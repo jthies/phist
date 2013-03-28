@@ -1,6 +1,5 @@
 function A=make_testmat(nx)
 
-nx=16;
 n=nx^3;
 
 e=ones(nx,1);
