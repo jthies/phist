@@ -1,4 +1,8 @@
-function A=make_testmat(nx)
+function A=make_testmat(nx,sym)
+
+if (nargin<2)
+  sym=false;
+end
 
 n=nx^3;
 
@@ -10,6 +14,11 @@ A2=kron(I1,A1)+kron(A1,I1);
 I2=speye(nx*nx,nx*nx);
 A=kron(I1,A2)+kron(A1,I2);
 
-A=A+0.1*sprand(A);
+if (sym)
+  R=sprandsym(A);
+else
+  R=sprandn(A);
+end
+A=A+0.25*R;
 
 end

@@ -1,6 +1,6 @@
 function [X,flag,relres,iter,resvec]=bgmres( A,B,X0,opts,M)
 %                                                        
-% function X=bgmres( A,B,opts,MFUN,...)                  
+% function X=bgmres( A,B,X0,opts,M)                      
 %                                                        
 % Right-preconditioned block GMRES(m).                   
 % Implementation follows Saad (Alg. 9.5, p270),          

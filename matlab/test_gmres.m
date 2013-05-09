@@ -1,7 +1,7 @@
 %for debugging - make results reproducible
 %rand("seed",42);
 %randn("seed",42);
-nx=32;
+nx=16;
 
 debug=false;
 
@@ -13,7 +13,7 @@ m=5;
 global printOpts;
 printOpts.debug=debug;
 
-A=make_testmat(nx);
+A=make_testmat(nx,true);
 n=size(A,1);
 
 A2=make_testmat(nx)+sprandn(A)*i;
