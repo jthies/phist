@@ -1,3 +1,4 @@
+default: install
 
 .PHONY: test_env clean
 
@@ -15,6 +16,11 @@ ifndef ESSEX_INSTALL
 	        echo This should be the directory where to instll libs, headers and binaries,; \
 	        echo for instance /usr/local/;
 	ENV_RETURN_CODE=false
+else
+	CFLAGS+=-I${ESSEX_INSTALL}/include
+	CXXFLAGS+=-I${ESSEX_INSTALL}/include
+	FFLAGS+=-I${ESSEX_INSTALL}/include
+	LDFLAGS+=-L${ESSEX_INSTALL}/lib
 endif
 ifndef ESSEX_PLAT
 	ENV_MSG+=echo Environment variable ESSEX_PLAT not set.; \
@@ -25,6 +31,8 @@ ifndef ESSEX_KERNEL_LIB
 	ENV_MSG+=echo Environment variable ESSEX_KERNEL_LIB not set.; \
 		echo This determines which underlying kernel library is linked in.;
 	ENV_RETURN_CODE=false
+else
+	LIBS+=-lessex_kernels_${ESEX_KERNEL_LIB}_${ESSEX_PLAT}
 endif
 ifeq ($(ESSEX_KERNEL_LIB),ghost)
 	ifndef GHOST_BASE
@@ -34,12 +42,20 @@ ifeq ($(ESSEX_KERNEL_LIB),ghost)
 	else ifeq ($(ESSEX_KERNEL_LIB),epetra)
 		ifndef TRILINOS_BASE
 			ENV_MSG+=echo Environment variable TRILINOS_BASE not set.;
-		ENV_RETURN_CODE=false
+			ENV_RETURN_CODE=false
+		else
+			CXXFLAGS+=-I${TRILINOS_BASE}/include
+			LDFLAGS+=-L${TRILINOS_BASE}/lib 
+			LIBS+=-lepetra -lteuchos
 		endif
 	else ifeq ($(ESSEX_KERNEL_LIB),tpetra)
 		ifndef TRILINOS_BASE
 			ENV_MSG+=echo Environment variable TRILINOS_BASE not set.;
-		ENV_RETURN_CODE=false
+			ENV_RETURN_CODE=false
+		else
+			CXXFLAGS+=-I${TRILINOS_BASE}/include
+			LDFLAGS+=-L${TRILINOS_BASE}/lib 
+			LIBS+=-ltpetra -lkokkos -lteuchos
 		endif
 	else
 		ENV_MSG+=echo Environment variable ESSEX_KERNEL_LIB is invalid.; \
@@ -55,8 +71,8 @@ ifeq ($(ESSEX_KERNEL_LIB),ghost)
 	ifdef LIBNAME
 		INSTALL_CMD+=cp ${LIBNAME} ${ESSEX_INSTALL}/lib/;
 	endif
-	ifdef EXEC_FILES
-		INSTALL_CMD+=cp ${EXEC_FILES} ${ESSEX_INSTALL}/bin/;
+	ifdef EXEC
+		INSTALL_CMD+=cp ${EXEC} ${ESSEX_INSTALL}/bin/;
 	endif
 	ifdef TEST_FILES
 		INSTALL_CMD+=cp ${TEST_FILES} ${ESSEX_INSTALL}/test/;
@@ -67,7 +83,10 @@ ifeq ($(ESSEX_KERNEL_LIB),ghost)
 test_env:
 	@${ENV_MSG}
 	@${ENV_RETURN_CODE}
-	
+
+${EXEC}: ${EXEC}.o
+	${LD} ${LDFLAGS} -o $@ $< ${LIBS}	
+
 %.o: %.c
 	${CC} ${CFLAGS} -c $<
 
@@ -91,6 +110,9 @@ test_env:
 
 %_tmp.f90: %.Fsrc %.Fimpl
 	${FPP} -I${ESSEX_HOME}/config/ ${FPPFLAGS} $< > $@
+
+${LIBNAME}: ${OBJ}
+	${AR} ${ARFLAGS} ${LIBNAME} ${OBJ}
 
 install: ${HEADER_FLIES} ${LIBNAME} ${EXEC_FILES} ${TEST_FILES} install_dirs
 	@${INSTALL_CMD}

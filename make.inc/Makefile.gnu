@@ -10,5 +10,8 @@ CFLAGS=-g -O2
 CXX=mpiCC
 CXXFLAGS=-g -O2
 
+LD=${CC}
+LDFLAGS=${CFLAGS}
+
 AR=ar
 ARFLAGS=vrcs
