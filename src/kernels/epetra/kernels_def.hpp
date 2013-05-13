@@ -19,7 +19,7 @@
 //@{
 
 //! read a matrix from a MatrixMarket (ASCII) file
-void Dread_crsMat_mm(void** vA, char* filename,int* ierr)
+void DcrsMat_read_mm(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
 #ifdef HAVE_MPI
   Epetra_MpiComm comm(MPI_COMM_WORLD);
@@ -28,18 +28,18 @@ void Dread_crsMat_mm(void** vA, char* filename,int* ierr)
 #endif
   Epetra_CrsMatrix* A=NULL;
   *ierr=EpetraExt::MatrixMarketFileToCrsMatrix(filename,comm,A);
-  *vA = (void*)(A);
+  *vA = (_TYPE_(crsMat_ptr))(A);
   }
 
 //! read a matrix from a Ghost CRS (binary) file.
-void Dread_crsMat_bin(void** A, char* filename,int* ierr)
+void DcrsMat_read_bin(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
   // TODO - not implemented (should read the binary file format defined by ghost)
   *ierr=-99;
   }
 
 //! read a matrix from a Harwell-Boeing (HB) file
-void Dread_crsMat_hb(void** vA, char* filename,int* ierr)
+void DcrsMat_read_hb(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
   *ierr=-99; // not implemented in epetra
   }
@@ -49,35 +49,35 @@ void Dread_crsMat_hb(void** vA, char* filename,int* ierr)
 
 //!@{
 //! get the row distribution of the matrix
-void Dget_row_map(void* vA, void** vmap, int* ierr)
+void DcrsMat_getrow_map(_TYPE_(const_crsMat_ptr) vA, map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_CrsMatrix,A,vA,*ierr);
-  *vmap = (void*)(&(A->RowMap()));
+  *vmap = (const map_ptr_t)(&(A->RowMap()));
   }
 
 //! get column distribution of a matrix
-void Dget_col_map(void* vA, void** vmap, int* ierr)
+void DcrsMat_getcol_map(_TYPE_(const_crsMat_ptr) vA, map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_CrsMatrix,A,vA,*ierr);
-  *vmap = (void*)(&(A->ColMap()));
+  *vmap = (const map_ptr_t)(&(A->ColMap()));
   }
 
 //! get the map for vectors x in y=A*x
-void Dget_domain_map(void* vA, void** vmap, int* ierr)
+void DcrsMat_getdomain_map(_TYPE_(const_crsMat_ptr) vA, map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_CrsMatrix,A,vA,*ierr);
-  *vmap = (void*)(&(A->DomainMap()));
+  *vmap = (const map_ptr_t)(&(A->DomainMap()));
   }
 
 //! get the map for vectors y in y=A*x
-void Dget_range_map(void* vA, void** vmap, int* ierr)
+void DcrsMat_getrange_map(_TYPE_(const_crsMat_ptr) vA, map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_CrsMatrix,A,vA,*ierr);
-  *vmap = (void*)(&(A->RangeMap()));
+  *vmap = (const map_ptr_t)(&(A->RangeMap()));
   }
 //@}
 
@@ -86,19 +86,18 @@ void Dget_range_map(void* vA, void** vmap, int* ierr)
 //@{
 //! create a block-vector. The entries are stored contiguously
 //! at val in column major ordering.
-void Dcreate_mvec(void* vmap, int nvec, void** vV, double** val, int* ierr)
+void Dmvec_create(const map_ptr_t vmap, int nvec, _TYPE_(mvec_ptr)* vV, 
+        int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_Map, map,vmap,*ierr);
   Epetra_MultiVector* result = new Epetra_MultiVector(*map,nvec);
-  *vV=(void*)(&result);
-  int lda;
-  *ierr = result->ExtractView(val,&lda);
+  *vV=(_TYPE_(mvec_ptr))(&result);
   }
 
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
-void Dcreate_sdMat(int nrows, int ncols, void** vM, double** val, int* ierr)
+void sdMat_create(int nrows, int ncols, _TYPE_(sdMat_ptr)* vM, double** val, int* ierr)
   {
   *ierr=0;
   Epetra_SerialComm comm;
@@ -107,17 +106,31 @@ void Dcreate_sdMat(int nrows, int ncols, void** vM, double** val, int* ierr)
   if (mv==NULL) *ierr=-1;
   int lda;
   *ierr = mv->ExtractView(val,&lda);
-  *vM=(void*)mv;
+  *vM=(_TYPE_(sdMat_ptr))mv;
   }
 
 //@}
+
+void Dmvec_extract_view(Dmvec_ptr_t vV, double** val, int* ierr)
+  {
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V, vV, *ierr);
+  int lda;
+  *ierr = V->ExtractView(val,&lda);
+  }
+
+void DsdMat_extract_view(DsdMat_ptr_t vM, double** val, int* ierr)
+  {
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,M, vM, *ierr);
+  int lda;
+  *ierr = M->ExtractView(val,&lda);
+  }
 
 //! \name destructors
 
 //@{
 
 //!
-void Ddelete_crsMat(void* vA, int* ierr)
+void DcrsMat_delete(_TYPE_(crsMat_ptr) vA, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_CrsMatrix,A,vA,*ierr);
@@ -125,7 +138,7 @@ void Ddelete_crsMat(void* vA, int* ierr)
   }
 
 //!
-void Ddelete_mvec(void* vV, int* ierr)
+void Dmvec_delete(_TYPE_(mvec_ptr) vV, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);
@@ -133,7 +146,7 @@ void Ddelete_mvec(void* vV, int* ierr)
   }
 
 //!
-void Ddelete_sdMat(void* vM, int* ierr)
+void DsdMat_delete(_TYPE_(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,M,vM,*ierr);
@@ -146,7 +159,8 @@ void Ddelete_sdMat(void* vM, int* ierr)
 //!@{
 
 //! y=alpha*A*x+beta*y.
-void DcrsMat_X_mvec(double alpha, void* vA, void* vx, double beta, void* vy, int* ierr)
+void DcrsMat_X_mvec(double alpha, _TYPE_(const_crsMat_ptr) vA, _TYPE_(const_mvec_ptr) vx, 
+double beta, _TYPE_(const_mvec_ptr) vy, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_CrsMatrix,A,vA,*ierr);
@@ -180,17 +194,17 @@ void DcrsMat_X_mvec(double alpha, void* vA, void* vx, double beta, void* vy, int
   }
 
 //! dot product of vectors v_i and w_i, i=1..numvecs
-void Dmvec_dot_mvec(void* vv, void* vw, double* s, int* ierr)
+void Dmvec_dot_mvec(_TYPE_(const_mvec_ptr) vV, _TYPE_(const_mvec_ptr) vW, double* s, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,v,vv,*ierr);
-  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,w,vw,*ierr);
-  _CHECK_ZERO_(v->Dot(*w,s),*ierr);
+  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
+  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,W,vW,*ierr);
+  _CHECK_ZERO_(V->Dot(*W,s),*ierr);
   }
 
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix
 //! C=V'*W. C is replicated on all MPI processes sharing V and W.
-void DmvecT_X_mvec(double alpha, void* vV, void* vW, double beta, void* vC, int* ierr)
+void DmvecT_X_mvec(double alpha, _TYPE_(const_mvec_ptr) vV, _TYPE_(const_mvec_ptr) vW, double beta, _TYPE_(sdMat_ptr) vC, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
@@ -199,8 +213,22 @@ void DmvecT_X_mvec(double alpha, void* vV, void* vW, double beta, void* vC, int*
   _CHECK_ZERO_(C->Multiply('T','N',alpha,*V,*W,beta),*ierr);
   }
 
+
+//! n x m multi-vector times m x m dense matrix gives n x m multi-vector,
+//! W=alpha*V*C + beta*W
+void Dmvec_X_sdMat(double alpha, _TYPE_(const_mvec_ptr) vV,
+                                       _TYPE_(const_sdMat_ptr) vC,
+                           _ST_ beta,  _TYPE_(mvec_ptr) vW,
+                                       int* ierr)
+  {
+  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,W,vW,*ierr);
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,C,vC,*ierr);
+  _CHECK_ZERO_(W->Multiply('N', 'N', alpha, *v, *C, beta),*ierr);
+  }
+  
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.
-void Dmvec_QR(void* V, void* Q, void* R, int* ierr)
+void Dmvec_QR(_TYPE_(const_mvec_ptr) V, _TYPE_(mvec_ptr) Q, _TYPE_(sdMat_ptr) R, int* ierr)
   {
   // TODO - check the status of TSQR in Trilinos
   *ierr=-99;

@@ -1,3 +1,4 @@
+#include <complex>
 
 // how to build up the name of a subroutine (void function)
 #ifdef _SUBROUTINE_
@@ -7,11 +8,11 @@
 #define _SUBROUTINE_(name) void C ## name
 
 // how to build up the name of a type
-#ifdef _TYPENAME_
-#undef _TYPENAME_
+#ifdef _TYPE_
+#undef _TYPE_
 #endif
 
-#define _TYPENAME_(name) C ## name ## _t
+#define _TYPE_(name) C ## name ## _t
 
 // scalar type
 #ifdef _ST_

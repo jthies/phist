@@ -9,21 +9,21 @@
 //@{
 
 //! read a matrix from a MatrixMarket (ASCII) file
-_SUBROUTINE_(read_crsMat_mm)(void** A, char* filename,int* ierr)
+_SUBROUTINE_(crsMat_read_mm)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
   // TODO - doesn't seem to be available in Tpetra
   *ierr=-99;
   }
 
 //! read a matrix from a Ghost CRS (binary) file.
-_SUBROUTINE_(read_crsMat_bin)(void** A, char* filename,int* ierr)
+_SUBROUTINE_(crsMat_read_bin)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
   // TODO - not implemented (should read the binary file format defined by ghost)
   *ierr=-99;
   }
 
 //! read a matrix from a Harwell-Boeing (HB) file
-_SUBROUTINE_(read_crsMat_hb)(void** vA, char* filename,int* ierr)
+_SUBROUTINE_(crsMat_read_hb)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
   *ierr=0;
   std::string fname(filename);
@@ -36,7 +36,7 @@ _SUBROUTINE_(read_crsMat_hb)(void** vA, char* filename,int* ierr)
   Teuchos::RCP<Teuchos::ParameterList> params=Teuchos::null;
   //_TRY_CATCH_(Tpetra::Utils::readHBMatrix(fname,comm,node,A,rowMap, params),*ierr);
   _TRY_CATCH_(Tpetra::Utils::readHBMatrix(fname,comm,node,A),*ierr);
-  *vA = (void*)(A.get());
+  *vA = (_TYPE_(crsMat_ptr))(A.get());
   }
 //!@}
 
@@ -44,35 +44,36 @@ _SUBROUTINE_(read_crsMat_hb)(void** vA, char* filename,int* ierr)
 
 //!@{
 //! get the row distribution of the matrix
-_SUBROUTINE_(get_row_map)(void* vA, void** vmap, int* ierr)
+_SUBROUTINE_(crsMat_get_row_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* 
+ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
-  *vmap = (void*)(A->getRowMap().get());
+  *vmap = (const_map_ptr_t)(A->getRowMap().get());
   }
 
 //! get column distribution of a matrix
-_SUBROUTINE_(get_col_map)(void* vA, void** vmap, int* ierr)
+_SUBROUTINE_(crsMat_get_col_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
-  *vmap = (void*)(A->getColMap().get());
+  *vmap = (const_map_ptr_t)(A->getColMap().get());
   }
 
 //! get the map for vectors x in y=A*x
-_SUBROUTINE_(get_domain_map)(void* vA, void** vmap, int* ierr)
+_SUBROUTINE_(crsMat_get_domain_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
-  *vmap = (void*)(A->getDomainMap().get());
+  *vmap = (const_map_ptr_t)(A->getDomainMap().get());
   }
 
 //! get the map for vectors y in y=A*x
-_SUBROUTINE_(get_range_map)(void* vA, void** vmap, int* ierr)
+_SUBROUTINE_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
-  *vmap = (void*)(A->getRangeMap().get());
+  *vmap = (const_map_ptr_t)(A->getRangeMap().get());
   }
 //@}
 
@@ -81,20 +82,22 @@ _SUBROUTINE_(get_range_map)(void* vA, void** vmap, int* ierr)
 //@{
 //! create a block-vector. The entries are stored contiguously
 //! at val in column major ordering.
-_SUBROUTINE_(create_mvec)(void* vmap, int nvec, void** vV, _ST_** val, int* ierr)
+_SUBROUTINE_(mvec_create)(const_map_ptr_t vmap, int nvec, _TYPE_(mvec_ptr)* vV, _ST_** val, 
+int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(map_t, map, vmap, *ierr);
   Teuchos::RCP<map_t> map_ptr = Teuchos::rcp(map,false);
   Traits<_ST_>::mvec_t* result = new Traits<_ST_>::mvec_t(map_ptr,nvec);
-  vV=(void**)(&result);
+  *vV=(_TYPE_(mvec_ptr))(&result);
   Teuchos::ArrayRCP<_ST_> val_ptr = result->get1dViewNonConst();
   *val = val_ptr.getRawPtr();
   }
 
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
-_SUBROUTINE_(create_sdMat)(int nrows, int ncols, void** vM, _ST_** val, int* ierr)
+_SUBROUTINE_(sdMat_create)(int nrows, int ncols, _TYPE_(sdMat_ptr)* vM, _ST_** val, int* 
+ierr)
   {
   *ierr=0;
   // create local map
@@ -104,7 +107,7 @@ _SUBROUTINE_(create_sdMat)(int nrows, int ncols, void** vM, _ST_** val, int* ier
   Teuchos::RCP<map_t> localMap =
         Teuchos::rcp(new map_t(nrows, 0, scomm, Tpetra::LocallyReplicated));
   Traits<_ST_>::sdMat_t* result = new Traits<_ST_>::mvec_t(localMap,ncols);
-  *vM=(void*)(result);
+  *vM=(_TYPE_(sdMat_ptr))(result);
   Teuchos::ArrayRCP<_ST_> valptr = result->get1dViewNonConst();
   *val = valptr.getRawPtr();
   }
@@ -116,7 +119,7 @@ _SUBROUTINE_(create_sdMat)(int nrows, int ncols, void** vM, _ST_** val, int* ier
 //@{
 
 //!
-_SUBROUTINE_(delete_crsMat)(void* vA, int* ierr)
+_SUBROUTINE_(crsMat_delete)(_TYPE_(crsMat_ptr) vA, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::crsMat_t,A,vA,*ierr);
@@ -124,7 +127,7 @@ _SUBROUTINE_(delete_crsMat)(void* vA, int* ierr)
   }
 
 //!
-_SUBROUTINE_(delete_mvec)(void* vV, int* ierr)
+_SUBROUTINE_(mvec_delete)(_TYPE_(mvec_ptr) vV, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -132,7 +135,7 @@ _SUBROUTINE_(delete_mvec)(void* vV, int* ierr)
   }
 
 //!
-_SUBROUTINE_(delete_sdMat)(void* vM, int* ierr)
+_SUBROUTINE_(sdMat_delete)(_TYPE_(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,M,vM,*ierr);
@@ -145,7 +148,10 @@ _SUBROUTINE_(delete_sdMat)(void* vM, int* ierr)
 //!@{
 
 //! y=alpha*A*x+beta*y.
-_SUBROUTINE_(crsMat_X_mvec)(_ST_ alpha, void* vA, void* vx, _ST_ beta, void* vy, int* ierr)
+_SUBROUTINE_(crsMat_X_mvec)(_ST_ alpha, _TYPE_(const_crsMat_ptr) vA, 
+                                        _TYPE_(const_mvec_ptr) vx, 
+                                        _ST_ beta, _TYPE_(mvec_ptr) vy, 
+                                        int* ierr)
   {
   *ierr=0;
   
@@ -159,7 +165,9 @@ _SUBROUTINE_(crsMat_X_mvec)(_ST_ alpha, void* vA, void* vx, _ST_ beta, void* vy,
   }
 
 //! dot product of vectors v_i and w_i, i=1..numvecs
-_SUBROUTINE_(mvec_dot_mvec)(void* vv, void* vw, _ST_* s, int* ierr)
+_SUBROUTINE_(mvec_dot_mvec)(_TYPE_(const_mvec_ptr) vv, _TYPE_(const_mvec_ptr) vw, _ST_* s, 
+int* 
+ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,v,vv,*ierr);
@@ -170,19 +178,35 @@ _SUBROUTINE_(mvec_dot_mvec)(void* vv, void* vw, _ST_* s, int* ierr)
 
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix
 //! C=V'*W. C is replicated on all MPI processes sharing V and W.
-_SUBROUTINE_(mvecT_X_mvec)(void* vV, void* vW, void* vC, int* ierr)
+_SUBROUTINE_(mvecT_X_mvec)(_TYPE_(const_mvec_ptr) vV, 
+                           _TYPE_(const_mvec_ptr) vW, 
+                           _TYPE_(sdMat_ptr) vC, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,W,vW,*ierr);
-  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,C,vC,*ierr);
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,C,vC,*ierr);
   _ST_ alpha = Traits<_ST_>::one();
   _ST_ beta = Traits<_ST_>::zero();
   _TRY_CATCH_(C->multiply(Teuchos::TRANS, Teuchos::NO_TRANS,alpha,*V,*W,beta),*ierr);
   }
 
+//! n x m multi-vector times m x m dense matrix gives n x m multi-vector,
+//! W=alpha*V*C + beta*W
+_SUBROUTINE_(mvec_X_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) vV,
+                                       _TYPE_(const_sdMat_ptr) vC,
+                           _ST_ beta,  _TYPE_(mvec_ptr) vW,
+                                       int* ierr)
+  {
+  *ierr=-99;
+  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,W,vW,*ierr);
+  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,C,vC,*ierr);
+  }
+
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.
-_SUBROUTINE_(mvec_QR)(void* V, void* Q, void* R, int* ierr)
+_SUBROUTINE_(mvec_QR)(_TYPE_(const_mvec_ptr) V, 
+        _TYPE_(mvec_ptr) Q, _TYPE_(sdMat_ptr) R, int* ierr)
   {
   // TODO - check the status of TSQR in Trilinos
   *ierr=-99;
