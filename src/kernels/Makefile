@@ -13,5 +13,5 @@ default: install_${ESSEX_KERNEL_LIB}
 include ../../make.inc/rules
 -include ${ESSEX_BASE}/make.inc/Makefile.${ESSEX_PLAT}
 
-install_${ESSEX_KERNEL_LIB}:
+install_${ESSEX_KERNEL_LIB}: test_env
 	+cd ${ESSEX_KERNEL_LIB}; make install
