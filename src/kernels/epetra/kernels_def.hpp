@@ -6,6 +6,7 @@
 #endif
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
+#include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_CrsMatrix.h"
 
@@ -17,6 +18,8 @@
 // \name Matrix input from a file
 
 //@{
+
+extern "C" {
 
 //! read a matrix from a MatrixMarket (ASCII) file
 void DcrsMat_read_mm(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
@@ -49,35 +52,35 @@ void DcrsMat_read_hb(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
 
 //!@{
 //! get the row distribution of the matrix
-void DcrsMat_getrow_map(_TYPE_(const_crsMat_ptr) vA, map_ptr_t* vmap, int* ierr)
+void DcrsMat_getrow_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_CrsMatrix,A,vA,*ierr);
-  *vmap = (const map_ptr_t)(&(A->RowMap()));
+  *vmap = (const_map_ptr_t)(&(A->RowMap()));
   }
 
 //! get column distribution of a matrix
-void DcrsMat_getcol_map(_TYPE_(const_crsMat_ptr) vA, map_ptr_t* vmap, int* ierr)
+void DcrsMat_getcol_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_CrsMatrix,A,vA,*ierr);
-  *vmap = (const map_ptr_t)(&(A->ColMap()));
+  *vmap = (const_map_ptr_t)(&(A->ColMap()));
   }
 
 //! get the map for vectors x in y=A*x
-void DcrsMat_getdomain_map(_TYPE_(const_crsMat_ptr) vA, map_ptr_t* vmap, int* ierr)
+void DcrsMat_getdomain_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_CrsMatrix,A,vA,*ierr);
-  *vmap = (const map_ptr_t)(&(A->DomainMap()));
+  *vmap = (const_map_ptr_t)(&(A->DomainMap()));
   }
 
 //! get the map for vectors y in y=A*x
-void DcrsMat_getrange_map(_TYPE_(const_crsMat_ptr) vA, map_ptr_t* vmap, int* ierr)
+void DcrsMat_getrange_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_CrsMatrix,A,vA,*ierr);
-  *vmap = (const map_ptr_t)(&(A->RangeMap()));
+  *vmap = (const_map_ptr_t)(&(A->RangeMap()));
   }
 //@}
 
@@ -86,7 +89,7 @@ void DcrsMat_getrange_map(_TYPE_(const_crsMat_ptr) vA, map_ptr_t* vmap, int* ier
 //@{
 //! create a block-vector. The entries are stored contiguously
 //! at val in column major ordering.
-void Dmvec_create(const map_ptr_t vmap, int nvec, _TYPE_(mvec_ptr)* vV, 
+void Dmvec_create(const_map_ptr_t vmap, int nvec, _TYPE_(mvec_ptr)* vV, 
         int* ierr)
   {
   *ierr=0;
@@ -111,11 +114,11 @@ void sdMat_create(int nrows, int ncols, _TYPE_(sdMat_ptr)* vM, double** val, int
 
 //@}
 
-void Dmvec_extract_view(Dmvec_ptr_t vV, double** val, int* ierr)
+void Dmvec_extract_view(Dmvec_ptr_t vV, double** val, int vec, int* ierr)
   {
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V, vV, *ierr);
   int lda;
-  *ierr = V->ExtractView(val,&lda);
+  *ierr = (*V)(vec)->ExtractView(val,&lda);
   }
 
 void DsdMat_extract_view(DsdMat_ptr_t vM, double** val, int* ierr)
@@ -160,7 +163,7 @@ void DsdMat_delete(_TYPE_(sdMat_ptr) vM, int* ierr)
 
 //! y=alpha*A*x+beta*y.
 void DcrsMat_X_mvec(double alpha, _TYPE_(const_crsMat_ptr) vA, _TYPE_(const_mvec_ptr) vx, 
-double beta, _TYPE_(const_mvec_ptr) vy, int* ierr)
+double beta, _TYPE_(mvec_ptr) vy, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_CrsMatrix,A,vA,*ierr);
@@ -224,7 +227,7 @@ void Dmvec_X_sdMat(double alpha, _TYPE_(const_mvec_ptr) vV,
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,W,vW,*ierr);
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,C,vC,*ierr);
-  _CHECK_ZERO_(W->Multiply('N', 'N', alpha, *v, *C, beta),*ierr);
+  _CHECK_ZERO_(W->Multiply('N', 'N', alpha, *V, *C, beta),*ierr);
   }
   
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.
@@ -236,3 +239,4 @@ void Dmvec_QR(_TYPE_(const_mvec_ptr) V, _TYPE_(mvec_ptr) Q, _TYPE_(sdMat_ptr) R,
 
 //!@}
 
+}// extern "C"

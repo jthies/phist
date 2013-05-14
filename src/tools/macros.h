@@ -10,8 +10,8 @@
 
 #ifndef _ESSEX_ERROR_HANDLER_
 #define _ESSEX_ERROR_HANDLER_(func,_FLAG_) \
-{_FLAG_=func; if (_FLAG_) { \
+{func; if (_FLAG_) { \
 fprintf(stderr,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
-__FLAG_,retcode2str(_FLAG_),#func,_FILE__,__LINE__); return;}}
+_FLAG_,retcode2str(_FLAG_),#func,__FILE__,__LINE__); return;}}
 #endif
 #endif

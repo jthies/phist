@@ -7,6 +7,10 @@ typedef const void* const_comm_ptr_t;
 typedef void* map_ptr_t;
 typedef const void* const_map_ptr_t;
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 //!
 void comm_create(comm_ptr_t* comm, int* ierr);
 //!
@@ -18,6 +22,9 @@ void map_create(map_ptr_t* map, const_comm_ptr_t comm, int nglob, int *ierr);
 //!
 void map_get_comm(const_map_ptr_t map, const_comm_ptr_t* comm, int* ierr);
 
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 //! include file for the basic operations (kernels)
 //! in single/double, real/complex.

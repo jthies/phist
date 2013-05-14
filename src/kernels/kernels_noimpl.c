@@ -4,36 +4,6 @@
 
 // \name Matrix input from a file
 
-#ifndef KERNELS_NOIMPL_GENERAL
-#define KERNELS_NOIMPL_GENERAL
-//!
-void comm_create(comm_ptr_t* comm, int* ierr);
-  {
-  *ierr=-99;
-  }
-//!
-void comm_get_rank(const_comm_ptr_t* comm, int* rank, int* ierr);
-  {
-  *ierr=-99;
-  }
-//!
-void comm_get_size(const_comm_ptr_t* comm, int* size, int* ierr);
-  {
-  *ierr=-99;
-  }
-//!
-void map_create(map_ptr_t* map, const_comm_ptr_t comm, int nglob, int *ierr);
-  {
-  *ierr=-99;
-  }
-//!
-void map_get_comm(const_map_ptr_t map, const_comm_ptr_t* comm, int* ierr)
-  {
-  *ierr=-99;
-  }
-
-#endif
-
 //@{
 
 //! read a matrix from a MatrixMarket (ASCII) file
@@ -59,25 +29,25 @@ _SUBROUTINE_(crsMat_read_hb)(_TYPE_(crsMat_ptr)* A, const char* filename,int* ie
 
 //!@{
 //! get the row distribution of the matrix
-_SUBROUTINE_(crsMat_get_row_map)(const _TYPE_(crsMat_ptr) A, map_ptr_t* map, int* ierr)
+_SUBROUTINE_(crsMat_get_row_map)(_TYPE_(const_crsMat_ptr) A, const_map_ptr_t* map, int* ierr)
   {
   *ierr=-99;
   }
 
 //! get column distribution of a matrix
-_SUBROUTINE_(crsMat_get_col_map)(const _TYPE_(crsMat_ptr) A, map_ptr_t* map, int* ierr)
+_SUBROUTINE_(crsMat_get_col_map)(_TYPE_(const_crsMat_ptr) A, const_map_ptr_t* map, int* ierr)
   {
   *ierr=-99;
   }
 
 //! get the map for vectors x in y=A*x
-_SUBROUTINE_(crsMat_get_domain_map)(const _TYPE_(crsMat_ptr) A, map_ptr_t* map, int* ierr)
+_SUBROUTINE_(crsMat_get_domain_map)(_TYPE_(const_crsMat_ptr) A, const_map_ptr_t* map, int* ierr)
   {
   *ierr=-99;
   }
 
 //! get the map for vectors y in y=A*x
-_SUBROUTINE_(crsMat_get_range_map)(const _TYPE_(crsMat_ptr) A, map_ptr_t* map, int* ierr)
+_SUBROUTINE_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) A, const_map_ptr_t* map, int* ierr)
   {
   *ierr=-99;
   }
@@ -88,7 +58,7 @@ _SUBROUTINE_(crsMat_get_range_map)(const _TYPE_(crsMat_ptr) A, map_ptr_t* map, i
 //@{
 //! create a block-vector. The entries are stored contiguously
 //! at val in column major ordering.
-_SUBROUTINE_(mvec_create)(const map_ptr_t map, int nvec, 
+_SUBROUTINE_(mvec_create)(const_map_ptr_t map, int nvec, 
         _TYPE_(mvec_ptr)* V, int* ierr)
   {
   *ierr=-99;
@@ -104,10 +74,15 @@ _SUBROUTINE_(sdMat_create)(int n, int m, _TYPE_(sdMat_ptr)* M, int* ierr)
 //@}
 
 //!
-_SUBROUTINE_(mvec_extract_view)(_TYPE_(mvec) V, _ST_** val, int* ierr);
+_SUBROUTINE_(mvec_extract_view)(_TYPE_(mvec_ptr) V, _ST_** val, int vec, int* ierr)
+  {
+  *ierr=-99;
+  }
 
 //!
-_SUBROUTINE_(sdMat_extract_view)(_TYPE_(mvec) V, _ST_** val, int* ierr);
+_SUBROUTINE_(sdMat_extract_view)(_TYPE_(mvec_ptr) V, _ST_** val, int* ierr)
+  {
+  }
 
 //! \name destructors
 
@@ -151,15 +126,15 @@ _SUBROUTINE_(sdMat_put_value)(_TYPE_(mvec_ptr) V, _ST_ value, int* ierr)
 //!@{
 
 //! y=alpha*A*x+beta*y.
-_SUBROUTINE_(crsMat_X_mvec)(_ST_ alpha, const _TYPE_(crsMat_ptr) A, 
-        const _TYPE_(mvec_ptr) x, _ST_ beta, _TYPE_(mvec_ptr) y, int* ierr)
+_SUBROUTINE_(crsMat_X_mvec)(_ST_ alpha, _TYPE_(const_crsMat_ptr) A, 
+        _TYPE_(const_mvec_ptr) x, _ST_ beta, _TYPE_(mvec_ptr) y, int* ierr)
   {
   *ierr=-99;
   }
 
 //! dot product of vectors v_i and w_i, i=1..numvecs
-_SUBROUTINE_(mvec_dot_mvec)(const _TYPE_(mvec_ptr) v, 
-                            const _TYPE_(mvec_ptr) w, 
+_SUBROUTINE_(mvec_dot_mvec)(_TYPE_(const_mvec_ptr) v, 
+                            _TYPE_(const_mvec_ptr) w, 
                             _ST_* s, int* ierr)
   {
   *ierr=-99;
@@ -170,13 +145,13 @@ _SUBROUTINE_(mvec_dot_mvec)(const _TYPE_(mvec_ptr) v,
 _SUBROUTINE_(mvec_X_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) V,
                                        _TYPE_(const_sdMat_ptr) C,
                                        _ST_ beta,
-                                       _TYPE_(mvec_ptr) W, omt* ierr)
+                                       _TYPE_(mvec_ptr) W, int* ierr)
   {
   *ierr=-99;
   }
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.
-_SUBROUTINE_(mvec_QR)(const _TYPE_(mvec_ptr) V, _TYPE_(mvec_ptr) Q, _TYPE_(sdMat_ptr) R, int* ierr)
+_SUBROUTINE_(mvec_QR)(_TYPE_(const_mvec_ptr) V, _TYPE_(mvec_ptr) Q, _TYPE_(sdMat_ptr) R, int* ierr)
   {
   *ierr=-99;
   }

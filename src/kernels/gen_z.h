@@ -1,5 +1,8 @@
+#ifdef __cplusplus
 #include <complex>
-
+#else
+#include <complex.h>
+#endif
 // how to build up the name of a subroutine (void function)
 #ifdef _SUBROUTINE_
 #undef _SUBROUTINE_

@@ -47,6 +47,10 @@ typedef void* _TYPE_(crsMat_ptr);
 //! opaque pointer to const CRS matrix objects
 typedef const void* _TYPE_(const_crsMat_ptr);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //! \name Matrix input from a file
 
 //@{
@@ -69,19 +73,19 @@ _SUBROUTINE_(crsMat_read_bin)(_TYPE_(crsMat_ptr)* A, const char* filename,int* i
 
 //! get the row distribution of the matrix
 _SUBROUTINE_(crsMat_get_row_map)(_TYPE_(const_crsMat_ptr) A, 
-        map_ptr_t* map, int* ierr);
+        const_map_ptr_t* map, int* ierr);
 
 //! get column distribution of a matrix
 _SUBROUTINE_(crsMat_get_col_map)(_TYPE_(const_crsMat_ptr) A, 
-        map_ptr_t* map, int* ierr);
+        const_map_ptr_t* map, int* ierr);
 
 //! get the map for vectors x in y=A*x
 _SUBROUTINE_(crsMat_get_domain_map)(_TYPE_(const_crsMat_ptr) A, 
-        map_ptr_t* map, int* ierr);
+        const_map_ptr_t* map, int* ierr);
 
 //! get the map for vectors y in y=A*x
 _SUBROUTINE_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) A, 
-        map_ptr_t* map, int* ierr);
+        const_map_ptr_t* map, int* ierr);
 //@}
 
 //! \name constructors
@@ -161,3 +165,7 @@ _SUBROUTINE_(mvec_QR)(_TYPE_(const_mvec_ptr) V,
 
 //!@}
 
+
+#ifdef __cplusplus
+} //extern "C"
+#endif
