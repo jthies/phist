@@ -102,14 +102,6 @@ _SUBROUTINE_(sdMat_create)(int nrows, int ncols,
 
 //@}
 
-//! extract view from multi-vector
-_SUBROUTINE_(mvec_extract_view)(_TYPE_(mvec_ptr) V, _ST_** val,
-        int vector, int* ierr);
-
-//! extract view from serial dense matrix
-_SUBROUTINE_(sdMat_extract_view)(_TYPE_(sdMat_ptr) M, _ST_** val,
-        int* ierr);
-
 //! \name destructors
 
 //@{
@@ -122,6 +114,22 @@ _SUBROUTINE_(mvec_delete)(_TYPE_(mvec_ptr) V, int* ierr);
 
 //!
 _SUBROUTINE_(sdMat_delete)(_TYPE_(sdMat_ptr) M, int* ierr);
+
+//@}
+
+//! \name getting data from objects
+//@{
+
+//! retrieve local length of the vectors in V
+_SUBROUTINE_(mvec_my_length)(_TYPE_(const_mvec_ptr) V, int* len, int* ierr);
+
+//! extract view from multi-vector
+_SUBROUTINE_(mvec_extract_view)(_TYPE_(mvec_ptr) V, _ST_** val,
+        int vector, int* ierr);
+
+//! extract view from serial dense matrix
+_SUBROUTINE_(sdMat_extract_view)(_TYPE_(sdMat_ptr) M, _ST_** val,
+        int* ierr);
 
 //@}
 

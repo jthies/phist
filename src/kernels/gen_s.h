@@ -4,7 +4,7 @@
 #undef _SUBROUTINE_
 #endif
 
-#define _SUBROUTINE_(name) void S ## name
+#define _SUBROUTINE_(name) void essex_S ## name
 
 // how to build up the name of a type
 #ifdef _TYPE_

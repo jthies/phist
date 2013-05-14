@@ -32,53 +32,57 @@ ifndef ESSEX_KERNEL_LIB
 		echo This determines which underlying kernel library is linked in.;
 	ENV_RETURN_CODE=false
 else
-	LIBS+=-lessex_kernels_${ESEX_KERNEL_LIB}_${ESSEX_PLAT}
+	LIBS+=-lessex_kernels_${ESSEX_KERNEL_LIB}_${ESSEX_PLAT}
 endif
+LIBS+=-lessex_tools_${ESSEX_PLAT}
 ifeq ($(ESSEX_KERNEL_LIB),ghost)
 	ifndef GHOST_BASE
 		ENV_MSG+=echo Environment variable GHOST_BASE not set.;
 		ENV_RETURN_CODE=false
 	endif
-	else ifeq ($(ESSEX_KERNEL_LIB),epetra)
-		ifndef TRILINOS_BASE
-			ENV_MSG+=echo Environment variable TRILINOS_BASE not set.;
-			ENV_RETURN_CODE=false
-		else
-			CXXFLAGS+=-I${TRILINOS_BASE}/include
-			LDFLAGS+=-L${TRILINOS_BASE}/lib 
-			LIBS+=-lepetra -lteuchos
-		endif
-	else ifeq ($(ESSEX_KERNEL_LIB),tpetra)
-		ifndef TRILINOS_BASE
-			ENV_MSG+=echo Environment variable TRILINOS_BASE not set.;
-			ENV_RETURN_CODE=false
-		else
-			CXXFLAGS+=-I${TRILINOS_BASE}/include
-			LDFLAGS+=-L${TRILINOS_BASE}/lib 
-			LIBS+=-ltpetra -lkokkos -lteuchos
-		endif
-	else
-		ENV_MSG+=echo Environment variable ESSEX_KERNEL_LIB is invalid.; \
-		        echo We currently support epetra, tpetra and ghost.;
+	LIBS+=-lghost ${LAPACKLIB} ${BLASLIB}
+else ifeq ($(ESSEX_KERNEL_LIB),epetra)
+	ifndef TRILINOS_BASE
+		ENV_MSG+=echo Environment variable TRILINOS_BASE not set.;
 		ENV_RETURN_CODE=false
+	else
+		CXXFLAGS+=-I${TRILINOS_BASE}/include
+		LDFLAGS+=-L${TRILINOS_BASE}/lib
+		LD=${CXX} 
+		LIBS+=-lepetraext -lepetra -lteuchoscore ${LAPACKLIB} ${BLASLIB}
 	endif
-	ENV_MSG+=echo
+else ifeq ($(ESSEX_KERNEL_LIB),tpetra)
+	ifndef TRILINOS_BASE
+		ENV_MSG+=echo Environment variable TRILINOS_BASE not set.;
+		ENV_RETURN_CODE=false
+	else
+		CXXFLAGS+=-I${TRILINOS_BASE}/include
+		LDFLAGS+=-L${TRILINOS_BASE}/lib 
+		LD=${CXX}
+		LIBS+=-ltpetra -lkokkos -lteuchos ${LAPACKLIB} ${BLASLIB}
+	endif
+else
+	ENV_MSG+=echo Environment variable ESSEX_KERNEL_LIB is invalid.; \
+	        echo We currently support epetra, tpetra and ghost.;
+	ENV_RETURN_CODE=false
+endif
+ENV_MSG+=echo
 
-	INSTALL_CMD=
-	ifdef HEADER_FILES
-		INSTALL_CMD+=cp ${HEADER_FILES} ${ESSEX_INSTALL}/include/;
-	endif
-	ifdef LIBNAME
-		INSTALL_CMD+=cp ${LIBNAME} ${ESSEX_INSTALL}/lib/;
-	endif
-	ifdef EXEC
-		INSTALL_CMD+=cp ${EXEC} ${ESSEX_INSTALL}/bin/;
-	endif
-	ifdef TEST_FILES
-		INSTALL_CMD+=cp ${TEST_FILES} ${ESSEX_INSTALL}/test/;
-	endif
+INSTALL_CMD=@echo installing to directory ${ESSEX_INSTALL};
+ifdef HEADER_FILES
+	INSTALL_CMD+=cp ${HEADER_FILES} ${ESSEX_INSTALL}/include/;
+endif
+ifdef LIBNAME
+	INSTALL_CMD+=cp ${LIBNAME} ${ESSEX_INSTALL}/lib/;
+endif
+ifdef EXEC
+	INSTALL_CMD+=cp ${EXEC} ${ESSEX_INSTALL}/bin/;
+endif
+ifdef TEST_FILES
+	INSTALL_CMD+=cp ${TEST_FILES} ${ESSEX_INSTALL}/test/;
+endif
 
-	INSTALL_CMD+=echo
+INSTALL_CMD+=echo
 
 test_env:
 	@${ENV_MSG}
@@ -118,11 +122,11 @@ install: ${HEADER_FLIES} ${LIBNAME} ${EXEC_FILES} ${TEST_FILES} install_dirs
 	@${INSTALL_CMD}
 	
 install_dirs: test_env
-	+@[ -d $(dir ${ESSEX_INSTALL}) ] || mkdir -p $(dir ${ESSEX_INSTALL})
-	+@[ -d $(dir ${ESSEX_INSTALL}/include) ] || mkdir -p $(dir ${ESSEX_INSTALL}/include)
-	+@[ -d $(dir ${ESSEX_INSTALL}/lib) ] || mkdir -p $(dir ${ESSEX_INSTALL}/lib)
-	+@[ -d $(dir ${ESSEX_INSTALL}/test) ] || mkdir -p $(dir ${ESSEX_INSTALL}/test)
-	+@[ -d $(dir ${ESSEX_INSTALL}/bin) ] || mkdir -p $(dir ${ESSEX_INSTALL}/bin)
+	@[ -d $(ESSEX_INSTALL) ] || mkdir -p $(ESSEX_INSTALL)
+	@[ -d $(ESSEX_INSTALL)/include ] || mkdir -p $(ESSEX_INSTALL)/include
+	@[ -d $(ESSEX_INSTALL)/lib ] || mkdir -p $(ESSEX_INSTALL)/lib
+	@[ -d $(ESSEX_INSTALL)/test ] || mkdir -p $(ESSEX_INSTALL)/test
+	@[ -d $(ESSEX_INSTALL)/bin ] || mkdir -p $(ESSEX_INSTALL)/bin
 
 add_to_libessex: ${OBJ} test_env
 	${AR} ${ARFLAGS} ${ESSEX_BASE}/lib/libessex_${ESSEX_PLAT}.a ${OBJ}

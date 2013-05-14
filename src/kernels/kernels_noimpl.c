@@ -1,3 +1,5 @@
+#include "essex_kernels.h"
+
 // these implementations can be used if a kernel package
 // does not implement all four data types (cf. epetra/ for
 // an example, which supports only double (D))
@@ -73,6 +75,12 @@ _SUBROUTINE_(sdMat_create)(int n, int m, _TYPE_(sdMat_ptr)* M, int* ierr)
 
 //@}
 
+//! retrieve local length of the vectors in V
+_SUBROUTINE_(mvec_my_length)(_TYPE_(const_mvec_ptr) V, int* len, int* ierr)
+  {
+  *ierr=-99;
+  }
+
 //!
 _SUBROUTINE_(mvec_extract_view)(_TYPE_(mvec_ptr) V, _ST_** val, int vec, int* ierr)
   {
@@ -82,6 +90,7 @@ _SUBROUTINE_(mvec_extract_view)(_TYPE_(mvec_ptr) V, _ST_** val, int vec, int* ie
 //!
 _SUBROUTINE_(sdMat_extract_view)(_TYPE_(mvec_ptr) V, _ST_** val, int* ierr)
   {
+  *ierr=-99;
   }
 
 //! \name destructors

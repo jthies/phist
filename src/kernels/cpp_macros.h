@@ -1,13 +1,19 @@
 #include "Teuchos_Utils.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
+
 #ifndef _PRINT_MSG_
 #define _PRINT_MSG_(s) {std::cerr << (s) << std::endl;}
 #endif
 
+#ifndef _DEBUG_
+#define _DEBUG_(s) {std::cerr<<#s<<" = "<<(s)<<std::endl;}
+#endif
+
 #ifndef _CAST_PTR_FROM_VOID_
 #define _CAST_PTR_FROM_VOID_(_TYPE_,_PTR_,_VPTR_,_FLAG_) \
-_TYPE_ *_PTR_ = (_TYPE_*)(_VPTR_); \
+_TYPE_ *_PTR_ = NULL; \
+_PTR_=(_TYPE_*)(_VPTR_); \
 if (_PTR_==NULL) {_FLAG_=-88; return;}
 #endif
 

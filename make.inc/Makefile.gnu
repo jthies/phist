@@ -13,5 +13,8 @@ CXXFLAGS=-g -O2
 LD=${CC}
 LDFLAGS=${CFLAGS}
 
+LAPACKLIB=-llapack
+BLASLIB=-lblas
+
 AR=ar
 ARFLAGS=vrcs

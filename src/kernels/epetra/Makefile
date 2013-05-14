@@ -3,6 +3,6 @@
 
 OBJ=kernels.o
 LIBNAME=libessex_kernels_epetra_${ESSEX_PLAT}.a
-HEADER_FILES=../kernels.h ../kernels_decl.h ../gen_*.h
+HEADER_FILES=../essex_kernels.h ../essex_kernels_decl.h ../gen_*.h
 
 include ${ESSEX_BASE}/make.inc/rules

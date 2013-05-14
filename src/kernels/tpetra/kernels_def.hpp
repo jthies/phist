@@ -110,6 +110,15 @@ _SUBROUTINE_(sdMat_create)(int nrows, int ncols, _TYPE_(sdMat_ptr)* vM, int* ier
 
 //@}
 
+//! retrieve local length of the vectors in V
+_SUBROUTINE_(mvec_my_length)(_TYPE_(const_mvec_ptr) vV, int* len, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  *len = V->getLocalLength();
+  }
+
+
 //! extract view from multi-vector
 _SUBROUTINE_(mvec_extract_view)(_TYPE_(mvec_ptr) vV, _ST_** val, int vector, int* ierr)
   {
