@@ -8,7 +8,4 @@ OBJ=kernels.o
 LIBNAME=libessex_kernels_tpetra_${ESSEX_PLAT}.a
 HEADER_FILES=../kernels.h ../kernels_decl.h ../gen_*.h
 
-${LIBNAME}: ${OBJ}
-	${AR} ${ARFLAGS} $@ $<
-
 include ${ESSEX_BASE}/make.inc/rules

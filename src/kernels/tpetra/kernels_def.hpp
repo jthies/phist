@@ -4,6 +4,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Tpetra_MatrixIO.hpp"
 
+extern "C" {
+
 // \name Matrix input from a file
 
 //@{
@@ -82,22 +84,18 @@ _SUBROUTINE_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t*
 //@{
 //! create a block-vector. The entries are stored contiguously
 //! at val in column major ordering.
-_SUBROUTINE_(mvec_create)(const_map_ptr_t vmap, int nvec, _TYPE_(mvec_ptr)* vV, _ST_** val, 
-int* ierr)
+_SUBROUTINE_(mvec_create)(const_map_ptr_t vmap, int nvec, _TYPE_(mvec_ptr)* vV, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(map_t, map, vmap, *ierr);
   Teuchos::RCP<map_t> map_ptr = Teuchos::rcp(map,false);
   Traits<_ST_>::mvec_t* result = new Traits<_ST_>::mvec_t(map_ptr,nvec);
   *vV=(_TYPE_(mvec_ptr))(&result);
-  Teuchos::ArrayRCP<_ST_> val_ptr = result->get1dViewNonConst();
-  *val = val_ptr.getRawPtr();
   }
 
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
-_SUBROUTINE_(sdMat_create)(int nrows, int ncols, _TYPE_(sdMat_ptr)* vM, _ST_** val, int* 
-ierr)
+_SUBROUTINE_(sdMat_create)(int nrows, int ncols, _TYPE_(sdMat_ptr)* vM, int* ierr)
   {
   *ierr=0;
   // create local map
@@ -108,11 +106,27 @@ ierr)
         Teuchos::rcp(new map_t(nrows, 0, scomm, Tpetra::LocallyReplicated));
   Traits<_ST_>::sdMat_t* result = new Traits<_ST_>::mvec_t(localMap,ncols);
   *vM=(_TYPE_(sdMat_ptr))(result);
-  Teuchos::ArrayRCP<_ST_> valptr = result->get1dViewNonConst();
-  *val = valptr.getRawPtr();
   }
 
 //@}
+
+//! extract view from multi-vector
+_SUBROUTINE_(mvec_extract_view)(_TYPE_(mvec_ptr) vV, _ST_** val, int vector, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  Teuchos::ArrayRCP<_ST_> val_ptr = V->get1dViewNonConst();
+  *val = val_ptr.getRawPtr();
+  }
+
+//! extract view from serial dense matrix
+_SUBROUTINE_(sdMat_extract_view)(_TYPE_(sdMat_ptr) vM, _ST_** val, int* ierr)
+  {
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,M,vM,*ierr);
+  Teuchos::ArrayRCP<_ST_> valptr = M->get1dViewNonConst();
+  *val = valptr.getRawPtr();
+  }
+
 
 //! \name destructors
 
@@ -177,17 +191,15 @@ ierr)
   }
 
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix
-//! C=V'*W. C is replicated on all MPI processes sharing V and W.
-_SUBROUTINE_(mvecT_X_mvec)(_TYPE_(const_mvec_ptr) vV, 
-                           _TYPE_(const_mvec_ptr) vW, 
+//! C=alpha*V'*W+beta*C. C is replicated on all MPI processes sharing V and W.
+_SUBROUTINE_(mvecT_X_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vV, 
+                           _TYPE_(const_mvec_ptr) vW, _ST_ beta, 
                            _TYPE_(sdMat_ptr) vC, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,W,vW,*ierr);
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,C,vC,*ierr);
-  _ST_ alpha = Traits<_ST_>::one();
-  _ST_ beta = Traits<_ST_>::zero();
   _TRY_CATCH_(C->multiply(Teuchos::TRANS, Teuchos::NO_TRANS,alpha,*V,*W,beta),*ierr);
   }
 
@@ -213,3 +225,6 @@ _SUBROUTINE_(mvec_QR)(_TYPE_(const_mvec_ptr) V,
   }
 
 //!@}
+
+} // extern "C"
+
