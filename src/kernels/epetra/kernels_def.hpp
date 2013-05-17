@@ -95,20 +95,19 @@ void essex_Dmvec_create(const_map_ptr_t vmap, int nvec, _TYPE_(mvec_ptr)* vV,
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_BlockMap, map,vmap,*ierr);
   Epetra_MultiVector* result = new Epetra_MultiVector(*map,nvec);
-  *vV=(_TYPE_(mvec_ptr))(&result);
+  if (result==NULL) *ierr=-1;
+  *vV=(_TYPE_(mvec_ptr))(result);
   }
 
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
-void sdMat_create(int nrows, int ncols, _TYPE_(sdMat_ptr)* vM, double** val, int* ierr)
+void sdMat_create(int nrows, int ncols, _TYPE_(sdMat_ptr)* vM, int* ierr)
   {
   *ierr=0;
   Epetra_SerialComm comm;
   Epetra_LocalMap localMap(nrows,0,comm);
   Epetra_MultiVector* mv = new Epetra_MultiVector(localMap,ncols);
   if (mv==NULL) *ierr=-1;
-  int lda;
-  _CHECK_ZERO_(mv->ExtractView(val,&lda),*ierr);
   *vM=(_TYPE_(sdMat_ptr))mv;
   }
 
@@ -120,7 +119,6 @@ void essex_Dmvec_my_length(_TYPE_(const_mvec_ptr) vV, int* len, int* ierr)
   *ierr = 0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
   *len = V->MyLength();
-  _DEBUG_(*len);
   }
 
 void essex_Dmvec_extract_view(Dmvec_ptr_t vV, double** val, int vec, int* ierr)

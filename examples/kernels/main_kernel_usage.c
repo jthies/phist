@@ -1,5 +1,6 @@
-#include "essex_kernels.h"
-#include "essex_macros.h"
+#include "kernels/essex_kernels.h"
+#include "tools/essex_macros.h"
+#include "../../test/helpers/essex_test_helpers.h"
 #include <stdio.h>
 
 int main(int argc, char** argv)
@@ -19,7 +20,12 @@ int main(int argc, char** argv)
   
   int i;
   
-  _ESSEX_ERROR_HANDLER_(essex_kernels_init(argc,argv,&ierr),ierr);
+  essex_bad_object* troet;
+  comm_ptr_t comm_world;
+  
+  _ESSEX_ERROR_HANDLER_(essex_kernels_init(&argc,&argv,&ierr),ierr);
+
+  _ESSEX_ERROR_HANDLER_(essex_comm_create(&comm_world,&ierr),ierr);
 
   _ESSEX_ERROR_HANDLER_(essex_DcrsMat_read_mm(&A,filename,&ierr),ierr);
   
@@ -29,9 +35,6 @@ int main(int argc, char** argv)
   _ESSEX_ERROR_HANDLER_(essex_map_get_comm(range_map, &comm, &ierr),ierr);
   _ESSEX_ERROR_HANDLER_(essex_comm_get_rank(comm, &rank, &ierr),ierr);
   _ESSEX_ERROR_HANDLER_(essex_comm_get_size(comm, &num_proc, &ierr),ierr);
-
-  // this is a bullshit call
-  _ESSEX_ERROR_HANDLER_(essex_Dmvec_my_length(range_map,&nloc_x,&ierr),ierr);
 
   _ESSEX_ERROR_HANDLER_(essex_Dmvec_create(domain_map,1,&x,&ierr),ierr);
   _ESSEX_ERROR_HANDLER_(essex_Dmvec_create(range_map,1,&y,&ierr),ierr);
@@ -44,6 +47,7 @@ int main(int argc, char** argv)
   
 
 
+  _ESSEX_TEST_HANDLER_(essex_Dmvec_extract_view(troet,&x_val,0,&ierr),ierr,_ESSEX_BAD_CAST_);
   _ESSEX_ERROR_HANDLER_(essex_Dmvec_extract_view(x,&x_val,0,&ierr),ierr);
   _ESSEX_ERROR_HANDLER_(essex_Dmvec_extract_view(y,&y_val,0,&ierr),ierr);
   

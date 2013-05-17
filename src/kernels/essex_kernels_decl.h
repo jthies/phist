@@ -139,6 +139,12 @@ _SUBROUTINE_(mvec_put_value)(_TYPE_(mvec_ptr) V, _ST_ value, int* ierr);
 //! put scalar value into all elements of a serial dense matrix
 _SUBROUTINE_(sdMat_put_value)(_TYPE_(mvec_ptr) V, _ST_ value, int* ierr);
 
+//! put scalar value into all elements of a multi-vector
+_SUBROUTINE_(mvec_random)(_TYPE_(mvec_ptr) V, int* ierr);
+
+//! put scalar value into all elements of a serial dense matrix
+_SUBROUTINE_(sdMat_random)(_TYPE_(mvec_ptr) V, int* ierr);
+
 //! \name Numerical functions
 //!@{
 
