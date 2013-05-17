@@ -170,6 +170,15 @@ _SUBROUTINE_(sdMat_delete)(_TYPE_(sdMat_ptr) vM, int* ierr)
 //! \name Numerical functions
 //!@{
 
+//! put scalar value into all elements of a multi-vector
+_SUBROUTINE_(mvec_put_value)(_TYPE_(mvec_ptr) vV, _ST_ value, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  _TRY_CATCH_(V->putScalar(value),*ierr);
+  }
+          
+
 //! y=alpha*A*x+beta*y.
 _SUBROUTINE_(crsMat_X_mvec)(_ST_ alpha, _TYPE_(const_crsMat_ptr) vA, 
                                         _TYPE_(const_mvec_ptr) vx, 
