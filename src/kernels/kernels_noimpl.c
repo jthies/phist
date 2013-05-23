@@ -60,15 +60,16 @@ _SUBROUTINE_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) A, const_map_ptr_t* 
 //@{
 //! create a block-vector. The entries are stored contiguously
 //! at val in column major ordering.
-_SUBROUTINE_(mvec_create)(const_map_ptr_t map, int nvec, 
-        _TYPE_(mvec_ptr)* V, int* ierr)
+_SUBROUTINE_(mvec_create)(_TYPE_(mvec_ptr)* V, 
+        const_map_ptr_t map, int nvec, int* ierr)
   {
   *ierr=-99;
   }
 
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
-_SUBROUTINE_(sdMat_create)(int n, int m, _TYPE_(sdMat_ptr)* M, int* ierr)
+_SUBROUTINE_(sdMat_create)(_TYPE_(sdMat_ptr)* M, 
+int n, int m, int* ierr)
   {
   *ierr=-99;
   }
@@ -81,14 +82,20 @@ _SUBROUTINE_(mvec_my_length)(_TYPE_(const_mvec_ptr) V, int* len, int* ierr)
   *ierr=-99;
   }
 
-//!
-_SUBROUTINE_(mvec_extract_view)(_TYPE_(mvec_ptr) V, _ST_** val, int vec, int* ierr)
+//! retrieve number of vectors/columns in V
+_SUBROUTINE_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) V, int* nvec, int* ierr)
   {
   *ierr=-99;
   }
 
 //!
-_SUBROUTINE_(sdMat_extract_view)(_TYPE_(mvec_ptr) V, _ST_** val, int* ierr)
+_SUBROUTINE_(mvec_extract_view)(_TYPE_(mvec_ptr) V, _ST_** val, int* lda, int* ierr)
+  {
+  *ierr=-99;
+  }
+
+//!
+_SUBROUTINE_(sdMat_extract_view)(_TYPE_(sdMat_ptr) V, _ST_** val, int* lda, int* ierr)
   {
   *ierr=-99;
   }

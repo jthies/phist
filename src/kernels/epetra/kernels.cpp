@@ -56,9 +56,13 @@ void essex_comm_get_size(const_comm_ptr_t vcomm, int* size, int* ierr)
   *size=comm->NumProc();
   }
 //!
-void essex_map_create(map_ptr_t* map, const_comm_ptr_t comm, int nglob, int *ierr)
+void essex_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, int nglob, int *ierr)
   {
-  *ierr=-99;
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Epetra_Comm,comm,vcomm,*ierr);
+  Epetra_BlockMap* map;
+  _TRY_CATCH_(map = new Epetra_Map(nglob,0,*comm),*ierr);
+  *vmap=(map_ptr_t)(map);
   }
 //!
 void essex_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr)

@@ -84,18 +84,18 @@ _SUBROUTINE_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t*
 //@{
 //! create a block-vector. The entries are stored contiguously
 //! at val in column major ordering.
-_SUBROUTINE_(mvec_create)(const_map_ptr_t vmap, int nvec, _TYPE_(mvec_ptr)* vV, int* ierr)
+_SUBROUTINE_(mvec_create)(_TYPE_(mvec_ptr)* vV, const_map_ptr_t vmap, int nvec, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(map_t, map, vmap, *ierr);
-  Teuchos::RCP<map_t> map_ptr = Teuchos::rcp(map,false);
+  _CAST_PTR_FROM_VOID_(const map_t, map, vmap, *ierr);
+  Teuchos::RCP<const map_t> map_ptr = Teuchos::rcp(map,false);
   Traits<_ST_>::mvec_t* result = new Traits<_ST_>::mvec_t(map_ptr,nvec);
   *vV=(_TYPE_(mvec_ptr))(&result);
   }
 
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
-_SUBROUTINE_(sdMat_create)(int nrows, int ncols, _TYPE_(sdMat_ptr)* vM, int* ierr)
+_SUBROUTINE_(sdMat_create)(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols, int* ierr)
   {
   *ierr=0;
   // create local map
@@ -118,22 +118,33 @@ _SUBROUTINE_(mvec_my_length)(_TYPE_(const_mvec_ptr) vV, int* len, int* ierr)
   *len = V->getLocalLength();
   }
 
+//! retrieve number of vectors/columns in V
+_SUBROUTINE_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) vV, int* nvec, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  *nvec = V->getNumVectors();
+  }
+
 
 //! extract view from multi-vector
-_SUBROUTINE_(mvec_extract_view)(_TYPE_(mvec_ptr) vV, _ST_** val, int vector, int* ierr)
+_SUBROUTINE_(mvec_extract_view)(_TYPE_(mvec_ptr) vV, _ST_** val, int* lda, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
   Teuchos::ArrayRCP<_ST_> val_ptr = V->get1dViewNonConst();
   *val = val_ptr.getRawPtr();
+  *lda = V->getLocalLength();
   }
 
 //! extract view from serial dense matrix
-_SUBROUTINE_(sdMat_extract_view)(_TYPE_(sdMat_ptr) vM, _ST_** val, int* ierr)
+_SUBROUTINE_(sdMat_extract_view)(_TYPE_(sdMat_ptr) vM, _ST_** val, int* lda, int* ierr)
   {
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,M,vM,*ierr);
   Teuchos::ArrayRCP<_ST_> valptr = M->get1dViewNonConst();
   *val = valptr.getRawPtr();
+  *lda=0;
+  *ierr=-99;
   }
 
 
@@ -146,7 +157,7 @@ _SUBROUTINE_(crsMat_delete)(_TYPE_(crsMat_ptr) vA, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::crsMat_t,A,vA,*ierr);
-  delete [] A;
+  delete A;
   }
 
 //!
@@ -154,7 +165,7 @@ _SUBROUTINE_(mvec_delete)(_TYPE_(mvec_ptr) vV, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
-  delete [] V;
+  delete V;
   }
 
 //!
@@ -162,7 +173,7 @@ _SUBROUTINE_(sdMat_delete)(_TYPE_(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,M,vM,*ierr);
-  delete [] M;
+  delete M;
   }
 
 //@}

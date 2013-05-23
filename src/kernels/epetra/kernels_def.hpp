@@ -89,19 +89,20 @@ void essex_DcrsMat_get_range_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* v
 //@{
 //! create a block-vector. The entries are stored contiguously
 //! at val in column major ordering.
-void essex_Dmvec_create(const_map_ptr_t vmap, int nvec, _TYPE_(mvec_ptr)* vV, 
-        int* ierr)
+void essex_Dmvec_create(_TYPE_(mvec_ptr)* vV, 
+const_map_ptr_t vmap, int nvec, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_BlockMap, map,vmap,*ierr);
-  Epetra_MultiVector* result = new Epetra_MultiVector(*map,nvec);
+  Epetra_MultiVector* result;
+  _TRY_CATCH_(result = new Epetra_MultiVector(*map,nvec),*ierr);
   if (result==NULL) *ierr=-1;
   *vV=(_TYPE_(mvec_ptr))(result);
   }
 
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
-void sdMat_create(int nrows, int ncols, _TYPE_(sdMat_ptr)* vM, int* ierr)
+void sdMat_create(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols, int* ierr)
   {
   *ierr=0;
   Epetra_SerialComm comm;
@@ -121,18 +122,24 @@ void essex_Dmvec_my_length(_TYPE_(const_mvec_ptr) vV, int* len, int* ierr)
   *len = V->MyLength();
   }
 
-void essex_Dmvec_extract_view(Dmvec_ptr_t vV, double** val, int vec, int* ierr)
+//! retrieve number of vectors/columns in V
+void essex_Dmvec_num_vectors(_TYPE_(const_mvec_ptr) vV, int* nvec, int* ierr)
   {
-  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V, vV, *ierr);
-  int lda;
-  _CHECK_ZERO_((*V)(vec)->ExtractView(val,&lda),*ierr);
+  *ierr = 0;
+  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
+  *nvec = V->NumVectors();
   }
 
-void essex_DsdMat_extract_view(DsdMat_ptr_t vM, double** val, int* ierr)
+void essex_Dmvec_extract_view(Dmvec_ptr_t vV, double** val, int* lda, int* ierr)
+  {
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V, vV, *ierr);
+  _CHECK_ZERO_((*V)(0)->ExtractView(val,lda),*ierr);
+  }
+
+void essex_DsdMat_extract_view(DsdMat_ptr_t vM, double** val, int* lda, int* ierr)
   {
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,M, vM, *ierr);
-  int lda;
-  _CHECK_ZERO_(M->ExtractView(val,&lda),*ierr);
+  _CHECK_ZERO_(M->ExtractView(val,lda),*ierr);
   }
 
 //! \name destructors
@@ -144,7 +151,7 @@ void essex_DcrsMat_delete(_TYPE_(crsMat_ptr) vA, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_CrsMatrix,A,vA,*ierr);
-  delete [] A;
+  delete A;
   }
 
 //!
@@ -152,7 +159,7 @@ void essex_Dmvec_delete(_TYPE_(mvec_ptr) vV, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);
-  delete [] V;
+  delete V;
   }
 
 //!
@@ -160,7 +167,7 @@ void essex_DsdMat_delete(_TYPE_(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,M,vM,*ierr);
-  delete [] M;
+  delete M;
   }
 
 //@}

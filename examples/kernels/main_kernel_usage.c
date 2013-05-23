@@ -15,12 +15,14 @@ int main(int argc, char** argv)
   
   double *x_val, *y_val;
   int nloc_x, nloc_y;
-  
+  int nvec_x,nvec_y;
+  int lda_x, lda_y;
+   
   const char* filename = "test.mm";
   
   int i;
   
-  essex_bad_object* troet;
+  essex_bad_object troet;
   comm_ptr_t comm_world;
   
   _ESSEX_ERROR_HANDLER_(essex_kernels_init(&argc,&argv,&ierr),ierr);
@@ -36,23 +38,26 @@ int main(int argc, char** argv)
   _ESSEX_ERROR_HANDLER_(essex_comm_get_rank(comm, &rank, &ierr),ierr);
   _ESSEX_ERROR_HANDLER_(essex_comm_get_size(comm, &num_proc, &ierr),ierr);
 
-  _ESSEX_ERROR_HANDLER_(essex_Dmvec_create(domain_map,1,&x,&ierr),ierr);
-  _ESSEX_ERROR_HANDLER_(essex_Dmvec_create(range_map,1,&y,&ierr),ierr);
+  _ESSEX_ERROR_HANDLER_(essex_Dmvec_create(&x,domain_map,1,&ierr),ierr);
+  _ESSEX_ERROR_HANDLER_(essex_Dmvec_create(&y,range_map,1,&ierr),ierr);
 
   _ESSEX_ERROR_HANDLER_(essex_Dmvec_my_length(x,&nloc_x,&ierr),ierr);
   _ESSEX_ERROR_HANDLER_(essex_Dmvec_my_length(y,&nloc_y,&ierr),ierr);
+
+  _ESSEX_ERROR_HANDLER_(essex_Dmvec_num_vectors(x,&nvec_x,&ierr),ierr);
+  _ESSEX_ERROR_HANDLER_(essex_Dmvec_num_vectors(y,&nvec_y,&ierr),ierr);
   
-  fprintf(stdout,"rank %d: x has local length %d\n",rank,nloc_x);
-  fprintf(stdout,"rank %d: y has local length %d\n",rank,nloc_y);
+  fprintf(stdout,"rank %d: x has local length %d and %d vectors\n",rank,nloc_x,nvec_x);
+  fprintf(stdout,"rank %d: y has local length %d and %d vectors\n",rank,nloc_y,nvec_y);
   
 
 
-  _ESSEX_TEST_HANDLER_(essex_Dmvec_extract_view(troet,&x_val,0,&ierr),ierr,_ESSEX_BAD_CAST_);
-  _ESSEX_ERROR_HANDLER_(essex_Dmvec_extract_view(x,&x_val,0,&ierr),ierr);
-  _ESSEX_ERROR_HANDLER_(essex_Dmvec_extract_view(y,&y_val,0,&ierr),ierr);
+  _ESSEX_ERROR_HANDLER_(essex_Dmvec_extract_view(x,&x_val,&lda_x,&ierr),ierr);
+  _ESSEX_ERROR_HANDLER_(essex_Dmvec_extract_view(y,&y_val,&lda_y,&ierr),ierr);
   
   // set x=1
-  _ESSEX_ERROR_HANDLER_(essex_Dmvec_put_value(x,1.0,&ierr),ierr);
+  _ESSEX_ERROR_HANDLER_(essex_Dmvec_put_value(x,42.0,&ierr),ierr);
+  _ESSEX_ERROR_HANDLER_(essex_Dmvec_put_value(y,-99.0,&ierr),ierr);
 
   // compute y=A*x
   _ESSEX_ERROR_HANDLER_(essex_DcrsMat_X_mvec(1.0,A,x,0.0,y,&ierr),ierr);
@@ -60,14 +65,13 @@ int main(int argc, char** argv)
   // print result
   for (i=0;i<nloc_y;i++)
     {
-    fprintf(stdout,"%d\t%16.8g\n",i+1,y_val[i]);
+    fprintf(stdout,"%d\t%16.8g\t%16.8g\n",i+1,x_val[i],y_val[i]);
     }
   
   // delete everything
   _ESSEX_ERROR_HANDLER_(essex_Dmvec_delete(x,&ierr),ierr);
   _ESSEX_ERROR_HANDLER_(essex_Dmvec_delete(y,&ierr),ierr);
   _ESSEX_ERROR_HANDLER_(essex_DcrsMat_delete(A,&ierr),ierr);
-  
 
   _ESSEX_ERROR_HANDLER_(essex_kernels_finalize(&ierr),ierr);
   }
