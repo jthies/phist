@@ -95,8 +95,8 @@ _SUBROUTINE_(mvec_create)(_TYPE_(mvec_ptr)* vV, const_map_ptr_t vmap, int nvec, 
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const map_t, map, vmap, *ierr);
   Teuchos::RCP<const map_t> map_ptr = Teuchos::rcp(map,false);
-  Traits<_ST_>::mvec_t* result = new Traits<_ST_>::mvec_t(map_ptr,nvec);
-  *vV=(_TYPE_(mvec_ptr))(&result);
+  Traits<_ST_>::mvec_t* V = new Traits<_ST_>::mvec_t(map_ptr,nvec);
+  *vV=(_TYPE_(mvec_ptr))(V);
   }
 
 //! create a serial dense n x m matrix on all procs, with column major
@@ -110,8 +110,8 @@ _SUBROUTINE_(sdMat_create)(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols, int* ier
   //TODO - add node arg
   Teuchos::RCP<map_t> localMap =
         Teuchos::rcp(new map_t(nrows, 0, scomm, Tpetra::LocallyReplicated));
-  Traits<_ST_>::sdMat_t* result = new Traits<_ST_>::mvec_t(localMap,ncols);
-  *vM=(_TYPE_(sdMat_ptr))(result);
+  Traits<_ST_>::sdMat_t* M = new Traits<_ST_>::mvec_t(localMap,ncols);
+  *vM=(_TYPE_(sdMat_ptr))(M);
   }
 
 //@}
