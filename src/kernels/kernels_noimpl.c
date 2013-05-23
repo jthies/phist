@@ -1,8 +1,13 @@
-#include "essex_kernels.h"
+#include "phist_kernels.h"
 
 // these implementations can be used if a kernel package
 // does not implement all four data types (cf. epetra/ for
 // an example, which supports only double (D))
+
+_SUBROUTINE_(type_avail)(int *ierr)
+  {
+  *ierr=-99;
+  }
 
 // \name Matrix input from a file
 

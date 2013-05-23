@@ -68,7 +68,7 @@ endif ()
 if (${PHIST_ENABLE_MPI})
   find_package(MPI REQUIRED)
   if (${MPI_FOUND})
-    add_definitions(-DHAVE_MPI)
+    add_definitions(-DPHIST_HAVE_MPI)
     set (CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS})
     set (CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS})
     set (CMAKE_C_COMPILE_FLAGS ${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS})
@@ -109,7 +109,7 @@ else ()
 endif ()
 
 set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp)
-set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/essex_tools.c)
+set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c)
 
 add_library(libphist_kernels_${PHIST_KERNEL_LIB}.a ${PHIST_KERNEL_SOURCE})
 add_library(libphist_tools.a ${PHIST_TOOLS_SOURCE})
@@ -138,8 +138,8 @@ list(APPEND PHIST_LIBS ${MPI_CXX_LIBRARIES})
 # Custom properties
 set(INTEGRATION_BUILD 0 CACHE STRING "Indicates an integration build")
 set(PYTHON_INTERPRETER python CACHE STRING "String Path to the Python interpreter")
-set(GCOVR_SCRIPT gcovr CACHE STRING "Path to the gcovr script")
-set(CPPCHECK_EXECUTABLE cppcheck CACHE STRING "Path to the cppcheck executable")
+set(GCOVR_SCRIPT /usr/bin/gcovr CACHE STRING "Path to the gcovr script")
+set(CPPCHECK_EXECUTABLE /usr/bin/cppcheck CACHE STRING "Path to the cppcheck executable")
 if (${INTEGRATION_BUILD})
     set(GCOVR_OPTIONS -r src --xml -o coverage.xml CACHE STRING "String gcovr options")
     set(CPPCHECK_OPTIONS src --enable=all --xml 2> cppcheck.xml CACHE STRING "cppcheck options")
@@ -160,10 +160,11 @@ set(KERNEL_TEST_SOURCES
     lib/googletest-1.6/gmock-gtest-all.cc
     test/mainTest.cpp
     test/kernels/CommTest.cpp
-#    test/kernels/MapTest.cpp
-#    test/kernels/MvecTest.cpp
-#    test/kernels/SdMatTest.cpp
+    test/kernels/VecTest.cpp
+    test/kernels/MvecTest.cpp
 #    test/kernels/CrsMatTest.cpp
+#    test/kernels/MapTest.cpp
+#    test/kernels/SdMatTest.cpp
 )
 set(KERNEL_TEST_SOURCES ${KERNEL_TEST_SOURCES} ${SOURCES} ${GTEST_SOURCES} ${GMOCK_SOURCES})
 list(REMOVE_ITEM KERNEL_TEST_SOURCES "examples/kernels/main_kernel_usage.c")
@@ -195,12 +196,12 @@ endif()
 
 # Custom targets: doc, cppcheck, coverage, audit
 # Adding optinal target "doc" to generate Doxygen documentation
-#find_package(doxygen)
-#if (DOXYGEN_FOUND)
-#    add_custom_target(doc
-#    ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cmake/phist_dlr.doxyfile
-#    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-#endif()
+find_package(Doxygen)
+if (DOXYGEN_FOUND)
+    add_custom_target(doc
+    ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cmake/phist.doxyfile
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endif()
 
 # Add optional target "coverage" to genereate code coverage report (console / XML)
 if (GCOVR_SCRIPT)

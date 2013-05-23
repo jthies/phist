@@ -51,6 +51,9 @@ typedef const void* _TYPE_(const_crsMat_ptr);
 extern "C" {
 #endif
 
+//! returns 0 if the library implements the data type, -99 otherwise.
+_SUBROUTINE_(type_avail)(int* ierr);
+
 //! \name Matrix input from a file
 
 //@{

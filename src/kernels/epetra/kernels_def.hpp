@@ -21,8 +21,14 @@
 
 extern "C" {
 
+// we implement only the double precision real type D
+void phist_Dtype_avail(int* ierr)
+  {
+  *ierr=0;
+  }
+
 //! read a matrix from a MatrixMarket (ASCII) file
-void essex_DcrsMat_read_mm(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
+void phist_DcrsMat_read_mm(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
 #ifdef HAVE_MPI
   Epetra_MpiComm comm(MPI_COMM_WORLD);
@@ -35,14 +41,14 @@ void essex_DcrsMat_read_mm(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ier
   }
 
 //! read a matrix from a Ghost CRS (binary) file.
-void essex_DcrsMat_read_bin(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
+void phist_DcrsMat_read_bin(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
   // TODO - not implemented (should read the binary file format defined by ghost)
   *ierr=-99;
   }
 
 //! read a matrix from a Harwell-Boeing (HB) file
-void essex_DcrsMat_read_hb(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
+void phist_DcrsMat_read_hb(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
   *ierr=-99; // not implemented in epetra
   }
@@ -52,7 +58,7 @@ void essex_DcrsMat_read_hb(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ier
 
 //!@{
 //! get the row distribution of the matrix
-void essex_DcrsMat_get_row_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
+void phist_DcrsMat_get_row_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_CrsMatrix,A,vA,*ierr);
@@ -60,7 +66,7 @@ void essex_DcrsMat_get_row_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vma
   }
 
 //! get column distribution of a matrix
-void essex_DcrsMat_get_col_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
+void phist_DcrsMat_get_col_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_CrsMatrix,A,vA,*ierr);
@@ -68,7 +74,7 @@ void essex_DcrsMat_get_col_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vma
   }
 
 //! get the map for vectors x in y=A*x
-void essex_DcrsMat_get_domain_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
+void phist_DcrsMat_get_domain_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_CrsMatrix,A,vA,*ierr);
@@ -76,7 +82,7 @@ void essex_DcrsMat_get_domain_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* 
   }
 
 //! get the map for vectors y in y=A*x
-void essex_DcrsMat_get_range_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
+void phist_DcrsMat_get_range_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_CrsMatrix,A,vA,*ierr);
@@ -89,7 +95,7 @@ void essex_DcrsMat_get_range_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* v
 //@{
 //! create a block-vector. The entries are stored contiguously
 //! at val in column major ordering.
-void essex_Dmvec_create(_TYPE_(mvec_ptr)* vV, 
+void phist_Dmvec_create(_TYPE_(mvec_ptr)* vV, 
 const_map_ptr_t vmap, int nvec, int* ierr)
   {
   *ierr=0;
@@ -115,7 +121,7 @@ void sdMat_create(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols, int* ierr)
 //@}
 
 //! retrieve local length of the vectors in V
-void essex_Dmvec_my_length(_TYPE_(const_mvec_ptr) vV, int* len, int* ierr)
+void phist_Dmvec_my_length(_TYPE_(const_mvec_ptr) vV, int* len, int* ierr)
   {
   *ierr = 0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
@@ -123,20 +129,20 @@ void essex_Dmvec_my_length(_TYPE_(const_mvec_ptr) vV, int* len, int* ierr)
   }
 
 //! retrieve number of vectors/columns in V
-void essex_Dmvec_num_vectors(_TYPE_(const_mvec_ptr) vV, int* nvec, int* ierr)
+void phist_Dmvec_num_vectors(_TYPE_(const_mvec_ptr) vV, int* nvec, int* ierr)
   {
   *ierr = 0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
   *nvec = V->NumVectors();
   }
 
-void essex_Dmvec_extract_view(Dmvec_ptr_t vV, double** val, int* lda, int* ierr)
+void phist_Dmvec_extract_view(Dmvec_ptr_t vV, double** val, int* lda, int* ierr)
   {
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V, vV, *ierr);
   _CHECK_ZERO_((*V)(0)->ExtractView(val,lda),*ierr);
   }
 
-void essex_DsdMat_extract_view(DsdMat_ptr_t vM, double** val, int* lda, int* ierr)
+void phist_DsdMat_extract_view(DsdMat_ptr_t vM, double** val, int* lda, int* ierr)
   {
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,M, vM, *ierr);
   _CHECK_ZERO_(M->ExtractView(val,lda),*ierr);
@@ -147,7 +153,7 @@ void essex_DsdMat_extract_view(DsdMat_ptr_t vM, double** val, int* lda, int* ier
 //@{
 
 //!
-void essex_DcrsMat_delete(_TYPE_(crsMat_ptr) vA, int* ierr)
+void phist_DcrsMat_delete(_TYPE_(crsMat_ptr) vA, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_CrsMatrix,A,vA,*ierr);
@@ -155,7 +161,7 @@ void essex_DcrsMat_delete(_TYPE_(crsMat_ptr) vA, int* ierr)
   }
 
 //!
-void essex_Dmvec_delete(_TYPE_(mvec_ptr) vV, int* ierr)
+void phist_Dmvec_delete(_TYPE_(mvec_ptr) vV, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);
@@ -163,7 +169,7 @@ void essex_Dmvec_delete(_TYPE_(mvec_ptr) vV, int* ierr)
   }
 
 //!
-void essex_DsdMat_delete(_TYPE_(sdMat_ptr) vM, int* ierr)
+void phist_DsdMat_delete(_TYPE_(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,M,vM,*ierr);
@@ -185,7 +191,7 @@ _SUBROUTINE_(mvec_put_value)(_TYPE_(mvec_ptr) vV, _ST_ value, int* ierr)
 
 
 //! y=alpha*A*x+beta*y.
-void essex_DcrsMat_X_mvec(double alpha, _TYPE_(const_crsMat_ptr) vA, _TYPE_(const_mvec_ptr) vx, 
+void phist_DcrsMat_X_mvec(double alpha, _TYPE_(const_crsMat_ptr) vA, _TYPE_(const_mvec_ptr) vx, 
 double beta, _TYPE_(mvec_ptr) vy, int* ierr)
   {
   *ierr=0;
@@ -220,7 +226,7 @@ double beta, _TYPE_(mvec_ptr) vy, int* ierr)
   }
 
 //! dot product of vectors v_i and w_i, i=1..numvecs
-void essex_Dmvec_dot_mvec(_TYPE_(const_mvec_ptr) vV, _TYPE_(const_mvec_ptr) vW, double* s, int* ierr)
+void phist_Dmvec_dot_mvec(_TYPE_(const_mvec_ptr) vV, _TYPE_(const_mvec_ptr) vW, double* s, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
@@ -230,7 +236,7 @@ void essex_Dmvec_dot_mvec(_TYPE_(const_mvec_ptr) vV, _TYPE_(const_mvec_ptr) vW, 
 
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix
 //! C=V'*W. C is replicated on all MPI processes sharing V and W.
-void essex_DmvecT_X_mvec(double alpha, _TYPE_(const_mvec_ptr) vV, _TYPE_(const_mvec_ptr) vW, double beta, _TYPE_(sdMat_ptr) vC, int* ierr)
+void phist_DmvecT_X_mvec(double alpha, _TYPE_(const_mvec_ptr) vV, _TYPE_(const_mvec_ptr) vW, double beta, _TYPE_(sdMat_ptr) vC, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
@@ -242,7 +248,7 @@ void essex_DmvecT_X_mvec(double alpha, _TYPE_(const_mvec_ptr) vV, _TYPE_(const_m
 
 //! n x m multi-vector times m x m dense matrix gives n x m multi-vector,
 //! W=alpha*V*C + beta*W
-void essex_Dmvec_X_sdMat(double alpha, _TYPE_(const_mvec_ptr) vV,
+void phist_Dmvec_X_sdMat(double alpha, _TYPE_(const_mvec_ptr) vV,
                                        _TYPE_(const_sdMat_ptr) vC,
                            _ST_ beta,  _TYPE_(mvec_ptr) vW,
                                        int* ierr)
@@ -254,7 +260,7 @@ void essex_Dmvec_X_sdMat(double alpha, _TYPE_(const_mvec_ptr) vV,
   }
   
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.
-void essex_Dmvec_QR(_TYPE_(const_mvec_ptr) V, _TYPE_(mvec_ptr) Q, _TYPE_(sdMat_ptr) R, int* ierr)
+void phist_Dmvec_QR(_TYPE_(const_mvec_ptr) V, _TYPE_(mvec_ptr) Q, _TYPE_(sdMat_ptr) R, int* ierr)
   {
   // TODO - check the status of TSQR in Trilinos
   *ierr=-99;

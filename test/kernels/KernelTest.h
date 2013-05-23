@@ -1,10 +1,10 @@
-#ifndef ESSEX_KERNEL_TEST_H
-#define ESSEX_KERNEL_TEST_H
+#ifndef PHIST_KERNEL_TEST_H
+#define PHIST_KERNEL_TEST_H
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "kernels/essex_kernels.h"
+#include "kernels/phist_kernels.h"
 
 /** Base for calculation tests.
  * This class provides a basic test fixture for all calculation tests. It mainly provides a vector
@@ -13,13 +13,23 @@
  */
 class KernelTest: public testing::Test {
 public:
+
+ comm_ptr_t comm_;
+ bool haveS_, haveD_, haveC_, haveZ_;
+ int ierr_;
+
 	/** Set up method.
 	 * Fills internal data vector with values 1.0, 2.0 and 3.0.
 	 */
 	virtual void SetUp() {
+	phist_comm_create(&comm_,&ierr_);
+	ASSERT_EQ(ierr_,0);
+	phist_Stype_avail(&ierr_); haveS_=(ierr_==0);
+	phist_Dtype_avail(&ierr_); haveD_=(ierr_==0);
+	phist_Ctype_avail(&ierr_); haveC_=(ierr_==0);
+	phist_Ztype_avail(&ierr_); haveZ_=(ierr_==0);
 	}
 
- int ierr_;
 };
 
 
@@ -30,4 +40,4 @@ public:
 //    MOCK_CONST_METHOD0(evaluate, double());
 };
 
-#endif /* CALCULATIONTEST_H_ */
+#endif

@@ -1,0 +1,2 @@
+include(FindPKG)
+FindPKG(Tpetra)

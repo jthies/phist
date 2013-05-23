@@ -6,6 +6,12 @@
 
 extern "C" {
 
+// we implement all the four types
+_SUBROUTINE_(type_avail)(int* ierr)
+  {
+  *ierr=0;
+  }
+
 // \name Matrix input from a file
 
 //@{

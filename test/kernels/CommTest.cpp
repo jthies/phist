@@ -2,7 +2,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "kernels/essex_kernels.h"
+#include "kernels/phist_kernels.h"
 #include "KernelTest.h"
 
 #ifdef HAVE_MPI
@@ -13,13 +13,13 @@ using namespace testing;
 
 /*! Test fixure. */
 class CommTest: public KernelTest {
+
 public:
 
   /*! Set up routine.
    */
   virtual void SetUp()
     {
-    ierr_=0;
     KernelTest::SetUp();
 #ifdef HAVE_MPI
     mpiComm_=MPI_COMM_WORLD;
@@ -30,7 +30,6 @@ public:
     rank_=0;
     size_=1;
 #endif
-    essex_comm_create(&essexComm_,&ierr_);
     }
 
   /*! Clean up.
@@ -40,16 +39,19 @@ public:
     KernelTest::TearDown();
     }
 
+#ifdef HAVE_MPI
   MPI_Comm mpiComm_;
+#else
+  int mpiComm_;
+#endif
   int rank_, size_;
-  comm_ptr_t essexComm_;
 
 };
 
   /*! Test the comm_get_rank function. */
   TEST_F(CommTest, get_rank) {
         int rank;
-        essex_comm_get_rank(essexComm_,&rank,&ierr_);
+        phist_comm_get_rank(comm_,&rank,&ierr_);
 	ASSERT_EQ(ierr_, 0);
 	ASSERT_EQ(rank_, rank);
 }
@@ -57,7 +59,8 @@ public:
   /*! Test the comm_get_size function. */
   TEST_F(CommTest, get_size) {
         int size;
-        essex_comm_get_size(essexComm_,&size,&ierr_);
+        phist_comm_get_size(comm_,&size,&ierr_);
 	ASSERT_EQ(ierr_, 0);
 	ASSERT_EQ(size_, size);
+	ASSERT_EQ(size_, 1); // parallel testing not supported, yet
 }
