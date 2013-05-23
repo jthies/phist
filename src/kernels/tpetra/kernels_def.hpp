@@ -194,10 +194,37 @@ _SUBROUTINE_(mvec_put_value)(_TYPE_(mvec_ptr) vV, _ST_ value, int* ierr)
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
   _TRY_CATCH_(V->putScalar(value),*ierr);
   }
-          
+
+//! put random numbers into all elements of a multi-vector
+_SUBROUTINE_(mvec_random)(_TYPE_(mvec_ptr) vV, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  _TRY_CATCH_(V->randomize(),*ierr);
+  }
+
+//! put random numbers into all elements of a serial dense matrix
+_SUBROUTINE_(sdMat_random)(_TYPE_(sdMat_ptr) vM, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,M,vM,*ierr);
+  _TRY_CATCH_(M->randomize(),*ierr);
+  }
+
+
+//! y=alpha*x+beta*y
+_SUBROUTINE_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vX,
+                            _ST_ beta,  _TYPE_(mvec_ptr)       vY, 
+                            int* ierr)
+  {
+  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,X,vX,*ierr);
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,Y,vX,*ierr);
+  _TRY_CATCH_(Y->update(alpha,*X,beta),*ierr);
+  }
+
 
 //! y=alpha*A*x+beta*y.
-_SUBROUTINE_(crsMat_X_mvec)(_ST_ alpha, _TYPE_(const_crsMat_ptr) vA, 
+_SUBROUTINE_(crsMat_times_mvec)(_ST_ alpha, _TYPE_(const_crsMat_ptr) vA, 
                                         _TYPE_(const_mvec_ptr) vx, 
                                         _ST_ beta, _TYPE_(mvec_ptr) vy, 
                                         int* ierr)
@@ -227,7 +254,7 @@ ierr)
 
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix
 //! C=alpha*V'*W+beta*C. C is replicated on all MPI processes sharing V and W.
-_SUBROUTINE_(mvecT_X_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vV, 
+_SUBROUTINE_(mvecT_times_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vV, 
                            _TYPE_(const_mvec_ptr) vW, _ST_ beta, 
                            _TYPE_(sdMat_ptr) vC, int* ierr)
   {
@@ -240,7 +267,7 @@ _SUBROUTINE_(mvecT_X_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vV,
 
 //! n x m multi-vector times m x m dense matrix gives n x m multi-vector,
 //! W=alpha*V*C + beta*W
-_SUBROUTINE_(mvec_X_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) vV,
+_SUBROUTINE_(mvec_times_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) vV,
                                        _TYPE_(const_sdMat_ptr) vC,
                            _ST_ beta,  _TYPE_(mvec_ptr) vW,
                                        int* ierr)

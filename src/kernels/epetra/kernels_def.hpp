@@ -189,9 +189,39 @@ _SUBROUTINE_(mvec_put_value)(_TYPE_(mvec_ptr) vV, _ST_ value, int* ierr)
   _CHECK_ZERO_(V->PutScalar(value),*ierr);
   }
 
+//! put random numbers into all elements of a multi-vector
+_SUBROUTINE_(mvec_random)(_TYPE_(mvec_ptr) vV, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);
+  _CHECK_ZERO_(V->Random(),*ierr);
+  }
+
+//! put random numbers into all elements of a serial dense matrix
+_SUBROUTINE_(sdMat_random)(_TYPE_(sdMat_ptr) vM, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,M,vM,*ierr);
+  _CHECK_ZERO_(M->Random(),*ierr);
+  }
+
+//! \name Numerical functions
+
+
+//! y=alpha*x+beta*y
+_SUBROUTINE_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vX,
+                            _ST_ beta,  _TYPE_(mvec_ptr)       vY, 
+                            int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,X,vX,*ierr);
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,Y,vY,*ierr);
+  _CHECK_ZERO_(Y->Update(alpha,*X,beta),*ierr);
+  }
+
 
 //! y=alpha*A*x+beta*y.
-void phist_DcrsMat_X_mvec(double alpha, _TYPE_(const_crsMat_ptr) vA, _TYPE_(const_mvec_ptr) vx, 
+void phist_DcrsMat_times_mvec(double alpha, _TYPE_(const_crsMat_ptr) vA, _TYPE_(const_mvec_ptr) vx, 
 double beta, _TYPE_(mvec_ptr) vy, int* ierr)
   {
   *ierr=0;
@@ -236,7 +266,7 @@ void phist_Dmvec_dot_mvec(_TYPE_(const_mvec_ptr) vV, _TYPE_(const_mvec_ptr) vW, 
 
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix
 //! C=V'*W. C is replicated on all MPI processes sharing V and W.
-void phist_DmvecT_X_mvec(double alpha, _TYPE_(const_mvec_ptr) vV, _TYPE_(const_mvec_ptr) vW, double beta, _TYPE_(sdMat_ptr) vC, int* ierr)
+void phist_DmvecT_times_mvec(double alpha, _TYPE_(const_mvec_ptr) vV, _TYPE_(const_mvec_ptr) vW, double beta, _TYPE_(sdMat_ptr) vC, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
@@ -248,7 +278,7 @@ void phist_DmvecT_X_mvec(double alpha, _TYPE_(const_mvec_ptr) vV, _TYPE_(const_m
 
 //! n x m multi-vector times m x m dense matrix gives n x m multi-vector,
 //! W=alpha*V*C + beta*W
-void phist_Dmvec_X_sdMat(double alpha, _TYPE_(const_mvec_ptr) vV,
+void phist_Dmvec_times_sdMat(double alpha, _TYPE_(const_mvec_ptr) vV,
                                        _TYPE_(const_sdMat_ptr) vC,
                            _ST_ beta,  _TYPE_(mvec_ptr) vW,
                                        int* ierr)

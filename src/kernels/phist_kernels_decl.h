@@ -145,19 +145,24 @@ _SUBROUTINE_(mvec_put_value)(_TYPE_(mvec_ptr) V, _ST_ value, int* ierr);
 //! put scalar value into all elements of a serial dense matrix
 _SUBROUTINE_(sdMat_put_value)(_TYPE_(mvec_ptr) V, _ST_ value, int* ierr);
 
-//! put scalar value into all elements of a multi-vector
+//! put random numbers into all elements of a multi-vector
 _SUBROUTINE_(mvec_random)(_TYPE_(mvec_ptr) V, int* ierr);
 
-//! put scalar value into all elements of a serial dense matrix
-_SUBROUTINE_(sdMat_random)(_TYPE_(mvec_ptr) V, int* ierr);
+//! put random numbers into all elements of a serial dense matrix
+_SUBROUTINE_(sdMat_random)(_TYPE_(sdMat_ptr) V, int* ierr);
 
 //! \name Numerical functions
 //!@{
 
+//! y=alpha*x+beta*y
+_SUBROUTINE_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) X,
+                            _ST_ beta,  _TYPE_(mvec_ptr)       Y,     
+                            int* ierr);
+
 //! y=alpha*A*x+beta*y. The scalars alpha and beta are expected to be of the
 //! same type as the entries in the vectors and matrix. Mixing of types is
 //! not allowed.
-_SUBROUTINE_(crsMat_X_mvec)(_ST_ alpha, _TYPE_(const_crsMat_ptr) A, 
+_SUBROUTINE_(crsMat_times_mvec)(_ST_ alpha, _TYPE_(const_crsMat_ptr) A, 
         _TYPE_(const_mvec_ptr) x, _ST_ beta, _TYPE_(mvec_ptr) y, int* ierr);
 
 //! dot product of vectors v_i and w_i, i=1..numvecs
@@ -167,13 +172,13 @@ _SUBROUTINE_(mvec_dot_mvec)(_TYPE_(const_mvec_ptr) V,
 
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix
 //! C=alpha*V'*W+beta*C. C is replicated on all MPI processes sharing V and W.
-_SUBROUTINE_(mvecT_X_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) V, 
+_SUBROUTINE_(mvecT_times_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) V, 
                                        _TYPE_(const_mvec_ptr) W, 
                                        _ST_ beta, _TYPE_(sdMat_ptr) C, int* ierr);
 
 //! n x m multi-vector times m x m dense matrix gives n x m multi-vector,
 //! W=alpha*V*C + beta*W
-_SUBROUTINE_(mvec_X_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) V, 
+_SUBROUTINE_(mvec_times_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) V, 
                                        _TYPE_(const_sdMat_ptr) C,
                            _ST_ beta,  _TYPE_(mvec_ptr) W, 
                                        int* ierr);

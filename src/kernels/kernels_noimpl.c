@@ -141,13 +141,32 @@ _SUBROUTINE_(sdMat_put_value)(_TYPE_(mvec_ptr) V, _ST_ value, int* ierr)
   *ierr=-99;
   }
 
+//! put random numbers into all elements of a multi-vector
+_SUBROUTINE_(mvec_random)(_TYPE_(mvec_ptr) V, int* ierr)
+  {
+  *ierr=-99;
+  }
+
+//! put random numbers into all elements of a serial dense matrix
+_SUBROUTINE_(sdMat_random)(_TYPE_(sdMat_ptr) M, int* ierr)
+  {
+  *ierr=-99;
+  }
 
 
 //! \name Numerical functions
 //!@{
 
+//! y=alpha*x+beta*y
+_SUBROUTINE_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) X,
+                            _ST_ beta,  _TYPE_(mvec_ptr)       Y, 
+                            int* ierr)
+  {
+  *ierr=-99;
+  }
+
 //! y=alpha*A*x+beta*y.
-_SUBROUTINE_(crsMat_X_mvec)(_ST_ alpha, _TYPE_(const_crsMat_ptr) A, 
+_SUBROUTINE_(crsMat_times_mvec)(_ST_ alpha, _TYPE_(const_crsMat_ptr) A, 
         _TYPE_(const_mvec_ptr) x, _ST_ beta, _TYPE_(mvec_ptr) y, int* ierr)
   {
   *ierr=-99;
@@ -163,7 +182,7 @@ _SUBROUTINE_(mvec_dot_mvec)(_TYPE_(const_mvec_ptr) v,
   
 //! n x m multi-vector times m x m dense matrix gives n x m multi-vector,
 //! W=alpha*V*C + beta*W
-_SUBROUTINE_(mvec_X_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) V,
+_SUBROUTINE_(mvec_times_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) V,
                                        _TYPE_(const_sdMat_ptr) C,
                                        _ST_ beta,
                                        _TYPE_(mvec_ptr) W, int* ierr)
