@@ -1,3 +1,5 @@
+#include "phist_macros.h"
+
 #include "Epetra_config.h"
 
 #include "Epetra_SerialComm.h"
@@ -182,7 +184,7 @@ void phist_DsdMat_delete(_TYPE_(sdMat_ptr) vM, int* ierr)
 //!@{
 
 //! put scalar value into all elements of a multi-vector
-_SUBROUTINE_(mvec_put_value)(_TYPE_(mvec_ptr) vV, _ST_ value, int* ierr)
+void _SUBR_(mvec_put_value)(_TYPE_(mvec_ptr) vV, _ST_ value, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);
@@ -190,7 +192,7 @@ _SUBROUTINE_(mvec_put_value)(_TYPE_(mvec_ptr) vV, _ST_ value, int* ierr)
   }
 
 //! put random numbers into all elements of a multi-vector
-_SUBROUTINE_(mvec_random)(_TYPE_(mvec_ptr) vV, int* ierr)
+void _SUBR_(mvec_random)(_TYPE_(mvec_ptr) vV, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);
@@ -198,7 +200,7 @@ _SUBROUTINE_(mvec_random)(_TYPE_(mvec_ptr) vV, int* ierr)
   }
 
 //! put random numbers into all elements of a serial dense matrix
-_SUBROUTINE_(sdMat_random)(_TYPE_(sdMat_ptr) vM, int* ierr)
+void _SUBR_(sdMat_random)(_TYPE_(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,M,vM,*ierr);
@@ -209,7 +211,7 @@ _SUBROUTINE_(sdMat_random)(_TYPE_(sdMat_ptr) vM, int* ierr)
 
 
 //! y=alpha*x+beta*y
-_SUBROUTINE_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vX,
+void _SUBR_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vX,
                             _ST_ beta,  _TYPE_(mvec_ptr)       vY, 
                             int* ierr)
   {

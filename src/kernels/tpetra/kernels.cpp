@@ -64,14 +64,14 @@ void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr
 
 } // extern "C"
 
-#include "../gen_s.h"
+#include "phist_gen_s.h"
 #include "kernels_def.hpp"
 
-#include "../gen_d.h"
+#include "phist_gen_d.h"
 #include "kernels_def.hpp"
 
-#include "../gen_c.h"
+#include "phist_gen_c.h"
 #include "kernels_def.hpp"
 
-#include "../gen_z.h"
+#include "phist_gen_z.h"
 #include "kernels_def.hpp"

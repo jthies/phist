@@ -72,17 +72,17 @@ void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr
   *vcomm = (const_comm_ptr_t)(&map->Comm());  
   }
 
-#include "../gen_s.h"
+#include "phist_gen_s.h"
 #include "../kernels_noimpl.c"
 
-#include "../gen_c.h"
+#include "phist_gen_c.h"
 #include "../kernels_noimpl.c"
 
-#include "../gen_z.h"
+#include "phist_gen_z.h"
 #include "../kernels_noimpl.c"
 
 } //extern "C"
 
-#include "../gen_d.h"
+#include "phist_gen_d.h"
 #include "kernels_def.hpp"
 

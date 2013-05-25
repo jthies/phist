@@ -1,5 +1,5 @@
-#ifndef KERNELS_H
-#define KERNELS_H
+#ifndef PHIST_KERNELS_H
+#define PHIST_KERNELS_H
 
 typedef void* comm_ptr_t;
 typedef const void* const_comm_ptr_t;
@@ -37,13 +37,13 @@ void phist_map_get_comm(const_map_ptr_t map, const_comm_ptr_t* comm, int* ierr);
 
 //! include file for the basic operations (kernels)
 //! in single/double, real/complex.
-#include "gen_s.h"
+#include "phist_gen_s.h"
 #include "phist_kernels_decl.h"
-#include "gen_d.h"
+#include "phist_gen_d.h"
 #include "phist_kernels_decl.h"
-#include "gen_c.h"
+#include "phist_gen_c.h"
 #include "phist_kernels_decl.h"
-#include "gen_z.h"
+#include "phist_gen_z.h"
 #include "phist_kernels_decl.h"
 
 #endif

@@ -1,3 +1,5 @@
+#include "phist_macros.h"
+
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "../cpp_macros.h"
 #include "Teuchos_DefaultComm.hpp"
@@ -7,7 +9,7 @@
 extern "C" {
 
 // we implement all the four types
-_SUBROUTINE_(type_avail)(int* ierr)
+void _SUBR_(type_avail)(int* ierr)
   {
   *ierr=0;
   }
@@ -17,21 +19,21 @@ _SUBROUTINE_(type_avail)(int* ierr)
 //@{
 
 //! read a matrix from a MatrixMarket (ASCII) file
-_SUBROUTINE_(crsMat_read_mm)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
+void _SUBR_(crsMat_read_mm)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
   // TODO - doesn't seem to be available in Tpetra
   *ierr=-99;
   }
 
 //! read a matrix from a Ghost CRS (binary) file.
-_SUBROUTINE_(crsMat_read_bin)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
+void _SUBR_(crsMat_read_bin)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
   // TODO - not implemented (should read the binary file format defined by ghost)
   *ierr=-99;
   }
 
 //! read a matrix from a Harwell-Boeing (HB) file
-_SUBROUTINE_(crsMat_read_hb)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
+void _SUBR_(crsMat_read_hb)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
   *ierr=0;
   std::string fname(filename);
@@ -52,7 +54,7 @@ _SUBROUTINE_(crsMat_read_hb)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* i
 
 //!@{
 //! get the row distribution of the matrix
-_SUBROUTINE_(crsMat_get_row_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* 
+void _SUBR_(crsMat_get_row_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* 
 ierr)
   {
   *ierr=0;
@@ -61,7 +63,7 @@ ierr)
   }
 
 //! get column distribution of a matrix
-_SUBROUTINE_(crsMat_get_col_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
+void _SUBR_(crsMat_get_col_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
@@ -69,7 +71,7 @@ _SUBROUTINE_(crsMat_get_col_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* v
   }
 
 //! get the map for vectors x in y=A*x
-_SUBROUTINE_(crsMat_get_domain_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
+void _SUBR_(crsMat_get_domain_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
@@ -77,7 +79,7 @@ _SUBROUTINE_(crsMat_get_domain_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t
   }
 
 //! get the map for vectors y in y=A*x
-_SUBROUTINE_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
+void _SUBR_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
@@ -90,7 +92,7 @@ _SUBROUTINE_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t*
 //@{
 //! create a block-vector. The entries are stored contiguously
 //! at val in column major ordering.
-_SUBROUTINE_(mvec_create)(_TYPE_(mvec_ptr)* vV, const_map_ptr_t vmap, int nvec, int* ierr)
+void _SUBR_(mvec_create)(_TYPE_(mvec_ptr)* vV, const_map_ptr_t vmap, int nvec, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const map_t, map, vmap, *ierr);
@@ -101,7 +103,7 @@ _SUBROUTINE_(mvec_create)(_TYPE_(mvec_ptr)* vV, const_map_ptr_t vmap, int nvec, 
 
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
-_SUBROUTINE_(sdMat_create)(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols, int* ierr)
+void _SUBR_(sdMat_create)(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols, int* ierr)
   {
   *ierr=0;
   // create local map
@@ -117,7 +119,7 @@ _SUBROUTINE_(sdMat_create)(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols, int* ier
 //@}
 
 //! retrieve local length of the vectors in V
-_SUBROUTINE_(mvec_my_length)(_TYPE_(const_mvec_ptr) vV, int* len, int* ierr)
+void _SUBR_(mvec_my_length)(_TYPE_(const_mvec_ptr) vV, int* len, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -125,7 +127,7 @@ _SUBROUTINE_(mvec_my_length)(_TYPE_(const_mvec_ptr) vV, int* len, int* ierr)
   }
 
 //! retrieve number of vectors/columns in V
-_SUBROUTINE_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) vV, int* nvec, int* ierr)
+void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) vV, int* nvec, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -134,7 +136,7 @@ _SUBROUTINE_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) vV, int* nvec, int* ierr)
 
 
 //! extract view from multi-vector
-_SUBROUTINE_(mvec_extract_view)(_TYPE_(mvec_ptr) vV, _ST_** val, int* lda, int* ierr)
+void _SUBR_(mvec_extract_view)(_TYPE_(mvec_ptr) vV, _ST_** val, int* lda, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -144,7 +146,7 @@ _SUBROUTINE_(mvec_extract_view)(_TYPE_(mvec_ptr) vV, _ST_** val, int* lda, int* 
   }
 
 //! extract view from serial dense matrix
-_SUBROUTINE_(sdMat_extract_view)(_TYPE_(sdMat_ptr) vM, _ST_** val, int* lda, int* ierr)
+void _SUBR_(sdMat_extract_view)(_TYPE_(sdMat_ptr) vM, _ST_** val, int* lda, int* ierr)
   {
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,M,vM,*ierr);
   Teuchos::ArrayRCP<_ST_> valptr = M->get1dViewNonConst();
@@ -159,7 +161,7 @@ _SUBROUTINE_(sdMat_extract_view)(_TYPE_(sdMat_ptr) vM, _ST_** val, int* lda, int
 //@{
 
 //!
-_SUBROUTINE_(crsMat_delete)(_TYPE_(crsMat_ptr) vA, int* ierr)
+void _SUBR_(crsMat_delete)(_TYPE_(crsMat_ptr) vA, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::crsMat_t,A,vA,*ierr);
@@ -167,7 +169,7 @@ _SUBROUTINE_(crsMat_delete)(_TYPE_(crsMat_ptr) vA, int* ierr)
   }
 
 //!
-_SUBROUTINE_(mvec_delete)(_TYPE_(mvec_ptr) vV, int* ierr)
+void _SUBR_(mvec_delete)(_TYPE_(mvec_ptr) vV, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -175,7 +177,7 @@ _SUBROUTINE_(mvec_delete)(_TYPE_(mvec_ptr) vV, int* ierr)
   }
 
 //!
-_SUBROUTINE_(sdMat_delete)(_TYPE_(sdMat_ptr) vM, int* ierr)
+void _SUBR_(sdMat_delete)(_TYPE_(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,M,vM,*ierr);
@@ -188,7 +190,7 @@ _SUBROUTINE_(sdMat_delete)(_TYPE_(sdMat_ptr) vM, int* ierr)
 //!@{
 
 //! put scalar value into all elements of a multi-vector
-_SUBROUTINE_(mvec_put_value)(_TYPE_(mvec_ptr) vV, _ST_ value, int* ierr)
+void _SUBR_(mvec_put_value)(_TYPE_(mvec_ptr) vV, _ST_ value, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -196,7 +198,7 @@ _SUBROUTINE_(mvec_put_value)(_TYPE_(mvec_ptr) vV, _ST_ value, int* ierr)
   }
 
 //! put random numbers into all elements of a multi-vector
-_SUBROUTINE_(mvec_random)(_TYPE_(mvec_ptr) vV, int* ierr)
+void _SUBR_(mvec_random)(_TYPE_(mvec_ptr) vV, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -204,7 +206,7 @@ _SUBROUTINE_(mvec_random)(_TYPE_(mvec_ptr) vV, int* ierr)
   }
 
 //! put random numbers into all elements of a serial dense matrix
-_SUBROUTINE_(sdMat_random)(_TYPE_(sdMat_ptr) vM, int* ierr)
+void _SUBR_(sdMat_random)(_TYPE_(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,M,vM,*ierr);
@@ -213,7 +215,7 @@ _SUBROUTINE_(sdMat_random)(_TYPE_(sdMat_ptr) vM, int* ierr)
 
 
 //! y=alpha*x+beta*y
-_SUBROUTINE_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vX,
+void _SUBR_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vX,
                             _ST_ beta,  _TYPE_(mvec_ptr)       vY, 
                             int* ierr)
   {
@@ -224,7 +226,7 @@ _SUBROUTINE_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vX,
 
 
 //! y=alpha*A*x+beta*y.
-_SUBROUTINE_(crsMat_times_mvec)(_ST_ alpha, _TYPE_(const_crsMat_ptr) vA, 
+void _SUBR_(crsMat_times_mvec)(_ST_ alpha, _TYPE_(const_crsMat_ptr) vA, 
                                         _TYPE_(const_mvec_ptr) vx, 
                                         _ST_ beta, _TYPE_(mvec_ptr) vy, 
                                         int* ierr)
@@ -241,7 +243,7 @@ _SUBROUTINE_(crsMat_times_mvec)(_ST_ alpha, _TYPE_(const_crsMat_ptr) vA,
   }
 
 //! dot product of vectors v_i and w_i, i=1..numvecs
-_SUBROUTINE_(mvec_dot_mvec)(_TYPE_(const_mvec_ptr) vv, _TYPE_(const_mvec_ptr) vw, _ST_* s, 
+void _SUBR_(mvec_dot_mvec)(_TYPE_(const_mvec_ptr) vv, _TYPE_(const_mvec_ptr) vw, _ST_* s, 
 int* 
 ierr)
   {
@@ -254,7 +256,7 @@ ierr)
 
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix
 //! C=alpha*V'*W+beta*C. C is replicated on all MPI processes sharing V and W.
-_SUBROUTINE_(mvecT_times_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vV, 
+void _SUBR_(mvecT_times_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vV, 
                            _TYPE_(const_mvec_ptr) vW, _ST_ beta, 
                            _TYPE_(sdMat_ptr) vC, int* ierr)
   {
@@ -267,7 +269,7 @@ _SUBROUTINE_(mvecT_times_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vV,
 
 //! n x m multi-vector times m x m dense matrix gives n x m multi-vector,
 //! W=alpha*V*C + beta*W
-_SUBROUTINE_(mvec_times_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) vV,
+void _SUBR_(mvec_times_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) vV,
                                        _TYPE_(const_sdMat_ptr) vC,
                            _ST_ beta,  _TYPE_(mvec_ptr) vW,
                                        int* ierr)
@@ -279,7 +281,7 @@ _SUBROUTINE_(mvec_times_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) vV,
   }
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.
-_SUBROUTINE_(mvec_QR)(_TYPE_(const_mvec_ptr) V, 
+void _SUBR_(mvec_QR)(_TYPE_(const_mvec_ptr) V, 
         _TYPE_(mvec_ptr) Q, _TYPE_(sdMat_ptr) R, int* ierr)
   {
   // TODO - check the status of TSQR in Trilinos

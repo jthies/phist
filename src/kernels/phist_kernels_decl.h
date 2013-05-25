@@ -1,3 +1,4 @@
+#include "phist_macros.h"
 
 /*! these functions need to be provided by a kernel module  
     in order to be used by the iterative solvers implemen-  
@@ -29,6 +30,7 @@
 
 */
 
+
 //! opaque pointer to multi-vector objects
 typedef void* _TYPE_(mvec_ptr);
 
@@ -52,21 +54,21 @@ extern "C" {
 #endif
 
 //! returns 0 if the library implements the data type, -99 otherwise.
-_SUBROUTINE_(type_avail)(int* ierr);
+void _SUBR_(type_avail)(int* ierr);
 
 //! \name Matrix input from a file
 
 //@{
 
 //! read a matrix from a MatrixMarket (ASCII) file
-_SUBROUTINE_(crsMat_read_mm)(_TYPE_(crsMat_ptr)* A, 
+void _SUBR_(crsMat_read_mm)(_TYPE_(crsMat_ptr)* A, 
         const char* filename,int* ierr);
 
 //! read a matrix from a Harwell-Boeing file
-_SUBROUTINE_(crsMat_read_hb)(_TYPE_(crsMat_ptr)* A, const char* filename,int* ierr);
+void _SUBR_(crsMat_read_hb)(_TYPE_(crsMat_ptr)* A, const char* filename,int* ierr);
 
 //! read a matrix from a Ghost CRS (binary) file.
-_SUBROUTINE_(crsMat_read_bin)(_TYPE_(crsMat_ptr)* A, const char* filename,int* ierr);
+void _SUBR_(crsMat_read_bin)(_TYPE_(crsMat_ptr)* A, const char* filename,int* ierr);
 
 //!@}
 
@@ -75,19 +77,19 @@ _SUBROUTINE_(crsMat_read_bin)(_TYPE_(crsMat_ptr)* A, const char* filename,int* i
 //!@{
 
 //! get the row distribution of the matrix
-_SUBROUTINE_(crsMat_get_row_map)(_TYPE_(const_crsMat_ptr) A, 
+void _SUBR_(crsMat_get_row_map)(_TYPE_(const_crsMat_ptr) A, 
         const_map_ptr_t* map, int* ierr);
 
 //! get column distribution of a matrix
-_SUBROUTINE_(crsMat_get_col_map)(_TYPE_(const_crsMat_ptr) A, 
+void _SUBR_(crsMat_get_col_map)(_TYPE_(const_crsMat_ptr) A, 
         const_map_ptr_t* map, int* ierr);
 
 //! get the map for vectors x in y=A*x
-_SUBROUTINE_(crsMat_get_domain_map)(_TYPE_(const_crsMat_ptr) A, 
+void _SUBR_(crsMat_get_domain_map)(_TYPE_(const_crsMat_ptr) A, 
         const_map_ptr_t* map, int* ierr);
 
 //! get the map for vectors y in y=A*x
-_SUBROUTINE_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) A, 
+void _SUBR_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) A, 
         const_map_ptr_t* map, int* ierr);
 //@}
 
@@ -95,12 +97,12 @@ _SUBROUTINE_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) A,
 
 //@{
 //! create a block-vector.
-_SUBROUTINE_(mvec_create)(_TYPE_(mvec_ptr)* V, const_map_ptr_t map, int nvec, 
+void _SUBR_(mvec_create)(_TYPE_(mvec_ptr)* V, const_map_ptr_t map, int nvec, 
         int* ierr);
 
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
-_SUBROUTINE_(sdMat_create)(_TYPE_(sdMat_ptr)* M, 
+void _SUBR_(sdMat_create)(_TYPE_(sdMat_ptr)* M, 
         int nrows, int ncols, int* ierr);
 
 //@}
@@ -110,13 +112,13 @@ _SUBROUTINE_(sdMat_create)(_TYPE_(sdMat_ptr)* M,
 //@{
 
 //!
-_SUBROUTINE_(crsMat_delete)(_TYPE_(crsMat_ptr) A, int* ierr);
+void _SUBR_(crsMat_delete)(_TYPE_(crsMat_ptr) A, int* ierr);
 
 //!
-_SUBROUTINE_(mvec_delete)(_TYPE_(mvec_ptr) V, int* ierr);
+void _SUBR_(mvec_delete)(_TYPE_(mvec_ptr) V, int* ierr);
 
 //!
-_SUBROUTINE_(sdMat_delete)(_TYPE_(sdMat_ptr) M, int* ierr);
+void _SUBR_(sdMat_delete)(_TYPE_(sdMat_ptr) M, int* ierr);
 
 //@}
 
@@ -124,67 +126,67 @@ _SUBROUTINE_(sdMat_delete)(_TYPE_(sdMat_ptr) M, int* ierr);
 //@{
 
 //! retrieve local length of the vectors in V
-_SUBROUTINE_(mvec_my_length)(_TYPE_(const_mvec_ptr) V, int* len, int* ierr);
+void _SUBR_(mvec_my_length)(_TYPE_(const_mvec_ptr) V, int* len, int* ierr);
 
 //! retrieve number of vectors/columns in V
-_SUBROUTINE_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) V, int* nvec, int* ierr);
+void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) V, int* nvec, int* ierr);
 
 //! extract view from multi-vector
-_SUBROUTINE_(mvec_extract_view)(_TYPE_(mvec_ptr) V, _ST_** val,
+void _SUBR_(mvec_extract_view)(_TYPE_(mvec_ptr) V, _ST_** val,
         int* lda, int* ierr);
 
 //! extract view from serial dense matrix
-_SUBROUTINE_(sdMat_extract_view)(_TYPE_(sdMat_ptr) M, _ST_** val,
+void _SUBR_(sdMat_extract_view)(_TYPE_(sdMat_ptr) M, _ST_** val,
         int* lda, int* ierr);
 
 //@}
 
 //! put scalar value into all elements of a multi-vector
-_SUBROUTINE_(mvec_put_value)(_TYPE_(mvec_ptr) V, _ST_ value, int* ierr);
+void _SUBR_(mvec_put_value)(_TYPE_(mvec_ptr) V, _ST_ value, int* ierr);
 
 //! put scalar value into all elements of a serial dense matrix
-_SUBROUTINE_(sdMat_put_value)(_TYPE_(mvec_ptr) V, _ST_ value, int* ierr);
+void _SUBR_(sdMat_put_value)(_TYPE_(mvec_ptr) V, _ST_ value, int* ierr);
 
 //! put random numbers into all elements of a multi-vector
-_SUBROUTINE_(mvec_random)(_TYPE_(mvec_ptr) V, int* ierr);
+void _SUBR_(mvec_random)(_TYPE_(mvec_ptr) V, int* ierr);
 
 //! put random numbers into all elements of a serial dense matrix
-_SUBROUTINE_(sdMat_random)(_TYPE_(sdMat_ptr) V, int* ierr);
+void _SUBR_(sdMat_random)(_TYPE_(sdMat_ptr) V, int* ierr);
 
 //! \name Numerical functions
 //!@{
 
 //! y=alpha*x+beta*y
-_SUBROUTINE_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) X,
+void _SUBR_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) X,
                             _ST_ beta,  _TYPE_(mvec_ptr)       Y,     
                             int* ierr);
 
 //! y=alpha*A*x+beta*y. The scalars alpha and beta are expected to be of the
 //! same type as the entries in the vectors and matrix. Mixing of types is
 //! not allowed.
-_SUBROUTINE_(crsMat_times_mvec)(_ST_ alpha, _TYPE_(const_crsMat_ptr) A, 
+void _SUBR_(crsMat_times_mvec)(_ST_ alpha, _TYPE_(const_crsMat_ptr) A, 
         _TYPE_(const_mvec_ptr) x, _ST_ beta, _TYPE_(mvec_ptr) y, int* ierr);
 
 //! dot product of vectors v_i and w_i, i=1..numvecs
-_SUBROUTINE_(mvec_dot_mvec)(_TYPE_(const_mvec_ptr) V, 
+void _SUBR_(mvec_dot_mvec)(_TYPE_(const_mvec_ptr) V, 
                             _TYPE_(const_mvec_ptr) W, 
                             _ST_* vw, int* ierr);
 
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix
 //! C=alpha*V'*W+beta*C. C is replicated on all MPI processes sharing V and W.
-_SUBROUTINE_(mvecT_times_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) V, 
+void _SUBR_(mvecT_times_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) V, 
                                        _TYPE_(const_mvec_ptr) W, 
                                        _ST_ beta, _TYPE_(sdMat_ptr) C, int* ierr);
 
 //! n x m multi-vector times m x m dense matrix gives n x m multi-vector,
 //! W=alpha*V*C + beta*W
-_SUBROUTINE_(mvec_times_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) V, 
+void _SUBR_(mvec_times_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) V, 
                                        _TYPE_(const_sdMat_ptr) C,
                            _ST_ beta,  _TYPE_(mvec_ptr) W, 
                                        int* ierr);
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.
-_SUBROUTINE_(mvec_QR)(_TYPE_(const_mvec_ptr) V, 
+void _SUBR_(mvec_QR)(_TYPE_(const_mvec_ptr) V, 
                             _TYPE_(mvec_ptr) Q, 
                             _TYPE_(sdMat_ptr) R, int* ierr);
 

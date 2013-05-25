@@ -13,7 +13,7 @@
 #define _PHIST_ERROR_HANDLER_(func,_FLAG_) \
 {func; if (_FLAG_!=_PHIST_SUCCESS_) { \
 fprintf(stderr,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
-_FLAG_,phist_retcode2str(_FLAG_),#func,__FILE__,__LINE__); return;}}
+(_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return;}}
 #endif
 
 
@@ -21,6 +21,29 @@ _FLAG_,phist_retcode2str(_FLAG_),#func,__FILE__,__LINE__); return;}}
 #define _PHIST_TEST_HANDLER_(func,_FLAG_,_FLAG_EXPECT_) \
 {func; if (_FLAG_!=_FLAG_EXPECT_) { \
 fprintf(stderr,"Unexpected error code %d (%s) returned from call %s\n(file %s, line %d)",\
-_FLAG_,phist_retcode2str(_FLAG_),#func,__FILE__,__LINE__);}}
+(_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__));}}
 #endif
+
+#endif
+
+// if a phist_gen_*.h file has been included, define
+// macros to build function names and such.
+#ifdef _TP_
+
+// _MT_ (magnitude type) for real numbers
+#ifndef _IS_COMPLEX_
+#ifdef _MT_
+#undef _MT_
+#endif
+
+#define _MT_ _ST_
+#endif
+
+#ifndef _IS_COMPLEX_
+#ifdef _Complex_I
+#undef _Complex_I
+#endif
+#define _Complex_I (_ST_)0.0
+#endif
+
 #endif
