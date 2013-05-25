@@ -32,7 +32,6 @@ public:
 
 };
 
-
 /** This class is a mock object to test kernel implementation. */
 class MockKernels {
 
