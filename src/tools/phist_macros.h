@@ -37,13 +37,11 @@ fprintf(stderr,"Unexpected error code %d (%s) returned from call %s\n(file %s, l
 #endif
 
 #define _MT_ _ST_
-#endif
 
-#ifndef _IS_COMPLEX_
 #ifdef _Complex_I
 #undef _Complex_I
 #endif
-#define _Complex_I (_ST_)0.0
+#define _Complex_I _ZERO_
 #endif
 
 #endif

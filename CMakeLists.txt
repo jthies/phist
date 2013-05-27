@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
+set (CMAKE_BUILD_TYPE Debug)
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
 
 # Define some custom variables
@@ -149,7 +150,7 @@ else()
 endif()
 
 # Define includes
-include_directories(lib/googletest-1.6 src/)
+include_directories(lib/googletest-1.6 src/ src/tools/ src/kernels/)
 
 # Define sources
 set(SOURCES 
@@ -160,9 +161,8 @@ set(KERNEL_TEST_SOURCES
     lib/googletest-1.6/gmock-gtest-all.cc
     test/mainTest.cpp
     test/kernels/CommTest.cpp
-    test/kernels/VecTest.cpp
     test/kernels/MvecTest.cpp
-#    test/kernels/CrsMatTest.cpp
+    test/kernels/CrsMatTest.cpp
 #    test/kernels/MapTest.cpp
 #    test/kernels/SdMatTest.cpp
 )

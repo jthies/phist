@@ -58,7 +58,7 @@ int main(int argc, char** argv)
   _PHIST_ERROR_HANDLER_(phist_Dmvec_put_value(y,-99.0,&ierr),ierr);
 
   // compute y=A*x
-  _PHIST_ERROR_HANDLER_(phist_DcrsMat_X_mvec(1.0,A,x,0.0,y,&ierr),ierr);
+  _PHIST_ERROR_HANDLER_(phist_DcrsMat_times_mvec(1.0,A,x,0.0,y,&ierr),ierr);
 
   // print result
   for (i=0;i<nloc_y;i++)

@@ -18,9 +18,10 @@
 
 #ifdef __cplusplus
 #define _ST_ std::complex<double>
-#ifndef _Complex_I
-#define _Complex_I _ST_(0.0,1.0)
+#ifdef _Complex_I
+#undef _Complex_I
 #endif
+#define _Complex_I (_ST_(0.0,1.0))
 #else
 #define _ST_ _Complex double
 #endif
@@ -38,6 +39,17 @@
 
 #define _IS_COMPLEX_
 
+#ifdef _ZERO_
+#undef _ZERO_
+#endif
+
+#define _ZERO_ _ST_(0.0,0.0)
+
+#ifdef _ONE_
+#undef _ONE_
+#endif
+
+#define _ONE_ _ST_(1.0,0.0)
 
 // adds type prefix to a specifier, e.g. _PREF_(gemm) -> Dgemm
 #ifdef _PREF_
@@ -60,3 +72,12 @@
 
 #define _TYPE_(name) Z ## name ## _t
 
+// how to build up the name of a test with two 'template' params
+#ifdef _TESTNAME2_
+#undef _TESTNAME2_
+#endif
+
+#define _TESTNAME2_(name,p1,p2) Z ## name ## _ ## p1 ## _ ## p2
+
+
+#include "phist_macros.h"
