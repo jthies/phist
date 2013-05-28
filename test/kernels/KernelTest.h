@@ -21,14 +21,21 @@ public:
 	/** Set up method.
 	 * Fills internal data vector with values 1.0, 2.0 and 3.0.
 	 */
-	virtual void SetUp() {
+	virtual void SetUp() 
+	{
 	phist_comm_create(&comm_,&ierr_);
-	ASSERT_EQ(ierr_,0);
+	ASSERT_EQ(0,ierr_);
 	phist_Stype_avail(&ierr_); haveS_=(ierr_==0);
 	phist_Dtype_avail(&ierr_); haveD_=(ierr_==0);
 	phist_Ctype_avail(&ierr_); haveC_=(ierr_==0);
 	phist_Ztype_avail(&ierr_); haveZ_=(ierr_==0);
 	}
+
+::testing::AssertionResult AssertNotNull(void* ptr)
+  {
+  if (ptr==NULL) return ::testing::AssertionFailure();
+  return ::testing::AssertionSuccess();
+  }
 
 };
 

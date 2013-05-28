@@ -1,4 +1,4 @@
-%%MatrixMarket matrix coordinate real symmetric
+%%MatrixMarket matrix coordinate real general
 %identity matrix
 25 25 25
 1 1  1

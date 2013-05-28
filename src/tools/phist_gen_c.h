@@ -80,4 +80,10 @@
 
 #define _TESTNAME2_(name,p1,p2) C ## name ## _ ## p1 ## _ ## p2
 
-#include "phist_macros.h"
+// define which gtest macro should be used for comparing floating point numbers
+#ifdef ASSERT_REAL_EQ
+#undef ASSERT_REAL_EQ
+#endif
+
+#define ASSERT_REAL_EQ(expected,actual) ASSERT_FLOAT_EQ(expected,actual)
+

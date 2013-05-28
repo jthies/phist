@@ -1,5 +1,3 @@
-#include "phist_macros.h"
-
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
@@ -45,8 +43,8 @@ public:
       {
       int nloc;
       _SUBR_(mvec_my_length)(vec1_,&nloc,&ierr_);
-      ASSERT_EQ(ierr_, 0);
-      ASSERT_EQ(nloc, nglob_); // parallel testing not supported, yet.    
+      ASSERT_EQ(0,ierr_);
+      ASSERT_EQ(nglob_, nloc); // parallel testing not supported, yet.    
       }
     }
 
@@ -56,8 +54,8 @@ public:
       {
       int nvec;
       _SUBR_(mvec_num_vectors)(vec1_,&nvec,&ierr_);
-      ASSERT_EQ(ierr_, 0);
-      ASSERT_EQ(nvec, nvec_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_EQ(nvec_, nvec);
       }
     }
 
@@ -68,8 +66,8 @@ public:
       {
       _ST_ val = (_ST_)42.0 + (_ST_)3.0*_Complex_I;
       _SUBR_(mvec_put_value)(vec1_,val,&ierr_);
-      ASSERT_EQ(ierr_, 0);
-      ASSERT_TRUE(ArrayEqual(vec1_vp_,nloc_,val));
+      ASSERT_EQ(0,ierr_);
+      ASSERT_REAL_EQ((_MT_)0.0,ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,val));
       }
     }
 
@@ -84,38 +82,10 @@ public:
         }
       _ST_* dots = new _ST_[nvec_];
       _SUBR_(mvec_dot_mvec)(vec1_,vec2_,dots,&ierr_);
-      ASSERT_EQ(ierr_, 0);
-      
-      std::cout << "I="<<_Complex_I<<std::endl;
-      std::cout << std::endl;
-      for (int i=0;i<nloc_;i++)
-        {
-        for (int j=0;j<nvec_;j++)
-          {
-          std::cout << vec1_vp_[lda_*j+i] << " ";
-          }
-        std::cout << std::endl;
-        }
-      std::cout << std::endl;
-      for (int i=0;i<nloc_;i++)
-        {
-        for (int j=0;j<nvec_;j++)
-          {
-          std::cout << vec2_vp_[lda_*j+i] << " ";
-          }
-        std::cout << std::endl;
-        }
-
+      ASSERT_EQ(0,ierr_);
+            
       _ST_ val = one() * (_ST_)nloc_;
-      
-      std::cout << "expected: "<<val<<std::endl;
-      std::cout << std::endl;
-      for (int i=0;i<nvec_;i++) 
-        {
-        std::cout << dots[i]<<std::endl;
-        }
-      
-      ASSERT_TRUE(ArrayEqual(dots,nvec_,val));
+      ASSERT_REAL_EQ((_MT_)0.0,ArrayEqual(dots,nvec_,1,nvec_,1,val));
       delete [] dots;
       }
     

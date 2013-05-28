@@ -13,9 +13,21 @@
 
 #define _ST_ double
 
+// magnitude (or member) type
+#ifdef _MT_
+#undef _MT_
+#endif
+#define _MT_ double
+
 #ifdef _IS_COMPLEX
 #undef _IS_COMPLEX_
 #endif
+
+#ifdef _Complex_I 
+#undef _Complex_I 
+#endif
+
+#define _Complex_I 0.0
 
 #ifdef _ZERO_
 #undef _ZERO_
@@ -57,5 +69,11 @@
 
 #define _TESTNAME2_(name,p1,p2) D ## name ## _ ## p1 ## _ ## p2
 
+// define which gtest macro should be used for comparing floating point numbers
+#ifdef ASSERT_REAL_EQ
+#undef ASSERT_REAL_EQ
+#endif
 
-#include "phist_macros.h"
+#define ASSERT_REAL_EQ(expected,actual) ASSERT_DOUBLE_EQ(expected,actual)
+
+

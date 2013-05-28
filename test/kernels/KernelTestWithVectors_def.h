@@ -18,13 +18,14 @@ virtual void SetUp()
     KernelTestWithMap<_Nglob>::SetUp();
     this->nvec_=_Nvec;
     _SUBR_(mvec_create)(&vec1_,this->map_,this->nvec_,&this->ierr_);
-    ASSERT_EQ(this->ierr_, 0);
+    ASSERT_EQ(0,this->ierr_);
     _SUBR_(mvec_extract_view)(vec1_,&vec1_vp_,&this->lda_,&this->ierr_);
-    ASSERT_EQ(this->ierr_, 0);
+    ASSERT_EQ(0,this->ierr_);
     _SUBR_(mvec_create)(&vec2_,this->map_,this->nvec_,&this->ierr_);
-    ASSERT_EQ(this->ierr_, 0);
+    ASSERT_EQ(0,this->ierr_);
     _SUBR_(mvec_extract_view)(vec2_,&vec2_vp_,&this->lda_,&this->ierr_);
-        ASSERT_EQ(this->ierr_, 0);
+        ASSERT_EQ(0,this->ierr_);
+    stride_=1;
     }
   }
 
@@ -43,7 +44,7 @@ virtual void TearDown()
   
   _TYPE_(mvec_ptr) vec1_, vec2_;
   _ST_ *vec1_vp_, *vec2_vp_;
-  int nvec_,lda_;
+  int nvec_,lda_,stride_;
   };
 
 

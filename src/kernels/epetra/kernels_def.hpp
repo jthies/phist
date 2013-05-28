@@ -40,6 +40,11 @@ void phist_DcrsMat_read_mm(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ier
   Epetra_CrsMatrix* A=NULL;
   *ierr=EpetraExt::MatrixMarketFileToCrsMatrix(filename,comm,A);
   *vA = (_TYPE_(crsMat_ptr))(A);
+  
+/*  std::cerr << "filename was '"<<filename<<"'"<<std::endl;
+  if (A==NULL) {std::cerr << "EpetraExt returned NULL"<<std::endl;}
+  if (*ierr!=0) {std::cerr << "EpetraExt returned int code "<<*ierr<<std::endl;}
+  */
   }
 
 //! read a matrix from a Ghost CRS (binary) file.
@@ -255,6 +260,11 @@ double beta, _TYPE_(mvec_ptr) vy, int* ierr)
     _CHECK_ZERO_(A->Multiply(false,*x,Ax),*ierr);
     _CHECK_ZERO_(y->Update(alpha,Ax,beta),*ierr);
     }
+  /*
+  std::cout << *A << std::endl;
+  std::cout << *((*x)(0)) << std::endl;
+  std::cout << *((*y)(0)) << std::endl;
+  */
   }
 
 //! dot product of vectors v_i and w_i, i=1..numvecs

@@ -52,7 +52,7 @@ public:
   TEST_F(CommTest, get_rank) {
         int rank;
         phist_comm_get_rank(comm_,&rank,&ierr_);
-	ASSERT_EQ(ierr_, 0);
+	ASSERT_EQ(0,ierr_);
 	ASSERT_EQ(rank_, rank);
 }
 
@@ -60,7 +60,7 @@ public:
   TEST_F(CommTest, get_size) {
         int size;
         phist_comm_get_size(comm_,&size,&ierr_);
-	ASSERT_EQ(ierr_, 0);
+	ASSERT_EQ(0,ierr_);
 	ASSERT_EQ(size_, size);
 	ASSERT_EQ(size_, 1); // parallel testing not supported, yet
 }

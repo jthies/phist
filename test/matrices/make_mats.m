@@ -39,6 +39,8 @@ rs=sum(C,2);
 D=spdiags(1./rs,0,n,n);
 C = D*C;
 
+write_all_formats(name,description,A,C);
+
 
 % random matrices with and with some zeros on diagonal, and row-sum 1
 

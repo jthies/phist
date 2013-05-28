@@ -18,7 +18,7 @@ KernelTest::SetUp();
 nglob_=_Nglob;
 nloc_=nglob_; // TODO - parallel testing not implemented
 phist_map_create(&map_,comm_,nglob_,&ierr_);
-ASSERT_EQ(ierr_,0);
+ASSERT_EQ(0,ierr_);
 }
 
 int nglob_, nloc_;

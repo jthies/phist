@@ -24,7 +24,7 @@ class KernelTestWithVectors:
 public:
   virtual void SetUp(){}
   virtual void TearDown(){}
-  int nvec_, lda_;
+  int nvec_, lda_, stride_;
 
   };
 
