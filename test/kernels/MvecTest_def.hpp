@@ -78,7 +78,7 @@ public:
       for (int i=0;i<nloc_*nvec_;i++)
         {
         vec1_vp_[i]=random_number();
-        vec2_vp_[i]=one()/vec1_vp_[i];
+        vec2_vp_[i]=one()/_CONJ_(vec1_vp_[i]);
         }
       _ST_* dots = new _ST_[nvec_];
       _SUBR_(mvec_dot_mvec)(vec1_,vec2_,dots,&ierr_);

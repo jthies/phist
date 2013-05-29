@@ -17,4 +17,3 @@ fprintf(stderr,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
 (_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return;}}
 
 #endif
-

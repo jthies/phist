@@ -66,6 +66,7 @@ protected:
 
 int read_mat(const char* filebase,_TYPE_(crsMat_ptr) *ptr)
   {
+  *ptr = NULL;
   char mmfile[256],hbfile[256],binfile[256];
   sprintf(mmfile,"%s%s%d.mm",_TPC_,filebase,nglob_);
 #ifdef _IS_COMPLEX_
@@ -78,11 +79,11 @@ int read_mat(const char* filebase,_TYPE_(crsMat_ptr) *ptr)
 //  std::cout << "Looking for matrix \'"<<filebase<<"\'...\n";
 //  std::cout << "... try \'"<<mmfile<<"\'\n";
   _SUBR_(crsMat_read_mm)(ptr,mmfile,&ierr_);
-  if (ierr_==-99 || ierr_==-1) // kernel lib can't read MatrixMarket format or file not found
+  if (ierr_!=_PHIST_SUCCESS_) // kernel lib can't read MatrixMarket format or file not found
     {
 //    std::cout << "... try \'"<<hbfile<<"\'\n";
     _SUBR_(crsMat_read_hb)(ptr,hbfile,&ierr_);
-    if (ierr_==-99 || ierr_==-1) // kernel lib can't read Harwell-Boeing or file not found
+    if (ierr_!=_PHIST_SUCCESS_) // kernel lib can't read Harwell-Boeing or file not found
       {
 //      std::cout << "... try \'"<<binfile<<"\'\n";
       _SUBR_(crsMat_read_bin)(ptr,binfile,&ierr_);

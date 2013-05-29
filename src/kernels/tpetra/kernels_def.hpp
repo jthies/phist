@@ -46,7 +46,8 @@ void _SUBR_(crsMat_read_hb)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ie
   Teuchos::RCP<Teuchos::ParameterList> params=Teuchos::null;
   //_TRY_CATCH_(Tpetra::Utils::readHBMatrix(fname,comm,node,A,rowMap, params),*ierr);
   _TRY_CATCH_(Tpetra::Utils::readHBMatrix(fname,comm,node,A),*ierr);
-  *vA = (_TYPE_(crsMat_ptr))(A.get());
+  Teuchos::Ptr<Traits<_ST_>::crsMat_t> Aptr = A.release();
+  *vA = (_TYPE_(crsMat_ptr))(Aptr.get());
   }
 //!@}
 
