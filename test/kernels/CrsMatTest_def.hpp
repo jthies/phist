@@ -68,7 +68,11 @@ int read_mat(const char* filebase,_TYPE_(crsMat_ptr) *ptr)
   {
   char mmfile[256],hbfile[256],binfile[256];
   sprintf(mmfile,"%s%s%d.mm",_TPC_,filebase,nglob_);
+#ifdef _IS_COMPLEX_
+  sprintf(hbfile,"%s%s%d.cua",_TPC_,filebase,nglob_);
+#else  
   sprintf(hbfile,"%s%s%d.rua",_TPC_,filebase,nglob_);
+#endif
   sprintf(binfile,"%s%s%d.bin",_TPC_,filebase,nglob_);
   
 //  std::cout << "Looking for matrix \'"<<filebase<<"\'...\n";
