@@ -67,7 +67,7 @@ public:
       _ST_ val = (_ST_)42.0 + (_ST_)3.0*_Complex_I;
       _SUBR_(mvec_put_value)(vec1_,val,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ((_MT_)0.0,ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,val));
+      ASSERT_REAL_EQ((_MT_)1.0,ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,val));
       }
     }
 
@@ -85,7 +85,7 @@ public:
       ASSERT_EQ(0,ierr_);
             
       _ST_ val = one() * (_ST_)nloc_;
-      ASSERT_REAL_EQ((_MT_)0.0,ArrayEqual(dots,nvec_,1,nvec_,1,val));
+      ASSERT_REAL_EQ((_MT_)1.0,ArrayEqual(dots,nvec_,1,nvec_,1,val));
       delete [] dots;
       }
     

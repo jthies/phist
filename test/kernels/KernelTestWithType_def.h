@@ -41,7 +41,7 @@ _MT_ ArrayEqual(const _ST_* array, int n, int m, int lda, int stride, _ST_ value
       maxval=std::max(std::abs(array[j*lda+i]-value)/scal,maxval);
       }
     }
-  return maxval;
+  return (_MT_)1.0+maxval;
   }
 
 
@@ -58,7 +58,7 @@ _MT_ ArraysEqual(const _ST_* arr1,const _ST_* arr2, int n, int m, int lda, int s
       maxval=std::max(m/p,maxval);
       }
     }
-  return maxval;
+  return (_MT_)1.0+maxval;
   }
 
 inline _ST_ zero() {return zero_;}
@@ -66,8 +66,6 @@ inline _ST_ zero() {return zero_;}
 inline _ST_ one() {return one_;}
 
 _ST_ random_number() {return (_MT_)std::rand()/(_MT_)RAND_MAX + (_MT_)std::rand()/(_MT_)RAND_MAX * _Complex_I;}
-
-_MT_ small_number() {return _SMALL_NUMBER_;}
 
 };
 

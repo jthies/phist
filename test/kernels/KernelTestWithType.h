@@ -23,16 +23,11 @@ virtual void TearDown() {
 
 };
 
-#define _SMALL_NUMBER_ (float)1.0e-7
-
 #include "phist_gen_s.h"
 #include "KernelTestWithType_def.h"
 
 #include "phist_gen_c.h"
 #include "KernelTestWithType_def.h"
-
-#undef _SMALL_NUMBER_
-#define _SMALL_NUMBER_ 1.0e-14
 
 #include "phist_gen_d.h"
 #include "KernelTestWithType_def.h"
