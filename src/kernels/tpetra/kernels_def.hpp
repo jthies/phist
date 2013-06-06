@@ -4,6 +4,7 @@
 #include "../cpp_macros.h"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_RCP.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_MatrixIO.hpp"
 
 extern "C" {
@@ -21,8 +22,19 @@ void _SUBR_(type_avail)(int* ierr)
 //! read a matrix from a MatrixMarket (ASCII) file
 void _SUBR_(crsMat_read_mm)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
-  // TODO - doesn't seem to be available in Tpetra
-  *ierr=-99;
+  Tpetra::MatrixMarket::Reader<Traits<_ST_>::crsMat_t> reader;
+  std::string fstring(filename);
+
+  
+  Teuchos::RCP<Traits<_ST_>::crsMat_t> A;
+
+  Teuchos::ParameterList nodeParams;
+  Teuchos::RCP<node_t> node = Teuchos::rcp(new node_t(nodeParams));
+  Teuchos::RCP<const comm_t> comm = Teuchos::DefaultComm<int>::getComm();
+  
+  _TRY_CATCH_(A=reader.readSparseFile(fstring,comm,node),*ierr);
+  Teuchos::Ptr<Traits<_ST_>::crsMat_t> Aptr = A.release();
+  *vA = (_TYPE_(crsMat_ptr))(Aptr.get());
   }
 
 //! read a matrix from a Ghost CRS (binary) file.
