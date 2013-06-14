@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 2.8)
 
-set (CMAKE_BUILD_TYPE Debug)
+if (NOT CMAKE_BUILD_TYPE)
+  message(STATUS "setting CMAKE_BUILD_TYPE to 'Debug' by default.")
+  set (CMAKE_BUILD_TYPE Debug)
+else()
+  message(STATUS "using CMAKE_BUILD_TYPE='${CMAKE_BUILD_TYPE}'")
+endif()
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
 
 # Define some custom variables
@@ -29,13 +34,13 @@ get_filename_component (CXX_COMPILER_NAME ${CMAKE_CXX_COMPILER} NAME)
 if (C_COMPILER_NAME STREQUAL "gcc")
   # gcc
   set (CMAKE_Fortran_FLAGS_RELEASE "-O3")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g -DTESTING")
 else ()
   message ("CMAKE_C_COMPILER full path: " ${CMAKE_C_COMPILER})
   message ("C compiler: " ${C_COMPILER_NAME})
   message ("No optimized C compiler flags are known, we just try -O2...")
   set (CMAKE_C_FLAGS_RELEASE "-O2")
-  set (CMAKE_C_FLAGS_DEBUG   "-O0 -g")
+  set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -DTESTING")
 endif ()
 
 if (Fortran_COMPILER_NAME STREQUAL "gfortran")
@@ -53,13 +58,13 @@ endif ()
 if (CXX_COMPILER_NAME STREQUAL "g++")
   # g++
   set (CMAKE_CXX_FLAGS_RELEASE "-O3")
-  set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g")
+  set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING")
 else ()
   message ("CMAKE_CXX_COMPILER full path: " ${CMAKE_CXX_COMPILER})
   message ("CXX compiler: " ${CXX_COMPILER_NAME})
   message ("No optimized CXX compiler flags are known, we just try -O2...")
   set (CMAKE_CXX_FLAGS_RELEASE "-O2")
-  set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g")
+  set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING")
 endif ()
 
 ##############################################################################
@@ -101,8 +106,10 @@ set(PHIST_LIBS "")
 set(LOAD_TRILI_PKG,"")
 if  (PHIST_KERNEL_LIB STREQUAL "epetra")
   list(APPEND LOAD_TRILI_PKG "EpetraExt")
+  list(APPEND LOAD_TRILI_PKG "Belos")
 elseif  (PHIST_KERNEL_LIB STREQUAL "tpetra")
   list(APPEND LOAD_TRILI_PKG "Tpetra")
+  list(APPEND LOAD_TRILI_PKG "Belos")
 elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   message(FATAL_ERROR "ghost not supported in CMakeLists.txt, yet")
 else ()
@@ -162,6 +169,8 @@ set(KERNEL_TEST_SOURCES
     test/mainTest.cpp
     test/kernels/CommTest.cpp
     test/kernels/MvecTest.cpp
+    test/kernels/MvecTest.cpp
+    test/kernels/QR_Test.cpp
     test/kernels/CrsMatTest.cpp
 #    test/kernels/MapTest.cpp
 #    test/kernels/SdMatTest.cpp
