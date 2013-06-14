@@ -1,7 +1,11 @@
 #ifndef KERNELS_TPETRA_TYPEDEFS_HPP
 #define KERNELS_TPETRA_TYPEDEFS_HPP
 
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_Comm.hpp"
+#include "Teuchos_DataAccess.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DefaultKernels.hpp"
@@ -32,6 +36,9 @@ class Traits
   //! serial dense matrix - just a multivector with a serial map.
   typedef Tpetra::MultiVector<ST,lidx_t,gidx_t,node_t> sdMat_t;
 
+  //! serial dense matrix from Teuchos, we need this for e.g. the BLAS interface.
+  typedef Teuchos::SerialDenseMatrix<lidx_t,ST> Teuchos_sdMat_t;
+
   //! CRS matrices
   typedef Tpetra::CrsMatrix<ST,lidx_t,gidx_t,node_t,localOps_t> crsMat_t;
 
@@ -44,12 +51,52 @@ class Traits
   //! scalar 0
   static inline ST zero(){return Teuchos::ScalarTraits<ST>::zero();}
 
+  //! create a Teuchos' view of a local mvec/sdMat
+  static Teuchos::RCP<const Teuchos_sdMat_t> CreateTeuchosView(Teuchos::RCP<const sdMat_t> M, int* ierr)
+    {
+    *ierr=0;
+    int stride = M->getStride();
+    int nrows = M->getLocalLength();
+    int ncols = M->getNumVectors();
+    
+    Teuchos::ArrayRCP<const ST> M_tmp;
+    bool status=true;
+    try {
+    M_tmp=M->get1dView();
+    } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,status);
+    if (!status) {*ierr=-1; return Teuchos::null;}
+    const ST *M_val = M_tmp.getRawPtr();
+    Teuchos::RCP<const Traits<ST>::Teuchos_sdMat_t> M_view
+                  = Teuchos::rcp(new Teuchos_sdMat_t(Teuchos::View,M_val,stride,nrows,ncols));
+    return M_view;     
+    }
+
+  //! create a non-const Teuchos' view of a local mvec/sdMat
+  static Teuchos::RCP<Teuchos_sdMat_t> CreateTeuchosViewNonConst(Teuchos::RCP<sdMat_t> M, int* ierr)
+    {
+    *ierr=0;
+    int stride = M->getStride();
+    int nrows = M->getLocalLength();
+    int ncols = M->getNumVectors();
+    Teuchos::ArrayRCP<ST> M_tmp=Teuchos::null;
+    bool status=true;
+    try {
+    M_tmp=M->get1dViewNonConst();
+    } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,status);
+    if (!status) {*ierr=-1; return Teuchos::null;}
+    ST *M_val = M_tmp.getRawPtr();
+    Teuchos::RCP<Traits<ST>::Teuchos_sdMat_t> M_view
+                  = Teuchos::rcp(new Teuchos_sdMat_t(Teuchos::View,M_val,stride,nrows,ncols));
+    return M_view;                  
+    }
+
   
   };
 
 
 
-#ifdef _IS_COMPLEX_
+#if 0
+//#ifdef _IS_COMPLEX_
 namespace Teuchos {
 // Partial specialization for std::complex numbers templated on real type <_MT_>
 struct ScalarTraits<_ST_>

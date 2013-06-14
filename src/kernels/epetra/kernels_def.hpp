@@ -16,6 +16,10 @@
 #include "EpetraExt_CrsMatrixIn.h"
 
 #include "../cpp_macros.h"
+#include "epetra_helpers.h"
+
+#include "BelosEpetraAdapter.hpp"
+#include "BelosTsqrOrthoManager.hpp"
 
 // \name Matrix input from a file
 
@@ -106,7 +110,7 @@ void phist_Dmvec_create(_TYPE_(mvec_ptr)* vV,
 const_map_ptr_t vmap, int nvec, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const Epetra_BlockMap, map,vmap,*ierr);
+  _CAST_PTR_FROM_VOID_(const map_t, map,vmap,*ierr);
   Epetra_MultiVector* result;
   _TRY_CATCH_(result = new Epetra_MultiVector(*map,nvec),*ierr);
   if (result==NULL) *ierr=-1;
@@ -115,7 +119,7 @@ const_map_ptr_t vmap, int nvec, int* ierr)
 
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
-void sdMat_create(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols, int* ierr)
+void phist_DsdMat_create(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols, int* ierr)
   {
   *ierr=0;
   Epetra_SerialComm comm;
@@ -189,7 +193,7 @@ void phist_DsdMat_delete(_TYPE_(sdMat_ptr) vM, int* ierr)
 //!@{
 
 //! put scalar value into all elements of a multi-vector
-void _SUBR_(mvec_put_value)(_TYPE_(mvec_ptr) vV, _ST_ value, int* ierr)
+void _SUBR_(mvec_put_value)(_TYPE_(mvec_ptr) vV, double value, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);
@@ -216,8 +220,8 @@ void _SUBR_(sdMat_random)(_TYPE_(sdMat_ptr) vM, int* ierr)
 
 
 //! y=alpha*x+beta*y
-void _SUBR_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vX,
-                            _ST_ beta,  _TYPE_(mvec_ptr)       vY, 
+void _SUBR_(mvec_add_mvec)(double alpha, _TYPE_(const_mvec_ptr) vX,
+                            double beta,  _TYPE_(mvec_ptr)       vY, 
                             int* ierr)
   {
   *ierr=0;
@@ -292,7 +296,7 @@ void phist_DmvecT_times_mvec(double alpha, _TYPE_(const_mvec_ptr) vV, _TYPE_(con
 //! W=alpha*V*C + beta*W
 void phist_Dmvec_times_sdMat(double alpha, _TYPE_(const_mvec_ptr) vV,
                                        _TYPE_(const_sdMat_ptr) vC,
-                           _ST_ beta,  _TYPE_(mvec_ptr) vW,
+                           double beta,  _TYPE_(mvec_ptr) vW,
                                        int* ierr)
   {
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
@@ -302,11 +306,47 @@ void phist_Dmvec_times_sdMat(double alpha, _TYPE_(const_mvec_ptr) vV,
   }
   
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.
-void phist_Dmvec_QR(_TYPE_(const_mvec_ptr) V, _TYPE_(mvec_ptr) Q, _TYPE_(sdMat_ptr) R, int* ierr)
+void phist_Dmvec_QR(_TYPE_(mvec_ptr) vV, _TYPE_(sdMat_ptr) vR, int* ierr)
   {
-  // TODO - check the status of TSQR in Trilinos
-  *ierr=-99;
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,R,vR,*ierr);
+
+  if (R->ConstantStride()==false)
+    {
+    *ierr = -1;
+    return;
+    }
+  int stride = R->Stride();
+  int nrows = R->MyLength();
+  int ncols = R->NumVectors();
+    
+#ifdef TESTING
+  _CHECK_ZERO_(nrows-ncols,*ierr);
+  _CHECK_ZERO_(nrows-V->NumVectors(),*ierr);
+  _CHECK_ZERO_(nrows-V->MyLength(),*ierr);
+#endif  
+
+  Teuchos::RCP<Teuchos_sdMat_t> R_view
+        = CreateTeuchosViewNonConst(Teuchos::rcp(R,false),ierr);
+  if (*ierr) return;
+  
+  Belos::TsqrOrthoManager<double, Epetra_MultiVector> tsqr("phist/epetra");
+  Teuchos::RCP<const Teuchos::ParameterList> valid_params = 
+        tsqr.getValidParameters();
+  // faster but numerically less robust settings:
+  Teuchos::RCP<const Teuchos::ParameterList> fast_params = 
+        tsqr.getFastParameters();
+  Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp
+        (new Teuchos::ParameterList(*valid_params));
+  tsqr.setParameterList(params);
+
+  int rank;
+  _TRY_CATCH_(rank = tsqr.normalize(*V,R_view),*ierr);  
+  *ierr = ncols-rank;// return positive number if rank not full.
+  return;
   }
+
 
 //!@}
 

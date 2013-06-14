@@ -192,7 +192,8 @@ void _SUBR_(mvec_times_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) V,
   }
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.
-void _SUBR_(mvec_QR)(_TYPE_(const_mvec_ptr) V, _TYPE_(mvec_ptr) Q, _TYPE_(sdMat_ptr) R, int* ierr)
+//! Q is computed in place of V.
+void _SUBR_(mvec_QR)(_TYPE_(mvec_ptr) V, _TYPE_(sdMat_ptr) R, int* ierr)
   {
   *ierr=-99;
   }

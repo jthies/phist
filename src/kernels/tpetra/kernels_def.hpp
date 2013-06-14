@@ -7,6 +7,8 @@
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_MatrixIO.hpp"
 
+#include "BelosTsqrOrthoManager.hpp"
+
 extern "C" {
 
 // we implement all the four types
@@ -287,18 +289,56 @@ void _SUBR_(mvec_times_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) vV,
                            _ST_ beta,  _TYPE_(mvec_ptr) vW,
                                        int* ierr)
   {
-  *ierr=-99;
+  *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
-  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,W,vW,*ierr);
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,C,vC,*ierr);
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,W,vW,*ierr);
+  _TRY_CATCH_(W->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,
+        alpha, *V, *C, beta), *ierr);
   }
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.
-void _SUBR_(mvec_QR)(_TYPE_(const_mvec_ptr) V, 
-        _TYPE_(mvec_ptr) Q, _TYPE_(sdMat_ptr) R, int* ierr)
+//! Q is computed in place of V.
+void _SUBR_(mvec_QR)(_TYPE_(mvec_ptr) vV, _TYPE_(sdMat_ptr) vR, int* ierr)
   {
-  // TODO - check the status of TSQR in Trilinos
-  *ierr=-99;
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,R,vR,*ierr);
+  
+  if (R->isConstantStride()==false)
+    {
+    *ierr = -1;
+    return;
+    }
+
+  int stride = R->getStride();
+  int nrows = R->getLocalLength();
+  int ncols = R->getNumVectors();
+    
+#ifdef TESTING
+  _CHECK_ZERO_(nrows-ncols,*ierr);
+  _CHECK_ZERO_(nrows-V->getNumVectors(),*ierr);
+  _CHECK_ZERO_(nrows-V->getMyLength(),*ierr);
+#endif  
+
+  Teuchos::RCP<Traits< _ST_ >::Teuchos_sdMat_t> R_view
+        = Traits< _ST_ >::CreateTeuchosViewNonConst(Teuchos::rcp(R,false),ierr);
+  if (*ierr) return;      
+  
+  Belos::TsqrOrthoManager< _ST_ , Traits< _ST_ >::mvec_t> tsqr("phist");
+  Teuchos::RCP<const Teuchos::ParameterList> valid_params = 
+        tsqr.getValidParameters();
+  // faster but numerically less robust settings:
+  Teuchos::RCP<const Teuchos::ParameterList> fast_params = 
+        tsqr.getFastParameters();
+  Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp
+        (new Teuchos::ParameterList(*valid_params));
+  tsqr.setParameterList(params);
+
+  int rank;
+  _TRY_CATCH_(rank = tsqr.normalize(*V,R_view),*ierr);  
+  *ierr = ncols-rank;// return positive number if rank not full.
+  return;
   }
 
 //!@}

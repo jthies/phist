@@ -7,6 +7,8 @@
 #include "Epetra_SerialComm.h"
 #endif
 
+#include "epetra_helpers.cpp"
+
 extern "C" {
 
 // initialize kernel library. Should at least call MPI_Init if it has not been called
