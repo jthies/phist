@@ -1,3 +1,6 @@
+#ifndef KERNEL_TEST_WITH_TYPE_H
+#define KERNEL_TEST_WITH_TYPE_H
+
 #include "KernelTest.h"
 
 /** 
@@ -34,3 +37,5 @@ virtual void TearDown() {
 
 #include "phist_gen_z.h"
 #include "KernelTestWithType_def.h"
+
+#endif

@@ -65,7 +65,3 @@
 #error "macro _TYPE_ not defined"
 #endif
 
-// how to build up the name of a test with two 'template' params
-#ifndef _TESTNAME2_
-#error "macro _TESTNAME2_ not defined"
-#endif

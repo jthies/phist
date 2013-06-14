@@ -6,7 +6,7 @@
 /** 
  */
 template<int _Nglob>
-class KernelTestWithMap: public KernelTest
+class KernelTestWithMap: public virtual KernelTest
 {
 public:
 

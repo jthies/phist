@@ -61,11 +61,6 @@
 #undef _TYPE_
 #endif
 
-// how to build up the name of a test with two 'template' params
-#ifdef _TESTNAME2_
-#undef _TESTNAME2_
-#endif
-
 // macro used in googletest assertions
 #ifdef ASSERT_REAL_EQ
 #undef ASSERT_REAL_EQ

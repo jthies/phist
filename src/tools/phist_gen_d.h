@@ -21,7 +21,4 @@
 // how to build up the name of a type
 #define _TYPE_(name) D ## name ## _t
 
-// how to build up the name of a test with two 'template' params
-#define _TESTNAME2_(name,p1,p2) D ## name ## _ ## p1 ## _ ## p2
-
 #include "phist_gen_post.h"

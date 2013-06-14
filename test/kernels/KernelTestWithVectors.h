@@ -17,8 +17,8 @@ using namespace testing;
 /*! Test fixure. */
 template<typename T, int _Nglob, int _Nvec>
 class KernelTestWithVectors:
-        public KernelTestWithMap<_Nglob>,
-        public KernelTestWithType<T>
+        public virtual KernelTestWithMap<_Nglob>,
+        public virtual KernelTestWithType<T>
   {
 
 public:

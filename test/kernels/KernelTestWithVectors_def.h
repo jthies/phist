@@ -2,8 +2,8 @@
 /*! Test fixture. */
 template<int _Nglob, int _Nvec>
 class KernelTestWithVectors<_ST_,_Nglob,_Nvec> : 
-        public KernelTestWithType< _ST_ >,
-        public KernelTestWithMap<_Nglob> 
+        public virtual KernelTestWithType< _ST_ >,
+        public virtual KernelTestWithMap<_Nglob> 
   {
 
 public:
