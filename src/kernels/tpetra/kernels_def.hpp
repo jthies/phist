@@ -7,6 +7,7 @@
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_MatrixIO.hpp"
 
+#include "BelosTpetraAdapter.hpp"
 #include "BelosTsqrOrthoManager.hpp"
 
 extern "C" {
@@ -157,7 +158,7 @@ void _SUBR_(mvec_extract_view)(_TYPE_(mvec_ptr) vV, _ST_** val, int* lda, int* i
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
   Teuchos::ArrayRCP<_ST_> val_ptr = V->get1dViewNonConst();
   *val = val_ptr.getRawPtr();
-  *lda = V->getLocalLength();
+  *lda = V->getStride();
   }
 
 //! extract view from serial dense matrix
@@ -166,8 +167,8 @@ void _SUBR_(sdMat_extract_view)(_TYPE_(sdMat_ptr) vM, _ST_** val, int* lda, int*
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,M,vM,*ierr);
   Teuchos::ArrayRCP<_ST_> valptr = M->get1dViewNonConst();
   *val = valptr.getRawPtr();
-  *lda=0;
-  *ierr=-99;
+  *lda=M->getStride();
+  *ierr=0; //TODO - how do we get LDA?
   }
 
 
