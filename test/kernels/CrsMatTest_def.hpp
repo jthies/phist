@@ -158,13 +158,13 @@ bool haveMats_;
     {
     // we allow a tolerance here because the matrices may have errors in the
     // last digit and we can't get the test to pass otherwise.
-    ASSERT_REAL_EQ((_MT_)1.0,const_row_sum_test(A2_));
+    ASSERT_NEAR((_MT_)1.0,const_row_sum_test(A2_),100*eps());
     }
 
   TEST_F(CLASSNAME, A3_times_mvec)
     {
     // we allow a tolerance here because the matrices may have errors in the
     // last digit and we can't get the test to pass otherwise.
-    ASSERT_REAL_EQ((_MT_)1.0,const_row_sum_test(A3_));
+    ASSERT_NEAR((_MT_)1.0,const_row_sum_test(A3_),100*eps());
     }
 

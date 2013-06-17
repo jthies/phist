@@ -1,4 +1,3 @@
-
 /*! Test fixture. */
 template<int _Nglob, int _Nvec>
 class KernelTestWithVectors<_ST_,_Nglob,_Nvec> : 
@@ -44,7 +43,5 @@ virtual void TearDown()
   
   _TYPE_(mvec_ptr) vec1_, vec2_;
   _ST_ *vec1_vp_, *vec2_vp_;
-  int nvec_,lda_,stride_;
+  lidx_t nvec_,lda_,stride_;
   };
-
-

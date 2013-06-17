@@ -7,13 +7,9 @@
 //! this file is just for internal use when implementing the
 //! Epetra variant of our kernel functions.
 
-typedef int lidx_t; // local ordinal/index type
-typedef int gidx_t; // global ordinal/index type
-typedef Teuchos::SerialDenseMatrix<lidx_t,double> Teuchos_sdMat_t;
+typedef Teuchos::SerialDenseMatrix<int,double> Teuchos_sdMat_t;
 
 class Epetra_MultiVector;
-
-typedef Epetra_BlockMap map_t;
 
   //! create a Teuchos' view of a local mvec/sdMat
   static Teuchos::RCP<const Teuchos_sdMat_t > CreateTeuchosView(Teuchos::RCP<const Epetra_MultiVector> M, int* ierr);

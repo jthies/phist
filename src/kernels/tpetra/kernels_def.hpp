@@ -1,7 +1,10 @@
 #include "phist_macros.h"
+#include "../cpp_macros.h"
+
+#include "phist_typedefs.h"
+#include "phist_kernels.h"
 
 #include "Teuchos_StandardCatchMacros.hpp"
-#include "../cpp_macros.h"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_RCP.hpp"
 #include "MatrixMarket_Tpetra.hpp"
@@ -70,8 +73,7 @@ void _SUBR_(crsMat_read_hb)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ie
 
 //!@{
 //! get the row distribution of the matrix
-void _SUBR_(crsMat_get_row_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* 
-ierr)
+void _SUBR_(crsMat_get_row_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
@@ -108,7 +110,7 @@ void _SUBR_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* 
 //@{
 //! create a block-vector. The entries are stored contiguously
 //! at val in column major ordering.
-void _SUBR_(mvec_create)(_TYPE_(mvec_ptr)* vV, const_map_ptr_t vmap, int nvec, int* ierr)
+void _SUBR_(mvec_create)(_TYPE_(mvec_ptr)* vV, const_map_ptr_t vmap, lidx_t nvec, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const map_t, map, vmap, *ierr);
@@ -119,7 +121,7 @@ void _SUBR_(mvec_create)(_TYPE_(mvec_ptr)* vV, const_map_ptr_t vmap, int nvec, i
 
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
-void _SUBR_(sdMat_create)(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols, int* ierr)
+void _SUBR_(sdMat_create)(_TYPE_(sdMat_ptr)* vM, lidx_t nrows, lidx_t ncols, int* ierr)
   {
   *ierr=0;
   // create local map
@@ -135,7 +137,7 @@ void _SUBR_(sdMat_create)(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols, int* ierr
 //@}
 
 //! retrieve local length of the vectors in V
-void _SUBR_(mvec_my_length)(_TYPE_(const_mvec_ptr) vV, int* len, int* ierr)
+void _SUBR_(mvec_my_length)(_TYPE_(const_mvec_ptr) vV, lidx_t* len, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -143,7 +145,7 @@ void _SUBR_(mvec_my_length)(_TYPE_(const_mvec_ptr) vV, int* len, int* ierr)
   }
 
 //! retrieve number of vectors/columns in V
-void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) vV, int* nvec, int* ierr)
+void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) vV, lidx_t* nvec, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -152,7 +154,7 @@ void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) vV, int* nvec, int* ierr)
 
 
 //! extract view from multi-vector
-void _SUBR_(mvec_extract_view)(_TYPE_(mvec_ptr) vV, _ST_** val, int* lda, int* ierr)
+void _SUBR_(mvec_extract_view)(_TYPE_(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -162,7 +164,7 @@ void _SUBR_(mvec_extract_view)(_TYPE_(mvec_ptr) vV, _ST_** val, int* lda, int* i
   }
 
 //! extract view from serial dense matrix
-void _SUBR_(sdMat_extract_view)(_TYPE_(sdMat_ptr) vM, _ST_** val, int* lda, int* ierr)
+void _SUBR_(sdMat_extract_view)(_TYPE_(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* ierr)
   {
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,M,vM,*ierr);
   Teuchos::ArrayRCP<_ST_> valptr = M->get1dViewNonConst();
@@ -319,7 +321,6 @@ void _SUBR_(mvec_QR)(_TYPE_(mvec_ptr) vV, _TYPE_(sdMat_ptr) vR, int* ierr)
 #ifdef TESTING
   _CHECK_ZERO_(nrows-ncols,*ierr);
   _CHECK_ZERO_(nrows-V->getNumVectors(),*ierr);
-  _CHECK_ZERO_(nrows-V->getMyLength(),*ierr);
 #endif  
 
   Teuchos::RCP<Traits< _ST_ >::Teuchos_sdMat_t> R_view

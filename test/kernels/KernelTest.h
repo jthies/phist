@@ -4,7 +4,8 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "kernels/phist_kernels.h"
+#include "phist_typedefs.h"
+#include "phist_kernels.h"
 
 /** Base for calculation tests.
  * This class provides a basic test fixture for all calculation tests. It mainly provides a vector

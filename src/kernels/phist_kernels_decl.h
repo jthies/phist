@@ -30,7 +30,6 @@
 
 */
 
-
 //! opaque pointer to multi-vector objects
 typedef void* _TYPE_(mvec_ptr);
 
@@ -97,13 +96,13 @@ void _SUBR_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) A,
 
 //@{
 //! create a block-vector.
-void _SUBR_(mvec_create)(_TYPE_(mvec_ptr)* V, const_map_ptr_t map, int nvec, 
+void _SUBR_(mvec_create)(_TYPE_(mvec_ptr)* V, const_map_ptr_t map, lidx_t nvec, 
         int* ierr);
 
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
 void _SUBR_(sdMat_create)(_TYPE_(sdMat_ptr)* M, 
-        int nrows, int ncols, int* ierr);
+        lidx_t nrows, lidx_t ncols, int* ierr);
 
 //@}
 
@@ -126,18 +125,18 @@ void _SUBR_(sdMat_delete)(_TYPE_(sdMat_ptr) M, int* ierr);
 //@{
 
 //! retrieve local length of the vectors in V
-void _SUBR_(mvec_my_length)(_TYPE_(const_mvec_ptr) V, int* len, int* ierr);
+void _SUBR_(mvec_my_length)(_TYPE_(const_mvec_ptr) V, lidx_t* len, int* ierr);
 
 //! retrieve number of vectors/columns in V
-void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) V, int* nvec, int* ierr);
+void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) V, lidx_t* nvec, int* ierr);
 
 //! extract view from multi-vector
 void _SUBR_(mvec_extract_view)(_TYPE_(mvec_ptr) V, _ST_** val,
-        int* lda, int* ierr);
+        lidx_t* lda, int* ierr);
 
 //! extract view from serial dense matrix
 void _SUBR_(sdMat_extract_view)(_TYPE_(sdMat_ptr) M, _ST_** val,
-        int* lda, int* ierr);
+        lidx_t* lda, int* ierr);
 
 //@}
 

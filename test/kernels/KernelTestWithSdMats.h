@@ -4,7 +4,8 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "kernels/phist_kernels.h"
+#include "phist_typedefs.h"
+#include "phist_kernels.h"
 #include "KernelTestWithType.h"
 
 #ifdef PHIST_HAVE_MPI

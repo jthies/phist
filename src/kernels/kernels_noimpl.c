@@ -67,7 +67,7 @@ void _SUBR_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) A, const_map_ptr_t* m
 //! create a block-vector. The entries are stored contiguously
 //! at val in column major ordering.
 void _SUBR_(mvec_create)(_TYPE_(mvec_ptr)* V, 
-        const_map_ptr_t map, int nvec, int* ierr)
+        const_map_ptr_t map, lidx_t nvec, int* ierr)
   {
   *ierr=-99;
   }
@@ -75,7 +75,7 @@ void _SUBR_(mvec_create)(_TYPE_(mvec_ptr)* V,
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
 void _SUBR_(sdMat_create)(_TYPE_(sdMat_ptr)* M, 
-int n, int m, int* ierr)
+lidx_t nrows, lidx_t ncols, int* ierr)
   {
   *ierr=-99;
   }
@@ -83,25 +83,25 @@ int n, int m, int* ierr)
 //@}
 
 //! retrieve local length of the vectors in V
-void _SUBR_(mvec_my_length)(_TYPE_(const_mvec_ptr) V, int* len, int* ierr)
+void _SUBR_(mvec_my_length)(_TYPE_(const_mvec_ptr) V, lidx_t* len, int* ierr)
   {
   *ierr=-99;
   }
 
 //! retrieve number of vectors/columns in V
-void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) V, int* nvec, int* ierr)
+void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) V, lidx_t* nvec, int* ierr)
   {
   *ierr=-99;
   }
 
 //!
-void _SUBR_(mvec_extract_view)(_TYPE_(mvec_ptr) V, _ST_** val, int* lda, int* ierr)
+void _SUBR_(mvec_extract_view)(_TYPE_(mvec_ptr) V, _ST_** val, lidx_t* lda, int* ierr)
   {
   *ierr=-99;
   }
 
 //!
-void _SUBR_(sdMat_extract_view)(_TYPE_(sdMat_ptr) V, _ST_** val, int* lda, int* ierr)
+void _SUBR_(sdMat_extract_view)(_TYPE_(sdMat_ptr) V, _ST_** val, lidx_t* lda, int* ierr)
   {
   *ierr=-99;
   }

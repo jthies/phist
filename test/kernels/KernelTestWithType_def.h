@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <limits>
 #include "gtest/gtest.h"
 
 using namespace ::testing;
@@ -61,11 +62,12 @@ _MT_ ArraysEqual(const _ST_* arr1,const _ST_* arr2, int n, int m, int lda, int s
   return (_MT_)1.0+maxval;
   }
 
-inline _ST_ zero() {return zero_;}
+inline _ST_ zero() const {return zero_;}
 
-inline _ST_ one() {return one_;}
+inline _ST_ one() const {return one_;}
 
-_ST_ random_number() {return (_MT_)std::rand()/(_MT_)RAND_MAX + (_MT_)std::rand()/(_MT_)RAND_MAX * _Complex_I;}
+inline _ST_ random_number() const {return (_MT_)std::rand()/(_MT_)RAND_MAX + (_MT_)std::rand()/(_MT_)RAND_MAX * _Complex_I;}
 
+inline _MT_ eps() const {return std::numeric_limits< _MT_ >::epsilon(); }
 };
 

@@ -1,6 +1,13 @@
 #ifndef PHIST_KERNELS_H
 #define PHIST_KERNELS_H
 
+//! note: before including this file, you need to include the phist_typedefs.h file provided in the subdirectory
+//! where the interface is implemented (e.g. ghost/, tpetra/)
+#include "phist_typedefs.h"
+//#ifndef PHIST_TYPEDEFS_H
+//#error "phist_typedefs.h must be included before phist_kernels.h"
+//#endif
+
 typedef void* comm_ptr_t;
 typedef const void* const_comm_ptr_t;
 

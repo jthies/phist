@@ -2,7 +2,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "kernels/phist_kernels.h"
+#include "phist_kernels.h"
 #include "KernelTest.h"
 
 #ifdef HAVE_MPI

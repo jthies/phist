@@ -1,4 +1,6 @@
 #include "phist_macros.h"
+#include "phist_typedefs.h"
+#include "phist_kernels.h"
 
 #include "Epetra_config.h"
 
@@ -110,7 +112,7 @@ void phist_Dmvec_create(_TYPE_(mvec_ptr)* vV,
 const_map_ptr_t vmap, int nvec, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const map_t, map,vmap,*ierr);
+  _CAST_PTR_FROM_VOID_(const Epetra_BlockMap, map,vmap,*ierr);
   Epetra_MultiVector* result;
   _TRY_CATCH_(result = new Epetra_MultiVector(*map,nvec),*ierr);
   if (result==NULL) *ierr=-1;
@@ -132,7 +134,7 @@ void phist_DsdMat_create(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols, int* ierr)
 //@}
 
 //! retrieve local length of the vectors in V
-void phist_Dmvec_my_length(_TYPE_(const_mvec_ptr) vV, int* len, int* ierr)
+void phist_Dmvec_my_length(_TYPE_(const_mvec_ptr) vV, lidx_t* len, int* ierr)
   {
   *ierr = 0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
@@ -140,20 +142,20 @@ void phist_Dmvec_my_length(_TYPE_(const_mvec_ptr) vV, int* len, int* ierr)
   }
 
 //! retrieve number of vectors/columns in V
-void phist_Dmvec_num_vectors(_TYPE_(const_mvec_ptr) vV, int* nvec, int* ierr)
+void phist_Dmvec_num_vectors(_TYPE_(const_mvec_ptr) vV, lidx_t* nvec, int* ierr)
   {
   *ierr = 0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
   *nvec = V->NumVectors();
   }
 
-void phist_Dmvec_extract_view(Dmvec_ptr_t vV, double** val, int* lda, int* ierr)
+void phist_Dmvec_extract_view(Dmvec_ptr_t vV, double** val, lidx_t* lda, int* ierr)
   {
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V, vV, *ierr);
   _CHECK_ZERO_((*V)(0)->ExtractView(val,lda),*ierr);
   }
 
-void phist_DsdMat_extract_view(DsdMat_ptr_t vM, double** val, int* lda, int* ierr)
+void phist_DsdMat_extract_view(DsdMat_ptr_t vM, double** val, lidx_t* lda, int* ierr)
   {
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,M, vM, *ierr);
   _CHECK_ZERO_(M->ExtractView(val,lda),*ierr);

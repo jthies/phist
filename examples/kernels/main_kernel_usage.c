@@ -1,5 +1,6 @@
-#include "kernels/phist_kernels.h"
-#include "tools/phist_macros.h"
+#include "phist_typedefs.h"
+#include "phist_kernels.h"
+#include "phist_macros.h"
 #include <stdio.h>
 
 int main(int argc, char** argv)
@@ -13,9 +14,9 @@ int main(int argc, char** argv)
   Dmvec_ptr_t x,y;
   
   double *x_val, *y_val;
-  int nloc_x, nloc_y;
-  int nvec_x,nvec_y;
-  int lda_x, lda_y;
+  lidx_t nloc_x, nloc_y;
+  lidx_t nvec_x,nvec_y;
+  lidx_t lda_x, lda_y;
    
   const char* filename = "test.mm";
   
@@ -48,8 +49,6 @@ int main(int argc, char** argv)
   fprintf(stdout,"rank %d: x has local length %d and %d vectors\n",rank,nloc_x,nvec_x);
   fprintf(stdout,"rank %d: y has local length %d and %d vectors\n",rank,nloc_y,nvec_y);
   
-
-
   _PHIST_ERROR_HANDLER_(phist_Dmvec_extract_view(x,&x_val,&lda_x,&ierr),ierr);
   _PHIST_ERROR_HANDLER_(phist_Dmvec_extract_view(y,&y_val,&lda_y,&ierr),ierr);
   

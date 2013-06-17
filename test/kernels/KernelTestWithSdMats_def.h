@@ -42,7 +42,7 @@ virtual void TearDown()
   
   _TYPE_(sdMat_ptr) mat1_, mat2_;
   _ST_ *mat1_vp_, *mat2_vp_;
-  int nrows_,ncols_,m_lda_;
+  lidx_t nrows_,ncols_,m_lda_;
   };
 
 

@@ -14,9 +14,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
 
-typedef int lidx_t; // local ordinal/index type
-typedef int gidx_t; // global ordinal/index type
-
+#include "phist_typedefs.h"
 
 typedef Kokkos::DefaultNode::DefaultNodeType node_t; // from the Kokkos node API
 typedef Tpetra::Map<lidx_t,gidx_t,node_t> map_t;
@@ -37,7 +35,7 @@ class Traits
   typedef Tpetra::MultiVector<ST,lidx_t,gidx_t,node_t> sdMat_t;
 
   //! serial dense matrix from Teuchos, we need this for e.g. the BLAS interface.
-  typedef Teuchos::SerialDenseMatrix<lidx_t,ST> Teuchos_sdMat_t;
+  typedef Teuchos::SerialDenseMatrix<int,ST> Teuchos_sdMat_t;
 
   //! CRS matrices
   typedef Tpetra::CrsMatrix<ST,lidx_t,gidx_t,node_t,localOps_t> crsMat_t;
