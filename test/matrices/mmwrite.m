@@ -1,4 +1,4 @@
-function [ err ] = mmwrite(filename,A,comment,mattype,precision)
+function [ err ] = mmwrite(filename,A,comment,mattype,symm,precision)
 %
 % Function: mmwrite(filename,A,comment,field,precision)
 %
@@ -31,13 +31,23 @@ function [ err ] = mmwrite(filename,A,comment,mattype,precision)
 %                              'pattern'
 %                              If ommitted, data will determine type.
 %
+%               symm    - 'general' - just store the matrix as it is
+%                         'auto' (default): test for symmetry properties.
+%                         other values like 'symmetric' can be given, but
+%                         then the correct part of the matrix has to be
+%                         passed in, it is recommended to let mmwrite do
+%                         this itself by using the 'auto' option.
+%
 %                 precision -  number of digits to display for real 
 %                              or complex values
 %                              If ommitted, full working precision is used.
 %
 
-if ( nargin < 5) 
+if ( nargin < 6) 
   precision = 16;
+end
+if ( nargin < 5) 
+  symm = 'auto';
 end
 if ( nargin < 4) 
   % Check whether there is an imaginary part:
@@ -75,6 +85,8 @@ if ( issparse(A) )
 %
 % Determine symmetry:
 %
+NZ = length(V);
+if (strcmp(symm,'auto'))
   if ( M ~= N )
     symm = 'general';
     issymm = 0;
@@ -129,7 +141,7 @@ if ( issparse(A) )
       end
     end
   end
-
+end
 % Sparse coordinate format:
 
   rep = 'coordinate';
