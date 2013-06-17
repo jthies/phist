@@ -119,6 +119,8 @@ endif ()
 set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp)
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c)
 
+include_directories(${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB})
+
 add_library(libphist_kernels_${PHIST_KERNEL_LIB}.a ${PHIST_KERNEL_SOURCE})
 add_library(libphist_tools.a ${PHIST_TOOLS_SOURCE})
 
@@ -178,13 +180,22 @@ set(KERNEL_TEST_SOURCES
 set(KERNEL_TEST_SOURCES ${KERNEL_TEST_SOURCES} ${SOURCES} ${GTEST_SOURCES} ${GMOCK_SOURCES})
 list(REMOVE_ITEM KERNEL_TEST_SOURCES "examples/kernels/main_kernel_usage.c")
 
+file(GLOB TestMatricesMM ${CMAKE_SOURCE_DIR}/test/matrices/*.mm)
+
+foreach (mat ${TestMatricesMM})
+  get_filename_component(${mat} mat_name NAME)
+  configure_file(${mat} ${CMAKE_CURRENT_BINARY_DIR}/${mat_name} COPYONLY)
+  list(APPEND TEST_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${mat_name})
+endforeach()
+
 # Define executables
-add_executable(${PRODUCT_NAME}-kernel-test ${KERNEL_TEST_SOURCES})
+add_executable(${PRODUCT_NAME}-kernel-test ${KERNEL_TEST_SOURCES} ${TEST_DEPENDS})
 add_executable(main_kernel_usage ${PROJECT_SOURCE_DIR}/examples/kernels/main_kernel_usage.c)
 
 
 # Activate testing
 enable_testing()
+
 add_test(kernel-tests ${PRODUCT_NAME}-kernel-test --gtest_output=xml:${CMAKE_SOURCE_DIR}/xunit.xml)
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --output-on-failure)
