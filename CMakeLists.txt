@@ -166,17 +166,13 @@ set(SOURCES
     src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
     examples/kernels/main_kernel_usage.c
 )
-set(KERNEL_TEST_SOURCES
+
+file(GLOB KERNEL_TEST_SOURCES ${CMAKE_SOURCE_DIR}/test/kernels/*.cpp)
+
+list(APPEND KERNEL_TEST_SOURCES
     lib/googletest-1.6/gmock-gtest-all.cc
-    test/mainTest.cpp
-    test/kernels/CommTest.cpp
-    test/kernels/MvecTest.cpp
-    test/kernels/MvecTest.cpp
-    test/kernels/QR_Test.cpp
-    test/kernels/CrsMatTest.cpp
-#    test/kernels/MapTest.cpp
-#    test/kernels/SdMatTest.cpp
-)
+    test/mainTest.cpp)
+    
 set(KERNEL_TEST_SOURCES ${KERNEL_TEST_SOURCES} ${SOURCES} ${GTEST_SOURCES} ${GMOCK_SOURCES})
 list(REMOVE_ITEM KERNEL_TEST_SOURCES "examples/kernels/main_kernel_usage.c")
 
