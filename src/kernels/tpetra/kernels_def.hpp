@@ -1,5 +1,4 @@
 #include "phist_macros.h"
-#include "../cpp_macros.h"
 
 #include "phist_typedefs.h"
 #include "phist_kernels.h"
@@ -173,6 +172,53 @@ void _SUBR_(sdMat_extract_view)(_TYPE_(sdMat_ptr) vM, _ST_** val, lidx_t* lda, i
   *ierr=0; //TODO - how do we get LDA?
   }
 
+//! get a new vector that is a view of some columns of the original one,
+//! Vblock = V(:,jmin:jmax). The new object Vblock is created but does not
+//! allocate memory for the vector entries, instead using the entries from V
+//! directly. When mvec_delete(Vblock) is called, the library has to take care
+//! that the value array is not deleted 
+void _SUBR_(mvec_view_block)(_TYPE_(mvec_ptr) vV,
+                             _TYPE_(mvec_ptr)* vVblock,
+                             int jmin, int jmax, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  Teuchos::RCP<Traits<_ST_>::mvec_t> Vblock;
+  _TRY_CATCH_(Vblock = V->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
+  *vVblock = (_TYPE_(mvec_ptr))(Vblock.release().get());                        
+  }
+
+//! get a new vector that is a copy of some columns of the original one,  
+//! Vblock = V(:,jmin:jmax). The object Vblock must be created beforehand 
+//! and the corresponding columns of V are copied into the value array    
+//! of Vblock. V is not modified.
+void _SUBR_(mvec_get_block)(_TYPE_(const_mvec_ptr) vV,
+                             _TYPE_(mvec_ptr) vVblock,
+                             int jmin, int jmax, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,Vblock,vVblock,*ierr);
+  // get a view of the columns of V first
+  Teuchos::RCP<const Traits<_ST_>::mvec_t> Vcols;
+  _TRY_CATCH_(Vcols = V->subView(Teuchos::Range1D(jmin,jmax)),*ierr);
+  *Vblock = *Vcols; // copy operation
+  }
+
+//! given a multi-vector Vblock, set V(:,jmin:jmax)=Vblock by copying the corresponding
+//! vectors. Vblock is not modified.
+void _SUBR_(mvec_set_block)(_TYPE_(mvec_ptr) vV,
+                             _TYPE_(const_mvec_ptr) vVblock,
+                             int jmin, int jmax, int* ierr)
+  {
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,Vblock,vVblock,*ierr);
+  // get a view of the columns of V first
+  Teuchos::RCP<Traits<_ST_>::mvec_t> Vcols;
+  _TRY_CATCH_(Vcols = V->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
+  // copy operation
+  _TRY_CATCH_(*Vcols = *Vblock, *ierr);
+  }
 
 //! \name destructors
 

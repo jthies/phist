@@ -1,6 +1,6 @@
 #include "typedefs.hpp"
 #include "../phist_kernels.h"
-#include "../cpp_macros.h"
+#include "phist_trilinos_macros.h"
 
 #include "Teuchos_DefaultComm.hpp"
 

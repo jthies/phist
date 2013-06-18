@@ -88,7 +88,7 @@ void _SUBR_(crsMat_get_domain_map)(_TYPE_(const_crsMat_ptr) A,
         const_map_ptr_t* map, int* ierr);
 
 //! get the map for vectors y in y=A*x
-void _SUBR_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) A, 
+void _SUBR_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) A,
         const_map_ptr_t* map, int* ierr);
 //@}
 
@@ -130,15 +130,44 @@ void _SUBR_(mvec_my_length)(_TYPE_(const_mvec_ptr) V, lidx_t* len, int* ierr);
 //! retrieve number of vectors/columns in V
 void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) V, lidx_t* nvec, int* ierr);
 
-//! extract view from multi-vector
+//! extract view from multi-vector. Sets the user-provided val pointer to point to the
+//! beginning of the first vector, and puts the leading dimension of the array into lda,
+//! such that the first element of vector i is val[i*lda]. Note that lda may be larger
+//! than the actual local vector length as obtained by mvec_my_length. This function is
+//! dangerous in the sense that it would force the underlying kernel lib to implement the
+//! data layout in this given fashion. A library that does not guarantee this should return
+//! -99 here ("not implemented")
 void _SUBR_(mvec_extract_view)(_TYPE_(mvec_ptr) V, _ST_** val,
         lidx_t* lda, int* ierr);
 
-//! extract view from serial dense matrix
+//! extract view from serial dense matrix. See comment for mvec_extract_view for details.
 void _SUBR_(sdMat_extract_view)(_TYPE_(sdMat_ptr) M, _ST_** val,
         lidx_t* lda, int* ierr);
 
 //@}
+
+//! get a new vector that is a view of some columns of the original one,
+//! Vblock = V(:,jmin:jmax). The new object Vblock is created but does not
+//! allocate memory for the vector entries, instead using the entries from V
+//! directly. When mvec_delete(Vblock) is called, the library has to take care
+//! that the value array is not deleted 
+void _SUBR_(mvec_view_block)(_TYPE_(mvec_ptr) V, 
+                             _TYPE_(mvec_ptr)* Vblock,
+                             int jmin, int jmax, int* ierr);
+
+//! get a new vector that is a copy of some columns of the original one,  
+//! Vblock = V(:,jmin:jmax). The object Vblock must be created beforehand 
+//! and the corresponding columns of V are copied into the value array    
+//! of Vblock. V is not modified.
+void _SUBR_(mvec_get_block)(_TYPE_(const_mvec_ptr) V, 
+                             _TYPE_(mvec_ptr) Vblock,
+                             int jmin, int jmax, int* ierr);
+
+//! given a multi-vector Vblock, set V(:,jmin:jmax)=Vblock by copying the corresponding
+//! vectors. Vblock is not modified.
+void _SUBR_(mvec_set_block)(_TYPE_(mvec_ptr) V, 
+                             _TYPE_(const_mvec_ptr) Vblock,
+                             int jmin, int jmax, int* ierr);
 
 //! put scalar value into all elements of a multi-vector
 void _SUBR_(mvec_put_value)(_TYPE_(mvec_ptr) V, _ST_ value, int* ierr);

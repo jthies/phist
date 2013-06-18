@@ -106,6 +106,38 @@ void _SUBR_(sdMat_extract_view)(_TYPE_(sdMat_ptr) V, _ST_** val, lidx_t* lda, in
   *ierr=-99;
   }
 
+//! get a new vector that is a view of some columns of the original one,
+//! Vblock = V(:,jmin:jmax). The new object Vblock is created but does not
+//! allocate memory for the vector entries, instead using the entries from V
+//! directly. When mvec_delete(Vblock) is called, the library has to take care
+//! that the value array is not deleted 
+void _SUBR_(mvec_view_block)(_TYPE_(mvec_ptr) V,
+                             _TYPE_(mvec_ptr)* Vblock,
+                             int jmin, int jmax, int* ierr)
+  {
+  *ierr=-99;
+  }
+
+//! get a new vector that is a copy of some columns of the original one,  
+//! Vblock = V(:,jmin:jmax). The object Vblock must be created beforehand 
+//! and the corresponding columns of V are copied into the value array    
+//! of Vblock. V is not modified.
+void _SUBR_(mvec_get_block)(_TYPE_(const_mvec_ptr) V,
+                             _TYPE_(mvec_ptr) Vblock,
+                             int jmin, int jmax, int* ierr)
+  {
+  *ierr=-99;
+  }
+
+//! given a multi-vector Vblock, set V(:,jmin:jmax)=Vblock by copying the corresponding
+//! vectors. Vblock is not modified.
+void _SUBR_(mvec_set_block)(_TYPE_(mvec_ptr) V,
+                             _TYPE_(const_mvec_ptr) Vblock,
+                             int jmin, int jmax, int* ierr)
+  {
+  *ierr=-99;
+  }
+
 //! \name destructors
 
 //@{

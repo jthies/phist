@@ -17,7 +17,6 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "EpetraExt_CrsMatrixIn.h"
 
-#include "../cpp_macros.h"
 #include "epetra_helpers.h"
 
 #include "BelosEpetraAdapter.hpp"
@@ -160,6 +159,53 @@ void phist_DsdMat_extract_view(DsdMat_ptr_t vM, double** val, lidx_t* lda, int* 
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,M, vM, *ierr);
   _CHECK_ZERO_(M->ExtractView(val,lda),*ierr);
   }
+
+//! get a new vector that is a view of some columns of the original one,
+//! Vblock = V(:,jmin:jmax). The new object Vblock is created but does not
+//! allocate memory for the vector entries, instead using the entries from V
+//! directly. When mvec_delete(Vblock) is called, the library has to take care
+//! that the value array is not deleted 
+void _SUBR_(mvec_view_block)(_TYPE_(mvec_ptr) vV,
+                             _TYPE_(mvec_ptr)* vVblock,
+                             int jmin, int jmax, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);
+  Epetra_MultiVector *Vblock;
+  _TRY_CATCH_(Vblock = new Epetra_MultiVector(View, *V, jmin, jmax-jmin+1),*ierr);
+  *vVblock = (_TYPE_(mvec_ptr))Vblock;
+  }
+
+//! get a new vector that is a copy of some columns of the original one,  
+//! Vblock = V(:,jmin:jmax). The object Vblock must be created beforehand 
+//! and the corresponding columns of V are copied into the value array    
+//! of Vblock. V is not modified.
+void _SUBR_(mvec_get_block)(_TYPE_(const_mvec_ptr) vV,
+                             _TYPE_(mvec_ptr) vVblock,
+                             int jmin, int jmax, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,Vblock,vVblock,*ierr);
+  Teuchos::RCP<const Epetra_MultiVector> Vcols;
+  _TRY_CATCH_(Vcols = Teuchos::rcp(new Epetra_MultiVector(View, *V, jmin, jmax-jmin+1)),*ierr);
+  *Vblock = *Vcols;
+  }
+
+//! given a multi-vector Vblock, set V(:,jmin:jmax)=Vblock by copying the corresponding
+//! vectors. Vblock is not modified.
+void _SUBR_(mvec_set_block)(_TYPE_(mvec_ptr) vV,
+                             _TYPE_(const_mvec_ptr) vVblock,
+                             int jmin, int jmax, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);
+  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,Vblock,vVblock,*ierr);
+  Teuchos::RCP<Epetra_MultiVector> Vcols;
+  _TRY_CATCH_(Vcols = Teuchos::rcp(new Epetra_MultiVector(View, *V, jmin, jmax-jmin+1)),*ierr);
+  *Vcols = *Vblock;
+  }
+
 
 //! \name destructors
 
@@ -326,7 +372,6 @@ void phist_Dmvec_QR(_TYPE_(mvec_ptr) vV, _TYPE_(sdMat_ptr) vR, int* ierr)
 #ifdef TESTING
   _CHECK_ZERO_(nrows-ncols,*ierr);
   _CHECK_ZERO_(nrows-V->NumVectors(),*ierr);
-  _CHECK_ZERO_(nrows-V->MyLength(),*ierr);
 #endif  
 
   Teuchos::RCP<Teuchos_sdMat_t> R_view

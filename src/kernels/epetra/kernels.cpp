@@ -1,5 +1,5 @@
 #include "../phist_kernels.h"
-#include "../cpp_macros.h"
+#include "phist_trilinos_macros.h"
 #include "Epetra_config.h"
 #ifdef PHIST_HAVE_MPI
 #include "Epetra_MpiComm.h"
