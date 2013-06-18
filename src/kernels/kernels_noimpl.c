@@ -213,12 +213,12 @@ void _SUBR_(mvec_dot_mvec)(_TYPE_(const_mvec_ptr) v,
   *ierr=-99;
   }
   
-//! n x m multi-vector times m x m dense matrix gives n x m multi-vector,
-//! W=alpha*V*C + beta*W
-void _SUBR_(mvec_times_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) V,
-                                       _TYPE_(const_sdMat_ptr) C,
-                                       _ST_ beta,
-                                       _TYPE_(mvec_ptr) W, int* ierr)
+//! dense tall skinny matrix-matrix product yielding a serial dense matrix
+//! C=alpha*V'*W+beta*C. C is replicated on all MPI processes sharing V and W.
+void _SUBR_(mvecT_times_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) V, 
+                                       _TYPE_(const_mvec_ptr) W, 
+                                       _ST_ beta, _TYPE_(sdMat_ptr) C, int* ierr)
+
   {
   *ierr=-99;
   }

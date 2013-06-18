@@ -261,6 +261,14 @@ void _SUBR_(mvec_put_value)(_TYPE_(mvec_ptr) vV, _ST_ value, int* ierr)
   _TRY_CATCH_(V->putScalar(value),*ierr);
   }
 
+//! put scalar value into all elements of a multi-vector
+void _SUBR_(sdMat_put_value)(_TYPE_(sdMat_ptr) vM, _ST_ value, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,M,vM,*ierr);
+  _TRY_CATCH_(M->putScalar(value),*ierr);
+  }
+
 //! put random numbers into all elements of a multi-vector
 void _SUBR_(mvec_random)(_TYPE_(mvec_ptr) vV, int* ierr)
   {

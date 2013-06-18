@@ -248,6 +248,14 @@ void _SUBR_(mvec_put_value)(_TYPE_(mvec_ptr) vV, double value, int* ierr)
   _CHECK_ZERO_(V->PutScalar(value),*ierr);
   }
 
+//! put scalar value into all elements of a multi-vector
+void _SUBR_(sdMat_put_value)(_TYPE_(sdMat_ptr) vV, double value, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);
+  _CHECK_ZERO_(V->PutScalar(value),*ierr);
+  }
+
 //! put random numbers into all elements of a multi-vector
 void _SUBR_(mvec_random)(_TYPE_(mvec_ptr) vV, int* ierr)
   {
