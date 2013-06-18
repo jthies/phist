@@ -1,20 +1,7 @@
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
-#include "kernels/phist_kernels.h"
-#include "KernelTestWithVectors.h"
-#include "KernelTestWithSdMats.h"
-
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-
-using namespace testing;
-
-
 #ifndef CLASSNAME
-#error 'file not included correctly'
+#error "file not included correctly"
 #endif
+
 /*! Test fixure. */
 class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
                  public virtual KernelTestWithSdMats<_ST_,_NV_,_NV_> 

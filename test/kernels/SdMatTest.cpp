@@ -1,9 +1,9 @@
 
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
+//#include "gmock/gmock.h"
 
 #include "kernels/phist_kernels.h"
-#include "KernelTestWithVectors.h"
+#include "KernelTestWithSdMats.h"
 
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>

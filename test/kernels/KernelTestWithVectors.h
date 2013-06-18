@@ -2,7 +2,7 @@
 #define PHIST_KERNEL_TEST_WITH_VECTORS_H
 
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
+//#include "gmock/gmock.h"
 
 #include "phist_typedefs.h"
 #include "phist_kernels.h"

@@ -2,7 +2,7 @@
 #define _CONJ_(x) std::conj(x)
 #else
 #define _CONJ_(x) x
-#define _Complex_I _ZERO_
+#define _CMPLX_I_ _ZERO_
 #endif
 
 #ifdef _IS_DOUBLE_
@@ -26,8 +26,8 @@
 #endif
 
 // imaginary unit
-#ifndef _Complex_I
-#warning "macro _Complex_I not defined"
+#ifndef _CMPLX_I_
+#warning "macro _CMPLX_I_ not defined"
 #endif
 
 // magnitude (or member) type

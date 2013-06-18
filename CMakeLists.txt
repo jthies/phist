@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 2.8)
 
-if (NOT CMAKE_BUILD_TYPE)
-  message(STATUS "setting CMAKE_BUILD_TYPE to 'Debug' by default.")
-  set (CMAKE_BUILD_TYPE Debug)
-else()
-  message(STATUS "using CMAKE_BUILD_TYPE='${CMAKE_BUILD_TYPE}'")
-endif()
+#if (NOT CMAKE_BUILD_TYPE)
+#  message(STATUS "setting CMAKE_BUILD_TYPE to 'Debug' by default.")
+#  set (CMAKE_BUILD_TYPE Debug)
+#else()
+#  message(STATUS "using CMAKE_BUILD_TYPE='${CMAKE_BUILD_TYPE}'")
+#endif()
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
 
 # Define some custom variables
@@ -145,16 +145,19 @@ endforeach()
 
 list(APPEND PHIST_LIBS ${MPI_CXX_LIBRARIES})
 
+set(GCOVR_EXCLUDES -e src/kernels/kernels_noimpl.c
+                   -e srctools)
+
 # Custom properties
 set(INTEGRATION_BUILD 0 CACHE STRING "Indicates an integration build")
 set(PYTHON_INTERPRETER python CACHE STRING "String Path to the Python interpreter")
 set(GCOVR_SCRIPT /usr/bin/gcovr CACHE STRING "Path to the gcovr script")
 set(CPPCHECK_EXECUTABLE /usr/bin/cppcheck CACHE STRING "Path to the cppcheck executable")
 if (${INTEGRATION_BUILD})
-    set(GCOVR_OPTIONS -r src --xml -o coverage.xml CACHE STRING "String gcovr options")
+    set(GCOVR_OPTIONS -r src ${GCOVR_EXCLUDES} --xml -o coverage.xml CACHE STRING "String gcovr options")
     set(CPPCHECK_OPTIONS src --enable=all --xml 2> cppcheck.xml CACHE STRING "cppcheck options")
 else()
-    set(GCOVR_OPTIONS -r src CACHE STRING "String gcovr options")
+    set(GCOVR_OPTIONS -r src ${GCOVR_EXCLUDES} CACHE STRING "String gcovr options")
     set(CPPCHECK_OPTIONS src --enable=all CACHE STRING "cppcheck options")
 endif()
 

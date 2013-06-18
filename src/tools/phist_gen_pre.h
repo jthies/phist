@@ -12,8 +12,8 @@
 #endif
 
 // imaginary unit
-#ifdef _Complex_I
-#undef _Complex_I
+#ifdef _CMPLX_I_
+#undef _CMPLX_I_
 #endif
 
 // magnitude (or member) type

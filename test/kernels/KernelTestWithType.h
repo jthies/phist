@@ -2,6 +2,9 @@
 #define KERNEL_TEST_WITH_TYPE_H
 
 #include "KernelTest.h"
+#include <cstdlib>
+#include <limits>
+#include "gtest/gtest.h"
 
 /** 
  */

@@ -15,9 +15,10 @@
 // scalar type
 #ifdef __cplusplus
 #define _ST_ std::complex<double>
-#define _Complex_I (_ST_(0.0,1.0))
+#define _CMPLX_I_ (_ST_(0.0,1.0))
 #else
-#define _ST_ _Complex double
+#define _ST_ complex double
+#define _CMPLX_I_ _ST_(0.0,1.0)
 #endif
 
 #define _ZERO_ _ST_(0.0,0.0)

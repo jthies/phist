@@ -1,15 +1,6 @@
-
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
-#include "phist_kernels.h"
-#include "KernelTest.h"
-
-#ifdef HAVE_MPI
-#include <mpi.h>
+#ifndef CLASSNAME
+#error "file not included correctly."
 #endif
-
-using namespace testing;
 
 /*! Test fixure. */
 class CLASSNAME: public KernelTestWithMap<_N_> {

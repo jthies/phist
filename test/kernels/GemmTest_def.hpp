@@ -1,20 +1,7 @@
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
-#include "kernels/phist_kernels.h"
-#include "KernelTestWithVectors.h"
-#include "KernelTestWithSdMats.h"
-
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-
-using namespace testing;
-
-
 #ifndef CLASSNAME
-#error 'file not included correctly'
+#error "file not included correctly"
 #endif
+
 /*! Test fixure. */
 class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>,
                  public KernelTestWithSdMats<_ST_,_NV_,_NV_> 
@@ -45,8 +32,8 @@ void BuildTestCase1()
     for (int i=0; i<stride_*nloc_; i+=stride_)
       {
       _MT_ ij = (_MT_)((i+1)*(j+1));
-      vec1_vp_[j*lda_+i] = ij*one() + ij*_Complex_I;
-      vec2_vp_[j*lda_+i] = one()/(ij - ij*_Complex_I);
+      vec1_vp_[j*lda_+i] = ij*one() + ij*I();
+      vec2_vp_[j*lda_+i] = one()/(ij - ij*I());
       }
   // result of vec1'*vec2
   for (int j=0; j<ncols_; j++)
@@ -60,6 +47,7 @@ void BuildTestCase1()
 void PrintTestCase()
   {
   std::cout << std::setw(8) << std::setprecision(8);
+  std::cout << "I="<<I()<<std::endl;
   std::cout << "A="<<std::endl;
   for (int i=0; i<stride_*nloc_; i+=stride_)
     {
@@ -96,7 +84,7 @@ void PrintTestCase()
     if (typeImplemented_)
       {
       BuildTestCase1();
-//      PrintTestCase();
+      PrintTestCase();
       _ST_ alpha=one(); 
       _ST_ beta=zero();
       _SUBR_(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&ierr_);

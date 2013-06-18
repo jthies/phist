@@ -1,16 +1,6 @@
-#include "phist_macros.h"
-
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
-#include "kernels/phist_kernels.h"
-#include "KernelTestWithVectors.h"
-
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
+#ifndef CLASSNAME
+#error "file not included correctly."
 #endif
-
-using namespace ::testing;
 
 /*! Test fixure. */
 class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_> 

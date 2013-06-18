@@ -2,7 +2,7 @@
 #define PHIST_KERNEL_TEST_WITH_SDMATS_H
 
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
+//#include "gmock/gmock.h"
 
 #include "phist_typedefs.h"
 #include "phist_kernels.h"
@@ -22,9 +22,6 @@ class KernelTestWithSdMats:
   {
 
 public:
-  virtual void SetUp(){}
-  virtual void TearDown(){}
-  int nrows_, ncols_;
 
   };
 

@@ -14,11 +14,11 @@
 // scalar type
 #ifdef __cplusplus
 #define _ST_ std::complex<float>
-#define _Complex_I _ST_(0.0f,1.0f)
 #else
-#define _ST_ _Complex float
+#define _ST_ complex float
 #endif
 
+#define _CMPLX_I_ _ST_(0.0f,1.0f)
 
 #define _ZERO_ _ST_(0.0f,0.0f)
 

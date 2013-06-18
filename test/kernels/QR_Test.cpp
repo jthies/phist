@@ -1,6 +1,9 @@
 
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
+//#include "gmock/gmock.h"
+
+#include "KernelTestWithVectors.h"
+#include "KernelTestWithSdMats.h"
 
 #include "phist_kernels.h"
 
