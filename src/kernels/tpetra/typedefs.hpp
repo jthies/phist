@@ -35,7 +35,7 @@ class Traits
   typedef Tpetra::MultiVector<ST,lidx_t,gidx_t,node_t> sdMat_t;
 
   //! serial dense matrix from Teuchos, we need this for e.g. the BLAS interface.
-  typedef Teuchos::SerialDenseMatrix<int,ST> Teuchos_sdMat_t;
+  typedef Teuchos::SerialDenseMatrix<lidx_t,ST> Teuchos_sdMat_t;
 
   //! CRS matrices
   typedef Tpetra::CrsMatrix<ST,lidx_t,gidx_t,node_t,localOps_t> crsMat_t;
@@ -53,9 +53,9 @@ class Traits
   static Teuchos::RCP<const Teuchos_sdMat_t> CreateTeuchosView(Teuchos::RCP<const sdMat_t> M, int* ierr)
     {
     *ierr=0;
-    int stride = M->getStride();
-    int nrows = M->getLocalLength();
-    int ncols = M->getNumVectors();
+    lidx_t stride = M->getStride();
+    lidx_t nrows = M->getLocalLength();
+    lidx_t ncols = M->getNumVectors();
     
     Teuchos::ArrayRCP<const ST> M_tmp;
     bool status=true;
