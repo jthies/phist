@@ -1,4 +1,5 @@
 #include "phist_tools.h"
+#include <stdio.h>
 
 #ifndef _PHIST_RETURN_TYPES
 #define _PHIST_RETURN_TYPES

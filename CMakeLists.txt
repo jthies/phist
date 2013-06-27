@@ -118,14 +118,22 @@ endif ()
 
 set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp)
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c)
+set (PHIST_OPERATOR_SOURCE ${PROJECT_SOURCE_DIR}/src/operator/phist_operator.c)
+set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_lanczos.c)
 
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB})
+include_directories(${PROJECT_SOURCE_DIR}/src/tools)
+include_directories(${PROJECT_SOURCE_DIR}/src/operator)
+include_directories(${PROJECT_SOURCE_DIR}/src/krylov)
+include_directories(${PROJECT_SOURCE_DIR}/src/jada)
 
 add_library(libphist_kernels_${PHIST_KERNEL_LIB}.a ${PHIST_KERNEL_SOURCE})
-add_library(libphist_tools.a ${PHIST_TOOLS_SOURCE})
+add_library(libphist_solvers.a ${PHIST_KRYLOV_SOURCE} ${PHIST_JADA_SOURCE})
+add_library(libphist_core.a ${PHIST_TOOLS_SOURCE} ${PHIST_OPERATOR_SOURCE})
 
+list(APPEND PHIST_LIBS libphist_solvers.a)
+list(APPEND PHIST_LIBS libphist_core.a)
 list(APPEND PHIST_LIBS libphist_kernels_${PHIST_KERNEL_LIB}.a)
-list(APPEND PHIST_LIBS libphist_tools.a)
 
 foreach(PKG ${LOAD_TRILI_PKG})
   find_package(${PKG} REQUIRED)
@@ -190,6 +198,7 @@ endforeach()
 # Define executables
 add_executable(${PRODUCT_NAME}-kernel-test ${KERNEL_TEST_SOURCES} ${TEST_DEPENDS})
 add_executable(main_kernel_usage ${PROJECT_SOURCE_DIR}/examples/kernels/main_kernel_usage.c)
+add_executable(main_Zlanczos ${PROJECT_SOURCE_DIR}/examples/krylov/main_zLanczos.c)
 
 
 # Activate testing
@@ -203,6 +212,7 @@ foreach(lib ${PHIST_LIBS})
 #  message("adding lib '" ${lib} "'")
   target_link_libraries(${PRODUCT_NAME}-kernel-test ${lib})
   target_link_libraries(main_kernel_usage ${lib})
+  target_link_libraries(main_Zlanczos ${lib})
 endforeach()
 
 # Activate gcov code generation

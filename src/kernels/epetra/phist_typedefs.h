@@ -7,4 +7,6 @@ typedef int lidx_t;
 //! type of global indices
 typedef int gidx_t;
 
+#include "phist_void_aliases.h"
+
 #endif

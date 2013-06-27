@@ -27,4 +27,6 @@ typedef ptrdiff_t gidx_t;
 
 #endif
 
+#include "phist_void_aliases.h"
+
 #endif
