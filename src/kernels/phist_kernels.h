@@ -1,19 +1,23 @@
 #ifndef PHIST_KERNELS_H
 #define PHIST_KERNELS_H
 
-//! note: before including this file, you need to include the phist_typedefs.h file provided in the subdirectory
-//! where the interface is implemented (e.g. ghost/, tpetra/)
+//! note: the phist_typedefs.h file is provided in the subdirectory
+//! where the interface is implemented (e.g. ghost/, tpetra/).
 #include "phist_typedefs.h"
-//#ifndef PHIST_TYPEDEFS_H
-//#error "phist_typedefs.h must be included before phist_kernels.h"
-//#endif
 
-typedef void* comm_ptr_t;
-typedef const void* const_comm_ptr_t;
-
-typedef void* map_ptr_t;
-typedef const void* const_map_ptr_t;
-
+//! the kernels are based on a number of abstract concepts, which are
+//! simply void* into a "kernel library":
+//! - comm_t: encapsulates MPI, currently the interface does not really
+//!   allow you to do much with this object, except use it to build other
+//!   objects.
+//! - map_t: encapsulates the distribution of points (e.g. rows of a matrix)
+//!   over processors
+//! - multi-vector (mvec_t): a dense matrix with N rows and m<<N columns, with a row-wise
+//!   distribution over computational nodes.
+//! - crsMat_t: sparse matrix in CRS format.
+//!
+//! The type-specific objects for mvecs and crsMats are called
+//! Smvec_t, Dmvec_t, Cmvec_t etc. and defined in phist_kernels_def.h
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,15 +31,15 @@ void phist_kernels_init(int *argc, char*** argv, int* ierr);
 //! but is required.
 void phist_kernels_finalize(int* ierr);
 
-//!
+//! creates a global comm object
 void phist_comm_create(comm_ptr_t* comm, int* ierr);
-//!
+//! get the rank of the calling node
 void phist_comm_get_rank(const_comm_ptr_t comm, int* rank, int* ierr);
-//!
+//! get the number of MPI asks
 void phist_comm_get_size(const_comm_ptr_t comm, int* size, int* ierr);
-//!
+//! creates a map with default distribution of points
 void phist_map_create(map_ptr_t* map, const_comm_ptr_t comm, int nglob, int *ierr);
-//!
+//! returns the comm object used by a map
 void phist_map_get_comm(const_map_ptr_t map, const_comm_ptr_t* comm, int* ierr);
 
 #ifdef __cplusplus
