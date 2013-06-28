@@ -322,7 +322,7 @@ void _SUBR_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vX,
                             int* ierr)
   {
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,X,vX,*ierr);
-  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,Y,vX,*ierr);
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,Y,vY,*ierr);
   _TRY_CATCH_(Y->update(alpha,*X,beta),*ierr);
   }
 
