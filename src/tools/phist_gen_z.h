@@ -16,14 +16,15 @@
 #ifdef __cplusplus
 #define _ST_ std::complex<double>
 #define _CMPLX_I_ (_ST_(0.0,1.0))
+#define _ZERO_ (_ST_(0.0,0.0))
+#define _ONE_ (_ST_(1.0,0.0))
 #else
-#define _ST_ complex double
-#define _CMPLX_I_ _ST_(0.0,1.0)
+#define _ST_ double complex
+#define _CMPLX_I_ (0.0+1.0*I)
+#define _ZERO_ (0.0+0.0*I)
+#define _ONE_ (1.0+0.0*I)
 #endif
 
-#define _ZERO_ _ST_(0.0,0.0)
-
-#define _ONE_ _ST_(1.0,0.0)
 
 // adds type prefix to a specifier, e.g. _PREF_(gemm) -> Dgemm
 #define _PREF_(name) Z ## name

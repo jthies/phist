@@ -14,15 +14,16 @@
 // scalar type
 #ifdef __cplusplus
 #define _ST_ std::complex<float>
+#define _CMPLX_I_ _ST_(0.0f,1.0f)
+#define _ZERO_ _ST_(0.0f,0.0f)
+#define _ONE_ _ST_(1.0f,0.0f)
 #else
-#define _ST_ complex float
+#define _ST_ float complex
+#define _CMPLX_I_ (0.0f+1.0f*I)
+#define _ZERO_ (0.0f+0.0f*I)
+#define _ONE_ (1.0f+0.0f*I)
 #endif
 
-#define _CMPLX_I_ _ST_(0.0f,1.0f)
-
-#define _ZERO_ _ST_(0.0f,0.0f)
-
-#define _ONE_ _ST_(1.0f,0.0f)
 
 // adds type prefix to a specifier, e.g. _PREF_(gemm) -> Dgemm
 #define _PREF_(name) C ## name
