@@ -274,6 +274,33 @@ void _SUBR_(sdMat_random)(_TYPE_(sdMat_ptr) vM, int* ierr)
 
 //! \name Numerical functions
 
+  //! normalize (in the 2-norm) each column of v and return ||v||_2
+  //! for each vector i in vnrm[i] (must be pre-allocated by caller)
+  void _SUBR_(mvec_normalize)(_TYPE_(mvec_ptr) vV,
+                            _ST_* vnrm, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);  
+  _CHECK_ZERO_(V->Norm2(vnrm),*ierr);
+  for (int i=0;i<V->NumVectors();i++)
+    {
+    _CHECK_ZERO_(V(i)->Scale(_ONE_/(_ST_)vnrm[i]),*ierr);
+    }
+  return;
+  }
+
+//! scale each column i of v and by scalar[i]
+void _SUBR_(mvec_scale)(_TYPE_(mvec_ptr) vV, 
+                            _ST_* scalar, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);  
+  for (int i=0;i<V->NumVectors();i++)
+    {
+    _CHECK_ZERO_(V(i)->Scale(scalar[i]),*ierr);
+    }
+  return;
+  }
 
 //! y=alpha*x+beta*y
 void _SUBR_(mvec_add_mvec)(double alpha, _TYPE_(const_mvec_ptr) vX,

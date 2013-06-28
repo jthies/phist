@@ -30,24 +30,6 @@
 
 */
 
-//! opaque pointer to multi-vector objects
-typedef void* _TYPE_(mvec_ptr);
-
-//! opaque pointer to const multi-vector objects
-typedef const void* _TYPE_(const_mvec_ptr);
-
-//! opaque pointer to serial dense matrix objects
-typedef void* _TYPE_(sdMat_ptr);
-
-//! opaque pointer to const serial dense matrix objects
-typedef const void* _TYPE_(const_sdMat_ptr);
-
-//! opaque pointer to CRS matrix objects
-typedef void* _TYPE_(crsMat_ptr);
-
-//! opaque pointer to const CRS matrix objects
-typedef const void* _TYPE_(const_crsMat_ptr);
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -180,6 +162,15 @@ void _SUBR_(mvec_random)(_TYPE_(mvec_ptr) V, int* ierr);
 
 //! put random numbers into all elements of a serial dense matrix
 void _SUBR_(sdMat_random)(_TYPE_(sdMat_ptr) V, int* ierr);
+
+//! normalize (in the 2-norm) each column of v and return ||v||_2
+//! for each vector i in vnrm[i] (must be pre-allocated by caller)
+void _SUBR_(mvec_normalize)(_TYPE_(mvec_ptr) V, 
+                            _MT_* vnrm, int* ierr);
+
+//! scale each column i of v and by scalar[i]
+void _SUBR_(mvec_scale)(_TYPE_(mvec_ptr) V, 
+                            _ST_* scalar, int* ierr);
 
 //! \name Numerical functions
 //!@{

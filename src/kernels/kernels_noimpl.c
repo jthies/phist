@@ -190,6 +190,22 @@ void _SUBR_(sdMat_random)(_TYPE_(sdMat_ptr) M, int* ierr)
 //! \name Numerical functions
 //!@{
 
+//! normalize (in the 2-norm) each column of v and return ||v||_2
+//! for each vector i in vnrm[i] (must be pre-allocated by caller)
+void _SUBR_(mvec_normalize)(_TYPE_(mvec_ptr) V,
+                            _MT_* vnrm, int* ierr)
+  {
+  *ierr=-99;
+  }
+
+
+//! scale each column i of v and by scalar[i]
+void _SUBR_(mvec_scale)(_TYPE_(mvec_ptr) V, 
+                        _ST_* scalar, int* ierr)
+  {
+  *ierr=-99;
+  }
+
 //! y=alpha*x+beta*y
 void _SUBR_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) X,
                             _ST_ beta,  _TYPE_(mvec_ptr)       Y, 

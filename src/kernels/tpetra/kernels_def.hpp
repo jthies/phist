@@ -285,6 +285,36 @@ void _SUBR_(sdMat_random)(_TYPE_(sdMat_ptr) vM, int* ierr)
   _TRY_CATCH_(M->randomize(),*ierr);
   }
 
+  //! normalize (in the 2-norm) each column of v and return ||v||_2
+  //! for each vector i in vnrm[i] (must be pre-allocated by caller)
+  void _SUBR_(mvec_normalize)(_TYPE_(mvec_ptr) vV,
+                            _MT_* vnrm, int* ierr) 
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
+int nvec = V->getNumVectors();
+  Teuchos::ArrayView<_MT_> norms(vnrm,nvec);
+  Teuchos::Array<_ST_> scaling(nvec);
+  _TRY_CATCH_(V->norm2(norms),*ierr);
+  for (int i=0;i<nvec;i++)
+    {
+    scaling[i]=1.0/norms[i];
+    }
+  _TRY_CATCH_(V->scale(scaling),*ierr);
+  return;
+  }
+
+//! scale each column i of v and by scalar[i]
+void _SUBR_(mvec_scale)(_TYPE_(mvec_ptr) vV, 
+                            _ST_* scalar, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
+int nvec = V->getNumVectors();
+  Teuchos::ArrayView<_ST_> scal(scalar,nvec);
+  _TRY_CATCH_(V->scale(scal),*ierr);
+  return;
+  }
 
 //! y=alpha*x+beta*y
 void _SUBR_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vX,
