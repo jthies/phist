@@ -1,3 +1,29 @@
+static int _SUBR_(converged)(_ST_ evmin)
+{
+	static _ST_ oldevmin = -1e9;
+
+	int converged = abs(evmin-oldevmin) < 1e-9;
+	oldevmin = evmin;
+
+	return converged;
+}
+
+
+static void _SUBR_(lanczosStep)(_TYPE_(const_op_ptr) op, _TYPE_(mvec_ptr) vnew, _TYPE_(mvec_ptr) vold,
+		_ST_ *alpha, _ST_ *beta, int* ierr)
+{
+        _ST_ ibeta;
+        //TODO check these operations
+        _PHIST_ERROR_HANDLER_(op->apply(_ONE_,op->A_,vold, -(*beta),vnew,ierr),*ierr);
+        _PHIST_ERROR_HANDLER_(_SUBR_(mvec_dot_mvec)(vnew,vold,alpha,ierr),*ierr);
+	_PHIST_ERROR_HANDLER_(_SUBR_(mvec_add_mvec)(-(*alpha),vold,_ONE_,vnew,ierr),*ierr);
+	_PHIST_ERROR_HANDLER_(_SUBR_(mvec_dot_mvec)(vnew,vnew,beta,ierr),*ierr);
+	*beta=sqrt(*beta);
+	ibeta=_ONE_/(*beta);
+	_PHIST_ERROR_HANDLER_(_SUBR_(mvec_scale)(vnew,&ibeta,ierr),*ierr);
+        return;
+}
+
 //! tries to compute a given number of eigenpairs (num_eig) of 
 //! an hermitian positive definite operator A using the Lanczos
 //! method. 
@@ -26,10 +52,16 @@ void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op,
         _MT_ tol,int* num_iters, int* num_eigs,
         int* ierr)
   {
-  _TYPE_(mvec_ptr) vold, vnew, r0;
-
-  int nIter=*num_iters;  
-  int iteration;
+  _TYPE_(mvec_ptr) vold, vnew, vtmp, r0;
+  
+  int nIter=*num_iters;
+  int it,n;
+  
+  _ST_ alpha=_ZERO_, beta=_ZERO_;
+  
+  int ldz=1;
+  _MT_ *work=NULL;
+  _ST_ *x_ptr; // TODO - we don't compute eigenvectors yet
   
   if (op->range_map_ != op->domain_map_)
     {
@@ -37,76 +69,44 @@ void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op,
     }
 
   _PHIST_ERROR_HANDLER_(_SUBR_(mvec_create)(&vnew,op->domain_map_,1,ierr),*ierr);
+  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_create)(&vold,op->domain_map_,1,ierr),*ierr);
   _PHIST_ERROR_HANDLER_(_SUBR_(mvec_create)(&r0,op->domain_map_,1,ierr),*ierr);
 
-/*
-	ghost_normalizeVector(r0); // normalize the global vector r0
+  // normalize the global vector r0
+  _MT_ rnorm;
+  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_normalize)(r0,&rnorm,ierr),*ierr); 
 
-	vold = ghost_cloneVector(r0); 
+  _ST_ *alphas  = (_ST_ *)malloc(sizeof(_ST_)*nIter);
+  _ST_ *betas   = (_ST_ *)malloc(sizeof(_ST_)*nIter);
+  _ST_ *falphas = (_ST_ *)malloc(sizeof(_ST_)*nIter);
+  _ST_ *fbetas  = (_ST_ *)malloc(sizeof(_ST_)*nIter);
 
-	ghost_mdat_t *alphas  = (ghost_mdat_t *)malloc(sizeof(ghost_mdat_t)*nIter);
-	ghost_mdat_t *betas   = (ghost_mdat_t *)malloc(sizeof(ghost_mdat_t)*nIter);
-	ghost_mdat_t *falphas = (ghost_mdat_t *)malloc(sizeof(ghost_mdat_t)*nIter);
-	ghost_mdat_t *fbetas  = (ghost_mdat_t *)malloc(sizeof(ghost_mdat_t)*nIter);
+  betas[0] = beta;
 
-	betas[0] = beta;
+  for (it = 0, n=1; 
+       it < nIter && !_SUBR_(converged)(falphas[0]); 
+       it++, n++) 
+	 {
+         printf("\r");
 
-	for(iteration = 0, n=1; 
-			iteration < nIter && !converged(falphas[0]); 
-			iteration++, n++) 
-	{
-		printf("\r");
+         _PHIST_ERROR_HANDLER_(_SUBR_(lanczosStep)(op,vnew,vold,&alpha,&beta,ierr),*ierr);
+         vtmp=vnew;
+         vnew=vold;
+         vold=vtmp;
 
-		lanczosStep(context,vnew,vold,&alpha,&beta);
-		ghost_swapVectors(vnew,vold);
+         alphas[it] = alpha;
+         betas[it+1] = beta;
+         memcpy(falphas,alphas,n*sizeof(_ST_)); // alphas and betas will be destroyed in imtql
+         memcpy(fbetas,betas,n*sizeof(_ST_));
 
-		alphas[iteration] = alpha;
-		betas[iteration+1] = beta;
-		memcpy(falphas,alphas,n*sizeof(ghost_mdat_t)); // alphas and betas will be destroyed in imtql
-		memcpy(fbetas,betas,n*sizeof(ghost_mdat_t));
+         _PHIST_ERROR_HANDLER_(STEQR("N",&n,falphas,fbetas,x_ptr,ldz,work,ierr),*ierr);
+         printf("\n");
+         }
 
-		// TODO evaluate headers in fortran files
-		if (GHOST_MY_MDATATYPE & GHOST_BINCRS_DT_FLOAT) {
-			imtql1f_(&n,falphas,fbetas,&ferr);
-		} else
-			imtql1_(&n,falphas,fbetas,&ferr);
+  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_delete)(r0,ierr),*ierr);
+  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_delete)(vold,ierr),*ierr);
+  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_delete)(vnew,ierr),*ierr);
 
-		if(ferr != 0) printf("Error: the %d. ev could not be determined\n",ferr);
-		printf("minimal eigenvalue: %f", falphas[0]);
-		fflush(stdout);
-	}
-	printf("\n");
-
-	ghost_freeVector(r0);
-	ghost_freeVector(vold);
-	ghost_freeVector(vnew);
-	ghost_freeContext (context);
-
-	ghost_finish();
-*/
   return;
   }
-/*
-static int converged(ghost_mdat_t evmin)
-{
-	static ghost_mdat_t oldevmin = -1e9;
 
-	int converged = MABS(evmin-oldevmin) < 1e-9;
-	oldevmin = evmin;
-
-	return converged;
-}
-
-
-static void lanczosStep(ghost_context_t *context, ghost_vec_t *vnew, ghost_vec_t *vold,
-		ghost_mdat_t *alpha, ghost_mdat_t *beta)
-{
-	vecscal(vnew,-*beta,context->lnrows(context));
-	ghost_spmvm(vnew, context, vold, GHOST_SPMVM_MODE_NOMPI|GHOST_SPMVM_AXPY);
-	dotprod(vnew,vold,alpha,context->lnrows(context));
-	axpy(vnew,vold,-(*alpha),context->lnrows(context));
-	dotprod(vnew,vnew,beta,context->lnrows(context));
-	*beta=MSQRT(*beta);
-	vecscal(vnew,(ghost_mdat_t)1./(*beta),context->lnrows(context));
-}
-*/
