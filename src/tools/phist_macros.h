@@ -1,5 +1,7 @@
+#ifndef NO_INCLUDES_IN_HEADERS
 #include "phist_tools.h"
 #include <stdio.h>
+#endif
 
 #ifndef _PHIST_RETURN_TYPES
 #define _PHIST_RETURN_TYPES
