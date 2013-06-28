@@ -88,6 +88,7 @@ int main(int argc, char** argv)
 
   num_iters=max_iters;
   // create operator wrapper for computing Y=A*X using a CRS matrix
+  A_op = (_TYPE_(op_ptr))malloc(sizeof(_TYPE_(op)));
   _PHIST_ERROR_HANDLER_(phist_Zop_wrap_crsMat(A_op,A,&ierr),ierr);
   
   // allocate memory for eigenvalues and residuals
@@ -116,6 +117,6 @@ int main(int argc, char** argv)
   
   _PHIST_ERROR_HANDLER_(phist_ZcrsMat_delete(A,&ierr),ierr);
   _PHIST_ERROR_HANDLER_(phist_Zmvec_delete(X,&ierr),ierr);
-
+  free(A_op);
   _PHIST_ERROR_HANDLER_(phist_kernels_finalize(&ierr),ierr);
   }
