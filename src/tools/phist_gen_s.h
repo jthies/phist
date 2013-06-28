@@ -10,6 +10,9 @@
 
 #define _ONE_ 1.0f
 
+// squareroot
+#define _SQRT_(X) sqrtf(X)
+
 // adds type prefix to a specifier, e.g. _PREF_(gemm) -> Dgemm
 #define _PREF_(name) S ## name
 

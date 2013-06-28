@@ -1,3 +1,7 @@
+// get type-sepcific macro wrappers for lapack,
+// for instance XGEMM <- SGEMM, DGEMM, CGEMM or ZGEMM 
+#include "phist_lapack_decl.h"
+
 static int _SUBR_(converged)(_ST_ evmin)
 {
 	static _ST_ oldevmin = -1e9;
@@ -18,7 +22,7 @@ static void _SUBR_(lanczosStep)(_TYPE_(const_op_ptr) op, _TYPE_(mvec_ptr) vnew, 
         _PHIST_ERROR_HANDLER_(_SUBR_(mvec_dot_mvec)(vnew,vold,alpha,ierr),*ierr);
 	_PHIST_ERROR_HANDLER_(_SUBR_(mvec_add_mvec)(-(*alpha),vold,_ONE_,vnew,ierr),*ierr);
 	_PHIST_ERROR_HANDLER_(_SUBR_(mvec_dot_mvec)(vnew,vnew,beta,ierr),*ierr);
-	*beta=sqrt(*beta);
+	*beta=_SQRT_(*beta);
 	ibeta=_ONE_/(*beta);
 	_PHIST_ERROR_HANDLER_(_SUBR_(mvec_scale)(vnew,&ibeta,ierr),*ierr);
         return;
@@ -71,6 +75,8 @@ void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op,
   _PHIST_ERROR_HANDLER_(_SUBR_(mvec_create)(&vnew,op->domain_map_,1,ierr),*ierr);
   _PHIST_ERROR_HANDLER_(_SUBR_(mvec_create)(&vold,op->domain_map_,1,ierr),*ierr);
   _PHIST_ERROR_HANDLER_(_SUBR_(mvec_create)(&r0,op->domain_map_,1,ierr),*ierr);
+  
+  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_random)(r0,ierr),*ierr);
 
   // normalize the global vector r0
   _MT_ rnorm;
@@ -87,8 +93,8 @@ void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op,
        it < nIter && !_SUBR_(converged)(falphas[0]); 
        it++, n++) 
 	 {
-         printf("\r");
-
+//         printf("\r");
+         printf("Iter %d ",it);
          _PHIST_ERROR_HANDLER_(_SUBR_(lanczosStep)(op,vnew,vold,&alpha,&beta,ierr),*ierr);
          vtmp=vnew;
          vnew=vold;
@@ -96,10 +102,10 @@ void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op,
 
          alphas[it] = alpha;
          betas[it+1] = beta;
-         memcpy(falphas,alphas,n*sizeof(_ST_)); // alphas and betas will be destroyed in imtql
+         memcpy(falphas,alphas,n*sizeof(_ST_)); // alphas and betas will be destroyed 
          memcpy(fbetas,betas,n*sizeof(_ST_));
 
-         _PHIST_ERROR_HANDLER_(STEQR("N",&n,falphas,fbetas,x_ptr,ldz,work,ierr),*ierr);
+         _PHIST_ERROR_HANDLER_(XSTEQR("N",&n,falphas,fbetas,x_ptr,&ldz,work,ierr),*ierr);
          printf("\n");
          }
 

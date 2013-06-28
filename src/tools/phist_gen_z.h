@@ -1,9 +1,15 @@
 #include "phist_gen_pre.h"
 
+// this may be useful for e.g. generating
+// the fortran interfaces or something, to
+// avoid littering the preprocessed files
+// with lots of system stuff
+#ifndef NO_INCLUDES_IN_HEADERS
 #ifdef __cplusplus
 #include <complex>
 #else
 #include <complex.h>
+#endif
 #endif
 
 // type specifier
@@ -25,6 +31,8 @@
 #define _ONE_ (1.0+0.0*I)
 #endif
 
+// squareroot
+#define _SQRT_(X) csqrt(X)
 
 // adds type prefix to a specifier, e.g. _PREF_(gemm) -> Dgemm
 #define _PREF_(name) Z ## name

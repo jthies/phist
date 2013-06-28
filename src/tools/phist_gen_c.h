@@ -1,9 +1,15 @@
 #include "phist_gen_pre.h"
 
+// this may be useful for e.g. generating
+// the fortran interfaces or something, to
+// avoid littering the preprocessed files
+// with lots of system stuff
+#ifndef NO_INCLUDES_IN_HEADERS
 #ifdef __cplusplus
 #include <complex>
 #else
 #include <complex.h>
+#endif
 #endif
 
 #define _IS_COMPLEX_
@@ -33,5 +39,8 @@
 
 // how to build up the name of a type
 #define _TYPE_(name) C ## name ## _t
+
+// squareroot
+#define _SQRT_(X) csqrtf(X)
 
 #include "phist_gen_post.h"

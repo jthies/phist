@@ -40,6 +40,11 @@
 #error "macro _CONJ_ not defined"
 #endif
 
+//! squareroot
+#ifndef _SQRT_
+#error "macro _SQRT_ not defined"
+#endif
+
 // scalar 0 in the type _ST_
 #ifndef _ZERO_
 #error "macro _ZERO_ not defined"

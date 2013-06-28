@@ -26,6 +26,11 @@
 #undef _CONJ_
 #endif
 
+// squareroot
+#ifdef _SQRT_
+#undef _SQRT_
+#endif
+
 // wether _ST_ is a real or complex type
 #ifdef _IS_COMPLEX_
 #undef _IS_COMPLEX_
