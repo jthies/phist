@@ -24,15 +24,23 @@
 #define _CMPLX_I_ (_ST_(0.0,1.0))
 #define _ZERO_ (_ST_(0.0,0.0))
 #define _ONE_ (_ST_(1.0,0.0))
+#define _SQRT_(X) std::sqrt(X)
+#define _ABS_(X) std::abs(X)
+#define _CONJ_(X) std::conj(X)
+#define _REAL_(X) std::real(X)
 #else
 #define _ST_ double complex
 #define _CMPLX_I_ (0.0+1.0*I)
 #define _ZERO_ (0.0+0.0*I)
 #define _ONE_ (1.0+0.0*I)
+#define _SQRT_(X) csqrt(X)
+#define _ABS_(X) cabs(X)
+#define _CONJ_(X) conj(X)
+#define _REAL_(X) creal(X)
 #endif
 
-// squareroot
-#define _SQRT_(X) csqrt(X)
+// imaginary part
+#define _IMAG_(X) cimag(X)
 
 // adds type prefix to a specifier, e.g. _PREF_(gemm) -> Dgemm
 #define _PREF_(name) Z ## name

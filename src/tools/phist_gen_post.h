@@ -1,7 +1,7 @@
-#ifdef _IS_COMPLEX_
-#define _CONJ_(x) std::conj(x)
-#else
+#ifndef _IS_COMPLEX_
 #define _CONJ_(x) x
+#define _REAL_(x) x
+#define _IMAG_(x) _ZERO_
 #define _CMPLX_I_ _ZERO_
 #endif
 
@@ -37,6 +37,18 @@
 
 #ifndef _SQRT_
 #error "macro _SQRT_ not defined"
+#endif
+
+#ifndef _ABS_
+#error "macro _ABS_ not defined"
+#endif
+
+#ifndef _REAL_
+#error "macro _REAL_ not defined"
+#endif
+
+#ifndef _IMAG_
+#error "macro _IMAG_ not defined"
 #endif
 
 #ifndef _ZERO_

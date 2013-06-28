@@ -23,11 +23,22 @@
 #define _CMPLX_I_ _ST_(0.0f,1.0f)
 #define _ZERO_ _ST_(0.0f,0.0f)
 #define _ONE_ _ST_(1.0f,0.0f)
+#define _SQRT_(X) std::sqrtf(X)
+#define _CONJ_(X) std::conj(X)
+#define _ABS_(X) std::absf(X)
+#define _REAL_(X) std::real(X)
+#define _IMAG_(X) std::imag(X)
 #else
 #define _ST_ float complex
 #define _CMPLX_I_ (0.0f+1.0f*I)
 #define _ZERO_ (0.0f+0.0f*I)
 #define _ONE_ (1.0f+0.0f*I)
+#define _SQRT_(X) csqrtf(X)
+#define _CONJ_(X) conjf(X)
+#define _ABS_(X) cabsf(X)
+#define _REAL_(X) crealf(X)
+#define _IMAG_(X) cimagf(X)
+
 #endif
 
 
@@ -39,8 +50,5 @@
 
 // how to build up the name of a type
 #define _TYPE_(name) C ## name ## _t
-
-// squareroot
-#define _SQRT_(X) csqrtf(X)
 
 #include "phist_gen_post.h"

@@ -24,6 +24,18 @@
 #undef _SQRT_
 #endif
 
+#ifdef _ABS_
+#undef _ABS_
+#endif
+
+#ifdef _REAL_
+#undef _REAL_
+#endif
+
+#ifdef _IMAG_
+#undef _IMAG_
+#endif
+
 #ifdef _IS_COMPLEX_
 #undef _IS_COMPLEX_
 #endif

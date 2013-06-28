@@ -15,6 +15,9 @@
 // squareroot
 #define _SQRT_(X) sqrt(X)
 
+// absolute value
+#define _ABS_(X) abs(X)
+
 // adds type prefix to a specifier, e.g. _PREF_(gemm) -> Dgemm
 #define _PREF_(name) D ## name
 

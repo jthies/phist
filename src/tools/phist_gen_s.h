@@ -10,16 +10,14 @@
 
 #define _ONE_ 1.0f
 
-// squareroot
+#ifdef __cplusplus
+#define _SQRT_(X) std::sqrt(X)
+#define _ABS_(X) std::abs(X)
+#else
 #define _SQRT_(X) sqrtf(X)
-
-// adds type prefix to a specifier, e.g. _PREF_(gemm) -> Dgemm
+#define _ABS_(X) absf(X)
+#endif
 #define _PREF_(name) S ## name
-
-// how to build up the name of a subroutine (void function)
 #define _SUBR_(name) phist_S ## name
-
-// how to build up the name of a type
 #define _TYPE_(name) S ## name ## _t
-
 #include "phist_gen_post.h"
