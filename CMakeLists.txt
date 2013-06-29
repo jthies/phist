@@ -198,7 +198,7 @@ endforeach()
 # Define executables
 add_executable(${PRODUCT_NAME}-kernel-test ${KERNEL_TEST_SOURCES} ${TEST_DEPENDS})
 add_executable(main_kernel_usage ${PROJECT_SOURCE_DIR}/examples/kernels/main_kernel_usage.c)
-add_executable(main_Zlanczos ${PROJECT_SOURCE_DIR}/examples/krylov/main_zLanczos.c)
+add_executable(main_zLanczos ${PROJECT_SOURCE_DIR}/examples/krylov/main_zLanczos.c)
 
 
 # Activate testing
@@ -212,7 +212,7 @@ foreach(lib ${PHIST_LIBS})
 #  message("adding lib '" ${lib} "'")
   target_link_libraries(${PRODUCT_NAME}-kernel-test ${lib})
   target_link_libraries(main_kernel_usage ${lib})
-  target_link_libraries(main_Zlanczos ${lib})
+  target_link_libraries(main_zLanczos ${lib})
 endforeach()
 
 # Activate gcov code generation

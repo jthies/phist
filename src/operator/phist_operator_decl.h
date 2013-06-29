@@ -10,4 +10,6 @@ typedef struct _TYPE_(op) {
 typedef _TYPE_(op)* _TYPE_(op_ptr);
 typedef const _TYPE_(op)* _TYPE_(const_op_ptr);
 
-void _SUBR_(Op_wrap_crsMat)(_TYPE_(op_ptr) op, _TYPE_(const_crsMat_ptr) A, int* ierr);
+//! this function can be used to create an operator which encapsulates a CRS matrix.
+//! It does not allocate memory for the op struct, the caller has to do that beforehand.
+void _SUBR_(op_wrap_crsMat)(_TYPE_(op_ptr) op, _TYPE_(const_crsMat_ptr) A, int* ierr);

@@ -15,7 +15,7 @@
 #define _ABS_(X) std::abs(X)
 #else
 #define _SQRT_(X) sqrtf(X)
-#define _ABS_(X) absf(X)
+#define _ABS_(X) fabs(X)
 #endif
 #define _PREF_(name) S ## name
 #define _SUBR_(name) phist_S ## name
