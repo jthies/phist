@@ -4,6 +4,7 @@
 
 #include "phist_lanczos.h"
 #include "phist_kernels.h"
+#include "phist_lapack.h"
 
 #include "phist_gen_s.h"
 #include "phist_lanczos_def.h"

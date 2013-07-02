@@ -22,7 +22,7 @@
 //! ierr: return code of the solver (0 on success, negative on error, positive on warning)
 void _SUBR_(lanczos)(_TYPE_(const_op_ptr) Op, 
         _TYPE_(mvec_ptr) X, 
-        _ST_* evals, _MT_* resid,
+        _MT_* evals, _MT_* resid,
         _MT_ tol,int* num_iters, int* num_eigs,
         int* ierr);
          

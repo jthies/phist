@@ -25,7 +25,7 @@ int main(int argc, char** argv)
                        // the distribution of matrix rows
   Zmvec_ptr_t X; // multivector for getting the eigenvectors
   
-  _ST_* evals;
+  _MT_* evals; // Lanczos assumes a Hermitian matrix, so the eigenvectors are real
   _MT_* resid;
 
   _MT_ tol;     
@@ -45,7 +45,7 @@ int main(int argc, char** argv)
 
   if (argc<2)
     {
-    if (verbose) fprintf(stderr,"Usage: ./main_zLanczos <matrix market filename> [<num eigs>] [<tol>] [<max iters>]");
+    if (verbose) fprintf(stderr,"Usage: ./main_zLanczos <matrix market filename> [<num eigs>] [<tol>] [<max iters>]\n");
     return -1;
     }
 
@@ -78,7 +78,7 @@ int main(int argc, char** argv)
     max_iters=atoi(argv[4]);
     }
 
-  if (verbose) fprintf(stdout,"looking for %d Eigenpairs of largest magnitude",num_eigs);
+  if (verbose) fprintf(stdout,"looking for %d Eigenpairs of largest magnitude\n",num_eigs);
   
   _PHIST_ERROR_HANDLER_(phist_ZcrsMat_read_mm(&A,filename,&ierr),ierr);
   
@@ -108,7 +108,7 @@ int main(int argc, char** argv)
     fprintf(stdout,"Eigenvalue \t Ritz Residual \n");
     for (i=0;i<num_eigs;i++)
       {
-      fprintf(stdout,"%16.8e %16.8e\t%16.8e\n",creal(evals[i]),cimag(evals[i]),resid[i]);
+      fprintf(stdout,"%16.8e\t%4.2e\n",evals[i],resid[i]);
       }
     }
 

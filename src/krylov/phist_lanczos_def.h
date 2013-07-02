@@ -1,15 +1,3 @@
-// get type-sepcific macro wrappers for lapack,
-// for instance XGEMM <- SGEMM, DGEMM, CGEMM or ZGEMM 
-#include "phist_lapack_decl.h"
-
-static int _SUBR_(converged)(_ST_ evmin, _MT_ tol)
-{
-	static _ST_ oldevmin = -1e9;
-
-	int converged = _ABS_(evmin-oldevmin) < tol;
-	oldevmin = evmin;
-	return converged;
-}
 // on entry, vnew = r, vold=v_(j-1).
 // on exit, vnew=v_j, vold=r
 static void _SUBR_(lanczosStep)(_TYPE_(const_op_ptr) op, 
@@ -57,30 +45,34 @@ static void _SUBR_(lanczosStep)(_TYPE_(const_op_ptr) op,
 //! resid: Ritz residuals
 //! ierr: return code of the solver (0 on success, negative on error, positive on warning)
 void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op, 
-        _TYPE_(mvec_ptr) X, 
-        _ST_* evals, _MT_* resid,
+        _TYPE_(mvec_ptr) X,
+        _MT_* evals, _MT_* resid,
         _MT_ tol,int* num_iters, int* num_eigs,
         int* ierr)
   {
   _TYPE_(mvec_ptr) vold, vnew, vtmp;
+  _TYPE_(mvec_ptr) V;
+  _TYPE_(sdMat_ptr) S;
   
   int nIter=*num_iters;
-  int it,n;
+  int nconv=0;
+  int i,it,n, inext;
   _ST_ alpha, beta;
+  int converged[nIter];
+  _MT_ r_est[nIter];
   _MT_ nrm;
  
    // allocate memory for the tridiagonal matrix H = [-beta_(j-1) alpha_j -beta_j]
-  _ST_ *alphas  = (_ST_ *)malloc(sizeof(_ST_)*nIter);
-  _ST_ *betas   = (_ST_ *)malloc(sizeof(_ST_)*nIter);
-  _ST_ *falphas = (_ST_ *)malloc(sizeof(_ST_)*nIter);
-  _ST_ *fbetas  = (_ST_ *)malloc(sizeof(_ST_)*nIter);
- 
-  int ldz=1;
-  _MT_ *work=NULL;
-  _ST_ *x_ptr; // TODO - we don't compute eigenvectors yet
+  _MT_ *alphas  = (_MT_ *)malloc(sizeof(_MT_)*nIter);
+  _MT_ *betas   = (_MT_ *)malloc(sizeof(_MT_)*nIter);
+  _MT_ *falphas = (_MT_ *)malloc(sizeof(_MT_)*nIter);
+  _MT_ *fbetas  = (_MT_ *)malloc(sizeof(_MT_)*nIter);
+  _MT_ *work  = (_MT_ *)malloc(sizeof(_MT_)*(2*nIter-2));
+  for (i=0;i<nIter;i++) converged[i]=0; 
+  int lds;
+  _MT_ *S_ptr; // will point to the Ritz values
   //int i,lda,nloc;
   *num_iters=0;
-  *num_eigs=0;
   
   if (op->range_map_ != op->domain_map_)
     {
@@ -89,17 +81,30 @@ void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op,
 
   _PHIST_ERROR_HANDLER_(_SUBR_(mvec_create)(&vold,op->domain_map_,1,ierr),*ierr);
   _PHIST_ERROR_HANDLER_(_SUBR_(mvec_create)(&vnew,op->domain_map_,1,ierr),*ierr);
+  // S will store the Ritz vectors
+#ifdef _IS_DOUBLE_  
+  _PHIST_ERROR_HANDLER_(phist_DsdMat_create(&S,nIter,nIter,ierr),*ierr);
+  // pointer to the data in S
+  _PHIST_ERROR_HANDLER_(phist_DsdMat_extract_view(S,&S_ptr, &lds,ierr),*ierr);
+#else
+  _PHIST_ERROR_HANDLER_(phist_SsdMat_create(&S,nIter,nIter,ierr),*ierr);
+  // pointer to the data in S
+  _PHIST_ERROR_HANDLER_(phist_SsdMat_extract_view(S,&S_ptr, &lds,ierr),*ierr);
+#endif
   
   // vold = random start vector, r=vold
-  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_random)(vold,ierr),*ierr);
-  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_normalize)(vold,&nrm,ierr),*ierr);
-  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_add_mvec)(_ONE_,vold,_ZERO_,vnew,ierr),*ierr);
+  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_put_value)(vold,_ZERO_,ierr),*ierr);
+  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_random)(vnew,ierr),*ierr);
+  // TROET
+  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_put_value)(vnew,_ONE_,ierr),*ierr);
+
+  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_normalize)(vnew,&nrm,ierr),*ierr);
 
   beta = _ONE_;
   betas[0] = beta;
 
   for(it = 0, n=1; 
-      it < nIter; 
+      it < nIter;
       it++, n++)
     {
          _PHIST_ERROR_HANDLER_(_SUBR_(lanczosStep)(op,vnew,vold,&alpha,&beta,ierr),*ierr);
@@ -108,32 +113,69 @@ void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op,
          vold=vtmp;
          alphas[it]=alpha;
          betas[it+1]=beta;
-/*
-         fprintf(stdout,"iter %d, alpha=%8.4f %8.4fi, \t beta=%8.4f+%8.4fi, \n", 
-                it,
-                _REAL_(alpha),_IMAG_(alpha),
-                _REAL_(beta),_IMAG_(beta));
-*/
-        if (it%5==0)
-          {
-          memcpy(falphas,alphas,n*sizeof(_ST_)); // alphas and betas will be destroyed 
-          memcpy(fbetas,betas,n*sizeof(_ST_));
 
-          _PHIST_ERROR_HANDLER_(XSTEQR("N",&n,falphas,fbetas,x_ptr,&ldz,work,ierr),*ierr);
-         
-           printf("it %d lambda_min: %f\n",it,_REAL_(falphas[0]));
-           if (_SUBR_(converged(falphas[0],tol))) break; 
+        if ((it+1)%5==0)
+          {
+          memcpy(falphas,alphas,n*sizeof(_MT_)); // alphas and betas will be destroyed 
+          memcpy(fbetas,betas,n*sizeof(_MT_));
+#ifdef _IS_DOUBLE_
+          _PHIST_ERROR_HANDLER_(DSTEQR("I",&n,falphas,fbetas+1,S_ptr,&lds,work,ierr),*ierr);
+#else
+          _PHIST_ERROR_HANDLER_(SSTEQR("I",&n,falphas,fbetas+1,S_ptr,&lds,work,ierr),*ierr);
+#endif
+           // bound for ||r|| of the first (smallest) Ritz value.
+           // Note that we check for the smallest one because the
+           // actual eigenvalues of A have a reversed sign.
+           nrm =1e99;
+           inext=0;
+           nconv=0;
+           for (i=0;i<n;i++)
+             {
+//             fprintf(stdout,"S[%d] %4.2e %4.2e %4.2e\n",i,S_ptr[i*lds],S_ptr[i*lds+1],S_ptr[i*lds+2]);
+             r_est[i]=fabs(betas[it+1]*S_ptr[i*lds+it]);
+//             fprintf(stdout,"lmb[%d] = %e, ||r|| approx. %e\n",i,falphas[i],r_est[i]);
+             if (r_est[i]<tol)
+               {
+               converged[i]=1;
+               nconv++;
+               }
+             else if (r_est[i]<nrm)
+               {
+               nrm=r_est[i];
+               inext=i;
+               }
+             }
+//           printf("it %d, %d converged, next eig to converge: %e\t||r|| est: %e\n",n,nconv,falphas[inext],r_est[inext]);
+           if (nconv>=*num_eigs) break;
            }
          }
-
+         
   *num_iters=it;
-  *num_eigs= it<nIter? 1:0;
-
-  evals[0] = falphas[0];
-  resid[0] = -_ONE_;
+  inext=0;
+  // copy at most num_eigs converged eigenvalues into the user
+  // provided array
+  for (i=n-1;i>=0, inext<*num_eigs;i--)
+    {
+    if (converged[i])
+      {
+      evals[inext] = falphas[i];
+      resid[inext] = r_est[i];
+      inext++;
+      }
+    }
+  if (nconv<*num_eigs) *num_eigs=nconv;
+  
+  // TODO - compute eigenvectors (need to store the whole basis V for that)
   
   _PHIST_ERROR_HANDLER_(_SUBR_(mvec_delete)(vold,ierr),*ierr);
   _PHIST_ERROR_HANDLER_(_SUBR_(mvec_delete)(vnew,ierr),*ierr);
+  _PHIST_ERROR_HANDLER_(_SUBR_(sdMat_delete)(S,ierr),*ierr);
+  
+  free(alphas);
+  free(betas);
+  free(falphas);
+  free(fbetas);
+  free(work);
 
   return;
   }
