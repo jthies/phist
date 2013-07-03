@@ -143,6 +143,15 @@ void _SUBR_(mvec_my_length)(_TYPE_(const_mvec_ptr) vV, lidx_t* len, int* ierr)
   *len = V->getLocalLength();
   }
 
+//! retrieve the map of the vectors in V
+void _SUBR_(mvec_get_map)(_TYPE_(const_mvec_ptr) vV, const_map_ptr_t* vmap, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
+  *vmap=(const_map_ptr_t)(V->getMap().get());
+  }
+
+
 //! retrieve number of vectors/columns in V
 void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) vV, int* nvec, int* ierr)
   {
@@ -219,6 +228,27 @@ void _SUBR_(mvec_set_block)(_TYPE_(mvec_ptr) vV,
   // copy operation
   _TRY_CATCH_(*Vcols = *Vblock, *ierr);
   }
+
+//! get a new matrix that is a copy of some rows and columns of the original one,  
+//! Mblock = M(imin:imax,jmin:jmax). The object Mblock must be created beforehand 
+//! and the corresponding columns of M are copied into the value array    
+//! of Mblock. M is not modified.
+void _SUBR_(sdMat_get_block)(_TYPE_(const_mvec_ptr) M, 
+                             _TYPE_(mvec_ptr) Mblock,
+                             int imin, int imax, int jmin, int jmax, int* ierr)
+  {
+  *ierr=-99;
+  }
+
+//! given a serial dense matrix Mblock, set M(imin:imax,jmin:jmax)=Mblock by 
+//! copying the corresponding elements. Mblock is not modified.
+void _SUBR_(mvec_set_block)(_TYPE_(sdMat_ptr) M, 
+                             _TYPE_(const_sdMat_ptr) Mblock,
+                             int imin, int imax, int jmin, int jmax, int* ierr)
+  {
+  *ierr=-99;
+  }
+
 
 //! \name destructors
 
