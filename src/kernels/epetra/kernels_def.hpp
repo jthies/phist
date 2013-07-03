@@ -227,7 +227,7 @@ void _SUBR_(sdMat_get_block)(_TYPE_(const_mvec_ptr) M,
 
 //! given a serial dense matrix Mblock, set M(imin:imax,jmin:jmax)=Mblock by 
 //! copying the corresponding elements. Mblock is not modified.
-void _SUBR_(mvec_set_block)(_TYPE_(sdMat_ptr) M, 
+void _SUBR_(sdMat_set_block)(_TYPE_(sdMat_ptr) M, 
                              _TYPE_(const_sdMat_ptr) Mblock,
                              int imin, int imax, int jmin, int jmax, int* ierr)
   {
