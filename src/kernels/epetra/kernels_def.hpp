@@ -140,8 +140,16 @@ void phist_Dmvec_my_length(_TYPE_(const_mvec_ptr) vV, lidx_t* len, int* ierr)
   *len = V->MyLength();
   }
 
+//! retrieve the map of the vectors in V
+void _SUBR_(mvec_get_map)(_TYPE_(const_mvec_ptr) vV, const_map_ptr_t* vmap, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
+  *vmap=(const_map_ptr_t)&V->Map();
+  }
+
 //! retrieve number of vectors/columns in V
-void phist_Dmvec_num_vectors(_TYPE_(const_mvec_ptr) vV, lidx_t* nvec, int* ierr)
+void phist_Dmvec_num_vectors(_TYPE_(const_mvec_ptr) vV, int* nvec, int* ierr)
   {
   *ierr = 0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);

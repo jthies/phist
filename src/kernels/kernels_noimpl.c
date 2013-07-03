@@ -75,7 +75,7 @@ void _SUBR_(mvec_create)(_TYPE_(mvec_ptr)* V,
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
 void _SUBR_(sdMat_create)(_TYPE_(sdMat_ptr)* M, 
-lidx_t nrows, lidx_t ncols, int* ierr)
+int nrows, int ncols, int* ierr)
   {
   *ierr=-99;
   }
@@ -88,8 +88,14 @@ void _SUBR_(mvec_my_length)(_TYPE_(const_mvec_ptr) V, lidx_t* len, int* ierr)
   *ierr=-99;
   }
 
+//! retrieve the map of the vectors in V
+void _SUBR_(mvec_get_map)(_TYPE_(const_mvec_ptr) V, const_map_ptr_t* map, int* ierr)
+  {
+  *ierr=-99;
+  }
+
 //! retrieve number of vectors/columns in V
-void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) V, lidx_t* nvec, int* ierr)
+void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) V, int* nvec, int* ierr)
   {
   *ierr=-99;
   }
