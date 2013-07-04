@@ -44,47 +44,13 @@ public:
   // check if vectors are normalized correctly after QR factorization
   TEST_F(CLASSNAME, normality) 
     {
-    if (typeImplemented_)
-      {
-      // see if all columns in vec2 have 2-norm 1
-      _ST_ *norms = new _ST_[ncols_];
-      for (int j=0;j<ncols_;j++)
-        {
-        _ST_ sum=zero();
-        for (int i=0;i<stride_*nrows_;i+=stride_)
-          {
-          _ST_ val=vec2_vp_[j*lda_+i];
-          sum+=val*_CONJ_(val); 
-          }
-        norms[j]=std::sqrt(sum);
-        }
-      ASSERT_REAL_EQ((_MT_)1.0,ArrayEqual(norms,nvec_,1,nvec_,1,one()));
-      delete [] norms;
-      }
+    ASSERT_REAL_EQ((_MT_)1.0,ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_));
     }
 
 
   // check if vectors are mutually orthogonal after QR factorization
   TEST_F(CLASSNAME, ortho) 
     {
-    if (typeImplemented_)
-      {
-      int nsums=(nrows_*ncols_-nrows_)/2;
-      _ST_ sums[nsums];
-      int k=0;
-      for (int j1=0;j1<ncols_;j1++)
-      for (int j2=j1+1;j2<ncols_;j2++)
-        {
-        _ST_ sum=zero();
-        for (int i=0;i<stride_*nrows_;i+=stride_)
-          {
-          _ST_ val1=vec2_vp_[j1*lda_+i];
-          _ST_ val2=vec2_vp_[j2*lda_+i];
-          sum+=val1*_CONJ_(val2); 
-          }
-        sums[k++]=sum;
-        }
-      ASSERT_REAL_EQ((_MT_)1.0,ArrayEqual(sums,nsums,1,nvec_,1,zero()));
-      }
+    ASSERT_REAL_EQ((_MT_)1.0,ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_));
     }
 

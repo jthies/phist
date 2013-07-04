@@ -3,6 +3,7 @@
 //#include "gmock/gmock.h"
 
 #include "phist_kernels.h"
+#include "KernelTestWithMap.h"
 #include "KernelTestWithVectors.h"
 
 #ifdef PHIST_HAVE_MPI

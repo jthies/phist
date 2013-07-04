@@ -18,7 +18,7 @@ public:
  comm_ptr_t comm_;
  bool haveS_, haveD_, haveC_, haveZ_;
  int ierr_;
-
+ 
 	/** Set up method.
 	 * Fills internal data vector with values 1.0, 2.0 and 3.0.
 	 */

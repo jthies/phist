@@ -15,16 +15,19 @@ public:
  */
 virtual void SetUp() {
 KernelTest::SetUp();
-nglob_=_Nglob;
 nloc_=nglob_; // TODO - parallel testing not implemented
 phist_map_create(&map_,comm_,nglob_,&ierr_);
 ASSERT_EQ(0,ierr_);
 }
 
-int nglob_, nloc_;
+static const int nglob_=_Nglob;
+int nloc_;
 map_ptr_t map_;
 
 
 };
+
+template<int n>
+const int KernelTestWithMap<n>::nglob_;
 
 #endif

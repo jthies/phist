@@ -174,18 +174,21 @@ include_directories(lib/googletest-1.6 src/ src/tools/ src/kernels/)
 
 # Define sources
 set(SOURCES 
-    src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
-    examples/kernels/main_kernel_usage.c
+  ${PHIST_KERNEL_SOURCE}
+  ${PHIST_TOOLS_SOURCE}
+  ${PHIST_OPERATOR_SOURCE}
+  ${PHIST_KRYLOV_SOURCE}
 )
 
 file(GLOB KERNEL_TEST_SOURCES ${CMAKE_SOURCE_DIR}/test/kernels/*.cpp)
+file(GLOB KRYLOV_TEST_SOURCES ${CMAKE_SOURCE_DIR}/test/krylov/*.cpp)
 
-list(APPEND KERNEL_TEST_SOURCES
+set(TEST_SOURCES
     lib/googletest-1.6/gmock-gtest-all.cc
     test/mainTest.cpp)
     
-set(KERNEL_TEST_SOURCES ${KERNEL_TEST_SOURCES} ${SOURCES} ${GTEST_SOURCES} ${GMOCK_SOURCES})
-list(REMOVE_ITEM KERNEL_TEST_SOURCES "examples/kernels/main_kernel_usage.c")
+set(KERNEL_TEST_SOURCES ${KERNEL_TEST_SOURCES} ${SOURCES} ${TEST_SOURCES})
+set(KRYLOV_TEST_SOURCES ${KRYLOV_TEST_SOURCES} ${SOURCES} ${TEST_SOURCES})
 
 file(GLOB TestMatricesMM ${CMAKE_SOURCE_DIR}/test/matrices/*.mm)
 
@@ -197,6 +200,7 @@ endforeach()
 
 # Define executables
 add_executable(${PRODUCT_NAME}-kernel-test ${KERNEL_TEST_SOURCES} ${TEST_DEPENDS})
+add_executable(${PRODUCT_NAME}-krylov-test ${KRYLOV_TEST_SOURCES} ${TEST_DEPENDS})
 add_executable(main_kernel_usage ${PROJECT_SOURCE_DIR}/examples/kernels/main_kernel_usage.c)
 add_executable(main_zLanczos ${PROJECT_SOURCE_DIR}/examples/krylov/main_zLanczos.c)
 
@@ -205,12 +209,15 @@ add_executable(main_zLanczos ${PROJECT_SOURCE_DIR}/examples/krylov/main_zLanczos
 enable_testing()
 
 add_test(kernel-tests ${PRODUCT_NAME}-kernel-test --gtest_output=xml:${CMAKE_SOURCE_DIR}/xunit.xml)
+add_test(krylov-tests ${PRODUCT_NAME}-krylov-test --gtest_output=xml:${CMAKE_SOURCE_DIR}/xunit.xml)
+
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --output-on-failure)
 
 foreach(lib ${PHIST_LIBS})
 #  message("adding lib '" ${lib} "'")
   target_link_libraries(${PRODUCT_NAME}-kernel-test ${lib})
+  target_link_libraries(${PRODUCT_NAME}-krylov-test ${lib})
   target_link_libraries(main_kernel_usage ${lib})
   target_link_libraries(main_zLanczos ${lib})
 endforeach()

@@ -15,8 +15,6 @@ virtual void SetUp()
   KernelTestWithType< _ST_ >::SetUp();
   if (this->typeImplemented_)
     {
-    this->nrows_=_Nrows;
-    this->ncols_=_Ncols;
     _SUBR_(sdMat_create)(&mat1_,this->nrows_,this->ncols_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
     _SUBR_(sdMat_extract_view)(mat1_,&mat1_vp_,&this->m_lda_,&this->ierr_);
@@ -42,7 +40,9 @@ virtual void TearDown()
   
   _TYPE_(sdMat_ptr) mat1_, mat2_;
   _ST_ *mat1_vp_, *mat2_vp_;
-  lidx_t nrows_,ncols_,m_lda_;
+  static const int nrows_=_Nrows;
+  static const int ncols_=_Ncols;
+  lidx_t m_lda_;
   };
 
 
