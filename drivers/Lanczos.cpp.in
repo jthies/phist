@@ -1,0 +1,9 @@
+#include <iostream>
+#include <cstdlib>
+#include "phist_macros.h"
+#include "phist_kernels.h"
+#include "phist_operator.h"
+#include "phist_lanczos.h"
+#include "phist_ScalarTraits.hpp"
+#include ${PHIST_TG_HFILE}
+#include "Lanczos_def.hpp"
