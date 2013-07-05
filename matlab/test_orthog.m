@@ -66,11 +66,11 @@ disp(norm(V2'*V2-eye(k)))
 
 % Householder QR, W=V*R
 %{
-W=randn(m,k) + i*cmplx*randn(m,k);
-for j=1:k
-  [alpha,beta]=house(W(j:end,j));
-  v=W(j:end,j);
-  v(1)=v(1)-alpha;
-  W(j:end,j:end)=W(j:end,j:end) + beta*v*(v'*W(j:end,j:end))
-end
+%W=randn(m,k) + i*cmplx*randn(m,k);
+%for j=1:k
+%  [alpha,beta]=house(W(j:end,j));
+%  v=W(j:end,j);
+%  v(1)=v(1)-alpha;
+%  W(j:end,j:end)=W(j:end,j:end) + beta*v*(v'*W(j:end,j:end))
+%end
 %}

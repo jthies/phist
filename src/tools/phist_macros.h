@@ -22,6 +22,12 @@ fprintf(stderr,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
 (_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return;}}
 #endif
 
+//! this macro is deprecated, PHIST_CHK_IERR should now be used.
+#ifndef _PHIST_ERROR_HANDLER_
+#define _PHIST_ERROR_HANDLER_(func,_FLAG_) PHIST_CHK_IERR(func,_FLAG_)
+#endif
+
+
 //! like PHIST_CHK_IERR, but returns ierr (to be used in int functions returning an error code)
 #ifndef PHIST_ICHK_IERR
 #define PHIST_ICHK_IERR(func,_FLAG_) \
