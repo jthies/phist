@@ -8,16 +8,16 @@ static void _SUBR_(lanczosStep)(_TYPE_(const_op_ptr) op,
         *ierr=0;
         // vnew = r/beta
         _ST_ ibeta = _ONE_/(*beta);
-        _PHIST_ERROR_HANDLER_(_SUBR_(mvec_scale)(vnew,&ibeta,ierr),*ierr);
+        PHIST_CHK_IERR(_SUBR_(mvec_scale)(vnew,&ibeta,ierr),*ierr);
         // r = A*v - beta*vold 
-        _PHIST_ERROR_HANDLER_(op->apply(_ONE_,op->A_,vnew, 
+        PHIST_CHK_IERR(op->apply(_ONE_,op->A_,vnew, 
                 -(*beta),vold,ierr),*ierr);
         //alpha_j = v_j'r
-        _PHIST_ERROR_HANDLER_(_SUBR_(mvec_dot_mvec)(vnew,vold,alpha,ierr),*ierr);
+        PHIST_CHK_IERR(_SUBR_(mvec_dot_mvec)(vnew,vold,alpha,ierr),*ierr);
         // r=r-alpha_j*v_j
-	_PHIST_ERROR_HANDLER_(_SUBR_(mvec_add_mvec)(-(*alpha),vnew,_ONE_,vold,ierr),*ierr);
+	PHIST_CHK_IERR(_SUBR_(mvec_add_mvec)(-(*alpha),vnew,_ONE_,vold,ierr),*ierr);
 	// beta_j = ||r||_2
-	_PHIST_ERROR_HANDLER_(_SUBR_(mvec_dot_mvec)(vold,vold,beta,ierr),*ierr);
+	PHIST_CHK_IERR(_SUBR_(mvec_dot_mvec)(vold,vold,beta,ierr),*ierr);
 	*beta=_SQRT_(*beta);
         return;
 }
@@ -79,49 +79,47 @@ void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op,
     *ierr=-1; // maps of operator should point to same object (A should be a square matrix)
     }
 
-  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_create)(&vold,op->domain_map_,1,ierr),*ierr);
-  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_create)(&vnew,op->domain_map_,1,ierr),*ierr);
+  PHIST_CHK_IERR(_SUBR_(mvec_create)(&vold,op->domain_map_,1,ierr),*ierr);
+  PHIST_CHK_IERR(_SUBR_(mvec_create)(&vnew,op->domain_map_,1,ierr),*ierr);
   // S will store the Ritz vectors
 #ifdef _IS_DOUBLE_  
-  _PHIST_ERROR_HANDLER_(phist_DsdMat_create(&S,nIter,nIter,ierr),*ierr);
+  PHIST_CHK_IERR(phist_DsdMat_create(&S,nIter,nIter,ierr),*ierr);
   // pointer to the data in S
-  _PHIST_ERROR_HANDLER_(phist_DsdMat_extract_view(S,&S_ptr, &lds,ierr),*ierr);
+  PHIST_CHK_IERR(phist_DsdMat_extract_view(S,&S_ptr, &lds,ierr),*ierr);
 #else
-  _PHIST_ERROR_HANDLER_(phist_SsdMat_create(&S,nIter,nIter,ierr),*ierr);
+  PHIST_CHK_IERR(phist_SsdMat_create(&S,nIter,nIter,ierr),*ierr);
   // pointer to the data in S
-  _PHIST_ERROR_HANDLER_(phist_SsdMat_extract_view(S,&S_ptr, &lds,ierr),*ierr);
+  PHIST_CHK_IERR(phist_SsdMat_extract_view(S,&S_ptr, &lds,ierr),*ierr);
 #endif
   
   // vold = random start vector, r=vold
-  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_put_value)(vold,_ZERO_,ierr),*ierr);
-  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_random)(vnew,ierr),*ierr);
-  // TROET
-  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_put_value)(vnew,_ONE_,ierr),*ierr);
+  PHIST_CHK_IERR(_SUBR_(mvec_put_value)(vold,_ZERO_,ierr),*ierr);
+  PHIST_CHK_IERR(_SUBR_(mvec_random)(vnew,ierr),*ierr);
 
-  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_normalize)(vnew,&nrm,ierr),*ierr);
+  PHIST_CHK_IERR(_SUBR_(mvec_normalize)(vnew,&nrm,ierr),*ierr);
 
   beta = _ONE_;
-  betas[0] = beta;
+  betas[0] = _REAL_(beta);
 
   for(it = 0, n=1; 
       it < nIter;
       it++, n++)
     {
-         _PHIST_ERROR_HANDLER_(_SUBR_(lanczosStep)(op,vnew,vold,&alpha,&beta,ierr),*ierr);
+         PHIST_CHK_IERR(_SUBR_(lanczosStep)(op,vnew,vold,&alpha,&beta,ierr),*ierr);
          vtmp=vnew;
          vnew=vold;
          vold=vtmp;
-         alphas[it]=alpha;
-         betas[it+1]=beta;
+         alphas[it]=_REAL_(alpha);
+         betas[it+1]=_REAL_(beta);
 
         if ((it+1)%5==0)
           {
           memcpy(falphas,alphas,n*sizeof(_MT_)); // alphas and betas will be destroyed 
           memcpy(fbetas,betas,n*sizeof(_MT_));
 #ifdef _IS_DOUBLE_
-          _PHIST_ERROR_HANDLER_(DSTEQR("I",&n,falphas,fbetas+1,S_ptr,&lds,work,ierr),*ierr);
+          PHIST_CHK_IERR(DSTEQR("I",&n,falphas,fbetas+1,S_ptr,&lds,work,ierr),*ierr);
 #else
-          _PHIST_ERROR_HANDLER_(SSTEQR("I",&n,falphas,fbetas+1,S_ptr,&lds,work,ierr),*ierr);
+          PHIST_CHK_IERR(SSTEQR("I",&n,falphas,fbetas+1,S_ptr,&lds,work,ierr),*ierr);
 #endif
            // bound for ||r|| of the first (smallest) Ritz value.
            // Note that we check for the smallest one because the
@@ -167,9 +165,9 @@ void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op,
   
   // TODO - compute eigenvectors (need to store the whole basis V for that)
   
-  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_delete)(vold,ierr),*ierr);
-  _PHIST_ERROR_HANDLER_(_SUBR_(mvec_delete)(vnew,ierr),*ierr);
-  _PHIST_ERROR_HANDLER_(_SUBR_(sdMat_delete)(S,ierr),*ierr);
+  PHIST_CHK_IERR(_SUBR_(mvec_delete)(vold,ierr),*ierr);
+  PHIST_CHK_IERR(_SUBR_(mvec_delete)(vnew,ierr),*ierr);
+  PHIST_CHK_IERR(_SUBR_(sdMat_delete)(S,ierr),*ierr);
   
   free(alphas);
   free(betas);

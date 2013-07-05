@@ -116,24 +116,33 @@ else ()
   message( FATAL_ERROR "PHIST_KERNEL_LIB not set" )
 endif ()
 
+# these specific versions of type-generic drivers have to be created
+set(TG_Types S 
+             D 
+             C 
+             Z)
+
 set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp)
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c)
-set (PHIST_OPERATOR_SOURCE ${PROJECT_SOURCE_DIR}/src/operator/phist_operator.c)
-set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_lanczos.c)
+set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.c)
+set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_lanczos.cpp)
 
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB})
 include_directories(${PROJECT_SOURCE_DIR}/src/tools)
-include_directories(${PROJECT_SOURCE_DIR}/src/operator)
+include_directories(${PROJECT_SOURCE_DIR}/src/core)
 include_directories(${PROJECT_SOURCE_DIR}/src/krylov)
 include_directories(${PROJECT_SOURCE_DIR}/src/jada)
+include_directories(${PROJECT_SOURCE_DIR}/drivers)
 
+add_library(libphist_tools.a ${PHIST_TOOLS_SOURCE})
+add_library(libphist_core.a ${PHIST_CORE_SOURCE})
 add_library(libphist_kernels_${PHIST_KERNEL_LIB}.a ${PHIST_KERNEL_SOURCE})
 add_library(libphist_solvers.a ${PHIST_KRYLOV_SOURCE} ${PHIST_JADA_SOURCE})
-add_library(libphist_core.a ${PHIST_TOOLS_SOURCE} ${PHIST_OPERATOR_SOURCE})
 
 list(APPEND PHIST_LIBS libphist_solvers.a)
 list(APPEND PHIST_LIBS libphist_core.a)
 list(APPEND PHIST_LIBS libphist_kernels_${PHIST_KERNEL_LIB}.a)
+list(APPEND PHIST_LIBS libphist_tools.a)
 
 foreach(PKG ${LOAD_TRILI_PKG})
   find_package(${PKG} REQUIRED)
@@ -154,7 +163,7 @@ endforeach()
 list(APPEND PHIST_LIBS ${MPI_CXX_LIBRARIES})
 
 set(GCOVR_EXCLUDES -e src/kernels/kernels_noimpl.c
-                   -e srctools)
+                   -e src/tools/tools.c)
 
 # Custom properties
 set(INTEGRATION_BUILD 0 CACHE STRING "Indicates an integration build")
@@ -176,7 +185,7 @@ include_directories(lib/googletest-1.6 src/ src/tools/ src/kernels/)
 set(SOURCES 
   ${PHIST_KERNEL_SOURCE}
   ${PHIST_TOOLS_SOURCE}
-  ${PHIST_OPERATOR_SOURCE}
+  ${PHIST_CORE_SOURCE}
   ${PHIST_KRYLOV_SOURCE}
 )
 
@@ -198,12 +207,44 @@ foreach (mat ${TestMatricesMM})
   list(APPEND TEST_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${mat_name})
 endforeach()
 
-# Define executables
-add_executable(${PRODUCT_NAME}-kernel-test ${KERNEL_TEST_SOURCES} ${TEST_DEPENDS})
-add_executable(${PRODUCT_NAME}-krylov-test ${KRYLOV_TEST_SOURCES} ${TEST_DEPENDS})
-add_executable(main_kernel_usage ${PROJECT_SOURCE_DIR}/examples/kernels/main_kernel_usage.c)
-add_executable(main_zLanczos ${PROJECT_SOURCE_DIR}/examples/krylov/main_zLanczos.c)
+#######################
+# Define executables  #
+#######################
 
+# type generic driver routines are compiled from .cpp files
+# which we get from .cpp.in files by preprocessing
+file(GLOB TG_Drivers ${CMAKE_SOURCE_DIR}/drivers/*.cpp.in)
+
+
+foreach (infile ${TG_Drivers})
+  get_filename_component(filebase ${infile} NAME_WE)
+  foreach (tc ${TG_Types})
+    STRING(TOLOWER \"phist_gen_${tc}.h\" PHIST_TG_HFILE)
+    configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.cpp)
+    add_executable(${tc}${filebase} ${tc}${filebase}.cpp)
+    foreach(lib ${PHIST_LIBS})
+      target_link_libraries(${tc}${filebase} ${lib})
+    endforeach()
+  endforeach()
+endforeach()
+
+# test drivers
+set(PHIST_TESTS kernel 
+                krylov)
+
+foreach(label ${PHIST_TESTS})
+  string(TOUPPER ${label} label_uc)
+  add_executable(${PRODUCT_NAME}-${label}-test ${${label_uc}_TEST_SOURCES} ${TEST_DEPENDS})
+  foreach(lib ${PHIST_LIBS})
+    target_link_libraries(${PRODUCT_NAME}-${label}-test ${lib})
+  endforeach()
+endforeach()
+
+# some example drivers which haven't made their way into the drivers/ directory
+add_executable(main_kernel_usage ${PROJECT_SOURCE_DIR}/examples/kernels/main_kernel_usage.c)
+foreach(lib ${PHIST_LIBS})
+  target_link_libraries(main_kernel_usage ${lib})
+endforeach()
 
 # Activate testing
 enable_testing()
@@ -213,14 +254,6 @@ add_test(krylov-tests ${PRODUCT_NAME}-krylov-test --gtest_output=xml:${CMAKE_SOU
 
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --output-on-failure)
-
-foreach(lib ${PHIST_LIBS})
-#  message("adding lib '" ${lib} "'")
-  target_link_libraries(${PRODUCT_NAME}-kernel-test ${lib})
-  target_link_libraries(${PRODUCT_NAME}-krylov-test ${lib})
-  target_link_libraries(main_kernel_usage ${lib})
-  target_link_libraries(main_zLanczos ${lib})
-endforeach()
 
 # Activate gcov code generation
 if (CMAKE_COMPILER_IS_GNUCXX AND "${CMAKE_BUILD_TYPE}" MATCHES "Debug")
