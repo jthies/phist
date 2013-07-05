@@ -1,7 +1,7 @@
 #include "phist_gen_pre.h"
 
 // type specifier
-#define _TP_ D
+#define _TP_ 'D'
 
 #define _IS_DOUBLE_
 

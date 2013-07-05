@@ -1,7 +1,7 @@
 #include "phist_gen_pre.h"
 
 // type specifier
-#define _TP_ S
+#define _TP_ 'S'
 
 // scalar type
 #define _ST_ float

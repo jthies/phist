@@ -8,6 +8,7 @@
 #ifdef __cplusplus
 #include <complex>
 #else
+#warning "C include of phist_gen_c.h"
 #include <complex.h>
 #endif
 #endif
@@ -15,7 +16,7 @@
 #define _IS_COMPLEX_
 
 // type specifier
-#define _TP_ C
+#define _TP_ 'C'
 
 // scalar type
 #ifdef __cplusplus
@@ -23,9 +24,9 @@
 #define _CMPLX_I_ _ST_(0.0f,1.0f)
 #define _ZERO_ _ST_(0.0f,0.0f)
 #define _ONE_ _ST_(1.0f,0.0f)
-#define _SQRT_(X) std::sqrtf(X)
+#define _SQRT_(X) std::sqrt(X)
 #define _CONJ_(X) std::conj(X)
-#define _ABS_(X) std::absf(X)
+#define _ABS_(X) std::abs(X)
 #define _REAL_(X) std::real(X)
 #define _IMAG_(X) std::imag(X)
 #else

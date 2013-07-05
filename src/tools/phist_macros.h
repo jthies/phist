@@ -13,10 +13,37 @@
 #define _PHIST_NOT_IMPLEMENTED_ -99
 #endif
 
-#ifndef _PHIST_ERROR_HANDLER_
-#define _PHIST_ERROR_HANDLER_(func,_FLAG_) \
+//! checks an ierr flag passed to a void function for non-zero value, assigns it to _FLAG_,
+//! prints an error message and returns if non-zero (to be used in void functions)
+#ifndef PHIST_CHK_IERR
+#define PHIST_CHK_IERR(func,_FLAG_) \
 {func; if (_FLAG_!=_PHIST_SUCCESS_) { \
 fprintf(stderr,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
 (_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return;}}
-
 #endif
+
+//! like PHIST_CHK_IERR, but returns ierr (to be used in int functions returning an error code)
+#ifndef PHIST_ICHK_IERR
+#define PHIST_ICHK_IERR(func,_FLAG_) \
+{func; if (_FLAG_!=_PHIST_SUCCESS_) { \
+fprintf(stderr,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
+(_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return _FLAG_;}}
+#endif
+
+//! checks return value of an int function for non-zero value, assigns it to _FLAG_,
+//! prints an error message and returns if non-zero (to be used in void functions)
+#ifndef PHIST_CHK_IRET
+#define PHIST_CHK_IRET(func,_FLAG_) \
+{FLAG=func; if (_FLAG_!=_PHIST_SUCCESS_) { \
+fprintf(stderr,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
+(_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return;}}
+#endif
+
+//! like PHIST_CHK_IERR, but returns ierr (to be used in int functions returning an error code)
+#ifndef PHIST_ICHK_IRET
+#define PHIST_ICHK_IRET(func,_FLAG_) \
+{FLAG=func; if (_FLAG_!=_PHIST_SUCCESS_) { \
+fprintf(stderr,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
+(_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return _FLAG_;}}
+#endif
+

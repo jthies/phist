@@ -13,7 +13,7 @@
 #endif
 
 // type specifier
-#define _TP_ Z
+#define _TP_ 'Z'
 
 #define _IS_DOUBLE_
 #define _IS_COMPLEX_
@@ -28,6 +28,7 @@
 #define _ABS_(X) std::abs(X)
 #define _CONJ_(X) std::conj(X)
 #define _REAL_(X) std::real(X)
+#define _IMAG_(X) std::imag(X)
 #else
 #define _ST_ double complex
 #define _CMPLX_I_ (0.0+1.0*I)
@@ -37,10 +38,8 @@
 #define _ABS_(X) cabs(X)
 #define _CONJ_(X) conj(X)
 #define _REAL_(X) creal(X)
-#endif
-
-// imaginary part
 #define _IMAG_(X) cimag(X)
+#endif
 
 // adds type prefix to a specifier, e.g. _PREF_(gemm) -> Dgemm
 #define _PREF_(name) Z ## name
