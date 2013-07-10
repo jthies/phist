@@ -31,6 +31,15 @@ void phist_comm_create(comm_ptr_t* vcomm, int* ierr)
   *ierr=0;
   *vcomm = (comm_ptr_t)(Teuchos::DefaultComm<int>::getComm().get());
   }
+
+//!
+void phist_comm_delete(comm_ptr_t vcomm, int* ierr)
+  {
+  *ierr=0;
+  // note - as comm_create returns a raw pointer to the default comm, we should not delete it.
+  }
+
+
 //!
 void phist_comm_get_rank(const_comm_ptr_t vcomm, int* rank, int* ierr)
   {
@@ -53,6 +62,16 @@ void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, int nglob, int *i
   map_t* map = new map_t(nglob,0,Teuchos::rcp(comm,false));
   *vmap = (map_ptr_t)(map);
   }
+
+//!
+void phist_map_delete(map_ptr_t vmap, int *ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(map_t,map,vmap,*ierr);
+  delete map;
+  vmap=NULL;
+  }
+
 //!
 void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr)
   {
@@ -61,6 +80,15 @@ void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr
   Teuchos::RCP<const comm_t> comm = map->getComm();
   *vcomm = (const_comm_ptr_t)(comm.get());
   }
+
+//!
+void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const map_t,map,vmap,*ierr);
+  *nloc = map->getNodeNumElements();
+  }
+
 
 } // extern "C"
 

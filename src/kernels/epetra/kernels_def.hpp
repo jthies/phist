@@ -311,7 +311,7 @@ void _SUBR_(sdMat_random)(_TYPE_(sdMat_ptr) vM, int* ierr)
   _CHECK_ZERO_(V->Norm2(vnrm),*ierr);
   for (int i=0;i<V->NumVectors();i++)
     {
-    _CHECK_ZERO_(V(i)->Scale(_ONE_/(_ST_)vnrm[i]),*ierr);
+    _CHECK_ZERO_((*V)(i)->Scale(_ONE_/(_ST_)vnrm[i]),*ierr);
     }
   return;
   }
@@ -324,7 +324,7 @@ void _SUBR_(mvec_scale)(_TYPE_(mvec_ptr) vV,
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);  
   for (int i=0;i<V->NumVectors();i++)
     {
-    _CHECK_ZERO_(V(i)->Scale(scalar[i]),*ierr);
+    _CHECK_ZERO_((*V)(i)->Scale(scalar[i]),*ierr);
     }
   return;
   }

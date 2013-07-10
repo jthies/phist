@@ -11,14 +11,21 @@ class KernelTestWithMap: public virtual KernelTest
 public:
 
 /** Set up method.
- * Fills internal data vector with values 1.0, 2.0 and 3.0.
  */
 virtual void SetUp() {
 KernelTest::SetUp();
-nloc_=nglob_; // TODO - parallel testing not implemented
 phist_map_create(&map_,comm_,nglob_,&ierr_);
 ASSERT_EQ(0,ierr_);
+phist_map_get_local_length(map_,&nloc_,&ierr_);
+ASSERT_EQ(0,ierr_);
 }
+
+/** clean up the global test environment */
+virtual void TearDown()
+  {
+  phist_map_delete(map_,&ierr_);
+ASSERT_EQ(0,ierr_);
+  }
 
 static const int nglob_=_Nglob;
 int nloc_;

@@ -43,6 +43,16 @@ void phist_comm_create(comm_ptr_t* vcomm, int* ierr)
   if (comm==NULL) *ierr=-1;
   *vcomm=(comm_ptr_t)(comm);
   }
+
+//!
+void phist_comm_delete(comm_ptr_t vcomm, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Epetra_Comm,comm,vcomm,*ierr);
+  delete comm;
+  vcomm=NULL;
+  }
+
 //!
 void phist_comm_get_rank(const_comm_ptr_t vcomm, int* rank, int* ierr)
   {
@@ -66,12 +76,30 @@ void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, int nglob, int *i
   _TRY_CATCH_(map = new Epetra_Map(nglob,0,*comm),*ierr);
   *vmap=(map_ptr_t)(map);
   }
+
+//!
+void phist_map_delete(map_ptr_t vmap, int *ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Epetra_BlockMap,map,vmap,*ierr);
+  delete map;
+  vmap=NULL;
+  }
+  
 //!
 void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_BlockMap,map,vmap,*ierr);
   *vcomm = (const_comm_ptr_t)(&map->Comm());  
+  }
+
+//!
+void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Epetra_BlockMap,map,vmap,*ierr);
+  *nloc = map->NumMyElements();
   }
 
 #include "phist_gen_s.h"

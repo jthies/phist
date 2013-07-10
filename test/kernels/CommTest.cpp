@@ -20,16 +20,9 @@ public:
    */
   virtual void SetUp()
     {
+    std::cout << "in CommTest::SetUp"<<std::endl;
     KernelTest::SetUp();
-#ifdef HAVE_MPI
-    mpiComm_=MPI_COMM_WORLD;
-    ierr_=MPI_Comm_rank(mpiComm_,&rank_);
-    ierr_=MPI_Comm_size(mpiComm_,&size_);
-#else
-    mpiComm_=0;
-    rank_=0;
-    size_=1;
-#endif
+    std::cout << "my rank: "<< mpi_rank_<<std::endl;
     }
 
   /*! Clean up.
@@ -39,28 +32,20 @@ public:
     KernelTest::TearDown();
     }
 
-#ifdef HAVE_MPI
-  MPI_Comm mpiComm_;
-#else
-  int mpiComm_;
-#endif
-  int rank_, size_;
-
 };
 
-  /*! Test the comm_get_rank function. */
+  /*! Test the comm_get_rank function - is the comm in the kernel lib really MPI_COMM_WORLD?. */
   TEST_F(CommTest, get_rank) {
-        int rank;
+        int rank=42;
         phist_comm_get_rank(comm_,&rank,&ierr_);
 	ASSERT_EQ(0,ierr_);
-	ASSERT_EQ(rank_, rank);
+	ASSERT_EQ(mpi_rank_, rank);
 }
 
-  /*! Test the comm_get_size function. */
+  /*! Test the comm_get_size function. Is the comm in the kernel lib really MPI_COMM_WORLD? */
   TEST_F(CommTest, get_size) {
-        int size;
+        int size=42;
         phist_comm_get_size(comm_,&size,&ierr_);
 	ASSERT_EQ(0,ierr_);
-	ASSERT_EQ(size_, size);
-	ASSERT_EQ(size_, 1); // parallel testing not supported, yet
+	ASSERT_EQ(mpi_size_, size);
 }

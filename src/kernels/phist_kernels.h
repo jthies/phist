@@ -33,14 +33,21 @@ void phist_kernels_finalize(int* ierr);
 
 //! creates a global comm object
 void phist_comm_create(comm_ptr_t* comm, int* ierr);
+//! delete a comm object. Only do this for comms obtained by phist_comm_create.
+void phist_comm_delete(comm_ptr_t comm, int* ierr);
 //! get the rank of the calling node
 void phist_comm_get_rank(const_comm_ptr_t comm, int* rank, int* ierr);
 //! get the number of MPI asks
 void phist_comm_get_size(const_comm_ptr_t comm, int* size, int* ierr);
 //! creates a map with default distribution of points
 void phist_map_create(map_ptr_t* map, const_comm_ptr_t comm, int nglob, int *ierr);
+//! delete a map object. Note that you should not do this if you got the map from
+//! anything else than phist_map_create.
+void phist_map_delete(map_ptr_t map, int *ierr);
 //! returns the comm object used by a map
 void phist_map_get_comm(const_map_ptr_t map, const_comm_ptr_t* comm, int* ierr);
+//! returns the local number of elements in the map
+void phist_map_get_local_length(const_map_ptr_t map, int* nloc, int* ierr);
 
 #ifdef __cplusplus
 } // extern "C"
