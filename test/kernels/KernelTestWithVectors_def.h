@@ -64,8 +64,9 @@ virtual void TearDown()
   // check if vectors are mutually orthogonal after QR factorization
   static _MT_ ColsAreOrthogonal(_ST_* vec_vp, int nloc, int lda, int stride) 
     {
+    std::cout << "nloc="<<nloc<<", lda="<<lda<<", stride="<<stride<<std::endl;
     _MT_ res=1.0;
-    int nsums=(nloc*nvec_-nloc)/2;
+    int nsums=(nvec_*nvec_-nvec_)/2;
       _ST_ sums[nsums];
       int k=0;
       for (int j1=0;j1<nvec_;j1++)
@@ -76,11 +77,11 @@ virtual void TearDown()
           {
           _ST_ val1=vec_vp[j1*lda+i];
           _ST_ val2=vec_vp[j2*lda+i];
-          sum+=val1*_CONJ_(val2); 
+          sum+=val1*_CONJ_(val2);
           }
         sums[k++]=sum;
         }
-      res=ArrayEqual(sums,nsums,1,nvec_,1,zero());
+      res=ArrayEqual(sums,nsums,1,nsums,1,zero());
       return res;
       }
 
