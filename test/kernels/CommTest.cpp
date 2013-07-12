@@ -5,7 +5,7 @@
 #include "phist_kernels.h"
 #include "KernelTest.h"
 
-#ifdef HAVE_MPI
+#ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
 
@@ -20,9 +20,7 @@ public:
    */
   virtual void SetUp()
     {
-    std::cout << "in CommTest::SetUp"<<std::endl;
     KernelTest::SetUp();
-    std::cout << "my rank: "<< mpi_rank_<<std::endl;
     }
 
   /*! Clean up.

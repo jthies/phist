@@ -94,19 +94,9 @@ public:
       _SUBR_(mvec_QR)(V_,R1_,&ierr_);
       ASSERT_EQ(0,ierr_);
 
-      std::cout << "V="<<std::endl;
-      for (int i=0;i<n_;i++)
-        {
-        std::cout << i << "\t";
-        for (int j=0;j<m_;j++)
-          {
-          std::cout <<  V_vp_[j*ldaV_+i]<<"  ";
-          }
-        std::cout << std::endl;
-        }
       // check wether this worked out
-      ASSERT_REAL_EQ((_MT_)1.0,VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_));
-      ASSERT_REAL_EQ((_MT_)1.0,VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_));
+      ASSERT_REAL_EQ((_MT_)1.0,VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
+      ASSERT_REAL_EQ((_MT_)1.0,VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
       // and so on.
       }
     }

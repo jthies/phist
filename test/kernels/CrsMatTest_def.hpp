@@ -96,13 +96,14 @@ _MT_ const_row_sum_test(_TYPE_(crsMat_ptr) A)
     if (typeImplemented_ && haveMats_)
       {
       _ST_ val = random_number();
+      global_sum(&val,1,mpi_comm_);
       _SUBR_(mvec_put_value)(vec1_,val,&ierr_);
       _SUBR_(mvec_random)(vec2_,&ierr_);
       _SUBR_(crsMat_times_mvec)(1.0,A2_,vec1_,0.0,vec2_,&ierr_);
       if (ierr_) return (_MT_)ierr_;
       return ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,val);
       }
-  return (_MT_)1.0;
+  return mt::one();
   }
 
 bool haveMats_;
@@ -127,7 +128,7 @@ bool haveMats_;
       _SUBR_(mvec_random)(vec2_,&ierr_);
       _SUBR_(crsMat_times_mvec)(1.0,A0_,vec1_,0.0,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ((_MT_)1.0,ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,0.0));
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,0.0));
       }
     }
 
@@ -140,7 +141,7 @@ bool haveMats_;
       _SUBR_(mvec_random)(vec2_,&ierr_);
       _SUBR_(crsMat_times_mvec)(1.0,A1_,vec1_,0.0,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ((_MT_)1.0,ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
       }
     }
 
@@ -148,13 +149,13 @@ bool haveMats_;
     {
     // we allow a tolerance here because the matrices may have errors in the
     // last digit and we can't get the test to pass otherwise.
-    ASSERT_NEAR((_MT_)1.0,const_row_sum_test(A2_),100*mt::eps());
+    ASSERT_NEAR(mt::one(),const_row_sum_test(A2_),100*mt::eps());
     }
 
   TEST_F(CLASSNAME, A3_times_mvec)
     {
     // we allow a tolerance here because the matrices may have errors in the
     // last digit and we can't get the test to pass otherwise.
-    ASSERT_NEAR((_MT_)1.0,const_row_sum_test(A3_),100*mt::eps());
+    ASSERT_NEAR(mt::one(),const_row_sum_test(A3_),100*mt::eps());
     }
 

@@ -39,8 +39,39 @@ virtual void TearDown()
     }
   KernelTestWithType< ST >::TearDown();
   }
-  
-  static MT ColsAreNormalized(const ST* vec_vp, int nloc, int lda, int stride)
+
+//! in-place reduction operation on scalar data type (for testing with MPI)
+static int global_sum(ST* value, int count, MPI_Comm mpi_comm)
+  {
+  int ierr=0;
+#ifdef PHIST_HAVE_MPI
+        ST* gvalue = new ST[count];
+        for (int i=0;i<count;i++) gvalue[i]=st::zero();
+        ierr=MPI_Allreduce(value,gvalue,count,
+                st::mpi_type(), MPI_SUM, mpi_comm);
+        for (int i=0;i<count;i++) value[i]=gvalue[i];
+        delete [] gvalue;
+#endif
+  return ierr;
+  }
+
+//! in-place reduction operation on scalar data type (for testing with MPI)
+static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
+  {
+  int ierr=0;
+#ifdef PHIST_HAVE_MPI
+        ST* gvalue = new MT[count];        
+        ierr=MPI_Allreduce(value,gvalue,count,
+                mt::mpi_type(), MPI_SUM, mpi_comm);
+        for (int i=0;i<count;i++) value[i]=gvalue[i];
+        delete [] gvalue;
+#endif
+  return ierr;
+  }
+
+  //! tests if each column of an mv is normalized in the 2-norm
+  static MT ColsAreNormalized(const ST* vec_vp, lidx_t nloc, lidx_t lda, lidx_t stride,
+        MPI_Comm mpi_comm)
     {
     MT res=1.0;
     // see if all columns in vec2 have 2-norm 1
@@ -51,21 +82,21 @@ virtual void TearDown()
       for (int i=0;i<stride*nloc;i+=stride)
         {
         ST val=vec_vp[j*lda+i];
-        sum+=val*st::conj(val); 
+        sum+=st::conj(val)*val; 
         }
-      norms[j]=std::sqrt(sum);
+      norms[j]=sum;
       }
+    global_sum(norms,nvec_,mpi_comm);
+    for (int j=0;j<nvec_;j++) norms[j]=st::sqrt(norms[j]);
     res=ArrayEqual(norms,nvec_,1,nvec_,1,st::one());
     delete [] norms;
     return res;
     }
 
-
   // check if vectors are mutually orthogonal after QR factorization
-  static MT ColsAreOrthogonal(ST* vec_vp, int nloc, int lda, int stride) 
+  static MT ColsAreOrthogonal(ST* vec_vp, lidx_t nloc, lidx_t lda, lidx_t stride,MPI_Comm mpi_comm) 
     {
-    std::cout << "nloc="<<nloc<<", lda="<<lda<<", stride="<<stride<<std::endl;
-    MT res=1.0;
+    MT res=mt::one();
     int nsums=(nvec_*nvec_-nvec_)/2;
       ST sums[nsums];
       int k=0;
@@ -81,9 +112,55 @@ virtual void TearDown()
           }
         sums[k++]=sum;
         }
+      global_sum(sums,nsums,mpi_comm);
       res=ArrayEqual(sums,nsums,1,nsums,1,st::zero());
       return res;
       }
+
+  // check if vectors are mutually orthogonal after QR factorization
+  static void PrintVector(std::ostream& os, std::string label, 
+        ST* vec_vp, lidx_t nloc, lidx_t lda, lidx_t stride,MPI_Comm mpi_comm) 
+    {
+    int rank=0, np=1;
+#ifdef PHIST_HAVE_MPI
+    MPI_Comm_rank(mpi_comm,&rank);
+    MPI_Comm_size(mpi_comm,&np);
+#endif    
+    if (rank==0)
+      {
+      os << std::endl<<label <<"="<<std::endl;
+      os << "nproc  "<<np<<std::endl;
+      os << "nglob  "<<_Nglob<<std::endl;
+      os << "nloc   "<<nloc<<std::endl;
+      os << "lda    "<<lda<<std::endl;
+      os << "stride "<<stride<<std::endl;
+      }
+    for (int p=0;p<np;p++)
+      {
+      if (p==rank)
+        {
+        os << " @ rank "<<p<<" @"<<std::endl;
+        for (int i=0;i<stride*nloc;i+=stride)
+          {
+          for (int j=0;j<nvec_;j++)
+            {
+            os << vec_vp[j*lda+i]<<"  ";
+            }//j
+          os << std::endl;
+          }//i
+        os << std::flush;
+        }//rank==p
+#ifdef PHIST_HAVE_MPI
+        MPI_Barrier(mpi_comm);
+        MPI_Barrier(mpi_comm);
+        MPI_Barrier(mpi_comm);
+        MPI_Barrier(mpi_comm);
+        MPI_Barrier(mpi_comm);
+#endif
+      }//p
+    return;
+    }
+
 
   _TYPE_(mvec_ptr) vec1_, vec2_;
   ST *vec1_vp_, *vec2_vp_;

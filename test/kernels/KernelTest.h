@@ -30,7 +30,10 @@ public:
  
  //! we store a pointer to the original stream buffer of std::cout,
  //! set it to NULL on rank!=0 at SetUp() and reset it at TearDown().
- std::streambuf* rdbuf_bak;
+ std::streambuf *rdbuf_bak,*e_rdbuf_bak;
+ 
+ std::ostream *cout;//! std::cout for everyone (std::cout is muted if rank!=0)
+ std::ostream *cerr;//! std::cerr for everyone
  
 	/** Set up method.
 	 * Fills internal data vector with values 1.0, 2.0 and 3.0.
@@ -55,7 +58,14 @@ public:
 	phist_Ctype_avail(&ierr_); haveC_=(ierr_==0);
 	phist_Ztype_avail(&ierr_); haveZ_=(ierr_==0);
 	rdbuf_bak = std::cout.rdbuf();
-	if (mpi_rank_!=0) std::cout.rdbuf(NULL);
+	e_rdbuf_bak = std::cerr.rdbuf();
+	cout=new std::ostream(rdbuf_bak);
+	cerr=new std::ostream(e_rdbuf_bak);
+	if (mpi_rank_!=0)
+	  {
+	  std::cout.rdbuf(NULL);
+	  std::cerr.rdbuf(NULL);
+	  }
 	}
 
 virtual void TearDown()
@@ -63,6 +73,9 @@ virtual void TearDown()
         phist_comm_delete(comm_,&ierr_);
 	ASSERT_EQ(0,ierr_);
 	std::cout.rdbuf(rdbuf_bak);
+	std::cerr.rdbuf(e_rdbuf_bak);
+	delete cout;
+	delete cerr;
   }
   
 ::testing::AssertionResult AssertNotNull(void* ptr)

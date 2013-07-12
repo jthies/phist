@@ -21,12 +21,14 @@ public:
       ASSERT_EQ(0,ierr_);
       for (int j=0;j<nvec_;j++)
         {
-        for (int i=0;i<stride_*nrows_;i+=stride_)
+        for (int i=0;i<stride_*nloc_;i+=stride_)
           {
           vec2_vp_[j*lda_+i] = vec1_vp_[j*lda_+i];
           }
         }
+//      PrintVector(*cout,"QR_Test V",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
       _SUBR_(mvec_QR)(vec2_,mat1_,&ierr_);
+//      PrintVector(*cout,"QR_Test Q",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
       ASSERT_EQ(0,ierr_);
       }
     }
@@ -44,13 +46,13 @@ public:
   // check if vectors are normalized correctly after QR factorization
   TEST_F(CLASSNAME, normality) 
     {
-    ASSERT_REAL_EQ((_MT_)1.0,ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_));
+    ASSERT_REAL_EQ(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_));
     }
 
 
   // check if vectors are mutually orthogonal after QR factorization
   TEST_F(CLASSNAME, ortho) 
     {
-    ASSERT_REAL_EQ((_MT_)1.0,ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_));
+    ASSERT_REAL_EQ(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_));
     }
 

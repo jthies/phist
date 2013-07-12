@@ -4,6 +4,10 @@
 #include <limits>
 #include <complex>
 
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
 namespace phist {
 
 template<typename ST>
@@ -28,14 +32,20 @@ class ScalarTraits< float >
   //! for real types, magn_t=scalar_t
   typedef float magn_t;
 
+#ifdef PHIST_HAVE_MPI
+  //! data type for MPI communication
+  static inline MPI_Datatype mpi_type() {return MPI_FLOAT;}
+  static inline MPI_Datatype mpi_complex_type() {return MPI_COMPLEX;}
+#endif
+
   //! returns the type prefix as a char, for instance 'S', 'D'
-  static inline const char type_char()
+  static inline char type_char()
     {
     return 'S';
     }
 
   //! returns the type prefix for the corresponding complex data type
-  static inline const char c_type_char()
+  static inline const char complex_type_char()
     {
     return 'C';
     }
@@ -110,14 +120,20 @@ class ScalarTraits< double >
   //! for real types, magn_t=scalar_t
   typedef double magn_t;
 
+#ifdef PHIST_HAVE_MPI
+  //! data type for MPI communication
+  static inline MPI_Datatype mpi_type() {return MPI_DOUBLE;}
+  static inline MPI_Datatype mpi_complex_type() {return MPI_DOUBLE_COMPLEX;}
+#endif
+
   //! returns the type prefix as a char, for instance 'S', 'D'
-  static inline const char type_char()
+  static inline char type_char()
     {
     return 'D';
     }
 
   //! returns the type prefix for the corresponding complex data type
-  static inline const char c_type_char()
+  static inline const char complex_type_char()
     {
     return 'Z';
     }
@@ -193,8 +209,18 @@ class ScalarTraits< std::complex<MT> >
   //! for real types, magn_t=scalar_t
   typedef MT magn_t;
 
+#ifdef PHIST_HAVE_MPI
+  
+  //! data type for MPI communication. CAVEAT: the MPI data type
+  //! is simply an array of two salars, only the MPI_SUM op will
+  //! work correctly. Others, like MPI_PROD, will perform the wrong
+  //! operation 'result = re(X)*re(Y) + I im(X)*im(Y)'
+  static inline MPI_Datatype mpi_type() {return ScalarTraits<magn_t>::mpi_complex_type();}
+    
+#endif
+
   //! returns the type prefix as a char, for instance 'S', 'D'
-  static inline const char type_char()
+  static inline char type_char()
     {
     return ScalarTraits<MT>::complex_type_char();
     }
@@ -257,8 +283,6 @@ class ScalarTraits< std::complex<MT> >
   //! 1.0 and the next floating point number)
   static inline magn_t eps(){return ScalarTraits<MT>::eps();}
   };
-
-
 
   
 }//namepsace

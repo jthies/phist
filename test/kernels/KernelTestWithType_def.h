@@ -41,7 +41,7 @@ if (verbose_)
 virtual void TearDown() {
 }
 
-static _MT_ ArrayEqual(const _ST_* array, int n, int m, int lda, int stride, _ST_ value)
+static _MT_ ArrayEqual(const _ST_* array, int n, int m, lidx_t lda, lidx_t stride, _ST_ value)
   {
   MT maxval=mt::zero();
   MT scal= st::abs(value);
@@ -57,7 +57,7 @@ static _MT_ ArrayEqual(const _ST_* array, int n, int m, int lda, int stride, _ST
   }
 
 
-static _MT_ ArraysEqual(const _ST_* arr1,const _ST_* arr2, int n, int m, int lda, int stride)
+static _MT_ ArraysEqual(const _ST_* arr1,const _ST_* arr2, int n, int m, lidx_t lda, lidx_t stride)
   {
   _MT_ maxval=mt::zero();
   for (int i=0;i<n*stride;i+=stride)
