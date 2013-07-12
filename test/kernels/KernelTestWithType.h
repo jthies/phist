@@ -2,13 +2,14 @@
 #define KERNEL_TEST_WITH_TYPE_H
 
 #include "KernelTest.h"
+#include "phist_ScalarTraits.hpp"
 #include <cstdlib>
 #include <limits>
 #include "gtest/gtest.h"
 
 /** 
  */
-template<typename ST>
+template<typename _ST>
 class KernelTestWithType
 {
 public:

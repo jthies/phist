@@ -1,5 +1,5 @@
-#ifndef PHIST_SCALAR_TRAITS_H
-#define PHIST_SCALAR_TRAITS_H
+#ifndef PHIST_SCALAR_TRAITS_HPP
+#define PHIST_SCALAR_TRAITS_HPP
 
 #include <limits>
 #include <complex>

@@ -52,10 +52,10 @@ public:
     {
     if (typeImplemented_)
       {
-      _ST_ val = (_ST_)42.0 + (_ST_)3.0*I();
+      ST val = (_ST_)42.0 + (ST)3.0*st::I();
       _SUBR_(mvec_put_value)(vec1_,val,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ((_MT_)1.0,ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,val));
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,val));
       }
     }
 
@@ -66,14 +66,14 @@ public:
       for (int i=0;i<nloc_*nvec_;i++)
         {
         vec1_vp_[i]=random_number();
-        vec2_vp_[i]=one()/_CONJ_(vec1_vp_[i]);
+        vec2_vp_[i]=mt::one()/st::conj(vec1_vp_[i]);
         }
-      _ST_* dots = new _ST_[nvec_];
+      _ST_* dots = new ST[nvec_];
       _SUBR_(mvec_dot_mvec)(vec1_,vec2_,dots,&ierr_);
       ASSERT_EQ(0,ierr_);
             
-      _ST_ val = one() * (_ST_)nloc_;
-      ASSERT_REAL_EQ((_MT_)1.0,ArrayEqual(dots,nvec_,1,nvec_,1,val));
+      _ST_ val = st::one() * (ST)nloc_;
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(dots,nvec_,1,nvec_,1,val));
       delete [] dots;
       }
     

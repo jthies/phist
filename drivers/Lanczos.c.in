@@ -1,18 +1,13 @@
-#include <iostream>
-#include <cstdlib>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
 #include "phist_macros.h"
 #include "phist_kernels.h"
 #include "phist_operator.h"
 #include "phist_lanczos.h"
-#include "phist_ScalarTraits.hpp"
 #include ${PHIST_TG_HFILE}
 
-
-using namespace phist;
-/*
-typedef ScalarTraits< _ST_ >::scaLar_t ST;
-typedef ScalarTraits< _ST_ >::magn_t MT;
-*/
 
 typedef _ST_ ST;
 typedef _MT_ MT;
@@ -62,7 +57,7 @@ int main(int argc, char** argv)
 
   if (argc<2)
     {
-    if (verbose) std::cout << "Usage: ./main_zLanczos <matrix market filename> [<num eigs>] [<tol>] [<max iters>]"<<std::endl;;
+    if (verbose) fprintf(stdout,"Usage: ./XLanczos <matrix market filename> [<num eigs>] [<tol>] [<max iters>]");
     return 1;
     }
 
@@ -95,8 +90,10 @@ int main(int argc, char** argv)
     max_iters=atoi(argv[4]);
     }
 
-  if (verbose) std::cout << "looking for "<<num_eigs<<" Eigenpairs of largest magnitude"<<std::endl;
-  
+  if (verbose) 
+    {
+    fprintf(stdout,"looking for %d Eigenpairs of largest magnitude\n",num_eigs);
+    }  
   PHIST_ICHK_IERR(_SUBR_(crsMat_read_mm)(&A,filename,&ierr),ierr);
   
   PHIST_ICHK_IERR(_SUBR_(crsMat_get_domain_map)(A, &map,&ierr),ierr);
@@ -105,7 +102,7 @@ int main(int argc, char** argv)
 
   num_iters=max_iters;
   // create operator wrapper for computing Y=A*X using a CRS matrix
-  A_op = (_TYPE_(op_ptr))malloc(sizeof(_TYPE_(op)));
+  A_op = (op_ptr_t)malloc(sizeof(_TYPE_(op)));
   PHIST_ICHK_IERR(_SUBR_(op_wrap_crsMat)(A_op,A,&ierr),ierr);
   
   // allocate memory for eigenvalues and residuals

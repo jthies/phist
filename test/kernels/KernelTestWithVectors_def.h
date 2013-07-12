@@ -11,7 +11,7 @@ public:
    */
 virtual void SetUp()
   {
-  KernelTestWithType< _ST_ >::SetUp();
+  KernelTestWithType< ST >::SetUp();
   if (this->typeImplemented_)
     {
     KernelTestWithMap<_Nglob>::SetUp();
@@ -37,56 +37,56 @@ virtual void TearDown()
     _SUBR_(mvec_delete)(vec2_,&this->ierr_);
     KernelTestWithMap<_Nglob>::TearDown();
     }
-  KernelTestWithType< _ST_ >::TearDown();
+  KernelTestWithType< ST >::TearDown();
   }
   
-  static _MT_ ColsAreNormalized(const _ST_* vec_vp, int nloc, int lda, int stride)
+  static MT ColsAreNormalized(const ST* vec_vp, int nloc, int lda, int stride)
     {
-    _MT_ res=1.0;
+    MT res=1.0;
     // see if all columns in vec2 have 2-norm 1
-    _ST_ *norms = new _ST_[nvec_];
+    ST *norms = new ST[nvec_];
     for (int j=0;j<nvec_;j++)
       {
-      _ST_ sum=zero();
+      ST sum=st::zero();
       for (int i=0;i<stride*nloc;i+=stride)
         {
-        _ST_ val=vec_vp[j*lda+i];
-        sum+=val*_CONJ_(val); 
+        ST val=vec_vp[j*lda+i];
+        sum+=val*st::conj(val); 
         }
       norms[j]=std::sqrt(sum);
       }
-    res=ArrayEqual(norms,nvec_,1,nvec_,1,one());
+    res=ArrayEqual(norms,nvec_,1,nvec_,1,st::one());
     delete [] norms;
     return res;
     }
 
 
   // check if vectors are mutually orthogonal after QR factorization
-  static _MT_ ColsAreOrthogonal(_ST_* vec_vp, int nloc, int lda, int stride) 
+  static MT ColsAreOrthogonal(ST* vec_vp, int nloc, int lda, int stride) 
     {
     std::cout << "nloc="<<nloc<<", lda="<<lda<<", stride="<<stride<<std::endl;
-    _MT_ res=1.0;
+    MT res=1.0;
     int nsums=(nvec_*nvec_-nvec_)/2;
-      _ST_ sums[nsums];
+      ST sums[nsums];
       int k=0;
       for (int j1=0;j1<nvec_;j1++)
       for (int j2=j1+1;j2<nvec_;j2++)
         {
-        _ST_ sum=zero();
+        ST sum=st::zero();
         for (int i=0;i<stride*nloc;i+=stride)
           {
-          _ST_ val1=vec_vp[j1*lda+i];
-          _ST_ val2=vec_vp[j2*lda+i];
-          sum+=val1*_CONJ_(val2);
+          ST val1=vec_vp[j1*lda+i];
+          ST val2=vec_vp[j2*lda+i];
+          sum+=val1*st::conj(val2);
           }
         sums[k++]=sum;
         }
-      res=ArrayEqual(sums,nsums,1,nsums,1,zero());
+      res=ArrayEqual(sums,nsums,1,nsums,1,st::zero());
       return res;
       }
 
   _TYPE_(mvec_ptr) vec1_, vec2_;
-  _ST_ *vec1_vp_, *vec2_vp_;
+  ST *vec1_vp_, *vec2_vp_;
   static const int nvec_=_Nvec;
   lidx_t lda_, stride_;
   };

@@ -5,32 +5,21 @@
 // avoid littering the preprocessed files
 // with lots of system stuff
 #ifndef NO_INCLUDES_IN_HEADERS
-#ifdef __cplusplus
-#include <complex>
-#else
-#warning "C include of phist_gen_c.h"
-#include <complex.h>
-#endif
+// let the kernel lib define the complex data type
+#include "phist_typedefs.h"
 #endif
 
 #define _IS_COMPLEX_
+#define _ST_ s_complex_t
+
+// C++ users should use the class phist::ScalarTraits and
+// phist_std_typedefs.hpp for all of this:
+#ifndef __cplusplus
 
 // type specifier
 #define _TP_ 'C'
 
 // scalar type
-#ifdef __cplusplus
-#define _ST_ std::complex<float>
-#define _CMPLX_I_ _ST_(0.0f,1.0f)
-#define _ZERO_ _ST_(0.0f,0.0f)
-#define _ONE_ _ST_(1.0f,0.0f)
-#define _SQRT_(X) std::sqrt(X)
-#define _CONJ_(X) std::conj(X)
-#define _ABS_(X) std::abs(X)
-#define _REAL_(X) std::real(X)
-#define _IMAG_(X) std::imag(X)
-#else
-#define _ST_ float complex
 #define _CMPLX_I_ (0.0f+1.0f*I)
 #define _ZERO_ (0.0f+0.0f*I)
 #define _ONE_ (1.0f+0.0f*I)

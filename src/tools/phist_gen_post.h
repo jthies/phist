@@ -1,10 +1,4 @@
-#ifndef _IS_COMPLEX_
-#define _CONJ_(x) x
-#define _REAL_(x) x
-#define _IMAG_(x) _ZERO_
-#define _CMPLX_I_ _ZERO_
-#endif
-
+// some common macros for all types:
 #ifdef _IS_DOUBLE_
 #define _MT_ double
 #define ASSERT_REAL_EQ(expected,actual) ASSERT_DOUBLE_EQ(expected,actual)
@@ -13,22 +7,40 @@
 #define ASSERT_REAL_EQ(expected,actual) ASSERT_FLOAT_EQ(expected,actual)
 #endif
 
-// check wether all necessary macros are there:
-
-#ifndef _TP_
-#error "macro _TP_ not defined"
-#endif
-
+// check if the standard things are defined in a previously included gen_x.h file
 #ifndef _ST_
 #error "macro _ST_ not defined"
 #endif
 
-#ifndef _CMPLX_I_
-#warning "macro _CMPLX_I_ not defined"
+#ifndef _PREF_
+#error "macro _PREF_ not defined"
 #endif
 
-#ifndef _MT_
-#error "macro _MT_ not defined"
+#ifndef _SUBR_
+#error "macro _SUBR_ not defined"
+#endif
+
+#ifndef _TYPE_
+#error "macro _TYPE_ not defined"
+#endif
+
+// additional things for the C interfaces
+#ifndef __cplusplus
+
+#ifndef _IS_COMPLEX_
+#define _CONJ_(x) x
+#define _REAL_(x) x
+#define _IMAG_(x) _ZERO_
+#define _CMPLX_I_ _ZERO_
+#endif
+
+// check wether all necessary macros are there:
+#ifndef _TP_
+#error "macro _TP_ not defined"
+#endif
+
+#ifndef _CMPLX_I_
+#warning "macro _CMPLX_I_ not defined"
 #endif
 
 #ifndef _CONJ_
@@ -58,16 +70,4 @@
 #ifndef _ONE_
 #error "macro _ONE_ not defined"
 #endif
-
-#ifndef _PREF_
-#error "macro _PREF_ not defined"
 #endif
-
-#ifndef _SUBR_
-#error "macro _SUBR_ not defined"
-#endif
-
-#ifndef _TYPE_
-#error "macro _TYPE_ not defined"
-#endif
-

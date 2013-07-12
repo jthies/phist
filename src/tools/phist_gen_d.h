@@ -1,12 +1,16 @@
 #include "phist_gen_pre.h"
 
-// type specifier
-#define _TP_ 'D'
-
 #define _IS_DOUBLE_
 
 // scalar type
 #define _ST_ double
+
+// C++ users should use the class phist::ScalarTraits and
+// phist_std_typedefs.hpp for all of this:
+#ifndef __cplusplus
+
+// type specifier
+#define _TP_ 'D'
 
 #define _ZERO_ 0.0
 
@@ -17,6 +21,8 @@
 
 // absolute value
 #define _ABS_(X) abs(X)
+
+#endif
 
 // adds type prefix to a specifier, e.g. _PREF_(gemm) -> Dgemm
 #define _PREF_(name) D ## name

@@ -12,11 +12,12 @@
 
 GTEST_API_ int main(int argc, char **argv) {
     int ierr,test_result;
-    phist_kernels_init(&argc,&argv,&ierr);
-    //ASSERT_INT_EQ(ierr,0);
-    std::cout << "Running main() from mainTest.cpp" << std::endl;
 
     testing::InitGoogleTest(&argc, argv);
+    phist_kernels_init(&argc,&argv,&ierr);
+
+    std::cout << "Running main() from mainTest.cpp" << std::endl;
+
     test_result=RUN_ALL_TESTS();
     phist_kernels_finalize(&ierr);
     //ASSERT_INT_EQ(ierr,0);

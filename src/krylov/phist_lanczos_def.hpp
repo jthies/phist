@@ -5,20 +5,22 @@ static void _SUBR_(lanczosStep)(_TYPE_(const_op_ptr) op,
                 _TYPE_(mvec_ptr) vold,
 		_ST_ *alpha, _ST_ *beta, int* ierr)
 {
+#include "phist_std_typedefs.hpp"
+
         *ierr=0;
         // vnew = r/beta
-        _ST_ ibeta = _ONE_/(*beta);
+        ST ibeta = st::one()/(*beta);
         PHIST_CHK_IERR(_SUBR_(mvec_scale)(vnew,&ibeta,ierr),*ierr);
         // r = A*v - beta*vold 
-        PHIST_CHK_IERR(op->apply(_ONE_,op->A_,vnew, 
+        PHIST_CHK_IERR(op->apply(st::one(),op->A_,vnew, 
                 -(*beta),vold,ierr),*ierr);
         //alpha_j = v_j'r
         PHIST_CHK_IERR(_SUBR_(mvec_dot_mvec)(vnew,vold,alpha,ierr),*ierr);
         // r=r-alpha_j*v_j
-	PHIST_CHK_IERR(_SUBR_(mvec_add_mvec)(-(*alpha),vnew,_ONE_,vold,ierr),*ierr);
+	PHIST_CHK_IERR(_SUBR_(mvec_add_mvec)(-(*alpha),vnew,st::one(),vold,ierr),*ierr);
 	// beta_j = ||r||_2
 	PHIST_CHK_IERR(_SUBR_(mvec_dot_mvec)(vold,vold,beta,ierr),*ierr);
-	*beta=_SQRT_(*beta);
+	*beta=st::sqrt(*beta);
         return;
 }
 
@@ -50,27 +52,29 @@ void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op,
         _MT_ tol,int* num_iters, int* num_eigs,
         int* ierr)
   {
-  _TYPE_(mvec_ptr) vold, vnew, vtmp;
-  _TYPE_(mvec_ptr) V;
-  _TYPE_(sdMat_ptr) S;
+#include "phist_std_typedefs.hpp"
+
+  mvec_ptr_t vold, vnew, vtmp;
+  mvec_ptr_t V;
+  sdMat_ptr_t S;
   
   int nIter=*num_iters;
   int nconv=0;
   int i,it,n, inext;
-  _ST_ alpha, beta;
+  ST alpha, beta;
   int converged[nIter];
-  _MT_ r_est[nIter];
-  _MT_ nrm;
+  MT r_est[nIter];
+  MT nrm;
  
    // allocate memory for the tridiagonal matrix H = [-beta_(j-1) alpha_j -beta_j]
-  _MT_ *alphas  = (_MT_ *)malloc(sizeof(_MT_)*nIter);
-  _MT_ *betas   = (_MT_ *)malloc(sizeof(_MT_)*nIter);
-  _MT_ *falphas = (_MT_ *)malloc(sizeof(_MT_)*nIter);
-  _MT_ *fbetas  = (_MT_ *)malloc(sizeof(_MT_)*nIter);
-  _MT_ *work  = (_MT_ *)malloc(sizeof(_MT_)*(2*nIter-2));
+  MT *alphas  = (MT *)malloc(sizeof(MT)*nIter);
+  MT *betas   = (MT *)malloc(sizeof(MT)*nIter);
+  MT *falphas = (MT *)malloc(sizeof(MT)*nIter);
+  MT *fbetas  = (MT *)malloc(sizeof(MT)*nIter);
+  MT *work  = (MT *)malloc(sizeof(MT)*(2*nIter-2));
   for (i=0;i<nIter;i++) converged[i]=0; 
   int lds;
-  _MT_ *S_ptr; // will point to the Ritz values
+  MT *S_ptr_t; // will point to the Ritz values
   //int i,lda,nloc;
   *num_iters=0;
   
@@ -85,21 +89,21 @@ void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op,
 #ifdef _IS_DOUBLE_  
   PHIST_CHK_IERR(phist_DsdMat_create(&S,nIter,nIter,ierr),*ierr);
   // pointer to the data in S
-  PHIST_CHK_IERR(phist_DsdMat_extract_view(S,&S_ptr, &lds,ierr),*ierr);
+  PHIST_CHK_IERR(phist_DsdMat_extract_view(S,&S_ptr_t, &lds,ierr),*ierr);
 #else
   PHIST_CHK_IERR(phist_SsdMat_create(&S,nIter,nIter,ierr),*ierr);
   // pointer to the data in S
-  PHIST_CHK_IERR(phist_SsdMat_extract_view(S,&S_ptr, &lds,ierr),*ierr);
+  PHIST_CHK_IERR(phist_SsdMat_extract_view(S,&S_ptr_t, &lds,ierr),*ierr);
 #endif
   
   // vold = random start vector, r=vold
-  PHIST_CHK_IERR(_SUBR_(mvec_put_value)(vold,_ZERO_,ierr),*ierr);
+  PHIST_CHK_IERR(_SUBR_(mvec_put_value)(vold,st::zero(),ierr),*ierr);
   PHIST_CHK_IERR(_SUBR_(mvec_random)(vnew,ierr),*ierr);
 
   PHIST_CHK_IERR(_SUBR_(mvec_normalize)(vnew,&nrm,ierr),*ierr);
 
-  beta = _ONE_;
-  betas[0] = _REAL_(beta);
+  beta = st::one();
+  betas[0] = st::real(beta);
 
   for(it = 0, n=1; 
       it < nIter;
@@ -109,17 +113,17 @@ void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op,
          vtmp=vnew;
          vnew=vold;
          vold=vtmp;
-         alphas[it]=_REAL_(alpha);
-         betas[it+1]=_REAL_(beta);
+         alphas[it]=st::real(alpha);
+         betas[it+1]=st::real(beta);
 
         if ((it+1)%5==0)
           {
-          memcpy(falphas,alphas,n*sizeof(_MT_)); // alphas and betas will be destroyed 
-          memcpy(fbetas,betas,n*sizeof(_MT_));
+          memcpy(falphas,alphas,n*sizeof(MT)); // alphas and betas will be destroyed 
+          memcpy(fbetas,betas,n*sizeof(MT));
 #ifdef _IS_DOUBLE_
-          PHIST_CHK_IERR(DSTEQR("I",&n,falphas,fbetas+1,S_ptr,&lds,work,ierr),*ierr);
+          PHIST_CHK_IERR(DSTEQR("I",&n,falphas,fbetas+1,S_ptr_t,&lds,work,ierr),*ierr);
 #else
-          PHIST_CHK_IERR(SSTEQR("I",&n,falphas,fbetas+1,S_ptr,&lds,work,ierr),*ierr);
+          PHIST_CHK_IERR(SSTEQR("I",&n,falphas,fbetas+1,S_ptr_t,&lds,work,ierr),*ierr);
 #endif
            // bound for ||r|| of the first (smallest) Ritz value.
            // Note that we check for the smallest one because the
@@ -129,8 +133,8 @@ void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op,
            nconv=0;
            for (i=0;i<n;i++)
              {
-//             fprintf(stdout,"S[%d] %4.2e %4.2e %4.2e\n",i,S_ptr[i*lds],S_ptr[i*lds+1],S_ptr[i*lds+2]);
-             r_est[i]=fabs(betas[it+1]*S_ptr[i*lds+it]);
+//             fprintf(stdout,"S[%d] %4.2e %4.2e %4.2e\n",i,S_ptr_t[i*lds],S_ptr_t[i*lds+1],S_ptr_t[i*lds+2]);
+             r_est[i]=fabs(betas[it+1]*S_ptr_t[i*lds+it]);
 //             fprintf(stdout,"lmb[%d] = %e, ||r|| approx. %e\n",i,falphas[i],r_est[i]);
              if (r_est[i]<tol)
                {

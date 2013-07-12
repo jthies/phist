@@ -211,12 +211,25 @@ endforeach()
 # Define executables  #
 #######################
 
-# type generic driver routines are compiled from .cpp files
-# which we get from .cpp.in files by preprocessing
-file(GLOB TG_Drivers ${CMAKE_SOURCE_DIR}/drivers/*.cpp.in)
+# type generic driver routines are compiled from .c or .cpp files
+# which we get from .in files by preprocessing
+file(GLOB TG_C_Drivers ${CMAKE_SOURCE_DIR}/drivers/*.c.in )
+file(GLOB TG_CXX_Drivers ${CMAKE_SOURCE_DIR}/drivers/*.cpp.in )
 
 
-foreach (infile ${TG_Drivers})
+foreach (infile ${TG_C_Drivers})
+  get_filename_component(filebase ${infile} NAME_WE)
+  foreach (tc ${TG_Types})
+    STRING(TOLOWER \"phist_gen_${tc}.h\" PHIST_TG_HFILE)
+    configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.c)
+    add_executable(${tc}${filebase} ${tc}${filebase}.c)
+    foreach(lib ${PHIST_LIBS})
+      target_link_libraries(${tc}${filebase} ${lib})
+    endforeach()
+  endforeach()
+endforeach()
+
+foreach (infile ${TG_CXX_Drivers})
   get_filename_component(filebase ${infile} NAME_WE)
   foreach (tc ${TG_Types})
     STRING(TOLOWER \"phist_gen_${tc}.h\" PHIST_TG_HFILE)

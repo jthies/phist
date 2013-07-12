@@ -31,15 +31,15 @@ void BuildTestCase1()
   for (int j=0;j<nvec_;j++)
     for (int i=0; i<stride_*nloc_; i+=stride_)
       {
-      _MT_ ij = (_MT_)((i+1)*(j+1));
-      vec1_vp_[j*lda_+i] = ij*one() + ij*I();
-      vec2_vp_[j*lda_+i] = one()/(ij - ij*I());
+      MT ij = (MT)((i+1)*(j+1));
+      vec1_vp_[j*lda_+i] = ij*st::one() + ij*st::I();
+      vec2_vp_[j*lda_+i] = st::one()/(ij - ij*st::I());
       }
   // result of vec1'*vec2
   for (int j=0; j<ncols_; j++)
     for (int i=0; i<nrows_; i++)
     {
-    mat2_vp_[j*m_lda_+i] = (_MT_)((i+1)*nloc_)*one()/(_MT_)(j+1);
+    mat2_vp_[j*m_lda_+i] = (MT)((i+1)*nloc_)*st::one()/(MT)(j+1);
     }
   }
 
@@ -47,7 +47,7 @@ void BuildTestCase1()
 void PrintTestCase()
   {
   std::cout << std::setw(8) << std::setprecision(8);
-  std::cout << "I="<<I()<<std::endl;
+  std::cout << "I="<<st::I()<<std::endl;
   std::cout << "A="<<std::endl;
   for (int i=0; i<stride_*nloc_; i+=stride_)
     {
@@ -85,23 +85,23 @@ void PrintTestCase()
       {
       BuildTestCase1();
       PrintTestCase();
-      _ST_ alpha=one(); 
-      _ST_ beta=zero();
+      _ST_ alpha=st::one(); 
+      _ST_ beta=st::zero();
       _SUBR_(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ((_MT_)1.0,ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1));
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1));
 
-      alpha=(_MT_)0.5*one();
-      beta=(_MT_)0.5*one();
+      alpha=(_MT_)0.5*st::one();
+      beta=(_MT_)0.5*st::one();
       _SUBR_(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ((_MT_)1.0,ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1));
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1));
 
-      alpha=(_MT_)0.3*one(); 
-      beta=(_MT_)0.7*one();
+      alpha=(_MT_)0.3*st::one(); 
+      beta=(_MT_)0.7*st::one();
       _SUBR_(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ((_MT_)1.0,ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1));
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1));
       }
     }
     
