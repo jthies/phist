@@ -102,6 +102,28 @@ void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr)
   *nloc = map->NumMyElements();
   }
 
+//! returns the smallest global index in the map appearing on my partition. ierr is set to 1
+//! in case the map is not contiguous, because in that case it may be that the
+//! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
+void phist_map_get_ilower(const_map_ptr_t vmap, int* ilower, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Epetra_BlockMap,map,vmap,*ierr);
+  if (map->LinearMap()==false) *ierr=1;
+  *ilower = map->MinMyGID();
+  }
+//! returns the largest global index in the map appearing on my partition. ierr is set to 1
+//! in case the map is not contiguous, because in that case it may be that the
+//! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
+void phist_map_get_iupper(const_map_ptr_t vmap, int* iupper, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Epetra_BlockMap,map,vmap,*ierr);
+  if (map->LinearMap()==false) *ierr=1;
+  *iupper = map->MaxMyGID();
+  }
+
+
 #include "phist_gen_s.h"
 #include "../kernels_noimpl.c"
 

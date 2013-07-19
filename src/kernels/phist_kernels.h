@@ -50,6 +50,14 @@ void phist_map_delete(map_ptr_t map, int *ierr);
 void phist_map_get_comm(const_map_ptr_t map, const_comm_ptr_t* comm, int* ierr);
 //! returns the local number of elements in the map
 void phist_map_get_local_length(const_map_ptr_t map, int* nloc, int* ierr);
+//! returns the smallest global index in the map appearing on my partition. ierr is set to 1
+//! in case the map is not contiguous, because in that case it may be that the
+//! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
+void phist_map_get_ilower(const_map_ptr_t map, int* ilower, int* ierr);
+//! returns the largest global index in the map appearing on my partition. ierr is set to 1
+//! in case the map is not contiguous, because in that case it may be that the
+//! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
+void phist_map_get_iupper(const_map_ptr_t map, int* iupper, int* ierr);
 
 #ifdef __cplusplus
 } // extern "C"

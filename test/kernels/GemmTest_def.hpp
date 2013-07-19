@@ -28,10 +28,13 @@ public:
 
 void BuildTestCase1()
   {
+  int ilower;
+  phist_map_get_ilower(map_,&ilower,&ierr_);
+  ASSERT_EQ(0,ierr_);
   for (int j=0;j<nvec_;j++)
     for (int i=0; i<stride_*nloc_; i+=stride_)
       {
-      MT ij = (MT)((i+1)*(j+1));
+      MT ij = (MT)((i+ilower+1)*(j+1));
       vec1_vp_[j*lda_+i] = ij*st::one() + ij*st::I();
       vec2_vp_[j*lda_+i] = st::one()/(ij - ij*st::I());
       }
@@ -39,7 +42,7 @@ void BuildTestCase1()
   for (int j=0; j<ncols_; j++)
     for (int i=0; i<nrows_; i++)
     {
-    mat2_vp_[j*m_lda_+i] = (MT)((i+1)*nloc_)*st::one()/(MT)(j+1);
+    mat2_vp_[j*m_lda_+i] = (MT)((i+1)*nglob_)*st::one()/(MT)(j+1);
     }
   }
 
@@ -47,7 +50,7 @@ void BuildTestCase1()
 void PrintTestCase()
   {
   std::cout << std::setw(8) << std::setprecision(8);
-  std::cout << "I="<<st::I()<<std::endl;
+  std::cout << "i="<<st::I()<<std::endl;
   std::cout << "A="<<std::endl;
   for (int i=0; i<stride_*nloc_; i+=stride_)
     {
@@ -84,7 +87,7 @@ void PrintTestCase()
     if (typeImplemented_)
       {
       BuildTestCase1();
-      PrintTestCase();
+//      PrintTestCase();
       _ST_ alpha=st::one(); 
       _ST_ beta=st::zero();
       _SUBR_(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&ierr_);
