@@ -129,9 +129,12 @@ public:
       
       // check the decomposition: Q*R2 = W - V*R1 (compute W2=Q*R2-W+V*R1 and compare with 0)
       _SUBR_(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
       _SUBR_(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
       _SUBR_(mvec_times_sdMat)(st::one(),V_,R2_,st::one(),W2_,&ierr_);
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(W2_vp_,n_,k_,ldaW2_,stride_,st::zero()));
+      ASSERT_EQ(0,ierr_);
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero()));
       }
     }
 
