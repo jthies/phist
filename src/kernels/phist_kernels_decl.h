@@ -81,10 +81,10 @@ void _SUBR_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) A,
 void _SUBR_(mvec_create)(_TYPE_(mvec_ptr)* V, const_map_ptr_t map, int nvec, 
         int* ierr);
 
-//! create a serial dense n x m matrix on all procs, with column major
-//! ordering.
+//! create a serial dense n x m matrix on all procs in comm, 
+//! with column major ordering and the capability to communicate.
 void _SUBR_(sdMat_create)(_TYPE_(sdMat_ptr)* M, 
-        int nrows, int ncols, int* ierr);
+        int nrows, int ncols, const_comm_ptr_t comm, int* ierr);
 
 //@}
 
@@ -112,8 +112,17 @@ void _SUBR_(mvec_my_length)(_TYPE_(const_mvec_ptr) V, lidx_t* len, int* ierr);
 //! retrieve the map of the vectors in V
 void _SUBR_(mvec_get_map)(_TYPE_(const_mvec_ptr) V, const_map_ptr_t* map, int* ierr);
 
+//! retrieve the comm used for MPI communication in V
+void _SUBR_(mvec_get_comm)(_TYPE_(const_mvec_ptr) V, const_comm_ptr_t* comm, int* ierr);
+
 //! retrieve number of vectors/columns in V
 void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) V, int* nvec, int* ierr);
+
+//! get number of cols in local dense matrix
+void _SUBR_(sdMat_get_nrows)(_TYPE_(const_sdMat_ptr) M, int* nrows, int* ierr);
+
+//! get number of cols in local dense matrix
+void _SUBR_(sdMat_get_ncols)(_TYPE_(const_sdMat_ptr) M, int* ncols, int* ierr);
 
 //! extract view from multi-vector. Sets the user-provided val pointer to point to the
 //! beginning of the first vector, and puts the leading dimension of the array into lda,
@@ -180,6 +189,9 @@ void _SUBR_(mvec_random)(_TYPE_(mvec_ptr) V, int* ierr);
 //! put random numbers into all elements of a serial dense matrix
 void _SUBR_(sdMat_random)(_TYPE_(sdMat_ptr) V, int* ierr);
 
+//! \name Numerical functions
+//!@{
+
 //! normalize (in the 2-norm) each column of v and return ||v||_2
 //! for each vector i in vnrm[i] (must be pre-allocated by caller)
 void _SUBR_(mvec_normalize)(_TYPE_(mvec_ptr) V, 
@@ -189,12 +201,15 @@ void _SUBR_(mvec_normalize)(_TYPE_(mvec_ptr) V,
 void _SUBR_(mvec_scale)(_TYPE_(mvec_ptr) V, 
                             _ST_* scalar, int* ierr);
 
-//! \name Numerical functions
-//!@{
 
 //! y=alpha*x+beta*y
 void _SUBR_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) X,
                             _ST_ beta,  _TYPE_(mvec_ptr)       Y,     
+                            int* ierr);
+
+//! B=alpha*A+beta*B
+void _SUBR_(sdMat_add_sdMat)(_ST_ alpha, _TYPE_(const_sdMat_ptr) A,
+                            _ST_ beta,  _TYPE_(sdMat_ptr)       B,     
                             int* ierr);
 
 //! y=alpha*A*x+beta*y. The scalars alpha and beta are expected to be of the

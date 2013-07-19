@@ -2,15 +2,22 @@
 #define PHIST_TYPEDEFS_H
 
 #ifdef __cplusplus
+
 #ifndef NO_INCLUDES_IN_HEADERS
 #include <complex>
 //! single precision complex type
 typedef std::complex<float> s_complex_t;
+typedef std::complex<double> d_complex_t;
+#endif
+
 #else
+
+#ifndef NO_INCLUDES_IN_HEADERS
 #include <complex.h>
 typedef float complex s_complex_t;
 typedef double complex d_complex_t;
 #endif
+
 #endif
 
 

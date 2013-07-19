@@ -120,15 +120,17 @@ void _SUBR_(mvec_create)(_TYPE_(mvec_ptr)* vV, const_map_ptr_t vmap, int nvec, i
 
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
-void _SUBR_(sdMat_create)(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols, int* ierr)
+void _SUBR_(sdMat_create)(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols, 
+        const_comm_ptr_t vcomm, int* ierr)
   {
   *ierr=0;
-  // create local map
-  Teuchos::RCP<Teuchos::SerialComm<int> > scomm = Teuchos::rcp
-        (new Teuchos::SerialComm<int>());
+  _CAST_PTR_FROM_VOID_(const comm_t, comm, vcomm, *ierr);
+
   //TODO - add node arg
+
+  // create local map
   Teuchos::RCP<map_t> localMap =
-        Teuchos::rcp(new map_t(nrows, 0, scomm, Tpetra::LocallyReplicated));
+        Teuchos::rcp(new map_t(nrows, 0, Teuchos::rcp(comm,false), Tpetra::LocallyReplicated));
   Traits<_ST_>::sdMat_t* M = new Traits<_ST_>::mvec_t(localMap,ncols);
   *vM=(_TYPE_(sdMat_ptr))(M);
   }
@@ -151,13 +153,37 @@ void _SUBR_(mvec_get_map)(_TYPE_(const_mvec_ptr) vV, const_map_ptr_t* vmap, int*
   *vmap=(const_map_ptr_t)(V->getMap().get());
   }
 
+//! retrieve the comm used for MPI communication in V
+void _SUBR_(mvec_get_comm)(_TYPE_(const_mvec_ptr) vV, const_comm_ptr_t* vcomm, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
+  *vcomm=(const_comm_ptr_t)(V->getMap()->getComm().get());
+  }
+
 
 //! retrieve number of vectors/columns in V
 void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) vV, int* nvec, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
   *nvec = V->getNumVectors();
+  }
+
+//! get number of cols in local dense matrix
+void _SUBR_(sdMat_get_nrows)(_TYPE_(const_sdMat_ptr) vM, int* nrows, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,M,vM,*ierr);
+  *nrows = M->getLocalLength();
+  }
+
+//! get number of cols in local dense matrix
+void _SUBR_(sdMat_get_ncols)(_TYPE_(const_sdMat_ptr) vM, int* ncols, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,M,vM,*ierr);
+  *ncols = M->getNumVectors();
   }
 
 
@@ -354,6 +380,16 @@ void _SUBR_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vX,
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,X,vX,*ierr);
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,Y,vY,*ierr);
   _TRY_CATCH_(Y->update(alpha,*X,beta),*ierr);
+  }
+
+//! B=alpha*A+beta*B
+void _SUBR_(sdMat_add_sdMat)(_ST_ alpha, _TYPE_(const_sdMat_ptr) vA,
+                            _ST_ beta,  _TYPE_(sdMat_ptr)       vB, 
+                            int* ierr)
+  {
+  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,A,vA,*ierr);
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,B,vB,*ierr);
+  _TRY_CATCH_(B->update(alpha,*A,beta),*ierr);
   }
 
 

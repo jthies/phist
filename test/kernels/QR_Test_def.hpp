@@ -46,13 +46,19 @@ public:
   // check if vectors are normalized correctly after QR factorization
   TEST_F(CLASSNAME, normality) 
     {
-    ASSERT_REAL_EQ(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_));
+    if (typeImplemented_)
+      {
+      ASSERT_REAL_EQ(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_));
+      }
     }
 
 
   // check if vectors are mutually orthogonal after QR factorization
   TEST_F(CLASSNAME, ortho) 
     {
-    ASSERT_REAL_EQ(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_));
+    if (typeImplemented_)
+      {
+      ASSERT_REAL_EQ(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_));
+      }
     }
 

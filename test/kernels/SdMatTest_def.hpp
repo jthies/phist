@@ -25,15 +25,20 @@ public:
 
 };
 
-  TEST_F(CLASSNAME, put_value) 
+// note: the numerical functions of sdMat are not tested up to now. This makes sense as
+// in all three kernel libs we want to support (Epetra, Tpetra, Ghost) an sdMat is just
+// an mvec with a local map.
+  TEST_F(CLASSNAME, get_attributes)
     {
     if (typeImplemented_)
       {
-      ST val = 42.0 + 3.0*mt::I();
-      _SUBR_(sdMat_put_value)(mat1_,val,&ierr_);
+      int n;
+      _SUBR_(sdMat_get_nrows)(mat1_,&n,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat1_vp_,nrows_,ncols_,m_lda_,1,val));
+      ASSERT_EQ(nrows_, n); 
+      _SUBR_(sdMat_get_ncols)(mat1_,&n,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_EQ(ncols_, n); 
       }
     }
-    
 

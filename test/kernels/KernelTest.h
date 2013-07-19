@@ -57,25 +57,38 @@ public:
 	phist_Dtype_avail(&ierr_); haveD_=(ierr_==0);
 	phist_Ctype_avail(&ierr_); haveC_=(ierr_==0);
 	phist_Ztype_avail(&ierr_); haveZ_=(ierr_==0);
+#if 0	
 	rdbuf_bak = std::cout.rdbuf();
 	e_rdbuf_bak = std::cerr.rdbuf();
 	cout=new std::ostream(rdbuf_bak);
 	cerr=new std::ostream(e_rdbuf_bak);
-	if (mpi_rank_!=0)
+	if (mpi_rank_!=0) // this doesn't really seem to work as expected
 	  {
 	  std::cout.rdbuf(NULL);
 	  std::cerr.rdbuf(NULL);
 	  }
+#else
+        cout = &std::cout;
+        cerr = &std::cerr;
+#endif	
 	}
 
 virtual void TearDown()
   {
-        phist_comm_delete(comm_,&ierr_);
-	ASSERT_EQ(0,ierr_);
+  if (false) // we do not delete the comm because it may be shared between
+             // base classes of a derived class, so it is not clear when to
+             // delete it without a smart pointer concept.
+    {
+    phist_comm_delete(comm_,&ierr_);
+    ASSERT_EQ(0,ierr_);
+    comm_=NULL;
+    }
+#if 0
 	std::cout.rdbuf(rdbuf_bak);
 	std::cerr.rdbuf(e_rdbuf_bak);
 	delete cout;
 	delete cerr;
+#endif
   }
   
 ::testing::AssertionResult AssertNotNull(void* ptr)

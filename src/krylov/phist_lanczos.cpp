@@ -1,6 +1,6 @@
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
+#include <cstdlib>
+#include <cstring>
+#include <cmath>
 
 #include "phist_lanczos.h"
 #include "phist_kernels.h"

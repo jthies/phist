@@ -4,7 +4,6 @@
 
 #include "phist_kernels.h"
 #include "../kernels/KernelTest.h"
-#include "../kernels/KernelTest.h"
 #include "../kernels/KernelTestWithMap.h"
 #include "../kernels/KernelTestWithType.h"
 #include "../kernels/KernelTestWithVectors.h"
@@ -21,60 +20,58 @@ using namespace testing;
 #undef CLASSNAME
 #endif
 
-#define _N_ 17
+#define _N_ 10
 #define _M_ 1
 #define _K_ 1
 
-#define CLASSNAME SOrthogTest_17_1_1
+#define CLASSNAME SMvecSdMatTest_10_1
 #include "phist_gen_s.h"
-#include "OrthogTest_def.hpp"
+#include "MvecSdMatTest_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME DOrthogTest_17_1_1
+#define CLASSNAME DMvecSdMatTest_10_1
 
 #include "phist_gen_d.h"
-#include "OrthogTest_def.hpp"
+#include "MvecSdMatTest_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME COrthogTest_17_1_1
+#define CLASSNAME CMvecSdMatTest_10_1
 
 #include "phist_gen_c.h"
-#include "OrthogTest_def.hpp"
+#include "MvecSdMatTest_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME ZOrthogTest_17_1_1
+#define CLASSNAME ZMvecSdMatTest_10_1
 
 #include "phist_gen_z.h"
-#include "OrthogTest_def.hpp"
+#include "MvecSdMatTest_def.hpp"
 
 #undef _N_
 #define _N_ 64
 #undef _M_
-#define _M_ 5
-#undef _K_
-#define _K_ 3
+#define _M_ 12
 
 #undef CLASSNAME
-#define CLASSNAME SOrthogTest_64_5_3
+#define CLASSNAME SMvecSdMatTest_64_12
 
 #include "phist_gen_s.h"
-#include "OrthogTest_def.hpp"
+#include "MvecSdMatTest_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME DOrthogTest_64_5_3
+#define CLASSNAME DMvecSdMatTest_64_12
 
 #include "phist_gen_d.h"
-#include "OrthogTest_def.hpp"
+#include "MvecSdMatTest_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME COrthogTest_64_5_3
+#define CLASSNAME CMvecSdMatTest_64_12
 
 #include "phist_gen_c.h"
-#include "OrthogTest_def.hpp"
+#include "MvecSdMatTest_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME ZOrthogTest_64_5_3
+#define CLASSNAME ZMvecSdMatTest_64_12
 
 #include "phist_gen_z.h"
-#include "OrthogTest_def.hpp"
+#include "MvecSdMatTest_def.hpp"
 

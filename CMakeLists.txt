@@ -124,7 +124,8 @@ set(TG_Types S
 
 set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp)
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c)
-set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.c)
+set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.c
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp)
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_lanczos.cpp)
 
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB})
@@ -190,6 +191,7 @@ set(SOURCES
 )
 
 file(GLOB KERNEL_TEST_SOURCES ${CMAKE_SOURCE_DIR}/test/kernels/*.cpp)
+file(GLOB CORE_TEST_SOURCES ${CMAKE_SOURCE_DIR}/test/core/*.cpp)
 file(GLOB KRYLOV_TEST_SOURCES ${CMAKE_SOURCE_DIR}/test/krylov/*.cpp)
 
 set(TEST_SOURCES
@@ -197,6 +199,7 @@ set(TEST_SOURCES
     test/mainTest.cpp)
     
 set(KERNEL_TEST_SOURCES ${KERNEL_TEST_SOURCES} ${SOURCES} ${TEST_SOURCES})
+set(CORE_TEST_SOURCES ${CORE_TEST_SOURCES} ${SOURCES} ${TEST_SOURCES})
 set(KRYLOV_TEST_SOURCES ${KRYLOV_TEST_SOURCES} ${SOURCES} ${TEST_SOURCES})
 
 file(GLOB TestMatricesMM ${CMAKE_SOURCE_DIR}/test/matrices/*.mm)
@@ -243,6 +246,7 @@ endforeach()
 
 # test drivers
 set(PHIST_TESTS kernel 
+                core
                 krylov)
 
 foreach(label ${PHIST_TESTS})
@@ -263,6 +267,7 @@ endforeach()
 enable_testing()
 
 add_test(kernel-tests ${PRODUCT_NAME}-kernel-test --gtest_output=xml:${CMAKE_SOURCE_DIR}/xunit.xml)
+add_test(core-tests ${PRODUCT_NAME}-core-test --gtest_output=xml:${CMAKE_SOURCE_DIR}/xunit.xml)
 add_test(krylov-tests ${PRODUCT_NAME}-krylov-test --gtest_output=xml:${CMAKE_SOURCE_DIR}/xunit.xml)
 
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console

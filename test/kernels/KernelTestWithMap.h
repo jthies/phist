@@ -25,6 +25,7 @@ virtual void TearDown()
   {
   phist_map_delete(map_,&ierr_);
 ASSERT_EQ(0,ierr_);
+  KernelTest::TearDown();
   }
 
 static const int nglob_=_Nglob;

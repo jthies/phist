@@ -20,6 +20,11 @@
 //! evals: latest eigenvalue approximations
 //! resid: Ritz residuals
 //! ierr: return code of the solver (0 on success, negative on error, positive on warning)
+//!
+//! Note: This solver is not fully implemented, it just computes a few eigenvalues without
+//! keeping the basis, so eigenvectors cannot be obtained, no reorthogonalization or restart
+//! is performed and the quality of the resulting eigenvalues may be poor.
+//!
 void _SUBR_(lanczos)(_TYPE_(const_op_ptr) Op, 
         _TYPE_(mvec_ptr) X, 
         _MT_* evals, _MT_* resid,

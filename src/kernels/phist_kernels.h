@@ -1,6 +1,8 @@
 #ifndef PHIST_KERNELS_H
 #define PHIST_KERNELS_H
 
+#include "phist_macros.h"
+
 //! note: the phist_typedefs.h file is provided in the subdirectory
 //! where the interface is implemented (e.g. ghost/, tpetra/).
 #include "phist_typedefs.h"

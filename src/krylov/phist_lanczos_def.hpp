@@ -82,16 +82,21 @@ void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op,
     {
     *ierr=-1; // maps of operator should point to same object (A should be a square matrix)
     }
+    
+  const_comm_ptr_t comm;
+  PHIST_CHK_IERR(phist_map_get_comm(op->range_map_,&comm,ierr),*ierr);
 
   PHIST_CHK_IERR(_SUBR_(mvec_create)(&vold,op->domain_map_,1,ierr),*ierr);
   PHIST_CHK_IERR(_SUBR_(mvec_create)(&vnew,op->domain_map_,1,ierr),*ierr);
   // S will store the Ritz vectors
+  // it would be nice if we could do these things with a traits class eventually,
+  // rather than with macros.
 #ifdef _IS_DOUBLE_  
-  PHIST_CHK_IERR(phist_DsdMat_create(&S,nIter,nIter,ierr),*ierr);
+  PHIST_CHK_IERR(phist_DsdMat_create(&S,nIter,nIter,comm,ierr),*ierr);
   // pointer to the data in S
   PHIST_CHK_IERR(phist_DsdMat_extract_view(S,&S_ptr_t, &lds,ierr),*ierr);
 #else
-  PHIST_CHK_IERR(phist_SsdMat_create(&S,nIter,nIter,ierr),*ierr);
+  PHIST_CHK_IERR(phist_SsdMat_create(&S,nIter,nIter,comm,ierr),*ierr);
   // pointer to the data in S
   PHIST_CHK_IERR(phist_SsdMat_extract_view(S,&S_ptr_t, &lds,ierr),*ierr);
 #endif

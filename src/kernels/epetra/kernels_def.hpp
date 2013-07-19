@@ -29,13 +29,13 @@
 extern "C" {
 
 // we implement only the double precision real type D
-void phist_Dtype_avail(int* ierr)
+void _SUBR_(type_avail)(int* ierr)
   {
   *ierr=0;
   }
 
 //! read a matrix from a MatrixMarket (ASCII) file
-void phist_DcrsMat_read_mm(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
+void _SUBR_(crsMat_read_mm)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
 #ifdef HAVE_MPI
   Epetra_MpiComm comm(MPI_COMM_WORLD);
@@ -53,14 +53,14 @@ void phist_DcrsMat_read_mm(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ier
   }
 
 //! read a matrix from a Ghost CRS (binary) file.
-void phist_DcrsMat_read_bin(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
+void _SUBR_(crsMat_read_bin)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
   // TODO - not implemented (should read the binary file format defined by ghost)
   *ierr=-99;
   }
 
 //! read a matrix from a Harwell-Boeing (HB) file
-void phist_DcrsMat_read_hb(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
+void _SUBR_(crsMat_read_hb)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
   *ierr=-99; // not implemented in epetra
   }
@@ -70,7 +70,7 @@ void phist_DcrsMat_read_hb(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ier
 
 //!@{
 //! get the row distribution of the matrix
-void phist_DcrsMat_get_row_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
+void _SUBR_(crsMat_get_row_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_CrsMatrix,A,vA,*ierr);
@@ -78,7 +78,7 @@ void phist_DcrsMat_get_row_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vma
   }
 
 //! get column distribution of a matrix
-void phist_DcrsMat_get_col_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
+void _SUBR_(crsMat_get_col_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_CrsMatrix,A,vA,*ierr);
@@ -86,7 +86,7 @@ void phist_DcrsMat_get_col_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vma
   }
 
 //! get the map for vectors x in y=A*x
-void phist_DcrsMat_get_domain_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
+void _SUBR_(crsMat_get_domain_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_CrsMatrix,A,vA,*ierr);
@@ -94,7 +94,7 @@ void phist_DcrsMat_get_domain_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* 
   }
 
 //! get the map for vectors y in y=A*x
-void phist_DcrsMat_get_range_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
+void _SUBR_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_CrsMatrix,A,vA,*ierr);
@@ -107,7 +107,7 @@ void phist_DcrsMat_get_range_map(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* v
 //@{
 //! create a block-vector. The entries are stored contiguously
 //! at val in column major ordering.
-void phist_Dmvec_create(_TYPE_(mvec_ptr)* vV, 
+void _SUBR_(mvec_create)(_TYPE_(mvec_ptr)* vV, 
 const_map_ptr_t vmap, int nvec, int* ierr)
   {
   *ierr=0;
@@ -120,11 +120,12 @@ const_map_ptr_t vmap, int nvec, int* ierr)
 
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
-void phist_DsdMat_create(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols, int* ierr)
+void _SUBR_(sdMat_create)(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols, 
+        const_comm_ptr_t vcomm, int* ierr)
   {
   *ierr=0;
-  Epetra_SerialComm comm;
-  Epetra_LocalMap localMap(nrows,0,comm);
+  _CAST_PTR_FROM_VOID_(const Epetra_Comm, comm,vcomm,*ierr);
+  Epetra_LocalMap localMap(nrows,0,*comm);
   Epetra_MultiVector* mv = new Epetra_MultiVector(localMap,ncols);
   if (mv==NULL) *ierr=-1;
   *vM=(_TYPE_(sdMat_ptr))mv;
@@ -133,7 +134,7 @@ void phist_DsdMat_create(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols, int* ierr)
 //@}
 
 //! retrieve local length of the vectors in V
-void phist_Dmvec_my_length(_TYPE_(const_mvec_ptr) vV, lidx_t* len, int* ierr)
+void _SUBR_(mvec_my_length)(_TYPE_(const_mvec_ptr) vV, lidx_t* len, int* ierr)
   {
   *ierr = 0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
@@ -148,21 +149,46 @@ void _SUBR_(mvec_get_map)(_TYPE_(const_mvec_ptr) vV, const_map_ptr_t* vmap, int*
   *vmap=(const_map_ptr_t)&V->Map();
   }
 
+//! retrieve the comm used for MPI communication in V
+void _SUBR_(mvec_get_comm)(_TYPE_(const_mvec_ptr) vV, const_comm_ptr_t* vcomm, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
+  *vcomm=(const_comm_ptr_t)&V->Comm();
+  }
+
 //! retrieve number of vectors/columns in V
-void phist_Dmvec_num_vectors(_TYPE_(const_mvec_ptr) vV, int* nvec, int* ierr)
+void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) vV, int* nvec, int* ierr)
   {
   *ierr = 0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
   *nvec = V->NumVectors();
   }
 
-void phist_Dmvec_extract_view(Dmvec_ptr_t vV, double** val, lidx_t* lda, int* ierr)
+//! get number of cols in local dense matrix
+void _SUBR_(sdMat_get_nrows)(_TYPE_(const_sdMat_ptr) vM, int* nrows, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,M,vM,*ierr);
+  *nrows = M->MyLength();
+  }
+
+//! get number of cols in local dense matrix
+void _SUBR_(sdMat_get_ncols)(_TYPE_(const_sdMat_ptr) vM, int* ncols, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,M,vM,*ierr);
+  *ncols = M->NumVectors();
+  }
+
+
+void _SUBR_(mvec_extract_view)(Dmvec_ptr_t vV, double** val, lidx_t* lda, int* ierr)
   {
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V, vV, *ierr);
   _CHECK_ZERO_((*V)(0)->ExtractView(val,lda),*ierr);
   }
 
-void phist_DsdMat_extract_view(DsdMat_ptr_t vM, double** val, lidx_t* lda, int* ierr)
+void _SUBR_(sdMat_extract_view)(DsdMat_ptr_t vM, double** val, lidx_t* lda, int* ierr)
   {
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,M, vM, *ierr);
   _CHECK_ZERO_(M->ExtractView(val,lda),*ierr);
@@ -239,7 +265,7 @@ void _SUBR_(sdMat_set_block)(_TYPE_(sdMat_ptr) M,
 //@{
 
 //!
-void phist_DcrsMat_delete(_TYPE_(crsMat_ptr) vA, int* ierr)
+void _SUBR_(crsMat_delete)(_TYPE_(crsMat_ptr) vA, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_CrsMatrix,A,vA,*ierr);
@@ -247,7 +273,7 @@ void phist_DcrsMat_delete(_TYPE_(crsMat_ptr) vA, int* ierr)
   }
 
 //!
-void phist_Dmvec_delete(_TYPE_(mvec_ptr) vV, int* ierr)
+void _SUBR_(mvec_delete)(_TYPE_(mvec_ptr) vV, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);
@@ -255,7 +281,7 @@ void phist_Dmvec_delete(_TYPE_(mvec_ptr) vV, int* ierr)
   }
 
 //!
-void phist_DsdMat_delete(_TYPE_(sdMat_ptr) vM, int* ierr)
+void _SUBR_(sdMat_delete)(_TYPE_(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,M,vM,*ierr);
@@ -311,7 +337,7 @@ void _SUBR_(sdMat_random)(_TYPE_(sdMat_ptr) vM, int* ierr)
   _CHECK_ZERO_(V->Norm2(vnrm),*ierr);
   for (int i=0;i<V->NumVectors();i++)
     {
-    _CHECK_ZERO_((*V)(i)->Scale(_ONE_/(_ST_)vnrm[i]),*ierr);
+    _CHECK_ZERO_((*V)(i)->Scale(1.0/(_ST_)vnrm[i]),*ierr);
     }
   return;
   }
@@ -340,9 +366,19 @@ void _SUBR_(mvec_add_mvec)(double alpha, _TYPE_(const_mvec_ptr) vX,
   _CHECK_ZERO_(Y->Update(alpha,*X,beta),*ierr);
   }
 
+//! B=alpha*A+beta*B
+void _SUBR_(sdMat_add_sdMat)(_ST_ alpha, _TYPE_(const_sdMat_ptr) vA,
+                            _ST_ beta,  _TYPE_(sdMat_ptr)       vB,
+                            int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,A,vA,*ierr);
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,B,vB,*ierr);
+  _CHECK_ZERO_(B->Update(alpha,*A,beta),*ierr);  
+  }
 
 //! y=alpha*A*x+beta*y.
-void phist_DcrsMat_times_mvec(double alpha, _TYPE_(const_crsMat_ptr) vA, _TYPE_(const_mvec_ptr) vx, 
+void _SUBR_(crsMat_times_mvec)(double alpha, _TYPE_(const_crsMat_ptr) vA, _TYPE_(const_mvec_ptr) vx, 
 double beta, _TYPE_(mvec_ptr) vy, int* ierr)
   {
   *ierr=0;
@@ -382,7 +418,7 @@ double beta, _TYPE_(mvec_ptr) vy, int* ierr)
   }
 
 //! dot product of vectors v_i and w_i, i=1..numvecs
-void phist_Dmvec_dot_mvec(_TYPE_(const_mvec_ptr) vV, _TYPE_(const_mvec_ptr) vW, double* s, int* ierr)
+void _SUBR_(mvec_dot_mvec)(_TYPE_(const_mvec_ptr) vV, _TYPE_(const_mvec_ptr) vW, double* s, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
@@ -392,7 +428,7 @@ void phist_Dmvec_dot_mvec(_TYPE_(const_mvec_ptr) vV, _TYPE_(const_mvec_ptr) vW, 
 
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix
 //! C=V'*W. C is replicated on all MPI processes sharing V and W.
-void phist_DmvecT_times_mvec(double alpha, _TYPE_(const_mvec_ptr) vV, _TYPE_(const_mvec_ptr) vW, double beta, _TYPE_(sdMat_ptr) vC, int* ierr)
+void _SUBR_(mvecT_times_mvec)(double alpha, _TYPE_(const_mvec_ptr) vV, _TYPE_(const_mvec_ptr) vW, double beta, _TYPE_(sdMat_ptr) vC, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
@@ -404,7 +440,7 @@ void phist_DmvecT_times_mvec(double alpha, _TYPE_(const_mvec_ptr) vV, _TYPE_(con
 
 //! n x m multi-vector times m x m dense matrix gives n x m multi-vector,
 //! W=alpha*V*C + beta*W
-void phist_Dmvec_times_sdMat(double alpha, _TYPE_(const_mvec_ptr) vV,
+void _SUBR_(mvec_times_sdMat)(double alpha, _TYPE_(const_mvec_ptr) vV,
                                        _TYPE_(const_sdMat_ptr) vC,
                            double beta,  _TYPE_(mvec_ptr) vW,
                                        int* ierr)
@@ -416,7 +452,7 @@ void phist_Dmvec_times_sdMat(double alpha, _TYPE_(const_mvec_ptr) vV,
   }
   
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.
-void phist_Dmvec_QR(_TYPE_(mvec_ptr) vV, _TYPE_(sdMat_ptr) vR, int* ierr)
+void _SUBR_(mvec_QR)(_TYPE_(mvec_ptr) vV, _TYPE_(sdMat_ptr) vR, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);

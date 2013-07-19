@@ -72,10 +72,10 @@ void _SUBR_(mvec_create)(_TYPE_(mvec_ptr)* V,
   *ierr=-99;
   }
 
-//! create a serial dense n x m matrix on all procs, with column major
-//! ordering.
+//! create a serial dense n x m matrix on all procs in comm, with column major
+//! ordering and the capability to communicate.
 void _SUBR_(sdMat_create)(_TYPE_(sdMat_ptr)* M, 
-int nrows, int ncols, int* ierr)
+int nrows, int ncols, const_comm_ptr_t comm, int* ierr)
   {
   *ierr=-99;
   }
@@ -94,11 +94,29 @@ void _SUBR_(mvec_get_map)(_TYPE_(const_mvec_ptr) V, const_map_ptr_t* map, int* i
   *ierr=-99;
   }
 
+//! retrieve the comm used for MPI communication in V
+void _SUBR_(mvec_get_comm)(_TYPE_(const_mvec_ptr) V, const_comm_ptr_t* comm, int* ierr)
+  {
+  *ierr=-99;
+  }
 //! retrieve number of vectors/columns in V
 void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) V, int* nvec, int* ierr)
   {
   *ierr=-99;
   }
+
+//! get number of cols in local dense matrix
+void _SUBR_(sdMat_get_nrows)(_TYPE_(const_sdMat_ptr) M, int* nrows, int* ierr)
+  {
+  *ierr=-99;
+  }
+
+//! get number of cols in local dense matrix
+void _SUBR_(sdMat_get_ncols)(_TYPE_(const_sdMat_ptr) M, int* ncols, int* ierr)
+  {
+  *ierr=-99;
+  }
+
 
 //!
 void _SUBR_(mvec_extract_view)(_TYPE_(mvec_ptr) V, _ST_** val, lidx_t* lda, int* ierr)
@@ -240,6 +258,14 @@ void _SUBR_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) X,
   *ierr=-99;
   }
 
+//! B=alpha*A+beta*B
+void _SUBR_(sdMat_add_sdMat)(_ST_ alpha, _TYPE_(const_sdMat_ptr) A,
+                            _ST_ beta,  _TYPE_(sdMat_ptr)       B, 
+                            int* ierr)
+  {
+  *ierr=-99;
+  }
+
 //! y=alpha*A*x+beta*y.
 void _SUBR_(crsMat_times_mvec)(_ST_ alpha, _TYPE_(const_crsMat_ptr) A, 
         _TYPE_(const_mvec_ptr) x, _ST_ beta, _TYPE_(mvec_ptr) y, int* ierr)
@@ -255,12 +281,19 @@ void _SUBR_(mvec_dot_mvec)(_TYPE_(const_mvec_ptr) v,
   *ierr=-99;
   }
   
+//! W=V*C
+void _SUBR_(mvec_times_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) V, 
+                                       _TYPE_(const_sdMat_ptr) C, 
+                                       _ST_ beta, _TYPE_(mvec_ptr) W, int* ierr)
+  {
+  *ierr=-99;
+  }
+
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix
 //! C=alpha*V'*W+beta*C. C is replicated on all MPI processes sharing V and W.
 void _SUBR_(mvecT_times_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) V, 
                                        _TYPE_(const_mvec_ptr) W, 
                                        _ST_ beta, _TYPE_(sdMat_ptr) C, int* ierr)
-
   {
   *ierr=-99;
   }
