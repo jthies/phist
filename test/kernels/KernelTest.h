@@ -15,12 +15,12 @@ typedef int MPI_Comm;
 #include "phist_typedefs.h"
 #include "phist_kernels.h"
 
-/** Base for calculation tests.
- * This class provides a basic test fixture for all calculation tests. It mainly provides a vector
- * with double precision values 1.0, 2.0 and 3.0 for usage as input to tests.
- * @note Derived classes need to call CalculationTest::SetUp() if they override it.
+/** Base for tests using kernel operations.
+It calls the init and finalize routines of the kernel lib
+and provides basic MPI support
  */
 class KernelTest: public testing::Test {
+
 public:
 
  comm_ptr_t comm_;
@@ -36,7 +36,6 @@ public:
  std::ostream *cerr;//! std::cerr for everyone
  
 	/** Set up method.
-	 * Fills internal data vector with values 1.0, 2.0 and 3.0.
 	 */
 	virtual void SetUp() 
 	{
@@ -97,13 +96,6 @@ virtual void TearDown()
   return ::testing::AssertionSuccess();
   }
 
-};
-
-/** This class is a mock object to test kernel implementation. */
-class MockKernels {
-
-public:
-//    MOCK_CONST_METHOD0(evaluate, double());
 };
 
 #endif
