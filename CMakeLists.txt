@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 2.8)
 
-#if (NOT CMAKE_BUILD_TYPE)
-#  message(STATUS "setting CMAKE_BUILD_TYPE to 'Debug' by default.")
-#  set (CMAKE_BUILD_TYPE Debug)
-#else()
-#  message(STATUS "using CMAKE_BUILD_TYPE='${CMAKE_BUILD_TYPE}'")
-#endif()
+if (NOT CMAKE_BUILD_TYPE)
+  message(STATUS "setting CMAKE_BUILD_TYPE to 'Debug' by default.")
+  set (CMAKE_BUILD_TYPE Debug)
+else()
+  message(STATUS "using CMAKE_BUILD_TYPE='${CMAKE_BUILD_TYPE}'")
+endif()
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
 
 # Define some custom variables
@@ -18,9 +18,9 @@ set(PRODUCT_NAME phist-${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VER
 
 option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
 
-enable_language (Fortran)
 enable_language (C)
 enable_language (CXX)
+enable_language (Fortran)
 
 ##############################################################################
 # compiler-dependent flags 
@@ -30,39 +30,44 @@ get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
 get_filename_component (C_COMPILER_NAME ${CMAKE_C_COMPILER} NAME)
 get_filename_component (CXX_COMPILER_NAME ${CMAKE_CXX_COMPILER} NAME)
 
+if (C_COMPILER_NAME STREQUAL "gcc")
+  if (CXX_COMPILER_NAME STREQUAL "c++")
+    set(CXX_COMPILER_NAME g++)
+  endif()
+  if (NOT Fortran_COMPILER_NAME)
+    set(Fortran_COMPILER_NAME gfortran)
+  endif()
+endif()
 
 if (C_COMPILER_NAME STREQUAL "gcc")
-  # gcc
-  set (CMAKE_Fortran_FLAGS_RELEASE "-O3")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g -DTESTING")
+  message(STATUS "using GCC compiler flags")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-O2 -fopenmp")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g -fopenmp -DTESTING")
 else ()
-  message ("CMAKE_C_COMPILER full path: " ${CMAKE_C_COMPILER})
   message ("C compiler: " ${C_COMPILER_NAME})
-  message ("No optimized C compiler flags are known, we just try -O2...")
+  message ("No specifig C compiler flags are known, we will try '-O2' and '-O0 -g', respectively")
   set (CMAKE_C_FLAGS_RELEASE "-O2")
   set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -DTESTING")
 endif ()
 
 if (Fortran_COMPILER_NAME STREQUAL "gfortran")
-  # gfortran
-  set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-fno-f2c -O0 -g")
+  message(STATUS "using gfortran compiler flags")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3 -fopenmp")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "-fno-f2c -O0 -g -fopenmp")
 else ()
-  message ("CMAKE_Fortran_COMPILER full path: " ${CMAKE_Fortran_COMPILER})
   message ("Fortran compiler: " ${Fortran_COMPILER_NAME})
-  message ("No optimized Fortran compiler flags are known, we just try -O2...")
+  message ("No optimized Fortran compiler flags are known, we will try '-O2' and '-O0 -g', respectively")
   set (CMAKE_Fortran_FLAGS_RELEASE "-O2")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
 endif ()
 
 if (CXX_COMPILER_NAME STREQUAL "g++")
-  # g++
-  set (CMAKE_CXX_FLAGS_RELEASE "-O3")
-  set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING")
+  message(STATUS "using g++ compiler flags")
+  set (CMAKE_CXX_FLAGS_RELEASE "-O2 -fopenmp")
+  set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING -fopenmp")
 else ()
-  message ("CMAKE_CXX_COMPILER full path: " ${CMAKE_CXX_COMPILER})
   message ("CXX compiler: " ${CXX_COMPILER_NAME})
-  message ("No optimized CXX compiler flags are known, we just try -O2...")
+  message ("No optimized C++ compiler flags are known, we will try '-O2' and '-O0 -g', respectively")
   set (CMAKE_CXX_FLAGS_RELEASE "-O2")
   set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING")
 endif ()
@@ -87,6 +92,34 @@ if (${PHIST_ENABLE_MPI})
   endif()
 endif()
 
+# ghost is a requirement of phist now because of the task queue
+find_package(Ghost PATHS $ENV{GHOST_HOME})
+
+message(STATUS "GHOST_Found=${GHOST_Found}")
+
+if (GHOST_Found)
+  include_directories(${GHOST_INCLUDE_DIRS})
+  link_directories(${GHOST_LIBRARY_DIRS})
+  list(APPEND PHIST_LIBS ${GHOST_LIBRARIES})
+  add_definitions(-DPHIST_HAVE_GHOST)
+else()
+  message(WARNING "Ghost is required for the scheduling in phist, without it things may "
+                " not be functional.                                                    "
+                "Set environment variable GHOST_HOME to help cmake find it.             ")
+#  message(ERROR "Ghost is a prerequisite of phist now because of the task-queue"
+#                "Set environment variable GHOST_HOME to help cmake find it.")
+endif()
+
+find_package(Likwid PATHS $ENV{LIKWID_HOME} Optional)
+if (${LIKWID_Found})
+  add_definitions(-DPHIST_HAVE_LIKWID)
+  include_directories(${LIKWID_INCLUDE_DIRS})
+  link_directories(${LIKWID_LIBRARY_DIRS})
+  list(APPEND PHIST_LIBS ${LIKWID_LIBRARIES})
+else()
+  message(STATUS "continuing without Likwid, you can set the environment variable LIKWID_HOME to help CMake find it")
+endif()
+
 ##############################################################################
 # setup which kernel library is being used.
 ##############################################################################
@@ -101,8 +134,6 @@ endif()
 
 message(STATUS "looking for " ${PHIST_KERNEL_LIB} " ...")
 
-
-set(PHIST_LIBS "")
 set(LOAD_TRILI_PKG,"")
 if  (PHIST_KERNEL_LIB STREQUAL "epetra")
   list(APPEND LOAD_TRILI_PKG "EpetraExt")
@@ -111,7 +142,8 @@ elseif  (PHIST_KERNEL_LIB STREQUAL "tpetra")
   list(APPEND LOAD_TRILI_PKG "Tpetra")
   list(APPEND LOAD_TRILI_PKG "Belos")
 elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
-  message(FATAL_ERROR "ghost not supported in CMakeLists.txt, yet")
+  # we already link with ghost because of the queuing system  
+  add_definitions(-DPHIST_KERNEL_LIB_GHOST)
 else ()
   message( FATAL_ERROR "PHIST_KERNEL_LIB not set" )
 endif ()
@@ -190,18 +222,10 @@ set(SOURCES
   ${PHIST_KRYLOV_SOURCE}
 )
 
-file(GLOB KERNEL_TEST_SOURCES ${CMAKE_SOURCE_DIR}/test/kernels/*.cpp)
-file(GLOB CORE_TEST_SOURCES ${CMAKE_SOURCE_DIR}/test/core/*.cpp)
-file(GLOB KRYLOV_TEST_SOURCES ${CMAKE_SOURCE_DIR}/test/krylov/*.cpp)
-
 set(TEST_SOURCES
     lib/googletest-1.6/gmock-gtest-all.cc
     test/mainTest.cpp)
     
-set(KERNEL_TEST_SOURCES ${KERNEL_TEST_SOURCES} ${SOURCES} ${TEST_SOURCES})
-set(CORE_TEST_SOURCES ${CORE_TEST_SOURCES} ${SOURCES} ${TEST_SOURCES})
-set(KRYLOV_TEST_SOURCES ${KRYLOV_TEST_SOURCES} ${SOURCES} ${TEST_SOURCES})
-
 file(GLOB TestMatricesMM ${CMAKE_SOURCE_DIR}/test/matrices/*.mm)
 
 foreach (mat ${TestMatricesMM})
@@ -245,13 +269,19 @@ foreach (infile ${TG_CXX_Drivers})
 endforeach()
 
 # test drivers
-set(PHIST_TESTS kernel 
+set(PHIST_TESTS kernels
                 core
+                sched
                 krylov)
 
 foreach(label ${PHIST_TESTS})
   string(TOUPPER ${label} label_uc)
+
+  file(GLOB ${label_uc}_TEST_SOURCES ${CMAKE_SOURCE_DIR}/test/${label}/*.cpp)
+  list(APPEND ${label_uc}_TEST_SOURCES ${TEST_SOURCES})
+
   add_executable(${PRODUCT_NAME}-${label}-test ${${label_uc}_TEST_SOURCES} ${TEST_DEPENDS})
+  
   foreach(lib ${PHIST_LIBS})
     target_link_libraries(${PRODUCT_NAME}-${label}-test ${lib})
   endforeach()
@@ -266,9 +296,9 @@ endforeach()
 # Activate testing
 enable_testing()
 
-add_test(kernel-tests ${PRODUCT_NAME}-kernel-test --gtest_output=xml:${CMAKE_SOURCE_DIR}/xunit.xml)
-add_test(core-tests ${PRODUCT_NAME}-core-test --gtest_output=xml:${CMAKE_SOURCE_DIR}/xunit.xml)
-add_test(krylov-tests ${PRODUCT_NAME}-krylov-test --gtest_output=xml:${CMAKE_SOURCE_DIR}/xunit.xml)
+foreach(label ${PHIST_TESTS})
+  add_test(${label}-tests ${PRODUCT_NAME}-${label}-test --gtest_output=xml:${CMAKE_SOURCE_DIR}/xunit.xml)
+endforeach()
 
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --output-on-failure)

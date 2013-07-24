@@ -2,8 +2,16 @@
 #include <unistd.h>
 #include <omp.h>
 
+#include "SchedTest.h"
+
+//[ without ghost these tests make no sense
+#ifdef PHIST_HAVE_GHOST
+
+
+extern "C" {
 #include "ghost_taskq.h"
 #include "ghost_util.h"
+}
 
 static void *task1(void *arg) {
 #pragma omp parallel
@@ -104,12 +112,12 @@ class GhostTaskQ_Test: public SchedTest
    */
   virtual void TearDown() 
     {
-    free(p1);
-    free(p2);
+    free(t1);
+    free(t2);
     SchedTest::TearDown();
     }
 
-  pthread_t* p1, p2;
+  pthread_t *t1, *t2;
   };
 
 // this is a simple test from ghost itself, it doesn't really enqueue anything
@@ -122,7 +130,7 @@ TEST_F(GhostTaskQ_Test,OmpTest)
     pthread_join(*t2,NULL);
 }
 
-TEST_F(GhostTaskQ_Test_WithQueue)
+TEST_F(GhostTaskQ_Test,WithQueue)
   {
         int foo = 42;
 
@@ -133,15 +141,21 @@ TEST_F(GhostTaskQ_Test_WithQueue)
         ghost_task_t *srTask;
 
         accuTask = ghost_task_init(1, 0, &accuFunc, &foo, GHOST_TASK_DEFAULT);
-
-        printf("checking for correct task state and whether accuTask returns %d\n",foo+1);
-        printf("state should be invalid: %s\n",ghost_task_strstate(ghost_task_test(accuTask)));
-
+//        printf("checking for correct task state and whether accuTask returns %d\n",foo+1);
+//        printf("state should be invalid: %s\n",ghost_task_strstate(ghost_task_test(accuTask)));
+        // this test fails because Ghost does not initialize the state correctly right now
+        //EXPECT_EQ(GHOST_TASK_INVALID,ghost_task_test(accuTask));
         ghost_task_add(accuTask);
-        printf("state should be enqueued or running: %s\n",ghost_task_strstate(ghost_task_test(accuTask)));
+//        printf("state should be enqueued or running: %s\n",ghost_task_strstate(ghost_task_test(accuTask)));
+        if (ghost_task_test(accuTask)!=GHOST_TASK_ENQUEUED)
+          {
+          EXPECT_EQ(GHOST_TASK_RUNNING,ghost_task_test(accuTask));
+          }
         ghost_task_wait(accuTask);
-        printf("state should be finished: %s\n",ghost_task_strstate(ghost_task_test(accuTask)));
-        printf("accuTask returned %d\n",*(int *)accuTask->ret);
+//        printf("state should be finished: %s\n",ghost_task_strstate(ghost_task_test(accuTask)));
+          EXPECT_EQ(GHOST_TASK_FINISHED,ghost_task_test(accuTask));
+//        printf("accuTask returned %d\n",*(int *)accuTask->ret);
+        EXPECT_EQ(foo+1,*(int *)accuTask->ret);
         ghost_task_destroy(accuTask);
 
         printf("\nstarting long running task @ LD0 and check if another strict LD0 task is blocking\n");
@@ -163,4 +177,5 @@ TEST_F(GhostTaskQ_Test_WithQueue)
         ghost_task_waitall();
 
   }
-	
+#endif
+//]
