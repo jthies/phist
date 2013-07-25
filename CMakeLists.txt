@@ -41,8 +41,8 @@ endif()
 
 if (C_COMPILER_NAME STREQUAL "gcc")
   message(STATUS "using GCC compiler flags")
-  set (CMAKE_Fortran_FLAGS_RELEASE "-O2 -fopenmp")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g -fopenmp -DTESTING")
+  set (CMAKE_C_FLAGS_RELEASE "-O2 -fopenmp")
+  set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -fopenmp -DTESTING")
 else ()
   message ("C compiler: " ${C_COMPILER_NAME})
   message ("No specifig C compiler flags are known, we will try '-O2' and '-O0 -g', respectively")
@@ -289,8 +289,10 @@ endforeach()
 
 # some example drivers which haven't made their way into the drivers/ directory
 add_executable(main_kernel_usage ${PROJECT_SOURCE_DIR}/examples/kernels/main_kernel_usage.c)
+add_executable(main_task_model ${PROJECT_SOURCE_DIR}/examples/sched/main_task_model.c)
 foreach(lib ${PHIST_LIBS})
   target_link_libraries(main_kernel_usage ${lib})
+  target_link_libraries(main_task_model ${lib})
 endforeach()
 
 # Activate testing
