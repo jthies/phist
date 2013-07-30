@@ -1,11 +1,17 @@
 cmake_minimum_required(VERSION 2.8)
 
-if (NOT CMAKE_BUILD_TYPE)
-  message(STATUS "setting CMAKE_BUILD_TYPE to 'Debug' by default.")
-  set (CMAKE_BUILD_TYPE Debug)
-else()
-  message(STATUS "using CMAKE_BUILD_TYPE='${CMAKE_BUILD_TYPE}'")
-endif()
+# If the user specifies -DCMAKE_BUILD_TYPE on the command line, take their definition
+# and dump it in the cache along with proper documentation, otherwise set CMAKE_BUILD_TYPE
+# to Debug prior to calling PROJECT()
+#
+IF(DEFINED CMAKE_BUILD_TYPE)
+   SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "Choose the type of build, 
+options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used), Debug, Release, RelWithDebInfo")
+ELSE()
+   SET(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build,
+options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used), Debug, Release, RelWithDebInfo")
+ENDIF()
+
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
 
 # Define some custom variables
@@ -41,35 +47,32 @@ endif()
 
 if (C_COMPILER_NAME STREQUAL "gcc")
   message(STATUS "using GCC compiler flags")
+  set (CMAKE_C_FLAGS "-fopenmp")
   set (CMAKE_C_FLAGS_RELEASE "-O2 -fopenmp")
   set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -fopenmp -DTESTING")
 else ()
   message ("C compiler: " ${C_COMPILER_NAME})
-  message ("No specifig C compiler flags are known, we will try '-O2' and '-O0 -g', respectively")
-  set (CMAKE_C_FLAGS_RELEASE "-O2")
-  set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -DTESTING")
+  message ("No specific C compiler flags are known.")
 endif ()
 
 if (Fortran_COMPILER_NAME STREQUAL "gfortran")
   message(STATUS "using gfortran compiler flags")
+  set (CMAKE_Fortran_FLAGS "-fopenmp")
   set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3 -fopenmp")
   set (CMAKE_Fortran_FLAGS_DEBUG   "-fno-f2c -O0 -g -fopenmp")
 else ()
   message ("Fortran compiler: " ${Fortran_COMPILER_NAME})
-  message ("No optimized Fortran compiler flags are known, we will try '-O2' and '-O0 -g', respectively")
-  set (CMAKE_Fortran_FLAGS_RELEASE "-O2")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
+  message ("No optimized Fortran compiler flags are known.")
 endif ()
 
 if (CXX_COMPILER_NAME STREQUAL "g++")
   message(STATUS "using g++ compiler flags")
+  set (CMAKE_CXX_FLAGS "-fopenmp")
   set (CMAKE_CXX_FLAGS_RELEASE "-O2 -fopenmp")
   set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING -fopenmp")
 else ()
   message ("CXX compiler: " ${CXX_COMPILER_NAME})
-  message ("No optimized C++ compiler flags are known, we will try '-O2' and '-O0 -g', respectively")
-  set (CMAKE_CXX_FLAGS_RELEASE "-O2")
-  set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING")
+  message ("No optimized C++ compiler flags are known.")
 endif ()
 
 ##############################################################################
