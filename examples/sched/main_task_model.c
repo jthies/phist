@@ -13,6 +13,8 @@
 #error "this driver makes no sense without ghost"
 #endif
 
+#define DONT_PIN_CONTROL_THREADS
+
 //                                                              
 // this example driver performs the following algorithm.        
 // given a number of columns of integer vectors, fill each      
@@ -55,6 +57,7 @@ static FILE* out;
 // argument for rndX, incX and divX functions operating on an array of int pointers.
 typedef struct
   {
+  int nThreads;
   int n;
   int **val;
   } argList_t;
@@ -62,6 +65,7 @@ typedef struct
 void argList_create(argList_t** args)
   {
   *args = (argList_t*)malloc(sizeof(argList_t));
+  (*args)->nThreads=nworkers;
   (*args)->n=0;
   (*args)->val=(int**)malloc(ntasks*sizeof(int*));
   }
@@ -78,9 +82,13 @@ static void *rndX(void* v_arg)
   int i;
   argList_t* arg = (argList_t*)v_arg;
 
+  fprintf(out,"NUM WORKERS: %d\n",nworkers);
+  fprintf(out,"NUM THREADS: %d\n",arg->nThreads);
+  omp_set_num_threads(arg->nThreads);
+
 #pragma omp parallel
   {
-//#pragma omp single
+#pragma omp single
   fprintf(out,"rndX executed by %d threads on %d values\n",omp_get_num_threads(),arg->n);  
 #pragma omp for
   for (i=0;i<arg->n;i++)
@@ -95,9 +103,13 @@ static void *incX(void* v_arg)
   int i;
   argList_t* arg = (argList_t*)v_arg;
 
+  fprintf(out,"NUM WORKERS: %d\n",nworkers);
+  fprintf(out,"NUM THREADS: %d\n",arg->nThreads);
+  omp_set_num_threads(arg->nThreads);
+
 #pragma omp parallel
   {
-//#pragma omp single
+#pragma omp single
   fprintf(out,"incX executed by %d threads on %d values\n",
         omp_get_num_threads(),arg->n);  
 #pragma omp for
@@ -114,9 +126,13 @@ static void *divX(void* v_arg)
   int i;
   argList_t* arg = (argList_t*)v_arg;
 
+  fprintf(out,"NUM WORKERS: %d\n",nworkers);
+  fprintf(out,"NUM THREADS: %d\n",arg->nThreads);
+  omp_set_num_threads(arg->nThreads);
+
 #pragma omp parallel
   {
-//#pragma omp single
+#pragma omp single
   fprintf(out,"divX executed by %d threads on %d values\n", 
         omp_get_num_threads(),arg->n);  
 #pragma omp for
@@ -148,13 +164,14 @@ argList_t **ghost_args;
 
 } taskBuf_t;
 
-void taskBuf_create(taskBuf_t** buf, int num_tasks, int* ierr);
+void taskBuf_create(taskBuf_t** buf, int num_tasks, int num_workers, int* ierr);
 void taskBuf_delete(taskBuf_t* buf, int* ierr);
 void taskBuf_exec(taskBuf_t* buf, int* arg, int task_id, int taskFlag);
 void taskBuf_group_and_run(taskBuf_t* buf);
 
 // create a new task buffer object
-void taskBuf_create(taskBuf_t** buf, int num_tasks, int* ierr)
+void taskBuf_create(taskBuf_t** buf, int num_tasks, 
+        int num_workers, int* ierr)
   {
   int i;
   *ierr=0;
@@ -174,8 +191,9 @@ void taskBuf_create(taskBuf_t** buf, int num_tasks, int* ierr)
   for (i=0;i<njobTypes;i++)
     {
     argList_create(&(*buf)->ghost_args[i]);
+    (*buf)->ghost_args[i]->nThreads = num_workers;
     }
-/*
+#ifdef DONT_PIN_CONTROL_THREADS
   (*buf)->ghost_task[JOBTYPE_RNDX] = ghost_task_init(GHOST_TASK_FILL_ALL, 0, &rndX, 
         (void*)((*buf)->ghost_args[JOBTYPE_RNDX]),GHOST_TASK_DEFAULT);
 
@@ -184,17 +202,16 @@ void taskBuf_create(taskBuf_t** buf, int num_tasks, int* ierr)
 
   (*buf)->ghost_task[JOBTYPE_DIVX] = ghost_task_init(GHOST_TASK_FILL_ALL, 0, &divX, 
         (void*)((*buf)->ghost_args[JOBTYPE_DIVX]),GHOST_TASK_DEFAULT);
-*/  
-
-  (*buf)->ghost_task[JOBTYPE_RNDX] = ghost_task_init(nworkers, 0, &rndX, 
+#else
+  (*buf)->ghost_task[JOBTYPE_RNDX] = ghost_task_init(num_workers, 0, &rndX, 
         (void*)((*buf)->ghost_args[JOBTYPE_RNDX]),GHOST_TASK_DEFAULT);
 
-  (*buf)->ghost_task[JOBTYPE_INCX] = ghost_task_init(nworkers, 0, &incX, 
+  (*buf)->ghost_task[JOBTYPE_INCX] = ghost_task_init(num_workers, 0, &incX, 
         (void*)((*buf)->ghost_args[JOBTYPE_INCX]),GHOST_TASK_DEFAULT);
 
-  (*buf)->ghost_task[JOBTYPE_DIVX] = ghost_task_init(nworkers, 0, &divX, 
+  (*buf)->ghost_task[JOBTYPE_DIVX] = ghost_task_init(num_workers, 0, &divX, 
         (void*)((*buf)->ghost_args[JOBTYPE_DIVX]),GHOST_TASK_DEFAULT);
-
+#endif
   return;
   }
 
@@ -352,8 +369,12 @@ int main(int argc, char** argv)
   int i,j;
   taskBuf_t *taskBuf;
   mainArg_t mainArg[ntasks];
-  ghost_task_t *mainTask[ntasks];
-
+#ifdef DONT_PIN_CONTROL_THREADS
+  pthread_t controlThread[ntasks];
+#else
+  ghost_task_t *controlTask[ntasks];
+#endif
+  
   int* vectors = (int*)malloc(ntasks*ndim*sizeof(int));
   
   comm_ptr_t comm_world;
@@ -368,14 +389,22 @@ int main(int argc, char** argv)
 #endif
   PHIST_CHK_IERR(phist_comm_create(&comm_world,&ierr),ierr);
  
-PHIST_CHK_IERR(taskBuf_create(&taskBuf,ntasks,&ierr),ierr);
+#ifdef DONT_PIN_CONTROL_THREADS
 
-// TODO: we would actually like to run the control threads without pinning
-//       and allow having all cores for doing the work, but if we do that 
-//       in the current ghost implementation, the jobs in the ghost queue 
-//       never get executed because ntasks cores are reserved for the     
-//       control threads.
+nworkers=ghost_thpool->nThreads;
+
+#else
+// we would actually like to run the control threads without pinning
+// and allow having all cores for doing the work, but if we do that 
+// in the current ghost implementation, the jobs in the ghost queue 
+// never get executed because ntasks cores are reserved for the     
+// control threads.
 nworkers=ghost_thpool->nThreads - ntasks;
+
+#endif
+
+PHIST_CHK_IERR(taskBuf_create(&taskBuf,ntasks,nworkers,&ierr),ierr);
+
 
 for (i=0;i<ntasks;i++)
   {
@@ -383,13 +412,23 @@ for (i=0;i<ntasks;i++)
   mainArg[i].col=i;
   mainArg[i].v=vectors+i*ndim;
   mainArg[i].taskBuf=taskBuf;
-  mainTask[i] = ghost_task_init(1, 0, &fill_vector, 
+#ifndef DONT_PIN_CONTROL_THREADS
+  controlTask[i] = ghost_task_init(1, 0, &fill_vector, 
         (void*)(&mainArg[i]),GHOST_TASK_DEFAULT);
-  ghost_task_add(mainTask[i]);
+  ghost_task_add(controlTask[i]);
+#else
+  pthread_create(&controlThread[i], NULL, &fill_vector, (void *)&mainArg[i]);
+#endif
   }
 
+#ifndef DONT_PIN_CONTROL_THREADS
 ghost_task_waitall();
-  
+#else
+for (i=0;i<ntasks;i++)
+  {
+  pthread_join(controlThread[i],NULL);
+  }
+#endif
 // single thread prints the results
 for (i=0;i<ndim;i++)
   {
