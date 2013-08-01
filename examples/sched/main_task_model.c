@@ -15,6 +15,7 @@
 #error "this driver makes no sense without ghost"
 #endif
 
+//#define SYNC_WAIT
 #define DONT_PIN_CONTROL_THREADS
 
 //                                                              
@@ -177,11 +178,13 @@ void taskBuf_create(taskBuf_t** buf, int num_tasks, int num_workers,
         int num_jobTypes, int* ierr);
 //! delete the task buffer
 void taskBuf_delete(taskBuf_t* buf, int* ierr);
-//! put a job request into the task buffer
+//! put a job request into the task buffer and wait until it is enqueued
 void taskBuf_add(taskBuf_t* buf, int* arg, int task_id, int taskFlag);
 //! flush the task buffer, e.g. group the tasks together and put them in
-//! the ghost queue.
+//! the ghost queue, then signal any waiting jobs.
 void taskBuf_flush(taskBuf_t* buf);
+//! wait for the task that you put in the buffer to be finished
+void taskBuf_wait(taskBuf_t* buf, int task_id);
 
 // create a new task buffer object
 void taskBuf_create(taskBuf_t** buf, int num_tasks, 
@@ -267,17 +270,20 @@ void taskBuf_add(taskBuf_t* buf, int* arg, int task_id, int taskFlag)
   if (buf->countdown==0)
     {
     taskBuf_flush(buf);
-    fprintf(OUT,"Thread %ul sending signal @ cond %p \n",pthread_self(),buf->finished_cv);
+    fprintf(OUT,"Thread %lu sending signal @ cond %p \n",pthread_self(),buf->finished_cv);
     pthread_cond_broadcast(&buf->finished_cv);
     }
   else
     {
-    fprintf(OUT,"Thread %ul wait @ cond %p \n",pthread_self(),buf->finished_cv);
+    fprintf(OUT,"Thread %lu wait @ cond %p \n",pthread_self(),buf->finished_cv);
     // this sends the thread to sleep and releases the mutex. When the signal is
     // received, the mutex is locked again
     pthread_cond_wait(&buf->finished_cv,&buf->lock_mx);
     }
-  // release the mutex so the buffer can be used for the next iteration.
+  // the bundled tasks have been put in the ghost queue.
+  // Release the mutex so the buffer can be used for the next iteration.
+  // The control thread is responsible for waiting for the task to finish
+  // before putting in a new one, otherwise a race condition is created.
   pthread_mutex_unlock(&buf->lock_mx);
   }
   
@@ -317,7 +323,7 @@ void taskBuf_flush(taskBuf_t* buf)
       }
     }
   buf->countdown=buf->njobs;
-
+#ifdef SYNC_WAIT
   //TODO
   // this should be removed, waiting should be left to 
   // each of the control threads using taskBuf_wait().
@@ -325,10 +331,11 @@ void taskBuf_flush(taskBuf_t* buf)
   {
   if (buf->ghost_args[i]->n>0)
     {
-    fprintf(OUT,"Thread %d waiting for job type %d\n",pthread_self(),i);
+    fprintf(OUT,"Thread %lu waiting for job type %d\n",pthread_self(),i);
       ghost_task_wait(buf->ghost_task[i]);
     }
   }
+#endif
   return;
   }
 
@@ -337,8 +344,9 @@ void taskBuf_wait(taskBuf_t* buf, int task_id)
   int jt = buf->jobType[task_id];
   if (buf->ghost_args[jt]->n>0)
     {
-    fprintf(OUT,"Thread %d waiting for job type %d\n",pthread_self(),jt);
+    fprintf(OUT,"Thread %lu waiting for job type %d\n",pthread_self(),jt);
       ghost_task_wait(buf->ghost_task[jt]);
+    fprintf(OUT,"Thread %lu, job type %d finished.\n",pthread_self(),jt);
     }
   return;
   }
@@ -387,7 +395,9 @@ void* fill_vector(void* v_mainArg)
       taskBuf_add(taskBuf,&v[i],col,JOBTYPE_INCX);
       }
 //    TODO - we currently wait in the taskBuf_flush function
-//    taskBuf_wait(taskBuf,col);    
+#ifndef SYNC_WAIT    
+    taskBuf_wait(taskBuf,col);    
+#endif
     }
   return;
   }
