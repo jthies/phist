@@ -4,16 +4,8 @@
 #include <pthread.h>
 #include <time.h>
 
-#include "phist_typedefs.h"
-#include "phist_kernels.h"
-#include "phist_macros.h"
-
-#ifdef PHIST_HAVE_GHOST
 #include "ghost.h"
 #include "ghost_taskq.h"
-#else
-#error "this driver makes no sense without ghost"
-#endif
 
 //#define SYNC_WAIT
 #define DONT_PIN_CONTROL_THREADS
@@ -419,20 +411,12 @@ int main(int argc, char** argv)
   
   int* vectors = (int*)malloc(NUM_TASKS*NDIM*sizeof(int));
   
-  comm_ptr_t comm_world;
-  
-  PHIST_CHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
-  // avoid duplicate init call
-#ifndef PHIST_KERNEL_LIB_GHOST
   // initialize ghost queue
   ghost_init(argc,argv);
-#endif
 
   // initialize C random number generator
   srand(time(NULL));
 
-  PHIST_CHK_IERR(phist_comm_create(&comm_world,&ierr),ierr);
- 
 #ifdef DONT_PIN_CONTROL_THREADS
 
 nworkers=ghost_thpool->nThreads;
@@ -447,7 +431,7 @@ nworkers=ghost_thpool->nThreads - NUM_TASKS;
 
 #endif
 
-PHIST_CHK_IERR(taskBuf_create(&taskBuf,NUM_TASKS,nworkers,NUM_JOBTYPES,&ierr),ierr);
+taskBuf_create(&taskBuf,NUM_TASKS,nworkers,NUM_JOBTYPES,&ierr);
 
 
 for (i=0;i<NUM_TASKS;i++)
@@ -483,10 +467,6 @@ for (i=0;i<NDIM;i++)
   fprintf(OUT,"\n");
   }
   
-  PHIST_CHK_IERR(phist_kernels_finalize(&ierr),ierr);
-  // avoid duplicate finish call
-#ifndef PHIST_KERNEL_LIB_GHOST
   // finalize ghost queue
   ghost_finish();
-#endif  
   }
