@@ -69,7 +69,7 @@ if (CXX_COMPILER_NAME STREQUAL "g++")
   message(STATUS "using g++ compiler flags")
   set (CMAKE_CXX_FLAGS "-fopenmp")
   set (CMAKE_CXX_FLAGS_RELEASE "-O2 -fopenmp")
-  set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING -fopenmp")
+  set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING -DDEBUG=1 -fopenmp")
 else ()
   message ("CXX compiler: " ${CXX_COMPILER_NAME})
   message ("No optimized C++ compiler flags are known.")
@@ -160,7 +160,8 @@ set(TG_Types S
 set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp)
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c)
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.c
-                       ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp)
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_taskbuf.c)
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_lanczos.cpp)
 
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB})
