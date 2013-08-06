@@ -1,6 +1,13 @@
 #ifndef NO_INCLUDES_IN_HEADERS
 #include "phist_tools.h"
 #include <stdio.h>
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+#endif
+
+#ifndef DEBUG
+#define DEBUG 0
 #endif
 
 #ifndef _PHIST_RETURN_TYPES
@@ -18,7 +25,7 @@
 #ifndef PHIST_CHK_IERR
 #define PHIST_CHK_IERR(func,_FLAG_) \
 {func; if (_FLAG_!=_PHIST_SUCCESS_) { \
-fprintf(stderr,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
+PHIST_OUT(0,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
 (_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return;}}
 #endif
 
@@ -32,7 +39,7 @@ fprintf(stderr,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
 #ifndef PHIST_ICHK_IERR
 #define PHIST_ICHK_IERR(func,_FLAG_) \
 {func; if (_FLAG_!=_PHIST_SUCCESS_) { \
-fprintf(stderr,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
+PHIST_OUT(0,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
 (_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return _FLAG_;}}
 #endif
 
@@ -41,7 +48,7 @@ fprintf(stderr,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
 #ifndef PHIST_CHK_IRET
 #define PHIST_CHK_IRET(func,_FLAG_) \
 {FLAG=func; if (_FLAG_!=_PHIST_SUCCESS_) { \
-fprintf(stderr,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
+PHIST_OUT(0,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
 (_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return;}}
 #endif
 
@@ -49,7 +56,25 @@ fprintf(stderr,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
 #ifndef PHIST_ICHK_IRET
 #define PHIST_ICHK_IRET(func,_FLAG_) \
 {FLAG=func; if (_FLAG_!=_PHIST_SUCCESS_) { \
-fprintf(stderr,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
+PHIST_OUT(0,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
 (_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return _FLAG_;}}
+#endif
+
+#ifdef PHIST_HAVE_MPI
+#define PHIST_OUT(level,msg, ...) {\
+        if(DEBUG >= level) {\
+                int __me;\
+                MPI_Comm_rank(MPI_COMM_WORLD,&__me);\
+                fprintf(stderr,"PE%d: "msg"\n",__me,##__VA_ARGS__);\
+                fflush(stderr);\
+        }\
+}
+#else
+#define PHIST_OUT(level,msg, ...) {\
+        if(DEBUG >= level) {\
+                fprintf(stderr,msg"\n",##__VA_ARGS__);\
+                fflush(stderr);\
+        }\
+}
 #endif
 

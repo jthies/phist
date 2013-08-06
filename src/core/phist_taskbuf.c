@@ -76,7 +76,7 @@ void taskBuf_add_op(taskBuf_t* buf, void* (*fcn)(argList_t*),
   *ierr=0;
   if (buf->nops==buf->nops_max)
     {
-    PHIST_DEBUG(1,"%d ops in task buffer, re-allocating memory",buf->nops+1);
+    PHIST_OUT(1,"%d ops in task buffer, re-allocating memory",buf->nops+1);
     buf->nops_max += 8;
     buf->ghost_args=(argList_t**)realloc(buf->ghost_args,buf->nops_max*sizeof(argList_t*));
     buf->ghost_task=(ghost_task_t**)realloc(buf->ghost_task,buf->nops_max*sizeof(ghost_task_t*));
@@ -110,17 +110,17 @@ void taskBuf_add(taskBuf_t* buf, void* arg, int task_id, int op_key,int* ierr)
   buf->opType[task_id]=op_key;
   buf->opArg[task_id]=arg;
   buf->countdown--;
-  PHIST_DEBUG(1,"control thread %lu request job %d on column %d, countdown=%d\n",
+  PHIST_OUT(1,"control thread %lu request job %d on column %d, countdown=%d\n",
         pthread_self(), op_key, task_id, buf->countdown);
   if (buf->countdown==0)
     {
     taskBuf_flush(buf);
-    PHIST_DEBUG(1,"Thread %lu sending signal @ cond %p \n",pthread_self(),buf->finished_cv);
+    PHIST_OUT(1,"Thread %lu sending signal @ cond %p \n",pthread_self(),buf->finished_cv);
     pthread_cond_broadcast(&buf->finished_cv);
     }
   else
     {
-    PHIST_DEBUG(1,"Thread %lu wait @ cond %p \n",pthread_self(),buf->finished_cv);
+    PHIST_OUT(1,"Thread %lu wait @ cond %p \n",pthread_self(),buf->finished_cv);
     // this sends the thread to sleep and releases the mutex. When the signal is
     // received, the mutex is locked again
     pthread_cond_wait(&buf->finished_cv,&buf->lock_mx);
@@ -139,13 +139,13 @@ void taskBuf_flush(taskBuf_t* buf)
   {
   int i,pos1,pos2;
   
-  PHIST_DEBUG(1,"control thread %lu starting jobs\n",pthread_self());
-  PHIST_DEBUG(1,"job types: ");
+  PHIST_OUT(1,"control thread %lu starting jobs\n",pthread_self());
+  PHIST_OUT(1,"job types: ");
   for (i=0;i<buf->ncontrollers;i++)
     {
-    PHIST_DEBUG(1," %d",buf->opType[i]);
+    PHIST_OUT(1," %d",buf->opType[i]);
     }
-  PHIST_DEBUG(1,"\n");
+  PHIST_OUT(1,"\n");
   
   for (i=0;i<buf->nops;i++)
     {
@@ -162,7 +162,7 @@ void taskBuf_flush(taskBuf_t* buf)
     {
     if (buf->ghost_args[i]->n>0)
       {
-      PHIST_DEBUG(1,"enqueue job type %d on %d workers for %d values\n",
+      PHIST_OUT(1,"enqueue job type %d on %d workers for %d values\n",
         i,buf->ghost_args[i]->nthreads,buf->ghost_args[i]->n);
       ghost_task_add(buf->ghost_task[i]);
       }
@@ -176,7 +176,7 @@ void taskBuf_flush(taskBuf_t* buf)
   {
   if (buf->ghost_args[i]->n>0)
     {
-    PHIST_DEBUG(1,"Thread %lu waiting for job type %d\n",pthread_self(),i);
+    PHIST_OUT(1,"Thread %lu waiting for job type %d\n",pthread_self(),i);
       ghost_task_wait(buf->ghost_task[i]);
     }
   }
@@ -190,9 +190,9 @@ void taskBuf_wait(taskBuf_t* buf, int task_id, int* ierr)
   *ierr=0;
   if (buf->ghost_args[jt]->n>0)
     {
-    PHIST_DEBUG(1,"Thread %lu waiting for job type %d\n",pthread_self(),jt);
+    PHIST_OUT(1,"Thread %lu waiting for job type %d\n",pthread_self(),jt);
       ghost_task_wait(buf->ghost_task[jt]);
-    PHIST_DEBUG(1,"Thread %lu, job type %d finished.\n",pthread_self(),jt);
+    PHIST_OUT(1,"Thread %lu, job type %d finished.\n",pthread_self(),jt);
     }
   return;
   }
