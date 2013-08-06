@@ -117,10 +117,10 @@ public:
       ASSERT_REAL_EQ(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
       ASSERT_REAL_EQ(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
       
-      int relax=0;
+      int nsteps=2;
       
       // now orthogonalize W against V. The result should be such that Q*R1=W-V*R2, Q'*Q=I,V'*Q=0
-      _SUBR_(orthog)(V_,Q_,R1_,R2_,relax,&ierr_);
+      _SUBR_(orthog)(V_,Q_,R1_,R2_,nsteps,&ierr_);
       ASSERT_EQ(0,ierr_);
       
       // check orthonormality of Q
@@ -134,7 +134,7 @@ public:
       ASSERT_EQ(0,ierr_);
       _SUBR_(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero()),6*mt::eps());
+      ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero()),8*mt::eps());
       }
     }
 
