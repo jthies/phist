@@ -327,6 +327,17 @@ void _SUBR_(sdMat_random)(_TYPE_(sdMat_ptr) vM, int* ierr)
 
 //! \name Numerical functions
 
+//! compute the 2-norm) of each column of v                   
+//! (vnrm[i] must be pre-allocated by caller)
+  void _SUBR_(mvec_norm2)(_TYPE_(const_mvec_ptr) vV,
+                            _ST_* vnrm, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);  
+  _CHECK_ZERO_(V->Norm2(vnrm),*ierr);
+  return;
+  }
+
   //! normalize (in the 2-norm) each column of v and return ||v||_2
   //! for each vector i in vnrm[i] (must be pre-allocated by caller)
   void _SUBR_(mvec_normalize)(_TYPE_(mvec_ptr) vV,
@@ -450,8 +461,25 @@ void _SUBR_(mvec_times_sdMat)(double alpha, _TYPE_(const_mvec_ptr) vV,
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,C,vC,*ierr);
   _CHECK_ZERO_(W->Multiply('N', 'N', alpha, *V, *C, beta),*ierr);
   }
-  
-//! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.
+
+//! n x m serial dense matrix times m x k serial dense matrix gives n x k multi-vector,
+//! C=alpha*V*W + beta*C
+void _SUBR_(sdMat_times_sdMat)(_ST_ alpha, _TYPE_(const_sdMat_ptr) vV,
+                                           _TYPE_(const_sdMat_ptr) vW,
+                               _ST_ beta, _TYPE_(sdMat_ptr) vC,
+                                       int* ierr)
+  {
+  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
+  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,W,vW,*ierr);
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,C,vC,*ierr);
+  _CHECK_ZERO_(C->Multiply('N', 'N', alpha, *V, *W, beta),*ierr);
+  }
+
+//! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.   
+//! Q is computed in place of V. If V does not have full rank, ierr>0   
+//! indicates the dimension of the null-space of V. The first m-ierr    
+//! columns of Q are an orthogonal basis of the column space of V, the  
+//! remaining columns form a basis for the null space.  
 void _SUBR_(mvec_QR)(_TYPE_(mvec_ptr) vV, _TYPE_(sdMat_ptr) vR, int* ierr)
   {
   *ierr=0;
@@ -484,6 +512,7 @@ void _SUBR_(mvec_QR)(_TYPE_(mvec_ptr) vV, _TYPE_(sdMat_ptr) vR, int* ierr)
         tsqr.getFastParameters();
   Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp
         (new Teuchos::ParameterList(*valid_params));
+  params->set("randomizeNullSpace",true);
   tsqr.setParameterList(params);
 
   int rank;

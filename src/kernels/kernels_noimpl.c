@@ -234,6 +234,14 @@ void _SUBR_(sdMat_random)(_TYPE_(sdMat_ptr) M, int* ierr)
 //! \name Numerical functions
 //!@{
 
+//! compute the 2-norm) of each column of v                   
+//! (vnrm[i] must be pre-allocated by caller)
+void _SUBR_(mvec_norm2)(_TYPE_(const_mvec_ptr) V,
+                            _MT_* vnrm, int* ierr)
+{
+*ierr=-99;
+}
+
 //! normalize (in the 2-norm) each column of v and return ||v||_2
 //! for each vector i in vnrm[i] (must be pre-allocated by caller)
 void _SUBR_(mvec_normalize)(_TYPE_(mvec_ptr) V,
@@ -285,6 +293,14 @@ void _SUBR_(mvec_dot_mvec)(_TYPE_(const_mvec_ptr) v,
 void _SUBR_(mvec_times_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) V, 
                                        _TYPE_(const_sdMat_ptr) C, 
                                        _ST_ beta, _TYPE_(mvec_ptr) W, int* ierr)
+  {
+  *ierr=-99;
+  }
+
+//! C=V*W
+void _SUBR_(sdMat_times_sdMat)(_ST_ alpha, _TYPE_(const_sdMat_ptr) V, 
+                                       _TYPE_(const_sdMat_ptr) V, 
+                                       _ST_ beta, _TYPE_(sdMat_ptr) W, int* ierr)
   {
   *ierr=-99;
   }

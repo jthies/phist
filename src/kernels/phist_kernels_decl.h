@@ -192,6 +192,11 @@ void _SUBR_(sdMat_random)(_TYPE_(sdMat_ptr) V, int* ierr);
 //! \name Numerical functions
 //!@{
 
+//! compute the 2-norm) of each column of v
+//! (vnrm[i] must be pre-allocated by caller)
+void _SUBR_(mvec_norm2)(_TYPE_(const_mvec_ptr) V, 
+                            _MT_* vnrm, int* ierr);
+
 //! normalize (in the 2-norm) each column of v and return ||v||_2
 //! for each vector i in vnrm[i] (must be pre-allocated by caller)
 void _SUBR_(mvec_normalize)(_TYPE_(mvec_ptr) V, 
@@ -200,7 +205,6 @@ void _SUBR_(mvec_normalize)(_TYPE_(mvec_ptr) V,
 //! scale each column i of v and by scalar[i]
 void _SUBR_(mvec_scale)(_TYPE_(mvec_ptr) V, 
                             _ST_* scalar, int* ierr);
-
 
 //! y=alpha*x+beta*y
 void _SUBR_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) X,
@@ -229,15 +233,25 @@ void _SUBR_(mvecT_times_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) V,
                                        _TYPE_(const_mvec_ptr) W, 
                                        _ST_ beta, _TYPE_(sdMat_ptr) C, int* ierr);
 
-//! n x m multi-vector times m x m dense matrix gives n x m multi-vector,
+//! n x m multi-vector times m x k dense matrix gives n x k multi-vector,
 //! W=alpha*V*C + beta*W
 void _SUBR_(mvec_times_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) V, 
                                        _TYPE_(const_sdMat_ptr) C,
                            _ST_ beta,  _TYPE_(mvec_ptr) W, 
                                        int* ierr);
 
-//! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.
-//! Q is computed in place of V.
+//! n x m serial dense matrix times m x k serial dense matrix gives n x k multi-vector,
+//! C=alpha*V*W + beta*C
+void _SUBR_(sdMat_times_sdMat)(_ST_ alpha, _TYPE_(const_sdMat_ptr) V, 
+                                           _TYPE_(const_sdMat_ptr) W, 
+                               _ST_ beta, _TYPE_(sdMat_ptr) C,
+                                       int* ierr);
+
+//! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.   
+//! Q is computed in place of V. If V does not have full rank, ierr>0   
+//! indicates the dimension of the null-space of V. The first m-ierr    
+//! columns of Q are an orthogonal basis of the column space of V, the  
+//! remaining columns form a basis for the null space.
 void _SUBR_(mvec_QR)(_TYPE_(mvec_ptr) V, 
                      _TYPE_(sdMat_ptr) R, int* ierr);
 
