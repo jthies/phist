@@ -4,8 +4,14 @@
 #include <limits>
 #include <complex>
 
+#include "phist_operator.h"
+
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
+#endif
+
+#ifdef PHIST_HAVE_GHOST
+#include "ghost.h"
 #endif
 
 namespace phist {
@@ -28,6 +34,15 @@ class ScalarTraits< float >
   
   //! alternative typename for ST
   typedef float scalar_t;
+#ifdef PHIST_HAVE_GHOST
+  static const int ghost_dt = GHOST_BINCRS_DT_FLOAT|GHOST_BINCRS_DT_REAL;
+  static const int c_ghost_dt = GHOST_BINCRS_DT_FLOAT|GHOST_BINCRS_DT_COMPLEX;
+#endif  
+  typedef phist_Sop_t op_t;
+  typedef phist_Smvec_t mvec_t;
+  typedef phist_Cop_t c_op_t; // this is just to allow a simpler implementation of the complex traits class
+  typedef phist_Cmvec_t c_mvec_t; // this is just to allow a simpler implementation of the complex traits class
+  
   //! for complex types, data type of real and imag part.
   //! for real types, magn_t=scalar_t
   typedef float magn_t;
@@ -116,6 +131,14 @@ class ScalarTraits< double >
   
   //! alternative typename for ST
   typedef double scalar_t;
+#ifdef PHIST_HAVE_GHOST
+  static const int ghost_dt = GHOST_BINCRS_DT_DOUBLE|GHOST_BINCRS_DT_REAL;
+  static const int c_ghost_dt = GHOST_BINCRS_DT_DOUBLE|GHOST_BINCRS_DT_COMPLEX;
+#endif  
+  typedef phist_Dop_t op_t; 
+  typedef phist_Dmvec_t mvec_t; 
+  typedef phist_Zop_t c_op_t; // this is just to allow a simpler implementation of the complex traits class
+  typedef phist_Zmvec_t c_mvec_t; // this is just to allow a simpler implementation of the complex traits class
   //! for complex types, data type of real and imag part.
   //! for real types, magn_t=scalar_t
   typedef double magn_t;
@@ -205,6 +228,11 @@ class ScalarTraits< std::complex<MT> >
   
   //! alternative typename for ST
   typedef typename std::complex<MT> scalar_t;
+#ifdef PHIST_HAVE_GHOST
+  static const int ghost_dt = ScalarTraits<MT>::c_ghost_dt;
+#endif
+  typedef ScalarTraits<MT>::c_op_t op_t; 
+  typedef ScalarTraits<MT>::c_mvec_t mvec_t; 
   //! for complex types, data type of real and imag part.
   //! for real types, magn_t=scalar_t
   typedef MT magn_t;

@@ -192,18 +192,16 @@ namespace Belos {
                                  const Teuchos::SerialDenseMatrix<int,Scalar>& B, 
                                  Scalar beta, ghost_vec_t& mv )
     {
-    TODO
-    /*
       // create local map
-      Teuchos::SerialComm<int> scomm;
-      Tpetra::Map<LO,GO,Node> LocalMap(B.numRows(), 0, Teuchos::rcpFromRef< const Teuchos::Comm<int> >(scomm), Tpetra::LocallyReplicated, A.getMap()->getNode());
-      // encapsulate Teuchos::SerialDenseMatrix data in ArrayView
-      Teuchos::ArrayView<const Scalar> Bvalues(B.values(),B.stride()*B.numCols());
-      // create locally replicated MultiVector with a copy of this data
-      ghost_vec_t B_mv(Teuchos::rcpFromRef(LocalMap),Bvalues,B.stride(),B.numCols());
+      ghost_vtraits_t dmtraits = GHOST_VTRAITS_INIT
+        (.flags = GHOST_VEC_LHS, .nrows=B.numRows(), .nvecs=B.numCols(), .datatype=phist::ScalarTraits<scalar_type>::ghost_dt);
+      // create view of Teuchos matrix as ghost_vec_t
+      // TODO: ghost doesn't have this construction mechanism yet
+      // B.values(),B.stride(),B.numRows(),B.numCols()
       // multiply
-      mv.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, alpha, A, B_mv, beta);
-    */
+      // TODO - ghost tries to allocate the result vector, which is undesired here.
+      ghost_gemm("T",&A,&B,&mv,&alpha,&beta,GHOST_GEMM_NO_REDUCE);
+              
     }
 
     static void MvAddMv( Scalar alpha, const ghost_vec_t& A, Scalar beta, const ghost_vec_t& B, ghost_vec_t& mv )
@@ -287,7 +285,7 @@ namespace Belos {
           "Belos::MultiVecTraits<Scalar,ghost_vec_t>::MvDot(A,B,dots): dots must have room for all dot products.");
 
       Teuchos::ArrayView<Scalar> av(dots)
-      A.dotProduct(const_cast<ghost_vec_t*>(&A),std::const_cast<ghost_vec_t*>(&B),&dots.getRawPtr());
+      A.dotProduct(const_cast<ghost_vec_t*>(&A),std::const_cast<ghost_vec_t*>(&B),dots.getRawPtr());
     }
 
     static void MvNorm(const ghost_vec_t& mv, std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &normvec, NormType type=TwoNorm)
@@ -323,7 +321,6 @@ TODO - haven't looked at the rest, yet
 
     static void SetBlock( const ghost_vec_t& A, const std::vector<int>& index, ghost_vec_t& mv )
     {
-      KOKKOS_NODE_TRACE("Belos::MVT::SetBlock()")
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION((typename std::vector<int>::size_type)A.getNumVectors() < index.size(),std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,ghost_vec_t>::SetBlock(A,index,mv): index must be the same size as A.");
@@ -344,7 +341,6 @@ TODO - haven't looked at the rest, yet
 	      const Teuchos::Range1D& index, 
 	      ghost_vec_t& mv)
     {
-      KOKKOS_NODE_TRACE("Belos::MVT::SetBlock()")
 
       // Range1D bounds are signed; size_t is unsigned.
       // Assignment of ghost_vec_t is a deep copy.
@@ -427,7 +423,6 @@ TODO - haven't looked at the rest, yet
     Assign (const ghost_vec_t& A, 
 	    ghost_vec_t& mv)
     {
-      KOKKOS_NODE_TRACE("Belos::MVT::Assign()")
 
       // Range1D bounds are signed; size_t is unsigned.
       // Assignment of ghost_vec_t is a deep copy.
@@ -483,7 +478,6 @@ TODO - haven't looked at the rest, yet
 
     static void MvRandom( ghost_vec_t& mv )
     { 
-      KOKKOS_NODE_TRACE("Belos::MVT::randomize()")
       mv.randomize(); 
     }
 
