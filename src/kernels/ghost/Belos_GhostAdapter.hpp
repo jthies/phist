@@ -172,7 +172,7 @@ namespace Belos {
 	       const Teuchos::Range1D& index)
     {
     return Teuchos::rcp_dynamic_cast<const ghost_vec_t >(CloneViewNonConst      
-        (std::const_cast<ghost_vec_t&>(mv),index);
+        (std::const_cast<ghost_vec_t&>(mv),index));
     }
 
     static int GetVecLength( const ghost_vec_t& mv )
@@ -502,7 +502,7 @@ TODO - haven't looked at the rest, yet
     ///
     typedef GhostTsqrAdaptor<Scalar> tsqr_adaptor_type;
 #endif // HAVE_BELOS_TSQR
-  };        
+  }; 
 
   ////////////////////////////////////////////////////////////////////
   //
@@ -511,24 +511,29 @@ TODO - haven't looked at the rest, yet
   ////////////////////////////////////////////////////////////////////
 
   /// \brief Partial specialization of OperatorTraits for Tpetra::Operator.
-  template <class Scalar> 
-  class OperatorTraits <Scalar, ghost_vec_t, phist_op_t >
+  /// Note: this is only going to work if MV is the class used by the kernel
+  /// library, for instance, you can't compile phist with PHIST_KERNEL_LIB=
+  /// tpetra and then use ghost vectors in Belos.
+  template <class Scalar, class MV> 
+  class OperatorTraits <Scalar, MV, phist::ScalarTraits<Scalar>::op_t >
   {
   public:
+
+    typedef phist::ScalarTraits<Scalar>::op_t phist_op_t;
+    typedef phist::ScalarTraits<Scalar>::mvec_t phist_mvec_t;
+
     static void 
     Apply (const phist_op_t& Op, 
-	   const ghost_vec_t& X,
-	   ghost_vec_t& Y,
+	   const MV& X,
+	   MV& Y,
 	   ETrans trans=NOTRANS)
     {
-    if (trans==NOTRANS)
-      {
-      //TODO
-      }
-    else
-      {
-      //TODO
-      }
+    TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS,std::invalid_argument,
+          "Belos::OperatorTraits<Scalar,MV,phist_op_t>:: Apply: only implemented for trans=NOTRANS up to now.");
+    int ierr;
+    Scalar alpha = Teuchos::ScalarTraits<Scalar>::one();
+    Scalar beta = Teuchos::ScalarTraits<Scalar>::zero();
+    op.apply(alpha,(const phist_mvec_t*)&X, beta, (phist_mvec_t*)&Y,&ierr);
     }
 
     static bool

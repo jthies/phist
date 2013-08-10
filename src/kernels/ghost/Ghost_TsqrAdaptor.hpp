@@ -1,20 +1,75 @@
-#ifndef GHOST_TSQR_ADAPTER_HPP
-#define GHOST_TSQR_ADAPTER_HPP
+// this file was taken from Trilinos 11.2.3 (Tpetra_TsqrAdaptor.hpp) and modified slightly
+// to adapt to ghost vectors. The reason we could not simply specialize the single function
+// getnonConstView(...) is that Ghost vectors do not know their data type at runtime, so
+// instead of a member typedef we need an explicit template parameter for the scalar type.
+// However, the only function that was actually changed compared to the Tpetra adapter is
+// the above mentioned.
 
-#include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
-#include <Tsqr.hpp> // full (internode + intranode) TSQR
-#include <Tsqr_DistTsqr.hpp> // internode TSQR
+#include "phist_typedefs.h"
+#include "ghost.h"
+
+// @HEADER
+// ***********************************************************************
+// 
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
+// 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+// @HEADER
+
+#ifndef __Ghost_TsqrAdaptor_hpp
+#define __Ghost_TsqrAdaptor_hpp
+
+#include <Tpetra_ConfigDefs.hpp> // HAVE_TPETRA_TSQR, etc.
+
+#ifdef HAVE_TPETRA_TSQR
+#  include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
+#  include <Tsqr.hpp> // full (internode + intranode) TSQR
+#  include <Tsqr_DistTsqr.hpp> // internode TSQR
 // Subclass of TSQR::MessengerBase, implemented using Teuchos
 // communicator template helper functions
-#include <Tsqr_TeuchosMessenger.hpp> 
-#include "ghost.h"
-#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
-#include <stdexcept>
+#  include <Tsqr_TeuchosMessenger.hpp> 
+#  include <Tpetra_MultiVector.hpp>
+#  include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
+#  include <stdexcept>
+
 
 namespace Ghost {
 
-  /// \class TsqrAdapter
-  /// \brief Adapter from Tpetra::MultiVector to TSQR
+  /// \class TsqrAdaptor
+  /// \brief Adaptor from Tpetra::MultiVector to TSQR
   /// \author Mark Hoemmen
   ///
   /// \tparam MV A specialization of \c Tpetra::MultiVector.
@@ -35,11 +90,13 @@ namespace Ghost {
   /// \warning The current implementation of this adaptor requires
   ///   that all Tpetra::MultiVector inputs use the same communicator
   ///   object (that is, the same Epetra_Comm) and map.
-  template<typename scalar_type>
-  class TsqrAdapter : public Teuchos::ParameterListAcceptorDefaultBase {
+  template<typename ST, class Node>
+  class TsqrAdaptor : public Teuchos::ParameterListAcceptorDefaultBase {
   public:
-    typedef lidx_t ordinal_type;
-    typedef Kokkos::DefaultNode node_type; //TODO
+    typedef ghost_vec_t MV;
+    typedef typename ST scalar_type;
+    typedef typename lidx_t ordinal_type;
+    typedef typename Kokkos::DefaultNode::DefaultNodeType node_type; // TODO - Node argument not yet used
     typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
@@ -57,7 +114,7 @@ namespace Ghost {
     ///   The specific parameter keys that are read depend on the TSQR
     ///   implementation.  For details, call \c getValidParameters()
     ///   and examine the documentation embedded therein.
-    TsqrAdapter (const Teuchos::RCP<Teuchos::ParameterList>& plist) :
+    TsqrAdaptor (const Teuchos::RCP<Teuchos::ParameterList>& plist) :
       nodeTsqr_ (new node_tsqr_type),
       distTsqr_ (new dist_tsqr_type),
       tsqr_ (new tsqr_type (nodeTsqr_, distTsqr_)),
@@ -67,7 +124,7 @@ namespace Ghost {
     }
 
     //! Constructor (that uses default parameters).
-    TsqrAdapter () : 
+    TsqrAdaptor () : 
       nodeTsqr_ (new node_tsqr_type),
       distTsqr_ (new dist_tsqr_type),
       tsqr_ (new tsqr_type (nodeTsqr_, distTsqr_)),
@@ -127,7 +184,7 @@ namespace Ghost {
     ///
     /// \warning Currently, this method only works if A and Q have the
     ///   same communicator and row distribution ("map," in Petra
-    ///   terms) as those of the multivector given to this TsqrAdapter
+    ///   terms) as those of the multivector given to this TsqrAdaptor
     ///   instance's constructor.  Otherwise, the result of this
     ///   method is undefined.
     void
@@ -226,7 +283,7 @@ namespace Ghost {
     ///   underlying communicator object (in this case,
     ///   Teuchos::Comm<int>, accessed via the Tpetra::Map belonging
     ///   to the multivector) and Kokkos Node instance.  All
-    ///   multivector objects used with this Adapter instance must
+    ///   multivector objects used with this Adaptor instance must
     ///   have the same map, communicator, and Kokkos Node instance.
     void 
     prepareTsqr (const MV& mv) 
@@ -279,22 +336,29 @@ namespace Ghost {
     /// \warning TSQR does not currently support multivectors with
     ///   nonconstant stride.  If A has nonconstant stride, this
     ///   method will throw an exception.
-    static Kokkos::MultiVector<scalar_type, node_type>
+    static Kokkos::MultiVector<scalar_type,node_type>
     getNonConstView (MV& A)
     {
-      // FIXME (mfh 25 Oct 2010) We should be able to run TSQR even if
-      // storage of A uses nonconstant stride internally.  We would
-      // have to copy and pack into a matrix with constant stride, and
-      // then unpack on exit.  For now we choose just to raise an
-      // exception.
-      TEUCHOS_TEST_FOR_EXCEPTION(! A.isConstantStride(), std::invalid_argument,
-                                 "TSQR does not currently support Tpetra::MultiVector "
-                                 "inputs that do not have constant stride.");
-      return A.getLocalMVNonConst();
+    lidx_t A_len = A.traits.nrowspadded*A.traits.nvecs;
+    ArrayRCP<Scalar> values((scalar_type*)A.values,0,A_len,false);
+    Teuchos::ParameterList nodeParams(node_type::getDefaultParameters());
+    nodeParams.set("Num Threads",ghost_cpuid_topology.numThreads);
+    Teuchos::RCP<node_type> node = Teuchos::rcp(new node_type(nodeParams));
+    Kokkos::MultiVector<scalar_type, node_type> KMV(node);
+    KMV.initializeValues ((size_t)A.traits.nrows,
+                      (size_t)A.traits.nvecs,
+                      values,
+                      (size_t)A.traits.nrowspadded,
+                      (size_t)A.traits.nrows,
+                      (size_t)A.traits.nvecs);
+    
+      return KMV;
     }
   };
 
-} // namespace Ghost
+} // namespace Tpetra
 
-#endif // GHOST_TSQR_ADAPTER_HPP
+#endif // HAVE_TPETRA_TSQR
+
+#endif // __Tpetra_TsqrAdaptor_hpp
 
