@@ -15,13 +15,13 @@ virtual void SetUp()
   if (this->typeImplemented_)
     {
     KernelTestWithMap<_Nglob>::SetUp();
-    _SUBR_(mvec_create)(&vec1_,this->map_,this->nvec_,&this->ierr_);
+    SUBR(mvec_create)(&vec1_,this->map_,this->nvec_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
-    _SUBR_(mvec_extract_view)(vec1_,&vec1_vp_,&this->lda_,&this->ierr_);
+    SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&this->lda_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
-    _SUBR_(mvec_create)(&vec2_,this->map_,this->nvec_,&this->ierr_);
+    SUBR(mvec_create)(&vec2_,this->map_,this->nvec_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
-    _SUBR_(mvec_extract_view)(vec2_,&vec2_vp_,&this->lda_,&this->ierr_);
+    SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&this->lda_,&this->ierr_);
         ASSERT_EQ(0,this->ierr_);
     stride_=1;
     }
@@ -33,8 +33,8 @@ virtual void TearDown()
   {
   if (this->typeImplemented_)
     {
-    _SUBR_(mvec_delete)(vec1_,&this->ierr_);
-    _SUBR_(mvec_delete)(vec2_,&this->ierr_);
+    SUBR(mvec_delete)(vec1_,&this->ierr_);
+    SUBR(mvec_delete)(vec2_,&this->ierr_);
     KernelTestWithMap<_Nglob>::TearDown();
     }
   KernelTestWithType< ST >::TearDown();
@@ -162,7 +162,7 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
     }
 
 
-  _TYPE_(mvec_ptr) vec1_, vec2_;
+  TYPE(mvec_ptr) vec1_, vec2_;
   ST *vec1_vp_, *vec2_vp_;
   static const int nvec_=_Nvec;
   lidx_t lda_, stride_;

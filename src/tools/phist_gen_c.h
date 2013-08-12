@@ -19,26 +19,27 @@
 // type specifier
 #define _TP_ 'C'
 
-// scalar type
 #define _CMPLX_I_ (0.0f+1.0f*I)
-#define _ZERO_ (0.0f+0.0f*I)
-#define _ONE_ (1.0f+0.0f*I)
-#define _SQRT_(X) csqrtf(X)
-#define _CONJ_(X) conjf(X)
-#define _ABS_(X) cabsf(X)
-#define _REAL_(X) crealf(X)
-#define _IMAG_(X) cimagf(X)
+#define ZERO (0.0f+0.0f*I)
+#define ONE (1.0f+0.0f*I)
+#define SQRT(X) csqrtf(X)
+#define MSQRT(X) sqrtf(X)
+#define CONJ(X) conjf(X)
+#define ABS(X) cabsf(X)
+#define MABS(X) absf(X)
+#define REAL(X) crealf(X)
+#define IMAG(X) cimagf(X)
 
 #endif
 
 
-// adds type prefix to a specifier, e.g. _PREF_(gemm) -> Dgemm
-#define _PREF_(name) C ## name
+// adds type prefix to a specifier, e.g. PREFIX(gemm) -> Dgemm
+#define PREFIX(name) C ## name
 
 // how to build up the name of a subroutine (void function)
-#define _SUBR_(name) phist_C ## name
+#define SUBR(name) phist_C ## name
 
 // how to build up the name of a type
-#define _TYPE_(name) C ## name ## _t
+#define TYPE(name) C ## name ## _t
 
 #include "phist_gen_post.h"

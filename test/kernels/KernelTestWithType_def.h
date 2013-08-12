@@ -19,7 +19,7 @@ static const bool verbose_=true;
 virtual void SetUp() {
 
 int ierr;
-_SUBR_(type_avail)(&ierr);
+SUBR(type_avail)(&ierr);
 typeImplemented_=(ierr==0);
 
 if (verbose_)

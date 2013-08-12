@@ -90,21 +90,21 @@ void PrintTestCase()
 //      PrintTestCase();
       _ST_ alpha=st::one(); 
       _ST_ beta=st::zero();
-      _SUBR_(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&ierr_);
+      SUBR(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1));
+      ASSERTREALEQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1));
 
       alpha=(_MT_)0.5*st::one();
       beta=(_MT_)0.5*st::one();
-      _SUBR_(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&ierr_);
+      SUBR(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1));
+      ASSERTREALEQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1));
 
       alpha=(_MT_)0.3*st::one(); 
       beta=(_MT_)0.7*st::one();
-      _SUBR_(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&ierr_);
+      SUBR(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1));
+      ASSERTREALEQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1));
       }
     }
     

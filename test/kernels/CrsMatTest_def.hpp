@@ -47,14 +47,14 @@ public:
       }
     }
 
-_TYPE_(crsMat_ptr) A0_; // all zero matrix
-_TYPE_(crsMat_ptr) A1_; // identity matrix
-_TYPE_(crsMat_ptr) A2_; // general sparse matrix with nonzero diagonal
-_TYPE_(crsMat_ptr) A3_; // general sparse matrix with some zeros on the diagonal
+TYPE(crsMat_ptr) A0_; // all zero matrix
+TYPE(crsMat_ptr) A1_; // identity matrix
+TYPE(crsMat_ptr) A2_; // general sparse matrix with nonzero diagonal
+TYPE(crsMat_ptr) A3_; // general sparse matrix with some zeros on the diagonal
 
 protected:
 
-int read_mat(const char* filebase,_TYPE_(crsMat_ptr) *ptr)
+int read_mat(const char* filebase,TYPE(crsMat_ptr) *ptr)
   {
   *ptr = NULL;
   char mmfile[256],hbfile[256],binfile[256];
@@ -68,38 +68,38 @@ int read_mat(const char* filebase,_TYPE_(crsMat_ptr) *ptr)
   
 //  std::cout << "Looking for matrix \'"<<filebase<<"\'...\n";
 //  std::cout << "... try \'"<<mmfile<<"\'\n";
-  _SUBR_(crsMat_read_mm)(ptr,mmfile,&ierr_);
+  SUBR(crsMat_read_mm)(ptr,mmfile,&ierr_);
   if (ierr_!=_PHIST_SUCCESS_) // kernel lib can't read MatrixMarket format or file not found
     {
 //    std::cout << "... try \'"<<hbfile<<"\'\n";
-    _SUBR_(crsMat_read_hb)(ptr,hbfile,&ierr_);
+    SUBR(crsMat_read_hb)(ptr,hbfile,&ierr_);
     if (ierr_!=_PHIST_SUCCESS_) // kernel lib can't read Harwell-Boeing or file not found
       {
 //      std::cout << "... try \'"<<binfile<<"\'\n";
-      _SUBR_(crsMat_read_bin)(ptr,binfile,&ierr_);
+      SUBR(crsMat_read_bin)(ptr,binfile,&ierr_);
       }
     }
   return ierr_;
   }
 
-int delete_mat(_TYPE_(crsMat_ptr) A)
+int delete_mat(TYPE(crsMat_ptr) A)
   {
   if (A!=NULL)
     {
-    _SUBR_(crsMat_delete)(A,&ierr_);
+    SUBR(crsMat_delete)(A,&ierr_);
     }
   return ierr_;
   }
 
-_MT_ const_row_sum_test(_TYPE_(crsMat_ptr) A)
+_MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
   {
     if (typeImplemented_ && haveMats_)
       {
       _ST_ val = random_number();
       global_sum(&val,1,mpi_comm_);
-      _SUBR_(mvec_put_value)(vec1_,val,&ierr_);
-      _SUBR_(mvec_random)(vec2_,&ierr_);
-      _SUBR_(crsMat_times_mvec)(1.0,A2_,vec1_,0.0,vec2_,&ierr_);
+      SUBR(mvec_put_value)(vec1_,val,&ierr_);
+      SUBR(mvec_random)(vec2_,&ierr_);
+      SUBR(crsMat_times_mvec)(1.0,A2_,vec1_,0.0,vec2_,&ierr_);
       if (ierr_) return (_MT_)ierr_;
       return ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,val);
       }
@@ -124,11 +124,11 @@ bool haveMats_;
     {
     if (typeImplemented_ && haveMats_)
       {
-      _SUBR_(mvec_random)(vec1_,&ierr_);
-      _SUBR_(mvec_random)(vec2_,&ierr_);
-      _SUBR_(crsMat_times_mvec)(1.0,A0_,vec1_,0.0,vec2_,&ierr_);
+      SUBR(mvec_random)(vec1_,&ierr_);
+      SUBR(mvec_random)(vec2_,&ierr_);
+      SUBR(crsMat_times_mvec)(1.0,A0_,vec1_,0.0,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,0.0));
+      ASSERTREALEQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,0.0));
       }
     }
 
@@ -137,11 +137,11 @@ bool haveMats_;
     {
     if (typeImplemented_ && haveMats_)
       {
-      _SUBR_(mvec_random)(vec1_,&ierr_);
-      _SUBR_(mvec_random)(vec2_,&ierr_);
-      _SUBR_(crsMat_times_mvec)(1.0,A1_,vec1_,0.0,vec2_,&ierr_);
+      SUBR(mvec_random)(vec1_,&ierr_);
+      SUBR(mvec_random)(vec2_,&ierr_);
+      SUBR(crsMat_times_mvec)(1.0,A1_,vec1_,0.0,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
+      ASSERTREALEQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
       }
     }
 

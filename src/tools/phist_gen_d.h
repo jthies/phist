@@ -12,25 +12,25 @@
 // type specifier
 #define _TP_ 'D'
 
-#define _ZERO_ 0.0
+#define ZERO 0.0
 
-#define _ONE_ 1.0
+#define ONE 1.0
 
 // squareroot
-#define _SQRT_(X) sqrt(X)
+#define SQRT(X) sqrt(X)
 
 // absolute value
-#define _ABS_(X) abs(X)
+#define ABS(X) abs(X)
 
 #endif
 
-// adds type prefix to a specifier, e.g. _PREF_(gemm) -> Dgemm
-#define _PREF_(name) D ## name
+// adds type prefix to a specifier, e.g. PREFIX(gemm) -> Dgemm
+#define PREFIX(name) D ## name
 
 // how to build up the name of a subroutine (void function)
-#define _SUBR_(name) phist_D ## name
+#define SUBR(name) phist_D ## name
 
 // how to build up the name of a type
-#define _TYPE_(name) D ## name ## _t
+#define TYPE(name) D ## name ## _t
 
 #include "phist_gen_post.h"

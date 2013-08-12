@@ -1,10 +1,10 @@
 // some common macros for all types:
 #ifdef _IS_DOUBLE_
 #define _MT_ double
-#define ASSERT_REAL_EQ(expected,actual) ASSERT_DOUBLE_EQ(expected,actual)
+#define ASSERTREALEQ(expected,actual) ASSERT_DOUBLE_EQ(expected,actual)
 #else
 #define _MT_ float
-#define ASSERT_REAL_EQ(expected,actual) ASSERT_FLOAT_EQ(expected,actual)
+#define ASSERTREALEQ(expected,actual) ASSERT_FLOAT_EQ(expected,actual)
 #endif
 
 // check if the standard things are defined in a previously included gen_x.h file
@@ -12,26 +12,28 @@
 #error "macro _ST_ not defined"
 #endif
 
-#ifndef _PREF_
-#error "macro _PREF_ not defined"
+#ifndef PREFIX
+#error "macro PREFIX not defined"
 #endif
 
-#ifndef _SUBR_
-#error "macro _SUBR_ not defined"
+#ifndef SUBR
+#error "macro SUBR not defined"
 #endif
 
-#ifndef _TYPE_
-#error "macro _TYPE_ not defined"
+#ifndef TYPE
+#error "macro TYPE not defined"
 #endif
 
 // additional things for the C interfaces
 #ifndef __cplusplus
 
 #ifndef _IS_COMPLEX_
-#define _CONJ_(x) x
-#define _REAL_(x) x
-#define _IMAG_(x) _ZERO_
-#define _CMPLX_I_ _ZERO_
+#define CONJ(x) x
+#define REAL(x) x
+#define IMAG(x) ZERO
+#define _CMPLX_I_ ZERO
+#define MSQRT(x) SQRT(x)
+#define MABS(x) ABS(x)
 #endif
 
 // check wether all necessary macros are there:
@@ -43,31 +45,31 @@
 #warning "macro _CMPLX_I_ not defined"
 #endif
 
-#ifndef _CONJ_
-#error "macro _CONJ_ not defined"
+#ifndef CONJ
+#error "macro CONJ not defined"
 #endif
 
-#ifndef _SQRT_
-#error "macro _SQRT_ not defined"
+#ifndef SQRT
+#error "macro SQRT not defined"
 #endif
 
-#ifndef _ABS_
-#error "macro _ABS_ not defined"
+#ifndef ABS
+#error "macro ABS not defined"
 #endif
 
-#ifndef _REAL_
-#error "macro _REAL_ not defined"
+#ifndef REAL
+#error "macro REAL not defined"
 #endif
 
-#ifndef _IMAG_
-#error "macro _IMAG_ not defined"
+#ifndef IMAG
+#error "macro IMAG not defined"
 #endif
 
-#ifndef _ZERO_
-#error "macro _ZERO_ not defined"
+#ifndef ZERO
+#error "macro ZERO not defined"
 #endif
 
-#ifndef _ONE_
-#error "macro _ONE_ not defined"
+#ifndef ONE
+#error "macro ONE not defined"
 #endif
 #endif

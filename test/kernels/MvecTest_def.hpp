@@ -41,7 +41,7 @@ public:
     if (typeImplemented_)
       {
       int nloc;
-      _SUBR_(mvec_my_length)(vec1_,&nloc,&ierr_);
+      SUBR(mvec_my_length)(vec1_,&nloc,&ierr_);
       ASSERT_EQ(0,ierr_);
       ASSERT_EQ(nloc_, nloc); 
       }
@@ -52,7 +52,7 @@ public:
     if (typeImplemented_)
       {
       int nvec;
-      _SUBR_(mvec_num_vectors)(vec1_,&nvec,&ierr_);
+      SUBR(mvec_num_vectors)(vec1_,&nvec,&ierr_);
       ASSERT_EQ(0,ierr_);
       ASSERT_EQ(nvec_, nvec);
       }
@@ -64,9 +64,9 @@ public:
     if (typeImplemented_)
       {
       ST val = (_ST_)42.0 + (ST)3.0*st::I();
-      _SUBR_(mvec_put_value)(vec1_,val,&ierr_);
+      SUBR(mvec_put_value)(vec1_,val,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,val));
+      ASSERTREALEQ(mt::one(),ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,val));
       }
     }
 
@@ -80,11 +80,11 @@ public:
         vec2_vp_[j*lda_+i]=mt::one()/st::conj(vec1_vp_[j*lda_+i]);
         }
       _ST_* dots = new ST[nvec_];
-      _SUBR_(mvec_dot_mvec)(vec1_,vec2_,dots,&ierr_);
+      SUBR(mvec_dot_mvec)(vec1_,vec2_,dots,&ierr_);
       ASSERT_EQ(0,ierr_);
             
       _ST_ val = st::one() * (ST)nglob_;
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(dots,nvec_,1,nvec_,1,val));
+      ASSERTREALEQ(mt::one(),ArrayEqual(dots,nvec_,1,nvec_,1,val));
       delete [] dots;
       }
     
@@ -94,7 +94,7 @@ public:
     {
     if (typeImplemented_)
       {
-      _SUBR_(mvec_random)(vec1_,&ierr_);
+      SUBR(mvec_random)(vec1_,&ierr_);
       ASSERT_EQ(0,ierr_);
       MT absval[nloc_*nvec_];
       int k=0;
@@ -122,10 +122,10 @@ public:
       {
       ST alpha = st::one();
       ST beta  = st::zero();
-      _SUBR_(mvec_add_mvec)(alpha,vec1_,beta,vec2_,&ierr_);
+      SUBR(mvec_add_mvec)(alpha,vec1_,beta,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
             
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
+      ASSERTREALEQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
       }
     
     }

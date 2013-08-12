@@ -1,5 +1,5 @@
-#ifndef KERNEL_TEST_WITH_TYPE_H
-#define KERNEL_TEST_WITH_TYPE_H
+#ifndef KERNEL_TEST_WITHTYPEH
+#define KERNEL_TEST_WITHTYPEH
 
 #include "KernelTest.h"
 #include "phist_ScalarTraits.hpp"

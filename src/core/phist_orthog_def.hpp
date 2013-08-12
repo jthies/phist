@@ -28,10 +28,10 @@
 // may be advisable. This should not happen in practice if       
 // numSweeps>=2 ('twice is enough').                             
 //                                                               
-void _SUBR_(orthog)(_TYPE_(const_mvec_ptr) V,
-                     _TYPE_(mvec_ptr) W,
-                     _TYPE_(sdMat_ptr) R1,
-                     _TYPE_(sdMat_ptr) R2,
+void SUBR(orthog)(TYPE(const_mvec_ptr) V,
+                     TYPE(mvec_ptr) W,
+                     TYPE(sdMat_ptr) R1,
+                     TYPE(sdMat_ptr) R2,
                      int numSweeps,
                      int* ierr)
   {
@@ -56,8 +56,8 @@ void _SUBR_(orthog)(_TYPE_(const_mvec_ptr) V,
     return;
     }
 
-  PHIST_CHK_IERR(_SUBR_(mvec_num_vectors)(V,&m,ierr),*ierr);
-  PHIST_CHK_IERR(_SUBR_(mvec_num_vectors)(W,&k,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&k,ierr),*ierr);
 
   if (k==0) // no vectors to be orthogonalized
     {
@@ -66,32 +66,32 @@ void _SUBR_(orthog)(_TYPE_(const_mvec_ptr) V,
 
   if (m==0)
     {
-    PHIST_CHK_IERR(_SUBR_(mvec_QR)(W,R1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_QR)(W,R1,ierr),*ierr);
     return;
     }
 
   if (numSweeps>1)
     {
-    PHIST_CHK_IERR(_SUBR_(mvec_get_comm)(V,&comm,ierr),*ierr);
-    PHIST_CHK_IERR(_SUBR_(sdMat_create)(&R1p,k,k,comm,ierr),*ierr);
-    PHIST_CHK_IERR(_SUBR_(sdMat_create)(&R1pp,k,k,comm,ierr),*ierr);
-    PHIST_CHK_IERR(_SUBR_(sdMat_create)(&R2p,m,k,comm,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_get_comm)(V,&comm,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&R1p,k,k,comm,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&R1pp,k,k,comm,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&R2p,m,k,comm,ierr),*ierr);
     }
 
 #ifdef TESTING
   // check that all array dimensions are correct
   PHIST_CHK_IERR((int)(V==NULL || W==NULL || R1==NULL || R2==NULL),*ierr);
   int n,tmp;
-  PHIST_CHK_IERR(_SUBR_(mvec_my_length)(V,&n,ierr),*ierr);
-  PHIST_CHK_IERR(_SUBR_(mvec_my_length)(W,&tmp,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_my_length)(W,&tmp,ierr),*ierr);
   PHIST_CHK_IERR(((n==tmp)?0:-1),*ierr);
-  PHIST_CHK_IERR(_SUBR_(sdMat_get_nrows)(R1,&tmp,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R1,&tmp,ierr),*ierr);
   PHIST_CHK_IERR(((k==tmp)?0:-1),*ierr);
-  PHIST_CHK_IERR(_SUBR_(sdMat_get_ncols)(R1,&tmp,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(R1,&tmp,ierr),*ierr);
   PHIST_CHK_IERR(((k==tmp)?0:-1),*ierr);
-  PHIST_CHK_IERR(_SUBR_(sdMat_get_nrows)(R2,&tmp,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R2,&tmp,ierr),*ierr);
   PHIST_CHK_IERR(((m==tmp)?0:-1),*ierr);
-  PHIST_CHK_IERR(_SUBR_(sdMat_get_ncols)(R2,&tmp,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(R2,&tmp,ierr),*ierr);
   PHIST_CHK_IERR(((k==tmp)?0:-1),*ierr);
 #endif
 
@@ -100,7 +100,7 @@ void _SUBR_(orthog)(_TYPE_(const_mvec_ptr) V,
   normW1=new MT[k];
   
   // determine original norms of W vectors and breakdown tolerance
-  PHIST_CHK_IERR(_SUBR_(mvec_norm2)(W,normW0,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW0,ierr),*ierr);
   breakdown = normW0[0];
   for (i=1;i<k;i++) std::min(normW0[i], breakdown);
   breakdown*=mt::eps();
@@ -108,12 +108,12 @@ void _SUBR_(orthog)(_TYPE_(const_mvec_ptr) V,
   // orthogonalize against V (first CGS sweep)
 
   //R2=V'*W;
-  PHIST_CHK_IERR(_SUBR_(mvecT_times_mvec)(st::one(),V,W,st::zero(),R2,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,W,st::zero(),R2,ierr),*ierr);
   //W=W-V*R2;
-  PHIST_CHK_IERR(_SUBR_(mvec_times_sdMat)(-st::one(),V,R2,st::one(),W,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),V,R2,st::one(),W,ierr),*ierr);
   // norms after first CGS sweep. This could be done cheaper by using R1 computed below,
   // since ||W_j||_2 = ||R1_j||_2 (TODO - that's how it's done in Belos).
-  PHIST_CHK_IERR(_SUBR_(mvec_norm2)(W,normW1,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW1,ierr),*ierr);
 
   // orthogonalize W after the first GS pass. This gives us the rank  
   // of W (ierr>0 indicates the dimension of the null space of W, i.e.
@@ -122,7 +122,7 @@ void _SUBR_(orthog)(_TYPE_(const_mvec_ptr) V,
   // V, which we do next. The projection coefficients for this part   
   // are thrown away as the randomized vectors are not really related 
   //to W anyway.
-  _SUBR_(mvec_QR)(W,R1,ierr);
+  SUBR(mvec_QR)(W,R1,ierr);
   if (*ierr<0)
     {
     PHIST_OUT(0,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
@@ -135,14 +135,14 @@ void _SUBR_(orthog)(_TYPE_(const_mvec_ptr) V,
     mvec_ptr_t Wrnd;
     sdMat_ptr_t Rrnd;
     int n0=*ierr;
-    PHIST_CHK_IERR(_SUBR_(mvec_view_block)(W,&Wrnd,rankW,k-1,ierr),*ierr);
-    PHIST_CHK_IERR(_SUBR_(sdMat_create)(&Rrnd,m,n0,comm,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(W,&Wrnd,rankW,k-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&Rrnd,m,n0,comm,ierr),*ierr);
     //R2=V'*W;
-    PHIST_CHK_IERR(_SUBR_(mvecT_times_mvec)(st::one(),V,Wrnd,st::zero(),Rrnd,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,Wrnd,st::zero(),Rrnd,ierr),*ierr);
     //W=W-V*R2;
-    PHIST_CHK_IERR(_SUBR_(mvec_times_sdMat)(-st::one(),V,Rrnd,st::one(),Wrnd,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),V,Rrnd,st::one(),Wrnd,ierr),*ierr);
     // throw away projection coefficients.
-    PHIST_CHK_IERR(_SUBR_(sdMat_delete)(Rrnd,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_delete)(Rrnd,ierr),*ierr);
     }
 
   for (i=1;i<numSweeps;i++)
@@ -161,19 +161,19 @@ void _SUBR_(orthog)(_TYPE_(const_mvec_ptr) V,
       }
 
     //R2p=V'*W;
-    PHIST_CHK_IERR(_SUBR_(mvecT_times_mvec)(st::one(),V,W,st::zero(),R2p,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,W,st::zero(),R2p,ierr),*ierr);
 
     //W=W-V*R2';
-    PHIST_CHK_IERR(_SUBR_(mvec_times_sdMat)(-st::one(),V,R2p,st::one(),W,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),V,R2p,st::one(),W,ierr),*ierr);
 
     //R2=R2+R2';
-    PHIST_CHK_IERR(_SUBR_(sdMat_add_sdMat)(st::one(),R2p,st::one(),R2,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R2p,st::one(),R2,ierr),*ierr);
 
     // orthogonalize W. The situation where the rank of W becomes
     // smaller than k here is (I think) very unlikely because we 
     // added random vectors before if rank(W) was not full. If   
     // it happens, we return with error code -10.                
-    _SUBR_(mvec_QR)(W,R1p,ierr);
+    SUBR(mvec_QR)(W,R1p,ierr);
     if (*ierr<0)
       {
       PHIST_OUT(0,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
@@ -189,11 +189,11 @@ void _SUBR_(orthog)(_TYPE_(const_mvec_ptr) V,
       }
     
     //R1pp=R1
-    PHIST_CHK_IERR(_SUBR_(sdMat_add_sdMat)(st::one(),R1,st::zero(),R1pp,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R1,st::zero(),R1pp,ierr),*ierr);
     //R1=R1p*R1pp;
-    PHIST_CHK_IERR(_SUBR_(sdMat_times_sdMat)(st::one(),R1p,R1pp,st::zero(),R1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R1p,R1pp,st::zero(),R1,ierr),*ierr);
     // again, the norm can be computed from the coefficients in R2p (TODO)
-    PHIST_CHK_IERR(_SUBR_(mvec_norm2)(W,normW1,ierr),*ierr);    
+    PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW1,ierr),*ierr);    
     }
 
   // if in the last CGS sweep a column decreased too much in norm, 
@@ -215,9 +215,9 @@ void _SUBR_(orthog)(_TYPE_(const_mvec_ptr) V,
       }
     }
 
-  PHIST_CHK_IERR(_SUBR_(sdMat_delete)(R1p,ierr),*ierr);
-  PHIST_CHK_IERR(_SUBR_(sdMat_delete)(R2p,ierr),*ierr);
-  PHIST_CHK_IERR(_SUBR_(sdMat_delete)(R1pp,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(R1p,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(R2p,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(R1pp,ierr),*ierr);
   delete [] normW0;
   delete [] normW1;
   }

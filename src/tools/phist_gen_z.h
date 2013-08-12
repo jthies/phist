@@ -20,22 +20,24 @@
 // phist_std_typedefs.hpp for all of this:
 #ifndef __cplusplus
 #define _CMPLX_I_ (0.0+1.0*I)
-#define _ZERO_ (0.0+0.0*I)
-#define _ONE_ (1.0+0.0*I)
-#define _SQRT_(X) csqrt(X)
-#define _ABS_(X) cabs(X)
-#define _CONJ_(X) conj(X)
-#define _REAL_(X) creal(X)
-#define _IMAG_(X) cimag(X)
+#define ZERO (0.0+0.0*I)
+#define ONE (1.0+0.0*I)
+#define SQRT(X) csqrt(X)
+#define MSQRT(X) sqrt(X)
+#define ABS(X) cabs(X)
+#define MABS(X) abs(X)
+#define CONJ(X) conj(X)
+#define REAL(X) creal(X)
+#define IMAG(X) cimag(X)
 #endif
 
-// adds type prefix to a specifier, e.g. _PREF_(gemm) -> Dgemm
-#define _PREF_(name) Z ## name
+// adds type prefix to a specifier, e.g. PREFIX(gemm) -> Dgemm
+#define PREFIX(name) Z ## name
 
 // how to build up the name of a subroutine (void function)
-#define _SUBR_(name) phist_Z ## name
+#define SUBR(name) phist_Z ## name
 
 // how to build up the name of a type
-#define _TYPE_(name) Z ## name ## _t
+#define TYPE(name) Z ## name ## _t
 
 #include "phist_gen_post.h"

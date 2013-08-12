@@ -15,7 +15,7 @@
 extern "C" {
 
 // we implement all the four types
-void _SUBR_(type_avail)(int* ierr)
+void SUBR(type_avail)(int* ierr)
   {
   *ierr=0;
   }
@@ -25,7 +25,7 @@ void _SUBR_(type_avail)(int* ierr)
 //@{
 
 //! read a matrix from a MatrixMarket (ASCII) file
-void _SUBR_(crsMat_read_mm)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
+void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
   Tpetra::MatrixMarket::Reader<Traits<_ST_>::crsMat_t> reader;
   std::string fstring(filename);
@@ -39,18 +39,18 @@ void _SUBR_(crsMat_read_mm)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ie
   
   _TRY_CATCH_(A=reader.readSparseFile(fstring,comm,node),*ierr);
   Teuchos::Ptr<Traits<_ST_>::crsMat_t> Aptr = A.release();
-  *vA = (_TYPE_(crsMat_ptr))(Aptr.get());
+  *vA = (TYPE(crsMat_ptr))(Aptr.get());
   }
 
 //! read a matrix from a Ghost CRS (binary) file.
-void _SUBR_(crsMat_read_bin)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
+void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
   // TODO - not implemented (should read the binary file format defined by ghost)
   *ierr=-99;
   }
 
 //! read a matrix from a Harwell-Boeing (HB) file
-void _SUBR_(crsMat_read_hb)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ierr)
+void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
   *ierr=0;
   std::string fname(filename);
@@ -64,7 +64,7 @@ void _SUBR_(crsMat_read_hb)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ie
   //_TRY_CATCH_(Tpetra::Utils::readHBMatrix(fname,comm,node,A,rowMap, params),*ierr);
   _TRY_CATCH_(Tpetra::Utils::readHBMatrix(fname,comm,node,A),*ierr);
   Teuchos::Ptr<Traits<_ST_>::crsMat_t> Aptr = A.release();
-  *vA = (_TYPE_(crsMat_ptr))(Aptr.get());
+  *vA = (TYPE(crsMat_ptr))(Aptr.get());
   }
 //!@}
 
@@ -72,7 +72,7 @@ void _SUBR_(crsMat_read_hb)(_TYPE_(crsMat_ptr)* vA, const char* filename,int* ie
 
 //!@{
 //! get the row distribution of the matrix
-void _SUBR_(crsMat_get_row_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
+void SUBR(crsMat_get_row_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
@@ -80,7 +80,7 @@ void _SUBR_(crsMat_get_row_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vm
   }
 
 //! get column distribution of a matrix
-void _SUBR_(crsMat_get_col_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
+void SUBR(crsMat_get_col_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
@@ -88,7 +88,7 @@ void _SUBR_(crsMat_get_col_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vm
   }
 
 //! get the map for vectors x in y=A*x
-void _SUBR_(crsMat_get_domain_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
+void SUBR(crsMat_get_domain_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
@@ -96,7 +96,7 @@ void _SUBR_(crsMat_get_domain_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t*
   }
 
 //! get the map for vectors y in y=A*x
-void _SUBR_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
+void SUBR(crsMat_get_range_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
@@ -109,18 +109,18 @@ void _SUBR_(crsMat_get_range_map)(_TYPE_(const_crsMat_ptr) vA, const_map_ptr_t* 
 //@{
 //! create a block-vector. The entries are stored contiguously
 //! at val in column major ordering.
-void _SUBR_(mvec_create)(_TYPE_(mvec_ptr)* vV, const_map_ptr_t vmap, int nvec, int* ierr)
+void SUBR(mvec_create)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap, int nvec, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const map_t, map, vmap, *ierr);
   Teuchos::RCP<const map_t> map_ptr = Teuchos::rcp(map,false);
   Traits<_ST_>::mvec_t* V = new Traits<_ST_>::mvec_t(map_ptr,nvec);
-  *vV=(_TYPE_(mvec_ptr))(V);
+  *vV=(TYPE(mvec_ptr))(V);
   }
 
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
-void _SUBR_(sdMat_create)(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols, 
+void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols, 
         const_comm_ptr_t vcomm, int* ierr)
   {
   *ierr=0;
@@ -132,13 +132,13 @@ void _SUBR_(sdMat_create)(_TYPE_(sdMat_ptr)* vM, int nrows, int ncols,
   Teuchos::RCP<map_t> localMap =
         Teuchos::rcp(new map_t(nrows, 0, Teuchos::rcp(comm,false), Tpetra::LocallyReplicated));
   Traits<_ST_>::sdMat_t* M = new Traits<_ST_>::mvec_t(localMap,ncols);
-  *vM=(_TYPE_(sdMat_ptr))(M);
+  *vM=(TYPE(sdMat_ptr))(M);
   }
 
 //@}
 
 //! retrieve local length of the vectors in V
-void _SUBR_(mvec_my_length)(_TYPE_(const_mvec_ptr) vV, lidx_t* len, int* ierr)
+void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) vV, lidx_t* len, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -146,7 +146,7 @@ void _SUBR_(mvec_my_length)(_TYPE_(const_mvec_ptr) vV, lidx_t* len, int* ierr)
   }
 
 //! retrieve the map of the vectors in V
-void _SUBR_(mvec_get_map)(_TYPE_(const_mvec_ptr) vV, const_map_ptr_t* vmap, int* ierr)
+void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -154,7 +154,7 @@ void _SUBR_(mvec_get_map)(_TYPE_(const_mvec_ptr) vV, const_map_ptr_t* vmap, int*
   }
 
 //! retrieve the comm used for MPI communication in V
-void _SUBR_(mvec_get_comm)(_TYPE_(const_mvec_ptr) vV, const_comm_ptr_t* vcomm, int* ierr)
+void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) vV, const_comm_ptr_t* vcomm, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -163,7 +163,7 @@ void _SUBR_(mvec_get_comm)(_TYPE_(const_mvec_ptr) vV, const_comm_ptr_t* vcomm, i
 
 
 //! retrieve number of vectors/columns in V
-void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) vV, int* nvec, int* ierr)
+void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) vV, int* nvec, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -171,7 +171,7 @@ void _SUBR_(mvec_num_vectors)(_TYPE_(const_mvec_ptr) vV, int* nvec, int* ierr)
   }
 
 //! get number of cols in local dense matrix
-void _SUBR_(sdMat_get_nrows)(_TYPE_(const_sdMat_ptr) vM, int* nrows, int* ierr)
+void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) vM, int* nrows, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,M,vM,*ierr);
@@ -179,7 +179,7 @@ void _SUBR_(sdMat_get_nrows)(_TYPE_(const_sdMat_ptr) vM, int* nrows, int* ierr)
   }
 
 //! get number of cols in local dense matrix
-void _SUBR_(sdMat_get_ncols)(_TYPE_(const_sdMat_ptr) vM, int* ncols, int* ierr)
+void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) vM, int* ncols, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,M,vM,*ierr);
@@ -188,7 +188,7 @@ void _SUBR_(sdMat_get_ncols)(_TYPE_(const_sdMat_ptr) vM, int* ncols, int* ierr)
 
 
 //! extract view from multi-vector
-void _SUBR_(mvec_extract_view)(_TYPE_(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ierr)
+void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -198,7 +198,7 @@ void _SUBR_(mvec_extract_view)(_TYPE_(mvec_ptr) vV, _ST_** val, lidx_t* lda, int
   }
 
 //! extract view from serial dense matrix
-void _SUBR_(sdMat_extract_view)(_TYPE_(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* ierr)
+void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* ierr)
   {
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,M,vM,*ierr);
   Teuchos::ArrayRCP<_ST_> valptr = M->get1dViewNonConst();
@@ -212,23 +212,23 @@ void _SUBR_(sdMat_extract_view)(_TYPE_(sdMat_ptr) vM, _ST_** val, lidx_t* lda, i
 //! allocate memory for the vector entries, instead using the entries from V
 //! directly. When mvec_delete(Vblock) is called, the library has to take care
 //! that the value array is not deleted 
-void _SUBR_(mvec_view_block)(_TYPE_(mvec_ptr) vV,
-                             _TYPE_(mvec_ptr)* vVblock,
+void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
+                             TYPE(mvec_ptr)* vVblock,
                              int jmin, int jmax, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
   Teuchos::RCP<Traits<_ST_>::mvec_t> Vblock;
   _TRY_CATCH_(Vblock = V->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
-  *vVblock = (_TYPE_(mvec_ptr))(Vblock.release().get());                        
+  *vVblock = (TYPE(mvec_ptr))(Vblock.release().get());                        
   }
 
 //! get a new vector that is a copy of some columns of the original one,  
 //! Vblock = V(:,jmin:jmax). The object Vblock must be created beforehand 
 //! and the corresponding columns of V are copied into the value array    
 //! of Vblock. V is not modified.
-void _SUBR_(mvec_get_block)(_TYPE_(const_mvec_ptr) vV,
-                             _TYPE_(mvec_ptr) vVblock,
+void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
+                             TYPE(mvec_ptr) vVblock,
                              int jmin, int jmax, int* ierr)
   {
   *ierr=0;
@@ -242,8 +242,8 @@ void _SUBR_(mvec_get_block)(_TYPE_(const_mvec_ptr) vV,
 
 //! given a multi-vector Vblock, set V(:,jmin:jmax)=Vblock by copying the corresponding
 //! vectors. Vblock is not modified.
-void _SUBR_(mvec_set_block)(_TYPE_(mvec_ptr) vV,
-                             _TYPE_(const_mvec_ptr) vVblock,
+void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
+                             TYPE(const_mvec_ptr) vVblock,
                              int jmin, int jmax, int* ierr)
   {
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -259,8 +259,8 @@ void _SUBR_(mvec_set_block)(_TYPE_(mvec_ptr) vV,
 //! Mblock = M(imin:imax,jmin:jmax). The object Mblock must be created beforehand 
 //! and the corresponding columns of M are copied into the value array    
 //! of Mblock. M is not modified.
-void _SUBR_(sdMat_get_block)(_TYPE_(const_mvec_ptr) M, 
-                             _TYPE_(mvec_ptr) Mblock,
+void SUBR(sdMat_get_block)(TYPE(const_mvec_ptr) M, 
+                             TYPE(mvec_ptr) Mblock,
                              int imin, int imax, int jmin, int jmax, int* ierr)
   {
   *ierr=-99;
@@ -268,8 +268,8 @@ void _SUBR_(sdMat_get_block)(_TYPE_(const_mvec_ptr) M,
 
 //! given a serial dense matrix Mblock, set M(imin:imax,jmin:jmax)=Mblock by 
 //! copying the corresponding elements. Mblock is not modified.
-void _SUBR_(sdMat_set_block)(_TYPE_(sdMat_ptr) M, 
-                             _TYPE_(const_sdMat_ptr) Mblock,
+void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M, 
+                             TYPE(const_sdMat_ptr) Mblock,
                              int imin, int imax, int jmin, int jmax, int* ierr)
   {
   *ierr=-99;
@@ -281,7 +281,7 @@ void _SUBR_(sdMat_set_block)(_TYPE_(sdMat_ptr) M,
 //@{
 
 //!
-void _SUBR_(crsMat_delete)(_TYPE_(crsMat_ptr) vA, int* ierr)
+void SUBR(crsMat_delete)(TYPE(crsMat_ptr) vA, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::crsMat_t,A,vA,*ierr);
@@ -289,7 +289,7 @@ void _SUBR_(crsMat_delete)(_TYPE_(crsMat_ptr) vA, int* ierr)
   }
 
 //!
-void _SUBR_(mvec_delete)(_TYPE_(mvec_ptr) vV, int* ierr)
+void SUBR(mvec_delete)(TYPE(mvec_ptr) vV, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -297,7 +297,7 @@ void _SUBR_(mvec_delete)(_TYPE_(mvec_ptr) vV, int* ierr)
   }
 
 //!
-void _SUBR_(sdMat_delete)(_TYPE_(sdMat_ptr) vM, int* ierr)
+void SUBR(sdMat_delete)(TYPE(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,M,vM,*ierr);
@@ -310,7 +310,7 @@ void _SUBR_(sdMat_delete)(_TYPE_(sdMat_ptr) vM, int* ierr)
 //!@{
 
 //! put scalar value into all elements of a multi-vector
-void _SUBR_(mvec_put_value)(_TYPE_(mvec_ptr) vV, _ST_ value, int* ierr)
+void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, _ST_ value, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -318,7 +318,7 @@ void _SUBR_(mvec_put_value)(_TYPE_(mvec_ptr) vV, _ST_ value, int* ierr)
   }
 
 //! put scalar value into all elements of a multi-vector
-void _SUBR_(sdMat_put_value)(_TYPE_(sdMat_ptr) vM, _ST_ value, int* ierr)
+void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vM, _ST_ value, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,M,vM,*ierr);
@@ -326,7 +326,7 @@ void _SUBR_(sdMat_put_value)(_TYPE_(sdMat_ptr) vM, _ST_ value, int* ierr)
   }
 
 //! put random numbers into all elements of a multi-vector
-void _SUBR_(mvec_random)(_TYPE_(mvec_ptr) vV, int* ierr)
+void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -334,7 +334,7 @@ void _SUBR_(mvec_random)(_TYPE_(mvec_ptr) vV, int* ierr)
   }
 
 //! put random numbers into all elements of a serial dense matrix
-void _SUBR_(sdMat_random)(_TYPE_(sdMat_ptr) vM, int* ierr)
+void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,M,vM,*ierr);
@@ -343,7 +343,7 @@ void _SUBR_(sdMat_random)(_TYPE_(sdMat_ptr) vM, int* ierr)
 
   //! compute the 2-norm) of each column of v                   
   //! (vnrm[i] must be pre-allocated by caller)
-  void _SUBR_(mvec_norm2)(_TYPE_(const_mvec_ptr) vV,
+  void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) vV,
                             _MT_* vnrm, int* ierr) 
   {
   *ierr=0;
@@ -357,7 +357,7 @@ int nvec = V->getNumVectors();
 
   //! normalize (in the 2-norm) each column of v and return ||v||_2
   //! for each vector i in vnrm[i] (must be pre-allocated by caller)
-  void _SUBR_(mvec_normalize)(_TYPE_(mvec_ptr) vV,
+  void SUBR(mvec_normalize)(TYPE(mvec_ptr) vV,
                             _MT_* vnrm, int* ierr) 
   {
   *ierr=0;
@@ -375,7 +375,7 @@ int nvec = V->getNumVectors();
   }
 
 //! scale each column i of v and by scalar[i]
-void _SUBR_(mvec_scale)(_TYPE_(mvec_ptr) vV, 
+void SUBR(mvec_scale)(TYPE(mvec_ptr) vV, 
                             _ST_* scalar, int* ierr)
   {
   *ierr=0;
@@ -387,8 +387,8 @@ int nvec = V->getNumVectors();
   }
 
 //! y=alpha*x+beta*y
-void _SUBR_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vX,
-                            _ST_ beta,  _TYPE_(mvec_ptr)       vY, 
+void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vX,
+                            _ST_ beta,  TYPE(mvec_ptr)       vY, 
                             int* ierr)
   {
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,X,vX,*ierr);
@@ -397,8 +397,8 @@ void _SUBR_(mvec_add_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vX,
   }
 
 //! B=alpha*A+beta*B
-void _SUBR_(sdMat_add_sdMat)(_ST_ alpha, _TYPE_(const_sdMat_ptr) vA,
-                            _ST_ beta,  _TYPE_(sdMat_ptr)       vB, 
+void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
+                            _ST_ beta,  TYPE(sdMat_ptr)       vB, 
                             int* ierr)
   {
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,A,vA,*ierr);
@@ -408,9 +408,9 @@ void _SUBR_(sdMat_add_sdMat)(_ST_ alpha, _TYPE_(const_sdMat_ptr) vA,
 
 
 //! y=alpha*A*x+beta*y.
-void _SUBR_(crsMat_times_mvec)(_ST_ alpha, _TYPE_(const_crsMat_ptr) vA, 
-                                        _TYPE_(const_mvec_ptr) vx, 
-                                        _ST_ beta, _TYPE_(mvec_ptr) vy, 
+void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA, 
+                                        TYPE(const_mvec_ptr) vx, 
+                                        _ST_ beta, TYPE(mvec_ptr) vy, 
                                         int* ierr)
   {
   *ierr=0;
@@ -425,7 +425,7 @@ void _SUBR_(crsMat_times_mvec)(_ST_ alpha, _TYPE_(const_crsMat_ptr) vA,
   }
 
 //! dot product of vectors v_i and w_i, i=1..numvecs
-void _SUBR_(mvec_dot_mvec)(_TYPE_(const_mvec_ptr) vv, _TYPE_(const_mvec_ptr) vw, _ST_* s, 
+void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) vv, TYPE(const_mvec_ptr) vw, _ST_* s, 
 int* 
 ierr)
   {
@@ -438,9 +438,9 @@ ierr)
 
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix
 //! C=alpha*V'*W+beta*C. C is replicated on all MPI processes sharing V and W.
-void _SUBR_(mvecT_times_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vV, 
-                           _TYPE_(const_mvec_ptr) vW, _ST_ beta, 
-                           _TYPE_(sdMat_ptr) vC, int* ierr)
+void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, 
+                           TYPE(const_mvec_ptr) vW, _ST_ beta, 
+                           TYPE(sdMat_ptr) vC, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -455,9 +455,9 @@ void _SUBR_(mvecT_times_mvec)(_ST_ alpha, _TYPE_(const_mvec_ptr) vV,
 
 //! n x m multi-vector times m x m dense matrix gives n x m multi-vector,
 //! W=alpha*V*C + beta*W
-void _SUBR_(mvec_times_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) vV,
-                                       _TYPE_(const_sdMat_ptr) vC,
-                           _ST_ beta,  _TYPE_(mvec_ptr) vW,
+void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
+                                       TYPE(const_sdMat_ptr) vC,
+                           _ST_ beta,  TYPE(mvec_ptr) vW,
                                        int* ierr)
   {
   *ierr=0;
@@ -470,9 +470,9 @@ void _SUBR_(mvec_times_sdMat)(_ST_ alpha, _TYPE_(const_mvec_ptr) vV,
 
 //! n x m serial dense matrix times m x k serial dense matrix gives n x k multi-vector,
 //! C=alpha*V*W + beta*C
-void _SUBR_(sdMat_times_sdMat)(_ST_ alpha, _TYPE_(const_sdMat_ptr) vV,
-                                           _TYPE_(const_sdMat_ptr) vW,
-                               _ST_ beta, _TYPE_(sdMat_ptr) vC,
+void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
+                                           TYPE(const_sdMat_ptr) vW,
+                               _ST_ beta, TYPE(sdMat_ptr) vC,
                                        int* ierr)
   {
   *ierr=0;
@@ -489,7 +489,7 @@ void _SUBR_(sdMat_times_sdMat)(_ST_ alpha, _TYPE_(const_sdMat_ptr) vV,
 //! indicates the dimension of the null-space of V. The first m-ierr    
 //! columns of Q are an orthogonal basis of the column space of V, the  
 //! remaining columns form a basis for the null space.
-void _SUBR_(mvec_QR)(_TYPE_(mvec_ptr) vV, _TYPE_(sdMat_ptr) vR, int* ierr)
+void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -506,8 +506,8 @@ void _SUBR_(mvec_QR)(_TYPE_(mvec_ptr) vV, _TYPE_(sdMat_ptr) vR, int* ierr)
   int ncols = R->getNumVectors();
     
 #ifdef TESTING
-  _CHECK_ZERO_(nrows-ncols,*ierr);
-  _CHECK_ZERO_(nrows-V->getNumVectors(),*ierr);
+  _CHECKZERO(nrows-ncols,*ierr);
+  _CHECKZERO(nrows-V->getNumVectors(),*ierr);
 #endif  
 
   Teuchos::RCP<Traits< _ST_ >::Teuchos_sdMat_t> R_view

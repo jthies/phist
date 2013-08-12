@@ -25,8 +25,8 @@
 //! keeping the basis, so eigenvectors cannot be obtained, no reorthogonalization or restart
 //! is performed and the quality of the resulting eigenvalues may be poor.
 //!
-void _SUBR_(lanczos)(_TYPE_(const_op_ptr) Op, 
-        _TYPE_(mvec_ptr) X, 
+void SUBR(lanczos)(TYPE(const_op_ptr) Op, 
+        TYPE(mvec_ptr) X, 
         _MT_* evals, _MT_* resid,
         _MT_ tol,int* num_iters, int* num_eigs,
         int* ierr);

@@ -969,7 +969,7 @@ class BuiltInDefaultValue<T*> {
 
 // The following specializations define the default values for
 // specific types we care about.
-#define GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(type, value) \
+#define GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(type, value) \
   template <> \
   class BuiltInDefaultValue<type> { \
    public: \
@@ -977,15 +977,15 @@ class BuiltInDefaultValue<T*> {
     static type Get() { return value; } \
   }
 
-GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(void, );  // NOLINT
+GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(void, );  // NOLINT
 #if GTEST_HAS_GLOBAL_STRING
-GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(::string, "");
+GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(::string, "");
 #endif  // GTEST_HAS_GLOBAL_STRING
-GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(::std::string, "");
-GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(bool, false);
-GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(unsigned char, '\0');
-GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(signed char, '\0');
-GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(char, '\0');
+GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(::std::string, "");
+GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(bool, false);
+GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(unsigned char, '\0');
+GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(signed char, '\0');
+GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(char, '\0');
 
 // There's no need for a default action for signed wchar_t, as that
 // type is the same as wchar_t for gcc, and invalid for MSVC.
@@ -994,21 +994,21 @@ GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(char, '\0');
 // that type is the same as unsigned int for gcc, and invalid for
 // MSVC.
 #if GMOCK_WCHAR_T_IS_NATIVE_
-GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(wchar_t, 0U);  // NOLINT
+GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(wchar_t, 0U);  // NOLINT
 #endif
 
-GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(unsigned short, 0U);  // NOLINT
-GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(signed short, 0);     // NOLINT
-GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(unsigned int, 0U);
-GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(signed int, 0);
-GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(unsigned long, 0UL);  // NOLINT
-GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(signed long, 0L);     // NOLINT
-GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(UInt64, 0);
-GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(Int64, 0);
-GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(float, 0);
-GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_(double, 0);
+GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(unsigned short, 0U);  // NOLINT
+GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(signed short, 0);     // NOLINT
+GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(unsigned int, 0U);
+GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(signed int, 0);
+GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(unsigned long, 0UL);  // NOLINT
+GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(signed long, 0L);     // NOLINT
+GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(UInt64, 0);
+GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(Int64, 0);
+GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(float, 0);
+GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE(double, 0);
 
-#undef GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURN_TYPE_
+#undef GMOCK_DEFINE_DEFAULT_ACTION_FOR_RETURNTYPE
 
 }  // namespace internal
 
@@ -3261,34 +3261,34 @@ DoAll(Action1 a1, Action2 a2, Action3 a3, Action4 a4, Action5 a5, Action6 a6,
     name3, name4, name5, name6, name7, name8, name9
 
 // Declares the types of value parameters.
-#define GMOCK_INTERNAL_DECL_TYPE_AND_0_VALUE_PARAMS()
-#define GMOCK_INTERNAL_DECL_TYPE_AND_1_VALUE_PARAMS(p0) , typename p0##_type
-#define GMOCK_INTERNAL_DECL_TYPE_AND_2_VALUE_PARAMS(p0, p1) , \
+#define GMOCK_INTERNAL_DECLTYPEAND_0_VALUE_PARAMS()
+#define GMOCK_INTERNAL_DECLTYPEAND_1_VALUE_PARAMS(p0) , typename p0##_type
+#define GMOCK_INTERNAL_DECLTYPEAND_2_VALUE_PARAMS(p0, p1) , \
     typename p0##_type, typename p1##_type
-#define GMOCK_INTERNAL_DECL_TYPE_AND_3_VALUE_PARAMS(p0, p1, p2) , \
+#define GMOCK_INTERNAL_DECLTYPEAND_3_VALUE_PARAMS(p0, p1, p2) , \
     typename p0##_type, typename p1##_type, typename p2##_type
-#define GMOCK_INTERNAL_DECL_TYPE_AND_4_VALUE_PARAMS(p0, p1, p2, p3) , \
+#define GMOCK_INTERNAL_DECLTYPEAND_4_VALUE_PARAMS(p0, p1, p2, p3) , \
     typename p0##_type, typename p1##_type, typename p2##_type, \
     typename p3##_type
-#define GMOCK_INTERNAL_DECL_TYPE_AND_5_VALUE_PARAMS(p0, p1, p2, p3, p4) , \
+#define GMOCK_INTERNAL_DECLTYPEAND_5_VALUE_PARAMS(p0, p1, p2, p3, p4) , \
     typename p0##_type, typename p1##_type, typename p2##_type, \
     typename p3##_type, typename p4##_type
-#define GMOCK_INTERNAL_DECL_TYPE_AND_6_VALUE_PARAMS(p0, p1, p2, p3, p4, p5) , \
+#define GMOCK_INTERNAL_DECLTYPEAND_6_VALUE_PARAMS(p0, p1, p2, p3, p4, p5) , \
     typename p0##_type, typename p1##_type, typename p2##_type, \
     typename p3##_type, typename p4##_type, typename p5##_type
-#define GMOCK_INTERNAL_DECL_TYPE_AND_7_VALUE_PARAMS(p0, p1, p2, p3, p4, p5, \
+#define GMOCK_INTERNAL_DECLTYPEAND_7_VALUE_PARAMS(p0, p1, p2, p3, p4, p5, \
     p6) , typename p0##_type, typename p1##_type, typename p2##_type, \
     typename p3##_type, typename p4##_type, typename p5##_type, \
     typename p6##_type
-#define GMOCK_INTERNAL_DECL_TYPE_AND_8_VALUE_PARAMS(p0, p1, p2, p3, p4, p5, \
+#define GMOCK_INTERNAL_DECLTYPEAND_8_VALUE_PARAMS(p0, p1, p2, p3, p4, p5, \
     p6, p7) , typename p0##_type, typename p1##_type, typename p2##_type, \
     typename p3##_type, typename p4##_type, typename p5##_type, \
     typename p6##_type, typename p7##_type
-#define GMOCK_INTERNAL_DECL_TYPE_AND_9_VALUE_PARAMS(p0, p1, p2, p3, p4, p5, \
+#define GMOCK_INTERNAL_DECLTYPEAND_9_VALUE_PARAMS(p0, p1, p2, p3, p4, p5, \
     p6, p7, p8) , typename p0##_type, typename p1##_type, typename p2##_type, \
     typename p3##_type, typename p4##_type, typename p5##_type, \
     typename p6##_type, typename p7##_type, typename p8##_type
-#define GMOCK_INTERNAL_DECL_TYPE_AND_10_VALUE_PARAMS(p0, p1, p2, p3, p4, p5, \
+#define GMOCK_INTERNAL_DECLTYPEAND_10_VALUE_PARAMS(p0, p1, p2, p3, p4, p5, \
     p6, p7, p8, p9) , typename p0##_type, typename p1##_type, \
     typename p2##_type, typename p3##_type, typename p4##_type, \
     typename p5##_type, typename p6##_type, typename p7##_type, \
@@ -3393,28 +3393,28 @@ DoAll(Action1 a1, Action2 a2, Action3 a3, Action4 a4, Action5 a5, Action6 a6,
     p7, p8, p9) p0, p1, p2, p3, p4, p5, p6, p7, p8, p9
 
 // Lists the value parameter types.
-#define GMOCK_INTERNAL_LIST_TYPE_AND_0_VALUE_PARAMS()
-#define GMOCK_INTERNAL_LIST_TYPE_AND_1_VALUE_PARAMS(p0) , p0##_type
-#define GMOCK_INTERNAL_LIST_TYPE_AND_2_VALUE_PARAMS(p0, p1) , p0##_type, \
+#define GMOCK_INTERNAL_LISTTYPEAND_0_VALUE_PARAMS()
+#define GMOCK_INTERNAL_LISTTYPEAND_1_VALUE_PARAMS(p0) , p0##_type
+#define GMOCK_INTERNAL_LISTTYPEAND_2_VALUE_PARAMS(p0, p1) , p0##_type, \
     p1##_type
-#define GMOCK_INTERNAL_LIST_TYPE_AND_3_VALUE_PARAMS(p0, p1, p2) , p0##_type, \
+#define GMOCK_INTERNAL_LISTTYPEAND_3_VALUE_PARAMS(p0, p1, p2) , p0##_type, \
     p1##_type, p2##_type
-#define GMOCK_INTERNAL_LIST_TYPE_AND_4_VALUE_PARAMS(p0, p1, p2, p3) , \
+#define GMOCK_INTERNAL_LISTTYPEAND_4_VALUE_PARAMS(p0, p1, p2, p3) , \
     p0##_type, p1##_type, p2##_type, p3##_type
-#define GMOCK_INTERNAL_LIST_TYPE_AND_5_VALUE_PARAMS(p0, p1, p2, p3, p4) , \
+#define GMOCK_INTERNAL_LISTTYPEAND_5_VALUE_PARAMS(p0, p1, p2, p3, p4) , \
     p0##_type, p1##_type, p2##_type, p3##_type, p4##_type
-#define GMOCK_INTERNAL_LIST_TYPE_AND_6_VALUE_PARAMS(p0, p1, p2, p3, p4, p5) , \
+#define GMOCK_INTERNAL_LISTTYPEAND_6_VALUE_PARAMS(p0, p1, p2, p3, p4, p5) , \
     p0##_type, p1##_type, p2##_type, p3##_type, p4##_type, p5##_type
-#define GMOCK_INTERNAL_LIST_TYPE_AND_7_VALUE_PARAMS(p0, p1, p2, p3, p4, p5, \
+#define GMOCK_INTERNAL_LISTTYPEAND_7_VALUE_PARAMS(p0, p1, p2, p3, p4, p5, \
     p6) , p0##_type, p1##_type, p2##_type, p3##_type, p4##_type, p5##_type, \
     p6##_type
-#define GMOCK_INTERNAL_LIST_TYPE_AND_8_VALUE_PARAMS(p0, p1, p2, p3, p4, p5, \
+#define GMOCK_INTERNAL_LISTTYPEAND_8_VALUE_PARAMS(p0, p1, p2, p3, p4, p5, \
     p6, p7) , p0##_type, p1##_type, p2##_type, p3##_type, p4##_type, \
     p5##_type, p6##_type, p7##_type
-#define GMOCK_INTERNAL_LIST_TYPE_AND_9_VALUE_PARAMS(p0, p1, p2, p3, p4, p5, \
+#define GMOCK_INTERNAL_LISTTYPEAND_9_VALUE_PARAMS(p0, p1, p2, p3, p4, p5, \
     p6, p7, p8) , p0##_type, p1##_type, p2##_type, p3##_type, p4##_type, \
     p5##_type, p6##_type, p7##_type, p8##_type
-#define GMOCK_INTERNAL_LIST_TYPE_AND_10_VALUE_PARAMS(p0, p1, p2, p3, p4, p5, \
+#define GMOCK_INTERNAL_LISTTYPEAND_10_VALUE_PARAMS(p0, p1, p2, p3, p4, p5, \
     p6, p7, p8, p9) , p0##_type, p1##_type, p2##_type, p3##_type, p4##_type, \
     p5##_type, p6##_type, p7##_type, p8##_type, p9##_type
 
@@ -3468,7 +3468,7 @@ DoAll(Action1 a1, Action2 a2, Action3 a3, Action4 a4, Action5 a5, Action6 a6,
 
 #define ACTION_TEMPLATE(name, template_params, value_params)\
   template <GMOCK_INTERNAL_DECL_##template_params\
-            GMOCK_INTERNAL_DECL_TYPE_##value_params>\
+            GMOCK_INTERNAL_DECLTYPE##value_params>\
   class GMOCK_ACTION_CLASS_(name, value_params) {\
    public:\
     GMOCK_ACTION_CLASS_(name, value_params)\
@@ -3506,18 +3506,18 @@ DoAll(Action1 a1, Action2 a2, Action3 a3, Action4 a4, Action5 a5, Action6 a6,
     GTEST_DISALLOW_ASSIGN_(GMOCK_ACTION_CLASS_(name, value_params));\
   };\
   template <GMOCK_INTERNAL_DECL_##template_params\
-            GMOCK_INTERNAL_DECL_TYPE_##value_params>\
+            GMOCK_INTERNAL_DECLTYPE##value_params>\
   inline GMOCK_ACTION_CLASS_(name, value_params)<\
       GMOCK_INTERNAL_LIST_##template_params\
-      GMOCK_INTERNAL_LIST_TYPE_##value_params> name(\
+      GMOCK_INTERNAL_LISTTYPE##value_params> name(\
           GMOCK_INTERNAL_DECL_##value_params) {\
     return GMOCK_ACTION_CLASS_(name, value_params)<\
         GMOCK_INTERNAL_LIST_##template_params\
-        GMOCK_INTERNAL_LIST_TYPE_##value_params>(\
+        GMOCK_INTERNAL_LISTTYPE##value_params>(\
             GMOCK_INTERNAL_LIST_##value_params);\
   }\
   template <GMOCK_INTERNAL_DECL_##template_params\
-            GMOCK_INTERNAL_DECL_TYPE_##value_params>\
+            GMOCK_INTERNAL_DECLTYPE##value_params>\
   template <typename F>\
   template <typename arg0_type, typename arg1_type, typename arg2_type,\
       typename arg3_type, typename arg4_type, typename arg5_type,\
@@ -3526,7 +3526,7 @@ DoAll(Action1 a1, Action2 a2, Action3 a3, Action4 a4, Action5 a5, Action6 a6,
   typename ::testing::internal::Function<F>::Result\
       GMOCK_ACTION_CLASS_(name, value_params)<\
           GMOCK_INTERNAL_LIST_##template_params\
-          GMOCK_INTERNAL_LIST_TYPE_##value_params>::gmock_Impl<F>::\
+          GMOCK_INTERNAL_LISTTYPE##value_params>::gmock_Impl<F>::\
               gmock_PerformImpl(\
           GMOCK_ACTION_ARG_TYPES_AND_NAMES_UNUSED_) const
 
@@ -10284,7 +10284,7 @@ namespace testing {
 namespace internal {
 
 // The type of the i-th (0-based) field of Tuple.
-#define GMOCK_FIELD_TYPE_(Tuple, i) \
+#define GMOCK_FIELDTYPE(Tuple, i) \
     typename ::std::tr1::tuple_element<i, Tuple>::type
 
 // TupleFields<Tuple, k0, ..., kn> is for selecting fields from a
@@ -10308,12 +10308,12 @@ template <class Tuple, int k0, int k1, int k2, int k3, int k4, int k5, int k6,
     int k7, int k8, int k9>
 class TupleFields {
  public:
-  typedef ::std::tr1::tuple<GMOCK_FIELD_TYPE_(Tuple, k0),
-      GMOCK_FIELD_TYPE_(Tuple, k1), GMOCK_FIELD_TYPE_(Tuple, k2),
-      GMOCK_FIELD_TYPE_(Tuple, k3), GMOCK_FIELD_TYPE_(Tuple, k4),
-      GMOCK_FIELD_TYPE_(Tuple, k5), GMOCK_FIELD_TYPE_(Tuple, k6),
-      GMOCK_FIELD_TYPE_(Tuple, k7), GMOCK_FIELD_TYPE_(Tuple, k8),
-      GMOCK_FIELD_TYPE_(Tuple, k9)> type;
+  typedef ::std::tr1::tuple<GMOCK_FIELDTYPE(Tuple, k0),
+      GMOCK_FIELDTYPE(Tuple, k1), GMOCK_FIELDTYPE(Tuple, k2),
+      GMOCK_FIELDTYPE(Tuple, k3), GMOCK_FIELDTYPE(Tuple, k4),
+      GMOCK_FIELDTYPE(Tuple, k5), GMOCK_FIELDTYPE(Tuple, k6),
+      GMOCK_FIELDTYPE(Tuple, k7), GMOCK_FIELDTYPE(Tuple, k8),
+      GMOCK_FIELDTYPE(Tuple, k9)> type;
   static type GetSelectedFields(const Tuple& t) {
     using ::std::tr1::get;
     return type(get<k0>(t), get<k1>(t), get<k2>(t), get<k3>(t), get<k4>(t),
@@ -10336,7 +10336,7 @@ class TupleFields<Tuple, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1> {
 template <class Tuple, int k0>
 class TupleFields<Tuple, k0, -1, -1, -1, -1, -1, -1, -1, -1, -1> {
  public:
-  typedef ::std::tr1::tuple<GMOCK_FIELD_TYPE_(Tuple, k0)> type;
+  typedef ::std::tr1::tuple<GMOCK_FIELDTYPE(Tuple, k0)> type;
   static type GetSelectedFields(const Tuple& t) {
     using ::std::tr1::get;
     return type(get<k0>(t));
@@ -10346,8 +10346,8 @@ class TupleFields<Tuple, k0, -1, -1, -1, -1, -1, -1, -1, -1, -1> {
 template <class Tuple, int k0, int k1>
 class TupleFields<Tuple, k0, k1, -1, -1, -1, -1, -1, -1, -1, -1> {
  public:
-  typedef ::std::tr1::tuple<GMOCK_FIELD_TYPE_(Tuple, k0),
-      GMOCK_FIELD_TYPE_(Tuple, k1)> type;
+  typedef ::std::tr1::tuple<GMOCK_FIELDTYPE(Tuple, k0),
+      GMOCK_FIELDTYPE(Tuple, k1)> type;
   static type GetSelectedFields(const Tuple& t) {
     using ::std::tr1::get;
     return type(get<k0>(t), get<k1>(t));
@@ -10357,8 +10357,8 @@ class TupleFields<Tuple, k0, k1, -1, -1, -1, -1, -1, -1, -1, -1> {
 template <class Tuple, int k0, int k1, int k2>
 class TupleFields<Tuple, k0, k1, k2, -1, -1, -1, -1, -1, -1, -1> {
  public:
-  typedef ::std::tr1::tuple<GMOCK_FIELD_TYPE_(Tuple, k0),
-      GMOCK_FIELD_TYPE_(Tuple, k1), GMOCK_FIELD_TYPE_(Tuple, k2)> type;
+  typedef ::std::tr1::tuple<GMOCK_FIELDTYPE(Tuple, k0),
+      GMOCK_FIELDTYPE(Tuple, k1), GMOCK_FIELDTYPE(Tuple, k2)> type;
   static type GetSelectedFields(const Tuple& t) {
     using ::std::tr1::get;
     return type(get<k0>(t), get<k1>(t), get<k2>(t));
@@ -10368,9 +10368,9 @@ class TupleFields<Tuple, k0, k1, k2, -1, -1, -1, -1, -1, -1, -1> {
 template <class Tuple, int k0, int k1, int k2, int k3>
 class TupleFields<Tuple, k0, k1, k2, k3, -1, -1, -1, -1, -1, -1> {
  public:
-  typedef ::std::tr1::tuple<GMOCK_FIELD_TYPE_(Tuple, k0),
-      GMOCK_FIELD_TYPE_(Tuple, k1), GMOCK_FIELD_TYPE_(Tuple, k2),
-      GMOCK_FIELD_TYPE_(Tuple, k3)> type;
+  typedef ::std::tr1::tuple<GMOCK_FIELDTYPE(Tuple, k0),
+      GMOCK_FIELDTYPE(Tuple, k1), GMOCK_FIELDTYPE(Tuple, k2),
+      GMOCK_FIELDTYPE(Tuple, k3)> type;
   static type GetSelectedFields(const Tuple& t) {
     using ::std::tr1::get;
     return type(get<k0>(t), get<k1>(t), get<k2>(t), get<k3>(t));
@@ -10380,9 +10380,9 @@ class TupleFields<Tuple, k0, k1, k2, k3, -1, -1, -1, -1, -1, -1> {
 template <class Tuple, int k0, int k1, int k2, int k3, int k4>
 class TupleFields<Tuple, k0, k1, k2, k3, k4, -1, -1, -1, -1, -1> {
  public:
-  typedef ::std::tr1::tuple<GMOCK_FIELD_TYPE_(Tuple, k0),
-      GMOCK_FIELD_TYPE_(Tuple, k1), GMOCK_FIELD_TYPE_(Tuple, k2),
-      GMOCK_FIELD_TYPE_(Tuple, k3), GMOCK_FIELD_TYPE_(Tuple, k4)> type;
+  typedef ::std::tr1::tuple<GMOCK_FIELDTYPE(Tuple, k0),
+      GMOCK_FIELDTYPE(Tuple, k1), GMOCK_FIELDTYPE(Tuple, k2),
+      GMOCK_FIELDTYPE(Tuple, k3), GMOCK_FIELDTYPE(Tuple, k4)> type;
   static type GetSelectedFields(const Tuple& t) {
     using ::std::tr1::get;
     return type(get<k0>(t), get<k1>(t), get<k2>(t), get<k3>(t), get<k4>(t));
@@ -10392,10 +10392,10 @@ class TupleFields<Tuple, k0, k1, k2, k3, k4, -1, -1, -1, -1, -1> {
 template <class Tuple, int k0, int k1, int k2, int k3, int k4, int k5>
 class TupleFields<Tuple, k0, k1, k2, k3, k4, k5, -1, -1, -1, -1> {
  public:
-  typedef ::std::tr1::tuple<GMOCK_FIELD_TYPE_(Tuple, k0),
-      GMOCK_FIELD_TYPE_(Tuple, k1), GMOCK_FIELD_TYPE_(Tuple, k2),
-      GMOCK_FIELD_TYPE_(Tuple, k3), GMOCK_FIELD_TYPE_(Tuple, k4),
-      GMOCK_FIELD_TYPE_(Tuple, k5)> type;
+  typedef ::std::tr1::tuple<GMOCK_FIELDTYPE(Tuple, k0),
+      GMOCK_FIELDTYPE(Tuple, k1), GMOCK_FIELDTYPE(Tuple, k2),
+      GMOCK_FIELDTYPE(Tuple, k3), GMOCK_FIELDTYPE(Tuple, k4),
+      GMOCK_FIELDTYPE(Tuple, k5)> type;
   static type GetSelectedFields(const Tuple& t) {
     using ::std::tr1::get;
     return type(get<k0>(t), get<k1>(t), get<k2>(t), get<k3>(t), get<k4>(t),
@@ -10406,10 +10406,10 @@ class TupleFields<Tuple, k0, k1, k2, k3, k4, k5, -1, -1, -1, -1> {
 template <class Tuple, int k0, int k1, int k2, int k3, int k4, int k5, int k6>
 class TupleFields<Tuple, k0, k1, k2, k3, k4, k5, k6, -1, -1, -1> {
  public:
-  typedef ::std::tr1::tuple<GMOCK_FIELD_TYPE_(Tuple, k0),
-      GMOCK_FIELD_TYPE_(Tuple, k1), GMOCK_FIELD_TYPE_(Tuple, k2),
-      GMOCK_FIELD_TYPE_(Tuple, k3), GMOCK_FIELD_TYPE_(Tuple, k4),
-      GMOCK_FIELD_TYPE_(Tuple, k5), GMOCK_FIELD_TYPE_(Tuple, k6)> type;
+  typedef ::std::tr1::tuple<GMOCK_FIELDTYPE(Tuple, k0),
+      GMOCK_FIELDTYPE(Tuple, k1), GMOCK_FIELDTYPE(Tuple, k2),
+      GMOCK_FIELDTYPE(Tuple, k3), GMOCK_FIELDTYPE(Tuple, k4),
+      GMOCK_FIELDTYPE(Tuple, k5), GMOCK_FIELDTYPE(Tuple, k6)> type;
   static type GetSelectedFields(const Tuple& t) {
     using ::std::tr1::get;
     return type(get<k0>(t), get<k1>(t), get<k2>(t), get<k3>(t), get<k4>(t),
@@ -10421,11 +10421,11 @@ template <class Tuple, int k0, int k1, int k2, int k3, int k4, int k5, int k6,
     int k7>
 class TupleFields<Tuple, k0, k1, k2, k3, k4, k5, k6, k7, -1, -1> {
  public:
-  typedef ::std::tr1::tuple<GMOCK_FIELD_TYPE_(Tuple, k0),
-      GMOCK_FIELD_TYPE_(Tuple, k1), GMOCK_FIELD_TYPE_(Tuple, k2),
-      GMOCK_FIELD_TYPE_(Tuple, k3), GMOCK_FIELD_TYPE_(Tuple, k4),
-      GMOCK_FIELD_TYPE_(Tuple, k5), GMOCK_FIELD_TYPE_(Tuple, k6),
-      GMOCK_FIELD_TYPE_(Tuple, k7)> type;
+  typedef ::std::tr1::tuple<GMOCK_FIELDTYPE(Tuple, k0),
+      GMOCK_FIELDTYPE(Tuple, k1), GMOCK_FIELDTYPE(Tuple, k2),
+      GMOCK_FIELDTYPE(Tuple, k3), GMOCK_FIELDTYPE(Tuple, k4),
+      GMOCK_FIELDTYPE(Tuple, k5), GMOCK_FIELDTYPE(Tuple, k6),
+      GMOCK_FIELDTYPE(Tuple, k7)> type;
   static type GetSelectedFields(const Tuple& t) {
     using ::std::tr1::get;
     return type(get<k0>(t), get<k1>(t), get<k2>(t), get<k3>(t), get<k4>(t),
@@ -10437,11 +10437,11 @@ template <class Tuple, int k0, int k1, int k2, int k3, int k4, int k5, int k6,
     int k7, int k8>
 class TupleFields<Tuple, k0, k1, k2, k3, k4, k5, k6, k7, k8, -1> {
  public:
-  typedef ::std::tr1::tuple<GMOCK_FIELD_TYPE_(Tuple, k0),
-      GMOCK_FIELD_TYPE_(Tuple, k1), GMOCK_FIELD_TYPE_(Tuple, k2),
-      GMOCK_FIELD_TYPE_(Tuple, k3), GMOCK_FIELD_TYPE_(Tuple, k4),
-      GMOCK_FIELD_TYPE_(Tuple, k5), GMOCK_FIELD_TYPE_(Tuple, k6),
-      GMOCK_FIELD_TYPE_(Tuple, k7), GMOCK_FIELD_TYPE_(Tuple, k8)> type;
+  typedef ::std::tr1::tuple<GMOCK_FIELDTYPE(Tuple, k0),
+      GMOCK_FIELDTYPE(Tuple, k1), GMOCK_FIELDTYPE(Tuple, k2),
+      GMOCK_FIELDTYPE(Tuple, k3), GMOCK_FIELDTYPE(Tuple, k4),
+      GMOCK_FIELDTYPE(Tuple, k5), GMOCK_FIELDTYPE(Tuple, k6),
+      GMOCK_FIELDTYPE(Tuple, k7), GMOCK_FIELDTYPE(Tuple, k8)> type;
   static type GetSelectedFields(const Tuple& t) {
     using ::std::tr1::get;
     return type(get<k0>(t), get<k1>(t), get<k2>(t), get<k3>(t), get<k4>(t),
@@ -10449,7 +10449,7 @@ class TupleFields<Tuple, k0, k1, k2, k3, k4, k5, k6, k7, k8, -1> {
   }
 };
 
-#undef GMOCK_FIELD_TYPE_
+#undef GMOCK_FIELDTYPE
 
 // Implements the Args() matcher.
 template <class ArgsTuple, int k0 = -1, int k1 = -1, int k2 = -1, int k3 = -1,

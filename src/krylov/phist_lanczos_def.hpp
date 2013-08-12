@@ -1,8 +1,8 @@
 // on entry, vnew = r, vold=v_(j-1).
 // on exit, vnew=v_j, vold=r
-static void _SUBR_(lanczosStep)(_TYPE_(const_op_ptr) op, 
-                _TYPE_(mvec_ptr) vnew, 
-                _TYPE_(mvec_ptr) vold,
+static void SUBR(lanczosStep)(TYPE(const_op_ptr) op, 
+                TYPE(mvec_ptr) vnew, 
+                TYPE(mvec_ptr) vold,
 		_ST_ *alpha, _ST_ *beta, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
@@ -10,16 +10,16 @@ static void _SUBR_(lanczosStep)(_TYPE_(const_op_ptr) op,
         *ierr=0;
         // vnew = r/beta
         ST ibeta = st::one()/(*beta);
-        PHIST_CHK_IERR(_SUBR_(mvec_scale)(vnew,&ibeta,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_scale)(vnew,&ibeta,ierr),*ierr);
         // r = A*v - beta*vold 
         PHIST_CHK_IERR(op->apply(st::one(),op->A_,vnew, 
                 -(*beta),vold,ierr),*ierr);
         //alpha_j = v_j'r
-        PHIST_CHK_IERR(_SUBR_(mvec_dot_mvec)(vnew,vold,alpha,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(vnew,vold,alpha,ierr),*ierr);
         // r=r-alpha_j*v_j
-	PHIST_CHK_IERR(_SUBR_(mvec_add_mvec)(-(*alpha),vnew,st::one(),vold,ierr),*ierr);
+	PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-(*alpha),vnew,st::one(),vold,ierr),*ierr);
 	// beta_j = ||r||_2
-	PHIST_CHK_IERR(_SUBR_(mvec_dot_mvec)(vold,vold,beta,ierr),*ierr);
+	PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(vold,vold,beta,ierr),*ierr);
 	*beta=st::sqrt(*beta);
         return;
 }
@@ -46,8 +46,8 @@ static void _SUBR_(lanczosStep)(_TYPE_(const_op_ptr) op,
 //! evals: latest eigenvalue approximations
 //! resid: Ritz residuals
 //! ierr: return code of the solver (0 on success, negative on error, positive on warning)
-void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op, 
-        _TYPE_(mvec_ptr) X,
+void SUBR(lanczos)(TYPE(const_op_ptr) op, 
+        TYPE(mvec_ptr) X,
         _MT_* evals, _MT_* resid,
         _MT_ tol,int* num_iters, int* num_eigs,
         int* ierr)
@@ -86,8 +86,8 @@ void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op,
   const_comm_ptr_t comm;
   PHIST_CHK_IERR(phist_map_get_comm(op->range_map_,&comm,ierr),*ierr);
 
-  PHIST_CHK_IERR(_SUBR_(mvec_create)(&vold,op->domain_map_,1,ierr),*ierr);
-  PHIST_CHK_IERR(_SUBR_(mvec_create)(&vnew,op->domain_map_,1,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&vold,op->domain_map_,1,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&vnew,op->domain_map_,1,ierr),*ierr);
   // S will store the Ritz vectors
   // it would be nice if we could do these things with a traits class eventually,
   // rather than with macros.
@@ -102,10 +102,10 @@ void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op,
 #endif
   
   // vold = random start vector, r=vold
-  PHIST_CHK_IERR(_SUBR_(mvec_put_value)(vold,st::zero(),ierr),*ierr);
-  PHIST_CHK_IERR(_SUBR_(mvec_random)(vnew,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_put_value)(vold,st::zero(),ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_random)(vnew,ierr),*ierr);
 
-  PHIST_CHK_IERR(_SUBR_(mvec_normalize)(vnew,&nrm,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_normalize)(vnew,&nrm,ierr),*ierr);
 
   beta = st::one();
   betas[0] = st::real(beta);
@@ -114,7 +114,7 @@ void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op,
       it < nIter;
       it++, n++)
     {
-         PHIST_CHK_IERR(_SUBR_(lanczosStep)(op,vnew,vold,&alpha,&beta,ierr),*ierr);
+         PHIST_CHK_IERR(SUBR(lanczosStep)(op,vnew,vold,&alpha,&beta,ierr),*ierr);
          vtmp=vnew;
          vnew=vold;
          vold=vtmp;
@@ -174,9 +174,9 @@ void _SUBR_(lanczos)(_TYPE_(const_op_ptr) op,
   
   // TODO - compute eigenvectors (need to store the whole basis V for that)
   
-  PHIST_CHK_IERR(_SUBR_(mvec_delete)(vold,ierr),*ierr);
-  PHIST_CHK_IERR(_SUBR_(mvec_delete)(vnew,ierr),*ierr);
-  PHIST_CHK_IERR(_SUBR_(sdMat_delete)(S,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(vold,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(vnew,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(S,ierr),*ierr);
   
   free(alphas);
   free(betas);

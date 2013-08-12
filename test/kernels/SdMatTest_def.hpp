@@ -33,10 +33,10 @@ public:
     if (typeImplemented_)
       {
       int n;
-      _SUBR_(sdMat_get_nrows)(mat1_,&n,&ierr_);
+      SUBR(sdMat_get_nrows)(mat1_,&n,&ierr_);
       ASSERT_EQ(0,ierr_);
       ASSERT_EQ(nrows_, n); 
-      _SUBR_(sdMat_get_ncols)(mat1_,&n,&ierr_);
+      SUBR(sdMat_get_ncols)(mat1_,&n,&ierr_);
       ASSERT_EQ(0,ierr_);
       ASSERT_EQ(ncols_, n); 
       }

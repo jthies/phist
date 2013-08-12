@@ -28,8 +28,8 @@
 // may be advisable. This should not happen in practice if       
 // numSweeps>=2 ('twice is enough').                             
 //                                                               
-void _SUBR_(orthog)(_TYPE_(const_mvec_ptr) V,
-                     _TYPE_(mvec_ptr) W,
-                     _TYPE_(sdMat_ptr) R1,
-                     _TYPE_(sdMat_ptr) R2,
+void SUBR(orthog)(TYPE(const_mvec_ptr) V,
+                     TYPE(mvec_ptr) W,
+                     TYPE(sdMat_ptr) R1,
+                     TYPE(sdMat_ptr) R2,
                      int numSweeps, int* ierr);

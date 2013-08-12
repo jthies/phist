@@ -17,7 +17,7 @@ public:
     KernelTestWithSdMats<_ST_,_NV_,_NV_>::SetUp();
     if (typeImplemented_)
       {
-      _SUBR_(mvec_random)(vec1_,&ierr_);
+      SUBR(mvec_random)(vec1_,&ierr_);
       ASSERT_EQ(0,ierr_);
       for (int j=0;j<nvec_;j++)
         {
@@ -27,7 +27,7 @@ public:
           }
         }
 //      PrintVector(*cout,"QR_Test V",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
-      _SUBR_(mvec_QR)(vec2_,mat1_,&ierr_);
+      SUBR(mvec_QR)(vec2_,mat1_,&ierr_);
 //      PrintVector(*cout,"QR_Test Q",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
       ASSERT_EQ(0,ierr_);
       }
@@ -48,7 +48,7 @@ public:
     {
     if (typeImplemented_)
       {
-      ASSERT_REAL_EQ(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_));
+      ASSERTREALEQ(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_));
       }
     }
 
@@ -58,7 +58,7 @@ public:
     {
     if (typeImplemented_)
       {
-      ASSERT_REAL_EQ(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_));
+      ASSERTREALEQ(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_));
       }
     }
 

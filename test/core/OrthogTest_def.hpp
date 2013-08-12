@@ -18,10 +18,10 @@ public:
   static const int k_=_K_;
   
   //! V is n x m, W is n x k  
-  _TYPE_(mvec_ptr) V_, W_,W2_,Q_;
+  TYPE(mvec_ptr) V_, W_,W2_,Q_;
 
   //! R1 is m x m, R2 is k x k
-  _TYPE_(sdMat_ptr) R0_, R1_, R2_;
+  TYPE(sdMat_ptr) R0_, R1_, R2_;
   
   _ST_ *V_vp_,*W_vp_,*W2_vp_,*Q_vp_,*R0_vp_,*R1_vp_,*R2_vp_;
   // how defines the data layout. Vector
@@ -44,33 +44,33 @@ public:
     if (this->typeImplemented_)
       {
       // create vectors V, W and vector views for setting/checking entries
-      _SUBR_(mvec_create)(&V_,this->map_,this->m_,&this->ierr_);
+      SUBR(mvec_create)(&V_,this->map_,this->m_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
-      _SUBR_(mvec_extract_view)(V_,&V_vp_,&ldaV_,&this->ierr_);
+      SUBR(mvec_extract_view)(V_,&V_vp_,&ldaV_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
-      _SUBR_(mvec_create)(&W_,this->map_,this->k_,&this->ierr_);
+      SUBR(mvec_create)(&W_,this->map_,this->k_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
-      _SUBR_(mvec_extract_view)(W_,&W_vp_,&ldaW_,&this->ierr_);
+      SUBR(mvec_extract_view)(W_,&W_vp_,&ldaW_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
-      _SUBR_(mvec_create)(&Q_,this->map_,this->k_,&this->ierr_);
+      SUBR(mvec_create)(&Q_,this->map_,this->k_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
-      _SUBR_(mvec_extract_view)(Q_,&Q_vp_,&ldaQ_,&this->ierr_);
+      SUBR(mvec_extract_view)(Q_,&Q_vp_,&ldaQ_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
-      _SUBR_(mvec_create)(&W2_,this->map_,this->k_,&this->ierr_);
+      SUBR(mvec_create)(&W2_,this->map_,this->k_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
-      _SUBR_(mvec_extract_view)(W2_,&W2_vp_,&ldaW2_,&this->ierr_);
+      SUBR(mvec_extract_view)(W2_,&W2_vp_,&ldaW2_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
       // create matrices R0,R1, R2 and matrix views for setting/checking entries
-      _SUBR_(sdMat_create)(&R0_,this->m_,this->m_,this->comm_,&this->ierr_);
+      SUBR(sdMat_create)(&R0_,this->m_,this->m_,this->comm_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
-      _SUBR_(sdMat_extract_view)(R0_,&R0_vp_,&this->ldaR0_,&this->ierr_);
-      _SUBR_(sdMat_create)(&R1_,this->k_,this->k_,this->comm_,&this->ierr_);
+      SUBR(sdMat_extract_view)(R0_,&R0_vp_,&this->ldaR0_,&this->ierr_);
+      SUBR(sdMat_create)(&R1_,this->k_,this->k_,this->comm_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
-      _SUBR_(sdMat_extract_view)(R1_,&R1_vp_,&this->ldaR1_,&this->ierr_);
+      SUBR(sdMat_extract_view)(R1_,&R1_vp_,&this->ldaR1_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
-      _SUBR_(sdMat_create)(&R2_,this->m_,this->k_,this->comm_,&this->ierr_);
+      SUBR(sdMat_create)(&R2_,this->m_,this->k_,this->comm_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
-      _SUBR_(sdMat_extract_view)(R2_,&R2_vp_,&this->ldaR2_,&this->ierr_);
+      SUBR(sdMat_extract_view)(R2_,&R2_vp_,&this->ldaR2_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
       }
     stride_=1;
@@ -82,13 +82,13 @@ public:
     {
     if (this->typeImplemented_)
       {
-      _SUBR_(mvec_delete)(V_,&ierr_);
-      _SUBR_(mvec_delete)(W_,&ierr_);
-      _SUBR_(mvec_delete)(W2_,&ierr_);
-      _SUBR_(mvec_delete)(Q_,&ierr_);
-      _SUBR_(sdMat_delete)(R0_,&ierr_);
-      _SUBR_(sdMat_delete)(R1_,&ierr_);
-      _SUBR_(sdMat_delete)(R2_,&ierr_);
+      SUBR(mvec_delete)(V_,&ierr_);
+      SUBR(mvec_delete)(W_,&ierr_);
+      SUBR(mvec_delete)(W2_,&ierr_);
+      SUBR(mvec_delete)(Q_,&ierr_);
+      SUBR(sdMat_delete)(R0_,&ierr_);
+      SUBR(sdMat_delete)(R1_,&ierr_);
+      SUBR(sdMat_delete)(R2_,&ierr_);
       }
     KernelTestWithMap<_N_>::TearDown();
     KernelTestWithType<_ST_>::TearDown();
@@ -102,37 +102,37 @@ public:
     if (typeImplemented_)
       {
       // fill V and W with random numbers
-      _SUBR_(mvec_random)(V_,&ierr_);
+      SUBR(mvec_random)(V_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      _SUBR_(mvec_random)(W_,&ierr_);
+      SUBR(mvec_random)(W_,&ierr_);
       ASSERT_EQ(0,ierr_);
       // copy Q=W because orthog() works in-place
-      _SUBR_(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&ierr_);
+      SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&ierr_);
       ASSERT_EQ(0,ierr_);
       // orthogonalize the m columns of V
-      _SUBR_(mvec_QR)(V_,R0_,&ierr_);
+      SUBR(mvec_QR)(V_,R0_,&ierr_);
       ASSERT_EQ(0,ierr_);
 
       // check wether this worked out
-      ASSERT_REAL_EQ(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
-      ASSERT_REAL_EQ(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
+      ASSERTREALEQ(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
+      ASSERTREALEQ(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
       
       int nsteps=2;
       
       // now orthogonalize W against V. The result should be such that Q*R1=W-V*R2, Q'*Q=I,V'*Q=0
-      _SUBR_(orthog)(V_,Q_,R1_,R2_,nsteps,&ierr_);
+      SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&ierr_);
       ASSERT_EQ(0,ierr_);
       
       // check orthonormality of Q
-      ASSERT_REAL_EQ(mt::one(),WTest::ColsAreNormalized(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_));
-      ASSERT_REAL_EQ(mt::one(),WTest::ColsAreOrthogonal(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_));
+      ASSERTREALEQ(mt::one(),WTest::ColsAreNormalized(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_));
+      ASSERTREALEQ(mt::one(),WTest::ColsAreOrthogonal(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_));
       
       // check the decomposition: Q*R2 = W - V*R1 (compute W2=Q*R2+V*R1-W and compare with 0)
-      _SUBR_(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);
+      SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      _SUBR_(mvec_times_sdMat)(st::one(),V_,R2_,st::one(),W2_,&ierr_);
+      SUBR(mvec_times_sdMat)(st::one(),V_,R2_,st::one(),W2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      _SUBR_(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
+      SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
       ASSERT_EQ(0,ierr_);
       ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero()),8*mt::eps());
       }

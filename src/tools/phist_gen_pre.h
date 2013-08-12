@@ -16,24 +16,32 @@
 #undef _MT_
 #endif
 
-#ifdef _CONJ_
-#undef _CONJ_
+#ifdef CONJ
+#undef CONJ
 #endif
 
-#ifdef _SQRT_
-#undef _SQRT_
+#ifdef SQRT
+#undef SQRT
 #endif
 
-#ifdef _ABS_
-#undef _ABS_
+#ifdef MSQRT
+#undef MSQRT
 #endif
 
-#ifdef _REAL_
-#undef _REAL_
+#ifdef ABS
+#undef ABS
 #endif
 
-#ifdef _IMAG_
-#undef _IMAG_
+#ifdef MABS
+#undef MABS
+#endif
+
+#ifdef REAL
+#undef REAL
+#endif
+
+#ifdef IMAG
+#undef IMAG
 #endif
 
 #ifdef _IS_COMPLEX_
@@ -44,26 +52,26 @@
 #undef _IS_DOUBLE_
 #endif
 
-#ifdef _ZERO_
-#undef _ZERO_
+#ifdef ZERO
+#undef ZERO
 #endif
 
-#ifdef _ONE_
-#undef _ONE_
+#ifdef ONE
+#undef ONE
 #endif
 
-#ifdef _PREF_
-#undef _PREF_
+#ifdef PREFIX
+#undef PREFIX
 #endif
 
-#ifdef _SUBR_
-#undef _SUBR_
+#ifdef SUBR
+#undef SUBR
 #endif
 
-#ifdef _TYPE_
-#undef _TYPE_
+#ifdef TYPE
+#undef TYPE
 #endif
 
-#ifdef ASSERT_REAL_EQ
-#undef ASSERT_REAL_EQ
+#ifdef ASSERTREALEQ
+#undef ASSERTREALEQ
 #endif

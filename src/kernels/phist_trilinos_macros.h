@@ -11,14 +11,14 @@
 #endif
 
 #ifndef _CAST_PTR_FROM_VOID_
-#define _CAST_PTR_FROM_VOID_(_TYPE_,_PTR_,_VPTR_,_FLAG_) \
-_TYPE_ *_PTR_ = NULL; \
-_PTR_=(_TYPE_*)(_VPTR_); \
+#define _CAST_PTR_FROM_VOID_(TYPE,_PTR_,_VPTR_,_FLAG_) \
+TYPE *_PTR_ = NULL; \
+_PTR_=(TYPE*)(_VPTR_); \
 if (_PTR_==NULL) {_FLAG_=-88; return;}
 #endif
 
-#ifndef _CHECK_ZERO_
-#define _CHECK_ZERO_(func,_FLAG_) \
+#ifndef _CHECKZERO
+#define _CHECKZERO(func,_FLAG_) \
 {*ierr=func; if (_FLAG_) { \
 std::string msg="Error code "+Teuchos::toString(_FLAG_)+" returned from call "\
 +"'"+#func+"'\n"+\
