@@ -44,7 +44,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   bool stopGS=false;
   
   // auxiliary matrices
-  sdMat_ptr_t R1p,R2p,R1pp;
+  st::sdMat_t *R1p,*R2p,*R1pp;
   const_comm_ptr_t comm;
 
   *ierr=0;
@@ -132,8 +132,8 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   if (*ierr>0) rankW=k-*ierr;
   if (rankW<k)
     {
-    mvec_ptr_t Wrnd;
-    sdMat_ptr_t Rrnd;
+    st::mvec_t *Wrnd;
+    st::sdMat_t *Rrnd;
     int n0=*ierr;
     PHIST_CHK_IERR(SUBR(mvec_view_block)(W,&Wrnd,rankW,k-1,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_create)(&Rrnd,m,n0,comm,ierr),*ierr);

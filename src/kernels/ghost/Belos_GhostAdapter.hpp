@@ -10,7 +10,6 @@
 #include <BelosConfigDefs.hpp>
 #include <BelosTypes.hpp>
 #include <BelosMultiVecTraits.hpp>
-#include <BelosOperatorTraits.hpp>
 
 #ifdef HAVE_BELOS_TSQR
 #  include <Ghost_TsqrAdaptor.hpp>
@@ -414,45 +413,6 @@ namespace Belos {
     typedef GhostTsqrAdaptor<Scalar> tsqr_adaptor_type;
 #endif // HAVE_BELOS_TSQR
   }; 
-
-  ////////////////////////////////////////////////////////////////////
-  //
-  // Implementation of the Belos::OperatorTraits for Tpetra::Operator.
-  //
-  ////////////////////////////////////////////////////////////////////
-
-  /// \brief Partial specialization of OperatorTraits for Tpetra::Operator.
-  /// Note: this is only going to work if MV is the class used by the kernel
-  /// library, for instance, you can't compile phist with PHIST_KERNEL_LIB=
-  /// tpetra and then use ghost vectors in Belos.
-  template <class Scalar, class MV> 
-  class OperatorTraits <Scalar, MV, phist::ScalarTraits<Scalar>::op_t >
-  {
-  public:
-
-    typedef phist::ScalarTraits<Scalar>::op_t phist_op_t;
-    typedef phist::ScalarTraits<Scalar>::mvec_t phist_mvec_t;
-
-    static void 
-    Apply (const phist_op_t& Op, 
-	   const MV& X,
-	   MV& Y,
-	   ETrans trans=NOTRANS)
-    {
-    TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS,std::invalid_argument,
-          "Belos::OperatorTraits<Scalar,MV,phist_op_t>:: Apply: only implemented for trans=NOTRANS up to now.");
-    int ierr;
-    Scalar alpha = Teuchos::ScalarTraits<Scalar>::one();
-    Scalar beta = Teuchos::ScalarTraits<Scalar>::zero();
-    op.apply(alpha,(const phist_mvec_t*)&X, beta, (phist_mvec_t*)&Y,&ierr);
-    }
-
-    static bool
-    HasApplyTranspose (const phist_op_t& Op)
-    {
-      return false;
-    }
-  };
 
 } // end of Belos namespace 
 

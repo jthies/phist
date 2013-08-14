@@ -22,10 +22,7 @@ class ScalarTraits
   {
   public: 
   
-  // if no specialization exists, this class can't do anything
-  // and a compile-time error should occur
-  typedef ST scalar_t;
-//  typedef missing_specialization_for_class_ScalarTraits scalar_t;
+  typedef typename ST::missing_specialization_for_class_ScalarTraits bar;
   };
 
 template<>
@@ -41,8 +38,13 @@ class ScalarTraits< float >
 #endif  
   typedef Sop_t op_t;
   typedef Smvec_t mvec_t;
+  typedef SsdMat_t sdMat_t;
+  typedef ScrsMat_t crsMat_t;
+  
   typedef Cop_t c_op_t; // this is just to allow a simpler implementation of the complex traits class
-  typedef Cmvec_t c_mvec_t; // this is just to allow a simpler implementation of the complex traits class
+  typedef Cmvec_t c_mvec_t; 
+  typedef CcrsMat_t c_crsMat_t; 
+  typedef CsdMat_t c_sdMat_t; 
   
   //! for complex types, data type of real and imag part.
   //! for real types, magn_t=scalar_t
@@ -138,8 +140,14 @@ class ScalarTraits< double >
 #endif  
   typedef Dop_t op_t; 
   typedef Dmvec_t mvec_t; 
+  typedef DcrsMat_t crsMat_t; 
+  typedef DsdMat_t sdMat_t; 
+  
   typedef Zop_t c_op_t; // this is just to allow a simpler implementation of the complex traits class
-  typedef Zmvec_t c_mvec_t; // this is just to allow a simpler implementation of the complex traits class
+  typedef Zmvec_t c_mvec_t;
+  typedef ZcrsMat_t c_crsMat_t;
+  typedef ZsdMat_t c_sdMat_t;
+  
   //! for complex types, data type of real and imag part.
   //! for real types, magn_t=scalar_t
   typedef double magn_t;
@@ -234,6 +242,9 @@ class ScalarTraits< std::complex<MT> >
 #endif
   typedef typename ScalarTraits<MT>::c_op_t op_t; 
   typedef typename ScalarTraits<MT>::c_mvec_t mvec_t; 
+  typedef typename ScalarTraits<MT>::c_crsMat_t crsMat_t; 
+  typedef typename ScalarTraits<MT>::c_sdMat_t sdMat_t; 
+
   //! for complex types, data type of real and imag part.
   //! for real types, magn_t=scalar_t
   typedef MT magn_t;

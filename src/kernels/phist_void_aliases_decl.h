@@ -8,7 +8,7 @@ typedef void* TYPE(mvec_ptr);
 typedef const void* TYPE(const_mvec_ptr);
 
 //! opaque serial dense matrix object
-typedef void* TYPE(sdMat);
+typedef void TYPE(sdMat);
 
 //! opaque pointer to serial dense matrix objects
 typedef void* TYPE(sdMat_ptr);

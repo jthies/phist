@@ -54,9 +54,9 @@ void SUBR(lanczos)(TYPE(const_op_ptr) op,
   {
 #include "phist_std_typedefs.hpp"
 
-  mvec_ptr_t vold, vnew, vtmp;
-  mvec_ptr_t V;
-  sdMat_ptr_t S;
+  st::mvec_t *vold, *vnew, *vtmp;
+  st::mvec_t *V;
+  mt::sdMat_t *S;
   
   int nIter=*num_iters;
   int nconv=0;

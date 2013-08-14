@@ -16,7 +16,8 @@
 
 #include "phist_typedefs.h"
 
-typedef Kokkos::DefaultNode::DefaultNodeType node_t; // from the Kokkos node API
+// currently typedef'd in phist_typedefs.hpp (TODO)
+//typedef Kokkos::DefaultNode::DefaultNodeType node_t; // from the Kokkos node API
 typedef Tpetra::Map<lidx_t,gidx_t,node_t> map_t;
 typedef Teuchos::Comm<int> comm_t;
 

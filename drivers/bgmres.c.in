@@ -1,0 +1,164 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+#include "phist_macros.h"
+#include "phist_kernels.h"
+#include "phist_operator.h"
+#include "phist_lanczos.h"
+#include ${PHIST_TG_HFILE}
+
+
+typedef _ST_ ST;
+typedef _MT_ MT;
+typedef TYPE(mvec_ptr) mvec_ptr_t;
+typedef TYPE(const_mvec_ptr) const_mvec_ptr_t;
+
+typedef TYPE(sdMat_ptr) sdMat_ptr_t;
+typedef TYPE(const_sdMat_ptr) const_sdMat_ptr_t;
+
+typedef TYPE(crsMat_ptr) crsMat_ptr_t;
+typedef TYPE(const_crsMat_ptr) const_crsMat_ptr_t;
+
+typedef TYPE(op_ptr) op_ptr_t;
+typedef TYPE(const_op_ptr) const_op_ptr_t;
+
+int main(int argc, char** argv)
+  {
+  int rank, num_proc;
+  int i, ierr;
+  bool verbose;
+
+  comm_ptr_t comm;
+  crsMat_ptr_t A;
+  op_ptr_t A_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  
+  const_map_ptr_t map; // map (element distribution) of vectors according to 
+                       // the distribution of matrix rows
+  mvec_ptr_t X,XEX,B; // multivectors for solution and rhs (XEX exact solution to compare)
+  
+  MT tol;
+  MT* norm2; /* for computing the error norms after the solve */
+  char* filename;
+  
+  int num_iters;
+  int max_iters,max_blocks,num_rhs;
+  
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+
+  PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
+
+  PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&ierr),ierr);
+
+  verbose= (rank==0);
+
+  if (argc<2)
+    {
+    if (verbose) fprintf(stdout,"Usage: ./Xbgmres <matrix market filename> [<max iters> [<tol> [<num rhs> [<max blocks>]]]]\n");
+    return 1;
+    }
+
+  filename = argv[1];
+  
+  if (argc<3)
+    {
+    max_iters=300;
+    }
+  else
+    {
+    max_iters=atoi(argv[2]);
+    }
+
+  if (argc<4)
+    {
+    tol=1.0e-6;
+    }
+  else
+    {
+    tol=(MT)atof(argv[3]);
+    }
+
+  if (argc<5)
+    {
+    num_rhs=1;
+    }
+  else
+    {
+    num_rhs=atoi(argv[4]);
+    }
+
+  if (argc<6)
+    {
+    max_blocks=30;
+    }
+  else
+    {
+    max_blocks=atoi(argv[5]);
+    }
+
+  if (verbose) 
+    {
+    PHIST_OUT(0,"matrix file: %s\n",filename);
+    PHIST_OUT(0,"number of rhs: %d\n",num_rhs);
+    }  
+
+  PHIST_ICHK_IERR(SUBR(crsMat_read_mm)(&A,filename,&ierr),ierr);
+  
+  /* we assume domain map = range map here, which is reasonable for something
+     you want to put into a linear solver */
+  PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(A, &map,&ierr),ierr);
+
+  /* create vectors */
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&XEX,map,num_rhs,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,num_rhs,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&B,map,num_rhs,&ierr),ierr);
+  
+  /* randomize the solution vector */
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(X,ZERO,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_random)(XEX,&ierr),ierr);
+  
+  /* compute rhs B=A*XEX */
+  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(ONE,A,XEX,ZERO,B,&ierr),ierr);
+  
+  /* create operator wrapper for computing Y=A*X using a CRS matrix */
+  A_op = (op_ptr_t)malloc(sizeof(TYPE(op)));
+  PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(A_op,A,&ierr),ierr);
+  
+  num_iters=max_iters;
+  
+  SUBR(bgmres)(A_op,X,B,tol,&num_iters,max_blocks,&ierr);
+
+  if (ierr!=0)
+    {
+    if (verbose) fprintf(stdout,"code %d returned from Belos BlockGMRES",ierr);
+    if (ierr<0) return ierr;
+    }
+  
+  PHIST_OUT(1,"number of iterations performed: %d",num_iters);
+  
+  /* compute ||X - XEX||_2 */
+  norm2=(MT*)malloc(num_rhs*sizeof(MT));
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(ONE,XEX,-ONE,X,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(X,norm2,&ierr),ierr);
+  
+  if (verbose)
+    {
+    fprintf(stdout,"error 2-norms: ");
+    for (i=0;i<num_rhs;i++)
+      {
+      fprintf(stdout,"%f  ",norm2[i]);
+      }
+    fprintf(stdout,"\n");
+    }
+  
+  free(norm2);
+  
+  PHIST_ICHK_IERR(SUBR(crsMat_delete)(A,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(XEX,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(B,&ierr),ierr);
+  free(A_op);
+  PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
+  return ierr;
+  }

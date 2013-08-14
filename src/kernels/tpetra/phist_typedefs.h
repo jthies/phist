@@ -5,6 +5,7 @@
 #ifdef __cplusplus
 #include <complex>
 #include <cstddef>
+#include "Kokkos_DefaultNode.hpp"
 #else
 #include <complex.h>
 #include <stddef.h>
@@ -12,6 +13,9 @@
 #endif
 
 #ifdef __cplusplus
+//! TODO - do we want that here or do we want to give
+//!        the user a choice?
+typedef Kokkos::DefaultNode::DefaultNodeType node_t;
 //! single precision complex type
 typedef std::complex<float> s_complex_t;
 typedef std::complex<double> d_complex_t;
