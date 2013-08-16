@@ -154,9 +154,12 @@ void taskBuf_flush(taskBuf_t* buf)
   for (i=0;i<buf->ncontrollers;i++)
       {
       pos1=buf->opType[i]; // which op is requested? (rndX, incX or divX)
-      pos2=buf->ghost_args[pos1]->n; // how many of this op have been requested already?
-      buf->ghost_args[pos1]->arg[pos2]=buf->opArg[i];
-      buf->ghost_args[pos1]->n++;
+      if (pos1>=0) // otherwise: -1=NO-OP
+        {
+        pos2=buf->ghost_args[pos1]->n; // how many of this op have been requested already?
+        buf->ghost_args[pos1]->arg[pos2]=buf->opArg[i];
+        buf->ghost_args[pos1]->n++;
+        }
       }
   for (i=0;i<buf->nops;i++)
     {
@@ -181,6 +184,32 @@ void taskBuf_flush(taskBuf_t* buf)
     }
   }
 #endif
+  return;
+  }
+
+// if a thread finishes with whatever it is the task buffer has been created    
+// for and others should continue using the buffer, the thread can renounce     
+// the buffer and others will no longer wait for this thread to add its         
+// requests.
+void taskBuf_renounce(taskBuf_t* buf, int task_id, int* ierr)
+  {
+  *ierr=0;
+  // lock the buffer while adjusting it to deal without me in the future.
+  pthread_mutex_lock(&buf->lock_mx);
+  buf->opType[task_id]=PHIST_NOOP;
+  buf->opArg[task_id]=NULL;
+  buf->ncontrollers--;
+  buf->countdown--;
+  PHIST_OUT(1,"control thread %lu (task_id %d) leaving the controller team\n",
+        pthread_self(), task_id);
+  // final flush if necessary
+  if (buf->countdown==0)
+    {
+    taskBuf_flush(buf);
+    PHIST_OUT(1,"Thread %lu sending signal @ cond %p \n",pthread_self(),buf->finished_cv);
+    pthread_cond_broadcast(&buf->finished_cv);
+    }
+  pthread_mutex_unlock(&buf->lock_mx);  
   return;
   }
 

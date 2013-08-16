@@ -14,6 +14,8 @@
 extern "C" {
 #endif
 
+#define PHIST_NOOP -1
+
 ////////////////////////////////////////////////////////////////////////////////////////
 // task buffer prototype                                                              //
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -71,6 +73,13 @@ void taskBuf_add(taskBuf_t* buf, void* arg, int task_id, int op_key, int* ierr);
 //! flush the task buffer, e.g. group the tasks together and put them in
 //! the ghost queue, then signal any waiting threads.
 void taskBuf_flush(taskBuf_t* buf);
+
+//! if a thread finishes with whatever it is the task buffer has been created    
+//! for and others should continue using the buffer, the thread can renounce     
+//! the buffer and others will no longer wait for this thread to add its         
+//! requests.
+void taskBuf_renounce(taskBuf_t* buf, int task_id, int* ierr);
+
 
 //! wait for the task that you put in the buffer to be finished
 void taskBuf_wait(taskBuf_t* buf, int task_id, int* ierr);

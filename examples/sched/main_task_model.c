@@ -159,7 +159,12 @@ void* fill_vector(void* v_mainArg)
   for (i=1; i<n;i++)
     {
     v[i]=v[i-1];
-    if (v[i-1]==0 || v[i-1]==1)
+    if (v[i-1]==42)
+      {
+      PHIST_CHK_IERR(taskBuf_renounce(taskBuf,col,ierr),*ierr);
+      return NULL;
+      }
+    else if (v[i-1]==0 || v[i-1]==1)
       {
       PHIST_CHK_IERR(taskBuf_add(taskBuf,&v[i],col,mainArg->RNDX,ierr),*ierr);
       }
