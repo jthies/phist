@@ -17,18 +17,10 @@
 #endif
 
 //                                                              
-// this example driver performs the following algorithm.        
-// given a number of columns of integer vectors, fill each      
-// vector with the sequence                                     
-//                                                              
-// V[n+1]=random() if n=-1 or V[n]=0 or V[n]=1                  
-// V[n+1] = V[n]+1 if V[n] is odd                               
-// V[n+1] = V[n]/2 if n is even                                 
-//                                                              
-// Each vector is treated by a different 'control thread', the  
-// actual operations (rndX(), incX and divX) are put into a     
-// task buffer and executed in bulks whenever each control      
-// thread has announced the type of operation it needs.         
+// this is the same example as in main_task_model.c, but with   
+// an artificial deadlock. If a thread encounters a value 42,   
+// it returns immediately, and the others will wait in vain for 
+// it to "place its order" in the task buffer.                  
 //                                                              
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -159,6 +151,18 @@ void* fill_vector(void* v_mainArg)
   for (i=1; i<n;i++)
     {
     v[i]=v[i-1];
+    
+    // this generates a deadlock if value 42 is encountered
+    // at any point. The other threads will wait for this
+    // one to put its demands in the buffer, but that won't
+    // happen.
+    if (v[i-1]==42)
+      {
+      fprintf(OUT,"Thread encountered value 42 and will return\n");
+      mainArg->ierr=42;
+      return NULL;
+      }
+    
     if (v[i-1]==0 || v[i-1]==1)
       {
       PHIST_CHK_IERR(taskBuf_add(taskBuf,&v[i],col,mainArg->RNDX,ierr),*ierr);

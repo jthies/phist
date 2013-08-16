@@ -295,11 +295,14 @@ foreach(label ${PHIST_TESTS})
 endforeach()
 
 # some example drivers which haven't made their way into the drivers/ directory
-add_executable(main_kernel_usage ${PROJECT_SOURCE_DIR}/examples/kernels/main_kernel_usage.c)
-add_executable(main_task_model ${PROJECT_SOURCE_DIR}/examples/sched/main_task_model.c)
-foreach(lib ${PHIST_LIBS})
-  target_link_libraries(main_kernel_usage ${lib})
-  target_link_libraries(main_task_model ${lib})
+file(GLOB C_Examples ${CMAKE_SOURCE_DIR}/examples/*/*.c )
+
+foreach (infile ${C_Examples})
+  get_filename_component(filebase ${infile} NAME_WE)
+  add_executable(${filebase} ${infile})
+  foreach(lib ${PHIST_LIBS})
+    target_link_libraries(${filebase} ${lib})
+  endforeach()
 endforeach()
 
 # Activate testing

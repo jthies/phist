@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <omp.h>
 #include <pthread.h>
 #include <time.h>
@@ -16,20 +17,12 @@
 #error "this driver makes no sense without ghost"
 #endif
 
-//                                                              
-// this example driver performs the following algorithm.        
-// given a number of columns of integer vectors, fill each      
-// vector with the sequence                                     
-//                                                              
-// V[n+1]=random() if n=-1 or V[n]=0 or V[n]=1                  
-// V[n+1] = V[n]+1 if V[n] is odd                               
-// V[n+1] = V[n]/2 if n is even                                 
-//                                                              
-// Each vector is treated by a different 'control thread', the  
-// actual operations (rndX(), incX and divX) are put into a     
-// task buffer and executed in bulks whenever each control      
-// thread has announced the type of operation it needs.         
-//                                                              
+#define DONT_PIN_CONTROL_THREADS
+
+// This is the same example as in main_task_model.c, but with 
+// an artificial race condition. Apart from the control threads
+// we start another one who fills all columns with zeros while 
+// the controllers are at work.
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // some constants for the example                                                     //
@@ -178,6 +171,30 @@ void* fill_vector(void* v_mainArg)
   return NULL;
   }
 
+// create an artificial race condition by writing in the memory
+// that is being filled by the fill_vector function, thus messing
+// up the results. When the executing threads encounter the false
+// zeros, they will randomize and restart the sequence falsely. If
+// the zero is placed after the entry was generated, the sequence 
+// is wrong. If the zero is written before the entry is generated,
+// nothing happens.
+void* init_vector(void* v)
+  {
+  int i,j;
+  int* vectors = (int*)v;
+  for (i=0; i<NDIM;i++)
+    {
+    for (j=0;j<NUM_TASKS;j++)
+      {
+      // delay for up to 100 microns
+      usleep((useconds_t)(rand()/RAND_MAX*100));
+      vectors[j*NDIM+i]=0;
+      }
+    }
+  fprintf(OUT,"vector initialized\n");
+  return NULL;
+  }
+
   
 int main(int argc, char** argv)
   {
@@ -192,6 +209,7 @@ int main(int argc, char** argv)
 #else
   ghost_task_t *controlTask[NUM_TASKS];
 #endif
+  pthread_t initThread;
   
   int* vectors = (int*)malloc(NUM_TASKS*NDIM*sizeof(int));
 
@@ -227,6 +245,12 @@ PHIST_CHK_IERR(taskBuf_add_op(taskBuf, &rndX, nworkers,&op_RNDX, &ierr),ierr);
 PHIST_CHK_IERR(taskBuf_add_op(taskBuf, &incX, nworkers,&op_INCX, &ierr),ierr);
 PHIST_CHK_IERR(taskBuf_add_op(taskBuf, &divX, nworkers,&op_DIVX, &ierr),ierr);
 
+// this thread sets random entries in the vector to 0, which it should do
+// (if at all) before the other starts. The lack of synchronization here 
+// creates a race condition.
+pthread_create(&initThread, NULL, &init_vector, (void *)vectors);
+
+
 for (i=0;i<NUM_TASKS;i++)
   {
   mainArg[i].n=NDIM;
@@ -236,6 +260,7 @@ for (i=0;i<NUM_TASKS;i++)
   mainArg[i].RNDX=op_RNDX;
   mainArg[i].INCX=op_INCX;
   mainArg[i].DIVX=op_DIVX;
+
 #ifndef DONT_PIN_CONTROL_THREADS
   controlTask[i] = ghost_task_init(1, 0, &fill_vector, 
         (void*)(&mainArg[i]),GHOST_TASK_DEFAULT);
@@ -248,6 +273,9 @@ for (i=0;i<NUM_TASKS;i++)
 #ifndef DONT_PIN_CONTROL_THREADS
 ghost_task_waitall();
 #else
+
+pthread_join(initThread,NULL);
+
 for (i=0;i<NUM_TASKS;i++)
   {
   pthread_join(controlThread[i],NULL);

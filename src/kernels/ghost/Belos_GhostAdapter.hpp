@@ -176,7 +176,12 @@ namespace Belos {
 
     static int GetVecLength( const ghost_vec_t& mv )
     { 
-    return mv.traits->TODO;
+// TOOD - this is not available in ghost,
+// but as it is only used for confirming 
+// that vectors are compatible for certain
+// operations in Belos, I think we can
+// cheat here and simply return the local vec length instead.
+    return mv.traits->nrows;
     }
 
     static int GetNumberVecs( const ghost_vec_t& mv )
@@ -192,21 +197,15 @@ namespace Belos {
                                  Scalar beta, ghost_vec_t& mv )
     {
       // create view of Teuchos matrix as ghost_vec_t
-      // TODO - constructor doesn't exist in Ghost so far
-      ghost_vec_t* Bghost=ghost_vec_view_TODO(flags = GHOST_VEC_LHS, 
-        nrows=B.numRows(), 
-        nvecs=B.numCols(),
-        nrowspadded=B.stride(),
-        datatype=phist::ScalarTraits<scalar_type>::ghost_dt);
-      
+      ghost_vec_t* Bghost=createGhostViewOfTeuchosSDM(B);
       // multiply
-      // TODO - ghost tries to allocate the result vector, which is undesired here.
       ghost_gemm("T",&A,Bghost,&mv,&alpha,&beta,GHOST_GEMM_NO_REDUCE);
-              
+      
+      ghost_freeVector(Bghost);
     }
 
     static void MvAddMv( Scalar alpha, const ghost_vec_t& A, Scalar beta, const ghost_vec_t& B, ghost_vec_t& mv )
-    { 
+    {
       //TODO - do this in one step if alpha and beta are not 0
       mv.zero(&mv);
       if (alpha==Teuchos::ScalarTraits<Scalar>::zero())
@@ -230,17 +229,13 @@ namespace Belos {
     // C=alpha*A*B
     static void MvTransMv( Scalar alpha, const ghost_vec_t& A, const ghost_vec_t& B, Teuchos::SerialDenseMatrix<int,Scalar>& C)
     {
-    ghost_vec_t* Cghost=ghost_vec_view_TODO(flags = GHOST_VEC_LHS, 
-      nrows=C.numRows(), 
-      nvecs=C.numCols(),
-      nrowspadded=C.stride(),
-      datatype=phist::ScalarTraits<scalar_type>::ghost_dt);
-    Scalar beta=phist::SclarTraits<Scalar>::zero();
+    ghost_vec_t* Cghost=createGhostViewOfTeuchosSDM(C);
     ghost_gemm("T",std::const_cast<ghost_vec_t*>(&A),
                    std::const_cast<ghost_vec_t*>(&B),
                    Cghost,
                    &alpha, &beta,
                    GHOST_GEMM_ALLREDUCE);
+    ghost_freeVector(Cghost);
     }
 
     static void MvDot( const ghost_vec_t& A, const ghost_vec_t& B, std::vector<Scalar> &dots)
@@ -405,6 +400,24 @@ namespace Belos {
       Teuchos::FancyOStream fos(Teuchos::rcp(&os,false));
       mv.describe(fos,Teuchos::VERB_EXTREME);
     }
+
+  ghost_vec_t* createGhostViewOfTeuchosSDM
+        (const Teuchos::SerialDenseMatrix<lidx_t,Scalar>& M)
+  {    
+      ghost_vtraits_t dmtraits = GHOST_VTRAITS_INIT(
+                .flags = GHOST_VEC_DEFAULTS, 
+                .nrows=M.numRows(),
+                .nvecs=M.numCols(), 
+                .nrowspadded=M.stride(),
+                .datatype=phist::ScalarTraits<Scalar>::ghost_dt);
+                                                                                                                                                  
+      ghost_vec_t* Mghost=ghost_createVector(&dmtraits);
+      Mghost->viewPlain(Mghost, (void*)M.Values(),
+                Mghost->traits->nrows, Mghost->traits->nvec,
+                0,0,ghost->traits->nrowspadded);
+  return Mghost;
+  } 
+
 
 #ifdef HAVE_BELOS_TSQR
     /// \typedef tsqr_adaptor_type
