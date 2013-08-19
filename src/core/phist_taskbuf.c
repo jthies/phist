@@ -30,6 +30,7 @@ void taskBuf_create(taskBuf_t** buf, int num_controllers, int* ierr)
   *buf = (taskBuf_t*)malloc(sizeof(taskBuf_t));
   
   (*buf)->ncontrollers=num_controllers;
+  (*buf)->nactive=num_controllers;
   (*buf)->countdown=num_controllers;
   (*buf)->opType=(int*)malloc(num_controllers*sizeof(int));
   (*buf)->opArg=(void**)malloc(num_controllers*sizeof(int*));
@@ -170,7 +171,7 @@ void taskBuf_flush(taskBuf_t* buf)
       ghost_task_add(buf->ghost_task[i]);
       }
     }
-  buf->countdown=buf->ncontrollers;
+  buf->countdown=buf->nactive;
 #ifdef SYNC_WAIT
   //TODO
   // this should be removed, waiting should be left to 
@@ -198,7 +199,7 @@ void taskBuf_renounce(taskBuf_t* buf, int task_id, int* ierr)
   pthread_mutex_lock(&buf->lock_mx);
   buf->opType[task_id]=PHIST_NOOP;
   buf->opArg[task_id]=NULL;
-  buf->ncontrollers--;
+  buf->nactive--;
   buf->countdown--;
   PHIST_OUT(1,"control thread %lu (task_id %d) leaving the controller team\n",
         pthread_self(), task_id);

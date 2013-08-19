@@ -39,6 +39,7 @@ void argList_delete(argList_t* args, int* ierr);
 typedef struct {
 
 int ncontrollers; // total number of threads using the buffer
+int nactive; // number of active controllers (some may renounce the buffer at a point)
 int nops; // number of different operations the buffer can perform
 int nops_max; // number of ops that can be added before memory has to be re-allocated
 int countdown; // when this reaches 0, the jobs are launched

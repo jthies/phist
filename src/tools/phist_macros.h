@@ -64,7 +64,10 @@ PHIST_OUT(0,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
 #define PHIST_OUT(level,msg, ...) {\
         if(DEBUG >= level) {\
                 int __me;\
+                MPI_Finalized(&__me); \
+                if (!__me) { \
                 MPI_Comm_rank(MPI_COMM_WORLD,&__me);\
+                } else {__me=-1;}\
                 fprintf(stderr,"PE%d: "msg"\n",__me,##__VA_ARGS__);\
                 fflush(stderr);\
         }\
