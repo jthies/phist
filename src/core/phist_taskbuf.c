@@ -89,13 +89,13 @@ void taskBuf_add_op(taskBuf_t* buf, void* (*fcn)(argList_t*),
   //TODO - properly state in which queue (LD) the job should be put
   if (num_workers==ghost_thpool->nThreads)
     {
-    buf->ghost_task[*op_key] = ghost_task_init(GHOST_TASK_FILL_ALL, 0, (void*(*)(void*))fcn, 
-        (void*)buf->ghost_args[*op_key],GHOST_TASK_DEFAULT);
+    buf->ghost_task[*op_key] = ghost_task_init(GHOST_TASK_FILL_ALL, GHOST_TASK_LD_ANY, 
+        (void*(*)(void*))fcn, (void*)buf->ghost_args[*op_key],GHOST_TASK_DEFAULT);
     }
   else
     {
-    buf->ghost_task[*op_key] = ghost_task_init(num_workers, 0, (void*(*)(void*))fcn, 
-        (void*)(buf->ghost_args[*op_key]),GHOST_TASK_DEFAULT);
+    buf->ghost_task[*op_key] = ghost_task_init(num_workers, GHOST_TASK_LD_ANY, 
+        (void*(*)(void*))fcn, (void*)(buf->ghost_args[*op_key]),GHOST_TASK_DEFAULT);
     }
   }
 
@@ -115,12 +115,12 @@ void taskBuf_add(taskBuf_t* buf, void* arg, int task_id, int op_key,int* ierr)
   if (buf->countdown==0)
     {
     taskBuf_flush(buf);
-    PHIST_OUT(1,"Thread %lu sending signal @ cond %p \n",pthread_self(),buf->finished_cv);
+    PHIST_OUT(1,"Thread %lu sending signal @ cond %p \n",pthread_self(),&buf->finished_cv);
     pthread_cond_broadcast(&buf->finished_cv);
     }
   else
     {
-    PHIST_OUT(1,"Thread %lu wait @ cond %p \n",pthread_self(),buf->finished_cv);
+    PHIST_OUT(1,"Thread %lu wait @ cond %p \n",pthread_self(),&buf->finished_cv);
     // this sends the thread to sleep and releases the mutex. When the signal is
     // received, the mutex is locked again
     pthread_cond_wait(&buf->finished_cv,&buf->lock_mx);

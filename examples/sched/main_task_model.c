@@ -39,8 +39,6 @@
 #define RND_MAX 10000
 // number of columns to be filled (=number of control threads)
 #define NUM_TASKS 4
-// we perform three different operations, rndX, incX and divX
-#define NUM_JOBTYPES 3 
 // local length of each column
 #define NDIM 40
 
@@ -153,6 +151,9 @@ void* fill_vector(void* v_mainArg)
   v = mainArg->v;
   taskBuf=mainArg->taskBuf;
   ierr = &mainArg->ierr;
+  
+  fprintf(OUT,"thread %ul: taskBuf at %p, finished_cv at %p\n",pthread_self(),
+        taskBuf, &taskBuf->finished_cv);
   
   // these are all blocking function calls right now
   v[0]=0;// next one will be randomized
