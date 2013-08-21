@@ -184,8 +184,8 @@ void* init_vector(void* v)
     {
     for (j=0;j<NUM_TASKS;j++)
       {
-      // delay for up to 100 microns
-      usleep((useconds_t)(rand()/RAND_MAX*100));
+      // delay for up to 5 millisecs
+      usleep((useconds_t)(rand()/(double)RAND_MAX*5000));
       vectors[j*NDIM+i]=0;
       }
     }
