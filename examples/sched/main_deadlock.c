@@ -191,7 +191,7 @@ int main(int argc, char** argv)
   int op_RNDX, op_INCX, op_DIVX;
   taskBuf_t *taskBuf;
   mainArg_t mainArg[NUM_TASKS];
-#ifdef DONT_PIN_CONTROL_THREADS
+#ifndef PIN_CONTROL_THREADS
   pthread_t controlThread[NUM_TASKS];
 #else
   ghost_task_t *controlTask[NUM_TASKS];
@@ -210,7 +210,7 @@ int main(int argc, char** argv)
   // initialize C random number generator
   srand(time(NULL));
 
-#ifdef DONT_PIN_CONTROL_THREADS
+#ifndef PIN_CONTROL_THREADS
 
 nworkers=ghost_thpool->nThreads;
 
@@ -240,7 +240,7 @@ for (i=0;i<NUM_TASKS;i++)
   mainArg[i].RNDX=op_RNDX;
   mainArg[i].INCX=op_INCX;
   mainArg[i].DIVX=op_DIVX;
-#ifndef DONT_PIN_CONTROL_THREADS
+#ifdef PIN_CONTROL_THREADS
   controlTask[i] = ghost_task_init(1, 0, &fill_vector, 
         (void*)(&mainArg[i]),GHOST_TASK_DEFAULT);
   ghost_task_add(controlTask[i]);
@@ -249,7 +249,7 @@ for (i=0;i<NUM_TASKS;i++)
 #endif
   }
 
-#ifndef DONT_PIN_CONTROL_THREADS
+#ifdef PIN_CONTROL_THREADS
 ghost_task_waitall();
 #else
 for (i=0;i<NUM_TASKS;i++)
