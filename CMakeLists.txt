@@ -311,6 +311,8 @@ enable_testing()
 foreach(label ${PHIST_TESTS})
   add_test(${label}-tests ${PRODUCT_NAME}-${label}-test --gtest_output=xml:${CMAKE_SOURCE_DIR}/xunit.xml)
 endforeach()
+# Adding concurrency tests with valgrind-helgrind
+add_test(concurrency-test: ${CMAKE_SOURCE_DIR}/test/multiple_helgrind_run.sh ${CMAKE_SOURCE_DIR}/test ${CMAKE_BINARY_DIR})
 
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --output-on-failure)
