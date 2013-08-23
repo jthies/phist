@@ -118,6 +118,16 @@ const_map_ptr_t vmap, int nvec, int* ierr)
   *vV=(TYPE(mvec_ptr))(result);
   }
 
+//! create a block-vector as view of raw data. The map tells the object
+//! how many rows it should 'see' in the data (at most lda, the leading
+//! dimension of the 2D array values).
+void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap, 
+        _ST_* values, lidx_t lda, int nvec,
+        int* ierr)
+  {
+  return -99;
+  }
+
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
 void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols, 
@@ -185,13 +195,13 @@ void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) vM, int* ncols, int* ierr)
 void SUBR(mvec_extract_view)(Dmvec_ptr_t vV, double** val, lidx_t* lda, int* ierr)
   {
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V, vV, *ierr);
-  _CHECKZERO((*V)(0)->ExtractView(val,lda),*ierr);
+  _CHECK_ZERO_((*V)(0)->ExtractView(val,lda),*ierr);
   }
 
 void SUBR(sdMat_extract_view)(DsdMat_ptr_t vM, double** val, lidx_t* lda, int* ierr)
   {
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,M, vM, *ierr);
-  _CHECKZERO(M->ExtractView(val,lda),*ierr);
+  _CHECK_ZERO_(M->ExtractView(val,lda),*ierr);
   }
 
 //! get a new vector that is a view of some columns of the original one,
@@ -298,7 +308,7 @@ void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, double value, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);
-  _CHECKZERO(V->PutScalar(value),*ierr);
+  _CHECK_ZERO_(V->PutScalar(value),*ierr);
   }
 
 //! put scalar value into all elements of a multi-vector
@@ -306,7 +316,7 @@ void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vV, double value, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);
-  _CHECKZERO(V->PutScalar(value),*ierr);
+  _CHECK_ZERO_(V->PutScalar(value),*ierr);
   }
 
 //! put random numbers into all elements of a multi-vector
@@ -314,7 +324,7 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);
-  _CHECKZERO(V->Random(),*ierr);
+  _CHECK_ZERO_(V->Random(),*ierr);
   }
 
 //! put random numbers into all elements of a serial dense matrix
@@ -322,7 +332,7 @@ void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,M,vM,*ierr);
-  _CHECKZERO(M->Random(),*ierr);
+  _CHECK_ZERO_(M->Random(),*ierr);
   }
 
 //! \name Numerical functions
@@ -334,7 +344,7 @@ void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);  
-  _CHECKZERO(V->Norm2(vnrm),*ierr);
+  _CHECK_ZERO_(V->Norm2(vnrm),*ierr);
   return;
   }
 
@@ -345,23 +355,33 @@ void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);  
-  _CHECKZERO(V->Norm2(vnrm),*ierr);
+  _CHECK_ZERO_(V->Norm2(vnrm),*ierr);
   for (int i=0;i<V->NumVectors();i++)
     {
-    _CHECKZERO((*V)(i)->Scale(1.0/(_ST_)vnrm[i]),*ierr);
+    _CHECK_ZERO_((*V)(i)->Scale(1.0/(_ST_)vnrm[i]),*ierr);
     }
   return;
   }
 
 //! scale each column i of v and by scalar[i]
 void SUBR(mvec_scale)(TYPE(mvec_ptr) vV, 
+                            _ST_ scalar, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);  
+  _CHECK_ZERO_(V->Scale(scalar),*ierr);
+  return;
+  }
+
+//! scale each column i of v and by scalar[i]
+void SUBR(mvec_vscale)(TYPE(mvec_ptr) vV, 
                             _ST_* scalar, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);  
   for (int i=0;i<V->NumVectors();i++)
     {
-    _CHECKZERO((*V)(i)->Scale(scalar[i]),*ierr);
+    _CHECK_ZERO_((*V)(i)->Scale(scalar[i]),*ierr);
     }
   return;
   }
@@ -374,7 +394,7 @@ void SUBR(mvec_add_mvec)(double alpha, TYPE(const_mvec_ptr) vX,
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,X,vX,*ierr);
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,Y,vY,*ierr);
-  _CHECKZERO(Y->Update(alpha,*X,beta),*ierr);
+  _CHECK_ZERO_(Y->Update(alpha,*X,beta),*ierr);
   }
 
 //! B=alpha*A+beta*B
@@ -385,7 +405,7 @@ void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,A,vA,*ierr);
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,B,vB,*ierr);
-  _CHECKZERO(B->Update(alpha,*A,beta),*ierr);  
+  _CHECK_ZERO_(B->Update(alpha,*A,beta),*ierr);  
   }
 
 //! y=alpha*A*x+beta*y.
@@ -400,26 +420,26 @@ double beta, TYPE(mvec_ptr) vy, int* ierr)
     {
     if (beta==0.0)
       {
-      _CHECKZERO(y->PutScalar(0.0),*ierr);
+      _CHECK_ZERO_(y->PutScalar(0.0),*ierr);
       }
     else if (beta!=1.0)
       {
-      _CHECKZERO(y->Scale(beta),*ierr);
+      _CHECK_ZERO_(y->Scale(beta),*ierr);
       }
     }
   else if (beta==0.0)
     {
-    _CHECKZERO(A->Multiply(false,*x,*y),*ierr);
+    _CHECK_ZERO_(A->Multiply(false,*x,*y),*ierr);
     if (alpha!=1.0)
       {
-      _CHECKZERO(y->Scale(alpha),*ierr);
+      _CHECK_ZERO_(y->Scale(alpha),*ierr);
       }
     }
   else
     {
     Epetra_MultiVector Ax(y->Map(),y->NumVectors());
-    _CHECKZERO(A->Multiply(false,*x,Ax),*ierr);
-    _CHECKZERO(y->Update(alpha,Ax,beta),*ierr);
+    _CHECK_ZERO_(A->Multiply(false,*x,Ax),*ierr);
+    _CHECK_ZERO_(y->Update(alpha,Ax,beta),*ierr);
     }
   /*
   std::cout << *A << std::endl;
@@ -434,7 +454,7 @@ void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) vV, TYPE(const_mvec_ptr) vW, doubl
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,W,vW,*ierr);
-  _CHECKZERO(V->Dot(*W,s),*ierr);
+  _CHECK_ZERO_(V->Dot(*W,s),*ierr);
   }
 
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix
@@ -445,7 +465,7 @@ void SUBR(mvecT_times_mvec)(double alpha, TYPE(const_mvec_ptr) vV, TYPE(const_mv
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,W,vW,*ierr);
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,C,vC,*ierr);
-  _CHECKZERO(C->Multiply('T','N',alpha,*V,*W,beta),*ierr);
+  _CHECK_ZERO_(C->Multiply('T','N',alpha,*V,*W,beta),*ierr);
   }
 
 
@@ -459,7 +479,7 @@ void SUBR(mvec_times_sdMat)(double alpha, TYPE(const_mvec_ptr) vV,
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,W,vW,*ierr);
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,C,vC,*ierr);
-  _CHECKZERO(W->Multiply('N', 'N', alpha, *V, *C, beta),*ierr);
+  _CHECK_ZERO_(W->Multiply('N', 'N', alpha, *V, *C, beta),*ierr);
   }
 
 //! n x m serial dense matrix times m x k serial dense matrix gives n x k multi-vector,
@@ -472,7 +492,7 @@ void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,W,vW,*ierr);
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,C,vC,*ierr);
-  _CHECKZERO(C->Multiply('N', 'N', alpha, *V, *W, beta),*ierr);
+  _CHECK_ZERO_(C->Multiply('N', 'N', alpha, *V, *W, beta),*ierr);
   }
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.   
@@ -496,8 +516,8 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   int ncols = R->NumVectors();
     
 #ifdef TESTING
-  _CHECKZERO(nrows-ncols,*ierr);
-  _CHECKZERO(nrows-V->NumVectors(),*ierr);
+  _CHECK_ZERO_(nrows-ncols,*ierr);
+  _CHECK_ZERO_(nrows-V->NumVectors(),*ierr);
 #endif  
 
   Teuchos::RCP<Teuchos_sdMat_t> R_view

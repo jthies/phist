@@ -118,6 +118,20 @@ void SUBR(mvec_create)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap, int nvec, int* 
   *vV=(TYPE(mvec_ptr))(V);
   }
 
+//! create a block-vector as view of raw data. The map tells the object
+//! how many rows it should 'see' in the data (at most lda, the leading
+//! dimension of the 2D array values).
+void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap, 
+        _ST_* values, lidx_t lda, int nvec,
+        int* ierr)
+  {
+  _CAST_PTR_FROM_VOID_(const map_t, map, vmap, *ierr);
+  Teuchos::RCP<const map_t> map_ptr = Teuchos::rcp(map,false);
+  Teuchos::ArrayView<_ST_> val_ptr(values,lda*nvec);
+  Traits<_ST_>::mvec_t* V = new Traits<_ST_>::mvec_t(map_ptr,val_ptr,lda,nvec);
+  *vV=(TYPE(mvec_ptr))(V);  
+  }
+
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
 void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols, 
@@ -374,8 +388,18 @@ int nvec = V->getNumVectors();
   return;
   }
 
-//! scale each column i of v and by scalar[i]
+//! scale each column i of v and by scalar
 void SUBR(mvec_scale)(TYPE(mvec_ptr) vV, 
+                            _ST_ scalar, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  _TRY_CATCH_(V->scale(scalar),*ierr);
+  return;
+  }
+
+//! scale each column i of v and by scalar[i]
+void SUBR(mvec_vscale)(TYPE(mvec_ptr) vV, 
                             _ST_* scalar, int* ierr)
   {
   *ierr=0;
@@ -394,6 +418,20 @@ void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vX,
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,X,vX,*ierr);
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,Y,vY,*ierr);
   _TRY_CATCH_(Y->update(alpha,*X,beta),*ierr);
+  }
+
+//! y[i]=alpha[i]*x[i]+beta*y[i], i=1..nvec
+void SUBR(mvec_vadd_mvec)(_ST_ alpha [], TYPE(const_mvec_ptr) vX,
+                            _ST_ beta,  TYPE(mvec_ptr)       vY, 
+                            int* ierr)
+  {
+  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,X,vX,*ierr);
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,Y,vY,*ierr);
+  
+  for (int i=0;i<X->getNumVectors(); i++)
+    {
+    _TRY_CATCH_(Y->getVectorNonConst(i)->update(alpha[i],X->getVector(i),beta),*ierr);
+    }
   }
 
 //! B=alpha*A+beta*B

@@ -81,6 +81,13 @@ void SUBR(crsMat_get_range_map)(TYPE(const_crsMat_ptr) A,
 void SUBR(mvec_create)(TYPE(mvec_ptr)* V, const_map_ptr_t map, int nvec, 
         int* ierr);
 
+//! create a block-vector as view of raw data. The map tells the object
+//! how many rows it should 'see' in the data (at most lda, the leading
+//! dimension of the 2D array values).
+void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, const_map_ptr_t map, 
+        _ST_* values, lidx_t lda, int nvec, 
+        int* ierr);
+
 //! create a serial dense n x m matrix on all procs in comm, 
 //! with column major ordering and the capability to communicate.
 void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M, 
@@ -202,13 +209,26 @@ void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) V,
 void SUBR(mvec_normalize)(TYPE(mvec_ptr) V, 
                             _MT_* vnrm, int* ierr);
 
-//! scale each column i of v and by scalar[i]
+//! scale each column i of v and by scalar
 void SUBR(mvec_scale)(TYPE(mvec_ptr) V, 
+                            _ST_ scalar, int* ierr);
+
+//! scale each column i of v and by scalar[i]
+void SUBR(mvec_vscale)(TYPE(mvec_ptr) V, 
                             _ST_* scalar, int* ierr);
 
-//! y=alpha*x+beta*y
+//! y=alpha*x+beta*y.
+//! This function can also be used for special cases such as
+//! alpha=0 => scale y
+//! alpha=1, beta=0 => copy y=x
+//! alpha!=0, beta=1: 'axpy' operation
 void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) X,
                             _ST_ beta,  TYPE(mvec_ptr)       Y,     
+                            int* ierr);
+
+//! y[i]=alpha[i]*x[i]+beta*y[i]
+void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) X,
+                          const _ST_ beta,  TYPE(mvec_ptr)       Y,     
                             int* ierr);
 
 //! B=alpha*A+beta*B

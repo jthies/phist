@@ -72,6 +72,16 @@ void SUBR(mvec_create)(TYPE(mvec_ptr)* V,
   *ierr=-99;
   }
 
+//! create a block-vector as view of raw data. The map tells the object
+//! how many rows it should 'see' in the data (at most lda, the leading
+//! dimension of the 2D array values).
+void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, const_map_ptr_t map, 
+        _ST_* values, lidx_t lda, int nvec,
+        int* ierr)
+  {
+  *ierr=-99;
+  }
+
 //! create a serial dense n x m matrix on all procs in comm, with column major
 //! ordering and the capability to communicate.
 void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M, 
@@ -251,8 +261,15 @@ void SUBR(mvec_normalize)(TYPE(mvec_ptr) V,
   }
 
 
-//! scale each column i of v and by scalar[i]
+//! scale each column i of v and by scalar
 void SUBR(mvec_scale)(TYPE(mvec_ptr) V, 
+                        _ST_ scalar, int* ierr)
+  {
+  *ierr=-99;
+  }
+
+//! scale each column i of v and by scalar[i]
+void SUBR(mvec_vscale)(TYPE(mvec_ptr) V, 
                         _ST_* scalar, int* ierr)
   {
   *ierr=-99;
