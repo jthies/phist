@@ -82,3 +82,14 @@ PHIST_OUT(0,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
 }
 #endif
 
+#ifdef MAX
+#undef MAX
+#endif
+
+#define MAX(a,b) (a)<(b)?(b):(a);
+
+#ifdef MIN
+#undef MIN
+#endif
+
+#define MIN(a,b) (b)<(a)?(b):(a);

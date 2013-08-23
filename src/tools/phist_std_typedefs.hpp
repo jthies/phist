@@ -18,4 +18,13 @@ stick to the macros defined in 'phist_gen_x.h'
 typedef ::phist::ScalarTraits< _ST_ > st;
 typedef st::scalar_t ST;
 typedef st::magn_t MT;
+typedef st::mvec_t* mvec_ptr_t;
+typedef const st::mvec_t* const_mvec_ptr_t;
+typedef st::crsMat_t* crsMat_ptr_t;
+typedef const st::crsMat_t* const_crsMat_ptr_t;
+typedef st::sdMat_t* sdMat_ptr_t;
+typedef const st::sdMat_t* const_sdMat_ptr_t;
+typedef st::op_t* op_ptr_t;
+typedef const st::op_t* const_op_ptr_t;
+
 typedef ::phist::ScalarTraits<MT> mt;

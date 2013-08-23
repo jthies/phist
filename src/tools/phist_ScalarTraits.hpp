@@ -22,6 +22,8 @@ class ScalarTraits
   {
   public: 
   
+  // this should prevent compiling a non-specialized
+  // template instantiation, but I'm not sure if it does.
   typedef typename ST::missing_specialization_for_class_ScalarTraits bar;
   };
 
@@ -74,6 +76,12 @@ class ScalarTraits< float >
     return false;
     }
     
+  //! random number
+  static inline scalar_t rand()
+    {
+    return 2.0f*(float)std::rand()/(float)RAND_MAX-1.0;
+    }
+
   //! square root
   static inline scalar_t sqrt(const scalar_t& x)
     {
@@ -175,6 +183,12 @@ class ScalarTraits< double >
     {
     return false;
     }
+
+  //! random number
+  static inline scalar_t rand()
+    {
+    return 2.0*(double)std::rand()/(double)RAND_MAX-1.0;
+    }
     
   //! square root
   static inline scalar_t sqrt(const scalar_t& x)
@@ -271,6 +285,12 @@ class ScalarTraits< std::complex<MT> >
     return true;
     }
     
+  //! random number
+  static inline scalar_t rand()
+    {
+    return ScalarTraits<magn_t>::rand() + I()*ScalarTraits<magn_t>::rand();
+    }
+
   //! square root
   static inline scalar_t sqrt(const scalar_t& x)
     {
