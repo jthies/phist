@@ -11,13 +11,18 @@ void argList_create(argList_t** args, int ntasks, int* ierr)
   *args = (argList_t*)malloc(sizeof(argList_t));
   (*args)->nthreads=1;
   (*args)->n=0;
-  (*args)->arg=(void**)malloc(ntasks*sizeof(void*));
+  (*args)->shared_arg=NULL;
+  (*args)->in_arg=(const void**)malloc(ntasks*sizeof(void*));
+  (*args)->out_arg=(void**)malloc(ntasks*sizeof(void*));
+  (*args)->id=(int*)malloc(ntasks*sizeof(int));
   }
 
 void argList_delete(argList_t* args, int* ierr)
   {
   *ierr=0;
-  free(args->arg);
+  free(args->in_arg);
+  free(args->out_arg);
+  free(args->id);
   free(args);
   }
 
@@ -33,7 +38,8 @@ void taskBuf_create(taskBuf_t** buf, int num_controllers, int* ierr)
   (*buf)->nactive=num_controllers;
   (*buf)->countdown=num_controllers;
   (*buf)->opType=(int*)malloc(num_controllers*sizeof(int));
-  (*buf)->opArg=(void**)malloc(num_controllers*sizeof(int*));
+  (*buf)->op_inArgs=(const void**)malloc(num_controllers*sizeof(void*));
+  (*buf)->op_outArgs=(void**)malloc(num_controllers*sizeof(void*));
 
   pthread_mutex_init(&((*buf)->lock_mx),NULL);
   pthread_cond_init(&(*buf)->finished_cv,NULL);
@@ -54,7 +60,8 @@ void taskBuf_delete(taskBuf_t* buf, int* ierr)
   *ierr=0;
   //TODO - maybe we should force execution/wait here
   free(buf->opType);
-  free(buf->opArg);
+  free(buf->op_inArgs);
+  free(buf->op_outArgs);
   for (i=0;i<buf->nops;i++)
     {
     ghost_task_destroy(buf->ghost_task[i]);
@@ -71,7 +78,7 @@ void taskBuf_delete(taskBuf_t* buf, int* ierr)
 //! add a function to the buffer so that taskBuf_add can be used to request
 //! that operation. The key is generated automatically by this function and can be used
 //! to request the operation later on.
-void taskBuf_add_op(taskBuf_t* buf, void* (*fcn)(argList_t*),
+void taskBuf_add_op(taskBuf_t* buf, void* (*fcn)(argList_t*), void* shared_arg,
         int num_workers, int* op_key, int* ierr)
   {
   *ierr=0;
@@ -86,6 +93,7 @@ void taskBuf_add_op(taskBuf_t* buf, void* (*fcn)(argList_t*),
   buf->nops++;
   PHIST_CHK_IERR(argList_create(&buf->ghost_args[*op_key], buf->ncontrollers,ierr),*ierr);
   buf->ghost_args[*op_key]->nthreads = num_workers;
+  buf->ghost_args[*op_key]->shared_arg=shared_arg;
   buf->ghost_args[*op_key]->nthreads = num_workers;
   //TODO - properly state in which queue (LD) the job should be put
   if (num_workers==ghost_thpool->nThreads)
@@ -103,13 +111,17 @@ void taskBuf_add_op(taskBuf_t* buf, void* (*fcn)(argList_t*),
 // a job is put into the task buffer and executed once the
 // buffer is full. This function returns only when the task 
 // is finished.
-void taskBuf_add(taskBuf_t* buf, void* arg, int task_id, int op_key,int* ierr)
+void taskBuf_add(taskBuf_t* buf, const void* in_arg, 
+                                       void* out_arg, 
+                             int task_id, int op_key, int* ierr)
   {
   *ierr=0;
   // lock the buffer while putting in jobs and executing them
   pthread_mutex_lock(&buf->lock_mx);
+  PHIST_OUT(1,"mutex at %p\n",&buf->lock_mx);
   buf->opType[task_id]=op_key;
-  buf->opArg[task_id]=arg;
+  buf->op_inArgs[task_id]=in_arg;
+  buf->op_outArgs[task_id]=out_arg;
   buf->countdown--;
   PHIST_OUT(1,"control thread %lu request job %d on column %d, countdown=%d\n",
         pthread_self(), op_key, task_id, buf->countdown);
@@ -153,15 +165,18 @@ void taskBuf_flush(taskBuf_t* buf)
     buf->ghost_args[i]->n=0;
     }
   for (i=0;i<buf->ncontrollers;i++)
+    {
+    pos1=buf->opType[i]; // which op is requested? (rndX, incX or divX)
+    if (pos1>=0) // otherwise: -1=NO_OP
       {
-      pos1=buf->opType[i]; // which op is requested? (rndX, incX or divX)
-      if (pos1>=0) // otherwise: -1=NO-OP
-        {
-        pos2=buf->ghost_args[pos1]->n; // how many of this op have been requested already?
-        buf->ghost_args[pos1]->arg[pos2]=buf->opArg[i];
-        buf->ghost_args[pos1]->n++;
-        }
+      pos2=buf->ghost_args[pos1]->n; // how many of this op have been requested already?
+      buf->ghost_args[pos1]->id[pos2]=i; // some operators find it interesting to know
+                                         // which column they operate on.
+      buf->ghost_args[pos1]->in_arg[pos2]=buf->op_inArgs[i];
+      buf->ghost_args[pos1]->out_arg[pos2]=buf->op_outArgs[i];
+      buf->ghost_args[pos1]->n++;
       }
+    }
   for (i=0;i<buf->nops;i++)
     {
     if (buf->ghost_args[i]->n>0)
@@ -198,7 +213,8 @@ void taskBuf_renounce(taskBuf_t* buf, int task_id, int* ierr)
   // lock the buffer while adjusting it to deal without me in the future.
   pthread_mutex_lock(&buf->lock_mx);
   buf->opType[task_id]=PHIST_NOOP;
-  buf->opArg[task_id]=NULL;
+  buf->op_inArgs[task_id]=NULL;
+  buf->op_outArgs[task_id]=NULL;
   buf->nactive--;
   buf->countdown--;
   PHIST_OUT(1,"control thread %lu (task_id %d) leaving the controller team\n",

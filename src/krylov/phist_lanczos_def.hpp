@@ -10,9 +10,9 @@ static void SUBR(lanczosStep)(TYPE(const_op_ptr) op,
         *ierr=0;
         // vnew = r/beta
         ST ibeta = st::one()/(*beta);
-        PHIST_CHK_IERR(SUBR(mvec_scale)(vnew,&ibeta,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_scale)(vnew,ibeta,ierr),*ierr);
         // r = A*v - beta*vold 
-        PHIST_CHK_IERR(op->apply(st::one(),op->A_,vnew, 
+        PHIST_CHK_IERR(op->apply(st::one(),op->A,vnew, 
                 -(*beta),vold,ierr),*ierr);
         //alpha_j = v_j'r
         PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(vnew,vold,alpha,ierr),*ierr);
@@ -78,16 +78,18 @@ void SUBR(lanczos)(TYPE(const_op_ptr) op,
   //int i,lda,nloc;
   *num_iters=0;
   
-  if (op->range_map_ != op->domain_map_)
+  if (op->range_map != op->domain_map)
     {
     *ierr=-1; // maps of operator should point to same object (A should be a square matrix)
+              // TODO - we can't implement this easily in ghost, maybe the test should be
+              // skipped or a function added to the kernel lib to compare maps.
     }
     
   const_comm_ptr_t comm;
-  PHIST_CHK_IERR(phist_map_get_comm(op->range_map_,&comm,ierr),*ierr);
+  PHIST_CHK_IERR(phist_map_get_comm(op->range_map,&comm,ierr),*ierr);
 
-  PHIST_CHK_IERR(SUBR(mvec_create)(&vold,op->domain_map_,1,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_create)(&vnew,op->domain_map_,1,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&vold,op->domain_map,1,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&vnew,op->domain_map,1,ierr),*ierr);
   // S will store the Ritz vectors
   // it would be nice if we could do these things with a traits class eventually,
   // rather than with macros.

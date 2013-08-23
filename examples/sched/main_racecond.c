@@ -30,8 +30,6 @@
 #define RND_MAX 10000
 // number of columns to be filled (=number of control threads)
 #define NUM_TASKS 4
-// we perform three different operations, rndX, incX and divX
-#define NUM_JOBTYPES 3 
 // local length of each column
 #define NDIM 40
 
@@ -56,8 +54,7 @@ static void *rndX(argList_t* args)
 #pragma omp for
   for (i=0;i<args->n;i++)
     {
-    int* val = (int*)args->arg[i];
-    *val=(int)((rand()/(double)RAND_MAX)*RND_MAX);
+    *((int*)args->out_arg[i])=(int)((rand()/(double)RAND_MAX)*RND_MAX);
     }
   }
   return NULL;
@@ -79,8 +76,7 @@ static void *incX(argList_t* args)
 #pragma omp for
   for (i=0;i<args->n;i++)
     {
-    int* val = (int*)args->arg[i];
-    *val+=1;
+    *((int*)args->out_arg[i])=*((const int*)args->in_arg[i])+1;
     }
   }
   return NULL;
@@ -103,8 +99,7 @@ static void *divX(argList_t* args)
 #pragma omp for
   for (i=0;i<args->n;i++)
     {
-    int* val = (int*)args->arg[i];
-    *val/=2;
+    *((int*)args->out_arg[i])=*((const int*)args->in_arg[i])/2;
     }
   }
   return NULL;
@@ -149,18 +144,17 @@ void* fill_vector(void* v_mainArg)
   v[0]=0;// next one will be randomized
   for (i=1; i<n;i++)
     {
-    v[i]=v[i-1];
     if (v[i-1]==0 || v[i-1]==1)
       {
-      PHIST_CHK_IERR(taskBuf_add(taskBuf,&v[i],col,mainArg->RNDX,ierr),*ierr);
+      PHIST_CHK_IERR(taskBuf_add(taskBuf,&v[i-1],&v[i],col,mainArg->RNDX,ierr),*ierr);
       }
     else if (v[i-1]%2==0)
       {
-      PHIST_CHK_IERR(taskBuf_add(taskBuf,&v[i],col,mainArg->DIVX,ierr),*ierr);
+      PHIST_CHK_IERR(taskBuf_add(taskBuf,&v[i-1],&v[i],col,mainArg->DIVX,ierr),*ierr);
       }
     else
       {
-      PHIST_CHK_IERR(taskBuf_add(taskBuf,&v[i],col,mainArg->INCX,ierr),*ierr);
+      PHIST_CHK_IERR(taskBuf_add(taskBuf,&v[i-1],&v[i],col,mainArg->INCX,ierr),*ierr);
       }
 #ifndef SYNC_WAIT
     PHIST_CHK_IERR(taskBuf_wait(taskBuf,col,ierr),*ierr);
@@ -239,9 +233,9 @@ nworkers=ghost_thpool->nThreads - NUM_TASKS;
 PHIST_CHK_IERR(taskBuf_create(&taskBuf,NUM_TASKS,&ierr),ierr);
 
 // add the basic operations for our algorithm to the buffer
-PHIST_CHK_IERR(taskBuf_add_op(taskBuf, &rndX, nworkers,&op_RNDX, &ierr),ierr);
-PHIST_CHK_IERR(taskBuf_add_op(taskBuf, &incX, nworkers,&op_INCX, &ierr),ierr);
-PHIST_CHK_IERR(taskBuf_add_op(taskBuf, &divX, nworkers,&op_DIVX, &ierr),ierr);
+PHIST_CHK_IERR(taskBuf_add_op(taskBuf, &rndX, NULL, nworkers,&op_RNDX, &ierr),ierr);
+PHIST_CHK_IERR(taskBuf_add_op(taskBuf, &incX, NULL, nworkers,&op_INCX, &ierr),ierr);
+PHIST_CHK_IERR(taskBuf_add_op(taskBuf, &divX, NULL, nworkers,&op_DIVX, &ierr),ierr);
 
 // this thread sets random entries in the vector to 0, which it should do
 // (if at all) before the other starts. The lack of synchronization here 

@@ -16,17 +16,34 @@ extern "C" {
 
 #define PHIST_NOOP -1
 
-////////////////////////////////////////////////////////////////////////////////////////
-// task buffer prototype                                                              //
-////////////////////////////////////////////////////////////////////////////////////////
+//! implementation of a task buffer that bundles operations which    
+//! are memory intensive because of a shared operation component.    
+//! The main applications in phist are the shifted operator (A-sjI)X 
+//! and the projected preconditioning M\(I-VV')X, where the columns  
+//! in X are managed by different threads.                           
+
+//! TODO - this file needs a lot more documentation, for an example  
+//! of how the task buffer is used, see examples/sched/main_task_model.c
 
 //! argument for functions operating on multiple pointers simultaneously
-//! (the kind of functions we want to bundle in the task buffer)
+//! (the kind of functions we want to bundle in the task buffer).       
+//!                                                                     
+//! The canonical example is compute Y[i] = A*X[i] for n (multi-)vectors
+//! X, Y and a single operator A, using up to nthreads worker threads.  
+//! Here A would be the shared_arg, X[i] the in_args and Y[i] the       
+//! out_args.
 typedef struct
   {
-  int nthreads;
-  int n;
-  void **arg;
+  //! \name common arguments useful for any function used with a buffer
+  //!@{
+  int nthreads; //! how many (OpenMP) worker threads are reserved for this task?
+  int n; //! how many arguments (vectors, columns or whatever) should you work on?
+  int* id; //! stores the ID's (for instance column index) of the 
+  //@}
+  const void* shared_arg; //! an input argument required for all vectors
+  const void* *in_arg; //! array of input arguments passed to the function (for instance vectors)
+  void** out_arg; //! array of output arguments passed to the function
+  int ierr;
   } argList_t;
 
 void argList_create(argList_t** args, int ntasks, int* ierr);
@@ -47,12 +64,14 @@ pthread_mutex_t lock_mx; // for controlling access to the shared object and the 
                          // variable finished_cv.
 pthread_cond_t finished_cv; // for waiting for the buffer to be emptied
 
-int *opType; // dimension ncontrollers
-void **opArg; // dimension ncontrollers
-int *opWorkers; // dimension ncontrollers, number of work threads to be employed for the op
+int *opType; // dimension ncontrollers: which operation is requested by thread i next?
 
-ghost_task_t **ghost_task; // dimension nops
-argList_t **ghost_args;    // dimension nops
+const void **op_inArgs; // when a task is added for a certain column, these are the input args
+void **op_outArgs;      // and these the output args provided by the thread. They may have to be
+                         // reordered before put in the ghost queue.
+
+ghost_task_t **ghost_task; // dimension nops: task to bundle op i and enqueue it in ghost
+argList_t **ghost_args;    // dimension nops: array of args passed into task i
 
 } taskBuf_t;
 
@@ -66,10 +85,11 @@ void taskBuf_delete(taskBuf_t* buf, int* ierr);
 //! that operation. The key is generated automatically by this function and can be used
 //! to request the operation later on.
 void taskBuf_add_op(taskBuf_t* buf, void* (*fcn)(argList_t*), 
-        int num_workers, int* op_key, int* ierr);
+        void* shared_arg, int num_workers, int* op_key, int* ierr);
 
 //! put a job request into the task buffer and wait until it is enqueued
-void taskBuf_add(taskBuf_t* buf, void* arg, int task_id, int op_key, int* ierr);
+void taskBuf_add(taskBuf_t* buf, const void* in_arg, void* out_arg, 
+                             int task_id, int op_key, int* ierr);
 
 //! flush the task buffer, e.g. group the tasks together and put them in
 //! the ghost queue, then signal any waiting threads.

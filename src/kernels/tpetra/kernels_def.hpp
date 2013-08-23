@@ -421,7 +421,7 @@ void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vX,
   }
 
 //! y[i]=alpha[i]*x[i]+beta*y[i], i=1..nvec
-void SUBR(mvec_vadd_mvec)(_ST_ alpha [], TYPE(const_mvec_ptr) vX,
+void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) vX,
                             _ST_ beta,  TYPE(mvec_ptr)       vY, 
                             int* ierr)
   {
@@ -430,7 +430,7 @@ void SUBR(mvec_vadd_mvec)(_ST_ alpha [], TYPE(const_mvec_ptr) vX,
   
   for (int i=0;i<X->getNumVectors(); i++)
     {
-    _TRY_CATCH_(Y->getVectorNonConst(i)->update(alpha[i],X->getVector(i),beta),*ierr);
+    _TRY_CATCH_(Y->getVectorNonConst(i)->update(alpha[i],*X->getVector(i), beta),*ierr);
     }
   }
 

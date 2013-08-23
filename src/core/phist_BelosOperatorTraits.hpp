@@ -39,7 +39,7 @@ namespace Belos {
     int ierr;
     Scalar alpha = phist::ScalarTraits<Scalar>::one();
     Scalar beta = phist::ScalarTraits<Scalar>::zero();
-    Op.apply(alpha,Op.A_,(const phist_mvec_t*)&X, beta, (phist_mvec_t*)&Y,&ierr);
+    Op.apply(alpha,Op.A,(const phist_mvec_t*)&X, beta, (phist_mvec_t*)&Y,&ierr);
     }
 
     static bool
