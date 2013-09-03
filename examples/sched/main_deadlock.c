@@ -272,10 +272,10 @@ for (i=0;i<NDIM;i++)
   fprintf(OUT,"\n");
   }
   
-  PHIST_CHK_IERR(phist_kernels_finalize(&ierr),ierr);
   // avoid duplicate finish call
 #ifndef PHIST_KERNEL_LIB_GHOST
   // finalize ghost queue
   ghost_finish();
 #endif  
+  PHIST_CHK_IERR(phist_kernels_finalize(&ierr),ierr);
   }
