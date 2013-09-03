@@ -11,6 +11,7 @@
 
 #ifdef PHIST_HAVE_GHOST
 #include "ghost.h"
+#include "likwid/cpuid.h"
 #include "ghost_taskq.h"
 #else
 #error "this driver makes no sense without ghost"
@@ -207,6 +208,8 @@ int main(int argc, char** argv)
 #ifndef PHIST_KERNEL_LIB_GHOST  
   PHIST_OUT(0,"initialize ghost");
   ghost_init(argc,argv);
+  ghost_thpool_init(ghost_getNumberOfPhysicalCores());
+  ghost_taskq_init(ghost_cpuid_topology.numSockets);
 #endif
 
   // initialize C random number generator
