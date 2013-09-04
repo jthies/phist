@@ -32,4 +32,4 @@ void SUBR(op_identity)(TYPE(op_ptr) op, int* ierr);
 //! vectors Y. The shared_arg is the operator itself. X and Y are allowed to contain 
 //! pointers to non-contiguous memory, in which case the vectors are copied before and after
 //! the operation.
-void SUBR(op_apply_buffered)(argList_t* args);
+void SUBR(op_apply_multi)(argList_t* args);

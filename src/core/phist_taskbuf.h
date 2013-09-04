@@ -38,7 +38,7 @@ typedef struct
   //!@{
   int nthreads; //! how many (OpenMP) worker threads are reserved for this task?
   int n; //! how many arguments (vectors, columns or whatever) should you work on?
-  int* id; //! stores the ID's (for instance column index) of the 
+  int* id; //! stores the ID's (for instance column index) TODO - remove this, I think
   //@}
   const void* shared_arg; //! an input argument required for all vectors
   const void* *in_arg; //! array of input arguments passed to the function (for instance vectors)

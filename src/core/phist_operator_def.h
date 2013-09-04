@@ -30,13 +30,13 @@ void SUBR(check_stride)(TYPE(const_mvec_ptr) v[], int n_mvec,
   
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v[0],&nvec_i,ierr),*ierr);
   *nvec_tot=nvec_i;
-  PHIST_CHK_IERR(SUBR(mvec_extract_view)(v[0],&val_im1,stride,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))v[0],&val_im1,stride,ierr),*ierr);
 
   for (i=1; i<n_mvec;i++)
     {
     if (*stride>0)
       {
-      PHIST_CHK_IERR(SUBR(mvec_extract_view)(v[i],&val_i,&lda_i,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))v[i],&val_i,&lda_i,ierr),*ierr);
       if (lda_i!=*stride)
         {
         *stride=-1;
@@ -53,17 +53,16 @@ void SUBR(check_stride)(TYPE(const_mvec_ptr) v[], int n_mvec,
   }
 
 // apply operator to several multi-vectors, which are not necessarily contiguous in memory.
-void SUBR(op_apply_buffered)(argList_t* args)
+void SUBR(op_apply_multi)(argList_t* args)
   {
   int i;
   int n_mvecs=args->n;
   int* ierr=&args->ierr;
   TYPE(const_op_ptr) A_op = (TYPE(const_op_ptr))args->shared_arg;
-  TYPE(const_mvec_ptr)* X = (TYPE(mvec_ptr)*)args->in_arg;
+  TYPE(const_mvec_ptr)* X = (TYPE(const_mvec_ptr)*)args->in_arg;
   TYPE(mvec_ptr)* Y = (TYPE(mvec_ptr)*)args->out_arg;
   
-  TYPE(mvec_ptr) myX;
-  TYPE(mvec_ptr) myY;
+  TYPE(mvec_ptr) myX,myY;
 
   const_map_ptr_t map;
   int contig;
@@ -84,7 +83,7 @@ void SUBR(op_apply_buffered)(argList_t* args)
   // just one mvec?
   if (n_mvecs==1)
     {
-    myX=X[0];
+    myX=(TYPE(mvec_ptr))X[0];
     myY=Y[0];
     }
   else
@@ -96,7 +95,7 @@ void SUBR(op_apply_buffered)(argList_t* args)
     // TODO - once we have established this we should skip the test
     // until the setup changes.
       PHIST_CHK_IERR(SUBR(check_stride)(X,n_mvecs,&stride_X,&nvec_tot_X,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(check_stride)(Y,n_mvecs,&stride_Y,&nvec_tot_Y,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(check_stride)((TYPE(const_mvec_ptr)*)Y,n_mvecs,&stride_Y,&nvec_tot_Y,ierr),*ierr);
 
     // inconsistent input - not the same number of vectors in total
     PHIST_CHK_IERR(*ierr=-(nvec_tot_X==nvec_tot_Y),*ierr);
@@ -106,7 +105,7 @@ void SUBR(op_apply_buffered)(argList_t* args)
       {
       // vectors lie in memory with constant stride => can
       // create a view and use e.g. BLAS 3 operations on the whole block
-      PHIST_CHK_IERR(SUBR(mvec_extract_view)(X[0],&val_X,&stride_X,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))X[0],&val_X,&stride_X,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_extract_view)(Y[0],&val_Y,&stride_Y,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_create_view)(&myX,map,val_X,stride_X,nvec_tot_X,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_create_view)(&myY,map,val_Y,stride_Y,nvec_tot_Y,ierr),*ierr);
@@ -114,7 +113,7 @@ void SUBR(op_apply_buffered)(argList_t* args)
     else
       {
       // create a copy and copy vectors into adjacent memory
-      PHIST_CHK_IERR(SUBR(mvec_create)(myX,map,nvec_tot_X,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_create)(&myX,map,nvec_tot_X,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_create)(myY,map,nvec_tot_Y,ierr),*ierr);
       imin=0;
       for (i=0;i<n_mvecs;i++)
@@ -133,12 +132,12 @@ void SUBR(op_apply_buffered)(argList_t* args)
     }
         
   // perform the operation
-  PHIST_CHK_IERR(A_op->apply(ONE,A_op,myX,ZERO,myY,ierr),*ierr);
+  PHIST_CHK_IERR(A_op->apply(ONE,A_op,(TYPE(const_mvec_ptr))myX,ZERO,myY,ierr),*ierr);
   
   if (!contig)
     {
     // copy the vectors back to where they belong
-    imin=0;    
+    imin=0;
     for (i=0;i<n_mvecs;i++)
       {
       PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X[i],&nvec_X,ierr),*ierr);
@@ -146,7 +145,7 @@ void SUBR(op_apply_buffered)(argList_t* args)
       PHIST_CHK_IERR(SUBR(mvec_get_block)(myY,Y[i],imin,imax,ierr),*ierr);
       imin=imax+1;
       }
-    
+                                                              
     PHIST_CHK_IERR(SUBR(mvec_delete)(myX,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_delete)(myY,ierr),*ierr);
     }// not contiguous, we have to copy data
@@ -155,7 +154,7 @@ void SUBR(op_apply_buffered)(argList_t* args)
   }
 
 //
-void SUBR(private_apply_identity)(_ST_ alpha, TYPE(const_op_ptr) A, TYPE(const_mvec_ptr) X,
+void SUBR(private_apply_identity)(_ST_ alpha, const void* A, TYPE(const_mvec_ptr) X,
         _ST_ beta, TYPE(mvec_ptr) Y, int* ierr)
         {
         SUBR(mvec_add_mvec)(alpha,X,beta,Y,ierr);
