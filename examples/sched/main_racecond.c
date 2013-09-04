@@ -46,7 +46,6 @@ static void *rndX(argList_t* args)
   int i;
 
 //  fprintf(OUT,"NUM THREADS: %d\n",arg->nThreads);
-  omp_set_num_threads(args->nthreads);
 
 #pragma omp parallel
   {
@@ -67,7 +66,6 @@ static void *incX(argList_t* args)
   int i;
 
 //  fprintf(OUT,"NUM THREADS: %d\n",arg->nThreads);
-  omp_set_num_threads(args->nthreads);
 
 #pragma omp parallel
   {
@@ -90,7 +88,6 @@ static void *divX(argList_t* args)
   int i;
 
 //  fprintf(OUT,"NUM THREADS: %d\n",arg->nThreads);
-  omp_set_num_threads(args->nthreads);
 
 #pragma omp parallel
   {

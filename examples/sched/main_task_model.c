@@ -17,6 +17,10 @@
 #error "this driver makes no sense without ghost"
 #endif
 
+// pinning the control threads by putting the 'fill-vector' tasks in the 
+// ghost queue does not work because only one of them puts the subtasks
+// in the queue, so even with the TASK_USE_PARENTS flag all but one of
+// the control threads block a core.
 //#define PIN_CONTROL_THREADS
 
 //                                                              
@@ -57,7 +61,6 @@ static void *rndX(argList_t* args)
   int i;
 
 //  fprintf(OUT,"NUM THREADS: %d\n",arg->nThreads);
-  omp_set_num_threads(args->nthreads);
 
 #pragma omp parallel
   {
@@ -78,7 +81,6 @@ static void *incX(argList_t* args)
   int i;
 
 //  fprintf(OUT,"NUM THREADS: %d\n",arg->nThreads);
-  omp_set_num_threads(args->nthreads);
 
 #pragma omp parallel
   {
@@ -101,7 +103,6 @@ static void *divX(argList_t* args)
   int i;
 
 //  fprintf(OUT,"NUM THREADS: %d\n",arg->nThreads);
-  omp_set_num_threads(args->nthreads);
 
 #pragma omp parallel
   {
@@ -215,25 +216,15 @@ int main(int argc, char** argv)
   // initialize C random number generator
   srand(time(NULL));
 
-#ifndef PIN_CONTROL_THREADS
-
 nworkers=ghost_thpool->nThreads;
-
-#else
-// we would actually like to run the control threads without pinning
-// and allow having all cores for doing the work, but if we do that 
-// in the current ghost implementation, the jobs in the ghost queue 
-// never get executed because NUM_TASKS cores are reserved for the     
-// control threads.
-nworkers=ghost_thpool->nThreads - NUM_TASKS;
-
-#endif
 
 PHIST_CHK_IERR(taskBuf_create(&taskBuf,NUM_TASKS,&ierr),ierr);
 
 // add the basic operations for our algorithm to the buffer
 PHIST_CHK_IERR(taskBuf_add_op(taskBuf, &rndX, NULL, nworkers,&op_RNDX, &ierr),ierr);
-PHIST_CHK_IERR(taskBuf_add_op(taskBuf, &incX, NULL, nworkers,&op_INCX, &ierr),ierr);
+PHIST_CHK_IERR(taskBuf_add_op(taskBuf, &
+
+incX, NULL, nworkers,&op_INCX, &ierr),ierr);
 PHIST_CHK_IERR(taskBuf_add_op(taskBuf, &divX, NULL, nworkers,&op_DIVX, &ierr),ierr);
 
 for (i=0;i<NUM_TASKS;i++)
