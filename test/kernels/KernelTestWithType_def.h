@@ -11,7 +11,7 @@ public:
 #include "phist_std_typedefs.hpp"
 
 bool typeImplemented_;
-static const bool verbose_=true;
+bool verbose_;
 
 /** Set up method.
  * Fills internal data vector with values 1.0, 2.0 and 3.0.
@@ -22,7 +22,9 @@ int ierr;
 SUBR(type_avail)(&ierr);
 typeImplemented_=(ierr==0);
 
-if (verbose_)
+verbose_=ghost_getRank(MPI_COMM_WORLD)==0;
+
+if (verbose_ && false)
   {
   std::cout << "data type: ";
 #ifdef _IS_COMPLEX_
@@ -80,3 +82,5 @@ static inline _ST_ random_number()
   }
 
 };
+
+

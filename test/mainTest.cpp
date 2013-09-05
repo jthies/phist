@@ -31,7 +31,11 @@ GTEST_API_ int main(int argc, char **argv) {
     // Gets hold of the event listener list.  
     ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();  
     // Adds a listener to the end.  Google Test takes the ownership.  
+    // the constructor of our MpiRootOnlyPrinter takes control of the
+    // default printer and removes it from the listeners list.
     listeners.Append(new MpiRootOnlyPrinter());
+
+    //TODO - do the same with the default_xml_generator
 
     test_result=RUN_ALL_TESTS();
 
