@@ -3,6 +3,10 @@
 #include "ghost_util.h"
 #include "gtest/gtest.h"
 
+//! This class suppresses output from any MPI process but rank 0 in googletest,
+//! both to screen and an XML file. In order to activate it, create an instance
+//! and append it to the gtest listeners. It then takes control of the default-
+//! listeners and removes them from the list.
 class MpiRootOnlyPrinter : public ::testing::EmptyTestEventListener 
   {
   public:
@@ -17,12 +21,17 @@ class MpiRootOnlyPrinter : public ::testing::EmptyTestEventListener
     ::testing::UnitTest::GetInstance()->listeners().Release(
     ::testing::UnitTest::GetInstance()->listeners().default_result_printer()
     );
+    myXmlPrinter_= 
+    ::testing::UnitTest::GetInstance()->listeners().Release(
+    ::testing::UnitTest::GetInstance()->listeners().default_xml_generator()
+    );
     // become the default printer
     }
     
   ~MpiRootOnlyPrinter()
     {
     delete myPrinter_;
+    if (myXmlPrinter_!=NULL) delete myXmlPrinter_;
     }
 
   virtual void OnTestCaseStart(const ::testing::TestCase& test_case) 
@@ -49,11 +58,15 @@ class MpiRootOnlyPrinter : public ::testing::EmptyTestEventListener
     
 void OnTestIterationEnd(const ::testing::UnitTest& unit_test, int iteration)
   {
-    if (amRoot_) myPrinter_->OnTestIterationEnd(unit_test,iteration);
-  }
+    if (amRoot_) 
+      {
+      myPrinter_->OnTestIterationEnd(unit_test,iteration);
+      if (myXmlPrinter_!=NULL) myXmlPrinter_->OnTestIterationEnd(unit_test,iteration);
+  }   }
 
   
   ::testing::TestEventListener* myPrinter_;
+  ::testing::TestEventListener* myXmlPrinter_;
   int rank_;
   bool amRoot_;
   };
