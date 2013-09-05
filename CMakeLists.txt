@@ -12,6 +12,8 @@ ELSE()
 options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used), Debug, Release, RelWithDebInfo")
 ENDIF()
 
+message(STATUS "build type: ${CMAKE_BUILD_TYPE}")
+
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
 
 # Define some custom variables
@@ -279,7 +281,8 @@ endforeach()
 set(PHIST_TESTS kernels
                 core
                 sched
-                krylov)
+                krylov
+                bench)
 
 foreach(label ${PHIST_TESTS})
   string(TOUPPER ${label} label_uc)

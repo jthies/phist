@@ -18,8 +18,15 @@ typedef struct TYPE(pfgmres_args)
   // need to initialize the task    
   // buffer correctly.
   taskBuf_t *taskBuf;
-  int op_OPX;
-  int op_RPRECX;
+  
+  int op_AX; // flag to request A*x from the task buffer
+  int op_RPRECX; // flag to request Mr\x from the task buffer
+  int op_nrm2;   // flag to request ||v||_2
+  int op_vTw;    // flag to request C=V'W
+  
+  _ST_ shift; // the operator used in the algorithm is A + shift*I
+  
+  // GMRES parameters
   int max_iters;
   int num_blocks;
   _MT_ tol;
