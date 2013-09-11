@@ -72,6 +72,6 @@
 #undef TYPE
 #endif
 
-#ifdef ASSERTREALEQ
-#undef ASSERTREALEQ
+#ifdef ASSERT_REAL_EQ
+#undef ASSERT_REAL_EQ
 #endif

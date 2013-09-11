@@ -48,7 +48,7 @@ public:
     {
     if (typeImplemented_)
       {
-      ASSERTREALEQ(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_));
+      ASSERT_REAL_EQ(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_));
       }
     }
 
@@ -58,7 +58,7 @@ public:
     {
     if (typeImplemented_)
       {
-      ASSERTREALEQ(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_));
+      ASSERT_REAL_EQ(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_));
       }
     }
 

@@ -114,8 +114,8 @@ public:
       ASSERT_EQ(0,ierr_);
 
       // check wether this worked out
-      ASSERTREALEQ(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
-      ASSERTREALEQ(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
+      ASSERT_REAL_EQ(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
+      ASSERT_REAL_EQ(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
       
       int nsteps=2;
       
@@ -124,8 +124,8 @@ public:
       ASSERT_EQ(0,ierr_);
       
       // check orthonormality of Q
-      ASSERTREALEQ(mt::one(),WTest::ColsAreNormalized(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_));
-      ASSERTREALEQ(mt::one(),WTest::ColsAreOrthogonal(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_));
+      ASSERT_REAL_EQ(mt::one(),WTest::ColsAreNormalized(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_));
+      ASSERT_REAL_EQ(mt::one(),WTest::ColsAreOrthogonal(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_));
       
       // check the decomposition: Q*R2 = W - V*R1 (compute W2=Q*R2+V*R1-W and compare with 0)
       SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);

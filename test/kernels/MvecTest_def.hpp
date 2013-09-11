@@ -66,7 +66,7 @@ public:
       ST val = (_ST_)42.0 + (ST)3.0*st::I();
       SUBR(mvec_put_value)(vec1_,val,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERTREALEQ(mt::one(),ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,val));
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,val));
       }
     }
 
@@ -84,7 +84,7 @@ public:
       ASSERT_EQ(0,ierr_);
             
       _ST_ val = st::one() * (ST)nglob_;
-      ASSERTREALEQ(mt::one(),ArrayEqual(dots,nvec_,1,nvec_,1,val));
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(dots,nvec_,1,nvec_,1,val));
       delete [] dots;
       }
     
@@ -125,7 +125,7 @@ public:
       SUBR(mvec_add_mvec)(alpha,vec1_,beta,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
             
-      ASSERTREALEQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
       }
     
     }

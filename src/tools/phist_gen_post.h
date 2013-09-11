@@ -1,10 +1,10 @@
 // some common macros for all types:
 #ifdef _IS_DOUBLE_
 #define _MT_ double
-#define ASSERTREALEQ(expected,actual) ASSERT_DOUBLE_EQ(expected,actual)
+#define ASSERT_REAL_EQ(expected,actual) ASSERT_DOUBLE_EQ(expected,actual)
 #else
 #define _MT_ float
-#define ASSERTREALEQ(expected,actual) ASSERT_FLOAT_EQ(expected,actual)
+#define ASSERT_REAL_EQ(expected,actual) ASSERT_FLOAT_EQ(expected,actual)
 #endif
 
 // check if the standard things are defined in a previously included gen_x.h file

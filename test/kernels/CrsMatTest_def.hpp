@@ -128,7 +128,7 @@ bool haveMats_;
       SUBR(mvec_random)(vec2_,&ierr_);
       SUBR(crsMat_times_mvec)(1.0,A0_,vec1_,0.0,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERTREALEQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,0.0));
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,0.0));
       }
     }
 
@@ -141,7 +141,7 @@ bool haveMats_;
       SUBR(mvec_random)(vec2_,&ierr_);
       SUBR(crsMat_times_mvec)(1.0,A1_,vec1_,0.0,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERTREALEQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
       }
     }
 
