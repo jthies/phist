@@ -256,7 +256,8 @@ namespace Belos {
       TEUCHOS_TEST_FOR_EXCEPTION(normvec.size() < (typename std::vector<int>::size_type)mv.traits.nvecs,std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,ghost_vec_t>::MvNorm(mv,normvec): normvec must have room for all norms.");
 #endif
-      Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> av(normvec);
+      Teuchos::Array<Scalar> av(normvec.size());
+      Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> nv(normvec);
       TEUCHOS_TEST_FOR_EXCEPTION(type != TwoNorm,std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,ghost_vec_t>::MvNorm(mv,normvec): MvNorm only accepts TwoNorm up to now.");
       
@@ -264,14 +265,12 @@ namespace Belos {
         case OneNorm:
           break;
         case TwoNorm:
-          // TODO - ghost doesn't support the dotProduct (and others) for multiple vecs.
-          // TODO - we can't put in a magnitude type here
           mv.dotProduct(std::const_cast<ghost_vec_t*>(&mv),
                         std::const_cast<ghost_vec_t*>(&mv),
                         av.getRawPtr());
           for (int i=0;i<av.size();i++)
             {
-            av[i]=std::sqrt(av[i]);
+            nv[i]=(Teuchos::ScalarTraits<Scalar>::magnitudeType)std::sqrt(av[i]);
             }
           break;
         case InfNorm:
@@ -290,7 +289,7 @@ namespace Belos {
       if ((typename std::vector<int>::size_type)A.traits.nvecs > index.size()) {
         Asub = CloneViewNonConst(*Asub,Teuchos::Range1D(0,index.size()-1)).get();
       }
-    //TODO - copying vector data in ghost???
+    //TODO - copying vector data in ghost? clone and extract create new vectors!
     //(*mvsub) = (*Asub);
     }
 
@@ -372,16 +371,17 @@ namespace Belos {
                              "'mv' has only " << numColsMv << " columns.");
           TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
         }
-      //TODO
       if (numColsA == numColsMv)
+        {
         //TODO
-        mv = A;
+        //mv = A;
+        }
       else
         {
           Teuchos::RCP<ghost_vec_t > mv_view = 
             CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1));
           //TODO
-          *mv_view = A;
+          //*mv_view = A;
         }
     }
 
@@ -389,18 +389,27 @@ namespace Belos {
 //TODO
     static void MvRandom( ghost_vec_t& mv )
     { 
-      mv.randomize(); 
-    }
-//TODO
-    static void MvInit( ghost_vec_t& mv, Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero() )
-    { mv.putScalar(alpha); }
-//TODO
-    static void MvPrint( const ghost_vec_t& mv, std::ostream& os )
-    { 
-      Teuchos::FancyOStream fos(Teuchos::rcp(&os,false));
-      mv.describe(fos,Teuchos::VERB_EXTREME);
+      // ghost wants to create a new vector, but random() may
+      // be called for existing vectors inside algorithms
+      //mv.randomize(); 
     }
 
+    static void MvInit( ghost_vec_t& mv, Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero() )
+    {
+    // again, this function does not exist in ghost, it wants to create a new vector 
+    //mv.putScalar(alpha); 
+    }
+
+    static void MvPrint( const ghost_vec_t& mv, std::ostream& os )
+    { 
+    // TODO - print the vector to a C++ stream is not so important
+    /*
+      Teuchos::FancyOStream fos(Teuchos::rcp(&os,false));
+      mv.describe(fos,Teuchos::VERB_EXTREME);
+    */
+    }
+
+  // private helper function
   ghost_vec_t* createGhostViewOfTeuchosSDM
         (const Teuchos::SerialDenseMatrix<lidx_t,Scalar>& M)
   {    
