@@ -316,8 +316,8 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
 
 //! C=V*W
 void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
-                                       TYPE(const_sdMat_ptr) V, 
-                                       _ST_ beta, TYPE(sdMat_ptr) W, int* ierr)
+                                       TYPE(const_sdMat_ptr) W, 
+                                       _ST_ beta, TYPE(sdMat_ptr) C, int* ierr)
   {
   *ierr=-99;
   }

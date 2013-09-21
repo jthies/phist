@@ -2,8 +2,8 @@
 #define BELOS_GHOST_ADAPTER_HPP
 
 #include "ghost.h"
-
-#include <phist_ScalarTraits.hpp>
+#include "ghost_vec.h"
+#include "phist_ScalarTraits.hpp"
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_Array.hpp>
 
@@ -31,30 +31,38 @@ namespace Belos {
     templated solvers.  */
   template<class Scalar>
   class MultiVecTraits<Scalar, ghost_vec_t >
-  {
+  {  
   public:
+
+    typedef ::phist::ScalarTraits<Scalar> st;
+    typedef typename st::magn_t magn_t;
 
     static Teuchos::RCP<ghost_vec_t > Clone( const ghost_vec_t& mv, const int numvecs )
     { 
       // TODO - this actually copies the data as well
-      return Teuchos::rcp( mv.extract(const_cast<ghost_vec_t*>(&mv),0,nvecs) );
+      // traits clonen, neuen Vektor erstellen
+//      return Teuchos::rcp( mv.extract(const_cast<ghost_vec_t*>(&mv),0,numvecs) );
     }
 
     static Teuchos::RCP<ghost_vec_t > CloneCopy( const ghost_vec_t& mv )
     {
-      return Teuchos::rcp( mv.extract(const_cast<ghost_vec_t*>(&mv),0,nvecs) );
+      ghost_vec_t& _mv = const_cast<ghost_vec_t&>(mv);
+      return       Teuchos::rcp(
+        _mv.clone(&_mv,0,mv.traits->nvecs) 
+      );
     }
 
     static Teuchos::RCP<ghost_vec_t > CloneCopy( const ghost_vec_t& mv, const std::vector<int>& index )
     { 
+      ghost_vec_t& _mv = const_cast<ghost_vec_t&>(mv);
       TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,ghost_vec_t>::CloneCopy(mv,index): numvecs must be greater than zero.");
 
       TEUCHOS_TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::runtime_error,
           "Belos::MultiVecTraits<Scalar,ghost_vec_t>::CloneCopy(mv,index): indices must be >= zero.");
 
-      TEUCHOS_TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= mv.traits.nvecs, std::runtime_error,
-          "Belos::MultiVecTraits<Scalar,ghost_vec_t>::CloneCopy(mv,index): indices must be < mv.traits.nvecs.");
+      TEUCHOS_TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= mv.traits->nvecs, std::runtime_error,
+          "Belos::MultiVecTraits<Scalar,ghost_vec_t>::CloneCopy(mv,index): indices must be < mv.traits->nvecs.");
 
       bool contig=true;
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
@@ -69,13 +77,14 @@ namespace Belos {
             "Belos::MultiVecTraits<Scalar,ghost_vec_t>::CloneCopy(mv,index): only contiguous range implemented so far.");
 
       // contiguous
-      return Teuchos::rcp( mv.extract(const_cast<ghost_vec_t*>(&mv),index[0],index.size()) );
+      return Teuchos::rcp( _mv.clone(&_mv,index[0],index.size()) );
     }
 
     static Teuchos::RCP<ghost_vec_t > 
     CloneCopy (const ghost_vec_t& mv, 
 	       const Teuchos::Range1D& index)
     {
+      ghost_vec_t& _mv = const_cast<ghost_vec_t&>(mv);
       const bool validRange = index.size() > 0 && 
 	index.lbound() >= 0 && 
 	index.ubound() < GetNumberVecs(mv);
@@ -98,7 +107,7 @@ namespace Belos {
 	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 			     os.str() << "Should never get here!");
 	}
-      return Teuchos::rcp( mv.extract(const_cast<ghost_vec_t*>(&mv),index.lbound(),index.ubound()-index.lbound()+1) );
+      return Teuchos::rcp(_mv.clone(&_mv,index.lbound(),index.ubound()-index.lbound()+1));
     }
 
 
@@ -109,8 +118,8 @@ namespace Belos {
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,ghost_vec_t>::CloneView(mv,index): indices must be >= zero.");
-      TEUCHOS_TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= mv.traits.nvecs, std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,ghost_vec_t>::CloneView(mv,index): indices must be < mv.traits.nvecs.");
+      TEUCHOS_TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= mv.traits->nvecs, std::invalid_argument,
+          "Belos::MultiVecTraits<Scalar,ghost_vec_t>::CloneView(mv,index): indices must be < mv.traits->nvecs.");
 #endif
       bool contig=true;
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
@@ -124,7 +133,7 @@ namespace Belos {
             "Belos::MultiVecTraits<Scalar,ghost_vec_t>::CloneCopy(mv,index): only contiguous range implemented so far.");
 
       // contiguous
-      return Teuchos::rcp( mv.view(&mv,index[0],index.size()) );
+      return Teuchos::rcp( mv.viewVec(&mv,index.size(),index[0]) );
       }
 
 
@@ -135,7 +144,7 @@ namespace Belos {
       // NOTE (mfh 11 Jan 2011) We really should check for possible
       // overflow of int here.  However, the number of columns in a
       // multivector typically fits in an int.
-      const int numCols = static_cast<int> (mv.traits.nvecs);
+      const int numCols = static_cast<int> (mv.traits->nvecs);
       const bool validRange = index.size() > 0 && 
 	index.lbound() >= 0 && index.ubound() < numCols;
       if (! validRange)
@@ -156,22 +165,22 @@ namespace Belos {
 	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 			     os.str() << "Should never get here!");
 	}
-      return Teuchos::rcp( mv.view(&mv,index.lbound(),index.ubound()-index.lbound()+1) );
+      return Teuchos::rcp( mv.viewVec(&mv,index.ubound()-index.lbound()+1, index.lbound()) );
     }
 
 
     static Teuchos::RCP<const ghost_vec_t > CloneView(const ghost_vec_t& mv, const std::vector<int>& index )
     {
     return Teuchos::rcp_dynamic_cast<const ghost_vec_t >
-        (CloneViewNonConst(std::const_cast<ghost_vec_t&>(mv),index));
+        (CloneViewNonConst(const_cast<ghost_vec_t&>(mv),index));
     }
 
     static Teuchos::RCP<const ghost_vec_t > 
     CloneView (const ghost_vec_t& mv, 
 	       const Teuchos::Range1D& index)
     {
-    return Teuchos::rcp_dynamic_cast<const ghost_vec_t >(CloneViewNonConst      
-        (std::const_cast<ghost_vec_t&>(mv),index));
+    return Teuchos::rcp_dynamic_cast<const ghost_vec_t >
+        (CloneViewNonConst(const_cast<ghost_vec_t&>(mv),index));
     }
 
     static int GetVecLength( const ghost_vec_t& mv )
@@ -199,65 +208,63 @@ namespace Belos {
       // create view of Teuchos matrix as ghost_vec_t
       ghost_vec_t* Bghost=createGhostViewOfTeuchosSDM(B);
       // multiply
-      ghost_gemm("T",&A,Bghost,&mv,&alpha,&beta,GHOST_GEMM_NO_REDUCE);
+      const char* trans="T";
+      ghost_gemm((char*)trans,(ghost_vec_t*)&A,Bghost,(ghost_vec_t*)&mv,&alpha,&beta,GHOST_GEMM_NO_REDUCE);
       
-      ghost_freeVector(Bghost);
+      ghost_freeVec(Bghost);
     }
 
     static void MvAddMv( Scalar alpha, const ghost_vec_t& A, Scalar beta, const ghost_vec_t& B, ghost_vec_t& mv )
     {
-      //TODO - do this in one step if alpha and beta are not 0
-      mv.zero(&mv);
-      if (alpha==Teuchos::ScalarTraits<Scalar>::zero())
-        {
-        mv.axpy(&mv,A,(void*)&alpha);
-        }
-      if (beta==Teuchos::ScalarTraits<Scalar>::zero())
-        {
-        mv.axpy(&mv,B,(void*)&beta);
-        }
+      Scalar zero=st::zero();
+      Scalar one=st::one();
+      mv.axpby(&mv,(ghost_vec_t*)&A,(void*)&alpha,(void*)&zero);
+      mv.axpy(&mv,(ghost_vec_t*)&B,(void*)&beta);
     }
 
     static void MvScale ( ghost_vec_t& mv, Scalar alpha )
-    { mv.scale(&mv,(void*)&alpha); }
+    { 
+    mv.scale(&mv,(void*)&alpha); }
 
     static void MvScale ( ghost_vec_t& mv, const std::vector<Scalar>& alphas )
-    { 
-    TODO
+    {
+    mv.vscale(&mv,&alphas[0]);
     }
 
     // C=alpha*A*B
     static void MvTransMv( Scalar alpha, const ghost_vec_t& A, const ghost_vec_t& B, Teuchos::SerialDenseMatrix<int,Scalar>& C)
     {
     ghost_vec_t* Cghost=createGhostViewOfTeuchosSDM(C);
-    ghost_gemm("T",std::const_cast<ghost_vec_t*>(&A),
-                   std::const_cast<ghost_vec_t*>(&B),
+    Scalar beta = st::zero();
+    const char T='T';
+    ghost_gemm((char*)&T,const_cast<ghost_vec_t*>(&A),
+                   const_cast<ghost_vec_t*>(&B),
                    Cghost,
-                   &alpha, &beta,
-                   GHOST_GEMM_ALLREDUCE);
-    ghost_freeVector(Cghost);
+                   (void*)&alpha, (void*)&beta,
+                   GHOST_GEMM_ALL_REDUCE);
+    ghost_freeVec(Cghost);
     }
 
     static void MvDot( const ghost_vec_t& A, const ghost_vec_t& B, std::vector<Scalar> &dots)
     {
-      TEUCHOS_TEST_FOR_EXCEPTION(A.traits.nvecs != B.traits.nvecs,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(A.traits->nvecs != B.traits->nvecs,std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,ghost_vec_t>::MvDot(A,B,dots): A and B must have the same number of vectors.");
 
-      TEUCHOS_TEST_FOR_EXCEPTION(dots.size() < (typename std::vector<int>::size_type)A.traits.nvecs,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(dots.size() < (typename std::vector<int>::size_type)A.traits->nvecs,std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,ghost_vec_t>::MvDot(A,B,dots): dots must have room for all dot products.");
 
-      Teuchos::ArrayView<Scalar> av(dots)
-      A.dotProduct(const_cast<ghost_vec_t*>(&A),std::const_cast<ghost_vec_t*>(&B),dots.getRawPtr());
+      Teuchos::ArrayView<Scalar> av(dots);
+      A.dotProduct(const_cast<ghost_vec_t*>(&A),const_cast<ghost_vec_t*>(&B),(void*)&dots[0]);
     }
 
-    static void MvNorm(const ghost_vec_t& mv, std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &normvec, NormType type=TwoNorm)
+    static void MvNorm(const ghost_vec_t& mv, std::vector<magn_t> &normvec, NormType type=TwoNorm)
     { 
 #ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(normvec.size() < (typename std::vector<int>::size_type)mv.traits.nvecs,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(normvec.size() < (typename std::vector<int>::size_type)mv.traits->nvecs,std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,ghost_vec_t>::MvNorm(mv,normvec): normvec must have room for all norms.");
 #endif
       Teuchos::Array<Scalar> av(normvec.size());
-      Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> nv(normvec);
+      Teuchos::ArrayView<typename st::magn_t> nv(normvec);
       TEUCHOS_TEST_FOR_EXCEPTION(type != TwoNorm,std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,ghost_vec_t>::MvNorm(mv,normvec): MvNorm only accepts TwoNorm up to now.");
       
@@ -265,12 +272,12 @@ namespace Belos {
         case OneNorm:
           break;
         case TwoNorm:
-          mv.dotProduct(std::const_cast<ghost_vec_t*>(&mv),
-                        std::const_cast<ghost_vec_t*>(&mv),
+          mv.dotProduct(const_cast<ghost_vec_t*>(&mv),
+                        const_cast<ghost_vec_t*>(&mv),
                         av.getRawPtr());
           for (int i=0;i<av.size();i++)
             {
-            nv[i]=(Teuchos::ScalarTraits<Scalar>::magnitudeType)std::sqrt(av[i]);
+            nv[i]=st::real(st::sqrt(av[i]));
             }
           break;
         case InfNorm:
@@ -281,16 +288,16 @@ namespace Belos {
     static void SetBlock( const ghost_vec_t& A, const std::vector<int>& index, ghost_vec_t& mv )
     {
 #ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION((typename std::vector<int>::size_type)A.traits.nvecs < index.size(),std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION((typename std::vector<int>::size_type)A.traits->nvecs < index.size(),std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,ghost_vec_t>::SetBlock(A,index,mv): index must be the same size as A.");
 #endif
       Teuchos::RCP<ghost_vec_t > mvsub = CloneViewNonConst(mv,index);
-      ghost_mvec_t* Asub = std::const_cast<ghost_mvec_t*>(&A);
-      if ((typename std::vector<int>::size_type)A.traits.nvecs > index.size()) {
+      ghost_vec_t* Asub = const_cast<ghost_vec_t*>(&A);
+      if ((typename std::vector<int>::size_type)A.traits->nvecs > index.size()) {
         Asub = CloneViewNonConst(*Asub,Teuchos::Range1D(0,index.size()-1)).get();
       }
     //TODO - copying vector data in ghost? clone and extract create new vectors!
-    //(*mvsub) = (*Asub);
+    mvsub->fromVec(mvsub.get(),Asub,0);
     }
 
     static void
@@ -300,8 +307,8 @@ namespace Belos {
     {
     
       // We've already validated the static casts above.
-      const int numColsA = A.traits.nvecs;
-      const int numColsMv = mv.traits.nvecs;
+      const int numColsA = A.traits->nvecs;
+      const int numColsMv = mv.traits->nvecs;
       // 'index' indexes into mv; it's the index set of the target.
       const bool validIndex = index.lbound() >= 0 && index.ubound() < numColsMv;
       // We can't take more columns out of A than A has.
@@ -346,8 +353,7 @@ namespace Belos {
       else
 	A_view = CloneView (A, Teuchos::Range1D(0, index.size()-1));
 
-//      TODO
-//      *mv_view = *A_view; 
+    mv_view->fromVec(mv_view,A_view,0);
     }
 
     static void
@@ -358,8 +364,8 @@ namespace Belos {
       // Range1D bounds are signed; size_t is unsigned.
       // Assignment of ghost_vec_t is a deep copy.
 
-      const int numColsA = A.traits.nvecs;
-      const int numColsMv = mv.traits.nvecs;
+      const int numColsA = A.traits->nvecs;
+      const int numColsMv = mv.traits->nvecs;
       if (numColsA > numColsMv)
         {
           std::ostringstream os;
@@ -373,31 +379,26 @@ namespace Belos {
         }
       if (numColsA == numColsMv)
         {
-        //TODO
-        //mv = A;
+        mv.fromVec(&mv,(ghost_vec_t*)&A,0);
         }
       else
         {
           Teuchos::RCP<ghost_vec_t > mv_view = 
             CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1));
-          //TODO
-          //*mv_view = A;
+          // copy mv(:,1:numColsA)=A
+          mv_view->fromVec(mv_view.get(),(ghost_vec_t*)&A,0);
         }
     }
 
 
-//TODO
     static void MvRandom( ghost_vec_t& mv )
     { 
-      // ghost wants to create a new vector, but random() may
-      // be called for existing vectors inside algorithms
-      //mv.randomize(); 
+      mv.fromRand(&mv);
     }
 
-    static void MvInit( ghost_vec_t& mv, Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero() )
+    static void MvInit( ghost_vec_t& mv, Scalar alpha = st::zero() )
     {
-    // again, this function does not exist in ghost, it wants to create a new vector 
-    //mv.putScalar(alpha); 
+    mv.fromScalar(&mv,(void*)&alpha);
     }
 
     static void MvPrint( const ghost_vec_t& mv, std::ostream& os )
@@ -410,20 +411,23 @@ namespace Belos {
     }
 
   // private helper function
-  ghost_vec_t* createGhostViewOfTeuchosSDM
+  static ghost_vec_t* createGhostViewOfTeuchosSDM
         (const Teuchos::SerialDenseMatrix<lidx_t,Scalar>& M)
   {    
-      ghost_vtraits_t dmtraits = GHOST_VTRAITS_INIT(
-                .flags = GHOST_VEC_DEFAULTS, 
-                .nrows=M.numRows(),
-                .nvecs=M.numCols(), 
-                .nrowspadded=M.stride(),
-                .datatype=phist::ScalarTraits<Scalar>::ghost_dt);
-                                                                                                                                                  
-      ghost_vec_t* Mghost=ghost_createVector(&dmtraits);
-      Mghost->viewPlain(Mghost, (void*)M.Values(),
-                Mghost->traits->nrows, Mghost->traits->nvec,
-                0,0,ghost->traits->nrowspadded);
+      ghost_vtraits_t dmtraits;
+                dmtraits.flags = GHOST_VEC_DEFAULT;
+                dmtraits.aux=NULL;
+                dmtraits.nrows=M.numRows();
+                dmtraits.nrowshalo=M.numRows();
+                dmtraits.nrowspadded=M.stride();
+                dmtraits.nvecs=M.numCols();
+                dmtraits.datatype=st::ghost_dt;
+                                                  
+      //TODO: create context
+      ghost_vec_t* Mghost=ghost_createVector(NULL,&dmtraits);
+      Mghost->viewPlain(Mghost, (void*)M.values(),
+                Mghost->traits->nrows, Mghost->traits->nvecs,
+                0,0,Mghost->traits->nrowspadded);
   return Mghost;
   } 
 
@@ -432,7 +436,7 @@ namespace Belos {
     /// \typedef tsqr_adaptor_type
     /// \brief TsqrAdaptor specialization for ghost_vec_t
     ///
-    typedef GhostTsqrAdaptor<Scalar> tsqr_adaptor_type;
+    typedef ghost::TsqrAdaptor<Scalar> tsqr_adaptor_type;
 #endif // HAVE_BELOS_TSQR
   }; 
 

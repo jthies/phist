@@ -17,8 +17,8 @@ _PTR_=(TYPE*)(_VPTR_); \
 if (_PTR_==NULL) {_FLAG_=-88; return;}
 #endif
 
-#ifndef CHECK_ZERO
-#define CHECK_ZERO(func,_FLAG_) \
+#ifndef _CHECK_ZERO_
+#define _CHECK_ZERO_(func,_FLAG_) \
 {*ierr=func; if (_FLAG_) { \
 std::string msg="Error code "+Teuchos::toString(_FLAG_)+" returned from call "\
 +"'"+#func+"'\n"+\

@@ -7,6 +7,7 @@
 
 #include "phist_typedefs.h"
 #include "ghost.h"
+#include "ghost_util.h"
 
 // @HEADER
 // ***********************************************************************
@@ -65,8 +66,9 @@
 #  include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
 #  include <stdexcept>
 
+#include "Teuchos_DefaultMpiComm.hpp"
 
-namespace Ghost {
+namespace ghost {
 
   /// \class TsqrAdaptor
   /// \brief Adaptor from Tpetra::MultiVector to TSQR
@@ -90,12 +92,12 @@ namespace Ghost {
   /// \warning The current implementation of this adaptor requires
   ///   that all Tpetra::MultiVector inputs use the same communicator
   ///   object (that is, the same Epetra_Comm) and map.
-  template<typename ST, class Node>
+  template<typename ST>
   class TsqrAdaptor : public Teuchos::ParameterListAcceptorDefaultBase {
   public:
     typedef ghost_vec_t MV;
-    typedef typename ST scalar_type;
-    typedef typename lidx_t ordinal_type;
+    typedef ST scalar_type;
+    typedef lidx_t ordinal_type;
     typedef typename Kokkos::DefaultNode::DefaultNodeType node_type; // TODO - Node argument not yet used
     typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
@@ -301,7 +303,9 @@ namespace Ghost {
     void
     prepareNodeTsqr (const MV& mv)
     {
-      node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_, mv.getMap()->getNode());
+      // TODO - we only use the default node here,
+      node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_, 
+                createNode());
     }
 
     /// \brief Finish internode TSQR initialization.
@@ -317,8 +321,9 @@ namespace Ghost {
       using Teuchos::rcp_implicit_cast;
       typedef TSQR::TeuchosMessenger<scalar_type> mess_type;
       typedef TSQR::MessengerBase<scalar_type> base_mess_type;
-
-      RCP<const Teuchos::Comm<int> > comm = mv.getMap()->getComm();
+      // TODO - we only use the default comm here
+      RCP<const Teuchos::Comm<int> > comm = Teuchos::rcp(new 
+        Teuchos::MpiComm<int>(mv.context->mpicomm));
       RCP<mess_type> mess (new mess_type (comm));
       RCP<base_mess_type> messBase = rcp_implicit_cast<base_mess_type> (mess);
       distTsqr_->init (messBase);
@@ -339,24 +344,31 @@ namespace Ghost {
     static Kokkos::MultiVector<scalar_type,node_type>
     getNonConstView (MV& A)
     {
-    lidx_t A_len = A.traits.nrowspadded*A.traits.nvecs;
-    ArrayRCP<Scalar> values((scalar_type*)A.values,0,A_len,false);
-    Teuchos::ParameterList nodeParams(node_type::getDefaultParameters());
-    nodeParams.set("Num Threads",ghost_cpuid_topology.numThreads);
-    Teuchos::RCP<node_type> node = Teuchos::rcp(new node_type(nodeParams));
-    Kokkos::MultiVector<scalar_type, node_type> KMV(node);
-    KMV.initializeValues ((size_t)A.traits.nrows,
-                      (size_t)A.traits.nvecs,
+    lidx_t A_len = A.traits->nrowspadded*A.traits->nvecs;
+    Teuchos::ArrayRCP<ST> values((scalar_type*)A.val,0,A_len,false);
+    Teuchos::RCP<node_type> node = createNode();
+  Kokkos::MultiVector<scalar_type, node_type> KMV(node);
+    KMV.initializeValues ((size_t)A.traits->nrows,
+                      (size_t)A.traits->nvecs,
                       values,
-                      (size_t)A.traits.nrowspadded,
-                      (size_t)A.traits.nrows,
-                      (size_t)A.traits.nvecs);
+                      (size_t)A.traits->nrowspadded,
+                      (size_t)A.traits->nrows,
+                      (size_t)A.traits->nvecs);
     
       return KMV;
     }
+
+  Teuchos::RCP<node_type> createNode()
+    {
+    Teuchos::ParameterList nodeParams(node_type::getDefaultParameters());
+    nodeParams.set("Num Threads",ghost_getNumberOfPhysicalCores());
+    Teuchos::RCP<node_type> node = Teuchos::rcp(new node_type(nodeParams));
+    return node;
+    }
+
   };
 
-} // namespace Tpetra
+} // namespace ghost
 
 #endif // HAVE_TPETRA_TSQR
 

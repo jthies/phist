@@ -90,6 +90,10 @@ void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, const_map_ptr_t map,
 
 //! create a serial dense n x m matrix on all procs in comm, 
 //! with column major ordering and the capability to communicate.
+//! TODO - ghost can use int64_t as lidx_t, should the sdMat have
+//! long ints as well? It should be possible to view the local
+//! part of a vector as sdMat, so at least nrows should become
+//! lidx_t, I think.
 void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M, 
         int nrows, int ncols, const_comm_ptr_t comm, int* ierr);
 

@@ -544,8 +544,8 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   int ncols = R->getNumVectors();
     
 #ifdef TESTING
-  CHECK_ZERO(nrows-ncols,*ierr);
-  CHECK_ZERO(nrows-V->getNumVectors(),*ierr);
+  _CHECK_ZERO_(nrows-ncols,*ierr);
+  _CHECK_ZERO_(nrows-V->getNumVectors(),*ierr);
 #endif  
 
   Teuchos::RCP<Traits< _ST_ >::Teuchos_sdMat_t> R_view

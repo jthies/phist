@@ -55,7 +55,7 @@ void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* ierr)
   *size=comm->getSize();
   }
 //!
-void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, int nglob, int *ierr)
+void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int *ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const comm_t,comm,vcomm,*ierr);

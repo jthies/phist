@@ -125,7 +125,11 @@ void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
         _ST_* values, lidx_t lda, int nvec,
         int* ierr)
   {
-  return -99;
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Epetra_BlockMap, map,vmap,*ierr);
+  Epetra_MultiVector* V = new Epetra_MultiVector(View, *map, values, lda, nvec);
+  *vV=(TYPE(mvec_ptr))(V);
+  return;
   }
 
 //! create a serial dense n x m matrix on all procs, with column major
