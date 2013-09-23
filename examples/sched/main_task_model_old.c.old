@@ -6,6 +6,7 @@
 
 #include "ghost.h"
 #include "ghost_taskq.h"
+#include "likwid/cpuid.h"
 
 //#define SYNC_WAIT
 #define DONT_PIN_CONTROL_THREADS
@@ -413,7 +414,8 @@ int main(int argc, char** argv)
   
   // initialize ghost queue
   ghost_init(argc,argv);
-
+  ghost_thpool_init(ghost_getNumberOfPhysicalCores());
+  ghost_taskq_init(ghost_cpuid_topology.numSockets);
   // initialize C random number generator
   srand(time(NULL));
 

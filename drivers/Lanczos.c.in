@@ -8,20 +8,7 @@
 #include "phist_lanczos.h"
 #include ${PHIST_TG_HFILE}
 
-
-typedef _ST_ ST;
-typedef _MT_ MT;
-typedef TYPE(mvec_ptr) mvec_ptr_t;
-typedef TYPE(const_mvec_ptr) const_mvec_ptr_t;
-
-typedef TYPE(sdMat_ptr) sdMat_ptr_t;
-typedef TYPE(const_sdMat_ptr) const_sdMat_ptr_t;
-
-typedef TYPE(crsMat_ptr) crsMat_ptr_t;
-typedef TYPE(const_crsMat_ptr) const_crsMat_ptr_t;
-
-typedef TYPE(op_ptr) op_ptr_t;
-typedef TYPE(const_op_ptr) const_op_ptr_t;
+#include "phist_driver_utils.h"
 
 int main(int argc, char** argv)
   {
@@ -93,8 +80,9 @@ int main(int argc, char** argv)
   if (verbose) 
     {
     fprintf(stdout,"looking for %d Eigenpairs of largest magnitude\n",num_eigs);
-    }  
-  PHIST_ICHK_IERR(SUBR(crsMat_read_mm)(&A,filename,&ierr),ierr);
+    }
+  // from the driver_utils.h header: checks file extension and calls read_mm, read_bin etc
+  PHIST_ICHK_IERR(SUBR(crsMat_read)(&A,filename,&ierr),ierr);
   
   PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(A, &map,&ierr),ierr);
 

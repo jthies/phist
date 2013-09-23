@@ -6,22 +6,10 @@
 
 #include "phist_taskbuf.h"
 
-#include "phist_kernels.h"
 #include "phist_macros.h"
 
-#ifdef PHIST_HAVE_GHOST
 #include "ghost.h"
-#include "likwid/cpuid.h"
 #include "ghost_taskq.h"
-#else
-#error "this driver makes no sense without ghost"
-#endif
-
-// pinning the control threads by putting the 'fill-vector' tasks in the 
-// ghost queue does not work because only one of them puts the subtasks
-// in the queue, so even with the TASK_USE_PARENTS flag all but one of
-// the control threads block a core.
-//#define PIN_CONTROL_THREADS
 
 //                                                              
 // this example driver performs the following algorithm.        
@@ -33,9 +21,11 @@
 // V[n+1] = V[n]/2 if n is even                                 
 //                                                              
 // Each vector is treated by a different 'control thread', the  
-// actual operations (rndX(), incX and divX) are put into a     
+// operations incX and divX are put into a                      
 // task buffer and executed in bulks whenever each control      
 // thread has announced the type of operation it needs.         
+// The operation rndX is not buffered but enqueued on the number
+// of cores each control thread gets for local operations.      
 //                                                              
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -49,43 +39,36 @@
 // local length of each column
 #define NDIM 40
 
-#define OUT stderr
-
 ////////////////////////////////////////////////////////////////////////////////////////
 // algorithm-specific functionality                                                   //
 ////////////////////////////////////////////////////////////////////////////////////////
 
 // fill  all entries in an array with random integers
-static void *rndX(argList_t* args)
+static void rndX(int* arg)
   {
-  int i;
-
-//  fprintf(OUT,"NUM THREADS: %d\n",arg->nThreads);
 
 #pragma omp parallel
   {
 #pragma omp single
-  fprintf(OUT,"rndX executed by %d threads on %d values\n",omp_get_num_threads(),args->n);  
-#pragma omp for
-  for (i=0;i<args->n;i++)
     {
-    *((int*)args->out_arg[i])=(int)((rand()/(double)RAND_MAX)*RND_MAX);
+    PHIST_OUT(0,"rndX executed by %d threads on one value\n",omp_get_num_threads());  
+    *arg=(int)((rand()/(double)RAND_MAX)*RND_MAX);
     }
   }
-  return NULL;
+  return;
   }
 
 // increment all entries in an array by one
-static void *incX(argList_t* args)
+static void incX(argList_t* args)
   {
   int i;
 
-//  fprintf(OUT,"NUM THREADS: %d\n",arg->nThreads);
+//  PHIST_OUT(0,"NUM THREADS: %d\n",arg->nThreads);
 
 #pragma omp parallel
   {
 #pragma omp single
-  fprintf(OUT,"incX executed by %d threads on %d values\n",
+  PHIST_OUT(0,"incX executed by %d threads on %d values\n",
         omp_get_num_threads(),args->n);  
 #pragma omp for
   for (i=0;i<args->n;i++)
@@ -93,21 +76,21 @@ static void *incX(argList_t* args)
     *((int*)args->out_arg[i])=*((const int*)args->in_arg[i])+1;
     }
   }
-  return NULL;
+  return;
   }
 
 
 // divide all entries in an array by two
-static void *divX(argList_t* args)
+static void divX(argList_t* args)
   {
   int i;
 
-//  fprintf(OUT,"NUM THREADS: %d\n",arg->nThreads);
+//  PHIST_OUT(0,"NUM THREADS: %d\n",arg->nThreads);
 
 #pragma omp parallel
   {
 #pragma omp single
-  fprintf(OUT,"divX executed by %d threads on %d values\n", 
+  PHIST_OUT(0,"divX executed by %d threads on %d values\n", 
         omp_get_num_threads(),args->n);  
 #pragma omp for
   for (i=0;i<args->n;i++)
@@ -115,16 +98,19 @@ static void *divX(argList_t* args)
     *((int*)args->out_arg[i])=*((const int*)args->in_arg[i])/2;
     }
   }
-  return NULL;
+  return;
   }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // implementation of the algorithm                                                        //
-////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////
+/////////////////////////////////////////////////////////////////////////
 
 // to conform with the ghost queue, we pass all function arguments to
 // our "algorithm" fill_vector in a single void pointer:
 typedef struct {
+
+int nworkers;
 int n;
 int col;
 int *v;
@@ -134,54 +120,184 @@ int DIVX; // key for calling divX via the buffer
 taskBuf_t *taskBuf; // task buffer to be used, must be initialized
                     // to handle the above three operations
 int ierr; // return code
+} colArg_t;
+
+// to conform with the ghost queue, we pass all function arguments to
+// our "algorithm" fill_all in a single void pointer:
+typedef struct {
+
+int nworkers;
+int n; // length of the vectors
+int nv; // number of vectors/columns
+int *v; // pointer to the first vector
+
+int ierr; // return code
 } mainArg_t;
+
+// forward declaration because fill_all needs fill_vector
+void fill_vector(colArg_t* v_colArg);
+
+
+void* fill_all(mainArg_t* arg)
+  {
+  colArg_t colArg[arg->nv];
+  ghost_task_t *colTask[arg->nv];
+  int nteam; // number of threads per column that can do local operations
+  int op_INCX; // key for calling incX via the buffer
+  int op_DIVX; // key for calling divX via the buffer
+  taskBuf_t *taskBuf; // task buffer to be used, must be initialized
+                      // to handle the above three operations
+  int *ierr = &arg->ierr;
+  int i;
+                 
+  nteam = (int) ( (double)arg->nworkers / (double)arg->nv );                    
+  
+  if (nteam<1)
+    {
+    PHIST_OUT(0,"number of threads (%d) smaller than number of tasks (%d)\n",
+        arg->nworkers, arg->nv);
+    arg->ierr=-1; 
+    return;
+    }
+  // first, setup the task buffer
+  PHIST_CHK_IERR(taskBuf_create(&taskBuf,arg->nv,ierr),*ierr);
+
+  // add the basic operations for our algorithm to the buffer
+  PHIST_CHK_IERR(taskBuf_add_op(taskBuf, (void*(*)(argList_t*))&incX, NULL, 
+        arg->nworkers, &op_INCX, ierr),*ierr);
+  PHIST_CHK_IERR(taskBuf_add_op(taskBuf, (void*(*)(argList_t*))&divX, NULL, 
+        arg->nworkers, &op_DIVX, ierr),*ierr);
+
+  // enqueue the tasks of filling the columns
+  for (i=0;i<arg->nv;i++)
+    {
+    colArg[i].nworkers=nteam;
+    colArg[i].n=arg->n;
+    colArg[i].col=i;
+    colArg[i].v=arg->v+i*arg->n;
+    colArg[i].taskBuf=taskBuf;
+    colArg[i].INCX=op_INCX;
+    colArg[i].DIVX=op_DIVX;
+
+    colTask[i] = ghost_task_init(nteam, GHOST_TASK_LD_ANY, (void*(*)(void*))&fill_vector, 
+        (void*)(&colArg[i]),GHOST_TASK_DEFAULT|GHOST_TASK_NO_PIN);
+    ghost_task_add(colTask[i]);
+    }
+  // now we have started all the teams of threads that will work
+  // on a column and request global operations from the buffer. 
+  // The teams themselves kick off the buffer ops whenever it is
+  // full. As this master thread has currently control over all 
+  // the available cores, it now has to wait explicitly for the 
+  // started control threads so that it's resources can be used 
+  // by them (otherwise they can't start running).
+  for (i=0;i<arg->nv;i++)
+    {
+    PHIST_OUT(0,"master thread %lu waiting for col %d\n",pthread_self(),i);
+    ghost_task_wait(colTask[i]);
+    ghost_task_destroy(colTask[i]);
+    }
+
+  PHIST_OUT(0,"master thread %lu has finished, so all controllers have renounced the buffer",
+        pthread_self());
+  PHIST_CHK_IERR(taskBuf_delete(taskBuf,ierr),*ierr);
+  return;
+  }
 
 // this is a long-running job (an "algorithm") executed by a control thread.
 // Inside, work that has to be done is put in a task buffer and than bundled
 // between control threads and put into the ghost queue.
-void* fill_vector(void* v_mainArg)
+void fill_vector(colArg_t* colArg)
   {
   int i,n,col;
   int* v;
   int* ierr;
   taskBuf_t* taskBuf;
-  mainArg_t *mainArg = (mainArg_t*)v_mainArg;
+  ghost_task_t *rndX_task;
+  int no_wait;
 
-  n = mainArg->n;
-  col = mainArg->col;
-  v = mainArg->v;
-  taskBuf=mainArg->taskBuf;
-  ierr = &mainArg->ierr;
+  n = colArg->n;
+  col = colArg->col;
+  v = colArg->v;
+  taskBuf=colArg->taskBuf;
+  ierr = &colArg->ierr;
   
-//  fprintf(OUT,"thread %ul: taskBuf at %p, finished_cv at %p\n",pthread_self(),
+#pragma omp parallel
+#pragma omp single
+PHIST_OUT(0,"fill_vector on col %d, team size %d, task buffer at %p\n",
+        col, omp_get_num_threads(), taskBuf);
+
+//  PHIST_OUT(0,"thread %ul: taskBuf at %p, finished_cv at %p\n",pthread_self(),
 //        taskBuf, &taskBuf->finished_cv);
-  
+
   // these are all blocking function calls right now
   v[0]=0;// next one will be randomized
+  
   for (i=1; i<n;i++)
     {
+    rndX_task=NULL;
+    no_wait=0;
     if (v[i-1]==42)
       {
       PHIST_CHK_IERR(taskBuf_renounce(taskBuf,col,ierr),*ierr);
-      return NULL;
+      return;
       }
     else if (v[i-1]==0 || v[i-1]==1)
       {
-      PHIST_CHK_IERR(taskBuf_add(taskBuf,&v[i-1],&v[i],col,mainArg->RNDX,ierr),*ierr);
+      // this is not done via the buffer but using the own team of OpenMP threads
+
+      // create a ghost task for the rndX operation
+      // TODO - keep track of locality domains (LD) and do this correctly
+      // TODO - is it safe to change the arg but keep the task?
+      // NOTE: with the current implementation we could even run the rndX
+      //       function locally and skip the queuing completely, but that
+      //       may keep others waiting. In the unlikely situation that one
+      //       thread just performs rndX all the time it will finish the
+      //       whole column before anyone else can start doing something.
+      //       Using the queue here allows the buffered tasks to get in 
+      //       between the local operations.
+      
+      
+      // the variant with the queue doesn't work yet, so we try executing rndX
+      // locally first
+      rndX(&v[i]);
+      no_wait=1;
+      /*
+      rndX_task = ghost_task_init(colArg->nworkers, GHOST_TASK_LD_ANY,
+        (void*(*)(void*))rndX, (void*)(&v[i]), GHOST_TASK_DEFAULT);
+      ghost_task_add(rndX_task);
+      */
+ 
+      // we have two options here: tell the buffer to do this round without us,
+      // or keep all other controllers waiting while we do the rndX. The choice
+      // depends on the priority of the rndX operation.
+      
+      // TODO - right now there is no mechanism to prevent the same thread from putting
+      // in another task on the column, in which case the countdown is decremented twice
+      // by the same controller
+//      PHIST_CHK_IERR(taskBuf_add(taskBuf,NULL,NULL,col,PHIST_OP_NULL,ierr),*ierr);
       }
     else if (v[i-1]%2==0)
       {
-      PHIST_CHK_IERR(taskBuf_add(taskBuf,&v[i-1],&v[i],col,mainArg->DIVX,ierr),*ierr);
+      PHIST_CHK_IERR(taskBuf_add(taskBuf,&v[i-1],&v[i],col,colArg->DIVX,ierr),*ierr);
       }
     else
       {
-      PHIST_CHK_IERR(taskBuf_add(taskBuf,&v[i-1],&v[i],col,mainArg->INCX,ierr),*ierr);
+      PHIST_CHK_IERR(taskBuf_add(taskBuf,&v[i-1],&v[i],col,colArg->INCX,ierr),*ierr);
       }
-#ifndef SYNC_WAIT
-    PHIST_CHK_IERR(taskBuf_wait(taskBuf,col,ierr),*ierr);
-#endif
+    // if we did not put in a task this iteration, this function
+    // will return immediately.
+    if (no_wait!=1)
+      {
+      PHIST_CHK_IERR(taskBuf_wait(taskBuf,col,ierr),*ierr);
+      }
+
+    if (rndX_task!=NULL)
+      {
+      // wait for the ghost tasks started by ourself (rndX)
+      ghost_task_wait(rndX_task);
+      }
     }
-  return NULL;
+  return;
   }
 
   
@@ -190,92 +306,52 @@ int main(int argc, char** argv)
   int ierr;
   int i,j;
   int nworkers;
-  int op_RNDX, op_INCX, op_DIVX;
-  taskBuf_t *taskBuf;
-  mainArg_t mainArg[NUM_TASKS];
-#ifndef PIN_CONTROL_THREADS
-  pthread_t controlThread[NUM_TASKS];
-#else
-  ghost_task_t *controlTask[NUM_TASKS];
-#endif
+  
+  mainArg_t mainArg;
+  ghost_task_t *mainTask;
   
   int* vectors = (int*)malloc(NUM_TASKS*NDIM*sizeof(int));
 
-  // we don't really use the kernel lib in this example, but
-  // out of habit we initialize it:
-  PHIST_OUT(0,"initialize kernel lib");
-  PHIST_CHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
-// avoid double init
-#ifndef PHIST_KERNEL_LIB_GHOST  
   PHIST_OUT(0,"initialize ghost");
   ghost_init(argc,argv);
-  ghost_thpool_init(ghost_getNumberOfPhysicalCores());
-  ghost_taskq_init(ghost_cpuid_topology.numSockets);
-#endif
+  ghost_thpool_init(GHOST_THPOOL_NTHREADS_FULLNODE,GHOST_THPOOL_FTHREAD_DEFAULT,GHOST_THPOOL_LEVELS_FULLSMT);
+  ghost_taskq_init();
 
   // initialize C random number generator
   srand(time(NULL));
 
 nworkers=ghost_thpool->nThreads;
 
-PHIST_CHK_IERR(taskBuf_create(&taskBuf,NUM_TASKS,&ierr),ierr);
+  mainTask = ghost_task_init(nworkers, GHOST_TASK_LD_ANY, (void*(*)(void*))&fill_all, 
+        (void*)&mainArg,GHOST_TASK_DEFAULT|GHOST_TASK_NO_PIN);
+  mainArg.nworkers=nworkers;
+  mainArg.nv = NUM_TASKS;
+  mainArg.n  = NDIM;
+  mainArg.v = vectors;
+  ghost_task_add(mainTask);
 
-// add the basic operations for our algorithm to the buffer
-PHIST_CHK_IERR(taskBuf_add_op(taskBuf, &rndX, NULL, nworkers,&op_RNDX, &ierr),ierr);
-PHIST_CHK_IERR(taskBuf_add_op(taskBuf, &
+ghost_task_wait(mainTask);
 
-incX, NULL, nworkers,&op_INCX, &ierr),ierr);
-PHIST_CHK_IERR(taskBuf_add_op(taskBuf, &divX, NULL, nworkers,&op_DIVX, &ierr),ierr);
+  ghost_task_destroy(mainTask);  
 
-for (i=0;i<NUM_TASKS;i++)
+if (mainArg.ierr)
   {
-  mainArg[i].n=NDIM;
-  mainArg[i].col=i;
-  mainArg[i].v=vectors+i*NDIM;
-  mainArg[i].taskBuf=taskBuf;
-  mainArg[i].RNDX=op_RNDX;
-  mainArg[i].INCX=op_INCX;
-  mainArg[i].DIVX=op_DIVX;
-#ifdef PIN_CONTROL_THREADS
-  controlTask[i] = ghost_task_init(1, 0, &fill_vector, 
-        (void*)(&mainArg[i]),GHOST_TASK_DEFAULT);
-  ghost_task_add(controlTask[i]);
-#else
-  pthread_create(&controlThread[i], NULL, &fill_vector, (void *)&mainArg[i]);
-#endif
-  }
-
-#ifdef PIN_CONTROL_THREADS
-ghost_task_waitall();
-#else
-for (i=0;i<NUM_TASKS;i++)
-  {
-  pthread_join(controlThread[i],NULL);
-  }
-#endif
-
-for (i=0;i<NUM_TASKS;i++)
-  {
-  if (mainArg[i].ierr)
-    {
-    fprintf(stderr,"error flag %d returned by thread %d\n",mainArg[i].ierr,i);
-    ierr=mainArg[i].ierr; // the last non-zero return code will be returned
-    }
+  fprintf(stderr,"error flag %d returned by master thread\n",mainArg.ierr);
+  ierr=mainArg.ierr; // the last non-zero return code will be returned
   }
 // single thread prints the results
 for (i=0;i<NDIM;i++)
   {
   for (j=0;j<NUM_TASKS;j++)
     {
-    fprintf(OUT,"\t%d",vectors[j*NDIM+i]);
+    fprintf(stdout,"\t%d",vectors[j*NDIM+i]);
     }
-  fprintf(OUT,"\n");
+  fprintf(stdout,"\n");
   }
-  
-  // avoid duplicate finish call
-#ifndef PHIST_KERNEL_LIB_GHOST
+
+  free(vectors);
+
+
   // finalize ghost queue
   ghost_finish();
-#endif  
-  PHIST_CHK_IERR(phist_kernels_finalize(&ierr),ierr);
   }

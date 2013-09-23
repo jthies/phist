@@ -11,7 +11,6 @@
 #include "kernels/phist_kernels.h"
 #include "MpiRootOnlyPrinter.hpp"
 #ifdef PHIST_HAVE_GHOST
-#include "likwid/cpuid.h"
 #include "ghost.h"
 #include "ghost_util.h"
 #include "ghost_taskq.h"
@@ -25,8 +24,6 @@ GTEST_API_ int main(int argc, char **argv) {
 #ifndef PHIST_KERNEL_LIB_GHOST
     ghost_init(argc,argv);
 #endif
-    ghost_thpool_init(ghost_getNumberOfPhysicalCores());
-    ghost_taskq_init(ghost_cpuid_topology.numSockets);
 #endif
     // Gets hold of the event listener list.  
     ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();  

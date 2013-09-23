@@ -17,6 +17,8 @@ void SUBR(bgmres)(TYPE(const_op_ptr) Op,
   typedef ghost_vec_t MV;
 #elif defined(PHIST_KERNEL_LIB_TPETRA)
   typedef Tpetra::MultiVector<ST,lidx_t,gidx_t,node_t> MV; 
+#elif defined(PHIST_KERNEL_LIB_EPETRA)
+  typedef Epetra_MultiVector MV; 
 #endif
   typedef st::op_t OP; // gives Sop_t, Dop_t etc.
 

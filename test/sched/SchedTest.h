@@ -15,7 +15,6 @@ typedef int MPI_Comm;
 #include "phist_kernels.h"
 #ifdef PHIST_HAVE_GHOST
 extern "C" {
-#include "ghost/likwid/cpuid.h"
 #include "ghost/ghost_taskq.h"
 }
 #endif
@@ -30,9 +29,6 @@ public:
 	 */
 	virtual void SetUp() 
 	{
-#ifdef PHIST_HAVE_GHOST
-	num_ghost_queues_=ghost_cpuid_topology.numSockets;
-#endif
 	}
 
 virtual void TearDown()
@@ -40,7 +36,6 @@ virtual void TearDown()
   }
   
 
-int num_ghost_queues_;
 };
 
 #endif

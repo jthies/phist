@@ -38,17 +38,26 @@ void taskBuf_create(taskBuf_t** buf, int num_controllers, int* ierr)
   (*buf)->nactive=num_controllers;
   (*buf)->countdown=num_controllers;
   (*buf)->opType=(int*)malloc(num_controllers*sizeof(int));
+  (*buf)->waitFor=(int*)malloc(num_controllers*sizeof(int));
+  (*buf)->array_mx=(pthread_mutex_t*)malloc(num_controllers*sizeof(pthread_mutex_t));
+  for (i=0;i<num_controllers;i++)
+    {
+    (*buf)->opType[i]=PHIST_OP_NULL;
+    (*buf)->waitFor[i]=PHIST_OP_NULL;
+    pthread_mutex_init(&((*buf)->array_mx[i]),NULL);
+    }
   (*buf)->op_inArgs=(const void**)malloc(num_controllers*sizeof(void*));
   (*buf)->op_outArgs=(void**)malloc(num_controllers*sizeof(void*));
 
   pthread_mutex_init(&((*buf)->lock_mx),NULL);
-  pthread_cond_init(&(*buf)->finished_cv,NULL);
+  pthread_cond_init(&(*buf)->flushed_cv,NULL);
   
   (*buf)->nops = 0;
-  (*buf)->nops_max = 8;
+  (*buf)->nops_max = 32; // that should be enough for all practical purposes, but
+                         // if it is ever exceeded we reallocate in add_op
 
-  (*buf)->ghost_args=(argList_t**)malloc((*buf)->nops_max*sizeof(argList_t*));
-  (*buf)->ghost_task=(ghost_task_t**)malloc((*buf)->nops_max*sizeof(ghost_task_t*));
+  (*buf)->ghost_args=(argList_t**)malloc(((*buf)->nops_max+1)*sizeof(argList_t*));
+  (*buf)->ghost_task=(ghost_task_t**)malloc(((*buf)->nops_max+1)*sizeof(ghost_task_t*));
 
   return;
   }
@@ -60,15 +69,17 @@ void taskBuf_delete(taskBuf_t* buf, int* ierr)
   *ierr=0;
   //TODO - maybe we should force execution/wait here
   free(buf->opType);
+  free(buf->waitFor);
   free(buf->op_inArgs);
   free(buf->op_outArgs);
-  for (i=0;i<buf->nops;i++)
+  for (i=1;i<=buf->nops;i++)
     {
     ghost_task_destroy(buf->ghost_task[i]);
     PHIST_CHK_IERR(argList_delete(buf->ghost_args[i],ierr),*ierr);
+    pthread_mutex_destroy(&buf->array_mx[i]);
     }
   pthread_mutex_destroy(&buf->lock_mx);
-  pthread_cond_destroy(&buf->finished_cv);
+  pthread_cond_destroy(&buf->flushed_cv);
   free(buf->ghost_task);
   free(buf->ghost_args);
   free(buf);
@@ -84,13 +95,14 @@ void taskBuf_add_op(taskBuf_t* buf, void* (*fcn)(argList_t*), void* shared_arg,
   *ierr=0;
   if (buf->nops==buf->nops_max)
     {
-    PHIST_OUT(1,"%d ops in task buffer, re-allocating memory",buf->nops+1);
-    buf->nops_max += 8;
-    buf->ghost_args=(argList_t**)realloc(buf->ghost_args,buf->nops_max*sizeof(argList_t*));
-    buf->ghost_task=(ghost_task_t**)realloc(buf->ghost_task,buf->nops_max*sizeof(ghost_task_t*));
+    PHIST_OUT(2,"%d ops in task buffer, re-allocating memory",buf->nops+1);
+    buf->nops_max *= 2;
+    buf->ghost_args=(argList_t**)realloc(buf->ghost_args,(buf->nops_max+1)*sizeof(argList_t*));
+    buf->ghost_task=(ghost_task_t**)realloc(buf->ghost_task,(buf->nops_max+1)*sizeof(ghost_task_t*));
     }
-  *op_key = buf->nops;
+  // note that slot 0 always remains empty, this is to be consistent with PHIST_OP_NULL=0
   buf->nops++;
+  *op_key = buf->nops;
   PHIST_CHK_IERR(argList_create(&buf->ghost_args[*op_key], buf->ncontrollers,ierr),*ierr);
   buf->ghost_args[*op_key]->nthreads = num_workers;
   buf->ghost_args[*op_key]->shared_arg=shared_arg;
@@ -103,103 +115,118 @@ void taskBuf_add_op(taskBuf_t* buf, void* (*fcn)(argList_t*), void* shared_arg,
     }
   else
     {
+    // TODO - correct usage of locality domains
     buf->ghost_task[*op_key] = ghost_task_init(num_workers, GHOST_TASK_LD_ANY, 
         (void*(*)(void*))fcn, (void*)(buf->ghost_args[*op_key]),GHOST_TASK_DEFAULT);
     }
   }
 
-// a job is put into the task buffer and executed once the
-// buffer is full. This function returns only when the task 
-// is finished.
+// a job is put into the task buffer and enqueued once the
+// buffer is full. This function returns immediately. Before
+// calling it again, you have to call taskBuf_wait to make  
+// sure the task has been enqueued and is finished.
 void taskBuf_add(taskBuf_t* buf, const void* in_arg, 
                                        void* out_arg, 
                              int task_id, int op_key, int* ierr)
   {
   *ierr=0;
+  // first make sure that the previous operation has been waited for
+  // We need to actually wait for completion of the ghost task here.
+  // Otherwise we could get that a ghost task is still in the
+  // queue or running and the ghost_task_t is overwritten by  
+  // the next taskBuf_flush. On the other hand, the buffer is only  
+  // flushed if all participating threads have put in something,    
+  // which by this mechanism makes sure that all ghost tasks have   
+  // finished before the next round is started.
+  pthread_mutex_lock(&buf->array_mx[task_id]);
+  if (buf->opType[task_id]!=PHIST_OP_NULL)
+    {
+    PHIST_OUT(2,"forcing thread %lu to wait for previous flush\n",pthread_self());
+    pthread_mutex_unlock(&buf->array_mx[task_id]);
+    PHIST_CHK_IERR(taskBuf_wait(buf,task_id,ierr),*ierr);
+    pthread_mutex_lock(&buf->array_mx[task_id]);
+    }
+  if (buf->waitFor[task_id]!=PHIST_OP_NULL)
+    {
+    PHIST_OUT(2,"forcing thread %lu to wait for previous job to finish\n",pthread_self());
+    pthread_mutex_unlock(&buf->array_mx[task_id]);
+    PHIST_CHK_IERR(taskBuf_wait(buf,task_id,ierr),*ierr);
+    pthread_mutex_lock(&buf->array_mx[task_id]);
+    }
+
   // lock the buffer while putting in jobs and executing them
-  pthread_mutex_lock(&buf->lock_mx);
-  PHIST_OUT(1,"mutex at %p\n",&buf->lock_mx);
   buf->opType[task_id]=op_key;
+  buf->waitFor[task_id]=PHIST_OP_NULL; // indicate that we need a flush before ghost_task_wait
   buf->op_inArgs[task_id]=in_arg;
   buf->op_outArgs[task_id]=out_arg;
+  pthread_mutex_unlock(&buf->array_mx[task_id]);
+  
+  pthread_mutex_lock(&buf->lock_mx);
   buf->countdown--;
-  PHIST_OUT(1,"control thread %lu request job %d on column %d, countdown=%d\n",
+  PHIST_OUT(2,"control thread %lu request job %d on column %d, countdown=%d\n",
         pthread_self(), op_key, task_id, buf->countdown);
+  // the first thread who observes that the buffer is full
+  // flushes it, which means that the operations are bundled
+  // and put in the ghost queue. From this moment the buffer
+  // can be used for the next iteration. It is the responsibility
+  // of the control threads to do a taskBuf_wait before reusing the
+  // buffer.
   if (buf->countdown==0)
     {
     taskBuf_flush(buf);
-    PHIST_OUT(1,"Thread %lu sending signal @ cond %p \n",pthread_self(),&buf->finished_cv);
-    pthread_cond_broadcast(&buf->finished_cv);
     }
-  else
-    {
-    PHIST_OUT(1,"Thread %lu wait @ cond %p \n",pthread_self(),&buf->finished_cv);
-    // this sends the thread to sleep and releases the mutex. When the signal is
-    // received, the mutex is locked again
-    pthread_cond_wait(&buf->finished_cv,&buf->lock_mx);
-    }
-  // the bundled tasks have been put in the ghost queue.
-  // Release the mutex so the buffer can be used for the next iteration.
-  // The control thread is responsible for waiting for the task to finish
-  // before putting in a new one, otherwise a race condition is created.
   pthread_mutex_unlock(&buf->lock_mx);
   }
   
 // once the buffer is full, group the tasks into blocks and enqueue them.
 // This function must not be called by multiple threads at a time, which 
-// is why we encapsulate it in an openMP lock in taskBuf_add above.
+// is why we encapsulate it in a pthread lock in taskBuf_add above. This 
+// function is NOT intended for use by anyone (consider it private)
 void taskBuf_flush(taskBuf_t* buf)
   {
   int i,pos1,pos2;
   
-  PHIST_OUT(1,"control thread %lu starting jobs\n",pthread_self());
-  PHIST_OUT(1,"job types: ");
-  for (i=0;i<buf->ncontrollers;i++)
-    {
-    PHIST_OUT(1," %d",buf->opType[i]);
-    }
-  PHIST_OUT(1,"\n");
+  PHIST_OUT(2,"control thread %lu starting jobs\n",pthread_self());
+  PHIST_OUT(2,"job types: ");
   
-  for (i=0;i<buf->nops;i++)
+  // skip op 0, which is PHIST_OP_NULL ("do nothing")
+  for (i=1;i<=buf->nops;i++)
     {
     buf->ghost_args[i]->n=0;
     }
   for (i=0;i<buf->ncontrollers;i++)
     {
+    pthread_mutex_lock(&buf->array_mx[i]);
+    PHIST_OUT(2," %d",buf->opType[i]);
+    PHIST_OUT(2,"\n");
     pos1=buf->opType[i]; // which op is requested? (rndX, incX or divX)
-    if (pos1>=0) // otherwise: -1=NO_OP
+    buf->opType[i]=PHIST_OP_NULL; // next op can be requested (buffer has been flushed)
+    buf->waitFor[i]=pos1;
+    pthread_mutex_unlock(&buf->array_mx[i]);
+    if (pos1>0) // otherwise: 0=PHIST_OP_NULL
       {
       pos2=buf->ghost_args[pos1]->n; // how many of this op have been requested already?
       buf->ghost_args[pos1]->id[pos2]=i; // some operators find it interesting to know
                                          // which column they operate on.
+                                         // (TODO: do we actually need this?)
       buf->ghost_args[pos1]->in_arg[pos2]=buf->op_inArgs[i];
       buf->ghost_args[pos1]->out_arg[pos2]=buf->op_outArgs[i];
       buf->ghost_args[pos1]->n++;
       }
     }
-  for (i=0;i<buf->nops;i++)
+  for (i=1;i<=buf->nops;i++)
     {
+    PHIST_OUT(3,"job type %d: %d requests\n",i,buf->ghost_args[i]->n);
     if (buf->ghost_args[i]->n>0)
       {
-      PHIST_OUT(1,"enqueue job type %d on %d workers for %d values\n",
+      PHIST_OUT(2,"enqueue job type %d on %d workers for %d values\n",
         i,buf->ghost_args[i]->nthreads,buf->ghost_args[i]->n);
       ghost_task_add(buf->ghost_task[i]);
       }
     }
   buf->countdown=buf->nactive;
-#ifdef SYNC_WAIT
-  //TODO
-  // this should be removed, waiting should be left to 
-  // each of the control threads using taskBuf_wait().
-  for (i=0;i<buf->nops;i++)
-  {
-  if (buf->ghost_args[i]->n>0)
-    {
-    PHIST_OUT(1,"Thread %lu waiting for job type %d\n",pthread_self(),i);
-      ghost_task_wait(buf->ghost_task[i]);
-    }
-  }
-#endif
+  PHIST_OUT(2,"Thread %lu sending signal @ cond %p \n",pthread_self(),&buf->flushed_cv);
+  pthread_cond_broadcast(&buf->flushed_cv);
   return;
   }
 
@@ -211,20 +238,20 @@ void taskBuf_renounce(taskBuf_t* buf, int task_id, int* ierr)
   {
   *ierr=0;
   // lock the buffer while adjusting it to deal without me in the future.
-  pthread_mutex_lock(&buf->lock_mx);
-  buf->opType[task_id]=PHIST_NOOP;
+  pthread_mutex_lock(&buf->array_mx[task_id]);
+  buf->opType[task_id]=PHIST_OP_NULL;
   buf->op_inArgs[task_id]=NULL;
   buf->op_outArgs[task_id]=NULL;
+  pthread_mutex_unlock(&buf->array_mx[task_id]);
+  pthread_mutex_lock(&buf->lock_mx);
   buf->nactive--;
   buf->countdown--;
-  PHIST_OUT(1,"control thread %lu (task_id %d) leaving the controller team\n",
+  PHIST_OUT(2,"control thread %lu (task_id %d) leaving the controller team\n",
         pthread_self(), task_id);
   // final flush if necessary
   if (buf->countdown==0)
     {
     taskBuf_flush(buf);
-    PHIST_OUT(1,"Thread %lu sending signal @ cond %p \n",pthread_self(),buf->finished_cv);
-    pthread_cond_broadcast(&buf->finished_cv);
     }
   pthread_mutex_unlock(&buf->lock_mx);  
   return;
@@ -232,14 +259,50 @@ void taskBuf_renounce(taskBuf_t* buf, int task_id, int* ierr)
 
 void taskBuf_wait(taskBuf_t* buf, int task_id, int* ierr)
   {
-  int jt = buf->opType[task_id];
+  int jt;
+  int wf;
   *ierr=0;
-  if (buf->ghost_args[jt]->n>0)
+  // lock the array position so we don't miss the taskBuf_flush
+  pthread_mutex_lock(&buf->array_mx[task_id]);
+  jt = buf->opType[task_id];
+  wf = buf->waitFor[task_id];
+
+  // no operation submitted -> return immediately
+  if (jt==PHIST_OP_NULL && wf==PHIST_OP_NULL) 
     {
-    PHIST_OUT(1,"Thread %lu waiting for job type %d\n",pthread_self(),jt);
-      ghost_task_wait(buf->ghost_task[jt]);
-    PHIST_OUT(1,"Thread %lu, job type %d finished.\n",pthread_self(),jt);
+    pthread_mutex_unlock(&buf->array_mx[task_id]);
+    return; 
     }
+
+
+  // wait until the buffer has been flushed
+  if (jt!=PHIST_OP_NULL)
+    {
+    pthread_mutex_lock(&buf->lock_mx);
+    PHIST_OUT(2,"Thread %lu waiting for flush @ %p\n",pthread_self(),&buf->flushed_cv);
+    // if we don't release the array position lock, taskBuf_flush will
+    // create a deadlock
+    pthread_mutex_unlock(&buf->array_mx[task_id]);
+    pthread_cond_wait(&buf->flushed_cv,&buf->lock_mx);
+    pthread_mutex_lock(&buf->array_mx[task_id]);
+    pthread_mutex_unlock(&buf->lock_mx);
+    }
+  // by now we are sure that someone has called taskBuf_flush and
+  // the requested operation is in the queue.
+  
+  // it is safe to keep the array position task_id locked until the
+  // job has been executed because no flush can occur while we're  
+  // still here (that is, until this thread announces it's next op)
+  wf = buf->waitFor[task_id];
+
+  if (wf!=PHIST_OP_NULL)
+    {
+    PHIST_OUT(2,"Thread %lu waiting for job type %d\n",pthread_self(),wf);
+    ghost_task_wait(buf->ghost_task[wf]);
+    buf->waitFor[task_id]=PHIST_OP_NULL;
+    PHIST_OUT(2,"Thread %lu, job type %d finished.\n",pthread_self(),jt);
+    }
+  pthread_mutex_unlock(&buf->array_mx[task_id]);
   return;
   }
 

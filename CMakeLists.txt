@@ -71,7 +71,7 @@ if (CXX_COMPILER_NAME STREQUAL "g++")
   message(STATUS "using g++ compiler flags")
   set (CMAKE_CXX_FLAGS "-fopenmp")
   set (CMAKE_CXX_FLAGS_RELEASE "-O2 -fopenmp")
-  set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING -DDEBUG=1 -fopenmp")
+  set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING -DDEBUG=99 -fopenmp")
 else ()
   message ("CXX compiler: " ${CXX_COMPILER_NAME})
   message ("No optimized C++ compiler flags are known.")
@@ -95,24 +95,6 @@ if (${PHIST_ENABLE_MPI})
   else()
     message(WARNING "could not find MPI")
   endif()
-endif()
-
-# ghost is a requirement of phist now because of the task queue
-find_package(Ghost PATHS $ENV{GHOST_HOME})
-
-message(STATUS "GHOST_Found=${GHOST_Found}")
-
-if (GHOST_Found)
-  include_directories(${GHOST_INCLUDE_DIRS})
-  link_directories(${GHOST_LIBRARY_DIRS})
-  list(APPEND PHIST_LIBS ${GHOST_LIBRARIES})
-  add_definitions(-DPHIST_HAVE_GHOST)
-else()
-  message(WARNING "Ghost is required for the scheduling in phist, without it things may "
-                " not be functional.                                                    "
-                "Set environment variable GHOST_HOME to help cmake find it.             ")
-#  message(ERROR "Ghost is a prerequisite of phist now because of the task-queue"
-#                "Set environment variable GHOST_HOME to help cmake find it.")
 endif()
 
 find_package(Likwid PATHS $ENV{LIKWID_HOME} Optional)
@@ -150,17 +132,22 @@ elseif  (PHIST_KERNEL_LIB STREQUAL "tpetra")
   add_definitions(-DPHIST_KERNEL_LIB_TPETRA)
 elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   # we already link with ghost because of the queuing system  
+  list(APPEND LOAD_TRILI_PKG "Belos")
   add_definitions(-DPHIST_KERNEL_LIB_GHOST)
 else ()
   message( FATAL_ERROR "PHIST_KERNEL_LIB not set" )
 endif ()
 
+
 # these specific versions of type-generic drivers have to be created
+if  (PHIST_KERNEL_LIB STREQUAL "epetra")
+set(TG_Types D)
+else ()
 set(TG_Types S 
              D 
              C 
              Z)
-
+endif ()
 set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp)
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c)
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.c
@@ -185,6 +172,24 @@ list(APPEND PHIST_LIBS phist_solvers)
 list(APPEND PHIST_LIBS phist_core)
 list(APPEND PHIST_LIBS phist_kernels_${PHIST_KERNEL_LIB})
 list(APPEND PHIST_LIBS phist_tools)
+
+# ghost is a requirement of phist now because of the task queue
+find_package(Ghost PATHS $ENV{GHOST_HOME})
+message(STATUS "GHOST_Found=${GHOST_Found}")
+
+if (GHOST_Found)
+  include_directories(${GHOST_INCLUDE_DIRS})
+  link_directories(${GHOST_LIBRARY_DIRS})
+  list(APPEND PHIST_LIBS ${GHOST_LIBRARIES})
+  add_definitions(-DPHIST_HAVE_GHOST)
+else()
+  message(WARNING "Ghost is required for the scheduling in phist, without it things may "
+                " not be functional.                                                    "
+                "Set environment variable GHOST_HOME to help cmake find it.             ")
+#  message(ERROR "Ghost is a prerequisite of phist now because of the task-queue"
+#                "Set environment variable GHOST_HOME to help cmake find it.")
+endif()
+
 
 foreach(PKG ${LOAD_TRILI_PKG})
   find_package(${PKG} REQUIRED)

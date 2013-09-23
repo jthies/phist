@@ -3,6 +3,7 @@
 
 #include <limits>
 #include <complex>
+#include <cstdlib>
 
 #include "phist_void_aliases.h"
 #include "phist_operator.h"

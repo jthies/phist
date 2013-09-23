@@ -78,7 +78,7 @@ void SUBR(lanczos)(TYPE(const_op_ptr) op,
   //int i,lda,nloc;
   *num_iters=0;
   
-  if (op->range_map != op->domain_map)
+  if (op->range_map != op->domain_map || op->range_map==NULL)
     {
     *ierr=-1; // maps of operator should point to same object (A should be a square matrix)
               // TODO - we can't implement this easily in ghost, maybe the test should be
@@ -88,12 +88,18 @@ void SUBR(lanczos)(TYPE(const_op_ptr) op,
   const_comm_ptr_t comm;
   PHIST_CHK_IERR(phist_map_get_comm(op->range_map,&comm,ierr),*ierr);
 
+  PHIST_OUT(1,"create vectors");
   PHIST_CHK_IERR(SUBR(mvec_create)(&vold,op->domain_map,1,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_create)(&vnew,op->domain_map,1,ierr),*ierr);
+
+  PHIST_OUT(3,"vold @ %p\n",vold);
+  PHIST_OUT(3,"vnew @ %p\n",vnew);
+
   // S will store the Ritz vectors
   // it would be nice if we could do these things with a traits class eventually,
   // rather than with macros.
-#ifdef _IS_DOUBLE_  
+  PHIST_OUT(1,"create matrix for ritz vectors");
+#ifdef _IS_DOUBLE_
   PHIST_CHK_IERR(phist_DsdMat_create(&S,nIter,nIter,comm,ierr),*ierr);
   // pointer to the data in S
   PHIST_CHK_IERR(phist_DsdMat_extract_view(S,&S_ptr_t, &lds,ierr),*ierr);
@@ -104,9 +110,11 @@ void SUBR(lanczos)(TYPE(const_op_ptr) op,
 #endif
   
   // vold = random start vector, r=vold
+  PHIST_OUT(1,"initialize vectors");
   PHIST_CHK_IERR(SUBR(mvec_put_value)(vold,st::zero(),ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_random)(vnew,ierr),*ierr);
 
+  PHIST_OUT(1,"normalize start vector");
   PHIST_CHK_IERR(SUBR(mvec_normalize)(vnew,&nrm,ierr),*ierr);
 
   beta = st::one();
@@ -140,9 +148,9 @@ void SUBR(lanczos)(TYPE(const_op_ptr) op,
            nconv=0;
            for (i=0;i<n;i++)
              {
-//             fprintf(stdout,"S[%d] %4.2e %4.2e %4.2e\n",i,S_ptr_t[i*lds],S_ptr_t[i*lds+1],S_ptr_t[i*lds+2]);
+             //fprintf(stdout,"S[%d] %4.2e %4.2e %4.2e\n",i,S_ptr_t[i*lds],S_ptr_t[i*lds+1],S_ptr_t[i*lds+2]);
              r_est[i]=fabs(betas[it+1]*S_ptr_t[i*lds+it]);
-//             fprintf(stdout,"lmb[%d] = %e, ||r|| approx. %e\n",i,falphas[i],r_est[i]);
+             //fprintf(stdout,"lmb[%d] = %e, ||r|| approx. %e\n",i,falphas[i],r_est[i]);
              if (r_est[i]<tol)
                {
                converged[i]=1;
@@ -154,7 +162,8 @@ void SUBR(lanczos)(TYPE(const_op_ptr) op,
                inext=i;
                }
              }
-//           printf("it %d, %d converged, next eig to converge: %e\t||r|| est: %e\n",n,nconv,falphas[inext],r_est[inext]);
+           PHIST_OUT(1,"it %d, %d converged, next eig to converge: %e\t||r|| est: %e\n",
+                n, nconv, falphas[inext], r_est[inext]);
            if (nconv>=*num_eigs) break;
            }
          }
