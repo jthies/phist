@@ -451,12 +451,15 @@ void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
                                         _ST_ beta, TYPE(mvec_ptr) vy, 
                                         int* ierr)
   {
+#include "phist_std_typedefs.hpp"
+  ENTER_FCN(__FUNCTION__);
   *ierr=0;
   
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::crsMat_t,A,vA,*ierr);
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,x,vx,*ierr);
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,y,vy,*ierr);
-
+  PHIST_OUT(9,"alpha=%g+i%g\n",st::real(alpha),st::imag(alpha));
+  PHIST_OUT(9,"beta=%g+i%g\n",st::real(beta),st::imag(beta));
   Traits<_ST_>::crsMVM_t spMVM(Teuchos::rcp(A,false));
   _TRY_CATCH_(spMVM.apply(*x,*y,Teuchos::NO_TRANS,alpha,beta),*ierr);
 

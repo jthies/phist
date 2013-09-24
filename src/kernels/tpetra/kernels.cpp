@@ -1,8 +1,19 @@
+#include "phist_macros.h"
 #include "typedefs.hpp"
 #include "../phist_kernels.h"
 #include "phist_trilinos_macros.h"
+#include "phist_ScalarTraits.hpp"
 
+#include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_RCP.hpp"
+#include "MatrixMarket_Tpetra.hpp"
+#include "Tpetra_MatrixIO.hpp"
+
+#include "BelosTpetraAdapter.hpp"
+#include "BelosTsqrOrthoManager.hpp"
+
+
 
 extern "C" {
 
