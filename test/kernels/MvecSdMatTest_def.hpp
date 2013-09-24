@@ -54,7 +54,6 @@ public:
       SUBR(sdMat_create)(&M2_,this->m_,this->m_,this->comm_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
       SUBR(sdMat_extract_view)(M2_,&M2_vp_,&this->ldaM2_,&this->ierr_);
-
       }
     stride_=1;
     }

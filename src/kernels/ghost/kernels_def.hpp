@@ -161,7 +161,7 @@ void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
         dmtraits->flags = GHOST_VEC_DEFAULT; 
         dmtraits->nrows=nrows;
         dmtraits->nrowshalo=nrows;
-        dmtraits->nrowspadded=nrows;// TODO - leave to ghost
+        dmtraits->nrowspadded=ghost_pad(nrows,GHOST_PAD_MAX);
         dmtraits->nvecs=ncols;
         dmtraits->datatype=st::ghost_dt;
 
@@ -181,13 +181,15 @@ else
   }
 #endif
 
-  // TODO - how to create correct context here?
+  // I think the sdMat should not have a context
+  ghost_context_t* ctx=NULL;
+/*
   ghost_context_t* ctx=ghost_createContext(nrows, ncols, GHOST_CONTEXT_DEFAULT, 
         NULL, *comm, 1.0);
+*/
   result=ghost_createVector(ctx,dmtraits);
   ST zero = st::zero();
   result->fromScalar(result,&zero);
-  PHIST_OUT(9,"sdMat nrows: %ld\n",result->traits->nrows);
   *vM=(TYPE(sdMat_ptr))result;
   }
 

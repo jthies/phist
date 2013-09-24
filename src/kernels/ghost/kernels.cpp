@@ -110,7 +110,13 @@ void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int
   map->ctx=ghost_createContext(nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,*comm,1.0);
 
   map->vtraits_template=phist_default_vtraits();
-  map->vtraits_template->flags = GHOST_VEC_LHS|GHOST_VEC_RHS;
+  // in ghost terminology, we look at LHS=A*RHS, the LHS is based on the
+  // row distribution of A, the RHS has halo elements to allow importing from
+  // neighbors. It is not possible to construct an RHS without a matrix, so if
+  // we want to create one we need to get the 'map' from the matrix (e.g. the
+  // domain map which is the same as the col map in ghost). A RHS vector can
+  // be used as LHS, however.
+  map->vtraits_template->flags = GHOST_VEC_LHS;
 
   *vmap=(map_ptr_t)(map);
   }

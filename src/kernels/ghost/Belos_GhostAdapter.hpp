@@ -4,6 +4,7 @@
 #include "ghost.h"
 #include "ghost_vec.h"
 #include "phist_ScalarTraits.hpp"
+#include "phist_macros.h"
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_Array.hpp>
 
@@ -38,18 +39,26 @@ namespace Belos {
     typedef typename st::magn_t magn_t;
 
     static Teuchos::RCP<ghost_vec_t > Clone( const ghost_vec_t& mv, const int numvecs )
-    { 
-      // TODO - this actually copies the data as well
-      // traits clonen, neuen Vektor erstellen
-//      return Teuchos::rcp( mv.extract(const_cast<ghost_vec_t*>(&mv),0,numvecs) );
+    {
+      // TODO - this function is not supposed to copy the data, but
+      //        we have to do something to get the openMP 'first touch' rule right
+      ghost_vec_t& _mv = const_cast<ghost_vec_t&>(mv);
+      ghost_vtraits_t* vtraits = ghost_cloneVtraits(mv.traits);
+      vtraits->nvecs=numvecs;
+      ghost_vec_t* mv_clone = ghost_createVector(mv.context,vtraits);
+      mv_clone->fromVec(mv_clone,&_mv,0);
+      return Teuchos::rcp( mv_clone ); // TODO - memory management won't work because ghost_vec_t has no destructor!
+                                       // we probably have to write C++ wrappers for ghost structs first
     }
 
     static Teuchos::RCP<ghost_vec_t > CloneCopy( const ghost_vec_t& mv )
     {
       ghost_vec_t& _mv = const_cast<ghost_vec_t&>(mv);
-      return       Teuchos::rcp(
-        _mv.clone(&_mv,0,mv.traits->nvecs) 
-      );
+      ghost_vtraits_t* vtraits = ghost_cloneVtraits(mv.traits);
+      ghost_vec_t* mv_clone = ghost_createVector(mv.context,vtraits);
+      mv_clone->fromVec(mv_clone,&_mv,0);
+      return Teuchos::rcp( mv_clone ); // TODO - memory management won't work because ghost_vec_t has no destructor!
+                                       // we probably have to write C++ wrappers for ghost structs first
     }
 
     static Teuchos::RCP<ghost_vec_t > CloneCopy( const ghost_vec_t& mv, const std::vector<int>& index )
@@ -296,7 +305,6 @@ namespace Belos {
       if ((typename std::vector<int>::size_type)A.traits->nvecs > index.size()) {
         Asub = CloneViewNonConst(*Asub,Teuchos::Range1D(0,index.size()-1)).get();
       }
-    //TODO - copying vector data in ghost? clone and extract create new vectors!
     mvsub->fromVec(mvsub.get(),Asub,0);
     }
 
@@ -422,9 +430,11 @@ namespace Belos {
                 dmtraits.nrowspadded=M.stride();
                 dmtraits.nvecs=M.numCols();
                 dmtraits.datatype=st::ghost_dt;
-                                                  
-      //TODO: create context
-      ghost_vec_t* Mghost=ghost_createVector(NULL,&dmtraits);
+
+      //! we don't need a context for serial dense matrices
+      ghost_context_t* ctx = NULL;
+      
+      ghost_vec_t* Mghost=ghost_createVector(ctx,&dmtraits);
       Mghost->viewPlain(Mghost, (void*)M.values(),
                 Mghost->traits->nrows, Mghost->traits->nvecs,
                 0,0,Mghost->traits->nrowspadded);
