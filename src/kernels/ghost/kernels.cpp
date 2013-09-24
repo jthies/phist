@@ -29,12 +29,12 @@ const int MPI_COMM_WORLD=0;
 // In ghost this is handled differently, the 'context' is the main object for describing  
 // communication patterns, and it is owned by a sparse matrix. In order to create a vector
 // we need the vtraits_t object, which also knows about number of vectors and             
-// data type. So we define our own struct with a pointer to the context object and the    
-// flags required to create the traits object in mvec_create(). 
+// data type. So we define our own struct with a pointer to the context object and a temp-
+// late for cloning the vtraits in mvec_create
 typedef struct ghost_map_t
   {
   ghost_context_t* ctx;
-  int vtraits_flags;
+  ghost_vtraits_t* vtraits_template;
   } ghost_map_t;
 
 // initialize ghost
@@ -42,6 +42,8 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
   {
   *ierr=0;
   ghost_init(*argc, *argv);
+  ghost_printSysInfo();
+  ghost_printGhostInfo();
   }
 
 // finalize ghost
@@ -84,6 +86,17 @@ void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* ierr)
   *size=ghost_getNumberOfRanks(*comm);
   }
 
+//! private helper function to create a vtraits object
+ghost_vtraits_t* phist_default_vtraits()
+  {
+  ghost_vtraits_t *vtraits = (ghost_vtraits_t*)malloc(sizeof(ghost_vtraits_t));
+  vtraits->nrows=0; // get from context
+  vtraits->nrowshalo=0; // get from context
+  vtraits->nrowspadded=0; // get from context
+  vtraits->flags = GHOST_VEC_DEFAULT;
+  vtraits->nvecs=1;
+  }
+
 //! this generates a default map with linear distribution of points among
 //! processes. Vectors based on this map will have halo points so that   
 //! they can be used as either X or Y in Y=A*X operations.
@@ -95,7 +108,10 @@ void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int
   ghost_map_t* map = new ghost_map_t;
   
   map->ctx=ghost_createContext(nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,*comm,1.0);
-  map->vtraits_flags = GHOST_VEC_LHS;
+
+  map->vtraits_template=phist_default_vtraits();
+  map->vtraits_template->flags = GHOST_VEC_LHS|GHOST_VEC_RHS;
+
   *vmap=(map_ptr_t)(map);
   }
 
@@ -124,7 +140,7 @@ void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr)
   {
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const ghost_map_t,map,vmap,*ierr);
-  *nloc=map->ctx->communicator->lnrows[ghost_getRank(MPI_COMM_WORLD)];
+  *nloc=map->ctx->communicator->lnrows[ghost_getRank(map->ctx->mpicomm)];
   }
 
 //! returns the smallest global index in the map appearing on my partition.
