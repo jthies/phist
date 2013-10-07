@@ -347,7 +347,7 @@ namespace ghost {
     lidx_t A_len = A.traits->nrowspadded*A.traits->nvecs;
     Teuchos::ArrayRCP<ST> values((scalar_type*)A.val,0,A_len,false);
     Teuchos::RCP<node_type> node = createNode();
-  Kokkos::MultiVector<scalar_type, node_type> KMV(node);
+    Kokkos::MultiVector<scalar_type, node_type> KMV(node);
     KMV.initializeValues ((size_t)A.traits->nrows,
                       (size_t)A.traits->nvecs,
                       values,
@@ -358,7 +358,7 @@ namespace ghost {
       return KMV;
     }
 
-  Teuchos::RCP<node_type> createNode()
+ static Teuchos::RCP<node_type> createNode()
     {
     Teuchos::ParameterList nodeParams(node_type::getDefaultParameters());
     nodeParams.set("Num Threads",ghost_getNumberOfPhysicalCores());

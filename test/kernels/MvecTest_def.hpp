@@ -22,7 +22,7 @@ public:
         for (int i=0;i<nloc_*stride_;i+=stride_)
           {
           vec1_vp_[j*lda_+i]=random_number();
-          vec2_vp_[i]=st::one();
+          vec2_vp_[j*lda_+i]=st::one();
           }
       }
     }
@@ -116,6 +116,7 @@ public:
       }
     }
 
+  // X = 1*Y + 0*X = Y
   TEST_F(CLASSNAME, copy_by_axpy)
     {
     if (typeImplemented_)
@@ -129,5 +130,52 @@ public:
       }
     
     }
-    
 
+  // X = 0*Y + a*X = a*X
+  TEST_F(CLASSNAME, scale_by_axpy)
+    {
+    if (typeImplemented_)
+      {
+      ST alpha = st::zero();
+      ST beta  = st::rand();
+      PHIST_OUT(9,"axpy, alpha=%f+%f i, beta=%f+%f i",st::real(alpha),
+        st::imag(alpha),st::real(beta),st::imag(beta));
+      PrintVector(std::cerr,"before scale",
+        vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+      SUBR(mvec_add_mvec)(alpha,vec1_,beta,vec2_,&ierr_);
+      PrintVector(std::cerr,"after scale",
+        vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+      ASSERT_EQ(0,ierr_);
+            
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,beta));
+      }
+    
+    }
+
+
+// TODO - missing tests
+
+// only test the Belos interface for ghost, we didn't write
+// the interfaces for Epetra or Tpetra so it is not our problem.
+#ifdef PHIST_KERNEL_LIB_GHOST
+
+  // runs all tests from the Belos MvTraits tester
+  TEST_F(CLASSNAME, belos_iface)
+    {
+    if (typeImplemented_)
+      {
+      Teuchos::RCP<Belos::OutputManager<ST> > MyOM
+        = Teuchos::rcp( new Belos::OutputManager<ST>() );
+      MyOM->setVerbosity( Belos::Warnings|Belos::Debug);
+
+      ghost_vec_t* v = (ghost_vec_t*)vec1_;
+      Teuchos::RCP<ghost_vec_t> ivec = Teuchos::rcp(v,false);
+
+      // test the multivector and its adapter
+      bool berr=Belos::TestMultiVecTraits<ST,ghost_vec_t>(MyOM,ivec);
+      ASSERT_EQ(true,berr);
+      }
+    
+    }
+    
+#endif

@@ -237,7 +237,8 @@ namespace Belos {
 
     static void MvScale ( ghost_vec_t& mv, const std::vector<Scalar>& alphas )
     {
-    mv.vscale(&mv,&alphas[0]);
+    void* val = (void*)(&alphas[0]);
+    mv.vscale(&mv,val);
     }
 
     // C=alpha*A*B

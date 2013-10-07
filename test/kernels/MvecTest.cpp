@@ -6,6 +6,12 @@
 #include "KernelTestWithMap.h"
 #include "KernelTestWithVectors.h"
 
+#ifdef PHIST_KERNEL_LIB_GHOST
+#include "Belos_GhostAdapter.hpp"
+#include "BelosMVOPTester.hpp"
+#include "BelosOutputManager.hpp"
+#endif
+
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif

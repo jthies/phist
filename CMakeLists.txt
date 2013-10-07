@@ -241,8 +241,14 @@ set(TEST_SOURCES
     test/mainTest.cpp)
     
 file(GLOB TestMatricesMM ${CMAKE_SOURCE_DIR}/test/matrices/*.mm)
+file(GLOB TestMatricesBIN ${CMAKE_SOURCE_DIR}/test/matrices/*.bin)
 
 foreach (mat ${TestMatricesMM})
+  get_filename_component(${mat} mat_name NAME)
+  configure_file(${mat} ${CMAKE_CURRENT_BINARY_DIR}/${mat_name} COPYONLY)
+  list(APPEND TEST_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${mat_name})
+endforeach()
+foreach (mat ${TestMatricesBIN})
   get_filename_component(${mat} mat_name NAME)
   configure_file(${mat} ${CMAKE_CURRENT_BINARY_DIR}/${mat_name} COPYONLY)
   list(APPEND TEST_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${mat_name})

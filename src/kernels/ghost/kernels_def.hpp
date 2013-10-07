@@ -588,7 +588,7 @@ void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE(const_mvec
   _CAST_PTR_FROM_VOID_(ghost_vec_t,W,vW,*ierr);
   _CAST_PTR_FROM_VOID_(ghost_vec_t,C,vC,*ierr);
   char trans;
-#ifdef IS_COMPLEX
+#ifdef _IS_COMPLEX_
   trans='C';
 #else
   trans='T';
@@ -642,23 +642,21 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(ghost_vec_t,R,vR,*ierr);
 
-*ierr=-99;
-return;
-/*
-
   int stride = R->traits->nrowspadded;
   int nrows = R->traits->nrows;
   int ncols = R->traits->nvecs;
     
 #ifdef TESTING
   _CHECK_ZERO_(nrows-ncols,*ierr);
-  _CHECK_ZERO_(nrows-V->traits->nrows,*ierr);
+  _CHECK_ZERO_(nrows-(V->traits->nvecs),*ierr);
 #endif  
 
-  Teuchos::RCP<Teuchos_sdMat_t> R_view
-        = CreateTeuchosViewNonConst(Teuchos::rcp(R,false),ierr);
-  if (*ierr) return;
-  
+  PHIST_OUT(9,"create Teuchos view of R");
+  Teuchos::RCP<Traits<_ST_ >::Teuchos_sdMat_t> R_view;
+  PHIST_CHK_IERR(R_view = Traits<_ST_ >::CreateTeuchosViewNonConst
+        (Teuchos::rcp(R,false),ierr),*ierr);
+
+  PHIST_OUT(9,"create TSQR ortho manager");  
   Belos::TsqrOrthoManager<_ST_, ghost_vec_t> tsqr("phist/ghost");
   Teuchos::RCP<const Teuchos::ParameterList> valid_params = 
         tsqr.getValidParameters();
@@ -668,13 +666,14 @@ return;
   Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp
         (new Teuchos::ParameterList(*valid_params));
   params->set("randomizeNullSpace",true);
+  PHIST_OUT(9,"set TSQR parameters");
   tsqr.setParameterList(params);
 
   int rank;
   _TRY_CATCH_(rank = tsqr.normalize(*V,R_view),*ierr);
+  PHIST_OUT(9,"V has %d columns and rank %d",ncols,rank);
   *ierr = ncols-rank;// return positive number if rank not full.
   return;
-  */
   }
 
 

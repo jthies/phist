@@ -3,7 +3,13 @@
 #include "../phist_kernels.h"
 
 #include "phist_typedefs.h"
+#include "typedefs.hpp"
 #include "phist_ScalarTraits.hpp"
+
+// these are from Trilinos, we need them to interface
+// the TSQR library for orthogonalizing tall skinny matrices.
+#include "Ghost_TsqrAdaptor.hpp"
+#include "Belos_GhostAdapter.hpp"
 #include "BelosTsqrOrthoManager.hpp"
 
 #ifdef PHIST_HAVE_MPI
