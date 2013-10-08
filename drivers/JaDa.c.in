@@ -1,0 +1,178 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+#include "phist_macros.h"
+#include "phist_kernels.h"
+#include "phist_operator.h"
+//#include "phist_jada.h"
+#include ${PHIST_TG_HFILE}
+
+
+typedef _ST_ ST;
+typedef _MT_ MT;
+typedef _TYPE_(mvec_ptr) mvec_ptr_t;
+typedef _TYPE_(const_mvec_ptr) const_mvec_ptr_t;
+
+typedef _TYPE_(sdMat_ptr) sdMat_ptr_t;
+typedef _TYPE_(const_sdMat_ptr) const_sdMat_ptr_t;
+
+typedef _TYPE_(crsMat_ptr) crsMat_ptr_t;
+typedef _TYPE_(const_crsMat_ptr) const_crsMat_ptr_t;
+
+typedef _TYPE_(op_ptr) op_ptr_t;
+typedef _TYPE_(const_op_ptr) const_op_ptr_t;
+
+int main(int argc, char** argv)
+  {
+  int rank, num_proc;
+  int i, ierr;
+  int verbose;
+
+  comm_ptr_t comm;
+  crsMat_ptr_t A;
+  op_ptr_t A_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  
+  const_map_ptr_t map; // map (element distribution) of vectors according to 
+                       // the distribution of matrix rows
+  mvec_ptr_t X; // multivector for getting the eigenvectors
+  
+  ST* evals; // for real non-symmetric matrices we can get complex pairs,
+             // so we need twice the amount of memory to store the eigenvalues 
+  MT* resid;
+
+  ST target;
+  MT tol;
+  char* filename;
+  
+  int num_eigs,num_iters,max_iters;
+  int minBas,maxBas; /* whenever maxBas vectors have been created, we shrink the search space to minBas */
+  
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+
+  PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
+
+  PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&ierr),ierr);
+
+  verbose= (rank==0);
+
+
+  if (argc<2)
+    {
+    if (verbose) fprintf(stdout,"Usage: ./XJaDa <matrix filename> [<num eigs>] [<target>] [<tol>] [<max iters> <min basis> <max basis>]");
+    return 1;
+    }
+
+  filename = argv[1];
+  
+  if (argc<3)
+    {
+    num_eigs=10;
+    }
+  else
+    {
+    num_eigs=atoi(argv[2]);
+    }
+
+  if (argc<4)
+    {
+    target=ZERO;
+    }
+  else
+    {
+    target=atof(argv[3]); //TODO - input complex shifts
+    }
+    
+  if (argc<5)
+    {
+    tol=1.0e-10;
+    }
+  else
+    {
+    tol=(MT)atof(argv[4]);
+    }
+
+  if (argc<6)
+    {
+    max_iters=250;
+    }
+  else
+    {
+    max_iters=atoi(argv[5]);
+    }
+
+  if (argc<7)
+    {
+    minBas=10;
+    }
+  else
+    {
+    minBas=atoi(argv[6]);
+    }
+
+  if (argc<8)
+    {
+    maxBas=minBas+20;
+    }
+  else
+    {
+    maxBas=atoi(argv[7]);
+    }
+
+  if (verbose) 
+    {
+    fprintf(stdout,"looking for %d Eigenpairs of largest magnitude\n",num_eigs);
+    }  
+  PHIST_ICHK_IERR(_SUBR_(crsMat_read_mm)(&A,filename,&ierr),ierr);
+  
+  PHIST_ICHK_IERR(_SUBR_(crsMat_get_domain_map)(A, &map,&ierr),ierr);
+
+  PHIST_ICHK_IERR(_SUBR_(mvec_create)(&X,map,num_eigs,&ierr),ierr);
+
+  num_iters=max_iters;
+  // create operator wrapper for computing Y=A*X using a CRS matrix
+  A_op = (op_ptr_t)malloc(sizeof(_TYPE_(op)));
+  PHIST_ICHK_IERR(_SUBR_(op_wrap_crsMat)(A_op,A,&ierr),ierr);
+  
+  // allocate memory for eigenvalues and residuals
+  //TODO - complex eigenpairs???
+  evals = (MT*)malloc(num_eigs*sizeof(MT));
+  resid = (MT*)malloc(num_eigs*sizeof(MT));
+
+// TODO - interface
+/*
+  SUBR(jada)(A_op,X,evals,
+        resid, target, tol,
+        &num_iters,&num_eigs,
+        minBas, maxBas,
+        &ierr);
+/*
+  if (ierr!=0)
+    {
+    if (verbose) fprintf(stdout,"code %d returned from Lanczos",ierr);
+    if (ierr<0) return ierr;
+    }
+  if (verbose)
+    {
+    fprintf(stdout,"Found %d eigenpairs after %d iterations\n",num_eigs,num_iters);
+    }
+
+  if (verbose && num_eigs>0)
+    {
+    fprintf(stdout,"Eigenvalue \t Ritz Residual \n");
+    for (i=0;i<num_eigs;i++)
+      {
+      fprintf(stdout,"%16.8e\t%4.2e\n",evals[i],resid[i]);
+      }
+    }
+
+  free(evals);
+  free(resid);
+  
+  PHIST_ICHK_IERR(_SUBR_(crsMat_delete)(A,&ierr),ierr);
+  PHIST_ICHK_IERR(_SUBR_(mvec_delete)(X,&ierr),ierr);
+  free(A_op);
+  PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
+  return ierr;
+  }
