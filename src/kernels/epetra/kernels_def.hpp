@@ -254,6 +254,18 @@ void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
   *Vcols = *Vblock;
   }
 
+//! not implemented
+void SUBR(mvec_view_block)(TYPE(mvec_ptr) vM,
+                             TYPE(mvec_ptr)* vMblock,
+                             int imin, int imax, int jmin, int jmax, int* ierr)
+  {
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,M,vM,*ierr);
+  Epetra_MultiVector *Mblock=NULL;
+  *ierr=-99; // not yet implemented for Epetra, cf. tpetra for an example how to do it
+  *vVblock = (TYPE(mvec_ptr))Vblock;
+  }
+
 //! get a new matrix that is a copy of some rows and columns of the original one,  
 //! Mblock = M(imin:imax,jmin:jmax). The object Mblock must be created beforehand 
 //! and the corresponding columns of M are copied into the value array    
