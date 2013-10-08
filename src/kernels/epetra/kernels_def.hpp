@@ -270,8 +270,8 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) vM,
 //! Mblock = M(imin:imax,jmin:jmax). The object Mblock must be created beforehand 
 //! and the corresponding columns of M are copied into the value array    
 //! of Mblock. M is not modified.
-void SUBR(sdMat_get_block)(TYPE(const_mvec_ptr) M, 
-                             TYPE(mvec_ptr) Mblock,
+void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) M, 
+                             TYPE(sdMat_ptr) Mblock,
                              int imin, int imax, int jmin, int jmax, int* ierr)
   {
   *ierr=-99;

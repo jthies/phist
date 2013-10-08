@@ -176,7 +176,7 @@ void SUBR(mvec_set_block)(TYPE(mvec_ptr) V,
 
 //! get a new matrix that is a view of some rows and columns of the original one, 
 //! Mblock = M(imin:imax,jmin:jmax). The behavior is analogous to mvec_view_block.
-void SUBR(sdMat_get_block)(TYPE(mvec_ptr) M, 
+void SUBR(sdMat_get_block)(TYPE(const_mvec_ptr) M, 
                              TYPE(mvec_ptr) Mblock,
                              int imin, int imax, int jmin, int jmax, int* ierr);
 
@@ -184,8 +184,8 @@ void SUBR(sdMat_get_block)(TYPE(mvec_ptr) M,
 //! Mblock = M(imin:imax,jmin:jmax). The object Mblock must be created beforehand 
 //! and the corresponding columns of M are copied into the value array    
 //! of Mblock. M is not modified.
-void SUBR(sdMat_get_block)(TYPE(const_mvec_ptr) M, 
-                             TYPE(mvec_ptr) Mblock,
+void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) M, 
+                             TYPE(sdMat_ptr) Mblock,
                              int imin, int imax, int jmin, int jmax, int* ierr);
 
 //! given a serial dense matrix Mblock, set M(imin:imax,jmin:jmax)=Mblock by 
