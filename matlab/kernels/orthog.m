@@ -32,6 +32,11 @@ if (nargin==3)
   relax=varargin{3};
 end
 
+if isempty(V)
+  V=zeros(size(W,1),0);
+end
+
+
 n=size(V,1);
 m=size(V,2);
 k=size(W,2);

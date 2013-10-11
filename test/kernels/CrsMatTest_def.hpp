@@ -174,13 +174,16 @@ bool haveMats_;
       //alpha*I*X+beta*Y = alpha*X+beta*Y?
       SUBR(mvec_random)(vec1_,&ierr_);
       SUBR(mvec_random)(vec2_,&ierr_);
+      SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&ierr_);
       alpha = random_number();
       beta = random_number();
+      // v2 = alpha*v1 + beta*v2 (=alpha*v1+beta*v3)
       SUBR(crsMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      SUBR(mvec_add_mvec)(-alpha, vec1_,st::one()/beta,vec2_,&ierr_);
+      SUBR(mvec_add_mvec)(-alpha, vec1_,st::one(),vec2_,&ierr_);
+      SUBR(mvec_scale)(vec3_,beta,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
+      ASSERT_NEAR(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_),10*mt::eps());
       }
     }
 

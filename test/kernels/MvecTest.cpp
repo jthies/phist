@@ -7,6 +7,7 @@
 #include "KernelTestWithVectors.h"
 
 #ifdef PHIST_KERNEL_LIB_GHOST
+#define DO_BELOS_TESTS
 #include "phist_GhostMV.hpp"
 #include "phist_rcp_helpers.hpp"
 #include "Belos_GhostAdapter.hpp"
@@ -22,6 +23,7 @@ using namespace testing;
 
 #define _N_ 9
 #define _NV_ 1
+#define DO_BELOS_TESTS
 #ifdef CLASSNAME
 #undef CLASSNAME
 #endif
@@ -46,6 +48,10 @@ using namespace testing;
 
 #include "phist_gen_z.h"
 #include "MvecTest_def.hpp"
+
+// the Belos Tester selects the number of vectors itself,
+// it is enough to test it for one vector length, I think
+#undef DO_BELOS_TESTS
 
 #undef _N_
 #define _N_ 6

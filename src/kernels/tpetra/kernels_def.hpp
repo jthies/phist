@@ -276,22 +276,24 @@ void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
                              int imin, int imax, int jmin, int jmax, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,V,vM,*ierr);
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,M,vM,*ierr);
   Traits<_ST_>::sdMat_t* Mblock;
   int lda=M->getStride();
   int nrows=imax-imin+1;
   int ncols=jmax-jmin+1;
   Teuchos::ArrayRCP<_ST_> valptr0 = M->get1dViewNonConst();
-  _ST_* val = valptr0->getRawPtr();
+
+  _ST_* val = valptr0.getRawPtr();
   int len=lda*nrows - imin;
   Teuchos::ArrayView<_ST_> valptr(val+imin,len);
+
   Teuchos::SerialComm<int> scomm;
-  Teuchos::RCP<map_t> localMap =
+  Teuchos::RCP<map_t> smap =
         Teuchos::rcp(new map_t(nrows, 0, Teuchos::rcpFromRef< const Teuchos::Comm<int> >(scomm), 
                 Tpetra::LocallyReplicated));
 
-  _TRY_CATCH_(Mblock = new Traits<_ST_>::sdMat_t(smap,valptr,ncols),*ierr);
-  *vMblock = (TYPE(sdMat_ptr))(Mblock.release().get());                        
+  _TRY_CATCH_(Mblock = new Traits<_ST_>::sdMat_t(smap,valptr,lda,ncols),*ierr);
+  *vMblock = (TYPE(sdMat_ptr))Mblock;                        
   }
 
 //! get a new matrix that is a copy of some rows and columns of the original one,  

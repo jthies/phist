@@ -149,7 +149,8 @@ set(TG_Types S
              Z)
 endif ()
 set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp)
-set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c)
+set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c
+                        ${PROJECT_SOURCE_DIR}/src/tools/phist_rcp_helpers.cpp)
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.c
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_taskbuf.c)
@@ -325,8 +326,12 @@ enable_testing()
 foreach(label ${PHIST_TESTS})
   add_test(${label}-tests ${PRODUCT_NAME}-${label}-test --gtest_output=xml:${CMAKE_SOURCE_DIR}/xunit.xml)
 endforeach()
-# Adding concurrency tests with valgrind-helgrind
-add_test(concurrency-test: ${CMAKE_SOURCE_DIR}/test/multiple_helgrind_run.sh ${CMAKE_SOURCE_DIR}/test ${CMAKE_BINARY_DIR})
+
+# Adding concurrency tests with valgrind-helgrind.
+# This was done by Timo for his bachelor thesis, currently
+# the whole tasking thing is not working and the use/portability
+# of automated valgrind tests is questionable, so we skip this test for now.
+#add_test(concurrency-test: ${CMAKE_SOURCE_DIR}/test/multiple_helgrind_run.sh ${CMAKE_SOURCE_DIR}/test ${CMAKE_BINARY_DIR})
 
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --output-on-failure)

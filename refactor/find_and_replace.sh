@@ -1,6 +1,6 @@
 #!/bin/bash
-REPLACE=__CHECK_ZERO__
-REPL_BY=_CHECK_ZERO_
+REPLACE=crsMat
+REPL_BY=spMat
 
 SED_STRING=s/${REPLACE}/${REPL_BY}/g
 echo $SED_STRING > tmp.sed

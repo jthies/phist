@@ -23,6 +23,10 @@ virtual void SetUp()
     ASSERT_EQ(0,this->ierr_);
     SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&this->lda_,&this->ierr_);
         ASSERT_EQ(0,this->ierr_);
+    SUBR(mvec_create)(&vec3_,this->map_,this->nvec_,&this->ierr_);
+    ASSERT_EQ(0,this->ierr_);
+    SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&this->lda_,&this->ierr_);
+        ASSERT_EQ(0,this->ierr_);
     stride_=1;
     }
   }
@@ -35,6 +39,7 @@ virtual void TearDown()
     {
     SUBR(mvec_delete)(vec1_,&this->ierr_);
     SUBR(mvec_delete)(vec2_,&this->ierr_);
+    SUBR(mvec_delete)(vec3_,&this->ierr_);
     KernelTestWithMap<_Nglob>::TearDown();
     }
   KernelTestWithType< ST >::TearDown();
@@ -162,8 +167,8 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
     }
 
 
-  TYPE(mvec_ptr) vec1_, vec2_;
-  ST *vec1_vp_, *vec2_vp_;
+  TYPE(mvec_ptr) vec1_, vec2_, vec3_;
+  ST *vec1_vp_, *vec2_vp_, *vec3_vp_;
   static const int nvec_=_Nvec;
   lidx_t lda_, stride_;
   };

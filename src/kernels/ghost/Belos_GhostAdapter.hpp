@@ -152,13 +152,19 @@ using ::phist::GhostMV;
           "Belos::MultiVecTraits<Scalar,GhostMV>::CloneView(mv,index): indices must be < mv.traits->nvecs.");
 #endif
       bool constStride=true;
-      int stride=index[1]-index[0];
-      for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
-        if (index[j] != index[j-1]+stride) {
-          constStride=false;
-          break;
+      int stride=1;
+      if (index.size()>1)
+        {
+        stride=index[1]-index[0];
+        for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) 
+          {
+          if (index[j] != index[j-1]+stride) 
+            {
+            constStride=false;
+            break;
+            }
+          }
         }
-      }
       
     // this is to cheat the Belos MVOPTester class, we can't create a view
     // with non-constant stride so we create a copy and issue a warning.
