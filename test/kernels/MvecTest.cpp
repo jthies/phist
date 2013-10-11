@@ -7,6 +7,8 @@
 #include "KernelTestWithVectors.h"
 
 #ifdef PHIST_KERNEL_LIB_GHOST
+#include "phist_GhostMV.hpp"
+#include "phist_rcp_helpers.hpp"
 #include "Belos_GhostAdapter.hpp"
 #include "BelosMVOPTester.hpp"
 #include "BelosOutputManager.hpp"

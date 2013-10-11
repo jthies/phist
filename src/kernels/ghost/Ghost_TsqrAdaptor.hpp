@@ -8,6 +8,7 @@
 #include "phist_typedefs.h"
 #include "ghost.h"
 #include "ghost_util.h"
+#include "phist_GhostMV.hpp"
 
 // @HEADER
 // ***********************************************************************
@@ -95,7 +96,7 @@ namespace ghost {
   template<typename ST>
   class TsqrAdaptor : public Teuchos::ParameterListAcceptorDefaultBase {
   public:
-    typedef ghost_vec_t MV;
+    typedef phist::GhostMV MV;
     typedef ST scalar_type;
     typedef lidx_t ordinal_type;
     typedef typename Kokkos::DefaultNode::DefaultNodeType node_type; // TODO - Node argument not yet used
@@ -323,7 +324,7 @@ namespace ghost {
       typedef TSQR::MessengerBase<scalar_type> base_mess_type;
       // TODO - we only use the default comm here
       RCP<const Teuchos::Comm<int> > comm = Teuchos::rcp(new 
-        Teuchos::MpiComm<int>(mv.context->mpicomm));
+        Teuchos::MpiComm<int>(mv.get()->context->mpicomm));
       RCP<mess_type> mess (new mess_type (comm));
       RCP<base_mess_type> messBase = rcp_implicit_cast<base_mess_type> (mess);
       distTsqr_->init (messBase);
@@ -344,16 +345,16 @@ namespace ghost {
     static Kokkos::MultiVector<scalar_type,node_type>
     getNonConstView (MV& A)
     {
-    lidx_t A_len = A.traits->nrowspadded*A.traits->nvecs;
-    Teuchos::ArrayRCP<ST> values((scalar_type*)A.val,0,A_len,false);
+    lidx_t A_len = A.get()->traits->nrowspadded*A.get()->traits->nvecs;
+    Teuchos::ArrayRCP<ST> values((scalar_type*)A.get()->val,0,A_len,false);
     Teuchos::RCP<node_type> node = createNode();
     Kokkos::MultiVector<scalar_type, node_type> KMV(node);
-    KMV.initializeValues ((size_t)A.traits->nrows,
-                      (size_t)A.traits->nvecs,
+    KMV.initializeValues ((size_t)A.get()->traits->nrows,
+                      (size_t)A.get()->traits->nvecs,
                       values,
-                      (size_t)A.traits->nrowspadded,
-                      (size_t)A.traits->nrows,
-                      (size_t)A.traits->nvecs);
+                      (size_t)A.get()->traits->nrowspadded,
+                      (size_t)A.get()->traits->nrows,
+                      (size_t)A.get()->traits->nvecs);
     
       return KMV;
     }

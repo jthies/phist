@@ -15,10 +15,13 @@ void SUBR(bgmres)(TYPE(const_op_ptr) Op,
 #include "phist_std_typedefs.hpp"  
 #ifdef PHIST_KERNEL_LIB_GHOST
   typedef ghost_vec_t MV;
+  typedef phist::GhostMV BelosMV;
 #elif defined(PHIST_KERNEL_LIB_TPETRA)
-  typedef Tpetra::MultiVector<ST,lidx_t,gidx_t,node_t> MV; 
+  typedef Tpetra::MultiVector<ST,lidx_t,gidx_t,node_t> MV;
+  typedef MV BelosMV;
 #elif defined(PHIST_KERNEL_LIB_EPETRA)
   typedef Epetra_MultiVector MV; 
+  typedef MV BelosMV;
 #endif
   typedef st::op_t OP; // gives Sop_t, Dop_t etc.
 
@@ -28,8 +31,11 @@ void SUBR(bgmres)(TYPE(const_op_ptr) Op,
   int numRhs=1;// get from input vectors
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vX,&numRhs,ierr),*ierr);
   
-  Teuchos::RCP<MV> X = Teuchos::rcp((MV*)vX, false);
-  Teuchos::RCP<const MV> B = Teuchos::rcp((const MV*)vB, false);
+  Teuchos::RCP<BelosMV> X = phist::rcp((MV*)vX, false);
+  Teuchos::RCP<const BelosMV> B = phist::rcp((const MV*)vB, false);
+  // note: our operator nas no destructor, so we should
+  // actually wrap it like the ghost_vec_t (cf. phist_rcp_helpers and phist_GhostMV),
+  // but since Belos does nothing but apply the operator it is not necessary here.
   Teuchos::RCP<const OP> A = Teuchos::rcp((const OP*)Op, false);
 
 ////////////////////////////////////////////////////////////////////
@@ -71,11 +77,11 @@ void SUBR(bgmres)(TYPE(const_op_ptr) Op,
   belosList->set("Output Stream",out->getOStream());
 
 // create Belos problem interface
-Teuchos::RCP<Belos::LinearProblem<ST,MV,OP> > linearSystem
-        = Teuchos::rcp(new Belos::LinearProblem<ST,MV,OP>(A,X,B));
+Teuchos::RCP<Belos::LinearProblem<ST,BelosMV,OP> > linearSystem
+        = Teuchos::rcp(new Belos::LinearProblem<ST,BelosMV,OP>(A,X,B));
 
-Teuchos::RCP<Belos::BlockGmresSolMgr<ST,MV, OP> > gmres
-        = Teuchos::rcp(new Belos::BlockGmresSolMgr<ST,MV, OP>
+Teuchos::RCP<Belos::BlockGmresSolMgr<ST,BelosMV, OP> > gmres
+        = Teuchos::rcp(new Belos::BlockGmresSolMgr<ST,BelosMV, OP>
         (linearSystem, belosList));
 
 

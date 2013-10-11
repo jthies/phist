@@ -169,10 +169,10 @@ public:
       MyOM->setVerbosity( Belos::Warnings|Belos::Debug);
 
       ghost_vec_t* v = (ghost_vec_t*)vec1_;
-      Teuchos::RCP<ghost_vec_t> ivec = Teuchos::rcp(v,false);
+      Teuchos::RCP<phist::GhostMV> ivec = phist::rcp(v,false);
 
       // test the multivector and its adapter
-      bool berr=Belos::TestMultiVecTraits<ST,ghost_vec_t>(MyOM,ivec);
+      bool berr=Belos::TestMultiVecTraits<ST,phist::GhostMV>(MyOM,ivec);
       ASSERT_EQ(true,berr);
       }
     

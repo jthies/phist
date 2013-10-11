@@ -8,6 +8,8 @@
 
 #include "phist_ScalarTraits.hpp"
 
+#include "jada_helpers.hpp"
+
 #include "phist_gen_s.h"
 #include "phist_jada_def.hpp"
 #include "phist_gen_d.h"

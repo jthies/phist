@@ -10,26 +10,16 @@
 //!        converged in Arnoldi, but this requires some additional programming
 //!        effort which we leave for later.
 void _SUBR_(arnoldi)(TYPE(const_op_ptr) op, TYPE(const_mvec_ptr) v0,
-        TYPE(mvec_ptr) V, TYPE(sdMat_ptr) H, int m, int* ierr)
-  {
-#include "phist_std_typedefs.hpp"
-  TYPE(mvec_ptr) v,av,vprev;
-  TYPE(sdMat_ptr) R1,R2;
-  PHIST_CHK_IERR(SUBR(mvec_set_block)(V,v0,0,0,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_view)(V,v,0,0,ierr),*ierr);
-  
-  for (int i=0;i<m;i++)
-    {
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&vprev,0,i,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&av,i+1,i+1,ierr),*ierr);
-    PHIST_CHK_IERR(op->apply(st::one(),op->A_,v,st::zero(),av,ierr),*ierr);
-    // orthogonalize
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R1,0,i,i,i,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R2,i+1,i+1,i,i,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(orthog)(vprev,av,R1,R2,ierr),*ierr);
-    v=av;
-    }
-  }
+        TYPE(mvec_ptr) V, TYPE(sdMat_ptr) H, int m, int* ierr);
+
+ // this function does a Schur decomposition of M(1:m,1:m) into T and S. The Ritz values
+ // appear on the diagonal of T (for the real case there may be 2x2 blocks for complex
+ // conjugate pairs). The nsort flag indicates in which order they should appear:
+ // 0: unsorted
+ // >0: first <nsort> Ritz values according to the 'which' flag (for instance the ones with
+ // largest magnitude, smallest real part etc.) in the top left corner
+ void SUBR(SchurDecomp)(_ST_ M, int ldM, _ST_* T, int ldT, _ST_* S, int ldS,
+         int m, int nsort, int *ierr);
 
 //! tries to compute a given number of eigenpairs (num_eig) of 
 //! an non-hermitian operator A using the Jacobi-Davidson
@@ -59,7 +49,7 @@ void _SUBR_(arnoldi)(TYPE(const_op_ptr) op, TYPE(const_mvec_ptr) v0,
 //! which candidates are complex conjugate pairs and which are real values/vectors.
 void _SUBR_(jada)(_TYPE_(const_op_ptr) op, 
         _TYPE_(mvec_ptr) X,
-        _ST_* evals, _MT_* resid, _ST_ target,
+        _ST_* evals, _MT_* resid, eigSort_t which,
         _MT_ tol,int* num_iters, int* num_eigs,
         int minBas, int maxBas,
         int* ierr)
@@ -74,8 +64,16 @@ void _SUBR_(jada)(_TYPE_(const_op_ptr) op,
   mvec_ptr_t V, AV;
   // current update
   mvec_ptr_t t;
+  // matrix (V,AV)
   sdMat_ptr_t M;
   sdMat_ptr_t Mblock; // to create views of parts of M
+  // Schur-decomposition of M
+  sdMat_ptr_t T, S;
+  sdMat_ptr_t Tblock,Sblock; // to create views of parts of T and S
+
+  // for extracting views of M, T and S (to call lapack etc.)
+  int ldM,ldS,ldT;
+  ST *M_ptr, *S_ptr, *T_ptr; 
   
   //! view of certain columns of V
   mvec_ptr_t Vblock, Vm;
@@ -83,24 +81,19 @@ void _SUBR_(jada)(_TYPE_(const_op_ptr) op,
   mvec_ptr_t AVblock, AVm;
 
   //! Hessenberg matrix from the initial Arnoldi iteration
-  sdMat_ptr_t H;
+  sdMat_ptr_t H0;
   
   bool expand=true;
   bool solve=true;
   
   int nconv=0; // number of converged eigenpairs
   int maxIter=*num_iters;
-  int i,it,n, inext;
+  int i,it,n,m;
   ST alpha, beta;
   int converged[maxIter];
   MT r_est[maxIter];
   MT nrm;
- 
-  int ldm;
-  ST *M_ptr; // will point to the Ritz values
-  
-  //int i,lda,nloc;
-  
+
   *num_iters=0;
   
   const_comm_ptr_t comm;
@@ -110,10 +103,14 @@ void _SUBR_(jada)(_TYPE_(const_op_ptr) op,
   PHIST_CHK_IERR(_SUBR_(mvec_create)(&AV,op->domain_map_,maxBas,ierr),*ierr);
 
   PHIST_CHK_IERR(SUBR(sdMat_create)(&M,maxBas,maxBas,comm,ierr),*ierr);
-  // pointer to the data in M
-  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(M,&M_ptr, &ldm,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&S,maxBas,maxBas,comm,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&T,maxBas,maxBas,comm,ierr),*ierr);
 
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&H0,minBas+1,minBas+1,comm,ierr),*ierr);
+  // pointer to the data in M, S and T
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(M,&M_ptr, &ldM,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S,&S_ptr, &ldS,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(T,&T_ptr, &ldT,ierr),*ierr);
+
   PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vblock,0,minBas,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&H0, 0,minBas,0,minBas,ierr),*ierr);
 
@@ -125,7 +122,7 @@ void _SUBR_(jada)(_TYPE_(const_op_ptr) op,
   PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVblock,0,minBas-1,ierr),*ierr);
   // compute A*V for the first minBas columns which we have now using the Arnoldi relation
   PHIST_CHK_IERR(mvec_times_sdMat)(st::one(),Vblock,H0,st::zero(),AVblock,ierr),*ierr);
-  m=minBas-1;  
+  m=minBas-1;
   expand=false;
   
   PHIST_OUT(1,"Jacobi-Davidson");
@@ -171,24 +168,45 @@ void _SUBR_(jada)(_TYPE_(const_op_ptr) op,
       {
       expand=true;
       }
-//TODO TROET continue here
       
     // now do a Schur decomposition of M into S and T, with the
     // Ritz values on the diagonal of T.
-    //... TODO ...
-    // sort the Schur decomposition according to the target
-    //... TODO ...
 
-  theta=T(1,1);
-  s=S(:,1);
-  u=V*s;
-  Au=AV*s;
-  r=Au-theta*u;
+    // copy T=M. Note that as we just 'view' the upper left blocks,
+    // the pointers M_ptr, T_ptr, S_ptr are still correct
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mblock,0,m,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tblock,0,m,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),Mblock,st::zero(),Tblock,ierr),*ierr);
 
-  atil = Q'*r;
-  rtil = r-Q*atil;
-  nrm=norm(rtil);
+    // unless a restart is impending, sort only the next Ritz value to the top left
+    int sort = m==maxBas-1? minBas: 1;
+    PHIST_CHK_IERR(SUBR(SchurDecomp)(M_ptr,ldM,T_ptr,ldT,S_ptr,ldS,m,sort,ierr),*ierr);
 
+    theta=T_ptr[0]; // first diagonal entry of T is next EV to go for.
+                    // In the real case it may be a complex eigenvalue,
+                    // but we just take the real part then.
+    
+    // get Ritz vector corresponding to theta
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sblock,0,m,0,0,ierr),*ierr);
+    
+    //u=V*s;
+    //...
+    
+    //Au=AV*s;
+    //...
+
+    //r=Au-theta*u;
+    //...
+
+    //atil = Q'*r;
+    //...
+    
+    //rtil = r-Q*atil;
+    //...
+    
+    //nrm=norm(rtil);
+    //...
+    
   PHIST_OUT(1,"%d\t%d\t%8.4g %8.4gi\t\t%8.4g\n",it,m,st::real(theta),st::imag(theta),nrm);
 
   // deflate converged eigenpairs
@@ -339,4 +357,108 @@ void _SUBR_(jada)(_TYPE_(const_op_ptr) op,
 
   return;
   }
+
+
+
+void _SUBR_(arnoldi)(TYPE(const_op_ptr) op, TYPE(const_mvec_ptr) v0,
+        TYPE(mvec_ptr) V, TYPE(sdMat_ptr) H, int m, int* ierr)
+  {
+#include "phist_std_typedefs.hpp"
+  TYPE(mvec_ptr) v,av,vprev;
+  TYPE(sdMat_ptr) R1,R2;
+  PHIST_CHK_IERR(SUBR(mvec_set_block)(V,v0,0,0,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_view)(V,v,0,0,ierr),*ierr);
+  
+  for (int i=0;i<m;i++)
+    {
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&vprev,0,i,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&av,i+1,i+1,ierr),*ierr);
+    PHIST_CHK_IERR(op->apply(st::one(),op->A_,v,st::zero(),av,ierr),*ierr);
+    // orthogonalize
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R1,0,i,i,i,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R2,i+1,i+1,i,i,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(orthog)(vprev,av,R1,R2,ierr),*ierr);
+    v=av;
+    }
+  }
+
+
+ // this function does a Schur decomposition of M(1:m,1:m) into T and S. The Ritz values
+ // appear on the diagonal of T (for the real case there may be 2x2 blocks for complex
+ // conjugate pairs). The sort flag indicates in which order they should appear:
+ // 0: unsorted
+ // >0: first <sort> Ritz values according to the 'which' flag (for instance the ones with
+ // largest magnitude, smallest real part etc.) in the top left corner
+ void SUBR(SchurDecomp)(_ST_ M, int ldM, _ST_* T, int ldT, _ST_* S, int ldS,
+         int m, int nsort, eigSort_t which, int *ierr)
+   {
+#include "phist_std_typedefs.hpp"
+   // this is for XGEES (computing the Schur form)
+   int lwork = std::max(20*m,2*nsort*(m-nsort));
+                          // min required workspace is 3*m 
+                          // for GEES and 2*m*(m-nsort) for 
+                          // TRSEN with condition estimate,
+                          // so this should be enough for  
+                          // good performance of GEES as.  
+   ST work[lwork];
+   // real and imag part of ritz values
+   MT ev_r[m];   // in the complex case this is used as RWORK
+   MT ev_i[m];
+   std::complex<MT> ev[m];
+
+   const char *jobvs="V"; // compute the ritz vectors in S
+   const char *sort="N";  // do not sort Ritz values (we do that later
+                          // because gees only accepts the simple select
+                          // function which does not compare the Ritz values)
+
+ #ifdef IS_COMPLEX
+     PHIST_CHK_IERR(PREFIX(GEES)(jobvs,sort,NULL,&m,T_ptr,&ldT,
+         &sdim,ev,S_ptr,&ldS,work,&lwork,ev_r,NULL,ierr),*ierr);
+ #else
+     PHIST_CHK_IERR(PREFIX(GEES)(jobvs,sort,NULL,&m,T_ptr,&ldT,
+         &sdim,ev_r,ev_i,S_ptr,&ldS,work,&lwork,NULL,ierr),*ierr);
+#endif
+
+     if (!nsort) return;
+
+#ifdef IS_COMPLEX
+     for (int i=0;i<m;i++)
+       {
+       ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
+       }
+#endif
+
+   // find indices for the first howMany eigenvalues. A pair of complex conjugate
+   // eigs is counted as a single one because we will skip solving the update equation
+   // in that case. howMany is adjusted to include the pairs on output, for instance,
+   // if howMany=1 on input but the first eig encountered is a complex conjugate pair,
+   // the 2x2 block is shifted to the upper left of T and howMany=2 on output.
+   int idx[m];
+
+   // sort all eigenvalues according to 'which'.
+   PHIST_CHK_IERR(SortEig(ev,idx,which,ierr),*ierr);
+
+   // permute the first <nsort> eigenvalues according to idx
+   // to the top left, taking the vectors along
+   int select[m];
+   for (int i=0;i<m;i++) select[i]=0;
+   for (int i=0;i<nsort;i++) select[idx[i]]=1;
+
+  // call lapack routine to reorder Schur form
+  const char *job="N"; // indicates wether we want condition estimates
+                       // for [E]igenvalues, the invariant [S]ubspace or [B]oth
+                       // (or [N]one, just sort)
+  MT S[nsort];
+  MT* sep[nsort];
+
+#ifdef IS_COMPLEX
+   PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,T_ptr,&ldT,S_ptr,&ldS,ev,&nsort,
+        S, sep, work, &lwork, ierr),*ierr);
+#else
+   int liwork=nsort*(m-nsort);
+   int iwork[liwork];
+   PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,T_ptr,&ldT,S_ptr,&ldS,ev_r,ev_i,&nsort,
+        S, sep, work, &lwork, iwork, &liwork, ierr),*ierr);   
+#endif   
+   }
 

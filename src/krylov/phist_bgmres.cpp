@@ -7,6 +7,7 @@
 #include "ghost.h"
 
 #include "phist_ScalarTraits.hpp"
+#include "phist_rcp_helpers.hpp"
 #include "phist_BelosOperatorTraits.hpp"
 
 // Trilinos stuff

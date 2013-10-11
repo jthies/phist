@@ -3,7 +3,6 @@ extern "C" {
 // we implement only the double precision real type D
 void SUBR(type_avail)(int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
   *ierr=0;
   }
 
@@ -646,6 +645,10 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   int nrows = R->traits->nrows;
   int ncols = R->traits->nvecs;
     
+  // wrapper class for ghost_vec_t for calling Belos.
+  // The wrapper does not own the vector so it doesn't destroy it.
+  phist::GhostMV mv_V(V,false);
+    
 #ifdef TESTING
   _CHECK_ZERO_(nrows-ncols,*ierr);
   _CHECK_ZERO_(nrows-(V->traits->nvecs),*ierr);
@@ -657,7 +660,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
         (Teuchos::rcp(R,false),ierr),*ierr);
 
   PHIST_OUT(9,"create TSQR ortho manager");  
-  Belos::TsqrOrthoManager<_ST_, ghost_vec_t> tsqr("phist/ghost");
+  Belos::TsqrOrthoManager<_ST_, phist::GhostMV> tsqr("phist/ghost");
   Teuchos::RCP<const Teuchos::ParameterList> valid_params = 
         tsqr.getValidParameters();
   // faster but numerically less robust settings:
@@ -670,7 +673,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   tsqr.setParameterList(params);
 
   int rank;
-  _TRY_CATCH_(rank = tsqr.normalize(*V,R_view),*ierr);
+  _TRY_CATCH_(rank = tsqr.normalize(mv_V,R_view),*ierr);
   PHIST_OUT(9,"V has %d columns and rank %d",ncols,rank);
   *ierr = ncols-rank;// return positive number if rank not full.
   return;
