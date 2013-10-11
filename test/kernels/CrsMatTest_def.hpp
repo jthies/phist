@@ -153,6 +153,7 @@ bool haveMats_;
     {
     if (typeImplemented_ && haveMats_)
       {
+      ST alpha, beta;
       //I*X=X?
       SUBR(mvec_random)(vec1_,&ierr_);
       SUBR(mvec_random)(vec2_,&ierr_);
@@ -163,7 +164,7 @@ bool haveMats_;
       //alpha*I*X=alpha*X?
       SUBR(mvec_random)(vec1_,&ierr_);
       SUBR(mvec_random)(vec2_,&ierr_);
-      ST alpha = random_number();
+      alpha = random_number();
       SUBR(crsMat_times_mvec)(alpha,A1_,vec1_,st::zero(),vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_scale)(vec1_,alpha,&ierr_);
@@ -173,8 +174,8 @@ bool haveMats_;
       //alpha*I*X+beta*Y = alpha*X+beta*Y?
       SUBR(mvec_random)(vec1_,&ierr_);
       SUBR(mvec_random)(vec2_,&ierr_);
-      ST alpha = random_number();
-      ST beta = random_number();
+      alpha = random_number();
+      beta = random_number();
       SUBR(crsMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_add_mvec)(-alpha, vec1_,st::one()/beta,vec2_,&ierr_);
