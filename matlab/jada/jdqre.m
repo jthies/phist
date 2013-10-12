@@ -92,7 +92,9 @@ if (arno)
   end
   % construct H(1:mmin+1,1:mmin) and V(:,1:mmin+1)
   % such that A*V(:,1:mmin) = V*H
-  [V,H]=arnoldi(A,v0,mmin);
+  arno_opts.maxIter=mmin;
+  [V,H]=arnoldi(A,v0,arno_opts);
+  size(H)
   AV=V*H;
   V=V(:,1:mmin);
   %AV=A*V;
