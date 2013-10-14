@@ -162,28 +162,70 @@ bool haveMats_;
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
 
       //alpha*I*X=alpha*X?
+      alpha = random_number();
+      beta=st::zero();
       SUBR(mvec_random)(vec1_,&ierr_);
       SUBR(mvec_random)(vec2_,&ierr_);
-      alpha = random_number();
-      SUBR(crsMat_times_mvec)(alpha,A1_,vec1_,st::zero(),vec2_,&ierr_);
+      SUBR(crsMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_scale)(vec1_,alpha,&ierr_);
       ASSERT_EQ(0,ierr_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
 
-      //alpha*I*X+beta*Y = alpha*X+beta*Y?
+      //0*I*X+beta*Y = beta*Y? 
+      alpha=st::zero(); 
+      beta=random_number(); 
+      std::cout << "MVM with A=I, alpha="<<alpha<<", beta="<<beta<<std::endl;
+      SUBR(mvec_random)(vec1_,&ierr_); 
+      SUBR(mvec_random)(vec2_,&ierr_); 
+      std::cout << "input="<<std::endl;
+      SUBR(mvec_print)(vec1_,&ierr_);
+      std::cout << "output, before="<<std::endl;
+      SUBR(mvec_print)(vec2_,&ierr_);
+      // v3=beta*v2 
+      SUBR(mvec_add_mvec)(beta,vec2_,st::zero(),vec3_,&ierr_); 
+      ASSERT_EQ(0,ierr_); 
+      // v2 = 0*v1 + beta*v2 (=v3) 
+      SUBR(crsMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&ierr_); 
+      ASSERT_EQ(0,ierr_); 
+      std::cout << "output, after="<<std::endl;
+      SUBR(mvec_print)(vec2_,&ierr_);
+      std::cout << "output, expected="<<std::endl;
+      SUBR(mvec_print)(vec3_,&ierr_);
+      std::cout << "pointer locations: v2 @ "<<vec2_vp_<<", vec3 @ "<<vec3_vp_<<std::endl;
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_));
+
+      //I*X+beta*Y = X+beta*Y?
+      alpha = st::one();
+      beta = random_number();
       SUBR(mvec_random)(vec1_,&ierr_);
       SUBR(mvec_random)(vec2_,&ierr_);
-      SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&ierr_);
-      alpha = random_number();
-      beta = random_number();
-      // v2 = alpha*v1 + beta*v2 (=alpha*v1+beta*v3)
+      //v3=beta*v2
+      SUBR(mvec_add_mvec)(beta,vec2_,st::zero(),vec3_,&ierr_);
+      // v2 = v1 + beta*v2 (=alpha*v1+v3)
       SUBR(crsMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_add_mvec)(-alpha, vec1_,st::one(),vec2_,&ierr_);
-      SUBR(mvec_scale)(vec3_,beta,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_NEAR(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_),10*mt::eps());
+      // we need to be a bit generous here because the order of calculation may be different
+      // and the matrix is not exactly I
+      ASSERT_NEAR(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_),100*mt::eps());
+
+      //alpha*I*X+beta*Y = alpha*X+beta*Y?
+      alpha = random_number();
+      beta = random_number();
+      SUBR(mvec_random)(vec1_,&ierr_);
+      SUBR(mvec_random)(vec2_,&ierr_);
+      // v3=beta*v2
+      SUBR(mvec_add_mvec)(beta,vec2_,st::zero(),vec3_,&ierr_);
+      // v2 = alpha*v1 + beta*v2 (=alpha*v1+v3)
+      SUBR(crsMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_add_mvec)(-alpha, vec1_,st::one(),vec2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      // we need to be a bit generous here because the order of calculation may be different
+      // and the matrix is not exactly I
+      ASSERT_NEAR(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_),100*mt::eps());
       }
     }
 

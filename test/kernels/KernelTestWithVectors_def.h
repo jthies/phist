@@ -14,19 +14,26 @@ virtual void SetUp()
   KernelTestWithType< ST >::SetUp();
   if (this->typeImplemented_)
     {
+    int lda;
+    // vectors created with the same function should get the same stride (lda)
     KernelTestWithMap<_Nglob>::SetUp();
     SUBR(mvec_create)(&vec1_,this->map_,this->nvec_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
     SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&this->lda_,&this->ierr_);
+    lda=this->lda_;
     ASSERT_EQ(0,this->ierr_);
     SUBR(mvec_create)(&vec2_,this->map_,this->nvec_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
+    ASSERT_EQ(lda,this->lda_);
     SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&this->lda_,&this->ierr_);
         ASSERT_EQ(0,this->ierr_);
+    ASSERT_EQ(lda,this->lda_);
     SUBR(mvec_create)(&vec3_,this->map_,this->nvec_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
+    ASSERT_EQ(lda,this->lda_);
     SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&this->lda_,&this->ierr_);
         ASSERT_EQ(0,this->ierr_);
+    ASSERT_EQ(lda,this->lda_);
     stride_=1;
     }
   }

@@ -70,8 +70,11 @@ static _MT_ ArraysEqual(const _ST_* arr1,const _ST_* arr2, int n, int m, lidx_t 
       MT p = (st::abs(arr1[j*lda+i])+st::abs(arr2[j*lda+i]))*(MT)0.5;
       if (p==mt::zero()) p=mt::one();
       maxval=std::max(m/p,maxval);
+      std::cout << arr1[j*lda+i]<< "\t SAME ?? AS \t"<<arr2[j*lda+i]<<std::endl;
       }
+    std::cout << std::endl;
     }
+  std::cout << "MAX VAL: "<<maxval<<std::endl;
   return mt::one()+maxval;
   }
 

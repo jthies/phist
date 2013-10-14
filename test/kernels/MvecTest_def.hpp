@@ -67,6 +67,14 @@ public:
       SUBR(mvec_put_value)(vec1_,val,&ierr_);
       ASSERT_EQ(0,ierr_);
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,val));
+
+      // check that the random function does not change the pointer
+      ST* ptr;
+      lidx_t lda_new;
+      SUBR(mvec_extract_view)(vec1_,&ptr,&lda_new,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_EQ(lda_,lda_new);
+      ASSERT_EQ(vec1_vp_,ptr);
       }
     }
 
@@ -96,6 +104,15 @@ public:
       {
       SUBR(mvec_random)(vec1_,&ierr_);
       ASSERT_EQ(0,ierr_);
+      
+      // check that the random function does not change the pointer
+      ST* ptr;
+      lidx_t lda_new;
+      SUBR(mvec_extract_view)(vec1_,&ptr,&lda_new,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_EQ(lda_,lda_new);
+      ASSERT_EQ(vec1_vp_,ptr);
+            
       MT absval[nloc_*nvec_];
       int k=0;
       for (int j=0;j<nvec_;j++)
@@ -112,7 +129,7 @@ public:
         minval=std::min(minval,mt::abs(absval[j]-absval[j-1]));
         }
       // force assertion failure if two 'random' numbers are the same
-      if (minval<mt::eps()) ASSERT_EQ(0,-1);
+      ASSERT_EQ(true,minval>mt::eps()); 
       }
     }
 
