@@ -176,8 +176,8 @@ void SUBR(mvec_set_block)(TYPE(mvec_ptr) V,
 
 //! get a new matrix that is a view of some rows and columns of the original one, 
 //! Mblock = M(imin:imax,jmin:jmax). The behavior is analogous to mvec_view_block.
-void SUBR(sdMat_get_block)(TYPE(const_mvec_ptr) M, 
-                             TYPE(mvec_ptr) Mblock,
+void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) M, 
+                             TYPE(sdMat_ptr)* Mblock,
                              int imin, int imax, int jmin, int jmax, int* ierr);
 
 //! get a new matrix that is a copy of some rows and columns of the original one,  
@@ -205,6 +205,12 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* ierr);
 
 //! put random numbers into all elements of a serial dense matrix
 void SUBR(sdMat_random)(TYPE(sdMat_ptr) V, int* ierr);
+
+//! print a vector to the screen (for debugging)
+void SUBR(mvec_print)(TYPE(const_mvec_ptr) V, int* ierr);
+
+//! print an sdMat to the screen (for debugging)
+void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) M, int* ierr);
 
 //! \name Numerical functions
 //!@{

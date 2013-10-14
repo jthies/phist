@@ -422,6 +422,19 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* ierr)
   V->fromRand(V);
   }
 
+void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* ierr)
+  {
+  _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
+  V->print(V);
+  }
+
+void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* ierr)
+  {
+  _CAST_PTR_FROM_VOID_(ghost_vec_t,M,vM,*ierr);
+  M->print(M);
+  }
+
+
 //! put random numbers into all elements of a serial dense matrix
 void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* ierr)
   {
@@ -529,7 +542,7 @@ void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA, TYPE(const_m
 _ST_ beta, TYPE(mvec_ptr) vy, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
-#include "phist_std_typedefs.hpp"  
+#include "phist_std_typedefs.hpp"
   *ierr=0;
   _CAST_PTR_FROM_VOID_(ghost_mat_t,A,vA,*ierr);
   _CAST_PTR_FROM_VOID_(ghost_vec_t,x,vx,*ierr);
@@ -549,21 +562,32 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* ierr)
   else
     {
     int spMVM_opts=GHOST_SPMVM_DEFAULT;
-    _ST_ *old_scale = (_ST_*)A->traits->scale;
+    void* old_scale = A->traits->scale;
     if (alpha!=st::one())
       {
+      // TODO: this fails for some reason!
       A->traits->scale = (void*)&alpha;
       spMVM_opts|=GHOST_SPMVM_APPLY_SCALE;
+      // copy input vector and scale 
+      /*
+      x=x->clone(x,x->traits->nvecs,0);
+      x->scale(x,(void*)&alpha);
+      */
       }
     if (beta!=st::zero())
       {
       spMVM_opts|=GHOST_SPMVM_AXPY;
-      }
-    if (beta!=st::one())
-      {
-      y->scale(y,&beta);
+      if (beta!=st::one())
+        {
+        y->scale(y,&beta);
+        }
       }
     *ierr=ghost_spmvm(A->context,y,A,x,&spMVM_opts);
+    if (alpha!=st::one())
+      {
+      A->traits->scale = old_scale;
+      //x->destroy(x); // x has been cloned
+      }
     }
   }
 

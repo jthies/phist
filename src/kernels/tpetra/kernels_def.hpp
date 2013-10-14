@@ -374,6 +374,19 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* ierr)
   _TRY_CATCH_(V->randomize(),*ierr);
   }
 
+void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* ierr)
+  {
+  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
+  std::cout << *V;
+  }
+
+void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* ierr)
+  {
+  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,M,vM,*ierr);
+  std::cout << *M;
+  }
+
+
 //! put random numbers into all elements of a serial dense matrix
 void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* ierr)
   {

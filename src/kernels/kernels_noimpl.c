@@ -179,6 +179,16 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* ierr)
   *ierr=-99;
   }
 
+void SUBR(mvec_print)(TYPE(const_mvec_ptr) V, int* ierr)
+  {
+  *ierr=-99;
+  }
+
+void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) M, int* ierr)
+  {
+  *ierr=-99;
+  }
+
 void SUBR(sdMat_random)(TYPE(sdMat_ptr) M, int* ierr)
   {
   *ierr=-99;
