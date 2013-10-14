@@ -66,7 +66,7 @@ for m = 1:maxIter                               % main iteration loop
     v = q;
     for i = 1:k
         for j = 1:1:i-1
-            v(:,i) = v(:,i) + r(j,i)/(r(j,j)+r(i,i))*q(:,j);
+            v(:,i) = v(:,i) + r(j,i)/(r(i,i)-r(j,j))*q(:,j);
         end
     end
     delta_lambda = lambda - diag(r);
@@ -106,9 +106,9 @@ for m = 1:maxIter                               % main iteration loop
                 for j = 1:1:i-1
                     res_i = res_i + r(j,i)*t(:,j);
                 end
+            else
+                res_i = res_i - q*(q'*res_i);
             end
-            % for numerical reasons project to I-qq'
-            res_i = res_i - q*(q'*res_i);
             % solve i-th equation
             %A_proj_i = (eye(n)-q*q')*(A-r(i,i)*eye(n))*(eye(n)-q*q');
             %t(:,i) = res_i\A_proj_i;
