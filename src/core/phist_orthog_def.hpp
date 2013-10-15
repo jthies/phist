@@ -132,7 +132,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   if (*ierr>0) rankW=k-*ierr;
   if (rankW<k)
     {
-    st::mvec_t *Wrnd;
+    st::mvec_t *Wrnd=NULL;
     st::sdMat_t *Rrnd;
     int n0=*ierr;
     PHIST_CHK_IERR(SUBR(mvec_view_block)(W,&Wrnd,rankW,k-1,ierr),*ierr);

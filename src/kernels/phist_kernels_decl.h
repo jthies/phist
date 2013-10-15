@@ -155,7 +155,11 @@ void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) M, _ST_** val,
 //! Vblock = V(:,jmin:jmax). The new object Vblock is created but does not
 //! allocate memory for the vector entries, instead using the entries from V
 //! directly. When mvec_delete(Vblock) is called, the library has to take care
-//! that the value array is not deleted 
+//! that the value array is not deleted.
+//! If on entry, *Vblock!=NULL, this function should delete *Vblock so that
+//! repeated use of view_block does not lead to memory holes. It is crucial
+//! that you pass in a NULL pointer if you want a new object, otherwise you
+//! may get a segfault.
 void SUBR(mvec_view_block)(TYPE(mvec_ptr) V, 
                              TYPE(mvec_ptr)* Vblock,
                              int jmin, int jmax, int* ierr);
@@ -176,6 +180,10 @@ void SUBR(mvec_set_block)(TYPE(mvec_ptr) V,
 
 //! get a new matrix that is a view of some rows and columns of the original one, 
 //! Mblock = M(imin:imax,jmin:jmax). The behavior is analogous to mvec_view_block.
+//! If on entry, *Mblock!=NULL, this function should delete *Mblock so that
+//! repeated use of view_block does not lead to memory holes. It is crucial
+//! that you pass in a NULL pointer if you want a new object, otherwise you
+//! may get a segfault.
 void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) M, 
                              TYPE(sdMat_ptr)* Mblock,
                              int imin, int imax, int jmin, int jmax, int* ierr);

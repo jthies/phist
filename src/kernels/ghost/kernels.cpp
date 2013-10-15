@@ -99,7 +99,7 @@ ghost_vtraits_t* phist_default_vtraits()
   vtraits->nrows=0; // get from context
   vtraits->nrowshalo=0; // get from context
   vtraits->nrowspadded=0; // get from context
-  vtraits->flags = GHOST_VEC_DEFAULT;
+  vtraits->flags = GHOST_VEC_DEFAULT+GHOST_VEC_HOST+GHOST_VEC_LHS;
   vtraits->nvecs=1;
   }
 

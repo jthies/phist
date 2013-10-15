@@ -221,6 +221,11 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,V,vV,*ierr);
   Epetra_MultiVector *Vblock;
   _TRY_CATCH_(Vblock = new Epetra_MultiVector(View, *V, jmin, jmax-jmin+1),*ierr);
+  if (*vVblock!=NULL)
+    {
+    _CAST_PTR_FROM_VOID_(Epetra_MultiVector,tmp,*vVblock,*ierr);
+    delete [] tmp;
+    }
   *vVblock = (TYPE(mvec_ptr))Vblock;
   }
 
@@ -262,6 +267,11 @@ void SUBR(sdMAt_view_block)(TYPE(sdMat_ptr) vM,
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Epetra_MultiVector,M,vM,*ierr);
   Epetra_MultiVector *Mblock=NULL;
+  if (*vVblock!=NULL)
+    {
+    _CAST_PTR_FROM_VOID_(Epetra_MultiVector,tmp,*vVblock,*ierr);
+    delete [] tmp;
+    }
   *ierr=-99; // not yet implemented for Epetra, cf. tpetra for an example how to do it
   *vMblock = (TYPE(mvec_ptr))Mblock;
   }

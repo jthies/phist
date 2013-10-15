@@ -11,9 +11,9 @@
 #endif
 
 #ifndef _CAST_PTR_FROM_VOID_
-#define _CAST_PTR_FROM_VOID_(TYPE,_PTR_,_VPTR_,_FLAG_) \
-TYPE *_PTR_ = NULL; \
-_PTR_=(TYPE*)(_VPTR_); \
+#define _CAST_PTR_FROM_VOID_(_TYPE_,_PTR_,_VPTR_,_FLAG_) \
+_TYPE_ *_PTR_ = NULL; \
+_PTR_=(_TYPE_*)(_VPTR_); \
 if (_PTR_==NULL) {_FLAG_=-88; return;}
 #endif
 

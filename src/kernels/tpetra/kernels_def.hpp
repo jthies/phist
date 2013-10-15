@@ -234,6 +234,11 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
   Teuchos::RCP<Traits<_ST_>::mvec_t> Vblock;
   _TRY_CATCH_(Vblock = V->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
+  if (*vVblock!=NULL)
+    {
+    _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,tmp,*vVblock,*ierr);
+    delete [] tmp;
+    }
   *vVblock = (TYPE(mvec_ptr))(Vblock.release().get());                        
   }
 
@@ -293,6 +298,14 @@ void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
                 Tpetra::LocallyReplicated));
 
   _TRY_CATCH_(Mblock = new Traits<_ST_>::sdMat_t(smap,valptr,lda,ncols),*ierr);
+
+  if (*vMblock!=NULL)
+    {
+    _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,tmp,*vMblock,*ierr);
+    delete [] tmp;
+    }
+
+
   *vMblock = (TYPE(sdMat_ptr))Mblock;                        
   }
 
