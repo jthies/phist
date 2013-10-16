@@ -123,7 +123,7 @@ void SUBR(mvec_create)(TYPE(mvec_ptr)* vV,
   ST zero = st::zero();
   // this allocates the vector and fills it with zeros
   result->fromScalar(result,&zero);
-  PHIST_OUT(9,"mvec nrows: %ld\n",result->traits->nrows);
+  PHIST_OUT(PHIST_DEBUG,"mvec nrows: %ld\n",result->traits->nrows);
   *vV=(TYPE(mvec_ptr))(result);
   }
 
@@ -168,15 +168,15 @@ void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
 PHIST_CHK_IERR(comm==NULL,*ierr);
 if (*comm==MPI_COMM_WORLD)
   {
-  PHIST_OUT(2, "create sdMat with MPI_COMM_WORLD");
+  PHIST_OUT(PHIST_INFO, "create sdMat with MPI_COMM_WORLD");
   }
 else if (*comm==MPI_COMM_SELF)
   {
-  PHIST_OUT(2, "create sdMat with MPI_COMM_SELF");
+  PHIST_OUT(PHIST_INFO, "create sdMat with MPI_COMM_SELF");
   }
 else
   {
-  PHIST_OUT(2, "create sdMat with non-standard comm");
+  PHIST_OUT(PHIST_INFO, "create sdMat with non-standard comm");
   }
 #endif
 
@@ -200,8 +200,8 @@ void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) vV, lidx_t* len, int* ierr)
   ENTER_FCN(__FUNCTION__);
   *ierr = 0;
   _CAST_PTR_FROM_VOID_(const ghost_vec_t,V,vV,*ierr);
-  PHIST_OUT(9,"vV @ %p",vV);
-  PHIST_OUT(9,"V @ %p",V);
+  PHIST_OUT(PHIST_DEBUG,"vV @ %p",vV);
+  PHIST_OUT(PHIST_DEBUG,"V @ %p",V);
   *len = V->traits->nrows;
   }
 
@@ -427,7 +427,7 @@ void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, _ST_ value, int* ierr)
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
-  PHIST_OUT(9,"put value, V @ %p. V->traits->nrows=%ld\n",V,V->traits->nrows);
+  PHIST_OUT(PHIST_DEBUG,"put value, V @ %p. V->traits->nrows=%ld\n",V,V->traits->nrows);
   V->fromScalar(V,(void*)&value);
   }
 
@@ -437,7 +437,7 @@ void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vV, _ST_ value, int* ierr)
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
-  PHIST_OUT(9,"sdMat put value, M @ %p. V->traits->nrows=%ld\n",V,V->traits->nrows);
+  PHIST_OUT(PHIST_DEBUG,"sdMat put value, M @ %p. V->traits->nrows=%ld\n",V,V->traits->nrows);
   V->fromScalar(V,(void*)&value);
   }
 
@@ -706,12 +706,12 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   _CHECK_ZERO_(nrows-(V->traits->nvecs),*ierr);
 #endif  
 
-  PHIST_OUT(9,"create Teuchos view of R");
+  PHIST_OUT(PHIST_DEBUG,"create Teuchos view of R");
   Teuchos::RCP<Traits<_ST_ >::Teuchos_sdMat_t> R_view;
   PHIST_CHK_IERR(R_view = Traits<_ST_ >::CreateTeuchosViewNonConst
         (Teuchos::rcp(R,false),ierr),*ierr);
 
-  PHIST_OUT(9,"create TSQR ortho manager");  
+  PHIST_OUT(PHIST_DEBUG,"create TSQR ortho manager");  
   Belos::TsqrOrthoManager<_ST_, phist::GhostMV> tsqr("phist/ghost");
   Teuchos::RCP<const Teuchos::ParameterList> valid_params = 
         tsqr.getValidParameters();
@@ -721,12 +721,12 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp
         (new Teuchos::ParameterList(*valid_params));
   params->set("randomizeNullSpace",true);
-  PHIST_OUT(9,"set TSQR parameters");
+  PHIST_OUT(PHIST_DEBUG,"set TSQR parameters");
   tsqr.setParameterList(params);
 
   int rank;
   _TRY_CATCH_(rank = tsqr.normalize(mv_V,R_view),*ierr);
-  PHIST_OUT(9,"V has %d columns and rank %d",ncols,rank);
+  PHIST_OUT(PHIST_DEBUG,"V has %d columns and rank %d",ncols,rank);
   *ierr = ncols-rank;// return positive number if rank not full.
   return;
   }

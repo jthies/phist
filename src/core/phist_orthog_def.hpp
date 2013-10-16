@@ -35,6 +35,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      int numSweeps,
                      int* ierr)
   {
+  ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
 
   int m,k,i,j;
@@ -58,6 +59,13 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&k,ierr),*ierr);
+  
+#if PHIST_OUTLEV>=PHIST_DEBUG
+  int nrowsV,nrowsW;
+  PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&nrowsV,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_my_length)(W,&nrowsW,ierr),*ierr);  
+  PHIST_OUT(PHIST_DEBUG,"orthog: V is %dx%d, W is %dx%d\n",nrowsV,m,nrowsW,k);
+#endif  
 
   if (k==0) // no vectors to be orthogonalized
     {
@@ -123,18 +131,20 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   // are thrown away as the randomized vectors are not really related 
   //to W anyway.
   SUBR(mvec_QR)(W,R1,ierr);
+
   if (*ierr<0)
     {
-    PHIST_OUT(0,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
+    PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
         *ierr,(phist_retcode2str(*ierr)),"Xmvec_QR(W,R1,ierr)",__FILE__,__LINE__); 
     return;
     }
-  if (*ierr>0) rankW=k-*ierr;
+  rankW=k-*ierr;
   if (rankW<k)
     {
     st::mvec_t *Wrnd=NULL;
     st::sdMat_t *Rrnd;
     int n0=*ierr;
+    PHIST_OUT(PHIST_INFO,"Matrix W does not have full rank (%d cols, rank=%d)\n",k,rankW);
     PHIST_CHK_IERR(SUBR(mvec_view_block)(W,&Wrnd,rankW,k-1,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_create)(&Rrnd,m,n0,comm,ierr),*ierr);
     //R2=V'*W;
@@ -176,13 +186,13 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     SUBR(mvec_QR)(W,R1p,ierr);
     if (*ierr<0)
       {
-      PHIST_OUT(0,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
+      PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
           *ierr,(phist_retcode2str(*ierr)),"Xmvec_QR(W,R1,ierr)",__FILE__,__LINE__); 
       return;
       }
     else if (*ierr>0)
       {
-      PHIST_OUT(0,"Unexpected rank deficiency in orthog routine\n(file %s, line %d)",\
+      PHIST_OUT(PHIST_ERROR,"Unexpected rank deficiency in orthog routine\n(file %s, line %d)",\
                 __FILE__,__LINE__); 
       *ierr=-10;
       return;

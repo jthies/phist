@@ -112,13 +112,12 @@ public:
       // orthogonalize the m columns of V
       SUBR(mvec_QR)(V_,R0_,&ierr_);
       ASSERT_EQ(0,ierr_);
-
       // check wether this worked out
       ASSERT_REAL_EQ(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
       ASSERT_REAL_EQ(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
       
       int nsteps=2;
-      
+
       // now orthogonalize W against V. The result should be such that Q*R1=W-V*R2, Q'*Q=I,V'*Q=0
       SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&ierr_);
       ASSERT_EQ(0,ierr_);

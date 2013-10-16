@@ -390,13 +390,15 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* ierr)
 void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* ierr)
   {
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
-  std::cout << *V;
+  Teuchos::FancyOStream fos(Teuchos::rcp(&std::cout,false));
+  V->describe(fos,Teuchos::VERB_EXTREME);
   }
 
 void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* ierr)
   {
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,M,vM,*ierr);
-  std::cout << *M;
+  Teuchos::FancyOStream fos(Teuchos::rcp(&std::cout,false));
+  M->describe(fos,Teuchos::VERB_EXTREME);
   }
 
 
@@ -511,8 +513,8 @@ void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::crsMat_t,A,vA,*ierr);
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,x,vx,*ierr);
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,y,vy,*ierr);
-  PHIST_OUT(9,"alpha=%g+i%g\n",st::real(alpha),st::imag(alpha));
-  PHIST_OUT(9,"beta=%g+i%g\n",st::real(beta),st::imag(beta));
+  PHIST_OUT(PHIST_TRACE,"alpha=%g+i%g\n",st::real(alpha),st::imag(alpha));
+  PHIST_OUT(PHIST_TRACE,"beta=%g+i%g\n",st::real(beta),st::imag(beta));
   Traits<_ST_>::crsMVM_t spMVM(Teuchos::rcp(A,false));
   _TRY_CATCH_(spMVM.apply(*x,*y,Teuchos::NO_TRANS,alpha,beta),*ierr);
 
@@ -622,6 +624,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   int rank;
   _TRY_CATCH_(rank = tsqr.normalize(*V,R_view),*ierr);  
   *ierr = ncols-rank;// return positive number if rank not full.
+  PHIST_OUT(PHIST_DEBUG,"mvec_QR: ncols=%d, rank=%d, returning %d\n",ncols,rank,*ierr);
   return;
   }
 
