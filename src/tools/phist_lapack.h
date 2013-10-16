@@ -1,19 +1,20 @@
 #ifndef PHIST_LAPACK_H
 #define PHIST_LAPACK_H
 
+typedef struct Sblas_cmplx_t {
+float re;
+float im;
+} Sblas_cmplx_t;
+
+typedef struct Dblas_cmplx_t {
+double re;
+double im;
+} Dblas_cmplx_t;
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef struct Slap_cmplx_t {
-float re;
-float im;
-} Slap_cmplx_t;
-
-typedef struct Dlap_cmplx_t {
-double re;
-double im;
-} Dlap_cmplx_t;
 
 // TODO - cmake/blas/lapack integration.
 // this is a platform dependent macro, we should have CMake determine
@@ -40,7 +41,7 @@ void DSTEQR(const char*, const int* n, double* D, double* E, double* Z, const in
 
 // Schur decomposition of a real non-symmetric matrix
 #define SGEES LAPACK_SUBR(SGEES,sgees)
-void DGEES(const char*, const char*, int (*select)(float*, float*), const int* n, 
+void SGEES(const char*, const char*, int (*select)(float*, float*), const int* n, 
 float* a, const int* lda, int* sdim, float* wr, float* wi,
  float* vs, const int* ldvs, float* work, const int* lwork, int* bwork, int* info);
 // Schur decomposition of a real non-symmetric matrix
@@ -52,15 +53,15 @@ double* a, const int* lda, int*sdim, double* wr, double* wi,
 
 // Schur decomposition of a complex non-hermitian matrix 
 #define CGEES LAPACK_SUBR(CGEES,cgees)
-void ZGEES(const char*, const char*, int (*select)(Slap_cmplx_t*), 
-const int* n, Slap_cmplx_t* a, const int* lda, int* sdim,
-Slap_cmplx_t* w, Slap_cmplx_t* vs, const int* ldvs, Slap_cmplx_t* work, 
+void CGEES(const char*, const char*, int (*select)(Sblas_cmplx_t*), 
+const int* n, Sblas_cmplx_t* a, const int* lda, int* sdim,
+Sblas_cmplx_t* w, Sblas_cmplx_t* vs, const int* ldvs, Sblas_cmplx_t* work, 
 const int* lwork, float* rwork, int* bwork, int* info);
 // Schur decomposition of a complex non-hermitian matrix 
 #define ZGEES LAPACK_SUBR(ZGEES,zgees)
-void ZGEES(const char*, const char*, int (*select)(Dlap_cmplx_t*), 
-const int* n, Dlap_cmplx_t* a, const int* lda, int* sdim,
-Dlap_cmplx_t* w, Dlap_cmplx_t* vs, const int* ldvs, Dlap_cmplx_t* work, 
+void ZGEES(const char*, const char*, int (*select)(Dblas_cmplx_t*), 
+const int* n, Dblas_cmplx_t* a, const int* lda, int* sdim,
+Dblas_cmplx_t* w, Dblas_cmplx_t* vs, const int* ldvs, Dblas_cmplx_t* work, 
 const int* lwork, double* rwork, int* bwork, int* info);
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -82,14 +83,14 @@ double *work, const int *lwork, int *iwork, const int *liwork, int *info);
 //! reorder complex Schur decomposition
 #define CTRSEN LAPACK_SUBR(CTRSEN,ctrsen)
 void CTRSEN(const char* job, const char* jobvs, const int *select, const int *n, 
-Slap_cmplx_t *T, const int *ldt, Slap_cmplx_t *Q, const int *ldq, Slap_cmplx_t *W, 
-const int *m, double *S, double *sep, Slap_cmplx_t *work, const int *lwork, int *info);
+Sblas_cmplx_t *T, const int *ldt, Sblas_cmplx_t *Q, const int *ldq, Sblas_cmplx_t *W, 
+const int *m, float *S, float *sep, Sblas_cmplx_t *work, const int *lwork, int *info);
 
 //! reorder complex Schur decomposition
 #define ZTRSEN LAPACK_SUBR(ZTRSEN,ztrsen)
 void ZTRSEN(const char* job, const char* jobvs, const int *select, const int *n, 
-Dlap_cmplx_t *T, const int *ldt, Dlap_cmplx_t *Q, const int *ldq, Dlap_cmplx_t *W, 
-const int *m, double *S, double *sep, Dlap_cmplx_t *work, const int *lwork, int *info);
+Dblas_cmplx_t *T, const int *ldt, Dblas_cmplx_t *Q, const int *ldq, Dblas_cmplx_t *W, 
+const int *m, double *S, double *sep, Dblas_cmplx_t *work, const int *lwork, int *info);
 
 #ifdef __cplusplus
 }

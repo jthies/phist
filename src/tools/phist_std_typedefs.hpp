@@ -28,3 +28,6 @@ typedef st::op_t* op_ptr_t;
 typedef const st::op_t* const_op_ptr_t;
 
 typedef ::phist::ScalarTraits<MT> mt;
+typedef ::phist::ScalarTraits<std::complex<MT> > ct;
+
+typedef mt::blas_cmplx_t blas_cmplx_t;

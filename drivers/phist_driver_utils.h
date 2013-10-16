@@ -29,6 +29,7 @@ void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, char* filename, int* ierr)
   c++;
   isMM=!strcmp(c,"mm");
   isCRS=!strcmp(c,"crs");
+  isCRS=isCRS||!strcmp(c,"bin");
   isHB=!strcmp(c,"rua")||!strcmp(c,"cua");
   if (isMM)
     {

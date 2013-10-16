@@ -3,9 +3,10 @@
 #include <stdbool.h>
 
 #include "phist_macros.h"
+#include "phist_enums.h"
 #include "phist_kernels.h"
 #include "phist_operator.h"
-//#include "phist_jada.h"
+#include "phist_jdqr.h"
 #include ${PHIST_TG_HFILE}
 
 
@@ -32,6 +33,7 @@ int main(int argc, char** argv)
   comm_ptr_t comm;
   crsMat_ptr_t A;
   op_ptr_t A_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  op_ptr_t B_op=NULL; // no mass matrix up to now
   
   const_map_ptr_t map; // map (element distribution) of vectors according to 
                        // the distribution of matrix rows
@@ -40,8 +42,10 @@ int main(int argc, char** argv)
   ST* evals; // for real non-symmetric matrices we can get complex pairs,
              // so we need twice the amount of memory to store the eigenvalues 
   MT* resid;
+  
+  int* is_cmplx=NULL; // only required for the real case for indicating complex EV
 
-  ST target;
+  eigSort_t which;
   MT tol;
   char* filename;
   
@@ -60,7 +64,7 @@ int main(int argc, char** argv)
 
   if (argc<2)
     {
-    if (verbose) fprintf(stdout,"Usage: ./XJaDa <matrix filename> [<num eigs>] [<target>] [<tol>] [<max iters> <min basis> <max basis>]");
+    if (verbose) fprintf(stdout,"Usage: ./XJaDa <matrix filename> [<num eigs>] [<which>] [<tol>] [<max iters> <min basis> <max basis>]");
     return 1;
     }
 
@@ -77,11 +81,19 @@ int main(int argc, char** argv)
 
   if (argc<4)
     {
-    target=ZERO;
+    which=LM;
     }
   else
     {
-    target=atof(argv[3]); //TODO - input complex shifts
+    if (!strcmp(argv[3],"LM")) which=LM;
+    else if (!strcmp(argv[3],"SM")) which=SM;
+    else if (!strcmp(argv[3],"LR")) which=LR;
+    else if (!strcmp(argv[3],"SR")) which=SR;
+    else
+      {
+      if (verbose) fprintf(stderr,"ERROR: the which parameter may be \"LM\",\"SM\",\"LR\" or \"SR\"\n");
+      return -1;
+      }
     }
     
   if (argc<5)
@@ -120,34 +132,30 @@ int main(int argc, char** argv)
     maxBas=atoi(argv[7]);
     }
 
-  if (verbose) 
-    {
-    fprintf(stdout,"looking for %d Eigenpairs of largest magnitude\n",num_eigs);
-    }  
   PHIST_ICHK_IERR(SUBR(crsMat_read_mm)(&A,filename,&ierr),ierr);
   
   PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(A, &map,&ierr),ierr);
 
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,num_eigs,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,num_eigs+1,&ierr),ierr);
 
   num_iters=max_iters;
   // create operator wrapper for computing Y=A*X using a CRS matrix
   A_op = (op_ptr_t)malloc(sizeof(TYPE(op)));
   PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(A_op,A,&ierr),ierr);
   
-  // allocate memory for eigenvalues and residuals
-  //TODO - complex eigenpairs???
-  evals = (ST*)malloc(num_eigs*sizeof(ST));
-  resid = (MT*)malloc(num_eigs*sizeof(MT));
+  // allocate memory for eigenvalues and residuals. We allocate
+  // one extra entry because in the real case we may get that the
+  // last EV to converge is a complex pair (requirement of JDQR)
+  evals = (ST*)malloc((num_eigs+1)*sizeof(ST));
+  resid = (MT*)malloc((num_eigs+1)*sizeof(MT));
+  is_cmplx = (int*)malloc((num_eigs+1)*sizeof(int));
 
-// TODO - interface
-/*
-  SUBR(jada)(A_op,X,evals,
-        resid, target, tol,
+  SUBR(jdqr)(A_op,B_op,X,evals,resid,is_cmplx, 
+        which, tol,
         &num_iters,&num_eigs,
         minBas, maxBas,
         &ierr);
-*/
+
   if (ierr!=0)
     {
     if (verbose) fprintf(stdout,"code %d returned from Lanczos",ierr);
@@ -169,6 +177,7 @@ int main(int argc, char** argv)
 
   free(evals);
   free(resid);
+  free(is_cmplx);
   
   PHIST_ICHK_IERR(SUBR(crsMat_delete)(A,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&ierr),ierr);

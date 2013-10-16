@@ -14,7 +14,8 @@ ENDIF()
 
 message(STATUS "build type: ${CMAKE_BUILD_TYPE}")
 
-set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
+list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
 
 # Define some custom variables
 project(PHIST)
@@ -152,10 +153,11 @@ set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/k
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_rcp_helpers.cpp)
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.c
-                       ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp
-                       ${PROJECT_SOURCE_DIR}/src/core/phist_taskbuf.c)
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp)
+#                       ${PROJECT_SOURCE_DIR}/src/core/phist_taskbuf.c)
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_lanczos.cpp
-                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_bgmres.cpp)
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_bgmres.cpp
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp)
 
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB})
 include_directories(${PROJECT_SOURCE_DIR}/src/tools)
@@ -175,14 +177,15 @@ list(APPEND PHIST_LIBS phist_kernels_${PHIST_KERNEL_LIB})
 list(APPEND PHIST_LIBS phist_tools)
 
 # ghost is a requirement of phist now because of the task queue
-find_package(Ghost PATHS $ENV{GHOST_HOME})
-message(STATUS "GHOST_Found=${GHOST_Found}")
+#find_package(Ghost PATHS $ENV{GHOST_HOME})
+#message(STATUS "GHOST_Found=${GHOST_Found}")
+find_package(GHOST REQUIRED)
 
-if (GHOST_Found)
+if (GHOST_FOUND)
+  add_definitions(-DPHIST_HAVE_GHOST)
   include_directories(${GHOST_INCLUDE_DIRS})
   link_directories(${GHOST_LIBRARY_DIRS})
   list(APPEND PHIST_LIBS ${GHOST_LIBRARIES})
-  add_definitions(-DPHIST_HAVE_GHOST)
 else()
   message(WARNING "Ghost is required for the scheduling in phist, without it things may "
                 " not be functional.                                                    "
@@ -292,9 +295,9 @@ endforeach()
 # test drivers
 set(PHIST_TESTS kernels
                 core
-                sched
                 krylov
                 bench)
+#                sched
 
 foreach(label ${PHIST_TESTS})
   string(TOUPPER ${label} label_uc)
