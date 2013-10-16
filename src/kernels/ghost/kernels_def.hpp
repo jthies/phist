@@ -253,7 +253,7 @@ void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) vM, int* nrows, int* ierr)
   _CAST_PTR_FROM_VOID_(const ghost_vec_t,M,vM,*ierr);
   *nrows = M->traits->nrows;
   }
-
+  
 //! get number of cols in local dense matrix
 void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) vM, int* ncols, int* ierr)
   {
@@ -295,8 +295,12 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
   // TODO - should we pass in nrows, nrowshalo for nr
   ghost_vec_t *Vblock = V->viewVec(V, jmax-jmin+1, 0);
+  if (vVblock!=NULL)
+    {
+    _CAST_PTR_FROM_VOID_(ghost_vec_t,tmp,vVblock,*ierr);
+    tmp->destroy(tmp);
+    }
   *vVblock = (TYPE(mvec_ptr))Vblock;
-  Vblock->destroy(Vblock);
   }
 
 //! get a new vector that is a copy of some columns of the original one,  
@@ -333,6 +337,30 @@ void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
   Vcols->fromVec(Vcols,Vblock,0);
   // delete the view
   Vcols->destroy(Vcols);
+  }
+
+//! get a new sdMat that is a view of some rows and columns of the original one,
+//! Mblock = M(imin:imax,jmin:jmax). The new object Vblock is created but does not
+//! allocate memory for the vector entries, instead using the entries from V
+//! directly.
+void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMblock,
+                             int imin, int imax, int jmin, int jmax, int* ierr)
+  {
+  ENTER_FCN(__FUNCTION__);
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(ghost_vec_t,M,vM,*ierr);
+  // first just create a view of the corresponding columns
+  ghost_vec_t *Mblock = M->viewVec(M, jmax-jmin+1, 0);
+  // adjust the offset and the number of rows seen by the object
+  Mblock->traits->nrows=imax-imin+1;
+  std::ptrdiff_t offset=(std::ptrdiff_t)imin*(std::ptrdiff_t)ghost_sizeofDataType(Mblock->traits->datatype);
+  Mblock->val=(void*)((char*)(Mblock->val)+offset);
+  if (vMblock!=NULL)
+    {
+    _CAST_PTR_FROM_VOID_(ghost_vec_t,tmp,vMblock,*ierr);
+    tmp->destroy(tmp);
+    }
+  *vMblock = (TYPE(mvec_ptr))Mblock;
   }
 
 //! get a new matrix that is a copy of some rows and columns of the original one,  
