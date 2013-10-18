@@ -255,7 +255,7 @@ while (k<numEigs && it<=maxIter)
       % TODO - is this necessary?
       precOp=precOp.compute(A-shift*speye(n),precOp);
       t0=zeros(size(rtil));
-      lsOpts.tol=max(tol,1/2.^max(1,mm-1));
+      lsOpts.tol=max(tol,1/2.^max(1,mm));
       if (verbose)
         disp(['inner conv tol: ',num2str(lsOpts.tol)]);
       end
