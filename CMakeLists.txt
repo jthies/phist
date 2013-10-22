@@ -156,8 +156,10 @@ set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.c
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp)
 #                       ${PROJECT_SOURCE_DIR}/src/core/phist_taskbuf.c)
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_lanczos.cpp
-                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_bgmres.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_bgmres.cpp)
+set (PHIST_JADA_SOURCE ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.c
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp)
+
 
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB})
 include_directories(${PROJECT_SOURCE_DIR}/src/tools)
@@ -238,6 +240,7 @@ set(SOURCES
   ${PHIST_TOOLS_SOURCE}
   ${PHIST_CORE_SOURCE}
   ${PHIST_KRYLOV_SOURCE}
+  ${PHIST_JADA_SOURCE}
 )
 
 set(TEST_SOURCES

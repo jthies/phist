@@ -154,4 +154,7 @@ class FcnTracer
 #define ENTER_FCN(s)
 #endif
 
+#else
+// currently no function tracing in C code parts
+#define ENTER_FCN(s)
 #endif // cplusplus

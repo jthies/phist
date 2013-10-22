@@ -38,9 +38,8 @@
 //! ierr: return code of the solver (0 on success, negative on error, positive on warning)
 //!
 void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
-        TYPE(mvec_ptr) X, eigSort_t which,
-        _ST_* evals, _MT_* resid, int* is_cmplx,
-        _MT_ tol, int* num_eigs, int* num_iters,
+        TYPE(mvec_ptr) X, _ST_* evals, _MT_* resid, int* is_cmplx,
+        eigSort_t which, _MT_ tol, int* num_eigs, int* num_iters,
         int minBas, int maxBas,
         int* ierr);
          
