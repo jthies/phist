@@ -670,7 +670,8 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
   PHIST_CHK_IERR(ncC-ncW,*ierr);
 #endif
   // note: C is replicated, so this operation is a purely local one.
-  *ierr=ghost_gemm("N",V,C,W,(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE);
+  char trans='N';
+  *ierr=ghost_gemm(&trans,V,C,W,(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE);
   }
 
 //! n x m serial dense matrix times m x k serial dense matrix gives n x k sdMat,

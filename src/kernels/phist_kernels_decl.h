@@ -160,6 +160,18 @@ void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) M, _ST_** val,
 //! repeated use of view_block does not lead to memory holes. It is crucial
 //! that you pass in a NULL pointer if you want a new object, otherwise you
 //! may get a segfault.
+//! 
+//! The user is responsible for deleting the objects in the correct order: First
+//! the view of V, then V itself. It is allowed to create a view of a view, but 
+//! then again, the order of deletion has to be observed by the user. For instance,
+//! this code may run into trouble:
+//!
+//!     Dmvec_ptr_t A, Av, Avv;
+//!     phist_Dmvec_create(&A,...);
+//!     phist_Dmvec_view_block(A,&Av,...);
+//!     phist_Dmvec_view_block(Av,&Avv,...);
+//!     phist_Dmvec_delete(Av,...);
+//! (do something with Avv)
 void SUBR(mvec_view_block)(TYPE(mvec_ptr) V, 
                              TYPE(mvec_ptr)* Vblock,
                              int jmin, int jmax, int* ierr);

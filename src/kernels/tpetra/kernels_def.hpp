@@ -147,13 +147,23 @@ void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const comm_t, comm, vcomm, *ierr);
+  const comm_t* comm = (const comm_t*)vcomm;
 
-  //TODO - add node arg
+  Teuchos::RCP<const comm_t> comm_ptr;
+
+  //TODO - add node arg. Is there any reason to have a comm object here??
+  if (comm==NULL)
+    {
+    comm_ptr=Teuchos::DefaultComm<int>::getDefaultSerialComm(Teuchos::null);
+    }
+  else
+    {
+    comm_ptr = Teuchos::rcp(comm,false);
+    }
 
   // create local map
   Teuchos::RCP<map_t> localMap =
-        Teuchos::rcp(new map_t(nrows, 0, Teuchos::rcp(comm,false), Tpetra::LocallyReplicated));
+        Teuchos::rcp(new map_t(nrows, 0, comm_ptr, Tpetra::LocallyReplicated));
   Traits<_ST_>::sdMat_t* M = new Traits<_ST_>::mvec_t(localMap,ncols);
   *vM=(TYPE(sdMat_ptr))(M);
   }
@@ -341,22 +351,72 @@ void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
 //! Mblock = M(imin:imax,jmin:jmax). The object Mblock must be created beforehand 
 //! and the corresponding columns of M are copied into the value array    
 //! of Mblock. M is not modified.
-void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) M, 
-                             TYPE(sdMat_ptr) Mblock,
+void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM, 
+                             TYPE(sdMat_ptr) vMblock,
                              int imin, int imax, int jmin, int jmax, int* ierr)
   {
+  *ierr=0;
   ENTER_FCN(__FUNCTION__);
-  *ierr=-99;
+  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,M,vM,*ierr);
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,Mblock,vMblock,*ierr);
+  
+  Teuchos::RCP<const Traits<_ST_>::sdMat_t> Mview,Mtmp;
+
+  if (imin==0 && imax==M->getLocalLength()-1)
+    {
+    _TRY_CATCH_(Mview = M->subView(Teuchos::Range1D(jmin,jmax)),*ierr);
+    }
+  else
+    {
+    int nrows=imax-imin+1;
+    Teuchos::RCP<map_t> smap = Teuchos::rcp(new map_t
+        (nrows, 0, M->getMap()->getComm(),Tpetra::LocallyReplicated));
+    if (imin==0 && imax==M->getNumVectors())
+      {
+      _TRY_CATCH_(Mview = M->offsetView(smap,imin),*ierr);
+      }
+    else
+      {
+      _TRY_CATCH_(Mtmp = M->offsetView(smap,imin),*ierr);
+      _TRY_CATCH_(Mview = Mtmp->subView(Teuchos::Range1D(jmin,jmax)),*ierr);
+      }
+    }
+  *Mblock = *Mview; // copy operation
   }
 
 //! given a serial dense matrix Mblock, set M(imin:imax,jmin:jmax)=Mblock by 
 //! copying the corresponding elements. Mblock is not modified.
-void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M, 
-                             TYPE(const_sdMat_ptr) Mblock,
+void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM, 
+                             TYPE(const_sdMat_ptr) vMblock,
                              int imin, int imax, int jmin, int jmax, int* ierr)
   {
+  *ierr=0;
   ENTER_FCN(__FUNCTION__);
-  *ierr=-99;
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,M,vM,*ierr);
+  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,Mblock,vMblock,*ierr);
+  
+  Teuchos::RCP<Traits<_ST_>::sdMat_t> Mview,Mtmp;
+
+  if (imin==0 && imax==M->getLocalLength()-1)
+    {
+    _TRY_CATCH_(Mview = M->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
+    }
+  else
+    {
+    int nrows=imax-imin+1;
+    Teuchos::RCP<map_t> smap = Teuchos::rcp(new map_t
+        (nrows, 0, M->getMap()->getComm(),Tpetra::LocallyReplicated));
+    if (imin==0 && imax==M->getNumVectors())
+      {
+      _TRY_CATCH_(Mview = M->offsetViewNonConst(smap,imin),*ierr);
+      }
+    else
+      {
+      _TRY_CATCH_(Mtmp = M->offsetViewNonConst(smap,imin),*ierr);
+      _TRY_CATCH_(Mview = Mtmp->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
+      }
+    }
+  *Mview = *Mblock; // copy operation
   }
 
 

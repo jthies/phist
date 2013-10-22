@@ -59,25 +59,25 @@ using namespace testing;
 #define _NV_ 3
 
 #undef CLASSNAME
-#define CLASSNAME SMvecTest_6_3
+#define CLASSNAME SMvecTest_16_9
 
 #include "phist_gen_s.h"
 #include "MvecTest_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME DMvecTest_6_3
+#define CLASSNAME DMvecTest_16_9
 
 #include "phist_gen_d.h"
 #include "MvecTest_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME CMvecTest_6_3
+#define CLASSNAME CMvecTest_16_9
 
 #include "phist_gen_c.h"
 #include "MvecTest_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME ZMvecTest_6_3
+#define CLASSNAME ZMvecTest_16_9
 
 #include "phist_gen_z.h"
 #include "MvecTest_def.hpp"

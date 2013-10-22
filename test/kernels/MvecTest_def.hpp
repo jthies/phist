@@ -180,15 +180,22 @@ public:
       int jmax=std::min(5,nvec_-1);
       TYPE(mvec_ptr) v1_view=NULL;
       SUBR(mvec_view_block)(vec1_,&v1_view,jmin,jmax,&ierr_);
+      // create a view of the view
+      TYPE(mvec_ptr) v1_vv=NULL;
+      SUBR(mvec_view_block)(v1_view,&v1_vv,0,jmax-jmin+1,&ierr_);
       ASSERT_EQ(0,ierr_);
       
       _MT_ norms_V1[nvec_];
-      _MT_ norms_V1view[jmax-jmin+1];
+      _MT_ norms_V1view[nvec_];
+      _MT_ norms_V1vv[nvec_];
       
       SUBR(mvec_norm2)(vec1_,norms_V1,&ierr_);
       ASSERT_EQ(0,ierr_);      
 
       SUBR(mvec_norm2)(v1_view,norms_V1view,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      SUBR(mvec_norm2)(v1_vv,norms_V1vv,&ierr_);
       ASSERT_EQ(0,ierr_);
       
       // compare elements one-by-one because our ArraysEqual expects ST rather than MT as 
@@ -196,6 +203,7 @@ public:
       for (int j=jmin;j<=jmax;j++)
         {
         ASSERT_REAL_EQ(norms_V1[j],norms_V1view[j-jmin]);
+        ASSERT_REAL_EQ(norms_V1[j],norms_V1vv[j-jmin]);
         }
       // set all the viewed entries to a certain value and check that the original vector is 
       // changed.
@@ -203,10 +211,93 @@ public:
       SUBR(mvec_put_value)(v1_view,val,&ierr_);
       ASSERT_EQ(0,ierr_);
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec1_vp_+jmin*lda_,nloc_,jmax-jmin+1,lda_,stride_,val));
+
+      // new norms after changing columns
+      SUBR(mvec_norm2)(vec1_,norms_V1,&ierr_);
+      ASSERT_EQ(0,ierr_);      
+      
+      // delete the views without harming v1
+      SUBR(mvec_delete)(v1_view,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_delete)(v1_vv,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      // check that v1 still works
+      SUBR(mvec_norm2)(vec1_,norms_V1vv,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      for (int j=0;j<nvec_;j++)
+        {
+        ASSERT_REAL_EQ(norms_V1[j],norms_V1vv[j]);
+        }
       }
-    
     }
 
+
+
+  // view certain columns, manipulate them and check it changes the
+  // correct locations in the original one
+  TEST_F(CLASSNAME, get_set_block)
+    {
+    if (typeImplemented_)
+      {
+      int jmin=std::min(2,nvec_-1);
+      int jmax=std::min(5,nvec_-1);
+      TYPE(mvec_ptr) v1_copy=NULL;
+      SUBR(mvec_create)(&v1_copy,map_,jmax-jmin+1,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      
+      SUBR(mvec_get_block)(vec1_,v1_copy,jmin,jmax,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      _MT_ norms_V1[nvec_];
+      _MT_ norms_V1copy[nvec_];
+      
+      SUBR(mvec_norm2)(vec1_,norms_V1,&ierr_);
+      ASSERT_EQ(0,ierr_);      
+
+      SUBR(mvec_norm2)(v1_copy,norms_V1copy,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // compare elements one-by-one because our ArraysEqual expects ST rather than MT as 
+      // type here.
+      for (int j=jmin;j<=jmax;j++)
+        {
+        ASSERT_REAL_EQ(norms_V1[j],norms_V1copy[j-jmin]);
+        }
+      // set all the viewed entries to a certain value and check that the original vector is 
+      // changed.
+      _ST_ val = random_number();
+      SUBR(mvec_put_value)(v1_copy,val,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      
+      // check that the norms of v1 are unchanged
+      SUBR(mvec_norm2)(vec1_,norms_V1copy,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      for (int j=0;j<=nvec_;j++)
+        {
+        ASSERT_REAL_EQ(norms_V1[j],norms_V1copy[j]);
+        }
+
+      // compute the new norms
+      // check that the norms of v1 are unchanged
+      SUBR(mvec_norm2)(v1_copy,norms_V1copy,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      
+      // now set the block as the corresponding columns of v2
+      SUBR(mvec_set_block)(vec2_,v1_copy,jmin,jmax,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // compute the new norms
+      // check that the norms of v1 are unchanged
+      SUBR(mvec_norm2)(vec2_,norms_V1,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      for (int j=jmin;j<=jmax;j++)
+        {
+        ASSERT_REAL_EQ(norms_V1[j],norms_V1copy[j-jmin]);
+        }
+      }
+    }
 
 // TODO - missing tests
 
