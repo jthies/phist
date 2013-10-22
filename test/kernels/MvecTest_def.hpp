@@ -170,6 +170,44 @@ public:
     }
 
 
+  // view certain columns, manipulate them and check it changes the
+  // correct locations in the original one
+  TEST_F(CLASSNAME, view_block)
+    {
+    if (typeImplemented_)
+      {
+      int jmin=std::min(2,nvec_-1);
+      int jmax=std::min(5,nvec_-1);
+      TYPE(mvec_ptr) v1_view=NULL;
+      SUBR(mvec_view_block)(vec1_,&v1_view,jmin,jmax,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      
+      _MT_ norms_V1[nvec_];
+      _MT_ norms_V1view[jmax-jmin+1];
+      
+      SUBR(mvec_norm2)(vec1_,norms_V1,&ierr_);
+      ASSERT_EQ(0,ierr_);      
+
+      SUBR(mvec_norm2)(v1_view,norms_V1view,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      
+      // compare elements one-by-one because our ArraysEqual expects ST rather than MT as 
+      // type here.
+      for (int j=jmin;j<=jmax;j++)
+        {
+        ASSERT_REAL_EQ(norms_V1[j],norms_V1view[j-jmin]);
+        }
+      // set all the viewed entries to a certain value and check that the original vector is 
+      // changed.
+      _ST_ val = random_number();
+      SUBR(mvec_put_value)(v1_view,val,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec1_vp_+jmin*lda_,nloc_,jmax-jmin+1,lda_,stride_,val));
+      }
+    
+    }
+
+
 // TODO - missing tests
 
 // only test the Belos interface for ghost, we didn't write

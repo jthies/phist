@@ -660,9 +660,17 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
   _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(ghost_vec_t,C,vC,*ierr);
   _CAST_PTR_FROM_VOID_(ghost_vec_t,W,vW,*ierr);
-  char trans='N';
+#ifdef TESTING
+  int nrV,ncV,nrW,ncW,nrC,ncC;
+  nrV=V->traits->nrows;  ncV=V->traits->nvecs;
+  nrW=W->traits->nrows;  ncW=V->traits->nvecs;
+  nrC=C->traits->nrows;  ncC=V->traits->nvecs;
+  PHIST_CHK_IERR(nrV-nrW,*ierr);
+  PHIST_CHK_IERR(nrC-ncV,*ierr);
+  PHIST_CHK_IERR(ncC-ncW,*ierr);
+#endif
   // note: C is replicated, so this operation is a purely local one.
-  *ierr=ghost_gemm(&trans,V,C,W,(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE);
+  *ierr=ghost_gemm("N",V,C,W,(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE);
   }
 
 //! n x m serial dense matrix times m x k serial dense matrix gives n x k sdMat,

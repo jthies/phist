@@ -75,7 +75,7 @@ public:
 
 };
 
-  // check if vectors are normalized correctly after QR factorization
+  // check ones(n,m)'*ones(n,m)=n*ones(m,m)
   TEST_F(CLASSNAME, mvecT_times_mvec) 
     {
     if (typeImplemented_)
@@ -91,6 +91,27 @@ public:
       VTest::PrintVector(*cout,"ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(M1_vp_,m_,m_,ldaM1_,stride_,(ST)nglob_));
+      }
+    }
+
+  // check ones(n,m)*ones(m,m)=m*ones(n,m)
+  TEST_F(CLASSNAME, mvec_times_sdMat) 
+    {
+    if (typeImplemented_)
+      {
+      // fill V and W with ones
+      SUBR(mvec_put_value)(V1_,st::one(),&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_put_value)(V2_,(MT)42.0*st::one(),&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_put_value)(M1_,st::one(),&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,st::zero(),V2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      VTest::PrintVector(*cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      MTest::PrintSdMat(*cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
+      VTest::PrintVector(*cout,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(V2_vp_,nloc_,m_,ldaV2_,stride_,(ST)m_));
       }
     }
 

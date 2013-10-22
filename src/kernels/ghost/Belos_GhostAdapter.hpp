@@ -170,9 +170,9 @@ using ::phist::GhostMV;
     // with non-constant stride so we create a copy and issue a warning.
     if (constStride==false)
       {
-      std::cerr << "WARNING: Belos/Ghost Interface does not implement CloneViewNonConst for\n"<<
-          "variable strides. Returning a copy instead, which may not be what you want."<<std::endl;
-      return CloneCopy(mv,index);
+      ghost_vec_t* result=
+        _mv->viewScatteredVec(_mv,(ghost_vidx_t)index.size(),(ghost_vidx_t*)(&index[0]));
+      return phist::rcp(result);
       }
 
     // constant stride
