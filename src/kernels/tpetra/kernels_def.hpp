@@ -335,14 +335,12 @@ void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
       {
       _TRY_CATCH_(Mtmp = M->offsetViewNonConst(smap,imin),*ierr);
       _TRY_CATCH_(Mblock = Mtmp->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
-      // TODO: we are viewing a view here and are not allowed to delete either
-      //       when leaving the function. This is in fact a memory leak, because
-      //       mMcols will not be deleted, so a small amount of light-weight data
-      //       remains.
-      Mtmp.release();
+      // note: Mtmp and Mblock are 'persistent views' of the data, meaning that if the
+      //       viewed object is deleted, the view remains. So we can simply allow
+      //       Mtmp to be deleted at this point.
       }
     }
-    
+  // transfer memory management of Mblock to the caller
   *vMblock = (TYPE(sdMat_ptr))(Mblock.release().get());
   return;
   }
