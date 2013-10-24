@@ -346,7 +346,12 @@ namespace ghost {
     getNonConstView (MV& A)
     {
     lidx_t A_len = A.get()->traits->nrowspadded*A.get()->traits->nvecs;
-    Teuchos::ArrayRCP<ST> values((scalar_type*)A.get()->val,0,A_len,false);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(A.traits->flags & GHOST_VEC_SCATTERED,    
+                std::invalid_argument,
+                "ghost::TsqrAdaptor<Scalar>::getNonConstView(mv) requires constant stride in mv");
+                
+    Teuchos::ArrayRCP<ST> values((scalar_type*)A.get()->val[0],0,A_len,false);
     Teuchos::RCP<node_type> node = createNode();
     Kokkos::MultiVector<scalar_type, node_type> KMV(node);
     KMV.initializeValues ((size_t)A.get()->traits->nrows,

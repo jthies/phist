@@ -269,7 +269,22 @@ void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ie
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   _CAST_PTR_FROM_VOID_(ghost_vec_t,V, vV, *ierr);
-  *val = (_ST_*)V->val;
+  if (V->traits->flags & GHOST_VEC_SCATTERED)
+    {
+    PHIST_OUT(PHIST_ERROR,"%s: cannot view data with non-constant stride using "
+        "this function (file %s, line %d)", __FUNCTION__, __FILE__, __LINE__);
+    *ierr=-1; 
+    return;
+    }
+  if (V->val==NULL)
+    {
+    PHIST_OUT(PHIST_ERROR,"%s, pointer is NULL",__FUNCTION__);
+    *ierr=-2;
+    return;
+    }
+  fprintf(stderr,"location of data: %p\n",V->val[0]);
+  fprintf(stderr,"location of ptr-array: %p\n",V->val);
+  *val = (_ST_*)(V->val[0]);
   *lda = V->traits->nrowspadded;
   }
 
@@ -277,7 +292,16 @@ void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* 
   {
   ENTER_FCN(__FUNCTION__);
   _CAST_PTR_FROM_VOID_(ghost_vec_t,M, vM, *ierr);
-  *val = (_ST_*)M->val;
+
+  if (M->traits->flags & GHOST_VEC_SCATTERED)
+    {
+    PHIST_OUT(PHIST_ERROR,"%s: cannot view data with non-constant stride using "
+        "this function (file %s, line %d)", __FUNCTION__, __FILE__, __LINE__);
+    *ierr=-1; 
+    return;
+    }
+
+  *val = (_ST_*)M->val[0];
   *lda = M->traits->nrowspadded;
   }
 
@@ -354,7 +378,10 @@ void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMblock,
   // adjust the offset and the number of rows seen by the object
   Mblock->traits->nrows=imax-imin+1;
   std::ptrdiff_t offset=(std::ptrdiff_t)imin*(std::ptrdiff_t)ghost_sizeofDataType(Mblock->traits->datatype);
-  Mblock->val=(void*)((char*)(Mblock->val)+offset);
+  for (int i=0;i<Mblock->traits->nvecs;i++)
+    {
+    Mblock->val[i]+=offset;
+    }
   if (vMblock!=NULL)
     {
     _CAST_PTR_FROM_VOID_(ghost_vec_t,tmp,vMblock,*ierr);
@@ -638,13 +665,12 @@ void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE(const_mvec
   _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(ghost_vec_t,W,vW,*ierr);
   _CAST_PTR_FROM_VOID_(ghost_vec_t,C,vC,*ierr);
-  char trans;
 #ifdef _IS_COMPLEX_
-  trans='C';
+  char trans[]="C";
 #else
-  trans='T';
+  char trans[]="T";
 #endif  
-  *ierr=ghost_gemm(&trans,V,W,C,(void*)&alpha,(void*)&beta,GHOST_GEMM_ALL_REDUCE);
+  *ierr=ghost_gemm(trans,V,W,C,(void*)&alpha,(void*)&beta,GHOST_GEMM_ALL_REDUCE);
   }
 
 
@@ -670,8 +696,8 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
   PHIST_CHK_IERR(ncC-ncW,*ierr);
 #endif
   // note: C is replicated, so this operation is a purely local one.
-  char trans='N';
-  *ierr=ghost_gemm(&trans,V,C,W,(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE);
+  char trans[]="N";
+  *ierr=ghost_gemm(trans,V,C,W,(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE);
   }
 
 //! n x m serial dense matrix times m x k serial dense matrix gives n x k sdMat,
