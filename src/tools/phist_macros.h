@@ -115,6 +115,12 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #undef MAX
 #endif
 
+#if PHIST_OUTLEV>PHIST_DEBUG
+#define PHIST_DEB(msg, ...) PHIST_OUT(PHIST_DEBUG,msg,##__VA_ARGS__);
+#else
+#define PHIST_DEB(msg, ...)
+#endif
+
 #define MAX(a,b) (a)<(b)?(b):(a);
 
 #ifdef MIN

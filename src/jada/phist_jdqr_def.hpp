@@ -146,7 +146,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   std::complex<MT> theta; // next eigenvalue to go for
   ST shift;
   // theta as a sdMat_t (either 1x1 or 2x2 in real case)
-  sdMat_ptr_t Theta;
+  sdMat_ptr_t Theta=NULL;
   std::complex<MT> ev[maxBas];
   
   int numEigs=*num_eigs;
@@ -207,31 +207,40 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S,&S_raw, &ldS,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(T,&T_raw, &ldT,ierr),*ierr);
 
+  // view the first minBas+1 columns of V and H as M(1:minBas+1,1:minBas)
   PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,minBas,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&H0, 0,minBas,0,minBas,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&H0, 0,minBas,0,minBas-1,ierr),*ierr);
 
   PHIST_OUT(1,"%d steps of Arnoldi as start-up",minBas);
   
   // start by filling the first minBas vectors using Arnoldi
   //TODO - we promised to use the user input in X, here we just
-  // use a random vector instead
-  mvec_ptr_t v0;
+  // use a random vector instead.
+  mvec_ptr_t v0=NULL;
   PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v0,0,0,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_random)(v0,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(arnoldi)(A_op,v0,Vv,H0,minBas,ierr),*ierr);
+
+#if PHIST_OUTLEV>PHIST_DEBUG
+  PHIST_DEB("initial H (by Arnoldi)");
+  PHIST_CHK_IERR(SUBR(sdMat_print)(H0,ierr),*ierr);
+#endif
   // delete the view (not the data) v0
   PHIST_CHK_IERR(SUBR(mvec_delete)(v0,ierr),*ierr);
-  
+  v0=NULL; // always important to nullify pointers in phist...
   PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,minBas-1,ierr),*ierr);
   // compute A*V for the first minBas columns which we have now using the Arnoldi relation
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,H0,st::zero(),AVv,ierr),*ierr);
+
+  // set Vv=V(:,1:minBas)
+  PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,minBas-1,ierr),*ierr);
 
   PHIST_OUT(1,"Jacobi-Davidson");
   PHIST_OUT(1,"%s\t%s\t%s\t\t%s\n","iter","m","approx","resid");
 
   it=0; // total number of JaDa iterations
   mm=0; //count iterations per eigenvalue/pair of complex ev's
-  m=minBas-1;// current position in V where we want to add a new vector
+  m=minBas-1;// location of last valid vector in V
   expand=0;
   int nv=1; // number of vectors in current update (1 or 2 in this implementation, 2 for
             // complex eigenvectors of a real matrix.
@@ -241,6 +250,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     //TODO - thoroughly check the switch from 1-based m in MATLAB to 0-based here
     if (expand)
       {
+      PHIST_DEB("EXPAND basis by %d vector(s)",nv);
       int m0=m;
       m+=expand;
       mm++;
@@ -251,8 +261,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vm,m0+1,m,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVm,m0+1,m,ierr),*ierr);
       // orthogonalize t against V(:,0:m-1). We use T and S as temporary storage here
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,nv,0,nv,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m0,0,nv,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,nv-1,0,nv-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m0,0,nv-1,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(orthog)(Vv,t_ptr,Tv,Sv,2,ierr),*ierr);
       // set V(:,m)=t
       PHIST_CHK_IERR(SUBR(mvec_set_block)(V,t,m0+1,m,ierr),*ierr);
@@ -272,10 +282,13 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       // general dense matmul.
       PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,m0+1,m,m0+1,m,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vm,AVm,st::zero(),Mv,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m,ierr),*ierr);
+      PHIST_DEB("basis size is now m=%d",m+1);
       }
     else
       {
-      expand=1;
+      expand=1;//TODO - handle nv correctly
       }
       
     // now do a Schur decomposition of M into S and T, with the
@@ -305,6 +318,12 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     int ev_pos=0;
     theta=ev[ev_pos];
 
+#if PHIST_OUTLEV>PHIST_DEBUG
+  PHIST_DEB("it=%d, m=%d, mm=%d",it,m,mm);
+  PHIST_DEB("sorted Schur form");
+  PHIST_CHK_IERR(SUBR(sdMat_print)(Tv,ierr),*ierr);
+#endif
+
     nv=1; // nv==2 indicates complex eigenvalue of real matrix, we
           // will use this flag later on.
     // set some pointers
@@ -317,6 +336,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 #ifndef _IS_COMPLEX_
     if (mt::abs(ct::imag(theta))>mt::eps())
       {
+      PHIST_DEB("complex eigenvalue in real arithmetic");
       nv++; // get imaginary part
       }
     else
@@ -336,11 +356,17 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // get Ritz vector corresponding to theta
     // (for complex RV in real case, two columns are extracted)
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m,0,nv-1,ierr),*ierr);
-
+/*
+    PHIST_DEB("TROET try to compute V*S with V and S this:");
+    PHIST_CHK_IERR(SUBR(mvec_print)(Vv,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_print)(Sv,ierr),*ierr);
+    PHIST_DEB("TROET result should go here (in u):");
+    PHIST_CHK_IERR(SUBR(mvec_print)(u_ptr,ierr),*ierr);
+*/
     //u=V*s;
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),V,Sv,st::zero(),u_ptr,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),u_ptr,ierr),*ierr);
     //Au=AV*s;
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),AV,Sv,st::zero(),Au_ptr,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),AVv,Sv,st::zero(),Au_ptr,ierr),*ierr);
 
 // part CMP_RESID: compute residual and its norm (TODO: make this a helper function)
 //{
@@ -410,7 +436,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     m=m-nv;
     //V=V*S;
     // It is not allowed to alias V in mvec_times_sdMat, so we use a temporary vector
-    mvec_ptr_t v_tmp;
+    mvec_ptr_t v_tmp=NULL;
     PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v_tmp,0,m,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),v_tmp,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,v_tmp,0,m,ierr),*ierr);
@@ -493,7 +519,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-1,0,m-1,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_get_block)(T,Mv,0,m-1,0,m-1,ierr),*ierr);
     //V=V*S;
-    mvec_ptr_t v_tmp;
+    mvec_ptr_t v_tmp=NULL;
     PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v_tmp,0,m,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),v_tmp,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,v_tmp,0,m,ierr),*ierr);
@@ -631,9 +657,9 @@ void SUBR(arnoldi)(TYPE(const_op_ptr) op, TYPE(const_mvec_ptr) v0,
     PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&vprev,0,i,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&av,i+1,i+1,ierr),*ierr);
     PHIST_CHK_IERR(op->apply(st::one(),op->A,v,st::zero(),av,ierr),*ierr);
-    // orthogonalize
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R1,0,i,i,i,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R2,i+1,i+1,i,i,ierr),*ierr);
+    // orthogonalize, Q*R1 = W - V*R2
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R2,0,i,i,i,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R1,i+1,i+1,i,i,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(orthog)(vprev,av,R1,R2,2,ierr),*ierr);
     v=av;
     }
