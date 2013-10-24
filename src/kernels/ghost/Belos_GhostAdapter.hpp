@@ -151,33 +151,51 @@ using ::phist::GhostMV;
       TEUCHOS_TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= mv.traits->nvecs, std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,GhostMV>::CloneView(mv,index): indices must be < mv.traits->nvecs.");
 #endif
-      bool constStride=true;
+
+      bool constStride=true;                                                                                                      
       int stride=1;
-      if (index.size()>1)
+      if (_mv->traits->flags&GHOST_VEC_SCATTERED) 
         {
-        stride=index[1]-index[0];
-        for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) 
-          {
-          if (index[j] != index[j-1]+stride) 
-            {
-            constStride=false;
-            break;
-            }
+        constStride=false;
+        }
+      else
+        {
+        if (index.size()>1) stride=index[1]-index[0];                                                                                                         
+        for (typename std::vector<int>::size_type j=2; j<index.size(); ++j)                                                         
+           {                                                                                                                         
+           if (index[j] != index[j-1]+stride)                                                                                      
+             {                                                                                                                     
+             constStride=false;                                                                                                    
+             break;                                                                                                                
+             }
           }
         }
-      
-    // this is to cheat the Belos MVOPTester class, we can't create a view
-    // with non-constant stride so we create a copy and issue a warning.
+        
+    ghost_vec_t* result=NULL;
+
     if (constStride==false)
       {
-      ghost_vec_t* result=
-        _mv->viewScatteredVec(_mv,(ghost_vidx_t)index.size(),(ghost_vidx_t*)(&index[0]));
-      return phist::rcp(result);
+      //TODO: index is ints, ghost_vidx_t may be int64_t...
+      result=_mv->viewScatteredVec(_mv,(ghost_vidx_t)index.size(),(ghost_vidx_t*)(&index[0]));
       }
-
-    // constant stride
-    ghost_vec_t* result=_mv->viewVec(_mv,index.size(),index[0]);
-    result->traits->nrowspadded*=stride;
+    else
+      {
+      // constant stride
+      
+      // stride k: first simply view the vector, then manually set pointers and stride
+      result=_mv->viewVec(_mv,index.size(),index[0]);
+      if (stride!=1)
+        {
+        for (int i=0;i<index.size();i++)
+          {
+          result->val[i] = _mv->val[index[i]];
+          }
+        //TODO: this is quite a nasty hack to allow the ghost_gemm function to
+        // work for constant stride access, it should be fixed somehow in ghost
+        // so that the GPU stuff works as well etc.
+        result->traits->nrowspadded = _mv->traits->nrowspadded*stride;
+        }
+      }
     return phist::rcp(result);
     }
 
@@ -287,8 +305,8 @@ using ::phist::GhostMV;
     {
     ghost_vec_t* Cghost=createGhostViewOfTeuchosSDM(C);
     Scalar beta = st::zero();
-    const char T='T';
-    ghost_gemm((char*)&T,const_cast<ghost_vec_t*>(A.get()),
+    const char* trans=phist::ScalarTraits<Scalar>::is_complex()? "C": "T";
+    ghost_gemm((char*)trans,  const_cast<ghost_vec_t*>(A.get()),
                    const_cast<ghost_vec_t*>(B.get()),
                    Cghost,
                    (void*)&alpha, (void*)&beta,
@@ -343,13 +361,34 @@ using ::phist::GhostMV;
 #endif
       // note the dual meaning of get() here: RCP.get() gives raw pointer to GhostMV,
       // GhostMV.get() gives raw pointer to ghost_vec_t
-      ghost_vec_t* mvsub = CloneViewNonConst(mv,index)->get();
-      ghost_vec_t* Asub = const_cast<ghost_vec_t*>(A.get());
-      if ((typename std::vector<int>::size_type)Asub->traits->nvecs > index.size()) {
+      
+      // view the columns that we want to set in mv:
+      Teuchos::RCP<GhostMV> mvsub = CloneViewNonConst(mv,index);
+      ghost_vec_t* _mvsub = mvsub->get();
+      Teuchos::RCP<GhostMV> Asub = Teuchos::null;
+      ghost_vec_t* _Asub = const_cast<ghost_vec_t*>(A.get());
+      if ((typename std::vector<int>::size_type)_Asub->traits->nvecs > index.size()) {
         // this get is the GhostMV function to get an ghost_vec_t*
-        Asub = CloneViewNonConst(const_cast<GhostMV&>(A),Teuchos::Range1D(0,index.size()-1))->get();
+        Asub = CloneViewNonConst(const_cast<GhostMV&>(A),Teuchos::Range1D(0,index.size()-1));
+        _Asub= Asub->get();
       }
-    mvsub->fromVec(mvsub,Asub,0);
+    _mvsub->fromVec(_mvsub,_Asub,0);
+    return;
+/*
+    std::cout <<"MvCopy: indices: "<<std::endl;
+    for (int i=0;i<index.size();i++)
+      std::cout << index[i]<<" ";
+    std::cout<<std::endl;
+    
+    std::cout << "complete target matrix of MvCopy():"<<std::endl;
+    mv.get()->print(mv.get());
+
+    std::cout << "target columns of MvCopy():"<<std::endl;
+    _mvsub->print(_mvsub);
+
+    std::cout << "input block of MvCopy() was:"<<std::endl;
+    _Asub->print(_Asub);
+*/
     }
 
     static void

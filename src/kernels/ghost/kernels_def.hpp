@@ -123,7 +123,7 @@ void SUBR(mvec_create)(TYPE(mvec_ptr)* vV,
   ST zero = st::zero();
   // this allocates the vector and fills it with zeros
   result->fromScalar(result,&zero);
-  PHIST_OUT(PHIST_DEBUG,"mvec nrows: %ld\n",result->traits->nrows);
+  PHIST_DEB("mvec nrows: %ld\n",result->traits->nrows);
   *vV=(TYPE(mvec_ptr))(result);
   }
 
@@ -200,8 +200,8 @@ void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) vV, lidx_t* len, int* ierr)
   ENTER_FCN(__FUNCTION__);
   *ierr = 0;
   _CAST_PTR_FROM_VOID_(const ghost_vec_t,V,vV,*ierr);
-  PHIST_OUT(PHIST_DEBUG,"vV @ %p",vV);
-  PHIST_OUT(PHIST_DEBUG,"V @ %p",V);
+  PHIST_DEB("vV @ %p",vV);
+  PHIST_DEB("V @ %p",V);
   *len = V->traits->nrows;
   }
 
@@ -322,6 +322,7 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   if (vVblock!=NULL)
     {
     _CAST_PTR_FROM_VOID_(ghost_vec_t,tmp,vVblock,*ierr);
+    PHIST_DEB("destroying previous vector (view)");
     tmp->destroy(tmp);
     }
   *vVblock = (TYPE(mvec_ptr))Vblock;
@@ -373,8 +374,11 @@ void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMblock,
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   _CAST_PTR_FROM_VOID_(ghost_vec_t,M,vM,*ierr);
+
+  PHIST_DEB("requested index range: (%d:%d,%d:%d)",imin,imax,jmin,jmax);
+
   // first just create a view of the corresponding columns
-  ghost_vec_t *Mblock = M->viewVec(M, jmax-jmin+1, 0);
+  ghost_vec_t *Mblock = M->viewVec(M, jmax-jmin+1, jmin);
   // adjust the offset and the number of rows seen by the object
   Mblock->traits->nrows=imax-imin+1;
   std::ptrdiff_t offset=(std::ptrdiff_t)imin*(std::ptrdiff_t)ghost_sizeofDataType(Mblock->traits->datatype);
@@ -382,6 +386,14 @@ void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMblock,
     {
     Mblock->val[i]+=offset;
     }
+
+#if PHIST_OUTLEV>PHIST_DEBUG
+  PHIST_DEB("original matrix:");
+  M->print(M);
+  PHIST_DEB("viewed block:");
+  Mblock->print(Mblock);
+#endif  
+
   if (vMblock!=NULL)
     {
     _CAST_PTR_FROM_VOID_(ghost_vec_t,tmp,vMblock,*ierr);
@@ -454,7 +466,7 @@ void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, _ST_ value, int* ierr)
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
-  PHIST_OUT(PHIST_DEBUG,"put value, V @ %p. V->traits->nrows=%ld\n",V,V->traits->nrows);
+  PHIST_DEB("put value, V @ %p. V->traits->nrows=%ld\n",V,V->traits->nrows);
   V->fromScalar(V,(void*)&value);
   }
 
@@ -464,7 +476,6 @@ void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vV, _ST_ value, int* ierr)
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
-  PHIST_OUT(PHIST_DEBUG,"sdMat put value, M @ %p. V->traits->nrows=%ld\n",V,V->traits->nrows);
   V->fromScalar(V,(void*)&value);
   }
 
@@ -741,12 +752,12 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   _CHECK_ZERO_(nrows-(V->traits->nvecs),*ierr);
 #endif  
 
-  PHIST_OUT(PHIST_DEBUG,"create Teuchos view of R");
+  PHIST_DEB("create Teuchos view of R");
   Teuchos::RCP<Traits<_ST_ >::Teuchos_sdMat_t> R_view;
   PHIST_CHK_IERR(R_view = Traits<_ST_ >::CreateTeuchosViewNonConst
         (Teuchos::rcp(R,false),ierr),*ierr);
 
-  PHIST_OUT(PHIST_DEBUG,"create TSQR ortho manager");  
+  PHIST_DEB("create TSQR ortho manager");  
   Belos::TsqrOrthoManager<_ST_, phist::GhostMV> tsqr("phist/ghost");
   Teuchos::RCP<const Teuchos::ParameterList> valid_params = 
         tsqr.getValidParameters();
@@ -756,12 +767,12 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp
         (new Teuchos::ParameterList(*valid_params));
   params->set("randomizeNullSpace",true);
-  PHIST_OUT(PHIST_DEBUG,"set TSQR parameters");
+  PHIST_DEB("set TSQR parameters");
   tsqr.setParameterList(params);
 
   int rank;
   _TRY_CATCH_(rank = tsqr.normalize(mv_V,R_view),*ierr);
-  PHIST_OUT(PHIST_DEBUG,"V has %d columns and rank %d",ncols,rank);
+  PHIST_DEB("V has %d columns and rank %d",ncols,rank);
   *ierr = ncols-rank;// return positive number if rank not full.
   return;
   }
