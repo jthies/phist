@@ -154,7 +154,6 @@ void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const MPI_Comm, comm,vcomm,*ierr);
   ghost_vec_t* result;
   ghost_vtraits_t *dmtraits=new ghost_vtraits_t;
         dmtraits->flags = GHOST_VEC_DEFAULT; 
@@ -163,22 +162,6 @@ void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
         dmtraits->nrowspadded=ghost_pad(nrows,GHOST_PAD_MAX);
         dmtraits->nvecs=ncols;
         dmtraits->datatype=st::ghost_dt;
-
-#ifdef TESTING
-PHIST_CHK_IERR(comm==NULL,*ierr);
-if (*comm==MPI_COMM_WORLD)
-  {
-  PHIST_OUT(PHIST_INFO, "create sdMat with MPI_COMM_WORLD");
-  }
-else if (*comm==MPI_COMM_SELF)
-  {
-  PHIST_OUT(PHIST_INFO, "create sdMat with MPI_COMM_SELF");
-  }
-else
-  {
-  PHIST_OUT(PHIST_INFO, "create sdMat with non-standard comm");
-  }
-#endif
 
   // I think the sdMat should not have a context
   ghost_context_t* ctx=NULL;
@@ -319,9 +302,9 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
   // TODO - should we pass in nrows, nrowshalo for nr
   ghost_vec_t *Vblock = V->viewVec(V, jmax-jmin+1, 0);
-  if (vVblock!=NULL)
+  if (*vVblock!=NULL)
     {
-    _CAST_PTR_FROM_VOID_(ghost_vec_t,tmp,vVblock,*ierr);
+    _CAST_PTR_FROM_VOID_(ghost_vec_t,tmp,*vVblock,*ierr);
     PHIST_DEB("destroying previous vector (view)");
     tmp->destroy(tmp);
     }
@@ -376,16 +359,20 @@ void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMblock,
   _CAST_PTR_FROM_VOID_(ghost_vec_t,M,vM,*ierr);
 
   PHIST_DEB("requested index range: (%d:%d,%d:%d)",imin,imax,jmin,jmax);
+  PHIST_DEB("original matrix nrowspadded: %d",M->traits->nrowspadded);
 
   // first just create a view of the corresponding columns
   ghost_vec_t *Mblock = M->viewVec(M, jmax-jmin+1, jmin);
   // adjust the offset and the number of rows seen by the object
   Mblock->traits->nrows=imax-imin+1;
   std::ptrdiff_t offset=(std::ptrdiff_t)imin*(std::ptrdiff_t)ghost_sizeofDataType(Mblock->traits->datatype);
+
   for (int i=0;i<Mblock->traits->nvecs;i++)
     {
     Mblock->val[i]+=offset;
     }
+
+  PHIST_DEB("viewed matrix nrowspadded: %d",Mblock->traits->nrowspadded);
 
 #if PHIST_OUTLEV>PHIST_DEBUG
   PHIST_DEB("original matrix:");
@@ -394,9 +381,10 @@ void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMblock,
   Mblock->print(Mblock);
 #endif  
 
-  if (vMblock!=NULL)
+  if (*vMblock!=NULL)
     {
-    _CAST_PTR_FROM_VOID_(ghost_vec_t,tmp,vMblock,*ierr);
+    PHIST_DEB("deleting previous object in %s",__FUNCTION__);
+    _CAST_PTR_FROM_VOID_(ghost_vec_t,tmp,*vMblock,*ierr);
     tmp->destroy(tmp);
     }
   *vMblock = (TYPE(mvec_ptr))Mblock;
