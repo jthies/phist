@@ -727,6 +727,14 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(ghost_vec_t,R,vR,*ierr);
 
+  if (
+  (V->traits->flags&GHOST_VEC_SCATTERED) ||
+  (R->traits->flags&GHOST_VEC_SCATTERED))
+    {
+    *ierr=-1; // can't handle non-constant stride
+    return;
+    }
+
   int stride = R->traits->nrowspadded;
   int nrows = R->traits->nrows;
   int ncols = R->traits->nvecs;

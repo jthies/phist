@@ -62,6 +62,13 @@ public:
   static Teuchos::RCP<Teuchos_sdMat_t> CreateTeuchosViewNonConst(Teuchos::RCP<sdMat_t> M, int* ierr)
     {
     *ierr=0;
+    
+    if (M->traits->flags & GHOST_VEC_SCATTERED)
+      {
+      *ierr=-1;
+      PHIST_OUT(PHIST_ERROR,"to create a Teuchos view we need constant stride in ghost_vec_t");
+      return Teuchos::null;
+      }
 
     int stride = M->traits->nrowspadded;
     int nrows = M->traits->nrows;
@@ -69,11 +76,12 @@ public:
     
     if (M->traits->datatype != phist::ScalarTraits<ST>::ghost_dt)
       {
-      *ierr=-1;
+      *ierr=-2;
+      PHIST_OUT(PHIST_ERROR,"incorrect data type in ghost_vec_t");
       return Teuchos::null;
       }
 
-    ST *M_val = (ST*)M->val;
+    ST *M_val = (ST*)M->val[0];
     
     Teuchos::RCP<Traits<ST>::Teuchos_sdMat_t> M_view
                   = Teuchos::rcp(new Teuchos_sdMat_t(Teuchos::View,M_val,stride,nrows,ncols));
