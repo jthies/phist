@@ -1,8 +1,7 @@
 function X=jada_op(Y, A,sigma,B, V)
-% computes X=(B-VV')(A-sigma*B)(B-VV')
+% computes X=(B-VV')(A-sigma*B)
 
-X = B*Y-(V'*Y)*V;
-X = A*X - sigma*X;
+X = A*Y - sigma*B*Y;
 X = B*X-(V'*X)*V;
 
 end

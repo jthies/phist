@@ -81,7 +81,6 @@ public:
       
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat1_vp_+imin+jmin*lda,imax-imin+1,jmax-jmin+1,lda,stride,val));
       }
-
     }
 
 

@@ -26,7 +26,7 @@ V = orthog(v0);
 H=zeros((m+1)*k,m*k);
 
 for j=1:m
-  W=A*V(:,idx(j));
+  W=apply_op(V(:,idx(j)),A);
 
   % orthogonalize
   [Vnew,hcol]=orthog(V,W);

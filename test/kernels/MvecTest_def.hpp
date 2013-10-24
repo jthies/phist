@@ -185,6 +185,10 @@ public:
       SUBR(mvec_view_block)(v1_view,&v1_vv,0,jmax-jmin+1,&ierr_);
       ASSERT_EQ(0,ierr_);
       
+      // now this should delete the original view and create a new one,
+      // all vectors must remain valid:
+      SUBR(mvec_view_block)(vec1_,&v1_view,jmin,jmax,&ierr_);
+      
       _MT_ norms_V1[nvec_];
       _MT_ norms_V1view[nvec_];
       _MT_ norms_V1vv[nvec_];

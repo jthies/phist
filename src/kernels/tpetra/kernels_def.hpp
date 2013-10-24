@@ -647,6 +647,9 @@ void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,W,vW,*ierr);
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,C,vC,*ierr);
+PHIST_DEB("V is %dx%d, W is %dx%d, C is %dx%d\n",V->getLocalLength(),V->getNumVectors(),
+                                                 W->getLocalLength(),W->getNumVectors(),
+                                                 C->getLocalLength(),C->getNumVectors());
 #ifdef _IS_COMPLEX_
   _TRY_CATCH_(C->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS,alpha,*V,*W,beta),*ierr);
 #else
@@ -666,6 +669,10 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,C,vC,*ierr);
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,W,vW,*ierr);
+
+PHIST_DEB("V is %dx%d, C is %dx%d, W is %dx%d\n",V->getLocalLength(),V->getNumVectors(),
+                                                 C->getLocalLength(),C->getNumVectors(),
+                                                 W->getLocalLength(),W->getNumVectors());
   _TRY_CATCH_(W->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,
         alpha, *V, *C, beta), *ierr);
   }
@@ -732,7 +739,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   int rank;
   _TRY_CATCH_(rank = tsqr.normalize(*V,R_view),*ierr);  
   *ierr = ncols-rank;// return positive number if rank not full.
-  PHIST_OUT(PHIST_DEBUG,"mvec_QR: ncols=%d, rank=%d, returning %d\n",ncols,rank,*ierr);
+  PHIST_DEB("mvec_QR: ncols=%d, rank=%d, returning %d\n",ncols,rank,*ierr);
   return;
   }
 

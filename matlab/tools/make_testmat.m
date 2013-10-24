@@ -19,6 +19,6 @@ if (sym)
 else
   R=sprandn(A);
 end
-A=A+0.25*R;
+A=A+R;
 
 end

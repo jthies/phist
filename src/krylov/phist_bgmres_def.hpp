@@ -12,6 +12,7 @@ void SUBR(bgmres)(TYPE(const_op_ptr) Op,
         _MT_ tol,int *num_iters, int max_blocks,
         int* ierr)
   {
+  ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"  
 #ifdef PHIST_KERNEL_LIB_GHOST
   typedef ghost_vec_t MV;
@@ -93,10 +94,10 @@ try {
     Belos::ReturnType result=gmres->solve();
     *num_iters = gmres->getNumIters();
     *out << "Belos returned '"<<Belos::convertReturnTypeToString(result)<<"'"<<std::endl;
-
+    if (result!=Belos::Converged) *ierr=1;
   } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,status);
 
-  if (!status) *ierr=-5; // caught an exception while solving the linear system
+  if (!status) *ierr=_PHIST_CAUGHT_EXCEPTION_; 
   return;
   }// end of bgmres
 

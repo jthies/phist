@@ -17,10 +17,21 @@ if (isstruct(op))
 else
   x=op*y;  
   if issparse(op)
-    if isempty(count_MVM)
-      count_MVM=0;
+    % check if this is the identity matrix
+    % (this is of course terribly expensive
+    % and just for getting the counts right,
+    % in a practical implementation we'ld do
+    % it smarter)
+    is_I=false;
+    if (norm(op-speye(size(op)),inf)==0)
+      is_I=true;
     end
-    count_MVM=count_MVM+1;
+    if (~is_I)
+      if isempty(count_MVM)
+        count_MVM=0;
+      end
+      count_MVM=count_MVM+1;
+    end
   end
 end
 

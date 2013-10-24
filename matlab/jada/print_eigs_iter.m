@@ -1,6 +1,7 @@
 function print_eigs_iter(iter,m,res,val)
 
 global printOpts;
+global count_MVM;
 tab='\t';
 fmt='';
 if (isfield(printOpts,'indent'))
@@ -9,9 +10,10 @@ if (isfield(printOpts,'indent'))
   end
 end
 
-iscomplex=abs(imag(val))>sqrt(eps);
+iscomplex=true;
+%iscomplex=abs(imag(val))>sqrt(eps);
 
-fmt=[fmt,'%d %d\t%12.5e '];
+fmt=[fmt,'it=%d m=%d #MV=%d\tth=%12.5e '];
 
 if iscomplex
   fmt=[fmt,' %+12.5e i'];
@@ -22,9 +24,9 @@ end
 fmt=[fmt,'\t||r||=%16.8e'];
 %disp('=================================================');
 if iscomplex
-  disp(sprintf(fmt,iter,m,real(val),imag(val),res));
+  disp(sprintf(fmt,iter,m,count_MVM,real(val),imag(val),res));
 else
-  disp(sprintf(fmt,iter,m,real(val),res));
+  disp(sprintf(fmt,iter,m,count_MVM,real(val),res));
 end
 %disp('=================================================');
 

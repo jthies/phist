@@ -1,5 +1,5 @@
 #include "phist_macros.h"
-#include "typedefs.hpp"
+#include "phist_tpetra_typedefs.hpp"
 #include "../phist_kernels.h"
 #include "phist_trilinos_macros.h"
 #include "phist_ScalarTraits.hpp"
@@ -13,6 +13,9 @@
 #include "BelosTpetraAdapter.hpp"
 #include "BelosTsqrOrthoManager.hpp"
 
+
+
+using namespace phist::tpetra;
 
 
 extern "C" {

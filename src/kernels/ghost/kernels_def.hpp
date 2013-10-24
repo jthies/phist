@@ -340,7 +340,7 @@ void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
   _CAST_PTR_FROM_VOID_(ghost_vec_t,Vblock,vVblock,*ierr);
   // TODO - bounds checking
   // create a view of the requested columns of V
-  ghost_vec_t *Vcols = Vcols->viewVec(V,jmax-jmin+1,jmin);
+  ghost_vec_t *Vcols = V->viewVec(V,jmax-jmin+1,jmin);
   // copy the data
   Vcols->fromVec(Vcols,Vblock,0);
   // delete the view

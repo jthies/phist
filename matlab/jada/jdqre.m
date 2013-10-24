@@ -36,7 +36,9 @@ n=size(A,1);
 
 global printOpts;
 global count_MVM;
+global A_operator;
 
+A_operator=A; % for testing Sleijpens GMRES
 count_MVM=0;
 
 EXPAND=true;
@@ -201,7 +203,7 @@ while (k<numEigs && it<=maxIter)
     rtil=r-Q*atil;
     nrm=norm(rtil);
 
-    [S,T]=SortSchur(M,target,m==mmax,mmin);
+    [S,T]=SortSchur(M,target);%,m==mmax,mmin);
 
   end % while (deflate)
 
@@ -245,6 +247,10 @@ while (k<numEigs && it<=maxIter)
       b_aug = [rtil;zeros(size(Qtil,2),size(rtil,2))];
       t_aug= A_aug\b_aug;
       t=t_aug(1:size(Qtil,1),:);
+    elseif (strcmp(lsFun,'gmres'))
+      lsOpts.tol=max(tol,1/2.^max(1,mm));
+      par=[lsOpts.tol lsOpts.maxIter];
+      t=their_gmres(shift,Qtil,Qtil,1,rtil,par);
     else
       op=comp_jada_op(A,shift,speye(n),Qtil);
       if (isfield(printOpts,'indent'))
@@ -259,9 +265,10 @@ while (k<numEigs && it<=maxIter)
       if (verbose)
         disp(['inner conv tol: ',num2str(lsOpts.tol)]);
       end
+      
       [t,flag,relres,iter,resvec] = ...
         lsFun(op,rtil,t0,lsOpts,precOp);
-      
+
       printOpts.indent=printOpts.indent-1;
     end % direct or user-supplied
     EXPAND=true;    

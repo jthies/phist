@@ -1,8 +1,9 @@
+clear global;
 setpath;
 %for debugging - make results reproducible
 rand('seed',77);
 randn('seed',42);
-complex=0;
+complex=1;
 
 nx=8;
 A=make_testmat(nx);
@@ -25,19 +26,21 @@ opts.debug=false;
 % JD options
 opts.arnoldi=true; % start with Arnoldi?
 %opts.switchTol=1.0e-3;
-opts.numEigs=10;
-opts.maxIter=250;
+opts.numEigs=20;
+opts.maxIter=200;
 opts.tol=1.0e-6;
 opts.minSpace=10;
-opts.maxSpace=20;
+opts.maxSpace=200;
 
-opts.iterFun=@bgmres;
+%opts.iterFun=@bgmres;
+opts.iterFun='gmres';
+%opts.iterFun='direct';
 
 
 % options for the outer GMRES loop
-opts.lsOpts.tol=1.0;
-opts.lsOpts.maxIter=100;
-opts.lsOpts.m=20; % restart/truncation parameter:
+opts.lsOpts.tol=0.5;
+opts.lsOpts.maxIter=25;
+opts.lsOpts.m=25; % restart/truncation parameter:
 
 % symmetric
 %s=1./sqrt(sum(abs(A),2));
@@ -48,6 +51,7 @@ opts.lsOpts.m=20; % restart/truncation parameter:
 %S=spdiags(s,0,n,n);
 %A=S*A; % row equilibration
 
+%opts.precOp.compute=@comp_diagprec;
 %opts.precOp.compute=@comp_iluprec;
 
 

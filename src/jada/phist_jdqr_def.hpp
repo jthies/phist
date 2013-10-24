@@ -356,13 +356,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // get Ritz vector corresponding to theta
     // (for complex RV in real case, two columns are extracted)
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m,0,nv-1,ierr),*ierr);
-/*
-    PHIST_DEB("TROET try to compute V*S with V and S this:");
-    PHIST_CHK_IERR(SUBR(mvec_print)(Vv,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_print)(Sv,ierr),*ierr);
-    PHIST_DEB("TROET result should go here (in u):");
-    PHIST_CHK_IERR(SUBR(mvec_print)(u_ptr,ierr),*ierr);
-*/
     //u=V*s;
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),u_ptr,ierr),*ierr);
     //Au=AV*s;
