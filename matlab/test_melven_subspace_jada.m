@@ -15,6 +15,15 @@ if (complex)
   A=A+0.25*sprandn(A)*i*complex;
 end
 
+generalized = true;
+if( generalized )
+  % create spd. B
+  B = sprandsym(n, 0.001,0.1,2);
+  % print cond of B
+  fprintf('cond(B) = %f\n', condest(B));
+else
+  B = eye(n);
+end
 
 v0=randn(n,k);
 if (complex)
@@ -30,7 +39,7 @@ res_eps = 1.e-8;
 resnorm_history_total = [];
 for iOuter = 1:maxOuterIter
     fprintf('Outer iteration %d:', iOuter)
-    [r,q,resnorm,resnorm_history,m] = melven_subspace_jada(A,v0,maxInnerIter,res_eps);
+    [r,q,resnorm,resnorm_history,m] = melven_subspace_jada(A,B,v0,maxInnerIter,res_eps);
     resnorm_history_total = [resnorm_history_total resnorm_history];
     v0 = q;
     if( m < maxInnerIter )
@@ -38,7 +47,7 @@ for iOuter = 1:maxOuterIter
     end
 end
 fprintf('Outer iterations: %d, total iterations: %d',iOuter, (iOuter-1)*maxInnerIter+m-1);
-fprintf('\nEigenv. (MATLAB): %s', num2str(eigs(A,k)','%8.4g'));
-fprintf('\n      Difference: '); fprintf(' %6.2g',abs(sort(diag(r),'descend')-sort(eigs(A,k),'descend')));
+fprintf('\nEigenv. (MATLAB): %s', num2str(eigs(A,B,k)','%8.4g'));
+fprintf('\n      Difference: '); fprintf(' %6.2g',abs(sort(diag(r),'descend')-sort(eigs(A,B,k),'descend')));
 fprintf('\n');
 

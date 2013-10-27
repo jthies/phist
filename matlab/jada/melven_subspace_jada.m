@@ -1,9 +1,10 @@
-function [r,q,resnorm,resnorm_history,m]=melven_subspace_jada(A,v0,maxIter,res_eps)
+function [r,q,resnorm,resnorm_history,m]=melven_subspace_jada(A,B,v0,maxIter,res_eps)
 
 n = size(A,1);                                  % matrix dimension
 k = size(v0,2);                                 % blocksize, e.g. number of eigenvalues wanted
 
 V = zeros(n,maxIter*k);                         % search space empty initially
+BV = zeros(n,maxIter*k);
 nV = 0;
 W = zeros(n,maxIter*k);
 t = v0;                                         % initial new direction
@@ -17,19 +18,20 @@ lambda = zeros(k,1);
 for m = 1:maxIter                               % main iteration loop
     nV_old = nV;
     if( m > 1 )
-        t = t - V(:,1:nV_old) * (V(:,1:nV_old)' * t);     % orthogonalize t wrt V
+        t = t - V(:,1:nV_old) * (BV(:,1:nV_old)' * t);     % orthogonalize t wrt V
     end
-    t = orth(t);
-    inv_norm_t = diag(1./sqrt(sum(t'*t)));
-    t = t*inv_norm_t;
-    rank_t = rank(t,res_eps);
+    [t,rank_t] = orth(t,B,res_eps); % need B-orthogonality
+    %inv_norm_t = diag(1./sqrt(sum(t'*t)));
+    %t = t*inv_norm_t;
+    %rank_t = rank(t,res_eps);
     fprintf(' rank of correction: %d\n', rank_t);
     if( rank(t) == 0 )
         return
     end
     nV = nV_old + rank_t;
     V(:,nV_old+1:nV) = t;                     % update subspace V
-    V_orth = max(max(abs(eye(nV) - V(:,1:nV)' * V(:,1:nV))));
+    BV(:,nV_old+1:nV) = B*t;
+    V_orth = max(max(abs(eye(nV) - BV(:,1:nV)' * V(:,1:nV))));
     if( V_orth > res_eps )
         error('V not orthogonal: %g', V_orth);
     end
@@ -53,9 +55,10 @@ for m = 1:maxIter                               % main iteration loop
     % get our current approximation of  A*Q = Q*R
     r = R_H(1:k,1:k);
     q = V(:,1:nV) * Q_H(:,1:k);
+    Bq = BV(:,1:nV) * Q_H(:,1:k);
     % calculate residuum
     Aq = W(:,1:nV) * Q_H(:,1:k);
-    res = Aq - q*r;
+    res = Aq - Bq*r;
     for i = 1:k
         resnorm(i) = norm(res(:,i),2);
     end
@@ -71,7 +74,7 @@ for m = 1:maxIter                               % main iteration loop
     end
     delta_lambda = lambda - diag(r);
     lambda = diag(r);
-    res_ev = A*v - v*diag(lambda);
+    res_ev = A*v - B*v*diag(lambda);
     for i = 1:k
         resnorm_ev(i) = norm(res_ev(:,i),2);
     end
@@ -90,9 +93,9 @@ for m = 1:maxIter                               % main iteration loop
 
     if( true )
         % solve approximately
-        % (I-qq')A(I-qq')*t - (I-qq')*t*r = -res
+        % (I-Bqq')A(I-qBq')*t - (I-Bqq')*B*t*r = -res
         % as r is an upper triangular matrix, we can do this column for column
-        % (I-qq')(A-r(i,i)*I)(I-qq')*t(:,i) = -res(:,i) + (I-qq')*t(:,1:i-1)*r(1:i-1,i)
+        % (I-Bqq')(A-r(i,i)*B)(I-qBq')*t(:,i) = -res(:,i) + (I-Bqq')*B*t(:,1:i-1)*r(1:i-1,i)
         for i = 1:k
             % don't correct already converged eigenvalues
             if( resnorm(i) < res_eps )
@@ -104,41 +107,68 @@ for m = 1:maxIter                               % main iteration loop
             % analyse behaviour if we omit the coupling here...
             if( true )
                 for j = 1:1:i-1
-                    res_i = res_i + r(j,i)*t(:,j);
+                    res_i = res_i - r(j,i)*B*t(:,j);
                 end
-            else
-                res_i = res_i - q*(q'*res_i);
             end
+            res_i = res_i - q*(Bq'*res_i);
             % solve i-th equation
             %A_proj_i = (eye(n)-q*q')*(A-r(i,i)*eye(n))*(eye(n)-q*q');
             %t(:,i) = res_i\A_proj_i;
             shift = r(i,i);
-            t(:,i) = gmres(@A_proj, res_i);
-            % use the projection of t onto (I-qq')
-            t(:,i) = t(:,i) - q*(q'*t(:,i));
+            t(:,i) = gmres(@A_proj, res_i, ...
+                           min(40,10*m), ...
+                           min(0.5,max(eps,resnorm(i)*1/m^2)), ...
+                           max(floor(4/m),1));
+            % use the projection of t onto (I-qBq')
+            t(:,i) = t(:,i) - q*(Bq'*t(:,i));
         end
     else % standard block_jada?
         % solve approximately
-        %(I-qq')(A-lambda(i) I)(I-qq')t(:,i) = -res_ev(:,i)
+        %(I-Bqq')(A-lambda(i) B)(I-qBq')t(:,i) = -res_ev(:,i)
         for i = 1:k
             if( resnorm(i) < res_eps )
                 t(:,i) = 0;
                 continue;
             end
-            %A_proj_i = (eye(n)-q*q')*(A-r(i,i)*eye(n))*(eye(n)-q*q');
+            %A_proj_i = (eye(n)-q*Bq')*(A-r(i,i)*B)*(eye(n)-q*Bq');
             %t(:,i) = -res_ev(:,i)\A_proj_i;
-            res_ev(:,i) = res_ev(:,i) - q*(q'*res_ev(:,i));
+            res_ev(:,i) = res_ev(:,i) - q*(Bq'*res_ev(:,i));
             shift = r(i,i);
-            t(:,i) = gmres(@A_proj, -res_ev(:,i));
-            t(:,i) = t(:,i) - q*(q'*t(:,i));
+            t(:,i) = gmres(@A_proj, -res_ev(:,i), ...
+                           min(40,10*m), ...
+                           min(0.5,max(eps,resnorm(i)*1/m^2)), ...
+                           max(floor(4/m),1));
+            t(:,i) = t(:,i) - q*(Bq'*t(:,i));
         end
     end
 end
 
 function y = A_proj(x)
-    y = x-q*(q'*x);
-    y = A*y - shift*y;
-    y = y - q*(q'*y);
+    y = x-q*(Bq'*x);
+    y = A*y - shift*(B*y);
+    y = y - Bq*(q'*y);
 end
 
+end
+
+
+function [y,rank_y] = orth(x,D,eps)
+    n = size(x,1);
+    k = size(x,2);
+    y = zeros(n,k);
+    l = 1;
+    for i = 1:k;
+        y(:,l) = x(:,i);
+        for j = 1:i-1
+            alpha_jl = y(:,j)'*D*y(:,l);
+            y(:,l) = y(:,l) - y(:,j)*alpha_jl;
+        end
+        alpha_ii = sqrt(y(:,l)'*D*y(:,l));
+        if( alpha_ii > eps )
+            y(:,l) = y(:,l)/alpha_ii;
+            l = l + 1;
+        end
+    end
+    rank_y = l-1;
+    y = y(:,1:rank_y);
 end
