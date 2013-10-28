@@ -181,18 +181,23 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   t_r=t; t_i=NULL;
 
 #ifndef _IS_COMPLEX_
+  u_r=NULL;
   PHIST_CHK_IERR(SUBR(mvec_view_block)(u,&u_r,0,0,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_view_block)(u,&u_i,1,1,ierr),*ierr);
 
+  Au_r=NULL;
   PHIST_CHK_IERR(SUBR(mvec_view_block)(Au,&Au_r,0,0,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_view_block)(Au,&Au_i,1,1,ierr),*ierr);
 
+  r_r=NULL;
   PHIST_CHK_IERR(SUBR(mvec_view_block)(r,&r_r,0,0,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_view_block)(r,&r_i,1,1,ierr),*ierr);
 
+  rtil_r=NULL;
   PHIST_CHK_IERR(SUBR(mvec_view_block)(rtil,&rtil_r,0,0,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_view_block)(rtil,&rtil_i,1,1,ierr),*ierr);  
 
+  t_r=NULL;
   PHIST_CHK_IERR(SUBR(mvec_view_block)(t,&t_r,0,0,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_view_block)(t,&t_i,1,1,ierr),*ierr);  
 #endif
