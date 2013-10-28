@@ -563,11 +563,19 @@ void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vX,
                             _ST_ beta,  TYPE(mvec_ptr)       vY, 
                             int* ierr)
   {
+#include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   _CAST_PTR_FROM_VOID_(ghost_vec_t,X,vX,*ierr);
   _CAST_PTR_FROM_VOID_(ghost_vec_t,Y,vY,*ierr);
-  Y->axpby(Y,X,(void*)&alpha,(void*)&beta);
+  if (beta==st::one())
+    {
+    Y->axpy(Y,X,(void*)&alpha);
+    }
+  else
+    {
+    Y->axpby(Y,X,(void*)&alpha,(void*)&beta);
+    }
   }
 
 //! y[j]=alpha[j]*x[j]+beta[j]*y[j] for all columns j
