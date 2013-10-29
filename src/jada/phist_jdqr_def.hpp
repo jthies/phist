@@ -121,12 +121,12 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   // these point either to u or u_r etc. to make live simpler further down
   mvec_ptr_t u_ptr=NULL, Au_ptr=NULL, r_ptr=NULL, rtil_ptr=NULL,t_ptr=NULL;
   // Q*s (temporary vector)
-  sdMat_ptr_t atil=NULL, atil_r=NULL, atil_i=NULL, atil_ptr;
+  sdMat_ptr_t atil=NULL, atilv=NULL;
   // matrix <V,AV>
   sdMat_ptr_t M=NULL;
   sdMat_ptr_t Mv=NULL; // to create views of parts of M
   // Schur-decomposition of M
-  sdMat_ptr_t T, S=NULL;
+  sdMat_ptr_t T=NULL, S=NULL;
   sdMat_ptr_t Tv=NULL,Sv=NULL; // to create views of parts of T and S
 
   // for extracting views of M, T and S (to call lapack etc.)
@@ -207,6 +207,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(sdMat_create)(&T,maxBas,maxBas,comm,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&R,*num_eigs,*num_eigs,comm,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,st::zero(),ierr),*ierr);
+
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&atil,maxBas,nv_max,comm,ierr),*ierr);
 
   // pointer to the data in M, S and T
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(M,&M_raw, &ldM,ierr),*ierr);
@@ -335,7 +337,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // set some pointers
     u_ptr=u;
     Au_ptr=Au;
-    atil_ptr=atil;
     r_ptr=r;
     rtil_ptr=rtil;
     t_ptr=t;
@@ -348,13 +349,15 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     else
       {
       // real matrix, real Ritz theta
-      atil_ptr=atil_r;
       u_ptr=u_r;
       Au_ptr=Au_r;
       r_ptr=r_r;
       rtil_ptr=rtil_r;
       }
 #endif
+
+    // view a~, a temporary vector
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(atil,&atilv,0,nconv-1,0,nv-1,ierr),*ierr);
 
     // get the diagonal block (1x1 or 2x2) corresponding to theta
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Theta,0,nv-1,0,nv-1,ierr),*ierr);
@@ -382,6 +385,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r_ptr,st::zero(),rtil_ptr,ierr),*ierr);
 
     // project out already converged eigenvectors
+    // TODO - we could use our orthog routine here instead
     if (nconv>0)
       {
       //atil = Q'*r;
@@ -415,7 +419,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
      PHIST_CHK_IERR(SUBR(mvec_set_block)(Qv,u_ptr,nq0,nconv-1,ierr),*ierr);
      //R=[R, atil;
      //   0, theta];
-     PHIST_CHK_IERR(SUBR(sdMat_set_block)(R,atil_ptr,0,m,nq0,nconv-1,ierr),*ierr);
+     PHIST_CHK_IERR(SUBR(sdMat_set_block)(R,atilv,0,nq0-1,nq0,nconv-1,ierr),*ierr);
      PHIST_CHK_IERR(SUBR(sdMat_set_block)(R,Theta,nq0,nconv-1,nq0,nconv-1,ierr),*ierr);
 
     PHIST_OUT(1,"eigenvalue %d (%8.4g%+8.4gi) is converged.",nconv,ct::real(theta),ct::imag(theta));
@@ -484,7 +488,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Qv,r_ptr,st::zero(),atil,ierr),*ierr);
     
     //rtil = r-Q*atil;
-      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,atil_ptr,st::one(),r,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,atilv,st::one(),r,ierr),*ierr);
 
     //nrm=norm(rtil);
     // real case with complex r: ||v+iw||=sqrt((v+iw).'*(v-iw))=sqrt(v'v+w'w)
