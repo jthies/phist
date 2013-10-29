@@ -345,21 +345,22 @@ namespace ghost {
     static Kokkos::MultiVector<scalar_type,node_type>
     getNonConstView (MV& A)
     {
-    lidx_t A_len = A.get()->traits->nrowspadded*A.get()->traits->nvecs;
+    ghost_vec_t* _A=A.get();
+    lidx_t A_len = _A->traits->nrowspadded*_A->traits->nvecs;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(A.traits->flags & GHOST_VEC_SCATTERED,    
+    TEUCHOS_TEST_FOR_EXCEPTION(_A->traits->flags & GHOST_VEC_SCATTERED,    
                 std::invalid_argument,
                 "ghost::TsqrAdaptor<Scalar>::getNonConstView(mv) requires constant stride in mv");
                 
-    Teuchos::ArrayRCP<ST> values((scalar_type*)A.get()->val[0],0,A_len,false);
+    Teuchos::ArrayRCP<ST> values((scalar_type*)_A->val[0],0,A_len,false);
     Teuchos::RCP<node_type> node = createNode();
     Kokkos::MultiVector<scalar_type, node_type> KMV(node);
-    KMV.initializeValues ((size_t)A.get()->traits->nrows,
-                      (size_t)A.get()->traits->nvecs,
+    KMV.initializeValues ((size_t)_A->traits->nrows,
+                      (size_t)_A->traits->nvecs,
                       values,
-                      (size_t)A.get()->traits->nrowspadded,
-                      (size_t)A.get()->traits->nrows,
-                      (size_t)A.get()->traits->nvecs);
+                      (size_t)_A->traits->nrowspadded,
+                      (size_t)_A->traits->nrows,
+                      (size_t)_A->traits->nvecs);
     
       return KMV;
     }

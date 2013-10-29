@@ -300,8 +300,9 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
-  // TODO - should we pass in nrows, nrowshalo for nr
-  ghost_vec_t *Vblock = V->viewVec(V, jmax-jmin+1, 0);
+
+  ghost_vec_t *Vblock = V->viewVec(V, jmax-jmin+1, jmin);
+
   if (*vVblock!=NULL)
     {
     _CAST_PTR_FROM_VOID_(ghost_vec_t,tmp,*vVblock,*ierr);
@@ -358,8 +359,8 @@ void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMblock,
   *ierr=0;
   _CAST_PTR_FROM_VOID_(ghost_vec_t,M,vM,*ierr);
 
-  PHIST_DEB("requested index range: (%d:%d,%d:%d)",imin,imax,jmin,jmax);
-  PHIST_DEB("original matrix nrowspadded: %d",M->traits->nrowspadded);
+  //TODO: we only view the host side of the vector here, this function should
+  //      eventually be moved into ghost and the accelerator stuff added.
 
   // first just create a view of the corresponding columns
   ghost_vec_t *Mblock = M->viewVec(M, jmax-jmin+1, jmin);
@@ -371,15 +372,6 @@ void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMblock,
     {
     Mblock->val[i]+=offset;
     }
-
-  PHIST_DEB("viewed matrix nrowspadded: %d",Mblock->traits->nrowspadded);
-
-#if PHIST_OUTLEV>PHIST_DEBUG
-  PHIST_DEB("original matrix:");
-  M->print(M);
-  PHIST_DEB("viewed block:");
-  Mblock->print(Mblock);
-#endif  
 
   if (*vMblock!=NULL)
     {
@@ -394,23 +386,34 @@ void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMblock,
 //! Mblock = M(imin:imax,jmin:jmax). The object Mblock must be created beforehand 
 //! and the corresponding columns of M are copied into the value array    
 //! of Mblock. M is not modified.
-void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) M, 
-                             TYPE(sdMat_ptr) Mblock,
+void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
+                             TYPE(sdMat_ptr) vMblock,
                              int imin, int imax, int jmin, int jmax, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
-  //TODO - do we need this in ghost?
-  *ierr=-99;
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(ghost_vec_t,Mblock,vMblock,*ierr);
+
+  ghost_vec_t *Mb_view=NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)((TYPE(sdMat_ptr))vM,(TYPE(sdMat_ptr)*)&Mb_view,imin,imax,jmin,jmax,ierr),*ierr);
+  Mblock->fromVec(Mblock,(ghost_vec_t*)Mb_view,0);
+  Mb_view->destroy(Mb_view);
   }
 
 //! given a serial dense matrix Mblock, set M(imin:imax,jmin:jmax)=Mblock by 
 //! copying the corresponding elements. Mblock is not modified.
-void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M, 
-                             TYPE(const_sdMat_ptr) Mblock,
+void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM, 
+                             TYPE(const_sdMat_ptr) vMblock,
                              int imin, int imax, int jmin, int jmax, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
-  *ierr=-99;
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(ghost_vec_t,Mblock,vMblock,*ierr);
+
+  ghost_vec_t* Mb_view=NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)(vM,(TYPE(sdMat_ptr)*)&Mb_view,imin,imax,jmin,jmax,ierr),*ierr);
+  Mb_view->fromVec(Mb_view,Mblock,0);
+  Mb_view->destroy(Mb_view);
   }
 
 //! \name destructors

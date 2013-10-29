@@ -189,6 +189,12 @@ public:
       // all vectors must remain valid:
       SUBR(mvec_view_block)(vec1_,&v1_view,jmin,jmax,&ierr_);
       
+      //TROET
+      PHIST_DEB("TROET, vector with view and view of view");
+SUBR(mvec_print)(vec1_,&ierr_);
+SUBR(mvec_print)(v1_view,&ierr_);
+SUBR(mvec_print)(v1_vv,&ierr_);
+      
       _MT_ norms_V1[nvec_];
       _MT_ norms_V1view[nvec_];
       _MT_ norms_V1vv[nvec_];
