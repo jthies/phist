@@ -14,7 +14,8 @@
 #define _CAST_PTR_FROM_VOID_(_TYPE_,_PTR_,_VPTR_,_FLAG_) \
 _TYPE_ *_PTR_ = NULL; \
 _PTR_=(_TYPE_*)(_VPTR_); \
-if (_PTR_==NULL) {_FLAG_=-88; return;}
+if (_PTR_==NULL) {_FLAG_=-88; PHIST_OUT(PHIST_ERROR,"bad cast in file %s, line %d.",\
+__FILE__,__LINE__); return;}
 #endif
 
 #ifndef _CHECK_ZERO_
