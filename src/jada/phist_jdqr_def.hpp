@@ -144,7 +144,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   int expand=1;
   int solve=1;
   std::complex<MT> theta; // next eigenvalue to go for
-  ST shift;
+  sdMat_ptr_t shift = NULL;
   // theta as a sdMat_t (either 1x1 or 2x2 in real case)
   sdMat_ptr_t Theta=NULL;
   std::complex<MT> ev[maxBas];
@@ -201,6 +201,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(mvec_view_block)(t,&t_r,0,0,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_view_block)(t,&t_i,1,1,ierr),*ierr);  
 #endif
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&shift,1,1,NULL,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&M,maxBas,maxBas,comm,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&S,maxBas,maxBas,comm,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&T,maxBas,maxBas,comm,ierr),*ierr);
@@ -559,9 +560,11 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     */
     
 #ifdef _IS_COMPLEX_
-    shift=theta;
+//    shift=theta;
+    PHIST_CHK_IERR(SUBR(sdMat_put_value)(shift,theta,ierr),*ierr);
 #else
-    shift=ct::real(theta);
+//    shift=ct::real(theta);
+    PHIST_CHK_IERR(SUBR(sdMat_put_value)(shift,ct::real(theta),ierr),*ierr);
 #endif    
     // solve approximately 
     // (I-uu')(A-theta*I)(I-uu')*t=-r
@@ -570,7 +573,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // the block case is not implemented yet:
     // (I-uu')A(I-uu')*t - (I-uu')t*Theta=-r
     op_ptr_t jada_op;
-    PHIST_CHK_IERR(SUBR(jadaOp_create)(A_op,B_op,Qtil,shift,&jada_op,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(jadaOp_create)(A_op,NULL,Qtil,NULL,shift,NULL,&jada_op,ierr),*ierr);
     
     // 1/2^mm, but at most the outer tol as conv tol for GMRES
     MT innerTol = std::max(tol,mt::one()/((MT)(2<<mm)));
@@ -650,7 +653,7 @@ void SUBR(arnoldi)(TYPE(const_op_ptr) op, TYPE(const_mvec_ptr) v0,
   PHIST_CHK_IERR(SUBR(mvec_set_block)(V,v0,0,0,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&v,0,0,ierr),*ierr);
   
-  for (int i=0;i<m;i++)
+  for (int i=0;i<m-1;i++)
     {
     PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&vprev,0,i,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&av,i+1,i+1,ierr),*ierr);

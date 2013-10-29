@@ -218,7 +218,7 @@ void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M,
 void SUBR(mvec_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* ierr);
 
 //! put scalar value into all elements of a serial dense matrix
-void SUBR(sdMat_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* ierr);
+void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) V, _ST_ value, int* ierr);
 
 //! put random numbers into all elements of a multi-vector
 void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* ierr);
