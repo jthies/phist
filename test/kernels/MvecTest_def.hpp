@@ -90,7 +90,17 @@ public:
       _ST_* dots = new ST[nvec_];
       SUBR(mvec_dot_mvec)(vec1_,vec2_,dots,&ierr_);
       ASSERT_EQ(0,ierr_);
-            
+#if PHIST_OUTLEV>PHIST_DEBUG
+      PHIST_DEB("dot: v1=");
+      SUBR(mvec_print)(vec1_,&ierr_);
+      PHIST_DEB("dot: v2=");
+      SUBR(mvec_print)(vec2_,&ierr_);
+      PHIST_DEB("dot: result(s):");
+      for (int i=0;i<nvec_;i++)
+        {
+        std::cerr << i << " " << dots[i] << std::endl;
+        }
+#endif
       _ST_ val = st::one() * (ST)nglob_;
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(dots,nvec_,1,nvec_,1,val));
       delete [] dots;
@@ -182,18 +192,12 @@ public:
       SUBR(mvec_view_block)(vec1_,&v1_view,jmin,jmax,&ierr_);
       // create a view of the view
       TYPE(mvec_ptr) v1_vv=NULL;
-      SUBR(mvec_view_block)(v1_view,&v1_vv,0,jmax-jmin+1,&ierr_);
+      SUBR(mvec_view_block)(v1_view,&v1_vv,0,jmax-jmin,&ierr_);
       ASSERT_EQ(0,ierr_);
       
       // now this should delete the original view and create a new one,
       // all vectors must remain valid:
       SUBR(mvec_view_block)(vec1_,&v1_view,jmin,jmax,&ierr_);
-      
-      //TROET
-      PHIST_DEB("TROET, vector with view and view of view");
-SUBR(mvec_print)(vec1_,&ierr_);
-SUBR(mvec_print)(v1_view,&ierr_);
-SUBR(mvec_print)(v1_vv,&ierr_);
       
       _MT_ norms_V1[nvec_];
       _MT_ norms_V1view[nvec_];
