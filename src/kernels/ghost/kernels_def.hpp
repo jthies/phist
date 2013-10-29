@@ -515,7 +515,7 @@ void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* ierr)
   _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);  
   nv=V->traits->nvecs;
   _ST_ tmp[V->traits->nvecs];
-  V->dotProduct(V,V,tmp);
+  ghost_dotProduct(V,V,tmp);
   for (i=0;i<nv;i++) vnrm[i]=mt::sqrt(st::real(tmp[i]));
   return;
   }
@@ -663,7 +663,7 @@ void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) vV, TYPE(const_mvec_ptr) vW, _ST_*
   *ierr=0;
   _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(ghost_vec_t,W,vW,*ierr);
-  V->dotProduct(V,W,s);
+  ghost_dotProduct(V,W,s);
   }
 
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix

@@ -203,11 +203,7 @@ bool haveMats_;
       // v2 = v1 + beta*v2 (=alpha*v1+v3)
       SUBR(crsMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      //TROET
-      // we need to be a bit generous here because the order of calculation may be different
-      // and the matrix is not exactly I
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_));
-//      ASSERT_NEAR(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_),100*mt::eps());
 
       //alpha*I*X+beta*Y = alpha*X+beta*Y?
       alpha = random_number();
@@ -222,9 +218,6 @@ bool haveMats_;
       // v2 = alpha*v1 + beta*v2 (=alpha*v1+v3)
       SUBR(crsMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      // we need to be a bit generous here because the order of calculation may be different
-      // and the matrix is not exactly I
-      //ASSERT_NEAR(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_),100*mt::eps());
       ASSERT_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_));
       }
     }

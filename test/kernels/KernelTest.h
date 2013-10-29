@@ -26,6 +26,7 @@ public:
  comm_ptr_t comm_;
  bool haveS_, haveD_, haveC_, haveZ_;
  MPI_Comm mpi_comm_;
+ unsigned int rseed_;//random number seed
  int ierr_, mpi_rank_, mpi_size_;
  
  //! we store a pointer to the original stream buffer of std::cout,
@@ -70,6 +71,10 @@ public:
         cout = &std::cout;
         cerr = &std::cerr;
 #endif	
+	// initialize random number sequence in a reproducible way (yet
+	// with a different seed on each MPI process)
+	rseed_ = (unsigned int)(mpi_rank_*77+42);
+	srand(rseed_);
 	}
 
 virtual void TearDown()

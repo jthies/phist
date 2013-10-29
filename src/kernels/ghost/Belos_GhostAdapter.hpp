@@ -383,7 +383,7 @@ using ::phist::GhostMV;
           "Belos::MultiVecTraits<Scalar,GhostMV>::MvDot(A,B,dots): dots must have room for all dot products.");
 
       Teuchos::ArrayView<Scalar> av(dots);
-      A.get()->dotProduct(const_cast<ghost_vec_t*>(A.get()),const_cast<ghost_vec_t*>(B.get()),(void*)&dots[0]);
+      ghost_dotProduct(const_cast<ghost_vec_t*>(A.get()),const_cast<ghost_vec_t*>(B.get()),(void*)&dots[0]);
       }
 
     static void MvNorm(const GhostMV& mv, std::vector<magn_t> &normvec, NormType type=TwoNorm)
@@ -403,7 +403,7 @@ using ::phist::GhostMV;
         case OneNorm:
           break;
         case TwoNorm:
-          _mv->dotProduct(_mv, _mv, av.getRawPtr());
+          ghost_dotProduct(_mv, _mv, av.getRawPtr());
           for (int i=0;i<av.size();i++)
             {
             nv[i]=st::real(st::sqrt(av[i]));

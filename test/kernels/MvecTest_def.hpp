@@ -90,17 +90,6 @@ public:
       _ST_* dots = new ST[nvec_];
       SUBR(mvec_dot_mvec)(vec1_,vec2_,dots,&ierr_);
       ASSERT_EQ(0,ierr_);
-#if PHIST_OUTLEV>PHIST_DEBUG
-      PHIST_DEB("dot: v1=");
-      SUBR(mvec_print)(vec1_,&ierr_);
-      PHIST_DEB("dot: v2=");
-      SUBR(mvec_print)(vec2_,&ierr_);
-      PHIST_DEB("dot: result(s):");
-      for (int i=0;i<nvec_;i++)
-        {
-        std::cerr << i << " " << dots[i] << std::endl;
-        }
-#endif
       _ST_ val = st::one() * (ST)nglob_;
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(dots,nvec_,1,nvec_,1,val));
       delete [] dots;
