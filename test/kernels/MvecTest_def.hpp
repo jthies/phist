@@ -132,6 +132,38 @@ public:
       }
     }
 
+  // 2-norm, nrm2=sqrt(v'v)
+  TEST_F(CLASSNAME, norm2)
+    {
+    if (typeImplemented_)
+      {
+      int ilower;     
+      phist_map_get_ilower(map_,&ilower,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      for (int j=0;j<nvec_;j++)
+        {
+        for (int i=0;i<nloc_*stride_;i+=stride_)
+          {
+          vec1_vp_[j*lda_+i]=ilower+i;
+          }
+        }
+      MT expect = 0.0;
+      for (int i=0;i<_N_;i++)
+        {
+        expect+=(MT)(i*i);
+        }
+      expect=mt::sqrt(expect);
+
+      MT nrm2[nvec_];
+      SUBR(mvec_norm2)(vec1_,nrm2,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      for (int i=0;i<nvec_;i++)
+        {
+        ASSERT_REAL_EQ(expect,nrm2[i]);
+        }
+      }
+    }
+
   // X = 1*Y + 0*X = Y
   TEST_F(CLASSNAME, copy_by_axpy)
     {
@@ -276,7 +308,7 @@ public:
       SUBR(mvec_norm2)(vec1_,norms_V1copy,&ierr_);
       ASSERT_EQ(0,ierr_);
 
-      for (int j=0;j<=nvec_;j++)
+      for (int j=0;j<nvec_;j++)
         {
         ASSERT_REAL_EQ(norms_V1[j],norms_V1copy[j]);
         }
