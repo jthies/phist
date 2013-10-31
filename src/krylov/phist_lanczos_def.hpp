@@ -143,7 +143,7 @@ void SUBR(lanczos)(TYPE(const_op_ptr) op,
            // bound for ||r|| of the first (smallest) Ritz value.
            // Note that we check for the smallest one because the
            // actual eigenvalues of A have a reversed sign.
-           nrm =1e99;
+           nrm =10000.;
            inext=0;
            nconv=0;
            for (i=0;i<n;i++)

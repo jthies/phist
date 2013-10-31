@@ -27,6 +27,12 @@ set(PRODUCT_NAME phist-${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VER
 
 option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
 
+if (DEFINED LAPACK_LIBS)
+  set(LAPACK_LIBS ${LAPACK_LIBS} CACHE STRING "how to link with lapack (and blas)")
+else()
+  set(LAPACK_LIBS "lapack;blas" CACHE STRING "how to link with lapack (and blas)")
+endif()
+
 enable_language (C)
 enable_language (CXX)
 enable_language (Fortran)
@@ -83,19 +89,19 @@ endif ()
 ##############################################################################
 
 if (${PHIST_ENABLE_MPI})
-  find_package(MPI REQUIRED)
-  if (${MPI_FOUND})
+#  find_package(MPI REQUIRED)
+#  if (${MPI_FOUND})
     add_definitions(-DPHIST_HAVE_MPI)
-    set (CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS})
-    set (CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS})
-    set (CMAKE_C_COMPILE_FLAGS ${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS})
-    set (CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS})
-    set (CMAKE_Fortran_COMPILE_FLAGS ${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COMPILE_FLAGS})
-    set (CMAKE_Fortran_LINK_FLAGS ${CMAKE_Fortran_LINK_FLAGS} ${MPI_Fortran_LINK_FLAGS})
-    include_directories (${MPI_INCLUDE_PATH})
-  else()
-    message(WARNING "could not find MPI")
-  endif()
+#    set (CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS})
+#    set (CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS})
+#    set (CMAKE_C_COMPILE_FLAGS ${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS})
+#    set (CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS})
+#    set (CMAKE_Fortran_COMPILE_FLAGS ${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COMPILE_FLAGS})
+#    set (CMAKE_Fortran_LINK_FLAGS ${CMAKE_Fortran_LINK_FLAGS} ${MPI_Fortran_LINK_FLAGS})
+#    include_directories (${MPI_INCLUDE_PATH})
+#  else()
+#    message(WARNING "could not find MPI")
+#  endif()
 endif()
 
 find_package(Likwid PATHS $ENV{LIKWID_HOME} Optional)
@@ -213,6 +219,7 @@ foreach(PKG ${LOAD_TRILI_PKG})
 
 endforeach()
 
+list(APPEND PHIST_LIBS ${LAPACK_LIBS})
 list(APPEND PHIST_LIBS ${MPI_CXX_LIBRARIES})
 
 set(GCOVR_EXCLUDES -e src/kernels/kernels_noimpl.c

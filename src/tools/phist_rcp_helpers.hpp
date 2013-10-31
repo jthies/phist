@@ -1,6 +1,7 @@
 #ifndef PHIST_RCP_HELPERS_HPP
 #define PHIST_RCP_HELPERS_HPP
 
+#include <mpi.h>
 #include "Teuchos_RCP.hpp"
 
 #ifdef PHIST_KERNEL_LIB_GHOST

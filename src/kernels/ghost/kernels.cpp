@@ -56,6 +56,7 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
 void phist_kernels_finalize(int* ierr)
   {
   ghost_finish();
+  *ierr=0;
   }
 
 
@@ -101,6 +102,7 @@ ghost_vtraits_t* phist_default_vtraits()
   vtraits->nrowspadded=0; // get from context
   vtraits->flags = GHOST_VEC_DEFAULT+GHOST_VEC_HOST+GHOST_VEC_LHS;
   vtraits->nvecs=1;
+  return vtraits;
   }
 
 //! this generates a default map with linear distribution of points among

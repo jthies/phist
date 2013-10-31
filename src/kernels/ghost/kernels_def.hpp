@@ -20,6 +20,7 @@ void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
 //! read a matrix from a Ghost CRS (binary) file.
 void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
+  *ierr=0;
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
 
@@ -34,11 +35,11 @@ void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
         GHOST_CONTEXT_DEFAULT,(char*)filename,MPI_COMM_WORLD,1.0);
   mat = ghost_createMatrix(ctx,mtraits,1);                               
   mat->fromFile(mat,const_cast<char*>(filename));
-#if DEBUG > 0  
+#if PHIST_OUTLEV >= PHIST_DEBUG
   ghost_printContextInfo(ctx);
   ghost_printMatrixInfo(mat);
 #endif
-  *vA = (TYPE(crsMat_ptr))mat;  
+  *vA = (TYPE(crsMat_ptr))mat;
   }
 
 //! read a matrix from a Harwell-Boeing (HB) file

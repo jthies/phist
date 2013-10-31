@@ -1,17 +1,18 @@
 #ifndef PHIST_SCALAR_TRAITS_HPP
 #define PHIST_SCALAR_TRAITS_HPP
 
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
 #include <limits>
 #include <complex>
 #include <cstdlib>
+#include <cstdio>
 
 #include "phist_void_aliases.h"
 #include "phist_operator.h"
 #include "phist_lapack.h"
-
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
 
 #ifdef PHIST_HAVE_GHOST
 #include "ghost.h"
@@ -68,7 +69,7 @@ class ScalarTraits< float >
     }
 
   //! returns the type prefix for the corresponding complex data type
-  static inline const char complex_type_char()
+  static inline char complex_type_char()
     {
     return 'C';
     }
@@ -177,7 +178,7 @@ class ScalarTraits< double >
     }
 
   //! returns the type prefix for the corresponding complex data type
-  static inline const char complex_type_char()
+  static inline char complex_type_char()
     {
     return 'Z';
     }

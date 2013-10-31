@@ -1,8 +1,12 @@
 #ifndef NO_INCLUDES_IN_HEADERS
 #include "phist_tools.h"
-#include <stdio.h>
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
+#endif
+#ifdef __cplusplus
+#include <cstdio>
+#else
+#include <stdio.h>
 #endif
 #endif
 
@@ -19,7 +23,7 @@
 #define PHIST_TRACE 5
 
 #ifndef PHIST_OUTLEV
-#define PHIST_OUTLEV PHIST_WARNIUNG
+#define PHIST_OUTLEV PHIST_WARNING
 #endif
 
 #ifndef _PHIST_RETURN_TYPES
@@ -115,7 +119,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #undef MAX
 #endif
 
-#if PHIST_OUTLEV>PHIST_DEBUG
+#if PHIST_OUTLEV>=PHIST_DEBUG
 #define PHIST_DEB(msg, ...) PHIST_OUT(PHIST_DEBUG,msg,##__VA_ARGS__);
 #else
 #define PHIST_DEB(msg, ...)
@@ -129,38 +133,17 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 
 #define MIN(a,b) (b)<(a)?(b):(a);
 
-// function tracer can only be used in C++ code
 #ifdef __cplusplus
-
-#ifndef PHIST_FCN_TRACER
-#define PHIST_FCN_TRACER
-
-class FcnTracer
-  {
-  public:
-  
-  FcnTracer(const char* fcn) : fcn_(fcn)
-    {
-    PHIST_OUT(PHIST_TRACE,"PHIST ENTER %s\n",fcn_.c_str());
-    }
-
-  ~FcnTracer()
-    { 
-    PHIST_OUT(PHIST_TRACE,"PHIST LEAVE %s\n",fcn_.c_str()); 
-    }
-
-  std::string fcn_;
-  };
-
-#endif
-
+#include "phist_fcntrace.hpp"
+#ifndef ENTER_FCN
 #if (PHIST_OUTLEV>=PHIST_TRACE)
-#define ENTER_FCN(s) FcnTracer FnT(s);
+#define ENTER_FCN(s) FcnTracer YouCantHaveMultiple_ENTER_FCN_StatementsInOneScope(s);
 #else
 #define ENTER_FCN(s)
 #endif
-
+#endif
 #else
-// currently no function tracing in C code parts
+#ifndef ENTER_FCN
 #define ENTER_FCN(s)
-#endif // cplusplus
+#endif
+#endif
