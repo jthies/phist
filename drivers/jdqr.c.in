@@ -158,7 +158,7 @@ int main(int argc, char** argv)
 
   if (ierr!=0)
     {
-    if (verbose) fprintf(stdout,"code %d returned from Lanczos",ierr);
+    if (verbose) fprintf(stdout,"code %d returned from jdqr",ierr);
     if (ierr<0) return ierr;
     }
   if (verbose)
@@ -171,7 +171,11 @@ int main(int argc, char** argv)
     fprintf(stdout,"Eigenvalue \t Ritz Residual \n");
     for (i=0;i<num_eigs;i++)
       {
+#ifdef _IS_COMPLEX_
+      fprintf(stdout,"%16.8e%+16.8ei\t%4.2e\n",evals[i],resid[i]);
+#else
       fprintf(stdout,"%16.8e\t%4.2e\n",evals[i],resid[i]);
+#endif
       }
     }
 

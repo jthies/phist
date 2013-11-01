@@ -30,6 +30,7 @@ int main(int argc, char** argv)
   
   int num_iters;
   int max_iters,max_blocks,num_rhs;
+  int variant=0; // only proper block GMRES accessible via this driver right now.
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
 
@@ -114,7 +115,7 @@ int main(int argc, char** argv)
   
   num_iters=max_iters;
   
-  SUBR(bgmres)(A_op,X,B,tol,&num_iters,max_blocks,&ierr);
+  SUBR(bgmres)(A_op,X,B,tol,&num_iters,max_blocks,variant,NULL,&ierr);
 
   if (ierr!=0)
     {

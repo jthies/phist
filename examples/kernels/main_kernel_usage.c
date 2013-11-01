@@ -30,44 +30,44 @@ int main(int argc, char** argv)
   
   comm_ptr_t comm_world;
   
-  PHIST_CHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
 
-  PHIST_CHK_IERR(phist_comm_create(&comm_world,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_comm_create(&comm_world,&ierr),ierr);
 #ifdef PHIST_KERNEL_LIB_GHOST
-  PHIST_CHK_IERR(phist_DcrsMat_read_bin(&A,filename,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_DcrsMat_read_bin(&A,filename,&ierr),ierr);
   ghost_mat_t* A_ghost = (ghost_mat_t*)A;
   ghost_printMatrixInfo(A_ghost);
 #else
-  PHIST_CHK_IERR(phist_DcrsMat_read_mm(&A,filename,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_DcrsMat_read_mm(&A,filename,&ierr),ierr);
 #endif  
-  PHIST_CHK_IERR(phist_DcrsMat_get_range_map(A, &range_map, &ierr),ierr);
-  PHIST_CHK_IERR(phist_DcrsMat_get_domain_map(A, &domain_map, &ierr),ierr);
+  PHIST_ICHK_IERR(phist_DcrsMat_get_range_map(A, &range_map, &ierr),ierr);
+  PHIST_ICHK_IERR(phist_DcrsMat_get_domain_map(A, &domain_map, &ierr),ierr);
 
-  PHIST_CHK_IERR(phist_map_get_comm(range_map, &comm, &ierr),ierr);
-  PHIST_CHK_IERR(phist_comm_get_rank(comm, &rank, &ierr),ierr);
-  PHIST_CHK_IERR(phist_comm_get_size(comm, &num_proc, &ierr),ierr);
+  PHIST_ICHK_IERR(phist_map_get_comm(range_map, &comm, &ierr),ierr);
+  PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank, &ierr),ierr);
+  PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc, &ierr),ierr);
 
-  PHIST_CHK_IERR(phist_Dmvec_create(&x,domain_map,1,&ierr),ierr);
-  PHIST_CHK_IERR(phist_Dmvec_create(&y,range_map,1,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_Dmvec_create(&x,domain_map,1,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_Dmvec_create(&y,range_map,1,&ierr),ierr);
 
   PHIST_OUT(3,"x pointer @ %p",x);
   PHIST_OUT(3,"y pointer @ %p",y);
 
-  PHIST_CHK_IERR(phist_Dmvec_my_length(x,&nloc_x,&ierr),ierr);
-  PHIST_CHK_IERR(phist_Dmvec_my_length(y,&nloc_y,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_Dmvec_my_length(x,&nloc_x,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_Dmvec_my_length(y,&nloc_y,&ierr),ierr);
 
-  PHIST_CHK_IERR(phist_Dmvec_num_vectors(x,&nvec_x,&ierr),ierr);
-  PHIST_CHK_IERR(phist_Dmvec_num_vectors(y,&nvec_y,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_Dmvec_num_vectors(x,&nvec_x,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_Dmvec_num_vectors(y,&nvec_y,&ierr),ierr);
   
   fprintf(stdout,"rank %d: x has local length %d and %d vectors\n",rank,(int)nloc_x,(int)nvec_x);
   fprintf(stdout,"rank %d: y has local length %d and %d vectors\n",rank,(int)nloc_y,(int)nvec_y);
   
-  PHIST_CHK_IERR(phist_Dmvec_extract_view(x,&x_val,&lda_x,&ierr),ierr);
-  PHIST_CHK_IERR(phist_Dmvec_extract_view(y,&y_val,&lda_y,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_Dmvec_extract_view(x,&x_val,&lda_x,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_Dmvec_extract_view(y,&y_val,&lda_y,&ierr),ierr);
   
   // set x=1
-  PHIST_CHK_IERR(phist_Dmvec_put_value(x,42.0,&ierr),ierr);
-  PHIST_CHK_IERR(phist_Dmvec_put_value(y,-99.0,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_Dmvec_put_value(x,42.0,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_Dmvec_put_value(y,-99.0,&ierr),ierr);
 
   // print initial vectors
   PHIST_OUT(1,"x vector data @ %p (lda %d)",x_val,lda_x);
@@ -79,7 +79,7 @@ int main(int argc, char** argv)
     }
 
   // compute y=A*x
-  PHIST_CHK_IERR(phist_DcrsMat_times_mvec(1.0,A,x,0.0,y,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_DcrsMat_times_mvec(1.0,A,x,0.0,y,&ierr),ierr);
 
   // print result
   PHIST_OUT(1,"after MVM:");
@@ -89,9 +89,9 @@ int main(int argc, char** argv)
     }
   
   // delete everything
-  PHIST_CHK_IERR(phist_Dmvec_delete(x,&ierr),ierr);
-  PHIST_CHK_IERR(phist_Dmvec_delete(y,&ierr),ierr);
-  PHIST_CHK_IERR(phist_DcrsMat_delete(A,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_Dmvec_delete(x,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_Dmvec_delete(y,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_DcrsMat_delete(A,&ierr),ierr);
 
-  PHIST_CHK_IERR(phist_kernels_finalize(&ierr),ierr);
+  PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
   }
