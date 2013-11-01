@@ -53,7 +53,7 @@ public:
       }
     
     const ST *M_val = (const ST*)M->val;
-    Teuchos::RCP<const Traits<ST>::Teuchos_sdMat_t> M_view
+    Teuchos::RCP<const Teuchos_sdMat_t> M_view
                   = Teuchos::rcp(new Teuchos_sdMat_t(Teuchos::View,M_val,stride,nrows,ncols));
     return M_view;     
     }
@@ -83,7 +83,7 @@ public:
 
     ST *M_val = (ST*)M->val[0];
     
-    Teuchos::RCP<Traits<ST>::Teuchos_sdMat_t> M_view
+    Teuchos::RCP<Teuchos_sdMat_t> M_view
                   = Teuchos::rcp(new Teuchos_sdMat_t(Teuchos::View,M_val,stride,nrows,ncols));
     return M_view;                  
     }
