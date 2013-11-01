@@ -9,3 +9,7 @@ void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,   TYPE(const_op_ptr)   B_op
                          TYPE(op_ptr)* jdOp,           int*                 ierr);
 
 void SUBR(jadaOp_delete)(TYPE(op_ptr)* jdOp, int *ierr);
+
+void SUBR(jadaOp_apply)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
+                        _ST_ beta, TYPE(mvec_ptr) Y, int* ierr);
+

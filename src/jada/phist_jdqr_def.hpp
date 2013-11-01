@@ -353,6 +353,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       Au_ptr=Au_r;
       r_ptr=r_r;
       rtil_ptr=rtil_r;
+      t_ptr=t_r;
       }
 #endif
 
@@ -389,10 +390,10 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     if (nconv>0)
       {
       //atil = Q'*r;
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Qv,r,st::zero(),atil,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Qv,r_ptr,st::zero(),atil,ierr),*ierr);
     
       //rtil = r-Q*atil;
-      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,atil,st::one(),r,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,atil,st::one(),rtil_ptr,ierr),*ierr);
       }
 
     //nrm=norm(rtil);
@@ -567,8 +568,12 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 //    shift=theta;
     PHIST_CHK_IERR(SUBR(sdMat_put_value)(shift,theta,ierr),*ierr);
 #else
-//    shift=ct::real(theta);
-    PHIST_CHK_IERR(SUBR(sdMat_put_value)(shift,ct::real(theta),ierr),*ierr);
+  if (nv>1)
+    {
+    PHIST_OUT(PHIST_ERROR,"real case with complex eig not implemented (file %s, line %d)",__FILE__,__LINE__);
+    PHIST_CHK_IERR(-99,*ierr);
+    }
+  PHIST_CHK_IERR(SUBR(sdMat_put_value)(shift,ct::real(theta),ierr),*ierr);
 #endif    
     // solve approximately 
     // (I-uu')(A-theta*I)(I-uu')*t=-r
@@ -576,9 +581,14 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
     // the block case is not implemented yet:
     // (I-uu')A(I-uu')*t - (I-uu')t*Theta=-r
-    op_ptr_t jada_op;
+    op_ptr_t jada_op=NULL;
+    if (B_op!=NULL)
+      {
+      PHIST_OUT(PHIST_WARNING,"case B!=I not implemented (file %s, line %d)",__FILE__,__LINE__);
+      }
+      
     PHIST_CHK_IERR(SUBR(jadaOp_create)(A_op,NULL,Qtil,NULL,shift,NULL,&jada_op,ierr),*ierr);
-    
+
     // 1/2^mm, but at most the outer tol as conv tol for GMRES
     MT innerTol = std::max(tol,mt::one()/((MT)(2<<mm)));
     PHIST_OUT(1,"inner conv tol: %g",innerTol);
@@ -589,10 +599,12 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     
     //TODO - scaling and preconditioning
     
-    // set t=-r as initial guess
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),rtil,st::zero(),u,ierr),*ierr);
+    // set t=0 as initial guess
+    PHIST_CHK_IERR(SUBR(mvec_put_value)(t_ptr,st::zero(),ierr),*ierr);
+//    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),rtil_ptr,st::zero(),t_ptr,ierr),*ierr);
 
-    SUBR(bgmres)(jada_op,t_ptr,rtil_ptr,innerTol,&nIt,maxKSpace,ierr);
+int variant=0; //0:block GMRES, 1: pseudo-BGMRES
+   SUBR(bgmres)(jada_op,t_ptr,rtil_ptr,innerTol,&nIt,maxKSpace,variant,NULL,ierr);
       
     expand=true;
 

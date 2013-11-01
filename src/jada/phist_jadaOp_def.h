@@ -55,8 +55,29 @@ void SUBR(jadaOp_apply)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
   ENTER_FCN(__FUNCTION__);
 
   // convert op to jadaOp_data
-  const TYPE(jadaOp_data) *jadaOp = (TYPE(jadaOp_data)*) op;
+  const TYPE(jadaOp_data) *jadaOp = (const TYPE(jadaOp_data)*) op;
 
+#if PHIST_OUTLEV>=PHIST_DEBUG
+
+int nrX,ncX,nrY,ncY,nrV,ncV,nrSig,ncSig;
+PHIST_CHK_IERR(SUBR(mvec_my_length)(X,&nrX,ierr),*ierr);
+PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&ncX,ierr),*ierr);
+PHIST_CHK_IERR(SUBR(mvec_my_length)(Y,&nrY,ierr),*ierr);
+PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Y,&ncY,ierr),*ierr);
+PHIST_CHK_IERR(SUBR(mvec_my_length)(jadaOp->V,&nrV,ierr),*ierr);
+PHIST_CHK_IERR(SUBR(mvec_num_vectors)(jadaOp->V,&ncV,ierr),*ierr);
+
+PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(jadaOp->sigma,&nrSig,ierr),*ierr);
+PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(jadaOp->sigma,&ncSig,ierr),*ierr);
+
+PHIST_DEB("X is %dx%d", nrX, ncX);
+PHIST_DEB("Y is %dx%d", nrY, ncY);
+PHIST_DEB("V is %dx%d", nrV, ncV);
+PHIST_DEB("sigma is %dx%d", nrSig, ncSig);
+
+#endif
+
+  // Y = A*X - Y
 
   // first calculate Y = A*X - B*X*sigma
   // apply B if we have one
@@ -76,7 +97,6 @@ void SUBR(jadaOp_apply)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
   // then calculate Y = (Y - BV*V'*Y)
   PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(ONE,jadaOp->V,Y,ZERO,jadaOp->vy,ierr),*ierr);             // vy = V'*Y
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-ONE,jadaOp->BV,jadaOp->vy,ONE,Y,ierr),*ierr);            // Y  = Y - BV*vy
-
   return;
 }
 
@@ -88,17 +108,19 @@ void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,  TYPE(const_op_ptr)   B_op,
                          TYPE(op_ptr)*         jdOp,  int*                 ierr)
 {
   ENTER_FCN(__FUNCTION__);
+  *ierr = 0;
 
   // allocate jadaOp struct
-  *ierr = 0;
-  *jdOp = (TYPE(op_ptr))malloc(sizeof(TYPE(op_ptr)));
+  *jdOp = (TYPE(op_ptr))malloc(sizeof(TYPE(op)));
   TYPE(jadaOp_data) *myOp = (TYPE(jadaOp_data)*)malloc(sizeof(TYPE(jadaOp_data)));
 
   // setup jadaOp members
   myOp->A_op  = A_op;
+
   myOp->B_op  = B_op;
   myOp->V     = V;
   myOp->sigma = sigma;
+
   // if B_op == NULL we can use V here
   if( B_op != NULL )
   {
@@ -110,16 +132,19 @@ void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,  TYPE(const_op_ptr)   B_op,
     myOp->BV    = V;
     myOp->Work  = NULL;
   }
+
   // allocate data for temporary sdMat vy
   int nvec_V, nvec_X;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec_V,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(sigma,&nvec_X,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&(myOp->vy),nvec_V,nvec_X,NULL,ierr),*ierr);
 
-
   // setup op_ptr function pointers
-  (*jdOp)->A     = (void*)myOp;
-  (*jdOp)->apply = &SUBR(jadaOp_apply);
+  (*jdOp)->A     = (const void*)myOp;
+// note: this will cause a segfault later on if we don't explicitly cast to the correct 
+// function return type (void*). This is needed here because we're in C, not C++.
+//(*jdOp)->apply = (void(*)(_ST_,const void*,TYPE(const_mvec_ptr),_ST_,TYPE(mvec_ptr),int*))
+(*jdOp)->apply = (&SUBR(jadaOp_apply));
 
   return;
 }
