@@ -18,6 +18,7 @@ public:
     KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
     if (typeImplemented_)
       {
+      SUBR(mvec_print)(vec1_,&ierr_);
       for (int j=0;j<nvec_;j++)
         for (int i=0;i<nloc_*stride_;i+=stride_)
           {

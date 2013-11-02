@@ -64,12 +64,31 @@ public:
 
 void rebuildVectors(TYPE(const_crsMat_ptr) A)
   {
-#if 0
-//TODO  
-  // set vec1 to be a valid X, vec2 a valid Y in Y=AX
-  const_map_t *range_map, *domain_map;
-  PHIST_CHK_IERR(TROET) // continue here
-#endif
+  if (haveMats_ && typeImplemented_)
+    {
+    // set vec1 to be a valid X, vec2 a valid Y in Y=AX
+    const_map_ptr_t range_map, domain_map;
+    SUBR(crsMat_get_range_map)(A,&range_map,&ierr_);
+    ASSERT_EQ(0,ierr_);
+    SUBR(crsMat_get_domain_map)(A,&domain_map,&ierr_);
+    ASSERT_EQ(0,ierr_);
+    SUBR(mvec_delete)(vec1_,&ierr_);
+    ASSERT_EQ(0,ierr_);
+    SUBR(mvec_delete)(vec2_,&ierr_);
+    ASSERT_EQ(0,ierr_);
+
+    SUBR(mvec_create)(&vec1_,domain_map,this->nvec_,&this->ierr_);
+    ASSERT_EQ(0,this->ierr_);
+    int lda;
+    SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda,&this->ierr_);
+    ASSERT_EQ(0,this->ierr_);
+    ASSERT_EQ(lda,this->lda_);
+    SUBR(mvec_create)(&vec2_,range_map,this->nvec_,&this->ierr_);
+    ASSERT_EQ(0,this->ierr_);
+    SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&lda,&this->ierr_);
+        ASSERT_EQ(0,this->ierr_);
+    ASSERT_EQ(lda,this->lda_);
+    }
   }
 
 TYPE(crsMat_ptr) A0_; // all zero matrix
