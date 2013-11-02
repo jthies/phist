@@ -10,6 +10,7 @@ void SUBR(bgmres)(TYPE(const_op_ptr) Op,
         TYPE(mvec_ptr) vX,
         TYPE(const_mvec_ptr) vB, 
         _MT_ tol,int *num_iters, int max_blocks,
+        int variant, int* nConv,
         int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
@@ -59,7 +60,7 @@ void SUBR(bgmres)(TYPE(const_op_ptr) Op,
   // get linear solver specific parameters from the list
   // read parameters from our XML file
   Teuchos::RCP<Teuchos::ParameterList> belosList 
-        = Teuchos::rcp(new Teuchos::ParameterList());
+        = Teuchos::rcp(new Teuchos::ParameterList("phist/belos"));
 
   belosList->set("Maximum Iterations",*num_iters);
   belosList->set("Block Size",numRhs);
@@ -77,14 +78,45 @@ void SUBR(bgmres)(TYPE(const_op_ptr) Op,
 
   belosList->set("Output Stream",out->getOStream());
 
+std::cerr << "TROET: " << *belosList << std::endl;
+
 // create Belos problem interface
 Teuchos::RCP<Belos::LinearProblem<ST,BelosMV,OP> > linearSystem
         = Teuchos::rcp(new Belos::LinearProblem<ST,BelosMV,OP>(A,X,B));
 
-Teuchos::RCP<Belos::BlockGmresSolMgr<ST,BelosMV, OP> > gmres
-        = Teuchos::rcp(new Belos::BlockGmresSolMgr<ST,BelosMV, OP>
+Teuchos::RCP<Belos::SolverManager<ST,BelosMV, OP> > gmres;
+if (variant==0)
+  {
+  gmres = Teuchos::rcp(new Belos::BlockGmresSolMgr<ST,BelosMV, OP>
         (linearSystem, belosList));
+  }
+else if (variant==1)
+  {
+  int dq;
+  if (nConv==NULL) 
+    {
+    dq=numRhs;
+    }
+  else
+    {
+    dq=*nConv;
+    }
+  belosList->set("Deflation Quorum",dq);
+  gmres = Teuchos::rcp(new Belos::PseudoBlockGmresSolMgr<ST,BelosMV, OP>
+        (linearSystem, belosList));
+  }
+else
+  {
+  PHIST_OUT(PHIST_ERROR,"gmres variant %d is not supported",variant);
+  *ierr=-99;
+  }
 
+#if PHIST_OUTLEV>PHIST_DEBUG
+  PHIST_DEB("valid GMRES parameters:");
+  std::cerr << *gmres->getValidParameters();
+  PHIST_DEB("current GMRES parameters:");
+  std::cerr << *gmres->getCurrentParameters();
+#endif
 
 ///////////////////////////////////////////////////////////////////////
 // solve the system!                                                 //

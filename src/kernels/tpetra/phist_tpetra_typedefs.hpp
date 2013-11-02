@@ -68,7 +68,7 @@ class Traits
     } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,status);
     if (!status) {*ierr=-1; return Teuchos::null;}
     const ST *M_val = M_tmp.getRawPtr();
-    Teuchos::RCP<const Traits<ST>::Teuchos_sdMat_t> M_view
+    Teuchos::RCP<const Teuchos_sdMat_t> M_view
                   = Teuchos::rcp(new Teuchos_sdMat_t(Teuchos::View,M_val,stride,nrows,ncols));
     return M_view;     
     }
@@ -87,7 +87,7 @@ class Traits
     } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,status);
     if (!status) {*ierr=-1; return Teuchos::null;}
     ST *M_val = M_tmp.getRawPtr();
-    Teuchos::RCP<Traits<ST>::Teuchos_sdMat_t> M_view
+    Teuchos::RCP<Teuchos_sdMat_t> M_view
                   = Teuchos::rcp(new Teuchos_sdMat_t(Teuchos::View,M_val,stride,nrows,ncols));
     return M_view;                  
     }

@@ -62,6 +62,16 @@ public:
       }
     }
 
+void rebuildVectors(TYPE(const_crsMat_ptr) A)
+  {
+#if 0
+//TODO  
+  // set vec1 to be a valid X, vec2 a valid Y in Y=AX
+  const_map_t *range_map, *domain_map;
+  PHIST_CHK_IERR(TROET) // continue here
+#endif
+  }
+
 TYPE(crsMat_ptr) A0_; // all zero matrix
 TYPE(crsMat_ptr) A1_; // identity matrix
 TYPE(crsMat_ptr) A2_; // general sparse matrix with nonzero diagonal
@@ -112,6 +122,8 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       {
       _ST_ val = random_number();
       global_sum(&val,1,mpi_comm_);
+      // build vectors with correct range- and domain map
+      rebuildVectors(A);
       SUBR(mvec_put_value)(vec1_,val,&ierr_);
       SUBR(mvec_random)(vec2_,&ierr_);
       SUBR(crsMat_times_mvec)(st::one(),A2_,vec1_,st::zero(),vec2_,&ierr_);

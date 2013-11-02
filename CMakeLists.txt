@@ -54,11 +54,17 @@ if (C_COMPILER_NAME STREQUAL "gcc")
   endif()
 endif()
 
+if ("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
+  add_definitions(-DPHIST_OUTLEV=99)
+else()
+  add_definitions(-DPHIST_OUTLEV=2)
+endif()
+
 if (C_COMPILER_NAME STREQUAL "gcc")
   message(STATUS "using GCC compiler flags")
   set (CMAKE_C_FLAGS "-fopenmp")
   set (CMAKE_C_FLAGS_RELEASE "-O2 -fopenmp")
-  set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -fopenmp -DTESTING -DPHIST_OUTLEV=99")
+  set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -fopenmp")
 else ()
   message ("C compiler: " ${C_COMPILER_NAME})
   message ("No specific C compiler flags are known.")
@@ -221,6 +227,8 @@ endforeach()
 
 list(APPEND PHIST_LIBS ${LAPACK_LIBS})
 list(APPEND PHIST_LIBS ${MPI_CXX_LIBRARIES})
+
+message(STATUS "all libraries: "${PHIST_LIBS})
 
 set(GCOVR_EXCLUDES -e src/kernels/kernels_noimpl.c
                    -e src/tools/tools.c)

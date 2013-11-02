@@ -17,6 +17,25 @@ public:
     
     if (typeImplemented_)
       {
+      nq_ = std::min(3*nvec_+1,nglob_-4);
+      SUBR(mvec_create)(&Q_,map_,nq_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_create)(&sigma_,nq_,nq_,NULL,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_random)(sigma_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+            
+      // create random orthogonal Q
+      SUBR(mvec_random)(Q_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      TYPE(sdMat_ptr) Rtmp;
+      SUBR(sdMat_create)(&Rtmp,nq_,nq_,NULL,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_QR)(Q_,Rtmp,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(Rtmp,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
       read_mat("sprandn",&A1_);
       read_mat("sprandn_nodiag",&A2_);
       
@@ -38,6 +57,10 @@ public:
     KernelTestWithVectors<_ST_,_N_,_NV_>::TearDown();
     if (typeImplemented_)
       {
+    SUBR(mvec_delete)(Q_,&ierr_);
+    ASSERT_EQ(0,ierr_);
+    SUBR(sdMat_delete)(sigma_,&ierr_);
+    ASSERT_EQ(0,ierr_);
       ASSERT_EQ(0,delete_mat(A1_));
       ASSERT_EQ(0,delete_mat(A2_));
       }
@@ -45,6 +68,11 @@ public:
 
 TYPE(crsMat_ptr) A1_; 
 TYPE(crsMat_ptr) A2_; 
+
+// for testing the jada operator
+int nq_;
+TYPE(mvec_ptr) Q_;
+TYPE(sdMat_ptr) sigma_;
 
 protected:
 
@@ -96,6 +124,9 @@ int doBelosTests(TYPE(crsMat_ptr) A)
       TYPE(op) *op=new TYPE(op);
       Teuchos::RCP<const TYPE(op)> op_ptr = Teuchos::rcp(op,true);
       PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(op,A,&ierr_),ierr_);
+      TYPE(op)* jdOp=NULL;
+      PHIST_ICHK_IERR(SUBR(jadaOp_create)(op,NULL,Q_,NULL,sigma_,NULL,&jdOp,&ierr_),ierr_);
+      Teuchos::RCP<const TYPE(op)> jdOp_ptr=Teuchos::rcp(jdOp,false);
 #ifdef PHIST_KERNEL_LIB_GHOST
       ghost_vec_t* v = (ghost_vec_t*)vec1_;
       Teuchos::RCP<const phist::GhostMV> V = phist::rcp(v,false);
@@ -106,8 +137,14 @@ int doBelosTests(TYPE(crsMat_ptr) A)
       phist::tpetra::Traits<ST>::mvec_t* v = (phist::tpetra::Traits<ST>::mvec_t*)vec1_;
       Teuchos::RCP<const phist::tpetra::Traits<ST>::mvec_t> V = Teuchos::rcp(v,false);
 #else
-#endif    
-      if (Belos::TestOperatorTraits(MyOM,V,op_ptr)==false) ierr_=-1;
+#warning belos test case not implemented for this kernel lib (OpTest_def_hpp)
+#endif
+      if (Belos::TestOperatorTraits(MyOM,V,op_ptr)==false) {ierr_=-1; return ierr_;}
+// note: we can't test the jadaOp in this way because it operates on a fixed number of 
+// vectors and the Belos test assumes it works for any number of vectors.
+//      if (Belos::TestOperatorTraits(MyOM,V,jdOp_ptr)==false) {ierr_=-2; return ierr_;}
+//TODO - I'm getting an 'undefined reference' linker error here
+//      PHIST_ICHK_IERR(SUBR(jadaOp_delete)(&jdOp,&ierr_),ierr_);
       }
   return ierr_;
   }

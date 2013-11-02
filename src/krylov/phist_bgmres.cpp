@@ -17,7 +17,9 @@
 #include "Teuchos_FancyOStream.hpp"
 
 // GMRES solver manager from the Belos package
+#include "BelosSolverManager.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
 
 #ifdef PHIST_KERNEL_LIB_GHOST
 #include "Belos_GhostAdapter.hpp"

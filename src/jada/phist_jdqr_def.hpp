@@ -229,7 +229,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(mvec_random)(v0,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(arnoldi)(A_op,v0,Vv,H0,minBas,ierr),*ierr);
 
-#if PHIST_OUTLEV>PHIST_DEBUG
+#if PHIST_OUTLEV>=PHIST_DEBUG
   PHIST_DEB("initial H (by Arnoldi)");
   PHIST_CHK_IERR(SUBR(sdMat_print)(H0,ierr),*ierr);
 #endif
@@ -326,7 +326,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     int ev_pos=0;
     theta=ev[ev_pos];
 
-#if PHIST_OUTLEV>PHIST_DEBUG
+#if PHIST_OUTLEV>=PHIST_DEBUG
   PHIST_DEB("it=%d, m=%d, mm=%d",it,m,mm);
   PHIST_DEB("sorted Schur form");
   PHIST_CHK_IERR(SUBR(sdMat_print)(Tv,ierr),*ierr);
