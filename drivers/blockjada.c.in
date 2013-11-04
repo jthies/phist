@@ -1,0 +1,217 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+#include "phist_macros.h"
+#include "phist_enums.h"
+#include "phist_kernels.h"
+#include "phist_operator.h"
+#include "phist_blockjada.h"
+#include "phist_simple_arnoldi.h"
+#include ${PHIST_TG_HFILE}
+
+
+typedef _ST_ ST;
+typedef _MT_ MT;
+typedef TYPE(mvec_ptr) mvec_ptr_t;
+typedef TYPE(const_mvec_ptr) const_mvec_ptr_t;
+
+typedef TYPE(sdMat_ptr) sdMat_ptr_t;
+typedef TYPE(const_sdMat_ptr) const_sdMat_ptr_t;
+
+typedef TYPE(crsMat_ptr) crsMat_ptr_t;
+typedef TYPE(const_crsMat_ptr) const_crsMat_ptr_t;
+
+typedef TYPE(op_ptr) op_ptr_t;
+typedef TYPE(const_op_ptr) const_op_ptr_t;
+
+int main(int argc, char** argv)
+  {
+  int rank, num_proc;
+  int i, ierr;
+  int verbose;
+
+  comm_ptr_t comm = NULL;
+  crsMat_ptr_t A = NULL;
+  op_ptr_t A_op = NULL; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  op_ptr_t B_op=NULL; // no mass matrix up to now
+  
+  const_map_ptr_t map = NULL; // map (element distribution) of vectors according to 
+                       // the distribution of matrix rows
+  mvec_ptr_t X = NULL; // multivector for getting the eigenvectors
+  mvec_ptr_t x0 = NULL; // start vector for arnoldi
+  sdMat_ptr_t XH = NULL;
+  
+  ST* evals = NULL; // for real non-symmetric matrices we can get complex pairs,
+             // so we need twice the amount of memory to store the eigenvalues 
+  MT* resid = NULL;
+  
+  int* is_cmplx=NULL; // only required for the real case for indicating complex EV
+
+  eigSort_t which;
+  MT tol;
+  char* filename = NULL;
+  
+  int num_eigs,num_iters,max_iters;
+  int blockSize, minBas,maxBas; /* whenever maxBas vectors have been created, we shrink the search space to minBas */
+  
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+
+  PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
+
+  PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&ierr),ierr);
+
+  verbose= (rank==0);
+
+
+  if (argc<2)
+    {
+    if (verbose) fprintf(stdout,"Usage: ./XJaDa <matrix filename> [<num eigs>] [<which>] [<tol>] [<max iters> <blockSize> <min basis> <max basis>]\n");
+    return 1;
+    }
+
+  filename = argv[1];
+  
+  if (argc<3)
+    {
+    num_eigs=10;
+    }
+  else
+    {
+    num_eigs=atoi(argv[2]);
+    }
+
+  if (argc<4)
+    {
+    which=LM;
+    }
+  else
+    {
+    if (!strcmp(argv[3],"LM")) which=LM;
+    else if (!strcmp(argv[3],"SM")) which=SM;
+    else if (!strcmp(argv[3],"LR")) which=LR;
+    else if (!strcmp(argv[3],"SR")) which=SR;
+    else
+      {
+      if (verbose) fprintf(stderr,"ERROR: the which parameter may be \"LM\",\"SM\",\"LR\" or \"SR\"\n");
+      return -1;
+      }
+    }
+    
+  if (argc<5)
+    {
+    tol=1.0e-10;
+    }
+  else
+    {
+    tol=(MT)atof(argv[4]);
+    }
+
+  if (argc<6)
+    {
+    max_iters=250;
+    }
+  else
+    {
+    max_iters=atoi(argv[5]);
+    }
+
+  if( argc < 7 )
+    blockSize = 4;
+  else
+    blockSize = atoi(argv[6]);
+
+  if (argc<8)
+    {
+    minBas=10;
+    }
+  else
+    {
+    minBas=atoi(argv[7]);
+    }
+
+  if (argc<9)
+    {
+    maxBas=minBas+20;
+    }
+  else
+    {
+    maxBas=atoi(argv[8]);
+    }
+
+  PHIST_ICHK_IERR(SUBR(crsMat_read_mm)(&A,filename,&ierr),ierr);
+  
+  PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(A, &map,&ierr),ierr);
+
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,num_eigs+1,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(X,ZERO,&ierr),ierr);
+  
+  num_iters=max_iters;
+  // create operator wrapper for computing Y=A*X using a CRS matrix
+  A_op = (op_ptr_t)malloc(sizeof(TYPE(op)));
+  PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(A_op,A,&ierr),ierr);
+  
+  // allocate memory for eigenvalues and residuals. We allocate
+  // one extra entry because in the real case we may get that the
+  // last EV to converge is a complex pair (requirement of JDQR)
+  evals = (ST*)malloc((num_eigs+1)*sizeof(ST));
+  resid = (MT*)malloc((num_eigs+1)*sizeof(MT));
+  is_cmplx = (int*)malloc((num_eigs+1)*sizeof(int));
+
+  // create start block vector from one-vector
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&x0,map,1,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(x0,ONE,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_create)(&XH,blockSize,blockSize,NULL,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_put_value)(XH,ZERO,&ierr),ierr);
+  // use blockSize steps of arnoldi to create starting vector
+  PHIST_ICHK_IERR(SUBR(simple_arnoldi)(A_op,x0,X,XH,blockSize,&ierr),ierr);
+#if PHIST_OUTLEV>=PHIST_DEBUG
+  PHIST_DEB("initial H (by Arnoldi)");
+  PHIST_ICHK_IERR(SUBR(sdMat_print)(XH,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_print)(X,&ierr),ierr);
+#endif
+  // delete x0, XH
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(x0,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_delete)(XH,&ierr),ierr);
+  x0 = NULL;
+
+  SUBR(blockjada)(A_op,B_op,X,evals,resid,is_cmplx, 
+        which, tol,
+        &num_iters,&num_eigs,
+        blockSize, minBas, maxBas,
+        &ierr);
+
+  if (ierr!=0)
+    {
+    if (verbose) fprintf(stdout,"code %d returned from block-jada",ierr);
+    if (ierr<0) return ierr;
+    }
+  if (verbose)
+    {
+    fprintf(stdout,"Found %d eigenpairs after %d iterations\n",num_eigs,num_iters);
+    }
+
+  if (verbose && num_eigs>0)
+    {
+    fprintf(stdout,"Eigenvalue \t Ritz Residual \n");
+    for (i=0;i<num_eigs;i++)
+      {
+#ifdef _IS_COMPLEX_
+      fprintf(stdout,"%16.8e%+16.8ei\t%4.2e\n",evals[i],resid[i]);
+#else
+      fprintf(stdout,"%16.8e\t%4.2e\n",evals[i],resid[i]);
+#endif
+      }
+    }
+
+  free(evals);
+  free(resid);
+  free(is_cmplx);
+  
+  PHIST_ICHK_IERR(SUBR(crsMat_delete)(A,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&ierr),ierr);
+  free(A_op);
+  PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
+  return ierr;
+  }

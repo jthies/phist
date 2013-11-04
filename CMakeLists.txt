@@ -64,7 +64,7 @@ if (C_COMPILER_NAME STREQUAL "gcc")
   message(STATUS "using GCC compiler flags")
   set (CMAKE_C_FLAGS "-fopenmp")
   set (CMAKE_C_FLAGS_RELEASE "-O2 -fopenmp")
-  set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -fopenmp")
+  set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -fopenmp -Wall -Wextra -Wno-unused-local-typedefs -Wno-format -Wno-sign-compare")
 else ()
   message ("C compiler: " ${C_COMPILER_NAME})
   message ("No specific C compiler flags are known.")
@@ -74,7 +74,7 @@ if (Fortran_COMPILER_NAME STREQUAL "gfortran")
   message(STATUS "using gfortran compiler flags")
   set (CMAKE_Fortran_FLAGS "-fopenmp")
   set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3 -fopenmp")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-fno-f2c -O0 -g -fopenmp")
+  set (CMAKE_Fortran_FLAGS_DEBUG   "-fno-f2c -O0 -g -fopenmp -Wall -Wextra")
 else ()
   message ("Fortran compiler: " ${Fortran_COMPILER_NAME})
   message ("No optimized Fortran compiler flags are known.")
@@ -84,7 +84,7 @@ if (CXX_COMPILER_NAME STREQUAL "g++")
   message(STATUS "using g++ compiler flags")
   set (CMAKE_CXX_FLAGS "-fopenmp")
   set (CMAKE_CXX_FLAGS_RELEASE "-O2 -fopenmp")
-  set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING -DPHIST_OUTLEV=99 -fopenmp")
+  set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING -DPHIST_OUTLEV=99 -fopenmp -Wall -Wextra -Wno-unused-local-typedefs -Wno-format -Wno-sign-compare")
 else ()
   message ("CXX compiler: " ${CXX_COMPILER_NAME})
   message ("No optimized C++ compiler flags are known.")
@@ -170,7 +170,9 @@ set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.c
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_lanczos.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_bgmres.cpp)
 set (PHIST_JADA_SOURCE ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.c
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp)
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_simple_arnoldi.cpp
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_blockjada.cpp)
 
 
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB})
