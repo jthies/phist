@@ -26,14 +26,13 @@ opts.debug=false;
 % JD options
 opts.arnoldi=true; % start with Arnoldi?
 %opts.switchTol=1.0e-3;
-opts.numEigs=20;
+opts.numEigs=10;
 opts.maxIter=200;
 opts.tol=1.0e-6;
 opts.minSpace=10;
-opts.maxSpace=200;
+opts.maxSpace=20;
 
-%opts.iterFun=@bgmres;
-opts.iterFun='gmres';
+opts.iterFun=@bgmres;
 %opts.iterFun='direct';
 
 

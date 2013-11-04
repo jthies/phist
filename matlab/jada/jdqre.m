@@ -119,7 +119,7 @@ while (k<numEigs && it<=maxIter)
     m=m+1;
     mm=mm+1;
     it=it+1;
-    t=orthog(V(:,1:m-1),t);
+    t=orthog([Q,V(:,1:m-1)],t);
     V(:,m)=t; %bvscal(t,1./bvnorm(t,2));
     AV(:,m)=apply_op(V(:,m),A);
     % Galerkin - non-Hermitian A
@@ -247,10 +247,6 @@ while (k<numEigs && it<=maxIter)
       b_aug = [rtil;zeros(size(Qtil,2),size(rtil,2))];
       t_aug= A_aug\b_aug;
       t=t_aug(1:size(Qtil,1),:);
-    elseif (strcmp(lsFun,'gmres'))
-      lsOpts.tol=max(tol,1/2.^max(1,mm));
-      par=[lsOpts.tol lsOpts.maxIter];
-      t=their_gmres(shift,Qtil,Qtil,1,rtil,par);
     else
       op=comp_jada_op(A,shift,speye(n),Qtil);
       if (isfield(printOpts,'indent'))
