@@ -20,7 +20,7 @@ end
 %A=A+A'+2*speye(n);
 %A2=A2+A2'+2*speye(n);
 
-opts.verbose=true;
+opts.verbose=false;
 opts.debug=false;
 
 % JD options
@@ -37,6 +37,7 @@ opts.iterFun=@bgmres;
 
 
 % options for the outer GMRES loop
+opts.lsOpts.verbose=opts.verbose;
 opts.lsOpts.tol=0.5;
 opts.lsOpts.maxIter=25;
 opts.lsOpts.m=25; % restart/truncation parameter:

@@ -2,27 +2,27 @@ setpath;
 %for debugging - make results reproducible
 rand('seed',77);
 randn('seed',42);
-complex=0;
+complex=1;
 
 nx=8;
 A=make_testmat(nx);
 n=size(A,1);
 
-k=6; % block size
+k=10; % block size
 
 % complex case
 if (complex)
   A=A+0.25*sprandn(A)*i*complex;
 end
 
-generalized = true;
+generalized = false;
 if( generalized )
   % create spd. B
   B = sprandsym(n, 0.001,0.1,2);
   % print cond of B
   fprintf('cond(B) = %f\n', condest(B));
 else
-  B = eye(n);
+  B = speye(n);
 end
 
 v0=randn(n,k);
@@ -33,7 +33,7 @@ v0=v0./norm(v0,2);
 
 disp('subspace JaDa iteration for exterior eig(s).');
 
-maxOuterIter = 10;
+maxOuterIter = 50;
 maxInnerIter = floor(80/k);
 res_eps = 1.e-8;
 resnorm_history_total = [];

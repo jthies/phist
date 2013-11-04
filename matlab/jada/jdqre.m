@@ -56,6 +56,7 @@ arno=getopt(opts,'arnoldi',true);
 verbose=getopt(opts,'verbose',true);
 debug=getopt(opts,'debug',false);
 
+lsOpts.verbose=verbose;
 lsOpts.maxIter=10;
 lsOpts.tol=0.1;
 

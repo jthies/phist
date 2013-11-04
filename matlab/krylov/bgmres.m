@@ -27,6 +27,8 @@ function [X,flag,relres,iter,resvec]=bgmres( A,B,X0,opts,M)
 % The block size is determined by size(B,2) right now.   
 %
 
+verbose=getopt(opts,'verbose',true);
+
 flag=0;
 relres=1.0;
 iter = 0; % total iterations
@@ -133,7 +135,9 @@ while (1)
     end
     relres = abs(diag(rs(idx(j+1),:))).'./bnorm;
     resvec=[resvec;relres];
-    print_iter(iter,relres);    
+    if (verbose)
+      print_iter(iter,relres);    
+    end
     if (max(relres)<=tol || iter>=maxIter)
       %disp('convergence - exit Arnoldi');
       break;
