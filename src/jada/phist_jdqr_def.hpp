@@ -222,11 +222,12 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_OUT(1,"%d steps of Arnoldi as start-up",minBas);
   
   // start by filling the first minBas vectors using Arnoldi
-  //TODO - we promised to use the user input in X, here we just
-  // use a random vector instead.
+  //TODO - we promised to use the user input in X, but here we
+  // use only the first vector as start vec. We could do block
+  // Arnoldi instead, or use a linear combination of the X columns.
+  // We're also assuming that v0 is normalized here.
   mvec_ptr_t v0=NULL;
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v0,0,0,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_random)(v0,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_view_block)(X,&v0,0,0,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(arnoldi)(A_op,v0,Vv,H0,minBas,ierr),*ierr);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -669,7 +670,7 @@ void SUBR(arnoldi)(TYPE(const_op_ptr) op, TYPE(const_mvec_ptr) v0,
   PHIST_CHK_IERR(SUBR(mvec_set_block)(V,v0,0,0,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&v,0,0,ierr),*ierr);
   
-  for (int i=0;i<m-1;i++)
+  for (int i=0;i<m;i++)
     {
     PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&vprev,0,i,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&av,i+1,i+1,ierr),*ierr);
