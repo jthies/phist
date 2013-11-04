@@ -137,7 +137,8 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(A, &map,&ierr),ierr);
 
   PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,num_eigs+1,&ierr),ierr);
-
+  PHIST_ICHK_IERR(SUBR(mvec_random)(X,&ierr),ierr);
+  
   num_iters=max_iters;
   // create operator wrapper for computing Y=A*X using a CRS matrix
   A_op = (op_ptr_t)malloc(sizeof(TYPE(op)));
@@ -149,6 +150,20 @@ int main(int argc, char** argv)
   evals = (ST*)malloc((num_eigs+1)*sizeof(ST));
   resid = (MT*)malloc((num_eigs+1)*sizeof(MT));
   is_cmplx = (int*)malloc((num_eigs+1)*sizeof(int));
+
+  // first column in X is currently used as starting vector of Arnoldi in jdqr. The first 
+  // jmin vectors are constructed by an Arnoldi process for stability reasons.
+  int nloc,lda; 
+  ST* valX0;
+  MT nrmX0[num_eigs+1];
+  PHIST_ICHK_IERR(SUBR(mvec_my_length)(X,&nloc,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_extract_view)(X,&valX0,&lda,&ierr),ierr);
+  // for comparing step-by-step with matlab
+  for (i=0;i<nloc;i++)
+    {
+    valX0[i] = (ST)(i+1);
+    }
+  PHIST_ICHK_IERR(SUBR(mvec_normalize)(X,nrmX0,&ierr),ierr);
 
   SUBR(jdqr)(A_op,B_op,X,evals,resid,is_cmplx, 
         which, tol,
