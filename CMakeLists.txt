@@ -228,7 +228,7 @@ endforeach()
 list(APPEND PHIST_LIBS ${LAPACK_LIBS})
 list(APPEND PHIST_LIBS ${MPI_CXX_LIBRARIES})
 
-message(STATUS "all libraries: "${PHIST_LIBS})
+#message(STATUS "all libraries: "${PHIST_LIBS})
 
 set(GCOVR_EXCLUDES -e src/kernels/kernels_noimpl.c
                    -e src/tools/tools.c)
@@ -313,6 +313,7 @@ endforeach()
 # test drivers
 set(PHIST_TESTS kernels
                 core
+                jada
                 krylov
                 bench)
 #                sched

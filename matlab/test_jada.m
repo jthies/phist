@@ -20,8 +20,8 @@ end
 %A=A+A'+2*speye(n);
 %A2=A2+A2'+2*speye(n);
 
-opts.verbose=false;
-opts.debug=false;
+opts.verbose=true;
+opts.debug=true;
 
 % JD options
 opts.arnoldi=true; % start with Arnoldi?
@@ -55,10 +55,10 @@ opts.lsOpts.m=25; % restart/truncation parameter:
 %opts.precOp.compute=@comp_iluprec;
 
 
-v0=randn(n,k);
-if (complex)
-  v0=v0+complex*i*randn(n,k);
-end
+v0=[1:n]'; %randn(n,k);
+%if (complex)
+%  v0=v0+complex*i*randn(n,k);
+%end
 v0=v0./norm(v0,2);
 
 disp('JDQR for exterior eig(s).');

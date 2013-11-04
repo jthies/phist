@@ -97,7 +97,11 @@ if (arno)
   % such that A*V(:,1:mmin) = V*H
   arno_opts.maxIter=mmin;
   [V,H]=arnoldi(A,v0,arno_opts);
-  size(H)
+  if (debug)
+    disp('H matrix from Arnoldi:');
+    size(H)
+    H
+  end
   AV=V*H;
   V=V(:,1:mmin);
   %AV=A*V;
