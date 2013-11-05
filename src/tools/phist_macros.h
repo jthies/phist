@@ -147,3 +147,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #define ENTER_FCN(s)
 #endif
 #endif
+
+#ifndef TOUCH
+#define TOUCH(x) (void)(x);
+#endif

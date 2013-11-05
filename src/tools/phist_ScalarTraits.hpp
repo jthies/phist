@@ -25,9 +25,8 @@ class ScalarTraits
   {
   public: 
   
-  // this should prevent compiling a non-specialized
-  // template instantiation, but I'm not sure if it does.
-  typedef typename ST::missing_specialization_for_class_ScalarTraits bar;
+  char type_char() {return ST::missing_specialization_for_ScalarTraits_class();}
+  
   };
 
 template<>
@@ -113,6 +112,7 @@ class ScalarTraits< float >
   //! imaginary part (0 for real data types)
   static inline magn_t imag(const scalar_t& x)
     {
+    TOUCH(x)
     return 0.0f;
     }
     
@@ -222,6 +222,7 @@ class ScalarTraits< double >
   //! imaginary part (0 for real data types)
   static inline magn_t imag(const scalar_t& x)
     {
+    TOUCH(x)
     return 0.0;
     }
     
@@ -282,6 +283,7 @@ class ScalarTraits< std::complex<MT> >
   //! returns the type prefix as a char, for instance 'S', 'D'
   static inline char type_char()
     {
+    ENTER_FCN(__FUNCTION__);
     return ScalarTraits<MT>::complex_type_char();
     }
 
