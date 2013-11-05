@@ -10,17 +10,14 @@
 // normalize W. The method stops if the reduction in norm of W   
 // by a CGS step is less than approx. a factor sqrt(2).          
 //                                                               
-// If we find that W does not have full column rank,             
+// If we find that W-V*R2 does not have full column rank,             
 // the matrix Q is augmented with random vectors which are made  
-// mutually orthogonal and orthogonal against V. The original    
-// rank of W is returned in ierr at the end of the routine. If   
-// it happens somewhere during the process, we return an error   
-// code ierr=-7.                                                 
+// mutually orthogonal and orthogonal against V. In this case the
+// dimension of the null space of W-V*R2 is returned in ierr>0.    
 //                                                               
-// If a breakdown occurs, indicating that one of the columns of  
-// W lives in the space spanned by the columns of V, ierr=-8 is  
-// returned. A more convenient behavior may be added later, like 
-// randomizing the column(s) as before.                          
+// If no random orthogonal vectors can be generated (after some tries)
+// ierr=-8 is returned. This may indicate a problem with the random vector
+// generator.
 //                                                               
 // If the decrease in norm in one of the columns                 
 // in the last CGS sweep indicates that the algorithm has not    

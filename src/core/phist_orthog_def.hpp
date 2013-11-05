@@ -10,17 +10,14 @@
 // normalize W. The method stops if the reduction in norm of W   
 // by a CGS step is less than approx. a factor sqrt(2).          
 //                                                               
-// If we find that W does not have full column rank,             
+// If we find that W-V*R2 does not have full column rank,             
 // the matrix Q is augmented with random vectors which are made  
-// mutually orthogonal and orthogonal against V. The original    
-// rank of W is returned in ierr at the end of the routine. If   
-// it happens somewhere during the process, we return an error   
-// code ierr=-7.                                                 
+// mutually orthogonal and orthogonal against V. In this case the
+// dimension of the null space of W-V*R2 is returned in ierr>0.    
 //                                                               
-// If a breakdown occurs, indicating that one of the columns of  
-// W lives in the space spanned by the columns of V, ierr=-8 is  
-// returned. A more convenient behavior may be added later, like 
-// randomizing the column(s) as before.                          
+// If no random orthogonal vectors can be generated (after some tries)
+// ierr=-8 is returned. This may indicate a problem with the random vector
+// generator.
 //                                                               
 // If the decrease in norm in one of the columns                 
 // in the last CGS sweep indicates that the algorithm has not    
@@ -145,21 +142,35 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     return;
     }
   rankW=k-*ierr;
-  if (rankW<k)
-    {
-    st::mvec_t *Wrnd=NULL;
-    st::sdMat_t *Rrnd;
-    int n0=*ierr;
-    PHIST_OUT(PHIST_INFO,"Matrix W does not have full rank (%d cols, rank=%d)\n",k,rankW);
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(W,&Wrnd,rankW,k-1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&Rrnd,m,n0,comm,ierr),*ierr);
-    //R2=V'*W;
-    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,Wrnd,st::zero(),Rrnd,ierr),*ierr);
-    //W=W-V*R2;
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),V,Rrnd,st::one(),Wrnd,ierr),*ierr);
-    // throw away projection coefficients.
-    PHIST_CHK_IERR(SUBR(sdMat_delete)(Rrnd,ierr),*ierr);
-    }
+  if(rankW < k )
+  {
+    int random_iter = 0;
+    while (*ierr > 0)
+      {
+      // terminate even if random vectors are not "random" enough, e.g. random number generator is broken
+      if( random_iter++ > 10 )
+      {
+        PHIST_OUT(PHIST_ERROR,"could not create random orthogonal vectors, possibly the random vector generator is broken!");
+        *ierr = -8;
+        return;
+      }
+      st::mvec_t *Wrnd=NULL;
+      st::sdMat_t *Rrnd;
+      int n0=*ierr;
+      PHIST_OUT(PHIST_INFO,"Matrix W does not have full rank (%d cols, rank=%d)\n",k,rankW);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(W,&Wrnd,rankW,k-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&Rrnd,m,n0,comm,ierr),*ierr);
+      //R2=V'*W;
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,Wrnd,st::zero(),Rrnd,ierr),*ierr);
+      //W=W-V*R2;
+      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),V,Rrnd,st::one(),Wrnd,ierr),*ierr);
+      // throw away projection coefficients.
+      PHIST_CHK_IERR(SUBR(sdMat_delete)(Rrnd,ierr),*ierr);
+
+      // reorthogonlize result, filling in new random vectors if these were in span(V)
+      PHIST_CHK_IERR(SUBR(mvec_QR)(W,R1,ierr),*ierr);
+      }
+  }
 
   for (i=1;i<numSweeps;i++)
     {
@@ -212,6 +223,16 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW1,ierr),*ierr);    
     }
 
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(R1p,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(R2p,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(R1pp,ierr),*ierr);
+  delete [] normW0;
+  delete [] normW1;
+
+  // return size of randomly filled null space if W-V*R2 not full rank
+  if(rankW < k)
+    *ierr = k-rankW;
+
   // if in the last CGS sweep a column decreased too much in norm, 
   // return an error (we could return a warning, but since we used 
   // all positive numbers for the case of rank deficient W already,
@@ -230,10 +251,4 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
         }
       }
     }
-
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(R1p,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(R2p,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(R1pp,ierr),*ierr);
-  delete [] normW0;
-  delete [] normW1;
   }
