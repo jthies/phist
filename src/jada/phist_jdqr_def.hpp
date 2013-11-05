@@ -146,7 +146,9 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   const_comm_ptr_t comm;
   PHIST_CHK_IERR(phist_map_get_comm(A_op->range_map,&comm,ierr),*ierr);
 
-  PHIST_CHK_IERR(SUBR(mvec_create)(&V,A_op->domain_map,maxBas,ierr),*ierr);
+  // we need maxBas vectors to store the maximum size JaDa basis, but we add some temporary
+  // storage so that we can store [V,Q], where Q contains the already converged eigenspace.
+  PHIST_CHK_IERR(SUBR(mvec_create)(&V,A_op->domain_map,maxBas+numEigs,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_create)(&AV,A_op->domain_map,maxBas,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_create)(&Vtmp,A_op->domain_map,maxBas,ierr),*ierr);
 
@@ -190,8 +192,10 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 #endif
   PHIST_CHK_IERR(SUBR(sdMat_create)(&shift,1,1,NULL,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&M,maxBas,maxBas,comm,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&S,maxBas,maxBas,comm,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&T,maxBas,maxBas,comm,ierr),*ierr);
+  // these two are made bigger because they are used as temporary storage when 
+  // orthogonalizing against [V Q], which is of dimension up to n x (maxBas+numEigs)
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&S,maxBas+numEigs,maxBas+numEigs,comm,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&T,maxBas+numEigs,maxBas+numEigs,comm,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&R,*num_eigs,*num_eigs,comm,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,st::zero(),ierr),*ierr);
 
@@ -252,14 +256,25 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       mm++;
       it++;
       // create views of V(:,1:m-1), V(:,m) and AV likewise
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m0,ierr),*ierr);
+      
+      // V temporarily gets extra storage to store [V Q] for the orthogonalization
+      int ncVQ=m0+nconv;// number of columns of [V,Q]
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,ncVQ,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m0,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vm,m0+1,m,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVm,m0+1,m,ierr),*ierr);
-      // orthogonalize t against V(:,0:m-1). We use T and S as temporary storage here
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,nv-1,0,nv-1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m0,0,nv-1,ierr),*ierr);
+      // orthogonalize t against V(:,0:m-1) and the converged eigenspace Q. TROET
+      // We use T and S as temporary storage here
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,nv-1,0,nv-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,ncVQ,0,nv-1,ierr),*ierr);
+      if (nconv>0)
+        {
+        PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,Qv,m0+1,ncVQ,ierr),*ierr);
+        }
       PHIST_CHK_IERR(SUBR(orthog)(Vv,t_ptr,Tv,Sv,2,ierr),*ierr);
+      // reset the view of V without the Q.
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m0,ierr),*ierr);
+      
       // set V(:,m)=t
       PHIST_CHK_IERR(SUBR(mvec_set_block)(V,t,m0+1,m,ierr),*ierr);
       // compute AV(:,m) = A*V(:,m)
@@ -345,9 +360,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       }
 #endif
 
-    // view a~, a temporary vector
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(atil,&atilv,0,nconv-1,0,nv-1,ierr),*ierr);
-
     // get the diagonal block (1x1 or 2x2) corresponding to theta
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Theta,0,nv-1,0,nv-1,ierr),*ierr);
 
@@ -378,10 +390,10 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     if (nconv>0)
       {
       //atil = Q'*r;
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Qv,r_ptr,st::zero(),atil,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Qv,r_ptr,st::zero(),atilv,ierr),*ierr);
     
       //rtil = r-Q*atil;
-      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,atil,st::one(),rtil_ptr,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,atilv,st::one(),rtil_ptr,ierr),*ierr);
       }
 
     //nrm=norm(rtil);
@@ -401,6 +413,9 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     int nq0=nconv;
     nconv=nconv+nv;
 
+    // view a~, a temporary vector
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(atil,&atilv,0,nconv-1,0,nv-1,ierr),*ierr);
+
     // view first nconv columns of X as 'Q'
     PHIST_CHK_IERR(SUBR(mvec_view_block)(X,&Qv,0,nconv-1,ierr),*ierr);
 
@@ -408,7 +423,10 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
      PHIST_CHK_IERR(SUBR(mvec_set_block)(Qv,u_ptr,nq0,nconv-1,ierr),*ierr);
      //R=[R, atil;
      //   0, theta];
-     PHIST_CHK_IERR(SUBR(sdMat_set_block)(R,atilv,0,nq0-1,nq0,nconv-1,ierr),*ierr);
+     if (nq0>0)
+       {
+       PHIST_CHK_IERR(SUBR(sdMat_set_block)(R,atilv,0,nq0-1,nq0,nconv-1,ierr),*ierr);
+       }
      PHIST_CHK_IERR(SUBR(sdMat_set_block)(R,Theta,nq0,nconv-1,nq0,nconv-1,ierr),*ierr);
 
     PHIST_OUT(1,"eigenvalue %d (%8.4g%+8.4gi) is converged.",nconv,ct::real(theta),ct::imag(theta));
@@ -419,10 +437,10 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       }
 
     //S=S(:,2:m); (select remaining Ritz vectors)
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m-1,nv,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m,nv,m,ierr),*ierr);
     //M=T(2:m,2:m);
     // let Mblock point to the first m-nv x m-nv block of M
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-nv-1,0,m-nv-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-nv,0,m-nv,ierr),*ierr);
     // copy T(nv+1:m,nv+1:m) into it
     PHIST_CHK_IERR(SUBR(sdMat_get_block)(T,Mv,nv,m,nv,m,ierr),*ierr);
     m=m-nv;
@@ -439,15 +457,16 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m,ierr),*ierr);
 
     //u=V(:,1);
-    PHIST_CHK_IERR(SUBR(mvec_get_block)(Vv,u,0,nv,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_get_block)(Vv,u_ptr,0,nv-1,ierr),*ierr);
     //Au=AV(:,1);
-    PHIST_CHK_IERR(SUBR(mvec_get_block)(AVv,Au,0,nv,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_get_block)(AVv,Au_ptr,0,nv-1,ierr),*ierr);
 
     // select next target ev. This need not be the next according to
     // the sort criterion because the Schur-form is not completely sorted
     // (TODO: is it desirable to do them in order?)
 
     ev_pos+=nv; // skip conjugate ev for real case w/ cmplx theta
+                // TODO: we would have to add it ot Q anyway, wouldn't we?
     theta=ev[ev_pos];
     nv=1;
 #ifndef _IS_COMPLEX_
@@ -474,11 +493,11 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r_ptr,st::zero(),rtil_ptr,ierr),*ierr);
 
     //atil = Q'*r;
-    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Qv,r_ptr,st::zero(),atil,ierr),*ierr);
-    
-    //rtil = r-Q*atil;
-      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,atilv,st::one(),r,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Qv,r_ptr,st::zero(),atilv,ierr),*ierr);
 
+    //rtil = r-Q*atil;
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,atilv,st::one(),r,ierr),*ierr);
+      
     //nrm=norm(rtil);
     // real case with complex r: ||v+iw||=sqrt((v+iw).'*(v-iw))=sqrt(v'v+w'w)
     nrm[1]=mt::zero();
