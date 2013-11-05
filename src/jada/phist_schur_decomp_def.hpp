@@ -73,7 +73,7 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
    if (nselect<=0) return;
    if (nsort>nselect || nsort<0)
      {
-     PHIST_OUT(PHIST_WARNING,"nelect=%d>=nsort=%d, or nsort>=0 "
+     PHIST_OUT(PHIST_WARNING,"nselect=%d>=nsort=%d, or nsort>=0 "
                              "not satisfied, returning      unsorted Schur form",
                              nselect,nsort);
      *ierr=1;

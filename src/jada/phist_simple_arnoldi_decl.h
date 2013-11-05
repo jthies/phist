@@ -1,7 +1,7 @@
 //! a simple Arnoldi process to start up the JaDa iteration.
-//! Given a minimum basis size m, compute V(:,1:m), 
+//! Given a minimum basis size m, compute V(:,1:m+1), 
 //! H(1:m+1,1:m) such that A*V(:,1:m) = V(:,1:m+1)*H(1:m+1,1:m)
-//! input: v0 with ||v0||_2=1, V and H allocated with m+1 columns
+//! input: v0 with ||v0||_2=1, V and H allocated with m+1 resp. m columns
 //! and nloc resp. m+1 rows.
 //!
 //! TODO - block Arnoldi, cf. matlab/krylov/arnoldi.m for a prototype.
