@@ -226,8 +226,6 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   PHIST_CHK_IERR(SUBR(sdMat_delete)(R1p,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_delete)(R2p,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_delete)(R1pp,ierr),*ierr);
-  delete [] normW0;
-  delete [] normW1;
 
   // return size of randomly filled null space if W-V*R2 not full rank
   if(rankW < k)
@@ -251,4 +249,6 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
         }
       }
     }
+  delete [] normW0;
+  delete [] normW1;
   }

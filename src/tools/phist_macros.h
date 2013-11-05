@@ -60,6 +60,31 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #endif
 #endif
 
+//! checks an ierr flag passed to a void function for negative value, assigns it to _FLAG_,
+//! prints an error message and returns if non-zero (to be used in void functions)
+#ifndef PHIST_CHK_NEG_IERR
+#ifdef __cplusplus
+#define PHIST_CHK_NEG_IERR(func,_FLAG_) \
+try {func; if (_FLAG_ < _PHIST_SUCCESS_) { \
+PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
+(_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return;}} \
+catch (std::exception e) {PHIST_OUT(PHIST_ERROR,"Exception caught in call %s (%s)\n(file %s, line %d)",\
+(#func),e.what(),(__FILE__),(__LINE__)); (_FLAG_)=-77; return;} \
+catch (std::string s) {PHIST_OUT(PHIST_ERROR,"Exception caught in call %s (%s)\n(file %s, line %d)",\
+(#func),s.c_str(),(__FILE__),(__LINE__)); (_FLAG_)=-77; return;} \
+catch (int iexc) {PHIST_OUT(PHIST_ERROR,"int Exception caught in call %s (value %d)\n(file %s, line %d)",\
+(#func),iexc,(__FILE__),(__LINE__)); (_FLAG_)=-77; return;} \
+catch (...) {PHIST_OUT(PHIST_ERROR,"unknown Exception caught in call %s\n(file %s, line %d)",\
+(#func),(__FILE__),(__LINE__)); (_FLAG_)=-77; return;}
+#else
+#define PHIST_CHK_NEG_IERR(func,_FLAG_) \
+{func; if (_FLAG_<_PHIST_SUCCESS_) { \
+PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
+(_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return;}}
+#endif
+#endif
+
+
 //! this macro is deprecated, PHIST_CHK_IERR should now be used.
 #ifndef _PHIST_ERROR_HANDLER_
 #define _PHIST_ERROR_HANDLER_(func,_FLAG_) PHIST_CHK_IERR(func,_FLAG_)

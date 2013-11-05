@@ -229,11 +229,16 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(mvec_delete)(v0,ierr),*ierr);
   v0=NULL; // always important to nullify pointers in phist...
   PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,minBas-1,ierr),*ierr);
-  // compute A*V for the first minBas columns which we have now using the Arnoldi relation
-  PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,H0,st::zero(),AVv,ierr),*ierr);
-
   // set Vv=V(:,1:minBas)
   PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,minBas-1,ierr),*ierr);
+  // compute A*V for the first minBas columns which we have now using the Arnoldi relation
+  //PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,H0,st::zero(),AVv,ierr),*ierr);
+  // fails if orthogonal basis was extended by random vectors
+  PHIST_CHK_IERR(A_op->apply(st::one(),A_op->A,Vv,st::zero(),AVv,ierr),*ierr);
+
+  // compute initial projection M = V'AV
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,minBas-1,0,minBas-1,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,AVv,st::zero(),Mv,ierr),*ierr);
 
   PHIST_OUT(1,"Jacobi-Davidson");
   PHIST_OUT(1,"%s\t%s\t%s\t\t%s\n","iter","m","approx","resid");
@@ -271,7 +276,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
         {
         PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,Qv,m0+1,ncVQ,ierr),*ierr);
         }
-      PHIST_CHK_IERR(SUBR(orthog)(Vv,t_ptr,Tv,Sv,2,ierr),*ierr);
+      PHIST_CHK_NEG_IERR(SUBR(orthog)(Vv,t_ptr,Tv,Sv,2,ierr),*ierr);
       // reset the view of V without the Q.
       PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m0,ierr),*ierr);
       
@@ -331,6 +336,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
   PHIST_DEB("it=%d, m=%d, mm=%d",it,m,mm);
+  PHIST_DEB("projected matric");
+  PHIST_CHK_IERR(SUBR(sdMat_print)(Mv,ierr),*ierr);
   PHIST_DEB("sorted Schur form");
   PHIST_CHK_IERR(SUBR(sdMat_print)(Tv,ierr),*ierr);
 #endif

@@ -42,7 +42,11 @@ void SUBR(simple_arnoldi)(TYPE(const_op_ptr) op, TYPE(const_mvec_ptr) v0,
     // orthogonalize, Q*R1 = W - V*R2
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R2,0,i,i,i,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R1,i+1,i+1,i,i,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(orthog)(vprev,av,R1,R2,2,ierr),*ierr);
+    PHIST_CHK_NEG_IERR(SUBR(orthog)(vprev,av,R1,R2,2,ierr),*ierr);
+    if( *ierr > 0 )
+    {
+      PHIST_OUT(PHIST_INFO,"found invariant subspace in arnoldi, expanding basis with a randomly generated orthogonal vector");
+    }
     tmp=v; v=av; av=tmp; // swap the vectors v and av,av will be deleted and re-build as a 
                          // new view in the next step
     }
