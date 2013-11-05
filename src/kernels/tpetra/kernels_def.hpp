@@ -48,6 +48,8 @@ void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
   // TODO - not implemented (should read the binary file format defined by ghost)
+  TOUCH(vA);
+  TOUCH(filename);
   *ierr=-99;
   }
 
@@ -708,11 +710,11 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   
   if (R->isConstantStride()==false)
     {
+    TOUCH(vR);
     *ierr = -1;
     return;
     }
 
-  int stride = R->getStride();
   int nrows = R->getLocalLength();
   int ncols = R->getNumVectors();
     

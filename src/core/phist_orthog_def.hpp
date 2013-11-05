@@ -82,14 +82,14 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 #ifdef TESTING
 
   // check that all array dimensions are correct
-  PHIST_CHK_IERR((int)(V==NULL || W==NULL || R1==NULL || R2==NULL),*ierr);
+  PHIST_CHK_IERR(*ierr=(int)(V==NULL || W==NULL || R1==NULL || R2==NULL),*ierr);
 
   lidx_t n,nrR1,ncR1,nrR2,ncR2,tmp;
 
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_my_length)(W,&tmp,ierr),*ierr);
 
-  PHIST_CHK_IERR(((n==tmp)?0:-1),*ierr);
+  PHIST_CHK_IERR(*ierr=((n==tmp)?0:-1),*ierr);
 
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R1,&nrR1,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(R1,&ncR1,ierr),*ierr);
@@ -97,11 +97,11 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(R2,&ncR2,ierr),*ierr);
 
   // Q (and W) must match R1, R1 must be square
-  PHIST_CHK_IERR(((k==nrR1)?0:-1),*ierr);
-  PHIST_CHK_IERR(((k==ncR1)?0:-1),*ierr);
+  PHIST_CHK_IERR(*ierr=((k==nrR1)?0:-1),*ierr);
+  PHIST_CHK_IERR((*ierr=(k==ncR1)?0:-1),*ierr);
   // V must match R2, and V*R2 must match W
-  PHIST_CHK_IERR(((m==nrR2)?0:-1),*ierr);
-  PHIST_CHK_IERR(((k==ncR2)?0:-1),*ierr);
+  PHIST_CHK_IERR((*ierr=(m==nrR2)?0:-1),*ierr);
+  PHIST_CHK_IERR((*ierr=(k==ncR2)?0:-1),*ierr);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
   PHIST_OUT(PHIST_DEBUG,"orthog: V is %dx%d,  W is %dx%d\n"

@@ -50,6 +50,7 @@ void phist_comm_create(comm_ptr_t* vcomm, int* ierr)
 void phist_comm_delete(comm_ptr_t vcomm, int* ierr)
   {
   *ierr=0;
+  TOUCH(vcomm);
   // note - as comm_create returns a raw pointer to the default comm, we should not delete it.
   }
 

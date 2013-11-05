@@ -157,12 +157,15 @@ void SUBR(op_apply_multi)(argList_t* args)
 void SUBR(private_apply_identity)(_ST_ alpha, const void* A, TYPE(const_mvec_ptr) X,
         _ST_ beta, TYPE(mvec_ptr) Y, int* ierr)
         {
+        *ierr=0;
+        TOUCH(A)
         SUBR(mvec_add_mvec)(alpha,X,beta,Y,ierr);
         }
 
 // setup identity operator that returns Y=alpha*X + beta*Y
 void SUBR(op_identity)(TYPE(op_ptr) op, int* ierr)
   {
+  *ierr=0;
   op->A=NULL;
   op->apply = &SUBR(private_apply_identity);
   }
