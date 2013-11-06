@@ -1,38 +1,3 @@
-
- //                                                                                             
- // this function does an in-place Schur decomposition of T(1:m,1:m) into T and S.              
- // The Ritz values appear on the diagonal of T (for the real case there may be 2x2 blocks      
- // for complex conjugate pairs). The nselect and nsort flags indicate in which order they      
- // should appear:                                                                              
- // nselect=nsort=0: unsorted                                                                   
- // nselect>0: the first <nselect> Ritz values (if the last one is a complex conjugate pair     
- //            <nselect+1>) appear in any order in the upper left corner of T                    
- // 0<nsort<nselect: in addition to moving a cluster of <nselect> eigenvalues, sort the         
- //             first <nsort> of them in the upper left corner.                                 
- //                                                                                             
- // Example: if the Schur form is                                                               
- //                                                                                             
- //     a x x x x                                                                               
- //     0 b c x x, and the eigenvalues are |a|<|e|<|lambda([b,c;d,b])|<|f|,                     
- //     0 d b x x                                                                               
- //     0 0 0 e x                                                                               
- //     0 0 0 0 f                                                                               
- //                                                                                             
- // we get for nselect=3, nsort=1, which=LM:                                                    
- //                                                                                             
- //   f x x x x                                                                                 
- //     b c x x                                                                                 
- //     d b x x                                                                                 
- //         e x                                                                                 
- //           a                                                                                 
- //                                                                                             
- // so we guarantee that the largest one <nsort> is in the upper left corner,                   
- // and that the 3 largest ones appear first in any order.                                      
- //                                                                                             
- void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
-         int m, int nselect, int nsort, eigSort_t which, 
-         std::complex<_MT_>* ev, int *ierr);
-
 //! tries to compute a given number of eigenpairs (num_eig) of 
 //! an general operator A using the Jacobi-Davidson QR (JDQR)
 //! method. We allow for generalized EVPs here, A*x=lambda*B*x,
@@ -97,14 +62,12 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   mvec_ptr_t t=NULL;
   // some more (single) vectors we need:
   mvec_ptr_t u=NULL, Au=NULL, r=NULL, rtil=NULL;
-  // the above vectors may be complex even for a real
-  // matrix. These are real- and imaginary parts, respectively
-  // (in the complex case x_r aliases x and x_i==NULL)
-  mvec_ptr_t    u_r=NULL,       u_i=NULL,
-                Au_r=NULL,      Au_i=NULL,
-                r_r=NULL,       r_i=NULL,
-                rtil_r=NULL,    rtil_i=NULL,
-                t_r=NULL,       t_i=NULL;
+  // the above vectors may be complex even for a real   
+  // matrix. These are the first columns to be used for 
+  // real eigenvectors                                  
+  // (in the complex case x_r aliases x and x_i==NULL). 
+  mvec_ptr_t    u_r=NULL, Au_r=NULL, r_r=NULL, rtil_r=NULL, t_r=NULL;
+
   // these point either to u or u_r etc. to make live simpler further down
   mvec_ptr_t u_ptr=NULL, Au_ptr=NULL, r_ptr=NULL, rtil_ptr=NULL,t_ptr=NULL;
   // Q*s (temporary vector)
@@ -163,32 +126,27 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(mvec_create)(&rtil,A_op->domain_map,nv_max,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_create)(&t,A_op->domain_map,nv_max,ierr),*ierr);
   
-  u_r=u; u_i=NULL;
-  Au_r=Au; Au_i=NULL;
-  r_r=r; r_i=NULL;
-  rtil_r=rtil; rtil_i=NULL;
-  t_r=t; t_i=NULL;
+  u_r=u;
+  Au_r=Au;
+  r_r=r;
+  rtil_r=rtil;
+  t_r=t;
 
 #ifndef _IS_COMPLEX_
   u_r=NULL;
   PHIST_CHK_IERR(SUBR(mvec_view_block)(u,&u_r,0,0,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(u,&u_i,1,1,ierr),*ierr);
 
   Au_r=NULL;
   PHIST_CHK_IERR(SUBR(mvec_view_block)(Au,&Au_r,0,0,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(Au,&Au_i,1,1,ierr),*ierr);
 
   r_r=NULL;
   PHIST_CHK_IERR(SUBR(mvec_view_block)(r,&r_r,0,0,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(r,&r_i,1,1,ierr),*ierr);
 
   rtil_r=NULL;
   PHIST_CHK_IERR(SUBR(mvec_view_block)(rtil,&rtil_r,0,0,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(rtil,&rtil_i,1,1,ierr),*ierr);  
 
   t_r=NULL;
   PHIST_CHK_IERR(SUBR(mvec_view_block)(t,&t_r,0,0,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(t,&t_i,1,1,ierr),*ierr);  
 #endif
   PHIST_CHK_IERR(SUBR(sdMat_create)(&shift,1,1,NULL,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&M,maxBas,maxBas,comm,ierr),*ierr);
@@ -557,7 +515,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     if (nv>1)
       {
       PHIST_OUT(PHIST_ERROR,"case real A with complex eigs not (fully) implemented");
-      PHIST_CHK_IERR(-99,*ierr);
+      PHIST_CHK_IERR(*ierr=-99,*ierr);
       }
     // maintain orthogonality against
     // all converged vectors (Q) and the
@@ -671,124 +629,4 @@ int variant=0; //0:block GMRES, 1: pseudo-BGMRES
   return;
   }
 
-
- // this function does an in-place Schur decomposition of T(1:m,1:m) into T and S.              
- // The Ritz values appear on the diagonal of T (for the real case there may be 2x2 blocks      
- // for complex conjugate pairs). The nselect and nsort flags indicate in which order they      
- // should appear:                                                                              
- // nselect=nsort=0: unsorted                                                                   
- // nselect>0: the first <nselect> Ritz values (if the last one is a complex conjugate pair     
- //            <nselect+1> appear in any order in the upper left corner of T                    
- // 0<nsort<nselect: in addition to moving a cluster of <nselect> eigenvalues, sort the         
- //             first <nsort> of them in the upper left corner.                                 
-void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
-         int m, int nselect, int nsort, eigSort_t which, 
-         std::complex<_MT_>* ev, int *ierr)
-   {
-   ENTER_FCN(__FUNCTION__);
-#include "phist_std_typedefs.hpp"
-   // this is for XGEES (computing the Schur form)
-   int lwork = std::max(20*m,2*nselect*(m-nselect));
-                          // min required workspace is 3*m 
-                          // for GEES and 2*m*(m-nsort) for 
-                          // TRSEN with condition estimate,
-                          // so this should be enough for  
-                          // good performance of GEES as.  
-   ST work[lwork];
-   // real and imag part of ritz values
-   MT ev_r[m];   // in the complex case this is used as RWORK
-   MT ev_i[m];
-
-   const char *jobvs="V"; // compute the ritz vectors in S
-   const char *sort="N";  // do not sort Ritz values (we do that later
-                          // because gees only accepts the simple select
-                          // function which does not compare the Ritz values)
-  int sdim;
-
-  // can select at most m Ritz values (and at least 0)
-  nselect=std::max(0,std::min(nselect,m));
-  // can sort at most nselect Ritz values (and at least 0)
-  nsort=std::max(0,std::min(nsort,nselect));
-
-#ifdef _IS_COMPLEX_
-     PHIST_CHK_IERR(PREFIX(GEES)(jobvs,sort,NULL,&m,(blas_cmplx_t*)T,&ldT,
-         &sdim,(blas_cmplx_t*)ev,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)work,&lwork,ev_r,NULL,ierr),*ierr);
-#else
-     PHIST_CHK_IERR(PREFIX(GEES)(jobvs,sort,NULL,&m,T,&ldT,
-         &sdim,ev_r,ev_i,S,&ldS,work,&lwork,NULL,ierr),*ierr);
-     for (int i=0;i<m;i++)
-       {
-       ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
-       }
-#endif
-
-
-   if (nselect==0) return;
-
-   // find indices for the first howMany eigenvalues. A pair of complex conjugate
-   // eigs is counted as a single one because we will skip solving the update equation
-   // in that case. howMany is adjusted to include the pairs on output, for instance,
-   // if howMany=1 on input but the first eig encountered is a complex conjugate pair,
-   // the 2x2 block is shifted to the upper left of T and howMany=2 on output.
-   int idx[m];
-
-   // sort all eigenvalues according to 'which'.
-   PHIST_CHK_IERR(SortEig(ev,m,idx,which,ierr),*ierr);
-
-   // permute the first <nsort> eigenvalues according to idx
-   // to the top left, taking the vectors along
-   int select[m];
-   for (int i=0;i<m;i++) select[i]=0;
-   for (int i=0;i<nselect;i++) select[std::abs(idx[i])]=1;
-
-  // call lapack routine to reorder Schur form
-  const char *job="N"; // indicates wether we want condition estimates
-                       // for [E]igenvalues, the invariant [S]ubspace or [B]oth
-                       // (or [N]one, just sort)
-  MT S_cond;
-  MT sep;
-
-#ifdef _IS_COMPLEX_
-   PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)ev,&nsort,
-        &S_cond, &sep, (blas_cmplx_t*)work, &lwork, ierr),*ierr);
-#else
-   int liwork=nselect*(m-nselect);
-   int iwork[liwork];
-   PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsort,
-        &S_cond, &sep, work, &lwork, iwork, &liwork, ierr),*ierr);   
-   for (int i=0;i<m;i++)
-     {
-     ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
-     }
-#endif   
-
-   for (int i=0;i<m;i++) select[i]=0;
-
-   // sort all eigenvalues according to 'which'.
-   PHIST_CHK_IERR(SortEig(ev,nselect,idx,which,ierr),*ierr);
-
-   for (int i=0;i<nsort;i++)
-     {
-     // sort next candidate to top. Keep the select array in this loop
-     // so that previoously sorted ones aren't moved back down.
-     select[std::abs(idx[i])]=1;
-#ifdef _IS_COMPLEX_
-     PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,
-        (blas_cmplx_t*)ev,&nsort,&S_cond, &sep, (blas_cmplx_t*)work, &lwork, ierr),*ierr);
-#else
-     PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsort,
-          &S_cond, &sep, work, &lwork, iwork, &liwork, ierr),*ierr);   
-#endif
-     }
-
-#ifndef _IS_COMPLEX_
-   if (nsort>0)
-     {
-     for (int i=0;i<m;i++)
-       {
-       ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
-       }
-     }
-#endif
-   }
 

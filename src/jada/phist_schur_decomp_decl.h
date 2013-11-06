@@ -28,6 +28,9 @@
  // so we guarantee that the largest one <nsort> is in the upper left corner,                   
  // and that the 3 largest ones appear first in any order.                                      
  //                                                                                             
+ // The type of the array ev is in fact _CT_ (dimension m), but we passit in as void* because   
+ // we want to be able to call the function from C and C++ alike.                               
+ //                                                                                             
  void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
          int m, int nselect, int nsort, eigSort_t which, 
-         std::complex<_MT_>* ev, int *ierr);
+         void* ev, int *ierr);
