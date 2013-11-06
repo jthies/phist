@@ -31,25 +31,25 @@
 void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
          int m, int nselect, int nsort, eigSort_t which, 
          void* v_ev, int *ierr)
-   {
-   ENTER_FCN(__FUNCTION__);
+  {
+  ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
-   // this is for XGEES (computing the Schur form)
-   int lwork = std::max(20*m,2*nselect*(m-nselect));
+  // this is for XGEES (computing the Schur form)
+  int lwork = std::max(20*m,2*nselect*(m-nselect));
                           // min required workspace is 3*m 
                           // for GEES and 2*m*(m-nsort) for 
                           // TRSEN with condition estimate,
                           // so this should be enough for  
                           // good performance of GEES as.  
-   ST work[lwork];
+  ST work[lwork];
 
-   MT ev_r[m];   // in the complex case this is used as RWORK
+  MT ev_r[m];   // in the complex case this is used as RWORK
 #ifndef _IS_COMPLEX_
-   // real and imag part of ritz values
-   MT ev_i[m];
+  // real and imag part of ritz values
+  MT ev_i[m];
 #endif
-   const char *jobvs="V"; // compute the ritz vectors in S
-   const char *sort="N";  // do not sort Ritz values (we do that later
+  const char *jobvs="V"; // compute the ritz vectors in S
+  const char *sort="N";  // do not sort Ritz values (we do that later
                           // because gees only accepts the simple select
                           // function which does not compare the Ritz values)
   int sdim;
@@ -60,47 +60,48 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
   // can sort at most nselect Ritz values (and at least 0)
   nsort=std::max(0,std::min(nsort,nselect));
 
-     PHIST_DEB("m=%d, nselect=%d, nsort=%d",m,nselect,nsort);
+  PHIST_DEB("m=%d, nselect=%d, nsort=%d",m,nselect,nsort);
 
 #ifdef _IS_COMPLEX_
-     PHIST_DEB("call complex %cGEES",st::type_char());
-     PHIST_CHK_IERR(PREFIX(GEES)(jobvs,sort,NULL,&m,(blas_cmplx_t*)T,&ldT,
+  PHIST_DEB("call complex %cGEES",st::type_char());
+  PHIST_CHK_IERR(PREFIX(GEES)(jobvs,sort,NULL,&m,(blas_cmplx_t*)T,&ldT,
          &sdim,(blas_cmplx_t*)ev,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)work,&lwork,ev_r,NULL,ierr),*ierr);
 #else
-     PHIST_DEB("call real %cGEES",st::type_char());
-     PHIST_CHK_IERR(PREFIX(GEES)(jobvs,sort,NULL,&m,T,&ldT,
+  PHIST_DEB("call real %cGEES",st::type_char());
+  PHIST_CHK_IERR(PREFIX(GEES)(jobvs,sort,NULL,&m,T,&ldT,
          &sdim,ev_r,ev_i,S,&ldS,work,&lwork,NULL,ierr),*ierr);
-     for (int i=0;i<m;i++)
-       {
-       ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
-       }
+  for (int i=0;i<m;i++)
+    {
+    ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
+    }
 #endif
 
 
-   if (nselect<=0) return;
-   if (nsort>nselect || nsort<0)
-     {
-     PHIST_OUT(PHIST_WARNING,"nselect=%d>=nsort=%d, or nsort>=0 "
+  if (nselect<=0) return;
+  if (nsort>nselect || nsort<0)
+    {
+    PHIST_OUT(PHIST_WARNING,"nselect=%d>=nsort=%d, or nsort>=0 "
                              "not satisfied, returning      unsorted Schur form",
                              nselect,nsort);
-     *ierr=1;
-     return;
-     }
+    *ierr=1;
+    return;
+    }
 
-   // find indices for the first howMany eigenvalues. A pair of complex conjugate
-   // eigs is counted as a single one because we will skip solving the update equation
-   // in that case. howMany is adjusted to include the pairs on output, for instance,
-   // if howMany=1 on input but the first eig encountered is a complex conjugate pair,
-   // the 2x2 block is shifted to the upper left of T and howMany=2 on output.
-   int idx[m];
+  // find indices for the first howMany eigenvalues. A pair of complex conjugate
+  // eigs is counted as a single one because we will skip solving the update equation
+  // in that case. howMany is adjusted to include the pairs on output, for instance,
+  // if howMany=1 on input but the first eig encountered is a complex conjugate pair,
+  // the 2x2 block is shifted to the upper left of T and howMany=2 on output.
+  int idx[m];
 
-   // sort all eigenvalues according to 'which'.
-   PHIST_CHK_IERR(SortEig(ev,m,idx,which,ierr),*ierr);
+  // sort all eigenvalues according to 'which'.
+  PHIST_CHK_IERR(SortEig(ev,m,idx,which,ierr),*ierr);
 
-   // permute the first <nselect> eigenvalues according to idx
-   // to the top left, taking the vectors along
-   int select[m];
-   for (int i=0;i<m;i++) select[i]=0;
+  // permute the first <nselect> eigenvalues according to idx
+  // to the top left, taking the vectors along
+  int select[m];
+  int nsorted;
+  for (int i=0;i<m;i++) select[i]=0;
 
   // call lapack routine to reorder Schur form
   const char *job="N"; // indicates wether we want condition estimates
@@ -121,45 +122,43 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
       select[std::abs(idx[i])]=1;
       }
 #ifdef _IS_COMPLEX_
-    PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)ev,&nsort,
+    PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)ev,&nsorted,
           &S_cond, &sep, (blas_cmplx_t*)work, &lwork, ierr),*ierr);
 #else
-    PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsort,
+    PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
          &S_cond, &sep, work, &lwork, iwork, &liwork, ierr),*ierr);   
     for (int i=0;i<m;i++)
       {
       ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
       }
 #endif   
-
+    PHIST_DEB("nsorted=%d",nsorted);
     }//nselect<m
-
   for (int i=0;i<nsort;i++)
      {
      PHIST_DEB("sort step, %d [%d]",i,nsort);
-     // sort next candidate to top. Keep the select array in this loop
-     // so that previoously sorted ones aren't moved back down.
-     for (int j=0;j<i;j++) select[i]=1;
-     for (int j=i;j<nsort;j++) 
+     // sort the next few eigenvalues (up to nsort)
+     PHIST_CHK_IERR(SortEig(ev+i,nsort-i,idx+i,which,ierr),*ierr);
+
+     // sort next candidate to top.
+     for (int j=0;j<i;j++) select[j]=1;
+     for (int j=i;j<m;j++) select[j]=0;
+     for (int j=i;j<nsort;j++)
        {
        select[std::abs(idx[j])]=1;
        }
 #ifdef _IS_COMPLEX_
      PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,
-        (blas_cmplx_t*)ev,&nsort,&S_cond, &sep, (blas_cmplx_t*)work, &lwork, ierr),*ierr);
+        (blas_cmplx_t*)ev,&nsorted,&S_cond, &sep, (blas_cmplx_t*)work, &lwork, ierr),*ierr);
 #else
-     PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsort,
+     PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
           &S_cond, &sep, work, &lwork, iwork, &liwork, ierr),*ierr);   
     for (int j=0;j<m;j++)
       {
-      ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
+      ev[j]=std::complex<MT>(ev_r[j],ev_i[j]);
       }
 #endif
-     // sort remaining eigs again because the order may have been messed up
-     if (i<m-1)
-       {
-       PHIST_CHK_IERR(SortEig(ev+i+1,m-i-1,idx+i+1,which,ierr),*ierr);     
-       }
-     }
-   }
+    PHIST_DEB("nsorted=%d",nsorted);
+    }
+  }
 
