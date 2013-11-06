@@ -15,9 +15,16 @@ stick to the macros defined in 'phist_gen_x.h'
 //! all the time. The programmer must take care that this file
 //! is included once per scope only, otherwise the compiler will 
 //! complain.
-typedef ::phist::ScalarTraits< _ST_ > st;
-typedef st::scalar_t ST;
+
+typedef ::phist::ScalarTraits< _ST_ >::scalar_t ST;
+typedef ::phist::ScalarTraits<ST> st;
+
 typedef st::magn_t MT;
+typedef ::phist::ScalarTraits<MT> mt;
+
+typedef std::complex<MT> CT;
+typedef ::phist::ScalarTraits<CT> ct;
+
 typedef st::mvec_t* mvec_ptr_t;
 typedef const st::mvec_t* const_mvec_ptr_t;
 typedef st::crsMat_t* crsMat_ptr_t;
@@ -26,8 +33,5 @@ typedef st::sdMat_t* sdMat_ptr_t;
 typedef const st::sdMat_t* const_sdMat_ptr_t;
 typedef st::op_t* op_ptr_t;
 typedef const st::op_t* const_op_ptr_t;
-
-typedef ::phist::ScalarTraits<MT> mt;
-typedef ::phist::ScalarTraits<std::complex<MT> > ct;
 
 typedef mt::blas_cmplx_t blas_cmplx_t;

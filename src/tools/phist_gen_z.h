@@ -1,13 +1,5 @@
 #include "phist_gen_pre.h"
 
-// this may be useful for e.g. generating
-// the fortran interfaces or something, to
-// avoid littering the preprocessed files
-// with lots of system stuff
-#ifndef NO_INCLUDES_IN_HEADERS
-// let the kernel lib define the complex data type
-#include "phist_typedefs.h"
-#endif
 
 // type specifier
 #define _TP_ 'Z'

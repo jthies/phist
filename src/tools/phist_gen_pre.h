@@ -1,3 +1,8 @@
+
+#ifdef COMPLEX_T
+#undef COMPLEX_T
+#endif
+
 // this file undefs all the macros defined by the phist_gen_* 
 // headers
 #ifdef _TP_

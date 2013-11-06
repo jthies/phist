@@ -25,7 +25,7 @@ class ScalarTraits
   {
   public: 
   
-  char type_char() {return ST::missing_specialization_for_ScalarTraits_class();}
+  typedef typename ST::MissingImplementationOfScalarTraitsClass error;
   
   };
 
@@ -283,7 +283,6 @@ class ScalarTraits< std::complex<MT> >
   //! returns the type prefix as a char, for instance 'S', 'D'
   static inline char type_char()
     {
-    ENTER_FCN(__FUNCTION__);
     return ScalarTraits<MT>::complex_type_char();
     }
 
