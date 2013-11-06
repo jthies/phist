@@ -13,22 +13,24 @@ public:
   //! mvec/sdMat sizes
   static const int n_=_N_;
   static const int m_=_N_;
-  
-  //! M is n x n, M=S*T with T (block-) upper triangular
-  TYPE(sdMat_ptr) M_,S_,T_;
 
-  std::complex<MT> ev_[_N_];  
+  // different test scenarios
+  int nselect_[4];
+  int nsort_[4];
+
+  std::complex<MT> ev_[_N_];
   
   /*! Set up routine.
    */
   virtual void SetUp()
     {
     MTest::SetUp();
-    
-    // fill all matrices with random numbers and set some pointers
-    M_=mat1_;
-    T_=mat1_; // SchurDecomp works in-place
-    S_=mat2_;
+      
+    // a few test cases
+    nselect_[0]=1; nsort_[0]=1;
+    nselect_[1]=_N_; nsort_[1]=_N_;
+    nselect_[2]=std::min(5,_N_); nsort_[2]=0;
+    nselect_[3]=std::min(7,_N_); nsort_[3]=3;
     }
 
   /*! Clean up.
@@ -38,12 +40,20 @@ public:
     KernelTestWithType<_ST_>::TearDown();
     }
 
-  void DoSchurDecomp(int nselect,int nsort,eigSort_t which)
+  void DoSchurDecompTest(eigSort_t which)
     {
-
+    if (!typeImplemented_) return;
+    for (int c=0;c<4;c++) 
+      {
+    int nselect = nselect_[c];
+    int nsort = nsort_[c];
+    PHIST_OUT(PHIST_INFO,"==================================================");
+    PHIST_OUT(PHIST_INFO,"CASE nselect %d, nsort %d",nselect,nsort);
+    PHIST_OUT(PHIST_INFO,"==================================================");
+    
     SUBR(sdMat_random)(mat1_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
-
+    
     SUBR(sdMat_random)(mat2_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
 
@@ -140,63 +150,52 @@ public:
       }
     // make sure err>0
     ASSERT_REAL_EQ(mt::zero(),std::min(mt::zero(),err));
-    }
-};
-
-  // check ones(n,m)'*ones(n,m)=n*ones(m,m)
-  TEST_F(CLASSNAME, do_tests) 
-    {
-    if (typeImplemented_)
-      {
-      eigSort_t sort[4];
-      sort[0]=LM;
-      sort[1]=SM;
-      sort[2]=LR;
-      sort[3]=SR;
-      
-      int nselect[4];
-      int nsort[4];
-      // a few test cases
-      nselect[0]=1; nsort[0]=1;
-      nselect[1]=_N_; nsort[1]=_N_;
-      nselect[2]=std::min(5,_N_); nsort[2]=0;
-      nselect[3]=std::min(7,_N_); nsort[3]=3;
-      for (int s=0;s<4;s++)
-        {
-        for (int c=0;c<4;c++)
-          {
-          PHIST_OUT(PHIST_INFO,"==================================================");
-          PHIST_OUT(PHIST_INFO,"nselect %d, nsort %d, order=%s",nselect[c],nsort[c],
-                sort[s]==LM?"LM":sort[s]==SM?"SM":sort[s]==LR?"LR":sort[s]==SR?"SR":"??");
-          PHIST_OUT(PHIST_INFO,"==================================================");
-          DoSchurDecomp(nselect[c],nsort[c],sort[s]);
-          // check the T matrix is upper triangular (with 2x2 blocks for complex eigs in the 
-          // real case)
-          PHIST_DEB("data types: ST %c, MT %c, CT %c",
-                st::type_char(), mt::type_char(), ct::type_char());
+    
+      // check the T matrix is upper triangular (with 2x2 blocks for complex eigs in the 
+      // real case)
 #ifdef _IS_COMPLEX_
-          for (int j=0;j<_N_;j++)
-            {
-            for (int i=j+1;i<_N_;i++)
-              {
-              ASSERT_REAL_EQ(mt::zero(),st::abs(mat1_vp_[j*m_lda_+i]));
-              }//i
-            }//j
+      for (int j=0;j<_N_;j++)
+        {
+        for (int i=j+1;i<_N_;i++)
+          {
+          ASSERT_REAL_EQ(mt::zero(),st::abs(mat1_vp_[j*m_lda_+i]));
+          }//i
+        }//j
 #else
-          for (int j=0;j<_N_;j++)
-            {
-            PHIST_DEB("j=%d, ev[j]=%8.4f %+8.4fi",j,ct::real(ev_[j]),ct::imag(ev_[j]));
-            if (ct::imag(ev_[j])<=mt::zero())
-              {
-              ASSERT_REAL_EQ(st::zero(),st::abs(mat1_vp_[j*m_lda_+j+1]));
-              }
-            for (int i=j+2;i<_N_;i++)
-              {
-              ASSERT_REAL_EQ(mt::zero(),st::abs(mat1_vp_[j*m_lda_+i]));
-              }//i
-            }//j
+      for (int j=0;j<_N_;j++)
+        {
+        PHIST_DEB("j=%d, ev[j]=%8.4f %+8.4fi",j,ct::real(ev_[j]),ct::imag(ev_[j]));
+        if (ct::imag(ev_[j])<=mt::zero())
+          {
+          ASSERT_REAL_EQ(st::zero(),st::abs(mat1_vp_[j*m_lda_+j+1]));
+          }
+        for (int i=j+2;i<_N_;i++)
+          {
+          ASSERT_REAL_EQ(mt::zero(),st::abs(mat1_vp_[j*m_lda_+i]));
+          }//i
+        }//j
 #endif
-          }//c(ase)
-        }//s(ort-type)
-      }// type implemented?
+      }//cases
+    }//DoSchurDecompTest
+  };
+
+  TEST_F(CLASSNAME, rand_LM) 
+    {
+    DoSchurDecompTest(LM);
     }
+
+  TEST_F(CLASSNAME, rand_SM) 
+    {
+    DoSchurDecompTest(SM);
+    }
+
+  TEST_F(CLASSNAME, rand_LR) 
+    {
+    DoSchurDecompTest(LR);
+    }
+
+  TEST_F(CLASSNAME, rand_SR) 
+    {
+    DoSchurDecompTest(SR);
+    }
+
