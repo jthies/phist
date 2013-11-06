@@ -1,18 +1,19 @@
-function [r,q,resnorm,resnorm_history,m]=melven_subspace_jada(A,B,v0,maxIter,res_eps)
+function [r,q,resnorm,resnorm_history,m,restarts]=melven_subspace_jada(A,B,v0,maxIter,minBas,maxBas,res_eps)
 
 n = size(A,1);                                  % matrix dimension
 k = size(v0,2);                                 % blocksize, e.g. number of eigenvalues wanted
 
-V = zeros(n,maxIter*k);                         % search space empty initially
-BV = zeros(n,maxIter*k);
+V = zeros(n,maxBas);                         % search space empty initially
+BV = zeros(n,maxBas);
 nV = 0;
-W = zeros(n,maxIter*k);
+W = zeros(n,maxBas);
 t = v0;                                         % initial new direction
-H = zeros(maxIter*k);                           % preallocate H
+H = zeros(maxBas);                           % preallocate H
 resnorm = zeros(k,1);
 resnorm_history = zeros(k,maxIter);
 resnorm_ev = zeros(k,1);
 lambda = zeros(k,1);
+restarts = 0;
 
 
 for m = 1:maxIter                               % main iteration loop
@@ -27,6 +28,17 @@ for m = 1:maxIter                               % main iteration loop
     fprintf(' rank of correction: %d\n', rank_t);
     if( rank(t) == 0 )
         return
+    end
+    if( nV_old + rank_t > maxBas )
+      restarts = restarts + 1;
+      fprintf('restarting with %d basis vectors after subspace dimension of %d was reached.\n', minBas, nV_old + rank_t);
+      % we need to get the "best" vectors out of V
+      V(:,1:minBas) = V(:,1:nV_old)*Q_H(:,1:minBas);
+      % also update BV, W and H
+      BV(:,1:minBas) = BV(:,1:nV_old)*Q_H(:,1:minBas);
+      W(:,1:minBas) = W(:,1:nV_old)*Q_H(:,1:minBas);
+      H(1:minBas,1:minBas) = Q_H(:,1:minBas)' * H(1:nV_old,1:nV_old) * Q_H(:,1:minBas);
+      nV_old = minBas;
     end
     nV = nV_old + rank_t;
     V(:,nV_old+1:nV) = t;                     % update subspace V
@@ -49,6 +61,9 @@ for m = 1:maxIter                               % main iteration loop
     [~,sort_index] = sort(abs(DH),'descend');
     select_ev = false(nV,1);
     select_ev(sort_index(1:k)) = true;
+    if( nV+k > maxBas )
+      select_ev(sort_index(k+1:minBas)) = true;
+    end
     % sort schur form
     [Q_H,R_H] = ordschur(Q_H,R_H,select_ev);
 
@@ -81,6 +96,7 @@ for m = 1:maxIter                               % main iteration loop
     
     % display stuff
     fprintf('\niteration %d:',m);
+    fprintf('\nsubspace dimension %d:',nV);
     fprintf('\n V-orthog. %e:',V_orth);
     fprintf('\n app. eigenvalues: %s', num2str(diag(r)','%8.4g'));
     fprintf('\n   schur residuum:');  fprintf(' %6.2g', resnorm);
@@ -115,7 +131,7 @@ for m = 1:maxIter                               % main iteration loop
             %A_proj_i = (eye(n)-q*q')*(A-r(i,i)*eye(n))*(eye(n)-q*q');
             %t(:,i) = res_i\A_proj_i;
             shift = r(i,i);
-            t(:,i) = gmres(@A_proj, res_i, ...
+            [t(:,i),gmres_flag] = gmres(@A_proj, res_i, ...
                            min(40,10*m), ...
                            min(0.5,max(res_eps,1/m^2)), ...
                            max(floor(4/m),1));
