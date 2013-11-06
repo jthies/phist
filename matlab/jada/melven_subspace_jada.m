@@ -1,4 +1,4 @@
-function [r,q,resnorm,resnorm_history,m,restarts]=melven_subspace_jada(A,B,v0,maxIter,minBas,maxBas,res_eps)
+function [R,Q,resnorm,resnorm_history,m,restarts]=melven_subspace_jada(A,B,v0,nEig,maxIter,minBas,maxBas,res_eps)
 
 n = size(A,1);                                  % matrix dimension
 k = size(v0,2);                                 % blocksize, e.g. number of eigenvalues wanted
@@ -9,12 +9,16 @@ nV = 0;
 W = zeros(n,maxBas);
 t = v0;                                         % initial new direction
 H = zeros(maxBas);                           % preallocate H
-resnorm = zeros(k,1);
-resnorm_history = zeros(k,maxIter);
-resnorm_ev = zeros(k,1);
-lambda = zeros(k,1);
 restarts = 0;
 
+%data for already converged eigenvalues
+resnorm = inf(nEig,1);
+resnorm_history = inf(nEig,maxIter);
+nConv = 0;
+R = zeros(nEig,nEig);
+Q = zeros(n,nEig);
+BQ = zeros(n,nEig);
+nNewConv = 0;
 
 for m = 1:maxIter                               % main iteration loop
     nV_old = nV;
@@ -22,16 +26,16 @@ for m = 1:maxIter                               % main iteration loop
         t = t - V(:,1:nV_old) * (BV(:,1:nV_old)' * t);     % orthogonalize t wrt V
     end
     [t,rank_t] = orth(t,B,res_eps); % need B-orthogonality
-    %inv_norm_t = diag(1./sqrt(sum(t'*t)));
-    %t = t*inv_norm_t;
-    %rank_t = rank(t,res_eps);
-    fprintf(' rank of correction: %d\n', rank_t);
-    if( rank(t) == 0 )
+    fprintf(' rank of correction: %d (newly converged EV: %d)\n', rank_t, nNewConv);
+    if( rank(t) == 0 && nNewConv == 0 )
         return
     end
     if( nV_old + rank_t > maxBas )
       restarts = restarts + 1;
       fprintf('restarting with %d basis vectors after subspace dimension of %d was reached.\n', minBas, nV_old + rank_t);
+      % resort schur form with minBas biggest EW
+      select_ev(sort_index(1:minBas)) = true;
+      [Q_H,~] = ordschur(Q_H,R_H,select_ev);
       % we need to get the "best" vectors out of V
       V(:,1:minBas) = V(:,1:nV_old)*Q_H(:,1:minBas);
       % also update BV, W and H
@@ -45,7 +49,15 @@ for m = 1:maxIter                               % main iteration loop
     BV(:,nV_old+1:nV) = B*t;
     V_orth = max(max(abs(eye(nV) - BV(:,1:nV)' * V(:,1:nV))));
     if( V_orth > res_eps )
-        error('V not orthogonal: %g', V_orth);
+        %% reorthogonalize
+        warning('V not orthogonal (%g), reorthogonalizing', V_orth);
+        [t,nV] = orth(V(:,1:nV),B,res_eps);
+        nV_old = 0;
+        BV(:,1:nV) = B*t;
+        V_orth = max(max(abs(eye(nV) - BV(:,1:nV)' * t)));
+        if( V_orth > res_eps )
+            error('could not reorthogonalize, error: %g', V_orth);
+        end
     end
     W(:,nV_old+1:nV) = A*t;                   % update W = A*V
 
@@ -55,15 +67,13 @@ for m = 1:maxIter                               % main iteration loop
     H(nV_old+1:nV,nV_old+1:nV) = V(:,nV_old+1:nV)' * W(:,nV_old+1:nV);
 
     % compute the schur form of H
+    k = min(k,nEig-nConv);
     [Q_H,R_H] = schur(H(1:nV,1:nV),'complex');
     % extract largest eigenvalues (in modulus)
     DH = ordeig(R_H);
     [~,sort_index] = sort(abs(DH),'descend');
     select_ev = false(nV,1);
     select_ev(sort_index(1:k)) = true;
-    if( nV+k > maxBas )
-      select_ev(sort_index(k+1:minBas)) = true;
-    end
     % sort schur form
     [Q_H,R_H] = ordschur(Q_H,R_H,select_ev);
 
@@ -74,50 +84,64 @@ for m = 1:maxIter                               % main iteration loop
     % calculate residuum
     Aq = W(:,1:nV) * Q_H(:,1:k);
     res = Aq - Bq*r;
+    a_ = BQ(:,1:nConv)'*res;
+    res = res - Q(:,1:nConv)*a_;
     for i = 1:k
-        resnorm(i) = norm(res(:,i),2);
+        resnorm(nConv+i) = norm(res(:,i),2);
     end
     resnorm_history(:,m) = resnorm;
-    
-    
-    % explicitly calculate eigenvalues and -vectors 
-    v = q;
+
+    % check for converged eigenvalues
+    nNewConv = 0;
     for i = 1:k
-        for j = 1:1:i-1
-            v(:,i) = v(:,i) + r(j,i)/(r(i,i)-r(j,j))*q(:,j);
+        if( resnorm(nConv+i) < res_eps )
+            fprintf('\nconverged eigenvalue %d: %8.4g', nConv+i, r(i,i));
+            nNewConv = nNewConv + 1;
+        else
+            %% TODO: also handle converged eigenvalues in the middle of the block q
+            break
         end
     end
-    delta_lambda = lambda - diag(r);
-    lambda = diag(r);
-    res_ev = A*v - B*v*diag(lambda);
-    for i = 1:k
-        resnorm_ev(i) = norm(res_ev(:,i),2);
+    if( nNewConv > 0 )
+        % add it to converged data for deflation
+        Q(:,nConv+1:nConv+nNewConv) = q(:,1:nNewConv);
+        R(1:nConv,nConv+1:nConv+nNewConv) = a_(1:nConv,1:nNewConv);
+        R(nConv+1:nConv+nNewConv,nConv+1:nConv+nNewConv) = r(1:nNewConv,1:nNewConv);
+        BQ(:,nConv+1:nConv+nNewConv) = Bq(:,1:nNewConv);
+        % remove it from V!
+        V(:,1:nV-nNewConv) = V(:,1:nV)*Q_H(:,nNewConv+1:nV);
+        BV(:,1:nV-nNewConv) = BV(:,1:nV)*Q_H(:,nNewConv+1:nV);
+        W(:,1:nV-nNewConv) = W(:,1:nV)*Q_H(:,nNewConv+1:nV);
+        nV = nV - nNewConv;
     end
+
+
     
     % display stuff
     fprintf('\niteration %d:',m);
+    fprintf('\nconverged eigenvalues: %d (of %d)', nConv, nEig);
     fprintf('\nsubspace dimension %d:',nV);
     fprintf('\n V-orthog. %e:',V_orth);
-    fprintf('\n app. eigenvalues: %s', num2str(diag(r)','%8.4g'));
+    fprintf('\n app. eigenvalues: %s', num2str([diag(R(1:nConv,1:nConv)); diag(r)]','%8.4g'));
     fprintf('\n   schur residuum:');  fprintf(' %6.2g', resnorm);
-    %fprintf('\n eigenv. residuum:');  fprintf(' %10.4g', resnorm_ev);
-    if( m > 1 )
-        fprintf('\n    eigenv. delta:');  fprintf(' %6.2g', abs(delta_lambda));
-    end
     fprintf('\n');
+    if( nConv+nNewConv == nEig )
+        return;
+    end
 
-
+    % construct q_ and Bq_ which deflate already converged eigenvalues
+    q_ = [Q(:,1:nConv) q];
+    Bq_ = [BQ(:,1:nConv) Bq];
+    t = zeros(n,k);
     if( true )
         % solve approximately
         % (I-Bqq')A(I-qBq')*t - (I-Bqq')*B*t*r = -res
         % as r is an upper triangular matrix, we can do this column for column
         % (I-Bqq')(A-r(i,i)*B)(I-qBq')*t(:,i) = -res(:,i) + (I-Bqq')*B*t(:,1:i-1)*r(1:i-1,i)
-        for i = 1:k
-            % don't correct already converged eigenvalues
-            if( resnorm(i) < res_eps )
-                t(:,i) = 0;
-                continue
-            end
+        for i = 1:nNewConv
+            t(:,i) = 0;
+        end
+        for i = nNewConv+1:k
             % i-th residuum
             res_i = -res(:,i);
             % analyse behaviour if we omit the coupling here...
@@ -126,7 +150,7 @@ for m = 1:maxIter                               % main iteration loop
                     res_i = res_i - r(j,i)*B*t(:,j);
                 end
             end
-            res_i = res_i - q*(Bq'*res_i);
+            res_i = res_i - q_*(Bq_'*res_i);
             % solve i-th equation
             %A_proj_i = (eye(n)-q*q')*(A-r(i,i)*eye(n))*(eye(n)-q*q');
             %t(:,i) = res_i\A_proj_i;
@@ -136,7 +160,7 @@ for m = 1:maxIter                               % main iteration loop
                            min(0.5,max(res_eps,1/m^2)), ...
                            max(floor(4/m),1));
             % use the projection of t onto (I-qBq')
-            t(:,i) = t(:,i) - q*(Bq'*t(:,i));
+            t(:,i) = t(:,i) - q_*(Bq_'*t(:,i));
         end
     else % standard block_jada?
         % solve approximately
@@ -150,19 +174,23 @@ for m = 1:maxIter                               % main iteration loop
             %t(:,i) = -res_ev(:,i)\A_proj_i;
             res_ev(:,i) = res_ev(:,i) - q*(Bq'*res_ev(:,i));
             shift = r(i,i);
-            t(:,i) = gmres(@A_proj, -res_ev(:,i), ...
+            [t(:,i),gmres_flag] = gmres(@A_proj, -res_ev(:,i), ...
                            min(40,10*m), ...
                            min(0.5,max(res_eps,1/m^2)), ...
                            max(floor(4/m),1));
-            t(:,i) = t(:,i) - q*(Bq'*t(:,i));
+            % use the projection of t onto (I-qBq')
+            t(:,i) = t(:,i) - q_*(Bq_'*t(:,i));
         end
     end
+    
+
+    nConv = nConv + nNewConv;
 end
 
 function y = A_proj(x)
-    y = x-q*(Bq'*x);
+    y = x-q_*(Bq_'*x);
     y = A*y - shift*(B*y);
-    y = y - Bq*(q'*y);
+    y = y - Bq_*(q_'*y);
 end
 
 end

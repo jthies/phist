@@ -8,11 +8,12 @@ nx=8;
 A=make_testmat(nx);
 n=size(A,1);
 
-k=8; % block size
+k=1; % block size
+nEig = 4;
 
 % complex case
 if (complex)
-  A=A+0.25*sprandn(A)*i*complex;
+  A=A+0.25*sprandn(A)*1i*complex;
 end
 
 generalized = false;
@@ -36,11 +37,11 @@ disp('subspace JaDa iteration for exterior eig(s).');
 minBas = 2*k;
 maxBas = 80;
 maxIter = 400;
-res_eps = 1.e-8;
+res_eps = 1.e-4;
 resnorm_history_total = [];
-[r,q,resnorm,resnorm_history,m,restarts] = melven_subspace_jada(A,B,v0,maxIter,minBas,maxBas,res_eps);
+[r,q,resnorm,resnorm_history,m,restarts] = melven_subspace_jada(A,B,v0,nEig,maxIter,minBas,maxBas,res_eps);
 fprintf('total iterations: %d, restarts: %d',m,restarts);
-fprintf('\nEigenv. (MATLAB): %s', num2str(eigs(A,B,k)','%8.4g'));
-fprintf('\n      Difference: '); fprintf(' %6.2g',abs(sort(diag(r),'descend')-sort(eigs(A,B,k),'descend')));
+fprintf('\nEigenv. (MATLAB): %s', num2str(eigs(A,B,nEig)','%8.4g'));
+fprintf('\n      Difference: '); fprintf(' %6.2g',abs(sort(diag(r),'descend')-sort(eigs(A,B,nEig),'descend')));
 fprintf('\n');
 
