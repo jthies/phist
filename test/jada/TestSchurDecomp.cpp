@@ -2,6 +2,7 @@
 #include "gtest/gtest.h"
 //#include "gmock/gmock.h"
 
+#include "phist_macros.h"
 #include "phist_kernels.h"
 #include "phist_enums.h"
 #include "phist_schur_decomp.h"
