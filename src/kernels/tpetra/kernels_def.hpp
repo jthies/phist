@@ -256,6 +256,25 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
+
+#ifdef TESTING
+  if (jmax<jmin)
+    {
+    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d] is invalid",__FUNCTION__,
+                          jmin,jmax);
+    *ierr=-1; return;
+    }
+  if (jmin<0 || jmax>=V->getNumVectors())
+    {
+    PHIST_OUT(PHIST_ERROR,"input vector to %s is %d x %d, which does not match "
+                          "given range [%d..%d]",__FUNCTION__,
+                          V->getLocalLength(), V->getNumVectors(),
+                          jmin,jmax);
+    *ierr=-1; return;
+    }
+#endif
+
+
   Teuchos::RCP<Traits<_ST_>::mvec_t> Vblock;
   _TRY_CATCH_(Vblock = V->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
   if (*vVblock!=NULL)
@@ -278,6 +297,33 @@ void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
   *ierr=0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,Vblock,vVblock,*ierr);
+
+#ifdef TESTING
+  if (jmax<jmin)
+    {
+    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d] is invalid",__FUNCTION__,
+                          jmin,jmax);
+    *ierr=-1; return;
+    }
+  int nc=jmax-jmin+1;
+  if (nc!=Vblock->getNumVectors())
+    {
+    PHIST_OUT(PHIST_ERROR,"output block to %s has % cols, which does not match "
+                          "given range [%d..%d]",__FUNCTION__,
+                          Vblock->getNumVectors(),
+                          jmin,jmax);
+    *ierr=-1; return;
+    }
+  if (jmin<0 || jmax>=M->getNumVectors())
+    {
+    PHIST_OUT(PHIST_ERROR,"input vector to %s has %d columns, which does not match "
+                          "given range [%d..%d]",__FUNCTION__,
+                          M->getNumVectors(),
+                          jmin,jmax);
+    *ierr=-1; return;
+    }
+#endif
+
   // get a view of the columns of V first
   Teuchos::RCP<const Traits<_ST_>::mvec_t> Vcols;
   _TRY_CATCH_(Vcols = V->subView(Teuchos::Range1D(jmin,jmax)),*ierr);
@@ -293,6 +339,34 @@ void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
   ENTER_FCN(__FUNCTION__);
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,Vblock,vVblock,*ierr);
+
+#ifdef TESTING
+  if (jmax<jmin)
+    {
+    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d] is invalid",__FUNCTION__,
+                          jmin,jmax);
+    *ierr=-1; return;
+    }
+  int nc=jmax-jmin+1;
+  if (nc!=Vblock->getNumVectors())
+    {
+    PHIST_OUT(PHIST_ERROR,"input block to %s has %d columns, which does not match "
+                          "given range [%d..%d]",__FUNCTION__,
+                          Vblock->getNumVectors(),
+                          jmin,jmax);
+    *ierr=-1; return;
+    }
+  if (jmin<0 || jmax>=V->getNumVectors())
+    {
+    PHIST_OUT(PHIST_ERROR,"in/output matrix to %s has %d columns, which does not match "
+                          "given range [%d..%d]",__FUNCTION__,
+                          V->getNumVectors(),
+                          jmin,jmax);
+    *ierr=-1; return;
+    }
+#endif
+
+
   // get a view of the columns of V first
   Teuchos::RCP<Traits<_ST_>::mvec_t> Vcols;
   _TRY_CATCH_(Vcols = V->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
@@ -317,12 +391,19 @@ void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
     }
 
 #ifdef TESTING
-  if (imax<0 || imax>=M->getLocalLength() || jmin<0 || jmax>=M->getNumVectors())
+  if (jmax<jmin||imax<imin)
+    {
+    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d]x[%d..%d] is invalid",__FUNCTION__,
+                          imin,imax,jmin,jmax);
+    *ierr=-1; return;
+    }
+  if (imin<0 || imax>=M->getLocalLength() || jmin<0 || jmax>=M->getNumVectors())
     {
     PHIST_OUT(PHIST_ERROR,"input matrix to %s is %d x %d, which does not match "
                           "given range [%d..%d]x[%d..%d]",__FUNCTION__,
                           M->getLocalLength(), M->getNumVectors(),
                           imin,imax,jmin,jmax);
+    *ierr=-1; return;
     }
 #endif
 
@@ -373,6 +454,12 @@ void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
   Teuchos::RCP<const Traits<_ST_>::sdMat_t> Mview,Mtmp;
 
 #ifdef TESTING
+  if (jmax<jmin||imax<imin)
+    {
+    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d]x[%d..%d] is invalid",__FUNCTION__,
+                          imin,imax,jmin,jmax);
+    *ierr=-1; return;
+    }
   int nr=imax-imin+1, nc=jmax-jmin+1;
   if (nr!=Mblock->getLocalLength() || nc!=Mblock->getNumVectors())
     {
@@ -380,6 +467,7 @@ void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
                           "given range [%d..%d]x[%d..%d]",__FUNCTION__,
                           Mblock->getLocalLength(), Mblock->getNumVectors(),
                           imin,imax,jmin,jmax);
+    *ierr=-1; return;
     }
   if (imin<0 || imax>=M->getLocalLength() || jmin<0 || jmax>=M->getNumVectors())
     {
@@ -387,6 +475,7 @@ void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
                           "given range [%d..%d]x[%d..%d]",__FUNCTION__,
                           M->getLocalLength(), M->getNumVectors(),
                           imin,imax,jmin,jmax);
+    *ierr=-1; return;
     }
 #endif
 
@@ -425,6 +514,12 @@ void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,Mblock,vMblock,*ierr);
 
 #ifdef TESTING
+  if (jmax<jmin||imax<imin)
+    {
+    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d]x[%d..%d] is invalid",__FUNCTION__,
+                          imin,imax,jmin,jmax);
+    *ierr=-1; return;
+    }
   int nr=imax-imin+1, nc=jmax-jmin+1;
   if (nr!=Mblock->getLocalLength() || nc!=Mblock->getNumVectors())
     {
@@ -432,6 +527,7 @@ void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
                           "given range [%d..%d]x[%d..%d]",__FUNCTION__,
                           Mblock->getLocalLength(), Mblock->getNumVectors(),
                           imin,imax,jmin,jmax);
+    *ierr=-1; return;
     }
   if (imin<0 || imax>=M->getLocalLength() || jmin<0 || jmax>=M->getNumVectors())
     {
@@ -439,6 +535,7 @@ void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
                           "given range [%d..%d]x[%d..%d]",__FUNCTION__,
                           M->getLocalLength(), M->getNumVectors(),
                           imin,imax,jmin,jmax);
+    *ierr=-1; return;
     }
 #endif
   
