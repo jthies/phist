@@ -158,7 +158,7 @@ public:
         {
         for (int i=j+1;i<_N_;i++)
           {
-          ASSERT_REAL_EQ(mt::zero(),st::abs(mat1_vp_[j*m_lda_+i]));
+          ASSERT_REAL_EQ(mt::one(),mt::one()+st::abs(mat1_vp_[j*m_lda_+i]));
           }//i
         }//j
 #else
@@ -167,11 +167,11 @@ public:
         PHIST_DEB("j=%d, ev[j]=%8.4f %+8.4fi",j,ct::real(ev_[j]),ct::imag(ev_[j]));
         if (ct::imag(ev_[j])<=mt::zero())
           {
-          ASSERT_REAL_EQ(st::zero(),st::abs(mat1_vp_[j*m_lda_+j+1]));
+          ASSERT_REAL_EQ(mt::one(),mt::one()+st::abs(mat1_vp_[j*m_lda_+j+1]));
           }
         for (int i=j+2;i<_N_;i++)
           {
-          ASSERT_REAL_EQ(mt::zero(),st::abs(mat1_vp_[j*m_lda_+i]));
+          ASSERT_REAL_EQ(mt::one(),mt::one()+st::abs(mat1_vp_[j*m_lda_+i]));
           }//i
         }//j
 #endif

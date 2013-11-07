@@ -94,13 +94,11 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
   // the 2x2 block is shifted to the upper left of T and howMany=2 on output.
   int idx[m];
 
-  // sort all eigenvalues according to 'which'.
-  PHIST_CHK_IERR(SortEig(ev,m,idx,which,ierr),*ierr);
-
   // permute the first <nselect> eigenvalues according to idx
   // to the top left, taking the vectors along
   int select[m];
   int nsorted;
+
   for (int i=0;i<m;i++) select[i]=0;
 
   // call lapack routine to reorder Schur form
@@ -117,6 +115,8 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
   if (nselect<m)
     {
     PHIST_DEB("initial sort step, nselect=%d",nselect);
+    // sort all eigenvalues according to 'which'.
+    PHIST_CHK_IERR(SortEig(ev,m,idx,which,ierr),*ierr);
     for (int i=0;i<nselect;i++) 
       {
       select[std::abs(idx[i])]=1;
@@ -134,19 +134,25 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
 #endif   
     PHIST_DEB("nsorted=%d",nsorted);
     }//nselect<m
-  for (int i=0;i<nsort;i++)
+  
+  if (nselect==1) return; // the one (or two for complex pairs) selected eigenvalue
+                          // according to 'which' is already 'sorted'
+  
+  int i=0;
+  while (i<nsort)
      {
-     PHIST_DEB("sort step, %d [%d]",i,nsort);
-     // sort the next few eigenvalues (up to nsort)
-     PHIST_CHK_IERR(SortEig(ev+i,nsort-i,idx+i,which,ierr),*ierr);
+     PHIST_DEB("sort step %d, nsorted=%d [%d]",i,nsorted,nsort);
+     // sort the next few eigenvalues (up to nselect)
+     PHIST_CHK_IERR(SortEig(ev+i,nselect-i,idx+i,which,ierr),*ierr);
 
      // sort next candidate to top.
      for (int j=0;j<i;j++) select[j]=1;
      for (int j=i;j<m;j++) select[j]=0;
-     for (int j=i;j<nsort;j++)
-       {
-       select[std::abs(idx[j])]=1;
-       }
+     select[std::abs(idx[i])+i]=1; // sort next one to the top
+                                   // note that the index returned by 
+                                   // SortEig misses an offset i because
+                                   // we pass in ev+i
+     int nsorted_before=nsorted;
 #ifdef _IS_COMPLEX_
      PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,
         (blas_cmplx_t*)ev,&nsorted,&S_cond, &sep, (blas_cmplx_t*)work, &lwork, ierr),*ierr);
@@ -158,7 +164,7 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
       ev[j]=std::complex<MT>(ev_r[j],ev_i[j]);
       }
 #endif
-    PHIST_DEB("nsorted=%d",nsorted);
-    }
+    i+= std::max(nsorted-nsorted_before,1);
+    }//while
   }
 

@@ -147,6 +147,8 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_random)(vec2_,&ierr_);
       SUBR(crsMat_times_mvec)(st::one(),A2_,vec1_,st::zero(),vec2_,&ierr_);
       if (ierr_) return (_MT_)ierr_;
+      SUBR(mvec_print)(vec1_,&ierr_);
+      SUBR(mvec_print)(vec2_,&ierr_);
       return ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,val);
       }
   return mt::one();
