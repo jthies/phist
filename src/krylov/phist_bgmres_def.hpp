@@ -78,8 +78,6 @@ void SUBR(bgmres)(TYPE(const_op_ptr) Op,
 
   belosList->set("Output Stream",out->getOStream());
 
-std::cerr << "TROET: " << *belosList << std::endl;
-
 // create Belos problem interface
 Teuchos::RCP<Belos::LinearProblem<ST,BelosMV,OP> > linearSystem
         = Teuchos::rcp(new Belos::LinearProblem<ST,BelosMV,OP>(A,X,B));

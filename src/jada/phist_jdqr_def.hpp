@@ -198,8 +198,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,minBas-1,0,minBas-1,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,AVv,st::zero(),Mv,ierr),*ierr);
 
-  PHIST_OUT(1,"Jacobi-Davidson");
-  PHIST_OUT(1,"%s\t%s\t%s\t\t%s\n","iter","m","approx","resid");
+  PHIST_OUT(PHIST_INFO,"Start Jacobi-Davidson");
 
   it=0; // total number of JaDa iterations
   mm=0; //count iterations per eigenvalue/pair of complex ev's
@@ -226,7 +225,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m0,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vm,m0+1,m,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVm,m0+1,m,ierr),*ierr);
-      // orthogonalize t against V(:,0:m-1) and the converged eigenspace Q. TROET
+      // orthogonalize t against V(:,0:m-1) and the converged eigenspace Q.
       // We use T and S as temporary storage here
       PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,nv-1,0,nv-1,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,ncVQ,0,nv-1,ierr),*ierr);
@@ -234,7 +233,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
         {
         PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,Qv,m0+1,ncVQ,ierr),*ierr);
         }
-      PHIST_CHK_NEG_IERR(SUBR(orthog)(Vv,t_ptr,Tv,Sv,2,ierr),*ierr);
+      PHIST_CHK_NEG_IERR(SUBR(orthog)(Vv,t_ptr,Tv,Sv,3,ierr),*ierr);
       // reset the view of V without the Q.
       PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m0,ierr),*ierr);
       
@@ -294,7 +293,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
   PHIST_DEB("it=%d, m=%d, mm=%d",it,m,mm);
-  PHIST_DEB("projected matric");
+  PHIST_DEB("projected matrix");
   PHIST_CHK_IERR(SUBR(sdMat_print)(Mv,ierr),*ierr);
   PHIST_DEB("sorted Schur form");
   PHIST_CHK_IERR(SUBR(sdMat_print)(Tv,ierr),*ierr);
@@ -369,7 +368,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(rtil_ptr,rtil_ptr,(ST*)nrm,ierr),*ierr);
     nrm[0]=mt::sqrt(nrm[0]*nrm[0]+nrm[1]*nrm[1]);
 //}
-    PHIST_OUT(PHIST_INFO,"JDQR Iter %d\t%d\t%8.4g%+8.4gi\t\t%8.4g\n",it,m,ct::real(theta),ct::imag(theta),nrm[0]);
+    PHIST_OUT(PHIST_INFO,"JDQR Iter %d\tdim(V)=%d\ttheta=%8.4g%+8.4gi\t\tr_est=%8.4g\n",it,m+1,ct::real(theta),ct::imag(theta),nrm[0]);
   // deflate converged eigenpairs
   while (nrm[0]<=tol)
     {
@@ -381,9 +380,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       {
       resid[j]=nrm[0]; // will be returned to the user
       }
-
-    // view a~, a temporary vector
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(atil,&atilv,0,nconv-1,0,nv-1,ierr),*ierr);
 
     // view first nconv columns of X as 'Q'
     PHIST_CHK_IERR(SUBR(mvec_view_block)(X,&Qv,0,nconv-1,ierr),*ierr);
@@ -398,9 +394,13 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
        }
      PHIST_CHK_IERR(SUBR(sdMat_set_block)(R,Theta,nq0,nconv-1,nq0,nconv-1,ierr),*ierr);
 
-    PHIST_OUT(PHIST_INFO,"eigenvalue %d (%8.4g%+8.4gi) converged.",nconv,ct::real(theta),ct::imag(theta));
+     // view next ~a, a temporary vector to compute ~a=Q'*r
+     PHIST_CHK_IERR(SUBR(sdMat_view_block)(atil,&atilv,0,nconv-1,0,nv-1,ierr),*ierr);
+
+    PHIST_OUT(PHIST_VERBOSE,"eigenvalue %d (%8.4g%+8.4gi) converged.",nconv,ct::real(theta),ct::imag(theta));
     if (nconv>=numEigs)
       {
+      PHIST_OUT(PHIST_VERBOSE,"stopping JDQR loop");
       solve=false;
       break;
       }
@@ -413,6 +413,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // copy T(nv+1:m,nv+1:m) into it
     PHIST_CHK_IERR(SUBR(sdMat_get_block)(T,Mv,nv,m,nv,m,ierr),*ierr);
     m=m-nv;
+    it=it-1;
     //V=V*S;
     // It is not allowed to alias V in mvec_times_sdMat, so we use a temporary vector
     mvec_ptr_t v_tmp=NULL;
@@ -487,17 +488,17 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     } //while (deflate)
 
   // restart if necessary
-  if (m>=maxBas)
+  if (m>=maxBas-1)
     {
-    PHIST_OUT(1,"restart JDQR");
+    PHIST_OUT(PHIST_VERBOSE,"restart JDQR");
     int m0=m;
     m=minBas-1;
     
     //S=S(:,1:m);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m0-1,0,m-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m0,0,m,ierr),*ierr);
     //M=T(1:m,1:m);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-1,0,m-1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_get_block)(T,Mv,0,m-1,0,m-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_get_block)(T,Mv,0,m,0,m,ierr),*ierr);
     //V=V*S;
     mvec_ptr_t v_tmp=NULL;
     PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v_tmp,0,m,ierr),*ierr);
