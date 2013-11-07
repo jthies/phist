@@ -316,6 +316,16 @@ void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
     delete tmp;
     }
 
+#ifdef TESTING
+  if (imax<0 || imax>=M->getLocalLength() || jmin<0 || jmax>=M->getNumVectors())
+    {
+    PHIST_OUT(PHIST_ERROR,"input matrix to %s is %d x %d, which does not match "
+                          "given range [%d..%d]x[%d..%d]",__FUNCTION__,
+                          M->getLocalLength(), M->getNumVectors(),
+                          imin,imax,jmin,jmax);
+    }
+#endif
+
   int nrows=imax-imin+1;
   int ncols=jmax-jmin+1;
 
@@ -362,6 +372,25 @@ void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
   
   Teuchos::RCP<const Traits<_ST_>::sdMat_t> Mview,Mtmp;
 
+#ifdef TESTING
+  int nr=imax-imin+1, nc=jmax-jmin+1;
+  if (nr!=Mblock->getLocalLength() || nc!=Mblock->getNumVectors())
+    {
+    PHIST_OUT(PHIST_ERROR,"output block to %s is %d x %d, which does not match "
+                          "given range [%d..%d]x[%d..%d]",__FUNCTION__,
+                          Mblock->getLocalLength(), Mblock->getNumVectors(),
+                          imin,imax,jmin,jmax);
+    }
+  if (imin<0 || imax>=M->getLocalLength() || jmin<0 || jmax>=M->getNumVectors())
+    {
+    PHIST_OUT(PHIST_ERROR,"input matrix to %s is %d x %d, which does not match "
+                          "given range [%d..%d]x[%d..%d]",__FUNCTION__,
+                          M->getLocalLength(), M->getNumVectors(),
+                          imin,imax,jmin,jmax);
+    }
+#endif
+
+
   if (imin==0 && imax==M->getLocalLength()-1)
     {
     _TRY_CATCH_(Mview = M->subView(Teuchos::Range1D(jmin,jmax)),*ierr);
@@ -394,6 +423,24 @@ void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
   ENTER_FCN(__FUNCTION__);
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,M,vM,*ierr);
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,Mblock,vMblock,*ierr);
+
+#ifdef TESTING
+  int nr=imax-imin+1, nc=jmax-jmin+1;
+  if (nr!=Mblock->getLocalLength() || nc!=Mblock->getNumVectors())
+    {
+    PHIST_OUT(PHIST_ERROR,"input block to %s is %d x %d, which does not match "
+                          "given range [%d..%d]x[%d..%d]",__FUNCTION__,
+                          Mblock->getLocalLength(), Mblock->getNumVectors(),
+                          imin,imax,jmin,jmax);
+    }
+  if (imin<0 || imax>=M->getLocalLength() || jmin<0 || jmax>=M->getNumVectors())
+    {
+    PHIST_OUT(PHIST_ERROR,"in/output matrix to %s is %d x %d, which does not match "
+                          "given range [%d..%d]x[%d..%d]",__FUNCTION__,
+                          M->getLocalLength(), M->getNumVectors(),
+                          imin,imax,jmin,jmax);
+    }
+#endif
   
   Teuchos::RCP<Traits<_ST_>::sdMat_t> Mview,Mtmp;
 
