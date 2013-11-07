@@ -64,7 +64,7 @@ int main(int argc, char** argv)
 
   if (argc<2)
     {
-    if (verbose) fprintf(stdout,"Usage: ./XJaDa <matrix filename> [<num eigs>] [<which>] [<tol>] [<max iters> <min basis> <max basis>]");
+    if (verbose) fprintf(stdout,"Usage: ./Xjdqr <matrix filename> [<num eigs>] [<which>] [<tol>] [<max iters> <min basis> <max basis>]");
     return 1;
     }
 
@@ -167,7 +167,7 @@ int main(int argc, char** argv)
 
   SUBR(jdqr)(A_op,B_op,X,evals,resid,is_cmplx, 
         which, tol,
-        &num_iters,&num_eigs,
+        &num_eigs,&num_iters,
         minBas, maxBas,
         &ierr);
 

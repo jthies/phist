@@ -206,7 +206,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   m=minBas-1;// location of last valid vector in V
   expand=0;
   int nv=1; // number of vectors in current update (1 or 2 in this implementation, 2 for
-            // complex eigenvectors of a real matrix.
+            // complex eigenvectors of a real matrix)
   
   while (nconv<numEigs && it < maxIter)
     {
@@ -369,7 +369,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(rtil_ptr,rtil_ptr,(ST*)nrm,ierr),*ierr);
     nrm[0]=mt::sqrt(nrm[0]*nrm[0]+nrm[1]*nrm[1]);
 //}
-    PHIST_OUT(1,"%d\t%d\t%8.4g%+8.4gi\t\t%8.4g\n",it,m,ct::real(theta),ct::imag(theta),nrm[0]);
+    PHIST_OUT(PHIST_INFO,"JDQR Iter %d\t%d\t%8.4g%+8.4gi\t\t%8.4g\n",it,m,ct::real(theta),ct::imag(theta),nrm[0]);
   // deflate converged eigenpairs
   while (nrm[0]<=tol)
     {
@@ -377,6 +377,10 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // number of converged eigenpairs: +2 for complex conjugate pairs in real case
     int nq0=nconv;
     nconv=nconv+nv;
+    for (int j=nq0;j<nconv;j++)
+      {
+      resid[j]=nrm[0]; // will be returned to the user
+      }
 
     // view a~, a temporary vector
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(atil,&atilv,0,nconv-1,0,nv-1,ierr),*ierr);
@@ -394,7 +398,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
        }
      PHIST_CHK_IERR(SUBR(sdMat_set_block)(R,Theta,nq0,nconv-1,nq0,nconv-1,ierr),*ierr);
 
-    PHIST_OUT(1,"eigenvalue %d (%8.4g%+8.4gi) is converged.",nconv,ct::real(theta),ct::imag(theta));
+    PHIST_OUT(PHIST_INFO,"eigenvalue %d (%8.4g%+8.4gi) converged.",nconv,ct::real(theta),ct::imag(theta));
     if (nconv>=numEigs)
       {
       solve=false;
@@ -543,7 +547,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   if (nv>1)
     {
     PHIST_OUT(PHIST_ERROR,"real case with complex eig not implemented (file %s, line %d)",__FILE__,__LINE__);
-    PHIST_CHK_IERR(-99,*ierr);
+    PHIST_CHK_IERR(*ierr=-99,*ierr);
     }
   PHIST_CHK_IERR(SUBR(sdMat_put_value)(shift,ct::real(theta),ierr),*ierr);
 #endif    
@@ -571,17 +575,13 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     
     //TODO - scaling and preconditioning
     
-    // set t=0 as initial guess
+    // set t=0 as initial guess (TODO, better start vector)
     PHIST_CHK_IERR(SUBR(mvec_put_value)(t_ptr,st::zero(),ierr),*ierr);
-//    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),rtil_ptr,st::zero(),t_ptr,ierr),*ierr);
 
-int variant=0; //0:block GMRES, 1: pseudo-BGMRES
-   SUBR(bgmres)(jada_op,t_ptr,rtil_ptr,innerTol,&nIt,maxKSpace,variant,NULL,ierr);
+    int variant=0; //0:block GMRES, 1: pseudo-BGMRES
+    SUBR(bgmres)(jada_op,t_ptr,rtil_ptr,innerTol,&nIt,maxKSpace,variant,NULL,ierr);
       
     expand=true;
-
-//    PHIST_OUT(1,"(Qtil,t)=%f",num2str(norm(Qtil'*t)));
-//    PHIST_OUT(1,"(A-sI)t+rtil=%f",norm(A*t-shift*t+rtil));         
     }
   else
     {
@@ -591,23 +591,55 @@ int variant=0; //0:block GMRES, 1: pseudo-BGMRES
   }// while loop
     
   *num_iters=it;
+  
+  // TODO Sleijpen in his jdqr code does a refinement step at this      
+  // point taking the information from the current V into Q and R       
+  // (might be a nice feature). It also allows us to return unconverged 
+  // eigenvectors so the user can restart from them.                    
+  // In that case the value of the residual norm in resid should be     
+  // considered an upper bound (or updated, of course).                 
+  TOUCH(Rv); // we would need it for this
+  
+  // some sanity checks - the user provides only num_eigs+1 slots
+  nconv = std::min(*num_eigs+1,nconv);
+  *num_eigs=nconv;// tell the user how many we return
+  
   // copy at most num_eigs+1 converged eigenvalues into the user
   // provided array
-  /* TODO
-  for (i=n-1;i>=0, inext<*num_eigs;i--)
+  ST* R_raw=NULL;
+  lidx_t ldR;
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&R_raw,&ldR,ierr),*ierr);
+
+  i=0;
+  while (i<nconv)
     {
-    if (converged[i])
+    evals[i] = R_raw[i*ldR+i];
+#ifndef _IS_COMPLEX_
+    if (i<nconv-1)
       {
-      evals[inext] = falphas[i];
-      resid[inext] = r_est[i];
-      inext++;
+      if (st::abs(R_raw[i*ldR+i+1])>mt::eps())
+        {
+        is_cmplx[i]=1;
+        // sqrt((T^2)/4-D) gives the imaginary part of the eigenpair of
+        // a 2x2 matrix, with T the trace and D the determinant. In our
+        // case A11=A22 and the thing simplifies to im(lambda)=A12*A21.
+        evals[i+1]=T_raw[i*ldR+i+1]*T_raw[(i+1)*ldR+i];
+        is_cmplx[i+1]=1;
+        i++;
+        }
       }
+#else
+    TOUCH(is_cmplx);
+#endif    
+    i++;
     }
-  */
   
-  if (nconv!=*num_eigs) *num_eigs=nconv;
-  
-  // TODO - compute eigenvectors
+  // TODO - compute eigenvectors 
+  // * Jordan decomposition: R*S = S*J, with J in Jordan form (diagonal with possibly a 1 on 
+  // the super diagonal and the eigenvalues on the diagonal)
+  // * X = Q*S
+  // (which LAPACK routines? XTREVC to get eigenvectors?)
+  PHIST_OUT(PHIST_WARNING,"warning: returning only a basis of the computed eigenspace");
 
   // free memory
   PHIST_CHK_IERR(SUBR(mvec_delete)(V,ierr),*ierr);
