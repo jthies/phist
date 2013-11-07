@@ -314,11 +314,11 @@ void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
                           jmin,jmax);
     *ierr=-1; return;
     }
-  if (jmin<0 || jmax>=M->getNumVectors())
+  if (jmin<0 || jmax>=V->getNumVectors())
     {
     PHIST_OUT(PHIST_ERROR,"input vector to %s has %d columns, which does not match "
                           "given range [%d..%d]",__FUNCTION__,
-                          M->getNumVectors(),
+                          V->getNumVectors(),
                           jmin,jmax);
     *ierr=-1; return;
     }
