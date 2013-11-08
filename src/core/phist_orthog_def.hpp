@@ -35,7 +35,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
 
-  int m,k,i,j;
+  int m,k;
   MT* normW0, *normW1;
   MT breakdown; // to check for V'W becoming near 0 for some vector in W
   int rankW;
@@ -43,7 +43,6 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   
   // auxiliary matrices
   st::sdMat_t *R1p,*R2p,*R1pp;
-  const_comm_ptr_t comm;
 
   *ierr=0;
   
@@ -70,10 +69,9 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 
   if (numSweeps>1)
     {
-    PHIST_CHK_IERR(SUBR(mvec_get_comm)(V,&comm,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&R1p,k,k,comm,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&R1pp,k,k,comm,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&R2p,m,k,comm,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&R1p,k,k,NULL,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&R1pp,k,k,NULL,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&R2p,m,k,NULL,ierr),*ierr);
     }
 
 #ifdef TESTING
@@ -100,10 +98,8 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   PHIST_CHK_IERR((*ierr=(m==nrR2)?0:-1),*ierr);
   PHIST_CHK_IERR((*ierr=(k==ncR2)?0:-1),*ierr);
 
-#if PHIST_OUTLEV>=PHIST_DEBUG
-  PHIST_OUT(PHIST_DEBUG,"orthog: V is %dx%d,  W is %dx%d\n"
+  PHIST_DEB("orthog: V is %dx%d,  W is %dx%d\n"
                         "       R1 is %dx%d, R2 is %dx%d\n",n,m,n,k,nrR1,ncR1,nrR2,ncR2);
-#endif  
 #endif
 
   // compute the norms of the columns in W (for checking the result later)
@@ -113,7 +109,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   // determine original norms of W vectors and breakdown tolerance
   PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW0,ierr),*ierr);
   breakdown = normW0[0];
-  for (i=1;i<k;i++) std::min(normW0[i], breakdown);
+  for (int i=1;i<k;i++) breakdown=std::min(normW0[i], breakdown);
   breakdown*=mt::eps();
   
   // orthogonalize against V (first CGS sweep)
@@ -133,33 +129,27 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   // V, which we do next. The projection coefficients for this part   
   // are thrown away as the randomized vectors are not really related 
   //to W anyway.
-  SUBR(mvec_QR)(W,R1,ierr);
+  PHIST_CHK_NEG_IERR(SUBR(mvec_QR)(W,R1,ierr),*ierr);
 
-  if (*ierr<0)
-    {
-    PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
-        *ierr,(phist_retcode2str(*ierr)),"Xmvec_QR(W,R1,ierr)",__FILE__,__LINE__); 
-    return;
-    }
   rankW=k-*ierr;
-  if(rankW < k )
-  {
+  if (rankW < k )
+    {
     int random_iter = 0;
     while (*ierr > 0)
       {
       // terminate even if random vectors are not "random" enough, e.g. random number generator is broken
       if( random_iter++ > 10 )
-      {
+        {
         PHIST_OUT(PHIST_ERROR,"could not create random orthogonal vectors, possibly the random vector generator is broken!");
         *ierr = -8;
         return;
-      }
+        }
       st::mvec_t *Wrnd=NULL;
       st::sdMat_t *Rrnd;
       int n0=*ierr;
       PHIST_OUT(PHIST_INFO,"Matrix W does not have full rank (%d cols, rank=%d)\n",k,rankW);
       PHIST_CHK_IERR(SUBR(mvec_view_block)(W,&Wrnd,rankW,k-1,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(sdMat_create)(&Rrnd,m,n0,comm,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&Rrnd,m,n0,NULL,ierr),*ierr);
       //R2=V'*W;
       PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,Wrnd,st::zero(),Rrnd,ierr),*ierr);
       //W=W-V*R2;
@@ -170,23 +160,30 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
       // reorthogonlize result, filling in new random vectors if these were in span(V)
       PHIST_CHK_IERR(SUBR(mvec_QR)(W,R1,ierr),*ierr);
       }
-  }
-
-  for (i=1;i<numSweeps;i++)
+    }
+    
+  int step=1;
+  while (true)
     {
     MT maxRed=1.0;
-    for (j=0;j<k;j++)
+    for (int j=0;j<k;j++)
       {
       maxRed=std::min(maxRed,normW1[j]/normW0[j]);
       normW0[j]=normW1[j];
       }
-
-    if (maxRed>0.7)
+    PHIST_OUT(PHIST_VERBOSE,"reduction in norm, GS step %d: %4.2f",step,maxRed);
+    if (maxRed>0.75)
       {
       stopGS=true;
+      PHIST_OUT(PHIST_VERBOSE,"stopping Gram-Schmidt");
       break;
       }
-
+    if (step>=numSweeps)
+      {
+      PHIST_OUT(PHIST_VERBOSE,"stopping Gram-Schmidt because %d steps have been performed", 
+                numSweeps);
+      }
+    step++;
     //R2p=V'*W;
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,W,st::zero(),R2p,ierr),*ierr);
 
@@ -200,17 +197,12 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     // smaller than k here is (I think) very unlikely because we 
     // added random vectors before if rank(W) was not full. If   
     // it happens, we return with error code -10.                
-    SUBR(mvec_QR)(W,R1p,ierr);
-    if (*ierr<0)
+    PHIST_CHK_NEG_IERR(SUBR(mvec_QR)(W,R1p,ierr),*ierr);
+   
+    if (*ierr>0)
       {
-      PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
-          *ierr,(phist_retcode2str(*ierr)),"Xmvec_QR(W,R1,ierr)",__FILE__,__LINE__); 
-      return;
-      }
-    else if (*ierr>0)
-      {
-      PHIST_OUT(PHIST_ERROR,"Unexpected rank deficiency in orthog routine\n(file %s, line %d)",\
-                __FILE__,__LINE__); 
+      PHIST_OUT(PHIST_ERROR,"Unexpected rank deficiency in orthog routine\n(file %s, line %d)",
+                __FILE__,__LINE__);
       *ierr=-10;
       return;
       }
@@ -221,15 +213,14 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R1p,R1pp,st::zero(),R1,ierr),*ierr);
     // again, the norm can be computed from the coefficients in R2p (TODO)
     PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW1,ierr),*ierr);    
-    }
+    }//while
 
   PHIST_CHK_IERR(SUBR(sdMat_delete)(R1p,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_delete)(R2p,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_delete)(R1pp,ierr),*ierr);
 
   // return size of randomly filled null space if W-V*R2 not full rank
-  if(rankW < k)
-    *ierr = k-rankW;
+  if (rankW < k) *ierr = k-rankW;
 
   // if in the last CGS sweep a column decreased too much in norm, 
   // return an error (we could return a warning, but since we used 
@@ -240,7 +231,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     // we need to check again, for instance, the 2nd pass may have given
     // the desired small reduction but the check would have been performed
     // at the beginning of pass 3, which was not done.
-    for (i=0;i<k;i++)
+    for (int i=0;i<k;i++)
       {
       if (normW1[i]<0.7*normW0[i])
         {
@@ -248,7 +239,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
         *ierr=-9;
         }
       }
-    }
+    }//stopGS?
   delete [] normW0;
   delete [] normW1;
   }
