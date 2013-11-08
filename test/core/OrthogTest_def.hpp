@@ -145,7 +145,7 @@ public:
       // fill V and W with one-vectors
       SUBR(mvec_put_value)(V_,st::one(),&ierr_);
       ASSERT_EQ(0,ierr_);
-      SUBR(mvec_put_value)(V_,st::one(),&ierr_);
+      SUBR(mvec_put_value)(W_,st::one(),&ierr_);
       ASSERT_EQ(0,ierr_);
       // copy Q=W because orthog() works in-place
       SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&ierr_);
