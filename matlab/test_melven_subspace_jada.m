@@ -11,6 +11,7 @@ n=size(A,1);
 
 k = 4;
 nEig = 20;
+maxDeflationVecs = nEig;
 res_eps = 1.e-8;
 generalized = false;
 
@@ -43,13 +44,15 @@ v0=v0./norm(v0,2);
 
 disp('subspace JaDa iteration for exterior eig(s).');
 
-minBas = 2*k;
+minBas = 20;
 maxBas = 80;
 arnoldiIter = 2;
 maxIter = 400;
 resnorm_history_total = [];
-[r,q,resnorm,lambda_history,resnorm_history,m,restarts] = melven_subspace_jada(A,B,v0,nEig,arnoldiIter,maxIter,minBas,maxBas,res_eps);
+[r,q,resnorm,lambda_history,resnorm_history,m,restarts,lambda_iter,totalMatVecs,correctionRatio] = melven_subspace_jada(A,B,v0,nEig,arnoldiIter,maxIter,minBas,maxBas,res_eps,maxDeflationVecs);
 fprintf('total iterations: %d, restarts: %d',m,restarts);
+fprintf('\ntotal number of matrix-vector multiplications: %d', totalMatVecs);
+fprintf('\ndropped corrections ratio: %8.4g', 1-correctionRatio);
 fprintf('\nEigenv. (MATLAB): %s', num2str(eigs(A,B,nEig)','%8.4g'));
 fprintf('\n      Difference: '); fprintf(' %6.2g',abs(sort(diag(r),'descend')-sort(eigs(A,B,nEig),'descend')));
 fprintf('\n');

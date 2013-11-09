@@ -1,7 +1,10 @@
-function [R,Q,resnorm,lambda_history,resnorm_history,m,restarts]=melven_subspace_jada(A,B,v0,nEig,arnoldiIter,maxIter,minBas,maxBas,res_eps)
+function [R,Q,resnorm,lambda_history,resnorm_history,m,restarts,lambda_iter,totalMatVecs,correctionRatio]=melven_subspace_jada(A,B,v0,nEig,arnoldiIter,maxIter,minBas,maxBas,res_eps,maxDeflationVecs)
 
+totalMatVecs = 0;
 n = size(A,1);                                  % matrix dimension
 k = size(v0,2);                                 % blocksize, e.g. number of eigenvalues wanted
+totalCorrections = 0;
+totalNewCorrections = 0;
 
 V = zeros(n,maxBas);                         % search space empty initially
 BV = zeros(n,maxBas);
@@ -15,18 +18,26 @@ restarts = 0;
 resnorm = inf(nEig,1);
 resnorm_history = inf(nEig,arnoldiIter+maxIter);
 lambda_history = nan(nEig,arnoldiIter+maxIter);
+lambda_iter = zeros(nEig,1);
 nConv = 0;
 R = zeros(nEig,nEig);
 Q = zeros(n,nEig);
 BQ = zeros(n,nEig);
 nNewConv = 0;
+firstDeflationVec = 0;
 
 for m = 1:maxIter+arnoldiIter                               % main iteration loop
     nV_old = nV;
     if( m > 1 )
+        if( firstDeflationVec > 1 )
+            t = t - Q(:,1:firstDeflationVec-1) * (BQ(:,1:firstDeflationVec-1)' * t);
+        end
         t = t - V(:,1:nV_old) * (BV(:,1:nV_old)' * t);     % orthogonalize t wrt V
     end
+totalCorrections = totalCorrections + size(t,2);
     [t,rank_t] = orth(t,B,res_eps/100); % need B-orthogonality
+totalNewCorrections = totalNewCorrections + rank_t;
+correctionRatio = totalNewCorrections/totalCorrections;
     fprintf(' rank of correction: %d (previously converged EV: %d)\n', rank_t, nNewConv);
     if( rank_t == 0 && nNewConv == 0 )
         warning('using new random vector!');
@@ -65,6 +76,8 @@ if( V_orth > res_eps/100 )
     end
 end
     W(:,nV_old+1:nV) = A*t;                   % update W = A*V
+totalMatVecs = totalMatVecs + rank_t;
+
 
     % update H = V' * W
     H(1:nV_old,    nV_old+1:nV)  = V(:,1:nV_old)'    * W(:,nV_old+1:nV);
@@ -174,11 +187,12 @@ end
     end
 
     % construct q_ and Bq_ which deflate already converged eigenvalues
-    q_ = [Q(:,1:nConv) q];
-    Bq_ = [BQ(:,1:nConv) Bq];
-if( max(max(abs(q_' * Bq_ - eye(nConv+k)))) > res_eps )
-    error('q_Bq_')
-end
+    firstDeflationVec = max(1,nConv-maxDeflationVecs);
+    q_ = [Q(:,firstDeflationVec:nConv) q];
+    Bq_ = [BQ(:,firstDeflationVec:nConv) Bq];
+%if( max(max(abs(q_' * Bq_ - eye(nConv+k)))) > res_eps )
+%    error('q_Bq_')
+%end
 %r_ = [R(1:nConv,1:nConv) a_(1:nConv,1:k); zeros(k,nConv) r];
 %q_Orth = max(max(abs(q_' * Bq_ - eye(nConv+k)))); 
 %if( q_Orth > res_eps )
@@ -191,23 +205,24 @@ end
         % as r is an upper triangular matrix, we can do this column for column
         % (I-Bqq')(A-r(i,i)*B)(I-qBq')*t(:,i) = -res(:,i) + (I-Bqq')*B*t(:,1:i-1)*r(1:i-1,i)
         for i = 1:k
+            lambda_iter(nConv+k) = lambda_iter(nConv+k) + 1;
+            m_ = lambda_iter(nConv+k);
             % i-th residuum
             res_i = -res(:,i);
             % analyse behaviour if we omit the coupling here...
-            if( true )
+            if( false )
                 for j = 1:1:i-1
                     res_i = res_i - r(j,i)*B*t(:,j);
                 end
             end
-            res_i = res_i - q_*(Bq_'*res_i);
             % solve i-th equation
             %A_proj_i = (eye(n)-q*q')*(A-r(i,i)*eye(n))*(eye(n)-q*q');
             %t(:,i) = res_i\A_proj_i;
             shift = r(i,i);
-            [t(:,i),gmres_flag] = gmres(@A_proj, res_i, ...
-                           min(40,10*m), ...
-                           min(0.5,max(res_eps,1/m^2)), ...
-                           max(floor(4/m),1));
+            [t(:,i)] = gmres(@A_proj, res_i, ...
+                           min(40,10*m_), ...
+                           min(0.5,max(res_eps,1/m_^2)), ...
+                           max(floor(4/m_),1));
             % use the projection of t onto (I-qBq')
             t(:,i) = t(:,i) - q_*(Bq_'*t(:,i));
         end
@@ -223,7 +238,7 @@ end
             %t(:,i) = -res_ev(:,i)\A_proj_i;
             res_ev(:,i) = res_ev(:,i) - q*(Bq'*res_ev(:,i));
             shift = r(i,i);
-            [t(:,i),gmres_flag] = gmres(@A_proj, -res_ev(:,i), ...
+            [t(:,i)] = gmres(@A_proj, -res_ev(:,i), ...
                            min(40,10*m), ...
                            min(0.5,max(res_eps,1/m^2)), ...
                            max(floor(4/m),1));
@@ -239,6 +254,7 @@ function y = A_proj(x)
     y = x-q_*(Bq_'*x);
     y = A*y - shift*(B*y);
     y = y - Bq_*(q_'*y);
+    totalMatVecs = totalMatVecs + 1;
 end
 
 end
