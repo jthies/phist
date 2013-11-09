@@ -63,7 +63,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 
   if (m==0)
     {
-    PHIST_CHK_IERR(SUBR(mvec_QR)(W,R1,ierr),*ierr);
+    PHIST_CHK_NEG_IERR(SUBR(mvec_QR)(W,R1,ierr),*ierr);
     return;
     }
 
@@ -158,7 +158,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
       PHIST_CHK_IERR(SUBR(sdMat_delete)(Rrnd,ierr),*ierr);
 
       // reorthogonlize result, filling in new random vectors if these were in span(V)
-      PHIST_CHK_IERR(SUBR(mvec_QR)(W,R1,ierr),*ierr);
+      PHIST_CHK_NEG_IERR(SUBR(mvec_QR)(W,R1,ierr),*ierr);
       }
     }
     

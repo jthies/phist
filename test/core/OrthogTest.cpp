@@ -48,6 +48,7 @@ using namespace testing;
 #include "phist_gen_z.h"
 #include "OrthogTest_def.hpp"
 
+// larger block size for W
 #undef _N_
 #define _N_ 64
 #undef _M_
@@ -78,4 +79,37 @@ using namespace testing;
 
 #include "phist_gen_z.h"
 #include "OrthogTest_def.hpp"
+
+// do at least one larger test case
+#undef _N_
+#define _N_ 10000
+#undef _M_
+#define _M_ 40
+#undef _K_
+#define _K_ 8
+
+#undef CLASSNAME
+#define CLASSNAME SOrthogTest_10k_40_8
+
+#include "phist_gen_s.h"
+#include "OrthogTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME DOrthogTest_10k_40_8
+
+#include "phist_gen_d.h"
+#include "OrthogTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME COrthogTest_10k_40_8
+
+#include "phist_gen_c.h"
+#include "OrthogTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZOrthogTest_10k_40_8
+
+#include "phist_gen_z.h"
+#include "OrthogTest_def.hpp"
+
 

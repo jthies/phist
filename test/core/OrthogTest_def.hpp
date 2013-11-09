@@ -106,6 +106,27 @@ public:
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_random)(W_,&ierr_);
       ASSERT_EQ(0,ierr_);
+
+      MT nrmV[m_];
+      MT max_nrmV;
+      SUBR(mvec_norm2)(V_,nrmV,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      max_nrmV=nrmV[0];
+      for (int i=1;i<m_;i++)
+        {
+        max_nrmV=std::max(max_nrmV,nrmV[i]);
+        }
+
+      MT nrmW[k_];
+      MT max_nrmW;
+      SUBR(mvec_norm2)(W_,nrmW,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      max_nrmW=nrmW[0];
+      for (int i=1;i<k_;i++)
+        {
+        max_nrmW=std::max(max_nrmW,nrmW[i]);
+        }
+
       // copy Q=W because orthog() works in-place
       SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -113,8 +134,9 @@ public:
       SUBR(mvec_QR)(V_,R0_,&ierr_);
       ASSERT_EQ(0,ierr_);
       // check wether this worked out
-      ASSERT_REAL_EQ(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
-      ASSERT_REAL_EQ(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
+      MT orthoTolV=max_nrmV*mt::eps();
+      ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),orthoTolV);
+      ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),orthoTolV);
       
       int nsteps=2;
 
@@ -123,8 +145,9 @@ public:
       ASSERT_EQ(0,ierr_);
       
       // check orthonormality of Q
-      ASSERT_REAL_EQ(mt::one(),WTest::ColsAreNormalized(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_));
-      ASSERT_REAL_EQ(mt::one(),WTest::ColsAreOrthogonal(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_));
+      MT orthoTolW=max_nrmW*mt::eps();
+      ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),orthoTolW);
+      ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),orthoTolW);
       
       // check the decomposition: Q*R2 = W - V*R1 (compute W2=Q*R2+V*R1-W and compare with 0)
       SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);
@@ -152,15 +175,7 @@ public:
       ASSERT_EQ(0,ierr_);
       // orthogonalize the m columns of V
       SUBR(mvec_QR)(V_,R0_,&ierr_);
-      if( this->m_ != 1 )
-      {
-        // mvec_QR only works for full rank
-        ASSERT_EQ(4,ierr_);
-      }
-      else
-      {
-        ASSERT_EQ(0,ierr_);
-      }
+        ASSERT_EQ(m_-1,ierr_);
 
       // check wether this worked out
       ASSERT_REAL_EQ(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
@@ -170,7 +185,8 @@ public:
 
       // now orthogonalize W against V. The result should be such that Q*R1=W-V*R2, Q'*Q=I,V'*Q=0
       SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&ierr_);
-      ASSERT_EQ(_K_,ierr_);
+      int dim0= (k_==1? 1: k_-1);
+      ASSERT_EQ(dim0,ierr_);
       
       // check orthonormality of Q
       ASSERT_REAL_EQ(mt::one(),WTest::ColsAreNormalized(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_));
