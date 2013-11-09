@@ -673,6 +673,7 @@ int nvec = V->getNumVectors();
   void SUBR(mvec_normalize)(TYPE(mvec_ptr) vV,
                             _MT_* vnrm, int* ierr) 
   {
+#include "phist_std_typedefs.hpp"  
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
@@ -682,7 +683,14 @@ int nvec = V->getNumVectors();
   _TRY_CATCH_(V->norm2(norms),*ierr);
   for (int i=0;i<nvec;i++)
     {
-    scaling[i]=1.0/norms[i];
+    if (norms[i]==mt::zero())
+      {
+      scaling[i]=1.0;
+      }
+    else
+      {
+      scaling[i]=1.0/norms[i];
+      }
     }
   _TRY_CATCH_(V->scale(scaling),*ierr);
   return;
@@ -847,10 +855,35 @@ void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
 //! remaining columns form a basis for the null space.
 void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   {
+#include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,R,vR,*ierr);
+  int rank;
+  MT rankTol=8*mt::eps();
+  if (V->getNumVectors()==1)
+    {
+    // we need a special treatment here because TSQR
+    // uses a relative tolerance to determine rank deficiency,
+    // so a single zero vector is not detected to be rank deficient.
+    MT nrm;
+    PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
+    ST* Rval = R->get1dViewNonConst().getRawPtr();
+    PHIST_DEB("single vector QR, R=%8.4f",nrm);
+    rank=1;
+    if (nrm<rankTol)
+      {
+      PHIST_DEB("zero vector detected");
+      // randomize the vector
+      PHIST_CHK_IERR(SUBR(mvec_random)(vV,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
+      rank=0;// dimension of null space
+      }
+    *Rval=(ST)nrm;
+    *ierr=1-rank;
+    return;
+    }
   
   if (R->isConstantStride()==false)
     {
@@ -861,7 +894,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
 
   int nrows = R->getLocalLength();
   int ncols = R->getNumVectors();
-    
+      
 #ifdef TESTING
   _CHECK_ZERO_(nrows-ncols,*ierr);
   _CHECK_ZERO_(nrows-V->getNumVectors(),*ierr);
@@ -879,10 +912,15 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
         tsqr.getFastParameters();
   Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp
         (new Teuchos::ParameterList(*valid_params));
+  // if the matrix is rank-deficient, fill the 'missing' columns with
+  // random vectors and return the rank of the original matrix:
   params->set("randomizeNullSpace",true);
+  // this is the tolerance for determining rank deficiency. The tolerance
+  // is relative to the largest singular value of R in the QR decomp of V,
+  // i.e. the 2-norm of R.
+  params->set("relativeRankTolerance",rankTol);
   tsqr.setParameterList(params);
 
-  int rank;
   _TRY_CATCH_(rank = tsqr.normalize(*V,R_view),*ierr);  
   *ierr = ncols-rank;// return positive number if rank not full.
   PHIST_DEB("mvec_QR: ncols=%d, rank=%d, returning %d\n",ncols,rank,*ierr);
