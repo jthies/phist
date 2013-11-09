@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#ifdef PHIST_HAVE_LIKWID
 #include "likwid.h"
+#endif
 
 #include "phist_macros.h"
 #include "phist_enums.h"
@@ -29,7 +31,9 @@ int main(int argc, char** argv)
   
   char* filename = NULL;
   
+#ifdef PHIST_HAVE_LIKWID
   likwid_markerInit();
+#endif
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
   PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
 
@@ -59,9 +63,16 @@ int main(int argc, char** argv)
   for(int i = 0; i < 120/nvecs; i++)
   {
     Teuchos::TimeMonitor timeMon( *time );
+
+#ifdef PHIST_HAVE_LIKWID
     likwid_markerStartRegion("crsMat_times_mvec");
+#endif
+
     PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(st::one(),A,x,st::zero(),y,&ierr),ierr);
+
+#ifdef PHIST_HAVE_LIKWID
     likwid_markerStopRegion("crsMat_times_mvec");
+#endif
   }
   Teuchos::TimeMonitor::summarize();
 
@@ -70,7 +81,9 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(crsMat_delete)(A,&ierr),ierr);
 
   PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
+#ifdef PHIST_HAVE_LIKWID
   likwid_markerClose();
+#endif
 
   return ierr;
 }
