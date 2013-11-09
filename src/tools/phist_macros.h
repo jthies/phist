@@ -48,10 +48,34 @@
         if(PHIST_OUTLEV >= level) {\
                 FILE* out= (level<=PHIST_WARNING)? stderr:stdout;
                 fprintf(out,msg"\n",##__VA_ARGS__);\
+                fflush(out);\ }\ }
+#endif
+
+#ifdef PHIST_HAVE_MPI
+#define PHIST_SOUT(level,msg, ...) {\
+        if(PHIST_OUTLEV >= level) {\
+                FILE* out= (level<=PHIST_WARNING)? stderr:stdout;\
+                int me,ini,fini;\
+                MPI_Initialized(&ini); \
+                if (ini) MPI_Finalized(&fini); \
+                if (ini && (!fini)) { \
+                MPI_Comm_rank(MPI_COMM_WORLD,&me);\
+                } else {me=0;}\
+                if(me==0){\
+                fprintf(out,"PE%d: "msg"\n",me,##__VA_ARGS__);\
+                fflush(out);}\
+        }\
+}
+#else
+#define PHIST_SOUT(level,msg, ...) {\
+        if(PHIST_OUTLEV >= level) {\
+                FILE* out= (level<=PHIST_WARNING)? stderr:stdout;
+                fprintf(out,msg"\n",##__VA_ARGS__);\
                 fflush(out);\
         }\
 }
 #endif
+
 
 // return types
 #define _PHIST_SUCCESS_ 0

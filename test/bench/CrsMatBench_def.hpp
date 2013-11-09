@@ -32,7 +32,7 @@ public:
       }
     }
 
-static const int numRuns_ = (int)(1.0e6/_N_);
+static const int numRuns_ = (int)(4.0e6/_N_/_NV_);
 TYPE(crsMat_ptr) A_; 
 
 protected:
@@ -90,6 +90,7 @@ int delete_mat(TYPE(crsMat_ptr) A)
       {
       SUBR(mvec_random)(vec1_,&ierr_);
       SUBR(mvec_random)(vec2_,&ierr_);
+      PHIST_SOUT(PHIST_INFO, "running crsMat_times_mvec %d times", numRuns_);
       for (int i=0; i<numRuns_;i++)
         {
         SUBR(crsMat_times_mvec)(1.0,A_,vec1_,0.0,vec2_,&ierr_);

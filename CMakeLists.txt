@@ -285,12 +285,19 @@ foreach (infile ${TG_CXX_Drivers})
 endforeach()
 
 # test drivers
-set(PHIST_TESTS kernels
-                core
-                jada
-                krylov
-                bench)
-#                sched
+if( "${CMAKE_BUILD_TYPE}" MATCHES "Release" )
+  set(PHIST_TESTS kernels
+                  core
+                  jada
+                  krylov
+                  bench)
+  #                sched
+else()
+  set(PHIST_TESTS kernels
+                  core
+                  jada
+                  krylov)
+endif()
 
 foreach(label ${PHIST_TESTS})
   string(TOUPPER ${label} label_uc)
@@ -315,6 +322,37 @@ foreach (infile ${C_Examples})
     target_link_libraries(${filebase} ${lib})
   endforeach()
 endforeach()
+
+# type generic examples routines are compiled from .c or .cpp files
+# which we get from .in files by preprocessing
+file(GLOB TG_C_Examples ${CMAKE_SOURCE_DIR}/examples/*/*.c.in )
+file(GLOB TG_CXX_Examples ${CMAKE_SOURCE_DIR}/examples/*/*.cpp.in )
+
+foreach (infile ${TG_C_Examples})
+  get_filename_component(filebase ${infile} NAME_WE)
+  foreach (tc ${TG_Types})
+    STRING(TOLOWER \"phist_gen_${tc}.h\" PHIST_TG_HFILE)
+    configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.c)
+    add_executable(${tc}${filebase} ${tc}${filebase}.c)
+    foreach(lib ${PHIST_LIBS})
+      target_link_libraries(${tc}${filebase} ${lib})
+    endforeach()
+  endforeach()
+endforeach()
+
+foreach (infile ${TG_CXX_Examples})
+  get_filename_component(filebase ${infile} NAME_WE)
+  foreach (tc ${TG_Types})
+    STRING(TOLOWER \"phist_gen_${tc}.h\" PHIST_TG_HFILE)
+    configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.cpp)
+    add_executable(${tc}${filebase} ${tc}${filebase}.cpp)
+    foreach(lib ${PHIST_LIBS})
+      target_link_libraries(${tc}${filebase} ${lib})
+    endforeach()
+  endforeach()
+endforeach()
+
+#
 
 # Activate testing
 enable_testing()
