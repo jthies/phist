@@ -167,7 +167,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
       if( typeImplemented_ )
       {
         // run simple_arnoldi
-        SUBR(simple_arnoldi)(opA,v0_,V_,H_,m_,&ierr);
+        SUBR(simple_arnoldi)(opA,NULL,v0_,V_,NULL,H_,m_,&ierr);
         ASSERT_EQ(0,ierr);
 
         // check orthogonality of V_

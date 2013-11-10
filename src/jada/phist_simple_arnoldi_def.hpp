@@ -8,12 +8,17 @@
 //! TODO - we may want to include a check if any Ritz values have already
 //!        converged in Arnoldi, but this requires some additional programming
 //!        effort which we leave for later.
-void SUBR(simple_arnoldi)(TYPE(const_op_ptr) op, TYPE(const_mvec_ptr) v0,
-        TYPE(mvec_ptr) V, TYPE(sdMat_ptr) H, int m, int* ierr)
+void SUBR(simple_arnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op, TYPE(const_mvec_ptr) v0,
+        TYPE(mvec_ptr) V, TYPE(mvec_ptr) BV, TYPE(sdMat_ptr) H, int m, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *ierr = 0;
+  if( B_op != NULL )
+  {
+    PHIST_SOUT(PHIST_ERROR,"case B_op != NULL (e.g. B != I) not implemented yet!");
+    PHIST_CHK_IERR(*ierr = 99, *ierr);
+  }
   TYPE(mvec_ptr) v=NULL,av=NULL,vprev=NULL;
   TYPE(sdMat_ptr) R1=NULL,R2=NULL;
   PHIST_CHK_IERR(SUBR(mvec_set_block)(V,v0,0,0,ierr),*ierr);
@@ -39,7 +44,7 @@ void SUBR(simple_arnoldi)(TYPE(const_op_ptr) op, TYPE(const_mvec_ptr) v0,
     {
     PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&vprev,0,i,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&av,i+1,i+1,ierr),*ierr);
-    PHIST_CHK_IERR(op->apply(st::one(),op->A,v,st::zero(),av,ierr),*ierr);
+    PHIST_CHK_IERR(A_op->apply(st::one(),A_op->A,v,st::zero(),av,ierr),*ierr);
     // orthogonalize, Q*R1 = W - V*R2
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R2,0,i,i,i,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R1,i+1,i+1,i,i,ierr),*ierr);
