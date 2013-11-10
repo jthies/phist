@@ -169,8 +169,6 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
         // run simple_arnoldi
         SUBR(simple_arnoldi)(opA,v0_,V_,H_,m_,&ierr);
         ASSERT_EQ(0,ierr);
-//SUBR(mvec_print)(V_,&ierr);
-//SUBR(sdMat_print)(H_,&ierr);
 
         // check orthogonality of V_
         ASSERT_REAL_EQ(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));

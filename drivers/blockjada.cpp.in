@@ -1,0 +1,190 @@
+#include <string>
+#include <sstream>
+
+#include "phist_macros.h"
+#include "phist_enums.h"
+#include "phist_kernels.h"
+#include "phist_operator.h"
+#include "phist_blockjada.h"
+#include "phist_simple_arnoldi.h"
+#include ${PHIST_TG_HFILE}
+
+
+#include "phist_ScalarTraits.hpp"
+#include "phist_std_typedefs.hpp"
+
+// small c++ string helper function
+bool endsWith(const std::string& s, const std::string& suffix)
+{
+  return s.rfind(suffix) == (s.size()-suffix.size());
+}
+
+
+int main(int argc, char** argv)
+{
+  int ierr;
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+
+
+
+  //------------------------------- parse input parameters ------------------------- 
+
+  // check arguments
+  if( argc < 2 )
+  {
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A filename> [<num eigs>] [<which>] [<tol>] [<max iters> <block size> <min basis> <max basis>]", argv[0]);
+    return 1;
+  }
+
+  // get file name of matrix A
+  const std::string filename_A(argv[1]);
+
+  // number of eigenvalues to compute
+  int nEig = 8;
+  if( argc > 2 )
+  {
+    std::istringstream iss(argv[2]);
+    iss >> nEig;
+  }
+
+  // which eigenvalues to compute
+  eigSort_t which = LM;
+  if( argc > 3 )
+  {
+    if( argv[3] == std::string("LM") )
+      which = LM;
+    else if( argv[3] == std::string("SM") )
+      which = SM;
+    else if( argv[3] == std::string("LR") )
+      which = LR;
+    else if( argv[4] == std::string("SR") )
+      which = SR;
+    else
+    {
+      PHIST_SOUT(PHIST_ERROR,"error parsing argument 3 <which> ('%s'), it should be one of LM, SM, LR or SR", argv[4]);
+      return 1;
+    }
+  }
+
+  // desired accuracy: residuum tolerance
+  _MT_ tol = mt::eps()*1000;
+  if( argc > 4 )
+  {
+    std::istringstream iss(argv[4]);
+    iss >> tol;
+    if( tol <= mt::eps() )
+    {
+      PHIST_SOUT(PHIST_WARNING,"specified tolerance %e is too small! (eps: %e)", tol, mt::eps());
+    }
+  }
+
+  // maximum number of iterations
+  int nIter = 250;
+  if( argc > 5 )
+  {
+    std::istringstream iss(argv[5]);
+    iss >> nIter;
+  }
+
+  // block size
+  int blockDim = 4;
+  if( argc > 6 )
+  {
+    std::istringstream iss(argv[6]);
+    iss >> blockDim;
+  }
+
+  // min basis size
+  int minBase = 20;
+  if( argc > 7 )
+  {
+    std::istringstream iss(argv[7]);
+    iss >> minBase;
+  }
+
+  // max basis size
+  int maxBase = std::max(80, minBase+blockDim);
+  if( argc > 8 )
+  {
+    std::istringstream iss(argv[8]);
+    iss >> maxBase;
+  }
+
+
+
+  //------------------------------- setup matrices and vectors --------------------- 
+
+  // we have gathered all input parameters...
+  // read matrix A
+  crsMat_ptr_t A = NULL;
+  if( endsWith(filename_A,".mm") )
+  {
+    PHIST_ICHK_IERR(SUBR(crsMat_read_mm)(&A,filename_A.c_str(),&ierr),ierr);
+  }
+  else if( endsWith(filename_A,".cua") )
+  {
+#ifdef _IS_COMPLEX_
+    PHIST_ICHK_IERR(SUBR(crsMat_read_hb)(&A,filename_A.c_str(),&ierr),ierr);
+#else
+    PHIST_SOUT(PHIST_ERROR,"error, invoked real version of this program for complex matrix with ending '.cua'");
+    return 1;
+#endif
+  }
+  else if( endsWith(filename_A,".rua") )
+  {
+#ifdef _IS_COMPLEX_
+    PHIST_SOUT(PHIST_ERROR,"error, invoked complex version of this program for real matrix with ending '.rua'");
+    return 1;
+#else
+    PHIST_ICHK_IERR(SUBR(crsMat_read_hb)(&A,filename_A.c_str(),&ierr),ierr);
+#endif
+  }
+  else if( endsWith(filename_A,".bin") )
+  {
+    PHIST_ICHK_IERR(SUBR(crsMat_read_bin)(&A,filename_A.c_str(),&ierr),ierr);
+  }
+  else
+  {
+    PHIST_SOUT(PHIST_ERROR,"unknown file ending of matrix file '%s'",filename_A.c_str());
+    return 1;
+  }
+  // create an operator from A
+  op_ptr_t opA = new TYPE(op);
+  PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(opA,A,&ierr),ierr);
+
+  // we need the domain map of the matrix
+  const_map_ptr_t map = NULL;
+  PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(A,&map,&ierr),ierr);
+
+  // setup necessary vectors and matrices for the schur form
+  mvec_ptr_t Q = NULL;
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&Q,map,nEig,&ierr),ierr);
+  sdMat_ptr_t R = NULL;
+  PHIST_ICHK_IERR(SUBR(sdMat_create)(&R,nEig,nEig,NULL,&ierr),ierr);
+  _MT_ *resNorm = new _MT_[nEig];
+
+  // setup start vector (currently to (1 1 1 ... 1) )
+  mvec_ptr_t v0 = NULL;
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&v0,map,1,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::one(),&ierr),ierr);
+
+
+
+  //------------------------------- run block JaDa algorithm ----------------------- 
+  PHIST_ICHK_IERR(SUBR(blockjada)(opA, NULL, v0, which, tol, &nEig, &nIter, blockDim, minBase, maxBase, Q, R, resNorm, &ierr), ierr);
+
+
+
+  //------------------------------- clear matrices and vectors --------------------- 
+  // delete vectors and sdMats
+  delete[] resNorm;
+  PHIST_ICHK_IERR(SUBR(sdMat_delete)(R,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(Q,&ierr),ierr);
+  // clean up operator
+  delete opA;
+  // delete matrix
+  PHIST_ICHK_IERR(SUBR(crsMat_delete)(A,&ierr),ierr);
+
+  PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
+  return ierr;
+}

@@ -87,7 +87,7 @@
 //! checks an ierr flag passed to a void function for non-zero value, assigns it to _FLAG_,
 //! prints an error message and returns if non-zero (to be used in void functions)
 #ifdef __cplusplus
-#define PHIST_CHK_IERR(func,_FLAG_) \
+#define PHIST_CHK_IERR(func,_FLAG_) {\
 try {func; if (_FLAG_!=_PHIST_SUCCESS_) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
 (_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return;}} \
@@ -98,19 +98,19 @@ catch (std::string s) {PHIST_OUT(PHIST_ERROR,"Exception caught in call %s (%s)\n
 catch (int iexc) {PHIST_OUT(PHIST_ERROR,"int Exception caught in call %s (value %d)\n(file %s, line %d)",\
 (#func),iexc,(__FILE__),(__LINE__)); (_FLAG_)=-77; return;} \
 catch (...) {PHIST_OUT(PHIST_ERROR,"unknown Exception caught in call %s\n(file %s, line %d)",\
-(#func),(__FILE__),(__LINE__)); (_FLAG_)=-77; return;}
+(#func),(__FILE__),(__LINE__)); (_FLAG_)=-77; return;}}
 #else
-#define PHIST_CHK_IERR(func,_FLAG_) \
+#define PHIST_CHK_IERR(func,_FLAG_) {\
 {func; if (_FLAG_!=_PHIST_SUCCESS_) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
-(_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return;}}
+(_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return;}}}
 #endif
 
 //! checks an ierr flag passed to a void function for negative value, assigns it to _FLAG_,
 //! prints an error message and returns if non-zero (to be used in void functions)
 #ifndef PHIST_CHK_NEG_IERR
 #ifdef __cplusplus
-#define PHIST_CHK_NEG_IERR(func,_FLAG_) \
+#define PHIST_CHK_NEG_IERR(func,_FLAG_) {\
 try {func; if (_FLAG_ < _PHIST_SUCCESS_) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
 (_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return;}} \
@@ -121,21 +121,21 @@ catch (std::string s) {PHIST_OUT(PHIST_ERROR,"Exception caught in call %s (%s)\n
 catch (int iexc) {PHIST_OUT(PHIST_ERROR,"int Exception caught in call %s (value %d)\n(file %s, line %d)",\
 (#func),iexc,(__FILE__),(__LINE__)); (_FLAG_)=-77; return;} \
 catch (...) {PHIST_OUT(PHIST_ERROR,"unknown Exception caught in call %s\n(file %s, line %d)",\
-(#func),(__FILE__),(__LINE__)); (_FLAG_)=-77; return;}
+(#func),(__FILE__),(__LINE__)); (_FLAG_)=-77; return;}}
 #else
-#define PHIST_CHK_NEG_IERR(func,_FLAG_) \
+#define PHIST_CHK_NEG_IERR(func,_FLAG_) {\
 {func; if (_FLAG_<_PHIST_SUCCESS_) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
-(_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return;}}
+(_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return;}}}
 #endif
 #endif
 
 
 //! like PHIST_CHK_IERR, but returns ierr (to be used in int functions returning an error code)
-#define PHIST_ICHK_IERR(func,_FLAG_) \
+#define PHIST_ICHK_IERR(func,_FLAG_) {\
 {func; if (_FLAG_!=_PHIST_SUCCESS_) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
-(_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return _FLAG_;}}
+(_FLAG_),(phist_retcode2str(_FLAG_)),(#func),(__FILE__),(__LINE__)); return _FLAG_;}}}
 
 #ifdef MAX
 #undef MAX

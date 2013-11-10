@@ -41,8 +41,6 @@ void SUBR(simple_arnoldi)(TYPE(const_op_ptr) op, TYPE(const_mvec_ptr) v0,
     PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&av,i+1,i+1,ierr),*ierr);
     PHIST_CHK_IERR(op->apply(st::one(),op->A,v,st::zero(),av,ierr),*ierr);
     // orthogonalize, Q*R1 = W - V*R2
-//PHIST_CHK_IERR(SUBR(mvec_print)(V,ierr),*ierr);
-//PHIST_CHK_IERR(SUBR(sdMat_print)(H,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R2,0,i,i,i,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R1,i+1,i+1,i,i,ierr),*ierr);
     PHIST_CHK_NEG_IERR(SUBR(orthog)(vprev,av,R1,R2,3,ierr),*ierr);
@@ -53,8 +51,6 @@ void SUBR(simple_arnoldi)(TYPE(const_op_ptr) op, TYPE(const_mvec_ptr) v0,
     std::swap(v,av);     // swap the vectors v and av,av will be deleted and re-build as a 
                          // new view in the next step
     }
-//PHIST_CHK_IERR(SUBR(mvec_print)(V,ierr),*ierr);
-//PHIST_CHK_IERR(SUBR(sdMat_print)(H,ierr),*ierr);
   // delete the views that we have created
   PHIST_CHK_IERR(SUBR(mvec_delete)(v,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_delete)(av,ierr),*ierr);

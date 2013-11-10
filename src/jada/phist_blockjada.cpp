@@ -12,6 +12,7 @@
 #include "jada_helpers.hpp"
 #include "phist_schur_decomp.h"
 #include "phist_jadaOp.h"
+#include "phist_simple_arnoldi.h"
 
 #include "phist_bgmres.h"
 
