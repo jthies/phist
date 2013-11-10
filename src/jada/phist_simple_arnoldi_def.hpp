@@ -13,7 +13,8 @@ void SUBR(simple_arnoldi)(TYPE(const_op_ptr) op, TYPE(const_mvec_ptr) v0,
   {
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
-  TYPE(mvec_ptr) v=NULL,av=NULL,vprev=NULL,tmp=NULL;
+  *ierr = 0;
+  TYPE(mvec_ptr) v=NULL,av=NULL,vprev=NULL;
   TYPE(sdMat_ptr) R1=NULL,R2=NULL;
   PHIST_CHK_IERR(SUBR(mvec_set_block)(V,v0,0,0,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&v,0,0,ierr),*ierr);
@@ -31,7 +32,7 @@ void SUBR(simple_arnoldi)(TYPE(const_op_ptr) op, TYPE(const_mvec_ptr) v0,
   if (ncV<m+1 || nrH<m+1 || ncH<m) {*ierr = -1; return;}
   if (ncV!=m+1 || nrH!=m+1 || ncH!=m)
     {
-    PHIST_OUT(PHIST_INFO,"input vectors/matrix to arnoldi are larger than necessary");
+    PHIST_SOUT(PHIST_INFO,"input vectors/matrix to arnoldi are larger than necessary");
     }
   
   for (int i=0;i<m;i++)
@@ -40,16 +41,20 @@ void SUBR(simple_arnoldi)(TYPE(const_op_ptr) op, TYPE(const_mvec_ptr) v0,
     PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&av,i+1,i+1,ierr),*ierr);
     PHIST_CHK_IERR(op->apply(st::one(),op->A,v,st::zero(),av,ierr),*ierr);
     // orthogonalize, Q*R1 = W - V*R2
+//PHIST_CHK_IERR(SUBR(mvec_print)(V,ierr),*ierr);
+//PHIST_CHK_IERR(SUBR(sdMat_print)(H,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R2,0,i,i,i,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R1,i+1,i+1,i,i,ierr),*ierr);
     PHIST_CHK_NEG_IERR(SUBR(orthog)(vprev,av,R1,R2,3,ierr),*ierr);
     if( *ierr > 0 )
     {
-      PHIST_OUT(PHIST_INFO,"found invariant subspace in arnoldi, expanding basis with a randomly generated orthogonal vector");
+      PHIST_SOUT(PHIST_INFO,"found invariant subspace in arnoldi, expanding basis with a randomly generated orthogonal vector");
     }
-    tmp=v; v=av; av=tmp; // swap the vectors v and av,av will be deleted and re-build as a 
+    std::swap(v,av);     // swap the vectors v and av,av will be deleted and re-build as a 
                          // new view in the next step
     }
+//PHIST_CHK_IERR(SUBR(mvec_print)(V,ierr),*ierr);
+//PHIST_CHK_IERR(SUBR(sdMat_print)(H,ierr),*ierr);
   // delete the views that we have created
   PHIST_CHK_IERR(SUBR(mvec_delete)(v,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_delete)(av,ierr),*ierr);

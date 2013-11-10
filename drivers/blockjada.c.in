@@ -162,10 +162,10 @@ int main(int argc, char** argv)
   // create start block vector from one-vector
   PHIST_ICHK_IERR(SUBR(mvec_create)(&x0,map,1,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(x0,ONE,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(sdMat_create)(&XH,blockSize,blockSize,NULL,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_create)(&XH,blockSize,blockSize-1,NULL,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(sdMat_put_value)(XH,ZERO,&ierr),ierr);
   // use blockSize steps of arnoldi to create starting vector
-  PHIST_ICHK_IERR(SUBR(simple_arnoldi)(A_op,x0,X,XH,blockSize,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(simple_arnoldi)(A_op,x0,X,XH,blockSize-1,&ierr),ierr);
 #if PHIST_OUTLEV>=PHIST_DEBUG
   PHIST_DEB("initial H (by Arnoldi)");
   PHIST_ICHK_IERR(SUBR(sdMat_print)(XH,&ierr),ierr);

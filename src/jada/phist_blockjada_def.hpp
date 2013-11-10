@@ -39,6 +39,8 @@ void SUBR(blockjada)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
         int blockSize, int minBase, int maxBase,
         int* ierr)
 {
-  PHIST_OUT(PHIST_INFO,"Called block JaDa");
+  ENTER_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+
 }
 
