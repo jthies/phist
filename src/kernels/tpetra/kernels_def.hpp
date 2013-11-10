@@ -630,6 +630,7 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* ierr)
 void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
+  *ierr = 0;
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
   Teuchos::FancyOStream fos(Teuchos::rcp(&std::cout,false));
   V->describe(fos,Teuchos::VERB_EXTREME);

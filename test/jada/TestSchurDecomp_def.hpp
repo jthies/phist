@@ -165,7 +165,7 @@ public:
       for (int j=0;j<_N_;j++)
         {
         PHIST_DEB("j=%d, ev[j]=%8.4f %+8.4fi",j,ct::real(ev_[j]),ct::imag(ev_[j]));
-        if (ct::imag(ev_[j])<=mt::zero())
+        if (ct::imag(ev_[j])<=mt::zero() && j+1<_N_)
           {
           ASSERT_REAL_EQ(mt::one(),mt::one()+st::abs(mat1_vp_[j*m_lda_+j+1]));
           }

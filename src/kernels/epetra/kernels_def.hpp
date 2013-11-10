@@ -355,6 +355,7 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* ierr)
 
 void SUBR(mvec_print)(TYPE(connst_mvec_ptr) vV, int* ierr)
   {
+  *ierr = 0;
   _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
   std::cout << *V;
   }

@@ -110,7 +110,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW0,ierr),*ierr);
   breakdown = normW0[0];
   for (int i=1;i<k;i++) breakdown=std::min(normW0[i], breakdown);
-  breakdown*=mt::eps();
+  breakdown*=mt::eps()*100;
   
   // orthogonalize against V (first CGS sweep)
 
@@ -122,6 +122,15 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   // since ||W_j||_2 = ||R1_j||_2 (TODO - that's how it's done in Belos).
   PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW1,ierr),*ierr);
 
+  // special case which cannot be detected in mvec_QR if W in span(V) (because mvec_QR uses a relative tolerance):
+  MT maxNormW1 = 0;
+  for(int i = 0; i < k; i++)
+    maxNormW1 = std::max(normW1[i],maxNormW1);
+  if(maxNormW1 < breakdown)
+  {
+    PHIST_SOUT(PHIST_INFO,"breakdown in phist_orthog: W in span(V), filling in random vectors!");
+    PHIST_CHK_IERR(SUBR(mvec_put_value)(W,st::zero(),ierr),*ierr);
+  }
   // orthogonalize W after the first GS pass. This gives us the rank  
   // of W (ierr>0 indicates the dimension of the null space of W, i.e.
   // the rank of W is k-ierr). If W is not full rank, it is augmented 
@@ -130,8 +139,8 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   // are thrown away as the randomized vectors are not really related 
   //to W anyway.
   PHIST_CHK_NEG_IERR(SUBR(mvec_QR)(W,R1,ierr),*ierr);
-
   rankW=k-*ierr;
+
   if (rankW < k )
     {
     int random_iter = 0;
@@ -160,6 +169,12 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
       // reorthogonlize result, filling in new random vectors if these were in span(V)
       PHIST_CHK_NEG_IERR(SUBR(mvec_QR)(W,R1,ierr),*ierr);
       }
+
+    // we must fill the appropriate columns of R1 with zeros (where random values were used)
+    TYPE(mvec_ptr) R1_r = NULL;
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(R1,&R1_r,rankW,k-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_put_value)(R1_r,st::zero(),ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(R1_r,ierr),*ierr);
     }
     
   int step=1;
@@ -211,6 +226,16 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R1,st::zero(),R1pp,ierr),*ierr);
     //R1=R1p*R1pp;
     PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R1p,R1pp,st::zero(),R1,ierr),*ierr);
+    // keep zero entries in R1 for rank(W-V*V'*W) < k
+    if( rankW < k )
+    {
+      // we must fill the appropriate columns of R1 with zeros (where random values were used)
+      TYPE(mvec_ptr) R1_r = NULL;
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(R1,&R1_r,rankW,k-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_put_value)(R1_r,st::zero(),ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_delete)(R1_r,ierr),*ierr);
+    }
+
     // again, the norm can be computed from the coefficients in R2p (TODO)
     PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW1,ierr),*ierr);    
     }//while

@@ -482,6 +482,7 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* ierr)
 
 void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* ierr)
   {
+  *ierr = 0;
   _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
   V->print(V);
   }

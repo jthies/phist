@@ -186,12 +186,13 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
         // calculate AV_' := AV_ - VH_
         SUBR(mvec_add_mvec)(-st::one(),VH_,st::one(),AV_,&ierr);
         ASSERT_EQ(0,ierr);
-        _MT_ vnorm;
-        SUBR(mvec_norm2)(AV_,&vnorm,&ierr);
+        _MT_ vnorm[_M_];
+        SUBR(mvec_norm2)(AV_,vnorm,&ierr);
         ASSERT_EQ(0,ierr);
 
         // check AV_' = AV_ - VH_ == 0
-        ASSERT_NEAR(mt::one(),vnorm,100*mt::eps());
+        for(int i = 0; i < _M_; i++)
+          ASSERT_NEAR(mt::zero(),vnorm[i],100*mt::eps());
       }
     }
 };
