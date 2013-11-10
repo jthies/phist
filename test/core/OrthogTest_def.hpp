@@ -106,26 +106,9 @@ public:
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_random)(W_,&ierr_);
       ASSERT_EQ(0,ierr_);
-
-      MT nrmV[m_];
-      MT max_nrmV;
-      SUBR(mvec_norm2)(V_,nrmV,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      max_nrmV=nrmV[0];
-      for (int i=1;i<m_;i++)
-        {
-        max_nrmV=std::max(max_nrmV,nrmV[i]);
-        }
-
-      MT nrmW[k_];
-      MT max_nrmW;
-      SUBR(mvec_norm2)(W_,nrmW,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      max_nrmW=nrmW[0];
-      for (int i=1;i<k_;i++)
-        {
-        max_nrmW=std::max(max_nrmW,nrmW[i]);
-        }
+      
+      MT tolV=VTest::releps(V_);
+      MT tolW=WTest::releps(W_);
 
       // copy Q=W because orthog() works in-place
       SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&ierr_);
@@ -134,9 +117,8 @@ public:
       SUBR(mvec_QR)(V_,R0_,&ierr_);
       ASSERT_EQ(0,ierr_);
       // check wether this worked out
-      MT orthoTolV=max_nrmV*mt::eps();
-      ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),orthoTolV);
-      ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),orthoTolV);
+      ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),tolV);
+      ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),tolV);
       
       int nsteps=2;
 
@@ -145,9 +127,8 @@ public:
       ASSERT_EQ(0,ierr_);
       
       // check orthonormality of Q
-      MT orthoTolW=max_nrmW*mt::eps();
-      ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),orthoTolW);
-      ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),orthoTolW);
+      ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),tolW);
+      ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),tolW);
       
       // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
       SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);
@@ -156,7 +137,7 @@ public:
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero()),100*mt::eps());
+      ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero()),tolW);
       }
     }
 
@@ -178,8 +159,8 @@ public:
       ASSERT_EQ(m_-1,ierr_);
 
       // check wether this worked out
-      ASSERT_REAL_EQ(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
-      ASSERT_REAL_EQ(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
+      ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),VTest::releps());
+      ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),VTest::releps());
 
       int nsteps=2;
 
@@ -189,8 +170,8 @@ public:
       ASSERT_EQ(dim0,ierr_);
       
       // check orthonormality of Q
-      ASSERT_REAL_EQ(mt::one(),WTest::ColsAreNormalized(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_));
-      ASSERT_REAL_EQ(mt::one(),WTest::ColsAreOrthogonal(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_));
+      ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),WTest::releps());
+      ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),WTest::releps());
 
       // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
       SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);

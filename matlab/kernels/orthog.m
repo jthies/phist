@@ -50,6 +50,38 @@ n=size(V,1);
 m=size(V,2);
 k=size(W,2);
 
+if (k==1)
+  normW0=norm(W)
+  R1=V'*W;
+  W=W-V*R1;
+  normW1=norm(W);
+  R2=normW0;
+  if (R2==0)
+    W=randn(n,1);
+    W=W-(V'*W)*V;
+    R2=norm(W);
+    normW1=R2;
+  end
+  W=W/R2;
+  numSweeps=1;
+  while (numSweeps<5)
+    red=normW1/normW0;
+    disp(sprintf('GS step %d: reduction %4.2f',...
+        numSweeps, red));
+    if (red>0.7) 
+      break;
+    end
+    R1p=V'*W;
+    W=W-V*R1p;
+    normW0=normW1;
+    normW1=norm(W);
+    R2=R2*normW1;
+    R1=R1+R1p;
+    numSweeps=numSweeps+1;
+  end
+  Q=W;
+else
+
 % orthogonalize against V
 R1=V'*W;
 Z=W-V*R1;
@@ -68,6 +100,8 @@ end
 
 % orthogonalize Z
 [Q,R2]=qr(Z,0);
+
+end
 
 if (nargout>=1)
   varargout{1}=Q;

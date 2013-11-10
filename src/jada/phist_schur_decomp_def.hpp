@@ -76,6 +76,13 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
     }
 #endif
 
+#if PHIST_OUTLEV>=PHIST_DEBUG
+PHIST_OUT(0,"eigenvalues of unsorted Schur form:");
+for (int i=0;i<m;i++)
+  {
+  PHIST_OUT(0,"%d\t%16.8g%+16.8gi",i,ct::real(ev[i]),ct::imag(ev[i]));
+  }
+#endif
 
   if (nselect<=0) return;
   if (nsort>nselect || nsort<0)
@@ -97,7 +104,7 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
   // permute the first <nselect> eigenvalues according to idx
   // to the top left, taking the vectors along
   int select[m];
-  int nsorted;
+  int nsorted=0;
 
   for (int i=0;i<m;i++) select[i]=0;
 
@@ -166,5 +173,15 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
 #endif
     i+= std::max(nsorted-nsorted_before,1);
     }//while
+
+#if PHIST_OUTLEV>=PHIST_DEBUG
+PHIST_OUT(0,"eigenvalues of sorted Schur form:");
+for (int i=0;i<m;i++)
+  {
+  PHIST_OUT(0,"%d\t%16.8g%+16.8gi",i,ct::real(ev[i]),ct::imag(ev[i]));
+  }
+#endif
+
+
   }
 

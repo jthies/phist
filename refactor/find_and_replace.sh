@@ -1,6 +1,6 @@
 #!/bin/bash
-REPLACE=crsMat
-REPL_BY=spMat
+REPLACE=UNUSED
+REPL_BY=TOUCH
 
 SED_STRING=s/${REPLACE}/${REPL_BY}/g
 echo $SED_STRING > tmp.sed

@@ -71,3 +71,33 @@ using namespace testing;
 #include "phist_gen_z.h"
 #include "QR_Test_def.hpp"
 
+// let's try something bigger...
+#undef _N_
+#define _N_ 9999
+#undef _NV_
+#define _NV_ 65
+
+#undef CLASSNAME
+#define CLASSNAME SQR_Test_10k_65
+
+#include "phist_gen_s.h"
+#include "QR_Test_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME DQR_Test_10k_65
+
+#include "phist_gen_d.h"
+#include "QR_Test_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CQR_Test_10k_65
+
+#include "phist_gen_c.h"
+#include "QR_Test_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZQR_Test_10k_65
+
+#include "phist_gen_z.h"
+#include "QR_Test_def.hpp"
+

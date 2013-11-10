@@ -52,6 +52,23 @@ virtual void TearDown()
   KernelTestWithType< ST >::TearDown();
   }
 
+// tolerance for tests depending on the vector length
+inline static MT releps(TYPE(const_mvec_ptr) V=NULL)
+  {
+  if (V==NULL) return std::sqrt((MT)_Nglob*mt::eps());
+  int nvec,ierr;
+  SUBR(mvec_num_vectors)(V,&nvec,&ierr);
+  MT nrms[nvec];
+  MT max_nrm=0;
+  SUBR(mvec_norm2)(V,nrms,&ierr);
+  for (int i=0;i<nvec;i++)
+    {
+    max_nrm = std::max(max_nrm,nrms[i]);
+    }
+  if (max_nrm<4*mt::eps()) max_nrm=mt::sqrt((MT)_Nglob);
+  return max_nrm*mt::eps();
+  }
+
 //! in-place reduction operation on scalar data type (for testing with MPI)
 static int global_sum(ST* value, int count, MPI_Comm mpi_comm)
   {

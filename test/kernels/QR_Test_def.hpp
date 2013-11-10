@@ -26,10 +26,6 @@ public:
           vec2_vp_[j*lda_+i] = vec1_vp_[j*lda_+i];
           }
         }
-//      PrintVector(*cout,"QR_Test V",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
-      SUBR(mvec_QR)(vec2_,mat1_,&ierr_);
-//      PrintVector(*cout,"QR_Test Q",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
-      ASSERT_EQ(0,ierr_);
       }
     }
 
@@ -43,22 +39,16 @@ public:
 
 };
 
-  // check if vectors are normalized correctly after QR factorization
-  TEST_F(CLASSNAME, normality) 
+  TEST_F(CLASSNAME, with_random_vectors) 
     {
     if (typeImplemented_)
       {
-      ASSERT_REAL_EQ(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_));
-      }
-    }
-
-
-  // check if vectors are mutually orthogonal after QR factorization
-  TEST_F(CLASSNAME, ortho) 
-    {
-    if (typeImplemented_)
-      {
-      ASSERT_REAL_EQ(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_));
+//      PrintVector(*cout,"QR_Test V",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+      SUBR(mvec_QR)(vec2_,mat1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+//      PrintVector(*cout,"QR_Test Q",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+      ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),releps(vec1_));
+      ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),releps(vec1_));
       }
     }
 
@@ -88,8 +78,8 @@ public:
       // check that the rank deficiency was detected
       ASSERT_EQ(1, ierr_);
       // check that we anyway got something orthogonal back
-      ASSERT_REAL_EQ(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_));
-      ASSERT_REAL_EQ(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_));
+      ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),releps(vec1_));
+      ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),releps(vec1_));
       }
     }
 

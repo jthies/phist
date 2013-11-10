@@ -26,8 +26,9 @@ opts.debug=true;
 % JD options
 opts.arnoldi=true; % start with Arnoldi?
 %opts.switchTol=1.0e-3;
-opts.numEigs=10;
-opts.maxIter=200;
+opts.numEigs=8;
+opts.target='LM';
+opts.maxIter=100;
 opts.tol=1.0e-6;
 opts.minSpace=10;
 opts.maxSpace=20;
@@ -62,6 +63,5 @@ v0=[1:n]'; %randn(n,k);
 v0=v0./norm(v0,2);
 
 disp('JDQR for exterior eig(s).');
-opts.target='SR';
 [D,V,Q,R]=jdqre(A,v0,opts);
 

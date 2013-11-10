@@ -862,7 +862,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,R,vR,*ierr);
   int rank;
-  MT rankTol=8*mt::eps();
+  MT rankTol=32*mt::eps();
   if (V->getNumVectors()==1)
     {
     // we need a special treatment here because TSQR
@@ -903,7 +903,12 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
 
   Teuchos::RCP<Traits< _ST_ >::Teuchos_sdMat_t> R_view
         = Traits< _ST_ >::CreateTeuchosViewNonConst(Teuchos::rcp(R,false),ierr);
-  if (*ierr) return;      
+  if (*ierr!=0) 
+    {
+    PHIST_OUT(PHIST_ERROR,"error code %d returned from CreateTeuchosViewNonConst (file %s, line %d)",__FILE__,__LINE__);
+    return;
+    }
+  
   
   Belos::TsqrOrthoManager< _ST_ , Traits< _ST_ >::mvec_t> tsqr("phist");
   Teuchos::RCP<const Teuchos::ParameterList> valid_params = 

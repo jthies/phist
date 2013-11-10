@@ -152,7 +152,10 @@ while (k<numEigs && it<=maxIter)
   %       function
   [S,T]=SortSchur(M,target);%m==mmax,mmin);
   if (debug)
-    disp('sorted Schur (upper k x k block)');
+    disp('projected matrix:');
+    M
+    disp(sprintf('sorted Schur (upper %d x %d block, actual size %d x %d)',...
+        min(m,10),min(m,10),m,m));
     T(1:min(m,numEigs),1:min(m,numEigs))
   end
   theta=T(1,1);

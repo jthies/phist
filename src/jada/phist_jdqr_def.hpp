@@ -104,6 +104,9 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   int i,it,m,mm;
   MT nrm[2]; // for computing residual norms
 
+  // set output format for floating point numbers
+  std::cout << std::scientific << std::setprecision(4) << std::setw(8);
+
   *num_iters=0;
   
   const_comm_ptr_t comm;
