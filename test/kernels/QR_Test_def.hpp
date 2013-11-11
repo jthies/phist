@@ -83,3 +83,29 @@ public:
       }
     }
 
+  TEST_F(CLASSNAME, with_one_vectors) 
+    {
+    if (typeImplemented_)
+      {
+      if (nvec_==1)
+        {
+        SUBR(mvec_put_value)(vec1_,st::zero(),&ierr_);
+      ASSERT_EQ(0,ierr_);
+        }
+      else
+        {
+        SUBR(mvec_put_value)(vec1_,st::one(),&ierr_);
+        ASSERT_EQ(0,ierr_);
+        }
+      SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      SUBR(mvec_QR)(vec2_,mat1_,&ierr_);
+      // check that the rank deficiency was detected
+      ASSERT_EQ(std::max(nvec_-1,1), ierr_);
+      // check that we anyway got something orthogonal back
+      ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),releps(vec1_));
+      ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),releps(vec1_));
+      }
+    }
+

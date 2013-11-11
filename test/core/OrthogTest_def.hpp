@@ -166,7 +166,7 @@ public:
 
       // now orthogonalize W against V. The result should be such that Q*R1=W-V*R2, Q'*Q=I,V'*Q=0
       SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&ierr_);
-      int dim0= k_;
+      int dim0= std::max(k_-1,1);
       ASSERT_EQ(dim0,ierr_);
       
       // check orthonormality of Q
