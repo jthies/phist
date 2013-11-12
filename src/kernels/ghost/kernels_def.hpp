@@ -740,6 +740,32 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(ghost_vec_t,R,vR,*ierr);
 
+  int rank;
+  MT rankTol=32*mt::eps();
+  if (V->getNumVectors()==1)
+    {
+    // we need a special treatment here because TSQR
+    // uses a relative tolerance to determine rank deficiency,
+    // so a single zero vector is not detected to be rank deficient.
+    MT nrm;
+    PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
+    ST* Rval = R->get1dViewNonConst().getRawPtr();
+    PHIST_DEB("single vector QR, R=%8.4f",nrm);
+    rank=1;
+    if (nrm<rankTol)
+      {
+      PHIST_DEB("zero vector detected");
+      // randomize the vector
+      PHIST_CHK_IERR(SUBR(mvec_random)(vV,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
+      rank=0;// dimension of null space
+      }
+    *Rval=(ST)nrm;
+    *ierr=1-rank;
+    return;
+    }
+
+  
   if (
   (V->traits->flags&GHOST_VEC_SCATTERED) ||
   (R->traits->flags&GHOST_VEC_SCATTERED))
@@ -776,6 +802,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp
         (new Teuchos::ParameterList(*valid_params));
   params->set("randomizeNullSpace",true);
+  params->set("relativeRankTol",rankTol);
   PHIST_DEB("set TSQR parameters");
   tsqr.setParameterList(params);
 
