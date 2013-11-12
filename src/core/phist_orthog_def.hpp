@@ -98,8 +98,8 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   PHIST_CHK_IERR((*ierr=(m==nrR2)?0:-1),*ierr);
   PHIST_CHK_IERR((*ierr=(k==ncR2)?0:-1),*ierr);
 
-  PHIST_DEB("orthog: V is %dx%d,  W is %dx%d\n"
-                        "       R1 is %dx%d, R2 is %dx%d\n",n,m,n,k,nrR1,ncR1,nrR2,ncR2);
+//  PHIST_DEB("orthog: V is %dx%d,  W is %dx%d\n"
+//                        "       R1 is %dx%d, R2 is %dx%d\n",n,m,n,k,nrR1,ncR1,nrR2,ncR2);
 #endif
 
   // compute the norms of the columns in W (for checking the result later)
