@@ -802,9 +802,9 @@ void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::mvec_t,W,vW,*ierr);
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,C,vC,*ierr);
-PHIST_DEB("V is %dx%d, W is %dx%d, C is %dx%d\n",V->getLocalLength(),V->getNumVectors(),
-                                                 W->getLocalLength(),W->getNumVectors(),
-                                                 C->getLocalLength(),C->getNumVectors());
+//PHIST_DEB("V is %dx%d, W is %dx%d, C is %dx%d\n",V->getLocalLength(),V->getNumVectors(),
+//                                                 W->getLocalLength(),W->getNumVectors(),
+//                                                 C->getLocalLength(),C->getNumVectors());
 #ifdef _IS_COMPLEX_
   _TRY_CATCH_(C->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS,alpha,*V,*W,beta),*ierr);
 #else
@@ -825,9 +825,9 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
   _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,C,vC,*ierr);
   _CAST_PTR_FROM_VOID_(Traits<_ST_>::mvec_t,W,vW,*ierr);
 
-PHIST_DEB("V is %dx%d, C is %dx%d, W is %dx%d\n",V->getLocalLength(),V->getNumVectors(),
-                                                 C->getLocalLength(),C->getNumVectors(),
-                                                 W->getLocalLength(),W->getNumVectors());
+//PHIST_DEB("V is %dx%d, C is %dx%d, W is %dx%d\n",V->getLocalLength(),V->getNumVectors(),
+//                                                 C->getLocalLength(),C->getNumVectors(),
+//                                                 W->getLocalLength(),W->getNumVectors());
   _TRY_CATCH_(W->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,
         alpha, *V, *C, beta), *ierr);
   }

@@ -69,12 +69,12 @@ PHIST_CHK_IERR(SUBR(mvec_num_vectors)(jadaOp->V,&ncV,ierr),*ierr);
 
 PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(jadaOp->sigma,&nrSig,ierr),*ierr);
 PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(jadaOp->sigma,&ncSig,ierr),*ierr);
-
+/*
 PHIST_DEB("X is %dx%d", nrX, ncX);
 PHIST_DEB("Y is %dx%d", nrY, ncY);
 PHIST_DEB("V is %dx%d", nrV, ncV);
 PHIST_DEB("sigma is %dx%d", nrSig, ncSig);
-
+*/
 #endif
 
   // Y = A*X - Y
