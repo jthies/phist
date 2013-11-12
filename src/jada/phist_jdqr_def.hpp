@@ -328,9 +328,9 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
     // copy T=M. Note that as we just 'view' the upper left blocks,
     // the pointers M_raw, T_raw, S_raw are still correct
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-1,0,m,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,m-1,0,m,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_get_block)(Mv,Tv,0,m-1,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-1,0,m-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,m-1,0,m-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_get_block)(Mv,Tv,0,m-1,0,m-1,ierr),*ierr);
 
     // if a restart is impending, shift the next <minBas> Ritz values
     // to the top left. Shift the next <nsort> of them to the 
@@ -427,7 +427,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(rtil_ptr,rtil_ptr,(ST*)nrm,ierr),*ierr);
     nrm[0]=mt::sqrt(nrm[0]*nrm[0]+nrm[1]*nrm[1]);
 //}
-    PHIST_OUT(PHIST_INFO,"JDQR Iter %d\tdim(V)=%d\ttheta=%8.4g%+8.4gi\t\tr_est=%8.4e\n",it,m+1,ct::real(theta),ct::imag(theta),nrm[0]);
+    PHIST_OUT(PHIST_INFO,"JDQR Iter %d\tdim(V)=%d\ttheta=%8.4g%+8.4gi\t\tr_est=%8.4e\n",it,m,ct::real(theta),ct::imag(theta),nrm[0]);
   // deflate converged eigenpairs
   while (nrm[0]<=tol)
     {
@@ -555,9 +555,9 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     m=minBas;
     
     //S=S(:,1:m);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m0-1,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m0-1,0,m-1,ierr),*ierr);
     //M=T(1:m,1:m);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-1,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-1,0,m-1,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_get_block)(T,Mv,0,m-1,0,m-1,ierr),*ierr);
     //V=V*S;
     mvec_ptr_t v_tmp=NULL;
