@@ -687,6 +687,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&R_raw,&ldR,ierr),*ierr);
 
   i=0;
+//TROET
+SUBR(sdMat_print)(R,ierr);
   while (i<nconv)
     {
     evals[i] = R_raw[i*ldR+i];
@@ -701,10 +703,17 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
         // case A11=A22 and the thing simplifies to im(lambda)=A12*A21.
         evals[i+1]=T_raw[i*ldR+i+1]*T_raw[(i+1)*ldR+i];
         is_cmplx[i+1]=1;
+        PHIST_DEB("returning ev[%d]=%8.4g%+8.4gi",i,evals[i],evals[i+1]);
         i++;
+        }
+      else
+        {
+        PHIST_DEB("returning ev[%d]=%8.4g",i,evals[i]);
+        is_cmplx[i]=0;
         }
       }
 #else
+    PHIST_DEB("returning ev[%d]=%8.4g%+8.4gi",i,st::real(evals[i]),st::imag(evals[i]));
     TOUCH(is_cmplx);
 #endif    
     i++;
