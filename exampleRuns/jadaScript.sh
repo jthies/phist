@@ -1,6 +1,7 @@
 #!/bin/bash -x
-DRIVER=Zjdqr
-MATFILE=ZjadaTestMat.mm
+SCALAR=Z
+DRIVER=${SCALAR}jdqr
+MATFILE=${SCALAR}jadaTestMat.mm
 # we look for 10 eigenpairs
 NEIG=10
 # at the right-most side of the spectrum
