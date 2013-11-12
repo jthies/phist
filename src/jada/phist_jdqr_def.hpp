@@ -62,12 +62,13 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   mvec_ptr_t t=NULL;
   // some more (single) vectors we need:
   mvec_ptr_t u=NULL, Au=NULL, r=NULL, rtil=NULL;
+#ifndef _IS_COMPLEX_
   // the above vectors may be complex even for a real   
   // matrix. These are the first columns to be used for 
   // real eigenvectors                                  
   // (in the complex case x_r aliases x and x_i==NULL). 
   mvec_ptr_t    u_r=NULL, Au_r=NULL, r_r=NULL, rtil_r=NULL, t_r=NULL;
-
+#endif
   // these point either to u or u_r etc. to make live simpler further down
   mvec_ptr_t u_ptr=NULL, Au_ptr=NULL, r_ptr=NULL, rtil_ptr=NULL,t_ptr=NULL;
   // Q*s (temporary vector)
@@ -129,12 +130,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(mvec_create)(&rtil,A_op->domain_map,nv_max,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_create)(&t,A_op->domain_map,nv_max,ierr),*ierr);
   
-  u_r=u;
-  Au_r=Au;
-  r_r=r;
-  rtil_r=rtil;
-  t_r=t;
-
 #ifndef _IS_COMPLEX_
   u_r=NULL;
   PHIST_CHK_IERR(SUBR(mvec_view_block)(u,&u_r,0,0,ierr),*ierr);
@@ -218,7 +213,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
   it=0; // total number of JaDa iterations
   mm=0; //count iterations per eigenvalue/pair of complex ev's
-  m=minBas-1;// location of last valid vector in V
+  m=minBas; // number of vectors in current basis V
   expand=0;
   int nv=1; // number of vectors in current update (1 or 2 in this implementation, 2 for
             // complex eigenvectors of a real matrix)
@@ -237,61 +232,67 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       
       // V temporarily gets extra storage to store [V Q] for the orthogonalization
       int ncVQ=m0+nconv;// number of columns of [V,Q]
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,ncVQ,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m0,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vm,m0+1,m,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVm,m0+1,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,ncVQ-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m0-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vm,m0,m-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVm,m0,m-1,ierr),*ierr);
       // orthogonalize t against V(:,0:m-1) and the converged eigenspace Q.
       // We use T and S as temporary storage here
       PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,nv-1,0,nv-1,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,ncVQ,0,nv-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,ncVQ-1,0,nv-1,ierr),*ierr);
       if (nconv>0)
         {
-        PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,Qv,m0+1,ncVQ,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,Qv,m0,ncVQ-1,ierr),*ierr);
         }
       PHIST_CHK_NEG_IERR(SUBR(orthog)(Vv,t_ptr,Tv,Sv,3,ierr),*ierr);
       // reset the view of V without the Q.
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m0,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m0-1,ierr),*ierr);
       
       // set V(:,m)=t
-      PHIST_CHK_IERR(SUBR(mvec_set_block)(V,t,m0+1,m,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_set_block)(V,t,m0,m-1,ierr),*ierr);
       // compute AV(:,m) = A*V(:,m)
       PHIST_CHK_IERR(A_op->apply(st::one(),A_op->A,Vm,st::zero(),AVm,ierr),*ierr);
       // Galerkin for non-Hermitian A
       // TODO - is it maybe more efficient to just compute V'AV completely? It
       //        means more ops and more data transfer but fewer messages.
       // M(1:m-1,m)=V(:,1:m-1)'*AV(:,m);
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m0,m0+1,m,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m0-1,m0,m-1,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,AVm,st::zero(),Mv,ierr),*ierr);
       // M(m,1:m-1)=V(:,m)'*AV(:,1:m-1);
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,m0+1,m,0,m0,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,m0,m-1,0,m0-1,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vm,AVv,st::zero(),Mv,ierr),*ierr);
       // M(m,m)=V(:,m)'*AV(:,m) note that we could do this using a dot product in the
       // single-vector case, but we want to extend it to a block variant so we use the more
       // general dense matmul.
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,m0+1,m,m0+1,m,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,m0,m-1,m0,m-1,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vm,AVm,st::zero(),Mv,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,ierr),*ierr);
       PHIST_DEB("basis size is now m=%d",m+1);
 #ifdef TESTING
       // check orthogonality of [V Q]
       sdMat_ptr_t tmp1=NULL,tmp2=NULL;
       ST *tmp1_raw, *tmp2_raw;
       int ld1,ld2;
-      PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp1,m+1,m+1,NULL,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp1,m,m,NULL,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(sdMat_extract_view)(tmp1,&tmp1_raw,&ld1,ierr),*ierr);
+        int ncV;
+        PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Vv,&ncV,ierr),*ierr);
+        PHIST_OUT(PHIST_VERBOSE,"#vectors in V: %d",ncV);
       PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,Vv,st::zero(),tmp1,ierr),*ierr);
       if (nconv>0)
         {
-        PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp2,m+1,nconv,NULL,ierr),*ierr);
+        int ncQ;
+        PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Qv,&ncQ,ierr),*ierr);
+        PHIST_OUT(PHIST_VERBOSE,"#vectors in Q: %d",ncQ);
+        PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp2,m,nconv,NULL,ierr),*ierr);
         PHIST_CHK_IERR(SUBR(sdMat_extract_view)(tmp2,&tmp2_raw,&ld2,ierr),*ierr);
         PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,Qv,st::zero(),tmp2,ierr),*ierr);
         }
       MT err1=mt::zero(), err2=mt::zero();
-      for (int i=0;i<=m;i++)
+      for (int i=0;i<m;i++)
         {
-        for (int j=0;j<=m;j++)
+        for (int j=0;j<m;j++)
           {
           if (i!=j)
             {
@@ -327,9 +328,9 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
     // copy T=M. Note that as we just 'view' the upper left blocks,
     // the pointers M_raw, T_raw, S_raw are still correct
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m,0,m,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,m,0,m,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_get_block)(Mv,Tv,0,m,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-1,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,m-1,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_get_block)(Mv,Tv,0,m-1,0,m,ierr),*ierr);
 
     // if a restart is impending, shift the next <minBas> Ritz values
     // to the top left. Shift the next <nsort> of them to the 
@@ -387,7 +388,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
     // get Ritz vector corresponding to theta
     // (for complex RV in real case, two columns are extracted)
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m,0,nv-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m-1,0,nv-1,ierr),*ierr);
     //u=V*s;
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),u_ptr,ierr),*ierr);
     //Au=AV*s;
@@ -464,25 +465,26 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       }
 
     //S=S(:,2:m); (select remaining Ritz vectors)
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m,nv,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m-1,nv,m,ierr),*ierr);
     //M=T(2:m,2:m);
     // let Mblock point to the first m-nv x m-nv block of M
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-nv,0,m-nv,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-nv-1,0,m-nv-1,ierr),*ierr);
     // copy T(nv+1:m,nv+1:m) into it
-    PHIST_CHK_IERR(SUBR(sdMat_get_block)(T,Mv,nv,m,nv,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_get_block)(T,Mv,nv,m-1,nv,m-1,ierr),*ierr);
+    int m0=m;
     m=m-nv;
     it=it-1;
     //V=V*S;
     // It is not allowed to alias V in mvec_times_sdMat, so we use a temporary vector
     mvec_ptr_t v_tmp=NULL;
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v_tmp,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v_tmp,0,m0-1,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),v_tmp,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,v_tmp,0,m,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,v_tmp,0,m0-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,ierr),*ierr);
     //AV=AV*S;
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),AVv,Sv,st::zero(),v_tmp,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(AVv,v_tmp,0,m,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(AVv,v_tmp,0,m0-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,ierr),*ierr);
 
     //u=V(:,1);
     PHIST_CHK_IERR(SUBR(mvec_get_block)(Vv,u_ptr,0,nv-1,ierr),*ierr);
@@ -538,38 +540,38 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     nselect=m;
     nsort=nselect;
     // set T=M
-    PHIST_CHK_IERR(SUBR(sdMat_set_block)(T,Mv,0,m,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_set_block)(T,Mv,0,m-1,0,m-1,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(SchurDecomp)
         (T_raw,ldT,S_raw,ldS,m,nselect,nsort,which,ev,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,m,0,m,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,m-1,0,m-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m-1,0,m-1,ierr),*ierr);
     } //while (deflate)
 
   // restart if necessary
-  if (m>=maxBas-1)
+  if (m>=maxBas)
     {
     PHIST_OUT(PHIST_VERBOSE,"restart JDQR");
     int m0=m;
-    m=minBas-1;
+    m=minBas;
     
     //S=S(:,1:m);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m0,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m0-1,0,m,ierr),*ierr);
     //M=T(1:m,1:m);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m,0,m,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_get_block)(T,Mv,0,m,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-1,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_get_block)(T,Mv,0,m-1,0,m-1,ierr),*ierr);
     //V=V*S;
     mvec_ptr_t v_tmp=NULL;
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v_tmp,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v_tmp,0,m-1,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),v_tmp,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,v_tmp,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,v_tmp,0,m-1,ierr),*ierr);
     //AV=AV*S;
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),AVv,Sv,st::zero(),v_tmp,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(AVv,v_tmp,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(AVv,v_tmp,0,m-1,ierr),*ierr);
 
     //V=V(:,1:mmin);
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,ierr),*ierr);
     //AV=AV(:,1:mmin);
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,ierr),*ierr);
     solve=true;
     expand=nv;
     }
@@ -626,7 +628,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
     // 1/2^mm, but at most the outer tol as conv tol for GMRES
     MT innerTol = std::max(tol,mt::one()/((MT)(2<<mm)));
-    PHIST_OUT(1,"inner conv tol: %g",innerTol);
+    PHIST_OUT(PHIST_VERBOSE,"inner conv tol: %g",innerTol);
 
     // allow at most 25 iterations (TODO: make these settings available to the user)
     int nIt=25;
