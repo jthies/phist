@@ -81,7 +81,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
   // for extracting views of M, T and S (to call lapack etc.)
   int ldM,ldS,ldT;
-  ST *M_raw, *S_raw, *T_raw; 
+  ST *M_raw, *S_raw, *T_raw;
   
   //! view of certain columns of V
   mvec_ptr_t Vv=NULL, Vm=NULL;
@@ -274,6 +274,48 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m,ierr),*ierr);
       PHIST_DEB("basis size is now m=%d",m+1);
+#ifdef TESTING
+      // check orthogonality of [V Q]
+      sdMat_ptr_t tmp1=NULL,tmp2=NULL;
+      ST *tmp1_raw, *tmp2_raw;
+      int ld1,ld2;
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp1,m+1,m+1,NULL,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_extract_view)(tmp1,&tmp1_raw,&ld1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,Vv,st::zero(),tmp1,ierr),*ierr);
+      if (nconv>0)
+        {
+        PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp2,m+1,nconv,NULL,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(sdMat_extract_view)(tmp2,&tmp2_raw,&ld2,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,Qv,st::zero(),tmp2,ierr),*ierr);
+        }
+      MT err1=mt::zero(), err2=mt::zero();
+      for (int i=0;i<=m;i++)
+        {
+        for (int j=0;j<=m;j++)
+          {
+          if (i!=j)
+            {
+            err1+=std::abs(tmp1_raw[j*ld1+i]);
+            }
+          }
+        err1+=mt::one()-std::abs(tmp1_raw[i*ld1+i]);// diagonal element should be 1
+        if (nconv>0)
+          {
+          for (int j=0;j<nconv;j++)
+            {
+            err2+=std::abs(tmp2_raw[j*ld2+i]);
+            }
+          }
+        }
+      PHIST_OUT(PHIST_VERBOSE,"orthogonality monitors:");
+      PHIST_OUT(PHIST_VERBOSE,"||V'V-I||=%e",err1);
+      PHIST_OUT(PHIST_VERBOSE,"||V'Q||=%e",err2);
+      PHIST_CHK_IERR(SUBR(sdMat_delete)(tmp1,ierr),*ierr);
+      if (nconv>0)
+        {
+        PHIST_CHK_IERR(SUBR(sdMat_delete)(tmp2,ierr),*ierr);
+        }
+#endif
       }
     else
       {
@@ -384,7 +426,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(rtil_ptr,rtil_ptr,(ST*)nrm,ierr),*ierr);
     nrm[0]=mt::sqrt(nrm[0]*nrm[0]+nrm[1]*nrm[1]);
 //}
-    PHIST_OUT(PHIST_INFO,"JDQR Iter %d\tdim(V)=%d\ttheta=%8.4g%+8.4gi\t\tr_est=%8.4g\n",it,m+1,ct::real(theta),ct::imag(theta),nrm[0]);
+    PHIST_OUT(PHIST_INFO,"JDQR Iter %d\tdim(V)=%d\ttheta=%8.4g%+8.4gi\t\tr_est=%8.4e\n",it,m+1,ct::real(theta),ct::imag(theta),nrm[0]);
   // deflate converged eigenpairs
   while (nrm[0]<=tol)
     {
