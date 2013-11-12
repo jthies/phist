@@ -1,5 +1,6 @@
 #include "phist_tools.h"
 #include "phist_macros.h"
+#include "phist_enums.h"
 
 
 const char* phist_retcode2str(int code)
@@ -12,3 +13,8 @@ const char* phist_retcode2str(int code)
   return "unknown error";
   }
 
+const char* eigSort2str(eigSort_t s)
+  {
+  return s==LM?"LM":s==SM?"SM":s==LR?"LR":s==SR?"SR":s==NONE?"none":"unknown eigsort_t";
+  }
+      

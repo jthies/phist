@@ -24,6 +24,19 @@ typedef TYPE(const_crsMat_ptr) const_crsMat_ptr_t;
 typedef TYPE(op_ptr) op_ptr_t;
 typedef TYPE(const_op_ptr) const_op_ptr_t;
 
+// JDQR reads an input matrix and tries to compute a given number of            
+// exterior eigenpairs at either end of the spectrum. Input parameters          
+// are (in this order on the command line)                                      
+//                                                                              
+// <matrix file name> :  a .mm or .bin file (matrix market or ghost binary CRS) 
+// <num eigs>         : number of desired eigenpairs [10]                       
+// <which>            : can be "LM", "SM", "LR" or "SR" (Largest/Smallest       
+//                      Magnitude/Real part) ["LM"]                             
+// <tol>              : convergence tolerance [1.0e-10]                         
+// <max iters>        : maximum number of iterations allowed [250]              
+// <minBas>           : number of vectors to keep in the basis upon restart [10]
+// <maxBas>           : number of vectors to generate before restarting         
+//                      [minBas+20]                                             
 int main(int argc, char** argv)
   {
   int rank, num_proc;
@@ -91,7 +104,11 @@ int main(int argc, char** argv)
     else if (!strcmp(argv[3],"SR")) which=SR;
     else
       {
-      if (verbose) fprintf(stderr,"ERROR: the which parameter may be \"LM\",\"SM\",\"LR\" or \"SR\"\n");
+      if (verbose) 
+        {
+        fprintf(stderr,"ERROR: the which parameter may be \"LM\",\"SM\",\"LR\" or \"SR\".\n");
+        fprintf(stderr,"       run the program without args to get a usage message.\n");
+        }
       return -1;
       }
     }

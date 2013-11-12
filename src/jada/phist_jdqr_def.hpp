@@ -171,6 +171,19 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,minBas,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&H0, 0,minBas,0,minBas-1,ierr),*ierr);
 
+  // print parameters passed in to the method
+  PHIST_OUT(PHIST_VERBOSE,"====================");
+  PHIST_OUT(PHIST_VERBOSE,"| JDQR parameters  |");
+  PHIST_OUT(PHIST_VERBOSE,"====================");
+  PHIST_OUT(PHIST_VERBOSE,"#eigs\t%d",*num_eigs);
+  PHIST_OUT(PHIST_VERBOSE,"which\t%s",eigSort2str(which));
+  PHIST_OUT(PHIST_VERBOSE,"tol\t%4.2g",tol);
+  PHIST_OUT(PHIST_VERBOSE,"#iter\t%d",maxIter);
+  PHIST_OUT(PHIST_VERBOSE,"minBas\t%d",minBas);
+  PHIST_OUT(PHIST_VERBOSE,"maxBas\t%d",maxBas);
+  PHIST_OUT(PHIST_VERBOSE,"====================");
+
+
   PHIST_OUT(1,"%d steps of Arnoldi as start-up",minBas);
   
   // start by filling the first minBas vectors using Arnoldi

@@ -11,4 +11,12 @@ SR=4   // smallest real part
 
 } eigSort_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+// defined in phist_tools.c
+const char* eigSort2str(eigSort_t s);
+#ifdef __cplusplus
+}
+#endif
 #endif
