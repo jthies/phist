@@ -49,8 +49,8 @@
 #undef IMAG
 #endif
 
-#ifdef _IS_COMPLEX_
-#undef _IS_COMPLEX_
+#ifdef IS_COMPLEX
+#undef IS_COMPLEX
 #endif
 
 #ifdef _IS_DOUBLE_

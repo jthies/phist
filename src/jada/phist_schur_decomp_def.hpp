@@ -44,7 +44,7 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
   ST work[lwork];
 
   MT ev_r[m];   // in the complex case this is used as RWORK
-#ifndef _IS_COMPLEX_
+#ifndef IS_COMPLEX
   // real and imag part of ritz values
   MT ev_i[m];
 #endif
@@ -62,7 +62,7 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
 
   PHIST_DEB("m=%d, nselect=%d, nsort=%d",m,nselect,nsort);
 
-#ifdef _IS_COMPLEX_
+#ifdef IS_COMPLEX
   PHIST_DEB("call complex %cGEES",st::type_char());
   PHIST_CHK_IERR(PREFIX(GEES)(jobvs,sort,NULL,&m,(blas_cmplx_t*)T,&ldT,
          &sdim,(blas_cmplx_t*)ev,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)work,&lwork,ev_r,NULL,ierr),*ierr);
@@ -115,7 +115,7 @@ for (int i=0;i<m;i++)
   MT S_cond;
   MT sep;
 
-#ifndef _IS_COMPLEX_
+#ifndef IS_COMPLEX
   int liwork=m*m;
   int iwork[liwork];
 #endif  
@@ -128,7 +128,7 @@ for (int i=0;i<m;i++)
       {
       select[std::abs(idx[i])]=1;
       }
-#ifdef _IS_COMPLEX_
+#ifdef IS_COMPLEX
     PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)ev,&nsorted,
           &S_cond, &sep, (blas_cmplx_t*)work, &lwork, ierr),*ierr);
 #else
@@ -160,7 +160,7 @@ for (int i=0;i<m;i++)
                                    // SortEig misses an offset i because
                                    // we pass in ev+i
      int nsorted_before=nsorted;
-#ifdef _IS_COMPLEX_
+#ifdef IS_COMPLEX
      PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,
         (blas_cmplx_t*)ev,&nsorted,&S_cond, &sep, (blas_cmplx_t*)work, &lwork, ierr),*ierr);
 #else

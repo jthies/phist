@@ -805,7 +805,7 @@ void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
 //PHIST_DEB("V is %dx%d, W is %dx%d, C is %dx%d\n",V->getLocalLength(),V->getNumVectors(),
 //                                                 W->getLocalLength(),W->getNumVectors(),
 //                                                 C->getLocalLength(),C->getNumVectors());
-#ifdef _IS_COMPLEX_
+#ifdef IS_COMPLEX
   _TRY_CATCH_(C->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS,alpha,*V,*W,beta),*ierr);
 #else
   _TRY_CATCH_(C->multiply(Teuchos::TRANS, Teuchos::NO_TRANS,alpha,*V,*W,beta),*ierr);

@@ -677,7 +677,7 @@ void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE(const_mvec
   _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
   _CAST_PTR_FROM_VOID_(ghost_vec_t,W,vW,*ierr);
   _CAST_PTR_FROM_VOID_(ghost_vec_t,C,vC,*ierr);
-#ifdef _IS_COMPLEX_
+#ifdef IS_COMPLEX
   char trans[]="C";
 #else
   char trans[]="T";
@@ -735,6 +735,7 @@ void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
 //! remaining columns form a basis for the null space.  
 void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   {
+#include "phist_std_typedefs.hpp"  
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
@@ -742,14 +743,16 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
 
   int rank;
   MT rankTol=32*mt::eps();
-  if (V->getNumVectors()==1)
+  if (V->traits->nvecs==1)
     {
     // we need a special treatment here because TSQR
     // uses a relative tolerance to determine rank deficiency,
     // so a single zero vector is not detected to be rank deficient.
     MT nrm;
     PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
-    ST* Rval = R->get1dViewNonConst().getRawPtr();
+    ST* Rval=NULL;
+    int ldR;
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(vR,&Rval,&ldR,ierr),*ierr);
     PHIST_DEB("single vector QR, R=%8.4f",nrm);
     rank=1;
     if (nrm<rankTol)
@@ -806,7 +809,6 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   PHIST_DEB("set TSQR parameters");
   tsqr.setParameterList(params);
 
-  int rank;
   _TRY_CATCH_(rank = tsqr.normalize(mv_V,R_view),*ierr);
   PHIST_DEB("V has %d columns and rank %d",ncols,rank);
   *ierr = ncols-rank;// return positive number if rank not full.

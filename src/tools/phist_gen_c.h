@@ -1,7 +1,7 @@
 #include "phist_gen_pre.h"
 
 
-#define _IS_COMPLEX_
+#define IS_COMPLEX
 #define _ST_ s_complex_t
 
 // C++ users should use the class phist::ScalarTraits and

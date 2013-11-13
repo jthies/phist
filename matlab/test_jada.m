@@ -3,7 +3,7 @@ setpath;
 %for debugging - make results reproducible
 rand('seed',77);
 randn('seed',42);
-complex=1;
+complex=0;
 
 nx=8;
 A=make_testmat(nx);
@@ -20,16 +20,16 @@ end
 %A=A+A'+2*speye(n);
 %A2=A2+A2'+2*speye(n);
 
-opts.verbose=true;
-opts.debug=true;
+opts.verbose=false;
+opts.debug=false;
 
 % JD options
 opts.arnoldi=true; % start with Arnoldi?
 %opts.switchTol=1.0e-3;
-opts.numEigs=8;
-opts.target='LM';
-opts.maxIter=100;
-opts.tol=1.0e-6;
+opts.numEigs=10;
+opts.target='SR';
+opts.maxIter=250;
+opts.tol=100*eps; %1.0e-6;
 opts.minSpace=10;
 opts.maxSpace=20;
 

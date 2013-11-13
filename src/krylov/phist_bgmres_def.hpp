@@ -127,7 +127,7 @@ try {
     if (result!=Belos::Converged) *ierr=1;
   } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,status);
 
-  if (!status) *ierr=_PHIST_CAUGHT_EXCEPTION_; 
+  if (!status) *ierr=PHIST_CAUGHT_EXCEPTION; 
   return;
   }// end of bgmres
 

@@ -27,7 +27,7 @@
 // additional things for the C interfaces
 #ifndef __cplusplus
 
-#ifndef _IS_COMPLEX_
+#ifndef IS_COMPLEX
 #define CONJ(x) x
 #define REAL(x) x
 #define IMAG(x) ZERO

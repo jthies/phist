@@ -6,7 +6,7 @@
 #define _ST_ d_complex_t
 
 #define _IS_DOUBLE_
-#define _IS_COMPLEX_
+#define IS_COMPLEX
 
 // C++ users should use the class phist::ScalarTraits and
 // phist_std_typedefs.hpp for all of this:

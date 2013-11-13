@@ -5,11 +5,11 @@
 
 const char* phist_retcode2str(int code)
   {
-  if (code==_PHIST_SUCCESS_) return "success";
-  else if (code==_PHIST_FUNCTIONAL_ERROR_) return "functional error";
-  else if (code==_PHIST_CAUGHT_EXCEPTION_) return "caught exception";
-  else if (code==_PHIST_BAD_CAST_) return "bad cast or NULL pointer";
-  else if (code==_PHIST_NOT_IMPLEMENTED_) return "not implemented";
+  if (code==PHIST_SUCCESS) return "success";
+  else if (code==PHIST_FUNCTIONAL_ERROR) return "functional error";
+  else if (code==PHIST_CAUGHT_EXCEPTION) return "caught exception";
+  else if (code==PHIST_BAD_CAST) return "bad cast or NULL pointer";
+  else if (code==PHIST_NOT_IMPLEMENTED) return "not implemented";
   return "unknown error";
   }
 

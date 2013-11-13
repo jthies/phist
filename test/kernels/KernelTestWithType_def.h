@@ -27,7 +27,7 @@ verbose_=ghost_getRank(MPI_COMM_WORLD)==0;
 if (verbose_ && false)
   {
   std::cout << "data type: ";
-#ifdef _IS_COMPLEX_
+#ifdef IS_COMPLEX
   std::cout << " complex ";
 #else
   std::cout << " real ";

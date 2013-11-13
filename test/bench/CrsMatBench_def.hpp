@@ -42,7 +42,7 @@ int read_mat(const char* filebase,TYPE(crsMat_ptr) *ptr)
   *ptr = NULL;
   char mmfile[256],hbfile[256],binfile[256];
   sprintf(mmfile,"%s.mm",filebase);
-#ifdef _IS_COMPLEX_
+#ifdef IS_COMPLEX
   sprintf(hbfile,"%s.cua",filebase);
 #else  
   sprintf(hbfile,"%s.rua",filebase);

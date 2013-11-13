@@ -62,7 +62,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   mvec_ptr_t t=NULL;
   // some more (single) vectors we need:
   mvec_ptr_t u=NULL, Au=NULL, r=NULL, rtil=NULL;
-#ifndef _IS_COMPLEX_
+#ifndef IS_COMPLEX
   // the above vectors may be complex even for a real   
   // matrix. These are the first columns to be used for 
   // real eigenvectors                                  
@@ -113,7 +113,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   const_comm_ptr_t comm;
   PHIST_CHK_IERR(phist_map_get_comm(A_op->range_map,&comm,ierr),*ierr);
 
-#ifdef _IS_COMPLEX_
+#ifdef IS_COMPLEX
   const int nv_max=1;
 #else
   const int nv_max=2;
@@ -136,7 +136,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(mvec_create)(&t,A_op->domain_map,nv_max,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&shift,nv_max,nv_max,NULL,ierr),*ierr);
   
-#ifndef _IS_COMPLEX_
+#ifndef IS_COMPLEX
   PHIST_CHK_IERR(SUBR(mvec_view_block)(u,&u_r,0,0,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_view_block)(Au,&Au_r,0,0,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_view_block)(r,&r_r,0,0,ierr),*ierr);
@@ -191,7 +191,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_DEB("initial H (by Arnoldi)");
   PHIST_CHK_IERR(SUBR(sdMat_print)(H0,ierr),*ierr);
 #endif
-  // delete the view (not the data) v0
+  // delete the views (not the data) v0 and H0
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(H0,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_delete)(v0,ierr),*ierr);
   v0=NULL; // always important to nullify pointers in phist...
   PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,minBas-1,ierr),*ierr);
@@ -364,7 +365,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     rtil_ptr=rtil;
     t_ptr=t;
     shift_ptr=shift;
-#ifndef _IS_COMPLEX_
+#ifndef IS_COMPLEX
     if (mt::abs(ct::imag(theta))>mt::eps())
       {
       PHIST_DEB("complex eigenvalue in real arithmetic");
@@ -500,7 +501,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
                 // TODO: we would have to add it ot Q anyway, wouldn't we?
     theta=ev[ev_pos];
     nv=1;
-#ifndef _IS_COMPLEX_
+#ifndef IS_COMPLEX
     if (mt::abs(ct::imag(theta))>mt::eps())
       {
       nv++;
@@ -586,7 +587,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     //AV=AV*S;
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),AVv,Sv,st::zero(),v_tmp,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_set_block)(AVv,v_tmp,0,m-1,ierr),*ierr);
-
+    PHIST_CHK_IERR(SUBR(mvec_delete)(v_tmp,ierr),*ierr);
     //V=V(:,1:mmin);
     PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,ierr),*ierr);
     //AV=AV(:,1:mmin);
@@ -606,7 +607,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     //Qtil=[Q,u];
     PHIST_CHK_IERR(SUBR(mvec_view_block)(X,&Qtil,0,nconv+nv-1,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_set_block)(Qtil,u_ptr,nconv,nconv+nv-1,ierr),*ierr);
-#ifdef _IS_COMPLEX_
+#ifdef IS_COMPLEX
     PHIST_CHK_IERR(SUBR(sdMat_put_value)(shift_ptr,theta,ierr),*ierr);
 #else
     PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),Theta,st::zero(),shift_ptr,ierr),*ierr);
@@ -680,49 +681,68 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   nconv = std::min(*num_eigs+1,nconv);
   *num_eigs=nconv;// tell the user how many we return
   
-  // copy at most num_eigs+1 converged eigenvalues into the user
-  // provided array
-  ST* R_raw=NULL;
-  lidx_t ldR;
-  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&R_raw,&ldR,ierr),*ierr);
-  i=0;
-  while (i<nconv)
+  if (nconv>0)
     {
-    evals[i] = R_raw[i*ldR+i];
-#ifndef _IS_COMPLEX_
-    if (i<nconv-1)
+    // copy at most num_eigs+1 converged eigenvalues into the user
+    // provided array
+    ST* R_raw=NULL;
+    lidx_t ldR;
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&R_raw,&ldR,ierr),*ierr);
+    i=0;
+    while (i<nconv)
       {
-      if (st::abs(R_raw[i*ldR+i+1])>mt::eps())
+      evals[i] = R_raw[i*ldR+i];
+#ifndef IS_COMPLEX
+      if (i<nconv-1)
         {
-        is_cmplx[i]=1;
-        // sqrt((T^2)/4-D) gives the imaginary part of the eigenpair of
-        // a 2x2 matrix, with T the trace and D the determinant. In our
-        // case A11=A22 => im(lambda)=im(sqrt(A12*A21))
-        evals[i+1]=st::sqrt(-R_raw[i*ldR+i+1]*R_raw[(i+1)*ldR+i]);
-        is_cmplx[i+1]=1;
-        i++;
+        if (st::abs(R_raw[i*ldR+i+1])>mt::eps())
+          {
+          is_cmplx[i]=1;
+          // sqrt((T^2)/4-D) gives the imaginary part of the eigenpair of
+          // a 2x2 matrix, with T the trace and D the determinant. In our
+          // case A11=A22 => im(lambda)=im(sqrt(A12*A21))
+          evals[i+1]=st::sqrt(-R_raw[i*ldR+i+1]*R_raw[(i+1)*ldR+i]);
+          is_cmplx[i+1]=1;
+          i++;
+          }
+        else
+          {
+          is_cmplx[i]=0;
+          }
         }
       else
         {
         is_cmplx[i]=0;
         }
-      }
-    else
-      {
-      is_cmplx[i]=0;
-      }
 #else
-    TOUCH(is_cmplx);
+      TOUCH(is_cmplx);
 #endif    
-    i++;
-    }
+      i++;
+      }
   
-  // TODO - compute eigenvectors 
-  // * Jordan decomposition: R*S = S*J, with J in Jordan form (diagonal with possibly a 1 on 
-  // the super diagonal and the eigenvalues on the diagonal)
-  // * X = Q*S
-  // (which LAPACK routines? XTREVC to get eigenvectors?)
-  PHIST_OUT(PHIST_WARNING,"warning: returning only a basis of the computed eigenspace");
+    // compute eigenvectors. Given the Schur form R, first compute all its 
+    // eigenvectors in S. Then compute the eigenvectors of A as Q*S.
+    const char* side="R";
+    const char* howmny="A";
+    int m_out;
+    MT* work=new MT[5*nconv];
+#ifdef IS_COMPLEX
+    MT* rwork = work+4*nconv;
+    PHIST_CHK_IERR(PREFIX(TREVC)(side, howmny, NULL, &nconv, (const mt::blas_cmplx_t*)R_raw, &ldR, 
+    NULL, &ldS, (mt::blas_cmplx_t*)S_raw, &ldS, &nconv, &m_out, (mt::blas_cmplx_t*)work, 
+    rwork, ierr),*ierr);
+#else
+    PHIST_CHK_IERR(PREFIX(TREVC)(side, howmny, NULL, &nconv,R_raw, &ldR, 
+        NULL, &ldS, S_raw, &ldS, &nconv, &m_out, work, ierr),*ierr);
+#endif  
+    delete [] work;
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,nconv-1,0,nconv-1,ierr),*ierr);
+    TYPE(mvec_ptr) Qcopy=NULL;
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&Qcopy,0,nconv-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),Qv,st::zero(),Qcopy,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Qcopy,Sv,st::zero(),Qv,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(Qcopy,ierr),*ierr);
+    }// any eigenpairs converged?
 
   // free memory
   PHIST_CHK_IERR(SUBR(mvec_delete)(V,ierr),*ierr);
@@ -738,9 +758,30 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(sdMat_delete)(S,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_delete)(T,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_delete)(R,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(shift,ierr),*ierr);
   
-  // TODO - we should also call delete for the views to avoid small memory leaks
+  // we also call delete for the views to avoid small memory leaks
+#ifndef IS_COMPLEX
+  PHIST_CHK_IERR(SUBR(mvec_delete)(u_r,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Au_r,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(r_r,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(rtil_r,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(t_r,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(shift_r,ierr),*ierr);
+#endif
+
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Vv,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(AVv, ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Vm,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(AVm, ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Qv, ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Qtil, ierr),*ierr);
   
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(Mv, ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(Tv, ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(Sv, ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(Theta, ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(atilv, ierr),*ierr);
   return;
   }
 

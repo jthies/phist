@@ -136,7 +136,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
       char mmfile[256],hbfile[256],binfile[256];
       char tpc = tolower(st::type_char());
       sprintf(mmfile,"%c_%s%d.mm",tpc,filebase,nglob_);
-#ifdef _IS_COMPLEX_
+#ifdef IS_COMPLEX
       sprintf(hbfile,"%c_%s%d.cua",tpc,filebase,nglob_);
 #else
       sprintf(hbfile,"%c_%s%d.rua",tpc,filebase,nglob_);
@@ -144,9 +144,9 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
       sprintf(binfile,"%c_%s%d.bin",tpc,filebase,nglob_);
 
       SUBR(crsMat_read_mm)(ptr,mmfile,&ierr_);
-      if (ierr_!=_PHIST_SUCCESS_)
+      if (ierr_!=PHIST_SUCCESS)
         SUBR(crsMat_read_hb)(ptr,hbfile,&ierr_);
-      if (ierr_!=_PHIST_SUCCESS_)
+      if (ierr_!=PHIST_SUCCESS)
         SUBR(crsMat_read_bin)(ptr,binfile,&ierr_);
       return ierr_;
     }

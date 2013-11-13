@@ -198,25 +198,40 @@ int main(int argc, char** argv)
     fprintf(stdout,"Found %d eigenpairs after %d iterations\n",num_eigs,num_iters);
     }
 
+  MT expRes[MIN(num_eigs,1)];
+
+  if (num_eigs>0)
+    {
+    // compute residuals explicitly
+    TYPE(mvec_ptr) R=NULL,Xv=NULL;
+    PHIST_ICHK_IERR(SUBR(mvec_create)(&R,map,num_eigs,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_view_block)(X,&Xv,0,num_eigs-1,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(ONE,A,Xv,ZERO,R,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_vadd_mvec)(evals,Xv,-ONE,R,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_norm2)(R,expRes,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_delete)(Xv,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_delete)(R,&ierr),ierr);
+    }
+
   if (verbose && num_eigs>0)
     {
-    fprintf(stdout,"  Eigenvalue\t\t\t\tRitz Residual\n");
-    fprintf(stdout,"  ===================================================\n");
+    fprintf(stdout,"  Eigenvalue\t\t\t\tRitz Residual\tExpl. Residual\n");
+    fprintf(stdout,"  =================================================================\n");
     int i=0;
     while (i<num_eigs)
       {
-#ifdef _IS_COMPLEX_
-      fprintf(stdout,"%16.8g%+16.8gi\t  %4.2e\n",evals[i],resid[i]);
+#ifdef IS_COMPLEX
+      fprintf(stdout,"%16.8g%+16.8gi\t  %3.1e\t%3.1e\n",evals[i],resid[i],expRes[i]);
 #else
       if (is_cmplx[i])
         {
-        fprintf(stdout,"%16.8g%+16.8gi\t%4.2e\n",evals[i],evals[i+1],resid[i]);
-        fprintf(stdout,"%16.8g%+16.8gi\t%3.1e\n",evals[i],-evals[i+1],resid[i+1]);
+        fprintf(stdout,"%16.8g%+16.8gi\t%3.1e\t%3.1e\n",evals[i],evals[i+1],resid[i],expRes[i]);
+        fprintf(stdout,"%16.8g%+16.8gi\t%3.1e\t%3.1e\n",evals[i],-evals[i+1],resid[i+1],expRes[i]);
         i++;
         }
       else
         {
-        fprintf(stdout,"%16.8e\t\t\t%3.1e\n",evals[i],resid[i]);
+        fprintf(stdout,"%16.8e\t\t\t%3.1e\t%3.1e\n",evals[i],resid[i],expRes[i]);
         }
 #endif
       i++;

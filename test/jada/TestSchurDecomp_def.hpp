@@ -79,7 +79,7 @@ public:
     for (int i=0;i<n_;i++)
       {
       ASSERT_REAL_EQ(ct::real(ev_[i]), st::real(mat1_vp_[i*m_lda_+i]));
-#ifdef _IS_COMPLEX_
+#ifdef IS_COMPLEX
       ASSERT_REAL_EQ(ct::imag(ev_[i]), st::imag(mat1_vp_[i*m_lda_+i]));
 #endif      
       }
@@ -153,7 +153,7 @@ public:
     
       // check the T matrix is upper triangular (with 2x2 blocks for complex eigs in the 
       // real case)
-#ifdef _IS_COMPLEX_
+#ifdef IS_COMPLEX
       for (int j=0;j<_N_;j++)
         {
         for (int i=j+1;i<_N_;i++)
