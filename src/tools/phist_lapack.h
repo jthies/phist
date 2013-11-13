@@ -92,6 +92,31 @@ void ZTRSEN(const char* job, const char* jobvs, const int *select, const int *n,
 Dblas_cmplx_t *T, const int *ldt, Dblas_cmplx_t *Q, const int *ldq, Dblas_cmplx_t *W, 
 const int *m, double *S, double *sep, Dblas_cmplx_t *work, const int *lwork, int *info);
 
+///////////////////////////////////////////////////////////////////////////////////////////
+//      TREVC - eigenvalues and -vectors of the Schur form                               //
+///////////////////////////////////////////////////////////////////////////////////////////
+
+#define STREVC LAPACK_SUBR(STREVC,strevc)
+void STREVC(const char* side, const char* howmny, int* select, const int* n, 
+const float* T, const int* ldt, float* vl, const int* ldvl, float* vr, const int* ldvr, 
+const int* mm, int* m, float* work, int* info);
+
+#define DTREVC LAPACK_SUBR(DTREVC,dtrevc)
+void DTREVC(const char* side, const char* howmny, int* select, const int* n, 
+const double* T, const int* ldt, double* vl, const int* ldvl, double* vr, const int* ldvr, 
+const int* mm, int* m, double* work, int* info);
+
+#define CTREVC LAPACK_SUBR(CTREVC,ctrevc)
+  void CTREVC(const char* side, const char* howmny, int* select, const int* n, 
+const Sblas_cmplx_t* t, const int* ldt, Sblas_cmplx_t* vl, const int* ldvl, Sblas_cmplx_t* vr, const int* ldvr, 
+const int* mm, int* m, Sblas_cmplx_t* work, float* rwork, int* info);
+
+#define ZTREVC LAPACK_SUBR(ZTREVC,ztrevc)
+void ZTREVC(const char* side, const char* howmny, int* select, const int* n, 
+const Dblas_cmplx_t* T, const int* ldt, Dblas_cmplx_t* vl, const int* ldvl, Dblas_cmplx_t* vr, const int* ldvr, 
+const int* mm, int* m, Dblas_cmplx_t* work, double* rwork, int* info);
+
+
 #ifdef __cplusplus
 }
 #endif
