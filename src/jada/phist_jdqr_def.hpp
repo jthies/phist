@@ -455,7 +455,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
        }
      PHIST_CHK_IERR(SUBR(sdMat_set_block)(R,Theta,nq0,nconv-1,nq0,nconv-1,ierr),*ierr);
 
-    PHIST_OUT(PHIST_VERBOSE,"eigenvalue %d (%8.4g%+8.4gi) converged.",nconv,ct::real(theta),ct::imag(theta));
+    PHIST_OUT(PHIST_VERBOSE,"eigenvalue %d (%8.4g%+8.4gi) is converged.",
+        nconv,ct::real(theta),ct::imag(theta));
     if (nconv>=numEigs)
       {
       PHIST_OUT(PHIST_VERBOSE,"stopping JDQR loop");
@@ -471,7 +472,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // copy T(nv+1:m,nv+1:m) into it
     PHIST_CHK_IERR(SUBR(sdMat_get_block)(T,Mv,nv,m-1,nv,m-1,ierr),*ierr);
     m=m-nv;
-    it=it-1;
     //V=V*S;
     // It is not allowed to alias V in mvec_times_sdMat, so we use a temporary vector
     mvec_ptr_t v_tmp=NULL;
