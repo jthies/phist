@@ -81,7 +81,7 @@ int main(int argc, char** argv)
     {
     fprintf(stdout,"looking for %d Eigenpairs of largest magnitude\n",num_eigs);
     }
-  // from the driver_utils.h header: checks file extension and calls read_mm, read_bin etc
+  // from the driver_utils.h header: checks file extension and calls read, read_bin etc
   PHIST_ICHK_IERR(SUBR(crsMat_read)(&A,filename,&ierr),ierr);
   
   PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(A, &map,&ierr),ierr);
