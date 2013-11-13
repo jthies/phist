@@ -177,9 +177,8 @@ if (GHOST_FOUND)
 else()
   message(WARNING "Ghost is required for the scheduling in phist, without it things may "
                 " not be functional.                                                    "
-                "Set environment variable GHOST_HOME to help cmake find it.             ")
-#  message(ERROR "Ghost is a prerequisite of phist now because of the task-queue"
-#                "Set environment variable GHOST_HOME to help cmake find it.")
+                "Append the ghost installation directory to the environment variable    "
+                "PKG_CONFIG_PATH to help cmake find it.                                 ")
 endif()
 
 
