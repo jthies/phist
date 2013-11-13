@@ -200,22 +200,23 @@ int main(int argc, char** argv)
 
   if (verbose && num_eigs>0)
     {
-    fprintf(stdout,"Eigenvalue \t Ritz Residual \n");
+    fprintf(stdout,"  Eigenvalue\t\t\t\tRitz Residual\n");
+    fprintf(stdout,"  ===================================================\n");
     int i=0;
     while (i<num_eigs)
       {
 #ifdef _IS_COMPLEX_
-      fprintf(stdout,"%16.8g%+16.8gi\t%4.2e\n",evals[i],resid[i]);
+      fprintf(stdout,"%16.8g%+16.8gi\t  %4.2e\n",evals[i],resid[i]);
 #else
       if (is_cmplx[i])
         {
-        fprintf(stdout,"%16.8g%+16.8gi\t\t%4.2e\n",evals[i],evals[i+1],resid[i]);
-        fprintf(stdout,"%16.8g-%16.8gi\t\t%4.2e\n",evals[i],-evals[i+1],resid[i+1]);
+        fprintf(stdout,"%16.8g%+16.8gi\t%4.2e\n",evals[i],evals[i+1],resid[i]);
+        fprintf(stdout,"%16.8g%+16.8gi\t%3.1e\n",evals[i],-evals[i+1],resid[i+1]);
         i++;
         }
       else
         {
-        fprintf(stdout,"%16.8e\t\t%4.2e\n",evals[i],resid[i]);
+        fprintf(stdout,"%16.8e\t\t\t%3.1e\n",evals[i],resid[i]);
         }
 #endif
       i++;

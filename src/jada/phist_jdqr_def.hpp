@@ -685,7 +685,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   ST* R_raw=NULL;
   lidx_t ldR;
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&R_raw,&ldR,ierr),*ierr);
-
   i=0;
   while (i<nconv)
     {
@@ -698,8 +697,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
         is_cmplx[i]=1;
         // sqrt((T^2)/4-D) gives the imaginary part of the eigenpair of
         // a 2x2 matrix, with T the trace and D the determinant. In our
-        // case A11=A22 and the thing simplifies to im(lambda)=A12*A21.
-        evals[i+1]=R_raw[i*ldR+i+1]*R_raw[(i+1)*ldR+i];
+        // case A11=A22 => im(lambda)=im(sqrt(A12*A21))
+        evals[i+1]=st::sqrt(-R_raw[i*ldR+i+1]*R_raw[(i+1)*ldR+i]);
         is_cmplx[i+1]=1;
         i++;
         }
@@ -708,8 +707,11 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
         is_cmplx[i]=0;
         }
       }
+    else
+      {
+      is_cmplx[i]=0;
+      }
 #else
-    PHIST_DEB("returning ev[%d]=%8.4g%+8.4gi",i,st::real(evals[i]),st::imag(evals[i]));
     TOUCH(is_cmplx);
 #endif    
     i++;
