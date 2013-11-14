@@ -719,9 +719,9 @@ void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
-  CAST_PTR_FROM_VOID_(ghost_vec_t,W,vW,*ierr);
-  CAST_PTR_FROM_VOID_(ghost_vec_t,C,vC,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,W,vW,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,C,vC,*ierr);
   char trans[]="N";
   *ierr=ghost_gemm(trans, V, W, C, (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE);
   }
@@ -735,9 +735,9 @@ void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
-  CAST_PTR_FROM_VOID_(ghost_vec_t,W,vW,*ierr);
-  CAST_PTR_FROM_VOID_(ghost_vec_t,C,vC,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,W,vW,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,C,vC,*ierr);
 #ifdef _IS_COMPLEX_
   char trans[]="C";
 #else

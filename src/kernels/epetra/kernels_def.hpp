@@ -542,10 +542,10 @@ void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
                                _ST_ beta, TYPE(sdMat_ptr) vC,
                                        int* ierr)
   {
-  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
-  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,W,vW,*ierr);
-  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,C,vC,*ierr);
-  _CHECK_ZERO_(C->Multiply('T', 'N', alpha, *V, *W, beta),*ierr);
+  CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(const Epetra_MultiVector,W,vW,*ierr);
+  CAST_PTR_FROM_VOID(Epetra_MultiVector,C,vC,*ierr);
+  PHIST_CHK_IRET(C->Multiply('T', 'N', alpha, *V, *W, beta),*ierr);
   }
 
 

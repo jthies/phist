@@ -858,10 +858,10 @@ void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,V,vV,*ierr);
-  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,W,vW,*ierr);
-  _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,C,vC,*ierr);
-  _TRY_CATCH_(C->multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,
+  CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,W,vW,*ierr);
+  CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,C,vC,*ierr);
+  TRY_CATCH(C->multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,
         alpha, *V, *W, beta), *ierr);
   }
 
