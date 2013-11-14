@@ -207,7 +207,35 @@ int main(int argc, char** argv)
     PHIST_ICHK_IERR(SUBR(mvec_create)(&R,map,num_eigs,&ierr),ierr);
     PHIST_ICHK_IERR(SUBR(mvec_view_block)(X,&Xv,0,num_eigs-1,&ierr),ierr);
     PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(ONE,A,Xv,ZERO,R,&ierr),ierr);
+#ifdef IS_COMPLEX
     PHIST_ICHK_IERR(SUBR(mvec_vadd_mvec)(evals,Xv,-ONE,R,&ierr),ierr);
+#else
+    // we have complex pairs as [v_r, v_i] and [lambda_r, lambda_i] right now.
+    // To get the residual correct, create the block diagonal matrix D with   
+    // D_j=[lambda_r, lambda_i; -lambda_i, lambda_r] for complex pairs and    
+    // then compute A*X-X*D as the residual
+    TYPE(sdMat_ptr) D=NULL;
+    PHIST_ICHK_IERR(SUBR(sdMat_create)(&D,num_eigs,num_eigs,NULL,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(sdMat_put_value)(D,ZERO,&ierr),ierr);
+    ST *D_raw=NULL;
+    lidx_t ldD;
+    PHIST_ICHK_IERR(SUBR(sdMat_extract_view)(D,&D_raw,&ldD,&ierr),ierr);
+    i=0;
+    while (i<num_eigs)
+      {
+      D_raw[i*ldD+i]= evals[i];
+      if (is_cmplx[i])
+        {
+        D_raw[(i+1)*ldD+(i+1)]=evals[i];
+        D_raw[i*ldD+(i+1)]=-evals[i+1];
+        D_raw[(i+1)*ldD+i]=-evals[i+1];
+        i++;
+        }
+      i++;
+      }
+    PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(ONE,Xv,D,-ONE,R,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(sdMat_delete)(D,&ierr),ierr);
+#endif
     PHIST_ICHK_IERR(SUBR(mvec_norm2)(R,expRes,&ierr),ierr);
     PHIST_ICHK_IERR(SUBR(mvec_delete)(Xv,&ierr),ierr);
     PHIST_ICHK_IERR(SUBR(mvec_delete)(R,&ierr),ierr);
@@ -221,17 +249,17 @@ int main(int argc, char** argv)
     while (i<num_eigs)
       {
 #ifdef IS_COMPLEX
-      fprintf(stdout,"%16.8g%+16.8gi\t  %3.1e\t%3.1e\n",evals[i],resid[i],expRes[i]);
+      fprintf(stdout,"%16.8g%+16.8gi\t  %3.1e\t\t%3.1e\n",evals[i],resid[i],expRes[i]);
 #else
       if (is_cmplx[i])
         {
-        fprintf(stdout,"%16.8g%+16.8gi\t%3.1e\t%3.1e\n",evals[i],evals[i+1],resid[i],expRes[i]);
-        fprintf(stdout,"%16.8g%+16.8gi\t%3.1e\t%3.1e\n",evals[i],-evals[i+1],resid[i+1],expRes[i]);
+        fprintf(stdout,"%16.8g%+16.8gi\t%3.1e\t\t%3.1e\n",evals[i],evals[i+1],resid[i],expRes[i]);
+        fprintf(stdout,"%16.8g%+16.8gi\t%3.1e\t\t%3.1e\n",evals[i],-evals[i+1],resid[i+1],expRes[i]);
         i++;
         }
       else
         {
-        fprintf(stdout,"%16.8e\t\t\t%3.1e\t%3.1e\n",evals[i],resid[i],expRes[i]);
+        fprintf(stdout,"%16.8e\t\t\t%3.1e\t\t%3.1e\n",evals[i],resid[i],expRes[i]);
         }
 #endif
       i++;

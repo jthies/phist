@@ -774,14 +774,18 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(mvec_delete)(AVv, ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vm,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_delete)(AVm, ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(Qv, ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Qtil, ierr),*ierr);
   
   PHIST_CHK_IERR(SUBR(sdMat_delete)(Mv, ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_delete)(Tv, ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_delete)(Sv, ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_delete)(Theta, ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(atilv, ierr),*ierr);
+  // these may still be NULL if nothing converged
+  if (nconv>0)
+    {
+    PHIST_CHK_IERR(SUBR(mvec_delete)(Qv, ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_delete)(atilv, ierr),*ierr);
+    }
   return;
   }
 
