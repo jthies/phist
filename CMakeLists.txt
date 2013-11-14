@@ -66,6 +66,7 @@ endif ()
 ##############################################################################
 
 if (${PHIST_ENABLE_MPI})
+#TODO - what is the best way to do this portably?
 #  find_package(MPI REQUIRED)
 #  if (${MPI_FOUND})
     add_definitions(-DPHIST_HAVE_MPI)
@@ -79,6 +80,8 @@ if (${PHIST_ENABLE_MPI})
 #  else()
 #    message(WARNING "could not find MPI")
 #  endif()
+set(MPIEXEC "mpirun")
+set(MPIEXEC_NUMPROC_FLAG "-np")
 endif()
 
 find_package(Likwid PATHS $ENV{LIKWID_HOME} Optional)
@@ -356,8 +359,17 @@ endforeach()
 # Activate testing
 enable_testing()
 
-foreach(label ${PHIST_TESTS})
-  add_test(${label}-tests ${PRODUCT_NAME}-${label}-test --gtest_output=xml:${CMAKE_SOURCE_DIR}/xunit.xml)
+if (${PHIST_ENABLE_MPI})
+  set(PHIST_MPI_TEST_NPROCS 1 2 4 7 8)
+else()
+  set(PHIST_MPI_TEST_NPROCS "")
+endif()
+
+foreach(np ${PHIST_MPI_TEST_NPROCS})
+  foreach(label ${PHIST_TESTS})
+    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} ${PRODUCT_NAME}-${label}-test --gtest_output=xml:test_output_np${np}/${label}/xunit.xml)
+    add_test(NAME test-${label}_np${np} COMMAND ${TEST_COMMAND})
+  endforeach()
 endforeach()
 
 # Adding concurrency tests with valgrind-helgrind.
