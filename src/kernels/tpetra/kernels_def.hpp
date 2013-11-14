@@ -624,7 +624,23 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* ierr)
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
+#ifdef TESTING
+  PHIST_SOUT(PHIST_WARNING,"gathering global vector (only in TESTING mode)");
+  // make results reproducible by doing a sequential randomization and then a 'scatter'
+  Teuchos::RCP<const map_t> map = V->getMap();
+  gidx_t nglob=map->getGlobalNumElements();
+  gidx_t nloc=nglob;
+  if (map->getComm()->getRank()!=0) nloc=0;
+  Teuchos::RCP<map_t> gmap = Teuchos::rcp(new 
+  map_t(nglob,nloc,0,map->getComm(),map->getNode()));
+  Teuchos::RCP<import_t> import = Teuchos::rcp(new import_t(gmap,map));
+  Teuchos::RCP<Traits< _ST_ >::mvec_t> gvec = Teuchos::rcp
+        (new Traits< _ST_ >::mvec_t(gmap,V->getNumVectors()));
+  TRY_CATCH(gvec->randomize(),*ierr);
+  TRY_CATCH(V->doImport(*gvec,*import,Tpetra::INSERT),*ierr);
+#else
   TRY_CATCH(V->randomize(),*ierr);
+#endif
   }
 
 void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* ierr)
@@ -654,7 +670,7 @@ void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* ierr)
   TRY_CATCH(M->randomize(),*ierr);
   }
 
-  //! compute the 2-norm) of each column of v                   
+  //! compute the 2-norm of each column of v                   
   //! (vnrm[i] must be pre-allocated by caller)
   void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) vV,
                             _MT_* vnrm, int* ierr) 
@@ -690,7 +706,7 @@ int nvec = V->getNumVectors();
       }
     else
       {
-      scaling[i]=1.0/norms[i];
+      scaling[i]=st::one()/norms[i];
       }
     }
   TRY_CATCH(V->scale(scaling),*ierr);

@@ -22,6 +22,8 @@ namespace tpetra {
 // currently typedef'd in phist_typedefs.hpp (TODO)
 //typedef Kokkos::DefaultNode::DefaultNodeType node_t; // from the Kokkos node API
 typedef Tpetra::Map<lidx_t,gidx_t,node_t> map_t;
+typedef Tpetra::Import<lidx_t,gidx_t,node_t> import_t;
+typedef Tpetra::Export<lidx_t,gidx_t,node_t> export_t;
 typedef Teuchos::Comm<int> comm_t;
 
 template<typename ST>
