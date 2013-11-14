@@ -307,7 +307,11 @@ void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
 //! Q is computed in place of V. If V does not have full rank, ierr>0   
 //! indicates the dimension of the null-space of V. The first m-ierr    
 //! columns of Q are an orthogonal basis of the column space of V, the  
-//! remaining columns form a basis for the null space.
+//! remaining columns form a basis for the null space.                  
+//!                                                                     
+//! TODO: our current three implementations of this function (ghost,    
+//!     tpetra and epetra) are identical, it would be nicer to move this
+//!     function into core/ so we have a single implementation.         
 void SUBR(mvec_QR)(TYPE(mvec_ptr) V, 
                      TYPE(sdMat_ptr) R, int* ierr);
 

@@ -59,7 +59,7 @@ void SUBR(crsMat_get_row_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, 
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const ghost_mat_t,A,vA,*ierr);
+  CAST_PTR_FROM_VOID(const ghost_mat_t,A,vA,*ierr);
   ghost_map_t* map = new ghost_map_t;
   map->ctx = A->context;
   map->vtraits_template=phist_default_vtraits();
@@ -75,7 +75,7 @@ void SUBR(crsMat_get_col_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, 
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const ghost_mat_t,A,vA,*ierr);
+  CAST_PTR_FROM_VOID(const ghost_mat_t,A,vA,*ierr);
   ghost_map_t* map = new ghost_map_t;
   map->ctx = A->context;
   map->vtraits_template=phist_default_vtraits();
@@ -115,7 +115,7 @@ void SUBR(mvec_create)(TYPE(mvec_ptr)* vV,
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const ghost_map_t, map,vmap,*ierr);
+  CAST_PTR_FROM_VOID(const ghost_map_t, map,vmap,*ierr);
   ghost_vec_t* result;
   ghost_vtraits_t *vtraits = ghost_cloneVtraits(map->vtraits_template);
         vtraits->nvecs=nvec;
@@ -138,7 +138,7 @@ void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
   ENTER_FCN(__FUNCTION__);
   *ierr=-99;
 /*
-  _CAST_PTR_FROM_VOID_(const map_t, map, vmap, *ierr);
+  CAST_PTR_FROM_VOID(const map_t, map, vmap, *ierr);
   Teuchos::RCP<const map_t> map_ptr = Teuchos::rcp(map,false);
   Teuchos::ArrayView<_ST_> val_ptr(values,lda*nvec);
   Traits<_ST_>::mvec_t* V = new Traits<_ST_>::mvec_t(map_ptr,val_ptr,lda,nvec);
@@ -183,9 +183,7 @@ void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) vV, lidx_t* len, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
   *ierr = 0;
-  _CAST_PTR_FROM_VOID_(const ghost_vec_t,V,vV,*ierr);
-  PHIST_DEB("vV @ %p",vV);
-  PHIST_DEB("V @ %p",V);
+  CAST_PTR_FROM_VOID(const ghost_vec_t,V,vV,*ierr);
   *len = V->traits->nrows;
   }
 
@@ -194,7 +192,7 @@ void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, const_map_ptr_t* vmap, int* ier
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(const ghost_vec_t,V,vV,*ierr);
   ghost_map_t* map = new ghost_map_t;
   map->ctx=V->context; 
   *vmap=(const_map_ptr_t)map;
@@ -205,7 +203,7 @@ void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) vV, const_comm_ptr_t* vcomm, int* 
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(const ghost_vec_t,V,vV,*ierr);
 
   if (V->context!=NULL)
     {
@@ -225,7 +223,7 @@ void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) vV, int* nvec, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
   *ierr = 0;
-  _CAST_PTR_FROM_VOID_(const ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(const ghost_vec_t,V,vV,*ierr);
   *nvec = V->traits->nvecs;
   }
 
@@ -234,7 +232,7 @@ void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) vM, int* nrows, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const ghost_vec_t,M,vM,*ierr);
+  CAST_PTR_FROM_VOID(const ghost_vec_t,M,vM,*ierr);
   *nrows = M->traits->nrows;
   }
   
@@ -243,7 +241,7 @@ void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) vM, int* ncols, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const ghost_vec_t,M,vM,*ierr);
+  CAST_PTR_FROM_VOID(const ghost_vec_t,M,vM,*ierr);
   *ncols = M->traits->nvecs;
   }
 
@@ -252,7 +250,7 @@ void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ie
   {
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,V, vV, *ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,V, vV, *ierr);
   if (V->traits->flags & GHOST_VEC_SCATTERED)
     {
     PHIST_OUT(PHIST_ERROR,"%s: cannot view data with non-constant stride using "
@@ -275,7 +273,7 @@ void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ie
 void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,M, vM, *ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,M, vM, *ierr);
 
   if (M->traits->flags & GHOST_VEC_SCATTERED)
     {
@@ -300,13 +298,13 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
 
   ghost_vec_t *Vblock = V->viewVec(V, jmax-jmin+1, jmin);
 
   if (*vVblock!=NULL)
     {
-    _CAST_PTR_FROM_VOID_(ghost_vec_t,tmp,*vVblock,*ierr);
+    CAST_PTR_FROM_VOID(ghost_vec_t,tmp,*vVblock,*ierr);
     PHIST_DEB("destroying previous vector (view)");
     tmp->destroy(tmp);
     }
@@ -323,8 +321,8 @@ void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,Vblock,vVblock,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,Vblock,vVblock,*ierr);
   *ierr=0;
   //TODO check bounds of Vblock
   Vblock->fromVec(Vblock,V,jmin);
@@ -338,8 +336,8 @@ void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,Vblock,vVblock,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,Vblock,vVblock,*ierr);
   // TODO - bounds checking
   // create a view of the requested columns of V
   ghost_vec_t *Vcols = V->viewVec(V,jmax-jmin+1,jmin);
@@ -358,7 +356,7 @@ void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMblock,
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,M,vM,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,M,vM,*ierr);
 
   //TODO: we only view the host side of the vector here, this function should
   //      eventually be moved into ghost and the accelerator stuff added.
@@ -377,7 +375,7 @@ void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMblock,
   if (*vMblock!=NULL)
     {
     PHIST_DEB("deleting previous object in %s",__FUNCTION__);
-    _CAST_PTR_FROM_VOID_(ghost_vec_t,tmp,*vMblock,*ierr);
+    CAST_PTR_FROM_VOID(ghost_vec_t,tmp,*vMblock,*ierr);
     tmp->destroy(tmp);
     }
   *vMblock = (TYPE(mvec_ptr))Mblock;
@@ -393,7 +391,7 @@ void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,Mblock,vMblock,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,Mblock,vMblock,*ierr);
 
   ghost_vec_t *Mb_view=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_view_block)((TYPE(sdMat_ptr))vM,(TYPE(sdMat_ptr)*)&Mb_view,imin,imax,jmin,jmax,ierr),*ierr);
@@ -409,7 +407,7 @@ void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,Mblock,vMblock,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,Mblock,vMblock,*ierr);
 
   ghost_vec_t* Mb_view=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(vM,(TYPE(sdMat_ptr)*)&Mb_view,imin,imax,jmin,jmax,ierr),*ierr);
@@ -426,7 +424,7 @@ void SUBR(crsMat_delete)(TYPE(crsMat_ptr) vA, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_mat_t,A,vA,*ierr);
+  CAST_PTR_FROM_VOID(ghost_mat_t,A,vA,*ierr);
   A->destroy(A);
   }
 
@@ -435,7 +433,7 @@ void SUBR(mvec_delete)(TYPE(mvec_ptr) vV, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
   V->destroy(V);
   }
 
@@ -443,7 +441,7 @@ void SUBR(mvec_delete)(TYPE(mvec_ptr) vV, int* ierr)
 void SUBR(sdMat_delete)(TYPE(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,M,vM,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,M,vM,*ierr);
   M->destroy(M);
   }
 
@@ -457,7 +455,7 @@ void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, _ST_ value, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
   PHIST_DEB("put value, V @ %p. V->traits->nrows=%ld\n",V,V->traits->nrows);
   V->fromScalar(V,(void*)&value);
   }
@@ -467,7 +465,7 @@ void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vV, _ST_ value, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
   V->fromScalar(V,(void*)&value);
   }
 
@@ -476,20 +474,20 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
   V->fromRand(V);
   }
 
 void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* ierr)
   {
   *ierr = 0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
   V->print(V);
   }
 
 void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* ierr)
   {
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,M,vM,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,M,vM,*ierr);
   M->print(M);
   }
 
@@ -499,7 +497,7 @@ void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,M,vM,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,M,vM,*ierr);
   M->fromRand(M);
   }
 
@@ -514,7 +512,7 @@ void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* ierr)
 #include "phist_std_typedefs.hpp"  
   int i,nv;
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);  
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);  
   nv=V->traits->nvecs;
   _ST_ tmp[V->traits->nvecs];
   ghost_dotProduct(V,V,tmp);
@@ -530,7 +528,7 @@ void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* ierr)
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"  
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);  
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);  
   // TODO - this call doesn't return the norm as we wish
   //V->normalize(V);    
   PHIST_CHK_IERR(SUBR(mvec_norm2)(vV,vnrm,ierr),*ierr);
@@ -546,7 +544,7 @@ void SUBR(mvec_scale)(TYPE(mvec_ptr) vV,
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);  
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);  
   V->scale(V,(void*)&scalar);
   return;
   }
@@ -558,7 +556,7 @@ void SUBR(mvec_vscale)(TYPE(mvec_ptr) vV,
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"  
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);  
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);  
   V->vscale(V,(void*)scalar);
   return;
   }
@@ -571,8 +569,8 @@ void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vX,
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,X,vX,*ierr);
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,Y,vY,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,X,vX,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,Y,vY,*ierr);
   if (beta==st::one())
     {
     Y->axpy(Y,X,(void*)&alpha);
@@ -590,8 +588,8 @@ void SUBR(mvec_vadd_mvec)(const _ST_ *alpha, TYPE(const_mvec_ptr) vX,
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,X,vX,*ierr);
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,Y,vY,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,X,vX,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,Y,vY,*ierr);
   Y->vaxpby(Y,X,(void*)&alpha,(void*)&beta);
   }
 
@@ -611,9 +609,9 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* ierr)
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_mat_t,A,vA,*ierr);
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,x,vx,*ierr);
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,y,vy,*ierr);
+  CAST_PTR_FROM_VOID(ghost_mat_t,A,vA,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,x,vx,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,y,vy,*ierr);
   if (alpha==st::zero())
     {
     // no MVM needed
@@ -663,8 +661,8 @@ void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) vV, TYPE(const_mvec_ptr) vW, _ST_*
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,W,vW,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,W,vW,*ierr);
   ghost_dotProduct(V,W,s);
   }
 
@@ -674,9 +672,9 @@ void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE(const_mvec
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,W,vW,*ierr);
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,C,vC,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,W,vW,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,C,vC,*ierr);
 #ifdef IS_COMPLEX
   char trans[]="C";
 #else
@@ -695,9 +693,9 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,C,vC,*ierr);
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,W,vW,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,C,vC,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,W,vW,*ierr);
 #ifdef TESTING
   int nrV,ncV,nrW,ncW,nrC,ncC;
   nrV=V->traits->nrows;  ncV=V->traits->nvecs;
@@ -721,9 +719,9 @@ void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,W,vW,*ierr);
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,C,vC,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,W,vW,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,C,vC,*ierr);
   char trans='N';
   *ierr=ghost_gemm(&trans, V, W, C, (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE);
   }
@@ -738,8 +736,8 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
 #include "phist_std_typedefs.hpp"  
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
-  _CAST_PTR_FROM_VOID_(ghost_vec_t,R,vR,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID(ghost_vec_t,R,vR,*ierr);
 
   int rank;
   MT rankTol=32*mt::eps();
@@ -786,8 +784,8 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   phist::GhostMV mv_V(V,false);
     
 #ifdef TESTING
-  _CHECK_ZERO_(nrows-ncols,*ierr);
-  _CHECK_ZERO_(nrows-(V->traits->nvecs),*ierr);
+  PHIST_CHK_IRET(nrows-ncols,*ierr);
+  PHIST_CHK_IRET(nrows-(V->traits->nvecs),*ierr);
 #endif  
 
   PHIST_DEB("create Teuchos view of R");
@@ -809,7 +807,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   PHIST_DEB("set TSQR parameters");
   tsqr.setParameterList(params);
 
-  _TRY_CATCH_(rank = tsqr.normalize(mv_V,R_view),*ierr);
+  TRY_CATCH(rank = tsqr.normalize(mv_V,R_view),*ierr);
   PHIST_DEB("V has %d columns and rank %d",ncols,rank);
   *ierr = ncols-rank;// return positive number if rank not full.
   return;

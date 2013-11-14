@@ -80,6 +80,7 @@ using namespace testing;
 #include "phist_gen_z.h"
 #include "OrthogTest_def.hpp"
 
+#if 0
 // do at least one larger test case
 #undef _N_
 #define _N_ 10000
@@ -113,3 +114,4 @@ using namespace testing;
 #include "OrthogTest_def.hpp"
 
 
+#endif

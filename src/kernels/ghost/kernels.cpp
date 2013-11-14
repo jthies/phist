@@ -74,7 +74,7 @@ void phist_comm_create(comm_ptr_t* vcomm, int* ierr)
 void phist_comm_delete(comm_ptr_t vcomm, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(MPI_Comm,comm,vcomm,*ierr);
+  CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*ierr);
   delete comm;
   }
 
@@ -82,14 +82,14 @@ void phist_comm_delete(comm_ptr_t vcomm, int* ierr)
 void phist_comm_get_rank(const_comm_ptr_t vcomm, int* rank, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(MPI_Comm,comm,vcomm,*ierr);
+  CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*ierr);
   *rank=ghost_getRank(*comm);
   }
 //!
 void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(MPI_Comm,comm,vcomm,*ierr);
+  CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*ierr);
   *size=ghost_getNumberOfRanks(*comm);
   }
 
@@ -111,7 +111,7 @@ ghost_vtraits_t* phist_default_vtraits()
 void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int *ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(MPI_Comm,comm,vcomm,*ierr);
+  CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*ierr);
 
   ghost_map_t* map = new ghost_map_t;
   
@@ -133,7 +133,7 @@ void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int
 void phist_map_delete(map_ptr_t vmap, int *ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(ghost_map_t,map,vmap,*ierr);
+  CAST_PTR_FROM_VOID(ghost_map_t,map,vmap,*ierr);
   // this is problematic because the object may be shared, so we don't delete
   // anything right now (it's just a tiny amount of data to leak for now)
   // delete map->ctx;
@@ -145,7 +145,7 @@ void phist_map_delete(map_ptr_t vmap, int *ierr)
 void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const ghost_map_t,map,vmap,*ierr);
+  CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*ierr);
   *vcomm = (const_comm_ptr_t)(&map->ctx->mpicomm);
   }
 
@@ -153,7 +153,7 @@ void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr
 void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const ghost_map_t,map,vmap,*ierr);
+  CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*ierr);
   *nloc=map->ctx->communicator->lnrows[ghost_getRank(map->ctx->mpicomm)];
   }
 
@@ -161,7 +161,7 @@ void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr)
 void phist_map_get_ilower(const_map_ptr_t vmap, int* ilower, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const ghost_map_t,map,vmap,*ierr);
+  CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*ierr);
   int me = ghost_getRank(map->ctx->mpicomm);
   *ilower = map->ctx->communicator->lfRow[me];
   }
@@ -169,7 +169,7 @@ void phist_map_get_ilower(const_map_ptr_t vmap, int* ilower, int* ierr)
 void phist_map_get_iupper(const_map_ptr_t vmap, int* iupper, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const ghost_map_t,map,vmap,*ierr);
+  CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*ierr);
   int me = ghost_getRank(map->ctx->mpicomm);
   *iupper = map->ctx->communicator->lfRow[me+1]-1;
   }

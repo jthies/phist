@@ -582,10 +582,7 @@ using ::phist::GhostMV;
       Mghost->viewPlain(Mghost, (void*)M.values(),
                 Mghost->traits->nrows, Mghost->traits->nvecs,
                 0,0,Mghost->traits->nrowspadded);
-    PHIST_DEB("original Teuchos SDM");
-    std::cerr << M<<std::endl;
-    PHIST_DEB("Viewed sdMat is %"PRlidx"x%"PRlidx,Mghost->traits->nrows,Mghost->traits->nvecs);
-    Mghost->print(Mghost);
+
     return Mghost;
     }
 

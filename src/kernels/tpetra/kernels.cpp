@@ -59,21 +59,21 @@ void phist_comm_delete(comm_ptr_t vcomm, int* ierr)
 void phist_comm_get_rank(const_comm_ptr_t vcomm, int* rank, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const comm_t,comm,vcomm,*ierr);
+  CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
   *rank=comm->getRank();
   }
 //!
 void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const comm_t,comm,vcomm,*ierr);
+  CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
   *size=comm->getSize();
   }
 //!
 void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int *ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const comm_t,comm,vcomm,*ierr);
+  CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
   map_t* map = new map_t(nglob,0,Teuchos::rcp(comm,false));
   *vmap = (map_ptr_t)(map);
   }
@@ -82,7 +82,7 @@ void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int
 void phist_map_delete(map_ptr_t vmap, int *ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(map_t,map,vmap,*ierr);
+  CAST_PTR_FROM_VOID(map_t,map,vmap,*ierr);
   delete map;
   vmap=NULL;
   }
@@ -91,7 +91,7 @@ void phist_map_delete(map_ptr_t vmap, int *ierr)
 void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const map_t,map,vmap,*ierr);
+  CAST_PTR_FROM_VOID(const map_t,map,vmap,*ierr);
   Teuchos::RCP<const comm_t> comm = map->getComm();
   *vcomm = (const_comm_ptr_t)(comm.get());
   }
@@ -100,7 +100,7 @@ void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr
 void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const map_t,map,vmap,*ierr);
+  CAST_PTR_FROM_VOID(const map_t,map,vmap,*ierr);
   *nloc = map->getNodeNumElements();
   }
 
@@ -110,7 +110,7 @@ void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr)
 void phist_map_get_ilower(const_map_ptr_t vmap, int* ilower, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const map_t,map,vmap,*ierr);
+  CAST_PTR_FROM_VOID(const map_t,map,vmap,*ierr);
   if (map->isContiguous()==false) *ierr=1;
   *ilower = map->getMinGlobalIndex();
   }
@@ -120,7 +120,7 @@ void phist_map_get_ilower(const_map_ptr_t vmap, int* ilower, int* ierr)
 void phist_map_get_iupper(const_map_ptr_t vmap, int* iupper, int* ierr)
   {
   *ierr=0;
-  _CAST_PTR_FROM_VOID_(const map_t,map,vmap,*ierr);
+  CAST_PTR_FROM_VOID(const map_t,map,vmap,*ierr);
   if (map->isContiguous()==false) *ierr=1;
   *iupper = map->getMaxGlobalIndex();
   }
