@@ -1,4 +1,5 @@
 #!/bin/bash -x
+NP=4
 SCALAR=Z
 DRIVER=${SCALAR}jdqr
 MATFILE=${SCALAR}jadaTestMat.mm
@@ -14,4 +15,4 @@ MAXIT=250
 MINBAS=10
 MAXBAS=25
 
-./${DRIVER} ${MATFILE} ${NEIG} ${WHICH} ${TOL} ${MAXIT} ${MINBAS} ${MAXBAS}
+mpirun -np ${NP} ./${DRIVER} ${MATFILE} ${NEIG} ${WHICH} ${TOL} ${MAXIT} ${MINBAS} ${MAXBAS}

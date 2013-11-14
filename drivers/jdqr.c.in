@@ -215,7 +215,7 @@ int main(int argc, char** argv)
     // D_j=[lambda_r, lambda_i; -lambda_i, lambda_r] for complex pairs and    
     // then compute A*X-X*D as the residual
     TYPE(sdMat_ptr) D=NULL;
-    PHIST_ICHK_IERR(SUBR(sdMat_create)(&D,num_eigs,num_eigs,NULL,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(sdMat_create)(&D,num_eigs,num_eigs,comm,&ierr),ierr);
     PHIST_ICHK_IERR(SUBR(sdMat_put_value)(D,ZERO,&ierr),ierr);
     ST *D_raw=NULL;
     lidx_t ldD;

@@ -52,11 +52,11 @@ int read_mat(const char* filebase,TYPE(crsMat_ptr) *ptr)
 //  std::cout << "Looking for matrix \'"<<filebase<<"\'...\n";
 //  std::cout << "... try \'"<<mmfile<<"\'\n";
   SUBR(crsMat_read_mm)(ptr,mmfile,&ierr_);
-  if (ierr_!=_PHIST_SUCCESS_) // kernel lib can't read MatrixMarket format or file not found
+  if (ierr_!=PHIST_SUCCESS) // kernel lib can't read MatrixMarket format or file not found
     {
 //    std::cout << "... try \'"<<hbfile<<"\'\n";
     SUBR(crsMat_read_hb)(ptr,hbfile,&ierr_);
-    if (ierr_!=_PHIST_SUCCESS_) // kernel lib can't read Harwell-Boeing or file not found
+    if (ierr_!=PHIST_SUCCESS) // kernel lib can't read Harwell-Boeing or file not found
       {
 //      std::cout << "... try \'"<<binfile<<"\'\n";
       SUBR(crsMat_read_bin)(ptr,binfile,&ierr_);

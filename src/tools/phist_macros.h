@@ -62,7 +62,7 @@
                 MPI_Comm_rank(MPI_COMM_WORLD,&me);\
                 } else {me=0;}\
                 if(me==0){\
-                fprintf(out,"PE%d: "msg"\n",me,##__VA_ARGS__);\
+                fprintf(out,msg"\n",##__VA_ARGS__);\
                 fflush(out);}\
         }\
 }

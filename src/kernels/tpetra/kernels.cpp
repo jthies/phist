@@ -20,12 +20,20 @@ using namespace phist::tpetra;
 
 extern "C" {
 
+static int myMpiSession=0;
+
 // initialize kernel library. Should at least call MPI_Init if it has not been called
 // but is required.
 void phist_kernels_init(int* argc, char*** argv, int* ierr)
   {
 #ifdef PHIST_HAVE_MPI
-  *ierr=MPI_Init(argc,argv);
+  int mpi_initialized;
+  MPI_Initialized(&mpi_initialized);
+  myMpiSession= mpi_initialized? 0: 1;
+  if (myMpiSession==1)
+    {
+    *ierr=MPI_Init(argc,argv);
+    }
 #endif
   }
       
@@ -34,7 +42,10 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
   void phist_kernels_finalize(int* ierr)
     {
 #ifdef PHIST_HAVE_MPI
-  *ierr=MPI_Finalize();
+  if (myMpiSession==1)
+    {
+    *ierr=MPI_Finalize();
+    }
 #endif
     }
             
