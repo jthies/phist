@@ -178,6 +178,7 @@ int main(int argc, char** argv)
   //------------------------------- clear matrices and vectors --------------------- 
   // delete vectors and sdMats
   delete[] resNorm;
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(v0,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(sdMat_delete)(R,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(Q,&ierr),ierr);
   // clean up operator

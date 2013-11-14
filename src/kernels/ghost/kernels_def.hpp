@@ -719,12 +719,33 @@ void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
-  CAST_PTR_FROM_VOID(ghost_vec_t,W,vW,*ierr);
-  CAST_PTR_FROM_VOID(ghost_vec_t,C,vC,*ierr);
-  char trans='N';
-  *ierr=ghost_gemm(&trans, V, W, C, (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE);
+  CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID_(ghost_vec_t,W,vW,*ierr);
+  CAST_PTR_FROM_VOID_(ghost_vec_t,C,vC,*ierr);
+  char trans[]="N";
+  *ierr=ghost_gemm(trans, V, W, C, (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE);
   }
+
+//! n x m conj. transposed serial dense matrix times m x k serial dense matrix gives m x k sdMat,
+//! C=alpha*V*W + beta*C (serial XGEMM wrapper)
+void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
+                                         TYPE(const_sdMat_ptr) vW,
+                              _ST_ beta, TYPE(sdMat_ptr) vC,
+                                         int* ierr)
+  {
+  ENTER_FCN(__FUNCTION__);
+  *ierr=0;
+  CAST_PTR_FROM_VOID_(ghost_vec_t,V,vV,*ierr);
+  CAST_PTR_FROM_VOID_(ghost_vec_t,W,vW,*ierr);
+  CAST_PTR_FROM_VOID_(ghost_vec_t,C,vC,*ierr);
+#ifdef _IS_COMPLEX_
+  char trans[]="C";
+#else
+  char trans[]="T";
+#endif  
+  *ierr=ghost_gemm(trans, V, W, C, (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE);
+  }
+
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.   
 //! Q is computed in place of V. If V does not have full rank, ierr>0   

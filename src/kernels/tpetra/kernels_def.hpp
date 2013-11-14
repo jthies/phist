@@ -832,7 +832,7 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
         alpha, *V, *C, beta), *ierr);
   }
 
-//! n x m serial dense matrix times m x k serial dense matrix gives n x k multi-vector,
+//! n x m serial dense matrix times m x k serial dense matrix gives n x k serial dense matrix,
 //! C=alpha*V*W + beta*C
 void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
                                            TYPE(const_sdMat_ptr) vW,
@@ -847,6 +847,24 @@ void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
   TRY_CATCH(C->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,
         alpha, *V, *W, beta), *ierr);
   }
+
+
+//! n x m conj. transposed serial dense matrix times m x k serial dense matrix gives m x k serial dense matrix,
+//! C=alpha*V'*W + beta*C
+void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
+                                           TYPE(const_sdMat_ptr) vW,
+                               _ST_ beta, TYPE(sdMat_ptr) vC,
+                                       int* ierr)
+  {
+  ENTER_FCN(__FUNCTION__);
+  *ierr=0;
+  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,V,vV,*ierr);
+  _CAST_PTR_FROM_VOID_(const Traits<_ST_>::sdMat_t,W,vW,*ierr);
+  _CAST_PTR_FROM_VOID_(Traits<_ST_>::sdMat_t,C,vC,*ierr);
+  _TRY_CATCH_(C->multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,
+        alpha, *V, *W, beta), *ierr);
+  }
+
 
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.   

@@ -153,16 +153,13 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
         *ierr = -8;
         return;
         }
-      st::mvec_t *Wrnd=NULL;
       st::sdMat_t *Rrnd;
-      int n0=*ierr;
       PHIST_OUT(PHIST_INFO,"Matrix W does not have full rank (%d cols, rank=%d)\n",k,rankW);
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(W,&Wrnd,rankW,k-1,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(sdMat_create)(&Rrnd,m,n0,NULL,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&Rrnd,m,k,NULL,ierr),*ierr);
       //R2=V'*W;
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,Wrnd,st::zero(),Rrnd,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,W,st::zero(),Rrnd,ierr),*ierr);
       //W=W-V*R2;
-      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),V,Rrnd,st::one(),Wrnd,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),V,Rrnd,st::one(),W,ierr),*ierr);
       // throw away projection coefficients.
       PHIST_CHK_IERR(SUBR(sdMat_delete)(Rrnd,ierr),*ierr);
 

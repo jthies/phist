@@ -54,6 +54,9 @@ void SUBR(jadaOp_apply)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
 {
   ENTER_FCN(__FUNCTION__);
 
+  PHIST_CHK_IERR(*ierr = (alpha == ONE  ? 0 : -99), *ierr);
+  PHIST_CHK_IERR(*ierr = (beta  == ZERO ? 0 : -99), *ierr);
+
   // convert op to jadaOp_data
   const TYPE(jadaOp_data) *jadaOp = (const TYPE(jadaOp_data)*) op;
 
@@ -97,7 +100,6 @@ PHIST_DEB("sigma is %dx%d", nrSig, ncSig);
   // then calculate Y = (Y - BV*V'*Y)
   PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(ONE,jadaOp->V,Y,ZERO,jadaOp->vy,ierr),*ierr);             // vy = V'*Y
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-ONE,jadaOp->BV,jadaOp->vy,ONE,Y,ierr),*ierr);            // Y  = Y - BV*vy
-  return;
 }
 
 
@@ -151,16 +153,16 @@ void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,  TYPE(const_op_ptr)   B_op,
 
 
 // deallocate jadaOp struct
-void SUBR(jaraOp_delete)(TYPE(op_ptr)* jdOp, int *ierr)
+void SUBR(jadaOp_delete)(TYPE(op_ptr)* jdOp, int *ierr)
 {
   ENTER_FCN(__FUNCTION__);
 
   // get jadaOp
-  TYPE(jadaOp_data) *jadaOp = (TYPE(jadaOp_data)*) jdOp;
+  TYPE(jadaOp_data) *jadaOp = (TYPE(jadaOp_data)*) (*jdOp)->A;
 
   // delete op
-  free(jdOp);
-  jdOp = NULL;
+  free(*jdOp);
+  *jdOp = NULL;
 
   // delete temporary sdMat vy
   PHIST_CHK_IERR(SUBR(sdMat_delete)(jadaOp->vy,ierr),*ierr);

@@ -521,7 +521,7 @@ void SUBR(mvec_times_sdMat)(double alpha, TYPE(const_mvec_ptr) vV,
   PHIST_CHK_IRET(W->Multiply('N', 'N', alpha, *V, *C, beta),*ierr);
   }
 
-//! n x m serial dense matrix times m x k serial dense matrix gives n x k multi-vector,
+//! n x m serial dense matrix times m x k serial dense matrix gives n x k serial dense matrix,
 //! C=alpha*V*W + beta*C
 void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
                                            TYPE(const_sdMat_ptr) vW,
@@ -533,6 +533,21 @@ void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
   CAST_PTR_FROM_VOID(Epetra_MultiVector,C,vC,*ierr);
   PHIST_CHK_IRET(C->Multiply('N', 'N', alpha, *V, *W, beta),*ierr);
   }
+
+
+//! n x m transposed serial dense matrix times m x k serial dense matrix gives m x k serial dense matrix,
+//! C=alpha*V*W + beta*C
+void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
+                                           TYPE(const_sdMat_ptr) vW,
+                               _ST_ beta, TYPE(sdMat_ptr) vC,
+                                       int* ierr)
+  {
+  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,V,vV,*ierr);
+  _CAST_PTR_FROM_VOID_(const Epetra_MultiVector,W,vW,*ierr);
+  _CAST_PTR_FROM_VOID_(Epetra_MultiVector,C,vC,*ierr);
+  _CHECK_ZERO_(C->Multiply('T', 'N', alpha, *V, *W, beta),*ierr);
+  }
+
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.   
 //! Q is computed in place of V. If V does not have full rank, ierr>0   
