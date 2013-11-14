@@ -44,6 +44,8 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   // auxiliary matrices
   st::sdMat_t *R1p,*R2p,*R1pp;
 
+      const_comm_ptr_t comm=NULL;
+
   *ierr=0;
   
   // all vectors and matrices must be allocated.
@@ -67,11 +69,13 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     return;
     }
 
+      PHIST_CHK_IERR(SUBR(mvec_get_comm)(V,&comm,ierr),*ierr);
+
   if (numSweeps>1)
     {
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&R1p,k,k,NULL,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&R1pp,k,k,NULL,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&R2p,m,k,NULL,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&R1p,k,k,comm,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&R1pp,k,k,comm,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&R2p,m,k,comm,ierr),*ierr);
     }
 
 #ifdef TESTING
@@ -149,13 +153,13 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
       // terminate even if random vectors are not "random" enough, e.g. random number generator is broken
       if( random_iter++ > 10 )
         {
-        PHIST_OUT(PHIST_ERROR,"could not create random orthogonal vectors, possibly the random vector generator is broken!");
+        PHIST_SOUT(PHIST_ERROR,"could not create random orthogonal vectors, possibly the random vector generator is broken!");
         *ierr = -8;
         return;
         }
       st::sdMat_t *Rrnd;
-      PHIST_OUT(PHIST_INFO,"Matrix W does not have full rank (%d cols, rank=%d)\n",k,rankW);
-      PHIST_CHK_IERR(SUBR(sdMat_create)(&Rrnd,m,k,NULL,ierr),*ierr);
+      PHIST_SOUT(PHIST_INFO,"Matrix W does not have full rank (%d cols, rank=%d)\n",k,rankW);
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&Rrnd,m,k,comm,ierr),*ierr);
       //R2=V'*W;
       PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,W,st::zero(),Rrnd,ierr),*ierr);
       //W=W-V*R2;
@@ -163,15 +167,15 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
       // throw away projection coefficients.
       PHIST_CHK_IERR(SUBR(sdMat_delete)(Rrnd,ierr),*ierr);
 
-      // reorthogonlize result, filling in new random vectors if these were in span(V)
+      // reorthogonalize result, filling in new random vectors if these were in span(V)
       PHIST_CHK_NEG_IERR(SUBR(mvec_QR)(W,R1,ierr),*ierr);
       }
 
     // we must fill the appropriate columns of R1 with zeros (where random values were used)
-    TYPE(mvec_ptr) R1_r = NULL;
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(R1,&R1_r,rankW,k-1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_put_value)(R1_r,st::zero(),ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_delete)(R1_r,ierr),*ierr);
+    TYPE(sdMat_ptr) R1_r = NULL;
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(R1,&R1_r,0,k-1,rankW,k-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_put_value)(R1_r,st::zero(),ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_delete)(R1_r,ierr),*ierr);
     }
     
   int step=1;
@@ -183,16 +187,16 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
       maxRed=std::min(maxRed,normW1[j]/normW0[j]);
       normW0[j]=normW1[j];
       }
-    PHIST_OUT(PHIST_VERBOSE,"reduction in norm, GS step %d: %4.2f",step,maxRed);
+    PHIST_SOUT(PHIST_VERBOSE,"reduction in norm, GS step %d: %4.2f",step,maxRed);
     if (maxRed>0.75)
       {
       stopGS=true;
-      PHIST_OUT(PHIST_VERBOSE,"stopping Gram-Schmidt");
+      PHIST_SOUT(PHIST_VERBOSE,"stopping Gram-Schmidt");
       break;
       }
     if (step>=numSweeps)
       {
-      PHIST_OUT(PHIST_VERBOSE,"stopping Gram-Schmidt because %d steps have been performed", 
+      PHIST_SOUT(PHIST_VERBOSE,"stopping Gram-Schmidt because %d steps have been performed", 
                 numSweeps);
       }
     step++;
@@ -213,7 +217,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
    
     if (*ierr>0)
       {
-      PHIST_OUT(PHIST_ERROR,"Unexpected rank deficiency in orthog routine\n(file %s, line %d)",
+      PHIST_SOUT(PHIST_ERROR,"Unexpected rank deficiency in orthog routine\n(file %s, line %d)",
                 __FILE__,__LINE__);
       *ierr=-10;
       return;
