@@ -80,6 +80,7 @@ protected:
   //! disallow copy constructor
   GhostMV(const GhostMV& v)
     {
+    (void)v;//unused
     v_=NULL;
     }
   

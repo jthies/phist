@@ -701,9 +701,9 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
   nrV=V->traits->nrows;  ncV=V->traits->nvecs;
   nrW=W->traits->nrows;  ncW=V->traits->nvecs;
   nrC=C->traits->nrows;  ncC=V->traits->nvecs;
-  PHIST_CHK_IERR(nrV-nrW,*ierr);
-  PHIST_CHK_IERR(nrC-ncV,*ierr);
-  PHIST_CHK_IERR(ncC-ncW,*ierr);
+  PHIST_CHK_IERR(*ierr=nrV-nrW,*ierr);
+  PHIST_CHK_IERR(*ierr=nrC-ncV,*ierr);
+  PHIST_CHK_IERR(*ierr=ncC-ncW,*ierr);
 #endif
   // note: C is replicated, so this operation is a purely local one.
   char trans[]="N";
@@ -805,8 +805,8 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   phist::GhostMV mv_V(V,false);
     
 #ifdef TESTING
-  PHIST_CHK_IRET(nrows-ncols,*ierr);
-  PHIST_CHK_IRET(nrows-(V->traits->nvecs),*ierr);
+  PHIST_CHK_IERR(*ierr=nrows-ncols,*ierr);
+  PHIST_CHK_IERR(*ierr=nrows-(V->traits->nvecs),*ierr);
 #endif  
 
   PHIST_DEB("create Teuchos view of R");

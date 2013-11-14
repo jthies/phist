@@ -286,7 +286,7 @@ using ::phist::GhostMV;
       ghost_vec_t* _mv = (ghost_vec_t*)mv.get();
       // multiply
       const char* trans="N";
-      ghost_gemm((char*)trans,(ghost_vec_t*)A.get(),Bghost,(ghost_vec_t*)mv.get(),&alpha,&beta,GHOST_GEMM_NO_REDUCE);
+      ghost_gemm((char*)trans,_A,Bghost,_mv,&alpha,&beta,GHOST_GEMM_NO_REDUCE);
       
       ghost_freeVec(Bghost);
       }
