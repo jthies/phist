@@ -1,14 +1,14 @@
 setpath;
 %for debugging - make results reproducible
-%rand("seed",42);
-%randn("seed",42);
-nx=16;
+rand("seed",77);
+randn("seed",42);
+nx=8;
 
 debug=false;
 
 k=4; % number of rhs
 % restart/truncation parameter:
-m=5;
+m=20;
 
 global printOpts;
 printOpts.debug=debug;
