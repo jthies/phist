@@ -276,8 +276,8 @@ void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ie
     *ierr=-2;
     return;
     }
-  fprintf(stderr,"location of data: %p\n",V->val[0]);
-  fprintf(stderr,"location of ptr-array: %p\n",V->val);
+  PHIST_DEB("location of data: %p\n",V->val[0]);
+  PHIST_DEB("location of ptr-array: %p\n",V->val);
   *val = (_ST_*)(V->val[0]);
   *lda = V->traits->nrowspadded;
   }
@@ -782,7 +782,8 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
 
   int rank;
   MT rankTol=32*mt::eps();
-  if (V->traits->nvecs==1)
+  int ncols=V->traits->nvecs;
+  if (ncols==1)
     {
     // we need a special treatment here because TSQR
     // uses a relative tolerance to determine rank deficiency,
@@ -822,7 +823,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     
 #ifdef TESTING
   int nrows = R->traits->nrows;
-  int ncols = R->traits->nvecs;
+  ncols = R->traits->nvecs;
     
   PHIST_CHK_IERR(*ierr=nrows-ncols,*ierr);
   PHIST_CHK_IERR(*ierr=nrows-(V->traits->nvecs),*ierr);

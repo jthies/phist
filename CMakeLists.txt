@@ -50,10 +50,12 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   message(STATUS "using GNU compiler flags")
   set (CMAKE_C_FLAGS "-fopenmp")
   set (CMAKE_C_FLAGS_RELEASE "-O2 -fopenmp -DPHIST_OUTLEV=3")
+  set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g -fopenmp -DPHIST_OUTLEV=3")
   set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -fopenmp -DPHIST_OUTLEV=4 -Wall -Wextra -Wno-unused-local-typedefs -Wno-format -Wno-sign-compare")
 
   set (CMAKE_CXX_FLAGS "-fopenmp")
   set (CMAKE_CXX_FLAGS_RELEASE "-O2 -fopenmp -DPHIST_OUTLEV=3")
+  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -fopenmp -DPHIST_OUTLEV=3")
   set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING -DPHIST_OUTLEV=4 -fopenmp -Wall -Wextra -Wno-unused-local-typedefs -Wno-format -Wno-sign-compare")
 else ()
 #TODO - add flags for Intel and others
