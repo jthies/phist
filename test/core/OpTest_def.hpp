@@ -22,7 +22,9 @@ public:
       // note: TSQR does not work if nvec>nloc (that wouldn't really be a 'tall skinny 
       // matrix' but a 'short fat and sliced matrix')
       nq_ = std::min(nloc_,nq_);
-      MPI_Allreduce(MPI_IN_PLACE,&nq_,1,MPI_INT,MPI_MIN,mpi_comm_);
+      int nq_local = nq_;
+      ierr_ = MPI_Allreduce(&nq_local,&nq_,1,MPI_INT,MPI_MIN,mpi_comm_);
+      ASSERT_EQ(0,ierr_);
 #endif      
       SUBR(mvec_create)(&Q_,map_,nq_,&ierr_);
       ASSERT_EQ(0,ierr_);

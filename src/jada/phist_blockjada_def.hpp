@@ -52,45 +52,56 @@ void SUBR(blockjada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
 
   //------------------------------- create vectors and matrices --------------------
+  // get communicator for sdMats
+  const_comm_ptr_t domain_comm;
+  PHIST_CHK_IERR(phist_map_get_comm(A_op->domain_map, &domain_comm, ierr), *ierr);
+  const_comm_ptr_t range_comm;
+  PHIST_CHK_IERR(phist_map_get_comm(A_op->range_map,  &range_comm,  ierr), *ierr);
+
   // create mvecs and sdMats
-  mvec_ptr_t  V_   = NULL;    //< space for V
-  mvec_ptr_t  Vtmp_= NULL;    //< temporary space for V
-  mvec_ptr_t  AV_  = NULL;    //< space for AV
-  mvec_ptr_t  BV_  = NULL;    //< space for BV
-  mvec_ptr_t  BQ_  = NULL;    //< space for BQ
-  mvec_ptr_t  t_   = NULL;    //< space for t
-  mvec_ptr_t  res_ = NULL;    //< space for res
-  sdMat_ptr_t H_   = NULL;    //< space for H
-  sdMat_ptr_t Htmp_= NULL;    //< temporary space for H
-  sdMat_ptr_t Q_H_ = NULL;    //< space for Q_H
-  sdMat_ptr_t R_H_ = NULL;    //< space for R_H
-  sdMat_ptr_t R_QQ_= NULL;    //< space for orthogonalization of t wrt. QQ
-  sdMat_ptr_t sigma_= NULL;    //< matrix of JaDa correction shifts
-  _ST_ *sigma_raw = NULL;
-  _ST_ *Q_H_raw = NULL;
-  _ST_ *R_H_raw = NULL;
-  _ST_ *Htmp_raw = NULL;
+  mvec_ptr_t  V_      = NULL;    //< space for V
+  mvec_ptr_t  Vtmp_   = NULL;    //< temporary space for V
+  mvec_ptr_t  AV_     = NULL;    //< space for AV
+  mvec_ptr_t  BV_     = NULL;    //< space for BV
+  mvec_ptr_t  BQ_     = NULL;    //< space for BQ
+  mvec_ptr_t  t_      = NULL;    //< space for t
+  mvec_ptr_t  res_    = NULL;    //< space for res
+
+  sdMat_ptr_t H_      = NULL;    //< space for H
+  sdMat_ptr_t Htmp_   = NULL;    //< temporary space for H
+  sdMat_ptr_t Q_H_    = NULL;    //< space for Q_H
+  sdMat_ptr_t R_H_    = NULL;    //< space for R_H
+  sdMat_ptr_t R_QQ_   = NULL;    //< space for orthogonalization of t wrt. QQ
+  sdMat_ptr_t sigma_  = NULL;    //< matrix of JaDa correction shifts
+
+  _ST_ *sigma_raw     = NULL;
+  _ST_ *Q_H_raw       = NULL;
+  _ST_ *R_H_raw       = NULL;
+  _ST_ *Htmp_raw 			= NULL;
   lidx_t ldaSigma, ldaQ_H, ldaR_H, ldaHtmp;
-  PHIST_CHK_IERR(SUBR( mvec_create  ) (&V_,   A_op->domain_map, maxBase,  ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_create  ) (&Vtmp_,A_op->domain_map, maxBase,  ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_create  ) (&AV_,  A_op->range_map,  maxBase,  ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_create  ) (&t_,   A_op->domain_map, blockDim, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_create  ) (&res_, A_op->range_map,  blockDim, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_create ) (&H_,   maxBase, maxBase, NULL,     ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_create ) (&Htmp_,maxBase, maxBase, NULL,     ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_create ) (&Q_H_, maxBase, maxBase, NULL,     ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_create ) (&R_H_, maxBase, maxBase, NULL,     ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_create ) (&R_QQ_,*nEig+blockDim, blockDim,NULL,     ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_create ) (&sigma_,blockDim,blockDim,NULL,     ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_put_value ) (sigma_, st::zero(), ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (Q_H_, &Q_H_raw, &ldaQ_H, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (R_H_, &R_H_raw, &ldaR_H, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (Htmp_,&Htmp_raw,&ldaHtmp,ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (sigma_, &sigma_raw, &ldaSigma, ierr), *ierr);
+
+  PHIST_CHK_IERR(SUBR( mvec_create  ) (&V_,     A_op->domain_map, maxBase,        ierr), *ierr);
+  // TODO: remove Vtmp
+  PHIST_CHK_IERR(SUBR( mvec_create  ) (&Vtmp_,  A_op->domain_map, maxBase,                ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_create  ) (&AV_,    A_op->range_map,  maxBase,        	      ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_create  ) (&t_,     A_op->domain_map, blockDim,               ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_create  ) (&res_,   A_op->range_map,  blockDim,               ierr), *ierr);
+
+  PHIST_CHK_IERR(SUBR( sdMat_create ) (&H_,     maxBase,          maxBase,  range_comm,   ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_create ) (&Htmp_,  maxBase,          maxBase,  range_comm,   ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_create ) (&Q_H_,   maxBase,          maxBase,  range_comm,   ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_create ) (&R_H_,   maxBase,          maxBase,  range_comm,   ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_create ) (&R_QQ_,  *nEig+blockDim,   blockDim, domain_comm,  ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_create ) (&sigma_, blockDim,         blockDim, domain_comm,  ierr), *ierr);
+
+  PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (Q_H_,    &Q_H_raw,   &ldaQ_H,   ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (R_H_,  	&R_H_raw,   &ldaR_H,   ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (Htmp_,   &Htmp_raw,  &ldaHtmp,  ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (sigma_,  &sigma_raw, &ldaSigma, ierr), *ierr);
   if( B_op != NULL )
   {
-    PHIST_CHK_IERR(SUBR( mvec_create )(&BV_, B_op->range_map,  maxBase,  ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_create )(&BQ_, B_op->range_map,  *nEig,    ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_create )(&BV_,    B_op->range_map,  maxBase,                ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_create )(&BQ_,    B_op->range_map,  *nEig,                  ierr), *ierr);
   }
   else
   {
@@ -100,6 +111,8 @@ void SUBR(blockjada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   // array for the (possibly complex) eigenvalues for SchurDecomp
   CT* ev_H = new CT[maxBase];
 
+  // set sigma to zero as we just need its diagonal later
+  PHIST_CHK_IERR(SUBR( sdMat_put_value ) (sigma_, st::zero(), ierr), *ierr);
 
   // create views on mvecs and sdMats with current dimensions
   int nV  = minBase;          //< current subspace dimension
@@ -143,40 +156,40 @@ void SUBR(blockjada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   // set R_ to zero because we don't explicitly consider the lower left part
   PHIST_CHK_IERR(SUBR( sdMat_put_value  ) (R_, st::zero(), ierr), *ierr);
 
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,  &t,                     0,     k-1,       ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res_,&res,                   0,     k-1,       ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &r,   *nEig, *nEig+k-1, *nEig, *nEig+k-1, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,  &V,                     0,     nV-1,      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_, &AV,                    0,     nV-1,      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BV,                    0,     nV-1,      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  &H,   0,     nV-1,      0,     nV-1,      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,  &Qq,                    *nEig, *nEig+k-1, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ_, &BQq,                   *nEig, *nEig+k-1, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,  &QQ,                    0,     *nEig+k-1, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ_, &BQQ,                   0,     *nEig+k-1, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (sigma_,&sigma, 0, k-1,       0,     k-1,       ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,      &t,                       0,     k-1,       ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res_,    &res,                     0,     k-1,       ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,      &r,     *nEig, *nEig+k-1, *nEig, *nEig+k-1, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                       0,     nV-1,      ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                      0,     nV-1,      ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                      0,     nV-1,      ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     0,      nV-1,     0,     nV-1,      ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,      &Qq,                      *nEig, *nEig+k-1, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ_,     &BQq,                     *nEig, *nEig+k-1, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,      &QQ,                      0,     *nEig+k-1, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ_,     &BQQ,                     0,     *nEig+k-1, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (sigma_,  &sigma, 0,      k-1,      0,     k-1,       ierr), *ierr);
 
 
 
   //------------------------------- initialize subspace etc ------------------------
   // run arnoldi
   nV = minBase;
-  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  &H,  0, minBase,        0,     nV-1,      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,  &V,                     0,     nV,        ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BV,                    0,     nV,        ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     0,      minBase,  0,     nV-1,      ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                       0,     nV,        ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                      0,     nV,        ierr), *ierr);
 
   //TODO B_op in arnoldi
   // calculates A*V(:,1:m) = V(:,1:m+1)*H(1:m+1,1:m)
   PHIST_CHK_IERR(SUBR( simple_arnoldi ) (A_op, B_op, v0, V, BV, H, nV, ierr), *ierr);
 
   // calculate AV from V,H
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_, &AV,                    0,     nV-1,      ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                      0,     nV-1,      ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), V, H,  st::zero(), AV, ierr), *ierr);
 
   // calculate H and setup V, BV
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,  &V,                     0,     nV-1,      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BV,                    0,     nV-1,      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  &H,   0,     nV-1,      0,     nV-1,      ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                       0,     nV-1,      ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, 		&BV,                      0,     nV-1,      ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  		&H,     0,      nV-1,     0,     nV-1,      ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), V, AV, st::zero(), H,  ierr), *ierr);
 
 
@@ -192,37 +205,57 @@ void SUBR(blockjada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,     nV-1,      ierr), *ierr);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H,0,     k-1,       0,     k-1,       ierr), *ierr);
 
-#if PHIST_OUTLEV>=PHIST_DEBUG
-    {
-      // check orthogonality of V, BV
-      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), V, BV, st::zero(), Htmp, ierr), *ierr);
-      _MT_ orthEps = std::abs(Htmp_raw[0] - st::one());
-      for(int i = 0; i < nV; i++)
-        for(int j = 0; j < nV; j++)
-          orthEps = std::max(orthEps, std::abs(Htmp_raw[i*ldaHtmp+j] - ((i==j) ? st::one() : st::zero())));
-      PHIST_SOUT(PHIST_INFO, "B-orthogonality of V: %e", orthEps);
-      if( *nEig > 0 && *nEig <= nV )
-      {
-        PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    *nEig-1,   0,     *nEig-1,   ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Q, BQ, st::zero(), Htmp, ierr), *ierr);
-        orthEps = std::abs(Htmp_raw[0] - st::one());
-        for(int i = 0; i < *nEig; i++)
-          for(int j = 0; j < *nEig; j++)
-            orthEps = std::max(orthEps, std::abs(Htmp_raw[i*ldaHtmp+j] - ((i==j) ? st::one() : st::zero())));
-        PHIST_SOUT(PHIST_INFO, "B-orthogonality of Q: %e", orthEps);
-        PHIST_CHK_IERR(SUBR( sdMat_print ) (Htmp, ierr), *ierr);
+#ifdef TESTING
+{
+  // check orthogonality of V, BV, Q
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), V, BV, st::zero(), Htmp, ierr), *ierr);
+  _MT_ orthEps = std::abs(Htmp_raw[0] - st::one());
+  for(int i = 0; i < nV; i++)
+    for(int j = 0; j < nV; j++)
+      orthEps = std::max(orthEps, std::abs(Htmp_raw[i*ldaHtmp+j] - ((i==j) ? st::one() : st::zero())));
+  PHIST_OUT(PHIST_INFO, "B-orthogonality of V: %e", orthEps);
+  if( *nEig > 0 && *nEig <= nV )
+  {
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    *nEig-1,   0,     *nEig-1,   ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Q, BQ, st::zero(), Htmp, ierr), *ierr);
+    orthEps = std::abs(Htmp_raw[0] - st::one());
+    for(int i = 0; i < *nEig; i++)
+      for(int j = 0; j < *nEig; j++)
+        orthEps = std::max(orthEps, std::abs(Htmp_raw[i*ldaHtmp+j] - ((i==j) ? st::one() : st::zero())));
+    PHIST_OUT(PHIST_INFO, "B-orthogonality of Q: %e", orthEps);
+    PHIST_CHK_IERR(SUBR( sdMat_print ) (Htmp, ierr), *ierr);
 
-        PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     *nEig-1,   ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), V, BQ, st::zero(), Htmp, ierr), *ierr);
-        orthEps = std::abs(Htmp_raw[0]);
-        for(int i = 0; i < nV; i++)
-          for(int j = 0; j < *nEig; j++)
-            orthEps = std::max(orthEps, std::abs(Htmp_raw[i*ldaHtmp+j]));
-        PHIST_SOUT(PHIST_INFO, "B-orthogonality of V wrt. Q: %e", orthEps);
-        PHIST_CHK_IERR(SUBR( sdMat_print ) (Htmp, ierr), *ierr);
-      }
-    }
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     *nEig-1,   ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), V, BQ, st::zero(), Htmp, ierr), *ierr);
+    orthEps = std::abs(Htmp_raw[0]);
+    for(int i = 0; i < nV; i++)
+      for(int j = 0; j < *nEig; j++)
+        orthEps = std::max(orthEps, std::abs(Htmp_raw[i*ldaHtmp+j]));
+    PHIST_OUT(PHIST_INFO, "B-orthogonality of V wrt. Q: %e", orthEps);
+    PHIST_CHK_IERR(SUBR( sdMat_print ) (Htmp, ierr), *ierr);
+  }
+
+  // check AV = A*V
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp,                  0,       nV-1,          ierr), *ierr);
+  PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, V, st::zero(), Vtmp, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (-st::one(), V, st::one(), Vtmp, ierr), *ierr);
+  _MT_ normVtmp[nV];
+  PHIST_CHK_IERR(SUBR( mvec_norm2 ) (Vtmp, normVtmp, ierr), *ierr);
+  _MT_ equalEps = normVtmp[0];
+  for(int i = 0; i < nV; i++)
+    equalEps = std::max(equalEps, normVtmp[i]);
+  PHIST_OUT(PHIST_INFO, "AV - A*V: %e", equalEps);
+  // check H = V'*A*V
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), V, AV, st::zero(), Htmp, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_add_sdMat ) (-st::one(), H, st::one(), Htmp, ierr), *ierr);
+  equalEps = std::abs(Htmp_raw[0]);
+  for(int i = 0; i < nV; i++)
+    for(int j = 0; j < nV; j++)
+      equalEps = std::max(equalEps, std::abs(Htmp_raw[i*ldaHtmp+j]));
+  PHIST_OUT(PHIST_INFO, "H - V'*AV: %e", equalEps);
+}
 #endif
 
 
@@ -236,17 +269,17 @@ void SUBR(blockjada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR( SchurDecomp ) (R_H_raw, ldaR_H, Q_H_raw, ldaQ_H, nV, nSelect, nSort, which, ev_H, ierr), *ierr);
 
     // calculate approximate Schur form of A (with deflation of converged vectors Q)
-    PHIST_CHK_IERR(SUBR( sdMat_add_sdMat  ) (st::one(), Rr_H,       st::zero(),  r,  ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(),  V,   Qq_H, st::zero(), Qq,  ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_add_sdMat  ) (st::one(), Rr_H,       st::zero(), r,   ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), V,    Qq_H, st::zero(), Qq,  ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), AV,   Qq_H, st::zero(), res, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BV,   Qq_H, st::zero(), BQq, ierr), *ierr);
     // overwrite res with the residuum: -res = -(Aq - Bqr) = + BQq*r - res
-    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BQq, r,   -st::one(),  res, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BQq,  r,    -st::one(), res, ierr), *ierr);
     if( *nEig > 0 )
     {
       // deflate with Q: a = BQ'*res;  -res_ = Q*a - res
       PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (-st::one(),  BQ,  res, st::zero(), a,   ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(),  Q,   a,   st::one(), res, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(),   Q,   a,   st::one(),  res, ierr), *ierr);
     }
     // calculate norm of the residuum
     PHIST_CHK_IERR(SUBR( mvec_norm2 ) (res, &resNorm[*nEig], ierr), *ierr);
@@ -271,33 +304,33 @@ void SUBR(blockjada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
         break;
 
       // remove directions from search space
-      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  0, nV-1,         nNewEig, nV-1,         ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  0, nV-1,         nNewEig, nV-1,          ierr), *ierr);
       // TODO: we need mvec_times_sdMat in-place (which should be quite performant!)
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp, 0, nV-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp,                  0,       nV-1,          ierr), *ierr);
 
-      PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), V, st::zero(), Vtmp, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,    &V,    0, nV-nNewEig-1, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H, st::zero(), V,  ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), V,           st::zero(), Vtmp, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,    &V,                     0,       nV-nNewEig-1,  ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H,   st::zero(), V,    ierr), *ierr);
 
-      PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), AV,st::zero(), Vtmp, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,   &AV,   0, nV-nNewEig-1, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H, st::zero(), AV, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), AV,          st::zero(), Vtmp, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,   &AV,                    0,       nV-nNewEig-1,  ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H,   st::zero(), AV,   ierr), *ierr);
 
       if( B_op != NULL )
       {
-        PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), BV,st::zero(), Vtmp, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,   &BV,   0, nV-nNewEig-1, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H, st::zero(), BV, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), BV,        st::zero(), Vtmp, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BV,                    0,       nV-nNewEig-1,  ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H, st::zero(), BV,   ierr), *ierr);
       }
       else
       {
-        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,   &BV,   0, nV-nNewEig-1, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,   &BV,                  0,       nV-nNewEig-1, ierr), *ierr);
       }
       // update H <- H_Q' * H * H_Q
       PHIST_CHK_IERR(SUBR( sdMat_view_block  )(Htmp_, &Htmp, 0, nV-1,         0,       nV-nNewEig-1, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( sdMat_times_sdMat )(st::one(), H,    Q_H,  st::zero(), Htmp, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_times_sdMat )(st::one(), H,    Q_H,   st::zero(), Htmp, ierr), *ierr);
       PHIST_CHK_IERR(SUBR( sdMat_view_block  )(H_,    &H,    0, nV-nNewEig-1, 0,       nV-nNewEig-1, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( sdMatT_times_sdMat)(st::one(), Q_H,  Htmp, st::zero(), H,    ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMatT_times_sdMat)(st::one(), Q_H,  Htmp,  st::zero(), H,    ierr), *ierr);
       // not necessary to update Q_H, R_H explicitly, they are only needed again below in this iteration,
       // so we can take care of the case nNewEig > 0 there
       // Q_H = I
@@ -308,21 +341,21 @@ void SUBR(blockjada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
       k = std::min(k, maxEig-*nEig);
 
       // update views
-      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &r,   *nEig, *nEig+k-1, *nEig, *nEig+k-1, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,  &Q,                     0,     *nEig-1,   ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ_, &BQ,                    0,     *nEig-1,   ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R,   0,     *nEig-1,   0,     *nEig-1,   ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &a,   0,     *nEig-1,   *nEig, *nEig+k-1, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,  &Qq,                    *nEig, *nEig+k-1, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,  &QQ,                    0,     *nEig+k-1, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ_, &BQq,                   *nEig, *nEig+k-1, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ_, &BQQ,                   0,     *nEig+k-1, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,  &t,                     0,     k-1,       ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (sigma_,&sigma, 0,k-1,        0,     k-1,       ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res_,&res,                   0,     k-1,       ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,     &r,     *nEig,   *nEig+k-1, *nEig, *nEig+k-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,     &Q,                         0,     *nEig-1,   ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ_,    &BQ,                        0,     *nEig-1,   ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,     &R,     0,       *nEig-1,   0,     *nEig-1,   ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,     &a,     0,       *nEig-1,   *nEig, *nEig+k-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,     &Qq,                        *nEig, *nEig+k-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,     &QQ,                        0,     *nEig+k-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ_,    &BQq,                       *nEig, *nEig+k-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ_,    &BQQ,                       0,     *nEig+k-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,     &t,                         0,     k-1,       ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (sigma_, &sigma, 0,       k-1,       0,     k-1,       ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res_,   &res,                       0,     k-1,       ierr), *ierr);
 
       // calculate new approximate Schur form of A
-      PHIST_CHK_IERR(SUBR( sdMat_get_block  ) (R_H_, r,   nNewEig, nNewEig+k-1, nNewEig, nNewEig+k-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_get_block  ) (R_H_,   r,      nNewEig, nNewEig+k-1, nNewEig, nNewEig+k-1, ierr), *ierr);
       PHIST_CHK_IERR(SUBR( mvec_get_block   ) (V,    Qq,                        0,       k-1,         ierr), *ierr);
       PHIST_CHK_IERR(SUBR( mvec_get_block   ) (AV,   res,                       0,       k-1,         ierr), *ierr);
       PHIST_CHK_IERR(SUBR( mvec_get_block   ) (BV,   BQq,                       0,       k-1,         ierr), *ierr);
@@ -347,48 +380,48 @@ void SUBR(blockjada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
       if( nNewEig == 0)
       {
         // if some eigenvalues have converged in this iteration, Q_H = I
-        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,    &V,    0, minBase-1, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,   &AV,   0, minBase-1, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,    &V,                     0, minBase-1,    ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,   &AV,                    0, minBase-1,    ierr), *ierr);
         if( B_op != NULL )
         {
-          PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,   &BV,   0, minBase-1, ierr), *ierr);
+          PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BV,                    0, minBase-1,    ierr), *ierr);
         }
         else
         {
-          PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,   &BV,   0, nV-nNewEig-1, ierr), *ierr);
+          PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BV,                    0, nV-nNewEig-1, ierr), *ierr);
         }
-        PHIST_CHK_IERR(SUBR( sdMat_view_block  )(H_,    &H,    0, minBase-1,    0,       minBase-1, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( sdMat_view_block  )(H_,    &H,    0, minBase-1,    0, minBase-1,    ierr), *ierr);
         nV = minBase;
       }
       else
       {
-        PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0,     nV-1,      0,     minBase-1, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp, 0, nV-1, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  0, nV-1,          0, minBase-1,    ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp,                   0, nV-1,         ierr), *ierr);
 
-        PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), V, st::zero(), Vtmp, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,    &V,    0, minBase-1, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H, st::zero(), V,  ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), V,           st::zero(), Vtmp, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,    &V,                      0, minBase-1,    ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H,   st::zero(), V,    ierr), *ierr);
 
-        PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), AV,st::zero(), Vtmp, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,   &AV,   0, minBase-1, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H, st::zero(), AV, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), AV,          st::zero(), Vtmp, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,   &AV,                     0, minBase-1,    ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H,   st::zero(), AV,   ierr), *ierr);
 
         if( B_op != NULL )
         {
-          PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), BV,st::zero(), Vtmp, ierr), *ierr);
-          PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,   &BV,   0, minBase-1, ierr), *ierr);
-          PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H, st::zero(), BV, ierr), *ierr);
+          PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), BV,        st::zero(), Vtmp, ierr), *ierr);
+          PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BV,                     0, minBase-1,    ierr), *ierr);
+          PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H, st::zero(), BV,   ierr), *ierr);
         }
         else
         {
-          PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,   &BV,   0, nV-nNewEig-1, ierr), *ierr);
+          PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BV,                     0, nV-nNewEig-1, ierr), *ierr);
         }
 
         // update H <- H_Q' * H * H_Q
-        PHIST_CHK_IERR(SUBR( sdMat_view_block  )(Htmp_, &Htmp, 0, nV-1,         0,       minBase-1, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( sdMat_times_sdMat )(st::one(), H,    Q_H, st::zero(), Htmp, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( sdMat_view_block  )(H_,    &H,    0, minBase-1,    0,       minBase-1, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( sdMatT_times_sdMat)(st::one(), Q_H, Htmp, st::zero(), H,    ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( sdMat_view_block  )(Htmp_, &Htmp, 0, nV-1,         0, minBase-1,     ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( sdMat_times_sdMat )(st::one(), H,    Q_H,   st::zero(), Htmp, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( sdMat_view_block  )(H_,    &H,    0, minBase-1,    0, minBase-1,     ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( sdMatT_times_sdMat)(st::one(), Q_H, Htmp,   st::zero(), H,    ierr), *ierr);
 
         nV = minBase;
       }
