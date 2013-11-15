@@ -138,8 +138,10 @@ void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,  TYPE(const_op_ptr)   B_op,
   // allocate data for temporary sdMat vy
   int nvec_V, nvec_X;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec_V,ierr),*ierr);
+  const_comm_ptr_t comm;
+  PHIST_CHK_IERR(SUBR(mvec_get_comm)(V,&comm,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(sigma,&nvec_X,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&(myOp->vy),nvec_V,nvec_X,NULL,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&(myOp->vy),nvec_V,nvec_X,comm,ierr),*ierr);
 
   // setup op_ptr function pointers
   (*jdOp)->A     = (const void*)myOp;

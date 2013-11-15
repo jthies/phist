@@ -239,7 +239,7 @@ void SUBR(blockjada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   // check AV = A*V
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp,                  0,       nV-1,          ierr), *ierr);
   PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, V, st::zero(), Vtmp, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (-st::one(), V, st::one(), Vtmp, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (-st::one(), AV, st::one(), Vtmp, ierr), *ierr);
   _MT_ normVtmp[nV];
   PHIST_CHK_IERR(SUBR( mvec_norm2 ) (Vtmp, normVtmp, ierr), *ierr);
   _MT_ equalEps = normVtmp[0];
@@ -285,9 +285,10 @@ void SUBR(blockjada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR( mvec_norm2 ) (res, &resNorm[*nEig], ierr), *ierr);
     for(int i = 0; i < k; i++)
     {
-      PHIST_SOUT(PHIST_INFO,"Current approximation for eigenvalue %d is %16.8g%+16.8gi with residuum %e", *nEig+i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]), resNorm[*nEig+i]);
+      PHIST_SOUT(PHIST_INFO,"In iteration %d: Current approximation for eigenvalue %d is %16.8g%+16.8gi with residuum %e", *nIter, *nEig+i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]), resNorm[*nEig+i]);
     }
-    int nNewEig = 0;
+    int nNewEig;
+    nNewEig = 0;
     for(int i = 0; i < k; i++)
     {
       if( resNorm[*nEig+i] > tol )
@@ -377,7 +378,7 @@ void SUBR(blockjada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     if( nV + k > maxBase )
     {
       PHIST_SOUT(PHIST_DEBUG,"Shrinking search space from %d to %d", nV, minBase);
-      if( nNewEig == 0)
+      if( nNewEig > 0)
       {
         // if some eigenvalues have converged in this iteration, Q_H = I
         PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,    &V,                     0, minBase-1,    ierr), *ierr);
@@ -447,7 +448,7 @@ void SUBR(blockjada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     // TODO specify useful bgmresIter and tol per eigenvalue!
     int bgmresIter = 25;
     PHIST_CHK_IERR(SUBR( mvec_put_value )(t, st::zero(), ierr), *ierr);
-    PHIST_CHK_NEG_IERR(SUBR( bgmres )    (jdOp, t, res, tol, &bgmresIter, 25, 0, NULL, ierr), *ierr);
+    PHIST_CHK_NEG_IERR(SUBR( bgmres )    (jdOp, t, res, tol, &bgmresIter, 25, 1, NULL, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( jadaOp_delete ) (&jdOp, ierr), *ierr);
     // orthogonlize wrt. QQ
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_QQ_, &R_QQ,  0,       *nEig+k-1,   0,     k-1,       ierr), *ierr);
