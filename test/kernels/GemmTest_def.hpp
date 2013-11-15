@@ -35,8 +35,8 @@ void BuildTestCase1()
     for (int i=0; i<stride_*nloc_; i+=stride_)
       {
       MT ij = (MT)((i+ilower+1)*(j+1));
-      vec1_vp_[j*lda_+i] = ij*st::one() + ij*st::I();
-      vec2_vp_[j*lda_+i] = st::one()/(ij - ij*st::I());
+      vec1_vp_[j*lda_+i] = ij*st::one() + ij*st::cmplx_I();
+      vec2_vp_[j*lda_+i] = st::one()/(ij - ij*st::cmplx_I());
       }
   // result of vec1'*vec2
   for (int j=0; j<ncols_; j++)
@@ -50,7 +50,7 @@ void BuildTestCase1()
 void PrintTestCase()
   {
   std::cout << std::setw(8) << std::setprecision(8);
-  std::cout << "i="<<st::I()<<std::endl;
+  std::cout << "i="<<st::cmplx_I()<<std::endl;
   std::cout << "A="<<std::endl;
   for (int i=0; i<stride_*nloc_; i+=stride_)
     {

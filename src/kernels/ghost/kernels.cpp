@@ -17,8 +17,6 @@
 #endif
 
 #include "ghost.h"
-#include "ghost_vec.h"
-#include "ghost_util.h"
 
 extern "C" {
 

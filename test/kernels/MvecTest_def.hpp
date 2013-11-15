@@ -64,7 +64,7 @@ public:
     {
     if (typeImplemented_)
       {
-      ST val = (_ST_)42.0 + (ST)3.0*st::I();
+      ST val = (_ST_)42.0 + (ST)3.0*st::cmplx_I();
       SUBR(mvec_put_value)(vec1_,val,&ierr_);
       ASSERT_EQ(0,ierr_);
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,val));

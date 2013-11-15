@@ -3,7 +3,6 @@
 
 #include "ghost.h"
 #include "phist_typedefs.h"
-#include "ghost_vec.h"
 #include "phist_ScalarTraits.hpp"
 #include "phist_macros.h"
 #include <Teuchos_ScalarTraits.hpp>
@@ -288,7 +287,7 @@ using ::phist::GhostMV;
       const char* trans="N";
       ghost_gemm((char*)trans,_A,Bghost,_mv,&alpha,&beta,GHOST_GEMM_NO_REDUCE);
       
-      ghost_freeVec(Bghost);
+      Bghost->destroy(Bghost);
       }
 
     // compute mv = alpha*A + beta*B
@@ -370,7 +369,7 @@ using ::phist::GhostMV;
                    Cghost,
                    (void*)&alpha, (void*)&beta,
                    GHOST_GEMM_ALL_REDUCE);
-      ghost_freeVec(Cghost);
+      Cghost->destroy(Cghost);
       }
 
     static void MvDot( const GhostMV& A, const GhostMV& B, std::vector<Scalar> &dots)

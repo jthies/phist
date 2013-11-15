@@ -81,7 +81,7 @@ static _MT_ ArraysEqual(const _ST_* arr1,const _ST_* arr2, int n, int m, lidx_t 
 static inline _ST_ random_number() 
   {
   return (MT)(2*std::rand()-RAND_MAX)/(MT)RAND_MAX + 
-         (MT)(2*std::rand()-RAND_MAX)/(MT)RAND_MAX * st::I();
+         (MT)(2*std::rand()-RAND_MAX)/(MT)RAND_MAX * st::cmplx_I();
   }
 
 };

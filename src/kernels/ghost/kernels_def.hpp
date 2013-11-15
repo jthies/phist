@@ -645,6 +645,8 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* ierr)
   else
     {
     int spMVM_opts=GHOST_SPMVM_DEFAULT;
+    // currently the vector mode is the only one working with MPI and multiple RHS
+    spMVM_opts|=GHOST_SPMVM_MODE_VECTORMODE;
     void* old_scale = A->traits->scale;
     if (alpha!=st::one())
       {

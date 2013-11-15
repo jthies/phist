@@ -15,7 +15,7 @@
 #include "phist_lapack.h"
 
 #ifdef PHIST_HAVE_GHOST
-#include "ghost.h"
+#include "ghost_constants.h"
 #endif
 
 namespace phist {
@@ -129,7 +129,7 @@ class ScalarTraits< float >
     }
     
   //! imaginary unit
-  static inline scalar_t I()
+  static inline scalar_t cmplx_I()
     {
     return 0.0f;
     }
@@ -239,7 +239,7 @@ class ScalarTraits< double >
     }
     
   //! imaginary unit
-  static inline scalar_t I()
+  static inline scalar_t cmplx_I()
     {
     return 0.0;
     }
@@ -295,7 +295,7 @@ class ScalarTraits< std::complex<MT> >
   //! random number
   static inline scalar_t rand()
     {
-    return ScalarTraits<magn_t>::rand() + I()*ScalarTraits<magn_t>::rand();
+    return ScalarTraits<magn_t>::rand() + cmplx_I()*ScalarTraits<magn_t>::rand();
     }
 
   //! square root
@@ -341,7 +341,7 @@ class ScalarTraits< std::complex<MT> >
     }
     
   //! imaginary unit
-  static inline scalar_t I()
+  static inline scalar_t cmplx_I()
     {
     return scalar_t(ScalarTraits<MT>::zero(),ScalarTraits<MT>::one());
     }
