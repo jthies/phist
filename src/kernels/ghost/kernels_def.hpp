@@ -14,6 +14,8 @@ void SUBR(type_avail)(int* ierr)
 void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
+  TOUCH(vA);
+  TOUCH(filename);
   *ierr = -99; // not implemented in ghost, use converter script to bin crs
   }
 
@@ -46,6 +48,8 @@ void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
 void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
+  TOUCH(vA);
+  TOUCH(filename);
   *ierr = -99; // not implemented in ghost, use converter script to bin crs
   }
 
@@ -136,6 +140,11 @@ void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
         int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
+  TOUCH(vV);
+  TOUCH(vmap);
+  TOUCH(values);
+  TOUCH(lda);
+  TOUCH(nvec);
   *ierr=-99;
 /*
   CAST_PTR_FROM_VOID(const map_t, map, vmap, *ierr);
@@ -154,6 +163,9 @@ void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
   {
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
+  TOUCH(vcomm); // we don't need the serial dense matrix to know about MPI
+                // (in contrast to the tpetra implementation of this interface,
+                // ghost takes the communicator from V when computing V*M or M=V'W)
   *ierr=0;
   ghost_vec_t* result;
   ghost_vtraits_t *dmtraits=new ghost_vtraits_t;
@@ -324,6 +336,12 @@ void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
   CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
   CAST_PTR_FROM_VOID(ghost_vec_t,Vblock,vVblock,*ierr);
   *ierr=0;
+#ifdef TESTING
+// nonzero error code if #vectors in Vblock too small or large
+  PHIST_CHK_IERR(*ierr=(jmax-jmin+1)-Vblock->traits->nvecs,*ierr);
+#else
+  TOUCH(jmax);
+#endif  
   //TODO check bounds of Vblock
   Vblock->fromVec(Vblock,V,jmin);
   }
@@ -796,15 +814,14 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     return;
     }
 
-  int stride = R->traits->nrowspadded;
-  int nrows = R->traits->nrows;
-  int ncols = R->traits->nvecs;
-    
   // wrapper class for ghost_vec_t for calling Belos.
   // The wrapper does not own the vector so it doesn't destroy it.
   phist::GhostMV mv_V(V,false);
     
 #ifdef TESTING
+  int nrows = R->traits->nrows;
+  int ncols = R->traits->nvecs;
+    
   PHIST_CHK_IERR(*ierr=nrows-ncols,*ierr);
   PHIST_CHK_IERR(*ierr=nrows-(V->traits->nvecs),*ierr);
 #endif  
