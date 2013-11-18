@@ -1,5 +1,6 @@
 #include <string>
 #include <sstream>
+#include <iostream>
 
 #include "phist_macros.h"
 #include "phist_enums.h"

@@ -1,6 +1,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+#include <iostream>
+#include <iomanip>
 
 #include "phist_macros.h"
 #include "phist_blockjada.h"

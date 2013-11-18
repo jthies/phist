@@ -939,7 +939,8 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
         = Traits< _ST_ >::CreateTeuchosViewNonConst(Teuchos::rcp(R,false),ierr);
   if (*ierr!=0) 
     {
-    PHIST_OUT(PHIST_ERROR,"error code %d returned from CreateTeuchosViewNonConst (file %s, line %d)",__FILE__,__LINE__);
+    PHIST_OUT(PHIST_ERROR,"error code %d returned from CreateTeuchosViewNonConst (file %s,line %d)", 
+        *ierr, __FILE__, __LINE__);
     return;
     }
   
