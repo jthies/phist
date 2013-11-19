@@ -41,27 +41,35 @@ enable_language (Fortran)
 # compiler-dependent flags 
 ##############################################################################
 
-get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
-get_filename_component (C_COMPILER_NAME ${CMAKE_C_COMPILER} NAME)
-get_filename_component (CXX_COMPILER_NAME ${CMAKE_CXX_COMPILER} NAME)
-
+set(OUTLEV_DEBUG 4)
+set(OUTLEV_RELEASE 3)
 
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   message(STATUS "using GNU compiler flags")
   set (CMAKE_C_FLAGS "-fopenmp")
-  set (CMAKE_C_FLAGS_RELEASE "-O2 -fopenmp -DPHIST_OUTLEV=3")
-  set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g -fopenmp -DPHIST_OUTLEV=3")
-  set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -fopenmp -DPHIST_OUTLEV=4 -Wall -Wextra -Wno-unused-local-typedefs -Wno-format -Wno-sign-compare")
+  set (CMAKE_C_FLAGS_RELEASE "-O2 -fopenmp")
+  set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g -fopenmp")
+  set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -fopenmp -Wall -Wextra -Wno-unused-local-typedefs -Wno-format -Wno-sign-compare")
 
   set (CMAKE_CXX_FLAGS "-fopenmp")
-  set (CMAKE_CXX_FLAGS_RELEASE "-O2 -fopenmp -DPHIST_OUTLEV=3")
-  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -fopenmp -DPHIST_OUTLEV=3")
-  set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING -DPHIST_OUTLEV=4 -fopenmp -Wall -Wextra -Wno-unused-local-typedefs -Wno-format -Wno-sign-compare")
+  set (CMAKE_CXX_FLAGS_RELEASE "-O2 -fopenmp")
+  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -fopenmp")
+  set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-unused-local-typedefs -Wno-format -Wno-sign-compare")
 else ()
 #TODO - add flags for Intel and others
   message ("compiler ID: " ${CXX_COMPILER_ID})
   message ("No custom compiler flags are known.")
 endif ()
+
+# append output level to C and C++ flags
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DPHIST_OUTLEV=${OUTLEV_DEBUG}")
+
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DPHIST_OUTLEV=${OUTLEV_DEBUG}")
+
 
 ##############################################################################
 # setup MPI
@@ -141,8 +149,8 @@ set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/k
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_rcp_helpers.cpp)
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.c
-                       ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp
-                       ${PROJECT_SOURCE_DIR}/src/core/phist_taskbuf.c)
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp)
+#                       ${PROJECT_SOURCE_DIR}/src/core/phist_taskbuf.c)
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_lanczos.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_bgmres.cpp)
