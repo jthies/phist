@@ -1,6 +1,7 @@
 #ifndef BELOS_GHOST_MV_HPP
 #define BELOS_GHOST_MV_HPP
 
+#include "phist_macros.h"
 #include "ghost.h"
 
 namespace phist {
@@ -38,6 +39,10 @@ class GhostMV: public ghost_vec_t
     {
     v_=v_in;
     ownMem_=ownMem;
+    
+    myID=countObjects++;
+    
+    PHIST_DEB("+++ Create GhostMV #%d, ownMem=%d",myID,ownMem);
     }
   
   //!
@@ -46,6 +51,7 @@ class GhostMV: public ghost_vec_t
     if (ownMem_)
       {
       this->get()->destroy(this->get());
+      PHIST_DEB("+++ Delete GhostMV #%d",myID);
       }
     }
 
@@ -97,6 +103,11 @@ protected:
   
   //! are we allowed to delete the vector?
   bool ownMem_;
+  
+  static int countObjects;
+  
+  int myID;
+  
   };
 
 } //namespace phist

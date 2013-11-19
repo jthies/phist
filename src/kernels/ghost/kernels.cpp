@@ -12,11 +12,18 @@
 #include "Belos_GhostAdapter.hpp"
 #include "BelosTsqrOrthoManager.hpp"
 
+#include "phist_GhostMV.hpp"
+
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
 
 #include "ghost.h"
+
+namespace phist
+  {
+  int GhostMV::countObjects=0;
+  }
 
 extern "C" {
 

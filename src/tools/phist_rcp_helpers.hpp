@@ -13,16 +13,30 @@ namespace phist
   {
 #ifdef PHIST_KERNEL_LIB_GHOST
 
-  // rcp for ghost_vec_t, includes creating the GhostMV wrapper
+  //! rcp for ghost_vec_t, includes creating the GhostMV wrapper
   Teuchos::RCP<GhostMV> rcp(ghost_vec_t* rawPtr, bool ownMem=true);
 
-  // specialization for const ghost_vec_t
+  //! specialization for const ghost_vec_t
   Teuchos::RCP<const GhostMV> rcp(const ghost_vec_t* rawPtr, bool ownMem=true);
 
 #else
-  // standard rcp() function from Teuchos
+  //! standard rcp() function from Teuchos
   using Teuchos::rcp;
 #endif
+
+  //! get mvec pointer from reference
+  template<typename MV>
+  void* ref2ptr(MV& V)
+    {
+    return &V;
+    }
+
+  //! get mvec pointer from reference
+  template<typename MV>
+  const void* ref2ptr(const MV& V)
+    {
+    return &V;
+    }
 
   } // namespace phist
 #endif

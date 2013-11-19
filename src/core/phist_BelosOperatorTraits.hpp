@@ -1,6 +1,7 @@
 #ifndef PHIST_BELOS_OPERATOR_TRAITS_HPP
 #define PHIST_BELOS_OPERATOR_TRAITS_HPP
 
+#include "phist_rcp_helpers.hpp"
 #include "phist_operator.h"
 #include "phist_ScalarTraits.hpp"
 #include "BelosTypes.hpp"
@@ -39,7 +40,7 @@ namespace Belos {
     int ierr;
     Scalar alpha = phist::ScalarTraits<Scalar>::one();
     Scalar beta = phist::ScalarTraits<Scalar>::zero();
-    Op.apply(alpha,Op.A,(const phist_mvec_t*)&X, beta, (phist_mvec_t*)&Y,&ierr);
+    Op.apply(alpha,Op.A,phist::ref2ptr(X), beta, phist::ref2ptr(Y),&ierr);
     }
 
     static bool

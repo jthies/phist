@@ -500,12 +500,16 @@ void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* ierr)
   {
   *ierr = 0;
   CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
+  std::cout << "# local rows: "<<V->traits->nrows<<std::endl;
+  std::cout << "# vectors:    "<<V->traits->nvecs<<std::endl;
   V->print(V);
   }
 
 void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* ierr)
   {
   CAST_PTR_FROM_VOID(ghost_vec_t,M,vM,*ierr);
+  std::cout << "# rows: "<<M->traits->nrows<<std::endl;
+  std::cout << "# cols: "<<M->traits->nvecs<<std::endl;
   M->print(M);
   }
 
@@ -717,7 +721,8 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
   CAST_PTR_FROM_VOID(ghost_vec_t,C,vC,*ierr);
   CAST_PTR_FROM_VOID(ghost_vec_t,W,vW,*ierr);
 #ifdef TESTING
-  int nrV,ncV,nrW,ncW,nrC,ncC;
+  lidx_t nrV,nrW;
+  int ncV, ncW, nrC, ncC;
   nrV=V->traits->nrows;  ncV=V->traits->nvecs;
   nrW=W->traits->nrows;  ncW=V->traits->nvecs;
   nrC=C->traits->nrows;  ncC=V->traits->nvecs;
@@ -725,6 +730,8 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
   PHIST_CHK_IERR(*ierr=nrC-ncV,*ierr);
   PHIST_CHK_IERR(*ierr=ncC-ncW,*ierr);
 #endif
+  PHIST_DEB("V'C with V %"PRlidx"x%d, C %dx%d and result %"PRlidx"x%d",
+        nrV,ncV,nrC,ncC,nrW,ncW);
   // note: C is replicated, so this operation is a purely local one.
   char trans[]="N";
   *ierr=ghost_gemm(trans,V,C,W,(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE);

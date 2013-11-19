@@ -22,6 +22,26 @@ namespace phist
     // if it is no longer needed.
     return Teuchos::rcp(new GhostMV(const_cast<ghost_vec_t*>(rawPtr),ownMem),true);
     }
-#endif
 
+  //!\name ref2ptr specialization for Ghost: input GhostMV, output ghost_vec_t*
+  //@{
+
+  // get mvec pointer from reference (implementation for GhostMV that returns
+  // ghost_vec_t*)
+  template<>
+  void* ref2ptr(GhostMV& V)
+    {
+    return (void*)V.get();
+    }
+
+  // get const mvec pointer from const reference (implementation for GhostMV that returns
+  // const ghost_vec_t*)
+  template<>
+  const void* ref2ptr(const GhostMV& V)
+    {
+    return (const void*)V.get();
+    }
+  //@}
+
+#endif
   } // namespace phist

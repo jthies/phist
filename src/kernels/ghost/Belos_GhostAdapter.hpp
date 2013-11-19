@@ -54,7 +54,7 @@ using ::phist::GhostMV;
       // this allocates the memory for the vector
       Scalar z=st::zero();
       mv_clone->fromScalar(mv_clone,(void*)&z);
-      return phist::rcp(mv_clone);
+      return phist::rcp(mv_clone,true);
     }
 
     static Teuchos::RCP<GhostMV > CloneCopy( const GhostMV& mv )
@@ -64,7 +64,7 @@ using ::phist::GhostMV;
       ghost_vtraits_t* vtraits = ghost_cloneVtraits(_mv->traits);
       ghost_vec_t* mv_clone = ghost_createVector(_mv->context,vtraits);
       mv_clone->fromVec(mv_clone,_mv,0);
-      return phist::rcp(mv_clone); 
+      return phist::rcp(mv_clone,true); 
     }
 
     static Teuchos::RCP<GhostMV > CloneCopy( const GhostMV& mv, const std::vector<int>& index )
@@ -91,7 +91,7 @@ using ::phist::GhostMV;
 
       if (contig)
         {
-        return phist::rcp(_mv->clone(_mv,index.size(),index[0]));
+        return phist::rcp(_mv->clone(_mv,index.size(),index[0]),true);
         }
       else
         {
@@ -108,7 +108,7 @@ using ::phist::GhostMV;
           ghost_vec_t *result_j = result->viewVec(result, 1, j);
           result_j->fromVec(result_j,_mv,index[j]);
           }
-        return phist::rcp(result);
+        return phist::rcp(result,true);
         }
       }
 
@@ -140,7 +140,7 @@ using ::phist::GhostMV;
 	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 			     os.str() << "Should never get here!");
 	}
-      return phist::rcp(_mv->clone(_mv,index.ubound()-index.lbound()+1,index.lbound));
+      return phist::rcp(_mv->clone(_mv,index.ubound()-index.lbound()+1,index.lbound),true);
       }
 
 
@@ -201,7 +201,7 @@ using ::phist::GhostMV;
         result->traits->nrowspadded = _mv->traits->nrowspadded*stride;
         }
       }
-    return phist::rcp(result);
+    return phist::rcp(result,true);
     }
 
 
@@ -235,7 +235,7 @@ using ::phist::GhostMV;
 	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 			     os.str() << "Should never get here!");
 	}
-      return phist::rcp(_mv->viewVec(_mv,index.ubound()-index.lbound()+1, index.lbound()));
+      return phist::rcp(_mv->viewVec(_mv,index.ubound()-index.lbound()+1, index.lbound()),true);
       }
 
 
@@ -301,11 +301,12 @@ using ::phist::GhostMV;
       Scalar zero=st::zero();
       Scalar one=st::one();
       
-      std::cerr << "alpha="<<alpha<<", beta="<<beta<<std::endl;
-      std::cerr << "A="<<std::endl;
-      _A->print(_A);
-      std::cerr << "B="<<std::endl;
-      _B->print(_B);
+      //std::cerr << "alpha="<<alpha<<", beta="<<beta<<std::endl;
+      //std::cerr << "A="<<std::endl;
+      //_A->print(_A);
+      //std::cerr << "B="<<std::endl;
+      //_B->print(_B);
+      
       // mv = A
       if (alpha==zero)
         {
@@ -337,8 +338,8 @@ using ::phist::GhostMV;
           _mv->axpy(_mv,_B,(void*)&beta);
           }
         }
-      std::cerr << "alpha*A+beta*B="<<std::endl;
-      _mv->print(_mv);
+      //std::cerr << "alpha*A+beta*B="<<std::endl;
+      //_mv->print(_mv);
       }
 
     static void MvScale ( GhostMV& mv, Scalar alpha )
