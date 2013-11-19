@@ -20,10 +20,12 @@
 
 #include "ghost.h"
 
+#if PHIST_OUTLEV>=PHIST_TRACE
 namespace phist
   {
   int GhostMV::countObjects=0;
   }
+#endif
 
 extern "C" {
 

@@ -40,9 +40,10 @@ class GhostMV: public ghost_vec_t
     v_=v_in;
     ownMem_=ownMem;
     
+#if PHIST_OUTLEV>=PHIST_TRACE
+    PHIST_OUT(PHIST_TRACE,"+++ Create GhostMV #%d, ownMem=%d",myID,ownMem);
     myID=countObjects++;
-    
-    PHIST_DEB("+++ Create GhostMV #%d, ownMem=%d",myID,ownMem);
+#endif
     }
   
   //!
@@ -51,8 +52,17 @@ class GhostMV: public ghost_vec_t
     if (ownMem_)
       {
       this->get()->destroy(this->get());
-      PHIST_DEB("+++ Delete GhostMV #%d",myID);
       }
+#if PHIST_OUTLEV>=PHIST_TRACE
+    if (ownMem_)
+      {
+      PHIST_OUT(PHIST_TRACE,"+++ Delete GhostMV #%d",myID);
+      }
+    else
+      {
+      PHIST_OUT(PHIST_TRACE,"+++ Delete view GhostMV #%d",myID);
+      }
+#endif
     }
 
   //!
@@ -100,14 +110,16 @@ protected:
   
   //! the wrapped object
   ghost_vec_t* v_;
-  
+
   //! are we allowed to delete the vector?
   bool ownMem_;
-  
+
+#if PHIST_OUTLEV>=PHIST_TRACE  
+  // give each newly created object a label so we can track where they are destroyed 
   static int countObjects;
-  
+  // label of this object
   int myID;
-  
+#endif  
   };
 
 } //namespace phist
