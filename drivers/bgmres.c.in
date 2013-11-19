@@ -25,7 +25,8 @@ int main(int argc, char** argv)
   mvec_ptr_t X,XEX,B; // multivectors for solution and rhs (XEX exact solution to compare)
   
   MT tol;
-  MT* norm2; /* for computing the error norms after the solve */
+  MT *norm2; /* for computing the error norms after the solve */
+  MT *xnorm2, *bnorm2; /* for scaling, norm of exact solution and rhs */
   char* filename;
   
   int num_iters;
@@ -127,20 +128,26 @@ int main(int argc, char** argv)
   
   /* compute ||X - XEX||_2 */
   norm2=(MT*)malloc(num_rhs*sizeof(MT));
+  xnorm2=(MT*)malloc(num_rhs*sizeof(MT));
+  bnorm2=(MT*)malloc(num_rhs*sizeof(MT));
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(ONE,XEX,-ONE,X,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_norm2)(X,norm2,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(XEX,xnorm2,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(B,bnorm2,&ierr),ierr);
   
   if (verbose)
     {
-    fprintf(stdout,"error 2-norms: ");
+    fprintf(stdout,"error 2-norms: ||r||, ||r||/||x||, ||r||/||b||:\n");
     for (i=0;i<num_rhs;i++)
       {
-      fprintf(stdout,"%f  ",norm2[i]);
+      fprintf(stdout,"%8.4e\t%8.4e\t%8.4e",norm2[i],norm2[i]/xnorm2[i],norm2[i]/bnorm2[i]);
       }
     fprintf(stdout,"\n");
     }
   
   free(norm2);
+  free(xnorm2);
+  free(bnorm2);
   
   PHIST_ICHK_IERR(SUBR(crsMat_delete)(A,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&ierr),ierr);
