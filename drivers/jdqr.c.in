@@ -74,6 +74,9 @@ int main(int argc, char** argv)
 
   verbose= (rank==0);
 
+#ifdef TESTING
+  std::srand(49+rank);
+#endif
 
   if (argc<2)
     {
@@ -175,11 +178,6 @@ int main(int argc, char** argv)
   MT nrmX0[num_eigs+1];
   PHIST_ICHK_IERR(SUBR(mvec_my_length)(X,&nloc,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_extract_view)(X,&valX0,&lda,&ierr),ierr);
-  // for comparing step-by-step with matlab
-  for (i=0;i<nloc;i++)
-    {
-    valX0[i] = (ST)(i+1);
-    }
   PHIST_ICHK_IERR(SUBR(mvec_normalize)(X,nrmX0,&ierr),ierr);
 
   SUBR(jdqr)(A_op,B_op,X,evals,resid,is_cmplx, 
