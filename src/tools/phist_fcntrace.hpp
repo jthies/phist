@@ -3,6 +3,9 @@
 
 #ifndef NO_INCLUDES_IN_HEADERS
 #include <string>
+#ifdef PHIST_HAVE_LIKWID
+#include <likwid.h>
+#endif
 #endif
 
 // this is an object that prints a message when created and when destroyed.
@@ -19,10 +22,16 @@ class FcnTracer
   FcnTracer(const char* fcn) : fcn_(fcn)
     {
     PHIST_OUT(0,"PHIST ENTER %s\n",fcn_.c_str());
+#ifdef PHIST_HAVE_LIKWID
+    likwid_markerStartRegion(fcn_.c_str());
+#endif
     }
 
   ~FcnTracer()
     { 
+#ifdef PHIST_HAVE_LIKWID
+    likwid_markerStopRegion(fcn_.c_str());
+#endif
     PHIST_OUT(0,"PHIST LEAVE %s\n",fcn_.c_str()); 
     }
 

@@ -10,6 +10,10 @@
 #include "epetra_helpers.cpp"
 #include "phist_ScalarTraits.hpp"
 
+#ifdef PHIST_HAVE_LIKWID
+#include <likwid.h>
+#endif
+
 extern "C" {
 
 // initialize kernel library. Should at least call MPI_Init if it has not been called
@@ -20,12 +24,18 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
 #ifdef PHIST_HAVE_MPI
   *ierr=MPI_Init(argc,argv); 
 #endif
+#ifdef PHIST_HAVE_LIKWID
+  likwid_markerInit();
+#endif
   }
 
 // finalize kernel library. Should at least call MPI_Finalize if it has not been called
 // but is required.
 void phist_kernels_finalize(int* ierr)
   {
+#ifdef PHIST_HAVE_LIKWID
+  likwid_markerClose();
+#endif
 #ifdef PHIST_HAVE_MPI
   *ierr=MPI_Finalize();
 #endif  

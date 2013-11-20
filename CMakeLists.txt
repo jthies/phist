@@ -94,16 +94,6 @@ set(MPIEXEC "mpirun")
 set(MPIEXEC_NUMPROC_FLAG "-np")
 endif()
 
-find_package(Likwid PATHS $ENV{LIKWID_HOME} Optional)
-if (${LIKWID_Found})
-  add_definitions(-DPHIST_HAVE_LIKWID)
-  include_directories(${LIKWID_INCLUDE_DIRS})
-  link_directories(${LIKWID_LIBRARY_DIRS})
-  list(APPEND PHIST_LIBS ${LIKWID_LIBRARIES})
-else()
-  message(STATUS "continuing without Likwid, you can set the environment variable LIKWID_HOME to help CMake find it")
-endif()
-
 ##############################################################################
 # setup which kernel library is being used.
 ##############################################################################
@@ -193,6 +183,16 @@ else()
                 " not be functional.                                                    "
                 "Append the ghost installation directory to the environment variable    "
                 "PKG_CONFIG_PATH to help cmake find it.                                 ")
+endif()
+
+find_package(Likwid PATHS $ENV{LIKWID_HOME} Optional)
+if (${LIKWID_Found})
+  add_definitions(-DPHIST_HAVE_LIKWID)
+  include_directories(${LIKWID_INCLUDE_DIRS})
+  link_directories(${LIKWID_LIBRARY_DIRS})
+  list(APPEND PHIST_LIBS ${LIKWID_LIBRARIES} -pthread)
+else()
+  message(STATUS "continuing without Likwid, you can set the environment variable LIKWID_HOME to help CMake find it")
 endif()
 
 

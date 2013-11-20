@@ -14,6 +14,10 @@
 
 #include "phist_GhostMV.hpp"
 
+#ifdef PHIST_HAVE_LIKWID
+#include <likwid.h>
+#endif
+
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
@@ -57,11 +61,17 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
   ghost_init(*argc, *argv);
   ghost_printSysInfo();
   ghost_printGhostInfo();
+#ifdef PHIST_HAVE_LIKWID
+  likwid_markerInit();
+#endif
   }
 
 // finalize ghost
 void phist_kernels_finalize(int* ierr)
   {
+#ifdef PHIST_HAVE_LIKWID
+  likwid_markerClose();
+#endif
   ghost_finish();
   *ierr=0;
   }

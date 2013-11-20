@@ -13,6 +13,9 @@
 #include "BelosTpetraAdapter.hpp"
 #include "BelosTsqrOrthoManager.hpp"
 
+#ifdef PHIST_HAVE_LIKWID
+#include <likwid.h>
+#endif
 
 
 using namespace phist::tpetra;
@@ -35,12 +38,18 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
     *ierr=MPI_Init(argc,argv);
     }
 #endif
+#ifdef PHIST_HAVE_LIKWID
+  likwid_markerInit();
+#endif
   }
       
   // finalize kernel library. Should at least call MPI_Finalize if it has not been called
   // but is required.
   void phist_kernels_finalize(int* ierr)
     {
+#ifdef PHIST_HAVE_LIKWID
+  likwid_markerClose();
+#endif
 #ifdef PHIST_HAVE_MPI
   if (myMpiSession==1)
     {
