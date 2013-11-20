@@ -185,7 +185,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     for (int j=0;j<k;j++)
       {
       maxRed=std::min(maxRed,normW1[j]/normW0[j]);
-      normW0[j]=normW1[j];
+      normW0[j]=1.; // after mvec_QR the norm is 1!
       }
     PHIST_SOUT(PHIST_VERBOSE,"reduction in norm, GS step %d: %4.2f",step,maxRed);
     if (maxRed>0.75)
@@ -208,6 +208,9 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 
     //R2=R2+R2';
     PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R2p,st::one(),R2,ierr),*ierr);
+
+    // again, the norm can be computed from the coefficients in R2p (TODO)
+    PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW1,ierr),*ierr);    
 
     // orthogonalize W. The situation where the rank of W becomes
     // smaller than k here is (I think) very unlikely because we 
@@ -236,9 +239,6 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
       PHIST_CHK_IERR(SUBR(mvec_put_value)(R1_r,st::zero(),ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_delete)(R1_r,ierr),*ierr);
     }
-
-    // again, the norm can be computed from the coefficients in R2p (TODO)
-    PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW1,ierr),*ierr);    
     }//while
 
   PHIST_CHK_IERR(SUBR(sdMat_delete)(R1p,ierr),*ierr);
