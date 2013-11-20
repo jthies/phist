@@ -62,7 +62,8 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
   ghost_printSysInfo();
   ghost_printGhostInfo();
 #ifdef PHIST_HAVE_LIKWID
-  likwid_markerInit();
+  LIKWID_MARKER_INIT;
+  LIKWID_MARKER_START("phist<ghost>");
 #endif
   }
 
@@ -70,7 +71,8 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
 void phist_kernels_finalize(int* ierr)
   {
 #ifdef PHIST_HAVE_LIKWID
-  likwid_markerClose();
+  LIKWID_MARKER_STOP("phist<ghost>");
+  LIKWID_MARKER_CLOSE;
 #endif
   ghost_finish();
   *ierr=0;

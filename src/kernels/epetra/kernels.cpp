@@ -25,7 +25,8 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
   *ierr=MPI_Init(argc,argv); 
 #endif
 #ifdef PHIST_HAVE_LIKWID
-  likwid_markerInit();
+  LIKWID_MARKER_INIT;
+  LIKWID_MARKER_START("phist<epetra>");
 #endif
   }
 
@@ -34,7 +35,8 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
 void phist_kernels_finalize(int* ierr)
   {
 #ifdef PHIST_HAVE_LIKWID
-  likwid_markerClose();
+  LIKWID_MARKER_STOP("phist<epetra>");
+  LIKWID_MARKER_CLOSE;
 #endif
 #ifdef PHIST_HAVE_MPI
   *ierr=MPI_Finalize();

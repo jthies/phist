@@ -21,18 +21,18 @@ class FcnTracer
   
   FcnTracer(const char* fcn) : fcn_(fcn)
     {
+#if (PHIST_OUTLEV>=PHIST_TRACE)
     PHIST_OUT(0,"PHIST ENTER %s\n",fcn_.c_str());
-#ifdef PHIST_HAVE_LIKWID
-    likwid_markerStartRegion(fcn_.c_str());
 #endif
+    LIKWID_MARKER_START(fcn_.c_str());
     }
 
   ~FcnTracer()
     { 
-#ifdef PHIST_HAVE_LIKWID
-    likwid_markerStopRegion(fcn_.c_str());
-#endif
+    LIKWID_MARKER_STOP(fcn_.c_str());
+#if (PHIST_OUTLEV>=PHIST_TRACE)
     PHIST_OUT(0,"PHIST LEAVE %s\n",fcn_.c_str()); 
+#endif
     }
 
   std::string fcn_;

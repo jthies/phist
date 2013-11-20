@@ -155,7 +155,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 
 #ifdef __cplusplus
 #include "phist_fcntrace.hpp"
-#if (PHIST_OUTLEV>=PHIST_TRACE)
+#if (PHIST_OUTLEV>=PHIST_TRACE) || (LIKWID_PERFMON)
 #define ENTER_FCN(s) FcnTracer YouCantHaveMultiple_ENTER_FCN_StatementsInOneScope(s);
 #else
 #define ENTER_FCN(s)
