@@ -30,8 +30,16 @@ namespace phist {
 //! you pass to an rcp, if true the vector 
 //! is destroyed along with the wrapper,   
 //! otherwise just the wrapper is deleted. 
-//!                                         
-class GhostMV: public ghost_vec_t
+//!                                        
+//! JT 20.11.2013: disabling the feature   
+//! that GhostMV is derived from ghost_vec 
+//! because it leads ot confusion and bugs.
+//! Use phist::rcp(ghost_vec_t*) to get an 
+//! RCP<GhostMV> instead, and phist::ref2ptr
+//! in order to get a ghost_vec_t* from a  
+//! GhostMV object (or whatever the underly-
+//! ing kernel lib uses as vector format).
+class GhostMV
   {
   public:
   //!
