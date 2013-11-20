@@ -170,6 +170,10 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::one(),&ierr),ierr);
 
 
+  // used to calculate explicit residuals
+  mvec_ptr_t res;
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&res,map,nEig,&ierr),ierr);
+
 
   //------------------------------- run block JaDa algorithm ----------------------- 
   PHIST_ICHK_IERR(SUBR(blockjada)(opA, NULL, v0, which, tol, &nEig, &nIter, blockDim, minBase, maxBase, Q, R, resNorm, &ierr), ierr);
@@ -180,10 +184,21 @@ int main(int argc, char** argv)
     std::cout << " " << resNorm[i];
   std::cout << std::endl;
 
+  // calculate real residual
+  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(st::one(),A,Q,st::zero(),res,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Q,R,st::one(),res,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(res,resNorm,&ierr),ierr);
+  PHIST_SOUT(PHIST_INFO, " explicit residuum norm:");
+  for(int i = 0; i < nEig; i++)
+    std::cout << " " << resNorm[i];
+  std::cout << std::endl;
+
+
 
 
   //------------------------------- clear matrices and vectors --------------------- 
   // delete vectors and sdMats
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(res,&ierr),ierr);
   delete[] resNorm;
   PHIST_ICHK_IERR(SUBR(mvec_delete)(v0,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(sdMat_delete)(R,&ierr),ierr);
