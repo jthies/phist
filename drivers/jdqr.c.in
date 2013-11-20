@@ -241,23 +241,24 @@ int main(int argc, char** argv)
 
   if (verbose && num_eigs>0)
     {
-    fprintf(stdout,"  Eigenvalue\t\t\t\tRitz Residual\tExpl. Residual\n");
-    fprintf(stdout,"  =================================================================\n");
+    fprintf(stdout,"  Eigenvalue\t\t\t\t\t\tRitz Residual\tExpl. Residual\n");
+    fprintf(stdout,"======================================================================================\n");
     int i=0;
     while (i<num_eigs)
       {
 #ifdef IS_COMPLEX
-      fprintf(stdout,"%16.8g%+16.8gi\t  %3.1e\t\t%3.1e\n",evals[i],resid[i],expRes[i]);
+      fprintf(stdout,"%24.16e%+24.16ei\t%3.1e\t\t%3.1e\n",
+        REAL(evals[i]),IMAG(evals[i]),resid[i],expRes[i]);
 #else
       if (is_cmplx[i])
         {
-        fprintf(stdout,"%16.8g%+16.8gi\t%3.1e\t\t%3.1e\n",evals[i],evals[i+1],resid[i],expRes[i]);
-        fprintf(stdout,"%16.8g%+16.8gi\t%3.1e\t\t%3.1e\n",evals[i],-evals[i+1],resid[i+1],expRes[i]);
+        fprintf(stdout,"%24.16e%+24.16ei\t%3.1e\t\t%3.1e\n",evals[i],evals[i+1],resid[i],expRes[i]);
+        fprintf(stdout,"%24.16e%+24.16ei\t%3.1e\t\t%3.1e\n",evals[i],-evals[i+1],resid[i+1],expRes[i+1]);
         i++;
         }
       else
         {
-        fprintf(stdout,"%16.8e\t\t\t%3.1e\t\t%3.1e\n",evals[i],resid[i],expRes[i]);
+        fprintf(stdout,"%24.16e\t\t\t\t%3.1e\t\t%3.1e\n",evals[i],resid[i],expRes[i]);
         }
 #endif
       i++;
