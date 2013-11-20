@@ -28,8 +28,8 @@ void SUBR(simple_arnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op, TYPE
   
   int nrH,ncH,ncV;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&ncV,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(V,&nrH,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(V,&ncH,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(H,&nrH,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(H,&ncH,ierr),*ierr);
   // note: we actually don't care about the dimensions of V and H as long as they are large 
   // enough since we just work with views in this function. However, we issue a warning 
   // (positive ierr) if the array dimensions are larger than expected so that the user 
@@ -37,7 +37,10 @@ void SUBR(simple_arnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op, TYPE
   if (ncV<m+1 || nrH<m+1 || ncH<m) {*ierr = -1; return;}
   if (ncV!=m+1 || nrH!=m+1 || ncH!=m)
     {
-    PHIST_SOUT(PHIST_INFO,"input vectors/matrix to arnoldi are larger than necessary");
+    PHIST_SOUT(PHIST_VERBOSE,"REMARK: input vectors/matrix to arnoldi are larger than necessary.");
+    PHIST_SOUT(PHIST_VERBOSE,"        Requested subspace dimension is %d,",m);
+    PHIST_SOUT(PHIST_VERBOSE,"        H is %dx%d (expecting %dx%d), V with %d cols (expecting %d)",
+                                      nrH, ncH, m+1,m,ncV,m+1);
     }
   
   for (int i=0;i<m;i++)
