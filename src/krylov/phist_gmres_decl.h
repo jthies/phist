@@ -5,7 +5,7 @@
 //! manually (the parameter maxBas must not be adjusted
 //! after the call to _create as it determines the size
 //! of the held data structures). Then call reset to   
-//! set the initial vector. To restart from the        
+//! set the rhs and initial vector. To restart from the
 //! previous iteration state, simply pass the object to
 //! gmres again. To restart from an initial guess, use 
 //! the reset function again. It is important to call  
@@ -33,6 +33,11 @@ typedef struct TYPE(gmresState) {
   _ST_ *cs_, *sn_;   //! cosine and sine terms for the Givens rotations
   _ST_ *rs_;
   
+  _MT_ normB_; //! stores norm of RHS so it doesn't have to be recomputed when
+               //! when continuing.
+
+  _MT_ normB_; //! stores current residual norm
+  
   int curDimV_; //! current size of the basis V
   int curIter_; //! number of iterations performed since last call to init
   //@}
@@ -41,19 +46,27 @@ typedef struct TYPE(gmresState) {
 typedef TYPE(gmresState)* TYPE(gmresState_ptr);
 
 //! a simple GMRES implementation that works on several vectors simultaneously,
-//! building a separate Krylov subspace for each of them. The iteration status 
-//! is stored in a struct so that the process can be continued for some of the 
-//! systems if one or more converge. This is not a block GMRES but a 'pseudo-  
+//! building a separate Krylov subspace for each of them. The iteration status
+//! is stored in a struct so that the process can be continued for some of the
+//! systems if one or more converge. This is not a block GMRES but a 'pseudo-
 //! block GMRES' as the former would build a single subspace for all rhs. It is
-//! therefore OK to have the operator perform a different task for each vector 
-//! column it is applied to, like in block JaDa: OP(X_j) = (A-s_jI)(I-VV').    
-//! The computational steering is done by initializing the parameters in the   
-//! gmresState structs. Individual ierr flags are contained within the structs,
+//! therefore OK to have the operator perform a different task for each vector
+//! column it is applied to, like in block JaDa: OP(X_j) = (A-s_jI)(I-VV').
+//! The computational steering is done by initializing the parameters in the
+//! gmresState structs. The iteration stops as soon as one system converges.
+//! The user can then continue running GMRES on the others after appropriately
+//! reordering the input vectors and array of states.
+//! Individual ierr flags are contained within the structs,
 //! and a global error code is put into the last arg ierr, as usual.
+//!
+//! if system j has converged, S_array[j]->ierr will be set t0 0 on output.
+//! Otherwise it will be set to 1 (not yet converged) or 2 (max iters exceeded),
+//! or a negative value if an error occurred related to this particular system.
+//! The global ierr flag will then be set to -1.
 void SUBR(gmres)(TYPE(const_op_ptr) Op,
         TYPE(mvec_ptr) X,
         TYPE(const_mvec_ptr) B,
-        TYPE(gmresState)* array_of_states,
+        TYPE(gmresState)* S_array,
         int* ierr);
 
 //! delete gmresState object
@@ -71,4 +84,10 @@ SUBR(gmresState_create)(TYPE(gmresState_ptr)* state, const_map_ptr map,
 //! solver. It is necessary to call this function before the first call to
 //! gmres. The input starting vector x0 may be NULL, in that case this function
 //! will generate a random initial guess. x0 does not have to be normalized in advance.
-SUBR(gmresState_reset)(TYPE(gmresState_ptr) S, TYPE(const_mvec_ptr) x0,int *ierr);
+//! The input RHS may also be NULL, meaning 'keep old RHS', but not on the first call to
+//! reset. If one of the RHS vectors changes between calls to gmres, reset with the new
+//! rhs should be called for that gmresState, otherwise a messed up Krylov sequence will
+//! result and the convergence criterion will not be consistent.
+SUBR(gmresState_reset)(TYPE(gmresState_ptr) S, 
+                TYPE(const_mvec_ptr) b, 
+                TYPE(const_mvec_ptr) x0, int *ierr);
