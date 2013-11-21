@@ -109,7 +109,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   std::cout << std::scientific << std::setprecision(4) << std::setw(8);
 
   *num_iters=0;
-  
+  *num_eigs=0;
+   
   const_comm_ptr_t comm;
   PHIST_CHK_IERR(phist_map_get_comm(A_op->range_map,&comm,ierr),*ierr);
 
@@ -167,7 +168,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_SOUT(PHIST_VERBOSE,"====================");
   PHIST_SOUT(PHIST_VERBOSE,"| JDQR parameters  |");
   PHIST_SOUT(PHIST_VERBOSE,"====================");
-  PHIST_SOUT(PHIST_VERBOSE,"#eigs\t%d",*num_eigs);
+  PHIST_SOUT(PHIST_VERBOSE,"#eigs\t%d",numEigs);
   PHIST_SOUT(PHIST_VERBOSE,"which\t%s",eigSort2str(which));
   PHIST_SOUT(PHIST_VERBOSE,"tol\t%4.2g",tol);
   PHIST_SOUT(PHIST_VERBOSE,"#iter\t%d",maxIter);
@@ -678,7 +679,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   TOUCH(Rv); // we would need it for this
   
   // some sanity checks - the user provides only num_eigs+1 slots
-  nconv = std::min(*num_eigs+1,nconv);
+  nconv = std::min(numEigs+1,nconv);
   *num_eigs=nconv;// tell the user how many we return
   
   if (nconv>0)
