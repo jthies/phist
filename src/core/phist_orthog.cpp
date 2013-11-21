@@ -3,6 +3,39 @@
 
 #include "phist_ScalarTraits.hpp"
 
+//#ifdef PHIST_KERNEL_LIB_TPETRA
+//#define USE_TRILINOS_ORTHO_MANAGER
+//#endif
+
+#ifdef USE_TRILINOS_ORTHO_MANAGER
+
+#include "phist_rcp_helpers.hpp"
+#include "phist_operator.h"
+#include "phist_BelosOperatorTraits.hpp"
+
+#ifdef PHIST_KERNEL_LIB_TPETRA
+#include "BelosTpetraAdapter.hpp"
+#include "phist_tpetra_typedefs.hpp"
+#else
+#error "not implemented"
+#endif
+
+#include "BelosOrthoManager.hpp"
+// we can try any of the methods implemented in Belos:
+#include "BelosTsqrOrthoManager.hpp"
+#include "BelosDGKSOrthoManager.hpp"
+#include "BelosICGSOrthoManager.hpp"
+#include "BelosIMGSOrthoManager.hpp"
+
+#include "phist_gen_s.h"
+#include "trili_orthog_def.hpp"
+#include "phist_gen_d.h"
+#include "trili_orthog_def.hpp"
+#include "phist_gen_c.h"
+#include "trili_orthog_def.hpp"
+#include "phist_gen_z.h"
+#include "trili_orthog_def.hpp"
+#else
 #include "phist_gen_s.h"
 #include "phist_orthog_def.hpp"
 #include "phist_gen_d.h"
@@ -11,4 +44,4 @@
 #include "phist_orthog_def.hpp"
 #include "phist_gen_z.h"
 #include "phist_orthog_def.hpp"
-
+#endif
