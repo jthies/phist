@@ -49,6 +49,9 @@ using ::phist::GhostMV;
     ENTER_FCN(__FUNCTION__);    
       ghost_vec_t* _mv = const_cast<GhostMV&>(mv).get();
       ghost_vtraits_t* vtraits = ghost_cloneVtraits(_mv->traits);
+      // copy the data even if the input vector is itself a view
+      // (bitwise NAND operation to unset the view flag if set)
+      vtraits->flags &= ~GHOST_VEC_VIEW;
       vtraits->nvecs=numvecs;
       ghost_vec_t* mv_clone = ghost_createVector(_mv->context,vtraits);
       // this allocates the memory for the vector
@@ -62,6 +65,9 @@ using ::phist::GhostMV;
     ENTER_FCN(__FUNCTION__);    
       ghost_vec_t* _mv = const_cast<GhostMV&>(mv).get();
       ghost_vtraits_t* vtraits = ghost_cloneVtraits(_mv->traits);
+      // copy the data even if the input vector is itself a view
+      // (bitwise NAND operation to unset the view flag if set)
+      vtraits->flags &= ~GHOST_VEC_VIEW;
       ghost_vec_t* mv_clone = ghost_createVector(_mv->context,vtraits);
       mv_clone->fromVec(mv_clone,_mv,0);
       return phist::rcp(mv_clone,true); 
@@ -98,6 +104,9 @@ using ::phist::GhostMV;
         ghost_vec_t* result;
         ghost_vtraits_t *vtraits = ghost_cloneVtraits(_mv->traits);
                 vtraits->nvecs=index.size();
+        // copy the data even if the input vector is itself a view
+        // (bitwise NAND operation to unset the view flag if set)
+        vtraits->flags &= ~GHOST_VEC_VIEW;
         result=ghost_createVector(_mv->context,vtraits);
         // allocates memory
         Scalar zero=Teuchos::ScalarTraits<Scalar>::zero();

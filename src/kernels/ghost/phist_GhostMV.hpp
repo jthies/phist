@@ -4,6 +4,11 @@
 #include "phist_macros.h"
 #include "ghost.h"
 
+#if PHIST_OUTLEV>=PHIST_TRACE
+#define TRACE_GHOSTMV_MEM
+#endif
+
+
 namespace phist {
 
 //! a C++ wrapper for ghost_vec_t so that  
@@ -48,29 +53,30 @@ class GhostMV
     v_=v_in;
     ownMem_=ownMem;
     
-#if PHIST_OUTLEV>=PHIST_TRACE
-    PHIST_OUT(PHIST_TRACE,"+++ Create GhostMV #%d, ownMem=%d",myID,ownMem);
+#ifdef TRACE_GHOSTMV_MEM
     myID=countObjects++;
+    PHIST_OUT(PHIST_INFO,"### Create GhostMV #%d, ownMem=%d",myID,ownMem);
 #endif
     }
   
   //!
   virtual ~GhostMV()
     {
+#ifdef TRACE_GHOSTMV_MEM
     if (ownMem_)
       {
-      this->get()->destroy(this->get());
-      }
-#if PHIST_OUTLEV>=PHIST_TRACE
-    if (ownMem_)
-      {
-      PHIST_OUT(PHIST_TRACE,"+++ Delete GhostMV #%d",myID);
+      PHIST_OUT(PHIST_INFO,"### Delete GhostMV #%d",myID);
       }
     else
       {
-      PHIST_OUT(PHIST_TRACE,"+++ Delete view GhostMV #%d",myID);
+      PHIST_OUT(PHIST_INFO,"### Delete view GhostMV #%d",myID);
       }
 #endif
+    if (ownMem_)
+      {
+      this->get()->destroy(this->get());
+      this->v_=NULL;
+      }
     }
 
   //!
@@ -122,12 +128,14 @@ protected:
   //! are we allowed to delete the vector?
   bool ownMem_;
 
-#if PHIST_OUTLEV>=PHIST_TRACE  
   // give each newly created object a label so we can track where they are destroyed 
   static int countObjects;
+
+#if 1
+//#if PHIST_OUTLEV>=PHIST_TRACE  
   // label of this object
   int myID;
-#endif  
+#endif
   };
 
 } //namespace phist
