@@ -28,6 +28,7 @@ public:
       
     // a few test cases
     nselect_.push_back(0);                  nsort_.push_back(0);
+    nselect_.push_back(1);                  nsort_.push_back(0);
     nselect_.push_back(1);                  nsort_.push_back(1);
     nselect_.push_back(_N_);                nsort_.push_back(_N_);
     nselect_.push_back(std::min(5,_N_));    nsort_.push_back(0);
@@ -103,10 +104,10 @@ public:
     SUBR(sdMat_times_sdMat)(st::one(),A_clone,mat2_,st::zero(),mat4_,&ierr_);
     ASSERT_EQ(0,ierr_);
     SUBR(sdMat_print)(mat4_,&ierr_);
-    SUBR(sdMat_times_sdMat)(-st::one(),mat1_,mat2_,st::one(),mat4_,&ierr_);
+    SUBR(sdMat_times_sdMat)(-st::one(),mat2_,mat1_,st::one(),mat4_,&ierr_);
     ASSERT_EQ(0,ierr_);
     SUBR(sdMat_print)(mat4_,&ierr_);
-    ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat4_vp_,nrows_,ncols_,m_lda_,1,st::zero()));
+    ASSERT_NEAR(mt::one(),ArrayEqual(mat4_vp_,nrows_,ncols_,m_lda_,1,st::zero()),1000*mt::eps());
     
     PHIST_DEB("eigenvalue array");
     for (int i=0;i<n_;i++)
