@@ -18,6 +18,8 @@ public:
       ASSERT_EQ(0,ierr_);
     SUBR(sdMat_put_value)(mat2_,(ST)42.0,&ierr_);
       ASSERT_EQ(0,ierr_);
+    SUBR(sdMat_random)(mat3_,&ierr_);
+      ASSERT_EQ(0,ierr_);
     }
 
   /*! Clean up.
@@ -83,6 +85,20 @@ public:
       }
     }
 
+#ifdef IS_COMPLEX
+  TEST_F(CLASSNAME, complex_random)
+  {
+    if(typeImplemented_)
+    {
+      // check that the imaginary part is not zero everywhere!
+      MT maxAbsIm = mt::zero();
+      for(int i = 0; i < nrows_; i++)
+        for(int j = 0; j < ncols_; j++)
+          maxAbsIm = std::max(std::abs(st::imag(mat1_vp_[j*m_lda_+i])), maxAbsIm);
+      ASSERT_TRUE(maxAbsIm != mt::zero());
+    }
+  }
+#endif
 
   // copy certain rows and columns of a serial dense matrix,
   // manipulate them and check the original matrix has not changed.
@@ -142,3 +158,48 @@ public:
       }
     }
 
+  TEST_F(CLASSNAME, sdMat_times_sdMat)
+  {
+    if (typeImplemented_ && nrows_ == ncols_ )
+    {
+      SUBR(sdMat_times_sdMat)(st::one(),mat1_,mat3_,st::one(),mat2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      PHIST_DEB("random*random+42");
+      SUBR(sdMat_print)(mat2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // subtract matrix product by hand
+      for(int i = 0; i < nrows_; i++)
+        for(int j = 0; j < ncols_; j++)
+          for(int k = 0; k < ncols_; k++)
+            mat2_vp_[j*m_lda_+i] -= mat1_vp_[k*m_lda_+i]*mat3_vp_[j*m_lda_+k];
+      // check result
+      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0),10*mt::eps());
+
+    }
+  }
+
+  TEST_F(CLASSNAME, sdMatT_times_sdMat)
+  {
+    if (typeImplemented_ && nrows_ == ncols_ )
+    {
+#ifdef IS_COMPLEX
+      // force some complex non-zero value even if complex_random fails
+      mat1_vp_[0] = std::complex<MT>( st::imag(mat1_vp_[0]), st::real(mat1_vp_[0]) );
+#endif
+      SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat3_,st::one(),mat2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      PHIST_DEB("random*random+42");
+      SUBR(sdMat_print)(mat2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // subtract matrix product by hand
+      for(int i = 0; i < nrows_; i++)
+        for(int j = 0; j < ncols_; j++)
+          for(int k = 0; k < ncols_; k++)
+            mat2_vp_[j*m_lda_+i] -= st::conj(mat1_vp_[i*m_lda_+k])*mat3_vp_[j*m_lda_+k];
+      // check result
+      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0),10*mt::eps());
+
+    }
+  }

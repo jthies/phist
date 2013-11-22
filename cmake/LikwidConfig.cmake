@@ -1,0 +1,8 @@
+set(LIKWID_HOME "$ENV{LIKWID_HOME}")
+if(LIKWID_HOME)
+  message(STATUS "Assuming Likwid in ${LIKWID_HOME}")
+  set(LIKWID_Found true)
+  set(LIKWID_INCLUDE_DIRS ${LIKWID_HOME}/include)
+  set(LIKWID_LIBRARY_DIRS ${LIKWID_HOME}/lib)
+  set(LIKWID_LIBRARIES likwid)
+endif()
