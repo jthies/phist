@@ -451,6 +451,7 @@ void SUBR(mvec_delete)(TYPE(mvec_ptr) vV, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
+  if (vV==NULL) return;
   CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
   V->destroy(V);
   }
@@ -458,7 +459,9 @@ void SUBR(mvec_delete)(TYPE(mvec_ptr) vV, int* ierr)
 //!
 void SUBR(sdMat_delete)(TYPE(sdMat_ptr) vM, int* ierr)
   {
+  ENTER_FCN(__FUNCTION__);
   *ierr=0;
+  if (vM==NULL) return;
   CAST_PTR_FROM_VOID(ghost_vec_t,M,vM,*ierr);
   M->destroy(M);
   }
