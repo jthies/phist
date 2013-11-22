@@ -729,9 +729,9 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
   PHIST_CHK_IERR(*ierr=nrV-nrW,*ierr);
   PHIST_CHK_IERR(*ierr=nrC-ncV,*ierr);
   PHIST_CHK_IERR(*ierr=ncC-ncW,*ierr);
-#endif
   PHIST_DEB("V'C with V %"PRlidx"x%d, C %dx%d and result %"PRlidx"x%d",
         nrV,ncV,nrC,ncC,nrW,ncW);
+#endif
   // note: C is replicated, so this operation is a purely local one.
   char trans[]="N";
   *ierr=ghost_gemm(trans,V,C,W,(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE);
