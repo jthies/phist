@@ -112,6 +112,9 @@ for (int i=0;i<m;i++)
   const char *job="N"; // indicates wether we want condition estimates
                        // for [E]igenvalues, the invariant [S]ubspace or [B]oth
                        // (or [N]one, just sort)
+  const char *compq = "V"; // indicates wether we want to update the schur vectors
+                           // [V]: update schur vectors in Q
+                           // [N]: don't update schur vectors in Q
   MT S_cond;
   MT sep;
 
@@ -129,10 +132,10 @@ for (int i=0;i<m;i++)
       select[std::abs(idx[i])]=1;
       }
 #ifdef IS_COMPLEX
-    PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)ev,&nsorted,
+    PHIST_CHK_IERR(PREFIX(TRSEN)(job,compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)ev,&nsorted,
           &S_cond, &sep, (blas_cmplx_t*)work, &lwork, ierr),*ierr);
 #else
-    PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
+    PHIST_CHK_IERR(PREFIX(TRSEN)(job,compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
          &S_cond, &sep, work, &lwork, iwork, &liwork, ierr),*ierr);   
     for (int i=0;i<m;i++)
       {
@@ -161,10 +164,10 @@ for (int i=0;i<m;i++)
                                    // we pass in ev+i
      int nsorted_before=nsorted;
 #ifdef IS_COMPLEX
-     PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,
+     PHIST_CHK_IERR(PREFIX(TRSEN)(job,compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,
         (blas_cmplx_t*)ev,&nsorted,&S_cond, &sep, (blas_cmplx_t*)work, &lwork, ierr),*ierr);
 #else
-     PHIST_CHK_IERR(PREFIX(TRSEN)(job,jobvs,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
+     PHIST_CHK_IERR(PREFIX(TRSEN)(job,compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
           &S_cond, &sep, work, &lwork, iwork, &liwork, ierr),*ierr);   
     for (int j=0;j<m;j++)
       {
