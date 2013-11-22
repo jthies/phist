@@ -21,22 +21,45 @@ using namespace testing;
 #define CLASSNAME STestSchurDecomp_10
 #include "phist_gen_s.h"
 #include "TestSchurDecomp_def.hpp"
-
 #undef CLASSNAME
-#define CLASSNAME DTestSchurDecomp_10
 
+#define CLASSNAME DTestSchurDecomp_10
 #include "phist_gen_d.h"
 #include "TestSchurDecomp_def.hpp"
-
 #undef CLASSNAME
-#define CLASSNAME CTestSchurDecomp_10
 
+#define CLASSNAME CTestSchurDecomp_10
 #include "phist_gen_c.h"
 #include "TestSchurDecomp_def.hpp"
-
 #undef CLASSNAME
-#define CLASSNAME ZTestSchurDecomp_10
 
+#define CLASSNAME ZTestSchurDecomp_10
 #include "phist_gen_z.h"
 #include "TestSchurDecomp_def.hpp"
+#undef CLASSNAME
 
+#undef _N_
+
+#define _N_ 50
+
+#define CLASSNAME STestSchurDecomp_50
+#include "phist_gen_s.h"
+#include "TestSchurDecomp_def.hpp"
+#undef CLASSNAME
+
+#define CLASSNAME DTestSchurDecomp_50
+#include "phist_gen_d.h"
+#include "TestSchurDecomp_def.hpp"
+#undef CLASSNAME
+
+#define CLASSNAME CTestSchurDecomp_50
+#include "phist_gen_c.h"
+#include "TestSchurDecomp_def.hpp"
+#undef CLASSNAME
+
+#define CLASSNAME ZTestSchurDecomp_50
+#include "phist_gen_z.h"
+#include "TestSchurDecomp_def.hpp"
+#undef CLASSNAME
+
+#undef _N_
