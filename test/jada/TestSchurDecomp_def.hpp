@@ -15,8 +15,8 @@ public:
   static const int m_=_N_;
 
   // different test scenarios
-  int nselect_[4];
-  int nsort_[4];
+  std::vector<int> nselect_;
+  std::vector<int> nsort_;
 
   std::complex<MT> ev_[_N_];
   
@@ -27,10 +27,13 @@ public:
     MTest::SetUp();
       
     // a few test cases
-    nselect_[0]=1; nsort_[0]=1;
-    nselect_[1]=_N_; nsort_[1]=_N_;
-    nselect_[2]=std::min(5,_N_); nsort_[2]=0;
-    nselect_[3]=std::min(7,_N_); nsort_[3]=3;
+    nselect_.push_back(0);                  nsort_.push_back(0);
+    nselect_.push_back(1);                  nsort_.push_back(1);
+    nselect_.push_back(_N_);                nsort_.push_back(_N_);
+    nselect_.push_back(std::min(5,_N_));    nsort_.push_back(0);
+    nselect_.push_back(std::min(7,_N_));    nsort_.push_back(3);
+    nselect_.push_back(std::min(20,_N_));   nsort_.push_back(7);
+    nselect_.push_back(std::min(8,_N_));    nsort_.push_back(8);
     
     // create a diagonal matrix with some interesting features for the diag_* tests
     SUBR(sdMat_put_value)(mat3_,st::zero(),&ierr_);
@@ -50,6 +53,13 @@ public:
       diag[0]=(ST)st::real(diag[0]);
       diag[4]=-diag[0];
       }
+    if (nrows_==50)
+    {
+      for(int i = 0; i < nrows_; i++)
+      {
+        diag[i] = i*(i+1) % 20;
+      }
+    }
     for (int i=0;i<nrows_;i++)
       {
       mat3_vp_[i*m_lda_+i]=diag[i];
@@ -67,7 +77,8 @@ public:
   void DoSchurDecompTest(TYPE(const_sdMat_ptr) A_clone, eigSort_t which)
     {
     if (!typeImplemented_) return;
-    for (int c=0;c<4;c++) 
+    ASSERT_EQ(nsort_.size(),nselect_.size());
+    for (int c=0; c < nselect_.size(); c++)
       {
     int nselect = nselect_[c];
     int nsort = nsort_[c];
@@ -87,6 +98,15 @@ public:
     PHIST_DEB("resulting T:");
     SUBR(mvec_print)(mat1_,&ierr_);
     ASSERT_EQ(0,ierr_);
+
+    PHIST_DEB("check AS=ST");
+    SUBR(sdMat_times_sdMat)(st::one(),A_clone,mat2_,st::zero(),mat4_,&ierr_);
+    ASSERT_EQ(0,ierr_);
+    SUBR(sdMat_print)(mat4_,&ierr_);
+    SUBR(sdMat_times_sdMat)(-st::one(),mat1_,mat2_,st::one(),mat4_,&ierr_);
+    ASSERT_EQ(0,ierr_);
+    SUBR(sdMat_print)(mat4_,&ierr_);
+    ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat4_vp_,nrows_,ncols_,m_lda_,1,st::zero()));
     
     PHIST_DEB("eigenvalue array");
     for (int i=0;i<n_;i++)
