@@ -73,6 +73,43 @@ public:
     KernelTestWithType<_ST_>::TearDown();
     }
 
+  /*! compare sdMats on several procs
+   */
+  void SUBR(sdMat_parallel_check_)(TYPE(const_sdMat_ptr) mat, int* ierr)
+  {
+    *ierr = 0;
+    // TODO: use correct communicator
+    int n,m;
+    PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(mat, &m, ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(mat, &n, ierr),*ierr);
+    _ST_* buff = new _ST_[m*n];
+    _ST_* mat_raw;
+    lidx_t lda;
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)((TYPE(sdMat_ptr))mat, &mat_raw, &lda, ierr),*ierr);
+    // copy data to buffer
+    for(int j = 0; j < n; j++)
+      for(int i = 0; i < m; i++)
+        buff[j*m+i] = mat_raw[j*lda+i];
+    // broadcast
+    PHIST_CHK_IERR(*ierr = MPI_Bcast(buff,m*n,::phist::ScalarTraits<_ST_>::mpi_type(),0,MPI_COMM_WORLD),*ierr);
+    // check
+    int error = 0;
+    for(int j = 0; j < n; j++)
+      for(int i = 0; i < m; i++)
+        if( buff[j*m+i] != mat_raw[j*lda+i] )
+          error = 1;
+    int globError = 0;
+    PHIST_CHK_IERR(*ierr = MPI_Allreduce(&error,&globError,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD),*ierr);
+
+    delete[] buff;
+
+    if( globError )
+    {
+      PHIST_CHK_IERR(SUBR(sdMat_print)(mat,ierr),*ierr);
+      *ierr = -1;
+      return;
+    }
+  }
 };
 
   // check ones(n,m)'*ones(n,m)=n*ones(m,m)
@@ -91,6 +128,8 @@ public:
       VTest::PrintVector(*cout,"ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(M1_vp_,m_,m_,ldaM1_,stride_,(ST)nglob_));
+      SUBR(sdMat_parallel_check_)(M1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
       }
     }
 
@@ -112,7 +151,27 @@ public:
       MTest::PrintSdMat(*cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
       VTest::PrintVector(*cout,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(V2_vp_,nloc_,m_,ldaV2_,stride_,(ST)m_));
+      SUBR(sdMat_parallel_check_)(M1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
       }
     }
 
-
+  // random check
+  TEST_F(CLASSNAME, random_mvecT_times_mvec) 
+    {
+    if (typeImplemented_)
+      {
+      // fill V and W with ones
+      SUBR(mvec_random)(V1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_random)(V2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      VTest::PrintVector(*cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      VTest::PrintVector(*cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+      MTest::PrintSdMat(*cout,"random'*random",M1_vp_,ldaM1_,stride_,mpi_comm_);
+      SUBR(sdMat_parallel_check_)(M1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      }
+    }

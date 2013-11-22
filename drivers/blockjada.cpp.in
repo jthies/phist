@@ -156,12 +156,14 @@ int main(int argc, char** argv)
   // we need the domain map of the matrix
   const_map_ptr_t map = NULL;
   PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(A,&map,&ierr),ierr);
+  const_comm_ptr_t comm = NULL;
+  PHIST_ICHK_IERR(phist_map_get_comm(map,&comm,&ierr),ierr);
 
   // setup necessary vectors and matrices for the schur form
   mvec_ptr_t Q = NULL;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&Q,map,nEig,&ierr),ierr);
   sdMat_ptr_t R = NULL;
-  PHIST_ICHK_IERR(SUBR(sdMat_create)(&R,nEig,nEig,NULL,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_create)(&R,nEig,nEig,comm,&ierr),ierr);
   _MT_ *resNorm = new _MT_[nEig];
 
   // setup start vector (currently to (1 1 1 ... 1) )
