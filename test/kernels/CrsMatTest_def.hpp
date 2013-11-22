@@ -207,22 +207,26 @@ bool haveMats_;
 
       //0*I*X+beta*Y = beta*Y? 
       alpha=st::zero(); 
-      beta=random_number(); 
+      beta=random_number();
       std::cout << "MVM with A=I, alpha="<<alpha<<", beta="<<beta<<std::endl;
       SUBR(mvec_random)(vec1_,&ierr_); 
       SUBR(mvec_random)(vec2_,&ierr_); 
+#if PHIST_OUTLEV>=PHIST_DEBUG
       std::cout << "input="<<std::endl;
       SUBR(mvec_print)(vec1_,&ierr_);
       std::cout << "output, before="<<std::endl;
       SUBR(mvec_print)(vec2_,&ierr_);
+#endif
       // v3=beta*v2 
       SUBR(mvec_add_mvec)(beta,vec2_,st::zero(),vec3_,&ierr_); 
       ASSERT_EQ(0,ierr_); 
       // v2 = 0*v1 + beta*v2 (=v3) 
       SUBR(crsMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&ierr_); 
       ASSERT_EQ(0,ierr_); 
+#if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_print)(vec2_,&ierr_);
       SUBR(mvec_print)(vec3_,&ierr_);
+#endif
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_));
 
       //I*X+beta*Y = X+beta*Y?

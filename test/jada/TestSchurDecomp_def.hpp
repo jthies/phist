@@ -31,6 +31,30 @@ public:
     nselect_[1]=_N_; nsort_[1]=_N_;
     nselect_[2]=std::min(5,_N_); nsort_[2]=0;
     nselect_[3]=std::min(7,_N_); nsort_[3]=3;
+    
+    // create a diagonal matrix with some interesting features for the diag_* tests
+    SUBR(sdMat_put_value)(mat3_,st::zero(),&ierr_);
+    ASSERT_EQ(0,ierr_);
+    ST *diag = new ST[nrows_];
+    for (int i=0;i<nrows_;i++)
+      {
+      diag[i]=st::rand();
+      }
+#ifdef PHIST_HAVE_MPI
+    ASSERT_EQ(0,MPI_Bcast(diag,nrows_,st::mpi_type(), 0, mpi_comm_));
+#endif
+    if (nrows_==10)
+      {
+      diag[6]=diag[1];
+      diag[9]=diag[1];
+      diag[0]=(ST)st::real(diag[0]);
+      diag[4]=-diag[0];
+      }
+    for (int i=0;i<nrows_;i++)
+      {
+      mat3_vp_[i*m_lda_+i]=diag[i];
+      }
+    delete [] diag;
     }
 
   /*! Clean up.
@@ -40,7 +64,7 @@ public:
     KernelTestWithType<_ST_>::TearDown();
     }
 
-  void DoSchurDecompTest(eigSort_t which)
+  void DoSchurDecompTest(TYPE(const_sdMat_ptr) A_clone, eigSort_t which)
     {
     if (!typeImplemented_) return;
     for (int c=0;c<4;c++) 
@@ -51,7 +75,7 @@ public:
     PHIST_OUT(PHIST_INFO,"CASE nselect %d, nsort %d",nselect,nsort);
     PHIST_OUT(PHIST_INFO,"==================================================");
     
-    SUBR(sdMat_random)(mat1_,&this->ierr_);
+    SUBR(sdMat_add_sdMat)(st::one(),A_clone,st::zero(),mat1_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
     
     SUBR(sdMat_random)(mat2_,&this->ierr_);
@@ -181,21 +205,45 @@ public:
 
   TEST_F(CLASSNAME, rand_LM) 
     {
-    DoSchurDecompTest(LM);
+    SUBR(sdMat_random)(mat3_,&this->ierr_);
+    DoSchurDecompTest(mat3_,LM);
     }
 
   TEST_F(CLASSNAME, rand_SM) 
     {
-    DoSchurDecompTest(SM);
+    SUBR(sdMat_random)(mat3_,&this->ierr_);
+    DoSchurDecompTest(mat3_,SM);
     }
 
   TEST_F(CLASSNAME, rand_LR) 
     {
-    DoSchurDecompTest(LR);
+    SUBR(sdMat_random)(mat3_,&this->ierr_);
+    DoSchurDecompTest(mat3_,LR);
     }
 
   TEST_F(CLASSNAME, rand_SR) 
     {
-    DoSchurDecompTest(SR);
+    SUBR(sdMat_random)(mat3_,&this->ierr_);
+    DoSchurDecompTest(mat3_,SR);
+    }
+
+  TEST_F(CLASSNAME, diag_LM) 
+    {
+    DoSchurDecompTest(mat3_,LM);
+    }
+
+  TEST_F(CLASSNAME, diag_SM) 
+    {
+    DoSchurDecompTest(mat3_,SM);
+    }
+
+  TEST_F(CLASSNAME, diag_LR) 
+    {
+    DoSchurDecompTest(mat3_,LR);
+    }
+
+  TEST_F(CLASSNAME, diag_SR) 
+    {
+    DoSchurDecompTest(mat3_,SR);
     }
 

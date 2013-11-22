@@ -71,7 +71,7 @@ using namespace testing;
 #include "phist_gen_z.h"
 #include "QR_Test_def.hpp"
 
-#if 0
+#if 1
 // let's try something bigger...
 #undef _N_
 #define _N_ 9999
