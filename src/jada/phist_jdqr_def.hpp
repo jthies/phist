@@ -252,8 +252,10 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       // compute AV(:,m) = A*V(:,m)
       PHIST_CHK_IERR(A_op->apply(st::one(),A_op->A,Vm,st::zero(),AVm,ierr),*ierr);
       // Galerkin for non-Hermitian A
-      // TODO - is it maybe more efficient to just compute V'AV completely? It
-      //        means more ops and more data transfer but fewer messages.
+#if 0
+      //BUG: this variant does not work correctly in parallel. Should check out why (TODO).
+      //     It is probably also less efficient because it requires three messages rather 
+      //     than one.
       // M(1:m-1,m)=V(:,1:m-1)'*AV(:,m);
       PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m0-1,m0,m-1,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,AVm,st::zero(),Mv,ierr),*ierr);
@@ -265,6 +267,15 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       // general dense matmul.
       PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,m0,m-1,m0,m-1,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vm,AVm,st::zero(),Mv,ierr),*ierr);
+#else
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,ierr),*ierr);
+      // compute M = V'A*V
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-1,0,m-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,AVv,st::zero(),Mv,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m0-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m0-1,ierr),*ierr);
+#endif
       PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,ierr),*ierr);
       PHIST_DEB("basis size is now m=%d",m+1);
