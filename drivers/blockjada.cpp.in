@@ -58,7 +58,7 @@ int main(int argc, char** argv)
       which = SM;
     else if( argv[3] == std::string("LR") )
       which = LR;
-    else if( argv[4] == std::string("SR") )
+    else if( argv[3] == std::string("SR") )
       which = SR;
     else
     {
@@ -166,10 +166,25 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(sdMat_create)(&R,nEig,nEig,comm,&ierr),ierr);
   _MT_ *resNorm = new _MT_[nEig];
 
-  // setup start vector (currently to (1 1 1 ... 1) )
+  // setup start vector (currently to (1 0 1 0 .. ) )
   mvec_ptr_t v0 = NULL;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&v0,map,1,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::one(),&ierr),ierr);
+  //PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::one(),&ierr),ierr);
+  // initialize random number generator in parallel
+  int ilower, iupper;
+  PHIST_ICHK_IERR(phist_map_get_ilower(map,&ilower,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_map_get_iupper(map,&iupper,&ierr),ierr);
+  //std::srand(ilower);
+  //PHIST_ICHK_IERR(SUBR(mvec_random)(v0,&ierr),ierr);
+  //PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::zero(),&ierr),ierr);
+  _ST_* v0_raw;
+  lidx_t v0_lda;
+  PHIST_ICHK_IERR(SUBR(mvec_extract_view)(v0,&v0_raw,&v0_lda,&ierr),ierr);
+  for(int i = ilower; i <= iupper; i++)
+  {
+    _ST_ factor = (i % 2 == 0 ? st::one() : st::zero());
+    v0_raw[i-ilower] = factor;
+  }
 
 
   // used to calculate explicit residuals
