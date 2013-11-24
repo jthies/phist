@@ -37,7 +37,7 @@ void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
         GHOST_CONTEXT_DEFAULT,(char*)filename,MPI_COMM_WORLD,1.0);
   mat = ghost_createMatrix(ctx,mtraits,1);                               
   mat->fromFile(mat,const_cast<char*>(filename));
-#if PHIST_OUTLEV >= PHIST_DEBUG
+#if PHIST_OUTLEV >= PHIST_VERBOSE
   ghost_printContextInfo(ctx);
   ghost_printMatrixInfo(mat);
 #endif
