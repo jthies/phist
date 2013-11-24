@@ -185,7 +185,7 @@ else()
                 "PKG_CONFIG_PATH to help cmake find it.                                 ")
 endif()
 
-find_package(Likwid PATHS $ENV{LIKWID_HOME} Optional)
+find_package(Likwid PATHS "$ENV{LIKWID_HOME}" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/" Optional)
 if (${LIKWID_Found})
   add_definitions(-DPHIST_HAVE_LIKWID)
   include_directories(${LIKWID_INCLUDE_DIRS})

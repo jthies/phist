@@ -175,3 +175,88 @@ public:
       ASSERT_EQ(0,ierr_);
       }
     }
+
+  // random check with partial views of partial mvecs and sdMats
+  TEST_F(CLASSNAME, random_mvecT_times_mvec_with_inside_views) 
+    {
+    if (typeImplemented_ && m_ > 4)
+      {
+      std::vector<int> off1;
+      std::vector<int> off2;
+      std::vector<int> m1;
+      std::vector<int> m2;
+      std::vector<int> off1_M;
+      std::vector<int> off2_M;
+
+      off1.push_back(0);  m1.push_back(3);  off2.push_back(1);  m2.push_back(3);  off1_M.push_back(0);  off2_M.push_back(1);
+      off1.push_back(1);  m1.push_back(1);  off2.push_back(0);  m2.push_back(6);  off1_M.push_back(4);  off2_M.push_back(0);
+      off1.push_back(3);  m1.push_back(5);  off2.push_back(0);  m2.push_back(1);  off1_M.push_back(2);  off2_M.push_back(3);
+      off1.push_back(7);  m1.push_back(2);  off2.push_back(4);  m2.push_back(3);  off1_M.push_back(1);  off2_M.push_back(2);
+
+      for(int i = 0; i < off1.size(); i++)
+      {
+        if( off1[i]+m1[i] > m_ || off2[i]+m2[i] > m_  || off1_M[i]+m1[i] > m_ || off2_M[i]+m2[i] > m_)
+          continue;
+
+        // create views to parts of mvecs and sdmats
+        mvec_ptr_t V1 = NULL;
+        SUBR(mvec_view_block)(V1_,&V1,off1[i],off1[i]+m1[i]-1,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        mvec_ptr_t V2 = NULL;
+        SUBR(mvec_view_block)(V2_,&V2,off2[i],off2[i]+m2[i]-1,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        sdMat_ptr_t M1 = NULL;
+        SUBR(sdMat_view_block)(M1_,&M1,off1_M[i],off1_M[i]+m1[i]-1,off2_M[i],off2_M[i]+m2[i]-1,&ierr_);
+        ASSERT_EQ(0,ierr_);
+
+        // fill V and W with ones
+        SUBR(mvec_put_value)(V1_,st::zero(),&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_random)(V1,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_put_value)(V2_,st::zero(),&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_random)(V2,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        // fill M1_ with zeros
+        SUBR(sdMat_put_value)(M1_,st::zero(),&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvecT_times_mvec)(-st::one(),V1,V2,st::one(),M1,&ierr_);
+        ASSERT_EQ(0,ierr_);
+
+        PHIST_DEB("Note: we are just using views inside the random vectors");
+        VTest::PrintVector(*cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+        VTest::PrintVector(*cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+        MTest::PrintSdMat(*cout,"zero-random'*random",M1_vp_,ldaM1_,stride_,mpi_comm_);
+        SUBR(sdMat_parallel_check_)(M1_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+
+        PHIST_DEB("check the result with full mvecT_times_mvec");
+        // copy M1 back to correct position
+        SUBR(sdMat_put_value)(M2_,st::zero(),&ierr_);
+        ASSERT_EQ(0,ierr_);
+        sdMat_ptr_t M2 = NULL;
+        SUBR(sdMat_view_block)(M2_,&M2,off1[i],off1[i]+m1[i]-1,off2[i],off2[i]+m2[i]-1,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(sdMat_add_sdMat)(st::one(),M1,st::zero(),M2,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(sdMat_delete)(M2,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::one(),M2_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        MTest::PrintSdMat(*cout,"zero-random'*random+random'*random",M2_vp_,ldaM2_,stride_,mpi_comm_);
+        SUBR(sdMat_parallel_check_)(M2_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+
+        // the result should be zero!
+        ASSERT_NEAR(mt::one(),ArrayEqual(M2_vp_,m_,m_,ldaM2_,stride_,st::zero()),10*mt::eps());
+
+        SUBR(mvec_delete)(V1,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(V2,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(sdMat_delete)(M1,&ierr_);
+        ASSERT_EQ(0,ierr_);
+      }
+      }
+    }
