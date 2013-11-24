@@ -768,7 +768,7 @@ void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
   CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
   CAST_PTR_FROM_VOID(ghost_vec_t,W,vW,*ierr);
   CAST_PTR_FROM_VOID(ghost_vec_t,C,vC,*ierr);
-#ifdef _IS_COMPLEX_
+#ifdef IS_COMPLEX
   char trans[]="C";
 #else
   char trans[]="T";
