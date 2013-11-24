@@ -169,8 +169,9 @@ int main(int argc, char** argv)
   // setup start vector (currently to (1 0 1 0 .. ) )
   mvec_ptr_t v0 = NULL;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&v0,map,1,&ierr),ierr);
-  //PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::one(),&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::one(),&ierr),ierr);
   // initialize random number generator in parallel
+/*
   int ilower, iupper;
   PHIST_ICHK_IERR(phist_map_get_ilower(map,&ilower,&ierr),ierr);
   PHIST_ICHK_IERR(phist_map_get_iupper(map,&iupper,&ierr),ierr);
@@ -185,6 +186,7 @@ int main(int argc, char** argv)
     _ST_ factor = (i % 2 == 0 ? st::one() : st::zero());
     v0_raw[i-ilower] = factor;
   }
+*/
 
 
   // used to calculate explicit residuals
