@@ -37,7 +37,7 @@ void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
         GHOST_CONTEXT_DEFAULT,(char*)filename,MPI_COMM_WORLD,1.0);
   mat = ghost_createMatrix(ctx,mtraits,1);                               
   mat->fromFile(mat,const_cast<char*>(filename));
-#if PHIST_OUTLEV >= PHIST_DEBUG
+#if PHIST_OUTLEV >= PHIST_VERBOSE
   ghost_printContextInfo(ctx);
   ghost_printMatrixInfo(mat);
 #endif
@@ -768,7 +768,7 @@ void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
   CAST_PTR_FROM_VOID(ghost_vec_t,V,vV,*ierr);
   CAST_PTR_FROM_VOID(ghost_vec_t,W,vW,*ierr);
   CAST_PTR_FROM_VOID(ghost_vec_t,C,vC,*ierr);
-#ifdef _IS_COMPLEX_
+#ifdef IS_COMPLEX
   char trans[]="C";
 #else
   char trans[]="T";

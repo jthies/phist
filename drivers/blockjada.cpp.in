@@ -124,7 +124,7 @@ int main(int argc, char** argv)
   }
   else if( endsWith(filename_A,".cua") )
   {
-#ifdef _IS_COMPLEX_
+#ifdef IS_COMPLEX
     PHIST_ICHK_IERR(SUBR(crsMat_read_hb)(&A,filename_A.c_str(),&ierr),ierr);
 #else
     PHIST_SOUT(PHIST_ERROR,"error, invoked real version of this program for complex matrix with ending '.cua'");
@@ -133,7 +133,7 @@ int main(int argc, char** argv)
   }
   else if( endsWith(filename_A,".rua") )
   {
-#ifdef _IS_COMPLEX_
+#ifdef IS_COMPLEX
     PHIST_SOUT(PHIST_ERROR,"error, invoked complex version of this program for real matrix with ending '.rua'");
     return 1;
 #else
