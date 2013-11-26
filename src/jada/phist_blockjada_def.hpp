@@ -467,9 +467,9 @@ void SUBR(blockjada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 #endif
     PHIST_CHK_IERR(SUBR( jadaOp_create ) (A_op, B_op, QQ, BQQ, sigma, NULL, &jdOp, ierr), *ierr);
     // TODO specify useful bgmresIter and tol per eigenvalue!
-    int bgmresIter = 5;
+    int bgmresIter = 10;
     PHIST_CHK_IERR(SUBR( mvec_put_value )(t, st::zero(), ierr), *ierr);
-    PHIST_CHK_NEG_IERR(SUBR( bgmres )    (jdOp, t, res, mt::zero(), &bgmresIter, 5, 1, NULL, ierr), *ierr);
+    PHIST_CHK_NEG_IERR(SUBR( bgmres )    (jdOp, t, res, mt::zero(), &bgmresIter, 10, 1, NULL, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( jadaOp_delete ) (&jdOp, ierr), *ierr);
     // the result is (I-QQ*BQQ')*t
     // shouldn't be necessary to do this explicitly, but I encountered problems otherwise (perhaps due to floating point precision)
