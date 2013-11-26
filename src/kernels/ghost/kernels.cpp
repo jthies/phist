@@ -57,6 +57,7 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
   {
   *ierr=0;
   ghost_init(*argc, *argv);
+  //ghost_pinThreads(GHOST_PIN_PHYS,NULL);
   ghost_printSysInfo();
   ghost_printGhostInfo();
 #ifdef PHIST_HAVE_LIKWID
