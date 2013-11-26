@@ -58,7 +58,7 @@ inline static MT releps(TYPE(const_mvec_ptr) V=NULL)
   if (V==NULL) return std::sqrt((MT)_Nglob*mt::eps());
   int nvec,ierr;
   SUBR(mvec_num_vectors)(V,&nvec,&ierr);
-  MT nrms[nvec];
+  MT *nrms = new MT[nvec];
   MT max_nrm=0;
   SUBR(mvec_norm2)(V,nrms,&ierr);
   for (int i=0;i<nvec;i++)
@@ -66,6 +66,7 @@ inline static MT releps(TYPE(const_mvec_ptr) V=NULL)
     max_nrm = std::max(max_nrm,nrms[i]);
     }
   if (max_nrm<4*mt::eps()) max_nrm=mt::sqrt((MT)_Nglob);
+  delete[] nrms;
   return max_nrm*mt::eps();
   }
 
