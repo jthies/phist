@@ -105,8 +105,8 @@ public:
       // check that the rank deficiency was detected
       ASSERT_EQ(std::max(nvec_-1,1), ierr_);
       // check that we anyway got something orthogonal back
-      ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),releps(vec1_));
-      ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),releps(vec1_));
+      ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),3*releps(vec1_));
+      ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),3*releps(vec1_));
       }
     }
 
