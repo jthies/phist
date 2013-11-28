@@ -5,7 +5,6 @@
 
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_RCP.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_MatrixIO.hpp"
@@ -32,23 +31,15 @@ void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
   Tpetra::MatrixMarket::Reader<Traits<_ST_>::crsMat_t> reader;
   std::string fstring(filename);
 
-  
   Teuchos::RCP<Traits<_ST_>::crsMat_t> A;
 
-  Teuchos::RCP<const comm_t> comm = Teuchos::DefaultComm<int>::getComm();
+  Teuchos::RCP<const comm_t> comm_ptr = Teuchos::DefaultComm<int>::getComm();
 
-  Teuchos::RCP<Teuchos::ParameterList> nodeParams=Teuchos::rcp(new Teuchos::ParameterList);
-  try {
-  Teuchos::updateParametersFromXmlFileAndBroadcast("node.xml",nodeParams.ptr(),*comm);
-  } catch (...)
-    {
-    PHIST_SOUT(PHIST_INFO,"failed to read file 'node.xml', using the default setting 'Num Threads'=0\n"
-                          "(file %s, line %d)",__FILE__,__LINE__);
-    }
-  PHIST_SOUT(PHIST_VERBOSE,"# threads rquested: %d",nodeParams->get("Num Threads",0));
-  Teuchos::RCP<node_t> node = Teuchos::rcp(new node_t(*nodeParams));
+  node_t* node;
+  PHIST_CHK_IERR(phist_tpetra_node_create(&node,(const_comm_ptr_t)comm_ptr.get(),ierr),*ierr);
+  Teuchos::RCP<node_t> node_ptr = Teuchos::rcp(node,true);
   
-  TRY_CATCH(A=reader.readSparseFile(fstring,comm,node),*ierr);
+  TRY_CATCH(A=reader.readSparseFile(fstring,comm_ptr,node_ptr),*ierr);
   Teuchos::Ptr<Traits<_ST_>::crsMat_t> Aptr = A.release();
   *vA = (TYPE(crsMat_ptr))(Aptr.get());
   }
