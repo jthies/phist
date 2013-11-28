@@ -2,9 +2,9 @@
 
 the DLR contribution to the ESSEX (Equipping Sparse Solvers for Exa-Scale)
 has the working title "PHIST" (Pipelined Hybrid-parallel Iterative Solver Toolkit).
-The svn repository can be checked out using the command (on DLR systems):
+The git repository can be checked out using the command
 
-  svn co https://svn-dmz.sistec.dlr.de/svn/dfg-essex/trunk dfg-essex
+  git clone git@bitbucket.org:essex/phist
 
 1) Installation
 
@@ -19,10 +19,13 @@ you need cmake, on the DLR systems, use
 you need to select a "kernel library" that provides the basic operations.
 We currently support two kernel libs from the Trilinos project, 
 epetra (only real double precision, MPI only) and tpetra (single, double, real, complex,
-MPI and node-level parallelism). Soon we will also support ghost. On the DLR systems:
+MPI and node-level parallelism), and ghost (from the essex project). On the DLR systems:
 
   module add trilinos/trilinos-11.2.4
-  export PHIST_KERNEL_LIB=epetra
+  export PHIST_KERNEL_LIB=tpetra
+
+On LiMa at RRZE you can use the script provided in buildScripts/script_lima.sh to get 
+started.
 
 Now go to the build directory, configure and compile:
 
