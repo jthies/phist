@@ -162,6 +162,7 @@ void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
         const_comm_ptr_t vcomm, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
+  CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*ierr);
 #include "phist_std_typedefs.hpp"
   *ierr=0;
   ghost_vec_t* result;
@@ -174,7 +175,6 @@ void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
         dmtraits->datatype=st::ghost_dt;
 
   // I think the sdMat should not have a context
-  MPI_Comm* comm = (MPI_Comm*) vcomm;
   ghost_context_t* ctx=ghost_createContext(nrows, ncols, GHOST_CONTEXT_DEFAULT, 
         NULL, *comm, 1.0);
   result=ghost_createVector(ctx,dmtraits);
@@ -214,10 +214,11 @@ void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) vV, const_comm_ptr_t* vcomm, int* 
 
   if (V->context!=NULL)
     {
-    *vcomm=(const_comm_ptr_t)V->context->mpicomm;
+    *vcomm=(const_comm_ptr_t)&(V->context->mpicomm);
     }
   else
     {
+    PHIST_OUT(PHIST_WARNING,"in mvec_get_comm: ghost_vec_t without context!");
     MPI_Comm* comm = new MPI_Comm;
     *comm=MPI_COMM_SELF;
     *vcomm=(const_comm_ptr_t)(comm);
