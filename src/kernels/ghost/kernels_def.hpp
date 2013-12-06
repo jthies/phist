@@ -163,9 +163,6 @@ void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
   {
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
-  TOUCH(vcomm); // we don't need the serial dense matrix to know about MPI
-                // (in contrast to the tpetra implementation of this interface,
-                // ghost takes the communicator from V when computing V*M or M=V'W)
   *ierr=0;
   ghost_vec_t* result;
   ghost_vtraits_t *dmtraits=new ghost_vtraits_t;
@@ -177,11 +174,9 @@ void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
         dmtraits->datatype=st::ghost_dt;
 
   // I think the sdMat should not have a context
-  ghost_context_t* ctx=NULL;
-/*
+  MPI_Comm* comm = (MPI_Comm*) vcomm;
   ghost_context_t* ctx=ghost_createContext(nrows, ncols, GHOST_CONTEXT_DEFAULT, 
         NULL, *comm, 1.0);
-*/
   result=ghost_createVector(ctx,dmtraits);
   ST zero = st::zero();
   result->fromScalar(result,&zero);

@@ -28,7 +28,7 @@ public:
 #endif      
       SUBR(mvec_create)(&Q_,map_,nq_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_create)(&sigma_,nq_,nq_,NULL,&ierr_);
+      SUBR(sdMat_create)(&sigma_,nq_,nq_,comm_,&ierr_);
       ASSERT_EQ(0,ierr_);
       SUBR(sdMat_random)(sigma_,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -37,7 +37,7 @@ public:
       SUBR(mvec_random)(Q_,&ierr_);
       ASSERT_EQ(0,ierr_);
       TYPE(sdMat_ptr) Rtmp;
-      SUBR(sdMat_create)(&Rtmp,nq_,nq_,NULL,&ierr_);
+      SUBR(sdMat_create)(&Rtmp,nq_,nq_,comm_,&ierr_);
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_QR)(Q_,Rtmp,&ierr_);
       ASSERT_EQ(0,ierr_);

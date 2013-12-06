@@ -116,7 +116,7 @@ public:
       // set m2=m1 to check later
       SUBR(sdMat_add_sdMat)(st::one(),mat1_,st::zero(),mat2_,&ierr_);
       
-      SUBR(sdMat_create)(&m1_copy,imax-imin+1,jmax-jmin+1,NULL,&ierr_);
+      SUBR(sdMat_create)(&m1_copy,imax-imin+1,jmax-jmin+1,comm_,&ierr_);
       ASSERT_EQ(0,ierr_);
       SUBR(sdMat_get_block)(mat1_,m1_copy,imin,imax,jmin,jmax,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -189,7 +189,7 @@ public:
 #endif
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat3_,st::one(),mat2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      PHIST_DEB("random*random+42");
+      PHIST_DEB("random'*random+42");
       SUBR(sdMat_print)(mat2_,&ierr_);
       ASSERT_EQ(0,ierr_);
 

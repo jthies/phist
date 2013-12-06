@@ -584,8 +584,10 @@ using ::phist::GhostMV;
                 dmtraits->nvecs=M.numCols();
                 dmtraits->datatype=st::ghost_dt;
 
-      //! we don't need a context for serial dense matrices
-      ghost_context_t* ctx = NULL;
+      //TODO: don't use world here?
+      MPI_Comm comm = MPI_COMM_WORLD;
+      ghost_context_t* ctx=ghost_createContext(M.numRows(), M.numRows(), GHOST_CONTEXT_DEFAULT,
+          NULL, comm, 1.0);
       
       ghost_vec_t* Mghost=ghost_createVector(ctx,dmtraits);
       Mghost->viewPlain(Mghost, (void*)M.values(),
