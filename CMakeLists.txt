@@ -148,7 +148,8 @@ set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_lanczos.cpp
 set (PHIST_JADA_SOURCE ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.c
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_schur_decomp.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_blockjada.cpp)
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_blockjada.cpp
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejada.cpp)
 
 
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB})
