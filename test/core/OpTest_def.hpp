@@ -28,11 +28,8 @@ public:
 #endif      
       SUBR(mvec_create)(&Q_,map_,nq_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_create)(&sigma_,nq_,nq_,comm_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_random)(sigma_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-            
+      sigma = new _ST_[nq_];
+
       // create random orthogonal Q
       SUBR(mvec_random)(Q_,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -67,8 +64,7 @@ public:
       {
     SUBR(mvec_delete)(Q_,&ierr_);
     ASSERT_EQ(0,ierr_);
-    SUBR(sdMat_delete)(sigma_,&ierr_);
-    ASSERT_EQ(0,ierr_);
+    delete[] sigma;
       ASSERT_EQ(0,delete_mat(A1_));
       ASSERT_EQ(0,delete_mat(A2_));
       }
@@ -80,7 +76,7 @@ TYPE(crsMat_ptr) A2_;
 // for testing the jada operator
 int nq_;
 TYPE(mvec_ptr) Q_;
-TYPE(sdMat_ptr) sigma_;
+_ST_* sigma;
 
 protected:
 
@@ -132,9 +128,10 @@ int doBelosTests(TYPE(crsMat_ptr) A)
       TYPE(op) *op=new TYPE(op);
       Teuchos::RCP<const TYPE(op)> op_ptr = Teuchos::rcp(op,true);
       PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(op,A,&ierr_),ierr_);
-      TYPE(op)* jdOp=NULL;
-      PHIST_ICHK_IERR(SUBR(jadaOp_create)(op,NULL,Q_,NULL,sigma_,NULL,&jdOp,&ierr_),ierr_);
-      Teuchos::RCP<const TYPE(op)> jdOp_ptr=Teuchos::rcp(jdOp,false);
+      TYPE(op) jdOp;
+      // TODO setup necessary arguments for jadaOp: AX, work
+      PHIST_ICHK_IERR(SUBR(jadaOp_create)(op,NULL,Q_,NULL,sigma,NULL,NULL,NULL,NULL,NULL,&jdOp,&ierr_),ierr_);
+      Teuchos::RCP<const TYPE(op)> jdOp_ptr=Teuchos::rcp(&jdOp,false);
 #ifdef PHIST_KERNEL_LIB_GHOST
       ghost_vec_t* v = (ghost_vec_t*)vec1_;
       Teuchos::RCP<const phist::GhostMV> V = phist::rcp(v,false);
@@ -152,7 +149,7 @@ int doBelosTests(TYPE(crsMat_ptr) A)
 // vectors and the Belos test assumes it works for any number of vectors.
 //      if (Belos::TestOperatorTraits(MyOM,V,jdOp_ptr)==false) {ierr_=-2; return ierr_;}
 //TODO - I'm getting an 'undefined reference' linker error here
-//      PHIST_ICHK_IERR(SUBR(jadaOp_delete)(&jdOp,&ierr_),ierr_);
+      PHIST_ICHK_IERR(SUBR(jadaOp_delete)(&jdOp,&ierr_),ierr_);
       }
   return ierr_;
   }

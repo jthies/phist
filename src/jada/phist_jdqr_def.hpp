@@ -120,6 +120,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   const int nv_max=2;
 #endif
 
+  _ST_ sigma[nv_max];
+
   // In the real case we allow the basis to grow up to maxBas+1 so we can add a complex    
   // pair even if a restart would be required strictly speaking (nv_max=2)
   int maxVecs=maxBas+nv_max-1;
@@ -621,8 +623,11 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR(mvec_set_block)(Qtil,u_ptr,nconv,nconv+nv-1,ierr),*ierr);
 #ifdef IS_COMPLEX
     PHIST_CHK_IERR(SUBR(sdMat_put_value)(shift_ptr,theta,ierr),*ierr);
+    sigma[0] = -theta;
 #else
     PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),Theta,st::zero(),shift_ptr,ierr),*ierr);
+    sigma[0] = -ct::real(theta);
+    sigma[1] = -ct::real(theta);
     if (nv==2)
       {
       // use diagonal of the 2x2 block (real part) as shift:
@@ -646,13 +651,17 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
     // the block case is not implemented here:
     // (I-uu')A(I-uu')*t - (I-uu')t*Theta=-r
-    op_ptr_t jada_op=NULL;
+    TYPE(op) jada_op;
     if (B_op!=NULL)
-      {
+    {
       PHIST_SOUT(PHIST_WARNING,"case B!=I not implemented (file %s, line %d)",__FILE__,__LINE__);
-      }
-      
-    PHIST_CHK_IERR(SUBR(jadaOp_create)(A_op,NULL,Qtil,NULL,shift_ptr,NULL,&jada_op,ierr),*ierr);
+    }
+
+    TYPE(mvec_ptr) jadaOp_AX = NULL;
+    TYPE(sdMat_ptr) jadaOp_VY = NULL;
+    PHIST_CHK_IERR(SUBR(mvec_create)(&jadaOp_AX,A_op->domain_map,nv,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&jadaOp_VY,nv,nv,comm,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(jadaOp_create)(A_op,NULL,Qtil,NULL,sigma,jadaOp_VY,jadaOp_AX,NULL,NULL,NULL,&jada_op,ierr),*ierr);
 
     // 1/2^mm, but at most the outer tol as conv tol for GMRES
     MT innerTol = std::max(tol,mt::one()/((MT)(2<<mm)));
@@ -668,8 +677,12 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR(mvec_put_value)(t_ptr,st::zero(),ierr),*ierr);
 
     int variant=0; //0:block GMRES, 1: pseudo-BGMRES
-    SUBR(bgmres)(jada_op,t_ptr,rtil_ptr,innerTol,&nIt,maxKSpace,variant,NULL,ierr);
-      
+    SUBR(bgmres)(&jada_op,t_ptr,rtil_ptr,innerTol,&nIt,maxKSpace,variant,NULL,ierr);
+
+    PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jada_op,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(jadaOp_AX,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_delete)(jadaOp_VY,ierr),*ierr);
+
     expand=nv;
     }
   else
