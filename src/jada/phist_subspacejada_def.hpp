@@ -67,27 +67,27 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   if( nEig < blockDim )
   {
     PHIST_SOUT(PHIST_ERROR, "parameter nEig > minBase!");
-    PHIST_CHK_IERR(*ierr = 99, *ierr);
+    PHIST_CHK_IERR(*ierr = -99, *ierr);
   }
   if( minBase < nEig )
   {
     PHIST_SOUT(PHIST_ERROR, "parameter minBase < nEig!");
-    PHIST_CHK_IERR(*ierr = 99, *ierr);
+    PHIST_CHK_IERR(*ierr = -99, *ierr);
   }
   if( minBase > maxBase )
   {
     PHIST_SOUT(PHIST_ERROR, "parameter minBase > maxBase!");
-    PHIST_CHK_IERR(*ierr = 99, *ierr);
+    PHIST_CHK_IERR(*ierr = -99, *ierr);
   }
   if( maxBase < nEig+blockDim )
   {
     PHIST_SOUT(PHIST_ERROR, "paramater maxBase < nEig+blockDim!");
-    PHIST_CHK_IERR(*ierr = 99, *ierr);
+    PHIST_CHK_IERR(*ierr = -99, *ierr);
   }
   if( B_op != NULL )
   {
     PHIST_SOUT(PHIST_ERROR,"case B_op != NULL (e.g. B != I) not implemented yet!");
-    PHIST_CHK_IERR(*ierr = 99, *ierr);
+    PHIST_CHK_IERR(*ierr = -99, *ierr);
   }
 
   // set output format for floating point numbers
@@ -311,25 +311,28 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     // shrink search space if necessary
     if( nV + k > maxBase )
     {
-      PHIST_SOUT(PHIST_DEBUG,"Shrinking search space from %d to %d", nV, minBase);
+      PHIST_SOUT(PHIST_INFO,"Shrinking search space from %d to %d", nV, minBase);
 
       //TODO: this should be done in-place!!!!!!!!!!!!!!
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  0, nV-1,          0, minBase-1,    ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp,                   0, nV-1,         ierr), *ierr);
+      //PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp,                   0, nV-1,         ierr), *ierr);
 
-      PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), V,           st::zero(), Vtmp, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (V, Q_H, 64, ierr), *ierr);
+      //PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), V,           st::zero(), Vtmp, ierr), *ierr);
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,    &V,                      0, minBase-1,    ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H,   st::zero(), V,    ierr), *ierr);
+      //PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H,   st::zero(), V,    ierr), *ierr);
 
-      PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), AV,          st::zero(), Vtmp, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (AV, Q_H, 64, ierr), *ierr);
+      //PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), AV,          st::zero(), Vtmp, ierr), *ierr);
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,   &AV,                     0, minBase-1,    ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H,   st::zero(), AV,   ierr), *ierr);
+      //PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H,   st::zero(), AV,   ierr), *ierr);
 
       if( B_op != NULL )
       {
-        PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), BV,        st::zero(), Vtmp, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (BV, Q_H, 64, ierr), *ierr);
+        //PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), BV,        st::zero(), Vtmp, ierr), *ierr);
         PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BV,                     0, minBase-1,    ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H, st::zero(), BV,   ierr), *ierr);
+        //PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H, st::zero(), BV,   ierr), *ierr);
       }
       else
       {
@@ -370,10 +373,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  &HvV, nV,    nV+k-1,    0,     nV-1,      ierr), *ierr);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  &Hvv, nV,    nV+k-1,    nV,    nV+k-1,    ierr), *ierr);
     // orthogonalize t as Vv (reuse R_H)
-    if( B_op == NULL )
-    {
-      PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (st::one(), t, st::zero(), Vv, ierr), *ierr);
-    }
+    PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (st::one(), t, st::zero(), Vv, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,     k-1,       ierr), *ierr);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H,nV,    nV+k-1,    nV,    nV+k-1,    ierr), *ierr);
     PHIST_CHK_IERR(SUBR( orthog ) (V, Vv, Rr_H, R_H, 3, ierr), *ierr);

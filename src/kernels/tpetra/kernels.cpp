@@ -104,7 +104,7 @@ void phist_tpetra_node_create(node_t** node, const_comm_ptr_t vcomm, int* ierr)
   CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
   Teuchos::RCP<Teuchos::ParameterList> nodeParams=Teuchos::rcp(new Teuchos::ParameterList);
   try {
-  Teuchos::updateParametersFromXmlFileAndBroadcast("phist_node.xml",nodeParams.ptr(),*comm);
+  Teuchos::updateParametersFromXmlFile("phist_node.xml",nodeParams.ptr());
   } catch (...)
     {
     PHIST_SOUT(PHIST_INFO,"failed to read file 'phist_node.xml', using the default setting 'Num Threads'=0\n"
