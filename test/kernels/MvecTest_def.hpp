@@ -201,6 +201,26 @@ public:
     
     }
 
+  // X = Y*diag(a_1,...,a_nvec) + a*X
+  TEST_F(CLASSNAME, random_vadd)
+  {
+    if( typeImplemented_ )
+    {
+      ST beta = st::rand();
+      ST alpha[_NV_];
+      for(int i = 0; i < nvec_; i++)
+        alpha[i] = st::rand();
+
+      SUBR(mvec_vadd_mvec)(alpha,vec1_,beta,vec2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // calculate solution by hand
+      for(int i = 0; i < nloc_; i++)
+        for(int j = 0; j < nvec_; j++)
+          vec1_vp_[j*lda_+i] = alpha[j]*vec1_vp_[j*lda_+i]+beta;
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
+    }
+  }
 
   // view certain columns, manipulate them and check it changes the
   // correct locations in the original one
