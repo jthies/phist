@@ -33,7 +33,7 @@ int main(int argc, char** argv)
   // check arguments
   if( argc < 2 )
   {
-    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A filename> [<invariant subspace dimension>] [<which>] [<tol>] [<max iters> <block size> <min basis> <max basis>]", argv[0]);
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A filename> [<invariant subspace dimension>] [<which>] [<tol>] [<max iters> <block size> <min basis> <max basis> <initial shift> <initial shift iterations>]", argv[0]);
     return 1;
   }
 
@@ -96,7 +96,7 @@ int main(int argc, char** argv)
   }
 
   // min basis size
-  int minBase = 20;
+  int minBase = std::min(20,nEig+blockDim-1);
   if( argc > 7 )
   {
     std::istringstream iss(argv[7]);
@@ -109,6 +109,22 @@ int main(int argc, char** argv)
   {
     std::istringstream iss(argv[8]);
     iss >> maxBase;
+  }
+
+  // initial shift
+  _ST_ initialShift = st::zero();
+  if( argc > 9 )
+  {
+    std::istringstream iss(argv[9]);
+    iss >> initialShift;
+  }
+
+  // number of initial iterations with fixed initial shift
+  int initialShiftIters = 0;
+  if( argc > 10 )
+  {
+    std::istringstream iss(argv[10]);
+    iss >> initialShiftIters;
   }
 
 
@@ -161,10 +177,10 @@ int main(int argc, char** argv)
 
   // setup necessary vectors and matrices for the schur form
   mvec_ptr_t Q = NULL;
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&Q,map,nEig,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&Q,map,nEig+blockDim-1,&ierr),ierr);
   sdMat_ptr_t R = NULL;
-  PHIST_ICHK_IERR(SUBR(sdMat_create)(&R,nEig,nEig,comm,&ierr),ierr);
-  _MT_ *resNorm = new _MT_[nEig];
+  PHIST_ICHK_IERR(SUBR(sdMat_create)(&R,nEig+blockDim-1,nEig+blockDim-1,comm,&ierr),ierr);
+  _MT_ *resNorm = new _MT_[nEig+blockDim-1];
 
   // setup start vector (currently to (1 0 1 0 .. ) )
   mvec_ptr_t v0 = NULL;
@@ -191,11 +207,11 @@ int main(int argc, char** argv)
 
   // used to calculate explicit residuals
   mvec_ptr_t res;
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&res,map,nEig,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&res,map,nEig+blockDim-1,&ierr),ierr);
 
 
   //------------------------------- run block JaDa algorithm ----------------------- 
-  PHIST_ICHK_IERR(SUBR(subspacejada)(opA, NULL, v0, which, tol, nEig, &nIter, blockDim, minBase, maxBase, Q, R, resNorm, &ierr), ierr);
+  PHIST_ICHK_IERR(SUBR(subspacejada)(opA, NULL, v0, which, tol, nEig, &nIter, blockDim, minBase, maxBase, initialShiftIters, initialShift, Q, R, resNorm, &ierr), ierr);
   int nConvergedEig = 0;
   for(int i = 0; i < nEig; i++)
     if(resNorm[i] <= tol)

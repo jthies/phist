@@ -55,6 +55,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
                          _MT_ tol,                 int nEig,
                          int* nIter,               int blockDim,
                          int minBase,              int maxBase,
+                         int initialShiftIter,     _ST_ initialShift,
                          TYPE(mvec_ptr) Q,         TYPE(sdMat_ptr) R,
                          _MT_* resNorm,            int* ierr)
 {
@@ -62,21 +63,20 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 #include "phist_std_typedefs.hpp"
   *ierr = 0;
 
+  // extended number of searched eigenvalues in order to respect the block dimension,
+  // this way we always have a fixed blockDim AND it should make the calculation
+  // of the last eigenvalues more stable in some cases
+  int nEig_ = nEig + blockDim - 1;
 
   //------------------------------- check arguments --------------------------------
-  if( nEig < blockDim )
+  if( minBase < nEig_ )
   {
-    PHIST_SOUT(PHIST_ERROR, "parameter nEig > minBase!");
+    PHIST_SOUT(PHIST_ERROR, "parameter minBase < nEig+blockDim-1!");
     PHIST_CHK_IERR(*ierr = -99, *ierr);
   }
-  if( minBase < nEig )
+  if( minBase+blockDim > maxBase )
   {
-    PHIST_SOUT(PHIST_ERROR, "parameter minBase < nEig!");
-    PHIST_CHK_IERR(*ierr = -99, *ierr);
-  }
-  if( minBase > maxBase )
-  {
-    PHIST_SOUT(PHIST_ERROR, "parameter minBase > maxBase!");
+    PHIST_SOUT(PHIST_ERROR, "parameter minBase+blockDim > maxBase!");
     PHIST_CHK_IERR(*ierr = -99, *ierr);
   }
   if( maxBase < nEig+blockDim )
@@ -114,7 +114,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   sdMat_ptr_t Htmp_   = NULL;    //< temporary space for H
   sdMat_ptr_t Q_H_    = NULL;    //< space for Q_H
   sdMat_ptr_t R_H_    = NULL;    //< space for R_H
-  _ST_ sigma[nEig];              //< JaDa correction shifts
+  _ST_ sigma[nEig_];             //< JaDa correction shifts
 
   _ST_ *Q_H_raw       = NULL;
   _ST_ *R_H_raw       = NULL;
@@ -125,8 +125,8 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   // TODO: remove Vtmp
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&Vtmp_,  A_op->domain_map, maxBase,                ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&AV_,    A_op->range_map,  maxBase,        	      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_create  ) (&t_,     A_op->domain_map, nEig,                  ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_create  ) (&res,    A_op->range_map,  nEig,                  ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_create  ) (&t_,     A_op->domain_map, nEig_,                 ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_create  ) (&res,    A_op->range_map,  nEig_,                 ierr), *ierr);
 
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&H_,     maxBase,          maxBase,  range_comm,   ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&Htmp_,  maxBase,          maxBase,  range_comm,   ierr), *ierr);
@@ -139,7 +139,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   if( B_op != NULL )
   {
     PHIST_CHK_IERR(SUBR( mvec_create )(&BV_,    B_op->range_map,  maxBase,                ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_create )(&BQ,    B_op->range_map,  nEig,                  ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_create )(&BQ,    B_op->range_map,  nEig_,                 ierr), *ierr);
   }
   else
   {
@@ -165,6 +165,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   mvec_ptr_t BQtil= NULL;     //< B*Qtil
 
   sdMat_ptr_t H   = NULL;     //< projection of A onto H, V'*AV
+  sdMat_ptr_t Hh  = NULL;     //< inside view for H
   sdMat_ptr_t Htmp= NULL;     //< temporary space for H
   sdMat_ptr_t HVv = NULL;     //< next rows in H_
   sdMat_ptr_t HvV = NULL;     //< next columns in H_
@@ -209,14 +210,9 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
   //----------------------------------- MAIN LOOP ----------------------------------
   int maxIter = *nIter;
+  int nConvergedEig = 0;
   for(*nIter = 0; *nIter < maxIter; (*nIter)++)
   {
-    // update views
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0,     nV-1,      0,     nV-1,      ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Qq_H,0,     nV-1,      0,     nEig-1,    ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,     nV-1,      ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H,0,     nEig-1,    0,     nEig-1,    ierr), *ierr);
-
 #ifdef TESTING
 {
   // check orthogonality of V, BV, Q
@@ -252,12 +248,47 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
 
     // calculate sorted Schur form of H in (Q_H,R_H)
-    PHIST_CHK_IERR(SUBR( sdMat_add_sdMat ) (st::one(), H, st::zero(), R_H, ierr), *ierr);
-    int nSort = nEig;
+    // we only update part of Q_H,R_H, so first set Q_H, R_H to zero
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0,     nV-1,      0,     nV-1,      ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,     nV-1,      ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_put_value  ) (Q_H, st::zero(), ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_put_value  ) (R_H, st::zero(), ierr), *ierr);
+    // then copy the new block of H
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, nConvergedEig, nV-1, nConvergedEig, nV-1, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_get_block  ) (H,   R_H,  nConvergedEig, nV-1, nConvergedEig, nV-1, ierr), *ierr);
+    int nSort = nEig_-nConvergedEig;
     int nSelect = nSort;
-    PHIST_CHK_IERR(SUBR( SchurDecomp ) (R_H_raw, ldaR_H, Q_H_raw, ldaQ_H, nV, nSelect, nSort, which, ev_H, ierr), *ierr);
+    lidx_t offR_H = ldaR_H*nConvergedEig+nConvergedEig;
+    lidx_t offQ_H = ldaQ_H*nConvergedEig+nConvergedEig;
+    PHIST_CHK_IERR(SUBR( SchurDecomp ) (R_H_raw+offR_H, ldaR_H, Q_H_raw+offQ_H, ldaQ_H, nV-nConvergedEig, nSelect, nSort, which, ev_H+nConvergedEig, ierr), *ierr);
+    // we still need to add the missing parts of R_H, Q_H
+    if( nConvergedEig > 0 )
+    {
+      // upper left part of Q_H
+      for(int i = 0; i < nConvergedEig; i++)
+        Q_H_raw[ldaQ_H*i+i] = st::one();
 
-    // calculate approximate Schur form of A (with deflation of converged vectors Q)
+      // upper left part of R_H
+      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_, &R_H, 0, nConvergedEig-1, 0, nConvergedEig-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_get_block  ) (R,    R_H,  0, nConvergedEig-1, 0, nConvergedEig-1, ierr), *ierr);
+
+      // upper right part of R_H
+      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (Q_H_, &Qq_H, nConvergedEig, nEig_-1,         nConvergedEig, nEig_-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (R_H_, &Rr_H, 0,             nConvergedEig-1, nConvergedEig, nEig_-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (H_  , &Hh,   0,             nConvergedEig-1, nConvergedEig, nEig_-1, ierr), *ierr);
+
+      PHIST_CHK_IERR(SUBR( sdMat_times_sdMat ) (st::one(), Hh, Qq_H, st::zero(), Rr_H, ierr), *ierr);
+    }
+
+    // update views
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0,     nV-1,      0,     nV-1,      ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Qq_H,0,     nV-1,      0,     nEig_-1,   ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,     nV-1,      ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H,0,     nEig_-1,   0,     nEig_-1,   ierr), *ierr);
+
+
+
+    // calculate approximate Schur form of A
     PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), V,    Qq_H, st::zero(), Q,   ierr), *ierr);
     PHIST_CHK_IERR(SUBR( sdMat_add_sdMat  ) (st::one(), Rr_H,       st::zero(), R,   ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), AV,   Qq_H, st::zero(), res, ierr), *ierr);
@@ -267,23 +298,54 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     // calculate norm of the residuum
     PHIST_CHK_IERR(SUBR( mvec_norm2 ) (res, resNorm, ierr), *ierr);
 
+
+
     // check for converged eigenvalues
-    int nConvergedEig = 0;
-    for(int i = 0; i < nEig; i++)
+    int nNewlyConvergedEig = 0;
+    for(int i = nConvergedEig; i < nEig; i++)
     {
       PHIST_SOUT(PHIST_INFO,"In iteration %d: Current approximation for eigenvalue %d is %16.8g%+16.8gi with residuum %e", *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]), resNorm[i]);
       if( resNorm[i] <= tol )
-        nConvergedEig++;
+        nNewlyConvergedEig++;
     }
-    PHIST_SOUT(PHIST_INFO,"In iteration %d: converged eigenvalues %d", *nIter, nConvergedEig);
-    if( nConvergedEig == nEig )
+
+    if( nNewlyConvergedEig > 0 )
+    {
+      PHIST_SOUT(PHIST_INFO,"In iteration %d: converged another %d eigenvalues", *nIter, nNewlyConvergedEig);
+
+      // reorder V and H
+      PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (V, Q_H, 64, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (AV, Q_H, 64, ierr), *ierr);
+      if( B_op != NULL )
+      {
+        PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (BV, Q_H, 64, ierr), *ierr);
+      }
+      // update H <- H_Q' * H * H_Q
+      PHIST_CHK_IERR(SUBR( sdMat_view_block  )(Htmp_, &Htmp, 0, nV-1,         0, nV-1,     ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_times_sdMat )(st::one(), H,    Q_H,   st::zero(), Htmp, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMatT_times_sdMat)(st::one(), Q_H, Htmp,   st::zero(), H,    ierr), *ierr);
+
+      nConvergedEig = nConvergedEig+nNewlyConvergedEig;
+    }
+
+    if( nConvergedEig >= nEig )
+    {
+      PHIST_SOUT(PHIST_INFO,"In iteration %d: all eigenvalues converged!", *nIter);
       break;
+    }
+
+    if( *nIter >= maxIter )
+    {
+      PHIST_SOUT(PHIST_INFO,"Reached maximum number of iterations!");
+      break;
+    }
+
 
 
     // setup matrix of shifts and residuals for the correction equation
-    int k = 0;  // current correction block dimension
     int k_ = 0; // 0:k_-1 vectors of Q used for the orthogonal projection in the correction equation
-    for(int i = 0; i < nEig && k < blockDim; i++)
+    int k = 0;  // is always == blockDim!
+    for(int i = 0; i < nEig_ && k < blockDim; i++)
     {
 #ifndef IS_COMPLEX
       if( std::abs(ct::imag(ev_H[i])) > tol )
@@ -295,11 +357,19 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
       if( resNorm[i] > tol )
       {
         k_ = i;
+
+        if( *nIter < initialShiftIter )
+        {
+          sigma[k] = -initialShift;
+        }
+        else
+        {
 #ifndef IS_COMPLEX
-        sigma[k] = -ct::real(ev_H[i]);
+          sigma[k] = -ct::real(ev_H[i]);
 #else
-        sigma[k] = -ev_H[i];
+          sigma[k] = -ev_H[i];
 #endif
+        }
 
         // copy residual
         if( i != k )
@@ -310,6 +380,19 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
         k++;
       }
     }
+    // we should also project out other schur vectors if they have already (nearly) converged
+    for(int i = k_+1; i < nEig_; i++)
+    {
+      if( resNorm[i] <= sqrt(tol) )
+      {
+        if( i != k_ )
+        {
+          PHIST_CHK_IERR(SUBR( mvec_view_block ) (Q, &t_res, k_, k_, ierr), *ierr);
+          PHIST_CHK_IERR(SUBR( mvec_get_block  ) (Q, t_res,  i,  i,  ierr), *ierr);
+        }
+        k_++;
+      }
+    }
 
 
     // shrink search space if necessary
@@ -317,37 +400,30 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     {
       PHIST_SOUT(PHIST_INFO,"Shrinking search space from %d to %d", nV, minBase);
 
-      //TODO: this should be done in-place!!!!!!!!!!!!!!
-      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  0, nV-1,          0, minBase-1,    ierr), *ierr);
-      //PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp,                   0, nV-1,         ierr), *ierr);
+      // nothing to do if no converged eigenvalues this iteration
+      if( nNewlyConvergedEig == 0 )
+      {
+        PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  0, nV-1,          0, minBase-1,    ierr), *ierr);
 
-      PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (V, Q_H, 64, ierr), *ierr);
-      //PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), V,           st::zero(), Vtmp, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (V, Q_H, 64, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (AV, Q_H, 64, ierr), *ierr);
+        if( B_op != NULL )
+        {
+          PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (BV, Q_H, 64, ierr), *ierr);
+        }
+
+        // update H <- H_Q' * H * H_Q
+        PHIST_CHK_IERR(SUBR( sdMat_view_block  )(Htmp_, &Htmp, 0, nV-1,         0, minBase-1,     ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( sdMat_times_sdMat )(st::one(), H,    Q_H,   st::zero(), Htmp, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( sdMat_view_block  )(H_,    &H,    0, minBase-1,    0, minBase-1,     ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( sdMatT_times_sdMat)(st::one(), Q_H, Htmp,   st::zero(), H,    ierr), *ierr);
+      }
+
+      // update views
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,    &V,                      0, minBase-1,    ierr), *ierr);
-      //PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H,   st::zero(), V,    ierr), *ierr);
-
-      PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (AV, Q_H, 64, ierr), *ierr);
-      //PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), AV,          st::zero(), Vtmp, ierr), *ierr);
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,   &AV,                     0, minBase-1,    ierr), *ierr);
-      //PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H,   st::zero(), AV,   ierr), *ierr);
-
-      if( B_op != NULL )
-      {
-      PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (BV, Q_H, 64, ierr), *ierr);
-        //PHIST_CHK_IERR(SUBR( mvec_add_mvec    ) (st::one(), BV,        st::zero(), Vtmp, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BV,                     0, minBase-1,    ierr), *ierr);
-        //PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), Vtmp, Q_H, st::zero(), BV,   ierr), *ierr);
-      }
-      else
-      {
-        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BV,                     0, minBase-1, ierr), *ierr);
-      }
-
-      // update H <- H_Q' * H * H_Q
-      PHIST_CHK_IERR(SUBR( sdMat_view_block  )(Htmp_, &Htmp, 0, nV-1,         0, minBase-1,     ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( sdMat_times_sdMat )(st::one(), H,    Q_H,   st::zero(), Htmp, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,   &BV,                     0, minBase-1,    ierr), *ierr);
       PHIST_CHK_IERR(SUBR( sdMat_view_block  )(H_,    &H,    0, minBase-1,    0, minBase-1,     ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( sdMatT_times_sdMat)(st::one(), Q_H, Htmp,   st::zero(), H,    ierr), *ierr);
 
       nV = minBase;
     }
@@ -383,7 +459,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (st::one(), t, st::zero(), Vv, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,     k-1,       ierr), *ierr);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H,nV,    nV+k-1,    nV,    nV+k-1,    ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( orthog ) (V, Vv, Rr_H, R_H, 3, ierr), *ierr);
+    PHIST_CHK_NEG_IERR(SUBR( orthog ) (V, Vv, Rr_H, R_H, 3, ierr), *ierr);
     // TODO: only take non-random vector if *ierr > 0
     // calculate AVv, BVv
     PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vv, st::zero(), AVv, ierr), *ierr);
