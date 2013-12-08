@@ -37,8 +37,8 @@ void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V_, TYPE(sdMat_ptr) M_, lidx_
 #ifdef IS_COMPLEX
   _ST_ blas_ONE_ = ONE;
   _ST_ blas_ZERO_ = ZERO;
-  const _ST_* blas_ONE = &blas_ONE;
-  const _ST_* blas_ZERO = &blas_ZERO;
+  const _ST_* blas_ONE = &blas_ONE_;
+  const _ST_* blas_ZERO = &blas_ZERO_;
 #else
   _ST_ blas_ONE = ONE;
   _ST_ blas_ZERO = ZERO;
