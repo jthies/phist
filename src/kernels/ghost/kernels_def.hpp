@@ -607,11 +607,27 @@ void SUBR(mvec_vadd_mvec)(const _ST_ *alpha, TYPE(const_mvec_ptr) vX,
                             _ST_ beta,  TYPE(mvec_ptr)       vY, 
                             int* ierr)
   {
+#include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   CAST_PTR_FROM_VOID(ghost_vec_t,X,vX,*ierr);
   CAST_PTR_FROM_VOID(ghost_vec_t,Y,vY,*ierr);
-  Y->vaxpby(Y,X,(void*)&alpha,(void*)&beta);
+  if(beta == st::one())
+  {
+    Y->vaxpy(Y,X,(void*)alpha);
+  }
+  else
+  {
+    // ghost also expects a vector for beta, so construct one:
+    int nvec = 0;
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vY,&nvec,ierr),*ierr);
+    _ST_ *b = (_ST_*)malloc(nvec*sizeof(_ST_));
+    for(int i = 0; i < nvec; i++)
+      b[i] = beta;
+
+    Y->vaxpby(Y,X,(void*)alpha,(void*)b);
+    free(b);
+  }
   }
 
 //! B=alpha*A+beta*B
