@@ -161,6 +161,8 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   mvec_ptr_t  BVv = NULL;     //< next columns in BV_
   mvec_ptr_t  t   = NULL;     //< Block-Jacobi-Davidson correction
   mvec_ptr_t  t_res = NULL;   //< part of the residual AQ-QR corresponding to current block t
+  mvec_ptr_t  Qtil= NULL;     //< view of part of Q required for the JaDa correction equation
+  mvec_ptr_t BQtil= NULL;     //< B*Qtil
 
   sdMat_ptr_t H   = NULL;     //< projection of A onto H, V'*AV
   sdMat_ptr_t Htmp= NULL;     //< temporary space for H
@@ -279,7 +281,8 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
 
     // setup matrix of shifts and residuals for the correction equation
-    int k = 0;
+    int k = 0;  // current correction block dimension
+    int k_ = 0; // 0:k_-1 vectors of Q used for the orthogonal projection in the correction equation
     for(int i = 0; i < nEig && k < blockDim; i++)
     {
 #ifndef IS_COMPLEX
@@ -291,6 +294,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
       if( resNorm[i] > tol )
       {
+        k_ = i;
 #ifndef IS_COMPLEX
         sigma[k] = -ct::real(ev_H[i]);
 #else
@@ -352,15 +356,18 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     // calculate corrections
     // setup jadaOp
     // set correction views and temporary jadaOp-storage
-    PHIST_CHK_IERR(SUBR( mvec_view_block ) (t_,  &t,     0, k-1, ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_view_block ) (res, &t_res, 0, k-1, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,  &t,     0, k-1,  ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res, &t_res, 0, k-1,  ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,  &Vv,                    nV,    nV+k-1,    ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_, &AVv,                   nV,    nV+k-1,    ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BVv,                   nV,    nV+k-1,    ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nEig-1,    0,     k-1,       ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     k_-1,      0,     k-1,       ierr), *ierr);
+    // we only need to view first part of Q
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q,   &Qtil,  0, k_-1, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ,  &BQtil, 0, k_-1, ierr), *ierr);
 
     TYPE(op) jdOp;
-    PHIST_CHK_IERR(SUBR( jadaOp_create ) (A_op, B_op, Q, BQ, sigma, R_H, AVv, BVv, Vv, NULL, &jdOp, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( jadaOp_create ) (A_op, B_op, Qtil, BQtil, sigma, R_H, AVv, BVv, Vv, NULL, &jdOp, ierr), *ierr);
     // TODO specify useful bgmresIter and tol per eigenvalue!
     int bgmresIter = 10;
     PHIST_CHK_IERR(SUBR( mvec_put_value )(t, st::zero(), ierr), *ierr);
@@ -424,6 +431,8 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (Vv,  ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (Vtmp,ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (V,   ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_delete  ) (Qtil,ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_delete  ) (BQtil,ierr), *ierr);
 
   if( B_op != NULL )
   {
