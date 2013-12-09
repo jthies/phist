@@ -305,13 +305,13 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     for(int i = nConvergedEig; i < nEig; i++)
     {
       PHIST_SOUT(PHIST_INFO,"In iteration %d: Current approximation for eigenvalue %d is %16.8g%+16.8gi with residuum %e", *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]), resNorm[i]);
-      if( resNorm[i] <= tol )
+      if( resNorm[i] <= tol && i == nConvergedEig+nNewlyConvergedEig ) // only consider eigenvalues from the beginning
         nNewlyConvergedEig++;
     }
 
     if( nNewlyConvergedEig > 0 )
     {
-      PHIST_SOUT(PHIST_INFO,"In iteration %d: converged another %d eigenvalues", *nIter, nNewlyConvergedEig);
+      PHIST_SOUT(PHIST_INFO,"In iteration %d: fixing %d newly converged eigenvalues", *nIter, nNewlyConvergedEig);
 
       // reorder V and H
       PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (V, Q_H, 64, ierr), *ierr);
