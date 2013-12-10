@@ -1,4 +1,8 @@
 
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
 #include "gtest/gtest.h"
 //#include "gmock/gmock.h"
 
