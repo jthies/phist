@@ -1,11 +1,12 @@
 #ifndef PHIST_MACROS_H
 #define PHIST_MACROS_H
 
-#ifndef NO_INCLUDES_IN_HEADERS
-#include "phist_tools.h"
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
+
+#ifndef NO_INCLUDES_IN_HEADERS
+#include "phist_tools.h"
 #ifdef __cplusplus
 #include <cstdio>
 #else

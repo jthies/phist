@@ -1,3 +1,7 @@
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
 #include "phist_typedefs.h"
 #include "phist_kernels.h"
 #include "phist_macros.h"
