@@ -5,6 +5,10 @@
  *      Author: schlauch
  */
 
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
 #include <iostream>
 
 #include "gtest/gtest.h"
