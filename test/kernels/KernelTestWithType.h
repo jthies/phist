@@ -1,6 +1,10 @@
 #ifndef KERNEL_TEST_WITHTYPEH
 #define KERNEL_TEST_WITHTYPEH
 
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
 #include "KernelTest.h"
 #include "phist_ScalarTraits.hpp"
 #include <cstdlib>
