@@ -32,6 +32,7 @@ void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
   ghost_mtraits_t *mtraits=new ghost_mtraits_t;
         mtraits->format = GHOST_SPM_FORMAT_CRS;
         mtraits->datatype = st::ghost_dt;
+        mtraits->flags = GHOST_SPM_DEFAULT;
 
   ctx = ghost_createContext(GHOST_GET_DIM_FROM_MATRIX,GHOST_GET_DIM_FROM_MATRIX,
         GHOST_CONTEXT_DEFAULT,(char*)filename,MPI_COMM_WORLD,1.0);
