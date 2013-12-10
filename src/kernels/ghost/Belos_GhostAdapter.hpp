@@ -584,7 +584,9 @@ using ::phist::GhostMV;
                 dmtraits->nvecs=M.numCols();
                 dmtraits->datatype=st::ghost_dt;
 
-      //TODO: don't use world here?
+      // The context and communicator are supposed to be irrelevant in an sdMat,
+      // but it is not clear wether this is handled correctly everywhere i ghost.
+      // For the moment we can afford to just put in MPI_COMM_WORLD at this point.
       MPI_Comm comm = MPI_COMM_WORLD;
       ghost_context_t* ctx=ghost_createContext(M.numRows(), M.numRows(), GHOST_CONTEXT_DEFAULT,
           NULL, comm, 1.0);
