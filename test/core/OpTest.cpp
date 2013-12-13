@@ -8,6 +8,7 @@
 
 #include "phist_operator.h"
 #include "phist_jadaOp.h"
+#include "../tools/MatrixIO.h"
 
 #include "../kernels/KernelTest.h"
 #include "../kernels/KernelTestWithMap.h"

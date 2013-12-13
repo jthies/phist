@@ -36,7 +36,7 @@ typedef struct TYPE(gmresState) {
   _MT_ normB_; //! stores norm of RHS so it doesn't have to be recomputed when
                //! when continuing.
 
-  _MT_ normB_; //! stores current residual norm
+  _MT_ normR_; //! stores current residual norm
   
   int curDimV_; //! current size of the basis V
   int curIter_; //! number of iterations performed since last call to init
@@ -53,16 +53,20 @@ typedef TYPE(gmresState)* TYPE(gmresState_ptr);
 //! therefore OK to have the operator perform a different task for each vector
 //! column it is applied to, like in block JaDa: OP(X_j) = (A-s_jI)(I-VV').
 //! The computational steering is done by initializing the parameters in the
-//! gmresState structs. The iteration stops as soon as one system converges.
+//! gmresState structs. The iteration stops as soon as one system converges or
+//! reaches min(maxBas,maxIters) iterations (NOTE: no restarting is implemented, 
+//! so the maximum number of iterations is determined by the number of basis vectors
+//! allocated).
 //! The user can then continue running GMRES on the others after appropriately
 //! reordering the input vectors and array of states.
 //! Individual ierr flags are contained within the structs,
 //! and a global error code is put into the last arg ierr, as usual.
 //!
-//! if system j has converged, S_array[j]->ierr will be set t0 0 on output.
+//! if system j has converged, S_array[j]->ierr will be set to 0 on output.
 //! Otherwise it will be set to 1 (not yet converged) or 2 (max iters exceeded),
 //! or a negative value if an error occurred related to this particular system.
-//! The global ierr flag will then be set to -1.
+//! The global ierr flag will then be set to -1. (0 for "someone converged" and +1 for
+//! someone reached max iters")
 void SUBR(gmres)(TYPE(const_op_ptr) Op,
         TYPE(mvec_ptr) X,
         TYPE(const_mvec_ptr) B,
@@ -77,8 +81,8 @@ void SUBR(gmresState_delete)(TYPE(mvec_ptr) S, int* ierr);
 //! The maxBas parameter cannot be adjusted afterwards as it determines the amount 
 //! of memory allocated in this function. The map argument indicates the data dist-
 //! ribution of vectors so we can create the basis vectors a priori.
-SUBR(gmresState_create)(TYPE(gmresState_ptr)* state, const_map_ptr map, 
-        int maxBas,int* ierr);
+void SUBR(gmresState_create)(TYPE(gmresState_ptr)* state, const_map_ptr_t map,
+        int maxBas, int* ierr);
 
 //! this function can be used to force a clean restart of the associated GMRES
 //! solver. It is necessary to call this function before the first call to
@@ -88,6 +92,6 @@ SUBR(gmresState_create)(TYPE(gmresState_ptr)* state, const_map_ptr map,
 //! reset. If one of the RHS vectors changes between calls to gmres, reset with the new
 //! rhs should be called for that gmresState, otherwise a messed up Krylov sequence will
 //! result and the convergence criterion will not be consistent.
-SUBR(gmresState_reset)(TYPE(gmresState_ptr) S, 
+void SUBR(gmresState_reset)(TYPE(gmresState_ptr) S, 
                 TYPE(const_mvec_ptr) b, 
                 TYPE(const_mvec_ptr) x0, int *ierr);

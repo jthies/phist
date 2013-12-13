@@ -13,10 +13,9 @@
 
 /*! Test fixure. */
 class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_> 
-  {
+{
 
-public:
-
+  public:
 
   /*! Set up routine.
    */
@@ -26,14 +25,14 @@ public:
     
     if (typeImplemented_)
       {
-      read_mat("speye",&A1_);
+      SUBR(read_mat)("speye",nglob_,&A1_,&ierr_);
 #ifndef SKIP_ZERO_MAT
-      read_mat("spzero",&A0_);
+      SUBR(read_mat)("spzero",nglob_,&A0_,&ierr_);
 #else
       A0_=A1_;
 #endif
-      read_mat("sprandn",&A2_);
-      read_mat("sprandn_nodiag",&A3_);
+      SUBR(read_mat)("sprandn",nglob_,&A2_,&ierr_);
+      SUBR(read_mat)("sprandn_nodiag",nglob_,&A3_,&ierr_);
       
       if (A0_==NULL || A1_==NULL || A2_==NULL || A3_==NULL)
         {
@@ -98,34 +97,6 @@ TYPE(crsMat_ptr) A3_; // general sparse matrix with some zeros on the diagonal
 
 protected:
 
-int read_mat(const char* filebase,TYPE(crsMat_ptr) *ptr)
-  {
-  *ptr = NULL;
-  char mmfile[256],hbfile[256],binfile[256];
-  sprintf(mmfile,"%s%s%d.mm",_TPC_,filebase,nglob_);
-#ifdef IS_COMPLEX
-  sprintf(hbfile,"%s%s%d.cua",_TPC_,filebase,nglob_);
-#else  
-  sprintf(hbfile,"%s%s%d.rua",_TPC_,filebase,nglob_);
-#endif
-  sprintf(binfile,"%s%s%d.bin",_TPC_,filebase,nglob_);
-  
-//  std::cout << "Looking for matrix \'"<<filebase<<"\'...\n";
-//  std::cout << "... try \'"<<mmfile<<"\'\n";
-  SUBR(crsMat_read_mm)(ptr,mmfile,&ierr_);
-  if (ierr_!=PHIST_SUCCESS) // kernel lib can't read MatrixMarket format or file not found
-    {
-//    std::cout << "... try \'"<<hbfile<<"\'\n";
-    SUBR(crsMat_read_hb)(ptr,hbfile,&ierr_);
-    if (ierr_!=PHIST_SUCCESS) // kernel lib can't read Harwell-Boeing or file not found
-      {
-//      std::cout << "... try \'"<<binfile<<"\'\n";
-      SUBR(crsMat_read_bin)(ptr,binfile,&ierr_);
-      }
-    }
-  return ierr_;
-  }
-
 int delete_mat(TYPE(crsMat_ptr) A)
   {
   if (A!=NULL)
@@ -154,7 +125,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
   return mt::one();
   }
 
-bool haveMats_;
+  bool haveMats_;
 };
 
   TEST_F(CLASSNAME, read_matrices) 

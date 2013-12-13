@@ -18,6 +18,8 @@
 #include <likwid.h>
 #endif
 
+#include <fstream>
+
 
 using namespace phist::tpetra;
 
@@ -103,13 +105,34 @@ void phist_tpetra_node_create(node_t** node, const_comm_ptr_t vcomm, int* ierr)
   *ierr=0;
   CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
   Teuchos::RCP<Teuchos::ParameterList> nodeParams=Teuchos::rcp(new Teuchos::ParameterList);
-  try {
-  Teuchos::updateParametersFromXmlFile("phist_node.xml",nodeParams.ptr());
-  } catch (...)
+  // check if the file exists
+  bool haveNodeFile=false;
+  if (comm->getRank()==0)
     {
-    PHIST_SOUT(PHIST_INFO,"failed to read file 'phist_node.xml', using the default setting 'Num Threads'=0\n"
-                          "(file %s, line %d)",__FILE__,__LINE__);
+    std::ifstream test("phist_node.xml");
+    if (test) haveNodeFile=true;
     }
+  
+  comm->broadcast(0,sizeof(bool),(char*)&haveNodeFile);
+
+  if (haveNodeFile)
+  {
+    bool status=true;
+    try 
+    {
+      Teuchos::updateParametersFromXmlFileAndBroadcast("phist_node.xml",nodeParams.ptr(),*comm);
+    } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,status);
+    if (status==false)
+      {
+      *ierr=PHIST_CAUGHT_EXCEPTION; 
+      return;
+      }
+  }
+  else
+  {
+    PHIST_SOUT(PHIST_WARNING,"File phist_node.xml not found, using default node settings in tpetra");
+  }
+
   PHIST_SOUT(PHIST_VERBOSE,"# threads rquested: %d",nodeParams->get("Num Threads",0));
   *node = new node_t(*nodeParams);
 }
