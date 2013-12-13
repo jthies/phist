@@ -9,12 +9,15 @@
 #include "phist_macros.h"
 #include "phist_kernels.h"
 #include "phist_enums.h"
-#include "phist_simple_arnoldi.h"
+#include "phist_gmres.h"
+#include "phist_ScalarTraits.hpp"
 #include "../kernels/KernelTest.h"
 #include "../kernels/KernelTestWithMap.h"
 #include "../kernels/KernelTestWithType.h"
 #include "../kernels/KernelTestWithSdMats.h"
 #include "../kernels/KernelTestWithVectors.h"
+
+#include "../tools/MatrixIO.h"
 
 using namespace testing;
 
@@ -22,32 +25,34 @@ using namespace testing;
 #undef CLASSNAME
 #endif
 
-#define _N_ 25
-#define _M_ 10
+#ifdef MATNAME
+#undef MATNAME
+#endif
 
-#define CLASSNAME STestSimpleArnoldi_25_10
+#define MATNAME "jadaTestMat"
+
+#define _N_ 512
+#define _M_ 6
+
+#define CLASSNAME STestGmres
 #include "phist_gen_s.h"
-#include "../tools/MatrixIO_def.hpp"
-#include "TestSimpleArnoldi_def.hpp"
+#include "TestGmres_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME DTestSimpleArnoldi_25_10
+#define CLASSNAME DTestGmres
 
 #include "phist_gen_d.h"
-#include "../tools/MatrixIO_def.hpp"
-#include "TestSimpleArnoldi_def.hpp"
+#include "TestGmres_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME CTestSimpleArnoldi_25_10
+#define CLASSNAME CTestGmres
 
 #include "phist_gen_c.h"
-#include "../tools/MatrixIO_def.hpp"
-#include "TestSimpleArnoldi_def.hpp"
+#include "TestGmres_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME ZTestSimpleArnoldi_25_10
+#define CLASSNAME ZTestGmres
 
 #include "phist_gen_z.h"
-#include "../tools/MatrixIO_def.hpp"
-#include "TestSimpleArnoldi_def.hpp"
+#include "TestGmres_def.hpp"
 

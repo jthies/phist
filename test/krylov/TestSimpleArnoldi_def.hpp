@@ -26,10 +26,14 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
       if( typeImplemented_ )
       {
         // read matrices
-        ASSERT_EQ(0,read_mat("speye",&Aeye_));
-        ASSERT_EQ(0,read_mat("spzero",&Azero_));
-        ASSERT_EQ(0,read_mat("sprandn",&Arand_));
-        ASSERT_EQ(0,read_mat("sprandn_nodiag",&Arand_nodiag_));
+        SUBR(read_mat)("speye",nglob_,&Aeye_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(read_mat)("spzero",nglob_,&Azero_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(read_mat)("sprandn",nglob_,&Arand_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(read_mat)("sprandn_nodiag",nglob_,&Arand_nodiag_,&ierr_);
+        ASSERT_EQ(0,ierr_);
 
         ASSERT_TRUE(Aeye_ != NULL);
         ASSERT_TRUE(Azero_ != NULL);
@@ -129,27 +133,6 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
     TYPE(mvec_ptr) AV_;
     TYPE(mvec_ptr) VH_;
     TYPE(sdMat_ptr) H_;
-
-    int read_mat(const char* filebase,TYPE(crsMat_ptr) *ptr)
-    {
-      *ptr = NULL;
-      char mmfile[256],hbfile[256],binfile[256];
-      char tpc = tolower(st::type_char());
-      sprintf(mmfile,"%c_%s%d.mm",tpc,filebase,nglob_);
-#ifdef IS_COMPLEX
-      sprintf(hbfile,"%c_%s%d.cua",tpc,filebase,nglob_);
-#else
-      sprintf(hbfile,"%c_%s%d.rua",tpc,filebase,nglob_);
-#endif
-      sprintf(binfile,"%c_%s%d.bin",tpc,filebase,nglob_);
-
-      SUBR(crsMat_read_mm)(ptr,mmfile,&ierr_);
-      if (ierr_!=PHIST_SUCCESS)
-        SUBR(crsMat_read_hb)(ptr,hbfile,&ierr_);
-      if (ierr_!=PHIST_SUCCESS)
-        SUBR(crsMat_read_bin)(ptr,binfile,&ierr_);
-      return ierr_;
-    }
 
     int delete_mat(TYPE(crsMat_ptr) A)
     {

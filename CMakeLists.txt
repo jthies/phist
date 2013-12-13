@@ -252,7 +252,8 @@ set(SOURCES
 
 set(TEST_SOURCES
     lib/googletest-1.6/gmock-gtest-all.cc
-    test/mainTest.cpp)
+    test/mainTest.cpp
+    test/tools/MatrixIO.cpp)
     
 file(GLOB TestMatricesMM ${CMAKE_SOURCE_DIR}/test/matrices/*.mm)
 file(GLOB TestMatricesBIN ${CMAKE_SOURCE_DIR}/test/matrices/*.bin)

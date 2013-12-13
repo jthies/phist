@@ -41,8 +41,10 @@ public:
       SUBR(sdMat_delete)(Rtmp,&ierr_);
       ASSERT_EQ(0,ierr_);
 
-      read_mat("sprandn",&A1_);
-      read_mat("sprandn_nodiag",&A2_);
+      SUBR(read_mat)("sprandn",nglob_,&A1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(read_mat)("sprandn_nodiag",nglob_,&A2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
       
       if (A1_==NULL || A2_==NULL)
         {
@@ -79,35 +81,6 @@ TYPE(mvec_ptr) Q_;
 _ST_* sigma;
 
 protected:
-
-int read_mat(const char* filebase,TYPE(crsMat_ptr) *ptr)
-  {
-  *ptr = NULL;
-  char tpc = tolower(st::type_char());
-  char mmfile[256],hbfile[256],binfile[256];
-  sprintf(mmfile,"%c_%s%d.mm",tpc,filebase,nglob_);
-#ifdef IS_COMPLEX
-  sprintf(hbfile,"%c_%s%d.cua",tpc,filebase,nglob_);
-#else  
-  sprintf(hbfile,"%c_%s%d.rua",tpc,filebase,nglob_);
-#endif
-  sprintf(binfile,"%c_%s%d.bin",tpc,filebase,nglob_);
-  
-//  std::cout << "Looking for matrix \'"<<filebase<<"\'...\n";
-//  std::cout << "... try \'"<<mmfile<<"\'\n";
-  SUBR(crsMat_read_mm)(ptr,mmfile,&ierr_);
-  if (ierr_!=PHIST_SUCCESS) // kernel lib can't read MatrixMarket format or file not found
-    {
-//    std::cout << "... try \'"<<hbfile<<"\'\n";
-    SUBR(crsMat_read_hb)(ptr,hbfile,&ierr_);
-    if (ierr_!=PHIST_SUCCESS) // kernel lib can't read Harwell-Boeing or file not found
-      {
-//      std::cout << "... try \'"<<binfile<<"\'\n";
-      SUBR(crsMat_read_bin)(ptr,binfile,&ierr_);
-      }
-    }
-  return ierr_;
-  }
 
 int delete_mat(TYPE(crsMat_ptr) A)
   {
