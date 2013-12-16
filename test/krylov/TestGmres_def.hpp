@@ -2,9 +2,27 @@
 #error "file not included correctly"
 #endif
 #ifndef MATNAME
+// matrix base filename (eg. xyz => xyz'_N_'.'ext'
 #error "file not included correctly"
 #endif
 #ifndef _N_
+global size of matrix
+#error "file not included correctly"
+#endif
+#ifndef _M_
+// number of systems solved simultaneously
+#error "file not included correctly"
+#endif
+#ifndef MAXBAS
+// maximum number of vectors in Krylov space
+#error "file not included correctly"
+#endif
+#ifndef TOLA
+// tolerance to be achieved in MAXBAS iterations (no restart)
+#error "file not included correctly"
+#endif
+#ifndef TOLB
+// tolerance to be achieved in 5*MAXBAS iterations (4 restarts)
 #error "file not included correctly"
 #endif
 
@@ -19,11 +37,11 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
     //! mvec/sdMat sizes
     static const int n_=_N_;
     static const int m_=_M_;
+    static const int maxBas_=MAXBAS;
 
     //! Set up routine.
     virtual void SetUp()
     {
-      int ierr;
       VTest::SetUp();
 
       if( typeImplemented_ )
@@ -37,8 +55,32 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
         opA_ = new TYPE(op);
         ASSERT_TRUE(opA_ != NULL);
 
-        SUBR(op_wrap_crsMat)(opA_,A_,&ierr);
-        ASSERT_EQ(0,ierr);
+        SUBR(op_wrap_crsMat)(opA_,A_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        
+        state_=new TYPE(gmresState_ptr)[m_];
+
+        for (int i=0;i<m_;i++)
+        {
+          SUBR(gmresState_create)(&state_[i],map_,maxBas_,&ierr_);
+          ASSERT_EQ(0,ierr_);
+        }
+        xex_=vec1_;
+        rhs_=vec2_;
+        sol_=vec3_;
+        xex_vp_=vec1_vp_;
+        rhs_vp_=vec2_vp_;
+        sol_vp_=vec3_vp_;
+        SUBR(mvec_put_value)(xex_,st::one(),&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_put_value)(sol_,st::zero(),&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(crsMat_times_mvec)(st::one(),A_,xex_,st::zero(),rhs_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_norm2)(xex_,&xNorm_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_norm2)(rhs_,&bNorm_,&ierr_);
+        ASSERT_EQ(0,ierr_);
       }
     }
 
@@ -54,61 +96,105 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
         SUBR(crsMat_delete)(A_,&ierr_);
         ASSERT_EQ(0,ierr_);
       }
-
+      for (int i=0;i<m_;i++)
+        {
+        SUBR(gmresState_delete)(state_[i],&ierr);
+        }
+      delete [] state_;
+        ASSERT_EQ(0,ierr_);
       VTest::TearDown();
     }
 
     TYPE(op_ptr) opA_;
+    TYPE(gmresState_ptr) *state_;
 
   protected:
   
     TYPE(crsMat_ptr) A_;
+    TYPE(mvec_ptr) xex_,sol_,rhs_;
+    ST *xex_vp_,*rhs_vp_,*sol_vp_;
+    MT bNorm_,xNorm_;
 
-/*
+
     // ========================= the actual arnoldi test =========================
-    void doArnoldiTest(TYPE(const_op_ptr) opA)
+    void doGmresTest(int nrhs, int nrestarts, MT tol)
     {
-      int ierr;
       if( typeImplemented_ )
       {
-        // run simple_arnoldi
-        SUBR(simple_arnoldi)(opA,NULL,v0_,V_,NULL,H_,m_,&ierr);
-        ASSERT_EQ(0,ierr);
+        ASSERT_TRUE(nrhs<=m_);
+        // up to now we only test the case of one matrix, one rhs here (TODO)
+        ASSERT_TRUE(nrhs==1);
 
-        // check orthogonality of V_
-        ASSERT_REAL_EQ(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
-        ASSERT_REAL_EQ(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
+        TYPE(mvec_ptr) x=NULL,b=NULL,xex=NULL;
+        SUBR(mvec_view_block)(xex_,&xex,0,nrhs-1,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_view_block)(sol_,&x,0,nrhs-1,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_view_block)(rhs_,&b,0,nrhs-1,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        
+        int ierr2=0;        
+        for (int nr=0;nr<=nrestarts;nr++)
+        {
+          // initialize state with current approximation
+          for (int i=0;i<nrhs;i++)
+          {
+            SUBR(gmresState_reset)(state_[i],b,x,&ierr_);
+            ASSERT_EQ(0,ierr_);
+          }
+          // iterate for MAXBAS iterations
+          SUBR(gmresState_iterate)(opA_,state_,m_,&ierr2);
+          SUBR(gmresState_updateSol)(state_,x,&ierr_);
+          ASSERT_EQ(0,ierr_);
+        }
+        ASSERT_EQ(0,ierr2); // GMRES indicated convergence
 
-        // calculate A*V(:,1:m)
-        opA->apply(st::one(),opA->A,Vm_,st::zero(),AV_,&ierr);
-        ASSERT_EQ(0,ierr);
-        // calculate V(:,1:m+1)*H(1:m+1,1:m)
-        SUBR(mvec_times_sdMat)(st::one(),V_,H_,st::zero(),VH_,&ierr);
-        ASSERT_EQ(0,ierr);
+        // check residual and error norms, compare with tol
+        MT resNorm, errNorm;
+        
+        
+        // compute true residual in b
+        SUBR(crsMat_times_mvec)(-st::one(),A_,x,st::one(),b,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        
+        SUBR(mvec_norm2)(b,&resNorm,&ierr_);
+        ASSERT_EQ(0,ierr_);
 
-        // calculate AV_' := AV_ - VH_
-        SUBR(mvec_add_mvec)(-st::one(),VH_,st::one(),AV_,&ierr);
-        ASSERT_EQ(0,ierr);
-        _MT_ vnorm[_M_];
-        SUBR(mvec_norm2)(AV_,vnorm,&ierr);
-        ASSERT_EQ(0,ierr);
+        // check error (residual two norm < tol)
+        ASSERT_TRUE(resNorm<=tol*bNorm_);
 
-        // check AV_' = AV_ - VH_ == 0
-        for(int i = 0; i < _M_; i++)
-          ASSERT_NEAR(mt::zero(),vnorm[i],100*mt::eps());
+        // check error
+        SUBR(mvec_add_mvec)(-st::one(),xex,st::one(),x,&ierr_);
+        ASSERT_EQ(0,ierr_);
+
+        SUBR(mvec_norm2)(x,&errNorm,&ierr_);
+        ASSERT_EQ(0,ierr_);
+
+        ASSERT_TRUE(errNorm<=tol*bNorm_);
+        
+
+        SUBR(mvec_delete)(x,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(b,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(xex,&ierr_);
+        ASSERT_EQ(0,ierr_);
       }
     }
-    */
 };
 
-
-TEST_F(CLASSNAME, some_test) 
+// test unrestarted GMRES with tolerance TOL1
+TEST_F(CLASSNAME, simple_gmres) 
 {
-/*
-  int ierr;
-  SUBR(mvec_put_value)(v0_,st::one(),&ierr);
-  ASSERT_EQ(0,ierr);
-  doArnoldiTest(opAeye_);
-*/
+  int nrestarts=0;
+  int nrhs=1;
+  doGmresTest(nrhs,nrestarts,TOLA);
 }
 
+// test restarted GMRES with tolerance TOL2
+TEST_F(CLASSNAME, restarted_gmres) 
+{
+  int nrestarts=5;
+  int nrhs=1;
+  doGmresTest(nrhs,nrestarts,TOLB);
+}
