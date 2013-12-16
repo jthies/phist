@@ -116,6 +116,25 @@ void ZTREVC(const char* side, const char* howmny, int* select, const int* n,
 const Dblas_cmplx_t* T, const int* ldt, Dblas_cmplx_t* vl, const int* ldvl, Dblas_cmplx_t* vr, const int* ldvr, 
 const int* mm, int* m, Dblas_cmplx_t* work, double* rwork, int* info);
 
+///////////////////////////////////////////////////////////////////////////////////////////
+//      XTRTRS - solve triangular linear system                                          //
+///////////////////////////////////////////////////////////////////////////////////////////
+#define STRTRS LAPACK_SUBR(STRTRS,strtrs)
+void STRTRS(const char* uplo, const char* trans, const char* diag, const int* n, const int* nrhs, 
+const float* a, const int* lda, float* b, const int* ldb, int* info);
+
+#define DTRTRS LAPACK_SUBR(DTRTRS,dtrtrs)
+void DTRTRS(const char* uplo, const char* trans, const char* diag, const int* n, const int* nrhs, 
+const double* a, const int* lda, double* b, const int* ldb, int* info);
+
+#define CTRTRS LAPACK_SUBR(CTRTRS,ctrtrs)
+void CTRTRS(const char* uplo, const char* trans, const char* diag, const int* n, const int* nrhs, 
+const Sblas_cmplx_t* a, const int* lda, Sblas_cmplx_t* b, const int* ldb, int* info);
+
+#define ZTRTRS LAPACK_SUBR(ZTRTRS,ztrtrs)
+void ZTRTRS(const char* uplo, const char* trans, const char* diag, const int* n, const int* nrhs, 
+const Dblas_cmplx_t* a, const int* lda, Dblas_cmplx_t* b, const int* ldb, int* info);
+
 
 #ifdef __cplusplus
 }
