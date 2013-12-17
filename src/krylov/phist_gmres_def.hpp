@@ -10,33 +10,37 @@
 // another routine that gives complex coefficients??)
 void SUBR(rotg)(_ST_ f, _ST_ g, _ST_& cs, _ST_& sn, _ST_& r)
 {
-#include "phist_std_typedefs.hpp"  
-  ST d=st::sqrt(std::abs(f).^2 + abs(g).^2);
-  c=st::zero();
-  s=c; r=c;
+#include "phist_std_typedefs.hpp"
+  MT af=st::abs(f);
+  MT ag=st::abs(g);
+  MT d=mt::sqrt(af*af + ag*ag);
+  cs=st::zero();
+  sn=st::zero();
+  r=st::zero();
 
-  if (g==st::zero() ) // includes case f=0 and g=0
+  if (ag==mt::zero() ) // includes case f=0 and g=0
   {
     cs = st::one();
-    sn = zt::zero();
+    sn = st::zero();
     r  = f;
   }
-  else if (f == st::zero())
+  else if (af == mt::zero())
   {
-    c=st::zero();
-    s=st::conj(g)/std::abs(g);
-    r=std::abs(g);
+    cs=st::zero();
+    sn=st::conj(g)/ag;
+    r=ag;
   }
   else
   {
-    c=std::abs(f)/d;
-    s=(f/std::abs(f))*(st::conj(g)/d);
-    r=(f/std::abs(f))*d;
+    cs=af/d;
+    sn=(f/af)*(st::conj(g)/d);
+    r=(f/af)*d;
   }
+  return;
 }
 
 // create new state object
-void SUBR(gmresState_create)(TYPE(gmresState_ptr)* state, const_map_ptr map, 
+void SUBR(gmresState_create)(TYPE(gmresState_ptr)* state, const_map_ptr_t map, 
         int maxBas,int* ierr)
 {
 #include "phist_std_typedefs.hpp"  
@@ -52,12 +56,16 @@ void SUBR(gmresState_create)(TYPE(gmresState_ptr)* state, const_map_ptr map,
   S->ierr=-2;
 
   S->maxBasAllocated_=maxBas;
-  PHIST_CHK_IERR(SUBR(mvec_create)(&S->V_, maxBas, ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&S->H_, maxBas+1, maxBas, ierr),*ierr);
+
+  PHIST_CHK_IERR(SUBR(mvec_create)(&S->X0_, map,1, ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&S->V_, map,maxBas, ierr),*ierr);
+  const_comm_ptr_t comm;
+  PHIST_CHK_IERR(phist_map_get_comm(map,&comm,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&S->H_, maxBas+1, maxBas, comm,ierr),*ierr);
   S->cs_ = new ST[maxBas];
   S->sn_ = new ST[maxBas];
   S->rs_ = new ST[maxBas];
-  S->curDim_=0;
+  S->curDimV_=0;
   S->curIter_=0;
   S->normB_=-mt::one(); // not initialized
 }
@@ -74,51 +82,73 @@ void SUBR(gmresState_delete)(TYPE(gmresState)* S, int* ierr)
 }
 
 // reset gmres state.
-SUBR(gmresState_reset)(TYPE(gmresState_ptr) S, TYPE(const_mvec_ptr) b,
+void SUBR(gmresState_reset)(TYPE(gmresState_ptr) S, TYPE(const_mvec_ptr) b,
         TYPE(const_mvec_ptr) x0,int *ierr)
 {
 #include "phist_std_typedefs.hpp"  
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   
-  MT rs0;
-  TYPE(mvec_ptr) v0 = NULL;
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(V_,&v0,0,0,ierr),*ierr);
-  if (b!=NULL)
+  if (b==NULL && S->B_==NULL)
     {
-    PHIST_CHK_IERR(SUBR(mvec_norm2)(b,&(S->normB_),ierr),*ierr);
-    }
-  else if (S->normB_==-mt::one())
-    {
-    PHISt_OUT(PHIST_ERROR,"on the first call to gmresState_reset you *must* provide the RHS vector");
+    PHIST_OUT(PHIST_ERROR,"on the first call to gmresState_reset you *must* provide the RHS vector");
     *ierr=-1;
     return;
     }
-  if (x0!=NULL)
+  else if (b!=S->B_ && b!=NULL)
     {
-    // copy starting vector into V
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(S->V_,x0,0,0,ierr),*ierr);
+    // new rhs -> need to recompute ||B||
+    S->B_=b;
+    S->normB_=-mt::one();
+    S->curIter_=0;
     }
-  else
-    {
-    // generate random initial vector
-    PHIST_CHK_IERR(SUBR(mvec_random)(v0,ierr),*ierr);
-    }
-  //normalize
-  PHIST_CHK_IERR(SUBR(mvec_normalize)(v0,&rs0,ierr),*ierr);
-  S->rs_[0]=(ST)rs0;
-  S->curIter_=1;
-  S->curDim_=1;
-  // delete view of first column
-  PHIST_CHK_IERR(mvec_delete)(v0,ierr),*ierr);
+  S->curDimV_=0;
+  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),x0,st::zero(),S->X0_,ierr),*ierr);
+  return;
+}
+
+void SUBR(gmresState_updateSol)(TYPE(gmresState_ptr) S_array[], TYPE(mvec_ptr) x, int* ierr)
+{
+#include "phist_std_typedefs.hpp"
+
+  int numSys;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x,&numSys,ierr),*ierr);
+  const_comm_ptr_t comm=NULL;
+  PHIST_CHK_IERR(SUBR(mvec_get_comm)(x,&comm,ierr),*ierr);
+
+  // TODO - omp parallel for
+  for (int i=0;i<numSys;i++)
+  {
+    // compute y by solving the triangular system
+    TYPE(const_gmresState_ptr) S = S_array[i];
+    TYPE(sdMat_ptr) y=NULL;
+    ST* H_raw=NULL,*y_raw=NULL;
+    lidx_t ldH,ldy;
+    
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&y,S->curDimV_,numSys,comm,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(y,&y_raw,&ldy,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S->H_,&H_raw,&ldH,ierr),*ierr);
+
+    // y = H\rs, H upper triangular
+    const char* uplo="U";
+    const char* trans="N";
+    const char* diag="N";
+    int nrhs=1;
+    PHIST_CHK_IERR(PREFIX(TRTRS)(uplo,trans,diag,&S->curDimV_,&nrhs,
+                                        (st::blas_scalar_t*)H_raw,&ldH,
+                                        (st::blas_scalar_t*)y_raw, &ldy, ierr),*ierr);
+
+    // X = X + M\V*y. TODO: with right preconditioning, split this into two parts and apply
+    // preconditioner to all systems simultaneously outside the loop (need tmp vector)
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),S->V_,y,st::one(),x,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_delete)(y,ierr),*ierr);
+  }
   return;
 }
 
 // implementation of gmres on several systems simultaneously
-void SUBR(gmres)(TYPE(const_op_ptr) Op,
-        TYPE(mvec_ptr) X,
-        TYPE(const_mvec_ptr) B,
-        TYPE(gmresState)* S_array,
+void SUBR(gmresState_iterate)(TYPE(const_op_ptr) Op,
+        TYPE(gmresState_ptr) S_array[], int numSys,
         int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
@@ -126,7 +156,7 @@ void SUBR(gmres)(TYPE(const_op_ptr) Op,
   *ierr = 0;
 
   // map defining how to create new vector objects
-  const_map_t* map=NULL;
+  const_map_ptr_t map=NULL;
   // multi-vectors to work with several of the systems simultaneously
   TYPE(mvec_ptr) R=NULL, V=NULL, W=NULL;
   // views into vector blocks of system i
@@ -134,23 +164,23 @@ void SUBR(gmres)(TYPE(const_op_ptr) Op,
   // for the orthog routine (again, a view into the H objects in the states
   TYPE(sdMat_ptr) R1=NULL,R2=NULL;
   
-  // number of systems we're iterating on. This value may decrease
-  // as systems converge, until at least 'stopIf' of them are
-  // converged and we exit the subroutine.
-  int numSys;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&numSys,ierr),*ierr);
-  
   // check if the given state objects have computed the norm of B,
   // and do so if not.
   for (int i=0;i<numSys;i++)
   {
-    S_array[i]->ierr_=1; // not converged yet
+    S_array[i]->ierr=1; // not converged yet
+    if (S_array[i]->normB_<mt::zero())
+      {
+        SUBR(mvec_norm2)(S_array[i]->B_,&S_array[i]->normB_,&S_array[i]->ierr);
+        PHIST_CHK_IERR(*ierr=S_array[i]->ierr,*ierr);
+      }
   }
   
-  MT beta[numSys];
-  
   // figure out how new vectors are built
-  PHIST_CHK_IERR(SUBR(mvec_get_map)(X,&map,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_get_map)(S_array[0]->X0_,&map,ierr),*ierr);
+
+//TODO - we could use "scattered views" here to avoid copying the columns into the GMRES 
+//       states
 
   // residual vectors
   PHIST_CHK_IERR(SUBR(mvec_create)(&R,map,numSys,ierr),*ierr);
@@ -161,6 +191,9 @@ void SUBR(gmres)(TYPE(const_op_ptr) Op,
 
   bool anyConverged=false;
   bool anyFailed=false;
+
+//TODO - here we must compute the initial residual r0=A*x0-b, rs0=||r0||, v0=r0/rs0 after
+//       a call to reset(), but without interfering with the rest of the systems...
 
   // we return as soon as one system converges or reaches its
   // maximum permitted number of iterations. The decision about what to do
@@ -184,117 +217,96 @@ void SUBR(gmres)(TYPE(const_op_ptr) Op,
     //        so that the small stuff can be done in parallel too?
     for (int i=0;i<numSys;i++)
     {
-      TYPE(gmresState) *S = S_array+i;
-      int j=S->curDim_;
+      TYPE(gmresState_ptr) S = S_array[i];
+      int j=S->curDimV_;
+      
+      if (j<=0)
+        {
+        PHIST_OUT(PHIST_ERROR,"gmres state not initialized correctly");
+        S->ierr=-1;
+        *ierr=-1;
+        }
+      if (j>=S->maxBas-1)
+        {
+        PHIST_OUT(PHIST_ERROR,"gmres state not initialized/reset correctly");
+        S->ierr=2;
+        *ierr=2;
+        }
+        
       //TODO - blocking of vectors in orthog to avoid communication??
         
       // view the existing basis vectors as Vprev
       PHIST_CHK_IERR(SUBR(mvec_view_block)(S->V_,&Vprev,0,j-1,ierr),*ierr);
       // view the next V vector as Vj
       PHIST_CHK_IERR(SUBR(mvec_view_block)(S->V_,&Vj,j,j,ierr),*ierr);
+      // copy vector A*v into location Vj
+      PHIST_CHK_IERR(SUBR(mvec_get_block)(V,Vj,i,i,ierr),*ierr);
       // view H(j,j) as R1
       PHIST_CHK_IERR(SUBR(sdMat_view_block)(S->H_,&R1,j,j,j,j,ierr),*ierr);
       // view H(1:j,j) as R2
       PHIST_CHK_IERR(SUBR(sdMat_view_block)(S->H_,&R2,0,j-1,j,j,ierr),*ierr);
       //orthogonalize
-      PHIST_CHK_IERR(SUBR(orthog)(Vprev,V,R1,R2,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(orthog)(Vprev,Vj,R1,R2,2,ierr),*ierr);
         
       //    % update QR factorization of H
 
-      // note: it is OK to work on raw data of serial dense matrices because
-      // they are typically not modified on an accelerator, however, we must
-      // somehow implement a check of this in the kernel interfaces (TODO)
-      // note also that we will access H_col[jj], which is strictly speaking
-      // R1, but by construction they should be aligned in memory.
-      ST *Hcol=NULL;
-      lidx_t ldH
-      PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R2,&H_col,&ldH,ierr),*ierr);
+      // note: it is OK to work on raw data of serial dense matrices because 
+      // they are typically not modified on an accelerator, however, we must 
+      // somehow implement a check of this in the kernel interfaces (TODO)   
+      // note also that we will access Hcol[j], which is strictly speaking   
+      // R1, but by construction they should be aligned in memory. 
+      ST *Hcol=NULL; 
+      lidx_t ldH; 
+      PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R2,&Hcol,&ldH,ierr),*ierr); 
 
-      //    % apply previous (j-1) transformations to columns j
+      ST htmp;
+
+      //    % apply previous (j-1) transformations to column j
       for (int jj=0;jj<j-1;jj++)
       {
-        ST htmp = S->cs_[jj]*Hcol[jj] + 
+        htmp = S->cs_[jj]*Hcol[jj] + 
                     S->sn_[jj]*Hcol[jj+1]; // H(j-1,j) in the last step, which is R1 above
         Hcol[jj+1] = -st::conj(S->sn_[jj])*Hcol[jj] + S->cs_[jj]*Hcol[jj+1];
         Hcol[jj]   = htmp;
       }
 
       // new Givens rotation for eliminating H(j+1,j)
-      [cs,sn,htmp]=give(Hcol(j),Hcol(j+1));
-      trans(1,j)=cs;
-      trans(2,j)=sn;
-      // eliminate H(j+1,j)
-      Hcol(j) = htmp;
-      Hcol(j+1)=0;
+      SUBR(rotg)(Hcol[j-1],Hcol[j],S->cs_[j-1],S->sn_[j-1],htmp);
+      // eliminate H(j,j-1)
+      Hcol[j-1] = htmp;
+      Hcol[j]=st::zero();
       // apply to RHS
-      tmp=cs*rs(j);
-      rs(j+1) = -conj(sn).*rs(j);
-      rs(j)=tmp;
+      htmp=S->cs_[j-1]*S->rs_[j-1];
+      S->rs_[j] = -st::conj(S->sn_[j-1])*S->rs_[j-1];
+      S->rs_[j-1]=htmp;
 
-      H(1:j+1,j)=Hcol;
-
-      if (HIST_OUTLEV>=PHIST_DEBUG)
+      if (PHIST_OUTLEV>=PHIST_DEBUG)
       {
         PHIST_DEB("transformed H");
-        PHIST_CHK_IERR(SUBR(sdMat_print)(H,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(sdMat_print)(S->H_,ierr),*ierr);
         //disp(rs(1:j+1,:))
       }
-      relres = abs(rs(j+1))./bnorm;
-      resvec=[resvec;relres];
-      if (PHIST_OUTLEV>=PHIST_VERBOSE)
+      S->normR_=st::abs(S->rs_[j+1]);
+      MT relres=S->normR_/S->normB_;
+      
+      if (relres<S->tol)
       {
-        print_iter(iter,relres);
-      }
-      if (max(relres)<=tol || iter>=maxIter)
-      {
-        //disp('convergence - exit Arnoldi');
-        break;
-      }
-      //disp(sprintf('j=%d, cs=%8.4f sn=%8.4f rs=%8.4f',j,trans(1,j),trans(2,j),rs(j)));
-
-    }// for-loop (Arnoldi iterations)
- 
-    y = triu(H(1:j,1:j))\rs(1:j);
-    X = X+apply_op(V(:,1:j)*y,M);    
-
-    //R=B-A*X;
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one,B,st::zero(),R,ierr), *ierr);
-    PHIST_CHK_IERR(Op->apply(-st::one(),Op->A, X, st::one(), R, ierr), *ierr);
-  
-    PHIST_CHK_IERR(mvec_norm2)(R,beta,ierr),*ierr);
- 
-    for (int i=0;i<numSys;i++)
-    {
-      if (S_array[i]->normB_<mt::zero())
-      {
-        PHIST_OUT(PHIST_ERROR,"state object %d  not initialized correctly",i);
-        *ierr=-1;
-        return;
-      }
-      S_array[i]->normR_=beta[i];
-      if (S_array[i]->normR_ <= S_array[i]->normB_*tol;
-      {
+        S->ierr=0; // converged
         anyConverged=true;
-        S_array[i]->ierr=0;
       }
-      if (S_array[i]->numIters_>S_array[i]
-      {
-        anyFailed=true;
-        S_array[i]->ierr=2;
-      }
-    }
-  
-    if (anyConverged)
-    {
-      *ierr=0;
-      break;
-    }
+    }// for all systems i, update H and rs
+    if (anyConverged) break;
+  }// for-loop (Arnoldi iterations)
+ 
+ 
+  if (anyConverged)
+  {
+    *ierr=0;
+  }
       
   if (anyFailed)
-    {
-      *ierr=1;
-      break;
-    }
+  {
+    *ierr=1;
   }
+return;
 }
-

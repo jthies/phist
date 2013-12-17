@@ -18,7 +18,6 @@ public:
     KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
     if (typeImplemented_)
       {
-      SUBR(mvec_print)(vec1_,&ierr_);
       for (int j=0;j<nvec_;j++)
         for (int i=0;i<nloc_*stride_;i+=stride_)
           {
@@ -288,9 +287,50 @@ public:
     }
 
 
+  // view some columns as a new mvec, compare ||V|| calculations
+  // and check that modifying the view vector modifies the original ones
+  TEST_F(CLASSNAME, view_scattered)
+  {
+    const int nc=4;
+    int idx[nc]={3,0,2,5};
+    for (int i=0;i<nc;i++)
+    {
+      idx[i]=std::min(idx[i],nvec_-1);
+    }
+    MT norms0[nvec_];
+    MT norms1[nc];
+    SUBR(mvec_norm2)(vec1_,norms0,&ierr_);
+    ASSERT_EQ(0,ierr_);
 
-  // view certain columns, manipulate them and check it changes the
-  // correct locations in the original one
+    TYPE(mvec_ptr) V=NULL;
+    SUBR(mvec_view_scattered)(vec1_,&V,idx,nc,&ierr_);
+    ASSERT_EQ(0,ierr_);
+    SUBR(mvec_norm2)(V,norms1,&ierr_);
+    ASSERT_EQ(0,ierr_);
+
+    for (int i=0;i<nc;i++)
+    {
+      ASSERT_REAL_EQ(norms0[idx[i]],norms1[i]);
+    }
+      
+    // now randomize the view and check again
+    SUBR(mvec_random)(V,&ierr_);
+    ASSERT_EQ(0,ierr_);
+
+    SUBR(mvec_norm2)(vec1_,norms0,&ierr_);
+    ASSERT_EQ(0,ierr_);
+
+    SUBR(mvec_norm2)(V,norms1,&ierr_);
+    ASSERT_EQ(0,ierr_);
+
+    for (int i=0;i<nc;i++)
+    {
+      ASSERT_REAL_EQ(norms0[idx[i]],norms1[i]);
+    }
+
+  }
+
+  // copy in and out columns
   TEST_F(CLASSNAME, get_set_block)
     {
     if (typeImplemented_)

@@ -34,6 +34,11 @@ using namespace testing;
 #define _N_ 512
 #define _M_ 6
 
+#define MAXBAS 20
+//TODO - tune these settings
+#define TOLA 1.0e-3
+#define TOLB 1.0e-5
+
 #define CLASSNAME STestGmres
 #include "phist_gen_s.h"
 #include "TestGmres_def.hpp"
@@ -45,6 +50,11 @@ using namespace testing;
 #include "TestGmres_def.hpp"
 
 #undef CLASSNAME
+#undef TOLA
+#undef TOLB
+//TODO - tune these settings
+#define TOLA 1.0e-3
+#define TOLB 1.0e-5
 #define CLASSNAME CTestGmres
 
 #include "phist_gen_c.h"

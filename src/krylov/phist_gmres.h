@@ -3,6 +3,7 @@
 
 #include "phist_operator.h"
 #include "phist_enums.h"
+#include "phist_typedefs.h"
 
 #ifdef __cplusplus
 extern "C" {

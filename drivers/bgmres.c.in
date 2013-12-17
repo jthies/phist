@@ -109,7 +109,9 @@ int main(int argc, char** argv)
   
   /* randomize the solution vector */
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(X,ZERO,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_random)(XEX,&ierr),ierr);
+  //TROET
+  //PHIST_ICHK_IERR(SUBR(mvec_random)(XEX,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(XEX,ONE,&ierr),ierr);
   
   /* compute rhs B=A*XEX */
   PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(ONE,A,XEX,ZERO,B,&ierr),ierr);

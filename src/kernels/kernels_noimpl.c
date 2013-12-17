@@ -114,6 +114,12 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) V,
   *ierr=-99;
   }
 
+void SUBR(mvec_view_scattered)(TYPE(mvec_ptr) V, TYPE(mvec_ptr)* Vscat,
+                             int* cols, int ncols, int* ierr)
+  {
+  *ierr=-99;
+  }
+
 void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) V,
                              TYPE(mvec_ptr) Vblock,
                              int jmin, int jmax, int* ierr)
