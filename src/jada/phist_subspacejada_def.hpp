@@ -311,7 +311,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
     if( nNewlyConvergedEig > 0 )
     {
-      PHIST_SOUT(PHIST_INFO,"In iteration %d: fixing %d newly converged eigenvalues", *nIter, nNewlyConvergedEig);
+      PHIST_SOUT(PHIST_INFO,"In iteration %d: locking %d newly converged eigenvalues", *nIter, nNewlyConvergedEig);
 
       // reorder V and H
       PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (V, Q_H, 64, ierr), *ierr);
