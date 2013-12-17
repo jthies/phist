@@ -14,39 +14,51 @@
 //! because the iteration will otherwise not start up  
 //! correctly. See test/krylov/TestGmres for examples  
 //! of using this object to build up a restarted GMRES.
+//!                                                    
+//! In order to utilize 'scattered views' when e.g.    
+//! applying A*X to vectors from different gmresStates,
+//! we need to draw all the bases V from a single block
+//! of memory, Vglob. The way we implement this is to  
+//! always create and delete an entire array of states.
+//! not all of them have to be passed to functions like
+//! iterate or updateSol, but they must be created and 
+//! deleted together so that the memory handling is    
+//! clear.                                             
 typedef struct TYPE(gmresState) {
   //! \name input and output args:
   //@{
   int id; //! can be used to identify the system solved here (the column to which this 
           //! iteration status belongs)
   _MT_ tol; //! convergence tolerance for this system
-  int  maxIters; //! maximum number of iterations allowed for this system
-  int maxBas; //! maximum size of basis before restart
 
   int ierr; //! error code returned by this GMRES instance
   //@}
   //! \name  internal data structures
   //@{
   TYPE(const_mvec_ptr) B_; //! for which RHS is this GMRES being run?
-  TYPE(mvec_ptr) X0_; //! initial vector passed in to most recent reset() call (will be 
+  TYPE(mvec_ptr) X0_; //! initial vector passed in to most recent reset() call (will be  
                       //! copied to make sure the user doesn't change/delete it, we need 
                       //! it in updateSol)
-  TYPE(mvec_ptr) V_; //! current basis
-  TYPE(mvec_ptr) H_; //! current Hessenberg matrix from the Arnoldi process,
-                     //! transformed to upper triangular form using Givens
-                     //! rotations.
+  TYPE(mvec_ptr) Vglob_; //! the V arrays are in fact views of sections of a large block
+                         //! of memory Vglob_, cf. comment above.
+  int offsetVglob_;      //! where in Vglob_ does my V_ start?
+  TYPE(mvec_ptr) V_; //! space in which basis is built up
+  TYPE(mvec_ptr) H_; //! space in which Hessenberg matrix from the Arnoldi process
+                     //! is built up,, transformed to upper triangular form using 
+                     //! Givens rotations.
   _ST_ *cs_, *sn_;   //! cosine and sine terms for the Givens rotations
   _ST_ *rs_;
   
   _MT_ normB_; //! stores norm of RHS so it doesn't have to be recomputed when
                //! when continuing.
 
+  _MT_ normR0_; //! stores initial (explicit) residual norm
   _MT_ normR_; //! stores current (implicit) residual norm
   
-  int maxBasAllocated_; //! maximum value that maxBas can take without deleting
-                        //! and recreating the object.
   int curDimV_; //! current size of the basis V
   int curIter_; //! number of iterations performed since last call to reset with new RHS
+
+  int maxBas_; //! maximum size of basis before restart
 
   //@}
 } TYPE(gmresState);
@@ -83,7 +95,7 @@ typedef TYPE(gmresState) const * TYPE(const_gmresState_ptr);
 //! The global ierr flag will then be set to -1. (0 for "someone converged" and +1 for  
 //! someone reached max iters")                                                         
 //!                                                                                     
-void SUBR(gmresState_iterate)(TYPE(const_op_ptr) Op,
+void SUBR(gmresStates_iterate)(TYPE(const_op_ptr) Op,
         TYPE(gmresState_ptr) S_array[], int numSys,
         int* ierr);
 
@@ -92,11 +104,11 @@ void SUBR(gmresState_iterate)(TYPE(const_op_ptr) Op,
 //! The maxBas parameter cannot be adjusted afterwards as it determines the amount 
 //! of memory allocated in this function. The map argument indicates the data dist-
 //! ribution of vectors so we can create the basis vectors a priori.
-void SUBR(gmresState_create)(TYPE(gmresState_ptr) S_array[], const_map_ptr_t map,
-        int maxBas, int* ierr);
+void SUBR(gmresStates_create)(TYPE(gmresState_ptr) S_array[], int numSys,
+        const_map_ptr_t map, int maxBas, int* ierr);
 
 //! delete gmresState object
-void SUBR(gmresState_delete)(TYPE(gmresState_ptr) S, int* ierr);
+void SUBR(gmresStates_delete)(TYPE(gmresState_ptr) S_array[], int numSys, int* ierr);
 
 //! this function can be used to force a clean restart of the associated GMRES
 //! solver. It is necessary to call this function before the first call to
@@ -114,4 +126,5 @@ void SUBR(gmresState_reset)(TYPE(gmresState_ptr) S,
 //! This should be done for a system that indicates convergence after iterate, but it can  
 //! also be done to get an intermediate solution. The function is 'vectorized' in the same 
 //! way as iterate, so an array of states and multivector x can be passed in.
-void SUBR(gmresState_updateSol)(TYPE(gmresState_ptr) S_array[], TYPE(mvec_ptr) x, int* ierr);
+void SUBR(gmresStates_updateSol)(TYPE(gmresState_ptr) S_array[], int numSys,
+                TYPE(mvec_ptr) x, int* ierr);

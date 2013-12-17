@@ -39,46 +39,64 @@ void SUBR(rotg)(_ST_ f, _ST_ g, _ST_& cs, _ST_& sn, _ST_& r)
   return;
 }
 
-// create new state object
-void SUBR(gmresState_create)(TYPE(gmresState_ptr)* state, const_map_ptr_t map, 
-        int maxBas,int* ierr)
+// create new state objects. We just get an array of (NULL-)pointers
+void SUBR(gmresStates_create)(TYPE(gmresState_ptr) state[], int numSys,
+        const_map_ptr_t map, int maxBas,int* ierr)
 {
-#include "phist_std_typedefs.hpp"  
+#include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  TYPE(gmresState)* S = new TYPE(gmresState);
-  *state = S;
-  // options not set
-  S->id=-1;
-  S->tol=-mt::one(); 
-  S->maxIters=-1;
-  S->maxBas=maxBas;
-  S->ierr=-2;
-
-  S->maxBasAllocated_=maxBas;
-
-  PHIST_CHK_IERR(SUBR(mvec_create)(&S->X0_, map,1, ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_create)(&S->V_, map,maxBas, ierr),*ierr);
+  if (numSys==0) return;
   const_comm_ptr_t comm;
   PHIST_CHK_IERR(phist_map_get_comm(map,&comm,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&S->H_, maxBas+1, maxBas, comm,ierr),*ierr);
-  S->cs_ = new ST[maxBas];
-  S->sn_ = new ST[maxBas];
-  S->rs_ = new ST[maxBas];
-  S->curDimV_=0;
-  S->curIter_=0;
-  S->normB_=-mt::one(); // not initialized
+
+  // memory for the bases V is allocated in one big chunk
+  int tot_nV = maxBas*numSys;
+  TYPE(mvec_ptr) Vglob=NULL;
+  PHIST_CHK_IERR(SUBR(mvec_create)(&Vglob, map,tot_nV, ierr),*ierr);
+  
+  for (int i=0;i<numSys;i++)
+  {
+    state[i] = new TYPE(gmresState);
+    state[i]->id=i;
+    // set some default options
+    state[i]->tol=0.5; // typical starting tol for JaDa inner iterations...
+    state[i]->ierr=-2;// not initialized
+    state[i]->Vglob_=Vglob;
+    state[i]->offsetVglob_=i*maxBas;
+    state[i]->maxBas_=maxBas;
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(Vglob,&state[i]->V_,
+        state[i]->offsetVglob_, state[i]->offsetVglob_+maxBas-1, ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->X0_, map,1, ierr),*ierr);
+  
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&state[i]->H_, maxBas+1, maxBas, comm,ierr),*ierr);
+    state[i]->cs_ = new ST[maxBas];
+    state[i]->sn_ = new ST[maxBas];
+    state[i]->rs_ = new ST[maxBas];
+    state[i]->curDimV_=0;
+    state[i]->curIter_=0;
+    state[i]->normB_=-mt::one(); // not initialized
+  }
 }
 
+
 //! delete gmresState object
-void SUBR(gmresState_delete)(TYPE(gmresState)* S, int* ierr)
+void SUBR(gmresStates_delete)(TYPE(gmresState_ptr) state[], int numSys, int* ierr)
 {
-  PHIST_CHK_IERR(SUBR(mvec_delete)(S->V_,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(S->H_,ierr),*ierr);
-  delete [] S->cs_;
-  delete [] S->sn_;
-  delete [] S->rs_;
-  delete S;
+  ENTER_FCN(__FUNCTION__);
+  *ierr=0;
+  if (numSys==0) return;
+  TYPE(mvec_ptr) Vglob=state[0]->Vglob_;
+  for (int i=0;i<numSys;i++)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->V_,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_delete)(state[i]->H_,ierr),*ierr);
+    delete [] state[i]->cs_;
+    delete [] state[i]->sn_;
+    delete [] state[i]->rs_;
+    delete state[i];
+  }
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Vglob,ierr),*ierr);
 }
 
 // reset gmres state.
@@ -104,15 +122,18 @@ void SUBR(gmresState_reset)(TYPE(gmresState_ptr) S, TYPE(const_mvec_ptr) b,
     }
   S->curDimV_=0;
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),x0,st::zero(),S->X0_,ierr),*ierr);
+  S->normR0_=-mt::one();
+  for (int i=0;i<S->maxBas_;i++)
+  {
+    S->rs_[i]=st::zero();
+  }
   return;
 }
 
-void SUBR(gmresState_updateSol)(TYPE(gmresState_ptr) S_array[], TYPE(mvec_ptr) x, int* ierr)
+void SUBR(gmresStates_updateSol)(TYPE(gmresState_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
 
-  int numSys;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x,&numSys,ierr),*ierr);
   const_comm_ptr_t comm=NULL;
   PHIST_CHK_IERR(SUBR(mvec_get_comm)(x,&comm,ierr),*ierr);
 
@@ -147,7 +168,7 @@ void SUBR(gmresState_updateSol)(TYPE(gmresState_ptr) S_array[], TYPE(mvec_ptr) x
 }
 
 // implementation of gmres on several systems simultaneously
-void SUBR(gmresState_iterate)(TYPE(const_op_ptr) Op,
+void SUBR(gmresStates_iterate)(TYPE(const_op_ptr) Op,
         TYPE(gmresState_ptr) S_array[], int numSys,
         int* ierr)
 {
@@ -155,10 +176,8 @@ void SUBR(gmresState_iterate)(TYPE(const_op_ptr) Op,
 #include "phist_std_typedefs.hpp"
   *ierr = 0;
 
-  // map defining how to create new vector objects
-  const_map_ptr_t map=NULL;
   // multi-vectors to work with several of the systems simultaneously
-  TYPE(mvec_ptr) R=NULL, V=NULL, W=NULL;
+  TYPE(mvec_ptr) V=NULL, W=NULL;
   // views into vector blocks of system i
   TYPE(mvec_ptr) Vprev=NULL, Vj=NULL;
   // for the orthog routine (again, a view into the H objects in the states
@@ -170,47 +189,40 @@ void SUBR(gmresState_iterate)(TYPE(const_op_ptr) Op,
   {
     S_array[i]->ierr=1; // not converged yet
     if (S_array[i]->normB_<mt::zero())
-      {
+    {
         SUBR(mvec_norm2)(S_array[i]->B_,&S_array[i]->normB_,&S_array[i]->ierr);
         PHIST_CHK_IERR(*ierr=S_array[i]->ierr,*ierr);
-      }
+    }
   }
   
-  // figure out how new vectors are built
-  PHIST_CHK_IERR(SUBR(mvec_get_map)(S_array[0]->X0_,&map,ierr),*ierr);
-
-//TODO - we could use "scattered views" here to avoid copying the columns into the GMRES 
-//       states
-
-  // residual vectors
-  PHIST_CHK_IERR(SUBR(mvec_create)(&R,map,numSys,ierr),*ierr);
-  // vectors V(:,j) for each of the systems
-  PHIST_CHK_IERR(SUBR(mvec_create)(&V,map,numSys,ierr),*ierr);
-  // vectors W=A*V(:,j) for each of the systems
-  PHIST_CHK_IERR(SUBR(mvec_create)(&W,map,numSys,ierr),*ierr);
-
-  bool anyConverged=false;
-  bool anyFailed=false;
-
-//TODO - here we must compute the initial residual r0=A*x0-b, rs0=||r0||, v0=r0/rs0 after
-//       a call to reset(), but without interfering with the rest of the systems...
-
   // we return as soon as one system converges or reaches its
   // maximum permitted number of iterations. The decision about what to do
   // next is then left to the caller.
 
+  bool anyConverged=false;
+  bool anyFailed=false;
+
   // Arnoldi - build orthogonal basis V and upper Hessenberg matrix H.
   // jmax is chosen so that the next system reaches maxBas.
-  int jmax = S_array[0]->maxBas-S_array[0]->curDimV_;
+  int jmax = S_array[0]->maxBas_-S_array[0]->curDimV_;
   for (int i=1;i<numSys;i++)
   {
-    jmax = std::min(jmax, S_array[i]->maxBas-S_array[i]->curDimV_);
+    jmax = std::min(jmax, S_array[i]->maxBas_-S_array[i]->curDimV_);
   }
   for (int j_dum=0; j_dum<jmax; j_dum++)
   {
+    // create 'scattered views' V of all the vectors that we want to multiply our operator 
+    // with and W for the result A*V.
+    // ... (TODO!) ...
+    {
+      PHIST_OUT(PHIST_ERROR,"not implemented");
+      *ierr=-99;
+      return;
+    }
+    
     //W=A*(M\V(:,j));
     PHIST_CHK_IERR(Op->apply(st::one(),Op->A, V, st::zero(), W, ierr), *ierr);
-      
+
     // Arnoldi update. TODO - we could save some messages by
     // clustering the communication in orthog
     // TODO - maybe we could parallelize this loop by an OpenMP section
@@ -220,18 +232,20 @@ void SUBR(gmresState_iterate)(TYPE(const_op_ptr) Op,
       TYPE(gmresState_ptr) S = S_array[i];
       int j=S->curDimV_;
       
-      if (j<=0)
-        {
-        PHIST_OUT(PHIST_ERROR,"gmres state not initialized correctly");
-        S->ierr=-1;
-        *ierr=-1;
-        }
-      if (j>=S->maxBas-1)
-        {
+      // after a reset we must compute the initial residual r0=A*x0-b, rs0=||r0||, v0=r0/rs0 
+      // (TODO!)
+      if (j==0)
+      {
+        PHIST_OUT(PHIST_ERROR,"not implemented");
+        S->ierr=-99;
+        *ierr=-99;
+      }
+      if (j>=S->maxBas_-1)
+      {
         PHIST_OUT(PHIST_ERROR,"gmres state not initialized/reset correctly");
         S->ierr=2;
         *ierr=2;
-        }
+      }
         
       //TODO - blocking of vectors in orthog to avoid communication??
         
