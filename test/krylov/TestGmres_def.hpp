@@ -128,21 +128,29 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
         ASSERT_EQ(0,ierr_);
         
         int ierr2=0;
+        TYPE(mvec_ptr) x_i=NULL,b_i=NULL;
         for (int nr=0;nr<=nrestarts;nr++)
         {
           // initialize state with current approximation
           for (int i=0;i<nrhs;i++)
           {
-            SUBR(gmresState_reset)(state_[i],b,x,&ierr_);
+            SUBR(mvec_view_block)(x,&x_i,i,i,&ierr_);
+            SUBR(mvec_view_block)(b,&b_i,i,i,&ierr_);
+            SUBR(gmresState_reset)(state_[i],b_i,x_i,&ierr_);
             ASSERT_EQ(0,ierr_);
           }
           // iterate for MAXBAS iterations
-          SUBR(gmresStates_iterate)(opA_,state_,m_,&ierr2);
+          SUBR(gmresStates_iterate)(opA_,state_,nrhs,&ierr2);
           ASSERT_TRUE(ierr2>=0);
-          SUBR(gmresStates_updateSol)(state_,m_,x,&ierr_);
+          SUBR(gmresStates_updateSol)(state_,nrhs,x,&ierr_);
           ASSERT_EQ(0,ierr_);
         }
+        
         ASSERT_EQ(0,ierr2); // GMRES indicated convergence
+        SUBR(mvec_delete)(x_i,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(b_i,&ierr_);
+        ASSERT_EQ(0,ierr_);
 
         // check residual and error norms, compare with tol
         MT resNorm, errNorm;
