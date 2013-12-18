@@ -59,12 +59,9 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
         ASSERT_EQ(0,ierr_);
         
         state_=new TYPE(gmresState_ptr)[m_];
-
-        for (int i=0;i<m_;i++)
-        {
-          SUBR(gmresState_create)(&state_[i],map_,maxBas_,&ierr_);
-          ASSERT_EQ(0,ierr_);
-        }
+        SUBR(gmresStates_create)(state_,m_,map_,maxBas_,&ierr_);
+        
+        ASSERT_EQ(0,ierr_);
         xex_=vec1_;
         rhs_=vec2_;
         sol_=vec3_;
@@ -96,10 +93,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
         SUBR(crsMat_delete)(A_,&ierr_);
         ASSERT_EQ(0,ierr_);
       }
-      for (int i=0;i<m_;i++)
-        {
-        SUBR(gmresState_delete)(state_[i],&ierr);
-        }
+      SUBR(gmresStates_delete)(state_,m_,&ierr);
       delete [] state_;
         ASSERT_EQ(0,ierr_);
       VTest::TearDown();
@@ -133,21 +127,30 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
         SUBR(mvec_view_block)(rhs_,&b,0,nrhs-1,&ierr_);
         ASSERT_EQ(0,ierr_);
         
-        int ierr2=0;        
+        int ierr2=0;
+        TYPE(mvec_ptr) x_i=NULL,b_i=NULL;
         for (int nr=0;nr<=nrestarts;nr++)
         {
           // initialize state with current approximation
           for (int i=0;i<nrhs;i++)
           {
-            SUBR(gmresState_reset)(state_[i],b,x,&ierr_);
+            SUBR(mvec_view_block)(x,&x_i,i,i,&ierr_);
+            SUBR(mvec_view_block)(b,&b_i,i,i,&ierr_);
+            SUBR(gmresState_reset)(state_[i],b_i,x_i,&ierr_);
             ASSERT_EQ(0,ierr_);
           }
           // iterate for MAXBAS iterations
-          SUBR(gmresState_iterate)(opA_,state_,m_,&ierr2);
-          SUBR(gmresState_updateSol)(state_,x,&ierr_);
+          SUBR(gmresStates_iterate)(opA_,state_,nrhs,&ierr2);
+          ASSERT_TRUE(ierr2>=0);
+          SUBR(gmresStates_updateSol)(state_,nrhs,x,&ierr_);
           ASSERT_EQ(0,ierr_);
         }
+        
         ASSERT_EQ(0,ierr2); // GMRES indicated convergence
+        SUBR(mvec_delete)(x_i,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(b_i,&ierr_);
+        ASSERT_EQ(0,ierr_);
 
         // check residual and error norms, compare with tol
         MT resNorm, errNorm;
@@ -171,7 +174,6 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
         ASSERT_EQ(0,ierr_);
 
         ASSERT_TRUE(errNorm<=tol*bNorm_);
-        
 
         SUBR(mvec_delete)(x,&ierr_);
         ASSERT_EQ(0,ierr_);
