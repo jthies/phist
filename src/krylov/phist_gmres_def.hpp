@@ -159,23 +159,33 @@ void SUBR(gmresStates_updateSol)(TYPE(gmresState_ptr) S_array[], int numSys, TYP
     TYPE(sdMat_ptr) y=NULL;
     ST* H_raw=NULL,*y_raw=NULL;
     lidx_t ldH,ldy;
+
+    int m=S->curDimV_-1;
     
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&y,S->curDimV_,numSys,comm,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&y,m,1,comm,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(y,&y_raw,&ldy,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S->H_,&H_raw,&ldH,ierr),*ierr);
+
+#if PHIST_OUTLEV>=PHIST_DEBUG
+    PHIST_OUT(PHIST_DEBUG,"gmres_updateSol[%d], curDimV=%d, H=\n",i,S->curDimV_);
+    PHIST_CHK_IERR(SUBR(mvec_print)(S->H_,ierr),*ierr);
+#endif
 
     // y = H\rs, H upper triangular
     const char* uplo="U";
     const char* trans="N";
     const char* diag="N";
     int nrhs=1;
-    PHIST_CHK_IERR(PREFIX(TRTRS)(uplo,trans,diag,&S->curDimV_,&nrhs,
+    PHIST_CHK_IERR(PREFIX(TRTRS)(uplo,trans,diag,&m,&nrhs,
                                         (st::blas_scalar_t*)H_raw,&ldH,
                                         (st::blas_scalar_t*)y_raw, &ldy, ierr),*ierr);
 
+    TYPE(mvec_ptr) V=NULL;
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(S->V_,&V,0,m-1,ierr),*ierr);
+
     // X = X + M\V*y. TODO: with right preconditioning, split this into two parts and apply
     // preconditioner to all systems simultaneously outside the loop (need tmp vector)
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),S->V_,y,st::one(),x_i,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),V,y,st::one(),x_i,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_delete)(y,ierr),*ierr);
   }
   PHIST_CHK_IERR(SUBR(mvec_delete)(x_i,ierr),*ierr);
@@ -276,7 +286,7 @@ PHIST_CHK_IERR(SUBR(mvec_print)(S_array[0]->Vglob_,ierr),*ierr);
       // First check for failed and restarted systems.
       // In case a system was just (re-)started, we now only computed A*x0 (cf. reset 
       // function). Update this to the initial residual A*x0-b
-      if (j>=S->maxBas_-1)
+      if (j>=S->maxBas_)
       {
         anyFailed=true;
         S->ierr=2;

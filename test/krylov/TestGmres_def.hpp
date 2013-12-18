@@ -87,15 +87,16 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
       int ierr;
       if( typeImplemented_ )
       {
-
+        ENTER_FCN(__FUNCTION__);
         delete opA_;
 
         SUBR(crsMat_delete)(A_,&ierr_);
         ASSERT_EQ(0,ierr_);
       }
       SUBR(gmresStates_delete)(state_,m_,&ierr);
+      ASSERT_EQ(0,ierr_);
       delete [] state_;
-        ASSERT_EQ(0,ierr_);
+      //TODO: here we get a segfault, maybe someone deleted xex_,sol_ and/or rhs_?
       VTest::TearDown();
     }
 
@@ -113,6 +114,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
     // ========================= the actual arnoldi test =========================
     void doGmresTest(int nrhs, int nrestarts, MT tol)
     {
+      ENTER_FCN(__FUNCTION__);
       if( typeImplemented_ )
       {
         ASSERT_TRUE(nrhs<=m_);
@@ -173,6 +175,9 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
         
         SUBR(mvec_norm2)(b,&resNorm,&ierr_);
         ASSERT_EQ(0,ierr_);
+        
+        PHIST_DEB("required tol:  %6.2g\n",tol);
+        PHIST_DEB("rel. res norm: %6.2g\n",resNorm/bNorm_);
 
         // check error (residual two norm < tol)
         ASSERT_TRUE(resNorm<=tol*bNorm_);
@@ -184,6 +189,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
         SUBR(mvec_norm2)(x,&errNorm,&ierr_);
         ASSERT_EQ(0,ierr_);
 
+        PHIST_DEB("rel. err norm: %6.2g\n",errNorm/bNorm_);
         ASSERT_TRUE(errNorm<=tol*bNorm_);
 
         SUBR(mvec_delete)(x,&ierr_);
