@@ -144,6 +144,7 @@ void SUBR(gmresState_reset)(TYPE(gmresState_ptr) S, TYPE(const_mvec_ptr) b,
 void SUBR(gmresStates_updateSol)(TYPE(gmresState_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
+  ENTER_FCN(__FUNCTION__);
 
   const_comm_ptr_t comm=NULL;
   PHIST_CHK_IERR(SUBR(mvec_get_comm)(x,&comm,ierr),*ierr);
@@ -186,8 +187,8 @@ void SUBR(gmresStates_iterate)(TYPE(const_op_ptr) Op,
         TYPE(gmresState_ptr) S_array[], int numSys,
         int* ierr)
 {
-  ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
+  ENTER_FCN(__FUNCTION__);
   *ierr = 0;
 
   // multi-vectors to work with several of the systems simultaneously
@@ -248,22 +249,29 @@ void SUBR(gmresStates_iterate)(TYPE(const_op_ptr) Op,
       v_idx[i]++;
     }
     PHIST_CHK_IERR(SUBR(mvec_view_scattered)(S_array[0]->Vglob_,&W,v_idx,numSys,ierr),*ierr);
+    // the indices are now already at j+1 for the next iteration.
+    // We could avoid extracting V by swapping the V and W pointers,
+    // but as the whole viewing business is about swapping around
+    // pointers, it doesn't matter too much and may be more confusing.
 
-    // update indices of V for next iteration
-    for (int i=0;i<numSys;i++)
-    {
-      v_idx[i]++;
-    }
-    
     //W=A*(M\V(:,j));
     PHIST_CHK_IERR(Op->apply(st::one(),Op->A, V, st::zero(), W, ierr), *ierr);
-
+/*
+PHIST_OUT(PHIST_DEBUG,"DUDEL: V=\n");
+PHIST_CHK_IERR(SUBR(mvec_print)(V,ierr),*ierr);
+PHIST_OUT(PHIST_DEBUG,"DUDEL: W=\n");
+PHIST_CHK_IERR(SUBR(mvec_print)(W,ierr),*ierr);
+PHIST_OUT(PHIST_DEBUG,"BLOEK: W=\n");
+PHIST_CHK_IERR(SUBR(mvec_print)(S_array[0]->Vglob_,ierr),*ierr);
+*/
     // TODO - maybe we could parallelize this loop by an OpenMP section
     //        so that the small stuff can be done in parallel too?
     for (int i=0;i<numSys;i++)
     {
       TYPE(gmresState_ptr) S = S_array[i];
       int j=S->curDimV_;
+      
+      PHIST_DEB("SYSTEM %d, ITERATE %d\n",i,j);
 
       // First check for failed and restarted systems.
       // In case a system was just (re-)started, we now only computed A*x0 (cf. reset 
@@ -276,17 +284,20 @@ void SUBR(gmresStates_iterate)(TYPE(const_op_ptr) Op,
       }//TROET
       else if (j==0)
       {
-        PHIST_OUT(PHIST_VERBOSE,"gmres state %d (re-)starts",i);
+        PHIST_OUT(PHIST_VERBOSE,"gmres state %d (re-)starts\n",i);
         TYPE(mvec_ptr) v0=NULL,Ax0=NULL;
         PHIST_CHK_IERR(SUBR(mvec_view_block)(S->V_,&v0,0,0,ierr),*ierr);
         PHIST_CHK_IERR(SUBR(mvec_view_block)(S->V_,&Ax0,1,1,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-st::one(),S->B_,st::one(),Ax0,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),S->B_,-st::one(),Ax0,ierr),*ierr);
         // set v0=b-A*x0
         PHIST_CHK_IERR(SUBR(mvec_set_block)(S->V_,Ax0,0,0,ierr),*ierr);
         // normalize, rs[0]=||r0||, v0=r0/||r0||
         PHIST_CHK_IERR(SUBR(mvec_normalize)(v0,&S->normR0_,ierr),*ierr);
         S->rs_[0]= S->normR0_;
         S->normR_= S->normR0_;
+        // Note: this is a bit of a hack. As we have overwritten vector j=0, 
+        // adjust the index array for the next matvec so that w1=A*v0, not A*v1
+        v_idx[i]--;
       }
       else
       {
@@ -298,11 +309,22 @@ void SUBR(gmresStates_iterate)(TYPE(const_op_ptr) Op,
         // view the next V vector as Vj (it currently contains A*v_{j-1}
         PHIST_CHK_IERR(SUBR(mvec_view_block)(S->V_,&Vj,j,j,ierr),*ierr);
         // view H(j,j) as R1
-        PHIST_CHK_IERR(SUBR(sdMat_view_block)(S->H_,&R1,j,j,j,j,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(sdMat_view_block)(S->H_,&R1,j,j,j-1,j-1,ierr),*ierr);
         // view H(1:j,j) as R2
-        PHIST_CHK_IERR(SUBR(sdMat_view_block)(S->H_,&R2,0,j-1,j,j,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(sdMat_view_block)(S->H_,&R2,0,j-1,j-1,j-1,ierr),*ierr);
+#if 0 // PHIST_OUTLEV>=PHIST_DEBUG
+        PHIST_SOUT(PHIST_DEBUG,"SYSTEM %d, V(:,0:%d)=\n",i,j-1);
+        PHIST_CHK_IERR(SUBR(mvec_print)(Vprev,ierr),*ierr);
+        PHIST_SOUT(PHIST_DEBUG,"SYSTEM %d, V(:,%d)=\n",i,j);
+        PHIST_CHK_IERR(SUBR(mvec_print)(Vj,ierr),*ierr);
+#endif    
         //orthogonalize
         PHIST_CHK_IERR(SUBR(orthog)(Vprev,Vj,R1,R2,2,ierr),*ierr);
+
+#if PHIST_OUTLEV>=PHIST_DEBUG
+  PHIST_DEB("untransformed H");
+  PHIST_CHK_IERR(SUBR(sdMat_print)(S->H_,ierr),*ierr);
+#endif
         
         //    % update QR factorization of H
 
@@ -311,7 +333,7 @@ void SUBR(gmresStates_iterate)(TYPE(const_op_ptr) Op,
         // somehow implement a check of this in the kernel interfaces (TODO)   
         // note also that we will access Hcol[j], which is strictly speaking   
         // R1, but by construction they should be aligned in memory. 
-        ST *Hcol=NULL; 
+        ST *Hcol=NULL;
         lidx_t ldH; 
         PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R2,&Hcol,&ldH,ierr),*ierr); 
 
@@ -336,13 +358,11 @@ void SUBR(gmresStates_iterate)(TYPE(const_op_ptr) Op,
         S->rs_[j] = -st::conj(S->sn_[j-1])*S->rs_[j-1];
         S->rs_[j-1]=htmp;
 
-        if (PHIST_OUTLEV>=PHIST_DEBUG)
-        {
-          PHIST_DEB("transformed H");
-          PHIST_CHK_IERR(SUBR(sdMat_print)(S->H_,ierr),*ierr);
-          //disp(rs(1:j+1,:))
-        }
-        S->normR_=st::abs(S->rs_[j+1]);
+#if PHIST_OUTLEV>=PHIST_DEBUG
+  PHIST_DEB("transformed H");
+  PHIST_CHK_IERR(SUBR(sdMat_print)(S->H_,ierr),*ierr);
+#endif
+        S->normR_=st::abs(S->rs_[j]);
       }// initial step or standard Arnoldi?
 
       MT relres=S->normR_/S->normB_;
@@ -354,8 +374,8 @@ void SUBR(gmresStates_iterate)(TYPE(const_op_ptr) Op,
       }
     S->curDimV_++;
     }// for all systems i
-  PHIST_SOUT(PHIST_VERBOSE,"GMRES iteration states");
-  PHIST_SOUT(PHIST_VERBOSE,"======================");
+  PHIST_SOUT(PHIST_VERBOSE,"GMRES iteration states\n");
+  PHIST_SOUT(PHIST_VERBOSE,"======================\n");
 #if PHIST_OUTLEV>=PHIST_VERBOSE
   for (int i=0;i<numSys;i++)
   {
@@ -363,7 +383,7 @@ void SUBR(gmresStates_iterate)(TYPE(const_op_ptr) Op,
         S_array[i]->curDimV_,S_array[i]->normR_/S_array[i]->normB_);
   }
 #endif
-  PHIST_SOUT(PHIST_VERBOSE,"----------------------");
+  PHIST_SOUT(PHIST_VERBOSE,"----------------------\n");
   }// while-loop (Arnoldi iterations)
 
   if (anyConverged)

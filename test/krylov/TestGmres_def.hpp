@@ -119,12 +119,23 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
         // up to now we only test the case of one matrix, one rhs here (TODO)
         ASSERT_TRUE(nrhs==1);
 
+        // set convergence tolerance for all linear systems
+        for (int i=0;i<nrhs;i++)
+        {
+          state_[i]->tol=tol;
+        }
+
         TYPE(mvec_ptr) x=NULL,b=NULL,xex=NULL;
         SUBR(mvec_view_block)(xex_,&xex,0,nrhs-1,&ierr_);
         ASSERT_EQ(0,ierr_);
         SUBR(mvec_view_block)(sol_,&x,0,nrhs-1,&ierr_);
         ASSERT_EQ(0,ierr_);
         SUBR(mvec_view_block)(rhs_,&b,0,nrhs-1,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        
+        // start with a zero initial guess for each of the systems
+        SUBR(mvec_put_value)(x,st::zero(),&ierr_);
+//        SUBR(mvec_random)(x,&ierr_);
         ASSERT_EQ(0,ierr_);
         
         int ierr2=0;
