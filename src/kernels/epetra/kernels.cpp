@@ -7,6 +7,9 @@
 #include "Epetra_SerialComm.h"
 #endif
 
+#ifdef PHIST_TIMEMONITOR
+#include <Teuchos_TimeMonitor.hpp>
+#endif
 #include "epetra_helpers.cpp"
 #include "phist_ScalarTraits.hpp"
 
@@ -37,6 +40,9 @@ void phist_kernels_finalize(int* ierr)
 #ifdef PHIST_HAVE_LIKWID
   LIKWID_MARKER_STOP("phist<epetra>");
   LIKWID_MARKER_CLOSE;
+#endif
+#ifdef PHIST_TIMEMONITOR
+  Teuchos::TimeMonitor::summarize();
 #endif
 #ifdef PHIST_HAVE_MPI
   *ierr=MPI_Finalize();

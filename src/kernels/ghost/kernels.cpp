@@ -11,6 +11,9 @@
 #include "Ghost_TsqrAdaptor.hpp"
 #include "Belos_GhostAdapter.hpp"
 #include "BelosTsqrOrthoManager.hpp"
+#ifdef PHIST_TIMEMONITOR
+#include <Teuchos_TimeMonitor.hpp>
+#endif
 
 #include "phist_GhostMV.hpp"
 
@@ -72,6 +75,9 @@ void phist_kernels_finalize(int* ierr)
 #ifdef PHIST_HAVE_LIKWID
   LIKWID_MARKER_STOP("phist<ghost>");
   LIKWID_MARKER_CLOSE;
+#endif
+#ifdef PHIST_TIMEMONITOR
+  Teuchos::TimeMonitor::summarize();
 #endif
   ghost_finish();
   *ierr=0;

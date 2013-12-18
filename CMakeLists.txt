@@ -200,6 +200,11 @@ else()
   message(STATUS "continuing without Likwid, you can set the environment variable LIKWID_HOME to help CMake find it")
 endif()
 
+if( ${PHIST_TIMEMONITOR} )
+  message(STATUS "activated TimeMonitor timing monitoring")
+  add_definitions(-DPHIST_TIMEMONITOR)
+endif()
+
 
 foreach(PKG ${LOAD_TRILI_PKG})
   find_package(${PKG} REQUIRED)

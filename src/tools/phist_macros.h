@@ -155,14 +155,30 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #endif
 
 #ifdef __cplusplus
-#include "phist_fcntrace.hpp"
-#if (PHIST_OUTLEV>=PHIST_TRACE) || (LIKWID_PERFMON)
-#define ENTER_FCN(s) FcnTracer YouCantHaveMultiple_ENTER_FCN_StatementsInOneScope(s);
+# include "phist_fcntrace.hpp"
+# ifdef PHIST_TIMEMONITOR
+#   include <Teuchos_TimeMonitor.hpp>
+#   if (PHIST_OUTLEV>=PHIST_TRACE) || (LIKWID_PERFMON)
+#     define ENTER_FCN(s) FcnTracer YouCantHaveMultiple_ENTER_FCN_StatementsInOneScope(s);\
+                          static Teuchos::RCP<Teuchos::Time> TimeFrom_ENTER_FCN; \
+                          if( TimeFrom_ENTER_FCN.is_null() ) \
+                              TimeFrom_ENTER_FCN = Teuchos::TimeMonitor::getNewTimer(s); \
+                          Teuchos::TimeMonitor TimeMonFrom_ENTER_FCN( *TimeFrom_ENTER_FCN );
+#   else
+#     define ENTER_FCN(s) static Teuchos::RCP<Teuchos::Time> TimeFrom_ENTER_FCN; \
+                          if( TimeFrom_ENTER_FCN.is_null() ) \
+                              TimeFrom_ENTER_FCN = Teuchos::TimeMonitor::getNewTimer(s); \
+                          Teuchos::TimeMonitor TimeMonFrom_ENTER_FCN( *TimeFrom_ENTER_FCN );
+#   endif
+# else
+#   if (PHIST_OUTLEV>=PHIST_TRACE) || (LIKWID_PERFMON)
+#     define ENTER_FCN(s) FcnTracer YouCantHaveMultiple_ENTER_FCN_StatementsInOneScope(s);
+#   else
+#     define ENTER_FCN(s)
+#   endif
+# endif
 #else
-#define ENTER_FCN(s)
-#endif
-#else
-#define ENTER_FCN(s)
+# define ENTER_FCN(s)
 #endif
 
 #ifndef TOUCH
