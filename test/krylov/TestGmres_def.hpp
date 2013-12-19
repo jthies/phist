@@ -6,7 +6,7 @@
 #error "file not included correctly"
 #endif
 #ifndef _N_
-global size of matrix
+// global size of matrix
 #error "file not included correctly"
 #endif
 #ifndef _M_
@@ -27,7 +27,7 @@ global size of matrix
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
+class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
 {
 
   public:
@@ -87,15 +87,16 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
       int ierr;
       if( typeImplemented_ )
       {
-
+        ENTER_FCN(__FUNCTION__);
         delete opA_;
 
         SUBR(crsMat_delete)(A_,&ierr_);
         ASSERT_EQ(0,ierr_);
       }
       SUBR(gmresStates_delete)(state_,m_,&ierr);
+      ASSERT_EQ(0,ierr_);
       delete [] state_;
-        ASSERT_EQ(0,ierr_);
+      //TODO: here we get a segfault, maybe someone deleted xex_,sol_ and/or rhs_?
       VTest::TearDown();
     }
 
@@ -113,11 +114,18 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
     // ========================= the actual arnoldi test =========================
     void doGmresTest(int nrhs, int nrestarts, MT tol)
     {
+      ENTER_FCN(__FUNCTION__);
       if( typeImplemented_ )
       {
         ASSERT_TRUE(nrhs<=m_);
         // up to now we only test the case of one matrix, one rhs here (TODO)
         ASSERT_TRUE(nrhs==1);
+
+        // set convergence tolerance for all linear systems
+        for (int i=0;i<nrhs;i++)
+        {
+          state_[i]->tol=tol;
+        }
 
         TYPE(mvec_ptr) x=NULL,b=NULL,xex=NULL;
         SUBR(mvec_view_block)(xex_,&xex,0,nrhs-1,&ierr_);
@@ -125,6 +133,11 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
         SUBR(mvec_view_block)(sol_,&x,0,nrhs-1,&ierr_);
         ASSERT_EQ(0,ierr_);
         SUBR(mvec_view_block)(rhs_,&b,0,nrhs-1,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        
+        // start with a zero initial guess for each of the systems
+        SUBR(mvec_put_value)(x,st::zero(),&ierr_);
+//        SUBR(mvec_random)(x,&ierr_);
         ASSERT_EQ(0,ierr_);
         
         int ierr2=0;
@@ -162,6 +175,9 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
         
         SUBR(mvec_norm2)(b,&resNorm,&ierr_);
         ASSERT_EQ(0,ierr_);
+        
+        PHIST_DEB("required tol:  %6.2g\n",tol);
+        PHIST_DEB("rel. res norm: %6.2g\n",resNorm/bNorm_);
 
         // check error (residual two norm < tol)
         ASSERT_TRUE(resNorm<=tol*bNorm_);
@@ -173,7 +189,8 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
         SUBR(mvec_norm2)(x,&errNorm,&ierr_);
         ASSERT_EQ(0,ierr_);
 
-        ASSERT_TRUE(errNorm<=tol*bNorm_);
+        PHIST_DEB("rel. err norm: %6.2g\n",errNorm/bNorm_);
+        ASSERT_TRUE(errNorm<=tol*bNorm_); // this depends on the matrix condition/norm or not?
 
         SUBR(mvec_delete)(x,&ierr_);
         ASSERT_EQ(0,ierr_);

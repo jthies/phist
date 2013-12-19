@@ -34,13 +34,17 @@
 #define PHIST_OUT(level,msg, ...) {\
         if(PHIST_OUTLEV >= level) {\
                 FILE* out= (level<=PHIST_WARNING)? stderr:stdout;\
-                int me,ini,fini;\
+                int me,np,ini,fini;\
                 MPI_Initialized(&ini); \
                 if (ini) MPI_Finalized(&fini); \
                 if (ini && (!fini)) { \
                 MPI_Comm_rank(MPI_COMM_WORLD,&me);\
-                } else {me=0;}\
-                fprintf(out,"PE%d: "msg"\n",me,##__VA_ARGS__);\
+                MPI_Comm_size(MPI_COMM_WORLD,&np);\
+                } else {me=0; np=1;}\
+                if (np>1) \
+                {fprintf(out,"PE%d: "msg,me,##__VA_ARGS__);}\
+                else \
+                {fprintf(out,msg,##__VA_ARGS__);}\
                 fflush(out);\
         }\
 }
@@ -48,7 +52,7 @@
 #define PHIST_OUT(level,msg, ...) {\
         if(PHIST_OUTLEV >= level) {\
                 FILE* out= (level<=PHIST_WARNING)? stderr:stdout;
-                fprintf(out,msg"\n",##__VA_ARGS__);\
+                fprintf(out,msg,##__VA_ARGS__);\
                 fflush(out);\ }\ }
 #endif
 
@@ -63,7 +67,7 @@
                 MPI_Comm_rank(MPI_COMM_WORLD,&me);\
                 } else {me=0;}\
                 if(me==0){\
-                fprintf(out,msg"\n",##__VA_ARGS__);\
+                fprintf(out,msg,##__VA_ARGS__);\
                 fflush(out);}\
         }\
 }
@@ -71,7 +75,7 @@
 #define PHIST_SOUT(level,msg, ...) {\
         if(PHIST_OUTLEV >= level) {\
                 FILE* out= (level<=PHIST_WARNING)? stderr:stdout;
-                fprintf(out,msg"\n",##__VA_ARGS__);\
+                fprintf(out,msg,##__VA_ARGS__);\
                 fflush(out);\
         }\
 }
@@ -90,20 +94,20 @@
 #ifdef __cplusplus
 #define PHIST_CHK_IERR(func,FLAG) {\
 try {func; if (FLAG!=PHIST_SUCCESS) { \
-PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
+PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return;}} \
-catch (std::exception e) {PHIST_OUT(PHIST_ERROR,"Exception caught in call %s (%s)\n(file %s, line %d)",\
+catch (std::exception e) {PHIST_OUT(PHIST_ERROR,"Exception caught in call %s (%s)\n(file %s, line %d)\n",\
 (#func),e.what(),(__FILE__),(__LINE__)); (FLAG)=-77; return;} \
-catch (std::string s) {PHIST_OUT(PHIST_ERROR,"Exception caught in call %s (%s)\n(file %s, line %d)",\
+catch (std::string s) {PHIST_OUT(PHIST_ERROR,"Exception caught in call %s (%s)\n(file %s, line %d)\n",\
 (#func),s.c_str(),(__FILE__),(__LINE__)); (FLAG)=-77; return;} \
-catch (int iexc) {PHIST_OUT(PHIST_ERROR,"int Exception caught in call %s (value %d)\n(file %s, line %d)",\
+catch (int iexc) {PHIST_OUT(PHIST_ERROR,"int Exception caught in call %s (value %d)\n(file %s, line %d)\n",\
 (#func),iexc,(__FILE__),(__LINE__)); (FLAG)=-77; return;} \
-catch (...) {PHIST_OUT(PHIST_ERROR,"unknown Exception caught in call %s\n(file %s, line %d)",\
+catch (...) {PHIST_OUT(PHIST_ERROR,"unknown Exception caught in call %s\n(file %s, line %d)\n",\
 (#func),(__FILE__),(__LINE__)); (FLAG)=-77; return;}}
 #else
 #define PHIST_CHK_IERR(func,FLAG) {\
 {func; if (FLAG!=PHIST_SUCCESS) { \
-PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
+PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return;}}}
 #endif
 
@@ -113,20 +117,20 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #ifdef __cplusplus
 #define PHIST_CHK_NEG_IERR(func,FLAG) {\
 try {func; if (FLAG < PHIST_SUCCESS) { \
-PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
+PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return;}} \
-catch (std::exception e) {PHIST_OUT(PHIST_ERROR,"Exception caught in call %s (%s)\n(file %s, line %d)",\
+catch (std::exception e) {PHIST_OUT(PHIST_ERROR,"Exception caught in call %s (%s)\n(file %s, line %d)\n",\
 (#func),e.what(),(__FILE__),(__LINE__)); (FLAG)=-77; return;} \
-catch (std::string s) {PHIST_OUT(PHIST_ERROR,"Exception caught in call %s (%s)\n(file %s, line %d)",\
+catch (std::string s) {PHIST_OUT(PHIST_ERROR,"Exception caught in call %s (%s)\n(file %s, line %d)\n",\
 (#func),s.c_str(),(__FILE__),(__LINE__)); (FLAG)=-77; return;} \
-catch (int iexc) {PHIST_OUT(PHIST_ERROR,"int Exception caught in call %s (value %d)\n(file %s, line %d)",\
+catch (int iexc) {PHIST_OUT(PHIST_ERROR,"int Exception caught in call %s (value %d)\n(file %s, line %d)\n",\
 (#func),iexc,(__FILE__),(__LINE__)); (FLAG)=-77; return;} \
-catch (...) {PHIST_OUT(PHIST_ERROR,"unknown Exception caught in call %s\n(file %s, line %d)",\
+catch (...) {PHIST_OUT(PHIST_ERROR,"unknown Exception caught in call %s\n(file %s, line %d)\n",\
 (#func),(__FILE__),(__LINE__)); (FLAG)=-77; return;}}
 #else
 #define PHIST_CHK_NEG_IERR(func,FLAG) {\
 {func; if (FLAG<PHIST_SUCCESS) { \
-PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
+PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return;}}}
 #endif
 #endif
@@ -135,7 +139,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 //! like PHIST_CHK_IERR, but returns ierr (to be used in int functions returning an error code)
 #define PHIST_ICHK_IERR(func,FLAG) {\
 {func; if (FLAG!=PHIST_SUCCESS) { \
-PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)",\
+PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return FLAG;}}}
 
 #ifdef MAX
@@ -189,7 +193,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #define CAST_PTR_FROM_VOID(_TYPE_,_PTR_,_VPTR_,_FLAG_) \
 _TYPE_ *_PTR_ = NULL; \
 _PTR_=(_TYPE_*)(_VPTR_); \
-if (_PTR_==NULL) {_FLAG_=-88; PHIST_OUT(PHIST_ERROR,"bad cast in file %s, line %d.",\
+if (_PTR_==NULL) {_FLAG_=-88; PHIST_OUT(PHIST_ERROR,"bad cast in file %s, line %d.\n",\
 __FILE__,__LINE__); return;}
 #endif
 

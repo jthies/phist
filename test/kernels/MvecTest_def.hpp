@@ -311,6 +311,7 @@ public:
     for (int i=0;i<nc;i++)
     {
       ASSERT_REAL_EQ(norms0[idx[i]],norms1[i]);
+      ASSERT_TRUE(norms0[idx[i]]!=mt::zero());
     }
       
     // now randomize the view and check again

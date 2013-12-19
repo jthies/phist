@@ -57,7 +57,6 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&k,ierr),*ierr);
-  
   if (k==0) // no vectors to be orthogonalized
     {
     return;
@@ -132,7 +131,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     maxNormW1 = std::max(normW1[i],maxNormW1);
   if(maxNormW1 < breakdown)
   {
-    PHIST_SOUT(PHIST_INFO,"breakdown in phist_orthog: W in span(V), filling in random vectors!");
+    PHIST_SOUT(PHIST_INFO,"breakdown in phist_orthog: W in span(V), filling in random vectors!\n");
     PHIST_CHK_IERR(SUBR(mvec_put_value)(W,st::zero(),ierr),*ierr);
   }
   // orthogonalize W after the first GS pass. This gives us the rank  
@@ -153,7 +152,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
       // terminate even if random vectors are not "random" enough, e.g. random number generator is broken
       if( random_iter++ > 10 )
         {
-        PHIST_SOUT(PHIST_ERROR,"could not create random orthogonal vectors, possibly the random vector generator is broken!");
+        PHIST_SOUT(PHIST_ERROR,"could not create random orthogonal vectors, possibly the random vector generator is broken!\n");
         *ierr = -8;
         return;
         }
@@ -187,7 +186,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
       maxRed=std::min(maxRed,normW1[j]/normW0[j]);
       normW0[j]=1.; // after mvec_QR the norm is 1!
       }
-    PHIST_SOUT(PHIST_VERBOSE,"reduction in norm, GS step %d: %4.2f",step,maxRed);
+    PHIST_SOUT(PHIST_VERBOSE,"reduction in norm, GS step %d: %4.2f\n",step,maxRed);
     if (maxRed>0.75)
       {
       stopGS=true;
@@ -196,7 +195,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
       }
     if (step>=numSweeps)
       {
-      PHIST_SOUT(PHIST_VERBOSE,"stopping Gram-Schmidt because %d steps have been performed", 
+      PHIST_SOUT(PHIST_VERBOSE,"stopping Gram-Schmidt because %d steps have been performed\n", 
                 numSweeps);
       }
     step++;
@@ -220,7 +219,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
    
     if (*ierr>0)
       {
-      PHIST_SOUT(PHIST_ERROR,"Unexpected rank deficiency in orthog routine\n(file %s, line %d)",
+      PHIST_SOUT(PHIST_ERROR,"Unexpected rank deficiency in orthog routine\n(file %s, line %d)\n",
                 __FILE__,__LINE__);
       *ierr=-10;
       return;

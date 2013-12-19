@@ -36,8 +36,8 @@ using namespace testing;
 
 #define MAXBAS 20
 //TODO - tune these settings
-#define TOLA 1.0e-3
-#define TOLB 1.0e-5
+#define TOLA 5.0e-2
+#define TOLB 1.0e-4
 
 #define CLASSNAME STestGmres
 #include "phist_gen_s.h"
