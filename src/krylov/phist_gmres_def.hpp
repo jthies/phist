@@ -76,7 +76,6 @@ void SUBR(gmresStates_create)(TYPE(gmresState_ptr) state[], int numSys,
     state[i]->sn_ = new ST[maxBas];
     state[i]->rs_ = new ST[maxBas];
     state[i]->curDimV_=0;
-    state[i]->curIter_=0;
     state[i]->normB_=-mt::one(); // not initialized
     // not initialized, set B pointer to NULL
     state[i]->B_=NULL;
@@ -95,10 +94,6 @@ void SUBR(gmresStates_delete)(TYPE(gmresState_ptr) state[], int numSys, int* ier
   {
     PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->V_,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_delete)(state[i]->H_,ierr),*ierr);
-    if (state[i]->B_!=NULL)
-    {
-      PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->V_,ierr),*ierr);
-    }
     delete [] state[i]->cs_;
     delete [] state[i]->sn_;
     delete [] state[i]->rs_;
@@ -126,7 +121,6 @@ void SUBR(gmresState_reset)(TYPE(gmresState_ptr) S, TYPE(const_mvec_ptr) b,
     // new rhs -> need to recompute ||B||
     S->B_=b;
     S->normB_=-mt::one(); // needs to be computed in next iterate call
-    S->curIter_=0;
   }
   S->curDimV_=0;
   S->normR0_=-mt::one(); // needs to be computed in nect iterate call
@@ -138,6 +132,7 @@ void SUBR(gmresState_reset)(TYPE(gmresState_ptr) S, TYPE(const_mvec_ptr) b,
   {
     S->rs_[i]=st::zero();
   }
+  PHIST_CHK_IERR(SUBR(sdMat_put_value)(S->H_,st::zero(),ierr),*ierr);
   return;
 }
 
@@ -157,7 +152,7 @@ void SUBR(gmresStates_updateSol)(TYPE(gmresState_ptr) S_array[], int numSys, TYP
     // compute y by solving the triangular system
     TYPE(const_gmresState_ptr) S = S_array[i];
     TYPE(sdMat_ptr) y=NULL;
-    ST* H_raw=NULL,*y_raw=NULL;
+    ST *H_raw=NULL, *y_raw=NULL;
     lidx_t ldH,ldy;
 
     int m=S->curDimV_-1;
@@ -167,9 +162,19 @@ void SUBR(gmresStates_updateSol)(TYPE(gmresState_ptr) S_array[], int numSys, TYP
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S->H_,&H_raw,&ldH,ierr),*ierr);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
-    PHIST_OUT(PHIST_DEBUG,"gmres_updateSol[%d], curDimV=%d, H=\n",i,S->curDimV_);
-    PHIST_CHK_IERR(SUBR(mvec_print)(S->H_,ierr),*ierr);
+    PHIST_SOUT(PHIST_DEBUG,"gmres_updateSol[%d], curDimV=%d, H=\n",i,S->curDimV_);
+    PHIST_CHK_IERR(SUBR(sdMat_print)(S->H_,ierr),*ierr);
+    PHIST_SOUT(PHIST_DEBUG,"rs=\n");
+    for (int i=0;i<m;i++)
+    {
+      PHIST_SOUT(PHIST_DEBUG,"%16.8f+%16.8fi\n",st::real(S->rs_[i]),st::imag(S->rs_[i]));      
+    }
 #endif
+
+    for (int i=0;i<m;i++)
+    {
+      y_raw[i]=S->rs_[i];
+    }
 
     // y = H\rs, H upper triangular
     const char* uplo="U";
@@ -179,6 +184,12 @@ void SUBR(gmresStates_updateSol)(TYPE(gmresState_ptr) S_array[], int numSys, TYP
     PHIST_CHK_IERR(PREFIX(TRTRS)(uplo,trans,diag,&m,&nrhs,
                                         (st::blas_scalar_t*)H_raw,&ldH,
                                         (st::blas_scalar_t*)y_raw, &ldy, ierr),*ierr);
+
+
+#if PHIST_OUTLEV>=PHIST_DEBUG
+    PHIST_OUT(PHIST_DEBUG,"y=\n");
+    PHIST_CHK_IERR(SUBR(sdMat_print)(y,ierr),*ierr);
+#endif
 
     TYPE(mvec_ptr) V=NULL;
     PHIST_CHK_IERR(SUBR(mvec_view_block)(S->V_,&V,0,m-1,ierr),*ierr);
@@ -266,14 +277,6 @@ void SUBR(gmresStates_iterate)(TYPE(const_op_ptr) Op,
 
     //W=A*(M\V(:,j));
     PHIST_CHK_IERR(Op->apply(st::one(),Op->A, V, st::zero(), W, ierr), *ierr);
-/*
-PHIST_OUT(PHIST_DEBUG,"DUDEL: V=\n");
-PHIST_CHK_IERR(SUBR(mvec_print)(V,ierr),*ierr);
-PHIST_OUT(PHIST_DEBUG,"DUDEL: W=\n");
-PHIST_CHK_IERR(SUBR(mvec_print)(W,ierr),*ierr);
-PHIST_OUT(PHIST_DEBUG,"BLOEK: W=\n");
-PHIST_CHK_IERR(SUBR(mvec_print)(S_array[0]->Vglob_,ierr),*ierr);
-*/
     // TODO - maybe we could parallelize this loop by an OpenMP section
     //        so that the small stuff can be done in parallel too?
     for (int i=0;i<numSys;i++)
@@ -322,16 +325,16 @@ PHIST_CHK_IERR(SUBR(mvec_print)(S_array[0]->Vglob_,ierr),*ierr);
         PHIST_CHK_IERR(SUBR(sdMat_view_block)(S->H_,&R1,j,j,j-1,j-1,ierr),*ierr);
         // view H(1:j,j) as R2
         PHIST_CHK_IERR(SUBR(sdMat_view_block)(S->H_,&R2,0,j-1,j-1,j-1,ierr),*ierr);
-#if 0 // PHIST_OUTLEV>=PHIST_DEBUG
+#if 0 /*PHIST_OUTLEV>=PHIST_DEBUG*/
         PHIST_SOUT(PHIST_DEBUG,"SYSTEM %d, V(:,0:%d)=\n",i,j-1);
         PHIST_CHK_IERR(SUBR(mvec_print)(Vprev,ierr),*ierr);
         PHIST_SOUT(PHIST_DEBUG,"SYSTEM %d, V(:,%d)=\n",i,j);
         PHIST_CHK_IERR(SUBR(mvec_print)(Vj,ierr),*ierr);
-#endif    
+#endif
         //orthogonalize
         PHIST_CHK_IERR(SUBR(orthog)(Vprev,Vj,R1,R2,2,ierr),*ierr);
 
-#if PHIST_OUTLEV>=PHIST_DEBUG
+#if 0 /*PHIST_OUTLEV>=PHIST_DEBUG*/
   PHIST_DEB("untransformed H");
   PHIST_CHK_IERR(SUBR(sdMat_print)(S->H_,ierr),*ierr);
 #endif
@@ -368,7 +371,7 @@ PHIST_CHK_IERR(SUBR(mvec_print)(S_array[0]->Vglob_,ierr),*ierr);
         S->rs_[j] = -st::conj(S->sn_[j-1])*S->rs_[j-1];
         S->rs_[j-1]=htmp;
 
-#if PHIST_OUTLEV>=PHIST_DEBUG
+#if 0 /*PHIST_OUTLEV>=PHIST_DEBUG*/
   PHIST_DEB("transformed H");
   PHIST_CHK_IERR(SUBR(sdMat_print)(S->H_,ierr),*ierr);
 #endif
