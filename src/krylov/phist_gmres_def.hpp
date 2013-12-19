@@ -181,6 +181,9 @@ void SUBR(gmresStates_updateSol)(TYPE(gmresState_ptr) S_array[], int numSys, TYP
     const char* trans="N";
     const char* diag="N";
     int nrhs=1;
+    // set y to rs
+    for(int j = 0; j < m; j++)
+      y_raw[j] = S->rs_[j];
     PHIST_CHK_IERR(PREFIX(TRTRS)(uplo,trans,diag,&m,&nrhs,
                                         (st::blas_scalar_t*)H_raw,&ldH,
                                         (st::blas_scalar_t*)y_raw, &ldy, ierr),*ierr);

@@ -6,7 +6,7 @@
 #error "file not included correctly"
 #endif
 #ifndef _N_
-global size of matrix
+// global size of matrix
 #error "file not included correctly"
 #endif
 #ifndef _M_
@@ -27,7 +27,7 @@ global size of matrix
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
+class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
 {
 
   public:
@@ -191,6 +191,9 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
         ASSERT_EQ(0,ierr_);
 
         PHIST_DEB("rel. err norm: %6.2g\n",errNorm/bNorm_);
+        // TODO - we should use the matrix norm for the scaling here,
+        //        but since we only test with one matrix we can hard-code
+        //        a factor 20 so that the test is passed.
         ASSERT_TRUE(errNorm<=20*tol*bNorm_);
 
         SUBR(mvec_delete)(x,&ierr_);
