@@ -97,7 +97,8 @@ void SUBR(gmresStates_delete)(TYPE(gmresState_ptr) state[], int numSys, int* ier
     PHIST_CHK_IERR(SUBR(sdMat_delete)(state[i]->H_,ierr),*ierr);
     if (state[i]->B_!=NULL)
     {
-      PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->V_,ierr),*ierr);
+      // do we really want to delete this, probably not allocated by us...
+      //PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->B_,ierr),*ierr);
     }
     delete [] state[i]->cs_;
     delete [] state[i]->sn_;
@@ -176,6 +177,9 @@ void SUBR(gmresStates_updateSol)(TYPE(gmresState_ptr) S_array[], int numSys, TYP
     const char* trans="N";
     const char* diag="N";
     int nrhs=1;
+    // set y to rs
+    for(int j = 0; j < m; j++)
+      y_raw[j] = S->rs_[j];
     PHIST_CHK_IERR(PREFIX(TRTRS)(uplo,trans,diag,&m,&nrhs,
                                         (st::blas_scalar_t*)H_raw,&ldH,
                                         (st::blas_scalar_t*)y_raw, &ldy, ierr),*ierr);

@@ -6,7 +6,7 @@
 #error "file not included correctly"
 #endif
 #ifndef _N_
-global size of matrix
+// global size of matrix
 #error "file not included correctly"
 #endif
 #ifndef _M_
@@ -27,7 +27,7 @@ global size of matrix
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
+class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
 {
 
   public:
@@ -190,7 +190,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_M_>
         ASSERT_EQ(0,ierr_);
 
         PHIST_DEB("rel. err norm: %6.2g\n",errNorm/bNorm_);
-        ASSERT_TRUE(errNorm<=tol*bNorm_);
+        ASSERT_TRUE(errNorm<=tol*bNorm_); // this depends on the matrix condition/norm or not?
 
         SUBR(mvec_delete)(x,&ierr_);
         ASSERT_EQ(0,ierr_);
