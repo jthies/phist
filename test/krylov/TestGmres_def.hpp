@@ -119,7 +119,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
       {
         ASSERT_TRUE(nrhs<=m_);
         // up to now we only test the case of one matrix, one rhs here (TODO)
-        ASSERT_TRUE(nrhs==1);
+        //ASSERT_TRUE(nrhs==1);
 
         // set convergence tolerance for all linear systems
         for (int i=0;i<nrhs;i++)
@@ -221,3 +221,12 @@ TEST_F(CLASSNAME, restarted_gmres)
   int nrhs=1;
   doGmresTest(nrhs,nrestarts,TOLB);
 }
+
+// test unrestarted GMRES with tolerance TOL1
+TEST_F(CLASSNAME, multiple_simple_gmres) 
+{
+  int nrestarts=0;
+  int nrhs=4;
+  doGmresTest(nrhs,nrestarts,TOLA);
+}
+

@@ -51,7 +51,7 @@ void SUBR(gmresStates_create)(TYPE(gmresState_ptr) state[], int numSys,
   PHIST_CHK_IERR(phist_map_get_comm(map,&comm,ierr),*ierr);
 
   // memory for the bases V is allocated in one big chunk
-  int tot_nV = (maxBas+1)*numSys;
+  int tot_nV = (maxBas+2)*numSys;
   TYPE(mvec_ptr) Vglob=NULL;
   PHIST_CHK_IERR(SUBR(mvec_create)(&Vglob, map,tot_nV, ierr),*ierr);
   
@@ -63,7 +63,7 @@ void SUBR(gmresStates_create)(TYPE(gmresState_ptr) state[], int numSys,
     state[i]->tol=0.5; // typical starting tol for JaDa inner iterations...
     state[i]->ierr=-2;// not initialized
     state[i]->Vglob_=Vglob;
-    state[i]->offsetVglob_=i*(maxBas+1);
+    state[i]->offsetVglob_=i*(maxBas+2);
     state[i]->maxBas_=maxBas;
     // we allow one additional vector to be stored in the basis so that
     // we can have V(:,i+1) = A*V(:,i) temporarily
@@ -77,8 +77,9 @@ void SUBR(gmresStates_create)(TYPE(gmresState_ptr) state[], int numSys,
     state[i]->rs_ = new ST[maxBas];
     state[i]->curDimV_=0;
     state[i]->normB_=-mt::one(); // not initialized
-    // not initialized, set B pointer to NULL
-    state[i]->B_=NULL;
+    state[i]->B_ = NULL;
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(Vglob,&state[i]->B_,
+        state[i]->offsetVglob_+maxBas+1, state[i]->offsetVglob_+maxBas+1, ierr), *ierr);
   }
 }
 
@@ -93,6 +94,7 @@ void SUBR(gmresStates_delete)(TYPE(gmresState_ptr) state[], int numSys, int* ier
   for (int i=0;i<numSys;i++)
   {
     PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->V_,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->B_,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_delete)(state[i]->H_,ierr),*ierr);
     delete [] state[i]->cs_;
     delete [] state[i]->sn_;
@@ -110,16 +112,17 @@ void SUBR(gmresState_reset)(TYPE(gmresState_ptr) S, TYPE(const_mvec_ptr) b,
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   
-  if (b==NULL && S->B_==NULL)
+  if (b==NULL && S->normB_ == -mt::one())
   {
     PHIST_OUT(PHIST_ERROR,"on the first call to gmresState_reset you *must* provide the RHS vector");
     *ierr=-1;
     return;
   }
-  else if (b!=S->B_ && b!=NULL)
+  else if (b!=NULL)
   {
     // new rhs -> need to recompute ||B||
-    S->B_=b;
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), b, st::zero(), S->B_, ierr), *ierr);
+    //S->B_=b;
     S->normB_=-mt::one(); // needs to be computed in next iterate call
   }
   S->curDimV_=0;
