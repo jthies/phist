@@ -434,6 +434,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,&t, i,i, ierr), *ierr);
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res,&t_res, i,i, ierr), *ierr);
       PHIST_CHK_IERR(SUBR( gmresState_reset ) (gmresState[i], t_res, t, ierr), *ierr);
+      gmresState[i]->tol = mt::zero();
     }
     PHIST_CHK_NEG_IERR(SUBR( gmresStates_iterate ) (&jdOp, gmresState, k, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,&t, 0,k-1, ierr), *ierr);
