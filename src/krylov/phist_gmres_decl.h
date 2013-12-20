@@ -56,7 +56,6 @@ typedef struct TYPE(gmresState) {
   _MT_ normR_; //! stores current (implicit) residual norm
   
   int curDimV_; //! current size of the basis V
-  int curIter_; //! number of iterations performed since last call to reset with new RHS
 
   int maxBas_; //! maximum size of basis before restart
 

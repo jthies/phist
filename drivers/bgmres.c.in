@@ -26,9 +26,10 @@ int main(int argc, char** argv)
   
   const_map_ptr_t map; // map (element distribution) of vectors according to 
                        // the distribution of matrix rows
-  mvec_ptr_t X,XEX,B; // multivectors for solution and rhs (XEX exact solution to compare)
+  mvec_ptr_t X,XEX,B,R;// multivectors for solution and rhs (XEX exact solution to compare)
   
   MT tol;
+  MT *rnorm2; /* for computing the residual norm axplicitly */
   MT *norm2; /* for computing the error norms after the solve */
   MT *xnorm2, *bnorm2; /* for scaling, norm of exact solution and rhs */
   char* filename;
@@ -106,6 +107,7 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(mvec_create)(&XEX,map,num_rhs,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,num_rhs,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&B,map,num_rhs,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&R,map,num_rhs,&ierr),ierr);
   
   /* randomize the solution vector */
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(X,ZERO,&ierr),ierr);
@@ -132,18 +134,32 @@ int main(int argc, char** argv)
   
   PHIST_OUT(1,"number of iterations performed: %d",num_iters);
   
+  /* compute residual norms */
+  PHIST_CHK_IERR(SUBR(crsMat_times_mvec)(ONE,A,X,ZERO,R,&ierr),ierr);
+  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-ONE,B,ONE,R,&ierr),ierr);
+  
   /* compute ||X - XEX||_2 */
   norm2=(MT*)malloc(num_rhs*sizeof(MT));
+  rnorm2=(MT*)malloc(num_rhs*sizeof(MT));
   xnorm2=(MT*)malloc(num_rhs*sizeof(MT));
   bnorm2=(MT*)malloc(num_rhs*sizeof(MT));
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(ONE,XEX,-ONE,X,&ierr),ierr);
+
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(R,rnorm2,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_norm2)(X,norm2,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_norm2)(XEX,xnorm2,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_norm2)(B,bnorm2,&ierr),ierr);
   
   if (verbose)
     {
-    fprintf(stdout,"error 2-norms: ||r||, ||r||/||x||, ||r||/||b||:\n");
+    fprintf(stdout,"residual 2-norms: ||r||, ||r||/||x||, ||r||/||b||:\n");
+    for (i=0;i<num_rhs;i++)
+      {
+      fprintf(stdout,"%8.4e\t%8.4e\t%8.4e",rnorm2[i],rnorm2[i]/xnorm2[i],rnorm2[i]/bnorm2[i]);
+      }
+    fprintf(stdout,"\n");
+
+    fprintf(stdout,"error 2-norms: ||e||, ||e||/||x||, ||e||/||b||:\n");
     for (i=0;i<num_rhs;i++)
       {
       fprintf(stdout,"%8.4e\t%8.4e\t%8.4e",norm2[i],norm2[i]/xnorm2[i],norm2[i]/bnorm2[i]);
@@ -151,6 +167,7 @@ int main(int argc, char** argv)
     fprintf(stdout,"\n");
     }
   
+  free(rnorm2);
   free(norm2);
   free(xnorm2);
   free(bnorm2);
@@ -159,6 +176,7 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(XEX,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(B,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(R,&ierr),ierr);
   free(A_op);
   PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
   return ierr;

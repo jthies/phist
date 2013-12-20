@@ -242,7 +242,7 @@ void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* 
   Teuchos::ArrayRCP<_ST_> valptr = M->get1dViewNonConst();
   *val = valptr.getRawPtr();
   *lda=M->getStride();
-  *ierr=0; //TODO - how do we get LDA?
+  *ierr=0; 
   }
 
 //! get a new vector that is a view of some columns of the original one,
