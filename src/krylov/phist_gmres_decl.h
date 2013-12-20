@@ -38,7 +38,7 @@ typedef struct TYPE(gmresState) {
   //@}
   //! \name  internal data structures
   //@{
-  TYPE(const_mvec_ptr) B_; //! for which RHS is this GMRES being run?
+  TYPE(mvec_ptr) B_; //! for which RHS is this GMRES being run?
   TYPE(mvec_ptr) Vglob_; //! the V arrays are in fact views of sections of a large block
                          //! of memory Vglob_, cf. comment above.
   int offsetVglob_;      //! where in Vglob_ does my V_ start?
