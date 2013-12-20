@@ -49,12 +49,12 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   set (CMAKE_C_FLAGS "-fopenmp")
   set (CMAKE_C_FLAGS_RELEASE "-O2 -fopenmp")
   set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g -fopenmp")
-  set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare")
+  set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-local-typedefs")
 
   set (CMAKE_CXX_FLAGS "-fopenmp")
   set (CMAKE_CXX_FLAGS_RELEASE "-O2 -fopenmp")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -fopenmp")
-  set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare")
+  set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-local-typedefs")
 else ()
 #TODO - add flags for Intel and others
   message ("compiler ID: " ${CXX_COMPILER_ID})
@@ -149,7 +149,8 @@ set (PHIST_JADA_SOURCE ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.c
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_schur_decomp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_blockjada.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejada.cpp)
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejada.cpp
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp)
 
 
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB})

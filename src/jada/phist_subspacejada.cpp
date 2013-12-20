@@ -19,6 +19,7 @@
 #include "phist_schur_decomp.h"
 #include "phist_jadaOp.h"
 #include "phist_simple_arnoldi.h"
+#include "phist_transform_searchspace.h"
 
 #include "phist_bgmres.h"
 

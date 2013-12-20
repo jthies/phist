@@ -20,8 +20,29 @@ extern "C" {
 // this is a platform dependent macro, we should have CMake determine
 // how to define the name of a fortran 77 routine
 #define LAPACK_SUBR(NAME,name) name ## _
+#define BLAS_SUBR(NAME,name) name ## _
 
 // we add lapack subroutines as we go along implementing things.
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//      XGEMM - general dense matrix-matrix multiplicaiton                               //
+///////////////////////////////////////////////////////////////////////////////////////////
+#define SGEMM BLAS_SUBR(SGEMM,sgemm)
+void SGEMM(const char*, const char*, const int*, const int*, const int*,
+    const float*, const float*, const int*, const float*, const int*, const float*,
+    float *, const int*, int*);
+#define DGEMM BLAS_SUBR(DGEMM,dgemm)
+void DGEMM(const char*, const char*, const int*, const int*, const int*,
+    const double*, const double*, const int*, const double*, const int*, const double*,
+    double *, const int*, int*);
+#define CGEMM BLAS_SUBR(CGEMM,cgemm)
+void CGEMM(const char*, const char*, const int*, const int*, const int*,
+    const Sblas_cmplx_t*, const Sblas_cmplx_t*, const int*, const Sblas_cmplx_t*, const int*, const Sblas_cmplx_t*,
+    Sblas_cmplx_t *, const int*, int*);
+#define ZGEMM BLAS_SUBR(ZGEMM,zgemm)
+void ZGEMM(const char*, const char*, const int*, const int*, const int*,
+    const Dblas_cmplx_t*, const Dblas_cmplx_t*, const int*, const Dblas_cmplx_t*, const int*, const Dblas_cmplx_t*,
+    Dblas_cmplx_t *, const int*, int*);
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // XSTEQR - QR decomposition of symmetric tridiagonal matrices                           //
