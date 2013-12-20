@@ -15,11 +15,14 @@ void SUBR(transform_searchSpace)(TYPE(mvec_ptr) V, TYPE(mvec_ptr) AV, TYPE(mvec_
 
   // get dimensions to create temporary storage for H
   lidx_t nV, minBase;
+  const_comm_ptr_t comm;
   PHIST_CHK_IERR(SUBR( sdMat_get_nrows ) (M, &nV, ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_get_ncols ) (M, &minBase, ierr), *ierr);
-  TYPE(mvec_ptr) H_ = NULL;
-  TYPE(mvec_ptr) Htmp = NULL;
-  PHIST_CHK_IERR(SUBR( sdMat_create ) (&Htmp, nV, minBase, NULL, ierr), *ierr);
+  // we need some communicator for ghost...
+  PHIST_CHK_IERR(SUBR( mvec_get_comm ) (V, &comm, ierr), *ierr);
+  TYPE(sdMat_ptr) H_ = NULL;
+  TYPE(sdMat_ptr) Htmp = NULL;
+  PHIST_CHK_IERR(SUBR( sdMat_create ) (&Htmp, nV, minBase, comm, ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_view_block  )(H,    &H_,    0, minBase-1,    0, minBase-1,     ierr), *ierr);
 
   // update H <- M' * H * M

@@ -37,7 +37,7 @@ int main(int argc, char** argv)
   // check arguments
   if( argc < 2 )
   {
-    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A filename> [<invariant subspace dimension>] [<which>] [<tol>] [<max iters> <block size> <min basis> <max basis> <initial shift> <initial shift iterations>]", argv[0]);
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A filename> [<invariant subspace dimension>] [<which>] [<tol>] [<max iters> <block size> <min basis> <max basis> <initial shift> <initial shift iterations>]\n", argv[0]);
     return 1;
   }
 
@@ -66,7 +66,7 @@ int main(int argc, char** argv)
       which = SR;
     else
     {
-      PHIST_SOUT(PHIST_ERROR,"error parsing argument 3 <which> ('%s'), it should be one of LM, SM, LR or SR", argv[4]);
+      PHIST_SOUT(PHIST_ERROR,"error parsing argument 3 <which> ('%s'), it should be one of LM, SM, LR or SR\n", argv[4]);
       return 1;
     }
   }
@@ -79,7 +79,7 @@ int main(int argc, char** argv)
     iss >> tol;
     if( tol <= mt::eps() )
     {
-      PHIST_SOUT(PHIST_WARNING,"specified tolerance %e is too small! (eps: %e)", tol, mt::eps());
+      PHIST_SOUT(PHIST_WARNING,"specified tolerance %e is too small! (eps: %e)\n", tol, mt::eps());
     }
   }
 
@@ -147,14 +147,14 @@ int main(int argc, char** argv)
 #ifdef IS_COMPLEX
     PHIST_ICHK_IERR(SUBR(crsMat_read_hb)(&A,filename_A.c_str(),&ierr),ierr);
 #else
-    PHIST_SOUT(PHIST_ERROR,"error, invoked real version of this program for complex matrix with ending '.cua'");
+    PHIST_SOUT(PHIST_ERROR,"error, invoked real version of this program for complex matrix with ending '.cua'\n");
     return 1;
 #endif
   }
   else if( endsWith(filename_A,".rua") )
   {
 #ifdef IS_COMPLEX
-    PHIST_SOUT(PHIST_ERROR,"error, invoked complex version of this program for real matrix with ending '.rua'");
+    PHIST_SOUT(PHIST_ERROR,"error, invoked complex version of this program for real matrix with ending '.rua'\n");
     return 1;
 #else
     PHIST_ICHK_IERR(SUBR(crsMat_read_hb)(&A,filename_A.c_str(),&ierr),ierr);
@@ -166,7 +166,7 @@ int main(int argc, char** argv)
   }
   else
   {
-    PHIST_SOUT(PHIST_ERROR,"unknown file ending of matrix file '%s'",filename_A.c_str());
+    PHIST_SOUT(PHIST_ERROR,"unknown file ending of matrix file '%s'\n",filename_A.c_str());
     return 1;
   }
   // create an operator from A
@@ -220,7 +220,7 @@ int main(int argc, char** argv)
   for(int i = 0; i < nEig; i++)
     if(resNorm[i] <= tol)
       nConvergedEig++;
-  PHIST_SOUT(PHIST_INFO, "subspacejada terminated after %d iterations and calculated %d eigenvalues;\n printing R:", nIter, nConvergedEig);
+  PHIST_SOUT(PHIST_INFO, "subspacejada terminated after %d iterations and calculated %d eigenvalues;\n printing R:\n", nIter, nConvergedEig);
   PHIST_ICHK_IERR(SUBR( sdMat_print ) (R, &ierr), ierr);
   PHIST_SOUT(PHIST_INFO, " residuum norm:");
   for(int i = 0; i < nEig; i++)

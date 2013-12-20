@@ -71,22 +71,22 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   //------------------------------- check arguments --------------------------------
   if( minBase < nEig_ )
   {
-    PHIST_SOUT(PHIST_ERROR, "parameter minBase < nEig+blockDim-1!");
+    PHIST_SOUT(PHIST_ERROR, "parameter minBase < nEig+blockDim-1!\n");
     PHIST_CHK_IERR(*ierr = -99, *ierr);
   }
   if( minBase+blockDim > maxBase )
   {
-    PHIST_SOUT(PHIST_ERROR, "parameter minBase+blockDim > maxBase!");
+    PHIST_SOUT(PHIST_ERROR, "parameter minBase+blockDim > maxBase!\n");
     PHIST_CHK_IERR(*ierr = -99, *ierr);
   }
   if( maxBase < nEig+blockDim )
   {
-    PHIST_SOUT(PHIST_ERROR, "paramater maxBase < nEig+blockDim!");
+    PHIST_SOUT(PHIST_ERROR, "paramater maxBase < nEig+blockDim!\n");
     PHIST_CHK_IERR(*ierr = -99, *ierr);
   }
   if( B_op != NULL )
   {
-    PHIST_SOUT(PHIST_ERROR,"case B_op != NULL (e.g. B != I) not implemented yet!");
+    PHIST_SOUT(PHIST_ERROR,"case B_op != NULL (e.g. B != I) not implemented yet!\n");
     PHIST_CHK_IERR(*ierr = -99, *ierr);
   }
 
@@ -222,7 +222,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   for(int i = 0; i < nV; i++)
     for(int j = 0; j < nV; j++)
       orthEps = std::max(orthEps, std::abs(Htmp_raw[i*ldaHtmp+j] - ((i==j) ? st::one() : st::zero())));
-  PHIST_OUT(PHIST_INFO, "B-orthogonality of V: %e", orthEps);
+  PHIST_OUT(PHIST_INFO, "B-orthogonality of V: %e\n", orthEps);
 
   // check AV = A*V
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp,                  0,       nV-1,          ierr), *ierr);
@@ -233,7 +233,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   _MT_ equalEps = normVtmp[0];
   for(int i = 0; i < nV; i++)
     equalEps = std::max(equalEps, normVtmp[i]);
-  PHIST_OUT(PHIST_INFO, "AV - A*V: %e", equalEps);
+  PHIST_OUT(PHIST_INFO, "AV - A*V: %e\n", equalEps);
   // check H = V'*A*V
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), V, AV, st::zero(), Htmp, ierr), *ierr);
@@ -242,7 +242,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   for(int i = 0; i < nV; i++)
     for(int j = 0; j < nV; j++)
       equalEps = std::max(equalEps, std::abs(Htmp_raw[i*ldaHtmp+j]));
-  PHIST_OUT(PHIST_INFO, "H - V'*AV: %e", equalEps);
+  PHIST_OUT(PHIST_INFO, "H - V'*AV: %e\n", equalEps);
 }
 #endif
 
@@ -304,14 +304,14 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     int nNewlyConvergedEig = 0;
     for(int i = nConvergedEig; i < nEig; i++)
     {
-      PHIST_SOUT(PHIST_INFO,"In iteration %d: Current approximation for eigenvalue %d is %16.8g%+16.8gi with residuum %e", *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]), resNorm[i]);
+      PHIST_SOUT(PHIST_INFO,"In iteration %d: Current approximation for eigenvalue %d is %16.8g%+16.8gi with residuum %e\n", *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]), resNorm[i]);
       if( resNorm[i] <= tol && i == nConvergedEig+nNewlyConvergedEig ) // only consider eigenvalues from the beginning
         nNewlyConvergedEig++;
     }
 
     if( nNewlyConvergedEig > 0 )
     {
-      PHIST_SOUT(PHIST_INFO,"In iteration %d: locking %d newly converged eigenvalues", *nIter, nNewlyConvergedEig);
+      PHIST_SOUT(PHIST_INFO,"In iteration %d: locking %d newly converged eigenvalues\n", *nIter, nNewlyConvergedEig);
 
       // reorder V and H
       PHIST_CHK_IERR(SUBR( transform_searchSpace ) (V, AV, BV, H, Q_H, B_op != NULL, ierr), *ierr);
@@ -321,13 +321,13 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
     if( nConvergedEig >= nEig )
     {
-      PHIST_SOUT(PHIST_INFO,"In iteration %d: all eigenvalues converged!", *nIter);
+      PHIST_SOUT(PHIST_INFO,"In iteration %d: all eigenvalues converged!\n", *nIter);
       break;
     }
 
     if( *nIter >= maxIter )
     {
-      PHIST_SOUT(PHIST_INFO,"Reached maximum number of iterations!");
+      PHIST_SOUT(PHIST_INFO,"Reached maximum number of iterations!\n");
       break;
     }
 
@@ -341,7 +341,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 #ifndef IS_COMPLEX
       if( std::abs(ct::imag(ev_H[i])) > tol )
       {
-        PHIST_SOUT(PHIST_WARNING,"real case with complex conjugate eigenvalues not fully implemented yet!");
+        PHIST_SOUT(PHIST_WARNING,"real case with complex conjugate eigenvalues not fully implemented yet!\n");
       }
 #endif
 
@@ -389,7 +389,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     // shrink search space if necessary
     if( nV + k > maxBase )
     {
-      PHIST_SOUT(PHIST_INFO,"Shrinking search space from %d to %d", nV, minBase);
+      PHIST_SOUT(PHIST_INFO,"Shrinking search space from %d to %d\n", nV, minBase);
 
       // nothing to do if no converged eigenvalues this iteration
       if( nNewlyConvergedEig == 0 )
