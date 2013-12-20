@@ -185,7 +185,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
   //------------------------------- initialize GMRES solver ------------------------
   TYPE(gmresState_ptr) *gmresState = new TYPE(gmresState_ptr)[blockDim];
-  PHIST_CHK_IERR(SUBR( gmresStates_create ) (gmresState, blockDim, A_op->domain_map, 10, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( gmresStates_create ) (gmresState, blockDim, A_op->domain_map, 11, ierr), *ierr);
 
   //------------------------------- initialize subspace etc ------------------------
   // run arnoldi
