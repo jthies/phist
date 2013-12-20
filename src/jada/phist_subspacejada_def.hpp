@@ -314,16 +314,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
       PHIST_SOUT(PHIST_INFO,"In iteration %d: locking %d newly converged eigenvalues", *nIter, nNewlyConvergedEig);
 
       // reorder V and H
-      PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (V, Q_H, 64, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (AV, Q_H, 64, ierr), *ierr);
-      if( B_op != NULL )
-      {
-        PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (BV, Q_H, 64, ierr), *ierr);
-      }
-      // update H <- H_Q' * H * H_Q
-      PHIST_CHK_IERR(SUBR( sdMat_view_block  )(Htmp_, &Htmp, 0, nV-1,         0, nV-1,     ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( sdMat_times_sdMat )(st::one(), H,    Q_H,   st::zero(), Htmp, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( sdMatT_times_sdMat)(st::one(), Q_H, Htmp,   st::zero(), H,    ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( transform_searchSpace ) (V, AV, BV, H, Q_H, B_op != NULL, ierr), *ierr);
 
       nConvergedEig = nConvergedEig+nNewlyConvergedEig;
     }
@@ -405,25 +396,14 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
       {
         PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  0, nV-1,          0, minBase-1,    ierr), *ierr);
 
-        PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (V, Q_H, 64, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (AV, Q_H, 64, ierr), *ierr);
-        if( B_op != NULL )
-        {
-          PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (BV, Q_H, 64, ierr), *ierr);
-        }
-
-        // update H <- H_Q' * H * H_Q
-        PHIST_CHK_IERR(SUBR( sdMat_view_block  )(Htmp_, &Htmp, 0, nV-1,         0, minBase-1,     ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( sdMat_times_sdMat )(st::one(), H,    Q_H,   st::zero(), Htmp, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( sdMat_view_block  )(H_,    &H,    0, minBase-1,    0, minBase-1,     ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( sdMatT_times_sdMat)(st::one(), Q_H, Htmp,   st::zero(), H,    ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( transform_searchSpace ) (V, AV, BV, H, Q_H, B_op != NULL, ierr), *ierr);
       }
 
       // update views
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,    &V,                      0, minBase-1,    ierr), *ierr);
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,   &AV,                     0, minBase-1,    ierr), *ierr);
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,   &BV,                     0, minBase-1,    ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( sdMat_view_block  )(H_,    &H,    0, minBase-1,    0, minBase-1,     ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block  )(H_,    &H,    0, minBase-1,     0, minBase-1,    ierr), *ierr);
 
       nV = minBase;
     }

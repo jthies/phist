@@ -1,5 +1,38 @@
-//! in order to shrink a subspace we need a fast in-place operation for mvec_times_sdMat
+//! apply a transformation matrix M to a given search space V and AV, BV and the projection H=V'AV
+void SUBR(transform_searchSpace)(TYPE(mvec_ptr) V, TYPE(mvec_ptr) AV, TYPE(mvec_ptr) BV, TYPE(sdMat_ptr) H, TYPE(sdMat_ptr) M, bool generalizedEigenproblem, int *ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  *ierr = 0;
 
+  // update V, AV and BV
+  PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (V,  M, 64, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (AV, M, 64, ierr), *ierr);
+  if( generalizedEigenproblem )
+  {
+    PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (BV, M, 64, ierr), *ierr);
+  }
+
+  // get dimensions to create temporary storage for H
+  lidx_t nV, minBase;
+  PHIST_CHK_IERR(SUBR( sdMat_get_nrows ) (M, &nV, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_get_ncols ) (M, &minBase, ierr), *ierr);
+  TYPE(mvec_ptr) H_ = NULL;
+  TYPE(mvec_ptr) Htmp = NULL;
+  PHIST_CHK_IERR(SUBR( sdMat_create ) (&Htmp, nV, minBase, NULL, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_view_block  )(H,    &H_,    0, minBase-1,    0, minBase-1,     ierr), *ierr);
+
+  // update H <- M' * H * M
+  PHIST_CHK_IERR(SUBR( sdMat_times_sdMat )(st::one(), H, M,    st::zero(), Htmp, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMatT_times_sdMat)(st::one(), M, Htmp, st::zero(), H_,   ierr), *ierr);
+
+  // delete temp. storage
+  PHIST_CHK_IERR(SUBR( sdMat_delete ) (Htmp, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_delete ) (H_,   ierr), *ierr);
+}
+
+
+//! in order to shrink a subspace we need a fast in-place operation for mvec_times_sdMat
 void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V_, TYPE(sdMat_ptr) M_, lidx_t chunkSize, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
@@ -48,7 +81,7 @@ void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V_, TYPE(sdMat_ptr) M_, lidx_
     ST blas_ONE = st::one();
     ST blas_ZERO = st::zero();
 
-    lidx_t i, j, k, off;
+    lidx_t i, j, off;
     lidx_t iChunk;
     lidx_t nChunks = nV/chunkSize;
 #pragma omp for
