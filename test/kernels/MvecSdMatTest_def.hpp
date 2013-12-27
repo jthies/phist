@@ -249,7 +249,7 @@ public:
         ASSERT_EQ(0,ierr_);
 
         // the result should be zero!
-        ASSERT_NEAR(mt::one(),ArrayEqual(M2_vp_,m_,m_,ldaM2_,stride_,st::zero()),20*mt::eps());
+        ASSERT_NEAR(mt::one(),ArrayEqual(M2_vp_,m_,m_,ldaM2_,stride_,st::zero()),200*mt::eps());
 
         SUBR(mvec_delete)(V1,&ierr_);
         ASSERT_EQ(0,ierr_);
