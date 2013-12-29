@@ -46,7 +46,7 @@ set(OUTLEV_RELEASE 3)
 
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   message(STATUS "using GNU compiler flags")
-  set (CMAKE_C_FLAGS "-fopenmp")
+  set (CMAKE_C_FLAGS "-fopenmp -std=c99")
   set (CMAKE_C_FLAGS_RELEASE "-O2 -fopenmp")
   set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g -fopenmp")
   set (CMAKE_C_FLAGS_DEBUG   "-O0 -g -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused")
@@ -55,6 +55,9 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   set (CMAKE_CXX_FLAGS_RELEASE "-O2 -fopenmp")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -fopenmp")
   set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused")
+
+  set (CMAKE_Fortran_FLAGS "-fopenmp")
+  set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -DTESTING -fopenmp -Wall -Wextra -fcheck=all")
 else ()
 #TODO - add flags for Intel and others
   message ("compiler ID: " ${CXX_COMPILER_ID})
@@ -121,13 +124,16 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   # we already link with ghost because of the queuing system  
   list(APPEND LOAD_TRILI_PKG "Belos")
   add_definitions(-DPHIST_KERNEL_LIB_GHOST)
+elseif (PHIST_KERNEL_LIB STREQUAL "fortran")
+  list(APPEND LOAD_TRILI_PKG "Belos")
+  add_definitions(-DPHIST_KERNEL_LIB_FORTRAN)
 else ()
   message( FATAL_ERROR "PHIST_KERNEL_LIB not set" )
 endif ()
 
 
 # these specific versions of type-generic drivers have to be created
-if  (PHIST_KERNEL_LIB STREQUAL "epetra")
+if  (PHIST_KERNEL_LIB STREQUAL "epetra" OR PHIST_KERNEL_LIB STREQUAL "fortran")
 set(TG_Types D)
 else ()
 set(TG_Types S 
@@ -135,7 +141,25 @@ set(TG_Types S
              C 
              Z)
 endif ()
-set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp)
+
+if (PHIST_KERNEL_LIB STREQUAL "fortran")
+  set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/env_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/map_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/mrgrnk.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/crsmat_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/mvec_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/nrm2_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/axpy_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/dot_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/gemm_kernels_sB.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/gemm_kernels_sC.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/spmvm_kernels_nt.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/spmvm_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/sdmat_module.f90)
+else()
+  set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp)
+endif()
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_rcp_helpers.cpp)
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.c

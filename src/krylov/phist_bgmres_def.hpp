@@ -6,6 +6,18 @@
 // method is restarted, until num_iters is reached or     
 // ||r||/||r0||<tol is achieved. *num_iters is overwritten
 // by the actual number of iterations performed.
+#ifdef NO_BGMRES_IMPLEMENTATION
+void SUBR(bgmres)(TYPE(const_op_ptr) Op, 
+        TYPE(mvec_ptr) vX,
+        TYPE(const_mvec_ptr) vB, 
+        _MT_ tol,int *num_iters, int max_blocks,
+        int variant, int* nConv,
+        int* ierr)
+  {
+  ENTER_FCN(__FUNCTION__);
+  *ierr = 99;
+  }
+#else
 void SUBR(bgmres)(TYPE(const_op_ptr) Op, 
         TYPE(mvec_ptr) vX,
         TYPE(const_mvec_ptr) vB, 
@@ -130,6 +142,4 @@ try {
   if (!status) *ierr=PHIST_CAUGHT_EXCEPTION; 
   return;
   }// end of bgmres
-
-
-  
+#endif

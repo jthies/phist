@@ -35,8 +35,13 @@ void BuildTestCase1()
     for (int i=0; i<stride_*nloc_; i+=stride_)
       {
       MT ij = (MT)((i+ilower+1)*(j+1));
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      vec1_vp_[j+i*lda_] = ij*st::one() + ij*st::cmplx_I();
+      vec2_vp_[j+i*lda_] = st::one()/(ij - ij*st::cmplx_I());
+#else
       vec1_vp_[j*lda_+i] = ij*st::one() + ij*st::cmplx_I();
       vec2_vp_[j*lda_+i] = st::one()/(ij - ij*st::cmplx_I());
+#endif
       }
   // result of vec1'*vec2
   for (int j=0; j<ncols_; j++)
@@ -56,7 +61,11 @@ void PrintTestCase()
     {
     for (int j=0;j<nvec_;j++)
       {
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      std::cout << vec1_vp_[j+i*lda_] << "  ";
+#else
       std::cout << vec1_vp_[j*lda_+i] << "  ";
+#endif
       }
     std::cout << std::endl;
     }
@@ -65,7 +74,11 @@ void PrintTestCase()
     {
     for (int j=0;j<nvec_;j++)
       {
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      std::cout << vec2_vp_[j+i*lda_] << "  ";
+#else
       std::cout << vec2_vp_[j*lda_+i] << "  ";
+#endif
       }
     std::cout << std::endl;
     }

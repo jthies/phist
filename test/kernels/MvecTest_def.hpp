@@ -21,8 +21,13 @@ public:
       for (int j=0;j<nvec_;j++)
         for (int i=0;i<nloc_*stride_;i+=stride_)
           {
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+          vec1_vp_[j+i*lda_]=random_number();
+          vec2_vp_[j+i*lda_]=st::one();
+#else
           vec1_vp_[j*lda_+i]=random_number();
           vec2_vp_[j*lda_+i]=st::one();
+#endif
           }
       }
     }
@@ -66,7 +71,11 @@ public:
       ST val = (_ST_)42.0 + (ST)3.0*st::cmplx_I();
       SUBR(mvec_put_value)(vec1_,val,&ierr_);
       ASSERT_EQ(0,ierr_);
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec1_vp_,nvec_,nloc_,lda_,stride_,val));
+#else
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,val));
+#endif
 
       // check that the random function does not change the pointer
       ST* ptr;
@@ -85,7 +94,11 @@ public:
       for (int j=0;j<nvec_;j++)
         for (int i=0;i<nloc_*stride_;i+=stride_)
           {
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+        vec2_vp_[j+i*lda_]=mt::one()/st::conj(vec1_vp_[j+i*lda_]);
+#else
         vec2_vp_[j*lda_+i]=mt::one()/st::conj(vec1_vp_[j*lda_+i]);
+#endif
         }
       _ST_* dots = new ST[nvec_];
       SUBR(mvec_dot_mvec)(vec1_,vec2_,dots,&ierr_);
@@ -118,7 +131,11 @@ public:
         {
         for (int i=0;i<nloc_*stride_;i+=stride_)
           {
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+          absval[k++]=st::abs(vec1_vp_[j+i*lda_]);
+#else
           absval[k++]=st::abs(vec1_vp_[j*lda_+i]);
+#endif
           }
         }
       MT minval=1.0;
@@ -144,7 +161,11 @@ public:
         {
         for (int i=0;i<nloc_*stride_;i+=stride_)
           {
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+          vec1_vp_[j+i*lda_]=ilower+i;
+#else
           vec1_vp_[j*lda_+i]=ilower+i;
+#endif
           }
         }
       MT expect = 0.0;
@@ -174,7 +195,11 @@ public:
       SUBR(mvec_add_mvec)(alpha,vec1_,beta,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
 
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nvec_,nloc_,lda_,stride_));
+#else
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
+#endif
       }
     
     }
@@ -195,7 +220,11 @@ public:
         vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
       ASSERT_EQ(0,ierr_);
             
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nvec_,nloc_,lda_,stride_,beta));
+#else
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,beta));
+#endif
       }
     
     }
@@ -216,8 +245,16 @@ public:
       // calculate solution by hand
       for(int i = 0; i < nloc_; i++)
         for(int j = 0; j < nvec_; j++)
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+          vec1_vp_[j+i*lda_] = alpha[j]*vec1_vp_[j+i*lda_]+beta;
+#else
           vec1_vp_[j*lda_+i] = alpha[j]*vec1_vp_[j*lda_+i]+beta;
+#endif
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nvec_,nloc_,lda_,stride_));
+#else
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
+#endif
     }
   }
 
@@ -265,7 +302,11 @@ public:
       _ST_ val = random_number();
       SUBR(mvec_put_value)(v1_view,val,&ierr_);
       ASSERT_EQ(0,ierr_);
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec1_vp_+jmin,jmax-jmin+1,nloc_,lda_,stride_,val));
+#else
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec1_vp_+jmin*lda_,nloc_,jmax-jmin+1,lda_,stride_,val));
+#endif
 
       // new norms after changing columns
       SUBR(mvec_norm2)(vec1_,norms_V1,&ierr_);
@@ -406,7 +447,11 @@ public:
 
       SUBR(mvec_scale)(vec2_,scale,&ierr_);
       ASSERT_EQ(0,ierr_);
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nvec_,nloc_,lda_,stride_,scale));
+#else
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,scale));
+#endif
 
       SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -417,9 +462,17 @@ public:
       // apply scale to vec2_ by hand
       for(int i = 0; i < nloc_; i++)
         for(int j = 0; j < nvec_; j++)
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+          vec2_vp_[j+i*lda_] *= scale;
+#else
           vec2_vp_[j*lda_+i] *= scale;
+#endif
 
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nvec_,nloc_,lda_,stride_));
+#else
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
+#endif
     }
   }
 
@@ -439,9 +492,17 @@ public:
       // apply scale to vec2_ by hand
       for(int i = 0; i < nloc_; i++)
         for(int j = 0; j < nvec_; j++)
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+          vec2_vp_[j+i*lda_] *= scale[j];
+#else
           vec2_vp_[j*lda_+i] *= scale[j];
+#endif
 
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nvec_,nloc_,lda_,stride_));
+#else
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
+#endif
     }
   }
 

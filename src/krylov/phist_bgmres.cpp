@@ -29,6 +29,9 @@
 #elif defined(PHIST_KERNEL_LIB_TPETRA)
 #include "Tpetra_MultiVector.hpp"
 #include "BelosTpetraAdapter.hpp"
+#elif defined(PHIST_KERNEL_LIB_FORTRAN)
+#warning "bgmres not supported with fortran kernels lib"
+#define NO_BGMRES_IMPLEMENTATION
 #else
 #error "bgmres only supports ghost, epetra and tpetra right now"
 #endif
@@ -46,3 +49,4 @@
 #include "phist_gen_z.h"
 #include "phist_bgmres_def.hpp"
 #endif
+

@@ -163,7 +163,11 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_random)(vec2_,&ierr_);
       SUBR(crsMat_times_mvec)(st::one(),A1_,vec1_,st::zero(),vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nvec_,nloc_,lda_,stride_));
+#else
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
+#endif
 
       //alpha*I*X=alpha*X?
       alpha = random_number();
@@ -174,7 +178,11 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_scale)(vec1_,alpha,&ierr_);
       ASSERT_EQ(0,ierr_);
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nvec_,nloc_,lda_,stride_));
+#else
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
+#endif
 
       //0*I*X+beta*Y = beta*Y? 
       alpha=st::zero(); 
@@ -198,7 +206,11 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_print)(vec2_,&ierr_);
       SUBR(mvec_print)(vec3_,&ierr_);
 #endif
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nvec_,nloc_,lda_,stride_));
+#else
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_));
+#endif
 
       //I*X+beta*Y = X+beta*Y?
       alpha = st::one();
@@ -211,7 +223,11 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       // v2 = v1 + beta*v2 (=alpha*v1+v3)
       SUBR(crsMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nvec_,nloc_,lda_,stride_));
+#else
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_));
+#endif
 
       //alpha*I*X+beta*Y = alpha*X+beta*Y?
       alpha = random_number();
@@ -226,7 +242,11 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       // v2 = alpha*v1 + beta*v2 (=alpha*v1+v3)
       SUBR(crsMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      ASSERT_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nvec_,nloc_,lda_,stride_));
+#else
       ASSERT_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_));
+#endif
       }
     }
 
