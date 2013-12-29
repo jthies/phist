@@ -598,7 +598,7 @@ void SUBR(mvec_scale)(TYPE(mvec_ptr) vV,
 
 //! scale each column i of v and by scalar[i]
 void SUBR(mvec_vscale)(TYPE(mvec_ptr) vV, 
-                            _ST_* scalar, int* ierr)
+                            const _ST_* scalar, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"  

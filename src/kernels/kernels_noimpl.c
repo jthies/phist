@@ -219,7 +219,7 @@ void SUBR(mvec_scale)(TYPE(mvec_ptr) V,
   }
 
 void SUBR(mvec_vscale)(TYPE(mvec_ptr) V, 
-                        _ST_* scalar, int* ierr)
+                        const _ST_* scalar, int* ierr)
   {
   *ierr=-99;
   }
@@ -230,6 +230,14 @@ void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) X,
   {
   *ierr=-99;
   }
+
+void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) X,
+                            _ST_ beta,  TYPE(mvec_ptr)       Y, 
+                            int* ierr)
+  {
+  *ierr=-99;
+  }
+
 
 void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
                             _ST_ beta,  TYPE(sdMat_ptr)       B, 
@@ -259,6 +267,13 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
   }
 
 void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
+                                       TYPE(const_sdMat_ptr) W, 
+                                       _ST_ beta, TYPE(sdMat_ptr) C, int* ierr)
+  {
+  *ierr=-99;
+  }
+
+void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
                                        TYPE(const_sdMat_ptr) W, 
                                        _ST_ beta, TYPE(sdMat_ptr) C, int* ierr)
   {

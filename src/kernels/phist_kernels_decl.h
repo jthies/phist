@@ -259,7 +259,7 @@ void SUBR(mvec_scale)(TYPE(mvec_ptr) V,
 
 //! scale each column i of v and by scalar[i]
 void SUBR(mvec_vscale)(TYPE(mvec_ptr) V, 
-                            _ST_* scalar, int* ierr);
+                            const _ST_* scalar, int* ierr);
 
 //! y=alpha*x+beta*y.
 //! This function can also be used for special cases such as
