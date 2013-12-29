@@ -173,7 +173,7 @@ public:
       ST beta  = st::zero();
       SUBR(mvec_add_mvec)(alpha,vec1_,beta,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-            
+
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
       }
     
@@ -291,44 +291,46 @@ public:
   // and check that modifying the view vector modifies the original ones
   TEST_F(CLASSNAME, view_scattered)
   {
-    const int nc=4;
-    int idx[nc]={3,0,2,5};
-    for (int i=0;i<nc;i++)
+    if( typeImplemented_ )
     {
-      idx[i]=std::min(idx[i],nvec_-1);
+      const int nc=4;
+      int idx[nc]={3,0,2,5};
+      for (int i=0;i<nc;i++)
+      {
+        idx[i]=std::min(idx[i],nvec_-1);
+      }
+      MT norms0[nvec_];
+      MT norms1[nc];
+      SUBR(mvec_norm2)(vec1_,norms0,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      TYPE(mvec_ptr) V=NULL;
+      SUBR(mvec_view_scattered)(vec1_,&V,idx,nc,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_norm2)(V,norms1,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      for (int i=0;i<nc;i++)
+      {
+        ASSERT_REAL_EQ(norms0[idx[i]],norms1[i]);
+        ASSERT_TRUE(norms0[idx[i]]!=mt::zero());
+      }
+        
+      // now randomize the view and check again
+      SUBR(mvec_random)(V,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      SUBR(mvec_norm2)(vec1_,norms0,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      SUBR(mvec_norm2)(V,norms1,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      for (int i=0;i<nc;i++)
+      {
+        ASSERT_REAL_EQ(norms0[idx[i]],norms1[i]);
+      }
     }
-    MT norms0[nvec_];
-    MT norms1[nc];
-    SUBR(mvec_norm2)(vec1_,norms0,&ierr_);
-    ASSERT_EQ(0,ierr_);
-
-    TYPE(mvec_ptr) V=NULL;
-    SUBR(mvec_view_scattered)(vec1_,&V,idx,nc,&ierr_);
-    ASSERT_EQ(0,ierr_);
-    SUBR(mvec_norm2)(V,norms1,&ierr_);
-    ASSERT_EQ(0,ierr_);
-
-    for (int i=0;i<nc;i++)
-    {
-      ASSERT_REAL_EQ(norms0[idx[i]],norms1[i]);
-      ASSERT_TRUE(norms0[idx[i]]!=mt::zero());
-    }
-      
-    // now randomize the view and check again
-    SUBR(mvec_random)(V,&ierr_);
-    ASSERT_EQ(0,ierr_);
-
-    SUBR(mvec_norm2)(vec1_,norms0,&ierr_);
-    ASSERT_EQ(0,ierr_);
-
-    SUBR(mvec_norm2)(V,norms1,&ierr_);
-    ASSERT_EQ(0,ierr_);
-
-    for (int i=0;i<nc;i++)
-    {
-      ASSERT_REAL_EQ(norms0[idx[i]],norms1[i]);
-    }
-
   }
 
   // copy in and out columns
@@ -395,6 +397,54 @@ public:
         }
       }
     }
+
+  TEST_F(CLASSNAME, scale)
+  {
+    if( typeImplemented_ )
+    {
+      _ST_ scale = st::rand();
+
+      SUBR(mvec_scale)(vec2_,scale,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,scale));
+
+      SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      scale = st::rand();
+      SUBR(mvec_scale)(vec1_,scale,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      // apply scale to vec2_ by hand
+      for(int i = 0; i < nloc_; i++)
+        for(int j = 0; j < nvec_; j++)
+          vec2_vp_[j*lda_+i] *= scale;
+
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
+    }
+  }
+
+  TEST_F(CLASSNAME, vscale)
+  {
+    if( typeImplemented_ )
+    {
+      _ST_ scale[_NV_];
+      for(int i = 0; i < _NV_; i++)
+        scale[i] = st::rand();
+
+      SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      SUBR(mvec_vscale)(vec1_,scale,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      // apply scale to vec2_ by hand
+      for(int i = 0; i < nloc_; i++)
+        for(int j = 0; j < nvec_; j++)
+          vec2_vp_[j*lda_+i] *= scale[j];
+
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
+    }
+  }
+
 
 // TODO - missing tests
 

@@ -108,16 +108,18 @@ int doBelosTests(TYPE(crsMat_ptr) A)
 #ifdef PHIST_KERNEL_LIB_GHOST
       ghost_vec_t* v = (ghost_vec_t*)vec1_;
       Teuchos::RCP<const phist::GhostMV> V = phist::rcp(v,false);
+      if (Belos::TestOperatorTraits(MyOM,V,op_ptr)==false) {ierr_=-1; return ierr_;}
 #elif defined(PHIST_KERNEL_LIB_EPETRA)
       Epetra_MultiVector* v = (Epetra_MultiVector*)vec1_;
       Teuchos::RCP<const Epetra_MultiVector> V = phist::rcp(v,false);
+      if (Belos::TestOperatorTraits(MyOM,V,op_ptr)==false) {ierr_=-1; return ierr_;}
 #elif defined(PHIST_KERNEL_LIB_TPETRA)
       phist::tpetra::Traits<ST>::mvec_t* v = (phist::tpetra::Traits<ST>::mvec_t*)vec1_;
       Teuchos::RCP<const phist::tpetra::Traits<ST>::mvec_t> V = Teuchos::rcp(v,false);
+      if (Belos::TestOperatorTraits(MyOM,V,op_ptr)==false) {ierr_=-1; return ierr_;}
 #else
 #warning belos test case not implemented for this kernel lib (OpTest_def_hpp)
 #endif
-      if (Belos::TestOperatorTraits(MyOM,V,op_ptr)==false) {ierr_=-1; return ierr_;}
 // note: we can't test the jadaOp in this way because it operates on a fixed number of 
 // vectors and the Belos test assumes it works for any number of vectors.
 //      if (Belos::TestOperatorTraits(MyOM,V,jdOp_ptr)==false) {ierr_=-2; return ierr_;}

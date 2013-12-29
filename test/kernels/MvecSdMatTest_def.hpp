@@ -41,18 +41,26 @@ public:
       // create vectors V1 and V2, and vector views for setting/checking entries
       SUBR(mvec_create)(&V1_,this->map_,this->m_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
+      SUBR(mvec_put_value)(V1_,st::zero(),&ierr_);
+      ASSERT_EQ(0,ierr_);
       SUBR(mvec_extract_view)(V1_,&V1_vp_,&ldaV1_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
       SUBR(mvec_create)(&V2_,this->map_,this->m_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
+      SUBR(mvec_put_value)(V2_,st::zero(),&ierr_);
+      ASSERT_EQ(0,ierr_);
       SUBR(mvec_extract_view)(V2_,&V2_vp_,&ldaV2_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
       // create matrices M1, M2 and views.
       SUBR(sdMat_create)(&M1_,this->m_,this->m_,this->comm_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
+      SUBR(sdMat_put_value)(M1_,st::zero(),&ierr_);
+      ASSERT_EQ(0,ierr_);
       SUBR(sdMat_extract_view)(M1_,&M1_vp_,&this->ldaM1_,&this->ierr_);
       SUBR(sdMat_create)(&M2_,this->m_,this->m_,this->comm_,&this->ierr_);
       ASSERT_EQ(0,this->ierr_);
+      SUBR(sdMat_put_value)(M2_,st::zero(),&ierr_);
+      ASSERT_EQ(0,ierr_);
       SUBR(sdMat_extract_view)(M2_,&M2_vp_,&this->ldaM2_,&this->ierr_);
       }
     stride_=1;

@@ -22,15 +22,15 @@ virtual void SetUp()
     ASSERT_EQ(0,this->ierr_);
     SUBR(sdMat_create)(&mat2_,this->nrows_,this->ncols_,this->comm_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
-    SUBR(mvec_extract_view)(mat2_,&mat2_vp_,&this->m_lda_,&this->ierr_);
+    SUBR(sdMat_extract_view)(mat2_,&mat2_vp_,&this->m_lda_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
     SUBR(sdMat_create)(&mat3_,this->nrows_,this->ncols_,this->comm_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
-    SUBR(mvec_extract_view)(mat3_,&mat3_vp_,&this->m_lda_,&this->ierr_);
+    SUBR(sdMat_extract_view)(mat3_,&mat3_vp_,&this->m_lda_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
     SUBR(sdMat_create)(&mat4_,this->nrows_,this->ncols_,this->comm_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
-    SUBR(mvec_extract_view)(mat4_,&mat4_vp_,&this->m_lda_,&this->ierr_);
+    SUBR(sdMat_extract_view)(mat4_,&mat4_vp_,&this->m_lda_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
     }
   }
@@ -53,8 +53,44 @@ virtual void TearDown()
 static void PrintSdMat(std::ostream& os, std::string label, 
         ST* mat_vp, lidx_t lda, lidx_t stride,MPI_Comm mpi_comm)
   {
-  KernelTestWithVectors<ST,_Nrows,_Ncols>::PrintVector(os, label, 
-        mat_vp, (lidx_t)_Nrows, lda, stride,mpi_comm); 
+    int rank=0, np=1;
+#ifdef PHIST_HAVE_MPI
+    MPI_Comm_rank(mpi_comm,&rank);
+    MPI_Comm_size(mpi_comm,&np);
+#endif    
+    if (rank==0)
+      {
+      os << std::endl<<label <<"="<<std::endl;
+      os << "nproc  "<<np<<std::endl;
+      os << "nrows  "<<nrows_<<std::endl;
+      os << "ncols   "<<ncols_<<std::endl;
+      os << "lda    "<<lda<<std::endl;
+      os << "stride "<<stride<<std::endl;
+      }
+    for (int p=0;p<np;p++)
+      {
+      if (p==rank)
+        {
+        os << " @ rank "<<p<<" @"<<std::endl;
+        for (int i=0;i<stride*nrows_;i+=stride)
+          {
+          for (int j=0;j<ncols_;j++)
+            {
+            os << mat_vp[j*lda+i]<<"  ";
+            }//j
+          os << std::endl;
+          }//i
+        os << std::flush;
+        }//rank==p
+#ifdef PHIST_HAVE_MPI
+        MPI_Barrier(mpi_comm);
+        MPI_Barrier(mpi_comm);
+        MPI_Barrier(mpi_comm);
+        MPI_Barrier(mpi_comm);
+        MPI_Barrier(mpi_comm);
+#endif
+      }//p
+    return;
   }
   
   TYPE(sdMat_ptr) mat1_, mat2_, mat3_, mat4_;

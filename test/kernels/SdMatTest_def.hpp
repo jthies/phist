@@ -12,15 +12,18 @@ public:
   /*! Set up routine.
    */
   virtual void SetUp()
-    {
+  {
     KernelTestWithSdMats<ST,_NROWS_,_NCOLS_>::SetUp();
-    SUBR(sdMat_random)(mat1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-    SUBR(sdMat_put_value)(mat2_,(ST)42.0,&ierr_);
-      ASSERT_EQ(0,ierr_);
-    SUBR(sdMat_random)(mat3_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+    if( typeImplemented_ )
+    {
+      SUBR(sdMat_random)(mat1_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_put_value)(mat2_,(ST)42.0,&ierr_);
+        ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_random)(mat3_,&ierr_);
+        ASSERT_EQ(0,ierr_);
     }
+  }
 
   /*! Clean up.
    */
