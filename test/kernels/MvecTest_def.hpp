@@ -328,6 +328,78 @@ public:
     }
 
 
+  // create a view of a view and check if this behaves as the user would suspect
+  // (not knowing wether a mvec is actually a view or not!)
+  TEST_F(CLASSNAME, nested_view_block)
+  {
+    if (typeImplemented_)
+    {
+      // first set some data of the whole array
+      _ST_ outer_val = st::rand();
+      SUBR(mvec_put_value)(vec1_,outer_val,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // now create a view
+      int jmin=std::min(2,nvec_-1);
+      int jmax=std::min(5,nvec_-1);
+      TYPE(mvec_ptr) view = NULL;
+      SUBR(mvec_view_block)(vec1_,&view,jmin,jmax,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // set the data in the view to some other value
+      _ST_ view_val = st::rand();
+      SUBR(mvec_put_value)(view,view_val,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // view part of view
+      int nvec_view;
+      SUBR(mvec_num_vectors)(view, &nvec_view, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      int jmin2=std::min(1,nvec_view-1);
+      int jmax2=std::min(3,nvec_view-1);
+      TYPE(mvec_ptr) view2 = NULL;
+      SUBR(mvec_view_block)(view, &view2, jmin2, jmax2, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // set data in the inner view to yet another value
+      _ST_ inner_val = st::rand();
+      SUBR(mvec_put_value)(view2, inner_val, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // now use the raw data to verify results
+      for(int i = 0; i < nloc_; i++)
+      {
+        for(int j = 0; j < nvec_; j++)
+        {
+          if( j < jmin || j > jmax )
+          {
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+            ASSERT_REAL_EQ(mt::zero(), st::abs(vec1_vp_[j+i*lda_]-outer_val));
+#else
+            ASSERT_REAL_EQ(mt::zero(), st::abs(vec1_vp_[j*lda_+i]-outer_val));
+#endif
+          }
+          else if( j < jmin+jmin2 || j > jmin+jmax2 )
+          {
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+            ASSERT_REAL_EQ(mt::zero(), st::abs(vec1_vp_[j+i*lda_]-view_val));
+#else
+            ASSERT_REAL_EQ(mt::zero(), st::abs(vec1_vp_[j*lda_+i]-view_val));
+#endif
+          }
+          else
+          {
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+            ASSERT_REAL_EQ(mt::zero(), st::abs(vec1_vp_[j+i*lda_]-inner_val));
+#else
+            ASSERT_REAL_EQ(mt::zero(), st::abs(vec1_vp_[j*lda_+i]-inner_val));
+#endif
+          }
+        }
+      }
+    }
+  }
+
   // view some columns as a new mvec, compare ||V|| calculations
   // and check that modifying the view vector modifies the original ones
   TEST_F(CLASSNAME, view_scattered)

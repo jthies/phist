@@ -13,3 +13,12 @@ void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,    TYPE(const_op_ptr)    B_
 
 void SUBR(jadaOp_delete)(TYPE(op_ptr)  jdOp, int *ierr);
 
+//! access AX from last call to apply (return a view to it)
+void SUBR(jadaOp_view_AX)(TYPE(const_op_ptr) jadaOp, TYPE(mvec_ptr)*AX, int* ierr);
+
+//! access BX from last call to apply (return a view to it)
+void SUBR(jadaOp_view_BX)(TYPE(const_op_ptr) jadaOp, TYPE(mvec_ptr)*BX, int* ierr);
+
+//! access X_proj from last call to apply (return a view to it)
+void SUBR(jadaOp_view_X_proj)(TYPE(const_op_ptr) jadaOp, TYPE(mvec_ptr)*X_proj, int* ierr);
+

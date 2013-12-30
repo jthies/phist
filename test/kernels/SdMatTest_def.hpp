@@ -88,6 +88,71 @@ public:
       }
     }
 
+  // create a view of a view and check if this behaves as the user would suspect
+  // (not knowing wether a sdmat is actually a view or not!)
+  TEST_F(CLASSNAME, nested_view_block)
+  {
+    if (typeImplemented_)
+    {
+      // first set some data of the whole array
+      _ST_ outer_val = st::rand();
+      SUBR(sdMat_put_value)(mat1_,outer_val,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // now create a view
+      int imin=std::min(3,nrows_-1);
+      int imax=std::min(7,nrows_-1);
+      int jmin=std::min(2,ncols_-1);
+      int jmax=std::min(5,ncols_-1);
+      TYPE(sdMat_ptr) view = NULL;
+      SUBR(sdMat_view_block)(mat1_,&view,imin,imax,jmin,jmax,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // set the data in the view to some other value
+      _ST_ view_val = st::rand();
+      SUBR(sdMat_put_value)(view,view_val,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // view part of view
+      int nrows_view = imax-imin+1;
+      int ncols_view = jmax-jmin+1;
+      ASSERT_EQ(0,ierr_);
+      int imin2=std::min(2,nrows_view-1);
+      int imax2=std::min(4,nrows_view-1);
+      int jmin2=std::min(1,ncols_view-1);
+      int jmax2=std::min(3,ncols_view-1);
+      TYPE(sdMat_ptr) view2 = NULL;
+      SUBR(sdMat_view_block)(view, &view2, imin2,imax2,jmin2, jmax2, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // set data in the inner view to yet another value
+      _ST_ inner_val = st::rand();
+      SUBR(sdMat_put_value)(view2, inner_val, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // now use the raw data to verify results
+      for(int i = 0; i < nrows_; i++)
+      {
+        for(int j = 0; j < ncols_; j++)
+        {
+          if( i < imin || i > imax || j < jmin || j > jmax )
+          {
+            ASSERT_REAL_EQ(mt::zero(), st::abs(mat1_vp_[j*m_lda_+i]-outer_val));
+          }
+          else if( i < imin+imin2 || i > imin+imax2 || j < jmin+jmin2 || j > jmin+jmax2 )
+          {
+            ASSERT_REAL_EQ(mt::zero(), st::abs(mat1_vp_[j*m_lda_+i]-view_val));
+          }
+          else
+          {
+            ASSERT_REAL_EQ(mt::zero(), st::abs(mat1_vp_[j*m_lda_+i]-inner_val));
+          }
+        }
+      }
+    }
+  }
+
+
 #ifdef IS_COMPLEX
   TEST_F(CLASSNAME, complex_random)
   {

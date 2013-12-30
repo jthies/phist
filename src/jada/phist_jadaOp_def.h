@@ -157,3 +157,36 @@ void SUBR(jadaOp_delete)(TYPE(op_ptr) jdOp, int *ierr)
   free(jadaOp);
 }
 
+//! access AX from last call to apply (return a view to it)
+void SUBR(jadaOp_view_AX)(TYPE(const_op_ptr) op, TYPE(mvec_ptr)*AX, int* ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+  CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *ierr);
+
+  int nvec;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(jadaOp->AX, &nvec, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_view_block)(jadaOp->AX, AX, 0, nvec-1, ierr), *ierr);
+}
+
+//! access BX from last call to apply (return a view to it)
+void SUBR(jadaOp_view_BX)(TYPE(const_op_ptr) op, TYPE(mvec_ptr)*BX, int* ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+  CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *ierr);
+
+  int nvec;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(jadaOp->BX, &nvec, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_view_block)(jadaOp->BX, BX, 0, nvec-1, ierr), *ierr);
+}
+
+//! access X_proj from last call to apply (return a view to it)
+void SUBR(jadaOp_view_X_proj)(TYPE(const_op_ptr) op, TYPE(mvec_ptr)*X_proj, int* ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+  CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *ierr);
+
+  int nvec;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(jadaOp->X_proj, &nvec, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_view_block)(jadaOp->X_proj, X_proj, 0, nvec-1, ierr), *ierr);
+}
+
