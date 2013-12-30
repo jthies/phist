@@ -39,9 +39,6 @@ int main(int argc, char** argv)
   mvec_ptr_t y = NULL;
   sdMat_ptr_t XH = NULL;
   
-#ifdef PHIST_HAVE_LIKWID
-  likwid_markerInit();
-#endif
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
   PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
 
@@ -104,12 +101,14 @@ int main(int argc, char** argv)
     Teuchos::TimeMonitor timeMon( *time );
 
 #ifdef PHIST_HAVE_LIKWID
+#pragma omp parallel
     likwid_markerStartRegion("crsMat_times_mvec");
 #endif
 
     PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(st::one(),A,x,st::zero(),y,&ierr),ierr);
 
 #ifdef PHIST_HAVE_LIKWID
+#pragma omp parallel
     likwid_markerStopRegion("crsMat_times_mvec");
 #endif
   }
@@ -120,9 +119,6 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(crsMat_delete)(A,&ierr),ierr);
 
   PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
-#ifdef PHIST_HAVE_LIKWID
-  likwid_markerClose();
-#endif
 
   return ierr;
 }

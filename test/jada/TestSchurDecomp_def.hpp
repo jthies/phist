@@ -26,46 +26,49 @@ public:
     {
     MTest::SetUp();
       
-    // a few test cases
-    nselect_.push_back(0);                  nsort_.push_back(0);
-    nselect_.push_back(1);                  nsort_.push_back(0);
-    nselect_.push_back(1);                  nsort_.push_back(1);
-    nselect_.push_back(_N_);                nsort_.push_back(_N_);
-    nselect_.push_back(std::min(5,_N_));    nsort_.push_back(0);
-    nselect_.push_back(std::min(7,_N_));    nsort_.push_back(3);
-    nselect_.push_back(std::min(20,_N_));   nsort_.push_back(7);
-    nselect_.push_back(std::min(8,_N_));    nsort_.push_back(8);
-    
-    // create a diagonal matrix with some interesting features for the diag_* tests
-    SUBR(sdMat_put_value)(mat3_,st::zero(),&ierr_);
-    ASSERT_EQ(0,ierr_);
-    ST *diag = new ST[nrows_];
-    for (int i=0;i<nrows_;i++)
-      {
-      diag[i]=st::rand();
-      }
-#ifdef PHIST_HAVE_MPI
-    ASSERT_EQ(0,MPI_Bcast(diag,nrows_,st::mpi_type(), 0, mpi_comm_));
-#endif
-    if (nrows_==10)
-      {
-      diag[6]=diag[1];
-      diag[9]=diag[1];
-      diag[0]=(ST)st::real(diag[0]);
-      diag[4]=-diag[0];
-      }
-    if (nrows_==50)
+    if( typeImplemented_ )
     {
-      for(int i = 0; i < nrows_; i++)
+      // a few test cases
+      nselect_.push_back(0);                  nsort_.push_back(0);
+      nselect_.push_back(1);                  nsort_.push_back(0);
+      nselect_.push_back(1);                  nsort_.push_back(1);
+      nselect_.push_back(_N_);                nsort_.push_back(_N_);
+      nselect_.push_back(std::min(5,_N_));    nsort_.push_back(0);
+      nselect_.push_back(std::min(7,_N_));    nsort_.push_back(3);
+      nselect_.push_back(std::min(20,_N_));   nsort_.push_back(7);
+      nselect_.push_back(std::min(8,_N_));    nsort_.push_back(8);
+      
+      // create a diagonal matrix with some interesting features for the diag_* tests
+      SUBR(sdMat_put_value)(mat3_,st::zero(),&ierr_);
+      ASSERT_EQ(0,ierr_);
+      ST *diag = new ST[nrows_];
+      for (int i=0;i<nrows_;i++)
+        {
+        diag[i]=st::rand();
+        }
+#ifdef PHIST_HAVE_MPI
+      ASSERT_EQ(0,MPI_Bcast(diag,nrows_,st::mpi_type(), 0, mpi_comm_));
+#endif
+      if (nrows_==10)
+        {
+        diag[6]=diag[1];
+        diag[9]=diag[1];
+        diag[0]=(ST)st::real(diag[0]);
+        diag[4]=-diag[0];
+        }
+      if (nrows_==50)
       {
-        diag[i] = i*(i+1) % 20;
+        for(int i = 0; i < nrows_; i++)
+        {
+          diag[i] = i*(i+1) % 20;
+        }
       }
+      for (int i=0;i<nrows_;i++)
+        {
+        mat3_vp_[i*m_lda_+i]=diag[i];
+        }
+      delete [] diag;
     }
-    for (int i=0;i<nrows_;i++)
-      {
-      mat3_vp_[i*m_lda_+i]=diag[i];
-      }
-    delete [] diag;
     }
 
   /*! Clean up.
@@ -97,7 +100,7 @@ public:
     SUBR(sdMat_print)(mat1_,&ierr_);
     SUBR(SchurDecomp)(mat1_vp_,m_lda_,mat2_vp_,m_lda_,n_,nselect,nsort,which,ev_,&this->ierr_);
     PHIST_DEB("resulting T:");
-    SUBR(mvec_print)(mat1_,&ierr_);
+    SUBR(sdMat_print)(mat1_,&ierr_);
     ASSERT_EQ(0,ierr_);
 
     PHIST_DEB("check AS=ST");
@@ -226,26 +229,38 @@ public:
 
   TEST_F(CLASSNAME, rand_LM) 
     {
-    SUBR(sdMat_random)(mat3_,&this->ierr_);
-    DoSchurDecompTest(mat3_,LM);
+    if( typeImplemented_ )
+    {
+      SUBR(sdMat_random)(mat3_,&this->ierr_);
+      DoSchurDecompTest(mat3_,LM);
+    }
     }
 
   TEST_F(CLASSNAME, rand_SM) 
     {
-    SUBR(sdMat_random)(mat3_,&this->ierr_);
-    DoSchurDecompTest(mat3_,SM);
+    if( typeImplemented_ )
+    {
+      SUBR(sdMat_random)(mat3_,&this->ierr_);
+      DoSchurDecompTest(mat3_,SM);
+    }
     }
 
   TEST_F(CLASSNAME, rand_LR) 
     {
-    SUBR(sdMat_random)(mat3_,&this->ierr_);
-    DoSchurDecompTest(mat3_,LR);
+    if( typeImplemented_ )
+    {
+      SUBR(sdMat_random)(mat3_,&this->ierr_);
+      DoSchurDecompTest(mat3_,LR);
+    }
     }
 
   TEST_F(CLASSNAME, rand_SR) 
     {
-    SUBR(sdMat_random)(mat3_,&this->ierr_);
-    DoSchurDecompTest(mat3_,SR);
+    if( typeImplemented_ )
+    {
+      SUBR(sdMat_random)(mat3_,&this->ierr_);
+      DoSchurDecompTest(mat3_,SR);
+    }
     }
 
   TEST_F(CLASSNAME, diag_LM) 

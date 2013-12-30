@@ -154,8 +154,8 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
         ASSERT_EQ(0,ierr);
 
         // check orthogonality of V_
-        ASSERT_REAL_EQ(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
-        ASSERT_REAL_EQ(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_));
+        ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)10.*releps(V_));
+        ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)10.*releps(V_));
 
         // calculate A*V(:,1:m)
         opA->apply(st::one(),opA->A,Vm_,st::zero(),AV_,&ierr);
@@ -181,33 +181,45 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
 
 TEST_F(CLASSNAME, Aeye_v0ones) 
 {
-  int ierr;
-  SUBR(mvec_put_value)(v0_,st::one(),&ierr);
-  ASSERT_EQ(0,ierr);
-  doArnoldiTest(opAeye_);
+  if( typeImplemented_)
+  {
+    int ierr;
+    SUBR(mvec_put_value)(v0_,st::one(),&ierr);
+    ASSERT_EQ(0,ierr);
+    doArnoldiTest(opAeye_);
+  }
 }
 
 TEST_F(CLASSNAME, Azero_v0ones) 
 {
-  int ierr;
-  SUBR(mvec_put_value)(v0_,st::one(),&ierr);
-  ASSERT_EQ(0,ierr);
-  doArnoldiTest(opAzero_);
+  if( typeImplemented_)
+  {
+    int ierr;
+    SUBR(mvec_put_value)(v0_,st::one(),&ierr);
+    ASSERT_EQ(0,ierr);
+    doArnoldiTest(opAzero_);
+  }
 }
 
 TEST_F(CLASSNAME, Arand_v0ones) 
 {
-  int ierr;
-  SUBR(mvec_put_value)(v0_,st::one(),&ierr);
-  ASSERT_EQ(0,ierr);
-  doArnoldiTest(opArand_);
+  if( typeImplemented_)
+  {
+    int ierr;
+    SUBR(mvec_put_value)(v0_,st::one(),&ierr);
+    ASSERT_EQ(0,ierr);
+    doArnoldiTest(opArand_);
+  }
 }
 
 TEST_F(CLASSNAME, Arand_nodiag_v0ones) 
 {
-  int ierr;
-  SUBR(mvec_put_value)(v0_,st::one(),&ierr);
-  ASSERT_EQ(0,ierr);
-  doArnoldiTest(opArand_nodiag_);
+  if( typeImplemented_)
+  {
+    int ierr;
+    SUBR(mvec_put_value)(v0_,st::one(),&ierr);
+    ASSERT_EQ(0,ierr);
+    doArnoldiTest(opArand_nodiag_);
+  }
 }
 

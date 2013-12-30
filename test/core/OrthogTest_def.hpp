@@ -107,8 +107,8 @@ public:
       SUBR(mvec_random)(W_,&ierr_);
       ASSERT_EQ(0,ierr_);
       
-      MT tolV=VTest::releps(V_);
-      MT tolW=WTest::releps(W_);
+      MT tolV=(MT)10.*VTest::releps(V_);
+      MT tolW=(MT)10.*WTest::releps(W_);
 
       // copy Q=W because orthog() works in-place
       SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&ierr_);
@@ -137,7 +137,11 @@ public:
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
       ASSERT_EQ(0,ierr_);
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,k_,nloc_,ldaW2_,stride_,st::zero()),tolW);
+#else
       ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero()),tolW);
+#endif
       }
     }
 
@@ -159,8 +163,8 @@ public:
       ASSERT_EQ(m_-1,ierr_);
 
       // check wether this worked out
-      ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),VTest::releps());
-      ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),VTest::releps());
+      ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)10.*VTest::releps());
+      ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)10.*VTest::releps());
 
       int nsteps=2;
 
@@ -170,8 +174,8 @@ public:
       ASSERT_EQ(dim0,ierr_);
       
       // check orthonormality of Q
-      ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),WTest::releps());
-      ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),WTest::releps());
+      ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),(MT)10.*WTest::releps());
+      ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),(MT)10.*WTest::releps());
 
       // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
       SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);
@@ -180,7 +184,11 @@ public:
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
       ASSERT_EQ(0,ierr_);
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,k_,nloc_,ldaW2_,stride_,st::zero()),100*mt::eps());
+#else
       ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero()),100*mt::eps());
+#endif
      
     }
   }

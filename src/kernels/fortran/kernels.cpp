@@ -31,15 +31,23 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
   PHIST_CHK_IERR( *ierr = MPI_Init(argc, argv), *ierr);
 #ifdef PHIST_HAVE_LIKWID
   LIKWID_MARKER_INIT;
-  LIKWID_MARKER_START("phist<ghost>");
+#pragma omp parallel
+  {
+    LIKWID_MARKER_THREADINIT;
+    LIKWID_MARKER_START("phist<fortran>");
+  }
 #endif
 }
 
-// finalize ghost
+// finalize fortran
 void phist_kernels_finalize(int* ierr)
 {
 #ifdef PHIST_HAVE_LIKWID
-  LIKWID_MARKER_STOP("phist<ghost>");
+#pragma omp parallel
+  {
+    LIKWID_MARKER_STOP("phist<fortran>");
+  }
+#pragma omp barrier
   LIKWID_MARKER_CLOSE;
 #endif
 #ifdef PHIST_TIMEMONITOR

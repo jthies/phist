@@ -28,7 +28,7 @@ module sdmat_module
     integer     :: imin, imax
     integer     :: jmin, jmax
     integer     :: comm
-    real(kind=8), contiguous, pointer :: val(:,:)
+    real(kind=8), contiguous, pointer :: val(:,:) => null()
     logical     :: is_view
     !--------------------------------------------------------------------------------
   end type SDMat_t

@@ -33,6 +33,8 @@ module mvec_module
   public :: mvec_times_sdmat
   !public :: phist_DmvecT_times_mvec
   public :: mvecT_times_mvec
+  !public :: phist_Dmvec_QR
+  public :: mvec_QR
 
 
   !==================================================================================
@@ -41,7 +43,7 @@ module mvec_module
     !--------------------------------------------------------------------------------
     integer     :: jmin, jmax
     type(Map_t) :: map
-    real(kind=8), contiguous, pointer :: val(:,:)
+    real(kind=8), contiguous, pointer :: val(:,:) => null()
     logical     :: is_view
     !--------------------------------------------------------------------------------
   end type MVec_t
@@ -51,7 +53,6 @@ contains
   !==================================================================================
   !> calculate 2-norm of the vectors in a multivector
   subroutine mvec_norm2(mvec, vnrm)
-    use nrm2_kernels_module
     !--------------------------------------------------------------------------------
     type(MVec_t), intent(in)  :: mvec
     real(kind=8), intent(out) :: vnrm(mvec%jmin:mvec%jmax)
@@ -329,7 +330,6 @@ contains
   !==================================================================================
   ! dot product for mvecs
   subroutine mvec_dot_mvec(x,y,dot)
-    use dot_kernels_module
     !--------------------------------------------------------------------------------
     type(MVec_t), intent(in)  :: x, y
     real(kind=8), intent(out) :: dot(x%jmin:x%jmax)
@@ -656,6 +656,125 @@ contains
     !--------------------------------------------------------------------------------
   end subroutine mvecT_times_mvec
 
+
+  !==================================================================================
+  ! orthogonalize v with v = QR, fill with orthogonal random vectors if not full rank
+  subroutine mvec_QR(v,R,nullSpaceDim)
+    !--------------------------------------------------------------------------------
+    type(MVec_t),   intent(inout) :: v
+    type(SDMat_t),  intent(inout) :: R
+    integer,        intent(out)   :: nullSpaceDim
+    !--------------------------------------------------------------------------------
+    real(kind=8), parameter :: eps = 1.e-10
+    integer :: i, i_, j, nvec, rank
+    type(MVec_t) :: vi, vipn
+    type(SDMat_t) :: Ripn
+    real(kind=8) :: rii(1:1)
+    !--------------------------------------------------------------------------------
+
+    nvec = v%jmax-v%jmin+1
+
+    ! setup views vi, vipn, Ripn
+    vipn%jmax = v%jmax
+    vipn%is_view = .true.
+    vi%is_view = .true.
+    vi%val=>v%val
+    vipn%val=>v%val
+    vi%map = v%map
+    vipn%map = v%map
+    Ripn%jmax = R%jmax
+    Ripn%is_view = .true.
+    Ripn%val => R%val
+    Ripn%comm = R%comm
+
+    ! simple modified gram schmidt... probably SLOW
+    ! R = 0
+    nullSpaceDim = 0
+    R%val(R%imin:R%imax,R%jmin:R%jmax) = 0.
+    i_ = 0
+    do i = 0, nvec-1, 1
+      ! create view of column i
+      vi%jmin = v%jmin+i
+      vi%jmax = v%jmin+i
+      call mvec_norm2(vi,rii)
+      R%val(R%imin+i_,R%jmin+i) = rii(1)
+      if( rii(1) .lt. eps ) then
+        nullSpaceDim = nullSpaceDim + 1
+        rii(1) = 0
+        R%val(R%imin+i_,R%jmin+i) = 0
+      else
+        rii(1) = 1._8/rii(1)
+        call mvec_scale(vi,rii(1))
+        if( i .lt. nvec-1 ) then
+          vipn%jmin = v%jmin+i+1
+          Ripn%imin = R%imin+i_
+          Ripn%imax = R%imin+i_
+          Ripn%jmin = R%jmin+i+1
+          call mvecT_times_mvec(1._8,vi,vipn,0._8,Ripn)
+          call mvec_times_sdmat(-1._8,vi,Ripn,1._8,vipn)
+        end if
+        ! copy vi to column i_, because previous vector was not linearly independent
+        if( i .ne. i_ ) then
+          v%val(v%jmin+i_,:) = v%val(v%jmin+i,:)
+        end if
+        i_ = i_ + 1
+      end if
+    end do
+
+    ! try to generate orthogonal random vectors
+    if( nullSpaceDim .gt. 0 ) then
+      rank = nvec - nullSpaceDim
+      call random_number(v%val(v%jmin+rank:v%jmax,:))
+
+      ! reuse Ripn for temporary storage
+      Ripn%val=>null()
+      Ripn%is_view = .false.
+      Ripn%imin = 1
+      Ripn%imax = max(1,rank)
+      Ripn%jmin = 1
+      Ripn%jmax = nullSpaceDim
+      allocate(Ripn%val(Ripn%imax,Ripn%jmax))
+      Ripn%val = 0._8
+
+      if( rank .gt. 0 ) then
+        ! orthog. random vectors wrt. previous vectors
+        vi%jmin = v%jmin
+        vi%jmax = v%jmin+rank-1
+        vipn%jmin = v%jmin+rank
+        call mvecT_times_mvec(1._8,vi,vipn,0._8,Ripn)
+        call mvec_times_sdmat(-1._8,vi,Ripn,1._8,vipn)
+      end if
+
+      ! orthog. random vectors wrt. each other
+      Ripn%imin = 1
+      Ripn%imax = 1
+      do i = rank, nvec-1, 1
+        ! create view of column i
+        vi%jmin = v%jmin+i
+        vi%jmax = v%jmin+i
+        call mvec_norm2(vi,rii)
+        if( rii(1) .lt. eps ) then
+          write(*,*) 'error during orthogonalization'
+          nullSpaceDim = -1
+          deallocate(Ripn%val)
+          return
+        end if
+        rii(1) = 1._8/rii(1)
+        call mvec_scale(vi,rii(1))
+        if( i .lt. nvec-1 ) then
+          vipn%jmin = v%jmin+i+1
+          Ripn%jmin = i-rank+2
+          call mvecT_times_mvec(1._8,vi,vipn,0._8,Ripn)
+          call mvec_times_sdmat(-1._8,vi,Ripn,1._8,vipn)
+        end if
+      end do
+
+      deallocate(Ripn%val)
+    end if
+
+    !--------------------------------------------------------------------------------
+  end subroutine mvec_QR
+ 
 
   !==================================================================================
   ! wrapper routines 
@@ -1165,5 +1284,28 @@ contains
 
   end subroutine phist_DmvecT_times_mvec
 
+
+  subroutine phist_Dmvec_QR(v_ptr, R_ptr, ierr) bind(C,name='phist_Dmvec_QR_f')
+    use, intrinsic :: iso_c_binding
+    !--------------------------------------------------------------------------------
+    type(C_PTR),        value         :: v_ptr, R_ptr
+    integer(C_INT),     intent(out)   :: ierr
+    !--------------------------------------------------------------------------------
+    type(MVec_t), pointer :: v
+    type(SDMat_t), pointer :: R
+    !--------------------------------------------------------------------------------
+
+    if( .not. c_associated(v_ptr) .or. &
+      & .not. c_associated(R_ptr)      ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(v_ptr,v)
+    call c_f_pointer(R_ptr,R)
+
+    call mvec_QR(v,R,ierr)
+
+  end subroutine phist_Dmvec_QR
 
 end module mvec_module

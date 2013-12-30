@@ -2,7 +2,7 @@
 subroutine dnrm2_strided_1(nrows, vec, ldv, vnrm)
   implicit none
   integer, intent(in)       :: nrows, ldv
-  real(kind=8), intent(in)  :: vec(ldv,*)
+  real(kind=8), intent(in)  :: vec(*)
   real(kind=8), intent(out) :: vnrm
 
   ! dnrm2 blas interface
@@ -10,7 +10,7 @@ subroutine dnrm2_strided_1(nrows, vec, ldv, vnrm)
     function dnrm2(n,v,ldv)
       real(kind=8) :: dnrm2
       integer, intent(in) :: n, ldv
-      real(kind=8), intent(in) :: v(ldv,*)
+      real(kind=8), intent(in) :: v(*)
     end function dnrm2
   end interface
 

@@ -271,9 +271,6 @@ contains
     end do
 
     write(*,*) 'created new crsMat with dimensions', A%nRows, A%nCols, A%nEntries, 'address', c_loc(A)
-    write(*,*) 'row_offset', A%row_offset
-    write(*,*) 'col_idx', A%col_idx
-    write(*,*) 'val', A%val
     A_ptr = c_loc(A)
 
     ierr = 0

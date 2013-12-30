@@ -363,7 +363,7 @@ subroutine dspmvm_generic(nrows, nvec, ncols, nnz, alpha, row_ptr, col_idx, val,
     do j = row_ptr(i), row_ptr(i+1)-1, 1
       tmp(:) = tmp(:) + val(j)*x(1:nvec,col_idx(j))
     end do
-    y(:,i) = alpha*tmp(:) + beta*y(1:nvec,i)
+    y(1:nvec,i) = alpha*tmp(:) + beta*y(1:nvec,i)
   end do
 end subroutine dspmvm_generic
 

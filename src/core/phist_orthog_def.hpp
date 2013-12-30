@@ -234,9 +234,9 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     {
       // we must fill the appropriate columns of R1 with zeros (where random values were used)
       TYPE(mvec_ptr) R1_r = NULL;
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(R1,&R1_r,rankW,k-1,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvec_put_value)(R1_r,st::zero(),ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvec_delete)(R1_r,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(R1,&R1_r,0,k-1,rankW,k-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_put_value)(R1_r,st::zero(),ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_delete)(R1_r,ierr),*ierr);
     }
     }//while
 

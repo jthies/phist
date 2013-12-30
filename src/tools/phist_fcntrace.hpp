@@ -16,31 +16,36 @@
 // LEAVE xyz
 // for some functino xyz. The macro is defined empty of PHIST_OUTLEV<PHIST_TRACE
 class FcnTracer
-  {
+{
   public:
-  
-  FcnTracer(const char* fcn) : fcn_(fcn)
+    FcnTracer(const char* fcn) : fcn_(fcn)
     {
 #if (PHIST_OUTLEV>=PHIST_TRACE)
-    PHIST_OUT(0,"PHIST ENTER %s\n",fcn_.c_str());
+      PHIST_OUT(0,"PHIST ENTER %s\n",fcn_.c_str());
 #endif
 #ifdef PHIST_HAVE_LIKWID
-    LIKWID_MARKER_START(fcn_.c_str());
+#pragma omp parallel
+      {
+        LIKWID_MARKER_START(fcn_.c_str());
+      }
 #endif
     }
 
-  ~FcnTracer()
+    ~FcnTracer()
     { 
 #ifdef PHIST_HAVE_LIKWID
-    LIKWID_MARKER_STOP(fcn_.c_str());
+#pragma omp parallel
+      {
+        LIKWID_MARKER_STOP(fcn_.c_str());
+      }
 #endif
 #if (PHIST_OUTLEV>=PHIST_TRACE)
-    PHIST_OUT(0,"PHIST LEAVE %s\n",fcn_.c_str()); 
+      PHIST_OUT(0,"PHIST LEAVE %s\n",fcn_.c_str()); 
 #endif
     }
 
-  std::string fcn_;
-  };
+    std::string fcn_;
+};
 
 #endif
 

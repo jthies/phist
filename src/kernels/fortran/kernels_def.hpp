@@ -53,8 +53,11 @@ void SUBR(mvec_create)(TYPE(mvec_ptr)* V,
     const_map_ptr_t map, lidx_t nvec, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"  
   void SUBR(mvec_create_f)(TYPE(mvec_ptr)*,const_map_ptr_t,lidx_t,int*);
   PHIST_CHK_IERR( SUBR(mvec_create_f) (V,map,nvec,ierr), *ierr);
+  // initialize with zero...
+  PHIST_CHK_IERR( SUBR(mvec_put_value)(*V,st::zero(),ierr),*ierr);
 }
 
 void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, const_map_ptr_t map, 
@@ -69,8 +72,10 @@ void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M,
     int nrows, int ncols, const_comm_ptr_t comm, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"  
   void SUBR(sdMat_create_f)(TYPE(sdMat_ptr)*,int,int,const_comm_ptr_t,int*);
   PHIST_CHK_IERR(SUBR(sdMat_create_f)(M,nrows,ncols,comm,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_put_value)(*M,st::zero(),ierr),*ierr);
 }
 
 void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) V, lidx_t* len, int* ierr)
@@ -378,7 +383,9 @@ void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
 void SUBR(mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
-  *ierr=-99;
+  // trilinos tsqr would be better but seems to expect column-major mvecs
+  void SUBR(mvec_QR_f)(TYPE(mvec_ptr),TYPE(sdMat_ptr),int*);
+  PHIST_CHK_NEG_IERR(SUBR(mvec_QR_f)(V,R,ierr),*ierr);
 }
 
 }

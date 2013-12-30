@@ -47,6 +47,34 @@ using namespace testing;
 #include "QR_Test_def.hpp"
 
 #undef _N_
+#define _N_ 5
+#undef _NV_
+#define _NV_ 3
+
+#undef CLASSNAME
+#define CLASSNAME SQR_Test_5_3
+#include "phist_gen_s.h"
+#include "QR_Test_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME DQR_Test_5_3
+
+#include "phist_gen_d.h"
+#include "QR_Test_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CQR_Test_5_3
+
+#include "phist_gen_c.h"
+#include "QR_Test_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZQR_Test_5_3
+
+#include "phist_gen_z.h"
+#include "QR_Test_def.hpp"
+
+#undef _N_
 #define _N_ 59
 #undef _NV_
 #define _NV_ 5
