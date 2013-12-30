@@ -661,7 +661,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     TYPE(sdMat_ptr) jadaOp_VY = NULL;
     PHIST_CHK_IERR(SUBR(mvec_create)(&jadaOp_AX,A_op->domain_map,nv,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_create)(&jadaOp_VY,nv,nv,comm,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(jadaOp_create)(A_op,NULL,Qtil,NULL,sigma,jadaOp_VY,jadaOp_AX,NULL,NULL,NULL,&jada_op,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(jadaOp_create)(A_op,NULL,Qtil,NULL,sigma,jadaOp_VY,jadaOp_AX,NULL,NULL,&jada_op,ierr),*ierr);
 
     // 1/2^mm, but at most the outer tol as conv tol for GMRES
     MT innerTol = std::max(tol,mt::one()/((MT)(2<<mm)));

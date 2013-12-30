@@ -8,8 +8,8 @@ void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,    TYPE(const_op_ptr)    B_
                          TYPE(const_mvec_ptr)  V,       TYPE(const_mvec_ptr)  BV,
                          const _ST_            sigma[], TYPE(sdMat_ptr)       VY,
                          TYPE(mvec_ptr)        AX,      TYPE(mvec_ptr)        BX,
-                         TYPE(mvec_ptr)        X_proj,  TYPE(mvec_ptr)        work,
-                         TYPE(op_ptr)          jdOp,    int*                  ierr);
+                         TYPE(mvec_ptr)        X_proj,  TYPE(op_ptr)          jdOp,
+                         int*                  ierr);
 
 void SUBR(jadaOp_delete)(TYPE(op_ptr)  jdOp, int *ierr);
 

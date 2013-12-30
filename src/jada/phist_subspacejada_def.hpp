@@ -423,7 +423,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ,  &BQtil, 0, k_, ierr), *ierr);
 
     TYPE(op) jdOp;
-    PHIST_CHK_IERR(SUBR( jadaOp_create ) (A_op, B_op, Qtil, BQtil, sigma, R_H, AVv, BVv, Vv, NULL, &jdOp, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( jadaOp_create ) (A_op, B_op, Qtil, BQtil, sigma, R_H, AVv, BVv, Vv, &jdOp, ierr), *ierr);
     // TODO specify useful bgmresIter and tol per eigenvalue!
     int bgmresIter = 10;
     PHIST_CHK_IERR(SUBR( mvec_put_value )(t, st::zero(), ierr), *ierr);

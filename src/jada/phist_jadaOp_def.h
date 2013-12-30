@@ -51,7 +51,6 @@ typedef struct TYPE(jadaOp_data)
   const _ST_*           sigma;  // array of NEGATIVE shifts, assumed to have correct size; TODO: what about 'complex' shifts for real JDQR?
   TYPE(sdMat_ptr)       VY;     // temporary storage for V' times intermediate Y for the projection (I-VV')Y
   TYPE(mvec_ptr)        AX;     // temporary storage for A*X, respectively  A*X_proj for B!=NULL
-  TYPE(mvec_ptr)        work;   // temporary storage
   TYPE(mvec_ptr)        BX;     // temporary storage for B*X_proj, only needed for B != NULL
   TYPE(mvec_ptr)        X_proj; // temporary storage for (I-VV'B)X, only used for B!= NULL
 } TYPE(jadaOp_data);
@@ -65,13 +64,6 @@ void SUBR(jadaOp_apply)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
 {
   ENTER_FCN(__FUNCTION__);
   CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *ierr);
-
-  // check if we have a work array
-  if( jadaOp->work == NULL )
-  {
-    PHIST_CHK_IERR(*ierr = (alpha == ONE  ? 0 : -99), *ierr);
-    PHIST_CHK_IERR(*ierr = (beta  == ZERO ? 0 : -99), *ierr);
-  }
 
   TYPE(const_mvec_ptr) BX;
   if( jadaOp->B_op == NULL )
@@ -92,22 +84,15 @@ void SUBR(jadaOp_apply)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
   }
 
 
+  // Y <- alpha* (I-BVV')(AX-BX*sigma) + beta*X
+  PHIST_CHK_IERR( SUBR( mvec_add_mvec    ) (ONE, jadaOp->AX, ZERO, Y, ierr), *ierr);                          // Y      <- AX
+  PHIST_CHK_IERR( SUBR( mvec_vadd_mvec   ) (jadaOp->sigma, BX, ONE, Y, ierr), *ierr);                         // Y      <- Y + BX*sigma
+  PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (ONE, jadaOp->V, Y, ZERO, jadaOp->VY, ierr), *ierr);               // VY     <- V'*Y
+  PHIST_CHK_IERR( SUBR( mvec_times_sdMat ) (-ONE, jadaOp->BV, jadaOp->VY, ONE, Y, ierr), *ierr);              // Y      <- Y - BV*VY
+
   if( alpha != ONE || beta != ZERO )
   {
-    // Y <- alpha* (I-BVV')(AX+BX*sigma) + beta*Y
-    PHIST_CHK_IERR( SUBR( mvec_add_mvec    ) (ONE, jadaOp->AX, ZERO, jadaOp->work, ierr), *ierr);               // work   <- AX
-    PHIST_CHK_IERR( SUBR( mvec_vadd_mvec   ) (jadaOp->sigma, BX, ONE, jadaOp->work, ierr), *ierr);              // work   <- work + BX*sigma
-    PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (ONE, jadaOp->V, jadaOp->work, ZERO, jadaOp->VY, ierr), *ierr);    // VY     <- V'*work
-    PHIST_CHK_IERR( SUBR( mvec_times_sdMat ) (-ONE, jadaOp->BV, jadaOp->VY, ONE, jadaOp->work, ierr), *ierr);   // work   <- work - BV*VY
-    PHIST_CHK_IERR( SUBR( mvec_add_mvec    ) (alpha, jadaOp->work, beta, Y, ierr), *ierr);                      // Y      <- alpha*work + beta*Y
-  }
-  else
-  {
-    // Y <- alpha* (I-BVV')(AX-BX*sigma) + beta*Y
-    PHIST_CHK_IERR( SUBR( mvec_add_mvec    ) (ONE, jadaOp->AX, ZERO, Y, ierr), *ierr);                          // Y      <- AX
-    PHIST_CHK_IERR( SUBR( mvec_vadd_mvec   ) (jadaOp->sigma, BX, ONE, Y, ierr), *ierr);                         // Y      <- Y + BX*sigma
-    PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (ONE, jadaOp->V, Y, ZERO, jadaOp->VY, ierr), *ierr);               // VY     <- V'*Y
-    PHIST_CHK_IERR( SUBR( mvec_times_sdMat ) (-ONE, jadaOp->BV, jadaOp->VY, ONE, Y, ierr), *ierr);              // Y      <- Y - BV*VY
+    PHIST_CHK_IERR( SUBR( mvec_add_mvec  ) (beta, X, alpha, Y, ierr), *ierr);
   }
 }
 
@@ -117,8 +102,8 @@ void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,    TYPE(const_op_ptr)    B_
                          TYPE(const_mvec_ptr)  V,       TYPE(const_mvec_ptr)  BV,
                          const _ST_            sigma[], TYPE(sdMat_ptr)       VY,
                          TYPE(mvec_ptr)        AX,      TYPE(mvec_ptr)        BX,
-                         TYPE(mvec_ptr)        X_proj,  TYPE(mvec_ptr)        work,
-                         TYPE(op_ptr)          jdOp,    int*                  ierr)
+                         TYPE(mvec_ptr)        X_proj,  TYPE(op_ptr)          jdOp,
+                         int*                  ierr)
 {
   ENTER_FCN(__FUNCTION__);
   *ierr = 0;
@@ -136,7 +121,6 @@ void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,    TYPE(const_op_ptr)    B_
   myOp->AX     = AX;
   myOp->BX     = (B_op != NULL ? BX     : NULL);
   myOp->X_proj = (B_op != NULL ? X_proj : NULL);
-  myOp->work   = work;
 
   // setup op_ptr function pointers
   jdOp->A     = (const void*)myOp;
