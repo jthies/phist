@@ -333,15 +333,22 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
       TYPE(mvec_ptr) vec5;
       SUBR(mvec_create)(&vec5,map_,_NV_,&ierr_);
+      SUBR(mvec_put_value)(vec5,st::one(),&ierr_);
       ASSERT_EQ(0,ierr_);
+      // we assume vec5 in q^orth, so make it so:
+      SUBR(mvecT_times_mvec)(st::one(),q_,vec5,st::zero(),mat1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_times_sdMat)(-st::one(),q_,mat1_,st::one(),vec5,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      // add beta (I-qq')*ONE to vec3_
       _ST_ beta = st::rand();
+      SUBR(mvec_add_mvec)(beta,vec5,st::one(),vec3_,&ierr_);
+      ASSERT_EQ(0,ierr_);
       jdOp.apply(st::one(),jdOp.A,vec4,beta,vec5,&ierr_);
       ASSERT_EQ(0,ierr_);
 
-      // vec5 = vec3_+beta*vec4
-      SUBR(mvec_add_mvec)(beta,vec4,st::one(),vec3_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_add_mvec)(-st::one(),vec5,st::one(),vec3_,&ierr_);
+      // vec5 == vec3_?
+      SUBR(mvec_add_mvec)(st::one(),vec5,-st::one(),vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
 
 #ifdef PHIST_KERNEL_LIB_FORTRAN

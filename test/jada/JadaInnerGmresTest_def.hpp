@@ -53,6 +53,11 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         // setup system to solve, exact x and A*x
         SUBR(mvec_random)(vec2_,&ierr_);
         ASSERT_EQ(0,ierr_);
+        // x needs to be in q^orth
+        SUBR(mvecT_times_mvec)(st::one(),q_,vec2_,st::zero(),mat1_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_times_sdMat)(-st::one(),q_,mat1_,st::one(),vec2_,&ierr_);
+        ASSERT_EQ(0,ierr_);
         jdOp_->apply(st::one(),jdOp_->A,vec2_,st::zero(),vec3_,&ierr_);
         ASSERT_EQ(0,ierr_);
       }
@@ -104,6 +109,17 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
   {
     if( typeImplemented_ )
     {
+
+      // now check the result: vec3 = jdOp_(vec2)
+      jdOp_->apply(-st::one(),jdOp_->A,vec2_,st::one(),vec3_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
+#else
+      ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
+#endif
+      return;
+
       TYPE(jadaInnerGmresState_ptr) state[_NV_];
       SUBR(jadaInnerGmresStates_create)(state, _NV_, map_, _MAXBAS_, &ierr_);
       ASSERT_EQ(0,ierr_);

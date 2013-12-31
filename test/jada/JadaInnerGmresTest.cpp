@@ -29,13 +29,49 @@ using namespace testing;
 #undef MATNAME
 #endif
 
+#define MATNAME "sprandn"
+
+#define _N_ 25
+#define _NV_ 1
+#define _NVP_ 2
+#define _MAXBAS_ 5
+
+#define CLASSNAME SJadaInnerGmresTest_25_1_2
+#include "phist_gen_s.h"
+#include "JadaInnerGmresTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME DJadaInnerGmresTest_25_1_2
+
+#include "phist_gen_d.h"
+#include "JadaInnerGmresTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CJadaInnerGmresTest_25_1_2
+
+#include "phist_gen_c.h"
+#include "JadaInnerGmresTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZJadaInnerGmresTest_25_1_2
+
+#include "phist_gen_z.h"
+#include "JadaInnerGmresTest_def.hpp"
+
+#undef MATNAME
 #define MATNAME "jadaTestMat"
+
+#undef _N_
+#undef _NV_
+#undef _NVP_
+#undef _MAXBAS_
 
 #define _N_ 512
 #define _NV_ 3
 #define _NVP_ 7
 #define _MAXBAS_ 40
 
+#undef CLASSNAME
 #define CLASSNAME SJadaInnerGmresTest_512_3_7
 #include "phist_gen_s.h"
 #include "JadaInnerGmresTest_def.hpp"

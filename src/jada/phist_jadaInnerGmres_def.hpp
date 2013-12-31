@@ -67,11 +67,12 @@ void SUBR(jadaInnerGmresStates_create)(TYPE(jadaInnerGmresState_ptr) state[], in
     // we can have V(:,i+1) = A*V(:,i) temporarily
     PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->V_,map,maxBas+1,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_create)(&state[i]->H_, maxBas+1, maxBas, comm,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->b_,map,1,ierr),*ierr);
     state[i]->cs_ = new ST[maxBas];
     state[i]->sn_ = new ST[maxBas];
     state[i]->rs_ = new ST[maxBas];
     state[i]->curDimV_=0;
-    state[i]->normB_=-mt::one(); // not initialized
+    state[i]->normR0_=-mt::one(); // not initialized
   }
 }
 
@@ -83,8 +84,9 @@ void SUBR(jadaInnerGmresStates_delete)(TYPE(jadaInnerGmresState_ptr) state[], in
   *ierr=0;
   for (int i=0;i<numSys;i++)
   {
-    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->V_,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->b_,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_delete)(state[i]->H_,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->V_,ierr),*ierr);
     delete [] state[i]->cs_;
     delete [] state[i]->sn_;
     delete [] state[i]->rs_;
@@ -100,7 +102,7 @@ void SUBR(jadaInnerGmresState_reset)(TYPE(jadaInnerGmresState_ptr) S, TYPE(const
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   
-  if (b==NULL && S->normB_ == -mt::one())
+  if (b==NULL && S->normR0_ == -mt::one())
   {
     PHIST_OUT(PHIST_ERROR,"on the first call to jadaInnerGmresState_reset you *must* provide the RHS vector");
     *ierr=-1;
@@ -108,23 +110,20 @@ void SUBR(jadaInnerGmresState_reset)(TYPE(jadaInnerGmresState_ptr) S, TYPE(const
   }
   else if (b!=NULL)
   {
-    // new rhs -> need to recompute ||B||
-//PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), b, st::zero(), S->B_, ierr), *ierr);
-    //S->B_=b;
-    S->normB_=-mt::one(); // needs to be computed in next iterate call
+    // new rhs -> need to recompute ||b-A*x0||
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), b, st::zero(), S->b_, ierr), *ierr);
+    S->ierr = -1;
+    S->totalIter = 0;
   }
   S->curDimV_=0;
-  S->normR0_=-mt::one(); // needs to be computed in nect iterate call
+  S->normR0_=-mt::one(); // needs to be computed in next iterate call
   // set V_0=X_0. iterate() will have to compute the residual and normalize it,
   // because the actual V_0 we want is r/||r||_2, but we can't easily apply the
   // operator to a single vector.
   PHIST_CHK_IERR(SUBR(mvec_set_block)(S->V_,x0,0,0,ierr),*ierr);
   for (int i=0;i<S->maxBas_;i++)
-  {
     S->rs_[i]=st::zero();
-  }
   PHIST_CHK_IERR(SUBR(sdMat_put_value)(S->H_,st::zero(),ierr),*ierr);
-  return;
 }
 
 void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, TYPE(mvec_ptr) Ax, _MT_* relResNorm, int* ierr)
@@ -137,7 +136,6 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
   TYPE(mvec_ptr) x_i=NULL;
   TYPE(mvec_ptr) Ax_i=NULL;
 
-  // TODO - omp parallel for
   for (int i=0;i<numSys;i++)
   {
     PHIST_CHK_IERR(SUBR(mvec_view_block)(x,&x_i,i,i,ierr),*ierr);
@@ -152,7 +150,13 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
     lidx_t ldH,ldy;
 
     int m=S->curDimV_-1;
-    
+    if( m < 0 )
+    {
+      // no iteration done yet
+      relResNorm[i] = -mt::one();
+      continue;
+    }
+
     PHIST_CHK_IERR(SUBR(sdMat_create)(&y,m,1,comm,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(y,&y_raw,&ldy,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S->H_,&H_raw,&ldH,ierr),*ierr);
@@ -168,9 +172,7 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
 #endif
 
     for (int i=0;i<m;i++)
-    {
       y_raw[i]=S->rs_[i];
-    }
 
     // y = H\rs, H upper triangular
     const char* uplo="U";
@@ -241,18 +243,18 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) Op,
   for (int i=0;i<numSys;i++)
   {
     S_array[i]->ierr=1; // not converged yet
-    if (S_array[i]->normB_<mt::zero())
-    {
-//if (S_array[i]->B_==NULL)
+//if (S_array[i]->normB_<mt::zero())
 //{
-  //PHIST_OUT(PHIST_ERROR,"rhs vector not set in state %d, "
-  //"did you forget to call reset()? (file %s, line %d)",i,__FILE__,__LINE__);
-  //*ierr=-1;
-  //return;
+  //if (S_array[i]->B_==NULL)
+  //{
+    //PHIST_OUT(PHIST_ERROR,"rhs vector not set in state %d, "
+    //"did you forget to call reset()? (file %s, line %d)",i,__FILE__,__LINE__);
+    //*ierr=-1;
+    //return;
+  //}
+  //SUBR(mvec_norm2)(S_array[i]->B_,&S_array[i]->normB_,&S_array[i]->ierr);
+  //PHIST_CHK_IERR(*ierr=S_array[i]->ierr,*ierr);
 //}
-//SUBR(mvec_norm2)(S_array[i]->B_,&S_array[i]->normB_,&S_array[i]->ierr);
-      PHIST_CHK_IERR(*ierr=S_array[i]->ierr,*ierr);
-    }
   }
   
   // indices of next vectors V_j
@@ -386,7 +388,7 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) Op,
         S->normR_=st::abs(S->rs_[j]);
       }// initial step or standard Arnoldi?
 
-      MT relres=S->normR_/S->normB_;
+      MT relres=S->normR_/S->normR0_;
       
       if (relres<S->tol)
       {
@@ -401,7 +403,7 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) Op,
   for (int i=0;i<numSys;i++)
   {
   PHIST_SOUT(PHIST_VERBOSE,"[%d]: %d\t%8.4e\n",i,
-        S_array[i]->curDimV_,S_array[i]->normR_/S_array[i]->normB_);
+        S_array[i]->curDimV_,S_array[i]->normR_/S_array[i]->normR0_);
   }
 #endif
   PHIST_SOUT(PHIST_VERBOSE,"----------------------\n");

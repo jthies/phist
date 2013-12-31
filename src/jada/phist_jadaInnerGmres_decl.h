@@ -47,12 +47,10 @@ typedef struct TYPE(jadaInnerGmresState) {
   TYPE(sdMat_ptr) H_; //! memory block in which Hessenberg matrix from the Arnoldi process
                      //! is built up,, transformed to upper triangular form using 
                      //! Givens rotations.
+  TYPE(mvec_ptr) b_; //! rhs to compute the first residual vector r0
   _ST_ *cs_, *sn_;   //! cosine and sine terms for the Givens rotations
   _ST_ *rs_;
   
-  _MT_ normB_; //! stores norm of RHS so it doesn't have to be recomputed
-               //! when continuing.
-
   _MT_ normR0_; //! stores initial (explicit) residual norm
   _MT_ normR_; //! stores current (implicit) residual norm
   
