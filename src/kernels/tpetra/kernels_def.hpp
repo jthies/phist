@@ -773,7 +773,7 @@ void SUBR(mvec_vscale)(TYPE(mvec_ptr) vV,
   *ierr=0;
   CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
 int nvec = V->getNumVectors();
-  Teuchos::ArrayView<_ST_> scal(scalar,nvec);
+  Teuchos::ArrayView<_ST_> scal((_ST_*)scalar,nvec);
   TRY_CATCH(V->scale(scal),*ierr);
   return;
   }
@@ -783,6 +783,8 @@ void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vX,
                             _ST_ beta,  TYPE(mvec_ptr)       vY, 
                             int* ierr)
   {
+  ENTER_FCN(__FUNCTION__);
+  *ierr=0;
   CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,X,vX,*ierr);
   CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,Y,vY,*ierr);
   TRY_CATCH(Y->update(alpha,*X,beta),*ierr);
