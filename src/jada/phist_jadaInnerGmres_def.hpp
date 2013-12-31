@@ -214,7 +214,7 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
 // implementation of gmres on several systems simultaneously
 void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) Op,
         TYPE(jadaInnerGmresState_ptr) S_array[], int numSys,
-        int* ierr)
+        int* nIter, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);

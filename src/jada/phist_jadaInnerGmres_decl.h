@@ -37,6 +37,8 @@ typedef struct TYPE(jadaInnerGmresState) {
   _MT_ tol; //! convergence tolerance for this system
 
   int ierr; //! error code returned by this GMRES instance
+
+  int totalIter; //! counts number of iterations (also over restarts)
   //@}
   //! \name  internal data structures
   //@{
@@ -97,7 +99,7 @@ typedef TYPE(jadaInnerGmresState) const * TYPE(const_jadaInnerGmresState_ptr);
 //!                                                                                     
 void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) Op,
         TYPE(jadaInnerGmresState_ptr) S_array[], int numSys,
-        int* ierr);
+        int* nIter, int* ierr);
 
 //! create an array of gmresState objects. The method's input parameters
 //! will be set to default values and can be adjusted before calling reset/iterate. 
