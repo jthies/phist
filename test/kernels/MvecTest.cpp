@@ -58,7 +58,7 @@ using namespace testing;
 #undef DO_BELOS_TESTS
 
 #undef _N_
-#define _N_ 6
+#define _N_ 16
 #undef _NV_
 #define _NV_ 3
 
@@ -85,3 +85,34 @@ using namespace testing;
 
 #include "phist_gen_z.h"
 #include "MvecTest_def.hpp"
+
+#undef _N_
+#define _N_ 237
+#undef _NV_
+#define _NV_ 4
+
+#undef CLASSNAME
+#define CLASSNAME SMvecTest_237_4
+
+#include "phist_gen_s.h"
+#include "MvecTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME DMvecTest_237_4
+
+#include "phist_gen_d.h"
+#include "MvecTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecTest_237_4
+
+#include "phist_gen_c.h"
+#include "MvecTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecTest_237_4
+
+#include "phist_gen_z.h"
+#include "MvecTest_def.hpp"
+
+

@@ -175,11 +175,19 @@ subroutine daxpby_2(nrows, alpha, x, beta, y)
   real(kind=8), intent(inout) :: y(2,nrows)
   integer :: i
 
+  interface
+    subroutine daxpy_NT_2(nrows,alpha,x,y) bind(C)
+      use, intrinsic :: iso_c_binding
+      integer, value :: nrows
+      real(kind=8), intent(in) :: alpha(*)
+      real(kind=8), intent(in) :: x(*)
+      real(kind=8), intent(out) :: y(*)
+    end subroutine daxpy_NT_2
+  end interface
+
+
   if( beta .eq. 0 ) then
-!$omp parallel do
-    do i = 1, nrows
-      y(:,i) = alpha(:)*x(:,i)
-    end do
+    call daxpy_NT_2(nrows,alpha,x,y)
   else
 !$omp parallel do
     do i = 1, nrows
@@ -197,11 +205,18 @@ subroutine daxpby_4(nrows, alpha, x, beta, y)
   real(kind=8), intent(inout) :: y(4,nrows)
   integer :: i
 
+  interface
+    subroutine daxpy_NT_4(nrows,alpha,x,y) bind(C)
+      use, intrinsic :: iso_c_binding
+      integer, value :: nrows
+      real(kind=8), intent(in) :: alpha(*)
+      real(kind=8), intent(in) :: x(*)
+      real(kind=8), intent(out) :: y(*)
+    end subroutine daxpy_NT_4
+  end interface
+
   if( beta .eq. 0 ) then
-!$omp parallel do
-    do i = 1, nrows
-      y(:,i) = alpha(:)*x(:,i)
-    end do
+    call daxpy_NT_4(nrows,alpha,x,y)
   else
 !$omp parallel do
     do i = 1, nrows
@@ -219,11 +234,19 @@ subroutine daxpby_8(nrows, alpha, x, beta, y)
   real(kind=8), intent(inout) :: y(8,nrows)
   integer :: i
 
+  interface
+    subroutine daxpy_NT_8(nrows,alpha,x,y) bind(C)
+      use, intrinsic :: iso_c_binding
+      integer, value :: nrows
+      real(kind=8), intent(in) :: alpha(*)
+      real(kind=8), intent(in) :: x(*)
+      real(kind=8), intent(out) :: y(*)
+    end subroutine daxpy_NT_8
+  end interface
+
+
   if( beta .eq. 0 ) then
-!$omp parallel do
-    do i = 1, nrows
-      y(:,i) = alpha(:)*x(:,i)
-    end do
+    call daxpy_NT_8(nrows,alpha,x,y)
   else
 !$omp parallel do
     do i = 1, nrows

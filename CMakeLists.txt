@@ -151,6 +151,7 @@ if (PHIST_KERNEL_LIB STREQUAL "fortran")
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/mvec_module.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/nrm2_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/axpy_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/axpy_kernels_c.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/dot_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/gemm_kernels_sB.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/gemm_kernels_sC.f90

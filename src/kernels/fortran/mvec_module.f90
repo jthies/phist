@@ -84,15 +84,15 @@ contains
       end if
     else if( nvec .eq. 4 ) then
       if( strided ) then
-        call dnrm2_strided_2(nrows, mvec%val(mvec%jmin,1), lda, vnrm)
+        call dnrm2_strided_4(nrows, mvec%val(mvec%jmin,1), lda, vnrm)
       else
-        call dnrm2_2(nrows, mvec%val, vnrm)
+        call dnrm2_4(nrows, mvec%val, vnrm)
       end if
     else if( nvec .eq. 8 ) then
       if( strided ) then
-        call dnrm2_strided_2(nrows, mvec%val(mvec%jmin,1), lda, vnrm)
+        call dnrm2_strided_8(nrows, mvec%val(mvec%jmin,1), lda, vnrm)
       else
-        call dnrm2_2(nrows, mvec%val, vnrm)
+        call dnrm2_8(nrows, mvec%val, vnrm)
       end if
     else
       call dnrm2_general(nrows, nvec, mvec%val(mvec%jmin,1), lda, vnrm)
@@ -372,15 +372,15 @@ contains
       end if
     else if( nvec .eq. 4 ) then
       if( strided ) then
-        call ddot_strided_2(nrows, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy, dot)
+        call ddot_strided_4(nrows, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy, dot)
       else
-        call ddot_2(nrows, x%val, y%val, dot)
+        call ddot_4(nrows, x%val, y%val, dot)
       end if
     else if( nvec .eq. 8 ) then
       if( strided ) then
-        call ddot_strided_2(nrows, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy, dot)
+        call ddot_strided_8(nrows, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy, dot)
       else
-        call ddot_2(nrows, x%val, y%val, dot)
+        call ddot_8(nrows, x%val, y%val, dot)
       end if
     else
       call ddot_general(nrows, nvec, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy, dot)
