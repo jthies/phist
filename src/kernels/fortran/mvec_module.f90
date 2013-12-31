@@ -755,6 +755,7 @@ contains
         call mvec_norm2(vi,rii)
         if( rii(1) .lt. eps ) then
           write(*,*) 'error during orthogonalization'
+          flush(6)
           nullSpaceDim = -1
           deallocate(Ripn%val)
           return
@@ -797,7 +798,11 @@ contains
     mvec%jmin = 1
     mvec%jmax = nvec
     mvec%map = map
+#ifdef TESTING
     write(*,*) 'creating new mvec with dimensions:', nvec, map%nlocal(map%me), 'address', c_loc(mvec)
+    flush(6)
+    flush(6)
+#endif
     allocate(mvec%val(nvec,map%nlocal(map%me)))
     mvec_ptr = c_loc(mvec)
     ierr = 0
@@ -814,7 +819,11 @@ contains
     type(MVec_t), pointer :: mvec
     !--------------------------------------------------------------------------------
 
+#ifdef TESTING
     write(*,*) 'deleting mvec at address', mvec_ptr
+    flush(6)
+    flush(6)
+#endif
     if( c_associated(mvec_ptr) ) then
       call c_f_pointer(mvec_ptr, mvec)
       if( .not. mvec%is_view) then
@@ -838,7 +847,11 @@ contains
     type(MVec_t), pointer :: mvec
     !--------------------------------------------------------------------------------
 
+#ifdef TESTING
     write(*,*) 'extract view of mvec at address', mvec_ptr
+    flush(6)
+    flush(6)
+#endif
     if( c_associated(mvec_ptr) ) then
       call c_f_pointer(mvec_ptr, mvec)
       raw_ptr = c_loc(mvec%val(mvec%jmin,1))
@@ -932,6 +945,7 @@ contains
         call c_f_pointer(view_ptr,view)
         if( .not. view%is_view ) then
           write(*,*) 'mvec not a view!'
+          flush(6)
           ierr = -88
           return
         end if
@@ -1061,6 +1075,7 @@ contains
     call c_f_pointer(mvec_ptr, mvec)
 
     write(*,*) mvec%val(mvec%jmin:mvec%jmax,:)
+    flush(6)
     ierr = 0
 
   end subroutine phist_Dmvec_print

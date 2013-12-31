@@ -56,7 +56,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -fopenmp")
   set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused")
 
-  set (CMAKE_Fortran_FLAGS "-fopenmp")
+  set (CMAKE_Fortran_FLAGS "-fopenmp -cpp")
   set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -DTESTING -fopenmp -Wall -Wextra -fcheck=all -Wno-unused")
 else ()
 #TODO - add flags for Intel and others

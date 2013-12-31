@@ -156,6 +156,20 @@ const Sblas_cmplx_t* a, const int* lda, Sblas_cmplx_t* b, const int* ldb, int* i
 void ZTRTRS(const char* uplo, const char* trans, const char* diag, const int* n, const int* nrhs, 
 const Dblas_cmplx_t* a, const int* lda, Dblas_cmplx_t* b, const int* ldb, int* info);
 
+///////////////////////////////////////////////////////////////////////////////////////////
+//      XLARTG - compute givens rotation
+///////////////////////////////////////////////////////////////////////////////////////////
+#define SLARTG LAPACK_SUBR(SLARTG,slartg)
+void SLARTG(const float *f, const float *g, float* cs, float* sn, float* r);
+
+#define DLARTG LAPACK_SUBR(DLARTG,dlartg)
+void DLARTG(const double *f, const double *g, double* cs, double* sn, double* r);
+
+#define CLARTG LAPACK_SUBR(CLARTG,clartg)
+void CLARTG(const Sblas_cmplx_t *f, const Sblas_cmplx_t *g, float* cs, Sblas_cmplx_t* sn, Sblas_cmplx_t* r);
+
+#define ZLARTG LAPACK_SUBR(ZLARTG,zlartg)
+void ZLARTG(const Dblas_cmplx_t *f, const Dblas_cmplx_t *g, double* cs, Dblas_cmplx_t* sn, Dblas_cmplx_t* r);
 
 #ifdef __cplusplus
 }

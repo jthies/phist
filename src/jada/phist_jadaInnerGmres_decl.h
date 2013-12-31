@@ -48,7 +48,8 @@ typedef struct TYPE(jadaInnerGmresState) {
                      //! is built up,, transformed to upper triangular form using 
                      //! Givens rotations.
   TYPE(mvec_ptr) b_; //! rhs to compute the first residual vector r0
-  _ST_ *cs_, *sn_;   //! cosine and sine terms for the Givens rotations
+  _MT_ *cs_;         //! terms c of the Givens rotation
+  _ST_ *sn_;         //! terms s of the Givens rotation
   _ST_ *rs_;
   
   _MT_ normR0_; //! stores initial (explicit) residual norm
@@ -132,4 +133,4 @@ void SUBR(jadaInnerGmresState_reset)(TYPE(jadaInnerGmresState_ptr) S,
 //! and multivector x can be passed in.
 //! If not NULL, also outputs A*x through projections coefficients and A*V
 void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[], int numSys,
-                TYPE(mvec_ptr) x, TYPE(mvec_ptr) Ax, _MT_ *relResNorm, int* ierr);
+                TYPE(mvec_ptr) x, TYPE(mvec_ptr) Ax, _MT_ *resNorm, int* ierr);

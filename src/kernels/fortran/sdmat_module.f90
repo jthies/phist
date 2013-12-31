@@ -111,7 +111,10 @@ contains
     else
       sdmat%comm = MPI_COMM_NULL
     end if
+#ifdef TESTING
     write(*,*) 'creating new sdmat with dimensions:', nrows, ncols, 'address', c_loc(sdmat)
+    flush(6)
+#endif
     allocate(sdmat%val(nrows,ncols))
     sdmat_ptr = c_loc(sdmat)
     ierr = 0
@@ -128,7 +131,10 @@ contains
     type(sdmat_t), pointer :: sdmat
     !--------------------------------------------------------------------------------
 
+#ifdef TESTING
     write(*,*) 'deleting sdmat at address', sdmat_ptr
+    flush(6)
+#endif
     if( c_associated(sdmat_ptr) ) then
       call c_f_pointer(sdmat_ptr, sdmat)
       if( .not. sdmat%is_view) then
@@ -152,7 +158,10 @@ contains
     type(sdmat_t), pointer :: sdmat
     !--------------------------------------------------------------------------------
 
+#ifdef TESTING
     write(*,*) 'extract view of sdmat at address', sdmat_ptr
+    flush(6)
+#endif
     if( c_associated(sdmat_ptr) ) then
       call c_f_pointer(sdmat_ptr, sdmat)
       raw_ptr = c_loc(sdmat%val(sdmat%imin,sdmat%jmin))
@@ -218,7 +227,10 @@ contains
     type(sdmat_t), pointer :: sdmat, view
     !--------------------------------------------------------------------------------
 
+#ifdef TESTING
     write(*,*) 'create view of sdmat at address', sdmat_ptr
+    flush(6)
+#endif
     if( .not. c_associated(sdmat_ptr) ) then
       ierr = -88
       return
@@ -229,14 +241,21 @@ contains
       call c_f_pointer(view_ptr, view)
       if( .not. view%is_view ) then
         write(*,*) 'is not a view'
+        flush(6)
         ierr = -88
         return
       end if
+#ifdef TESTING
       write(*,*) 'reusing view at address', view_ptr
+      flush(6)
+#endif
     else
       allocate(view)
       view_ptr = c_loc(view)
+#ifdef TESTING
       write(*,*) 'created new view at address', view_ptr
+      flush(6)
+#endif
     end if
 
 
@@ -365,6 +384,7 @@ contains
     call c_f_pointer(sdmat_ptr, sdmat)
 
     write(*,*) sdmat%val(sdmat%imin:sdmat%imax,sdmat%jmin:sdmat%jmax)
+    flush(6)
     ierr = 0
 
   end subroutine phist_DsdMat_print

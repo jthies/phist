@@ -179,6 +179,7 @@ contains
 
     ! open the file
     write(*,*) 'reading file:', filename
+    flush(6)
     open(unit   = newunit(funit), file    = filename, &
       &  action = 'read',         status  = 'old',    &
       &  iostat = ierr)
@@ -187,8 +188,10 @@ contains
     ! read first line
     read(funit,'(A)') line
     write(*,*) line
+    flush(6)
     if( trim(line) .ne. '%%MatrixMarket matrix coordinate real general' ) then
       write(*,*) 'unsupported format'
+    flush(6)
       ierr = -99
       return
     end if
@@ -204,6 +207,7 @@ contains
     ! now read the dimensions
     read(funit,*) A%nRows, A%nCols, A%nEntries
     write(*,*) 'CrsMat:', A%nRows, A%nCols, A%nEntries
+    flush(6)
 
     call map_setup(A%row_map, MPI_COMM_WORLD, int(A%nRows,kind=8), ierr)
     if( ierr .ne. 0 ) return
@@ -270,7 +274,10 @@ contains
       end if
     end do
 
+#ifdef TESTING
     write(*,*) 'created new crsMat with dimensions', A%nRows, A%nCols, A%nEntries, 'address', c_loc(A)
+    flush(6)
+#endif
     A_ptr = c_loc(A)
 
     ierr = 0
@@ -289,7 +296,10 @@ contains
     type(CrsMat_t), pointer :: A
     !--------------------------------------------------------------------------------
 
+#ifdef TESTING
     write(*,*) 'deleting crsMat at address', A_ptr
+    flush(6)
+#endif
     if( c_associated(A_ptr) ) then
       call c_f_pointer(A_ptr,A)
       deallocate(A)

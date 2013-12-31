@@ -144,7 +144,7 @@ void SUBR(jadaOp_delete)(TYPE(op_ptr) jdOp, int *ierr)
 }
 
 //! access AX from last call to apply (return a view to it)
-void SUBR(jadaOp_view_AX)(TYPE(const_op_ptr) op, TYPE(mvec_ptr)*AX, int* ierr)
+void SUBR(jadaOp_view_AX)(const void* op, TYPE(mvec_ptr)*AX, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
   CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *ierr);
@@ -155,7 +155,7 @@ void SUBR(jadaOp_view_AX)(TYPE(const_op_ptr) op, TYPE(mvec_ptr)*AX, int* ierr)
 }
 
 //! access BX from last call to apply (return a view to it)
-void SUBR(jadaOp_view_BX)(TYPE(const_op_ptr) op, TYPE(mvec_ptr)*BX, int* ierr)
+void SUBR(jadaOp_view_BX)(const void* op, TYPE(mvec_ptr)*BX, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
   CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *ierr);
@@ -166,7 +166,7 @@ void SUBR(jadaOp_view_BX)(TYPE(const_op_ptr) op, TYPE(mvec_ptr)*BX, int* ierr)
 }
 
 //! access X_proj from last call to apply (return a view to it)
-void SUBR(jadaOp_view_X_proj)(TYPE(const_op_ptr) op, TYPE(mvec_ptr)*X_proj, int* ierr)
+void SUBR(jadaOp_view_X_proj)(const void* op, TYPE(mvec_ptr)*X_proj, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
   CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *ierr);

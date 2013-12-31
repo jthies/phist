@@ -4,6 +4,7 @@
 
 #include "phist_macros.h"
 #include "phist_jadaInnerGmres.h"
+#include "phist_jadaOp.h"
 #include "phist_kernels.h"
 #include "phist_lapack.h"
 #include "phist_orthog.h"
