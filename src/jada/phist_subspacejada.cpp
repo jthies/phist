@@ -21,7 +21,7 @@
 #include "phist_simple_arnoldi.h"
 #include "phist_transform_searchspace.h"
 
-#include "phist_bgmres.h"
+#include "phist_gmres.h"
 
 #include "phist_gen_s.h"
 #include "phist_subspacejada_def.hpp"

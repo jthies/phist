@@ -46,7 +46,7 @@
 #include "phist_jadaOp.h"
 #include "phist_simple_arnoldi.h"
 
-#include "phist_bgmres.h"
+#include "phist_gmres.h"
 
 #include "phist_gen_s.h"
 #endif
@@ -183,6 +183,9 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     0,      nV-1,     0,     nV-1,      ierr), *ierr);
 
 
+  //------------------------------- initialize GMRES solver ------------------------
+  TYPE(gmresState_ptr) *gmresState = new TYPE(gmresState_ptr)[blockDim];
+  PHIST_CHK_IERR(SUBR( gmresStates_create ) (gmresState, blockDim, A_op->domain_map, 11, ierr), *ierr);
 
   //------------------------------- initialize subspace etc ------------------------
   // run arnoldi
@@ -334,7 +337,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
 
     // setup matrix of shifts and residuals for the correction equation
-    int k_ = 0; // 0:k_-1 vectors of Q used for the orthogonal projection in the correction equation
+    int k_ = 0; // 0:k_ vectors of Q used for the orthogonal projection in the correction equation
     int k = 0;  // is always == blockDim!
     for(int i = 0; i < nEig_ && k < blockDim; i++)
     {
@@ -424,10 +427,18 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
     TYPE(op) jdOp;
     PHIST_CHK_IERR(SUBR( jadaOp_create ) (A_op, B_op, Qtil, BQtil, sigma, R_H, AVv, BVv, Vv, &jdOp, ierr), *ierr);
-    // TODO specify useful bgmresIter and tol per eigenvalue!
-    int bgmresIter = 10;
+    // TODO specify useful tol per eigenvalue!
     PHIST_CHK_IERR(SUBR( mvec_put_value )(t, st::zero(), ierr), *ierr);
-    PHIST_CHK_NEG_IERR(SUBR( bgmres )    (&jdOp, t, t_res, mt::zero(), &bgmresIter, 10, 1, NULL, ierr), *ierr);
+    for(int i = 0; i < k; i++)
+    {
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,&t, i,i, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res,&t_res, i,i, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( gmresState_reset ) (gmresState[i], t_res, t, ierr), *ierr);
+      gmresState[i]->tol = mt::zero();
+    }
+    PHIST_CHK_NEG_IERR(SUBR( gmresStates_iterate ) (&jdOp, gmresState, k, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,&t, 0,k-1, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( gmresStates_updateSol ) (gmresState, k, t, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( jadaOp_delete ) (&jdOp, ierr), *ierr);
 
     // enlarge search space
@@ -464,6 +475,9 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
 
   //------------------------------- delete vectors and matrices --------------------
+  PHIST_CHK_IERR(SUBR( gmresStates_delete ) (gmresState, blockDim, ierr), *ierr);
+  delete[] gmresState;
+
   // delete views
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (R_H, ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (Rr_H,ierr), *ierr);
