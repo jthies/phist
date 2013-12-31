@@ -1,3 +1,5 @@
+//! TODO: update description, partially outdated, refers to phist_gmres rather thand this variant
+
 //! iteration status object for the pseudo-block GMRES
 //! iteration we currently use as approximate solver  
 //! for the correction equation. To initialize the    
@@ -38,9 +40,8 @@ typedef struct TYPE(jadaInnerGmresState) {
   //@}
   //! \name  internal data structures
   //@{
-  TYPE(mvec_ptr) B_; //! for which RHS is this GMRES being run?
   TYPE(mvec_ptr) V_; //! memory block in which basis is built up
-  TYPE(mvec_ptr) AV_; //! A*V_ to be used by jada (not (I-Qtil*Qtil')(A-shift I)
+  TYPE(mvec_ptr) AV_; //! A*V_ to be used by jada (not (I-Qtil*Qtil')(A-shift I) V_
   TYPE(sdMat_ptr) H_; //! memory block in which Hessenberg matrix from the Arnoldi process
                      //! is built up,, transformed to upper triangular form using 
                      //! Givens rotations.
@@ -131,4 +132,4 @@ void SUBR(jadaInnerGmresState_reset)(TYPE(jadaInnerGmresState_ptr) S,
 //! and multivector x can be passed in.
 //! If not NULL, also outputs A*x through projections coefficients and A*V
 void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[], int numSys,
-                TYPE(mvec_ptr) x, TYPE(mvec_ptr) Ax, int* ierr);
+                TYPE(mvec_ptr) x, TYPE(mvec_ptr) Ax, _MT_ *relResNorm, int* ierr);

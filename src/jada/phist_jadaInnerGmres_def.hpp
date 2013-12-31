@@ -109,7 +109,7 @@ void SUBR(jadaInnerGmresState_reset)(TYPE(jadaInnerGmresState_ptr) S, TYPE(const
   else if (b!=NULL)
   {
     // new rhs -> need to recompute ||B||
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), b, st::zero(), S->B_, ierr), *ierr);
+//PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), b, st::zero(), S->B_, ierr), *ierr);
     //S->B_=b;
     S->normB_=-mt::one(); // needs to be computed in next iterate call
   }
@@ -127,7 +127,7 @@ void SUBR(jadaInnerGmresState_reset)(TYPE(jadaInnerGmresState_ptr) S, TYPE(const
   return;
 }
 
-void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, TYPE(mvec_ptr) Ax, int* ierr)
+void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, TYPE(mvec_ptr) Ax, _MT_* relResNorm, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
@@ -243,14 +243,14 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) Op,
     S_array[i]->ierr=1; // not converged yet
     if (S_array[i]->normB_<mt::zero())
     {
-      if (S_array[i]->B_==NULL)
-      {
-        PHIST_OUT(PHIST_ERROR,"rhs vector not set in state %d, "
-        "did you forget to call reset()? (file %s, line %d)",i,__FILE__,__LINE__);
-        *ierr=-1;
-        return;
-      }
-      SUBR(mvec_norm2)(S_array[i]->B_,&S_array[i]->normB_,&S_array[i]->ierr);
+//if (S_array[i]->B_==NULL)
+//{
+  //PHIST_OUT(PHIST_ERROR,"rhs vector not set in state %d, "
+  //"did you forget to call reset()? (file %s, line %d)",i,__FILE__,__LINE__);
+  //*ierr=-1;
+  //return;
+//}
+//SUBR(mvec_norm2)(S_array[i]->B_,&S_array[i]->normB_,&S_array[i]->ierr);
       PHIST_CHK_IERR(*ierr=S_array[i]->ierr,*ierr);
     }
   }
@@ -309,7 +309,7 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) Op,
         TYPE(mvec_ptr) v0=NULL,Ax0=NULL;
         PHIST_CHK_IERR(SUBR(mvec_view_block)(S->V_,&v0,0,0,ierr),*ierr);
         PHIST_CHK_IERR(SUBR(mvec_view_block)(S->V_,&Ax0,1,1,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),S->B_,-st::one(),Ax0,ierr),*ierr);
+//PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),S->B_,-st::one(),Ax0,ierr),*ierr);
         // set v0=b-A*x0
         PHIST_CHK_IERR(SUBR(mvec_set_block)(S->V_,Ax0,0,0,ierr),*ierr);
         // normalize, rs[0]=||r0||, v0=r0/||r0||
