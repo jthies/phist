@@ -109,17 +109,17 @@ subroutine dspmvm_NT_strided_2(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, 
   real(kind=8), intent(inout) :: y(ldy,nrows)
 
   interface
-    subroutine dspmvm_nt_2_c(nrows, alpha, row_ptr, col_idx, val, x, ldx, y, ldy) bind(C)
+    subroutine dspmvm_nt_strided_2_c(nrows, alpha, row_ptr, col_idx, val, x, ldx, y, ldy) bind(C)
       use, intrinsic :: iso_c_binding
       integer(C_INT), value :: nrows, ldy, ldx
       real(C_DOUBLE), value :: alpha
       integer(C_INT), intent(in) :: row_ptr(*), col_idx(*)
       real(C_DOUBLE), intent(in) :: val(*), x(*)
       real(C_DOUBLE), intent(inout) :: y(*)
-    end subroutine dspmvm_nt_2_c
+    end subroutine dspmvm_nt_strided_2_c
   end interface
 
-  call dspmvm_nt_2_c(nrows,alpha,row_ptr,col_idx,val,x,ldx,y,ldy)
+  call dspmvm_nt_strided_2_c(nrows,alpha,row_ptr,col_idx,val,x,ldx,y,ldy)
 
 end subroutine dspmvm_NT_strided_2
 
@@ -134,17 +134,17 @@ subroutine dspmvm_NT_strided_4(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, 
   real(kind=8), intent(inout) :: y(ldy,nrows)
 
   interface
-    subroutine dspmvm_nt_4_c(nrows, alpha, row_ptr, col_idx, val, x, ldx, y, ldy) bind(C)
+    subroutine dspmvm_nt_strided_4_c(nrows, alpha, row_ptr, col_idx, val, x, ldx, y, ldy) bind(C)
       use, intrinsic :: iso_c_binding
       integer(C_INT), value :: nrows, ldy, ldx
       real(C_DOUBLE), value :: alpha
       integer(C_INT), intent(in) :: row_ptr(*), col_idx(*)
       real(C_DOUBLE), intent(in) :: val(*), x(*)
       real(C_DOUBLE), intent(inout) :: y(*)
-    end subroutine dspmvm_nt_4_c
+    end subroutine dspmvm_nt_strided_4_c
   end interface
 
-  call dspmvm_nt_4_c(nrows,alpha,row_ptr,col_idx,val,x,ldx,y,ldy)
+  call dspmvm_nt_strided_4_c(nrows,alpha,row_ptr,col_idx,val,x,ldx,y,ldy)
 
 end subroutine dspmvm_NT_strided_4
 
@@ -159,17 +159,17 @@ subroutine dspmvm_NT_strided_8(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, 
   real(kind=8), intent(inout) :: y(ldy,nrows)
 
   interface
-    subroutine dspmvm_nt_8_c(nrows, alpha, row_ptr, col_idx, val, x, ldx, y, ldy) bind(C)
+    subroutine dspmvm_nt_strided_8_c(nrows, alpha, row_ptr, col_idx, val, x, ldx, y, ldy) bind(C)
       use, intrinsic :: iso_c_binding
       integer(C_INT), value :: nrows, ldy, ldx
       real(C_DOUBLE), value :: alpha
       integer(C_INT), intent(in) :: row_ptr(*), col_idx(*)
       real(C_DOUBLE), intent(in) :: val(*), x(*)
       real(C_DOUBLE), intent(inout) :: y(*)
-    end subroutine dspmvm_nt_8_c
+    end subroutine dspmvm_nt_strided_8_c
   end interface
 
-  call dspmvm_nt_8_c(nrows,alpha,row_ptr,col_idx,val,x,ldx,y,ldy)
+  call dspmvm_nt_strided_8_c(nrows,alpha,row_ptr,col_idx,val,x,ldx,y,ldy)
 
 end subroutine dspmvm_NT_strided_8
 
@@ -299,7 +299,7 @@ subroutine dspmvm_strided_2(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, x, 
     do j = row_ptr(i), row_ptr(i+1)-1, 1
       tmp(:) = tmp(:) + val(j)*x(1:2,col_idx(j))
     end do
-    y(:,i) = alpha*tmp(:) + beta*y(1:2,i)
+    y(1:2,i) = alpha*tmp(:) + beta*y(1:2,i)
   end do
 end subroutine dspmvm_strided_2
 
@@ -320,7 +320,7 @@ subroutine dspmvm_strided_4(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, x, 
     do j = row_ptr(i), row_ptr(i+1)-1, 1
       tmp(:) = tmp(:) + val(j)*x(1:4,col_idx(j))
     end do
-    y(:,i) = alpha*tmp(:) + beta*y(1:4,i)
+    y(1:4,i) = alpha*tmp(:) + beta*y(1:4,i)
   end do
 end subroutine dspmvm_strided_4
 
@@ -341,7 +341,7 @@ subroutine dspmvm_strided_8(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, x, 
     do j = row_ptr(i), row_ptr(i+1)-1, 1
       tmp(:) = tmp(:) + val(j)*x(1:8,col_idx(j))
     end do
-    y(:,i) = alpha*tmp(:) + beta*y(1:8,i)
+    y(1:8,i) = alpha*tmp(:) + beta*y(1:8,i)
   end do
 end subroutine dspmvm_strided_8
 

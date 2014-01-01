@@ -47,7 +47,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(0,ierr_);
 
         jdOp_ = new TYPE(op);
-        SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,mat1_,vec1_,NULL,NULL,jdOp_,&ierr_);
+        SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,jdOp_,&ierr_);
         ASSERT_EQ(0,ierr_);
 
         // setup system to solve, exact x and A*x
@@ -140,6 +140,16 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       // don't let it iterate here!
 
       // check the result (we have given the solution as initial guess!)
+      {
+        TYPE(mvec_ptr) AX = NULL;
+        SUBR(jadaOp_view_AX)(jdOp_->A,&AX,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_add_mvec)(st::one(),AX,st::zero(),vec1_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(AX,&ierr_);
+        ASSERT_EQ(0,ierr_);
+      }
+      ASSERT_EQ(0,ierr_);
       TYPE(mvec_ptr) Ax_i = NULL;
       for(int i = 0; i < _NV_; i++)
       {
@@ -238,6 +248,16 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
 #endif
 
+      {
+        TYPE(mvec_ptr) AX = NULL;
+        SUBR(jadaOp_view_AX)(jdOp_->A,&AX,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_add_mvec)(st::one(),AX,st::zero(),vec1_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(AX,&ierr_);
+        ASSERT_EQ(0,ierr_);
+      }
+ 
       // check Ax = A*x
       SUBR(crsMat_times_mvec)(-st::one(),A_,vec2_,st::one(),vec1_,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -295,6 +315,16 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(0,state[i]->ierr);
       }
 
+      {
+        TYPE(mvec_ptr) AX = NULL;
+        SUBR(jadaOp_view_AX)(jdOp_->A,&AX,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_add_mvec)(st::one(),AX,st::zero(),vec1_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(AX,&ierr_);
+        ASSERT_EQ(0,ierr_);
+      }
+ 
       SUBR(crsMat_times_mvec)(st::one(),A_,vec2_,st::zero(),vec1_,&ierr_);
       ASSERT_EQ(0,ierr_);
       // check the result (we have given the solution as initial guess!)
@@ -382,6 +412,16 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_TRUE(state[i]->ierr == 0 || state[i]->ierr == 1);
       }
 
+      {
+        TYPE(mvec_ptr) AX = NULL;
+        SUBR(jadaOp_view_AX)(jdOp_->A,&AX,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_add_mvec)(st::one(),AX,st::zero(),vec1_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(AX,&ierr_);
+        ASSERT_EQ(0,ierr_);
+      }
+ 
       SUBR(crsMat_times_mvec)(st::one(),A_,vec2_,st::zero(),vec1_,&ierr_);
       ASSERT_EQ(0,ierr_);
       // check the result
@@ -474,6 +514,16 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(nIter,state[i]->totalIter);
       }
 
+      {
+        TYPE(mvec_ptr) AX = NULL;
+        SUBR(jadaOp_view_AX)(jdOp_->A,&AX,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_add_mvec)(st::one(),AX,st::zero(),vec1_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(AX,&ierr_);
+        ASSERT_EQ(0,ierr_);
+      }
+ 
       SUBR(crsMat_times_mvec)(st::one(),A_,vec2_,st::zero(),vec1_,&ierr_);
       ASSERT_EQ(0,ierr_);
       // check the result (we have given the solution as initial guess!)

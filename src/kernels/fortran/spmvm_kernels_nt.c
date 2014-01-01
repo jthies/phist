@@ -8,6 +8,15 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
   return (uintptr_t)pointer % byte_count == 0;
 }
 
+// provide possibility to check alignment in fortran
+void mem_is_aligned16_(const void*restrict pointer, int* ret)
+{
+  if( is_aligned(pointer,16) )
+    *ret = 0;
+  else
+    *ret = 1;
+}
+
 void dspmvm_nt_1_c(int nrows, double alpha, const int *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
                  const double *restrict rhsv, double *restrict lhsv)
 {

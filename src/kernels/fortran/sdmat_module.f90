@@ -69,7 +69,13 @@ contains
     ! determine data layout
     m = C%imax-C%imin+1
     n = C%jmax-C%jmin+1
-    k = A%jmax-A%jmin+1
+    if( transA .eq. 'N' ) then
+      k = A%jmax-A%jmin+1
+    else if( transA .eq. 'T' ) then
+      k = A%imax-A%imin+1
+    else
+      call exit(1)
+    end if
     lda = size(A%val,1)
     ldb = size(B%val,1)
     ldc = size(C%val,1)

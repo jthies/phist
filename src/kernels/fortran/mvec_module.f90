@@ -790,6 +790,7 @@ contains
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
     type(Map_t), pointer :: map
+    integer :: nvec_padded
     !--------------------------------------------------------------------------------
 
     call c_f_pointer(map_ptr, map)
@@ -803,7 +804,10 @@ contains
     flush(6)
     flush(6)
 #endif
-    allocate(mvec%val(nvec,map%nlocal(map%me)))
+    ! if nvec > 1, make it a multiple of 2 to have 16byte aligned offsets!
+    nvec_padded = nvec;
+    if( nvec_padded .gt. 1 .and. mod(nvec_padded,2) .eq. 1 ) nvec_padded = nvec_padded+1
+    allocate(mvec%val(nvec_padded,map%nlocal(map%me)))
     mvec_ptr = c_loc(mvec)
     ierr = 0
 
@@ -1167,11 +1171,11 @@ contains
     type(MVec_t), pointer :: x, y
     !--------------------------------------------------------------------------------
 
-    if( beta .ne. 0 .and. .not. c_associated(y_ptr) ) then
+    if( .not. c_associated(y_ptr) ) then
       ierr = -88
       return
     end if
-    if( alpha .ne. 0 .and. .not. c_associated(x_ptr) ) then
+    if( .not. c_associated(x_ptr) ) then
       ierr = -88
       return
     end if

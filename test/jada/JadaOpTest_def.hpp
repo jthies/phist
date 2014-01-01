@@ -44,14 +44,10 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         opA1_ = new TYPE(op);
         SUBR(op_wrap_crsMat)(opA1_, A1_, &ierr_);
         ASSERT_EQ(0,ierr_);
-        SUBR(read_mat)("sprandn_nodiag",nglob_,&A2_,&ierr_);
+        SUBR(read_mat)("speye",nglob_,&I_,&ierr_);
         ASSERT_EQ(0,ierr_);
-        opA2_ = new TYPE(op);
-        SUBR(op_wrap_crsMat)(opA2_, A2_, &ierr_);
-        ASSERT_EQ(0,ierr_);
-
         opI_ = new TYPE(op);
-        SUBR(op_identity)(opI_, &ierr_);
+        SUBR(op_wrap_crsMat)(opI_, I_, &ierr_);
         ASSERT_EQ(0,ierr_);
       }
     }
@@ -64,11 +60,11 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       VTest::TearDown();
       if (typeImplemented_)
       {
-        delete opA2_;
+        delete opI_;
         SUBR(crsMat_delete)(A1_,&ierr_);
         ASSERT_EQ(0,ierr_);
         delete opA1_;
-        SUBR(crsMat_delete)(A2_,&ierr_);
+        SUBR(crsMat_delete)(I_,&ierr_);
         ASSERT_EQ(0,ierr_);
         SUBR(mvec_delete)(q_,&ierr_);
         ASSERT_EQ(0,ierr_);
@@ -78,10 +74,9 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
     TYPE(crsMat_ptr) A1_; 
     TYPE(op_ptr) opA1_;
-    TYPE(crsMat_ptr) A2_; 
-    TYPE(op_ptr) opA2_;
-    TYPE(mvec_ptr) q_;
+    TYPE(crsMat_ptr) I_; 
     TYPE(op_ptr) opI_;
+    TYPE(mvec_ptr) q_;
     _ST_* sigma_;
 };
 
@@ -91,7 +86,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(op) jdOp;
-      SUBR(jadaOp_create)(opA1_,NULL,q_,NULL,sigma_,mat1_,vec1_,NULL,NULL,&jdOp,&ierr_);
+      SUBR(jadaOp_create)(opA1_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&ierr_);
       ASSERT_EQ(0,ierr_);
 
       SUBR(jadaOp_delete)(&jdOp,&ierr_);
@@ -105,7 +100,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(op) jdOp;
-      SUBR(jadaOp_create)(opA1_,opI_,q_,q_,sigma_,mat1_,vec1_,vec2_,vec3_,&jdOp,&ierr_);
+      SUBR(jadaOp_create)(opA1_,opI_,q_,q_,sigma_,_NV_,&jdOp,&ierr_);
       ASSERT_EQ(0,ierr_);
 
       SUBR(jadaOp_delete)(&jdOp,&ierr_);
@@ -119,7 +114,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(op) jdOp;
-      SUBR(jadaOp_create)(opI_,NULL,q_,NULL,sigma_,mat1_,vec1_,NULL,NULL,&jdOp,&ierr_);
+      SUBR(jadaOp_create)(opI_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&ierr_);
       ASSERT_EQ(0,ierr_);
 
       SUBR(mvec_random)(vec2_,&ierr_);
@@ -130,6 +125,16 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         sigma_[i] = st::zero();
       jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
+
+      {
+        TYPE(mvec_ptr) AX = NULL;
+        SUBR(jadaOp_view_AX)(jdOp.A,&AX,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_add_mvec)(st::one(),AX,st::zero(),vec1_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(AX,&ierr_);
+        ASSERT_EQ(0,ierr_);
+      }
 
       // vec1_ = I*vec2_ ?
 #ifdef PHIST_KERNEL_LIB_FORTRAN
@@ -162,7 +167,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(op) jdOp;
-      SUBR(jadaOp_create)(opI_,NULL,q_,NULL,sigma_,mat1_,vec1_,NULL,NULL,&jdOp,&ierr_);
+      SUBR(jadaOp_create)(opI_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&ierr_);
       ASSERT_EQ(0,ierr_);
 
       SUBR(mvec_random)(vec2_,&ierr_);
@@ -171,6 +176,16 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       // apply
       jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
+
+      {
+        TYPE(mvec_ptr) AX = NULL;
+        SUBR(jadaOp_view_AX)(jdOp.A,&AX,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_add_mvec)(st::one(),AX,st::zero(),vec1_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(AX,&ierr_);
+        ASSERT_EQ(0,ierr_);
+      }
 
       // vec1_ = I*vec2_ ?
 #ifdef PHIST_KERNEL_LIB_FORTRAN
@@ -207,7 +222,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(op) jdOp;
-      SUBR(jadaOp_create)(opA1_,NULL,q_,NULL,sigma_,mat1_,vec1_,NULL,NULL,&jdOp,&ierr_);
+      SUBR(jadaOp_create)(opA1_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&ierr_);
       ASSERT_EQ(0,ierr_);
 
       SUBR(mvec_random)(vec2_,&ierr_);
@@ -216,6 +231,16 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       // apply
       jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
+
+      {
+        TYPE(mvec_ptr) AX = NULL;
+        SUBR(jadaOp_view_AX)(jdOp.A,&AX,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_add_mvec)(st::one(),AX,st::zero(),vec1_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(AX,&ierr_);
+        ASSERT_EQ(0,ierr_);
+      }
 
       // vec1_ = A1_*vec2_ ?
       SUBR(crsMat_times_mvec)(st::one(),A1_,vec2_,st::zero(),vec3_,&ierr_);
@@ -236,7 +261,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(op) jdOp;
-      SUBR(jadaOp_create)(opA1_,NULL,q_,NULL,sigma_,mat1_,vec1_,NULL,NULL,&jdOp,&ierr_);
+      SUBR(jadaOp_create)(opA1_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&ierr_);
       ASSERT_EQ(0,ierr_);
 
       SUBR(mvec_random)(vec2_,&ierr_);
@@ -245,6 +270,16 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       // apply
       jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
+
+      {
+        TYPE(mvec_ptr) AX = NULL;
+        SUBR(jadaOp_view_AX)(jdOp.A,&AX,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_add_mvec)(st::one(),AX,st::zero(),vec1_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(AX,&ierr_);
+        ASSERT_EQ(0,ierr_);
+      }
 
       // vec3_ = (I-q_*q_') (vec1+sigma_i*I)vec2_ ?
       SUBR(mvec_vadd_mvec)(sigma_,vec2_,st::one(),vec1_,&ierr_);
@@ -272,7 +307,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(op) jdOp;
-      SUBR(jadaOp_create)(opA1_,NULL,q_,NULL,sigma_,mat1_,vec1_,NULL,NULL,&jdOp,&ierr_);
+      SUBR(jadaOp_create)(opA1_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&ierr_);
       ASSERT_EQ(0,ierr_);
 
       TYPE(mvec_ptr) vec4;
@@ -318,7 +353,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(op) jdOp;
-      SUBR(jadaOp_create)(opA1_,NULL,q_,NULL,sigma_,mat1_,vec1_,NULL,NULL,&jdOp,&ierr_);
+      SUBR(jadaOp_create)(opA1_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&ierr_);
       ASSERT_EQ(0,ierr_);
 
       TYPE(mvec_ptr) vec4;

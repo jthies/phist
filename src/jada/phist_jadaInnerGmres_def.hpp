@@ -362,8 +362,8 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
 #if PHIST_OUTLEV>=PHIST_VERBOSE
     for (int i=0;i<numSys;i++)
     {
-    PHIST_SOUT(PHIST_VERBOSE,"[%d]: %d\t%8.4e\n",i,
-          S[i]->curDimV_-1,S[i]->normR_);
+    PHIST_SOUT(PHIST_VERBOSE,"[%d]: %d\t%8.4e\t(%8.4e)\n",i,
+          S[i]->curDimV_-1,S[i]->normR_/S[i]->normR0_,S[i]->normR_);
     }
 #endif
     PHIST_SOUT(PHIST_VERBOSE,"%d converged, %d failed.\n",anyConverged,anyFailed);

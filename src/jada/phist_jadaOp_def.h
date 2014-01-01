@@ -102,10 +102,8 @@ void SUBR(jadaOp_apply)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
 // allocate and initialize the jadaOp struct
 void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,    TYPE(const_op_ptr)    B_op,
                          TYPE(const_mvec_ptr)  V,       TYPE(const_mvec_ptr)  BV,
-                         const _ST_            sigma[], TYPE(sdMat_ptr)       VY,
-                         TYPE(mvec_ptr)        AX,      TYPE(mvec_ptr)        BX,
-                         TYPE(mvec_ptr)        X_proj,  TYPE(op_ptr)          jdOp,
-                         int*                  ierr)
+                         const _ST_            sigma[], int                   nvec,
+                         TYPE(op_ptr)          jdOp,    int*                  ierr)
 {
   ENTER_FCN(__FUNCTION__);
   *ierr = 0;
@@ -119,10 +117,23 @@ void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,    TYPE(const_op_ptr)    B_
   myOp->V      = V;
   myOp->BV     = (B_op != NULL ? BV     : V);
   myOp->sigma  = sigma;
-  myOp->VY     = VY;
-  myOp->AX     = AX;
-  myOp->BX     = (B_op != NULL ? BX     : NULL);
-  myOp->X_proj = (B_op != NULL ? X_proj : NULL);
+  // allocate necessary temporary arrays
+  int nvecp;
+  const_comm_ptr_t comm;
+  PHIST_CHK_IERR(phist_map_get_comm(A_op->domain_map, &comm, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V, &nvecp, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&myOp->VY, nvecp, nvec, comm, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&myOp->AX, A_op->range_map, nvec, ierr), *ierr);
+  if( B_op != NULL )
+  {
+    PHIST_CHK_IERR(SUBR(mvec_create)(&myOp->BX, B_op->range_map, nvec, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&myOp->X_proj, B_op->domain_map, nvec, ierr), *ierr);
+  }
+  else
+  {
+    myOp->BX = NULL;
+    myOp->X_proj = NULL;
+  }
 
   // setup op_ptr function pointers
   jdOp->A     = (const void*)myOp;
@@ -138,6 +149,12 @@ void SUBR(jadaOp_delete)(TYPE(op_ptr) jdOp, int *ierr)
 
   // get jadaOp
   TYPE(jadaOp_data) *jadaOp = (TYPE(jadaOp_data)*) jdOp->A;
+
+  // delete temporary arrays
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(jadaOp->VY, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(jadaOp->AX, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(jadaOp->BX, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(jadaOp->X_proj, ierr), *ierr);
 
   // delete jadaOp
   free(jadaOp);

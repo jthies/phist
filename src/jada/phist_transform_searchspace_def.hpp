@@ -5,6 +5,33 @@ void SUBR(transform_searchSpace)(TYPE(mvec_ptr) V, TYPE(mvec_ptr) AV, TYPE(mvec_
 #include "phist_std_typedefs.hpp"
   *ierr = 0;
 
+  // get dimensions to create temporary storage
+  lidx_t nV, minBase;
+  const_comm_ptr_t comm;
+  PHIST_CHK_IERR(SUBR( sdMat_get_nrows ) (M, &nV, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_get_ncols ) (M, &minBase, ierr), *ierr);
+
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+  // temporary storage
+  const_map_ptr_t map;
+  PHIST_CHK_IERR( SUBR(mvec_get_map) (V, &map, ierr), *ierr);
+  TYPE(mvec_ptr) Vtmp;
+  PHIST_CHK_IERR( SUBR(mvec_create) (&Vtmp, map, minBase, ierr), *ierr);
+
+  PHIST_CHK_IERR(SUBR( mvec_times_sdMat) (st::one(), V, M, st::zero(), Vtmp, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_set_block  ) (V, Vtmp, 0, minBase-1, ierr), *ierr);
+
+  PHIST_CHK_IERR(SUBR( mvec_times_sdMat) (st::one(), AV, M, st::zero(), Vtmp, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_set_block  ) (AV, Vtmp, 0, minBase-1, ierr), *ierr);
+
+  if( generalizedEigenproblem )
+  {
+    PHIST_CHK_IERR(SUBR( mvec_times_sdMat) (st::one(), BV, M, st::zero(), Vtmp, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_set_block  ) (BV, Vtmp, 0, minBase-1, ierr), *ierr);
+  }
+
+  PHIST_CHK_IERR( SUBR(mvec_delete)(Vtmp, ierr), *ierr);
+#else
   // update V, AV and BV
   PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (V,  M, 64, ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (AV, M, 64, ierr), *ierr);
@@ -12,12 +39,8 @@ void SUBR(transform_searchSpace)(TYPE(mvec_ptr) V, TYPE(mvec_ptr) AV, TYPE(mvec_
   {
     PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (BV, M, 64, ierr), *ierr);
   }
+#endif
 
-  // get dimensions to create temporary storage for H
-  lidx_t nV, minBase;
-  const_comm_ptr_t comm;
-  PHIST_CHK_IERR(SUBR( sdMat_get_nrows ) (M, &nV, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_get_ncols ) (M, &minBase, ierr), *ierr);
   // we need some communicator for ghost...
   PHIST_CHK_IERR(SUBR( mvec_get_comm ) (V, &comm, ierr), *ierr);
   TYPE(sdMat_ptr) H_ = NULL;
