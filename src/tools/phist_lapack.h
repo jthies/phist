@@ -157,6 +157,26 @@ void ZTRTRS(const char* uplo, const char* trans, const char* diag, const int* n,
 const Dblas_cmplx_t* a, const int* lda, Dblas_cmplx_t* b, const int* ldb, int* info);
 
 ///////////////////////////////////////////////////////////////////////////////////////////
+//      XTRTRS - solve triangular linear system with single vector                       //
+///////////////////////////////////////////////////////////////////////////////////////////
+#define STRSV LAPACK_SUBR(STRSV,strsv)
+void STRSV(const char* uplo, const char* trans, const char* diag, const int* n,
+const float* a, const int* lda, float* b, const int* incb, int* info);
+
+#define DTRSV LAPACK_SUBR(DTRSV,dtrsv)
+void DTRSV(const char* uplo, const char* trans, const char* diag, const int* n,
+const double* a, const int* lda, double* b, const int* incb, int* info);
+
+#define CTRSV LAPACK_SUBR(CTRSV,ctrsv)
+void CTRSV(const char* uplo, const char* trans, const char* diag, const int* n,
+const Sblas_cmplx_t* a, const int* lda, Sblas_cmplx_t* b, const int* incb, int* info);
+
+#define ZTRSV LAPACK_SUBR(ZTRSV,ztrsv)
+void ZTRSV(const char* uplo, const char* trans, const char* diag, const int* n,
+const Dblas_cmplx_t* a, const int* lda, Dblas_cmplx_t* b, const int* incb, int* info);
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
 //      XLARTG - compute givens rotation
 ///////////////////////////////////////////////////////////////////////////////////////////
 #define SLARTG LAPACK_SUBR(SLARTG,slartg)

@@ -42,15 +42,10 @@ typedef struct TYPE(jadaInnerGmresState) {
   //@}
   //! \name  internal data structures
   //@{
-#ifndef PHIST_KERNEL_LIB_FORTRAN
-  TYPE(mvec_ptr) V_; //! memory block in which basis is built up
-  TYPE(mvec_ptr) AV_; //! A*V_ to be used by jada (not (I-Qtil*Qtil')(A-shift I) V_
-#else
   TYPE(mvec_ptr) *V_; //! array of mvecs because row-wise storage is not well suited here
   TYPE(mvec_ptr) *AV_; //! ""
   void *glob_unused_mvecs_;
   void *glob_used_mvecs_;
-#endif
   TYPE(sdMat_ptr) H_; //! memory block in which Hessenberg matrix from the Arnoldi process
                      //! is built up,, transformed to upper triangular form using 
                      //! Givens rotations.

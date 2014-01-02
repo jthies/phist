@@ -9,7 +9,6 @@ void SUBR(jadaInnerGmresStates_create)(TYPE(jadaInnerGmresState_ptr) state[], in
   const_comm_ptr_t comm;
   PHIST_CHK_IERR(phist_map_get_comm(map,&comm,ierr),*ierr);
 
-#ifdef PHIST_KERNEL_LIB_FORTRAN
   // setup a "queue" of mvecs to use later
   int totally_needed_mvecs = 2*(maxBas+2)*numSys;
   std::vector<TYPE(mvec_ptr)> *unused_mvecs = new std::vector<TYPE(mvec_ptr)>();
@@ -20,7 +19,6 @@ void SUBR(jadaInnerGmresStates_create)(TYPE(jadaInnerGmresState_ptr) state[], in
     unused_mvecs->push_back(tmp);
   }
   std::vector<TYPE(mvec_ptr)> *used_mvecs = new std::vector<TYPE(mvec_ptr)>();
-#endif
   
   for (int i=0;i<numSys;i++)
   {
@@ -32,15 +30,10 @@ void SUBR(jadaInnerGmresStates_create)(TYPE(jadaInnerGmresState_ptr) state[], in
     state[i]->maxBas_=maxBas;
     // we allow one additional vector to be stored in the basis so that
     // we can have V(:,i+1) = A*V(:,i) temporarily
-#ifndef PHIST_KERNEL_LIB_FORTRAN
-    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->V_,map,maxBas+1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->AV_,map,maxBas+1,ierr),*ierr);
-#else
     state[i]->V_ = new TYPE(mvec_ptr)[maxBas+1];
     state[i]->AV_ = new TYPE(mvec_ptr)[maxBas+1];
     state[i]->glob_unused_mvecs_ = (void*)unused_mvecs;
     state[i]->glob_used_mvecs_ = (void*)used_mvecs;
-#endif
     PHIST_CHK_IERR(SUBR(sdMat_create)(&state[i]->H_, maxBas+1, maxBas, comm,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->x0_,map,1,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->b_,map,1,ierr),*ierr);
@@ -59,7 +52,6 @@ void SUBR(jadaInnerGmresStates_delete)(TYPE(jadaInnerGmresState_ptr) state[], in
 {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-#ifdef PHIST_KERNEL_LIB_FORTRAN
   if( numSys > 0 )
   {
     std::vector<TYPE(mvec_ptr)> *unused_mvecs = (std::vector<TYPE(mvec_ptr)>*) state[0]->glob_unused_mvecs_;
@@ -75,19 +67,13 @@ void SUBR(jadaInnerGmresStates_delete)(TYPE(jadaInnerGmresState_ptr) state[], in
     delete unused_mvecs;
     delete used_mvecs;
   }
-#endif
   for (int i=0;i<numSys;i++)
   {
     PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->x0_,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->b_,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_delete)(state[i]->H_,ierr),*ierr);
-#ifndef PHIST_KERNEL_LIB_FORTRAN
-    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->AV_,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->V_,ierr),*ierr);
-#else
     delete [] state[i]->AV_;
     delete [] state[i]->V_;
-#endif
     delete [] state[i]->cs_;
     delete [] state[i]->sn_;
     delete [] state[i]->rs_;
@@ -138,19 +124,40 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
   TYPE(mvec_ptr) x_i=NULL;
   TYPE(mvec_ptr) Ax_i=NULL;
   TYPE(mvec_ptr) V=NULL;
+  *ierr = 0;
 
+  if( numSys <= 0 )
+    return;
+
+  int sharedCurDimV = S_array[0]->curDimV_;
+  for(int i = 0; i < numSys; i++)
+  {
+    PHIST_CHK_IERR(*ierr = (sharedCurDimV == S_array[i]->curDimV_) ? 0 : -99, *ierr);
+  }
+
+  // no iteration done yet?
+  if( sharedCurDimV <= 0 )
+  {
+    for(int i = 0; i < numSys; i++)
+      resNorm[i] = -mt::one();
+    return;
+  }
+  if( sharedCurDimV == 1 )
+  {
+    for(int i = 0; i < numSys; i++)
+      resNorm[i] = S_array[i]->normR0_;
+    return;
+  }
+
+  _ST_ *y = new _ST_[numSys*S_array[0]->maxBas_];
+  int ldy = numSys;
+
+  // calculate y by solving the triangular systems
   for (int i=0;i<numSys;i++)
   {
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(x,&x_i,i,i,ierr),*ierr);
-    if( Ax != NULL )
-    {
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(Ax,&Ax_i,i,i,ierr),*ierr);
-    }
-    // compute y by solving the triangular system
     TYPE(const_jadaInnerGmresState_ptr) S = S_array[i];
-    TYPE(sdMat_ptr) y=NULL;
-    ST *H_raw=NULL, *y_raw=NULL;
-    lidx_t ldH,ldy;
+    ST *H_raw=NULL;
+    lidx_t ldH;
 
     int m=S->curDimV_-1;
     // no iteration done yet?
@@ -166,8 +173,6 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
     }
     resNorm[i] = S->normR_/S->normR0_;
 
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&y,m,1,comm,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(y,&y_raw,&ldy,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S->H_,&H_raw,&ldH,ierr),*ierr);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -185,55 +190,28 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
     }
 #endif
 
-    for (int k=0;k<m;k++)
-      y_raw[k]=S->rs_[k];
-
     // y = H\rs, H upper triangular
     const char* uplo="U";
     const char* trans="N";
     const char* diag="N";
-    int nrhs=1;
     // set y to rs
     for(int j = 0; j < m; j++)
-      y_raw[j] = S->rs_[j];
-    PHIST_CHK_IERR(PREFIX(TRTRS)(uplo,trans,diag,&m,&nrhs,
+      y[i+ldy*j] = S->rs_[j];
+    PHIST_CHK_IERR(PREFIX(TRSV)(uplo,trans,diag,&m,
                                         (st::blas_scalar_t*)H_raw,&ldH,
-                                        (st::blas_scalar_t*)y_raw, &ldy, ierr),*ierr);
+                                        (st::blas_scalar_t*)&y[i], &ldy, ierr),*ierr);
+  }
 
 
-#if PHIST_OUTLEV>=PHIST_DEBUG
-    PHIST_OUT(PHIST_DEBUG,"y=\n");
-    PHIST_CHK_IERR(SUBR(sdMat_print)(y,ierr),*ierr);
-#endif
-
-#ifndef PHIST_KERNEL_LIB_FORTRAN
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(S->V_,&V,0,m-1,ierr),*ierr);
-
-    // X = X + M\V*y. TODO: with right preconditioning, split this into two parts and apply
-    // preconditioner to all systems simultaneously outside the loop (need tmp vector)
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),V,y,st::one(),x_i,ierr),*ierr);
+  // add up solution
+  for(int j = 0; j < sharedCurDimV-1; j++)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&y[ldy*j], S_array[0]->V_[j], st::one(), x, ierr), *ierr);
     if( Ax != NULL )
     {
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(S->AV_,&V,0,m-1,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),V,y,st::one(),Ax_i,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&y[ldy*j], S_array[0]->AV_[j], st::one(), Ax, ierr), *ierr);
     }
-#else
-    for(int j = 0; j < m; j++)
-    {
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(S->V_[j],&V,i,i,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(y_raw[j],V,st::one(),x_i,ierr), *ierr);
-      if( Ax != NULL )
-      {
-        PHIST_CHK_IERR(SUBR(mvec_view_block)(S->AV_[j],&V,i,i,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(y_raw[j],V,st::one(),Ax_i,ierr), *ierr);
-      }
-    }
-#endif
-    PHIST_CHK_IERR(SUBR(sdMat_delete)(y,ierr),*ierr);
   }
-  PHIST_CHK_IERR(SUBR(mvec_delete)(V,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(x_i,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(Ax_i,ierr),*ierr);
 }
 
 
@@ -265,14 +243,10 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
   // work vector for x and y = jdOp(x)
   TYPE(mvec_ptr) work_x = NULL;
   TYPE(mvec_ptr) work_y = NULL;
-#ifndef PHIST_KERNEL_LIB_FORTRAN
-  PHIST_CHK_IERR( SUBR(mvec_create ) (&work_x, map, numSys, ierr), *ierr);
-  PHIST_CHK_IERR( SUBR(mvec_create ) (&work_y, map, numSys, ierr), *ierr);
-#else
   // get pointers to mvec-stacks
   std::vector<TYPE(mvec_ptr)> *unused_mvecs = (std::vector<TYPE(mvec_ptr)>*) S[0]->glob_unused_mvecs_;
   std::vector<TYPE(mvec_ptr)> *used_mvecs = (std::vector<TYPE(mvec_ptr)>*) S[0]->glob_used_mvecs_;
-#warning "assuming full restart, partial restart not supported for this kernel lib yet"
+#warning "assuming full restart, partial restart not supported yet"
   unused_mvecs->insert(unused_mvecs->end(),used_mvecs->begin(),used_mvecs->end());
   used_mvecs->clear();
   // borrow work_x, it is only used for one iteration
@@ -284,7 +258,6 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(work_x,&nvec,ierr),*ierr);
     PHIST_CHK_IERR( *ierr = (nvec == numSys) ? 0 : -99, *ierr);
   }
-#endif
 
   // views into V_
   TYPE(mvec_ptr) Vj = NULL, AVj = NULL, Vprev = NULL;
@@ -323,26 +296,16 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
 
   while( anyConverged == 0 && anyFailed == 0 )
   {
-#ifdef PHIST_KERNEL_LIB_FORTRAN
     // we need a new mvec for work_y
     work_y = unused_mvecs->back();
     used_mvecs->push_back(work_y);
     unused_mvecs->pop_back();
-#endif
 
     //    % apply the jadaOp
     PHIST_CHK_IERR( jdOp->apply (st::one(), jdOp->A, work_x, st::zero(), work_y, ierr), *ierr);
     PHIST_CHK_IERR( SUBR(jadaOp_view_AX) (jdOp->A, &view_Ax, ierr), *ierr);
 
     //    % scatter view_Ax
-#ifndef PHIST_KERNEL_LIB_FORTRAN
-    for(int i = 0; i < numSys; i++)
-    {
-      int jprev = std::max(S[i]->curDimV_-1,0);
-      PHIST_CHK_IERR( SUBR(mvec_view_block) (S[i]->AV_, &AVj, jprev, jprev, ierr), *ierr);
-      PHIST_CHK_IERR( SUBR(mvec_get_block ) (view_Ax, AVj, i, i, ierr), *ierr);
-    }
-#else
     // we need storage for Ax, reuse work_x here
     work_x = unused_mvecs->back();
     used_mvecs->push_back(work_x);
@@ -355,7 +318,6 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
       int jprev = std::max(S[i]->curDimV_-1,0);
       S[i]->AV_[jprev] = work_x;
     }
-#endif
 
     // use work_y for Vj to avoid unnecessary copies and scatter afterwords
 
@@ -385,27 +347,7 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
       }
     }
 
-#ifndef PHIST_KERNEL_LIB_FORTRAN
-    //    % arnoldi update
-    for(int i = 0; i < numSys; i++)
-    {
-      int j = S[i]->curDimV_;
-      if( j == 0 )
-        continue;
-
-      PHIST_CHK_IERR( SUBR(mvec_view_block) (work_y, &Vj, i, i, ierr), *ierr);
-
-      // view appropriate blocks in V_ and H_
-      PHIST_CHK_IERR( SUBR(mvec_view_block ) (S[i]->V_, &Vprev, 0, j-1, ierr), *ierr);
-      // view H(j,j) as R1
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(S[i]->H_,&R1,j,j,j-1,j-1,ierr),*ierr);
-      // view H(1:j,j) as R2
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(S[i]->H_,&R2,0,j-1,j-1,j-1,ierr),*ierr);
-      //orthogonalize
-      PHIST_CHK_IERR(SUBR(orthog)(Vprev,Vj,R1,R2,2,ierr),*ierr);
-    }
-#else
-    // TODO: 
+    // TODO: % arnoldi update with modified gram schmidt
     {
       int sharedCurDimV = S[0]->curDimV_;
       for(int i = 0; i < numSys; i++)
@@ -450,7 +392,6 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
         delete[] tmp_;
       }
     }
-#endif
 
 
     //    % update QR factorization of H
@@ -530,17 +471,6 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
     }
 
     // scatter work_y
-#ifndef PHIST_KERNEL_LIB_FORTRAN
-    for(int i = 0; i < numSys; i++)
-    {
-      // curDimV already increased by one!
-      int j = S[i]->curDimV_-1;
-      PHIST_CHK_IERR( SUBR(mvec_view_block) (S[i]->V_, &Vj, j, j, ierr), *ierr);
-      PHIST_CHK_IERR( SUBR(mvec_get_block ) (work_y, Vj, i, i, ierr), *ierr);
-    }
-    // avoids copying data
-    std::swap(work_x,work_y);
-#else
     // append work_y to the V_ lists of the states
     for(int i = 0; i < numSys; i++)
     {
@@ -549,7 +479,6 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
     }
     // use work_y as input in the next iteration
     work_x = work_y;
-#endif
 
 
 
@@ -567,12 +496,6 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
 
     (*nIter)++;
   }
-
-  // delete work storage
-#ifndef PHIST_KERNEL_LIB_FORTRAN
-  PHIST_CHK_IERR( SUBR(mvec_delete) (work_x, ierr), *ierr);
-  PHIST_CHK_IERR( SUBR(mvec_delete) (work_y, ierr), *ierr);
-#endif
 
   if (anyConverged > 0)
     *ierr=0;

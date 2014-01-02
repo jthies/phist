@@ -122,6 +122,7 @@ contains
     flush(6)
 #endif
     allocate(sdmat%val(nrows,ncols))
+    sdmat%val = 0._8
     sdmat_ptr = c_loc(sdmat)
     ierr = 0
 

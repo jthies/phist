@@ -190,7 +190,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     if (maxRed>0.75)
       {
       stopGS=true;
-      PHIST_SOUT(PHIST_VERBOSE,"stopping Gram-Schmidt");
+      PHIST_SOUT(PHIST_VERBOSE,"stopping Gram-Schmidt\n");
       break;
       }
     if (step>=numSweeps)

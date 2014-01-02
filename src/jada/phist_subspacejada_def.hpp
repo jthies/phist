@@ -412,11 +412,11 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
       nV = minBase;
     }
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifndef JADA_INNER_GMRES_FIXED
 int originalBlockDim = k;
 if( k < blockDim )
 {
-  PHIST_SOUT(PHIST_WARNING,"k < blockDim not supported for fortran kernel lib!\n");
+  PHIST_SOUT(PHIST_WARNING,"k < blockDim not supported yet!\n");
   k = blockDim;
 }
 #endif
@@ -442,11 +442,14 @@ if( k < blockDim )
       gmresState[i]->tol = mt::zero();
     }
     PHIST_CHK_NEG_IERR(SUBR( jadaInnerGmresStates_iterate ) (&jdOp, gmresState, k, &nTotalGmresIter, ierr), *ierr);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifndef JADA_INNER_GMRES_FIXED
   k = originalBlockDim;
 #endif
+    // get solution and reuse res for At
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,&t, 0,k-1, ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( jadaInnerGmresStates_updateSol ) (gmresState, k, t, NULL, gmresResNorm, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res,&t_res, 0,k-1, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_put_value )(t_res, st::zero(), ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( jadaInnerGmresStates_updateSol ) (gmresState, k, t, t_res, gmresResNorm, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( jadaOp_delete ) (&jdOp, ierr), *ierr);
 
     // enlarge search space
@@ -460,10 +463,19 @@ if( k < blockDim )
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,     k-1,       ierr), *ierr);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H,nV,    nV+k-1,    nV,    nV+k-1,    ierr), *ierr);
     PHIST_CHK_NEG_IERR(SUBR( orthog ) (V, Vv, Rr_H, R_H, 3, ierr), *ierr);
+    int randomVecs = *ierr;
     // TODO: only take non-random vector if *ierr > 0
     // calculate AVv, BVv
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_, &AVv,                   nV,    nV+k-1,    ierr), *ierr);
-    PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vv, st::zero(), AVv, ierr), *ierr);
+    if( randomVecs == 0 )
+    {
+      // reuse data from jadaInnerGmres
+      PHIST_CHK_IERR(SUBR(  mvec_times_sdMat ) (st::one(), t_res, Rr_H, st::zero(), AVv, ierr), *ierr);
+    }
+    else
+    {
+      PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vv, st::zero(), AVv, ierr), *ierr);
+    }
     if( B_op != NULL )
     {
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BVv,                   nV,    nV+k-1,    ierr), *ierr);
