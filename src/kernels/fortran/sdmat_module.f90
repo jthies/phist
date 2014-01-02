@@ -380,6 +380,7 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(SDMat_t), pointer :: sdmat
+    integer :: i
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(sdmat_ptr) ) then
@@ -389,7 +390,9 @@ contains
 
     call c_f_pointer(sdmat_ptr, sdmat)
 
-    write(*,*) sdmat%val(sdmat%imin:sdmat%imax,sdmat%jmin:sdmat%jmax)
+    do i = sdmat%imin, sdmat%imax
+      write(*,*) sdmat%val(i,sdmat%jmin:sdmat%jmax)
+    end do
     flush(6)
     ierr = 0
 

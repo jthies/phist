@@ -468,3 +468,22 @@ subroutine dgemm_sB_generic(m,n,k,alpha,A,lda,B,beta,C,ldc)
 
 end subroutine dgemm_sB_generic
 
+
+subroutine dgemm_sB_generic_inplace(m,n,k,A,lda,B)
+  implicit none
+  integer, intent(in) :: m,n,k,lda
+  real(kind=8), intent(inout) :: A(lda,*)
+  real(kind=8), intent(in) :: B(k,n)
+  integer :: i, j
+  real(kind=8) :: work(n)
+
+!$omp parallel do private(work)
+  do i = 1, m
+    do j = 1, n
+      work(j) = sum(A(1:k,i)*B(:,j))
+    end do
+    A(1:n,i) = work(:)
+  end do
+
+end subroutine dgemm_sB_generic_inplace
+

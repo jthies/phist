@@ -412,7 +412,14 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
       nV = minBase;
     }
-
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+int originalBlockDim = k;
+if( k < blockDim )
+{
+  PHIST_SOUT(PHIST_WARNING,"k < blockDim not supported for fortran kernel lib!\n");
+  k = blockDim;
+}
+#endif
 
     // calculate corrections
     // setup jadaOp
@@ -435,6 +442,9 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
       gmresState[i]->tol = mt::zero();
     }
     PHIST_CHK_NEG_IERR(SUBR( jadaInnerGmresStates_iterate ) (&jdOp, gmresState, k, &nTotalGmresIter, ierr), *ierr);
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+  k = originalBlockDim;
+#endif
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,&t, 0,k-1, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( jadaInnerGmresStates_updateSol ) (gmresState, k, t, NULL, gmresResNorm, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( jadaOp_delete ) (&jdOp, ierr), *ierr);

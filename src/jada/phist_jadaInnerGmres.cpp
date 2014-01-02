@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+#include <vector>
 
 #include "phist_macros.h"
 #include "phist_jadaInnerGmres.h"

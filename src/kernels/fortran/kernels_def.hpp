@@ -388,4 +388,27 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* ierr)
   PHIST_CHK_NEG_IERR(SUBR(mvec_QR_f)(V,R,ierr),*ierr);
 }
 
+/* unused
+void SUBR(mvec_gather_mvecs)(TYPE(mvec_ptr) V, TYPE(const_mvec_ptr) W[], int nblocks, int *ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+  void SUBR(mvec_gather_mvecs_f)(TYPE(mvec_ptr),TYPE(const_mvec_ptr) W[], int, int*);
+  PHIST_CHK_IERR(SUBR(mvec_gather_mvecs_f)(V,W,nblocks,ierr),*ierr);
+}
+
+void SUBR(mvec_scatter_mvecs)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W[], int nblocks, int *ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+  void SUBR(mvec_scatter_mvecs_f)(TYPE(const_mvec_ptr),TYPE(mvec_ptr) W[], int, int*);
+  PHIST_CHK_IERR(SUBR(mvec_scatter_mvecs_f)(V,W,nblocks,ierr),*ierr);
+}
+*/
+
+void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int* ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+  void SUBR(mvec_times_sdMat_inplace_f)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int*);
+  PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace_f)(V, M, ierr), *ierr);
+}
+
 }

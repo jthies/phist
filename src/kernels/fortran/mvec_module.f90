@@ -14,6 +14,10 @@ module mvec_module
   !public :: phist_Dmvec_view_block
   !public :: phist_Dmvec_get_block
   !public :: phist_Dmvec_set_block
+  ! !public :: phist_Dmvec_gather_mvecs
+  ! !public :: phist_Dmvec_scatter_mvecs
+  ! public :: mvec_gather_mvecs
+  ! public :: mvec_scatter_mvecs
   !public :: phist_Dmvec_put_value
   !public :: phist_Dmvec_random
   !public :: phist_Dmvec_print
@@ -30,7 +34,9 @@ module mvec_module
   !public :: phist_Dmvec_dot_mvec
   public :: mvec_dot_mvec
   !public :: phist_Dmvec_times_sdMat
+  !public :: phist_Dmvec_times_sdMat_inplace
   public :: mvec_times_sdmat
+  public :: mvec_times_sdmat_inplace
   !public :: phist_DmvecT_times_mvec
   public :: mvecT_times_mvec
   !public :: phist_Dmvec_QR
@@ -49,6 +55,151 @@ module mvec_module
   end type MVec_t
 
 contains
+
+  ! currently unused
+  !!==================================================================================
+  !!> copy data from a list of other mvecs into one mvec
+  !subroutine mvec_gather_mvecs(mvec, block_list)
+    !!--------------------------------------------------------------------------------
+    !type(MVec_t), intent(inout) :: mvec
+    !type(MVec_t), intent(in)    :: block_list(1:)
+    !!--------------------------------------------------------------------------------
+    !integer :: nvec, nblocks, nrows, ldb, ldm
+    !logical :: single_vector_gather
+    !integer :: i, j, nvec_i, off, jmin_i, jmax_i
+    !logical :: strided
+    !!--------------------------------------------------------------------------------
+
+    !! determine data layout
+    !nvec = mvec%jmax-mvec%jmin+1
+    !nblocks = size(block_list)
+    !nrows = size(mvec%val,2)
+    !ldm = size(mvec%val,1)
+    !if( .not. mvec%is_view .or. &
+      !& ( mvec%jmin .eq. lbound(mvec%val,1) .and. &
+      !&   mvec%jmax .eq. ubound(mvec%val,1)       ) ) then
+      !strided = .false.
+    !else
+      !strided = .true.
+    !end if
+
+
+    !! fast versions for fixed nvec and gathering single vectors
+    !single_vector_gather = .true.
+    !if( nvec .ne. nblocks ) single_vector_gather = .false.
+    !do i = 1, nblocks
+      !if( block_list(i)%jmin .ne. block_list(i)%jmax ) then
+        !single_vector_gather = .false.
+      !end if
+    !end do
+
+    !if( single_vector_gather .and. .not. strided ) then
+      !if( nvec .eq. 1 ) then
+        !call dgather_1(nrows, mvec%val(mvec%jmin,1), &
+          !&            block_list(1)%val(block_list(1)%jmin,1), size(block_list(1)%val,1) )
+        !return
+      !else if( nvec .eq. 2 ) then
+        !call dgather_2(nrows, mvec%val(mvec%jmin,1), &
+          !&            block_list(1)%val(block_list(1)%jmin,1), size(block_list(1)%val,1), &
+          !&            block_list(2)%val(block_list(2)%jmin,1), size(block_list(2)%val,1) )
+        !return
+      !else if( nvec .eq. 4 ) then
+        !call dgather_4(nrows, mvec%val(mvec%jmin,1), &
+          !&            block_list(1)%val(block_list(1)%jmin,1), size(block_list(1)%val,1), &
+          !&            block_list(2)%val(block_list(2)%jmin,1), size(block_list(2)%val,1), &
+          !&            block_list(3)%val(block_list(3)%jmin,1), size(block_list(3)%val,1), &
+          !&            block_list(4)%val(block_list(4)%jmin,1), size(block_list(4)%val,1) )
+        !return
+      !end if
+    !end if
+
+!!$omp parallel do
+    !do j = 1, nrows
+      !off = mvec%jmin
+      !do i = 1, nblocks
+        !jmin_i = block_list(i)%jmin
+        !jmax_i = block_list(i)%jmax
+        !nvec_i = jmax_i-jmin_i+1
+        !mvec%val(off:off+nvec_i-1,j) = block_list(i)%val(jmin_i:jmax_i,j)
+      !end do
+    !end do
+
+    !!--------------------------------------------------------------------------------
+  !end subroutine mvec_gather_mvecs
+
+
+  !! currently unused
+  !!==================================================================================
+  !!> copy data from a list of other mvecs into one mvec
+  !subroutine mvec_scatter_mvecs(mvec, block_list)
+    !!--------------------------------------------------------------------------------
+    !type(MVec_t), intent(inout) :: mvec
+    !type(MVec_t), intent(in)    :: block_list(1:)
+    !!--------------------------------------------------------------------------------
+    !integer :: nvec, nblocks, nrows, ldb, ldm
+    !logical :: single_vector_scatter
+    !integer :: i, j, nvec_i, off, jmin_i, jmax_i
+    !logical :: strided
+    !!--------------------------------------------------------------------------------
+
+    !! determine data layout
+    !nvec = mvec%jmax-mvec%jmin+1
+    !nblocks = size(block_list)
+    !nrows = size(mvec%val,2)
+    !ldm = size(mvec%val,1)
+    !if( .not. mvec%is_view .or. &
+      !& ( mvec%jmin .eq. lbound(mvec%val,1) .and. &
+      !&   mvec%jmax .eq. ubound(mvec%val,1)       ) ) then
+      !strided = .false.
+    !else
+      !strided = .true.
+    !end if
+
+
+    !! fast versions for fixed nvec and scattering single vectors
+    !single_vector_scatter = .true.
+    !if( nvec .ne. nblocks ) single_vector_scatter = .false.
+    !do i = 1, nblocks
+      !if( block_list(i)%jmin .ne. block_list(i)%jmax ) then
+        !single_vector_scatter = .false.
+      !end if
+    !end do
+
+    !if( single_vector_scatter .and. .not. strided ) then
+      !if( nvec .eq. 1 ) then
+        !call dscatter_1(nrows, mvec%val(mvec%jmin,1), &
+          !&            block_list(1)%val(block_list(1)%jmin,1), size(block_list(1)%val,1) )
+        !return
+      !else if( nvec .eq. 2 ) then
+        !call dscatter_2(nrows, mvec%val(mvec%jmin,1), &
+          !&            block_list(1)%val(block_list(1)%jmin,1), size(block_list(1)%val,1), &
+          !&            block_list(1)%val(block_list(2)%jmin,1), size(block_list(2)%val,1) )
+        !return
+      !else if( nvec .eq. 4 ) then
+        !call dscatter_4(nrows, mvec%val(mvec%jmin,1), &
+          !&            block_list(1)%val(block_list(1)%jmin,1), size(block_list(1)%val,1), &
+          !&            block_list(2)%val(block_list(2)%jmin,1), size(block_list(2)%val,1), &
+          !&            block_list(3)%val(block_list(3)%jmin,1), size(block_list(3)%val,1), &
+          !&            block_list(4)%val(block_list(4)%jmin,1), size(block_list(4)%val,1) )
+        !return
+      !end if
+    !end if
+
+!!$omp parallel do
+    !do j = 1, nrows
+      !off = mvec%jmin
+      !do i = 1, nblocks
+        !jmin_i = block_list(i)%jmin
+        !jmax_i = block_list(i)%jmax
+        !nvec_i = jmax_i-jmin_i+1
+        !block_list(i)%val(jmin_i:jmax_i,j) = mvec%val(off:off+nvec_i-1,j)
+      !end do
+    !end do
+
+    !!--------------------------------------------------------------------------------
+  !end subroutine mvec_scatter_mvecs
+
+
 
   !==================================================================================
   !> calculate 2-norm of the vectors in a multivector
@@ -521,6 +672,37 @@ contains
   end subroutine mvec_times_sdmat
 
 
+  !==================================================================================
+  ! special gemm routine for mvec <- mvec*sdMat
+  subroutine mvec_times_sdmat_inplace(v,M)
+    !--------------------------------------------------------------------------------
+    type(MVec_t),  intent(in)    :: v
+    type(SDMat_t), intent(in)    :: M
+    !--------------------------------------------------------------------------------
+    integer :: nrows, nvecv, nvecw, ldv
+    logical :: strided_v
+    !--------------------------------------------------------------------------------
+
+    ! determine data layout
+    nrows = size(v%val,2)
+    nvecv = v%jmax-v%jmin+1
+    nvecw = M%jmax-M%jmin+1
+    ldv = size(v%val,1)
+    if( .not. v%is_view .or. &
+      & ( v%jmin .eq. lbound(v%val,1) .and. &
+      &   v%jmax .eq. ubound(v%val,1)       ) ) then
+      strided_v = .false.
+    else
+      strided_v = .true.
+    end if
+
+    call dgemm_sB_generic_inplace(nrows,nvecw,nvecv,v%val(v%jmin,1),ldv, &
+      &                   M%val(M%imin:M%imax,M%jmin:M%jmax))
+
+
+    !--------------------------------------------------------------------------------
+  end subroutine mvec_times_sdmat_inplace
+
 
   !==================================================================================
   ! special gemm routine for mvecT_times_mvec
@@ -974,6 +1156,7 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec, block
+    type(MVec_t) :: view
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) .or. .not. c_associated(block_ptr) ) then
@@ -984,7 +1167,15 @@ contains
     call c_f_pointer(mvec_ptr, mvec)
     call c_f_pointer(block_ptr,block)
 
-    block%val(block%jmin:block%jmax,:) = mvec%val(mvec%jmin+jmin:mvec%jmin+jmax,:)
+    ! create view and let mvec_add_mvec handle the rest!
+    view%is_view = .true.
+    view%map = mvec%map
+    view%jmin = mvec%jmin+jmin
+    view%jmax = mvec%jmin+jmax
+    view%val=>mvec%val
+    call mvec_add_mvec(1._8,view,0._8,block)
+
+    ierr = 0
 
   end subroutine phist_Dmvec_get_block
 
@@ -997,6 +1188,7 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec, block
+    type(MVec_t) :: view
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) .or. .not. c_associated(block_ptr) ) then
@@ -1007,9 +1199,100 @@ contains
     call c_f_pointer(mvec_ptr, mvec)
     call c_f_pointer(block_ptr,block)
 
+    ! create view and let mvec_add_mvec handle the rest!
+    view%is_view = .true.
+    view%map = mvec%map
+    view%jmin = mvec%jmin+jmin
+    view%jmax = mvec%jmin+jmax
+    view%val=>mvec%val
+    call mvec_add_mvec(1._8,block,0._8,view)
+
     mvec%val(mvec%jmin+jmin:mvec%jmin+jmax,:) = block%val(block%jmin:block%jmax,:)
+    ierr = 0
 
   end subroutine phist_Dmvec_set_block
+
+
+  !subroutine phist_Dmvec_gather_mvecs(mvec_ptr, block_ptr_list, nblocks, ierr) bind(C,name='phist_Dmvec_gather_mvecs_f')
+    !use, intrinsic :: iso_c_binding
+    !!--------------------------------------------------------------------------------
+    !type(C_PTR),        value         :: mvec_ptr
+    !type(C_PTR),        intent(in)    :: block_ptr_list(*)
+    !integer(C_INT),     value         :: nblocks
+    !integer(C_INT),     intent(out)   :: ierr
+    !!--------------------------------------------------------------------------------
+    !type(MVec_t), pointer :: mvec, tmp
+    !type(MVec_t), pointer :: block_list(:)
+    !integer :: i
+    !!--------------------------------------------------------------------------------
+
+    !if( .not. c_associated(mvec_ptr) ) then
+      !ierr = -88
+      !return
+    !end if
+    !call c_f_pointer(mvec_ptr, mvec)
+
+    !allocate(block_list(nblocks))
+    !do i = 1, nblocks
+      !if( .not. c_associated(block_ptr_list(i)) ) then
+        !ierr = -88
+        !return
+      !end if
+      !call c_f_pointer(block_ptr_list(i),tmp)
+      !block_list(i)%jmin = tmp%jmin
+      !block_list(i)%jmax = tmp%jmax
+      !block_list(i)%is_view = .true.
+      !block_list(i)%map = tmp%map
+      !block_list(i)%val => tmp%val
+    !end do
+
+    !call mvec_gather_mvecs(mvec,block_list)
+    !deallocate(block_list)
+
+    !ierr = 0
+
+  !end subroutine phist_Dmvec_gather_mvecs
+
+
+  !subroutine phist_Dmvec_scatter_mvecs(mvec_ptr, block_ptr_list, nblocks, ierr) bind(C,name='phist_Dmvec_scatter_mvecs_f')
+    !use, intrinsic :: iso_c_binding
+    !!--------------------------------------------------------------------------------
+    !type(C_PTR),        value         :: mvec_ptr
+    !type(C_PTR),        intent(in)    :: block_ptr_list(*)
+    !integer(C_INT),     value         :: nblocks
+    !integer(C_INT),     intent(out)   :: ierr
+    !!--------------------------------------------------------------------------------
+    !type(MVec_t), pointer :: mvec, tmp
+    !type(MVec_t), pointer :: block_list(:)
+    !integer :: i
+    !!--------------------------------------------------------------------------------
+
+    !if( .not. c_associated(mvec_ptr) ) then
+      !ierr = -88
+      !return
+    !end if
+    !call c_f_pointer(mvec_ptr, mvec)
+
+    !allocate(block_list(nblocks))
+    !do i = 1, nblocks
+      !if( .not. c_associated(block_ptr_list(i)) ) then
+        !ierr = -88
+        !return
+      !end if
+      !call c_f_pointer(block_ptr_list(i),tmp)
+      !block_list(i)%jmin = tmp%jmin
+      !block_list(i)%jmax = tmp%jmax
+      !block_list(i)%is_view = .true.
+      !block_list(i)%map = tmp%map
+      !block_list(i)%val => tmp%val
+    !end do
+
+    !call mvec_scatter_mvecs(mvec,block_list)
+    !deallocate(block_list)
+
+    !ierr = 0
+
+  !end subroutine phist_Dmvec_scatter_mvecs
 
 
   subroutine phist_Dmvec_put_value(mvec_ptr, val, ierr) bind(C,name='phist_Dmvec_put_value_f')
@@ -1269,6 +1552,33 @@ contains
     ierr = 0
 
   end subroutine phist_Dmvec_times_sdMat
+
+
+  subroutine phist_Dmvec_times_sdMat_inplace(v_ptr, M_ptr, ierr) bind(C,name='phist_Dmvec_times_sdMat_inplace_f')
+    use, intrinsic :: iso_c_binding
+    !--------------------------------------------------------------------------------
+    type(C_PTR),        value         :: v_ptr
+    type(C_PTR),        value         :: M_ptr
+    integer(C_INT),     intent(out)   :: ierr
+    !--------------------------------------------------------------------------------
+    type(MVec_t), pointer :: v
+    type(SDMat_t), pointer :: M
+    !--------------------------------------------------------------------------------
+
+    if( .not. c_associated(v_ptr) .or. &
+      & .not. c_associated(M_ptr)      ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(v_ptr,v)
+    call c_f_pointer(M_ptr,M)
+
+    call mvec_times_sdmat_inplace(v,M)
+
+    ierr = 0
+
+  end subroutine phist_Dmvec_times_sdMat_inplace
 
 
   subroutine phist_DmvecT_times_mvec(alpha, v_ptr, w_ptr, beta, M_ptr, ierr) bind(C,name='phist_DmvecT_times_mvec_f')

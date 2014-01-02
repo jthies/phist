@@ -484,6 +484,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         SUBR(mvec_delete)(tmp,&ierr_);
         ASSERT_EQ(0,ierr_);
       }
+
       TYPE(mvec_ptr) x_i = NULL;
       TYPE(mvec_ptr) y_i = NULL;
       for(int i = 0; i < _NV_; i++)
@@ -503,6 +504,15 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_delete)(y_i,&ierr_);
       ASSERT_EQ(0,ierr_);
+
+      // calculate initial residual norm
+      SUBR(mvec_add_mvec)(st::one(),vec3_,st::zero(),vec1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      jdOp_->apply(-st::one(),jdOp_->A,vec2_,st::one(),vec1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      // calculate the residual norm
+      _MT_ initialResNorm[_NV_];
+      SUBR(mvec_norm2)(vec1_,initialResNorm,&ierr_);
 
       // call iterate
       int nIter = 0;
@@ -541,8 +551,16 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 #endif
 
       // now check the result: vec3 = jdOp_(vec2)
-      //jdOp_->apply(-st::one(),jdOp_->A,vec2_,st::one(),vec3_,&ierr_);
-      //ASSERT_EQ(0,ierr_);
+      jdOp_->apply(-st::one(),jdOp_->A,vec2_,st::one(),vec3_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      // calculate the residual norm
+      _MT_ explicitResNorm[_NV_];
+      SUBR(mvec_norm2)(vec3_,explicitResNorm,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      //for(int i = 0; i < _NV_; i++)
+      //{
+        //ASSERT_NEAR(explicitResNorm[i]/initialResNorm[i], resNorm[i], 100*VTest::releps());
+      //}
 //#ifdef PHIST_KERNEL_LIB_FORTRAN
       //ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
 //#else

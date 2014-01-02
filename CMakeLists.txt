@@ -57,6 +57,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   set (CMAKE_CXX_FLAGS_DEBUG   "-O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused")
 
   set (CMAKE_Fortran_FLAGS "-fopenmp -cpp")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -Ofast -fopenmp -cpp")
   set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -DTESTING -fopenmp -Wall -Wextra -fcheck=all -Wno-unused")
 else ()
 #TODO - add flags for Intel and others
@@ -152,6 +153,7 @@ if (PHIST_KERNEL_LIB STREQUAL "fortran")
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/nrm2_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/axpy_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/axpy_kernels_nt.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/gather_scatter_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/dot_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/gemm_kernels_sB.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/gemm_kernels_sC.f90

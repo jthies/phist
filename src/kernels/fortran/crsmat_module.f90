@@ -42,7 +42,7 @@ contains
     !--------------------------------------------------------------------------------
     integer :: nvec, ldx, ldy
     logical :: strided_x, strided_y
-    integer(C_INT) :: y_is_aligned16
+    logical :: y_is_aligned16
     !--------------------------------------------------------------------------------
 
     ! if alpha == 0, only scale y
@@ -71,13 +71,17 @@ contains
     ldx = size(x%val,1)
     ldy = size(y%val,1)
 
-    call mem_is_aligned16(y%val(y%jmin,1),y_is_aligned16)
+    if( mod(loc(y%val(y%jmin,1)),16) .eq. 0 ) then
+      y_is_aligned16 = .true.
+    else
+      y_is_aligned16 = .false.
+    end if
 
-    write(*,*) 'spMVM with nvec =',nvec,', ldx =',ldx,', ldy =',ldy,', check_mem_aligned16 =', y_is_aligned16
+    write(*,*) 'spMVM with nvec =',nvec,', ldx =',ldx,', ldy =',ldy,', y_mem_aligned16 =', y_is_aligned16
     flush(6)
 
     ! try to use NT stores if possible
-    if( beta .eq. 0 .and. y_is_aligned16 .eq. 0 ) then
+    if( beta .eq. 0 .and. y_is_aligned16 ) then
       if( nvec .eq. 1 ) then
         if( .not. strided_x ) then
           call dspmvm_NT_1(A%nrows, A%ncols, A%nEntries, alpha, A%row_offset, A%col_idx, A%val, x%val, y%val)

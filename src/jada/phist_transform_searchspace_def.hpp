@@ -11,35 +11,13 @@ void SUBR(transform_searchSpace)(TYPE(mvec_ptr) V, TYPE(mvec_ptr) AV, TYPE(mvec_
   PHIST_CHK_IERR(SUBR( sdMat_get_nrows ) (M, &nV, ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_get_ncols ) (M, &minBase, ierr), *ierr);
 
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-  // temporary storage
-  const_map_ptr_t map;
-  PHIST_CHK_IERR( SUBR(mvec_get_map) (V, &map, ierr), *ierr);
-  TYPE(mvec_ptr) Vtmp;
-  PHIST_CHK_IERR( SUBR(mvec_create) (&Vtmp, map, minBase, ierr), *ierr);
-
-  PHIST_CHK_IERR(SUBR( mvec_times_sdMat) (st::one(), V, M, st::zero(), Vtmp, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_set_block  ) (V, Vtmp, 0, minBase-1, ierr), *ierr);
-
-  PHIST_CHK_IERR(SUBR( mvec_times_sdMat) (st::one(), AV, M, st::zero(), Vtmp, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_set_block  ) (AV, Vtmp, 0, minBase-1, ierr), *ierr);
-
-  if( generalizedEigenproblem )
-  {
-    PHIST_CHK_IERR(SUBR( mvec_times_sdMat) (st::one(), BV, M, st::zero(), Vtmp, ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_set_block  ) (BV, Vtmp, 0, minBase-1, ierr), *ierr);
-  }
-
-  PHIST_CHK_IERR( SUBR(mvec_delete)(Vtmp, ierr), *ierr);
-#else
   // update V, AV and BV
-  PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (V,  M, 64, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (AV, M, 64, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (V,  M, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (AV, M, ierr), *ierr);
   if( generalizedEigenproblem )
   {
-    PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (BV, M, 64, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_times_sdMat_inplace ) (BV, M, ierr), *ierr);
   }
-#endif
 
   // we need some communicator for ghost...
   PHIST_CHK_IERR(SUBR( mvec_get_comm ) (V, &comm, ierr), *ierr);
@@ -58,12 +36,15 @@ void SUBR(transform_searchSpace)(TYPE(mvec_ptr) V, TYPE(mvec_ptr) AV, TYPE(mvec_
 }
 
 
+#ifndef PHIST_KERNEL_LIB_FORTRAN
 //! in order to shrink a subspace we need a fast in-place operation for mvec_times_sdMat
-void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V_, TYPE(sdMat_ptr) M_, lidx_t chunkSize, int* ierr)
+void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V_, TYPE(sdMat_ptr) M_, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *ierr = 0;
+
+  lidx_t chunkSize = 64;
 
   // get dimensions
   lidx_t nV, nvec, nM, mM;
@@ -154,4 +135,4 @@ void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V_, TYPE(sdMat_ptr) M_, lidx_
 
   PHIST_CHK_IERR(*ierr = error ? -1: 0, *ierr);
 }
-
+#endif
