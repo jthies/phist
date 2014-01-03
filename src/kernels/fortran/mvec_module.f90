@@ -848,7 +848,7 @@ contains
     integer,        intent(out)   :: nullSpaceDim
     !--------------------------------------------------------------------------------
     real(kind=8), parameter :: eps = 1.e-10
-    integer :: i, i_, j, nvec, rank
+    integer :: i, i_, nvec, rank
     type(MVec_t) :: vi, vipn
     type(SDMat_t) :: Ripn
     real(kind=8) :: rii(1:1)
@@ -1319,11 +1319,10 @@ contains
   end subroutine phist_Dmvec_put_value
 
 
-  subroutine phist_Dmvec_random(mvec_ptr, val, ierr) bind(C,name='phist_Dmvec_random_f')
+  subroutine phist_Dmvec_random(mvec_ptr, ierr) bind(C,name='phist_Dmvec_random_f')
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),        value         :: mvec_ptr
-    real(C_DOUBLE),     value         :: val
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
@@ -1373,8 +1372,7 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
-    real(kind=8), allocatable :: tmp(:)
-    integer :: i, nvec
+    integer :: nvec
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) ) then

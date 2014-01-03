@@ -11,7 +11,6 @@
 #include "phist_orthog.h"
 
 #include "phist_ScalarTraits.hpp"
-#include "jada_helpers.hpp"
 
 #include "phist_gen_s.h"
 #include "phist_jadaInnerGmres_def.hpp"

@@ -358,7 +358,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     int nselect=m;
     int nsort=nselect;
     PHIST_CHK_IERR(SUBR(SchurDecomp)
-        (T_raw,ldT,S_raw,ldS,m,nselect,nsort,which,ev,ierr),*ierr);
+        (T_raw,ldT,S_raw,ldS,m,nselect,nsort,which,tol,ev,ierr),*ierr);
     int ev_pos=0;
     theta=ev[ev_pos];
 
@@ -576,7 +576,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // set T=M
     PHIST_CHK_IERR(SUBR(sdMat_set_block)(T,Mv,0,m-1,0,m-1,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(SchurDecomp)
-        (T_raw,ldT,S_raw,ldS,m,nselect,nsort,which,ev,ierr),*ierr);
+        (T_raw,ldT,S_raw,ldS,m,nselect,nsort,which,tol,ev,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,m-1,0,m-1,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m-1,0,m-1,ierr),*ierr);
     } //while (deflate)

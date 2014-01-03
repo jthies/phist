@@ -41,7 +41,6 @@
 #include "phist_orthog.h"
 
 #include "phist_ScalarTraits.hpp"
-#include "jada_helpers.hpp"
 #include "phist_schur_decomp.h"
 #include "phist_jadaOp.h"
 #include "phist_simple_arnoldi.h"
@@ -265,7 +264,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     int nSelect = nSort;
     lidx_t offR_H = ldaR_H*nConvergedEig+nConvergedEig;
     lidx_t offQ_H = ldaQ_H*nConvergedEig+nConvergedEig;
-    PHIST_CHK_IERR(SUBR( SchurDecomp ) (R_H_raw+offR_H, ldaR_H, Q_H_raw+offQ_H, ldaQ_H, nV-nConvergedEig, nSelect, nSort, which, ev_H+nConvergedEig, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( SchurDecomp ) (R_H_raw+offR_H, ldaR_H, Q_H_raw+offQ_H, ldaQ_H, nV-nConvergedEig, nSelect, nSort, which, tol, ev_H+nConvergedEig, ierr), *ierr);
     // we still need to add the missing parts of R_H, Q_H
     if( nConvergedEig > 0 )
     {

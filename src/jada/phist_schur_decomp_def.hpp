@@ -29,7 +29,7 @@
  // and that the 3 largest ones appear first in any order.                                      
  //                                                                                             
 void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
-         int m, int nselect, int nsort, eigSort_t which, 
+         int m, int nselect, int nsort, eigSort_t which, _MT_ tol, 
          void* v_ev, int *ierr)
   {
   ENTER_FCN(__FUNCTION__);
@@ -126,7 +126,7 @@ for (int i=0;i<m;i++)
     {
     PHIST_DEB("initial sort step, nselect=%d",nselect);
     // sort all eigenvalues according to 'which'.
-    PHIST_CHK_IERR(SortEig(ev,m,idx,which,ierr),*ierr);
+    PHIST_CHK_IERR(SortEig(ev,m,idx,which,tol,ierr),*ierr);
     for (int i=0;i<nselect;i++) 
       {
       select[std::abs(idx[i])]=1;
@@ -153,7 +153,7 @@ for (int i=0;i<m;i++)
      {
      PHIST_DEB("sort step %d, nsorted=%d [%d]",i,nsorted,nsort);
      // sort the next few eigenvalues (up to nselect)
-     PHIST_CHK_IERR(SortEig(ev+i,nselect-i,idx+i,which,ierr),*ierr);
+     PHIST_CHK_IERR(SortEig(ev+i,nselect-i,idx+i,which,tol,ierr),*ierr);
 
      // sort next candidate to top.
      for (int j=0;j<i;j++) select[j]=1;
@@ -187,4 +187,14 @@ for (int i=0;i<m;i++)
 
 
   }
+
+
+// reorder multiple eigenvalues in a given (partial) schur decomposition by the smallest residual norm of the unprojected problem
+void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
+      int m, int nselected, _MT_ tol, _MT_* resNorm, void* ev, TYPE(sdMat_ptr) *transFormation, int *ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  *ierr = 0;
+}
 

@@ -4,102 +4,131 @@
 #include <complex>
 #include "phist_enums.h"
 
+// compare functors with tolerance
+
 template<typename T>
-bool SelectLM(std::pair<T,int> a_, std::pair<T,int> b_)
-  {
-  T& a = a_.first;
-  T& b = b_.first; 
-  if (std::abs(a)==std::abs(b))
+class SelectLM
+{
+  public:
+    SelectLM(_MT_ tol) : tol_(tol) {}
+
+    bool operator()(std::pair<T,int> a_, std::pair<T,int> b_)
     {
-    if (std::real(a)==std::real(b))
+      T& a = a_.first;
+      T& b = b_.first; 
+      if ( std::abs(std::abs(a)-std::abs(b)) < tol_ )
       {
-      // conj pair, positive imag first
-      return std::imag(a)>std::imag(b);
+        if ( std::abs(std::real(a)-std::real(b)) < tol_ )
+        {
+          // possibly conj pair, positive imag first
+          return std::imag(a)>std::imag(b)+tol_;
+        }
+        else
+        {
+          return std::real(a)>std::real(b);
+        }
       }
-    else
-      {
-      return std::real(a)>std::real(b);
-      }
+      return std::abs(a)>std::abs(b);
     }
-  return std::abs(a)>std::abs(b);
-  }
+
+  private:
+    _MT_ tol_;
+};
 
 template<typename T>
-bool SelectSM(std::pair<T,int> a_, std::pair<T,int> b_)
-  {
-  T& a = a_.first;
-  T& b = b_.first; 
-  if (std::abs(a)==std::abs(b))
+class SelectSM
+{
+  public:
+    SelectSM(_MT_ tol) : tol_(tol) {}
+
+    bool operator()(std::pair<T,int> a_, std::pair<T,int> b_)
     {
-    if (std::real(a)==std::real(b))
+      T& a = a_.first;
+      T& b = b_.first; 
+      if ( std::abs(std::abs(a)-std::abs(b)) < tol_ )
       {
-      // conj pair, positive imag first
-      return std::imag(a)>std::imag(b);
+        if ( std::abs(std::real(a)-std::real(b)) < tol_ )
+        {
+          // conj pair, positive imag first
+          return std::imag(a)>std::imag(b)+tol_;
+        }
+        else
+        {
+          return std::real(a)<std::real(b);
+        }
       }
-    else
-      {
-      return std::real(a)<std::real(b);
-      }
+      return std::abs(a)<std::abs(b);
     }
-  return std::abs(a)<std::abs(b);
-  }
+
+  private:
+    _MT_ tol_;
+};
 
 template<typename T>
-bool SelectLR(std::pair<T,int> a_, std::pair<T,int> b_)
-  {
-  T& a = a_.first;
-  T& b = b_.first; 
-  return std::real(a)>std::real(b);
-  }
+class SelectLR
+{
+  public:
+    SelectLR(_MT_ tol) : tol_(tol) {}
+
+    bool operator()(std::pair<T,int> a_, std::pair<T,int> b_)
+    {
+      T& a = a_.first;
+      T& b = b_.first; 
+      return std::real(a)>std::real(b)+tol_;
+    }
+
+  private:
+    _MT_ tol_;
+};
 
 template<typename T>
-bool SelectSR(std::pair<T,int> a_, std::pair<T,int> b_)
-  {
-  T& a = a_.first;
-  T& b = b_.first; 
-  return std::real(a)<std::real(b);
-  }
+class SelectSR
+{
+  public:
+    SelectSR(_MT_ tol) : tol_(tol) {}
+
+    bool operator()(std::pair<T,int> a_, std::pair<T,int> b_)
+    {
+      T& a = a_.first;
+      T& b = b_.first; 
+      return std::real(a)<std::real(b)-tol_;
+    }
+
+  private:
+    _MT_ tol_;
+};
 
 
 
 template<typename MT>
-void SortEig(std::complex<MT>* ev,int n,int* idx,eigSort_t which,int* ierr)
-  {
+void SortEig(std::complex<MT>* ev,int n,int* idx,eigSort_t which, _MT_ tol, int* ierr)
+{
   typedef std::complex<MT> ST;
   typedef std::pair<ST,int> PT;
   std::vector<PT> v(n);
   for (int i=0;i<n;i++)
-    {
     v[i]=PT(ev[i],i);
-    }
 
   if (which==LM)
-    {
-    std::sort(v.begin(),v.end(),SelectLM<ST>);
-    }
+    std::stable_sort(v.begin(),v.end(),SelectLM<ST>(tol));
   else if (which==SM)
-    {
-    std::sort(v.begin(),v.end(),SelectSM<ST>);
-    }
+    std::stable_sort(v.begin(),v.end(),SelectSM<ST>(tol));
   else if (which==LR)
-    {
-    std::sort(v.begin(),v.end(),SelectLR<ST>);
-    }
+    std::stable_sort(v.begin(),v.end(),SelectLR<ST>(tol));
   else if (which==SR)
-    {
-    std::sort(v.begin(),v.end(),SelectSR<ST>);
-    }
+    std::stable_sort(v.begin(),v.end(),SelectSR<ST>(tol));
   else if (which!=NONE)
-    {
+  {
     // sort type not implemented
     *ierr=-99;
-    }
+  }
 
   for (int i=0;i<n;i++)
-    {
+  {
     ev[i]=v[i].first;
     idx[i]=v[i].second;
-    if (std::imag(ev[i])!=(MT)0.0) idx[i]*=-1;
-    }
+    if (std::imag(ev[i])!=(MT)0.0)
+      idx[i]*=-1;
   }
+}
 

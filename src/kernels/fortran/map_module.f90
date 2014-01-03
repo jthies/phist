@@ -43,7 +43,7 @@ contains
     allocate(map%nlocal(0:map%nProcs-1))
 
     do i = 0, map%nProcs-1
-      map%nlocal(i) = n_glob/map%nProcs
+      map%nlocal(i) = int(n_glob/map%nProcs)
       if( i .lt. mod(n_glob,map%nProcs) ) then
         map%nlocal(i) = map%nlocal(i) + 1
       end if
@@ -162,7 +162,7 @@ contains
     !------------------------------------------------------------
 
     call c_f_pointer(map_ptr, map)
-    iupper = map%distrib(map%me+1)-1
+    iupper = int(map%distrib(map%me+1)-1)
     ierr = 0
   end subroutine phist_map_get_iupper
 

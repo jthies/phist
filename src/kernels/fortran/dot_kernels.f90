@@ -4,7 +4,6 @@ subroutine ddot_strided_1(nrows, v, ldv, w, ldw, vdot)
   integer, intent(in)       :: nrows, ldv, ldw
   real(kind=8), intent(in)  :: v(ldv,*), w(ldw,*)
   real(kind=8), intent(out) :: vdot
-  integer :: i
 
   ! ddot blas interface
   interface

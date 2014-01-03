@@ -263,7 +263,7 @@ void SUBR(blockjada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
       nSort = minBase;
     nSort = std::min(nSort, maxEig-*nEig);
     int nSelect = nSort;
-    PHIST_CHK_IERR(SUBR( SchurDecomp ) (R_H_raw, ldaR_H, Q_H_raw, ldaQ_H, nV, nSelect, nSort, which, ev_H, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( SchurDecomp ) (R_H_raw, ldaR_H, Q_H_raw, ldaQ_H, nV, nSelect, nSort, which, tol, ev_H, ierr), *ierr);
 
     // calculate approximate Schur form of A (with deflation of converged vectors Q)
     PHIST_CHK_IERR(SUBR( sdMat_add_sdMat  ) (st::one(), Rr_H,       st::zero(), r,   ierr), *ierr);

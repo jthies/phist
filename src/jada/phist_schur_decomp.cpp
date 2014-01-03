@@ -4,11 +4,11 @@
 
 #include "phist_macros.h"
 #include "phist_schur_decomp.h"
+#include "jada_helpers.hpp"
 #include "phist_kernels.h"
 #include "phist_lapack.h"
 
 #include "phist_ScalarTraits.hpp"
-#include "jada_helpers.hpp"
 
 #ifdef __cplusplus
 extern "C" {

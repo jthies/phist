@@ -32,5 +32,10 @@
  // we want to be able to call the function from C and C++ alike.                               
  //                                                                                             
  void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
-         int m, int nselect, int nsort, eigSort_t which, 
+         int m, int nselect, int nsort, eigSort_t which, _MT_ tol,
          void* ev, int *ierr);
+
+ // reorder multiple eigenvalues in a given (partial) schur decomposition by the smallest residual norm of the unprojected problem
+ void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
+        int m, int nselected, _MT_ tol, _MT_* resNorm, void* ev, TYPE(sdMat_ptr) *transFormation, int *ierr);
+

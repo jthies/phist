@@ -112,7 +112,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
         PHIST_DEB("input matrix to Schur-decomp:");
         SUBR(sdMat_print)(mat1_,&ierr_);
 #endif
-        SUBR(SchurDecomp)(mat1_vp_,m_lda_,mat2_vp_,m_lda_,n_,nselect,nsort,which,ev_,&this->ierr_);
+        SUBR(SchurDecomp)(mat1_vp_,m_lda_,mat2_vp_,m_lda_,n_,nselect,nsort,which,tol,ev_,&this->ierr_);
         PHIST_DEB("resulting T:");
 #if PHIST_OUTLEV>=PHIST_DEBUG
         SUBR(sdMat_print)(mat1_,&ierr_);
