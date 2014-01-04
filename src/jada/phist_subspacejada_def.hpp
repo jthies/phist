@@ -459,6 +459,19 @@ if( k < blockDim )
     // orthogonalize t as Vv (reuse R_H)
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,  &Vv,                    nV,    nV+k-1,    ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (st::one(), t, st::zero(), Vv, ierr), *ierr);
+#ifdef TESTING
+{
+  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),t_res,st::zero(),t,ierr), *ierr);
+  PHIST_CHK_IERR( A_op->apply(-st::one(), A_op->A, Vv, st::one(), t, ierr), *ierr);
+  _MT_ *testNorm = new _MT_[k];
+  PHIST_CHK_IERR( SUBR(mvec_norm2)(t, testNorm, ierr), *ierr);
+  PHIST_OUT(PHIST_INFO,"At - A*t =");
+  for(int i = 0; i < k; i++)
+    PHIST_OUT(PHIST_INFO,"\t%8.4e", testNorm[i]);
+  PHIST_OUT(PHIST_INFO,"\n");
+  delete [] testNorm;
+}
+#endif
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,     k-1,       ierr), *ierr);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H,nV,    nV+k-1,    nV,    nV+k-1,    ierr), *ierr);
     PHIST_CHK_NEG_IERR(SUBR( orthog ) (V, Vv, Rr_H, R_H, 3, ierr), *ierr);
@@ -469,7 +482,43 @@ if( k < blockDim )
     if( randomVecs == 0 )
     {
       // reuse data from jadaInnerGmres
-      PHIST_CHK_IERR(SUBR(  mvec_times_sdMat ) (st::one(), t_res, Rr_H, st::zero(), AVv, ierr), *ierr);
+      // Vv*Rr_H = t - V*R_H
+      // => AVv*Rr_H = At - AV*R_H
+      PHIST_CHK_IERR(SUBR(  mvec_times_sdMat ) (-st::one(), AV,     R_H,  st::one(),  t_res, ierr), *ierr);
+      _ST_* t_res_raw;
+      lidx_t ldt_res;
+      PHIST_CHK_IERR(SUBR(mvec_extract_view)(t_res, &t_res_raw, &ldt_res, ierr), *ierr);
+      int nlocal;
+      PHIST_CHK_IERR(phist_map_get_local_length(A_op->range_map, &nlocal, ierr), *ierr);
+      _ST_ alpha = st::one();
+#ifdef IS_COMPLEX
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      PHIST_CHK_IERR( PREFIX(TRSM) ("L","U","T","N",&k,&nlocal,(blas_cmplx_t*)&alpha,(blas_cmplx_t*)R_H_raw+nV+nV*ldaR_H,&ldaR_H,(blas_cmplx_t*)t_res_raw,&ldt_res,ierr),*ierr);
+#else
+      PHIST_CHK_IERR( PREFIX(TRSM) ("R","U","N","N",&nlocal,&k,(blas_cmplx_t*)&alpha,(blas_cmplx_t*)R_H_raw+nV+nV*ldaR_H,&ldaR_H,(blas_cmplx_t*)t_res_raw,&ldt_res,ierr),*ierr);
+#endif
+#else
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      PHIST_CHK_IERR( PREFIX(TRSM) ("L","U","T","N",&k,&nlocal,&alpha,R_H_raw+nV+nV*ldaR_H,&ldaR_H,t_res_raw,&ldt_res,ierr),*ierr);
+#else
+      PHIST_CHK_IERR( PREFIX(TRSM) ("R","U","N","N",&nlocal,&k,&alpha,R_H_raw+nV+nV*ldaR_H,&ldaR_H,t_res_raw,&ldt_res,ierr),*ierr);
+#endif
+#endif
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), t_res, st::zero(), AVv, ierr), *ierr);
+
+#ifdef TESTING
+{
+  // check
+  PHIST_CHK_IERR( A_op->apply(-st::one(), A_op->A, Vv, st::one(), t_res, ierr), *ierr);
+  _MT_ *testNorm = new _MT_[k];
+  PHIST_CHK_IERR( SUBR(mvec_norm2)(t_res, testNorm, ierr), *ierr);
+  PHIST_OUT(PHIST_INFO,"AVv - A*Vv =");
+  for(int i = 0; i < k; i++)
+    PHIST_OUT(PHIST_INFO,"\t%8.4e", testNorm[i]);
+  PHIST_OUT(PHIST_INFO,"\n");
+  delete [] testNorm;
+}
+#endif
     }
     else
     {

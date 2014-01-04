@@ -157,23 +157,43 @@ void ZTRTRS(const char* uplo, const char* trans, const char* diag, const int* n,
 const Dblas_cmplx_t* a, const int* lda, Dblas_cmplx_t* b, const int* ldb, int* info);
 
 ///////////////////////////////////////////////////////////////////////////////////////////
-//      XTRTRS - solve triangular linear system with single vector                       //
+//      XTRTRV - solve triangular linear system with single vector                       //
 ///////////////////////////////////////////////////////////////////////////////////////////
-#define STRSV LAPACK_SUBR(STRSV,strsv)
+#define STRSV BLAS_SUBR(STRSV,strsv)
 void STRSV(const char* uplo, const char* trans, const char* diag, const int* n,
 const float* a, const int* lda, float* b, const int* incb, int* info);
 
-#define DTRSV LAPACK_SUBR(DTRSV,dtrsv)
+#define DTRSV BLAS_SUBR(DTRSV,dtrsv)
 void DTRSV(const char* uplo, const char* trans, const char* diag, const int* n,
 const double* a, const int* lda, double* b, const int* incb, int* info);
 
-#define CTRSV LAPACK_SUBR(CTRSV,ctrsv)
+#define CTRSV BLAS_SUBR(CTRSV,ctrsv)
 void CTRSV(const char* uplo, const char* trans, const char* diag, const int* n,
 const Sblas_cmplx_t* a, const int* lda, Sblas_cmplx_t* b, const int* incb, int* info);
 
-#define ZTRSV LAPACK_SUBR(ZTRSV,ztrsv)
+#define ZTRSV BLAS_SUBR(ZTRSV,ztrsv)
 void ZTRSV(const char* uplo, const char* trans, const char* diag, const int* n,
 const Dblas_cmplx_t* a, const int* lda, Dblas_cmplx_t* b, const int* incb, int* info);
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//      XTRTRM - solve triangular linear system with rhs matrix                          //
+///////////////////////////////////////////////////////////////////////////////////////////
+#define STRSM BLAS_SUBR(STRSM,strsm)
+void STRSM(const char* side, const char* uplo, const char* trans, const char* diag, const int* m, const int* n,
+const float* alpha, const float* a, const int* lda, float* b, const int* ldb, int* info);
+
+#define DTRSM BLAS_SUBR(DTRSV,dtrsm)
+void DTRSM(const char* side, const char* uplo, const char* trans, const char* diag, const int* m, const int* n,
+const double* alpha, const double* a, const int* lda, double* b, const int* ldb, int* info);
+
+#define CTRSM BLAS_SUBR(CTRSV,ctrsm)
+void CTRSM(const char* side, const char* uplo, const char* trans, const char* diag, const int* m, const int* n,
+const Sblas_cmplx_t* alpha, const Sblas_cmplx_t* a, const int* lda, Sblas_cmplx_t* b, const int* ldb, int* info);
+
+#define ZTRSM BLAS_SUBR(ZTRSV,ztrsm)
+void ZTRSM(const char* side, const char* uplo, const char* trans, const char* diag, const int* m, const int* n,
+const Dblas_cmplx_t* alpha, const Dblas_cmplx_t* a, const int* lda, Dblas_cmplx_t* b, const int* ldb, int* info);
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
