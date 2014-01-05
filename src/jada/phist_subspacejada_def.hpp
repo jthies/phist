@@ -358,7 +358,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
     // setup matrix of shifts and residuals for the correction equation
     int k_ = 0; // 0:k_ vectors of Q used for the orthogonal projection in the correction equation
-    int k = 0;  // is always == blockDim!
+    int k = 0;  // is always <= blockDim!
     for(int i = 0; i < nEig_ && k < blockDim; i++)
     {
 #ifndef IS_COMPLEX
@@ -367,6 +367,12 @@ PHIST_SOUT(PHIST_INFO,"\n");
         PHIST_SOUT(PHIST_WARNING,"real case with complex conjugate eigenvalues not fully implemented yet!\n");
       }
 #endif
+      // only allow i >= nEig for multiple eigenvalues
+      if( i >= nEig )
+      {
+        if( ct::abs(ev_H[i] - ev_H[i-1]) > sqrt(tol) )
+          break;
+      }
 
       if( resNorm[i] > tol )
       {
@@ -436,14 +442,14 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
       nV = minBase;
     }
-#ifndef JADA_INNER_GMRES_FIXED
-int originalBlockDim = k;
-if( k < blockDim )
-{
-  PHIST_SOUT(PHIST_WARNING,"k < blockDim not supported yet!\n");
-  k = blockDim;
-}
-#endif
+//#ifndef JADA_INNER_GMRES_FIXED
+//int originalBlockDim = k;
+//if( k < blockDim )
+//{
+  //PHIST_SOUT(PHIST_WARNING,"k < blockDim not supported yet!\n");
+  //k = blockDim;
+//}
+//#endif
 
     // calculate corrections
     // setup jadaOp
@@ -467,9 +473,9 @@ if( k < blockDim )
       gmresState[i]->tol = mt::zero();
     }
     PHIST_CHK_NEG_IERR(SUBR( jadaInnerGmresStates_iterate ) (&jdOp, gmresState, k, &nTotalGmresIter, ierr), *ierr);
-#ifndef JADA_INNER_GMRES_FIXED
-  k = originalBlockDim;
-#endif
+//#ifndef JADA_INNER_GMRES_FIXED
+  //k = originalBlockDim;
+//#endif
     // get solution and reuse res for At
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,&Vv, 0,k-1, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res,&AVv, 0,k-1, ierr), *ierr);

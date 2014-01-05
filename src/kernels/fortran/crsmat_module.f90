@@ -71,7 +71,7 @@ contains
     ldx = size(x%val,1)
     ldy = size(y%val,1)
 
-    if( mod(loc(y%val(y%jmin,1)),16) .eq. 0 ) then
+    if( mod(loc(y%val(y%jmin,1)),16) .eq. 0 .and. mod(ldy,2) .eq. 0 ) then
       y_is_aligned16 = .true.
     else
       y_is_aligned16 = .false.

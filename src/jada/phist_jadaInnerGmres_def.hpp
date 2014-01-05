@@ -215,16 +215,24 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
     }
   }
 
+  for(int i = 0; i < numSys; i++)
+  {
+    PHIST_CHK_IERR( *ierr = (S_array[i]->id == i) ? 0 : -1, *ierr);
+  }
 
   // add up solution
+  TYPE(mvec_ptr) Vj = NULL;
   for(int j = 0; j < sharedCurDimV-1; j++)
   {
-    PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&y[ldy*j], S_array[0]->V_[j], st::one(), x, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(S_array[0]->V_[j], &Vj, 0, numSys-1, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&y[ldy*j], Vj, st::one(), x, ierr), *ierr);
     if( Ax != NULL )
     {
-      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&y[ldy*j], S_array[0]->AV_[j], st::one(), Ax, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(S_array[0]->AV_[j], &Vj, 0, numSys-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&y[ldy*j], Vj, st::one(), Ax, ierr), *ierr);
     }
   }
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Vj, ierr), *ierr);
 }
 
 
@@ -249,10 +257,6 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
   if( numSys <= 0 )
     return;
 
-  // get map
-  const_map_ptr_t map = NULL;
-  PHIST_CHK_IERR( SUBR(mvec_get_map) (S[0]->V_, &map, ierr), *ierr);
-  
   // work vector for x and y = jdOp(x)
   TYPE(mvec_ptr) work_x = NULL;
   TYPE(mvec_ptr) work_y = NULL;
@@ -264,16 +268,10 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
   used_mvecs->clear();
   // borrow work_x, it is only used for one iteration
   PHIST_CHK_IERR( *ierr = (unused_mvecs->size() > 2) ? 0 : -1, *ierr);
-  work_x = unused_mvecs->at(0);
-  {
-    // check dimensions
-    int nvec;
-    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(work_x,&nvec,ierr),*ierr);
-    PHIST_CHK_IERR( *ierr = (nvec == numSys) ? 0 : -99, *ierr);
-  }
+  PHIST_CHK_IERR(SUBR(mvec_view_block)(unused_mvecs->at(0), &work_x, 0, numSys-1, ierr), *ierr);
 
   // views into V_
-  TYPE(mvec_ptr) Vj = NULL, AVj = NULL, Vprev = NULL;
+  TYPE(mvec_ptr) Vj = NULL, Vk = NULL;
   // views into H_
   TYPE(sdMat_ptr) R1 = NULL, R2 = NULL;
   TYPE(mvec_ptr) view_Ax = NULL;
@@ -335,9 +333,15 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
   while( anyConverged == 0 && anyFailed == 0 )
   {
     // we need a new mvec for work_y
-    work_y = unused_mvecs->back();
-    used_mvecs->push_back(work_y);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(unused_mvecs->back(), &work_y, 0, numSys-1, ierr), *ierr);
+    for(int i = 0; i < numSys; i++)
+    {
+      int j = S[i]->curDimV_;
+      S[i]->V_[j] = unused_mvecs->back();
+    }
+    used_mvecs->push_back(unused_mvecs->back());
     unused_mvecs->pop_back();
+
 
     //    % apply the jadaOp
     PHIST_CHK_IERR( jdOp->apply (st::one(), jdOp->A, work_x, st::zero(), work_y, ierr), *ierr);
@@ -345,19 +349,17 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
 
     //    % scatter view_Ax
     // we need storage for Ax, reuse work_x here
-    work_x = unused_mvecs->back();
-    used_mvecs->push_back(work_x);
-    unused_mvecs->pop_back();
-    // copy data
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), view_Ax, st::zero(), work_x, ierr), *ierr);
-    // append it to the AV lists of the states
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(unused_mvecs->back(), &work_x, 0, numSys-1, ierr), *ierr);
     for(int i = 0; i < numSys; i++)
     {
       int jprev = std::max(S[i]->curDimV_-1,0);
-      S[i]->AV_[jprev] = work_x;
+      S[i]->AV_[jprev] = unused_mvecs->back();
     }
+    used_mvecs->push_back(unused_mvecs->back());
+    unused_mvecs->pop_back();
 
-    // use work_y for Vj to avoid unnecessary copies and scatter afterwords
+    // copy data
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), view_Ax, st::zero(), work_x, ierr), *ierr);
 
     //    % initialize GMRES for (re-)started systems
     for(int i = 0; i < numSys; i++)
@@ -399,7 +401,8 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
         for(int k = 0; k < sharedCurDimV; k++)
         {
           // simply gram schmidt applied to all systems at once
-          PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(work_y,S[0]->V_[k],tmp,ierr),*ierr);
+          PHIST_CHK_IERR(SUBR(mvec_view_block)(S[0]->V_[k], &Vk, 0, numSys-1, ierr), *ierr);
+          PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(work_y,Vk,tmp,ierr),*ierr);
           // store in H
           for(int i = 0; i < numSys; i++)
           {
@@ -412,7 +415,7 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
           }
           for(int i = 0; i < numSys; i++)
             tmp[i] = -tmp[i];
-          PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(tmp,S[0]->V_[k],st::one(),work_y,ierr),*ierr);
+          PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(tmp,Vk,st::one(),work_y,ierr),*ierr);
         }
         delete[] tmp;
 
@@ -508,15 +511,8 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
       }
     }
 
-    // scatter work_y
-    // append work_y to the V_ lists of the states
-    for(int i = 0; i < numSys; i++)
-    {
-      int j = S[i]->curDimV_-1;
-      S[i]->V_[j] = work_y;
-    }
     // use work_y as input in the next iteration
-    work_x = work_y;
+    std::swap(work_x,work_y);
 
 
 
@@ -534,6 +530,13 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
 
     (*nIter)++;
   }
+
+  // delete views
+  PHIST_CHK_IERR(SUBR(mvec_delete)(work_x, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(work_y, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Vj,     ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Vk,     ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(view_Ax,ierr), *ierr);
 
   if (anyConverged > 0)
     *ierr=0;
