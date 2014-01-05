@@ -985,7 +985,8 @@ contains
     flush(6)
 #endif
     allocate(mvec%val(nvec,map%nlocal(map%me)))
-    mvec%val = 0._8
+    ! that's costly... the user should take care himself!
+    !mvec%val = 0._8
     mvec_ptr = c_loc(mvec)
     ierr = 0
 

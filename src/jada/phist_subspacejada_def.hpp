@@ -315,7 +315,6 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     std::vector<int> resPermutation(nEig_);
     for(int i = 0; i < nEig_; i++)
       resPermutation[i] = i;
-/*
     PHIST_CHK_IERR( SUBR(ReorderPartialSchurDecomp)(R_H_raw+offR_H, ldaR_H, Q_H_raw+offQ_H, ldaQ_H, nV-nConvergedEig, nSort, which, sqrt(tol), resNorm+nConvergedEig, ev_H+nConvergedEig, &resPermutation[nConvergedEig], ierr), *ierr);
     for(int i = nConvergedEig; i < nEig_; i++)
       resPermutation[i] += nConvergedEig;
@@ -323,7 +322,6 @@ PHIST_SOUT(PHIST_INFO,"resPermutation: ");
 for(int i = 0; i < nEig_; i++)
   PHIST_SOUT(PHIST_INFO,"\t%d", resPermutation[i]);
 PHIST_SOUT(PHIST_INFO,"\n");
-*/
 
     // check for converged eigenvalues
     int nNewlyConvergedEig = 0;
@@ -401,6 +399,7 @@ PHIST_SOUT(PHIST_INFO,"resPermutation: ");
 for(int i = 0; i < nEig_; i++)
   PHIST_SOUT(PHIST_INFO,"\t%d", resPermutation[i]);
 PHIST_SOUT(PHIST_INFO,"\n");
+// TODO: respect resPermutation? (perhaps it works out of the bugs, because we deflate with more vectors than necessary...)
     // we should also project out other schur vectors if they have already (nearly) converged
     for(int i = k_+1; i < nEig_; i++)
     {
