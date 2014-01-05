@@ -114,6 +114,27 @@ Dblas_cmplx_t *T, const int *ldt, Dblas_cmplx_t *Q, const int *ldq, Dblas_cmplx_
 const int *m, double *S, double *sep, Dblas_cmplx_t *work, const int *lwork, int *info);
 
 ///////////////////////////////////////////////////////////////////////////////////////////
+//      XTREXC - reorder Schur form                                                      //
+///////////////////////////////////////////////////////////////////////////////////////////
+
+//! reorder real Schur decomposition
+#define STREXC LAPACK_SUBR(STREXC,strexc)
+void STREXC(const char* compq, const int *n, float *t, const int *ldt, float *q, const int *ldq, int* ifst, int *ilst, float *work, int *info);
+
+//! reorder real Schur decomposition
+#define DTREXC LAPACK_SUBR(DTREXC,dtrexc)
+void DTREXC(const char* compq, const int *n, double *t, const int *ldt, double *q, const int *ldq, int* ifst, int *ilst, double *work, int *info);
+
+//! reorder complex Schur decomposition
+#define CTREXC LAPACK_SUBR(CTREXC,ctrexc)
+void CTREXC(const char* compq, const int *n, Sblas_cmplx_t *t, const int *ldt, Sblas_cmplx_t *q, const int *ldq, int* ifst, int *ilst, int *info);
+
+//! reorder complex Schur decomposition
+#define ZTREXC LAPACK_SUBR(ZTREXC,ztrexc)
+void ZTREXC(const char* compq, const int *n, Dblas_cmplx_t *t, const int *ldt, Dblas_cmplx_t *q, const int *ldq, int* ifst, int *ilst, int *info);
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
 //      TREVC - eigenvalues and -vectors of the Schur form                               //
 ///////////////////////////////////////////////////////////////////////////////////////////
 

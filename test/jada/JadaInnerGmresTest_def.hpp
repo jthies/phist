@@ -161,7 +161,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(0,ierr_);
 
         _MT_ resNorm;
-        SUBR(jadaInnerGmresStates_updateSol)(&state[i], 1, x_i, Ax_i, &resNorm, &ierr_);
+        SUBR(jadaInnerGmresStates_updateSol)(&state[i], 1, x_i, Ax_i, &resNorm, false, &ierr_);
         ASSERT_EQ(0,ierr_);
 
         // can't know the residual norm, yet
@@ -230,7 +230,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
       // check the result (we have given the solution as initial guess!)
       _MT_ resNorm[_NV_];
-      SUBR(jadaInnerGmresStates_updateSol)(state, _NV_, vec2_, vec3_, resNorm, &ierr_);
+      SUBR(jadaInnerGmresStates_updateSol)(state, _NV_, vec2_, vec3_, resNorm, false, &ierr_);
       ASSERT_EQ(0,ierr_);
 
       // can't know the residual norm, yet
@@ -329,7 +329,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0,ierr_);
       // check the result (we have given the solution as initial guess!)
       _MT_ resNorm[_NV_];
-      SUBR(jadaInnerGmresStates_updateSol)(state, _NV_, vec2_, vec1_, resNorm, &ierr_);
+      SUBR(jadaInnerGmresStates_updateSol)(state, _NV_, vec2_, vec1_, resNorm, false, &ierr_);
       ASSERT_EQ(0,ierr_);
 
       // can't know the residual norm, yet
@@ -426,7 +426,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0,ierr_);
       // check the result
       _MT_ resNorm[_NV_];
-      SUBR(jadaInnerGmresStates_updateSol)(state, _NV_, vec2_, vec1_, resNorm, &ierr_);
+      SUBR(jadaInnerGmresStates_updateSol)(state, _NV_, vec2_, vec1_, resNorm, false, &ierr_);
       ASSERT_EQ(0,ierr_);
 
       // resnorm should be set now
@@ -538,7 +538,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0,ierr_);
       // check the result (we have given the solution as initial guess!)
       _MT_ resNorm[_NV_];
-      SUBR(jadaInnerGmresStates_updateSol)(state, _NV_, vec2_, vec1_, resNorm, &ierr_);
+      SUBR(jadaInnerGmresStates_updateSol)(state, _NV_, vec2_, vec1_, resNorm, false, &ierr_);
       ASSERT_EQ(0,ierr_);
 
       // check Ax = A*x

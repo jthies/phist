@@ -109,6 +109,10 @@ void SortEig(std::complex<MT>* ev,int n,int* idx,eigSort_t which, _MT_ tol, int*
   for (int i=0;i<n;i++)
     v[i]=PT(ev[i],i);
 
+  // we need to use tol/n because all fp values would be conisidered equal in (0 tol, 2*tol, 3*tol) and others
+  // and thats problably not what we want!
+  tol = tol/n;
+
   if (which==LM)
     std::stable_sort(v.begin(),v.end(),SelectLM<ST>(tol));
   else if (which==SM)

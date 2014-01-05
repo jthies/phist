@@ -136,4 +136,4 @@ void SUBR(jadaInnerGmresState_reset)(TYPE(jadaInnerGmresState_ptr) S,
 //! and multivector x can be passed in.
 //! If not NULL, also outputs A*x through projections coefficients and A*V
 void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[], int numSys,
-                TYPE(mvec_ptr) x, TYPE(mvec_ptr) Ax, _MT_ *resNorm, int* ierr);
+                TYPE(mvec_ptr) x, TYPE(mvec_ptr) Ax, _MT_ *resNorm, bool scaleSolutionToOne, int* ierr);

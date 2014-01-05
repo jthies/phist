@@ -114,7 +114,7 @@ void SUBR(jadaInnerGmresState_reset)(TYPE(jadaInnerGmresState_ptr) S, TYPE(const
 }
 
 
-void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, TYPE(mvec_ptr) Ax, _MT_* resNorm, int* ierr)
+void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, TYPE(mvec_ptr) Ax, _MT_* resNorm, bool scaleSolutionToOne, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
@@ -200,6 +200,19 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
     PHIST_CHK_IERR(PREFIX(TRSV)(uplo,trans,diag,&m,
                                         (st::blas_scalar_t*)H_raw,&ldH,
                                         (st::blas_scalar_t*)&y[i], &ldy, ierr),*ierr);
+
+    // if we are only interested in the directions Vi*yi and appropriate AVi*yi,
+    // then this scaling may help to improve the conditioning of a following orthogonlization step!
+    if( scaleSolutionToOne )
+    {
+      // scale y to one
+      _MT_ scale = mt::zero();
+      for(int j = 0; j < m; j++)
+        scale += st::real(st::conj(y[i+ldy*j])*y[i+ldy*j]);
+      scale = mt::one()/sqrt(scale);
+      for(int j = 0; j < m; j++)
+        y[i+ldy*j] *= scale;
+    }
   }
 
 

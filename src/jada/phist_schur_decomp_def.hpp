@@ -60,14 +60,14 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
   // can sort at most nselect Ritz values (and at least 0)
   nsort=std::max(0,std::min(nsort,nselect));
 
-  PHIST_DEB("m=%d, nselect=%d, nsort=%d",m,nselect,nsort);
+  PHIST_DEB("m=%d, nselect=%d, nsort=%d\n",m,nselect,nsort);
 
 #ifdef IS_COMPLEX
-  PHIST_DEB("call complex %cGEES",st::type_char());
+  PHIST_DEB("call complex %cGEES\n",st::type_char());
   PHIST_CHK_IERR(PREFIX(GEES)(jobvs,sort,NULL,&m,(blas_cmplx_t*)T,&ldT,
          &sdim,(blas_cmplx_t*)ev,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)work,&lwork,ev_r,NULL,ierr),*ierr);
 #else
-  PHIST_DEB("call real %cGEES",st::type_char());
+  PHIST_DEB("call real %cGEES\n",st::type_char());
   PHIST_CHK_IERR(PREFIX(GEES)(jobvs,sort,NULL,&m,T,&ldT,
          &sdim,ev_r,ev_i,S,&ldS,work,&lwork,NULL,ierr),*ierr);
   for (int i=0;i<m;i++)
@@ -76,19 +76,19 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
     }
 #endif
 
-#if PHIST_OUTLEV>=PHIST_DEBUG
-PHIST_OUT(0,"eigenvalues of unsorted Schur form:");
+//#if PHIST_OUTLEV>=PHIST_DEBUG
+PHIST_OUT(0,"eigenvalues of unsorted Schur form:\n");
 for (int i=0;i<m;i++)
-  {
-  PHIST_OUT(0,"%d\t%16.8g%+16.8gi",i,ct::real(ev[i]),ct::imag(ev[i]));
-  }
-#endif
+{
+  PHIST_OUT(0,"%d\t%16.8g%+16.8gi\n",i,ct::real(ev[i]),ct::imag(ev[i]));
+}
+//#endif
 
   if (nselect<=0) return;
   if (nsort>nselect || nsort<0)
     {
     PHIST_OUT(PHIST_WARNING,"nselect=%d>=nsort=%d, or nsort>=0 "
-                             "not satisfied, returning      unsorted Schur form",
+                             "not satisfied, returning      unsorted Schur form\n",
                              nselect,nsort);
     *ierr=1;
     return;
@@ -123,27 +123,33 @@ for (int i=0;i<m;i++)
   int iwork[liwork];
 #endif  
   if (nselect<m)
-    {
-    PHIST_DEB("initial sort step, nselect=%d",nselect);
+  {
+    PHIST_DEB("initial sort step, nselect=%d\n",nselect);
     // sort all eigenvalues according to 'which'.
     PHIST_CHK_IERR(SortEig(ev,m,idx,which,tol,ierr),*ierr);
     for (int i=0;i<nselect;i++) 
-      {
       select[std::abs(idx[i])]=1;
-      }
 #ifdef IS_COMPLEX
     PHIST_CHK_IERR(PREFIX(TRSEN)(job,compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)ev,&nsorted,
           &S_cond, &sep, (blas_cmplx_t*)work, &lwork, ierr),*ierr);
 #else
     PHIST_CHK_IERR(PREFIX(TRSEN)(job,compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
-         &S_cond, &sep, work, &lwork, iwork, &liwork, ierr),*ierr);   
+          &S_cond, &sep, work, &lwork, iwork, &liwork, ierr),*ierr);   
     for (int i=0;i<m;i++)
-      {
+    {
       ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
-      }
+    }
 #endif   
-    PHIST_DEB("nsorted=%d",nsorted);
-    }//nselect<m
+    PHIST_DEB("nsorted=%d\n",nsorted);
+    // *POSSIBLE PROBLEM*
+    // if we select part of a complex conjugate eigenpair, trsen just increases nselect by one
+    if( nsorted > nselect )
+    {
+      PHIST_DEB("detected nsorted > nselect, try to continue with nsort <- nselect and nselect <- nsorted\n");
+      nsort = nselect;
+      nselect = nsorted;
+    }
+  }//nselect<m
   
   if (nselect==1) return; // the one (or two for complex pairs) selected eigenvalue
                           // according to 'which' is already 'sorted'
@@ -151,7 +157,7 @@ for (int i=0;i<m;i++)
   int i=0;
   while (i<nsort)
      {
-     PHIST_DEB("sort step %d, nsorted=%d [%d]",i,nsorted,nsort);
+     PHIST_DEB("sort step %d, nsorted=%d [%d]\n",i,nsorted,nsort);
      // sort the next few eigenvalues (up to nselect)
      PHIST_CHK_IERR(SortEig(ev+i,nselect-i,idx+i,which,tol,ierr),*ierr);
 
@@ -178,11 +184,11 @@ for (int i=0;i<m;i++)
     }//while
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
-PHIST_OUT(0,"eigenvalues of sorted Schur form:");
-for (int i=0;i<m;i++)
-  {
-  PHIST_OUT(0,"%d\t%16.8g%+16.8gi",i,ct::real(ev[i]),ct::imag(ev[i]));
-  }
+//PHIST_OUT(0,"eigenvalues of sorted Schur form:\n");
+//for (int i=0;i<m;i++)
+  //{
+  //PHIST_OUT(0,"%d\t%16.8g%+16.8gi\n",i,ct::real(ev[i]),ct::imag(ev[i]));
+  //}
 #endif
 
 
@@ -191,10 +197,101 @@ for (int i=0;i<m;i++)
 
 // reorder multiple eigenvalues in a given (partial) schur decomposition by the smallest residual norm of the unprojected problem
 void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
-      int m, int nselected, _MT_ tol, _MT_* resNorm, void* ev, TYPE(sdMat_ptr) *transFormation, int *ierr)
+      int m, int nselected, eigSort_t which, _MT_ tol, _MT_* resNorm, void* v_ev, int* permutation, int *ierr)
 {
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *ierr = 0;
+
+  CT* ev = (CT*) v_ev;
+
+  // set permutation to identity
+  for(int i = 0; i < nselected; i++)
+    permutation[i] = i;
+
+  // work array for lapack
+#ifndef IS_COMPLEX
+  _ST_ work[m];
+#endif
+
+  // go through all eigenvalues and check if we need to do something
+  // using gnome sort
+  int pos = 1;
+  while( pos < nselected )
+  {
+#ifndef IS_COMPLEX
+    // we cannot reorder conjugate complex eigenpairs currently
+    if( ct::imag(ev[pos]) != 0 || ct::imag(ev[pos-1]) != 0 )
+    {
+      pos++;
+      continue;
+    }
+#endif
+    // check if the next eigenvalue has same "magnitude"
+    if( which == LM && ct::abs(ev[pos]) < ct::abs(ev[pos-1])-tol )
+    {
+      pos++;
+      continue;
+    }
+    if( which == SM && ct::abs(ev[pos]) > ct::abs(ev[pos-1])+tol )
+    {
+      pos++;
+      continue;
+    }
+    if( which == LR && ct::real(ev[pos]) < ct::real(ev[pos-1])-tol )
+    {
+      pos++;
+      continue;
+    }
+    if( which == SR && ct::real(ev[pos]) > ct::real(ev[pos-1])+tol )
+    {
+      pos++;
+      continue;
+    }
+
+    // we have two ev with the same "magnitude", check residuum
+    if( which == LM || which == SM )
+    {
+      if( mt::abs(ct::abs(ev[pos])-ct::abs(ev[pos-1])) <= tol &&
+          resNorm[pos] >= resNorm[pos-1] )
+      {
+        pos++;
+        continue;
+      }
+    }
+    if( which == LR || which == SR )
+    {
+      if( mt::abs(ct::real(ev[pos])-ct::real(ev[pos-1])) <= tol &&
+          resNorm[pos] >= resNorm[pos-1] )
+      {
+        pos++;
+        continue;
+      }
+    }
+
+
+    // swap elements pos and pos-1
+    std::swap(resNorm[pos],resNorm[pos-1]);
+    std::swap(permutation[pos],permutation[pos-1]);
+    std::swap(ev[pos],ev[pos-1]);
+
+#ifndef IS_COMPLEX
+#warning "reordering does not work for complex-conjugate eigenpairs in the real case!"
+#endif
+
+    const char* compq = "V";
+    int ifst = pos;
+    int ilst = pos+1;
+PHIST_SOUT(PHIST_INFO,"swapping %d %d in unconverged eigenvalues\n",ifst-1,ilst-1);
+#ifdef IS_COMPLEX
+    PHIST_CHK_IERR( PREFIX(TREXC) (compq, &m, (blas_cmplx_t*) T, &ldT, (blas_cmplx_t*) S, &ldS, &ifst, &ilst, ierr), *ierr);
+#else
+    PHIST_CHK_IERR( PREFIX(TREXC) (compq, &m, T, &ldT, S, &ldS, &ifst, &ilst, work, ierr), *ierr);
+#endif
+PHIST_DEB("ifst = %d,\t ilst = %d\n", ifst-1, ilst-1);
+
+    if( pos > 1 )
+      pos--;
+  }
 }
 

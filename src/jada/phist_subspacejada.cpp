@@ -7,6 +7,7 @@
 #include <cmath>
 #include <iostream>
 #include <iomanip>
+#include <vector>
 
 #include "phist_macros.h"
 #include "phist_subspacejada.h"
