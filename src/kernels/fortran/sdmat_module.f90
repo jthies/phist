@@ -166,8 +166,8 @@ contains
     !--------------------------------------------------------------------------------
 
 #ifdef TESTING
-    write(*,*) 'extract view of sdmat at address', sdmat_ptr
-    flush(6)
+    !write(*,*) 'extract view of sdmat at address', sdmat_ptr
+    !flush(6)
 #endif
     if( c_associated(sdmat_ptr) ) then
       call c_f_pointer(sdmat_ptr, sdmat)

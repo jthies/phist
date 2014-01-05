@@ -1031,9 +1031,8 @@ contains
     !--------------------------------------------------------------------------------
 
 #ifdef TESTING
-    write(*,*) 'extract view of mvec at address', mvec_ptr
-    flush(6)
-    flush(6)
+    !write(*,*) 'extract view of mvec at address', mvec_ptr
+    !flush(6)
 #endif
     if( c_associated(mvec_ptr) ) then
       call c_f_pointer(mvec_ptr, mvec)

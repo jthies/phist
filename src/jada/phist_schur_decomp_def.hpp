@@ -76,13 +76,13 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
     }
 #endif
 
-//#if PHIST_OUTLEV>=PHIST_DEBUG
-PHIST_OUT(0,"eigenvalues of unsorted Schur form:\n");
-for (int i=0;i<m;i++)
-{
-  PHIST_OUT(0,"%d\t%16.8g%+16.8gi\n",i,ct::real(ev[i]),ct::imag(ev[i]));
-}
-//#endif
+#if PHIST_OUTLEV>=PHIST_DEBUG
+//PHIST_OUT(0,"eigenvalues of unsorted Schur form:\n");
+//for (int i=0;i<m;i++)
+//{
+  //PHIST_OUT(0,"%d\t%16.8g%+16.8gi\n",i,ct::real(ev[i]),ct::imag(ev[i]));
+//}
+#endif
 
   if (nselect<=0) return;
   if (nsort>nselect || nsort<0)

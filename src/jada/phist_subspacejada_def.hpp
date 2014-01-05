@@ -173,6 +173,8 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   //sdMat_ptr_t Rr  = NULL;     //< [R a; 0 r]
   sdMat_ptr_t Q_H = NULL;     //< schur vectors of H
   sdMat_ptr_t Qq_H = NULL;
+  mvec_ptr_t  Qq  = NULL;
+  mvec_ptr_t BQq = NULL;
   sdMat_ptr_t R_H = NULL;     //< schur matrix of H
   sdMat_ptr_t Rr_H = NULL;
 
@@ -284,31 +286,36 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     }
 
     // update views
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0,     nV-1,      0,     nV-1,      ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Qq_H,0,     nV-1,      0,     nEig_-1,   ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,     nV-1,      ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H,0,     nEig_-1,   0,     nEig_-1,   ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0,     nV-1,      0,             nV-1,      ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,             nV-1,      ierr), *ierr);
+
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Qq_H,0,     nV-1,      nConvergedEig, nEig_-1,   ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H,0,     nEig_-1,   nConvergedEig, nEig_-1,   ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_set_block  ) (R, Rr_H, 0, nEig_-1, nConvergedEig, nEig_-1, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H, nConvergedEig,     nEig_-1,   nConvergedEig, nEig_-1,   ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q,   &Qq,                    nConvergedEig, nEig_-1,   ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ,  &BQq,                   nConvergedEig, nEig_-1,   ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res, &t_res,                 nConvergedEig, nEig_-1,   ierr), *ierr);
+
+    // update approximate Schur form of A (keeping the already computed part locked)
+    // and residual
+    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), V,    Qq_H, st::zero(), Qq,  ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), AV,   Qq_H, st::zero(), t_res, ierr), *ierr);
+    if( B_op != NULL )
+    {
+      PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BV,   Qq_H, st::zero(), BQq,  ierr), *ierr);
+    }
+    // overwrite res with the residual: -res = -(Aq - Bqr) = + BQq*r - res
+    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BQq,   Rr_H,    -st::one(), t_res, ierr), *ierr);
+    // calculate norm of the residual
+    PHIST_CHK_IERR(SUBR( mvec_norm2 ) (t_res, resNorm+nConvergedEig, ierr), *ierr);
 
 
-
-    // TODO we only need to update part of Q and R and res!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // put interesting part in current_q and calculate the corresponding current_res
-    // calculate approximate Schur form of A
-    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), V,    Qq_H, st::zero(), Q,   ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( sdMat_add_sdMat  ) (st::one(), Rr_H,       st::zero(), R,   ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), AV,   Qq_H, st::zero(), res, ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BV,   Qq_H, st::zero(), BQ,  ierr), *ierr);
-    // overwrite res with the residuum: -res = -(Aq - Bqr) = + BQq*r - res
-    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BQ,   R,    -st::one(), res, ierr), *ierr);
-    // calculate norm of the residuum
-    PHIST_CHK_IERR(SUBR( mvec_norm2 ) (res, resNorm, ierr), *ierr);
-
-
-/*
     // reorder multiple eigenvalues in schur form by residual norm
     std::vector<int> resPermutation(nEig_);
-    for(int i = 0; i < nConvergedEig; i++)
+    for(int i = 0; i < nEig_; i++)
       resPermutation[i] = i;
+/*
     PHIST_CHK_IERR( SUBR(ReorderPartialSchurDecomp)(R_H_raw+offR_H, ldaR_H, Q_H_raw+offQ_H, ldaQ_H, nV-nConvergedEig, nSort, which, sqrt(tol), resNorm+nConvergedEig, ev_H+nConvergedEig, &resPermutation[nConvergedEig], ierr), *ierr);
     for(int i = nConvergedEig; i < nEig_; i++)
       resPermutation[i] += nConvergedEig;
@@ -522,8 +529,10 @@ if( k < blockDim )
       int nlocal;
       PHIST_CHK_IERR(phist_map_get_local_length(A_op->range_map, &nlocal, ierr), *ierr);
       _ST_ alpha = st::one();
+#ifdef TESTING
 PHIST_SOUT(PHIST_INFO,"Rr_H:\n");
 PHIST_CHK_IERR( SUBR(sdMat_print) (Rr_H, ierr), *ierr);
+#endif
 #ifdef IS_COMPLEX
 #ifdef PHIST_KERNEL_LIB_FORTRAN
       PHIST_CHK_IERR( PREFIX(TRSM) ("L","U","T","N",&k,&nlocal,(blas_cmplx_t*)&alpha,(blas_cmplx_t*)R_H_raw+nV+nV*ldaR_H,&ldaR_H,(blas_cmplx_t*)t_res_raw,&ldt_res,ierr),*ierr);
@@ -596,6 +605,8 @@ PHIST_CHK_IERR( SUBR(sdMat_print) (Rr_H, ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (r,   ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (Htmp,ierr),*ierr);
 
+  PHIST_CHK_IERR(SUBR( mvec_delete  ) (Qq,  ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_delete  ) (BQq, ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (t,   ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (res, ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (t_res,ierr),*ierr);
