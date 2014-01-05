@@ -292,6 +292,7 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
 
 
   // gather work_x
+#ifndef PHIST_KERNEL_LIB_FORTRAN
   for(int i = 0; i < numSys; i++)
   {
     int jprev = S[i]->curDimV_-1;
@@ -306,6 +307,30 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
       PHIST_CHK_IERR( SUBR(mvec_set_block ) (work_x, Vj, i, i, ierr), *ierr);
     }
   }
+#else
+  {
+    TYPE(mvec_ptr) work_xi[numSys];
+    for(int i = 0; i < numSys; i++)
+    {
+      work_xi[i] = NULL;
+      int jprev = S[i]->curDimV_-1;
+      if( jprev < 0 )
+      {
+        // (re-)start
+        PHIST_CHK_IERR( SUBR(mvec_view_block ) (S[i]->x0_, &work_xi[i], 0, 0, ierr), *ierr);
+      }
+      else
+      {
+        PHIST_CHK_IERR( SUBR(mvec_view_block) (S[i]->V_[jprev], &work_xi[i], i, i, ierr), *ierr);
+      }
+    }
+    PHIST_CHK_IERR( SUBR(mvec_gather_mvecs) (work_x, (TYPE(const_mvec_ptr)*)work_xi, numSys, ierr), *ierr);
+    for(int i = 0; i < numSys; i++)
+    {
+      PHIST_CHK_IERR( SUBR(mvec_delete) (work_xi[i], ierr), *ierr);
+    }
+  }
+#endif
 
   while( anyConverged == 0 && anyFailed == 0 )
   {

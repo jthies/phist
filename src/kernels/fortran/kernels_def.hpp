@@ -269,13 +269,15 @@ void SUBR(mvec_normalize)(TYPE(mvec_ptr) V,
 {
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"  
-  PHIST_CHK_IERR(SUBR(mvec_norm2)(V,vnrm,ierr),*ierr);
+  void SUBR(mvec_norm2_f)(TYPE(const_mvec_ptr),_MT_*,int*);
+  PHIST_CHK_IERR(SUBR(mvec_norm2_f)(V,vnrm,ierr),*ierr);
   int nvec;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,ierr),*ierr);
   _ST_*scale = new _ST_[nvec];
   for(int i = 0; i < nvec; i++)
     scale[i] = st::one()/vnrm[i];
-  PHIST_CHK_IERR(SUBR(mvec_vscale)(V,scale,ierr),*ierr);
+  void SUBR(mvec_vscale_f)(TYPE(mvec_ptr),const _ST_*,int*);
+  PHIST_CHK_IERR(SUBR(mvec_vscale_f)(V,scale,ierr),*ierr);
   delete[] scale;
 }
 
@@ -385,7 +387,6 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* ierr)
   PHIST_CHK_NEG_IERR(SUBR(mvec_QR_f)(V,R,ierr),*ierr);
 }
 
-/* unused
 void SUBR(mvec_gather_mvecs)(TYPE(mvec_ptr) V, TYPE(const_mvec_ptr) W[], int nblocks, int *ierr)
 {
   ENTER_FCN(__FUNCTION__);
@@ -399,7 +400,6 @@ void SUBR(mvec_scatter_mvecs)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W[], int nb
   void SUBR(mvec_scatter_mvecs_f)(TYPE(const_mvec_ptr),TYPE(mvec_ptr) W[], int, int*);
   PHIST_CHK_IERR(SUBR(mvec_scatter_mvecs_f)(V,W,nblocks,ierr),*ierr);
 }
-*/
 
 void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int* ierr)
 {

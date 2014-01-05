@@ -1,94 +1,93 @@
-! currently unused
-!! kernels to copy between different mvecs
+! kernels to copy between different mvecs
 
-!subroutine dgather_1(nrows, v, w, ldw)
-  !integer, intent(in) :: nrows, ldw
-  !real(kind=8), intent(out) :: v(nrows)
-  !real(kind=8), intent(in) :: w(ldw,*)
-  !integer :: i
+subroutine dgather_1(nrows, v, w, ldw)
+  integer, intent(in) :: nrows, ldw
+  real(kind=8), intent(out) :: v(nrows)
+  real(kind=8), intent(in) :: w(ldw,*)
+  integer :: i
 
-!!$omp parallel do
-  !do i = 1, nrows
-    !v(i) = w(1,i)
-  !end do
+!$omp parallel do
+  do i = 1, nrows
+    v(i) = w(1,i)
+  end do
 
-!end subroutine dgather_1
+end subroutine dgather_1
 
-!subroutine dgather_2(nrows, v, w1, ldw1, w2, ldw2)
-  !integer, intent(in) :: nrows, ldw1, ldw2
-  !real(kind=8), intent(out) :: v(2,nrows)
-  !real(kind=8), intent(in) :: w1(ldw1,*)
-  !real(kind=8), intent(in) :: w2(ldw2,*)
-  !integer :: i
+subroutine dgather_2(nrows, v, w1, ldw1, w2, ldw2)
+  integer, intent(in) :: nrows, ldw1, ldw2
+  real(kind=8), intent(out) :: v(2,nrows)
+  real(kind=8), intent(in) :: w1(ldw1,*)
+  real(kind=8), intent(in) :: w2(ldw2,*)
+  integer :: i
 
-!!$omp parallel do
-  !do i = 1, nrows
-    !v(:,i) = (/w1(1,i),w2(1,i)/)
-  !end do
+!$omp parallel do
+  do i = 1, nrows
+    v(:,i) = (/w1(1,i),w2(1,i)/)
+  end do
 
-!end subroutine dgather_2
+end subroutine dgather_2
 
-!subroutine dgather_4(nrows, v, w1, ldw1, w2, ldw2, w3, ldw3, w4, ldw4)
-  !integer, intent(in) :: nrows, ldw1, ldw2
-  !real(kind=8), intent(out) :: v(4,nrows)
-  !real(kind=8), intent(in) :: w1(ldw1,*)
-  !real(kind=8), intent(in) :: w2(ldw2,*)
-  !real(kind=8), intent(in) :: w3(ldw3,*)
-  !real(kind=8), intent(in) :: w4(ldw4,*)
-  !integer :: i
+subroutine dgather_4(nrows, v, w1, ldw1, w2, ldw2, w3, ldw3, w4, ldw4)
+  integer, intent(in) :: nrows, ldw1, ldw2
+  real(kind=8), intent(out) :: v(4,nrows)
+  real(kind=8), intent(in) :: w1(ldw1,*)
+  real(kind=8), intent(in) :: w2(ldw2,*)
+  real(kind=8), intent(in) :: w3(ldw3,*)
+  real(kind=8), intent(in) :: w4(ldw4,*)
+  integer :: i
 
-!!$omp parallel do
-  !do i = 1, nrows
-    !v(:,i) = (/w1(1,i),w2(1,i),w3(1,i),w4(1,i)/)
-  !end do
+!$omp parallel do
+  do i = 1, nrows
+    v(:,i) = (/w1(1,i),w2(1,i),w3(1,i),w4(1,i)/)
+  end do
 
-!end subroutine dgather_4
+end subroutine dgather_4
 
 
-!subroutine dscatter_1(nrows, v, w, ldw)
-  !integer, intent(in) :: nrows, ldw
-  !real(kind=8), intent(in) :: v(nrows)
-  !real(kind=8), intent(inout) :: w(ldw,*)
-  !integer :: i
+subroutine dscatter_1(nrows, v, w, ldw)
+  integer, intent(in) :: nrows, ldw
+  real(kind=8), intent(in) :: v(nrows)
+  real(kind=8), intent(inout) :: w(ldw,*)
+  integer :: i
 
-!!$omp parallel do
-  !do i = 1, nrows
-    !w(1,i) = v(i)
-  !end do
+!$omp parallel do
+  do i = 1, nrows
+    w(1,i) = v(i)
+  end do
 
-!end subroutine dscatter_1
+end subroutine dscatter_1
 
-!subroutine dscatter_2(nrows, v, w1, ldw1, w2, ldw2)
-  !integer, intent(in) :: nrows, ldw1, ldw2
-  !real(kind=8), intent(in) :: v(2,nrows)
-  !real(kind=8), intent(inout) :: w1(ldw1,*)
-  !real(kind=8), intent(inout) :: w2(ldw2,*)
-  !integer :: i
+subroutine dscatter_2(nrows, v, w1, ldw1, w2, ldw2)
+  integer, intent(in) :: nrows, ldw1, ldw2
+  real(kind=8), intent(in) :: v(2,nrows)
+  real(kind=8), intent(inout) :: w1(ldw1,*)
+  real(kind=8), intent(inout) :: w2(ldw2,*)
+  integer :: i
 
-!!$omp parallel do
-  !do i = 1, nrows
-    !w1(1,i) = v(1,i)
-    !w2(1,i) = v(2,i)
-  !end do
+!$omp parallel do
+  do i = 1, nrows
+    w1(1,i) = v(1,i)
+    w2(1,i) = v(2,i)
+  end do
 
-!end subroutine dscatter_2
+end subroutine dscatter_2
 
-!subroutine dscatter_4(nrows, v, w1, ldw1, w2, ldw2, w3, ldw3, w4, ldw4)
-  !integer, intent(in) :: nrows, ldw1, ldw2
-  !real(kind=8), intent(in) :: v(4,nrows)
-  !real(kind=8), intent(inout) :: w1(ldw1,*)
-  !real(kind=8), intent(inout) :: w2(ldw2,*)
-  !real(kind=8), intent(inout) :: w3(ldw3,*)
-  !real(kind=8), intent(inout) :: w4(ldw4,*)
-  !integer :: i
+subroutine dscatter_4(nrows, v, w1, ldw1, w2, ldw2, w3, ldw3, w4, ldw4)
+  integer, intent(in) :: nrows, ldw1, ldw2
+  real(kind=8), intent(in) :: v(4,nrows)
+  real(kind=8), intent(inout) :: w1(ldw1,*)
+  real(kind=8), intent(inout) :: w2(ldw2,*)
+  real(kind=8), intent(inout) :: w3(ldw3,*)
+  real(kind=8), intent(inout) :: w4(ldw4,*)
+  integer :: i
 
-!!$omp parallel do
-  !do i = 1, nrows
-    !w1(1,i) = v(1,i)
-    !w2(1,i) = v(2,i)
-    !w3(1,i) = v(3,i)
-    !w4(1,i) = v(4,i)
-  !end do
+!$omp parallel do
+  do i = 1, nrows
+    w1(1,i) = v(1,i)
+    w2(1,i) = v(2,i)
+    w3(1,i) = v(3,i)
+    w4(1,i) = v(4,i)
+  end do
 
-!end subroutine dscatter_4
+end subroutine dscatter_4
 
