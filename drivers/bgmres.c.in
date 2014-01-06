@@ -135,8 +135,8 @@ int main(int argc, char** argv)
   PHIST_OUT(1,"number of iterations performed: %d",num_iters);
   
   /* compute residual norms */
-  PHIST_CHK_IERR(SUBR(crsMat_times_mvec)(ONE,A,X,ZERO,R,&ierr),ierr);
-  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-ONE,B,ONE,R,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(ONE,A,X,ZERO,R,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,B,ONE,R,&ierr),ierr);
   
   /* compute ||X - XEX||_2 */
   norm2=(MT*)malloc(num_rhs*sizeof(MT));
