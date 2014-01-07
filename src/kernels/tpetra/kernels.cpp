@@ -136,7 +136,7 @@ void phist_tpetra_node_create(node_t** node, const_comm_ptr_t vcomm, int* ierr)
   }
   else
   {
-    PHIST_SOUT(PHIST_WARNING,"File phist_node.xml not found, using default node settings in tpetra");
+    PHIST_SOUT(PHIST_WARNING,"File phist_node.xml not found, using default node settings in tpetra\n");
   }
 
   PHIST_SOUT(PHIST_VERBOSE,"# threads rquested: %d",nodeParams->get("Num Threads",0));

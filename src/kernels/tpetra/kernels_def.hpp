@@ -690,6 +690,7 @@ void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* ierr)
   *ierr = 0;
   CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*ierr);
   Teuchos::FancyOStream fos(Teuchos::rcp(&std::cout,false));
+  fos << std::scientific << std::setw(16) << std::setprecision(12);
   V->describe(fos,Teuchos::VERB_EXTREME);
   }
 
@@ -698,6 +699,7 @@ void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* ierr)
   ENTER_FCN(__FUNCTION__);
   CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*ierr);
   Teuchos::FancyOStream fos(Teuchos::rcp(&std::cout,false));
+  fos << std::scientific << std::setw(16) << std::setprecision(12);
   M->describe(fos,Teuchos::VERB_EXTREME);
   }
 
