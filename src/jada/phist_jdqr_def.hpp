@@ -167,19 +167,19 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&H0, 0,minBas,0,minBas-1,ierr),*ierr);
 
   // print parameters passed in to the method
-  PHIST_SOUT(PHIST_VERBOSE,"====================");
-  PHIST_SOUT(PHIST_VERBOSE,"| JDQR parameters  |");
-  PHIST_SOUT(PHIST_VERBOSE,"====================");
-  PHIST_SOUT(PHIST_VERBOSE,"#eigs\t%d",numEigs);
-  PHIST_SOUT(PHIST_VERBOSE,"which\t%s",eigSort2str(which));
-  PHIST_SOUT(PHIST_VERBOSE,"tol\t%4.2g",tol);
-  PHIST_SOUT(PHIST_VERBOSE,"#iter\t%d",maxIter);
-  PHIST_SOUT(PHIST_VERBOSE,"minBas\t%d",minBas);
-  PHIST_SOUT(PHIST_VERBOSE,"maxBas\t%d",maxBas);
-  PHIST_SOUT(PHIST_VERBOSE,"====================");
+  PHIST_SOUT(PHIST_VERBOSE,"====================\n");
+  PHIST_SOUT(PHIST_VERBOSE,"| JDQR parameters  |\n");
+  PHIST_SOUT(PHIST_VERBOSE,"====================\n");
+  PHIST_SOUT(PHIST_VERBOSE,"#eigs\t%d\n",numEigs);
+  PHIST_SOUT(PHIST_VERBOSE,"which\t%s\n",eigSort2str(which));
+  PHIST_SOUT(PHIST_VERBOSE,"tol\t%4.2g\n",tol);
+  PHIST_SOUT(PHIST_VERBOSE,"#iter\t%d\n",maxIter);
+  PHIST_SOUT(PHIST_VERBOSE,"minBas\t%d\n",minBas);
+  PHIST_SOUT(PHIST_VERBOSE,"maxBas\t%d\n",maxBas);
+  PHIST_SOUT(PHIST_VERBOSE,"====================\n");
 
 
-  PHIST_SOUT(1,"%d steps of Arnoldi as start-up",minBas);
+  PHIST_SOUT(1,"%d steps of Arnoldi as start-up\n",minBas);
   
   // start by filling the first minBas vectors using Arnoldi
   //TODO - we promised to use the user input in X, but here we
@@ -191,7 +191,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(simple_arnoldi)(A_op,NULL,v0,Vv,NULL,H0,minBas,ierr),*ierr);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
-  PHIST_DEB("initial H (by Arnoldi)");
+  PHIST_DEB("initial H (by Arnoldi)\n");
   PHIST_CHK_IERR(SUBR(sdMat_print)(H0,ierr),*ierr);
 #endif
   // delete the views (not the data) v0 and H0
@@ -210,7 +210,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,minBas-1,0,minBas-1,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,AVv,st::zero(),Mv,ierr),*ierr);
 
-  PHIST_SOUT(PHIST_INFO,"Start Jacobi-Davidson");
+  PHIST_SOUT(PHIST_INFO,"Start Jacobi-Davidson\n");
 
   it=0; // total number of JaDa iterations
   mm=0; //count iterations per eigenvalue/pair of complex ev's
@@ -224,7 +224,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     //TODO - thoroughly check the switch from 1-based m in MATLAB to 0-based here
     if (expand)
       {
-      PHIST_DEB("EXPAND basis by %d vector(s)",nv);
+      PHIST_DEB("EXPAND basis by %d vector(s)\n",nv);
       int m0=m;
       m+=expand;
       mm++;
@@ -280,7 +280,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 #endif
       PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,ierr),*ierr);
-      PHIST_DEB("basis size is now m=%d",m+1);
+      PHIST_DEB("basis size is now m=%d\n",m+1);
 #ifdef TESTING
       // check orthogonality of [V Q]
       sdMat_ptr_t tmp1=NULL,tmp2=NULL;
@@ -290,13 +290,13 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       PHIST_CHK_IERR(SUBR(sdMat_extract_view)(tmp1,&tmp1_raw,&ld1,ierr),*ierr);
         int ncV;
         PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Vv,&ncV,ierr),*ierr);
-        PHIST_SOUT(PHIST_VERBOSE,"#vectors in V: %d",ncV);
+        PHIST_SOUT(PHIST_VERBOSE,"#vectors in V: %d\n",ncV);
       PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,Vv,st::zero(),tmp1,ierr),*ierr);
       if (nconv>0)
         {
         int ncQ;
         PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Qv,&ncQ,ierr),*ierr);
-        PHIST_SOUT(PHIST_VERBOSE,"#vectors in Q: %d",ncQ);
+        PHIST_SOUT(PHIST_VERBOSE,"#vectors in Q: %d\n",ncQ);
         PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp2,m,nconv,comm,ierr),*ierr);
         PHIST_CHK_IERR(SUBR(sdMat_extract_view)(tmp2,&tmp2_raw,&ld2,ierr),*ierr);
         PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,Qv,st::zero(),tmp2,ierr),*ierr);
@@ -320,9 +320,9 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
             }
           }
         }
-      PHIST_SOUT(PHIST_VERBOSE,"orthogonality monitors:");
-      PHIST_SOUT(PHIST_VERBOSE,"||V'V-I||=%e",err1);
-      PHIST_SOUT(PHIST_VERBOSE,"||V'Q||=%e",err2);
+      PHIST_SOUT(PHIST_VERBOSE,"orthogonality monitors:\n");
+      PHIST_SOUT(PHIST_VERBOSE,"||V'V-I||=%e\n",err1);
+      PHIST_SOUT(PHIST_VERBOSE,"||V'Q||=%e\n",err2);
       PHIST_CHK_IERR(SUBR(sdMat_delete)(tmp1,ierr),*ierr);
       if (nconv>0)
         {
@@ -363,10 +363,10 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     theta=ev[ev_pos];
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
-  PHIST_DEB("it=%d, m=%d, mm=%d",it,m,mm);
-  PHIST_DEB("projected matrix");
+  PHIST_DEB("it=%d, m=%d, mm=%d\n",it,m,mm);
+  PHIST_DEB("projected matrix\n");
   PHIST_CHK_IERR(SUBR(sdMat_print)(Mv,ierr),*ierr);
-  PHIST_DEB("sorted Schur form");
+  PHIST_DEB("sorted Schur form\n");
   PHIST_CHK_IERR(SUBR(sdMat_print)(Tv,ierr),*ierr);
 #endif
 
@@ -382,7 +382,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 #ifndef IS_COMPLEX
     if (mt::abs(ct::imag(theta))>mt::eps())
       {
-      PHIST_DEB("complex eigenvalue in real arithmetic");
+      PHIST_DEB("complex eigenvalue in real arithmetic\n");
       nv++; // get imaginary part
       }
     else
@@ -437,12 +437,12 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       }
 
     //nrm=norm(rtil);
-    // real case with complex r: ||v+iw||=sqrt((v+iw).'*(v-iw))=sqrt(v'v+w'w)
-    nrm[1]=mt::zero();
+    // real case with complex r: ||v+iw||=sqrt((v+iw).'*(v-iw))=sqrt(v'v+w'w).
     // in the complex case we pass in a 're-interpret cast' of nrm as complex,
-    // which should be fine (imaginary part will be 0)
+    // which should be fine (imaginary part will be 0).
+    nrm[1]=mt::zero();
     PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(rtil_ptr,rtil_ptr,(ST*)nrm,ierr),*ierr);
-    nrm[0]=mt::sqrt(nrm[0]*nrm[0]+nrm[1]*nrm[1]);
+    nrm[0]=mt::sqrt(nrm[0]+nrm[1]);
 //}
     PHIST_SOUT(PHIST_INFO,"JDQR Iter %d\tdim(V)=%d\ttheta=%8.4g%+8.4gi\t\tr_est=%8.4e\n",it,m,ct::real(theta),ct::imag(theta),nrm[0]);
   // deflate converged eigenpairs
@@ -470,11 +470,11 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
        }
      PHIST_CHK_IERR(SUBR(sdMat_set_block)(R,Theta,nq0,nconv-1,nq0,nconv-1,ierr),*ierr);
 
-    PHIST_SOUT(PHIST_VERBOSE,"eigenvalue %d (%8.4g%+8.4gi) is converged.",
+    PHIST_SOUT(PHIST_VERBOSE,"eigenvalue %d (%8.4g%+8.4gi) is converged.\n",
         nconv,ct::real(theta),ct::imag(theta));
     if (nconv>=numEigs)
       {
-      PHIST_SOUT(PHIST_VERBOSE,"stopping JDQR loop");
+      PHIST_SOUT(PHIST_VERBOSE,"stopping JDQR loop\n");
       solve=false;
       break;
       }
@@ -563,10 +563,12 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,atilv,st::one(),r_ptr,ierr),*ierr);
       
     //nrm=norm(rtil);
-    // real case with complex r: ||v+iw||=sqrt((v+iw).'*(v-iw))=sqrt(v'v+w'w)
+    // real case with complex r: ||v+iw||=sqrt((v+iw).'*(v-iw))=sqrt(v'v+w'w).
+    // in the complex case we pass in a 're-interpret cast' of nrm as complex,
+    // which should be fine (imaginary part will be 0).
     nrm[1]=mt::zero();
     PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(rtil_ptr,rtil_ptr,(ST*)nrm,ierr),*ierr);
-    nrm[0]=mt::sqrt(nrm[0]*nrm[0]+nrm[1]*nrm[1]);
+    nrm[0]=mt::sqrt(nrm[0]+nrm[1]);
 //}
     // again, sort the largest Ritz value to the top
 //    nselect = m==maxBas-1? minBas: 1;
@@ -584,7 +586,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   // restart if necessary
   if (m>=maxBas)
     {
-    PHIST_SOUT(PHIST_VERBOSE,"restart JDQR");
+    PHIST_SOUT(PHIST_VERBOSE,"restart JDQR\n");
     int m0=m;
     m=minBas;
     
@@ -613,7 +615,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     {
     if (nv>1)
       {
-      PHIST_SOUT(PHIST_VERBOSE,"complex eigenvalue of real matrix, using real GMRES right now.");
+      PHIST_SOUT(PHIST_VERBOSE,"complex eigenvalue of real matrix, using real GMRES right now.\n");
       }
     // maintain orthogonality against
     // all converged vectors (Q) and the
@@ -654,7 +656,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     TYPE(op) jada_op;
     if (B_op!=NULL)
     {
-      PHIST_SOUT(PHIST_WARNING,"case B!=I not implemented (file %s, line %d)",__FILE__,__LINE__);
+      PHIST_SOUT(PHIST_WARNING,"case B!=I not implemented (file %s, line %d)\n",__FILE__,__LINE__);
     }
 
     TYPE(mvec_ptr) jadaOp_AX = NULL;

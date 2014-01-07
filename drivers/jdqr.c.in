@@ -70,7 +70,7 @@ int main(int argc, char** argv)
 
   if (argc<2)
     {
-    if (verbose) fprintf(stdout,"Usage: ./Xjdqr <matrix filename> [<num eigs>] [<which>] [<tol>] [<max iters> <min basis> <max basis>]");
+    if (verbose) fprintf(stdout,"Usage: ./Xjdqr <matrix filename> [<num eigs>] [<which>] [<tol>] [<max iters> <min basis> <max basis>]\n");
     return 1;
     }
 
@@ -147,7 +147,8 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(A, &map,&ierr),ierr);
 
   PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,num_eigs+1,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_random)(X,&ierr),ierr);
+//  PHIST_ICHK_IERR(SUBR(mvec_random)(X,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(X,ONE,&ierr),ierr);
   
   num_iters=max_iters;
   // create operator wrapper for computing Y=A*X using a CRS matrix
@@ -178,7 +179,7 @@ int main(int argc, char** argv)
 
   if (ierr!=0)
     {
-    if (verbose) fprintf(stdout,"code %d returned from jdqr",ierr);
+    if (verbose) fprintf(stdout,"code %d returned from jdqr\n",ierr);
     if (ierr<0) return ierr;
     }
   if (verbose)
