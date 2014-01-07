@@ -51,6 +51,7 @@ m=size(V,2);
 k=size(W,2);
 
 if (k==1)
+%{
   normW0=norm(W)
   R1=V'*W;
   W=W-V*R1;
@@ -66,6 +67,7 @@ if (k==1)
   numSweeps=1;
   while (numSweeps<5)
     red=normW1/normW0;
+    normW0=1.0;
     disp(sprintf('GS step %d: reduction %4.2f',...
         numSweeps, red));
     if (red>0.7) 
@@ -73,13 +75,33 @@ if (k==1)
     end
     R1p=V'*W;
     W=W-V*R1p;
-    normW0=normW1;
-    normW1=norm(W);
-    R2=R2*normW1;
+    R2p=norm(W);
+    normW1=R2p;
     R1=R1+R1p;
+    R2=R2*R2p;
     numSweeps=numSweeps+1;
   end
-  Q=W;
+  %}
+  
+  tmp=norm(W);
+  R1a=V'*W;
+  W=W-V*R1a;
+  R2a=norm(W);
+  W=W/R2a;
+%  disp(sprintf('GS step 1: %f',R2a/tmp));
+  if (R2a/tmp < 0.7)
+    R1b=V'*W;
+    W=W-V*R1b;
+    R2b=norm(W);
+    W=W/R2b;
+%    disp(sprintf('GS step 2: %f',R2b));
+  else
+    R1b=0.0;
+    R2b=1.0;
+  end
+    Q=W;
+  R1=R1a+R1b;
+  R2=R2a*R2b;
 else
 
 % orthogonalize against V
