@@ -74,7 +74,7 @@ using ::phist::GhostMV;
     }
 
     static Teuchos::RCP<GhostMV > CloneCopy( const GhostMV& mv, const std::vector<int>& index )
-      {
+    {
       ENTER_FCN(__FUNCTION__);    
       ghost_vec_t* _mv = const_cast<GhostMV&>(mv).get();
       TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
@@ -96,11 +96,11 @@ using ::phist::GhostMV;
       }
 
       if (contig)
-        {
+      {
         return phist::rcp(_mv->clone(_mv,index.size(),index[0]),true);
-        }
+      }
       else
-        {
+      {
         ghost_vec_t* result;
         ghost_vtraits_t *vtraits = ghost_cloneVtraits(_mv->traits);
                 vtraits->nvecs=index.size();
@@ -113,18 +113,18 @@ using ::phist::GhostMV;
         result->fromScalar(result, &zero);
         // copy columns one by one
         for (int j=0;j<index.size();j++)
-          {
+        {
           ghost_vec_t *result_j = result->viewVec(result, 1, j);
           result_j->fromVec(result_j,_mv,index[j]);
-          }
-        return phist::rcp(result,true);
         }
+        return phist::rcp(result,true);
       }
+    }
 
     static Teuchos::RCP<GhostMV > 
     CloneCopy (const GhostMV& mv, 
 	       const Teuchos::Range1D& index)
-      {
+    {
       ENTER_FCN(__FUNCTION__);    
       ghost_vec_t* _mv = const_cast<GhostMV&>(mv).get();
       const bool validRange = index.size() > 0 && 
@@ -150,11 +150,11 @@ using ::phist::GhostMV;
 			     os.str() << "Should never get here!");
 	}
       return phist::rcp(_mv->clone(_mv,index.ubound()-index.lbound()+1,index.lbound),true);
-      }
+    }
 
 
     static Teuchos::RCP<GhostMV > CloneViewNonConst( GhostMV& mv, const std::vector<int>& index )
-      {
+    {
       ENTER_FCN(__FUNCTION__);    
       ghost_vec_t* _mv = mv.get();
       TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
@@ -169,55 +169,55 @@ using ::phist::GhostMV;
       bool constStride=true;                                                                                                      
       int stride=1;
       if (_mv->traits->flags&GHOST_VEC_SCATTERED) 
-        {
+      {
         constStride=false;
-        }
+      }
       else
-        {
+      {
         if (index.size()>1) stride=index[1]-index[0];                                                                                                         
         for (typename std::vector<int>::size_type j=2; j<index.size(); ++j)                                                         
-           {                                                                                                                         
-           if (index[j] != index[j-1]+stride)                                                                                      
-             {                                                                                                                     
-             constStride=false;                                                                                                    
-             break;                                                                                                                
-             }
+        {                                                                                                                         
+          if (index[j] != index[j-1]+stride)                                                                                      
+          {                                                                                                                     
+            constStride=false;                                                                                                    
+            break;                                                                                                                
           }
         }
+      }
         
     ghost_vec_t* result=NULL;
 
     if (constStride==false)
-      {
+    {
       //TODO: index is ints, ghost_vidx_t may be int64_t...
       result=_mv->viewScatteredVec(_mv,(ghost_vidx_t)index.size(),(ghost_vidx_t*)(&index[0]));
-      }
+    }
     else
-      {
+    {
       // constant stride
       
       // stride k: first simply view the vector, then manually set pointers and stride
       result=_mv->viewVec(_mv,index.size(),index[0]);
       if (stride!=1)
-        {
+      {
         for (int i=0;i<index.size();i++)
-          {
+        {
           result->val[i] = _mv->val[index[i]];
-          }
+        }
         //TODO: this is quite a nasty hack to allow the ghost_gemm function to
         // work for constant stride access, it should be fixed somehow in ghost
         // so that the GPU stuff works as well etc.
         result->traits->nrowspadded = _mv->traits->nrowspadded*stride;
-        }
       }
-    return phist::rcp(result,true);
     }
+    return phist::rcp(result,true);
+  }
 
 
     static Teuchos::RCP<GhostMV > 
     CloneViewNonConst (GhostMV& mv, 
 		       const Teuchos::Range1D& index)
-      {
+    {
       ENTER_FCN(__FUNCTION__);    
       ghost_vec_t* _mv=mv.get();
       // NOTE (mfh 11 Jan 2011) We really should check for possible
@@ -245,48 +245,48 @@ using ::phist::GhostMV;
 			     os.str() << "Should never get here!");
 	}
       return phist::rcp(_mv->viewVec(_mv,index.ubound()-index.lbound()+1, index.lbound()),true);
-      }
+    }
 
 
     static Teuchos::RCP<const GhostMV > CloneView(const GhostMV& mv, const std::vector<int>& index )
-      {
+    {
       ENTER_FCN(__FUNCTION__);    
       return Teuchos::rcp_dynamic_cast<const GhostMV >
         (CloneViewNonConst(const_cast<GhostMV&>(mv),index));
-      }
+    }
 
     static Teuchos::RCP<const GhostMV > 
     CloneView (const GhostMV& mv, 
 	       const Teuchos::Range1D& index)
-      {
+    {
       ENTER_FCN(__FUNCTION__);    
       return Teuchos::rcp_dynamic_cast<const GhostMV >
         (CloneViewNonConst(const_cast<GhostMV&>(mv),index));
-      }
+    }
 
     static int GetVecLength( const GhostMV& mv )
-      {
+    {
 // TOOD - this is not available in ghost,
 // but as it is only used for confirming 
 // that vectors are compatible for certain
 // operations in Belos, I think we can
 // cheat here and simply return the local vec length instead.
     return mv.get()->traits->nrows;
-    }
+  }
 
   static int GetNumberVecs( const GhostMV& mv )
-    { 
+  { 
     return mv.get()->traits->nvecs;
-    }
+  }
 
 
     static bool HasConstantStride( const GhostMV& mv )
-      { return (mv.get()->traits->flags&GHOST_VEC_SCATTERED==false); }
+    { return (mv.get()->traits->flags&GHOST_VEC_SCATTERED==false); }
 
     static void MvTimesMatAddMv( Scalar alpha, const GhostMV& A, 
                                  const Teuchos::SerialDenseMatrix<int,Scalar>& B, 
                                  Scalar beta, GhostMV& mv )
-      {
+    {
       ENTER_FCN(__FUNCTION__);    
       // create view of Teuchos matrix as GhostMV
       ghost_vec_t* Bghost=createGhostViewOfTeuchosSDM(B);
@@ -297,78 +297,92 @@ using ::phist::GhostMV;
       ghost_gemm((char*)trans,_A,Bghost,_mv,&alpha,&beta,GHOST_GEMM_NO_REDUCE);
       
       Bghost->destroy(Bghost);
-      }
+    }
 
-    // compute mv = alpha*A + beta*B
+    // compute mv = alpha*A + beta*B. This function is abused in Belos by aliasing mv and A 
+    // or B, e.g. A = 0*A+1*B instead of A=B. We therefore have to be a bit careful with
+    // the memcopy we use if either alpha or beta are 0.
     static void MvAddMv( Scalar alpha, const GhostMV& A, Scalar beta, const GhostMV& B, GhostMV& mv )
-      {
-      ENTER_FCN(__FUNCTION__);    
+    {
+      ENTER_FCN(__FUNCTION__);
       ghost_vec_t* _mv = mv.get();
       ghost_vec_t* _A = (ghost_vec_t*)A.get();
       ghost_vec_t* _B = (ghost_vec_t*)B.get();
       
       Scalar zero=st::zero();
       Scalar one=st::one();
-      
-      //std::cerr << "alpha="<<alpha<<", beta="<<beta<<std::endl;
-      //std::cerr << "A="<<std::endl;
-      //_A->print(_A);
-      //std::cerr << "B="<<std::endl;
-      //_B->print(_B);
-      
+
       // mv = A
       if (alpha==zero)
-        {
+      {
         if (beta==zero)
-          {
+        {
           _mv->fromScalar(_mv,(void*)&zero);
-          }
+        }
         else
+        {
+          // Belos allows aliasing here, putting views of A as MV etc. (cf. MVOPTester).
+          // This is a problem because fromVec uses memcpy, which does not allow aliasing.
+          bool mv_is_B = (_B->val[0] == _mv->val[0]) &&
+                         (_B->val[_B->traits->nvecs-1]==_mv->val[_mv->traits->nvecs-1]) &&
+                         (_B->traits->nrowspadded == _mv->traits->nrowspadded);
+          // NOTE: we do not check for partial overlap, or if one of the two is a 'scattered 
+          // view' or something of the kind. So this function may cause problems if used in
+          // unexpected ways because of the memcpy here. 
+          if (mv_is_B==false)
           {
-          _mv->fromVec(_mv,_B,0);
+            _mv->fromVec(_mv,_B,0);
+          }
           if (beta!=one)
-            {
+          {
             _mv->scale(_mv,&beta);
-            }
           }
         }
+      }
       else // alpha!=0
-        {
-        _mv->fromVec(_mv,_A,0);
-        if (alpha!=one)
+      {
+      // cf. comment on aliasing above.
+        bool mv_is_A = (_A->val[0] == _mv->val[0]) &&
+                         (_A->val[_A->traits->nvecs-1]==_mv->val[_mv->traits->nvecs-1]) &&
+                         (_A->traits->nrowspadded == _mv->traits->nrowspadded);
+          if (mv_is_A==false)
           {
-          _mv->scale(_mv,&alpha);
+            _mv->fromVec(_mv,_A,0);
           }
+        if (alpha!=one)
+        {
+          _mv->scale(_mv,&alpha);
+        }
         // now we have mv=alpha*A
         
         // mv = alpha*A + beta*B
         if (beta!=zero)
-          {
+        {
           _mv->axpy(_mv,_B,(void*)&beta);
-          }
         }
+      }
       //std::cerr << "alpha*A+beta*B="<<std::endl;
       //_mv->print(_mv);
-      }
+    }
 
     static void MvScale ( GhostMV& mv, Scalar alpha )
-      {
+    {
       ENTER_FCN(__FUNCTION__);    
       ghost_vec_t* _mv = const_cast<GhostMV&>(mv).get();
       _mv->scale(_mv,(void*)&alpha); 
-      }
+    }
 
     static void MvScale ( GhostMV& mv, const std::vector<Scalar>& alphas )
-      {
+    {
       ENTER_FCN(__FUNCTION__);    
       ghost_vec_t* _mv = const_cast<GhostMV&>(mv).get();
       void* val = (void*)(&alphas[0]);
       _mv->vscale(_mv,val);
-      }
+    }
 
     // C=alpha*A*B
     static void MvTransMv( Scalar alpha, const GhostMV& A, const GhostMV& B, Teuchos::SerialDenseMatrix<int,Scalar>& C)
-      {
+    {
       ENTER_FCN(__FUNCTION__);    
       ghost_vec_t* Cghost=createGhostViewOfTeuchosSDM(C);
 
@@ -380,10 +394,10 @@ using ::phist::GhostMV;
                    (void*)&alpha, (void*)&beta,
                    GHOST_GEMM_ALL_REDUCE);
       Cghost->destroy(Cghost);
-      }
+    }
 
     static void MvDot( const GhostMV& A, const GhostMV& B, std::vector<Scalar> &dots)
-      {
+    {
       ENTER_FCN(__FUNCTION__);    
       TEUCHOS_TEST_FOR_EXCEPTION(GetNumberVecs(A) != GetNumberVecs(B),std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,GhostMV>::MvDot(A,B,dots): A and B must have the same number of vectors.");
@@ -393,10 +407,10 @@ using ::phist::GhostMV;
 
       Teuchos::ArrayView<Scalar> av(dots);
       ghost_dotProduct(const_cast<ghost_vec_t*>(A.get()),const_cast<ghost_vec_t*>(B.get()),(void*)&dots[0]);
-      }
+    }
 
     static void MvNorm(const GhostMV& mv, std::vector<magn_t> &normvec, NormType type=TwoNorm)
-      {
+    {
       ENTER_FCN(__FUNCTION__);    
       ghost_vec_t* _mv = const_cast<GhostMV&>(mv).get();
 #ifdef HAVE_TPETRA_DEBUG
@@ -414,9 +428,9 @@ using ::phist::GhostMV;
         case TwoNorm:
           ghost_dotProduct(_mv, _mv, av.getRawPtr());
           for (int i=0;i<av.size();i++)
-            {
+          {
             nv[i]=st::real(st::sqrt(av[i]));
-            }
+          }
           break;
         case InfNorm:
           break;
@@ -424,7 +438,7 @@ using ::phist::GhostMV;
     }
 
     static void SetBlock( const GhostMV& A, const std::vector<int>& index, GhostMV& mv )
-      {
+    {
       ENTER_FCN(__FUNCTION__);    
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION((typename std::vector<int>::size_t)GetNumberVecs(A) < index.size(),std::invalid_argument,
@@ -460,13 +474,13 @@ using ::phist::GhostMV;
     std::cout << "input block of MvCopy() was:"<<std::endl;
     _Asub->print(_Asub);
 */
-      }
+    }
 
     static void
     SetBlock (const GhostMV& A, 
 	      const Teuchos::Range1D& index, 
 	      GhostMV& mv)
-      {
+    {
       ENTER_FCN(__FUNCTION__);        
       // We've already validated the static casts above.
       const int numColsA = GetNumberVecs(A);
@@ -516,12 +530,12 @@ using ::phist::GhostMV;
 	A_view = CloneView (A, Teuchos::Range1D(0, index.size()-1));
 
       mv_view->get()->fromVec(mv_view->get(),A_view->get(),0);
-      }
+    }
 
     static void
     Assign (const GhostMV& A, 
 	    GhostMV& mv)
-      {
+    {
       ENTER_FCN(__FUNCTION__);        
       // Range1D bounds are signed; size_t is unsigned.
       // Assignment of GhostMV is a deep copy.
@@ -529,7 +543,7 @@ using ::phist::GhostMV;
       const int numColsA = GetNumberVecs(A);
       const int numColsMv = GetNumberVecs(mv);
       if (numColsA > numColsMv)
-        {
+      {
           std::ostringstream os;
           os <<	"Belos::MultiVecTraits<Scalar, GhostMV<Scalar, ..."
             "> >::Assign(A, mv): ";
@@ -538,42 +552,42 @@ using ::phist::GhostMV;
                              << numColsA << " columns, but output multivector "
                              "'mv' has only " << numColsMv << " columns.");
           TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-        }
+      }
       if (numColsA == numColsMv)
-        {
+      {
         mv.get()->fromVec(mv.get(),(ghost_vec_t*)A.get(),0);
-        }
+      }
       else
-        {
+      {
           ghost_vec_t* mv_view = 
             CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1))->get();
           // copy mv(:,1:numColsA)=A
           mv_view->fromVec(mv_view,(ghost_vec_t*)A.get(),0);
-        }
       }
+    }
 
 
     static void MvRandom( GhostMV& mv )
-      { 
+    { 
       mv.get()->fromRand(mv.get());
-      }
+    }
 
     static void MvInit( GhostMV& mv, Scalar alpha = st::zero() )
-      {
+    {
       mv.get()->fromScalar(mv.get(),(void*)&alpha);
-      }
+    }
 
     static void MvPrint( const GhostMV& mv, std::ostream& os )
-      {
+    {
       // TODO - the stream argument is ignored, ghost always prints to stdout
       ghost_vec_t* _mv = const_cast<ghost_vec_t*>(mv.get());
       _mv->print(_mv);
-      }
+    }
 
   // private helper function
   static ghost_vec_t* createGhostViewOfTeuchosSDM
         (const Teuchos::SerialDenseMatrix<lidx_t,Scalar>& M)
-    {
+  {
     ENTER_FCN(__FUNCTION__);    
       ghost_vtraits_t *dmtraits=new ghost_vtraits_t;
                 dmtraits->flags = GHOST_VEC_DEFAULT;
@@ -597,7 +611,7 @@ using ::phist::GhostMV;
                 0,0,Mghost->traits->nrowspadded);
 
     return Mghost;
-    }
+  }
 
 
 #ifdef HAVE_BELOS_TSQR
@@ -606,7 +620,7 @@ using ::phist::GhostMV;
     ///
     typedef ghost::TsqrAdaptor<Scalar> tsqr_adaptor_type;
 #endif // HAVE_BELOS_TSQR
-  };
+};
 
 } // end of Belos namespace 
 
