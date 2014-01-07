@@ -17,7 +17,7 @@ void mem_is_aligned16_(const void*restrict pointer, int* ret)
     *ret = 1;
 }
 
-void dspmvm_nt_1_c(int nrows, double alpha, const int *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
+void dspmvm_nt_1_c(int nrows, double alpha, const long *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
                  const double *restrict rhsv, double *restrict lhsv)
 {
   if( !is_aligned(lhsv,16) )
@@ -31,12 +31,12 @@ void dspmvm_nt_1_c(int nrows, double alpha, const int *restrict row_ptr, const i
   {
     double lhs1 = 0.;
 
-    for(int j = row_ptr[2*i]-1; j < row_ptr[2*i+1]-1; j++)
+    for(long j = row_ptr[2*i]-1; j < row_ptr[2*i+1]-1; j++)
       lhs1 += val[j]*rhsv[ (col_idx[j]-1) ];
 
     double lhs2 = 0.;
 
-    for(int j = row_ptr[2*i+1]-1; j < row_ptr[2*i+2]-1; j++)
+    for(long j = row_ptr[2*i+1]-1; j < row_ptr[2*i+2]-1; j++)
       lhs2 += val[j]*rhsv[ (col_idx[j]-1) ];
 
     // multiply with alpha
@@ -52,14 +52,14 @@ void dspmvm_nt_1_c(int nrows, double alpha, const int *restrict row_ptr, const i
   if( nrows % 2 != 0 )
   {
     lhsv[nrows-1] = 0.;
-    for(int j = row_ptr[nrows-1]-1; j < row_ptr[nrows]-1; j++)
+    for(long j = row_ptr[nrows-1]-1; j < row_ptr[nrows]-1; j++)
       lhsv[nrows-1] += val[j]*rhsv[ (col_idx[j]-1) ];
     lhsv[nrows-1] *= alpha;
   }
 }
 
 
-void dspmvm_nt_2_c(int nrows, double alpha, const int *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
+void dspmvm_nt_2_c(int nrows, double alpha, const long *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
                  const double *restrict rhsv, double *restrict lhsv, int ldv)
 {
   if( !is_aligned(lhsv,16) )
@@ -73,7 +73,7 @@ void dspmvm_nt_2_c(int nrows, double alpha, const int *restrict row_ptr, const i
   {
     __m128d lhs_ = _mm_set1_pd(0.);
 
-    for(int j = row_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    for(long j = row_ptr[i]-1; j < row_ptr[i+1]-1; j++)
     {
       __m128d val_ = _mm_set1_pd(val[j]);
 
@@ -92,7 +92,7 @@ void dspmvm_nt_2_c(int nrows, double alpha, const int *restrict row_ptr, const i
   }
 }
 
-void dspmvm_nt_4_c(int nrows, double alpha, const int *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
+void dspmvm_nt_4_c(int nrows, double alpha, const long *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
                  const double *restrict rhsv, double *restrict lhsv, int ldv)
 {
   if( !is_aligned(lhsv,16) )
@@ -108,7 +108,7 @@ void dspmvm_nt_4_c(int nrows, double alpha, const int *restrict row_ptr, const i
     for(int k = 0; k < 2; k++)
       lhs_[k] = _mm_set1_pd(0.);
 
-    for(int j = row_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    for(long j = row_ptr[i]-1; j < row_ptr[i+1]-1; j++)
     {
       __m128d val_ = _mm_set1_pd(val[j]);
       for(int k = 0; k < 2; k++)
@@ -131,7 +131,7 @@ void dspmvm_nt_4_c(int nrows, double alpha, const int *restrict row_ptr, const i
   }
 }
 
-void dspmvm_nt_8_c(int nrows, double alpha, const int *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
+void dspmvm_nt_8_c(int nrows, double alpha, const long *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
                  const double *restrict rhsv, double *restrict lhsv, int ldv)
 {
   if( !is_aligned(lhsv,16) )
@@ -147,7 +147,7 @@ void dspmvm_nt_8_c(int nrows, double alpha, const int *restrict row_ptr, const i
     for(int k = 0; k < 4; k++)
       lhs_[k] = _mm_set1_pd(0.);
 
-    for(int j = row_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    for(long j = row_ptr[i]-1; j < row_ptr[i+1]-1; j++)
     {
       __m128d val_ = _mm_set1_pd(val[j]);
       for(int k = 0; k < 4; k++)
@@ -171,7 +171,7 @@ void dspmvm_nt_8_c(int nrows, double alpha, const int *restrict row_ptr, const i
 }
 
 
-void dspmvm_nt_strided_2_c(int nrows, double alpha, const int *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
+void dspmvm_nt_strided_2_c(int nrows, double alpha, const long *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
                          const double *restrict rhsv, int ldr, double *restrict lhsv, int ldl)
 {
   if( !is_aligned(lhsv,16) )
@@ -185,7 +185,7 @@ void dspmvm_nt_strided_2_c(int nrows, double alpha, const int *restrict row_ptr,
   {
     __m128d lhs_ = _mm_set1_pd(0.);
 
-    for(int j = row_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    for(long j = row_ptr[i]-1; j < row_ptr[i+1]-1; j++)
     {
       __m128d val_ = _mm_set1_pd(val[j]);
 
@@ -204,7 +204,7 @@ void dspmvm_nt_strided_2_c(int nrows, double alpha, const int *restrict row_ptr,
   }
 }
 
-void dspmvm_nt_strided_4_c(int nrows, double alpha, const int *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
+void dspmvm_nt_strided_4_c(int nrows, double alpha, const long *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
                          const double *restrict rhsv, int ldr, double *restrict lhsv, int ldl)
 {
   if( !is_aligned(lhsv,16) )
@@ -220,7 +220,7 @@ void dspmvm_nt_strided_4_c(int nrows, double alpha, const int *restrict row_ptr,
     for(int k = 0; k < 2; k++)
       lhs_[k] = _mm_set1_pd(0.);
 
-    for(int j = row_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    for(long j = row_ptr[i]-1; j < row_ptr[i+1]-1; j++)
     {
       __m128d val_ = _mm_set1_pd(val[j]);
       for(int k = 0; k < 2; k++)
@@ -243,7 +243,7 @@ void dspmvm_nt_strided_4_c(int nrows, double alpha, const int *restrict row_ptr,
   }
 }
 
-void dspmvm_nt_strided_8_c(int nrows, double alpha, const int *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
+void dspmvm_nt_strided_8_c(int nrows, double alpha, const long *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
                          const double *restrict rhsv, int ldr, double *restrict lhsv, int ldl)
 {
   if( !is_aligned(lhsv,16) )
@@ -259,7 +259,7 @@ void dspmvm_nt_strided_8_c(int nrows, double alpha, const int *restrict row_ptr,
     for(int k = 0; k < 4; k++)
       lhs_[k] = _mm_set1_pd(0.);
 
-    for(int j = row_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    for(long j = row_ptr[i]-1; j < row_ptr[i+1]-1; j++)
     {
       __m128d val_ = _mm_set1_pd(val[j]);
       for(int k = 0; k < 4; k++)

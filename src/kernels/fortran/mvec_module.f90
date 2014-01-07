@@ -203,11 +203,12 @@ contains
   !==================================================================================
   !> calculate 2-norm of the vectors in a multivector
   subroutine mvec_norm2(mvec, vnrm)
+    use mpi
     !--------------------------------------------------------------------------------
     type(MVec_t), intent(in)  :: mvec
     real(kind=8), intent(out) :: vnrm(mvec%jmin:mvec%jmax)
     !--------------------------------------------------------------------------------
-    integer :: nvec, nrows, lda
+    integer :: nvec, nrows, lda, ierr
     logical :: strided
     !--------------------------------------------------------------------------------
 
@@ -248,6 +249,9 @@ contains
       call dnrm2_general(nrows, nvec, mvec%val(mvec%jmin,1), lda, vnrm)
     end if
 
+    vnrm = vnrm*vnrm
+    call MPI_Allreduce(MPI_IN_PLACE,vnrm,nvec,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
+    vnrm = sqrt(vnrm)
 
     !--------------------------------------------------------------------------------
   end subroutine mvec_norm2
@@ -480,11 +484,12 @@ contains
   !==================================================================================
   ! dot product for mvecs
   subroutine mvec_dot_mvec(x,y,dot)
+    use mpi
     !--------------------------------------------------------------------------------
     type(MVec_t), intent(in)  :: x, y
     real(kind=8), intent(out) :: dot(x%jmin:x%jmax)
     !--------------------------------------------------------------------------------
-    integer :: nvec, nrows, ldx, ldy
+    integer :: nvec, nrows, ldx, ldy, ierr
     logical :: strided_x, strided_y, strided
     !--------------------------------------------------------------------------------
 
@@ -535,6 +540,8 @@ contains
     else
       call ddot_general(nrows, nvec, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy, dot)
     end if
+
+    call MPI_Allreduce(MPI_IN_PLACE,dot,nvec,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
 
     !--------------------------------------------------------------------------------
   end subroutine mvec_dot_mvec
@@ -706,6 +713,7 @@ contains
   !==================================================================================
   ! special gemm routine for mvecT_times_mvec
   subroutine mvecT_times_mvec(alpha,v,w,beta,m)
+    use mpi
     !--------------------------------------------------------------------------------
     real(kind=8),  intent(in)    :: alpha
     type(MVec_t),  intent(in)    :: v
@@ -713,8 +721,9 @@ contains
     real(kind=8),  intent(in)    :: beta
     type(SDMat_t), intent(inout) :: M
     !--------------------------------------------------------------------------------
-    integer :: nrows, nvecv, nvecw, ldv, ldw
+    integer :: nrows, nvecv, nvecw, ldv, ldw, ierr
     logical :: strided_v, strided_w
+    logical :: handled, tmp_transposed
     real(kind=8), allocatable :: tmp(:,:)
     !--------------------------------------------------------------------------------
 
@@ -746,6 +755,9 @@ contains
       strided_w = .true.
     end if
 
+    handled = .false.
+    tmp_transposed = .false.
+
     if( .not. strided_v ) then
       if( nvecv .eq. 1 ) then
         allocate(tmp(nvecv,nvecw))
@@ -754,8 +766,7 @@ contains
         else
           call dgemm_sC_1(nrows,nvecw,v%val,w%val,tmp)
         end if
-        M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
-        return
+        handled = .true.
       else if( nvecv .eq. 2 ) then
         allocate(tmp(nvecv,nvecw))
         if( strided_w ) then
@@ -763,8 +774,7 @@ contains
         else
           call dgemm_sC_2(nrows,nvecw,v%val,w%val,tmp)
         end if
-        M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
-        return
+        handled = .true.
       else if( nvecv .eq. 4 ) then
         allocate(tmp(nvecv,nvecw))
         if( strided_w ) then
@@ -772,8 +782,7 @@ contains
         else
           call dgemm_sC_4(nrows,nvecw,v%val,w%val,tmp)
         end if
-        M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
-        return
+        handled = .true.
       else if( nvecv .eq. 8 ) then
         allocate(tmp(nvecv,nvecw))
         if( strided_w ) then
@@ -781,12 +790,11 @@ contains
         else
           call dgemm_sC_8(nrows,nvecw,v%val,w%val,tmp)
         end if
-        M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
-        return
+        handled = .true.
       end if
     end if
 
-    if( .not. strided_w ) then
+    if( .not. handled .and. .not. strided_w ) then
       if( nvecw .eq. 1 ) then
         allocate(tmp(nvecw,nvecv))
         if( strided_w ) then
@@ -794,8 +802,8 @@ contains
         else
           call dgemm_sC_1(nrows,nvecv,w%val,v%val,tmp)
         end if
-        M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*transpose(tmp)+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
-        return
+        handled = .true.
+        tmp_transposed = .true.
       else if( nvecw .eq. 2 ) then
         allocate(tmp(nvecw,nvecv))
         if( strided_w ) then
@@ -803,8 +811,8 @@ contains
         else
           call dgemm_sC_2(nrows,nvecv,w%val,v%val,tmp)
         end if
-        M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*transpose(tmp)+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
-        return
+        handled = .true.
+        tmp_transposed = .true.
       else if( nvecw .eq. 4 ) then
         allocate(tmp(nvecw,nvecv))
         if( strided_w ) then
@@ -812,8 +820,8 @@ contains
         else
           call dgemm_sC_4(nrows,nvecv,w%val,v%val,tmp)
         end if
-        M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*transpose(tmp)+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
-        return
+        handled = .true.
+        tmp_transposed = .true.
       else if( nvecw .eq. 8 ) then
         allocate(tmp(nvecw,nvecv))
         if( strided_w ) then
@@ -821,19 +829,27 @@ contains
         else
           call dgemm_sC_8(nrows,nvecv,w%val,v%val,tmp)
         end if
-        M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*transpose(tmp)+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
-        return
+        handled = .true.
+        tmp_transposed = .true.
       end if
     end if
 
 
-    ! generic case
-    allocate(tmp(nvecv,nvecw))
+    if( .not. handled ) then
+      ! generic case
+      allocate(tmp(nvecv,nvecw))
 
-    call dgemm_sC_generic(nrows,nvecv,nvecw,v%val(v%jmin,1),ldv,w%val(w%jmin,1),ldw,tmp)
+      call dgemm_sC_generic(nrows,nvecv,nvecw,v%val(v%jmin,1),ldv,w%val(w%jmin,1),ldw,tmp)
 
-    M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
+    end if
 
+    call MPI_Allreduce(MPI_IN_PLACE,tmp,nvecv*nvecw,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
+
+    if( tmp_transposed ) then
+      M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*transpose(tmp)+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
+    else
+      M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
+    end if
     !--------------------------------------------------------------------------------
   end subroutine mvecT_times_mvec
 
