@@ -273,8 +273,6 @@ void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ie
     *ierr=-2;
     return;
     }
-  PHIST_DEB("location of data: %p\n",V->val[0]);
-  PHIST_DEB("location of ptr-array: %p\n",V->val);
   *val = (_ST_*)(V->val[0]);
   *lda = V->traits->nrowspadded;
   }

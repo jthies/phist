@@ -46,6 +46,9 @@ using namespace testing;
 #include "phist_gen_z.h"
 #include "QR_Test_def.hpp"
 
+/* 
+// this small test causes problems in parallel because TSQR
+// requires nrows>=ncols on each MPI process.
 #undef _N_
 #define _N_ 5
 #undef _NV_
@@ -73,7 +76,7 @@ using namespace testing;
 
 #include "phist_gen_z.h"
 #include "QR_Test_def.hpp"
-
+*/
 #undef _N_
 #define _N_ 59
 #undef _NV_
