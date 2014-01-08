@@ -11,6 +11,7 @@
 #include "phist_kernels.h"
 #include "phist_operator.h"
 #include "phist_jdqr.h"
+#include "phist_jadaOpts.h"
 #include ${PHIST_TG_HFILE}
 #include "phist_driver_utils.h"
 
@@ -48,12 +49,11 @@ int main(int argc, char** argv)
   
   int* is_cmplx=NULL; // only required for the real case for indicating complex EV
 
-  eigSort_t which;
-  MT tol;
+  phist_jadaOpts_t opts;
+
   char* filename;
   
-  int num_eigs,num_iters,max_iters;
-  int minBas,maxBas; /* whenever maxBas vectors have been created, we shrink the search space to minBas */
+  int num_eigs,num_iters;
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
 
@@ -69,78 +69,77 @@ int main(int argc, char** argv)
 #endif
 
   if (argc<2)
-    {
-    if (verbose) fprintf(stdout,"Usage: ./Xjdqr <matrix filename> [<num eigs>] [<which>] [<tol>] [<max iters> <min basis> <max basis>]\n");
+  {
+    if (verbose) fprintf(stdout,"Usage: ./Xjdqr <mat file> <num eigs> <which> <tol> <max it> <min bas> <max bas> <arno> <init shift>\n\n"
+                                "               \"mat file\" is the matrix file to be read (compulsory)\n\n"
+                                "       all other args are optional but are interpreted in the order given, so only the last\n"
+                                "       few can be left out.\n\n"
+                                "TODO - documentation of options\n"
+                                );
     return 1;
-    }
+  }
 
   filename = argv[1];
+ 
+  phist_jadaOpts_setDefaults(&opts);
   
-  if (argc<3)
-    {
-    num_eigs=10;
-    }
-  else
-    {
-    num_eigs=atoi(argv[2]);
-    }
+  if (argc>=3)
+  {
+    opts.numEigs=atoi(argv[2]);
+  }
 
-  if (argc<4)
-    {
-    which=LM;
-    }
-  else
-    {
-    if (!strcmp(argv[3],"LM")) which=LM;
-    else if (!strcmp(argv[3],"SM")) which=SM;
-    else if (!strcmp(argv[3],"LR")) which=LR;
-    else if (!strcmp(argv[3],"SR")) which=SR;
+  if (argc>=4)
+  {
+    if (!strcmp(argv[3],"LM")) opts.which=LM;
+    else if (!strcmp(argv[3],"SM")) opts.which=SM;
+    else if (!strcmp(argv[3],"LR")) opts.which=LR;
+    else if (!strcmp(argv[3],"SR")) opts.which=SR;
     else
-      {
+    {
       if (verbose) 
-        {
+      {
         fprintf(stderr,"ERROR: the which parameter may be \"LM\",\"SM\",\"LR\" or \"SR\".\n");
         fprintf(stderr,"       run the program without args to get a usage message.\n");
-        }
-      return -1;
       }
+      return -1;
     }
+  }
     
-  if (argc<5)
-    {
-    tol=1.0e-10;
-    }
-  else
-    {
-    tol=(MT)atof(argv[4]);
-    }
+  if (argc>=5)
+  {
+    opts.convTol=(MT)atof(argv[4]);
+  }
 
-  if (argc<6)
-    {
-    max_iters=250;
-    }
-  else
-    {
-    max_iters=atoi(argv[5]);
-    }
+  if (argc>=6)
+  {
+    opts.maxIters=atoi(argv[5]);
+  }
 
-  if (argc<7)
-    {
-    minBas=10;
-    }
-  else
-    {
-    minBas=atoi(argv[6]);
-    }
+  if (argc>=7)
+  {
+    opts.minBas=atoi(argv[6]);
+  }
 
   if (argc<8)
-    {
-    maxBas=minBas+20;
-    }
+  {
+    opts.maxBas=opts.minBas+20;
+  }
   else
-    {
-    maxBas=atoi(argv[7]);
-    }
+  {
+    opts.maxBas=atoi(argv[7]);
+  }
+
+  if (argc>=9)
+  {
+    opts.arno=atoi(argv[8]);
+  }
+
+  if (argc>=10)
+  {
+    opts.initialShift=atof(argv[9]);
+  }
+
+  num_eigs = opts.numEigs;
 
   PHIST_ICHK_IERR(SUBR(crsMat_read)(&A,filename,&ierr),ierr);
   
@@ -148,12 +147,16 @@ int main(int argc, char** argv)
 
   PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,num_eigs+1,&ierr),ierr);
 //  PHIST_ICHK_IERR(SUBR(mvec_random)(X,&ierr),ierr);
+  // start with constant vector to make runs reproducible
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(X,ONE,&ierr),ierr);
+
+  PHIST_ICHK_IERR(SUBR(mvec_view_block)(X,&opts.v0,0,0,&ierr),ierr);
   
-  num_iters=max_iters;
   // create operator wrapper for computing Y=A*X using a CRS matrix
   A_op = (op_ptr_t)malloc(sizeof(TYPE(op)));
   PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(A_op,A,&ierr),ierr);
+
+  
   
   // allocate memory for eigenvalues and residuals. We allocate
   // one extra entry because in the real case we may get that the
@@ -172,9 +175,8 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(mvec_normalize)(X,nrmX0,&ierr),ierr);
 
   SUBR(jdqr)(A_op,B_op,X,evals,resid,is_cmplx, 
-        which, tol,
+        opts,
         &num_eigs,&num_iters,
-        minBas, maxBas,
         &ierr);
 
   if (ierr!=0)

@@ -49,12 +49,12 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   set (CMAKE_C_FLAGS "-fopenmp -std=c99")
   set (CMAKE_C_FLAGS_RELEASE "-O2 -fopenmp")
   set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g -fopenmp")
-  set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+  set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
 
   set (CMAKE_CXX_FLAGS "-fopenmp")
   set (CMAKE_CXX_FLAGS_RELEASE "-O2 -fopenmp")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -fopenmp")
-  set (CMAKE_CXX_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+  set (CMAKE_CXX_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
 
   set (CMAKE_Fortran_FLAGS "-fopenmp -cpp")
   set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -Ofast -fopenmp -cpp")
@@ -175,7 +175,8 @@ set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_lanczos.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_gmres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_bgmres.cpp)
-set (PHIST_JADA_SOURCE ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.c
+set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.c
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.c
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_schur_decomp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_blockjada.cpp

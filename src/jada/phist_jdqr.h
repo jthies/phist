@@ -2,7 +2,7 @@
 #define PHIST_JDQR_H
 
 #include "phist_operator.h"
-#include "phist_enums.h"
+#include "phist_jadaOpts.h"
 
 #ifdef __cplusplus
 extern "C" {
