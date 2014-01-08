@@ -137,10 +137,13 @@ endif ()
 if  (PHIST_KERNEL_LIB STREQUAL "epetra" OR PHIST_KERNEL_LIB STREQUAL "fortran")
 set(TG_Types D)
 else ()
-set(TG_Types S 
-             D 
-             C 
-             Z)
+set(TG_Types D
+             Z) 
+
+#set(TG_Types S 
+#             D 
+#             C 
+#             Z)
 endif ()
 
 if (PHIST_KERNEL_LIB STREQUAL "fortran")
