@@ -88,7 +88,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   int expand=1;
   int solve=1;
   std::complex<MT> theta; // next eigenvalue to go for
-  //sdMat_ptr_t shift = NULL, shift_ptr=NULL;TROET
   // theta as a sdMat_t (either 1x1 or 2x2 in real case)
   sdMat_ptr_t Theta=NULL;
   
@@ -138,7 +137,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(mvec_create)(&r,A_op->domain_map,nv_max,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_create)(&rtil,A_op->domain_map,nv_max,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_create)(&t,A_op->domain_map,nv_max,ierr),*ierr);
-//  PHIST_CHK_IERR(SUBR(sdMat_create)(&shift,nv_max,nv_max,comm,ierr),*ierr);TROET
   
 #ifndef IS_COMPLEX
   PHIST_CHK_IERR(SUBR(mvec_view_block)(u,&u_r,0,0,ierr),*ierr);
@@ -146,7 +144,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(mvec_view_block)(r,&r_r,0,0,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_view_block)(rtil,&rtil_r,0,0,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_view_block)(t,&t_r,0,0,ierr),*ierr);
-//  PHIST_CHK_IERR(SUBR(sdMat_view_block)(shift,&shift_r,0,0,0,0,ierr),*ierr);TROET
 #endif
   PHIST_CHK_IERR(SUBR(sdMat_create)(&M,maxVecs,maxVecs,comm,ierr),*ierr);
   // these two are made bigger because they are used as temporary storage when 
@@ -203,13 +200,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   if (arno)
   {
     PHIST_SOUT(1,"%d steps of Arnoldi as start-up\n",minBas);
-if (v0==NULL)
-{
-  PHIST_SOUT(PHIST_ERROR,"TROET, v0 must not be NULL here");
-  *ierr=-1;
-  return;
-}
-  SUBR(mvec_print)(v0,ierr);//TROET
     PHIST_CHK_IERR(SUBR(simple_arnoldi)(A_op,NULL,v0,Vv,NULL,H0,minBas,ierr),*ierr);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -230,16 +220,19 @@ if (v0==NULL)
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,AVv,st::zero(),Mv,ierr),*ierr);
 
     m=minBas; // number of vectors in current basis V
-    mm=0; //count iterations per eigenvalue/pair of complex ev's
     PHIST_CHK_IERR(SUBR(sdMat_delete)(H0,ierr),*ierr);
     expand=0;
   }
   else
   {
     // start Jacobi-Davidson directly with a given shift
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(V,v0,0,0,ierr),*ierr);
+#ifdef IS_COMPLEX
+    t_ptr=t;
+#else
+    t_ptr=t_r;
+#endif
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(t_ptr,v0,0,0,ierr),*ierr);
     m=0;
-    mm=0; // first 'iteration' not counted
     expand=1;
   }
 
@@ -252,6 +245,8 @@ if (v0==NULL)
   PHIST_SOUT(PHIST_INFO,"Start Jacobi-Davidson\n");
 
   it=0; // total number of JaDa iterations
+  mm=0; //count iterations per eigenvalue/pair of complex ev's
+  if (!arno) mm--; // to get the inner conv tol right we need this hack
   int nv=1; // number of vectors in current update (1 or 2 in this implementation, 2 for
             // complex eigenvectors of a real matrix)
   
@@ -287,10 +282,9 @@ if (v0==NULL)
         PHIST_CHK_NEG_IERR(SUBR(orthog)(Vv,t_ptr,Tv,Sv,3,ierr),*ierr);
         // reset the view of V without the Q.
         PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m0-1,ierr),*ierr);
-      
-        // set V(:,m)=t
-        PHIST_CHK_IERR(SUBR(mvec_set_block)(V,t_ptr,m0,m-1,ierr),*ierr);
       }
+      // set V(:,m)=t
+      PHIST_CHK_IERR(SUBR(mvec_set_block)(V,t_ptr,m0,m-1,ierr),*ierr);
       // compute AV(:,m) = A*V(:,m)
       PHIST_CHK_IERR(A_op->apply(st::one(),A_op->A,Vm,st::zero(),AVm,ierr),*ierr);
       // Galerkin for non-Hermitian A
@@ -416,7 +410,6 @@ if (v0==NULL)
     r_ptr=r;
     rtil_ptr=rtil;
     t_ptr=t;
-    //shift_ptr=shift;TROET
 #ifndef IS_COMPLEX
     if (mt::abs(ct::imag(theta))>mt::eps())
     {
@@ -431,7 +424,6 @@ if (v0==NULL)
       r_ptr=r_r;
       rtil_ptr=rtil_r;
       t_ptr=t_r;
-      //shift_ptr=shift_r;//TROET
     }
 #endif
 
@@ -562,7 +554,6 @@ if (v0==NULL)
       r_ptr=r;
       rtil_ptr=rtil;
       t_ptr=t;
-      //shift_ptr=shift;TROET
     }
     else
     {
@@ -571,7 +562,6 @@ if (v0==NULL)
       r_ptr=r_r;
       rtil_ptr=rtil_r;
       t_ptr=t_r;
-      //shift_ptr=shift_r;TROET
     }
 #endif
     // get the diagonal block (1x1 or 2x2) corresponding to theta
@@ -668,10 +658,8 @@ if (v0==NULL)
       actual_shift=initialShift; // start-up without Arnoldi
     }
 #ifdef IS_COMPLEX
-//    PHIST_CHK_IERR(SUBR(sdMat_put_value)(shift_ptr,actual_shift,ierr),*ierr);TROET
     sigma[0] = -actual_shift;
 #else
-//    PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),Theta,st::zero(),shift_ptr,ierr),*ierr);TROET
     sigma[0] = -ct::real(actual_shift);
     sigma[1] = -ct::real(actual_shift);
 #endif
@@ -710,7 +698,6 @@ if (v0==NULL)
     
     // set t=0 as initial guess (TODO, better start vector)
     PHIST_CHK_IERR(SUBR(mvec_put_value)(t_ptr,st::zero(),ierr),*ierr);
-
     int variant=0; //0:block GMRES, 1: pseudo-BGMRES
     SUBR(bgmres)(&jada_op,t_ptr,rtil_ptr,innerTol,&nIt,maxKSpace,variant,NULL,ierr);
 
