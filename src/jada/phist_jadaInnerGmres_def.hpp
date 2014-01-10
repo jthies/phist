@@ -145,11 +145,13 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
   if( sharedCurDimV == 1 )
   {
     for(int i = 0; i < numSys; i++)
-      resNorm[i] = S_array[i]->normR0_;
+      resNorm[i] = mt::one();
     return;
   }
 
   _ST_ *y = new _ST_[numSys*S_array[0]->maxBas_];
+  for(int i = 0; i < numSys*S_array[0]->maxBas_; i++)
+    y[i] = st::zero();
   int ldy = numSys;
 
   // calculate y by solving the triangular systems
@@ -168,7 +170,7 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
     }
     if( m == 0 )
     {
-      resNorm[i] = S->normR0_;
+      resNorm[i] = mt::one();
       continue;
     }
     resNorm[i] = S->normR_/S->normR0_;
@@ -179,7 +181,7 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
     PHIST_SOUT(PHIST_DEBUG,"jadaInnerGmres_updateSol[%d], curDimV=%d, H=\n",i,S->curDimV_);
     {
       TYPE(sdMat_ptr) H = NULL;
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(S->H_, &H, 0, m+1, 0, m, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(S->H_, &H, 0, m-1, 0, m-1, ierr), *ierr);
       PHIST_CHK_IERR(SUBR(sdMat_print)(H,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(sdMat_delete)(H,ierr),*ierr);
     }
@@ -197,6 +199,31 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
     // set y to rs
     for(int j = 0; j < m; j++)
       y[i+ldy*j] = S->rs_[j];
+#ifdef TESTING
+{
+  // setup e-vector
+  _ST_ e[m];
+  e[0] = st::one();
+  for(int j = 1; j < m+1; j++)
+    e[j] = st::zero();
+  // apply givens rotations
+  for(int j = 0; j < m-1; j++)
+  {
+    _ST_ tmp = S->cs_[j] * e[j]  +  S->sn_[j] * e[j+1];
+    e[j+1] = -st::conj(S->sn_[j]) * e[j]  +  S->cs_[j] * e[j+1];
+    e[j] = tmp;
+  }
+  // check that y is givens_rotations applied to e
+  PHIST_SOUT(PHIST_INFO, "rs/norm0:");
+  for(int j = 0; j < m; j++)
+    PHIST_SOUT(PHIST_INFO, "\t%8.4e + i%8.4e", st::real(y[i+ldy*j])/S->normR0_, st::imag(y[i+ldy*j])/S->normR0_);
+  PHIST_SOUT(PHIST_INFO, "\nabs(rs(j)/norm0)):%8.4e", st::abs(y[i+ldy*(m-1)])/S->normR0_);
+  PHIST_SOUT(PHIST_INFO, "\nrot(e_1):");
+  for(int j = 0; j < m; j++)
+    PHIST_SOUT(PHIST_INFO, "\t%8.4e + i%8.4e", st::real(e[j]), st::imag(e[j]));
+  PHIST_SOUT(PHIST_INFO, "\nabs(rot(e_1)):%8.4e\n", st::abs(e[m-1]));
+}
+#endif
     PHIST_CHK_IERR(PREFIX(TRSV)(uplo,trans,diag,&m,
                                         (st::blas_scalar_t*)H_raw,&ldH,
                                         (st::blas_scalar_t*)&y[i], &ldy, ierr),*ierr);
@@ -222,15 +249,15 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
 
   // add up solution
   TYPE(mvec_ptr) Vj = NULL;
-  for(int j = 0; j < sharedCurDimV-1; j++)
+  for(int j = 0; j < sharedCurDimV; j++)
   {
     PHIST_CHK_IERR(SUBR(mvec_view_block)(S_array[0]->V_[j], &Vj, 0, numSys-1, ierr), *ierr);
     PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&y[ldy*j], Vj, st::one(), x, ierr), *ierr);
-    if( Ax != NULL )
-    {
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(S_array[0]->AV_[j], &Vj, 0, numSys-1, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&y[ldy*j], Vj, st::one(), Ax, ierr), *ierr);
-    }
+    //if( Ax != NULL )
+    //{
+      //PHIST_CHK_IERR(SUBR(mvec_view_block)(S_array[0]->AV_[j], &Vj, 0, numSys-1, ierr), *ierr);
+      //PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&y[ldy*j], Vj, st::one(), Ax, ierr), *ierr);
+    //}
   }
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vj, ierr), *ierr);
 }
@@ -453,6 +480,7 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
       {
         tmp = S[i]->cs_[k]*Hj[k] + S[i]->sn_[k]*Hj[k+1];
         Hj[k+1] = -st::conj(S[i]->sn_[k])*Hj[k] + S[i]->cs_[k]*Hj[k+1];
+        Hj[k] = tmp;
       }
       // new Givens rotation to eliminate H(j+1,j)
 #ifdef IS_COMPLEX
@@ -462,12 +490,12 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
 #endif
 #ifdef TESTING
 {
-  PHIST_OUT(PHIST_VERBOSE,"(Hj[j-1],Hj[j]) = (%8.4e+%8.4ei, %8.4e+%8.4ei)\n", st::real(Hj[j-1]), st::imag(Hj[j-1]),st::real(Hj[j]),st::imag(Hj[j]));
-  PHIST_OUT(PHIST_VERBOSE,"(c,s) = (%8.4e, %8.4e+%8.4ei)\n", S[i]->cs_[j-1],st::real(S[i]->sn_[j-1]),st::imag(S[i]->sn_[j-1]));
-  PHIST_OUT(PHIST_VERBOSE,"r = %8.4e+%8.4ei\n", st::real(tmp),st::imag(tmp));
+  PHIST_OUT(PHIST_VERBOSE,"(Hj[j-1],Hj[j]) = (%8.4e+i%8.4e, %8.4e + i%8.4e)\n", st::real(Hj[j-1]), st::imag(Hj[j-1]),st::real(Hj[j]),st::imag(Hj[j]));
+  PHIST_OUT(PHIST_VERBOSE,"(c,s) = (%8.4e, %8.4e+i%8.4e)\n", S[i]->cs_[j-1],st::real(S[i]->sn_[j-1]),st::imag(S[i]->sn_[j-1]));
+  PHIST_OUT(PHIST_VERBOSE,"r = %8.4e + i%8.4e\n", st::real(tmp),st::imag(tmp));
   _ST_ r_ = S[i]->cs_[j-1]*Hj[j-1] + S[i]->sn_[j-1]*Hj[j];
   _ST_ zero_ = -st::conj(S[i]->sn_[j-1])*Hj[j-1] + S[i]->cs_[j-1]*Hj[j];
-  PHIST_OUT(PHIST_VERBOSE,"(r, 0) = (%8.4e+8.4%ei, %8.4e+8.4%ei)\n", st::real(r_), st::imag(r_), st::real(zero_), st::imag(zero_));
+  PHIST_OUT(PHIST_VERBOSE,"(r, 0) = (%8.4e + i%8.4e, %8.4e+i%8.4e)\n", st::real(r_), st::imag(r_), st::real(zero_), st::imag(zero_));
   PHIST_CHK_IERR(*ierr = (st::abs(r_-tmp) < 1.e-5) ? 0 : -1, *ierr);
   PHIST_CHK_IERR(*ierr = (st::abs(zero_) < 1.e-5) ? 0 : -1, *ierr);
 }
@@ -495,7 +523,7 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
       // check convergence
       MT relres = S[i]->normR_ / S[i]->normR0_;
       MT absres = S[i]->normR_;
-      if( relres < S[i]->tol || absres < S[i]->tol )
+      if( absres < 100*st::eps() || relres < S[i]->tol )
       {
         S[i]->ierr = 0; // mark as converged
         anyConverged++;
