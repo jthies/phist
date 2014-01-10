@@ -265,9 +265,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_print)(vec3_,&ierr_);
 #endif
 #ifdef PHIST_KERNEL_LIB_FORTRAN
-      ASSERT_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nvec_,nloc_,lda_,stride_));
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nvec_,nloc_,lda_,stride_));
 #else
-      ASSERT_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_));
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_));
 #endif
       }
     }
