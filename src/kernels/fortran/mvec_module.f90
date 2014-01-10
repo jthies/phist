@@ -318,6 +318,8 @@ contains
     nrows = size(x%val,2)
     lda = size(x%val,1)
 
+    !call dlascl2(nvec,nrows,alpha(1),x%val(x%jmin,1),lda)
+
     if( nvec .eq. 1 ) then
       call dscal(nrows,alpha(1),x%val(x%jmin,1),lda)
     else if( nvec .eq. 2 ) then
@@ -444,7 +446,7 @@ contains
       if( .not. strided ) then
         call dcopy(nvec*nrows, x%val, 1, y%val, 1)
       else
-        call dcopy_general(nrows, nvec, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
+        call dlacpy('G',nvec,nrows,x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
       end if
       return
     end if

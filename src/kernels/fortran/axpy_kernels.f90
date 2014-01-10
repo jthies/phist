@@ -1,31 +1,3 @@
-subroutine dcopy_general(nrows, nvec, x, ldx, y, ldy)
-  implicit none
-  integer, intent(in) :: nrows, nvec, ldx, ldy
-  real(kind=8), intent(in) :: x(ldx,*)
-  real(kind=8), intent(out) :: y(ldy,*)
-  integer i
-
-  interface
-    subroutine dcopy_general_nt_c(nrows,nvec,x,ldx,y,ldy) bind(C)
-      use, intrinsic :: iso_c_binding
-      integer(C_INT), value :: nrows,nvec,ldx,ldy
-      real(C_DOUBLE), intent(in) :: x(*)
-      real(C_DOUBLE), intent(out) :: y(*)
-    end subroutine dcopy_general_nt_c
-  end interface
-
-
-  if( mod(loc(y),16) .eq. 0 .and. mod(ldy,2) .eq. 0 .and. mod(nvec,2) .eq. 0 .and. mod(ldx,2) .eq. 0 ) then
-    call dcopy_general_nt_c(nrows, nvec, x, ldx, y, ldy)
-  else
-!$omp parallel do
-    do i = 1, nrows
-      y(1:nvec,i) = x(1:nvec,i)
-    end do
-  end if
-end subroutine dcopy_general
-
-
 subroutine dscal_2(nrows, alpha, x)
   implicit none
   integer, intent(in) :: nrows
