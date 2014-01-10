@@ -187,7 +187,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
       normW0[j]=1.; // after mvec_QR the norm is 1!
       }
     PHIST_SOUT(PHIST_VERBOSE,"reduction in norm, GS step %d: %4.2f\n",step,maxRed);
-    if (maxRed>0.75)
+    if (maxRed>0.85)
       {
       stopGS=true;
       PHIST_SOUT(PHIST_VERBOSE,"stopping Gram-Schmidt\n");
