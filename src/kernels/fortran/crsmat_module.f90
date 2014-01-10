@@ -271,21 +271,21 @@ contains
     call mpi_waitall(combuff%nRecvProcs,combuff%recvRequests,&
       &              combuff%recvStatus,ierr)
 
-  contains
-
-    subroutine sort(array)
-      use m_mrgrnk
-      integer, intent(inout) :: array(1:)
-      integer, allocatable :: tmp(:,:)
-
-      allocate(tmp(size(array),2))
-      tmp(:,1) = array
-      call mrgrnk(tmp(:,1),tmp(:,2))
-      do i = 1, size(array)
-        array(tmp(i,2)) = tmp(i,1)
-      end do
-    end subroutine sort
   end subroutine setup_commBuff
+
+  subroutine sort(array)
+    use m_mrgrnk
+    integer, intent(inout) :: array(1:)
+    integer, allocatable :: tmp(:,:)
+    integer :: i
+
+    allocate(tmp(size(array),2))
+    tmp(:,1) = array
+    call mrgrnk(tmp(:,1),tmp(:,2))
+    do i = 1, size(array)
+      array(tmp(i,2)) = tmp(i,1)
+    end do
+  end subroutine sort
 
 
   !> rearrange the elements of a matrix stored in crs format in a
@@ -623,7 +623,7 @@ contains
     character(len=100) :: line
     integer, allocatable :: idx(:,:)
     real(kind=8),    allocatable :: val(:)
-    integer :: i, j, off, n
+    integer :: i, j, off, n, globalRows, globalCols, globalEntries
     !--------------------------------------------------------------------------------
 
     do i = 1, filename_len
@@ -644,7 +644,7 @@ contains
     flush(6)
     if( trim(line) .ne. '%%MatrixMarket matrix coordinate real general' ) then
       write(*,*) 'unsupported format'
-    flush(6)
+      flush(6)
       ierr = -99
       return
     end if
@@ -658,21 +658,32 @@ contains
     allocate(A)
 
     ! now read the dimensions
-    read(funit,*) A%nRows, A%nCols, A%nEntries
-    write(*,*) 'CrsMat:', A%nRows, A%nCols, A%nEntries
+    read(funit,*) globalRows, globalCols, globalEntries
+    write(*,*) 'CrsMat:', globalRows, globalCols, globalEntries
     flush(6)
 
-    call map_setup(A%row_map, MPI_COMM_WORLD, int(A%nRows,kind=8), ierr)
+    call map_setup(A%row_map, MPI_COMM_WORLD, int(globalRows,kind=8), ierr)
     if( ierr .ne. 0 ) return
 
+    A%nRows = A%row_map%nlocal(A%row_map%me)
+    A%nCols = A%nRows
+
     ! allocate temporary buffers
-    allocate(idx(A%nEntries,2))
-    allocate(val(A%nEntries))
+    allocate(idx(globalEntries,2))
+    allocate(val(globalEntries))
 
     ! read data
-    do i = 1, A%nEntries
-      read(funit,*) idx(i,1), idx(i,2), val(i)
+    j = 0
+    do i = 1, globalEntries, 1
+      read(funit,*) idx(j+1,1), idx(j+1,2), val(j+1)
+      if( idx(j+1,1) .ge. A%row_map%distrib(A%row_map%me) .and. &
+        & idx(j+1,1) .lt. A%row_map%distrib(A%row_map%me+1)     ) then
+        j = j + 1
+        ! already subtract offset of this proc
+        idx(j,1) = idx(j,1) -  A%row_map%distrib(A%row_map%me) + 1
+      end if
     end do
+    A%nEntries = j
 
     ! close the file
     close(funit)
@@ -737,10 +748,8 @@ contains
     call setup_commBuff(A, A%comm_buff)
     call sortlnlCrs(A)
 
-    if( A%row_map%me .eq. 0 ) then
-      write(*,*) 'created new crsMat with dimensions', A%nRows, A%nCols, A%nEntries
-      flush(6)
-    end if
+    write(*,*) 'created new crsMat with dimensions', A%nRows, A%nCols, A%nEntries
+    flush(6)
     A_ptr = c_loc(A)
 
     ierr = 0
