@@ -476,7 +476,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       }
     }
     // deflate with more vectors if there are multiple, partly converged eigenvalues
-    while( k_ < nEig_ && resNorm[k_] < mt::sqrt(tol) && ct::abs(ev_H[k_]-ev_H[k_-1]) < mt::sqrt(tol) )
+    while( k_ < nEig_-1 && resNorm[k_] < mt::sqrt(tol) && ct::abs(ev_H[k_]-ev_H[k_-1]) < mt::sqrt(tol) )
       k_++;
 
 PHIST_SOUT(PHIST_INFO,"selectedRes: ");
