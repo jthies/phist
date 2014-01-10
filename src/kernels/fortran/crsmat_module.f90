@@ -56,7 +56,7 @@ module crsmat_module
   type ProcWiseIndices_t
     integer :: nd                                     !< number of rows with elements from this proc
     integer :: offset                                 !< row block offset of first row from this proc
-    integer(kind=8), allocatable :: row_offset(:)        !< index of elements in this proc, has size (nd+1)
+    integer(kind=8), allocatable :: row_offset(:)     !< index of elements in this proc, has size (nd+1)
   end type ProcWiseIndices_t
 
 
@@ -292,7 +292,7 @@ contains
   !! way that the elements are grouped by remote process (e.g. when performing
   !! a matrix vector multiplication, the elements that are multiplied with a
   !! subvector from a remote process are stored consecutivly in memory)
-  pure subroutine sortlnlcrs(mat)
+  subroutine sortlnlcrs(mat)
     type(CrsMat_t), intent(inout) :: mat
 
     integer :: i, k, jProcIndex
@@ -302,7 +302,7 @@ contains
     type(ProcWiseIndices_t), allocatable :: lnlInd(:)
 
 
-    firstrow = mat%row_map%distrib(mat%row_map%me)+1
+    firstrow = mat%row_map%distrib(mat%row_map%me)
     lastrow  = mat%row_map%distrib(mat%row_map%me+1)-1
 
     ! first create new row_offset indices per proc
@@ -413,7 +413,7 @@ contains
     ! get pointer to first nonlocal element in each row
     allocate(mat%nonlocal_offset(mat%nRows))
     do i=1,mat%nRows,1
-      do j=lnlInd(0)%row_offset(i),lnlInd(0)%row_offset(i+1)-1,1
+      do j = mat%row_offset(i), mat%row_offset(i+1)-1, 1
         if( mat%col_idx(j) .lt. 0 ) exit
       end do
       mat%nonlocal_offset(i) = j

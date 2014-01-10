@@ -63,7 +63,7 @@ contains
     type(MVec_t), intent(inout) :: mvec
     type(MVec_t), intent(in)    :: block_list(1:)
     !--------------------------------------------------------------------------------
-    integer :: nvec, nblocks, nrows, ldb, ldm
+    integer :: nvec, nblocks, nrows, ldm
     logical :: single_vector_gather
     integer :: i, j, nvec_i, off, jmin_i, jmax_i
     logical :: strided
@@ -135,7 +135,7 @@ contains
     type(MVec_t), intent(inout) :: mvec
     type(MVec_t), intent(in)    :: block_list(1:)
     !--------------------------------------------------------------------------------
-    integer :: nvec, nblocks, nrows, ldb, ldm
+    integer :: nvec, nblocks, nrows, ldm
     logical :: single_vector_scatter
     integer :: i, j, nvec_i, off, jmin_i, jmax_i
     logical :: strided
@@ -380,7 +380,7 @@ contains
     !--------------------------------------------------------------------------------
     integer :: nvec, nrows, ldx, ldy
     logical :: strided_x, strided_y, strided
-    logical :: only_scale, only_copy
+    logical :: only_scale, only_copy, one_alpha, y_aligned
     integer :: i
     !--------------------------------------------------------------------------------
 
@@ -428,55 +428,93 @@ contains
       strided_x = .false.
     end if
 
+    one_alpha = .true.
+    do i = 1, nvec-1, 1
+      if( alpha(i) .ne. alpha(i+1) ) one_alpha = .false.
+    end do
+
+    y_aligned = .true.
+    if( mod(loc(y%val(y%jmin,1)),16) .ne. 0 .or. mod(ldy,2) .ne. 0 ) then
+      y_aligned = .false.
+    end if
+
     strided = strided_x .or. strided_y
 
     if( only_copy ) then
       if( .not. strided ) then
         call dcopy(nvec*nrows, x%val, 1, y%val, 1)
-      else if( nvec .eq. 1 ) then
-        call dcopy(nrows, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
-      else if( nvec .eq. 2 ) then
-        call dcopy_strided_2(nrows, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
-      else if( nvec .eq. 4 ) then
-        call dcopy_strided_4(nrows, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
-      else if( nvec .eq. 8 ) then
-        call dcopy_strided_8(nrows, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
       else
         call dcopy_general(nrows, nvec, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
       end if
-    else
+      return
+    end if
+
+    if( beta .eq. 1 ) then
       if( nvec .eq. 1 ) then
-        if( beta .eq. 1 ) then
-          call daxpy(nrows, alpha(1), x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
-        else
-          if( strided ) then
-            call daxpby_strided_1(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
-          else
-            call daxpby_1(nrows, alpha(1), x%val(x%jmin,1), beta, y%val(y%jmin,1))
-          end if
-        end if
-      else if( nvec .eq. 2 ) then
-        if( strided ) then
-          call daxpby_strided_1(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
-        else
-          call daxpby_1(nrows, alpha(1), x%val(x%jmin,1), beta, y%val(y%jmin,1))
-        end if
-      else if( nvec .eq. 4 ) then
-        if( strided ) then
-          call daxpby_strided_4(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
-        else
-          call daxpby_4(nrows, alpha(1), x%val(x%jmin,1), beta, y%val(y%jmin,1))
-        end if
-      else if( nvec .eq. 8 ) then
-        if( strided ) then
-          call daxpby_strided_8(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
-        else
-          call daxpby_8(nrows, alpha(1), x%val(x%jmin,1), beta, y%val(y%jmin,1))
-        end if
-      else
-        call daxpby_generic(nrows, nvec, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
+        call daxpy(nrows, alpha(1), x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
+        return
+      else if( one_alpha .and. .not. strided ) then
+        call daxpy(nrows*nvec, alpha(1), x%val(x%jmin,1), 1, y%val(y%jmin,1), 1)
+        return
       end if
     end if
+
+    if( beta .eq. 0 ) then
+      if( nvec .eq. 2 .and. y_aligned ) then
+        if( strided ) then
+          call daxpy_NT_strided_2(nrows, alpha(1), x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
+        else
+          call daxpy_NT_2(nrows, alpha(1), x%val(x%jmin,1), y%val(y%jmin,1))
+        end if
+        return
+      else if( nvec .eq. 4 .and. y_aligned ) then
+        if( strided ) then
+          call daxpy_NT_strided_4(nrows, alpha(1), x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
+        else
+          call daxpy_NT_4(nrows, alpha(1), x%val(x%jmin,1), y%val(y%jmin,1))
+        end if
+        return
+      else if( nvec .eq. 8 .and. y_aligned ) then
+        if( strided ) then
+          call daxpy_NT_strided_8(nrows, alpha(1), x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
+        else
+          call daxpy_NT_8(nrows, alpha(1), x%val(x%jmin,1), y%val(y%jmin,1))
+        end if
+        return
+      end if
+    end if
+
+    if( nvec .eq. 1 ) then
+      if( strided ) then
+        call daxpby_strided_1(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
+      else
+        call daxpby_1(nrows, alpha(1), x%val(x%jmin,1), beta, y%val(y%jmin,1))
+      end if
+      return
+    else if( nvec .eq. 2 ) then
+      if( strided ) then
+        call daxpby_strided_1(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
+      else
+        call daxpby_1(nrows, alpha(1), x%val(x%jmin,1), beta, y%val(y%jmin,1))
+      end if
+      return
+    else if( nvec .eq. 4 ) then
+      if( strided ) then
+        call daxpby_strided_4(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
+      else
+        call daxpby_4(nrows, alpha(1), x%val(x%jmin,1), beta, y%val(y%jmin,1))
+      end if
+      return
+    else if( nvec .eq. 8 ) then
+      if( strided ) then
+        call daxpby_strided_8(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
+      else
+        call daxpby_8(nrows, alpha(1), x%val(x%jmin,1), beta, y%val(y%jmin,1))
+      end if
+      return
+    end if
+
+    call daxpby_generic(nrows, nvec, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
     !--------------------------------------------------------------------------------
   end subroutine mvec_vadd_mvec
 
@@ -1001,8 +1039,10 @@ contains
     flush(6)
 #endif
     allocate(mvec%val(nvec,map%nlocal(map%me)))
-    ! that's costly... the user should take care himself!
-    !mvec%val = 0._8
+    ! that should hopefully help in cases of NUMA
+!$omp workshare
+    mvec%val = 0._8
+!$omp end workshare
     mvec_ptr = c_loc(mvec)
     ierr = 0
 
