@@ -64,10 +64,6 @@ int main(int argc, char** argv)
 
   verbose= (rank==0);
 
-#ifdef TESTING
-  std::srand(49+rank);
-#endif
-
   if (argc<2)
     {
     if (verbose) fprintf(stdout,"Usage: ./Xjdqr <matrix filename> [<num eigs>] [<which>] [<tol>] [<max iters> <min basis> <max basis>]\n");

@@ -49,7 +49,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   set (CMAKE_C_FLAGS "-fopenmp -std=c99")
   set (CMAKE_C_FLAGS_RELEASE "-O2 -fopenmp")
   set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g -fopenmp")
-  set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+  set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
 
   set (CMAKE_CXX_FLAGS "-fopenmp")
   set (CMAKE_CXX_FLAGS_RELEASE "-O2 -fopenmp")
