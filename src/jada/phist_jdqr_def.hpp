@@ -188,7 +188,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   // We're also assuming that v0 is normalized here.
   mvec_ptr_t v0=NULL;
   PHIST_CHK_IERR(SUBR(mvec_view_block)(X,&v0,0,0,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(simple_arnoldi)(A_op,NULL,v0,Vv,NULL,H0,minBas,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(simple_arnoldi)(A_op,NULL,v0,Vv,NULL,NULL,H0,minBas,ierr),*ierr);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
   PHIST_DEB("initial H (by Arnoldi)\n");
