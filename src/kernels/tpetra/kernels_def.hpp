@@ -261,14 +261,14 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
 #ifdef TESTING
   if (jmax<jmin)
     {
-    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d] is invalid",__FUNCTION__,
+    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d] is invalid\n",__FUNCTION__,
                           jmin,jmax);
     *ierr=-1; return;
     }
   if (jmin<0 || jmax>=V->getNumVectors())
     {
     PHIST_OUT(PHIST_ERROR,"input vector to %s is %d x %d, which does not match "
-                          "given range [%d..%d]",__FUNCTION__,
+                          "given range [%d..%d]\n",__FUNCTION__,
                           V->getLocalLength(), V->getNumVectors(),
                           jmin,jmax);
     *ierr=-1; return;
@@ -303,7 +303,7 @@ void SUBR(mvec_view_scattered)(TYPE(mvec_ptr) vV, TYPE(mvec_ptr)* vVscat,
     {
     if (cols[i]<0 || cols[i]>=V->getNumVectors())
       {
-      PHIST_OUT(PHIST_ERROR,"in %s, requested vector %d..%d is invalid",__FUNCTION__,cols[i]);
+      PHIST_OUT(PHIST_ERROR,"in %s, requested vector %d..%d is invalid\n",__FUNCTION__,cols[i]);
       *ierr=-1;
       }
     }
@@ -340,7 +340,7 @@ void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
 #ifdef TESTING
   if (jmax<jmin)
     {
-    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d] is invalid",__FUNCTION__,
+    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d] is invalid\n",__FUNCTION__,
                           jmin,jmax);
     *ierr=-1; return;
     }
@@ -348,7 +348,7 @@ void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
   if (nc!=Vblock->getNumVectors())
     {
     PHIST_OUT(PHIST_ERROR,"output block to %s has % cols, which does not match "
-                          "given range [%d..%d]",__FUNCTION__,
+                          "given range [%d..%d]\n",__FUNCTION__,
                           Vblock->getNumVectors(),
                           jmin,jmax);
     *ierr=-1; return;
@@ -356,7 +356,7 @@ void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
   if (jmin<0 || jmax>=V->getNumVectors())
     {
     PHIST_OUT(PHIST_ERROR,"input vector to %s has %d columns, which does not match "
-                          "given range [%d..%d]",__FUNCTION__,
+                          "given range [%d..%d]\n",__FUNCTION__,
                           V->getNumVectors(),
                           jmin,jmax);
     *ierr=-1; return;
@@ -382,7 +382,7 @@ void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
 #ifdef TESTING
   if (jmax<jmin)
     {
-    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d] is invalid",__FUNCTION__,
+    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d] is invalid\n",__FUNCTION__,
                           jmin,jmax);
     *ierr=-1; return;
     }
@@ -390,7 +390,7 @@ void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
   if (nc!=Vblock->getNumVectors())
     {
     PHIST_OUT(PHIST_ERROR,"input block to %s has %d columns, which does not match "
-                          "given range [%d..%d]",__FUNCTION__,
+                          "given range [%d..%d]\n",__FUNCTION__,
                           Vblock->getNumVectors(),
                           jmin,jmax);
     *ierr=-1; return;
@@ -398,7 +398,7 @@ void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
   if (jmin<0 || jmax>=V->getNumVectors())
     {
     PHIST_OUT(PHIST_ERROR,"in/output matrix to %s has %d columns, which does not match "
-                          "given range [%d..%d]",__FUNCTION__,
+                          "given range [%d..%d]\n",__FUNCTION__,
                           V->getNumVectors(),
                           jmin,jmax);
     *ierr=-1; return;
@@ -432,14 +432,14 @@ void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
 #ifdef TESTING
   if (jmax<jmin||imax<imin)
     {
-    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d]x[%d..%d] is invalid",__FUNCTION__,
+    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d]x[%d..%d] is invalid\n",__FUNCTION__,
                           imin,imax,jmin,jmax);
     *ierr=-1; return;
     }
   if (imin<0 || imax>=M->getLocalLength() || jmin<0 || jmax>=M->getNumVectors())
     {
     PHIST_OUT(PHIST_ERROR,"input matrix to %s is %d x %d, which does not match "
-                          "given range [%d..%d]x[%d..%d]",__FUNCTION__,
+                          "given range [%d..%d]x[%d..%d]\n",__FUNCTION__,
                           M->getLocalLength(), M->getNumVectors(),
                           imin,imax,jmin,jmax);
     *ierr=-1; return;
@@ -495,7 +495,7 @@ void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
 #ifdef TESTING
   if (jmax<jmin||imax<imin)
     {
-    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d]x[%d..%d] is invalid",__FUNCTION__,
+    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d]x[%d..%d] is invalid\n",__FUNCTION__,
                           imin,imax,jmin,jmax);
     *ierr=-1; return;
     }
@@ -503,7 +503,7 @@ void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
   if (nr!=Mblock->getLocalLength() || nc!=Mblock->getNumVectors())
     {
     PHIST_OUT(PHIST_ERROR,"output block to %s is %d x %d, which does not match "
-                          "given range [%d..%d]x[%d..%d]",__FUNCTION__,
+                          "given range [%d..%d]x[%d..%d]\n",__FUNCTION__,
                           Mblock->getLocalLength(), Mblock->getNumVectors(),
                           imin,imax,jmin,jmax);
     *ierr=-1; return;
@@ -511,7 +511,7 @@ void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
   if (imin<0 || imax>=M->getLocalLength() || jmin<0 || jmax>=M->getNumVectors())
     {
     PHIST_OUT(PHIST_ERROR,"input matrix to %s is %d x %d, which does not match "
-                          "given range [%d..%d]x[%d..%d]",__FUNCTION__,
+                          "given range [%d..%d]x[%d..%d]\n",__FUNCTION__,
                           M->getLocalLength(), M->getNumVectors(),
                           imin,imax,jmin,jmax);
     *ierr=-1; return;
@@ -555,7 +555,7 @@ void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
 #ifdef TESTING
   if (jmax<jmin||imax<imin)
     {
-    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d]x[%d..%d] is invalid",__FUNCTION__,
+    PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d]x[%d..%d] is invalid\n",__FUNCTION__,
                           imin,imax,jmin,jmax);
     *ierr=-1; return;
     }
@@ -563,7 +563,7 @@ void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
   if (nr!=Mblock->getLocalLength() || nc!=Mblock->getNumVectors())
     {
     PHIST_OUT(PHIST_ERROR,"input block to %s is %d x %d, which does not match "
-                          "given range [%d..%d]x[%d..%d]",__FUNCTION__,
+                          "given range [%d..%d]x[%d..%d]\n",__FUNCTION__,
                           Mblock->getLocalLength(), Mblock->getNumVectors(),
                           imin,imax,jmin,jmax);
     *ierr=-1; return;
@@ -571,7 +571,7 @@ void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
   if (imin<0 || imax>=M->getLocalLength() || jmin<0 || jmax>=M->getNumVectors())
     {
     PHIST_OUT(PHIST_ERROR,"in/output matrix to %s is %d x %d, which does not match "
-                          "given range [%d..%d]x[%d..%d]",__FUNCTION__,
+                          "given range [%d..%d]x[%d..%d]\n",__FUNCTION__,
                           M->getLocalLength(), M->getNumVectors(),
                           imin,imax,jmin,jmax);
     *ierr=-1; return;
@@ -666,7 +666,7 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* ierr)
   *ierr=0;
   CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
 #ifdef TESTING
-  PHIST_SOUT(PHIST_WARNING,"gathering global vector (only in TESTING mode)");
+  PHIST_SOUT(PHIST_WARNING,"gathering global vector (only in TESTING mode)\n");
   // make results reproducible by doing a sequential randomization and then a 'scatter'
   Teuchos::RCP<const map_t> map = V->getMap();
   gidx_t nglob=map->getGlobalNumElements();
@@ -950,11 +950,11 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     MT nrm;
     PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
     ST* Rval = R->get1dViewNonConst().getRawPtr();
-    PHIST_DEB("single vector QR, R=%8.4f",nrm);
+    PHIST_DEB("single vector QR, R=%8.4f\n",nrm);
     rank=1;
     if (nrm<rankTol)
       {
-      PHIST_DEB("zero vector detected");
+      PHIST_DEB("zero vector detected\n");
       // randomize the vector
       PHIST_CHK_IERR(SUBR(mvec_random)(vV,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
@@ -984,7 +984,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
         = Traits< _ST_ >::CreateTeuchosViewNonConst(Teuchos::rcp(R,false),ierr);
   if (*ierr!=0) 
     {
-    PHIST_OUT(PHIST_ERROR,"error code %d returned from CreateTeuchosViewNonConst (file %s,line %d)", 
+    PHIST_OUT(PHIST_ERROR,"error code %d returned from CreateTeuchosViewNonConst (file %s,line %d)\n", 
         *ierr, __FILE__, __LINE__);
     return;
     }

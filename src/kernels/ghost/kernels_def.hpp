@@ -219,7 +219,7 @@ void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) vV, const_comm_ptr_t* vcomm, int* 
     }
   else
     {
-    PHIST_OUT(PHIST_WARNING,"in mvec_get_comm: ghost_vec_t without context!");
+    PHIST_OUT(PHIST_WARNING,"in mvec_get_comm: ghost_vec_t without context!\n");
     MPI_Comm* comm = new MPI_Comm;
     *comm=MPI_COMM_SELF;
     *vcomm=(const_comm_ptr_t)(comm);
@@ -263,13 +263,13 @@ void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ie
   if (V->traits->flags & GHOST_VEC_SCATTERED)
     {
     PHIST_OUT(PHIST_ERROR,"%s: cannot view data with non-constant stride using "
-        "this function (file %s, line %d)", __FUNCTION__, __FILE__, __LINE__);
+        "this function (file %s, line %d)\n", __FUNCTION__, __FILE__, __LINE__);
     *ierr=-1; 
     return;
     }
   if (V->val==NULL)
     {
-    PHIST_OUT(PHIST_ERROR,"%s, pointer is NULL",__FUNCTION__);
+    PHIST_OUT(PHIST_ERROR,"%s, pointer is NULL\n",__FUNCTION__);
     *ierr=-2;
     return;
     }
@@ -285,7 +285,7 @@ void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* 
   if (M->traits->flags & GHOST_VEC_SCATTERED)
     {
     PHIST_OUT(PHIST_ERROR,"%s: cannot view data with non-constant stride using "
-        "this function (file %s, line %d)", __FUNCTION__, __FILE__, __LINE__);
+        "this function (file %s, line %d)\n", __FUNCTION__, __FILE__, __LINE__);
     *ierr=-1; 
     return;
     }
@@ -312,7 +312,7 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   if (*vVblock!=NULL)
     {
     CAST_PTR_FROM_VOID(ghost_vec_t,tmp,*vVblock,*ierr);
-    PHIST_DEB("destroying previous vector (view)");
+    PHIST_DEB("destroying previous vector (view)\n");
     tmp->destroy(tmp);
     }
   *vVblock = (TYPE(mvec_ptr))Vblock;
@@ -337,7 +337,7 @@ void SUBR(mvec_view_scattered)(TYPE(mvec_ptr) vV, TYPE(mvec_ptr)* vVscat,
   if (*vVscat!=NULL)
     {
     CAST_PTR_FROM_VOID(ghost_vec_t,tmp,*vVscat,*ierr);
-    PHIST_DEB("destroying previous vector (view)");
+    PHIST_DEB("destroying previous vector (view)\n");
     tmp->destroy(tmp);
     }
   *vVscat = (TYPE(mvec_ptr))Vscat;
@@ -412,7 +412,7 @@ void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMblock,
 
   if (*vMblock!=NULL)
     {
-    PHIST_DEB("deleting previous object in %s",__FUNCTION__);
+    PHIST_DEB("deleting previous object in %s\n",__FUNCTION__);
     CAST_PTR_FROM_VOID(ghost_vec_t,tmp,*vMblock,*ierr);
     tmp->destroy(tmp);
     }
@@ -768,7 +768,7 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
   PHIST_CHK_IERR(*ierr=nrV-nrW,*ierr);
   PHIST_CHK_IERR(*ierr=nrC-ncV,*ierr);
   PHIST_CHK_IERR(*ierr=ncC-ncW,*ierr);
-  PHIST_DEB("V'C with V %"PRlidx"x%d, C %dx%d and result %"PRlidx"x%d",
+  PHIST_DEB("V'C with V %"PRlidx"x%d, C %dx%d and result %"PRlidx"x%d\n",
         nrV,ncV,nrC,ncC,nrW,ncW);
 #endif
   // note: C is replicated, so this operation is a purely local one.
@@ -839,11 +839,11 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     ST* Rval=NULL;
     int ldR;
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(vR,&Rval,&ldR,ierr),*ierr);
-    PHIST_DEB("single vector QR, R=%8.4f",nrm);
+    PHIST_DEB("single vector QR, R=%8.4f\n",nrm);
     rank=1;
     if (nrm<rankTol)
       {
-      PHIST_DEB("zero vector detected");
+      PHIST_DEB("zero vector detected\n");
       // randomize the vector
       PHIST_CHK_IERR(SUBR(mvec_random)(vV,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
@@ -875,12 +875,12 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   PHIST_CHK_IERR(*ierr=nrows-(V->traits->nvecs),*ierr);
 #endif  
 
-  PHIST_DEB("create Teuchos view of R");
+  PHIST_DEB("create Teuchos view of R\n");
   Teuchos::RCP<Traits<_ST_ >::Teuchos_sdMat_t> R_view;
   PHIST_CHK_IERR(R_view = Traits<_ST_ >::CreateTeuchosViewNonConst
         (Teuchos::rcp(R,false),ierr),*ierr);
 
-  PHIST_DEB("create TSQR ortho manager");  
+  PHIST_DEB("create TSQR ortho manager\n");  
   Belos::TsqrOrthoManager<_ST_, phist::GhostMV> tsqr("phist/ghost");
   Teuchos::RCP<const Teuchos::ParameterList> valid_params = 
         tsqr.getValidParameters();
@@ -891,11 +891,11 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
         (new Teuchos::ParameterList(*valid_params));
   params->set("randomizeNullSpace",true);
   params->set("relativeRankTol",rankTol);
-  PHIST_DEB("set TSQR parameters");
+  PHIST_DEB("set TSQR parameters\n");
   tsqr.setParameterList(params);
 
   TRY_CATCH(rank = tsqr.normalize(mv_V,R_view),*ierr);
-  PHIST_DEB("V has %d columns and rank %d",ncols,rank);
+  PHIST_DEB("V has %d columns and rank %d\n",ncols,rank);
   *ierr = ncols-rank;// return positive number if rank not full.
   return;
   }

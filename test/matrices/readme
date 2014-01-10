@@ -1,6 +1,12 @@
-# matrix        type      which     number
-rdb3200l.mm     r         LR        ?
-ck656.mm        r         LM        (>1)
-cry10000.mm     r         LR        ?
-dw8192.mm       r         LR        ?
-olm5000.mm      r         LR        ?
+# matrix        type      which     number      JDQR *)
+rdb3200l.mm     r         LR        ?           hard
+ck656.mm        r         LM        (>1)        easy
+cry10000.mm     r         LR        ?           hard
+dw8192.mm       r         LR        ?           works for low conv tol (1e-3)
+olm5000.mm      r         LR        ?           hard
+
+*) GMRES, no preconditioning. JDQR basically works (I tested only the cry10000 matrix, 
+thogugh) with a direct solver, but the JD iteration stagnates at times and does not achieve
+more than 10^-6 or something like that. It helps to use shift-invert at the beginning rather
+than RQI, and not do Arnoldi steps because we have huge dominant negative eigenvalues and 
+the sought ones are relatively small.

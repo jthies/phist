@@ -332,10 +332,10 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       SUBR(jadaInnerGmresStates_updateSol)(state, _NV_, vec2_, vec1_, resNorm, false, &ierr_);
       ASSERT_EQ(0,ierr_);
 
-      // can't know the residual norm, yet
+      // residual didn't change, so the relative residual should be one
       for(int i = 0; i < _NV_; i++)
       {
-        ASSERT_NEAR(0,resNorm[i],10*VTest::releps());
+        ASSERT_NEAR(1,resNorm[i],10*VTest::releps());
       }
 
       // check Ax = A*x
@@ -435,7 +435,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         PHIST_OUT(PHIST_INFO,"resNorm[%d] = %8.4e\n", resNorm[i]);
         ASSERT_TRUE(resNorm[i] >= mt::zero());
       }
-      ASSERT_NEAR(mt::zero(), resNorm[exactGuessAt], 10*VTest::releps());
+      ASSERT_NEAR(mt::one(), resNorm[exactGuessAt], 10*VTest::releps());
 
       // check Ax = A*x
       SUBR(crsMat_times_mvec)(-st::one(),A_,vec2_,st::one(),vec1_,&ierr_);
