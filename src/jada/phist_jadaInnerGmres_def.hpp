@@ -357,6 +357,10 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
   }
 #endif
 
+
+  PHIST_SOUT(PHIST_VERBOSE,"GMRES iteration started\n");
+  PHIST_SOUT(PHIST_VERBOSE,"=======================\n");
+
   while( anyConverged == 0 && anyFailed == 0 )
   {
     // we need a new mvec for work_y
@@ -544,8 +548,6 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
 
 
 
-    PHIST_SOUT(PHIST_VERBOSE,"GMRES iteration states\n");
-    PHIST_SOUT(PHIST_VERBOSE,"======================\n");
 #if PHIST_OUTLEV>=PHIST_VERBOSE
     for (int i=0;i<numSys;i++)
     {
@@ -553,11 +555,12 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
           S[i]->curDimV_-1,S[i]->normR_/S[i]->normR0_,S[i]->normR_);
     }
 #endif
-    PHIST_SOUT(PHIST_VERBOSE,"%d converged, %d failed.\n",anyConverged,anyFailed);
-    PHIST_SOUT(PHIST_VERBOSE,"----------------------\n");
 
     (*nIter)++;
   }
+
+  PHIST_SOUT(PHIST_VERBOSE,"%d converged, %d failed.\n",anyConverged,anyFailed);
+  PHIST_SOUT(PHIST_VERBOSE,"-----------------------\n");
 
   // delete views
   PHIST_CHK_IERR(SUBR(mvec_delete)(work_x, ierr), *ierr);
