@@ -765,6 +765,7 @@ contains
     logical :: strided_v, strided_w
     logical :: handled, tmp_transposed
     real(kind=8), allocatable :: tmp(:,:)
+    real(kind=8), allocatable :: tmp_(:,:)
     !--------------------------------------------------------------------------------
 
     ! check if we only need to scale
@@ -883,13 +884,15 @@ contains
 
     end if
 
-    call MPI_Allreduce(MPI_IN_PLACE,tmp,nvecv*nvecw,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
-
+    allocate(tmp_(nvecv,nvecw))
     if( tmp_transposed ) then
-      M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*transpose(tmp)+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
+      tmp_ = transpose(tmp)
     else
-      M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
+      tmp_ = tmp
     end if
+    call MPI_Allreduce(MPI_IN_PLACE,tmp_,nvecv*nvecw,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
+
+    M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp_+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
     !--------------------------------------------------------------------------------
   end subroutine mvecT_times_mvec
 

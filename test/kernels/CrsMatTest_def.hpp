@@ -33,6 +33,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
 #endif
       SUBR(read_mat)("sprandn",nglob_,&A2_,&ierr_);
       SUBR(read_mat)("sprandn_nodiag",nglob_,&A3_,&ierr_);
+      SUBR(read_mat)("spshift",nglob_,&A4_,&ierr_);
       
       if (A0_==NULL || A1_==NULL || A2_==NULL || A3_==NULL)
         {
@@ -58,6 +59,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
       ASSERT_EQ(0,delete_mat(A1_));
       ASSERT_EQ(0,delete_mat(A2_));
       ASSERT_EQ(0,delete_mat(A3_));
+      ASSERT_EQ(0,delete_mat(A4_));
       }
     }
 
@@ -94,6 +96,7 @@ TYPE(crsMat_ptr) A0_; // all zero matrix
 TYPE(crsMat_ptr) A1_; // identity matrix
 TYPE(crsMat_ptr) A2_; // general sparse matrix with nonzero diagonal
 TYPE(crsMat_ptr) A3_; // general sparse matrix with some zeros on the diagonal
+TYPE(crsMat_ptr) A4_; // orthogonal sparse matrix that "shifts" each value to the next row
 
 protected:
 
@@ -285,4 +288,51 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     // last digit and we can't get the test to pass otherwise.
     ASSERT_NEAR(mt::one(),const_row_sum_test(A3_),100*mt::eps());
     }
+
+  TEST_F(CLASSNAME, shift_mvec)
+  {
+    if( typeImplemented_ )
+    {
+      _ST_ alpha = st::one();
+      _ST_ beta = st::zero();
+      int ilower = 0;
+      phist_map_get_ilower(map_,&ilower,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // setup recognizable input
+      for(int i = 0; i < nloc_; i++)
+      {
+        for(int j = 0; j < nvec_; j++)
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+          vec1_vp_[i*lda_+j] = (_ST_)(ilower+i + j*nglob_);
+#else
+          vec1_vp_[j*lda_+i] = (_ST_)(ilower+i + j*nglob_);
+#endif
+      }
+
+      // apply our shift matrix
+      std::cout << "MVM with A='shift', alpha=1, beta=0"<<std::endl;
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      SUBR(mvec_print)(vec1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+#endif
+      SUBR(crsMat_times_mvec)(alpha,A4_,vec1_,beta,vec2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      SUBR(mvec_print)(vec2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+#endif
+
+      // check result
+      for(int i = 0; i < nloc_; i++)
+      {
+        for(int j = 0; j < nvec_; j++)
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+          ASSERT_REAL_EQ((ilower+i+1)%nglob_ + j*nglob_, st::real(vec2_vp_[i*lda_+j]));
+#else
+          ASSERT_REAL_EQ((ilower+i+1)%nglob_ + j*nglob_, st::real(vec2_vp_[j*lda_+i]));
+#endif
+      }
+    }
+  }
 

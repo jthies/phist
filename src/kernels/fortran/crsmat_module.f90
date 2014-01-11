@@ -268,14 +268,10 @@ contains
         if( mat%col_idx(j) .ge. firstrow .and. &
           & mat%col_idx(j) .le. lastrow        ) then
           ! local element, use negative index to sort them first
-          mat%col_idx(j) = -mat%col_idx(j)
+          mat%col_idx(j) = -(mat%col_idx(j)-firstrow+1)
         else
           ! nonlocal element, search its position in the comm buffer
-          recvBuffIndex = 1
-          do while( mat%col_idx(j) .gt. mat%comm_buff%recvRowBlkInd(recvBuffIndex) )
-            recvBuffIndex = recvBuffIndex + 1
-          end do
-          mat%col_idx(j) = recvBuffIndex
+          mat%col_idx(j) = search_recvBuffIndex(mat%col_idx(j))
         end if
       end do
     end do
@@ -311,6 +307,31 @@ contains
       end do
       mat%nonlocal_offset(i) = j
     end do
+
+  contains
+
+  function search_recvBuffIndex(col) result(idx)
+    integer, intent(in) :: col
+    integer :: idx
+    integer :: a, b, n, n_max
+
+
+    a = 1
+    b = size(mat%comm_buff%recvRowBlkInd)
+    n_max = int(log(real(b))/log(2.))+1
+    do n = 1, n_max, 1
+      idx = (a+b)/2
+      if( col .lt. mat%comm_buff%recvRowBlkInd(idx) ) then
+        b = idx
+      else if( col .gt. mat%comm_buff%recvRowBlkInd(idx) ) then
+        a = idx
+      end if
+      return
+    end do
+    if( col .ne. mat%comm_buff%recvRowBlkInd(idx) ) then
+      call exit(23)
+    end if
+  end function search_recvBuffIndex
 
   end subroutine sort_rows
 
@@ -516,6 +537,7 @@ contains
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
     use mpi
+    use m_mrgrnk
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
     integer(C_INT),     value       :: filename_len
@@ -630,6 +652,26 @@ contains
       A%row_offset( i+1 ) = A%row_offset( i )
     end do
     A%row_offset( 1 ) = 1
+
+    ! we still need to sort the entries in each row by column
+    do i = 1, A%nRows
+      off = A%row_offset(i)
+      n = A%row_offset(i+1) - off
+      if( n .gt. 1 ) then
+        ! reuse idx for sorting
+        idx(1:n,1) = A%col_idx( off:off+n-1 )
+        val(1:n)   = A%val( off:off+n-1 )
+
+        ! determine order of columns
+        call mrgrnk(idx(1:n,1), idx(1:n,2))
+
+        ! copy back sorted arrays
+        do j = 1, n
+          A%col_idx( off+idx(j,2)-1 ) = idx(j,1)
+          A%val( off+idx(j,2)-1 ) = val(j)
+        end do
+      end if
+    end do
 
     call setup_commBuff(A, A%comm_buff)
     call sort_rows(A)
