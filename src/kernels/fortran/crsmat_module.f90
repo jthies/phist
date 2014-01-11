@@ -50,52 +50,7 @@ module crsmat_module
   end type CrsMat_t
 
 
-  !==================================================================================
-  !> offsets and indices for proc-wise sorted bcrs
-  !! only used internally!
-  type ProcWiseIndices_t
-    integer :: nd                                     !< number of rows with elements from this proc
-    integer :: offset                                 !< row block offset of first row from this proc
-    integer(kind=8), allocatable :: row_offset(:)     !< index of elements in this proc, has size (nd+1)
-  end type ProcWiseIndices_t
-
-
 contains
-
-  !==================================================================================
-  !> rearranges the entries in CrsMat_t%val and CrsMat_t%col_idx in a given order
-  pure subroutine reordCRS(mat, new_ind)
-    type(CrsMat_t),  intent(inout) :: mat
-    integer(kind=8), intent(inout) :: new_ind(:)
-
-    integer(kind=8) :: j,l
-    integer :: buff_col_idx
-    integer(kind=8) :: buff_new_ind
-    real(kind=8) :: buff_value
-
-    ! now sort the data in place (we have already the future position,
-    ! so this can be done by O(n) swaps)
-    do j=1,mat%nEntries, 1
-      do while( new_ind(j) .ne. j )
-        l = new_ind(j)
-        ! swap j and l
-
-        buff_value = mat%val(l)
-        buff_col_idx = mat%col_idx(l)
-        buff_new_ind = new_ind(l)
-
-        mat%val(l) = mat%val(j)
-        mat%col_idx(l) = mat%col_idx(j)
-        new_ind(l) = new_ind(j)
-
-        mat%val(j) = buff_value
-        mat%col_idx(j) = buff_col_idx
-        new_ind(j) = buff_new_ind
-
-      end do
-    end do
-
-  end subroutine reordCRS
 
 
   !==================================================================================
@@ -283,8 +238,9 @@ contains
     tmp(:,1) = array
     call mrgrnk(tmp(:,1),tmp(:,2))
     do i = 1, size(array)
-      array(tmp(i,2)) = tmp(i,1)
+      array(i) = tmp(tmp(i,2),1)
     end do
+
   end subroutine sort
 
 
@@ -292,122 +248,59 @@ contains
   !! way that the elements are grouped by remote process (e.g. when performing
   !! a matrix vector multiplication, the elements that are multiplied with a
   !! subvector from a remote process are stored consecutivly in memory)
-  subroutine sortlnlcrs(mat)
+  subroutine sort_rows(mat)
+    use m_mrgrnk
     type(CrsMat_t), intent(inout) :: mat
 
-    integer :: i, k, jProcIndex
-    integer(kind=8) :: j, tmp
-    integer(kind=8),allocatable :: proc_ind(:)
+    integer :: i, n
+    integer(kind=8) :: j, off
     integer :: firstrow, lastrow, recvBuffIndex
-    type(ProcWiseIndices_t), allocatable :: lnlInd(:)
+    integer, allocatable :: idx(:,:)
+    real(kind=8), allocatable :: val(:)
 
 
     firstrow = mat%row_map%distrib(mat%row_map%me)
     lastrow  = mat%row_map%distrib(mat%row_map%me+1)-1
 
-    ! first create new row_offset indices per proc
-    allocate(lnlInd(0:mat%comm_buff%nRecvProcs))
-    allocate(proc_ind(mat%nEntries))
-    ! give each element a proc_ind and get row block offset
-    ! and number of rows per proc
-    do i=0,mat%comm_buff%nRecvProcs, 1
-      lnlInd(i)%offset=mat%nRows
-      lnlInd(i)%nd=0
-    end do
-    do i=1,mat%nRows, 1
-      jProcIndex=1
-      do j=mat%row_offset(i),mat%row_offset(i+1)-1,1
+    ! this is possibly slow
+    do i = 1, mat%nRows, 1
+      do j = mat%row_offset(i), mat%row_offset(i+1)-1, 1
         if( mat%col_idx(j) .ge. firstrow .and. &
-          & mat%col_idx(j) .le. lastrow ) then
-          ! is a local element
-          proc_ind(j) = 0
+          & mat%col_idx(j) .le. lastrow        ) then
+          ! local element, use negative index to sort them first
+          mat%col_idx(j) = -mat%col_idx(j)
         else
-          ! non local element
-          do while(mat%col_idx(j) .ge. &
-            &      mat%row_map%distrib(mat%comm_buff%recvProcId(jProcIndex)+1) )
-            jProcIndex=jProcIndex+1
-          end do
-          proc_ind(j) = jProcIndex
-        end if
-
-        lnlInd(proc_ind(j))%offset = min(i,lnlInd(proc_ind(j))%offset)
-        lnlInd(proc_ind(j))%nd = i-lnlInd(proc_ind(j))%offset+1
-      end do
-    end do
-
-    ! allocate memory for indices
-    do i=0,mat%comm_buff%nRecvProcs, 1
-      allocate(lnlInd(i)%row_offset( lnlInd(i)%nd+1 ))
-      lnlInd(i)%row_offset=0
-    end do
-
-    ! go through all elements and count the elements per proc
-    do i=1,mat%nRows, 1
-      do j=mat%row_offset(i),mat%row_offset(i+1)-1,1
-        lnlInd(proc_ind(j))%row_offset(i-lnlInd(proc_ind(j))%offset+2)=& 
-        &lnlInd(proc_ind(j))%row_offset(i-lnlInd(proc_ind(j))%offset+2)+1
-      end do
-    end do
-
-    ! make indices from elem counts
-    j=1
-    do i=0,mat%comm_buff%nRecvProcs, 1
-      do k=1,lnlInd(i)%nd+1, 1
-        j=j+lnlInd(i)%row_offset(k)
-        lnlInd(i)%row_offset(k)=j
-      end do
-    end do
-
-
-
-    ! we have created all necessary indices, now we need to sort the
-    ! data in the matrix
-    ! save the new position in proc_ind
-    do i=1,mat%nRows,1
-      do j=mat%row_offset(i),mat%row_offset(i+1)-1,1
-        tmp = lnlInd(proc_ind(j))%& 
-          &           row_offset(i-lnlInd(proc_ind(j))%offset+1)
-        lnlInd(proc_ind(j))%& 
-          &           row_offset(i-lnlInd(proc_ind(j))%offset+1) = &
-          &           tmp + 1
-        proc_ind(j) = tmp
-      end do
-    end do
-
-    ! restore indices
-    do i=0,mat%comm_buff%nRecvProcs, 1
-      do k=lnlInd(i)%nd,1,-1
-        lnlInd(i)%row_offset(k+1)=lnlInd(i)%row_offset(k)
-      end do
-      if( i .eq. 0 ) then
-        lnlInd(i)%row_offset(1)=1
-      else
-        lnlInd(i)%row_offset(1)=lnlInd(i-1)%row_offset(&
-          &                 lnlInd(i-1)%nd+1)
-      end if
-    end do
-
-    ! reorder the elements
-    call reordCRS(mat, proc_ind)
-    deallocate(proc_ind)
-
-    ! make the mat%col_idx local
-    do i=1,lnlInd(0)%nd,1
-      do j=lnlInd(0)%row_offset(i),lnlInd(0)%row_offset(i+1)-1,1
-        mat%col_idx(j)=mat%col_idx(j)-mat%row_map%distrib(mat%row_map%me)+1
-      end do
-    end do
-
-    do k=1,mat%comm_buff%nRecvProcs, 1
-      do i=1,lnlInd(k)%nd,1
-        recvBuffIndex = mat%comm_buff%recvInd(k)
-        do j=lnlInd(k)%row_offset(i),lnlInd(k)%row_offset(i+1)-1,1
+          ! nonlocal element, search its position in the comm buffer
+          recvBuffIndex = 1
           do while( mat%col_idx(j) .gt. mat%comm_buff%recvRowBlkInd(recvBuffIndex) )
-            recvBuffIndex=recvBuffIndex+1
+            recvBuffIndex = recvBuffIndex + 1
           end do
-          mat%col_idx(j) = -recvBuffIndex
-        end do
+          mat%col_idx(j) = recvBuffIndex
+        end if
       end do
+    end do
+
+    allocate(idx(mat%nEntries,2))
+    allocate(val(mat%nEntries))
+    ! sort all rows
+    do i = 1, mat%nRows
+      off = mat%row_offset(i)
+      n = mat%row_offset(i+1) - off
+      if( n .gt. 0 ) then
+        ! reuse idx for sorting
+        idx(1:n,1) = mat%col_idx( off:off+n-1 )
+        val(1:n)   = mat%val( off:off+n-1 )
+
+        ! determine order of columns
+        call mrgrnk(idx(1:n,1), idx(1:n,2))
+
+        ! copy back sorted arrays
+        do j = 1, n
+          ! inverse sign, so local columns are positive, followed by negative indices in the recv buffer
+          mat%col_idx( off+j-1 ) = -idx(idx(j,2),1)
+          mat%val( off+j-1 ) = val(idx(j,2))
+        end do
+      end if
     end do
 
     ! get pointer to first nonlocal element in each row
@@ -419,7 +312,7 @@ contains
       mat%nonlocal_offset(i) = j
     end do
 
-  end subroutine sortlnlcrs
+  end subroutine sort_rows
 
 
 
@@ -474,11 +367,13 @@ contains
       y_is_aligned16 = .false.
     end if
 
-    write(*,*) 'spMVM with nvec =',nvec,', ldx =',ldx,', ldy =',ldy,', y_mem_aligned16 =', y_is_aligned16
+    write(*,*) 'spMVM with nvec =',nvec,', ldx =',ldx,', ldy =',ldy,', y_mem_aligned16 =', y_is_aligned16, 'on proc', A%row_map%me
     flush(6)
 
 
     ! exchange necessary elements
+!write(*,*) 'CRS', A%row_map%me, 'sendRowBlkInd', A%comm_buff%sendRowBlkInd
+!write(*,*) 'CRS', A%row_map%me, 'recvRowBlkInd', A%comm_buff%recvRowBlkInd
 
     ! start buffer irecv
     if( allocated(A%comm_buff%recvData) ) then
@@ -591,6 +486,18 @@ contains
       !return
     !end if
 
+!do i = 1, A%nRows, 1
+  !write(*,*) 'CRS', A%row_map%me, 'localrow', i, 'entries', A%col_idx(A%row_offset(i):A%row_offset(i+1)-1)
+!end do
+!write(*,*) 'CRS', A%row_map%me, 'row_offset', A%row_offset
+!write(*,*) 'CRS', A%row_map%me, 'halo_offset', A%nonlocal_offset
+!write(*,*) 'CRS', A%row_map%me, 'col_idx', A%col_idx
+!write(*,*) 'CRS', A%row_map%me, 'val', A%val
+!write(*,*) 'CRS', A%row_map%me, 'alpha', alpha, 'beta', beta
+!write(*,*) 'CRS', A%row_map%me, 'x', x%val(x%jmin:x%jmax,:)
+!write(*,*) 'CRS', A%row_map%me, 'recvData', A%comm_buff%recvData
+!write(*,*) 'CRS', A%row_map%me, 'y', y%val(y%jmin:y%jmax,:)
+!flush(6)
     call dspmvm_generic(nvec, A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
       &                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
       &                 x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
@@ -607,7 +514,6 @@ contains
   !> read MatrixMarket file
   subroutine phist_DcrsMat_read_mm(A_ptr, filename_len, filename_ptr, ierr) bind(C,name='phist_DcrsMat_read_mm_f')
     use, intrinsic :: iso_c_binding
-    use m_mrgrnk
     use env_module, only: newunit
     use mpi
     !--------------------------------------------------------------------------------
@@ -622,7 +528,7 @@ contains
     integer :: funit
     character(len=100) :: line
     integer, allocatable :: idx(:,:)
-    real(kind=8),    allocatable :: val(:)
+    real(kind=8), allocatable :: val(:)
     integer :: i, j, off, n, globalRows, globalCols, globalEntries
     !--------------------------------------------------------------------------------
 
@@ -725,28 +631,8 @@ contains
     end do
     A%row_offset( 1 ) = 1
 
-    ! we still need to sort the entries in each row by column
-    do i = 1, A%nRows
-      off = A%row_offset(i)
-      n = A%row_offset(i+1) - off
-      if( n .gt. 1 ) then
-        ! reuse idx for sorting
-        idx(1:n,1) = A%col_idx( off:off+n-1 )
-        val(1:n)   = A%val( off:off+n-1 )
-
-        ! determine order of columns
-        call mrgrnk(idx(1:n,1), idx(1:n,2))
-
-        ! copy back sorted arrays
-        do j = 1, n
-          A%col_idx( off+idx(j,2)-1 ) = idx(j,1)
-          A%val( off+idx(j,2)-1 ) = val(j)
-        end do
-      end if
-    end do
-
     call setup_commBuff(A, A%comm_buff)
-    call sortlnlCrs(A)
+    call sort_rows(A)
 
     write(*,*) 'created new crsMat with dimensions', A%nRows, A%nCols, A%nEntries
     flush(6)
