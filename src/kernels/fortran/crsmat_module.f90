@@ -397,6 +397,7 @@ contains
 !write(*,*) 'CRS', A%row_map%me, 'recvRowBlkInd', A%comm_buff%recvRowBlkInd
 
     ! start buffer irecv
+    ! we could also set up persistent communication channels here... and use MPI_Startall later
     if( allocated(A%comm_buff%recvData) ) then
       if( size(A%comm_buff%recvData,1) .ne. nvec ) then
         deallocate(A%comm_buff%recvData)
