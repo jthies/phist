@@ -414,7 +414,7 @@ subroutine dspmvm_generic(nvec, nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_
       tmp(:) = tmp(:) + val(j)*x(1:nvec,col_idx(j))
     end do
     do j = halo_ptr(i), row_ptr(i+1)-1, 1
-      tmp(:) = tmp(:) + val(j)*halo(:,-col_idx(j))
+      tmp(:) = tmp(:) + val(j)*halo(:,col_idx(j))
     end do
     y(1:nvec,i) = alpha*tmp(:) + beta*y(1:nvec,i)
   end do

@@ -262,16 +262,21 @@ contains
     firstrow = mat%row_map%distrib(mat%row_map%me)
     lastrow  = mat%row_map%distrib(mat%row_map%me+1)-1
 
-    ! this is possibly slow
+    ! distinguish between local elements and buffer indices
+    allocate(mat%nonlocal_offset(mat%nRows))
+    mat%nonlocal_offset(:) = mat%row_offset(1:mat%nRows)
     do i = 1, mat%nRows, 1
       do j = mat%row_offset(i), mat%row_offset(i+1)-1, 1
         if( mat%col_idx(j) .ge. firstrow .and. &
           & mat%col_idx(j) .le. lastrow        ) then
-          ! local element, use negative index to sort them first
-          mat%col_idx(j) = -(mat%col_idx(j)-firstrow+1)
+          ! local element, substract offset of this process
+          mat%col_idx(j) = (mat%col_idx(j)-firstrow+1)
+          ! increase nonlocal offset
+          mat%nonlocal_offset(i) = mat%nonlocal_offset(i) + 1
         else
           ! nonlocal element, search its position in the comm buffer
-          mat%col_idx(j) = search_recvBuffIndex(mat%col_idx(j))
+          ! add nRows to sort them behind local elements
+          mat%col_idx(j) = search_recvBuffIndex(mat%col_idx(j)) + mat%nRows
         end if
       end do
     end do
@@ -293,19 +298,15 @@ contains
         ! copy back sorted arrays
         do j = 1, n
           ! inverse sign, so local columns are positive, followed by negative indices in the recv buffer
-          mat%col_idx( off+j-1 ) = -idx(idx(j,2),1)
+          mat%col_idx( off+j-1 ) = idx(idx(j,2),1)
           mat%val( off+j-1 ) = val(idx(j,2))
         end do
-      end if
-    end do
 
-    ! get pointer to first nonlocal element in each row
-    allocate(mat%nonlocal_offset(mat%nRows))
-    do i=1,mat%nRows,1
-      do j = mat%row_offset(i), mat%row_offset(i+1)-1, 1
-        if( mat%col_idx(j) .lt. 0 ) exit
+      end if
+      ! subtract mat%nRows from buffer indices, was only added for sorting!
+      do j = mat%nonlocal_offset(i), mat%row_offset(i+1)-1, 1
+        mat%col_idx(j) = mat%col_idx(j) - mat%nRows
       end do
-      mat%nonlocal_offset(i) = j
     end do
 
   contains
@@ -322,13 +323,16 @@ contains
     do n = 1, n_max, 1
       idx = (a+b)/2
       if( col .lt. mat%comm_buff%recvRowBlkInd(idx) ) then
-        b = idx
+        b = idx-1
       else if( col .gt. mat%comm_buff%recvRowBlkInd(idx) ) then
-        a = idx
+        a = idx+1
+      else
+        exit
       end if
-      return
     end do
+
     if( col .ne. mat%comm_buff%recvRowBlkInd(idx) ) then
+      write(*,*) 'Error in search_recvBuffIndex! col:', col, 'a', a, 'b', b, 'idx', idx
       call exit(23)
     end if
   end function search_recvBuffIndex
