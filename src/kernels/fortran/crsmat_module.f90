@@ -85,6 +85,13 @@ contains
           do while( mat%col_idx(j) .ge. mat%row_map%distrib(jProc+1) )
             jProc=jProc+1
           end do
+#ifdef TESTING
+if( mat%col_idx(j) .lt. mat%row_map%distrib(jProc) ) then
+  write(*,*) 'CRS sorting error! me', mat%row_map%me, 'idx', mat%col_idx(j), &
+    &        'jProc', jProc, 'distrib', mat%row_map%distrib
+  call exit(1)
+end if
+#endif
           if( recvnum(jProc) .eq. 0 ) then
             recvnum(jProc) = 1
             combuff%nRecvProcs=combuff%nRecvProcs+1
@@ -217,7 +224,19 @@ contains
         &            combuff%recvProcId(i),20,mat%row_map%Comm,&
         &            combuff%recvRequests(i),ierr)
     end do
-    
+
+#ifdef TESTING
+! check that recvRowBlkInd is globally sorted
+do i = 2, size(combuff%recvRowBlkInd), 1
+  if( combuff%recvRowBlkInd(i-1) .ge. combuff%recvRowBlkInd(i) ) then
+    write(*,*) 'Error: recvRowBlkInd not sorted! me', mat%row_map%me, &
+      &        'i', i, 'recvRowBlkInd', combuff%recvRowBlkInd
+    flush(6)
+    call exit(11)
+  end if
+end do
+#endif
+
     call mpi_waitall(combuff%nSendProcs,combuff%sendRequests,&
       &              combuff%sendStatus,ierr)
 
@@ -387,7 +406,7 @@ contains
     ldx = size(x%val,1)
     ldy = size(y%val,1)
 
-    if( mod(loc(y%val(y%jmin,1)),16) .eq. 0 .and. mod(ldy,2) .eq. 0 ) then
+    if( mod(loc(y%val(y%jmin,1)),16) .eq. 0 .and. (mod(ldy,2) .eq. 0 .or. ldy .eq. 1) ) then
       y_is_aligned16 = .true.
     else
       y_is_aligned16 = .false.
@@ -417,6 +436,7 @@ contains
       allocate(A%comm_buff%recvData(nvec,A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1))
       allocate(A%comm_buff%sendData(nvec,A%comm_buff%sendInd(A%comm_buff%nSendProcs+1)-1))
     end if
+
     do i=1,A%comm_buff%nRecvProcs, 1
       k = A%comm_buff%recvInd(i)
       l = A%comm_buff%recvInd(i+1)
@@ -425,12 +445,20 @@ contains
     end do
 
     ! start buffer isend
+!$omp parallel
     do i=1,A%comm_buff%nSendProcs, 1
       k = A%comm_buff%sendInd(i)
       l = A%comm_buff%sendInd(i+1)
+!$omp do
       do j = k, l-1, 1
         A%comm_buff%sendData(:,j) = x%val(x%jmin:x%jmax,A%comm_buff%sendRowBlkInd(j))
       end do
+    end do
+!$omp end parallel
+
+    do i=1,A%comm_buff%nSendProcs, 1
+      k = A%comm_buff%sendInd(i)
+      l = A%comm_buff%sendInd(i+1)
       call mpi_isend(A%comm_buff%sendData(:,k:l-1),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
         &            A%comm_buff%sendProcId(i),3,A%row_map%Comm,A%comm_buff%sendRequests(i),ierr)
     end do
@@ -458,7 +486,7 @@ contains
         else
           call dspmvm_NT_2(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
             &              A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-            &              x%val, y%val(y%jmin,1), ldy)
+            &              x%val, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
         end if
         return
       else if( nvec .eq. 4 ) then
@@ -515,7 +543,7 @@ contains
           &                   x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
       else
         call dspmvm_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
-          &              A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+          &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
           &           x%val, A%comm_buff%recvData, beta, y%val)
       end if
       return
@@ -688,8 +716,8 @@ contains
 
         ! copy back sorted arrays
         do j = 1, n
-          A%col_idx( off+idx(j,2)-1 ) = idx(j,1)
-          A%val( off+idx(j,2)-1 ) = val(j)
+          A%col_idx( off+j-1 ) = idx(idx(j,2),1)
+          A%val( off+j-1 ) = val(idx(j,2))
         end do
       end if
     end do

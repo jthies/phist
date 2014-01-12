@@ -1363,6 +1363,7 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
+    integer :: i
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) ) then
@@ -1372,9 +1373,10 @@ contains
 
     call c_f_pointer(mvec_ptr, mvec)
 
-!$omp workshare
-    mvec%val(mvec%jmin:mvec%jmax,:) = val
-!$omp end workshare
+!$omp parallel do
+    do i = 1, size(mvec%val,2), 1
+      mvec%val(mvec%jmin:mvec%jmax,i) = val
+    end do
 
     ierr = 0
 
