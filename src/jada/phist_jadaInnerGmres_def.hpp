@@ -31,7 +31,6 @@ void SUBR(jadaInnerGmresStates_create)(TYPE(jadaInnerGmresState_ptr) state[], in
     // we allow one additional vector to be stored in the basis so that
     // we can have V(:,i+1) = A*V(:,i) temporarily
     state[i]->V_ = new TYPE(mvec_ptr)[maxBas+1];
-    state[i]->AV_ = new TYPE(mvec_ptr)[maxBas+1];
     state[i]->glob_unused_mvecs_ = (void*)unused_mvecs;
     state[i]->glob_used_mvecs_ = (void*)used_mvecs;
     PHIST_CHK_IERR(SUBR(sdMat_create)(&state[i]->H_, maxBas+1, maxBas, comm,ierr),*ierr);
@@ -72,7 +71,6 @@ void SUBR(jadaInnerGmresStates_delete)(TYPE(jadaInnerGmresState_ptr) state[], in
     PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->x0_,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->b_,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_delete)(state[i]->H_,ierr),*ierr);
-    delete [] state[i]->AV_;
     delete [] state[i]->V_;
     delete [] state[i]->cs_;
     delete [] state[i]->sn_;
@@ -114,7 +112,7 @@ void SUBR(jadaInnerGmresState_reset)(TYPE(jadaInnerGmresState_ptr) S, TYPE(const
 }
 
 
-void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, TYPE(mvec_ptr) Ax, _MT_* resNorm, bool scaleSolutionToOne, int* ierr)
+void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, _MT_* resNorm, bool scaleSolutionToOne, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
@@ -253,11 +251,6 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
   {
     PHIST_CHK_IERR(SUBR(mvec_view_block)(S_array[0]->V_[j], &Vj, 0, numSys-1, ierr), *ierr);
     PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&y[ldy*j], Vj, st::one(), x, ierr), *ierr);
-    //if( Ax != NULL )
-    //{
-      //PHIST_CHK_IERR(SUBR(mvec_view_block)(S_array[0]->AV_[j], &Vj, 0, numSys-1, ierr), *ierr);
-      //PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&y[ldy*j], Vj, st::one(), Ax, ierr), *ierr);
-    //}
   }
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vj, ierr), *ierr);
 }
@@ -376,21 +369,6 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
 
     //    % apply the jadaOp
     PHIST_CHK_IERR( jdOp->apply (st::one(), jdOp->A, work_x, st::zero(), work_y, ierr), *ierr);
-    PHIST_CHK_IERR( SUBR(jadaOp_view_AX) (jdOp->A, &view_Ax, ierr), *ierr);
-
-    //    % scatter view_Ax
-    // we need storage for Ax, reuse work_x here
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(unused_mvecs->back(), &work_x, 0, numSys-1, ierr), *ierr);
-    for(int i = 0; i < numSys; i++)
-    {
-      int jprev = std::max(S[i]->curDimV_-1,0);
-      S[i]->AV_[jprev] = unused_mvecs->back();
-    }
-    used_mvecs->push_back(unused_mvecs->back());
-    unused_mvecs->pop_back();
-
-    // copy data
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), view_Ax, st::zero(), work_x, ierr), *ierr);
 
     //    % initialize GMRES for (re-)started systems
     for(int i = 0; i < numSys; i++)

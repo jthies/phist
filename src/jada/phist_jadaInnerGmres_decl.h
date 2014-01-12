@@ -43,7 +43,6 @@ typedef struct TYPE(jadaInnerGmresState) {
   //! \name  internal data structures
   //@{
   TYPE(mvec_ptr) *V_; //! array of mvecs because row-wise storage is not well suited here
-  TYPE(mvec_ptr) *AV_; //! ""
   void *glob_unused_mvecs_;
   void *glob_used_mvecs_;
   TYPE(sdMat_ptr) H_; //! memory block in which Hessenberg matrix from the Arnoldi process
@@ -134,6 +133,5 @@ void SUBR(jadaInnerGmresState_reset)(TYPE(jadaInnerGmresState_ptr) S,
 //! indicates convergence after iterate, but it can also be done to get an intermediate 
 //! solution. The function is 'vectorized' in the same way as iterate, so an array of states 
 //! and multivector x can be passed in.
-//! If not NULL, also outputs A*x through projections coefficients and A*V
 void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[], int numSys,
-                TYPE(mvec_ptr) x, TYPE(mvec_ptr) Ax, _MT_ *resNorm, bool scaleSolutionToOne, int* ierr);
+                TYPE(mvec_ptr) x, _MT_ *resNorm, bool scaleSolutionToOne, int* ierr);

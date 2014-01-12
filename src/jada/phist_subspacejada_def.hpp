@@ -538,7 +538,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,&Vv, 0,k-1, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res,&AVv, 0,k-1, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_put_value )(AVv, st::zero(), ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( jadaInnerGmresStates_updateSol ) (gmresState, k, Vv, AVv, gmresResNorm, true, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( jadaInnerGmresStates_updateSol ) (gmresState, k, Vv, gmresResNorm, true, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( jadaOp_delete ) (&jdOp, ierr), *ierr);
 
     // enlarge search space
@@ -553,37 +553,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
     int randomVecs = *ierr;
     // TODO: only take non-random vector if *ierr > 0
     // calculate AVv, BVv
-    // TODO: check conditioning to verify it is safe to calculate AVv from At
-    if( false && randomVecs == 0 )
-    {
-      // reuse data from jadaInnerGmres
-      // Vv*Rr_H = t - V*R_H
-      // => AVv*Rr_H = At - AV*R_H
-      PHIST_CHK_IERR(SUBR(  mvec_times_sdMat ) (-st::one(), AV,     R_H,  st::one(),  AVv, ierr), *ierr);
-      _ST_* AVv_raw;
-      lidx_t ldAVv;
-      PHIST_CHK_IERR(SUBR(mvec_extract_view)(AVv, &AVv_raw, &ldAVv, ierr), *ierr);
-      int nlocal;
-      PHIST_CHK_IERR(phist_map_get_local_length(A_op->range_map, &nlocal, ierr), *ierr);
-      _ST_ alpha = st::one();
-#ifdef IS_COMPLEX
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      PHIST_CHK_IERR( PREFIX(TRSM) ("L","U","T","N",&k,&nlocal,(blas_cmplx_t*)&alpha,(blas_cmplx_t*)R_H_raw+nV+nV*ldaR_H,&ldaR_H,(blas_cmplx_t*)AVv_raw,&ldAVv,ierr),*ierr);
-#else
-      PHIST_CHK_IERR( PREFIX(TRSM) ("R","U","N","N",&nlocal,&k,(blas_cmplx_t*)&alpha,(blas_cmplx_t*)R_H_raw+nV+nV*ldaR_H,&ldaR_H,(blas_cmplx_t*)AVv_raw,&ldAVv,ierr),*ierr);
-#endif
-#else
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      PHIST_CHK_IERR( PREFIX(TRSM) ("L","U","T","N",&k,&nlocal,&alpha,R_H_raw+nV+nV*ldaR_H,&ldaR_H,AVv_raw,&ldAVv,ierr),*ierr);
-#else
-      PHIST_CHK_IERR( PREFIX(TRSM) ("R","U","N","N",&nlocal,&k,&alpha,R_H_raw+nV+nV*ldaR_H,&ldaR_H,AVv_raw,&ldAVv,ierr),*ierr);
-#endif
-#endif
-    }
-    else
-    {
-      PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vv, st::zero(), AVv, ierr), *ierr);
-    }
+    PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vv, st::zero(), AVv, ierr), *ierr);
     if( B_op != NULL )
     {
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BVv,                   nV,    nV+k-1,    ierr), *ierr);
