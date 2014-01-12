@@ -65,7 +65,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   endif ()
 
   set (CMAKE_Fortran_FLAGS "-fopenmp -cpp")
-  set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -Ofast -fopenmp -cpp")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -O3 -fopenmp -cpp")
   set (CMAKE_Fortran_FLAGS_DEBUG "-dH -O0 -g -DTESTING -fopenmp -Wall -fcheck=all")
 else ()
 #TODO - add flags for Intel and others

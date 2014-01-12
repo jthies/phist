@@ -1268,7 +1268,6 @@ contains
     view%val=>mvec%val
     call mvec_add_mvec(1._8,block,0._8,view)
 
-    mvec%val(mvec%jmin+jmin:mvec%jmin+jmax,:) = block%val(block%jmin:block%jmax,:)
     ierr = 0
 
   end subroutine phist_Dmvec_set_block
@@ -1373,7 +1372,10 @@ contains
 
     call c_f_pointer(mvec_ptr, mvec)
 
+!$omp workshare
     mvec%val(mvec%jmin:mvec%jmax,:) = val
+!$omp end workshare
+
     ierr = 0
 
   end subroutine phist_Dmvec_put_value
@@ -1396,6 +1398,7 @@ contains
     call c_f_pointer(mvec_ptr, mvec)
 
     call random_number(mvec%val(mvec%jmin:mvec%jmax,:))
+
     ierr = 0
 
   end subroutine phist_Dmvec_random

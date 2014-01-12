@@ -355,7 +355,7 @@ contains
     type(MVec_t),   intent(inout) :: y
     !--------------------------------------------------------------------------------
     integer :: nvec, ldx, ldy, recvBuffSize
-    logical :: strided_x, strided_y
+    logical :: strided_x, strided_y, strided
     logical :: y_is_aligned16
     integer :: i, j, k, l, ierr
     !--------------------------------------------------------------------------------
@@ -382,6 +382,7 @@ contains
     else
       strided_y = .true.
     end if
+    strided = strided_x .or. strided_y
     nvec = x%jmax-x%jmin+1
     ldx = size(x%val,1)
     ldy = size(y%val,1)
@@ -399,6 +400,10 @@ contains
     ! exchange necessary elements
 !write(*,*) 'CRS', A%row_map%me, 'sendRowBlkInd', A%comm_buff%sendRowBlkInd
 !write(*,*) 'CRS', A%row_map%me, 'recvRowBlkInd', A%comm_buff%recvRowBlkInd
+
+    ! just make sure the buffers are not used any more...
+    call mpi_waitall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
+
 
     ! start buffer irecv
     ! we could also set up persistent communication channels here... and use MPI_Startall later
@@ -436,81 +441,96 @@ contains
     recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
 
 
-    ! try to use NT stores if possible
-    !if( beta .eq. 0 .and. y_is_aligned16 ) then
-      !if( nvec .eq. 1 ) then
-        !if( .not. strided_x ) then
-          !call dspmvm_NT_1(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, A%row_offset, A%col_idx, A%val, x%val, &
-            !&              A%comm_buff%recvData, y%val)
-          !return
-        !end if
-      !else if( nvec .eq. 2 ) then
-        !if( strided_x ) then
-          !call dspmvm_NT_strided_2(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, A%row_offset, A%col_idx, A%val, &
-            !&                      x%val(x%jmin,1), ldx, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
-        !else
-          !call dspmvm_NT_2(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, A%row_offset, A%col_idx, A%val, &
-            !&              x%val, y%val(y%jmin,1), ldy)
-        !end if
-        !return
-      !else if( nvec .eq. 4 ) then
-        !if( strided_x ) then
-          !call dspmvm_NT_strided_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, A%row_offset, A%col_idx, A%val, &
-            !&                      x%val(x%jmin,1), ldx, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
-        !else
-          !call dspmvm_NT_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, A%row_offset, A%col_idx, A%val, &
-            !&              x%val, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
-        !end if
-        !return
-      !else if( nvec .eq. 8 ) then
-        !if( strided_x ) then
-          !call dspmvm_NT_strided_8(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, A%row_offset, A%col_idx, A%val, &
-            !&                      x%val(x%jmin,1), ldx, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
-        !else
-          !call dspmvm_NT_8(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, A%row_offset, A%col_idx, A%val, &
-            !&              x%val, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
-        !end if
-        !return
-      !end if
-    !end if
+     !try to use NT stores if possible
+    if( beta .eq. 0 .and. y_is_aligned16 ) then
+      if( nvec .eq. 1 ) then
+        if( .not. strided ) then
+          call dspmvm_NT_1(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+            &              A%row_offset, A%nonlocal_offset, A%col_idx, A%val, x%val, &
+            &              A%comm_buff%recvData, y%val)
+          return
+        end if
+      else if( nvec .eq. 2 ) then
+        if( strided_x ) then
+          call dspmvm_NT_strided_2(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+            &                      A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+            &                      x%val(x%jmin,1), ldx, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
+        else
+          call dspmvm_NT_2(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+            &              A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+            &              x%val, y%val(y%jmin,1), ldy)
+        end if
+        return
+      else if( nvec .eq. 4 ) then
+        if( strided_x ) then
+          call dspmvm_NT_strided_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+            &                      A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+            &                      x%val(x%jmin,1), ldx, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
+        else
+          call dspmvm_NT_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+            &              A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+            &              x%val, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
+        end if
+        return
+      else if( nvec .eq. 8 ) then
+        if( strided_x ) then
+          call dspmvm_NT_strided_8(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+            &              A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+            &                      x%val(x%jmin,1), ldx, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
+        else
+          call dspmvm_NT_8(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+            &              A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+            &              x%val, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
+        end if
+        return
+      end if
+    end if
 
-    !if( nvec .eq. 1 ) then
-      !if( strided_x .or. strided_y ) then
-        !call dspmvm_strided_1(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, A%row_offset, A%col_idx, A%val, &
-          !&                   x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
-      !else
-        !call dspmvm_1(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, A%row_offset, A%col_idx, A%val, &
-          !&           x%val, A%comm_buff%recvData, beta, y%val)
-      !end if
-      !return
-    !else if( nvec .eq. 2 ) then
-      !if( strided_x .or. strided_y ) then
-        !call dspmvm_strided_2(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, A%row_offset, A%col_idx, A%val, &
-          !&                   x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
-      !else
-        !call dspmvm_2(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, A%row_offset, A%col_idx, A%val, &
-          !&           x%val, A%comm_buff%recvData, beta, y%val)
-      !end if
-      !return
-    !else if( nvec .eq. 4 ) then
-      !if( strided_x .or. strided_y ) then
-        !call dspmvm_strided_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, A%row_offset, A%col_idx, A%val, &
-          !&                   x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
-      !else
-        !call dspmvm_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, A%row_offset, A%col_idx, A%val, &
-          !&           x%val, A%comm_buff%recvData, beta, y%val)
-      !end if
-      !return
-    !else if( nvec .eq. 8 ) then
-      !if( strided_x .or. strided_y ) then
-        !call dspmvm_strided_8(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, A%row_offset, A%col_idx, A%val, &
-          !&                   x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
-      !else
-        !call dspmvm_8(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, A%row_offset, A%col_idx, A%val, &
-          !&           x%val, A%comm_buff%recvData, beta, y%val)
-      !end if
-      !return
-    !end if
+    if( nvec .eq. 1 ) then
+      if( strided ) then
+        call dspmvm_strided_1(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+          &                   A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+          &                   x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
+      else
+        call dspmvm_1(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+          &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+          &           x%val, A%comm_buff%recvData, beta, y%val)
+      end if
+      return
+    else if( nvec .eq. 2 ) then
+      if( strided ) then
+        call dspmvm_strided_2(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+          &                   A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+          &                   x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
+      else
+        call dspmvm_2(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+          &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+          &           x%val, A%comm_buff%recvData, beta, y%val)
+      end if
+      return
+    else if( nvec .eq. 4 ) then
+      if( strided ) then
+        call dspmvm_strided_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+          &                   A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+          &                   x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
+      else
+        call dspmvm_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+          &              A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+          &           x%val, A%comm_buff%recvData, beta, y%val)
+      end if
+      return
+    else if( nvec .eq. 8 ) then
+      if( strided ) then
+        call dspmvm_strided_8(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+          &                   A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+          &                   x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
+      else
+        call dspmvm_8(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+          &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+          &           x%val, A%comm_buff%recvData, beta, y%val)
+      end if
+      return
+    end if
 
 !do i = 1, A%nRows, 1
   !write(*,*) 'CRS', A%row_map%me, 'localrow', i, 'entries', A%col_idx(A%row_offset(i):A%row_offset(i+1)-1)
@@ -527,10 +547,6 @@ contains
     call dspmvm_generic(nvec, A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
       &                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
       &                 x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
-
-
-    ! just make sure the buffers are not used any more...
-    call mpi_waitall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
 
     !--------------------------------------------------------------------------------
   end subroutine crsmat_times_mvec

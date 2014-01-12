@@ -17,8 +17,8 @@ void mem_is_aligned16_(const void*restrict pointer, int* ret)
     *ret = 1;
 }
 
-void dspmvm_nt_1_c(int nrows, double alpha, const long *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
-                 const double *restrict rhsv, double *restrict lhsv)
+void dspmvm_nt_1_c(int nrows, double alpha, const long *restrict row_ptr, const long *restrict halo_ptr, const int *restrict col_idx, const double *restrict val,
+                 const double *restrict rhsv, const double *restrict halo, double *restrict lhsv)
 {
   if( !is_aligned(lhsv,16) )
   {
@@ -31,13 +31,17 @@ void dspmvm_nt_1_c(int nrows, double alpha, const long *restrict row_ptr, const 
   {
     double lhs1 = 0.;
 
-    for(long j = row_ptr[2*i]-1; j < row_ptr[2*i+1]-1; j++)
+    for(long j = row_ptr[2*i]-1; j < halo_ptr[2*i]-1; j++)
       lhs1 += val[j]*rhsv[ (col_idx[j]-1) ];
+    for(long j = halo_ptr[2*i]-1; j < row_ptr[2*i+1]-1; j++)
+      lhs1 += val[j]*halo[ (col_idx[j]-1) ];
 
     double lhs2 = 0.;
 
-    for(long j = row_ptr[2*i+1]-1; j < row_ptr[2*i+2]-1; j++)
+    for(long j = row_ptr[2*i+1]-1; j < halo_ptr[2*i+1]-1; j++)
       lhs2 += val[j]*rhsv[ (col_idx[j]-1) ];
+    for(long j = halo_ptr[2*i+1]-1; j < row_ptr[2*i+2]-1; j++)
+      lhs2 += val[j]*halo[ (col_idx[j]-1) ];
 
     // multiply with alpha
     lhs1 *= alpha;
@@ -52,15 +56,17 @@ void dspmvm_nt_1_c(int nrows, double alpha, const long *restrict row_ptr, const 
   if( nrows % 2 != 0 )
   {
     lhsv[nrows-1] = 0.;
-    for(long j = row_ptr[nrows-1]-1; j < row_ptr[nrows]-1; j++)
+    for(long j = row_ptr[nrows-1]-1; j < halo_ptr[nrows-1]-1; j++)
       lhsv[nrows-1] += val[j]*rhsv[ (col_idx[j]-1) ];
+    for(long j = halo_ptr[nrows-1]-1; j < row_ptr[nrows]-1; j++)
+      lhsv[nrows-1] += val[j]*halo[ (col_idx[j]-1) ];
     lhsv[nrows-1] *= alpha;
   }
 }
 
 
-void dspmvm_nt_2_c(int nrows, double alpha, const long *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
-                 const double *restrict rhsv, double *restrict lhsv, int ldv)
+void dspmvm_nt_2_c(int nrows, double alpha, const long *restrict row_ptr, const long *restrict halo_ptr, const int *restrict col_idx, const double *restrict val,
+                 const double *restrict rhsv, const double *restrict halo, double *restrict lhsv, int ldv)
 {
   if( !is_aligned(lhsv,16) )
   {
@@ -73,11 +79,21 @@ void dspmvm_nt_2_c(int nrows, double alpha, const long *restrict row_ptr, const 
   {
     __m128d lhs_ = _mm_set1_pd(0.);
 
-    for(long j = row_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    for(long j = row_ptr[i]-1; j < halo_ptr[i]-1; j++)
     {
       __m128d val_ = _mm_set1_pd(val[j]);
 
       const double *rhsp = rhsv + (col_idx[j]-1)*2;
+      __m128d rhs_ = _mm_set_pd(rhsp[0],rhsp[1]);
+      rhs_ = _mm_mul_pd(val_,rhs_);
+      lhs_ = _mm_add_pd(lhs_,rhs_);
+    }
+
+    for(long j = halo_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    {
+      __m128d val_ = _mm_set1_pd(val[j]);
+
+      const double *rhsp = halo + (col_idx[j]-1)*2;
       __m128d rhs_ = _mm_set_pd(rhsp[0],rhsp[1]);
       rhs_ = _mm_mul_pd(val_,rhs_);
       lhs_ = _mm_add_pd(lhs_,rhs_);
@@ -92,8 +108,8 @@ void dspmvm_nt_2_c(int nrows, double alpha, const long *restrict row_ptr, const 
   }
 }
 
-void dspmvm_nt_4_c(int nrows, double alpha, const long *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
-                 const double *restrict rhsv, double *restrict lhsv, int ldv)
+void dspmvm_nt_4_c(int nrows, double alpha, const long *restrict row_ptr, const long *restrict halo_ptr, const int *restrict col_idx, const double *restrict val,
+                 const double *restrict rhsv, const double *restrict halo, double *restrict lhsv, int ldv)
 {
   if( !is_aligned(lhsv,16) )
   {
@@ -108,12 +124,24 @@ void dspmvm_nt_4_c(int nrows, double alpha, const long *restrict row_ptr, const 
     for(int k = 0; k < 2; k++)
       lhs_[k] = _mm_set1_pd(0.);
 
-    for(long j = row_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    for(long j = row_ptr[i]-1; j < halo_ptr[i]-1; j++)
     {
       __m128d val_ = _mm_set1_pd(val[j]);
       for(int k = 0; k < 2; k++)
       {
         const double *rhsp = rhsv + (col_idx[j]-1)*4 + 2*k;
+        __m128d rhs_ = _mm_set_pd(rhsp[1],rhsp[0]);
+        rhs_ = _mm_mul_pd(val_,rhs_);
+        lhs_[k] = _mm_add_pd(lhs_[k],rhs_);
+      }
+    }
+
+    for(long j = halo_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    {
+      __m128d val_ = _mm_set1_pd(val[j]);
+      for(int k = 0; k < 2; k++)
+      {
+        const double *rhsp = halo + (col_idx[j]-1)*4 + 2*k;
         __m128d rhs_ = _mm_set_pd(rhsp[1],rhsp[0]);
         rhs_ = _mm_mul_pd(val_,rhs_);
         lhs_[k] = _mm_add_pd(lhs_[k],rhs_);
@@ -131,8 +159,8 @@ void dspmvm_nt_4_c(int nrows, double alpha, const long *restrict row_ptr, const 
   }
 }
 
-void dspmvm_nt_8_c(int nrows, double alpha, const long *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
-                 const double *restrict rhsv, double *restrict lhsv, int ldv)
+void dspmvm_nt_8_c(int nrows, double alpha, const long *restrict row_ptr, const long *restrict halo_ptr, const int *restrict col_idx, const double *restrict val,
+                 const double *restrict rhsv, const double *restrict halo, double *restrict lhsv, int ldv)
 {
   if( !is_aligned(lhsv,16) )
   {
@@ -147,12 +175,24 @@ void dspmvm_nt_8_c(int nrows, double alpha, const long *restrict row_ptr, const 
     for(int k = 0; k < 4; k++)
       lhs_[k] = _mm_set1_pd(0.);
 
-    for(long j = row_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    for(long j = row_ptr[i]-1; j < halo_ptr[i]-1; j++)
     {
       __m128d val_ = _mm_set1_pd(val[j]);
       for(int k = 0; k < 4; k++)
       {
         const double *rhsp = rhsv + (col_idx[j]-1)*8 + 2*k;
+        __m128d rhs_ = _mm_set_pd(rhsp[1],rhsp[0]);
+        rhs_ = _mm_mul_pd(val_,rhs_);
+        lhs_[k] = _mm_add_pd(lhs_[k],rhs_);
+      }
+    }
+
+    for(long j = halo_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    {
+      __m128d val_ = _mm_set1_pd(val[j]);
+      for(int k = 0; k < 4; k++)
+      {
+        const double *rhsp = halo + (col_idx[j]-1)*8 + 2*k;
         __m128d rhs_ = _mm_set_pd(rhsp[1],rhsp[0]);
         rhs_ = _mm_mul_pd(val_,rhs_);
         lhs_[k] = _mm_add_pd(lhs_[k],rhs_);
@@ -171,8 +211,8 @@ void dspmvm_nt_8_c(int nrows, double alpha, const long *restrict row_ptr, const 
 }
 
 
-void dspmvm_nt_strided_2_c(int nrows, double alpha, const long *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
-                         const double *restrict rhsv, int ldr, double *restrict lhsv, int ldl)
+void dspmvm_nt_strided_2_c(int nrows, double alpha, const long *restrict row_ptr, const long *restrict halo_ptr, const int *restrict col_idx, const double *restrict val,
+                         const double *restrict rhsv, int ldr, const double *restrict halo, double *restrict lhsv, int ldl)
 {
   if( !is_aligned(lhsv,16) )
   {
@@ -185,11 +225,21 @@ void dspmvm_nt_strided_2_c(int nrows, double alpha, const long *restrict row_ptr
   {
     __m128d lhs_ = _mm_set1_pd(0.);
 
-    for(long j = row_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    for(long j = row_ptr[i]-1; j < halo_ptr[i]-1; j++)
     {
       __m128d val_ = _mm_set1_pd(val[j]);
 
       const double *rhsp = rhsv + (col_idx[j]-1)*ldr;
+      __m128d rhs_ = _mm_set_pd(rhsp[0],rhsp[1]);
+      rhs_ = _mm_mul_pd(val_,rhs_);
+      lhs_ = _mm_add_pd(lhs_,rhs_);
+    }
+
+    for(long j = halo_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    {
+      __m128d val_ = _mm_set1_pd(val[j]);
+
+      const double *rhsp = halo + (col_idx[j]-1)*2;
       __m128d rhs_ = _mm_set_pd(rhsp[0],rhsp[1]);
       rhs_ = _mm_mul_pd(val_,rhs_);
       lhs_ = _mm_add_pd(lhs_,rhs_);
@@ -204,8 +254,8 @@ void dspmvm_nt_strided_2_c(int nrows, double alpha, const long *restrict row_ptr
   }
 }
 
-void dspmvm_nt_strided_4_c(int nrows, double alpha, const long *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
-                         const double *restrict rhsv, int ldr, double *restrict lhsv, int ldl)
+void dspmvm_nt_strided_4_c(int nrows, double alpha, const long *restrict row_ptr, const long *restrict halo_ptr, const int *restrict col_idx, const double *restrict val,
+                         const double *restrict rhsv, int ldr, const double *restrict halo, double *restrict lhsv, int ldl)
 {
   if( !is_aligned(lhsv,16) )
   {
@@ -220,12 +270,24 @@ void dspmvm_nt_strided_4_c(int nrows, double alpha, const long *restrict row_ptr
     for(int k = 0; k < 2; k++)
       lhs_[k] = _mm_set1_pd(0.);
 
-    for(long j = row_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    for(long j = row_ptr[i]-1; j < halo_ptr[i]-1; j++)
     {
       __m128d val_ = _mm_set1_pd(val[j]);
       for(int k = 0; k < 2; k++)
       {
         const double *rhsp = rhsv + (col_idx[j]-1)*ldr + 2*k;
+        __m128d rhs_ = _mm_set_pd(rhsp[1],rhsp[0]);
+        rhs_ = _mm_mul_pd(val_,rhs_);
+        lhs_[k] = _mm_add_pd(lhs_[k],rhs_);
+      }
+    }
+
+    for(long j = halo_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    {
+      __m128d val_ = _mm_set1_pd(val[j]);
+      for(int k = 0; k < 2; k++)
+      {
+        const double *rhsp = halo + (col_idx[j]-1)*4 + 2*k;
         __m128d rhs_ = _mm_set_pd(rhsp[1],rhsp[0]);
         rhs_ = _mm_mul_pd(val_,rhs_);
         lhs_[k] = _mm_add_pd(lhs_[k],rhs_);
@@ -243,8 +305,8 @@ void dspmvm_nt_strided_4_c(int nrows, double alpha, const long *restrict row_ptr
   }
 }
 
-void dspmvm_nt_strided_8_c(int nrows, double alpha, const long *restrict row_ptr, const int *restrict col_idx, const double *restrict val,
-                         const double *restrict rhsv, int ldr, double *restrict lhsv, int ldl)
+void dspmvm_nt_strided_8_c(int nrows, double alpha, const long *restrict row_ptr, const long *restrict halo_ptr, const int *restrict col_idx, const double *restrict val,
+                         const double *restrict rhsv, int ldr, const double *restrict halo, double *restrict lhsv, int ldl)
 {
   if( !is_aligned(lhsv,16) )
   {
@@ -259,12 +321,24 @@ void dspmvm_nt_strided_8_c(int nrows, double alpha, const long *restrict row_ptr
     for(int k = 0; k < 4; k++)
       lhs_[k] = _mm_set1_pd(0.);
 
-    for(long j = row_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    for(long j = row_ptr[i]-1; j < halo_ptr[i]-1; j++)
     {
       __m128d val_ = _mm_set1_pd(val[j]);
       for(int k = 0; k < 4; k++)
       {
         const double *rhsp = rhsv + (col_idx[j]-1)*ldr + 2*k;
+        __m128d rhs_ = _mm_set_pd(rhsp[1],rhsp[0]);
+        rhs_ = _mm_mul_pd(val_,rhs_);
+        lhs_[k] = _mm_add_pd(lhs_[k],rhs_);
+      }
+    }
+
+    for(long j = halo_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    {
+      __m128d val_ = _mm_set1_pd(val[j]);
+      for(int k = 0; k < 4; k++)
+      {
+        const double *rhsp = halo + (col_idx[j]-1)*ldr + 2*k;
         __m128d rhs_ = _mm_set_pd(rhsp[1],rhsp[0]);
         rhs_ = _mm_mul_pd(val_,rhs_);
         lhs_[k] = _mm_add_pd(lhs_[k],rhs_);
