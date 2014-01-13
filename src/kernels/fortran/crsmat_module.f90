@@ -375,7 +375,7 @@ end do
     !--------------------------------------------------------------------------------
     integer :: nvec, ldx, ldy, recvBuffSize
     logical :: strided_x, strided_y, strided
-    logical :: y_is_aligned16
+    logical :: y_is_aligned16, handled
     integer :: i, j, k, l, ierr
     !--------------------------------------------------------------------------------
 
@@ -419,10 +419,6 @@ end do
     ! exchange necessary elements
 !write(*,*) 'CRS', A%row_map%me, 'sendRowBlkInd', A%comm_buff%sendRowBlkInd
 !write(*,*) 'CRS', A%row_map%me, 'recvRowBlkInd', A%comm_buff%recvRowBlkInd
-
-    ! just make sure the buffers are not used any more...
-    call mpi_waitall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
-
 
     ! start buffer irecv
     ! we could also set up persistent communication channels here... and use MPI_Startall later
@@ -469,14 +465,15 @@ end do
     recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
 
 
-     !try to use NT stores if possible
+    handled = .false.
+    !try to use NT stores if possible
     if( beta .eq. 0 .and. y_is_aligned16 ) then
       if( nvec .eq. 1 ) then
         if( .not. strided ) then
           call dspmvm_NT_1(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
             &              A%row_offset, A%nonlocal_offset, A%col_idx, A%val, x%val, &
             &              A%comm_buff%recvData, y%val)
-          return
+          handled = .true.
         end if
       else if( nvec .eq. 2 ) then
         if( strided_x ) then
@@ -488,7 +485,7 @@ end do
             &              A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
             &              x%val, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
         end if
-        return
+        handled = .true.
       else if( nvec .eq. 4 ) then
         if( strided_x ) then
           call dspmvm_NT_strided_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
@@ -499,7 +496,7 @@ end do
             &              A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
             &              x%val, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
         end if
-        return
+        handled = .true.
       else if( nvec .eq. 8 ) then
         if( strided_x ) then
           call dspmvm_NT_strided_8(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
@@ -510,7 +507,7 @@ end do
             &              A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
             &              x%val, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
         end if
-        return
+        handled = .true.
       end if
     end if
 
@@ -524,7 +521,7 @@ end do
           &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
           &           x%val, A%comm_buff%recvData, beta, y%val)
       end if
-      return
+      handled = .true.
     else if( nvec .eq. 2 ) then
       if( strided ) then
         call dspmvm_strided_2(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
@@ -535,7 +532,7 @@ end do
           &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
           &           x%val, A%comm_buff%recvData, beta, y%val)
       end if
-      return
+      handled = .true.
     else if( nvec .eq. 4 ) then
       if( strided ) then
         call dspmvm_strided_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
@@ -546,7 +543,7 @@ end do
           &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
           &           x%val, A%comm_buff%recvData, beta, y%val)
       end if
-      return
+      handled = .true.
     else if( nvec .eq. 8 ) then
       if( strided ) then
         call dspmvm_strided_8(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
@@ -557,7 +554,7 @@ end do
           &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
           &           x%val, A%comm_buff%recvData, beta, y%val)
       end if
-      return
+      handled = .true.
     end if
 
 !do i = 1, A%nRows, 1
@@ -572,9 +569,15 @@ end do
 !write(*,*) 'CRS', A%row_map%me, 'recvData', A%comm_buff%recvData
 !write(*,*) 'CRS', A%row_map%me, 'y', y%val(y%jmin:y%jmax,:)
 !flush(6)
-    call dspmvm_generic(nvec, A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
-      &                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-      &                 x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
+    if( .not. handled ) then
+      call dspmvm_generic(nvec, A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+        &                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+        &                 x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
+    end if
+
+
+    ! just make sure the buffers are not used any more...
+    call mpi_waitall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
 
     !--------------------------------------------------------------------------------
   end subroutine crsmat_times_mvec

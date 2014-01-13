@@ -112,7 +112,7 @@ contains
       end if
     end if
 
-!$omp parallel do
+!$omp parallel do private(off)
     do j = 1, nrows
       off = mvec%jmin
       do i = 1, nblocks
@@ -120,6 +120,7 @@ contains
         jmax_i = block_list(i)%jmax
         nvec_i = jmax_i-jmin_i+1
         mvec%val(off:off+nvec_i-1,j) = block_list(i)%val(jmin_i:jmax_i,j)
+        off = off +nvec_i
       end do
     end do
 
@@ -184,7 +185,7 @@ contains
       end if
     end if
 
-!$omp parallel do
+!$omp parallel do private(off)
     do j = 1, nrows
       off = mvec%jmin
       do i = 1, nblocks
@@ -192,6 +193,7 @@ contains
         jmax_i = block_list(i)%jmax
         nvec_i = jmax_i-jmin_i+1
         block_list(i)%val(jmin_i:jmax_i,j) = mvec%val(off:off+nvec_i-1,j)
+        off = off +nvec_i
       end do
     end do
 
@@ -415,19 +417,14 @@ contains
       if( alpha(i) .ne. 1 ) only_copy = .false.
     end do
 
-    if( .not. only_scale ) then
+    ldx = size(x%val,1)
 
-      ldx = size(x%val,1)
-
-      if( .not. x%is_view .or. &
-        & ( x%jmin .eq. lbound(x%val,1) .and. &
-        &   x%jmax .eq. ubound(x%val,1)       ) ) then
-        strided_x = .false.
-      else
-        strided_x = .true.
-      end if
-    else
+    if( .not. x%is_view .or. &
+      & ( x%jmin .eq. lbound(x%val,1) .and. &
+      &   x%jmax .eq. ubound(x%val,1)       ) ) then
       strided_x = .false.
+    else
+      strided_x = .true.
     end if
 
     one_alpha = .true.
