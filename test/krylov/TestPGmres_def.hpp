@@ -58,8 +58,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
         SUBR(op_wrap_crsMat)(opA_,A_,&ierr_);
         ASSERT_EQ(0,ierr_);
         
-        state_=new TYPE(gmresState_ptr)[m_];
-        SUBR(gmresStates_create)(state_,m_,map_,maxBas_,&ierr_);
+        state_=new TYPE(pgmresState_ptr)[m_];
+        SUBR(pgmresStates_create)(state_,m_,map_,maxBas_,&ierr_);
         
         ASSERT_EQ(0,ierr_);
         xex_=vec1_;
@@ -92,7 +92,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
 
         SUBR(crsMat_delete)(A_,&ierr_);
         ASSERT_EQ(0,ierr_);
-        SUBR(gmresStates_delete)(state_,m_,&ierr);
+        SUBR(pgmresStates_delete)(state_,m_,&ierr);
         ASSERT_EQ(0,ierr_);
         delete [] state_;
       }
@@ -101,7 +101,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
     }
 
     TYPE(op_ptr) opA_;
-    TYPE(gmresState_ptr) *state_;
+    TYPE(pgmresState_ptr) *state_;
 
   protected:
   
@@ -112,7 +112,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
 
 
     // ========================= the actual arnoldi test =========================
-    void doGmresTest(int nrhs, int nrestarts, MT tol)
+    void doPGmresTest(int nrhs, int nrestarts, MT tol)
     {
       ENTER_FCN(__FUNCTION__);
       if( typeImplemented_ )
@@ -149,13 +149,15 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
           {
             SUBR(mvec_view_block)(x,&x_i,i,i,&ierr_);
             SUBR(mvec_view_block)(b,&b_i,i,i,&ierr_);
-            SUBR(gmresState_reset)(state_[i],b_i,x_i,&ierr_);
+            SUBR(pgmresState_reset)(state_[i],b_i,x_i,&ierr_);
             ASSERT_EQ(0,ierr_);
           }
           // iterate for MAXBAS iterations
-          SUBR(gmresStates_iterate)(opA_,state_,nrhs,&ierr2);
+          int nIter = 0;
+          SUBR(pgmresStates_iterate)(opA_,state_,nrhs,&nIter,&ierr2);
           ASSERT_TRUE(ierr2>=0);
-          SUBR(gmresStates_updateSol)(state_,nrhs,x,&ierr_);
+          _MT_ resNorm[nrhs];
+          SUBR(pgmresStates_updateSol)(state_,nrhs,x,resNorm,false,&ierr_);
           ASSERT_EQ(0,ierr_);
           if (ierr2==0) break; // converged
         }
@@ -207,26 +209,26 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
 };
 
 // test unrestarted GMRES with tolerance TOL1
-TEST_F(CLASSNAME, simple_gmres) 
+TEST_F(CLASSNAME, simple_pgmres) 
 {
   int nrestarts=0;
   int nrhs=1;
-  doGmresTest(nrhs,nrestarts,TOLA);
+  doPGmresTest(nrhs,nrestarts,TOLA);
 }
 
 // test restarted GMRES with tolerance TOL2
-TEST_F(CLASSNAME, restarted_gmres) 
+TEST_F(CLASSNAME, restarted_pgmres) 
 {
   int nrestarts=5;
   int nrhs=1;
-  doGmresTest(nrhs,nrestarts,TOLB);
+  doPGmresTest(nrhs,nrestarts,TOLB);
 }
 
 // test unrestarted GMRES with tolerance TOL1
-TEST_F(CLASSNAME, multiple_simple_gmres) 
+TEST_F(CLASSNAME, multiple_simple_pgmres) 
 {
   int nrestarts=0;
   int nrhs=4;
-  doGmresTest(nrhs,nrestarts,TOLA);
+  doPGmresTest(nrhs,nrestarts,TOLA);
 }
 

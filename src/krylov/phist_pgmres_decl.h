@@ -26,7 +26,7 @@
 //! iterate or updateSol, but they must be created and 
 //! deleted together so that the memory handling is    
 //! clear.                                             
-typedef struct TYPE(jadaInnerGmresState) {
+typedef struct TYPE(pgmresState) {
   //! \name input and output args:
   //@{
   int id; //! can be used to identify the system solved here (the column to which this 
@@ -62,11 +62,11 @@ typedef struct TYPE(jadaInnerGmresState) {
   int maxBas_; //! maximum size of basis before restart
 
   //@}
-} TYPE(jadaInnerGmresState);
+} TYPE(pgmresState);
 
-typedef TYPE(jadaInnerGmresState)* TYPE(jadaInnerGmresState_ptr);
+typedef TYPE(pgmresState)* TYPE(pgmresState_ptr);
 
-typedef TYPE(jadaInnerGmresState) const * TYPE(const_jadaInnerGmresState_ptr);
+typedef TYPE(pgmresState) const * TYPE(const_pgmresState_ptr);
 
 //!                                                                                     
 //! a simple GMRES implementation that works on several vectors simultaneously,         
@@ -98,8 +98,8 @@ typedef TYPE(jadaInnerGmresState) const * TYPE(const_jadaInnerGmresState_ptr);
 //! The global ierr flag will then be set to -1. (0 for "someone converged" and +1 for  
 //! someone reached max iters")                                                         
 //!                                                                                     
-void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) Op,
-        TYPE(jadaInnerGmresState_ptr) S_array[], int numSys,
+void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Op,
+        TYPE(pgmresState_ptr) S_array[], int numSys,
         int* nIter, int* ierr);
 
 //! create an array of gmresState objects. The method's input parameters
@@ -109,12 +109,12 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) Op,
 //! ribution of vectors so we can create the basis vectors a priori.
 //! The array of pointers must be allocated beforehand, but the individual structs 
 //! are allocated by this method.
-void SUBR(jadaInnerGmresStates_create)(TYPE(jadaInnerGmresState_ptr) S_array[], int numSys,
+void SUBR(pgmresStates_create)(TYPE(pgmresState_ptr) S_array[], int numSys,
         const_map_ptr_t map, int maxBas, int* ierr);
 
 //! delete an set of gmresState objects. Only the individual structs are destroyed,
 //! The csller has to delete the array and nullify it.
-void SUBR(jadaInnerGmresStates_delete)(TYPE(jadaInnerGmresState_ptr) S_array[], int numSys, int* ierr);
+void SUBR(pgmresStates_delete)(TYPE(pgmresState_ptr) S_array[], int numSys, int* ierr);
 
 //! this function can be used to force a clean restart of the associated GMRES
 //! solver. It is necessary to call this function before the first call to
@@ -124,7 +124,7 @@ void SUBR(jadaInnerGmresStates_delete)(TYPE(jadaInnerGmresState_ptr) S_array[], 
 //! reset. If one of the RHS vectors changes between calls to gmres, reset with the new
 //! rhs should be called for that gmresState, otherwise a messed up Krylov sequence will
 //! result and the convergence criterion will not be consistent.
-void SUBR(jadaInnerGmresState_reset)(TYPE(jadaInnerGmresState_ptr) S,
+void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S,
                 TYPE(const_mvec_ptr) b,
                 TYPE(const_mvec_ptr) x0, int *ierr);
 
@@ -133,5 +133,5 @@ void SUBR(jadaInnerGmresState_reset)(TYPE(jadaInnerGmresState_ptr) S,
 //! indicates convergence after iterate, but it can also be done to get an intermediate 
 //! solution. The function is 'vectorized' in the same way as iterate, so an array of states 
 //! and multivector x can be passed in.
-void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[], int numSys,
+void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S_array[], int numSys,
                 TYPE(mvec_ptr) x, _MT_ *resNorm, bool scaleSolutionToOne, int* ierr);

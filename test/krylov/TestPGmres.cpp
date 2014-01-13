@@ -9,7 +9,7 @@
 #include "phist_macros.h"
 #include "phist_kernels.h"
 #include "phist_enums.h"
-#include "phist_gmres.h"
+#include "phist_pgmres.h"
 #include "phist_ScalarTraits.hpp"
 #include "../kernels/KernelTest.h"
 #include "../kernels/KernelTestWithMap.h"
@@ -39,15 +39,15 @@ using namespace testing;
 #define TOLA 2.5e-2
 #define TOLB 1.0e-4
 
-#define CLASSNAME STestGmres
+#define CLASSNAME STestPGmres
 #include "phist_gen_s.h"
-#include "TestGmres_def.hpp"
+#include "TestPGmres_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME DTestGmres
+#define CLASSNAME DTestPGmres
 
 #include "phist_gen_d.h"
-#include "TestGmres_def.hpp"
+#include "TestPGmres_def.hpp"
 
 #undef CLASSNAME
 #undef TOLA
@@ -55,14 +55,14 @@ using namespace testing;
 //TODO - tune these settings
 #define TOLA 2.5e-2
 #define TOLB 1.0e-4
-#define CLASSNAME CTestGmres
+#define CLASSNAME CTestPGmres
 
 #include "phist_gen_c.h"
-#include "TestGmres_def.hpp"
+#include "TestPGmres_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME ZTestGmres
+#define CLASSNAME ZTestPGmres
 
 #include "phist_gen_z.h"
-#include "TestGmres_def.hpp"
+#include "TestPGmres_def.hpp"
 
