@@ -1,3 +1,5 @@
+//! TODO: update description, partially outdated, refers to phist_gmres rather thand this variant
+
 //! iteration status object for the pseudo-block GMRES
 //! iteration we currently use as approximate solver  
 //! for the correction equation. To initialize the    
@@ -24,7 +26,7 @@
 //! iterate or updateSol, but they must be created and 
 //! deleted together so that the memory handling is    
 //! clear.                                             
-typedef struct TYPE(gmresState) {
+typedef struct TYPE(pgmresState) {
   //! \name input and output args:
   //@{
   int id; //! can be used to identify the system solved here (the column to which this 
@@ -35,23 +37,23 @@ typedef struct TYPE(gmresState) {
   _MT_ tol; //! convergence tolerance for this system
 
   int ierr; //! error code returned by this GMRES instance
+
+  int totalIter; //! counts number of iterations (also over restarts)
   //@}
   //! \name  internal data structures
   //@{
-  TYPE(mvec_ptr) B_; //! for which RHS is this GMRES being run?
-  TYPE(mvec_ptr) Vglob_; //! the V arrays are in fact views of sections of a large block
-                         //! of memory Vglob_, cf. comment above.
-  int offsetVglob_;      //! where in Vglob_ does my V_ start?
-  TYPE(mvec_ptr) V_; //! memory block in which basis is built up
-  TYPE(mvec_ptr) H_; //! memory block in which Hessenberg matrix from the Arnoldi process
+  TYPE(mvec_ptr) *V_; //! array of mvecs because row-wise storage is not well suited here
+  void *glob_unused_mvecs_;
+  void *glob_used_mvecs_;
+  TYPE(sdMat_ptr) H_; //! memory block in which Hessenberg matrix from the Arnoldi process
                      //! is built up,, transformed to upper triangular form using 
                      //! Givens rotations.
-  _ST_ *cs_, *sn_;   //! cosine and sine terms for the Givens rotations
+  TYPE(mvec_ptr) x0_; //! starting vector to compute the first residual vector r0
+  TYPE(mvec_ptr) b_; //! rhs to compute the first residual vector r0
+  _MT_ *cs_;         //! terms c of the Givens rotation
+  _ST_ *sn_;         //! terms s of the Givens rotation
   _ST_ *rs_;
   
-  _MT_ normB_; //! stores norm of RHS so it doesn't have to be recomputed when
-               //! when continuing.
-
   _MT_ normR0_; //! stores initial (explicit) residual norm
   _MT_ normR_; //! stores current (implicit) residual norm
   
@@ -60,11 +62,11 @@ typedef struct TYPE(gmresState) {
   int maxBas_; //! maximum size of basis before restart
 
   //@}
-} TYPE(gmresState);
+} TYPE(pgmresState);
 
-typedef TYPE(gmresState)* TYPE(gmresState_ptr);
+typedef TYPE(pgmresState)* TYPE(pgmresState_ptr);
 
-typedef TYPE(gmresState) const * TYPE(const_gmresState_ptr);
+typedef TYPE(pgmresState) const * TYPE(const_pgmresState_ptr);
 
 //!                                                                                     
 //! a simple GMRES implementation that works on several vectors simultaneously,         
@@ -74,6 +76,7 @@ typedef TYPE(gmresState) const * TYPE(const_gmresState_ptr);
 //! block GMRES' as the former would build a single subspace for all rhs. It is         
 //! therefore OK to have the operator perform a different task for each vector          
 //! column it is applied to, like in block JaDa: OP(X_j) = (A-s_jI)(I-VV').             
+//! (Note: a real block variant should be possible, since A-s_jI gives the *SAME* Krylov-subspace as A)
 //! The computational steering is done by initializing the parameters in the            
 //! gmresState structs. The iteration stops as soon as one system converges or          
 //! reaches maxBas iterations (NOTE: no restarting is implemented, so the maximum       
@@ -95,9 +98,9 @@ typedef TYPE(gmresState) const * TYPE(const_gmresState_ptr);
 //! The global ierr flag will then be set to -1. (0 for "someone converged" and +1 for  
 //! someone reached max iters")                                                         
 //!                                                                                     
-void SUBR(gmresStates_iterate)(TYPE(const_op_ptr) Op,
-        TYPE(gmresState_ptr) S_array[], int numSys,
-        int* ierr);
+void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Op,
+        TYPE(pgmresState_ptr) S_array[], int numSys,
+        int* nIter, int* ierr);
 
 //! create an array of gmresState objects. The method's input parameters
 //! will be set to default values and can be adjusted before calling reset/iterate. 
@@ -106,12 +109,12 @@ void SUBR(gmresStates_iterate)(TYPE(const_op_ptr) Op,
 //! ribution of vectors so we can create the basis vectors a priori.
 //! The array of pointers must be allocated beforehand, but the individual structs 
 //! are allocated by this method.
-void SUBR(gmresStates_create)(TYPE(gmresState_ptr) S_array[], int numSys,
+void SUBR(pgmresStates_create)(TYPE(pgmresState_ptr) S_array[], int numSys,
         const_map_ptr_t map, int maxBas, int* ierr);
 
 //! delete an set of gmresState objects. Only the individual structs are destroyed,
 //! The csller has to delete the array and nullify it.
-void SUBR(gmresStates_delete)(TYPE(gmresState_ptr) S_array[], int numSys, int* ierr);
+void SUBR(pgmresStates_delete)(TYPE(pgmresState_ptr) S_array[], int numSys, int* ierr);
 
 //! this function can be used to force a clean restart of the associated GMRES
 //! solver. It is necessary to call this function before the first call to
@@ -121,7 +124,7 @@ void SUBR(gmresStates_delete)(TYPE(gmresState_ptr) S_array[], int numSys, int* i
 //! reset. If one of the RHS vectors changes between calls to gmres, reset with the new
 //! rhs should be called for that gmresState, otherwise a messed up Krylov sequence will
 //! result and the convergence criterion will not be consistent.
-void SUBR(gmresState_reset)(TYPE(gmresState_ptr) S,
+void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S,
                 TYPE(const_mvec_ptr) b,
                 TYPE(const_mvec_ptr) x0, int *ierr);
 
@@ -130,5 +133,5 @@ void SUBR(gmresState_reset)(TYPE(gmresState_ptr) S,
 //! indicates convergence after iterate, but it can also be done to get an intermediate 
 //! solution. The function is 'vectorized' in the same way as iterate, so an array of states 
 //! and multivector x can be passed in.
-void SUBR(gmresStates_updateSol)(TYPE(gmresState_ptr) S_array[], int numSys,
-                TYPE(mvec_ptr) x, int* ierr);
+void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S_array[], int numSys,
+                TYPE(mvec_ptr) x, _MT_ *resNorm, bool scaleSolutionToOne, int* ierr);

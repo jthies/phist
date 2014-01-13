@@ -45,7 +45,7 @@
 #include "phist_jadaOp.h"
 #include "phist_simple_arnoldi.h"
 
-#include "phist_jadaInnerGmres.h"
+#include "phist_pgmres.h"
 
 #include "phist_gen_s.h"
 #endif
@@ -187,10 +187,10 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
 
   //------------------------------- initialize GMRES solver ------------------------
-  TYPE(jadaInnerGmresState_ptr) *gmresState = new TYPE(jadaInnerGmresState_ptr)[blockDim];
+  TYPE(pgmresState_ptr) *gmresState = new TYPE(pgmresState_ptr)[blockDim];
   _MT_ *gmresResNorm = new _MT_[blockDim];
   int nTotalGmresIter = 0;
-  PHIST_CHK_IERR(SUBR( jadaInnerGmresStates_create ) (gmresState, blockDim, A_op->domain_map, 26, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( pgmresStates_create ) (gmresState, blockDim, A_op->domain_map, 26, ierr), *ierr);
   _MT_ *innerTol = new _MT_[nEig_];
   for(int i = 0; i < nEig_; i++)
     innerTol[i] = mt::one();
@@ -525,7 +525,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       int i_ = selectedRes[i];
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,&t, i,i, ierr), *ierr);
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res,&t_res, i_,i_, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( jadaInnerGmresState_reset ) (gmresState[i], t_res, t, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( pgmresState_reset ) (gmresState[i], t_res, t, ierr), *ierr);
       if( resNorm[nConvergedEig+i] > 4*lastOuterRes[nConvergedEig+i] )
         innerTol[nConvergedEig+i] = 1.;
       innerTol[nConvergedEig+i] *= 0.5;
@@ -533,12 +533,12 @@ PHIST_SOUT(PHIST_INFO,"\n");
       gmresState[i]->tol = innerTol[nConvergedEig+i];
       PHIST_SOUT(PHIST_INFO, "gmres-tol: %8.4e\n",gmresState[i]->tol);
     }
-    PHIST_CHK_NEG_IERR(SUBR( jadaInnerGmresStates_iterate ) (&jdOp, gmresState, k, &nTotalGmresIter, ierr), *ierr);
+    PHIST_CHK_NEG_IERR(SUBR( pgmresStates_iterate ) (&jdOp, gmresState, k, &nTotalGmresIter, ierr), *ierr);
     // get solution and reuse res for At
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,&Vv, 0,k-1, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res,&AVv, 0,k-1, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_put_value )(AVv, st::zero(), ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( jadaInnerGmresStates_updateSol ) (gmresState, k, Vv, AVv, gmresResNorm, true, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( pgmresStates_updateSol ) (gmresState, k, Vv, gmresResNorm, true, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( jadaOp_delete ) (&jdOp, ierr), *ierr);
 
     // enlarge search space
@@ -553,37 +553,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
     int randomVecs = *ierr;
     // TODO: only take non-random vector if *ierr > 0
     // calculate AVv, BVv
-    // TODO: check conditioning to verify it is safe to calculate AVv from At
-    if( false && randomVecs == 0 )
-    {
-      // reuse data from jadaInnerGmres
-      // Vv*Rr_H = t - V*R_H
-      // => AVv*Rr_H = At - AV*R_H
-      PHIST_CHK_IERR(SUBR(  mvec_times_sdMat ) (-st::one(), AV,     R_H,  st::one(),  AVv, ierr), *ierr);
-      _ST_* AVv_raw;
-      lidx_t ldAVv;
-      PHIST_CHK_IERR(SUBR(mvec_extract_view)(AVv, &AVv_raw, &ldAVv, ierr), *ierr);
-      int nlocal;
-      PHIST_CHK_IERR(phist_map_get_local_length(A_op->range_map, &nlocal, ierr), *ierr);
-      _ST_ alpha = st::one();
-#ifdef IS_COMPLEX
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      PHIST_CHK_IERR( PREFIX(TRSM) ("L","U","T","N",&k,&nlocal,(blas_cmplx_t*)&alpha,(blas_cmplx_t*)R_H_raw+nV+nV*ldaR_H,&ldaR_H,(blas_cmplx_t*)AVv_raw,&ldAVv,ierr),*ierr);
-#else
-      PHIST_CHK_IERR( PREFIX(TRSM) ("R","U","N","N",&nlocal,&k,(blas_cmplx_t*)&alpha,(blas_cmplx_t*)R_H_raw+nV+nV*ldaR_H,&ldaR_H,(blas_cmplx_t*)AVv_raw,&ldAVv,ierr),*ierr);
-#endif
-#else
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      PHIST_CHK_IERR( PREFIX(TRSM) ("L","U","T","N",&k,&nlocal,&alpha,R_H_raw+nV+nV*ldaR_H,&ldaR_H,AVv_raw,&ldAVv,ierr),*ierr);
-#else
-      PHIST_CHK_IERR( PREFIX(TRSM) ("R","U","N","N",&nlocal,&k,&alpha,R_H_raw+nV+nV*ldaR_H,&ldaR_H,AVv_raw,&ldAVv,ierr),*ierr);
-#endif
-#endif
-    }
-    else
-    {
-      PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vv, st::zero(), AVv, ierr), *ierr);
-    }
+    PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vv, st::zero(), AVv, ierr), *ierr);
     if( B_op != NULL )
     {
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BVv,                   nV,    nV+k-1,    ierr), *ierr);
@@ -609,7 +579,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
 
   //------------------------------- delete vectors and matrices --------------------
-  PHIST_CHK_IERR(SUBR( jadaInnerGmresStates_delete ) (gmresState, blockDim, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( pgmresStates_delete ) (gmresState, blockDim, ierr), *ierr);
   delete[] gmresState;
   delete[] gmresResNorm;
 
