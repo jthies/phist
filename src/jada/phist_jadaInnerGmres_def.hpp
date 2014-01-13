@@ -10,7 +10,7 @@ void SUBR(jadaInnerGmresStates_create)(TYPE(jadaInnerGmresState_ptr) state[], in
   PHIST_CHK_IERR(phist_map_get_comm(map,&comm,ierr),*ierr);
 
   // setup a "queue" of mvecs to use later
-  int totally_needed_mvecs = 2*(maxBas+2)*numSys;
+  int totally_needed_mvecs = (maxBas+2)*numSys;
   std::vector<TYPE(mvec_ptr)> *unused_mvecs = new std::vector<TYPE(mvec_ptr)>();
   for(int i = 0; i < totally_needed_mvecs; i++)
   {
