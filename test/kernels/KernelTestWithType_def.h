@@ -22,7 +22,11 @@ int ierr;
 SUBR(type_avail)(&ierr);
 typeImplemented_=(ierr==0);
 
-verbose_=ghost_getRank(MPI_COMM_WORLD)==0;
+int rank=0;
+#ifdef PHIST_HAVE_MPI
+MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+#endif
+verbose_=rank==0;
 
 if (verbose_ && false)
   {
