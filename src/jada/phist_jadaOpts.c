@@ -10,6 +10,7 @@ opts->maxIters=300;
 opts->blockSize=1; 
 opts->minBas=10;
 opts->maxBas=20;
+opts->convTol=1.0e-12;
 
 opts->v0=NULL; 
 opts->arno=1;
