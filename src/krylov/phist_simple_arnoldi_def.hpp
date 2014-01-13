@@ -16,7 +16,7 @@ void SUBR(simple_arnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op, TYPE
   *ierr = 0;
   if( B_op != NULL )
   {
-    PHIST_SOUT(PHIST_ERROR,"case B_op != NULL (e.g. B != I) not implemented yet!");
+    PHIST_SOUT(PHIST_ERROR,"case B_op != NULL (e.g. B != I) not implemented yet!\n");
     PHIST_CHK_IERR(*ierr = 99, *ierr);
   }
   TYPE(mvec_ptr) v=NULL,av=NULL,vprev=NULL;
@@ -37,9 +37,9 @@ void SUBR(simple_arnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op, TYPE
   if (ncV<m+1 || nrH<m+1 || ncH<m) {*ierr = -1; return;}
   if (ncV!=m+1 || nrH!=m+1 || ncH!=m)
     {
-    PHIST_SOUT(PHIST_VERBOSE,"REMARK: input vectors/matrix to arnoldi are larger than necessary.");
-    PHIST_SOUT(PHIST_VERBOSE,"        Requested subspace dimension is %d,",m);
-    PHIST_SOUT(PHIST_VERBOSE,"        H is %dx%d (expecting %dx%d), V with %d cols (expecting %d)",
+    PHIST_SOUT(PHIST_VERBOSE,"REMARK: input vectors/matrix to arnoldi are larger than necessary.\n");
+    PHIST_SOUT(PHIST_VERBOSE,"        Requested subspace dimension is %d,\n",m);
+    PHIST_SOUT(PHIST_VERBOSE,"        H is %dx%d (expecting %dx%d), V with %d cols (expecting %d)\n",
                                       nrH, ncH, m+1,m,ncV,m+1);
     }
   
@@ -54,7 +54,7 @@ void SUBR(simple_arnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op, TYPE
     PHIST_CHK_NEG_IERR(SUBR(orthog)(vprev,av,R1,R2,3,ierr),*ierr);
     if( *ierr > 0 )
     {
-      PHIST_SOUT(PHIST_INFO,"found invariant subspace in arnoldi, expanding basis with a randomly generated orthogonal vector");
+      PHIST_SOUT(PHIST_INFO,"found invariant subspace in arnoldi, expanding basis with a randomly generated orthogonal vector\n");
     }
     std::swap(v,av);     // swap the vectors v and av,av will be deleted and re-build as a 
                          // new view in the next step
