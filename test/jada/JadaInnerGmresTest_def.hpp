@@ -95,11 +95,11 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
   {
     if( typeImplemented_ )
     {
-      TYPE(jadaInnerGmresState_ptr) state[_NV_];
-      SUBR(jadaInnerGmresStates_create)(state, _NV_, map_, _MAXBAS_, &ierr_);
+      TYPE(pgmresState_ptr) state[_NV_];
+      SUBR(pgmresStates_create)(state, _NV_, map_, _MAXBAS_, &ierr_);
       ASSERT_EQ(0,ierr_);
 
-      SUBR(jadaInnerGmresStates_delete)(state, _NV_, &ierr_);
+      SUBR(pgmresStates_delete)(state, _NV_, &ierr_);
       ASSERT_EQ(0,ierr_);
     }
   }
@@ -120,8 +120,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 #endif
       return;
 
-      TYPE(jadaInnerGmresState_ptr) state[_NV_];
-      SUBR(jadaInnerGmresStates_create)(state, _NV_, map_, _MAXBAS_, &ierr_);
+      TYPE(pgmresState_ptr) state[_NV_];
+      SUBR(pgmresStates_create)(state, _NV_, map_, _MAXBAS_, &ierr_);
       ASSERT_EQ(0,ierr_);
 
       TYPE(mvec_ptr) x_i = NULL;
@@ -133,35 +133,20 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         SUBR(mvec_view_block)(vec3_,&y_i,i,i,&ierr_);
         ASSERT_EQ(0,ierr_);
 
-        SUBR(jadaInnerGmresState_reset)(state[i], y_i, x_i, &ierr_);
+        SUBR(pgmresState_reset)(state[i], y_i, x_i, &ierr_);
         ASSERT_EQ(0,ierr_);
       }
 
       // don't let it iterate here!
-
-      // check the result (we have given the solution as initial guess!)
-      {
-        TYPE(mvec_ptr) AX = NULL;
-        SUBR(jadaOp_view_AX)(jdOp_->A,&AX,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_add_mvec)(st::one(),AX,st::zero(),vec1_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_delete)(AX,&ierr_);
-        ASSERT_EQ(0,ierr_);
-      }
-      ASSERT_EQ(0,ierr_);
-      TYPE(mvec_ptr) Ax_i = NULL;
       for(int i = 0; i < _NV_; i++)
       {
         SUBR(mvec_view_block)(vec2_,&x_i,i,i,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_view_block)(vec1_,&Ax_i,i,i,&ierr_);
         ASSERT_EQ(0,ierr_);
         SUBR(mvec_view_block)(vec3_,&y_i,i,i,&ierr_);
         ASSERT_EQ(0,ierr_);
 
         _MT_ resNorm;
-        SUBR(jadaInnerGmresStates_updateSol)(&state[i], 1, x_i, Ax_i, &resNorm, false, &ierr_);
+        SUBR(pgmresStates_updateSol)(&state[i], 1, x_i, &resNorm, false, &ierr_);
         ASSERT_EQ(0,ierr_);
 
         // can't know the residual norm, yet
@@ -169,8 +154,6 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       }
       // delete views
       SUBR(mvec_delete)(x_i,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_delete)(Ax_i,&ierr_);
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_delete)(y_i,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -184,17 +167,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
 #endif
 
-      // check Ax = A*x
-      SUBR(crsMat_times_mvec)(-st::one(),A_,vec2_,st::one(),vec1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      ASSERT_NEAR(mt::one(),ArrayEqual(vec1_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
-#else
-      ASSERT_NEAR(mt::one(),ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
-#endif
-
-
-      SUBR(jadaInnerGmresStates_delete)(state, _NV_, &ierr_);
+      SUBR(pgmresStates_delete)(state, _NV_, &ierr_);
       ASSERT_EQ(0,ierr_);
     }
   }
@@ -204,8 +177,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
   {
     if( typeImplemented_ )
     {
-      TYPE(jadaInnerGmresState_ptr) state[_NV_];
-      SUBR(jadaInnerGmresStates_create)(state, _NV_, map_, _MAXBAS_, &ierr_);
+      TYPE(pgmresState_ptr) state[_NV_];
+      SUBR(pgmresStates_create)(state, _NV_, map_, _MAXBAS_, &ierr_);
       ASSERT_EQ(0,ierr_);
 
       TYPE(mvec_ptr) x_i = NULL;
@@ -217,7 +190,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         SUBR(mvec_view_block)(vec3_,&y_i,i,i,&ierr_);
         ASSERT_EQ(0,ierr_);
 
-        SUBR(jadaInnerGmresState_reset)(state[i], y_i, x_i, &ierr_);
+        SUBR(pgmresState_reset)(state[i], y_i, x_i, &ierr_);
         ASSERT_EQ(0,ierr_);
       }
       // delete views
@@ -230,7 +203,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
       // check the result (we have given the solution as initial guess!)
       _MT_ resNorm[_NV_];
-      SUBR(jadaInnerGmresStates_updateSol)(state, _NV_, vec2_, vec3_, resNorm, false, &ierr_);
+      SUBR(pgmresStates_updateSol)(state, _NV_, vec2_, resNorm, false, &ierr_);
       ASSERT_EQ(0,ierr_);
 
       // can't know the residual norm, yet
@@ -248,27 +221,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
 #endif
 
-      {
-        TYPE(mvec_ptr) AX = NULL;
-        SUBR(jadaOp_view_AX)(jdOp_->A,&AX,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_add_mvec)(st::one(),AX,st::zero(),vec1_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_delete)(AX,&ierr_);
-        ASSERT_EQ(0,ierr_);
-      }
- 
-      // check Ax = A*x
-      SUBR(crsMat_times_mvec)(-st::one(),A_,vec2_,st::one(),vec1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      ASSERT_NEAR(mt::one(),ArrayEqual(vec1_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
-#else
-      ASSERT_NEAR(mt::one(),ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
-#endif
-
-
-      SUBR(jadaInnerGmresStates_delete)(state, _NV_, &ierr_);
+      SUBR(pgmresStates_delete)(state, _NV_, &ierr_);
       ASSERT_EQ(0,ierr_);
     }
   }
@@ -278,8 +231,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
   {
     if( typeImplemented_ )
     {
-      TYPE(jadaInnerGmresState_ptr) state[_NV_];
-      SUBR(jadaInnerGmresStates_create)(state, _NV_, map_, _MAXBAS_, &ierr_);
+      TYPE(pgmresState_ptr) state[_NV_];
+      SUBR(pgmresStates_create)(state, _NV_, map_, _MAXBAS_, &ierr_);
       ASSERT_EQ(0,ierr_);
 
       TYPE(mvec_ptr) x_i = NULL;
@@ -291,7 +244,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         SUBR(mvec_view_block)(vec3_,&y_i,i,i,&ierr_);
         ASSERT_EQ(0,ierr_);
 
-        SUBR(jadaInnerGmresState_reset)(state[i], y_i, x_i, &ierr_);
+        SUBR(pgmresState_reset)(state[i], y_i, x_i, &ierr_);
         ASSERT_EQ(0,ierr_);
       }
       // delete views
@@ -302,7 +255,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
       // call iterate
       int nIter = 0;
-      SUBR(jadaInnerGmresStates_iterate)(jdOp_,state, _NV_, &nIter, &ierr_);
+      SUBR(pgmresStates_iterate)(jdOp_,state, _NV_, &nIter, &ierr_);
       ASSERT_EQ(0,ierr_);
       // only one iteration should be needed!
       ASSERT_EQ(1,nIter);
@@ -315,37 +268,19 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(0,state[i]->ierr);
       }
 
-      {
-        TYPE(mvec_ptr) AX = NULL;
-        SUBR(jadaOp_view_AX)(jdOp_->A,&AX,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_add_mvec)(st::one(),AX,st::zero(),vec1_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_delete)(AX,&ierr_);
-        ASSERT_EQ(0,ierr_);
-      }
  
       SUBR(crsMat_times_mvec)(st::one(),A_,vec2_,st::zero(),vec1_,&ierr_);
       ASSERT_EQ(0,ierr_);
       // check the result (we have given the solution as initial guess!)
       _MT_ resNorm[_NV_];
-      SUBR(jadaInnerGmresStates_updateSol)(state, _NV_, vec2_, vec1_, resNorm, false, &ierr_);
+      SUBR(pgmresStates_updateSol)(state, _NV_, vec2_, resNorm, false, &ierr_);
       ASSERT_EQ(0,ierr_);
 
-      // can't know the residual norm, yet
+      // residual didn't change, so the relative residual should be one
       for(int i = 0; i < _NV_; i++)
       {
-        ASSERT_NEAR(0,resNorm[i],10*VTest::releps());
+        ASSERT_NEAR(1,resNorm[i],10*VTest::releps());
       }
-
-      // check Ax = A*x
-      SUBR(crsMat_times_mvec)(-st::one(),A_,vec2_,st::one(),vec1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      ASSERT_NEAR(mt::one(),ArrayEqual(vec1_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
-#else
-      ASSERT_NEAR(mt::one(),ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
-#endif
 
       // now check the result: vec3 = jdOp_(vec2)
       jdOp_->apply(-st::one(),jdOp_->A,vec2_,st::one(),vec3_,&ierr_);
@@ -357,7 +292,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 #endif
 
 
-      SUBR(jadaInnerGmresStates_delete)(state, _NV_, &ierr_);
+      SUBR(pgmresStates_delete)(state, _NV_, &ierr_);
       ASSERT_EQ(0,ierr_);
     }
   }
@@ -367,8 +302,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
   {
     if( typeImplemented_ )
     {
-      TYPE(jadaInnerGmresState_ptr) state[_NV_];
-      SUBR(jadaInnerGmresStates_create)(state, _NV_, map_, _MAXBAS_, &ierr_);
+      TYPE(pgmresState_ptr) state[_NV_];
+      SUBR(pgmresStates_create)(state, _NV_, map_, _MAXBAS_, &ierr_);
       ASSERT_EQ(0,ierr_);
 
       int exactGuessAt = std::min(1,_NV_-1);
@@ -387,7 +322,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
           SUBR(mvec_put_value)(x_i,st::zero(),&ierr_);
           ASSERT_EQ(0,ierr_);
         }
-        SUBR(jadaInnerGmresState_reset)(state[i], y_i, x_i, &ierr_);
+        SUBR(pgmresState_reset)(state[i], y_i, x_i, &ierr_);
         ASSERT_EQ(0,ierr_);
       }
       // delete views
@@ -398,7 +333,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
       // call iterate
       int nIter = 0;
-      SUBR(jadaInnerGmresStates_iterate)(jdOp_,state, _NV_, &nIter, &ierr_);
+      SUBR(pgmresStates_iterate)(jdOp_,state, _NV_, &nIter, &ierr_);
       ASSERT_EQ(0,ierr_);
       // only one iteration should be needed!
       ASSERT_EQ(1,nIter);
@@ -412,21 +347,11 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_TRUE(state[i]->ierr == 0 || state[i]->ierr == 1);
       }
 
-      {
-        TYPE(mvec_ptr) AX = NULL;
-        SUBR(jadaOp_view_AX)(jdOp_->A,&AX,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_add_mvec)(st::one(),AX,st::zero(),vec1_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_delete)(AX,&ierr_);
-        ASSERT_EQ(0,ierr_);
-      }
- 
       SUBR(crsMat_times_mvec)(st::one(),A_,vec2_,st::zero(),vec1_,&ierr_);
       ASSERT_EQ(0,ierr_);
       // check the result
       _MT_ resNorm[_NV_];
-      SUBR(jadaInnerGmresStates_updateSol)(state, _NV_, vec2_, vec1_, resNorm, false, &ierr_);
+      SUBR(pgmresStates_updateSol)(state, _NV_, vec2_, resNorm, false, &ierr_);
       ASSERT_EQ(0,ierr_);
 
       // resnorm should be set now
@@ -435,17 +360,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         PHIST_OUT(PHIST_INFO,"resNorm[%d] = %8.4e\n", resNorm[i]);
         ASSERT_TRUE(resNorm[i] >= mt::zero());
       }
-      ASSERT_NEAR(mt::zero(), resNorm[exactGuessAt], 10*VTest::releps());
-
-      // check Ax = A*x
-      SUBR(crsMat_times_mvec)(-st::one(),A_,vec2_,st::one(),vec1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      ASSERT_NEAR(mt::one(),ArrayEqual(vec1_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
-#else
-      ASSERT_NEAR(mt::one(),ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
-#endif
-
+      ASSERT_NEAR(mt::one(), resNorm[exactGuessAt], 10*VTest::releps());
 
       // now check the result: vec3[exactGuessAt] = jdOp_(vec2)[exactGuessAt]
       jdOp_->apply(-st::one(),jdOp_->A,vec2_,st::one(),vec3_,&ierr_);
@@ -456,7 +371,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_NEAR(mt::one(),ArrayEqual(&vec3_vp_[exactGuessAt*lda_],nloc_,1,lda_,stride_,st::zero()),10*VTest::releps());
 #endif
 
-      SUBR(jadaInnerGmresStates_delete)(state, _NV_, &ierr_);
+      SUBR(pgmresStates_delete)(state, _NV_, &ierr_);
       ASSERT_EQ(0,ierr_);
     }
   }
@@ -466,8 +381,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
   {
     if( typeImplemented_ )
     {
-      TYPE(jadaInnerGmresState_ptr) state[_NV_];
-      SUBR(jadaInnerGmresStates_create)(state, _NV_, map_, _MAXBAS_, &ierr_);
+      TYPE(pgmresState_ptr) state[_NV_];
+      SUBR(pgmresStates_create)(state, _NV_, map_, _MAXBAS_, &ierr_);
       ASSERT_EQ(0,ierr_);
 
       // setup system with y = 0.3*jdOp^2(x) - 0.9*jdOp(x)
@@ -494,7 +409,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         SUBR(mvec_view_block)(vec3_,&y_i,i,i,&ierr_);
         ASSERT_EQ(0,ierr_);
 
-        SUBR(jadaInnerGmresState_reset)(state[i], y_i, x_i, &ierr_);
+        SUBR(pgmresState_reset)(state[i], y_i, x_i, &ierr_);
         ASSERT_EQ(0,ierr_);
 
         state[i]->tol = 100*VTest::releps();
@@ -516,7 +431,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
       // call iterate
       int nIter = 0;
-      SUBR(jadaInnerGmresStates_iterate)(jdOp_,state, _NV_, &nIter, &ierr_);
+      SUBR(pgmresStates_iterate)(jdOp_,state, _NV_, &nIter, &ierr_);
       ASSERT_TRUE(ierr_ == 0 || ierr_ == 1);
       for(int i = 0; i < _NV_; i++)
       {
@@ -524,31 +439,12 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(nIter,state[i]->totalIter);
       }
 
-      {
-        TYPE(mvec_ptr) AX = NULL;
-        SUBR(jadaOp_view_AX)(jdOp_->A,&AX,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_add_mvec)(st::one(),AX,st::zero(),vec1_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_delete)(AX,&ierr_);
-        ASSERT_EQ(0,ierr_);
-      }
- 
       SUBR(crsMat_times_mvec)(st::one(),A_,vec2_,st::zero(),vec1_,&ierr_);
       ASSERT_EQ(0,ierr_);
       // check the result (we have given the solution as initial guess!)
       _MT_ resNorm[_NV_];
-      SUBR(jadaInnerGmresStates_updateSol)(state, _NV_, vec2_, vec1_, resNorm, false, &ierr_);
+      SUBR(pgmresStates_updateSol)(state, _NV_, vec2_, resNorm, false, &ierr_);
       ASSERT_EQ(0,ierr_);
-
-      // check Ax = A*x
-      SUBR(crsMat_times_mvec)(-st::one(),A_,vec2_,st::one(),vec1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      ASSERT_NEAR(mt::one(),ArrayEqual(vec1_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
-#else
-      ASSERT_NEAR(mt::one(),ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
-#endif
 
       // now check the result: vec3 = jdOp_(vec2)
       jdOp_->apply(-st::one(),jdOp_->A,vec2_,st::one(),vec3_,&ierr_);
@@ -568,7 +464,158 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 //#endif
 
 
-      SUBR(jadaInnerGmresStates_delete)(state, _NV_, &ierr_);
+      SUBR(pgmresStates_delete)(state, _NV_, &ierr_);
+      ASSERT_EQ(0,ierr_);
+    }
+  }
+
+
+  TEST_F(CLASSNAME, iterate_with_restart)
+  {
+    if( typeImplemented_ )
+    {
+      TYPE(pgmresState_ptr) state[_NV_];
+      SUBR(pgmresStates_create)(state, _NV_, map_, _MAXBAS_, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // setup system with y = 0.3*jdOp^2(x) - 0.9*jdOp(x)
+      {
+        TYPE(mvec_ptr) tmp;
+        SUBR(mvec_create)(&tmp,map_,_NV_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+
+        SUBR(mvec_add_mvec)(st::one(),vec3_,st::zero(),tmp,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        jdOp_->apply((_ST_)0.3*st::one(),jdOp_->A,tmp,(_ST_)-0.9*st::one(),vec3_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+
+        SUBR(mvec_delete)(tmp,&ierr_);
+        ASSERT_EQ(0,ierr_);
+      }
+
+      TYPE(mvec_ptr) x_i = NULL;
+      TYPE(mvec_ptr) y_i = NULL;
+      for(int i = 0; i < _NV_; i++)
+      {
+        SUBR(mvec_view_block)(vec2_,&x_i,i,i,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_view_block)(vec3_,&y_i,i,i,&ierr_);
+        ASSERT_EQ(0,ierr_);
+
+        SUBR(pgmresState_reset)(state[i], y_i, x_i, &ierr_);
+        ASSERT_EQ(0,ierr_);
+
+        state[i]->tol = 100*VTest::releps();
+      }
+
+      // calculate initial residual norm
+      SUBR(mvec_add_mvec)(st::one(),vec3_,st::zero(),vec1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      jdOp_->apply(-st::one(),jdOp_->A,vec2_,st::one(),vec1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      // calculate the residual norm
+      _MT_ initialResNorm[_NV_];
+      SUBR(mvec_norm2)(vec1_,initialResNorm,&ierr_);
+
+
+      // norm for later
+      _MT_ resNorm[_NV_];
+      for(int i = 0; i < _NV_; i++)
+        resNorm[i] = -mt::one();
+      // original sigma for later
+      _ST_ origSigma[_NV_];
+      for(int i = 0; i < _NV_; i++)
+        origSigma[i] = sigma_[i];
+
+      // call iterate
+      int nIter = 0;
+      int numSys = _NV_;
+      do
+      {
+        SUBR(pgmresStates_iterate)(jdOp_,state, _NV_, &nIter, &ierr_);
+        ASSERT_TRUE(ierr_ == 0 || ierr_ == 1);
+
+        // check if any converged or needs to be restarted
+        for(int i = 0; i < numSys; i++)
+        {
+          // update solution
+          if( state[i]->ierr == 0 || state[i]->ierr == 2 )
+          {
+            int id = state[i]->id;
+            SUBR(mvec_view_block)(vec2_, &x_i, id, id, &ierr_);
+            ASSERT_EQ(0,ierr_);
+            SUBR(pgmresStates_updateSol)(&state[i], 1, x_i, &resNorm[id], false, &ierr_);
+            ASSERT_EQ(0,ierr_);
+          }
+
+          // explicitly restart
+          if( state[i]->ierr == 2 )
+          {
+            int id = state[i]->id;
+            SUBR(mvec_view_block)(vec3_,&y_i,id,id,&ierr_);
+            ASSERT_EQ(0,ierr_);
+            SUBR(pgmresState_reset)(state[i], y_i, x_i, &ierr_);
+            ASSERT_EQ(0,ierr_);
+          }
+        }
+
+        // move converged systems to the end of the state array
+        int nConverged = 0;
+        int nUnconverged = 0;
+        TYPE(pgmresState_ptr) convergedState[_NV_];
+        TYPE(pgmresState_ptr) unconvergedState[_NV_];
+        for(int i = 0; i < _NV_; i++)
+        {
+          if( state[i]->ierr == 0 )
+            convergedState[nConverged++] = state[i];
+          else
+            unconvergedState[nUnconverged++] = state[i];
+        }
+        for(int i = 0; i < nUnconverged; i++)
+          state[i] = unconvergedState[i];
+        for(int i = 0; i < nConverged; i++)
+          state[i+nUnconverged] = convergedState[i];
+
+        if( nUnconverged > 0 )
+        {
+          // setup new jada op
+          SUBR(jadaOp_delete)(jdOp_,&ierr_);
+          ASSERT_EQ(0,ierr_);
+          for(int i = 0; i < numSys; i++)
+            sigma_[i] = origSigma[state[i]->id];
+          numSys = nUnconverged;
+          SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,numSys,jdOp_,&ierr_);
+          ASSERT_EQ(0,ierr_);
+        }
+      }
+      while(ierr_ == 1 && nIter < 200 && numSys > 0);
+
+
+      // now check the result: vec3 = jdOp_(vec2)
+      SUBR(mvec_add_mvec)(-st::one(),vec1_,st::one(),vec3_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      // calculate the residual norm
+      _MT_ explicitResNorm[_NV_];
+      SUBR(mvec_norm2)(vec3_,explicitResNorm,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      for(int i = 0; i < _NV_; i++)
+      {
+        ASSERT_NEAR(explicitResNorm[i]/initialResNorm[i], resNorm[i], 100*VTest::releps());
+      }
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+      ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),1000*VTest::releps());
+#else
+      ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()),1000*VTest::releps());
+#endif
+
+
+      SUBR(pgmresStates_delete)(state, _NV_, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // delete views
+      SUBR(mvec_delete)(x_i,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_delete)(y_i,&ierr_);
       ASSERT_EQ(0,ierr_);
     }
   }

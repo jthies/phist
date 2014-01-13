@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.10)
 
 # If the user specifies -DCMAKE_BUILD_TYPE on the command line, take their definition
 # and dump it in the cache along with proper documentation, otherwise set CMAKE_BUILD_TYPE
@@ -49,12 +49,20 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   set (CMAKE_C_FLAGS "-fopenmp -std=c99")
   set (CMAKE_C_FLAGS_RELEASE "-O2 -fopenmp")
   set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g -fopenmp")
-  set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+  if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
+    set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+  else ()
+    set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+  endif ()
 
   set (CMAKE_CXX_FLAGS "-fopenmp")
   set (CMAKE_CXX_FLAGS_RELEASE "-O2 -fopenmp")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -fopenmp")
-  set (CMAKE_CXX_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+  if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
+    set (CMAKE_CXX_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+  else ()
+    set (CMAKE_CXX_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+  endif ()
 
   set (CMAKE_Fortran_FLAGS "-fopenmp -cpp")
   set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -Ofast -fopenmp -cpp")
@@ -171,18 +179,15 @@ set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.c
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp)
 #                       ${PROJECT_SOURCE_DIR}/src/core/phist_taskbuf.c)
-set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_lanczos.cpp
-                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
-                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_gmres.cpp
+set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_pgmres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_bgmres.cpp)
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.c
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.c
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_schur_decomp.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_blockjada.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejada.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaInnerGmres.cpp)
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp)
 
 
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB})

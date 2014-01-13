@@ -200,7 +200,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   if (arno)
   {
     PHIST_SOUT(1,"%d steps of Arnoldi as start-up\n",minBas);
-    PHIST_CHK_IERR(SUBR(simple_arnoldi)(A_op,NULL,v0,Vv,NULL,H0,minBas,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(simple_arnoldi)(A_op,NULL,v0,Vv,NULL,NULL,H0,minBas,ierr),*ierr);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
     PHIST_DEB("initial H (by Arnoldi)\n");

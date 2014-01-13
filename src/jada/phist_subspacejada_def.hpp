@@ -45,7 +45,7 @@
 #include "phist_jadaOp.h"
 #include "phist_simple_arnoldi.h"
 
-#include "phist_jadaInnerGmres.h"
+#include "phist_pgmres.h"
 
 #include "phist_gen_s.h"
 #endif
@@ -122,7 +122,9 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&V_,     A_op->domain_map, maxBase,        ierr), *ierr);
   // TODO: remove Vtmp
+#ifdef TESTING
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&Vtmp_,  A_op->domain_map, maxBase,                ierr), *ierr);
+#endif
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&AV_,    A_op->range_map,  maxBase,        	      ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&t_,     A_op->domain_map, nEig_,                 ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&res,    A_op->range_map,  nEig_,                 ierr), *ierr);
@@ -185,31 +187,35 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
 
   //------------------------------- initialize GMRES solver ------------------------
-  TYPE(jadaInnerGmresState_ptr) *gmresState = new TYPE(jadaInnerGmresState_ptr)[blockDim];
+  TYPE(pgmresState_ptr) *gmresState = new TYPE(pgmresState_ptr)[blockDim];
   _MT_ *gmresResNorm = new _MT_[blockDim];
   int nTotalGmresIter = 0;
-  PHIST_CHK_IERR(SUBR( jadaInnerGmresStates_create ) (gmresState, blockDim, A_op->domain_map, 11, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( pgmresStates_create ) (gmresState, blockDim, A_op->domain_map, 26, ierr), *ierr);
+  _MT_ *innerTol = new _MT_[nEig_];
+  for(int i = 0; i < nEig_; i++)
+    innerTol[i] = mt::one();
+  _MT_ *lastOuterRes = new _MT_ [nEig_];
+  for(int i = 0; i < nEig_; i++)
+    lastOuterRes[i] = 0;
 
   //------------------------------- initialize subspace etc ------------------------
   // run arnoldi
   nV = minBase;
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     0,      minBase,  0,     nV-1,      ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                       0,     nV,        ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                      0,     nV,        ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                      0,     nV,        ierr), *ierr);
 
   //TODO B_op in arnoldi
   // calculates A*V(:,1:m) = V(:,1:m+1)*H(1:m+1,1:m)
-  PHIST_CHK_IERR(SUBR( simple_arnoldi ) (A_op, B_op, v0, V, BV, H, nV, ierr), *ierr);
-
-  // calculate AV from V,H
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                      0,     nV-1,      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), V, H,  st::zero(), AV, ierr), *ierr);
+  // also outputs A*V (DON'T recalculate it from V*H, because this may not be accurate enough!)
+  PHIST_CHK_IERR(SUBR( simple_arnoldi ) (A_op, B_op, v0, V, AV, BV, H, nV, ierr), *ierr);
 
   // calculate H and setup V, BV
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                       0,     nV-1,      ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                      0,     nV-1,      ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, 		&BV,                      0,     nV-1,      ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  		&H,     0,      nV-1,     0,     nV-1,      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), V, AV, st::zero(), H,  ierr), *ierr);
 
 
 
@@ -288,27 +294,50 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     // update views
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0,     nV-1,      0,             nV-1,      ierr), *ierr);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,             nV-1,      ierr), *ierr);
-
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Qq_H,0,     nV-1,      nConvergedEig, nEig_-1,   ierr), *ierr);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H,0,     nEig_-1,   nConvergedEig, nEig_-1,   ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( sdMat_set_block  ) (R, Rr_H, 0, nEig_-1, nConvergedEig, nEig_-1, ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H, nConvergedEig,     nEig_-1,   nConvergedEig, nEig_-1,   ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q,   &Qq,                    nConvergedEig, nEig_-1,   ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ,  &BQq,                   nConvergedEig, nEig_-1,   ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res, &t_res,                 nConvergedEig, nEig_-1,   ierr), *ierr);
 
     // update approximate Schur form of A (keeping the already computed part locked)
-    // and residual
     PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), V,    Qq_H, st::zero(), Qq,  ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_set_block  ) (R, Rr_H, 0, nEig_-1, nConvergedEig, nEig_-1, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), AV,   Qq_H, st::zero(), t_res, ierr), *ierr);
     if( B_op != NULL )
     {
       PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BV,   Qq_H, st::zero(), BQq,  ierr), *ierr);
     }
     // overwrite res with the residual: -res = -(Aq - Bqr) = + BQq*r - res
-    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BQq,   Rr_H,    -st::one(), t_res, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BQ,   Rr_H,    -st::one(), t_res, ierr), *ierr);
     // calculate norm of the residual
     PHIST_CHK_IERR(SUBR( mvec_norm2 ) (t_res, resNorm+nConvergedEig, ierr), *ierr);
+#ifdef TESTING
+{
+  // check that the residual is orthogonal to Q (should be by construction!)
+  PHIST_CHK_IERR( SUBR( sdMat_view_block ) (Htmp_, &Htmp, 0, nEig_-1, nConvergedEig, nEig_-1, ierr), *ierr);
+  PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (st::one(), Q, t_res, st::zero(), Htmp, ierr), *ierr);
+  _MT_ equalEps = std::abs(Htmp_raw[0]);
+  for(int i = 0; i < nEig_; i++)
+    for(int j = nConvergedEig; j < nEig_; j++)
+      equalEps = std::max(equalEps, std::abs(Htmp_raw[i*ldaHtmp+j]));
+  PHIST_OUT(PHIST_INFO, "Res orthogonality wrt. Q: %e\n", equalEps);
+  // calculate explicit residual
+  // AQ - BQR
+  PHIST_CHK_IERR( SUBR( mvec_view_block ) (Vtmp_, &Vtmp, 0, nEig_-1, ierr), *ierr);
+  PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Q, st::zero(), Vtmp, ierr), *ierr);
+  PHIST_CHK_IERR( SUBR( mvec_times_sdMat ) (-st::one(), BQ, R, st::one(), Vtmp, ierr), *ierr);
+  _MT_ expRes[nEig_];
+  PHIST_CHK_IERR( SUBR( mvec_norm2 )(Vtmp, expRes, ierr), *ierr);
+  PHIST_SOUT(PHIST_INFO, "est. residual: ");
+  for(int i = 0; i < nEig_; i++)
+    PHIST_SOUT(PHIST_INFO, "\t%8.4e", resNorm[i]);
+  PHIST_SOUT(PHIST_INFO, "\nexp. residual: ");
+  for(int i = 0; i < nEig_; i++)
+    PHIST_SOUT(PHIST_INFO, "\t%8.4e", expRes[i]);
+  PHIST_SOUT(PHIST_INFO, "\n");
+}
+#endif
 
 
     // reorder multiple eigenvalues in schur form by residual norm
@@ -322,14 +351,63 @@ PHIST_SOUT(PHIST_INFO,"resPermutation: ");
 for(int i = 0; i < nEig_; i++)
   PHIST_SOUT(PHIST_INFO,"\t%d", resPermutation[i]);
 PHIST_SOUT(PHIST_INFO,"\n");
+    // check if we need to adapt Q to the new ordering (e.g. there were duplicate eigenvalues not sorted by their residual norm)
+    // res is handled implicitly later
+    for(int i = 0; i < nEig_; i++)
+    {
+      if( resPermutation[i] != i )
+      {
+        // setup permutation matrix
+        PHIST_CHK_IERR(SUBR(sdMat_view_block)(Htmp_, &Htmp, i, nEig_-1, i, nEig_-1, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR(sdMat_put_value)(Htmp, st::zero(), ierr), *ierr);
+        for(int j = i; j < nEig_; j++)
+        {
+          int j_ = resPermutation[j];
+          Htmp_raw[j_+j*ldaHtmp] = st::one();
+        }
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(Q, &Qq, i, nEig_-1, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(Qq, Htmp, ierr), *ierr);
+        if( B_op != NULL )
+        {
+          PHIST_CHK_IERR(SUBR(mvec_view_block)(BQ, &BQq, i, nEig_-1, ierr), *ierr);
+          PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(BQq, Htmp, ierr), *ierr);
+        }
+        break;
+      }
+    }
+#ifdef TESTING
+{
+  // check that Q is in correct order
+  PHIST_CHK_IERR(A_op->apply(st::one(), A_op->A, Q, st::zero(), t_, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(), BQ, R, st::one(), t_, ierr), *ierr);
+  _MT_ reorderedResNorm[nEig_];
+  PHIST_CHK_IERR(SUBR(mvec_norm2)(t_, reorderedResNorm, ierr), *ierr);
+  PHIST_SOUT(PHIST_INFO,"est. residual norm after reordering:");
+  for(int i = 0; i < nEig_; i++)
+    PHIST_SOUT(PHIST_INFO,"\t%8.4e",resNorm[i]);
+  PHIST_SOUT(PHIST_INFO,"\nexp. residual norm after reordering:");
+  bool err = false;
+  for(int i = 0; i < nEig_; i++)
+  {
+    PHIST_SOUT(PHIST_INFO,"\t%8.4e",reorderedResNorm[i]);
+    // we don't want it to abort in case of some inaccuracies...
+    if( mt::abs(reorderedResNorm[i] - resNorm[i]) > mt::sqrt(tol) )
+      err = true;
+  }
+  PHIST_SOUT(PHIST_INFO,"\n");
+  PHIST_CHK_IERR( *ierr = err ? -1 : 0, *ierr);
+}
+#endif
 
     // check for converged eigenvalues
     int nNewlyConvergedEig = 0;
     for(int i = nConvergedEig; i < nEig; i++)
     {
       PHIST_SOUT(PHIST_INFO,"In iteration %d: Current approximation for eigenvalue %d is %16.8g%+16.8gi with residuum %e\n", *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]), resNorm[i]);
-      if( resNorm[i] <= tol && i == nConvergedEig+nNewlyConvergedEig ) // only consider eigenvalues from the beginning
+      if( resNorm[i] <= tol && i == nConvergedEig+nNewlyConvergedEig )
         nNewlyConvergedEig++;
+      else if( blockDim == 1 )
+        break;
     }
 
     if( nNewlyConvergedEig > 0 )
@@ -359,6 +437,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
     // setup matrix of shifts and residuals for the correction equation
     int k_ = 0; // 0:k_ vectors of Q used for the orthogonal projection in the correction equation
     int k = 0;  // is always <= blockDim!
+    std::vector<int> selectedRes(blockDim);
     for(int i = 0; i < nEig_ && k < blockDim; i++)
     {
 #ifndef IS_COMPLEX
@@ -370,7 +449,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       // only allow i >= nEig for multiple eigenvalues
       if( i >= nEig )
       {
-        if( ct::abs(ev_H[i] - ev_H[i-1]) > sqrt(tol) )
+        if( ct::abs(ev_H[i] - ev_H[i-1]) > mt::sqrt(tol) )
           break;
       }
 
@@ -391,34 +470,19 @@ PHIST_SOUT(PHIST_INFO,"\n");
 #endif
         }
 
-        // copy residual
-        if( resPermutation[k] != resPermutation[i] )
-        {
-          resPermutation[k] = resPermutation[i];
-          //PHIST_CHK_IERR(SUBR( mvec_view_block ) (res, &t_res, k, k, ierr), *ierr);
-          //PHIST_CHK_IERR(SUBR( mvec_get_block  ) (res, t_res,  i, i, ierr), *ierr);
-        }
+        // select the correct (unpermuted) residual
+        selectedRes[k] = resPermutation[i];
         k++;
       }
     }
-PHIST_SOUT(PHIST_INFO,"resPermutation: ");
-for(int i = 0; i < nEig_; i++)
-  PHIST_SOUT(PHIST_INFO,"\t%d", resPermutation[i]);
+    // deflate with more vectors if there are multiple, partly converged eigenvalues
+    while( k_ < nEig_-1 && resNorm[k_] < mt::sqrt(tol) && ct::abs(ev_H[k_]-ev_H[k_-1]) < mt::sqrt(tol) )
+      k_++;
+
+PHIST_SOUT(PHIST_INFO,"selectedRes: ");
+for(int i = 0; i < k; i++)
+  PHIST_SOUT(PHIST_INFO,"\t%d", selectedRes[i]);
 PHIST_SOUT(PHIST_INFO,"\n");
-// TODO: respect resPermutation? (perhaps it works out of the bugs, because we deflate with more vectors than necessary...)
-    // we should also project out other schur vectors if they have already (nearly) converged
-    for(int i = k_+1; i < nEig_; i++)
-    {
-      if( resNorm[i] <= sqrt(tol) )
-      {
-        if( i != k_ )
-        {
-          PHIST_CHK_IERR(SUBR( mvec_view_block ) (Q, &t_res, k_, k_, ierr), *ierr);
-          PHIST_CHK_IERR(SUBR( mvec_get_block  ) (Q, t_res,  i,  i,  ierr), *ierr);
-        }
-        k_++;
-      }
-    }
 
 
     // shrink search space if necessary
@@ -442,14 +506,6 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
       nV = minBase;
     }
-//#ifndef JADA_INNER_GMRES_FIXED
-//int originalBlockDim = k;
-//if( k < blockDim )
-//{
-  //PHIST_SOUT(PHIST_WARNING,"k < blockDim not supported yet!\n");
-  //k = blockDim;
-//}
-//#endif
 
     // calculate corrections
     // setup jadaOp
@@ -466,21 +522,23 @@ PHIST_SOUT(PHIST_INFO,"\n");
     PHIST_CHK_IERR(SUBR( mvec_put_value )(t, st::zero(), ierr), *ierr);
     for(int i = 0; i < k; i++)
     {
-      int i_ = resPermutation[i];
+      int i_ = selectedRes[i];
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,&t, i,i, ierr), *ierr);
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res,&t_res, i_,i_, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( jadaInnerGmresState_reset ) (gmresState[i], t_res, t, ierr), *ierr);
-      gmresState[i]->tol = mt::zero();
+      PHIST_CHK_IERR(SUBR( pgmresState_reset ) (gmresState[i], t_res, t, ierr), *ierr);
+      if( resNorm[nConvergedEig+i] > 4*lastOuterRes[nConvergedEig+i] )
+        innerTol[nConvergedEig+i] = 1.;
+      innerTol[nConvergedEig+i] *= 0.5;
+      lastOuterRes[nConvergedEig+i] = resNorm[nConvergedEig+i];
+      gmresState[i]->tol = innerTol[nConvergedEig+i];
+      PHIST_SOUT(PHIST_INFO, "gmres-tol: %8.4e\n",gmresState[i]->tol);
     }
-    PHIST_CHK_NEG_IERR(SUBR( jadaInnerGmresStates_iterate ) (&jdOp, gmresState, k, &nTotalGmresIter, ierr), *ierr);
-//#ifndef JADA_INNER_GMRES_FIXED
-  //k = originalBlockDim;
-//#endif
+    PHIST_CHK_NEG_IERR(SUBR( pgmresStates_iterate ) (&jdOp, gmresState, k, &nTotalGmresIter, ierr), *ierr);
     // get solution and reuse res for At
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,&Vv, 0,k-1, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res,&AVv, 0,k-1, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_put_value )(AVv, st::zero(), ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( jadaInnerGmresStates_updateSol ) (gmresState, k, Vv, AVv, gmresResNorm, true, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( pgmresStates_updateSol ) (gmresState, k, Vv, gmresResNorm, true, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( jadaOp_delete ) (&jdOp, ierr), *ierr);
 
     // enlarge search space
@@ -495,36 +553,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
     int randomVecs = *ierr;
     // TODO: only take non-random vector if *ierr > 0
     // calculate AVv, BVv
-    if( randomVecs == 0 )
-    {
-      // reuse data from jadaInnerGmres
-      // Vv*Rr_H = t - V*R_H
-      // => AVv*Rr_H = At - AV*R_H
-      PHIST_CHK_IERR(SUBR(  mvec_times_sdMat ) (-st::one(), AV,     R_H,  st::one(),  AVv, ierr), *ierr);
-      _ST_* AVv_raw;
-      lidx_t ldAVv;
-      PHIST_CHK_IERR(SUBR(mvec_extract_view)(AVv, &AVv_raw, &ldAVv, ierr), *ierr);
-      int nlocal;
-      PHIST_CHK_IERR(phist_map_get_local_length(A_op->range_map, &nlocal, ierr), *ierr);
-      _ST_ alpha = st::one();
-#ifdef IS_COMPLEX
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      PHIST_CHK_IERR( PREFIX(TRSM) ("L","U","T","N",&k,&nlocal,(blas_cmplx_t*)&alpha,(blas_cmplx_t*)R_H_raw+nV+nV*ldaR_H,&ldaR_H,(blas_cmplx_t*)AVv_raw,&ldAVv,ierr),*ierr);
-#else
-      PHIST_CHK_IERR( PREFIX(TRSM) ("R","U","N","N",&nlocal,&k,(blas_cmplx_t*)&alpha,(blas_cmplx_t*)R_H_raw+nV+nV*ldaR_H,&ldaR_H,(blas_cmplx_t*)AVv_raw,&ldAVv,ierr),*ierr);
-#endif
-#else
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      PHIST_CHK_IERR( PREFIX(TRSM) ("L","U","T","N",&k,&nlocal,&alpha,R_H_raw+nV+nV*ldaR_H,&ldaR_H,AVv_raw,&ldAVv,ierr),*ierr);
-#else
-      PHIST_CHK_IERR( PREFIX(TRSM) ("R","U","N","N",&nlocal,&k,&alpha,R_H_raw+nV+nV*ldaR_H,&ldaR_H,AVv_raw,&ldAVv,ierr),*ierr);
-#endif
-#endif
-    }
-    else
-    {
-      PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vv, st::zero(), AVv, ierr), *ierr);
-    }
+    PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vv, st::zero(), AVv, ierr), *ierr);
     if( B_op != NULL )
     {
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BVv,                   nV,    nV+k-1,    ierr), *ierr);
@@ -550,7 +579,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
 
   //------------------------------- delete vectors and matrices --------------------
-  PHIST_CHK_IERR(SUBR( jadaInnerGmresStates_delete ) (gmresState, blockDim, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( pgmresStates_delete ) (gmresState, blockDim, ierr), *ierr);
   delete[] gmresState;
   delete[] gmresResNorm;
 

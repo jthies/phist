@@ -1,5 +1,5 @@
 // create new state objects. We just get an array of (NULL-)pointers
-void SUBR(jadaInnerGmresStates_create)(TYPE(jadaInnerGmresState_ptr) state[], int numSys,
+void SUBR(pgmresStates_create)(TYPE(pgmresState_ptr) state[], int numSys,
         const_map_ptr_t map, int maxBas,int* ierr)
 {
 #include "phist_std_typedefs.hpp"
@@ -10,7 +10,7 @@ void SUBR(jadaInnerGmresStates_create)(TYPE(jadaInnerGmresState_ptr) state[], in
   PHIST_CHK_IERR(phist_map_get_comm(map,&comm,ierr),*ierr);
 
   // setup a "queue" of mvecs to use later
-  int totally_needed_mvecs = 2*(maxBas+2)*numSys;
+  int totally_needed_mvecs = (maxBas+2)*numSys;
   std::vector<TYPE(mvec_ptr)> *unused_mvecs = new std::vector<TYPE(mvec_ptr)>();
   for(int i = 0; i < totally_needed_mvecs; i++)
   {
@@ -22,7 +22,7 @@ void SUBR(jadaInnerGmresStates_create)(TYPE(jadaInnerGmresState_ptr) state[], in
   
   for (int i=0;i<numSys;i++)
   {
-    state[i] = new TYPE(jadaInnerGmresState);
+    state[i] = new TYPE(pgmresState);
     state[i]->id=i;
     // set some default options
     state[i]->tol=0.5; // typical starting tol for JaDa inner iterations...
@@ -31,7 +31,6 @@ void SUBR(jadaInnerGmresStates_create)(TYPE(jadaInnerGmresState_ptr) state[], in
     // we allow one additional vector to be stored in the basis so that
     // we can have V(:,i+1) = A*V(:,i) temporarily
     state[i]->V_ = new TYPE(mvec_ptr)[maxBas+1];
-    state[i]->AV_ = new TYPE(mvec_ptr)[maxBas+1];
     state[i]->glob_unused_mvecs_ = (void*)unused_mvecs;
     state[i]->glob_used_mvecs_ = (void*)used_mvecs;
     PHIST_CHK_IERR(SUBR(sdMat_create)(&state[i]->H_, maxBas+1, maxBas, comm,ierr),*ierr);
@@ -47,8 +46,8 @@ void SUBR(jadaInnerGmresStates_create)(TYPE(jadaInnerGmresState_ptr) state[], in
 }
 
 
-//! delete jadaInnerGmresState object
-void SUBR(jadaInnerGmresStates_delete)(TYPE(jadaInnerGmresState_ptr) state[], int numSys, int* ierr)
+//! delete pgmresState object
+void SUBR(pgmresStates_delete)(TYPE(pgmresState_ptr) state[], int numSys, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
@@ -72,7 +71,6 @@ void SUBR(jadaInnerGmresStates_delete)(TYPE(jadaInnerGmresState_ptr) state[], in
     PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->x0_,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->b_,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_delete)(state[i]->H_,ierr),*ierr);
-    delete [] state[i]->AV_;
     delete [] state[i]->V_;
     delete [] state[i]->cs_;
     delete [] state[i]->sn_;
@@ -81,8 +79,8 @@ void SUBR(jadaInnerGmresStates_delete)(TYPE(jadaInnerGmresState_ptr) state[], in
   }
 }
 
-// reset jadaInnerGmres state.
-void SUBR(jadaInnerGmresState_reset)(TYPE(jadaInnerGmresState_ptr) S, TYPE(const_mvec_ptr) b,
+// reset pgmres state.
+void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b,
         TYPE(const_mvec_ptr) x0,int *ierr)
 {
 #include "phist_std_typedefs.hpp"  
@@ -91,7 +89,7 @@ void SUBR(jadaInnerGmresState_reset)(TYPE(jadaInnerGmresState_ptr) S, TYPE(const
   
   if (b==NULL && S->normR0_ == -mt::one())
   {
-    PHIST_OUT(PHIST_ERROR,"on the first call to jadaInnerGmresState_reset you *must* provide the RHS vector");
+    PHIST_OUT(PHIST_ERROR,"on the first call to pgmresState_reset you *must* provide the RHS vector");
     *ierr=-1;
     return;
   }
@@ -114,7 +112,7 @@ void SUBR(jadaInnerGmresState_reset)(TYPE(jadaInnerGmresState_ptr) S, TYPE(const
 }
 
 
-void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, TYPE(mvec_ptr) Ax, _MT_* resNorm, bool scaleSolutionToOne, int* ierr)
+void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, _MT_* resNorm, bool scaleSolutionToOne, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
@@ -145,17 +143,19 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
   if( sharedCurDimV == 1 )
   {
     for(int i = 0; i < numSys; i++)
-      resNorm[i] = S_array[i]->normR0_;
+      resNorm[i] = mt::one();
     return;
   }
 
   _ST_ *y = new _ST_[numSys*S_array[0]->maxBas_];
+  for(int i = 0; i < numSys*S_array[0]->maxBas_; i++)
+    y[i] = st::zero();
   int ldy = numSys;
 
   // calculate y by solving the triangular systems
   for (int i=0;i<numSys;i++)
   {
-    TYPE(const_jadaInnerGmresState_ptr) S = S_array[i];
+    TYPE(const_pgmresState_ptr) S = S_array[i];
     ST *H_raw=NULL;
     lidx_t ldH;
 
@@ -168,7 +168,7 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
     }
     if( m == 0 )
     {
-      resNorm[i] = S->normR0_;
+      resNorm[i] = mt::one();
       continue;
     }
     resNorm[i] = S->normR_/S->normR0_;
@@ -176,10 +176,10 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S->H_,&H_raw,&ldH,ierr),*ierr);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
-    PHIST_SOUT(PHIST_DEBUG,"jadaInnerGmres_updateSol[%d], curDimV=%d, H=\n",i,S->curDimV_);
+    PHIST_SOUT(PHIST_DEBUG,"pgmres_updateSol[%d], curDimV=%d, H=\n",i,S->curDimV_);
     {
       TYPE(sdMat_ptr) H = NULL;
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(S->H_, &H, 0, m+1, 0, m, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(S->H_, &H, 0, m-1, 0, m-1, ierr), *ierr);
       PHIST_CHK_IERR(SUBR(sdMat_print)(H,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(sdMat_delete)(H,ierr),*ierr);
     }
@@ -197,6 +197,31 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
     // set y to rs
     for(int j = 0; j < m; j++)
       y[i+ldy*j] = S->rs_[j];
+#ifdef TESTING
+{
+  // setup e-vector
+  _ST_ e[m];
+  e[0] = st::one();
+  for(int j = 1; j < m+1; j++)
+    e[j] = st::zero();
+  // apply givens rotations
+  for(int j = 0; j < m-1; j++)
+  {
+    _ST_ tmp = S->cs_[j] * e[j]  +  S->sn_[j] * e[j+1];
+    e[j+1] = -st::conj(S->sn_[j]) * e[j]  +  S->cs_[j] * e[j+1];
+    e[j] = tmp;
+  }
+  // check that y is givens_rotations applied to e
+  PHIST_SOUT(PHIST_INFO, "rs/norm0:");
+  for(int j = 0; j < m; j++)
+    PHIST_SOUT(PHIST_INFO, "\t%8.4e + i%8.4e", st::real(y[i+ldy*j])/S->normR0_, st::imag(y[i+ldy*j])/S->normR0_);
+  PHIST_SOUT(PHIST_INFO, "\nabs(rs(j)/norm0)):%8.4e", st::abs(y[i+ldy*(m-1)])/S->normR0_);
+  PHIST_SOUT(PHIST_INFO, "\nrot(e_1):");
+  for(int j = 0; j < m; j++)
+    PHIST_SOUT(PHIST_INFO, "\t%8.4e + i%8.4e", st::real(e[j]), st::imag(e[j]));
+  PHIST_SOUT(PHIST_INFO, "\nabs(rot(e_1)):%8.4e\n", st::abs(e[m-1]));
+}
+#endif
     PHIST_CHK_IERR(PREFIX(TRSV)(uplo,trans,diag,&m,
                                         (st::blas_scalar_t*)H_raw,&ldH,
                                         (st::blas_scalar_t*)&y[i], &ldy, ierr),*ierr);
@@ -222,23 +247,18 @@ void SUBR(jadaInnerGmresStates_updateSol)(TYPE(jadaInnerGmresState_ptr) S_array[
 
   // add up solution
   TYPE(mvec_ptr) Vj = NULL;
-  for(int j = 0; j < sharedCurDimV-1; j++)
+  for(int j = 0; j < sharedCurDimV; j++)
   {
     PHIST_CHK_IERR(SUBR(mvec_view_block)(S_array[0]->V_[j], &Vj, 0, numSys-1, ierr), *ierr);
     PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&y[ldy*j], Vj, st::one(), x, ierr), *ierr);
-    if( Ax != NULL )
-    {
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(S_array[0]->AV_[j], &Vj, 0, numSys-1, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&y[ldy*j], Vj, st::one(), Ax, ierr), *ierr);
-    }
   }
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vj, ierr), *ierr);
 }
 
 
 // implementation of gmres on several systems simultaneously
-void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
-        TYPE(jadaInnerGmresState_ptr) S[], int numSys,
+void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) jdOp,
+        TYPE(pgmresState_ptr) S[], int numSys,
         int* nIter, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
@@ -330,6 +350,10 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
   }
 #endif
 
+
+  PHIST_SOUT(PHIST_VERBOSE,"GMRES iteration started\n");
+  PHIST_SOUT(PHIST_VERBOSE,"=======================\n");
+
   while( anyConverged == 0 && anyFailed == 0 )
   {
     // we need a new mvec for work_y
@@ -345,21 +369,6 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
 
     //    % apply the jadaOp
     PHIST_CHK_IERR( jdOp->apply (st::one(), jdOp->A, work_x, st::zero(), work_y, ierr), *ierr);
-    PHIST_CHK_IERR( SUBR(jadaOp_view_AX) (jdOp->A, &view_Ax, ierr), *ierr);
-
-    //    % scatter view_Ax
-    // we need storage for Ax, reuse work_x here
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(unused_mvecs->back(), &work_x, 0, numSys-1, ierr), *ierr);
-    for(int i = 0; i < numSys; i++)
-    {
-      int jprev = std::max(S[i]->curDimV_-1,0);
-      S[i]->AV_[jprev] = unused_mvecs->back();
-    }
-    used_mvecs->push_back(unused_mvecs->back());
-    unused_mvecs->pop_back();
-
-    // copy data
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), view_Ax, st::zero(), work_x, ierr), *ierr);
 
     //    % initialize GMRES for (re-)started systems
     for(int i = 0; i < numSys; i++)
@@ -370,7 +379,7 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
       if( j == 0 )
       {
         //    % (re-)start: normalize r_0 = b - A*x_0
-        PHIST_SOUT(PHIST_VERBOSE,"jadaInnerGmres state %d (re-)starts\n",i);
+        PHIST_SOUT(PHIST_VERBOSE,"pgmres state %d (re-)starts\n",i);
 
         // we need b-Ax0 in the first step
         PHIST_CHK_IERR( SUBR(mvec_add_mvec) (st::one(), S[i]->b_, -st::one(), Vj, ierr), *ierr);
@@ -453,6 +462,7 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
       {
         tmp = S[i]->cs_[k]*Hj[k] + S[i]->sn_[k]*Hj[k+1];
         Hj[k+1] = -st::conj(S[i]->sn_[k])*Hj[k] + S[i]->cs_[k]*Hj[k+1];
+        Hj[k] = tmp;
       }
       // new Givens rotation to eliminate H(j+1,j)
 #ifdef IS_COMPLEX
@@ -462,12 +472,12 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
 #endif
 #ifdef TESTING
 {
-  PHIST_OUT(PHIST_VERBOSE,"(Hj[j-1],Hj[j]) = (%8.4e+%8.4ei, %8.4e+%8.4ei)\n", st::real(Hj[j-1]), st::imag(Hj[j-1]),st::real(Hj[j]),st::imag(Hj[j]));
-  PHIST_OUT(PHIST_VERBOSE,"(c,s) = (%8.4e, %8.4e+%8.4ei)\n", S[i]->cs_[j-1],st::real(S[i]->sn_[j-1]),st::imag(S[i]->sn_[j-1]));
-  PHIST_OUT(PHIST_VERBOSE,"r = %8.4e+%8.4ei\n", st::real(tmp),st::imag(tmp));
+  PHIST_OUT(PHIST_VERBOSE,"(Hj[j-1],Hj[j]) = (%8.4e+i%8.4e, %8.4e + i%8.4e)\n", st::real(Hj[j-1]), st::imag(Hj[j-1]),st::real(Hj[j]),st::imag(Hj[j]));
+  PHIST_OUT(PHIST_VERBOSE,"(c,s) = (%8.4e, %8.4e+i%8.4e)\n", S[i]->cs_[j-1],st::real(S[i]->sn_[j-1]),st::imag(S[i]->sn_[j-1]));
+  PHIST_OUT(PHIST_VERBOSE,"r = %8.4e + i%8.4e\n", st::real(tmp),st::imag(tmp));
   _ST_ r_ = S[i]->cs_[j-1]*Hj[j-1] + S[i]->sn_[j-1]*Hj[j];
   _ST_ zero_ = -st::conj(S[i]->sn_[j-1])*Hj[j-1] + S[i]->cs_[j-1]*Hj[j];
-  PHIST_OUT(PHIST_VERBOSE,"(r, 0) = (%8.4e+8.4%ei, %8.4e+8.4%ei)\n", st::real(r_), st::imag(r_), st::real(zero_), st::imag(zero_));
+  PHIST_OUT(PHIST_VERBOSE,"(r, 0) = (%8.4e + i%8.4e, %8.4e+i%8.4e)\n", st::real(r_), st::imag(r_), st::real(zero_), st::imag(zero_));
   PHIST_CHK_IERR(*ierr = (st::abs(r_-tmp) < 1.e-5) ? 0 : -1, *ierr);
   PHIST_CHK_IERR(*ierr = (st::abs(zero_) < 1.e-5) ? 0 : -1, *ierr);
 }
@@ -495,7 +505,7 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
       // check convergence
       MT relres = S[i]->normR_ / S[i]->normR0_;
       MT absres = S[i]->normR_;
-      if( relres < S[i]->tol || absres < S[i]->tol )
+      if( absres < 100*st::eps() || relres < S[i]->tol )
       {
         S[i]->ierr = 0; // mark as converged
         anyConverged++;
@@ -516,8 +526,6 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
 
 
 
-    PHIST_SOUT(PHIST_VERBOSE,"GMRES iteration states\n");
-    PHIST_SOUT(PHIST_VERBOSE,"======================\n");
 #if PHIST_OUTLEV>=PHIST_VERBOSE
     for (int i=0;i<numSys;i++)
     {
@@ -525,11 +533,12 @@ void SUBR(jadaInnerGmresStates_iterate)(TYPE(const_op_ptr) jdOp,
           S[i]->curDimV_-1,S[i]->normR_/S[i]->normR0_,S[i]->normR_);
     }
 #endif
-    PHIST_SOUT(PHIST_VERBOSE,"%d converged, %d failed.\n",anyConverged,anyFailed);
-    PHIST_SOUT(PHIST_VERBOSE,"----------------------\n");
 
     (*nIter)++;
   }
+
+  PHIST_SOUT(PHIST_VERBOSE,"%d converged, %d failed.\n",anyConverged,anyFailed);
+  PHIST_SOUT(PHIST_VERBOSE,"-----------------------\n");
 
   // delete views
   PHIST_CHK_IERR(SUBR(mvec_delete)(work_x, ierr), *ierr);

@@ -138,6 +138,12 @@ void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,    TYPE(const_op_ptr)    B_
   // setup op_ptr function pointers
   jdOp->A     = (const void*)myOp;
   jdOp->apply = (&SUBR(jadaOp_apply));
+
+  // print some useful data
+  PHIST_SOUT(PHIST_INFO, "Created jadaOp with %d projection vectors and shifts ", nvecp);
+  for(int i = 0; i < nvec; i++)
+    PHIST_SOUT(PHIST_INFO, "\t(%8.4e+i%8.4e)", REAL(sigma[i]), IMAG(sigma[i]));
+  PHIST_SOUT(PHIST_INFO, ".\n");
 }
 
 
