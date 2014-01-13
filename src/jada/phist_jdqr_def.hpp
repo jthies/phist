@@ -652,7 +652,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR(mvec_view_block)(X,&Qtil,0,nconv+nv-1,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_set_block)(Qtil,u_ptr,nconv,nconv+nv-1,ierr),*ierr);
     CT actual_shift=theta;
-    if (m<minBas && tol>1.0e-2)
+    if (m<minBas && nrm[0]>1.0e-2)
     {
       PHIST_SOUT(PHIST_VERBOSE,"start-up step with fixed sigma=%f\n",initialShift);
       actual_shift=initialShift; // start-up without Arnoldi
