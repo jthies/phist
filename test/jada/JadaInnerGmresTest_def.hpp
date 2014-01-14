@@ -265,7 +265,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         // all systems did 1 iteration
         ASSERT_EQ(1,state[i]->totalIter);
         // all systems converged
-        ASSERT_EQ(0,state[i]->ierr);
+        ASSERT_EQ(0,state[i]->status);
       }
 
  
@@ -338,13 +338,13 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       // only one iteration should be needed!
       ASSERT_EQ(1,nIter);
       // at least one system converged
-      ASSERT_EQ(0,state[exactGuessAt]->ierr);
+      ASSERT_EQ(0,state[exactGuessAt]->status);
       for(int i = 0; i < _NV_; i++)
       {
         // all systems did 1 iteration
         ASSERT_EQ(1,state[i]->totalIter);
         // other systems may have converged
-        ASSERT_TRUE(state[i]->ierr == 0 || state[i]->ierr == 1);
+        ASSERT_TRUE(state[i]->status == 0 || state[i]->status == 1);
       }
 
       SUBR(crsMat_times_mvec)(st::one(),A_,vec2_,st::zero(),vec1_,&ierr_);
@@ -539,7 +539,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         for(int i = 0; i < numSys; i++)
         {
           // update solution
-          if( state[i]->ierr == 0 || state[i]->ierr == 2 )
+          if( state[i]->status == 0 || state[i]->status == 2 )
           {
             int id = state[i]->id;
             SUBR(mvec_view_block)(vec2_, &x_i, id, id, &ierr_);
@@ -549,7 +549,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
           }
 
           // explicitly restart
-          if( state[i]->ierr == 2 )
+          if( state[i]->status == 2 )
           {
             int id = state[i]->id;
             SUBR(mvec_view_block)(vec3_,&y_i,id,id,&ierr_);
@@ -566,7 +566,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         TYPE(pgmresState_ptr) unconvergedState[_NV_];
         for(int i = 0; i < _NV_; i++)
         {
-          if( state[i]->ierr == 0 )
+          if( state[i]->status == 0 )
             convergedState[nConverged++] = state[i];
           else
             unconvergedState[nUnconverged++] = state[i];

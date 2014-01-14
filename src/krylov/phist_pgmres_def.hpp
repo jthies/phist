@@ -1,179 +1,275 @@
+// small class for a ring buffer for the subspaces
+// TODO: use a real template instead of this "TYPE"-stuff?
+class TYPE(MvecRingBuffer)
+{
+  public:
+    TYPE(MvecRingBuffer)(int size) : mvecs_(size,NULL), mvecs_used_(size,0), lastIndex_(0) {}
+
+    // we can handle failures probably more cleanly if not done in the constructor
+    void create_mvecs(const_map_ptr_t map, int nvecs, int* ierr)
+    {
+      for(int i = 0; i < mvecs_.size(); i++)
+      {
+        PHIST_CHK_IERR(*ierr = (mvecs_[i] != NULL) ? -1 : 0, *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_create ) (&mvecs_[i], map, nvecs, ierr), *ierr);
+      }
+    }
+
+    // must be called before the destructor
+    void delete_mvecs(int *ierr)
+    {
+      for(int i = 0; i < mvecs_.size(); i++)
+      {
+        PHIST_CHK_IERR(SUBR( mvec_delete ) (mvecs_[i], ierr), *ierr);
+        mvecs_[i] = NULL;
+      }
+    }
+
+    ~TYPE(MvecRingBuffer)()
+    {
+      int ierr = 0;
+      // print an error if there are still allocated mvecs
+      // as this could use up all memory quite fast if used multiple times!
+      for(int i = 0; i < mvecs_.size(); i++)
+      {
+        PHIST_CHK_IERR(ierr = (mvecs_[i] != NULL) ? -1 : 0, ierr);
+      }
+    }
+
+    // get vector at index i
+    TYPE(mvec_ptr) at(int i) {return mvecs_.at(i);}
+
+    int size() {return mvecs_.size();}
+
+    // just to make sure no element is used twice
+    void incRef(int i) {mvecs_used_.at(i)++;}
+    void decRef(int i) {mvecs_used_.at(i)--;}
+
+    // get last used index
+    int lastIndex() {return lastIndex_;}
+
+    // get preceeding index
+    int prevIndex(int i, int n = 1) {return (i+size()-n)%size();}
+
+    // get next index and make sure it is unused
+    void getNextUnused(int &nextIndex, int *ierr)
+    {
+      *ierr = 0;
+      nextIndex = (lastIndex_+1)%mvecs_.size();
+      if( mvecs_used_[nextIndex] != 0 )
+      {
+        *ierr = -1;
+        return;
+      }
+      lastIndex_ = nextIndex;
+    }
+
+  private:
+    std::vector<TYPE(mvec_ptr)> mvecs_;
+    std::vector<int> mvecs_used_;
+    int lastIndex_;
+
+    // hide copy constructor etc
+    TYPE(MvecRingBuffer)(const TYPE(MvecRingBuffer)&);
+    const TYPE(MvecRingBuffer)& operator=(const TYPE(MvecRingBuffer)&);
+};
+
+
 // create new state objects. We just get an array of (NULL-)pointers
-void SUBR(pgmresStates_create)(TYPE(pgmresState_ptr) state[], int numSys,
-        const_map_ptr_t map, int maxBas,int* ierr)
+void SUBR(pgmresStates_create)(TYPE(pgmresState_ptr) state[], int numSys, const_map_ptr_t map, int maxBas,int* ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  if (numSys==0) return;
+
+  if (numSys <= 0)
+    return;
+
   const_comm_ptr_t comm;
   PHIST_CHK_IERR(phist_map_get_comm(map,&comm,ierr),*ierr);
 
-  // setup a "queue" of mvecs to use later
-  int totally_needed_mvecs = (maxBas+2)*numSys;
-  std::vector<TYPE(mvec_ptr)> *unused_mvecs = new std::vector<TYPE(mvec_ptr)>();
-  for(int i = 0; i < totally_needed_mvecs; i++)
+  // setup buffer of mvecs to be used later
+  Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff(new TYPE(MvecRingBuffer)(maxBas+1));
+  PHIST_CHK_IERR( mvecBuff->create_mvecs(map, numSys, ierr), *ierr);
+
+  // set up individual states
+  for(int i = 0; i < numSys; i++)
   {
-    TYPE(mvec_ptr) tmp;
-    PHIST_CHK_IERR(SUBR(mvec_create)(&tmp,map,numSys,ierr),*ierr);
-    unused_mvecs->push_back(tmp);
-  }
-  std::vector<TYPE(mvec_ptr)> *used_mvecs = new std::vector<TYPE(mvec_ptr)>();
-  
-  for (int i=0;i<numSys;i++)
-  {
-    state[i] = new TYPE(pgmresState);
-    state[i]->id=i;
-    // set some default options
-    state[i]->tol=0.5; // typical starting tol for JaDa inner iterations...
-    state[i]->ierr=-2;// not initialized
-    state[i]->maxBas_=maxBas;
-    // we allow one additional vector to be stored in the basis so that
-    // we can have V(:,i+1) = A*V(:,i) temporarily
-    state[i]->V_ = new TYPE(mvec_ptr)[maxBas+1];
-    state[i]->glob_unused_mvecs_ = (void*)unused_mvecs;
-    state[i]->glob_used_mvecs_ = (void*)used_mvecs;
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&state[i]->H_, maxBas+1, maxBas, comm,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->x0_,map,1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->b_,map,1,ierr),*ierr);
+    // initialization data for the next state
+    TYPE(pgmresState) tmp = {i,(_MT_)0.5,-2,0,-1,0,NULL,NULL,NULL,NULL,NULL,-mt::one(),-mt::one(),NULL};
+
+    // create state
+    state[i] = new TYPE(pgmresState)(tmp);
+
+    // allocate members
+    PHIST_CHK_IERR(SUBR( sdMat_create )(&state[i]->H_, maxBas+1, maxBas, comm, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_create  )(&state[i]->b_, map,      1,            ierr), *ierr);
     state[i]->cs_ = new MT[maxBas];
     state[i]->sn_ = new ST[maxBas];
     state[i]->rs_ = new ST[maxBas];
-    state[i]->curDimV_=0;
-    state[i]->normR0_=-mt::one(); // not initialized
-    state[i]->normR_=-mt::one();
+
+    // assign MvecRingBuffer (with reference counting)
+    state[i]->Vbuff = (void*) new Teuchos::RCP<TYPE(MvecRingBuffer)>(mvecBuff);
   }
 }
 
 
-//! delete pgmresState object
+// delete pgmresState object
 void SUBR(pgmresStates_delete)(TYPE(pgmresState_ptr) state[], int numSys, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  if( numSys > 0 )
+
+  for(int i = 0; i < numSys; i++)
   {
-    std::vector<TYPE(mvec_ptr)> *unused_mvecs = (std::vector<TYPE(mvec_ptr)>*) state[0]->glob_unused_mvecs_;
-    std::vector<TYPE(mvec_ptr)> *used_mvecs = (std::vector<TYPE(mvec_ptr)>*) state[0]->glob_used_mvecs_;
-    for(int i = 0; i < unused_mvecs->size(); i++)
-    {
-      PHIST_CHK_IERR(SUBR(mvec_delete)(unused_mvecs->at(i),ierr), *ierr);
-    }
-    for(int i = 0; i < used_mvecs->size(); i++)
-    {
-      PHIST_CHK_IERR(SUBR(mvec_delete)(used_mvecs->at(i),ierr), *ierr);
-    }
-    delete unused_mvecs;
-    delete used_mvecs;
-  }
-  for (int i=0;i<numSys;i++)
-  {
-    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->x0_,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->b_,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_delete)(state[i]->H_,ierr),*ierr);
-    delete [] state[i]->V_;
+    PHIST_CHK_IERR(SUBR( sdMat_delete ) (state[i]->H_, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_delete  ) (state[i]->b_, ierr), *ierr);
     delete [] state[i]->cs_;
     delete [] state[i]->sn_;
     delete [] state[i]->rs_;
+    CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuff, state[i]->Vbuff, *ierr);
+    PHIST_CHK_IERR((*mvecBuff)->delete_mvecs(ierr), *ierr);
+    delete mvecBuff;
     delete state[i];
   }
 }
 
+
 // reset pgmres state.
-void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b,
-        TYPE(const_mvec_ptr) x0,int *ierr)
+void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b, TYPE(const_mvec_ptr) x0, int *ierr)
 {
 #include "phist_std_typedefs.hpp"  
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   
-  if (b==NULL && S->normR0_ == -mt::one())
+  if( b == NULL && S->normR0_ == -mt::one() )
   {
     PHIST_OUT(PHIST_ERROR,"on the first call to pgmresState_reset you *must* provide the RHS vector");
     *ierr=-1;
     return;
   }
-  else if (b!=NULL)
+
+  if( b != NULL )
   {
     // new rhs -> need to recompute ||b-A*x0||
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), b, st::zero(), S->b_, ierr), *ierr);
-    S->ierr = -1;
+    S->status = -1;
     S->totalIter = 0;
   }
-  S->curDimV_=0;
-  S->normR0_=-mt::one(); // needs to be computed in next iterate call
-  // set V_0=X_0. iterate() will have to compute the residual and normalize it,
-  // because the actual V_0 we want is r/||r||_2, but we can't easily apply the
-  // operator to a single vector.
-  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),x0,st::zero(), S->x0_, ierr),*ierr);
-  for (int i=0;i<S->maxBas_;i++)
-    S->rs_[i]=st::zero();
-  PHIST_CHK_IERR(SUBR(sdMat_put_value)(S->H_,st::zero(),ierr),*ierr);
+
+
+  // get mvecBuff
+  CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S->Vbuff, *ierr);
+  Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
+
+  if( x0 == NULL )
+  {
+    // great, we can directly apply a first gmres step as we don't need to compute A*x0
+
+    PHIST_CHK_IERR(SUBR( mvec_norm2 ) (S->b_, &S->normR_, ierr), *ierr);
+    if( S->normR0_ < mt::zero() )
+      S->normR0_ = S->normR_;
+    S->rs_[0] = S->normR_;
+
+    S->lastVind_ = mvecBuff->lastIndex();
+    S->curDimV_ = 1;
+    TYPE(mvec_ptr) r0 = NULL;
+    PHIST_CHK_IERR(SUBR( mvec_view_block )(mvecBuff->at(S->lastVind_), &r0, S->id, S->id, ierr), *ierr);
+    mvecBuff->incRef(S->lastVind_);
+    if( S->normR_ != 0 )
+    {
+      _ST_ scale = st::one() / S->normR_;
+      PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (scale, S->b_, st::zero(), r0, ierr), *ierr);
+    }
+    PHIST_CHK_IERR(SUBR( mvec_delete ) (r0, ierr), *ierr);
+  }
+  else // x != NULL
+  {
+    // initialize everything to calculate b-A*x0 in the next call to iterate
+    S->curDimV_ = 0;
+    S->normR0_  = -mt::one(); // needs to be recomputed
+    S->lastVind_ = mvecBuff->lastIndex();
+    PHIST_CHK_IERR(SUBR( mvec_set_block ) (mvecBuff->at(S->lastVind_), x0, S->id, S->id, ierr), *ierr);
+    mvecBuff->incRef(S->lastVind_);
+  }
 }
 
 
+// calculate approximate solution
 void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, _MT_* resNorm, bool scaleSolutionToOne, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
-
-  const_comm_ptr_t comm=NULL;
-  PHIST_CHK_IERR(SUBR(mvec_get_comm)(x,&comm,ierr),*ierr);
-  TYPE(mvec_ptr) x_i=NULL;
-  TYPE(mvec_ptr) Ax_i=NULL;
-  TYPE(mvec_ptr) V=NULL;
   *ierr = 0;
 
   if( numSys <= 0 )
     return;
 
-  int sharedCurDimV = S_array[0]->curDimV_;
+  // if there are multiple systems, make sure their id is correct!
+  for(int i = 0; i < numSys; i++)
+    PHIST_CHK_IERR(*ierr = (S_array[i]->id != i) ? -1 : 0, *ierr);
+
+  // make sure all lastVind_ are the same
+  int lastVind = S_array[0]->lastVind_;
+  for(int i = 0; i < numSys; i++)
+    PHIST_CHK_IERR(*ierr = (S_array[i]->lastVind_ != lastVind) ? -1 : 0, *ierr);
+
+  CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S_array[0]->Vbuff, *ierr);
+  Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
+
+  // make sure all systems use the same mvecBuff
   for(int i = 0; i < numSys; i++)
   {
-    PHIST_CHK_IERR(*ierr = (sharedCurDimV == S_array[i]->curDimV_) ? 0 : -99, *ierr);
+    CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S_array[i]->Vbuff, *ierr);
+    PHIST_CHK_IERR(*ierr = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *ierr);
+  }
+
+  // determine maximal and shared (minimal) dimensions of subspaces
+  int maxCurDimV = 0;
+  int sharedCurDimV = mvecBuff->size();
+  for(int i = 0; i < numSys; i++)
+  {
+    maxCurDimV = std::max(maxCurDimV, S_array[i]->curDimV_);
+    sharedCurDimV = std::min(sharedCurDimV, S_array[i]->curDimV_);
+  }
+
+  // calculate resNorm
+  for(int i = 0; i < numSys; i++)
+  {
+    if( S_array[i]->curDimV_ <= 0 )
+      resNorm[i] = -mt::one();
+    else if( S_array[i]->curDimV_ == 1 )
+      resNorm[i] = mt::one();
+    else
+      resNorm[i] = S_array[i]->normR_/S_array[i]->normR0_;
   }
 
   // no iteration done yet?
-  if( sharedCurDimV <= 0 )
-  {
-    for(int i = 0; i < numSys; i++)
-      resNorm[i] = -mt::one();
+  if( maxCurDimV <= 1 )
     return;
-  }
-  if( sharedCurDimV == 1 )
-  {
-    for(int i = 0; i < numSys; i++)
-      resNorm[i] = mt::one();
-    return;
-  }
 
-  _ST_ *y = new _ST_[numSys*S_array[0]->maxBas_];
-  for(int i = 0; i < numSys*S_array[0]->maxBas_; i++)
-    y[i] = st::zero();
+
+  // allocate space for y
+  _ST_ *yglob = new _ST_[numSys*maxCurDimV];
+  for(int i = 0; i < numSys*maxCurDimV; i++)
+    yglob[i] = st::zero();
   int ldy = numSys;
 
   // calculate y by solving the triangular systems
-  for (int i=0;i<numSys;i++)
+  for(int i = 0; i < numSys; i++)
   {
+    // nothing to do here?
+    if( S_array[i]->curDimV_ <= 1 )
+      continue;
+
+    // helpful variables
     TYPE(const_pgmresState_ptr) S = S_array[i];
+    int m = S->curDimV_ - 1;
     ST *H_raw=NULL;
     lidx_t ldH;
-
-    int m=S->curDimV_-1;
-    // no iteration done yet?
-    if( m < 0 )
-    {
-      resNorm[i] = -mt::one();
-      continue;
-    }
-    if( m == 0 )
-    {
-      resNorm[i] = mt::one();
-      continue;
-    }
-    resNorm[i] = S->normR_/S->normR0_;
-
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S->H_,&H_raw,&ldH,ierr),*ierr);
+    _ST_ *y = &yglob[i+ldy*(maxCurDimV-S->curDimV_)];
+
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
     PHIST_SOUT(PHIST_DEBUG,"pgmres_updateSol[%d], curDimV=%d, H=\n",i,S->curDimV_);
@@ -190,13 +286,10 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S_array[], int numSys, T
     }
 #endif
 
-    // y = H\rs, H upper triangular
-    const char* uplo="U";
-    const char* trans="N";
-    const char* diag="N";
     // set y to rs
     for(int j = 0; j < m; j++)
-      y[i+ldy*j] = S->rs_[j];
+      y[ldy*j] = S->rs_[j];
+
 #ifdef TESTING
 {
   // setup e-vector
@@ -214,52 +307,68 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S_array[], int numSys, T
   // check that y is givens_rotations applied to e
   PHIST_SOUT(PHIST_INFO, "rs/norm0:");
   for(int j = 0; j < m; j++)
-    PHIST_SOUT(PHIST_INFO, "\t%8.4e + i%8.4e", st::real(y[i+ldy*j])/S->normR0_, st::imag(y[i+ldy*j])/S->normR0_);
-  PHIST_SOUT(PHIST_INFO, "\nabs(rs(j)/norm0)):%8.4e", st::abs(y[i+ldy*(m-1)])/S->normR0_);
+    PHIST_SOUT(PHIST_INFO, "\t%8.4e + i%8.4e", st::real(y[ldy*j])/S->normR0_, st::imag(y[ldy*j])/S->normR0_);
+  PHIST_SOUT(PHIST_INFO, "\nabs(rs(j)/norm0)):%8.4e", st::abs(y[ldy*(m-1)])/S->normR0_);
   PHIST_SOUT(PHIST_INFO, "\nrot(e_1):");
   for(int j = 0; j < m; j++)
     PHIST_SOUT(PHIST_INFO, "\t%8.4e + i%8.4e", st::real(e[j]), st::imag(e[j]));
   PHIST_SOUT(PHIST_INFO, "\nabs(rot(e_1)):%8.4e\n", st::abs(e[m-1]));
 }
 #endif
-    PHIST_CHK_IERR(PREFIX(TRSV)(uplo,trans,diag,&m,
-                                        (st::blas_scalar_t*)H_raw,&ldH,
-                                        (st::blas_scalar_t*)&y[i], &ldy, ierr),*ierr);
+
+    // solve triangular system
+    PHIST_CHK_IERR(PREFIX(TRSV)("U","N","N",&m,(st::blas_scalar_t*)H_raw,&ldH,(st::blas_scalar_t*)y, &ldy, ierr),*ierr);
 
     // if we are only interested in the directions Vi*yi and appropriate AVi*yi,
-    // then this scaling may help to improve the conditioning of a following orthogonlization step!
+    // then this scaling may help to improve the conditioning of a following orthogonalization step!
     if( scaleSolutionToOne )
     {
       // scale y to one
       _MT_ scale = mt::zero();
       for(int j = 0; j < m; j++)
-        scale += st::real(st::conj(y[i+ldy*j])*y[i+ldy*j]);
+        scale += st::real(st::conj(y[ldy*j])*y[ldy*j]);
       scale = mt::one()/sqrt(scale);
       for(int j = 0; j < m; j++)
-        y[i+ldy*j] *= scale;
+        y[ldy*j] *= scale;
     }
   }
 
-  for(int i = 0; i < numSys; i++)
-  {
-    PHIST_CHK_IERR( *ierr = (S_array[i]->id == i) ? 0 : -1, *ierr);
-  }
 
   // add up solution
-  TYPE(mvec_ptr) Vj = NULL;
-  for(int j = 0; j < sharedCurDimV; j++)
+  TYPE(mvec_ptr) Vj = NULL, x_i = NULL;
+  for(int j = 1; j <= maxCurDimV; j++)
   {
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(S_array[0]->V_[j], &Vj, 0, numSys-1, ierr), *ierr);
-    PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(&y[ldy*j], Vj, st::one(), x, ierr), *ierr);
+    int Vind = mvecBuff->prevIndex(S_array[0]->lastVind_,maxCurDimV-j);
+    _ST_ *yj = yglob + ldy*(maxCurDimV-j);
+
+    if( j > maxCurDimV-sharedCurDimV )
+    {
+      // update solution of all systems at once
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vind), &Vj, 0, numSys-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(yj, Vj, st::one(), x, ierr), *ierr);
+    }
+    else
+    {
+      // update solution of single systems
+      for(int i = 0; i < numSys; i++)
+      {
+        if( j > maxCurDimV-S_array[i]->curDimV_ )
+        {
+          PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vind), &Vj, S_array[i]->id, S_array[i]->id, ierr), *ierr);
+          PHIST_CHK_IERR(SUBR(mvec_view_block)(x, &x_i, i, i, ierr), *ierr);
+          PHIST_CHK_IERR(SUBR(mvec_add_mvec)(yj[i], Vj, st::one(), x, ierr), *ierr);
+        }
+      }
+    }
   }
+
+  PHIST_CHK_IERR(SUBR(mvec_delete)(x_i, ierr), *ierr);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vj, ierr), *ierr);
 }
 
 
 // implementation of gmres on several systems simultaneously
-void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) jdOp,
-        TYPE(pgmresState_ptr) S[], int numSys,
-        int* nIter, int* ierr)
+void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[], int numSys, int* nIter, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
@@ -277,78 +386,58 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) jdOp,
   if( numSys <= 0 )
     return;
 
-  // work vector for x and y = jdOp(x)
+  // make sure the id of the systems here is correct
+// TODO: we could allow to continue the calculation of a single system even for i != id
+  for(int i = 0; i < numSys; i++)
+    PHIST_CHK_IERR(*ierr = (S[i]->id != i) ? -1 : 0, *ierr);
+
+  CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *ierr);
+  Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
+
+  // make sure all systems use the same mvecBuff
+  for(int i = 0; i < numSys; i++)
+  {
+    CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *ierr);
+    PHIST_CHK_IERR(*ierr = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *ierr);
+  }
+
+  // determine maximal and shared (minimal) dimensions of subspaces
+  int maxCurDimV = 0;
+  int sharedCurDimV = mvecBuff->size();
+  for(int i = 0; i < numSys; i++)
+  {
+    maxCurDimV = std::max(maxCurDimV, S[i]->curDimV_);
+    sharedCurDimV = std::min(sharedCurDimV, S[i]->curDimV_);
+  }
+
+  // work vector for x and y = Aop(x)
   TYPE(mvec_ptr) work_x = NULL;
   TYPE(mvec_ptr) work_y = NULL;
-  // get pointers to mvec-stacks
-  std::vector<TYPE(mvec_ptr)> *unused_mvecs = (std::vector<TYPE(mvec_ptr)>*) S[0]->glob_unused_mvecs_;
-  std::vector<TYPE(mvec_ptr)> *used_mvecs = (std::vector<TYPE(mvec_ptr)>*) S[0]->glob_used_mvecs_;
-#warning "assuming full restart, partial restart not supported yet"
-  unused_mvecs->insert(unused_mvecs->end(),used_mvecs->begin(),used_mvecs->end());
-  used_mvecs->clear();
-  // borrow work_x, it is only used for one iteration
-  PHIST_CHK_IERR( *ierr = (unused_mvecs->size() > 2) ? 0 : -1, *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(unused_mvecs->at(0), &work_x, 0, numSys-1, ierr), *ierr);
+
+  {
+    // make sure all lastVind_ are the same
+    int lastVind = S[0]->lastVind_;
+    for(int i = 0; i < numSys; i++)
+      PHIST_CHK_IERR(*ierr = (S[i]->lastVind_ != lastVind) ? -1 : 0, *ierr);
+
+    // x0 / last element of krylov subspace
+    PHIST_CHK_IERR(SUBR( mvec_view_block )( mvecBuff->at(lastVind), &work_x, 0, numSys-1, ierr), *ierr);
+  }
+
 
   // views into V_
   TYPE(mvec_ptr) Vj = NULL, Vk = NULL;
   // views into H_
   TYPE(sdMat_ptr) R1 = NULL, R2 = NULL;
-  TYPE(mvec_ptr) view_Ax = NULL;
+
 
   // we return as soon as one system converges or reaches its
   // maximum permitted number of iterations. The decision about what to do
   // next is then left to the caller.
   int anyConverged = 0;
   int anyFailed = 0;
-  // check wether one of the systems cannot iterate
-  for(int i = 0; i < numSys; i++)
-  {
-    if( S[i]->curDimV_ >= S[i]->maxBas_ )
-      anyFailed++;
-  }
 
-
-  // gather work_x
-#ifndef PHIST_KERNEL_LIB_FORTRAN
-  for(int i = 0; i < numSys; i++)
-  {
-    int jprev = S[i]->curDimV_-1;
-    if( jprev < 0 )
-    {
-      // (re-)start
-      PHIST_CHK_IERR( SUBR(mvec_set_block ) (work_x, S[i]->x0_, i, i, ierr), *ierr);
-    }
-    else
-    {
-      PHIST_CHK_IERR( SUBR(mvec_view_block) (S[i]->V_, &Vj, jprev, jprev, ierr), *ierr);
-      PHIST_CHK_IERR( SUBR(mvec_set_block ) (work_x, Vj, i, i, ierr), *ierr);
-    }
-  }
-#else
-  {
-    TYPE(mvec_ptr) work_xi[numSys];
-    for(int i = 0; i < numSys; i++)
-    {
-      work_xi[i] = NULL;
-      int jprev = S[i]->curDimV_-1;
-      if( jprev < 0 )
-      {
-        // (re-)start
-        PHIST_CHK_IERR( SUBR(mvec_view_block ) (S[i]->x0_, &work_xi[i], 0, 0, ierr), *ierr);
-      }
-      else
-      {
-        PHIST_CHK_IERR( SUBR(mvec_view_block) (S[i]->V_[jprev], &work_xi[i], i, i, ierr), *ierr);
-      }
-    }
-    PHIST_CHK_IERR( SUBR(mvec_gather_mvecs) (work_x, (TYPE(const_mvec_ptr)*)work_xi, numSys, ierr), *ierr);
-    for(int i = 0; i < numSys; i++)
-    {
-      PHIST_CHK_IERR( SUBR(mvec_delete) (work_xi[i], ierr), *ierr);
-    }
-  }
-#endif
+//TODO: check dimensions of all systems!
 
 
   PHIST_SOUT(PHIST_VERBOSE,"GMRES iteration started\n");
@@ -356,92 +445,100 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) jdOp,
 
   while( anyConverged == 0 && anyFailed == 0 )
   {
-    // we need a new mvec for work_y
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(unused_mvecs->back(), &work_y, 0, numSys-1, ierr), *ierr);
-    for(int i = 0; i < numSys; i++)
-    {
-      int j = S[i]->curDimV_;
-      S[i]->V_[j] = unused_mvecs->back();
-    }
-    used_mvecs->push_back(unused_mvecs->back());
-    unused_mvecs->pop_back();
+    //    % get new vector for y
+    int nextIndex;
+    PHIST_CHK_IERR( mvecBuff->getNextUnused(nextIndex,ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(nextIndex), &work_y, 0, numSys-1, ierr), *ierr);
 
 
-    //    % apply the jadaOp
-    PHIST_CHK_IERR( jdOp->apply (st::one(), jdOp->A, work_x, st::zero(), work_y, ierr), *ierr);
+    //    % apply the operator of the matrix A
+    PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_x, st::zero(), work_y, ierr), *ierr);
+
 
     //    % initialize GMRES for (re-)started systems
     for(int i = 0; i < numSys; i++)
     {
       int j = S[i]->curDimV_;
-      PHIST_CHK_IERR( SUBR(mvec_view_block) (work_y, &Vj, i, i, ierr), *ierr);
-
       if( j == 0 )
       {
-        //    % (re-)start: normalize r_0 = b - A*x_0
-        PHIST_SOUT(PHIST_VERBOSE,"pgmres state %d (re-)starts\n",i);
-
-        // we need b-Ax0 in the first step
+        // (re-)start: r_0 = b - A*x_0
+        PHIST_CHK_IERR( SUBR(mvec_view_block) (work_y, &Vj, i, i, ierr), *ierr);
         PHIST_CHK_IERR( SUBR(mvec_add_mvec) (st::one(), S[i]->b_, -st::one(), Vj, ierr), *ierr);
-
-        // normalize
-        _MT_ norm;
-        PHIST_CHK_IERR( SUBR(mvec_normalize) (Vj, &norm, ierr), *ierr);
-        S[i]->rs_[0] = norm;
-        S[i]->normR_ = norm;
-
-        // if this is no restart, store normR0
-        if( S[i]->normR0_ < mt::zero() )
-          S[i]->normR0_ = norm;
       }
     }
-
-    // TODO: % arnoldi update with modified gram schmidt
+    // increment ref counters in mvecBuff and set lastVind_
+    for(int i = 0; i < numSys; i++)
     {
-      int sharedCurDimV = S[0]->curDimV_;
+      if( S[i]->curDimV_ == 0 )
+      {
+        // we have used one index for x0, release it
+        mvecBuff->decRef(S[i]->lastVind_);
+      }
+      S[i]->lastVind_ = nextIndex;
+      mvecBuff->incRef(nextIndex);
+    }
+
+
+    //    % arnoldi update with modified gram schmidt
+    for(int j = 1; j < maxCurDimV; j++)
+    {
+      int Vind = mvecBuff->prevIndex(S[0]->lastVind_,maxCurDimV-j);
+      _ST_ tmp[numSys];
+
+      bool calculatedDot = false;
+      if( j > maxCurDimV-sharedCurDimV )
+      {
+        // MGS step for all systems at once
+        PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, 0, numSys-1, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (work_y, Vk, tmp, ierr), *ierr);
+        for(int i = 0; i < numSys; i++)
+          tmp[i] = -tmp[i];
+        PHIST_CHK_IERR(SUBR( mvec_vadd_mvec  ) (tmp, Vk, st::one(), work_y, ierr), *ierr);
+        calculatedDot = true;
+      }
+
+      // store in H (and do MGS steps for single systems)
       for(int i = 0; i < numSys; i++)
       {
-        PHIST_CHK_IERR(*ierr = (sharedCurDimV == S[i]->curDimV_) ? 0 : -99, *ierr);
-      }
-      int j = sharedCurDimV;
-      if( j > 0 )
-      {
-        _ST_*tmp = new _ST_[numSys];
-        for(int k = 0; k < sharedCurDimV; k++)
+        int j_ = j - (maxCurDimV-S[i]->curDimV_+1);
+        if( j_ >= 0 )
         {
-          // simply gram schmidt applied to all systems at once
-          PHIST_CHK_IERR(SUBR(mvec_view_block)(S[0]->V_[k], &Vk, 0, numSys-1, ierr), *ierr);
-          PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(work_y,Vk,tmp,ierr),*ierr);
-          // store in H
-          for(int i = 0; i < numSys; i++)
+          if( !calculatedDot )
           {
-            // raw view of H
-            ST *Hj=NULL;
-            lidx_t ldH; 
-            PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
-            Hj += (j-1)*ldH;
-            Hj[k] = tmp[i];
-          }
-          for(int i = 0; i < numSys; i++)
+            // MGS step for single system
+            PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, i, i, ierr), *ierr);
+            PHIST_CHK_IERR(SUBR( mvec_view_block ) (work_y,             &Vj, i, i, ierr), *ierr);
+            PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vj, Vk, &tmp[i], ierr), *ierr);
             tmp[i] = -tmp[i];
-          PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(tmp,Vk,st::one(),work_y,ierr),*ierr);
-        }
-        delete[] tmp;
+            PHIST_CHK_IERR(SUBR( mvec_add_mvec   ) (tmp[i], Vk, st::one(), Vj, ierr), *ierr);
+          }
 
-        _MT_ *tmp_ = new _MT_[numSys];
-        PHIST_CHK_IERR(SUBR(mvec_normalize)(work_y,tmp_,ierr),*ierr);
-        for(int i = 0; i < numSys; i++)
-        {
-          // raw view of H
+          // store in H
           ST *Hj=NULL;
           lidx_t ldH; 
           PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
-          Hj += (j-1)*ldH;
-          Hj[j] = tmp_[i];
+          Hj += (S[i]->curDimV_-1)*ldH;
+          Hj[j_] = -tmp[i];
         }
-        delete[] tmp_;
       }
     }
+    {
+      // normalize resulting vector
+      _MT_ tmp[numSys];
+      PHIST_CHK_IERR(SUBR(mvec_normalize)(work_y, tmp, ierr), *ierr);
+      for(int i = 0; i < numSys; i++)
+      {
+        int j = S[i]->curDimV_;
+        // raw view of H
+        ST *Hj=NULL;
+        lidx_t ldH; 
+        PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
+        Hj += (S[i]->curDimV_-1)*ldH;
+        Hj[j] = tmp[i];
+      }
+    }
+    maxCurDimV++;
+    sharedCurDimV++;
 
 
     //    % update QR factorization of H
@@ -449,7 +546,10 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) jdOp,
     {
       int j = S[i]->curDimV_;
       if( j == 0 )
+      {
+        S[i]->rs_[0] = S[i]->normR_;
         continue;
+      }
 
       // raw view of H
       ST *Hj=NULL;
@@ -494,6 +594,7 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) jdOp,
       S[i]->normR_=st::abs(S[i]->rs_[j]);
     }
 
+
     //    % check convergence, update subspace dimension etc
     for(int i = 0; i < numSys; i++)
     {
@@ -507,17 +608,17 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) jdOp,
       MT absres = S[i]->normR_;
       if( absres < 100*st::eps() || relres < S[i]->tol )
       {
-        S[i]->ierr = 0; // mark as converged
+        S[i]->status = 0; // mark as converged
         anyConverged++;
       }
-      else if( S[i]->curDimV_ >= S[i]->maxBas_ )
+      else if( S[i]->curDimV_ >= mvecBuff->size()-1 )
       {
-        S[i]->ierr = 2; // mark as failed/restart needed
+        S[i]->status = 2; // mark as failed/restart needed
         anyFailed++;
       }
       else
       {
-        S[i]->ierr = 1; // iterating, not converged yet
+        S[i]->status = 1; // iterating, not converged yet
       }
     }
 
@@ -545,7 +646,6 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) jdOp,
   PHIST_CHK_IERR(SUBR(mvec_delete)(work_y, ierr), *ierr);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vj,     ierr), *ierr);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vk,     ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(view_Ax,ierr), *ierr);
 
   if (anyConverged > 0)
     *ierr=0;

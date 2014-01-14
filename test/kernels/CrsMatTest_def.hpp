@@ -33,7 +33,11 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
 #endif
       SUBR(read_mat)("sprandn",nglob_,&A2_,&ierr_);
       SUBR(read_mat)("sprandn_nodiag",nglob_,&A3_,&ierr_);
+#ifndef SKIP_ZERO_MAT
       SUBR(read_mat)("spshift",nglob_,&A4_,&ierr_);
+#else
+      A4_ = NULL;
+#endif
       
       if (A0_==NULL || A1_==NULL || A2_==NULL || A3_==NULL || A4_==NULL)
         {
@@ -59,7 +63,9 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
       ASSERT_EQ(0,delete_mat(A1_));
       ASSERT_EQ(0,delete_mat(A2_));
       ASSERT_EQ(0,delete_mat(A3_));
+#ifndef SKIP_ZERO_MAT
       ASSERT_EQ(0,delete_mat(A4_));
+#endif
       }
     }
 
@@ -289,6 +295,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     ASSERT_NEAR(mt::one(),const_row_sum_test(A3_),100*mt::eps());
     }
 
+#ifndef SKIP_ZERO_MAT
   TEST_F(CLASSNAME, shift_mvec)
   {
     if( typeImplemented_ )
@@ -335,6 +342,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       }
     }
   }
+#endif
 
 
 
