@@ -2,7 +2,6 @@
 #define PHIST_OPERATOR_H
 
 #include "phist_kernels.h"
-#include "phist_taskbuf.h"
 
 #ifdef __cplusplus
 extern "C" {

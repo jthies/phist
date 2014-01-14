@@ -11,8 +11,6 @@
 #include <limits>
 #include "gtest/gtest.h"
 
-#include "ghost_util.h"
-
 /** 
  */
 template<typename _ST>

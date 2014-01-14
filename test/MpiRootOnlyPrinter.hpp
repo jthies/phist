@@ -1,7 +1,7 @@
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
 #include <iostream>
-#include "ghost.h"
-#include "ghost_util.h"
-#include "gtest/gtest.h"
 
 //! This class suppresses output from any MPI process but rank 0 in googletest,
 //! both to screen and an XML file. In order to activate it, create an instance
@@ -14,7 +14,11 @@ class MpiRootOnlyPrinter : public ::testing::EmptyTestEventListener
   // constructor
   MpiRootOnlyPrinter()
     {
-    rank_=ghost_getRank(MPI_COMM_WORLD);
+    rank_ = 0;
+#ifdef PHIST_HAVE_MPI
+    int ierr = 0;
+    rank_ = MPI_Comm_rank(MPI_COMM_WORLD,&ierr);
+#endif
     amRoot_=(rank_==0);
     // take ownership of the default printer
     myPrinter_= 

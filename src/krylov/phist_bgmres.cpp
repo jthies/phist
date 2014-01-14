@@ -4,8 +4,6 @@
 
 #include "phist_bgmres.h"
 
-#include "ghost.h"
-
 #include "phist_ScalarTraits.hpp"
 #include "phist_rcp_helpers.hpp"
 #include "phist_BelosOperatorTraits.hpp"
@@ -22,6 +20,7 @@
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 
 #ifdef PHIST_KERNEL_LIB_GHOST
+#include "ghost.h"
 #include "Belos_GhostAdapter.hpp"
 #elif defined(PHIST_KERNEL_LIB_EPETRA)
 #include "Epetra_MultiVector.h"
