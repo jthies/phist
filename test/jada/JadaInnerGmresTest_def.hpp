@@ -453,10 +453,12 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       _MT_ explicitResNorm[_NV_];
       SUBR(mvec_norm2)(vec3_,explicitResNorm,&ierr_);
       ASSERT_EQ(0,ierr_);
-      //for(int i = 0; i < _NV_; i++)
-      //{
-        //ASSERT_NEAR(explicitResNorm[i]/initialResNorm[i], resNorm[i], 100*VTest::releps());
-      //}
+      for(int i = 0; i < _NV_; i++)
+      {
+        ASSERT_LT(resNorm[i], mt::one());
+        ASSERT_LT(explicitResNorm[i], initialResNorm[i]);
+        ASSERT_NEAR(explicitResNorm[i]/initialResNorm[i], resNorm[i], 100*VTest::releps());
+      }
 //#ifdef PHIST_KERNEL_LIB_FORTRAN
       //ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
 //#else

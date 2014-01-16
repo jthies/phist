@@ -106,7 +106,7 @@ void SUBR(pgmresStates_create)(TYPE(pgmresState_ptr) state[], int numSys, const_
     PHIST_CHK_IERR(SUBR( mvec_create  )(&state[i]->b_, map,      1,            ierr), *ierr);
     state[i]->cs_ = new MT[maxBas];
     state[i]->sn_ = new ST[maxBas];
-    state[i]->rs_ = new ST[maxBas];
+    state[i]->rs_ = new ST[maxBas+1];
 
     // assign MvecRingBuffer (with reference counting)
     state[i]->Vbuff = (void*) new Teuchos::RCP<TYPE(MvecRingBuffer)>(mvecBuff);
@@ -264,7 +264,7 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S_array[], int numSys, T
 
     // helpful variables
     TYPE(const_pgmresState_ptr) S = S_array[i];
-    int m = S->curDimV_ - 1;
+    int m = S->curDimV_-1;
     ST *H_raw=NULL;
     lidx_t ldH;
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S->H_,&H_raw,&ldH,ierr),*ierr);
@@ -293,7 +293,7 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S_array[], int numSys, T
 #ifdef TESTING
 {
   // setup e-vector
-  _ST_ e[m];
+  _ST_ e[m+1];
   e[0] = st::one();
   for(int j = 1; j < m+1; j++)
     e[j] = st::zero();
@@ -331,17 +331,25 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S_array[], int numSys, T
       for(int j = 0; j < m; j++)
         y[ldy*j] *= scale;
     }
+#ifdef TESTING
+{
+  PHIST_SOUT(PHIST_INFO, "y:");
+  for(int j = 0; j < m; j++)
+    PHIST_SOUT(PHIST_INFO,"%8.4e + i%8.4e\n", st::real(y[ldy*j]), st::imag(y[ldy*j]));
+}
+#endif
   }
 
 
   // add up solution
   TYPE(mvec_ptr) Vj = NULL, x_i = NULL;
-  for(int j = 1; j <= maxCurDimV; j++)
+  for(int j = 0; j < maxCurDimV-1; j++)
   {
-    int Vind = mvecBuff->prevIndex(S_array[0]->lastVind_,maxCurDimV-j);
-    _ST_ *yj = yglob + ldy*(maxCurDimV-j);
+    int Vind = mvecBuff->prevIndex(lastVind,maxCurDimV-1-j);
+    _ST_ *yj = yglob + ldy*j;
+std::cout << "j " << j << " yj " << *yj << " maxCurDimV " << maxCurDimV << " sharedCurDimV " << sharedCurDimV << " Vind " << Vind << std::endl;
 
-    if( j > maxCurDimV-sharedCurDimV )
+    if( j >= maxCurDimV-sharedCurDimV )
     {
       // update solution of all systems at once
       PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vind), &Vj, 0, numSys-1, ierr), *ierr);
@@ -352,7 +360,7 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S_array[], int numSys, T
       // update solution of single systems
       for(int i = 0; i < numSys; i++)
       {
-        if( j > maxCurDimV-S_array[i]->curDimV_ )
+        if( j >= maxCurDimV-S_array[i]->curDimV_ )
         {
           PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vind), &Vj, S_array[i]->id, S_array[i]->id, ierr), *ierr);
           PHIST_CHK_IERR(SUBR(mvec_view_block)(x, &x_i, i, i, ierr), *ierr);
@@ -480,13 +488,13 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[
 
 
     //    % arnoldi update with modified gram schmidt
-    for(int j = 1; j < maxCurDimV; j++)
+    for(int j = 0; j < maxCurDimV; j++)
     {
       int Vind = mvecBuff->prevIndex(S[0]->lastVind_,maxCurDimV-j);
       _ST_ tmp[numSys];
 
       bool calculatedDot = false;
-      if( j > maxCurDimV-sharedCurDimV )
+      if( j >= maxCurDimV-sharedCurDimV )
       {
         // MGS step for all systems at once
         PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, 0, numSys-1, ierr), *ierr);
@@ -500,9 +508,10 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[
       // store in H (and do MGS steps for single systems)
       for(int i = 0; i < numSys; i++)
       {
-        int j_ = j - (maxCurDimV-S[i]->curDimV_+1);
+        int j_ = j - (maxCurDimV-S[i]->curDimV_);
         if( j_ >= 0 )
         {
+std::cout << "In pgmres arnoldi: j " << j << " Vind " << Vind << " i " << i << " j_ " << j_ << " curDimV " << S[i]->curDimV_ << std::endl;
           if( !calculatedDot )
           {
             // MGS step for single system
@@ -529,12 +538,23 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[
       for(int i = 0; i < numSys; i++)
       {
         int j = S[i]->curDimV_;
-        // raw view of H
-        ST *Hj=NULL;
-        lidx_t ldH; 
-        PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
-        Hj += (S[i]->curDimV_-1)*ldH;
-        Hj[j] = tmp[i];
+        if( j == 0 )
+        {
+          // initilize rs_
+          S[i]->rs_[0] = tmp[i];
+          S[i]->normR_ = tmp[i];
+          if( S[i]->normR0_ == -mt::one() )
+            S[i]->normR0_ = S[i]->normR_;
+        }
+        else
+        {
+          // raw view of H
+          ST *Hj=NULL;
+          lidx_t ldH; 
+          PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
+          Hj += (S[i]->curDimV_-1)*ldH;
+          Hj[j] = tmp[i];
+        }
       }
     }
     maxCurDimV++;
@@ -546,10 +566,7 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[
     {
       int j = S[i]->curDimV_;
       if( j == 0 )
-      {
-        S[i]->rs_[0] = S[i]->normR_;
         continue;
-      }
 
       // raw view of H
       ST *Hj=NULL;
@@ -611,7 +628,7 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[
         S[i]->status = 0; // mark as converged
         anyConverged++;
       }
-      else if( S[i]->curDimV_ >= mvecBuff->size()-1 )
+      else if( S[i]->curDimV_ >= mvecBuff->size() )
       {
         S[i]->status = 2; // mark as failed/restart needed
         anyFailed++;
