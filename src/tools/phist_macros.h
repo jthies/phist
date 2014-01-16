@@ -112,6 +112,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #endif
 
 #ifdef PHIST_KERNEL_LIB_GHOST
+#include "ghost/config.h"
 #include "ghost/types.h"
 // check return value from GHOST
 #define PHIST_CHK_GERR(func,FLAG) {\
