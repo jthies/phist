@@ -44,6 +44,7 @@ class TYPE(MvecRingBuffer)
     // just to make sure no element is used twice
     void incRef(int i) {mvecs_used_.at(i)++;}
     void decRef(int i) {mvecs_used_.at(i)--;}
+    int refCount(int index) const {return mvecs_used_.at(index);}
 
     // get last used index
     int lastIndex() {return lastIndex_;}
@@ -141,7 +142,23 @@ void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b, TY
 #include "phist_std_typedefs.hpp"  
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  
+
+  // get mvecBuff
+  CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S->Vbuff, *ierr);
+  Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
+
+  // release mvecs currently marked used by this state
+  for(int j = 0; j < S->curDimV_; j++)
+  {
+    int Vind = mvecBuff->prevIndex(S->lastVind_,j);
+    mvecBuff->decRef(Vind);
+  }
+  S->curDimV_ = 0;
+
+  // only freed resources
+  if( b == NULL && x0 == NULL )
+    return;
+
   if( b == NULL && S->normR0_ == -mt::one() )
   {
     PHIST_OUT(PHIST_ERROR,"on the first call to pgmresState_reset you *must* provide the RHS vector");
@@ -155,12 +172,9 @@ void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b, TY
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), b, st::zero(), S->b_, ierr), *ierr);
     S->status = -1;
     S->totalIter = 0;
+    S->normR0_ = -mt::one();
   }
 
-
-  // get mvecBuff
-  CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S->Vbuff, *ierr);
-  Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
 
   if( x0 == NULL )
   {
@@ -186,8 +200,6 @@ void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b, TY
   else // x != NULL
   {
     // initialize everything to calculate b-A*x0 in the next call to iterate
-    S->curDimV_ = 0;
-    S->normR0_  = -mt::one(); // needs to be recomputed
     S->lastVind_ = mvecBuff->lastIndex();
     PHIST_CHK_IERR(SUBR( mvec_set_block ) (mvecBuff->at(S->lastVind_), x0, S->id, S->id, ierr), *ierr);
     mvecBuff->incRef(S->lastVind_);
@@ -196,7 +208,7 @@ void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b, TY
 
 
 // calculate approximate solution
-void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, _MT_* resNorm, bool scaleSolutionToOne, int* ierr)
+void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mvec_ptr) x, _MT_* resNorm, bool scaleSolutionToOne, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
@@ -205,22 +217,27 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S_array[], int numSys, T
   if( numSys <= 0 )
     return;
 
-  // if there are multiple systems, make sure their id is correct!
+  // if there are multiple systems, get the maximal id
+  int maxId = 0;
   for(int i = 0; i < numSys; i++)
-    PHIST_CHK_IERR(*ierr = (S_array[i]->id != i) ? -1 : 0, *ierr);
+    maxId = std::max(maxId,S[i]->id);
+
+  bool ordered = true;
+  for(int i = 0; i < numSys; i++)
+    ordered = ordered && (S[i]->id == i);
 
   // make sure all lastVind_ are the same
-  int lastVind = S_array[0]->lastVind_;
+  int lastVind = S[0]->lastVind_;
   for(int i = 0; i < numSys; i++)
-    PHIST_CHK_IERR(*ierr = (S_array[i]->lastVind_ != lastVind) ? -1 : 0, *ierr);
+    PHIST_CHK_IERR(*ierr = (S[i]->lastVind_ != lastVind) ? -1 : 0, *ierr);
 
-  CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S_array[0]->Vbuff, *ierr);
+  CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *ierr);
   Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
 
   // make sure all systems use the same mvecBuff
   for(int i = 0; i < numSys; i++)
   {
-    CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S_array[i]->Vbuff, *ierr);
+    CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *ierr);
     PHIST_CHK_IERR(*ierr = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *ierr);
   }
 
@@ -229,19 +246,19 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S_array[], int numSys, T
   int sharedCurDimV = mvecBuff->size();
   for(int i = 0; i < numSys; i++)
   {
-    maxCurDimV = std::max(maxCurDimV, S_array[i]->curDimV_);
-    sharedCurDimV = std::min(sharedCurDimV, S_array[i]->curDimV_);
+    maxCurDimV = std::max(maxCurDimV, S[i]->curDimV_);
+    sharedCurDimV = std::min(sharedCurDimV, S[i]->curDimV_);
   }
 
   // calculate resNorm
   for(int i = 0; i < numSys; i++)
   {
-    if( S_array[i]->curDimV_ <= 0 )
+    if( S[i]->curDimV_ <= 0 )
       resNorm[i] = -mt::one();
-    else if( S_array[i]->curDimV_ == 1 )
+    else if( S[i]->curDimV_ == 1 )
       resNorm[i] = mt::one();
     else
-      resNorm[i] = S_array[i]->normR_/S_array[i]->normR0_;
+      resNorm[i] = S[i]->normR_/S[i]->normR0_;
   }
 
   // no iteration done yet?
@@ -250,45 +267,44 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S_array[], int numSys, T
 
 
   // allocate space for y
-  _ST_ *yglob = new _ST_[numSys*maxCurDimV];
-  for(int i = 0; i < numSys*maxCurDimV; i++)
+  _ST_ *yglob = new _ST_[(maxId+1)*maxCurDimV];
+  for(int i = 0; i < (maxId+1)*maxCurDimV; i++)
     yglob[i] = st::zero();
-  int ldy = numSys;
+  int ldy = (maxId+1);
 
   // calculate y by solving the triangular systems
   for(int i = 0; i < numSys; i++)
   {
     // nothing to do here?
-    if( S_array[i]->curDimV_ <= 1 )
+    if( S[i]->curDimV_ <= 1 )
       continue;
 
     // helpful variables
-    TYPE(const_pgmresState_ptr) S = S_array[i];
-    int m = S->curDimV_-1;
+    int m = S[i]->curDimV_-1;
     ST *H_raw=NULL;
     lidx_t ldH;
-    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S->H_,&H_raw,&ldH,ierr),*ierr);
-    _ST_ *y = &yglob[i+ldy*(maxCurDimV-S->curDimV_)];
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&H_raw,&ldH,ierr),*ierr);
+    _ST_ *y = &yglob[S[i]->id+ldy*(maxCurDimV-S[i]->curDimV_)];
 
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
-    PHIST_SOUT(PHIST_DEBUG,"pgmres_updateSol[%d], curDimV=%d, H=\n",i,S->curDimV_);
+    PHIST_SOUT(PHIST_DEBUG,"pgmres_updateSol[%d], curDimV=%d, H=\n",i,S[i]->curDimV_);
     {
       TYPE(sdMat_ptr) H = NULL;
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(S->H_, &H, 0, m-1, 0, m-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(S[i]->H_, &H, 0, m-1, 0, m-1, ierr), *ierr);
       PHIST_CHK_IERR(SUBR(sdMat_print)(H,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(sdMat_delete)(H,ierr),*ierr);
     }
     PHIST_SOUT(PHIST_DEBUG,"rs=\n");
     for (int k=0;k<m;k++)
     {
-      PHIST_SOUT(PHIST_DEBUG,"%16.8f+%16.8fi\n",st::real(S->rs_[k]),st::imag(S->rs_[k]));      
+      PHIST_SOUT(PHIST_DEBUG,"%16.8f+%16.8fi\n",st::real(S[i]->rs_[k]),st::imag(S[i]->rs_[k]));      
     }
 #endif
 
     // set y to rs
     for(int j = 0; j < m; j++)
-      y[ldy*j] = S->rs_[j];
+      y[ldy*j] = S[i]->rs_[j];
 
 #ifdef TESTING
 {
@@ -300,15 +316,15 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S_array[], int numSys, T
   // apply givens rotations
   for(int j = 0; j < m-1; j++)
   {
-    _ST_ tmp = S->cs_[j] * e[j]  +  S->sn_[j] * e[j+1];
-    e[j+1] = -st::conj(S->sn_[j]) * e[j]  +  S->cs_[j] * e[j+1];
+    _ST_ tmp = S[i]->cs_[j] * e[j]  +  S[i]->sn_[j] * e[j+1];
+    e[j+1] = -st::conj(S[i]->sn_[j]) * e[j]  +  S[i]->cs_[j] * e[j+1];
     e[j] = tmp;
   }
   // check that y is givens_rotations applied to e
   PHIST_SOUT(PHIST_INFO, "rs/norm0:");
   for(int j = 0; j < m; j++)
-    PHIST_SOUT(PHIST_INFO, "\t%8.4e + i%8.4e", st::real(y[ldy*j])/S->normR0_, st::imag(y[ldy*j])/S->normR0_);
-  PHIST_SOUT(PHIST_INFO, "\nabs(rs(j)/norm0)):%8.4e", st::abs(y[ldy*(m-1)])/S->normR0_);
+    PHIST_SOUT(PHIST_INFO, "\t%8.4e + i%8.4e", st::real(y[ldy*j])/S[i]->normR0_, st::imag(y[ldy*j])/S[i]->normR0_);
+  PHIST_SOUT(PHIST_INFO, "\nabs(rs(j)/norm0)):%8.4e", st::abs(y[ldy*(m-1)])/S[i]->normR0_);
   PHIST_SOUT(PHIST_INFO, "\nrot(e_1):");
   for(int j = 0; j < m; j++)
     PHIST_SOUT(PHIST_INFO, "\t%8.4e + i%8.4e", st::real(e[j]), st::imag(e[j]));
@@ -347,12 +363,12 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S_array[], int numSys, T
   {
     int Vind = mvecBuff->prevIndex(lastVind,maxCurDimV-1-j);
     _ST_ *yj = yglob + ldy*j;
-std::cout << "j " << j << " yj " << *yj << " maxCurDimV " << maxCurDimV << " sharedCurDimV " << sharedCurDimV << " Vind " << Vind << std::endl;
+//std::cout << "j " << j << " yj " << *yj << " maxCurDimV " << maxCurDimV << " sharedCurDimV " << sharedCurDimV << " Vind " << Vind << std::endl;
 
-    if( j >= maxCurDimV-sharedCurDimV )
+    if( j >= maxCurDimV-sharedCurDimV && ordered )
     {
       // update solution of all systems at once
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vind), &Vj, 0, numSys-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vind), &Vj, 0, maxId, ierr), *ierr);
       PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(yj, Vj, st::one(), x, ierr), *ierr);
     }
     else
@@ -360,11 +376,11 @@ std::cout << "j " << j << " yj " << *yj << " maxCurDimV " << maxCurDimV << " sha
       // update solution of single systems
       for(int i = 0; i < numSys; i++)
       {
-        if( j >= maxCurDimV-S_array[i]->curDimV_ )
+        if( j >= maxCurDimV-S[i]->curDimV_ )
         {
-          PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vind), &Vj, S_array[i]->id, S_array[i]->id, ierr), *ierr);
+          PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vind), &Vj, S[i]->id, S[i]->id, ierr), *ierr);
           PHIST_CHK_IERR(SUBR(mvec_view_block)(x, &x_i, i, i, ierr), *ierr);
-          PHIST_CHK_IERR(SUBR(mvec_add_mvec)(yj[i], Vj, st::one(), x, ierr), *ierr);
+          PHIST_CHK_IERR(SUBR(mvec_add_mvec)(yj[S[i]->id], Vj, st::one(), x, ierr), *ierr);
         }
       }
     }
@@ -394,10 +410,10 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[
   if( numSys <= 0 )
     return;
 
-  // make sure the id of the systems here is correct
-// TODO: we could allow to continue the calculation of a single system even for i != id
+  // if there are multiple systems, get the maximal id
+  int maxId = 0;
   for(int i = 0; i < numSys; i++)
-    PHIST_CHK_IERR(*ierr = (S[i]->id != i) ? -1 : 0, *ierr);
+    maxId = std::max(maxId,S[i]->id);
 
   CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *ierr);
   Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
@@ -429,7 +445,59 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[
       PHIST_CHK_IERR(*ierr = (S[i]->lastVind_ != lastVind) ? -1 : 0, *ierr);
 
     // x0 / last element of krylov subspace
-    PHIST_CHK_IERR(SUBR( mvec_view_block )( mvecBuff->at(lastVind), &work_x, 0, numSys-1, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block )( mvecBuff->at(lastVind), &work_x, 0, maxId, ierr), *ierr);
+
+#ifdef TESTING
+// print a visualization of the current state
+std::vector<bool> mvecUsedBy[maxId+1];
+for(int i = 0; i < maxId+1; i++)
+  mvecUsedBy[i].resize(mvecBuff->size(),false);
+std::vector<bool> idUsed(maxId+1,false);
+for(int i = 0; i < numSys; i++)
+{
+  idUsed[S[i]->id] = true;
+  for(int j = 0; j < S[i]->curDimV_; j++)
+  {
+    int Vind = mvecBuff->prevIndex(lastVind,j);
+    mvecUsedBy[S[i]->id][Vind] = true;
+  }
+}
+PHIST_SOUT(PHIST_INFO,"Pipelined GMRES status:\n");
+for(int j = 0; j < mvecBuff->size(); j++)
+{
+  PHIST_SOUT(PHIST_INFO,"--");
+}
+PHIST_SOUT(PHIST_INFO,"\n");
+for(int i = 0; i < maxId+1; i++)
+{
+  for(int j = 0; j < mvecBuff->size(); j++)
+  {
+    if( j == lastVind && idUsed[i] )
+    {
+      PHIST_SOUT(PHIST_INFO," |");
+    }
+    else if( mvecUsedBy[i][j] )
+    {
+      PHIST_SOUT(PHIST_INFO," +");
+    }
+    else
+    {
+      PHIST_SOUT(PHIST_INFO,"  ");
+    }
+  }
+  PHIST_SOUT(PHIST_INFO,"\n");
+}
+for(int j = 0; j < mvecBuff->size(); j++)
+{
+  PHIST_SOUT(PHIST_INFO,"--");
+}
+PHIST_SOUT(PHIST_INFO,"\n");
+for(int j = 0; j < mvecBuff->size(); j++)
+{
+  PHIST_SOUT(PHIST_INFO," %1d",mvecBuff->refCount(j));
+}
+PHIST_SOUT(PHIST_INFO,"\n");
+#endif
   }
 
 
@@ -445,18 +513,35 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[
   int anyConverged = 0;
   int anyFailed = 0;
 
-//TODO: check dimensions of all systems!
 
 
   PHIST_SOUT(PHIST_VERBOSE,"GMRES iteration started\n");
   PHIST_SOUT(PHIST_VERBOSE,"=======================\n");
+
+  // check if there are already converged/failed systems
+  for(int i = 0; i < numSys; i++)
+  {
+    // check convergence
+    MT relres = S[i]->normR_ / S[i]->normR0_;
+    MT absres = S[i]->normR_;
+    if( S[i]->normR0_ != -mt::one() && ( absres < 100*st::eps() || relres < S[i]->tol ) )
+    {
+      S[i]->status = 0; // mark as converged
+      anyConverged++;
+    }
+    else if( S[i]->curDimV_ >= mvecBuff->size() )
+    {
+      S[i]->status = 2; // mark as failed/restart needed
+      anyFailed++;
+    }
+  }
 
   while( anyConverged == 0 && anyFailed == 0 )
   {
     //    % get new vector for y
     int nextIndex;
     PHIST_CHK_IERR( mvecBuff->getNextUnused(nextIndex,ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(nextIndex), &work_y, 0, numSys-1, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(nextIndex), &work_y, 0, maxId, ierr), *ierr);
 
 
     //    % apply the operator of the matrix A
@@ -470,7 +555,7 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[
       if( j == 0 )
       {
         // (re-)start: r_0 = b - A*x_0
-        PHIST_CHK_IERR( SUBR(mvec_view_block) (work_y, &Vj, i, i, ierr), *ierr);
+        PHIST_CHK_IERR( SUBR(mvec_view_block) (work_y, &Vj, S[i]->id, S[i]->id, ierr), *ierr);
         PHIST_CHK_IERR( SUBR(mvec_add_mvec) (st::one(), S[i]->b_, -st::one(), Vj, ierr), *ierr);
       }
     }
@@ -491,15 +576,15 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[
     for(int j = 0; j < maxCurDimV; j++)
     {
       int Vind = mvecBuff->prevIndex(S[0]->lastVind_,maxCurDimV-j);
-      _ST_ tmp[numSys];
+      _ST_ tmp[maxId+1];
 
       bool calculatedDot = false;
-      if( j >= maxCurDimV-sharedCurDimV )
+      if( j >= maxCurDimV-sharedCurDimV && maxId == numSys-1 )
       {
         // MGS step for all systems at once
-        PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, 0, numSys-1, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, 0, maxId, ierr), *ierr);
         PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (work_y, Vk, tmp, ierr), *ierr);
-        for(int i = 0; i < numSys; i++)
+        for(int i = 0; i < maxId+1; i++)
           tmp[i] = -st::conj(tmp[i]);
         PHIST_CHK_IERR(SUBR( mvec_vadd_mvec  ) (tmp, Vk, st::one(), work_y, ierr), *ierr);
         calculatedDot = true;
@@ -511,15 +596,15 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[
         int j_ = j - (maxCurDimV-S[i]->curDimV_);
         if( j_ >= 0 )
         {
-std::cout << "In pgmres arnoldi: j " << j << " Vind " << Vind << " i " << i << " j_ " << j_ << " curDimV " << S[i]->curDimV_ << std::endl;
+//std::cout << "In pgmres arnoldi: j " << j << " Vind " << Vind << " i " << i << " j_ " << j_ << " curDimV " << S[i]->curDimV_ << std::endl;
           if( !calculatedDot )
           {
             // MGS step for single system
-            PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, i, i, ierr), *ierr);
-            PHIST_CHK_IERR(SUBR( mvec_view_block ) (work_y,             &Vj, i, i, ierr), *ierr);
-            PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vj, Vk, &tmp[i], ierr), *ierr);
-            tmp[i] = -st::conj(tmp[i]);
-            PHIST_CHK_IERR(SUBR( mvec_add_mvec   ) (tmp[i], Vk, st::one(), Vj, ierr), *ierr);
+            PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, S[i]->id, S[i]->id, ierr), *ierr);
+            PHIST_CHK_IERR(SUBR( mvec_view_block ) (work_y,             &Vj, S[i]->id, S[i]->id, ierr), *ierr);
+            PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vj, Vk, &tmp[S[i]->id], ierr), *ierr);
+            tmp[S[i]->id] = -st::conj(tmp[S[i]->id]);
+            PHIST_CHK_IERR(SUBR( mvec_add_mvec   ) (tmp[S[i]->id], Vk, st::one(), Vj, ierr), *ierr);
           }
 
           // store in H
@@ -527,13 +612,13 @@ std::cout << "In pgmres arnoldi: j " << j << " Vind " << Vind << " i " << i << "
           lidx_t ldH; 
           PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
           Hj += (S[i]->curDimV_-1)*ldH;
-          Hj[j_] = -tmp[i];
+          Hj[j_] = -tmp[S[i]->id];
         }
       }
     }
     {
       // normalize resulting vector
-      _MT_ tmp[numSys];
+      _MT_ tmp[maxId+1];
       PHIST_CHK_IERR(SUBR(mvec_normalize)(work_y, tmp, ierr), *ierr);
       for(int i = 0; i < numSys; i++)
       {
@@ -541,8 +626,8 @@ std::cout << "In pgmres arnoldi: j " << j << " Vind " << Vind << " i " << i << "
         if( j == 0 )
         {
           // initilize rs_
-          S[i]->rs_[0] = tmp[i];
-          S[i]->normR_ = tmp[i];
+          S[i]->rs_[0] = tmp[S[i]->id];
+          S[i]->normR_ = tmp[S[i]->id];
           if( S[i]->normR0_ == -mt::one() )
             S[i]->normR0_ = S[i]->normR_;
         }
@@ -553,7 +638,7 @@ std::cout << "In pgmres arnoldi: j " << j << " Vind " << Vind << " i " << i << "
           lidx_t ldH; 
           PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
           Hj += (S[i]->curDimV_-1)*ldH;
-          Hj[j] = tmp[i];
+          Hj[j] = tmp[S[i]->id];
         }
       }
     }

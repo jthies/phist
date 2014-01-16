@@ -149,8 +149,16 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
           {
             SUBR(mvec_view_block)(x,&x_i,i,i,&ierr_);
             SUBR(mvec_view_block)(b,&b_i,i,i,&ierr_);
-            SUBR(pgmresState_reset)(state_[i],b_i,x_i,&ierr_);
-            ASSERT_EQ(0,ierr_);
+            if( nr == 0 )
+            {
+              SUBR(pgmresState_reset)(state_[i],b_i,x_i,&ierr_);
+              ASSERT_EQ(0,ierr_);
+            }
+            else
+            {
+              SUBR(pgmresState_reset)(state_[i],NULL,x_i,&ierr_);
+              ASSERT_EQ(0,ierr_);
+            }
           }
           // iterate for MAXBAS iterations
           int nIter = 0;

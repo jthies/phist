@@ -524,17 +524,13 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       _MT_ resNorm[_NV_];
       for(int i = 0; i < _NV_; i++)
         resNorm[i] = -mt::one();
-      // original sigma for later
-      _ST_ origSigma[_NV_];
-      for(int i = 0; i < _NV_; i++)
-        origSigma[i] = sigma_[i];
 
       // call iterate
       int nIter = 0;
       int numSys = _NV_;
       do
       {
-        SUBR(pgmresStates_iterate)(jdOp_,state, _NV_, &nIter, &ierr_);
+        SUBR(pgmresStates_iterate)(jdOp_,state, numSys, &nIter, &ierr_);
         ASSERT_TRUE(ierr_ == 0 || ierr_ == 1);
 
         // check if any converged or needs to be restarted
@@ -553,10 +549,14 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
           // explicitly restart
           if( state[i]->status == 2 )
           {
-            int id = state[i]->id;
-            SUBR(mvec_view_block)(vec3_,&y_i,id,id,&ierr_);
+            SUBR(pgmresState_reset)(state[i], NULL, x_i, &ierr_);
             ASSERT_EQ(0,ierr_);
-            SUBR(pgmresState_reset)(state[i], y_i, x_i, &ierr_);
+            state[i]->tol = 100*VTest::releps();
+          }
+          // free resources
+          else if( state[i]->status == 0 )
+          {
+            SUBR(pgmresState_reset)(state[i], NULL, NULL, &ierr_);
             ASSERT_EQ(0,ierr_);
           }
         }
@@ -564,9 +564,9 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         // move converged systems to the end of the state array
         int nConverged = 0;
         int nUnconverged = 0;
-        TYPE(pgmresState_ptr) convergedState[_NV_];
-        TYPE(pgmresState_ptr) unconvergedState[_NV_];
-        for(int i = 0; i < _NV_; i++)
+        TYPE(pgmresState_ptr) convergedState[numSys];
+        TYPE(pgmresState_ptr) unconvergedState[numSys];
+        for(int i = 0; i < numSys; i++)
         {
           if( state[i]->status == 0 )
             convergedState[nConverged++] = state[i];
@@ -578,19 +578,21 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         for(int i = 0; i < nConverged; i++)
           state[i+nUnconverged] = convergedState[i];
 
+        numSys = nUnconverged;
+        int maxId = 0;
+        for(int i = 0; i < numSys; i++)
+          maxId = std::max(maxId,state[i]->id);
+
         if( nUnconverged > 0 )
         {
           // setup new jada op
           SUBR(jadaOp_delete)(jdOp_,&ierr_);
           ASSERT_EQ(0,ierr_);
-          for(int i = 0; i < numSys; i++)
-            sigma_[i] = origSigma[state[i]->id];
-          numSys = nUnconverged;
-          SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,numSys,jdOp_,&ierr_);
+          SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,maxId+1,jdOp_,&ierr_);
           ASSERT_EQ(0,ierr_);
         }
       }
-      while(ierr_ == 1 && nIter < 200 && numSys > 0);
+      while(nIter < 200 && numSys > 0);
 
 
       // now check the result: vec3 = jdOp_(vec2)
@@ -602,7 +604,9 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0,ierr_);
       for(int i = 0; i < _NV_; i++)
       {
-        ASSERT_NEAR(explicitResNorm[i]/initialResNorm[i], resNorm[i], 100*VTest::releps());
+        ASSERT_LT(resNorm[i], mt::one());
+        ASSERT_LT(explicitResNorm[i], initialResNorm[i]);
+        ASSERT_NEAR(explicitResNorm[i]/initialResNorm[i], resNorm[i], 1000*VTest::releps());
       }
 #ifdef PHIST_KERNEL_LIB_FORTRAN
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),1000*VTest::releps());
