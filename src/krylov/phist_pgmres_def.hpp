@@ -500,7 +500,7 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[
         PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, 0, numSys-1, ierr), *ierr);
         PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (work_y, Vk, tmp, ierr), *ierr);
         for(int i = 0; i < numSys; i++)
-          tmp[i] = -tmp[i];
+          tmp[i] = -st::conj(tmp[i]);
         PHIST_CHK_IERR(SUBR( mvec_vadd_mvec  ) (tmp, Vk, st::one(), work_y, ierr), *ierr);
         calculatedDot = true;
       }
@@ -518,7 +518,7 @@ std::cout << "In pgmres arnoldi: j " << j << " Vind " << Vind << " i " << i << "
             PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, i, i, ierr), *ierr);
             PHIST_CHK_IERR(SUBR( mvec_view_block ) (work_y,             &Vj, i, i, ierr), *ierr);
             PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vj, Vk, &tmp[i], ierr), *ierr);
-            tmp[i] = -tmp[i];
+            tmp[i] = -st::conj(tmp[i]);
             PHIST_CHK_IERR(SUBR( mvec_add_mvec   ) (tmp[i], Vk, st::one(), Vj, ierr), *ierr);
           }
 

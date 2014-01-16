@@ -105,6 +105,27 @@ public:
       ASSERT_EQ(0,ierr_);
       _ST_ val = st::one() * (ST)nglob_;
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(dots,nvec_,1,nvec_,1,val));
+
+      // test two random vectors
+      SUBR(mvec_random)(vec2_, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_dot_mvec)(vec1_,vec2_,dots,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      for (int j=0;j<nvec_;j++)
+      {
+        for (int i=0;i<nloc_*stride_;i+=stride_)
+        {
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+          dots[j] -= st::conj(vec1_vp_[j+i*lda_])*vec2_vp_[j+i*lda_];
+#else
+          dots[j] -= st::conj(vec1_vp_[i+j*lda_])*vec2_vp_[i+j*lda_];
+#endif
+        }
+        ASSERT_NEAR(mt::zero(), st::real(dots[j]), 100*mt::eps());
+        ASSERT_NEAR(mt::zero(), st::imag(dots[j]), 100*mt::eps());
+      }
+
       delete [] dots;
       }
     
