@@ -139,8 +139,9 @@ void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int
 
   ghost_map_t* map = new ghost_map_t;
   
-  map->ctx=ghost_createContext(nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,*comm,1.0);
-
+  map->ctx=NULL;
+//TODO: check ghost_err_t return codes everywhere like this:
+  PHIST_CHK_GERR(ghost_createContext(&map->ctx,nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,*comm,1.0),*ierr);
   map->vtraits_template=phist_default_vtraits();
   // in ghost terminology, we look at LHS=A*RHS, the LHS is based on the
   // row distribution of A, the RHS has halo elements to allow importing from
@@ -178,7 +179,8 @@ void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*ierr);
-  *nloc=map->ctx->communicator->lnrows[ghost_getRank(map->ctx->mpicomm)];
+  int me=ghost_getRank(map->ctx->mpicomm);
+  *nloc=map->ctx->lnrows[me];
   }
 
 //! returns the smallest global index in the map appearing on my partition.
@@ -187,7 +189,7 @@ void phist_map_get_ilower(const_map_ptr_t vmap, int* ilower, int* ierr)
   *ierr=0;
   CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*ierr);
   int me = ghost_getRank(map->ctx->mpicomm);
-  *ilower = map->ctx->communicator->lfRow[me];
+  *ilower = map->ctx->lfRow[me];
   }
 //! returns the largest global index in the map appearing on my partition.
 void phist_map_get_iupper(const_map_ptr_t vmap, int* iupper, int* ierr)
@@ -195,7 +197,7 @@ void phist_map_get_iupper(const_map_ptr_t vmap, int* iupper, int* ierr)
   *ierr=0;
   CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*ierr);
   int me = ghost_getRank(map->ctx->mpicomm);
-  *iupper = map->ctx->communicator->lfRow[me+1]-1;
+  *iupper = map->ctx->lfRow[me+1]-1;
   }
 
 

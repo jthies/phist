@@ -15,7 +15,7 @@
 #include "phist_lapack.h"
 
 #ifdef PHIST_HAVE_GHOST
-#include "ghost_constants.h"
+#include "ghost/constants.h"
 #endif
 
 namespace phist {

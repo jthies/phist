@@ -7,7 +7,7 @@
 
 #include "phist_typedefs.h"
 #include "ghost.h"
-#include "ghost_affinity.h"
+#include "ghost/affinity.h"
 #include "phist_GhostMV.hpp"
 
 // @HEADER
