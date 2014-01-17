@@ -33,9 +33,9 @@ void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
         mtraits->format = GHOST_SPM_FORMAT_CRS;
         mtraits->datatype = st::ghost_dt;
         mtraits->flags = GHOST_SPM_DEFAULT;
-
-  ctx = ghost_createContext(GHOST_GET_DIM_FROM_MATRIX,GHOST_GET_DIM_FROM_MATRIX,
-        GHOST_CONTEXT_DEFAULT,(char*)filename,MPI_COMM_WORLD,1.0);
+// TODO - check ghost return codes everywhere like this
+  PHIST_CHK_GERR(ghost_createContext(&ctx,GHOST_GET_DIM_FROM_MATRIX,GHOST_GET_DIM_FROM_MATRIX,
+        GHOST_CONTEXT_DEFAULT,(char*)filename,MPI_COMM_WORLD,1.0),*ierr);
   mat = ghost_createMatrix(ctx,mtraits,1);                               
   mat->fromFile(mat,const_cast<char*>(filename));
 #if PHIST_OUTLEV >= PHIST_VERBOSE
@@ -176,8 +176,9 @@ void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
         dmtraits->datatype=st::ghost_dt;
 
   // I think the sdMat should not have a context
-  ghost_context_t* ctx=ghost_createContext(nrows, ncols, GHOST_CONTEXT_DEFAULT, 
-        NULL, *comm, 1.0);
+  ghost_context_t* ctx=NULL;
+  PHIST_CHK_GERR(ghost_createContext(&ctx,nrows, ncols, GHOST_CONTEXT_DEFAULT, 
+        NULL, *comm, 1.0),*ierr);
   result=ghost_createVector(ctx,dmtraits);
   ST zero = st::zero();
   result->fromScalar(result,&zero);

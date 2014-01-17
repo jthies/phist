@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <ghost.h>
-#include <ghost_util.h>
+#include <ghost/util.h>
 
 // struct for JaDa settings
 #include "phist_jadaOpts.h"
@@ -98,7 +98,12 @@ int main( int argc, char* argv[] )
 
     ghost_init(argc,argv);
 
-    ctx = ghost_createContext( info.nrows , info.ncols ,GHOST_CONTEXT_DEFAULT,NULL,MPI_COMM_WORLD,1.);
+    ghost_error_t err=ghost_createContext(&ctx, info.nrows , 
+        info.ncols,GHOST_CONTEXT_DEFAULT,NULL,MPI_COMM_WORLD,1.);
+    if (err!=GHOST_SUCCESS)
+    {
+      PHIST_OUT(PHIST_ERROR,"error returned from createContext (file %s, line %d)",__FILE__,__LINE__);
+    }        
 
     mat = ghost_createMatrix(ctx,&mtraits,1);
 

@@ -18,8 +18,8 @@ typedef  complex float s_complex_t;
 typedef  complex double d_complex_t;
 #endif
 
-#include "ghost_config.h"
-#include "ghost_types.h"
+#include "ghost/config.h"
+#include "ghost/types.h"
 
 //! type of node-local indices
 typedef ghost_vidx_t lidx_t;

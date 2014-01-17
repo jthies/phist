@@ -111,6 +111,16 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return;}}}
 #endif
 
+#ifdef PHIST_KERNEL_LIB_GHOST
+#include "ghost/config.h"
+#include "ghost/types.h"
+// check return value from GHOST
+#define PHIST_CHK_GERR(func,FLAG) {\
+ghost_error_t gerr=func; FLAG=(int)gerr; if (gerr!=GHOST_SUCCESS) { \
+PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
+(FLAG),(phist_ghost_error2str(gerr)),(#func),(__FILE__),(__LINE__)); return;}\
+}
+#endif
 //! checks an ierr flag passed to a void function for negative value, assigns it to FLAG,
 //! prints an error message and returns if non-zero (to be used in void functions)
 #ifndef PHIST_CHK_NEG_IERR

@@ -16,8 +16,8 @@
 #include "MpiRootOnlyPrinter.hpp"
 #ifdef PHIST_HAVE_GHOST
 #include "ghost.h"
-#include "ghost_util.h"
-#include "ghost_taskq.h"
+#include "ghost/util.h"
+#include "ghost/taskq.h"
 #endif
 
 GTEST_API_ int main(int argc, char **argv) {

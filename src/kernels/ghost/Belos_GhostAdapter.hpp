@@ -4,6 +4,7 @@
 #include "ghost.h"
 #include "phist_typedefs.h"
 #include "phist_ScalarTraits.hpp"
+#include "phist_tools.h"
 #include "phist_macros.h"
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_Array.hpp>
@@ -588,7 +589,7 @@ using ::phist::GhostMV;
   static ghost_vec_t* createGhostViewOfTeuchosSDM
         (const Teuchos::SerialDenseMatrix<lidx_t,Scalar>& M)
   {
-    ENTER_FCN(__FUNCTION__);    
+    ENTER_FCN(__FUNCTION__);
       ghost_vtraits_t *dmtraits=new ghost_vtraits_t;
                 dmtraits->flags = GHOST_VEC_DEFAULT;
                 dmtraits->aux=NULL;
@@ -602,9 +603,12 @@ using ::phist::GhostMV;
       // but it is not clear wether this is handled correctly everywhere i ghost.
       // For the moment we can afford to just put in MPI_COMM_WORLD at this point.
       MPI_Comm comm = MPI_COMM_WORLD;
-      ghost_context_t* ctx=ghost_createContext(M.numRows(), M.numRows(), GHOST_CONTEXT_DEFAULT,
-          NULL, comm, 1.0);
-      
+      ghost_context_t* ctx=NULL;
+      ghost_error_t gerr=ghost_createContext(&ctx,M.numRows(), M.numRows(), 
+          GHOST_CONTEXT_DEFAULT, NULL, comm, 1.0);
+      if (gerr!=GHOST_SUCCESS) PHIST_OUT(PHIST_ERROR,"GHOST error (%s) in file %s, line %d",
+        phist_ghost_error2str(gerr),__FILE__,__LINE__);
+      //TODO - check return values everywhere
       ghost_vec_t* Mghost=ghost_createVector(ctx,dmtraits);
       Mghost->viewPlain(Mghost, (void*)M.values(),
                 Mghost->traits->nrows, Mghost->traits->nvecs,

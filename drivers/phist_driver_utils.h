@@ -1,4 +1,8 @@
-
+#ifdef __cplusplus
+#include <cstring>
+#else
+#include <string.h>
+#endif
 typedef _ST_ ST;
 typedef _MT_ MT;
 typedef TYPE(mvec_ptr) mvec_ptr_t;
