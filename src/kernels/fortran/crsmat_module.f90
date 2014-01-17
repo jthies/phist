@@ -363,12 +363,13 @@ end do
 
   !==================================================================================
   !> multiply crsmat with mvec
-  subroutine crsmat_times_mvec(alpha, A, x, beta, y)
+  subroutine crsmat_times_mvec(alpha, A, shifts, x, beta, y)
     use, intrinsic :: iso_c_binding, only: C_INT
     use mpi
     !--------------------------------------------------------------------------------
     real(kind=8),   intent(in)    :: alpha
     type(CrsMat_t), intent(inout) :: A
+    real(kind=8),   intent(in)    :: shifts(*)
     type(MVec_t),   intent(in)    :: x
     real(kind=8),   intent(in)    :: beta
     type(MVec_t),   intent(inout) :: y
@@ -471,7 +472,7 @@ end do
       if( nvec .eq. 1 ) then
         if( .not. strided ) then
           call dspmvm_NT_1(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
-            &              A%row_offset, A%nonlocal_offset, A%col_idx, A%val, x%val, &
+            &              A%row_offset, A%nonlocal_offset, A%col_idx, A%val, shifts, x%val, &
             &              A%comm_buff%recvData, y%val)
           handled = .true.
         end if
@@ -479,33 +480,33 @@ end do
         if( strided_x ) then
           call dspmvm_NT_strided_2(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
             &                      A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-            &                      x%val(x%jmin,1), ldx, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
+            &                      shifts, x%val(x%jmin,1), ldx, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
         else
           call dspmvm_NT_2(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
             &              A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-            &              x%val, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
+            &              shifts, x%val, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
         end if
         handled = .true.
       else if( nvec .eq. 4 ) then
         if( strided_x ) then
           call dspmvm_NT_strided_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
             &                      A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-            &                      x%val(x%jmin,1), ldx, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
+            &                      shifts, x%val(x%jmin,1), ldx, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
         else
           call dspmvm_NT_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
             &              A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-            &              x%val, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
+            &              shifts, x%val, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
         end if
         handled = .true.
       else if( nvec .eq. 8 ) then
         if( strided_x ) then
           call dspmvm_NT_strided_8(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
             &              A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-            &                      x%val(x%jmin,1), ldx, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
+            &                      shifts, x%val(x%jmin,1), ldx, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
         else
           call dspmvm_NT_8(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
             &              A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-            &              x%val, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
+            &              shifts, x%val, A%comm_buff%recvData, y%val(y%jmin,1), ldy)
         end if
         handled = .true.
       end if
@@ -515,44 +516,44 @@ end do
       if( strided ) then
         call dspmvm_strided_1(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
           &                   A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-          &                   x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
+          &                   shifts, x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
       else
         call dspmvm_1(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
           &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-          &           x%val, A%comm_buff%recvData, beta, y%val)
+          &           shifts, x%val, A%comm_buff%recvData, beta, y%val)
       end if
       handled = .true.
     else if( nvec .eq. 2 ) then
       if( strided ) then
         call dspmvm_strided_2(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
           &                   A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-          &                   x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
+          &                   shifts, x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
       else
         call dspmvm_2(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
           &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-          &           x%val, A%comm_buff%recvData, beta, y%val)
+          &           shifts, x%val, A%comm_buff%recvData, beta, y%val)
       end if
       handled = .true.
     else if( nvec .eq. 4 ) then
       if( strided ) then
         call dspmvm_strided_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
           &                   A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-          &                   x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
+          &                   shifts, x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
       else
         call dspmvm_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
           &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-          &           x%val, A%comm_buff%recvData, beta, y%val)
+          &           shifts, x%val, A%comm_buff%recvData, beta, y%val)
       end if
       handled = .true.
     else if( nvec .eq. 8 ) then
       if( strided ) then
         call dspmvm_strided_8(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
           &                   A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-          &                   x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
+          &                   shifts, x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
       else
         call dspmvm_8(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
           &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-          &           x%val, A%comm_buff%recvData, beta, y%val)
+          &           shifts, x%val, A%comm_buff%recvData, beta, y%val)
       end if
       handled = .true.
     end if
@@ -572,7 +573,7 @@ end do
     if( .not. handled ) then
       call dspmvm_generic(nvec, A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
         &                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-        &                 x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
+        &                 shifts, x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
     end if
 
 
@@ -794,6 +795,7 @@ end do
     !--------------------------------------------------------------------------------
     type(CrsMat_t), pointer :: A
     type(MVec_t), pointer :: x, y
+    real(kind=8), allocatable :: shifts(:)
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(A_ptr) .or. &
@@ -807,10 +809,43 @@ end do
     call c_f_pointer(x_ptr,x)
     call c_f_pointer(y_ptr,y)
 
-    call crsmat_times_mvec(alpha,A,x,beta,y)
+    allocate(shifts(x%jmax-x%jmin+1))
+    shifts = 0._8
+
+    call crsmat_times_mvec(alpha,A,shifts,x,beta,y)
 
     ierr = 0
   end subroutine phist_DcrsMat_times_mvec
+
+
+  !==================================================================================
+  subroutine phist_DcrsMat_times_mvec_vadd_mvec(alpha, A_ptr, shifts, x_ptr, beta, y_ptr, ierr) bind(C,name='phist_DcrsMat_times_mvec_vadd_mvec_f')
+    use, intrinsic :: iso_c_binding
+    !--------------------------------------------------------------------------------
+    real(C_DOUBLE),   value         :: alpha, beta
+    real(C_DOUBLE),   intent(in)    :: shifts(*)
+    type(C_PTR),      value         :: A_ptr, x_ptr, y_ptr
+    integer(C_INT),   intent(out)   :: ierr
+    !--------------------------------------------------------------------------------
+    type(CrsMat_t), pointer :: A
+    type(MVec_t), pointer :: x, y
+    !--------------------------------------------------------------------------------
+
+    if( .not. c_associated(A_ptr) .or. &
+      & .not. c_associated(x_ptr) .or. &
+      & .not. c_associated(y_ptr)      ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(A_ptr,A)
+    call c_f_pointer(x_ptr,x)
+    call c_f_pointer(y_ptr,y)
+
+    call crsmat_times_mvec(alpha,A,shifts,x,beta,y)
+
+    ierr = 0
+  end subroutine phist_DcrsMat_times_mvec_vadd_mvec
 
 
 end module crsmat_module

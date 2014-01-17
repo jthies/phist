@@ -18,7 +18,7 @@ void mem_is_aligned16_(const void*restrict pointer, int* ret)
 }
 
 void dspmvm_nt_1_c(int nrows, double alpha, const long *restrict row_ptr, const long *restrict halo_ptr, const int *restrict col_idx, const double *restrict val,
-                 const double *restrict rhsv, const double *restrict halo, double *restrict lhsv)
+                 const double *restrict shifts, const double *restrict rhsv, const double *restrict halo, double *restrict lhsv)
 {
   if( !is_aligned(lhsv,16) )
   {
@@ -29,14 +29,14 @@ void dspmvm_nt_1_c(int nrows, double alpha, const long *restrict row_ptr, const 
 #pragma omp parallel for
   for(int i = 0; i < nrows/2; i++)
   {
-    double lhs1 = 0.;
+    double lhs1 = shifts[0]*rhsv[2*i];
 
     for(long j = row_ptr[2*i]-1; j < halo_ptr[2*i]-1; j++)
       lhs1 += val[j]*rhsv[ (col_idx[j]-1) ];
     for(long j = halo_ptr[2*i]-1; j < row_ptr[2*i+1]-1; j++)
       lhs1 += val[j]*halo[ (col_idx[j]-1) ];
 
-    double lhs2 = 0.;
+    double lhs2 = shifts[0]*rhsv[2*i+1];
 
     for(long j = row_ptr[2*i+1]-1; j < halo_ptr[2*i+1]-1; j++)
       lhs2 += val[j]*rhsv[ (col_idx[j]-1) ];
@@ -66,7 +66,7 @@ void dspmvm_nt_1_c(int nrows, double alpha, const long *restrict row_ptr, const 
 
 
 void dspmvm_nt_2_c(int nrows, double alpha, const long *restrict row_ptr, const long *restrict halo_ptr, const int *restrict col_idx, const double *restrict val,
-                 const double *restrict rhsv, const double *restrict halo, double *restrict lhsv, int ldv)
+                 const double *restrict shifts, const double *restrict rhsv, const double *restrict halo, double *restrict lhsv, int ldv)
 {
   if( !is_aligned(lhsv,16) )
   {
@@ -77,7 +77,7 @@ void dspmvm_nt_2_c(int nrows, double alpha, const long *restrict row_ptr, const 
 #pragma omp parallel for
   for(int i = 0; i < nrows; i++)
   {
-    __m128d lhs_ = _mm_set1_pd(0.);
+    __m128d lhs_ = _mm_set_pd(shifts[1]*rhsv[2*i+1],shifts[0]*rhsv[2*i]);
 
     for(long j = row_ptr[i]-1; j < halo_ptr[i]-1; j++)
     {
@@ -109,7 +109,7 @@ void dspmvm_nt_2_c(int nrows, double alpha, const long *restrict row_ptr, const 
 }
 
 void dspmvm_nt_4_c(int nrows, double alpha, const long *restrict row_ptr, const long *restrict halo_ptr, const int *restrict col_idx, const double *restrict val,
-                 const double *restrict rhsv, const double *restrict halo, double *restrict lhsv, int ldv)
+                 const double *restrict shifts, const double *restrict rhsv, const double *restrict halo, double *restrict lhsv, int ldv)
 {
   if( !is_aligned(lhsv,16) )
   {
@@ -122,7 +122,7 @@ void dspmvm_nt_4_c(int nrows, double alpha, const long *restrict row_ptr, const 
   {
     __m128d lhs_[2];
     for(int k = 0; k < 2; k++)
-      lhs_[k] = _mm_set1_pd(0.);
+      lhs_[k] = _mm_set_pd(shifts[2*k+1]*rhsv[4*i+2*k+1],shifts[2*k]*rhsv[4*i+2*k]);
 
     for(long j = row_ptr[i]-1; j < halo_ptr[i]-1; j++)
     {
@@ -160,7 +160,7 @@ void dspmvm_nt_4_c(int nrows, double alpha, const long *restrict row_ptr, const 
 }
 
 void dspmvm_nt_8_c(int nrows, double alpha, const long *restrict row_ptr, const long *restrict halo_ptr, const int *restrict col_idx, const double *restrict val,
-                 const double *restrict rhsv, const double *restrict halo, double *restrict lhsv, int ldv)
+                 const double *restrict shifts, const double *restrict rhsv, const double *restrict halo, double *restrict lhsv, int ldv)
 {
   if( !is_aligned(lhsv,16) )
   {
@@ -173,7 +173,7 @@ void dspmvm_nt_8_c(int nrows, double alpha, const long *restrict row_ptr, const 
   {
     __m128d lhs_[4];
     for(int k = 0; k < 4; k++)
-      lhs_[k] = _mm_set1_pd(0.);
+      lhs_[k] = _mm_set_pd(shifts[2*k+1]*rhsv[8*i+2*k+1],shifts[2*k]*rhsv[8*i+2*k]);
 
     for(long j = row_ptr[i]-1; j < halo_ptr[i]-1; j++)
     {
@@ -212,7 +212,7 @@ void dspmvm_nt_8_c(int nrows, double alpha, const long *restrict row_ptr, const 
 
 
 void dspmvm_nt_strided_2_c(int nrows, double alpha, const long *restrict row_ptr, const long *restrict halo_ptr, const int *restrict col_idx, const double *restrict val,
-                         const double *restrict rhsv, int ldr, const double *restrict halo, double *restrict lhsv, int ldl)
+                         const double *restrict shifts, const double *restrict rhsv, int ldr, const double *restrict halo, double *restrict lhsv, int ldl)
 {
   if( !is_aligned(lhsv,16) )
   {
@@ -223,7 +223,7 @@ void dspmvm_nt_strided_2_c(int nrows, double alpha, const long *restrict row_ptr
 #pragma omp parallel for
   for(int i = 0; i < nrows; i++)
   {
-    __m128d lhs_ = _mm_set1_pd(0.);
+    __m128d lhs_ = _mm_set_pd(shifts[1]*rhsv[ldr*i+1],shifts[0]*rhsv[ldr*i]);
 
     for(long j = row_ptr[i]-1; j < halo_ptr[i]-1; j++)
     {
@@ -255,7 +255,7 @@ void dspmvm_nt_strided_2_c(int nrows, double alpha, const long *restrict row_ptr
 }
 
 void dspmvm_nt_strided_4_c(int nrows, double alpha, const long *restrict row_ptr, const long *restrict halo_ptr, const int *restrict col_idx, const double *restrict val,
-                         const double *restrict rhsv, int ldr, const double *restrict halo, double *restrict lhsv, int ldl)
+                         const double *restrict shifts, const double *restrict rhsv, int ldr, const double *restrict halo, double *restrict lhsv, int ldl)
 {
   if( !is_aligned(lhsv,16) )
   {
@@ -268,7 +268,7 @@ void dspmvm_nt_strided_4_c(int nrows, double alpha, const long *restrict row_ptr
   {
     __m128d lhs_[2];
     for(int k = 0; k < 2; k++)
-      lhs_[k] = _mm_set1_pd(0.);
+      lhs_[k] = _mm_set_pd(shifts[2*k+1]*rhsv[ldr*i+2*k+1],shifts[2*k]*rhsv[ldr*i+2*k]);
 
     for(long j = row_ptr[i]-1; j < halo_ptr[i]-1; j++)
     {
@@ -306,7 +306,7 @@ void dspmvm_nt_strided_4_c(int nrows, double alpha, const long *restrict row_ptr
 }
 
 void dspmvm_nt_strided_8_c(int nrows, double alpha, const long *restrict row_ptr, const long *restrict halo_ptr, const int *restrict col_idx, const double *restrict val,
-                         const double *restrict rhsv, int ldr, const double *restrict halo, double *restrict lhsv, int ldl)
+                         const double *restrict shifts, const double *restrict rhsv, int ldr, const double *restrict halo, double *restrict lhsv, int ldl)
 {
   if( !is_aligned(lhsv,16) )
   {
@@ -319,7 +319,7 @@ void dspmvm_nt_strided_8_c(int nrows, double alpha, const long *restrict row_ptr
   {
     __m128d lhs_[4];
     for(int k = 0; k < 4; k++)
-      lhs_[k] = _mm_set1_pd(0.);
+      lhs_[k] = _mm_set_pd(shifts[2*k+1]*rhsv[ldr*i+2*k+1],shifts[2*k]*rhsv[ldr*i+2*k]);
 
     for(long j = row_ptr[i]-1; j < halo_ptr[i]-1; j++)
     {
