@@ -17,6 +17,8 @@
 //! blockDim: block size, calculates <blockDim> corrections in each iteration
 //! minBase:  start up from a basis consisting of minBas vectors (using Arnoldi)
 //! maxBase:  when the basis reaches <maxBase> vectors, restart from <minBase> vectors.
+//! innerBlockDim: block dimension used in the inner GMRES itersion
+//! innerMaxBase:  restart inner GMRES after this number of iterations
 //! 
 //! Output arguments:
 //!
@@ -32,6 +34,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
                          _MT_ tol,                 int nEig,
                          int* nIter,               int blockDim,
                          int minBase,              int maxBase,
+                         int innerBlockDim,        int innerMaxBase,
                          int initialShiftIter,     _ST_ initialShift,
                          TYPE(mvec_ptr) Q,         TYPE(sdMat_ptr) R,
                          _MT_* resNorm,            int* ierr)
@@ -168,7 +171,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   TYPE(pgmresState_ptr) *gmresState = new TYPE(pgmresState_ptr)[blockDim];
   _MT_ *gmresResNorm = new _MT_[blockDim];
   int nTotalGmresIter = 0;
-  PHIST_CHK_IERR(SUBR( pgmresStates_create ) (gmresState, blockDim, A_op->domain_map, 26, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( pgmresStates_create ) (gmresState, blockDim, A_op->domain_map, innerMaxBase+1, ierr), *ierr);
   _MT_ *innerTol = new _MT_[nEig_];
   for(int i = 0; i < nEig_; i++)
     innerTol[i] = mt::one();
@@ -396,6 +399,20 @@ PHIST_SOUT(PHIST_INFO,"\n");
       PHIST_CHK_IERR(SUBR( transform_searchSpace ) (V, AV, BV, H, Q_H, B_op != NULL, ierr), *ierr);
 
       nConvergedEig = nConvergedEig+nNewlyConvergedEig;
+
+      // to avoid unnecessary subspace transformations, shrink the searchspace one iteration earlier...
+      if( nV + 2*blockDim > maxBase )
+      {
+        PHIST_SOUT(PHIST_INFO,"Shrinking search space from %d to %d\n", nV, minBase);
+
+        // update views
+        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,    &V,                      0, minBase-1,    ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,   &AV,                     0, minBase-1,    ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,   &BV,                     0, minBase-1,    ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( sdMat_view_block  )(H_,    &H,    0, minBase-1,     0, minBase-1,    ierr), *ierr);
+
+        nV = minBase;
+      }
     }
 
     if( nConvergedEig >= nEig )

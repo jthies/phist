@@ -17,6 +17,8 @@
 //! blockDim: block size, calculates <blockDim> corrections in each iteration
 //! minBase:  start up from a basis consisting of minBas vectors (using Arnoldi)
 //! maxBase:  when the basis reaches <maxBase> vectors, restart from <minBase> vectors.
+//! innerBlockDim: block dimension used in the inner GMRES itersion
+//! innerMaxBase:  restart inner GMRES after this number of iterations
 //! 
 //! Output arguments:
 //!
@@ -32,6 +34,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
                          _MT_ tol,                 int nEig,
                          int* nIter,               int blockDim,
                          int minBase,              int maxBase,
+                         int innerBlockDim,        int innerMaxBase,
                          int initialShiftIter,     _ST_ initialShift,
                          TYPE(mvec_ptr) Q,         TYPE(sdMat_ptr) R,
                          _MT_* resNorm,            int* ierr);
