@@ -460,8 +460,10 @@ end do
         &            A%comm_buff%sendProcId(i),3,A%row_map%Comm,A%comm_buff%sendRequests(i),ierr)
     end do
 
-    ! wait till all data arrived
-    call mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStatus,ierr)
+    if( A%comm_buff%nRecvProcs .gt. 0 ) then
+      ! wait till all data arrived
+      call mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStatus,ierr)
+    end if
 
     recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
 
@@ -512,50 +514,52 @@ end do
       end if
     end if
 
-    if( nvec .eq. 1 ) then
-      if( strided ) then
-        call dspmvm_strided_1(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
-          &                   A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-          &                   shifts, x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
-      else
-        call dspmvm_1(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
-          &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-          &           shifts, x%val, A%comm_buff%recvData, beta, y%val)
+    if( .not. handled ) then
+      if( nvec .eq. 1 ) then
+        if( strided ) then
+          call dspmvm_strided_1(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+            &                   A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+            &                   shifts, x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
+        else
+          call dspmvm_1(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+            &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+            &           shifts, x%val, A%comm_buff%recvData, beta, y%val)
+        end if
+        handled = .true.
+      else if( nvec .eq. 2 ) then
+        if( strided ) then
+          call dspmvm_strided_2(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+            &                   A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+            &                   shifts, x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
+        else
+          call dspmvm_2(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+            &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+            &           shifts, x%val, A%comm_buff%recvData, beta, y%val)
+        end if
+        handled = .true.
+      else if( nvec .eq. 4 ) then
+        if( strided ) then
+          call dspmvm_strided_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+            &                   A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+            &                   shifts, x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
+        else
+          call dspmvm_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+            &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+            &           shifts, x%val, A%comm_buff%recvData, beta, y%val)
+        end if
+        handled = .true.
+      else if( nvec .eq. 8 ) then
+        if( strided ) then
+          call dspmvm_strided_8(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+            &                   A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+            &                   shifts, x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
+        else
+          call dspmvm_8(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
+            &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+            &           shifts, x%val, A%comm_buff%recvData, beta, y%val)
+        end if
+        handled = .true.
       end if
-      handled = .true.
-    else if( nvec .eq. 2 ) then
-      if( strided ) then
-        call dspmvm_strided_2(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
-          &                   A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-          &                   shifts, x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
-      else
-        call dspmvm_2(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
-          &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-          &           shifts, x%val, A%comm_buff%recvData, beta, y%val)
-      end if
-      handled = .true.
-    else if( nvec .eq. 4 ) then
-      if( strided ) then
-        call dspmvm_strided_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
-          &                   A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-          &                   shifts, x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
-      else
-        call dspmvm_4(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
-          &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-          &           shifts, x%val, A%comm_buff%recvData, beta, y%val)
-      end if
-      handled = .true.
-    else if( nvec .eq. 8 ) then
-      if( strided ) then
-        call dspmvm_strided_8(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
-          &                   A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-          &                   shifts, x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
-      else
-        call dspmvm_8(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
-          &           A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-          &           shifts, x%val, A%comm_buff%recvData, beta, y%val)
-      end if
-      handled = .true.
     end if
 
 !do i = 1, A%nRows, 1
@@ -577,8 +581,10 @@ end do
     end if
 
 
-    ! just make sure the buffers are not used any more...
-    call mpi_waitall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
+    if( A%comm_buff%nSendProcs .gt. 0 ) then
+      ! just make sure the buffers are not used any more...
+      call mpi_waitall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
+    end if
 
     !--------------------------------------------------------------------------------
   end subroutine crsmat_times_mvec
