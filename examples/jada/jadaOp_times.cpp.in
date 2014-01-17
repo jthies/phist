@@ -14,7 +14,7 @@
 #include "phist_kernels.h"
 #include "phist_operator.h"
 #include "phist_driver_utils.h"
-#include "phist_jadaOp.h"
+#include "phist_jadaOp.hpp"
 #include <Teuchos_TimeMonitor.hpp>
 #include ${PHIST_TG_HFILE}
 #include "phist_ScalarTraits.hpp"

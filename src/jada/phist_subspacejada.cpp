@@ -17,7 +17,7 @@
 
 #include "phist_ScalarTraits.hpp"
 #include "phist_schur_decomp.h"
-#include "phist_jadaOp.h"
+#include "phist_jadaOp.hpp"
 #include "phist_simple_arnoldi.h"
 #include "phist_transform_searchspace.h"
 

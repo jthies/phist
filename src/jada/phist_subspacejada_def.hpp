@@ -27,28 +27,6 @@
 //! resNorm:  norm of the residua of the schur form $A*q_i-Q*r_i, i=1,nEig$
 //! ierr:     return code of the solver (0 on success, negative on error, positive on warning)
 //!
-#ifndef SUBR  /* ignore the following, just to allow better syntax highlighting/autocompletion etc */
-#include <cstdlib>
-#include <cstring>
-#include <cmath>
-#include <iostream>
-#include <iomanip>
-
-#include "phist_macros.h"
-#include "phist_subspacejada.h"
-#include "phist_kernels.h"
-#include "phist_lapack.h"
-#include "phist_orthog.h"
-
-#include "phist_ScalarTraits.hpp"
-#include "phist_schur_decomp.h"
-#include "phist_jadaOp.h"
-#include "phist_simple_arnoldi.h"
-
-#include "phist_pgmres.h"
-
-#include "phist_gen_s.h"
-#endif
 void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
                          TYPE(const_mvec_ptr) v0,  eigSort_t which,
                          _MT_ tol,                 int nEig,

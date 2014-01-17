@@ -9,7 +9,7 @@
 #include "phist_kernels.h"
 #include "phist_enums.h"
 #include "phist_pgmres.h"
-#include "phist_jadaOp.h"
+#include "phist_jadaOp.hpp"
 #include "phist_ScalarTraits.hpp"
 #include "../kernels/KernelTest.h"
 #include "../kernels/KernelTestWithMap.h"
