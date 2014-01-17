@@ -49,9 +49,6 @@ typedef struct TYPE(jadaOp_data)
   TYPE(const_mvec_ptr)  V;      // B-orthonormal basis
   TYPE(const_mvec_ptr)  BV;     // B*V
   const _ST_*           sigma;  // array of NEGATIVE shifts, assumed to have correct size; TODO: what about 'complex' shifts for real JDQR?
-  TYPE(sdMat_ptr)       VY;     // temporary storage for V' times intermediate Y for the projection (I-VV')Y
-  TYPE(mvec_ptr)        AX;     // temporary storage for A*X, respectively  A*X_proj for B!=NULL
-  TYPE(mvec_ptr)        BX;     // temporary storage for B*X_proj, only needed for B != NULL
   TYPE(mvec_ptr)        X_proj; // temporary storage for (I-VV'B)X, only used for B!= NULL
 } TYPE(jadaOp_data);
 
@@ -65,6 +62,34 @@ void SUBR(jadaOp_apply)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
   ENTER_FCN(__FUNCTION__);
   CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *ierr);
 
+  PHIST_CHK_IERR(*ierr = (jadaOp->B_op != NULL) ? -99 : 0, *ierr);
+
+  if( alpha == ZERO )
+  {
+    PHIST_CHK_IERR( SUBR( mvec_scale       ) (Y, beta, ierr), *ierr);
+  }
+  else
+  {
+    int nvec, nvecp;
+    PHIST_CHK_IERR( SUBR( mvec_num_vectors ) (X,          &nvec,  ierr), *ierr);
+    PHIST_CHK_IERR( SUBR( mvec_num_vectors ) (jadaOp->V,  &nvecp, ierr), *ierr);
+    const_comm_ptr_t comm;
+    PHIST_CHK_IERR( SUBR( mvec_get_comm ) (X, &comm, ierr), *ierr);
+    TYPE(sdMat_ptr) tmp;
+    PHIST_CHK_IERR( SUBR( sdMat_create ) (&tmp, nvecp, nvec, comm, ierr), *ierr);
+
+    // TODO: ugly, we don't know if jadaOp->A_op->A
+    // y_i <- alpha*(A+sigma_i I)*x_i + beta * y_i
+    PHIST_CHK_IERR( SUBR( crsMat_times_mvec_vadd_mvec ) (alpha, jadaOp->A_op->A, jadaOp->sigma, X, beta, Y, ierr), *ierr);
+    // tmp <- V'*Y
+    PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (ONE,  jadaOp->V,  Y,   ZERO, tmp, ierr), *ierr);
+    // Y <- Y - V*tmp
+    PHIST_CHK_IERR( SUBR( mvec_times_sdMat ) (-ONE, jadaOp->BV, tmp, ONE,  Y,   ierr), *ierr);
+
+    PHIST_CHK_IERR( SUBR( sdMat_delete ) (tmp, ierr), *ierr);
+  }
+
+/*
   TYPE(const_mvec_ptr) BX;
   if( jadaOp->B_op == NULL )
   {
@@ -96,6 +121,7 @@ void SUBR(jadaOp_apply)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
   {
     PHIST_CHK_IERR( SUBR( mvec_scale       ) (Y, beta, ierr), *ierr);
   }
+*/
 }
 
 
@@ -123,16 +149,12 @@ void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,    TYPE(const_op_ptr)    B_
   const_comm_ptr_t comm;
   PHIST_CHK_IERR(phist_map_get_comm(A_op->domain_map, &comm, ierr), *ierr);
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V, &nvecp, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&myOp->VY, nvecp, nvec, comm, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_create)(&myOp->AX, A_op->range_map, nvec, ierr), *ierr);
   if( B_op != NULL )
   {
-    PHIST_CHK_IERR(SUBR(mvec_create)(&myOp->BX, B_op->range_map, nvec, ierr), *ierr);
     PHIST_CHK_IERR(SUBR(mvec_create)(&myOp->X_proj, B_op->domain_map, nvec, ierr), *ierr);
   }
   else
   {
-    myOp->BX = NULL;
     myOp->X_proj = NULL;
   }
 
@@ -158,45 +180,9 @@ void SUBR(jadaOp_delete)(TYPE(op_ptr) jdOp, int *ierr)
   TYPE(jadaOp_data) *jadaOp = (TYPE(jadaOp_data)*) jdOp->A;
 
   // delete temporary arrays
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(jadaOp->VY, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(jadaOp->AX, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(jadaOp->BX, ierr), *ierr);
   PHIST_CHK_IERR(SUBR(mvec_delete)(jadaOp->X_proj, ierr), *ierr);
 
   // delete jadaOp
   free(jadaOp);
-}
-
-//! access AX from last call to apply (return a view to it)
-void SUBR(jadaOp_view_AX)(const void* op, TYPE(mvec_ptr)*AX, int* ierr)
-{
-  ENTER_FCN(__FUNCTION__);
-  CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *ierr);
-
-  int nvec;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(jadaOp->AX, &nvec, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(jadaOp->AX, AX, 0, nvec-1, ierr), *ierr);
-}
-
-//! access BX from last call to apply (return a view to it)
-void SUBR(jadaOp_view_BX)(const void* op, TYPE(mvec_ptr)*BX, int* ierr)
-{
-  ENTER_FCN(__FUNCTION__);
-  CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *ierr);
-
-  int nvec;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(jadaOp->BX, &nvec, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(jadaOp->BX, BX, 0, nvec-1, ierr), *ierr);
-}
-
-//! access X_proj from last call to apply (return a view to it)
-void SUBR(jadaOp_view_X_proj)(const void* op, TYPE(mvec_ptr)*X_proj, int* ierr)
-{
-  ENTER_FCN(__FUNCTION__);
-  CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *ierr);
-
-  int nvec;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(jadaOp->X_proj, &nvec, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(jadaOp->X_proj, X_proj, 0, nvec-1, ierr), *ierr);
 }
 

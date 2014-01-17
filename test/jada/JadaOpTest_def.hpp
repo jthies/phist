@@ -126,22 +126,6 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
 
-      {
-        TYPE(mvec_ptr) AX = NULL;
-        SUBR(jadaOp_view_AX)(jdOp.A,&AX,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_add_mvec)(st::one(),AX,st::zero(),vec1_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_delete)(AX,&ierr_);
-        ASSERT_EQ(0,ierr_);
-      }
-
-      // vec1_ = I*vec2_ ?
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nvec_,nloc_,lda_,stride_));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
-#endif
 
       // vec3_ = (I-q_*q_') vec2_ ?
       SUBR(mvecT_times_mvec)(st::one(),q_,vec2_,st::zero(),mat2_,&ierr_);
@@ -177,22 +161,6 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
 
-      {
-        TYPE(mvec_ptr) AX = NULL;
-        SUBR(jadaOp_view_AX)(jdOp.A,&AX,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_add_mvec)(st::one(),AX,st::zero(),vec1_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_delete)(AX,&ierr_);
-        ASSERT_EQ(0,ierr_);
-      }
-
-      // vec1_ = I*vec2_ ?
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nvec_,nloc_,lda_,stride_));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
-#endif
 
       // vec3_ = (I-q_*q_') (I+(sigma_i))vec2_ ?
       for(int i = 0; i < _NV_; i++)
@@ -217,45 +185,6 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
   }
 
 
-  TEST_F(CLASSNAME, apply_check_AX)
-  {
-    if( typeImplemented_ )
-    {
-      TYPE(op) jdOp;
-      SUBR(jadaOp_create)(opA1_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&ierr_);
-      ASSERT_EQ(0,ierr_);
-
-      SUBR(mvec_random)(vec2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-
-      // apply
-      jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-
-      {
-        TYPE(mvec_ptr) AX = NULL;
-        SUBR(jadaOp_view_AX)(jdOp.A,&AX,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_add_mvec)(st::one(),AX,st::zero(),vec1_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_delete)(AX,&ierr_);
-        ASSERT_EQ(0,ierr_);
-      }
-
-      // vec1_ = A1_*vec2_ ?
-      SUBR(crsMat_times_mvec)(st::one(),A1_,vec2_,st::zero(),vec3_,&ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec3_vp_,vec1_vp_,nvec_,nloc_,lda_,stride_));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec3_vp_,vec1_vp_,nloc_,nvec_,lda_,stride_));
-#endif
-
-      SUBR(jadaOp_delete)(&jdOp,&ierr_);
-      ASSERT_EQ(0,ierr_);
-    }
-  }
-
-
   TEST_F(CLASSNAME, apply_check_result)
   {
     if( typeImplemented_ )
@@ -271,17 +200,10 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
 
-      {
-        TYPE(mvec_ptr) AX = NULL;
-        SUBR(jadaOp_view_AX)(jdOp.A,&AX,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_add_mvec)(st::one(),AX,st::zero(),vec1_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_delete)(AX,&ierr_);
-        ASSERT_EQ(0,ierr_);
-      }
 
       // vec3_ = (I-q_*q_') (vec1+sigma_i*I)vec2_ ?
+      opA1_->apply(st::one(), opA1_->A, vec2_, st::zero(), vec1_, &ierr_);
+      ASSERT_EQ(0,ierr_);
       SUBR(mvec_vadd_mvec)(sigma_,vec2_,st::one(),vec1_,&ierr_);
       ASSERT_EQ(0,ierr_);
       SUBR(mvecT_times_mvec)(st::one(),q_,vec1_,st::zero(),mat2_,&ierr_);

@@ -518,7 +518,6 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
     TYPE(op) jdOp;
     PHIST_CHK_IERR(SUBR( jadaOp_create ) (A_op, B_op, Qtil, BQtil, sigma, k, &jdOp, ierr), *ierr);
-    // TODO specify useful tol per eigenvalue!
     PHIST_CHK_IERR(SUBR( mvec_put_value )(t, st::zero(), ierr), *ierr);
     for(int i = 0; i < k; i++)
     {

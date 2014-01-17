@@ -286,6 +286,10 @@ void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
 void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A, 
         TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr);
 
+//! y[i]=alpha*(A*x[i]+shifts[i]*x[i]) + beta*y[i]
+void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
+        const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr);
+
 //! dot product of vectors v_i and w_i, i=1..numvecs
 void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) V, 
                             TYPE(const_mvec_ptr) W, 

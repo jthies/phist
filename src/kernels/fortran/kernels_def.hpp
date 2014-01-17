@@ -333,6 +333,23 @@ void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
   PHIST_CHK_IERR(SUBR(crsMat_times_mvec_f)(alpha,A,x,beta,y,ierr),*ierr);
 }
 
+//! y[i]=alpha*(A*x[i]+shifts[i]*x[i]) + beta*y[i]
+void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
+        const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr)
+{
+#include "phist_std_typedefs.hpp"
+  ENTER_FCN(__FUNCTION__);
+  *ierr=0;
+
+  PHIST_CHK_IERR(SUBR(crsMat_times_mvec)(alpha, A, x, beta, y, ierr), *ierr);
+  int nvec;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x, &nvec, ierr), *ierr);
+  _ST_ alpha_shifts[nvec];
+  for(int i = 0; i < nvec; i++)
+    alpha_shifts[i] = alpha*shifts[i];
+  PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha_shifts, x, st::one(), y, ierr), *ierr);
+}
+
 void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) v, 
     TYPE(const_mvec_ptr) w, 
     _ST_* s, int* ierr)

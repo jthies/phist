@@ -399,6 +399,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         SUBR(mvec_delete)(tmp,&ierr_);
         ASSERT_EQ(0,ierr_);
       }
+      SUBR(mvec_put_value)(vec2_, st::one(), &ierr_);
 
       TYPE(mvec_ptr) x_i = NULL;
       TYPE(mvec_ptr) y_i = NULL;
