@@ -64,7 +64,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     set (CMAKE_CXX_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
   endif ()
 
-  set (CMAKE_Fortran_FLAGS "-fopenmp -cpp")
+  set (CMAKE_Fortran_FLAGS "-fopenmp -cpp -ffree-line-length-none")
   set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -O3 -fopenmp -cpp")
   set (CMAKE_Fortran_FLAGS_DEBUG "-dH -O0 -g -DTESTING -fopenmp -Wall -fcheck=all")
 else ()

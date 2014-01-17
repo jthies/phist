@@ -524,7 +524,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       int i_ = selectedRes[i];
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,&t, i,i, ierr), *ierr);
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res,&t_res, i_,i_, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( pgmresState_reset ) (gmresState[i], t_res, t, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( pgmresState_reset ) (gmresState[i], t_res, NULL, ierr), *ierr);
       if( resNorm[nConvergedEig+i] > 4*lastOuterRes[nConvergedEig+i] )
         innerTol[nConvergedEig+i] = 1.;
       innerTol[nConvergedEig+i] *= 0.5;
