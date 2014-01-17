@@ -350,7 +350,7 @@ if  (PHIST_KERNEL_LIB STREQUAL "ghost")
 # TODO - make this somehow general, or probably we should
 #       actually install phist instead and push the spinChain
 #       driver to the essex/examples repo...
-  set(ESSEX_INSTALL_DIR $ENV{HOME}/local/)
+  set(ESSEX_INSTALL_DIR CACHE $ENV{HOME}/local/ "where the essex examples are installed")
   include_directories(${ESSEX_INSTALL_DIR}/include/essex_examples)
   add_executable(spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
   target_link_libraries(spinChain ${ESSEX_INSTALL_DIR}/lib/essex_examples/libmatfuncs.so)
