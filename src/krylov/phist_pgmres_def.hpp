@@ -190,7 +190,7 @@ void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b, TY
     TYPE(mvec_ptr) r0 = NULL;
     PHIST_CHK_IERR(SUBR( mvec_view_block )(mvecBuff->at(S->lastVind_), &r0, S->id, S->id, ierr), *ierr);
     mvecBuff->incRef(S->lastVind_);
-    if( S->normR_ != 0 )
+    if( S->normR_ != mt::zero() )
     {
       _ST_ scale = st::one() / S->normR_;
       PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (scale, S->b_, st::zero(), r0, ierr), *ierr);
@@ -359,7 +359,7 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
 
   // add up solution
   TYPE(mvec_ptr) Vj = NULL, x_i = NULL;
-  for(int j = 0; j < maxCurDimV-1; j++)
+  for(int j = 0; j < maxCurDimV; j++)
   {
     int Vind = mvecBuff->prevIndex(lastVind,maxCurDimV-1-j);
     _ST_ *yj = yglob + ldy*j;
@@ -543,7 +543,6 @@ PHIST_SOUT(PHIST_INFO,"\n");
     PHIST_CHK_IERR( mvecBuff->getNextUnused(nextIndex,ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(nextIndex), &work_y, 0, maxId, ierr), *ierr);
 
-
     //    % apply the operator of the matrix A
     PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_x, st::zero(), work_y, ierr), *ierr);
 
@@ -644,7 +643,33 @@ PHIST_SOUT(PHIST_INFO,"\n");
     }
     maxCurDimV++;
     sharedCurDimV++;
-
+#ifdef TESTING
+// check subspace orthogonality
+{
+  for(int i = 0; i < numSys; i++)
+  {
+    int nj = S[i]->curDimV_+1;
+    _ST_ orth[nj][nj];
+    _MT_ maxOrthErr = mt::zero();
+    for(int j = 0; j < nj; j++)
+    {
+      for(int k = 0; k < nj; k++)
+      {
+        int Vjind = mvecBuff->prevIndex(nextIndex,j);
+        int Vkind = mvecBuff->prevIndex(nextIndex,k);
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vjind), &Vj, S[i]->id, S[i]->id, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vkind), &Vk, S[i]->id, S[i]->id, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(Vj,Vk,&orth[j][k],ierr), *ierr);
+        if( j == k )
+          maxOrthErr = std::max(maxOrthErr, st::abs(orth[j][k]-st::one()));
+        else
+          maxOrthErr = std::max(maxOrthErr, st::abs(orth[j][k]));
+      }
+    }
+    PHIST_SOUT(PHIST_INFO,"subspace orthogonality of subspace %d: %8.4e\n", i, maxOrthErr);
+  }
+}
+#endif
 
     //    % update QR factorization of H
     for(int i = 0; i < numSys; i++)

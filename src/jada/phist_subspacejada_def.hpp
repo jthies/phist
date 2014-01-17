@@ -539,6 +539,11 @@ PHIST_SOUT(PHIST_INFO,"\n");
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res,&AVv, 0,k-1, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_put_value )(AVv, st::zero(), ierr), *ierr);
     PHIST_CHK_IERR(SUBR( pgmresStates_updateSol ) (gmresState, k, Vv, gmresResNorm, true, ierr), *ierr);
+    // tell the pgmres that we don't need the states any more
+    for(int i = 0; i < k; i++)
+    {
+      PHIST_CHK_IERR(SUBR( pgmresState_reset ) (gmresState[i], NULL, NULL, ierr), *ierr);
+    }
     PHIST_CHK_IERR(SUBR( jadaOp_delete ) (&jdOp, ierr), *ierr);
 
     // enlarge search space
