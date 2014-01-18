@@ -109,17 +109,6 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
   {
     if( typeImplemented_ )
     {
-
-      // now check the result: vec3 = jdOp_(vec2)
-      jdOp_->apply(-st::one(),jdOp_->A,vec2_,st::one(),vec3_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
-#else
-      ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
-#endif
-      return;
-
       TYPE(pgmresState_ptr) state[_NV_];
       SUBR(pgmresStates_create)(state, _NV_, map_, _MAXBAS_, &ierr_);
       ASSERT_EQ(0,ierr_);

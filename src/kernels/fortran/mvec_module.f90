@@ -1410,6 +1410,7 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
+    integer :: i
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) ) then
@@ -1419,7 +1420,9 @@ contains
 
     call c_f_pointer(mvec_ptr, mvec)
 
-    write(*,*) mvec%val(mvec%jmin:mvec%jmax,:)
+    do i = 1, size(mvec%val,2)
+      write(*,*) mvec%val(mvec%jmin:mvec%jmax,i)
+    end do
     flush(6)
     ierr = 0
 

@@ -318,8 +318,8 @@ subroutine daxpby_strided_1(nrows, alpha, x, ldx, beta, y, ldy)
   integer, intent(in) :: nrows, ldx, ldy
   real(kind=8), intent(in) :: alpha
   real(kind=8), intent(in) :: beta
-  real(kind=8), intent(in) :: x(ldx,nrows)
-  real(kind=8), intent(inout) :: y(ldy,nrows)
+  real(kind=8), intent(in) :: x(ldx,*)
+  real(kind=8), intent(inout) :: y(ldy,*)
   integer :: i
 
   if( beta .eq. 0 ) then
@@ -340,8 +340,8 @@ subroutine daxpby_strided_2(nrows, alpha, x, ldx, beta, y, ldy)
   integer, intent(in) :: nrows, ldx, ldy
   real(kind=8), intent(in) :: alpha(2)
   real(kind=8), intent(in) :: beta
-  real(kind=8), intent(in) :: x(ldx,nrows)
-  real(kind=8), intent(inout) :: y(ldy,nrows)
+  real(kind=8), intent(in) :: x(ldx,*)
+  real(kind=8), intent(inout) :: y(ldy,*)
   integer :: i
 
   if( beta .eq. 0 ) then
@@ -362,8 +362,8 @@ subroutine daxpby_strided_4(nrows, alpha, x, ldx, beta, y, ldy)
   integer, intent(in) :: nrows, ldx, ldy
   real(kind=8), intent(in) :: alpha(4)
   real(kind=8), intent(in) :: beta
-  real(kind=8), intent(in) :: x(ldx,nrows)
-  real(kind=8), intent(inout) :: y(ldy,nrows)
+  real(kind=8), intent(in) :: x(ldx,*)
+  real(kind=8), intent(inout) :: y(ldy,*)
   integer :: i
 
   if( beta .eq. 0 ) then
@@ -384,8 +384,8 @@ subroutine daxpby_strided_8(nrows, alpha, x, ldx, beta, y, ldy)
   integer, intent(in) :: nrows, ldx, ldy
   real(kind=8), intent(in) :: alpha(8)
   real(kind=8), intent(in) :: beta
-  real(kind=8), intent(in) :: x(ldx,nrows)
-  real(kind=8), intent(inout) :: y(ldy,nrows)
+  real(kind=8), intent(in) :: x(ldx,*)
+  real(kind=8), intent(inout) :: y(ldy,*)
   integer :: i
 
   if( beta .eq. 0 ) then
@@ -406,8 +406,8 @@ subroutine daxpby_generic(nrows, nvec, alpha, x, ldx, beta, y, ldy)
   integer, intent(in) :: nrows, nvec, ldx, ldy
   real(kind=8), intent(in) :: alpha(nvec)
   real(kind=8), intent(in) :: beta
-  real(kind=8), intent(in) :: x(ldx,nrows)
-  real(kind=8), intent(inout) :: y(ldy,nrows)
+  real(kind=8), intent(in) :: x(ldx,*)
+  real(kind=8), intent(inout) :: y(ldy,*)
   integer :: i
 
   if( beta .eq. 0 ) then

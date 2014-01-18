@@ -98,6 +98,41 @@ void rebuildVectors(TYPE(const_crsMat_ptr) A)
     }
   }
 
+
+  void test_crsMat_times_mvec_vadd_mvec(_ST_ alpha, TYPE(const_crsMat_ptr) A, _ST_ shifts[_NV_], _ST_ beta)
+  {
+    if( !typeImplemented_ )
+      return;
+
+    // set up mvecs
+    SUBR(mvec_random)(vec1_, &ierr_);
+    ASSERT_EQ(0, ierr_);
+    SUBR(mvec_random)(vec2_, &ierr_);
+    ASSERT_EQ(0, ierr_);
+
+    SUBR(mvec_add_mvec)(st::one(), vec2_, st::zero(), vec3_, &ierr_);
+    ASSERT_EQ(0, ierr_);
+
+    SUBR(crsMat_times_mvec_vadd_mvec)(alpha, A, shifts, vec1_, beta, vec2_, &ierr_);
+    ASSERT_EQ(0, ierr_);
+
+    _ST_ alpha_shifts[_NV_];
+    for(int i = 0; i < _NV_; i++)
+      alpha_shifts[i] = alpha*shifts[i];
+
+    SUBR(crsMat_times_mvec)(alpha, A, vec1_, beta, vec3_, &ierr_);
+    ASSERT_EQ(0, ierr_);
+    SUBR(mvec_vadd_mvec)(alpha_shifts, vec1_, st::one(), vec3_, &ierr_);
+    ASSERT_EQ(0, ierr_);
+
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nvec_,nloc_,lda_,stride_), 1000*mt::eps());
+#else
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_), 1000*mt::eps());
+#endif
+  }
+
+
 TYPE(crsMat_ptr) A0_; // all zero matrix
 TYPE(crsMat_ptr) A1_; // identity matrix
 TYPE(crsMat_ptr) A2_; // general sparse matrix with nonzero diagonal
@@ -133,6 +168,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       }
   return mt::one();
   }
+
 
   bool haveMats_;
 };
@@ -508,5 +544,52 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
         }
       }
     }
+  }
+
+
+  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_only_scale)
+  {
+    _ST_ shifts[_NV_];
+    for(int i = 0; i < _NV_; i++)
+      shifts[i] = st::rand();
+    _ST_ alpha = st::zero();
+    _ST_ beta = st::rand();
+
+    test_crsMat_times_mvec_vadd_mvec(alpha, A2_, shifts, beta);
+  }
+
+#ifndef SKIP_ZERO_MAT
+  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_only_vadd)
+  {
+    _ST_ shifts[_NV_];
+    for(int i = 0; i < _NV_; i++)
+      shifts[i] = st::rand();
+    _ST_ alpha = st::one();
+    _ST_ beta = st::rand();
+
+    test_crsMat_times_mvec_vadd_mvec(alpha, A0_, shifts, beta);
+  }
+#endif
+
+  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_only_spmvm)
+  {
+    _ST_ shifts[_NV_];
+    for(int i = 0; i < _NV_; i++)
+      shifts[i] = st::zero();
+    _ST_ alpha = st::rand();
+    _ST_ beta = st::rand();
+
+    test_crsMat_times_mvec_vadd_mvec(alpha, A2_, shifts, beta);
+  }
+
+  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_random)
+  {
+    _ST_ shifts[_NV_];
+    for(int i = 0; i < _NV_; i++)
+      shifts[i] = st::rand();
+    _ST_ alpha = st::rand();
+    _ST_ beta = st::rand();
+
+    test_crsMat_times_mvec_vadd_mvec(alpha, A2_, shifts, beta);
   }
 
