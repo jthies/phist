@@ -413,8 +413,10 @@ end do
       y_is_aligned16 = .false.
     end if
 
+#ifdef TESTING
     write(*,*) 'spMVM with nvec =',nvec,', ldx =',ldx,', ldy =',ldy,', y_mem_aligned16 =', y_is_aligned16, 'on proc', A%row_map%me
     flush(6)
+#endif
 
 
     ! exchange necessary elements

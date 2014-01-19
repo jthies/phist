@@ -315,6 +315,7 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
     for(int j = 0; j < m; j++)
       y[ldy*j] = S[i]->rs_[j];
 
+/*
 #ifdef TESTING
 {
   // setup e-vector
@@ -344,6 +345,7 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
   PHIST_SOUT(PHIST_INFO, "\nabs(rot(e_1)):%8.4e\n", st::abs(e[m]));
 }
 #endif
+*/
 
     // solve triangular system
     PHIST_CHK_IERR(PREFIX(TRSV)("U","N","N",&m,(st::blas_scalar_t*)H_raw,&ldH,(st::blas_scalar_t*)y, &ldy, ierr),*ierr);
@@ -362,13 +364,6 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
       for(int j = 0; j < m; j++)
         y[ldy*j] *= scale;
     }
-#ifdef testing
-{
-  PHIST_SOUT(PHIST_INFO, "y:");
-  for(int j = 0; j < m; j++)
-    PHIST_SOUT(PHIST_INFO,"%8.4e + i%8.4e\n", st::real(y[ldy*j]), st::imag(y[ldy*j]));
-}
-#endif
   }
 
 
@@ -749,12 +744,12 @@ PHIST_SOUT(PHIST_INFO,"\n");
 #endif
 #ifdef TESTING
 {
-  PHIST_OUT(PHIST_VERBOSE,"(Hj[j-1],Hj[j]) = (%8.4e+i%8.4e, %8.4e + i%8.4e)\n", st::real(Hj[j-1]), st::imag(Hj[j-1]),st::real(Hj[j]),st::imag(Hj[j]));
-  PHIST_OUT(PHIST_VERBOSE,"(c,s) = (%8.4e, %8.4e+i%8.4e)\n", S[i]->cs_[j-1],st::real(S[i]->sn_[j-1]),st::imag(S[i]->sn_[j-1]));
-  PHIST_OUT(PHIST_VERBOSE,"r = %8.4e + i%8.4e\n", st::real(tmp),st::imag(tmp));
+  //PHIST_OUT(PHIST_VERBOSE,"(Hj[j-1],Hj[j]) = (%8.4e+i%8.4e, %8.4e + i%8.4e)\n", st::real(Hj[j-1]), st::imag(Hj[j-1]),st::real(Hj[j]),st::imag(Hj[j]));
+  //PHIST_OUT(PHIST_VERBOSE,"(c,s) = (%8.4e, %8.4e+i%8.4e)\n", S[i]->cs_[j-1],st::real(S[i]->sn_[j-1]),st::imag(S[i]->sn_[j-1]));
+  //PHIST_OUT(PHIST_VERBOSE,"r = %8.4e + i%8.4e\n", st::real(tmp),st::imag(tmp));
   _ST_ r_ = S[i]->cs_[j-1]*Hj[j-1] + S[i]->sn_[j-1]*Hj[j];
   _ST_ zero_ = -st::conj(S[i]->sn_[j-1])*Hj[j-1] + S[i]->cs_[j-1]*Hj[j];
-  PHIST_OUT(PHIST_VERBOSE,"(r, 0) = (%8.4e + i%8.4e, %8.4e+i%8.4e)\n", st::real(r_), st::imag(r_), st::real(zero_), st::imag(zero_));
+  //PHIST_OUT(PHIST_VERBOSE,"(r, 0) = (%8.4e + i%8.4e, %8.4e+i%8.4e)\n", st::real(r_), st::imag(r_), st::real(zero_), st::imag(zero_));
   PHIST_CHK_IERR(*ierr = (st::abs(r_-tmp) < 1.e-5) ? 0 : -1, *ierr);
   PHIST_CHK_IERR(*ierr = (st::abs(zero_) < 1.e-5) ? 0 : -1, *ierr);
 }

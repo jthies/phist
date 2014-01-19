@@ -428,7 +428,11 @@ public:
 
   // view some columns as a new mvec, compare ||V|| calculations
   // and check that modifying the view vector modifies the original ones
+#ifndef PHIST_KERNEL_LIB_FORTRAN
   TEST_F(CLASSNAME, view_scattered)
+#else
+  TEST_F(CLASSNAME, DISABLED_view_scattered)
+#endif
   {
     if( typeImplemented_ )
     {

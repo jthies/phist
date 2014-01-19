@@ -40,7 +40,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         SUBR(sdMat_create)(&Rtmp,_NVP_,_NVP_,comm_,&ierr_);
         ASSERT_EQ(0,ierr_);
         SUBR(mvec_QR)(q_,Rtmp,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        ASSERT_GE(ierr_,0);
         SUBR(sdMat_delete)(Rtmp,&ierr_);
         ASSERT_EQ(0,ierr_);
 
