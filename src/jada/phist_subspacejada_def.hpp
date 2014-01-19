@@ -322,16 +322,31 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
 
     // reorder multiple eigenvalues in schur form by residual norm
+    // only possible/implemented for the symmetric case, so we need to check the symmetrie
+    bool symmetric = true;
+    for(int i = 0; i < nEig_; i++)
+    {
+      for(int j = 0; j < i; j++)
+      {
+        if( st::abs(R_H_raw[i*ldaR_H+j]) > tol/2 )
+          symmetric = false;
+      }
+    }
     std::vector<int> resPermutation(nEig_);
     for(int i = 0; i < nEig_; i++)
       resPermutation[i] = i;
-    PHIST_CHK_IERR( SUBR(ReorderPartialSchurDecomp)(R_H_raw+offR_H, ldaR_H, Q_H_raw+offQ_H, ldaQ_H, nV-nConvergedEig, nSort, which, sqrt(tol), resNorm+nConvergedEig, ev_H+nConvergedEig, &resPermutation[nConvergedEig], ierr), *ierr);
-    for(int i = nConvergedEig; i < nEig_; i++)
-      resPermutation[i] += nConvergedEig;
+    if( symmetric )
+    {
+      PHIST_CHK_IERR( SUBR(ReorderPartialSchurDecomp)(R_H_raw+offR_H, ldaR_H, Q_H_raw+offQ_H, ldaQ_H, nV-nConvergedEig, nSort, which, sqrt(tol), resNorm+nConvergedEig, ev_H+nConvergedEig, &resPermutation[nConvergedEig], ierr), *ierr);
+      for(int i = nConvergedEig; i < nEig_; i++)
+        resPermutation[i] += nConvergedEig;
+#ifdef TESTING
 PHIST_SOUT(PHIST_INFO,"resPermutation: ");
 for(int i = 0; i < nEig_; i++)
   PHIST_SOUT(PHIST_INFO,"\t%d", resPermutation[i]);
 PHIST_SOUT(PHIST_INFO,"\n");
+#endif
+    }
     // check if we need to adapt Q to the new ordering (e.g. there were duplicate eigenvalues not sorted by their residual norm)
     // res is handled implicitly later
     for(int i = 0; i < nEig_; i++)
@@ -376,7 +391,10 @@ PHIST_SOUT(PHIST_INFO,"\n");
       err = true;
   }
   PHIST_SOUT(PHIST_INFO,"\n");
-  PHIST_CHK_IERR( *ierr = err ? -1 : 0, *ierr);
+  if( err )
+  {
+    PHIST_SOUT(PHIST_WARNING,"strong deviation of estimated and explicit residuals (see above)!\n");
+  }
 }
 #endif
 
