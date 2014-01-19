@@ -58,7 +58,13 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(0,ierr_);
         SUBR(mvec_times_sdMat)(-st::one(),q_,mat1_,st::one(),vec2_,&ierr_);
         ASSERT_EQ(0,ierr_);
+        _MT_ tmp[_NV_];
+        SUBR(mvec_normalize)(vec2_, tmp, &ierr_);
+        ASSERT_EQ(0,ierr_);
         jdOp_->apply(st::one(),jdOp_->A,vec2_,st::zero(),vec3_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        // as we are only interested in the direction of vec3_, scale it to one
+        SUBR(mvec_normalize)(vec3_, tmp, &ierr_);
         ASSERT_EQ(0,ierr_);
       }
     }
@@ -83,6 +89,48 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       }
     }
 
+    void checkResiduals(_MT_ tol[_NV_])
+    {
+      // the calculated approximations should be stored in vec2, the JD-residual in vec3_
+
+      // the solution should be scaled to one
+      _MT_ solutionNorm[_NV_];
+      SUBR(mvec_norm2)(vec2_, solutionNorm, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      for(int i = 0; i < _NV_; i++)
+      {
+        ASSERT_NEAR(mt::one(), solutionNorm[i], VTest::releps());
+      }
+
+      // we cannot directly compare the vectors because the solution is scaled
+      jdOp_->apply(st::one(),jdOp_->A,vec2_,st::zero(),vec1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      // rather check that vec1_ and vec3_ point in the same direction
+      _ST_ tmp[_NV_];
+      SUBR(mvec_dot_mvec)(vec3_, vec1_, tmp, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_vadd_mvec)(tmp, vec3_, -st::one(), vec1_, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      _MT_ resNorm[_NV_];
+      SUBR(mvec_norm2)(vec1_, resNorm, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      // check that the resnorm is actually near the required norm
+      PHIST_SOUT(PHIST_INFO, "required tol.:");
+      for(int i = 0; i < _NV_; i++)
+      {
+        PHIST_SOUT(PHIST_INFO, "\t%8.4e", tol[i]);
+      }
+      PHIST_SOUT(PHIST_INFO, "\nachieved tol.:");
+      for(int i = 0; i < _NV_; i++)
+      {
+        PHIST_SOUT(PHIST_INFO, "\t%8.4e", resNorm[i]);
+      }
+      for(int i = 0; i < _NV_; i++)
+      {
+        ASSERT_LT(resNorm[i], 10*tol[i]);
+      }
+    }
+
     TYPE(crsMat_ptr) A_;
     TYPE(op_ptr) opA_;
     TYPE(op_ptr) jdOp_;
@@ -96,10 +144,185 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(solver, 3, map_, 10, &ierr_);
+      SUBR(jadaCorrectionSolver_create)(solver, 3, map_, _MAXBAS_, &ierr_);
       ASSERT_EQ(0, ierr_);
       SUBR(jadaCorrectionSolver_delete)(solver, &ierr_);
       ASSERT_EQ(0, ierr_);
     }
   }
+
+  TEST_F(CLASSNAME, selftest)
+  {
+    if( typeImplemented_ )
+    {
+      std::vector<_MT_> tol(_NV_, VTest::releps());
+      checkResiduals(&tol[0]);
+    }
+  }
+
+  TEST_F(CLASSNAME, single)
+  {
+    if( typeImplemented_ )
+    {
+      TYPE(jadaCorrectionSolver_ptr) solver = NULL;
+      SUBR(jadaCorrectionSolver_create)(solver, 1, map_, _MAXBAS_, &ierr_);
+      ASSERT_EQ(0, ierr_);
+
+      TYPE(mvec_ptr) t_i = NULL;
+      TYPE(mvec_ptr) res_i = NULL;
+      _MT_ tol[_NV_];
+      for(int i = 0; i < _NV_; i++)
+      {
+        SUBR(mvec_view_block)(vec2_, &t_i, i, i, &ierr_);
+        ASSERT_EQ(0, ierr_);
+        SUBR(mvec_view_block)(vec3_, &res_i, i, i, &ierr_);
+        ASSERT_EQ(0, ierr_);
+
+        // create some random tolerance
+        tol[i] = exp(-(mt::rand()+mt::one())/2)*VTest::releps()/exp(-1);
+
+        SUBR(mvec_put_value)(t_i, st::zero(), &ierr_);
+        ASSERT_EQ(0, ierr_);
+
+        // run
+        SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, &sigma_[i], res_i, &tol[i], 200, t_i, &ierr_);
+        ASSERT_EQ(0, ierr_);
+      }
+
+      // check all solutions
+      checkResiduals(tol);
+
+      SUBR(mvec_delete)(res_i, &ierr_);
+      ASSERT_EQ(0, ierr_);
+      SUBR(mvec_delete)(t_i, &ierr_);
+      ASSERT_EQ(0, ierr_);
+      SUBR(jadaCorrectionSolver_delete)(solver, &ierr_);
+      ASSERT_EQ(0, ierr_);
+    }
+  }
+
+
+  TEST_F(CLASSNAME, all_at_once)
+  {
+    if( typeImplemented_ )
+    {
+      TYPE(jadaCorrectionSolver_ptr) solver = NULL;
+      SUBR(jadaCorrectionSolver_create)(solver, _NV_, map_, _MAXBAS_, &ierr_);
+      ASSERT_EQ(0, ierr_);
+
+      _MT_ tol[_NV_];
+      for(int i = 0; i < _NV_; i++)
+      {
+        // create some random tolerance
+        tol[i] = exp(-(mt::rand()+mt::one())/2)*VTest::releps()/exp(-1);
+      }
+
+      SUBR(mvec_put_value)(vec2_, st::zero(), &ierr_);
+      ASSERT_EQ(0, ierr_);
+
+      // run
+      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, tol, 200, vec2_, &ierr_);
+      ASSERT_EQ(0, ierr_);
+
+      // check all solutions
+      checkResiduals(tol);
+
+      SUBR(jadaCorrectionSolver_delete)(solver, &ierr_);
+      ASSERT_EQ(0, ierr_);
+    }
+  }
+
+
+  TEST_F(CLASSNAME, one_after_another)
+  {
+    if( typeImplemented_ )
+    {
+      TYPE(jadaCorrectionSolver_ptr) solver = NULL;
+      SUBR(jadaCorrectionSolver_create)(solver, 1, map_, _MAXBAS_, &ierr_);
+      ASSERT_EQ(0, ierr_);
+
+      _MT_ tol[_NV_];
+      for(int i = 0; i < _NV_; i++)
+      {
+        // create some random tolerance
+        tol[i] = exp(-(mt::rand()+mt::one())/2)*VTest::releps()/exp(-1);
+      }
+
+      SUBR(mvec_put_value)(vec2_, st::zero(), &ierr_);
+      ASSERT_EQ(0, ierr_);
+
+      // run
+      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, tol, 200, vec2_, &ierr_);
+      ASSERT_EQ(0, ierr_);
+
+      // check all solutions
+      checkResiduals(tol);
+
+      SUBR(jadaCorrectionSolver_delete)(solver, &ierr_);
+      ASSERT_EQ(0, ierr_);
+    }
+  }
+
+
+  TEST_F(CLASSNAME, pipelined_2)
+  {
+    if( typeImplemented_ )
+    {
+      TYPE(jadaCorrectionSolver_ptr) solver = NULL;
+      SUBR(jadaCorrectionSolver_create)(solver, 2, map_, _MAXBAS_, &ierr_);
+      ASSERT_EQ(0, ierr_);
+
+      _MT_ tol[_NV_];
+      for(int i = 0; i < _NV_; i++)
+      {
+        // create some random tolerance
+        tol[i] = exp(-(mt::rand()+mt::one())/2)*VTest::releps()/exp(-1);
+      }
+
+      SUBR(mvec_put_value)(vec2_, st::zero(), &ierr_);
+      ASSERT_EQ(0, ierr_);
+
+      // run
+      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, tol, 200, vec2_, &ierr_);
+      ASSERT_EQ(0, ierr_);
+
+      // check all solutions
+      checkResiduals(tol);
+
+      SUBR(jadaCorrectionSolver_delete)(solver, &ierr_);
+      ASSERT_EQ(0, ierr_);
+    }
+  }
+
+
+  TEST_F(CLASSNAME, pipelined_4)
+  {
+    if( typeImplemented_ )
+    {
+      TYPE(jadaCorrectionSolver_ptr) solver = NULL;
+      SUBR(jadaCorrectionSolver_create)(solver, 4, map_, _MAXBAS_, &ierr_);
+      ASSERT_EQ(0, ierr_);
+
+      _MT_ tol[_NV_];
+      for(int i = 0; i < _NV_; i++)
+      {
+        // create some random tolerance
+        tol[i] = exp(-(mt::rand()+mt::one())/2)*VTest::releps()/exp(-1);
+      }
+
+      SUBR(mvec_put_value)(vec2_, st::zero(), &ierr_);
+      ASSERT_EQ(0, ierr_);
+
+      // run
+      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, tol, 200, vec2_, &ierr_);
+      ASSERT_EQ(0, ierr_);
+
+      // check all solutions
+      checkResiduals(tol);
+
+      SUBR(jadaCorrectionSolver_delete)(solver, &ierr_);
+      ASSERT_EQ(0, ierr_);
+    }
+  }
+
 
