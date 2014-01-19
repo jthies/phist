@@ -169,7 +169,6 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
   return mt::one();
   }
 
-
   bool haveMats_;
 };
 

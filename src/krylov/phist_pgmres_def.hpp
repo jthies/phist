@@ -175,6 +175,8 @@ void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b, TY
     S->normR0_ = -mt::one();
   }
 
+  // set H to zero
+  PHIST_CHK_IERR(SUBR(sdMat_put_value)(S->H_, st::zero(), ierr), *ierr);
 
   if( x0 == NULL )
   {
@@ -267,8 +269,8 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
 
 
   // allocate space for y
-  _ST_ *yglob = new _ST_[(maxId+1)*maxCurDimV];
-  for(int i = 0; i < (maxId+1)*maxCurDimV; i++)
+  _ST_ *yglob = new _ST_[(maxId+1)*(maxCurDimV-1)];
+  for(int i = 0; i < (maxId+1)*(maxCurDimV-1); i++)
     yglob[i] = st::zero();
   int ldy = (maxId+1);
 
@@ -314,7 +316,7 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
   for(int j = 1; j < m+1; j++)
     e[j] = st::zero();
   // apply givens rotations
-  for(int j = 0; j < m-1; j++)
+  for(int j = 0; j < m; j++)
   {
     _ST_ tmp = S[i]->cs_[j] * e[j]  +  S[i]->sn_[j] * e[j+1];
     e[j+1] = -st::conj(S[i]->sn_[j]) * e[j]  +  S[i]->cs_[j] * e[j+1];
@@ -323,18 +325,29 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
   // check that y is givens_rotations applied to e
   PHIST_SOUT(PHIST_INFO, "rs/norm0:");
   for(int j = 0; j < m; j++)
+  {
     PHIST_SOUT(PHIST_INFO, "\t%8.4e + i%8.4e", st::real(y[ldy*j])/S[i]->normR0_, st::imag(y[ldy*j])/S[i]->normR0_);
+  }
   PHIST_SOUT(PHIST_INFO, "\nabs(rs(j)/norm0)):%8.4e", st::abs(y[ldy*(m-1)])/S[i]->normR0_);
   PHIST_SOUT(PHIST_INFO, "\nrot(e_1):");
-  for(int j = 0; j < m; j++)
+  for(int j = 0; j <= m; j++)
+  {
     PHIST_SOUT(PHIST_INFO, "\t%8.4e + i%8.4e", st::real(e[j]), st::imag(e[j]));
-  PHIST_SOUT(PHIST_INFO, "\nabs(rot(e_1)):%8.4e\n", st::abs(e[m-1]));
+  }
+  PHIST_SOUT(PHIST_INFO, "\nabs(rot(e_1)):%8.4e\n", st::abs(e[m]));
 }
 #endif
 
     // solve triangular system
     PHIST_CHK_IERR(PREFIX(TRSV)("U","N","N",&m,(st::blas_scalar_t*)H_raw,&ldH,(st::blas_scalar_t*)y, &ldy, ierr),*ierr);
 
+//#ifdef testing
+{
+  PHIST_SOUT(PHIST_INFO, "y:");
+  for(int j = 0; j < m; j++)
+    PHIST_SOUT(PHIST_INFO,"%8.4e + i%8.4e\n", st::real(y[ldy*j]), st::imag(y[ldy*j]));
+}
+//#endif
     // if we are only interested in the directions Vi*yi and appropriate AVi*yi,
     // then this scaling may help to improve the conditioning of a following orthogonalization step!
     if( scaleSolutionToOne )
@@ -344,22 +357,23 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
       for(int j = 0; j < m; j++)
         scale += st::real(st::conj(y[ldy*j])*y[ldy*j]);
       scale = mt::one()/sqrt(scale);
+      PHIST_SOUT(PHIST_DEBUG,"scaling solution with: %8.4e\n", scale);
       for(int j = 0; j < m; j++)
         y[ldy*j] *= scale;
     }
-#ifdef TESTING
+//#ifdef testing
 {
   PHIST_SOUT(PHIST_INFO, "y:");
   for(int j = 0; j < m; j++)
     PHIST_SOUT(PHIST_INFO,"%8.4e + i%8.4e\n", st::real(y[ldy*j]), st::imag(y[ldy*j]));
 }
-#endif
+//#endif
   }
 
 
   // add up solution
   TYPE(mvec_ptr) Vj = NULL, x_i = NULL;
-  for(int j = 0; j < maxCurDimV; j++)
+  for(int j = 0; j < maxCurDimV-1; j++)
   {
     int Vind = mvecBuff->prevIndex(lastVind,maxCurDimV-1-j);
     _ST_ *yj = yglob + ldy*j;
@@ -571,62 +585,85 @@ PHIST_SOUT(PHIST_INFO,"\n");
     }
 
 
-    //    % arnoldi update with modified gram schmidt
-    for(int j = 0; j < maxCurDimV; j++)
+    //    % arnoldi update with iterated modified gram schmidt
     {
-      int Vind = mvecBuff->prevIndex(S[0]->lastVind_,maxCurDimV-j);
-      _ST_ tmp[maxId+1];
-
-      bool calculatedDot = false;
-      if( j >= maxCurDimV-sharedCurDimV && maxId == numSys-1 )
+      std::vector<_MT_> ynorm(maxId+1,-mt::one());
+      std::vector<_MT_> prev_ynorm(maxId+1,-mt::one());
+      for(int mgsIter = 0; mgsIter < 3; mgsIter++)
       {
-        // MGS step for all systems at once
-        PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, 0, maxId, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (work_y, Vk, tmp, ierr), *ierr);
-        for(int i = 0; i < maxId+1; i++)
-          tmp[i] = -st::conj(tmp[i]);
-        PHIST_CHK_IERR(SUBR( mvec_vadd_mvec  ) (tmp, Vk, st::one(), work_y, ierr), *ierr);
-        calculatedDot = true;
-      }
+        // calculate norm
+        prev_ynorm = ynorm;
+        PHIST_CHK_IERR(SUBR(mvec_norm2)(work_y, &ynorm[0], ierr), *ierr);
 
-      // store in H (and do MGS steps for single systems)
-      for(int i = 0; i < numSys; i++)
-      {
-        int j_ = j - (maxCurDimV-S[i]->curDimV_);
-        if( j_ >= 0 )
+        bool needAnotherIteration = (mgsIter == 0);
+        for(int i = 0; i < numSys; i++)
         {
-//std::cout << "In pgmres arnoldi: j " << j << " Vind " << Vind << " i " << i << " j_ " << j_ << " curDimV " << S[i]->curDimV_ << std::endl;
-          if( !calculatedDot )
+          if( ynorm[S[i]->id] < 0.8 * prev_ynorm[S[i]->id] )
+            needAnotherIteration = true;
+        }
+        if( !needAnotherIteration )
+          break;
+        if( mgsIter > 0)
+        {
+          PHIST_SOUT(PHIST_WARNING, "Additional MGS iteration in PGMRES!\n");
+        }
+
+
+        for(int j = 0; j < maxCurDimV; j++)
+        {
+          int Vind = mvecBuff->prevIndex(S[0]->lastVind_,maxCurDimV-j);
+          _ST_ tmp[maxId+1];
+
+          bool calculatedDot = false;
+          if( j >= maxCurDimV-sharedCurDimV && maxId == numSys-1 )
           {
-            // MGS step for single system
-            PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, S[i]->id, S[i]->id, ierr), *ierr);
-            PHIST_CHK_IERR(SUBR( mvec_view_block ) (work_y,             &Vj, S[i]->id, S[i]->id, ierr), *ierr);
-            PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vj, Vk, &tmp[S[i]->id], ierr), *ierr);
-            tmp[S[i]->id] = -st::conj(tmp[S[i]->id]);
-            PHIST_CHK_IERR(SUBR( mvec_add_mvec   ) (tmp[S[i]->id], Vk, st::one(), Vj, ierr), *ierr);
+            // MGS step for all systems at once
+            PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, 0, maxId, ierr), *ierr);
+            PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (work_y, Vk, tmp, ierr), *ierr);
+            for(int i = 0; i < maxId+1; i++)
+              tmp[i] = -st::conj(tmp[i]);
+            PHIST_CHK_IERR(SUBR( mvec_vadd_mvec  ) (tmp, Vk, st::one(), work_y, ierr), *ierr);
+            calculatedDot = true;
           }
 
-          // store in H
-          ST *Hj=NULL;
-          lidx_t ldH; 
-          PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
-          Hj += (S[i]->curDimV_-1)*ldH;
-          Hj[j_] = -tmp[S[i]->id];
+          // store in H (and do MGS steps for single systems)
+          for(int i = 0; i < numSys; i++)
+          {
+            int j_ = j - (maxCurDimV-S[i]->curDimV_);
+            if( j_ >= 0 )
+            {
+    //std::cout << "In pgmres arnoldi: j " << j << " Vind " << Vind << " i " << i << " j_ " << j_ << " curDimV " << S[i]->curDimV_ << std::endl;
+              if( !calculatedDot )
+              {
+                // MGS step for single system
+                PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, S[i]->id, S[i]->id, ierr), *ierr);
+                PHIST_CHK_IERR(SUBR( mvec_view_block ) (work_y,             &Vj, S[i]->id, S[i]->id, ierr), *ierr);
+                PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vj, Vk, &tmp[S[i]->id], ierr), *ierr);
+                tmp[S[i]->id] = -st::conj(tmp[S[i]->id]);
+                PHIST_CHK_IERR(SUBR( mvec_add_mvec   ) (tmp[S[i]->id], Vk, st::one(), Vj, ierr), *ierr);
+              }
+
+              // store in H
+              ST *Hj=NULL;
+              lidx_t ldH; 
+              PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
+              Hj += (S[i]->curDimV_-1)*ldH;
+              Hj[j_] += -tmp[S[i]->id];
+            }
+          }
         }
       }
-    }
-    {
+
       // normalize resulting vector
-      _MT_ tmp[maxId+1];
-      PHIST_CHK_IERR(SUBR(mvec_normalize)(work_y, tmp, ierr), *ierr);
+      // we have already calculated the norm (stored in ynorm)
       for(int i = 0; i < numSys; i++)
       {
         int j = S[i]->curDimV_;
         if( j == 0 )
         {
           // initilize rs_
-          S[i]->rs_[0] = tmp[S[i]->id];
-          S[i]->normR_ = tmp[S[i]->id];
+          S[i]->rs_[0] = ynorm[S[i]->id];
+          S[i]->normR_ = ynorm[S[i]->id];
           if( S[i]->normR0_ == -mt::one() )
             S[i]->normR0_ = S[i]->normR_;
         }
@@ -637,9 +674,13 @@ PHIST_SOUT(PHIST_INFO,"\n");
           lidx_t ldH; 
           PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
           Hj += (S[i]->curDimV_-1)*ldH;
-          Hj[j] = tmp[S[i]->id];
+          Hj[j] = ynorm[S[i]->id];
         }
       }
+      _ST_ scale[maxId+1];
+      for(int i = 0; i < maxId+1; i++)
+        scale[i] = st::one() / ynorm[i];
+      PHIST_CHK_IERR(SUBR(mvec_vscale)(work_y, scale, ierr), *ierr);
     }
     maxCurDimV++;
     sharedCurDimV++;
@@ -667,6 +708,14 @@ PHIST_SOUT(PHIST_INFO,"\n");
       }
     }
     PHIST_SOUT(PHIST_INFO,"subspace orthogonality of subspace %d: %8.4e\n", i, maxOrthErr);
+    //for(int j = 0; j < nj; j++)
+    //{
+      //for(int k = 0; k < nj; k++)
+      //{
+        //PHIST_SOUT(PHIST_INFO,"\t%8.4e", st::abs(orth[j][k]-( (j==k) ? st::one() : st::zero() )) );
+      //}
+      //PHIST_SOUT(PHIST_INFO,"\n");
+    //}
   }
 }
 #endif
