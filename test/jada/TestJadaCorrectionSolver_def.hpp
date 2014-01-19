@@ -29,7 +29,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         for(int i = 0; i < _NV_; i++)
         {
           // there are hopefully no eigenvalues in this region so the matrix doesn't get nearly singular
-          sigma_[i] = (_ST_)30*st::one() + (_ST_)5*st::rand();
+          sigma_[i] = (_ST_)30*st::one() + (_ST_)5*st::prand();
           negSigma_[i] = -sigma_[i];
         }
 
@@ -190,7 +190,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(0, ierr_);
 
         // create some random tolerance
-        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::rand());
+        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
 
         SUBR(mvec_put_value)(t_i, st::zero(), &ierr_);
         ASSERT_EQ(0, ierr_);
@@ -225,7 +225,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       for(int i = 0; i < _NV_; i++)
       {
         // create some random tolerance
-        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::rand());
+        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
       }
 
       SUBR(mvec_put_value)(vec2_, st::zero(), &ierr_);
@@ -256,7 +256,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       for(int i = 0; i < _NV_; i++)
       {
         // create some random tolerance
-        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::rand());
+        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
       }
 
       SUBR(mvec_put_value)(vec2_, st::zero(), &ierr_);
@@ -287,7 +287,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       for(int i = 0; i < _NV_; i++)
       {
         // create some random tolerance
-        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::rand());
+        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
       }
 
       SUBR(mvec_put_value)(vec2_, st::zero(), &ierr_);
@@ -318,7 +318,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       for(int i = 0; i < _NV_; i++)
       {
         // create some random tolerance
-        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::rand());
+        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
       }
 
       SUBR(mvec_put_value)(vec2_, st::zero(), &ierr_);

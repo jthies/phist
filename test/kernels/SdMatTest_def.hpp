@@ -73,8 +73,10 @@ public:
       ASSERT_EQ(lda,m_lda_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+imin+jmin*lda,val_ptr,imax-imin+1,jmax-jmin+1,lda,stride));
 
+#if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(sdMat_print)(mat1_,&ierr_);
       SUBR(sdMat_print)(m1_view,&ierr_);
+#endif
 
       // set all the viewed entries to a certain value and check that the original vector is
       // changed.
@@ -82,7 +84,9 @@ public:
       SUBR(sdMat_put_value)(m1_view,val,&ierr_);
       ASSERT_EQ(0,ierr_);
       
+#if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(sdMat_print)(m1_view,&ierr_);
+#endif
       
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat1_vp_+imin+jmin*lda,imax-imin+1,jmax-jmin+1,lda,stride,val));
       }
@@ -233,8 +237,10 @@ public:
       SUBR(sdMat_times_sdMat)(st::one(),mat1_,mat3_,st::one(),mat2_,&ierr_);
       ASSERT_EQ(0,ierr_);
       PHIST_DEB("random*random+42");
+#if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(sdMat_print)(mat2_,&ierr_);
       ASSERT_EQ(0,ierr_);
+#endif
 
       // subtract matrix product by hand
       for(int i = 0; i < nrows_; i++)
@@ -258,8 +264,10 @@ public:
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat3_,st::one(),mat2_,&ierr_);
       ASSERT_EQ(0,ierr_);
       PHIST_DEB("random'*random+42");
+#if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(sdMat_print)(mat2_,&ierr_);
       ASSERT_EQ(0,ierr_);
+#endif
 
       // subtract matrix product by hand
       for(int i = 0; i < nrows_; i++)

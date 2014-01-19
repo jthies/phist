@@ -26,7 +26,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(0,ierr_);
         sigma_ = new _ST_[_NV_];
         for(int i = 0; i < _NV_; i++)
-          sigma_[i] = st::rand();
+          sigma_[i] = st::prand();
 
         // create random orthogonal Q
         SUBR(mvec_random)(q_,&ierr_);

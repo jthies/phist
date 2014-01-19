@@ -48,11 +48,8 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
         ST *diag = new ST[nrows_];
         for (int i=0;i<nrows_;i++)
         {
-          diag[i]=st::rand();
+          diag[i]=st::prand();
         }
-#ifdef PHIST_HAVE_MPI
-        ASSERT_EQ(0,MPI_Bcast(diag,nrows_,st::mpi_type(), 0, mpi_comm_));
-#endif
         if (nrows_==10)
         {
           diag[6]=diag[1];
@@ -134,7 +131,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
           std::vector<_MT_> resNormOrig(nsort);
           std::vector<int> permutation(nsort);
           for(int i = 0; i < nsort; i++)
-            resNormOrig[i] = resNorm[i] = exp(mt::rand());
+            resNormOrig[i] = resNorm[i] = exp(mt::prand());
           SUBR(ReorderPartialSchurDecomp)(mat1_vp_,m_lda_,mat2_vp_,m_lda_,n_,nsort,which,tol,
               &resNorm[0],ev_,&permutation[0],&ierr_);
           ASSERT_EQ(0,ierr_);
@@ -422,7 +419,11 @@ TEST_F(CLASSNAME, diag_SR_tol)
 }
 
 
+#ifdef IS_COMPLEX
 TEST_F(CLASSNAME, rand_LM_tol_reorder)
+#else
+TEST_F(CLASSNAME, DISABLED_rand_LM_tol_reorder)
+#endif
 {
   if( typeImplemented_ )
   {
@@ -431,7 +432,11 @@ TEST_F(CLASSNAME, rand_LM_tol_reorder)
   }
 }
 
+#ifdef IS_COMPLEX
 TEST_F(CLASSNAME, rand_SM_tol_reorder)
+#else
+TEST_F(CLASSNAME, DISABLED_rand_SM_tol_reorder)
+#endif
 {
   if( typeImplemented_ )
   {
@@ -440,7 +445,11 @@ TEST_F(CLASSNAME, rand_SM_tol_reorder)
   }
 }
 
+#ifdef IS_COMPLEX
 TEST_F(CLASSNAME, rand_LR_tol_reorder)
+#else
+TEST_F(CLASSNAME, DISABLED_rand_LR_tol_reorder)
+#endif
 {
   if( typeImplemented_ )
   {
@@ -449,7 +458,11 @@ TEST_F(CLASSNAME, rand_LR_tol_reorder)
   }
 }
 
+#ifdef IS_COMPLEX
 TEST_F(CLASSNAME, rand_SR_tol_reorder)
+#else
+TEST_F(CLASSNAME, DISABLED_rand_SR_tol_reorder)
+#endif
 {
   if( typeImplemented_ )
   {

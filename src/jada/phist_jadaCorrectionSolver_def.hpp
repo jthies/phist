@@ -56,6 +56,12 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   // set solution vectors to zero to add them up later
   PHIST_CHK_IERR(SUBR(mvec_put_value)(t, st::zero(), ierr), *ierr);
 
+  // make sure all states are resetted
+  for(int i = 0; i < me->gmresBlockDim_; i++)
+  {
+    PHIST_CHK_IERR(SUBR(pgmresState_reset)(me->pgmresStates_[i], NULL, NULL, ierr), *ierr);
+  }
+
   // current and maximal block dimension
   int max_k = me->gmresBlockDim_;
   int k = max_k;
@@ -126,8 +132,8 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
         activeStates.push_back(me->pgmresStates_[i]);
       }
     }
-    k = activeStates.size();
     PHIST_SOUT(PHIST_INFO, "\n");
+    k = activeStates.size();
 
 
     // actually iterate

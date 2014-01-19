@@ -26,7 +26,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(0,ierr_);
         sigma_ = new _ST_[_NV_];
         for(int i = 0; i < _NV_; i++)
-          sigma_[i] = st::rand();
+          sigma_[i] = st::prand();
 
         // create random orthogonal Q
         SUBR(mvec_random)(q_,&ierr_);
@@ -245,7 +245,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       TYPE(mvec_ptr) vec5;
       SUBR(mvec_create)(&vec5,map_,_NV_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      _ST_ alpha = st::rand();
+      _ST_ alpha = st::prand();
       jdOp.apply(alpha,jdOp.A,vec4,st::zero(),vec5,&ierr_);
       ASSERT_EQ(0,ierr_);
 
@@ -298,7 +298,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       SUBR(mvec_times_sdMat)(-st::one(),q_,mat1_,st::one(),vec5,&ierr_);
       ASSERT_EQ(0,ierr_);
       // add beta (I-qq')*ONE to vec3_
-      _ST_ beta = st::rand();
+      _ST_ beta = st::prand();
       SUBR(mvec_add_mvec)(beta,vec5,st::one(),vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
       jdOp.apply(st::one(),jdOp.A,vec4,beta,vec5,&ierr_);

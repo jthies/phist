@@ -162,8 +162,10 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_random)(vec2_,&ierr_);
       SUBR(crsMat_times_mvec)(st::one(),A2_,vec1_,st::zero(),vec2_,&ierr_);
       if (ierr_) return (_MT_)ierr_;
+#if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_print)(vec1_,&ierr_);
       SUBR(mvec_print)(vec2_,&ierr_);
+#endif
       return ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,val);
       }
   return mt::one();
@@ -550,9 +552,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
   {
     _ST_ shifts[_NV_];
     for(int i = 0; i < _NV_; i++)
-      shifts[i] = st::rand();
+      shifts[i] = st::prand();
     _ST_ alpha = st::zero();
-    _ST_ beta = st::rand();
+    _ST_ beta = st::prand();
 
     test_crsMat_times_mvec_vadd_mvec(alpha, A2_, shifts, beta);
   }
@@ -562,9 +564,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
   {
     _ST_ shifts[_NV_];
     for(int i = 0; i < _NV_; i++)
-      shifts[i] = st::rand();
+      shifts[i] = st::prand();
     _ST_ alpha = st::one();
-    _ST_ beta = st::rand();
+    _ST_ beta = st::prand();
 
     test_crsMat_times_mvec_vadd_mvec(alpha, A0_, shifts, beta);
   }
@@ -575,8 +577,8 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     _ST_ shifts[_NV_];
     for(int i = 0; i < _NV_; i++)
       shifts[i] = st::zero();
-    _ST_ alpha = st::rand();
-    _ST_ beta = st::rand();
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
 
     test_crsMat_times_mvec_vadd_mvec(alpha, A2_, shifts, beta);
   }
@@ -585,9 +587,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
   {
     _ST_ shifts[_NV_];
     for(int i = 0; i < _NV_; i++)
-      shifts[i] = st::rand();
-    _ST_ alpha = st::rand();
-    _ST_ beta = st::rand();
+      shifts[i] = st::prand();
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
 
     test_crsMat_times_mvec_vadd_mvec(alpha, A2_, shifts, beta);
   }
