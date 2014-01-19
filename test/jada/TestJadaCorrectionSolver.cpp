@@ -69,7 +69,7 @@ using namespace testing;
 #define _N_ 512
 #define _NV_ 11
 #define _NVP_ 7
-#define _MAXBAS_ 40
+#define _MAXBAS_ 10
 
 #undef CLASSNAME
 #define CLASSNAME STestJadaCorrectionSolver_512_11_7

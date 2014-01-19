@@ -157,9 +157,12 @@ void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b, TY
 
   // only freed resources
   if( b == NULL && x0 == NULL )
+  {
+    S->status = -2;
     return;
+  }
 
-  if( b == NULL && S->normR0_ == -mt::one() )
+  if( b == NULL && (S->normR0_ == -mt::one() || S->status == -2) )
   {
     PHIST_OUT(PHIST_ERROR,"on the first call to pgmresState_reset you *must* provide the RHS vector");
     *ierr=-1;
@@ -206,6 +209,10 @@ void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b, TY
     PHIST_CHK_IERR(SUBR( mvec_set_block ) (mvecBuff->at(S->lastVind_), x0, S->id, S->id, ierr), *ierr);
     mvecBuff->incRef(S->lastVind_);
   }
+
+  // update status
+  if( S->status >= 0 )
+    S->status = 1;
 }
 
 
@@ -341,13 +348,7 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
     // solve triangular system
     PHIST_CHK_IERR(PREFIX(TRSV)("U","N","N",&m,(st::blas_scalar_t*)H_raw,&ldH,(st::blas_scalar_t*)y, &ldy, ierr),*ierr);
 
-//#ifdef testing
-{
-  PHIST_SOUT(PHIST_INFO, "y:");
-  for(int j = 0; j < m; j++)
-    PHIST_SOUT(PHIST_INFO,"%8.4e + i%8.4e\n", st::real(y[ldy*j]), st::imag(y[ldy*j]));
-}
-//#endif
+
     // if we are only interested in the directions Vi*yi and appropriate AVi*yi,
     // then this scaling may help to improve the conditioning of a following orthogonalization step!
     if( scaleSolutionToOne )
@@ -361,13 +362,13 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
       for(int j = 0; j < m; j++)
         y[ldy*j] *= scale;
     }
-//#ifdef testing
+#ifdef testing
 {
   PHIST_SOUT(PHIST_INFO, "y:");
   for(int j = 0; j < m; j++)
     PHIST_SOUT(PHIST_INFO,"%8.4e + i%8.4e\n", st::real(y[ldy*j]), st::imag(y[ldy*j]));
 }
-//#endif
+#endif
   }
 
 

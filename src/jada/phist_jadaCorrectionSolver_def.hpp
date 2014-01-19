@@ -1,19 +1,28 @@
 //! create a jadaCorrectionSolver object
-void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver, int pgmresBlockDim, const_map_ptr_t map, int pgmresMaxBase, int *ierr)
+void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, int pgmresBlockDim, const_map_ptr_t map, int pgmresMaxBase, int *ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr = 0;
 
+  PHIST_CHK_IERR( *ierr = (pgmresBlockDim <= 0) ? -1 : 0, *ierr);
+
+  *me = new TYPE(jadaCorrectionSolver);
+  (*me)->gmresBlockDim_ = pgmresBlockDim;
+  (*me)->pgmresStates_  = new TYPE(pgmresState_ptr)[pgmresBlockDim];
+  PHIST_CHK_IERR(SUBR(pgmresStates_create)((*me)->pgmresStates_, pgmresBlockDim, map, pgmresMaxBase, ierr), *ierr);
 }
 
 //! delete a jadaCorrectionSolver object
-void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver, int *ierr)
+void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) me, int *ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr = 0;
 
+  PHIST_CHK_IERR(SUBR(pgmresStates_delete)(me->pgmresStates_, me->gmresBlockDim_, ierr), *ierr);
+  delete[] me->pgmresStates_;
+  delete me;
 }
 
 
@@ -31,7 +40,7 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolv
 //! maxIter         maximal number of iterations after which individial systems should be aborted
 //! t               returns approximate solution vectors
 //! ierr            a value > 0 indicates the number of systems that have not converged to the desired tolerance
-void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver,
+void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
                                     TYPE(const_op_ptr)    A_op,     TYPE(const_op_ptr)    B_op, 
                                     TYPE(const_mvec_ptr)  Qtil,     TYPE(const_mvec_ptr)  BQtil,
                                     const _ST_            sigma[],  TYPE(const_mvec_ptr)  res,
@@ -42,4 +51,125 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver,
   ENTER_FCN(__FUNCTION__);
   *ierr = 0;
 
+  PHIST_CHK_IERR(*ierr = (maxIter <= 0) ? -1 : 0, *ierr);
+
+  // set solution vectors to zero to add them up later
+  PHIST_CHK_IERR(SUBR(mvec_put_value)(t, st::zero(), ierr), *ierr);
+
+  // current and maximal block dimension
+  int max_k = me->gmresBlockDim_;
+  int k = max_k;
+
+  // total number of systems to solve
+  int totalNumSys;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(res, &totalNumSys, ierr), *ierr);
+
+  // index of currently iterated systems in all systems to solve
+  std::vector<int> index(max_k);
+
+  // shifts currently in use
+  std::vector<_ST_> currShifts(max_k, st::zero());
+
+  // we need a jadaOp
+  TYPE(op) jadaOp;
+  PHIST_CHK_IERR(SUBR(jadaOp_create)(A_op, B_op, Qtil, BQtil, &currShifts[0], k, &jadaOp, ierr), *ierr);
+
+  // the next system to consider if one converged/failed
+  int nextSystem = 0;
+
+  // just used to prevent inifite loops
+  int finiteLoopCounter = 0;
+
+  // we need some views
+  TYPE(mvec_ptr) res_i = NULL;
+  TYPE(mvec_ptr) t_i   = NULL;
+
+  // total number of pgmres-iterations performed, not used
+  int nTotalIter = 0;
+
+  // number of unconverged systems to be returned
+  int nUnconvergedSystems = 0;
+
+  // iterate while there's at least one system remaining
+  while( k > 0 )
+  {
+    // prevent bugs from causing inifite looping
+    if( finiteLoopCounter++ > maxIter )
+      break;
+
+    // find unoccupied states
+    for(int i = 0; i < max_k; i++)
+    {
+      if( nextSystem >= totalNumSys )
+        break;
+      if( me->pgmresStates_[i]->status == -2 )
+      {
+        // setup the next system waiting to be solved
+        PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))res, &res_i, nextSystem, nextSystem, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR(pgmresState_reset)(me->pgmresStates_[i], res_i, NULL, ierr), *ierr);
+        me->pgmresStates_[i]->tol = tol[nextSystem];
+        currShifts[me->pgmresStates_[i]->id] = -sigma[nextSystem];
+        index[me->pgmresStates_[i]->id] = nextSystem;
+
+        nextSystem++;
+      }
+    }
+
+    // gather systems that are waiting to be iterated
+    std::vector<TYPE(pgmresState_ptr)> activeStates;
+    PHIST_SOUT(PHIST_INFO, "Iterating systems:");
+    for(int i = 0; i < max_k; i++)
+    {
+      if( std::abs(me->pgmresStates_[i]->status) == 1 )
+      {
+        PHIST_SOUT(PHIST_INFO, "\t%d", index[me->pgmresStates_[i]->id]);
+        activeStates.push_back(me->pgmresStates_[i]);
+      }
+    }
+    k = activeStates.size();
+    PHIST_SOUT(PHIST_INFO, "\n");
+
+
+    // actually iterate
+    PHIST_CHK_NEG_IERR(SUBR(pgmresStates_iterate)(&jadaOp, &activeStates[0], k, &nTotalIter, ierr), *ierr);
+
+
+    // check the status of the systems
+    for(int i = 0; i < k; i++)
+    {
+      if( activeStates[i]->status == 0 || activeStates[i]->status == 2 )
+      {
+        // update solution
+        int ind = index[activeStates[i]->id];
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(t, &t_i, ind, ind, ierr), *ierr);
+        _MT_ tmp;
+        PHIST_CHK_IERR(SUBR(pgmresStates_updateSol)(&activeStates[i], 1, t_i, &tmp, false, ierr), *ierr);
+
+        if( activeStates[i]->status == 2 && activeStates[i]->totalIter >= maxIter )
+          nUnconvergedSystems++;
+        else if( activeStates[i]->status == 2 )
+        {
+          // prepare restart
+          PHIST_CHK_IERR(SUBR(pgmresState_reset)(activeStates[i], NULL, t_i, ierr), *ierr);
+          continue;
+        }
+
+        // reset to be free in the next iteration
+        PHIST_CHK_IERR(SUBR(pgmresState_reset)(activeStates[i], NULL, NULL, ierr), *ierr);
+      }
+    }
+
+  }
+
+
+  // normalize result vectors, TODO: should be done in updateSol/pgmres?
+  _MT_ tmp[totalNumSys];
+  PHIST_CHK_IERR(SUBR(mvec_normalize)(t, tmp, ierr), *ierr);
+
+  // delete views
+  PHIST_CHK_IERR(SUBR(mvec_delete)(res_i, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(t_i,   ierr), *ierr);
+  // delete the jadaOp
+  PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jadaOp, ierr), *ierr);
 }
+

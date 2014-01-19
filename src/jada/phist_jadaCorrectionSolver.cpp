@@ -1,8 +1,10 @@
 #include "phist_jadaCorrectionSolver.h"
 #include "phist_macros.h"
 #include "phist_ScalarTraits.hpp"
+#include "phist_jadaOp.hpp"
 
-#include <stdlib.h>
+#include <cstdlib>
+#include <vector>
 
 #include "phist_gen_s.h"
 #include "phist_jadaCorrectionSolver_def.hpp"

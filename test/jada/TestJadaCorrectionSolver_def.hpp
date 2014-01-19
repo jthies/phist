@@ -25,8 +25,13 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         SUBR(mvec_create)(&q_,map_,_NVP_,&ierr_);
         ASSERT_EQ(0,ierr_);
         sigma_ = new _ST_[_NV_];
+        negSigma_ = new _ST_[_NV_];
         for(int i = 0; i < _NV_; i++)
-          sigma_[i] = st::rand();
+        {
+          // there are hopefully no eigenvalues in this region so the matrix doesn't get nearly singular
+          sigma_[i] = (_ST_)30*st::one() + (_ST_)5*st::rand();
+          negSigma_[i] = -sigma_[i];
+        }
 
         // create random orthogonal Q
         SUBR(mvec_random)(q_,&ierr_);
@@ -47,7 +52,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(0,ierr_);
 
         jdOp_ = new TYPE(op);
-        SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,jdOp_,&ierr_);
+        SUBR(jadaOp_create)(opA_,NULL,q_,NULL,negSigma_,_NV_,jdOp_,&ierr_);
         ASSERT_EQ(0,ierr_);
 
         // setup system to solve, exact x and A*x
@@ -86,6 +91,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         SUBR(mvec_delete)(q_,&ierr_);
         ASSERT_EQ(0,ierr_);
         delete[] sigma_;
+        delete[] negSigma_;
       }
     }
 
@@ -106,10 +112,13 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       jdOp_->apply(st::one(),jdOp_->A,vec2_,st::zero(),vec1_,&ierr_);
       ASSERT_EQ(0,ierr_);
       // rather check that vec1_ and vec3_ point in the same direction
-      _ST_ tmp[_NV_];
-      SUBR(mvec_dot_mvec)(vec3_, vec1_, tmp, &ierr_);
+      _MT_ tmp[_NV_];
+      SUBR(mvec_normalize)(vec1_, tmp, &ierr_);
       ASSERT_EQ(0,ierr_);
-      SUBR(mvec_vadd_mvec)(tmp, vec3_, -st::one(), vec1_, &ierr_);
+      _ST_ dot[_NV_];
+      SUBR(mvec_dot_mvec)(vec3_, vec1_, dot, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_vadd_mvec)(dot, vec3_, -st::one(), vec1_, &ierr_);
       ASSERT_EQ(0,ierr_);
       _MT_ resNorm[_NV_];
       SUBR(mvec_norm2)(vec1_, resNorm, &ierr_);
@@ -125,9 +134,10 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       {
         PHIST_SOUT(PHIST_INFO, "\t%8.4e", resNorm[i]);
       }
+      PHIST_SOUT(PHIST_INFO, "\n");
       for(int i = 0; i < _NV_; i++)
       {
-        ASSERT_LT(resNorm[i], 10*tol[i]);
+        ASSERT_LT(resNorm[i], 5*tol[i]);
       }
     }
 
@@ -136,6 +146,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     TYPE(op_ptr) jdOp_;
     TYPE(mvec_ptr) q_;
     _ST_* sigma_;
+    _ST_* negSigma_;
 };
 
 
@@ -144,7 +155,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(solver, 3, map_, _MAXBAS_, &ierr_);
+      SUBR(jadaCorrectionSolver_create)(&solver, 3, map_, _MAXBAS_, &ierr_);
       ASSERT_EQ(0, ierr_);
       SUBR(jadaCorrectionSolver_delete)(solver, &ierr_);
       ASSERT_EQ(0, ierr_);
@@ -165,7 +176,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(solver, 1, map_, _MAXBAS_, &ierr_);
+      SUBR(jadaCorrectionSolver_create)(&solver, 1, map_, _MAXBAS_, &ierr_);
       ASSERT_EQ(0, ierr_);
 
       TYPE(mvec_ptr) t_i = NULL;
@@ -179,7 +190,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(0, ierr_);
 
         // create some random tolerance
-        tol[i] = exp(-(mt::rand()+mt::one())/2)*VTest::releps()/exp(-1);
+        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::rand());
 
         SUBR(mvec_put_value)(t_i, st::zero(), &ierr_);
         ASSERT_EQ(0, ierr_);
@@ -207,14 +218,14 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(solver, _NV_, map_, _MAXBAS_, &ierr_);
+      SUBR(jadaCorrectionSolver_create)(&solver, _NV_, map_, _MAXBAS_, &ierr_);
       ASSERT_EQ(0, ierr_);
 
       _MT_ tol[_NV_];
       for(int i = 0; i < _NV_; i++)
       {
         // create some random tolerance
-        tol[i] = exp(-(mt::rand()+mt::one())/2)*VTest::releps()/exp(-1);
+        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::rand());
       }
 
       SUBR(mvec_put_value)(vec2_, st::zero(), &ierr_);
@@ -238,14 +249,14 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(solver, 1, map_, _MAXBAS_, &ierr_);
+      SUBR(jadaCorrectionSolver_create)(&solver, 1, map_, _MAXBAS_, &ierr_);
       ASSERT_EQ(0, ierr_);
 
       _MT_ tol[_NV_];
       for(int i = 0; i < _NV_; i++)
       {
         // create some random tolerance
-        tol[i] = exp(-(mt::rand()+mt::one())/2)*VTest::releps()/exp(-1);
+        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::rand());
       }
 
       SUBR(mvec_put_value)(vec2_, st::zero(), &ierr_);
@@ -269,14 +280,14 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(solver, 2, map_, _MAXBAS_, &ierr_);
+      SUBR(jadaCorrectionSolver_create)(&solver, 2, map_, _MAXBAS_, &ierr_);
       ASSERT_EQ(0, ierr_);
 
       _MT_ tol[_NV_];
       for(int i = 0; i < _NV_; i++)
       {
         // create some random tolerance
-        tol[i] = exp(-(mt::rand()+mt::one())/2)*VTest::releps()/exp(-1);
+        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::rand());
       }
 
       SUBR(mvec_put_value)(vec2_, st::zero(), &ierr_);
@@ -300,14 +311,14 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(solver, 4, map_, _MAXBAS_, &ierr_);
+      SUBR(jadaCorrectionSolver_create)(&solver, 4, map_, _MAXBAS_, &ierr_);
       ASSERT_EQ(0, ierr_);
 
       _MT_ tol[_NV_];
       for(int i = 0; i < _NV_; i++)
       {
         // create some random tolerance
-        tol[i] = exp(-(mt::rand()+mt::one())/2)*VTest::releps()/exp(-1);
+        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::rand());
       }
 
       SUBR(mvec_put_value)(vec2_, st::zero(), &ierr_);
