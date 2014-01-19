@@ -4,9 +4,6 @@
 #include "phist_ScalarTraits.hpp"
 
 #include <stdlib.h>
-#ifdef LIKWID_PERFMON
-#include <likwid.h>
-#endif
 
 #include "phist_gen_s.h"
 #include "phist_transform_searchspace_def.hpp"

@@ -1,5 +1,3 @@
-//! TODO: update description, partially outdated, refers to phist_gmres rather thand this variant
-
 //!
 //! iteration status object for the pipelined GMRES
 //! iteration we currently use as approximate solver
