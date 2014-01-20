@@ -492,9 +492,9 @@ contains
       return
     else if( nvec .eq. 2 ) then
       if( strided ) then
-        call daxpby_strided_1(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
+        call daxpby_strided_2(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
       else
-        call daxpby_1(nrows, alpha(1), x%val(x%jmin,1), beta, y%val(y%jmin,1))
+        call daxpby_2(nrows, alpha(1), x%val(x%jmin,1), beta, y%val(y%jmin,1))
       end if
       return
     else if( nvec .eq. 4 ) then
