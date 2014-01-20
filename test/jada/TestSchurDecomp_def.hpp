@@ -147,10 +147,10 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
           CheckSchurDecomp(A_clone, which, nsort, nsort, tol);
 
           // check if the permutation of resNorm is correct
-          PHIST_OUT(PHIST_INFO,"resNorm array:\nold\t\tnew\t\tperm\n");
+          PHIST_OUT(PHIST_DEBUG,"resNorm array:\nold\t\tnew\t\tperm\n");
           for(int i = 0; i < nsort; i++)
           {
-            PHIST_OUT(PHIST_INFO,"%8.4e\t%8.4e\t%d\n",resNormOrig[i],resNorm[i],permutation[i]);
+            PHIST_OUT(PHIST_DEBUG,"%8.4e\t%8.4e\t%d\n",resNormOrig[i],resNorm[i],permutation[i]);
             ASSERT_TRUE( resNorm.at(i) == resNormOrig.at(permutation[i]) );
           }
 
@@ -192,14 +192,14 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
 #endif
       ASSERT_NEAR(mt::one(),ArrayEqual(mat4_vp_,nrows_,ncols_,m_lda_,1,st::zero()),1000*mt::eps());
 
-      PHIST_OUT(PHIST_INFO,"eigenvalue array:\n");
+      PHIST_OUT(PHIST_DEBUG,"eigenvalue array:\n");
       for (int i=0;i<n_;i++)
       {
         // test the traits class on the way:
         ASSERT_REAL_EQ(ct::abs(ev_[i]),std::abs(ev_[i]));
         ASSERT_REAL_EQ(ct::real(ev_[i]),std::real(ev_[i]));
         ASSERT_REAL_EQ(ct::imag(ev_[i]),std::imag(ev_[i]));
-        PHIST_OUT(PHIST_INFO,"%8.4f%+8.4fi\tabs=%8.4f\n",ct::real(ev_[i]),ct::imag(ev_[i]),ct::abs(ev_[i]));
+        PHIST_OUT(PHIST_DEBUG,"%8.4f%+8.4fi\tabs=%8.4f\n",ct::real(ev_[i]),ct::imag(ev_[i]),ct::abs(ev_[i]));
       }
 
 
