@@ -118,7 +118,6 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
         PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))res, &res_i, ind, ind, ierr), *ierr);
         PHIST_CHK_IERR(SUBR(pgmresState_reset)(me->pgmresStates_[i], res_i, NULL, ierr), *ierr);
         me->pgmresStates_[i]->tol = tol[nextSystem];
-        currShifts[me->pgmresStates_[i]->id] = -sigma[nextSystem];
         index[me->pgmresStates_[i]->id] = nextSystem;
 
         nextSystem++;
@@ -127,6 +126,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
 
     // gather systems that are waiting to be iterated
     std::vector<TYPE(pgmresState_ptr)> activeStates;
+    int firstId = max_k;
     PHIST_SOUT(PHIST_INFO, "Iterating systems:");
     for(int i = 0; i < max_k; i++)
     {
@@ -134,11 +134,17 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
       {
         PHIST_SOUT(PHIST_INFO, "\t%d", index[me->pgmresStates_[i]->id]);
         activeStates.push_back(me->pgmresStates_[i]);
+        firstId = std::min(firstId,activeStates.back()->id);
       }
     }
     PHIST_SOUT(PHIST_INFO, "\n");
     k = activeStates.size();
 
+    // set correct shifts
+    for(int i = 0; i < k; i++)
+    {
+      currShifts[activeStates[i]->id - firstId] = -sigma[index[activeStates[i]->id]];
+    }
 
     // actually iterate
     PHIST_CHK_NEG_IERR(SUBR(pgmresStates_iterate)(&jadaOp, &activeStates[0], k, &nTotalIter, ierr), *ierr);
@@ -163,6 +169,21 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
           PHIST_CHK_IERR(SUBR(pgmresState_reset)(activeStates[i], NULL, t_i, ierr), *ierr);
           continue;
         }
+#ifdef TESTING
+{
+  // determine real residual for comparison
+  currShifts[0] = -sigma[ind];
+  TYPE(mvec_ptr) res_i = NULL;
+  int resInd = ind;
+  if( resIndex != NULL )
+    resInd = resIndex[resInd];
+  PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))res, &res_i, resInd, resInd, ierr), *ierr);
+  PHIST_CHK_IERR(jadaOp.apply(-st::one(), jadaOp.A, t_i, st::one(), res_i, ierr), *ierr);
+  _MT_ nrm;
+  PHIST_CHK_IERR(SUBR(mvec_norm2)(res_i, &nrm, ierr), *ierr);
+  PHIST_SOUT(PHIST_INFO,"est. / exp. residual of system %d: %8.4e / %8.4e\n", ind, tmp, nrm);
+}
+#endif
 
         // reset to be free in the next iteration
         PHIST_CHK_IERR(SUBR(pgmresState_reset)(activeStates[i], NULL, NULL, ierr), *ierr);

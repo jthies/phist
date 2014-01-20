@@ -31,7 +31,7 @@ typedef struct TYPE(pgmresState)
   int curDimV_;         //! current dimension of the subspace in V_
   TYPE(mvec_ptr) b_;    //! right hand side vector of the system Ax=b
   TYPE(sdMat_ptr) H_;   //! Hessenberg-matrix from the Arnoldi-process rotated to upper triangular form
-  _MT_ *cs_;            //! terms c of the Givens rotations (c s; -s' c)
+  _ST_ *cs_;            //! terms c of the Givens rotations (c s; -s' c)
   _ST_ *sn_;            //! terms s of the Givens rotations (c s; -s' c)
   _ST_ *rs_;            //! rotated projected residual (e.g. ...*q_3*q_2*q_1*e1 )
   _MT_ normR0_;         //! initial (explicit) residual norm

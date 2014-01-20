@@ -137,7 +137,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       PHIST_SOUT(PHIST_INFO, "\n");
       for(int i = 0; i < _NV_; i++)
       {
-        ASSERT_LT(resNorm[i], 5*tol[i]);
+        ASSERT_LT(resNorm[i], 10*tol[i]);
       }
     }
 

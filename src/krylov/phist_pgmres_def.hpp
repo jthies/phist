@@ -105,7 +105,7 @@ void SUBR(pgmresStates_create)(TYPE(pgmresState_ptr) state[], int numSys, const_
     // allocate members
     PHIST_CHK_IERR(SUBR( sdMat_create )(&state[i]->H_, maxBas+1, maxBas, comm, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_create  )(&state[i]->b_, map,      1,            ierr), *ierr);
-    state[i]->cs_ = new MT[maxBas];
+    state[i]->cs_ = new ST[maxBas];
     state[i]->sn_ = new ST[maxBas];
     state[i]->rs_ = new ST[maxBas+1];
 
@@ -315,7 +315,7 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
     for(int j = 0; j < m; j++)
       y[ldy*j] = S[i]->rs_[j];
 
-/*
+
 #ifdef TESTING
 {
   // setup e-vector
@@ -326,8 +326,8 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
   // apply givens rotations
   for(int j = 0; j < m; j++)
   {
-    _ST_ tmp = S[i]->cs_[j] * e[j]  +  S[i]->sn_[j] * e[j+1];
-    e[j+1] = -st::conj(S[i]->sn_[j]) * e[j]  +  S[i]->cs_[j] * e[j+1];
+    _ST_ tmp = st::conj(S[i]->cs_[j]) * e[j]  +  st::conj(S[i]->sn_[j]) * e[j+1];
+    e[j+1] = -S[i]->sn_[j] * e[j]  +  S[i]->cs_[j] * e[j+1];
     e[j] = tmp;
   }
   // check that y is givens_rotations applied to e
@@ -345,7 +345,7 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
   PHIST_SOUT(PHIST_INFO, "\nabs(rot(e_1)):%8.4e\n", st::abs(e[m]));
 }
 #endif
-*/
+
 
     // solve triangular system
     PHIST_CHK_IERR(PREFIX(TRSV)("U","N","N",&m,(st::blas_scalar_t*)H_raw,&ldH,(st::blas_scalar_t*)y, &ldy, ierr),*ierr);
@@ -424,6 +424,9 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[
   int maxId = 0;
   for(int i = 0; i < numSys; i++)
     maxId = std::max(maxId,S[i]->id);
+  int minId = maxId;
+  for(int i = 0; i < numSys; i++)
+    minId = std::min(minId,S[i]->id);
 
   CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *ierr);
   Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
@@ -455,7 +458,7 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[
       PHIST_CHK_IERR(*ierr = (S[i]->lastVind_ != lastVind) ? -1 : 0, *ierr);
 
     // x0 / last element of krylov subspace
-    PHIST_CHK_IERR(SUBR( mvec_view_block )( mvecBuff->at(lastVind), &work_x, 0, maxId, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block )( mvecBuff->at(lastVind), &work_x, minId, maxId, ierr), *ierr);
 
 #ifdef TESTING
 // print a visualization of the current state
@@ -551,7 +554,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
     //    % get new vector for y
     int nextIndex;
     PHIST_CHK_IERR( mvecBuff->getNextUnused(nextIndex,ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(nextIndex), &work_y, 0, maxId, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(nextIndex), &work_y, minId, maxId, ierr), *ierr);
 
     //    % apply the operator of the matrix A
     PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_x, st::zero(), work_y, ierr), *ierr);
@@ -564,7 +567,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       if( j == 0 )
       {
         // (re-)start: r_0 = b - A*x_0
-        PHIST_CHK_IERR( SUBR(mvec_view_block) (work_y, &Vj, S[i]->id, S[i]->id, ierr), *ierr);
+        PHIST_CHK_IERR( SUBR(mvec_view_block) (work_y, &Vj, S[i]->id-minId, S[i]->id-minId, ierr), *ierr);
         PHIST_CHK_IERR( SUBR(mvec_add_mvec) (st::one(), S[i]->b_, -st::one(), Vj, ierr), *ierr);
       }
     }
@@ -583,8 +586,8 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
     //    % arnoldi update with iterated modified gram schmidt
     {
-      std::vector<_MT_> ynorm(maxId+1,-mt::one());
-      std::vector<_MT_> prev_ynorm(maxId+1,-mt::one());
+      std::vector<_MT_> ynorm(maxId+1-minId,-mt::one());
+      std::vector<_MT_> prev_ynorm(maxId+1-minId,-mt::one());
       for(int mgsIter = 0; mgsIter < 3; mgsIter++)
       {
         // calculate norm
@@ -592,11 +595,14 @@ PHIST_SOUT(PHIST_INFO,"\n");
         PHIST_CHK_IERR(SUBR(mvec_norm2)(work_y, &ynorm[0], ierr), *ierr);
 
         bool needAnotherIteration = (mgsIter == 0);
+        PHIST_SOUT(PHIST_DEBUG,"reduction in norm in IMGS:");
         for(int i = 0; i < numSys; i++)
         {
-          if( ynorm[S[i]->id] < 0.8 * prev_ynorm[S[i]->id] )
+          PHIST_SOUT(PHIST_DEBUG,"\t%8.4e", ynorm[S[i]->id-minId]/prev_ynorm[S[i]->id-minId]);
+          if( ynorm[S[i]->id-minId] < 0.85 * prev_ynorm[S[i]->id-minId] )
             needAnotherIteration = true;
         }
+        PHIST_SOUT(PHIST_DEBUG,"\n");
         if( !needAnotherIteration )
           break;
         if( mgsIter > 0)
@@ -608,16 +614,16 @@ PHIST_SOUT(PHIST_INFO,"\n");
         for(int j = 0; j < maxCurDimV; j++)
         {
           int Vind = mvecBuff->prevIndex(S[0]->lastVind_,maxCurDimV-j);
-          _ST_ tmp[maxId+1];
+          _ST_ tmp[maxId+1-minId];
 
           bool calculatedDot = false;
-          if( j >= maxCurDimV-sharedCurDimV && maxId == numSys-1 )
+          if( j >= maxCurDimV-sharedCurDimV && maxId+1-minId == numSys-1 )
           {
             // MGS step for all systems at once
-            PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, 0, maxId, ierr), *ierr);
-            PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (work_y, Vk, tmp, ierr), *ierr);
-            for(int i = 0; i < maxId+1; i++)
-              tmp[i] = -st::conj(tmp[i]);
+            PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, minId, maxId, ierr), *ierr);
+            PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vk, work_y, tmp, ierr), *ierr);
+            for(int i = 0; i < maxId+1-minId; i++)
+              tmp[i] = -tmp[i];
             PHIST_CHK_IERR(SUBR( mvec_vadd_mvec  ) (tmp, Vk, st::one(), work_y, ierr), *ierr);
             calculatedDot = true;
           }
@@ -632,11 +638,11 @@ PHIST_SOUT(PHIST_INFO,"\n");
               if( !calculatedDot )
               {
                 // MGS step for single system
-                PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, S[i]->id, S[i]->id, ierr), *ierr);
-                PHIST_CHK_IERR(SUBR( mvec_view_block ) (work_y,             &Vj, S[i]->id, S[i]->id, ierr), *ierr);
-                PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vj, Vk, &tmp[S[i]->id], ierr), *ierr);
-                tmp[S[i]->id] = -st::conj(tmp[S[i]->id]);
-                PHIST_CHK_IERR(SUBR( mvec_add_mvec   ) (tmp[S[i]->id], Vk, st::one(), Vj, ierr), *ierr);
+                PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, S[i]->id,       S[i]->id,       ierr), *ierr);
+                PHIST_CHK_IERR(SUBR( mvec_view_block ) (work_y,             &Vj, S[i]->id-minId, S[i]->id-minId, ierr), *ierr);
+                PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vk, Vj, &tmp[S[i]->id-minId], ierr), *ierr);
+                tmp[S[i]->id-minId] = -tmp[S[i]->id-minId];
+                PHIST_CHK_IERR(SUBR( mvec_add_mvec   ) (tmp[S[i]->id-minId], Vk, st::one(), Vj, ierr), *ierr);
               }
 
               // store in H
@@ -644,7 +650,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
               lidx_t ldH; 
               PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
               Hj += (S[i]->curDimV_-1)*ldH;
-              Hj[j_] += -tmp[S[i]->id];
+              Hj[j_] += -tmp[S[i]->id-minId];
             }
           }
         }
@@ -658,8 +664,8 @@ PHIST_SOUT(PHIST_INFO,"\n");
         if( j == 0 )
         {
           // initilize rs_
-          S[i]->rs_[0] = ynorm[S[i]->id];
-          S[i]->normR_ = ynorm[S[i]->id];
+          S[i]->rs_[0] = ynorm[S[i]->id-minId];
+          S[i]->normR_ = ynorm[S[i]->id-minId];
           if( S[i]->normR0_ == -mt::one() )
             S[i]->normR0_ = S[i]->normR_;
         }
@@ -670,11 +676,11 @@ PHIST_SOUT(PHIST_INFO,"\n");
           lidx_t ldH; 
           PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
           Hj += (S[i]->curDimV_-1)*ldH;
-          Hj[j] = ynorm[S[i]->id];
+          Hj[j] = ynorm[S[i]->id-minId];
         }
       }
-      _ST_ scale[maxId+1];
-      for(int i = 0; i < maxId+1; i++)
+      _ST_ scale[maxId+1-minId];
+      for(int i = 0; i < maxId+1-minId; i++)
         scale[i] = st::one() / ynorm[i];
       PHIST_CHK_IERR(SUBR(mvec_vscale)(work_y, scale, ierr), *ierr);
     }
@@ -732,24 +738,34 @@ PHIST_SOUT(PHIST_INFO,"\n");
       _ST_ tmp;
       for(int k = 0; k < j-1; k++)
       {
-        tmp = S[i]->cs_[k]*Hj[k] + S[i]->sn_[k]*Hj[k+1];
-        Hj[k+1] = -st::conj(S[i]->sn_[k])*Hj[k] + S[i]->cs_[k]*Hj[k+1];
+        tmp = st::conj(S[i]->cs_[k])*Hj[k] + st::conj(S[i]->sn_[k])*Hj[k+1];
+        Hj[k+1] = -S[i]->sn_[k]*Hj[k] + S[i]->cs_[k]*Hj[k+1];
         Hj[k] = tmp;
       }
       // new Givens rotation to eliminate H(j+1,j)
 #ifdef IS_COMPLEX
-      PREFIX(LARTG)((blas_cmplx_t*)&Hj[j-1],(blas_cmplx_t*)&Hj[j],&S[i]->cs_[j-1],(blas_cmplx_t*)&S[i]->sn_[j-1],(blas_cmplx_t*)&tmp);
+      _MT_ cs;
+      PREFIX(LARTG)((blas_cmplx_t*)&Hj[j-1],(blas_cmplx_t*)&Hj[j],&cs,(blas_cmplx_t*)&S[i]->sn_[j-1],(blas_cmplx_t*)&tmp);
+      S[i]->cs_[j-1] = (_ST_) cs;
+      S[i]->sn_[j-1] = st::conj(S[i]->sn_[j-1]);
 #else
       PREFIX(LARTG)(&Hj[j-1],&Hj[j],&S[i]->cs_[j-1],&S[i]->sn_[j-1],&tmp);
+      //{
+        //_MT_ len = mt::sqrt(st::real(st::conj(Hj[j-1])*Hj[j-1])+st::real(st::conj(Hj[j])*Hj[j]));
+        //S[i]->cs_[j-1] = Hj[j-1]/len;
+        //S[i]->sn_[j-1] = Hj[j]/len;
+        //// and apply it
+        //tmp = st::conj(S[i]->cs_[j-1])*Hj[j-1] + st::conj(S[i]->sn_[j-1])*Hj[j];
+      //}
 #endif
 #ifdef TESTING
 {
-  //PHIST_OUT(PHIST_VERBOSE,"(Hj[j-1],Hj[j]) = (%8.4e+i%8.4e, %8.4e + i%8.4e)\n", st::real(Hj[j-1]), st::imag(Hj[j-1]),st::real(Hj[j]),st::imag(Hj[j]));
-  //PHIST_OUT(PHIST_VERBOSE,"(c,s) = (%8.4e, %8.4e+i%8.4e)\n", S[i]->cs_[j-1],st::real(S[i]->sn_[j-1]),st::imag(S[i]->sn_[j-1]));
-  //PHIST_OUT(PHIST_VERBOSE,"r = %8.4e + i%8.4e\n", st::real(tmp),st::imag(tmp));
-  _ST_ r_ = S[i]->cs_[j-1]*Hj[j-1] + S[i]->sn_[j-1]*Hj[j];
-  _ST_ zero_ = -st::conj(S[i]->sn_[j-1])*Hj[j-1] + S[i]->cs_[j-1]*Hj[j];
-  //PHIST_OUT(PHIST_VERBOSE,"(r, 0) = (%8.4e + i%8.4e, %8.4e+i%8.4e)\n", st::real(r_), st::imag(r_), st::real(zero_), st::imag(zero_));
+  PHIST_OUT(PHIST_VERBOSE,"(Hj[j-1],Hj[j]) = (%8.4e+i%8.4e, %8.4e + i%8.4e)\n", st::real(Hj[j-1]), st::imag(Hj[j-1]),st::real(Hj[j]),st::imag(Hj[j]));
+  PHIST_OUT(PHIST_VERBOSE,"(c,s) = (%8.4e+i%8.4e, %8.4e+i%8.4e)\n", st::real(S[i]->cs_[j-1]),st::imag(S[i]->cs_[j-1]),st::real(S[i]->sn_[j-1]),st::imag(S[i]->sn_[j-1]));
+  PHIST_OUT(PHIST_VERBOSE,"r = %8.4e + i%8.4e\n", st::real(tmp),st::imag(tmp));
+  _ST_ r_ = st::conj(S[i]->cs_[j-1])*Hj[j-1] + st::conj(S[i]->sn_[j-1])*Hj[j];
+  _ST_ zero_ = -S[i]->sn_[j-1]*Hj[j-1] + S[i]->cs_[j-1]*Hj[j];
+  PHIST_OUT(PHIST_VERBOSE,"(r, 0) = (%8.4e + i%8.4e, %8.4e+i%8.4e)\n", st::real(r_), st::imag(r_), st::real(zero_), st::imag(zero_));
   PHIST_CHK_IERR(*ierr = (st::abs(r_-tmp) < 1.e-5) ? 0 : -1, *ierr);
   PHIST_CHK_IERR(*ierr = (st::abs(zero_) < 1.e-5) ? 0 : -1, *ierr);
 }
@@ -758,8 +774,8 @@ PHIST_SOUT(PHIST_INFO,"\n");
       Hj[j-1] = tmp;
       Hj[j] = st::zero();
       // apply to RHS
-      tmp = S[i]->cs_[j-1]*S[i]->rs_[j-1];
-      S[i]->rs_[j] = -st::conj(S[i]->sn_[j-1])*S[i]->rs_[j-1];
+      tmp = st::conj(S[i]->cs_[j-1])*S[i]->rs_[j-1];
+      S[i]->rs_[j] = -S[i]->sn_[j-1]*S[i]->rs_[j-1];
       S[i]->rs_[j-1] = tmp;
 
       // update current residual norm
