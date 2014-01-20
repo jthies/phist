@@ -100,17 +100,8 @@ int main(int argc, char** argv)
   {
     Teuchos::TimeMonitor timeMon( *time );
 
-#ifdef PHIST_HAVE_LIKWID
-#pragma omp parallel
-    likwid_markerStartRegion("crsMat_times_mvec");
-#endif
-
     PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(st::one(),A,x,st::zero(),y,&ierr),ierr);
 
-#ifdef PHIST_HAVE_LIKWID
-#pragma omp parallel
-    likwid_markerStopRegion("crsMat_times_mvec");
-#endif
   }
   Teuchos::TimeMonitor::summarize();
 
