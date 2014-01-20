@@ -36,6 +36,7 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) me, int *i
 //! BQtil           projection vectors BV passed to jadaOp_create
 //! sigma           (pos.!) shifts, -sigma[i], i in {1, ..., nvec} is passed to the jadaOp
 //! res             JD residuals, e.g. rhs of the correction equations
+//! resIndex        if not NULL, specifies permutation of the residual array to avoid unnecessary copying in the jada-algorithm
 //! tol             desired accuracy (gmres residual tolerance) of the individual systems
 //! maxIter         maximal number of iterations after which individial systems should be aborted
 //! t               returns approximate solution vectors
@@ -43,7 +44,7 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) me, int *i
 void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
                                     TYPE(const_op_ptr)    A_op,     TYPE(const_op_ptr)    B_op, 
                                     TYPE(const_mvec_ptr)  Qtil,     TYPE(const_mvec_ptr)  BQtil,
-                                    const _ST_            sigma[],  TYPE(const_mvec_ptr)  res,
+                                    const _ST_            sigma[],  TYPE(const_mvec_ptr)  res,      const int resIndex[], 
                                     const _MT_            tol[],    int                   maxIter,
                                     TYPE(mvec_ptr)        t,        int *                 ierr)
 {
@@ -68,7 +69,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
 
   // total number of systems to solve
   int totalNumSys;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(res, &totalNumSys, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(t, &totalNumSys, ierr), *ierr);
 
   // index of currently iterated systems in all systems to solve
   std::vector<int> index(max_k);
@@ -111,7 +112,10 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
       if( me->pgmresStates_[i]->status == -2 )
       {
         // setup the next system waiting to be solved
-        PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))res, &res_i, nextSystem, nextSystem, ierr), *ierr);
+        int ind = nextSystem;
+        if( resIndex != NULL )
+          ind = resIndex[ind];
+        PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))res, &res_i, ind, ind, ierr), *ierr);
         PHIST_CHK_IERR(SUBR(pgmresState_reset)(me->pgmresStates_[i], res_i, NULL, ierr), *ierr);
         me->pgmresStates_[i]->tol = tol[nextSystem];
         currShifts[me->pgmresStates_[i]->id] = -sigma[nextSystem];

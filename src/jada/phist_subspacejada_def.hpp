@@ -167,17 +167,11 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     0,      nV-1,     0,     nV-1,      ierr), *ierr);
 
 
-  //------------------------------- initialize GMRES solver ------------------------
-  TYPE(pgmresState_ptr) *gmresState = new TYPE(pgmresState_ptr)[blockDim];
-  _MT_ *gmresResNorm = new _MT_[blockDim];
-  int nTotalGmresIter = 0;
-  PHIST_CHK_IERR(SUBR( pgmresStates_create ) (gmresState, blockDim, A_op->domain_map, innerMaxBase+1, ierr), *ierr);
-  _MT_ *innerTol = new _MT_[nEig_];
-  for(int i = 0; i < nEig_; i++)
-    innerTol[i] = mt::one();
-  _MT_ *lastOuterRes = new _MT_ [nEig_];
-  for(int i = 0; i < nEig_; i++)
-    lastOuterRes[i] = 0;
+  //------------------------------- initialize correction equation solver solver ------------------------
+  TYPE(jadaCorrectionSolver_ptr) innerSolv = NULL;
+  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, innerBlockDim, A_op->domain_map, innerMaxBase, ierr), *ierr);
+  std::vector<_MT_> innerTol(nEig_,mt::one());
+  std::vector<_MT_> lastOuterRes(nEig_,mt::zero());
 
   //------------------------------- initialize subspace etc ------------------------
   // run arnoldi
@@ -472,14 +466,14 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
         if( *nIter < initialShiftIter )
         {
-          sigma[k] = -initialShift;
+          sigma[k] = initialShift;
         }
         else
         {
 #ifndef IS_COMPLEX
-          sigma[k] = -ct::real(ev_H[i]);
+          sigma[k] = ct::real(ev_H[i]);
 #else
-          sigma[k] = -ev_H[i];
+          sigma[k] = ev_H[i];
 #endif
         }
 
@@ -528,35 +522,20 @@ PHIST_SOUT(PHIST_INFO,"\n");
     // we only need to view first part of Q
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q,   &Qtil,  0, k_, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ,  &BQtil, 0, k_, ierr), *ierr);
-
-    TYPE(op) jdOp;
-    PHIST_CHK_IERR(SUBR( jadaOp_create ) (A_op, B_op, Qtil, BQtil, sigma, k, &jdOp, ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_put_value )(t, st::zero(), ierr), *ierr);
+    // set tolerances
     for(int i = 0; i < k; i++)
     {
-      int i_ = selectedRes[i];
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,&t, i,i, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res,&t_res, i_,i_, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( pgmresState_reset ) (gmresState[i], t_res, NULL, ierr), *ierr);
       if( resNorm[nConvergedEig+i] > 4*lastOuterRes[nConvergedEig+i] )
         innerTol[nConvergedEig+i] = 1.;
       innerTol[nConvergedEig+i] *= 0.5;
       lastOuterRes[nConvergedEig+i] = resNorm[nConvergedEig+i];
-      gmresState[i]->tol = innerTol[nConvergedEig+i];
-      PHIST_SOUT(PHIST_INFO, "gmres-tol: %8.4e\n",gmresState[i]->tol);
     }
-    PHIST_CHK_NEG_IERR(SUBR( pgmresStates_iterate ) (&jdOp, gmresState, k, &nTotalGmresIter, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, B_op, Qtil, BQtil, sigma, t_res, &selectedRes[0],
+                                                  &innerTol[nConvergedEig], innerMaxBase, t, ierr), *ierr);
+
     // get solution and reuse res for At
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,&Vv, 0,k-1, ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res,&AVv, 0,k-1, ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_put_value )(AVv, st::zero(), ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( pgmresStates_updateSol ) (gmresState, k, Vv, gmresResNorm, true, ierr), *ierr);
-    // tell the pgmres that we don't need the states any more
-    for(int i = 0; i < k; i++)
-    {
-      PHIST_CHK_IERR(SUBR( pgmresState_reset ) (gmresState[i], NULL, NULL, ierr), *ierr);
-    }
-    PHIST_CHK_IERR(SUBR( jadaOp_delete ) (&jdOp, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_, &Vv,  0, k-1, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res,&AVv, 0, k-1, ierr), *ierr);
 
     // enlarge search space
     // first update views
@@ -596,9 +575,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
 
   //------------------------------- delete vectors and matrices --------------------
-  PHIST_CHK_IERR(SUBR( pgmresStates_delete ) (gmresState, blockDim, ierr), *ierr);
-  delete[] gmresState;
-  delete[] gmresResNorm;
+  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_delete)(innerSolv, ierr), *ierr);
 
   // delete views
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (R_H, ierr), *ierr);

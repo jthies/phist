@@ -116,7 +116,7 @@ int main(int argc, char** argv)
   }
 
   // inner GMRES block size
-  int innerBlockDim = 2;
+  int innerBlockDim = std::min(2, blockDim);
   if( argc > 9 )
   {
     std::istringstream iss(argv[9]);

@@ -17,11 +17,10 @@
 
 #include "phist_ScalarTraits.hpp"
 #include "phist_schur_decomp.h"
-#include "phist_jadaOp.hpp"
 #include "phist_simple_arnoldi.h"
 #include "phist_transform_searchspace.h"
+#include "phist_jadaCorrectionSolver.h"
 
-#include "phist_pgmres.h"
 
 #include "phist_gen_s.h"
 #include "phist_subspacejada_def.hpp"
