@@ -254,17 +254,37 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
       for(int i = 0; i < nConvergedEig; i++)
         Q_H_raw[ldaQ_H*i+i] = st::one();
 
-      // upper left part of R_H
+      // left part of R_H
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_, &R_H, 0, nConvergedEig-1, 0, nConvergedEig-1, ierr), *ierr);
       PHIST_CHK_IERR(SUBR( sdMat_get_block  ) (R,    R_H,  0, nConvergedEig-1, 0, nConvergedEig-1, ierr), *ierr);
 
       // upper right part of R_H
-      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (Q_H_, &Qq_H, nConvergedEig, nEig_-1,         nConvergedEig, nEig_-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (Q_H_, &Qq_H, nConvergedEig, nV-1,            nConvergedEig, nEig_-1, ierr), *ierr);
       PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (R_H_, &Rr_H, 0,             nConvergedEig-1, nConvergedEig, nEig_-1, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (H_  , &Hh,   0,             nConvergedEig-1, nConvergedEig, nEig_-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (H_  , &Hh,   0,             nConvergedEig-1, nConvergedEig, nV-1,    ierr), *ierr);
 
       PHIST_CHK_IERR(SUBR( sdMat_times_sdMat ) (st::one(), Hh, Qq_H, st::zero(), Rr_H, ierr), *ierr);
     }
+#ifdef TESTING
+{
+  // check that H Q_H = Q_H R_H
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0, nV-1,    0, nEig_-1, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0, nEig_-1, 0, nEig_-1, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)(Htmp_, &Htmp, 0, nV-1,    0, nEig_-1, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(), H, Q_H, st::zero(), Htmp, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(-st::one(), Q_H, R_H, st::one(), Htmp, ierr), *ierr);
+  // get max norm
+  _MT_ absErr = mt::zero();
+  for(int i = 0; i < nEig_; i++)
+    for(int j = 0; j < nV; j++)
+      absErr = std::max(absErr, st::abs(Htmp_raw[i*ldaHtmp+j]));
+  PHIST_SOUT(PHIST_INFO, "H*Q_H - Q_H*R_H: %8.4e\n", absErr);
+  PHIST_CHK_IERR(SUBR(sdMat_print)(H, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_print)(Q_H, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_print)(R_H, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_print)(Htmp, ierr), *ierr);
+}
+#endif
 
     // update views
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0,     nV-1,      0,             nV-1,      ierr), *ierr);
@@ -406,29 +426,11 @@ PHIST_SOUT(PHIST_INFO,"\n");
     if( nNewlyConvergedEig > 0 )
     {
       PHIST_SOUT(PHIST_INFO,"In iteration %d: locking %d newly converged eigenvalues\n", *nIter, nNewlyConvergedEig);
-
-      // reorder V and H
-      PHIST_CHK_IERR(SUBR( transform_searchSpace ) (V, AV, BV, H, Q_H, B_op != NULL, ierr), *ierr);
-
-      nConvergedEig = nConvergedEig+nNewlyConvergedEig;
-
-      // to avoid unnecessary subspace transformations, shrink the searchspace one iteration earlier...
-      if( nV + 2*blockDim > maxBase )
-      {
-        PHIST_SOUT(PHIST_INFO,"Shrinking search space from %d to %d\n", nV, minBase);
-
-        // update views
-        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,    &V,                      0, minBase-1,    ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,   &AV,                     0, minBase-1,    ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,   &BV,                     0, minBase-1,    ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( sdMat_view_block  )(H_,    &H,    0, minBase-1,     0, minBase-1,    ierr), *ierr);
-
-        nV = minBase;
-      }
     }
 
-    if( nConvergedEig >= nEig )
+    if( nConvergedEig + nNewlyConvergedEig >= nEig )
     {
+      nConvergedEig += nNewlyConvergedEig;
       PHIST_SOUT(PHIST_INFO,"In iteration %d: all eigenvalues converged!\n", *nIter);
       break;
     }
@@ -437,6 +439,32 @@ PHIST_SOUT(PHIST_INFO,"\n");
     {
       PHIST_SOUT(PHIST_INFO,"Reached maximum number of iterations!\n");
       break;
+    }
+
+    if( nNewlyConvergedEig > 0 )
+    {
+      // to avoid unnecessary subspace transformations, shrink the searchspace one iteration earlier...
+      if( nV + 2*blockDim > maxBase )
+      {
+        PHIST_SOUT(PHIST_INFO,"Shrinking search space from %d to %d\n", nV, minBase);
+        PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  0, nV-1,          0, minBase-1,    ierr), *ierr);
+      }
+
+      // reorder V and H
+      PHIST_CHK_IERR(SUBR( transform_searchSpace ) (V, AV, BV, H, Q_H, B_op != NULL, ierr), *ierr);
+
+      nConvergedEig = nConvergedEig+nNewlyConvergedEig;
+
+      // update views if necessary
+      if( nV + 2*blockDim > maxBase )
+      {
+        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,    &V,                      0, minBase-1,    ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,   &AV,                     0, minBase-1,    ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,   &BV,                     0, minBase-1,    ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( sdMat_view_block  )(H_,    &H,    0, minBase-1,     0, minBase-1,    ierr), *ierr);
+
+        nV = minBase;
+      }
     }
 
 
@@ -518,7 +546,6 @@ PHIST_SOUT(PHIST_INFO,"\n");
     // setup jadaOp
     // set correction views and temporary jadaOp-storage
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,  &t,     0, k-1,  ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res, &t_res, 0, k-1,  ierr), *ierr);
     // we only need to view first part of Q
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q,   &Qtil,  0, k_, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ,  &BQtil, 0, k_, ierr), *ierr);
@@ -530,7 +557,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       innerTol[nConvergedEig+i] *= 0.5;
       lastOuterRes[nConvergedEig+i] = resNorm[nConvergedEig+i];
     }
-    PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, B_op, Qtil, BQtil, sigma, t_res, &selectedRes[0],
+    PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, B_op, Qtil, BQtil, sigma, res, &selectedRes[0],
                                                   &innerTol[nConvergedEig], innerMaxBase, t, ierr), *ierr);
 
     // get solution and reuse res for At
