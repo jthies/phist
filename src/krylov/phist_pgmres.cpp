@@ -1,3 +1,6 @@
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
 #include <cstdlib>
 #include <cstring>
 #include <cmath>

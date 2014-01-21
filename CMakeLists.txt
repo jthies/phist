@@ -29,7 +29,7 @@ option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
 
 if (DEFINED LAPACK_LIBS)
   set(LAPACK_LIBS ${LAPACK_LIBS} CACHE STRING "how to link with lapack (and blas)")
-else()
+elseif(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
   set(LAPACK_LIBS "lapack;blas" CACHE STRING "how to link with lapack (and blas)")
 endif()
 
@@ -45,6 +45,7 @@ set(OUTLEV_DEBUG 4)
 set(OUTLEV_RELEASE 3)
 
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+
   message(STATUS "using GNU compiler flags")
   set (CMAKE_C_FLAGS "-fopenmp -std=c99")
   set (CMAKE_C_FLAGS_RELEASE "-O3 -ffast-math -march=native -fopenmp")
@@ -67,11 +68,32 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   set (CMAKE_Fortran_FLAGS "-fopenmp -cpp -ffree-line-length-none")
   set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -O3 -ffast-math -fopenmp -cpp")
   set (CMAKE_Fortran_FLAGS_DEBUG "-dH -O0 -g -DTESTING -fopenmp -Wall -fcheck=all")
-else ()
-#TODO - add flags for Intel and others
-  message ("compiler ID: " ${CXX_COMPILER_ID})
+
+elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
+
+  message(STATUS "using INTEL compiler flags")
+  set (CMAKE_C_FLAGS "-openmp -Wno-unused-variable -mkl -std=c99")
+  set (CMAKE_C_FLAGS_RELEASE "-O3 -xHOST -no-prec-div")
+  set (CMAKE_C_FLAGS_DEBUG "-check=uninit,stack -debug")
+
+  set (CMAKE_CXX_FLAGS "-openmp -Wno-unused-variable -mkl")
+  set (CMAKE_CXX_FLAGS_RELEASE "-O3 -xHOST -no-prec-div")
+  set (CMAKE_CXX_FLAGS_DEBUG "-check=uninit,stack -debug")
+
+  set (CMAKE_Fortran_FLAGS "-openmp -fpp -mkl")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -xHOST -no-prec-div")
+  set (CMAKE_Fortran_FLAGS_DEBUG "-check -debug")
+
+  # for ipo
+  set_property(DIRECTORY . PROPERTY INTERPROCEDURAL_OPTIMIZATION 1)
+
+else()
+
+  message ("compiler ID: " ${CMAKE_C_COMPILER_ID})
   message ("No custom compiler flags are known.")
+
 endif ()
+
 
 # append output level to C and C++ flags
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
@@ -441,8 +463,10 @@ endif()
 
 foreach(np ${PHIST_MPI_TEST_NPROCS})
   foreach(label ${PHIST_TESTS})
-    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} ${PRODUCT_NAME}-${label}-test --gtest_output=xml:test_output_np${np}/${label}/xunit.xml)
+    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} ./${PRODUCT_NAME}-${label}-test --gtest_output=xml:test_output_np${np}/${label}/xunit.xml)
     add_test(NAME test-${label}_np${np} COMMAND ${TEST_COMMAND})
+    set_tests_properties(test-${label}_np${np} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
+    set_tests_properties(test-${label}_np${np} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
   endforeach()
 endforeach()
 
