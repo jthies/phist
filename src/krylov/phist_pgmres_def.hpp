@@ -617,7 +617,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
           _ST_ tmp[maxId+1-minId];
 
           bool calculatedDot = false;
-          if( j >= maxCurDimV-sharedCurDimV && maxId+1-minId == numSys-1 )
+          if( j >= maxCurDimV-sharedCurDimV && maxId+1-minId == numSys )
           {
             // MGS step for all systems at once
             PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, minId, maxId, ierr), *ierr);
