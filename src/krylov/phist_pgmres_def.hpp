@@ -797,14 +797,6 @@ PHIST_SOUT(PHIST_INFO,"\n");
       if( absres < 100*st::eps() || relres < S[i]->tol )
       {
         S[i]->status = 0; // mark as converged
-      }
-      // to circumvent errors in parallel due to floating point inaccuracies,
-      // tell all other processes we are finished!
-#ifdef PHIST_HAVE_MPI
-      PHIST_CHK_IERR(*ierr = MPI_Bcast(&S[i]->status, 1, MPI_INT, 0, MPI_COMM_WORLD), *ierr);
-#endif
-      if( S[i]->status == 0 )
-      {
         anyConverged++;
       }
       else if( S[i]->curDimV_ >= mvecBuff->size() )

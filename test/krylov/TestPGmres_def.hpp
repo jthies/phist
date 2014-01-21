@@ -74,9 +74,9 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
         ASSERT_EQ(0,ierr_);
         SUBR(crsMat_times_mvec)(st::one(),A_,xex_,st::zero(),rhs_,&ierr_);
         ASSERT_EQ(0,ierr_);
-        SUBR(mvec_norm2)(xex_,&xNorm_,&ierr_);
+        SUBR(mvec_norm2)(xex_,xNorm_,&ierr_);
         ASSERT_EQ(0,ierr_);
-        SUBR(mvec_norm2)(rhs_,&bNorm_,&ierr_);
+        SUBR(mvec_norm2)(rhs_,bNorm_,&ierr_);
         ASSERT_EQ(0,ierr_);
       }
     }
@@ -108,7 +108,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
     TYPE(crsMat_ptr) A_;
     TYPE(mvec_ptr) xex_,sol_,rhs_;
     ST *xex_vp_,*rhs_vp_,*sol_vp_;
-    MT bNorm_,xNorm_;
+    MT bNorm_[_M_],xNorm_[_M_];
 
 
     // ========================= the actual arnoldi test =========================
@@ -177,34 +177,40 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
         ASSERT_EQ(0,ierr_);
 
         // check residual and error norms, compare with tol
-        MT resNorm, errNorm;
+        MT resNorm[nrhs], errNorm[nrhs];
         
         
         // compute true residual in b
         SUBR(crsMat_times_mvec)(-st::one(),A_,x,st::one(),b,&ierr_);
         ASSERT_EQ(0,ierr_);
         
-        SUBR(mvec_norm2)(b,&resNorm,&ierr_);
+        SUBR(mvec_norm2)(b,resNorm,&ierr_);
         ASSERT_EQ(0,ierr_);
-        
-        PHIST_DEB("required tol:  %6.2g\n",tol);
-        PHIST_DEB("rel. res norm: %6.2g\n",resNorm/bNorm_);
 
-        // check error (residual two norm < tol)
-        ASSERT_TRUE(resNorm<=tol*bNorm_);
+        for(int i = 0; i < nrhs; i++)
+        {
+          PHIST_DEB("required tol:  %6.2g\n",tol);
+          PHIST_DEB("rel. res norm: %6.2g\n",resNorm[i]/bNorm_[i]);
+
+          // check error (residual two norm < tol)
+          ASSERT_TRUE(resNorm[i]<=tol*bNorm_[i]);
+        }
 
         // check error
         SUBR(mvec_add_mvec)(-st::one(),xex,st::one(),x,&ierr_);
         ASSERT_EQ(0,ierr_);
 
-        SUBR(mvec_norm2)(x,&errNorm,&ierr_);
+        SUBR(mvec_norm2)(x,errNorm,&ierr_);
         ASSERT_EQ(0,ierr_);
 
-        PHIST_DEB("rel. err norm: %6.2g\n",errNorm/bNorm_);
-        // TODO - we should use the matrix norm for the scaling here,
-        //        but since we only test with one matrix we can hard-code
-        //        a factor 20 so that the test is passed.
-        ASSERT_TRUE(errNorm<=20*tol*bNorm_);
+        for(int i = 0; i < nrhs; i++)
+        {
+          PHIST_DEB("rel. err norm: %6.2g\n",errNorm[i]/bNorm_[i]);
+          // TODO - we should use the matrix norm for the scaling here,
+          //        but since we only test with one matrix we can hard-code
+          //        a factor 20 so that the test is passed.
+          ASSERT_TRUE(errNorm[i]<=20*tol*bNorm_[i]);
+        }
 
         SUBR(mvec_delete)(x,&ierr_);
         ASSERT_EQ(0,ierr_);

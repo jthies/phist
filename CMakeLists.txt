@@ -82,7 +82,7 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
   set (CMAKE_Fortran_FLAGS "-openmp -fpp -mkl")
   set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -xHOST -no-prec-div")
-  set (CMAKE_Fortran_FLAGS_DEBUG "-check -debug")
+  set (CMAKE_Fortran_FLAGS_DEBUG "-check=all,noarg_temp_created -debug")
 
   # for ipo
   set_property(DIRECTORY . PROPERTY INTERPROCEDURAL_OPTIMIZATION 1)

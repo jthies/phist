@@ -91,7 +91,7 @@ class ScalarTraits< float >
   static inline scalar_t prand()
   {
     scalar_t tmp = rand();
-#ifdef HAVE_MPI
+#ifdef PHIST_HAVE_MPI
     MPI_Bcast(&tmp, 1, mpi_type(), 0, MPI_COMM_WORLD);
 #endif
     return tmp;
@@ -212,7 +212,7 @@ class ScalarTraits< double >
   static inline scalar_t prand()
   {
     scalar_t tmp = rand();
-#ifdef HAVE_MPI
+#ifdef PHIST_HAVE_MPI
     MPI_Bcast(&tmp, 1, mpi_type(), 0, MPI_COMM_WORLD);
 #endif
     return tmp;
@@ -326,7 +326,7 @@ class ScalarTraits< std::complex<MT> >
   static inline scalar_t prand()
   {
     scalar_t tmp = rand();
-#ifdef HAVE_MPI
+#ifdef PHIST_HAVE_MPI
     MPI_Bcast(&tmp, 1, mpi_type(), 0, MPI_COMM_WORLD);
 #endif
     return tmp;
