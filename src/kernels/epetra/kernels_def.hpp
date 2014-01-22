@@ -199,7 +199,7 @@ void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) vM, int* ncols, int* ierr)
 void SUBR(mvec_extract_view)(Dmvec_ptr_t vV, double** val, lidx_t* lda, int* ierr)
   {
   CAST_PTR_FROM_VOID(Epetra_MultiVector,V, vV, *ierr);
-  PHIST_CHK_IERR(*ierr=(*V)(0)->ExtractView(val,lda),*ierr);
+  PHIST_CHK_IERR(*ierr=V->ExtractView(val,lda),*ierr);
   }
 
 void SUBR(sdMat_extract_view)(DsdMat_ptr_t vM, double** val, lidx_t* lda, int* ierr)
@@ -224,7 +224,7 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   if (*vVblock!=NULL)
     {
     CAST_PTR_FROM_VOID(Epetra_MultiVector,tmp,*vVblock,*ierr);
-    delete [] tmp;
+    delete tmp;
     }
   *vVblock = (TYPE(mvec_ptr))Vblock;
   }
@@ -270,9 +270,14 @@ void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
   if (*vMblock!=NULL)
     {
     CAST_PTR_FROM_VOID(Epetra_MultiVector,tmp,*vMblock,*ierr);
-    delete [] tmp;
+    delete tmp;
     }
-  *ierr=-99; // not yet implemented for Epetra, cf. tpetra for an example how to do it
+  double* val;
+  lidx_t lda;
+  PHIST_CHK_IERR(*ierr=M->ExtractView(&val,&lda),*ierr);
+  PHIST_DEB("in view (%d:%d,%d:%d), lda=%d",imin,imax,jmin,jmax,lda);
+  Epetra_LocalMap localMap(imax-imin+1,M->Map().IndexBase(),M->Map().Comm());
+  Mblock = new Epetra_MultiVector(View, localMap, val+imin+jmin*lda, lda, jmax-jmin+1);
   *vMblock = (TYPE(sdMat_ptr))Mblock;
   }
 
@@ -280,20 +285,32 @@ void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
 //! Mblock = M(imin:imax,jmin:jmax). The object Mblock must be created beforehand 
 //! and the corresponding columns of M are copied into the value array    
 //! of Mblock. M is not modified.
-void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) M, 
-                             TYPE(sdMat_ptr) Mblock,
+void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM, 
+                             TYPE(sdMat_ptr) vMblock,
                              int imin, int imax, int jmin, int jmax, int* ierr)
   {
-  *ierr=-99;
+  *ierr=0;
+  TYPE(sdMat_ptr) vMtmp=NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)((TYPE(sdMat_ptr))vM,&vMtmp,imin,imax,jmin,jmax,ierr),*ierr);
+  CAST_PTR_FROM_VOID(Epetra_MultiVector,Mblock,vMblock,*ierr);
+  CAST_PTR_FROM_VOID(Epetra_MultiVector,Mtmp,vMtmp,*ierr);
+  PHIST_CHK_IERR(*Mblock=*Mtmp,*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(vMtmp,ierr),*ierr);
   }
 
 //! given a serial dense matrix Mblock, set M(imin:imax,jmin:jmax)=Mblock by 
 //! copying the corresponding elements. Mblock is not modified.
-void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M, 
-                             TYPE(const_sdMat_ptr) Mblock,
+void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM, 
+                             TYPE(const_sdMat_ptr) vMblock,
                              int imin, int imax, int jmin, int jmax, int* ierr)
   {
-  *ierr=-99;
+  *ierr=0;
+  TYPE(sdMat_ptr) vMtmp=NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)(vM,&vMtmp,imin,imax,jmin,jmax,ierr),*ierr);
+  CAST_PTR_FROM_VOID(Epetra_MultiVector,Mblock,vMblock,*ierr);
+  CAST_PTR_FROM_VOID(Epetra_MultiVector,Mtmp,vMtmp,*ierr);
+  PHIST_CHK_IERR(*Mtmp=*Mblock,*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(vMtmp,ierr),*ierr);
   }
 
 //! \name destructors
@@ -312,6 +329,7 @@ void SUBR(crsMat_delete)(TYPE(crsMat_ptr) vA, int* ierr)
 void SUBR(mvec_delete)(TYPE(mvec_ptr) vV, int* ierr)
   {
   *ierr=0;
+  if (vV==NULL) return;
   CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*ierr);
   delete V;
   }
