@@ -41,14 +41,16 @@ using namespace testing;
 #define _N_ 25
 #define _NV_ 8
 
-#define CLASSNAME SOpTest_25_8
-#include "phist_gen_s.h"
-#include "OpTest_def.hpp"
-
 #undef CLASSNAME
 #define CLASSNAME DOpTest_25_8
 
 #include "phist_gen_d.h"
+#include "OpTest_def.hpp"
+
+#ifndef PHIST_KERNEL_LIB_EPETRA
+
+#define CLASSNAME SOpTest_25_8
+#include "phist_gen_s.h"
 #include "OpTest_def.hpp"
 
 #undef CLASSNAME
@@ -60,7 +62,7 @@ using namespace testing;
 #undef CLASSNAME
 #define CLASSNAME ZOpTest_25_8
 
-#include "phist_gen_d.h"
+#include "phist_gen_z.h"
 #include "OpTest_def.hpp"
-
+#endif
 
