@@ -19,6 +19,7 @@
 #include "phist_tpetra_typedefs.hpp"
 #include "BelosTpetraAdapter.hpp"
 #elif defined(PHIST_KERNEL_LIB_EPETRA)
+#include "Epetra_MultiVector.h"
 #include "BelosEpetraAdapter.hpp"
 #elif defined(PHIST_KERNEL_LIB_GHOST)
 #include "Belos_GhostAdapter.hpp"

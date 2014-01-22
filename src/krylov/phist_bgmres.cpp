@@ -38,14 +38,14 @@
 #include "phist_gen_d.h"
 #include "phist_bgmres_def.hpp"
 
-// disallow using Belos with other than double type for Epetra,
-// that makes no sense because Epetra has only double as type.
-#ifndef PHIST_KERNEL_LIB_EPETRA
+#ifdef PHIST_KERNEL_LIB_EPETRA
+#define NO_BGMRES_IMPLEMENTATION
+#endif
+
 #include "phist_gen_s.h"
 #include "phist_bgmres_def.hpp"
 #include "phist_gen_c.h"
 #include "phist_bgmres_def.hpp"
 #include "phist_gen_z.h"
 #include "phist_bgmres_def.hpp"
-#endif
 
