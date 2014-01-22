@@ -275,7 +275,7 @@ void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
   double* val;
   lidx_t lda;
   PHIST_CHK_IERR(*ierr=M->ExtractView(&val,&lda),*ierr);
-  PHIST_DEB("in view (%d:%d,%d:%d), lda=%d",imin,imax,jmin,jmax,lda);
+  PHIST_DEB("in view (%d:%d,%d:%d), lda=%d\n",imin,imax,jmin,jmax,lda);
   Epetra_LocalMap localMap(imax-imin+1,M->Map().IndexBase(),M->Map().Comm());
   Mblock = new Epetra_MultiVector(View, localMap, val+imin+jmin*lda, lda, jmax-jmin+1);
   *vMblock = (TYPE(sdMat_ptr))Mblock;
@@ -606,14 +606,14 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     // so a single zero vector is not detected to be rank deficient.
     MT nrm;
     PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
-    PHIST_DEB("single vector QR, R=%8.4f",nrm);
+    PHIST_DEB("single vector QR, R=%8.4f\n",nrm);
     ST* Rval=NULL;
     int ldR;
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&Rval,&ldR,ierr),*ierr);
     rank=1;
     if (nrm<rankTol)
       {
-      PHIST_DEB("zero vector detected");
+      PHIST_DEB("zero vector detected\n");
       // randomize the vector
       PHIST_CHK_IERR(SUBR(mvec_random)(vV,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
