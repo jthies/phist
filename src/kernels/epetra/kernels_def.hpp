@@ -229,16 +229,6 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   *vVblock = (TYPE(mvec_ptr))Vblock;
   }
 
-//! get a new vector that is a view of a number of columns of an existing one, treating them
-//! The columns do not need to be contiguous in memory or have a constant stride between
-//! them, the stride may even be negative. Not all functions have to support this kind of
-//! data, in particular mvecT_times_mvec) will probably not. They obviously have to report
-//! the error appropriately.
-void SUBR(mvec_view_scattered)(TYPE(mvec_ptr) V, TYPE(mvec_ptr)* Vscat,
-                             int* cols, int ncols, int* ierr)
-  {
-  *ierr=-99;
-  };
 //! get a new vector that is a copy of some columns of the original one,  
 //! Vblock = V(:,jmin:jmax). The object Vblock must be created beforehand 
 //! and the corresponding columns of V are copied into the value array    

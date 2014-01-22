@@ -13,6 +13,7 @@ const char* phist_retcode2str(int code)
   return "unknown error";
   }
 
+#ifdef PHIST_KERNEL_LIB_GHOST
 const char* phist_ghost_error2str(ghost_error_t code)
   {
   if (code==GHOST_SUCCESS) return "success";
@@ -25,6 +26,7 @@ const char* phist_ghost_error2str(ghost_error_t code)
   else if (code==GHOST_ERR_IO) return "I/O error";
   return "unknown error code";
   }
+#endif
 
 const char* eigSort2str(eigSort_t s)
   {
