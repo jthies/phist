@@ -82,7 +82,7 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
   set (CMAKE_Fortran_FLAGS "-openmp -fpp -mkl")
   set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -xHOST -no-prec-div")
-  set (CMAKE_Fortran_FLAGS_DEBUG "-check=all,noarg_temp_created -debug")
+  set (CMAKE_Fortran_FLAGS_DEBUG "-check all -debug")
 
   # for ipo
   set_property(DIRECTORY . PROPERTY INTERPROCEDURAL_OPTIMIZATION 1)
@@ -285,7 +285,7 @@ endforeach()
 list(APPEND PHIST_LIBS ${LAPACK_LIBS})
 list(APPEND PHIST_LIBS ${MPI_CXX_LIBRARIES})
 
-#message(STATUS "all libraries: "${PHIST_LIBS})
+message(STATUS "all libraries: ${PHIST_LIBS}")
 
 set(GCOVR_EXCLUDES -e src/kernels/kernels_noimpl.c
                    -e src/tools/tools.c)
