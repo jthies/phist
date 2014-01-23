@@ -557,8 +557,13 @@ PHIST_SOUT(PHIST_INFO,"\n");
       innerTol[nConvergedEig+i] *= 0.5;
       lastOuterRes[nConvergedEig+i] = resNorm[nConvergedEig+i];
     }
-    PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, B_op, Qtil, BQtil, sigma, res, &selectedRes[0],
-                                                  &innerTol[nConvergedEig], innerMaxBase, t, ierr), *ierr);
+//#ifdef PHIST_KERNEL_LIB_FORTRAN
+//    bool abortAfterFirstConvergedInBlock = true;
+//#else
+    bool abortAfterFirstConvergedInBlock = false;
+//#endif
+    PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, B_op, Qtil, BQtil, sigma, res, &selectedRes[0],
+                                                  &innerTol[nConvergedEig], innerMaxBase, t, abortAfterFirstConvergedInBlock, ierr), *ierr);
 
     // get solution and reuse res for At
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_, &Vv,  0, k-1, ierr), *ierr);

@@ -46,7 +46,8 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
                                     TYPE(const_mvec_ptr)  Qtil,     TYPE(const_mvec_ptr)  BQtil,
                                     const _ST_            sigma[],  TYPE(const_mvec_ptr)  res,      const int resIndex[], 
                                     const _MT_            tol[],    int                   maxIter,
-                                    TYPE(mvec_ptr)        t,        int *                 ierr)
+                                    TYPE(mvec_ptr)        t,        bool abortAfterFirstConvergedInBlock,
+                                    int *                 ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
@@ -150,25 +151,39 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
     PHIST_CHK_NEG_IERR(SUBR(pgmresStates_iterate)(&jadaOp, &activeStates[0], k, &nTotalIter, ierr), *ierr);
 
 
-    // check the status of the systems
-    for(int i = 0; i < k; i++)
+    // optimization to use always full blocks and ignore tolerances
+    if( abortAfterFirstConvergedInBlock && k > 0 )
     {
-      if( activeStates[i]->status == 0 || activeStates[i]->status == 2 )
+      int ind = index[activeStates[0]->id];
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(t, &t_i, ind, ind+k-1, ierr), *ierr);
+      _MT_ tmp[k];
+      PHIST_CHK_IERR(SUBR(pgmresStates_updateSol)(&activeStates[0], k, t_i, tmp, false, ierr), *ierr);
+      for(int i = 0; i < k; i++)
       {
-        // update solution
-        int ind = index[activeStates[i]->id];
-        PHIST_CHK_IERR(SUBR(mvec_view_block)(t, &t_i, ind, ind, ierr), *ierr);
-        _MT_ tmp;
-        PHIST_CHK_IERR(SUBR(pgmresStates_updateSol)(&activeStates[i], 1, t_i, &tmp, false, ierr), *ierr);
-
-        if( activeStates[i]->status == 2 && activeStates[i]->totalIter >= maxIter )
-          nUnconvergedSystems++;
-        else if( activeStates[i]->status == 2 )
+        PHIST_CHK_IERR(SUBR(pgmresState_reset)(activeStates[i], NULL, NULL, ierr), *ierr);
+      }
+    }
+    else
+    {
+      // check the status of the systems
+      for(int i = 0; i < k; i++)
+      {
+        if( activeStates[i]->status == 0 || activeStates[i]->status == 2 )
         {
-          // prepare restart
-          PHIST_CHK_IERR(SUBR(pgmresState_reset)(activeStates[i], NULL, t_i, ierr), *ierr);
-          continue;
-        }
+          // update solution
+          int ind = index[activeStates[i]->id];
+          PHIST_CHK_IERR(SUBR(mvec_view_block)(t, &t_i, ind, ind, ierr), *ierr);
+          _MT_ tmp;
+          PHIST_CHK_IERR(SUBR(pgmresStates_updateSol)(&activeStates[i], 1, t_i, &tmp, false, ierr), *ierr);
+
+          if( activeStates[i]->status == 2 && activeStates[i]->totalIter >= maxIter )
+            nUnconvergedSystems++;
+          else if( activeStates[i]->status == 2 )
+          {
+            // prepare restart
+            PHIST_CHK_IERR(SUBR(pgmresState_reset)(activeStates[i], NULL, t_i, ierr), *ierr);
+            continue;
+          }
 #ifdef TESTING
 {
   // determine real residual for comparison
@@ -185,8 +200,9 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
 }
 #endif
 
-        // reset to be free in the next iteration
-        PHIST_CHK_IERR(SUBR(pgmresState_reset)(activeStates[i], NULL, NULL, ierr), *ierr);
+          // reset to be free in the next iteration
+          PHIST_CHK_IERR(SUBR(pgmresState_reset)(activeStates[i], NULL, NULL, ierr), *ierr);
+        }
       }
     }
 
@@ -202,5 +218,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   PHIST_CHK_IERR(SUBR(mvec_delete)(t_i,   ierr), *ierr);
   // delete the jadaOp
   PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jadaOp, ierr), *ierr);
+
+  *ierr = nUnconvergedSystems;
 }
 
