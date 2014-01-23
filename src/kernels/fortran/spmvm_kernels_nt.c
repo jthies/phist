@@ -26,7 +26,7 @@ void dspmvm_nt_1_c(int nrows, double alpha, const long *restrict row_ptr, const 
     exit(1);
   }
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows/2; i++)
   {
     double lhs1 = shifts[0]*rhsv[2*i];
@@ -90,7 +90,7 @@ void dspmvm_nt_2_c(int nrows, double alpha, const long *restrict row_ptr, const 
 
   __m128d shifts_ = _mm_loadu_pd(shifts);
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
     __m128d lhs_ = _mm_load_pd(rhsv+2*i);
@@ -149,7 +149,7 @@ void dspmvm_nt_4_c(int nrows, double alpha, const long *restrict row_ptr, const 
   shifts_[0] = _mm_loadu_pd(shifts);
   shifts_[1] = _mm_loadu_pd(shifts+2);
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
     __m128d lhs_[2];
@@ -219,7 +219,7 @@ void dspmvm_nt_8_c(int nrows, double alpha, const long *restrict row_ptr, const 
     shifts_[k] = _mm_loadu_pd(shifts+2*k);
 
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
     __m128d lhs_[4];
@@ -280,7 +280,7 @@ void dspmvm_nt_strided_2_c(int nrows, double alpha, const long *restrict row_ptr
 
   __m128d shifts_ = _mm_loadu_pd(shifts);
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
     __m128d lhs_ = _mm_loadu_pd(rhsv+ldr*i);
@@ -333,7 +333,7 @@ void dspmvm_nt_strided_4_c(int nrows, double alpha, const long *restrict row_ptr
   shifts_[0] = _mm_loadu_pd(shifts);
   shifts_[1] = _mm_loadu_pd(shifts+2);
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
     __m128d lhs_[2];
@@ -396,7 +396,7 @@ void dspmvm_nt_strided_8_c(int nrows, double alpha, const long *restrict row_ptr
     shifts_[k] = _mm_loadu_pd(shifts+2*k);
 
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
     __m128d lhs_[4];

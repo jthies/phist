@@ -6,7 +6,7 @@ subroutine dgather_1(nrows, v, w, ldw)
   real(kind=8), intent(in) :: w(ldw,*)
   integer :: i
 
-!$omp parallel do
+!$omp parallel do schedule(static)
   do i = 1, nrows
     v(i) = w(1,i)
   end do
@@ -20,7 +20,7 @@ subroutine dgather_2(nrows, v, w1, ldw1, w2, ldw2)
   real(kind=8), intent(in) :: w2(ldw2,*)
   integer :: i
 
-!$omp parallel do
+!$omp parallel do schedule(static)
   do i = 1, nrows
     v(:,i) = (/w1(1,i),w2(1,i)/)
   end do
@@ -36,7 +36,7 @@ subroutine dgather_4(nrows, v, w1, ldw1, w2, ldw2, w3, ldw3, w4, ldw4)
   real(kind=8), intent(in) :: w4(ldw4,*)
   integer :: i
 
-!$omp parallel do
+!$omp parallel do schedule(static)
   do i = 1, nrows
     v(:,i) = (/w1(1,i),w2(1,i),w3(1,i),w4(1,i)/)
   end do
@@ -50,7 +50,7 @@ subroutine dscatter_1(nrows, v, w, ldw)
   real(kind=8), intent(inout) :: w(ldw,*)
   integer :: i
 
-!$omp parallel do
+!$omp parallel do schedule(static)
   do i = 1, nrows
     w(1,i) = v(i)
   end do
@@ -64,7 +64,7 @@ subroutine dscatter_2(nrows, v, w1, ldw1, w2, ldw2)
   real(kind=8), intent(inout) :: w2(ldw2,*)
   integer :: i
 
-!$omp parallel do
+!$omp parallel do schedule(static)
   do i = 1, nrows
     w1(1,i) = v(1,i)
     w2(1,i) = v(2,i)
@@ -81,7 +81,7 @@ subroutine dscatter_4(nrows, v, w1, ldw1, w2, ldw2, w3, ldw3, w4, ldw4)
   real(kind=8), intent(inout) :: w4(ldw4,*)
   integer :: i
 
-!$omp parallel do
+!$omp parallel do schedule(static)
   do i = 1, nrows
     w1(1,i) = v(1,i)
     w2(1,i) = v(2,i)

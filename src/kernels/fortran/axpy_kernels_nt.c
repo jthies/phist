@@ -24,7 +24,7 @@ void daxpy_nt_2_c(int nrows, const double *restrict alpha, const double *restric
   }
 
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
     // get x
@@ -53,7 +53,7 @@ void daxpy_nt_4_c(int nrows, const double *restrict alpha, const double *restric
   }
 
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
     for(int k = 0; k < 2; k++)
@@ -85,7 +85,7 @@ void daxpy_nt_8_c(int nrows, const double *restrict alpha, const double *restric
   }
 
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
     for(int k = 0; k < 4; k++)
@@ -111,7 +111,7 @@ void daxpy_nt_strided_2_c(int nrows, const double *restrict alpha, const double 
     exit(1);
   }
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
     // get x
@@ -134,7 +134,7 @@ void daxpy_nt_strided_4_c(int nrows, const double *restrict alpha, const double 
     exit(1);
   }
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
     for(int k = 0; k < 2; k++)
@@ -159,7 +159,7 @@ void daxpy_nt_strided_8_c(int nrows, const double *restrict alpha, const double 
     exit(1);
   }
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
     for(int k = 0; k < 4; k++)
@@ -190,7 +190,7 @@ void dcopy_general_nt_c(int nrows, int nvec, const double *restrict x, int ldx, 
     exit(1);
   }
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
     for(int j = 0; j < nvec/2; j++)

@@ -80,7 +80,6 @@ void phist_kernels_finalize(int* ierr)
   {
     LIKWID_MARKER_STOP("phist<fortran>");
   }
-#pragma omp barrier
   LIKWID_MARKER_CLOSE;
 #endif
 #ifdef PHIST_TIMEMONITOR

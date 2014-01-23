@@ -59,8 +59,8 @@ contains
   !! Also allocates necessary buffer space.
   subroutine setup_commBuff(mat,combuff)
     use mpi
-    type(CrsMat_t),      intent(in)  :: mat
-    type(CrsCommBuff_t), intent(out) :: combuff
+    type(CrsMat_t),      intent(in)    :: mat
+    type(CrsCommBuff_t), intent(inout) :: combuff
     !--------------------------------------------------------------------------------
     integer,allocatable :: recvnum(:)
     integer,allocatable :: sendnum(:)
@@ -448,7 +448,7 @@ end do
     do i=1,A%comm_buff%nSendProcs, 1
       k = A%comm_buff%sendInd(i)
       l = A%comm_buff%sendInd(i+1)
-!$omp do
+!$omp do schedule(static)
       do j = k, l-1, 1
         A%comm_buff%sendData(:,j) = x%val(x%jmin:x%jmax,A%comm_buff%sendRowBlkInd(j))
       end do
@@ -684,14 +684,12 @@ end do
     allocate(A%val(A%nEntries))
 
     ! try to respect NUMA
-!$omp workshare
-    A%row_offset = 0
-    A%col_idx = 0
-    A%val = 0._8
-!$omp end workshare
+!$omp parallel do schedule(static)
+    do i = 1, A%nRows+1
+      A%row_offset(i) = 0
+    end do
 
     ! count number of entries per row
-    A%row_offset = 0
     do i = 1, A%nEntries
       A%row_offset( idx(i,1)+1 ) = A%row_offset( idx(i,1)+1 )  +  1
     end do
@@ -700,9 +698,16 @@ end do
       A%row_offset( i+1 ) = A%row_offset( i ) + A%row_offset( i+1 )
     end do
 
+    ! try to respect NUMA
+!$omp parallel do schedule(static)
+    do i = 1, A%nRows
+      do j = A%row_offset(i), A%row_offset(i+1)-1, 1
+        A%col_idx(j) = 0
+        A%val(j) = 0._8
+      end do
+    end do
+
     ! now put the entries into the corresponding rows
-    A%col_idx = 0
-    A%val = 0.
     do i = 1, A%nEntries
       A%col_idx( A%row_offset(idx(i,1)) ) = idx(i,2)
       A%val    ( A%row_offset(idx(i,1)) ) = val(i)

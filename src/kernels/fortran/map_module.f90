@@ -27,7 +27,7 @@ contains
   subroutine map_setup(map, comm, n_glob, ierr)
     use mpi
     !------------------------------------------------------------
-    type(Map_t),    intent(out) :: map
+    type(Map_t),    intent(inout) :: map
     integer,        intent(in)  :: comm
     integer(kind=8),intent(in)  :: n_glob
     integer,        intent(out) :: ierr
