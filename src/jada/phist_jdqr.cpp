@@ -13,6 +13,7 @@
 #include "phist_kernels.h"
 #include "phist_lapack.h"
 #include "phist_orthog.h"
+#include "phist_pgmres.h"
 
 #include "phist_ScalarTraits.hpp"
 #include "phist_schur_decomp.h"

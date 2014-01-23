@@ -698,9 +698,29 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     
     // set t=0 as initial guess (TODO, better start vector)
     PHIST_CHK_IERR(SUBR(mvec_put_value)(t_ptr,st::zero(),ierr),*ierr);
-    int variant=0; //0:block GMRES, 1: pseudo-BGMRES
-    SUBR(bgmres)(&jada_op,t_ptr,rtil_ptr,innerTol,&nIt,maxKSpace,variant,NULL,ierr);
+    /* Trilinos-based GMRES */
+    if (nv>1)
+    {
+      int variant=0; //0:block GMRES, 1: pseudo-BGMRES
+      SUBR(bgmres)(&jada_op,t_ptr,rtil_ptr,innerTol,&nIt,maxKSpace,variant,NULL,ierr);
+    }
+    else
+    {
+      // use our own single-vector GMRES to become independent of Belos:
+      TYPE(pgmresState)* gmres=NULL;
+      MT gmresNorm;
+      int gmresIters;
+      const_map_ptr_t map=NULL;
+      PHIST_CHK_IERR(SUBR(mvec_get_map)(t_ptr,&map,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(pgmresStates_create)(&gmres, 1, map,maxKSpace,ierr),*ierr);
+      
+      gmres->tol=innerTol;
 
+      PHIST_CHK_IERR(SUBR(pgmresState_reset)(gmres, rtil_ptr,t_ptr,ierr),*ierr);
+      PHIST_CHK_NEG_IERR(SUBR(pgmresStates_iterate)(&jada_op,&gmres,1,&gmresIters,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(pgmresStates_updateSol)(&gmres,1,t_ptr,&gmresNorm,false,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(pgmresStates_delete)(&gmres,1,ierr),*ierr);
+    }
     PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jada_op,ierr),*ierr);
 
     expand=nv;
