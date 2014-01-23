@@ -205,13 +205,17 @@ void phist_map_get_iupper(const_map_ptr_t vmap, int* iupper, int* ierr)
 
 #include "phist_gen_s.h"
 #include "kernels_def.hpp"
+#include "carp_def.hpp"
 
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"
+#include "carp_def.hpp"
 
 #include "phist_gen_c.h"
 #include "kernels_def.hpp"
+#include "carp_def.hpp"
 
 #include "phist_gen_z.h"
 #include "kernels_def.hpp"
+#include "carp_def.hpp"
 

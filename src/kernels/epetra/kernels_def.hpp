@@ -22,11 +22,11 @@
 #include "BelosEpetraAdapter.hpp"
 #include "BelosTsqrOrthoManager.hpp"
 
+extern "C" {
+
 // \name Matrix input from a file
 
 //@{
-
-extern "C" {
 
 // we implement only the double precision real type D
 void SUBR(type_avail)(int* ierr)

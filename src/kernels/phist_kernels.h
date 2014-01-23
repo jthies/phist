@@ -67,11 +67,15 @@ void phist_map_get_iupper(const_map_ptr_t map, int* iupper, int* ierr);
 //! in single/double, real/complex.
 #include "phist_gen_s.h"
 #include "phist_kernels_decl.h"
+#include "phist_carp_decl.h"
 #include "phist_gen_d.h"
 #include "phist_kernels_decl.h"
+#include "phist_carp_decl.h"
 #include "phist_gen_c.h"
 #include "phist_kernels_decl.h"
+#include "phist_carp_decl.h"
 #include "phist_gen_z.h"
 #include "phist_kernels_decl.h"
+#include "phist_carp_decl.h"
 
 #endif
