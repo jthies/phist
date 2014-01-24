@@ -82,11 +82,16 @@ void SUBR(bgmres)(TYPE(const_op_ptr) Op,
   belosList->set("Output Frequency",1);
   belosList->set("Show Maximum Residual Norm Only",true);
   belosList->set("Output Style",::Belos::Brief);
-  belosList->set("Verbosity",::Belos::Errors+::Belos::Warnings
-                         +::Belos::IterationDetails
-                         +::Belos::StatusTestDetails
-                         +::Belos::FinalSummary
-                         +::Belos::TimingDetails);
+  int verb=::Belos::Errors+::Belos::Warnings;
+#if PHIST_OUTLEV>=PHIST_INFO
+  verb+=   ::Belos::IterationDetails
+         + ::Belos::StatusTestDetails;
+#endif
+#if PHIST_OUTLEV>=PHIST_VERBOSE
+  verb+=   ::Belos::FinalSummary
+         + ::Belos::TimingDetails;
+#endif
+  belosList->set("Verbosity",verb);
 
   belosList->set("Output Stream",out->getOStream());
 

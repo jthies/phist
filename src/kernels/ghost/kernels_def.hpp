@@ -204,6 +204,7 @@ void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, const_map_ptr_t* vmap, int* ier
   CAST_PTR_FROM_VOID(const ghost_vec_t,V,vV,*ierr);
   ghost_map_t* map = new ghost_map_t;
   map->ctx=V->context; 
+  map->vtraits_template=V->traits;
   *vmap=(const_map_ptr_t)map;
   }
 
@@ -898,3 +899,4 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
 //!@}
 
 }// extern "C"
+

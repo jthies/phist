@@ -128,11 +128,11 @@ int main(int argc, char** argv)
 
   if (ierr!=0)
     {
-    if (verbose) fprintf(stdout,"code %d returned from Belos BlockGMRES",ierr);
+    if (verbose) fprintf(stdout,"code %d returned from Belos BlockGMRES\n",ierr);
     if (ierr<0) return ierr;
     }
   
-  PHIST_OUT(1,"number of iterations performed: %d",num_iters);
+  PHIST_OUT(1,"number of iterations performed: %d\n",num_iters);
   
   /* compute residual norms */
   PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(ONE,A,X,ZERO,R,&ierr),ierr);
