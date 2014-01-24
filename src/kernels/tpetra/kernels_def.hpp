@@ -801,6 +801,29 @@ void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
 
   }
 
+//! y=alpha*A*x+beta*y.
+void SUBR(crsMatT_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA, 
+                                        TYPE(const_mvec_ptr) vx, 
+                                        _ST_ beta, TYPE(mvec_ptr) vy, 
+                                        int* ierr)
+  {
+#include "phist_std_typedefs.hpp"
+  ENTER_FCN(__FUNCTION__);
+  *ierr=0;
+  
+  CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t,A,vA,*ierr);
+  CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,x,vx,*ierr);
+  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,y,vy,*ierr);
+  PHIST_OUT(PHIST_TRACE,"alpha=%g+i%g\n",st::real(alpha),st::imag(alpha));
+  PHIST_OUT(PHIST_TRACE,"beta=%g+i%g\n",st::real(beta),st::imag(beta));
+  Traits<_ST_>::crsMVM_t spMVM(Teuchos::rcp(A,false));
+#ifdef IS_COMPLEX
+  TRY_CATCH(spMVM.apply(*x,*y,Teuchos::CONJ_TRANS,alpha,beta),*ierr);
+#else
+  TRY_CATCH(spMVM.apply(*x,*y,Teuchos::TRANS,alpha,beta),*ierr);
+#endif
+  }
+
 //! y[i]=alpha*(A*x[i]+shifts[i]*x[i]) + beta*y[i]
 void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
         const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr)

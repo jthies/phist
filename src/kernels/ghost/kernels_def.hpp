@@ -643,7 +643,7 @@ void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
 //! y=alpha*A*x+beta*y.
 void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
 _ST_ beta, TYPE(mvec_ptr) vy, int* ierr)
-  {
+{
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *ierr=0;
@@ -651,25 +651,25 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* ierr)
   CAST_PTR_FROM_VOID(ghost_vec_t,x,vx,*ierr);
   CAST_PTR_FROM_VOID(ghost_vec_t,y,vy,*ierr);
   if (alpha==st::zero())
-    {
+  {
     // no MVM needed
     if (beta==st::zero())
-      {
-      PHIST_CHK_IERR(SUBR(mvec_put_value)(vy,beta,ierr),*ierr);
-      }
-    else if (beta!=st::one())
-      {
-      y->scale(y,(void*)&beta);
-      }
-    }
-  else
     {
+      PHIST_CHK_IERR(SUBR(mvec_put_value)(vy,beta,ierr),*ierr);
+    }
+    else if (beta!=st::one())
+    {
+      y->scale(y,(void*)&beta);
+    }
+  }
+  else
+  {
     int spMVM_opts=GHOST_SPMVM_DEFAULT;
     // currently the vector mode is the only one working with MPI and multiple RHS
     spMVM_opts|=GHOST_SPMVM_MODE_VECTORMODE;
     void* old_scale = A->traits->scale;
     if (alpha!=st::one())
-      {
+    {
       // TODO: this fails for some reason!
       A->traits->scale = (void*)&alpha;
       spMVM_opts|=GHOST_SPMVM_APPLY_SCALE;
@@ -680,22 +680,31 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* ierr)
       */
       }
     if (beta!=st::zero())
-      {
+    {
       spMVM_opts|=GHOST_SPMVM_AXPY;
       if (beta!=st::one())
-        {
-        y->scale(y,&beta);
-        }
-      }
-    *ierr=ghost_spmvm(A->context,y,A,x,&spMVM_opts);
-    if (alpha!=st::one())
       {
-      A->traits->scale = old_scale;
-      //x->destroy(x); // x has been cloned
+        y->scale(y,&beta);
       }
     }
+    *ierr=ghost_spmvm(A->context,y,A,x,&spMVM_opts);
+    if (alpha!=st::one())
+    {
+      A->traits->scale = old_scale;
+      //x->destroy(x); // x has been cloned
+    }
   }
+}
 
+//! y=alpha*A*x+beta*y.
+void SUBR(crsMatT_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
+_ST_ beta, TYPE(mvec_ptr) vy, int* ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  *ierr=-99;
+  return;
+}
 //! y[i]=alpha*(A*x[i]+shifts[i]*x[i]) + beta*y[i]
 void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
         const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr)
