@@ -41,7 +41,6 @@ using namespace testing;
 #define _N_ 25
 #define _NV_ 8
 
-#undef CLASSNAME
 #define CLASSNAME DOpTest_25_8
 
 #include "phist_gen_d.h"

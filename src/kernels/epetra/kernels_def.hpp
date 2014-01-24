@@ -521,6 +521,42 @@ double beta, TYPE(mvec_ptr) vy, int* ierr)
   */
   }
 
+//! y=alpha*A*x+beta*y.
+void SUBR(crsMatT_times_mvec)(double alpha, TYPE(const_crsMat_ptr) vA, TYPE(const_mvec_ptr) 
+vx, 
+double beta, TYPE(mvec_ptr) vy, int* ierr)
+  {
+  *ierr=0;
+  CAST_PTR_FROM_VOID(const Epetra_CrsMatrix,A,vA,*ierr);
+  CAST_PTR_FROM_VOID(const Epetra_MultiVector,x,vx,*ierr);
+  CAST_PTR_FROM_VOID(Epetra_MultiVector,y,vy,*ierr);
+  if (alpha==0.0)
+    {
+    if (beta==0.0)
+      {
+      PHIST_CHK_IERR(*ierr=y->PutScalar(0.0),*ierr);
+      }
+    else if (beta!=1.0)
+      {
+      PHIST_CHK_IERR(*ierr=y->Scale(beta),*ierr);
+      }
+    }
+  else if (beta==0.0)
+    {
+    PHIST_CHK_IERR(*ierr=A->Multiply(true,*x,*y),*ierr);
+    if (alpha!=1.0)
+      {
+      PHIST_CHK_IERR(*ierr=y->Scale(alpha),*ierr);
+      }
+    }
+  else
+    {
+    Epetra_MultiVector Ax(y->Map(),y->NumVectors());
+    PHIST_CHK_IERR(*ierr=A->Multiply(true,*x,Ax),*ierr);
+    PHIST_CHK_IERR(*ierr=y->Update(alpha,Ax,beta),*ierr);
+    }
+  }
+
 //! y[i]=alpha*(A*x[i]+shifts[i]*x[i]) + beta*y[i]
 void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
         const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr)
