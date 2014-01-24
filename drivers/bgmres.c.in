@@ -9,7 +9,7 @@
 #include "phist_macros.h"
 #include "phist_kernels.h"
 #include "phist_operator.h"
-#include "phist_bgmres.h"
+#include "phist_belos.h"
 #include ${PHIST_TG_HFILE}
 
 #include "phist_driver_utils.h"
@@ -124,7 +124,7 @@ int main(int argc, char** argv)
   
   num_iters=max_iters;
   
-  SUBR(bgmres)(A_op,X,B,tol,&num_iters,max_blocks,variant,NULL,&ierr);
+  SUBR(belos)(A_op,X,B,tol,&num_iters,max_blocks,variant,NULL,&ierr);
 
   if (ierr!=0)
     {

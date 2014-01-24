@@ -1,31 +1,15 @@
-// block GMRES - solve a linear system with multiple RHS
-// using the BlockGMRES method implemented in Belos.
-// AX=B is solved for X. At most max_blocks blocks of vectors are
-// generated. A block consists of as many vectors as there
-// are columns in X and B. If max_blocks is reached, the  
-// method is restarted, until num_iters is reached or     
-// ||r||/||r0||<tol is achieved. *num_iters is overwritten
-// by the actual number of iterations performed.
-#ifdef NO_BGMRES_IMPLEMENTATION
-void SUBR(bgmres)(TYPE(const_op_ptr) Op, 
+// Belos: block krylov methods from Trilinos
+void SUBR(belos)(TYPE(const_op_ptr) Op, 
         TYPE(mvec_ptr) vX,
         TYPE(const_mvec_ptr) vB, 
         _MT_ tol,int *num_iters, int max_blocks,
         int variant, int* nConv,
         int* ierr)
   {
+#ifdef NO_BELOS_IMPLEMENTATION
   ENTER_FCN(__FUNCTION__);
   *ierr = 99;
-  }
 #else
-void SUBR(bgmres)(TYPE(const_op_ptr) Op, 
-        TYPE(mvec_ptr) vX,
-        TYPE(const_mvec_ptr) vB, 
-        _MT_ tol,int *num_iters, int max_blocks,
-        int variant, int* nConv,
-        int* ierr)
-  {
-  ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"  
 #ifdef PHIST_KERNEL_LIB_GHOST
   typedef ghost_vec_t MV;
@@ -73,10 +57,27 @@ void SUBR(bgmres)(TYPE(const_op_ptr) Op,
   // read parameters from our XML file
   Teuchos::RCP<Teuchos::ParameterList> belosList 
         = Teuchos::rcp(new Teuchos::ParameterList("phist/belos"));
-
+  if (variant==0 || variant==1)
+  {
+    //GMRES restarting
+    belosList->set("Num Blocks",max_blocks);
+  }
+  if (variant==1||variant==3)
+  {
+    //pseudo-block, set stopping criterion
+    int dq;
+    if (nConv==NULL) 
+    {
+      dq=numRhs;
+    }
+    else
+    {
+      dq=*nConv;
+    }
+    belosList->set("Deflation Quorum",dq);
+  }
   belosList->set("Maximum Iterations",*num_iters);
   belosList->set("Block Size",numRhs);
-  belosList->set("Num Blocks",max_blocks);
   belosList->set("Orthogonalization","DGKS");
   belosList->set("Convergence Tolerance",tol);
   belosList->set("Output Frequency",1);
@@ -99,38 +100,38 @@ void SUBR(bgmres)(TYPE(const_op_ptr) Op,
 Teuchos::RCP<Belos::LinearProblem<ST,BelosMV,OP> > linearSystem
         = Teuchos::rcp(new Belos::LinearProblem<ST,BelosMV,OP>(A,X,B));
 
-Teuchos::RCP<Belos::SolverManager<ST,BelosMV, OP> > gmres;
+Teuchos::RCP<Belos::SolverManager<ST,BelosMV, OP> > belos;
 if (variant==0)
   {
-  gmres = Teuchos::rcp(new Belos::BlockGmresSolMgr<ST,BelosMV, OP>
+  belos = Teuchos::rcp(new Belos::BlockGmresSolMgr<ST,BelosMV, OP>
         (linearSystem, belosList));
   }
 else if (variant==1)
   {
-  int dq;
-  if (nConv==NULL) 
-    {
-    dq=numRhs;
-    }
-  else
-    {
-    dq=*nConv;
-    }
-  belosList->set("Deflation Quorum",dq);
-  gmres = Teuchos::rcp(new Belos::PseudoBlockGmresSolMgr<ST,BelosMV, OP>
+  belos = Teuchos::rcp(new Belos::PseudoBlockGmresSolMgr<ST,BelosMV, OP>
+        (linearSystem, belosList));
+  }
+else if (variant==2)
+  {
+  belos = Teuchos::rcp(new Belos::BlockCGSolMgr<ST,BelosMV, OP>
+        (linearSystem, belosList));
+  }
+else if (variant==3)
+  {
+  belos = Teuchos::rcp(new Belos::PseudoBlockCGSolMgr<ST,BelosMV, OP>
         (linearSystem, belosList));
   }
 else
   {
-  PHIST_OUT(PHIST_ERROR,"gmres variant %d is not supported",variant);
+  PHIST_OUT(PHIST_ERROR,"belos variant %d is not supported",variant);
   *ierr=-99;
   }
 
 #if PHIST_OUTLEV>PHIST_DEBUG
-  PHIST_DEB("valid GMRES parameters:");
-  std::cerr << *gmres->getValidParameters();
+  PHIST_DEB("valid Belos parameters:");
+  std::cerr << *belos->getValidParameters();
   PHIST_DEB("current GMRES parameters:");
-  std::cerr << *gmres->getCurrentParameters();
+  std::cerr << *belos->getCurrentParameters();
 #endif
 
 ///////////////////////////////////////////////////////////////////////
@@ -138,13 +139,13 @@ else
 ///////////////////////////////////////////////////////////////////////
 try {
     linearSystem->setProblem();
-    Belos::ReturnType result=gmres->solve();
-    *num_iters = gmres->getNumIters();
+    Belos::ReturnType result=belos->solve();
+    *num_iters = belos->getNumIters();
     *out << "Belos returned '"<<Belos::convertReturnTypeToString(result)<<"'"<<std::endl;
     if (result!=Belos::Converged) *ierr=1;
   } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,status);
 
   if (!status) *ierr=PHIST_CAUGHT_EXCEPTION; 
   return;
-  }// end of bgmres
+  }// end of belos
 #endif

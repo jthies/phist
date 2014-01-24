@@ -37,6 +37,8 @@ SUBR(carp_create)(TYPE(const_crsMat_ptr) vA, TYPE(carpData)** dat_ptr, int* ierr
 
 SUBR(carp_delete)(TYPE(carpData)* dat, int* ierr)
 {
+  *ierr=0;
+  if (dat==NULL) return;
   *ierr=-99;
 }
 
