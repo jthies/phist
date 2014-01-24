@@ -49,6 +49,7 @@ using namespace testing;
 
 #ifndef PHIST_KERNEL_LIB_EPETRA
 
+#undef CLASSNAME
 #define CLASSNAME SOpTest_25_8
 #include "phist_gen_s.h"
 #include "OpTest_def.hpp"
