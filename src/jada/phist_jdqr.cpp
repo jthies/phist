@@ -20,7 +20,7 @@
 #include "phist_jadaOp.hpp"
 #include "phist_jadaOpts.h"
 
-#include "phist_bgmres.h"
+#include "phist_jadaCorrectionSolver.h"
 
 #include "phist_gen_s.h"
 #include "phist_jdqr_def.hpp"
