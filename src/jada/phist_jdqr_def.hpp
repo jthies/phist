@@ -164,6 +164,14 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,minBas,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&H0, 0,minBas,0,minBas-1,ierr),*ierr);
 
+  // setup inner solver
+  TYPE(jadaCorrectionSolver_ptr) innerSolv = NULL;
+#ifdef IS_COMPLEX
+  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, 1, A_op->domain_map, 25, ierr), *ierr);
+#else
+  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, 2, A_op->domain_map, 25, ierr), *ierr);
+#endif
+
   // print parameters passed in to the method
   PHIST_SOUT(PHIST_VERBOSE,"====================\n");
   PHIST_SOUT(PHIST_VERBOSE,"| JDQR parameters  |\n");
@@ -658,10 +666,10 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       actual_shift=initialShift; // start-up without Arnoldi
     }
 #ifdef IS_COMPLEX
-    sigma[0] = -actual_shift;
+    sigma[0] = actual_shift;
 #else
-    sigma[0] = -ct::real(actual_shift);
-    sigma[1] = -ct::real(actual_shift);
+    sigma[0] = ct::real(actual_shift);
+    sigma[1] = ct::real(actual_shift);
 #endif
     // solve approximately 
     // (I-uu')(A-theta*I)(I-uu')*t=-r
@@ -676,52 +684,21 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
     // the block case is not implemented here:
     // (I-uu')A(I-uu')*t - (I-uu')t*Theta=-r
-    TYPE(op) jada_op;
     if (B_op!=NULL)
     {
       PHIST_SOUT(PHIST_WARNING,"case B!=I not implemented (file %s, line %d)\n",__FILE__,__LINE__);
     }
 
-    TYPE(mvec_ptr) jadaOp_AX = NULL;
-    TYPE(sdMat_ptr) jadaOp_VY = NULL;
-    PHIST_CHK_IERR(SUBR(jadaOp_create)(A_op,NULL,Qtil,NULL,sigma,nv,&jada_op,ierr),*ierr);
-
     // 1/2^mm, but at most the outer tol as conv tol for GMRES
-    MT innerTol = std::max(tol,mt::one()/((MT)(2<<mm)));
-    PHIST_SOUT(PHIST_VERBOSE,"inner conv tol: %g",innerTol);
+    MT innerTol[2];
+    innerTol[0] = std::max(tol,mt::one()/((MT)(2<<mm)));
+    innerTol[1] = std::max(tol,mt::one()/((MT)(2<<mm)));
+    PHIST_SOUT(PHIST_VERBOSE,"inner conv tol: %g",innerTol[0]);
 
     // allow at most 25 iterations (TODO: make these settings available to the user)
     int nIt=25;
-    int maxKSpace=25; // maximum size of Krylov subspace created
-    
-    //TODO - scaling and preconditioning
-    
-    // set t=0 as initial guess (TODO, better start vector)
-    PHIST_CHK_IERR(SUBR(mvec_put_value)(t_ptr,st::zero(),ierr),*ierr);
-    /* Trilinos-based GMRES */
-    if (nv>1)
-    {
-      int variant=0; //0:block GMRES, 1: pseudo-BGMRES
-      SUBR(bgmres)(&jada_op,t_ptr,rtil_ptr,innerTol,&nIt,maxKSpace,variant,NULL,ierr);
-    }
-    else
-    {
-      // use our own single-vector GMRES to become independent of Belos:
-      TYPE(pgmresState)* gmres=NULL;
-      MT gmresNorm;
-      int gmresIters;
-      const_map_ptr_t map=NULL;
-      PHIST_CHK_IERR(SUBR(mvec_get_map)(t_ptr,&map,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(pgmresStates_create)(&gmres, 1, map,maxKSpace,ierr),*ierr);
-      
-      gmres->tol=innerTol;
-
-      PHIST_CHK_IERR(SUBR(pgmresState_reset)(gmres, rtil_ptr,t_ptr,ierr),*ierr);
-      PHIST_CHK_NEG_IERR(SUBR(pgmresStates_iterate)(&jada_op,&gmres,1,&gmresIters,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(pgmresStates_updateSol)(&gmres,1,t_ptr,&gmresNorm,false,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(pgmresStates_delete)(&gmres,1,ierr),*ierr);
-    }
-    PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jada_op,ierr),*ierr);
+    PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, NULL, Qtil, NULL, sigma, rtil_ptr, NULL, 
+                                                      innerTol, nIt, t_ptr, false, ierr), *ierr);
 
     expand=nv;
   }
@@ -810,6 +787,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     }// any eigenpairs converged?
 
   // free memory
+  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_delete)(innerSolv, ierr), *ierr);
   PHIST_CHK_IERR(SUBR(mvec_delete)(V,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_delete)(AV,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vtmp,ierr),*ierr);

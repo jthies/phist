@@ -13,7 +13,6 @@
 #include "phist_kernels.h"
 #include "phist_lapack.h"
 #include "phist_orthog.h"
-#include "phist_pgmres.h"
 
 #include "phist_ScalarTraits.hpp"
 #include "phist_schur_decomp.h"
@@ -21,7 +20,7 @@
 #include "phist_jadaOp.hpp"
 #include "phist_jadaOpts.h"
 
-#include "phist_bgmres.h"
+#include "phist_jadaCorrectionSolver.h"
 
 #include "phist_gen_s.h"
 #include "phist_jdqr_def.hpp"
