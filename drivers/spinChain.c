@@ -96,7 +96,7 @@ int main( int argc, char* argv[] )
                              // SpinChain matrix is symmetric
     double expRes[numEigs+1]; // explicit residual norms
 
-    ghost_init(argc,argv);
+    PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
 
     ghost_error_t err=ghost_createContext(&ctx, info.nrows , 
         info.ncols,GHOST_CONTEXT_DEFAULT,NULL,MPI_COMM_WORLD,1.);
@@ -215,7 +215,7 @@ int main( int argc, char* argv[] )
     ghost_freeContext(ctx);
     free(vtraits1);
 
-    ghost_finish();
+    PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
 
     return EXIT_SUCCESS;
 }

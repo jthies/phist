@@ -834,7 +834,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     ST* Rval=NULL;
     int ldR;
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(vR,&Rval,&ldR,ierr),*ierr);
-    PHIST_DEB("single vector QR, R=%8.4f\n",nrm);
+    PHIST_DEB("single vector QR, R=%8.4e\n",nrm);
     rank=1;
     if (nrm<rankTol)
       {

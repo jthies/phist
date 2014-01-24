@@ -60,7 +60,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
         ASSERT_EQ(0,ierr);
 
         // setup views for needed vectors and sdMats
-        v0_ = V_ = Vm_ = AV_ = VH_ = NULL;
+        v0_ = V_ = Vm_ = AV_ = AVm_ = VH_ = NULL;
         SUBR(mvec_view_block)(vec2_,&v0_,0,0,&ierr);
         ASSERT_EQ(0,ierr);
         SUBR(mvec_view_block)(vec1_,&V_,0,m_,&ierr);
@@ -72,11 +72,15 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
         ASSERT_EQ(0,ierr);
         SUBR(mvec_view_block)(vec2_,&AV_,1,m_,&ierr);
         ASSERT_EQ(0,ierr);
+        SUBR(mvec_view_block)(vec2_,&AVm_,0,m_-1,&ierr);
+        ASSERT_EQ(0,ierr);
         SUBR(mvec_view_block)(vec3_,&VH_,1,m_,&ierr);
         ASSERT_EQ(0,ierr);
 
-        H_ = NULL;
+        H_ = Hm_ = NULL;
         SUBR(sdMat_view_block)(mat1_,&H_,0,m_,0,m_-1,&ierr);
+        ASSERT_EQ(0,ierr);
+        SUBR(sdMat_view_block)(mat2_,&Hm_,0,m_-1,0,m_-1,&ierr);
         ASSERT_EQ(0,ierr);
       }
     }
@@ -95,9 +99,13 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
         ASSERT_EQ(0,ierr);
         SUBR(mvec_delete)(AV_,&ierr);
         ASSERT_EQ(0,ierr);
+        SUBR(mvec_delete)(AVm_,&ierr);
+        ASSERT_EQ(0,ierr);
         SUBR(mvec_delete)(VH_,&ierr);
         ASSERT_EQ(0,ierr);
         SUBR(sdMat_delete)(H_,&ierr);
+        ASSERT_EQ(0,ierr);
+        SUBR(sdMat_delete)(Hm_,&ierr);
         ASSERT_EQ(0,ierr);
 
         delete opAeye_;
@@ -131,8 +139,10 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
     _ST_ *V_vp_; int ldaV_, stride_;
     TYPE(mvec_ptr) Vm_;
     TYPE(mvec_ptr) AV_;
+    TYPE(mvec_ptr) AVm_;
     TYPE(mvec_ptr) VH_;
     TYPE(sdMat_ptr) H_;
+    TYPE(sdMat_ptr) Hm_;
 
     int delete_mat(TYPE(crsMat_ptr) A)
     {
@@ -156,6 +166,59 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
         // check orthogonality of V_
         ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)50.*releps(V_));
         ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)50.*releps(V_));
+
+        // calculate A*V(:,1:m)
+        opA->apply(st::one(),opA->A,Vm_,st::zero(),AV_,&ierr);
+        ASSERT_EQ(0,ierr);
+        // calculate V(:,1:m+1)*H(1:m+1,1:m)
+        SUBR(mvec_times_sdMat)(st::one(),V_,H_,st::zero(),VH_,&ierr);
+        ASSERT_EQ(0,ierr);
+
+        // calculate AV_' := AV_ - VH_
+        SUBR(mvec_add_mvec)(-st::one(),VH_,st::one(),AV_,&ierr);
+        ASSERT_EQ(0,ierr);
+        _MT_ vnorm[_M_];
+        SUBR(mvec_norm2)(AV_,vnorm,&ierr);
+        ASSERT_EQ(0,ierr);
+
+        // check AV_' = AV_ - VH_ == 0
+        for(int i = 0; i < _M_; i++)
+          ASSERT_NEAR(mt::zero(),vnorm[i],100*mt::eps());
+      }
+    }
+
+    // ========================= extended arnoldi test =========================
+    // when one is interested in AV as well
+    void doExtendedArnoldiTest(TYPE(const_op_ptr) opA)
+    {
+      int ierr;
+      if( typeImplemented_ )
+      {
+        // run simple_arnoldi
+        SUBR(simple_arnoldi)(opA,NULL,v0_,V_,AVm_,NULL,H_,m_,&ierr);
+        ASSERT_EQ(0,ierr);
+
+        // check orthogonality of V_
+        ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)50.*releps(V_));
+        ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)50.*releps(V_));
+
+        // check H = Vm'*AVm
+        SUBR(sdMat_put_value)(mat2_, st::zero(), &ierr);
+        ASSERT_EQ(0,ierr);
+        SUBR(sdMat_get_block)(H_, Hm_, 0,m_-1, 0,m_-1, &ierr);
+        ASSERT_EQ(0,ierr);
+        SUBR(mvecT_times_mvec)(-st::one(),Vm_,AVm_,st::one(),Hm_, &ierr);
+        ASSERT_EQ(0,ierr);
+        ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,m_lda_,m_-1,m_,stride_,st::zero()), (MT)50.*releps(V_));
+
+        // check A*Vm = AVm
+        opA->apply(-st::one(),opA->A,Vm_,st::one(),AVm_,&ierr);
+        ASSERT_EQ(0,ierr);
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+        ASSERT_NEAR(mt::one(),ArrayEqual(vec2_vp_,nvec_,nloc_,lda_,stride_,st::zero()), (MT)50.*releps(V_));
+#else
+        ASSERT_NEAR(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,st::zero()), (MT)50.*releps(V_));
+#endif
 
         // calculate A*V(:,1:m)
         opA->apply(st::one(),opA->A,Vm_,st::zero(),AV_,&ierr);
@@ -220,6 +283,51 @@ TEST_F(CLASSNAME, Arand_nodiag_v0ones)
     SUBR(mvec_put_value)(v0_,st::one(),&ierr);
     ASSERT_EQ(0,ierr);
     doArnoldiTest(opArand_nodiag_);
+  }
+}
+
+
+TEST_F(CLASSNAME, extended_Aeye_v0ones) 
+{
+  if( typeImplemented_)
+  {
+    int ierr;
+    SUBR(mvec_put_value)(v0_,st::one(),&ierr);
+    ASSERT_EQ(0,ierr);
+    doExtendedArnoldiTest(opAeye_);
+  }
+}
+
+TEST_F(CLASSNAME, extended_Azero_v0ones) 
+{
+  if( typeImplemented_)
+  {
+    int ierr;
+    SUBR(mvec_put_value)(v0_,st::one(),&ierr);
+    ASSERT_EQ(0,ierr);
+    doExtendedArnoldiTest(opAzero_);
+  }
+}
+
+TEST_F(CLASSNAME, extended_Arand_v0ones) 
+{
+  if( typeImplemented_)
+  {
+    int ierr;
+    SUBR(mvec_put_value)(v0_,st::one(),&ierr);
+    ASSERT_EQ(0,ierr);
+    doExtendedArnoldiTest(opArand_);
+  }
+}
+
+TEST_F(CLASSNAME, extended_Arand_nodiag_v0ones) 
+{
+  if( typeImplemented_)
+  {
+    int ierr;
+    SUBR(mvec_put_value)(v0_,st::one(),&ierr);
+    ASSERT_EQ(0,ierr);
+    doExtendedArnoldiTest(opArand_nodiag_);
   }
 }
 

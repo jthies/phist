@@ -607,7 +607,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
           break;
         if( mgsIter > 0)
         {
-          PHIST_SOUT(PHIST_WARNING, "Additional MGS iteration in PGMRES!\n");
+          PHIST_SOUT(PHIST_INFO, "Additional MGS iteration in PGMRES!\n");
         }
 
 
