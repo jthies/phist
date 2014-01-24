@@ -209,7 +209,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
         ASSERT_EQ(0,ierr);
         SUBR(mvecT_times_mvec)(-st::one(),Vm_,AVm_,st::one(),Hm_, &ierr);
         ASSERT_EQ(0,ierr);
-        ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,m_lda_,m_-1,m_,stride_,st::zero()), (MT)50.*releps(V_));
+        ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,m_-1,m_-1,m_lda_,stride_,st::zero()), (MT)50.*releps(V_));
 
         // check A*Vm = AVm
         opA->apply(-st::one(),opA->A,Vm_,st::one(),AVm_,&ierr);
