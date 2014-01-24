@@ -53,7 +53,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
     set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
   else ()
-    set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -fstack-protector-all -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
   endif ()
 
   set (CMAKE_CXX_FLAGS "-fopenmp")
@@ -62,12 +62,12 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
     set (CMAKE_CXX_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
   else ()
-    set (CMAKE_CXX_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_CXX_FLAGS_DEBUG   "-dH -O0 -g -fstack-protector-all -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
   endif ()
 
   set (CMAKE_Fortran_FLAGS "-fopenmp -cpp -ffree-line-length-none")
   set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -O3 -ffast-math -fopenmp -cpp")
-  set (CMAKE_Fortran_FLAGS_DEBUG "-dH -O0 -g -DTESTING -fopenmp -Wall -fcheck=all")
+  set (CMAKE_Fortran_FLAGS_DEBUG "-dH -O0 -g -DTESTING -fopenmp -Wall -fcheck=all -fstack-protector-all")
 
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
@@ -233,7 +233,7 @@ list(APPEND PHIST_LIBS phist_tools)
 # ghost is a requirement of phist now because of the task queue
 #find_package(Ghost PATHS $ENV{GHOST_HOME})
 #message(STATUS "GHOST_Found=${GHOST_Found}")
-if(PHIST_KERNEL_LIB STREQUAL "ghost")
+if(PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
   find_package(GHOST REQUIRED)
 
   if (GHOST_FOUND)
@@ -369,7 +369,7 @@ foreach (infile ${TG_CXX_Drivers})
 endforeach()
 
 # example drivers implemented in ghost
-if  (PHIST_KERNEL_LIB STREQUAL "ghost")
+if  (PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
 # TODO - make this somehow general, or probably we should
 #       actually install phist instead and push the spinChain
 #       driver to the essex/examples repo...

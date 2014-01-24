@@ -18,8 +18,12 @@
 #include "ghost/util.h"
 extern "C" {
 #include "matfuncs.h"
+}
+#ifdef PHIST_KERNEL_LIB_GHOST
+extern "C" {
 void init_mtraits(ghost_mtraits_t* mtraits);
 }
+#endif
 
 GHOST_REGISTER_DT_D(my_datatype)
 
@@ -175,12 +179,11 @@ int main(int argc, char** argv)
 
 
   //------------------------------- setup matrices and vectors --------------------- 
-  ghost_mat_t * mat;
+  TYPE(crsMat_ptr) mat = NULL;
+#ifdef PHIST_KERNEL_LIB_GHOST
   ghost_context_t * ctx;
+#endif
   {
-    ghost_mtraits_t mtraits;
-    init_mtraits(&mtraits);
-
     ghost_midx_t DIM;
     //TODO - get from command line
     ghost_midx_t conf_spinZ[3] = {nSpins,nSpins/2,0};
@@ -196,7 +199,13 @@ int main(int argc, char** argv)
        exit(0);
     }
 
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+    PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,
+          info.nrows, info.ncols, info.row_nnz,
+          &SpinChainSZ, &ierr), ierr);
+#endif
 
+#ifdef PHIST_KERNEL_LIB_GHOST
     ghost_error_t err=ghost_createContext(&ctx, info.nrows , 
         info.ncols,GHOST_CONTEXT_DEFAULT,NULL,MPI_COMM_WORLD,1.);
     if (err!=GHOST_SUCCESS)
@@ -204,11 +213,12 @@ int main(int argc, char** argv)
       PHIST_OUT(PHIST_ERROR,"error returned from createContext (file %s, line %d)",__FILE__,__LINE__);
     }        
 
+    ghost_mtraits_t mtraits;
+    init_mtraits(&mtraits);
     mat = ghost_createMatrix(ctx,&mtraits,1);
-
     mat->fromRowFunc( mat, info.row_nnz , 0, &SpinChainSZ, 0);
-
     ghost_printMatrixInfo(mat);
+#endif
   }
 
   // create an operator from A
@@ -279,8 +289,10 @@ int main(int argc, char** argv)
   // clean up operator
   delete opA;
   // delete matrix
-  mat->destroy(mat);
+  PHIST_ICHK_IERR(SUBR(crsMat_delete)(mat,&ierr),ierr);
+#ifdef PHIST_KERNEL_LIB_GHOST
   ghost_freeContext(ctx);
+#endif
 
   PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
   return ierr;

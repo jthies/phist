@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <ghost.h>
-#include <ghost/util.h>
 
 // struct for JaDa settings
 #include "phist_jadaOpts.h"
@@ -12,6 +10,8 @@
 // an operator representation of the matrix
 #include "phist_operator.h"
 
+#include <ghost.h>
+#include <ghost/util.h>
 #include "matfuncs.h"
 
 GHOST_REGISTER_DT_D(my_datatype)
