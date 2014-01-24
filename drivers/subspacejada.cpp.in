@@ -37,7 +37,7 @@ int main(int argc, char** argv)
   // check arguments
   if( argc < 2 )
   {
-    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A filename> [<invariant subspace dimension>] [<which>] [<tol>] [<max iters> <block size> <min basis> <max basis> <initial shift> <initial shift iterations>]\n", argv[0]);
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A filename> [<invariant subspace dimension>] [<which>] [<tol>] [<max iters> <JD block size> <min basis> <max basis> <GMRES block size> <GMRES subspace dimension> <initial shift> <initial shift iterations>]\n", argv[0]);
     return 1;
   }
 
@@ -115,19 +115,35 @@ int main(int argc, char** argv)
     iss >> maxBase;
   }
 
-  // initial shift
-  _ST_ initialShift = st::zero();
+  // inner GMRES block size
+  int innerBlockDim = std::min(2, blockDim);
   if( argc > 9 )
   {
     std::istringstream iss(argv[9]);
+    iss >> innerBlockDim;
+  }
+
+  // inner GMRES subspace dimension
+  int innerMaxBase = 25;
+  if( argc > 10 )
+  {
+    std::istringstream iss(argv[10]);
+    iss >> innerMaxBase;
+  }
+
+  // initial shift
+  _ST_ initialShift = st::zero();
+  if( argc > 11 )
+  {
+    std::istringstream iss(argv[11]);
     iss >> initialShift;
   }
 
   // number of initial iterations with fixed initial shift
   int initialShiftIters = 0;
-  if( argc > 10 )
+  if( argc > 12 )
   {
-    std::istringstream iss(argv[10]);
+    std::istringstream iss(argv[12]);
     iss >> initialShiftIters;
   }
 
@@ -215,7 +231,7 @@ int main(int argc, char** argv)
 
 
   //------------------------------- run block JaDa algorithm ----------------------- 
-  PHIST_ICHK_IERR(SUBR(subspacejada)(opA, NULL, v0, which, tol, nEig, &nIter, blockDim, minBase, maxBase, initialShiftIters, initialShift, Q, R, resNorm, &ierr), ierr);
+  PHIST_ICHK_IERR(SUBR(subspacejada)(opA, NULL, v0, which, tol, nEig, &nIter, blockDim, minBase, maxBase, innerBlockDim, innerMaxBase, initialShiftIters, initialShift, Q, R, resNorm, &ierr), ierr);
   int nConvergedEig = 0;
   for(int i = 0; i < nEig; i++)
     if(resNorm[i] <= tol)

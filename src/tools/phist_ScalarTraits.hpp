@@ -87,6 +87,16 @@ class ScalarTraits< float >
     return 2.0f*(float)std::rand()/(float)RAND_MAX-1.0;
     }
 
+  //! same random number on all processed
+  static inline scalar_t prand()
+  {
+    scalar_t tmp = rand();
+#ifdef PHIST_HAVE_MPI
+    MPI_Bcast(&tmp, 1, mpi_type(), 0, MPI_COMM_WORLD);
+#endif
+    return tmp;
+  }
+
   //! square root
   static inline scalar_t sqrt(const scalar_t& x)
     {
@@ -197,7 +207,17 @@ class ScalarTraits< double >
     {
     return 2.0*(double)std::rand()/(double)RAND_MAX-1.0;
     }
-    
+
+  //! same random number on all processed
+  static inline scalar_t prand()
+  {
+    scalar_t tmp = rand();
+#ifdef PHIST_HAVE_MPI
+    MPI_Bcast(&tmp, 1, mpi_type(), 0, MPI_COMM_WORLD);
+#endif
+    return tmp;
+  }
+
   //! square root
   static inline scalar_t sqrt(const scalar_t& x)
     {
@@ -301,6 +321,16 @@ class ScalarTraits< std::complex<MT> >
     {
     return ScalarTraits<magn_t>::rand() + cmplx_I()*ScalarTraits<magn_t>::rand();
     }
+
+  //! same random number on all processed
+  static inline scalar_t prand()
+  {
+    scalar_t tmp = rand();
+#ifdef PHIST_HAVE_MPI
+    MPI_Bcast(&tmp, 1, mpi_type(), 0, MPI_COMM_WORLD);
+#endif
+    return tmp;
+  }
 
   //! square root
   static inline scalar_t sqrt(const scalar_t& x)

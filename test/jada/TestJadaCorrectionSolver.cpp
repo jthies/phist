@@ -8,8 +8,8 @@
 #include "phist_macros.h"
 #include "phist_kernels.h"
 #include "phist_enums.h"
-#include "phist_pgmres.h"
 #include "phist_jadaOp.hpp"
+#include "phist_jadaCorrectionSolver.h"
 #include "phist_ScalarTraits.hpp"
 #include "../kernels/KernelTest.h"
 #include "../kernels/KernelTestWithMap.h"
@@ -32,31 +32,31 @@ using namespace testing;
 #define MATNAME "sprandn"
 
 #define _N_ 25
-#define _NV_ 1
+#define _NV_ 10
 #define _NVP_ 2
 #define _MAXBAS_ 5
 
-#define CLASSNAME SJadaInnerGmresTest_25_1_2
+#define CLASSNAME STestJadaCorrectionSolver_25_10_2
 #include "phist_gen_s.h"
-#include "JadaInnerGmresTest_def.hpp"
+#include "TestJadaCorrectionSolver_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME DJadaInnerGmresTest_25_1_2
+#define CLASSNAME DTestJadaCorrectionSolver_25_10_2
 
 #include "phist_gen_d.h"
-#include "JadaInnerGmresTest_def.hpp"
+#include "TestJadaCorrectionSolver_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME CJadaInnerGmresTest_25_1_2
+#define CLASSNAME CTestJadaCorrectionSolver_25_10_2
 
 #include "phist_gen_c.h"
-#include "JadaInnerGmresTest_def.hpp"
+#include "TestJadaCorrectionSolver_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME ZJadaInnerGmresTest_25_1_2
+#define CLASSNAME ZTestJadaCorrectionSolver_25_10_2
 
 #include "phist_gen_z.h"
-#include "JadaInnerGmresTest_def.hpp"
+#include "TestJadaCorrectionSolver_def.hpp"
 
 #undef MATNAME
 #define MATNAME "jadaTestMat"
@@ -67,31 +67,31 @@ using namespace testing;
 #undef _MAXBAS_
 
 #define _N_ 512
-#define _NV_ 3
+#define _NV_ 11
 #define _NVP_ 7
-#define _MAXBAS_ 40
+#define _MAXBAS_ 10
 
 #undef CLASSNAME
-#define CLASSNAME SJadaInnerGmresTest_512_3_7
+#define CLASSNAME STestJadaCorrectionSolver_512_11_7
 #include "phist_gen_s.h"
-#include "JadaInnerGmresTest_def.hpp"
+#include "TestJadaCorrectionSolver_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME DJadaInnerGmresTest_512_3_7
+#define CLASSNAME DTestJadaCorrectionSolver_512_11_7
 
 #include "phist_gen_d.h"
-#include "JadaInnerGmresTest_def.hpp"
+#include "TestJadaCorrectionSolver_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME CJadaInnerGmresTest_512_3_7
+#define CLASSNAME CTestJadaCorrectionSolver_512_11_7
 
 #include "phist_gen_c.h"
-#include "JadaInnerGmresTest_def.hpp"
+#include "TestJadaCorrectionSolver_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME ZJadaInnerGmresTest_512_3_7
+#define CLASSNAME ZTestJadaCorrectionSolver_512_11_7
 
 #include "phist_gen_z.h"
-#include "JadaInnerGmresTest_def.hpp"
+#include "TestJadaCorrectionSolver_def.hpp"
 
 

@@ -7,7 +7,7 @@
 //#include "gmock/gmock.h"
 
 #include "phist_operator.h"
-#include "phist_jadaOp.h"
+#include "phist_jadaOp.hpp"
 #include "../tools/MatrixIO.h"
 
 #include "../kernels/KernelTest.h"

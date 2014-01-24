@@ -73,9 +73,6 @@ void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V_, TYPE(sdMat_ptr) M_, int* 
   int error = 0;
 #pragma omp parallel reduction(||:error)
   {
-#ifdef LIKWID_PERFMON
-    likwid_markerStartRegion("mvec_times_sdMat_inplace");
-#endif
     // create a buffer for a block of the mvec
     ST *work = (ST*)malloc(chunkSize*nvec*sizeof(ST));
 
@@ -126,11 +123,7 @@ void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V_, TYPE(sdMat_ptr) M_, int* 
       }
     }
 
-
     free(work);
-#ifdef LIKWID_PERFMON
-    likwid_markerStopRegion("mvec_times_sdMat_inplace");
-#endif
   }
 
   PHIST_CHK_IERR(*ierr = error ? -1: 0, *ierr);

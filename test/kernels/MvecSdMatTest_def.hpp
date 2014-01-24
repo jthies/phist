@@ -132,9 +132,11 @@ public:
       ASSERT_EQ(0,ierr_);
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&ierr_);
       ASSERT_EQ(0,ierr_);
+#if PHIST_OUTLEV>=PHIST_DEBUG
       VTest::PrintVector(*cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
       VTest::PrintVector(*cout,"ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
+#endif
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(M1_vp_,m_,m_,ldaM1_,stride_,(ST)nglob_));
       SUBR(sdMat_parallel_check_)(M1_,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -155,9 +157,11 @@ public:
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,st::zero(),V2_,&ierr_);
       ASSERT_EQ(0,ierr_);
+#if PHIST_OUTLEV>=PHIST_DEBUG
       VTest::PrintVector(*cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
       VTest::PrintVector(*cout,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+#endif
 #ifdef PHIST_KERNEL_LIB_FORTRAN
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(V2_vp_,m_,nloc_,m_,stride_,(ST)m_));
 #else
@@ -180,9 +184,11 @@ public:
       ASSERT_EQ(0,ierr_);
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&ierr_);
       ASSERT_EQ(0,ierr_);
+#if PHIST_OUTLEV>=PHIST_DEBUG
       VTest::PrintVector(*cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
       VTest::PrintVector(*cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"random'*random",M1_vp_,ldaM1_,stride_,mpi_comm_);
+#endif
       SUBR(sdMat_parallel_check_)(M1_,&ierr_);
       ASSERT_EQ(0,ierr_);
       }
@@ -237,9 +243,11 @@ public:
         ASSERT_EQ(0,ierr_);
 
         PHIST_DEB("Note: we are just using views inside the random vectors");
+#if PHIST_OUTLEV>=PHIST_DEBUG
         VTest::PrintVector(*cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
         VTest::PrintVector(*cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
         MTest::PrintSdMat(*cout,"zero-random'*random",M1_vp_,ldaM1_,stride_,mpi_comm_);
+#endif
         SUBR(sdMat_parallel_check_)(M1_,&ierr_);
         ASSERT_EQ(0,ierr_);
 
@@ -256,7 +264,9 @@ public:
         ASSERT_EQ(0,ierr_);
         SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::one(),M2_,&ierr_);
         ASSERT_EQ(0,ierr_);
+#if PHIST_OUTLEV>=PHIST_DEBUG
         MTest::PrintSdMat(*cout,"zero-random'*random+random'*random",M2_vp_,ldaM2_,stride_,mpi_comm_);
+#endif
         SUBR(sdMat_parallel_check_)(M2_,&ierr_);
         ASSERT_EQ(0,ierr_);
 

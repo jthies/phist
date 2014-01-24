@@ -1,7 +1,7 @@
-SMATS=`ls s_*.mm`
-DMATS=`ls d_*.mm`
-CMATS=`ls c_*.mm`
-ZMATS=`ls z_*.mm`
+SMATS=`ls S*.mm`
+DMATS=`ls D*.mm`
+CMATS=`ls C*.mm`
+ZMATS=`ls Z*.mm`
 
 for mat in ${SMATS}
         do

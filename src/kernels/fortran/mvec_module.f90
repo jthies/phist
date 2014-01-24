@@ -63,7 +63,7 @@ contains
     type(MVec_t), intent(inout) :: mvec
     type(MVec_t), intent(in)    :: block_list(1:)
     !--------------------------------------------------------------------------------
-    integer :: nvec, nblocks, nrows, ldb, ldm
+    integer :: nvec, nblocks, nrows, ldm
     logical :: single_vector_gather
     integer :: i, j, nvec_i, off, jmin_i, jmax_i
     logical :: strided
@@ -112,7 +112,7 @@ contains
       end if
     end if
 
-!$omp parallel do
+!$omp parallel do private(off) schedule(static)
     do j = 1, nrows
       off = mvec%jmin
       do i = 1, nblocks
@@ -120,6 +120,7 @@ contains
         jmax_i = block_list(i)%jmax
         nvec_i = jmax_i-jmin_i+1
         mvec%val(off:off+nvec_i-1,j) = block_list(i)%val(jmin_i:jmax_i,j)
+        off = off +nvec_i
       end do
     end do
 
@@ -135,7 +136,7 @@ contains
     type(MVec_t), intent(inout) :: mvec
     type(MVec_t), intent(in)    :: block_list(1:)
     !--------------------------------------------------------------------------------
-    integer :: nvec, nblocks, nrows, ldb, ldm
+    integer :: nvec, nblocks, nrows, ldm
     logical :: single_vector_scatter
     integer :: i, j, nvec_i, off, jmin_i, jmax_i
     logical :: strided
@@ -184,7 +185,7 @@ contains
       end if
     end if
 
-!$omp parallel do
+!$omp parallel do private(off) schedule(static)
     do j = 1, nrows
       off = mvec%jmin
       do i = 1, nblocks
@@ -192,6 +193,7 @@ contains
         jmax_i = block_list(i)%jmax
         nvec_i = jmax_i-jmin_i+1
         block_list(i)%val(jmin_i:jmax_i,j) = mvec%val(off:off+nvec_i-1,j)
+        off = off +nvec_i
       end do
     end do
 
@@ -203,11 +205,12 @@ contains
   !==================================================================================
   !> calculate 2-norm of the vectors in a multivector
   subroutine mvec_norm2(mvec, vnrm)
+    use mpi
     !--------------------------------------------------------------------------------
     type(MVec_t), intent(in)  :: mvec
     real(kind=8), intent(out) :: vnrm(mvec%jmin:mvec%jmax)
     !--------------------------------------------------------------------------------
-    integer :: nvec, nrows, lda
+    integer :: nvec, nrows, lda, ierr
     logical :: strided
     !--------------------------------------------------------------------------------
 
@@ -248,6 +251,9 @@ contains
       call dnrm2_general(nrows, nvec, mvec%val(mvec%jmin,1), lda, vnrm)
     end if
 
+    vnrm = vnrm*vnrm
+    call MPI_Allreduce(MPI_IN_PLACE,vnrm,nvec,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
+    vnrm = sqrt(vnrm)
 
     !--------------------------------------------------------------------------------
   end subroutine mvec_norm2
@@ -314,8 +320,14 @@ contains
     nrows = size(x%val,2)
     lda = size(x%val,1)
 
+    !call dlascl2(nvec,nrows,alpha(1),x%val(x%jmin,1),lda)
+
     if( nvec .eq. 1 ) then
-      call dscal(nrows,alpha(1),x%val(x%jmin,1),lda)
+      if( strided ) then
+        call dscal_strided_1(nrows,alpha,x%val(x%jmin,1),lda)
+      else
+        call dscal_1(nrows,alpha,x%val)
+      end if
     else if( nvec .eq. 2 ) then
       if( strided ) then
         call dscal_strided_2(nrows,alpha,x%val(x%jmin,1),lda)
@@ -376,7 +388,7 @@ contains
     !--------------------------------------------------------------------------------
     integer :: nvec, nrows, ldx, ldy
     logical :: strided_x, strided_y, strided
-    logical :: only_scale, only_copy
+    logical :: only_scale, only_copy, one_alpha, y_aligned
     integer :: i
     !--------------------------------------------------------------------------------
 
@@ -409,70 +421,94 @@ contains
       if( alpha(i) .ne. 1 ) only_copy = .false.
     end do
 
-    if( .not. only_scale ) then
+    ldx = size(x%val,1)
 
-      ldx = size(x%val,1)
-
-      if( .not. x%is_view .or. &
-        & ( x%jmin .eq. lbound(x%val,1) .and. &
-        &   x%jmax .eq. ubound(x%val,1)       ) ) then
-        strided_x = .false.
-      else
-        strided_x = .true.
-      end if
-    else
+    if( .not. x%is_view .or. &
+      & ( x%jmin .eq. lbound(x%val,1) .and. &
+      &   x%jmax .eq. ubound(x%val,1)       ) ) then
       strided_x = .false.
+    else
+      strided_x = .true.
+    end if
+
+    one_alpha = .true.
+    do i = 1, nvec-1, 1
+      if( alpha(i) .ne. alpha(i+1) ) one_alpha = .false.
+    end do
+
+    y_aligned = .true.
+    if( mod(loc(y%val(y%jmin,1)),16) .ne. 0 .or. mod(ldy,2) .ne. 0 ) then
+      y_aligned = .false.
     end if
 
     strided = strided_x .or. strided_y
 
     if( only_copy ) then
       if( .not. strided ) then
-        call dcopy(nvec*nrows, x%val, 1, y%val, 1)
-      else if( nvec .eq. 1 ) then
-        call dcopy(nrows, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
-      else if( nvec .eq. 2 ) then
-        call dcopy_strided_2(nrows, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
-      else if( nvec .eq. 4 ) then
-        call dcopy_strided_4(nrows, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
-      else if( nvec .eq. 8 ) then
-        call dcopy_strided_8(nrows, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
+        call dcopy_1(nvec*nrows, x%val, y%val)
       else
-        call dcopy_general(nrows, nvec, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
+        call dcopy_general(nvec,nrows,x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
       end if
-    else
-      if( nvec .eq. 1 ) then
-        if( beta .eq. 1 ) then
-          call daxpy(nrows, alpha(1), x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
-        else
-          if( strided ) then
-            call daxpby_strided_1(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
-          else
-            call daxpby_1(nrows, alpha(1), x%val(x%jmin,1), beta, y%val(y%jmin,1))
-          end if
-        end if
-      else if( nvec .eq. 2 ) then
+      return
+    end if
+
+
+    if( beta .eq. 0 ) then
+      if( nvec .eq. 2 .and. y_aligned ) then
         if( strided ) then
-          call daxpby_strided_1(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
+          call daxpy_NT_strided_2(nrows, alpha(1), x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
         else
-          call daxpby_1(nrows, alpha(1), x%val(x%jmin,1), beta, y%val(y%jmin,1))
+          call daxpy_NT_2(nrows, alpha(1), x%val(x%jmin,1), y%val(y%jmin,1))
         end if
-      else if( nvec .eq. 4 ) then
+        return
+      else if( nvec .eq. 4 .and. y_aligned ) then
         if( strided ) then
-          call daxpby_strided_4(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
+          call daxpy_NT_strided_4(nrows, alpha(1), x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
         else
-          call daxpby_4(nrows, alpha(1), x%val(x%jmin,1), beta, y%val(y%jmin,1))
+          call daxpy_NT_4(nrows, alpha(1), x%val(x%jmin,1), y%val(y%jmin,1))
         end if
-      else if( nvec .eq. 8 ) then
+        return
+      else if( nvec .eq. 8 .and. y_aligned ) then
         if( strided ) then
-          call daxpby_strided_8(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
+          call daxpy_NT_strided_8(nrows, alpha(1), x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy)
         else
-          call daxpby_8(nrows, alpha(1), x%val(x%jmin,1), beta, y%val(y%jmin,1))
+          call daxpy_NT_8(nrows, alpha(1), x%val(x%jmin,1), y%val(y%jmin,1))
         end if
-      else
-        call daxpby_generic(nrows, nvec, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
+        return
       end if
     end if
+
+    if( nvec .eq. 1 ) then
+      if( strided ) then
+        call daxpby_strided_1(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
+      else
+        call daxpby_1(nrows, alpha(1), x%val(x%jmin,1), beta, y%val(y%jmin,1))
+      end if
+      return
+    else if( nvec .eq. 2 ) then
+      if( strided ) then
+        call daxpby_strided_2(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
+      else
+        call daxpby_2(nrows, alpha(1), x%val(x%jmin,1), beta, y%val(y%jmin,1))
+      end if
+      return
+    else if( nvec .eq. 4 ) then
+      if( strided ) then
+        call daxpby_strided_4(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
+      else
+        call daxpby_4(nrows, alpha(1), x%val(x%jmin,1), beta, y%val(y%jmin,1))
+      end if
+      return
+    else if( nvec .eq. 8 ) then
+      if( strided ) then
+        call daxpby_strided_8(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
+      else
+        call daxpby_8(nrows, alpha(1), x%val(x%jmin,1), beta, y%val(y%jmin,1))
+      end if
+      return
+    end if
+
+    call daxpby_generic(nrows, nvec, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)
     !--------------------------------------------------------------------------------
   end subroutine mvec_vadd_mvec
 
@@ -480,11 +516,12 @@ contains
   !==================================================================================
   ! dot product for mvecs
   subroutine mvec_dot_mvec(x,y,dot)
+    use mpi
     !--------------------------------------------------------------------------------
     type(MVec_t), intent(in)  :: x, y
     real(kind=8), intent(out) :: dot(x%jmin:x%jmax)
     !--------------------------------------------------------------------------------
-    integer :: nvec, nrows, ldx, ldy
+    integer :: nvec, nrows, ldx, ldy, ierr
     logical :: strided_x, strided_y, strided
     !--------------------------------------------------------------------------------
 
@@ -536,6 +573,8 @@ contains
       call ddot_general(nrows, nvec, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy, dot)
     end if
 
+    call MPI_Allreduce(MPI_IN_PLACE,dot,nvec,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
+
     !--------------------------------------------------------------------------------
   end subroutine mvec_dot_mvec
 
@@ -551,6 +590,7 @@ contains
     !--------------------------------------------------------------------------------
     integer :: nrows, nvecv, nvecw, ldv, ldw
     logical :: strided_v, strided_w
+    real(kind=8), allocatable :: Mtmp(:,:)
     !--------------------------------------------------------------------------------
 
     ! check if we only need to scale
@@ -581,90 +621,78 @@ contains
       strided_w = .true.
     end if
 
+    allocate(Mtmp(nvecw,nvecv))
+    Mtmp = transpose(M%val(M%imin:M%imax,M%jmin:M%jmax))
     ! recognize small block mvecs
     if( .not. strided_w ) then
       if( nvecw .eq. 1 ) then
         if( strided_v ) then
-          call dgemm_sB_strided_1_k(nrows, nvecv, alpha, v%val(v%jmin,1), ldv, &
-            &                       transpose(M%val(M%imin:M%imax,M%jmin:M%jmax)), beta, w%val)
+          call dgemm_sB_strided_1_k(nrows, nvecv, alpha, v%val(v%jmin,1), ldv, Mtmp, beta, w%val)
         else
-          call dgemm_sB_1_k        (nrows, nvecv, alpha, v%val, &
-            &                       transpose(M%val(M%imin:M%imax,M%jmin:M%jmax)), beta, w%val)
+          call dgemm_sB_1_k        (nrows, nvecv, alpha, v%val, Mtmp, beta, w%val)
         end if
         return
       else if( nvecw .eq. 2 ) then
         if( strided_v ) then
-          call dgemm_sB_strided_2_k(nrows, nvecv, alpha, v%val(v%jmin,1), ldv, &
-            &                       transpose(M%val(M%imin:M%imax,M%jmin:M%jmax)), beta, w%val)
+          call dgemm_sB_strided_2_k(nrows, nvecv, alpha, v%val(v%jmin,1), ldv, Mtmp, beta, w%val)
         else
-          call dgemm_sB_2_k        (nrows, nvecv, alpha, v%val, &
-            &                       transpose(M%val(M%imin:M%imax,M%jmin:M%jmax)), beta, w%val)
+          call dgemm_sB_2_k        (nrows, nvecv, alpha, v%val, Mtmp, beta, w%val)
         end if
         return
       else if( nvecw .eq. 4 ) then
         if( strided_v ) then
-          call dgemm_sB_strided_4_k(nrows, nvecv, alpha, v%val(v%jmin,1), ldv, &
-            &                       transpose(M%val(M%imin:M%imax,M%jmin:M%jmax)), beta, w%val)
+          call dgemm_sB_strided_4_k(nrows, nvecv, alpha, v%val(v%jmin,1), ldv, Mtmp, beta, w%val)
         else
-          call dgemm_sB_4_k        (nrows, nvecv, alpha, v%val, &
-            &                       transpose(M%val(M%imin:M%imax,M%jmin:M%jmax)), beta, w%val)
+          call dgemm_sB_4_k        (nrows, nvecv, alpha, v%val, Mtmp, beta, w%val)
         end if
         return
       else if( nvecw .eq. 8 ) then
         if( strided_v ) then
-          call dgemm_sB_strided_8_k(nrows, nvecv, alpha, v%val(v%jmin,1), ldv, &
-            &                       transpose(M%val(M%imin:M%imax,M%jmin:M%jmax)), beta, w%val)
+          call dgemm_sB_strided_8_k(nrows, nvecv, alpha, v%val(v%jmin,1), ldv, Mtmp, beta, w%val)
         else
-          call dgemm_sB_8_k        (nrows, nvecv, alpha, v%val, &
-            &                       transpose(M%val(M%imin:M%imax,M%jmin:M%jmax)), beta, w%val)
+          call dgemm_sB_8_k        (nrows, nvecv, alpha, v%val, Mtmp, beta, w%val)
         end if
         return
       end if
     end if
+    deallocate(Mtmp)
+    allocate(Mtmp(nvecv,nvecw))
+    Mtmp = M%val(M%imin:M%imax,M%jmin:M%jmax)
 
     if( .not. strided_v ) then
       if( nvecv .eq. 1 ) then
         if( strided_w ) then
-          call dgemm_sB_strided_k_1(nrows, nvecw, alpha, v%val, &
-            &                       M%val(M%imin:M%imax,M%jmin:M%jmax), beta, w%val(w%jmin,1), ldw)
+          call dgemm_sB_strided_k_1(nrows, nvecw, alpha, v%val, Mtmp, beta, w%val(w%jmin,1), ldw)
         else
-          call dgemm_sB_k_1        (nrows, nvecw, alpha, v%val, &
-            &                       M%val(M%imin:M%imax,M%jmin:M%jmax), beta, w%val)
+          call dgemm_sB_k_1        (nrows, nvecw, alpha, v%val, Mtmp, beta, w%val)
         end if
         return
       else if( nvecv .eq. 2 ) then
         if( strided_w ) then
-          call dgemm_sB_strided_k_2(nrows, nvecw, alpha, v%val, &
-            &                       M%val(M%imin:M%imax,M%jmin:M%jmax), beta, w%val(w%jmin,1), ldw)
+          call dgemm_sB_strided_k_2(nrows, nvecw, alpha, v%val, Mtmp, beta, w%val(w%jmin,1), ldw)
         else
-          call dgemm_sB_k_2        (nrows, nvecw, alpha, v%val, &
-            &                       M%val(M%imin:M%imax,M%jmin:M%jmax), beta, w%val)
+          call dgemm_sB_k_2        (nrows, nvecw, alpha, v%val, Mtmp, beta, w%val)
         end if
         return
       else if( nvecv .eq. 4 ) then
         if( strided_w ) then
-          call dgemm_sB_strided_k_4(nrows, nvecw, alpha, v%val, &
-            &                       M%val(M%imin:M%imax,M%jmin:M%jmax), beta, w%val(w%jmin,1), ldw)
+          call dgemm_sB_strided_k_4(nrows, nvecw, alpha, v%val, Mtmp, beta, w%val(w%jmin,1), ldw)
         else
-          call dgemm_sB_k_4        (nrows, nvecw, alpha, v%val, &
-            &                       M%val(M%imin:M%imax,M%jmin:M%jmax), beta, w%val)
+          call dgemm_sB_k_4        (nrows, nvecw, alpha, v%val, Mtmp, beta, w%val)
         end if
         return
       else if( nvecv .eq. 8 ) then
         if( strided_w ) then
-          call dgemm_sB_strided_k_8(nrows, nvecw, alpha, v%val, &
-            &                       M%val(M%imin:M%imax,M%jmin:M%jmax), beta, w%val(w%jmin,1), ldw)
+          call dgemm_sB_strided_k_8(nrows, nvecw, alpha, v%val, Mtmp, beta, w%val(w%jmin,1), ldw)
         else
-          call dgemm_sB_k_8        (nrows, nvecw, alpha, v%val, &
-            &                       M%val(M%imin:M%imax,M%jmin:M%jmax), beta, w%val)
+          call dgemm_sB_k_8        (nrows, nvecw, alpha, v%val, Mtmp, beta, w%val)
         end if
         return
       end if
     end if
 
 
-    call dgemm_sB_generic(nrows,nvecw,nvecv,alpha,v%val(v%jmin,1),ldv, &
-      &                   M%val(M%imin:M%imax,M%jmin:M%jmax), beta, w%val(w%jmin,1),ldw)
+    call dgemm_sB_generic(nrows,nvecw,nvecv,alpha,v%val(v%jmin,1),ldv, Mtmp, beta, w%val(w%jmin,1),ldw)
 
 
     !--------------------------------------------------------------------------------
@@ -706,6 +734,7 @@ contains
   !==================================================================================
   ! special gemm routine for mvecT_times_mvec
   subroutine mvecT_times_mvec(alpha,v,w,beta,m)
+    use mpi
     !--------------------------------------------------------------------------------
     real(kind=8),  intent(in)    :: alpha
     type(MVec_t),  intent(in)    :: v
@@ -713,9 +742,11 @@ contains
     real(kind=8),  intent(in)    :: beta
     type(SDMat_t), intent(inout) :: M
     !--------------------------------------------------------------------------------
-    integer :: nrows, nvecv, nvecw, ldv, ldw
+    integer :: nrows, nvecv, nvecw, ldv, ldw, ierr
     logical :: strided_v, strided_w
+    logical :: handled, tmp_transposed
     real(kind=8), allocatable :: tmp(:,:)
+    real(kind=8), allocatable :: tmp_(:,:)
     !--------------------------------------------------------------------------------
 
     ! check if we only need to scale
@@ -746,6 +777,9 @@ contains
       strided_w = .true.
     end if
 
+    handled = .false.
+    tmp_transposed = .false.
+
     if( .not. strided_v ) then
       if( nvecv .eq. 1 ) then
         allocate(tmp(nvecv,nvecw))
@@ -754,8 +788,7 @@ contains
         else
           call dgemm_sC_1(nrows,nvecw,v%val,w%val,tmp)
         end if
-        M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
-        return
+        handled = .true.
       else if( nvecv .eq. 2 ) then
         allocate(tmp(nvecv,nvecw))
         if( strided_w ) then
@@ -763,8 +796,7 @@ contains
         else
           call dgemm_sC_2(nrows,nvecw,v%val,w%val,tmp)
         end if
-        M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
-        return
+        handled = .true.
       else if( nvecv .eq. 4 ) then
         allocate(tmp(nvecv,nvecw))
         if( strided_w ) then
@@ -772,8 +804,7 @@ contains
         else
           call dgemm_sC_4(nrows,nvecw,v%val,w%val,tmp)
         end if
-        M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
-        return
+        handled = .true.
       else if( nvecv .eq. 8 ) then
         allocate(tmp(nvecv,nvecw))
         if( strided_w ) then
@@ -781,12 +812,11 @@ contains
         else
           call dgemm_sC_8(nrows,nvecw,v%val,w%val,tmp)
         end if
-        M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
-        return
+        handled = .true.
       end if
     end if
 
-    if( .not. strided_w ) then
+    if( .not. handled .and. .not. strided_w ) then
       if( nvecw .eq. 1 ) then
         allocate(tmp(nvecw,nvecv))
         if( strided_w ) then
@@ -794,8 +824,8 @@ contains
         else
           call dgemm_sC_1(nrows,nvecv,w%val,v%val,tmp)
         end if
-        M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*transpose(tmp)+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
-        return
+        handled = .true.
+        tmp_transposed = .true.
       else if( nvecw .eq. 2 ) then
         allocate(tmp(nvecw,nvecv))
         if( strided_w ) then
@@ -803,8 +833,8 @@ contains
         else
           call dgemm_sC_2(nrows,nvecv,w%val,v%val,tmp)
         end if
-        M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*transpose(tmp)+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
-        return
+        handled = .true.
+        tmp_transposed = .true.
       else if( nvecw .eq. 4 ) then
         allocate(tmp(nvecw,nvecv))
         if( strided_w ) then
@@ -812,8 +842,8 @@ contains
         else
           call dgemm_sC_4(nrows,nvecv,w%val,v%val,tmp)
         end if
-        M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*transpose(tmp)+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
-        return
+        handled = .true.
+        tmp_transposed = .true.
       else if( nvecw .eq. 8 ) then
         allocate(tmp(nvecw,nvecv))
         if( strided_w ) then
@@ -821,19 +851,29 @@ contains
         else
           call dgemm_sC_8(nrows,nvecv,w%val,v%val,tmp)
         end if
-        M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*transpose(tmp)+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
-        return
+        handled = .true.
+        tmp_transposed = .true.
       end if
     end if
 
 
-    ! generic case
-    allocate(tmp(nvecv,nvecw))
+    if( .not. handled ) then
+      ! generic case
+      allocate(tmp(nvecv,nvecw))
 
-    call dgemm_sC_generic(nrows,nvecv,nvecw,v%val(v%jmin,1),ldv,w%val(w%jmin,1),ldw,tmp)
+      call dgemm_sC_generic(nrows,nvecv,nvecw,v%val(v%jmin,1),ldv,w%val(w%jmin,1),ldw,tmp)
 
-    M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
+    end if
 
+    allocate(tmp_(nvecv,nvecw))
+    if( tmp_transposed ) then
+      tmp_ = transpose(tmp)
+    else
+      tmp_ = tmp
+    end if
+    call MPI_Allreduce(MPI_IN_PLACE,tmp_,nvecv*nvecw,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
+
+    M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp_+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
     !--------------------------------------------------------------------------------
   end subroutine mvecT_times_mvec
 
@@ -971,6 +1011,7 @@ contains
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
     type(Map_t), pointer :: map
+    integer :: i
     !--------------------------------------------------------------------------------
 
     call c_f_pointer(map_ptr, map)
@@ -985,8 +1026,11 @@ contains
     flush(6)
 #endif
     allocate(mvec%val(nvec,map%nlocal(map%me)))
-    ! that's costly... the user should take care himself!
-    !mvec%val = 0._8
+    ! that should hopefully help in cases of NUMA
+!$omp parallel do schedule(static)
+    do i = 1, size(mvec%val,2)
+      mvec%val(:,i) = 0._8
+    end do
     mvec_ptr = c_loc(mvec)
     ierr = 0
 
@@ -1207,7 +1251,6 @@ contains
     view%val=>mvec%val
     call mvec_add_mvec(1._8,block,0._8,view)
 
-    mvec%val(mvec%jmin+jmin:mvec%jmin+jmax,:) = block%val(block%jmin:block%jmax,:)
     ierr = 0
 
   end subroutine phist_Dmvec_set_block
@@ -1303,6 +1346,7 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
+    integer :: i
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) ) then
@@ -1312,7 +1356,11 @@ contains
 
     call c_f_pointer(mvec_ptr, mvec)
 
-    mvec%val(mvec%jmin:mvec%jmax,:) = val
+!$omp parallel do schedule(static)
+    do i = 1, size(mvec%val,2), 1
+      mvec%val(mvec%jmin:mvec%jmax,i) = val
+    end do
+
     ierr = 0
 
   end subroutine phist_Dmvec_put_value
@@ -1335,6 +1383,7 @@ contains
     call c_f_pointer(mvec_ptr, mvec)
 
     call random_number(mvec%val(mvec%jmin:mvec%jmax,:))
+
     ierr = 0
 
   end subroutine phist_Dmvec_random
@@ -1347,6 +1396,7 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
+    integer :: i
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) ) then
@@ -1356,7 +1406,9 @@ contains
 
     call c_f_pointer(mvec_ptr, mvec)
 
-    write(*,*) mvec%val(mvec%jmin:mvec%jmax,:)
+    do i = 1, size(mvec%val,2)
+      write(*,*) mvec%val(mvec%jmin:mvec%jmax,i)
+    end do
     flush(6)
     ierr = 0
 

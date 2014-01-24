@@ -29,7 +29,7 @@ option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
 
 if (DEFINED LAPACK_LIBS)
   set(LAPACK_LIBS ${LAPACK_LIBS} CACHE STRING "how to link with lapack (and blas)")
-else()
+elseif(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
   set(LAPACK_LIBS "lapack;blas" CACHE STRING "how to link with lapack (and blas)")
 endif()
 
@@ -45,9 +45,10 @@ set(OUTLEV_DEBUG 4)
 set(OUTLEV_RELEASE 3)
 
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+
   message(STATUS "using GNU compiler flags")
   set (CMAKE_C_FLAGS "-fopenmp -std=c99")
-  set (CMAKE_C_FLAGS_RELEASE "-O2 -fopenmp")
+  set (CMAKE_C_FLAGS_RELEASE "-O3 -ffast-math -march=native -fopenmp")
   set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g -fopenmp")
   if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
     set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
@@ -64,14 +65,35 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     set (CMAKE_CXX_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
   endif ()
 
-  set (CMAKE_Fortran_FLAGS "-fopenmp -cpp")
-  set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -Ofast -fopenmp -cpp")
+  set (CMAKE_Fortran_FLAGS "-fopenmp -cpp -ffree-line-length-none")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -O3 -ffast-math -fopenmp -cpp")
   set (CMAKE_Fortran_FLAGS_DEBUG "-dH -O0 -g -DTESTING -fopenmp -Wall -fcheck=all")
-else ()
-#TODO - add flags for Intel and others
-  message ("compiler ID: " ${CXX_COMPILER_ID})
+
+elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
+
+  message(STATUS "using INTEL compiler flags")
+  set (CMAKE_C_FLAGS "-openmp -Wno-unused-variable -mkl -std=c99")
+  set (CMAKE_C_FLAGS_RELEASE "-O3 -xHOST -no-prec-div")
+  set (CMAKE_C_FLAGS_DEBUG "-check=uninit,stack -debug")
+
+  set (CMAKE_CXX_FLAGS "-openmp -Wno-unused-variable -mkl")
+  set (CMAKE_CXX_FLAGS_RELEASE "-O3 -xHOST -no-prec-div")
+  set (CMAKE_CXX_FLAGS_DEBUG "-check=uninit,stack -debug")
+
+  set (CMAKE_Fortran_FLAGS "-openmp -fpp -mkl")
+  set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -xHOST -no-prec-div")
+  set (CMAKE_Fortran_FLAGS_DEBUG "-check all -debug")
+
+  # for ipo
+  set_property(DIRECTORY . PROPERTY INTERPROCEDURAL_OPTIMIZATION 1)
+
+else()
+
+  message ("compiler ID: " ${CMAKE_C_COMPILER_ID})
   message ("No custom compiler flags are known.")
+
 endif ()
+
 
 # append output level to C and C++ flags
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
@@ -182,12 +204,13 @@ set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.c
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_pgmres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_bgmres.cpp)
-set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.c
+set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.c
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_schur_decomp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejada.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp)
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaCorrectionSolver.cpp)
 
 
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB})
@@ -262,7 +285,7 @@ endforeach()
 list(APPEND PHIST_LIBS ${LAPACK_LIBS})
 list(APPEND PHIST_LIBS ${MPI_CXX_LIBRARIES})
 
-#message(STATUS "all libraries: "${PHIST_LIBS})
+message(STATUS "all libraries: ${PHIST_LIBS}")
 
 set(GCOVR_EXCLUDES -e src/kernels/kernels_noimpl.c
                    -e src/tools/tools.c)
@@ -350,7 +373,7 @@ if  (PHIST_KERNEL_LIB STREQUAL "ghost")
 # TODO - make this somehow general, or probably we should
 #       actually install phist instead and push the spinChain
 #       driver to the essex/examples repo...
-  set(ESSEX_INSTALL_DIR $ENV{HOME}/local/)
+  set(ESSEX_INSTALL_DIR CACHE $ENV{HOME}/local/ "where the essex examples are installed")
   include_directories(${ESSEX_INSTALL_DIR}/include/essex_examples)
   add_executable(spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
   target_link_libraries(spinChain ${ESSEX_INSTALL_DIR}/lib/essex_examples/libmatfuncs.so)
@@ -440,8 +463,10 @@ endif()
 
 foreach(np ${PHIST_MPI_TEST_NPROCS})
   foreach(label ${PHIST_TESTS})
-    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} ${PRODUCT_NAME}-${label}-test --gtest_output=xml:test_output_np${np}/${label}/xunit.xml)
+    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} ./${PRODUCT_NAME}-${label}-test --gtest_output=xml:test_output_np${np}/${label}/xunit.xml)
     add_test(NAME test-${label}_np${np} COMMAND ${TEST_COMMAND})
+    set_tests_properties(test-${label}_np${np} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
+    set_tests_properties(test-${label}_np${np} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
   endforeach()
 endforeach()
 

@@ -17,6 +17,8 @@
 //! blockDim: block size, calculates <blockDim> corrections in each iteration
 //! minBase:  start up from a basis consisting of minBas vectors (using Arnoldi)
 //! maxBase:  when the basis reaches <maxBase> vectors, restart from <minBase> vectors.
+//! innerBlockDim: block dimension used in the inner GMRES itersion
+//! innerMaxBase:  restart inner GMRES after this number of iterations
 //! 
 //! Output arguments:
 //!
@@ -27,33 +29,12 @@
 //! resNorm:  norm of the residua of the schur form $A*q_i-Q*r_i, i=1,nEig$
 //! ierr:     return code of the solver (0 on success, negative on error, positive on warning)
 //!
-#ifndef SUBR  /* ignore the following, just to allow better syntax highlighting/autocompletion etc */
-#include <cstdlib>
-#include <cstring>
-#include <cmath>
-#include <iostream>
-#include <iomanip>
-
-#include "phist_macros.h"
-#include "phist_subspacejada.h"
-#include "phist_kernels.h"
-#include "phist_lapack.h"
-#include "phist_orthog.h"
-
-#include "phist_ScalarTraits.hpp"
-#include "phist_schur_decomp.h"
-#include "phist_jadaOp.h"
-#include "phist_simple_arnoldi.h"
-
-#include "phist_pgmres.h"
-
-#include "phist_gen_s.h"
-#endif
 void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
                          TYPE(const_mvec_ptr) v0,  eigSort_t which,
                          _MT_ tol,                 int nEig,
                          int* nIter,               int blockDim,
                          int minBase,              int maxBase,
+                         int innerBlockDim,        int innerMaxBase,
                          int initialShiftIter,     _ST_ initialShift,
                          TYPE(mvec_ptr) Q,         TYPE(sdMat_ptr) R,
                          _MT_* resNorm,            int* ierr)
@@ -186,17 +167,11 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     0,      nV-1,     0,     nV-1,      ierr), *ierr);
 
 
-  //------------------------------- initialize GMRES solver ------------------------
-  TYPE(pgmresState_ptr) *gmresState = new TYPE(pgmresState_ptr)[blockDim];
-  _MT_ *gmresResNorm = new _MT_[blockDim];
-  int nTotalGmresIter = 0;
-  PHIST_CHK_IERR(SUBR( pgmresStates_create ) (gmresState, blockDim, A_op->domain_map, 26, ierr), *ierr);
-  _MT_ *innerTol = new _MT_[nEig_];
-  for(int i = 0; i < nEig_; i++)
-    innerTol[i] = mt::one();
-  _MT_ *lastOuterRes = new _MT_ [nEig_];
-  for(int i = 0; i < nEig_; i++)
-    lastOuterRes[i] = 0;
+  //------------------------------- initialize correction equation solver solver ------------------------
+  TYPE(jadaCorrectionSolver_ptr) innerSolv = NULL;
+  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, innerBlockDim, A_op->domain_map, innerMaxBase, ierr), *ierr);
+  std::vector<_MT_> innerTol(nEig_,mt::one());
+  std::vector<_MT_> lastOuterRes(nEig_,mt::zero());
 
   //------------------------------- initialize subspace etc ------------------------
   // run arnoldi
@@ -279,17 +254,37 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
       for(int i = 0; i < nConvergedEig; i++)
         Q_H_raw[ldaQ_H*i+i] = st::one();
 
-      // upper left part of R_H
+      // left part of R_H
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_, &R_H, 0, nConvergedEig-1, 0, nConvergedEig-1, ierr), *ierr);
       PHIST_CHK_IERR(SUBR( sdMat_get_block  ) (R,    R_H,  0, nConvergedEig-1, 0, nConvergedEig-1, ierr), *ierr);
 
       // upper right part of R_H
-      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (Q_H_, &Qq_H, nConvergedEig, nEig_-1,         nConvergedEig, nEig_-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (Q_H_, &Qq_H, nConvergedEig, nV-1,            nConvergedEig, nEig_-1, ierr), *ierr);
       PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (R_H_, &Rr_H, 0,             nConvergedEig-1, nConvergedEig, nEig_-1, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (H_  , &Hh,   0,             nConvergedEig-1, nConvergedEig, nEig_-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (H_  , &Hh,   0,             nConvergedEig-1, nConvergedEig, nV-1,    ierr), *ierr);
 
       PHIST_CHK_IERR(SUBR( sdMat_times_sdMat ) (st::one(), Hh, Qq_H, st::zero(), Rr_H, ierr), *ierr);
     }
+#ifdef TESTING
+{
+  // check that H Q_H = Q_H R_H
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0, nV-1,    0, nEig_-1, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0, nEig_-1, 0, nEig_-1, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)(Htmp_, &Htmp, 0, nV-1,    0, nEig_-1, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(), H, Q_H, st::zero(), Htmp, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(-st::one(), Q_H, R_H, st::one(), Htmp, ierr), *ierr);
+  // get max norm
+  _MT_ absErr = mt::zero();
+  for(int i = 0; i < nEig_; i++)
+    for(int j = 0; j < nV; j++)
+      absErr = std::max(absErr, st::abs(Htmp_raw[i*ldaHtmp+j]));
+  PHIST_SOUT(PHIST_INFO, "H*Q_H - Q_H*R_H: %8.4e\n", absErr);
+  PHIST_CHK_IERR(SUBR(sdMat_print)(H, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_print)(Q_H, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_print)(R_H, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_print)(Htmp, ierr), *ierr);
+}
+#endif
 
     // update views
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0,     nV-1,      0,             nV-1,      ierr), *ierr);
@@ -341,16 +336,31 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
 
     // reorder multiple eigenvalues in schur form by residual norm
+    // only possible/implemented for the symmetric case, so we need to check the symmetrie
+    bool symmetric = true;
+    for(int i = 0; i < nEig_; i++)
+    {
+      for(int j = 0; j < i; j++)
+      {
+        if( st::abs(R_H_raw[i*ldaR_H+j]) > tol/2 )
+          symmetric = false;
+      }
+    }
     std::vector<int> resPermutation(nEig_);
     for(int i = 0; i < nEig_; i++)
       resPermutation[i] = i;
-    PHIST_CHK_IERR( SUBR(ReorderPartialSchurDecomp)(R_H_raw+offR_H, ldaR_H, Q_H_raw+offQ_H, ldaQ_H, nV-nConvergedEig, nSort, which, sqrt(tol), resNorm+nConvergedEig, ev_H+nConvergedEig, &resPermutation[nConvergedEig], ierr), *ierr);
-    for(int i = nConvergedEig; i < nEig_; i++)
-      resPermutation[i] += nConvergedEig;
+    if( symmetric )
+    {
+      PHIST_CHK_IERR( SUBR(ReorderPartialSchurDecomp)(R_H_raw+offR_H, ldaR_H, Q_H_raw+offQ_H, ldaQ_H, nV-nConvergedEig, nSort, which, sqrt(tol), resNorm+nConvergedEig, ev_H+nConvergedEig, &resPermutation[nConvergedEig], ierr), *ierr);
+      for(int i = nConvergedEig; i < nEig_; i++)
+        resPermutation[i] += nConvergedEig;
+#ifdef TESTING
 PHIST_SOUT(PHIST_INFO,"resPermutation: ");
 for(int i = 0; i < nEig_; i++)
   PHIST_SOUT(PHIST_INFO,"\t%d", resPermutation[i]);
 PHIST_SOUT(PHIST_INFO,"\n");
+#endif
+    }
     // check if we need to adapt Q to the new ordering (e.g. there were duplicate eigenvalues not sorted by their residual norm)
     // res is handled implicitly later
     for(int i = 0; i < nEig_; i++)
@@ -395,7 +405,10 @@ PHIST_SOUT(PHIST_INFO,"\n");
       err = true;
   }
   PHIST_SOUT(PHIST_INFO,"\n");
-  PHIST_CHK_IERR( *ierr = err ? -1 : 0, *ierr);
+  if( err )
+  {
+    PHIST_SOUT(PHIST_WARNING,"strong deviation of estimated and explicit residuals (see above)!\n");
+  }
 }
 #endif
 
@@ -413,15 +426,11 @@ PHIST_SOUT(PHIST_INFO,"\n");
     if( nNewlyConvergedEig > 0 )
     {
       PHIST_SOUT(PHIST_INFO,"In iteration %d: locking %d newly converged eigenvalues\n", *nIter, nNewlyConvergedEig);
-
-      // reorder V and H
-      PHIST_CHK_IERR(SUBR( transform_searchSpace ) (V, AV, BV, H, Q_H, B_op != NULL, ierr), *ierr);
-
-      nConvergedEig = nConvergedEig+nNewlyConvergedEig;
     }
 
-    if( nConvergedEig >= nEig )
+    if( nConvergedEig + nNewlyConvergedEig >= nEig )
     {
+      nConvergedEig += nNewlyConvergedEig;
       PHIST_SOUT(PHIST_INFO,"In iteration %d: all eigenvalues converged!\n", *nIter);
       break;
     }
@@ -430,6 +439,32 @@ PHIST_SOUT(PHIST_INFO,"\n");
     {
       PHIST_SOUT(PHIST_INFO,"Reached maximum number of iterations!\n");
       break;
+    }
+
+    if( nNewlyConvergedEig > 0 )
+    {
+      // to avoid unnecessary subspace transformations, shrink the searchspace one iteration earlier...
+      if( nV + 2*blockDim > maxBase )
+      {
+        PHIST_SOUT(PHIST_INFO,"Shrinking search space from %d to %d\n", nV, minBase);
+        PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  0, nV-1,          0, minBase-1,    ierr), *ierr);
+      }
+
+      // reorder V and H
+      PHIST_CHK_IERR(SUBR( transform_searchSpace ) (V, AV, BV, H, Q_H, B_op != NULL, ierr), *ierr);
+
+      nConvergedEig = nConvergedEig+nNewlyConvergedEig;
+
+      // update views if necessary
+      if( nV + 2*blockDim > maxBase )
+      {
+        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,    &V,                      0, minBase-1,    ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,   &AV,                     0, minBase-1,    ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,   &BV,                     0, minBase-1,    ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( sdMat_view_block  )(H_,    &H,    0, minBase-1,     0, minBase-1,    ierr), *ierr);
+
+        nV = minBase;
+      }
     }
 
 
@@ -459,14 +494,14 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
         if( *nIter < initialShiftIter )
         {
-          sigma[k] = -initialShift;
+          sigma[k] = initialShift;
         }
         else
         {
 #ifndef IS_COMPLEX
-          sigma[k] = -ct::real(ev_H[i]);
+          sigma[k] = ct::real(ev_H[i]);
 #else
-          sigma[k] = -ev_H[i];
+          sigma[k] = ev_H[i];
 #endif
         }
 
@@ -511,35 +546,28 @@ PHIST_SOUT(PHIST_INFO,"\n");
     // setup jadaOp
     // set correction views and temporary jadaOp-storage
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,  &t,     0, k-1,  ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res, &t_res, 0, k-1,  ierr), *ierr);
     // we only need to view first part of Q
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q,   &Qtil,  0, k_, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ,  &BQtil, 0, k_, ierr), *ierr);
-
-    TYPE(op) jdOp;
-    PHIST_CHK_IERR(SUBR( jadaOp_create ) (A_op, B_op, Qtil, BQtil, sigma, k, &jdOp, ierr), *ierr);
-    // TODO specify useful tol per eigenvalue!
-    PHIST_CHK_IERR(SUBR( mvec_put_value )(t, st::zero(), ierr), *ierr);
+    // set tolerances
     for(int i = 0; i < k; i++)
     {
-      int i_ = selectedRes[i];
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,&t, i,i, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res,&t_res, i_,i_, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( pgmresState_reset ) (gmresState[i], t_res, t, ierr), *ierr);
       if( resNorm[nConvergedEig+i] > 4*lastOuterRes[nConvergedEig+i] )
         innerTol[nConvergedEig+i] = 1.;
       innerTol[nConvergedEig+i] *= 0.5;
       lastOuterRes[nConvergedEig+i] = resNorm[nConvergedEig+i];
-      gmresState[i]->tol = innerTol[nConvergedEig+i];
-      PHIST_SOUT(PHIST_INFO, "gmres-tol: %8.4e\n",gmresState[i]->tol);
     }
-    PHIST_CHK_NEG_IERR(SUBR( pgmresStates_iterate ) (&jdOp, gmresState, k, &nTotalGmresIter, ierr), *ierr);
+//#ifdef PHIST_KERNEL_LIB_FORTRAN
+//    bool abortAfterFirstConvergedInBlock = true;
+//#else
+    bool abortAfterFirstConvergedInBlock = false;
+//#endif
+    PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, B_op, Qtil, BQtil, sigma, res, &selectedRes[0],
+                                                  &innerTol[nConvergedEig], innerMaxBase, t, abortAfterFirstConvergedInBlock, ierr), *ierr);
+
     // get solution and reuse res for At
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,&Vv, 0,k-1, ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res,&AVv, 0,k-1, ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_put_value )(AVv, st::zero(), ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( pgmresStates_updateSol ) (gmresState, k, Vv, gmresResNorm, true, ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( jadaOp_delete ) (&jdOp, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_, &Vv,  0, k-1, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res,&AVv, 0, k-1, ierr), *ierr);
 
     // enlarge search space
     // first update views
@@ -579,9 +607,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
 
   //------------------------------- delete vectors and matrices --------------------
-  PHIST_CHK_IERR(SUBR( pgmresStates_delete ) (gmresState, blockDim, ierr), *ierr);
-  delete[] gmresState;
-  delete[] gmresResNorm;
+  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_delete)(innerSolv, ierr), *ierr);
 
   // delete views
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (R_H, ierr), *ierr);

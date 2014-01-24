@@ -282,7 +282,7 @@ void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
     const char* compq = "V";
     int ifst = pos;
     int ilst = pos+1;
-PHIST_SOUT(PHIST_INFO,"swapping %d %d in unconverged eigenvalues\n",ifst-1,ilst-1);
+PHIST_SOUT(PHIST_DEBUG,"swapping %d %d in unconverged eigenvalues\n",ifst-1,ilst-1);
 #ifdef IS_COMPLEX
     PHIST_CHK_IERR( PREFIX(TREXC) (compq, &m, (blas_cmplx_t*) T, &ldT, (blas_cmplx_t*) S, &ldS, &ifst, &ilst, ierr), *ierr);
 #else

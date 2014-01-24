@@ -33,50 +33,50 @@
 #ifdef PHIST_HAVE_MPI
 #define PHIST_OUT(level,msg, ...) {\
         if(PHIST_OUTLEV >= level) {\
-                FILE* out= (level<=PHIST_WARNING)? stderr:stdout;\
-                int me,np,ini,fini;\
-                MPI_Initialized(&ini); \
-                if (ini) MPI_Finalized(&fini); \
-                if (ini && (!fini)) { \
-                MPI_Comm_rank(MPI_COMM_WORLD,&me);\
-                MPI_Comm_size(MPI_COMM_WORLD,&np);\
-                } else {me=0; np=1;}\
-                if (np>1) \
-                {fprintf(out,"PE%d: "msg,me,##__VA_ARGS__);}\
+                FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
+                int PHIST_OUT_me,PHIST_OUT_np,PHIST_OUT_ini,PHIST_OUT_fini;\
+                MPI_Initialized(&PHIST_OUT_ini); \
+                if (PHIST_OUT_ini) MPI_Finalized(&PHIST_OUT_fini); \
+                if (PHIST_OUT_ini && (!PHIST_OUT_fini)) { \
+                MPI_Comm_rank(MPI_COMM_WORLD,&PHIST_OUT_me);\
+                MPI_Comm_size(MPI_COMM_WORLD,&PHIST_OUT_np);\
+                } else {PHIST_OUT_me=0; PHIST_OUT_np=1;}\
+                if (PHIST_OUT_np>1) \
+                {fprintf(PHIST_OUT_out,"PE%d: "msg,PHIST_OUT_me,##__VA_ARGS__);}\
                 else \
-                {fprintf(out,msg,##__VA_ARGS__);}\
-                fflush(out);\
+                {fprintf(PHIST_OUT_out,msg,##__VA_ARGS__);}\
+                fflush(PHIST_OUT_out);\
         }\
 }
 #else
 #define PHIST_OUT(level,msg, ...) {\
         if(PHIST_OUTLEV >= level) {\
-                FILE* out= (level<=PHIST_WARNING)? stderr:stdout;
-                fprintf(out,msg,##__VA_ARGS__);\
-                fflush(out);\ }\ }
+                FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;
+                fprintf(PHIST_OUT_out,msg,##__VA_ARGS__);\
+                fflush(PHIST_OUT_out);\ }\ }
 #endif
 
 #ifdef PHIST_HAVE_MPI
 #define PHIST_SOUT(level,msg, ...) {\
         if(PHIST_OUTLEV >= level) {\
-                FILE* out= (level<=PHIST_WARNING)? stderr:stdout;\
-                int me,ini,fini;\
-                MPI_Initialized(&ini); \
-                if (ini) MPI_Finalized(&fini); \
-                if (ini && (!fini)) { \
-                MPI_Comm_rank(MPI_COMM_WORLD,&me);\
-                } else {me=0;}\
-                if(me==0){\
-                fprintf(out,msg,##__VA_ARGS__);\
-                fflush(out);}\
+                FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
+                int PHIST_OUT_me,PHIST_OUT_ini,PHIST_OUT_fini;\
+                MPI_Initialized(&PHIST_OUT_ini); \
+                if (PHIST_OUT_ini) MPI_Finalized(&PHIST_OUT_fini); \
+                if (PHIST_OUT_ini && (!PHIST_OUT_fini)) { \
+                MPI_Comm_rank(MPI_COMM_WORLD,&PHIST_OUT_me);\
+                } else {PHIST_OUT_me=0;}\
+                if(PHIST_OUT_me==0){\
+                fprintf(PHIST_OUT_out,msg,##__VA_ARGS__);\
+                fflush(PHIST_OUT_out);}\
         }\
 }
 #else
 #define PHIST_SOUT(level,msg, ...) {\
         if(PHIST_OUTLEV >= level) {\
-                FILE* out= (level<=PHIST_WARNING)? stderr:stdout;
-                fprintf(out,msg,##__VA_ARGS__);\
-                fflush(out);\
+                FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;
+                fprintf(PHIST_OUT_out,msg,##__VA_ARGS__);\
+                fflush(PHIST_OUT_out);\
         }\
 }
 #endif

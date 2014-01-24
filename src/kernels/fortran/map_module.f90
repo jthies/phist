@@ -27,7 +27,7 @@ contains
   subroutine map_setup(map, comm, n_glob, ierr)
     use mpi
     !------------------------------------------------------------
-    type(Map_t),    intent(out) :: map
+    type(Map_t),    intent(inout) :: map
     integer,        intent(in)  :: comm
     integer(kind=8),intent(in)  :: n_glob
     integer,        intent(out) :: ierr
@@ -54,6 +54,11 @@ contains
       map%distrib(i) = map%distrib(i-1) + map%nlocal(i-1)
     end do
 
+#ifdef TESTING
+write(*,*) map%me, 'setting up map with nglob = ', n_glob, ', nProcs = ', map%nProcs, &
+  &  ', distrib = ', map%distrib, ', nlocal = ', map%nlocal
+flush(6)
+#endif
     if( map%distrib(map%nProcs) .ne. n_glob+1 ) then
       ierr = -1
     else

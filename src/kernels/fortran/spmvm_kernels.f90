@@ -1,259 +1,322 @@
 ! hopefully fast spMVM kernels for beta != 0 (and thus without nontemporary stores)
 
-subroutine dspmvm_NT_1(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, x, y)
-  integer, intent(in) :: nrows, ncols, nnz
+subroutine dspmvm_NT_1(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, halo, y)
+  implicit none
+  integer, intent(in) :: nlocal, nhalo, ncols
+  integer(kind=8), intent(in) :: nnz
   real(kind=8), intent(in) :: alpha
-  integer, intent(in) :: row_ptr(nrows+1)
+  real(kind=8), intent(in) :: shifts(1)
+  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(1,ncols)
-  real(kind=8), intent(inout) :: y(1,nrows)
+  real(kind=8), intent(in) :: x(1,ncols), halo(1,nhalo)
+  real(kind=8), intent(inout) :: y(1,nlocal)
 
   interface
-    subroutine dspmvm_nt_1_c(nrows, alpha, row_ptr, col_idx, val, x, y) bind(C)
+    subroutine dspmvm_nt_1_c(nlocal, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, halo, y) bind(C)
       use, intrinsic :: iso_c_binding
-      integer(C_INT), value :: nrows
+      integer(C_INT), value :: nlocal
       real(C_DOUBLE), value :: alpha
-      integer(C_INT), intent(in) :: row_ptr(*), col_idx(*)
-      real(C_DOUBLE), intent(in) :: val(*), x(*)
+      real(C_DOUBLE), intent(in) :: shifts(*)
+      integer(C_LONG), intent(in) :: row_ptr(*), halo_ptr(*)
+      integer(C_INT), intent(in) :: col_idx(*)
+      real(C_DOUBLE), intent(in) :: val(*), x(*), halo(*)
       real(C_DOUBLE), intent(inout) :: y(*)
     end subroutine dspmvm_nt_1_c
   end interface
 
-  call dspmvm_nt_1_c(nrows,alpha,row_ptr,col_idx,val,x,y)
+  call dspmvm_nt_1_c(nlocal,alpha,row_ptr,halo_ptr,col_idx,val,shifts,x,halo,y)
 
 end subroutine dspmvm_NT_1
 
-subroutine dspmvm_NT_2(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, x, y, ldy)
-  integer, intent(in) :: nrows, ncols, nnz, ldy
+subroutine dspmvm_NT_2(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, halo, y, ldy)
+  implicit none
+  integer, intent(in) :: nlocal, nhalo, ncols, ldy
+  integer(kind=8), intent(in) :: nnz
   real(kind=8), intent(in) :: alpha
-  integer, intent(in) :: row_ptr(nrows+1)
+  real(kind=8), intent(in) :: shifts(2)
+  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(2,ncols)
-  real(kind=8), intent(inout) :: y(ldy,nrows)
+  real(kind=8), intent(in) :: x(2,ncols), halo(2,nhalo)
+  real(kind=8), intent(inout) :: y(ldy,nlocal)
 
   interface
-    subroutine dspmvm_nt_2_c(nrows, alpha, row_ptr, col_idx, val, x, y, ldy) bind(C)
+    subroutine dspmvm_nt_2_c(nlocal, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, halo, y, ldy) bind(C)
       use, intrinsic :: iso_c_binding
-      integer(C_INT), value :: nrows, ldy
+      integer(C_INT), value :: nlocal, ldy
       real(C_DOUBLE), value :: alpha
-      integer(C_INT), intent(in) :: row_ptr(*), col_idx(*)
-      real(C_DOUBLE), intent(in) :: val(*), x(*)
+      real(C_DOUBLE), intent(in) :: shifts(*)
+      integer(C_LONG), intent(in) :: row_ptr(*), halo_ptr(*)
+      integer(C_INT), intent(in) :: col_idx(*)
+      real(C_DOUBLE), intent(in) :: val(*), x(*), halo(*)
       real(C_DOUBLE), intent(inout) :: y(*)
     end subroutine dspmvm_nt_2_c
   end interface
 
-  call dspmvm_nt_2_c(nrows,alpha,row_ptr,col_idx,val,x,y,ldy)
+  call dspmvm_nt_2_c(nlocal,alpha,row_ptr,halo_ptr,col_idx,val,shifts,x,halo,y,ldy)
 
 end subroutine dspmvm_NT_2
 
 
-subroutine dspmvm_NT_4(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, x, y, ldy)
-  integer, intent(in) :: nrows, ncols, nnz, ldy
+subroutine dspmvm_NT_4(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, halo, y, ldy)
+  implicit none
+  integer, intent(in) :: nlocal, nhalo, ncols, ldy
+  integer(kind=8), intent(in) :: nnz
   real(kind=8), intent(in) :: alpha
-  integer, intent(in) :: row_ptr(nrows+1)
+  real(kind=8), intent(in) :: shifts(4)
+  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(4,ncols)
-  real(kind=8), intent(inout) :: y(ldy,nrows)
+  real(kind=8), intent(in) :: x(4,ncols), halo(4,nhalo)
+  real(kind=8), intent(inout) :: y(ldy,nlocal)
 
   interface
-    subroutine dspmvm_nt_4_c(nrows, alpha, row_ptr, col_idx, val, x, y, ldy) bind(C)
+    subroutine dspmvm_nt_4_c(nlocal, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, halo, y, ldy) bind(C)
       use, intrinsic :: iso_c_binding
-      integer(C_INT), value :: nrows, ldy
+      integer(C_INT), value :: nlocal, ldy
       real(C_DOUBLE), value :: alpha
-      integer(C_INT), intent(in) :: row_ptr(*), col_idx(*)
-      real(C_DOUBLE), intent(in) :: val(*), x(*)
+      real(C_DOUBLE), intent(in) :: shifts(*)
+      integer(C_LONG), intent(in) :: row_ptr(*), halo_ptr(*)
+      integer(C_INT), intent(in) :: col_idx(*)
+      real(C_DOUBLE), intent(in) :: val(*), x(*), halo(*)
       real(C_DOUBLE), intent(inout) :: y(*)
     end subroutine dspmvm_nt_4_c
   end interface
 
-  call dspmvm_nt_4_c(nrows,alpha,row_ptr,col_idx,val,x,y,ldy)
+  call dspmvm_nt_4_c(nlocal,alpha,row_ptr,halo_ptr,col_idx,val,shifts,x,halo,y,ldy)
 
 end subroutine dspmvm_NT_4
 
 
-subroutine dspmvm_NT_8(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, x, y, ldy)
-  integer, intent(in) :: nrows, ncols, nnz, ldy
+subroutine dspmvm_NT_8(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, halo, y, ldy)
+  implicit none
+  integer, intent(in) :: nlocal, nhalo, ncols, ldy
+  integer(kind=8), intent(in) :: nnz
   real(kind=8), intent(in) :: alpha
-  integer, intent(in) :: row_ptr(nrows+1)
+  real(kind=8), intent(in) :: shifts(8)
+  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(8,ncols)
-  real(kind=8), intent(inout) :: y(ldy,nrows)
+  real(kind=8), intent(in) :: x(8,ncols), halo(8,nhalo)
+  real(kind=8), intent(inout) :: y(ldy,nlocal)
 
   interface
-    subroutine dspmvm_nt_8_c(nrows, alpha, row_ptr, col_idx, val, x, y, ldy) bind(C)
+    subroutine dspmvm_nt_8_c(nlocal, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, halo, y, ldy) bind(C)
       use, intrinsic :: iso_c_binding
-      integer(C_INT), value :: nrows, ldy
+      integer(C_INT), value :: nlocal, ldy
       real(C_DOUBLE), value :: alpha
-      integer(C_INT), intent(in) :: row_ptr(*), col_idx(*)
-      real(C_DOUBLE), intent(in) :: val(*), x(*)
+      real(C_DOUBLE), intent(in) :: shifts(*)
+      integer(C_LONG), intent(in) :: row_ptr(*), halo_ptr(*)
+      integer(C_INT), intent(in) :: col_idx(*)
+      real(C_DOUBLE), intent(in) :: val(*), x(*), halo(*)
       real(C_DOUBLE), intent(inout) :: y(*)
     end subroutine dspmvm_nt_8_c
   end interface
 
-  call dspmvm_nt_8_c(nrows,alpha,row_ptr,col_idx,val,x,y,ldy)
+  call dspmvm_nt_8_c(nlocal,alpha,row_ptr,halo_ptr,col_idx,val,shifts,x,halo,y,ldy)
 
 end subroutine dspmvm_NT_8
 
 
-subroutine dspmvm_NT_strided_2(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, x, ldx, y, ldy)
-  integer, intent(in) :: nrows, ncols, nnz, ldy, ldx
+subroutine dspmvm_NT_strided_2(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, ldx, halo, y, ldy)
+  implicit none
+  integer, intent(in) :: nlocal, nhalo, ncols, ldy, ldx
+  integer(kind=8), intent(in) :: nnz
   real(kind=8), intent(in) :: alpha
-  integer, intent(in) :: row_ptr(nrows+1)
+  real(kind=8), intent(in) :: shifts(2)
+  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(ldx,ncols)
-  real(kind=8), intent(inout) :: y(ldy,nrows)
+  real(kind=8), intent(in) :: x(ldx,ncols), halo(2,nhalo)
+  real(kind=8), intent(inout) :: y(ldy,nlocal)
 
   interface
-    subroutine dspmvm_nt_strided_2_c(nrows, alpha, row_ptr, col_idx, val, x, ldx, y, ldy) bind(C)
+    subroutine dspmvm_nt_strided_2_c(nlocal, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, ldx, halo, y, ldy) bind(C)
       use, intrinsic :: iso_c_binding
-      integer(C_INT), value :: nrows, ldy, ldx
+      integer(C_INT), value :: nlocal, ldy, ldx
       real(C_DOUBLE), value :: alpha
-      integer(C_INT), intent(in) :: row_ptr(*), col_idx(*)
-      real(C_DOUBLE), intent(in) :: val(*), x(*)
+      real(C_DOUBLE), intent(in) :: shifts(*)
+      integer(C_LONG), intent(in) :: row_ptr(*), halo_ptr(*)
+      integer(C_INT), intent(in) :: col_idx(*)
+      real(C_DOUBLE), intent(in) :: val(*), x(*), halo(*)
       real(C_DOUBLE), intent(inout) :: y(*)
     end subroutine dspmvm_nt_strided_2_c
   end interface
 
-  call dspmvm_nt_strided_2_c(nrows,alpha,row_ptr,col_idx,val,x,ldx,y,ldy)
+  call dspmvm_nt_strided_2_c(nlocal,alpha,row_ptr,halo_ptr,col_idx,val,shifts,x,ldx,halo,y,ldy)
 
 end subroutine dspmvm_NT_strided_2
 
 
-subroutine dspmvm_NT_strided_4(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, x, ldx, y, ldy)
-  integer, intent(in) :: nrows, ncols, nnz, ldy, ldx
+subroutine dspmvm_NT_strided_4(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, ldx, halo, y, ldy)
+  implicit none
+  integer, intent(in) :: nlocal, nhalo, ncols, ldy, ldx
+  integer(kind=8), intent(in) :: nnz
   real(kind=8), intent(in) :: alpha
-  integer, intent(in) :: row_ptr(nrows+1)
+  real(kind=8), intent(in) :: shifts(4)
+  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(ldx,ncols)
-  real(kind=8), intent(inout) :: y(ldy,nrows)
+  real(kind=8), intent(in) :: x(ldx,ncols), halo(4,nhalo)
+  real(kind=8), intent(inout) :: y(ldy,nlocal)
 
   interface
-    subroutine dspmvm_nt_strided_4_c(nrows, alpha, row_ptr, col_idx, val, x, ldx, y, ldy) bind(C)
+    subroutine dspmvm_nt_strided_4_c(nlocal, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, ldx, halo, y, ldy) bind(C)
       use, intrinsic :: iso_c_binding
-      integer(C_INT), value :: nrows, ldy, ldx
+      integer(C_INT), value :: nlocal, ldy, ldx
       real(C_DOUBLE), value :: alpha
-      integer(C_INT), intent(in) :: row_ptr(*), col_idx(*)
-      real(C_DOUBLE), intent(in) :: val(*), x(*)
+      real(C_DOUBLE), intent(in) :: shifts(*)
+      integer(C_LONG), intent(in) :: row_ptr(*), halo_ptr(*)
+      integer(C_INT), intent(in) :: col_idx(*)
+      real(C_DOUBLE), intent(in) :: val(*), x(*), halo(*)
       real(C_DOUBLE), intent(inout) :: y(*)
     end subroutine dspmvm_nt_strided_4_c
   end interface
 
-  call dspmvm_nt_strided_4_c(nrows,alpha,row_ptr,col_idx,val,x,ldx,y,ldy)
+  call dspmvm_nt_strided_4_c(nlocal,alpha,row_ptr,halo_ptr,col_idx,val,shifts,x,ldx,halo,y,ldy)
 
 end subroutine dspmvm_NT_strided_4
 
 
-subroutine dspmvm_NT_strided_8(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, x, ldx, y, ldy)
-  integer, intent(in) :: nrows, ncols, nnz, ldy, ldx
+subroutine dspmvm_NT_strided_8(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, ldx, halo, y, ldy)
+  implicit none
+  integer, intent(in) :: nlocal, nhalo, ncols, ldy, ldx
+  integer(kind=8), intent(in) :: nnz
   real(kind=8), intent(in) :: alpha
-  integer, intent(in) :: row_ptr(nrows+1)
+  real(kind=8), intent(in) :: shifts(8)
+  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(ldx,ncols)
-  real(kind=8), intent(inout) :: y(ldy,nrows)
+  real(kind=8), intent(in) :: x(ldx,ncols), halo(8,nhalo)
+  real(kind=8), intent(inout) :: y(ldy,nlocal)
 
   interface
-    subroutine dspmvm_nt_strided_8_c(nrows, alpha, row_ptr, col_idx, val, x, ldx, y, ldy) bind(C)
+    subroutine dspmvm_nt_strided_8_c(nlocal, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, ldx, halo, y, ldy) bind(C)
       use, intrinsic :: iso_c_binding
-      integer(C_INT), value :: nrows, ldy, ldx
+      integer(C_INT), value :: nlocal, ldy, ldx
       real(C_DOUBLE), value :: alpha
-      integer(C_INT), intent(in) :: row_ptr(*), col_idx(*)
-      real(C_DOUBLE), intent(in) :: val(*), x(*)
+      real(C_DOUBLE), intent(in) :: shifts(*)
+      integer(C_LONG), intent(in) :: row_ptr(*), halo_ptr(*)
+      integer(C_INT), intent(in) :: col_idx(*)
+      real(C_DOUBLE), intent(in) :: val(*), x(*), halo(*)
       real(C_DOUBLE), intent(inout) :: y(*)
     end subroutine dspmvm_nt_strided_8_c
   end interface
 
-  call dspmvm_nt_strided_8_c(nrows,alpha,row_ptr,col_idx,val,x,ldx,y,ldy)
+  call dspmvm_nt_strided_8_c(nlocal,alpha,row_ptr,halo_ptr,col_idx,val,shifts,x,ldx,halo,y,ldy)
 
 end subroutine dspmvm_NT_strided_8
 
 
 
-subroutine dspmvm_1(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, x, beta, y)
-  integer, intent(in) :: nrows, ncols, nnz
+subroutine dspmvm_1(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, halo, beta, y)
+  implicit none
+  integer, intent(in) :: nlocal, nhalo, ncols
+  integer(kind=8), intent(in) :: nnz
   real(kind=8), intent(in) :: alpha, beta
-  integer, intent(in) :: row_ptr(nrows+1)
+  real(kind=8), intent(in) :: shifts(1)
+  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(1,ncols)
-  real(kind=8), intent(inout) :: y(1,nrows)
+  real(kind=8), intent(in) :: x(1,ncols), halo(1,nhalo)
+  real(kind=8), intent(inout) :: y(1,nlocal)
   real(kind=8) :: tmp(1)
-  integer :: i, j
+  integer :: i
+  integer(kind=8) :: j
 
-!$omp parallel do private(tmp)
-  do i = 1, nrows
-    tmp(:) = 0.
-    do j = row_ptr(i), row_ptr(i+1)-1, 1
+!$omp parallel do private(tmp) schedule(static)
+  do i = 1, nlocal
+    tmp(:) = shifts*x(:,i)
+    do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp(:) = tmp(:) + val(j)*x(:,col_idx(j))
+    end do
+    do j = halo_ptr(i), row_ptr(i+1)-1, 1
+      tmp(:) = tmp(:) + val(j)*halo(:,col_idx(j))
     end do
     y(:,i) = alpha*tmp(:) + beta*y(:,i)
   end do
 end subroutine dspmvm_1
 
-subroutine dspmvm_2(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, x, beta, y)
-  integer, intent(in) :: nrows, ncols, nnz
+subroutine dspmvm_2(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, halo, beta, y)
+  implicit none
+  integer, intent(in) :: nlocal, nhalo, ncols
+  integer(kind=8), intent(in) :: nnz
   real(kind=8), intent(in) :: alpha, beta
-  integer, intent(in) :: row_ptr(nrows+1)
+  real(kind=8), intent(in) :: shifts(2)
+  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(2,ncols)
-  real(kind=8), intent(inout) :: y(2,nrows)
+  real(kind=8), intent(in) :: x(2,ncols), halo(2,nhalo)
+  real(kind=8), intent(inout) :: y(2,nlocal)
   real(kind=8) :: tmp(2)
-  integer :: i, j
+  integer :: i
+  integer(kind=8) :: j
 
-!$omp parallel do private(tmp)
-  do i = 1, nrows
-    tmp(:) = 0.
-    do j = row_ptr(i), row_ptr(i+1)-1, 1
+!$omp parallel do private(tmp) schedule(static)
+  do i = 1, nlocal
+    tmp(:) = shifts*x(:,i)
+    do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp(:) = tmp(:) + val(j)*x(:,col_idx(j))
+    end do
+    do j = halo_ptr(i), row_ptr(i+1)-1, 1
+      tmp(:) = tmp(:) + val(j)*halo(:,col_idx(j))
     end do
     y(:,i) = alpha*tmp(:) + beta*y(:,i)
   end do
 end subroutine dspmvm_2
 
-subroutine dspmvm_4(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, x, beta, y)
-  integer, intent(in) :: nrows, ncols, nnz
+subroutine dspmvm_4(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, halo, beta, y)
+  implicit none
+  integer, intent(in) :: nlocal, nhalo, ncols
+  integer(kind=8), intent(in) :: nnz
   real(kind=8), intent(in) :: alpha, beta
-  integer, intent(in) :: row_ptr(nrows+1)
+  real(kind=8), intent(in) :: shifts(4)
+  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(4,ncols)
-  real(kind=8), intent(inout) :: y(4,nrows)
+  real(kind=8), intent(in) :: x(4,ncols), halo(4,nhalo)
+  real(kind=8), intent(inout) :: y(4,nlocal)
   real(kind=8) :: tmp(4)
-  integer :: i, j
+  integer :: i
+  integer(kind=8) :: j
 
-!$omp parallel do private(tmp)
-  do i = 1, nrows
-    tmp(:) = 0.
-    do j = row_ptr(i), row_ptr(i+1)-1, 1
+!$omp parallel do private(tmp) schedule(static)
+  do i = 1, nlocal
+    tmp(:) = shifts*x(:,i)
+    do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp(:) = tmp(:) + val(j)*x(:,col_idx(j))
+    end do
+    do j = halo_ptr(i), row_ptr(i+1)-1, 1
+      tmp(:) = tmp(:) + val(j)*halo(:,col_idx(j))
     end do
     y(:,i) = alpha*tmp(:) + beta*y(:,i)
   end do
 end subroutine dspmvm_4
 
-subroutine dspmvm_8(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, x, beta, y)
-  integer, intent(in) :: nrows, ncols, nnz
+subroutine dspmvm_8(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, halo, beta, y)
+  implicit none
+  integer, intent(in) :: nlocal, nhalo, ncols
+  integer(kind=8), intent(in) :: nnz
   real(kind=8), intent(in) :: alpha, beta
-  integer, intent(in) :: row_ptr(nrows+1)
+  real(kind=8), intent(in) :: shifts(8)
+  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(8,ncols)
-  real(kind=8), intent(inout) :: y(8,nrows)
+  real(kind=8), intent(in) :: x(8,ncols), halo(8,nhalo)
+  real(kind=8), intent(inout) :: y(8,nlocal)
   real(kind=8) :: tmp(8)
-  integer :: i, j
+  integer :: i
+  integer(kind=8) :: j
 
-!$omp parallel do private(tmp)
-  do i = 1, nrows
-    tmp(:) = 0.
-    do j = row_ptr(i), row_ptr(i+1)-1, 1
+!$omp parallel do private(tmp) schedule(static)
+  do i = 1, nlocal
+    tmp(:) = shifts*x(:,i)
+    do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp(:) = tmp(:) + val(j)*x(:,col_idx(j))
+    end do
+    do j = halo_ptr(i), row_ptr(i+1)-1, 1
+      tmp(:) = tmp(:) + val(j)*halo(:,col_idx(j))
     end do
     y(:,i) = alpha*tmp(:) + beta*y(:,i)
   end do
@@ -261,107 +324,142 @@ end subroutine dspmvm_8
 
 
 
-subroutine dspmvm_strided_1(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, x, ldx, beta, y, ldy)
-  integer, intent(in) :: nrows, ncols, nnz, ldx, ldy
+subroutine dspmvm_strided_1(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, ldx, halo, beta, y, ldy)
+  implicit none
+  integer, intent(in) :: nlocal, nhalo, ncols, ldx, ldy
+  integer(kind=8), intent(in) :: nnz
   real(kind=8), intent(in) :: alpha, beta
-  integer, intent(in) :: row_ptr(nrows+1)
+  real(kind=8), intent(in) :: shifts(1)
+  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(ldx,*)
+  real(kind=8), intent(in) :: x(ldx,*), halo(1,nhalo)
   real(kind=8), intent(inout) :: y(ldy,*)
   real(kind=8) :: tmp(1)
-  integer :: i, j
+  integer :: i
+  integer(kind=8) :: j
 
-!$omp parallel do private(tmp)
-  do i = 1, nrows
-    tmp(:) = 0.
-    do j = row_ptr(i), row_ptr(i+1)-1, 1
+!$omp parallel do private(tmp) schedule(static)
+  do i = 1, nlocal
+    tmp(:) = shifts*x(1:1,i)
+    do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp(:) = tmp(:) + val(j)*x(1:1,col_idx(j))
+    end do
+    do j = halo_ptr(i), row_ptr(i+1)-1, 1
+      tmp(:) = tmp(:) + val(j)*halo(:,col_idx(j))
     end do
     y(1:1,i) = alpha*tmp(:) + beta*y(1:1,i)
   end do
 end subroutine dspmvm_strided_1
 
-subroutine dspmvm_strided_2(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, x, ldx, beta, y, ldy)
-  integer, intent(in) :: nrows, ncols, nnz, ldx, ldy
+subroutine dspmvm_strided_2(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, ldx, halo, beta, y, ldy)
+  implicit none
+  integer, intent(in) :: nlocal, nhalo, ncols, ldx, ldy
+  integer(kind=8), intent(in) :: nnz
   real(kind=8), intent(in) :: alpha, beta
-  integer, intent(in) :: row_ptr(nrows+1)
+  real(kind=8), intent(in) :: shifts(2)
+  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(ldx,*)
+  real(kind=8), intent(in) :: x(ldx,*), halo(2,nhalo)
   real(kind=8), intent(inout) :: y(ldy,*)
   real(kind=8) :: tmp(2)
-  integer :: i, j
+  integer :: i
+  integer(kind=8) :: j
 
-!$omp parallel do private(tmp)
-  do i = 1, nrows
-    tmp(:) = 0.
-    do j = row_ptr(i), row_ptr(i+1)-1, 1
+!$omp parallel do private(tmp) schedule(static)
+  do i = 1, nlocal
+    tmp(:) = shifts*x(1:2,i)
+    do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp(:) = tmp(:) + val(j)*x(1:2,col_idx(j))
+    end do
+    do j = halo_ptr(i), row_ptr(i+1)-1, 1
+      tmp(:) = tmp(:) + val(j)*halo(:,col_idx(j))
     end do
     y(1:2,i) = alpha*tmp(:) + beta*y(1:2,i)
   end do
 end subroutine dspmvm_strided_2
 
-subroutine dspmvm_strided_4(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, x, ldx, beta, y, ldy)
-  integer, intent(in) :: nrows, ncols, nnz, ldx, ldy
+subroutine dspmvm_strided_4(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, ldx, halo, beta, y, ldy)
+  implicit none
+  integer, intent(in) :: nlocal, nhalo, ncols, ldx, ldy
+  integer(kind=8), intent(in) :: nnz
   real(kind=8), intent(in) :: alpha, beta
-  integer, intent(in) :: row_ptr(nrows+1)
+  real(kind=8), intent(in) :: shifts(4)
+  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(ldx,*)
+  real(kind=8), intent(in) :: x(ldx,*), halo(4,nhalo)
   real(kind=8), intent(inout) :: y(ldy,*)
   real(kind=8) :: tmp(4)
-  integer :: i, j
+  integer :: i
+  integer(kind=8) :: j
 
-!$omp parallel do private(tmp)
-  do i = 1, nrows
-    tmp(:) = 0.
-    do j = row_ptr(i), row_ptr(i+1)-1, 1
+!$omp parallel do private(tmp) schedule(static)
+  do i = 1, nlocal
+    tmp(:) = shifts*x(1:4,i)
+    do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp(:) = tmp(:) + val(j)*x(1:4,col_idx(j))
+    end do
+    do j = halo_ptr(i), row_ptr(i+1)-1, 1
+      tmp(:) = tmp(:) + val(j)*halo(:,col_idx(j))
     end do
     y(1:4,i) = alpha*tmp(:) + beta*y(1:4,i)
   end do
 end subroutine dspmvm_strided_4
 
-subroutine dspmvm_strided_8(nrows, ncols, nnz, alpha, row_ptr, col_idx, val, x, ldx, beta, y, ldy)
-  integer, intent(in) :: nrows, ncols, nnz, ldx, ldy
+subroutine dspmvm_strided_8(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, ldx, halo, beta, y, ldy)
+  implicit none
+  integer, intent(in) :: nlocal, nhalo, ncols, ldx, ldy
+  integer(kind=8), intent(in) :: nnz
   real(kind=8), intent(in) :: alpha, beta
-  integer, intent(in) :: row_ptr(nrows+1)
+  real(kind=8), intent(in) :: shifts(8)
+  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(ldx,*)
+  real(kind=8), intent(in) :: x(ldx,*), halo(8,nhalo)
   real(kind=8), intent(inout) :: y(ldy,*)
   real(kind=8) :: tmp(8)
-  integer :: i, j
+  integer :: i
+  integer(kind=8) :: j
 
-!$omp parallel do private(tmp)
-  do i = 1, nrows
-    tmp(:) = 0.
-    do j = row_ptr(i), row_ptr(i+1)-1, 1
+!$omp parallel do private(tmp) schedule(static)
+  do i = 1, nlocal
+    tmp(:) = shifts*x(1:8,i)
+    do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp(:) = tmp(:) + val(j)*x(1:8,col_idx(j))
+    end do
+    do j = halo_ptr(i), row_ptr(i+1)-1, 1
+      tmp(:) = tmp(:) + val(j)*halo(:,col_idx(j))
     end do
     y(1:8,i) = alpha*tmp(:) + beta*y(1:8,i)
   end do
 end subroutine dspmvm_strided_8
 
 
-subroutine dspmvm_generic(nrows, nvec, ncols, nnz, alpha, row_ptr, col_idx, val, x, ldx, beta, y, ldy)
-  integer, intent(in) :: nrows, nvec, ncols, nnz, ldx, ldy
+subroutine dspmvm_generic(nvec, nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, ldx, halo, beta, y, ldy)
+  implicit none
+  integer, intent(in) :: nvec, nlocal, nhalo, ncols, ldx, ldy
+  integer(kind=8), intent(in) :: nnz
   real(kind=8), intent(in) :: alpha, beta
-  integer, intent(in) :: row_ptr(nrows+1)
+  real(kind=8), intent(in) :: shifts(nvec)
+  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(ldx,*)
+  real(kind=8), intent(in) :: x(ldx,*), halo(nvec,nhalo)
   real(kind=8), intent(inout) :: y(ldy,*)
   real(kind=8) :: tmp(nvec)
-  integer :: i, j
+  integer :: i
+  integer(kind=8) :: j
 
-!$omp parallel do private(tmp)
-  do i = 1, nrows
-    tmp(:) = 0.
-    do j = row_ptr(i), row_ptr(i+1)-1, 1
+!$omp parallel do private(tmp) schedule(static)
+  do i = 1, nlocal
+    tmp(:) = shifts*x(1:nvec,i)
+    do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp(:) = tmp(:) + val(j)*x(1:nvec,col_idx(j))
+    end do
+    do j = halo_ptr(i), row_ptr(i+1)-1, 1
+      tmp(:) = tmp(:) + val(j)*halo(:,col_idx(j))
     end do
     y(1:nvec,i) = alpha*tmp(:) + beta*y(1:nvec,i)
   end do

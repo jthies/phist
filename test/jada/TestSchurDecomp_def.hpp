@@ -48,11 +48,8 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
         ST *diag = new ST[nrows_];
         for (int i=0;i<nrows_;i++)
         {
-          diag[i]=st::rand();
+          diag[i]=st::prand();
         }
-#ifdef PHIST_HAVE_MPI
-        ASSERT_EQ(0,MPI_Bcast(diag,nrows_,st::mpi_type(), 0, mpi_comm_));
-#endif
         if (nrows_==10)
         {
           diag[6]=diag[1];
@@ -134,7 +131,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
           std::vector<_MT_> resNormOrig(nsort);
           std::vector<int> permutation(nsort);
           for(int i = 0; i < nsort; i++)
-            resNormOrig[i] = resNorm[i] = exp(mt::rand());
+            resNormOrig[i] = resNorm[i] = exp(mt::prand());
           SUBR(ReorderPartialSchurDecomp)(mat1_vp_,m_lda_,mat2_vp_,m_lda_,n_,nsort,which,tol,
               &resNorm[0],ev_,&permutation[0],&ierr_);
           ASSERT_EQ(0,ierr_);
@@ -150,10 +147,10 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
           CheckSchurDecomp(A_clone, which, nsort, nsort, tol);
 
           // check if the permutation of resNorm is correct
-          PHIST_OUT(PHIST_INFO,"resNorm array:\nold\t\tnew\t\tperm\n");
+          PHIST_OUT(PHIST_DEBUG,"resNorm array:\nold\t\tnew\t\tperm\n");
           for(int i = 0; i < nsort; i++)
           {
-            PHIST_OUT(PHIST_INFO,"%8.4e\t%8.4e\t%d\n",resNormOrig[i],resNorm[i],permutation[i]);
+            PHIST_OUT(PHIST_DEBUG,"%8.4e\t%8.4e\t%d\n",resNormOrig[i],resNorm[i],permutation[i]);
             ASSERT_TRUE( resNorm.at(i) == resNormOrig.at(permutation[i]) );
           }
 
@@ -195,14 +192,14 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
 #endif
       ASSERT_NEAR(mt::one(),ArrayEqual(mat4_vp_,nrows_,ncols_,m_lda_,1,st::zero()),1000*mt::eps());
 
-      PHIST_OUT(PHIST_INFO,"eigenvalue array:\n");
+      PHIST_OUT(PHIST_DEBUG,"eigenvalue array:\n");
       for (int i=0;i<n_;i++)
       {
         // test the traits class on the way:
         ASSERT_REAL_EQ(ct::abs(ev_[i]),std::abs(ev_[i]));
         ASSERT_REAL_EQ(ct::real(ev_[i]),std::real(ev_[i]));
         ASSERT_REAL_EQ(ct::imag(ev_[i]),std::imag(ev_[i]));
-        PHIST_OUT(PHIST_INFO,"%8.4f%+8.4fi\tabs=%8.4f\n",ct::real(ev_[i]),ct::imag(ev_[i]),ct::abs(ev_[i]));
+        PHIST_OUT(PHIST_DEBUG,"%8.4f%+8.4fi\tabs=%8.4f\n",ct::real(ev_[i]),ct::imag(ev_[i]),ct::abs(ev_[i]));
       }
 
 
@@ -422,7 +419,11 @@ TEST_F(CLASSNAME, diag_SR_tol)
 }
 
 
+#ifdef IS_COMPLEX
 TEST_F(CLASSNAME, rand_LM_tol_reorder)
+#else
+TEST_F(CLASSNAME, DISABLED_rand_LM_tol_reorder)
+#endif
 {
   if( typeImplemented_ )
   {
@@ -431,7 +432,11 @@ TEST_F(CLASSNAME, rand_LM_tol_reorder)
   }
 }
 
+#ifdef IS_COMPLEX
 TEST_F(CLASSNAME, rand_SM_tol_reorder)
+#else
+TEST_F(CLASSNAME, DISABLED_rand_SM_tol_reorder)
+#endif
 {
   if( typeImplemented_ )
   {
@@ -440,7 +445,11 @@ TEST_F(CLASSNAME, rand_SM_tol_reorder)
   }
 }
 
+#ifdef IS_COMPLEX
 TEST_F(CLASSNAME, rand_LR_tol_reorder)
+#else
+TEST_F(CLASSNAME, DISABLED_rand_LR_tol_reorder)
+#endif
 {
   if( typeImplemented_ )
   {
@@ -449,7 +458,11 @@ TEST_F(CLASSNAME, rand_LR_tol_reorder)
   }
 }
 
+#ifdef IS_COMPLEX
 TEST_F(CLASSNAME, rand_SR_tol_reorder)
+#else
+TEST_F(CLASSNAME, DISABLED_rand_SR_tol_reorder)
+#endif
 {
   if( typeImplemented_ )
   {

@@ -88,27 +88,51 @@ public:
     }
 
   TEST_F(CLASSNAME, dot_mvec)
-    {
+  {
     if (typeImplemented_)
-      {
+    {
       for (int j=0;j<nvec_;j++)
         for (int i=0;i<nloc_*stride_;i+=stride_)
-          {
+        {
 #ifdef PHIST_KERNEL_LIB_FORTRAN
-        vec2_vp_[j+i*lda_]=mt::one()/st::conj(vec1_vp_[j+i*lda_]);
+          vec2_vp_[j+i*lda_]=mt::one()/st::conj(vec1_vp_[j+i*lda_]);
 #else
-        vec2_vp_[j*lda_+i]=mt::one()/st::conj(vec1_vp_[j*lda_+i]);
+          vec2_vp_[j*lda_+i]=mt::one()/st::conj(vec1_vp_[j*lda_+i]);
 #endif
         }
-      _ST_* dots = new ST[nvec_];
-      SUBR(mvec_dot_mvec)(vec1_,vec2_,dots,&ierr_);
+      _ST_ dots_ref[_NV_];
+      _ST_ dots[_NV_];
+      SUBR(mvec_dot_mvec)(vec1_,vec2_,dots_ref,&ierr_);
       ASSERT_EQ(0,ierr_);
       _ST_ val = st::one() * (ST)nglob_;
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(dots,nvec_,1,nvec_,1,val));
-      delete [] dots;
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(dots_ref,nvec_,1,nvec_,1,val));
+
+      // test two random vectors
+      SUBR(mvec_random)(vec2_, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_dot_mvec)(vec1_,vec2_,dots_ref,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      for (int j=0;j<nvec_;j++)
+      {
+        dots[j] = st::zero();
+        for (int i=0;i<nloc_*stride_;i+=stride_)
+        {
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+          dots[j] += st::conj(vec1_vp_[j+i*lda_])*vec2_vp_[j+i*lda_];
+#else
+          dots[j] += st::conj(vec1_vp_[i+j*lda_])*vec2_vp_[i+j*lda_];
+#endif
+        }
+#ifdef PHIST_HAVE_MPI
+        MPI_Allreduce(MPI_IN_PLACE, &dots[j], 1, st::mpi_type(), MPI_SUM, MPI_COMM_WORLD);
+#endif
+        EXPECT_NEAR(mt::zero(), st::real(dots[j]-dots_ref[j]), 100*mt::eps());
+        EXPECT_NEAR(mt::zero(), st::imag(dots[j]-dots_ref[j]), 100*mt::eps());
       }
-    
     }
+
+  }
 
   TEST_F(CLASSNAME, random)
     {
@@ -210,14 +234,16 @@ public:
     if (typeImplemented_)
       {
       ST alpha = st::zero();
-      ST beta  = st::rand();
+      ST beta  = st::prand();
       PHIST_OUT(9,"axpy, alpha=%f+%f i, beta=%f+%f i",st::real(alpha),
         st::imag(alpha),st::real(beta),st::imag(beta));
-      PrintVector(std::cerr,"before scale",
-        vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      PrintVector(std::cerr,"before scale",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+#endif
       SUBR(mvec_add_mvec)(alpha,vec1_,beta,vec2_,&ierr_);
-      PrintVector(std::cerr,"after scale",
-        vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      PrintVector(std::cerr,"after scale",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+#endif
       ASSERT_EQ(0,ierr_);
             
 #ifdef PHIST_KERNEL_LIB_FORTRAN
@@ -234,10 +260,10 @@ public:
   {
     if( typeImplemented_ )
     {
-      ST beta = st::rand();
+      ST beta = st::prand();
       ST alpha[_NV_];
       for(int i = 0; i < nvec_; i++)
-        alpha[i] = st::rand();
+        alpha[i] = st::prand();
 
       SUBR(mvec_vadd_mvec)(alpha,vec1_,beta,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -335,7 +361,7 @@ public:
     if (typeImplemented_)
     {
       // first set some data of the whole array
-      _ST_ outer_val = st::rand();
+      _ST_ outer_val = st::prand();
       SUBR(mvec_put_value)(vec1_,outer_val,&ierr_);
       ASSERT_EQ(0,ierr_);
 
@@ -347,7 +373,7 @@ public:
       ASSERT_EQ(0,ierr_);
 
       // set the data in the view to some other value
-      _ST_ view_val = st::rand();
+      _ST_ view_val = st::prand();
       SUBR(mvec_put_value)(view,view_val,&ierr_);
       ASSERT_EQ(0,ierr_);
 
@@ -362,7 +388,7 @@ public:
       ASSERT_EQ(0,ierr_);
 
       // set data in the inner view to yet another value
-      _ST_ inner_val = st::rand();
+      _ST_ inner_val = st::prand();
       SUBR(mvec_put_value)(view2, inner_val, &ierr_);
       ASSERT_EQ(0,ierr_);
 
@@ -399,6 +425,7 @@ public:
       }
     }
   }
+
 
   // copy in and out columns
   TEST_F(CLASSNAME, get_set_block)
@@ -460,7 +487,7 @@ public:
 
       for (int j=jmin;j<=jmax;j++)
         {
-        ASSERT_REAL_EQ(norms_V1[j],norms_V1copy[j-jmin]);
+        ASSERT_NEAR(norms_V1[j],norms_V1copy[j-jmin], 100*mt::eps());
         }
       }
     }
@@ -469,7 +496,7 @@ public:
   {
     if( typeImplemented_ )
     {
-      _ST_ scale = st::rand();
+      _ST_ scale = st::prand();
 
       SUBR(mvec_scale)(vec2_,scale,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -482,7 +509,7 @@ public:
       SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
 
-      scale = st::rand();
+      scale = st::prand();
       SUBR(mvec_scale)(vec1_,scale,&ierr_);
       ASSERT_EQ(0,ierr_);
       // apply scale to vec2_ by hand
@@ -508,7 +535,7 @@ public:
     {
       _ST_ scale[_NV_];
       for(int i = 0; i < _NV_; i++)
-        scale[i] = st::rand();
+        scale[i] = st::prand();
 
       SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
