@@ -18,7 +18,10 @@
 #include "ghost/util.h"
 extern "C" {
 #include "matfuncs.h"
+void init_mtraits(ghost_mtraits_t* mtraits);
 }
+
+GHOST_REGISTER_DT_D(my_datatype)
 
 
 // double precision type
@@ -26,7 +29,6 @@ extern "C" {
 #include "phist_ScalarTraits.hpp"
 #include "phist_std_typedefs.hpp"
 
-GHOST_REGISTER_DT_D(my_datatype)
 
 
 // small c++ string helper function
@@ -176,7 +178,8 @@ int main(int argc, char** argv)
   ghost_mat_t * mat;
   ghost_context_t * ctx;
   {
-    ghost_mtraits_t mtraits = GHOST_MTRAITS_INIT(.format = GHOST_SPM_FORMAT_CRS, .flags = GHOST_SPM_DEFAULT, .datatype = my_datatype);
+    ghost_mtraits_t mtraits;
+    init_mtraits(&mtraits);
 
     ghost_midx_t DIM;
     //TODO - get from command line

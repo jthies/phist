@@ -8,8 +8,6 @@
 #include "phist_jadaOpts.h"
 // single-vector JDQR solver
 #include "phist_jdqr.h"
-//TROET
-#include "phist_bgmres.h"
 // for phist iterative solvers we need to provide
 // an operator representation of the matrix
 #include "phist_operator.h"

@@ -8,13 +8,13 @@ extern "C" {
 #endif
 
 #include "phist_gen_d.h"
-#include "phist_bgmres_decl.h"
+#include "phist_belos_decl.h"
 #include "phist_gen_s.h"
-#include "phist_bgmres_decl.h"
+#include "phist_belos_decl.h"
 #include "phist_gen_c.h"
-#include "phist_bgmres_decl.h"
+#include "phist_belos_decl.h"
 #include "phist_gen_z.h"
-#include "phist_bgmres_decl.h"
+#include "phist_belos_decl.h"
 
 #ifdef __cplusplus
 }

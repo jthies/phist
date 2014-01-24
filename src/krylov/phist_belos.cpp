@@ -2,7 +2,7 @@
 #include <cstring>
 #include <cmath>
 
-#include "phist_bgmres.h"
+#include "phist_belos.h"
 
 #include "phist_ScalarTraits.hpp"
 #include "phist_rcp_helpers.hpp"
@@ -36,16 +36,16 @@
 #endif
 
 #include "phist_gen_d.h"
-#include "phist_bgmres_def.hpp"
+#include "phist_belos_def.hpp"
 
 #ifdef PHIST_KERNEL_LIB_EPETRA
 #define NO_BGMRES_IMPLEMENTATION
 #endif
 
 #include "phist_gen_s.h"
-#include "phist_bgmres_def.hpp"
+#include "phist_belos_def.hpp"
 #include "phist_gen_c.h"
-#include "phist_bgmres_def.hpp"
+#include "phist_belos_def.hpp"
 #include "phist_gen_z.h"
-#include "phist_bgmres_def.hpp"
+#include "phist_belos_def.hpp"
 
