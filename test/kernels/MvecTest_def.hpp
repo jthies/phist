@@ -426,55 +426,6 @@ public:
     }
   }
 
-  // view some columns as a new mvec, compare ||V|| calculations
-  // and check that modifying the view vector modifies the original ones
-#ifndef PHIST_KERNEL_LIB_FORTRAN
-  TEST_F(CLASSNAME, view_scattered)
-#else
-  TEST_F(CLASSNAME, DISABLED_view_scattered)
-#endif
-  {
-    if( typeImplemented_ )
-    {
-      const int nc=4;
-      int idx[nc]={3,0,2,5};
-      for (int i=0;i<nc;i++)
-      {
-        idx[i]=std::min(idx[i],nvec_-1);
-      }
-      MT norms0[nvec_];
-      MT norms1[nc];
-      SUBR(mvec_norm2)(vec1_,norms0,&ierr_);
-      ASSERT_EQ(0,ierr_);
-
-      TYPE(mvec_ptr) V=NULL;
-      SUBR(mvec_view_scattered)(vec1_,&V,idx,nc,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_norm2)(V,norms1,&ierr_);
-      ASSERT_EQ(0,ierr_);
-
-      for (int i=0;i<nc;i++)
-      {
-        ASSERT_REAL_EQ(norms0[idx[i]],norms1[i]);
-        ASSERT_TRUE(norms0[idx[i]]!=mt::zero());
-      }
-        
-      // now randomize the view and check again
-      SUBR(mvec_random)(V,&ierr_);
-      ASSERT_EQ(0,ierr_);
-
-      SUBR(mvec_norm2)(vec1_,norms0,&ierr_);
-      ASSERT_EQ(0,ierr_);
-
-      SUBR(mvec_norm2)(V,norms1,&ierr_);
-      ASSERT_EQ(0,ierr_);
-
-      for (int i=0;i<nc;i++)
-      {
-        ASSERT_REAL_EQ(norms0[idx[i]],norms1[i]);
-      }
-    }
-  }
 
   // copy in and out columns
   TEST_F(CLASSNAME, get_set_block)

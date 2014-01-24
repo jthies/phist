@@ -199,13 +199,13 @@ void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) vM, int* ncols, int* ierr)
 void SUBR(mvec_extract_view)(Dmvec_ptr_t vV, double** val, lidx_t* lda, int* ierr)
   {
   CAST_PTR_FROM_VOID(Epetra_MultiVector,V, vV, *ierr);
-  PHIST_CHK_IRET((*V)(0)->ExtractView(val,lda),*ierr);
+  PHIST_CHK_IERR(*ierr=V->ExtractView(val,lda),*ierr);
   }
 
 void SUBR(sdMat_extract_view)(DsdMat_ptr_t vM, double** val, lidx_t* lda, int* ierr)
   {
   CAST_PTR_FROM_VOID(Epetra_MultiVector,M, vM, *ierr);
-  PHIST_CHK_IRET(M->ExtractView(val,lda),*ierr);
+  PHIST_CHK_IERR(*ierr=M->ExtractView(val,lda),*ierr);
   }
 
 //! get a new vector that is a view of some columns of the original one,
@@ -224,21 +224,11 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   if (*vVblock!=NULL)
     {
     CAST_PTR_FROM_VOID(Epetra_MultiVector,tmp,*vVblock,*ierr);
-    delete [] tmp;
+    delete tmp;
     }
   *vVblock = (TYPE(mvec_ptr))Vblock;
   }
 
-//! get a new vector that is a view of a number of columns of an existing one, treating them
-//! The columns do not need to be contiguous in memory or have a constant stride between
-//! them, the stride may even be negative. Not all functions have to support this kind of
-//! data, in particular mvecT_times_mvec) will probably not. They obviously have to report
-//! the error appropriately.
-void SUBR(mvec_view_scattered)(TYPE(mvec_ptr) V, TYPE(mvec_ptr)* Vscat,
-                             int* cols, int ncols, int* ierr)
-  {
-  *ierr=-99;
-  };
 //! get a new vector that is a copy of some columns of the original one,  
 //! Vblock = V(:,jmin:jmax). The object Vblock must be created beforehand 
 //! and the corresponding columns of V are copied into the value array    
@@ -280,9 +270,14 @@ void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
   if (*vMblock!=NULL)
     {
     CAST_PTR_FROM_VOID(Epetra_MultiVector,tmp,*vMblock,*ierr);
-    delete [] tmp;
+    delete tmp;
     }
-  *ierr=-99; // not yet implemented for Epetra, cf. tpetra for an example how to do it
+  double* val;
+  lidx_t lda;
+  PHIST_CHK_IERR(*ierr=M->ExtractView(&val,&lda),*ierr);
+  PHIST_DEB("in view (%d:%d,%d:%d), lda=%d\n",imin,imax,jmin,jmax,lda);
+  Epetra_LocalMap localMap(imax-imin+1,M->Map().IndexBase(),M->Map().Comm());
+  Mblock = new Epetra_MultiVector(View, localMap, val+imin+jmin*lda, lda, jmax-jmin+1);
   *vMblock = (TYPE(sdMat_ptr))Mblock;
   }
 
@@ -290,20 +285,32 @@ void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
 //! Mblock = M(imin:imax,jmin:jmax). The object Mblock must be created beforehand 
 //! and the corresponding columns of M are copied into the value array    
 //! of Mblock. M is not modified.
-void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) M, 
-                             TYPE(sdMat_ptr) Mblock,
+void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM, 
+                             TYPE(sdMat_ptr) vMblock,
                              int imin, int imax, int jmin, int jmax, int* ierr)
   {
-  *ierr=-99;
+  *ierr=0;
+  TYPE(sdMat_ptr) vMtmp=NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)((TYPE(sdMat_ptr))vM,&vMtmp,imin,imax,jmin,jmax,ierr),*ierr);
+  CAST_PTR_FROM_VOID(Epetra_MultiVector,Mblock,vMblock,*ierr);
+  CAST_PTR_FROM_VOID(Epetra_MultiVector,Mtmp,vMtmp,*ierr);
+  PHIST_CHK_IERR(*Mblock=*Mtmp,*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(vMtmp,ierr),*ierr);
   }
 
 //! given a serial dense matrix Mblock, set M(imin:imax,jmin:jmax)=Mblock by 
 //! copying the corresponding elements. Mblock is not modified.
-void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M, 
-                             TYPE(const_sdMat_ptr) Mblock,
+void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM, 
+                             TYPE(const_sdMat_ptr) vMblock,
                              int imin, int imax, int jmin, int jmax, int* ierr)
   {
-  *ierr=-99;
+  *ierr=0;
+  TYPE(sdMat_ptr) vMtmp=NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)(vM,&vMtmp,imin,imax,jmin,jmax,ierr),*ierr);
+  CAST_PTR_FROM_VOID(Epetra_MultiVector,Mblock,vMblock,*ierr);
+  CAST_PTR_FROM_VOID(Epetra_MultiVector,Mtmp,vMtmp,*ierr);
+  PHIST_CHK_IERR(*Mtmp=*Mblock,*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(vMtmp,ierr),*ierr);
   }
 
 //! \name destructors
@@ -322,6 +329,7 @@ void SUBR(crsMat_delete)(TYPE(crsMat_ptr) vA, int* ierr)
 void SUBR(mvec_delete)(TYPE(mvec_ptr) vV, int* ierr)
   {
   *ierr=0;
+  if (vV==NULL) return;
   CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*ierr);
   delete V;
   }
@@ -344,7 +352,7 @@ void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, double value, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*ierr);
-  PHIST_CHK_IRET(V->PutScalar(value),*ierr);
+  PHIST_CHK_IERR(*ierr=V->PutScalar(value),*ierr);
   }
 
 //! put scalar value into all elements of a multi-vector
@@ -352,7 +360,7 @@ void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vV, double value, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*ierr);
-  PHIST_CHK_IRET(V->PutScalar(value),*ierr);
+  PHIST_CHK_IERR(*ierr=V->PutScalar(value),*ierr);
   }
 
 //! put random numbers into all elements of a multi-vector
@@ -360,17 +368,17 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*ierr);
-  PHIST_CHK_IRET(V->Random(),*ierr);
+  PHIST_CHK_IERR(*ierr=V->Random(),*ierr);
   }
 
-void SUBR(mvec_print)(TYPE(connst_mvec_ptr) vV, int* ierr)
+void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* ierr)
   {
   *ierr = 0;
   CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*ierr);
   std::cout << *V;
   }
 
-void SUBR(sdMat_print)(TYPE(connst_sdMat_ptr) vM, int* ierr)
+void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* ierr)
   {
   CAST_PTR_FROM_VOID(const Epetra_MultiVector,M,vM,*ierr);
   std::cout << *M;
@@ -381,7 +389,7 @@ void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(Epetra_MultiVector,M,vM,*ierr);
-  PHIST_CHK_IRET(M->Random(),*ierr);
+  PHIST_CHK_IERR(*ierr=M->Random(),*ierr);
   }
 
 //! \name Numerical functions
@@ -393,7 +401,7 @@ void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*ierr);  
-  PHIST_CHK_IRET(V->Norm2(vnrm),*ierr);
+  PHIST_CHK_IERR(*ierr=V->Norm2(vnrm),*ierr);
   return;
   }
 
@@ -404,10 +412,10 @@ void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*ierr);  
-  PHIST_CHK_IRET(V->Norm2(vnrm),*ierr);
+  PHIST_CHK_IERR(*ierr=V->Norm2(vnrm),*ierr);
   for (int i=0;i<V->NumVectors();i++)
     {
-    PHIST_CHK_IRET((*V)(i)->Scale(1.0/(_ST_)vnrm[i]),*ierr);
+    PHIST_CHK_IERR(*ierr=(*V)(i)->Scale(1.0/(_ST_)vnrm[i]),*ierr);
     }
   return;
   }
@@ -418,7 +426,7 @@ void SUBR(mvec_scale)(TYPE(mvec_ptr) vV,
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*ierr);  
-  PHIST_CHK_IRET(V->Scale(scalar),*ierr);
+  PHIST_CHK_IERR(*ierr=V->Scale(scalar),*ierr);
   return;
   }
 
@@ -430,7 +438,7 @@ void SUBR(mvec_vscale)(TYPE(mvec_ptr) vV,
   CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*ierr);  
   for (int i=0;i<V->NumVectors();i++)
     {
-    PHIST_CHK_IRET((*V)(i)->Scale(scalar[i]),*ierr);
+    PHIST_CHK_IERR(*ierr=(*V)(i)->Scale(scalar[i]),*ierr);
     }
   return;
   }
@@ -443,8 +451,24 @@ void SUBR(mvec_add_mvec)(double alpha, TYPE(const_mvec_ptr) vX,
   *ierr=0;
   CAST_PTR_FROM_VOID(const Epetra_MultiVector,X,vX,*ierr);
   CAST_PTR_FROM_VOID(Epetra_MultiVector,Y,vY,*ierr);
-  PHIST_CHK_IRET(Y->Update(alpha,*X,beta),*ierr);
+  PHIST_CHK_IERR(*ierr=Y->Update(alpha,*X,beta),*ierr);
   }
+
+//! y[i]=alpha[i]*x[i]+beta*y[i], i=1..nvec
+void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) vX,
+                            _ST_ beta,  TYPE(mvec_ptr)       vY,
+                            int* ierr)
+  {
+  ENTER_FCN(__FUNCTION__);
+  CAST_PTR_FROM_VOID(const Epetra_MultiVector,X,vX,*ierr);
+  CAST_PTR_FROM_VOID(Epetra_MultiVector,Y,vY,*ierr);
+
+  for (int i=0;i<X->NumVectors(); i++)
+    {
+    TRY_CATCH((*Y)(i)->Update(alpha[i],*(*X)(i), beta),*ierr);
+    }
+  }
+
 
 //! B=alpha*A+beta*B
 void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
@@ -454,7 +478,7 @@ void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
   *ierr=0;
   CAST_PTR_FROM_VOID(const Epetra_MultiVector,A,vA,*ierr);
   CAST_PTR_FROM_VOID(Epetra_MultiVector,B,vB,*ierr);
-  PHIST_CHK_IRET(B->Update(alpha,*A,beta),*ierr);  
+  PHIST_CHK_IERR(*ierr=B->Update(alpha,*A,beta),*ierr);  
   }
 
 //! y=alpha*A*x+beta*y.
@@ -469,26 +493,26 @@ double beta, TYPE(mvec_ptr) vy, int* ierr)
     {
     if (beta==0.0)
       {
-      PHIST_CHK_IRET(y->PutScalar(0.0),*ierr);
+      PHIST_CHK_IERR(*ierr=y->PutScalar(0.0),*ierr);
       }
     else if (beta!=1.0)
       {
-      PHIST_CHK_IRET(y->Scale(beta),*ierr);
+      PHIST_CHK_IERR(*ierr=y->Scale(beta),*ierr);
       }
     }
   else if (beta==0.0)
     {
-    PHIST_CHK_IRET(A->Multiply(false,*x,*y),*ierr);
+    PHIST_CHK_IERR(*ierr=A->Multiply(false,*x,*y),*ierr);
     if (alpha!=1.0)
       {
-      PHIST_CHK_IRET(y->Scale(alpha),*ierr);
+      PHIST_CHK_IERR(*ierr=y->Scale(alpha),*ierr);
       }
     }
   else
     {
     Epetra_MultiVector Ax(y->Map(),y->NumVectors());
-    PHIST_CHK_IRET(A->Multiply(false,*x,Ax),*ierr);
-    PHIST_CHK_IRET(y->Update(alpha,Ax,beta),*ierr);
+    PHIST_CHK_IERR(*ierr=A->Multiply(false,*x,Ax),*ierr);
+    PHIST_CHK_IERR(*ierr=y->Update(alpha,Ax,beta),*ierr);
     }
   /*
   std::cout << *A << std::endl;
@@ -519,7 +543,7 @@ void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) vV, TYPE(const_mvec_ptr) vW, doubl
   *ierr=0;
   CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*ierr);
   CAST_PTR_FROM_VOID(const Epetra_MultiVector,W,vW,*ierr);
-  PHIST_CHK_IRET(V->Dot(*W,s),*ierr);
+  PHIST_CHK_IERR(*ierr=V->Dot(*W,s),*ierr);
   }
 
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix
@@ -530,7 +554,7 @@ void SUBR(mvecT_times_mvec)(double alpha, TYPE(const_mvec_ptr) vV, TYPE(const_mv
   CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*ierr);
   CAST_PTR_FROM_VOID(const Epetra_MultiVector,W,vW,*ierr);
   CAST_PTR_FROM_VOID(Epetra_MultiVector,C,vC,*ierr);
-  PHIST_CHK_IRET(C->Multiply('T','N',alpha,*V,*W,beta),*ierr);
+  PHIST_CHK_IERR(*ierr=C->Multiply('T','N',alpha,*V,*W,beta),*ierr);
   }
 
 
@@ -544,7 +568,7 @@ void SUBR(mvec_times_sdMat)(double alpha, TYPE(const_mvec_ptr) vV,
   CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*ierr);
   CAST_PTR_FROM_VOID(Epetra_MultiVector,W,vW,*ierr);
   CAST_PTR_FROM_VOID(Epetra_MultiVector,C,vC,*ierr);
-  PHIST_CHK_IRET(W->Multiply('N', 'N', alpha, *V, *C, beta),*ierr);
+  PHIST_CHK_IERR(*ierr=W->Multiply('N', 'N', alpha, *V, *C, beta),*ierr);
   }
 
 //! n x m serial dense matrix times m x k serial dense matrix gives n x k serial dense matrix,
@@ -557,7 +581,7 @@ void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
   CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*ierr);
   CAST_PTR_FROM_VOID(const Epetra_MultiVector,W,vW,*ierr);
   CAST_PTR_FROM_VOID(Epetra_MultiVector,C,vC,*ierr);
-  PHIST_CHK_IRET(C->Multiply('N', 'N', alpha, *V, *W, beta),*ierr);
+  PHIST_CHK_IERR(*ierr=C->Multiply('N', 'N', alpha, *V, *W, beta),*ierr);
   }
 
 
@@ -571,7 +595,7 @@ void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
   CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*ierr);
   CAST_PTR_FROM_VOID(const Epetra_MultiVector,W,vW,*ierr);
   CAST_PTR_FROM_VOID(Epetra_MultiVector,C,vC,*ierr);
-  PHIST_CHK_IRET(C->Multiply('T', 'N', alpha, *V, *W, beta),*ierr);
+  PHIST_CHK_IERR(*ierr=C->Multiply('T', 'N', alpha, *V, *W, beta),*ierr);
   }
 
 
@@ -591,21 +615,21 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
 
   int rank;
   MT rankTol=32*mt::eps();
-  if (V->getNumVectors()==1)
+  if (V->NumVectors()==1)
     {
     // we need a special treatment here because TSQR
     // uses a relative tolerance to determine rank deficiency,
     // so a single zero vector is not detected to be rank deficient.
     MT nrm;
     PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
-    PHIST_DEB("single vector QR, R=%8.4f",nrm);
+    PHIST_DEB("single vector QR, R=%8.4f\n",nrm);
     ST* Rval=NULL;
     int ldR;
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&Rval,&ldR,ierr),*ierr);
     rank=1;
     if (nrm<rankTol)
       {
-      PHIST_DEB("zero vector detected");
+      PHIST_DEB("zero vector detected\n");
       // randomize the vector
       PHIST_CHK_IERR(SUBR(mvec_random)(vV,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
@@ -626,8 +650,8 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   int ncols = R->NumVectors();
     
 #ifdef TESTING
-  PHIST_CHK_IRET(nrows-ncols,*ierr);
-  PHIST_CHK_IRET(nrows-V->NumVectors(),*ierr);
+  PHIST_CHK_IERR(*ierr=nrows-ncols,*ierr);
+  PHIST_CHK_IERR(*ierr=nrows-V->NumVectors(),*ierr);
 #endif  
 
   Teuchos::RCP<Teuchos_sdMat_t> R_view
@@ -645,7 +669,6 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   params->set("randomizeNullSpace",true);
   tsqr.setParameterList(params);
 
-  int rank;
   TRY_CATCH(rank = tsqr.normalize(*V,R_view),*ierr);  
   *ierr = ncols-rank;// return positive number if rank not full.
   return;

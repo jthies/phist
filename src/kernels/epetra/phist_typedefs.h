@@ -31,8 +31,8 @@ typedef int gidx_t;
 
 //#define PRlidx=PRId32
 //#define PRgidx=PRId32
-#define PRlidx="d"
-#define PRgidx="d"
+#define PRlidx "d"
+#define PRgidx "d"
 
 #include "phist_void_aliases.h"
 
