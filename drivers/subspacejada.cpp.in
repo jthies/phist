@@ -237,20 +237,28 @@ int main(int argc, char** argv)
     if(resNorm[i] <= tol)
       nConvergedEig++;
   PHIST_SOUT(PHIST_INFO, "subspacejada terminated after %d iterations and calculated %d eigenvalues;\n printing R:\n", nIter, nConvergedEig);
+#ifdef PHIST_HAVE_MPI
+  int me;
+  PHIST_ICHK_IERR(ierr = MPI_Comm_rank(MPI_COMM_WORLD,&me), ierr);
+  if( me == 0 )
+  {
+    PHIST_ICHK_IERR(SUBR( sdMat_print ) (R, &ierr), ierr);
+  }
+#else
   PHIST_ICHK_IERR(SUBR( sdMat_print ) (R, &ierr), ierr);
+#endif
   PHIST_SOUT(PHIST_INFO, " residuum norm:");
   for(int i = 0; i < nEig; i++)
-    std::cout << " " << resNorm[i];
-  std::cout << std::endl;
+    PHIST_SOUT(PHIST_INFO, "\t%8.4e", resNorm[i]);
 
   // calculate real residual
   PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(st::one(),A,Q,st::zero(),res,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Q,R,st::one(),res,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_norm2)(res,resNorm,&ierr),ierr);
-  PHIST_SOUT(PHIST_INFO, " explicit residuum norm:");
+  PHIST_SOUT(PHIST_INFO, "\n explicit residuum norm:");
   for(int i = 0; i < nEig; i++)
-    std::cout << " " << resNorm[i];
-  std::cout << std::endl;
+    PHIST_SOUT(PHIST_INFO, "\t%8.4e", resNorm[i]);
+  PHIST_SOUT(PHIST_INFO, "\n");
 
 
 

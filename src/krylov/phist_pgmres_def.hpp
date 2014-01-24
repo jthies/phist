@@ -599,7 +599,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
         for(int i = 0; i < numSys; i++)
         {
           PHIST_SOUT(PHIST_DEBUG,"\t%8.4e", ynorm[S[i]->id-minId]/prev_ynorm[S[i]->id-minId]);
-          if( ynorm[S[i]->id-minId] < 0.85 * prev_ynorm[S[i]->id-minId] )
+          if( ynorm[S[i]->id-minId] < 0.75 * prev_ynorm[S[i]->id-minId] )
             needAnotherIteration = true;
         }
         PHIST_SOUT(PHIST_DEBUG,"\n");

@@ -39,6 +39,10 @@ contains
     call mpi_comm_size(map%comm, map%nProcs, ierr)
     call mpi_Comm_rank(map%comm, map%me, ierr)
 
+    if( map%me .eq. 0 ) then
+      write(*,*) 'map%nProcs', map%nProcs
+    end if
+
     allocate(map%distrib(0:map%nProcs))
     allocate(map%nlocal(0:map%nProcs-1))
 
