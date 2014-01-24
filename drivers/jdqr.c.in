@@ -215,7 +215,7 @@ int main(int argc, char** argv)
         {
         D_raw[(i+1)*ldD+(i+1)]=evals[i];
         D_raw[i*ldD+(i+1)]=-evals[i+1];
-        D_raw[(i+1)*ldD+i]=-evals[i+1];
+        D_raw[(i+1)*ldD+i]= evals[i+1];
         i++;
         }
       i++;
