@@ -75,11 +75,11 @@ precOp=getopt(opts,'precOp',comp_idprec(A));
 
 tau=target;
 if ischar(target)
-  tau=0;
+  tau=getopt(opts,'initial_shift',0);
 end
 
 % compute preconditioner and keep it fixed during iteration
-precOp=precOp.compute(A-tau*speye(n),precOp);
+precOp=precOp.compute(A,precOp);
 
 k=0; % number of converged Eigenpairs
 it=0; % total number of iterations
@@ -134,7 +134,8 @@ while (k<numEigs && it<=maxIter)
   
     if (debug)
       disp('new vector');
-      V(1:5,m)
+      %V(1:5,m)
+      V(1:10,1:m)
     end
   else
     EXPAND=true;
@@ -156,14 +157,15 @@ while (k<numEigs && it<=maxIter)
     M
     disp(sprintf('sorted Schur (upper %d x %d block, actual size %d x %d)',...
         min(m,10),min(m,10),m,m));
-    T(1:min(m,numEigs),1:min(m,numEigs))
+    T(1:min(m,10),1:min(m,10))
+    disp('next Schur vector');
+    S(1:m,1)
   end
   theta=T(1,1);
   s=S(:,1);
   u=V*s;
   Au=AV*s;
   r=Au-theta*u;
-
   atil = Q'*r;
   rtil = r-Q*atil;
   nrm=norm(rtil);
@@ -263,13 +265,13 @@ while (k<numEigs && it<=maxIter)
         printOpts.indent=1;
       end
       % TODO - is this necessary?
-      precOp=precOp.compute(A-shift*speye(n),precOp);
+%      precOp=precOp.compute(A-shift*speye(n),precOp);
       t0=zeros(size(rtil));
       lsOpts.tol=max(tol,1/2.^max(1,mm));
       if (verbose)
         disp(['inner conv tol: ',num2str(lsOpts.tol)]);
       end
-      
+
       [t,flag,relres,iter,resvec] = ...
         lsFun(op,rtil,t0,lsOpts,precOp);
 
