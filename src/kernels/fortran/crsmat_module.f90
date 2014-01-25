@@ -782,7 +782,8 @@ end do
     character(len=100) :: line
     integer, allocatable :: idx(:,:)
     real(kind=8), allocatable :: val(:)
-    integer :: i, j, off, n, nne, globalRows, globalCols, globalEntries
+    integer :: i, nne, globalRows, globalCols
+    integer(kind=8) :: j, j_, off, n, globalEntries
     !--------------------------------------------------------------------------------
 
     ! get procedure pointer
@@ -797,7 +798,7 @@ end do
     ! now read the dimensions
     globalRows = nrows
     globalCols = ncols
-    globalEntries = maxnne_per_row*nrows
+    globalEntries = int(maxnne_per_row,kind=8)*int(nrows,kind=8)
     write(*,*) 'CrsMat:', globalRows, globalCols, globalEntries
     flush(6)
 
@@ -806,7 +807,7 @@ end do
 
     A%nRows = A%row_map%nlocal(A%row_map%me)
     A%nCols = A%nRows
-    A%nEntries = maxnne_per_row*A%nRows
+    A%nEntries = int(maxnne_per_row,kind=8)*int(A%nRows,kind=8)
 
     ! allocate temporary buffers
     allocate(idx(maxnne_per_row,2))
@@ -818,15 +819,16 @@ end do
     allocate(A%val(A%nEntries))
 
     ! get data, try to respect NUMA
-    A%row_offset(1) = 1
+    A%row_offset(1) = 1_8
 !$omp parallel do schedule(static) ordered
     do i = 1, A%nRows, 1
 !$omp ordered
       call rowFunc(int(A%row_map%distrib(A%row_map%me)+i-2,kind=4), nne, idx(:,1), val)
-      j = A%row_offset(i)-1
-      A%col_idx(j+1:j+nne) = idx(1:nne,1)+1
-      A%val(j+1:j+nne) = val(1:nne)
-      A%row_offset(i+1) = A%row_offset(i)+nne
+      j = A%row_offset(i)
+      j_ = j + int(nne-1,kind=8)
+      A%col_idx(j:j_) = idx(1:nne,1)+1
+      A%val(j:j_) = val(1:nne)
+      A%row_offset(i+1) = A%row_offset(i)+int(nne,kind=8)
 !$omp end ordered
     end do
 
