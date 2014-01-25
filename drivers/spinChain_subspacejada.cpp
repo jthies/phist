@@ -179,9 +179,11 @@ int main(int argc, char** argv)
 
 
   //------------------------------- setup matrices and vectors --------------------- 
-  TYPE(crsMat_ptr) mat = NULL;
 #ifdef PHIST_KERNEL_LIB_GHOST
   ghost_context_t * ctx;
+  ghost_mat_t *mat = NULL;
+#else
+  TYPE(crsMat_ptr) mat = NULL;
 #endif
   {
     ghost_midx_t DIM;
@@ -289,9 +291,11 @@ int main(int argc, char** argv)
   // clean up operator
   delete opA;
   // delete matrix
-  PHIST_ICHK_IERR(SUBR(crsMat_delete)(mat,&ierr),ierr);
 #ifdef PHIST_KERNEL_LIB_GHOST
+  mat->destroy(mat);
   ghost_freeContext(ctx);
+#else
+  PHIST_ICHK_IERR(SUBR(crsMat_delete)(mat,&ierr),ierr);
 #endif
 
   PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
