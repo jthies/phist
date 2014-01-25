@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #
 # setup number of nodes and required time
-#PBS -l nodes=${NNODES}:ppn=24,walltime=00:30:00
+#PBS -l nodes=${NNODES}:ppn=24,walltime=00:10:00
 #
 # name the job
 #PBS -N spinChain${CHAIN_SIZE}_ghost_nn${NNODES}
@@ -11,4 +11,4 @@
 # go to caller dir
 cd $PBS_O_WORKDIR
 # simply run it
-mpirun -np $(expr 2 \* ${NNODES}) env OMP_NUM_THREADS=6 ./spinChain ${CHAIN_SIZE} 10 1.e-8 1000 10 20
+mpirun -np $(expr 2 \* ${NNODES}) -npernode 2 env OMP_NUM_THREADS=6 ./spinChain ${CHAIN_SIZE} 10 1.e-8 1000 10 20
