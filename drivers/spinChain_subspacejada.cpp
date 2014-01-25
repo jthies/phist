@@ -11,7 +11,6 @@
 #include "phist_kernels.h"
 #include "phist_operator.h"
 #include "phist_subspacejada.h"
-#include "phist_simple_arnoldi.h"
 
 // ghost/spinChain stuff
 #include "ghost.h"
@@ -185,43 +184,41 @@ int main(int argc, char** argv)
 #else
   TYPE(crsMat_ptr) mat = NULL;
 #endif
+  ghost_midx_t DIM;
+  //TODO - get from command line
+  ghost_midx_t conf_spinZ[3] = {nSpins,nSpins/2,0};
+  SpinChainSZ( -2, &DIM, conf_spinZ, NULL);
+
+  matfuncs_info_t info;
+  //crsGraphene( -1, NULL, NULL, &info);
+  SpinChainSZ( -1, NULL, NULL, &info);
+
+  if ( my_datatype != info.datatype)
   {
-    ghost_midx_t DIM;
-    //TODO - get from command line
-    ghost_midx_t conf_spinZ[3] = {nSpins,nSpins/2,0};
-    SpinChainSZ( -2, &DIM, conf_spinZ, NULL);
-
-    matfuncs_info_t info;
-    //crsGraphene( -1, NULL, NULL, &info);
-    SpinChainSZ( -1, NULL, NULL, &info);
-
-    if ( my_datatype != info.datatype)
-    {
-	     printf("error: datatyte does not match\n");
-       exit(0);
-    }
+     printf("error: datatyte does not match\n");
+     exit(0);
+  }
 
 #ifdef PHIST_KERNEL_LIB_FORTRAN
-    PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,
-          info.nrows, info.ncols, info.row_nnz,
-          &SpinChainSZ, &ierr), ierr);
+  PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,
+        info.nrows, info.ncols, info.row_nnz,
+        &SpinChainSZ, &ierr), ierr);
 #endif
 
 #ifdef PHIST_KERNEL_LIB_GHOST
-    ghost_error_t err=ghost_createContext(&ctx, info.nrows , 
-        info.ncols,GHOST_CONTEXT_DEFAULT,NULL,MPI_COMM_WORLD,1.);
-    if (err!=GHOST_SUCCESS)
-    {
-      PHIST_OUT(PHIST_ERROR,"error returned from createContext (file %s, line %d)",__FILE__,__LINE__);
-    }        
+  ghost_error_t err=ghost_createContext(&ctx, info.nrows , 
+      info.ncols,GHOST_CONTEXT_DEFAULT,NULL,MPI_COMM_WORLD,1.);
+  if (err!=GHOST_SUCCESS)
+  {
+    PHIST_OUT(PHIST_ERROR,"error returned from createContext (file %s, line %d)",__FILE__,__LINE__);
+  }        
 
-    ghost_mtraits_t mtraits;
-    init_mtraits(&mtraits);
-    mat = ghost_createMatrix(ctx,&mtraits,1);
-    mat->fromRowFunc( mat, info.row_nnz , 0, &SpinChainSZ, 0);
-    ghost_printMatrixInfo(mat);
+  ghost_mtraits_t mtraits;
+  init_mtraits(&mtraits);
+  mat = ghost_createMatrix(ctx,&mtraits,1);
+  mat->fromRowFunc( mat, info.row_nnz , 0, &SpinChainSZ, 0);
+  ghost_printMatrixInfo(mat);
 #endif
-  }
 
   // create an operator from A
   op_ptr_t opA = new TYPE(op);
