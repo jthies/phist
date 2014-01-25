@@ -820,9 +820,9 @@ end do
     ! get data, try to respect NUMA
     A%row_offset(1) = 1
 !$omp parallel do schedule(static) ordered
-    do i = A%row_map%distrib(A%row_map%me), A%row_map%distrib(A%row_map%me+1)-1, 1
+    do i = 1, A%nRows, 1
 !$omp ordered
-      call rowFunc(i-1, nne, idx(:,1), val)
+      call rowFunc(int(A%row_map%distrib(A%row_map%me)+i-1,kind=4), nne, idx(:,1), val)
       j = A%row_offset(i)-1
       A%col_idx(j+1:j+nne) = idx(1:nne,1)+1
       A%val(j+1:j+nne) = val(1:nne)
