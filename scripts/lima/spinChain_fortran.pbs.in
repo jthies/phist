@@ -1,0 +1,14 @@
+#!/bin/bash -l
+#
+# setup number of nodes and required time
+#PBS -l nodes=${NNODES}:ppn=24,walltime=00:15:00
+#
+# name the job
+#PBS -N spinChain${CHAIN_SIZE}_fortran_nn${NNODES}
+#
+# first non-empty non-comment line ends PBS options
+
+# go to caller dir
+cd $PBS_O_WORKDIR
+# simply run it
+mpirun -np ${NNODES} -npernode 1 env OMP_NUM_THREADS=12 env KMP_AFFINITY="granularity=fine,compact,1,0" ./spinChain ${CHAIN_SIZE} 10 1.e-8 1000 20 40
