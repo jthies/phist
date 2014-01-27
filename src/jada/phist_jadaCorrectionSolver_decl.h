@@ -43,5 +43,6 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver,
                                     TYPE(const_mvec_ptr)  Qtil,     TYPE(const_mvec_ptr)  BQtil,
                                     const _ST_            sigma[],  TYPE(const_mvec_ptr)  res,      const int resIndex[], 
                                     const _MT_            tol[],    int                   maxIter,
-                                    TYPE(mvec_ptr)        t,        bool abortAfterFirstConvergedInBlock,
+                                    TYPE(mvec_ptr)        t,
+                                    bool useIMGS,                   bool abortAfterFirstConvergedInBlock,
                                     int *                 ierr);

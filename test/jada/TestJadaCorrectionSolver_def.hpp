@@ -196,7 +196,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(0, ierr_);
 
         // run
-        SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, &sigma_[i], res_i, NULL, &tol[i], 200, t_i, false, &ierr_);
+        SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, &sigma_[i], res_i, NULL, &tol[i], 200, t_i, true, false, &ierr_);
         ASSERT_EQ(0, ierr_);
       }
 
@@ -232,7 +232,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0, ierr_);
 
       // run
-      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, false, &ierr_);
+      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, true, false, &ierr_);
       ASSERT_EQ(0, ierr_);
 
       // check all solutions
@@ -263,7 +263,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0, ierr_);
 
       // run
-      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, false, &ierr_);
+      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, true, false, &ierr_);
       ASSERT_EQ(0, ierr_);
 
       // check all solutions
@@ -294,7 +294,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0, ierr_);
 
       // run
-      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, false, &ierr_);
+      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, true, false, &ierr_);
       ASSERT_EQ(0, ierr_);
 
       // check all solutions
@@ -325,7 +325,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0, ierr_);
 
       // run
-      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, false, &ierr_);
+      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, true, false, &ierr_);
       ASSERT_EQ(0, ierr_);
 
       // check all solutions

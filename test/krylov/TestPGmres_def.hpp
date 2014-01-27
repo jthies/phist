@@ -162,7 +162,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
           }
           // iterate for MAXBAS iterations
           int nIter = 0;
-          SUBR(pgmresStates_iterate)(opA_,state_,nrhs,&nIter,&ierr2);
+          SUBR(pgmresStates_iterate)(opA_,state_,nrhs,&nIter,true, &ierr2);
           ASSERT_TRUE(ierr2>=0);
           _MT_ resNorm[nrhs];
           SUBR(pgmresStates_updateSol)(state_,nrhs,x,resNorm,false,&ierr_);

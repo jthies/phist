@@ -952,7 +952,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     MT nrm;
     PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
     ST* Rval = R->get1dViewNonConst().getRawPtr();
-    PHIST_DEB("single vector QR, R=%8.4f\n",nrm);
+    PHIST_DEB("single vector QR, R=%8.4e\n",nrm);
     rank=1;
     if (nrm<rankTol)
       {

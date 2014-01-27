@@ -53,7 +53,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
     set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
   else ()
-    set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -fstack-protector-all -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
   endif ()
 
   set (CMAKE_CXX_FLAGS "-fopenmp")
@@ -62,23 +62,23 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
     set (CMAKE_CXX_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
   else ()
-    set (CMAKE_CXX_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_CXX_FLAGS_DEBUG   "-dH -O0 -g -fstack-protector-all -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
   endif ()
 
   set (CMAKE_Fortran_FLAGS "-fopenmp -cpp -ffree-line-length-none")
   set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -O3 -ffast-math -fopenmp -cpp")
-  set (CMAKE_Fortran_FLAGS_DEBUG "-dH -O0 -g -DTESTING -fopenmp -Wall -fcheck=all")
+  set (CMAKE_Fortran_FLAGS_DEBUG "-dH -O0 -g -DTESTING -fopenmp -Wall -fcheck=all -fstack-protector-all")
 
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
   message(STATUS "using INTEL compiler flags")
   set (CMAKE_C_FLAGS "-openmp -Wno-unused-variable -mkl -std=c99")
   set (CMAKE_C_FLAGS_RELEASE "-O3 -xHOST -no-prec-div")
-  set (CMAKE_C_FLAGS_DEBUG "-check=uninit,stack -debug")
+  set (CMAKE_C_FLAGS_DEBUG "-check=uninit,stack -debug -DTESTING")
 
   set (CMAKE_CXX_FLAGS "-openmp -Wno-unused-variable -mkl")
   set (CMAKE_CXX_FLAGS_RELEASE "-O3 -xHOST -no-prec-div")
-  set (CMAKE_CXX_FLAGS_DEBUG "-check=uninit,stack -debug")
+  set (CMAKE_CXX_FLAGS_DEBUG "-check=uninit,stack -debug -DTESTING")
 
   set (CMAKE_Fortran_FLAGS "-openmp -fpp -mkl")
   set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -xHOST -no-prec-div")
@@ -234,7 +234,7 @@ list(APPEND PHIST_LIBS phist_tools)
 # ghost is a requirement of phist now because of the task queue
 #find_package(Ghost PATHS $ENV{GHOST_HOME})
 #message(STATUS "GHOST_Found=${GHOST_Found}")
-if(PHIST_KERNEL_LIB STREQUAL "ghost")
+if(PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
   find_package(GHOST REQUIRED)
 
   if (GHOST_FOUND)
@@ -370,16 +370,19 @@ foreach (infile ${TG_CXX_Drivers})
 endforeach()
 
 # example drivers implemented in ghost
-if  (PHIST_KERNEL_LIB STREQUAL "ghost")
+if  (PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
 # TODO - make this somehow general, or probably we should
 #       actually install phist instead and push the spinChain
 #       driver to the essex/examples repo...
   set(ESSEX_INSTALL_DIR CACHE $ENV{HOME}/local/ "where the essex examples are installed")
   include_directories(${ESSEX_INSTALL_DIR}/include/essex_examples)
   add_executable(spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
+  add_executable(spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
   target_link_libraries(spinChain ${ESSEX_INSTALL_DIR}/lib/essex_examples/libmatfuncs.so)
+  target_link_libraries(spinChain_subspacejada ${ESSEX_INSTALL_DIR}/lib/essex_examples/libmatfuncs.so)
   foreach(lib ${PHIST_LIBS})
     target_link_libraries(spinChain ${lib})
+    target_link_libraries(spinChain_subspacejada ${lib})
   endforeach()
 endif()
 

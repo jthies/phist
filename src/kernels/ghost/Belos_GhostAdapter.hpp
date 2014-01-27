@@ -285,7 +285,7 @@ using ::phist::GhostMV;
     { return (mv.get()->traits->flags&GHOST_VEC_SCATTERED==false); }
 
     static void MvTimesMatAddMv( Scalar alpha, const GhostMV& A, 
-                                 const Teuchos::SerialDenseMatrix<int,Scalar>& B, 
+                                 const Teuchos::SerialDenseMatrix<lidx_t,Scalar>& B, 
                                  Scalar beta, GhostMV& mv )
     {
       ENTER_FCN(__FUNCTION__);    
@@ -382,7 +382,7 @@ using ::phist::GhostMV;
     }
 
     // C=alpha*A*B
-    static void MvTransMv( Scalar alpha, const GhostMV& A, const GhostMV& B, Teuchos::SerialDenseMatrix<int,Scalar>& C)
+    static void MvTransMv( Scalar alpha, const GhostMV& A, const GhostMV& B, Teuchos::SerialDenseMatrix<lidx_t,Scalar>& C)
     {
       ENTER_FCN(__FUNCTION__);    
       ghost_vec_t* Cghost=createGhostViewOfTeuchosSDM(C);

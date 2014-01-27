@@ -6,6 +6,7 @@ module crsmat_module
 
   public :: CrsMat_t
   !public :: phist_DcrsMat_read_mm
+  !public :: phist_DcrsMat_create_fromRowFunc
   !public :: phist_DcrsMat_delete
   !public :: phist_DcrsMat_times_mvec
   public :: crsmat_times_mvec
@@ -49,6 +50,17 @@ module crsmat_module
     !--------------------------------------------------------------------------------
   end type CrsMat_t
 
+
+  !> interface of function-ptr for crsMat_create_fromRowFunc
+  abstract interface
+    subroutine matRowFunc(row, nnz, cols, vals)
+      use, intrinsic :: iso_c_binding
+      integer(C_INT32_T), value :: row
+      integer(C_INT32_T), intent(inout) :: nnz
+      integer(C_INT32_T), intent(inout) :: cols(*)
+      real(C_DOUBLE),     intent(inout) :: vals(*)
+    end subroutine matRowFunc
+  end interface
 
 contains
 
@@ -750,6 +762,108 @@ end do
 
     !--------------------------------------------------------------------------------
   end subroutine phist_DcrsMat_read_mm
+
+
+  !==================================================================================
+  !> read MatrixMarket file
+  subroutine phist_DcrsMat_create_fromRowFunc(A_ptr, nrows, ncols, maxnne_per_row, rowFunc_ptr, ierr) bind(C,name='phist_DcrsMat_create_fromRowFunc_f')
+    use, intrinsic :: iso_c_binding
+    use mpi
+    use m_mrgrnk
+    !--------------------------------------------------------------------------------
+    type(C_PTR),        intent(out) :: A_ptr
+    integer(C_INT),     value       :: nrows, ncols, maxnne_per_row
+    type(C_FUNPTR),     value       :: rowFunc_ptr
+    integer(C_INT),     intent(out) :: ierr
+    !--------------------------------------------------------------------------------
+    type(CrsMat_t), pointer :: A
+    procedure(matRowFunc), pointer :: rowFunc
+    !--------------------------------------------------------------------------------
+    character(len=100) :: line
+    integer, allocatable :: idx(:,:)
+    real(kind=8), allocatable :: val(:)
+    integer :: i, nne, globalRows, globalCols
+    integer(kind=8) :: j, j_, off, n, globalEntries
+    !--------------------------------------------------------------------------------
+
+    ! get procedure pointer
+    call c_f_procpointer(rowFunc_ptr, rowFunc)
+
+    ! open the file
+    write(*,*) 'creating matrix from rowFunc'
+    flush(6)
+
+    allocate(A)
+
+    ! now read the dimensions
+    globalRows = nrows
+    globalCols = ncols
+    globalEntries = int(maxnne_per_row,kind=8)*int(nrows,kind=8)
+    write(*,*) 'CrsMat:', globalRows, globalCols, globalEntries
+    flush(6)
+
+    call map_setup(A%row_map, MPI_COMM_WORLD, int(globalRows,kind=8), ierr)
+    if( ierr .ne. 0 ) return
+
+    A%nRows = A%row_map%nlocal(A%row_map%me)
+    A%nCols = A%nRows
+    A%nEntries = int(maxnne_per_row,kind=8)*int(A%nRows,kind=8)
+
+    ! allocate temporary buffers
+    allocate(idx(maxnne_per_row,2))
+    allocate(val(maxnne_per_row))
+
+    ! allocate crs matrix
+    allocate(A%row_offset(A%nRows+1))
+    allocate(A%col_idx(A%nEntries))
+    allocate(A%val(A%nEntries))
+
+    ! get data, try to respect NUMA
+    A%row_offset(1) = 1_8
+!$omp parallel do schedule(static) ordered
+    do i = 1, A%nRows, 1
+!$omp ordered
+      call rowFunc(int(A%row_map%distrib(A%row_map%me)+i-2,kind=4), nne, idx(:,1), val)
+      j = A%row_offset(i)
+      j_ = j + int(nne-1,kind=8)
+      A%col_idx(j:j_) = idx(1:nne,1)+1
+      A%val(j:j_) = val(1:nne)
+      A%row_offset(i+1) = A%row_offset(i)+int(nne,kind=8)
+!$omp end ordered
+    end do
+
+
+    ! we still need to sort the entries in each row by column
+    do i = 1, A%nRows
+      off = A%row_offset(i)
+      n = A%row_offset(i+1) - off
+      if( n .gt. 1 ) then
+        ! reuse idx for sorting
+        idx(1:n,1) = A%col_idx( off:off+n-1 )
+        val(1:n)   = A%val( off:off+n-1 )
+
+        ! determine order of columns
+        call mrgrnk(idx(1:n,1), idx(1:n,2))
+
+        ! copy back sorted arrays
+        do j = 1, n
+          A%col_idx( off+j-1 ) = idx(idx(j,2),1)
+          A%val( off+j-1 ) = val(idx(j,2))
+        end do
+      end if
+    end do
+
+    call setup_commBuff(A, A%comm_buff)
+    call sort_rows(A)
+
+    write(*,*) 'created new crsMat with dimensions', A%nRows, A%nCols, A%nEntries
+    flush(6)
+    A_ptr = c_loc(A)
+
+    ierr = 0
+
+    !--------------------------------------------------------------------------------
+  end subroutine phist_DcrsMat_create_fromRowFunc
 
 
   !==================================================================================

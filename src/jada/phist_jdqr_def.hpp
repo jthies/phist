@@ -698,7 +698,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // allow at most 25 iterations (TODO: make these settings available to the user)
     int nIt=25;
     PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, NULL, Qtil, NULL, sigma, rtil_ptr, NULL, 
-                                                      innerTol, nIt, t_ptr, false, ierr), *ierr);
+                                                      innerTol, nIt, t_ptr, true, false, ierr), *ierr);
 
     expand=nv;
   }

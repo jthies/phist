@@ -244,7 +244,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
       // call iterate
       int nIter = 0;
-      SUBR(pgmresStates_iterate)(jdOp_,state, _NV_, &nIter, &ierr_);
+      SUBR(pgmresStates_iterate)(jdOp_,state, _NV_, &nIter, true, &ierr_);
       ASSERT_EQ(0,ierr_);
       // only one iteration should be needed!
       ASSERT_EQ(1,nIter);
@@ -322,7 +322,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
       // call iterate
       int nIter = 0;
-      SUBR(pgmresStates_iterate)(jdOp_,state, _NV_, &nIter, &ierr_);
+      SUBR(pgmresStates_iterate)(jdOp_,state, _NV_, &nIter, true, &ierr_);
       ASSERT_EQ(0,ierr_);
       // only one iteration should be needed!
       ASSERT_EQ(1,nIter);
@@ -421,7 +421,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
       // call iterate
       int nIter = 0;
-      SUBR(pgmresStates_iterate)(jdOp_,state, _NV_, &nIter, &ierr_);
+      SUBR(pgmresStates_iterate)(jdOp_,state, _NV_, &nIter, true, &ierr_);
       ASSERT_TRUE(ierr_ == 0 || ierr_ == 1);
       for(int i = 0; i < _NV_; i++)
       {

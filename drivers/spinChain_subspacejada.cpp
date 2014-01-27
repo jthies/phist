@@ -11,11 +11,28 @@
 #include "phist_kernels.h"
 #include "phist_operator.h"
 #include "phist_subspacejada.h"
-#include ${PHIST_TG_HFILE}
+
+// ghost/spinChain stuff
+#include "ghost.h"
+#include "ghost/util.h"
+extern "C" {
+#include "matfuncs.h"
+}
+#ifdef PHIST_KERNEL_LIB_GHOST
+extern "C" {
+void init_mtraits(ghost_mtraits_t* mtraits);
+}
+#endif
+
+GHOST_REGISTER_DT_D(my_datatype)
 
 
+// double precision type
+#include "phist_gen_d.h"
 #include "phist_ScalarTraits.hpp"
 #include "phist_std_typedefs.hpp"
+
+
 
 // small c++ string helper function
 bool endsWith(const std::string& s, const std::string& suffix)
@@ -36,15 +53,27 @@ int main(int argc, char** argv)
   // check arguments
   if( argc < 2 )
   {
-    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A filename> [<invariant subspace dimension>] [<which>] [<tol>] [<max iters> <JD block size> <min basis> <max basis> <GMRES block size> <GMRES subspace dimension> <initial shift> <initial shift iterations> <GMRES use IMGS> <GMRES abort when first converged in block>]\n", argv[0]);
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s <number of spins> [<invariant subspace dimension>] [<which>] [<tol>] [<max iters> <JD block size> <min basis> <max basis> <GMRES block size> <GMRES subspace dimension> <initial shift> <initial shift iterations> <GMRES use IMGS> <GMRES abort when first converged in block>]\n", argv[0]);
     return 1;
   }
 
-  // get file name of matrix A
+  // number of spins to generate the matrix
+  int nSpins = 22;
+  if( argc > 1 )
+  {
+    std::istringstream iss(argv[1]);
+    iss >> nSpins;
+    if( !(nSpins > 0 && nSpins % 2 == 0) )
+    {
+      PHIST_SOUT(PHIST_ERROR,"Error: number of spins must be positive even number!\n");
+      return 1;
+    }
+  }
+
   const std::string filename_A(argv[1]);
 
   // number of eigenvalues to compute
-  int nEig = 8;
+  int nEig = 10;
   if( argc > 2 )
   {
     std::istringstream iss(argv[2]);
@@ -52,7 +81,7 @@ int main(int argc, char** argv)
   }
 
   // which eigenvalues to compute
-  eigSort_t which = LM;
+  eigSort_t which = SR;
   if( argc > 3 )
   {
     if( argv[3] == std::string("LM") )
@@ -165,84 +194,71 @@ int main(int argc, char** argv)
 
 
   //------------------------------- setup matrices and vectors --------------------- 
+#ifdef PHIST_KERNEL_LIB_GHOST
+  ghost_context_t * ctx;
+  ghost_mat_t *mat = NULL;
+#else
+  TYPE(crsMat_ptr) mat = NULL;
+#endif
+  ghost_midx_t DIM;
+  //TODO - get from command line
+  ghost_midx_t conf_spinZ[3] = {nSpins,nSpins/2,0};
+  SpinChainSZ( -2, &DIM, conf_spinZ, NULL);
 
-  // we have gathered all input parameters...
-  // read matrix A
-  crsMat_ptr_t A = NULL;
-  if( endsWith(filename_A,".mm") )
+  matfuncs_info_t info;
+  //crsGraphene( -1, NULL, NULL, &info);
+  SpinChainSZ( -1, NULL, NULL, &info);
+
+  if ( my_datatype != info.datatype)
   {
-    PHIST_ICHK_IERR(SUBR(crsMat_read_mm)(&A,filename_A.c_str(),&ierr),ierr);
+     printf("error: datatyte does not match\n");
+     exit(0);
   }
-  else if( endsWith(filename_A,".cua") )
-  {
-#ifdef IS_COMPLEX
-    PHIST_ICHK_IERR(SUBR(crsMat_read_hb)(&A,filename_A.c_str(),&ierr),ierr);
-#else
-    PHIST_SOUT(PHIST_ERROR,"error, invoked real version of this program for complex matrix with ending '.cua'\n");
-    return 1;
+
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+  PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,
+        info.nrows, info.ncols, info.row_nnz,
+        &SpinChainSZ, &ierr), ierr);
 #endif
-  }
-  else if( endsWith(filename_A,".rua") )
+
+#ifdef PHIST_KERNEL_LIB_GHOST
+  ghost_error_t err=ghost_createContext(&ctx, info.nrows , 
+      info.ncols,GHOST_CONTEXT_DEFAULT,NULL,MPI_COMM_WORLD,1.);
+  if (err!=GHOST_SUCCESS)
   {
-#ifdef IS_COMPLEX
-    PHIST_SOUT(PHIST_ERROR,"error, invoked complex version of this program for real matrix with ending '.rua'\n");
-    return 1;
-#else
-    PHIST_ICHK_IERR(SUBR(crsMat_read_hb)(&A,filename_A.c_str(),&ierr),ierr);
+    PHIST_OUT(PHIST_ERROR,"error returned from createContext (file %s, line %d)",__FILE__,__LINE__);
+  }        
+
+  ghost_mtraits_t mtraits;
+  init_mtraits(&mtraits);
+  mat = ghost_createMatrix(ctx,&mtraits,1);
+  mat->fromRowFunc( mat, info.row_nnz , 0, &SpinChainSZ, 0);
+  ghost_printMatrixInfo(mat);
 #endif
-  }
-  else if( endsWith(filename_A,".bin") )
-  {
-    PHIST_ICHK_IERR(SUBR(crsMat_read_bin)(&A,filename_A.c_str(),&ierr),ierr);
-  }
-  else
-  {
-    PHIST_SOUT(PHIST_ERROR,"unknown file ending of matrix file '%s'\n",filename_A.c_str());
-    return 1;
-  }
+
   // create an operator from A
   op_ptr_t opA = new TYPE(op);
-  PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(opA,A,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(opA,mat,&ierr),ierr);
 
   // we need the domain map of the matrix
-  const_map_ptr_t map = NULL;
-  PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(A,&map,&ierr),ierr);
   const_comm_ptr_t comm = NULL;
-  PHIST_ICHK_IERR(phist_map_get_comm(map,&comm,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_map_get_comm(opA->domain_map,&comm,&ierr),ierr);
 
   // setup necessary vectors and matrices for the schur form
   mvec_ptr_t Q = NULL;
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&Q,map,nEig+blockDim-1,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&Q,opA->domain_map,nEig+blockDim-1,&ierr),ierr);
   sdMat_ptr_t R = NULL;
   PHIST_ICHK_IERR(SUBR(sdMat_create)(&R,nEig+blockDim-1,nEig+blockDim-1,comm,&ierr),ierr);
   _MT_ *resNorm = new _MT_[nEig+blockDim-1];
 
   // setup start vector (currently to (1 0 1 0 .. ) )
   mvec_ptr_t v0 = NULL;
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&v0,map,1,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&v0,opA->domain_map,1,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::one(),&ierr),ierr);
-  // initialize random number generator in parallel
-/*
-  int ilower, iupper;
-  PHIST_ICHK_IERR(phist_map_get_ilower(map,&ilower,&ierr),ierr);
-  PHIST_ICHK_IERR(phist_map_get_iupper(map,&iupper,&ierr),ierr);
-  //std::srand(ilower);
-  //PHIST_ICHK_IERR(SUBR(mvec_random)(v0,&ierr),ierr);
-  //PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::zero(),&ierr),ierr);
-  _ST_* v0_raw;
-  lidx_t v0_lda;
-  PHIST_ICHK_IERR(SUBR(mvec_extract_view)(v0,&v0_raw,&v0_lda,&ierr),ierr);
-  for(int i = ilower; i <= iupper; i++)
-  {
-    _ST_ factor = (i % 2 == 0 ? st::one() : st::zero());
-    v0_raw[i-ilower] = factor;
-  }
-*/
-
 
   // used to calculate explicit residuals
   mvec_ptr_t res;
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&res,map,nEig+blockDim-1,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&res,opA->domain_map,nEig+blockDim-1,&ierr),ierr);
 
 
   //------------------------------- run block JaDa algorithm ----------------------- 
@@ -267,7 +283,7 @@ int main(int argc, char** argv)
     PHIST_SOUT(PHIST_INFO, "\t%8.4e", resNorm[i]);
 
   // calculate real residual
-  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(st::one(),A,Q,st::zero(),res,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(st::one(),mat,Q,st::zero(),res,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Q,R,st::one(),res,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_norm2)(res,resNorm,&ierr),ierr);
   PHIST_SOUT(PHIST_INFO, "\n explicit residuum norm:");
@@ -288,7 +304,12 @@ int main(int argc, char** argv)
   // clean up operator
   delete opA;
   // delete matrix
-  PHIST_ICHK_IERR(SUBR(crsMat_delete)(A,&ierr),ierr);
+#ifdef PHIST_KERNEL_LIB_GHOST
+  mat->destroy(mat);
+  ghost_freeContext(ctx);
+#else
+  PHIST_ICHK_IERR(SUBR(crsMat_delete)(mat,&ierr),ierr);
+#endif
 
   PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
   return ierr;

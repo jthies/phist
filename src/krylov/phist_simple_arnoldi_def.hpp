@@ -42,6 +42,7 @@ void SUBR(simple_arnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op, TYPE
     PHIST_SOUT(PHIST_VERBOSE,"        H is %dx%d (expecting %dx%d), V with %d cols (expecting %d)\n",
                                       nrH, ncH, m+1,m,ncV,m+1);
     }
+  PHIST_CHK_IERR(SUBR(sdMat_put_value)(H,st::zero(),ierr),*ierr);
   
   for (int i=0;i<m;i++)
   {

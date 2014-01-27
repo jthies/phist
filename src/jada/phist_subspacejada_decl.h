@@ -36,5 +36,6 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
                          int minBase,              int maxBase,
                          int innerBlockDim,        int innerMaxBase,
                          int initialShiftIter,     _ST_ initialShift,
+                         bool innerIMGS,           bool innerGMRESabortAfterFirstConverged,
                          TYPE(mvec_ptr) Q,         TYPE(sdMat_ptr) R,
                          _MT_* resNorm,            int* ierr);

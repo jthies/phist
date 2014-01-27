@@ -1,221 +1,289 @@
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-#include <ghost.h>
-#include <ghost/util.h>
+#include <stdbool.h>
 
-// struct for JaDa settings
-#include "phist_jadaOpts.h"
-// single-vector JDQR solver
-#include "phist_jdqr.h"
-//TROET
-#include "phist_bgmres.h"
-// for phist iterative solvers we need to provide
-// an operator representation of the matrix
+#include "phist_macros.h"
+#include "phist_enums.h"
+#include "phist_kernels.h"
 #include "phist_operator.h"
+#include "phist_jdqr.h"
+#include "phist_jadaOpts.h"
 
+// ghost/spinChain stuff
+#include "ghost.h"
+#include "ghost/util.h"
 #include "matfuncs.h"
 
 GHOST_REGISTER_DT_D(my_datatype)
-//   my_datatype    =  ghost_datatype_int
-//   my_datatype_t  = cast auf datatype ( float, double, .. )
 
+#include "phist_gen_d.h"
+#include "phist_driver_utils.h"
 
-
-
-int main( int argc, char* argv[] )
-{
-
-
-
-    if ( argc < 2 ) 
-    { 
-        printf("usage: spinChain <L> <howMany> <tol> <maxIter> <minBas> <maxBas> "
-               "                 <arno> <initShift>\n"
-               " where: L:         number of spins \n"
-               "        howMany:   number of (right-most) eigenvalues to seek\n"
-               "        tol:       convergence tolerance\n"
-               "        maxIter:   max. num JaDa iterations\n"
-               "        minBas:    number of vectors from which to restart\n"
-               "        maxBas:    max num vectors to create before restarting\n"
-               "        arno:      start with <minBas> Arnoldi steps\n"
-               "        initShift: if arno=0, start with fixed shift <iniShift>\n");
-        exit(0); }
-
-    int L=atoi(argv[1]);
-    if ((double)(L/2.0)*2!=(double)L)
-    {
-        printf("parameter L must be even for this driver.\n");
-        printf("Type ./spinChain (without args) to get a usage message\n");
-        exit(-1);
-    }
-    int numEigs=5;
-    int numIters;
-    if (argc>2)
-    {
-        numEigs=atoi(argv[2]);
-    }
-    if (numEigs<=0)
-    {
-        printf("parameter numEigs must be >0 for this driver.\n");
-        printf("Type ./spinChain (without args) to get a usage message\n");
-        exit(-1);
-    }
-    ghost_vtraits_t vtraits = GHOST_VTRAITS_INIT(.flags = GHOST_VEC_LHS|GHOST_VEC_RHS, 
-                                                 .datatype = my_datatype, 
-                                                 .nvecs=numEigs+1);
-    ghost_vtraits_t *vtraits1 = ghost_cloneVtraits(&vtraits);
-    vtraits1->nvecs=1;
-    
-    ghost_mtraits_t mtraits = GHOST_MTRAITS_INIT(.format = GHOST_SPM_FORMAT_CRS, .flags = GHOST_SPM_DEFAULT, .datatype = my_datatype);
-
-    int m,i,ierr;
-
-    ghost_midx_t DIM;
-    //TODO - get from command line
-    ghost_midx_t conf_spinZ[3] = {L,L/2,0};
-    SpinChainSZ( -2, &DIM, conf_spinZ, NULL);
-
-    matfuncs_info_t info;
-    //crsGraphene( -1, NULL, NULL, &info);
-    SpinChainSZ( -1, NULL, NULL, &info);
-
-    if ( my_datatype != info.datatype) {
-	     printf("error: datatyte does not match\n");  exit(0);
-	}
-
-    ghost_mat_t * mat;
-    ghost_context_t * ctx;
-    ghost_vec_t* eigVecs; // eigenvector approximations
-    ghost_vec_t* resVecs; // explicitly compute residuals after JaDa run
-    ghost_vec_t* startVec; // for creating a starting vector for JaDa
-    double eigVals[numEigs+1]; // eigenvalue approximations
-    double resid[numEigs+1]; // residuals computed by JaDa
-    int is_cmplx[numEigs+1]; // JDQR is intended for non-symmetric matrices as well,
-                             // this flag array can be ignored here because the
-                             // SpinChain matrix is symmetric
-    double expRes[numEigs+1]; // explicit residual norms
-
-    ghost_init(argc,argv);
-
-    ghost_error_t err=ghost_createContext(&ctx, info.nrows , 
-        info.ncols,GHOST_CONTEXT_DEFAULT,NULL,MPI_COMM_WORLD,1.);
-    if (err!=GHOST_SUCCESS)
-    {
-      PHIST_OUT(PHIST_ERROR,"error returned from createContext (file %s, line %d)",__FILE__,__LINE__);
-    }        
-
-    mat = ghost_createMatrix(ctx,&mtraits,1);
-
-    mat->fromRowFunc( mat, info.row_nnz , 0, &SpinChainSZ, 0);
-
-    ghost_printMatrixInfo(mat);
-
-    // create starting vector (if you don't provide one, a random
-    // start vector will be generated, but here we give something
-    // so runs are reproducible)
-    startVec = ghost_createVector(ctx,vtraits1);
-    double one=1.0;
-    // allocate memory and set starting vector to 1
-    startVec->fromScalar(startVec,&one);
-
-    // create the eigenvectors
-    eigVecs = ghost_createVector(ctx,&vtraits);
-    // allocate memory for eigenvectors
-    double zero=0.0;
-    eigVecs->fromScalar(eigVecs,&zero);
-
-    // setup options for JDQR
-    phist_jadaOpts_t opts;
-    phist_jadaOpts_setDefaults(&opts);
-    
-    // TODO - expose JaDa parameters to the caller via command-line or input file
-    opts.numEigs=numEigs;
-    opts.which=SR; // we assume that we always look for smallest real part eigs in this application
-    if (argc>=4)
-    {
-      opts.convTol=atof(argv[3]);
-    }
-    if (argc>=5)
-    {
-        opts.maxIters=atoi(argv[4]);
-    }
-    if (argc>=6)
-    {
-        opts.minBas=atoi(argv[5]);
-        if (argc>=7)
-            {
-                opts.maxBas=atoi(argv[6]);
-            }
-        else
-            {
-                opts.maxBas=opts.minBas+10;
-            }
-    }
-    if (argc>=8)
-    {
-        opts.arno=atoi(argv[7]);
-    }
-    if (argc>=9)
-    {
-        opts.initialShift=atof(argv[8]);
-    }
-    opts.v0=startVec;
-
-    // wrap the matrix into a phist operator
-    Dop_t A_op;
-    // no mass matrix
-    Dop_t* B_op=NULL;
-    
-    phist_Dop_wrap_crsMat(&A_op,mat,&ierr);
-
-    // run JDQR
-    phist_Djdqr(&A_op,B_op,eigVecs,eigVals,resid,is_cmplx,
-              opts,&numEigs,&numIters,
-              &ierr);
-    // compute R=A*X-X*Lambda
-
-    resVecs = ghost_createVector(ctx,&vtraits);
-    resVecs->fromVec(resVecs,eigVecs,0);
-    resVecs->vscale(resVecs,eigVals);
-    double minus_one=-1.0;
-    resVecs->scale(resVecs,&minus_one);
-    int spmvmOpts = GHOST_SPMVM_AXPY;
-    ghost_spmvm(ctx,resVecs,mat,eigVecs,&spmvmOpts);
-    resVecs->dotProduct(resVecs,resVecs,expRes);
-    for (i=0;i<numEigs;i++)
-    {
-      expRes[i]=sqrt(expRes[i]);
-    }
-
-
-    if (ghost_getRank(MPI_COMM_WORLD)==0)
-    {
-      fprintf(stdout, "Found %d eigenpair(s) after %d iterations.\n",numEigs,numIters);
-      if (numEigs>0)
+int main(int argc, char** argv)
+  {
+     if ( argc < 2 )
       {
-        fprintf(stdout,"  Eigenvalue\t\t\t\tRitz Residual\tExpl. Residual\n");
-        fprintf(stdout,"=======================================================\n");
-        for (i=0;i<numEigs;i++)
+          printf("usage: spinChain <L> <howMany> <tol> <maxIter> <minBas> <maxBas> "
+                 "                 <arno> <initShift>\n"
+                 " where: L:         number of spins \n"
+                 "        howMany:   number of (right-most) eigenvalues to seek\n"
+                 "        tol:       convergence tolerance\n"
+                 "        maxIter:   max. num JaDa iterations\n"
+                 "        minBas:    number of vectors from which to restart\n"
+                 "        maxBas:    max num vectors to create before restarting\n"
+                 "        arno:      start with <minBas> Arnoldi steps\n"
+                 "        initShift: if arno=0, start with fixed shift <iniShift>\n");
+          exit(0); }
+
+  int rank, num_proc;
+  int i, ierr;
+  int verbose;
+
+  comm_ptr_t comm;
+  op_ptr_t A_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  op_ptr_t B_op=NULL; // no mass matrix up to now
+  
+  const_map_ptr_t map; // map (element distribution) of vectors according to 
+                       // the distribution of matrix rows
+  mvec_ptr_t X; // multivector for getting the eigenvectors
+  
+  ST* evals; // for real non-symmetric matrices we can get complex pairs,
+             // so we need twice the amount of memory to store the eigenvalues 
+  MT* resid;
+  
+  int* is_cmplx=NULL; // only required for the real case for indicating complex EV
+
+  phist_jadaOpts_t opts;
+
+  
+  int num_eigs,num_iters;
+  
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+
+  PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
+
+  PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&ierr),ierr);
+
+  verbose= (rank==0);
+
+  int nSpins = atoi(argv[1]);
+ 
+  phist_jadaOpts_setDefaults(&opts);
+  
+  opts.which = SR;
+  if (argc>=3)
+  {
+    opts.numEigs=atoi(argv[2]);
+  }
+
+  if (argc>=4)
+  {
+    opts.convTol=(MT)atof(argv[3]);
+  }
+
+  if (argc>=5)
+  {
+    opts.maxIters=atoi(argv[4]);
+  }
+
+  if (argc>=6)
+  {
+    opts.minBas=atoi(argv[5]);
+  }
+
+  if (argc<7)
+  {
+    opts.maxBas=opts.minBas+20;
+  }
+  else
+  {
+    opts.maxBas=atoi(argv[6]);
+  }
+
+  if (argc>=8)
+  {
+    opts.arno=atoi(argv[7]);
+  }
+
+  if (argc>=9)
+  {
+    opts.initialShift=atof(argv[8]);
+  }
+
+  num_eigs = opts.numEigs;
+
+  // setup matrix
+#ifdef PHIST_KERNEL_LIB_GHOST
+  ghost_context_t * ctx = NULL;
+  ghost_mat_t * mat = NULL;
+#else
+  TYPE(crsMat_ptr) mat = NULL;
+#endif
+
+  ghost_midx_t DIM;
+  ghost_midx_t conf_spinZ[3] = {nSpins,nSpins/2,0};
+  SpinChainSZ( -2, &DIM, conf_spinZ, NULL);
+
+
+  matfuncs_info_t info;
+  SpinChainSZ( -1, NULL, NULL, &info);
+  if ( my_datatype != info.datatype)
+  {
+    printf("error: datatyte does not match\n");
+    exit(0);
+  }
+#ifdef PHIST_KERNEL_LIB_FORTRAN
+  PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,
+        info.nrows, info.ncols, info.row_nnz,
+        &SpinChainSZ, &ierr), ierr);
+#endif
+
+#ifdef PHIST_KERNEL_LIB_GHOST
+  ghost_error_t err=ghost_createContext(&ctx, info.nrows ,
+      info.ncols,GHOST_CONTEXT_DEFAULT,NULL,MPI_COMM_WORLD,1.);
+  if (err!=GHOST_SUCCESS)
+  {
+    PHIST_OUT(PHIST_ERROR,"error returned from createContext (file %s, line %d)",__FILE__,__LINE__);
+  }
+
+  ghost_mtraits_t mtraits = GHOST_MTRAITS_INIT(.format = GHOST_SPM_FORMAT_CRS, .flags = GHOST_SPM_DEFAULT, .datatype = my_datatype);
+  mat = ghost_createMatrix(ctx,&mtraits,1);
+  mat->fromRowFunc( mat, info.row_nnz , 0, &SpinChainSZ, 0);
+  ghost_printMatrixInfo(mat);
+#endif
+
+
+  PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(mat, &map,&ierr),ierr);
+
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,num_eigs+1,&ierr),ierr);
+//  PHIST_ICHK_IERR(SUBR(mvec_random)(X,&ierr),ierr);
+  // start with constant vector to make runs reproducible
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(X,ONE,&ierr),ierr);
+
+  PHIST_ICHK_IERR(SUBR(mvec_view_block)(X,&opts.v0,0,0,&ierr),ierr);
+  
+  // create operator wrapper for computing Y=A*X using a CRS matrix
+  A_op = (op_ptr_t)malloc(sizeof(TYPE(op)));
+  PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(A_op,mat,&ierr),ierr);
+
+  
+  
+  // allocate memory for eigenvalues and residuals. We allocate
+  // one extra entry because in the real case we may get that the
+  // last EV to converge is a complex pair (requirement of JDQR)
+  evals = (ST*)malloc((num_eigs+1)*sizeof(ST));
+  resid = (MT*)malloc((num_eigs+1)*sizeof(MT));
+  is_cmplx = (int*)malloc((num_eigs+1)*sizeof(int));
+
+  // first column in X is currently used as starting vector of Arnoldi in jdqr. The first 
+  // jmin vectors are constructed by an Arnoldi process for stability reasons.
+  int nloc,lda; 
+  ST* valX0;
+  MT nrmX0[num_eigs+1];
+  PHIST_ICHK_IERR(SUBR(mvec_my_length)(X,&nloc,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_extract_view)(X,&valX0,&lda,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_normalize)(X,nrmX0,&ierr),ierr);
+
+  SUBR(jdqr)(A_op,B_op,X,evals,resid,is_cmplx, 
+        opts,
+        &num_eigs,&num_iters,
+        &ierr);
+
+  if (ierr!=0)
+    {
+    if (verbose) fprintf(stdout,"code %d returned from jdqr\n",ierr);
+    if (ierr<0) return ierr;
+    }
+  if (verbose)
+    {
+    fprintf(stdout,"Found %d eigenpairs after %d iterations\n",num_eigs,num_iters);
+    }
+
+  MT expRes[MIN(num_eigs,1)];
+
+  if (num_eigs>0)
+    {
+    // compute residuals explicitly
+    TYPE(mvec_ptr) R=NULL,Xv=NULL;
+    PHIST_ICHK_IERR(SUBR(mvec_create)(&R,map,num_eigs,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_view_block)(X,&Xv,0,num_eigs-1,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(ONE,mat,Xv,ZERO,R,&ierr),ierr);
+#ifdef IS_COMPLEX
+    PHIST_ICHK_IERR(SUBR(mvec_vadd_mvec)(evals,Xv,-ONE,R,&ierr),ierr);
+#else
+    // we have complex pairs as [v_r, v_i] and [lambda_r, lambda_i] right now.
+    // To get the residual correct, create the block diagonal matrix D with   
+    // D_j=[lambda_r, lambda_i; -lambda_i, lambda_r] for complex pairs and    
+    // then compute A*X-X*D as the residual
+    TYPE(sdMat_ptr) D=NULL;
+    PHIST_ICHK_IERR(SUBR(sdMat_create)(&D,num_eigs,num_eigs,comm,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(sdMat_put_value)(D,ZERO,&ierr),ierr);
+    ST *D_raw=NULL;
+    lidx_t ldD;
+    PHIST_ICHK_IERR(SUBR(sdMat_extract_view)(D,&D_raw,&ldD,&ierr),ierr);
+    i=0;
+    while (i<num_eigs)
+      {
+      D_raw[i*ldD+i]= evals[i];
+      if (is_cmplx[i])
         {
-          if (is_cmplx[i])
-          {
-            fprintf(stdout,"WARNING: jdqr reports a complex eigenvalue, something is fishy.\n"
-                           "         the eigenvalue will be printed in two consecutive rows\n"
-                           "(real/imag part) anyway\n");
-          }
-          fprintf(stdout,"%24.16e\t\t%3.1e\t\t%3.1e\n",eigVals[i],resid[i],expRes[i]);
+        D_raw[(i+1)*ldD+(i+1)]=evals[i];
+        D_raw[i*ldD+(i+1)]=-evals[i+1];
+        D_raw[(i+1)*ldD+i]= evals[i+1];
+        i++;
         }
+      i++;
+      }
+    PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(ONE,Xv,D,-ONE,R,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(sdMat_delete)(D,&ierr),ierr);
+#endif
+    PHIST_ICHK_IERR(SUBR(mvec_norm2)(R,expRes,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_delete)(Xv,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_delete)(R,&ierr),ierr);
+    }
+
+  if (verbose && num_eigs>0)
+    {
+    fprintf(stdout,"  Eigenvalue\t\t\t\t\t\tRitz Residual\tExpl. Residual\n");
+    fprintf(stdout,"======================================================================================\n");
+    int i=0;
+    while (i<num_eigs)
+      {
+#ifdef IS_COMPLEX
+      fprintf(stdout,"%24.16e%+24.16ei\t%3.1e\t\t%3.1e\n",
+        REAL(evals[i]),IMAG(evals[i]),resid[i],expRes[i]);
+#else
+      if (is_cmplx[i])
+        {
+        fprintf(stdout,"%24.16e%+24.16ei\t%3.1e\t\t%3.1e\n",evals[i],evals[i+1],resid[i],expRes[i]);
+        fprintf(stdout,"%24.16e%+24.16ei\t%3.1e\t\t%3.1e\n",evals[i],-evals[i+1],resid[i+1],expRes[i+1]);
+        i++;
+        }
+      else
+        {
+        fprintf(stdout,"%24.16e\t\t\t\t%3.1e\t\t%3.1e\n",evals[i],resid[i],expRes[i]);
+        }
+#endif
+      i++;
       }
     }
 
-    mat->destroy(mat);
-    eigVecs->destroy(eigVecs);
-    eigVecs->destroy(resVecs);
-    ghost_freeContext(ctx);
-    free(vtraits1);
-
-    ghost_finish();
-
-    return EXIT_SUCCESS;
-}
+  free(evals);
+  free(resid);
+  free(is_cmplx);
+#ifdef PHIST_KERNEL_LIB_GHOST
+  mat->destroy(mat);
+  ghost_freeContext(ctx);
+#else
+  PHIST_ICHK_IERR(SUBR(crsMat_delete)(mat,&ierr),ierr);
+#endif
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&ierr),ierr);
+  free(A_op);
+  PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
+  return ierr;
+  }

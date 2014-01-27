@@ -1,0 +1,14 @@
+#!/bin/bash -l
+#
+# setup number of nodes and required time
+#PBS -l nodes=${NNODES}:ppn=24,walltime=00:10:00
+#
+# name the job
+#PBS -N spinChain${CHAIN_SIZE}_subspacejada_ghost_nn${NNODES}
+#
+# first non-empty non-comment line ends PBS options
+
+# go to caller dir
+cd $PBS_O_WORKDIR
+# simply run it
+mpirun -np $(expr 2 \* ${NNODES}) -npernode 2 env OMP_NUM_THREADS=6 ./spinChain_subspacejada ${CHAIN_SIZE} 10 SR 1.e-8 1000 4 20 40 2 15

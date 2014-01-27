@@ -658,7 +658,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     // so a single zero vector is not detected to be rank deficient.
     MT nrm;
     PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
-    PHIST_DEB("single vector QR, R=%8.4f\n",nrm);
+    PHIST_DEB("single vector QR, R=%8.4e\n",nrm);
     ST* Rval=NULL;
     int ldR;
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&Rval,&ldR,ierr),*ierr);

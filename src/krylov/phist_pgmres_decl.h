@@ -77,7 +77,7 @@ typedef TYPE(pgmresState) const * TYPE(const_pgmresState_ptr);
 //! someone reached max iters")
 //! \warning you cannot mix together states from different calls to pgmresStates_create!
 //!
-void SUBR( pgmresStates_iterate ) (TYPE(const_op_ptr) Op, TYPE(pgmresState_ptr) S_array[], int numSys, int* nIter, int* ierr);
+void SUBR( pgmresStates_iterate ) (TYPE(const_op_ptr) Op, TYPE(pgmresState_ptr) S_array[], int numSys, int* nIter, bool useIMGS, int* ierr);
 
 //!
 //! create an array of gmresState objects. The method's input parameters
