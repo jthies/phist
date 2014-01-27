@@ -14,17 +14,76 @@ void SUBR(op_wrap_crsMat)(TYPE(op_ptr) op, TYPE(const_crsMat_ptr) A, int* ierr)
 //
 void SUBR(private_apply_identity)(_ST_ alpha, const void* A, TYPE(const_mvec_ptr) X,
         _ST_ beta, TYPE(mvec_ptr) Y, int* ierr)
-        {
-        *ierr=0;
-        TOUCH(A)
-        SUBR(mvec_add_mvec)(alpha,X,beta,Y,ierr);
-        }
+{
+  *ierr=0;
+  TOUCH(A)
+  SUBR(mvec_add_mvec)(alpha,X,beta,Y,ierr);
+}
 
 // setup identity operator that returns Y=alpha*X + beta*Y
 void SUBR(op_identity)(TYPE(op_ptr) op, int* ierr)
-  {
+{
   *ierr=0;
   op->A=NULL;
   op->apply = &SUBR(private_apply_identity);
-  }
+}
 
+typedef struct 
+{
+  TYPE(carpData)* carp_;
+  TYPE(const_crsMat_ptr) A_;
+  TYPE(const_mvec_ptr) B_;
+  _ST_ omega_;
+  const _ST_* sigma_;
+} TYPE(private_carpOpData);
+
+//
+void SUBR(private_I_minus_dkswp)(_ST_ alpha, const void* vdat, TYPE(const_mvec_ptr) X,
+        _ST_ beta, TYPE(mvec_ptr) Y, int* ierr)
+{
+ENTER_FCN(__FUNCTION__);
+CAST_PTR_FROM_VOID(TYPE(private_carpOpData) const, dat, vdat,*ierr);
+
+  if (alpha!=ONE || beta!=ZERO)
+  {
+    PHIST_SOUT(PHIST_ERROR,"only case alpha=1, beta=0 implemented in %s\n"
+                           "(%s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
+    *ierr=-99;
+    return;
+  }
+  // TODO - optimize this implementation of I-DKSWP(A)
+//  TYPE(mvec_ptr) X_tmp=NULL;
+//  PHIST_CHK_IERR(SUBR(mvec_clone)(&X_tmp,X,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(carp_fb)(dat->carp_, dat->A_, dat->B_, dat->sigma_,
+                X, Y, ierr), *ierr);
+
+//  SUBR(mvec_add_mvec)(alpha,X,beta,Y,ierr);
+  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(ONE,X,-ONE,Y,ierr),*ierr);
+}
+
+//! given a crsMat, create the operator I-DCSWP(A,x), double CARP sweep.
+//! This operator can be passed to CG for solving Ax=b via the normal
+//! equations AA'y=b, x=A'y. We allow for an array of shifts here, so
+//! that the operator acting on each column i is in fact
+//! I-DCSWP(A-s[i]I,x[i]). If shift is NULL, s=0 is assumed.
+void SUBR(op_carp)(TYPE(op_ptr) op, TYPE(const_crsMat_ptr) A, _ST_* shifts,
+        _MT_ omega, int* ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+
+  // note: this operator acts as A*A^T
+  PHIST_CHK_IERR(SUBR(crsMat_get_range_map)(A,&op->range_map,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(crsMat_get_range_map)(A,&op->domain_map,ierr),*ierr);
+  
+  TYPE(private_carpOpData)* dat =
+        (TYPE(private_carpOpData)*)malloc(sizeof(TYPE(private_carpOpData)));
+  dat->A_=A;
+  dat->B_=NULL;
+  dat->sigma_=shifts;
+  dat->omega_=omega;
+  PHIST_CHK_IERR(SUBR(carp_create)(A,&(dat->carp_),ierr),*ierr);
+  op->A=dat;
+  op->apply = &SUBR(private_I_minus_dkswp);
+
+  return;
+}

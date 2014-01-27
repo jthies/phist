@@ -22,6 +22,14 @@ void SUBR(op_wrap_crsMat)(TYPE(op_ptr) op, TYPE(const_crsMat_ptr) A, int* ierr);
 //! create the identity operator that returns Y=alpha*X+beta*Y
 void SUBR(op_identity)(TYPE(op_ptr) op, int* ierr);
 
+//! given a crsMat, create the operator I-DCSWP(A,x), double CARP sweep.
+//! This operator can be passed to CG for solving Ax=b via the normal   
+//! equations AA'y=b, x=A'y. We allow for an array of shifts here, so   
+//! that the operator acting on each column i is in fact                
+//! I-DCSWP(A-s[i]I,x[i]). If shift is NULL, s=0 is assumed.            
+void SUBR(op_carp)(TYPE(op_ptr) op, TYPE(const_crsMat_ptr) A, _ST_* shifts,
+        _MT_ omega, int* ierr);
+
 //@}
 
 

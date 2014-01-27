@@ -1,4 +1,5 @@
 #include "phist_operator.h"
+#include <stdlib.h>
 
 #include "phist_gen_s.h"
 #include "phist_operator_def.h"
