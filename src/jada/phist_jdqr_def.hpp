@@ -166,11 +166,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
   // setup inner solver
   TYPE(jadaCorrectionSolver_ptr) innerSolv = NULL;
-#ifdef IS_COMPLEX
-  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, 1, A_op->domain_map, 25, ierr), *ierr);
-#else
-  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, 2, A_op->domain_map, 25, ierr), *ierr);
-#endif
+  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, nv_max, A_op->domain_map, 25, 
+  ierr), *ierr);
 
   // print parameters passed in to the method
   PHIST_SOUT(PHIST_VERBOSE,"====================\n");
