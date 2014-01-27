@@ -28,21 +28,21 @@ extern "C" {
 //      XGEMM - general dense matrix-matrix multiplicaiton                               //
 ///////////////////////////////////////////////////////////////////////////////////////////
 #define SGEMM BLAS_SUBR(SGEMM,sgemm)
-void SGEMM(const char*, const char*, const int*, const int*, const int*,
-    const float*, const float*, const int*, const float*, const int*, const float*,
-    float *, const int*, int*);
+void SGEMM(const char*, const char*, const lidx_t*, const lidx_t*, const lidx_t*,
+    const float*, const float*, const lidx_t*, const float*, const lidx_t*, const float*,
+    float *, const lidx_t*, int*);
 #define DGEMM BLAS_SUBR(DGEMM,dgemm)
-void DGEMM(const char*, const char*, const int*, const int*, const int*,
-    const double*, const double*, const int*, const double*, const int*, const double*,
-    double *, const int*, int*);
+void DGEMM(const char*, const char*, const lidx_t*, const lidx_t*, const lidx_t*,
+    const double*, const double*, const lidx_t*, const double*, const lidx_t*, const double*,
+    double *, const lidx_t*, int*);
 #define CGEMM BLAS_SUBR(CGEMM,cgemm)
-void CGEMM(const char*, const char*, const int*, const int*, const int*,
-    const Sblas_cmplx_t*, const Sblas_cmplx_t*, const int*, const Sblas_cmplx_t*, const int*, const Sblas_cmplx_t*,
-    Sblas_cmplx_t *, const int*, int*);
+void CGEMM(const char*, const char*, const lidx_t*, const lidx_t*, const lidx_t*,
+    const Sblas_cmplx_t*, const Sblas_cmplx_t*, const lidx_t*, const Sblas_cmplx_t*, const lidx_t*, const Sblas_cmplx_t*,
+    Sblas_cmplx_t *, const lidx_t*, int*);
 #define ZGEMM BLAS_SUBR(ZGEMM,zgemm)
-void ZGEMM(const char*, const char*, const int*, const int*, const int*,
-    const Dblas_cmplx_t*, const Dblas_cmplx_t*, const int*, const Dblas_cmplx_t*, const int*, const Dblas_cmplx_t*,
-    Dblas_cmplx_t *, const int*, int*);
+void ZGEMM(const char*, const char*, const lidx_t*, const lidx_t*, const lidx_t*,
+    const Dblas_cmplx_t*, const Dblas_cmplx_t*, const lidx_t*, const Dblas_cmplx_t*, const lidx_t*, const Dblas_cmplx_t*,
+    Dblas_cmplx_t *, const lidx_t*, int*);
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // XSTEQR - QR decomposition of symmetric tridiagonal matrices                           //
@@ -51,10 +51,10 @@ void ZGEMM(const char*, const char*, const int*, const int*, const int*,
 
 // QR decomposition of a real symmetric tridiagonal matrix
 #define SSTEQR LAPACK_SUBR(SSTEQR,ssteqr)
-void SSTEQR(const char*, const int* n, float* D, float* E, float* Z, const int* ldz, float* work, int* info);
+void SSTEQR(const char*, const lidx_t* n, float* D, float* E, float* Z, const lidx_t* ldz, float* work, int* info);
 // QR decomposition of a real symmetric tridiagonal matrix
 #define DSTEQR LAPACK_SUBR(DSTEQR,dsteqr)
-void DSTEQR(const char*, const int* n, double* D, double* E, double* Z, const int* ldz, double* work, int* info);
+void DSTEQR(const char*, const lidx_t* n, double* D, double* E, double* Z, const lidx_t* ldz, double* work, int* info);
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //      XGEES - Schur decomposition                                                      //
@@ -62,28 +62,28 @@ void DSTEQR(const char*, const int* n, double* D, double* E, double* Z, const in
 
 // Schur decomposition of a real non-symmetric matrix
 #define SGEES LAPACK_SUBR(SGEES,sgees)
-void SGEES(const char*, const char*, int (*select)(float*, float*), const int* n, 
-float* a, const int* lda, int* sdim, float* wr, float* wi,
- float* vs, const int* ldvs, float* work, const int* lwork, int* bwork, int* info);
+void SGEES(const char*, const char*, int (*select)(float*, float*), const lidx_t* n, 
+float* a, const lidx_t* lda, int* sdim, float* wr, float* wi,
+ float* vs, const lidx_t* ldvs, float* work, const lidx_t* lwork, lidx_t* bwork, int* info);
 // Schur decomposition of a real non-symmetric matrix
 #define DGEES LAPACK_SUBR(DGEES,dgees)
-void DGEES(const char*, const char*, int (*select)(double*, double*), const int* n, 
-double* a, const int* lda, int*sdim, double* wr, double* wi,
- double* vs, const int* ldvs, double* work, const int* lwork, int* bwork, int* info);
+void DGEES(const char*, const char*, int (*select)(double*, double*), const lidx_t* n, 
+double* a, const lidx_t* lda, lidx_t*sdim, double* wr, double* wi,
+ double* vs, const lidx_t* ldvs, double* work, const lidx_t* lwork, lidx_t* bwork, int* info);
 
 
 // Schur decomposition of a complex non-hermitian matrix 
 #define CGEES LAPACK_SUBR(CGEES,cgees)
 void CGEES(const char*, const char*, int (*select)(Sblas_cmplx_t*), 
-const int* n, Sblas_cmplx_t* a, const int* lda, int* sdim,
-Sblas_cmplx_t* w, Sblas_cmplx_t* vs, const int* ldvs, Sblas_cmplx_t* work, 
-const int* lwork, float* rwork, int* bwork, int* info);
+const lidx_t* n, Sblas_cmplx_t* a, const lidx_t* lda, lidx_t* sdim,
+Sblas_cmplx_t* w, Sblas_cmplx_t* vs, const lidx_t* ldvs, Sblas_cmplx_t* work, 
+const lidx_t* lwork, float* rwork, lidx_t* bwork, int* info);
 // Schur decomposition of a complex non-hermitian matrix 
 #define ZGEES LAPACK_SUBR(ZGEES,zgees)
 void ZGEES(const char*, const char*, int (*select)(Dblas_cmplx_t*), 
-const int* n, Dblas_cmplx_t* a, const int* lda, int* sdim,
-Dblas_cmplx_t* w, Dblas_cmplx_t* vs, const int* ldvs, Dblas_cmplx_t* work, 
-const int* lwork, double* rwork, int* bwork, int* info);
+const lidx_t* n, Dblas_cmplx_t* a, const lidx_t* lda, lidx_t* sdim,
+Dblas_cmplx_t* w, Dblas_cmplx_t* vs, const lidx_t* ldvs, Dblas_cmplx_t* work, 
+const lidx_t* lwork, double* rwork, lidx_t* bwork, int* info);
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //      XTRSEN - reorder Schur form                                                      //
@@ -119,19 +119,19 @@ const int *m, double *S, double *sep, Dblas_cmplx_t *work, const int *lwork, int
 
 //! reorder real Schur decomposition
 #define STREXC LAPACK_SUBR(STREXC,strexc)
-void STREXC(const char* compq, const int *n, float *t, const int *ldt, float *q, const int *ldq, int* ifst, int *ilst, float *work, int *info);
+void STREXC(const char* compq, const int *n, float *t, const int *ldt, float *q, const int *ldq, lidx_t* ifst, int *ilst, float *work, int *info);
 
 //! reorder real Schur decomposition
 #define DTREXC LAPACK_SUBR(DTREXC,dtrexc)
-void DTREXC(const char* compq, const int *n, double *t, const int *ldt, double *q, const int *ldq, int* ifst, int *ilst, double *work, int *info);
+void DTREXC(const char* compq, const int *n, double *t, const int *ldt, double *q, const int *ldq, lidx_t* ifst, int *ilst, double *work, int *info);
 
 //! reorder complex Schur decomposition
 #define CTREXC LAPACK_SUBR(CTREXC,ctrexc)
-void CTREXC(const char* compq, const int *n, Sblas_cmplx_t *t, const int *ldt, Sblas_cmplx_t *q, const int *ldq, int* ifst, int *ilst, int *info);
+void CTREXC(const char* compq, const int *n, Sblas_cmplx_t *t, const int *ldt, Sblas_cmplx_t *q, const int *ldq, lidx_t* ifst, int *ilst, int *info);
 
 //! reorder complex Schur decomposition
 #define ZTREXC LAPACK_SUBR(ZTREXC,ztrexc)
-void ZTREXC(const char* compq, const int *n, Dblas_cmplx_t *t, const int *ldt, Dblas_cmplx_t *q, const int *ldq, int* ifst, int *ilst, int *info);
+void ZTREXC(const char* compq, const int *n, Dblas_cmplx_t *t, const int *ldt, Dblas_cmplx_t *q, const int *ldq, lidx_t* ifst, int *ilst, int *info);
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -139,81 +139,81 @@ void ZTREXC(const char* compq, const int *n, Dblas_cmplx_t *t, const int *ldt, D
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 #define STREVC LAPACK_SUBR(STREVC,strevc)
-void STREVC(const char* side, const char* howmny, int* select, const int* n, 
-const float* T, const int* ldt, float* vl, const int* ldvl, float* vr, const int* ldvr, 
-const int* mm, int* m, float* work, int* info);
+void STREVC(const char* side, const char* howmny, lidx_t* select, const lidx_t* n, 
+const float* T, const lidx_t* ldt, float* vl, const lidx_t* ldvl, float* vr, const lidx_t* ldvr, 
+const lidx_t* mm, lidx_t* m, float* work, int* info);
 
 #define DTREVC LAPACK_SUBR(DTREVC,dtrevc)
-void DTREVC(const char* side, const char* howmny, int* select, const int* n, 
-const double* T, const int* ldt, double* vl, const int* ldvl, double* vr, const int* ldvr, 
-const int* mm, int* m, double* work, int* info);
+void DTREVC(const char* side, const char* howmny, lidx_t* select, const lidx_t* n, 
+const double* T, const lidx_t* ldt, double* vl, const lidx_t* ldvl, double* vr, const lidx_t* ldvr, 
+const lidx_t* mm, lidx_t* m, double* work, int* info);
 
 #define CTREVC LAPACK_SUBR(CTREVC,ctrevc)
-  void CTREVC(const char* side, const char* howmny, int* select, const int* n, 
-const Sblas_cmplx_t* t, const int* ldt, Sblas_cmplx_t* vl, const int* ldvl, Sblas_cmplx_t* vr, const int* ldvr, 
-const int* mm, int* m, Sblas_cmplx_t* work, float* rwork, int* info);
+  void CTREVC(const char* side, const char* howmny, lidx_t* select, const lidx_t* n, 
+const Sblas_cmplx_t* t, const lidx_t* ldt, Sblas_cmplx_t* vl, const lidx_t* ldvl, Sblas_cmplx_t* vr, const lidx_t* ldvr, 
+const lidx_t* mm, lidx_t* m, Sblas_cmplx_t* work, float* rwork, int* info);
 
 #define ZTREVC LAPACK_SUBR(ZTREVC,ztrevc)
-void ZTREVC(const char* side, const char* howmny, int* select, const int* n, 
-const Dblas_cmplx_t* T, const int* ldt, Dblas_cmplx_t* vl, const int* ldvl, Dblas_cmplx_t* vr, const int* ldvr, 
-const int* mm, int* m, Dblas_cmplx_t* work, double* rwork, int* info);
+void ZTREVC(const char* side, const char* howmny, lidx_t* select, const lidx_t* n, 
+const Dblas_cmplx_t* T, const lidx_t* ldt, Dblas_cmplx_t* vl, const lidx_t* ldvl, Dblas_cmplx_t* vr, const lidx_t* ldvr, 
+const lidx_t* mm, lidx_t* m, Dblas_cmplx_t* work, double* rwork, int* info);
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //      XTRTRS - solve triangular linear system                                          //
 ///////////////////////////////////////////////////////////////////////////////////////////
 #define STRTRS LAPACK_SUBR(STRTRS,strtrs)
-void STRTRS(const char* uplo, const char* trans, const char* diag, const int* n, const int* nrhs, 
-const float* a, const int* lda, float* b, const int* ldb, int* info);
+void STRTRS(const char* uplo, const char* trans, const char* diag, const lidx_t* n, const lidx_t* nrhs, 
+const float* a, const lidx_t* lda, float* b, const lidx_t* ldb, int* info);
 
 #define DTRTRS LAPACK_SUBR(DTRTRS,dtrtrs)
-void DTRTRS(const char* uplo, const char* trans, const char* diag, const int* n, const int* nrhs, 
-const double* a, const int* lda, double* b, const int* ldb, int* info);
+void DTRTRS(const char* uplo, const char* trans, const char* diag, const lidx_t* n, const lidx_t* nrhs, 
+const double* a, const lidx_t* lda, double* b, const lidx_t* ldb, int* info);
 
 #define CTRTRS LAPACK_SUBR(CTRTRS,ctrtrs)
-void CTRTRS(const char* uplo, const char* trans, const char* diag, const int* n, const int* nrhs, 
-const Sblas_cmplx_t* a, const int* lda, Sblas_cmplx_t* b, const int* ldb, int* info);
+void CTRTRS(const char* uplo, const char* trans, const char* diag, const lidx_t* n, const lidx_t* nrhs, 
+const Sblas_cmplx_t* a, const lidx_t* lda, Sblas_cmplx_t* b, const lidx_t* ldb, int* info);
 
 #define ZTRTRS LAPACK_SUBR(ZTRTRS,ztrtrs)
-void ZTRTRS(const char* uplo, const char* trans, const char* diag, const int* n, const int* nrhs, 
-const Dblas_cmplx_t* a, const int* lda, Dblas_cmplx_t* b, const int* ldb, int* info);
+void ZTRTRS(const char* uplo, const char* trans, const char* diag, const lidx_t* n, const lidx_t* nrhs, 
+const Dblas_cmplx_t* a, const lidx_t* lda, Dblas_cmplx_t* b, const lidx_t* ldb, int* info);
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //      XTRTRV - solve triangular linear system with single vector                       //
 ///////////////////////////////////////////////////////////////////////////////////////////
 #define STRSV BLAS_SUBR(STRSV,strsv)
-void STRSV(const char* uplo, const char* trans, const char* diag, const int* n,
-const float* a, const int* lda, float* b, const int* incb, int* info);
+void STRSV(const char* uplo, const char* trans, const char* diag, const lidx_t* n,
+const float* a, const lidx_t* lda, float* b, const lidx_t* incb, int* info);
 
 #define DTRSV BLAS_SUBR(DTRSV,dtrsv)
-void DTRSV(const char* uplo, const char* trans, const char* diag, const int* n,
-const double* a, const int* lda, double* b, const int* incb, int* info);
+void DTRSV(const char* uplo, const char* trans, const char* diag, const lidx_t* n,
+const double* a, const lidx_t* lda, double* b, const lidx_t* incb, int* info);
 
 #define CTRSV BLAS_SUBR(CTRSV,ctrsv)
-void CTRSV(const char* uplo, const char* trans, const char* diag, const int* n,
-const Sblas_cmplx_t* a, const int* lda, Sblas_cmplx_t* b, const int* incb, int* info);
+void CTRSV(const char* uplo, const char* trans, const char* diag, const lidx_t* n,
+const Sblas_cmplx_t* a, const lidx_t* lda, Sblas_cmplx_t* b, const lidx_t* incb, int* info);
 
 #define ZTRSV BLAS_SUBR(ZTRSV,ztrsv)
-void ZTRSV(const char* uplo, const char* trans, const char* diag, const int* n,
-const Dblas_cmplx_t* a, const int* lda, Dblas_cmplx_t* b, const int* incb, int* info);
+void ZTRSV(const char* uplo, const char* trans, const char* diag, const lidx_t* n,
+const Dblas_cmplx_t* a, const lidx_t* lda, Dblas_cmplx_t* b, const lidx_t* incb, int* info);
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //      XTRTRM - solve triangular linear system with rhs matrix                          //
 ///////////////////////////////////////////////////////////////////////////////////////////
 #define STRSM BLAS_SUBR(STRSM,strsm)
-void STRSM(const char* side, const char* uplo, const char* trans, const char* diag, const int* m, const int* n,
-const float* alpha, const float* a, const int* lda, float* b, const int* ldb, int* info);
+void STRSM(const char* side, const char* uplo, const char* trans, const char* diag, const lidx_t* m, const lidx_t* n,
+const float* alpha, const float* a, const lidx_t* lda, float* b, const lidx_t* ldb, int* info);
 
 #define DTRSM BLAS_SUBR(DTRSV,dtrsm)
-void DTRSM(const char* side, const char* uplo, const char* trans, const char* diag, const int* m, const int* n,
-const double* alpha, const double* a, const int* lda, double* b, const int* ldb, int* info);
+void DTRSM(const char* side, const char* uplo, const char* trans, const char* diag, const lidx_t* m, const lidx_t* n,
+const double* alpha, const double* a, const lidx_t* lda, double* b, const lidx_t* ldb, int* info);
 
 #define CTRSM BLAS_SUBR(CTRSV,ctrsm)
-void CTRSM(const char* side, const char* uplo, const char* trans, const char* diag, const int* m, const int* n,
-const Sblas_cmplx_t* alpha, const Sblas_cmplx_t* a, const int* lda, Sblas_cmplx_t* b, const int* ldb, int* info);
+void CTRSM(const char* side, const char* uplo, const char* trans, const char* diag, const lidx_t* m, const lidx_t* n,
+const Sblas_cmplx_t* alpha, const Sblas_cmplx_t* a, const lidx_t* lda, Sblas_cmplx_t* b, const lidx_t* ldb, int* info);
 
 #define ZTRSM BLAS_SUBR(ZTRSV,ztrsm)
-void ZTRSM(const char* side, const char* uplo, const char* trans, const char* diag, const int* m, const int* n,
-const Dblas_cmplx_t* alpha, const Dblas_cmplx_t* a, const int* lda, Dblas_cmplx_t* b, const int* ldb, int* info);
+void ZTRSM(const char* side, const char* uplo, const char* trans, const char* diag, const lidx_t* m, const lidx_t* n,
+const Dblas_cmplx_t* alpha, const Dblas_cmplx_t* a, const lidx_t* lda, Dblas_cmplx_t* b, const lidx_t* ldb, int* info);
 
 
 

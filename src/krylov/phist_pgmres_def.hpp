@@ -279,7 +279,7 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
   _ST_ *yglob = new _ST_[(maxId+1)*(maxCurDimV-1)];
   for(int i = 0; i < (maxId+1)*(maxCurDimV-1); i++)
     yglob[i] = st::zero();
-  int ldy = (maxId+1);
+  lidx_t ldy = (maxId+1);
 
   // calculate y by solving the triangular systems
   for(int i = 0; i < numSys; i++)
@@ -289,7 +289,7 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
       continue;
 
     // helpful variables
-    int m = S[i]->curDimV_-1;
+    lidx_t m = S[i]->curDimV_-1;
     ST *H_raw=NULL;
     lidx_t ldH;
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&H_raw,&ldH,ierr),*ierr);

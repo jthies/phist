@@ -4,6 +4,7 @@
 #include "ghost.h"
 #include "phist_typedefs.h"
 #include "phist_ScalarTraits.hpp"
+#include "./typedefs.hpp"
 #include "phist_tools.h"
 #include "phist_macros.h"
 #include <Teuchos_ScalarTraits.hpp>
@@ -44,6 +45,7 @@ using ::phist::GhostMV;
 
     typedef ::phist::ScalarTraits<Scalar> st;
     typedef typename st::magn_t magn_t;
+    typedef typename Traits<Scalar>::Teuchos_sdMat_t Teuchos_sdMat_t;
 
     static Teuchos::RCP<GhostMV > Clone( const GhostMV& mv, const int numvecs )
     {
@@ -285,7 +287,7 @@ using ::phist::GhostMV;
     { return (mv.get()->traits->flags&GHOST_VEC_SCATTERED==false); }
 
     static void MvTimesMatAddMv( Scalar alpha, const GhostMV& A, 
-                                 const Teuchos::SerialDenseMatrix<lidx_t,Scalar>& B, 
+                                 const Teuchos_sdMat_t& B, 
                                  Scalar beta, GhostMV& mv )
     {
       ENTER_FCN(__FUNCTION__);    
@@ -382,7 +384,7 @@ using ::phist::GhostMV;
     }
 
     // C=alpha*A*B
-    static void MvTransMv( Scalar alpha, const GhostMV& A, const GhostMV& B, Teuchos::SerialDenseMatrix<lidx_t,Scalar>& C)
+    static void MvTransMv( Scalar alpha, const GhostMV& A, const GhostMV& B, Teuchos_sdMat_t& C)
     {
       ENTER_FCN(__FUNCTION__);    
       ghost_vec_t* Cghost=createGhostViewOfTeuchosSDM(C);
@@ -587,7 +589,7 @@ using ::phist::GhostMV;
 
   // private helper function
   static ghost_vec_t* createGhostViewOfTeuchosSDM
-        (const Teuchos::SerialDenseMatrix<lidx_t,Scalar>& M)
+        (const Teuchos_sdMat_t& M)
   {
     ENTER_FCN(__FUNCTION__);
       ghost_vtraits_t *dmtraits=new ghost_vtraits_t;

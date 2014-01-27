@@ -26,6 +26,7 @@
 #endif
 
 #include "ghost.h"
+#include <limits>
 
 namespace phist
   {
@@ -202,6 +203,17 @@ void phist_map_get_iupper(const_map_ptr_t vmap, int* iupper, int* ierr)
 
 
 } //extern "C"
+
+// small helper function to preclude integer overflows (ghost allows 64 bit local indices, 
+// but we don't right now)
+  template<typename idx_t>
+  int check_local_size(idx_t& i)
+  {
+    if (i>std::numeric_limits<lidx_t>::max()) return -1;
+    return 0;
+  }
+
+
 
 #include "phist_gen_s.h"
 #include "kernels_def.hpp"

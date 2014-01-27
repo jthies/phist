@@ -193,6 +193,7 @@ void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) vV, lidx_t* len, int* ierr)
   ENTER_FCN(__FUNCTION__);
   *ierr = 0;
   CAST_PTR_FROM_VOID(const ghost_vec_t,V,vV,*ierr);
+  PHIST_CHK_IERR(*ierr=check_local_size(V->traits->nrows),*ierr);
   *len = V->traits->nrows;
   }
 
@@ -235,15 +236,17 @@ void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) vV, int* nvec, int* ierr)
   ENTER_FCN(__FUNCTION__);
   *ierr = 0;
   CAST_PTR_FROM_VOID(const ghost_vec_t,V,vV,*ierr);
+  PHIST_CHK_IERR(*ierr=check_local_size(V->traits->nvecs),*ierr);
   *nvec = V->traits->nvecs;
   }
 
-//! get number of cols in local dense matrix
+//! get number of rows in local dense matrix
 void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) vM, int* nrows, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   CAST_PTR_FROM_VOID(const ghost_vec_t,M,vM,*ierr);
+  PHIST_CHK_IERR(*ierr=check_local_size(M->traits->nrows),*ierr);
   *nrows = M->traits->nrows;
   }
   
@@ -258,43 +261,46 @@ void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) vM, int* ncols, int* ierr)
 
 
 void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ierr)
-  {
+{
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   CAST_PTR_FROM_VOID(ghost_vec_t,V, vV, *ierr);
   if (V->traits->flags & GHOST_VEC_SCATTERED)
-    {
+  {
     PHIST_OUT(PHIST_ERROR,"%s: cannot view data with non-constant stride using "
         "this function (file %s, line %d)\n", __FUNCTION__, __FILE__, __LINE__);
     *ierr=-1; 
     return;
-    }
+  }
   if (V->val==NULL)
-    {
+  {
     PHIST_OUT(PHIST_ERROR,"%s, pointer is NULL\n",__FUNCTION__);
     *ierr=-2;
     return;
-    }
-  *val = (_ST_*)(V->val[0]);
-  *lda = V->traits->nrowspadded;
   }
+  *val = (_ST_*)(V->val[0]);
+  PHIST_CHK_IERR(*ierr=check_local_size(V->traits->nrowspadded),*ierr);
+  *lda = V->traits->nrowspadded;
+}
 
 void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* ierr)
-  {
+{
   ENTER_FCN(__FUNCTION__);
   CAST_PTR_FROM_VOID(ghost_vec_t,M, vM, *ierr);
 
   if (M->traits->flags & GHOST_VEC_SCATTERED)
-    {
+  {
     PHIST_OUT(PHIST_ERROR,"%s: cannot view data with non-constant stride using "
         "this function (file %s, line %d)\n", __FUNCTION__, __FILE__, __LINE__);
     *ierr=-1; 
     return;
-    }
+  }
 
   *val = (_ST_*)M->val[0];
+
+  PHIST_CHK_IERR(*ierr=check_local_size(M->traits->nrowspadded),*ierr);
   *lda = M->traits->nrowspadded;
-  }
+}
 
 //! get a new vector that is a view of some columns of the original one,
 //! Vblock = V(:,jmin:jmax). The new object Vblock is created but does not
