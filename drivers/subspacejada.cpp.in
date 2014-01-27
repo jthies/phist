@@ -36,7 +36,7 @@ int main(int argc, char** argv)
   // check arguments
   if( argc < 2 )
   {
-    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A filename> [<invariant subspace dimension>] [<which>] [<tol>] [<max iters> <JD block size> <min basis> <max basis> <GMRES block size> <GMRES subspace dimension> <initial shift> <initial shift iterations>]\n", argv[0]);
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A filename> [<invariant subspace dimension>] [<which>] [<tol>] [<max iters> <JD block size> <min basis> <max basis> <GMRES block size> <GMRES subspace dimension> <initial shift> <initial shift iterations> <GMRES use IMGS> <GMRES abort when first converged in block>]\n", argv[0]);
     return 1;
   }
 
@@ -146,6 +146,22 @@ int main(int argc, char** argv)
     iss >> initialShiftIters;
   }
 
+  // in the inner GMRES: use a iterated modified gram schmidt (more accurate, but quite costly!)
+  bool innerIMGS = true;
+  if( argc > 13 )
+  {
+    std::istringstream iss(argv[13]);
+    iss >> innerIMGS;
+  }
+
+  // in the inner GMRES: abort solving a block when first system converged (effectively disables pipelining, but only "blocking" may be faster for now)
+  bool innerGMRESabortAfterFirstConverged = false;
+  if( argc > 14 )
+  {
+    std::istringstream iss(argv[14]);
+    iss >> innerGMRESabortAfterFirstConverged;
+  }
+
 
 
   //------------------------------- setup matrices and vectors --------------------- 
@@ -230,7 +246,7 @@ int main(int argc, char** argv)
 
 
   //------------------------------- run block JaDa algorithm ----------------------- 
-  PHIST_ICHK_IERR(SUBR(subspacejada)(opA, NULL, v0, which, tol, nEig, &nIter, blockDim, minBase, maxBase, innerBlockDim, innerMaxBase, initialShiftIters, initialShift, Q, R, resNorm, &ierr), ierr);
+  PHIST_ICHK_IERR(SUBR(subspacejada)(opA, NULL, v0, which, tol, nEig, &nIter, blockDim, minBase, maxBase, innerBlockDim, innerMaxBase, initialShiftIters, initialShift, innerIMGS, innerGMRESabortAfterFirstConverged, Q, R, resNorm, &ierr), ierr);
   int nConvergedEig = 0;
   for(int i = 0; i < nEig; i++)
     if(resNorm[i] <= tol)

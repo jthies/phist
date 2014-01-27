@@ -46,7 +46,8 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
                                     TYPE(const_mvec_ptr)  Qtil,     TYPE(const_mvec_ptr)  BQtil,
                                     const _ST_            sigma[],  TYPE(const_mvec_ptr)  res,      const int resIndex[], 
                                     const _MT_            tol[],    int                   maxIter,
-                                    TYPE(mvec_ptr)        t,        bool abortAfterFirstConvergedInBlock,
+                                    TYPE(mvec_ptr)        t,
+                                    bool useIMGS,                   bool abortAfterFirstConvergedInBlock,
                                     int *                 ierr)
 {
 #include "phist_std_typedefs.hpp"
@@ -148,7 +149,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
     }
 
     // actually iterate
-    PHIST_CHK_NEG_IERR(SUBR(pgmresStates_iterate)(&jadaOp, &activeStates[0], k, &nTotalIter, ierr), *ierr);
+    PHIST_CHK_NEG_IERR(SUBR(pgmresStates_iterate)(&jadaOp, &activeStates[0], k, &nTotalIter, useIMGS, ierr), *ierr);
 
 
     // optimization to use always full blocks and ignore tolerances

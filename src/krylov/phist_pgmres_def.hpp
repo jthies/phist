@@ -402,7 +402,7 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
 
 
 // implementation of gmres on several systems simultaneously
-void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[], int numSys, int* nIter, int* ierr)
+void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[], int numSys, int* nIter, bool useIMGS, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
@@ -592,7 +592,10 @@ PHIST_SOUT(PHIST_INFO,"\n");
       {
         // calculate norm
         prev_ynorm = ynorm;
-        PHIST_CHK_IERR(SUBR(mvec_norm2)(work_y, &ynorm[0], ierr), *ierr);
+        if( useIMGS || mgsIter == 1 )
+        {
+          PHIST_CHK_IERR(SUBR(mvec_norm2)(work_y, &ynorm[0], ierr), *ierr);
+        }
 
         bool needAnotherIteration = (mgsIter == 0);
         PHIST_SOUT(PHIST_DEBUG,"reduction in norm in IMGS:");
@@ -603,10 +606,10 @@ PHIST_SOUT(PHIST_INFO,"\n");
             needAnotherIteration = true;
         }
         PHIST_SOUT(PHIST_DEBUG,"\n");
-        if( !needAnotherIteration )
-          break;
         if( mgsIter > 0)
         {
+          if( !(needAnotherIteration && useIMGS) )
+            break;
           PHIST_SOUT(PHIST_INFO, "Additional MGS iteration in PGMRES!\n");
         }
 
