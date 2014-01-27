@@ -192,8 +192,17 @@ using ::phist::GhostMV;
 
     if (constStride==false)
     {
-      //TODO: index is ints, ghost_vidx_t may be int64_t...
-      result=_mv->viewScatteredVec(_mv,(ghost_vidx_t)index.size(),(ghost_vidx_t*)(&index[0]));
+#ifdef GHOST_HAVE_LONGIDX
+      // ghost expects long ints here, while we get ints. So we copy them over:
+      std::vector<ghost_vidx_t> clone_index(index.size());
+      for (int i=0;i<index.size();i++)
+      {
+        clone_index[i]=(ghost_vidx_t)index[i];
+      }
+#else
+      const std::vector<ghost_vidx_t>& clone_index=index;
+#endif
+      result=_mv->viewScatteredVec(_mv,(ghost_vidx_t)index.size(),(ghost_vidx_t*)&clone_index[0]);
     }
     else
     {
