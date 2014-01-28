@@ -21,6 +21,10 @@
 #include "phist_jadaOpts.h"
 
 #include "phist_jadaCorrectionSolver.h"
+// for testing CARP-CG, we use Belos BlockCG for now.
+// If it turns out to work well, we could include CG
+// as an option in the jadaCorrectionSolver.
+#include "phist_belos.h"
 
 #include "phist_gen_s.h"
 #include "phist_jdqr_def.hpp"
