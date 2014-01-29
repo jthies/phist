@@ -30,11 +30,9 @@
 #elif defined(PHIST_KERNEL_LIB_TPETRA)
 #include "Tpetra_MultiVector.hpp"
 #include "BelosTpetraAdapter.hpp"
-#elif defined(PHIST_KERNEL_LIB_FORTRAN)
-#warning "belos not supported with fortran kernels lib"
-#define NO_BELOS_IMPLEMENTATION
 #else
-#error "belos only supports ghost, epetra and tpetra right now"
+#warning "belos only supported with ghost, epetra and tpetra right now"
+#define NO_BELOS_IMPLEMENTATION
 #endif
 
 #include "phist_gen_d.h"

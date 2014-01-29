@@ -48,7 +48,6 @@ typedef struct TYPE(private_carpOpData)
   TYPE(carpData)* carp_;
   TYPE(const_crsMat_ptr) A_;
   TYPE(const_mvec_ptr) B_;
-  _ST_ omega_;
 } TYPE(private_carpOpData);
 
 
@@ -107,8 +106,8 @@ void SUBR(op_carp)(TYPE(op_ptr) op, TYPE(const_crsMat_ptr) A,
         (TYPE(private_carpOpData)*)malloc(sizeof(TYPE(private_carpOpData)));
   dat->A_=A;
   dat->B_=NULL;
-  dat->omega_=omega;
   PHIST_CHK_IERR(SUBR(carp_create)(A,&(dat->carp_),ierr),*ierr);
+  dat->carp_->omega_=omega;
   op->A=dat;
   op->apply=&SUBR(private_I_minus_dkswp);
   op->apply_shifted = &SUBR(private_I_minus_dkswp_shifted);

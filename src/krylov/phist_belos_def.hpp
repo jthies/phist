@@ -147,5 +147,5 @@ try {
 
   if (!status) *ierr=PHIST_CAUGHT_EXCEPTION; 
   return;
-  }// end of belos
 #endif
+  }// end of belos

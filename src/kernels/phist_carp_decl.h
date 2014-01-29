@@ -7,6 +7,7 @@ typedef struct TYPE(carpData)
   TYPE(mvec_ptr) diagA_;
   TYPE(mvec_ptr) rowScaling_;
   TYPE(mvec_ptr) xLoc_; // for importing the X vector
+  _ST_ omega_; // relaxation parameter
 } TYPE(carpData);
 
 //! setup CARP data structures for a matrix A. The data structures
