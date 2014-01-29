@@ -155,7 +155,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(&solver, 3, map_, _MAXBAS_, &ierr_);
+      SUBR(jadaCorrectionSolver_create)(&solver, 3, map_, GMRES, _MAXBAS_, &ierr_);
       ASSERT_EQ(0, ierr_);
       SUBR(jadaCorrectionSolver_delete)(solver, &ierr_);
       ASSERT_EQ(0, ierr_);
@@ -176,7 +176,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(&solver, 1, map_, _MAXBAS_, &ierr_);
+      SUBR(jadaCorrectionSolver_create)(&solver, 1, map_, GMRES, _MAXBAS_, &ierr_);
       ASSERT_EQ(0, ierr_);
 
       TYPE(mvec_ptr) t_i = NULL;
@@ -218,7 +218,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(&solver, _NV_, map_, _MAXBAS_, &ierr_);
+      SUBR(jadaCorrectionSolver_create)(&solver, _NV_, map_, GMRES, _MAXBAS_, &ierr_);
       ASSERT_EQ(0, ierr_);
 
       _MT_ tol[_NV_];
@@ -249,7 +249,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(&solver, 1, map_, _MAXBAS_, &ierr_);
+      SUBR(jadaCorrectionSolver_create)(&solver, 1, map_, GMRES, _MAXBAS_, &ierr_);
       ASSERT_EQ(0, ierr_);
 
       _MT_ tol[_NV_];
@@ -280,7 +280,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(&solver, 2, map_, _MAXBAS_, &ierr_);
+      SUBR(jadaCorrectionSolver_create)(&solver, 2, map_, GMRES, _MAXBAS_, &ierr_);
       ASSERT_EQ(0, ierr_);
 
       _MT_ tol[_NV_];
@@ -311,7 +311,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(&solver, 4, map_, _MAXBAS_, &ierr_);
+      SUBR(jadaCorrectionSolver_create)(&solver, 4, map_, GMRES, _MAXBAS_, &ierr_);
       ASSERT_EQ(0, ierr_);
 
       _MT_ tol[_NV_];

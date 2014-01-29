@@ -171,7 +171,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
   //------------------------------- initialize correction equation solver solver ------------------------
   TYPE(jadaCorrectionSolver_ptr) innerSolv = NULL;
-  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, innerBlockDim, A_op->domain_map, innerMaxBase, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, innerBlockDim, A_op->domain_map, GMRES, innerMaxBase, ierr), *ierr);
   std::vector<_MT_> innerTol(nEig_,mt::one());
   std::vector<_MT_> lastOuterRes(nEig_,mt::zero());
 

@@ -97,6 +97,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   eigSort_t which=opts.which;
   int minBas = opts.minBas;
   int maxBas = opts.maxBas;
+  linSolv_t innerSolvType = opts.innerSolvType;
   bool arno=(bool)opts.arno;
   MT initialShift=(MT)opts.initialShift;
 
@@ -104,13 +105,14 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   
   int i,it,m,mm;
   MT nrm[2]; // for computing residual norms
-
+  MT prev_nrm; // previous norm, to detect wether we're still working on the same eigenvalue
+  
   // set output format for floating point numbers
   std::cout << std::scientific << std::setprecision(4) << std::setw(8);
 
   *num_iters=0;
   *num_eigs=0;
-   
+  nrm[0]=1.0e88;// some random large value 
   const_comm_ptr_t comm;
   PHIST_CHK_IERR(phist_map_get_comm(A_op->range_map,&comm,ierr),*ierr);
 
@@ -166,8 +168,11 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
   // setup inner solver
   TYPE(jadaCorrectionSolver_ptr) innerSolv = NULL;
-  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, nv_max, A_op->domain_map, 25, 
-  ierr), *ierr);
+  if (innerSolvType==GMRES)
+  {
+    PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, nv_max, 
+        A_op->domain_map, innerSolvType, 25, ierr), *ierr);
+  }
 
   // print parameters passed in to the method
   PHIST_SOUT(PHIST_VERBOSE,"====================\n");
@@ -443,6 +448,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     //Au=AV*s;
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),AVv,Sv,st::zero(),Au_ptr,ierr),*ierr);
 
+    prev_nrm=nrm[0];
+    
 // part CMP_RESID: compute residual and its norm (TODO: make this a helper function)
 //{
     // r=Au-theta*u; ([r_r, r_i] = [Au_r, Au_i] - [u_r, u_i]*Theta in the real case with 
@@ -616,6 +623,13 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m-1,0,m-1,ierr),*ierr);
   } //while (deflate)
 
+  if (nrm[0]>100*prev_nrm)
+  {
+    // we probably aren't working on the same
+    // eigenvalue anymore, so we reset the convergence
+    // tolerance
+  }
+
   // restart if necessary
   if (m>=maxBas)
   {
@@ -694,9 +708,41 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
     // allow at most 25 iterations (TODO: make these settings available to the user)
     int nIt=25;
-    PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, NULL, Qtil, NULL, sigma, rtil_ptr, NULL, 
-                                                      innerTol, nIt, t_ptr, true, false, ierr), *ierr);
+    if (innerSolvType==CARP_CG)
+    {
+      //TODO: integrate CARP_CG in jadaCorrectionSolver.
+      //TODO: avoid temporary vector
+      TYPE(mvec_ptr) y_tmp=NULL;
+      PHIST_CHK_IERR(SUBR(mvec_create)(&y_tmp, A_op->domain_map, nv, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_put_value)(y_tmp,st::zero(),ierr),*ierr);
+      TYPE(op) carpOp, jadaOp;
+      
+      // note: the whole of phist is not type-safe, so this cast will
+      //       not produce an error if the data in A_op is not compatible with
+      //       TYPE(crsMat).
+      TYPE(const_crsMat_ptr) A=(TYPE(const_crsMat_ptr))A_op->A;
+      
 
+      MT omega=1.7;// TODO - make available to the outside
+      PHIST_CHK_IERR(SUBR(op_carp)(&carpOp, A, omega, ierr),*ierr);
+
+      PHIST_CHK_IERR(SUBR(jadaOp_create)(&carpOp, B_op, Qtil, NULL, sigma, nv, 
+                                &jadaOp, ierr), *ierr);
+
+      
+
+      int variant=3; //0:block GMRES, 1: pseudo-BGMRES 2: BlockCG 3: pseudo BlockCG
+      SUBR(belos)(&jadaOp,y_tmp,rtil_ptr,innerTol[0],&nIt,nIt,variant,NULL,ierr);
+
+      PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jadaOp,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_delete)(y_tmp,ierr),*ierr);
+    }
+    else
+    {
+      PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, NULL, Qtil, NULL, 
+                                                      sigma, rtil_ptr, NULL, 
+                                                      innerTol, nIt, t_ptr, true, false, ierr), *ierr);
+    }
     expand=nv;
   }
   else
