@@ -1,3 +1,5 @@
+extern "C" {
+
 // this function can be used to create an operator which encapsulates a CRS matrix.
 // It does not allocate memory for the op struct, the caller has to do that beforehand.
 void SUBR(op_wrap_crsMat)(TYPE(op_ptr) op, TYPE(const_crsMat_ptr) A, int* ierr)
@@ -58,10 +60,11 @@ void SUBR(private_I_minus_dkswp_shifted)(_ST_ alpha, const void* vdat, _ST_ cons
         TYPE(const_mvec_ptr) X,
         _ST_ beta, TYPE(mvec_ptr) Y, int* ierr)
 {
+#include "phist_std_typedefs.hpp"
 ENTER_FCN(__FUNCTION__);
 CAST_PTR_FROM_VOID(TYPE(private_carpOpData) const, dat, vdat,*ierr);
 
-  if (alpha!=ONE || beta!=ZERO)
+  if (alpha!=st::one() || beta!=st::zero())
   {
     PHIST_SOUT(PHIST_ERROR,"only case alpha=1, beta=0 implemented in %s\n"
                            "(%s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
@@ -75,18 +78,19 @@ CAST_PTR_FROM_VOID(TYPE(private_carpOpData) const, dat, vdat,*ierr);
                 X, Y, ierr), *ierr);
 
 //  SUBR(mvec_add_mvec)(alpha,X,beta,Y,ierr);
-  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(ONE,X,-ONE,Y,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),X,-st::one(),Y,ierr),*ierr);
 }
 
 void SUBR(private_I_minus_dkswp)(_ST_ alpha, const void* vdat,
         TYPE(const_mvec_ptr) X,
         _ST_ beta, TYPE(mvec_ptr) Y, int* ierr)
 {
+#include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   int nvec;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nvec,ierr),*ierr);
   _ST_ shifts[nvec];
-  for (int i=0;i<nvec;i++) shifts[i]=ONE;
+  for (int i=0;i<nvec;i++) shifts[i]=st::one();
   PHIST_CHK_IERR(SUBR(private_I_minus_dkswp_shifted)(alpha,vdat,shifts,X,beta,Y,ierr),*ierr);
 }
 
@@ -99,7 +103,6 @@ void SUBR(op_carp)(TYPE(op_ptr) op, TYPE(const_crsMat_ptr) A,
         _MT_ omega, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
-
   // note: this operator acts as A*A^T
   PHIST_CHK_IERR(SUBR(crsMat_get_range_map)(A,&op->range_map,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(crsMat_get_range_map)(A,&op->domain_map,ierr),*ierr);
@@ -117,3 +120,5 @@ void SUBR(op_carp)(TYPE(op_ptr) op, TYPE(const_crsMat_ptr) A,
 
   return;
 }
+
+} // extern "C"

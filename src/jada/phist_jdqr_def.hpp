@@ -715,6 +715,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     int nIt=25;
     if (innerSolvType==CARP_CG)
     {
+      PHIST_DEB("CARP-CG setup\n");
       //TODO: integrate CARP_CG in jadaCorrectionSolver.
       //TODO: avoid temporary vector
       TYPE(mvec_ptr) y_tmp=NULL;
@@ -734,17 +735,20 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       PHIST_CHK_IERR(SUBR(jadaOp_create)(&carpOp, B_op, Qtil, NULL, sigma, nv, 
                                 &jadaOp, ierr), *ierr);
 
+      PHIST_DEB("CARP-CG solve\n");
       
-
-      int variant=3; //0:block GMRES, 1: pseudo-BGMRES 2: BlockCG 3: pseudo BlockCG
+      int variant=2; //0:block GMRES, 1: pseudo-BGMRES 2: BlockCG 3: pseudo BlockCG
       SUBR(belos)(&jadaOp,y_tmp,rtil_ptr,innerTol[0],&nIt,nIt,variant,NULL,ierr);
       
       // back transform because we actually solved AA'y=b, so x=A'y
+      PHIST_DEB("CARP-CG back transformation\n");
       if (A_op->applyT==NULL)
       {
         PHIST_SOUT(PHIST_ERROR,"can't back-transform CARP-CG solution because\n"
                                "operator does not support applyT (transpose application)\n"
                                "(file %s, line %d)",__FILE__,__LINE__);
+        *ierr=-1;
+        return;
       }
       PHIST_CHK_IERR(A_op->applyT(st::one(),A_op->A,y_tmp,st::zero(),t_ptr,ierr),*ierr);
 

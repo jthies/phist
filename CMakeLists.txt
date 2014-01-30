@@ -198,7 +198,7 @@ else()
 endif()
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_rcp_helpers.cpp)
-set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.c
+set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp)
 #                       ${PROJECT_SOURCE_DIR}/src/core/phist_taskbuf.c)
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
