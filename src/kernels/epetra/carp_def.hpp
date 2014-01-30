@@ -39,6 +39,7 @@ void SUBR(carp_create)(TYPE(const_crsMat_ptr) vA, TYPE(carpData)** dat_ptr, int*
 
 void SUBR(carp_delete)(TYPE(carpData)* dat, int* ierr)
 {
+  ENTER_FCN(__FUNCTION__);
   *ierr=0;
   if (dat==NULL) return;
   *ierr=-99;
@@ -48,6 +49,7 @@ void SUBR(carp_fb)(TYPE(carpData)* dat, TYPE(const_crsMat_ptr) vA,
         TYPE(const_mvec_ptr) vB, _ST_ const * sigma, 
         TYPE(const_mvec_ptr) vrhs, TYPE(mvec_ptr) vsol, int* ierr)
 {
+  ENTER_FCN(__FUNCTION__);
   CAST_PTR_FROM_VOID(const Epetra_CrsMatrix, A, vA, *ierr);
   const Epetra_Vector* B = (const Epetra_Vector*)(vB);
   CAST_PTR_FROM_VOID(const Epetra_MultiVector, rhs, vrhs, *ierr);
@@ -74,6 +76,7 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
       CAST_PTR_FROM_VOID(Epetra_MultiVector,xLoc,dat->xLoc_,*ierr);
       if (xLoc->NumVectors()!=sol->NumVectors())
       {
+        delete xLoc;
         needVecs=true;
       }
     }
@@ -81,6 +84,7 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
 
   if (needVecs)
   {
+    PHIST_SOUT(PHIST_DEBUG,"(re-)allocate temporary vector");
     dat->xLoc_ = (TYPE(mvec_ptr))(new Epetra_MultiVector(A->ColMap(),sol->NumVectors()));
   }
   

@@ -9,6 +9,7 @@
 #include <iomanip>
 
 #include "phist_macros.h"
+#include "phist_enums.h"
 #include "phist_jdqr.h"
 #include "phist_kernels.h"
 #include "phist_lapack.h"

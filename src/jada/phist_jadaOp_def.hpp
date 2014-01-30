@@ -170,6 +170,7 @@ void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,    TYPE(const_op_ptr)    B_
   // setup op_ptr function pointers
   jdOp->A     = (const void*)myOp;
   jdOp->apply = (&SUBR(jadaOp_apply));
+  jdOp->applyT= NULL; // not needed, I think, but it's trivial to implement
   jdOp->apply_shifted=NULL;// does not make sense, it would mean calling apply_shifted in a 
                            // nested way.
 

@@ -10,6 +10,9 @@ typedef struct TYPE(op) {
  //! pointer to function for computing Y=alpha*A*X+beta*Y
  void (*apply)(_ST_ alpha, const void* A, 
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* ierr);
+//! apply transpose
+ void (*applyT)(_ST_ alpha, const void* A, 
+        TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* ierr);
  //! pointer to function for computing Y=(A-sigma[j]B)*X[j]+beta*Y[j]
  void (*apply_shifted)(_ST_ alpha, const void* A, _ST_ const * sigma,
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* ierr);

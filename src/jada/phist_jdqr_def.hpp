@@ -180,10 +180,15 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_SOUT(PHIST_VERBOSE,"====================\n");
   PHIST_SOUT(PHIST_VERBOSE,"#eigs\t%d\n",numEigs);
   PHIST_SOUT(PHIST_VERBOSE,"which\t%s\n",eigSort2str(which));
-  PHIST_SOUT(PHIST_VERBOSE,"tol\t%4.2g\n",tol);
+  PHIST_SOUT(PHIST_VERBOSE,"tol\t%5.3g\n",tol);
   PHIST_SOUT(PHIST_VERBOSE,"#iter\t%d\n",maxIter);
   PHIST_SOUT(PHIST_VERBOSE,"minBas\t%d\n",minBas);
   PHIST_SOUT(PHIST_VERBOSE,"maxBas\t%d\n",maxBas);
+  PHIST_SOUT(PHIST_VERBOSE,"innerSolvType\t%s\n",linSolv2str(innerSolvType));
+  if (!arno)
+  {
+    PHIST_SOUT(PHIST_VERBOSE,"initialShift\t%4.2g\n",initialShift);
+  }
   PHIST_SOUT(PHIST_VERBOSE,"====================\n");
 
   mvec_ptr_t v0=(mvec_ptr_t)opts.v0;
@@ -704,7 +709,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     MT innerTol[2];
     innerTol[0] = std::max(tol,mt::one()/((MT)(2<<mm)));
     innerTol[1] = std::max(tol,mt::one()/((MT)(2<<mm)));
-    PHIST_SOUT(PHIST_VERBOSE,"inner conv tol: %g",innerTol[0]);
+    PHIST_SOUT(PHIST_VERBOSE,"inner conv tol: %g\n",innerTol[0]);
 
     // allow at most 25 iterations (TODO: make these settings available to the user)
     int nIt=25;
@@ -733,6 +738,15 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
       int variant=3; //0:block GMRES, 1: pseudo-BGMRES 2: BlockCG 3: pseudo BlockCG
       SUBR(belos)(&jadaOp,y_tmp,rtil_ptr,innerTol[0],&nIt,nIt,variant,NULL,ierr);
+      
+      // back transform because we actually solved AA'y=b, so x=A'y
+      if (A_op->applyT==NULL)
+      {
+        PHIST_SOUT(PHIST_ERROR,"can't back-transform CARP-CG solution because\n"
+                               "operator does not support applyT (transpose application)\n"
+                               "(file %s, line %d)",__FILE__,__LINE__);
+      }
+      PHIST_CHK_IERR(A_op->applyT(st::one(),A_op->A,y_tmp,st::zero(),t_ptr,ierr),*ierr);
 
       PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jadaOp,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_delete)(y_tmp,ierr),*ierr);

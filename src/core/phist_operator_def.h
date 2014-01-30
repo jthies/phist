@@ -7,6 +7,7 @@ void SUBR(op_wrap_crsMat)(TYPE(op_ptr) op, TYPE(const_crsMat_ptr) A, int* ierr)
   PHIST_CHK_IERR(SUBR(crsMat_get_range_map)(A,&op->range_map,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(crsMat_get_domain_map)(A,&op->domain_map,ierr),*ierr);
   op->apply = &SUBR(crsMat_times_mvec);
+  op->applyT = &SUBR(crsMatT_times_mvec);
   op->apply_shifted = &SUBR(crsMat_times_mvec_vadd_mvec);
   return;
   }
@@ -40,6 +41,7 @@ void SUBR(op_identity)(TYPE(op_ptr) op, int* ierr)
   *ierr=0;
   op->A=NULL;
   op->apply = &SUBR(private_idOp_apply);
+  op->applyT = &SUBR(private_idOp_apply);
   op->apply_shifted = &SUBR(private_idOp_apply_shifted);
 }
 
@@ -110,6 +112,7 @@ void SUBR(op_carp)(TYPE(op_ptr) op, TYPE(const_crsMat_ptr) A,
   dat->carp_->omega_=omega;
   op->A=dat;
   op->apply=&SUBR(private_I_minus_dkswp);
+  op->applyT=NULL; // not supported
   op->apply_shifted = &SUBR(private_I_minus_dkswp_shifted);
 
   return;
