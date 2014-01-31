@@ -20,19 +20,20 @@ end
 %A=A+A'+2*speye(n);
 %A2=A2+A2'+2*speye(n);
 
-opts.verbose=false;
+opts.verbose=true;
 opts.debug=false;
 
 % JD options
 opts.arnoldi=true; % start with Arnoldi?
 %opts.switchTol=1.0e-3;
 opts.numEigs=10;
-opts.target='SR';
+opts.target='LM';
 opts.maxIter=250;
-opts.tol=100*eps; %1.0e-6;
+opts.tol=1.0e-8; %1.0e-6;
 opts.minSpace=10;
 opts.maxSpace=20;
 
+%opts.iterFun='carp_cg';
 opts.iterFun=@bgmres;
 %opts.iterFun='direct';
 

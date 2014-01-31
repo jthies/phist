@@ -2,7 +2,7 @@ setpath;
 %for debugging - make results reproducible
 %rand('seed',77);
 %randn('seed',42);
-nx=8;
+nx=10;
 
 debug=false;
 
@@ -56,7 +56,7 @@ if (flag2~=0)
 end
 
 
-omega=1.7;
+omega=1.0;
 op=comp_carp_op(A,sigma,omega);
 
 [y3,flag3,relres3,iter3,resvec3] = pcg(@apply_op, b, tol, maxIt, [], [], x0,op);
