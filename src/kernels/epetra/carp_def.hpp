@@ -28,6 +28,9 @@ void SUBR(carp_create)(TYPE(const_crsMat_ptr) vA, TYPE(carpData)** dat_ptr, int*
     {
       rowScaling[0][i] += val[j]*val[j];
     }
+    // we do not include the diagonal in this scaling, it must
+    // explicitly be added in carp_fb
+    rowScaling[0][i] -= (*diagA)[i]*(*diagA)[i];
   }
   
   *dat_ptr=dat;
@@ -66,6 +69,7 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
 
   bool needVecs=false;
   bool needImport=true;
+  int nvecs=sol->NumVectors();
   
   if (sol->Map().Comm().NumProc()>1)
   {
@@ -76,7 +80,7 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
     else
     {
       CAST_PTR_FROM_VOID(Epetra_MultiVector,xLoc,dat->xLoc_,*ierr);
-      if (xLoc->NumVectors()!=sol->NumVectors())
+      if (xLoc->NumVectors()!=nvecs)
       {
         delete xLoc;
         needVecs=true;
@@ -86,14 +90,14 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
   else
   {
     // create a view that will be re-created in the next call and deleted in carp_delete
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(vsol,&dat->xLoc_,0,sol->NumVectors()-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(vsol,&dat->xLoc_,0,nvecs-1,ierr),*ierr);
     needImport=false;
   }
 
   if (needVecs)
   {
     PHIST_SOUT(PHIST_DEBUG,"(re-)allocate temporary vector");
-    dat->xLoc_ = (TYPE(mvec_ptr))(new Epetra_MultiVector(A->ColMap(),sol->NumVectors()));
+    dat->xLoc_ = (TYPE(mvec_ptr))(new Epetra_MultiVector(A->ColMap(),nvecs));
   }
   
   // import the sol vector into the column map of A
@@ -112,39 +116,44 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
   ///////////////////////////////////////////////////////////
   // forward Kaczmarz sweep                                //
   ///////////////////////////////////////////////////////////
-  for (int i=0;i<A->NumMyRows();i++)
+  for (int i=0; i<A->NumMyRows(); i++)
   {
     double Aii = (*diagA)[i];
     double Bii = 1.0;
     if (B!=NULL) Bii=(*B)[i];
+    // the diagonal is still missing in this ||A(i,:)||^2 term:
     double nrm_ai = (*rowScaling)[i];
     PHIST_CHK_IERR(*ierr=A->ExtractMyRowView(i,len,val,col),*ierr);
-    //TODO - switch loop order
-    for (int k=0;k<sol->NumVectors();k++)
+    double factor[nvecs];
+
+    // first compute scaling factors
+    for (int k=0;k<nvecs;k++)
     {
-      double factor=(*rhs)[k][i];
-      // scale by 1/||A(i,:)||_2^2, correct row norm for shifted diagonal entry:
-      // ||A(i,:) + sigmaB(i,i)||_2^2 = ||A(i,:)||_2^2 - A(i,i)^2 + (A(i,i)-sigma*B(i,i))^2
-      //                              = ||A(i,:)||_2^2 -2*sigma*A(i,i)*B(i,i)
-      double scal=dat->omega_/(nrm_ai-2.0*sigma[k]*Aii*Bii+sigma[k]*sigma[k]*Bii*Bii);
+      factor[k]=(*rhs)[k][i];
       for (int j=0;j<len;j++)
       {
         // note: xLoc lives in the column map of A, so we do not need to convert the col index
-        factor += val[j]*(*xLoc)[k][col[j]];
+        factor[k] -= val[j]*(*xLoc)[k][col[j]];
       }//j
+      // row scaling
+      double d=Aii-sigma[k]*Bii;
+      factor[k] /= (nrm_ai+d*d);
+    }//k
 
+    // Projection step:
+    // update all elements j in one step (this prevents straight-forward OpenMP usage,
+    // we need a distance-2 coloring for intra-node parallelization here).
+    for (int k=0;k<nvecs;k++)
+    {
       for (int j=0;j<len;j++)
       {
-        // Projection step: 
-        // update all elements j in one step (this prevents straight-forward OpenMP usage,
-        // we need a distance-2 coloring for intra-node parallelization here).
-        (*xLoc)[k][col[j]] += factor*scal*val[j];
+        (*xLoc)[k][col[j]] += factor[k]*val[j];
       }//j
     }//k
   }// i
 
   ///////////////////////////////////////////////////////////
-  // communication/averaging                               //
+  // component averaging                                   //
   ///////////////////////////////////////////////////////////
 
   // average overlapping nodes into X. As explained by Gordon & Gordon (SISC 27, 2005), this
@@ -159,33 +168,39 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
   ///////////////////////////////////////////////////////////
   // forward Kaczmarz sweep                                //
   ///////////////////////////////////////////////////////////
-  for (int i=A->NumMyRows()-1;i>=0; i--)
+
+  for (int i=A->NumMyRows()-1; i>=0; i--)
   {
     double Aii = (*diagA)[i];
     double Bii = 1.0;
     if (B!=NULL) Bii=(*B)[i];
+    // the diagonal is still missing in this ||A(i,:)||^2 term:
     double nrm_ai = (*rowScaling)[i];
     PHIST_CHK_IERR(*ierr=A->ExtractMyRowView(i,len,val,col),*ierr);
-    //TODO - switch loop order
-    for (int k=0;k<sol->NumVectors();k++)
+    double factor[nvecs];
+
+    // first compute scaling factors
+    for (int k=0;k<nvecs;k++)
     {
-      double factor=(*rhs)[k][i];
-      // scale by 1/||A(i,:)||_2^2, correct row norm for shifted diagonal entry:
-      // ||A(i,:) + sigmaB(i,i)||_2^2 = ||A(i,:)||_2^2 - A(i,i)^2 + (A(i,i)-sigma*B(i,i))^2
-      //                              = ||A(i,:)||_2^2 -2*sigma*A(i,i)*B(i,i)
-      double scal=dat->omega_/(nrm_ai-2.0*sigma[k]*Aii*Bii+sigma[k]*sigma[k]*Bii*Bii);
+      factor[k]=(*rhs)[k][i];
       for (int j=0;j<len;j++)
       {
         // note: xLoc lives in the column map of A, so we do not need to convert the col index
-        factor += val[j]*(*xLoc)[k][col[j]];
+        factor[k] -= val[j]*(*xLoc)[k][col[j]];
       }//j
+      // row scaling
+      double d=Aii-sigma[k]*Bii;
+      factor[k] /= (nrm_ai+d*d);
+    }//k
 
+    // Projection step:
+    // update all elements j in one step (this prevents straight-forward OpenMP usage,
+    // we need a distance-2 coloring for intra-node parallelization here).
+    for (int k=0;k<nvecs;k++)
+    {
       for (int j=0;j<len;j++)
       {
-        // Projection step: 
-        // update all elements j in one step (this prevents straight-forward OpenMP usage,
-        // we need a distance-2 coloring for intra-node parallelization here).
-        (*xLoc)[k][col[j]] += factor*scal*val[j];
+        (*xLoc)[k][col[j]] += factor[k]*val[j];
       }//j
     }//k
   }// i
