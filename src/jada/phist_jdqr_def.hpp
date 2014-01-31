@@ -729,7 +729,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       TYPE(const_crsMat_ptr) A=(TYPE(const_crsMat_ptr))A_op->A;
       
 
-      MT omega=1.7;// TODO - make available to the outside
+      MT omega=1.0;// TODO - make available to the outside
       PHIST_CHK_IERR(SUBR(op_carp)(&carpOp, A, omega, ierr),*ierr);
 
       PHIST_CHK_IERR(SUBR(jadaOp_create)(&carpOp, B_op, Qtil, NULL, sigma, nv, 
@@ -848,7 +848,10 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     }// any eigenpairs converged?
 
   // free memory
-  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_delete)(innerSolv, ierr), *ierr);
+  if (innerSolvType==GMRES)
+  {
+    PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_delete)(innerSolv, ierr), *ierr);
+  }
   PHIST_CHK_IERR(SUBR(mvec_delete)(V,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_delete)(AV,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vtmp,ierr),*ierr);

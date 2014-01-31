@@ -42,7 +42,7 @@ void SUBR(carp_delete)(TYPE(carpData)* dat, int* ierr)
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   if (dat==NULL) return;
-  *ierr=-99;
+  *ierr=-99; //TODO - this can probably  be implemented in a kernel-lib independent way
 }
 
 void SUBR(carp_fb)(TYPE(carpData)* dat, TYPE(const_crsMat_ptr) vA, 
@@ -65,6 +65,8 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
 #endif  
 
   bool needVecs=false;
+  bool needImport=true;
+  
   if (sol->Map().Comm().NumProc()>1)
   {
     if (dat->xLoc_==NULL) 
@@ -81,6 +83,12 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
       }
     }
   }
+  else
+  {
+    // create a view that will be re-created in the next call and deleted in carp_delete
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(vsol,&dat->xLoc_,0,sol->NumVectors()-1,ierr),*ierr);
+    needImport=false;
+  }
 
   if (needVecs)
   {
@@ -90,8 +98,10 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
   
   // import the sol vector into the column map of A
   CAST_PTR_FROM_VOID(Epetra_MultiVector,xLoc,dat->xLoc_,*ierr);
-  PHIST_CHK_IERR(*ierr=xLoc->Import(*sol, *A->Importer(),Insert),*ierr);
-
+  if (needImport)
+  {
+    PHIST_CHK_IERR(*ierr=xLoc->Import(*sol, *A->Importer(),Insert),*ierr);
+  }
   CAST_PTR_FROM_VOID(const Epetra_Vector,diagA,dat->diagA_,*ierr);
   CAST_PTR_FROM_VOID(const Epetra_Vector,rowScaling,dat->rowScaling_,*ierr);
 
@@ -109,6 +119,7 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
     if (B!=NULL) Bii=(*B)[i];
     double nrm_ai = (*rowScaling)[i];
     PHIST_CHK_IERR(*ierr=A->ExtractMyRowView(i,len,val,col),*ierr);
+    //TODO - switch loop order
     for (int k=0;k<sol->NumVectors();k++)
     {
       double factor=(*rhs)[k][i];
@@ -120,7 +131,10 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
       {
         // note: xLoc lives in the column map of A, so we do not need to convert the col index
         factor += val[j]*(*xLoc)[k][col[j]];
+      }//j
 
+      for (int j=0;j<len;j++)
+      {
         // Projection step: 
         // update all elements j in one step (this prevents straight-forward OpenMP usage,
         // we need a distance-2 coloring for intra-node parallelization here).
@@ -136,8 +150,11 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
   // average overlapping nodes into X. As explained by Gordon & Gordon (SISC 27, 2005), this
   // parallel algorithm (which they call CARP) is equivalent to Kaczmarz in a superspace of 
   // R^n in which the overlapping elements appear multiple times.
-  PHIST_CHK_IERR(*ierr=sol->Export(*xLoc, *(A->Importer()), Average),*ierr);
-  PHIST_CHK_IERR(*ierr=xLoc->Import(*sol, *A->Importer(),Insert),*ierr);
+  if (needImport)
+  {
+    PHIST_CHK_IERR(*ierr=sol->Export(*xLoc, *(A->Importer()), Average),*ierr);
+    PHIST_CHK_IERR(*ierr=xLoc->Import(*sol, *A->Importer(),Insert),*ierr);
+  }
 
   ///////////////////////////////////////////////////////////
   // forward Kaczmarz sweep                                //
@@ -149,6 +166,7 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
     if (B!=NULL) Bii=(*B)[i];
     double nrm_ai = (*rowScaling)[i];
     PHIST_CHK_IERR(*ierr=A->ExtractMyRowView(i,len,val,col),*ierr);
+    //TODO - switch loop order
     for (int k=0;k<sol->NumVectors();k++)
     {
       double factor=(*rhs)[k][i];
@@ -160,7 +178,10 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
       {
         // note: xLoc lives in the column map of A, so we do not need to convert the col index
         factor += val[j]*(*xLoc)[k][col[j]];
+      }//j
 
+      for (int j=0;j<len;j++)
+      {
         // Projection step: 
         // update all elements j in one step (this prevents straight-forward OpenMP usage,
         // we need a distance-2 coloring for intra-node parallelization here).
@@ -169,6 +190,10 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
     }//k
   }// i
 
+  if (needImport)
+  {
+    PHIST_CHK_IERR(*ierr=sol->Export(*xLoc, *(A->Importer()), Average),*ierr);
+  }
 
 }//carp_fb
 

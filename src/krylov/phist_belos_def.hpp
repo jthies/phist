@@ -128,9 +128,9 @@ else
   }
 
 #if PHIST_OUTLEV>PHIST_DEBUG
-  PHIST_DEB("valid Belos parameters:");
+  PHIST_DEB("valid Belos parameters:\n");
   std::cerr << *belos->getValidParameters();
-  PHIST_DEB("current GMRES parameters:");
+  PHIST_DEB("current GMRES parameters:\n");
   std::cerr << *belos->getCurrentParameters();
 #endif
 

@@ -22,11 +22,11 @@ int main(int argc, char** argv)
 
   comm_ptr_t comm;
   crsMat_ptr_t A;
-  op_ptr_t A_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  op_ptr_t A_op, carp_op;
   
   const_map_ptr_t map; // map (element distribution) of vectors according to 
                        // the distribution of matrix rows
-  mvec_ptr_t X,XEX,B,R;// multivectors for solution and rhs (XEX exact solution to compare)
+  mvec_ptr_t X,XEX,B,Y,R;// multivectors for solution and rhs (XEX exact solution to compare)
   
   MT tol;
   MT *rnorm2; /* for computing the residual norm axplicitly */
@@ -36,7 +36,7 @@ int main(int argc, char** argv)
   
   int num_iters;
   int max_iters,max_blocks,num_rhs;
-  int variant=0; // only proper block GMRES accessible via this driver right now.
+  int variant=2; // only proper block CG accessible via this driver right now.
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
 
@@ -49,7 +49,8 @@ int main(int argc, char** argv)
 
   if (argc<2)
     {
-    if (verbose) fprintf(stdout,"Usage: ./Xbgmres <mat file> [<max iters> [<tol> [<num rhs> [<max blocks>]]]]\n");
+    if (verbose) fprintf(stdout,"Usage: %s <mat file> [<max iters> [<tol> [<num rhs>]]]\n", 
+        argv[0]);
     return 1;
     }
 
@@ -82,15 +83,6 @@ int main(int argc, char** argv)
     num_rhs=atoi(argv[4]);
     }
 
-  if (argc<6)
-    {
-    max_blocks=30;
-    }
-  else
-    {
-    max_blocks=atoi(argv[5]);
-    }
-
   if (verbose) 
     {
     PHIST_OUT(0,"matrix file: %s\n",filename);
@@ -106,12 +98,12 @@ int main(int argc, char** argv)
   /* create vectors */
   PHIST_ICHK_IERR(SUBR(mvec_create)(&XEX,map,num_rhs,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,num_rhs,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&Y,map,num_rhs,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&B,map,num_rhs,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&R,map,num_rhs,&ierr),ierr);
   
   /* randomize the solution vector */
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(X,ZERO,&ierr),ierr);
-  //PHIST_ICHK_IERR(SUBR(mvec_random)(XEX,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(XEX,ONE,&ierr),ierr);
   
   /* compute rhs B=A*XEX */
@@ -119,19 +111,22 @@ int main(int argc, char** argv)
   
   /* create operator wrapper for computing Y=A*X using a CRS matrix */
   A_op = (op_ptr_t)malloc(sizeof(TYPE(op)));
-  PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(A_op,A,&ierr),ierr);
-  
+  _MT_ omega=(_MT_)1.0;
+  PHIST_ICHK_IERR(SUBR(op_carp)(A_op,A,omega,&ierr),ierr);
   num_iters=max_iters;
   
-  SUBR(belos)(A_op,X,B,tol,&num_iters,max_blocks,variant,NULL,&ierr);
+  SUBR(belos)(A_op,Y,B,tol,&num_iters,max_blocks,variant,NULL,&ierr);
 
   if (ierr!=0)
     {
-    if (verbose) fprintf(stdout,"code %d returned from Belos BlockGMRES\n",ierr);
+    if (verbose) fprintf(stdout,"code %d returned from Belos BlockCG\n",ierr);
     if (ierr<0) return ierr;
     }
   
   PHIST_OUT(1,"number of iterations performed: %d\n",num_iters);
+ 
+ /* transform back, X=A'Y */
+ PHIST_ICHK_IERR(SUBR(crsMatT_times_mvec)(ONE,A,Y,ZERO,X,&ierr),ierr);
   
   /* compute residual norms */
   PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(ONE,A,X,ZERO,R,&ierr),ierr);
