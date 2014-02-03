@@ -185,7 +185,7 @@ void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr)
   }
 
 //! returns the smallest global index in the map appearing on my partition.
-void phist_map_get_ilower(const_map_ptr_t vmap, int* ilower, int* ierr)
+void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*ierr);
@@ -193,7 +193,7 @@ void phist_map_get_ilower(const_map_ptr_t vmap, int* ilower, int* ierr)
   *ilower = map->ctx->lfRow[me];
   }
 //! returns the largest global index in the map appearing on my partition.
-void phist_map_get_iupper(const_map_ptr_t vmap, int* iupper, int* ierr)
+void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*ierr);

@@ -148,8 +148,9 @@ flush(6)
     use, intrinsic :: iso_c_binding
     use mpi
     !------------------------------------------------------------
-    type(C_PTR),    value       :: map_ptr
-    integer(C_INT), intent(out) :: ilower, ierr
+    type(C_PTR),        value       :: map_ptr
+    integer(C_INT64_T), intent(out) :: ilower
+    integer(C_INT),     intent(out) :: ierr
     !------------------------------------------------------------
     type(Map_t), pointer :: map
     !------------------------------------------------------------
@@ -164,14 +165,15 @@ flush(6)
     use, intrinsic :: iso_c_binding
     use mpi
     !------------------------------------------------------------
-    type(C_PTR),    value       :: map_ptr
-    integer(C_INT), intent(out) :: iupper, ierr
+    type(C_PTR),        value       :: map_ptr
+    integer(C_INT64_T), intent(out) :: iupper
+    integer(C_INT),     intent(out) :: ierr
     !------------------------------------------------------------
     type(Map_t), pointer :: map
     !------------------------------------------------------------
 
     call c_f_pointer(map_ptr, map)
-    iupper = int(map%distrib(map%me+1)-1)
+    iupper = map%distrib(map%me+1)-1
     ierr = 0
   end subroutine phist_map_get_iupper
 

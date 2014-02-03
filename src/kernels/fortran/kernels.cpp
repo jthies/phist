@@ -98,8 +98,8 @@ void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int
 void phist_map_delete(map_ptr_t vmap, int *ierr);
 void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr);
 void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr);
-void phist_map_get_ilower(const_map_ptr_t vmap, int* ilower, int* ierr);
-void phist_map_get_iupper(const_map_ptr_t vmap, int* iupper, int* ierr);
+void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* ierr);
+void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr);
 
 
 #include "phist_gen_s.h"

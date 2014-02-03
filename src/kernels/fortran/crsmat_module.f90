@@ -96,8 +96,8 @@ contains
     allocate(recvnum(0:mat%row_map%nProcs-1))
     recvnum=0
     combuff%nRecvProcs=0
-    firstrow = int(mat%row_map%distrib(mat%row_map%me))
-    lastrow  = int(mat%row_map%distrib(mat%row_map%me+1)-1)
+    firstrow = mat%row_map%distrib(mat%row_map%me)
+    lastrow  = mat%row_map%distrib(mat%row_map%me+1)-1
     do i=1,mat%nRows,1
       jProc=0
       do j=mat%row_offset(i),mat%row_offset(i+1)-1, 1
@@ -678,7 +678,7 @@ end do
     write(*,*) 'CrsMat:', globalRows, globalCols, globalEntries
     flush(6)
 
-    call map_setup(A%row_map, MPI_COMM_WORLD, int(globalRows,kind=8), ierr)
+    call map_setup(A%row_map, MPI_COMM_WORLD, globalRows, ierr)
     if( ierr .ne. 0 ) return
 
     A%nRows = A%row_map%nlocal(A%row_map%me)

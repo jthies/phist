@@ -28,7 +28,7 @@ public:
 
 void BuildTestCase1()
   {
-  int ilower;
+  gidx_t ilower;
   phist_map_get_ilower(map_,&ilower,&ierr_);
   ASSERT_EQ(0,ierr_);
   for (int j=0;j<nvec_;j++)
