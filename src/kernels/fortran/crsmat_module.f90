@@ -1,3 +1,4 @@
+#include "ghost/config.h"
 module crsmat_module
   use map_module, only: Map_t, map_setup
   use mvec_module, only: MVec_t, mvec_scale
@@ -25,7 +26,7 @@ module crsmat_module
     real(kind=8), allocatable :: sendData(:,:)        !< send buffer, has size (nb,sendBuffInd(nSendProcs+1)-1)
     real(kind=8), allocatable :: recvData(:,:)        !< recv buffer, has size (nb,recvBuffInd(nRecvProcs+1)-1)
     integer,      allocatable :: sendRowBlkInd(:)     !< local row block index of the data in the sendBuffer, has size (sendBuffInd(nSendProcs+1)-1)
-    integer,      allocatable :: recvRowBlkInd(:)     !< global row block index of the data in the recvBuffer, has size (recvBuffInd(nRecvProcs+1)-1)
+    integer(kind=8), allocatable :: recvRowBlkInd(:)     !< global row block index of the data in the recvBuffer, has size (recvBuffInd(nRecvProcs+1)-1)
     integer,      allocatable :: sendRequests(:)      !< buffer for mpi send requests, has size (nSendProcs)
     integer,      allocatable :: recvRequests(:)      !< buffer for mpi receive requests, has size (nRecvProcs)
     integer,      allocatable :: sendStatus(:,:)      !< buffer for mpi send status, has size (MPI_STATUS_SIZE,nSendProcs)
@@ -45,6 +46,7 @@ module crsmat_module
     integer(kind=8), allocatable :: nonlocal_offset(:)   !< points to first nonlocal element in each row
     integer,         allocatable :: col_idx(:)           !< column indices
     real(kind=8),    allocatable :: val(:)               !< matrix entries
+    integer(kind=8), allocatable :: global_col_idx(:)    !< global column indices
     type(Map_t)                  :: row_map
     type(CrsCommBuff_t)          :: comm_buff
     !--------------------------------------------------------------------------------
@@ -55,9 +57,15 @@ module crsmat_module
   abstract interface
     subroutine matRowFunc(row, nnz, cols, vals)
       use, intrinsic :: iso_c_binding
+#ifdef GHOST_HAVE_LONGIDX
+      integer(C_INT64_T), value :: row
+      integer(C_INT64_T), intent(inout) :: nnz
+      integer(C_INT64_T), intent(inout) :: cols(*)
+#else
       integer(C_INT32_T), value :: row
       integer(C_INT32_T), intent(inout) :: nnz
       integer(C_INT32_T), intent(inout) :: cols(*)
+#endif
       real(C_DOUBLE),     intent(inout) :: vals(*)
     end subroutine matRowFunc
   end interface
@@ -78,9 +86,10 @@ contains
     integer,allocatable :: sendnum(:)
     integer(kind=8) :: i,j
     integer :: k, jProcIndex, jProc
-    integer :: firstrow, lastrow
+    integer(kind=8) :: firstrow, lastrow
     integer :: buff_size, ierr
     logical,allocatable :: row_offset_counted(:)
+    integer(kind=8), allocatable :: sendRowBlkInd(:)
     !--------------------------------------------------------------------------------
 
     ! determine nSendProcs and nRecvProcs
@@ -92,14 +101,14 @@ contains
     do i=1,mat%nRows,1
       jProc=0
       do j=mat%row_offset(i),mat%row_offset(i+1)-1, 1
-        if( mat%col_idx(j) .lt. firstrow .or. &
-          & mat%col_idx(j) .gt. lastrow ) then
-          do while( mat%col_idx(j) .ge. mat%row_map%distrib(jProc+1) )
+        if( mat%global_col_idx(j) .lt. firstrow .or. &
+          & mat%global_col_idx(j) .gt. lastrow ) then
+          do while( mat%global_col_idx(j) .ge. mat%row_map%distrib(jProc+1) )
             jProc=jProc+1
           end do
 #ifdef TESTING
-if( mat%col_idx(j) .lt. mat%row_map%distrib(jProc) ) then
-  write(*,*) 'CRS sorting error! me', mat%row_map%me, 'idx', mat%col_idx(j), &
+if( mat%global_col_idx(j) .lt. mat%row_map%distrib(jProc) ) then
+  write(*,*) 'CRS sorting error! me', mat%row_map%me, 'idx', mat%global_col_idx(j), &
     &        'jProc', jProc, 'distrib', mat%row_map%distrib
   call exit(1)
 end if
@@ -139,11 +148,11 @@ end if
       jProc=-1
       jProcIndex=0
       do j=mat%row_offset(i),mat%row_offset(i+1)-1,1
-        if( mat%col_idx(j) .lt. firstrow .or. &
-          & mat%col_idx(j) .gt. lastrow ) then
-          if( .not. row_offset_counted(mat%col_idx(j)) ) then
-            row_offset_counted(mat%col_idx(j)) = .true.
-            do while( mat%col_idx(j) .ge. mat%row_map%distrib(jProc+1) )
+        if( mat%global_col_idx(j) .lt. firstrow .or. &
+          & mat%global_col_idx(j) .gt. lastrow ) then
+          if( .not. row_offset_counted(mat%global_col_idx(j)) ) then
+            row_offset_counted(mat%global_col_idx(j)) = .true.
+            do while( mat%global_col_idx(j) .ge. mat%row_map%distrib(jProc+1) )
               jProc=jProc+1
               if( recvnum(jProc) .eq. 1 ) jProcIndex=jProcIndex+1
             end do
@@ -178,6 +187,7 @@ end if
       combuff%sendInd(i+1) = combuff%sendInd(i)+combuff%sendInd(i+1)
     end do
     buff_size=combuff%sendInd(combuff%nSendProcs+1)-1
+    allocate(sendRowBlkInd(buff_size))
     allocate(combuff%sendRowBlkInd(buff_size))
     call mpi_waitall(combuff%nRecvProcs,combuff%recvRequests,combuff%recvStatus,ierr)
 
@@ -194,7 +204,7 @@ end if
     do i=1,combuff%nSendProcs,1
       j=combuff%sendInd(i)
       k=combuff%sendInd(i+1)
-      call mpi_irecv(combuff%sendRowBlkInd(j:k-1),k-j,MPI_INTEGER,&
+      call mpi_irecv(sendRowBlkInd(j:k-1),k-j,MPI_INTEGER8,&
         &            combuff%sendProcId(i),20,mat%row_map%Comm,&
         &            combuff%sendRequests(i),ierr)
     end do
@@ -204,15 +214,15 @@ end if
       jProc=-1
       jProcIndex=0
       do j=mat%row_offset(i),mat%row_offset(i+1)-1,1
-        if( mat%col_idx(j) .lt. firstrow .or. &
-          & mat%col_idx(j) .gt. lastrow ) then
-          if( .not. row_offset_counted(mat%col_idx(j)) ) then
-            row_offset_counted(mat%col_idx(j)) = .true.
-            do while( mat%col_idx(j) .ge. mat%row_map%distrib(jProc+1) )
+        if( mat%global_col_idx(j) .lt. firstrow .or. &
+          & mat%global_col_idx(j) .gt. lastrow ) then
+          if( .not. row_offset_counted(mat%global_col_idx(j)) ) then
+            row_offset_counted(mat%global_col_idx(j)) = .true.
+            do while( mat%global_col_idx(j) .ge. mat%row_map%distrib(jProc+1) )
               jProc=jProc+1
               if( recvnum(jProc) .eq. 1 ) jProcIndex=jProcIndex+1
             end do
-            combuff%recvRowBlkInd(combuff%recvInd(jProcIndex)) = mat%col_idx(j)
+            combuff%recvRowBlkInd(combuff%recvInd(jProcIndex)) = mat%global_col_idx(j)
             combuff%recvInd(jProcIndex) = combuff%recvInd(jProcIndex)+1
           end if
         end if
@@ -232,7 +242,7 @@ end if
       j=combuff%recvInd(i)
       k=combuff%recvInd(i+1)
       call sort(combuff%recvRowBlkInd(j:k-1))
-      call mpi_isend(combuff%recvRowBlkInd(j:k-1),k-j,MPI_INTEGER,&
+      call mpi_isend(combuff%recvRowBlkInd(j:k-1),k-j,MPI_INTEGER8,&
         &            combuff%recvProcId(i),20,mat%row_map%Comm,&
         &            combuff%recvRequests(i),ierr)
     end do
@@ -252,17 +262,18 @@ end do
     call mpi_waitall(combuff%nSendProcs,combuff%sendRequests,&
       &              combuff%sendStatus,ierr)
 
-   combuff%sendRowBlkInd = combuff%sendRowBlkInd - firstrow+1
+
+    combuff%sendRowBlkInd = int(sendRowBlkInd - firstrow+1,kind=4)
 
     call mpi_waitall(combuff%nRecvProcs,combuff%recvRequests,&
-      &              combuff%recvStatus,ierr)
+     &              combuff%recvStatus,ierr)
 
   end subroutine setup_commBuff
 
   subroutine sort(array)
     use m_mrgrnk
-    integer, intent(inout) :: array(1:)
-    integer, allocatable :: tmp(:,:)
+    integer(kind=8), intent(inout) :: array(1:)
+    integer(kind=8), allocatable :: tmp(:,:)
     integer :: i
 
     allocate(tmp(size(array),2))
@@ -284,9 +295,9 @@ end do
     type(CrsMat_t), intent(inout) :: mat
 
     integer :: i, n
-    integer(kind=8) :: j, off
-    integer :: firstrow, lastrow, recvBuffIndex
-    integer, allocatable :: idx(:,:)
+    integer(kind=8) :: j, off, maxPerRow
+    integer(kind=8) :: firstrow, lastrow
+    integer(kind=8), allocatable :: idx(:,:)
     real(kind=8), allocatable :: val(:)
 
 
@@ -296,31 +307,35 @@ end do
     ! distinguish between local elements and buffer indices
     allocate(mat%nonlocal_offset(mat%nRows))
     mat%nonlocal_offset(:) = mat%row_offset(1:mat%nRows)
+!!$omp parallel do schedule(static)
     do i = 1, mat%nRows, 1
       do j = mat%row_offset(i), mat%row_offset(i+1)-1, 1
-        if( mat%col_idx(j) .ge. firstrow .and. &
-          & mat%col_idx(j) .le. lastrow        ) then
+        if( mat%global_col_idx(j) .ge. firstrow .and. &
+          & mat%global_col_idx(j) .le. lastrow        ) then
           ! local element, substract offset of this process
-          mat%col_idx(j) = (mat%col_idx(j)-firstrow+1)
+          mat%global_col_idx(j) = (mat%global_col_idx(j)-firstrow+1)
           ! increase nonlocal offset
           mat%nonlocal_offset(i) = mat%nonlocal_offset(i) + 1
         else
           ! nonlocal element, search its position in the comm buffer
           ! add nRows to sort them behind local elements
-          mat%col_idx(j) = search_recvBuffIndex(mat%col_idx(j)) + mat%nRows
+          mat%global_col_idx(j) = search_recvBuffIndex(mat%global_col_idx(j)) + mat%nRows
         end if
       end do
     end do
 
-    allocate(idx(mat%nEntries,2))
-    allocate(val(mat%nEntries))
-    ! sort all rows
+    maxPerRow = maxval(mat%row_offset(2:mat%nRows+1)-mat%row_offset(1:mat%nRows))
+    allocate(idx(maxPerRow,2))
+    allocate(val(maxPerRow))
+    allocate(mat%col_idx(mat%nEntries))
+    ! sort all rows, try to respect numa
+!!$omp parallel do schedule(static) private(idx,val)
     do i = 1, mat%nRows
       off = mat%row_offset(i)
-      n = mat%row_offset(i+1) - off
+      n = int(mat%row_offset(i+1) - off,kind=4)
       if( n .gt. 0 ) then
         ! reuse idx for sorting
-        idx(1:n,1) = mat%col_idx( off:off+n-1 )
+        idx(1:n,1) = mat%global_col_idx( off:off+n-1 )
         val(1:n)   = mat%val( off:off+n-1 )
 
         ! determine order of columns
@@ -328,8 +343,7 @@ end do
 
         ! copy back sorted arrays
         do j = 1, n
-          ! inverse sign, so local columns are positive, followed by negative indices in the recv buffer
-          mat%col_idx( off+j-1 ) = idx(idx(j,2),1)
+          mat%col_idx( off+j-1 ) = int(idx(idx(j,2),1),kind=4)
           mat%val( off+j-1 ) = val(idx(j,2))
         end do
 
@@ -339,13 +353,14 @@ end do
         mat%col_idx(j) = mat%col_idx(j) - mat%nRows
       end do
     end do
+    deallocate(mat%global_col_idx)
 
   contains
 
   function search_recvBuffIndex(col) result(idx)
-    integer, intent(in) :: col
-    integer :: idx
-    integer :: a, b, n, n_max
+    integer(kind=8), intent(in) :: col
+    integer(kind=8) :: idx
+    integer(kind=8) :: a, b, n, n_max
 
 
     a = 1
@@ -622,9 +637,9 @@ end do
     !--------------------------------------------------------------------------------
     integer :: funit
     character(len=100) :: line
-    integer, allocatable :: idx(:,:)
+    integer(kind=8), allocatable :: idx(:,:)
     real(kind=8), allocatable :: val(:)
-    integer :: i, j, off, n, globalRows, globalCols, globalEntries
+    integer(kind=8) :: i, j, off, n, globalRows, globalCols, globalEntries
     !--------------------------------------------------------------------------------
 
     do i = 1, filename_len
@@ -692,7 +707,7 @@ end do
 
     ! allocate crs matrix
     allocate(A%row_offset(A%nRows+1))
-    allocate(A%col_idx(A%nEntries))
+    allocate(A%global_col_idx(A%nEntries))
     allocate(A%val(A%nEntries))
 
     ! try to respect NUMA
@@ -700,6 +715,7 @@ end do
     do i = 1, A%nRows+1
       A%row_offset(i) = 0
     end do
+!$omp barrier
 
     ! count number of entries per row
     do i = 1, A%nEntries
@@ -714,14 +730,15 @@ end do
 !$omp parallel do schedule(static)
     do i = 1, A%nRows
       do j = A%row_offset(i), A%row_offset(i+1)-1, 1
-        A%col_idx(j) = 0
+        A%global_col_idx(j) = 0
         A%val(j) = 0._8
       end do
     end do
+!$omp barrier
 
     ! now put the entries into the corresponding rows
     do i = 1, A%nEntries
-      A%col_idx( A%row_offset(idx(i,1)) ) = idx(i,2)
+      A%global_col_idx( A%row_offset(idx(i,1)) ) = idx(i,2)
       A%val    ( A%row_offset(idx(i,1)) ) = val(i)
       A%row_offset( idx(i,1) ) = A%row_offset( idx(i,1) )  +  1
     end do
@@ -737,7 +754,7 @@ end do
       n = A%row_offset(i+1) - off
       if( n .gt. 1 ) then
         ! reuse idx for sorting
-        idx(1:n,1) = A%col_idx( off:off+n-1 )
+        idx(1:n,1) = A%global_col_idx( off:off+n-1 )
         val(1:n)   = A%val( off:off+n-1 )
 
         ! determine order of columns
@@ -745,7 +762,7 @@ end do
 
         ! copy back sorted arrays
         do j = 1, n
-          A%col_idx( off+j-1 ) = idx(idx(j,2),1)
+          A%global_col_idx( off+j-1 ) = idx(idx(j,2),1)
           A%val( off+j-1 ) = val(idx(j,2))
         end do
       end if
@@ -768,6 +785,7 @@ end do
   !> read MatrixMarket file
   subroutine phist_DcrsMat_create_fromRowFunc(A_ptr, nrows, ncols, maxnne_per_row, rowFunc_ptr, ierr) bind(C,name='phist_DcrsMat_create_fromRowFunc_f')
     use, intrinsic :: iso_c_binding
+    use env_module, only: newunit
     use mpi
     use m_mrgrnk
     !--------------------------------------------------------------------------------
@@ -779,11 +797,19 @@ end do
     type(CrsMat_t), pointer :: A
     procedure(matRowFunc), pointer :: rowFunc
     !--------------------------------------------------------------------------------
-    character(len=100) :: line
+#ifdef GHOST_HAVE_LONGIDX
+    integer(kind=8), allocatable :: idx(:,:)
+#else
     integer, allocatable :: idx(:,:)
+#endif
     real(kind=8), allocatable :: val(:)
-    integer :: i, nne, globalRows, globalCols
+    integer :: i, globalRows, globalCols
     integer(kind=8) :: j, j_, off, n, globalEntries
+#ifdef GHOST_HAVE_LONGIDX
+    integer(kind=8) :: i_, nne
+#else
+    integer :: i_, nne
+#endif
     !--------------------------------------------------------------------------------
 
     ! get procedure pointer
@@ -815,7 +841,7 @@ end do
 
     ! allocate crs matrix
     allocate(A%row_offset(A%nRows+1))
-    allocate(A%col_idx(A%nEntries))
+    allocate(A%global_col_idx(A%nEntries))
     allocate(A%val(A%nEntries))
 
     ! get data, try to respect NUMA
@@ -823,14 +849,28 @@ end do
 !$omp parallel do schedule(static) ordered
     do i = 1, A%nRows, 1
 !$omp ordered
-      call rowFunc(int(A%row_map%distrib(A%row_map%me)+i-2,kind=4), nne, idx(:,1), val)
+      i_ = A%row_map%distrib(A%row_map%me)+i-2
+      call rowFunc(i_, nne, idx(:,1), val)
       j = A%row_offset(i)
       j_ = j + int(nne-1,kind=8)
-      A%col_idx(j:j_) = idx(1:nne,1)+1
+      A%global_col_idx(j:j_) = idx(1:nne,1)+1
       A%val(j:j_) = val(1:nne)
       A%row_offset(i+1) = A%row_offset(i)+int(nne,kind=8)
 !$omp end ordered
     end do
+    A%nEntries = A%row_offset(A%nRows+1)-1
+
+! write matrix to mat.mm
+!open(unit   = newunit(funit), file = 'out.mm', action = 'write')
+!write(funit,'(A)') '%%MatrixMarket matrix coordinate real general'
+!write(funit,'(A)') '% generated by SpinChainSZ'
+!write(funit,*) A%nRows, A%nCols, A%nEntries
+!do i = 1, A%nRows
+  !do j = A%row_offset(i), A%row_offset(i+1)-1, 1
+    !write(funit,*) i, A%global_col_idx(j), A%val(j)
+  !end do
+!end do
+!close(funit)
 
 
     ! we still need to sort the entries in each row by column
@@ -839,7 +879,7 @@ end do
       n = A%row_offset(i+1) - off
       if( n .gt. 1 ) then
         ! reuse idx for sorting
-        idx(1:n,1) = A%col_idx( off:off+n-1 )
+        idx(1:n,1) = A%global_col_idx( off:off+n-1 )
         val(1:n)   = A%val( off:off+n-1 )
 
         ! determine order of columns
@@ -847,7 +887,7 @@ end do
 
         ! copy back sorted arrays
         do j = 1, n
-          A%col_idx( off+j-1 ) = idx(idx(j,2),1)
+          A%global_col_idx( off+j-1 ) = idx(idx(j,2),1)
           A%val( off+j-1 ) = val(idx(j,2))
         end do
       end if

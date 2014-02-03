@@ -10,6 +10,7 @@
 #include "typedefs.hpp"
 #include "phist_ScalarTraits.hpp"
 
+
 #ifdef PHIST_TIMEMONITOR
 #include <Teuchos_TimeMonitor.hpp>
 #endif
