@@ -21,13 +21,21 @@
 //                                                                              
 // <matrix file name> :  a .mm or .bin file (matrix market or ghost binary CRS) 
 // <num eigs>         : number of desired eigenpairs [10]                       
-// <which>            : can be "LM", "SM", "LR" or "SR" (Largest/Smallest       
-//                      Magnitude/Real part) ["LM"]                             
+// <which>            : can be "LM", "SM", "LR", "SR" or "TARGET" (Largest/     
+//                      Smallest Magnitude/Real part) ["LM"]                    
+//                      If "TARGET" is chosen, use "shift" to set the target.   
+//                      In this case, JDQR assumes that interior eigenvalues are
+//                      sought and you should use CARP-CG as "innerSolver".     
 // <tol>              : convergence tolerance [1.0e-10]                         
 // <max iters>        : maximum number of iterations allowed [250]              
 // <minBas>           : number of vectors to keep in the basis upon restart [10]
 // <maxBas>           : number of vectors to generate before restarting         
 //                      [minBas+20]                                             
+// <arno>             : if 0, starts with an initial shift. If 1, starts with   
+//                      <minBas> iterations of Arnoldi [1 unless which=TARGET]  
+// <initial shift>    : given initial shift (particularly interesting if you    
+//                      set <which> to "TARGET", in this case you should set    
+//                      arno=0 as well).
 int main(int argc, char** argv)
   {
   int rank, num_proc;
@@ -66,12 +74,13 @@ int main(int argc, char** argv)
 
   if (argc<2)
   {
-    if (verbose) fprintf(stdout,"Usage: ./Xjdqr <mat file> <num eigs> <which> <tol> <max it> <min bas> <max bas> <arno> <init shift>\n\n"
-                                "               \"mat file\" is the matrix file to be read (compulsory)\n\n"
+    if (verbose) fprintf(stdout,"Usage: ./Xjdqr <mat file> <num eigs> <which> <tol> <max it>\n"
+                                "               <min bas> <max bas> <arno> <init shift> <solver type>\n\n"
+                                "       \"mat file\" is the matrix file to be read (compulsory)\n\n"
                                 "       all other args are optional but are interpreted in the order given, so only the last\n"
                                 "       few can be left out.\n\n"
-                                "TODO - documentation of options\n"
-                                );
+                                "TODO - documentation of options. For now, look in the driver file %s for more details.\n",
+                                __FILE__);
     return 1;
   }
 
@@ -90,6 +99,7 @@ int main(int argc, char** argv)
     else if (!strcmp(argv[3],"SM")) opts.which=SM;
     else if (!strcmp(argv[3],"LR")) opts.which=LR;
     else if (!strcmp(argv[3],"SR")) opts.which=SR;
+    else if (!strcmp(argv[3],"TARGET")) opts.which=TARGET;
     else
     {
       if (verbose) 
@@ -133,6 +143,32 @@ int main(int argc, char** argv)
   if (argc>=10)
   {
     opts.initialShift=atof(argv[9]);
+  }
+  
+  if (argc>=11)
+  {
+    if (!strcmp(argv[10],"GMRES")) opts.innerSolvType=GMRES;
+    else if (!strcmp(argv[10],"CARP_CG")) opts.innerSolvType=CARP_CG;
+    else
+    {
+      if (verbose) 
+      {
+        fprintf(stderr,"ERROR: the linSolv parameter may be \"GMRES\" or \"CARP_CG\" right now\n");
+        fprintf(stderr,"       run the program without args to get a usage message.\n");
+      }
+      return -1;
+    }
+  }
+  else
+  {
+    if (opts.which==TARGET) 
+    {
+      opts.innerSolvType=CARP_CG;
+    }
+    else
+    {
+      opts.innerSolvType=GMRES;
+    }
   }
 
   num_eigs = opts.numEigs;

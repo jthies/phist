@@ -1,16 +1,28 @@
 //! create a jadaCorrectionSolver object
-void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, int pgmresBlockDim, const_map_ptr_t map, int pgmresMaxBase, int *ierr)
+void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, int pgmresBlockDim, const_map_ptr_t map, 
+        linSolv_t method, int pgmresMaxBase, int *ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr = 0;
+  if (method==GMRES)
+  {
+    PHIST_CHK_IERR( *ierr = (pgmresBlockDim <= 0) ? -1 : 0, *ierr);
 
-  PHIST_CHK_IERR( *ierr = (pgmresBlockDim <= 0) ? -1 : 0, *ierr);
-
-  *me = new TYPE(jadaCorrectionSolver);
-  (*me)->gmresBlockDim_ = pgmresBlockDim;
-  (*me)->pgmresStates_  = new TYPE(pgmresState_ptr)[pgmresBlockDim];
-  PHIST_CHK_IERR(SUBR(pgmresStates_create)((*me)->pgmresStates_, pgmresBlockDim, map, pgmresMaxBase, ierr), *ierr);
+    *me = new TYPE(jadaCorrectionSolver);
+    (*me)->gmresBlockDim_ = pgmresBlockDim;
+    (*me)->pgmresStates_  = new TYPE(pgmresState_ptr)[pgmresBlockDim];
+    PHIST_CHK_IERR(SUBR(pgmresStates_create)((*me)->pgmresStates_, pgmresBlockDim, map, pgmresMaxBase, ierr), *ierr);
+  }
+  else if (method==CARP_CG)
+  {
+    *ierr=-99;
+  }
+  else
+  {
+    PHIST_SOUT(PHIST_ERROR, "method %d (%s) not implemented",(int)method, linSolv2str(method));
+    *ierr=-99;
+  }
 }
 
 //! delete a jadaCorrectionSolver object
@@ -59,7 +71,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   // set solution vectors to zero to add them up later
   PHIST_CHK_IERR(SUBR(mvec_put_value)(t, st::zero(), ierr), *ierr);
 
-  // make sure all states are resetted
+  // make sure all states are reset
   for(int i = 0; i < me->gmresBlockDim_; i++)
   {
     PHIST_CHK_IERR(SUBR(pgmresState_reset)(me->pgmresStates_[i], NULL, NULL, ierr), *ierr);

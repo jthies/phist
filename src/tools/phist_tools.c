@@ -30,6 +30,11 @@ const char* phist_ghost_error2str(ghost_error_t code)
 
 const char* eigSort2str(eigSort_t s)
   {
-  return s==LM?"LM":s==SM?"SM":s==LR?"LR":s==SR?"SR":s==NONE?"none":"unknown eigsort_t";
+  return s==LM?"LM":s==SM?"SM":s==LR?"LR":s==SR?"SR":s==NONE?"none":s==TARGET?"target":"unknown eigsort_t";
   }
       
+
+const char* linSolv2str(linSolv_t s)
+  {
+  return s==GMRES?"GMRES":s==CARP_CG?"CARP-CG":s==DO_NOTHING?"do nothing":"unknown linSolv_t";
+  }

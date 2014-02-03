@@ -14,7 +14,8 @@ typedef struct phist_jadaOpts_t {
 
 // what do you want to compute?
 int numEigs; //! howmany eigenpairs are sought?
-eigSort_t which; //! LM, SM, LR, or SR
+eigSort_t which; //! LM, SM, LR, SR, or TARGET
+linSolv_t innerSolvType; //! GMRES or CARP_CG currently supported
 double convTol; //! convergence tolerance for eigenvalues
 
 // JaDa configuration

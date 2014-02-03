@@ -17,7 +17,8 @@ typedef TYPE(jadaCorrectionSolver) const * TYPE(const_jadaCorrectionSolver_ptr);
 
 
 //! create a jadaCorrectionSolver object
-void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *jdCorrSolver, int pgmresBlockDim, const_map_ptr_t map, int pgmresMaxBase, int *ierr);
+void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *jdCorrSolver, int pgmresBlockDim, const_map_ptr_t map, 
+        linSolv_t method, int maxBase, int *ierr);
 
 //! delete a jadaCorrectionSolver object
 void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver, int *ierr);

@@ -20,7 +20,7 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
 # Define some custom variables
 project(PHIST)
 set(PHIST_VERSION_MAJOR 0)
-set(PHIST_VERSION_MINOR 5)
+set(PHIST_VERSION_MINOR 6)
 set(PHIST_VERSION_PATCH 0)
 set(PHIST_VERSION_PATCH ${PHIST_VERSION_PATCH}-dev)
 set(PRODUCT_NAME phist-${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
@@ -198,7 +198,7 @@ else()
 endif()
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_rcp_helpers.cpp)
-set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.c
+set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp)
 #                       ${PROJECT_SOURCE_DIR}/src/core/phist_taskbuf.c)
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp

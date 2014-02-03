@@ -257,6 +257,22 @@ while (k<numEigs && it<=maxIter)
       b_aug = [rtil;zeros(size(Qtil,2),size(rtil,2))];
       t_aug= A_aug\b_aug;
       t=t_aug(1:size(Qtil,1),:);
+    elseif (strcmp(lsFun,'carp_cg'))
+      omega=1;
+      carp=comp_carp_op(A,shift,omega);
+      op=comp_jada_op(A,0,speye(n),Qtil);
+
+      t0=zeros(size(rtil));
+      lsOpts.tol=max(tol,1/2.^max(1,mm));
+      if (verbose)
+        disp(['inner conv tol: ',num2str(lsOpts.tol)]);
+      end
+
+      [t,flag,relres,iter,resvec] = ...
+        pcg(@apply_op,rtil,lsOpts.tol,lsOpts.maxIter,[],[],t0,op);
+      for i=1:length(resvec)
+        disp(sprintf('\t%d\t%e',i,resvec(i)));
+      end
     else
       op=comp_jada_op(A,shift,speye(n),Qtil);
       if (isfield(printOpts,'indent'))
