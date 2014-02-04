@@ -47,6 +47,7 @@ module crsmat_module
     integer,         allocatable :: col_idx(:)           !< column indices
     real(kind=8),    allocatable :: val(:)               !< matrix entries
     integer(kind=8), allocatable :: global_col_idx(:)    !< global column indices
+    integer(kind=8), allocatable :: global_row_idx(:)    !< from possible reordering: original global indices of local rows
     type(Map_t)                  :: row_map
     type(CrsCommBuff_t)          :: comm_buff
     !--------------------------------------------------------------------------------
@@ -286,11 +287,84 @@ end do
   end subroutine sort
 
 
+  subroutine sort_global_cols(A)
+    use m_mrgrnk
+    type(crsMat_t), intent(inout) :: A
+    integer(kind=8) :: i, off, n, maxPerRow
+    real(kind=8), allocatable :: val(:)
+    integer(kind=8), allocatable :: idx(:,:)
+    integer(kind=8) :: j
+
+    maxPerRow = maxval(A%row_offset(2:A%nRows+1)-A%row_offset(1:A%nRows))
+    allocate(idx(maxPerRow,2))
+    allocate(val(maxPerRow))
+
+    ! we still need to sort the entries in each row by column
+    do i = 1, A%nRows
+      off = A%row_offset(i)
+      n = A%row_offset(i+1) - off
+      if( n .gt. 1 ) then
+        ! reuse idx for sorting
+        idx(1:n,1) = A%global_col_idx( off:off+n-1 )
+        val(1:n)   = A%val( off:off+n-1 )
+
+        ! determine order of columns
+        call mrgrnk(idx(1:n,1), idx(1:n,2))
+
+        ! copy back sorted arrays
+        do j = 1, n
+          A%global_col_idx( off+j-1 ) = idx(idx(j,2),1)
+          A%val( off+j-1 ) = val(idx(j,2))
+        end do
+      end if
+    end do
+
+  end subroutine sort_global_cols
+
+
+  !> rearranges the entries in crsMat_t%val and crsMat_t%global_col_idx in a given order
+  !! \param crsMat matrix to reorder
+  !! \param new_ind array of size crsMat%nEntries with new position of each block
+  pure subroutine reord_val_global_col(crsMat, new_ind)
+    type(crsMat_t),intent(in out) :: crsMat
+    integer(kind=8),intent(in out) :: new_ind(1:crsMat%nEntries)
+
+    integer(kind=8) :: j,l
+    integer(kind=8) :: buff_col_ind
+    integer(kind=8) :: buff_new_ind
+    real(kind=8) :: buff_value
+
+    ! now sort the data in place (we have already the future position,
+    ! so this can be done by O(n) swaps)
+    do j=1,crsMat%nEntries, 1
+      do while( new_ind(j) .ne. j )
+        l = new_ind(j)
+        ! swap j and l
+
+        buff_value = crsMat%val(l)
+        buff_col_ind = crsMat%global_col_idx(l)
+        buff_new_ind = new_ind(l)
+
+        crsMat%val(l) = crsMat%val(j)
+        crsMat%global_col_idx(l) = crsMat%global_col_idx(j)
+        new_ind(l) = new_ind(j)
+
+        crsMat%val(j) = buff_value
+        crsMat%global_col_idx(j) = buff_col_ind
+        new_ind(j) = buff_new_ind
+
+      end do
+    end do
+
+  end subroutine reord_val_global_col
+
+
+
   !> rearrange the elements of a matrix stored in crs format in a
   !! way that the elements are grouped by remote process (e.g. when performing
   !! a matrix vector multiplication, the elements that are multiplied with a
   !! subvector from a remote process are stored consecutivly in memory)
-  subroutine sort_rows(mat)
+  subroutine sort_rows_local_nonlocal(mat)
     use m_mrgrnk
     type(CrsMat_t), intent(inout) :: mat
 
@@ -383,9 +457,409 @@ end do
     end if
   end function search_recvBuffIndex
 
-  end subroutine sort_rows
+  end subroutine sort_rows_local_nonlocal
 
 
+#ifdef PHIST_HAVE_PARMETIS
+
+  !> repartitions a matrix stored in crs form (crsMat_t) in order
+  !! to reduce the mpi-communication needed for matrix-vector multiplication
+  !! \param crsMat local part of the distributed matrix (gets modified)
+  !! \param outlev output verbosity level
+  !! \param ierr returns value != 0 on error
+  subroutine repartcrs(crsMat,outlev,ierr)
+    use mpi
+    type(crsMat_t) :: crsMat
+    integer,intent(in) :: outlev
+    integer,intent(out) :: ierr
+
+    integer(kind=8),allocatable :: rowSendProc(:)
+    integer,allocatable :: rowRecvProc(:)
+    integer(kind=8),allocatable :: rowSendProcGlob(:)
+    integer :: nd_new, jProc, jProc_
+    integer :: nSendProcs, nRecvProcs
+    integer(kind=8) :: j, k, l, i, row
+    integer(kind=8),allocatable :: sendBuffInd(:)
+    integer(kind=8),allocatable :: sendIds(:),procSendCount(:)
+    integer(kind=8),allocatable :: sendIdsInd(:)
+    integer,allocatable :: recvRequest(:,:)
+    integer,allocatable :: recvStatus(:,:,:)
+    integer(kind=8),allocatable :: sendBuff_row_blk(:)
+    integer(kind=8),allocatable :: buff_ind(:)
+    integer(kind=8),allocatable :: col_ind_new(:)
+    integer(kind=8),allocatable :: row_blk_new(:)
+    real(kind=8),allocatable :: value_new(:)
+    integer(kind=8),allocatable :: glob_row_permut(:)
+    integer :: ierr_
+
+
+    ierr = 0
+
+
+    allocate(rowSendProc(crsMat%nRows))
+    ! parmetis call encapsulated, we only need the
+    ! data where each row goes
+    call calculateNewPartition(crsMat,rowSendProc)
+    if( any(rowSendProc .lt. 0 .or. rowSendProc .ge. crsMat%row_map%nProcs) ) then
+      ierr = 1
+      if( outlev .ge. 1 .and. crsMat%row_map%me .eq. 0 ) then
+        write(*,*) 'DSCSolve: ERROR: parmetis failure on proc', crsMat%row_map%me
+      end if
+    end if
+    call mpi_allreduce(MPI_IN_PLACE, ierr, 1, MPI_INTEGER, MPI_SUM, crsMat%row_map%comm, ierr_)
+    if( ierr .ne. 0 ) then
+      return
+    end if
+
+    ! determine recvRowProc vector
+    allocate(rowSendProcGlob(crsMat%row_map%distrib(crsMat%row_map%nProcs)))
+    call mpi_allgatherv(rowSendProc,crsMat%nRows,MPI_INTEGER,&
+      & rowSendProcGlob,crsMat%row_map%nlocal,crsMat%row_map%distrib,MPI_INTEGER, &
+      & crsMat%row_map%comm, ierr)
+    nd_new = 0
+    do i = 1, crsMat%row_map%distrib(crsMat%row_map%nProcs), 1
+      if( rowSendProcGlob(i) .eq. crsMat%row_map%me ) then
+        nd_new = nd_new + 1
+      end if
+    end do
+
+    allocate(rowRecvProc(nd_new))
+    allocate(crsMat%global_row_idx(nd_new))
+    nRecvProcs = 1
+    if( nd_new .eq. 0 ) nRecvProcs = 0
+    nd_new = 0
+    do jProc = 0, crsMat%row_map%nProcs-1, 1
+      do i = crsMat%row_map%distrib(jProc)+1, crsMat%row_map%distrib(jProc+1), 1
+        if( rowSendProcGlob(i) .eq. crsMat%row_map%me ) then
+          nd_new = nd_new + 1
+          rowRecvProc(nd_new) = jProc
+          if( nd_new .gt. 1 ) then
+            if( rowRecvProc(nd_new-1) .ne. jProc ) then
+              nRecvProcs = nRecvProcs + 1
+            end if
+          end if
+          crsMat%global_row_idx(nd_new) = i
+        end if
+      end do
+    end do
+
+    crsMat%row_map%distrib=0
+    do i = 1, size(rowSendProcGlob), 1
+      crsMat%row_map%distrib(rowSendProcGlob(i)+1) = &
+        crsMat%row_map%distrib(rowSendProcGlob(i)+1) + 1
+    end do
+    crsMat%row_map%distrib(0) = 0
+    do i = 1, crsMat%row_map%nProcs, 1
+      crsMat%row_map%distrib(i) = crsMat%row_map%distrib(i-1) + crsMat%row_map%distrib(i)
+    end do
+    crsMat%row_map%nlocal = int(crsMat%row_map%distrib(1:crsMat%row_map%nProcs) - crsMat%row_map%distrib(0:crsMat%row_map%nProcs-1),kind=4)
+    allocate(glob_row_permut(crsMat%row_map%distrib(crsMat%row_map%nProcs)))
+    do i = 1, size(glob_row_permut), 1
+      crsMat%row_map%distrib( rowSendProcGlob(i) ) = &
+        & crsMat%row_map%distrib( rowSendProcGlob(i) ) + 1
+      glob_row_permut( i ) = crsMat%row_map%distrib( rowSendProcGlob(i) )
+    end do
+    ! restore row_blk_offset
+    do i = crsMat%row_map%nProcs,1,-1
+      crsMat%row_map%distrib(i) = crsMat%row_map%distrib(i-1)
+    end do
+    crsMat%row_map%distrib(0) = 0
+    deallocate(rowSendProcGlob)
+
+    ! change the col_ind for the new partition
+    do j = 1, crsMat%nEntries, 1
+      crsMat%global_col_idx(j) = glob_row_permut( crsMat%global_col_idx(j) )
+    end do
+    deallocate(glob_row_permut)
+    call sort_global_cols(crsMat)
+
+
+    ! we now have the rowRecvProc and the rowSendProc vec.
+    ! first start the receive for the number of elemens per row
+    allocate(recvRequest(nRecvProcs,2))
+    recvRequest=MPI_REQUEST_NULL
+    allocate(row_blk_new(nd_new+1))
+    if( nd_new .gt. 0 ) jProc = rowRecvProc(1)
+    k = 1
+    l = 1
+    row_blk_new = 0
+    do i = 2, nd_new+1, 1
+      jProc_ = -1
+      if( i .le. nd_new ) jProc_ = rowRecvProc(i)
+      if( jProc .ne. jProc_ ) then
+        call mpi_irecv(row_blk_new(k+1),i-k,MPI_INTEGER8, &
+          &           jProc,0,crsMat%row_map%comm, recvRequest(l,1), ierr)
+        k = i
+        l = l + 1
+        jProc = jProc_
+      end if
+    end do
+
+
+    ! now create the send buffer and send the number of elements per row
+    allocate(procSendCount(0:crsMat%row_map%nProcs))
+    procSendCount = 0
+    nSendProcs = 0
+    do i = 1, crsMat%nRows, 1
+      if( procSendCount(rowSendProc(i)+1) .eq. 0 ) then
+        nSendProcs = nSendProcs + 1
+      end if
+      procSendCount(rowSendProc(i)+1) = procSendCount(rowSendProc(i)+1) + 1
+    end do
+    allocate(sendBuffInd(nSendProcs+1))
+    allocate(sendIds(nSendProcs))
+    allocate(sendIdsInd(0:crsMat%row_map%nProcs-1))
+    jProc = 0
+    sendBuffInd(1) = 0
+    sendIdsInd=-1
+    do i = 1, nSendProcs, 1
+      do while( procSendCount(jProc+1) .eq. 0 )
+        jProc = jProc + 1
+      end do
+      sendBuffInd(i+1) = procSendCount(jProc+1)
+      sendIds(i) = jProc
+      sendIdsInd(jProc) = i
+      jProc=jProc+1
+    end do
+    sendBuffInd(1) = 1
+    do i = 1, nSendProcs, 1
+      sendBuffInd(i+1) = sendBuffInd(i)+sendBuffInd(i+1)
+    end do
+    do i = 1, crsMat%row_map%nProcs, 1
+      procSendCount(i) = procSendCount(i)+procSendCount(i-1)
+    end do
+    allocate(sendBuff_row_blk(sendBuffInd(nSendProcs+1)))
+    sendBuff_row_blk=0
+    do i = 1, crsMat%nRows, 1
+      rowSendProc(i) = sendIdsInd(rowSendProc(i))
+      procSendCount(sendIds(rowSendProc(i))) = &
+        & procSendCount(sendIds(rowSendProc(i)))+1
+      sendBuff_row_blk( procSendCount(sendIds(rowSendProc(i))) + 1) = &
+        & crsMat%row_offset(i+1) - crsMat%row_offset(i)
+    end do
+    deallocate(sendIdsInd)
+    do i = crsMat%row_map%nProcs, 1, -1
+      procSendCount(i) = procSendCount(i-1)
+    end do
+    procSendCount(0) = 0
+    do i = 1, nSendProcs, 1
+      call mpi_send(sendBuff_row_blk(sendBuffInd(i)+1), &
+        &     sendBuffInd(i+1)-sendBuffInd(i), MPI_INTEGER8, &
+        &     sendIds(i), 0, crsMat%row_map%comm, ierr)
+    end do
+    sendBuff_row_blk(1) = 1
+    do i = 1, sendBuffInd(nSendProcs+1)-1, 1
+      sendBuff_row_blk(i+1) = sendBuff_row_blk(i) + sendBuff_row_blk(i+1)
+    end do
+
+    ! finish receive and allocate buffers for col_ind receive
+    allocate(recvStatus(MPI_STATUS_SIZE,nRecvProcs,2))
+    call mpi_waitall(nRecvProcs,recvRequest(:,1),recvStatus(:,:,1),ierr)
+    row_blk_new(1) = 1
+    do i = 1, nd_new, 1
+      row_blk_new(i+1) = row_blk_new(i) + row_blk_new(i+1)
+    end do
+    allocate(col_ind_new(row_blk_new(nd_new+1)-1))
+    if( nd_new .gt. 0 ) jProc = rowRecvProc(1)
+    k = 1
+    l = 1
+    do i = 2, nd_new+1, 1
+      jProc_ = -1
+      if( i .le. nd_new ) jProc_ = rowRecvProc(i)
+      if( jProc .ne. jProc_ ) then
+        call mpi_irecv(col_ind_new(row_blk_new(k)),&
+          &           row_blk_new(i)-row_blk_new(k),MPI_INTEGER, &
+          &           jProc,1,crsMat%row_map%comm, recvRequest(l,1), ierr)
+        k = i
+        l = l + 1
+        jProc = jProc_
+      end if
+    end do
+
+
+
+
+    ! reorder local matrix entries, so they can be sent block-wise
+    allocate(buff_ind(crsMat%nEntries))
+    do i = 1, crsMat%nRows, 1
+      procSendCount(sendIds(rowSendProc(i))) = &
+        & procSendCount(sendIds(rowSendProc(i))) + 1
+      row = procSendCount(sendIds(rowSendProc(i)))
+      do j = crsMat%row_offset(i), crsMat%row_offset(i+1)-1, 1
+        buff_ind(j) = sendBuff_row_blk( row )
+        sendBuff_row_blk(row) = sendBuff_row_blk(row) + 1
+      end do
+    end do
+    do i = crsMat%nRows+1, 2, -1
+      sendBuff_row_blk(i) = sendBuff_row_blk(i-1)      
+    end do
+    sendBuff_row_blk(1) = 1
+    call reord_val_global_col(crsMat,buff_ind)
+    deallocate(buff_ind,procSendCount,crsMat%row_offset)
+
+    ! send col ind
+    do i = 1, nSendProcs, 1
+      call mpi_send(crsMat%global_col_idx(sendBuff_row_blk(sendBuffInd(i))), &
+        &  sendBuff_row_blk(sendBuffInd(i+1))-sendBuff_row_blk(sendBuffInd(i)), &
+        &  MPI_INTEGER,sendIds(i),1,crsMat%row_map%comm, ierr)
+    end do
+    deallocate(crsMat%global_col_idx) ! not needed any more
+
+
+    ! finish col_ind receive and create buffer for value
+    call mpi_waitall(nRecvProcs,recvRequest(:,1),recvStatus(:,:,1),ierr)
+    allocate(value_new(row_blk_new(nd_new+1)-1))
+    if( nd_new .gt. 0 ) jProc = rowRecvProc(1)
+    k = 1
+    l = 1
+    do i = 2, nd_new+1, 1
+      jProc_ = -1
+      if( i .le. nd_new ) jProc_ = rowRecvProc(i)
+      if( jProc .ne. jProc_ ) then
+        call mpi_irecv(value_new(row_blk_new(k)),&
+          &           (row_blk_new(i)-row_blk_new(k)),&
+          &           MPI_DOUBLE_PRECISION, &
+          &           jProc,2,crsMat%row_map%comm, recvRequest(l,1), ierr)
+        k = i
+        l = l + 1
+        jProc = jProc_
+      end if
+    end do
+
+
+    ! send value
+    do i = 1, nSendProcs, 1
+      call mpi_send(crsMat%val(sendBuff_row_blk(sendBuffInd(i))), &
+        &  (sendBuff_row_blk(sendBuffInd(i+1))-sendBuff_row_blk(sendBuffInd(i))), &
+        &  MPI_DOUBLE_PRECISION,sendIds(i),2,crsMat%row_map%comm, ierr)
+    end do
+    deallocate(crsMat%val,sendBuff_row_blk) ! not needed any more
+
+
+    ! finish value receive
+    call mpi_waitall(nRecvProcs,recvRequest(:,1),recvStatus(:,:,1),ierr)
+    deallocate(sendBuffInd, sendIds, rowRecvProc, rowSendProc,recvRequest,recvStatus)
+
+
+
+
+    crsMat%row_offset=row_blk_new
+    crsMat%global_col_idx=col_ind_new
+    crsMat%val=value_new
+    crsMat%nRows = nd_new
+    crsMat%nEntries = crsMat%row_offset(crsMat%nRows+1)-1
+
+
+  contains
+
+
+    subroutine calculateNewPartition(crsMat, rowBlkTargetProc)
+      type(crsMat_t),intent(in) :: crsMat
+      integer(kind=8) :: rowBlkTargetProc(crsMat%nRows)
+
+
+      ! parameter for ParMETIS_V3_PartKway
+      integer(kind=8),pointer :: vtxdist(:) ! = crsMat%row_map%distrib+1
+      integer(kind=8),pointer :: xadj(:) ! = crsMat%row_offset without counting diagonal entries
+      integer(kind=8),pointer :: adjncy(:) ! = crsMat%global_col_idx without diagonal (connection to itself)
+      integer(kind=8),pointer :: vwgt(:) ! has size(crsMat%nRows), number of non-zero entries per row block
+      integer(kind=8),pointer :: adjwgt(:) ! edge weights, for unsymmetric matrices 1 or 2
+      integer(kind=8),parameter :: wgtflag = 3 ! vertex and edge weights
+      integer(kind=8),parameter :: numflag = 1 ! fortran numbering style
+      integer(kind=8),parameter :: ncon = 1 ! only one constraint, one weight per vertex
+      integer(kind=8) :: nparts ! = crsMat%row_map%nProcs
+      real(kind=4),pointer :: tpwgts(:) ! =1/nparts, has size (1:nparts)
+      real(kind=4),parameter :: ubvec = 1.01 ! vertex weight imbalance tolerance
+      real(kind=4),parameter :: ubvec_refine = 1.01 ! vertex weight imbalance tolerance
+      integer(kind=8) :: options(0:3) = 0 ! default options
+      integer(kind=8) :: edgecut_refined, edgecut ! output parameter, global number of cutted edges
+      integer(kind=8) :: edgecut_before
+
+
+      integer :: i, ierr
+      integer(kind=8) :: j, k
+      integer(kind=8) :: offset
+
+      offset = crsMat%row_map%distrib(crsMat%row_map%me)-1
+      allocate(vtxdist(0:crsMat%row_map%nProcs))
+      vtxdist=crsMat%row_map%distrib+1
+      ! count non diagonal elements
+      allocate(xadj(crsMat%nRows+1))
+      allocate(vwgt(crsMat%nRows))
+      j = 1
+      xadj(1) = 1
+      do i = 1, crsMat%nRows, 1
+        do k = crsMat%row_offset(i), crsMat%row_offset(i+1)-1, 1
+          if( crsMat%global_col_idx(k) .ne. i + offset ) then
+            j = j + 1
+          end if
+        end do
+        xadj(i+1) = j
+        vwgt(i) = crsMat%row_offset(i+1)-crsMat%row_offset(i)
+      end do
+      allocate(adjncy(xadj(crsMat%nRows+1)-1))
+      nullify(adjwgt)
+      j = 1
+      edgecut = 0
+      do i = 1, crsMat%nRows, 1
+        do k = crsMat%row_offset(i), crsMat%row_offset(i+1)-1, 1
+          if( crsMat%global_col_idx(k) .ne. i + offset ) then
+            adjncy(j) = crsMat%global_col_idx(k)
+            j = j + 1
+            if( crsMat%global_col_idx(k) .le. offset .or. &
+              & crsMat%global_col_idx(k) .gt. offset+crsMat%nRows ) then
+              edgecut=edgecut+1
+            end if
+          end if
+        end do
+      end do
+
+      call mpi_allreduce(edgecut,edgecut_before,1,MPI_INTEGER,MPI_SUM,crsMat%row_map%comm,ierr)
+
+      nparts = crsMat%row_map%nProcs
+      allocate(tpwgts(1:nparts))
+      tpwgts = 1.0/nparts
+      rowBlkTargetProc=0
+
+      ! make symmetric graph from non-symmetric matrix pattern
+      !call parudgraph(mpi,vtxdist,xadj,adjncy,adjwgt)
+      allocate(adjwgt(xadj(crsMat%nRows+1)-1))
+      adjwgt = 1
+#warning "matrix reordering only implemented for the symmetric case, will fail otherwise!"
+      ! the edge weights are 1 for single edges and 2 for edges in both
+      ! directions
+
+      call ParMETIS_V3_PartKway_f(vtxdist, xadj, adjncy, vwgt, adjwgt, &
+        &                         wgtflag, numflag, ncon, nparts, tpwgts, ubvec, &
+        &                         options, edgecut, rowBlkTargetProc, crsMat%row_map%comm)
+
+      ! doesn't work with ParMetis-3.1.1, but other versions fail for empty
+      ! processes
+      options(0) = 1
+      options(1) = 0
+      options(2) = 15
+      options(3) = 2
+
+      call ParMETIS_V3_RefineKway_f(vtxdist, xadj, adjncy, vwgt, adjwgt, &
+        &                           wgtflag, numflag, ncon, nparts, tpwgts, ubvec_refine, &
+        &                           options, edgecut_refined, rowBlkTargetProc, crsMat%row_map%comm)
+
+      if( outlev .ge. 3 .and. crsMat%row_map%me .eq. 0 ) then
+        write(*,*) 'repartitioning: total number of edges cut:'
+        write(*,*) '                before:',edgecut_before
+        write(*,*) '      after first step:',edgecut
+        write(*,*) '     after second step:',edgecut_refined
+      end if
+      deallocate(xadj,adjncy,vwgt,tpwgts,vtxdist,adjwgt)
+
+      if( nparts .gt. 1 ) rowBlkTargetProc = rowBlkTargetProc - 1
+
+    end subroutine calculateNewPartition
+  end subroutine repartcrs
+
+
+
+#endif /* PHIST_HAVE_PARMEITS */
 
 
   !==================================================================================
@@ -625,7 +1099,6 @@ end do
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
     use mpi
-    use m_mrgrnk
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
     integer(C_INT),     value       :: filename_len
@@ -639,7 +1112,7 @@ end do
     character(len=100) :: line
     integer(kind=8), allocatable :: idx(:,:)
     real(kind=8), allocatable :: val(:)
-    integer(kind=8) :: i, j, off, n, globalRows, globalCols, globalEntries
+    integer(kind=8) :: i, j, globalRows, globalCols, globalEntries
     !--------------------------------------------------------------------------------
 
     do i = 1, filename_len
@@ -748,28 +1221,12 @@ end do
     end do
     A%row_offset( 1 ) = 1
 
-    ! we still need to sort the entries in each row by column
-    do i = 1, A%nRows
-      off = A%row_offset(i)
-      n = A%row_offset(i+1) - off
-      if( n .gt. 1 ) then
-        ! reuse idx for sorting
-        idx(1:n,1) = A%global_col_idx( off:off+n-1 )
-        val(1:n)   = A%val( off:off+n-1 )
-
-        ! determine order of columns
-        call mrgrnk(idx(1:n,1), idx(1:n,2))
-
-        ! copy back sorted arrays
-        do j = 1, n
-          A%global_col_idx( off+j-1 ) = idx(idx(j,2),1)
-          A%val( off+j-1 ) = val(idx(j,2))
-        end do
-      end if
-    end do
-
+    call sort_global_cols(A)
+#ifdef PHIST_HAVE_PARMETIS
+    call repartcrs(A,1,ierr)
+#endif
     call setup_commBuff(A, A%comm_buff)
-    call sort_rows(A)
+    call sort_rows_local_nonlocal(A)
 
     write(*,*) 'created new crsMat with dimensions', A%nRows, A%nCols, A%nEntries
     flush(6)
@@ -787,7 +1244,6 @@ end do
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
     use mpi
-    use m_mrgrnk
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
     integer(C_INT),     value       :: nrows, ncols, maxnne_per_row
@@ -804,7 +1260,7 @@ end do
 #endif
     real(kind=8), allocatable :: val(:)
     integer :: i, globalRows, globalCols
-    integer(kind=8) :: j, j_, off, n, globalEntries
+    integer(kind=8) :: j, j_, globalEntries
 #ifdef GHOST_HAVE_LONGIDX
     integer(kind=8) :: i_, nne
 #else
@@ -873,28 +1329,12 @@ end do
 !close(funit)
 
 
-    ! we still need to sort the entries in each row by column
-    do i = 1, A%nRows
-      off = A%row_offset(i)
-      n = A%row_offset(i+1) - off
-      if( n .gt. 1 ) then
-        ! reuse idx for sorting
-        idx(1:n,1) = A%global_col_idx( off:off+n-1 )
-        val(1:n)   = A%val( off:off+n-1 )
-
-        ! determine order of columns
-        call mrgrnk(idx(1:n,1), idx(1:n,2))
-
-        ! copy back sorted arrays
-        do j = 1, n
-          A%global_col_idx( off+j-1 ) = idx(idx(j,2),1)
-          A%val( off+j-1 ) = val(idx(j,2))
-        end do
-      end if
-    end do
-
+    call sort_global_cols(A)
+#ifdef PHIST_HAVE_PARMETIS
+    call repartcrs(A,1,ierr)
+#endif
     call setup_commBuff(A, A%comm_buff)
-    call sort_rows(A)
+    call sort_rows_local_nonlocal(A)
 
     write(*,*) 'created new crsMat with dimensions', A%nRows, A%nCols, A%nEntries
     flush(6)
