@@ -490,6 +490,7 @@ end do
     integer(kind=8),allocatable :: row_blk_new(:)
     real(kind=8),allocatable :: value_new(:)
     integer(kind=8),allocatable :: glob_row_permut(:)
+    integer,allocatable :: offsets(:)
     integer :: ierr_
 
 
@@ -500,24 +501,32 @@ end do
     ! parmetis call encapsulated, we only need the
     ! data where each row goes
     call calculateNewPartition(crsMat,rowSendProc)
+!write(*,*) 'rowSendProc', rowSendProc
     if( any(rowSendProc .lt. 0 .or. rowSendProc .ge. crsMat%row_map%nProcs) ) then
       ierr = 1
-      if( outlev .ge. 1 .and. crsMat%row_map%me .eq. 0 ) then
-        write(*,*) 'DSCSolve: ERROR: parmetis failure on proc', crsMat%row_map%me
-      end if
     end if
     call mpi_allreduce(MPI_IN_PLACE, ierr, 1, MPI_INTEGER, MPI_SUM, crsMat%row_map%comm, ierr_)
     if( ierr .ne. 0 ) then
+      if( outlev .ge. 1 .and. crsMat%row_map%me .eq. 0 ) then
+        write(*,*) 'ERROR: parmetis failure!'
+      end if
       return
     end if
 
     ! determine recvRowProc vector
-    allocate(rowSendProcGlob(crsMat%row_map%distrib(crsMat%row_map%nProcs)))
-    call mpi_allgatherv(rowSendProc,crsMat%nRows,MPI_INTEGER,&
-      & rowSendProcGlob,crsMat%row_map%nlocal,crsMat%row_map%distrib,MPI_INTEGER, &
+    allocate(rowSendProcGlob(crsMat%row_map%distrib(crsMat%row_map%nProcs)-1))
+#warning "cannot allgatherv more than max-int32 elements!"
+    allocate(offsets(crsMat%row_map%nProcs))
+    offsets = crsMat%row_map%distrib(0:crsMat%row_map%nProcs-1)-1
+!write(*,*) 'offsets', offsets
+    call mpi_allgatherv(rowSendProc,crsMat%nRows,MPI_INTEGER8,&
+      & rowSendProcGlob,crsMat%row_map%nlocal,offsets,MPI_INTEGER8, &
       & crsMat%row_map%comm, ierr)
+!if( crsMat%row_map%me .eq. 0 ) then
+  !write(*,*) 'rowSendProcGlob', rowSendProcGlob
+!end if
     nd_new = 0
-    do i = 1, crsMat%row_map%distrib(crsMat%row_map%nProcs), 1
+    do i = 1, crsMat%row_map%distrib(crsMat%row_map%nProcs)-1, 1
       if( rowSendProcGlob(i) .eq. crsMat%row_map%me ) then
         nd_new = nd_new + 1
       end if
@@ -529,7 +538,7 @@ end do
     if( nd_new .eq. 0 ) nRecvProcs = 0
     nd_new = 0
     do jProc = 0, crsMat%row_map%nProcs-1, 1
-      do i = crsMat%row_map%distrib(jProc)+1, crsMat%row_map%distrib(jProc+1), 1
+      do i = crsMat%row_map%distrib(jProc), crsMat%row_map%distrib(jProc+1)-1, 1
         if( rowSendProcGlob(i) .eq. crsMat%row_map%me ) then
           nd_new = nd_new + 1
           rowRecvProc(nd_new) = jProc
@@ -548,24 +557,26 @@ end do
       crsMat%row_map%distrib(rowSendProcGlob(i)+1) = &
         crsMat%row_map%distrib(rowSendProcGlob(i)+1) + 1
     end do
-    crsMat%row_map%distrib(0) = 0
+    crsMat%row_map%distrib(0) = 1
     do i = 1, crsMat%row_map%nProcs, 1
       crsMat%row_map%distrib(i) = crsMat%row_map%distrib(i-1) + crsMat%row_map%distrib(i)
     end do
     crsMat%row_map%nlocal = int(crsMat%row_map%distrib(1:crsMat%row_map%nProcs) - crsMat%row_map%distrib(0:crsMat%row_map%nProcs-1),kind=4)
-    allocate(glob_row_permut(crsMat%row_map%distrib(crsMat%row_map%nProcs)))
+    allocate(glob_row_permut(crsMat%row_map%distrib(crsMat%row_map%nProcs)-1))
     do i = 1, size(glob_row_permut), 1
+      glob_row_permut( i ) = crsMat%row_map%distrib( rowSendProcGlob(i) )
       crsMat%row_map%distrib( rowSendProcGlob(i) ) = &
         & crsMat%row_map%distrib( rowSendProcGlob(i) ) + 1
-      glob_row_permut( i ) = crsMat%row_map%distrib( rowSendProcGlob(i) )
     end do
     ! restore row_blk_offset
     do i = crsMat%row_map%nProcs,1,-1
       crsMat%row_map%distrib(i) = crsMat%row_map%distrib(i-1)
     end do
-    crsMat%row_map%distrib(0) = 0
+    crsMat%row_map%distrib(0) = 1
     deallocate(rowSendProcGlob)
 
+!write(*,*) 'global_col_idx', crsMat%global_col_idx
+!write(*,*) 'glob_row_permut', glob_row_permut
     ! change the col_ind for the new partition
     do j = 1, crsMat%nEntries, 1
       crsMat%global_col_idx(j) = glob_row_permut( crsMat%global_col_idx(j) )
@@ -642,6 +653,8 @@ end do
       procSendCount(i) = procSendCount(i-1)
     end do
     procSendCount(0) = 0
+!write(*,*) 'row_offset', crsMat%row_offset
+!write(*,*) 'sendBuff_row_blk', sendBuff_row_blk
     do i = 1, nSendProcs, 1
       call mpi_send(sendBuff_row_blk(sendBuffInd(i)+1), &
         &     sendBuffInd(i+1)-sendBuffInd(i), MPI_INTEGER8, &
@@ -659,6 +672,7 @@ end do
     do i = 1, nd_new, 1
       row_blk_new(i+1) = row_blk_new(i) + row_blk_new(i+1)
     end do
+!write(*,*) 'row_blk_new', row_blk_new
     allocate(col_ind_new(row_blk_new(nd_new+1)-1))
     if( nd_new .gt. 0 ) jProc = rowRecvProc(1)
     k = 1
@@ -668,7 +682,7 @@ end do
       if( i .le. nd_new ) jProc_ = rowRecvProc(i)
       if( jProc .ne. jProc_ ) then
         call mpi_irecv(col_ind_new(row_blk_new(k)),&
-          &           row_blk_new(i)-row_blk_new(k),MPI_INTEGER, &
+          &           row_blk_new(i)-row_blk_new(k),MPI_INTEGER8, &
           &           jProc,1,crsMat%row_map%comm, recvRequest(l,1), ierr)
         k = i
         l = l + 1
@@ -697,11 +711,12 @@ end do
     call reord_val_global_col(crsMat,buff_ind)
     deallocate(buff_ind,procSendCount,crsMat%row_offset)
 
+!write(*,*) 'global_col_idx', crsMat%global_col_idx
     ! send col ind
     do i = 1, nSendProcs, 1
       call mpi_send(crsMat%global_col_idx(sendBuff_row_blk(sendBuffInd(i))), &
         &  sendBuff_row_blk(sendBuffInd(i+1))-sendBuff_row_blk(sendBuffInd(i)), &
-        &  MPI_INTEGER,sendIds(i),1,crsMat%row_map%comm, ierr)
+        &  MPI_INTEGER8,sendIds(i),1,crsMat%row_map%comm, ierr)
     end do
     deallocate(crsMat%global_col_idx) ! not needed any more
 
@@ -764,7 +779,7 @@ end do
       integer(kind=8),pointer :: adjncy(:) ! = crsMat%global_col_idx without diagonal (connection to itself)
       integer(kind=8),pointer :: vwgt(:) ! has size(crsMat%nRows), number of non-zero entries per row block
       integer(kind=8),pointer :: adjwgt(:) ! edge weights, for unsymmetric matrices 1 or 2
-      integer(kind=8),parameter :: wgtflag = 3 ! vertex and edge weights
+      integer(kind=8),parameter :: wgtflag = 2 ! vertex and edge weights
       integer(kind=8),parameter :: numflag = 1 ! fortran numbering style
       integer(kind=8),parameter :: ncon = 1 ! only one constraint, one weight per vertex
       integer(kind=8) :: nparts ! = crsMat%row_map%nProcs
@@ -782,7 +797,7 @@ end do
 
       offset = crsMat%row_map%distrib(crsMat%row_map%me)-1
       allocate(vtxdist(0:crsMat%row_map%nProcs))
-      vtxdist=crsMat%row_map%distrib+1
+      vtxdist=crsMat%row_map%distrib
       ! count non diagonal elements
       allocate(xadj(crsMat%nRows+1))
       allocate(vwgt(crsMat%nRows))
@@ -814,7 +829,7 @@ end do
         end do
       end do
 
-      call mpi_allreduce(edgecut,edgecut_before,1,MPI_INTEGER,MPI_SUM,crsMat%row_map%comm,ierr)
+      call mpi_allreduce(edgecut,edgecut_before,1,MPI_INTEGER8,MPI_SUM,crsMat%row_map%comm,ierr)
 
       nparts = crsMat%row_map%nProcs
       allocate(tpwgts(1:nparts))
@@ -824,25 +839,41 @@ end do
       ! make symmetric graph from non-symmetric matrix pattern
       !call parudgraph(mpi,vtxdist,xadj,adjncy,adjwgt)
       allocate(adjwgt(xadj(crsMat%nRows+1)-1))
-      adjwgt = 1
+      adjwgt = 2
 #warning "matrix reordering only implemented for the symmetric case, will fail otherwise!"
       ! the edge weights are 1 for single edges and 2 for edges in both
       ! directions
 
+!write(*,*) 'vtxdist', vtxdist
+!write(*,*) 'xadj', xadj
+!write(*,*) 'adjncy', adjncy
+!write(*,*) 'vwgt', vwgt
+!write(*,*) 'adjwgt', adjwgt
+!write(*,*) 'wgtflag', wgtflag
+!write(*,*) 'numflag', numflag
+!write(*,*) 'ncon', ncon
+!write(*,*) 'nparts', nparts
+!write(*,*) 'tpwgts', tpwgts
+!write(*,*) 'ubvec', ubvec
+!write(*,*) 'options', options
+!write(*,*) 'edgecut', edgecut
+!write(*,*) 'rowBlkTargetProc', rowBlkTargetProc
       call ParMETIS_V3_PartKway_f(vtxdist, xadj, adjncy, vwgt, adjwgt, &
         &                         wgtflag, numflag, ncon, nparts, tpwgts, ubvec, &
         &                         options, edgecut, rowBlkTargetProc, crsMat%row_map%comm)
+!write(*,*) 'rowBlkTargetProc', rowBlkTargetProc
 
       ! doesn't work with ParMetis-3.1.1, but other versions fail for empty
       ! processes
-      options(0) = 1
-      options(1) = 0
-      options(2) = 15
-      options(3) = 2
 
-      call ParMETIS_V3_RefineKway_f(vtxdist, xadj, adjncy, vwgt, adjwgt, &
-        &                           wgtflag, numflag, ncon, nparts, tpwgts, ubvec_refine, &
-        &                           options, edgecut_refined, rowBlkTargetProc, crsMat%row_map%comm)
+  options(0) = 1
+  options(1) = 0
+  options(2) = 15
+  options(3) = 2
+
+  call ParMETIS_V3_RefineKway_f(vtxdist, xadj, adjncy, vwgt, adjwgt, &
+    &                           wgtflag, numflag, ncon, nparts, tpwgts, ubvec_refine, &
+    &                           options, edgecut_refined, rowBlkTargetProc, crsMat%row_map%comm)
 
       if( outlev .ge. 3 .and. crsMat%row_map%me .eq. 0 ) then
         write(*,*) 'repartitioning: total number of edges cut:'
@@ -852,7 +883,7 @@ end do
       end if
       deallocate(xadj,adjncy,vwgt,tpwgts,vtxdist,adjwgt)
 
-      if( nparts .gt. 1 ) rowBlkTargetProc = rowBlkTargetProc - 1
+      rowBlkTargetProc = rowBlkTargetProc - 1
 
     end subroutine calculateNewPartition
   end subroutine repartcrs
@@ -1112,7 +1143,7 @@ end do
     character(len=100) :: line
     integer(kind=8), allocatable :: idx(:,:)
     real(kind=8), allocatable :: val(:)
-    integer(kind=8) :: i, j, globalRows, globalCols, globalEntries
+    integer(kind=8) :: i, i_, j, globalRows, globalCols, globalEntries
     !--------------------------------------------------------------------------------
 
     do i = 1, filename_len
@@ -1223,8 +1254,39 @@ end do
 
     call sort_global_cols(A)
 #ifdef PHIST_HAVE_PARMETIS
-    call repartcrs(A,1,ierr)
+!write(*,*) 'row_offset', A%row_offset
+!write(*,*) 'col_idx', A%global_col_idx
+!write(*,*) 'val', A%val
+    call repartcrs(A,3,ierr)
+!write(*,*) 'row_offset', A%row_offset
+!write(*,*) 'col_idx', A%global_col_idx
+!write(*,*) 'val', A%val
 #endif
+! write matrix to mat.mm
+!do i_ = 0, A%row_map%nProcs-1
+
+  !call MPI_Barrier(A%row_map%comm, ierr)
+  !if( A%row_map%me .ne. i_ ) cycle
+
+  !if( i_ .eq. 0 ) then
+    !open(unit   = newunit(funit), file = 'out.mm', action = 'write')
+    !write(funit,'(A)') '%%MatrixMarket matrix coordinate real general'
+    !write(funit,'(A)') '% generated by SpinChainSZ'
+    !write(funit,*) A%row_map%distrib(A%row_map%nProcs)-1, A%row_map%distrib(A%row_map%nProcs)-1, A%nEntries
+  !else
+    !open(unit   = newunit(funit), file = 'out.mm', action = 'write', position = 'append')
+  !end if
+
+  !do i = 1, A%nRows
+    !do j = A%row_offset(i), A%row_offset(i+1)-1, 1
+      !write(funit,*) A%row_map%distrib(A%row_map%me)+i-1, A%global_col_idx(j), A%val(j)
+    !end do
+  !end do
+  !close(funit)
+
+!end do
+
+
     call setup_commBuff(A, A%comm_buff)
     call sort_rows_local_nonlocal(A)
 
@@ -1266,6 +1328,7 @@ end do
 #else
     integer :: i_, nne
 #endif
+    integer :: funit
     !--------------------------------------------------------------------------------
 
     ! get procedure pointer
@@ -1316,23 +1379,35 @@ end do
     end do
     A%nEntries = A%row_offset(A%nRows+1)-1
 
-! write matrix to mat.mm
-!open(unit   = newunit(funit), file = 'out.mm', action = 'write')
-!write(funit,'(A)') '%%MatrixMarket matrix coordinate real general'
-!write(funit,'(A)') '% generated by SpinChainSZ'
-!write(funit,*) A%nRows, A%nCols, A%nEntries
-!do i = 1, A%nRows
-  !do j = A%row_offset(i), A%row_offset(i+1)-1, 1
-    !write(funit,*) i, A%global_col_idx(j), A%val(j)
-  !end do
-!end do
-!close(funit)
-
 
     call sort_global_cols(A)
 #ifdef PHIST_HAVE_PARMETIS
-    call repartcrs(A,1,ierr)
+    call repartcrs(A,3,ierr)
 #endif
+! write matrix to mat.mm
+!do i_ = 0, A%row_map%nProcs-1
+
+  !call MPI_Barrier(A%row_map%comm, ierr)
+  !if( A%row_map%me .ne. i_ ) cycle
+
+  !if( i_ .eq. 0 ) then
+    !open(unit   = newunit(funit), file = 'out.mm', action = 'write')
+    !write(funit,'(A)') '%%MatrixMarket matrix coordinate real general'
+    !write(funit,'(A)') '% generated by SpinChainSZ'
+    !write(funit,*) A%row_map%distrib(A%row_map%nProcs)-1, A%row_map%distrib(A%row_map%nProcs)-1, A%nEntries
+  !else
+    !open(unit   = newunit(funit), file = 'out.mm', action = 'write', position = 'append')
+  !end if
+
+  !do i = 1, A%nRows
+    !do j = A%row_offset(i), A%row_offset(i+1)-1, 1
+      !write(funit,*) A%row_map%distrib(A%row_map%me)+i-1, A%global_col_idx(j), A%val(j)
+    !end do
+  !end do
+  !close(funit)
+
+!end do
+
     call setup_commBuff(A, A%comm_buff)
     call sort_rows_local_nonlocal(A)
 
