@@ -110,24 +110,24 @@ end
 
 disp(sprintf('CARP-CG with deflation of %d vectors',nd));
 
-opts.PrecL=comp_deflprec(speye(n),T,U);
-opts.PrecR=opts.PrecL;
+opts.Precond=comp_deflprec(speye(n),T,U);
+
 opts.omega=1.0;
 opts.tol=tol;
 opts.maxIter=maxIt;
 
-[x5,flag5,relres5,iter5,resvec5] = carp_cg(A, bV, x0, opts);
+[x5,flag5,relres5,iter5,resvec5] = carp_cg(A, b, x0, opts);
 disp(sprintf('CARP-CG: iters %d, relres %e\n',iter5, relres5));
-disp(sprintf('expl. resid: %e, error %e\n',norm(A*x5-sigma*x5-bV),norm(x5-xex)));
+disp(sprintf('expl. resid: %e, error %e\n',norm(A*x5-sigma*x5-b),norm(x5-xex)));
 
 if (flag5~=0)
   disp(sprintf('non-zero return flag=%d',flag5));
 end
 
 opts.omega=1.5;
-[x6,flag6,relres6,iter6,resvec6] = carp_cg(A, bV, x0, opts);
+[x6,flag6,relres6,iter6,resvec6] = carp_cg(A, b, x0, opts);
 disp(sprintf('CARP-CG (omg=%3.1f): iters %d, relres %e\n',opts.omega,iter6, relres6));
-disp(sprintf('expl. resid: %e, error %e\n',norm(A*x6-sigma*x6-bV),norm(x6-xex)));
+disp(sprintf('expl. resid: %e, error %e\n',norm(A*x6-sigma*x6-b),norm(x6-xex)));
 
 if (flag6~=0)
   disp(sprintf('non-zero return flag=%d',flag6));

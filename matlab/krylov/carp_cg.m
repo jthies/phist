@@ -36,7 +36,7 @@ n=size(A,1);
 tol=getopt(opts,'tol',1e-8);
 maxIter=getopt(opts,'maxIter',300);
 omega=getopt(opts,'omega',1.7);
-M=getopt(opts,'Precond',[]);
+M=getopt(opts,'Precond',speye(n));
 
 fprintf('CARP-CG tol: %4.2e\n',tol);
 
@@ -58,16 +58,17 @@ end
 
 x=x0;
 r=dkswp(A,b,x,omega,nrms_ai2)-x;
-p=r;
+z=apply_op(r,M);
+p=z;
 
-r2_new = r'*r;
+r2_new = r'*z;
 
 bnul=zeros(n,1);
 
 disp(sprintf('%d\t%e\t%e',0,sqrt(r2_new),sqrt(r2_new)/nrm_b));
 for k=1:maxIter
   q=p-dkswp(A,bnul,p,omega,nrms_ai2);
-  alpha = (r'*r)/(p'*q);
+  alpha = (r'*z)/(p'*q);
   x=x+alpha*p;
   if (mod(k-1,itcheck)==0)
     nrm_r = norm(A*x-b);
@@ -81,10 +82,11 @@ for k=1:maxIter
     end
   end
   r=r-alpha*q;
+  z=apply_op(r,M);
   r2_old=r2_new;
-  r2_new=r'*r;
+  r2_new=r'*z;
   beta=r2_new/r2_old;
-  p=r+beta*p;
+  p=z+beta*p;
   relres=sqrt(r2_old)/nrm_b;
   %fprintf('\t%d\t%e\n',k,relres);
   %if (r2_old<reltol2) 
