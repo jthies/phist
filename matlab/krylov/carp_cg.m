@@ -18,10 +18,13 @@ function [x,flag,relres,iter,resvec]=carp_cg( A,b,x0,opts)
 % opts.tol - convergence tolerance                       
 % opts.maxIter - max number of iterations
 % opts.omega - relaxation parameter
+% opts.Precond - preconditioning operator
+%
 
 verbose=getopt(opts,'verbose',true);
 
 itprint=10;
+itcheck=1;
 
 flag=0;
 relres=1.0;
@@ -33,7 +36,12 @@ n=size(A,1);
 tol=getopt(opts,'tol',1e-8);
 maxIter=getopt(opts,'maxIter',300);
 omega=getopt(opts,'omega',1.7);
+M=getopt(opts,'Precond',[]);
+
+fprintf('CARP-CG tol: %4.2e\n',tol);
+
 debug=getopt(opts,'debug',false);
+
 
 if (debug)
   tol
@@ -41,30 +49,34 @@ if (debug)
 end
 
 nrm_b=norm(b);
+reltol2=tol*tol*nrm_b*nrm_b;
 
 nrms_ai2=zeros(n,1);
 for i=1:n
   nrms_ai2(i) = A(i,:)*A(i,:)';
 end
 
-y=x0;
-r=dkswp(A,b,y,omega,nrms_ai2)-y;
+x=x0;
+r=dkswp(A,b,x,omega,nrms_ai2)-x;
 p=r;
 
 r2_new = r'*r;
 
-nul=zeros(n,1);
+bnul=zeros(n,1);
 
+disp(sprintf('%d\t%e\t%e',0,sqrt(r2_new),sqrt(r2_new)/nrm_b));
 for k=1:maxIter
-  q=p-dkswp(A,nul,p,omega,nrms_ai2);
+  q=p-dkswp(A,bnul,p,omega,nrms_ai2);
   alpha = (r'*r)/(p'*q);
-  y=y+alpha*p;
-  if (mod(k,itprint)==0)
-    nrm_r = norm(A*y-b);
-    disp(sprintf('%d\t%e\t%e',k,nrm_r,nrm_r/nrm_b));
+  x=x+alpha*p;
+  if (mod(k-1,itcheck)==0)
+    nrm_r = norm(A*x-b);
+    if (mod(k-1,itprint)==0)
+      disp(sprintf('%d\t%e\t%e',k,nrm_r,nrm_r/nrm_b));
+    end
     relres=nrm_r/nrm_b;
-    resvec=[resvec,nrm_r];
-    if (nrm_r<tol*nrm_b)
+  %  resvec=[resvec,nrm_r];
+    if (nrm_r<tol)
       break;
     end
   end
@@ -73,12 +85,18 @@ for k=1:maxIter
   r2_new=r'*r;
   beta=r2_new/r2_old;
   p=r+beta*p;
-  %disp(sprintf('%d\t%f',k,beta));
-  if (beta<tol) 
-    break;
-  end
+  relres=sqrt(r2_old)/nrm_b;
+  %fprintf('\t%d\t%e\n',k,relres);
+  %if (r2_old<reltol2) 
+  %  break;
+  %end
 end
 iter=k;
-%x=A'*y;
-x=y;
+
+if iter>=maxIter
+  flag=1;
+else
+  flag=0;
+end
+
 end
