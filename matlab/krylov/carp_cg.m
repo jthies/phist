@@ -1,4 +1,4 @@
-function [x,flag,relres,iter,resvec]=carp_cg( A,b,x0,opts)
+function [x,flag,relres,iter,resvec]=carp_cg(A,b,x0,opts)
 %                                                        
 % function X=bgmres( A,B,X0,opts,M)                      
 %                                                        
@@ -10,7 +10,7 @@ function [x,flag,relres,iter,resvec]=carp_cg( A,b,x0,opts)
 % args                                                   
 % ~~~~                                                   
 %                                                        
-% A should be a sparse matrix for now
+% A should be a real sparse matrix for now.
 %                                                        
 % options                                                
 % ~~~~~~~                                                
@@ -19,11 +19,13 @@ function [x,flag,relres,iter,resvec]=carp_cg( A,b,x0,opts)
 % opts.maxIter - max number of iterations
 % opts.omega - relaxation parameter
 % opts.Precond - preconditioning operator
+% opts.sigma - shift, solve (A-sigma*I)x=b instead.     
+%              in contrast to A, sigma may be complex.
 %
 
 verbose=getopt(opts,'verbose',true);
 
-itprint=10;
+itprint=1;
 itcheck=1;
 
 flag=0;
@@ -37,8 +39,9 @@ tol=getopt(opts,'tol',1e-8);
 maxIter=getopt(opts,'maxIter',300);
 omega=getopt(opts,'omega',1.7);
 M=getopt(opts,'Precond',speye(n));
+sigma=getopt(opts,'sigma',0.0);
 
-fprintf('CARP-CG tol: %4.2e\n',tol);
+%fprintf('CARP-CG tol: %4.2e\n',tol);
 
 debug=getopt(opts,'debug',false);
 
@@ -49,15 +52,13 @@ if (debug)
 end
 
 nrm_b=norm(b);
+nrm_r0=norm(A*x0-sigma*x0-b);
 reltol2=tol*tol*nrm_b*nrm_b;
 
-nrms_ai2=zeros(n,1);
-for i=1:n
-  nrms_ai2(i) = A(i,:)*A(i,:)';
-end
+nrm_ai2=nrms_ai2(A,sigma);
 
 x=x0;
-r=dkswp(A,b,x,omega,nrms_ai2)-x;
+r=dkswp(A,sigma,b,x,omega,nrm_ai2)-x;
 z=apply_op(r,M);
 p=z;
 
@@ -67,17 +68,17 @@ bnul=zeros(n,1);
 
 disp(sprintf('%d\t%e\t%e',0,sqrt(r2_new),sqrt(r2_new)/nrm_b));
 for k=1:maxIter
-  q=p-dkswp(A,bnul,p,omega,nrms_ai2);
+  q=p-dkswp(A,sigma,bnul,p,omega,nrm_ai2);
   alpha = (r'*z)/(p'*q);
   x=x+alpha*p;
   if (mod(k-1,itcheck)==0)
-    nrm_r = norm(A*x-b);
+    nrm_r = norm(A*x-sigma*x-b);
     if (mod(k-1,itprint)==0)
       disp(sprintf('%d\t%e\t%e',k,nrm_r,nrm_r/nrm_b));
     end
     relres=nrm_r/nrm_b;
-  %  resvec=[resvec,nrm_r];
-    if (nrm_r<tol)
+    resvec=[resvec,nrm_r];
+    if (nrm_r<tol*nrm_r0)
       break;
     end
   end

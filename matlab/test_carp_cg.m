@@ -21,22 +21,27 @@ maxIt=10000;
 tol=1.0e-12;
 
 mpath='/hpc_data/essex/WPT/';
-matrices={[mpath,'lap_cit/LAP_CIT_396.mat']};
-%{
-          [mpath,'lap_cit/LAP_CIT_1059.mat'],
-          [mpath,'lap_cit/LAP_CIT_3084.mat'],
-          [mpath,'lap_cit/LAP_CIT_4470.mat'],
-          [mpath,'lap_cit/LAP_CIT_6752.mat'],
-          [mpath,'lap_cit/LAP_CIT_8843.mat']}
-%}
+matrices={[mpath,'graphen/graphen21x4000.mat'],
+          [mpath,'graphen/graphen22x8000.mat'],
+          [mpath,'graphen/graphen21x40000.mat']};
+
+%matrices={[mpath,'lap_cit/LAP_CIT_396.mat'],
+%          [mpath,'lap_cit/LAP_CIT_1059.mat'],
+%          [mpath,'lap_cit/LAP_CIT_3084.mat'],
+%          [mpath,'lap_cit/LAP_CIT_4470.mat'],
+%          [mpath,'lap_cit/LAP_CIT_6752.mat'],
+%          [mpath,'lap_cit/LAP_CIT_8843.mat']}
 
 
 % solve (A-sigma*I)x=b
-sigma=-1.01e-1+1.0e-4i;
+sigma=0.008+1.0e-4i;
 
 skipGMRES=true;
 
 for matrixID=1:length(matrices)
+
+disp(['TEST CASE: ',matrices{matrixID}]);
+
 tmp=load(matrices{matrixID});
 A=tmp.S;
 n=size(A,1);
@@ -106,7 +111,7 @@ if (flag3~=0)
 end
 
 % try some overrelaxation
-opts.omega=0.9;
+opts.omega=1.33;
 tic;
 [x4,flag4,relres4,iter4,resvec4] = carp_cg(A, b, x0, opts);
 toc
@@ -131,6 +136,12 @@ if exist('x2')
   kleg=kleg+1;
   leg{kleg}=sprintf('GMRES(%d) + ILUTP',m);
   hold on;
+end
+if exist('x3')
+  semilogy(resvec4,'k:');
+  kleg=kleg+1;
+  leg{kleg}=sprintf('CARP-CG');
+  hold off;
 end
 if exist('x4')
   semilogy(resvec4,'k:');
