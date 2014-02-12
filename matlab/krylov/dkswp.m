@@ -1,23 +1,37 @@
-function x=dkswp(A,b,x,omega,nrm_ai2)
-%function x=dkswp(A,b,x,omega,nrm_ai2)
-% Kaczmarz forward-backward sweep for system Ax=b,
+function x=dkswp(A,sigma,b,x,omega,nrm_ai2)
+%function x=dkswp(A,sigma,b,x,omega,nrm_ai2)
+% Kaczmarz forward-backward sweep for system (A-sigma*I)x=b,
 
 global nm_operations
 
-% forward Kaczmarz sweep (CARP is Kaczmarz in parallel)
-n=size(A,1);
+% call mex function
+x=dkswp2(A', sigma, b, x, omega, nrm_ai2);
+return;
 
+% slow reference implementation
+%
+n=size(A,1);
+A=A-sigma*speye(n);
+
+
+%tic;
+
+% forward Kaczmarz sweep (CARP is Kaczmarz in parallel)
 for i=1:n
-  scal=(A(i,:)*x-b(i))/nrm_ai2(i);
-  x = x - omega*scal*A(i,:)';
+  idx=find(A(i,:));
+  scal=(A(i,idx)*x(idx)-b(i))/nrm_ai2(i);
+  x(idx) = x(idx) - omega*scal*A(i,idx)';
 end
 
 % ... and back ...
 for i=n:-1:1
-  scal=(A(i,:)*x-b(i))/nrm_ai2(i);
-  x = x - omega*scal*A(i,:)';
+  idx=find(A(i,:));
+  scal=(A(i,idx)*x(idx)-b(i))/nrm_ai2(i);
+  x(idx) = x(idx) - omega*scal*A(i,idx)';
 end
 
+%toc
+%
 if isempty(nm_operations)
   nm_operations=0;
 end
