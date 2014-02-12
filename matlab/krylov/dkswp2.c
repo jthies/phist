@@ -89,23 +89,28 @@ void mexFunction(int nlhs,
   */
   for (i=0; i<nrows; i++)
   {
+    /* contribution from rhs (b) and shifted diagonal */
     double scal_r=-br[i]-sigma_r*xr[i]+sigma_i*xi[i];
     double scal_i=-sigma_r*xi[i]-sigma_i*xr[i];
     if (bi) scal_i-=bi[i];
+    /* contributions from the unshifted matrix A */
     for (j=jcA[i]; j<jcA[i+1]; j++)
     {
       scal_r+=prA[j]*xr[irA[j]];
       scal_i+=prA[j]*xi[irA[j]];
     }
-    scal_r/=nrm_ai2[i];
-    scal_i/=nrm_ai2[i];
+    /* note: we require the nrm_ai2 array to already include the shift */
+    scal_r*=omega/nrm_ai2[i];
+    scal_i*=omega/nrm_ai2[i];
+
+    /* diagonal (cross-)terms */
+    xr[i]+=scal_r*sigma_r+scal_i*sigma_i;
+    xi[i]+=scal_i*sigma_r - scal_r*sigma_i;
     for (j=jcA[i]; j<jcA[i+1]; j++)
     {
-      xr[irA[j]] -= omega*scal_r*prA[j];
-      xi[irA[j]] -= omega*scal_i*prA[j];
+      xr[irA[j]] -= scal_r*prA[j];
+      xi[irA[j]] -= scal_i*prA[j];
     }
-  xr[i]-=omega*(scal_i*sigma_i - scal_r*sigma_r);
-  xi[i]+=omega*(scal_r*sigma_i + scal_i*sigma_r);
   }
 
   for (i=nrows-1; i>=0; i--)
@@ -118,15 +123,15 @@ void mexFunction(int nlhs,
       scal_r+=prA[j]*xr[irA[j]];
       scal_i+=prA[j]*xi[irA[j]];
     }
-    scal_r/=nrm_ai2[i];
-    scal_i/=nrm_ai2[i];
+    scal_r*=omega/nrm_ai2[i];
+    scal_i*=omega/nrm_ai2[i];
+    xr[i]+=scal_r*sigma_r+scal_i*sigma_i;
+    xi[i]+=scal_i*sigma_r - scal_r*sigma_i;
     for (j=jcA[i]; j<jcA[i+1]; j++)
     {
-      xr[irA[j]] -= omega*scal_r*prA[j];
-      xi[irA[j]] -= omega*scal_i*prA[j];
+      xr[irA[j]] -= scal_r*prA[j];
+      xi[irA[j]] -= scal_i*prA[j];
     }
-  xr[i]-=omega*(scal_i*sigma_i - scal_r*sigma_r);
-  xi[i]+=omega*(scal_r*sigma_i + scal_i*sigma_r);
   }
 
 if (mxGetPi(plhs[0])==NULL)
