@@ -57,6 +57,10 @@ void mexFunction(int nlhs,
   if (xi==NULL)
   {
     xi=(double*)malloc(nrows*sizeof(double));
+    for (i=0;i<nrows;i++)
+    {
+      xi[i]=0.0;
+    }
   }
 
   irA = mxGetIr(prhs[0]);
@@ -98,6 +102,7 @@ void mexFunction(int nlhs,
     for (j=jcA[i]; j<jcA[i+1]; j++)
     {
       xr[irA[j]] -= omega*scal_r*prA[j];
+      xi[irA[j]] -= omega*scal_i*prA[j];
     }
   xr[i]-=omega*(scal_i*sigma_i - scal_r*sigma_r);
   xi[i]+=omega*(scal_r*sigma_i + scal_i*sigma_r);
@@ -118,6 +123,7 @@ void mexFunction(int nlhs,
     for (j=jcA[i]; j<jcA[i+1]; j++)
     {
       xr[irA[j]] -= omega*scal_r*prA[j];
+      xi[irA[j]] -= omega*scal_i*prA[j];
     }
   xr[i]-=omega*(scal_i*sigma_i - scal_r*sigma_r);
   xi[i]+=omega*(scal_r*sigma_i + scal_i*sigma_r);
