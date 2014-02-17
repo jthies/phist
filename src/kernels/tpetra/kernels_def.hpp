@@ -943,7 +943,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
   CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,R,vR,*ierr);
   int rank;
-  MT rankTol=32*mt::eps();
+  MT rankTol=1000*mt::eps();
   if (V->getNumVectors()==1)
     {
     // we need a special treatment here because TSQR

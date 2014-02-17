@@ -60,7 +60,7 @@ void SUBR(simple_arnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op, TYPE
     {
       PHIST_SOUT(PHIST_INFO,"found invariant subspace in arnoldi, expanding basis with a randomly generated orthogonal vector\n");
     }
-    else if( AV != NULL )
+    if( AV != NULL )
     {
       // the result for R1 from v'*av may not be precise enough, so improve it!
       PHIST_CHK_IERR(SUBR(mvec_view_block)(AV, &AVv, i,i, ierr), *ierr);
