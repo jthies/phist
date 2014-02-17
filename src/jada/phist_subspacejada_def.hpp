@@ -244,7 +244,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     // then copy the new block of H
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, nConvergedEig, nV-1, nConvergedEig, nV-1, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( sdMat_get_block  ) (H,   R_H,  nConvergedEig, nV-1, nConvergedEig, nV-1, ierr), *ierr);
-    int nSort = nEig_-nConvergedEig;
+    int nSort = minBase-nConvergedEig; //nEig_-nConvergedEig;
     int nSelect = nSort;
     lidx_t offR_H = ldaR_H*nConvergedEig+nConvergedEig;
     lidx_t offQ_H = ldaQ_H*nConvergedEig+nConvergedEig;
@@ -281,10 +281,10 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     for(int j = 0; j < nV; j++)
       absErr = std::max(absErr, st::abs(Htmp_raw[i*ldaHtmp+j]));
   PHIST_SOUT(PHIST_INFO, "H*Q_H - Q_H*R_H: %8.4e\n", absErr);
-  PHIST_CHK_IERR(SUBR(sdMat_print)(H, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_print)(Q_H, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_print)(R_H, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_print)(Htmp, ierr), *ierr);
+  //PHIST_CHK_IERR(SUBR(sdMat_print)(H, ierr), *ierr);
+  //PHIST_CHK_IERR(SUBR(sdMat_print)(Q_H, ierr), *ierr);
+  //PHIST_CHK_IERR(SUBR(sdMat_print)(R_H, ierr), *ierr);
+  //PHIST_CHK_IERR(SUBR(sdMat_print)(Htmp, ierr), *ierr);
 }
 #endif
 
@@ -353,7 +353,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
       resPermutation[i] = i;
     if( symmetric )
     {
-      PHIST_CHK_IERR( SUBR(ReorderPartialSchurDecomp)(R_H_raw+offR_H, ldaR_H, Q_H_raw+offQ_H, ldaQ_H, nV-nConvergedEig, nSort, which, sqrt(tol), resNorm+nConvergedEig, ev_H+nConvergedEig, &resPermutation[nConvergedEig], ierr), *ierr);
+      PHIST_CHK_IERR( SUBR(ReorderPartialSchurDecomp)(R_H_raw+offR_H, ldaR_H, Q_H_raw+offQ_H, ldaQ_H, nV-nConvergedEig, nEig_-nConvergedEig, which, sqrt(tol), resNorm+nConvergedEig, ev_H+nConvergedEig, &resPermutation[nConvergedEig], ierr), *ierr);
       for(int i = nConvergedEig; i < nEig_; i++)
         resPermutation[i] += nConvergedEig;
 #ifdef TESTING
@@ -370,20 +370,22 @@ PHIST_SOUT(PHIST_INFO,"\n");
       if( resPermutation[i] != i )
       {
         // setup permutation matrix
-        PHIST_CHK_IERR(SUBR(sdMat_view_block)(Htmp_, &Htmp, i, nEig_-1, i, nEig_-1, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR(sdMat_put_value)(Htmp, st::zero(), ierr), *ierr);
-        for(int j = i; j < nEig_; j++)
-        {
-          int j_ = resPermutation[j];
-          Htmp_raw[j_+j*ldaHtmp] = st::one();
-        }
-        PHIST_CHK_IERR(SUBR(mvec_view_block)(Q, &Qq, i, nEig_-1, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(Qq, Htmp, ierr), *ierr);
-        if( B_op != NULL )
-        {
-          PHIST_CHK_IERR(SUBR(mvec_view_block)(BQ, &BQq, i, nEig_-1, ierr), *ierr);
-          PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(BQq, Htmp, ierr), *ierr);
-        }
+        //PHIST_CHK_IERR(SUBR(sdMat_view_block)(Htmp_, &Htmp, i, nEig_-1, i, nEig_-1, ierr), *ierr);
+        //PHIST_CHK_IERR(SUBR(sdMat_put_value)(Htmp, st::zero(), ierr), *ierr);
+        //for(int j = i; j < nEig_; j++)
+        //{
+          //int j_ = resPermutation[j];
+          //Htmp_raw[j_+j*ldaHtmp] = st::one();
+        //}
+        //PHIST_CHK_IERR(SUBR(mvec_view_block)(Q, &Qq, i, nEig_-1, ierr), *ierr);
+        //PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(Qq, Htmp, ierr), *ierr);
+        //if( B_op != NULL )
+        //{
+          //PHIST_CHK_IERR(SUBR(mvec_view_block)(BQ, &BQq, i, nEig_-1, ierr), *ierr);
+          //PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(BQq, Htmp, ierr), *ierr);
+        //}
+        PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), V,    Qq_H, st::zero(), Qq,  ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( sdMat_set_block  ) (R, Rr_H, 0, nEig_-1, nConvergedEig, nEig_-1, ierr), *ierr);
         break;
       }
     }
@@ -513,7 +515,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       }
     }
     // deflate with more vectors if there are multiple, partly converged eigenvalues
-    while( k_ < nEig_-1 && ct::abs(ev_H[k_]-ev_H[k_-1]) < 10*ct::abs(ev_H[k_])*mt::sqrt(tol) )
+    while( k_+1 < nEig_ && ct::abs(ev_H[k_+1]-ev_H[k_]) < 10*ct::abs(ev_H[k_+1])*mt::sqrt(tol) )
       k_++;
 
 PHIST_SOUT(PHIST_INFO,"selectedRes: ");
@@ -575,7 +577,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
     // orthogonalize t as Vv (reuse R_H)
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,     k-1,       ierr), *ierr);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H,nV,    nV+k-1,    nV,    nV+k-1,    ierr), *ierr);
-    PHIST_CHK_NEG_IERR(SUBR( orthog ) (V, Vv, Rr_H, R_H, 3, ierr), *ierr);
+    PHIST_CHK_NEG_IERR(SUBR( orthog ) (V, Vv, Rr_H, R_H, 5, ierr), *ierr);
     int randomVecs = *ierr;
     // TODO: only take non-random vector if *ierr > 0
     // calculate AVv, BVv
