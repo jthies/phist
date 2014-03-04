@@ -339,7 +339,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     {
       _ST_ alpha = st::one();
       _ST_ beta = st::zero();
-      int ilower = 0;
+      gidx_t ilower = 0;
       phist_map_get_ilower(map_,&ilower,&ierr_);
       ASSERT_EQ(0,ierr_);
 
@@ -389,7 +389,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     {
       _ST_ alpha = st::one();
       _ST_ beta = st::zero();
-      int ilower = 0;
+      gidx_t ilower = 0;
       phist_map_get_ilower(map_,&ilower,&ierr_);
       ASSERT_EQ(0,ierr_);
 

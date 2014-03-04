@@ -14,6 +14,7 @@
 #include "phist_jadaOpts.h"
 
 // ghost/spinChain stuff
+#include "ghost/config.h"
 #include "ghost.h"
 #include "ghost/util.h"
 #include "matfuncs.h"

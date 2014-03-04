@@ -182,6 +182,7 @@ if (PHIST_KERNEL_LIB STREQUAL "fortran")
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/map_module.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/mrgrnk.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/crsmat_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/parmetis.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/mvec_module.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/nrm2_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/axpy_kernels.f90
@@ -244,6 +245,21 @@ if(PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
     list(APPEND PHIST_LIBS ${GHOST_LIBRARIES})
   else()
     message(ERROR "Ghost not found!")
+  endif()
+endif()
+
+# load parmetis for reordering fortran
+if(PHIST_KERNEL_LIB STREQUAL "fortran")
+  find_package(ParMETIS)
+
+  if(PARMETIS_FOUND)
+    add_definitions(-DPHIST_HAVE_PARMETIS)
+    include_directories(${PARMETIS_INCLUDE_DIRS})
+    link_directories(${PARMETIS_LIBRARY_DIRS})
+    list(APPEND PHIST_LIBS ${PARMETIS_LIBRARIES})
+    message(STATUS "ParMETIS found, enabled matrix reordering!")
+  else()
+    message(STATUS "ParMETIS not found, no matrix reordering!")
   endif()
 endif()
 

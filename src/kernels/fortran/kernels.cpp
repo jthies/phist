@@ -10,6 +10,7 @@
 #include "typedefs.hpp"
 #include "phist_ScalarTraits.hpp"
 
+
 #ifdef PHIST_TIMEMONITOR
 #include <Teuchos_TimeMonitor.hpp>
 #endif
@@ -97,21 +98,26 @@ void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int
 void phist_map_delete(map_ptr_t vmap, int *ierr);
 void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr);
 void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr);
-void phist_map_get_ilower(const_map_ptr_t vmap, int* ilower, int* ierr);
-void phist_map_get_iupper(const_map_ptr_t vmap, int* iupper, int* ierr);
+void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* ierr);
+void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr);
 
 
 #include "phist_gen_s.h"
 #include "../kernels_noimpl.c"
+#include "../carp_noimpl.c"
 
 #include "phist_gen_c.h"
+
 #include "../kernels_noimpl.c"
+#include "../carp_noimpl.c"
 
 #include "phist_gen_z.h"
 #include "../kernels_noimpl.c"
+#include "../carp_noimpl.c"
 
 } //extern "C"
 
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"
+#include "../carp_noimpl.c"
 

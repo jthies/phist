@@ -426,10 +426,18 @@ void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, i
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace_f)(V, M, ierr), *ierr);
 }
 
+#ifdef GHOST_HAVE_LONGIDX
+void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, int nrows, int ncols, int maxnne, void (*rowFunPtr)(int64_t,int64_t*,int64_t*,void*), int *ierr)
+#else
 void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, int nrows, int ncols, int maxnne, void (*rowFunPtr)(int32_t,int32_t*,int32_t*,void*), int *ierr)
+#endif
 {
   ENTER_FCN(__FUNCTION__);
+#ifdef GHOST_HAVE_LONGIDX
+  void SUBR(crsMat_create_fromRowFunc_f)(TYPE(crsMat_ptr)*, int, int, int, void (*)(int64_t,int64_t*,int64_t*,void*), int*);
+#else
   void SUBR(crsMat_create_fromRowFunc_f)(TYPE(crsMat_ptr)*, int, int, int, void (*)(int32_t,int32_t*,int32_t*,void*), int*);
+#endif
   PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc_f)(A, nrows, ncols, maxnne, rowFunPtr, ierr), *ierr);
 }
 

@@ -30,6 +30,15 @@ void SUBR(transform_searchSpace)(TYPE(mvec_ptr) V, TYPE(mvec_ptr) AV, TYPE(mvec_
   PHIST_CHK_IERR(SUBR( sdMat_times_sdMat )(st::one(), H, M,    st::zero(), Htmp, ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMatT_times_sdMat)(st::one(), M, Htmp, st::zero(), H_,   ierr), *ierr);
 
+/*
+  // set M <- I
+  _ST_ *Mraw = NULL;
+  lidx_t ldaM;
+  PHIST_CHK_IERR(SUBR( sdMat_extract_view )(M, &Mraw, &ldaM, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_put_value )(M, st::zero(), ierr), *ierr);
+  for(int i = 0; i < minBase; i++)
+    Mraw[ldaM*i+i] = st::one();
+*/
   // delete temp. storage
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (Htmp, ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (H_,   ierr), *ierr);
@@ -56,7 +65,22 @@ void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V_, TYPE(sdMat_ptr) M_, int* 
   // check dimensions
   PHIST_CHK_IERR(*ierr = (nvec == nM ? 0 : -1), *ierr);
   PHIST_CHK_IERR(*ierr = (nvec >= mM ? 0 : -1), *ierr);
+/*
+  // get map
+  const_map_ptr_t map = NULL;
+  PHIST_CHK_IERR(SUBR(mvec_get_map)(V_, &map, ierr), *ierr);
 
+  // create temporary mvec
+  TYPE(mvec_ptr) Vtmp = NULL;
+  PHIST_CHK_IERR(SUBR(mvec_create)(&Vtmp, map, mM, ierr), *ierr);
+
+  // calculate and set block
+  PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(), V_, M_, st::zero(), Vtmp, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_set_block)(V_, Vtmp, 0, mM-1, ierr), *ierr);
+
+  // delete temp data
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Vtmp, ierr), *ierr);
+*/
   // get raw view on V and M
   ST *V = NULL;
   ST *M = NULL;

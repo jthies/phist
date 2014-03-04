@@ -113,7 +113,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW0,ierr),*ierr);
   breakdown = normW0[0];
   for (int i=1;i<k;i++) breakdown=std::min(normW0[i], breakdown);
-  breakdown*=mt::eps()*100;
+  breakdown*=mt::eps()*1000;
   
   // orthogonalize against V (first CGS sweep)
 
@@ -143,12 +143,21 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   //to W anyway.
   PHIST_CHK_NEG_IERR(SUBR(mvec_QR)(W,R1,ierr),*ierr);
   rankW=k-*ierr;
+  *ierr = 0;
+
+  // set normW1 to diag(R1)
+  _ST_ *R1_raw = NULL;
+  lidx_t ldaR1;
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R1,&R1_raw,&ldaR1,ierr),*ierr);
+  for(int i = 0; i < k; i++)
+    normW1[i] = std::min(normW1[i],st::abs(R1_raw[i+ldaR1*i]));
+
 
   if (rankW < k )
     {
     int random_iter = 0;
-    while (*ierr > 0)
-      {
+    do
+    {
       // terminate even if random vectors are not "random" enough, e.g. random number generator is broken
       if( random_iter++ > 10 )
         {
@@ -168,7 +177,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 
       // reorthogonalize result, filling in new random vectors if these were in span(V)
       PHIST_CHK_NEG_IERR(SUBR(mvec_QR)(W,R1,ierr),*ierr);
-      }
+    }while (*ierr > 0);
 
     // we must fill the appropriate columns of R1 with zeros (where random values were used)
     TYPE(sdMat_ptr) R1_r = NULL;
@@ -205,6 +214,15 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     //W=W-V*R2';
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),V,R2p,st::one(),W,ierr),*ierr);
 
+    // we must not modify columns in R2 corresponding to random vectors!
+    if( rankW < k )
+    {
+      TYPE(sdMat_ptr) R2p_rand = NULL;
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(R2p,&R2p_rand,0,m-1,rankW,k-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_put_value)(R2p_rand,st::zero(),ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_delete)(R2p_rand,ierr),*ierr);
+    }
+
     //R2=R2+R2';
     PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R2p,st::one(),R2,ierr),*ierr);
 
@@ -216,7 +234,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     // added random vectors before if rank(W) was not full. If   
     // it happens, we return with error code -10.                
     PHIST_CHK_NEG_IERR(SUBR(mvec_QR)(W,R1p,ierr),*ierr);
-   
+
     if (*ierr>0)
       {
       PHIST_SOUT(PHIST_ERROR,"Unexpected rank deficiency in orthog routine\n(file %s, line %d)\n",
@@ -224,6 +242,12 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
       *ierr=-10;
       return;
       }
+
+    _ST_ *R1p_raw = NULL;
+    lidx_t ldaR1p;
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R1p,&R1p_raw,&ldaR1p,ierr),*ierr);
+    for(int i = 0; i < k; i++)
+      normW1[i] = std::min(normW1[i],st::abs(R1p_raw[i+ldaR1p*i]));
     
     //R1pp=R1
     PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R1,st::zero(),R1pp,ierr),*ierr);

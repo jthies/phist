@@ -837,7 +837,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   CAST_PTR_FROM_VOID(ghost_vec_t,R,vR,*ierr);
 
   int rank;
-  MT rankTol=32*mt::eps();
+  MT rankTol=1000*mt::eps();
   int ncols=V->traits->nvecs;
   if (ncols==1)
     {
