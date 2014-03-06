@@ -124,8 +124,8 @@ if (${PHIST_ENABLE_MPI})
 #  else()
 #    message(WARNING "could not find MPI")
 #  endif()
-set(MPIEXEC "mpirun")
-set(MPIEXEC_NUMPROC_FLAG "-np")
+set(MPIEXEC "mpirun" CACHE STRING "")
+set(MPIEXEC_NUMPROC_FLAG "-np" CACHE STRING "")
 endif()
 
 ##############################################################################
