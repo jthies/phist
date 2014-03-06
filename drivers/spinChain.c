@@ -153,7 +153,10 @@ int main(int argc, char** argv)
   ghost_sparsemat_traits_t mtraits = GHOST_SPARSEMAT_TRAITS_INITIALIZER;
   mtraits.datatype = my_datatype;
   ghost_sparsemat_create(&mat,ctx,&mtraits,1);
-  mat->fromRowFunc( mat, info.row_nnz , 0, &SpinChainSZ, 0);
+  ghost_sparsemat_src_rowfunc_t src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
+  src.func = &SpinChainSZ;
+  src.maxrowlen = info.row_nnz;
+  mat->fromRowFunc(mat, &src);
   char *str;
   ghost_sparsemat_string(&str,mat);
   printf("%s\n",str);
