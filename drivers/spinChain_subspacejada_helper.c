@@ -4,8 +4,11 @@
 
 GHOST_REGISTER_DT_D(my_datatype_)
 
-void init_mtraits(ghost_mtraits_t* mtraits)
+void init_mtraits(ghost_sparsemat_traits_t* mtraits)
 {
-    ghost_mtraits_t newmtraits = GHOST_MTRAITS_INIT(.format = GHOST_SPM_FORMAT_CRS, .flags = GHOST_SPM_DEFAULT, .datatype = my_datatype_);
+    ghost_sparsemat_traits_t newmtraits = GHOST_SPARSEMAT_TRAITS_INITIALIZER;
+    newmtraits.format = GHOST_SPARSEMAT_CRS;
+    newmtraits.flags = GHOST_SPARSEMAT_DEFAULT;
+    newmtraits.datatype = my_datatype_;
     *mtraits = newmtraits;
 }

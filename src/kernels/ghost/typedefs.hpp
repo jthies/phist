@@ -65,18 +65,18 @@ public:
     {
     *ierr=0;
     
-    if (M->traits->flags & GHOST_VEC_SCATTERED)
+    if (M->traits.flags & GHOST_DENSEMAT_SCATTERED)
       {
       *ierr=-1;
       PHIST_OUT(PHIST_ERROR,"to create a Teuchos view we need constant stride in ghost_vec_t");
       return Teuchos::null;
       }
 
-    int stride = M->traits->nrowspadded;
-    int nrows = M->traits->nrows;
-    int ncols = M->traits->nvecs;
+    int stride = M->traits.nrowspadded;
+    int nrows = M->traits.nrows;
+    int ncols = M->traits.ncols;
     
-    if (M->traits->datatype != phist::ScalarTraits<ST>::ghost_dt)
+    if (M->traits.datatype != phist::ScalarTraits<ST>::ghost_dt)
       {
       *ierr=-2;
       PHIST_OUT(PHIST_ERROR,"incorrect data type in ghost_vec_t");

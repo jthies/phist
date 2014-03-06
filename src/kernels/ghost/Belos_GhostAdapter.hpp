@@ -30,13 +30,13 @@ using ::phist::GhostMV;
 
   ////////////////////////////////////////////////////////////////////
   //
-  // Implementation of the Belos::MultiVecTraits for ghost_vec_t.
+  // Implementation of the Belos::MultiVecTraits for ghost_densemat_t.
   //
   ////////////////////////////////////////////////////////////////////
 
-  /*!  \brief Template specialization of Belos::MultiVecTraits class using the ghost_vec_t class.
+  /*!  \brief Template specialization of Belos::MultiVecTraits class using the ghost_densemat_t class.
 
-    This interface will ensure that any ghost_vec_t will be accepted by the Belos
+    This interface will ensure that any ghost_densemat_t will be accepted by the Belos
     templated solvers.  */
   template<class Scalar>
   class MultiVecTraits<Scalar, GhostMV >
@@ -50,13 +50,14 @@ using ::phist::GhostMV;
     static Teuchos::RCP<GhostMV > Clone( const GhostMV& mv, const int numvecs )
     {
     ENTER_FCN(__FUNCTION__);    
-      ghost_vec_t* _mv = const_cast<GhostMV&>(mv).get();
-      ghost_vtraits_t* vtraits = ghost_cloneVtraits(_mv->traits);
+      ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
+      ghost_densemat_traits_t vtraits = _mv->traits;
       // copy the data even if the input vector is itself a view
       // (bitwise NAND operation to unset the view flag if set)
-      vtraits->flags &= ~GHOST_VEC_VIEW;
-      vtraits->nvecs=numvecs;
-      ghost_vec_t* mv_clone = ghost_createVector(_mv->context,vtraits);
+      vtraits.flags = (ghost_densemat_flags_t)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_VIEW);
+      vtraits.ncols=numvecs;
+      ghost_densemat_t* mv_clone;
+      ghost_densemat_create(&mv_clone,_mv->context,vtraits);
       // this allocates the memory for the vector
       Scalar z=st::zero();
       mv_clone->fromScalar(mv_clone,(void*)&z);
@@ -66,12 +67,13 @@ using ::phist::GhostMV;
     static Teuchos::RCP<GhostMV > CloneCopy( const GhostMV& mv )
     {
     ENTER_FCN(__FUNCTION__);    
-      ghost_vec_t* _mv = const_cast<GhostMV&>(mv).get();
-      ghost_vtraits_t* vtraits = ghost_cloneVtraits(_mv->traits);
+      ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
+      ghost_densemat_traits_t vtraits = _mv->traits;
       // copy the data even if the input vector is itself a view
       // (bitwise NAND operation to unset the view flag if set)
-      vtraits->flags &= ~GHOST_VEC_VIEW;
-      ghost_vec_t* mv_clone = ghost_createVector(_mv->context,vtraits);
+      vtraits.flags = (ghost_densemat_flags_t)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_VIEW);
+      ghost_densemat_t* mv_clone;
+      ghost_densemat_create(&mv_clone,_mv->context,vtraits);
       mv_clone->fromVec(mv_clone,_mv,0);
       return phist::rcp(mv_clone,true); 
     }
@@ -79,7 +81,7 @@ using ::phist::GhostMV;
     static Teuchos::RCP<GhostMV > CloneCopy( const GhostMV& mv, const std::vector<int>& index )
     {
       ENTER_FCN(__FUNCTION__);    
-      ghost_vec_t* _mv = const_cast<GhostMV&>(mv).get();
+      ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
       TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,GhostMV>::CloneCopy(mv,index): numvecs must be greater than zero.");
 
@@ -87,7 +89,7 @@ using ::phist::GhostMV;
           "Belos::MultiVecTraits<Scalar,GhostMV>::CloneCopy(mv,index): indices must be >= zero.");
 
       TEUCHOS_TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= GetNumberVecs(mv), std::runtime_error,
-          "Belos::MultiVecTraits<Scalar,GhostMV>::CloneCopy(mv,index): indices must be < mv.traits->nvecs.");
+          "Belos::MultiVecTraits<Scalar,GhostMV>::CloneCopy(mv,index): indices must be < mv.traits.ncols.");
 
       bool contig=true;
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
@@ -100,24 +102,28 @@ using ::phist::GhostMV;
 
       if (contig)
       {
-        return phist::rcp(_mv->clone(_mv,index.size(),index[0]),true);
+        ghost_densemat_t *result = NULL;
+        _mv->clone(_mv,&result,index.size(),index[0]);
+
+        return phist::rcp(result,true);
       }
       else
       {
-        ghost_vec_t* result;
-        ghost_vtraits_t *vtraits = ghost_cloneVtraits(_mv->traits);
-                vtraits->nvecs=index.size();
+        ghost_densemat_t* result;
+        ghost_densemat_traits_t vtraits = _mv->traits;
+                vtraits.ncols=index.size();
         // copy the data even if the input vector is itself a view
         // (bitwise NAND operation to unset the view flag if set)
-        vtraits->flags &= ~GHOST_VEC_VIEW;
-        result=ghost_createVector(_mv->context,vtraits);
+        vtraits.flags = (ghost_densemat_flags_t)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_VIEW);
+        ghost_densemat_create(&result,_mv->context,vtraits);
         // allocates memory
         Scalar zero=Teuchos::ScalarTraits<Scalar>::zero();
         result->fromScalar(result, &zero);
         // copy columns one by one
         for (int j=0;j<index.size();j++)
         {
-          ghost_vec_t *result_j = result->viewVec(result, 1, j);
+          ghost_densemat_t *result_j;
+          result->viewVec(result, &result_j, 1, j);
           result_j->fromVec(result_j,_mv,index[j]);
         }
         return phist::rcp(result,true);
@@ -129,7 +135,7 @@ using ::phist::GhostMV;
 	       const Teuchos::Range1D& index)
     {
       ENTER_FCN(__FUNCTION__);    
-      ghost_vec_t* _mv = const_cast<GhostMV&>(mv).get();
+      ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
       const bool validRange = index.size() > 0 && 
 	index.lbound() >= 0 && 
 	index.ubound() < GetNumberVecs(mv);
@@ -159,19 +165,19 @@ using ::phist::GhostMV;
     static Teuchos::RCP<GhostMV > CloneViewNonConst( GhostMV& mv, const std::vector<int>& index )
     {
       ENTER_FCN(__FUNCTION__);    
-      ghost_vec_t* _mv = mv.get();
+      ghost_densemat_t* _mv = mv.get();
       TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,GhostMV>::CloneView(mv,index): numvecs must be greater than zero.");
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,GhostMV>::CloneView(mv,index): indices must be >= zero.");
-      TEUCHOS_TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= mv.traits->nvecs, std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,GhostMV>::CloneView(mv,index): indices must be < mv.traits->nvecs.");
+      TEUCHOS_TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= mv.traits.ncols, std::invalid_argument,
+          "Belos::MultiVecTraits<Scalar,GhostMV>::CloneView(mv,index): indices must be < mv.traits.ncols.");
 #endif
 
       bool constStride=true;                                                                                                      
       int stride=1;
-      if (_mv->traits->flags&GHOST_VEC_SCATTERED) 
+      if (_mv->traits.flags&GHOST_DENSEMAT_SCATTERED) 
       {
         constStride=false;
       }
@@ -188,28 +194,28 @@ using ::phist::GhostMV;
         }
       }
         
-    ghost_vec_t* result=NULL;
+    ghost_densemat_t* result=NULL;
 
     if (constStride==false)
     {
 #ifdef GHOST_HAVE_LONGIDX
       // ghost expects long ints here, while we get ints. So we copy them over:
-      std::vector<ghost_vidx_t> clone_index(index.size());
+      std::vector<ghost_idx_t> clone_index(index.size());
       for (int i=0;i<index.size();i++)
       {
-        clone_index[i]=(ghost_vidx_t)index[i];
+        clone_index[i]=(ghost_idx_t)index[i];
       }
 #else
-      const std::vector<ghost_vidx_t>& clone_index=index;
+      const std::vector<ghost_idx_t>& clone_index=index;
 #endif
-      result=_mv->viewScatteredVec(_mv,(ghost_vidx_t)index.size(),(ghost_vidx_t*)&clone_index[0]);
+      _mv->viewScatteredVec(_mv,&result,(ghost_idx_t)index.size(),(ghost_idx_t*)&clone_index[0]);
     }
     else
     {
       // constant stride
       
       // stride k: first simply view the vector, then manually set pointers and stride
-      result=_mv->viewVec(_mv,index.size(),index[0]);
+      _mv->viewVec(_mv,&result,index.size(),index[0]);
       if (stride!=1)
       {
         for (int i=0;i<index.size();i++)
@@ -219,7 +225,7 @@ using ::phist::GhostMV;
         //TODO: this is quite a nasty hack to allow the ghost_gemm function to
         // work for constant stride access, it should be fixed somehow in ghost
         // so that the GPU stuff works as well etc.
-        result->traits->nrowspadded = _mv->traits->nrowspadded*stride;
+        result->traits.nrowspadded = _mv->traits.nrowspadded*stride;
       }
     }
     return phist::rcp(result,true);
@@ -231,11 +237,11 @@ using ::phist::GhostMV;
 		       const Teuchos::Range1D& index)
     {
       ENTER_FCN(__FUNCTION__);    
-      ghost_vec_t* _mv=mv.get();
+      ghost_densemat_t* _mv=mv.get();
       // NOTE (mfh 11 Jan 2011) We really should check for possible
       // overflow of int here.  However, the number of columns in a
       // multivector typically fits in an int.
-      const int numCols = static_cast<int> (_mv->traits->nvecs);
+      const int numCols = static_cast<int> (_mv->traits.ncols);
       const bool validRange = index.size() > 0 && 
 	index.lbound() >= 0 && index.ubound() < numCols;
       if (! validRange)
@@ -256,7 +262,11 @@ using ::phist::GhostMV;
 	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
 			     os.str() << "Should never get here!");
 	}
-      return phist::rcp(_mv->viewVec(_mv,index.ubound()-index.lbound()+1, index.lbound()),true);
+      
+      ghost_densemat_t* result=NULL;
+      _mv->viewVec(_mv,&result,index.ubound()-index.lbound()+1, index.lbound());
+
+      return phist::rcp(result,true);
     }
 
 
@@ -283,17 +293,17 @@ using ::phist::GhostMV;
 // that vectors are compatible for certain
 // operations in Belos, I think we can
 // cheat here and simply return the local vec length instead.
-    return mv.get()->traits->nrows;
+    return mv.get()->traits.nrows;
   }
 
   static int GetNumberVecs( const GhostMV& mv )
   { 
-    return mv.get()->traits->nvecs;
+    return mv.get()->traits.ncols;
   }
 
 
     static bool HasConstantStride( const GhostMV& mv )
-    { return (mv.get()->traits->flags&GHOST_VEC_SCATTERED==false); }
+    { return (mv.get()->traits.flags&GHOST_DENSEMAT_SCATTERED==false); }
 
     static void MvTimesMatAddMv( Scalar alpha, const GhostMV& A, 
                                  const Teuchos_sdMat_t& B, 
@@ -301,12 +311,12 @@ using ::phist::GhostMV;
     {
       ENTER_FCN(__FUNCTION__);    
       // create view of Teuchos matrix as GhostMV
-      ghost_vec_t* Bghost=createGhostViewOfTeuchosSDM(B);
-      ghost_vec_t* _A = (ghost_vec_t*)A.get();
-      ghost_vec_t* _mv = (ghost_vec_t*)mv.get();
+      ghost_densemat_t* Bghost=createGhostViewOfTeuchosSDM(B);
+      ghost_densemat_t* _A = (ghost_densemat_t*)A.get();
+      ghost_densemat_t* _mv = (ghost_densemat_t*)mv.get();
       // multiply
       const char* trans="N";
-      ghost_gemm((char*)trans,_A,Bghost,_mv,&alpha,&beta,GHOST_GEMM_NO_REDUCE);
+      ghost_gemm(_mv,_A,Bghost,(char*)trans,&alpha,&beta,GHOST_GEMM_NO_REDUCE);
       
       Bghost->destroy(Bghost);
     }
@@ -317,9 +327,9 @@ using ::phist::GhostMV;
     static void MvAddMv( Scalar alpha, const GhostMV& A, Scalar beta, const GhostMV& B, GhostMV& mv )
     {
       ENTER_FCN(__FUNCTION__);
-      ghost_vec_t* _mv = mv.get();
-      ghost_vec_t* _A = (ghost_vec_t*)A.get();
-      ghost_vec_t* _B = (ghost_vec_t*)B.get();
+      ghost_densemat_t* _mv = mv.get();
+      ghost_densemat_t* _A = (ghost_densemat_t*)A.get();
+      ghost_densemat_t* _B = (ghost_densemat_t*)B.get();
       
       Scalar zero=st::zero();
       Scalar one=st::one();
@@ -336,8 +346,8 @@ using ::phist::GhostMV;
           // Belos allows aliasing here, putting views of A as MV etc. (cf. MVOPTester).
           // This is a problem because fromVec uses memcpy, which does not allow aliasing.
           bool mv_is_B = (_B->val[0] == _mv->val[0]) &&
-                         (_B->val[_B->traits->nvecs-1]==_mv->val[_mv->traits->nvecs-1]) &&
-                         (_B->traits->nrowspadded == _mv->traits->nrowspadded);
+                         (_B->val[_B->traits.ncols-1]==_mv->val[_mv->traits.ncols-1]) &&
+                         (_B->traits.nrowspadded == _mv->traits.nrowspadded);
           // NOTE: we do not check for partial overlap, or if one of the two is a 'scattered 
           // view' or something of the kind. So this function may cause problems if used in
           // unexpected ways because of the memcpy here. 
@@ -355,8 +365,8 @@ using ::phist::GhostMV;
       {
       // cf. comment on aliasing above.
         bool mv_is_A = (_A->val[0] == _mv->val[0]) &&
-                         (_A->val[_A->traits->nvecs-1]==_mv->val[_mv->traits->nvecs-1]) &&
-                         (_A->traits->nrowspadded == _mv->traits->nrowspadded);
+                         (_A->val[_A->traits.ncols-1]==_mv->val[_mv->traits.ncols-1]) &&
+                         (_A->traits.nrowspadded == _mv->traits.nrowspadded);
           if (mv_is_A==false)
           {
             _mv->fromVec(_mv,_A,0);
@@ -380,14 +390,14 @@ using ::phist::GhostMV;
     static void MvScale ( GhostMV& mv, Scalar alpha )
     {
       ENTER_FCN(__FUNCTION__);    
-      ghost_vec_t* _mv = const_cast<GhostMV&>(mv).get();
+      ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
       _mv->scale(_mv,(void*)&alpha); 
     }
 
     static void MvScale ( GhostMV& mv, const std::vector<Scalar>& alphas )
     {
       ENTER_FCN(__FUNCTION__);    
-      ghost_vec_t* _mv = const_cast<GhostMV&>(mv).get();
+      ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
       void* val = (void*)(&alphas[0]);
       _mv->vscale(_mv,val);
     }
@@ -396,13 +406,13 @@ using ::phist::GhostMV;
     static void MvTransMv( Scalar alpha, const GhostMV& A, const GhostMV& B, Teuchos_sdMat_t& C)
     {
       ENTER_FCN(__FUNCTION__);    
-      ghost_vec_t* Cghost=createGhostViewOfTeuchosSDM(C);
+      ghost_densemat_t* Cghost=createGhostViewOfTeuchosSDM(C);
 
       Scalar beta = st::zero();
       const char* trans=phist::ScalarTraits<Scalar>::is_complex()? "C": "T";
-      ghost_gemm((char*)trans,  const_cast<ghost_vec_t*>(A.get()),
-                   const_cast<ghost_vec_t*>(B.get()),
-                   Cghost,
+      ghost_gemm(Cghost,  const_cast<ghost_densemat_t*>(A.get()),
+                   const_cast<ghost_densemat_t*>(B.get()),
+                   (char*)trans,
                    (void*)&alpha, (void*)&beta,
                    GHOST_GEMM_ALL_REDUCE);
       Cghost->destroy(Cghost);
@@ -418,15 +428,15 @@ using ::phist::GhostMV;
           "Belos::MultiVecTraits<Scalar,GhostMV>::MvDot(A,B,dots): dots must have room for all dot products.");
 
       Teuchos::ArrayView<Scalar> av(dots);
-      ghost_dotProduct(const_cast<ghost_vec_t*>(A.get()),const_cast<ghost_vec_t*>(B.get()),(void*)&dots[0]);
+      ghost_dot((void*)&dots[0],const_cast<ghost_densemat_t*>(A.get()),const_cast<ghost_densemat_t*>(B.get()));
     }
 
     static void MvNorm(const GhostMV& mv, std::vector<magn_t> &normvec, NormType type=TwoNorm)
     {
       ENTER_FCN(__FUNCTION__);    
-      ghost_vec_t* _mv = const_cast<GhostMV&>(mv).get();
+      ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
 #ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(normvec.size() < (typename std::vector<int>::size_type)mv.traits->nvecs,std::invalid_argument,
+      TEUCHOS_TEST_FOR_EXCEPTION(normvec.size() < (typename std::vector<int>::size_type)mv.traits.ncols,std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,GhostMV>::MvNorm(mv,normvec): normvec must have room for all norms.");
 #endif
       Teuchos::Array<Scalar> av(normvec.size());
@@ -438,7 +448,7 @@ using ::phist::GhostMV;
         case OneNorm:
           break;
         case TwoNorm:
-          ghost_dotProduct(_mv, _mv, av.getRawPtr());
+          ghost_dot(av.getRawPtr(), _mv, _mv);
           for (int i=0;i<av.size();i++)
           {
             nv[i]=st::real(st::sqrt(av[i]));
@@ -457,15 +467,15 @@ using ::phist::GhostMV;
           "Belos::MultiVecTraits<Scalar,GhostMV>::SetBlock(A,index,mv): index must be the same size as A.");
 #endif
       // note the dual meaning of get() here: RCP.get() gives raw pointer to GhostMV,
-      // GhostMV.get() gives raw pointer to ghost_vec_t
+      // GhostMV.get() gives raw pointer to ghost_densemat_t
       
       // view the columns that we want to set in mv:
       Teuchos::RCP<GhostMV> mvsub = CloneViewNonConst(mv,index);
-      ghost_vec_t* _mvsub = mvsub->get();
+      ghost_densemat_t* _mvsub = mvsub->get();
       Teuchos::RCP<GhostMV> Asub = Teuchos::null;
-      ghost_vec_t* _Asub = const_cast<ghost_vec_t*>(A.get());
-      if ((typename std::vector<int>::size_type)_Asub->traits->nvecs > index.size()) {
-        // this get is the GhostMV function to get an ghost_vec_t*
+      ghost_densemat_t* _Asub = const_cast<ghost_densemat_t*>(A.get());
+      if ((typename std::vector<int>::size_type)_Asub->traits.ncols > index.size()) {
+        // this get is the GhostMV function to get an ghost_densemat_t*
         Asub = CloneViewNonConst(const_cast<GhostMV&>(A),Teuchos::Range1D(0,index.size()-1));
         _Asub= Asub->get();
       }
@@ -567,14 +577,14 @@ using ::phist::GhostMV;
       }
       if (numColsA == numColsMv)
       {
-        mv.get()->fromVec(mv.get(),(ghost_vec_t*)A.get(),0);
+        mv.get()->fromVec(mv.get(),(ghost_densemat_t*)A.get(),0);
       }
       else
       {
-          ghost_vec_t* mv_view = 
+          ghost_densemat_t* mv_view = 
             CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1))->get();
           // copy mv(:,1:numColsA)=A
-          mv_view->fromVec(mv_view,(ghost_vec_t*)A.get(),0);
+          mv_view->fromVec(mv_view,(ghost_densemat_t*)A.get(),0);
       }
     }
 
@@ -592,38 +602,38 @@ using ::phist::GhostMV;
     static void MvPrint( const GhostMV& mv, std::ostream& os )
     {
       // TODO - the stream argument is ignored, ghost always prints to stdout
-      ghost_vec_t* _mv = const_cast<ghost_vec_t*>(mv.get());
+      ghost_densemat_t* _mv = const_cast<ghost_densemat_t*>(mv.get());
       _mv->print(_mv);
     }
 
   // private helper function
-  static ghost_vec_t* createGhostViewOfTeuchosSDM
+  static ghost_densemat_t* createGhostViewOfTeuchosSDM
         (const Teuchos_sdMat_t& M)
   {
     ENTER_FCN(__FUNCTION__);
-      ghost_vtraits_t *dmtraits=new ghost_vtraits_t;
-                dmtraits->flags = GHOST_VEC_DEFAULT;
-                dmtraits->aux=NULL;
-                dmtraits->nrows=M.numRows();
-                dmtraits->nrowshalo=M.numRows();
-                dmtraits->nrowspadded=M.stride();
-                dmtraits->nvecs=M.numCols();
-                dmtraits->datatype=st::ghost_dt;
+      ghost_densemat_traits_t dmtraits;/*=new ghost_vtraits_t;*/
+                dmtraits.flags = GHOST_DENSEMAT_DEFAULT;
+                dmtraits.nrows=M.numRows();
+                dmtraits.nrowshalo=M.numRows();
+                dmtraits.nrowspadded=M.stride();
+                dmtraits.ncols=M.numCols();
+                dmtraits.datatype=st::ghost_dt;
 
       // The context and communicator are supposed to be irrelevant in an sdMat,
       // but it is not clear wether this is handled correctly everywhere i ghost.
       // For the moment we can afford to just put in MPI_COMM_WORLD at this point.
       MPI_Comm comm = MPI_COMM_WORLD;
       ghost_context_t* ctx=NULL;
-      ghost_error_t gerr=ghost_createContext(&ctx,M.numRows(), M.numRows(), 
-          GHOST_CONTEXT_DEFAULT, NULL, comm, 1.0);
+      ghost_error_t gerr=ghost_context_create(&ctx,M.numRows(), M.numRows(), 
+          GHOST_CONTEXT_DEFAULT, NULL, GHOST_SPARSEMAT_SRC_NONE, comm, 1.0);
       if (gerr!=GHOST_SUCCESS) PHIST_OUT(PHIST_ERROR,"GHOST error (%s) in file %s, line %d",
         phist_ghost_error2str(gerr),__FILE__,__LINE__);
       //TODO - check return values everywhere
-      ghost_vec_t* Mghost=ghost_createVector(ctx,dmtraits);
+      ghost_densemat_t* Mghost;
+      ghost_densemat_create(&Mghost,ctx,dmtraits);
       Mghost->viewPlain(Mghost, (void*)M.values(),
-                Mghost->traits->nrows, Mghost->traits->nvecs,
-                0,0,Mghost->traits->nrowspadded);
+                Mghost->traits.nrows, Mghost->traits.ncols,
+                0,0,Mghost->traits.nrowspadded);
 
     return Mghost;
   }
@@ -631,7 +641,7 @@ using ::phist::GhostMV;
 
 #ifdef HAVE_BELOS_TSQR
     /// \typedef tsqr_adaptor_type
-    /// \brief TsqrAdaptor specialization for ghost_vec_t
+    /// \brief TsqrAdaptor specialization for ghost_densemat_t
     ///
     typedef ghost::TsqrAdaptor<Scalar> tsqr_adaptor_type;
 #endif // HAVE_BELOS_TSQR

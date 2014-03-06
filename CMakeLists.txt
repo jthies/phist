@@ -236,7 +236,7 @@ list(APPEND PHIST_LIBS phist_tools)
 #find_package(Ghost PATHS $ENV{GHOST_HOME})
 #message(STATUS "GHOST_Found=${GHOST_Found}")
 if(PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
-  find_package(GHOST REQUIRED)
+  find_package(GHOST REQUIRED CONFIG)
 
   if (GHOST_FOUND)
     add_definitions(-DPHIST_HAVE_GHOST)

@@ -575,7 +575,7 @@ public:
         = Teuchos::rcp( new Belos::OutputManager<ST>() );
       MyOM->setVerbosity( Belos::Warnings|Belos::Debug);
 
-      ghost_vec_t* v = (ghost_vec_t*)vec1_;
+      ghost_densemat_t* v = (ghost_densemat_t*)vec1_;
       Teuchos::RCP<phist::GhostMV> ivec = phist::rcp(v,false);
 
       // test the multivector and its adapter

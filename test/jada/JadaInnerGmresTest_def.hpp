@@ -346,7 +346,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       // resnorm should be set now
       for(int i = 0; i < _NV_; i++)
       {
-        PHIST_OUT(PHIST_INFO,"resNorm[%d] = %8.4e\n", resNorm[i]);
+        PHIST_OUT(PHIST_INFO,"resNorm[%d] = %8.4e\n", i, resNorm[i]);
         ASSERT_TRUE(resNorm[i] >= mt::zero());
       }
       ASSERT_NEAR(mt::one(), resNorm[exactGuessAt], 10*VTest::releps());

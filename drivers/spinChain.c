@@ -119,7 +119,7 @@ int main(int argc, char** argv)
   // setup matrix
 #ifdef PHIST_KERNEL_LIB_GHOST
   ghost_context_t * ctx = NULL;
-  ghost_mat_t * mat = NULL;
+  ghost_sparsemat_t * mat = NULL;
 #else
   TYPE(crsMat_ptr) mat = NULL;
 #endif
@@ -152,7 +152,7 @@ int main(int argc, char** argv)
 
   ghost_sparsemat_traits_t mtraits = GHOST_SPARSEMAT_TRAITS_INITIALIZER;
   mtraits.datatype = my_datatype;
-  ghost_createMatrix(&mat,ctx,&mtraits,1);
+  ghost_sparsemat_create(&mat,ctx,&mtraits,1);
   mat->fromRowFunc( mat, info.row_nnz , 0, &SpinChainSZ, 0);
   char *str;
   ghost_sparsemat_string(&str,mat);

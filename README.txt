@@ -24,7 +24,15 @@ MPI and node-level parallelism), and ghost (from the essex project). On the DLR 
   module add trilinos/trilinos-11.2.4
   export PHIST_KERNEL_LIB=tpetra
 
-On LiMa at RRZE you can use the script provided in buildScripts/script_lima.sh to get 
+On the RRZE systems proceed as follows to build PHIST with GHOST (substitute $PREFIX and $TRILINOS_HOME with according paths).
+
+  module load intel64
+  module load cmake
+  cd build/
+  PHIST_KERNEL_LIB=ghost CC=icc CXX=icpc cmake .. -DTrilinos_HOME=$TRILINOS_HOME -DGHOST_DIR=$PREFIX/lib/ghost -DESSEX_INSTALL_DIR=$PREFIX/
+  make 
+
+LiMa at RRZE you can use the script provided in buildScripts/script_lima.sh to get 
 started.
 
 Now go to the build directory, configure and compile:

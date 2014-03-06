@@ -106,7 +106,7 @@ int doBelosTests(TYPE(crsMat_ptr) A)
       PHIST_ICHK_IERR(SUBR(jadaOp_create)(op,NULL,Q_,NULL,sigma,_NV_,&jdOp,&ierr_),ierr_);
       Teuchos::RCP<const TYPE(op)> jdOp_ptr=Teuchos::rcp(&jdOp,false);
 #ifdef PHIST_KERNEL_LIB_GHOST
-      ghost_vec_t* v = (ghost_vec_t*)vec1_;
+      ghost_densemat_t* v = (ghost_densemat_t*)vec1_;
       Teuchos::RCP<const phist::GhostMV> V = phist::rcp(v,false);
       if (Belos::TestOperatorTraits(MyOM,V,op_ptr)==false) {ierr_=-1; return ierr_;}
 #elif defined(PHIST_KERNEL_LIB_EPETRA)
