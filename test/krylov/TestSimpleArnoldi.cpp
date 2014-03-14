@@ -18,6 +18,11 @@
 
 using namespace testing;
 
+// we can't easily store an all-zero matrix in ghost binCRS, so skip these tests
+#ifdef PHIST_KERNEL_LIB_GHOST
+#define SKIP_ZERO_MAT
+#endif
+
 #ifdef CLASSNAME
 #undef CLASSNAME
 #endif

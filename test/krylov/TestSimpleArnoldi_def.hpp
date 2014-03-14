@@ -28,15 +28,21 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
         // read matrices
         SUBR(read_mat)("speye",nglob_,&Aeye_,&ierr_);
         ASSERT_EQ(0,ierr_);
+#ifndef SKIP_ZERO_MAT
         SUBR(read_mat)("spzero",nglob_,&Azero_,&ierr_);
         ASSERT_EQ(0,ierr_);
+#else
+        Azero_=NULL;
+#endif        
         SUBR(read_mat)("sprandn",nglob_,&Arand_,&ierr_);
         ASSERT_EQ(0,ierr_);
         SUBR(read_mat)("sprandn_nodiag",nglob_,&Arand_nodiag_,&ierr_);
         ASSERT_EQ(0,ierr_);
 
         ASSERT_TRUE(Aeye_ != NULL);
+#ifndef SKIP_ZERO_MAT        
         ASSERT_TRUE(Azero_ != NULL);
+#endif
         ASSERT_TRUE(Arand_ != NULL);
         ASSERT_TRUE(Arand_nodiag_ != NULL);
 
@@ -52,8 +58,10 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
 
         SUBR(op_wrap_crsMat)(opAeye_,Aeye_,&ierr);
         ASSERT_EQ(0,ierr);
+#ifndef SKIP_ZERO_MAT
         SUBR(op_wrap_crsMat)(opAzero_,Azero_,&ierr);
         ASSERT_EQ(0,ierr);
+#endif
         SUBR(op_wrap_crsMat)(opArand_,Arand_,&ierr);
         ASSERT_EQ(0,ierr);
         SUBR(op_wrap_crsMat)(opArand_nodiag_,Arand_nodiag_,&ierr);
@@ -252,7 +260,7 @@ TEST_F(CLASSNAME, Aeye_v0ones)
     doArnoldiTest(opAeye_);
   }
 }
-
+#ifndef SKIP_ZERO_MAT
 TEST_F(CLASSNAME, Azero_v0ones) 
 {
   if( typeImplemented_)
@@ -263,7 +271,7 @@ TEST_F(CLASSNAME, Azero_v0ones)
     doArnoldiTest(opAzero_);
   }
 }
-
+#endif
 TEST_F(CLASSNAME, Arand_v0ones) 
 {
   if( typeImplemented_)
@@ -298,6 +306,7 @@ TEST_F(CLASSNAME, extended_Aeye_v0ones)
   }
 }
 
+#ifndef SKIP_ZERO_MAT
 TEST_F(CLASSNAME, extended_Azero_v0ones) 
 {
   if( typeImplemented_)
@@ -308,7 +317,7 @@ TEST_F(CLASSNAME, extended_Azero_v0ones)
     doExtendedArnoldiTest(opAzero_);
   }
 }
-
+#endif
 TEST_F(CLASSNAME, extended_Arand_v0ones) 
 {
   if( typeImplemented_)
