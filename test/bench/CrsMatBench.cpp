@@ -16,6 +16,12 @@
 
 using namespace testing;
 
+// This file is not currently used for serious testing
+// but rather a playground how to integrate automatic
+// performance testing. The idea up to now is to simply
+// run some kernel (spMVM here) and monitor the time the
+// test takes on something like a Jenkins server.
+
 #define MATNAME "mhd1280b"
 #define _N_ 1280
 
