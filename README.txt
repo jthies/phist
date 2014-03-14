@@ -29,10 +29,14 @@ On the RRZE systems proceed as follows to build PHIST with GHOST (substitute $PR
   module load intel64
   module load cmake
   cd build/
-  PHIST_KERNEL_LIB=ghost CC=icc CXX=icpc cmake .. -DTrilinos_HOME=$TRILINOS_HOME -DGHOST_DIR=$PREFIX/lib/ghost -DESSEX_INSTALL_DIR=$PREFIX/ -DMPIEXEC=mpirun_rrze
+  PHIST_KERNEL_LIB=ghost CC=icc CXX=icpc 
+  cmake .. -DTrilinos_HOME=$TRILINOS_HOME -DGHOST_HOME=$PREFIX/lib/ghost -DESSEX_INSTALL_DIR=$PREFIX/ -DMPIEXEC=mpirun_rrze
   make 
 
-LiMa at RRZE you can use the script provided in buildScripts/script_lima.sh to get 
+It is sufficient to set GHOST_HOME and TRILINOS_HOME as environement variables (or Ghost_HOME, Trilinos_HOME)
+If you want to use likwid, also set LIKWID_HOME and pass -DLIKWID_PERFMON to cmake.
+
+On LiMa at RRZE you can use the script provided in buildScripts/script_lima.sh to get 
 started.
 
 Now go to the build directory, configure and compile:
