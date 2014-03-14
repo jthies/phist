@@ -1,0 +1,179 @@
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#ifdef PHIST_HAVE_LIKWID
+#include "likwid.h"
+#endif
+
+#ifdef PHIST_KERNEL_LIB_GHOST
+#include "ghost.h"
+#include "ghost/thpool.h"
+#include "ghost/machine.h"
+#include "ghost/pumap.h"
+#include "ghost/locality.h"
+#endif
+
+#include "phist_macros.h"
+#include "phist_enums.h"
+#include "phist_kernels.h"
+#include "phist_operator.h"
+#include "phist_driver_utils.h"
+#include <Teuchos_TimeMonitor.hpp>
+#include ${PHIST_TG_HFILE}
+#include "phist_ScalarTraits.hpp"
+
+typedef phist::ScalarTraits<_ST_> st;
+
+// small c++ string helper function
+bool endsWith(const std::string& s, const std::string& suffix)
+{
+  return s.rfind(suffix) == (s.size()-suffix.size());
+}
+
+typedef struct mainArgs_t {
+int argc;
+char** argv;
+} mainArgs_t;
+
+static int mainFunc(mainArgs_t* arg);
+
+int main(int argc, char** argv)
+{
+  int ierr;
+  mainArgs_t args;
+  args.argc=argc;
+  args.argv=argv;
+
+#ifdef PHIST_HAVE_GHOST
+  ghost_hwconfig_t hwconfig={.ncore=6,.nsmt=6};
+  ghost_hwconfig_set(hwconfig);
+#endif  
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+#ifdef PHIST_HAVE_GHOST
+#ifndef PHIST_KERNEL_LIB_GHOST
+    ghost_init(argc,argv);
+#endif
+    ghost_thpool_t *thpool;
+    int nnuma = 0;
+    int npu = 0;
+    char *str;
+
+    ghost_thpool_get(&thpool);
+    ghost_machine_nnuma(&nnuma);
+    ghost_machine_npu(&npu,GHOST_NUMANODE_ANY);
+
+    ghost_pumap_string(&str);
+    PHIST_OUT(PHIST_VERBOSE,"%s\n",str);
+    free(str); str = NULL;
+
+    PHIST_OUT(PHIST_VERBOSE,"The thread pool consists of %d threads\n",thpool->nThreads);
+
+    ghost_task_t *mainTask;
+
+    ghost_task_create(&mainTask, 1, 0, 
+                (void*(*)(void*))&mainFunc, &args, GHOST_TASK_DEFAULT);
+
+    ghost_task_enqueue(mainTask);
+    ghost_task_wait(mainTask);
+    PHIST_ICHK_IERR(ierr=(int)mainTask->ret,ierr);
+    ghost_task_destroy(mainTask);
+#ifndef PHIST_KERNEL_LIB_GHOST
+    ghost_finalize();
+#endif
+#else
+// no ghost
+ierr=mainFunc(args);
+#endif    
+  PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
+}
+
+static int mainFunc(mainArgs_t* arg)
+{
+  int argc=arg->argc;
+  char** argv=arg->argv;
+  int ierr;
+  int rank, num_proc;
+  int verbose;
+
+  comm_ptr_t comm = NULL;
+  crsMat_ptr_t A = NULL;
+  const_map_ptr_t map = NULL;
+  mvec_ptr_t x = NULL;
+  mvec_ptr_t y = NULL;
+  sdMat_ptr_t XH = NULL;
+  
+  PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
+
+  PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&ierr),ierr);
+
+  verbose= (rank==0);
+
+  if (argc<3)
+  {
+    if (verbose) fprintf(stdout,"Usage: %s <matrix filename> <nvecs>\n", argv[0]);
+    return 1;
+  }
+
+  std::string filename(argv[1]);
+  int nvecs = atoi(argv[2]);
+  
+
+  if( endsWith(filename,".mm") )
+  {
+    PHIST_ICHK_IERR(SUBR(crsMat_read_mm)(&A,filename.c_str(),&ierr),ierr);
+  }
+  else if( endsWith(filename,".cua") )
+  {
+#ifdef IS_COMPLEX
+    PHIST_ICHK_IERR(SUBR(crsMat_read_hb)(&A,filename.c_str(),&ierr),ierr);
+#else
+    PHIST_SOUT(PHIST_ERROR,"error, invoked real version of this program for complex matrix with ending '.cua'");
+    return 1;
+#endif
+  }
+  else if( endsWith(filename,".rua") )
+  {
+#ifdef IS_COMPLEX
+    PHIST_SOUT(PHIST_ERROR,"error, invoked complex version of this program for real matrix with ending '.rua'");
+    return 1;
+#else
+    PHIST_ICHK_IERR(SUBR(crsMat_read_hb)(&A,filename.c_str(),&ierr),ierr);
+#endif
+  }
+  else if( endsWith(filename,".bin") )
+  {
+    PHIST_ICHK_IERR(SUBR(crsMat_read_bin)(&A,filename.c_str(),&ierr),ierr);
+  }
+  else
+  {
+    PHIST_SOUT(PHIST_ERROR,"unknown file ending of matrix file '%s'",filename.c_str());
+    return 1;
+  }
+
+  PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(A, &map,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&x,map,nvecs,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&y,map,nvecs,&ierr),ierr);
+
+  PHIST_ICHK_IERR(SUBR(mvec_random)(x,&ierr),ierr);
+
+  Teuchos::RCP<Teuchos::Time> time = Teuchos::TimeMonitor::getNewTimer("crsMat_times_mvec");
+  for(int i = 0; i < 120/nvecs; i++)
+  {
+    Teuchos::TimeMonitor timeMon( *time );
+
+    PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(st::one(),A,x,st::zero(),y,&ierr),ierr);
+
+  }
+  Teuchos::TimeMonitor::summarize();
+
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(x,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(y,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(crsMat_delete)(A,&ierr),ierr);
+
+  return ierr;
+}
