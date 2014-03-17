@@ -28,20 +28,22 @@ using namespace testing;
 #define _M_ 1
 #define _K_ 1
 
+#ifdef PHIST_HAVE_SP
 #define CLASSNAME SMvecSdMatTest_10_1
 #include "phist_gen_s.h"
-#include "MvecSdMatTest_def.hpp"
-
-#undef CLASSNAME
-#define CLASSNAME DMvecSdMatTest_10_1
-
-#include "phist_gen_d.h"
 #include "MvecSdMatTest_def.hpp"
 
 #undef CLASSNAME
 #define CLASSNAME CMvecSdMatTest_10_1
 
 #include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_10_1
+
+#include "phist_gen_d.h"
 #include "MvecSdMatTest_def.hpp"
 
 #undef CLASSNAME
@@ -55,6 +57,7 @@ using namespace testing;
 #undef _M_
 #define _M_ 12
 
+#ifdef PHIST_HAVE_SP
 #undef CLASSNAME
 #define CLASSNAME SMvecSdMatTest_64_12
 
@@ -62,15 +65,17 @@ using namespace testing;
 #include "MvecSdMatTest_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME DMvecSdMatTest_64_12
-
-#include "phist_gen_d.h"
-#include "MvecSdMatTest_def.hpp"
-
-#undef CLASSNAME
 #define CLASSNAME CMvecSdMatTest_64_12
 
 #include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_64_12
+
+#include "phist_gen_d.h"
 #include "MvecSdMatTest_def.hpp"
 
 #undef CLASSNAME

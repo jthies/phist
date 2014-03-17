@@ -21,53 +21,55 @@ using namespace testing;
 #ifdef CLASSNAME
 #undef CLASSNAME
 #endif
+
+#ifdef PHIST_HAVE_SP
 #define CLASSNAME SGemmTest_12_9
 #include "phist_gen_s.h"
 #include "GemmTest_def.hpp"
-
 #undef CLASSNAME
-#define CLASSNAME DGemmTest_12_9
 
-#include "phist_gen_d.h"
-#include "GemmTest_def.hpp"
-
-#undef CLASSNAME
 #define CLASSNAME CGemmTest_12_9
-
 #include "phist_gen_c.h"
 #include "GemmTest_def.hpp"
-
 #undef CLASSNAME
-#define CLASSNAME ZGemmTest_12_9
 
+#endif
+
+
+#define CLASSNAME DGemmTest_12_9
+#include "phist_gen_d.h"
+#include "GemmTest_def.hpp"
+#undef CLASSNAME
+
+#define CLASSNAME ZGemmTest_12_9
 #include "phist_gen_z.h"
 #include "GemmTest_def.hpp"
-
 #undef _N_
+
 #define _N_ 13
 #undef _NV_
 #define _NV_ 18
-
 #undef CLASSNAME
-#define CLASSNAME SGemmTest_13_18
 
+#ifdef PHIST_HAVE_SP
+
+#define CLASSNAME SGemmTest_13_18
 #include "phist_gen_s.h"
 #include "GemmTest_def.hpp"
-
 #undef CLASSNAME
-#define CLASSNAME DGemmTest_13_18
 
-#include "phist_gen_d.h"
-#include "GemmTest_def.hpp"
-
-#undef CLASSNAME
 #define CLASSNAME CGemmTest_13_18
-
 #include "phist_gen_c.h"
 #include "GemmTest_def.hpp"
-
 #undef CLASSNAME
-#define CLASSNAME ZGemmTest_13_18
 
+#endif
+
+#define CLASSNAME DGemmTest_13_18
+#include "phist_gen_d.h"
+#include "GemmTest_def.hpp"
+#undef CLASSNAME
+
+#define CLASSNAME ZGemmTest_13_18
 #include "phist_gen_z.h"
 #include "GemmTest_def.hpp"

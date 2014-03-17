@@ -17,46 +17,55 @@ using namespace testing;
 
 #define _NROWS_ 5
 #define _NCOLS_ 5
-#define CLASSNAME SSdMatTest_5_5
-#include "phist_gen_s.h"
-#include "SdMatTest_def.hpp"
 
-#undef CLASSNAME
+#ifdef PHIST_HAVE_SP
+
+# define CLASSNAME SSdMatTest_5_5
+# include "phist_gen_s.h"
+# include "SdMatTest_def.hpp"
+# undef CLASSNAME
+
+# define CLASSNAME CSdMatTest_5_5
+# include "phist_gen_c.h"
+# include "SdMatTest_def.hpp"
+# undef CLASSNAME
+
+#endif
+
 #define CLASSNAME DSdMatTest_5_5
 #include "phist_gen_d.h"
 #include "SdMatTest_def.hpp"
-
 #undef CLASSNAME
-#define CLASSNAME CSdMatTest_5_5
-#include "phist_gen_c.h"
-#include "SdMatTest_def.hpp"
 
-#undef CLASSNAME
 #define CLASSNAME ZSdMatTest_5_5
 #include "phist_gen_z.h"
 #include "SdMatTest_def.hpp"
+#undef CLASSNAME
 
 #undef _NROWS_
-#define _NROWS_ 6
 #undef _NCOLS_
+
+#define _NROWS_ 6
 #define _NCOLS_ 8
 
-#undef CLASSNAME
-#define CLASSNAME SSdMatTest_6_8
-#include "phist_gen_s.h"
-#include "SdMatTest_def.hpp"
+#ifdef PHIST_HAVE_SP
 
-#undef CLASSNAME
+# define CLASSNAME SSdMatTest_6_8
+# include "phist_gen_s.h"
+# include "SdMatTest_def.hpp"
+# undef CLASSNAME
+
+# define CLASSNAME CSdMatTest_6_8
+# include "phist_gen_c.h"
+# include "SdMatTest_def.hpp"
+# undef CLASSNAME
+#endif
+
 #define CLASSNAME DSdMatTest_6_8
 #include "phist_gen_d.h"
 #include "SdMatTest_def.hpp"
-
 #undef CLASSNAME
-#define CLASSNAME CSdMatTest_6_8
-#include "phist_gen_c.h"
-#include "SdMatTest_def.hpp"
 
-#undef CLASSNAME
 #define CLASSNAME ZSdMatTest_6_8
 #include "phist_gen_z.h"
 #include "SdMatTest_def.hpp"

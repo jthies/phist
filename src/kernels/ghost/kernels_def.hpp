@@ -31,6 +31,7 @@ void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
   ghost_context_t *ctx;
 
   ghost_sparsemat_traits_t *mtraits=new ghost_sparsemat_traits_t;
+        //mtraits->format = GHOST_SPARSEMAT_CRS;
         mtraits->format = GHOST_SPARSEMAT_CRS;
         mtraits->datatype = st::ghost_dt;
         mtraits->flags = GHOST_SPARSEMAT_DEFAULT;
@@ -42,10 +43,10 @@ void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
 #if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;
   ghost_context_string(&str,ctx);
-  printf("%s\n",str);
+  PHIST_SOUT(PHIST_VERBOSE,"%s\n",str);
   free(str); str = NULL;
   ghost_sparsemat_string(&str,mat);
-  printf("%s\n",str);
+  PHIST_SOUT(PHIST_VERBOSE,"%s\n",str);
   free(str); str = NULL;
 #endif
   *vA = (TYPE(crsMat_ptr))mat;

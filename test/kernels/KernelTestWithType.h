@@ -34,11 +34,15 @@ virtual void TearDown() {
 
 };
 
-#include "phist_gen_s.h"
-#include "KernelTestWithType_def.h"
+#ifdef PHIST_HAVE_SP
 
-#include "phist_gen_c.h"
-#include "KernelTestWithType_def.h"
+# include "phist_gen_s.h"
+# include "KernelTestWithType_def.h"
+
+# include "phist_gen_c.h"
+# include "KernelTestWithType_def.h"
+
+#endif
 
 #include "phist_gen_d.h"
 #include "KernelTestWithType_def.h"

@@ -29,6 +29,7 @@ class ScalarTraits
   
   };
 
+#ifdef PHIST_HAVE_SP
 template<>
 class ScalarTraits< float >
   {
@@ -149,7 +150,7 @@ class ScalarTraits< float >
   //! 1.0 and the next floating point number)
   static inline magn_t eps(){return std::numeric_limits<magn_t>::epsilon();}
   };
-
+#endif
 template<>
 class ScalarTraits< double >
   {

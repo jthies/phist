@@ -36,20 +36,24 @@ using namespace testing;
 #define _NVP_ 2
 #define _MAXBAS_ 5
 
+#ifdef PHIST_HAVE_SP
+
 #define CLASSNAME STestJadaCorrectionSolver_25_10_2
 #include "phist_gen_s.h"
-#include "TestJadaCorrectionSolver_def.hpp"
-
-#undef CLASSNAME
-#define CLASSNAME DTestJadaCorrectionSolver_25_10_2
-
-#include "phist_gen_d.h"
 #include "TestJadaCorrectionSolver_def.hpp"
 
 #undef CLASSNAME
 #define CLASSNAME CTestJadaCorrectionSolver_25_10_2
 
 #include "phist_gen_c.h"
+#include "TestJadaCorrectionSolver_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DTestJadaCorrectionSolver_25_10_2
+
+#include "phist_gen_d.h"
 #include "TestJadaCorrectionSolver_def.hpp"
 
 #undef CLASSNAME
@@ -71,21 +75,25 @@ using namespace testing;
 #define _NVP_ 7
 #define _MAXBAS_ 10
 
+#ifdef PHIST_HAVE_SP
+
 #undef CLASSNAME
 #define CLASSNAME STestJadaCorrectionSolver_512_11_7
 #include "phist_gen_s.h"
 #include "TestJadaCorrectionSolver_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME DTestJadaCorrectionSolver_512_11_7
-
-#include "phist_gen_d.h"
-#include "TestJadaCorrectionSolver_def.hpp"
-
-#undef CLASSNAME
 #define CLASSNAME CTestJadaCorrectionSolver_512_11_7
 
 #include "phist_gen_c.h"
+#include "TestJadaCorrectionSolver_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DTestJadaCorrectionSolver_512_11_7
+
+#include "phist_gen_d.h"
 #include "TestJadaCorrectionSolver_def.hpp"
 
 #undef CLASSNAME

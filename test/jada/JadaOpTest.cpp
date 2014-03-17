@@ -24,14 +24,10 @@ using namespace testing;
 #define _NV_ 4
 #define _NVP_ 10
 
+#ifdef PHIST_HAVE_SP
+
 #define CLASSNAME SJadaOpTest_25_4_10
 #include "phist_gen_s.h"
-#include "JadaOpTest_def.hpp"
-
-#undef CLASSNAME
-#define CLASSNAME DJadaOpTest_25_4_10
-
-#include "phist_gen_d.h"
 #include "JadaOpTest_def.hpp"
 
 #undef CLASSNAME
@@ -39,6 +35,15 @@ using namespace testing;
 
 #include "phist_gen_c.h"
 #include "JadaOpTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DJadaOpTest_25_4_10
+
+#include "phist_gen_d.h"
+#include "JadaOpTest_def.hpp"
+
 
 #undef CLASSNAME
 #define CLASSNAME ZJadaOpTest_25_4_10

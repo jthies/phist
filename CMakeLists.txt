@@ -26,7 +26,7 @@ set(PHIST_VERSION_PATCH ${PHIST_VERSION_PATCH}-dev)
 set(PRODUCT_NAME phist-${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
 
 option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
-
+option(PHIST_ENABLE_SP "Enable single precision functions and drivers" OFF)
 if (DEFINED LAPACK_LIBS)
   set(LAPACK_LIBS ${LAPACK_LIBS} CACHE STRING "how to link with lapack (and blas)")
 elseif(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
@@ -104,7 +104,12 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DPHIST_OUTLEV=${OUTLEV_
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DPHIST_OUTLEV=${OUTLEV_DEBUG}")
 
-
+##############################################################################
+# set enable precision?
+##############################################################################
+if (${PHIST_ENABLE_SP})
+  add_definitions(-DPHIST_HAVE_SP)
+endif ()
 ##############################################################################
 # setup MPI
 ##############################################################################
@@ -167,13 +172,15 @@ endif ()
 if  (PHIST_KERNEL_LIB STREQUAL "epetra" OR PHIST_KERNEL_LIB STREQUAL "fortran")
 set(TG_Types D)
 else ()
-set(TG_Types D
-             Z) 
-
-#set(TG_Types S 
-#             D 
-#             C 
-#             Z)
+  if (PHIST_ENABLE_SP)
+    set(TG_Types S 
+                 D 
+                 C 
+                 Z)
+  else ()
+    set(TG_Types D
+                 Z)
+  endif ()
 endif ()
 
 if (PHIST_KERNEL_LIB STREQUAL "fortran")

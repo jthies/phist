@@ -18,57 +18,53 @@ using namespace ::testing;
 
 #define _N_ 25
 #define _NV_ 1
-#ifdef CLASSNAME
-#undef CLASSNAME
+
+#ifdef PHIST_HAVE_SP
+# define CLASSNAME SCrsMatTest_25_1
+# include "phist_gen_s.h"
+# include "CrsMatTest_def.hpp"
+# undef CLASSNAME
+
+# define CLASSNAME CCrsMatTest_25_1
+# include "phist_gen_c.h"
+# include "CrsMatTest_def.hpp"
+# undef CLASSNAME
 #endif
-#define CLASSNAME SCrsMatTest_25_1
 
-#include "phist_gen_s.h"
-#include "CrsMatTest_def.hpp"
-
-#undef CLASSNAME
 #define CLASSNAME DCrsMatTest_25_1
-
 #include "phist_gen_d.h"
 #include "CrsMatTest_def.hpp"
-
 #undef CLASSNAME
-#define CLASSNAME CCrsMatTest_25_1
 
-#include "phist_gen_c.h"
-#include "CrsMatTest_def.hpp"
-
-#undef CLASSNAME
 #define CLASSNAME ZCrsMatTest_25_1
 #include "phist_gen_z.h"
 #include "CrsMatTest_def.hpp"
+#undef CLASSNAME
 
 #undef _N_
 #undef _NV_
-#undef CLASSNAME
 #define _N_ 25
 #define _NV_ 4
 
-#undef CLASSNAME
-#define CLASSNAME SCrsMatTest_25_4
+#ifdef PHIST_HAVE_SP
 
-#include "phist_gen_s.h"
-#include "CrsMatTest_def.hpp"
+# define CLASSNAME SCrsMatTest_25_4
+# include "phist_gen_s.h"
+# include "CrsMatTest_def.hpp"
+# undef CLASSNAME
 
+# define CLASSNAME CCrsMatTest_25_4
+# include "phist_gen_c.h"
+# include "CrsMatTest_def.hpp"
 #undef CLASSNAME
+
+#endif
+
 #define CLASSNAME DCrsMatTest_25_4
-
 #include "phist_gen_d.h"
 #include "CrsMatTest_def.hpp"
-
 #undef CLASSNAME
-#define CLASSNAME CCrsMatTest_25_4
 
-#include "phist_gen_c.h"
-#include "CrsMatTest_def.hpp"
-
-#undef CLASSNAME
 #define CLASSNAME ZCrsMatTest_25_4
-
 #include "phist_gen_z.h"
 #include "CrsMatTest_def.hpp"

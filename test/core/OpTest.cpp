@@ -45,23 +45,24 @@ using namespace testing;
 
 #include "phist_gen_d.h"
 #include "OpTest_def.hpp"
+#undef CLASSNAME
 
 #ifndef PHIST_KERNEL_LIB_EPETRA
 
-#undef CLASSNAME
-#define CLASSNAME SOpTest_25_8
-#include "phist_gen_s.h"
-#include "OpTest_def.hpp"
+#ifdef PHIST_HAVE_SP
 
-#undef CLASSNAME
-#define CLASSNAME COpTest_25_8
+# define CLASSNAME SOpTest_25_8
+# include "phist_gen_s.h"
+# include "OpTest_def.hpp"
+# undef CLASSNAME
 
-#include "phist_gen_c.h"
-#include "OpTest_def.hpp"
+# define CLASSNAME COpTest_25_8
+# include "phist_gen_c.h"
+# include "OpTest_def.hpp"
+# undef CLASSNAME
+#endif
 
-#undef CLASSNAME
 #define CLASSNAME ZOpTest_25_8
-
 #include "phist_gen_z.h"
 #include "OpTest_def.hpp"
 #endif

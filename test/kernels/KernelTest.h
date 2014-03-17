@@ -53,9 +53,14 @@ public:
         mpi_rank_=0;
         mpi_size_=1;
 #endif
+#ifdef PHIST_HAVE_SP
 	phist_Stype_avail(&ierr_); haveS_=(ierr_==0);
-	phist_Dtype_avail(&ierr_); haveD_=(ierr_==0);
 	phist_Ctype_avail(&ierr_); haveC_=(ierr_==0);
+#else
+        haveS_=false;
+        haveC_=false;
+#endif
+	phist_Dtype_avail(&ierr_); haveD_=(ierr_==0);
 	phist_Ztype_avail(&ierr_); haveZ_=(ierr_==0);
 #if 0	
 	rdbuf_bak = std::cout.rdbuf();
