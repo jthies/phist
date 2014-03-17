@@ -31,8 +31,9 @@ void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
   ghost_context_t *ctx;
 
   ghost_sparsemat_traits_t *mtraits=new ghost_sparsemat_traits_t;
-        //mtraits->format = GHOST_SPARSEMAT_CRS;
+        *mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
         mtraits->format = GHOST_SPARSEMAT_CRS;
+//        mtraits->format = GHOST_SPARSEMAT_SELL;
         mtraits->datatype = st::ghost_dt;
         mtraits->flags = GHOST_SPARSEMAT_DEFAULT;
 // TODO - check ghost return codes everywhere like this
