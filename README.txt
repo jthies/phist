@@ -6,7 +6,21 @@ The git repository can be checked out using the command
 
   git clone git@bitbucket.org:essex/phist
 
-1) Installation
+1a) Installing extra ESSEX libraries
+
+We support several different implementations of the basic linear algebra operations
+in PHIST, which are set by the variable PHIST_KERNEL_LIB (see below). If you choose
+ghost as kernel library, a number of example drivers are activated which also require 
+the essex examples in
+
+  git clone git@bitbucket.org:essex/examples
+
+you have to at least build libmatfuncs.so and copy it into 
+$ESSEX_INSTALL_DIR/lib/essex_exmples, and copy matfuncs.h into 
+$ESSEX_INSTALL_DIR/include/essex_examples/ before starting ot build
+phist. Obviously you also need to build ghost on your system.
+
+1b) PHIST Installation
 
 make a build directory:
 
@@ -14,14 +28,14 @@ make a build directory:
 
 you need cmake, on the DLR systems, use
 
-  module add application/cmake-2.8.8
+  module add cmake
 
 you need to select a "kernel library" that provides the basic operations.
 We currently support two kernel libs from the Trilinos project, 
 epetra (only real double precision, MPI only) and tpetra (single, double, real, complex,
 MPI and node-level parallelism), and ghost (from the essex project). On the DLR systems:
 
-  module add trilinos/trilinos-11.2.4
+  module add trilinos
   export PHIST_KERNEL_LIB=tpetra
 
 On the RRZE systems proceed as follows to build PHIST with GHOST (substitute $PREFIX and $TRILINOS_HOME with according paths).
