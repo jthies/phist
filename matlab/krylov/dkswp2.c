@@ -1,7 +1,7 @@
 #include "mex.h"
 
-/* function x=dkswp(A,sigma,b,x,omega,nrm_ai2)                    */
-/* Kaczmarz forward/backward sweep on A'-sigma*I                        */
+/* function x=dkswp(A,sigma,B,b,x,omega,nrm_ai2)                    */
+/* Kaczmarz forward/backward sweep on A'-sigma*B                        */
 /* note: you have to pass in A^T to this function!                      */
 /* A should be real, but sigma may be complex. b is assumed             */
 /* to be real, but x may be complex.                                    */
@@ -16,12 +16,13 @@ void mexFunction(int nlhs,
 
   int64_t *irA, *jcA;
   double *prA, *xr,*xi, *br, *bi, *nrm_ai2, *pr_omega, *diagA;
+  double *B;
   double *xr_in, *xi_in;
   double *prSigma, *piSigma;
   double omega, sigma_r, sigma_i;
   
   nrows = mxGetM(prhs[0]);
-  nvecs = mxGetN(prhs[3]);
+  nvecs = mxGetN(prhs[4]);
   
   if (nvecs!=1)
   {
@@ -31,16 +32,16 @@ void mexFunction(int nlhs,
 
   /* do we have a complex shift or complex vectors? */
   int is_cmplx=mxIsComplex(prhs[1]);
-  is_cmplx|=mxIsComplex(prhs[2]);
   is_cmplx|=mxIsComplex(prhs[3]);
+  is_cmplx|=mxIsComplex(prhs[4]);
 
   /* copy x to the output arg, make it complex if necessary */
-  if (is_cmplx && !mxIsComplex(prhs[3]))
+  if (is_cmplx && !mxIsComplex(prhs[4]))
   {
     plhs[0]=mxCreateDoubleMatrix(nrows, nvecs, mxCOMPLEX);
     xr = mxGetPr(plhs[0]);
     xi = mxGetPi(plhs[0]);
-    xr_in = mxGetPr(prhs[3]);
+    xr_in = mxGetPr(prhs[4]);
     for (i=0;i<nrows;i++)
     {
       xr[i]=xr_in[i];
@@ -49,7 +50,7 @@ void mexFunction(int nlhs,
   }
   else
   {
-    plhs[0]=mxDuplicateArray(prhs[3]);
+    plhs[0]=mxDuplicateArray(prhs[4]);
     xr = mxGetPr(plhs[0]);
     xi = mxGetPi(plhs[0]);
   }
@@ -77,10 +78,11 @@ void mexFunction(int nlhs,
   {
     sigma_i=0.0;
   }
-  br = mxGetPr(prhs[2]);
-  bi = mxGetPi(prhs[2]);
-  pr_omega = mxGetPr(prhs[4]);
-  nrm_ai2 = mxGetPr(prhs[5]);
+  B  = mxGetPr(prhs[2]); /* mass matrix */
+  br = mxGetPr(prhs[3]);
+  bi = mxGetPi(prhs[3]);
+  pr_omega = mxGetPr(prhs[5]);
+  nrm_ai2 = mxGetPr(prhs[6]);
   omega=pr_omega[0];
 
   /* real formulation of complex system: 
@@ -90,8 +92,8 @@ void mexFunction(int nlhs,
   for (i=0; i<nrows; i++)
   {
     /* contribution from rhs (b) and shifted diagonal */
-    double scal_r=-br[i]-sigma_r*xr[i]+sigma_i*xi[i];
-    double scal_i=-sigma_r*xi[i]-sigma_i*xr[i];
+    double scal_r=-br[i]-sigma_r*B[i]*xr[i]+sigma_i*B[i]*xi[i];
+    double scal_i=-sigma_r*B[i]*xi[i]-sigma_i*B[i]*xr[i];
     if (bi) scal_i-=bi[i];
     /* contributions from the unshifted matrix A */
     for (j=jcA[i]; j<jcA[i+1]; j++)
@@ -104,8 +106,8 @@ void mexFunction(int nlhs,
     scal_i*=omega/nrm_ai2[i];
 
     /* diagonal (cross-)terms */
-    xr[i]+=scal_r*sigma_r+scal_i*sigma_i;
-    xi[i]+=scal_i*sigma_r - scal_r*sigma_i;
+    xr[i]+=scal_r*sigma_r*B[i]+scal_i*sigma_i*B[i];
+    xi[i]+=scal_i*sigma_r*B[i] - scal_r*sigma_i*B[i];
     for (j=jcA[i]; j<jcA[i+1]; j++)
     {
       xr[irA[j]] -= scal_r*prA[j];
@@ -115,8 +117,8 @@ void mexFunction(int nlhs,
 
   for (i=nrows-1; i>=0; i--)
   {
-    double scal_r=-br[i]-sigma_r*xr[i]+sigma_i*xi[i];
-    double scal_i=-sigma_r*xi[i]-sigma_i*xr[i];
+    double scal_r=-br[i]-sigma_r*B[i]*xr[i]+sigma_i*B[i]*xi[i];
+    double scal_i=-sigma_r*B[i]*xi[i]-sigma_i*B[i]*xr[i];
     if (bi) scal_i-=bi[i];
     for (j=jcA[i]; j<jcA[i+1]; j++)
     {
@@ -125,8 +127,8 @@ void mexFunction(int nlhs,
     }
     scal_r*=omega/nrm_ai2[i];
     scal_i*=omega/nrm_ai2[i];
-    xr[i]+=scal_r*sigma_r+scal_i*sigma_i;
-    xi[i]+=scal_i*sigma_r - scal_r*sigma_i;
+    xr[i]+=(scal_r*sigma_r+scal_i*sigma_i)*B[i];
+    xi[i]+=(scal_i*sigma_r - scal_r*sigma_i)*B[i];
     for (j=jcA[i]; j<jcA[i+1]; j++)
     {
       xr[irA[j]] -= scal_r*prA[j];

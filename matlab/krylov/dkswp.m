@@ -1,11 +1,11 @@
-function x=dkswp(A,sigma,b,x,omega,nrm_ai2)
-%function x=dkswp(A,sigma,b,x,omega,nrm_ai2)
+function x=dkswp(A,sigma,B,b,x,omega,nrm_ai2)
+%function x=dkswp(A,sigma,B,b,x,omega,nrm_ai2)
 % Kaczmarz forward-backward sweep for system (A-sigma*I)x=b,
 
 global nm_operations
 
 % call mex function
-x=dkswp2(A', sigma, b, x, omega, nrm_ai2);
+x=dkswp2(A', sigma, B, b, x, omega, nrm_ai2);
 return;
 
 % slow reference implementation
