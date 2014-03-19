@@ -72,11 +72,6 @@ for shiftID=1:length(shifts)
   disp(['TEST CASE: ',matrices{matrixID},' sigma=',num2str(sigma)]);
   opts=struct;
 
-  nseed=1;
-  optsEV.tol=1.0e-6;
-  [V,Lambda]=eigs(A,nseed,real(sigma),optsEV);
-  sigma=Lambda(1,1);
-
 b=A*xex-sigma*xex;
 %b=b-V*V'*b;
 %
@@ -153,7 +148,14 @@ end
 %}
 
 % try deflation
-%
+%{
+nseed=16;
+I=speye(n);
+%d=nrms_ai2(A-sigma*I);
+%D=spdiags(d,0,n,n);
+%[V,Lambda]=eigs((A-real(sigma)*I)/D,nseed,'SM');
+%[V,Lambda]=eigs(A,nseed,real(sigma));
+V=orth(randn(n,nseed));
 opts.omega=1.0;
 %z=zeros(nseed,1);
 %opts.massmat=[I,sparse(n,nseed);sparse(nseed,n+nseed)];
@@ -171,7 +173,7 @@ disp(sprintf('expl. resid: %e, error %e\n',norm(A*x5-sigma*x5-b),norm(x5-xex)));
 if (flag5~=0)
   disp(sprintf('non-zero return flag=%d',flag5));
 end
-%
+%}
 
 figure(matrixID);
 hleg=legend;
