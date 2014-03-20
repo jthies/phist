@@ -33,7 +33,7 @@ void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
   ghost_sparsemat_traits_t *mtraits=new ghost_sparsemat_traits_t;
         *mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
         mtraits->format = GHOST_SPARSEMAT_CRS;
-//        mtraits->format = GHOST_SPARSEMAT_SELL;
+ //       mtraits->format = GHOST_SPARSEMAT_SELL;
         mtraits->datatype = st::ghost_dt;
         mtraits->flags = GHOST_SPARSEMAT_DEFAULT;
 // TODO - check ghost return codes everywhere like this
@@ -137,7 +137,7 @@ void SUBR(mvec_create)(TYPE(mvec_ptr)* vV,
   ST zero = st::zero();
   // this allocates the vector and fills it with zeros
   result->fromScalar(result,&zero);
-  PHIST_DEB("mvec nrows: %ld\n",result->traits.nrows);
+  PHIST_DEB("mvec nrows: %"PRlidx"\n",result->traits.nrows);
   *vV=(TYPE(mvec_ptr))(result);
   }
 
@@ -175,14 +175,16 @@ void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
 #include "phist_std_typedefs.hpp"
   *ierr=0;
   ghost_densemat_t* result;
-  ghost_densemat_traits_t dmtraits;
+  ghost_densemat_traits_t dmtraits=GHOST_DENSEMAT_TRAITS_INITIALIZER;
         dmtraits.flags = GHOST_DENSEMAT_DEFAULT; 
         dmtraits.nrows=nrows;
         dmtraits.nrowshalo=nrows;
         dmtraits.nrowspadded=PAD(nrows,GHOST_PAD_MAX);
         dmtraits.ncols=ncols;
         dmtraits.datatype=st::ghost_dt;
-
+        // sdMats are always column major, as in the fortran kernels.
+        // That way our unit tests work correctly, at least.
+        dmtraits.storage=GHOST_DENSEMAT_COLMAJOR;
   // I think the sdMat should not have a context
   ghost_context_t* ctx=NULL;
   PHIST_CHK_GERR(ghost_context_create(&ctx,nrows, ncols, GHOST_CONTEXT_DEFAULT, 
@@ -277,7 +279,7 @@ void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ie
   {
     PHIST_OUT(PHIST_ERROR,"%s: cannot view data with non-constant stride using "
         "this function (file %s, line %d)\n", __FUNCTION__, __FILE__, __LINE__);
-    *ierr=-1; 
+    *ierr=-1;
     return;
   }
   if (V->val==NULL)
@@ -307,7 +309,14 @@ void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* 
   *val = (_ST_*)M->val[0];
 
   PHIST_CHK_IERR(*ierr=check_local_size(M->traits.nrowspadded),*ierr);
-  *lda = M->traits.nrowspadded;
+  if (M->traits.storage==GHOST_DENSEMAT_ROWMAJOR)
+  {
+    *lda = M->traits.nrowspadded;
+  }
+else
+  {
+    *lda = M->traits.ncolspadded;
+  }
 }
 
 //! get a new vector that is a view of some columns of the original one,
@@ -322,9 +331,8 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
-
   ghost_densemat_t *Vblock;
-  V->viewVec(V, &Vblock, jmax-jmin+1, jmin);
+  V->viewCols(V, &Vblock, jmax-jmin+1, jmin);
 
   if (*vVblock!=NULL)
     {
@@ -355,7 +363,7 @@ void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
   TOUCH(jmax);
 #endif  
   //TODO check bounds of Vblock
-  Vblock->fromVec(Vblock,V,jmin);
+  Vblock->fromVec(Vblock,V,0,jmin);
   }
 
 //! given a multi-vector Vblock, set V(:,jmin:jmax)=Vblock by copying the corresponding
@@ -371,9 +379,9 @@ void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
   // TODO - bounds checking
   // create a view of the requested columns of V
   ghost_densemat_t *Vcols;
-  V->viewVec(V,&Vcols,jmax-jmin+1,jmin);
+  V->viewCols(V,&Vcols,jmax-jmin+1,jmin);
   // copy the data
-  Vcols->fromVec(Vcols,Vblock,0);
+  Vcols->fromVec(Vcols,Vblock,0,0);
   // delete the view
   Vcols->destroy(Vcols);
   }
@@ -394,17 +402,7 @@ void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMblock,
 
   // first just create a view of the corresponding columns
   ghost_densemat_t *Mblock;
-  M->viewVec(M, &Mblock, jmax-jmin+1, jmin);
-  // adjust the offset and the number of rows seen by the object
-  Mblock->traits.nrows=imax-imin+1;
-  size_t sizeofdt;
-  ghost_datatype_size(&sizeofdt,Mblock->traits.datatype);
-  std::ptrdiff_t offset=(std::ptrdiff_t)imin*(std::ptrdiff_t)sizeofdt;
-
-  for (int i=0;i<Mblock->traits.ncols;i++)
-    {
-    Mblock->val[i]+=offset;
-    }
+  M->viewVec(M, &Mblock, imax-imin+1,imin,jmax-jmin+1, jmin);
 
   if (*vMblock!=NULL)
     {
@@ -429,7 +427,7 @@ void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
 
   ghost_densemat_t *Mb_view=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_view_block)((TYPE(sdMat_ptr))vM,(TYPE(sdMat_ptr)*)&Mb_view,imin,imax,jmin,jmax,ierr),*ierr);
-  Mblock->fromVec(Mblock,(ghost_densemat_t*)Mb_view,0);
+  Mblock->fromVec(Mblock,(ghost_densemat_t*)Mb_view,0,0);
   Mb_view->destroy(Mb_view);
   }
 
@@ -445,7 +443,7 @@ void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
 
   ghost_densemat_t* Mb_view=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(vM,(TYPE(sdMat_ptr)*)&Mb_view,imin,imax,jmin,jmax,ierr),*ierr);
-  Mb_view->fromVec(Mb_view,Mblock,0);
+  Mb_view->fromVec(Mb_view,Mblock,0,0);
   Mb_view->destroy(Mb_view);
   }
 
@@ -493,7 +491,7 @@ void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, _ST_ value, int* ierr)
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
-  PHIST_DEB("put value, V @ %p. V->traits.nrows=%ld\n",V,V->traits.nrows);
+  PHIST_DEB("put value, V @ %p. V->traits.nrows=%"PRlidx"\n",V,V->traits.nrows);
   V->fromScalar(V,(void*)&value);
   }
 

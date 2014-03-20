@@ -111,7 +111,7 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
       ST sum=st::zero();
       for (int i=0;i<stride*nloc;i+=stride)
         {
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
         ST val=vec_vp[j+i*lda];
 #else
         ST val=vec_vp[j*lda+i];
@@ -140,7 +140,7 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
         ST sum=st::zero();
         for (int i=0;i<stride*nloc;i+=stride)
           {
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
           ST val1=vec_vp[j1+i*lda];
           ST val2=vec_vp[j2+i*lda];
 #else
@@ -183,7 +183,7 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
           {
           for (int j=0;j<nvec_;j++)
             {
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
             os << vec_vp[j+i*lda]<<"  ";
 #else
             os << vec_vp[j*lda+i]<<"  ";

@@ -137,7 +137,7 @@ public:
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,k_,nloc_,ldaW2_,stride_,st::zero()),tolW);
 #else
       ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero()),tolW);
@@ -184,7 +184,7 @@ public:
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,k_,nloc_,ldaW2_,stride_,st::zero()),100*mt::eps());
 #else
       ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero()),100*mt::eps());

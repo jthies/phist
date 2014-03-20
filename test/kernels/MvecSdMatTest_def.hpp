@@ -162,7 +162,7 @@ public:
       MTest::PrintSdMat(*cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
       VTest::PrintVector(*cout,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(V2_vp_,m_,nloc_,m_,stride_,(ST)m_));
 #else
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(V2_vp_,nloc_,m_,ldaV2_,stride_,(ST)m_));

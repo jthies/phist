@@ -65,6 +65,11 @@ public:
       TYPE(sdMat_ptr) m1_view=NULL;
       SUBR(sdMat_view_block)(mat1_,&m1_view,imin,imax,jmin,jmax,&ierr_);
       ASSERT_EQ(0,ierr_);
+
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      SUBR(sdMat_print)(mat1_,&ierr_);
+      SUBR(sdMat_print)(m1_view,&ierr_);
+#endif
       
       _ST_* val_ptr;
       int lda;
@@ -72,11 +77,6 @@ public:
       ASSERT_EQ(0,ierr_);
       ASSERT_EQ(lda,m_lda_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+imin+jmin*lda,val_ptr,imax-imin+1,jmax-jmin+1,lda,stride));
-
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(sdMat_print)(mat1_,&ierr_);
-      SUBR(sdMat_print)(m1_view,&ierr_);
-#endif
 
       // set all the viewed entries to a certain value and check that the original vector is
       // changed.

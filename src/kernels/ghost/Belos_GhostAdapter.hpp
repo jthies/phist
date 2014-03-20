@@ -74,7 +74,7 @@ using ::phist::GhostMV;
       vtraits.flags = (ghost_densemat_flags_t)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_VIEW);
       ghost_densemat_t* mv_clone;
       ghost_densemat_create(&mv_clone,_mv->context,vtraits);
-      mv_clone->fromVec(mv_clone,_mv,0);
+      mv_clone->fromVec(mv_clone,_mv,0,0);
       return phist::rcp(mv_clone,true); 
     }
 
@@ -91,6 +91,9 @@ using ::phist::GhostMV;
       TEUCHOS_TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= GetNumberVecs(mv), std::runtime_error,
           "Belos::MultiVecTraits<Scalar,GhostMV>::CloneCopy(mv,index): indices must be < mv.traits.ncols.");
 
+      ghost_idx_t imin=0;
+      ghost_idx_t ilen=_mv->traits.nrows;
+
       bool contig=true;
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
         if (index[j] != index[j-1]+1) {
@@ -103,7 +106,9 @@ using ::phist::GhostMV;
       if (contig)
       {
         ghost_densemat_t *result = NULL;
-        _mv->clone(_mv,&result,index.size(),index[0]);
+        ghost_idx_t ilen=_mv->traits.nrows;
+        ghost_idx_t imin=0;
+        _mv->clone(_mv,&result,ilen,imin,index.size(),index[0]);
 
         return phist::rcp(result,true);
       }
@@ -123,8 +128,8 @@ using ::phist::GhostMV;
         for (int j=0;j<index.size();j++)
         {
           ghost_densemat_t *result_j;
-          result->viewVec(result, &result_j, 1, j);
-          result_j->fromVec(result_j,_mv,index[j]);
+          result->viewCols(result, &result_j,1, j);
+          result_j->fromVec(result_j,_mv,0,index[j]);
         }
         return phist::rcp(result,true);
       }
@@ -208,14 +213,14 @@ using ::phist::GhostMV;
 #else
       const std::vector<ghost_idx_t>& clone_index=index;
 #endif
-      _mv->viewScatteredVec(_mv,&result,(ghost_idx_t)index.size(),(ghost_idx_t*)&clone_index[0]);
+      _mv->viewScatteredCols(_mv,&result,(ghost_idx_t)index.size(),(ghost_idx_t*)&clone_index[0]);
     }
     else
     {
       // constant stride
       
       // stride k: first simply view the vector, then manually set pointers and stride
-      _mv->viewVec(_mv,&result,index.size(),index[0]);
+      _mv->viewCols(_mv,&result,index.size(),index[0]);
       if (stride!=1)
       {
         for (int i=0;i<index.size();i++)
@@ -264,7 +269,7 @@ using ::phist::GhostMV;
 	}
       
       ghost_densemat_t* result=NULL;
-      _mv->viewVec(_mv,&result,index.ubound()-index.lbound()+1, index.lbound());
+      _mv->viewCols(_mv,&result,index.ubound()-index.lbound()+1, index.lbound());
 
       return phist::rcp(result,true);
     }
@@ -353,7 +358,7 @@ using ::phist::GhostMV;
           // unexpected ways because of the memcpy here. 
           if (mv_is_B==false)
           {
-            _mv->fromVec(_mv,_B,0);
+            _mv->fromVec(_mv,_B,0,0);
           }
           if (beta!=one)
           {
@@ -369,7 +374,7 @@ using ::phist::GhostMV;
                          (_A->traits.nrowspadded == _mv->traits.nrowspadded);
           if (mv_is_A==false)
           {
-            _mv->fromVec(_mv,_A,0);
+            _mv->fromVec(_mv,_A,0,0);
           }
         if (alpha!=one)
         {
@@ -479,7 +484,7 @@ using ::phist::GhostMV;
         Asub = CloneViewNonConst(const_cast<GhostMV&>(A),Teuchos::Range1D(0,index.size()-1));
         _Asub= Asub->get();
       }
-    _mvsub->fromVec(_mvsub,_Asub,0);
+    _mvsub->fromVec(_mvsub,_Asub,0,0);
     return;
 /*
     std::cout <<"MvCopy: indices: "<<std::endl;
@@ -551,7 +556,7 @@ using ::phist::GhostMV;
       else
 	A_view = CloneView (A, Teuchos::Range1D(0, index.size()-1));
 
-      mv_view->get()->fromVec(mv_view->get(),A_view->get(),0);
+      mv_view->get()->fromVec(mv_view->get(),A_view->get(),0,0);
     }
 
     static void
@@ -577,14 +582,14 @@ using ::phist::GhostMV;
       }
       if (numColsA == numColsMv)
       {
-        mv.get()->fromVec(mv.get(),(ghost_densemat_t*)A.get(),0);
+        mv.get()->fromVec(mv.get(),(ghost_densemat_t*)A.get(),0,0);
       }
       else
       {
           ghost_densemat_t* mv_view = 
             CloneViewNonConst (mv, Teuchos::Range1D(0, numColsA-1))->get();
           // copy mv(:,1:numColsA)=A
-          mv_view->fromVec(mv_view,(ghost_densemat_t*)A.get(),0);
+          mv_view->fromVec(mv_view,(ghost_densemat_t*)A.get(),0,0);
       }
     }
 

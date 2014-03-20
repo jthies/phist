@@ -133,6 +133,11 @@ ghost_densemat_traits_t phist_default_vtraits()
   vtraits.nrowspadded=0; // get from context
   vtraits.flags = (ghost_densemat_flags_t)(GHOST_DENSEMAT_DEFAULT|GHOST_DENSEMAT_HOST|GHOST_DENSEMAT_LHS);
   vtraits.ncols=1;
+#ifdef PHIST_MVECS_ROW_MAJOR
+  vtraits.storage=GHOST_DENSEMAT_ROWMAJOR;
+#else  
+  vtraits.storage=GHOST_DENSEMAT_COLMAJOR;
+#endif
   return vtraits;
   }
 

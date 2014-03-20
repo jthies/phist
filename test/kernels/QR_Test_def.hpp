@@ -23,7 +23,7 @@ public:
         {
         for (int i=0;i<stride_*nloc_;i+=stride_)
           {
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
           vec2_vp_[j+i*lda_] = vec1_vp_[j+i*lda_];
 #else
           vec2_vp_[j*lda_+i] = vec1_vp_[j*lda_+i];
@@ -72,7 +72,7 @@ public:
         // set last two columns to same vector
         for (int i=0;i<stride_*nloc_;i+=stride_)
           {
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
           vec1_vp_[(nvec_-1)+i*lda_] = vec1_vp_[(nvec_-2)+i*lda_];
 #else
           vec1_vp_[(nvec_-1)*lda_+i] = vec1_vp_[(nvec_-2)*lda_+i];

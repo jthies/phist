@@ -35,7 +35,7 @@ void BuildTestCase1()
     for (int i=0; i<stride_*nloc_; i+=stride_)
       {
       MT ij = (MT)((i+ilower+1)*(j+1));
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       vec1_vp_[j+i*lda_] = ij*st::one() + ij*st::cmplx_I();
       vec2_vp_[j+i*lda_] = st::one()/(ij - ij*st::cmplx_I());
 #else
@@ -61,7 +61,7 @@ void PrintTestCase()
     {
     for (int j=0;j<nvec_;j++)
       {
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       std::cout << vec1_vp_[j+i*lda_] << "  ";
 #else
       std::cout << vec1_vp_[j*lda_+i] << "  ";
@@ -74,7 +74,7 @@ void PrintTestCase()
     {
     for (int j=0;j<nvec_;j++)
       {
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       std::cout << vec2_vp_[j+i*lda_] << "  ";
 #else
       std::cout << vec2_vp_[j*lda_+i] << "  ";

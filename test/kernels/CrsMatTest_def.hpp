@@ -125,7 +125,7 @@ void rebuildVectors(TYPE(const_crsMat_ptr) A)
     SUBR(mvec_vadd_mvec)(alpha_shifts, vec1_, st::one(), vec3_, &ierr_);
     ASSERT_EQ(0, ierr_);
 
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
     ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nvec_,nloc_,lda_,stride_), 1000*mt::eps());
 #else
     ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_), 1000*mt::eps());
@@ -209,7 +209,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_random)(vec2_,&ierr_);
       SUBR(crsMat_times_mvec)(st::one(),A1_,vec1_,st::zero(),vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nvec_,nloc_,lda_,stride_));
 #else
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
@@ -224,7 +224,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_scale)(vec1_,alpha,&ierr_);
       ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nvec_,nloc_,lda_,stride_));
 #else
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
@@ -252,7 +252,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_print)(vec2_,&ierr_);
       SUBR(mvec_print)(vec3_,&ierr_);
 #endif
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nvec_,nloc_,lda_,stride_));
 #else
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_));
@@ -280,7 +280,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_print)(vec2_,&ierr_);
       SUBR(mvec_print)(vec3_,&ierr_);
 #endif
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nvec_,nloc_,lda_,stride_));
 #else
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_));
@@ -310,7 +310,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_print)(vec2_,&ierr_);
       SUBR(mvec_print)(vec3_,&ierr_);
 #endif
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nvec_,nloc_,lda_,stride_));
 #else
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_));
@@ -347,7 +347,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       for(int i = 0; i < nloc_; i++)
       {
         for(int j = 0; j < nvec_; j++)
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
           vec1_vp_[i*lda_+j] = (_ST_)(ilower+i + j*nglob_);
 #else
           vec1_vp_[j*lda_+i] = (_ST_)(ilower+i + j*nglob_);
@@ -371,7 +371,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       for(int i = 0; i < nloc_; i++)
       {
         for(int j = 0; j < nvec_; j++)
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
           ASSERT_REAL_EQ((ilower+i+1)%nglob_ + j*nglob_, st::real(vec2_vp_[i*lda_+j]));
 #else
           ASSERT_REAL_EQ((ilower+i+1)%nglob_ + j*nglob_, st::real(vec2_vp_[j*lda_+i]));
@@ -397,7 +397,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       for(int i = 0; i < nloc_; i++)
       {
         for(int j = 0; j < nvec_; j++)
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
           vec1_vp_[i*lda_+j] = (_ST_)(ilower+i + j*nglob_);
 #else
           vec1_vp_[j*lda_+i] = (_ST_)(ilower+i + j*nglob_);
@@ -535,7 +535,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       {
         for(int j = 0; j < nvec_; j++)
         {
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
           ASSERT_NEAR(st::real(precalc_result[(ilower+i)*nvec_+j]), st::real(vec2_vp_[i*lda_+j]), mt::sqrt(mt::eps()));
           ASSERT_NEAR(st::imag(precalc_result[(ilower+i)*nvec_+j]), st::imag(vec2_vp_[i*lda_+j]), mt::sqrt(mt::eps()));
 #else
