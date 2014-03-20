@@ -25,7 +25,8 @@
 #include <mpi.h>
 #endif
 
-#include "ghost.h"
+#include <ghost.h>
+#include <ghost/machine.h>
 #include <limits>
 
 namespace phist
@@ -53,7 +54,7 @@ const int MPI_COMM_WORLD=0;
 typedef struct ghost_map_t
   {
   ghost_context_t* ctx;
-  ghost_vtraits_t* vtraits_template;
+  ghost_densemat_traits_t vtraits_template;
   } ghost_map_t;
 
 // initialize ghost
@@ -62,8 +63,13 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
   *ierr=0;
   ghost_init(*argc, *argv);
   //ghost_pinThreads(GHOST_PIN_PHYS,NULL);
-  ghost_printSysInfo();
-  ghost_printGhostInfo();
+  char *str;
+  ghost_string(&str);
+  printf("%s\n",str);
+  free(str); str = NULL;
+  ghost_machine_string(&str);
+  printf("%s\n",str);
+  free(str); str = NULL;
 #ifdef PHIST_HAVE_LIKWID
   LIKWID_MARKER_INIT;
   LIKWID_MARKER_START("phist<ghost>");
@@ -80,7 +86,7 @@ void phist_kernels_finalize(int* ierr)
 #ifdef PHIST_TIMEMONITOR
   Teuchos::TimeMonitor::summarize();
 #endif
-  ghost_finish();
+  ghost_finalize();
   *ierr=0;
   }
 
@@ -108,25 +114,25 @@ void phist_comm_get_rank(const_comm_ptr_t vcomm, int* rank, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*ierr);
-  *rank=ghost_getRank(*comm);
+  ghost_rank(rank,*comm);
   }
 //!
 void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*ierr);
-  *size=ghost_getNumberOfRanks(*comm);
+  ghost_nrank(size,*comm);
   }
 
 //! private helper function to create a vtraits object
-ghost_vtraits_t* phist_default_vtraits()
+ghost_densemat_traits_t phist_default_vtraits()
   {
-  ghost_vtraits_t *vtraits = (ghost_vtraits_t*)malloc(sizeof(ghost_vtraits_t));
-  vtraits->nrows=0; // get from context
-  vtraits->nrowshalo=0; // get from context
-  vtraits->nrowspadded=0; // get from context
-  vtraits->flags = GHOST_VEC_DEFAULT+GHOST_VEC_HOST+GHOST_VEC_LHS;
-  vtraits->nvecs=1;
+  ghost_densemat_traits_t vtraits = GHOST_DENSEMAT_TRAITS_INITIALIZER;
+  vtraits.nrows=0; // get from context
+  vtraits.nrowshalo=0; // get from context
+  vtraits.nrowspadded=0; // get from context
+  vtraits.flags = (ghost_densemat_flags_t)(GHOST_DENSEMAT_DEFAULT|GHOST_DENSEMAT_HOST|GHOST_DENSEMAT_LHS);
+  vtraits.ncols=1;
   return vtraits;
   }
 
@@ -142,7 +148,7 @@ void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int
   
   map->ctx=NULL;
 //TODO: check ghost_err_t return codes everywhere like this:
-  PHIST_CHK_GERR(ghost_createContext(&map->ctx,nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,*comm,1.0),*ierr);
+  PHIST_CHK_GERR(ghost_context_create(&map->ctx,nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,GHOST_SPARSEMAT_SRC_NONE, *comm,1.0),*ierr);
   map->vtraits_template=phist_default_vtraits();
   // in ghost terminology, we look at LHS=A*RHS, the LHS is based on the
   // row distribution of A, the RHS has halo elements to allow importing from
@@ -150,7 +156,7 @@ void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int
   // we want to create one we need to get the 'map' from the matrix (e.g. the
   // domain map which is the same as the col map in ghost). A RHS vector can
   // be used as LHS, however.
-  map->vtraits_template->flags = GHOST_VEC_LHS;
+  map->vtraits_template.flags = GHOST_DENSEMAT_LHS;
 
   *vmap=(map_ptr_t)(map);
   }
@@ -180,7 +186,8 @@ void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*ierr);
-  int me=ghost_getRank(map->ctx->mpicomm);
+  int me;
+  ghost_rank(&me,map->ctx->mpicomm);
   *nloc=map->ctx->lnrows[me];
   }
 
@@ -189,7 +196,8 @@ void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*ierr);
-  int me = ghost_getRank(map->ctx->mpicomm);
+  int me;
+  ghost_rank(&me,map->ctx->mpicomm);
   *ilower = map->ctx->lfRow[me];
   }
 //! returns the largest global index in the map appearing on my partition.
@@ -197,7 +205,8 @@ void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*ierr);
-  int me = ghost_getRank(map->ctx->mpicomm);
+  int me;
+  ghost_rank(&me,map->ctx->mpicomm);
   *iupper = map->ctx->lfRow[me+1]-1;
   }
 
@@ -214,18 +223,20 @@ void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr)
   }
 
 
-
+#ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
-#include "kernels_def.hpp"
-#include "carp_def.hpp"
-
-#include "phist_gen_d.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
 
 #include "phist_gen_c.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
+#endif
+
+#include "phist_gen_d.h"
+#include "kernels_def.hpp"
+#include "carp_def.hpp"
+
 
 #include "phist_gen_z.h"
 #include "kernels_def.hpp"

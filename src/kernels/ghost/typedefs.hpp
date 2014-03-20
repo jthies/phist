@@ -27,10 +27,10 @@ public:
   typedef typename Kokkos::DefaultKernels<ST,lidx_t,node_t>::SparseOps localOps_t;
 
   //! multi vectors
-  typedef ghost_vec_t mvec_t;
+  typedef ghost_densemat_t mvec_t;
 
   //! serial dense matrix - just a multivector with a serial map.
-  typedef ghost_vec_t sdMat_t;
+  typedef ghost_densemat_t sdMat_t;
 
   //! serial dense matrix from Teuchos, we need this for e.g. the BLAS interface.
   //! Note: the index type *must* be int here, not int64_t, so we decided to have
@@ -38,7 +38,7 @@ public:
   typedef Teuchos::SerialDenseMatrix<lidx_t,ST> Teuchos_sdMat_t;
 
   //! CRS matrices
-  typedef ghost_mat_t crsMat_t;
+  typedef ghost_sparsemat_t crsMat_t;
 
   //! create a Teuchos' view of a local mvec/sdMat
   static Teuchos::RCP<const Teuchos_sdMat_t> CreateTeuchosView(Teuchos::RCP<const sdMat_t> M, int* ierr)
@@ -65,18 +65,18 @@ public:
     {
     *ierr=0;
     
-    if (M->traits->flags & GHOST_VEC_SCATTERED)
+    if (M->traits.flags & GHOST_DENSEMAT_SCATTERED)
       {
       *ierr=-1;
       PHIST_OUT(PHIST_ERROR,"to create a Teuchos view we need constant stride in ghost_vec_t");
       return Teuchos::null;
       }
 
-    int stride = M->traits->nrowspadded;
-    int nrows = M->traits->nrows;
-    int ncols = M->traits->nvecs;
+    int stride = M->traits.nrowspadded;
+    int nrows = M->traits.nrows;
+    int ncols = M->traits.ncols;
     
-    if (M->traits->datatype != phist::ScalarTraits<ST>::ghost_dt)
+    if (M->traits.datatype != phist::ScalarTraits<ST>::ghost_dt)
       {
       *ierr=-2;
       PHIST_OUT(PHIST_ERROR,"incorrect data type in ghost_vec_t");

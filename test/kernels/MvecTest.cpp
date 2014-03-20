@@ -31,14 +31,9 @@ using namespace testing;
 #ifdef CLASSNAME
 #undef CLASSNAME
 #endif
+#ifdef PHIST_HAVE_SP
 #define CLASSNAME SMvecTest_9_1
 #include "phist_gen_s.h"
-#include "MvecTest_def.hpp"
-
-#undef CLASSNAME
-#define CLASSNAME DMvecTest_9_1
-
-#include "phist_gen_d.h"
 #include "MvecTest_def.hpp"
 
 #undef CLASSNAME
@@ -46,6 +41,15 @@ using namespace testing;
 
 #include "phist_gen_c.h"
 #include "MvecTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecTest_9_1
+
+#include "phist_gen_d.h"
+#include "MvecTest_def.hpp"
+
 
 #undef CLASSNAME
 #define CLASSNAME ZMvecTest_9_1
@@ -62,6 +66,7 @@ using namespace testing;
 #undef _NV_
 #define _NV_ 3
 
+#ifdef PHIST_HAVE_SP
 #undef CLASSNAME
 #define CLASSNAME SMvecTest_16_9
 
@@ -69,16 +74,19 @@ using namespace testing;
 #include "MvecTest_def.hpp"
 
 #undef CLASSNAME
+#define CLASSNAME CMvecTest_16_9
+
+#include "phist_gen_c.h"
+#include "MvecTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
 #define CLASSNAME DMvecTest_16_9
 
 #include "phist_gen_d.h"
 #include "MvecTest_def.hpp"
 
-#undef CLASSNAME
-#define CLASSNAME CMvecTest_16_9
-
-#include "phist_gen_c.h"
-#include "MvecTest_def.hpp"
 
 #undef CLASSNAME
 #define CLASSNAME ZMvecTest_16_9
@@ -91,6 +99,7 @@ using namespace testing;
 #undef _NV_
 #define _NV_ 4
 
+#ifdef PHIST_HAVE_SP
 #undef CLASSNAME
 #define CLASSNAME SMvecTest_237_4
 
@@ -98,15 +107,17 @@ using namespace testing;
 #include "MvecTest_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME DMvecTest_237_4
-
-#include "phist_gen_d.h"
-#include "MvecTest_def.hpp"
-
-#undef CLASSNAME
 #define CLASSNAME CMvecTest_237_4
 
 #include "phist_gen_c.h"
+#include "MvecTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecTest_237_4
+
+#include "phist_gen_d.h"
 #include "MvecTest_def.hpp"
 
 #undef CLASSNAME

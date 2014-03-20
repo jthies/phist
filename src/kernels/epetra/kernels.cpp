@@ -143,7 +143,7 @@ void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr)
   *iupper = map->MaxMyGID();
   }
 
-
+#ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "../kernels_noimpl.c"
 #include "../carp_noimpl.c"
@@ -151,7 +151,7 @@ void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr)
 #include "phist_gen_c.h"
 #include "../kernels_noimpl.c"
 #include "../carp_noimpl.c"
-
+#endif
 #include "phist_gen_z.h"
 #include "../kernels_noimpl.c"
 #include "../carp_noimpl.c"

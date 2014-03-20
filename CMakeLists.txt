@@ -26,7 +26,7 @@ set(PHIST_VERSION_PATCH ${PHIST_VERSION_PATCH}-dev)
 set(PRODUCT_NAME phist-${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
 
 option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
-
+option(PHIST_ENABLE_SP "Enable single precision functions and drivers" OFF)
 if (DEFINED LAPACK_LIBS)
   set(LAPACK_LIBS ${LAPACK_LIBS} CACHE STRING "how to link with lapack (and blas)")
 elseif(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
@@ -104,7 +104,12 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DPHIST_OUTLEV=${OUTLEV_
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DPHIST_OUTLEV=${OUTLEV_DEBUG}")
 
-
+##############################################################################
+# set enable precision?
+##############################################################################
+if (${PHIST_ENABLE_SP})
+  add_definitions(-DPHIST_HAVE_SP)
+endif ()
 ##############################################################################
 # setup MPI
 ##############################################################################
@@ -124,8 +129,8 @@ if (${PHIST_ENABLE_MPI})
 #  else()
 #    message(WARNING "could not find MPI")
 #  endif()
-set(MPIEXEC "mpirun")
-set(MPIEXEC_NUMPROC_FLAG "-np")
+set(MPIEXEC "mpirun" CACHE STRING "")
+set(MPIEXEC_NUMPROC_FLAG "-np" CACHE STRING "")
 endif()
 
 ##############################################################################
@@ -167,13 +172,15 @@ endif ()
 if  (PHIST_KERNEL_LIB STREQUAL "epetra" OR PHIST_KERNEL_LIB STREQUAL "fortran")
 set(TG_Types D)
 else ()
-set(TG_Types D
-             Z) 
-
-#set(TG_Types S 
-#             D 
-#             C 
-#             Z)
+  if (PHIST_ENABLE_SP)
+    set(TG_Types S 
+                 D 
+                 C 
+                 Z)
+  else ()
+    set(TG_Types D
+                 Z)
+  endif ()
 endif ()
 
 if (PHIST_KERNEL_LIB STREQUAL "fortran")
@@ -204,7 +211,6 @@ set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
 #                       ${PROJECT_SOURCE_DIR}/src/core/phist_taskbuf.c)
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_pgmres.cpp
-                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_pcg.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_belos.cpp)
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.c
@@ -236,7 +242,7 @@ list(APPEND PHIST_LIBS phist_tools)
 #find_package(Ghost PATHS $ENV{GHOST_HOME})
 #message(STATUS "GHOST_Found=${GHOST_Found}")
 if(PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
-  find_package(GHOST REQUIRED)
+  find_package(GHOST REQUIRED CONFIG)
 
   if (GHOST_FOUND)
     add_definitions(-DPHIST_HAVE_GHOST)
@@ -392,14 +398,20 @@ if  (PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
 #       driver to the essex/examples repo...
   set(ESSEX_INSTALL_DIR CACHE $ENV{HOME}/local/ "where the essex examples are installed")
   include_directories(${ESSEX_INSTALL_DIR}/include/essex_examples)
-  add_executable(spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
-  add_executable(spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
-  target_link_libraries(spinChain ${ESSEX_INSTALL_DIR}/lib/essex_examples/libmatfuncs.so)
-  target_link_libraries(spinChain_subspacejada ${ESSEX_INSTALL_DIR}/lib/essex_examples/libmatfuncs.so)
-  foreach(lib ${PHIST_LIBS})
-    target_link_libraries(spinChain ${lib})
-    target_link_libraries(spinChain_subspacejada ${lib})
-  endforeach()
+
+  if (EXISTS "${ESSEX_INSTALL_DIR}/include/essex_exmples/matfuncs.h")
+    include_directories(${ESSEX_INSTALL_DIR}/include/essex_examples)
+    add_executable(spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
+    add_executable(spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
+    target_link_libraries(spinChain ${ESSEX_INSTALL_DIR}/lib/essex_examples/libmatfuncs.so)
+    target_link_libraries(spinChain_subspacejada ${ESSEX_INSTALL_DIR}/lib/essex_examples/libmatfuncs.so)
+    foreach(lib ${PHIST_LIBS})
+      target_link_libraries(spinChain ${lib})
+      target_link_libraries(spinChain_subspacejada ${lib})
+    endforeach()
+  else()
+    message(STATUS "ESSEX_INSTALL_DIR does not contain matfuncs.h in essex_exmples, skipping some example drivers.")
+  endif()
 endif()
 
 # test drivers

@@ -17,20 +17,20 @@
 //| of Teuchos::rcp to create an RCP from a raw pointer (for C++ vector
 //! classes it will just default to Teuchos::rcp). When getting a reference
 //! to an object the ref2ptr function should be used (rather than the ampersand &)
-//! to get the raw pointer. This is because our GhostMV wrapper is not a ghost_vec_t
+//! to get the raw pointer. This is because our GhostMV wrapper is not a ghost_densemat_t
 //! but will return one by the get() function. Again, for other vector classes than
-//! ghost_vec_t ref2ptr(V) just defaults to &V.
+//! ghost_densemat_t ref2ptr(V) just defaults to &V.
 
 namespace phist 
   {
 #ifdef PHIST_KERNEL_LIB_GHOST
 
 
-  //! rcp for ghost_vec_t, includes creating the GhostMV wrapper
-  Teuchos::RCP<GhostMV> rcp(ghost_vec_t* rawPtr, bool ownMem=true);
+  //! rcp for ghost_densemat_t, includes creating the GhostMV wrapper
+  Teuchos::RCP<GhostMV> rcp(ghost_densemat_t* rawPtr, bool ownMem=true);
 
-  //! specialization for const ghost_vec_t
-  Teuchos::RCP<const GhostMV> rcp(const ghost_vec_t* rawPtr, bool ownMem=true);
+  //! specialization for const ghost_densemat_t
+  Teuchos::RCP<const GhostMV> rcp(const ghost_densemat_t* rawPtr, bool ownMem=true);
 
 #elif defined(PHIST_KERNEL_LIB_FORTRAN)
 

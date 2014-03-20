@@ -20,7 +20,7 @@ extern "C" {
 }
 #ifdef PHIST_KERNEL_LIB_GHOST
 extern "C" {
-void init_mtraits(ghost_mtraits_t* mtraits);
+void init_mtraits(ghost_sparsemat_traits_t* mtraits);
 }
 #endif
 
@@ -196,13 +196,13 @@ int main(int argc, char** argv)
   //------------------------------- setup matrices and vectors --------------------- 
 #ifdef PHIST_KERNEL_LIB_GHOST
   ghost_context_t * ctx;
-  ghost_mat_t *mat = NULL;
+  ghost_sparsemat_t *mat = NULL;
 #else
   TYPE(crsMat_ptr) mat = NULL;
 #endif
-  ghost_midx_t DIM;
+  ghost_idx_t DIM;
   //TODO - get from command line
-  ghost_midx_t conf_spinZ[3] = {nSpins,nSpins/2,0};
+  ghost_idx_t conf_spinZ[3] = {nSpins,nSpins/2,0};
   SpinChainSZ( -2, &DIM, conf_spinZ, NULL);
 
   matfuncs_info_t info;
@@ -222,18 +222,24 @@ int main(int argc, char** argv)
 #endif
 
 #ifdef PHIST_KERNEL_LIB_GHOST
-  ghost_error_t err=ghost_createContext(&ctx, info.nrows , 
-      info.ncols,GHOST_CONTEXT_DEFAULT,NULL,MPI_COMM_WORLD,1.);
+  ghost_error_t err=ghost_context_create(&ctx, info.nrows , 
+      info.ncols,GHOST_CONTEXT_DEFAULT,NULL,GHOST_SPARSEMAT_SRC_NONE,MPI_COMM_WORLD,1.);
   if (err!=GHOST_SUCCESS)
   {
     PHIST_OUT(PHIST_ERROR,"error returned from createContext (file %s, line %d)",__FILE__,__LINE__);
   }        
 
-  ghost_mtraits_t mtraits;
+  ghost_sparsemat_traits_t mtraits;
   init_mtraits(&mtraits);
-  mat = ghost_createMatrix(ctx,&mtraits,1);
-  mat->fromRowFunc( mat, info.row_nnz , 0, &SpinChainSZ, 0);
-  ghost_printMatrixInfo(mat);
+  ghost_sparsemat_create(&mat, ctx,&mtraits,1);
+  ghost_sparsemat_src_rowfunc_t src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
+  src.func = &SpinChainSZ;
+  src.maxrowlen = info.row_nnz;
+  mat->fromRowFunc(mat, &src);
+  char *str;
+  ghost_sparsemat_string(&str,mat);
+  printf("%s\n",str);
+  free(str); str = NULL;
 #endif
 
   // create an operator from A
@@ -306,7 +312,7 @@ int main(int argc, char** argv)
   // delete matrix
 #ifdef PHIST_KERNEL_LIB_GHOST
   mat->destroy(mat);
-  ghost_freeContext(ctx);
+  ghost_context_destroy(ctx);
 #else
   PHIST_ICHK_IERR(SUBR(crsMat_delete)(mat,&ierr),ierr);
 #endif

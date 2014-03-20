@@ -14,9 +14,7 @@
 #include "phist_jadaOpts.h"
 
 // ghost/spinChain stuff
-#include "ghost/config.h"
 #include "ghost.h"
-#include "ghost/util.h"
 #include "matfuncs.h"
 
 GHOST_REGISTER_DT_D(my_datatype)
@@ -121,13 +119,13 @@ int main(int argc, char** argv)
   // setup matrix
 #ifdef PHIST_KERNEL_LIB_GHOST
   ghost_context_t * ctx = NULL;
-  ghost_mat_t * mat = NULL;
+  ghost_sparsemat_t * mat = NULL;
 #else
   TYPE(crsMat_ptr) mat = NULL;
 #endif
 
-  ghost_midx_t DIM;
-  ghost_midx_t conf_spinZ[3] = {nSpins,nSpins/2,0};
+  ghost_idx_t DIM;
+  ghost_idx_t conf_spinZ[3] = {nSpins,nSpins/2,0};
   SpinChainSZ( -2, &DIM, conf_spinZ, NULL);
 
 
@@ -145,17 +143,24 @@ int main(int argc, char** argv)
 #endif
 
 #ifdef PHIST_KERNEL_LIB_GHOST
-  ghost_error_t err=ghost_createContext(&ctx, info.nrows ,
-      info.ncols,GHOST_CONTEXT_DEFAULT,NULL,MPI_COMM_WORLD,1.);
+  ghost_error_t err=ghost_context_create(&ctx, info.nrows ,
+      info.ncols,GHOST_CONTEXT_DEFAULT,NULL,0,MPI_COMM_WORLD,1.);
   if (err!=GHOST_SUCCESS)
   {
     PHIST_OUT(PHIST_ERROR,"error returned from createContext (file %s, line %d)",__FILE__,__LINE__);
   }
 
-  ghost_mtraits_t mtraits = GHOST_MTRAITS_INIT(.format = GHOST_SPM_FORMAT_CRS, .flags = GHOST_SPM_DEFAULT, .datatype = my_datatype);
-  mat = ghost_createMatrix(ctx,&mtraits,1);
-  mat->fromRowFunc( mat, info.row_nnz , 0, &SpinChainSZ, 0);
-  ghost_printMatrixInfo(mat);
+  ghost_sparsemat_traits_t mtraits = GHOST_SPARSEMAT_TRAITS_INITIALIZER;
+  mtraits.datatype = my_datatype;
+  ghost_sparsemat_create(&mat,ctx,&mtraits,1);
+  ghost_sparsemat_src_rowfunc_t src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
+  src.func = &SpinChainSZ;
+  src.maxrowlen = info.row_nnz;
+  mat->fromRowFunc(mat, &src);
+  char *str;
+  ghost_sparsemat_string(&str,mat);
+  printf("%s\n",str);
+  free(str); str = NULL;
 #endif
 
 
@@ -279,7 +284,7 @@ int main(int argc, char** argv)
   free(is_cmplx);
 #ifdef PHIST_KERNEL_LIB_GHOST
   mat->destroy(mat);
-  ghost_freeContext(ctx);
+  ghost_context_destroy(ctx);
 #else
   PHIST_ICHK_IERR(SUBR(crsMat_delete)(mat,&ierr),ierr);
 #endif

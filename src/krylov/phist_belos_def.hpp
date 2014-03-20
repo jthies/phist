@@ -12,7 +12,7 @@ void SUBR(belos)(TYPE(const_op_ptr) Op,
 #else
 #include "phist_std_typedefs.hpp"  
 #ifdef PHIST_KERNEL_LIB_GHOST
-  typedef ghost_vec_t MV;
+  typedef ghost_densemat_t MV;
   typedef phist::GhostMV BelosMV;
 #elif defined(PHIST_KERNEL_LIB_TPETRA)
   typedef Tpetra::MultiVector<ST,lidx_t,gidx_t,node_t> MV;
@@ -32,7 +32,7 @@ void SUBR(belos)(TYPE(const_op_ptr) Op,
   Teuchos::RCP<BelosMV> X = phist::rcp((MV*)vX, false);
   Teuchos::RCP<const BelosMV> B = phist::rcp((const MV*)vB, false);
   // note: our operator nas no destructor, so we should
-  // actually wrap it like the ghost_vec_t (cf. phist_rcp_helpers and phist_GhostMV),
+  // actually wrap it like the ghost_densemat_t (cf. phist_rcp_helpers and phist_GhostMV),
   // but since Belos does nothing but apply the operator it is not necessary here.
   Teuchos::RCP<const OP> A = Teuchos::rcp((const OP*)Op, false);
 

@@ -101,15 +101,15 @@ void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr);
 void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* ierr);
 void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr);
 
-
+#ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "../kernels_noimpl.c"
 #include "../carp_noimpl.c"
 
 #include "phist_gen_c.h"
-
 #include "../kernels_noimpl.c"
 #include "../carp_noimpl.c"
+#endif
 
 #include "phist_gen_z.h"
 #include "../kernels_noimpl.c"

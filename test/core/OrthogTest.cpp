@@ -30,27 +30,28 @@ using namespace testing;
 #define _M_ 1
 #define _K_ 1
 
-#define CLASSNAME SOrthogTest_17_1_1
-#include "phist_gen_s.h"
-#include "OrthogTest_def.hpp"
+#ifdef PHIST_HAVE_SP
 
-#undef CLASSNAME
+# define CLASSNAME SOrthogTest_17_1_1
+# include "phist_gen_s.h"
+# include "OrthogTest_def.hpp"
+# undef CLASSNAME
+
+# define CLASSNAME COrthogTest_17_1_1
+# include "phist_gen_c.h"
+# include "OrthogTest_def.hpp"
+# undef CLASSNAME
+#endif
+
 #define CLASSNAME DOrthogTest_17_1_1
-
 #include "phist_gen_d.h"
 #include "OrthogTest_def.hpp"
-
 #undef CLASSNAME
-#define CLASSNAME COrthogTest_17_1_1
 
-#include "phist_gen_c.h"
-#include "OrthogTest_def.hpp"
-
-#undef CLASSNAME
 #define CLASSNAME ZOrthogTest_17_1_1
-
 #include "phist_gen_z.h"
 #include "OrthogTest_def.hpp"
+#undef CLASSNAME
 
 // larger block size for W
 #undef _N_
@@ -60,29 +61,29 @@ using namespace testing;
 #undef _K_
 #define _K_ 3
 
-#undef CLASSNAME
-#define CLASSNAME SOrthogTest_64_5_3
+#ifdef PHIST_HAVE_SP
 
-#include "phist_gen_s.h"
-#include "OrthogTest_def.hpp"
+# define CLASSNAME SOrthogTest_64_5_3
+# include "phist_gen_s.h"
+# include "OrthogTest_def.hpp"
+# undef CLASSNAME
 
-#undef CLASSNAME
+# define CLASSNAME COrthogTest_64_5_3
+# include "phist_gen_c.h"
+# include "OrthogTest_def.hpp"
+# undef CLASSNAME
+
+#endif
+
 #define CLASSNAME DOrthogTest_64_5_3
-
 #include "phist_gen_d.h"
 #include "OrthogTest_def.hpp"
-
 #undef CLASSNAME
-#define CLASSNAME COrthogTest_64_5_3
 
-#include "phist_gen_c.h"
-#include "OrthogTest_def.hpp"
-
-#undef CLASSNAME
 #define CLASSNAME ZOrthogTest_64_5_3
-
 #include "phist_gen_z.h"
 #include "OrthogTest_def.hpp"
+#undef CLASSNAME
 
 #if 0
 // do at least one larger test case
@@ -93,22 +94,23 @@ using namespace testing;
 #undef _K_
 #define _K_ 8
 
-#undef CLASSNAME
-#define CLASSNAME SOrthogTest_10k_40_8
+#ifdef PHIST_HAVE_SP
 
-#include "phist_gen_s.h"
-#include "OrthogTest_def.hpp"
+# define CLASSNAME SOrthogTest_10k_40_8
+# include "phist_gen_s.h"
+# include "OrthogTest_def.hpp"
+# undef CLASSNAME
 
-#undef CLASSNAME
+# define CLASSNAME COrthogTest_10k_40_8
+# include "phist_gen_c.h"
+# include "OrthogTest_def.hpp"
+# undef CLASSNAME
+
+#endif
+
 #define CLASSNAME DOrthogTest_10k_40_8
 
 #include "phist_gen_d.h"
-#include "OrthogTest_def.hpp"
-
-#undef CLASSNAME
-#define CLASSNAME COrthogTest_10k_40_8
-
-#include "phist_gen_c.h"
 #include "OrthogTest_def.hpp"
 
 #undef CLASSNAME
@@ -116,6 +118,5 @@ using namespace testing;
 
 #include "phist_gen_z.h"
 #include "OrthogTest_def.hpp"
-
 
 #endif

@@ -39,30 +39,36 @@ using namespace testing;
 #define TOLA 2.5e-2
 #define TOLB 1.0e-4
 
+#ifdef PHIST_HAVE_SP
+
 #define CLASSNAME STestPGmres
 #include "phist_gen_s.h"
 #include "TestPGmres_def.hpp"
-
 #undef CLASSNAME
-#define CLASSNAME DTestPGmres
 
+#endif
+
+#define CLASSNAME DTestPGmres
 #include "phist_gen_d.h"
 #include "TestPGmres_def.hpp"
-
 #undef CLASSNAME
+
 #undef TOLA
 #undef TOLB
 //TODO - tune these settings
 #define TOLA 2.5e-2
 #define TOLB 1.0e-4
-#define CLASSNAME CTestPGmres
 
+#ifdef PHIST_HAVE_SP
+
+#define CLASSNAME CTestPGmres
 #include "phist_gen_c.h"
 #include "TestPGmres_def.hpp"
-
 #undef CLASSNAME
-#define CLASSNAME ZTestPGmres
 
+#endif
+
+#define CLASSNAME ZTestPGmres
 #include "phist_gen_z.h"
 #include "TestPGmres_def.hpp"
 

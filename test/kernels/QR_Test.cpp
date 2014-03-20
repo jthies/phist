@@ -24,14 +24,9 @@ using namespace testing;
 #define _N_ 24
 #define _NV_ 1
 
+#ifdef PHIST_HAVE_SP
 #define CLASSNAME SQR_Test_24_1
 #include "phist_gen_s.h"
-#include "QR_Test_def.hpp"
-
-#undef CLASSNAME
-#define CLASSNAME DQR_Test_24_1
-
-#include "phist_gen_d.h"
 #include "QR_Test_def.hpp"
 
 #undef CLASSNAME
@@ -39,6 +34,15 @@ using namespace testing;
 
 #include "phist_gen_c.h"
 #include "QR_Test_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DQR_Test_24_1
+
+#include "phist_gen_d.h"
+#include "QR_Test_def.hpp"
+
 
 #undef CLASSNAME
 #define CLASSNAME ZQR_Test_24_1
@@ -54,21 +58,24 @@ using namespace testing;
 #undef _NV_
 #define _NV_ 3
 
+#ifdef PHIST_HAVE_SP
 #undef CLASSNAME
 #define CLASSNAME SQR_Test_5_3
 #include "phist_gen_s.h"
 #include "QR_Test_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME DQR_Test_5_3
-
-#include "phist_gen_d.h"
-#include "QR_Test_def.hpp"
-
-#undef CLASSNAME
 #define CLASSNAME CQR_Test_5_3
 
 #include "phist_gen_c.h"
+#include "QR_Test_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DQR_Test_5_3
+
+#include "phist_gen_d.h"
 #include "QR_Test_def.hpp"
 
 #undef CLASSNAME
@@ -82,16 +89,11 @@ using namespace testing;
 #undef _NV_
 #define _NV_ 5
 
+#ifdef PHIST_HAVE_SP
 #undef CLASSNAME
 #define CLASSNAME SQR_Test_59_5
 
 #include "phist_gen_s.h"
-#include "QR_Test_def.hpp"
-
-#undef CLASSNAME
-#define CLASSNAME DQR_Test_59_5
-
-#include "phist_gen_d.h"
 #include "QR_Test_def.hpp"
 
 #undef CLASSNAME
@@ -100,6 +102,13 @@ using namespace testing;
 #include "phist_gen_c.h"
 #include "QR_Test_def.hpp"
 
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DQR_Test_59_5
+
+#include "phist_gen_d.h"
+#include "QR_Test_def.hpp"
 #undef CLASSNAME
 #define CLASSNAME ZQR_Test_59_5
 
@@ -113,6 +122,8 @@ using namespace testing;
 #undef _NV_
 #define _NV_ 65
 
+#ifdef PHIST_HAVE_SP
+
 #undef CLASSNAME
 #define CLASSNAME SQR_Test_10k_65
 
@@ -120,15 +131,17 @@ using namespace testing;
 #include "QR_Test_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME DQR_Test_10k_65
-
-#include "phist_gen_d.h"
-#include "QR_Test_def.hpp"
-
-#undef CLASSNAME
 #define CLASSNAME CQR_Test_10k_65
 
 #include "phist_gen_c.h"
+#include "QR_Test_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DQR_Test_10k_65
+
+#include "phist_gen_d.h"
 #include "QR_Test_def.hpp"
 
 #undef CLASSNAME

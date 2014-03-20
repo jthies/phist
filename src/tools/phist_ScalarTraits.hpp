@@ -15,8 +15,7 @@
 #include "phist_lapack.h"
 
 #ifdef PHIST_HAVE_GHOST
-#include "ghost/config.h"
-#include "ghost/constants.h"
+#include "ghost.h"
 #endif
 
 namespace phist {
@@ -30,6 +29,7 @@ class ScalarTraits
   
   };
 
+#ifdef PHIST_HAVE_SP
 template<>
 class ScalarTraits< float >
   {
@@ -38,8 +38,8 @@ class ScalarTraits< float >
   //! alternative typename for ST
   typedef float scalar_t;
 #ifdef PHIST_HAVE_GHOST
-  static const int ghost_dt = GHOST_BINCRS_DT_FLOAT|GHOST_BINCRS_DT_REAL;
-  static const int c_ghost_dt = GHOST_BINCRS_DT_FLOAT|GHOST_BINCRS_DT_COMPLEX;
+  static const ghost_datatype_t ghost_dt = (ghost_datatype_t)(GHOST_DT_FLOAT|GHOST_DT_REAL);
+  static const ghost_datatype_t c_ghost_dt = (ghost_datatype_t)(GHOST_DT_FLOAT|GHOST_DT_COMPLEX);
 #endif  
   typedef Sop_t op_t;
   typedef Smvec_t mvec_t;
@@ -150,7 +150,7 @@ class ScalarTraits< float >
   //! 1.0 and the next floating point number)
   static inline magn_t eps(){return std::numeric_limits<magn_t>::epsilon();}
   };
-
+#endif
 template<>
 class ScalarTraits< double >
   {
@@ -159,8 +159,8 @@ class ScalarTraits< double >
   //! alternative typename for ST
   typedef double scalar_t;
 #ifdef PHIST_HAVE_GHOST
-  static const int ghost_dt = GHOST_BINCRS_DT_DOUBLE|GHOST_BINCRS_DT_REAL;
-  static const int c_ghost_dt = GHOST_BINCRS_DT_DOUBLE|GHOST_BINCRS_DT_COMPLEX;
+  static const ghost_datatype_t ghost_dt = (ghost_datatype_t)(GHOST_DT_DOUBLE|GHOST_DT_REAL);
+  static const ghost_datatype_t c_ghost_dt = (ghost_datatype_t)(GHOST_DT_DOUBLE|GHOST_DT_COMPLEX);
 #endif  
   typedef Dop_t op_t; 
   typedef Dmvec_t mvec_t; 
@@ -281,7 +281,7 @@ class ScalarTraits< std::complex<MT> >
   //! alternative typename for ST
   typedef typename std::complex<MT> scalar_t;
 #ifdef PHIST_HAVE_GHOST
-  static const int ghost_dt = ScalarTraits<MT>::c_ghost_dt;
+  static const ghost_datatype_t ghost_dt = ScalarTraits<MT>::c_ghost_dt;
 #endif
   typedef typename ScalarTraits<MT>::c_op_t op_t; 
   typedef typename ScalarTraits<MT>::c_mvec_t mvec_t; 

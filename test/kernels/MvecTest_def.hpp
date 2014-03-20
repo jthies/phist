@@ -163,12 +163,19 @@ public:
           }
         }
       MT minval=1.0;
-      std::sort(absval,absval+k);            
+      std::sort(absval,absval+k);
       for (int j=1;j<k;j++)
         {
         minval=std::min(minval,mt::abs(absval[j]-absval[j-1]));
         }
       // force assertion failure if two 'random' numbers are the same
+      // TODO - this test sometimes fails with OMP_NUM_THREADS>1 and ghost
+      //         in single precision. Probably the chance to get 'identical'
+      //         numbers in SP is higher, but why does it depend on #threads?
+      if (minval<=mt::eps())
+      {
+        SUBR(mvec_print)(vec1_,&ierr_);
+      }
       ASSERT_EQ(true,minval>mt::eps()); 
       }
     }
@@ -575,7 +582,7 @@ public:
         = Teuchos::rcp( new Belos::OutputManager<ST>() );
       MyOM->setVerbosity( Belos::Warnings|Belos::Debug);
 
-      ghost_vec_t* v = (ghost_vec_t*)vec1_;
+      ghost_densemat_t* v = (ghost_densemat_t*)vec1_;
       Teuchos::RCP<phist::GhostMV> ivec = phist::rcp(v,false);
 
       // test the multivector and its adapter

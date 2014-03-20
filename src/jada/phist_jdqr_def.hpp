@@ -112,7 +112,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
   *num_iters=0;
   *num_eigs=0;
-  nrm[0]=1.0e88;// some random large value 
+  nrm[0]=1.0e20;// some random large value 
   const_comm_ptr_t comm;
   PHIST_CHK_IERR(phist_map_get_comm(A_op->range_map,&comm,ierr),*ierr);
 

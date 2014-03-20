@@ -28,13 +28,17 @@ public:
 // we use a static member from this class for printing the matrix
 #include "KernelTestWithVectors.h"
 
-#include "phist_gen_s.h"
-#include "KernelTestWithSdMats_def.h"
+#ifdef PHIST_HAVE_SP
+
+# include "phist_gen_s.h"
+# include "KernelTestWithSdMats_def.h"
+
+# include "phist_gen_c.h"
+# include "KernelTestWithSdMats_def.h"
+
+#endif
 
 #include "phist_gen_d.h"
-#include "KernelTestWithSdMats_def.h"
-
-#include "phist_gen_c.h"
 #include "KernelTestWithSdMats_def.h"
 
 #include "phist_gen_z.h"

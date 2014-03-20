@@ -9,13 +9,17 @@
 extern "C" {
 #endif
 
+#ifdef PHIST_HAVE_SP
+
 #include "phist_gen_s.h"
 #include "MatrixIO_def.hpp"
 
-#include "phist_gen_d.h"
+#include "phist_gen_c.h"
 #include "MatrixIO_def.hpp"
 
-#include "phist_gen_c.h"
+#endif
+
+#include "phist_gen_d.h"
 #include "MatrixIO_def.hpp"
 
 #include "phist_gen_z.h"

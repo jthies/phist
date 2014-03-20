@@ -19,6 +19,14 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     {
       VTest::SetUp();
       MTest::SetUp();
+      
+      if (nloc_<_NVP_)
+      {
+        // disable the test because TSQR will not work.
+        // This situation occurs if we have a small matrix (_N_=25, say)
+        // and many Q vectors (e.g. 10) with multiple MPI procs.
+        typeImplemented_=false;
+      }
 
       if (typeImplemented_)
       {
