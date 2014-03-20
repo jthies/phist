@@ -383,8 +383,6 @@ using ::phist::GhostMV;
           _mv->axpy(_mv,_B,(void*)&beta);
         }
       }
-      //std::cerr << "alpha*A+beta*B="<<std::endl;
-      //_mv->print(_mv);
     }
 
     static void MvScale ( GhostMV& mv, Scalar alpha )
@@ -481,21 +479,6 @@ using ::phist::GhostMV;
       }
     _mvsub->fromVec(_mvsub,_Asub,0);
     return;
-/*
-    std::cout <<"MvCopy: indices: "<<std::endl;
-    for (int i=0;i<index.size();i++)
-      std::cout << index[i]<<" ";
-    std::cout<<std::endl;
-    
-    std::cout << "complete target matrix of MvCopy():"<<std::endl;
-    mv.get()->print(mv.get());
-
-    std::cout << "target columns of MvCopy():"<<std::endl;
-    _mvsub->print(_mvsub);
-
-    std::cout << "input block of MvCopy() was:"<<std::endl;
-    _Asub->print(_Asub);
-*/
     }
 
     static void
@@ -603,7 +586,7 @@ using ::phist::GhostMV;
     {
       // TODO - the stream argument is ignored, ghost always prints to stdout
       ghost_densemat_t* _mv = const_cast<ghost_densemat_t*>(mv.get());
-      _mv->print(_mv);
+      os << _mv->string(_mv) << std::endl;
     }
 
   // private helper function
