@@ -79,7 +79,7 @@ int main(int argc, char** argv)
 
     ghost_task_enqueue(mainTask);
     ghost_task_wait(mainTask);
-    PHIST_ICHK_IERR(ierr=(int)mainTask->ret,ierr);
+    PHIST_ICHK_IERR(ierr=*((int*)mainTask->ret),ierr);
     ghost_task_destroy(mainTask);
 #ifndef PHIST_KERNEL_LIB_GHOST
     ghost_finalize();

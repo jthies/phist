@@ -44,11 +44,11 @@ public:
   static Teuchos::RCP<const Teuchos_sdMat_t> CreateTeuchosView(Teuchos::RCP<const sdMat_t> M, int* ierr)
     {
     *ierr=0;
-    lidx_t stride = M->traits->nrowspadded;
-    lidx_t nrows = M->traits->nrows;
-    lidx_t ncols = M->traits->nvecs;
+    lidx_t stride = M->traits.nrowspadded;
+    lidx_t nrows = M->traits.nrows;
+    lidx_t ncols = M->traits.ncols;
 
-    if (M->traits->datatype != phist::ScalarTraits<ST>::ghost_dt)
+    if (M->traits.datatype != phist::ScalarTraits<ST>::ghost_dt)
       {
       *ierr=-1;
       return Teuchos::null;
