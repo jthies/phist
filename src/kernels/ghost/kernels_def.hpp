@@ -1,4 +1,16 @@
 #include "ghost/util.h"
+
+// macro to check ghost return type
+// TODO - use this macro everywhere in this file and kernels.cpp
+#define PHIST_CHK_GHOST(func,flag) { \
+ghost_error_t ghost_err=func; flag=0;\
+    if (ghost_err != GHOST_SUCCESS) {\        
+PHIST_OUT(PHIST_WARNING,"%s",ghost_error_string(ghost_err));\
+    flag=(int)ghost_err;\
+    return;\
+    }\
+}
+
 extern "C" {
 
 // we implement only the double precision real type D
@@ -274,6 +286,13 @@ void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ie
 {
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
+#if 1
+  // this function is currently disabled because we want to move to
+  // row major storage and towards hybrid nodes etc., so if we don't
+  // need the function we will probably throw it out altogether.
+  *ierr=-99;
+  return;
+#else
   CAST_PTR_FROM_VOID(ghost_densemat_t,V, vV, *ierr);
   if (V->traits.flags & GHOST_DENSEMAT_SCATTERED)
   {
@@ -291,6 +310,7 @@ void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ie
   *val = (_ST_*)(V->val[0]);
   PHIST_CHK_IERR(*ierr=check_local_size(V->traits.nrowspadded),*ierr);
   *lda = V->traits.nrowspadded;
+#endif
 }
 
 void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* ierr)
@@ -306,17 +326,24 @@ void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* 
     return;
   }
 
-  *val = (_ST_*)M->val[0];
+  PHIST_CHK_GHOST(ghost_densemat_valptr(M,(void**)val),*ierr);
 
   PHIST_CHK_IERR(*ierr=check_local_size(M->traits.nrowspadded),*ierr);
+
+  //sdMats are always col-major
+  *lda = M->traits.nrowspadded;
+
+/*
   if (M->traits.storage==GHOST_DENSEMAT_ROWMAJOR)
   {
     *lda = M->traits.nrowspadded;
   }
 else
   {
+
+    
     *lda = M->traits.ncolspadded;
-  }
+  }*/
 }
 
 //! get a new vector that is a view of some columns of the original one,
@@ -410,7 +437,7 @@ void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMblock,
     CAST_PTR_FROM_VOID(ghost_densemat_t,tmp,*vMblock,*ierr);
     tmp->destroy(tmp);
     }
-  *vMblock = (TYPE(mvec_ptr))Mblock;
+  *vMblock = (TYPE(sdMat_ptr))Mblock;
   }
 
 //! get a new matrix that is a copy of some rows and columns of the original one,  
@@ -423,12 +450,17 @@ void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
+  CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,Mblock,vMblock,*ierr);
-
-  ghost_densemat_t *Mb_view=NULL;
-  PHIST_CHK_IERR(SUBR(sdMat_view_block)((TYPE(sdMat_ptr))vM,(TYPE(sdMat_ptr)*)&Mb_view,imin,imax,jmin,jmax,ierr),*ierr);
-  Mblock->fromVec(Mblock,(ghost_densemat_t*)Mb_view,0,0);
+ 
+  /*
+  ghost_densemat_t* Mb_view=NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)(vM,(TYPE(sdMat_ptr)*)&Mb_view,imin,imax,jmin,jmax,ierr),*ierr);
+  Mb_view->fromVec(Mb_view,Mblock,0,0);
   Mb_view->destroy(Mb_view);
+  */ 
+  
+  M->fromVec(M,Mblock,imin,jmin);
   }
 
 //! given a serial dense matrix Mblock, set M(imin:imax,jmin:jmax)=Mblock by 
