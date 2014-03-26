@@ -802,7 +802,7 @@ void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE(const_mvec
 #else
   char trans[]="T";
 #endif  
-  *ierr=ghost_gemm(C,V,W,trans,(void*)&alpha,(void*)&beta,GHOST_GEMM_ALL_REDUCE);
+  *ierr=ghost_gemm(C,V,trans,W,"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_ALL_REDUCE);
   }
 
 
@@ -832,7 +832,7 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
 #endif
   // note: C is replicated, so this operation is a purely local one.
   char trans[]="N";
-  *ierr=ghost_gemm(W,V,C,trans,(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE);
+  *ierr=ghost_gemm(W,V,trans,C,"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE);
   }
 
 //! n x m serial dense matrix times m x k serial dense matrix gives n x k sdMat,
@@ -848,7 +848,7 @@ void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
   CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,C,vC,*ierr);
   char trans[]="N";
-  *ierr=ghost_gemm(C, V, W, trans, (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE);
+  *ierr=ghost_gemm(C, V, trans,W, "N", (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE);
   }
 
 //! n x m conj. transposed serial dense matrix times m x k serial dense matrix gives m x k sdMat,
@@ -868,7 +868,7 @@ void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
 #else
   char trans[]="T";
 #endif  
-  *ierr=ghost_gemm(C, V, W, trans, (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE);
+  *ierr=ghost_gemm(C, V, trans,W, "N", (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE);
   }
 
 

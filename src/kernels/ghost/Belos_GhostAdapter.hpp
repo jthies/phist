@@ -321,7 +321,7 @@ using ::phist::GhostMV;
       ghost_densemat_t* _mv = (ghost_densemat_t*)mv.get();
       // multiply
       const char* trans="N";
-      ghost_gemm(_mv,_A,Bghost,(char*)trans,&alpha,&beta,GHOST_GEMM_NO_REDUCE);
+      ghost_gemm(_mv,_A,(char*)trans,Bghost,"N",&alpha,&beta,GHOST_GEMM_NO_REDUCE);
       
       Bghost->destroy(Bghost);
     }
@@ -414,8 +414,9 @@ using ::phist::GhostMV;
       Scalar beta = st::zero();
       const char* trans=phist::ScalarTraits<Scalar>::is_complex()? "C": "T";
       ghost_gemm(Cghost,  const_cast<ghost_densemat_t*>(A.get()),
-                   const_cast<ghost_densemat_t*>(B.get()),
                    (char*)trans,
+                   const_cast<ghost_densemat_t*>(B.get()),
+                   "N",
                    (void*)&alpha, (void*)&beta,
                    GHOST_GEMM_ALL_REDUCE);
       Cghost->destroy(Cghost);
