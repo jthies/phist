@@ -4,7 +4,7 @@
 // TODO - use this macro everywhere in this file and kernels.cpp
 #define PHIST_CHK_GHOST(func,flag) { \
 ghost_error_t ghost_err=func; flag=0;\
-    if (ghost_err != GHOST_SUCCESS) {\        
+    if (ghost_err != GHOST_SUCCESS) {\
 PHIST_OUT(PHIST_WARNING,"%s",ghost_error_string(ghost_err));\
     flag=(int)ghost_err;\
     return;\
@@ -286,7 +286,7 @@ void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ie
 {
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
-#if 1
+#ifdef PHIST_MVECS_ROW_MAJOR
   // this function is currently disabled because we want to move to
   // row major storage and towards hybrid nodes etc., so if we don't
   // need the function we will probably throw it out altogether.
@@ -307,7 +307,7 @@ void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ie
     *ierr=-2;
     return;
   }
-  *val = (_ST_*)(V->val[0]);
+  PHIST_CHK_GHOST(ghost_densemat_valptr(V,(void**)val),*ierr);
   PHIST_CHK_IERR(*ierr=check_local_size(V->traits.nrowspadded),*ierr);
   *lda = V->traits.nrowspadded;
 #endif
@@ -460,7 +460,7 @@ void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
   Mb_view->destroy(Mb_view);
   */ 
   
-  M->fromVec(M,Mblock,imin,jmin);
+  M->fromVec(Mblock,M,imin,jmin);
   }
 
 //! given a serial dense matrix Mblock, set M(imin:imax,jmin:jmax)=Mblock by 
@@ -913,6 +913,12 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     return;
     }
 
+  if (V->traits.storage==GHOST_DENSEMAT_ROWMAJOR)
+  {
+    //TSQR for row major storage not available yet
+    *ierr=-99;
+    return;
+  }
   
   if (
   (V->traits.flags&GHOST_DENSEMAT_SCATTERED) ||

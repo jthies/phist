@@ -193,6 +193,13 @@ public:
       SUBR(sdMat_get_block)(mat1_,m1_copy,imin,imax,jmin,jmax,&ierr_);
       ASSERT_EQ(0,ierr_);
       
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      PHIST_SOUT(PHIST_DEBUG,"i=[%"PRlidx",%"PRlidx"], j=[%"PRlidx",%"PRlidx"]\n",
+        imin,imax,jmin,jmax);
+      PHIST_SOUT(PHIST_DEBUG,"This should be a copy of those columns:\n");
+      SUBR(sdMat_print)(mat1_,&ierr_);
+      SUBR(sdMat_print)(m1_copy,&ierr_);
+#endif      
       _ST_* val_ptr;
       int lda;
       SUBR(sdMat_extract_view)(m1_copy,&val_ptr,&lda,&ierr_);
@@ -224,6 +231,12 @@ public:
       // copy back in the changed block
       SUBR(sdMat_set_block)(mat1_,m1_copy,imin,imax,jmin,jmax,&ierr_);
       ASSERT_EQ(0,ierr_);
+
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      PHIST_SOUT(PHIST_DEBUG,"Changed block and copied it back in:\n");
+      SUBR(sdMat_print)(mat1_,&ierr_);
+      SUBR(sdMat_print)(m1_copy,&ierr_);
+#endif      
       
       // check that the corresponding entries have changed
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat1_vp_+imin+jmin*m_lda_,imax-imin+1,jmax-jmin+1,m_lda_,stride,val));

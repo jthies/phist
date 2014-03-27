@@ -201,7 +201,10 @@ using ::phist::GhostMV;
         
     ghost_densemat_t* result=NULL;
 
-    if (constStride==false)
+    // TODO - in the current ghost development version,
+    //        I think the only way to implement strided
+    //        view is to make it a 'scattered' view.
+    if (constStride==false || stride!=1)
     {
 #ifdef GHOST_HAVE_LONGIDX
       // ghost expects long ints here, while we get ints. So we copy them over:
@@ -221,17 +224,6 @@ using ::phist::GhostMV;
       
       // stride k: first simply view the vector, then manually set pointers and stride
       _mv->viewCols(_mv,&result,index.size(),index[0]);
-      if (stride!=1)
-      {
-        for (int i=0;i<index.size();i++)
-        {
-          result->val[i] = _mv->val[index[i]];
-        }
-        //TODO: this is quite a nasty hack to allow the ghost_gemm function to
-        // work for constant stride access, it should be fixed somehow in ghost
-        // so that the GPU stuff works as well etc.
-        result->traits.nrowspadded = _mv->traits.nrowspadded*stride;
-      }
     }
     return phist::rcp(result,true);
   }
