@@ -53,8 +53,9 @@
         if(PHIST_OUTLEV >= level) {\
                 FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
                 fprintf(PHIST_OUT_out,msg,##__VA_ARGS__);\
-                fflush(PHIST_OUT_out);\ }\ 
-                }
+                fflush(PHIST_OUT_out);\
+                }\
+        }
 #endif
 
 #ifdef PHIST_HAVE_MPI
