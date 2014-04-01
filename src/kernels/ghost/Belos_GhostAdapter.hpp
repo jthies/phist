@@ -599,6 +599,7 @@ using ::phist::GhostMV;
                 dmtraits.nrowspadded=M.stride();
                 dmtraits.ncols=M.numCols();
                 dmtraits.datatype=st::ghost_dt;
+                dmtraits.storage=GHOST_DENSEMAT_COLMAJOR;
 
       // The context and communicator are supposed to be irrelevant in an sdMat,
       // but it is not clear wether this is handled correctly everywhere i ghost.
