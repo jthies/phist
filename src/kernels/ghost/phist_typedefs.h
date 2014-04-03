@@ -21,18 +21,19 @@ typedef  complex double d_complex_t;
 #include "ghost/config.h"
 #include "ghost/types.h"
 
-//! type of node-local indices. Note that we do not allow
-//! extremely large local vectors in phist, even though ghost
-//! supports them.
-typedef int lidx_t;
+//! type of node-local indices. 
+typedef ghost_idx_t lidx_t;
 
 //! type of global indices
-typedef long long int gidx_t;
+typedef ghost_idx_t gidx_t;
 
+#ifdef GHOST_HAVE_LONGIDX
+#define PRlidx "lld"
+#define PRgidx "lld"
+#else
 #define PRlidx "d"
 #define PRgidx "d"
-//#define PRlidx PRvecIDX
-//#define PRgidx PRmatNNZ
+#endif
 
 #include "phist_void_aliases.h"
 

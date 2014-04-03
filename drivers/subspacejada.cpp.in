@@ -191,7 +191,7 @@ int main(int argc, char** argv)
     PHIST_ICHK_IERR(SUBR(crsMat_read_hb)(&A,filename_A.c_str(),&ierr),ierr);
 #endif
   }
-  else if( endsWith(filename_A,".bin") )
+  else if( endsWith(filename_A,".bin") || endsWith(filename_A,".crs"))
   {
     PHIST_ICHK_IERR(SUBR(crsMat_read_bin)(&A,filename_A.c_str(),&ierr),ierr);
   }

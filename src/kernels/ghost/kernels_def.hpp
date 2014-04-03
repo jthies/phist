@@ -36,11 +36,12 @@ void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
 //        mtraits->format = GHOST_SPARSEMAT_SELL;
         mtraits->datatype = st::ghost_dt;
         mtraits->flags = GHOST_SPARSEMAT_DEFAULT;
+        char* cfname=const_cast<char*>(filename);
 // TODO - check ghost return codes everywhere like this
   PHIST_CHK_GERR(ghost_context_create(&ctx,0,0,
-        GHOST_CONTEXT_DEFAULT,(char*)filename,GHOST_SPARSEMAT_SRC_FILE,MPI_COMM_WORLD,1.0),*ierr);
+        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_FILE,MPI_COMM_WORLD,1.0),*ierr);
   ghost_sparsemat_create(&mat,ctx,mtraits,1);                               
-  mat->fromFile(mat,const_cast<char*>(filename));
+  mat->fromFile(mat,cfname);
 #if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;
   ghost_context_string(&str,ctx);
@@ -329,7 +330,7 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   if (*vVblock!=NULL)
     {
     CAST_PTR_FROM_VOID(ghost_densemat_t,tmp,*vVblock,*ierr);
-    PHIST_DEB("destroying previous vector (view)\n");
+    //PHIST_DEB("destroying previous vector (view)\n");
     tmp->destroy(tmp);
     }
   *vVblock = (TYPE(mvec_ptr))Vblock;
@@ -408,7 +409,7 @@ void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMblock,
 
   if (*vMblock!=NULL)
     {
-    PHIST_DEB("deleting previous object in %s\n",__FUNCTION__);
+    //PHIST_DEB("deleting previous object in %s\n",__FUNCTION__);
     CAST_PTR_FROM_VOID(ghost_densemat_t,tmp,*vMblock,*ierr);
     tmp->destroy(tmp);
     }
@@ -797,8 +798,7 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
   PHIST_CHK_IERR(*ierr=nrV-nrW,*ierr);
   PHIST_CHK_IERR(*ierr=nrC-ncV,*ierr);
   PHIST_CHK_IERR(*ierr=ncC-ncW,*ierr);
-  PHIST_DEB("V'C with V %"PRlidx"x%d, C %dx%d and result %"PRlidx"x%d\n",
-        nrV,ncV,nrC,ncC,nrW,ncW);
+  //PHIST_DEB("V'C with V %"PRlidx"x%d, C %dx%d and result %"PRlidx"x%d\n", nrV,ncV,nrC,ncC,nrW,ncW);
 #endif
   // note: C is replicated, so this operation is a purely local one.
   char trans[]="N";
