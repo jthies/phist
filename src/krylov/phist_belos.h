@@ -1,6 +1,7 @@
 #ifndef PHIST_BELOS_H
 #define PHIST_BELOS_H
 
+#include "phist_config.h"
 #include "phist_operator.h"
 
 #ifdef __cplusplus

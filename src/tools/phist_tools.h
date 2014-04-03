@@ -1,5 +1,8 @@
 #ifndef PHIST_TOOLS_H
 #define PHIST_TOOLS_H
+
+#include "phist_config.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

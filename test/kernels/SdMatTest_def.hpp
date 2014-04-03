@@ -67,7 +67,7 @@ public:
       ASSERT_EQ(0,ierr_);
       
       _ST_* val_ptr;
-      int lda;
+      lidx_t lda;
       SUBR(sdMat_extract_view)(m1_view,&val_ptr,&lda,&ierr_);
       ASSERT_EQ(0,ierr_);
       ASSERT_EQ(lda,m_lda_);
@@ -194,7 +194,7 @@ public:
       ASSERT_EQ(0,ierr_);
       
       _ST_* val_ptr;
-      int lda;
+      lidx_t lda;
       SUBR(sdMat_extract_view)(m1_copy,&val_ptr,&lda,&ierr_);
       ASSERT_EQ(0,ierr_);
       //note: can't use ArraysEqual here because we (may) have different strides      

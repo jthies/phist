@@ -1,6 +1,10 @@
 #ifndef BELOS_GHOST_ADAPTER_HPP
 #define BELOS_GHOST_ADAPTER_HPP
 
+#include "phist_config.h"
+
+#ifdef PHIST_HAVE_BELOS
+
 #include "ghost.h"
 #include "phist_typedefs.h"
 #include "phist_ScalarTraits.hpp"
@@ -20,7 +24,6 @@
 #ifdef HAVE_BELOS_TSQR
 #  include <Ghost_TsqrAdaptor.hpp>
 #endif // HAVE_BELOS_TSQR
-
 
 // this file is mostly copied from the Belos Tpetra adapter implementation in Trilinos 11.2.4
 
@@ -168,12 +171,6 @@ using ::phist::GhostMV;
       ghost_densemat_t* _mv = mv.get();
       TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,GhostMV>::CloneView(mv,index): numvecs must be greater than zero.");
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,GhostMV>::CloneView(mv,index): indices must be >= zero.");
-      TEUCHOS_TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= mv.traits.ncols, std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,GhostMV>::CloneView(mv,index): indices must be < mv.traits.ncols.");
-#endif
 
       bool constStride=true;                                                                                                      
       int stride=1;
@@ -433,10 +430,6 @@ using ::phist::GhostMV;
     {
       ENTER_FCN(__FUNCTION__);    
       ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(normvec.size() < (typename std::vector<int>::size_type)mv.traits.ncols,std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,GhostMV>::MvNorm(mv,normvec): normvec must have room for all norms.");
-#endif
       Teuchos::Array<Scalar> av(normvec.size());
       Teuchos::ArrayView<typename st::magn_t> nv(normvec);
       TEUCHOS_TEST_FOR_EXCEPTION(type != TwoNorm,std::invalid_argument,
@@ -460,10 +453,6 @@ using ::phist::GhostMV;
     static void SetBlock( const GhostMV& A, const std::vector<int>& index, GhostMV& mv )
     {
       ENTER_FCN(__FUNCTION__);    
-#ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION((typename std::vector<int>::size_t)GetNumberVecs(A) < index.size(),std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,GhostMV>::SetBlock(A,index,mv): index must be the same size as A.");
-#endif
       // note the dual meaning of get() here: RCP.get() gives raw pointer to GhostMV,
       // GhostMV.get() gives raw pointer to ghost_densemat_t
       
@@ -632,5 +621,7 @@ using ::phist::GhostMV;
 
 } // end of Belos namespace 
 
-#endif 
-// end of file BELOS_GHOST_ADAPTER_HPP
+#endif // PHIST_HAVE_BELOS
+
+#endif // end of file BELOS_GHOST_ADAPTER_HPP
+

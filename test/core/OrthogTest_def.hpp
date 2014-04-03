@@ -28,7 +28,7 @@ public:
   // i starts at (i-1)*lda. Entries j and j+1
   // are at memory locations (i-1)*lda+stride*j
   // and (i-1)*lda+stride*(j+1), respectively.
-  int ldaV_,ldaW_,ldaW2_,ldaQ_,ldaR0_,ldaR1_,ldaR2_,stride_;
+  lidx_t ldaV_,ldaW_,ldaW2_,ldaQ_,ldaR0_,ldaR1_,ldaR2_,stride_;
 
   
   //NOTE: we assume stride_=1 here to make the loops simpler,

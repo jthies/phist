@@ -1,6 +1,8 @@
 #ifndef PHIST_SCALAR_TRAITS_HPP
 #define PHIST_SCALAR_TRAITS_HPP
 
+#include "phist_config.h"
+
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif

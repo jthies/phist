@@ -1,6 +1,8 @@
 #ifndef PHIST_MACROS_H
 #define PHIST_MACROS_H
 
+#include "phist_config.h"
+
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
@@ -87,6 +89,7 @@
 // return types
 #define PHIST_SUCCESS 0
 #define PHIST_FUNCTIONAL_ERROR -1
+#define PHIST_INTEGER_OVERFLOW -66
 #define PHIST_CAUGHT_EXCEPTION -77
 #define PHIST_BAD_CAST -88
 #define PHIST_NOT_IMPLEMENTED -99

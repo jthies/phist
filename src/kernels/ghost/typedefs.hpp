@@ -35,7 +35,7 @@ public:
   //! serial dense matrix from Teuchos, we need this for e.g. the BLAS interface.
   //! Note: the index type *must* be int here, not int64_t, so we decided to have
   //! phist local indices ints, even if ghost uses int64_t.
-  typedef Teuchos::SerialDenseMatrix<lidx_t,ST> Teuchos_sdMat_t;
+  typedef Teuchos::SerialDenseMatrix<int,ST> Teuchos_sdMat_t;
 
   //! CRS matrices
   typedef ghost_sparsemat_t crsMat_t;

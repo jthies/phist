@@ -4,7 +4,8 @@
 #include <iostream>
 #include <iomanip>
 #include "gtest/gtest.h"
-//#include "gmock/gmock.h"
+
+#include "phist_config.h"
 
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>

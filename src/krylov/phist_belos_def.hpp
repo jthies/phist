@@ -6,7 +6,7 @@ void SUBR(belos)(TYPE(const_op_ptr) Op,
         int variant, int* nConv,
         int* ierr)
   {
-#ifdef NO_BELOS_IMPLEMENTATION
+#ifndef PHIST_HAVE_BELOS
   ENTER_FCN(__FUNCTION__);
   *ierr = 99;
 #else

@@ -86,7 +86,7 @@ void rebuildVectors(TYPE(const_crsMat_ptr) A)
 
     SUBR(mvec_create)(&vec1_,domain_map,this->nvec_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
-    int lda;
+    lidx_t lda;
     SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
     ASSERT_EQ(lda,this->lda_);

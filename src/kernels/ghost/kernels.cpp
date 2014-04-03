@@ -1,3 +1,4 @@
+#include "phist_config.h"
 #include "phist_macros.h"
 #include "phist_trilinos_macros.h"
 #include "../phist_kernels.h"
@@ -8,9 +9,13 @@
 
 // these are from Trilinos, we need them to interface
 // the TSQR library for orthogonalizing tall skinny matrices.
+#ifndef PHIST_HAVE_BELOS
+#error "phist depends on belos right now because of the TsqrOrthoManager"
+#else
 #include "Ghost_TsqrAdaptor.hpp"
 #include "Belos_GhostAdapter.hpp"
 #include "BelosTsqrOrthoManager.hpp"
+#endif
 #ifdef PHIST_TIMEMONITOR
 #include <Teuchos_TimeMonitor.hpp>
 #endif

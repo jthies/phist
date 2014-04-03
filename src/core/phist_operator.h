@@ -1,6 +1,7 @@
 #ifndef PHIST_OPERATOR_H
 #define PHIST_OPERATOR_H
 
+#include "phist_config.h"
 #include "phist_kernels.h"
 
 #ifdef __cplusplus

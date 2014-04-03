@@ -289,7 +289,7 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
       continue;
 
     // helpful variables
-    lidx_t m = S[i]->curDimV_-1;
+    int m = S[i]->curDimV_-1;
     ST *H_raw=NULL;
     lidx_t ldH;
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&H_raw,&ldH,ierr),*ierr);
@@ -348,7 +348,14 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
 
 
     // solve triangular system
-    PHIST_CHK_IERR(PREFIX(TRSV)("U","N","N",&m,(st::blas_scalar_t*)H_raw,&ldH,(st::blas_scalar_t*)y, &ldy, ierr),*ierr);
+    blas_idx_t ildH=static_cast<blas_idx_t>(ldH);
+    blas_idx_t ildy=static_cast<blas_idx_t>(ldy);
+    if (ildH<0 || ildy<0)
+    {
+      *ierr=PHIST_INTEGER_OVERFLOW;
+      return;
+    }
+    PHIST_CHK_IERR(PREFIX(TRSV)("U","N","N",&m,(st::blas_scalar_t*)H_raw,&ildH,(st::blas_scalar_t*)y, &ildy, ierr),*ierr);
 
 
     // if we are only interested in the directions Vi*yi and appropriate AVi*yi,

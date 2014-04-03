@@ -45,7 +45,7 @@ public:
     {
     if (typeImplemented_)
       {
-      int nloc;
+      lidx_t nloc;
       SUBR(mvec_my_length)(vec1_,&nloc,&ierr_);
       ASSERT_EQ(0,ierr_);
       ASSERT_EQ(nloc_, nloc); 

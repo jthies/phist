@@ -1,3 +1,5 @@
+#include "phist_config.h"
+
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
@@ -14,6 +16,7 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_FancyOStream.hpp"
 
+#ifdef PHIST_HAVE_BELOS
 // GMRES solver manager from the Belos package
 #include "BelosSolverManager.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
@@ -32,7 +35,8 @@
 #include "BelosTpetraAdapter.hpp"
 #else
 #warning "belos only supported with ghost, epetra and tpetra right now"
-#define NO_BELOS_IMPLEMENTATION
+#undef PHIST_HAVE_BELOS
+#endif
 #endif
 
 #include "phist_gen_d.h"

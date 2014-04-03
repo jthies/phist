@@ -9,6 +9,8 @@
 #include "likwid.h"
 #endif
 
+#include "phist_config.h"
+
 #ifdef PHIST_KERNEL_LIB_GHOST
 #include "ghost.h"
 #include "ghost/thpool.h"
@@ -91,7 +93,7 @@ int main(int argc, char** argv)
 #endif
 #else
 // no ghost
-ierr=mainFunc(args);
+ierr=*mainFunc(&args);
 #endif    
   PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
 }

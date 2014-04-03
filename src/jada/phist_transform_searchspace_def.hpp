@@ -6,7 +6,7 @@ void SUBR(transform_searchSpace)(TYPE(mvec_ptr) V, TYPE(mvec_ptr) AV, TYPE(mvec_
   *ierr = 0;
 
   // get dimensions to create temporary storage
-  lidx_t nV, minBase;
+  int nV, minBase;
   const_comm_ptr_t comm;
   PHIST_CHK_IERR(SUBR( sdMat_get_nrows ) (M, &nV, ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_get_ncols ) (M, &minBase, ierr), *ierr);
@@ -56,7 +56,8 @@ void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V_, TYPE(sdMat_ptr) M_, int* 
   lidx_t chunkSize = 64;
 
   // get dimensions
-  lidx_t nV, nvec, nM, mM;
+  lidx_t nV;
+  int nvec, nM, mM;
   PHIST_CHK_IERR( SUBR( mvec_my_length     ) (V_, &nV,        ierr), *ierr);
   PHIST_CHK_IERR( SUBR( mvec_num_vectors   ) (V_, &nvec,      ierr), *ierr);
   PHIST_CHK_IERR( SUBR( sdMat_get_nrows    ) (M_, &nM,        ierr), *ierr);

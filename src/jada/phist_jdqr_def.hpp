@@ -74,7 +74,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   sdMat_ptr_t Tv=NULL,Sv=NULL; // to create views of parts of T and S
 
   // for extracting views of M, T and S (to call lapack etc.)
-  int ldM,ldS,ldT;
+  lidx_t ldM,ldS,ldT;
   ST *M_raw, *S_raw, *T_raw;
   
   //! view of certain columns of V
@@ -829,14 +829,21 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     const char* howmny="A";
     int m_out;
     MT* work=new MT[5*nconv];
+    blas_idx_t ildS=static_cast<blas_idx_t>(ldS);
+    blas_idx_t ildR=static_cast<blas_idx_t>(ldR);
+    if (ildS<0 || ildR<0)
+    {
+    *ierr=PHIST_INTEGER_OVERFLOW;
+    return;
+    }
 #ifdef IS_COMPLEX
     MT* rwork = work+4*nconv;
-    PHIST_CHK_IERR(PREFIX(TREVC)(side, howmny, NULL, &nconv, (const mt::blas_cmplx_t*)R_raw, &ldR, 
-    NULL, &ldS, (mt::blas_cmplx_t*)S_raw, &ldS, &nconv, &m_out, (mt::blas_cmplx_t*)work, 
+    PHIST_CHK_IERR(PREFIX(TREVC)(side, howmny, NULL, &nconv, (const mt::blas_cmplx_t*)R_raw, &ildR, 
+    NULL, &ildS, (mt::blas_cmplx_t*)S_raw, &ildS, &nconv, &m_out, (mt::blas_cmplx_t*)work, 
     rwork, ierr),*ierr);
 #else
-    PHIST_CHK_IERR(PREFIX(TREVC)(side, howmny, NULL, &nconv,R_raw, &ldR, 
-        NULL, &ldS, S_raw, &ldS, &nconv, &m_out, work, ierr),*ierr);
+    PHIST_CHK_IERR(PREFIX(TREVC)(side, howmny, NULL, &nconv,R_raw, &ildR, 
+        NULL, &ildS, S_raw, &ildS, &nconv, &m_out, work, ierr),*ierr);
 #endif  
     delete [] work;
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,nconv-1,0,nconv-1,ierr),*ierr);

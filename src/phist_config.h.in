@@ -1,0 +1,35 @@
+#ifndef PHIST_CONFIG_H
+#define PHIST_CONFIG_H
+
+#cmakedefine PHIST_HAVE_MPI
+#cmakedefine PHIST_HAVE_SP
+
+#cmakedefine PHIST_KERNEL_LIB_EPETRA
+#cmakedefine PHIST_KERNEL_LIB_TPETRA
+#cmakedefine PHIST_KERNEL_LIB_GHOST
+#cmakedefine PHIST_KERNEL_LIB_FORTRAN
+  
+#cmakedefine PHIST_HAVE_GHOST
+#cmakedefine PHIST_HAVE_BELOS
+#cmakedefine PHIST_HAVE_PARMETIS
+#cmakedefine PHIST_HAVE_LIKWID
+#cmakedefine LIKWID_PERFMON
+#cmakedefine PHIST_TIMEMONITOR
+
+# ifdef PHIST_KERNEL_LIB_GHOST
+#  ifdef PHIST_MVECS_ROW_MAJOR
+#   ifdef PHIST_HAVE_BELOS
+#   undef PHIST_HAVE_BELOS
+#   endif
+#  endif
+/* I think long ints should actually work with Belos
+   as long as the Teuchos::SerialDenseMatrix is int-based
+# include "ghost/config.h"
+#  ifdef GHOST_HAVE_LONGIDX
+#   ifdef PHIST_HAVE_BELOS
+#   undef PHIST_HAVE_BELOS
+#   endif
+#  endif
+*/
+# endif
+#endif
