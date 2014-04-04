@@ -904,6 +904,8 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   PHIST_CHK_IERR(*ierr=nrows-(V->traits.ncols),*ierr);
 #endif  
 
+#ifdef PHIST_HAVE_BELOS
+
   PHIST_DEB("create Teuchos view of R\n");
   Teuchos::RCP<Traits<_ST_ >::Teuchos_sdMat_t> R_view;
   PHIST_CHK_IERR(R_view = Traits<_ST_ >::CreateTeuchosViewNonConst
@@ -919,13 +921,16 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp
         (new Teuchos::ParameterList(*valid_params));
   params->set("randomizeNullSpace",true);
-  params->set("relativeRankTol",rankTol);
+  params->set("relativeRankTolerance",rankTol);
   PHIST_DEB("set TSQR parameters\n");
   tsqr.setParameterList(params);
 
   TRY_CATCH(rank = tsqr.normalize(mv_V,R_view),*ierr);
   PHIST_DEB("V has %d columns and rank %d\n",ncols,rank);
   *ierr = ncols-rank;// return positive number if rank not full.
+#else
+  *ierr=-99; // no Belos, no TSQR (right now)
+#endif
   return;
   }
 
