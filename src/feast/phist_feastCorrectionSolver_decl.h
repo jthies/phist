@@ -43,13 +43,15 @@ void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) fCorrSol
 //!
 //! arguments:
 //! fCorrSolver    the feastCorrectionSolver object
-//! rhs             rhs of the correction equations
+//! rhs            array of rhs of the correction equations, rhs[i] belongs 
+//!                to shift[i] in create()
 //! tol             desired accuracy (gmres residual tolerance) of the individual systems
 //! maxIter         maximal number of iterations after which individial systems should be aborted
-//! sol             returns approximate solution vectors
-//! ierr            a value > 0 indicates the number of systems that have not converged to the desired tolerance
+//! sol             returns approximate solution vectors, sol[i] belongs to shift[i] and rhs[i]
+//! ierr            a value > 0 indicates the number of systems that have not converged to the 
+//!                 desired tolerance
 void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) fCorrSolver,
-                                    const feast_mvec_t* const rhs,
+                                    const feast_mvec_t* const rhs[],
                                     const _MT_ tol, int maxIter,
-                                    feast_mvec_t* sol,
+                                    feast_mvec_t* sol[],
                                     int *ierr);
