@@ -400,7 +400,7 @@ using ::phist::GhostMV;
     // C=alpha*A*B
     static void MvTransMv( Scalar alpha, const GhostMV& A, const GhostMV& B, Teuchos_sdMat_t& C)
     {
-      ENTER_FCN(__FUNCTION__);    
+      ENTER_FCN(__FUNCTION__);
       ghost_densemat_t* Cghost=createGhostViewOfTeuchosSDM(C);
 
       Scalar beta = st::zero();
@@ -592,12 +592,14 @@ using ::phist::GhostMV;
         (const Teuchos_sdMat_t& M)
   {
     ENTER_FCN(__FUNCTION__);
-      ghost_densemat_traits_t dmtraits;/*=new ghost_vtraits_t;*/
+      ghost_densemat_traits_t dmtraits=GHOST_DENSEMAT_TRAITS_INITIALIZER;
                 dmtraits.flags = GHOST_DENSEMAT_DEFAULT;
                 dmtraits.nrows=M.numRows();
                 dmtraits.nrowshalo=M.numRows();
                 dmtraits.nrowspadded=M.stride();
                 dmtraits.ncols=M.numCols();
+                // sdMats are always column major
+                dmtraits.storage=GHOST_DENSEMAT_COLMAJOR;
                 dmtraits.datatype=st::ghost_dt;
 
       // The context and communicator are supposed to be irrelevant in an sdMat,
