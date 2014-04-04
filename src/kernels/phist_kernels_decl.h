@@ -137,11 +137,12 @@ void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* ierr);
 
 //! extract view from multi-vector. Sets the user-provided val pointer to point to the
 //! beginning of the first vector, and puts the leading dimension of the array into lda,
-//! such that the first element of vector i is val[i*lda]. Note that lda may be larger
-//! than the actual local vector length as obtained by mvec_my_length. This function is
-//! dangerous in the sense that it would force the underlying kernel lib to implement the
-//! data layout in this given fashion. A library that does not guarantee this should return
-//! -99 here ("not implemented")
+//! such that the element j of vector i is val[i*lda+j]. If PHIST_MVECS_ROW_MAJJOR is
+//! #defined, the storage is transposed and element j of vector i is found at val[j*lda+i].
+//! Note that lda may be larger than the actual local vector length as obtained by 
+//! mvec_my_length. This function is dangerous in the sense that it would force the 
+//! underlying kernel lib to implement the data layout in either of these formats.
+//! library that does not guarantee this should return -99 here ("not implemented")
 void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val,
         lidx_t* lda, int* ierr);
 

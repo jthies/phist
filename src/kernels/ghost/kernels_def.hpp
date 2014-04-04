@@ -286,13 +286,7 @@ void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ie
 {
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
-#ifdef PHIST_MVECS_ROW_MAJOR
-  // this function is currently disabled because we want to move to
-  // row major storage and towards hybrid nodes etc., so if we don't
-  // need the function we will probably throw it out altogether.
-  *ierr=-99;
-  return;
-#else
+
   CAST_PTR_FROM_VOID(ghost_densemat_t,V, vV, *ierr);
   if (V->traits.flags & GHOST_DENSEMAT_SCATTERED)
   {
@@ -309,6 +303,10 @@ void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ie
   }
   PHIST_CHK_GHOST(ghost_densemat_valptr(V,(void**)val),*ierr);
   PHIST_CHK_IERR(*ierr=check_local_size(V->traits.nrowspadded),*ierr);
+
+#ifdef PHIST_MVECS_ROW_MAJOR
+  *lda = V->traits.ncolspadded;
+#else
   *lda = V->traits.nrowspadded;
 #endif
 }

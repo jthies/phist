@@ -15,10 +15,13 @@
 //! - map_t: encapsulates the distribution of points (e.g. rows of a matrix)
 //!   over processors
 //! - multi-vector (mvec_t): a dense matrix with N rows and m<<N columns, with a row-wise
-//!   distribution over computational nodes.
-//! - crsMat_t: sparse matrix in CRS format.
+//!   distribution over computational nodes. The storage may be either column-major or
+//!   or column-major. In the latter case, the macro PHIST_MVECS_ROW_MAJOR should be 
+//!   defined.
+//! - sdMat_t - a small serial dense matrix, replicated on all MPI processes.
+//! - crsMat_t: sparse matrix in *any* storage format (TODO: rename it)
 //!
-//! The type-specific objects for mvecs and crsMats are called
+//! The type-specific objects for mvecs, sdMats and crsMats are called
 //! Smvec_t, Dmvec_t, Cmvec_t etc. and defined in phist_kernels_def.h
 
 #ifdef __cplusplus
