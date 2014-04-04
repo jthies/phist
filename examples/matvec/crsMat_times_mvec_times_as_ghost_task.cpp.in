@@ -9,13 +9,13 @@
 #include "likwid.h"
 #endif
 
-#ifdef PHIST_KERNEL_LIB_GHOST
+//#ifdef PHIST_KERNEL_LIB_GHOST
 #include "ghost.h"
 #include "ghost/thpool.h"
 #include "ghost/machine.h"
 #include "ghost/pumap.h"
 #include "ghost/locality.h"
-#endif
+//#endif
 
 #include "phist_macros.h"
 #include "phist_enums.h"
