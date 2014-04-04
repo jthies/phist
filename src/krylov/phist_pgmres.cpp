@@ -6,8 +6,6 @@
 #include <cmath>
 #include <vector>
 
-#include <Teuchos_RCP.hpp>
-
 #include "phist_macros.h"
 #include "phist_pgmres.h"
 #include "phist_jadaOp.hpp"

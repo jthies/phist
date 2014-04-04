@@ -572,7 +572,7 @@ public:
 // only test the Belos interface for ghost, we didn't write
 // the interfaces for Epetra or Tpetra so it is not our problem.
 #ifdef PHIST_KERNEL_LIB_GHOST
-#ifdef DO_BELOS_TESTS
+#ifdef PHIST_HAVE_BELOS
   // runs all tests from the Belos MvTraits tester
   TEST_F(CLASSNAME, belos_iface)
     {

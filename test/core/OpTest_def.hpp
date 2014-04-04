@@ -91,6 +91,7 @@ int delete_mat(TYPE(crsMat_ptr) A)
   return ierr_;
   }
 
+#ifdef PHIST_HAVE_BELOS
 int doBelosTests(TYPE(crsMat_ptr) A)
   {
     if (typeImplemented_ && haveMats_)
@@ -128,6 +129,7 @@ int doBelosTests(TYPE(crsMat_ptr) A)
       }
   return ierr_;
   }
+#endif
 
 bool haveMats_;
 };
@@ -142,6 +144,7 @@ bool haveMats_;
     }
 
 
+#ifdef PHIST_HAVE_BELOS
   TEST_F(CLASSNAME, belos_opTests) 
     {
     if (typeImplemented_)
@@ -150,5 +153,5 @@ bool haveMats_;
       ASSERT_EQ(0,doBelosTests(A2_));
       }
     }
-
+#endif
 //TODO test jada operator, test operator and compare with raw CrsMat
