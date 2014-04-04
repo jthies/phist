@@ -1,3 +1,5 @@
+#include "phist_config.h"
+
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
@@ -8,8 +10,6 @@
 #ifdef PHIST_HAVE_LIKWID
 #include "likwid.h"
 #endif
-
-#include "phist_config.h"
 
 #ifdef PHIST_KERNEL_LIB_GHOST
 #include "ghost.h"
@@ -24,10 +24,12 @@
 #include "phist_kernels.h"
 #include "phist_operator.h"
 #include "phist_driver_utils.h"
-#include <Teuchos_TimeMonitor.hpp>
 #include ${PHIST_TG_HFILE}
 #include "phist_ScalarTraits.hpp"
 
+#ifdef PHIST_TIMEMONITOR
+#include <Teuchos_TimeMonitor.hpp>
+#endif
 typedef phist::ScalarTraits<_ST_> st;
 
 #define PHIST_IPCHK_IERR(func,FLAG) {\
@@ -173,16 +175,20 @@ static int *mainFunc(mainArgs_t* arg)
 
   PHIST_IPCHK_IERR(SUBR(mvec_random)(x,&ierr),ierr);
 
+#ifdef PHIST_TIMEMONITOR
   Teuchos::RCP<Teuchos::Time> time = Teuchos::TimeMonitor::getNewTimer("crsMat_times_mvec");
+#endif
   for(int i = 0; i < 120/nvecs; i++)
   {
+#ifdef PHIST_TIMEMONITOR
     Teuchos::TimeMonitor timeMon( *time );
-
+#endif
     PHIST_IPCHK_IERR(SUBR(crsMat_times_mvec)(st::one(),A,x,st::zero(),y,&ierr),ierr);
 
   }
+#ifdef PHIST_TIMEMONITOR
   Teuchos::TimeMonitor::summarize();
-
+#endif
   PHIST_IPCHK_IERR(SUBR(mvec_delete)(x,&ierr),ierr);
   PHIST_IPCHK_IERR(SUBR(mvec_delete)(y,&ierr),ierr);
   PHIST_IPCHK_IERR(SUBR(crsMat_delete)(A,&ierr),ierr);

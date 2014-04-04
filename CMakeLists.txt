@@ -150,25 +150,33 @@ message(STATUS "looking for " ${PHIST_KERNEL_LIB} " ...")
 set(LOAD_TRILI_PKG,"")
 if  (PHIST_KERNEL_LIB STREQUAL "epetra")
   list(APPEND LOAD_TRILI_PKG "EpetraExt")
-  list(APPEND LOAD_TRILI_PKG "Belos")
   set(PHIST_KERNEL_LIB_EPETRA 1)
-  set(PHIST_HAVE_BELOS 1)
 elseif  (PHIST_KERNEL_LIB STREQUAL "tpetra")
   list(APPEND LOAD_TRILI_PKG "Tpetra")
-  list(APPEND LOAD_TRILI_PKG "Belos")
   set(PHIST_KERNEL_LIB_TPETRA 1)
-  set(PHIST_HAVE_BELOS 1)
 elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   # we already link with ghost because of the queuing system  
-  list(APPEND LOAD_TRILI_PKG "Belos")
   set(PHIST_KERNEL_LIB_GHOST 1)
-  set(PHIST_HAVE_BELOS 1)
 elseif (PHIST_KERNEL_LIB STREQUAL "fortran")
-  list(APPEND LOAD_TRILI_PKG "Belos")
   set(PHIST_KERNEL_LIB_FORTRAN 1)
 else ()
   message( FATAL_ERROR "PHIST_KERNEL_LIB not set" )
 endif ()
+
+# test for Belos (Trilinos library of iterative solvers).
+# We recommend linking with Belos because we use its Tsqr
+# interface. If Belos is not found, important functionality
+# may not work, in particular the mvec_QR function is currently
+# implemented via Belos by all kernel libs except "Fortran"
+
+find_package(Belos)
+
+if (${Belos_FOUND})
+  list(APPEND LOAD_TRILI_PKG "Belos")
+  set(PHIST_HAVE_BELOS 1)
+else()
+  message(STATUS "Belos not found, some functionality will be disabled and return -99 ('not implemented')")
+endif()
 
 
 # these specific versions of type-generic drivers have to be created
