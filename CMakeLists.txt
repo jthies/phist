@@ -398,7 +398,7 @@ if  (PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
 # TODO - make this somehow general, or probably we should
 #       actually install phist instead and push the spinChain
 #       driver to the essex/examples repo...
-  set(ESSEX_INSTALL_DIR CACHE $ENV{HOME}/local/ "where the essex examples are installed")
+  set(ESSEX_INSTALL_DIR "~/local" CACHE PATH "where the essex examples are installed")
   include_directories(${ESSEX_INSTALL_DIR}/include/essex_examples)
 
   if (EXISTS "${ESSEX_INSTALL_DIR}/include/essex_exmples/matfuncs.h")
