@@ -1308,7 +1308,11 @@ end do
     use mpi
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
+#ifdef GHOST_HAVE_LONGIDX
+    integer(C_INT64_T),     value       :: nrows, ncols, maxnne_per_row
+#else
     integer(C_INT),     value       :: nrows, ncols, maxnne_per_row
+#endif
     type(C_FUNPTR),     value       :: rowFunc_ptr
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
