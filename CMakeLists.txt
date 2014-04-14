@@ -402,10 +402,10 @@ if  (PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
 # TODO - make this somehow general, or probably we should
 #       actually install phist instead and push the spinChain
 #       driver to the essex/examples repo...
-  set(ESSEX_INSTALL_DIR CACHE $ENV{HOME}/local/ "where the essex examples are installed")
-  include_directories(${ESSEX_INSTALL_DIR}/include/essex_examples)
+  set(ESSEX_INSTALL_DIR CACHE ${CMAKE_INSTALL_PREFIX} "where the essex examples are 
+  installed")
 
-  if (EXISTS "${ESSEX_INSTALL_DIR}/include/essex_exmples/matfuncs.h")
+  if (EXISTS "${ESSEX_INSTALL_DIR}/include/essex_examples/matfuncs.h")
     include_directories(${ESSEX_INSTALL_DIR}/include/essex_examples)
     add_executable(spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
     add_executable(spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
@@ -416,7 +416,8 @@ if  (PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
       target_link_libraries(spinChain_subspacejada ${lib})
     endforeach()
   else()
-    message(STATUS "ESSEX_INSTALL_DIR does not contain matfuncs.h in essex_exmples, skipping some example drivers.")
+    message(STATUS "ESSEX_INSTALL_DIR (${ESSEX_INSTALL_DIR}) does not contain matfuncs.h in     
+    ./essex_examples, skipping some example drivers.")
   endif()
 endif()
 
