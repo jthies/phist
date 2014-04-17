@@ -98,9 +98,12 @@ namespace ghost {
   public:
     typedef phist::GhostMV MV;
     typedef ST scalar_type;
-    typedef lidx_t ordinal_type;
+    // note: ghost in principle allows more than 2M rows/core, but TSQR doesn't
+    typedef int ordinal_type;
+    // integer type for Teuchos::SerialDenseMatrix objects
+    typedef int blas_idx_type;
     typedef typename Kokkos::DefaultNode::DefaultNodeType node_type; // TODO - Node argument not yet used
-    typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
+    typedef Teuchos::SerialDenseMatrix<blas_idx_type, scalar_type> dense_matrix_type;
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
   private:

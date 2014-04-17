@@ -1,6 +1,7 @@
 #ifndef PHIST_KERNELS_H
 #define PHIST_KERNELS_H
 
+#include "phist_config.h"
 #include "phist_macros.h"
 
 //! note: the phist_typedefs.h file is provided in the subdirectory

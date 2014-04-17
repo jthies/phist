@@ -1,6 +1,10 @@
 #ifndef PHIST_BELOS_OPERATOR_TRAITS_HPP
 #define PHIST_BELOS_OPERATOR_TRAITS_HPP
 
+#include "phist_config.h"
+
+#ifdef PHIST_HAVE_BELOS
+
 #include "phist_rcp_helpers.hpp"
 #include "phist_operator.h"
 #include "phist_ScalarTraits.hpp"
@@ -51,6 +55,6 @@ namespace Belos {
   };
 
 } // end of Belos namespace 
-
+#endif /* PHIST_HAVE_BELOS */
 #endif 
 // end of file BELOS_GHOST_ADAPTER_HPP

@@ -1,7 +1,11 @@
 #ifndef PHIST_RCP_HELPERS_HPP
 #define PHIST_RCP_HELPERS_HPP
 
+#include "phist_config.h"
 #include <mpi.h>
+// we only need RCP's if we want to interact
+// with the iterative solvers in Belos
+#ifdef PHIST_HAVE_BELOS
 #include "Teuchos_RCP.hpp"
 
 #ifdef PHIST_KERNEL_LIB_GHOST
@@ -24,7 +28,6 @@
 namespace phist 
   {
 #ifdef PHIST_KERNEL_LIB_GHOST
-
 
   //! rcp for ghost_densemat_t, includes creating the GhostMV wrapper
   Teuchos::RCP<GhostMV> rcp(ghost_densemat_t* rawPtr, bool ownMem=true);
@@ -77,4 +80,5 @@ namespace phist
   //const void* ref2ptr(const FortranMV& V);
 #endif
   } // namespace phist
+#endif /* PHIST_HAVE_BELOS */
 #endif

@@ -144,7 +144,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
 
     TYPE(mvec_ptr) v0_;
     TYPE(mvec_ptr) V_;
-    _ST_ *V_vp_; int ldaV_, stride_;
+    _ST_ *V_vp_; lidx_t ldaV_, stride_;
     TYPE(mvec_ptr) Vm_;
     TYPE(mvec_ptr) AV_;
     TYPE(mvec_ptr) AVm_;

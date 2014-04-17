@@ -2,6 +2,7 @@
 #define PHIST_FCN_TRACE_HPP
 
 #ifndef NO_INCLUDES_IN_HEADERS
+#include "phist_config.h"
 #include <string>
 #ifdef PHIST_HAVE_LIKWID
 #include <likwid.h>

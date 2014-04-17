@@ -1,3 +1,4 @@
+#include "phist_config.h"
 
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -11,12 +12,14 @@
 #include "KernelTestWithVectors.h"
 
 #ifdef PHIST_KERNEL_LIB_GHOST
+#ifdef PHIST_HAVE_BELOS
 #define DO_BELOS_TESTS
 #include "phist_GhostMV.hpp"
 #include "phist_rcp_helpers.hpp"
 #include "Belos_GhostAdapter.hpp"
 #include "BelosMVOPTester.hpp"
 #include "BelosOutputManager.hpp"
+#endif
 #endif
 
 #ifdef PHIST_HAVE_MPI

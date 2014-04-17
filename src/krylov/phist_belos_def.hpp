@@ -6,7 +6,7 @@ void SUBR(belos)(TYPE(const_op_ptr) Op,
         int variant, int* nConv,
         int* ierr)
   {
-#ifdef NO_BELOS_IMPLEMENTATION
+#ifndef PHIST_HAVE_BELOS
   ENTER_FCN(__FUNCTION__);
   *ierr = 99;
 #else
@@ -24,6 +24,7 @@ void SUBR(belos)(TYPE(const_op_ptr) Op,
   typedef st::op_t OP; // gives Sop_t, Dop_t etc.
 
   bool status=true;
+  ENTER_FCN(__FUNCTION__);
   *ierr=0;
   
   int numRhs=1;// get from input vectors
@@ -147,5 +148,5 @@ try {
 
   if (!status) *ierr=PHIST_CAUGHT_EXCEPTION; 
   return;
-#endif /* NO_BELOS_IMPLEMENTATION */
+#endif /* PHIST_HAVE_BELOS */
   }// end of belos

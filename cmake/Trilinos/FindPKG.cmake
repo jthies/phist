@@ -10,7 +10,7 @@ endif()
 if (${PKG}_HOME)
   find_package(${PKG} PATHS ${${PKG}_HOME}/lib/cmake/${PKG} ${${PKG}_HOME}/include )
 else()
-  message(FATAL_ERROR "${PKG} not found.")
+  message(STATUS "${PKG} not found.")
 endif()
 
 endmacro()

@@ -108,17 +108,17 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DPHIST_OUTLEV=${OUTLEV_DEBU
 # set enable precision?
 ##############################################################################
 if (${PHIST_ENABLE_SP})
-  add_definitions(-DPHIST_HAVE_SP)
+  set(PHIST_HAVE_SP 1)
 endif ()
 ##############################################################################
 # setup MPI
 ##############################################################################
 
 if (${PHIST_ENABLE_MPI})
+    set(PHIST_HAVE_MPI 1)
 #TODO - what is the best way to do this portably?
 #  find_package(MPI REQUIRED)
 #  if (${MPI_FOUND})
-    add_definitions(-DPHIST_HAVE_MPI)
 #    set (CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS})
 #    set (CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS})
 #    set (CMAKE_C_COMPILE_FLAGS ${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS})
@@ -150,24 +150,36 @@ message(STATUS "looking for " ${PHIST_KERNEL_LIB} " ...")
 set(LOAD_TRILI_PKG,"")
 if  (PHIST_KERNEL_LIB STREQUAL "epetra")
   list(APPEND LOAD_TRILI_PKG "EpetraExt")
-  list(APPEND LOAD_TRILI_PKG "Belos")
-  add_definitions(-DPHIST_KERNEL_LIB_EPETRA)
+  set(PHIST_KERNEL_LIB_EPETRA 1)
 elseif  (PHIST_KERNEL_LIB STREQUAL "tpetra")
   list(APPEND LOAD_TRILI_PKG "Tpetra")
-  list(APPEND LOAD_TRILI_PKG "Belos")
-  add_definitions(-DPHIST_KERNEL_LIB_TPETRA)
+  set(PHIST_KERNEL_LIB_TPETRA 1)
 elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   # we already link with ghost because of the queuing system  
   list(APPEND LOAD_TRILI_PKG "Belos")
-#  add_definitions(-DPHIST_MVECS_ROW_MAJOR)
-  add_definitions(-DPHIST_KERNEL_LIB_GHOST)
+  set(PHIST_MVECS_ROW_MAJOR 1)
+  set(PHIST_KERNEL_LIB_GHOST 1)
 elseif (PHIST_KERNEL_LIB STREQUAL "fortran")
-  add_definitions(-DPHIST_MVECS_ROW_MAJOR)
-  list(APPEND LOAD_TRILI_PKG "Belos")
-  add_definitions(-DPHIST_KERNEL_LIB_FORTRAN)
+  set(PHIST_KERNEL_LIB_FORTRAN 1)
+  set(PHIST_MVECS_ROW_MAJOR 1)
 else ()
   message( FATAL_ERROR "PHIST_KERNEL_LIB not set" )
 endif ()
+
+# test for Belos (Trilinos library of iterative solvers).
+# We recommend linking with Belos because we use its Tsqr
+# interface. If Belos is not found, important functionality
+# may not work, in particular the mvec_QR function is currently
+# implemented via Belos by all kernel libs except "Fortran"
+
+find_package(Belos)
+
+if (${Belos_FOUND})
+  list(APPEND LOAD_TRILI_PKG "Belos")
+  set(PHIST_HAVE_BELOS 1)
+else()
+  message(STATUS "Belos not found, some functionality will be disabled and return -99 ('not implemented')")
+endif()
 
 
 # these specific versions of type-generic drivers have to be created
@@ -223,6 +235,7 @@ set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaCorrectionSolver.cpp)
 
 
+include_directories(${PROJECT_BINARY_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB})
 include_directories(${PROJECT_SOURCE_DIR}/src/tools)
 include_directories(${PROJECT_SOURCE_DIR}/src/core)
@@ -240,20 +253,13 @@ list(APPEND PHIST_LIBS phist_core)
 list(APPEND PHIST_LIBS phist_kernels_${PHIST_KERNEL_LIB})
 list(APPEND PHIST_LIBS phist_tools)
 
-# ghost is a requirement of phist now because of the task queue
-#find_package(Ghost PATHS $ENV{GHOST_HOME})
-#message(STATUS "GHOST_Found=${GHOST_Found}")
 if(PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
   find_package(GHOST REQUIRED CONFIG)
-
-  if (GHOST_FOUND)
-    add_definitions(-DPHIST_HAVE_GHOST)
-    include_directories(${GHOST_INCLUDE_DIRS})
-    link_directories(${GHOST_LIBRARY_DIRS})
-    list(APPEND PHIST_LIBS ${GHOST_LIBRARIES})
-  else()
-    message(ERROR "Ghost not found!")
-  endif()
+  message(STATUS "Found GHOST ${GHOST_VERSION}")
+  set(PHIST_HAVE_GHOST 1)
+  include_directories(${GHOST_INCLUDE_DIRS})
+  link_directories(${GHOST_LIBRARY_DIRS})
+  list(APPEND PHIST_LIBS ${GHOST_LIBRARIES})
 endif()
 
 # load parmetis for reordering fortran
@@ -261,7 +267,7 @@ if(PHIST_KERNEL_LIB STREQUAL "fortran")
   find_package(ParMETIS)
 
   if(PARMETIS_FOUND)
-    add_definitions(-DPHIST_HAVE_PARMETIS)
+    set(-DPHIST_HAVE_PARMETIS 1)
     include_directories(${PARMETIS_INCLUDE_DIRS})
     link_directories(${PARMETIS_LIBRARY_DIRS})
     list(APPEND PHIST_LIBS ${PARMETIS_LIBRARIES})
@@ -273,7 +279,7 @@ endif()
 
 find_package(Likwid PATHS "$ENV{LIKWID_HOME}" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/" Optional)
 if (${LIKWID_Found})
-  add_definitions(-DPHIST_HAVE_LIKWID)
+  set(PHIST_HAVE_LIKWID 1)
   include_directories(${LIKWID_INCLUDE_DIRS})
   link_directories(${LIKWID_LIBRARY_DIRS})
   list(APPEND PHIST_LIBS ${LIKWID_LIBRARIES} -pthread)
@@ -290,6 +296,7 @@ if( ${PHIST_TIMEMONITOR} )
   add_definitions(-DPHIST_TIMEMONITOR)
 endif()
 
+configure_file ("${PROJECT_SOURCE_DIR}/src/phist_config.h.in" "${PROJECT_BINARY_DIR}/phist_config.h")
 
 foreach(PKG ${LOAD_TRILI_PKG})
   find_package(${PKG} REQUIRED)
@@ -398,9 +405,7 @@ if  (PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
 # TODO - make this somehow general, or probably we should
 #       actually install phist instead and push the spinChain
 #       driver to the essex/examples repo...
-  set(ESSEX_INSTALL_DIR "~/local" CACHE PATH "where the essex examples are installed")
-  include_directories(${ESSEX_INSTALL_DIR}/include/essex_examples)
-
+  set(ESSEX_INSTALL_DIR ${CMAKE_INSTALL_PREFIX} CACHE STRING "where the essex examples are installed")
   if (EXISTS "${ESSEX_INSTALL_DIR}/include/essex_examples/matfuncs.h")
     include_directories(${ESSEX_INSTALL_DIR}/include/essex_examples)
     add_executable(spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
@@ -412,7 +417,8 @@ if  (PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
       target_link_libraries(spinChain_subspacejada ${lib})
     endforeach()
   else()
-    message(STATUS "ESSEX_INSTALL_DIR does not contain matfuncs.h in essex_examples, skipping some example drivers.")
+    message(STATUS "ESSEX_INSTALL_DIR (${ESSEX_INSTALL_DIR}) does not contain matfuncs.h in     
+    ./essex_examples, skipping some example drivers.")
   endif()
 endif()
 

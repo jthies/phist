@@ -1,3 +1,5 @@
+#include "phist_config.h"
+
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif

@@ -1,3 +1,4 @@
+#include "phist_config.h"
 
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -22,14 +23,15 @@
 #include "Epetra_MultiVector.h"
 #include "BelosEpetraAdapter.hpp"
 #elif defined(PHIST_KERNEL_LIB_GHOST)
+#ifdef PHIST_HAVE_BELOS
 #include "Belos_GhostAdapter.hpp"
 #endif
+#endif
+
+#ifdef PHIST_HAVE_BELOS
 #include "phist_rcp_helpers.hpp"
 #include "phist_BelosOperatorTraits.hpp"
 #include "BelosMVOPTester.hpp"
-
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
 #endif
 
 using namespace testing;

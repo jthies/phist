@@ -1,9 +1,11 @@
+#include "phist_config.h"
 #include "phist_rcp_helpers.hpp"
 
 
-namespace phist 
+namespace phist
   {
 #ifdef PHIST_KERNEL_LIB_GHOST
+#ifdef PHIST_HAVE_BELOS
 
   // rcp for ghost_densemat_t, includes creating the GhostMV wrapper
   Teuchos::RCP<GhostMV> rcp(ghost_densemat_t* rawPtr, bool ownMem)
@@ -43,5 +45,6 @@ namespace phist
     }
   //@}
 
+#endif
 #endif
   } // namespace phist

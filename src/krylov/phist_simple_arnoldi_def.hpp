@@ -17,7 +17,7 @@ void SUBR(simple_arnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op, TYPE
   if( B_op != NULL )
   {
     PHIST_SOUT(PHIST_ERROR,"case B_op != NULL (e.g. B != I) not implemented yet!\n");
-    PHIST_CHK_IERR(*ierr = 99, *ierr);
+    PHIST_CHK_IERR(*ierr=PHIST_NOT_IMPLEMENTED, *ierr);
   }
   TYPE(mvec_ptr) v=NULL,av=NULL,vprev=NULL,AVv=NULL;
   TYPE(sdMat_ptr) R1=NULL,R2=NULL;
