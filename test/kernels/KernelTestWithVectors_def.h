@@ -111,11 +111,7 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
       ST sum=st::zero();
       for (int i=0;i<stride*nloc;i+=stride)
         {
-#ifdef PHIST_MVECS_ROW_MAJOR
-        ST val=vec_vp[j+i*lda];
-#else
-        ST val=vec_vp[j*lda+i];
-#endif
+        ST val=vec_vp[VIDX(i,j,lda)];
         sum+=st::conj(val)*val; 
         }
       norms[j]=sum;
@@ -140,13 +136,8 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
         ST sum=st::zero();
         for (int i=0;i<stride*nloc;i+=stride)
           {
-#ifdef PHIST_MVECS_ROW_MAJOR
-          ST val1=vec_vp[j1+i*lda];
-          ST val2=vec_vp[j2+i*lda];
-#else
-          ST val1=vec_vp[j1*lda+i];
-          ST val2=vec_vp[j2*lda+i];
-#endif
+          ST val1=vec_vp[VIDX(i,j1,lda)];
+          ST val2=vec_vp[VIDX(i,j2,lda)];
           sum+=val1*st::conj(val2);
           }
         sums[k++]=sum;
@@ -183,11 +174,7 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
           {
           for (int j=0;j<nvec_;j++)
             {
-#ifdef PHIST_MVECS_ROW_MAJOR
-            os << vec_vp[j+i*lda]<<"  ";
-#else
-            os << vec_vp[j*lda+i]<<"  ";
-#endif
+            os << vec_vp[VIDX(i,j,lda)]<<"  ";
             }//j
           os << std::endl;
           }//i

@@ -192,12 +192,17 @@ void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
         dmtraits.flags = GHOST_DENSEMAT_DEFAULT; 
         dmtraits.nrows=nrows;
         dmtraits.nrowshalo=nrows;
-        dmtraits.nrowspadded=PAD(nrows,GHOST_PAD_MAX);
+        dmtraits.nrowspadded=nrows;
         dmtraits.ncols=ncols;
+        dmtraits.ncolspadded=ncols;
         dmtraits.datatype=st::ghost_dt;
-        // sdMats are always column major, as in the fortran kernels.
-        // That way our unit tests work correctly, at least.
+#ifdef PHIST_SDMATS_ROW_MAJOR
+        dmtraits.storage=GHOST_DENSEMAT_ROWMAJOR;
+        dmtraits.ncolspadded=PAD(nrows,GHOST_PAD_MAX);
+#else
         dmtraits.storage=GHOST_DENSEMAT_COLMAJOR;
+        dmtraits.nrowspadded=PAD(nrows,GHOST_PAD_MAX);
+#endif
   // I think the sdMat should not have a context
   ghost_context_t* ctx=NULL;
   PHIST_CHK_GERR(ghost_context_create(&ctx,nrows, ncols, GHOST_CONTEXT_DEFAULT, 
@@ -329,8 +334,11 @@ void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* 
 
   PHIST_CHK_IERR(*ierr=check_local_size(M->traits.nrowspadded),*ierr);
 
-  //sdMats are always col-major
+#ifdef PHIST_SDMATS_ROW_MAJOR
+  *lda = M->traits.ncolspadded;
+#else
   *lda = M->traits.nrowspadded;
+#endif
 
 /*
   if (M->traits.storage==GHOST_DENSEMAT_ROWMAJOR)

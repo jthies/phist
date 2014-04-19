@@ -11,20 +11,12 @@
 #ifdef PHIST_HAVE_BELOS
 
 #include "phist_rcp_helpers.hpp"
-#include "phist_BelosOperatorTraits.hpp"
 
 // Trilinos stuff
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_FancyOStream.hpp"
-
-// GMRES solver manager from the Belos package
-#include "BelosSolverManager.hpp"
-#include "BelosBlockGmresSolMgr.hpp"
-#include "BelosPseudoBlockGmresSolMgr.hpp"
-#include "BelosBlockCGSolMgr.hpp"
-#include "BelosPseudoBlockCGSolMgr.hpp"
 
 #ifdef PHIST_KERNEL_LIB_GHOST
 # include "ghost.h"
@@ -39,13 +31,23 @@
 # warning "belos only supported with ghost, epetra and tpetra right now"
 # undef PHIST_HAVE_BELOS
 #endif
+
+#ifdef PHIST_HAVE_BELOS
+#include "phist_BelosOperatorTraits.hpp"
+// GMRES solver manager from the Belos package
+#include "BelosSolverManager.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
+#include "BelosBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
+#endif
 #endif
 
 #include "phist_gen_d.h"
 #include "phist_belos_def.hpp"
 
 #ifdef PHIST_KERNEL_LIB_EPETRA
-#define NO_BELOS_IMPLEMENTATION
+#undef PHIST_HAVE_BELOS
 #endif
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

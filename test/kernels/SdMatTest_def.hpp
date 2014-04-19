@@ -76,7 +76,7 @@ public:
       SUBR(sdMat_extract_view)(m1_view,&val_ptr,&lda,&ierr_);
       ASSERT_EQ(0,ierr_);
       ASSERT_EQ(lda,m_lda_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+imin+jmin*lda,val_ptr,imax-imin+1,jmax-jmin+1,lda,stride));
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+MIDX(imin,jmin,lda),val_ptr,imax-imin+1,jmax-jmin+1,lda,stride,mflag_));
 
       // set all the viewed entries to a certain value and check that the original vector is
       // changed.
@@ -88,7 +88,7 @@ public:
       SUBR(sdMat_print)(m1_view,&ierr_);
 #endif
       
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat1_vp_+imin+jmin*lda,imax-imin+1,jmax-jmin+1,lda,stride,val));
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat1_vp_+imin+jmin*lda,imax-imin+1,jmax-jmin+1,lda,stride,val,mflag_));
       }
     }
 
@@ -141,15 +141,15 @@ public:
         {
           if( i < imin || i > imax || j < jmin || j > jmax )
           {
-            ASSERT_REAL_EQ(mt::zero(), st::abs(mat1_vp_[j*m_lda_+i]-outer_val));
+            ASSERT_REAL_EQ(mt::zero(), st::abs(mat1_vp_[MIDX(i,j,m_lda_)]-outer_val));
           }
           else if( i < imin+imin2 || i > imin+imax2 || j < jmin+jmin2 || j > jmin+jmax2 )
           {
-            ASSERT_REAL_EQ(mt::zero(), st::abs(mat1_vp_[j*m_lda_+i]-view_val));
+            ASSERT_REAL_EQ(mt::zero(), st::abs(mat1_vp_[MIDX(i,j,m_lda_)]-view_val));
           }
           else
           {
-            ASSERT_REAL_EQ(mt::zero(), st::abs(mat1_vp_[j*m_lda_+i]-inner_val));
+            ASSERT_REAL_EQ(mt::zero(), st::abs(mat1_vp_[MIDX(i,j,m_lda_)]-inner_val));
           }
         }
       }
@@ -166,7 +166,7 @@ public:
       MT maxAbsIm = mt::zero();
       for(int i = 0; i < nrows_; i++)
         for(int j = 0; j < ncols_; j++)
-          maxAbsIm = std::max(std::abs(st::imag(mat1_vp_[j*m_lda_+i])), maxAbsIm);
+          maxAbsIm = std::max(std::abs(st::imag(mat1_vp_[MIDX(i,j,m_lda_)])), maxAbsIm);
       ASSERT_TRUE(maxAbsIm != mt::zero());
     }
   }
@@ -210,12 +210,12 @@ public:
         {
         for (int j=jmin;j<jmax;j++)
           {
-          ST val1=mat1_vp_[j*m_lda_+i];
-          ST val2=val_ptr[(j-jmin)*lda+(i-imin)];
-          MT m = st::abs(val1-val2);
-          MT p = st::abs(val1+val2);
-          if (p==mt::zero()) p=mt::one();
-          maxval=std::max(m/p,maxval);
+          ST val1=mat1_vp_[MIDX(i,j,m_lda_)];
+          ST val2=val_ptr[MIDX(i-imin,j-jmin,lda)];
+          MT mn = st::abs(val1-val2);
+          MT pl = st::abs(val1+val2);
+          if (pl==mt::zero()) pl=mt::one();
+          maxval=std::max(mn/pl,maxval);
           }
         }
       ASSERT_REAL_EQ(mt::one()+maxval,mt::one());
@@ -226,7 +226,7 @@ public:
       SUBR(sdMat_put_value)(m1_copy,val,&ierr_);
       ASSERT_EQ(0,ierr_);
       
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
 
       // copy back in the changed block
       SUBR(sdMat_set_block)(mat1_,m1_copy,imin,imax,jmin,jmax,&ierr_);
@@ -239,7 +239,7 @@ public:
 #endif      
       
       // check that the corresponding entries have changed
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat1_vp_+imin+jmin*m_lda_,imax-imin+1,jmax-jmin+1,m_lda_,stride,val));
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat1_vp_+imin+jmin*m_lda_,imax-imin+1,jmax-jmin+1,m_lda_,stride,val,mflag_));
       }
     }
 
@@ -258,11 +258,14 @@ public:
       // subtract matrix product by hand
       for(int i = 0; i < nrows_; i++)
         for(int j = 0; j < ncols_; j++)
+        {
           for(int k = 0; k < ncols_; k++)
-            mat2_vp_[j*m_lda_+i] -= mat1_vp_[k*m_lda_+i]*mat3_vp_[j*m_lda_+k];
+          {
+            mat2_vp_[MIDX(i,j,m_lda_)] -= mat1_vp_[MIDX(i,k,m_lda_)]*mat3_vp_[MIDX(k,j,m_lda_)];
+          }
+        }
       // check result
-      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0),10*mt::eps());
-
+      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0,mflag_),10*mt::eps());
     }
   }
 
@@ -278,17 +281,30 @@ public:
       ASSERT_EQ(0,ierr_);
       PHIST_DEB("random'*random+42");
 #if PHIST_OUTLEV>=PHIST_DEBUG
+/*
+      SUBR(sdMat_print)(mat1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_print)(mat3_,&ierr_);
+      ASSERT_EQ(0,ierr_);
       SUBR(sdMat_print)(mat2_,&ierr_);
       ASSERT_EQ(0,ierr_);
+*/
 #endif
 
       // subtract matrix product by hand
       for(int i = 0; i < nrows_; i++)
+      {  
         for(int j = 0; j < ncols_; j++)
+        {
           for(int k = 0; k < ncols_; k++)
-            mat2_vp_[j*m_lda_+i] -= st::conj(mat1_vp_[i*m_lda_+k])*mat3_vp_[j*m_lda_+k];
+          {
+            mat2_vp_[MIDX(i,j,m_lda_)] -= 
+            st::conj(mat1_vp_[MIDX(k,i,m_lda_)])*mat3_vp_[MIDX(k,j,m_lda_)];
+          }
+        }
+      }
       // check result
-      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0),10*mt::eps());
+      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0,mflag_),10*mt::eps());
 
     }
   }

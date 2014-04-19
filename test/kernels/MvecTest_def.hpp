@@ -21,13 +21,8 @@ public:
       for (int j=0;j<nvec_;j++)
         for (int i=0;i<nloc_*stride_;i+=stride_)
           {
-#ifdef PHIST_MVECS_ROW_MAJOR
-          vec1_vp_[j+i*lda_]=random_number();
-          vec2_vp_[j+i*lda_]=st::one();
-#else
-          vec1_vp_[j*lda_+i]=random_number();
-          vec2_vp_[j*lda_+i]=st::one();
-#endif
+          vec1_vp_[VIDX(i,j,lda_)]=random_number();
+          vec2_vp_[VIDX(i,j,lda_)]=st::one();
           }
       }
     }
@@ -71,11 +66,7 @@ public:
       ST val = (_ST_)42.0 + (ST)3.0*st::cmplx_I();
       SUBR(mvec_put_value)(vec1_,val,&ierr_);
       ASSERT_EQ(0,ierr_);
-#ifdef PHIST_MVECS_ROW_MAJOR
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec1_vp_,nvec_,nloc_,lda_,stride_,val));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,val));
-#endif
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,val,vflag_));
 
       // check that the random function does not change the pointer
       ST* ptr;
@@ -94,11 +85,7 @@ public:
       for (int j=0;j<nvec_;j++)
         for (int i=0;i<nloc_*stride_;i+=stride_)
         {
-#ifdef PHIST_MVECS_ROW_MAJOR
-          vec2_vp_[j+i*lda_]=mt::one()/st::conj(vec1_vp_[j+i*lda_]);
-#else
-          vec2_vp_[j*lda_+i]=mt::one()/st::conj(vec1_vp_[j*lda_+i]);
-#endif
+          vec2_vp_[VIDX(i,j,lda_)]=mt::one()/st::conj(vec1_vp_[VIDX(i,j,lda_)]);
         }
       _ST_ dots_ref[_NV_];
       _ST_ dots[_NV_];
@@ -118,11 +105,7 @@ public:
         dots[j] = st::zero();
         for (int i=0;i<nloc_*stride_;i+=stride_)
         {
-#ifdef PHIST_MVECS_ROW_MAJOR
-          dots[j] += st::conj(vec1_vp_[j+i*lda_])*vec2_vp_[j+i*lda_];
-#else
-          dots[j] += st::conj(vec1_vp_[i+j*lda_])*vec2_vp_[i+j*lda_];
-#endif
+          dots[j] += st::conj(vec1_vp_[VIDX(i,j,lda_)])*vec2_vp_[VIDX(i,j,lda_)];
         }
 #ifdef PHIST_HAVE_MPI
         MPI_Allreduce(MPI_IN_PLACE, &dots[j], 1, st::mpi_type(), MPI_SUM, MPI_COMM_WORLD);
@@ -155,11 +138,7 @@ public:
         {
         for (int i=0;i<nloc_*stride_;i+=stride_)
           {
-#ifdef PHIST_MVECS_ROW_MAJOR
-          absval[k++]=st::abs(vec1_vp_[j+i*lda_]);
-#else
-          absval[k++]=st::abs(vec1_vp_[j*lda_+i]);
-#endif
+          absval[k++]=st::abs(vec1_vp_[VIDX(i,j,lda_)]);
           }
         }
       MT minval=1.0;
@@ -182,39 +161,35 @@ public:
 
   // 2-norm, nrm2=sqrt(v'v)
   TEST_F(CLASSNAME, norm2)
-    {
+  {
     if (typeImplemented_)
-      {
+    {
       gidx_t ilower;     
       phist_map_get_ilower(map_,&ilower,&ierr_);
       ASSERT_EQ(0,ierr_);
       for (int j=0;j<nvec_;j++)
-        {
+      {
         for (int i=0;i<nloc_*stride_;i+=stride_)
-          {
-#ifdef PHIST_MVECS_ROW_MAJOR
-          vec1_vp_[j+i*lda_]=ilower+i;
-#else
-          vec1_vp_[j*lda_+i]=ilower+i;
-#endif
-          }
+        {
+          vec1_vp_[VIDX(i,j,lda_)]=ilower+i;
         }
+      }
       MT expect = 0.0;
       for (int i=0;i<_N_;i++)
-        {
+      {
         expect+=(MT)(i*i);
-        }
+      }
       expect=mt::sqrt(expect);
 
       MT nrm2[nvec_];
       SUBR(mvec_norm2)(vec1_,nrm2,&ierr_);
       ASSERT_EQ(0,ierr_);
       for (int i=0;i<nvec_;i++)
-        {
+      {
         ASSERT_REAL_EQ(expect,nrm2[i]);
-        }
       }
     }
+  }
 
   // X = 1*Y + 0*X = Y
   TEST_F(CLASSNAME, copy_by_axpy)
@@ -226,11 +201,7 @@ public:
       SUBR(mvec_add_mvec)(alpha,vec1_,beta,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
 
-#ifdef PHIST_MVECS_ROW_MAJOR
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nvec_,nloc_,lda_,stride_));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
-#endif
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_,vflag_));
       }
     
     }
@@ -253,11 +224,7 @@ public:
 #endif
       ASSERT_EQ(0,ierr_);
             
-#ifdef PHIST_MVECS_ROW_MAJOR
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nvec_,nloc_,lda_,stride_,beta));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,beta));
-#endif
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,beta,vflag_));
       }
     
     }
@@ -277,17 +244,13 @@ public:
 
       // calculate solution by hand
       for(int i = 0; i < nloc_; i++)
+      {
         for(int j = 0; j < nvec_; j++)
-#ifdef PHIST_MVECS_ROW_MAJOR
-          vec1_vp_[j+i*lda_] = alpha[j]*vec1_vp_[j+i*lda_]+beta;
-#else
-          vec1_vp_[j*lda_+i] = alpha[j]*vec1_vp_[j*lda_+i]+beta;
-#endif
-#ifdef PHIST_MVECS_ROW_MAJOR
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nvec_,nloc_,lda_,stride_));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
-#endif
+        {
+          vec1_vp_[VIDX(i,j,lda_)] = alpha[j]*vec1_vp_[VIDX(i,j,lda_)]+beta;
+        }
+      }
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_,vflag_));
     }
   }
 
@@ -335,11 +298,7 @@ public:
       _ST_ val = random_number();
       SUBR(mvec_put_value)(v1_view,val,&ierr_);
       ASSERT_EQ(0,ierr_);
-#ifdef PHIST_MVECS_ROW_MAJOR
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec1_vp_+jmin,jmax-jmin+1,nloc_,lda_,stride_,val));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec1_vp_+jmin*lda_,nloc_,jmax-jmin+1,lda_,stride_,val));
-#endif
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(&vec1_vp_[VIDX(0,jmin,lda_)],nloc_,jmax-jmin+1,lda_,stride_,val,vflag_));
 
       // new norms after changing columns
       SUBR(mvec_norm2)(vec1_,norms_V1,&ierr_);
@@ -406,27 +365,15 @@ public:
         {
           if( j < jmin || j > jmax )
           {
-#ifdef PHIST_MVECS_ROW_MAJOR
-            ASSERT_REAL_EQ(mt::zero(), st::abs(vec1_vp_[j+i*lda_]-outer_val));
-#else
-            ASSERT_REAL_EQ(mt::zero(), st::abs(vec1_vp_[j*lda_+i]-outer_val));
-#endif
+            ASSERT_REAL_EQ(mt::zero(), st::abs(vec1_vp_[VIDX(i,j,lda_)]-outer_val));
           }
           else if( j < jmin+jmin2 || j > jmin+jmax2 )
           {
-#ifdef PHIST_MVECS_ROW_MAJOR
-            ASSERT_REAL_EQ(mt::zero(), st::abs(vec1_vp_[j+i*lda_]-view_val));
-#else
-            ASSERT_REAL_EQ(mt::zero(), st::abs(vec1_vp_[j*lda_+i]-view_val));
-#endif
+            ASSERT_REAL_EQ(mt::zero(), st::abs(vec1_vp_[VIDX(i,j,lda_)]-view_val));
           }
           else
           {
-#ifdef PHIST_MVECS_ROW_MAJOR
-            ASSERT_REAL_EQ(mt::zero(), st::abs(vec1_vp_[j+i*lda_]-inner_val));
-#else
-            ASSERT_REAL_EQ(mt::zero(), st::abs(vec1_vp_[j*lda_+i]-inner_val));
-#endif
+            ASSERT_REAL_EQ(mt::zero(), st::abs(vec1_vp_[VIDX(i,j,lda_)]-inner_val));
           }
         }
       }
@@ -507,11 +454,7 @@ public:
 
       SUBR(mvec_scale)(vec2_,scale,&ierr_);
       ASSERT_EQ(0,ierr_);
-#ifdef PHIST_MVECS_ROW_MAJOR
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nvec_,nloc_,lda_,stride_,scale));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,scale));
-#endif
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,scale,vflag_));
 
       SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -522,17 +465,11 @@ public:
       // apply scale to vec2_ by hand
       for(int i = 0; i < nloc_; i++)
         for(int j = 0; j < nvec_; j++)
-#ifdef PHIST_MVECS_ROW_MAJOR
-          vec2_vp_[j+i*lda_] *= scale;
-#else
-          vec2_vp_[j*lda_+i] *= scale;
-#endif
+        {
+          vec2_vp_[VIDX(i,j,lda_)] *= scale;
+        }
 
-#ifdef PHIST_MVECS_ROW_MAJOR
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nvec_,nloc_,lda_,stride_));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
-#endif
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_,vflag_));
     }
   }
 
@@ -552,17 +489,11 @@ public:
       // apply scale to vec2_ by hand
       for(int i = 0; i < nloc_; i++)
         for(int j = 0; j < nvec_; j++)
-#ifdef PHIST_MVECS_ROW_MAJOR
-          vec2_vp_[j+i*lda_] *= scale[j];
-#else
-          vec2_vp_[j*lda_+i] *= scale[j];
-#endif
+        {
+          vec2_vp_[VIDX(i,j,lda_)] *= scale[j];
+        }
 
-#ifdef PHIST_MVECS_ROW_MAJOR
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nvec_,nloc_,lda_,stride_));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
-#endif
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_,vflag_));
     }
   }
 

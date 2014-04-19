@@ -9,7 +9,8 @@
 #cmakedefine PHIST_KERNEL_LIB_GHOST
 #cmakedefine PHIST_KERNEL_LIB_FORTRAN
   
-  #cmakedefine PHIST_MVECS_ROW_MAJOR
+#cmakedefine PHIST_MVECS_ROW_MAJOR
+#cmakedefine PHIST_SDMATS_ROW_MAJOR
   
 #cmakedefine PHIST_HAVE_GHOST
 #cmakedefine PHIST_HAVE_BELOS

@@ -16,6 +16,16 @@ typedef int MPI_Comm;
 #include "phist_typedefs.h"
 #include "phist_kernels.h"
 
+#ifdef PHIST_MVECS_ROW_MAJOR
+#define VIDX(i,j,lda) ((j)+(i)*(lda))
+#else
+#define VIDX(i,j,lda) ((i)+(j)*(lda))
+#endif
+#ifdef PHIST_SDMATS_ROW_MAJOR
+#define MIDX(i,j,lda) ((j)+(i)*(lda))
+#else
+#define MIDX(i,j,lda) ((i)+(j)*(lda))
+#endif
 /** Base for tests using kernel operations.
 It calls the init and finalize routines of the kernel lib
 and provides basic MPI support
@@ -29,6 +39,18 @@ public:
  MPI_Comm mpi_comm_;
  unsigned int rseed_;//random number seed
  int ierr_, mpi_rank_, mpi_size_;
+
+ //! these flags determine how to traverse arrays
+ #ifdef PHIST_MVECS_ROW_MAJOR
+ static const bool vflag_=true;
+ #else
+ static const bool vflag_=false;
+ #endif
+ #ifdef PHIST_SDMATS_ROW_MAJOR
+ static const bool mflag_=true;
+ #else
+ static const bool mflag_=false;
+ #endif
  
  //! we store a pointer to the original stream buffer of std::cout,
  //! set it to NULL on rank!=0 at SetUp() and reset it at TearDown().

@@ -37,10 +37,8 @@ typedef ptrdiff_t gidx_t;
 //! type of node-local indices
 typedef int lidx_t;
 
-//#define PRlidx = PRId32
-//#define PRgidx = PRId64
-#define PRlidx = "d"
-#define PRgidx = "ld"
+#define PRlidx "d"
+#define PRgidx "ld"
 
 #include "phist_void_aliases.h"
 

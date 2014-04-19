@@ -97,14 +97,14 @@ public:
     // copy data to buffer
     for(int j = 0; j < n; j++)
       for(int i = 0; i < m; i++)
-        buff[j*m+i] = mat_raw[j*lda+i];
+        buff[j*m+i] = mat_raw[MIDX(i,j,lda)];
     // broadcast
     PHIST_CHK_IERR(*ierr = MPI_Bcast(buff,m*n,::phist::ScalarTraits<_ST_>::mpi_type(),0,MPI_COMM_WORLD),*ierr);
     // check
     int error = 0;
     for(int j = 0; j < n; j++)
       for(int i = 0; i < m; i++)
-        if( buff[j*m+i] != mat_raw[j*lda+i] )
+        if( buff[j*m+i] != mat_raw[MIDX(i,j,lda)] )
           error = 1;
     int globError = 0;
     PHIST_CHK_IERR(*ierr = MPI_Allreduce(&error,&globError,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD),*ierr);
@@ -137,7 +137,7 @@ public:
       VTest::PrintVector(*cout,"ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(M1_vp_,m_,m_,ldaM1_,stride_,(ST)nglob_));
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(M1_vp_,m_,m_,ldaM1_,stride_,(ST)nglob_,mflag_));
       SUBR(sdMat_parallel_check_)(M1_,&ierr_);
       ASSERT_EQ(0,ierr_);
       }
@@ -162,11 +162,7 @@ public:
       MTest::PrintSdMat(*cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
       VTest::PrintVector(*cout,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
-#ifdef PHIST_MVECS_ROW_MAJOR
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(V2_vp_,m_,nloc_,m_,stride_,(ST)m_));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(V2_vp_,nloc_,m_,ldaV2_,stride_,(ST)m_));
-#endif
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(V2_vp_,nloc_,m_,ldaV2_,stride_,(ST)m_,vflag_));
       SUBR(sdMat_parallel_check_)(M1_,&ierr_);
       ASSERT_EQ(0,ierr_);
       }
