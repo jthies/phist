@@ -919,13 +919,6 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     return;
     }
 
-  if (V->traits.storage==GHOST_DENSEMAT_ROWMAJOR)
-  {
-    //TSQR for row major storage not available yet
-    *ierr=-99;
-    return;
-  }
-  
   if (
   (V->traits.flags&GHOST_DENSEMAT_SCATTERED) ||
   (R->traits.flags&GHOST_DENSEMAT_SCATTERED))
@@ -933,6 +926,47 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     *ierr=-1; // can't handle non-constant stride
     return;
     }
+
+    //TSQR for row major storage not available yet - copy back and forth
+    //     if either mvecs or sdMats are row-major. In principle ghost
+    //     supports in-place memtranspose, but that changes the memory
+    //     location of the data block right now, so we do it this way for now.
+  ghost_densemat_t *Vaux=V;
+  ghost_densemat_t *Raux=R;
+  
+  if (V->traits.storage==GHOST_DENSEMAT_ROWMAJOR)
+  {
+    ghost_densemat_create(&Vaux,V->context,V->traits);
+    PHIST_CHK_GHOST(Vaux->fromVec(Vaux,V,0,0),*ierr);
+    PHIST_CHK_GHOST(Vaux->memtranspose(Vaux),*ierr);
+  }
+
+  if (R->traits.storage==GHOST_DENSEMAT_ROWMAJOR)
+  {
+    ghost_densemat_create(&Raux,R->context,R->traits);
+    PHIST_CHK_GHOST(Raux->fromVec(Raux,R,0,0),*ierr);
+    PHIST_CHK_GHOST(Raux->memtranspose(Raux),*ierr);
+  }
+  
+  if (Vaux!=V || Raux!=R)
+  {
+    SUBR(mvec_QR)(Vaux,Raux,ierr);
+    if (Vaux!=V)
+    {
+      PHIST_CHK_GHOST(Vaux->memtranspose(Vaux),*ierr);
+      PHIST_CHK_GHOST(V->fromVec(V,Vaux,0,0),*ierr);
+      Vaux->destroy(Vaux);
+    }
+    if (Raux!=R)
+    {
+      PHIST_CHK_GHOST(Raux->memtranspose(Raux),*ierr);
+      PHIST_CHK_GHOST(R->fromVec(R,Raux,0,0),*ierr);
+      Raux->destroy(Raux);
+    }
+  return;
+  }
+  
+  // Here the actual TSQR call with col-major V and R begins...
 
   // wrapper class for ghost_densemat_t for calling Belos.
   // The wrapper does not own the vector so it doesn't destroy it.

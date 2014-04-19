@@ -88,7 +88,7 @@ public:
       SUBR(sdMat_print)(m1_view,&ierr_);
 #endif
       
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat1_vp_+imin+jmin*lda,imax-imin+1,jmax-jmin+1,lda,stride,val,mflag_));
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(&mat1_vp_[MIDX(imin,jmin,lda)],imax-imin+1,jmax-jmin+1,lda,stride,val,mflag_));
       }
     }
 
@@ -239,7 +239,7 @@ public:
 #endif      
       
       // check that the corresponding entries have changed
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(mat1_vp_+imin+jmin*m_lda_,imax-imin+1,jmax-jmin+1,m_lda_,stride,val,mflag_));
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(&mat1_vp_[MIDX(imin,jmin,m_lda_)],imax-imin+1,jmax-jmin+1,m_lda_,stride,val,mflag_));
       }
     }
 
