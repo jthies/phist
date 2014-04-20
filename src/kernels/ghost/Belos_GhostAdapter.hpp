@@ -310,7 +310,7 @@ using ::phist::GhostMV;
       ghost_densemat_t* _mv = (ghost_densemat_t*)mv.get();
       // multiply
       const char* trans="N";
-      ghost_gemm(_mv,_A,(char*)trans,Bghost,"N",&alpha,&beta,GHOST_GEMM_NO_REDUCE);
+      ghost_gemm(_mv,_A,(char*)trans,Bghost,(char*)"N",&alpha,&beta,GHOST_GEMM_NO_REDUCE);
       
       Bghost->destroy(Bghost);
     }
@@ -405,7 +405,7 @@ using ::phist::GhostMV;
       ghost_gemm(Cghost,  const_cast<ghost_densemat_t*>(A.get()),
                    (char*)trans,
                    const_cast<ghost_densemat_t*>(B.get()),
-                   "N",
+                   (char*)"N",
                    (void*)&alpha, (void*)&beta,
                    GHOST_GEMM_ALL_REDUCE);
       Cghost->destroy(Cghost);
@@ -428,6 +428,7 @@ using ::phist::GhostMV;
     {
       ENTER_FCN(__FUNCTION__);    
       ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
+      int nvecs=_mv->traits.ncols;
       Teuchos::Array<Scalar> av(normvec.size());
       Teuchos::ArrayView<typename st::magn_t> nv(normvec);
       TEUCHOS_TEST_FOR_EXCEPTION(type != TwoNorm,std::invalid_argument,
@@ -446,6 +447,19 @@ using ::phist::GhostMV;
         case InfNorm:
           break;
       }
+    /*
+    std::cout << "vector in MvNorm: "<<_mv->traits.nrows<< "x"<<nvecs<<std::endl;
+    MvPrint(mv,std::cout);
+    std::cout << " v'v= ";
+    for (int i=0;i<nvecs;i++) std::cout << av[i]<<" ";
+    std::cout << std::endl;
+    std::cout << "nv= ";
+    for (int i=0;i<nvecs;i++) std::cout << nv[i]<<" ";
+    std::cout << std::endl;
+    std::cout << "nv= ";
+    for (int i=0;i<normvec.size();i++) std::cout << normvec[i]<<" ";
+    std::cout << std::endl;
+    */
     }
 
     static void SetBlock( const GhostMV& A, const std::vector<int>& index, GhostMV& mv )
@@ -573,7 +587,10 @@ using ::phist::GhostMV;
     {
       // TODO - the stream argument is ignored, ghost always prints to stdout
       ghost_densemat_t* _mv = const_cast<ghost_densemat_t*>(mv.get());
-      os << _mv->string(_mv) << std::endl;
+      char* the_string=NULL;
+      _mv->string(_mv,&the_string);
+      os << the_string << std::endl;
+      delete [] the_string;
     }
 
   // private helper function
