@@ -950,17 +950,19 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   
   if (Vaux!=V || Raux!=R)
   {
+    // do not change ierr after this call because
+    // it may carry rank information
     SUBR(mvec_QR)(Vaux,Raux,ierr);
     if (Vaux!=V)
     {
-      PHIST_CHK_GHOST(Vaux->memtranspose(Vaux),*ierr);
-      PHIST_CHK_GHOST(V->fromVec(V,Vaux,0,0),*ierr);
+      Vaux->memtranspose(Vaux);
+      V->fromVec(V,Vaux,0,0);
       Vaux->destroy(Vaux);
     }
     if (Raux!=R)
     {
-      PHIST_CHK_GHOST(Raux->memtranspose(Raux),*ierr);
-      PHIST_CHK_GHOST(R->fromVec(R,Raux,0,0),*ierr);
+      Raux->memtranspose(Raux);
+      R->fromVec(R,Raux,0,0);
       Raux->destroy(Raux);
     }
   return;
