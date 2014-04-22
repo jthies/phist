@@ -164,6 +164,11 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
       os << "nloc   "<<nloc<<std::endl;
       os << "lda    "<<lda<<std::endl;
       os << "stride "<<stride<<std::endl;
+#ifdef PHIST_MVECS_ROW_MAJOR
+      os << "row-major storage"<<std::endl;
+#else
+      os << "col-major storage"<<std::endl;
+#endif
       }
     for (int p=0;p<np;p++)
       {

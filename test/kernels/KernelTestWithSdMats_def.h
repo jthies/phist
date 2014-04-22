@@ -66,6 +66,11 @@ static void PrintSdMat(std::ostream& os, std::string label,
       os << "ncols   "<<ncols_<<std::endl;
       os << "lda    "<<lda<<std::endl;
       os << "stride "<<stride<<std::endl;
+#ifdef PHIST_SDMATS_ROW_MAJOR
+      os << "row-major storage"<<std::endl;
+#else
+      os << "col-major storage"<<std::endl;
+#endif      
       }
     for (int p=0;p<np;p++)
       {
@@ -76,7 +81,7 @@ static void PrintSdMat(std::ostream& os, std::string label,
           {
           for (int j=0;j<ncols_;j++)
             {
-            os << mat_vp[j*lda+i]<<"  ";
+            os << mat_vp[MIDX(i,j,lda)]<<"  ";
             }//j
           os << std::endl;
           }//i
