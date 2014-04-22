@@ -332,7 +332,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       // check orthogonality of [V Q]
       sdMat_ptr_t tmp1=NULL,tmp2=NULL;
       ST *tmp1_raw, *tmp2_raw;
-      int ld1,ld2;
+      lidx_t ld1,ld2;
       PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp1,m,m,comm,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(sdMat_extract_view)(tmp1,&tmp1_raw,&ld1,ierr),*ierr);
         int ncV;
