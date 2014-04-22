@@ -16,6 +16,9 @@
 #cmakedefine LIKWID_PERFMON
 #cmakedefine PHIST_TIMEMONITOR
 
+#cmakedefine PHIST_MVECS_ROW_MAJOR
+#cmakedefine PHIST_SDMATS_ROW_MAJOR
+
 # ifdef PHIST_KERNEL_LIB_GHOST
 #  ifdef PHIST_MVECS_ROW_MAJOR
 #   ifdef PHIST_HAVE_BELOS
