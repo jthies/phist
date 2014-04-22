@@ -1326,7 +1326,7 @@ end do
     integer, allocatable :: idx(:,:)
 #endif
     real(kind=8), allocatable :: val(:)
-    integer :: i, globalRows, globalCols
+    integer(kind=8) :: i, globalRows, globalCols
     integer(kind=8) :: j, j_, globalEntries
 #ifdef GHOST_HAVE_LONGIDX
     integer(kind=8) :: i_, nne
@@ -1352,7 +1352,7 @@ end do
     write(*,*) 'CrsMat:', globalRows, globalCols, globalEntries
     flush(6)
 
-    call map_setup(A%row_map, MPI_COMM_WORLD, int(globalRows,kind=8), ierr)
+    call map_setup(A%row_map, MPI_COMM_WORLD, globalRows, ierr)
     if( ierr .ne. 0 ) return
 
     A%nRows = A%row_map%nlocal(A%row_map%me)
