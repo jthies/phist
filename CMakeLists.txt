@@ -406,7 +406,7 @@ if  (PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
 # TODO - make this somehow general, or probably we should
 #       actually install phist instead and push the spinChain
 #       driver to the essex/examples repo...
-  set(ESSEX_INSTALL_DIR ${CMAKE_INSTALL_PREFIX} CACHE STRING "where the essex examples are installed")
+  set(ESSEX_INSTALL_DIR ${CMAKE_INSTALL_PREFIX} CACHE PATH "where the essex examples are installed")
   if (EXISTS "${ESSEX_INSTALL_DIR}/include/essex_examples/matfuncs.h")
     include_directories(${ESSEX_INSTALL_DIR}/include/essex_examples)
     add_executable(spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)

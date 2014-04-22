@@ -56,8 +56,9 @@ module crsmat_module
 
   !> interface of function-ptr for crsMat_create_fromRowFunc
   abstract interface
-    subroutine matRowFunc(row, nnz, cols, vals)
+    function matRowFunc(row, nnz, cols, vals) result(ierr)
       use, intrinsic :: iso_c_binding
+      integer(C_INT) :: ierr
 #ifdef GHOST_HAVE_LONGIDX
       integer(C_INT64_T), value :: row
       integer(C_INT64_T), intent(inout) :: nnz
@@ -68,7 +69,7 @@ module crsmat_module
       integer(C_INT32_T), intent(inout) :: cols(*)
 #endif
       real(C_DOUBLE),     intent(inout) :: vals(*)
-    end subroutine matRowFunc
+    end function matRowFunc
   end interface
 
 contains
@@ -1325,7 +1326,7 @@ end do
     integer, allocatable :: idx(:,:)
 #endif
     real(kind=8), allocatable :: val(:)
-    integer :: i, globalRows, globalCols
+    integer(kind=8) :: i, globalRows, globalCols
     integer(kind=8) :: j, j_, globalEntries
 #ifdef GHOST_HAVE_LONGIDX
     integer(kind=8) :: i_, nne
@@ -1351,7 +1352,7 @@ end do
     write(*,*) 'CrsMat:', globalRows, globalCols, globalEntries
     flush(6)
 
-    call map_setup(A%row_map, MPI_COMM_WORLD, int(globalRows,kind=8), ierr)
+    call map_setup(A%row_map, MPI_COMM_WORLD, globalRows, ierr)
     if( ierr .ne. 0 ) return
 
     A%nRows = A%row_map%nlocal(A%row_map%me)
@@ -1373,7 +1374,8 @@ end do
     do i = 1, A%nRows, 1
 !$omp ordered
       i_ = A%row_map%distrib(A%row_map%me)+i-2
-      call rowFunc(i_, nne, idx(:,1), val)
+      ierr = rowFunc(i_, nne, idx(:,1), val)
+      if( ierr .ne. 0 ) call exit()
       j = A%row_offset(i)
       j_ = j + int(nne-1,kind=8)
       A%global_col_idx(j:j_) = idx(1:nne,1)+1

@@ -211,6 +211,7 @@ public:
       {
         if( off1[i]+m1[i] > m_ || off2[i]+m2[i] > m_  || off1_M[i]+m1[i] > m_ || off2_M[i]+m2[i] > m_)
           continue;
+        PHIST_SOUT(PHIST_DEBUG, "Test offsets: off1: %d, off2: %d, m1: %d, m2: %d, off1_M: %d, off2_M: %d\n", off1[i], off2[i], m1[i], m2[i], off1_M[i], off2_M[i]);
 
         // create views to parts of mvecs and sdmats
         mvec_ptr_t V1 = NULL;

@@ -9,7 +9,7 @@ subroutine dspmvm_NT_1(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_
   integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(1,ncols), halo(1,nhalo)
+  real(kind=8), intent(in) :: x(1,nlocal), halo(1,nhalo)
   real(kind=8), intent(inout) :: y(1,nlocal)
 
   interface
@@ -38,7 +38,7 @@ subroutine dspmvm_NT_2(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_
   integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(2,ncols), halo(2,nhalo)
+  real(kind=8), intent(in) :: x(2,nlocal), halo(2,nhalo)
   real(kind=8), intent(inout) :: y(ldy,nlocal)
 
   interface
@@ -68,7 +68,7 @@ subroutine dspmvm_NT_4(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_
   integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(4,ncols), halo(4,nhalo)
+  real(kind=8), intent(in) :: x(4,nlocal), halo(4,nhalo)
   real(kind=8), intent(inout) :: y(ldy,nlocal)
 
   interface
@@ -98,7 +98,7 @@ subroutine dspmvm_NT_8(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_
   integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(8,ncols), halo(8,nhalo)
+  real(kind=8), intent(in) :: x(8,nlocal), halo(8,nhalo)
   real(kind=8), intent(inout) :: y(ldy,nlocal)
 
   interface
@@ -128,7 +128,7 @@ subroutine dspmvm_NT_strided_2(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_p
   integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(ldx,ncols), halo(2,nhalo)
+  real(kind=8), intent(in) :: x(ldx,nlocal), halo(2,nhalo)
   real(kind=8), intent(inout) :: y(ldy,nlocal)
 
   interface
@@ -158,7 +158,7 @@ subroutine dspmvm_NT_strided_4(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_p
   integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(ldx,ncols), halo(4,nhalo)
+  real(kind=8), intent(in) :: x(ldx,nlocal), halo(4,nhalo)
   real(kind=8), intent(inout) :: y(ldy,nlocal)
 
   interface
@@ -188,7 +188,7 @@ subroutine dspmvm_NT_strided_8(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_p
   integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(ldx,ncols), halo(8,nhalo)
+  real(kind=8), intent(in) :: x(ldx,nlocal), halo(8,nhalo)
   real(kind=8), intent(inout) :: y(ldy,nlocal)
 
   interface
@@ -219,7 +219,7 @@ subroutine dspmvm_1(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx
   integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(1,ncols), halo(1,nhalo)
+  real(kind=8), intent(in) :: x(1,nlocal), halo(1,nhalo)
   real(kind=8), intent(inout) :: y(1,nlocal)
   real(kind=8) :: tmp(1)
   integer :: i
@@ -247,7 +247,7 @@ subroutine dspmvm_2(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx
   integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(2,ncols), halo(2,nhalo)
+  real(kind=8), intent(in) :: x(2,nlocal), halo(2,nhalo)
   real(kind=8), intent(inout) :: y(2,nlocal)
   real(kind=8) :: tmp(2)
   integer :: i
@@ -275,7 +275,7 @@ subroutine dspmvm_4(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx
   integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(4,ncols), halo(4,nhalo)
+  real(kind=8), intent(in) :: x(4,nlocal), halo(4,nhalo)
   real(kind=8), intent(inout) :: y(4,nlocal)
   real(kind=8) :: tmp(4)
   integer :: i
@@ -303,7 +303,7 @@ subroutine dspmvm_8(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx
   integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(in) :: x(8,ncols), halo(8,nhalo)
+  real(kind=8), intent(in) :: x(8,nlocal), halo(8,nhalo)
   real(kind=8), intent(inout) :: y(8,nlocal)
   real(kind=8) :: tmp(8)
   integer :: i
