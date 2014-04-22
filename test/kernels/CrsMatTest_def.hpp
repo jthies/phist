@@ -156,11 +156,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       {
       _ST_ val = random_number();
       global_sum(&val,1,mpi_comm_);
-      // build vectors with correct range- and domain map
-      rebuildVectors(A);
       SUBR(mvec_put_value)(vec1_,val,&ierr_);
       SUBR(mvec_random)(vec2_,&ierr_);
-      SUBR(crsMat_times_mvec)(st::one(),A2_,vec1_,st::zero(),vec2_,&ierr_);
+      SUBR(crsMat_times_mvec)(st::one(),A,vec1_,st::zero(),vec2_,&ierr_);
       if (ierr_) return (_MT_)ierr_;
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_print)(vec1_,&ierr_);
@@ -190,6 +188,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     {
     if (typeImplemented_ && haveMats_)
       {
+      // matrices may have different maps
+      rebuildVectors(A0_);
+
       SUBR(mvec_random)(vec1_,&ierr_);
       SUBR(mvec_random)(vec2_,&ierr_);
       SUBR(crsMat_times_mvec)(st::one(),A0_,vec1_,st::zero(),vec2_,&ierr_);
@@ -203,6 +204,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     {
     if (typeImplemented_ && haveMats_)
       {
+      // matrices may have different maps
+      rebuildVectors(A1_);
+
       ST alpha, beta;
       //I*X=X?
       SUBR(mvec_random)(vec1_,&ierr_);
@@ -320,6 +324,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
 
   TEST_F(CLASSNAME, A2_times_mvec)
     {
+      // matrices may have different maps
+      rebuildVectors(A2_);
+
     // we allow a tolerance here because the matrices may have errors in the
     // last digit and we can't get the test to pass otherwise.
     ASSERT_NEAR(mt::one(),const_row_sum_test(A2_),100*mt::eps());
@@ -327,6 +334,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
 
   TEST_F(CLASSNAME, A3_times_mvec)
     {
+    // matrices may have different maps
+    rebuildVectors(A3_);
+
     // we allow a tolerance here because the matrices may have errors in the
     // last digit and we can't get the test to pass otherwise.
     ASSERT_NEAR(mt::one(),const_row_sum_test(A3_),100*mt::eps());
@@ -337,10 +347,16 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
   {
     if( typeImplemented_ )
     {
+      // matrices may have different maps
+      rebuildVectors(A4_);
+
       _ST_ alpha = st::one();
       _ST_ beta = st::zero();
+      const_map_ptr_t map;
+      SUBR(crsMat_get_domain_map)(A4_,&map,&ierr_);
+      ASSERT_EQ(0,ierr_);
       gidx_t ilower = 0;
-      phist_map_get_ilower(map_,&ilower,&ierr_);
+      phist_map_get_ilower(map,&ilower,&ierr_);
       ASSERT_EQ(0,ierr_);
 
       // setup recognizable input
@@ -387,10 +403,16 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
   {
     if( typeImplemented_ )
     {
+      // matrices may have different maps
+      rebuildVectors(A2_);
+
       _ST_ alpha = st::one();
       _ST_ beta = st::zero();
+      const_map_ptr_t map;
+      SUBR(crsMat_get_domain_map)(A2_,&map,&ierr_);
+      ASSERT_EQ(0,ierr_);
       gidx_t ilower = 0;
-      phist_map_get_ilower(map_,&ilower,&ierr_);
+      phist_map_get_ilower(map,&ilower,&ierr_);
       ASSERT_EQ(0,ierr_);
 
       // setup recognizable input
@@ -550,6 +572,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
 
   TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_only_scale)
   {
+    // matrices may have different maps
+    rebuildVectors(A2_);
+
     _ST_ shifts[_NV_];
     for(int i = 0; i < _NV_; i++)
       shifts[i] = st::prand();
@@ -562,6 +587,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
 #ifndef SKIP_ZERO_MAT
   TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_only_vadd)
   {
+    // matrices may have different maps
+    rebuildVectors(A0_);
+
     _ST_ shifts[_NV_];
     for(int i = 0; i < _NV_; i++)
       shifts[i] = st::prand();
@@ -574,6 +602,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
 
   TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_only_spmvm)
   {
+    // matrices may have different maps
+    rebuildVectors(A2_);
+
     _ST_ shifts[_NV_];
     for(int i = 0; i < _NV_; i++)
       shifts[i] = st::zero();
@@ -585,6 +616,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
 
   TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_random)
   {
+    // matrices may have different maps
+    rebuildVectors(A2_);
+
     _ST_ shifts[_NV_];
     for(int i = 0; i < _NV_; i++)
       shifts[i] = st::prand();

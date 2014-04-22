@@ -193,8 +193,8 @@ public:
       SUBR(sdMat_get_block)(mat1_,m1_copy,imin,imax,jmin,jmax,&ierr_);
       ASSERT_EQ(0,ierr_);
       
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      PHIST_SOUT(PHIST_DEBUG,"i=[%"PRlidx",%"PRlidx"], j=[%"PRlidx",%"PRlidx"]\n",
+#if PHIST_OUTLEV>=PHIST_DEBUG && !defined(PHIST_KERNEL_LIB_FORTRAN)
+      PHIST_SOUT(PHIST_DEBUG,"i=[%d"PRlidx",%"PRlidx"], j=[%"PRlidx",%"PRlidx"]\n",
         imin,imax,jmin,jmax);
       PHIST_SOUT(PHIST_DEBUG,"This should be a copy of those columns:\n");
       SUBR(sdMat_print)(mat1_,&ierr_);
