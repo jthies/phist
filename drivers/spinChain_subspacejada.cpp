@@ -220,7 +220,7 @@ int main(int argc, char** argv)
 #ifdef PHIST_KERNEL_LIB_FORTRAN
   PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,
         info.nrows, info.ncols, info.row_nnz,
-        (void(*)(ghost_idx_t,ghost_idx_t*,ghost_idx_t*,void*))&SpinChainSZ, &ierr), ierr);
+        &SpinChainSZ, &ierr), ierr);
 #endif
 
 #ifdef PHIST_KERNEL_LIB_GHOST
