@@ -18,6 +18,7 @@
 
 int main(int argc, char** argv)
   {
+#if 0
   int rank, num_proc;
   int i, ierr;
   bool verbose;
@@ -176,4 +177,7 @@ int main(int argc, char** argv)
   free(A_op);
   PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
   return ierr;
+#endif
+  fprintf(stdout,"driver in %s not implemented.",__FILE__);
+  return -99; // not implemented
   }

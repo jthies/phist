@@ -19,13 +19,6 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_FancyOStream.hpp"
 
-// GMRES solver manager from the Belos package
-#include "BelosSolverManager.hpp"
-#include "BelosBlockGmresSolMgr.hpp"
-#include "BelosPseudoBlockGmresSolMgr.hpp"
-#include "BelosBlockCGSolMgr.hpp"
-#include "BelosPseudoBlockCGSolMgr.hpp"
-
 #ifdef PHIST_KERNEL_LIB_GHOST
 # include "ghost.h"
 # include "Belos_GhostAdapter.hpp"
@@ -41,11 +34,18 @@
 #endif
 #endif
 
+// GMRES solver manager from the Belos package
+#include "BelosSolverManager.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
+#include "BelosBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
+
 #include "phist_gen_d.h"
 #include "phist_belos_def.hpp"
 
 #ifdef PHIST_KERNEL_LIB_EPETRA
-#define NO_BELOS_IMPLEMENTATION
+#undef PHIST_HAVE_BELOS
 #endif
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
