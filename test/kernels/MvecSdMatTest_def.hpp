@@ -224,7 +224,8 @@ public:
         SUBR(sdMat_view_block)(M1_,&M1,off1_M[i],off1_M[i]+m1[i]-1,off2_M[i],off2_M[i]+m2[i]-1,&ierr_);
         ASSERT_EQ(0,ierr_);
 
-        // fill V and W with ones
+        // set V1 and V2 to 0,
+        // fill (viewed) V and W with random numbers
         SUBR(mvec_put_value)(V1_,st::zero(),&ierr_);
         ASSERT_EQ(0,ierr_);
         SUBR(mvec_random)(V1,&ierr_);
@@ -239,7 +240,10 @@ public:
         SUBR(mvecT_times_mvec)(-st::one(),V1,V2,st::one(),M1,&ierr_);
         ASSERT_EQ(0,ierr_);
 
-        PHIST_DEB("Note: we are just using views inside the random vectors");
+        PHIST_DEB("Note: we are just using views inside the random vectors\n");
+        PHIST_DEB("col-range V1: [%d:%d]\n",off1[i],off1[i]+m1[i]-1);
+        PHIST_DEB("col-range V2: [%d:%d]\n",off2[i],off2[i]+m2[i]-1);
+        PHIST_DEB("idx-range M:  [%d:%d,%d:%d]\n",off1_M[i],off1_M[i]+m1[i]-1,off2_M[i],off2_M[i]+m2[i]-1);
 #if PHIST_OUTLEV>=PHIST_DEBUG
         VTest::PrintVector(*cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
         VTest::PrintVector(*cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
@@ -259,6 +263,7 @@ public:
         ASSERT_EQ(0,ierr_);
         SUBR(sdMat_delete)(M2,&ierr_);
         ASSERT_EQ(0,ierr_);
+        MTest::PrintSdMat(*cout,"zero-random'*random in correct location",M2_vp_,ldaM2_,stride_,mpi_comm_);
         SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::one(),M2_,&ierr_);
         ASSERT_EQ(0,ierr_);
 #if PHIST_OUTLEV>=PHIST_DEBUG

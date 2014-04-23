@@ -59,6 +59,8 @@ using ::phist::GhostMV;
       // (bitwise NAND operation to unset the view flag if set)
       vtraits.flags = (ghost_densemat_flags_t)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_VIEW);
       vtraits.ncols=numvecs;
+      vtraits.ncolsorig=numvecs;
+      vtraits.nrowsorig=vtraits.nrows;
       ghost_densemat_t* mv_clone;
       ghost_densemat_create(&mv_clone,_mv->context,vtraits);
       // this allocates the memory for the vector
@@ -113,6 +115,12 @@ using ::phist::GhostMV;
         ghost_idx_t imin=0;
         _mv->clone(_mv,&result,ilen,imin,index.size(),index[0]);
 
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      std::cout << "CloneCopy: input vector"<<std::endl;
+        MvPrint(mv,std::cout);
+      std::cout << "CloneCopy: output vector"<<std::endl;
+        MvPrint(*phist::rcp(result,false),std::cout);
+#endif
         return phist::rcp(result,true);
       }
       else
@@ -120,6 +128,7 @@ using ::phist::GhostMV;
         ghost_densemat_t* result;
         ghost_densemat_traits_t vtraits = _mv->traits;
                 vtraits.ncols=index.size();
+                vtraits.ncolsorig=index.size();
         // copy the data even if the input vector is itself a view
         // (bitwise NAND operation to unset the view flag if set)
         vtraits.flags = (ghost_densemat_flags_t)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_VIEW);
@@ -134,6 +143,18 @@ using ::phist::GhostMV;
           result->viewCols(result, &result_j,1, j);
           result_j->fromVec(result_j,_mv,0,index[j]);
         }
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      std::cout << "CloneCopy: input vector"<<std::endl;
+        MvPrint(mv,std::cout);
+        std::cout << "requested columns: ";
+        for (int i=0;i<index.size();i++)
+        {
+          std::cout << index[i]<<" ";
+        }
+      std::cout << std::endl;
+      std::cout << "CloneCopy: scattered output copy"<<std::endl;
+        MvPrint(*phist::rcp(result,false),std::cout);
+#endif
         return phist::rcp(result,true);
       }
     }
@@ -447,7 +468,7 @@ using ::phist::GhostMV;
         case InfNorm:
           break;
       }
-    /*
+    
     std::cout << "vector in MvNorm: "<<_mv->traits.nrows<< "x"<<nvecs<<std::endl;
     MvPrint(mv,std::cout);
     std::cout << " v'v= ";
@@ -459,7 +480,7 @@ using ::phist::GhostMV;
     std::cout << "nv= ";
     for (int i=0;i<normvec.size();i++) std::cout << normvec[i]<<" ";
     std::cout << std::endl;
-    */
+    
     }
 
     static void SetBlock( const GhostMV& A, const std::vector<int>& index, GhostMV& mv )
@@ -604,10 +625,9 @@ using ::phist::GhostMV;
                 dmtraits.nrowshalo=M.numRows();
                 dmtraits.nrowspadded=M.stride();
                 dmtraits.ncols=M.numCols();
-                // sdMats are always column major
+                // Teuchos sdMats are always column major
                 dmtraits.storage=GHOST_DENSEMAT_COLMAJOR;
                 dmtraits.datatype=st::ghost_dt;
-                dmtraits.storage=GHOST_DENSEMAT_COLMAJOR;
 
       // The context and communicator are supposed to be irrelevant in an sdMat,
       // but it is not clear wether this is handled correctly everywhere i ghost.
