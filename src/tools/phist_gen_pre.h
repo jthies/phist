@@ -53,8 +53,8 @@
 #undef IS_COMPLEX
 #endif
 
-#ifdef _IS_DOUBLE_
-#undef _IS_DOUBLE_
+#ifdef IS_DOUBLE
+#undef IS_DOUBLE
 #endif
 
 #ifdef ZERO

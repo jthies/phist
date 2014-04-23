@@ -1,6 +1,6 @@
 #include "phist_gen_pre.h"
 
-#define _IS_DOUBLE_
+#define IS_DOUBLE
 
 // scalar type
 #define _ST_ double

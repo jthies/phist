@@ -1,5 +1,3 @@
-#include "phist_carp_decl.h"
-
 void SUBR(carp_setup)(TYPE(const_crsMat_ptr) A, _ST_ const sigma[], 
         Dmvec_t *nrms, TYPE(mvec_ptr)* importVec, int* ierr)
 {

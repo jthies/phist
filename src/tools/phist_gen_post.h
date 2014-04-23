@@ -1,5 +1,5 @@
 // some common macros for all types:
-#ifdef _IS_DOUBLE_
+#ifdef IS_DOUBLE
 #define _MT_ double
 #define ASSERT_REAL_EQ(expected,actual) ASSERT_DOUBLE_EQ(expected,actual)
 #else
