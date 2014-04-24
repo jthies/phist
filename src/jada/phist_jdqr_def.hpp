@@ -332,7 +332,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       // check orthogonality of [V Q]
       sdMat_ptr_t tmp1=NULL,tmp2=NULL;
       ST *tmp1_raw, *tmp2_raw;
-      int ld1,ld2;
+      lidx_t ld1,ld2;
       PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp1,m,m,comm,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(sdMat_extract_view)(tmp1,&tmp1_raw,&ld1,ierr),*ierr);
         int ncV;
@@ -713,54 +713,9 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
     // allow at most 25 iterations (TODO: make these settings available to the user)
     int nIt=25;
-    if (innerSolvType==CARP_CG)
-    {
-      PHIST_DEB("CARP-CG setup\n");
-      //TODO: integrate CARP_CG in jadaCorrectionSolver.
-      //TODO: avoid temporary vector
-      TYPE(mvec_ptr) y_tmp=NULL;
-      PHIST_CHK_IERR(SUBR(mvec_create)(&y_tmp, A_op->domain_map, nv, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvec_put_value)(y_tmp,st::zero(),ierr),*ierr);
-      TYPE(op) carpOp, jadaOp;
-      
-      // note: the whole of phist is not type-safe, so this cast will
-      //       not produce an error if the data in A_op is not compatible with
-      //       TYPE(crsMat).
-      TYPE(const_crsMat_ptr) A=(TYPE(const_crsMat_ptr))A_op->A;
-      
-
-      MT omega=1.0;// TODO - make available to the outside
-      PHIST_CHK_IERR(SUBR(op_carp)(&carpOp, A, omega, ierr),*ierr);
-
-      PHIST_CHK_IERR(SUBR(jadaOp_create)(&carpOp, B_op, Qtil, NULL, sigma, nv, 
-                                &jadaOp, ierr), *ierr);
-
-      PHIST_DEB("CARP-CG solve\n");
-      
-      int variant=2; //0:block GMRES, 1: pseudo-BGMRES 2: BlockCG 3: pseudo BlockCG
-      SUBR(belos)(&jadaOp,y_tmp,rtil_ptr,innerTol[0],&nIt,nIt,variant,NULL,ierr);
-      
-      // back transform because we actually solved AA'y=b, so x=A'y
-      PHIST_DEB("CARP-CG back transformation\n");
-      if (A_op->applyT==NULL)
-      {
-        PHIST_SOUT(PHIST_ERROR,"can't back-transform CARP-CG solution because\n"
-                               "operator does not support applyT (transpose application)\n"
-                               "(file %s, line %d)",__FILE__,__LINE__);
-        *ierr=-1;
-        return;
-      }
-      PHIST_CHK_IERR(A_op->applyT(st::one(),A_op->A,y_tmp,st::zero(),t_ptr,ierr),*ierr);
-
-      PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jadaOp,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvec_delete)(y_tmp,ierr),*ierr);
-    }
-    else
-    {
       PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, NULL, Qtil, NULL, 
                                                       sigma, rtil_ptr, NULL, 
                                                       innerTol, nIt, t_ptr, true, false, ierr), *ierr);
-    }
     expand=nv;
   }
   else

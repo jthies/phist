@@ -1,5 +1,5 @@
+#if 0
 extern "C" {
-
 void SUBR(carp_create)(TYPE(const_crsMat_ptr) vA, TYPE(carpData)** dat_ptr, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
@@ -211,5 +211,7 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
   }
 
 }//carp_fb
-
 } // extern "C"
+#endif
+
+#include "../carp_noimpl.c"

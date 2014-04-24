@@ -449,7 +449,6 @@ using ::phist::GhostMV;
     {
       ENTER_FCN(__FUNCTION__);    
       ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
-      int nvecs=_mv->traits.ncols;
       Teuchos::Array<Scalar> av(normvec.size());
       Teuchos::ArrayView<typename st::magn_t> nv(normvec);
       TEUCHOS_TEST_FOR_EXCEPTION(type != TwoNorm,std::invalid_argument,

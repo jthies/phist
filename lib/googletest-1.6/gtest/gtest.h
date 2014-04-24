@@ -3450,8 +3450,8 @@ class GTEST_API_ FilePath {
 // Please contact googletestframework@googlegroups.com if you need
 // more.
 
-#ifndef GTEST_INCLUDE_GTEST_INTERNAL_GTESTTYPEUTIL_H_
-#define GTEST_INCLUDE_GTEST_INTERNAL_GTESTTYPEUTIL_H_
+#ifndef GTEST_INCLUDE_GTEST_INTERNAL_GTEST_TYPE_UTIL_H_
+#define GTEST_INCLUDE_GTEST_INTERNAL_GTEST_TYPE_UTIL_H_
 
 
 // #ifdef __GNUC__ is too general here.  It is possible to use gcc without using
@@ -6734,7 +6734,7 @@ struct TypeList<Types<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13,
 }  // namespace internal
 }  // namespace testing
 
-#endif  // GTEST_INCLUDE_GTEST_INTERNAL_GTESTTYPEUTIL_H_
+#endif  // GTEST_INCLUDE_GTEST_INTERNAL_GTEST_TYPE_UTIL_H_
 
 // Due to C++ preprocessor weirdness, we need double indirection to
 // concatenate two tokens when one of them is __LINE__.  Writing
@@ -16988,14 +16988,14 @@ INSTANTIATE_TYPED_TEST_CASE_P(My, FooTest, MyTypes);
 //
 // Expands to the name of the typedef for the type parameters of the
 // given test case.
-# define GTESTTYPEPARAMS_(TestCaseName) gtest_type_params_##TestCaseName##_
+# define GTEST_TYPE_PARAMS_(TestCaseName) gtest_type_params_##TestCaseName##_
 
 // The 'Types' template argument below must have spaces around it
 // since some compilers may choke on '>>' when passing a template
 // instance (e.g. Types<int>)
 # define TYPED_TEST_CASE(CaseName, Types) \
   typedef ::testing::internal::TypeList< Types >::type \
-      GTESTTYPEPARAMS_(CaseName)
+      GTEST_TYPE_PARAMS_(CaseName)
 
 # define TYPED_TEST(CaseName, TestName) \
   template <typename gtest_TypeParam_> \
@@ -17011,7 +17011,7 @@ INSTANTIATE_TYPED_TEST_CASE_P(My, FooTest, MyTypes);
           CaseName, \
           ::testing::internal::TemplateSel< \
               GTEST_TEST_CLASS_NAME_(CaseName, TestName)>, \
-          GTESTTYPEPARAMS_(CaseName)>::Register(\
+          GTEST_TYPE_PARAMS_(CaseName)>::Register(\
               "", #CaseName, #TestName, 0); \
   template <typename gtest_TypeParam_> \
   void GTEST_TEST_CLASS_NAME_(CaseName, TestName)<gtest_TypeParam_>::TestBody()

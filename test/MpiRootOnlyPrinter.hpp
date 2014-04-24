@@ -13,7 +13,7 @@ class MpiRootOnlyPrinter : public ::testing::EmptyTestEventListener
   
   // constructor
   MpiRootOnlyPrinter()
-    {
+  {
     rank_ = 0;
 #ifdef PHIST_HAVE_MPI
     int ierr = 0;
@@ -29,8 +29,7 @@ class MpiRootOnlyPrinter : public ::testing::EmptyTestEventListener
     ::testing::UnitTest::GetInstance()->listeners().Release(
     ::testing::UnitTest::GetInstance()->listeners().default_xml_generator()
     );
-    // become the default printer
-    }
+  }
     
   ~MpiRootOnlyPrinter()
     {
