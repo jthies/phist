@@ -885,7 +885,7 @@ void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
 //! remaining columns form a basis for the null space.  
 void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   {
-#include "phist_std_typedefs.hpp"  
+#include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
@@ -895,10 +895,11 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   MT rankTol=1000*mt::eps();
   int ncols=V->traits.ncols;
   if (ncols==1)
-    {
+  {
     // we need a special treatment here because TSQR
     // uses a relative tolerance to determine rank deficiency,
     // so a single zero vector is not detected to be rank deficient.
+    PHIST_DEB("mvec_QR: single-vector case");
     MT nrm;
     PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
     ST* Rval=NULL;
@@ -907,66 +908,61 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     PHIST_DEB("single vector QR, R=%8.4e\n",nrm);
     rank=1;
     if (nrm<rankTol)
-      {
+    {
       PHIST_DEB("zero vector detected\n");
       // randomize the vector
       PHIST_CHK_IERR(SUBR(mvec_random)(vV,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
       rank=0;// dimension of null space
-      }
+    }
     *Rval=(ST)nrm;
     *ierr=1-rank;
     return;
-    }
+  }// case ncols=1: normalize single vector
 
   if (
   (V->traits.flags&GHOST_DENSEMAT_SCATTERED) ||
   (R->traits.flags&GHOST_DENSEMAT_SCATTERED))
-    {
+  {
+    PHIST_SOUT(PHIST_ERROR,"mvec_QR: cannot handle scattered vectors");
     *ierr=-1; // can't handle non-constant stride
     return;
+  }//case vectors scattered: not implemented!
+
+    //TSQR for row major storage not available yet - explicit memtranspose
+    //     if either mvecs or sdMats are row-major. 
+  bool transV=(V->traits.storage==GHOST_DENSEMAT_ROWMAJOR);
+  bool transR=(R->traits.storage==GHOST_DENSEMAT_ROWMAJOR);
+  
+  if (transR||transV)
+  {
+    PHIST_DEB("we need to make the memory layout of V and/or R conform with TSQR");
+    if (transV)
+    {
+      PHIST_DEB("memtranspose V");
+      PHIST_CHK_GHOST(V->memtranspose(V),*ierr);
     }
-
-    //TSQR for row major storage not available yet - copy back and forth
-    //     if either mvecs or sdMats are row-major. In principle ghost
-    //     supports in-place memtranspose, but that changes the memory
-    //     location of the data block right now, so we do it this way for now.
-  ghost_densemat_t *Vaux=V;
-  ghost_densemat_t *Raux=R;
+    if (transR)
+    {
+      PHIST_DEB("memtranspose R");
+      PHIST_CHK_GHOST(R->memtranspose(R),*ierr);
+    }
   
-  if (V->traits.storage==GHOST_DENSEMAT_ROWMAJOR)
-  {
-    ghost_densemat_create(&Vaux,V->context,V->traits);
-    PHIST_CHK_GHOST(Vaux->fromVec(Vaux,V,0,0),*ierr);
-    PHIST_CHK_GHOST(Vaux->memtranspose(Vaux),*ierr);
-  }
-
-  if (R->traits.storage==GHOST_DENSEMAT_ROWMAJOR)
-  {
-    ghost_densemat_create(&Raux,R->context,R->traits);
-    PHIST_CHK_GHOST(Raux->fromVec(Raux,R,0,0),*ierr);
-    PHIST_CHK_GHOST(Raux->memtranspose(Raux),*ierr);
-  }
-  
-  if (Vaux!=V || Raux!=R)
-  {
     // do not change ierr after this call because
     // it may carry rank information
-    SUBR(mvec_QR)(Vaux,Raux,ierr);
-    if (Vaux!=V)
+    SUBR(mvec_QR)(V,R,ierr);
+    if (transV)
     {
-      Vaux->memtranspose(Vaux);
-      V->fromVec(V,Vaux,0,0);
-      Vaux->destroy(Vaux);
+      PHIST_DEB("memtranspose back V");
+      V->memtranspose(V);
     }
-    if (Raux!=R)
+    if (transR)
     {
-      Raux->memtranspose(Raux);
-      R->fromVec(R,Raux,0,0);
-      Raux->destroy(Raux);
+      PHIST_DEB("memtranspose back R");
+      R->memtranspose(R);
     }
-  return;
-  }
+    return;
+  }// need memtranspose of V or R
   
   // Here the actual TSQR call with col-major V and R begins...
 
@@ -980,10 +976,11 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     
   PHIST_CHK_IERR(*ierr=nrows-ncols,*ierr);
   PHIST_CHK_IERR(*ierr=nrows-(V->traits.ncols),*ierr);
-#endif  
+#endif
 
 #ifdef PHIST_HAVE_BELOS
 
+  PHIST_DEB("do TSQR on col-major ghost data structures");
   PHIST_DEB("create Teuchos view of R\n");
   Teuchos::RCP<Traits<_ST_ >::Teuchos_sdMat_t> R_view;
   PHIST_CHK_IERR(R_view = Traits<_ST_ >::CreateTeuchosViewNonConst
