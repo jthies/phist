@@ -78,8 +78,6 @@ public:
       SUBR(sdMat_print)(m1_view,&ierr_);
 #endif
       
-      _ST_* val_ptr;
-      lidx_t lda;
       SUBR(sdMat_extract_view)(m1_view,&val_ptr,&lda,&ierr_);
       ASSERT_EQ(0,ierr_);
       ASSERT_EQ(lda,m_lda_);

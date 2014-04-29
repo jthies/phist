@@ -1,4 +1,8 @@
 #include "phist_config.h"
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+#include <iostream>
 #include "phist_macros.h"
 #include "../phist_kernels.h"
 
