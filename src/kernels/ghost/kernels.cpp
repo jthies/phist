@@ -1,4 +1,8 @@
 #include "phist_config.h"
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+#include <iostream>
 #include "phist_macros.h"
 #include "../phist_kernels.h"
 
@@ -244,7 +248,6 @@ void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr)
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
-
 
 #include "phist_gen_z.h"
 #include "kernels_def.hpp"

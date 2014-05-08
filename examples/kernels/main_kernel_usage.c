@@ -23,7 +23,7 @@ int main(int argc, char** argv)
   
   double *x_val, *y_val;
   lidx_t nloc_x, nloc_y;
-  lidx_t nvec_x,nvec_y;
+  int nvec_x,nvec_y;
   lidx_t lda_x, lda_y;
 #ifdef PHIST_KERNEL_LIB_GHOST   
   const char* filename = "test.crs";

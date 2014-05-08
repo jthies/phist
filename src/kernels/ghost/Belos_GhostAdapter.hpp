@@ -449,7 +449,6 @@ using ::phist::GhostMV;
     {
       ENTER_FCN(__FUNCTION__);    
       ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
-      int nvecs=_mv->traits.ncols;
       Teuchos::Array<Scalar> av(normvec.size());
       Teuchos::ArrayView<typename st::magn_t> nv(normvec);
       TEUCHOS_TEST_FOR_EXCEPTION(type != TwoNorm,std::invalid_argument,
@@ -468,7 +467,7 @@ using ::phist::GhostMV;
         case InfNorm:
           break;
       }
-    
+/*    
     std::cout << "vector in MvNorm: "<<_mv->traits.nrows<< "x"<<nvecs<<std::endl;
     MvPrint(mv,std::cout);
     std::cout << " v'v= ";
@@ -480,7 +479,7 @@ using ::phist::GhostMV;
     std::cout << "nv= ";
     for (int i=0;i<normvec.size();i++) std::cout << normvec[i]<<" ";
     std::cout << std::endl;
-    
+*/    
     }
 
     static void SetBlock( const GhostMV& A, const std::vector<int>& index, GhostMV& mv )

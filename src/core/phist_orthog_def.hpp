@@ -82,7 +82,8 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   // check that all array dimensions are correct
   PHIST_CHK_IERR(*ierr=(int)(V==NULL || W==NULL || R1==NULL || R2==NULL),*ierr);
 
-  lidx_t n,nrR1,ncR1,nrR2,ncR2,tmp;
+  int nrR1,ncR1,nrR2,ncR2;
+  lidx_t n, tmp;
 
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_my_length)(W,&tmp,ierr),*ierr);

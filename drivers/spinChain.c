@@ -141,7 +141,7 @@ int main(int argc, char** argv)
 #ifdef PHIST_KERNEL_LIB_FORTRAN
   PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,
         info.nrows, info.ncols, info.row_nnz,
-        &SpinChainSZ, &ierr), ierr);
+        (void(*)(ghost_idx_t,ghost_idx_t*,ghost_idx_t*,void*))&SpinChainSZ, &ierr), ierr);
 #endif
 
 #ifdef PHIST_KERNEL_LIB_GHOST
@@ -190,7 +190,7 @@ int main(int argc, char** argv)
 
   // first column in X is currently used as starting vector of Arnoldi in jdqr. The first 
   // jmin vectors are constructed by an Arnoldi process for stability reasons.
-  int nloc,lda; 
+  lidx_t nloc,lda; 
   ST* valX0;
   MT nrmX0[num_eigs+1];
   PHIST_ICHK_IERR(SUBR(mvec_my_length)(X,&nloc,&ierr),ierr);

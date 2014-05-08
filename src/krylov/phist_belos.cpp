@@ -18,29 +18,30 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_FancyOStream.hpp"
 
-#ifdef PHIST_KERNEL_LIB_GHOST
-# include "ghost.h"
-# include "Belos_GhostAdapter.hpp"
-#elif defined(PHIST_KERNEL_LIB_EPETRA)
-# include "Epetra_MultiVector.h"
-# include "BelosEpetraAdapter.hpp"
-#elif defined(PHIST_KERNEL_LIB_TPETRA)
-# include "Tpetra_MultiVector.hpp"
-# include "BelosTpetraAdapter.hpp"
-#else
-# warning "belos only supported with ghost, epetra and tpetra right now"
-# undef PHIST_HAVE_BELOS
+# ifdef PHIST_KERNEL_LIB_GHOST
+#  include "ghost.h"
+#  include "Belos_GhostAdapter.hpp"
+# elif defined(PHIST_KERNEL_LIB_EPETRA)
+#  include "Epetra_MultiVector.h"
+#  include "BelosEpetraAdapter.hpp"
+# elif defined(PHIST_KERNEL_LIB_TPETRA)
+#  include "Tpetra_MultiVector.hpp"
+#  include "BelosTpetraAdapter.hpp"
+# else
+#  warning "belos only supported with ghost, epetra and tpetra right now"
+#  undef PHIST_HAVE_BELOS
+# endif
 #endif
 
 #ifdef PHIST_HAVE_BELOS
 #include "phist_BelosOperatorTraits.hpp"
+
 // GMRES solver manager from the Belos package
 #include "BelosSolverManager.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
-#endif
 #endif
 
 #include "phist_gen_d.h"

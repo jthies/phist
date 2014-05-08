@@ -156,25 +156,37 @@ void SUBR(mvec_create)(TYPE(mvec_ptr)* vV,
 
 //! create a block-vector as view of raw data. The map tells the object
 //! how many rows it should 'see' in the data (at most lda, the leading
-//! dimension of the 2D array values).
+//! dimension of the 2D array values). CAVEAT: This function only works
+//! if nrowshalo==nrows in the map, which is in general only the case for
+//! if there is only 1 MPI process or the matrix is trivially parallel.
 void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap, 
         _ST_* values, lidx_t lda, int nvec,
         int* ierr)
-  {
+{
+#include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
-  TOUCH(vV);
-  TOUCH(vmap);
-  TOUCH(values);
-  TOUCH(lda);
-  TOUCH(nvec);
-  *ierr=-99;
-/*
-  CAST_PTR_FROM_VOID(const map_t, map, vmap, *ierr);
-  Teuchos::RCP<const map_t> map_ptr = Teuchos::rcp(map,false);
-  Teuchos::ArrayView<_ST_> val_ptr(values,lda*nvec);
-  Traits<_ST_>::mvec_t* V = new Traits<_ST_>::mvec_t(map_ptr,val_ptr,lda,nvec);
-  *vV=(TYPE(mvec_ptr))(V);  
-*/  
+
+  CAST_PTR_FROM_VOID(const ghost_map_t, map,vmap,*ierr);
+  ghost_densemat_t* result;
+  ghost_densemat_traits_t vtraits = map->vtraits_template;/*ghost_cloneVtraits(map->vtraits_template);*/
+        vtraits.ncols=nvec;
+        vtraits.datatype = st::ghost_dt;
+
+  PHIST_CHK_GHOST(ghost_densemat_create(&result,map->ctx,vtraits),*ierr);
+
+  if ((result->traits.nrows!=result->traits.nrowshalo)||(result->traits.nrowshalo!=lda))
+  {
+    PHIST_OUT(PHIST_ERROR,"viewing plain data as ghost_vec only works "
+                          "for node-local or trivially parallel matrices!\n");
+    PHIST_OUT(PHIST_ERROR,"nrows=%"PRlidx", nrowshalo=%"PRlidx", lda=%d\n",
+        vtraits.nrows,vtraits.nrowshalo,lda);
+    *ierr=-1;
+    return;
+  }
+
+  PHIST_CHK_GHOST(result->viewPlain(result,(void*)values,vtraits.nrows,vtraits.ncols,0,0,lda),*ierr);
+  *vV=(TYPE(mvec_ptr))(result);
+  return;
 }
 
 
