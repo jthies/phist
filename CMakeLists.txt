@@ -251,12 +251,7 @@ list(APPEND PHIST_LIBS phist_kernels_${PHIST_KERNEL_LIB})
 list(APPEND PHIST_LIBS phist_tools)
 
 if(PHIST_KERNEL_LIB STREQUAL "ghost")
-  find_package(GHOST CONFIG)
-else()
-  find_package(GHOST CONFIG)
-endif()  
-  
-if (GHOST_FOUND)
+  find_package(GHOST REQUIRED CONFIG)
   message(STATUS "Found GHOST ${GHOST_VERSION}")
   set(PHIST_HAVE_GHOST 1)
   include_directories(${GHOST_INCLUDE_DIRS})
