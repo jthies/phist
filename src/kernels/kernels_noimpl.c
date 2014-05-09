@@ -1,6 +1,3 @@
-#include "phist_kernels.h"
-#include "phist_macros.h"
-
 // these implementations can be used if a kernel package
 // does not implement all four data types (cf. epetra/ for
 // an example, which supports only double (D)). If we ever

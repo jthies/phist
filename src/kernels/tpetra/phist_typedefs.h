@@ -1,6 +1,8 @@
 #ifndef PHIST_TYPEDEFS_H
 #define PHIST_TYPEDEFS_H
 
+#include "phist_config.h"
+
 #ifndef NO_INCLUDES_IN_HEADERS
 #ifdef __cplusplus
 //#include <cinttypes>

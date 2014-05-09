@@ -1,6 +1,7 @@
 #ifndef PHIST_SCHUR_DECOMP_H
 #define PHIST_SCHUR_DECOMP_H
 
+#include "phist_config.h"
 #include "phist_typedefs.h"
 #include "phist_macros.h"
 #include "phist_enums.h"

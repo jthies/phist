@@ -2,6 +2,7 @@
 #include <cstring>
 #include <cmath>
 
+#include "phist_config.h"
 #include "phist_macros.h"
 #include "phist_simple_arnoldi.h"
 #include "phist_kernels.h"

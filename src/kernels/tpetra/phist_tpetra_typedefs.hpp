@@ -14,6 +14,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
 
+#include "phist_config.h"
 #include "phist_typedefs.h"
 
 namespace phist {

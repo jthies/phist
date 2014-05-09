@@ -1,6 +1,7 @@
 #ifndef PHIST_ORTHOG_H
 #define PHIST_ORTHOG_H
 
+#include "phist_config.h"
 #include "phist_kernels.h"
 
 #ifdef __cplusplus

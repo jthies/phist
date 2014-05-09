@@ -1,6 +1,7 @@
 #ifndef PHIST_TRANSFORM_SEARCHSPACE_H
 #define PHIST_TRANSFORM_SEARCHSPACE_H
 
+#include "phist_config.h"
 #include "phist_kernels.h"
 
 #ifdef __cplusplus

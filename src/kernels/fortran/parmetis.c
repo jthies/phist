@@ -6,6 +6,8 @@
  *
  */
 
+#include "phist_config.h"
+
 #ifdef PHIST_HAVE_PARMETIS
 
 #include <parmetis.h>

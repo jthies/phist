@@ -1,3 +1,4 @@
+#include "phist_config.h"
 #include "phist_transform_searchspace.h"
 #include "phist_macros.h"
 #include "phist_lapack.h"

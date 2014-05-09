@@ -1,6 +1,7 @@
 #ifndef PHIST_PCG_H
 #define PHIST_PCG_H
 
+#include "phist_config.h"
 #include "phist_enums.h"
 #include "phist_typedefs.h"
 

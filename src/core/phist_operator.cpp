@@ -1,3 +1,4 @@
+#include "phist_config.h"
 #include "phist_operator.h"
 #include "phist_macros.h"
 #include "phist_ScalarTraits.hpp"

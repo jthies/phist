@@ -3,6 +3,7 @@
 
 #include "phist_operator.h"
 #include "phist_jadaOpts.h"
+#include "phist_config.h"
 
 #ifdef __cplusplus
 extern "C" {

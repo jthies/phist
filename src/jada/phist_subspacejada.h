@@ -1,6 +1,7 @@
 #ifndef PHIST_SUBSPACEJADA_H
 #define PHIST_SUBSPACEJADA_H
 
+#include "phist_config.h"
 #include "phist_operator.h"
 #include "phist_enums.h"
 

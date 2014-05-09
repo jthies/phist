@@ -1,6 +1,7 @@
 #ifndef PHIST_SIMPLE_ARNOLDI_H
 #define PHIST_SIMPLE_ARNOLDI_H
 
+#include "phist_config.h"
 #include "phist_operator.h"
 #include "phist_enums.h"
 

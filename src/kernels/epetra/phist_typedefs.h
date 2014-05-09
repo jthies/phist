@@ -1,6 +1,8 @@
 #ifndef PHIST_TYPEDEFS_H
 #define PHIST_TYPEDEFS_H
 
+#include "phist_config.h"
+
 #ifdef __cplusplus
 
 #ifndef NO_INCLUDES_IN_HEADERS

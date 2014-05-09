@@ -1,6 +1,7 @@
 #ifndef PHIST_PGMRES_H
 #define PHIST_PGMRES_H
 
+#include "phist_config.h"
 #include "phist_operator.h"
 #include "phist_enums.h"
 #include "phist_typedefs.h"

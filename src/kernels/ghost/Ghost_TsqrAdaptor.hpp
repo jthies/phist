@@ -5,6 +5,7 @@
 // However, the only function that was actually changed compared to the Tpetra adapter is
 // the above mentioned.
 
+#include "phist_config.h"
 #include "phist_typedefs.h"
 #include "ghost.h"
 #include "ghost/omp.h"

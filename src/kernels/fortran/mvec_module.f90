@@ -1,3 +1,4 @@
+#include "phist_config.h"
 module mvec_module
   use map_module, only: Map_t
   use sdmat_module, only: SDMat_t

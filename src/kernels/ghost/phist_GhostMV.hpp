@@ -1,6 +1,7 @@
 #ifndef BELOS_GHOST_MV_HPP
 #define BELOS_GHOST_MV_HPP
 
+#include "phist_config.h"
 #include "phist_macros.h"
 #include "ghost.h"
 

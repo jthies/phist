@@ -1,3 +1,4 @@
+#include "phist_config.h"
 #include "../phist_kernels.h"
 #include "phist_trilinos_macros.h"
 #include "phist_typedefs.h"

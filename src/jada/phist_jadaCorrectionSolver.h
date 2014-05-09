@@ -1,6 +1,7 @@
 #ifndef PHIST_JADACORRECTIONSOLVER_H
 #define PHIST_JADACORRECTIONSOLVER_H
 
+#include "phist_config.h"
 #include "phist_kernels.h"
 #include "phist_pgmres.h"
 

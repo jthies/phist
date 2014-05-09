@@ -1,3 +1,4 @@
+#include "phist_config.h"
 module map_module
   implicit none
   private

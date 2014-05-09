@@ -3,6 +3,7 @@
 #include <cmath>
 #include <vector>
 
+#include "phist_config.h"
 #include "phist_macros.h"
 #include "phist_carp_cg.h"
 #include "phist_kernels.h"

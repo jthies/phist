@@ -1,3 +1,4 @@
+#include "phist_config.h"
 module sdmat_module
   implicit none
   private

@@ -2,6 +2,7 @@
 #define PHIST_JADA_OP_H
 
 #include "phist_operator.h"
+#include "phist_config.h"
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

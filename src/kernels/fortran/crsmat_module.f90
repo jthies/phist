@@ -1,3 +1,4 @@
+#include "phist_config.h"
 module crsmat_module
   use map_module, only: Map_t, map_setup
   use mvec_module, only: MVec_t, mvec_scale

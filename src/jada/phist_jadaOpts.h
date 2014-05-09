@@ -1,6 +1,7 @@
 #ifndef PHIST_JADAOPTS_H
 #define PHIST_JADAOPTS_H
 
+#include "phist_config.h"
 #include "phist_enums.h"
 
 #ifdef __cplusplus

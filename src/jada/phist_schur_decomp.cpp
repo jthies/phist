@@ -2,6 +2,7 @@
 #include <cstring>
 #include <cmath>
 
+#include "phist_config.h"
 #include "phist_macros.h"
 #include "phist_schur_decomp.h"
 #include "jada_helpers.hpp"

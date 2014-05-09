@@ -90,7 +90,11 @@ void SUBR(pgmresStates_create)(TYPE(pgmresState_ptr) state[], int numSys, const_
   PHIST_CHK_IERR(phist_map_get_comm(map,&comm,ierr),*ierr);
 
   // setup buffer of mvecs to be used later
+#ifdef PHIST_HAVE_BELOS
+  Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff(new TYPE(MvecRingBuffer)(maxBas+1));
+#else
   TYPE(MvecRingBuffer)* mvecBuff = new TYPE(MvecRingBuffer)(maxBas+1);
+#endif
   PHIST_CHK_IERR( mvecBuff->create_mvecs(map, numSys, ierr), *ierr);
 
   // set up individual states
@@ -109,9 +113,13 @@ void SUBR(pgmresStates_create)(TYPE(pgmresState_ptr) state[], int numSys, const_
     state[i]->sn_ = new ST[maxBas];
     state[i]->rs_ = new ST[maxBas+1];
 
-    // assign MvecRingBuffer
+#ifdef PHIST_HAVE_BELOS
+    // assign MvecRingBuffer (with reference counting)
+    state[i]->Vbuff = (void*) new Teuchos::RCP<TYPE(MvecRingBuffer)>(mvecBuff);
+#else
     // TODO - check memory management, this used to be an RCP
     state[i]->Vbuff = (void*)mvecBuff;
+#endif
   }
 }
 
@@ -121,12 +129,14 @@ void SUBR(pgmresStates_delete)(TYPE(pgmresState_ptr) state[], int numSys, int* i
 {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
+#ifndef PHIST_HAVE_BELOS
   if (numSys==0) return;
   
     CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, state[0]->Vbuff, *ierr);    
     PHIST_CHK_IERR(mvecBuff->delete_mvecs(ierr), *ierr);
     
     delete mvecBuff;
+#endif
 
   for(int i = 0; i < numSys; i++)
   {
@@ -135,6 +145,11 @@ void SUBR(pgmresStates_delete)(TYPE(pgmresState_ptr) state[], int numSys, int* i
     delete [] state[i]->cs_;
     delete [] state[i]->sn_;
     delete [] state[i]->rs_;
+#ifdef PHIST_HAVE_BELOS
+    CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuff, state[i]->Vbuff, *ierr);
+    PHIST_CHK_IERR((*mvecBuff)->delete_mvecs(ierr), *ierr);
+    delete mvecBuff;
+#endif
     delete state[i];
   }
 }
@@ -148,7 +163,12 @@ void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b, TY
   *ierr=0;
 
   // get mvecBuff
+#ifdef PHIST_HAVE_BELOS
+  CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S->Vbuff, *ierr);
+  Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
+#else
   CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S->Vbuff, *ierr);
+#endif
 
   // release mvecs currently marked used by this state
   for(int j = 0; j < S->curDimV_; j++)
@@ -243,13 +263,23 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
   for(int i = 0; i < numSys; i++)
     PHIST_CHK_IERR(*ierr = (S[i]->lastVind_ != lastVind) ? -1 : 0, *ierr);
 
+#ifdef PHIST_HAVE_BELOS
+  CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *ierr);
+  Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
+#else
   CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S[0]->Vbuff, *ierr);
+#endif
 
   // make sure all systems use the same mvecBuff
   for(int i = 0; i < numSys; i++)
   {
+#ifdef PHIST_HAVE_BELOS
+    CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *ierr);
+    PHIST_CHK_IERR(*ierr = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *ierr);
+#else
     CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuffPtr_i, S[i]->Vbuff, *ierr);
     PHIST_CHK_IERR(*ierr = (mvecBuffPtr_i != mvecBuff) ? -1 : 0, *ierr);
+#endif
   }
 
   // determine maximal and shared (minimal) dimensions of subspaces
@@ -437,13 +467,23 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[
   for(int i = 0; i < numSys; i++)
     minId = std::min(minId,S[i]->id);
 
+#ifdef PHIST_HAVE_BELOS
+  CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *ierr);
+  Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
+#else
   CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S[0]->Vbuff, *ierr);
+#endif
 
   // make sure all systems use the same mvecBuff
   for(int i = 0; i < numSys; i++)
   {
+#ifdef PHIST_HAVE_BELOS
+    CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *ierr);
+    PHIST_CHK_IERR(*ierr = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *ierr);
+#else
     CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuffPtr_i, S[i]->Vbuff, *ierr);
     PHIST_CHK_IERR(*ierr = (mvecBuffPtr_i != mvecBuff) ? -1 : 0, *ierr);
+#endif
   }
 
   // determine maximal and shared (minimal) dimensions of subspaces

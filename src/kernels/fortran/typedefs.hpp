@@ -1,6 +1,8 @@
 #ifndef KERNELS_FORTRAN_TYPEDEFS_HPP
 #define KERNELS_FORTRAN_TYPEDEFS_HPP
 
+#include "phist_config.h"
+
 #ifdef PHIST_HAVE_BELOS
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Comm.hpp"

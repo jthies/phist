@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <vector>
 #include <complex>
+#include "phist_config.h"
 #include "phist_enums.h"
 
 // compare functors with tolerance

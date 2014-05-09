@@ -1,3 +1,4 @@
+#include "phist_config.h"
 #include "phist_orthog.h"
 #include "phist_kernels.h"
 
