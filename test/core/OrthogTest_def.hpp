@@ -189,3 +189,81 @@ public:
     }
   }
 
+
+  // check if we can orthogonalize "into a view", that is for instance
+  // compute R1, R2 in [R0 R2;
+  //                    0  R1]
+  TEST_F(CLASSNAME, random_vectors_into_viewed_R)
+    {
+    if (typeImplemented_)
+      {
+      // fill V and W with random numbers
+      SUBR(mvec_random)(V_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_random)(W_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      
+      MT tolV=(MT)10.*VTest::releps(V_);
+      MT tolW=(MT)10.*WTest::releps(W_);
+
+      // copy Q=W because orthog() works in-place
+      SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      lidx_t nR=_M_+_K_;
+      TYPE(sdMat_ptr) R=NULL;
+      SUBR(sdMat_create)(&R,nR,nR,comm_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(R0_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      R0_=NULL;
+      SUBR(sdMat_delete)(R1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      R1_=NULL;
+      SUBR(sdMat_delete)(R2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      R2_=NULL;
+      SUBR(sdMat_view_block)(R,&R0_,0,_M_-1,0,_M_-1,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      // R1 is the k x k diagonal block:
+      SUBR(sdMat_view_block)(R,&R1_,_M_,_M_+_K_-1,_M_,_M_+_K_-1,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      // R2 is the m'th block col with k cols and m rows
+      SUBR(sdMat_view_block)(R,&R2_,0,_M_-1,_M_,_M_+_K_-1,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // renew raw views
+      SUBR(sdMat_extract_view)(R0_,&R0_vp_,&this->ldaR0_,&this->ierr_);
+      ASSERT_EQ(0,this->ierr_);
+      SUBR(sdMat_extract_view)(R1_,&R1_vp_,&this->ldaR1_,&this->ierr_);
+      ASSERT_EQ(0,this->ierr_);
+      SUBR(sdMat_extract_view)(R2_,&R2_vp_,&this->ldaR2_,&this->ierr_);
+      ASSERT_EQ(0,this->ierr_);
+
+
+      // orthogonalize the m columns of V
+      SUBR(mvec_QR)(V_,R0_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      // check wether this worked out
+      ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),tolV);
+      ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),tolV);
+      
+      int nsteps=2;
+
+      // now orthogonalize W against V. The result should be such that Q*R1=W-V*R2, Q'*Q=I,V'*Q=0
+      SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      
+      // check orthonormality of Q
+      ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),tolW);
+      ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),tolW);
+      
+      // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
+      SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_times_sdMat)(st::one(),V_,R2_,st::one(),W2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero(),vflag_),tolW);
+      }
+    }
