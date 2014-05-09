@@ -567,6 +567,7 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* ierr)
 void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* ierr)
   {
   *ierr = 0;
+  ENTER_FCN(__FUNCTION__);
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
   std::cout << "# local rows: "<<V->traits.nrows<<std::endl;
   std::cout << "# vectors:    "<<V->traits.ncols<<std::endl;
@@ -578,6 +579,8 @@ void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* ierr)
 
 void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* ierr)
   {
+  *ierr=0;
+  ENTER_FCN(__FUNCTION__);
   CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*ierr);
   std::cout << "# rows: "<<M->traits.nrows<<std::endl;
   std::cout << "# cols: "<<M->traits.ncols<<std::endl;
@@ -820,7 +823,13 @@ void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE(const_mvec
   char trans[]="C";
 #else
   char trans[]="T";
-#endif  
+#endif
+  PHIST_DEB("VtV=C, V %"PRlidx"x%"PRlidx", \n"
+            "       W %"PRlidx"x%"PRlidx", \n"
+            "       C %"PRlidx"x%"PRlidx"\n", 
+  V->traits.nrows,V->traits.ncols,
+  W->traits.nrows,W->traits.ncols,
+  C->traits.nrows,C->traits.ncols);
   *ierr=ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_ALL_REDUCE);
   }
 
