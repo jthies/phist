@@ -23,6 +23,7 @@
 #endif
 
 #include <malloc.h>
+#include <cstring>
 
 extern "C" {
 

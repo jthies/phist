@@ -48,41 +48,41 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 
   message(STATUS "using GNU compiler flags")
   set (CMAKE_C_FLAGS "-fopenmp -std=c99")
-  set (CMAKE_C_FLAGS_RELEASE "-O3 -ffast-math -march=native -fopenmp")
-  set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g -fopenmp")
+  set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O3 -ffast-math -march=native")
+  set (CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -O2 -g")
   if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
-    set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+    set (CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS} -dH -O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
   else ()
-    set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -fstack-protector-all -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS} -dH -O0 -g -fstack-protector-all -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
   endif ()
 
   set (CMAKE_CXX_FLAGS "-fopenmp")
-  set (CMAKE_CXX_FLAGS_RELEASE "-O2 -fopenmp")
-  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -fopenmp")
+  set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O2")
+  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS} -O2")
   if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
-    set (CMAKE_CXX_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+    set (CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS} -dH -O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
   else ()
-    set (CMAKE_CXX_FLAGS_DEBUG   "-dH -O0 -g -fstack-protector-all -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS} -dH -O0 -g -fstack-protector-all -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
   endif ()
 
   set (CMAKE_Fortran_FLAGS "-fopenmp -cpp -ffree-line-length-none")
-  set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -O3 -ffast-math -fopenmp -cpp")
-  set (CMAKE_Fortran_FLAGS_DEBUG "-dH -O0 -g -DTESTING -fopenmp -Wall -fcheck=all -fstack-protector-all")
+  set (CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS} -march=native -O3 -ffast-math")
+  set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -dH -O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all")
 
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
   message(STATUS "using INTEL compiler flags")
   set (CMAKE_C_FLAGS "-openmp -Wno-unused-variable -mkl -std=c99")
-  set (CMAKE_C_FLAGS_RELEASE "-O3 -xHOST -no-prec-div")
-  set (CMAKE_C_FLAGS_DEBUG "-check=uninit,stack -debug -DTESTING")
+  set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O3 -xHOST -no-prec-div")
+  set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -check=uninit,stack -debug -DTESTING")
 
   set (CMAKE_CXX_FLAGS "-openmp -Wno-unused-variable -mkl")
-  set (CMAKE_CXX_FLAGS_RELEASE "-O3 -xHOST -no-prec-div")
-  set (CMAKE_CXX_FLAGS_DEBUG "-check=uninit,stack -debug -DTESTING")
+  set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -xHOST -no-prec-div")
+  set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -check=uninit,stack -debug -DTESTING")
 
   set (CMAKE_Fortran_FLAGS "-openmp -fpp -mkl")
-  set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -xHOST -no-prec-div")
-  set (CMAKE_Fortran_FLAGS_DEBUG "-check all -debug")
+  set (CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS} -O3 -xHOST -no-prec-div")
+  set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -check all -debug -DTESTING")
 
   # for ipo
   set_property(DIRECTORY . PROPERTY INTERPROCEDURAL_OPTIMIZATION 1)
@@ -95,7 +95,8 @@ else()
 endif ()
 
 
-# append output level to C and C++ flags
+# append output level to C, C++ and Fortran flags
+# remark(melven): we could also use add_definitions here..
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DPHIST_OUTLEV=${OUTLEV_DEBUG}")
@@ -103,6 +104,10 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DPHIST_OUTLEV=${OUTLEV_DEBUG}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DPHIST_OUTLEV=${OUTLEV_DEBUG}")
+
+set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
+set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELWITHDEBINFO} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
+set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -DPHIST_OUTLEV=${OUTLEV_DEBUG}")
 
 ##############################################################################
 # set enable precision?
@@ -119,13 +124,13 @@ if (${PHIST_ENABLE_MPI})
 #TODO - what is the best way to do this portably?
   find_package(MPI REQUIRED)
   if (${MPI_FOUND})
-    set (CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS})
-    set (CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS})
-    set (CMAKE_C_COMPILE_FLAGS ${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS})
-    set (CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS})
-    set (CMAKE_Fortran_COMPILE_FLAGS ${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COMPILE_FLAGS})
-    set (CMAKE_Fortran_LINK_FLAGS ${CMAKE_Fortran_LINK_FLAGS} ${MPI_Fortran_LINK_FLAGS})
-    include_directories (${MPI_INCLUDE_PATH})
+#    set (CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS})
+#    set (CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS})
+#    set (CMAKE_C_COMPILE_FLAGS ${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS})
+#    set (CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS})
+#    set (CMAKE_Fortran_COMPILE_FLAGS ${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COMPILE_FLAGS})
+#    set (CMAKE_Fortran_LINK_FLAGS ${CMAKE_Fortran_LINK_FLAGS} ${MPI_Fortran_LINK_FLAGS})
+#    include_directories (${MPI_INCLUDE_PATH})
   else()
     message(WARNING "could not find MPI. Trying to compile anyway, presuming the compiler/linker knows where to find it.")
   endif()
@@ -315,7 +320,7 @@ foreach(PKG ${LOAD_TRILI_PKG})
 endforeach()
 
 list(APPEND PHIST_LIBS ${LAPACK_LIBS})
-list(APPEND PHIST_LIBS ${MPI_CXX_LIBRARIES})
+#list(APPEND PHIST_LIBS ${MPI_CXX_LIBRARIES})
 
 message(STATUS "all libraries: ${PHIST_LIBS}")
 

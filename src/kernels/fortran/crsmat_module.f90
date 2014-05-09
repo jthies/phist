@@ -1414,10 +1414,13 @@ end do
     integer(C_INT), intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(CrsMat_t), pointer :: A
+#ifdef TESTING
+    integer(C_INTPTR_T) :: dummy
+#endif
     !--------------------------------------------------------------------------------
 
 #ifdef TESTING
-    write(*,*) 'deleting crsMat at address', A_ptr
+    write(*,*) 'deleting crsMat at address', transfer(A_ptr,dummy)
     flush(6)
 #endif
     if( c_associated(A_ptr) ) then

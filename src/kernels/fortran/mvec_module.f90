@@ -1012,6 +1012,9 @@ contains
     type(MVec_t), pointer :: mvec
     type(Map_t), pointer :: map
     integer :: i
+#ifdef TESTING
+    integer(C_INTPTR_T) :: dummy
+#endif
     !--------------------------------------------------------------------------------
 
     call c_f_pointer(map_ptr, map)
@@ -1021,7 +1024,7 @@ contains
     mvec%jmax = nvec
     mvec%map = map
 #ifdef TESTING
-    write(*,*) 'creating new mvec with dimensions:', nvec, map%nlocal(map%me), 'address', c_loc(mvec)
+    write(*,*) 'creating new mvec with dimensions:', nvec, map%nlocal(map%me), 'address', transfer(c_loc(mvec),dummy)
     flush(6)
     flush(6)
 #endif
@@ -1044,10 +1047,13 @@ contains
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
+#ifdef TESTING
+    integer(C_INTPTR_T) :: dummy
+#endif
     !--------------------------------------------------------------------------------
 
 #ifdef TESTING
-    write(*,*) 'deleting mvec at address', mvec_ptr
+    write(*,*) 'deleting mvec at address', transfer(mvec_ptr,dummy)
     flush(6)
     flush(6)
 #endif
@@ -1072,11 +1078,14 @@ contains
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
+#ifdef TESTING
+    integer(C_INTPTR_T) :: dummy
+#endif
     !--------------------------------------------------------------------------------
 
 #ifdef TESTING
-    !write(*,*) 'extract view of mvec at address', mvec_ptr
-    !flush(6)
+    write(*,*) 'extract view of mvec at address', transfer(mvec_ptr,dummy)
+    flush(6)
 #endif
     if( c_associated(mvec_ptr) ) then
       call c_f_pointer(mvec_ptr, mvec)
