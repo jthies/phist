@@ -1315,14 +1315,11 @@ end do
     integer(kind=8) :: j, j_, globalEntries
     integer(kind=8) :: i_, nne
     integer :: funit
+    integer(kind=8) :: globalDim(2)
     !--------------------------------------------------------------------------------
 
     ! get procedure pointer
     call c_f_procpointer(rowFunc_ptr, rowFunc)
-
-    ! open the file
-    write(*,*) 'creating matrix from rowFunc'
-    flush(6)
 
     allocate(A)
 
@@ -1330,11 +1327,14 @@ end do
     globalRows = nrows
     globalCols = ncols
     globalEntries = int(maxnne_per_row,kind=8)*int(nrows,kind=8)
-    write(*,*) 'CrsMat:', globalRows, globalCols, globalEntries
-    flush(6)
 
     call map_setup(A%row_map, MPI_COMM_WORLD, globalRows, ierr)
     if( ierr .ne. 0 ) return
+    if( A%row_map%me .eq. 0 ) then
+      write(*,*) 'creating matrix from rowFunc'
+      write(*,*) 'CrsMat:', globalRows, globalCols, globalEntries
+      flush(6)
+    end if
 
     A%nRows = A%row_map%nlocal(A%row_map%me)
     A%nCols = A%nRows
@@ -1397,8 +1397,15 @@ end do
     call setup_commBuff(A, A%comm_buff)
     call sort_rows_local_nonlocal(A)
 
-    write(*,*) 'created new crsMat with dimensions', A%nRows, A%nCols, A%nEntries
-    flush(6)
+    ! calculate actual global dimension
+    globalDim(1) = A%nrows
+    globalDim(2) = A%nEntries
+    call mpi_allreduce(MPI_IN_PLACE, globalDim, 2, MPI_INTEGER8, MPI_SUM, &
+      &                A%row_map%comm, ierr)
+    if( A%row_map%me .eq. 0 ) then
+      write(*,*) 'created new crsMat with dimensions', globalDim
+      flush(6)
+    end if
     A_ptr = c_loc(A)
 
     ierr = 0
