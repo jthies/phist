@@ -709,6 +709,7 @@ contains
     !--------------------------------------------------------------------------------
     integer :: nrows, nvecv, nvecw, ldv
     logical :: strided_v
+    real(kind=8), allocatable :: M_(:,:)
     !--------------------------------------------------------------------------------
 
     ! determine data layout
@@ -724,8 +725,10 @@ contains
       strided_v = .true.
     end if
 
-    call dgemm_sB_generic_inplace(nrows,nvecw,nvecv,v%val(v%jmin,1),ldv, &
-      &                   M%val(M%imin:M%imax,M%jmin:M%jmax))
+    ! copy data to dense block
+    allocate(M_(nvecv,nvecw))
+    M_ = M%val(M%imin:M%imax,M%jmin:M%jmax)
+    call dgemm_sB_generic_inplace(nrows,nvecw,nvecv,v%val(v%jmin,1),ldv,M_(1,1))
 
 
     !--------------------------------------------------------------------------------

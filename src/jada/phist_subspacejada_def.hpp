@@ -453,7 +453,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       // to avoid unnecessary subspace transformations, shrink the searchspace one iteration earlier...
       if( nV + 2*blockDim > maxBase )
       {
-        PHIST_SOUT(PHIST_INFO,"Shrinking search space from %d to %d\n", nV, minBase);
+        PHIST_SOUT(PHIST_INFO,"Shrinking search space (one iteration earlier) from %d to %d\n", nV, minBase);
         PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  0, nV-1,          0, minBase-1,    ierr), *ierr);
       }
 

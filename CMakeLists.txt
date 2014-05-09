@@ -85,7 +85,13 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
   set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -check all -debug -DTESTING")
 
   # for ipo
-  set_property(DIRECTORY . PROPERTY INTERPROCEDURAL_OPTIMIZATION 1)
+  # melven: probably not useful or even dangerous?
+  #  kernel routines should probably best optimized individually;
+  #  for fortran: I'm passing arrays as scalars in fortran (call by reference),
+  #               because the kernel routines would be too complex otherwise
+  #               (and they should be fast and not complex!).
+  #               The compiler best shouldn't be able to know about this...
+  #set_property(DIRECTORY . PROPERTY INTERPROCEDURAL_OPTIMIZATION 1)
 
 else()
 
