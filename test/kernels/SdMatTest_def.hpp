@@ -192,6 +192,9 @@ public:
       
       // set m2=m1 to check later
       SUBR(sdMat_add_sdMat)(st::one(),mat1_,st::zero(),mat2_,&ierr_);
+
+      // did the assignment operation above work, M2=M1?
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
       
       SUBR(sdMat_create)(&m1_copy,imax-imin+1,jmax-jmin+1,comm_,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -199,10 +202,11 @@ public:
       ASSERT_EQ(0,ierr_);
       
 #if PHIST_OUTLEV>=PHIST_DEBUG && !defined(PHIST_KERNEL_LIB_FORTRAN)
-      PHIST_SOUT(PHIST_DEBUG,"i=[%d"PRlidx",%"PRlidx"], j=[%"PRlidx",%"PRlidx"]\n",
+      PHIST_SOUT(PHIST_DEBUG,"i=[%"PRlidx",%"PRlidx"], j=[%"PRlidx",%"PRlidx"]\n",
         imin,imax,jmin,jmax);
-      PHIST_SOUT(PHIST_DEBUG,"This should be a copy of those columns:\n");
+      PHIST_SOUT(PHIST_DEBUG,"Original matrix:\n");
       SUBR(sdMat_print)(mat1_,&ierr_);
+      PHIST_SOUT(PHIST_DEBUG,"This should be a copy of those columns:\n");
       SUBR(sdMat_print)(m1_copy,&ierr_);
 #endif      
       _ST_* val_ptr;
@@ -230,6 +234,11 @@ public:
       _ST_ val = random_number();
       SUBR(sdMat_put_value)(m1_copy,val,&ierr_);
       ASSERT_EQ(0,ierr_);
+      
+      // check that the pointers we retrieved in SetUp() still point to the
+      // location of the sdMat data
+      ASSERT_EQ(true,pointerUnchanged(mat1_,mat1_vp_,m_lda_));
+      ASSERT_EQ(true,pointerUnchanged(mat2_,mat2_vp_,m_lda_));
       
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
 

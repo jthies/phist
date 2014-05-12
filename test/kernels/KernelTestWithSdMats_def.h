@@ -97,6 +97,16 @@ static void PrintSdMat(std::ostream& os, std::string label,
       }//p
     return;
   }
+
+  static bool pointerUnchanged(TYPE(sdMat_ptr) V, ST* expected_location, int expected_lda)
+  {
+    int ierr;
+    lidx_t lda;
+    ST* ptr;
+    SUBR(sdMat_extract_view)(V,&ptr,&lda,&ierr);
+    return ( (ierr==0)&&(lda==expected_lda)&&(ptr==expected_location) );
+  }
+
   
   TYPE(sdMat_ptr) mat1_, mat2_, mat3_, mat4_;
   _ST_ *mat1_vp_, *mat2_vp_, *mat3_vp_, *mat4_vp_;
