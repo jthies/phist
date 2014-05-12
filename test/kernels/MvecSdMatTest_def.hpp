@@ -15,6 +15,8 @@ public:
   //! mvec/sdMat sizes
   static const int n_=_N_;
   static const int m_=_M_;
+  //TODO: k is currently ignored in this test
+  static const int k_=_K_;
   
   //! V is n x m
   TYPE(mvec_ptr) V1_,V2_;

@@ -1,16 +1,5 @@
 #include "ghost/util.h"
 
-// macro to check ghost return type
-// TODO - use this macro everywhere in this file and kernels.cpp
-#define PHIST_CHK_GHOST(func,flag) { \
-ghost_error_t ghost_err=func; flag=0;\
-    if (ghost_err != GHOST_SUCCESS) {\
-PHIST_OUT(PHIST_WARNING,"%s",ghost_error_string(ghost_err));\
-    flag=(int)ghost_err;\
-    return;\
-    }\
-}
-
 extern "C" {
 
 // we implement only the double precision real type D
@@ -52,8 +41,8 @@ void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
 // TODO - check ghost return codes everywhere like this
   PHIST_CHK_GERR(ghost_context_create(&ctx,0,0,
         GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_FILE,MPI_COMM_WORLD,1.0),*ierr);
-  ghost_sparsemat_create(&mat,ctx,mtraits,1);                               
-  mat->fromFile(mat,cfname);
+  PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,mtraits,1),*ierr);                               
+  PHIST_CHK_GERR(mat->fromFile(mat,cfname),*ierr);
 #if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;
   ghost_context_string(&str,ctx);
@@ -146,10 +135,10 @@ void SUBR(mvec_create)(TYPE(mvec_ptr)* vV,
   ghost_densemat_traits_t vtraits = map->vtraits_template;/*ghost_cloneVtraits(map->vtraits_template);*/
         vtraits.ncols=nvec;
         vtraits.datatype = st::ghost_dt;
-  ghost_densemat_create(&result,map->ctx,vtraits);
+  PHIST_CHK_GERR(ghost_densemat_create(&result,map->ctx,vtraits),*ierr);
   ST zero = st::zero();
   // this allocates the vector and fills it with zeros
-  result->fromScalar(result,&zero);
+  PHIST_CHK_GERR(result->fromScalar(result,&zero),*ierr);
   PHIST_DEB("mvec nrows: %"PRlidx"\n",result->traits.nrows);
   *vV=(TYPE(mvec_ptr))(result);
   }
@@ -172,7 +161,7 @@ void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
         vtraits.ncols=nvec;
         vtraits.datatype = st::ghost_dt;
 
-  PHIST_CHK_GHOST(ghost_densemat_create(&result,map->ctx,vtraits),*ierr);
+  PHIST_CHK_GERR(ghost_densemat_create(&result,map->ctx,vtraits),*ierr);
 
   if ((result->traits.nrows!=result->traits.nrowshalo)||(result->traits.nrowshalo!=lda))
   {
@@ -184,7 +173,7 @@ void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
     return;
   }
 
-  PHIST_CHK_GHOST(result->viewPlain(result,(void*)values,vtraits.nrows,vtraits.ncols,0,0,lda),*ierr);
+  PHIST_CHK_GERR(result->viewPlain(result,(void*)values,vtraits.nrows,vtraits.ncols,0,0,lda),*ierr);
   *vV=(TYPE(mvec_ptr))(result);
   return;
 }
@@ -319,7 +308,7 @@ void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ie
     *ierr=-2;
     return;
   }
-  PHIST_CHK_GHOST(ghost_densemat_valptr(V,(void**)val),*ierr);
+  PHIST_CHK_GERR(ghost_densemat_valptr(V,(void**)val),*ierr);
   PHIST_CHK_IERR(*ierr=check_local_size(V->traits.nrowspadded),*ierr);
 
 #ifdef PHIST_MVECS_ROW_MAJOR
@@ -342,7 +331,7 @@ void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* 
     return;
   }
 
-  PHIST_CHK_GHOST(ghost_densemat_valptr(M,(void**)val),*ierr);
+  PHIST_CHK_GERR(ghost_densemat_valptr(M,(void**)val),*ierr);
 
   PHIST_CHK_IERR(*ierr=check_local_size(M->traits.nrowspadded),*ierr);
 
@@ -838,11 +827,11 @@ void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE(const_mvec
     if (ncC==4 || ncC==8)
     {
       PHIST_DEB("using specialized kernel for mvecT_times_mvec");
-      *ierr=ghost_tsmttsm(C, V, W, (void*)&alpha, (void*)&beta);
+      PHIST_CHK_GERR(ghost_tsmttsm(C, V, W, (void*)&alpha, (void*)&beta),*ierr);
     }
     else
     {
-      *ierr=ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_ALL_REDUCE);
+      PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_ALL_REDUCE),*ierr);
     }
   return;
   }
@@ -880,12 +869,12 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
     if ((ncC==4 || ncC==8) && (beta==st::zero()))
     {
       PHIST_DEB("using specialized kernel for mvec_times_sdMat");
-      *ierr=ghost_tsmm(W, V, C,(void*)&alpha);
+      PHIST_CHK_GERR(ghost_tsmm(W, V, C,(void*)&alpha),*ierr);
     }
     else
     {
       char trans[]="N";
-      *ierr=ghost_gemm(W,V,trans,C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE);
+      PHIST_CHK_GERR(ghost_gemm(W,V,trans,C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE),*ierr);
     }
   }
 //! n x m serial dense matrix times m x k serial dense matrix gives n x k sdMat,
@@ -900,8 +889,8 @@ void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,C,vC,*ierr);
-  char trans[]="N";
-  *ierr=ghost_gemm(C, V, trans,W, (char*)"N", (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE);
+  char trans[]="N";  
+  PHIST_CHK_GERR(ghost_gemm(C, V, trans,W, (char*)"N", (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE),*ierr);
   }
 
 //! n x m conj. transposed serial dense matrix times m x k serial dense matrix gives m x k sdMat,
@@ -921,7 +910,7 @@ void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
 #else
   char trans[]="T";
 #endif  
-  *ierr=ghost_gemm(C, V, trans,W, (char*)"N", (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE);
+  PHIST_CHK_GERR(ghost_gemm(C, V, trans,W, (char*)"N", (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE),*ierr);
   }
 
 
@@ -946,7 +935,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     // we need a special treatment here because TSQR
     // uses a relative tolerance to determine rank deficiency,
     // so a single zero vector is not detected to be rank deficient.
-    PHIST_DEB("mvec_QR: single-vector case");
+    PHIST_DEB("mvec_QR: single-vector case\n");
     MT nrm;
     PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
     ST* Rval=NULL;
@@ -987,27 +976,29 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     if (transV)
     {
       PHIST_DEB("memtranspose V");
-      PHIST_CHK_GHOST(V->memtranspose(V),*ierr);
+      PHIST_CHK_GERR(V->memtranspose(V),*ierr);
     }
     if (transR)
     {
       PHIST_DEB("memtranspose R");
-      PHIST_CHK_GHOST(R->memtranspose(R),*ierr);
+      PHIST_CHK_GERR(R->memtranspose(R),*ierr);
     }
   
     // do not change ierr after this call because
     // it may carry rank information
-    SUBR(mvec_QR)(V,R,ierr);
+    int ierr_final;
+    SUBR(mvec_QR)(V,R,&ierr_final);
     if (transV)
     {
       PHIST_DEB("memtranspose back V");
-      V->memtranspose(V);
+      PHIST_CHK_GERR(V->memtranspose(V),*ierr);
     }
     if (transR)
     {
       PHIST_DEB("memtranspose back R");
-      R->memtranspose(R);
+      PHIST_CHK_GERR(R->memtranspose(R),*ierr);
     }
+    *ierr=ierr_final;
     return;
   }// need memtranspose of V or R
   

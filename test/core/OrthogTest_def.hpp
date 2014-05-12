@@ -265,5 +265,50 @@ public:
       SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
       ASSERT_EQ(0,ierr_);
       ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero(),vflag_),tolW);
+      
+      // check the location of the resulting R parts
+      _ST_ *R_vp;
+      lidx_t ldaR;
+
+      SUBR(sdMat_extract_view)(R,&R_vp,&ldaR,&this->ierr_);
+      ASSERT_EQ(0,this->ierr_);
+
+#ifdef PHIST_SDMATS_ROW_MAJOR
+#warning "test not implemented for row-major sdMats"
+#endif
+
+        _MT_ errR2=mt::one();
+        for (lidx_t i=0; i<m_; i++)
+        {
+          for (lidx_t j=0; j<k_; j++)
+          {
+            lidx_t jj = m_+j;
+            _ST_ a = R_vp[jj*ldaR+i];
+            _ST_ b = R2_vp_[j*ldaR2_+i];
+            _MT_ denom=st::abs(a+b);
+            if (denom==mt::zero()) denom=mt::one();
+            errR2+= st::abs(a-b)/denom;
+          }
+        }
+        _MT_ errR1=mt::one();
+        for (lidx_t i=0; i<k_; i++)
+        {
+          for (lidx_t j=0; j<k_; j++)
+          {
+            lidx_t ii = m_+i;
+            lidx_t jj = m_+j;
+            _ST_ a = R_vp[jj*ldaR+ii];
+            _ST_ b = R1_vp_[j*ldaR1_+i];
+            _MT_ denom=st::abs(a+b);
+            if (denom==mt::zero()) denom=mt::one();
+            errR1+= st::abs(a-b)/denom;
+          }
+        }
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      PHIST_DEB("matrix H (last block-col should contain orthog-coefficients)");
+      SUBR(sdMat_print)(R,&ierr_);
+#endif    
+      ASSERT_REAL_EQ(mt::one(),errR1);
+      ASSERT_REAL_EQ(mt::one(),errR2);
       }
     }
