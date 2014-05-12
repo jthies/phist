@@ -821,38 +821,63 @@ void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE(const_mvec
 #else
   char trans[]="T";
 #endif  
-  *ierr=ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_ALL_REDUCE);
+
+    lidx_t ncC = C->traits.ncols;
+
+    // GHOST has experimental specialized kernels which we want to test here:
+    if (ncC==4 || ncC==8)
+    {
+      PHIST_DEB("using specialized kernel for mvecT_times_mvec");
+      *ierr=ghost_tsmttsm(C, V, W, (void*)&alpha, (void*)&beta);
+    }
+    else
+    {
+      *ierr=ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_ALL_REDUCE);
+    }
+  return;
   }
 
 
-//! n x m multi-vector times m x m dense matrix gives n x m multi-vector,
+//! n x m multi-vector times m x k dense matrix gives n x k multi-vector,
 //! W=alpha*V*C + beta*W
 void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
                                        TYPE(const_sdMat_ptr) vC,
                            _ST_ beta,  TYPE(mvec_ptr) vW,
                                        int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
-  *ierr=0;
-  CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
-  CAST_PTR_FROM_VOID(ghost_densemat_t,C,vC,*ierr);
-  CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*ierr);
-#ifdef TESTING
-  lidx_t nrV,nrW;
-  int ncV, ncW, nrC, ncC;
-  nrV=V->traits.nrows;  ncV=V->traits.ncols;
-  nrW=W->traits.nrows;  ncW=V->traits.ncols;
-  nrC=C->traits.nrows;  ncC=V->traits.ncols;
-  PHIST_CHK_IERR(*ierr=nrV-nrW,*ierr);
-  PHIST_CHK_IERR(*ierr=nrC-ncV,*ierr);
-  PHIST_CHK_IERR(*ierr=ncC-ncW,*ierr);
-  //PHIST_DEB("V'C with V %"PRlidx"x%d, C %dx%d and result %"PRlidx"x%d\n", nrV,ncV,nrC,ncC,nrW,ncW);
-#endif
-  // note: C is replicated, so this operation is a purely local one.
-  char trans[]="N";
-  *ierr=ghost_gemm(W,V,trans,C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE);
-  }
+#include "phist_std_typedefs.hpp"
+    ENTER_FCN(__FUNCTION__);
+    *ierr=0;
+    CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
+    CAST_PTR_FROM_VOID(ghost_densemat_t,C,vC,*ierr);
+    CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*ierr);
 
+    lidx_t nrV,nrW;
+    int ncV, ncW, nrC, ncC;
+    nrV=V->traits.nrows;  ncV=V->traits.ncols;
+    nrW=W->traits.nrows;  ncW=V->traits.ncols;
+    nrC=C->traits.nrows;  ncC=V->traits.ncols;
+
+#ifdef TESTING
+    PHIST_CHK_IERR(*ierr=nrV-nrW,*ierr);
+    PHIST_CHK_IERR(*ierr=nrC-ncV,*ierr);
+    PHIST_CHK_IERR(*ierr=ncC-ncW,*ierr);
+    //PHIST_DEB("V'C with V %"PRlidx"x%d, C %dx%d and result %"PRlidx"x%d\n", nrV,ncV,nrC,ncC,nrW,ncW);
+#endif
+    // note: C is replicated, so this operation is a purely local one.
+
+    // GHOST has experimental specialized kernels which we want to test here:
+    if ((ncC==4 || ncC==8) && (beta==st::zero()))
+    {
+      PHIST_DEB("using specialized kernel for mvec_times_sdMat");
+      *ierr=ghost_tsmm(W, V, C,(void*)&alpha);
+    }
+    else
+    {
+      char trans[]="N";
+      *ierr=ghost_gemm(W,V,trans,C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE);
+    }
+  }
 //! n x m serial dense matrix times m x k serial dense matrix gives n x k sdMat,
 //! C=alpha*V*W + beta*C (serial XGEMM wrapper)
 void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
