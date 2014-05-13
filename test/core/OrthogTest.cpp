@@ -53,6 +53,33 @@ using namespace testing;
 #include "OrthogTest_def.hpp"
 #undef CLASSNAME
 
+
+#undef _M_
+#define _M_ 6
+
+#ifdef PHIST_HAVE_SP
+
+# define CLASSNAME SOrthogTest_17_6_1
+# include "phist_gen_s.h"
+# include "OrthogTest_def.hpp"
+# undef CLASSNAME
+
+# define CLASSNAME COrthogTest_17_6_1
+# include "phist_gen_c.h"
+# include "OrthogTest_def.hpp"
+# undef CLASSNAME
+#endif
+
+#define CLASSNAME DOrthogTest_17_6_1
+#include "phist_gen_d.h"
+#include "OrthogTest_def.hpp"
+#undef CLASSNAME
+
+#define CLASSNAME ZOrthogTest_17_6_1
+#include "phist_gen_z.h"
+#include "OrthogTest_def.hpp"
+#undef CLASSNAME
+
 // larger block size for W
 #undef _N_
 #define _N_ 64

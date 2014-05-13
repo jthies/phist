@@ -56,6 +56,12 @@ void SUBR(simple_arnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op, TYPE
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R2,0,i,i,i,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R1,i+1,i+1,i,i,ierr),*ierr);
     PHIST_CHK_NEG_IERR(SUBR(orthog)(vprev,av,R1,R2,3,ierr),*ierr);
+#if PHIST_OUTLEV>=PHIST_DEBUG
+    PHIST_DEB("Arnoldi-step %d\n",i);
+    PHIST_CHK_IERR(SUBR(sdMat_print)(H,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_print)(R2,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_print)(R1,ierr),*ierr);
+#endif    
     if( *ierr > 0 )
     {
       PHIST_SOUT(PHIST_INFO,"found invariant subspace in arnoldi, expanding basis with a randomly generated orthogonal vector\n");
