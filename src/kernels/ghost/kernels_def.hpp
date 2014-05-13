@@ -959,7 +959,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   (V->traits.flags&GHOST_DENSEMAT_SCATTERED) ||
   (R->traits.flags&GHOST_DENSEMAT_SCATTERED))
   {
-    PHIST_SOUT(PHIST_ERROR,"mvec_QR: cannot handle scattered vectors");
+    PHIST_SOUT(PHIST_ERROR,"mvec_QR: cannot handle scattered vectors\n");
     *ierr=-1; // can't handle non-constant stride
     return;
   }//case vectors scattered: not implemented!
@@ -971,20 +971,20 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   
   if (transR||transV)
   {
-    PHIST_DEB("we need to make the memory layout of V and/or R conform with TSQR");
+    PHIST_DEB("we need to make the memory layout of V and/or R conform with TSQR\n");
     if (transV)
     {
       if (V->traits.flags&GHOST_DENSEMAT_VIEW) 
       {
-        PHIST_SOUT(PHIST_ERROR,"mvec_QR: cannot handle scattered vectors");
+        PHIST_SOUT(PHIST_ERROR,"mvec_QR: cannot handle scattered vectors\n");
         *ierr=-1; // can't handle view + memtranspose in ghost, yet
       }
-      PHIST_DEB("memtranspose V");
+      PHIST_DEB("memtranspose V\n");
       PHIST_CHK_GERR(V->memtranspose(V),*ierr);
     }
     if (transR)
     {
-      PHIST_DEB("memtranspose R");
+      PHIST_DEB("memtranspose R\n");
       PHIST_CHK_GERR(R->memtranspose(R),*ierr);
     }
   
@@ -994,12 +994,12 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     SUBR(mvec_QR)(V,R,&ierr_final);
     if (transV)
     {
-      PHIST_DEB("memtranspose back V");
+      PHIST_DEB("memtranspose back V\n");
       PHIST_CHK_GERR(V->memtranspose(V),*ierr);
     }
     if (transR)
     {
-      PHIST_DEB("memtranspose back R");
+      PHIST_DEB("memtranspose back R\n");
       PHIST_CHK_GERR(R->memtranspose(R),*ierr);
     }
     *ierr=ierr_final;
@@ -1022,7 +1022,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
 
 #ifdef PHIST_HAVE_BELOS
 
-  PHIST_DEB("do TSQR on col-major ghost data structures");
+  PHIST_DEB("do TSQR on col-major ghost data structures\n");
   PHIST_DEB("create Teuchos view of R\n");
   Teuchos::RCP<Traits<_ST_ >::Teuchos_sdMat_t> R_view;
   PHIST_CHK_IERR(R_view = Traits<_ST_ >::CreateTeuchosViewNonConst
