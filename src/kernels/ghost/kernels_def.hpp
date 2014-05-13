@@ -375,7 +375,7 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
     //PHIST_DEB("destroying previous vector (view)\n");
     tmp->destroy(tmp);
   }
-  PHIST_CHK_IERR(*ierr=(Vblock->traits.flags&GHOST_DENSEMAT_VIEW-1),*ierr);
+  PHIST_CHK_IERR(*ierr=(Vblock->traits.flags&GHOST_DENSEMAT_VIEW-GHOST_DENSEMAT_VIEW),*ierr);
   *vVblock = (TYPE(mvec_ptr))Vblock;
 }
 
@@ -446,7 +446,7 @@ void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMblock,
     CAST_PTR_FROM_VOID(ghost_densemat_t,tmp,*vMblock,*ierr);
     tmp->destroy(tmp);
   }
-  PHIST_CHK_IERR(*ierr=(Mblock->traits.flags&GHOST_DENSEMAT_VIEW-1),*ierr);
+  PHIST_CHK_IERR(*ierr=(Mblock->traits.flags&GHOST_DENSEMAT_VIEW-GHOST_DENSEMAT_VIEW),*ierr);
   *vMblock = (TYPE(sdMat_ptr))Mblock;
 }
 
