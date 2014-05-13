@@ -658,6 +658,7 @@ void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* ierr)
 
 void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* ierr)
   {
+  *ierr=0;
   ENTER_FCN(__FUNCTION__);
   CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*ierr);
   Teuchos::FancyOStream fos(Teuchos::rcp(&std::cout,false));
