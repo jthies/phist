@@ -763,26 +763,27 @@ end do
 
 
     subroutine calculateNewPartition(crsMat, rowBlkTargetProc)
+      use iso_c_binding
       type(crsMat_t),intent(in) :: crsMat
-      integer(kind=8) :: rowBlkTargetProc(crsMat%nRows)
+      integer(kind=C_INT64_T) :: rowBlkTargetProc(crsMat%nRows)
 
 
       ! parameter for ParMETIS_V3_PartKway
-      integer(kind=8),pointer :: vtxdist(:) ! = crsMat%row_map%distrib+1
-      integer(kind=8),pointer :: xadj(:) ! = crsMat%row_offset without counting diagonal entries
-      integer(kind=8),pointer :: adjncy(:) ! = crsMat%global_col_idx without diagonal (connection to itself)
-      integer(kind=8),pointer :: vwgt(:) ! has size(crsMat%nRows), number of non-zero entries per row block
-      integer(kind=8),pointer :: adjwgt(:) ! edge weights, for unsymmetric matrices 1 or 2
-      integer(kind=8),parameter :: wgtflag = 2 ! vertex and edge weights
-      integer(kind=8),parameter :: numflag = 1 ! fortran numbering style
-      integer(kind=8),parameter :: ncon = 1 ! only one constraint, one weight per vertex
-      integer(kind=8) :: nparts ! = crsMat%row_map%nProcs
-      real(kind=4),pointer :: tpwgts(:) ! =1/nparts, has size (1:nparts)
-      real(kind=4),parameter :: ubvec = 1.01 ! vertex weight imbalance tolerance
-      real(kind=4),parameter :: ubvec_refine = 1.01 ! vertex weight imbalance tolerance
-      integer(kind=8) :: options(0:3) = 0 ! default options
-      integer(kind=8) :: edgecut_refined, edgecut ! output parameter, global number of cutted edges
-      integer(kind=8) :: edgecut_before
+      integer(kind=C_INT64_T),allocatable :: vtxdist(:) ! = crsMat%row_map%distrib+1
+      integer(kind=C_INT64_T),allocatable :: xadj(:) ! = crsMat%row_offset without counting diagonal entries
+      integer(kind=C_INT64_T),allocatable :: adjncy(:) ! = crsMat%global_col_idx without diagonal (connection to itself)
+      integer(kind=C_INT64_T),allocatable :: vwgt(:) ! has size(crsMat%nRows), number of non-zero entries per row block
+      integer(kind=C_INT64_T),allocatable :: adjwgt(:) ! edge weights, for unsymmetric matrices 1 or 2
+      integer(kind=C_INT64_T),parameter :: wgtflag = 2 ! vertex and edge weights
+      integer(kind=C_INT64_T),parameter :: numflag = 1 ! fortran numbering style
+      integer(kind=C_INT64_T),parameter :: ncon = 1 ! only one constraint, one weight per vertex
+      integer(kind=C_INT64_T) :: nparts ! = crsMat%row_map%nProcs
+      real(kind=C_FLOAT),allocatable :: tpwgts(:) ! =1/nparts, has size (1:nparts)
+      real(kind=C_FLOAT),parameter :: ubvec = 1.01 ! vertex weight imbalance tolerance
+      real(kind=C_FLOAT),parameter :: ubvec_refine = 1.01 ! vertex weight imbalance tolerance
+      integer(kind=C_INT64_T) :: options(0:3) = 0 ! default options
+      integer(kind=C_INT64_T) :: edgecut_refined, edgecut ! output parameter, global number of cutted edges
+      integer(kind=C_INT64_T) :: edgecut_before
 
 
       integer :: i, ierr
@@ -807,7 +808,7 @@ end do
         vwgt(i) = crsMat%row_offset(i+1)-crsMat%row_offset(i)
       end do
       allocate(adjncy(xadj(crsMat%nRows+1)-1))
-      nullify(adjwgt)
+      !nullify(adjwgt)
       j = 1
       edgecut = 0
       do i = 1, crsMat%nRows, 1
@@ -1316,6 +1317,7 @@ end do
     integer(kind=8) :: i_, nne
     integer :: funit
     integer(kind=8) :: localDim(2), globalDim(2)
+    real(kind=8) :: wtime
     !--------------------------------------------------------------------------------
 
     ! get procedure pointer
@@ -1349,6 +1351,10 @@ end do
     allocate(A%global_col_idx(A%nEntries))
     allocate(A%val(A%nEntries))
 
+
+call mpi_barrier(MPI_COMM_WORLD, ierr)
+wtime = mpi_wtime()
+
     ! get data, try to respect NUMA
     A%row_offset(1) = 1_8
 !$omp parallel do schedule(static) ordered
@@ -1365,10 +1371,33 @@ end do
     end do
     A%nEntries = A%row_offset(A%nRows+1)-1
 
+call mpi_barrier(MPI_COMM_WORLD, ierr)
+wtime = mpi_wtime() - wtime
+if( A%row_map%me .eq. 0 ) then
+  write(*,*) 'read matrix from row func in', wtime, 'seconds'
+end if
+
+wtime = mpi_wtime()
 
     call sort_global_cols(A)
+
+call mpi_barrier(MPI_COMM_WORLD, ierr)
+wtime = mpi_wtime() - wtime
+if( A%row_map%me .eq. 0 ) then
+  write(*,*) 'sort global cols in', wtime, 'seconds'
+end if
+
+
 #ifdef PHIST_HAVE_PARMETIS
+wtime = mpi_wtime()
+
     call repartcrs(A,3,ierr)
+
+call mpi_barrier(MPI_COMM_WORLD, ierr)
+wtime = mpi_wtime() - wtime
+if( A%row_map%me .eq. 0 ) then
+  write(*,*) 'repartitioned in', wtime, 'seconds'
+end if
 #endif
 ! write matrix to mat.mm
 !do i_ = 0, A%row_map%nProcs-1
@@ -1394,8 +1423,27 @@ end do
 
 !end do
 
+wtime = mpi_wtime()
+
     call setup_commBuff(A, A%comm_buff)
+
+call mpi_barrier(MPI_COMM_WORLD, ierr)
+wtime = mpi_wtime() - wtime
+if( A%row_map%me .eq. 0 ) then
+  write(*,*) 'setup comm buffers in', wtime, 'seconds'
+end if
+
+
+wtime = mpi_wtime()
+
     call sort_rows_local_nonlocal(A)
+
+call mpi_barrier(MPI_COMM_WORLD, ierr)
+wtime = mpi_wtime() - wtime
+if( A%row_map%me .eq. 0 ) then
+  write(*,*) 'sorted rows local/nonlocal in', wtime, 'seconds'
+end if
+
 
     ! calculate actual global dimension
     localDim(1) = A%nrows
