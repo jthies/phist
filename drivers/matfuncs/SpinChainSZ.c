@@ -53,16 +53,75 @@ char * int2bin(int i)
 #define BIT_SHIFT_L <<
 #define BIT_SHIFT_R >>
 
+ghost_idx_t bitshift_l( ghost_idx_t z,  int32_t n ){
+	ghost_idx_t i;
+	
+#ifdef GHOST_HAVE_LONGIDX
+	ghost_idx_t r=0;
+	uint32_t tmp;
+	uint32_t * t0 = (uint32_t *)( &z);
+	uint32_t * t1 = (uint32_t *)( &r);
+	
+	if (n < 32 ){
+		t1[0] = t0[0] << n; t1[1] = t0[1] << n;
+		tmp =  t0[0] >> (32-n);
+		t1[1] |=  tmp;
+	}
+	else{
+		tmp =  t0[0] << (n-32);
+		t1[1] |=  tmp;
+	}
+	return r;
+	
+	//if (n > 0) for( i=0; i<n; i++ ) z *= 2;
+	//else       for( i=0; i<n; i++ ) z /= 2;
+	//return z;
+#else
+	return z << n;
+#endif
+	}
+
+ghost_idx_t bitshift_r( ghost_idx_t z,  int32_t  n ){
+	ghost_idx_t i;
+
+#ifdef GHOST_HAVE_LONGIDX
+		ghost_idx_t r=0;
+	uint32_t tmp;
+	uint32_t * t0 = (uint32_t *)( &z);
+	uint32_t * t1 = (uint32_t *)( &r);
+	
+	if (n < 32 ){
+		t1[0] = t0[0] >> n; t1[1] = t0[1] >> n;
+		tmp =  t0[1] << (32-n);
+		t1[0] |=  tmp;
+	}
+	else{
+		tmp =  t0[1] >> (n-32);
+		t1[0] |=  tmp;
+	}
+	return r;
+	
+	
+	//if (n > 0) for( i=0; i<n; i++ ) z /= 2;
+	//else       for( i=0; i<n; i++ ) z *= 2;
+	//return z;
+#else
+	return z >> n;
+#endif
+	}
+
 #define CHECK_DIFF_NN(  target  , nn_mask ) ( !((nn_mask == ( nn_mask & target )) || !( nn_mask & target )) )
 
 ghost_idx_t ishftc( ghost_idx_t i, ghost_idx_t s, ghost_idx_t L ){
 	if(s<0) s += L;
-	return  ((1 << L ) - 1) & ((i << s) | ( i >> (L-s)) );
+	//return  ((1 << L ) - 1) & ((i << s) | ( i >> (L-s)) );
+	return  (bitshift_l(1 , L ) - 1) & (bitshift_l(i , s) | bitshift_r( i , (L-s)) );
 	
 }
 
 ghost_idx_t power_of_2( ghost_idx_t n){
-	return (ghost_idx_t)(1) << n;
+	//return (ghost_idx_t)(1) << n;
+	return bitshift_l( 1 , n );
 	}
 
 
@@ -79,14 +138,16 @@ ghost_idx_t Binomial(ghost_idx_t N, ghost_idx_t k){
 	return B;
 	}
 
-int32_t bitcount(ghost_idx_t i){
+ghost_idx_t bitcount(ghost_idx_t i){
 	
-	int32_t count = 0;
+	ghost_idx_t count = 0;
 	//while (count < i){	count++;
 	//			i = i & (i-1);  }
 	
 	while ( i ){	count += i&1;
-			i >>= 1;   }
+			//i >>= 1;
+			i = bitshift_r( i,  1 );
+			}
 	return count;
 	}
 
@@ -97,7 +158,7 @@ int SpinChainSZ( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *val
 	static ghost_idx_t NUp = 0;
 	static double Jz  = 1.;
 	static double Jxy = 1.;
-	static int32_t useOBC = 0;
+	static ghost_idx_t useOBC = 0;
 	useOBC &= 1;
 	
 	
@@ -133,14 +194,15 @@ int SpinChainSZ( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *val
 		//while ( row >= lutlead[il+1] ) il++;
 		
 		
-		int32_t bp;
-		bp = (il << (L/2)) + lutrev[ row - lutlead[il] + revcnt[NUp-bitcount(il)]]; 
+		ghost_idx_t bp;
+		//bp = (il << (L/2)) + lutrev[ row - lutlead[il] + revcnt[NUp-bitcount(il)]]; 
+		bp = bitshift_l(il , (L/2)) + lutrev[ row - lutlead[il] + revcnt[NUp-bitcount(il)]]; 
 		if ( bitcount(bp) != NUp) {  printf("error 1\n"); exit(0);} 
 		
 		
 		ghost_idx_t hp = 0;
 		
-		int32_t l;
+		ghost_idx_t l;
 		
 		 if( Jz != 0. ){
 			for(l=0;l<L-useOBC;l++){
@@ -174,10 +236,11 @@ int SpinChainSZ( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *val
 				if (CHECK_DIFF_NN (bp , ishftc( 1|2 , l , L))) {
 					
 					//int32_t bp2 =  bp ^ imask[l];
-					int32_t bp2 =  bp ^ ishftc( 1|2 , l , L);
+					ghost_idx_t bp2 =  bp ^ ishftc( 1|2 , l , L);
 					
-					int32_t lbp = bp2 >> (L/2);
-					int32_t tbp = bp2 & (power_of_2(L/2)-1);
+					//ghost_idx_t lbp = bp2 >> (L/2);
+					ghost_idx_t lbp = bitshift_r( bp2,  L/2 );
+					ghost_idx_t tbp = bp2 & (power_of_2(L/2)-1);
 					
 					cols[ *nnz] = lutlead[lbp] + luttrail[tbp] -1;
 					
@@ -188,7 +251,7 @@ int SpinChainSZ( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *val
 		 }
 		
 		//cols_qsort( cols, vals , sizeof(double) ,  *nnz );
-    return 0;
+		return 0;
 		
 	}else if( row == -1 ){
 		
@@ -232,7 +295,7 @@ int SpinChainSZ( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *val
 		
 		
 		for(i=0;i<power_of_2(L/2);i++){
-			int32_t tmp = bitcount(i);
+			ghost_idx_t tmp = bitcount(i);
 			cnt[tmp]++;
 			luttrail[i] = cnt[tmp];
 		}
@@ -241,7 +304,7 @@ int SpinChainSZ( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *val
 		for(i=1;i<=L;i++)  revcnt[i] = revcnt[i-1] + cnt[i-1];
 		
 		for(i=0;i<power_of_2(L/2);i++){
-			int32_t tmp = bitcount(i);
+			ghost_idx_t tmp = bitcount(i);
 			lutrev[revcnt[tmp]]=i;
 			revcnt[tmp]++;
 		}
@@ -251,7 +314,7 @@ int SpinChainSZ( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *val
 		
 		lutlead[0]=0;
 		for(i=0;i<power_of_2(L/2);i++){
-			int32_t tmp = bitcount(i);
+			ghost_idx_t tmp = bitcount(i);
 			tmp = NUp-tmp;
 			if ( (tmp>=0) && (tmp<=NUp) )   lutlead[i+1] = lutlead[i]+cnt[tmp];
 			else                            lutlead[i+1] = lutlead[i];
@@ -282,7 +345,7 @@ int SpinChainSZ( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *val
 		
 		printf("\n");
 #endif
-    return 0;
+		return 0;
 	}
 	
 	else if( row == -3 ){
@@ -292,7 +355,7 @@ int SpinChainSZ( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *val
 		free(cnt);
 		free(revcnt);
 		//free(imask);
-    return 0;
+		return 0;
 	}
 
 	printf("SpinChainSZ(): error in row %"PRIDX"\n",row);
