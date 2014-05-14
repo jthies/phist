@@ -180,6 +180,12 @@ public:
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
       ASSERT_EQ(0,ierr_);
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      PHIST_SOUT(PHIST_DEBUG,"R2=\n");
+      SUBR(sdMat_print)(R2_,&ierr_);
+      PHIST_SOUT(PHIST_DEBUG,"R1=\n");
+      SUBR(sdMat_print)(R1_,&ierr_);
+#endif      
 #ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,k_,nloc_,ldaW2_,stride_,st::zero()),100*mt::eps());
 #else
@@ -366,6 +372,12 @@ public:
       // orthogonalize the m columns of V
       SUBR(mvec_QR)(V_,R0_,&ierr_);
       ASSERT_EQ(m_-1,ierr_);
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      PHIST_DEB("coeffs for QR of V:\n");
+      SUBR(sdMat_print)(R0_,&ierr_);
+      PHIST_DEB("in correct position?\n");
+      SUBR(sdMat_print)(R,&ierr_);
+#endif      
       // check wether this worked out
       ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),tolV);
       ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),tolV);

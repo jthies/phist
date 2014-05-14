@@ -99,9 +99,9 @@ public:
     }
 
   TEST_F(CLASSNAME, with_one_vectors) 
-    {
+  {
     if (typeImplemented_)
-      {
+    {
       SUBR(mvec_put_value)(vec1_,st::one(),&ierr_);
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&ierr_);
@@ -113,6 +113,10 @@ public:
       // check that we anyway got something orthogonal back
       ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
       ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
-      }
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      PHIST_DEB("R=\n");
+      SUBR(sdMat_print)(mat1_,&ierr_);
+#endif
     }
+  }
 

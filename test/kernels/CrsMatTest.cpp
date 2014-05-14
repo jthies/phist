@@ -68,3 +68,31 @@ using namespace ::testing;
 #define CLASSNAME ZCrsMatTest_25_4
 #include "phist_gen_z.h"
 #include "CrsMatTest_def.hpp"
+
+#undef _N_
+#undef _NV_
+#define _N_ 25
+#define _NV_ 7
+
+#ifdef PHIST_HAVE_SP
+
+# define CLASSNAME SCrsMatTest_25_7
+# include "phist_gen_s.h"
+# include "CrsMatTest_def.hpp"
+# undef CLASSNAME
+
+# define CLASSNAME CCrsMatTest_25_7
+# include "phist_gen_c.h"
+# include "CrsMatTest_def.hpp"
+#undef CLASSNAME
+
+#endif
+
+#define CLASSNAME DCrsMatTest_25_7
+#include "phist_gen_d.h"
+#include "CrsMatTest_def.hpp"
+#undef CLASSNAME
+
+#define CLASSNAME ZCrsMatTest_25_7
+#include "phist_gen_z.h"
+#include "CrsMatTest_def.hpp"

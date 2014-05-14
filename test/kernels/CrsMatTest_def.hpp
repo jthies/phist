@@ -36,7 +36,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
 #ifndef SKIP_ZERO_MAT
       SUBR(read_mat)("spshift",nglob_,&A4_,&ierr_);
 #else
-      A4_ = NULL;
+      A4_ = A1_;
 #endif
       
       if (A0_==NULL || A1_==NULL || A2_==NULL || A3_==NULL || A4_==NULL)
@@ -297,6 +297,58 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_));
       }
     }
+
+#if(_NV_>1)
+  TEST_F(CLASSNAME, A1_times_mvec_using_views)
+  {
+    if (typeImplemented_ && A1_!=NULL)
+    {
+      // matrices may have different maps
+      rebuildVectors(A1_);
+
+      ST alpha, beta;
+      //I*X=X?
+      SUBR(mvec_random)(vec1_,&ierr_);
+      SUBR(mvec_random)(vec2_,&ierr_);
+      
+      TYPE(mvec_ptr) v_in=NULL, v_out=NULL;
+      lidx_t nv =  _NV_/2;
+      lidx_t offs = _NV_%2;
+      SUBR(mvec_view_block)(vec1_,&v_in,offs,offs+nv-1,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_view_block)(vec1_,&v_out,offs+nv,offs+2*nv-1,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      
+      _ST_ *v_in_vp, *v_out_vp;
+
+// we could extract the pointers from the view, but this way we
+// have more control and make sure the data is where it should be:
+#ifdef PHIST_MVECS_ROW_MAJOR
+     v_in_vp = vec1_vp_+offs;
+     v_out_vp = vec1_vp_+offs+nv;
+#else
+     v_in_vp = vec1_vp_+offs*lda_;
+     v_out_vp = vec1_vp_+(offs+nv)*lda_;
+#endif
+#if(PHIST_OUTLEV>=PHIST_DEBUG)
+      PHIST_DEB("all random:\n");
+      SUBR(mvec_print)(vec1_,&ierr_);
+#endif
+      SUBR(crsMat_times_mvec)(st::one(),A1_,v_in,st::zero(),v_out,&ierr_);
+      ASSERT_EQ(0,ierr_);
+#if(PHIST_OUTLEV>=PHIST_DEBUG)
+      PHIST_DEB("with two identical blocks [%d..%d] and [%d..%d]:\n",
+        offs, offs+nv-1,offs+nv,offs+2*nv-1);
+      SUBR(mvec_print)(vec1_,&ierr_);
+#endif
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(v_in_vp,v_out_vp,nloc_,nv,lda_,stride_,vflag_));
+    }
+    else
+    {
+      PHIST_SOUT(PHIST_INFO,"test skipped\n");
+    }
+  }
+#endif
 
   TEST_F(CLASSNAME, A2_times_mvec)
     {
