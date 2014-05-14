@@ -515,7 +515,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
         -8.1932230989204431,
         9.6675923086516082 };
 #endif
-#else
+#elif _N_ == 25 && _NV_ == 1
 #ifdef IS_COMPLEX
       _ST_ precalc_result[_N_*_NV_] = {
         _ST_(1.072230172746e+01,-1.031665649804e+00), _ST_(3.572230172746e+01,-1.031665649804e+00), _ST_(6.072230172746e+01,-1.031665649804e+00), _ST_(8.572230172746e+01,-1.031665649804e+00),
@@ -571,6 +571,10 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
         -8.1932230989204431, 16.806776901079530, 41.806776901079516, 66.806776901079530,
         9.6675923086516082, 34.667592308651606, 59.667592308651606, 84.667592308651621 };
 #endif
+#else
+  PHIST_SOUT(PHIST_INFO,"skipping test, no data available\n");
+  ST* precalc_result=NULL;
+  return;
 #endif
       // check result
       for(int i = 0; i < nloc_; i++)

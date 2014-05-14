@@ -69,6 +69,7 @@ using namespace ::testing;
 #include "phist_gen_z.h"
 #include "CrsMatTest_def.hpp"
 
+#undef CLASSNAME
 #undef _N_
 #undef _NV_
 #define _N_ 25

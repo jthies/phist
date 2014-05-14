@@ -502,13 +502,12 @@ public:
 
 // only test the Belos interface for ghost, we didn't write
 // the interfaces for Epetra or Tpetra so it is not our problem.
-#ifdef PHIST_KERNEL_LIB_GHOST
-#ifdef PHIST_HAVE_BELOS
+#ifdef DO_BELOS_TESTS
   // runs all tests from the Belos MvTraits tester
   TEST_F(CLASSNAME, belos_iface)
-    {
+  {
     if (typeImplemented_)
-      {
+    {
       Teuchos::RCP<Belos::OutputManager<ST> > MyOM
         = Teuchos::rcp( new Belos::OutputManager<ST>() );
       MyOM->setVerbosity( Belos::Warnings|Belos::Debug);
@@ -519,9 +518,6 @@ public:
       // test the multivector and its adapter
       bool berr=Belos::TestMultiVecTraits<ST,phist::GhostMV>(MyOM,ivec);
       ASSERT_EQ(true,berr);
-      }
-    
     }
-    
-#endif
+  }
 #endif
