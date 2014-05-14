@@ -84,7 +84,7 @@ int main(int argc, char** argv)
     ghost_task_t *mainTask;
 
     ghost_task_create(&mainTask, 1, 0, 
-                (void*(*)(void*))&mainFunc, &args, GHOST_TASK_DEFAULT);
+                (void*(*)(void*))&mainFunc, &args, GHOST_TASK_DEFAULT, NULL, 0);
 
     ghost_task_enqueue(mainTask);
     ghost_task_wait(mainTask);
