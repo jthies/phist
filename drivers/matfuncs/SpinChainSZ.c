@@ -115,8 +115,22 @@ int SpinChainSZ( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *val
 		
 		double * dvals = vals;
 		*nnz = 0;
-		ghost_idx_t il = 0;
-		while ( row >= lutlead[il+1] ) il++;
+    // binary search
+    ghost_idx_t min_il = 0;
+		ghost_idx_t max_il = power_of_2(L/2);
+    ghost_idx_t il = 0;
+    for(int i = 0; i < L+1; i++)
+    {
+      il = (min_il + max_il)/2;
+      if( row >= lutlead[il+1] )
+        min_il = il+1;
+      else if( max_il != min_il )
+        max_il = il;
+      else
+        break;
+    }
+    // bad linear search, makes matrix building VERY expensive!
+		//while ( row >= lutlead[il+1] ) il++;
 		
 		
 		int32_t bp;
@@ -173,7 +187,7 @@ int SpinChainSZ( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *val
 			}
 		 }
 		
-		cols_qsort( cols, vals , sizeof(double) ,  *nnz );
+		//cols_qsort( cols, vals , sizeof(double) ,  *nnz );
     return 0;
 		
 	}else if( row == -1 ){
@@ -354,7 +368,7 @@ int crsSpinChain( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *va
 			}
 		}
 		
-		cols_qsort( cols, vals , sizeof(double) ,  *nnz );
+		//cols_qsort( cols, vals , sizeof(double) ,  *nnz );
 		return 0;
 		
 	}
