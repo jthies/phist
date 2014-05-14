@@ -34,7 +34,7 @@ void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
   ghost_sparsemat_traits_t *mtraits=new ghost_sparsemat_traits_t;
         *mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
         mtraits->format = GHOST_SPARSEMAT_CRS;
- //       mtraits->format = GHOST_SPARSEMAT_SELL;
+        //mtraits->format = GHOST_SPARSEMAT_SELL;
         mtraits->datatype = st::ghost_dt;
         mtraits->flags = GHOST_SPARSEMAT_DEFAULT;
         char* cfname=const_cast<char*>(filename);
