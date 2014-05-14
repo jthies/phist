@@ -37,6 +37,7 @@ enable_language (C)
 enable_language (CXX)
 enable_language (Fortran)
 
+
 ##############################################################################
 # compiler-dependent flags 
 ##############################################################################
@@ -299,11 +300,8 @@ else()
   message(STATUS "continuing without Likwid, you can set the environment variable LIKWID_HOME to help CMake find it")
 endif()
 
-set(PHIST_TIMEMONITOR Off CACHE BOOL "Gather detailed function-level timings using the TimeMonitor class from the Trilinos package Belos")
+set(PHIST_TIMEMONITOR Off CACHE BOOL "Gather detailed function-level timings")
 if( ${PHIST_TIMEMONITOR} )
-  if(NOT "${PHIST_HAVE_BELOS}" EQUAL 1)
-    message(FATAL_ERROR "TimeMonitor requires the Belos package from Trilinos!")
-  endif()
   message(STATUS "activated TimeMonitor timing monitoring")
 endif()
 

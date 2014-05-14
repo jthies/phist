@@ -485,7 +485,7 @@ end do
     real(kind=8),allocatable :: value_new(:)
     integer(kind=8),allocatable :: glob_row_permut(:)
     integer,allocatable :: offsets(:)
-    integer :: ierr_
+    integer :: ierr_, localErr
 
 
     ierr = 0
@@ -497,9 +497,9 @@ end do
     call calculateNewPartition(crsMat,rowSendProc)
 !write(*,*) 'rowSendProc', rowSendProc
     if( any(rowSendProc .lt. 0 .or. rowSendProc .ge. crsMat%row_map%nProcs) ) then
-      ierr = 1
+      localErr = 1
     end if
-    call mpi_allreduce(MPI_IN_PLACE, ierr, 1, MPI_INTEGER, MPI_SUM, crsMat%row_map%comm, ierr_)
+    call mpi_allreduce(localErr, ierr, 1, MPI_INTEGER, MPI_SUM, crsMat%row_map%comm, ierr_)
     if( ierr .ne. 0 ) then
       if( outlev .ge. 1 .and. crsMat%row_map%me .eq. 0 ) then
         write(*,*) 'ERROR: parmetis failure!'
@@ -1315,7 +1315,7 @@ end do
     integer(kind=8) :: j, j_, globalEntries
     integer(kind=8) :: i_, nne
     integer :: funit
-    integer(kind=8) :: globalDim(2)
+    integer(kind=8) :: localDim(2), globalDim(2)
     !--------------------------------------------------------------------------------
 
     ! get procedure pointer
@@ -1398,9 +1398,9 @@ end do
     call sort_rows_local_nonlocal(A)
 
     ! calculate actual global dimension
-    globalDim(1) = A%nrows
-    globalDim(2) = A%nEntries
-    call mpi_allreduce(MPI_IN_PLACE, globalDim, 2, MPI_INTEGER8, MPI_SUM, &
+    localDim(1) = A%nrows
+    localDim(2) = A%nEntries
+    call mpi_allreduce(localDim, globalDim, 2, MPI_INTEGER8, MPI_SUM, &
       &                A%row_map%comm, ierr)
     if( A%row_map%me .eq. 0 ) then
       write(*,*) 'created new crsMat with dimensions', globalDim

@@ -15,7 +15,11 @@
 
 
 #ifdef PHIST_TIMEMONITOR
-#include <Teuchos_TimeMonitor.hpp>
+#include "phist_timemonitor.hpp"
+namespace phist_TimeMonitor
+{
+  Timer::TimeDataMap Timer::_timingResults;
+}
 #endif
 
 #ifdef PHIST_HAVE_LIKWID
@@ -88,7 +92,7 @@ void phist_kernels_finalize(int* ierr)
   LIKWID_MARKER_CLOSE;
 #endif
 #ifdef PHIST_TIMEMONITOR
-  Teuchos::TimeMonitor::summarize();
+  phist_TimeMonitor::Timer::summarize();
 #endif
   PHIST_CHK_IERR( *ierr = MPI_Finalize(), *ierr);
   *ierr=0;

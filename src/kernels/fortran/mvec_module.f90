@@ -213,6 +213,7 @@ contains
     !--------------------------------------------------------------------------------
     integer :: nvec, nrows, lda, ierr
     logical :: strided
+    real(kind=8) :: localNrm(mvec%jmin:mvec%jmax)
     !--------------------------------------------------------------------------------
 
     ! determine data layout
@@ -252,8 +253,8 @@ contains
       call dnrm2_general(nrows, nvec, mvec%val(mvec%jmin,1), lda, vnrm)
     end if
 
-    vnrm = vnrm*vnrm
-    call MPI_Allreduce(MPI_IN_PLACE,vnrm,nvec,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
+    localNrm = vnrm*vnrm
+    call MPI_Allreduce(localNrm,vnrm,nvec,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
     vnrm = sqrt(vnrm)
 
     !--------------------------------------------------------------------------------
@@ -524,6 +525,7 @@ contains
     !--------------------------------------------------------------------------------
     integer :: nvec, nrows, ldx, ldy, ierr
     logical :: strided_x, strided_y, strided
+    real(kind=8) :: localDot(x%jmin:x%jmax)
     !--------------------------------------------------------------------------------
 
     ! determine data layout
@@ -574,7 +576,8 @@ contains
       call ddot_general(nrows, nvec, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy, dot)
     end if
 
-    call MPI_Allreduce(MPI_IN_PLACE,dot,nvec,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
+    localDot = dot
+    call MPI_Allreduce(localDot,dot,nvec,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
 
     !--------------------------------------------------------------------------------
   end subroutine mvec_dot_mvec
@@ -872,12 +875,14 @@ contains
     allocate(tmp_(nvecv,nvecw))
     if( tmp_transposed ) then
       tmp_ = transpose(tmp)
+      deallocate(tmp)
+      allocate(tmp(nvecv,nvecw))
     else
       tmp_ = tmp
     end if
-    call MPI_Allreduce(MPI_IN_PLACE,tmp_,nvecv*nvecw,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
+    call MPI_Allreduce(tmp_,tmp,nvecv*nvecw,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
 
-    M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp_+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
+    M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
     !--------------------------------------------------------------------------------
   end subroutine mvecT_times_mvec
 
