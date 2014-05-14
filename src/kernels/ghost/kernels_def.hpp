@@ -78,7 +78,7 @@ void SUBR(crsMat_get_row_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, 
   ghost_map_t* map = new ghost_map_t;
   map->ctx = A->context;
   map->vtraits_template=phist_default_vtraits();
-  map->vtraits_template.flags=GHOST_DENSEMAT_LHS;
+  map->vtraits_template.flags=GHOST_DENSEMAT_NO_HALO;
   *vmap = (const_map_ptr_t)map;
 }
 
@@ -94,7 +94,6 @@ void SUBR(crsMat_get_col_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, 
   ghost_map_t* map = new ghost_map_t;
   map->ctx = A->context;
   map->vtraits_template=phist_default_vtraits();
-  map->vtraits_template.flags=GHOST_DENSEMAT_RHS;
   *vmap = (const_map_ptr_t)map;
 }
 
