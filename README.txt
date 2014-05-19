@@ -11,14 +11,14 @@ The git repository can be checked out using the command
 We support several different implementations of the basic linear algebra operations
 in PHIST, which are set by the variable PHIST_KERNEL_LIB (see below). If you choose
 ghost as kernel library, a number of example drivers are activated which also require 
-the essex examples in
+the ESSEX Physics libraries to be installed:
 
-  git clone git@bitbucket.org:essex/examples
+  https://bitbucket.org/essex/physics
 
-you have to at least build libmatfuncs.so and copy it into 
-$ESSEX_INSTALL_DIR/lib/essex_exmples, and copy matfuncs.h into 
-$ESSEX_INSTALL_DIR/include/essex_examples/ before starting ot build
-phist. Obviously you also need to build ghost on your system.
+Follow the instructions in order to build and install the libraries.
+Obviously you also need to build and install GHOST on your system:
+
+  https://bitbucket.org/essex/ghost
 
 1b) PHIST Installation
 
@@ -44,7 +44,7 @@ On the RRZE systems proceed as follows to build PHIST with GHOST (substitute $PR
   module load cmake
   cd build/
   PHIST_KERNEL_LIB=ghost CC=icc CXX=icpc 
-  cmake .. -DTrilinos_HOME=$TRILINOS_HOME -DGHOST_HOME=$PREFIX/lib/ghost -DESSEX_INSTALL_DIR=$PREFIX/ -DMPIEXEC=mpirun_rrze
+  cmake .. -DTrilinos_HOME=$TRILINOS_HOME -DGHOST_DIR=$PREFIX/lib/ghost -DESSEX-PHYSICS_DIR=$PREFIX/lib/essex-physics -DMPIEXEC=mpirun_rrze
   make 
 
 It is sufficient to set GHOST_HOME and TRILINOS_HOME as environement variables (or Ghost_HOME, Trilinos_HOME)
