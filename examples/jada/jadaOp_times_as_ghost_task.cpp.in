@@ -1,0 +1,236 @@
+#include "phist_config.h"
+
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#ifdef PHIST_HAVE_LIKWID
+#include "likwid.h"
+#endif
+
+#include "phist_macros.h"
+#include "phist_enums.h"
+#include "phist_kernels.h"
+#include "phist_operator.h"
+#include "phist_driver_utils.h"
+#include "phist_jadaOp.hpp"
+#include ${PHIST_TG_HFILE}
+#include "phist_ScalarTraits.hpp"
+
+#ifdef PHIST_HAVE_GHOST
+#include "ghost.h"
+#include "ghost/thpool.h"
+#include "ghost/machine.h"
+#include "ghost/pumap.h"
+#include "ghost/locality.h"
+#endif
+
+#ifdef PHIST_TIMEMONITOR
+#include <Teuchos_TimeMonitor.hpp>
+#endif
+
+typedef phist::ScalarTraits<_ST_> st;
+
+#define PHIST_IPCHK_IERR(func,FLAG) {\
+{func; if (FLAG!=PHIST_SUCCESS) { \
+PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
+(FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return &(FLAG);}}}
+
+// small c++ string helper function
+bool endsWith(const std::string& s, const std::string& suffix)
+{
+  return s.rfind(suffix) == (s.size()-suffix.size());
+}
+
+typedef struct mainArgs_t {
+int argc;
+char** argv;
+} mainArgs_t;
+
+static int* mainFunc(mainArgs_t* arg);
+
+int main(int argc, char** argv)
+{
+  int ierr;
+  mainArgs_t args;
+  args.argc=argc;
+  args.argv=argv;
+
+#ifdef PHIST_HAVE_GHOST
+  ghost_hwconfig_t hwconfig={.ncore=6,.nsmt=6};
+  ghost_hwconfig_set(hwconfig);
+#endif
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+#ifdef PHIST_HAVE_GHOST
+#ifndef PHIST_KERNEL_LIB_GHOST
+    ghost_init(argc,argv);
+#endif
+    ghost_thpool_t *thpool;
+    int nnuma = 0;
+    int npu = 0;
+    char *str;
+
+    ghost_thpool_get(&thpool);
+    ghost_machine_nnuma(&nnuma);
+    ghost_machine_npu(&npu,GHOST_NUMANODE_ANY);
+
+    ghost_pumap_string(&str);
+    PHIST_OUT(PHIST_VERBOSE,"%s\n",str);
+    free(str); str = NULL;
+
+    PHIST_OUT(PHIST_VERBOSE,"The thread pool consists of %d threads\n",thpool->nThreads);
+
+    ghost_task_t *mainTask;
+
+    ghost_task_create(&mainTask, 1, 0,
+                (void*(*)(void*))&mainFunc, &args, GHOST_TASK_DEFAULT, NULL, 0);
+
+    ghost_task_enqueue(mainTask);
+    ghost_task_wait(mainTask);
+    PHIST_ICHK_IERR(ierr=*((int*)mainTask->ret),ierr);
+    ghost_task_destroy(mainTask);
+#ifndef PHIST_KERNEL_LIB_GHOST
+    ghost_finalize();
+#endif
+#else
+// no ghost
+ierr=*mainFunc(&args);
+#endif
+  PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
+}
+
+static int ierr;
+
+static int *mainFunc(mainArgs_t* arg)
+{
+  int argc=arg->argc;
+  char** argv=arg->argv;
+
+  int rank, num_proc;
+  int verbose;
+
+  comm_ptr_t comm = NULL;
+  crsMat_ptr_t A = NULL;
+  TYPE(op) opA;
+  _ST_* sigma = NULL;
+  TYPE(op) jadaOp;
+  const_map_ptr_t map = NULL;
+  mvec_ptr_t x = NULL;
+  mvec_ptr_t y = NULL;
+  mvec_ptr_t q = NULL;
+  
+  PHIST_IPCHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+  PHIST_IPCHK_IERR(phist_comm_create(&comm,&ierr),ierr);
+
+  PHIST_IPCHK_IERR(phist_comm_get_rank(comm, &rank,&ierr),ierr);
+  PHIST_IPCHK_IERR(phist_comm_get_size(comm, &num_proc,&ierr),ierr);
+
+  verbose= (rank==0);
+
+  if (argc<4)
+  {
+    if (verbose) fprintf(stdout,"Usage: %s <matrix filename> <nprojvecs> <nvecs>\n", argv[0]);
+    ierr=1;
+    return &ierr;
+  }
+
+  std::string filename(argv[1]);
+  int nproj = atoi(argv[2]);
+  int nvecs = atoi(argv[3]);
+  
+
+  if( endsWith(filename,".mm") )
+  {
+    PHIST_IPCHK_IERR(SUBR(crsMat_read_mm)(&A,filename.c_str(),&ierr),ierr);
+  }
+  else if( endsWith(filename,".cua") )
+  {
+#ifdef IS_COMPLEX
+    PHIST_IPCHK_IERR(SUBR(crsMat_read_hb)(&A,filename.c_str(),&ierr),ierr);
+#else
+    PHIST_SOUT(PHIST_ERROR,"error, invoked real version of this program for complex matrix with ending '.cua'");
+    ierr=1;
+    return &ierr;
+#endif
+  }
+  else if( endsWith(filename,".rua") )
+  {
+#ifdef IS_COMPLEX
+    PHIST_SOUT(PHIST_ERROR,"error, invoked complex version of this program for real matrix with ending '.rua'");
+    ierr=1;
+    return &ierr;
+#else
+    PHIST_IPCHK_IERR(SUBR(crsMat_read_hb)(&A,filename.c_str(),&ierr),ierr);
+#endif
+  }
+  else if( endsWith(filename,".bin") )
+  {
+    PHIST_IPCHK_IERR(SUBR(crsMat_read_bin)(&A,filename.c_str(),&ierr),ierr);
+  }
+  else
+  {
+    PHIST_SOUT(PHIST_ERROR,"unknown file ending of matrix file '%s'",filename.c_str());
+    ierr=1;
+    return &ierr;
+  }
+
+  PHIST_IPCHK_IERR(SUBR(crsMat_get_domain_map)(A, &map,&ierr),ierr);
+  PHIST_IPCHK_IERR(SUBR(mvec_create)(&x,map,nvecs,&ierr),ierr);
+  PHIST_IPCHK_IERR(SUBR(mvec_create)(&y,map,nvecs,&ierr),ierr);
+  PHIST_IPCHK_IERR(SUBR(op_wrap_crsMat)(&opA,A,&ierr),ierr);
+  sigma = new _ST_[nvecs];
+  for(int i = 0; i < nvecs; i++)
+    sigma[i] = st::rand();
+  PHIST_IPCHK_IERR(SUBR(mvec_create)(&q,map,nproj,&ierr),ierr);
+  PHIST_IPCHK_IERR(SUBR(mvec_put_value)(q,st::zero(),&ierr),ierr);
+  // set q vectors to unit vectors
+  {
+    lidx_t ldq;
+    _ST_* q_raw;
+    PHIST_IPCHK_IERR(SUBR(mvec_extract_view)(q,&q_raw,&ldq,&ierr),ierr);
+    for(int i = 0; i < nproj; i++)
+      q_raw[i*ldq+i] = st::one();
+  }
+  PHIST_IPCHK_IERR(SUBR(jadaOp_create)(&opA,NULL,q,NULL,sigma,nvecs,&jadaOp,&ierr),ierr);
+
+  PHIST_IPCHK_IERR(SUBR(mvec_put_value)(x,st::one(),&ierr),ierr);
+
+#ifdef PHIST_TIMEMONITOR
+  Teuchos::RCP<Teuchos::Time> time = Teuchos::TimeMonitor::getNewTimer("jadaOp_times");
+#endif
+  for(int i = 0; i < 120/nvecs; i++)
+  {
+#ifdef PHIST_TIMEMONITOR
+    Teuchos::TimeMonitor timeMon( *time );
+#endif
+#ifdef PHIST_HAVE_LIKWID
+#pragma omp parallel
+    {
+      LIKWID_MARKER_START("jadaOp_times");
+    }
+#endif
+
+    PHIST_IPCHK_IERR(jadaOp.apply(st::one(),jadaOp.A,x,st::zero(),y,&ierr),ierr);
+
+#ifdef PHIST_HAVE_LIKWID
+#pragma omp parallel
+    {
+      LIKWID_MARKER_STOP("jadaOp_times");
+    }
+#endif
+  }
+#ifdef PHIST_TIMEMONITOR
+  Teuchos::TimeMonitor::summarize();
+#endif
+  PHIST_IPCHK_IERR(SUBR(jadaOp_delete)(&jadaOp,&ierr),ierr);
+  delete sigma;
+  PHIST_IPCHK_IERR(SUBR(mvec_delete)(q,&ierr),ierr);
+  PHIST_IPCHK_IERR(SUBR(mvec_delete)(x,&ierr),ierr);
+  PHIST_IPCHK_IERR(SUBR(mvec_delete)(y,&ierr),ierr);
+  PHIST_IPCHK_IERR(SUBR(crsMat_delete)(A,&ierr),ierr);
+
+  return &ierr;
+}
