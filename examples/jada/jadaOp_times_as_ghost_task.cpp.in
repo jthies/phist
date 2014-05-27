@@ -60,7 +60,7 @@ int main(int argc, char** argv)
   args.argv=argv;
 
 #ifdef PHIST_HAVE_GHOST
-  ghost_hwconfig_t hwconfig={.ncore=6,.nsmt=6};
+  ghost_hwconfig_t hwconfig={.ncore=10,.nsmt=1};
   ghost_hwconfig_set(hwconfig);
 #endif
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
