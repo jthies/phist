@@ -737,29 +737,17 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* ierr)
     //void* old_scale = A->traits->scale;
     if (alpha!=st::one())
     {
-      // TODO: this fails for some reason!
-      //A->traits->scale = (void*)&alpha;
       spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_SCALE);
-      // copy input vector and scale 
-      /*
-      x=x->clone(x,x->traits->ncols,0);
-      x->scale(x,(void*)&alpha);
-      */
-      }
-    if (beta!=st::zero())
+    }
+    if (beta==st::one())
     {
       spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_AXPY);
-      if (beta!=st::one())
-      {
-        y->scale(y,&beta);
-      }
     }
-    *ierr=ghost_spmv(y,A,x,&spMVM_opts,&alpha,&beta,NULL);
-    if (alpha!=st::one())
+    else if (beta!=st::zero())
     {
-      //A->traits->scale = old_scale;
-      //x->destroy(x); // x has been cloned
+      spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_AXPBY);
     }
+    *ierr=ghost_spmv(y,A,x,&spMVM_opts,&alpha,&beta,NULL,NULL);
   }
 }
 
@@ -773,22 +761,44 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* ierr)
   return;
 }
 //! y[i]=alpha*(A*x[i]+shifts[i]*x[i]) + beta*y[i]
-void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
-        const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr)
+void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
+        const _ST_ shifts[], TYPE(const_mvec_ptr) vx, _ST_ beta, TYPE(mvec_ptr) vy, int* 
+        ierr)
 {
-#include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
   *ierr=0;
+  CAST_PTR_FROM_VOID(ghost_sparsemat_t,A,vA,*ierr);
+  CAST_PTR_FROM_VOID(ghost_densemat_t,x,vx,*ierr);
+  CAST_PTR_FROM_VOID(ghost_densemat_t,y,vy,*ierr);
+  if (alpha==st::zero())
+  {
+    PHIST_CHK_IERR(SUBR(crsMat_times_mvec)(alpha,vA,vx,beta,vy,ierr),*ierr);
+  }
+  else
+  {
+    int nvec;
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, ierr), *ierr);
 
-  PHIST_CHK_IERR(SUBR(crsMat_times_mvec)(alpha, A, x, beta, y, ierr), *ierr);
-  int nvec;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x, &nvec, ierr), *ierr);
-  _ST_ alpha_shifts[nvec];
-  for(int i = 0; i < nvec; i++)
-    alpha_shifts[i] = alpha*shifts[i];
-  PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha_shifts, x, st::one(), y, ierr), *ierr);
+    ghost_spmv_flags_t spMVM_opts=GHOST_SPMV_DEFAULT;
+    // currently the vector mode is the only one working with MPI and multiple RHS
+    spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_VECTOR);
+    if (alpha!=st::one())
+    {
+      spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_SCALE);
+    }
+    if (beta==st::one())
+    {
+      spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_AXPY);
+    }
+    else if (beta!=st::zero())
+    {
+      spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_AXPBY);
+    }
+    spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_VSHIFT);
+    *ierr=ghost_spmv(y,A,x,&spMVM_opts,&alpha,&beta,shifts,NULL);
+  }
 }
-
 
 //! dot product of vectors v_i and w_i, i=1..numvecs
 void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) vV, TYPE(const_mvec_ptr) vW, _ST_* s, int* ierr)
