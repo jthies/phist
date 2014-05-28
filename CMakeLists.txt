@@ -415,8 +415,6 @@ if  (PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
 #       driver to the essex/examples repo...
   find_package(ESSEX-PHYSICS REQUIRED CONFIG)
   message(STATUS "Found ESSEX-Physics ${ESSEX-PHYSICS_VERSION}")
-  set(ESSEX_INSTALL_DIR CACHE ${CMAKE_INSTALL_PREFIX} "where the essex examples are 
-  installed")
 
   include_directories(${ESSEX-PHYSICS_INCLUDE_DIRS})
   add_executable(spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
