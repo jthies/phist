@@ -752,7 +752,7 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* ierr)
     {
       spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_AXPBY);
     }
-    *ierr=ghost_spmv(y,A,x,&spMVM_opts,&alpha,&beta,NULL,NULL);
+    *ierr=ghost_spmv(y,A,x,&spMVM_opts,&alpha,&beta);
   }
 }
 
@@ -801,7 +801,9 @@ void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
       spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_AXPBY);
     }
     spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_VSHIFT);
-    *ierr=ghost_spmv(y,A,x,&spMVM_opts,&alpha,&beta,shifts,NULL);
+    ST ghost_shifts[nvec];
+    for (int i=0;i<nvec;i++) ghost_shifts[i]=-shifts[i];
+    *ierr=ghost_spmv(y,A,x,&spMVM_opts,&alpha,&beta,ghost_shifts);
   }
 }
 
