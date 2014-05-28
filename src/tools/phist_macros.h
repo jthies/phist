@@ -177,7 +177,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 # ifdef PHIST_TIMEMONITOR
 # include "phist_fcntrace.hpp"
 #   include <Teuchos_TimeMonitor.hpp>
-#   if (PHIST_OUTLEV>=PHIST_TRACE) || (LIKWID_PERFMON)
+#   if (PHIST_OUTLEV>=PHIST_TRACE) || defined(LIKWID_PERFMON)
 #     define ENTER_FCN(s) FcnTracer YouCantHaveMultiple_ENTER_FCN_StatementsInOneScope(s);\
                           static Teuchos::RCP<Teuchos::Time> TimeFrom_ENTER_FCN; \
                           if( TimeFrom_ENTER_FCN.is_null() ) \
@@ -190,7 +190,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
                           Teuchos::TimeMonitor TimeMonFrom_ENTER_FCN( *TimeFrom_ENTER_FCN );
 #   endif
 # else
-#   if (PHIST_OUTLEV>=PHIST_TRACE) || (LIKWID_PERFMON)
+#   if (PHIST_OUTLEV>=PHIST_TRACE) || defined(LIKWID_PERFMON)
 #   include "phist_fcntrace.hpp"
 #     define ENTER_FCN(s) FcnTracer YouCantHaveMultiple_ENTER_FCN_StatementsInOneScope(s);
 #   else
