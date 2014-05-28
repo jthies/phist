@@ -39,8 +39,8 @@ void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
         ghost_sell_aux_t aux = GHOST_SELL_AUX_INITIALIZER;
         aux.C = 4;
         mtraits->aux = &aux;
-        //mtraits->sortScope = 32;
-        //mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT|GHOST_SPARSEMAT_PERMUTE);
+        mtraits->sortScope = 8;
+        mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT|GHOST_SPARSEMAT_PERMUTE);
         mtraits->datatype = st::ghost_dt;
         char* cfname=const_cast<char*>(filename);
 // TODO - check ghost return codes everywhere like this
