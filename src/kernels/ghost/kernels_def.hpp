@@ -740,10 +740,6 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* ierr)
     // currently the vector mode is the only one working with MPI and multiple RHS
     spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_VECTOR);
     //void* old_scale = A->traits->scale;
-    if (alpha!=st::one())
-    {
-      spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_SCALE);
-    }
     if (beta==st::one())
     {
       spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_AXPY);
@@ -752,7 +748,15 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* ierr)
     {
       spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_AXPBY);
     }
-    *ierr=ghost_spmv(y,A,x,&spMVM_opts,&alpha,&beta);
+    if (alpha!=st::one())
+    {
+      spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_SCALE);
+      *ierr=ghost_spmv(y,A,x,&spMVM_opts,&alpha,&beta);
+    }
+    else
+    {
+      *ierr=ghost_spmv(y,A,x,&spMVM_opts,&beta);
+    }
   }
 }
 
@@ -788,22 +792,36 @@ void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
     ghost_spmv_flags_t spMVM_opts=GHOST_SPMV_DEFAULT;
     // currently the vector mode is the only one working with MPI and multiple RHS
     spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_VECTOR);
-    if (alpha!=st::one())
-    {
-      spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_SCALE);
-    }
+    spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_VSHIFT);
+    ST ghost_shifts[nvec];
+    for (int i=0;i<nvec;i++) ghost_shifts[i]=-shifts[i];
+    
     if (beta==st::one())
     {
       spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_AXPY);
+      if (alpha!=st::one())
+      {
+        spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_SCALE);
+        *ierr=ghost_spmv(y,A,x,&spMVM_opts,&alpha,ghost_shifts);
+      }
+      else
+      {
+        *ierr=ghost_spmv(y,A,x,&spMVM_opts,ghost_shifts);
+      }
     }
     else if (beta!=st::zero())
     {
       spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_AXPBY);
+      if (alpha!=st::one())
+      {
+        spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_SCALE);
+        *ierr=ghost_spmv(y,A,x,&spMVM_opts,&alpha,&beta,ghost_shifts);
+      }
+      else
+      {
+        *ierr=ghost_spmv(y,A,x,&spMVM_opts,&beta,ghost_shifts);
+      }
     }
-    spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_VSHIFT);
-    ST ghost_shifts[nvec];
-    for (int i=0;i<nvec;i++) ghost_shifts[i]=-shifts[i];
-    *ierr=ghost_spmv(y,A,x,&spMVM_opts,&alpha,&beta,ghost_shifts);
   }
 }
 
