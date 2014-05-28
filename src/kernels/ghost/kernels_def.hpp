@@ -1,4 +1,5 @@
 #include "ghost/util.h"
+#include "ghost/sell.h"
 
 extern "C" {
 
@@ -34,9 +35,13 @@ void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
   ghost_sparsemat_traits_t *mtraits=new ghost_sparsemat_traits_t;
         *mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
         mtraits->format = GHOST_SPARSEMAT_CRS;
-        //mtraits->format = GHOST_SPARSEMAT_SELL;
+        mtraits->format = GHOST_SPARSEMAT_SELL;
+        ghost_sell_aux_t aux = GHOST_SELL_AUX_INITIALIZER;
+        aux.C = 4;
+        mtraits->aux = &aux;
+        mtraits->sortScope = 32;
         mtraits->datatype = st::ghost_dt;
-        mtraits->flags = GHOST_SPARSEMAT_DEFAULT;
+        mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT|GHOST_SPARSEMAT_PERMUTE);
         char* cfname=const_cast<char*>(filename);
 // TODO - check ghost return codes everywhere like this
   PHIST_CHK_GERR(ghost_context_create(&ctx,0,0,
