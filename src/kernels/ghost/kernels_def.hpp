@@ -822,6 +822,18 @@ void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
         *ierr=ghost_spmv(y,A,x,&spMVM_opts,&beta,ghost_shifts);
       }
     }
+    else
+    {
+      if (alpha!=st::one())
+      {
+        spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_SCALE);
+        *ierr=ghost_spmv(y,A,x,&spMVM_opts,&alpha,ghost_shifts);
+      }
+      else
+      {
+        *ierr=ghost_spmv(y,A,x,&spMVM_opts,ghost_shifts);
+      }
+    }
   }
 }
 
