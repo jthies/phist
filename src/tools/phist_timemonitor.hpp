@@ -12,6 +12,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 
 // encapsulates functions and classes needed for function level time monitoring
@@ -70,6 +71,13 @@ namespace phist_TimeMonitor
       static TimeDataMap _timingResults;
 
 
+      // functor for sorting by keys in another vector
+      struct SortClass
+      {
+        SortClass(const std::vector<double>& keys) : _keys(keys) {}
+        bool operator() (int i, int j) {return _keys[i] > _keys[j];}
+        const std::vector<double>& _keys;
+      };
     public:
 
       // calculates the results and prints them
@@ -107,14 +115,22 @@ namespace phist_TimeMonitor
         MPI_Reduce(&tmp[0],&sumTotalTime[0],nTimers,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
         MPI_Reduce(&tmp[0],&maxTotalTime[0],nTimers,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD);
 
+        // sort by total time
+        std::vector<int> sortedIndex(nTimers);
+        for(int i = 0; i < nTimers; i++)
+          sortedIndex.at(i) = i;
+        SortClass sortFunc(maxTotalTime);
+        std::sort(sortedIndex.begin(), sortedIndex.end(), sortFunc);
+
         // print result on proc 0
         PHIST_SOUT(PHIST_INFO, "======================================== TIMING RESULTS ============================================\n");
         PHIST_SOUT(PHIST_INFO, "%40s  %10s  %10s  %10s  %10s  %10s\n", "function", "mtot.time", "count", "max.time", "avg.time", "min.time");
         int nprocs;
         MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-        for(int i = 0; i < nTimers; i++)
+        for(int i_ = 0; i_ < nTimers; i_++)
         {
-          if( i % 10 == 0 )
+          int i = sortedIndex.at(i_);
+          if( i_ % 10 == 0 )
           {
             PHIST_SOUT(PHIST_INFO, "----------------------------------------------------------------------------------------------------\n");
           }
