@@ -171,7 +171,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   if (innerSolvType==GMRES)
   {
     PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, nv_max, 
-        A_op->domain_map, innerSolvType, 25, ierr), *ierr);
+        A_op->domain_map, innerSolvType, 25, false, ierr), *ierr);
   }
 
   // print parameters passed in to the method

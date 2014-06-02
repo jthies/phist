@@ -34,7 +34,7 @@ namespace phist_TimeMonitor
       ~Timer()
       {
         wtime = MPI_Wtime() - wtime;
-        PHIST_OUT(PHIST_DEBUG, "Measured %10.4e wtime for function %s\n", wtime, fcnName.c_str());
+        //PHIST_OUT(PHIST_DEBUG, "Measured %10.4e wtime for function %s\n", wtime, fcnName.c_str());
         _timingResults[fcnName].update(wtime);
       }
 

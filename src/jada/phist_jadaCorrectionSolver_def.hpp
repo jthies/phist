@@ -1,6 +1,6 @@
 //! create a jadaCorrectionSolver object
 void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, int pgmresBlockDim, const_map_ptr_t map, 
-        linSolv_t method, int pgmresMaxBase, int *ierr)
+        linSolv_t method, int pgmresMaxBase, bool useMINRES, int *ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
@@ -13,6 +13,7 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, int p
     (*me)->gmresBlockDim_ = pgmresBlockDim;
     (*me)->pgmresStates_  = new TYPE(pgmresState_ptr)[pgmresBlockDim];
     PHIST_CHK_IERR(SUBR(pgmresStates_create)((*me)->pgmresStates_, pgmresBlockDim, map, pgmresMaxBase, ierr), *ierr);
+    (*me)->useMINRES_ = useMINRES;
   }
   else if (method==CARP_CG)
   {
@@ -161,7 +162,14 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
     }
 
     // actually iterate
-    PHIST_CHK_NEG_IERR(SUBR(pgmresStates_iterate)(&jadaOp, &activeStates[0], k, &nTotalIter, useIMGS, ierr), *ierr);
+    if( me->useMINRES_ )
+    {
+      PHIST_CHK_NEG_IERR(SUBR(pminresStates_iterate)(&jadaOp, &activeStates[0], k, &nTotalIter, ierr), *ierr);
+    }
+    else
+    {
+      PHIST_CHK_NEG_IERR(SUBR(pgmresStates_iterate)(&jadaOp, &activeStates[0], k, &nTotalIter, useIMGS, ierr), *ierr);
+    }
 
 
     // optimization to use always full blocks and ignore tolerances
@@ -198,19 +206,21 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
             continue;
           }
 #ifdef TESTING
-//{
-//  // determine real residual for comparison
-//  currShifts[0] = -sigma[ind];
-//  TYPE(mvec_ptr) res_i = NULL;
-//  int resInd = ind;
-//  if( resIndex != NULL )
-//    resInd = resIndex[resInd];
-//  PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))res, &res_i, resInd, resInd, ierr), *ierr);
-//  PHIST_CHK_IERR(jadaOp.apply(-st::one(), jadaOp.A, t_i, st::one(), res_i, ierr), *ierr);
-//  _MT_ nrm;
-//  PHIST_CHK_IERR(SUBR(mvec_norm2)(res_i, &nrm, ierr), *ierr);
-//  PHIST_SOUT(PHIST_INFO,"est. / exp. residual of system %d: %8.4e / %8.4e\n", ind, tmp, nrm);
-//}
+{
+  // determine real residual for comparison
+  currShifts[0] = -sigma[ind];
+  TYPE(mvec_ptr) res_i = NULL;
+  int resInd = ind;
+  if( resIndex != NULL )
+    resInd = resIndex[resInd];
+  PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))res, &res_i, resInd, resInd, ierr), *ierr);
+  _MT_ nrm0;
+  PHIST_CHK_IERR(SUBR(mvec_norm2)(res_i, &nrm0, ierr), *ierr);
+  PHIST_CHK_IERR(jadaOp.apply(-st::one(), jadaOp.A, t_i, st::one(), res_i, ierr), *ierr);
+  _MT_ nrm;
+  PHIST_CHK_IERR(SUBR(mvec_norm2)(res_i, &nrm, ierr), *ierr);
+  PHIST_SOUT(PHIST_INFO,"est. / exp. residual of system %d: %8.4e / %8.4e\n", ind, tmp, nrm/nrm0);
+}
 #endif
 
           // reset to be free in the next iteration

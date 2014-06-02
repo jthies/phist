@@ -112,7 +112,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
 
 
     // ========================= the actual arnoldi test =========================
-    void doPGmresTest(int nrhs, int nrestarts, MT tol)
+    void doPGmresTest(int nrhs, int nrestarts, MT tol, bool useMINRES)
     {
       ENTER_FCN(__FUNCTION__);
       if( typeImplemented_ )
@@ -162,7 +162,10 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
           }
           // iterate for MAXBAS iterations
           int nIter = 0;
-          SUBR(pgmresStates_iterate)(opA_,state_,nrhs,&nIter,true, &ierr2);
+          if( useMINRES )
+            SUBR(pminresStates_iterate)(opA_,state_,nrhs,&nIter, &ierr2);
+          else
+            SUBR(pgmresStates_iterate)(opA_,state_,nrhs,&nIter,true, &ierr2);
           ASSERT_TRUE(ierr2>=0);
           _MT_ resNorm[nrhs];
           SUBR(pgmresStates_updateSol)(state_,nrhs,x,resNorm,false,&ierr_);
@@ -227,7 +230,7 @@ TEST_F(CLASSNAME, simple_pgmres)
 {
   int nrestarts=0;
   int nrhs=1;
-  doPGmresTest(nrhs,nrestarts,TOLA);
+  doPGmresTest(nrhs,nrestarts,TOLA,false);
 }
 
 // test restarted GMRES with tolerance TOL2
@@ -235,7 +238,7 @@ TEST_F(CLASSNAME, restarted_pgmres)
 {
   int nrestarts=5;
   int nrhs=1;
-  doPGmresTest(nrhs,nrestarts,TOLB);
+  doPGmresTest(nrhs,nrestarts,TOLB,false);
 }
 
 // test unrestarted GMRES with tolerance TOL1
@@ -243,6 +246,31 @@ TEST_F(CLASSNAME, multiple_simple_pgmres)
 {
   int nrestarts=0;
   int nrhs=4;
-  doPGmresTest(nrhs,nrestarts,TOLA);
+  doPGmresTest(nrhs,nrestarts,TOLA,false);
 }
 
+#ifdef MATSYMMETRIC
+// test unrestarted GMRES with tolerance TOL1
+TEST_F(CLASSNAME, simple_pminres) 
+{
+  int nrestarts=0;
+  int nrhs=1;
+  doPGmresTest(nrhs,nrestarts,TOLA,true);
+}
+
+// test restarted GMRES with tolerance TOL2
+TEST_F(CLASSNAME, restarted_pminres) 
+{
+  int nrestarts=5;
+  int nrhs=1;
+  doPGmresTest(nrhs,nrestarts,TOLB,true);
+}
+
+// test unrestarted GMRES with tolerance TOL1
+TEST_F(CLASSNAME, multiple_simple_pminres) 
+{
+  int nrestarts=0;
+  int nrhs=4;
+  doPGmresTest(nrhs,nrestarts,TOLA,true);
+}
+#endif

@@ -8,6 +8,7 @@ typedef struct TYPE(jadaCorrectionSolver)
   //@{
   int                   gmresBlockDim_;     //! number of pgmres states iterated at once
   TYPE(pgmresState_ptr) *pgmresStates_;     //! pgmres states
+  bool                  useMINRES_;         //! switch to minres for symmetric matrices
   //@}
 } TYPE(jadaCorrectionSolver);
 
@@ -18,7 +19,7 @@ typedef TYPE(jadaCorrectionSolver) const * TYPE(const_jadaCorrectionSolver_ptr);
 
 //! create a jadaCorrectionSolver object
 void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *jdCorrSolver, int pgmresBlockDim, const_map_ptr_t map, 
-        linSolv_t method, int maxBase, int *ierr);
+        linSolv_t method, int maxBase, bool useMINRES, int *ierr);
 
 //! delete a jadaCorrectionSolver object
 void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver, int *ierr);

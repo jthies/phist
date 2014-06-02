@@ -4,6 +4,7 @@
 #include "phist_config.h"
 #include "phist_kernels.h"
 #include "phist_pgmres.h"
+#include "phist_pminres.h"
 
 #ifdef __cplusplus
 extern "C" {

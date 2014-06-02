@@ -229,6 +229,7 @@ set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp)
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_pgmres.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_pminres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_belos.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp)
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
