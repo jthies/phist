@@ -37,6 +37,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
                          int innerBlockDim,        int innerMaxBase,
                          int initialShiftIter,     _ST_ initialShift,
                          bool innerIMGS,           bool innerGMRESabortAfterFirstConverged,
+                         bool symmetric,
                          TYPE(mvec_ptr) Q,         TYPE(sdMat_ptr) R,
 
                          _MT_* resNorm,            int* ierr)
@@ -96,6 +97,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   sdMat_ptr_t Htmp_   = NULL;    //< temporary space for H
   sdMat_ptr_t Q_H_    = NULL;    //< space for Q_H
   sdMat_ptr_t R_H_    = NULL;    //< space for R_H
+  sdMat_ptr_t sdMI_   = NULL;    //< identity matrix
   _ST_ sigma[nEig_];             //< JaDa correction shifts
 
   _ST_ *Q_H_raw       = NULL;
@@ -116,6 +118,16 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&Htmp_,  maxBase,          maxBase,  range_comm,   ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&Q_H_,   maxBase,          maxBase,  range_comm,   ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&R_H_,   maxBase,          maxBase,  range_comm,   ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_create ) (&sdMI_,  maxBase,          maxBase,  range_comm,   ierr), *ierr);
+  // construct identity matrix
+  {
+    _ST_ *sdMI_raw = NULL;
+    lidx_t lda;
+    PHIST_CHK_IERR(SUBR( sdMat_extract_view) (sdMI_, &sdMI_raw, &lda, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_put_value ) (sdMI_, st::zero(), ierr), *ierr);
+    for(int i = 0; i < maxBase; i++)
+      sdMI_raw[i*lda+i] = st::one();
+  }
 
   PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (Q_H_,    &Q_H_raw,   &ldaQ_H,   ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (R_H_,  	&R_H_raw,   &ldaR_H,   ierr), *ierr);
@@ -162,6 +174,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   mvec_ptr_t BQq = NULL;
   sdMat_ptr_t R_H = NULL;     //< schur matrix of H
   sdMat_ptr_t Rr_H = NULL;
+  sdMat_ptr_t sdMI = NULL;
 
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                       0,     nV-1,      ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                      0,     nV-1,      ierr), *ierr);
@@ -171,7 +184,6 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
   //------------------------------- initialize correction equation solver solver ------------------------
   TYPE(jadaCorrectionSolver_ptr) innerSolv = NULL;
-  bool symmetric = false;
   PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, innerBlockDim, A_op->domain_map, GMRES, innerMaxBase, symmetric, ierr), *ierr);
   std::vector<_MT_> innerTol(nEig_,mt::one());
   std::vector<_MT_> lastOuterRes(nEig_,mt::zero());
@@ -342,16 +354,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
 
     // reorder multiple eigenvalues in schur form by residual norm
-    // only possible/implemented for the symmetric case, so we need to check the symmetrie
-    bool symmetric = true;
-    for(int i = 0; i < nEig_; i++)
-    {
-      for(int j = 0; j < i; j++)
-      {
-        if( st::abs(R_H_raw[i*ldaR_H+j]) > tol/2 )
-          symmetric = false;
-      }
-    }
+    // only possible/implemented for the symmetric case
     std::vector<int> resPermutation(nEig_);
     for(int i = 0; i < nEig_; i++)
       resPermutation[i] = i;
@@ -593,8 +596,16 @@ PHIST_SOUT(PHIST_INFO,"\n");
     }
     // update H
     PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), V,  AVv, st::zero(), HVv, ierr), *ierr);
-    //TODO: for the symmetric case use AVv*V here, so we don't need AV at all
-    PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vv, AV,  st::zero(), HvV, ierr), *ierr);
+    // for the symmetric case use AVv*V here, so we don't need AV at all
+    if( !symmetric )
+    {
+      PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vv, AV,  st::zero(), HvV, ierr), *ierr);
+    }
+    else
+    {
+      PHIST_CHK_IERR(SUBR(sdMat_view_block) (sdMI_, &sdMI, 0, nV-1, 0, nV-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat)(st::one(), HVv, sdMI, st::zero(), HvV, ierr), *ierr);
+    }
     PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vv, AVv, st::zero(), Hvv, ierr), *ierr);
     // use set block to put Vv and AVv really into V and AV
     PHIST_CHK_IERR(SUBR( mvec_set_block ) (V_,  Vv,  nV, nV+k-1, ierr), *ierr);
@@ -624,7 +635,8 @@ PHIST_SOUT(PHIST_INFO,"\n");
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (H,   ierr), *ierr);
   //PHIST_CHK_IERR(SUBR( sdMat_delete ) (Htmp,ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (r,   ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_delete ) (Htmp,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_delete ) (Htmp,ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_delete ) (sdMI,ierr), *ierr);
 
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (Qq,  ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (BQq, ierr), *ierr);
@@ -653,6 +665,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (R_H_,ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (Htmp_,ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (H_,  ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( sdMat_delete ) (sdMI_,ierr), *ierr);
   if( B_op != NULL )
   {
     PHIST_CHK_IERR(SUBR( mvec_delete )(BV_, ierr), *ierr);
