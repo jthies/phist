@@ -201,15 +201,19 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   // also outputs A*V (DON'T recalculate it from V*H, because this may not be accurate enough!)
   PHIST_CHK_IERR(SUBR( simple_arnoldi ) (A_op, B_op, v0, V, AV, BV, H, nV, ierr), *ierr);
 
-  // calculate H and setup V, BV
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                       0,     nV-1,      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                      0,     nV-1,      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, 		&BV,                      0,     nV-1,      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  		&H,     0,      nV-1,     0,     nV-1,      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &Vful,                       0,     nV-1,      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AVful,                      0,     nV-1,      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BVful,                      0,     nV-1,      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &Hful,     0,      nV-1,     0,     nV-1,      ierr), *ierr);
+  // set views
+  int nConvEig = 0;
+#define UPDATE_SUBSPACE_VIEWS \
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                         nConvEig, nV-1,      ierr), *ierr); \
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                        nConvEig, nV-1,      ierr), *ierr); \
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, 		&BV,                        nConvEig, nV-1,      ierr), *ierr); \
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  		&H,     nConvEig, nV-1,     nConvEig, nV-1,      ierr), *ierr); \
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &Vful,                      0,        nV-1,      ierr), *ierr); \
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AVful,                     0,        nV-1,      ierr), *ierr); \
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BVful,                     0,        nV-1,      ierr), *ierr); \
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &Hful,  0,        nV-1,     0,        nV-1,      ierr), *ierr);
+
+  UPDATE_SUBSPACE_VIEWS;
 
   // TODO: strangely there seems to be a bug in simple_arnoldi, s.t. H != V'*AV
   //       so recalculate it!
@@ -217,45 +221,51 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
 
 
-  //----------------------------------- MAIN LOOP ----------------------------------
-  int maxIter = *nIter;
-  int nConvEig = 0;
-  for(*nIter = 0; *nIter < maxIter; (*nIter)++)
-  {
-#ifdef TESTING
-{
-  // check orthogonality of V, BV, Q
-  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vful, BVful, st::zero(), Htmp, ierr), *ierr);
-  _MT_ orthEps = std::abs(Htmp_raw[0] - st::one());
-  for(int i = 0; i < nV; i++)
-    for(int j = 0; j < nV; j++)
-      orthEps = std::max(orthEps, std::abs(Htmp_raw[i*ldaHtmp+j] - ((i==j) ? st::one() : st::zero())));
-  PHIST_OUT(PHIST_INFO, "B-orthogonality of V: %e\n", orthEps);
 
-  // check AV = A*V
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp,                  0,       nV-1,          ierr), *ierr);
-  PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vful, st::zero(), Vtmp, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (-st::one(), AVful, st::one(), Vtmp, ierr), *ierr);
-  _MT_ normVtmp[nV];
-  PHIST_CHK_IERR(SUBR( mvec_norm2 ) (Vtmp, normVtmp, ierr), *ierr);
-  _MT_ equalEps = normVtmp[0];
-  for(int i = 0; i < nV; i++)
-    equalEps = std::max(equalEps, normVtmp[i]);
-  PHIST_OUT(PHIST_INFO, "AV - A*V: %e\n", equalEps);
-  // check H = V'*A*V
-  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vful, AVful, st::zero(), Htmp, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_add_sdMat ) (-st::one(), Hful, st::one(), Htmp, ierr), *ierr);
-PHIST_CHK_IERR(SUBR( sdMat_print ) (Htmp, ierr), *ierr);
-  equalEps = std::abs(Htmp_raw[0]);
-  for(int i = 0; i < nV; i++)
-    for(int j = 0; j < nV; j++)
-      equalEps = std::max(equalEps, std::abs(Htmp_raw[i*ldaHtmp+j]));
-  PHIST_OUT(PHIST_INFO, "H - V'*AV: %e\n", equalEps);
+#ifdef TESTING
+#define TESTING_CHECK_SUBSPACE_INVARIANTS \
+{ \
+  /* check orthogonality of V, BV, Q */ \
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      ierr), *ierr); \
+  PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vful, BVful, st::zero(), Htmp, ierr), *ierr); \
+  _MT_ orthEps = std::abs(Htmp_raw[0] - st::one()); \
+  for(int i = 0; i < nV; i++) \
+    for(int j = 0; j < nV; j++) \
+      orthEps = std::max(orthEps, std::abs(Htmp_raw[i*ldaHtmp+j] - ((i==j) ? st::one() : st::zero()))); \
+  PHIST_OUT(PHIST_INFO, "Line %d: B-orthogonality of V: %e\n", __LINE__, orthEps); \
+ \
+  /* check AV = A*V */ \
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp,                  0,       nV-1,          ierr), *ierr); \
+  PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vful, st::zero(), Vtmp, ierr), *ierr); \
+  PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (-st::one(), AVful, st::one(), Vtmp, ierr), *ierr); \
+  _MT_ normVtmp[nV]; \
+  PHIST_CHK_IERR(SUBR( mvec_norm2 ) (Vtmp, normVtmp, ierr), *ierr); \
+  _MT_ equalEps = normVtmp[0]; \
+  for(int i = 0; i < nV; i++) \
+    equalEps = std::max(equalEps, normVtmp[i]); \
+  PHIST_OUT(PHIST_INFO, "Line %d: AV - A*V: %e\n", __LINE__, equalEps); \
+  /* check H = V'*A*V */ \
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      ierr), *ierr); \
+  PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vful, AVful, st::zero(), Htmp, ierr), *ierr); \
+  PHIST_CHK_IERR(SUBR( sdMat_add_sdMat ) (-st::one(), Hful, st::one(), Htmp, ierr), *ierr); \
+  equalEps = std::abs(Htmp_raw[0]); \
+  for(int i = 0; i < nV; i++) \
+    for(int j = 0; j < nV; j++) \
+      equalEps = std::max(equalEps, std::abs(Htmp_raw[i*ldaHtmp+j])); \
+  PHIST_OUT(PHIST_INFO, "Line %d: H - V'*AV: %e\n", __LINE__, equalEps); \
 }
+#else
+#define TESTING_CHECK_SUBSPACE_INVARIANTS
 #endif
 
+
+TESTING_CHECK_SUBSPACE_INVARIANTS;
+
+
+  //----------------------------------- MAIN LOOP ----------------------------------
+  int maxIter = *nIter;
+  for(*nIter = 0; *nIter < maxIter; (*nIter)++)
+  {
     // calculate sorted Schur form of H in (Q_H,R_H)
     // we only update part of Q_H,R_H, so first set Q_H, R_H to zero
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0,     nV-1,      0,     nV-1,      ierr), *ierr);
@@ -429,24 +439,24 @@ PHIST_SOUT(PHIST_INFO,"\n");
 #endif
 
     // check for converged eigenvalues
-    int nNewlyConvergedEig = 0;
+    int nNewConvEig = 0;
     for(int i = nConvEig; i < nEig; i++)
     {
       PHIST_SOUT(PHIST_INFO,"In iteration %d: Current approximation for eigenvalue %d is %16.8g%+16.8gi with residuum %e\n", *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]), resNorm[i]);
-      if( resNorm[i] <= tol && i == nConvEig+nNewlyConvergedEig )
-        nNewlyConvergedEig++;
+      if( resNorm[i] <= tol && i == nConvEig+nNewConvEig )
+        nNewConvEig++;
       else if( blockDim == 1 )
         break;
     }
 
-    if( nNewlyConvergedEig > 0 )
+    if( nNewConvEig > 0 )
     {
-      PHIST_SOUT(PHIST_INFO,"In iteration %d: locking %d newly converged eigenvalues\n", *nIter, nNewlyConvergedEig);
+      PHIST_SOUT(PHIST_INFO,"In iteration %d: locking %d newly converged eigenvalues\n", *nIter, nNewConvEig);
     }
 
-    if( nConvEig + nNewlyConvergedEig >= nEig )
+    if( nConvEig + nNewConvEig >= nEig )
     {
-      nConvEig += nNewlyConvergedEig;
+      nConvEig += nNewConvEig;
       PHIST_SOUT(PHIST_INFO,"In iteration %d: all eigenvalues converged!\n", *nIter);
       break;
     }
@@ -457,34 +467,32 @@ PHIST_SOUT(PHIST_INFO,"\n");
       break;
     }
 
-    if( nNewlyConvergedEig > 0 )
+    if( nNewConvEig > 0 )
     {
       // to avoid unnecessary subspace transformations, shrink the searchspace one iteration earlier...
       if( nV + 2*blockDim > maxBase )
       {
         PHIST_SOUT(PHIST_INFO,"Shrinking search space (one iteration earlier) from %d to %d\n", nV, minBase);
+        PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  nConvEig, nV-1,          nConvEig, minBase-1,    ierr), *ierr);
       }
-      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  nConvEig, nV-1,          nConvEig, minBase-1,    ierr), *ierr);
+      else
+      {
+        PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  nConvEig, nV-1,          nConvEig, nV-1,    ierr), *ierr);
+      }
 
       // reorder V and H
       PHIST_CHK_IERR(SUBR( transform_searchSpace ) (V, AV, BV, H, Q_H, B_op != NULL, ierr), *ierr);
 
-      nConvEig = nConvEig+nNewlyConvergedEig;
+      nConvEig = nConvEig+nNewConvEig;
 
       // update views if necessary
       if( nV + 2*blockDim > maxBase )
       {
         nV = minBase;
 
-        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,    &V,                      nConvEig, minBase-1,    ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,   &AV,                     nConvEig, minBase-1,    ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,   &BV,                     nConvEig, minBase-1,    ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( sdMat_view_block  )(H_,    &H,    nConvEig, minBase-1,     nConvEig, minBase-1,    ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &Vful,                       0,     nV-1,      ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AVful,                      0,     nV-1,      ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BVful,                      0,     nV-1,      ierr), *ierr);
-        PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &Hful,     0,      nV-1,     0,     nV-1,      ierr), *ierr);
+        UPDATE_SUBSPACE_VIEWS;
       }
+TESTING_CHECK_SUBSPACE_INVARIANTS;
     }
 
 
@@ -546,7 +554,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       PHIST_SOUT(PHIST_INFO,"Shrinking search space from %d to %d\n", nV, minBase);
 
       // nothing to do if no converged eigenvalues this iteration
-      if( nNewlyConvergedEig == 0 )
+      if( nNewConvEig == 0 )
       {
         PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  nConvEig, nV-1,          nConvEig, minBase-1,    ierr), *ierr);
 
@@ -555,15 +563,8 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
       nV = minBase;
 
-      // update views
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,    &V,                      nConvEig, minBase-1,    ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,   &AV,                     nConvEig, minBase-1,    ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,   &BV,                     nConvEig, minBase-1,    ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( sdMat_view_block  )(H_,    &H,    nConvEig, minBase-1,     nConvEig, minBase-1,    ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &Vful,                       0,     nV-1,      ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AVful,                      0,     nV-1,      ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BVful,                      0,     nV-1,      ierr), *ierr);
-      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &Hful,     0,      nV-1,     0,     nV-1,      ierr), *ierr);
+      UPDATE_SUBSPACE_VIEWS;
+TESTING_CHECK_SUBSPACE_INVARIANTS;
     }
 
     // calculate corrections
@@ -625,15 +626,9 @@ PHIST_SOUT(PHIST_INFO,"\n");
     PHIST_CHK_IERR(SUBR( mvec_set_block ) (AV_, AVv, nV, nV+k-1, ierr), *ierr);
     // increase nV
     nV = nV + k;
-    // update views
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,  &V,                         nConvEig, nV-1,      ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_, &AV,                        nConvEig, nV-1,      ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BV,                        nConvEig, nV-1,      ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  &H,   nConvEig, nV-1,  nConvEig, nV-1,      ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &Vful,                       0,     nV-1,      ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AVful,                      0,     nV-1,      ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BVful,                      0,     nV-1,      ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &Hful,     0,      nV-1,     0,     nV-1,      ierr), *ierr);
+
+    UPDATE_SUBSPACE_VIEWS;
+TESTING_CHECK_SUBSPACE_INVARIANTS;
   }
 
 
