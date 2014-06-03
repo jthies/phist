@@ -914,7 +914,7 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
     // note: C is replicated, so this operation is a purely local one.
 
     // GHOST has experimental specialized kernels which we want to test here:
-    if ((ncC==1 || ncC==2 || ncC==4 || ncC==8) && (beta==st::zero()))
+    if ((ncC==1 || ncC==2 || ncC==4 || ncC==8) && (beta==st::one()))
     {
       PHIST_DEB("using specialized kernel for mvec_times_sdMat");
       PHIST_CHK_GERR(ghost_tsmm(W, V, C,(void*)&alpha),*ierr);
