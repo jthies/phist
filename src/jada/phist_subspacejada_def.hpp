@@ -52,6 +52,16 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   int nEig_ = nEig + blockDim - 1;
 
   //------------------------------- check arguments --------------------------------
+  if( blockDim < 1 )
+  {
+    PHIST_SOUT(PHIST_ERROR, "parameter blockDim < 1!\n");
+    PHIST_CHK_IERR(*ierr = -99, *ierr);
+  }
+  if( innerBlockDim > blockDim || innerBlockDim < 1)
+  {
+    PHIST_SOUT(PHIST_ERROR, "parameter innerBlockDim > blockDim || innerBlockDim < 1!\n");
+    PHIST_CHK_IERR(*ierr = -99, *ierr);
+  }
   if( minBase < nEig_ )
   {
     PHIST_SOUT(PHIST_ERROR, "parameter minBase < nEig+blockDim-1!\n");
