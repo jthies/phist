@@ -1,10 +1,10 @@
 
 #ifdef IS_DOUBLE
 typedef Zmvec_t Dfeast_mvec_t;
-typedef d_complex_t feast_shift_t;
+typedef d_complex_t Dfeast_shift_t;
 #else
-typedef Zmvec_t Dfeast_mvec_t;
-typedef s_complex_t feast_shift_t;
+typedef Cmvec_t Sfeast_mvec_t;
+typedef s_complex_t Sfeast_shift_t;
 typedef 
 #endif
 
@@ -32,7 +32,7 @@ typedef TYPE(feastCorrectionSolver) const * TYPE(const_feastCorrectionSolver_ptr
 void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *fCorrSolver, 
         TYPE(const_crsMat_ptr) A, 
         int blockSize, int numShifts,
-        feast_shift_t shifts[],
+        TYPE(feast_shift) shifts[],
         int *ierr);
 
 //! delete a feastCorrectionSolver object
@@ -43,15 +43,15 @@ void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) fCorrSol
 //!
 //! arguments:
 //! fCorrSolver    the feastCorrectionSolver object
-//! rhs            array of rhs of the correction equations, rhs[i] belongs 
+//! rhs            rhs of the correction equations, rhs is the same for all
 //!                to shift[i] in create()
 //! tol             desired accuracy (gmres residual tolerance) of the individual systems
 //! maxIter         maximal number of iterations after which individial systems should be aborted
-//! sol             returns approximate solution vectors, sol[i] belongs to shift[i] and rhs[i]
+//! sol             returns approximate solution vectors, sol[i] belongs to shift[i] and rhs
 //! ierr            a value > 0 indicates the number of systems that have not converged to the 
 //!                 desired tolerance
 void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) fCorrSolver,
-                                    const feast_mvec_t* const rhs[],
+                                    TYPE(feast_mvec) const * const rhs,
                                     const _MT_ tol, int maxIter,
-                                    feast_mvec_t* sol[],
+                                    TYPE(feast_mvec) * sol[],
                                     int *ierr);
