@@ -10,6 +10,7 @@ module crsmat_module
   !public :: phist_DcrsMat_create_fromRowFunc
   !public :: phist_DcrsMat_delete
   !public :: phist_DcrsMat_times_mvec
+  !public :: phist_DcrsMat_times_mvec_vadd_mvec
   public :: crsmat_times_mvec
   !public :: phist_DcrsMat_get_map
 

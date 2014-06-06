@@ -15,7 +15,11 @@
 #include "BelosTpetraAdapter.hpp"
 #include "BelosTsqrOrthoManager.hpp"
 #ifdef PHIST_TIMEMONITOR
-#include <Teuchos_TimeMonitor.hpp>
+#include "phist_timemonitor.hpp"
+namespace phist_TimeMonitor
+{
+  Timer::TimeDataMap Timer::_timingResults;
+}
 #endif
 
 #ifdef PHIST_HAVE_LIKWID
@@ -60,7 +64,7 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
     LIKWID_MARKER_CLOSE;
 #endif
 #ifdef PHIST_TIMEMONITOR
-    Teuchos::TimeMonitor::summarize();
+  phist_TimeMonitor::Timer::summarize();
 #endif
 #ifdef PHIST_HAVE_MPI
   if (myMpiSession==1)

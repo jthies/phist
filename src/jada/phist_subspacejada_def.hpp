@@ -91,6 +91,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   mvec_ptr_t  BV_     = NULL;    //< space for BV
   mvec_ptr_t  BQ_     = NULL;    //< B*Q
   mvec_ptr_t  t_      = NULL;    //< space for t
+  mvec_ptr_t  At_     = NULL;    //< space for A*t
   mvec_ptr_t  res     = NULL;    //< residuum A*Q-Q*R
 
   sdMat_ptr_t H_      = NULL;    //< space for H
@@ -111,8 +112,9 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&Vtmp_,  A_op->domain_map, maxBase,                ierr), *ierr);
 #endif
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&AV_,    A_op->range_map,  maxBase,        	      ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_create  ) (&t_,     A_op->domain_map, nEig_,                 ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_create  ) (&res,    A_op->range_map,  nEig_,                 ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_create  ) (&t_,     A_op->domain_map, blockDim,               ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_create  ) (&At_,    A_op->range_map,  blockDim,               ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_create  ) (&res,    A_op->range_map,  nEig_,                  ierr), *ierr);
 
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&H_,     maxBase,          maxBase,  range_comm,   ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&Htmp_,  maxBase,          maxBase,  range_comm,   ierr), *ierr);
@@ -421,7 +423,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
 #ifdef TESTING
 {
   // check that Q is in correct order
-  PHIST_CHK_IERR( SUBR(mvec_view_block)(t_, &t, 0, nEig_-1, ierr), *ierr);
+  PHIST_CHK_IERR( SUBR(mvec_view_block)(Vtmp_, &t, 0, nEig_-1, ierr), *ierr);
   PHIST_CHK_IERR(A_op->apply(st::one(), A_op->A, Q, st::zero(), t, ierr), *ierr);
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(), BQ, R, st::one(), t, ierr), *ierr);
   _MT_ reorderedResNorm[nEig_];
@@ -596,7 +598,7 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
 
     // get solution and reuse res for At
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_, &Vv,  0, k-1, ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res,&AVv, 0, k-1, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (At_,&AVv, 0, k-1, ierr), *ierr);
 
     // enlarge search space
     // first update views
@@ -662,7 +664,6 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (Qq,  ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (BQq, ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (t,   ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( mvec_delete  ) (res, ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (t_res,ierr),*ierr);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (BVv, ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (BV,  ierr), *ierr);
@@ -697,6 +698,8 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
     PHIST_CHK_IERR(SUBR( mvec_delete )(BV_, ierr), *ierr);
   }
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (t_,  ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_delete  ) (At_, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR( mvec_delete  ) (res, ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (AV_, ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (Vtmp_,ierr), *ierr);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (V_,  ierr), *ierr);

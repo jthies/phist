@@ -70,12 +70,9 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 
       PHIST_CHK_IERR(SUBR(mvec_get_comm)(V,&comm,ierr),*ierr);
 
-  if (numSweeps>1)
-    {
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&R1p,k,k,comm,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&R1pp,k,k,comm,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&R2p,m,k,comm,ierr),*ierr);
-    }
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&R1p,k,k,comm,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&R1pp,k,k,comm,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&R2p,m,k,comm,ierr),*ierr);
 
 #ifdef TESTING
 
