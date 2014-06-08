@@ -137,13 +137,7 @@ endif()
 # setup which kernel library is being used.
 ##############################################################################
 
-if (NOT PHIST_KERNEL_LIB)
-  set(PHIST_KERNEL_LIB $ENV{PHIST_KERNEL_LIB})
-endif()
-
-if (NOT PHIST_KERNEL_LIB)
-  message(FATAL_ERROR "PHIST_KERNEL_LIB not set.")
-endif()
+set(PHIST_KERNEL_LIB $ENV{PHIST_KERNEL_LIB} CACHE STRING "Select underlying kernel libraries for phist (epetra|tpetra|ghost|fortran)")
 
 message(STATUS "looking for " ${PHIST_KERNEL_LIB} " ...")
 
@@ -251,15 +245,18 @@ list(APPEND PHIST_LIBS phist_core)
 list(APPEND PHIST_LIBS phist_kernels_${PHIST_KERNEL_LIB})
 list(APPEND PHIST_LIBS phist_tools)
 
-if(PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
+if(PHIST_KERNEL_LIB STREQUAL "ghost")
   find_package(GHOST CONFIG)
-  if(GHOST_FOUND)
-    message(STATUS "Found GHOST ${GHOST_VERSION}")
-    set(PHIST_HAVE_GHOST 1)
-    include_directories(${GHOST_INCLUDE_DIRS})
-    link_directories(${GHOST_LIBRARY_DIRS})
-    list(APPEND PHIST_LIBS ${GHOST_LIBRARIES})
-    endif()
+else()
+  find_package(GHOST CONFIG)
+endif()  
+  
+if (GHOST_FOUND)
+  message(STATUS "Found GHOST ${GHOST_VERSION}")
+  set(PHIST_HAVE_GHOST 1)
+  include_directories(${GHOST_INCLUDE_DIRS})
+  link_directories(${GHOST_LIBRARY_DIRS})
+  list(APPEND PHIST_LIBS ${GHOST_LIBRARIES})
 endif()
 
 # load parmetis for reordering fortran
@@ -291,9 +288,12 @@ else()
   message(STATUS "continuing without Likwid, you can set the environment variable LIKWID_HOME to help CMake find it")
 endif()
 
+set(PHIST_TIMEMONITOR Off CACHE BOOL "Gather detailed function-level timings using the TimeMonitor class from the Trilinos package Belos")
 if( ${PHIST_TIMEMONITOR} )
+  if(NOT "${PHIST_HAVE_BELOS}" EQUAL 1)
+    message(FATAL_ERROR "TimeMonitor requires the Belos package from Trilinos!")
+  endif()
   message(STATUS "activated TimeMonitor timing monitoring")
-  add_definitions(-DPHIST_TIMEMONITOR)
 endif()
 
 configure_file ("${PROJECT_SOURCE_DIR}/src/phist_config.h.in" "${PROJECT_BINARY_DIR}/phist_config.h")
@@ -401,7 +401,7 @@ foreach (infile ${TG_CXX_Drivers})
 endforeach()
 
 # example drivers implemented in ghost
-if  (PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
+if  (PHIST_KERNEL_LIB STREQUAL "ghost")
 # TODO - make this somehow general, or probably we should
 #       actually install phist instead and push the spinChain
 #       driver to the essex/examples repo...
@@ -422,6 +422,17 @@ if  (PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
     message(STATUS "ESSEX_INSTALL_DIR (${ESSEX_INSTALL_DIR}) does not contain matfuncs.h in     
     ./essex_examples, skipping some example drivers.")
   endif()
+elseif(PHIST_KERNEL_LIB STREQUAL "fortran")
+  include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
+  add_executable(spinChain              ${PROJECT_SOURCE_DIR}/drivers/spinChain.c
+                                        ${PROJECT_SOURCE_DIR}/drivers/matfuncs/SpinChainSZ.c)
+  add_executable(spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp
+                                        ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c
+                                        ${PROJECT_SOURCE_DIR}/drivers/matfuncs/SpinChainSZ.c)
+  foreach(lib ${PHIST_LIBS})
+    target_link_libraries(spinChain ${lib})
+    target_link_libraries(spinChain_subspacejada ${lib})
+  endforeach()
 endif()
 
 # test drivers

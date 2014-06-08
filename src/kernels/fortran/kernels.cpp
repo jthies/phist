@@ -4,7 +4,9 @@
 #endif
 
 #include "phist_macros.h"
+#ifdef PHIST_HAVE_BELOS
 #include "phist_trilinos_macros.h"
+#endif
 #include "../phist_kernels.h"
 
 #include "phist_typedefs.h"

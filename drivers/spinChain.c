@@ -16,10 +16,12 @@
 #include "phist_jadaOpts.h"
 
 // ghost/spinChain stuff
+#ifdef PHIST_KERNEL_LIB_GHOST
 #include "ghost.h"
+GHOST_REGISTER_DT_D(my_datatype)
+#endif
 #include "matfuncs.h"
 
-GHOST_REGISTER_DT_D(my_datatype)
 
 #include "phist_gen_d.h"
 #include "phist_driver_utils.h"
@@ -133,11 +135,6 @@ int main(int argc, char** argv)
 
   matfuncs_info_t info;
   SpinChainSZ( -1, NULL, NULL, &info);
-  if ( my_datatype != info.datatype)
-  {
-    printf("error: datatyte does not match\n");
-    exit(0);
-  }
 #ifdef PHIST_KERNEL_LIB_FORTRAN
   PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,
         info.nrows, info.ncols, info.row_nnz,
@@ -145,6 +142,12 @@ int main(int argc, char** argv)
 #endif
 
 #ifdef PHIST_KERNEL_LIB_GHOST
+  if ( my_datatype != info.datatype)
+  {
+    printf("error: datatyte does not match\n");
+    exit(0);
+  }
+
   ghost_error_t err=ghost_context_create(&ctx, info.nrows ,
       info.ncols,GHOST_CONTEXT_DEFAULT,NULL,0,MPI_COMM_WORLD,1.);
   if (err!=GHOST_SUCCESS)

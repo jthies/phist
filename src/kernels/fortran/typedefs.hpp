@@ -1,6 +1,7 @@
 #ifndef KERNELS_FORTRAN_TYPEDEFS_HPP
 #define KERNELS_FORTRAN_TYPEDEFS_HPP
 
+#ifdef PHIST_HAVE_BELOS
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DataAccess.hpp"
@@ -10,10 +11,12 @@
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DefaultKernels.hpp"
 
+typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+#endif
+
 #include "phist_typedefs.h"
 #include "phist_ScalarTraits.hpp"
 
-typedef Kokkos::DefaultNode::DefaultNodeType node_t;
 
 template <typename ST>
 class Traits
@@ -21,17 +24,16 @@ class Traits
 
 public:
   
-  //!
-  typedef typename Kokkos::DefaultKernels<ST,lidx_t,node_t>::SparseOps localOps_t;
-
   //! multi vectors
   typedef void mvec_t;
 
   //! serial dense matrix
   typedef void sdMat_t;
 
+#ifdef PHIST_HAVE_BELOS
   //! serial dense matrix from Teuchos, we need this for e.g. the BLAS interface.
   typedef Teuchos::SerialDenseMatrix<lidx_t,ST> Teuchos_sdMat_t;
+#endif
 
   //! CRS matrices
   typedef void crsMat_t;

@@ -35,11 +35,13 @@
 #endif
 
 // GMRES solver manager from the Belos package
+#ifdef PHIST_HAVE_BELOS
 #include "BelosSolverManager.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
+#endif
 
 #include "phist_gen_d.h"
 #include "phist_belos_def.hpp"

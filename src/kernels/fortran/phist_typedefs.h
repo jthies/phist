@@ -22,7 +22,4 @@ typedef int64_t gidx_t;
 
 #include "phist_void_aliases.h"
 
-// for GHOST_HAVE_LONGIDX
-#include "ghost/config.h"
-
 #endif

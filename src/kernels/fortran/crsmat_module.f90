@@ -1,4 +1,3 @@
-#include "ghost/config.h"
 module crsmat_module
   use map_module, only: Map_t, map_setup
   use mvec_module, only: MVec_t, mvec_scale
@@ -58,15 +57,9 @@ module crsmat_module
   abstract interface
     subroutine matRowFunc(row, nnz, cols, vals)
       use, intrinsic :: iso_c_binding
-#ifdef GHOST_HAVE_LONGIDX
       integer(C_INT64_T), value :: row
       integer(C_INT64_T), intent(inout) :: nnz
       integer(C_INT64_T), intent(inout) :: cols(*)
-#else
-      integer(C_INT32_T), value :: row
-      integer(C_INT32_T), intent(inout) :: nnz
-      integer(C_INT32_T), intent(inout) :: cols(*)
-#endif
       real(C_DOUBLE),     intent(inout) :: vals(*)
     end subroutine matRowFunc
   end interface
@@ -1308,30 +1301,18 @@ end do
     use mpi
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
-#ifdef GHOST_HAVE_LONGIDX
     integer(C_INT64_T),     value       :: nrows, ncols, maxnne_per_row
-#else
-    integer(C_INT),     value       :: nrows, ncols, maxnne_per_row
-#endif
     type(C_FUNPTR),     value       :: rowFunc_ptr
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(CrsMat_t), pointer :: A
     procedure(matRowFunc), pointer :: rowFunc
     !--------------------------------------------------------------------------------
-#ifdef GHOST_HAVE_LONGIDX
     integer(kind=8), allocatable :: idx(:,:)
-#else
-    integer, allocatable :: idx(:,:)
-#endif
     real(kind=8), allocatable :: val(:)
     integer(kind=8) :: i, globalRows, globalCols
     integer(kind=8) :: j, j_, globalEntries
-#ifdef GHOST_HAVE_LONGIDX
     integer(kind=8) :: i_, nne
-#else
-    integer :: i_, nne
-#endif
     integer :: funit
     !--------------------------------------------------------------------------------
 
