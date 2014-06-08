@@ -1017,5 +1017,22 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
 
 //!@}
 
+//! mixed real/complex operation: split mvec into real and imag part.
+//! if either reV or imV are NULL, it is not touched.
+#ifdef IS_COMPLEX
+# ifdef IS_DOUBLE
+void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Dmvec_t* reV, Dmvec_t* imV, int *ierr)
+{
+  *ierr=-99;
+}
+# else
+void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* imV, int *ierr)
+{
+  *ierr=-99;
+}
+# endif
+#endif
+
+
 } // extern "C"
 

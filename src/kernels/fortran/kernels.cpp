@@ -114,13 +114,20 @@ void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr);
 #include "../carp_noimpl.c"
 #endif
 
-#include "phist_gen_z.h"
-#include "../kernels_noimpl.c"
-#include "../carp_noimpl.c"
-
 } //extern "C"
 
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"
 #include "../carp_noimpl.c"
+
+#include "phist_gen_z.h"
+// the complex functionality implemented
+// is extremely limited, basically we provde
+// a complex vector object, and a method to
+// set/get the real/imag part.
+#include "some_z_kernels_def.hpp"
+// we implement only the CARP kernel for real
+// double matrices with complex shifts/vectors.
+#include "dz_carp_def.hpp"
+
 

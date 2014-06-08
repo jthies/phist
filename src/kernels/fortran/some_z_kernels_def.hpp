@@ -1,12 +1,17 @@
 #include "phist_kernels.h"
 #include "phist_macros.h"
 
-// these implementations can be used if a kernel package
-// does not implement all four data types (cf. epetra/ for
-// an example, which supports only double (D)). If we ever
-// decide to add more data types (such as quad precision),
-// this will help maintain existing implementations for the
-// classical data types.
+#ifndef IS_DOUBLE
+#error "this file is intended for the Z-case only"
+#endif
+#ifndef IS_COMPLEX
+#error "this file is intended for the Z-case only"
+#endif
+
+// we implement a very limited subset of
+// the double complex kernels for the fortran
+// kernel lib to allow using FEAST based
+// on this kernel lib.
 
 // get rid of all those warnings!
 void SUBR(type_avail)(int *ierr)
@@ -52,6 +57,7 @@ void SUBR(crsMat_get_range_map)(TYPE(const_crsMat_ptr) A, const_map_ptr_t* map, 
 void SUBR(mvec_create)(TYPE(mvec_ptr)* V, 
     const_map_ptr_t map, lidx_t nvec, int* ierr)
 {
+  //TODO
   *ierr=-99;
 }
 
@@ -163,6 +169,7 @@ void SUBR(crsMat_delete)(TYPE(crsMat_ptr) A, int* ierr)
 
 void SUBR(mvec_delete)(TYPE(mvec_ptr) V, int* ierr)
 {
+  //TODO
   *ierr=-99;
 }
 
@@ -329,6 +336,7 @@ void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, i
 # ifdef IS_DOUBLE
 void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Dmvec_t* reV, Dmvec_t* imV, int *ierr)
 {
+  //TODO
   *ierr=-99;
 }
 # else
