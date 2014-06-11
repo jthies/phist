@@ -1,7 +1,7 @@
 !! compute for a given shift sigma=sigma_r+sigma_i the 2-norm of each row
 !! of the matrix shift[j]*I-A and store the inverse of the results in the
 !! columns j of the block vector nrmsai2i.
-subroutine dkacz_norms_ai2i(nvec, nlocal, nhalo, ncols, nnz, row_ptr, halo_ptr, 
+subroutine crsmat_norms_ai2i(nvec, nlocal, nhalo, ncols, nnz, row_ptr, halo_ptr, 
 col_idx, val, shifts_r,shifts_i, 
 nrmsai2i,istart)
   implicit none
@@ -30,9 +30,7 @@ nrmsai2i,istart)
     x_r(1:nvec,i) = rhs(i)-tmp_r(:)*nrmsai2i
     x_i(1:nvec,i) =       -tmp_i(:)*nrmsai2i
   end do
-end subroutine dkacz_generic
-
-
+end subroutine crsmat_norms_ai2i
 
 subroutine dkacz_generic(nvec, nlocal, nhalo, ncols, nnz, row_ptr, halo_ptr, 
 col_idx, val, shifts_r,shifts_i, x_r,x_i, ldx, halo_r, halo_i,nrmsai2i,istart,iend,istep)
