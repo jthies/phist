@@ -21,7 +21,8 @@ void SUBR(dkswp)(TYPE(const_crsMat_ptr) A, int numShifts,
   return;
 }
 
-void SUBR(carp_destroy(_MT_* nrms_ai2i, void* work, int *ierr)
+void SUBR(carp_destroy(TYPE(const_crsMat_ptr) A, int numShifts,
+_MT_* nrms_ai2i, void* work, int *ierr)
 {
   *ierr=-99;
   return;

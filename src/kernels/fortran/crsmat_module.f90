@@ -1514,6 +1514,107 @@ end do
     ierr = 0
   end subroutine phist_DcrsMat_times_mvec_vadd_mvec
 
+  !==================================================================================
 
+  subroutine phist_Dcarp_setup(A_ptr, numShifts, &
+        sigma_r, sigma_i, nrms_ptr, work_ptr,ierr) &
+  bind(C,name='phist_Dcarp_setup_f')
+    use, intrinsic :: iso_c_binding
+    !--------------------------------------------------------------------------------
+    type(C_PTR),      value         :: A_ptr
+    integer(C_INT),   intent(in)    :: numShifts
+    real(kind=c_double), intent(in) :: sigma_r(*), sigma_i(*)
+    type(C_PTR)                     :: nrms_ptr, work_ptr
+    integer(C_INT),   intent(out)   :: ierr
+    !--------------------------------------------------------------------------------
+    type(CrsMat_t), pointer :: A
+
+    !--------------------------------------------------------------------------------
+    
+    real(kind=8), allocatable, target :: nrms_ai2i(:,:)
+
+    if( .not. c_associated(A_ptr)) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(A_ptr,A)
+
+    ! create the double array nrms_ai2i and fill it with the inverse
+    ! of ||A(i,:)||_2^2.
+    allocate(nrms_ai2i(A%nRows, numShifts))
+    !TODO
+    ierr=-99
+    nrms_ptr=c_loc(nrms_ai2i)
+    
+    ! work is not used
+    work_ptr=c_null_ptr
+
+  end subroutine phist_Dcarp_setup
+
+  subroutine phist_Ddkswp(A_ptr, numShifts, sigma_r_ptr, sigma_i_ptr, &
+        b_ptr, x_r_ptr, x_i_ptr, nrms_ai2i_ptr, work_ptr, omega_ptr, ierr) &
+  bind(C,name='phist_Ddkswp_f')
+    use, intrinsic :: iso_c_binding
+    !--------------------------------------------------------------------------------
+    type(C_PTR),      value         :: A_ptr, b_ptr, x_r_ptr, x_i_ptr
+    integer(c_int),   intent(in)    :: numShifts
+    type(C_PTR),      value         :: sigma_r_ptr, sigma_i_ptr
+    type(C_PTR),      value         :: nrms_ai2i_ptr, work_ptr, omega_ptr
+    integer(C_INT),   intent(out)   :: ierr
+    !--------------------------------------------------------------------------------
+    type(CrsMat_t), pointer :: A
+    real(kind=8), pointer, dimension(:) :: sigma_r, sigma_i
+    type(MVec_t), pointer :: b
+    type(MVec_t), pointer, dimension(:) :: x_r, x_i
+    integer, dimension(1) :: theShape
+    
+    !--------------------------------------------------------------------------------
+
+    if( .not. c_associated(A_ptr) .or. &
+      & .not. c_associated(b_ptr) .or. &
+      & .not. c_associated(x_r_ptr) .or. &
+      & .not. c_associated(x_i_ptr)      ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(A_ptr,A)
+    call c_f_pointer(b_ptr,b)
+    ! TODO - how exactly do we have to write this
+    theShape(1)=numShifts
+    call c_f_pointer(x_r_ptr,x_r,theShape)
+    call c_f_pointer(x_i_ptr,x_i,theShape)
+
+    ierr = -99
+    
+  end subroutine phist_Ddkswp
+
+  subroutine phist_Dcarp_destroy(A_ptr, numShifts, nrms_ptr, work_ptr, ierr) &
+  bind(C,name='phist_Dcarp_destroy_f')
+    use, intrinsic :: iso_c_binding
+
+    type(C_PTR), value :: A_ptr
+    integer(c_int), value :: numShifts
+    type(C_PTR), value :: nrms_ptr, work_ptr
+    integer(c_int), intent(out) :: ierr
+    real(kind=8), pointer, dimension(:,:) :: nrms
+    integer :: theShape(2)
+    
+    TYPE(crsMat_t), pointer :: A
+    
+    if (c_associated(nrms_ptr)) then
+      if (.not. c_associated(A_ptr)) then
+        ierr=-88
+        return
+      end if
+      theShape(1)=A%nrows
+      theShape(2)=numShifts
+      call c_f_pointer(A_ptr,A)
+      call c_f_pointer(nrms_ptr,nrms,theShape)
+      deallocate(nrms)
+    end if
+  end subroutine phist_Dcarp_destroy
+  
 end module crsmat_module
 
