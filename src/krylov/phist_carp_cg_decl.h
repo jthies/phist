@@ -1,8 +1,10 @@
-// Pipelined CARP-CG solver for general shifted matrices A-sigma[j]B.
+// Pipelined CARP-CG solver for general shifted matrices sigma[j]I-A.
 // The algorithm is CG on the minimum norm problem AA'x=b with SSOR pre-
 // conditioning, implemented following the work of Bjoerck and Elfving (1979).
 // The parallelization of the Kaczmarz sweeps is left to the kernel library
-// (function carp_fb).
+// (functions carp_setup, dkswp). We allow the special situation of a real matrix
+// with complex shifts sigma = sigma_r + i*sigma_i, a real RHS vector and complex
+// result x_r + i*x_i.
 //
 
 // the usage of carp_cg is very similar to that of pgmres, except that we don't
@@ -17,7 +19,8 @@ typedef struct TYPE(carp_cgState) {
           //! or printing debug info in a function which gets just one state object.
   _MT_ tol; //! convergence tolerance for this system
   
-  _ST_ sigma; //! we're solving (A-sigma*I)x=b in this state object
+  _MT_ sigma_r; //! we're solving (sigma*I-A)x=b in this state object,
+  _MT_ sigma_i; //! with sigma = sigma_r + i*sigma_i
 
   int ierr; //! error code returned by this CARP-CG instance
 
@@ -25,8 +28,8 @@ typedef struct TYPE(carp_cgState) {
   //@}
   //! \name CARP data structures
   //@{
-  //! vector with the 2-norm of each row of A-sigma*I (squared)
-  TYPE(mvec_ptr) norms_ai2_;
+  //! array with the 2-norm of each row of A-sigma*I (squared inverse, actually)
+  MT* norms_ai2i_;
 
   //! \name  internal CG data structures
   //@{
@@ -45,11 +48,15 @@ typedef struct TYPE(carp_cgState) {
 
 typedef TYPE(carp_cgState)* TYPE(carp_cgState_ptr);
 
+
 typedef TYPE(carp_cgState) const * TYPE(const_cgState_ptr);
 
-//!
+//! CARP-CG iterations on all linear systems simultaneously.
+//! To set the RHS vector, use reset() beforehand. If A is complex
+//! or the shift sigma is real, X_i may be NULL.
 void SUBR(carp_cgStates_iterate)(TYPE(const_crsMat_ptr) A,
-        TYPE(carp_cgState_ptr) S_array[], TYPE(mvec_ptr) X,
+        TYPE(carp_cgState_ptr) S_array[], 
+        MTYPE(mvec_ptr) X_r, MTYPE(mvec_ptr) X_i,
         int* nIter, int* ierr);
 
 //!
