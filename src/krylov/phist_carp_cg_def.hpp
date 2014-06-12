@@ -1,6 +1,6 @@
 // create new state objects. We just get an array of (NULL-)pointers
 void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
-        const_map_ptr_t map, int maxIters,int* ierr)
+        const_map_ptr_t map, int nvec,int* ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
@@ -12,21 +12,26 @@ void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
     state[i] = new TYPE(carp_cgState);
     state[i]->id=i;
     // set some default options
-    state[i]->tol=0.5; // typical starting tol for JaDa inner iterations...
+    state[i]->tol=(MT)100*mt::eps(); // default value
     state[i]->ierr=-2;// not initialized
-    state[i]->maxIters_=maxIters; // max num iters, will just be increased if necessary
+    state[i]->maxIters_=1000; // default value
+    state[i]->nvec_=nvec;
   
-    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->x0_,map,1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->b_,map,1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->q_,map,1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->r_,map,1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->p_,map,1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->x0_,map,nvec,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->q_,map,nvec,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->r_,map,nvec,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->p_,map,nvec,ierr),*ierr);
     
-    state[i]->alpha_ = new ST[maxIters];
-    state[i]->beta_ = new MT[maxIters];
-    state[i]->curDimV_=0;
-    state[i]->normR0_=-mt::one(); // not initialized
-    state[i]->normR_=-mt::one();
+    state[i]->alpha_r_ = new MT[nvec];
+    state[i]->alpha_i_ = new MT[nvec];
+    state[i]->beta_ =  new MT[nvec];
+    state[i]->normR0_= new MT[nvec];
+    state[i]->normR_= new MT[nvec];
+    for (int j=0;j<nvec;j++)
+    {
+      state[i]->normR0_[j]=-mt::one(); // not initialized
+      state[i]->normR_[j]=-mt::one(); // not initialized
+    }
   }
 }
 
@@ -39,11 +44,11 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) state[], int numSys, int*
   for (int i=0;i<numSys;i++)
   {
     PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->x0_,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->b_,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->q_,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->r_,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->p_,ierr),*ierr);
-    delete [] state[i]->alpha_;
+    delete [] state[i]->alpha_r_;
+    delete [] state[i]->alpha_i_;
     delete [] state[i]->beta_;
     delete state[i];
   }
@@ -57,6 +62,9 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
 {
 #include "phist_std_typedefs.hpp"  
   ENTER_FCN(__FUNCTION__);
+#if 1
+  *ierr=-99;
+#else
   *ierr=0;
   
   if (b==NULL && S->normR0_ == -mt::one())
@@ -83,7 +91,8 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
   //TODO - recompute if shift or A changes
   S->nrm_ai2=nrms_ai2(A,sigma);
 
-
+#endif
+  return;
 }
 
 
@@ -94,6 +103,9 @@ void SUBR(carp_cgStates_iterate)(TYPE(const_crsMat_ptr) A,
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
+#if 1
+  *ierr=-99;
+#else
   *ierr = 0;
 
   int numSys;
@@ -192,6 +204,7 @@ for k=1:maxIter
       
   if (anyFailed > 0)
     *ierr=1;
+#endif
   return;
 }
 

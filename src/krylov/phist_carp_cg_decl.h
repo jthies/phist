@@ -10,6 +10,9 @@
 // the usage of carp_cg is very similar to that of pgmres, except that we don't
 // need the complicated queuing of vectors in pgmres.
 typedef struct TYPE(carp_cgState) {
+
+//TODO - imaginary parts of vectors where needed.
+
   //! \name input and output args:
   //@{
   int id; //! can be used to identify the system solved here (the column to which this 
@@ -21,6 +24,7 @@ typedef struct TYPE(carp_cgState) {
   
   _MT_ sigma_r; //! we're solving (sigma*I-A)x=b in this state object,
   _MT_ sigma_i; //! with sigma = sigma_r + i*sigma_i
+  int nvec_; //! number of RHS vectors for this shift
 
   int ierr; //! error code returned by this CARP-CG instance
 
@@ -29,17 +33,20 @@ typedef struct TYPE(carp_cgState) {
   //! \name CARP data structures
   //@{
   //! array with the 2-norm of each row of A-sigma*I (squared inverse, actually)
-  MT* norms_ai2i_;
+  _MT_* norms_ai2i_;
 
   //! \name  internal CG data structures
   //@{
   TYPE(mvec_ptr) q_, r_, p_; //! this instance operates on column 'id' of these vectors only.
   TYPE(mvec_ptr) x0_; //! starting vector to compute the first residual vector r0
   TYPE(mvec_ptr) b_; //! rhs to compute the first residual vector r0
-  _MT_ alpha_, beta_; // scalars forming the Lanczos (cf. numerics textbook for CG algorithm)
+
+  // scalars forming the Lanczos matrix, one for each RHS
+  _MT_ *alpha_r_, *alpha_i_;
+  _MT_ *beta_; 
   
-  _MT_ normR0_; //! stores initial (explicit) residual norm
-  _MT_ normR_; //! stores current (implicit) residual norm
+  _MT_ *normR0_; //! stores initial (explicit) residual norms
+  _MT_ *normR_; //! stores current (implicit) residual norms
   
   int maxIters_; //! maximum number of iterations allowed
 
@@ -56,12 +63,12 @@ typedef TYPE(carp_cgState) const * TYPE(const_cgState_ptr);
 //! or the shift sigma is real, X_i may be NULL.
 void SUBR(carp_cgStates_iterate)(TYPE(const_crsMat_ptr) A,
         TYPE(carp_cgState_ptr) S_array[], 
-        MTYPE(mvec_ptr) X_r, MTYPE(mvec_ptr) X_i,
+        TYPE(mvec_ptr) X_r, TYPE(mvec_ptr) X_i,
         int* nIter, int* ierr);
 
 //!
 void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) S_array[], int numSys,
-        const_map_ptr_t map, int maxIters, int* ierr);
+        const_map_ptr_t map, int numRhs, int maxIters, int* ierr);
 
 //!
 void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) S_array[], int numSys, int* ierr);

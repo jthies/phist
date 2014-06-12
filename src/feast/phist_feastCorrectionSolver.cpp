@@ -1,6 +1,8 @@
-#include "phist_feastCorrectionSolver.h"
+#include "phist_config.h"
 #include "phist_macros.h"
+#include "phist_kernels.h"
 #include "phist_enums.h"
+#include "phist_feastCorrectionSolver.h"
 #include "phist_ScalarTraits.hpp"
 
 #include <cstdlib>
@@ -8,7 +10,7 @@
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
-#include "phist_jadaCorrectionSolver_def.hpp"
+#include "phist_feastCorrectionSolver_def.hpp"
 #endif
 #include "phist_gen_d.h"
-#include "phist_jadaCorrectionSolver_def.hpp"
+#include "phist_feastCorrectionSolver_def.hpp"

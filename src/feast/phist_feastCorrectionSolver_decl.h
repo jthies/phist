@@ -14,12 +14,9 @@ typedef struct TYPE(feastCorrectionSolver)
   _MT_ *sigma_i_;
   int blockSize_;       // number of vectors in each system (#cols of rhs)
   TYPE(const_mvec_ptr) rhs_; // common right-hand side for all shifts sigma[j]
-#ifdef IS_DOUBLE
-  phist_Dmvec_t* nrms_ai2_; // for each row a[i] of sigma[j]I-A, contains ||a[i]||_2^2
-#else
-  phist_Smvec_t* nrms_ai2i_; // for each row a[i] of sigma[j]I-A, contains 1/||a[i]||_2^2
-#endif
-
+  linSolv_t method_;
+  TYPE(carp_cgState_ptr) *carp_cgStates_;
+  
 } TYPE(feastCorrectionSolver);
 
 typedef TYPE(feastCorrectionSolver)* TYPE(feastCorrectionSolver_ptr);
@@ -31,7 +28,7 @@ typedef TYPE(feastCorrectionSolver) const * TYPE(const_feastCorrectionSolver_ptr
 //! per shift (blockSize), the number of shifts (numShifts), and the complex shifts
 
 void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *fCorrSolver, 
-        TYPE(const_crsMat_ptr) A, 
+        TYPE(const_crsMat_ptr) A, linSolv_t method,
         int blockSize, int numShifts,
         _MT_ shifts_r[], _MT_ shifts_i[],
         int *ierr);

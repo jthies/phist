@@ -215,10 +215,10 @@ set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_rcp_helpers.cpp)
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp)
-#                       ${PROJECT_SOURCE_DIR}/src/core/phist_taskbuf.c)
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_pgmres.cpp
-                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_belos.cpp)
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_belos.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp)
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.c
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp
@@ -226,6 +226,7 @@ set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejada.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaCorrectionSolver.cpp)
+set (PHIST_FEAST_SOURCE  ${PROJECT_SOURCE_DIR}/src/feast/phist_feastCorrectionSolver.cpp)
 
 
 include_directories(${PROJECT_BINARY_DIR})
@@ -234,12 +235,15 @@ include_directories(${PROJECT_SOURCE_DIR}/src/tools)
 include_directories(${PROJECT_SOURCE_DIR}/src/core)
 include_directories(${PROJECT_SOURCE_DIR}/src/krylov)
 include_directories(${PROJECT_SOURCE_DIR}/src/jada)
+include_directories(${PROJECT_SOURCE_DIR}/src/feast)
 include_directories(${PROJECT_SOURCE_DIR}/drivers)
 
 add_library(phist_tools STATIC ${PHIST_TOOLS_SOURCE})
 add_library(phist_core STATIC ${PHIST_CORE_SOURCE})
 add_library(phist_kernels_${PHIST_KERNEL_LIB} STATIC ${PHIST_KERNEL_SOURCE})
-add_library(phist_solvers STATIC ${PHIST_KRYLOV_SOURCE} ${PHIST_JADA_SOURCE})
+add_library(phist_solvers STATIC ${PHIST_KRYLOV_SOURCE} 
+                                 ${PHIST_JADA_SOURCE}
+                                 ${PHIST_FEAST_SOURCE})
 
 list(APPEND PHIST_LIBS phist_solvers)
 list(APPEND PHIST_LIBS phist_core)
