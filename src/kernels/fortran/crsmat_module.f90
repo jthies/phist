@@ -1517,13 +1517,13 @@ end do
   !==================================================================================
 
   subroutine phist_Dcarp_setup(A_ptr, numShifts, &
-        sigma_r, sigma_i, nrms_ptr, work_ptr,ierr) &
+        shifts_r, shifts_i, nrms_ptr, work_ptr,ierr) &
   bind(C,name='phist_Dcarp_setup_f')
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),      value         :: A_ptr
     integer(C_INT),   intent(in)    :: numShifts
-    real(kind=c_double), intent(in) :: sigma_r(*), sigma_i(*)
+    real(kind=c_double), intent(in) :: shifts_r(numShifts), shifts_i(numShifts)
     type(C_PTR)                     :: nrms_ptr, work_ptr
     integer(C_INT),   intent(out)   :: ierr
     !--------------------------------------------------------------------------------
@@ -1549,13 +1549,13 @@ end do
     ! start by putting the diagonal elements of A in the first column
     ! of this array, will be overwritten by the kernel
     
-    !$omp parallel do private(tmp) schedule(static)
+!$omp parallel do private(iglob,j) schedule(static)
     do i = 1,A%nRows
       nrms_ai2i(i,1)=0.d0
       iglob=A%row_map%distrib(A%row_map%me)+i-1
       do j = A%row_offset(i), A%nonlocal_offset(i)-1, 1
         if (A%global_col_idx(j).eq.iglob) then
-          nrms_ai2i(i,1)=val(j)
+          nrms_ai2i(i,1)=A%val(j)
         end if
       end do
     end do
@@ -1577,29 +1577,37 @@ end do
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),      value         :: A_ptr, b_ptr
-    type(C_PTR),                    :: x_r_ptr(numShifts), x_i_ptr(numShifts)
     integer(c_int),   intent(in)    :: numShifts
-    real(kind=c_double)             :: shifts_r(numShifts), shifts_i(numShifts)
-    type(C_PTR),      value         :: nrms_ai2i_ptr, work_ptr
+    type(C_PTR)                     :: x_r_ptr(numShifts), x_i_ptr(numShifts)
+    real(kind=c_double), intent(in) :: shifts_r(numShifts), shifts_i(numShifts)
+    real(kind=c_double), intent(in) :: omegas(numShifts)
+    type(C_PTR),      value         :: nrms_ai2i_ptr,work_ptr
     integer(C_INT),   intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(CrsMat_t), pointer :: A
+    real(kind=8), pointer :: nrms_ai2i(:,:)
     type(MVec_t), pointer :: x_r, x_i, b
     
     !--------------------------------------------------------------------------------
     integer :: iSys,i,k,l
+    integer :: ldx, ldb, nvec
+    integer :: theShape(2)
     integer :: sendBuffSize,recvBuffSize
-    logical :: strided_x, strided_y, strided
+    logical :: strided_x, strided_b, strided
     logical :: x_is_aligned16, handled
 
-    if( .not. c_associated(A_ptr) .or. &
-      & .not. c_associated(b_ptr) .or. &
+    if ( .not. c_associated(A_ptr) .or. &
+      & .not. c_associated(b_ptr)  .or. &
+      & .not. c_associated(nrms_ai2i_ptr) ) then
       ierr = -88
       return
     end if
 
     call c_f_pointer(A_ptr,A)
     call c_f_pointer(b_ptr,b)
+    theShape(1) = A%nRows
+    theShape(2) = numShifts
+    call c_f_pointer(nrms_ai2i_ptr,nrms_ai2i,theShape)
 
     ! determin data layout of b
     if( .not. b%is_view .or. &
@@ -1731,10 +1739,12 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
       ! apply Kaczmarz forward sweep
       if (.not. handled) then
         call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
-                A%row_offsets, A%nonlocal_offsets, A%col_idx, A%val, &
+                A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 shifts_r(iSys),shifts_i(iSys), &
-                b, ldb, x_r,x_i, ldx, 
-                halo_r, halo_i,nrms_ai2i(iSys,:),omega(iSys),
+                b%val(b%jmin,1), ldb, x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
+                A%comm_buff%recvData(     1:  nvec,:),&
+                A%comm_buff%recvData(nvec+1:2*nvec,:),&
+                nrms_ai2i(:,iSys),omegas(iSys),&
                 1,A%nRows,+1)
       end if
     
@@ -1755,10 +1765,12 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
       ! apply Kaczmarz backward sweep
       if (.not. handled) then
         call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
-                A%row_offsets, A%nonlocal_offsets, A%col_idx, A%val, &
+                A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 shifts_r(iSys),shifts_i(iSys), &
-                b, ldb, x_r,x_i, ldx, 
-                halo_r, halo_i,nrms_ai2i(iSys,:),omega(iSys),
+                b%val(b%jmin,1), ldb, x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
+                A%comm_buff%recvData(     1:  nvec,:),&
+                A%comm_buff%recvData(nvec+1:2*nvec,:),&
+                nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)
       end if
     
