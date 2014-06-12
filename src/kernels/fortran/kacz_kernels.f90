@@ -2,14 +2,13 @@
 !! of the matrix shift[j]*I-A and store the inverse of the results in the
 !! columns j of the block vector nrms_ai2i. On entry, nrms_ai2i(:,1) should
 !! contain the diagonal elements of A, aii, to make things easier here (!).
-subroutine crsmat_norms_ai2i(nshifts, nlocal, nhalo, ncols, nnz, row_ptr, halo_ptr, &
-        diag_ptr, col_idx, val, shifts_r,shifts_i, nrms_ai2i)
+subroutine crsmat_norms_ai2i(nshifts, nlocal, nnz, row_ptr, &
+         val, shifts_r,shifts_i, nrms_ai2i)
   implicit none
-  integer, intent(in) :: nshifts, nlocal, nhalo, ncols
+  integer, intent(in) :: nshifts, nlocal
   integer(kind=8), intent(in) :: nnz
   real(kind=8), intent(in) :: shifts_r(nshifts), shifts_i(nshifts)
-  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal), diag_ptr(nlocal)
-  integer, intent(in) :: col_idx(nnz)
+  integer(kind=8), intent(in) :: row_ptr(nlocal+1)
   real(kind=8), intent(in) :: val(nnz)
   real(kind=8), intent(out) :: nrms_ai2i(nlocal,nshifts)
   ! local variables
@@ -42,16 +41,16 @@ end subroutine crsmat_norms_ai2i
 !! and possibly multiple vector columns in X and B
 subroutine dkacz_generic(nvec, nlocal, nhalo, ncols, nnz, &
 row_ptr, halo_ptr, col_idx, val, &
-shift_r,shift_i, &
+shift_r,shift_i, b, ldb, &
 x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,istart,iend,istep)
   implicit none
-  integer, intent(in) :: nvec, nlocal, nhalo, ncols, ldx
+  integer, intent(in) :: nvec, nlocal, nhalo, ncols, ldx, ldb
   integer(kind=8), intent(in) :: nnz
-  c(kind=8), intent(in) :: shift_r, shift_i
+  real(kind=8), intent(in) :: shift_r, shift_i
   integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
-  real(kind=8), intent(inout) :: x_r(ldx,*), x_i(ldx,*)
+  real(kind=8), intent(inout) :: x_r(ldx,*), x_i(ldx,*),b(ldb,*)
   real(kind=8), intend(inout) :: halo_r(nvec,nhalo),halo_i(nvec,nhalo)
   real(kind=8), intent(in) :: nrms_ai2i(nlocal)
   real(kind=8), intent(in) :: omega

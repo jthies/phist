@@ -1532,6 +1532,8 @@ end do
     !--------------------------------------------------------------------------------
     
     real(kind=8), allocatable, target :: nrms_ai2i(:,:)
+    integer :: i
+    integer(kind=8) :: iglob, j
 
     if( .not. c_associated(A_ptr)) then
       ierr = -88
@@ -1541,10 +1543,27 @@ end do
     call c_f_pointer(A_ptr,A)
 
     ! create the double array nrms_ai2i and fill it with the inverse
-    ! of ||A(i,:)||_2^2.
+    ! of ||A(i,:)||_2^2. This is a column-major block vector right now.
     allocate(nrms_ai2i(A%nRows, numShifts))
-    !TODO
-    ierr=-99
+    
+    ! start by putting the diagonal elements of A in the first column
+    ! of this array, will be overwritten by the kernel
+    
+    !$omp parallel do private(tmp) schedule(static)
+    do i = 1,A%nRows
+      nrms_ai2i(i,1)=0.d0
+      iglob=A%row_map%distrib(A%row_map%me)+i-1
+      do j = A%row_offset(i), A%nonlocal_offset(i)-1, 1
+        if (A%global_col_idx(j).eq.iglob) then
+          nrms_ai2i(i,1)=val(j)
+        end if
+      end do
+    end do
+    
+    ! compute inverse row norms for shift i in column i
+    call crsmat_norms_ai2i(numShifts, A%nRows, A%nEntries, &
+        A%row_offset, A%val, shifts_r,shifts_i,nrms_ai2i)
+            
     nrms_ptr=c_loc(nrms_ai2i)
     
     ! work is not used
@@ -1552,41 +1571,198 @@ end do
 
   end subroutine phist_Dcarp_setup
 
-  subroutine phist_Ddkswp(A_ptr, numShifts, sigma_r_ptr, sigma_i_ptr, &
-        b_ptr, x_r_ptr, x_i_ptr, nrms_ai2i_ptr, work_ptr, omega_ptr, ierr) &
+  subroutine phist_Ddkswp(A_ptr, numShifts, shifts_r, shifts_i, &
+        b_ptr, x_r_ptr, x_i_ptr, nrms_ai2i_ptr, work_ptr, omegas, ierr) &
   bind(C,name='phist_Ddkswp_f')
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
-    type(C_PTR),      value         :: A_ptr, b_ptr, x_r_ptr, x_i_ptr
+    type(C_PTR),      value         :: A_ptr, b_ptr
+    type(C_PTR),                    :: x_r_ptr(numShifts), x_i_ptr(numShifts)
     integer(c_int),   intent(in)    :: numShifts
-    type(C_PTR),      value         :: sigma_r_ptr, sigma_i_ptr
-    type(C_PTR),      value         :: nrms_ai2i_ptr, work_ptr, omega_ptr
+    real(kind=c_double)             :: shifts_r(numShifts), shifts_i(numShifts)
+    type(C_PTR),      value         :: nrms_ai2i_ptr, work_ptr
     integer(C_INT),   intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(CrsMat_t), pointer :: A
-    real(kind=8), pointer, dimension(:) :: sigma_r, sigma_i
-    type(MVec_t), pointer :: b
-    type(MVec_t), pointer, dimension(:) :: x_r, x_i
-    integer, dimension(1) :: theShape
+    type(MVec_t), pointer :: x_r, x_i, b
     
     !--------------------------------------------------------------------------------
+    integer :: iSys,i,k,l
+    integer :: sendBuffSize,recvBuffSize
+    logical :: strided_x, strided_y, strided
+    logical :: x_is_aligned16, handled
 
     if( .not. c_associated(A_ptr) .or. &
       & .not. c_associated(b_ptr) .or. &
-      & .not. c_associated(x_r_ptr) .or. &
-      & .not. c_associated(x_i_ptr)      ) then
       ierr = -88
       return
     end if
 
     call c_f_pointer(A_ptr,A)
     call c_f_pointer(b_ptr,b)
-    ! TODO - how exactly do we have to write this
-    theShape(1)=numShifts
-    call c_f_pointer(x_r_ptr,x_r,theShape)
-    call c_f_pointer(x_i_ptr,x_i,theShape)
 
-    ierr = -99
+    ! determin data layout of b
+    if( .not. b%is_view .or. &
+      & ( b%jmin .eq. lbound(b%val,1) .and. &
+      &   b%jmax .eq. ubound(b%val,1)       ) ) then
+      strided_b = .false.
+    else
+      strided_b = .true.
+    end if
+
+    nvec = b%jmax-b%jmin+1
+    ldb = size(b%val,1)
+
+    ! (re-)allocate communication buffers,
+    ! space for 2*nvecs vector halos is needed
+    ! because we have x_r and x_i (complex x).
+    if( allocated(A%comm_buff%recvData) ) then
+      if( size(A%comm_buff%recvData,1) .ne. 2*nvec ) then
+        deallocate(A%comm_buff%recvData)
+        deallocate(A%comm_buff%sendData)
+      end if
+    end if
+
+    sendBuffSize = A%comm_buff%sendInd(A%comm_buff%nSendProcs+1)-1
+    recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
+
+    if( .not. allocated(A%comm_buff%recvData) ) then
+      allocate(A%comm_buff%recvData(2*nvec,recvBuffSize))
+      allocate(A%comm_buff%sendData(2*nvec,sendBuffSize))
+    end if
+
+    
+    ! treat one shift at a time for the moment, here there
+    ! is potential for additional parallelism, of course,
+    ! but the user can also handle this level himself by
+    ! passsing in one shift at a time to this function.
+    do iSys=1,numShifts
+      
+      ! check that all C pointers are non-null
+      if ( .not. c_associated(x_r_ptr(iSys)) .or. &
+         & .not. c_associated(x_i_ptr(iSys)) ) then
+        ierr = -88
+        return
+      end if
+      call c_f_pointer(x_r_ptr(i),x_r)
+      call c_f_pointer(x_i_ptr(i),x_i)
+    
+      ! determin data layout of x
+      if( .not. x_r%is_view .or. &
+        & ( x_r%jmin .eq. lbound(x_r%val,1) .and. &
+        &   x_r%jmax .eq. ubound(x_r%val,1)       ) ) then
+        strided_x = .false.
+      else
+        strided_x = .true.
+      end if
+
+      strided = strided_x .or. strided_b
+      ldx = size(x_r%val,1)
+
+      if ( mod(loc(x_r%val(x_r%jmin,1)),16) .eq. 0 .and. &
+          (mod(ldx,2) .eq. 0 .or. ldx .eq. 1) ) then
+        x_is_aligned16 = .true.
+      else
+        x_is_aligned16 = .false.
+      end if
+    
+      ! NOTE: we assume that x_r and x_i have the same
+      !       data layout, i.e. if one of them is a view
+      !       both are, both have the correct #cols, same
+      !       ldx etc.
+
+#if 1
+      if (A%row_map%nProcs .gt. 1) then
+        write(*,*) 'CARP kernel in Fortran not implemented with MPI'
+        ierr=-99
+        return
+      end if
+#else
+
+! MPI parallel implementation
+
+      ! exchange necessary elements of X. TODO - we
+      ! can probably save this communication step by
+      ! doing more local computations, e.g. doing the
+      ! vector updates etc. in CG on the buffers as
+      ! well (working in the column map of A directly).
+
+      ! start buffer irecv
+      do i=1,A%comm_buff%nRecvProcs, 1
+        k = A%comm_buff%recvInd(i)
+        l = A%comm_buff%recvInd(i+1)
+        call mpi_irecv(A%comm_buff%recvData(:,k:l-1),(l-k)*2*nvec,MPI_DOUBLE_PRECISION,&
+                       A%comm_buff%recvProcId(i),3,A%row_map%Comm,A%comm_buff%recvRequests(i),ierr)
+      end do
+
+      ! start buffer isend
+!$omp parallel
+      do i=1,A%comm_buff%nSendProcs, 1
+        k = A%comm_buff%sendInd(i)
+        l = A%comm_buff%sendInd(i+1)
+!$omp do schedule(static)
+        do j = k, l-1, 1
+          A%comm_buff%sendData(1:nvec,j) = &
+                x_r%val(x_r%jmin:x_r%jmax,A%comm_buff%sendRowBlkInd(j))
+          A%comm_buff%sendData(nvec+1:2*nvec,j) = &
+                x_i%val(x_i%jmin:x_i%jmax,A%comm_buff%sendRowBlkInd(j))
+        end do
+      end do
+!$omp end parallel
+
+      do i=1,A%comm_buff%nSendProcs, 1
+        k = A%comm_buff%sendInd(i)
+        l = A%comm_buff%sendInd(i+1)
+        call mpi_isend(A%comm_buff%sendData(:,k:l-1),(l-k)*2*nvec,MPI_DOUBLE_PRECISION,&
+        &            A%comm_buff%sendProcId(i),3,A%row_map%Comm,A%comm_buff%sendRequests(i),ierr)
+    end do
+
+    if( A%comm_buff%nRecvProcs .gt. 0 ) then
+      ! wait till all data arrived
+      call 
+mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStatus,ierr)
+    end if
+
+#endif
+
+      ! TODO - specialized kernels...
+      handled=.false.
+
+      ! apply Kaczmarz forward sweep
+      if (.not. handled) then
+        call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
+                A%row_offsets, A%nonlocal_offsets, A%col_idx, A%val, &
+                shifts_r(iSys),shifts_i(iSys), &
+                b, ldb, x_r,x_i, ldx, 
+                halo_r, halo_i,nrms_ai2i(iSys,:),omega(iSys),
+                1,A%nRows,+1)
+      end if
+    
+#if 1
+      if (A%row_map%nProcs .gt. 1) then
+        write(*,*) 'CARP kernel in Fortran not implemented with MPI'
+        ierr=-99
+        return
+      end if
+
+#else
+! TODO - exchange/average halo
+#endif    
+
+      ! TODO - specialized kernels...
+      handled=.false.
+
+      ! apply Kaczmarz backward sweep
+      if (.not. handled) then
+        call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
+                A%row_offsets, A%nonlocal_offsets, A%col_idx, A%val, &
+                shifts_r(iSys),shifts_i(iSys), &
+                b, ldb, x_r,x_i, ldx, 
+                halo_r, halo_i,nrms_ai2i(iSys,:),omega(iSys),
+                A%nRows,1,-1)
+      end if
+    
+    end do
     
   end subroutine phist_Ddkswp
 
