@@ -206,6 +206,7 @@ if (PHIST_KERNEL_LIB STREQUAL "fortran")
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/gemm_kernels_sC.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/spmvm_kernels_nt.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/spmvm_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/kacz_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/sdmat_module.f90)
 else()
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp)

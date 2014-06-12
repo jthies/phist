@@ -1,4 +1,4 @@
-!! compute for a given shift sigma=sigma_r+sigma_i the 2-norm of each row
+!! compute for a given shift sigma=shift_r+shift_i the 2-norm of each row
 !! of the matrix shift[j]*I-A and store the inverse of the results in the
 !! columns j of the block vector nrms_ai2i. On entry, nrms_ai2i(:,1) should
 !! contain the diagonal elements of A, aii, to make things easier here (!).
@@ -24,16 +24,14 @@ subroutine crsmat_norms_ai2i(nshifts, nlocal, nnz, row_ptr, &
     !              = aii^2-2*aii*sr+sr^2+si^2. 
     ! aii^2 is added in the regular loop below.
     tmp=nrms_ai2i(i,1) ! =aii, see comment in the function header
-    nrms_ai2i(i,:)=shift_r(:)*shift_r(:) + shift_i(:)*shift_i(:) &
-                - 2.d0*tmp*shift_r(:)
+    nrms_ai2i(i,:)=shifts_r(1:nshifts)*shifts_r(1:nshifts) + &
+                   shifts_i(1:nshifts)*shifts_i(1:nshifts) - &
+                   2.d0*tmp*shifts_r(1:nshifts)
     tmp=0.d0
-    do j = row_ptr(i), halo_ptr(i)-1, 1
+    do j = row_ptr(i), row_ptr(i+1)-1, 1
       tmp = tmp + val(j)*val(j)
     end do
-    do j = halo_ptr(i), row_ptr(i+1)-1, 1
-      tmp = tmp + val(j)*val(j)
-    end do
-    nrms_ai2i(i,:)=1.do/(nrms_ai2i(i,:)+tmp)
+    nrms_ai2i(i,:)=1.d0/(nrms_ai2i(i,:)+tmp)
   end do
 end subroutine crsmat_norms_ai2i
 
@@ -51,7 +49,7 @@ x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,istart,iend,istep)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
   real(kind=8), intent(inout) :: x_r(ldx,*), x_i(ldx,*),b(ldb,*)
-  real(kind=8), intend(inout) :: halo_r(nvec,nhalo),halo_i(nvec,nhalo)
+  real(kind=8), intent(inout) :: halo_r(nvec,nhalo),halo_i(nvec,nhalo)
   real(kind=8), intent(in) :: nrms_ai2i(nlocal)
   real(kind=8), intent(in) :: omega
   integer, intent(in) :: istart,iend,istep
@@ -62,7 +60,7 @@ x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,istart,iend,istep)
 !TODO - OpenMP, coloring
   do i = istart, iend,istep
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !! compute (sigma_j I - A)_i*x
+    !! compute (shift_j I - A)_i*x
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     tmp_r(1:nvec) = shift_r*x_r(1:nvec,i) - &
                     shift_i*x_i(1:nvec,i)
@@ -83,8 +81,8 @@ x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,istart,iend,istep)
     tmp_i(:)=tmp_i(:)*omega*nrms_ai2i(i)
 
     ! b) projection step
-    x_r(1:nvec,i)=x_r(1:nvec,i) + (tmp_r(:)*sigma_r+tmp_i(:)*sigma_i)
-    x_i(1:nvec,i)=x_i(1:nvec,i) + (tmp_i(:)*sigma_r-tmp_r(:)*sigma_i)
+    x_r(1:nvec,i)=x_r(1:nvec,i) + (tmp_r(:)*shift_r+tmp_i(:)*shift_i)
+    x_i(1:nvec,i)=x_i(1:nvec,i) + (tmp_i(:)*shift_r-tmp_r(:)*shift_i)
 
     do j = row_ptr(i), halo_ptr(i)-1, 1
       x_r(1:nvec,col_idx(j)) = x_r(1:nvec,col_idx(j)) - &
@@ -98,7 +96,7 @@ x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,istart,iend,istep)
       halo_i(1:nvec,col_idx(j)) = halo_i(1:nvec,col_idx(j)) - &
                                tmp_i(:)*val(j)
     end do
-
+  end do
 end subroutine dkacz_generic
 
 
