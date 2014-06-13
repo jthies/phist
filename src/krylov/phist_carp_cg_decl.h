@@ -37,8 +37,13 @@ typedef struct TYPE(carp_cgState) {
 
   //! \name  internal CG data structures
   //@{
-  TYPE(mvec_ptr) q_, r_, p_; //! this instance operates on column 'id' of these vectors only.
+  TYPE(mvec_ptr) q_, r_, p_; //! CG helper vectors, one column per RHS
   TYPE(mvec_ptr) x0_; //! starting vector to compute the first residual vector r0
+#ifndef IS_COMPLEX
+  // imaginary parts, used if real A with complex shift
+  TYPE(mvec_ptr) qi_, ri_, pi_;
+  TYPE(mvec_ptr) x0i_; 
+#endif  
   TYPE(mvec_ptr) b_; //! rhs to compute the first residual vector r0
 
   // scalars forming the Lanczos matrix, one for each RHS
@@ -62,8 +67,9 @@ typedef TYPE(carp_cgState) const * TYPE(const_cgState_ptr);
 //! To set the RHS vector, use reset() beforehand. If A is complex
 //! or the shift sigma is real, X_i may be NULL.
 void SUBR(carp_cgStates_iterate)(TYPE(const_crsMat_ptr) A,
-        TYPE(carp_cgState_ptr) S_array[], 
-        TYPE(mvec_ptr) X_r, TYPE(mvec_ptr) X_i,
+        TYPE(const_mvec_ptr) rhs, 
+        TYPE(carp_cgState_ptr) S_array[], int numSys,
+        TYPE(mvec_ptr) X_r[], TYPE(mvec_ptr) X_i[],
         int* nIter, int* ierr);
 
 //!
@@ -75,15 +81,10 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) S_array[], int numSys, in
 
 //! this function can be used to force a clean restart of the associated CARP-CG
 //! solver. It is necessary to call this function before the first call to
-//! pcg. The input starting vector x0 may be NULL, in that case this function
-//! will generate a random initial guess. x0 does not have to be normalized in advance.
-//! The input crsMat A and RHS B may also be NULL, meaning 'keep old one', but not on 
-//! the first call to reset. If one of the RHS vectors changes between calls to pcg, 
-//! reset with the new rhs should be called for that cgState, otherwise a messed up 
-//! Krylov sequence will result and the convergence criterion will not be consistent. If
-//! the matrix A changes, *all* states must be reset. If some the shift in JaDa changes,
-//! reset should be called with A=NULL (A does not change) for that particular system.
+//! iterate(). The input starting vector x0 may be NULL, in that case this function
+//! will generate a zero initial guess. x0 does not have to be normalized in advance.
+//! x0i can be used to specify a complex initial vector (for real matrices with complex
+//! shift). If A (and thus x0) is complex, x0i is ignored.
 void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
-                TYPE(const_crsMat_ptr) A, TYPE(const_mvec_ptr) b,
-                TYPE(const_mvec_ptr) x0, int *ierr);
+                TYPE(const_mvec_ptr) x0, TYPE(mvec_ptr) x0i, int *ierr);
 

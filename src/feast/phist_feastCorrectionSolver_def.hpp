@@ -77,7 +77,7 @@ void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) me, int 
 //! calculate approximate solutions to given set of FEAST correction equations
 //!
 //! arguments:
-//! fCorrSolver    the feastCorrectionSolver object
+//! me    the feastCorrectionSolver object
 //! rhs            rhs of the correction equations, rhs is the same for all
 //!                to shift[i] in create()
 //! tol             desired accuracy (gmres residual tolerance) of the individual systems
@@ -85,7 +85,7 @@ void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) me, int 
 //! sol             returns approximate solution vectors, sol[i] belongs to shift[i] and rhs
 //! ierr            a value > 0 indicates the number of systems that have not converged to the 
 //!                 desired tolerance
-void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) fCorrSolver,
+void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
                                     TYPE(const_mvec_ptr) rhs,
                                     TYPE(mvec_ptr) sol_r[],
                                     TYPE(mvec_ptr) sol_i[],
@@ -94,9 +94,28 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) fCorrSolver
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  if (fCorrSolver->method_==CARP_CG)
+  if (me->method_==CARP_CG)
   {
-    *ierr=-99;
+    // reset all CG states. Use the given sol vectors as starting guess.
+    for (int i=0; i<me->numShifts_; i++)
+    {
+#ifdef IS_COMPLEX
+      PHIST_CHK_IERR(SUBR(carp_cgState_reset)(me->carp_cgStates_[i],
+        sol_r[i],NULL,ierr),*ierr);
+#else
+      PHIST_CHK_IERR(SUBR(carp_cgState_reset)(me->carp_cgStates_[i],
+        sol_r[i],sol_i[i],ierr),*ierr);
+#endif
+    }
+    // now iterate the systems with the different shifts
+    // (and the same multiple RHS each). At this point
+    // we put the further parallelisation into the hand of
+    // the carp_cg implementation, which might delegate shifts
+    // to other nodes, use a queuing system etc.
+    int nIter=0; // not sure why exactly this counter, but we'll see.
+    PHIST_CHK_IERR(SUBR(carp_cgStates_iterate)
+        (me->A_, rhs, me->carp_cgStates_, me->numShifts_,  
+                sol_r, sol_i, &nIter,ierr),*ierr);
   }
   else
   {

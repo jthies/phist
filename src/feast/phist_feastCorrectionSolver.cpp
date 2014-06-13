@@ -4,6 +4,7 @@
 #include "phist_enums.h"
 #include "phist_feastCorrectionSolver.h"
 #include "phist_ScalarTraits.hpp"
+#include "phist_carp_cg.h"
 
 #include <cstdlib>
 #include <vector>

@@ -21,6 +21,14 @@ void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
     PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->q_,map,nvec,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->r_,map,nvec,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->p_,map,nvec,ierr),*ierr);
+
+#ifndef IS_COMPLEX
+    // separate imaginary parts of the vectors
+    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->x0i_,map,nvec,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->qi_,map,nvec,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->ri_,map,nvec,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->pi_,map,nvec,ierr),*ierr);
+#endif
     
     state[i]->alpha_r_ = new MT[nvec];
     state[i]->alpha_i_ = new MT[nvec];
@@ -47,6 +55,12 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) state[], int numSys, int*
     PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->q_,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->r_,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->p_,ierr),*ierr);
+#ifndef IS_COMPLEX
+    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->x0i_,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->qi_,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->ri_,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->pi_,ierr),*ierr);
+#endif
     delete [] state[i]->alpha_r_;
     delete [] state[i]->alpha_i_;
     delete [] state[i]->beta_;
@@ -58,7 +72,9 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) state[], int numSys, int*
 void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S, 
         TYPE(const_crsMat_ptr) A,
         TYPE(const_mvec_ptr) b,
-        TYPE(const_mvec_ptr) x0,int *ierr)
+        TYPE(const_mvec_ptr) x0_r,
+        TYPE(const_mvec_ptr) x0_i, 
+        int *ierr)
 {
 #include "phist_std_typedefs.hpp"  
   ENTER_FCN(__FUNCTION__);
@@ -69,7 +85,7 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
   
   if (b==NULL && S->normR0_ == -mt::one())
   {
-    PHIST_OUT(PHIST_ERROR,"on the first call to cgState_reset you *must* provide the\n" 
+    PHIST_OUT(PHIST_ERROR,"on the first call to carp_cgState_reset you *must* provide the\n" 
                           "RHS vector b and sparse matrix A.");
     *ierr=-1;
     return;
@@ -77,7 +93,7 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
   else if (b!=NULL)
   {
     // new rhs -> need to recompute ||b-A*x0||
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), b, st::zero(), S->b_, ierr), *ierr);
+    S->b_=b;
     S->ierr = -1;
     S->totalIter = 0;
   }
@@ -86,8 +102,10 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
   // set V_0=X_0. iterate() will have to compute the residual and normalize it,
   // because the actual V_0 we want is r/||r||_2, but we can't easily apply the
   // operator to a single vector.
-  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),x0,st::zero(), S->x0_, ierr),*ierr);
-
+  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),x0_r,st::zero(), S->x0_r_, ierr),*ierr);
+#ifndef IS_COMPLEX
+  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),x0_r,st::zero(), S->x0_i_, ierr),*ierr);
+#endif
   //TODO - recompute if shift or A changes
   S->nrm_ai2=nrms_ai2(A,sigma);
 
@@ -98,7 +116,9 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
 
 // implementation of pcg on several systems simultaneously
 void SUBR(carp_cgStates_iterate)(TYPE(const_crsMat_ptr) A,
-        TYPE(carp_cgState_ptr) S_array[], TYPE(mvec_ptr) X,
+        TYPE(const_mvec_ptr) rhs,
+        TYPE(carp_cgState_ptr) S_array[], int numSys,
+        TYPE(mvec_ptr) X_r[], TYPE(mvec_ptr) X_i[],
         int* nIter, int* ierr)
 {
 #include "phist_std_typedefs.hpp"

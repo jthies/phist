@@ -413,19 +413,22 @@ if  (PHIST_KERNEL_LIB STREQUAL "ghost")
   set(ESSEX_INSTALL_DIR CACHE ${CMAKE_INSTALL_PREFIX} "where the essex examples are 
   installed")
 
-  if (EXISTS "${ESSEX_INSTALL_DIR}/include/essex_examples/matfuncs.h")
+  if (EXISTS "${ESSEX_INSTALL_DIR}/include/essex-physics/matfuncs.h")
     include_directories(${ESSEX_INSTALL_DIR}/include/essex_examples)
     add_executable(spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
     add_executable(spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
+    add_executable(graphene_carp ${PROJECT_SOURCE_DIR}/drivers/graphene_carp.c ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
     target_link_libraries(spinChain ${ESSEX_INSTALL_DIR}/lib/essex_examples/libmatfuncs.so)
     target_link_libraries(spinChain_subspacejada ${ESSEX_INSTALL_DIR}/lib/essex_examples/libmatfuncs.so)
+    target_link_libraries(graphene_carp ${ESSEX_INSTALL_DIR}/lib/essex_examples/libmatfuncs.so)
     foreach(lib ${PHIST_LIBS})
       target_link_libraries(spinChain ${lib})
       target_link_libraries(spinChain_subspacejada ${lib})
+      target_link_libraries(graphene_carp ${lib})
     endforeach()
   else()
     message(STATUS "ESSEX_INSTALL_DIR (${ESSEX_INSTALL_DIR}) does not contain matfuncs.h in     
-    ./essex_examples, skipping some example drivers.")
+    ./essex-physics, skipping some example drivers.")
   endif()
 elseif(PHIST_KERNEL_LIB STREQUAL "fortran")
   include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
@@ -434,9 +437,13 @@ elseif(PHIST_KERNEL_LIB STREQUAL "fortran")
   add_executable(spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp
                                         ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c
                                         ${PROJECT_SOURCE_DIR}/drivers/matfuncs/SpinChainSZ.c)
+  add_executable(graphene_carp ${PROJECT_SOURCE_DIR}/drivers/graphene_carp.c
+                                        ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c
+                                        ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c)
   foreach(lib ${PHIST_LIBS})
     target_link_libraries(spinChain ${lib})
     target_link_libraries(spinChain_subspacejada ${lib})
+    target_link_libraries(graphene_carp ${lib})
   endforeach()
 endif()
 
