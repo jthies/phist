@@ -1,8 +1,12 @@
+#include "phist_config.h"
+/* needs to be included before system headers for some intel compilers+mpi */
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
 
-#include "phist_config.h"
 #include "phist_macros.h"
 #include "phist_simple_arnoldi.h"
 #include "phist_kernels.h"

@@ -2,6 +2,10 @@
 #define PHIST_SUBSPACEJADA_H
 
 #include "phist_config.h"
+/* needs to be included before system headers for some intel compilers+mpi */
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
 #include "phist_operator.h"
 #include "phist_enums.h"
 

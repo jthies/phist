@@ -2,6 +2,10 @@
 #define PHIST_JADAOPTS_H
 
 #include "phist_config.h"
+/* needs to be included before system headers for some intel compilers+mpi */
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
 #include "phist_enums.h"
 
 #ifdef __cplusplus

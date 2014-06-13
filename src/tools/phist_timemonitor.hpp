@@ -3,6 +3,10 @@
 
 
 #include "phist_config.h"
+/* needs to be included before system headers for some intel compilers+mpi */
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
 
 #ifndef PHIST_HAVE_MPI
 #error "phist_TimeMonitor does only work with MPI_Wtime(), but no MPI found"

@@ -1,6 +1,11 @@
 #ifndef KERNELS_TPETRA_TYPEDEFS_HPP
 #define KERNELS_TPETRA_TYPEDEFS_HPP
 
+#include "phist_config.h"
+/* needs to be included before system headers for some intel compilers+mpi */
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DataAccess.hpp"
@@ -14,7 +19,6 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
 
-#include "phist_config.h"
 #include "phist_typedefs.h"
 
 namespace phist {

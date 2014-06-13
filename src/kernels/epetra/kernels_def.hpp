@@ -1,8 +1,13 @@
+#include "phist_configh."
+/* needs to be included before system headers for some intel compilers+mpi */
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+#include "Epetra_config.h"
 #include "phist_macros.h"
 #include "phist_typedefs.h"
 #include "phist_kernels.h"
 
-#include "Epetra_config.h"
 
 #include "Epetra_SerialComm.h"
 #ifdef HAVE_MPI
