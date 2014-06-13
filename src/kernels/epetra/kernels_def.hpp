@@ -1,32 +1,3 @@
-#include "phist_configh."
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-#include "Epetra_config.h"
-#include "phist_macros.h"
-#include "phist_typedefs.h"
-#include "phist_kernels.h"
-
-
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_BlockMap.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_Vector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_CrsMatrix.h"
-
-#include "Teuchos_StandardCatchMacros.hpp"
-#include "EpetraExt_CrsMatrixIn.h"
-
-#include "epetra_helpers.h"
-
-#include "BelosEpetraAdapter.hpp"
-#include "BelosTsqrOrthoManager.hpp"
-
 extern "C" {
 
 // \name Matrix input from a file

@@ -6,12 +6,26 @@
 #include "../phist_kernels.h"
 #include "phist_trilinos_macros.h"
 #include "phist_typedefs.h"
+#include "phist_typedefs.h"
 #include "Epetra_config.h"
 #ifdef PHIST_HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
+#include "Epetra_BlockMap.h"
+#include "Epetra_LocalMap.h"
+#include "Epetra_Vector.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_CrsMatrix.h"
+
+#include "Teuchos_StandardCatchMacros.hpp"
+#include "EpetraExt_CrsMatrixIn.h"
+
+#include "BelosEpetraAdapter.hpp"
+#include "BelosTsqrOrthoManager.hpp"
+
+
 
 #ifdef PHIST_TIMEMONITOR
 #include "phist_timemonitor.hpp"

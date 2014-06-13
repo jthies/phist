@@ -4,6 +4,7 @@
 #include <mpi.h>
 #endif
 #include "phist_macros.h"
+#include "phist_typedefs.h"
 #include "phist_tpetra_typedefs.hpp"
 #include "../phist_kernels.h"
 #include "phist_trilinos_macros.h"
@@ -18,6 +19,7 @@
 
 #include "BelosTpetraAdapter.hpp"
 #include "BelosTsqrOrthoManager.hpp"
+
 #ifdef PHIST_TIMEMONITOR
 #include "phist_timemonitor.hpp"
 namespace phist_TimeMonitor

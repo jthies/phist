@@ -1,22 +1,3 @@
-#include "phist_config.h"
-/* needs to be included before system headers for some intel compilers+mpi */
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-#include "phist_macros.h"
-
-#include "phist_typedefs.h"
-#include "phist_kernels.h"
-
-#include "Teuchos_StandardCatchMacros.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_RCP.hpp"
-#include "MatrixMarket_Tpetra.hpp"
-#include "Tpetra_MatrixIO.hpp"
-
-#include "BelosTpetraAdapter.hpp"
-#include "BelosTsqrOrthoManager.hpp"
-
 extern "C" {
 
 // we implement all the four types
