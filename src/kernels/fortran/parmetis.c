@@ -15,6 +15,7 @@
 #ifdef PHIST_HAVE_PARMETIS
 
 #include <parmetis.h>
+#include <stdlib.h>
 
 /*! wrapper for parmetis, so it can be called from fortran:<br>
  * it is necessary to convert the mpi communicator from c

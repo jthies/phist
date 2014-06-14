@@ -29,15 +29,19 @@ namespace phist_TimeMonitor
   {
     public:
       // start timer
-      Timer(const char* s) :
-        fcnName(s)
+      Timer(const char* s)
       {
+        if( !mpi_wtime_available() )
+          return;
+        fcnName = s;
         wtime = MPI_Wtime();
       }
 
       // stop timer
       ~Timer()
       {
+        if( fcnName.empty() || !mpi_wtime_available() ) // not ready yet
+          return;
         wtime = MPI_Wtime() - wtime;
         //PHIST_OUT(PHIST_DEBUG, "Measured %10.4e wtime for function %s\n", wtime, fcnName.c_str());
         _timingResults[fcnName].update(wtime);
@@ -82,6 +86,20 @@ namespace phist_TimeMonitor
         bool operator() (int i, int j) {return _keys[i] > _keys[j];}
         const std::vector<double>& _keys;
       };
+
+      // helper function to determine if mpi is initialized
+      static bool mpi_wtime_available()
+      {
+        int mpi_ini;
+        MPI_Initialized(&mpi_ini);
+        if( !mpi_ini )
+          return false;
+        MPI_Finalized(&mpi_ini);
+        if( mpi_ini )
+          return false;
+
+        return true;
+      }
     public:
 
       // calculates the results and prints them

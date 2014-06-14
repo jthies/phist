@@ -223,9 +223,9 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
         opA->apply(-st::one(),opA->A,Vm_,st::one(),AVm_,&ierr);
         ASSERT_EQ(0,ierr);
 #ifdef PHIST_KERNEL_LIB_FORTRAN
-        ASSERT_NEAR(mt::one(),ArrayEqual(vec2_vp_,nvec_,nloc_,lda_,stride_,st::zero()), (MT)50.*releps(V_));
+        ASSERT_NEAR(mt::one(),ArrayEqual(vec2_vp_,m_+1,nloc_,lda_,stride_,st::zero()), (MT)50.*releps(V_));
 #else
-        ASSERT_NEAR(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,st::zero()), (MT)50.*releps(V_));
+        ASSERT_NEAR(mt::one(),ArrayEqual(vec2_vp_,nloc_,m_+1,lda_,stride_,st::zero()), (MT)50.*releps(V_));
 #endif
 
         // calculate A*V(:,1:m)

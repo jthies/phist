@@ -47,7 +47,7 @@ contains
     allocate(map%distrib(0:map%nProcs))
     allocate(map%nlocal(0:map%nProcs-1))
 
-    do i = 0, map%nProcs-1
+    do i = 0, map%nProcs-1, 1
       map%nlocal(i) = int(n_glob/map%nProcs)
       if( i .lt. mod(n_glob,map%nProcs) ) then
         map%nlocal(i) = map%nlocal(i) + 1
@@ -55,15 +55,15 @@ contains
     end do
 
     map%distrib(0) = 1
-    do i = 1, map%nProcs
+    do i = 1, map%nProcs, 1
       map%distrib(i) = map%distrib(i-1) + map%nlocal(i-1)
     end do
 
-#ifdef TESTING
+!#ifdef TESTING
 write(*,*) map%me, 'setting up map with nglob = ', n_glob, ', nProcs = ', map%nProcs, &
   &  ', distrib = ', map%distrib, ', nlocal = ', map%nlocal
 flush(6)
-#endif
+!#endif
     if( map%distrib(map%nProcs) .ne. n_glob+1 ) then
       ierr = -1
     else

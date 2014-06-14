@@ -230,7 +230,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
   // TODO: strangely there seems to be a bug in simple_arnoldi, s.t. H != V'*AV
   //       so recalculate it!
-  PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), V, AV, st::zero(), H, ierr), *ierr);
+  //PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), V, AV, st::zero(), H, ierr), *ierr);
 
 
 
