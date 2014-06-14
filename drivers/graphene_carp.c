@@ -125,9 +125,9 @@ int main(int argc, char** argv)
   sigma_r = (MT*)malloc(nshifts*sizeof(MT));
   sigma_i = (MT*)malloc(nshifts*sizeof(MT));
   
-  for (int i=0;i<nshifts;i++)
+  for (i=0;i<nshifts;i++)
   {
-    fscanf(shiftFile,"%f %f",sigma_r[i],sigma_i[i]);
+    fscanf(shiftFile,"%f %f",&sigma_r[i],&sigma_i[i]);
     PHIST_SOUT(PHIST_VERBOSE,"sigma[%d]= %g + %gi\n",sigma_r[i],sigma_i[i]);
     if (sigma_i[i]==(MT)0.0)
     {
@@ -145,8 +145,6 @@ int main(int argc, char** argv)
 #else
   TYPE(crsMat_ptr) mat = NULL;
 #endif
-
-  TYPE(crsMat_ptr) A=(TYPE(crsMat_ptr))mat;
 
   ghost_idx_t DIM = WL[0]*WL[1];
   matfuncs_info_t info;
@@ -227,11 +225,11 @@ int main(int argc, char** argv)
   
   // x_r = 1/sig_i(A-sig_r I)x_i
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_r[0]/sigma_i[0],X_i_ex0,0.0,X_r_ex0,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(1.0/sigma_i[0],A,X_i_ex0,1.0,X_r_ex0,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(1.0/sigma_i[0],mat,X_i_ex0,1.0,X_r_ex0,&ierr),ierr);
   
   // compute rhs B to match this exact solution for sigma[0]:
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_r[0],X_r_ex0,0.0,B,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(-1.0,A,X_r_ex0,1.0,B,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(-1.0,mat,X_r_ex0,1.0,B,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_i[0],X_i_ex0,1.0,B,&ierr),ierr);
 
 ///////////////////////////////////////////////////////////////////
@@ -239,7 +237,7 @@ int main(int argc, char** argv)
 ///////////////////////////////////////////////////////////////////
   TYPE(feastCorrectionSolver_ptr) fCorrSolver;
   PHIST_ICHK_IERR(SUBR(feastCorrectionSolver_create)
-        (&fCorrSolver, A, CARP_CG, nvec, nshifts,sigma_r, sigma_i, &ierr),ierr);
+        (&fCorrSolver, mat, CARP_CG, nvec, nshifts,sigma_r, sigma_i, &ierr),ierr);
 
   PHIST_ICHK_IERR(SUBR(feastCorrectionSolver_run)
         (fCorrSolver, B, tol, maxIter,X_r, X_i, &ierr),ierr);
