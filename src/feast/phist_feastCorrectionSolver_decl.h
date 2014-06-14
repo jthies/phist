@@ -51,6 +51,6 @@ void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) fCorrSol
 void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) fCorrSolver,
                                     TYPE(const_mvec_ptr) rhs,
                                     const _MT_ tol, int maxIter,
-                                    TYPE(mvec_ptr) * sol_r[],
-                                    TYPE(mvec_ptr) * sol_i[],
+                                    TYPE(mvec_ptr) sol_r[],
+                                    TYPE(mvec_ptr) sol_i[],
                                     int *ierr);

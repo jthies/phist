@@ -14,8 +14,7 @@ void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
     // set some default options
     state[i]->tol=(MT)100*mt::eps(); // default value
     state[i]->ierr=-2;// not initialized
-    state[i]->maxIters_=1000; // default value
-    state[i]->nvec_=nvec;
+    state[i]->nvec=nvec;
   
     PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->x0_,map,nvec,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->q_,map,nvec,ierr),*ierr);
@@ -70,10 +69,8 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) state[], int numSys, int*
 
 // reset pcg state.
 void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S, 
-        TYPE(const_crsMat_ptr) A,
-        TYPE(const_mvec_ptr) b,
         TYPE(const_mvec_ptr) x0_r,
-        TYPE(const_mvec_ptr) x0_i, 
+        TYPE(const_mvec_ptr) x0_i,
         int *ierr)
 {
 #include "phist_std_typedefs.hpp"  
@@ -95,7 +92,7 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
     // new rhs -> need to recompute ||b-A*x0||
     S->b_=b;
     S->ierr = -1;
-    S->totalIter = 0;
+    S->numIter = 0;
   }
   
   S->normR0_=-mt::one(); // needs to be computed in next iterate call

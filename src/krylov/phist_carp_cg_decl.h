@@ -24,11 +24,12 @@ typedef struct TYPE(carp_cgState) {
   
   _MT_ sigma_r; //! we're solving (sigma*I-A)x=b in this state object,
   _MT_ sigma_i; //! with sigma = sigma_r + i*sigma_i
-  int nvec_; //! number of RHS vectors for this shift
+  int nvec; //! number of RHS vectors for this shift
+
+  int numIters; //! number of iterations performed since last call to reset()
 
   int ierr; //! error code returned by this CARP-CG instance
 
-  int totalIter; //! counts number of iterations (also over restarts)
   //@}
   //! \name CARP data structures
   //@{
@@ -53,8 +54,6 @@ typedef struct TYPE(carp_cgState) {
   _MT_ *normR0_; //! stores initial (explicit) residual norms
   _MT_ *normR_; //! stores current (implicit) residual norms
   
-  int maxIters_; //! maximum number of iterations allowed
-
   //@}
 } TYPE(carp_cgState);
 
@@ -74,7 +73,7 @@ void SUBR(carp_cgStates_iterate)(TYPE(const_crsMat_ptr) A,
 
 //!
 void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) S_array[], int numSys,
-        const_map_ptr_t map, int numRhs, int maxIters, int* ierr);
+        const_map_ptr_t map, int numRhs, int* ierr);
 
 //!
 void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) S_array[], int numSys, int* ierr);
@@ -86,5 +85,5 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) S_array[], int numSys, in
 //! x0i can be used to specify a complex initial vector (for real matrices with complex
 //! shift). If A (and thus x0) is complex, x0i is ignored.
 void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
-                TYPE(const_mvec_ptr) x0, TYPE(mvec_ptr) x0i, int *ierr);
+                TYPE(const_mvec_ptr) x0, TYPE(const_mvec_ptr) x0i, int *ierr);
 

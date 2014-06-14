@@ -4,7 +4,6 @@ void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me,
         linSolv_t method,
         int blockSize,
         int numShifts, _MT_ sigma_r[], _MT_ sigma_i[],
-        _MT_ tol, int maxIter,
         int *ierr)
 {
 #include "phist_std_typedefs.hpp"
@@ -33,11 +32,10 @@ void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me,
     (*me)->carp_cgStates_ = new TYPE(carp_cgState_ptr)[numShifts];
     
     PHIST_CHK_IERR(SUBR(carp_cgStates_create)
-        ((*me)->carp_cgStates_,numShifts,map,blockSize,maxIter,ierr),*ierr);
+        ((*me)->carp_cgStates_,numShifts,map,blockSize,ierr),*ierr);
     
     for (int i=0;i<numShifts;i++)
     {
-      (*me)->carp_cgStates_[i]->tol = tol;
       (*me)->carp_cgStates_[i]->sigma_r = sigma_r[i];
       (*me)->carp_cgStates_[i]->sigma_i = sigma_i[i];
     }
@@ -87,6 +85,7 @@ void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) me, int 
 //!                 desired tolerance
 void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
                                     TYPE(const_mvec_ptr) rhs,
+                                    _MT_ tol, int maxIter,
                                     TYPE(mvec_ptr) sol_r[],
                                     TYPE(mvec_ptr) sol_i[],
                                     int *ierr)
