@@ -1,43 +1,60 @@
 // create new state objects. We just get an array of (NULL-)pointers
 void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
-        const_map_ptr_t map, int nvec,int* ierr)
+        _MT_ sigma_r[], _MT_ sigma_i[],
+        TYPE(const_crsMat_ptr) A, int nvec,int* ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   if (numSys==0) return;
+  
+    // setup the CARP kernel and get the required data structures:
+    MT* nrms_ai2i=NULL;
+    void* aux=NULL;
+    PHIST_CHK_IERR(SUBR(carp_setup)(A,numSys,sigma_r,sigma_i,
+        &nrms_ai2i, &aux, ierr),*ierr);    
 
+  const_map_ptr_t map=NULL;
+  PHIST_CHK_IERR(SUBR(crsMat_get_row_map)(A,&map,ierr),*ierr);
+  lidx_t nloc;
+  PHIST_CHK_IERR(phist_map_get_local_length(map,&nloc,ierr),*ierr);
+  
   for (int i=0;i<numSys;i++)
   {
     state[i] = new TYPE(carp_cgState);
     state[i]->id=i;
-    // set some default options
-    state[i]->tol=(MT)100*mt::eps(); // default value
-    state[i]->ierr=-2;// not initialized
-    state[i]->nvec=nvec;
-  
+    state[i]->ierr=-2;// not initialized (need to call reset())
+    
+    state[i]->A_=A;
+    state[i]->sigma_r_=sigma_r[i];
+    state[i]->sigma_i_=sigma_i[i];
+    state[i]->nvec_=nvec;
+    
+    state[i]->nrms_ai2i_=nrms_ai2i+i*nloc;
+
     PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->x0_,map,nvec,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->q_,map,nvec,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->r_,map,nvec,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->p_,map,nvec,ierr),*ierr);
 
+    state[i]->beta_ =  new MT[nvec];
+    state[i]->alpha_ = new MT[nvec];
+
 #ifndef IS_COMPLEX
     // separate imaginary parts of the vectors
+    state[i]->alpha_i_ = new MT[nvec];
     PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->x0i_,map,nvec,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->qi_,map,nvec,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->ri_,map,nvec,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->pi_,map,nvec,ierr),*ierr);
 #endif
     
-    state[i]->alpha_r_ = new MT[nvec];
-    state[i]->alpha_i_ = new MT[nvec];
-    state[i]->beta_ =  new MT[nvec];
     state[i]->normR0_= new MT[nvec];
-    state[i]->normR_= new MT[nvec];
+    state[i]->normR= new MT[nvec];
     for (int j=0;j<nvec;j++)
     {
       state[i]->normR0_[j]=-mt::one(); // not initialized
-      state[i]->normR_[j]=-mt::one(); // not initialized
+      state[i]->normR[j]=-mt::one(); // not initialized
     }
   }
 }
@@ -60,7 +77,7 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) state[], int numSys, int*
     PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->ri_,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->pi_,ierr),*ierr);
 #endif
-    delete [] state[i]->alpha_r_;
+    delete [] state[i]->alpha_;
     delete [] state[i]->alpha_i_;
     delete [] state[i]->beta_;
     delete state[i];
@@ -68,19 +85,15 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) state[], int numSys, int*
 }
 
 // reset pcg state.
-void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S, 
-        TYPE(const_mvec_ptr) x0_r,
-        TYPE(const_mvec_ptr) x0_i,
+void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
+        TYPE(const_mvec_ptr) b,
         int *ierr)
 {
 #include "phist_std_typedefs.hpp"  
   ENTER_FCN(__FUNCTION__);
-#if 1
-  *ierr=-99;
-#else
   *ierr=0;
-  
-  if (b==NULL && S->normR0_ == -mt::one())
+
+  if (b==NULL && S->normR0_[0] == -mt::one())
   {
     PHIST_OUT(PHIST_ERROR,"on the first call to carp_cgState_reset you *must* provide the\n" 
                           "RHS vector b and sparse matrix A.");
@@ -95,28 +108,19 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
     S->numIter = 0;
   }
   
-  S->normR0_=-mt::one(); // needs to be computed in next iterate call
-  // set V_0=X_0. iterate() will have to compute the residual and normalize it,
-  // because the actual V_0 we want is r/||r||_2, but we can't easily apply the
-  // operator to a single vector.
-  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),x0_r,st::zero(), S->x0_r_, ierr),*ierr);
-#ifndef IS_COMPLEX
-  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),x0_r,st::zero(), S->x0_i_, ierr),*ierr);
-#endif
-  //TODO - recompute if shift or A changes
-  S->nrm_ai2=nrms_ai2(A,sigma);
-
-#endif
+  for (int i=0; i<S->nvec_; i++)
+  {
+    S->normR0_[i]=-mt::one(); // needs to be computed in next iterate call
+  }
   return;
 }
 
-
-// implementation of pcg on several systems simultaneously
-void SUBR(carp_cgStates_iterate)(TYPE(const_crsMat_ptr) A,
-        TYPE(const_mvec_ptr) rhs,
+// implementation of pcg on several systems with multiple RHS each
+void SUBR(carp_cgStates_iterate)(
         TYPE(carp_cgState_ptr) S_array[], int numSys,
         TYPE(mvec_ptr) X_r[], TYPE(mvec_ptr) X_i[],
-        int* nIter, int* ierr)
+        _MT_ tol, int maxIter, 
+        int* ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);

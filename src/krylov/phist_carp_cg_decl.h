@@ -4,7 +4,8 @@
 // The parallelization of the Kaczmarz sweeps is left to the kernel library
 // (functions carp_setup, dkswp). We allow the special situation of a real matrix
 // with complex shifts sigma = sigma_r + i*sigma_i, a real RHS vector and complex
-// result x_r + i*x_i.
+// result x_r + i*x_i. Each state object may iterate on multiple systems with the
+// same shift but different RHS (nvec>1)
 //
 
 // the usage of carp_cg is very similar to that of pgmres, except that we don't
@@ -13,77 +14,85 @@ typedef struct TYPE(carp_cgState) {
 
 //TODO - imaginary parts of vectors where needed.
 
-  //! \name input and output args:
+  //! \name output args:
   //@{
-  int id; //! can be used to identify the system solved here (the column to which this 
+  int id; //! can be used to identify the system solved here (the shift to which this 
           //! iteration status belongs)
-          //! This id is currently not used inside the code, i.e. we assume state[i] belongs
-          //! to X(:,i) everywhere. But it could be useful when reordering the state array 
-          //! or printing debug info in a function which gets just one state object.
-  _MT_ tol; //! convergence tolerance for this system
+          //! This id is currently not used inside the carp_cg solver but might be used
+          //! by the caller for reordering state objects etc. Initially, we just set
+          //! id to i for object i created in _create().
   
-  _MT_ sigma_r; //! we're solving (sigma*I-A)x=b in this state object,
-  _MT_ sigma_i; //! with sigma = sigma_r + i*sigma_i
-  int nvec; //! number of RHS vectors for this shift
-
-  int numIters; //! number of iterations performed since last call to reset()
+  int numIter; //! number of iterations performed since last call to reset()
+  _MT_ *normR;  //! stores current (implicit) residual norms
 
   int ierr; //! error code returned by this CARP-CG instance
 
   //@}
-  //! \name CARP data structures
+  
+  //! \name input data set by constructor
+  //@{
+  _MT_ sigma_r_; //! we're solving (sigma*I-A)x=b in this state object,
+  _MT_ sigma_i_; //! with sigma = sigma_r + i*sigma_i
+  int nvec_; //! number of RHS vectors for this shift
+
+  TYPE(const_crsMat_ptr) A_;
+
+  //@}
+  //! \name set by reset() function
+  //@{
+  // rhs vector
+  TYPE(const_mvec_ptr) b_;
+  TYPE(mvec_ptr) x0_,x0i_; //! starting vector
+  //@}
+  //! \name internal CARP data structures
   //@{
   //! array with the 2-norm of each row of A-sigma*I (squared inverse, actually)
-  _MT_* norms_ai2i_;
-
+  _MT_* nrms_ai2i_;
+  void* aux_; // work arg to dkswp (dep. on kernel lib)
+  //@}
   //! \name  internal CG data structures
   //@{
   TYPE(mvec_ptr) q_, r_, p_; //! CG helper vectors, one column per RHS
-  TYPE(mvec_ptr) x0_; //! starting vector to compute the first residual vector r0
-#ifndef IS_COMPLEX
   // imaginary parts, used if real A with complex shift
   TYPE(mvec_ptr) qi_, ri_, pi_;
-  TYPE(mvec_ptr) x0i_; 
-#endif  
-  TYPE(mvec_ptr) b_; //! rhs to compute the first residual vector r0
 
   // scalars forming the Lanczos matrix, one for each RHS
-  _MT_ *alpha_r_, *alpha_i_;
-  _MT_ *beta_; 
+  _MT_ *alpha_, *alpha_i_;
+  _MT_ *beta_;
   
   _MT_ *normR0_; //! stores initial (explicit) residual norms
-  _MT_ *normR_; //! stores current (implicit) residual norms
   
   //@}
 } TYPE(carp_cgState);
 
 typedef TYPE(carp_cgState)* TYPE(carp_cgState_ptr);
-
-
 typedef TYPE(carp_cgState) const * TYPE(const_cgState_ptr);
 
-//! CARP-CG iterations on all linear systems simultaneously.
-//! To set the RHS vector, use reset() beforehand. If A is complex
-//! or the shift sigma is real, X_i may be NULL.
-void SUBR(carp_cgStates_iterate)(TYPE(const_crsMat_ptr) A,
-        TYPE(const_mvec_ptr) rhs, 
-        TYPE(carp_cgState_ptr) S_array[], int numSys,
-        TYPE(mvec_ptr) X_r[], TYPE(mvec_ptr) X_i[],
-        int* nIter, int* ierr);
-
-//!
-void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) S_array[], int numSys,
-        const_map_ptr_t map, int numRhs, int* ierr);
+//! Create an array of CG state objects to solve a set of numSys linear systems
+//! (sigma[j]I-A)X=B. The systems all have the same rhs B, consisting of nvec  
+//! columns.
+void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) S_array[], 
+        int nshifts, _MT_ sigma_r[], _MT_ sigma_i[],
+        TYPE(const_crsMat_ptr) A, int numRhs, int* ierr);
 
 //!
 void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) S_array[], int numSys, int* ierr);
 
-//! this function can be used to force a clean restart of the associated CARP-CG
-//! solver. It is necessary to call this function before the first call to
-//! iterate(). The input starting vector x0 may be NULL, in that case this function
-//! will generate a zero initial guess. x0 does not have to be normalized in advance.
-//! x0i can be used to specify a complex initial vector (for real matrices with complex
-//! shift). If A (and thus x0) is complex, x0i is ignored.
+//! this function is used if the RHS vector changes but the matrix and shift
+//! sigma stays the same. The solver is reset to start solving the new system
+//! (sigma*I-A)x=rhs
 void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
-                TYPE(const_mvec_ptr) x0, TYPE(const_mvec_ptr) x0i, int *ierr);
+                TYPE(const_mvec_ptr) rhs,
+                int *ierr);
+
+//! CARP-CG iterations on all linear systems in the array.
+//! To set the RHS vector, use reset() beforehand. If X is complex
+//! or A and the shift sigma are real, X_i may be NULL. This function
+//! performs up to maxIter CARP-CG steps on each of the numSys linear
+//! systems and returns if all of them have either converged or failed.
+void SUBR(carp_cgStates_iterate)(
+        TYPE(carp_cgState_ptr) S_array[], int numSys,
+        TYPE(mvec_ptr) X_r[], TYPE(mvec_ptr) X_i[],
+        _MT_ tol, int maxIter,
+        int* ierr);
 

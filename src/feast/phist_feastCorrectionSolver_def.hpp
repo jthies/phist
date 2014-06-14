@@ -18,6 +18,7 @@ void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me,
   (*me)->sigma_i_ = new MT[numShifts];
   (*me)->rhs_=NULL;
   (*me)->method_=method;
+
   for (int i=0;i<numShifts;i++)
   {
     (*me)->sigma_r_[i]=sigma_r[i];
@@ -26,19 +27,12 @@ void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me,
   
   if (method==CARP_CG)
   {
-    const_map_ptr_t map=NULL;
-    PHIST_CHK_IERR(SUBR(crsMat_get_row_map)(A,&map,ierr),*ierr);
     // create one CARP-CG object per shift.
     (*me)->carp_cgStates_ = new TYPE(carp_cgState_ptr)[numShifts];
     
     PHIST_CHK_IERR(SUBR(carp_cgStates_create)
-        ((*me)->carp_cgStates_,numShifts,map,blockSize,ierr),*ierr);
-    
-    for (int i=0;i<numShifts;i++)
-    {
-      (*me)->carp_cgStates_[i]->sigma_r = sigma_r[i];
-      (*me)->carp_cgStates_[i]->sigma_i = sigma_i[i];
-    }
+        ((*me)->carp_cgStates_,numShifts,sigma_r,sigma_i,
+        A, blockSize,ierr),*ierr);    
   }
   else
   {
@@ -98,13 +92,7 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
     // reset all CG states. Use the given sol vectors as starting guess.
     for (int i=0; i<me->numShifts_; i++)
     {
-#ifdef IS_COMPLEX
-      PHIST_CHK_IERR(SUBR(carp_cgState_reset)(me->carp_cgStates_[i],
-        sol_r[i],NULL,ierr),*ierr);
-#else
-      PHIST_CHK_IERR(SUBR(carp_cgState_reset)(me->carp_cgStates_[i],
-        sol_r[i],sol_i[i],ierr),*ierr);
-#endif
+      PHIST_CHK_IERR(SUBR(carp_cgState_reset)(me->carp_cgStates_[i],rhs,ierr),*ierr);
     }
     // now iterate the systems with the different shifts
     // (and the same multiple RHS each). At this point
@@ -113,8 +101,8 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
     // to other nodes, use a queuing system etc.
     int nIter=0; // not sure why exactly this counter, but we'll see.
     PHIST_CHK_IERR(SUBR(carp_cgStates_iterate)
-        (me->A_, rhs, me->carp_cgStates_, me->numShifts_,  
-                sol_r, sol_i, &nIter,ierr),*ierr);
+                (me->carp_cgStates_, me->numShifts_, 
+                sol_r, sol_i, tol, maxIter,ierr),*ierr);
   }
   else
   {
