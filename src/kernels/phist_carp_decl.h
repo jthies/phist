@@ -4,7 +4,7 @@ extern "C" {
 
 //! kernels to implement CARP for the matrix sigma[j]I-A.
 
-//! create data structures needed for subsequent calls to dkswp: 
+//! create data structures needed for subsequent calls to carp_sweep: 
 //! 
 //! input: 
 //!
@@ -14,7 +14,7 @@ extern "C" {
 //! output:
 //! 
 //! *nrms_ai2i and *work should be NULL on input and not touched while
-//! dkswp is being called. If no longer needed, they should be cleaned
+//! carp_sweep is being called. If no longer needed, they should be cleaned
 //! up using carp_destroy.
 //!
 //! If the shifts sigma change, carp_destroy and carp_setup should be
@@ -27,7 +27,7 @@ void SUBR(carp_setup)(TYPE(const_crsMat_ptr) A, int numShifts,
 //! with matrix sigma[j]*I-A applied to the columns of mvec X[j] with a single rhs B. The
 //! input arguments nrms_ai2i and work must be unchanged from the _setup routine. For each
 //! shift sigma[j], a separate relaxation parameter omega[j] must be provided.
-void SUBR(dkswp)(TYPE(const_crsMat_ptr) A, int numShifts, 
+void SUBR(carp_sweep)(TYPE(const_crsMat_ptr) A, int numShifts, 
         _MT_ const sigma_r[], _MT_ const sigma_i[],
         TYPE(const_mvec_ptr) Rhs,
         TYPE(mvec_ptr) X_r[], TYPE(mvec_ptr) X_i[],
