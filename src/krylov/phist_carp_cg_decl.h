@@ -2,7 +2,7 @@
 // The algorithm is CG on the minimum norm problem AA'x=b with SSOR pre-
 // conditioning, implemented following the work of Bjoerck and Elfving (1979).
 // The parallelization of the Kaczmarz sweeps is left to the kernel library
-// (functions carp_setup, dkswp). We allow the special situation of a real matrix
+// (functions carp_setup, carp_sweep). We allow the special situation of a real matrix
 // with complex shifts sigma = sigma_r + i*sigma_i, a real RHS vector and complex
 // result x_r + i*x_i. Each state object may iterate on multiple systems with the
 // same shift but different RHS (nvec>1)
@@ -48,7 +48,7 @@ typedef struct TYPE(carp_cgState) {
   //@{
   //! array with the 2-norm of each row of A-sigma*I (squared inverse, actually)
   _MT_* nrms_ai2i_;
-  void* aux_; // work arg to dkswp (dep. on kernel lib)
+  void* aux_; // work arg to carp_sweep (dep. on kernel lib)
   //@}
   //! \name  internal CG data structures
   //@{
@@ -57,10 +57,11 @@ typedef struct TYPE(carp_cgState) {
   TYPE(mvec_ptr) qi_, ri_, pi_;
 
   // scalars forming the Lanczos matrix, one for each RHS
-  _MT_ *alpha_, *alpha_i_;
-  _MT_ *beta_;
-  
-  _MT_ *normR0_; //! stores initial (explicit) residual norms
+  _ST_ *alpha_;
+  _MT_ *alpha_i_, *beta_;
+
+  _MT_ *normB_ ; //! two-norm of rhs vector (for stopping criteria)
+  _MT_ *normR0_; //! stores initial (explicit) residual norms (for stopping criteria)
   
   //@}
 } TYPE(carp_cgState);
@@ -80,9 +81,12 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) S_array[], int numSys, in
 
 //! this function is used if the RHS vector changes but the matrix and shift
 //! sigma stays the same. The solver is reset to start solving the new system
-//! (sigma*I-A)x=rhs
+//! (sigma*I-A)x=rhs. If normsB==NULL, the two-norm of B is computed in S->normB_,
+//! otherwise it is copied from the given pointer (length S->nvec_). rhs must have 
+//! the same number of vectors (S->nvec_).
 void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
                 TYPE(const_mvec_ptr) rhs,
+                MT* normsB,
                 int *ierr);
 
 //! CARP-CG iterations on all linear systems in the array.

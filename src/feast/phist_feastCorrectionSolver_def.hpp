@@ -89,10 +89,13 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
   *ierr=0;
   if (me->method_==CARP_CG)
   {
+    MT* normsB=NULL;
     // reset all CG states. Use the given sol vectors as starting guess.
     for (int i=0; i<me->numShifts_; i++)
     {
-      PHIST_CHK_IERR(SUBR(carp_cgState_reset)(me->carp_cgStates_[i],rhs,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(carp_cgState_reset)(me->carp_cgStates_[i],rhs,normsB,ierr),*ierr);
+      // compute ||b|| only for first system, then copy it
+      normsB=me->carp_cgStates_[0]->normB_;
     }
     // now iterate the systems with the different shifts
     // (and the same multiple RHS each). At this point
