@@ -27,6 +27,13 @@ void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me,
   
   if (method==CARP_CG)
   {
+#ifdef PHIST_KERNEL_LIB_GHOST
+// GHOST has mixed arithmetic built in, we could simply use the complex kernels
+// (with complex shifts and vectors) but pass in a real-valued matrix (in theory...)
+#warning "for ghost we should use the complex carp_cg but pass in the real matrix."
+         "Using the real arithmetic version may cost performance..."
+
+#endif  
     // create one CARP-CG object per shift.
     (*me)->carp_cgStates_ = new TYPE(carp_cgState_ptr)[numShifts];
     
@@ -101,8 +108,9 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
     // (and the same multiple RHS each). At this point
     // we put the further parallelisation into the hand of
     // the carp_cg implementation, which might delegate shifts
-    // to other nodes, use a queuing system etc.
-    int nIter=0; // not sure why exactly this counter, but we'll see.
+    // to other nodes, use a queuing system etc. The starting
+    // vectors are taken as received by this function and passed
+    // on to carp_cg.
     PHIST_CHK_IERR(SUBR(carp_cgStates_iterate)
                 (me->carp_cgStates_, me->numShifts_, 
                 sol_r, sol_i, tol, maxIter,ierr),*ierr);

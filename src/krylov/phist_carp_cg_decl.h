@@ -42,7 +42,6 @@ typedef struct TYPE(carp_cgState) {
   //@{
   // rhs vector
   TYPE(const_mvec_ptr) b_;
-  TYPE(mvec_ptr) x0_,x0i_; //! starting vector
   //@}
   //! \name internal CARP data structures
   //@{
