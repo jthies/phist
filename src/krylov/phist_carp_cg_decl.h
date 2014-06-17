@@ -48,12 +48,13 @@ typedef struct TYPE(carp_cgState) {
   //! array with the 2-norm of each row of A-sigma*I (squared inverse, actually)
   _MT_* nrms_ai2i_;
   void* aux_; // work arg to carp_sweep (dep. on kernel lib)
+  _MT_ omega_;// relaxation parameter
   //@}
   //! \name  internal CG data structures
   //@{
-  TYPE(mvec_ptr) q_, r_, p_; //! CG helper vectors, one column per RHS
+  TYPE(mvec_ptr) q_, r_, p_, z_; //! CG helper vectors, one column per RHS
   // imaginary parts, used if real A with complex shift
-  TYPE(mvec_ptr) qi_, ri_, pi_;
+  TYPE(mvec_ptr) qi_, ri_, pi_, zi_;
 
   // scalars forming the Lanczos matrix, one for each RHS
   _ST_ *alpha_;
@@ -85,7 +86,7 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) S_array[], int numSys, in
 //! the same number of vectors (S->nvec_).
 void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
                 TYPE(const_mvec_ptr) rhs,
-                MT* normsB,
+                _MT_* normsB,
                 int *ierr);
 
 //! CARP-CG iterations on all linear systems in the array.
