@@ -41,7 +41,7 @@ enable_language (Fortran)
 # compiler-dependent flags 
 ##############################################################################
 
-set(OUTLEV_DEBUG 4)
+set(OUTLEV_DEBUG 99)
 set(OUTLEV_RELEASE 3)
 
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")

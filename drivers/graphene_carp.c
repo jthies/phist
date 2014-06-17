@@ -128,7 +128,7 @@ int main(int argc, char** argv)
   for (i=0;i<nshifts;i++)
   {
     fscanf(shiftFile,"%lf %lf",&sigma_r[i],&sigma_i[i]);
-    PHIST_SOUT(PHIST_VERBOSE,"sigma[%d]= %g + %gi\n",sigma_r[i],sigma_i[i]);
+    PHIST_SOUT(PHIST_VERBOSE,"sigma[%d]= %g + %gi\n",i,sigma_r[i],sigma_i[i]);
     if (sigma_i[i]==(MT)0.0)
     {
       PHIST_SOUT(PHIST_ERROR,"all shifts must have a non-zero imaginary part\n");

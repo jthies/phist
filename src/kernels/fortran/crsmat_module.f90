@@ -1522,7 +1522,7 @@ end do
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),      value         :: A_ptr
-    integer(C_INT),   intent(in)    :: numShifts
+    integer(C_INT),   value         :: numShifts
     real(kind=c_double), intent(in) :: shifts_r(numShifts), shifts_i(numShifts)
     type(C_PTR)                     :: nrms_ptr, work_ptr
     integer(C_INT),   intent(out)   :: ierr
@@ -1539,8 +1539,14 @@ end do
       ierr = -88
       return
     end if
+write(*,*) 'numShifts=',numShifts
+do i=1,numShifts
+  write(*,*) shifts_r(i),' + i',shifts_i(i)
+end do
 
     call c_f_pointer(A_ptr,A)
+
+write(*,*) 'A%nRows=',A%nRows
 
     ! create the double array nrms_ai2i and fill it with the inverse
     ! of ||A(i,:)||_2^2. This is a column-major block vector right now.
@@ -1548,18 +1554,23 @@ end do
     
     ! start by putting the diagonal elements of A in the first column
     ! of this array, will be overwritten by the kernel
-    
+
+!TODO - remove print statements below, they print the matrix for debugging
+ 
 !$omp parallel do private(iglob,j) schedule(static)
     do i = 1,A%nRows
       nrms_ai2i(i,1)=0.d0
       iglob=A%row_map%distrib(A%row_map%me)+i-1
       do j = A%row_offset(i), A%nonlocal_offset(i)-1, 1
-        if (A%global_col_idx(j).eq.iglob) then
+write(*,*) i,A%col_idx(j),A%val(j)
+!TODO - getting a segfault when accessing global_col_idx, ask Melven
+!        if (A%global_col_idx(j).eq.iglob) then
+        if (A%col_idx(j).eq.i) then
           nrms_ai2i(i,1)=A%val(j)
         end if
       end do
     end do
-    
+
     ! compute inverse row norms for shift i in column i
     call crsmat_norms_ai2i(numShifts, A%nRows, A%nEntries, &
         A%row_offset, A%val, shifts_r,shifts_i,nrms_ai2i)
@@ -1652,8 +1663,8 @@ end do
         ierr = -88
         return
       end if
-      call c_f_pointer(x_r_ptr(i),x_r)
-      call c_f_pointer(x_i_ptr(i),x_i)
+      call c_f_pointer(x_r_ptr(iSys),x_r)
+      call c_f_pointer(x_i_ptr(iSys),x_i)
     
       ! determin data layout of x
       if( .not. x_r%is_view .or. &
