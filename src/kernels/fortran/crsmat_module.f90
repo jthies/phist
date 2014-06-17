@@ -1588,7 +1588,7 @@ write(*,*) i,A%col_idx(j),A%val(j)
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),      value         :: A_ptr, b_ptr
-    integer(c_int),   intent(in)    :: numShifts
+    integer(c_int),   value    :: numShifts
     type(C_PTR)                     :: x_r_ptr(numShifts), x_i_ptr(numShifts)
     real(kind=c_double), intent(in) :: shifts_r(numShifts), shifts_i(numShifts)
     real(kind=c_double), intent(in) :: omegas(numShifts)
