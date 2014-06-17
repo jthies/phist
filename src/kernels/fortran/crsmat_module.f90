@@ -1571,9 +1571,9 @@ end do
 
   end subroutine phist_Dcarp_setup
 
-  subroutine phist_Ddkswp(A_ptr, numShifts, shifts_r, shifts_i, &
+  subroutine phist_Dcarp_sweep(A_ptr, numShifts, shifts_r, shifts_i, &
         b_ptr, x_r_ptr, x_i_ptr, nrms_ai2i_ptr, work_ptr, omegas, ierr) &
-  bind(C,name='phist_Ddkswp_f')
+  bind(C,name='phist_Dcarp_sweep_f')
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),      value         :: A_ptr, b_ptr
@@ -1776,7 +1776,7 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
     
     end do
     
-  end subroutine phist_Ddkswp
+  end subroutine phist_Dcarp_sweep
 
   subroutine phist_Dcarp_destroy(A_ptr, numShifts, nrms_ptr, work_ptr, ierr) &
   bind(C,name='phist_Dcarp_destroy_f')
