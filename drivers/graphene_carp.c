@@ -35,10 +35,10 @@ int main(int argc, char** argv)
   {
      if ( argc < 4 )
      {
-          printf("usage: graphene_carp <nx> <ny> <shiftFile> <num vecs>\n"
+          printf("Usage: graphene_carp <nx> <ny> <shiftFile> <num vecs>\n"
                  "                     <tol> <maxIter>\n"
                  "       where: TODO - document/complete args, for now\n"
-                 "       please look in the source file %s",__FILE__);
+                 "       please look in the source file %s\n",__FILE__);
           exit(0); 
      }
 
@@ -127,7 +127,7 @@ int main(int argc, char** argv)
   
   for (i=0;i<nshifts;i++)
   {
-    fscanf(shiftFile,"%f %f",&sigma_r[i],&sigma_i[i]);
+    fscanf(shiftFile,"%lf %lf",&sigma_r[i],&sigma_i[i]);
     PHIST_SOUT(PHIST_VERBOSE,"sigma[%d]= %g + %gi\n",sigma_r[i],sigma_i[i]);
     if (sigma_i[i]==(MT)0.0)
     {
