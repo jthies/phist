@@ -178,7 +178,7 @@ void SUBR(carp_cgStates_iterate)(
 
   // some internal settings  
   int itprint=1; // how often to print the current impl. residual norms
-  int itcheck=10; // how often to check the actual expl. res norms. We
+  int itcheck=1; // how often to check the actual expl. res norms. We
                   // only stop iterating if *all* expl. res norms for
                   // a given shift are below the tolerance. The impl.
                   // res norm is based on the carp operator, and I'm not
@@ -585,19 +585,20 @@ void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR,
         _MT_ const* normR0, _MT_ const* normB)
 {
 #include "phist_std_typedefs.hpp"
+  const char* carp_label = "CARP_CG";
   if (nvec==0)
   {
-    PHIST_SOUT(PHIST_INFO,"it\t||r||/||b||\t||r||/||r0||\n");
+    PHIST_SOUT(PHIST_INFO,"%s\tit\t||r||/||b||\t||r||/||r0||\n",carp_label);
   }
   else
   {
     ST tmp=mt::sqrt(st::real(normR[0]));
-    PHIST_SOUT(PHIST_INFO,"%d\t%e\t%e\n",it,
+    PHIST_SOUT(PHIST_INFO,"%s %d\t%e\t%e\n",carp_label,it,
           tmp/normB[0],tmp/normR0[0])
     for (int j=1;j<nvec;j++)
     {
       MT tmp=mt::sqrt(st::real(normR[j]));
-      PHIST_SOUT(PHIST_INFO,"  \t%e\t%e\n",
+      PHIST_SOUT(PHIST_INFO,"%s\t\t%e\t%e\n",carp_label,
              tmp/normB[j],tmp/normR0[j]);
     }
   }
