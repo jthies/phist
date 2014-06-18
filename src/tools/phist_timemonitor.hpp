@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <sstream>
 
 
 // encapsulates functions and classes needed for function level time monitoring
@@ -31,20 +32,28 @@ namespace phist_TimeMonitor
       // start timer
       Timer(const char* s)
       {
+#pragma omp barrier
         if( !mpi_wtime_available() )
           return;
+#pragma omp master
+{
         fcnName = s;
         wtime = MPI_Wtime();
+}
       }
 
       // stop timer
       ~Timer()
       {
+#pragma omp barrier
         if( fcnName.empty() || !mpi_wtime_available() ) // not ready yet
           return;
+#pragma omp master
+{
         wtime = MPI_Wtime() - wtime;
         //PHIST_OUT(PHIST_DEBUG, "Measured %10.4e wtime for function %s\n", wtime, fcnName.c_str());
         _timingResults[fcnName].update(wtime);
+}
       }
 
     private:
@@ -106,6 +115,22 @@ namespace phist_TimeMonitor
       static void summarize(void)
       {
         int nTimers = _timingResults.size();
+
+        // consider only timers from the first process!
+        MPI_Bcast(&nTimers, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+        // get timer names from the first process
+        std::string fcnNameList;
+        for(TimeDataMap::const_iterator it = _timingResults.begin(); it != _timingResults.end(); it++)
+          fcnNameList.append( it->first + '\n' );
+        int strLen = fcnNameList.length();
+        MPI_Bcast(&strLen, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        char* strBuf = new char[strLen];
+        fcnNameList.copy(strBuf, strLen);
+        strBuf[strLen-1] = '\0';
+        MPI_Bcast(strBuf, strLen, MPI_CHAR, 0, MPI_COMM_WORLD);
+        std::istringstream iss(strBuf);
+
         std::vector<std::string> fcnName(nTimers);
         std::vector<unsigned long> numberOfCalls(nTimers);
         std::vector<double> minTime(nTimers);
@@ -116,16 +141,13 @@ namespace phist_TimeMonitor
         std::vector<double> tmp(nTimers);
 
         // convert / copy everything into vectors
-        int i = 0;
-        for(TimeDataMap::const_iterator it = _timingResults.begin(); it != _timingResults.end(); it++)
+        for(int i = 0; i < nTimers; i++)
         {
-          fcnName.at(i) = it->first;
-          numberOfCalls.at(i) = it->second.numberOfCalls;
-          minTime.at(i) = it->second.minTime;
-          maxTime.at(i) = it->second.maxTime;
-          maxTotalTime.at(i) = it->second.totalTime;
-
-          i++;
+          iss >> fcnName.at(i);
+          numberOfCalls.at(i) = _timingResults[fcnName.at(i)].numberOfCalls;
+          minTime.at(i) = _timingResults[fcnName.at(i)].minTime;
+          maxTime.at(i) = _timingResults[fcnName.at(i)].maxTime;
+          maxTotalTime.at(i) = _timingResults[fcnName.at(i)].totalTime;
         }
 
         // reductions over mpi processes

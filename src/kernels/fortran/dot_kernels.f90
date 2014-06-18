@@ -10,7 +10,7 @@ subroutine ddot_strided_1(nrows, v, ldv, w, ldw, vdot)
 
   vdot = 0.
 !$omp parallel do reduction(+:vdot) schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     vdot = vdot + v(1,i)*w(1,i)
   end do
 end subroutine ddot_strided_1
@@ -25,7 +25,7 @@ subroutine ddot_strided_2(nrows, v, ldv, w, ldw, vdot)
 
   vdot = 0.
 !$omp parallel do reduction(+:vdot) schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     vdot = vdot + v(1:2,i)*w(1:2,i)
   end do
 end subroutine ddot_strided_2
@@ -40,7 +40,7 @@ subroutine ddot_strided_4(nrows, v, ldv, w, ldw, vdot)
 
   vdot = 0.
 !$omp parallel do reduction(+:vdot) schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     vdot = vdot + v(1:4,i)*w(1:4,i)
   end do
 end subroutine ddot_strided_4
@@ -55,7 +55,7 @@ subroutine ddot_strided_8(nrows, v, ldv, w, ldw, vdot)
 
   vdot = 0.
 !$omp parallel do reduction(+:vdot) schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     vdot = vdot + v(1:8,i)*w(1:8,i)
   end do
 end subroutine ddot_strided_8
@@ -70,7 +70,7 @@ subroutine ddot_1(nrows, v, w, vdot)
 
   vdot = 0.
 !$omp parallel do reduction(+:vdot) schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     vdot = vdot + v(i)*w(i)
   end do
 end subroutine ddot_1
@@ -85,7 +85,7 @@ subroutine ddot_2(nrows, v, w, vdot)
 
   vdot = 0.
 !$omp parallel do reduction(+:vdot) schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     vdot = vdot + v(:,i)*w(:,i)
   end do
 end subroutine ddot_2
@@ -100,7 +100,7 @@ subroutine ddot_4(nrows, v, w, vdot)
 
   vdot = 0.
 !$omp parallel do reduction(+:vdot) schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     vdot = vdot + v(:,i)*w(:,i)
   end do
 end subroutine ddot_4
@@ -115,7 +115,7 @@ subroutine ddot_8(nrows, v, w, vdot)
 
   vdot = 0.
 !$omp parallel do reduction(+:vdot) schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     vdot = vdot + v(:,i)*w(:,i)
   end do
 end subroutine ddot_8
@@ -130,7 +130,7 @@ subroutine ddot_general(nrows, nvec, v, ldv, w, ldw, vdot)
 
   vdot = 0.
 !$omp parallel do reduction(+:vdot) schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     vdot(1:nvec) = vdot(1:nvec) + v(1:nvec,i)*w(1:nvec,i)
   end do
 end subroutine ddot_general

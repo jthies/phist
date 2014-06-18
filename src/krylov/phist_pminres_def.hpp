@@ -70,10 +70,10 @@ void SUBR(pminresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S
 
 #ifdef TESTING
 // print a visualization of the current state
-std::vector<bool> mvecUsedBy[maxId+1];
+std::vector< std::vector<int> > mvecUsedBy(maxId+1);
 for(int i = 0; i < maxId+1; i++)
   mvecUsedBy[i].resize(mvecBuff->size(),false);
-std::vector<bool> idUsed(maxId+1,false);
+std::vector<int> idUsed(maxId+1,false);
 for(int i = 0; i < numSys; i++)
 {
   idUsed[S[i]->id] = true;

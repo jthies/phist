@@ -73,7 +73,7 @@ contains
     ! determine data layout
     nvec = mvec%jmax-mvec%jmin+1
     nblocks = size(block_list)
-    nrows = size(mvec%val,2)
+    nrows = mvec%map%nlocal(mvec%map%me)
     ldm = size(mvec%val,1)
     if( .not. mvec%is_view .or. &
       & ( mvec%jmin .eq. lbound(mvec%val,1) .and. &
@@ -87,7 +87,7 @@ contains
     ! fast versions for fixed nvec and gathering single vectors
     single_vector_gather = .true.
     if( nvec .ne. nblocks ) single_vector_gather = .false.
-    do i = 1, nblocks
+    do i = 1, nblocks, 1
       if( block_list(i)%jmin .ne. block_list(i)%jmax ) then
         single_vector_gather = .false.
       end if
@@ -114,9 +114,9 @@ contains
     end if
 
 !$omp parallel do private(off) schedule(static)
-    do j = 1, nrows
+    do j = 1, nrows, 1
       off = mvec%jmin
-      do i = 1, nblocks
+      do i = 1, nblocks, 1
         jmin_i = block_list(i)%jmin
         jmax_i = block_list(i)%jmax
         nvec_i = jmax_i-jmin_i+1
@@ -146,7 +146,7 @@ contains
     ! determine data layout
     nvec = mvec%jmax-mvec%jmin+1
     nblocks = size(block_list)
-    nrows = size(mvec%val,2)
+    nrows = mvec%map%nlocal(mvec%map%me)
     ldm = size(mvec%val,1)
     if( .not. mvec%is_view .or. &
       & ( mvec%jmin .eq. lbound(mvec%val,1) .and. &
@@ -160,7 +160,7 @@ contains
     ! fast versions for fixed nvec and scattering single vectors
     single_vector_scatter = .true.
     if( nvec .ne. nblocks ) single_vector_scatter = .false.
-    do i = 1, nblocks
+    do i = 1, nblocks, 1
       if( block_list(i)%jmin .ne. block_list(i)%jmax ) then
         single_vector_scatter = .false.
       end if
@@ -187,9 +187,9 @@ contains
     end if
 
 !$omp parallel do private(off) schedule(static)
-    do j = 1, nrows
+    do j = 1, nrows, 1
       off = mvec%jmin
-      do i = 1, nblocks
+      do i = 1, nblocks, 1
         jmin_i = block_list(i)%jmin
         jmax_i = block_list(i)%jmax
         nvec_i = jmax_i-jmin_i+1
@@ -226,7 +226,7 @@ contains
     end if
 
     nvec = mvec%jmax-mvec%jmin+1
-    nrows = size(mvec%val,2)
+    nrows = mvec%map%nlocal(mvec%map%me)
     lda = size(mvec%val,1)
     ! for single vectors call appropriate blas
     if( nvec .eq. 1 ) then
@@ -285,7 +285,7 @@ contains
     end if
 
     nvec = x%jmax-x%jmin+1
-    nrows = size(x%val,2)
+    nrows = x%map%nlocal(x%map%me)
 
     if( .not. strided ) then
       call dscal(nvec*nrows,alpha,x%val,1)
@@ -319,7 +319,7 @@ contains
     end if
 
     nvec = x%jmax-x%jmin+1
-    nrows = size(x%val,2)
+    nrows = x%map%nlocal(x%map%me)
     lda = size(x%val,1)
 
     !call dlascl2(nvec,nrows,alpha(1),x%val(x%jmin,1),lda)
@@ -396,7 +396,7 @@ contains
 
     ! first gather some data to decide what we want
     nvec = y%jmax-y%jmin+1
-    nrows = size(y%val,2)
+    nrows = y%map%nlocal(y%map%me)
     ldy = size(y%val,1)
 
     if( .not. y%is_view .or. &
@@ -409,7 +409,7 @@ contains
 
 
     only_scale = .true.
-    do i = 1, nvec
+    do i = 1, nvec, 1
       if( alpha(i) .ne. 0 ) only_scale = .false.
     end do
     if( only_scale ) then
@@ -419,7 +419,7 @@ contains
 
     only_copy = .true.
     if( beta .ne. 0 ) only_copy = .false.
-    do i = 1, nvec
+    do i = 1, nvec, 1
       if( alpha(i) .ne. 1 ) only_copy = .false.
     end do
 
@@ -548,12 +548,16 @@ contains
     strided = strided_x .or. strided_y
 
     nvec = x%jmax-x%jmin+1
-    nrows = size(x%val,2)
+    nrows = x%map%nlocal(x%map%me)
     ldx = size(x%val,1)
     ldy = size(y%val,1)
     ! for single vectors call appropriate blas
     if( nvec .eq. 1 ) then
-      call ddot_strided_1(nrows, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy, dot)
+      if( strided ) then
+        call ddot_strided_1(nrows, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy, dot)
+      else
+        call ddot_1(nrows, x%val, y%val, dot)
+      end if
     else if( nvec .eq. 2 ) then
       if( strided ) then
         call ddot_strided_2(nrows, x%val(x%jmin,1), ldx, y%val(y%jmin,1), ldy, dot)
@@ -604,7 +608,7 @@ contains
     end if
 
     ! determine data layout
-    nrows = size(w%val,2)
+    nrows = v%map%nlocal(v%map%me)
     nvecv = v%jmax-v%jmin+1
     nvecw = w%jmax-w%jmin+1
     ldv = size(v%val,1)
@@ -716,7 +720,7 @@ contains
     !--------------------------------------------------------------------------------
 
     ! determine data layout
-    nrows = size(v%val,2)
+    nrows = v%map%nlocal(v%map%me)
     nvecv = v%jmax-v%jmin+1
     nvecw = M%jmax-M%jmin+1
     ldv = size(v%val,1)
@@ -763,7 +767,7 @@ contains
     end if
 
     ! determine data layout
-    nrows = size(w%val,2)
+    nrows = v%map%nlocal(v%map%me)
     nvecv = v%jmax-v%jmin+1
     nvecw = w%jmax-w%jmin+1
     ldv = size(v%val,1)
@@ -1035,12 +1039,11 @@ contains
 #ifdef TESTING
     write(*,*) 'creating new mvec with dimensions:', nvec, map%nlocal(map%me), 'address', transfer(c_loc(mvec),dummy)
     flush(6)
-    flush(6)
 #endif
-    allocate(mvec%val(nvec,map%nlocal(map%me)))
+    allocate(mvec%val(nvec,max(1,map%nlocal(map%me))))
     ! that should hopefully help in cases of NUMA
 !$omp parallel do schedule(static)
-    do i = 1, size(mvec%val,2)
+    do i = 1, size(mvec%val,2), 1
       mvec%val(:,i) = 0._8
     end do
     mvec_ptr = c_loc(mvec)
@@ -1063,7 +1066,6 @@ contains
 
 #ifdef TESTING
     write(*,*) 'deleting mvec at address', transfer(mvec_ptr,dummy)
-    flush(6)
     flush(6)
 #endif
     if( c_associated(mvec_ptr) ) then
@@ -1121,7 +1123,7 @@ contains
 
     if( c_associated(mvec_ptr) ) then
       call c_f_pointer(mvec_ptr, mvec)
-      mylen = size(mvec%val,2)
+      mylen = mvec%map%nlocal(mvec%map%me)
       ierr = 0
     else
       ierr = -88
@@ -1294,7 +1296,7 @@ contains
     call c_f_pointer(mvec_ptr, mvec)
 
     allocate(block_list(nblocks))
-    do i = 1, nblocks
+    do i = 1, nblocks, 1
       if( .not. c_associated(block_ptr_list(i)) ) then
         ierr = -88
         return
@@ -1335,7 +1337,7 @@ contains
     call c_f_pointer(mvec_ptr, mvec)
 
     allocate(block_list(nblocks))
-    do i = 1, nblocks
+    do i = 1, nblocks, 1
       if( .not. c_associated(block_ptr_list(i)) ) then
         ierr = -88
         return
@@ -1375,7 +1377,7 @@ contains
     call c_f_pointer(mvec_ptr, mvec)
 
 !$omp parallel do schedule(static)
-    do i = 1, size(mvec%val,2), 1
+    do i = 1, mvec%map%nlocal(mvec%map%me), 1
       mvec%val(mvec%jmin:mvec%jmax,i) = val
     end do
 
@@ -1424,7 +1426,7 @@ contains
 
     call c_f_pointer(mvec_ptr, mvec)
 
-    do i = 1, size(mvec%val,2)
+    do i = 1, mvec%map%nlocal(mvec%map%me), 1
       write(*,*) mvec%val(mvec%jmin:mvec%jmax,i)
     end do
     flush(6)

@@ -314,6 +314,7 @@ void SUBR(mvec_delete)(TYPE(mvec_ptr) vV, int* ierr)
 void SUBR(sdMat_delete)(TYPE(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
+  if(vM==NULL) return;
   CAST_PTR_FROM_VOID(Epetra_MultiVector,M,vM,*ierr);
   delete M;
   }

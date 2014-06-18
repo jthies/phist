@@ -183,7 +183,6 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   sdMat_ptr_t HVv = NULL;     //< next rows in H_
   sdMat_ptr_t HvV = NULL;     //< next columns in H_
   sdMat_ptr_t Hvv = NULL;     //< next block on the diagonal of H_
-  sdMat_ptr_t r   = NULL;     //< currently iterated block of R_
   //sdMat_ptr_t Rr  = NULL;     //< [R a; 0 r]
   sdMat_ptr_t Q_H = NULL;     //< schur vectors of H
   sdMat_ptr_t Qq_H = NULL;
@@ -666,7 +665,6 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (HVv, ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (H,   ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (Hful,ierr), *ierr);
-  PHIST_CHK_IERR(SUBR( sdMat_delete ) (r,   ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (Htmp,ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (sdMI,ierr), *ierr);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (R,   ierr), *ierr);

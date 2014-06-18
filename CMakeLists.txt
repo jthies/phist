@@ -75,15 +75,15 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
   message(STATUS "using INTEL compiler flags")
   set (CMAKE_C_FLAGS "-openmp -Wno-unused-variable -mkl -std=c99")
   set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O3 -xHOST -no-prec-div")
-  set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -check=uninit,stack -debug -DTESTING")
+  set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -check=uninit,stack -fstack-protector -check-pointers=rw -check-pointers-dangling=all -check-pointers-undimensioned -w2 -debug -traceback -DTESTING")
 
   set (CMAKE_CXX_FLAGS "-openmp -Wno-unused-variable -mkl")
   set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -xHOST -no-prec-div")
-  set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -check=uninit,stack -debug -DTESTING")
+  set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -check=uninit,stack -fstack-protector -check-pointers=rw -check-pointers-dangling=all -check-pointers-undimensioned -w2 -debug -traceback -DTESTING")
 
   set (CMAKE_Fortran_FLAGS "-openmp -fpp -mkl")
   set (CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS} -O3 -xHOST -no-prec-div")
-  set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -check all -debug -DTESTING")
+  set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -check all -warn all -debug -traceback -DTESTING")
 
   # for ipo
   # melven: probably not useful or even dangerous?

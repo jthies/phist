@@ -497,6 +497,7 @@ end do
     ! data where each row goes
     call calculateNewPartition(crsMat,rowSendProc)
 !write(*,*) 'rowSendProc', rowSendProc
+    localErr = 0
     if( any(rowSendProc .lt. 0 .or. rowSendProc .ge. crsMat%row_map%nProcs) ) then
       localErr = 1
     end if
@@ -753,11 +754,29 @@ end do
 
 
 
-    crsMat%row_offset=row_blk_new
-    crsMat%global_col_idx=col_ind_new
-    crsMat%val=value_new
+    ! copy resulting data back
+
+    ! try to respect NUMA
     crsMat%nRows = nd_new
-    crsMat%nEntries = crsMat%row_offset(crsMat%nRows+1)-1
+    crsMat%nEntries = row_blk_new(nd_new+1)-1
+    allocate(crsMat%row_offset(crsMat%nRows+1))
+!$omp parallel do schedule(static)
+    do i = 1, crsMat%nRows+1, 1
+      crsMat%row_offset(i) = row_blk_new(i)
+    end do
+    deallocate(row_blk_new)
+
+    allocate(crsMat%global_col_idx(crsMat%nEntries))
+    allocate(crsMat%val(crsMat%nEntries))
+!$omp parallel do schedule(static)
+    do i = 1, crsMat%nRows, 1
+      do j = crsMat%row_offset(i), crsMat%row_offset(i+1)-1, 1
+        crsMat%global_col_idx(j) = col_ind_ind(j)
+        crsMat%val(j) = value_new(j)
+      end do
+    end do
+    deallocate(col_ind_new)
+    deallocate(value_new)
 
 
   contains
