@@ -1641,14 +1641,35 @@ write(*,*) i,A%col_idx(j),A%val(j)
         strided_b = .true.
       end if
       ldb = size(b%val,1)
+      nvec = b%jmax-b%jmin+1
     else
       strided_b=.false.
     end if
-    nvec = x_r%jmax-x_r%jmin+1
 
+    ! treat one shift at a time for the moment, here there
+    ! is potential for additional parallelism, of course,
+    ! but the user can also handle this level himself by
+    ! passsing in one shift at a time to this function.
+    do iSys=1,numShifts
+      
+      ! check that all C pointers are non-null
+      if ( .not. c_associated(x_r_ptr(iSys)) .or. &
+         & .not. c_associated(x_i_ptr(iSys)) ) then
+        write(*,*) 'an input mvec x is NULL, index ',iSys
+        ierr = -88
+        return
+      end if
+      call c_f_pointer(x_r_ptr(iSys),x_r)
+      call c_f_pointer(x_i_ptr(iSys),x_i)
+
+      nvec = x_r%jmax-x_r%jmin+1
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! (re-)allocate communication buffers,
     ! space for 2*nvecs vector halos is needed
     ! because we have x_r and x_i (complex x).
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
     if( allocated(A%comm_buff%recvData) ) then
       if( size(A%comm_buff%recvData,1) .ne. 2*nvec ) then
         deallocate(A%comm_buff%recvData)
@@ -1663,22 +1684,12 @@ write(*,*) i,A%col_idx(j),A%val(j)
       allocate(A%comm_buff%recvData(2*nvec,recvBuffSize))
       allocate(A%comm_buff%sendData(2*nvec,sendBuffSize))
     end if
-
     
-    ! treat one shift at a time for the moment, here there
-    ! is potential for additional parallelism, of course,
-    ! but the user can also handle this level himself by
-    ! passsing in one shift at a time to this function.
-    do iSys=1,numShifts
-      
-      ! check that all C pointers are non-null
-      if ( .not. c_associated(x_r_ptr(iSys)) .or. &
-         & .not. c_associated(x_i_ptr(iSys)) ) then
-        ierr = -88
-        return
-      end if
-      call c_f_pointer(x_r_ptr(iSys),x_r)
-      call c_f_pointer(x_i_ptr(iSys),x_i)
+    write(*,*) 'nvec=',nvec
+    write(*,*) 'x_r%jmin=',x_r%jmin
+    write(*,*) 'x_r%jmax=',x_r%jmax
+    write(*,*) 'bounds(1)=',lbound(x_r%val,1),ubound(x_r%val,1)
+    write(*,*) 'bounds(2)=',lbound(x_r%val,2),ubound(x_r%val,2)
     
       ! determin data layout of x
       if( .not. x_r%is_view .or. &
@@ -1768,7 +1779,8 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
           call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 shifts_r(iSys),shifts_i(iSys), &
-                b%val(b%jmin,1), ldb, x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
+                b%val(b%jmin,1), ldb, &
+                x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
                 A%comm_buff%recvData(     1:  nvec,:),&
                 A%comm_buff%recvData(nvec+1:2*nvec,:),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
