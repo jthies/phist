@@ -56,7 +56,7 @@ x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,istart,iend,istep)
   real(kind=8) :: tmp_r(nvec), tmp_i(nvec)
   integer :: i
   integer(kind=8) :: j
-
+!write(*,*) 'ldx=',ldx
 !TODO - OpenMP, coloring
   do i = istart, iend,istep
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -130,6 +130,8 @@ x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,istart,iend,istep)
   integer :: i
   integer(kind=8) :: j
   real(kind=8) :: b(nvec,nlocal)
+
+!write(*,*) 'ldx=',ldx
 
   b(:,:)=0.d0
 

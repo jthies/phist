@@ -1546,7 +1546,7 @@ end do
 
     call c_f_pointer(A_ptr,A)
 
-write(*,*) 'A%nRows=',A%nRows
+!write(*,*) 'A%nRows=',A%nRows
 
     ! create the double array nrms_ai2i and fill it with the inverse
     ! of ||A(i,:)||_2^2. This is a column-major block vector right now.
@@ -1562,7 +1562,7 @@ write(*,*) 'A%nRows=',A%nRows
       nrms_ai2i(i,1)=0.d0
       iglob=A%row_map%distrib(A%row_map%me)+i-1
       do j = A%row_offset(i), A%nonlocal_offset(i)-1, 1
-write(*,*) i,A%col_idx(j),A%val(j)
+!write(*,*) i,A%col_idx(j),A%val(j)
 !TODO - getting a segfault when accessing global_col_idx, ask Melven
 !        if (A%global_col_idx(j).eq.iglob) then
         if (A%col_idx(j).eq.i) then
@@ -1619,7 +1619,7 @@ write(*,*) i,A%col_idx(j),A%val(j)
       b_is_zero=.false.
       call c_f_pointer(b_ptr,b)
     end if
-    write(*,*) 'enter carp_sweep_f, bzero=',b_is_zero
+    !write(*,*) 'enter carp_sweep_f, bzero=',b_is_zero
     if ( .not. c_associated(nrms_ai2i_ptr) ) then
       write(*,*) 'nrms_ai2i is NULL'
       ierr = -88
@@ -1684,12 +1684,15 @@ write(*,*) i,A%col_idx(j),A%val(j)
       allocate(A%comm_buff%recvData(2*nvec,recvBuffSize))
       allocate(A%comm_buff%sendData(2*nvec,sendBuffSize))
     end if
+
+    ldx = size(x_r%val,1)
     
-    write(*,*) 'nvec=',nvec
-    write(*,*) 'x_r%jmin=',x_r%jmin
-    write(*,*) 'x_r%jmax=',x_r%jmax
-    write(*,*) 'bounds(1)=',lbound(x_r%val,1),ubound(x_r%val,1)
-    write(*,*) 'bounds(2)=',lbound(x_r%val,2),ubound(x_r%val,2)
+    !write(*,*) 'nvec=',nvec
+    !write(*,*) 'x_r%jmin=',x_r%jmin
+    !write(*,*) 'x_r%jmax=',x_r%jmax
+    !write(*,*) 'bounds(1)=',lbound(x_r%val,1),ubound(x_r%val,1)
+    !write(*,*) 'bounds(2)=',lbound(x_r%val,2),ubound(x_r%val,2)
+    !write(*,*) 'ldx=',ldx
     
       ! determin data layout of x
       if( .not. x_r%is_view .or. &
@@ -1701,7 +1704,6 @@ write(*,*) i,A%col_idx(j),A%val(j)
       end if
 
       strided = strided_x .or. strided_b
-      ldx = size(x_r%val,1)
 
       if ( mod(loc(x_r%val(x_r%jmin,1)),16) .eq. 0 .and. &
           (mod(ldx,2) .eq. 0 .or. ldx .eq. 1) ) then
@@ -1816,20 +1818,21 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
       if (.not. handled) then
         if (.not. b_is_zero) then
           write(*,*) 'kacz (b)'
-          call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
+          call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 shifts_r(iSys),shifts_i(iSys), &
-                b%val(b%jmin,1), ldb, x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
+                b%val(b%jmin,1), ldb, &
+                x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
                 A%comm_buff%recvData(     1:  nvec,:),&
                 A%comm_buff%recvData(nvec+1:2*nvec,:),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)
         else
           write(*,*) 'kacz (b), rhs=0'
-          call dkacz_bzero_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
+          call dkacz_bzero_generic(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 shifts_r(iSys),shifts_i(iSys), &
-                A%comm_buff%recvData(     1:  nvec,:),&
+                x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
                 A%comm_buff%recvData(nvec+1:2*nvec,:),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)
