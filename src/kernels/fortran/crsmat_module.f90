@@ -1605,32 +1605,46 @@ write(*,*) i,A%col_idx(j),A%val(j)
     integer :: theShape(2)
     integer :: sendBuffSize,recvBuffSize
     logical :: strided_x, strided_b, strided
-    logical :: x_is_aligned16, handled
+    logical :: x_is_aligned16, handled, b_is_zero
 
-    if ( .not. c_associated(A_ptr) .or. &
-      & .not. c_associated(b_ptr)  .or. &
-      & .not. c_associated(nrms_ai2i_ptr) ) then
+    if ( .not. c_associated(A_ptr) ) then
+      write(*,*) 'A is NULL'
+      ierr = -88
+      return
+    end if
+
+    if ( .not. c_associated(b_ptr) ) then
+      b_is_zero=.true.
+    else
+      b_is_zero=.false.
+      call c_f_pointer(b_ptr,b)
+    end if
+    write(*,*) 'enter carp_sweep_f, bzero=',b_is_zero
+    if ( .not. c_associated(nrms_ai2i_ptr) ) then
+      write(*,*) 'nrms_ai2i is NULL'
       ierr = -88
       return
     end if
 
     call c_f_pointer(A_ptr,A)
-    call c_f_pointer(b_ptr,b)
     theShape(1) = A%nRows
     theShape(2) = numShifts
     call c_f_pointer(nrms_ai2i_ptr,nrms_ai2i,theShape)
 
     ! determin data layout of b
-    if( .not. b%is_view .or. &
-      & ( b%jmin .eq. lbound(b%val,1) .and. &
-      &   b%jmax .eq. ubound(b%val,1)       ) ) then
-      strided_b = .false.
+    if (.not. b_is_zero) then
+      if( .not. b%is_view .or. &
+      &   ( b%jmin .eq. lbound(b%val,1) .and. &
+      &     b%jmax .eq. ubound(b%val,1)       ) ) then
+        strided_b = .false.
+      else
+        strided_b = .true.
+      end if
+      ldb = size(b%val,1)
     else
-      strided_b = .true.
+      strided_b=.false.
     end if
-
-    nvec = b%jmax-b%jmin+1
-    ldb = size(b%val,1)
+    nvec = x_r%jmax-x_r%jmin+1
 
     ! (re-)allocate communication buffers,
     ! space for 2*nvecs vector halos is needed
@@ -1749,7 +1763,9 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
 
       ! apply Kaczmarz forward sweep
       if (.not. handled) then
-        call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
+        if (.not. b_is_zero) then
+          write(*,*) 'kacz (f)'
+          call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 shifts_r(iSys),shifts_i(iSys), &
                 b%val(b%jmin,1), ldb, x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
@@ -1757,6 +1773,17 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
                 A%comm_buff%recvData(nvec+1:2*nvec,:),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 1,A%nRows,+1)
+        else
+          write(*,*) 'kacz (f), rhs=0'
+          call dkacz_bzero_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
+                A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+                shifts_r(iSys),shifts_i(iSys), &
+                x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
+                A%comm_buff%recvData(     1:  nvec,:),&
+                A%comm_buff%recvData(nvec+1:2*nvec,:),&
+                nrms_ai2i(:,iSys),omegas(iSys),&
+                1,A%nRows,+1)        
+        end if
       end if
     
 #if 1
@@ -1775,7 +1802,9 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
 
       ! apply Kaczmarz backward sweep
       if (.not. handled) then
-        call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
+        if (.not. b_is_zero) then
+          write(*,*) 'kacz (b)'
+          call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 shifts_r(iSys),shifts_i(iSys), &
                 b%val(b%jmin,1), ldb, x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
@@ -1783,6 +1812,16 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
                 A%comm_buff%recvData(nvec+1:2*nvec,:),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)
+        else
+          write(*,*) 'kacz (b), rhs=0'
+          call dkacz_bzero_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
+                A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+                shifts_r(iSys),shifts_i(iSys), &
+                A%comm_buff%recvData(     1:  nvec,:),&
+                A%comm_buff%recvData(nvec+1:2*nvec,:),&
+                nrms_ai2i(:,iSys),omegas(iSys),&
+                A%nRows,1,-1)
+        end if
       end if
     
     end do
