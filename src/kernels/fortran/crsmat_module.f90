@@ -771,7 +771,7 @@ end do
 !$omp parallel do schedule(static)
     do i = 1, crsMat%nRows, 1
       do j = crsMat%row_offset(i), crsMat%row_offset(i+1)-1, 1
-        crsMat%global_col_idx(j) = col_ind_ind(j)
+        crsMat%global_col_idx(j) = col_ind_new(j)
         crsMat%val(j) = value_new(j)
       end do
     end do
@@ -1016,6 +1016,13 @@ end do
 
     recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
 
+    if( A%comm_buff%nSendProcs .gt. 0 ) then
+      ! also wait till all data was sent to circumvent dumb MPI implementations
+      ! that don't do that in the background!
+      call mpi_waitall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
+    end if
+
+
 
     handled = .false.
     !try to use NT stores if possible
@@ -1127,12 +1134,6 @@ end do
       call dspmvm_generic(nvec, A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
         &                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
         &                 shifts, x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
-    end if
-
-
-    if( A%comm_buff%nSendProcs .gt. 0 ) then
-      ! just make sure the buffers are not used any more...
-      call mpi_waitall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
     end if
 
     !--------------------------------------------------------------------------------
