@@ -29,6 +29,10 @@ namespace phist_TimeMonitor
 
 #include <malloc.h>
 #include <cstring>
+#include <omp.h>
+#include <sched.h>
+#include <iostream>
+
 
 extern "C" {
 
@@ -73,6 +77,32 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
 {
   *ierr=0;
   PHIST_CHK_IERR( *ierr = MPI_Init(argc, argv), *ierr);
+
+  int rank;
+  PHIST_CHK_IERR( *ierr = MPI_Comm_rank(MPI_COMM_WORLD, &rank), *ierr);
+#pragma omp parallel
+  {
+    int tid = omp_get_thread_num();
+    int coreid = tid;// + 10*(rank%2);
+    cpu_set_t *cpu = CPU_ALLOC(40);
+    size_t size = CPU_ALLOC_SIZE(40);
+    CPU_ZERO_S(size, cpu);
+    CPU_SET_S(coreid, size, cpu);
+    sched_setaffinity(0, size, cpu);
+    CPU_FREE(cpu);
+  }
+
+  std::ostringstream oss;
+  oss << "rank: " << rank << ", cores(thread):";
+#pragma omp parallel
+  {
+    int tid = omp_get_thread_num();
+    int coreid = sched_getcpu();
+#pragma omp critical
+    oss << "\t" << coreid << " (" << tid << ")";
+  }
+  std::cout << oss.str() << std::endl;
+
 #ifdef PHIST_HAVE_LIKWID
   LIKWID_MARKER_INIT;
 #pragma omp parallel
