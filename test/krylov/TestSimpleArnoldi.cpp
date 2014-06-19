@@ -28,17 +28,18 @@ using namespace testing;
 #endif
 
 #define _N_ 25
-#define _M_ 10
+#define _M_ 12
+#define BLOCK_SIZE 0
 
 #ifdef PHIST_HAVE_SP
 
-#define CLASSNAME STestSimpleArnoldi_25_10
+#define CLASSNAME STestSimpleArnoldi_25_12
 #include "phist_gen_s.h"
 #include "../tools/MatrixIO_def.hpp"
 #include "TestSimpleArnoldi_def.hpp"
 #undef CLASSNAME
 
-#define CLASSNAME CTestSimpleArnoldi_25_10
+#define CLASSNAME CTestSimpleArnoldi_25_12
 #include "phist_gen_c.h"
 #include "../tools/MatrixIO_def.hpp"
 #include "TestSimpleArnoldi_def.hpp"
@@ -46,14 +47,128 @@ using namespace testing;
 
 #endif
 
-#define CLASSNAME DTestSimpleArnoldi_25_10
+#define CLASSNAME DTestSimpleArnoldi_25_12
 #include "phist_gen_d.h"
 #include "../tools/MatrixIO_def.hpp"
 #include "TestSimpleArnoldi_def.hpp"
 #undef CLASSNAME
 
-#define CLASSNAME ZTestSimpleArnoldi_25_10
+#define CLASSNAME ZTestSimpleArnoldi_25_12
 #include "phist_gen_z.h"
 #include "../tools/MatrixIO_def.hpp"
 #include "TestSimpleArnoldi_def.hpp"
+#undef CLASSNAME
+
+
+#undef BLOCK_SIZE
+#define BLOCK_SIZE 1
+
+#ifdef PHIST_HAVE_SP
+
+#define CLASSNAME STestSimpleBlock1Arnoldi_25_12
+#include "phist_gen_s.h"
+#include "TestSimpleArnoldi_def.hpp"
+#undef CLASSNAME
+
+#define CLASSNAME CTestSimpleBlock1Arnoldi_25_12
+#include "phist_gen_c.h"
+#include "TestSimpleArnoldi_def.hpp"
+#undef CLASSNAME
+
+#endif
+
+#define CLASSNAME DTestSimpleBlock1Arnoldi_25_12
+#include "phist_gen_d.h"
+#include "TestSimpleArnoldi_def.hpp"
+#undef CLASSNAME
+
+#define CLASSNAME ZTestSimpleBlock1Arnoldi_25_12
+#include "phist_gen_z.h"
+#include "TestSimpleArnoldi_def.hpp"
+#undef CLASSNAME
+
+
+#undef BLOCK_SIZE
+#define BLOCK_SIZE 2
+
+#ifdef PHIST_HAVE_SP
+
+#define CLASSNAME STestSimpleBlock2Arnoldi_25_12
+#include "phist_gen_s.h"
+#include "TestSimpleArnoldi_def.hpp"
+#undef CLASSNAME
+
+#define CLASSNAME CTestSimpleBlock2Arnoldi_25_12
+#include "phist_gen_c.h"
+#include "TestSimpleArnoldi_def.hpp"
+#undef CLASSNAME
+
+#endif
+
+#define CLASSNAME DTestSimpleBlock2Arnoldi_25_12
+#include "phist_gen_d.h"
+#include "TestSimpleArnoldi_def.hpp"
+#undef CLASSNAME
+
+#define CLASSNAME ZTestSimpleBlock2Arnoldi_25_12
+#include "phist_gen_z.h"
+#include "TestSimpleArnoldi_def.hpp"
+#undef CLASSNAME
+
+
+#undef BLOCK_SIZE
+#define BLOCK_SIZE 3
+
+#ifdef PHIST_HAVE_SP
+
+#define CLASSNAME STestSimpleBlock3Arnoldi_25_12
+#include "phist_gen_s.h"
+#include "TestSimpleArnoldi_def.hpp"
+#undef CLASSNAME
+
+#define CLASSNAME CTestSimpleBlock3Arnoldi_25_12
+#include "phist_gen_c.h"
+#include "TestSimpleArnoldi_def.hpp"
+#undef CLASSNAME
+
+#endif
+
+#define CLASSNAME DTestSimpleBlock3Arnoldi_25_12
+#include "phist_gen_d.h"
+#include "TestSimpleArnoldi_def.hpp"
+#undef CLASSNAME
+
+#define CLASSNAME ZTestSimpleBlock3Arnoldi_25_12
+#include "phist_gen_z.h"
+#include "TestSimpleArnoldi_def.hpp"
+#undef CLASSNAME
+
+
+#undef BLOCK_SIZE
+#define BLOCK_SIZE 4
+
+#ifdef PHIST_HAVE_SP
+
+#define CLASSNAME STestSimpleBlock4Arnoldi_25_12
+#include "phist_gen_s.h"
+#include "TestSimpleArnoldi_def.hpp"
+#undef CLASSNAME
+
+#define CLASSNAME CTestSimpleBlock4Arnoldi_25_12
+#include "phist_gen_c.h"
+#include "TestSimpleArnoldi_def.hpp"
+#undef CLASSNAME
+
+#endif
+
+#define CLASSNAME DTestSimpleBlock4Arnoldi_25_12
+#include "phist_gen_d.h"
+#include "TestSimpleArnoldi_def.hpp"
+#undef CLASSNAME
+
+#define CLASSNAME ZTestSimpleBlock4Arnoldi_25_12
+#include "phist_gen_z.h"
+#include "TestSimpleArnoldi_def.hpp"
+#undef CLASSNAME
+
 

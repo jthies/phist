@@ -82,6 +82,10 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     PHIST_SOUT(PHIST_ERROR,"case B_op != NULL (e.g. B != I) not implemented yet!\n");
     PHIST_CHK_IERR(*ierr = -99, *ierr);
   }
+  if( minBase % innerBlockDim != 0 )
+  {
+    PHIST_SOUT(PHIST_WARNING, "minBase is not a multiple of innerBlockDim, switching to single-vector arnoldi for initiali subspace!\n");
+  }
 
   // set output format for floating point numbers
   std::cout << std::scientific << std::setprecision(4) << std::setw(15);
@@ -211,7 +215,14 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   //TODO B_op in arnoldi
   // calculates A*V(:,1:m) = V(:,1:m+1)*H(1:m+1,1:m)
   // also outputs A*V (DON'T recalculate it from V*H, because this may not be accurate enough!)
-  PHIST_CHK_IERR(SUBR( simple_arnoldi ) (A_op, B_op, v0, V, AV, BV, H, nV, ierr), *ierr);
+  if( blockDim > 0 && nV % innerBlockDim == 0 )
+  {
+    PHIST_CHK_IERR(SUBR( simple_blockArnoldi ) (A_op, B_op, V, AV, BV, H, nV, innerBlockDim, ierr), *ierr);
+  }
+  else
+  {
+    PHIST_CHK_IERR(SUBR( simple_arnoldi ) (A_op, B_op, v0, V, AV, BV, H, nV, ierr), *ierr);
+  }
 
   // set views
   int nConvEig = 0;
@@ -226,11 +237,6 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &Hful,  0,        nV-1,     0,        nV-1,      ierr), *ierr);
 
   UPDATE_SUBSPACE_VIEWS;
-
-  // TODO: strangely there seems to be a bug in simple_arnoldi, s.t. H != V'*AV
-  //       so recalculate it!
-  //PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), V, AV, st::zero(), H, ierr), *ierr);
-
 
 
 
