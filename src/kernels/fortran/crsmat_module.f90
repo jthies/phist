@@ -1517,22 +1517,23 @@ end do
   !==================================================================================
 
   subroutine phist_Dcarp_setup(A_ptr, numShifts, &
-        shifts_r, shifts_i, nrms_ptr, work_ptr,ierr) &
+        shifts_r, shifts_i, nrms_ai2i_ptr, work_ptr,ierr) &
   bind(C,name='phist_Dcarp_setup_f')
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),      value         :: A_ptr
     integer(C_INT),   value         :: numShifts
     real(kind=c_double), intent(in) :: shifts_r(numShifts), shifts_i(numShifts)
-    type(C_PTR)                     :: nrms_ptr, work_ptr
+    TYPE(C_PTR), value :: nrms_ai2i_ptr
+    real(kind=8), pointer, dimension(:,:) :: nrms_ai2i
+    type(C_PTR)                     :: work_ptr
     integer(C_INT),   intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(CrsMat_t), pointer :: A
 
     !--------------------------------------------------------------------------------
     
-    real(kind=8), allocatable, target :: nrms_ai2i(:,:)
-    integer :: i
+    integer :: i, theShape(2)
     integer(kind=8) :: iglob, j
 
     if( .not. c_associated(A_ptr)) then
@@ -1545,12 +1546,11 @@ do i=1,numShifts
 end do
 
     call c_f_pointer(A_ptr,A)
+    theShape(1)=A%nRows
+    theShape(2)=numShifts
+    call c_f_pointer(nrms_ai2i_ptr,nrms_ai2i,theShape)
 
 !write(*,*) 'A%nRows=',A%nRows
-
-    ! create the double array nrms_ai2i and fill it with the inverse
-    ! of ||A(i,:)||_2^2. This is a column-major block vector right now.
-    allocate(nrms_ai2i(A%nRows, numShifts))
     
     ! start by putting the diagonal elements of A in the first column
     ! of this array, will be overwritten by the kernel
@@ -1563,8 +1563,6 @@ end do
       iglob=A%row_map%distrib(A%row_map%me)+i-1
       do j = A%row_offset(i), A%nonlocal_offset(i)-1, 1
 !write(*,*) i,A%col_idx(j),A%val(j)
-!TODO - getting a segfault when accessing global_col_idx, ask Melven
-!        if (A%global_col_idx(j).eq.iglob) then
         if (A%col_idx(j).eq.i) then
           nrms_ai2i(i,1)=A%val(j)
         end if
@@ -1575,8 +1573,6 @@ end do
     call crsmat_norms_ai2i(numShifts, A%nRows, A%nEntries, &
         A%row_offset, A%val, shifts_r,shifts_i,nrms_ai2i)
             
-    nrms_ptr=c_loc(nrms_ai2i)
-    
     ! work is not used
     work_ptr=c_null_ptr
 
@@ -1843,30 +1839,15 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
     
   end subroutine phist_Dcarp_sweep
 
-  subroutine phist_Dcarp_destroy(A_ptr, numShifts, nrms_ptr, work_ptr, ierr) &
+  subroutine phist_Dcarp_destroy(A_ptr, numShifts, work_ptr, ierr) &
   bind(C,name='phist_Dcarp_destroy_f')
     use, intrinsic :: iso_c_binding
 
     type(C_PTR), value :: A_ptr
     integer(c_int), value :: numShifts
-    type(C_PTR), value :: nrms_ptr, work_ptr
+    type(C_PTR), value :: work_ptr
     integer(c_int), intent(out) :: ierr
-    real(kind=8), pointer, dimension(:,:) :: nrms
-    integer :: theShape(2)
-    
-    TYPE(crsMat_t), pointer :: A
-    
-    if (c_associated(nrms_ptr)) then
-      if (.not. c_associated(A_ptr)) then
-        ierr=-88
-        return
-      end if
-      theShape(1)=A%nrows
-      theShape(2)=numShifts
-      call c_f_pointer(A_ptr,A)
-      call c_f_pointer(nrms_ptr,nrms,theShape)
-      deallocate(nrms)
-    end if
+        
   end subroutine phist_Dcarp_destroy
   
 end module crsmat_module

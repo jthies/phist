@@ -8,12 +8,19 @@ void SUBR(carp_setup)(TYPE(const_crsMat_ptr) A, int numShifts,
 {
   void SUBR(carp_setup_f)(TYPE(const_crsMat_ptr) A, int numShifts,
         _MT_ const sigma_r[], _MT_ const sigma_i[],
-        _MT_ **nrms_ai2i, void** work, int* ierr);
+        _MT_ *nrms_ai2i, void** work, int* ierr);
 
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
+  const_map_ptr_t map;
+  int nlocal;
+  PHIST_CHK_IERR(SUBR(crsMat_get_range_map)(A,&map,ierr),*ierr);
+  PHIST_CHK_IERR(phist_map_get_local_length(map,&nlocal,ierr),*ierr);
+  *nrms_ai2i=new _MT_[nlocal*numShifts]; // column-major array with
+                                         // nrms_ai2i(i,j) the inverse
+                                         // 2-norm of row i for shift j
   PHIST_CHK_IERR(SUBR(carp_setup_f)
-        (A,numShifts,sigma_r,sigma_i,nrms_ai2i,work,ierr),*ierr);
+        (A,numShifts,sigma_r,sigma_i,*nrms_ai2i,work,ierr),*ierr);
   return;
 }
 
@@ -44,11 +51,12 @@ void SUBR(carp_destroy)(TYPE(const_crsMat_ptr) A, int numShifts,
 _MT_* nrms_ai2i, void* work, int *ierr)
 {
   void SUBR(carp_destroy_f)(TYPE(const_crsMat_ptr) A, int numShifts,
-        _MT_* nrms_ai2i, void* work, int *ierr);
+        void* work, int *ierr);
 
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  PHIST_CHK_IERR(SUBR(carp_destroy_f)(A,numShifts,nrms_ai2i,work,ierr),*ierr);
+  delete [] nrms_ai2i;
+  PHIST_CHK_IERR(SUBR(carp_destroy_f)(A,numShifts,work,ierr),*ierr);
   return;
 }
 
