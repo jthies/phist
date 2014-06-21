@@ -301,8 +301,10 @@ nEig_ = std::min(nConvEig + 2*blockDim, nEig+blockDim-1);
 if( Qsize < nEig_ )
 {
   mvec_ptr_t newQ = NULL;
-  int newQsize = std::min(nEig_+blockDim, nEig+blockDim-1);
+  int newQsize = std::min(std::max(nEig_,2*Qsize), nEig+blockDim-1);
   if( newQsize % 2 != 0 )
+    newQsize++;
+  while( newQsize % innerBlockDim != 0 )
     newQsize++;
   PHIST_CHK_IERR(SUBR(mvec_create)(&newQ, A_op->range_map, newQsize, ierr), *ierr);
   if( Qsize > 0 )

@@ -900,7 +900,7 @@ contains
     integer,        intent(out)   :: nullSpaceDim
     !--------------------------------------------------------------------------------
     real(kind=8), parameter :: eps = 1.e-10
-    integer :: i, i_, nvec, rank
+    integer :: i, i_, nvec, rank, k
     type(MVec_t) :: vi, vipn
     type(SDMat_t) :: Ripn
     real(kind=8) :: rii(1:1)
@@ -949,7 +949,10 @@ contains
         end if
         ! copy vi to column i_, because previous vector was not linearly independent
         if( i .ne. i_ ) then
-          v%val(v%jmin+i_,:) = v%val(v%jmin+i,:)
+!$omp parallel do schedule(static)
+          do k = 1, v%map%nlocal(v%map%me), 1
+            v%val(v%jmin+i_,k) = v%val(v%jmin+i,k)
+          end do
         end if
         i_ = i_ + 1
       end if
