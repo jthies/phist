@@ -230,7 +230,11 @@ contains
     lda = size(mvec%val,1)
     ! for single vectors call appropriate blas
     if( nvec .eq. 1 ) then
-      call dnrm2_strided_1(nrows, mvec%val(mvec%jmin,1), lda, vnrm)
+      if( strided ) then
+        call dnrm2_strided_1(nrows, mvec%val(mvec%jmin,1), lda, vnrm)
+      else
+        call dnrm2_1(nrows, mvec%val, vnrm)
+      end if
     else if( nvec .eq. 2 ) then
       if( strided ) then
         call dnrm2_strided_2(nrows, mvec%val(mvec%jmin,1), lda, vnrm)
@@ -268,32 +272,18 @@ contains
     type(MVec_t), intent(inout) :: x
     real(kind=8), intent(in)    :: alpha
     !--------------------------------------------------------------------------------
-    integer :: nvec, nrows
-    logical :: strided
+    integer :: nvec
     real(kind=8), allocatable :: alpha_vec(:)
     !--------------------------------------------------------------------------------
 
     if( alpha .eq. 1 ) return
 
-    ! determine data layout
-    if( .not. x%is_view .or. &
-      & ( x%jmin .eq. lbound(x%val,1) .and. &
-      &   x%jmax .eq. ubound(x%val,1)       ) ) then
-      strided = .false.
-    else
-      strided = .true.
-    end if
-
     nvec = x%jmax-x%jmin+1
-    nrows = x%map%nlocal(x%map%me)
 
-    if( .not. strided ) then
-      call dscal(nvec*nrows,alpha,x%val,1)
-    else
-      allocate(alpha_vec(nvec))
-      alpha_vec = alpha
-      call mvec_vscale(x,alpha_vec)
-    end if
+    allocate(alpha_vec(nvec))
+    alpha_vec = alpha
+    call mvec_vscale(x,alpha_vec)
+
     !--------------------------------------------------------------------------------
   end subroutine mvec_scale
 
