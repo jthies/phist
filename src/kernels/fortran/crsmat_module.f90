@@ -1534,7 +1534,7 @@ end do
     !--------------------------------------------------------------------------------
     
     integer :: i, theShape(2)
-    integer(kind=8) :: iglob, j
+    integer(kind=8) :: j
 
     if( .not. c_associated(A_ptr)) then
       ierr = -88
@@ -1557,12 +1557,10 @@ end do
 
 !TODO - remove print statements below, they print the matrix for debugging
  
-!$omp parallel do private(iglob,j) schedule(static)
+!$omp parallel do private(j) schedule(static)
     do i = 1,A%nRows
-      nrms_ai2i(i,1)=0.d0
-      iglob=A%row_map%distrib(A%row_map%me)+i-1
+      nrms_ai2i(i,:)=0.d0
       do j = A%row_offset(i), A%nonlocal_offset(i)-1, 1
-!write(*,*) i,A%col_idx(j),A%val(j)
         if (A%col_idx(j).eq.i) then
           nrms_ai2i(i,1)=A%val(j)
         end if
@@ -1572,7 +1570,10 @@ end do
     ! compute inverse row norms for shift i in column i
     call crsmat_norms_ai2i(numShifts, A%nRows, A%nEntries, &
         A%row_offset, A%val, shifts_r,shifts_i,nrms_ai2i)
-            
+    !TROET
+    do i=1,A%nRows
+      write(*,*) 'NRMS_AI2I     ',i,nrms_ai2i(i,1:numShifts)
+    end do
     ! work is not used
     work_ptr=c_null_ptr
 
@@ -1774,7 +1775,7 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
       if (.not. handled) then
         if (.not. b_is_zero) then
           write(*,*) 'kacz (f)'
-          call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
+          call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 shifts_r(iSys),shifts_i(iSys), &
                 b%val(b%jmin,1), ldb, &
@@ -1829,6 +1830,7 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 shifts_r(iSys),shifts_i(iSys), &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
+                A%comm_buff%recvData(     1:  nvec,:),&                
                 A%comm_buff%recvData(nvec+1:2*nvec,:),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)
