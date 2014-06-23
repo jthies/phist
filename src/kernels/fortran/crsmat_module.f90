@@ -1570,10 +1570,6 @@ end do
     ! compute inverse row norms for shift i in column i
     call crsmat_norms_ai2i(numShifts, A%nRows, A%nEntries, &
         A%row_offset, A%val, shifts_r,shifts_i,nrms_ai2i)
-    !TROET
-    do i=1,A%nRows
-      write(*,*) 'NRMS_AI2I     ',i,nrms_ai2i(i,1:numShifts)
-    end do
     ! work is not used
     work_ptr=c_null_ptr
 
@@ -1774,7 +1770,7 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
       ! apply Kaczmarz forward sweep
       if (.not. handled) then
         if (.not. b_is_zero) then
-          write(*,*) 'kacz (f)'
+          !write(*,*) 'kacz (f)'
           call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 shifts_r(iSys),shifts_i(iSys), &
@@ -1785,7 +1781,7 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 1,A%nRows,+1)
         else
-          write(*,*) 'kacz (f), rhs=0'
+          !write(*,*) 'kacz (f), rhs=0'
           call dkacz_bzero_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 shifts_r(iSys),shifts_i(iSys), &
@@ -1814,7 +1810,7 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
       ! apply Kaczmarz backward sweep
       if (.not. handled) then
         if (.not. b_is_zero) then
-          write(*,*) 'kacz (b)'
+          !write(*,*) 'kacz (b)'
           call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 shifts_r(iSys),shifts_i(iSys), &
@@ -1825,7 +1821,7 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)
         else
-          write(*,*) 'kacz (b), rhs=0'
+          !write(*,*) 'kacz (b), rhs=0'
           call dkacz_bzero_generic(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 shifts_r(iSys),shifts_i(iSys), &

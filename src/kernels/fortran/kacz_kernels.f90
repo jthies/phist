@@ -32,7 +32,6 @@ subroutine crsmat_norms_ai2i(nshifts, nlocal, nnz, row_ptr, &
       tmp = tmp + val(j)*val(j)
     end do
     nrms_ai2i(i,:)=1.d0/(nrms_ai2i(i,:)+tmp)
-    write(*,*) 'NRMS_AI2I ',i,nrms_ai2i(i,:)
   end do
 end subroutine crsmat_norms_ai2i
 
@@ -57,31 +56,7 @@ x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,istart,iend,istep)
   real(kind=8) :: tmp_r(nvec), tmp_i(nvec)
   integer :: i
   integer(kind=8) :: j
-  integer, parameter :: ofile=42
-  
-  open(unit=ofile,file='kacz.txt',position="append")
 
-  write(ofile,*) 'omega=',omega
-
-  write(ofile,*) 'nrms_ai2i=[...'
-  do i=1,nlocal
-    write(ofile,"(E16.8)") nrms_ai2i(i)
-  end do
-  write(ofile,*) '];'
-
-  write(ofile,*) 'b=[...'
-  do i=1,nlocal
-    write(ofile,"(E16.8)") b(1,i)
-  end do
-  write(ofile,*) '];'
-
-  write(ofile,*) 'x_in=[...'
-  do i=1,nlocal
-    write(ofile,"(E24.16,'+',E24.16,'i')") x_r(1,i),x_i(1,i)
-  end do
-  write(ofile,*) '];'
-
-!write(*,*) 'ldx=',ldx
 !TODO - OpenMP, coloring
   do i = istart, iend,istep
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -125,14 +100,6 @@ x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,istart,iend,istep)
                                tmp_i(:)*val(j)
     end do
   end do
-
-  write(ofile,*) 'x_out=[...'
-  do i=1,nlocal
-    write(ofile,"(E24.16,'+',E24.16,'i')") x_r(1,i),x_i(1,i)
-  end do
-  write(ofile,*) '];'
-  close(ofile)
-  !stop 'troet'
 
 end subroutine dkacz_generic
 

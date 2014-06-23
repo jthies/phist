@@ -350,8 +350,6 @@ void SUBR(carp_cgStates_iterate)(
       MT denom_i[nvec];
       PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,alpha,alpha_i,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(private_dotProd)(p,pi,q,qi,nvec,denom,denom_i,ierr),*ierr);
-fprintf(stdout,"TROET RtZ=%e %+ei\n",alpha[0],alpha_i[0]);
-fprintf(stdout,"TROET PtQ=%e %+ei\n",denom[0],denom_i[0]);
       MT minus_alpha_i[nvec];
 #ifdef IS_COMPLEX
         for (int j=0;j<nvec;j++)
@@ -388,12 +386,6 @@ fprintf(stdout,"TROET PtQ=%e %+ei\n",denom[0],denom_i[0]);
         PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha_i,p,st::one(),xi,ierr),*ierr);
       }
 #endif
-fprintf(stdout,"TROET alpha=%e %+ei\n",alpha[0],alpha_i[0]);
-
-      printf("TROET X=\n");
-      PHIST_CHK_IERR(SUBR(mvec_print)(x,ierr),*ierr);
-      printf("TROET XI=\n");
-      PHIST_CHK_IERR(SUBR(mvec_print)(xi,ierr),*ierr);
 
       if ( it%itcheck == 0)
       {
@@ -431,12 +423,6 @@ fprintf(stdout,"TROET alpha=%e %+ei\n",alpha[0],alpha_i[0]);
         }
       }
 
-      printf("TROET Q=\n");
-      PHIST_CHK_IERR(SUBR(mvec_print)(q,ierr),*ierr);
-      printf("TROET QI=\n");
-      PHIST_CHK_IERR(SUBR(mvec_print)(qi,ierr),*ierr);
-
-
       //r=r-alpha*q;
       ST minus_alpha[nvec];
       for (int j=0;j<nvec;j++)
@@ -464,16 +450,9 @@ fprintf(stdout,"TROET alpha=%e %+ei\n",alpha[0],alpha_i[0]);
       // arithmetic here because r!=z => above dotProd has imag!=0.
       // Only for symmetric preconditioning would we get a Hermitian
       // Lanczos matrix and thus a real beta on the diagonal.
-      printf("TROET R=\n");
-      PHIST_CHK_IERR(SUBR(mvec_print)(r,ierr),*ierr);
-      printf("TROET RI=\n");
-      PHIST_CHK_IERR(SUBR(mvec_print)(ri,ierr),*ierr);
       for (int j=0;j<nvec;j++)
       {
         beta[j]=std::abs(r2_new[j])/r2_old[j];
-        fprintf(stdout,"TROET beta nom  =%e\n",r2_new[j]);
-        fprintf(stdout,"TROET beta denom=%e\n",r2_old[j]);
-        fprintf(stdout,"TROET beta=%e\n",beta[j]);
       }
       //p=z+beta*p;
 #ifdef IS_COMPLEX
