@@ -12,6 +12,7 @@
 #cmakedefine PHIST_HAVE_GHOST
 #cmakedefine PHIST_HAVE_BELOS
 #cmakedefine PHIST_HAVE_PARMETIS
+#cmakedefine PHIST_HAVE_COLPACK
 #cmakedefine PHIST_HAVE_LIKWID
 #cmakedefine LIKWID_PERFMON
 #cmakedefine PHIST_TIMEMONITOR

@@ -1,3 +1,5 @@
+#include "phist_config.h"
+
 module crsmat_module
   use map_module, only: Map_t, map_setup
   use mvec_module, only: MVec_t, mvec_scale
@@ -883,8 +885,89 @@ end do
 
 
 
-#endif /* PHIST_HAVE_PARMEITS */
+#endif /* PHIST_HAVE_PARMETIS */
 
+#ifdef PHIST_HAVE_COLPACK
+
+  subroutine colorcrs(crsMat,dist,outlev,ierr)
+    use mpi
+    type(crsMat_t) :: crsMat
+    ! distance (1 or 2)
+    integer, intent(in) :: dist
+    integer,intent(in) :: outlev
+    integer,intent(out) :: ierr
+    
+    ! local variables
+    integer :: i
+    integer(kind=8) :: j
+    integer :: colors(crsMat%nRows)
+    integer :: ncolors
+    integer, allocatable, dimension(:) :: colorCount
+    
+    interface
+    
+      subroutine colpack(nloc,row_ptr,nonlocal_ptr,column_idx,ncolors,colors,dist,ierr) &
+        bind(C, name='colpack_v1_0_8')
+      use, intrinsic :: iso_c_binding
+      
+      integer, value :: nloc
+      integer(c_int64_t), intent(in) :: row_ptr(:), nonlocal_ptr(:)
+      integer(c_int), intent(in) :: column_idx(:)
+      integer(c_int), intent(out) :: ncolors
+      integer(c_int), intent(out) :: colors(:)
+      integer(c_int), value :: dist
+      integer(c_int), intent(inout) :: ierr
+
+      end subroutine colpack
+
+    end interface
+    
+      
+      call colpack(crsMat%nRows, crsMat%row_offset(:), crsMat%nonlocal_offset(:), &
+                crsMat%col_idx(:), ncolors, colors(:), dist, ierr)
+      
+      if (ierr/=0) then
+        write(*,*) 'error code ',ierr,' returned from colpack'
+        return
+      end if
+      
+    ierr=0
+
+    ! count number of members in each color set
+    allocate(colorCount(ncolors))
+    
+    do i=1,crsMat%nRows
+      colorCount(colors(i))=colorCount(colors(i))+1
+    end do
+
+    deallocate(colorCount)
+
+#define DEBUG_COLPACK
+#ifdef DEBUG_COLPACK
+        open(unit=42,file='test_coloring.m',status='replace')
+        write(42,*) 'n=',crsMat%nRows
+        write(42,*) 'Adat=[...'
+        do i=1,crsMat%nRows
+          do j=crsMat%row_offset(i),crsMat%nonlocal_offset(i)
+            write(42,"(I4,I4,E24.8,',')") i,crsMat%col_idx(j),crsMat%val(j)
+          end do
+        end do
+        write(42,*) '];'
+        write(42,*) 'A=sparse(Adat(:,1),Adat(:,2),Adat(:,3),n,n);'
+        write(42,*) 'ncolors=',ncolors,';'
+        write(42,*) 'colors=[...'
+        do i=1,crsMat%nRows
+          write(42,*) colors(i)
+        end do
+        write(42,*) '];'
+        close(42)
+#endif
+      
+
+        
+    end subroutine colorcrs
+
+#endif
 
   !==================================================================================
   !> multiply crsmat with mvec
@@ -1255,6 +1338,11 @@ end do
 !write(*,*) 'col_idx', A%global_col_idx
 !write(*,*) 'val', A%val
 #endif
+
+#ifdef PHIST_HAVE_COLPACK
+    call colorcrs(A,2,3,ierr)
+#endif
+
 ! write matrix to mat.mm
 !do i_ = 0, A%row_map%nProcs-1
 
@@ -1368,6 +1456,9 @@ end do
     call sort_global_cols(A)
 #ifdef PHIST_HAVE_PARMETIS
     call repartcrs(A,3,ierr)
+#endif
+#ifdef PHIST_HAVE_COLPACK
+    call colorcrs(A,2,3,ierr)
 #endif
 ! write matrix to mat.mm
 !do i_ = 0, A%row_map%nProcs-1
@@ -1579,6 +1670,8 @@ end do
         b_ptr, x_r_ptr, x_i_ptr, nrms_ai2i_ptr, work_ptr, omegas, ierr) &
   bind(C,name='phist_Dcarp_sweep_f')
     use, intrinsic :: iso_c_binding
+    use mpi
+    implicit none
     !--------------------------------------------------------------------------------
     type(C_PTR),      value         :: A_ptr, b_ptr
     integer(c_int),   value    :: numShifts
@@ -1593,7 +1686,7 @@ end do
     type(MVec_t), pointer :: x_r, x_i, b
     
     !--------------------------------------------------------------------------------
-    integer :: iSys,i,k,l
+    integer :: iSys,i,j,k,l
     integer :: ldx, ldb, nvec
     integer :: theShape(2)
     integer :: sendBuffSize,recvBuffSize
@@ -1710,22 +1803,10 @@ end do
       !       both are, both have the correct #cols, same
       !       ldx etc.
 
-#if 1
-      if (A%row_map%nProcs .gt. 1) then
-        write(*,*) 'CARP kernel in Fortran not implemented with MPI'
-        ierr=-99
-        return
-      end if
-#else
-
-! MPI parallel implementation
-
-      ! exchange necessary elements of X. TODO - we
-      ! can probably save this communication step by
-      ! doing more local computations, e.g. doing the
-      ! vector updates etc. in CG on the buffers as
-      ! well (working in the column map of A directly).
-
+      ! exchange necessary elements of X. This is the same      
+      ! operation as for an spMVM: import from the domain       
+      ! map into the column map of A.                           
+      
       ! start buffer irecv
       do i=1,A%comm_buff%nRecvProcs, 1
         k = A%comm_buff%recvInd(i)
@@ -1748,7 +1829,6 @@ end do
         end do
       end do
 !$omp end parallel
-
       do i=1,A%comm_buff%nSendProcs, 1
         k = A%comm_buff%sendInd(i)
         l = A%comm_buff%sendInd(i+1)
@@ -1758,11 +1838,9 @@ end do
 
     if( A%comm_buff%nRecvProcs .gt. 0 ) then
       ! wait till all data arrived
-      call 
-mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStatus,ierr)
+      call mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStatus,ierr)
     end if
 
-#endif
 
       ! TODO - specialized kernels...
       handled=.false.
@@ -1792,17 +1870,13 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
                 1,A%nRows,+1)        
         end if
       end if
-    
-#if 1
-      if (A%row_map%nProcs .gt. 1) then
-        write(*,*) 'CARP kernel in Fortran not implemented with MPI'
-        ierr=-99
+
+      ! exchange values and average
+      call Dcarp_average(A,x_r, x_i, ierr)
+      if (ierr/=0) then
+        write(*,*) 'call Dcarp_average returned ierr=',ierr
         return
       end if
-
-#else
-! TODO - exchange/average halo
-#endif    
 
       ! TODO - specialized kernels...
       handled=.false.
@@ -1832,7 +1906,13 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
                 A%nRows,1,-1)
         end if
       end if
-    
+
+      ! exchange values and average
+      call Dcarp_average(A,x_r, x_i, ierr)
+      if (ierr/=0) then
+        write(*,*) 'call Dcarp_average returned ierr=',ierr
+        return
+      end if
     end do
     
   end subroutine phist_Dcarp_sweep
@@ -1847,6 +1927,121 @@ mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStat
     integer(c_int), intent(out) :: ierr
         
   end subroutine phist_Dcarp_destroy
+
+! private subroutine to exchange halo elements and average
+!
+! The standard spMVM import is: get values of halo elements
+! from neighbors (import vector from domain map to column  
+! map). We now do the opposite: we receive alternative values
+! for the local nodes ghosted on other procs and update them
+! by averaging. Before the next spMVM or CARP sweep, a standard
+! halo import occurs to update the values on the other procs.
+subroutine Dcarp_average(A,xr,xi,ierr)
+  use mpi
+  implicit none
+
+  TYPE(crsMat_t) :: A
+  TYPE(mvec_t)   :: xr,xi
+  ! this array keeps track from how many procs we receive
+  ! contributions to a local x entry. In principle we could
+  ! set this up once and for all.
+  ! (TODO, or maybe it already exists somewhere?)
+  real(kind=8), dimension(A%nRows) :: divBy
+  integer :: ierr
+
+  ! local
+  integer :: sendBuffSize,recvBuffSize, nvec
+  integer :: i,j,k,l
   
+  nvec=xr%jmax-xr%jmin+1
+
+  ! re-allocate buffers for an spMVM. Note that in this function the
+  ! communication is reversed: We send from the halo and receive the
+  ! remote versions of local elements, so we use the send- as recv- 
+  ! buffer and vice versa. As in carp_sweep, we need twice the message
+  ! size because we have xr and xi (complex vectors in real arithmetic)
+  if( allocated(A%comm_buff%recvData) ) then
+      if( size(A%comm_buff%recvData,1) .ne. 2*nvec ) then
+        deallocate(A%comm_buff%recvData)
+        deallocate(A%comm_buff%sendData)
+      end if
+    end if
+
+    sendBuffSize = A%comm_buff%sendInd(A%comm_buff%nSendProcs+1)-1
+    recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
+
+    if( .not. allocated(A%comm_buff%recvData) ) then
+      allocate(A%comm_buff%recvData(2*nvec,recvBuffSize))
+      allocate(A%comm_buff%sendData(2*nvec,sendBuffSize))
+    end if
+
+    ! NOTE: in the following communication step, send and recv bufs are deliberately 
+    !       swapped! This is because we now *send* our updated halo elements and *recv*
+    !       alternative values for local nodes, which we average.
+
+      ! start buffered *irecv* of clones of local values
+      do i=1,A%comm_buff%nSendProcs, 1
+        k = A%comm_buff%sendInd(i)
+        l = A%comm_buff%sendInd(i+1)
+        call mpi_irecv(A%comm_buff%sendData(:,k:l-1),(l-k)*2*nvec,MPI_DOUBLE_PRECISION,&
+                       A%comm_buff%sendProcId(i),3,A%row_map%Comm,A%comm_buff%sendRequests(i),ierr)
+      end do
+
+      ! start buffered *isend* of my results in the halo
+      ! NOTE: we assume that the data we're sending is already
+      ! in the recvBuf. This is the case in carp_sweep: the halo
+      ! is imported and the kernel which is called (e.g. kacz_generic)
+      ! operates directly on the recvBuf and updates its contents.
+      do i=1,A%comm_buff%nRecvProcs, 1
+        k = A%comm_buff%recvInd(i)
+        l = A%comm_buff%recvInd(i+1)
+        call mpi_isend(A%comm_buff%recvData(:,k:l-1),(l-k)*2*nvec,&
+                       MPI_DOUBLE_PRECISION,A%comm_buff%recvProcId(i),3,&
+                       A%row_map%Comm,A%comm_buff%recvRequests(i),ierr)
+    end do
+
+  ! while we're waiting... 
+  divBy(:)=1.d0
+
+
+    if( A%comm_buff%nSendProcs .gt. 0 ) then
+      ! wait till all data arrived
+      call mpi_waitall(A%comm_buff%nSendProcs,&
+                       A%comm_buff%sendRequests,&
+                       A%comm_buff%sendStatus,ierr)
+    end if
+    
+    ! now average the values in the local elements for which we have received
+    ! alternative values from the neighbors
+    do i=1,A%comm_buff%nSendProcs
+      k = A%comm_buff%sendInd(i)
+      l = A%comm_buff%sendInd(i+1)
+      do j = k, l-1, 1
+
+          xr%val(xr%jmin:xr%jmax,A%comm_buff%sendRowBlkInd(j)) &
+        = xr%val(xr%jmin:xr%jmax,A%comm_buff%sendRowBlkInd(j)) &
+        + A%comm_buff%sendData(1:nvec,j)
+
+          xi%val(xi%jmin:xi%jmax,A%comm_buff%sendRowBlkInd(j)) &
+        = xi%val(xi%jmin:xi%jmax,A%comm_buff%sendRowBlkInd(j)) &
+        + A%comm_buff%sendData(nvec+1:2*nvec,j)
+        
+          divBy(A%comm_buff%sendRowBlkInd(j)) &
+        = divBy(A%comm_buff%sendRowBlkInd(j)) + 1.d0
+        
+      end do
+    end do
+    
+    ! average. In this prototype implementation, we just
+    ! divide *all* x entries by divBy, the interior ones
+    ! are divided by 1.
+!$omp parallel do schedule(static)
+    do i=1,A%nRows
+      xr%val(xr%jmin:xr%jmax,i) = xr%val(xr%jmin:xr%jmax,i)/divBy(i)
+      xi%val(xi%jmin:xi%jmax,i) = xi%val(xi%jmin:xi%jmax,i)/divBy(i)
+      write(*,*) 'TROET divBy(',i,')=',divBy(i)  
+    end do
+end subroutine Dcarp_average
+
 end module crsmat_module
 

@@ -56,7 +56,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -fstack-protector-all -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
   endif ()
 
-  set (CMAKE_CXX_FLAGS "-fopenmp")
+  set (CMAKE_CXX_FLAGS "-fopenmp -std=c++11")
   set (CMAKE_CXX_FLAGS_RELEASE "-O2 -fopenmp")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -fopenmp")
   if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
@@ -196,6 +196,7 @@ if (PHIST_KERNEL_LIB STREQUAL "fortran")
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/mrgrnk.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/crsmat_module.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/parmetis.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/colpack.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/mvec_module.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/nrm2_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/axpy_kernels.f90
@@ -266,8 +267,8 @@ endif()
 
 # load parmetis for reordering fortran
 if(PHIST_KERNEL_LIB STREQUAL "fortran")
+  
   find_package(ParMETIS)
-
   if(PARMETIS_FOUND)
     set(PHIST_HAVE_PARMETIS 1)
     include_directories(${PARMETIS_INCLUDE_DIRS})
@@ -277,6 +278,25 @@ if(PHIST_KERNEL_LIB STREQUAL "fortran")
   else()
     message(STATUS "ParMETIS not found, no matrix reordering!")
   endif()
+
+#  find_package(ColPack)
+  if (COLPACK_DIR)
+    set(COLPACK_INCLUDE_DIRS ${COLPACK_DIR}/include)
+    set(COLPACK_LIBRARIES ${COLPACK_DIR}/lib/libColPack.so)
+    set(COLPACK_LIBRARY_DIRS ${COLPACK_DIR}/lib)
+    set(COLPACK_FOUND 1)
+  endif()
+
+  if(COLPACK_FOUND)
+    set(PHIST_HAVE_COLPACK 1)
+    include_directories(${COLPACK_INCLUDE_DIRS})
+    link_directories(${COLPACK_LIBRARY_DIRS})
+    list(APPEND PHIST_LIBS ${COLPACK_LIBRARIES})
+    message(STATUS "ColPack found, enabled matrix coloring!")
+  else()
+    message(STATUS "ColPack not found, no matrix coloring!")
+  endif()
+
 endif()
 
 find_package(Likwid PATHS "$ENV{LIKWID_HOME}" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/" Optional)
