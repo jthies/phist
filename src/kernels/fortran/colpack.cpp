@@ -12,8 +12,9 @@
 //        *ncolors: will contain the number of colurs
 //        colors: dimension nrows, preallocated by user, contains 0-based color values.
 extern "C" void colpack_v1_0_8(int nrows, int64_t* row_ptr, int64_t* nonlocal_ptr, int* col_idx, 
-        int* ncolors, int* colors, int dist, int* ierr)
+        int* ncolors, int* colors, int dist, int idx_base, int* ierr)
 {
+  ENTER_FCN(__FUNCTION__);
 #ifndef PHIST_HAVE_COLPACK
   PHIST_SOUT(PHIST_ERROR,"%s not implemented, ColPack not available.\n"
                          "(file %s, line %d)\n",
@@ -41,17 +42,23 @@ extern "C" void colpack_v1_0_8(int nrows, int64_t* row_ptr, int64_t* nonlocal_pt
  // first we need to count the local nonzeros (TODO - or are they readily 
  // available in crsmat_module?)
  uint32_t nzloc=0;
- for (int i=0;i<nrows;i++) nzloc+=nonlocal_ptr[i]-row_ptr[i];
+ fprintf(stdout,"nrows=%d\n",nrows);
+ for (int i=0;i<nrows;i++) 
+ {
+   fprintf(stdout,"%d: %ld %ld\n",i,row_ptr[i],nonlocal_ptr[i]);
+   nzloc+=nonlocal_ptr[i]-row_ptr[i];
+ }
  uint32_t adolc_data[nzloc+nrows];
-#pragma omp parallel for schedule(static)
+//#pragma omp parallel for schedule(static)
  for (int64_t i=0;i<nrows;i++)
  {
-   uint32_t pos=row_ptr[i]+i; // +i because we store the row length in pos 0 of each row
+   // +i because we store the row length in pos 0 of each row
+   uint32_t pos=row_ptr[i]-row_ptr[0]+i; 
    adolc[i]=&(adolc_data[pos]);
    adolc_data[pos++]=nonlocal_ptr[i]-row_ptr[i];
    for (int j=row_ptr[i];j<nonlocal_ptr[i];j++)
    {
-     adolc_data[pos++]=col_idx[j];
+     adolc_data[pos++]=col_idx[j-row_ptr[0]]-idx_base;
    }
  }
 
@@ -70,7 +77,7 @@ int verbose=2;
 int verbose=1;
 #endif
 #ifdef TESTING
-    PHIST_CHK_IERR(*ierr,GC.CheckDistanceTwoColoring(verbose),*ierr);
+    PHIST_CHK_IERR(*ierr=GC.CheckDistanceTwoColoring(verbose),*ierr);
 #else
     PHIST_CHK_IERR(*ierr=GC.CheckQuickDistanceTwoColoring(verbose),*ierr);
 #endif

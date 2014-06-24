@@ -890,8 +890,10 @@ end do
 #ifdef PHIST_HAVE_COLPACK
 
   subroutine colorcrs(crsMat,dist,outlev,ierr)
+      use, intrinsic :: iso_c_binding
     use mpi
-    type(crsMat_t) :: crsMat
+    implicit none
+    type(crsMat_t),target :: crsMat
     ! distance (1 or 2)
     integer, intent(in) :: dist
     integer,intent(in) :: outlev
@@ -900,50 +902,58 @@ end do
     ! local variables
     integer :: i
     integer(kind=8) :: j
-    integer :: colors(crsMat%nRows)
+    integer(c_int), target :: colors(crsMat%nRows)
     integer :: ncolors
     integer, allocatable, dimension(:) :: colorCount
     
+    TYPE(c_ptr) :: c_rp, c_nlp, c_cidx, c_colors
+    
     interface
     
-      subroutine colpack(nloc,row_ptr,nonlocal_ptr,column_idx,ncolors,colors,dist,ierr) &
+      subroutine colpack(nloc,row_ptr,nonlocal_ptr,column_idx, &
+              ncolors, colors, dist, idxBase,ierr) &
         bind(C, name='colpack_v1_0_8')
+
       use, intrinsic :: iso_c_binding
+      implicit none
       
-      integer, value :: nloc
-      integer(c_int64_t), intent(in) :: row_ptr(:), nonlocal_ptr(:)
-      integer(c_int), intent(in) :: column_idx(:)
-      integer(c_int), intent(out) :: ncolors
-      integer(c_int), intent(out) :: colors(:)
+      integer(c_int), value :: nloc
+      type(c_ptr), value :: row_ptr, nonlocal_ptr, column_idx
+      integer(c_int), intent(out) :: ncolors      
+      type(c_ptr), value :: colors
       integer(c_int), value :: dist
+      integer(c_int), value :: idxBase
       integer(c_int), intent(inout) :: ierr
 
       end subroutine colpack
 
     end interface
-    
-      
-      call colpack(crsMat%nRows, crsMat%row_offset(:), crsMat%nonlocal_offset(:), &
-                crsMat%col_idx(:), ncolors, colors(:), dist, ierr)
+
+    c_rp=c_loc(crsMat%row_offset(1))
+    c_nlp=c_loc(crsMat%nonlocal_offset(1))
+    c_cidx=c_loc(crsMat%col_idx(1))
+    c_colors=c_loc(colors(1))
+        
+      call colpack(crsMat%nRows, c_rp,c_nlp,c_cidx,ncolors,c_colors, dist,1,ierr)
       
       if (ierr/=0) then
         write(*,*) 'error code ',ierr,' returned from colpack'
         return
       end if
-      
+ 
     ierr=0
 
     ! count number of members in each color set
     allocate(colorCount(ncolors))
     
     do i=1,crsMat%nRows
-      colorCount(colors(i))=colorCount(colors(i))+1
+!      colorCount(colors(i))=colorCount(colors(i))+1
     end do
 
     deallocate(colorCount)
 
-#define DEBUG_COLPACK
-#ifdef DEBUG_COLPACK
+#define DEBUG_COLPACK 1
+#if DEBUG_COLPACK
         open(unit=42,file='test_coloring.m',status='replace')
         write(42,*) 'n=',crsMat%nRows
         write(42,*) 'Adat=[...'
@@ -1339,10 +1349,6 @@ end do
 !write(*,*) 'val', A%val
 #endif
 
-#ifdef PHIST_HAVE_COLPACK
-    call colorcrs(A,2,3,ierr)
-#endif
-
 ! write matrix to mat.mm
 !do i_ = 0, A%row_map%nProcs-1
 
@@ -1370,6 +1376,10 @@ end do
 
     call setup_commBuff(A, A%comm_buff)
     call sort_rows_local_nonlocal(A)
+
+#ifdef PHIST_HAVE_COLPACK
+!    call colorcrs(A,2,3,ierr)
+#endif
 
     write(*,*) 'created new crsMat with dimensions', A%nRows, A%nCols, A%nEntries
     flush(6)
@@ -1457,9 +1467,6 @@ end do
 #ifdef PHIST_HAVE_PARMETIS
     call repartcrs(A,3,ierr)
 #endif
-#ifdef PHIST_HAVE_COLPACK
-    call colorcrs(A,2,3,ierr)
-#endif
 ! write matrix to mat.mm
 !do i_ = 0, A%row_map%nProcs-1
 
@@ -1486,6 +1493,12 @@ end do
 
     call setup_commBuff(A, A%comm_buff)
     call sort_rows_local_nonlocal(A)
+
+#ifdef PHIST_HAVE_COLPACK
+    !TODO - make the coloring optional, it only makes sense
+    !       for CARP-CG right now
+    call colorcrs(A,2,3,ierr)
+#endif
 
     write(*,*) 'created new crsMat with dimensions', A%nRows, A%nCols, A%nEntries
     flush(6)
@@ -2039,7 +2052,6 @@ subroutine Dcarp_average(A,xr,xi,ierr)
     do i=1,A%nRows
       xr%val(xr%jmin:xr%jmax,i) = xr%val(xr%jmin:xr%jmax,i)/divBy(i)
       xi%val(xi%jmin:xi%jmax,i) = xi%val(xi%jmin:xi%jmax,i)/divBy(i)
-      write(*,*) 'TROET divBy(',i,')=',divBy(i)  
     end do
 end subroutine Dcarp_average
 
