@@ -269,7 +269,7 @@ if(PHIST_KERNEL_LIB STREQUAL "fortran")
   find_package(ParMETIS)
 
   if(PARMETIS_FOUND)
-    set(-DPHIST_HAVE_PARMETIS 1)
+    set(PHIST_HAVE_PARMETIS 1)
     include_directories(${PARMETIS_INCLUDE_DIRS})
     link_directories(${PARMETIS_LIBRARY_DIRS})
     list(APPEND PHIST_LIBS ${PARMETIS_LIBRARIES})
