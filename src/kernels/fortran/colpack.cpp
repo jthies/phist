@@ -42,10 +42,8 @@ extern "C" void colpack_v1_0_8(int nrows, int64_t* row_ptr, int64_t* nonlocal_pt
  // first we need to count the local nonzeros (TODO - or are they readily 
  // available in crsmat_module?)
  uint32_t nzloc=0;
- fprintf(stdout,"nrows=%d\n",nrows);
  for (int i=0;i<nrows;i++) 
  {
-   fprintf(stdout,"%d: %ld %ld\n",i,row_ptr[i],nonlocal_ptr[i]);
    nzloc+=nonlocal_ptr[i]-row_ptr[i];
  }
  uint32_t adolc_data[nzloc+nrows];
@@ -70,7 +68,8 @@ extern "C" void colpack_v1_0_8(int nrows, int64_t* row_ptr, int64_t* nonlocal_pt
   }
   if (dist==2)
   {
-    PHIST_CHK_IERR(*ierr=GC.DistanceTwoColoring(),*ierr);
+    // this function returns 1 on success
+    PHIST_CHK_IERR(*ierr=GC.DistanceTwoColoring()-1,*ierr);
 #if PHIST_OUTLEV>=PHIST_VERBOSE
 int verbose=2;
 #else

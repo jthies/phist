@@ -958,8 +958,8 @@ end do
         write(42,*) 'n=',crsMat%nRows
         write(42,*) 'Adat=[...'
         do i=1,crsMat%nRows
-          do j=crsMat%row_offset(i),crsMat%nonlocal_offset(i)
-            write(42,"(I4,I4,E24.8,',')") i,crsMat%col_idx(j),crsMat%val(j)
+          do j=crsMat%row_offset(i),crsMat%nonlocal_offset(i)-1
+            write(42,"(I4,I4,E24.8)") i,crsMat%col_idx(j),crsMat%val(j)
           end do
         end do
         write(42,*) '];'
@@ -970,6 +970,7 @@ end do
           write(42,*) colors(i)
         end do
         write(42,*) '];'
+        flush(42)
         close(42)
 #endif
       
