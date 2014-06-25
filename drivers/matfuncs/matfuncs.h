@@ -15,6 +15,7 @@ typedef int64_t ghost_idx_t;
 #define GHOST_SPARSEMAT_SYMM_GENERAL 0x1
 #define GHOST_DT_DOUBLE 0x2
 #define GHOST_DT_REAL 0x4
+#define GHOST_HAVE_LONGIDX
 #endif
 
 

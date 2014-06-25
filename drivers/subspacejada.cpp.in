@@ -222,14 +222,14 @@ int main(int argc, char** argv)
   // setup start vector (currently to (1 0 1 0 .. ) )
   mvec_ptr_t v0 = NULL;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&v0,map,1,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::one(),&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_random)(v0,&ierr),ierr);
+  //PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::one(),&ierr),ierr);
   // initialize random number generator in parallel
 /*
   int ilower, iupper;
   PHIST_ICHK_IERR(phist_map_get_ilower(map,&ilower,&ierr),ierr);
   PHIST_ICHK_IERR(phist_map_get_iupper(map,&iupper,&ierr),ierr);
   //std::srand(ilower);
-  //PHIST_ICHK_IERR(SUBR(mvec_random)(v0,&ierr),ierr);
   //PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::zero(),&ierr),ierr);
   _ST_* v0_raw;
   lidx_t v0_lda;
@@ -248,7 +248,9 @@ int main(int argc, char** argv)
 
 
   //------------------------------- run block JaDa algorithm ----------------------- 
-  PHIST_ICHK_IERR(SUBR(subspacejada)(opA, NULL, v0, which, tol, nEig, &nIter, blockDim, minBase, maxBase, innerBlockDim, innerMaxBase, initialShiftIters, initialShift, innerIMGS, innerGMRESabortAfterFirstConverged, Q, R, resNorm, &ierr), ierr);
+  PHIST_ICHK_IERR(SUBR(subspacejada)(opA, NULL, v0, which, tol, nEig, &nIter, blockDim, minBase, maxBase,
+        innerBlockDim, innerMaxBase, initialShiftIters, initialShift, innerIMGS, innerGMRESabortAfterFirstConverged, false,
+        Q, R, resNorm, &ierr), ierr);
   int nConvergedEig = 0;
   for(int i = 0; i < nEig; i++)
     if(resNorm[i] <= tol)

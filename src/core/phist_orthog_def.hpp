@@ -70,14 +70,10 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 
       PHIST_CHK_IERR(SUBR(mvec_get_comm)(V,&comm,ierr),*ierr);
 
-  if (numSweeps>1)
-    {
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&R1p,k,k,comm,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&R1pp,k,k,comm,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&R2p,m,k,comm,ierr),*ierr);
-    }
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&R1p,k,k,comm,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&R1pp,k,k,comm,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&R2p,m,k,comm,ierr),*ierr);
 
-#ifdef TESTING
 
   // check that all array dimensions are correct
   PHIST_CHK_IERR(*ierr=(int)(V==NULL || W==NULL || R1==NULL || R2==NULL),*ierr);
@@ -102,8 +98,9 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   PHIST_CHK_IERR((*ierr=(m==nrR2)?0:-1),*ierr);
   PHIST_CHK_IERR((*ierr=(k==ncR2)?0:-1),*ierr);
 
-//  PHIST_DEB("orthog: V is %dx%d,  W is %dx%d\n"
-//                        "       R1 is %dx%d, R2 is %dx%d\n",n,m,n,k,nrR1,ncR1,nrR2,ncR2);
+#ifdef TESTING
+  PHIST_DEB("orthog: V is %dx%d,  W is %dx%d\n"
+                        "       R1 is %dx%d, R2 is %dx%d\n",n,m,n,k,nrR1,ncR1,nrR2,ncR2);
 #endif
 
   // compute the norms of the columns in W (for checking the result later)
@@ -112,6 +109,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   
   // determine original norms of W vectors and breakdown tolerance
   PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW0,ierr),*ierr);
+  PHIST_DEB("orthog: normW0 is %e\n", normW0);
   breakdown = normW0[0];
   for (int i=1;i<k;i++) breakdown=std::min(normW0[i], breakdown);
   breakdown*=mt::eps()*1000;
@@ -120,11 +118,16 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 
   //R2=V'*W;
   PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,W,st::zero(),R2,ierr),*ierr);
+#ifdef TESTING
+  PHIST_SOUT(PHIST_INFO,"R2:\n");
+  PHIST_CHK_IERR(SUBR(sdMat_print)(R2, ierr), *ierr);
+#endif
   //W=W-V*R2;
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),V,R2,st::one(),W,ierr),*ierr);
   // norms after first CGS sweep. This could be done cheaper by using R1 computed below,
   // since ||W_j||_2 = ||R1_j||_2 (TODO - that's how it's done in Belos).
   PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW1,ierr),*ierr);
+  PHIST_DEB("orthog: normW1 is %e\n", normW1);
 
   // special case which cannot be detected in mvec_QR if W in span(V) (because mvec_QR uses a relative tolerance):
   MT maxNormW1 = 0;
@@ -144,6 +147,10 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   //to W anyway.
   PHIST_CHK_NEG_IERR(SUBR(mvec_QR)(W,R1,ierr),*ierr);
   rankW=k-*ierr;
+#ifdef TESTING
+  PHIST_SOUT(PHIST_INFO,"rankW is %d, R1:\n", rankW);
+  PHIST_CHK_IERR(SUBR(sdMat_print)(R1, ierr), *ierr);
+#endif
   *ierr = 0;
 
   // set normW1 to diag(R1)

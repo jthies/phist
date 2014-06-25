@@ -1,3 +1,4 @@
+#include "phist_config.h"
 module crsmat_module
   use map_module, only: Map_t, map_setup
   use mvec_module, only: MVec_t, mvec_scale
@@ -9,6 +10,7 @@ module crsmat_module
   !public :: phist_DcrsMat_create_fromRowFunc
   !public :: phist_DcrsMat_delete
   !public :: phist_DcrsMat_times_mvec
+  !public :: phist_DcrsMat_times_mvec_vadd_mvec
   public :: crsmat_times_mvec
   !public :: phist_DcrsMat_get_map
 
@@ -484,7 +486,7 @@ end do
     real(kind=8),allocatable :: value_new(:)
     integer(kind=8),allocatable :: glob_row_permut(:)
     integer,allocatable :: offsets(:)
-    integer :: ierr_
+    integer :: ierr_, localErr
 
 
     ierr = 0
@@ -495,10 +497,11 @@ end do
     ! data where each row goes
     call calculateNewPartition(crsMat,rowSendProc)
 !write(*,*) 'rowSendProc', rowSendProc
+    localErr = 0
     if( any(rowSendProc .lt. 0 .or. rowSendProc .ge. crsMat%row_map%nProcs) ) then
-      ierr = 1
+      localErr = 1
     end if
-    call mpi_allreduce(MPI_IN_PLACE, ierr, 1, MPI_INTEGER, MPI_SUM, crsMat%row_map%comm, ierr_)
+    call mpi_allreduce(localErr, ierr, 1, MPI_INTEGER, MPI_SUM, crsMat%row_map%comm, ierr_)
     if( ierr .ne. 0 ) then
       if( outlev .ge. 1 .and. crsMat%row_map%me .eq. 0 ) then
         write(*,*) 'ERROR: parmetis failure!'
@@ -751,37 +754,56 @@ end do
 
 
 
-    crsMat%row_offset=row_blk_new
-    crsMat%global_col_idx=col_ind_new
-    crsMat%val=value_new
+    ! copy resulting data back
+
+    ! try to respect NUMA
     crsMat%nRows = nd_new
-    crsMat%nEntries = crsMat%row_offset(crsMat%nRows+1)-1
+    crsMat%nEntries = row_blk_new(nd_new+1)-1
+    allocate(crsMat%row_offset(crsMat%nRows+1))
+!$omp parallel do schedule(static)
+    do i = 1, crsMat%nRows+1, 1
+      crsMat%row_offset(i) = row_blk_new(i)
+    end do
+    deallocate(row_blk_new)
+
+    allocate(crsMat%global_col_idx(crsMat%nEntries))
+    allocate(crsMat%val(crsMat%nEntries))
+!$omp parallel do schedule(static)
+    do i = 1, crsMat%nRows, 1
+      do j = crsMat%row_offset(i), crsMat%row_offset(i+1)-1, 1
+        crsMat%global_col_idx(j) = col_ind_new(j)
+        crsMat%val(j) = value_new(j)
+      end do
+    end do
+    deallocate(col_ind_new)
+    deallocate(value_new)
 
 
   contains
 
 
     subroutine calculateNewPartition(crsMat, rowBlkTargetProc)
+      use iso_c_binding
       type(crsMat_t),intent(in) :: crsMat
-      integer(kind=8) :: rowBlkTargetProc(crsMat%nRows)
+      integer(kind=C_INT64_T) :: rowBlkTargetProc(crsMat%nRows)
 
 
       ! parameter for ParMETIS_V3_PartKway
-      integer(kind=8),pointer :: vtxdist(:) ! = crsMat%row_map%distrib+1
-      integer(kind=8),pointer :: xadj(:) ! = crsMat%row_offset without counting diagonal entries
-      integer(kind=8),pointer :: adjncy(:) ! = crsMat%global_col_idx without diagonal (connection to itself)
-      integer(kind=8),pointer :: vwgt(:) ! has size(crsMat%nRows), number of non-zero entries per row block
-      integer(kind=8),pointer :: adjwgt(:) ! edge weights, for unsymmetric matrices 1 or 2
-      integer(kind=8),parameter :: wgtflag = 2 ! vertex and edge weights
-      integer(kind=8),parameter :: numflag = 1 ! fortran numbering style
-      integer(kind=8),parameter :: ncon = 1 ! only one constraint, one weight per vertex
-      integer(kind=8) :: nparts ! = crsMat%row_map%nProcs
-      real(kind=4),pointer :: tpwgts(:) ! =1/nparts, has size (1:nparts)
-      real(kind=4),parameter :: ubvec = 1.01 ! vertex weight imbalance tolerance
-      real(kind=4),parameter :: ubvec_refine = 1.01 ! vertex weight imbalance tolerance
-      integer(kind=8) :: options(0:3) = 0 ! default options
-      integer(kind=8) :: edgecut_refined, edgecut ! output parameter, global number of cutted edges
-      integer(kind=8) :: edgecut_before
+      integer(kind=C_INT64_T),allocatable :: vtxdist(:) ! = crsMat%row_map%distrib+1
+      integer(kind=C_INT64_T),allocatable :: xadj(:) ! = crsMat%row_offset without counting diagonal entries
+      integer(kind=C_INT64_T),allocatable :: adjncy(:) ! = crsMat%global_col_idx without diagonal (connection to itself)
+      integer(kind=C_INT64_T),allocatable :: vwgt(:) ! has size(crsMat%nRows), number of non-zero entries per row block
+      integer(kind=C_INT64_T),allocatable :: adjwgt(:) ! edge weights, for unsymmetric matrices 1 or 2
+      integer(kind=C_INT64_T),parameter :: wgtflag = 2 ! vertex and edge weights
+      integer(kind=C_INT64_T),parameter :: numflag = 1 ! fortran numbering style
+      integer(kind=C_INT64_T),parameter :: ncon = 1 ! only one constraint, one weight per vertex
+      integer(kind=C_INT64_T) :: nparts ! = crsMat%row_map%nProcs
+      real(kind=C_FLOAT),allocatable :: tpwgts(:) ! =1/nparts, has size (1:nparts)
+      real(kind=C_FLOAT),parameter :: ubvec = 1.01 ! vertex weight imbalance tolerance
+      real(kind=C_FLOAT),parameter :: ubvec_refine = 1.01 ! vertex weight imbalance tolerance
+      integer(kind=C_INT64_T) :: options(0:3) = 0 ! default options
+      integer(kind=C_INT64_T) :: edgecut_refined, edgecut ! output parameter, global number of cutted edges
+      integer(kind=C_INT64_T) :: edgecut_before
 
 
       integer :: i, ierr
@@ -806,7 +828,7 @@ end do
         vwgt(i) = crsMat%row_offset(i+1)-crsMat%row_offset(i)
       end do
       allocate(adjncy(xadj(crsMat%nRows+1)-1))
-      nullify(adjwgt)
+      !nullify(adjwgt)
       j = 1
       edgecut = 0
       do i = 1, crsMat%nRows, 1
@@ -994,6 +1016,13 @@ end do
 
     recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
 
+    if( A%comm_buff%nSendProcs .gt. 0 ) then
+      ! also wait till all data was sent to circumvent dumb MPI implementations
+      ! that don't do that in the background!
+      call mpi_waitall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
+    end if
+
+
 
     handled = .false.
     !try to use NT stores if possible
@@ -1105,12 +1134,6 @@ end do
       call dspmvm_generic(nvec, A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
         &                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
         &                 shifts, x%val(x%jmin,1), ldx, A%comm_buff%recvData, beta, y%val(y%jmin,1), ldy)
-    end if
-
-
-    if( A%comm_buff%nSendProcs .gt. 0 ) then
-      ! just make sure the buffers are not used any more...
-      call mpi_waitall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
     end if
 
     !--------------------------------------------------------------------------------
@@ -1314,14 +1337,12 @@ end do
     integer(kind=8) :: j, j_, globalEntries
     integer(kind=8) :: i_, nne
     integer :: funit
+    integer(kind=8) :: localDim(2), globalDim(2)
+    real(kind=8) :: wtime
     !--------------------------------------------------------------------------------
 
     ! get procedure pointer
     call c_f_procpointer(rowFunc_ptr, rowFunc)
-
-    ! open the file
-    write(*,*) 'creating matrix from rowFunc'
-    flush(6)
 
     allocate(A)
 
@@ -1329,11 +1350,14 @@ end do
     globalRows = nrows
     globalCols = ncols
     globalEntries = int(maxnne_per_row,kind=8)*int(nrows,kind=8)
-    write(*,*) 'CrsMat:', globalRows, globalCols, globalEntries
-    flush(6)
 
     call map_setup(A%row_map, MPI_COMM_WORLD, globalRows, ierr)
     if( ierr .ne. 0 ) return
+    if( A%row_map%me .eq. 0 ) then
+      write(*,*) 'creating matrix from rowFunc'
+      write(*,*) 'CrsMat:', globalRows, globalCols, globalEntries
+      flush(6)
+    end if
 
     A%nRows = A%row_map%nlocal(A%row_map%me)
     A%nCols = A%nRows
@@ -1347,6 +1371,10 @@ end do
     allocate(A%row_offset(A%nRows+1))
     allocate(A%global_col_idx(A%nEntries))
     allocate(A%val(A%nEntries))
+
+
+call mpi_barrier(MPI_COMM_WORLD, ierr)
+wtime = mpi_wtime()
 
     ! get data, try to respect NUMA
     A%row_offset(1) = 1_8
@@ -1364,10 +1392,33 @@ end do
     end do
     A%nEntries = A%row_offset(A%nRows+1)-1
 
+call mpi_barrier(MPI_COMM_WORLD, ierr)
+wtime = mpi_wtime() - wtime
+if( A%row_map%me .eq. 0 ) then
+  write(*,*) 'read matrix from row func in', wtime, 'seconds'
+end if
+
+wtime = mpi_wtime()
 
     call sort_global_cols(A)
+
+call mpi_barrier(MPI_COMM_WORLD, ierr)
+wtime = mpi_wtime() - wtime
+if( A%row_map%me .eq. 0 ) then
+  write(*,*) 'sort global cols in', wtime, 'seconds'
+end if
+
+
 #ifdef PHIST_HAVE_PARMETIS
+wtime = mpi_wtime()
+
     call repartcrs(A,3,ierr)
+
+call mpi_barrier(MPI_COMM_WORLD, ierr)
+wtime = mpi_wtime() - wtime
+if( A%row_map%me .eq. 0 ) then
+  write(*,*) 'repartitioned in', wtime, 'seconds'
+end if
 #endif
 ! write matrix to mat.mm
 !do i_ = 0, A%row_map%nProcs-1
@@ -1393,11 +1444,37 @@ end do
 
 !end do
 
+wtime = mpi_wtime()
+
     call setup_commBuff(A, A%comm_buff)
+
+call mpi_barrier(MPI_COMM_WORLD, ierr)
+wtime = mpi_wtime() - wtime
+if( A%row_map%me .eq. 0 ) then
+  write(*,*) 'setup comm buffers in', wtime, 'seconds'
+end if
+
+
+wtime = mpi_wtime()
+
     call sort_rows_local_nonlocal(A)
 
-    write(*,*) 'created new crsMat with dimensions', A%nRows, A%nCols, A%nEntries
-    flush(6)
+call mpi_barrier(MPI_COMM_WORLD, ierr)
+wtime = mpi_wtime() - wtime
+if( A%row_map%me .eq. 0 ) then
+  write(*,*) 'sorted rows local/nonlocal in', wtime, 'seconds'
+end if
+
+
+    ! calculate actual global dimension
+    localDim(1) = A%nrows
+    localDim(2) = A%nEntries
+    call mpi_allreduce(localDim, globalDim, 2, MPI_INTEGER8, MPI_SUM, &
+      &                A%row_map%comm, ierr)
+    if( A%row_map%me .eq. 0 ) then
+      write(*,*) 'created new crsMat with dimensions', globalDim
+      flush(6)
+    end if
     A_ptr = c_loc(A)
 
     ierr = 0
@@ -1414,10 +1491,13 @@ end do
     integer(C_INT), intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(CrsMat_t), pointer :: A
+#ifdef TESTING
+    integer(C_INTPTR_T) :: dummy
+#endif
     !--------------------------------------------------------------------------------
 
 #ifdef TESTING
-    write(*,*) 'deleting crsMat at address', A_ptr
+    write(*,*) 'deleting crsMat at address', transfer(A_ptr,dummy)
     flush(6)
 #endif
     if( c_associated(A_ptr) ) then

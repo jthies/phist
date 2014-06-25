@@ -259,10 +259,11 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(sdMat_create)(&R,nEig+blockDim-1,nEig+blockDim-1,comm,&ierr),ierr);
   _MT_ *resNorm = new _MT_[nEig+blockDim-1];
 
-  // setup start vector (currently to (1 0 1 0 .. ) )
+  // setup start vector
   mvec_ptr_t v0 = NULL;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&v0,opA->domain_map,1,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::one(),&ierr),ierr);
+  //PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::one(),&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_random)(v0,&ierr),ierr);
 
   // used to calculate explicit residuals
   mvec_ptr_t res;
@@ -270,7 +271,9 @@ int main(int argc, char** argv)
 
 
   //------------------------------- run block JaDa algorithm ----------------------- 
-  PHIST_ICHK_IERR(SUBR(subspacejada)(opA, NULL, v0, which, tol, nEig, &nIter, blockDim, minBase, maxBase, innerBlockDim, innerMaxBase, initialShiftIters, initialShift, innerIMGS, innerGMRESabortAfterFirstConverged, Q, R, resNorm, &ierr), ierr);
+  PHIST_ICHK_IERR(SUBR(subspacejada)(opA, NULL, v0, which, tol, nEig, &nIter, blockDim, minBase, maxBase,
+        innerBlockDim, innerMaxBase, initialShiftIters, initialShift, innerIMGS, innerGMRESabortAfterFirstConverged, false,
+        Q, R, resNorm, &ierr), ierr);
   int nConvergedEig = 0;
   for(int i = 0; i < nEig; i++)
     if(resNorm[i] <= tol)

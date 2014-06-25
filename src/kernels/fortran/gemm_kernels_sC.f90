@@ -10,8 +10,8 @@ subroutine dgemm_sC_1(nrows,nvecw,v,w,M)
 
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
-  do i = 1, nrows
-    do j = 1, nvecw
+  do i = 1, nrows, 1
+    do j = 1, nvecw, 1
       M(:,j) = M(:,j) + v(:,i)*w(j,i)
     end do
   end do
@@ -28,8 +28,8 @@ subroutine dgemm_sC_2(nrows,nvecw,v,w,M)
 
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
-  do i = 1, nrows
-    do j = 1, nvecw
+  do i = 1, nrows, 1
+    do j = 1, nvecw, 1
       M(:,j) = M(:,j) + v(:,i)*w(j,i)
     end do
   end do
@@ -46,8 +46,8 @@ subroutine dgemm_sC_4(nrows,nvecw,v,w,M)
 
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
-  do i = 1, nrows
-    do j = 1, nvecw
+  do i = 1, nrows, 1
+    do j = 1, nvecw, 1
       M(:,j) = M(:,j) + v(:,i)*w(j,i)
     end do
   end do
@@ -64,8 +64,8 @@ subroutine dgemm_sC_8(nrows,nvecw,v,w,M)
 
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
-  do i = 1, nrows
-    do j = 1, nvecw
+  do i = 1, nrows, 1
+    do j = 1, nvecw, 1
       M(:,j) = M(:,j) + v(:,i)*w(j,i)
     end do
   end do
@@ -83,8 +83,8 @@ subroutine dgemm_sC_strided_1(nrows,nvecw,v,w,ldw,M)
 
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
-  do i = 1, nrows
-    do j = 1, nvecw
+  do i = 1, nrows, 1
+    do j = 1, nvecw, 1
       M(:,j) = M(:,j) + v(:,i)*w(j,i)
     end do
   end do
@@ -101,8 +101,8 @@ subroutine dgemm_sC_strided_2(nrows,nvecw,v,w,ldw,M)
 
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
-  do i = 1, nrows
-    do j = 1, nvecw
+  do i = 1, nrows, 1
+    do j = 1, nvecw, 1
       M(:,j) = M(:,j) + v(:,i)*w(j,i)
     end do
   end do
@@ -119,8 +119,8 @@ subroutine dgemm_sC_strided_4(nrows,nvecw,v,w,ldw,M)
 
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
-  do i = 1, nrows
-    do j = 1, nvecw
+  do i = 1, nrows, 1
+    do j = 1, nvecw, 1
       M(:,j) = M(:,j) + v(:,i)*w(j,i)
     end do
   end do
@@ -137,8 +137,8 @@ subroutine dgemm_sC_strided_8(nrows,nvecw,v,w,ldw,M)
 
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
-  do i = 1, nrows
-    do j = 1, nvecw
+  do i = 1, nrows, 1
+    do j = 1, nvecw, 1
       M(:,j) = M(:,j) + v(:,i)*w(j,i)
     end do
   end do
@@ -156,8 +156,8 @@ subroutine dgemm_sC_generic(nrows,nvecv,nvecw,v,ldv,w,ldw,M)
 
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
-  do i = 1, nrows
-    do j = 1, nvecw
+  do i = 1, nrows, 1
+    do j = 1, nvecw, 1
       M(:,j) = M(:,j) + v(1:nvecv,i)*w(j,i)
     end do
   end do

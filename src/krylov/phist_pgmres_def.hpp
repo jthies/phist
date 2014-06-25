@@ -1,80 +1,4 @@
-// small class for a ring buffer for the subspaces
-// TODO: use a real template instead of this "TYPE"-stuff?
-class TYPE(MvecRingBuffer)
-{
-  public:
-    TYPE(MvecRingBuffer)(int size) : mvecs_(size,NULL), mvecs_used_(size,0), lastIndex_(0) {}
-
-    // we can handle failures probably more cleanly if not done in the constructor
-    void create_mvecs(const_map_ptr_t map, int nvecs, int* ierr)
-    {
-      for(int i = 0; i < mvecs_.size(); i++)
-      {
-        PHIST_CHK_IERR(*ierr = (mvecs_[i] != NULL) ? -1 : 0, *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_create ) (&mvecs_[i], map, nvecs, ierr), *ierr);
-      }
-    }
-
-    // must be called before the destructor
-    void delete_mvecs(int *ierr)
-    {
-      for(int i = 0; i < mvecs_.size(); i++)
-      {
-        PHIST_CHK_IERR(SUBR( mvec_delete ) (mvecs_[i], ierr), *ierr);
-        mvecs_[i] = NULL;
-      }
-    }
-
-    ~TYPE(MvecRingBuffer)()
-    {
-      int ierr = 0;
-      // print an error if there are still allocated mvecs
-      // as this could use up all memory quite fast if used multiple times!
-      for(int i = 0; i < mvecs_.size(); i++)
-      {
-        PHIST_CHK_IERR(ierr = (mvecs_[i] != NULL) ? -1 : 0, ierr);
-      }
-    }
-
-    // get vector at index i
-    TYPE(mvec_ptr) at(int i) {return mvecs_.at(i);}
-
-    int size() {return mvecs_.size();}
-
-    // just to make sure no element is used twice
-    void incRef(int i) {mvecs_used_.at(i)++;}
-    void decRef(int i) {mvecs_used_.at(i)--;}
-    int refCount(int index) const {return mvecs_used_.at(index);}
-
-    // get last used index
-    int lastIndex() {return lastIndex_;}
-
-    // get preceeding index
-    int prevIndex(int i, int n = 1) {return (i+size()-n)%size();}
-
-    // get next index and make sure it is unused
-    void getNextUnused(int &nextIndex, int *ierr)
-    {
-      *ierr = 0;
-      nextIndex = (lastIndex_+1)%mvecs_.size();
-      if( mvecs_used_[nextIndex] != 0 )
-      {
-        *ierr = -1;
-        return;
-      }
-      lastIndex_ = nextIndex;
-    }
-
-  private:
-    std::vector<TYPE(mvec_ptr)> mvecs_;
-    std::vector<int> mvecs_used_;
-    int lastIndex_;
-
-    // hide copy constructor etc
-    TYPE(MvecRingBuffer)(const TYPE(MvecRingBuffer)&);
-    const TYPE(MvecRingBuffer)& operator=(const TYPE(MvecRingBuffer)&);
-};
-
+#include "phist_pgmres_helper_def.hpp"
 
 // create new state objects. We just get an array of (NULL-)pointers
 void SUBR(pgmresStates_create)(TYPE(pgmresState_ptr) state[], int numSys, const_map_ptr_t map, int maxBas,int* ierr)
@@ -90,14 +14,18 @@ void SUBR(pgmresStates_create)(TYPE(pgmresState_ptr) state[], int numSys, const_
   PHIST_CHK_IERR(phist_map_get_comm(map,&comm,ierr),*ierr);
 
   // setup buffer of mvecs to be used later
+#ifdef PHIST_HAVE_BELOS
+  Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff(new TYPE(MvecRingBuffer)(maxBas+1));
+#else
   TYPE(MvecRingBuffer)* mvecBuff = new TYPE(MvecRingBuffer)(maxBas+1);
+#endif
   PHIST_CHK_IERR( mvecBuff->create_mvecs(map, numSys, ierr), *ierr);
 
   // set up individual states
   for(int i = 0; i < numSys; i++)
   {
     // initialization data for the next state
-    TYPE(pgmresState) tmp = {i,(_MT_)0.5,-2,0,-1,0,NULL,NULL,NULL,NULL,NULL,-mt::one(),-mt::one(),NULL};
+    TYPE(pgmresState) tmp = {i,(_MT_)0.5,-2,0,-1,0,NULL,NULL,NULL,NULL,NULL,-mt::one(),-mt::one(),st::zero(),NULL};
 
     // create state
     state[i] = new TYPE(pgmresState)(tmp);
@@ -109,9 +37,13 @@ void SUBR(pgmresStates_create)(TYPE(pgmresState_ptr) state[], int numSys, const_
     state[i]->sn_ = new ST[maxBas];
     state[i]->rs_ = new ST[maxBas+1];
 
-    // assign MvecRingBuffer
+#ifdef PHIST_HAVE_BELOS
+    // assign MvecRingBuffer (with reference counting)
+    state[i]->Vbuff = (void*) new Teuchos::RCP<TYPE(MvecRingBuffer)>(mvecBuff);
+#else
     // TODO - check memory management, this used to be an RCP
     state[i]->Vbuff = (void*)mvecBuff;
+#endif
   }
 }
 
@@ -121,12 +53,14 @@ void SUBR(pgmresStates_delete)(TYPE(pgmresState_ptr) state[], int numSys, int* i
 {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
+#ifndef PHIST_HAVE_BELOS
   if (numSys==0) return;
   
     CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, state[0]->Vbuff, *ierr);    
     PHIST_CHK_IERR(mvecBuff->delete_mvecs(ierr), *ierr);
     
     delete mvecBuff;
+#endif
 
   for(int i = 0; i < numSys; i++)
   {
@@ -135,6 +69,11 @@ void SUBR(pgmresStates_delete)(TYPE(pgmresState_ptr) state[], int numSys, int* i
     delete [] state[i]->cs_;
     delete [] state[i]->sn_;
     delete [] state[i]->rs_;
+#ifdef PHIST_HAVE_BELOS
+    CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuff, state[i]->Vbuff, *ierr);
+    PHIST_CHK_IERR((*mvecBuff)->delete_mvecs(ierr), *ierr);
+    delete mvecBuff;
+#endif
     delete state[i];
   }
 }
@@ -148,7 +87,12 @@ void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b, TY
   *ierr=0;
 
   // get mvecBuff
+#ifdef PHIST_HAVE_BELOS
+  CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S->Vbuff, *ierr);
+  Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
+#else
   CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S->Vbuff, *ierr);
+#endif
 
   // release mvecs currently marked used by this state
   for(int j = 0; j < S->curDimV_; j++)
@@ -192,6 +136,7 @@ void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b, TY
     if( S->normR0_ < mt::zero() )
       S->normR0_ = S->normR_;
     S->rs_[0] = S->normR_;
+    S->prevBeta_ = S->normR_;
 
     S->lastVind_ = mvecBuff->lastIndex();
     S->curDimV_ = 1;
@@ -211,6 +156,7 @@ void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b, TY
     S->lastVind_ = mvecBuff->lastIndex();
     PHIST_CHK_IERR(SUBR( mvec_set_block ) (mvecBuff->at(S->lastVind_), x0, S->id, S->id, ierr), *ierr);
     mvecBuff->incRef(S->lastVind_);
+    S->prevBeta_ = st::zero();
   }
 
   // update status
@@ -243,13 +189,23 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
   for(int i = 0; i < numSys; i++)
     PHIST_CHK_IERR(*ierr = (S[i]->lastVind_ != lastVind) ? -1 : 0, *ierr);
 
+#ifdef PHIST_HAVE_BELOS
+  CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *ierr);
+  Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
+#else
   CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S[0]->Vbuff, *ierr);
+#endif
 
   // make sure all systems use the same mvecBuff
   for(int i = 0; i < numSys; i++)
   {
+#ifdef PHIST_HAVE_BELOS
+    CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *ierr);
+    PHIST_CHK_IERR(*ierr = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *ierr);
+#else
     CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuffPtr_i, S[i]->Vbuff, *ierr);
     PHIST_CHK_IERR(*ierr = (mvecBuffPtr_i != mvecBuff) ? -1 : 0, *ierr);
+#endif
   }
 
   // determine maximal and shared (minimal) dimensions of subspaces
@@ -437,13 +393,23 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[
   for(int i = 0; i < numSys; i++)
     minId = std::min(minId,S[i]->id);
 
+#ifdef PHIST_HAVE_BELOS
+  CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *ierr);
+  Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
+#else
   CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S[0]->Vbuff, *ierr);
+#endif
 
   // make sure all systems use the same mvecBuff
   for(int i = 0; i < numSys; i++)
   {
+#ifdef PHIST_HAVE_BELOS
+    CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *ierr);
+    PHIST_CHK_IERR(*ierr = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *ierr);
+#else
     CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuffPtr_i, S[i]->Vbuff, *ierr);
     PHIST_CHK_IERR(*ierr = (mvecBuffPtr_i != mvecBuff) ? -1 : 0, *ierr);
+#endif
   }
 
   // determine maximal and shared (minimal) dimensions of subspaces
@@ -470,10 +436,10 @@ void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[
 
 #ifdef TESTING
 // print a visualization of the current state
-std::vector<bool> mvecUsedBy[maxId+1];
+std::vector< std::vector<int> > mvecUsedBy(maxId+1);
 for(int i = 0; i < maxId+1; i++)
   mvecUsedBy[i].resize(mvecBuff->size(),false);
-std::vector<bool> idUsed(maxId+1,false);
+std::vector<int> idUsed(maxId+1,false);
 for(int i = 0; i < numSys; i++)
 {
   idUsed[S[i]->id] = true;
@@ -730,6 +696,35 @@ PHIST_SOUT(PHIST_INFO,"\n");
       //PHIST_SOUT(PHIST_INFO,"\n");
     //}
   }
+}
+// check arnoldi/krylov property for last (untransformed row of H): AV_k = V_(k+1) * H_(k+1,k)
+{
+  TYPE(mvec_ptr) tmpVec = NULL, tmpVec_ = NULL;
+  const_map_ptr_t map;
+  PHIST_CHK_IERR(SUBR(mvec_get_map)(work_y, &map, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&tmpVec_, map, maxId+1, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, minId, maxId, ierr), *ierr);
+  PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_x, st::zero(), tmpVec, ierr), *ierr);
+  for(int i = 0; i < numSys; i++)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, S[i]->id, S[i]->id, ierr), *ierr);
+    ST *Hj=NULL;
+    lidx_t ldH; 
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
+    Hj += (S[i]->curDimV_-1)*ldH;
+    PHIST_SOUT(PHIST_INFO,"accuracy of last column of H of system %d:\n", i);
+    for(int j = 0; j < S[i]->curDimV_; j++)
+    {
+      int Vjind = mvecBuff->prevIndex(nextIndex,S[i]->curDimV_-j);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vjind), &Vj, S[i]->id, S[i]->id, ierr), *ierr);
+      _ST_ Hnj;
+      PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(Vj, tmpVec, &Hnj, ierr), *ierr);
+      PHIST_SOUT(PHIST_INFO,"\t%8.4e", st::abs(Hj[j]-Hnj));
+    }
+    PHIST_SOUT(PHIST_INFO,"\n");
+  }
+  PHIST_CHK_IERR(SUBR(mvec_delete)(tmpVec, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(tmpVec_, ierr), *ierr);
 }
 #endif
 

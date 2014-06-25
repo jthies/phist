@@ -19,10 +19,6 @@
 #include ${PHIST_TG_HFILE}
 #include "phist_ScalarTraits.hpp"
 
-#ifdef PHIST_TIMEMONITOR
-#include <Teuchos_TimeMonitor.hpp>
-#endif
-
 typedef phist::ScalarTraits<_ST_> st;
 
 // small c++ string helper function
@@ -100,20 +96,10 @@ int main(int argc, char** argv)
 
   PHIST_ICHK_IERR(SUBR(mvec_random)(x,&ierr),ierr);
 
-#ifdef PHIST_TIMEMONITOR
-  Teuchos::RCP<Teuchos::Time> time = Teuchos::TimeMonitor::getNewTimer("crsMat_times_mvec");
-#endif
   for(int i = 0; i < 120/nvecs; i++)
   {
-#ifdef PHIST_TIMEMONITOR
-    Teuchos::TimeMonitor timeMon( *time );
-#endif
     PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(st::one(),A,x,st::zero(),y,&ierr),ierr);
-
   }
-#ifdef PHIST_TIMEMONITOR
-  Teuchos::TimeMonitor::summarize();
-#endif
   PHIST_ICHK_IERR(SUBR(mvec_delete)(x,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(y,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(crsMat_delete)(A,&ierr),ierr);

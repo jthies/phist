@@ -6,9 +6,16 @@
  *
  */
 
+#include "phist_config.h"
+/* needs to be included before system headers for some intel compilers+mpi */
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
 #ifdef PHIST_HAVE_PARMETIS
 
 #include <parmetis.h>
+#include <stdlib.h>
 
 /*! wrapper for parmetis, so it can be called from fortran:<br>
  * it is necessary to convert the mpi communicator from c

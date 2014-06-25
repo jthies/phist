@@ -11,17 +11,17 @@ subroutine dgemm_sB_1_k(nrows,k,alpha, A, B, beta, C)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       C(:,i) = 0.
-      do j = 1, k
+      do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       C(:,i) = beta*C(:,i)
-      do j = 1, k
+      do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
     end do
@@ -40,17 +40,17 @@ subroutine dgemm_sB_2_k(nrows,k,alpha, A, B, beta, C)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       C(:,i) = 0.
-      do j = 1, k
+      do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       C(:,i) = beta*C(:,i)
-      do j = 1, k
+      do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
     end do
@@ -69,17 +69,17 @@ subroutine dgemm_sB_4_k(nrows,k,alpha, A, B, beta, C)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       C(:,i) = 0.
-      do j = 1, k
+      do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       C(:,i) = beta*C(:,i)
-      do j = 1, k
+      do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
     end do
@@ -98,17 +98,17 @@ subroutine dgemm_sB_8_k(nrows,k,alpha, A, B, beta, C)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       C(:,i) = 0.
-      do j = 1, k
+      do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       C(:,i) = beta*C(:,i)
-      do j = 1, k
+      do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
     end do
@@ -129,15 +129,15 @@ subroutine dgemm_sB_k_1(nrows,n,alpha, A, B, beta, C)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
-      do j = 1, n
+    do i = 1, nrows, 1
+      do j = 1, n, 1
         C(j,i) = alpha*sum(B(:,j)*A(:,i))
       end do
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
-      do j = 1, n
+    do i = 1, nrows, 1
+      do j = 1, n, 1
         C(j,i) = beta*C(j,i) + alpha*sum(B(:,j)*A(:,i))
       end do
     end do
@@ -156,15 +156,15 @@ subroutine dgemm_sB_k_2(nrows,n,alpha, A, B, beta, C)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
-      do j = 1, n
+    do i = 1, nrows, 1
+      do j = 1, n, 1
         C(j,i) = alpha*sum(B(:,j)*A(:,i))
       end do
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
-      do j = 1, n
+    do i = 1, nrows, 1
+      do j = 1, n, 1
         C(j,i) = beta*C(j,i) + alpha*sum(B(:,j)*A(:,i))
       end do
     end do
@@ -183,15 +183,15 @@ subroutine dgemm_sB_k_4(nrows,n,alpha, A, B, beta, C)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
-      do j = 1, n
+    do i = 1, nrows, 1
+      do j = 1, n, 1
         C(j,i) = alpha*sum(B(:,j)*A(:,i))
       end do
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
-      do j = 1, n
+    do i = 1, nrows, 1
+      do j = 1, n, 1
         C(j,i) = beta*C(j,i) + alpha*sum(B(:,j)*A(:,i))
       end do
     end do
@@ -211,15 +211,15 @@ subroutine dgemm_sB_k_8(nrows,n,alpha, A, B, beta, C)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
-      do j = 1, n
+    do i = 1, nrows, 1
+      do j = 1, n, 1
         C(j,i) = alpha*sum(B(:,j)*A(:,i))
       end do
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
-      do j = 1, n
+    do i = 1, nrows, 1
+      do j = 1, n, 1
         C(j,i) = beta*C(j,i) + alpha*sum(B(:,j)*A(:,i))
       end do
     end do
@@ -239,17 +239,17 @@ subroutine dgemm_sB_strided_1_k(nrows,k,alpha, A, lda, B, beta, C)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       C(:,i) = 0.
-      do j = 1, k
+      do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       C(:,i) = beta*C(:,i)
-      do j = 1, k
+      do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
     end do
@@ -268,17 +268,17 @@ subroutine dgemm_sB_strided_2_k(nrows,k,alpha, A, lda, B, beta, C)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       C(:,i) = 0.
-      do j = 1, k
+      do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       C(:,i) = beta*C(:,i)
-      do j = 1, k
+      do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
     end do
@@ -297,17 +297,17 @@ subroutine dgemm_sB_strided_4_k(nrows,k,alpha, A, lda, B, beta, C)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       C(:,i) = 0.
-      do j = 1, k
+      do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       C(:,i) = beta*C(:,i)
-      do j = 1, k
+      do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
     end do
@@ -326,17 +326,17 @@ subroutine dgemm_sB_strided_8_k(nrows,k,alpha, A, lda, B, beta, C)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       C(:,i) = 0.
-      do j = 1, k
+      do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       C(:,i) = beta*C(:,i)
-      do j = 1, k
+      do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
     end do
@@ -357,15 +357,15 @@ subroutine dgemm_sB_strided_k_1(nrows,n,alpha, A, B, beta, C, ldC)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
-      do j = 1, n
+    do i = 1, nrows, 1
+      do j = 1, n, 1
         C(j,i) = alpha*sum(B(:,j)*A(:,i))
       end do
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
-      do j = 1, n
+    do i = 1, nrows, 1
+      do j = 1, n, 1
         C(j,i) = beta*C(j,i) + alpha*sum(B(:,j)*A(:,i))
       end do
     end do
@@ -384,15 +384,15 @@ subroutine dgemm_sB_strided_k_2(nrows,n,alpha, A, B, beta, C, ldC)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
-      do j = 1, n
+    do i = 1, nrows, 1
+      do j = 1, n, 1
         C(j,i) = alpha*sum(B(:,j)*A(:,i))
       end do
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
-      do j = 1, n
+    do i = 1, nrows, 1
+      do j = 1, n, 1
         C(j,i) = beta*C(j,i) + alpha*sum(B(:,j)*A(:,i))
       end do
     end do
@@ -411,15 +411,15 @@ subroutine dgemm_sB_strided_k_4(nrows,n,alpha, A, B, beta, C, ldC)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
-      do j = 1, n
+    do i = 1, nrows, 1
+      do j = 1, n, 1
         C(j,i) = alpha*sum(B(:,j)*A(:,i))
       end do
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
-      do j = 1, n
+    do i = 1, nrows, 1
+      do j = 1, n, 1
         C(j,i) = beta*C(j,i) + alpha*sum(B(:,j)*A(:,i))
       end do
     end do
@@ -439,15 +439,15 @@ subroutine dgemm_sB_strided_k_8(nrows,n,alpha, A, B, beta, C, ldC)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
-      do j = 1, n
+    do i = 1, nrows, 1
+      do j = 1, n, 1
         C(j,i) = alpha*sum(B(:,j)*A(:,i))
       end do
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
-      do j = 1, n
+    do i = 1, nrows, 1
+      do j = 1, n, 1
         C(j,i) = beta*C(j,i) + alpha*sum(B(:,j)*A(:,i))
       end do
     end do
@@ -470,15 +470,15 @@ subroutine dgemm_sB_generic(m,n,k,alpha,A,lda,B,beta,C,ldc)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, m
-      do j = 1, n
+    do i = 1, m, 1
+      do j = 1, n, 1
         C(j,i) = alpha*sum(B(:,j)*A(1:k,i))
       end do
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, m
-      do j = 1, n
+    do i = 1, m, 1
+      do j = 1, n, 1
         C(j,i) = beta*C(j,i) + alpha*sum(B(:,j)*A(1:k,i))
       end do
     end do
@@ -496,8 +496,8 @@ subroutine dgemm_sB_generic_inplace(m,n,k,A,lda,B)
   real(kind=8) :: work(n)
 
 !$omp parallel do private(work) schedule(static)
-  do i = 1, m
-    do j = 1, n
+  do i = 1, m, 1
+    do j = 1, n, 1
       work(j) = sum(A(1:k,i)*B(:,j))
     end do
     A(1:n,i) = work(:)

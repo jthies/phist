@@ -194,7 +194,7 @@ idx_t bitcount(idx_t i){
 	}
 
 
-int SpinChainSZ( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *vals ){
+int SpinChainSZ( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *vals){
 
 	static ghost_idx_t L   = 0;
 	static ghost_idx_t NUp = 0;
@@ -297,8 +297,8 @@ int SpinChainSZ( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *val
 		 }
 		
 		cols_error_check( Ns , row, *nnz, cols );
-		cols_qsort( cols, vals , sizeof(double) ,  *nnz );
-		return 0;
+		//cols_qsort( cols, vals , sizeof(double) ,  *nnz );
+    return 0;
 		
 	}else if( row == -1 ){
 		
@@ -393,7 +393,7 @@ int SpinChainSZ( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *val
 		
 		printf("\n");
 #endif
-		return 0;
+    return 0;
 	}
 	
 	else if( row == -3 ){
@@ -403,7 +403,7 @@ int SpinChainSZ( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *val
 		free(cnt);
 		free(revcnt);
 		//free(imask);
-		return 0;
+    return 0;
 	}
 
 	printf("SpinChainSZ(): error in row %"PRIDX"\n",row);
@@ -479,7 +479,7 @@ int crsSpinChain( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *va
 			}
 		}
 		
-		cols_qsort( cols, vals , sizeof(double) ,  *nnz );
+		//cols_qsort( cols, vals , sizeof(double) ,  *nnz );
 		return 0;
 		
 	}

@@ -37,6 +37,7 @@ enable_language (C)
 enable_language (CXX)
 enable_language (Fortran)
 
+
 ##############################################################################
 # compiler-dependent flags 
 ##############################################################################
@@ -48,44 +49,50 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 
   message(STATUS "using GNU compiler flags")
   set (CMAKE_C_FLAGS "-fopenmp -std=c99")
-  set (CMAKE_C_FLAGS_RELEASE "-O3 -ffast-math -march=native -fopenmp")
-  set (CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g -fopenmp")
+  set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O3 -ffast-math -march=native")
+  set (CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -O2 -g")
   if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
-    set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+    set (CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS} -dH -O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
   else ()
-    set (CMAKE_C_FLAGS_DEBUG   "-dH -O0 -g -fstack-protector-all -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS} -dH -O0 -g -fstack-protector-all -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
   endif ()
 
   set (CMAKE_CXX_FLAGS "-fopenmp")
-  set (CMAKE_CXX_FLAGS_RELEASE "-O2 -fopenmp")
-  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -fopenmp")
+  set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O2")
+  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS} -O2")
   if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
-    set (CMAKE_CXX_FLAGS_DEBUG   "-dH -O0 -g -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+    set (CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS} -dH -O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
   else ()
-    set (CMAKE_CXX_FLAGS_DEBUG   "-dH -O0 -g -fstack-protector-all -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS} -dH -O0 -g -fstack-protector-all -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
   endif ()
 
   set (CMAKE_Fortran_FLAGS "-fopenmp -cpp -ffree-line-length-none")
-  set (CMAKE_Fortran_FLAGS_RELEASE "-march=native -O3 -ffast-math -fopenmp -cpp")
-  set (CMAKE_Fortran_FLAGS_DEBUG "-dH -O0 -g -DTESTING -fopenmp -Wall -fcheck=all -fstack-protector-all")
+  set (CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS} -march=native -O3 -ffast-math")
+  set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -dH -O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all")
 
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
   message(STATUS "using INTEL compiler flags")
   set (CMAKE_C_FLAGS "-openmp -Wno-unused-variable -mkl -std=c99")
-  set (CMAKE_C_FLAGS_RELEASE "-O3 -xHOST -no-prec-div")
-  set (CMAKE_C_FLAGS_DEBUG "-check=uninit,stack -debug -DTESTING")
+  set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O3 -xHOST -no-prec-div")
+  set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -check=uninit,stack -fstack-protector -check-pointers=rw -check-pointers-dangling=all -check-pointers-undimensioned -w2 -debug -traceback -DTESTING")
 
   set (CMAKE_CXX_FLAGS "-openmp -Wno-unused-variable -mkl")
-  set (CMAKE_CXX_FLAGS_RELEASE "-O3 -xHOST -no-prec-div")
-  set (CMAKE_CXX_FLAGS_DEBUG "-check=uninit,stack -debug -DTESTING")
+  set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -xHOST -no-prec-div")
+  set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -check=uninit,stack -fstack-protector -check-pointers=rw -check-pointers-dangling=all -check-pointers-undimensioned -w2 -debug -traceback -DTESTING")
 
   set (CMAKE_Fortran_FLAGS "-openmp -fpp -mkl")
-  set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -xHOST -no-prec-div")
-  set (CMAKE_Fortran_FLAGS_DEBUG "-check all -debug")
+  set (CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS} -O3 -xHOST -no-prec-div")
+  set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -check all -warn all -debug -traceback -DTESTING")
 
   # for ipo
-  set_property(DIRECTORY . PROPERTY INTERPROCEDURAL_OPTIMIZATION 1)
+  # melven: probably not useful or even dangerous?
+  #  kernel routines should probably best optimized individually;
+  #  for fortran: I'm passing arrays as scalars in fortran (call by reference),
+  #               because the kernel routines would be too complex otherwise
+  #               (and they should be fast and not complex!).
+  #               The compiler best shouldn't be able to know about this...
+  #set_property(DIRECTORY . PROPERTY INTERPROCEDURAL_OPTIMIZATION 1)
 
 else()
 
@@ -95,7 +102,8 @@ else()
 endif ()
 
 
-# append output level to C and C++ flags
+# append output level to C, C++ and Fortran flags
+# remark(melven): we could also use add_definitions here..
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DPHIST_OUTLEV=${OUTLEV_DEBUG}")
@@ -103,6 +111,10 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DPHIST_OUTLEV=${OUTLEV_DEBUG}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DPHIST_OUTLEV=${OUTLEV_DEBUG}")
+
+set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
+set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELWITHDEBINFO} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
+set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -DPHIST_OUTLEV=${OUTLEV_DEBUG}")
 
 ##############################################################################
 # set enable precision?
@@ -119,13 +131,13 @@ if (${PHIST_ENABLE_MPI})
 #TODO - what is the best way to do this portably?
   find_package(MPI REQUIRED)
   if (${MPI_FOUND})
-    set (CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS})
-    set (CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS})
-    set (CMAKE_C_COMPILE_FLAGS ${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS})
-    set (CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS})
-    set (CMAKE_Fortran_COMPILE_FLAGS ${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COMPILE_FLAGS})
-    set (CMAKE_Fortran_LINK_FLAGS ${CMAKE_Fortran_LINK_FLAGS} ${MPI_Fortran_LINK_FLAGS})
-    include_directories (${MPI_INCLUDE_PATH})
+#    set (CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS})
+#    set (CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS})
+#    set (CMAKE_C_COMPILE_FLAGS ${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS})
+#    set (CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS})
+#    set (CMAKE_Fortran_COMPILE_FLAGS ${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COMPILE_FLAGS})
+#    set (CMAKE_Fortran_LINK_FLAGS ${CMAKE_Fortran_LINK_FLAGS} ${MPI_Fortran_LINK_FLAGS})
+#    include_directories (${MPI_INCLUDE_PATH})
   else()
     message(WARNING "could not find MPI. Trying to compile anyway, presuming the compiler/linker knows where to find it.")
   endif()
@@ -217,6 +229,7 @@ set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp)
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_pgmres.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_pminres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_belos.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp)
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
@@ -251,12 +264,7 @@ list(APPEND PHIST_LIBS phist_kernels_${PHIST_KERNEL_LIB})
 list(APPEND PHIST_LIBS phist_tools)
 
 if(PHIST_KERNEL_LIB STREQUAL "ghost")
-  find_package(GHOST CONFIG)
-else()
-  find_package(GHOST CONFIG)
-endif()  
-  
-if (GHOST_FOUND)
+  find_package(GHOST REQUIRED CONFIG)
   message(STATUS "Found GHOST ${GHOST_VERSION}")
   set(PHIST_HAVE_GHOST 1)
   include_directories(${GHOST_INCLUDE_DIRS})
@@ -269,7 +277,7 @@ if(PHIST_KERNEL_LIB STREQUAL "fortran")
   find_package(ParMETIS)
 
   if(PARMETIS_FOUND)
-    set(-DPHIST_HAVE_PARMETIS 1)
+    set(PHIST_HAVE_PARMETIS On)
     include_directories(${PARMETIS_INCLUDE_DIRS})
     link_directories(${PARMETIS_LIBRARY_DIRS})
     list(APPEND PHIST_LIBS ${PARMETIS_LIBRARIES})
@@ -293,12 +301,13 @@ else()
   message(STATUS "continuing without Likwid, you can set the environment variable LIKWID_HOME to help CMake find it")
 endif()
 
-set(PHIST_TIMEMONITOR Off CACHE BOOL "Gather detailed function-level timings using the TimeMonitor class from the Trilinos package Belos")
+set(PHIST_TIMEMONITOR On CACHE BOOL "Gather detailed function-level timings")
 if( ${PHIST_TIMEMONITOR} )
-  if(NOT "${PHIST_HAVE_BELOS}" EQUAL 1)
-    message(FATAL_ERROR "TimeMonitor requires the Belos package from Trilinos!")
-  endif()
   message(STATUS "activated TimeMonitor timing monitoring")
+endif()
+set(PHIST_TIMEMONITOR_PERLINE Off CACHE BOOL "Gather timing information for each line with a PHIST_CHK_* macro!")
+if( ${PHIST_TIMEMONITOR_PERLINE} )
+  message(WARNING "activated line-based TimeMonitor")
 endif()
 
 configure_file ("${PROJECT_SOURCE_DIR}/src/phist_config.h.in" "${PROJECT_BINARY_DIR}/phist_config.h")
@@ -320,7 +329,7 @@ foreach(PKG ${LOAD_TRILI_PKG})
 endforeach()
 
 list(APPEND PHIST_LIBS ${LAPACK_LIBS})
-list(APPEND PHIST_LIBS ${MPI_CXX_LIBRARIES})
+#list(APPEND PHIST_LIBS ${MPI_CXX_LIBRARIES})
 
 message(STATUS "all libraries: ${PHIST_LIBS}")
 

@@ -17,7 +17,7 @@ subroutine crsmat_norms_ai2i(nshifts, nlocal, nnz, row_ptr, &
   real(kind=8) :: tmp
 
 !$omp parallel do private(tmp) schedule(static)
-  do i = 1,nlocal
+  do i = 1,nlocal, 1
     ! for off-diagonal elements, add aij^2 to tmp.
     ! for diagonal element, the term we need is
     ! (aii-s[j])^2 = (aii-(sr[j]+i*si[j]))(aii-(sr[j]-i*si[j]))
