@@ -31,11 +31,12 @@ extern "C" void colpack_v1_0_8(int nrows, int64_t* row_ptr, int64_t* nonlocal_pt
   // ... all the way, so we just need a single object to represent the graph and the ordering 
   // and everything
   ColPack::GraphColoring GC;
-  
+
   // the input format this package accepts is called "ADOL-C compressed row". I have
   // looked in an obscure paper, ADOL-C is something about automatic differentiation
   // and tapes, and their format is this:
-  uint32_t* adolc[nrows]; // each of these pointers points to row i, but 
+  uint32_t** adolc = new uint32_t*[nrows]; 
+                          // each of these pointers points to row i, but 
                           // entry 0 is the length of row i, so we need to
                           // re-allocate and copy instead of passing in CRS
 
@@ -46,12 +47,14 @@ extern "C" void colpack_v1_0_8(int nrows, int64_t* row_ptr, int64_t* nonlocal_pt
  {
    nzloc+=nonlocal_ptr[i]-row_ptr[i];
  }
- uint32_t adolc_data[nzloc+nrows];
+
+ uint32_t *adolc_data=new uint32_t[nzloc+nrows];
+
 //#pragma omp parallel for schedule(static)
- for (int64_t i=0;i<nrows;i++)
+ for (int i=0;i<nrows;i++)
  {
    // +i because we store the row length in pos 0 of each row
-   uint32_t pos=row_ptr[i]-row_ptr[0]+i; 
+   int64_t pos=row_ptr[i]-row_ptr[0]+i; 
    adolc[i]=&(adolc_data[pos]);
    adolc_data[pos++]=nonlocal_ptr[i]-row_ptr[i];
    for (int j=row_ptr[i];j<nonlocal_ptr[i];j++)
@@ -61,6 +64,9 @@ extern "C" void colpack_v1_0_8(int nrows, int64_t* row_ptr, int64_t* nonlocal_pt
  }
 
   int i_HighestDegree = GC.BuildGraphFromRowCompressedFormat(adolc, nrows);
+  
+  delete [] adolc_data;
+  delete [] adolc;
 
   if (dist==1)
   {
