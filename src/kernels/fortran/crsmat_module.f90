@@ -942,12 +942,34 @@ end do
       end if
  
     ierr=0
+    
+    ! adjust colors to 1-based indexing
+    colors(1:crsMat%nRows)=colors(1:crsMat%nRows)+1
 
     ! count number of members in each color set
     allocate(colorCount(ncolors))
-    
+    colorCount(1:ncolors)=0
     do i=1,crsMat%nRows
-!      colorCount(colors(i))=colorCount(colors(i))+1
+      colorCount(colors(i))=colorCount(colors(i))+1
+    end do
+    ! allocate the color arrays in the map of A and fill them.
+    ! They are deleted when the map is deleted.
+    crsMat%row_map%coloringType=2
+    crsMat%row_map%nColors=ncolors
+    allocate(crsMat%row_map%color_offset(ncolors+1))
+    allocate(crsMat%row_map%color_idx(crsMat%nRows))
+    
+    crsMat%row_map%color_offset(1)=1
+    do i=1,ncolors
+      crsMat%row_map%color_offset(i+1) = &
+      crsMat%row_map%color_offset(i)   +colorCount(i)
+    end do
+
+    colorCount(1:ncolors)=0
+    do i=1,crsMat%nRows
+      j=crsMat%row_map%color_offset(colors(i))+colorCount(colors(i))
+      colorCount(colors(i))=colorCount(colors(i))+1
+      crsMat%row_map%color_idx(j)=i
     end do
 
     deallocate(colorCount)
@@ -970,12 +992,20 @@ end do
           write(42,*) colors(i)
         end do
         write(42,*) '];'
+        write(42,*) 'color_ptr=[...'
+                do i=1,crsMat%row_map%nColors+1
+          write(42,*) crsMat%row_map%color_offset(i)
+        end do
+        write(42,*) '];'
+        write(42,*) 'color_idx=[...'
+                do i=1,crsMat%nRows
+          write(42,*) crsMat%row_map%color_idx(i)
+        end do
+        write(42,*) '];'
         flush(42)
         close(42)
 #endif
-      
-
-        
+              
     end subroutine colorcrs
 
 #endif
@@ -1865,6 +1895,7 @@ end do
           !write(*,*) 'kacz (f)'
           call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+                A%row_map,&
                 shifts_r(iSys),shifts_i(iSys), &
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
@@ -1876,6 +1907,7 @@ end do
           !write(*,*) 'kacz (f), rhs=0'
           call dkacz_bzero_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+                A%row_map,&
                 shifts_r(iSys),shifts_i(iSys), &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
                 A%comm_buff%recvData(     1:  nvec,:),&
@@ -1901,6 +1933,7 @@ end do
           !write(*,*) 'kacz (b)'
           call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+                A%row_map,&
                 shifts_r(iSys),shifts_i(iSys), &
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
@@ -1912,6 +1945,7 @@ end do
           !write(*,*) 'kacz (b), rhs=0'
           call dkacz_bzero_generic(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+                A%row_map, &
                 shifts_r(iSys),shifts_i(iSys), &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
                 A%comm_buff%recvData(     1:  nvec,:),&                

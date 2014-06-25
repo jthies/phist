@@ -18,6 +18,21 @@ module map_module
     integer :: me
     integer(kind=8), allocatable :: distrib(:)
     integer,         allocatable :: nlocal(:)
+    
+    ! the may map contain coloring information:
+    ! to access the elements of a vector (or rows of
+    ! a matrix) one color at a time, do something like
+    ! this:
+    !
+    ! do ic=1,map%nColors
+    !   do jc=map%color_offset(ic),map%color_offset(ic+1)-1
+    !     x(map%color_idx(jc))=...
+    !
+    ! This module just sets map%nColors to 0 and leaves the arrays unallocated
+    ! but deletes them if they are allocated in map_delete().
+    integer :: coloringType
+    integer :: nColors
+    integer,         allocatable :: color_offset(:), color_idx(:)
   end type Map_t
 
 contains
@@ -69,6 +84,9 @@ flush(6)
       ierr = 0
     end if
 
+  map%nColors=0
+  map%coloringType=0
+
   end subroutine map_setup
 
 
@@ -106,6 +124,18 @@ flush(6)
     !------------------------------------------------------------
 
     call c_f_pointer(map_ptr, map)
+    if (allocated(map%distrib)) then
+      deallocate(map%distrib)
+    end if
+    if (allocated(map%nlocal)) then
+      deallocate(map%nlocal)
+    end if
+    if (allocated(map%color_offset)) then
+      deallocate(map%color_offset)
+    end if
+    if (allocated(map%color_idx)) then
+      deallocate(map%color_idx)
+    end if
     deallocate(map)
     ierr = 0
   end subroutine phist_map_delete
