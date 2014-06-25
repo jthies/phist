@@ -44,7 +44,7 @@
                 MPI_Comm_size(MPI_COMM_WORLD,&PHIST_OUT_np);\
                 } else {PHIST_OUT_me=0; PHIST_OUT_np=1;}\
                 if (PHIST_OUT_np>1) \
-                {fprintf(PHIST_OUT_out,"PE%d: "msg,PHIST_OUT_me,##__VA_ARGS__);}\
+                {fprintf(PHIST_OUT_out,"PE%d: " msg,PHIST_OUT_me,##__VA_ARGS__);}\
                 else \
                 {fprintf(PHIST_OUT_out,msg,##__VA_ARGS__);}\
                 fflush(PHIST_OUT_out);\
