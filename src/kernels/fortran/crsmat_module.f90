@@ -1675,10 +1675,10 @@ end do
       ierr = -88
       return
     end if
-write(*,*) 'numShifts=',numShifts
-do i=1,numShifts
-  write(*,*) shifts_r(i),' + i',shifts_i(i)
-end do
+!write(*,*) 'numShifts=',numShifts
+!do i=1,numShifts
+!  write(*,*) shifts_r(i),' + i',shifts_i(i)
+!end do
 
     call c_f_pointer(A_ptr,A)
     theShape(1)=A%nRows
@@ -1707,6 +1707,11 @@ end do
         A%row_offset, A%val, shifts_r,shifts_i,nrms_ai2i)
     ! work is not used
     work_ptr=c_null_ptr
+    
+    if (A%row_map%me==0 .and. A%row_map%coloringType==2) then
+      write(6,*) 'CARP will exploit local dist-2 coloring'
+      flush(6)
+    end if
 
   end subroutine phist_Dcarp_setup
 

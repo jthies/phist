@@ -74,13 +74,6 @@ subroutine dkacz_generic(nvec, nlocal, nhalo, ncols, nnz, &
                   (map%coloringType==2) .and. &
                   ((istep==1) .or. (istep==-1))
 
-  write(*,*) 'use_clr_kernel=',use_clr_kernel
-  write(*,*) 'map%nColors=',map%nColors
-  write(*,*) 'map%coloringType=',map%coloringType
-  write(*,*) 'istep=',istep
-  write(*,*) 'istart=',istart
-  write(*,*) 'iend=',iend
-
   if (use_clr_kernel) then
     if (istep==1) then
       istart_clr = 1
@@ -89,7 +82,6 @@ subroutine dkacz_generic(nvec, nlocal, nhalo, ncols, nnz, &
       istart_clr= map%nColors+1
       iend_clr = 2
     end if
-    write(*,*) 'calling generic OpenMP/Coloring kernel'
     call dkacz_generic_clr(nvec, nlocal, nhalo, ncols, nnz, &
         row_ptr, halo_ptr, col_idx, val, map, &
         shift_r,shift_i, b, ldb, &
@@ -99,8 +91,6 @@ subroutine dkacz_generic(nvec, nlocal, nhalo, ncols, nnz, &
 
   ! sequential implementation ignoring coloring information
   ! (lexicographic or given ordering)
-  write(*,*) 'using generic sequential/lexicographic kernel'
-
   do i = istart, iend,istep
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !! compute (shift_j I - A)_i*x

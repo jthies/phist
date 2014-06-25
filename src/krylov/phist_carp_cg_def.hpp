@@ -18,6 +18,7 @@ void SUBR(private_compResid)(TYPE(const_crsMat_ptr) A, int nvec, _ST_ sigma, _MT
                        TYPE(mvec_ptr) r,        TYPE(mvec_ptr) ri,
                        _MT_  *nrms, int *ierr);
 
+// pretty-print convergence history. nvec=0: print header. nvec=-1: print footer
 void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR, 
         _MT_ const* normR0, _MT_ const* normB);
 
@@ -418,6 +419,8 @@ void SUBR(carp_cgStates_iterate)(
         }
         if (numConverged==nvec)
         {
+        // print footer
+        SUBR(private_printResid)(it,-1,NULL,NULL,NULL);
           numSolved++; 
           break;
         }
@@ -634,6 +637,10 @@ void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR,
   if (nvec==0)
   {
     PHIST_SOUT(PHIST_INFO,"%s\tit\t||r||/||b||\t||r||/||r0||\n",carp_label);
+  }
+  else if (nvec==-1)
+  {
+    PHIST_SOUT(PHIST_INFO,"%s\tfinished after %d iterations.\n",carp_label,it);
   }
   else
   {
