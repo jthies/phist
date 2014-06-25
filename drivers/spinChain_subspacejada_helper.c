@@ -1,3 +1,4 @@
+#include "phist_config.h"
 #ifdef PHIST_KERNEL_LIB_GHOST
 
 #include "ghost.h"

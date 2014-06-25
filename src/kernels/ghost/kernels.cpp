@@ -20,7 +20,11 @@
 #include "BelosTsqrOrthoManager.hpp"
 #endif
 #ifdef PHIST_TIMEMONITOR
-#include <Teuchos_TimeMonitor.hpp>
+#include "phist_timemonitor.hpp"
+namespace phist_TimeMonitor
+{
+  Timer::TimeDataMap Timer::_timingResults;
+}
 #endif
 
 #include "phist_GhostMV.hpp"
@@ -92,7 +96,7 @@ void phist_kernels_finalize(int* ierr)
   LIKWID_MARKER_CLOSE;
 #endif
 #ifdef PHIST_TIMEMONITOR
-  Teuchos::TimeMonitor::summarize();
+  phist_TimeMonitor::Timer::summarize();
 #endif
   ghost_finalize();
   *ierr=0;
