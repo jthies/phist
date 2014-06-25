@@ -2,45 +2,42 @@
 extern "C" {
 #endif
 
+//! kernels to implement CARP for the matrix sigma[j]I-A.
+
 //! create data structures needed for subsequent calls to dkswp: 
-//! (1) compute the 2-norm (squared) of each row of sparse matrix A-sigma[j]*I. The
-//! number of shifts sigma is determined by the number of columns in nrms, so nrms 
-//! must be allocated beforehand by the user.
-//! (2) importVec - an import vector. This is allocated internally.
-//! Both nrms and importVec must be deleted by the user when no more calls to dkswp
-//! are desired. If *importVec is not NULL on input, it is deleted and reallocated.
-void SUBR(carp_setup)(TYPE(const_crsMat_ptr) A, _ST_ const sigma[], 
-        Dmvec_t *nrms, TYPE(mvec_ptr)* importVec, int* ierr);
+//! 
+//! input: 
+//!
+//! numShifts: number of shifts sigma 
+//! sigma_r, sigma_i: possibly complex shifts sigma=sigma_r+i*sigma_i
+//!
+//! output:
+//! 
+//! *nrms_ai2i and *work should be NULL on input and not touched while
+//! dkswp is being called. If no longer needed, they should be cleaned
+//! up using carp_destroy.
+//!
+//! If the shifts sigma change, carp_destroy and carp_setup should be
+//! used to rebuild the working objects.
+void SUBR(carp_setup)(TYPE(const_crsMat_ptr) A, int numShifts, 
+        _MT_ const sigma_r[], _MT_ const sigma_i[],
+        _MT_ **nrms_ai2i, void** work, int* ierr);
 
 //! forward/backward sweep of Kaczmarz/CARP algorithm (SSOR sweep on the normal equations),
-//! with matrix A-sigma[j]*I applied to vector column j. The number of systems is determined 
-//! by the number of columns in  X, and all other in/out args must have compatible number of 
-//! cols/entries.
-void SUBR(dkswp)(TYPE(const_crsMat_ptr) A, _ST_ const sigma[], 
-        TYPE(const_mvec_ptr) Rhs, TYPE(mvec_ptr) X, 
-        Dmvec_t const*  nrm_ai2, TYPE(mvec_ptr) importVec,
+//! with matrix sigma[j]*I-A applied to the columns of mvec X[j] with a single rhs B. The
+//! input arguments nrms_ai2i and work must be unchanged from the _setup routine. For each
+//! shift sigma[j], a separate relaxation parameter omega[j] must be provided.
+void SUBR(dkswp)(TYPE(const_crsMat_ptr) A, int numShifts, 
+        _MT_ const sigma_r[], _MT_ const sigma_i[],
+        TYPE(const_mvec_ptr) Rhs,
+        TYPE(mvec_ptr) X_r[], TYPE(mvec_ptr) X_i[],
+        _MT_ const* nrm_ai2i, void* const work,
         _MT_ const * omega, int* ierr);
 
-// mixed variants: real matrix with complex shifts
-#ifdef IS_COMPLEX
-# ifdef IS_DOUBLE
-void phist_DZcarp_setup(DcrsMat_t const*  A, _ST_ const sigma[], 
-        Dmvec_t* nrms, Zmvec_t** importVec, int* ierr);
+//! clean up data structures created by carp_setup
+void SUBR(carp_destroy)(TYPE(const_crsMat_ptr) A, int numShifts,
+        _MT_* nrms_ai2i, void* work, int *ierr);
 
-void phist_DZdkswp(DcrsMat_t const* A, _ST_ const sigma[], 
-        TYPE(const_mvec_ptr) Rhs, TYPE(mvec_ptr) X, 
-        Dmvec_t const* nrm_ai2, Zmvec_t* importVec,
-        _MT_ const * omega, int* ierr);
-# else
-void phist_SCcarp_setup(ScrsMat_t const*  A, _ST_ const sigma[], 
-        Smvec_t* nrms, Cmvec_t** importVec, int* ierr);
-
-void phist_SCdkswp(ScrsMat_t const* A, _ST_ const sigma[], 
-        TYPE(const_mvec_ptr) Rhs, TYPE(mvec_ptr) X, 
-        Smvec_t const* nrm_ai2, Cmvec_t* importVec,
-        _MT_ const * omega, int* ierr);
-# endif
-#endif
 
 #ifdef __cplusplus
 } //extern "C"

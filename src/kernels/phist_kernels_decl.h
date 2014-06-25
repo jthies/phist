@@ -336,11 +336,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) V,
 
 
 #ifdef PHIST_KERNEL_LIB_FORTRAN
-#ifdef GHOST_HAVE_LONGIDX
-void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, int nrows, int ncols, int maxnne, int (*rowFunPtr)(int64_t,int64_t*,int64_t*,void*), int *ierr);
-#else
-void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, int nrows, int ncols, int maxnne, int (*rowFunPtr)(int32_t,int32_t*,int32_t*,void*), int *ierr);
-#endif
+void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, int nrows, int ncols, int maxnne, void (*rowFunPtr)(int64_t,int64_t*,int64_t*,void*), int *ierr);
 void SUBR(mvec_gather_mvecs)(TYPE(mvec_ptr) V, TYPE(const_mvec_ptr) W[], int nblocks, int *ierr);
 void SUBR(mvec_scatter_mvecs)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W[], int nblocks, int *ierr);
 void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int *ierr);
@@ -349,7 +345,15 @@ void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, i
 
 //!@}
 
-
+//! mixed real/complex operation: split mvec into real and imag part.
+//! if either reV or imV are NULL, it is not touched.
+#ifdef IS_COMPLEX
+# ifdef IS_DOUBLE
+void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Dmvec_t* reV, Dmvec_t* imV, int *ierr);
+# else
+void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* imV, int *ierr);
+# endif
+#endif
 
 #ifdef __cplusplus
 } //extern "C"

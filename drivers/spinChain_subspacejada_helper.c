@@ -1,3 +1,5 @@
+#ifdef PHIST_KERNEL_LIB_GHOST
+
 #include "ghost.h"
 #include "ghost/util.h"
 #include "matfuncs.h"
@@ -12,3 +14,5 @@ void init_mtraits(ghost_sparsemat_traits_t* mtraits)
     newmtraits.datatype = my_datatype_;
     *mtraits = newmtraits;
 }
+
+#endif

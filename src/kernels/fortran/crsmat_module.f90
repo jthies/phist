@@ -1,4 +1,3 @@
-#include "ghost/config.h"
 module crsmat_module
   use map_module, only: Map_t, map_setup
   use mvec_module, only: MVec_t, mvec_scale
@@ -56,20 +55,13 @@ module crsmat_module
 
   !> interface of function-ptr for crsMat_create_fromRowFunc
   abstract interface
-    function matRowFunc(row, nnz, cols, vals) result(ierr)
+    subroutine matRowFunc(row, nnz, cols, vals)
       use, intrinsic :: iso_c_binding
-      integer(C_INT) :: ierr
-#ifdef GHOST_HAVE_LONGIDX
       integer(C_INT64_T), value :: row
       integer(C_INT64_T), intent(inout) :: nnz
       integer(C_INT64_T), intent(inout) :: cols(*)
-#else
-      integer(C_INT32_T), value :: row
-      integer(C_INT32_T), intent(inout) :: nnz
-      integer(C_INT32_T), intent(inout) :: cols(*)
-#endif
       real(C_DOUBLE),     intent(inout) :: vals(*)
-    end function matRowFunc
+    end subroutine matRowFunc
   end interface
 
 contains
@@ -1309,30 +1301,18 @@ end do
     use mpi
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
-#ifdef GHOST_HAVE_LONGIDX
     integer(C_INT64_T),     value       :: nrows, ncols, maxnne_per_row
-#else
-    integer(C_INT),     value       :: nrows, ncols, maxnne_per_row
-#endif
     type(C_FUNPTR),     value       :: rowFunc_ptr
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(CrsMat_t), pointer :: A
     procedure(matRowFunc), pointer :: rowFunc
     !--------------------------------------------------------------------------------
-#ifdef GHOST_HAVE_LONGIDX
     integer(kind=8), allocatable :: idx(:,:)
-#else
-    integer, allocatable :: idx(:,:)
-#endif
     real(kind=8), allocatable :: val(:)
     integer(kind=8) :: i, globalRows, globalCols
     integer(kind=8) :: j, j_, globalEntries
-#ifdef GHOST_HAVE_LONGIDX
     integer(kind=8) :: i_, nne
-#else
-    integer :: i_, nne
-#endif
     integer :: funit
     !--------------------------------------------------------------------------------
 
@@ -1374,8 +1354,7 @@ end do
     do i = 1, A%nRows, 1
 !$omp ordered
       i_ = A%row_map%distrib(A%row_map%me)+i-2
-      ierr = rowFunc(i_, nne, idx(:,1), val)
-      if( ierr .ne. 0 ) call exit()
+      call rowFunc(i_, nne, idx(:,1), val)
       j = A%row_offset(i)
       j_ = j + int(nne-1,kind=8)
       A%global_col_idx(j:j_) = idx(1:nne,1)+1
@@ -1535,6 +1514,295 @@ end do
     ierr = 0
   end subroutine phist_DcrsMat_times_mvec_vadd_mvec
 
+  !==================================================================================
 
+  subroutine phist_Dcarp_setup(A_ptr, numShifts, &
+        shifts_r, shifts_i, nrms_ptr, work_ptr,ierr) &
+  bind(C,name='phist_Dcarp_setup_f')
+    use, intrinsic :: iso_c_binding
+    !--------------------------------------------------------------------------------
+    type(C_PTR),      value         :: A_ptr
+    integer(C_INT),   intent(in)    :: numShifts
+    real(kind=c_double), intent(in) :: shifts_r(numShifts), shifts_i(numShifts)
+    type(C_PTR)                     :: nrms_ptr, work_ptr
+    integer(C_INT),   intent(out)   :: ierr
+    !--------------------------------------------------------------------------------
+    type(CrsMat_t), pointer :: A
+
+    !--------------------------------------------------------------------------------
+    
+    real(kind=8), allocatable, target :: nrms_ai2i(:,:)
+    integer :: i
+    integer(kind=8) :: iglob, j
+
+    if( .not. c_associated(A_ptr)) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(A_ptr,A)
+
+    ! create the double array nrms_ai2i and fill it with the inverse
+    ! of ||A(i,:)||_2^2. This is a column-major block vector right now.
+    allocate(nrms_ai2i(A%nRows, numShifts))
+    
+    ! start by putting the diagonal elements of A in the first column
+    ! of this array, will be overwritten by the kernel
+    
+!$omp parallel do private(iglob,j) schedule(static)
+    do i = 1,A%nRows
+      nrms_ai2i(i,1)=0.d0
+      iglob=A%row_map%distrib(A%row_map%me)+i-1
+      do j = A%row_offset(i), A%nonlocal_offset(i)-1, 1
+        if (A%global_col_idx(j).eq.iglob) then
+          nrms_ai2i(i,1)=A%val(j)
+        end if
+      end do
+    end do
+    
+    ! compute inverse row norms for shift i in column i
+    call crsmat_norms_ai2i(numShifts, A%nRows, A%nEntries, &
+        A%row_offset, A%val, shifts_r,shifts_i,nrms_ai2i)
+            
+    nrms_ptr=c_loc(nrms_ai2i)
+    
+    ! work is not used
+    work_ptr=c_null_ptr
+
+  end subroutine phist_Dcarp_setup
+
+  subroutine phist_Ddkswp(A_ptr, numShifts, shifts_r, shifts_i, &
+        b_ptr, x_r_ptr, x_i_ptr, nrms_ai2i_ptr, work_ptr, omegas, ierr) &
+  bind(C,name='phist_Ddkswp_f')
+    use, intrinsic :: iso_c_binding
+    !--------------------------------------------------------------------------------
+    type(C_PTR),      value         :: A_ptr, b_ptr
+    integer(c_int),   intent(in)    :: numShifts
+    type(C_PTR)                     :: x_r_ptr(numShifts), x_i_ptr(numShifts)
+    real(kind=c_double), intent(in) :: shifts_r(numShifts), shifts_i(numShifts)
+    real(kind=c_double), intent(in) :: omegas(numShifts)
+    type(C_PTR),      value         :: nrms_ai2i_ptr,work_ptr
+    integer(C_INT),   intent(out)   :: ierr
+    !--------------------------------------------------------------------------------
+    type(CrsMat_t), pointer :: A
+    real(kind=8), pointer :: nrms_ai2i(:,:)
+    type(MVec_t), pointer :: x_r, x_i, b
+    
+    !--------------------------------------------------------------------------------
+    integer :: iSys,i,k,l
+    integer :: ldx, ldb, nvec
+    integer :: theShape(2)
+    integer :: sendBuffSize,recvBuffSize
+    logical :: strided_x, strided_b, strided
+    logical :: x_is_aligned16, handled
+
+    if ( .not. c_associated(A_ptr) .or. &
+      & .not. c_associated(b_ptr)  .or. &
+      & .not. c_associated(nrms_ai2i_ptr) ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(A_ptr,A)
+    call c_f_pointer(b_ptr,b)
+    theShape(1) = A%nRows
+    theShape(2) = numShifts
+    call c_f_pointer(nrms_ai2i_ptr,nrms_ai2i,theShape)
+
+    ! determin data layout of b
+    if( .not. b%is_view .or. &
+      & ( b%jmin .eq. lbound(b%val,1) .and. &
+      &   b%jmax .eq. ubound(b%val,1)       ) ) then
+      strided_b = .false.
+    else
+      strided_b = .true.
+    end if
+
+    nvec = b%jmax-b%jmin+1
+    ldb = size(b%val,1)
+
+    ! (re-)allocate communication buffers,
+    ! space for 2*nvecs vector halos is needed
+    ! because we have x_r and x_i (complex x).
+    if( allocated(A%comm_buff%recvData) ) then
+      if( size(A%comm_buff%recvData,1) .ne. 2*nvec ) then
+        deallocate(A%comm_buff%recvData)
+        deallocate(A%comm_buff%sendData)
+      end if
+    end if
+
+    sendBuffSize = A%comm_buff%sendInd(A%comm_buff%nSendProcs+1)-1
+    recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
+
+    if( .not. allocated(A%comm_buff%recvData) ) then
+      allocate(A%comm_buff%recvData(2*nvec,recvBuffSize))
+      allocate(A%comm_buff%sendData(2*nvec,sendBuffSize))
+    end if
+
+    
+    ! treat one shift at a time for the moment, here there
+    ! is potential for additional parallelism, of course,
+    ! but the user can also handle this level himself by
+    ! passsing in one shift at a time to this function.
+    do iSys=1,numShifts
+      
+      ! check that all C pointers are non-null
+      if ( .not. c_associated(x_r_ptr(iSys)) .or. &
+         & .not. c_associated(x_i_ptr(iSys)) ) then
+        ierr = -88
+        return
+      end if
+      call c_f_pointer(x_r_ptr(i),x_r)
+      call c_f_pointer(x_i_ptr(i),x_i)
+    
+      ! determin data layout of x
+      if( .not. x_r%is_view .or. &
+        & ( x_r%jmin .eq. lbound(x_r%val,1) .and. &
+        &   x_r%jmax .eq. ubound(x_r%val,1)       ) ) then
+        strided_x = .false.
+      else
+        strided_x = .true.
+      end if
+
+      strided = strided_x .or. strided_b
+      ldx = size(x_r%val,1)
+
+      if ( mod(loc(x_r%val(x_r%jmin,1)),16) .eq. 0 .and. &
+          (mod(ldx,2) .eq. 0 .or. ldx .eq. 1) ) then
+        x_is_aligned16 = .true.
+      else
+        x_is_aligned16 = .false.
+      end if
+    
+      ! NOTE: we assume that x_r and x_i have the same
+      !       data layout, i.e. if one of them is a view
+      !       both are, both have the correct #cols, same
+      !       ldx etc.
+
+#if 1
+      if (A%row_map%nProcs .gt. 1) then
+        write(*,*) 'CARP kernel in Fortran not implemented with MPI'
+        ierr=-99
+        return
+      end if
+#else
+
+! MPI parallel implementation
+
+      ! exchange necessary elements of X. TODO - we
+      ! can probably save this communication step by
+      ! doing more local computations, e.g. doing the
+      ! vector updates etc. in CG on the buffers as
+      ! well (working in the column map of A directly).
+
+      ! start buffer irecv
+      do i=1,A%comm_buff%nRecvProcs, 1
+        k = A%comm_buff%recvInd(i)
+        l = A%comm_buff%recvInd(i+1)
+        call mpi_irecv(A%comm_buff%recvData(:,k:l-1),(l-k)*2*nvec,MPI_DOUBLE_PRECISION,&
+                       A%comm_buff%recvProcId(i),3,A%row_map%Comm,A%comm_buff%recvRequests(i),ierr)
+      end do
+
+      ! start buffer isend
+!$omp parallel
+      do i=1,A%comm_buff%nSendProcs, 1
+        k = A%comm_buff%sendInd(i)
+        l = A%comm_buff%sendInd(i+1)
+!$omp do schedule(static)
+        do j = k, l-1, 1
+          A%comm_buff%sendData(1:nvec,j) = &
+                x_r%val(x_r%jmin:x_r%jmax,A%comm_buff%sendRowBlkInd(j))
+          A%comm_buff%sendData(nvec+1:2*nvec,j) = &
+                x_i%val(x_i%jmin:x_i%jmax,A%comm_buff%sendRowBlkInd(j))
+        end do
+      end do
+!$omp end parallel
+
+      do i=1,A%comm_buff%nSendProcs, 1
+        k = A%comm_buff%sendInd(i)
+        l = A%comm_buff%sendInd(i+1)
+        call mpi_isend(A%comm_buff%sendData(:,k:l-1),(l-k)*2*nvec,MPI_DOUBLE_PRECISION,&
+        &            A%comm_buff%sendProcId(i),3,A%row_map%Comm,A%comm_buff%sendRequests(i),ierr)
+    end do
+
+    if( A%comm_buff%nRecvProcs .gt. 0 ) then
+      ! wait till all data arrived
+      call 
+mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStatus,ierr)
+    end if
+
+#endif
+
+      ! TODO - specialized kernels...
+      handled=.false.
+
+      ! apply Kaczmarz forward sweep
+      if (.not. handled) then
+        call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
+                A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+                shifts_r(iSys),shifts_i(iSys), &
+                b%val(b%jmin,1), ldb, x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
+                A%comm_buff%recvData(     1:  nvec,:),&
+                A%comm_buff%recvData(nvec+1:2*nvec,:),&
+                nrms_ai2i(:,iSys),omegas(iSys),&
+                1,A%nRows,+1)
+      end if
+    
+#if 1
+      if (A%row_map%nProcs .gt. 1) then
+        write(*,*) 'CARP kernel in Fortran not implemented with MPI'
+        ierr=-99
+        return
+      end if
+
+#else
+! TODO - exchange/average halo
+#endif    
+
+      ! TODO - specialized kernels...
+      handled=.false.
+
+      ! apply Kaczmarz backward sweep
+      if (.not. handled) then
+        call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
+                A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+                shifts_r(iSys),shifts_i(iSys), &
+                b%val(b%jmin,1), ldb, x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
+                A%comm_buff%recvData(     1:  nvec,:),&
+                A%comm_buff%recvData(nvec+1:2*nvec,:),&
+                nrms_ai2i(:,iSys),omegas(iSys),&
+                A%nRows,1,-1)
+      end if
+    
+    end do
+    
+  end subroutine phist_Ddkswp
+
+  subroutine phist_Dcarp_destroy(A_ptr, numShifts, nrms_ptr, work_ptr, ierr) &
+  bind(C,name='phist_Dcarp_destroy_f')
+    use, intrinsic :: iso_c_binding
+
+    type(C_PTR), value :: A_ptr
+    integer(c_int), value :: numShifts
+    type(C_PTR), value :: nrms_ptr, work_ptr
+    integer(c_int), intent(out) :: ierr
+    real(kind=8), pointer, dimension(:,:) :: nrms
+    integer :: theShape(2)
+    
+    TYPE(crsMat_t), pointer :: A
+    
+    if (c_associated(nrms_ptr)) then
+      if (.not. c_associated(A_ptr)) then
+        ierr=-88
+        return
+      end if
+      theShape(1)=A%nrows
+      theShape(2)=numShifts
+      call c_f_pointer(A_ptr,A)
+      call c_f_pointer(nrms_ptr,nrms,theShape)
+      deallocate(nrms)
+    end if
+  end subroutine phist_Dcarp_destroy
+  
 end module crsmat_module
 

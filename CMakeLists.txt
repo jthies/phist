@@ -116,32 +116,19 @@ endif ()
 
 if (${PHIST_ENABLE_MPI})
   set(PHIST_HAVE_MPI 1)
-#    set(MPI_LIBRARIES "-lmpi_mt")
-#        find_package(MPI)
-#        include_directories(${MPI_INCLUDE_PATH})
-#    foreach(item ${MPI_LIBRARIES})
-#        string(REGEX MATCH ".*libmpi.so" match ${item})
-#        if (match)
-#            get_filename_component(MPI_LIBDIR ${match} PATH)
-#            if (EXISTS "${MPI_LIBDIR}/libmpi_mt.so")
-#                list(REMOVE_ITEM MPI_LIBRARIES ${item})
-#                list(APPEND MPI_LIBRARIES ${MPI_LIBDIR}/libmpi_mt.so)
-#            endif()
-#        endif()
-#    endforeach()
-#  
-#  find_package(MPI REQUIRED)
-#  if (${MPI_FOUND})
-#    set (CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS})
-#    set (CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS})
-#    set (CMAKE_C_COMPILE_FLAGS ${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS})
-#    set (CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS})
-#    set (CMAKE_Fortran_COMPILE_FLAGS ${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COMPILE_FLAGS})
-#    set (CMAKE_Fortran_LINK_FLAGS ${CMAKE_Fortran_LINK_FLAGS} ${MPI_Fortran_LINK_FLAGS})
-#    include_directories (${MPI_INCLUDE_PATH})
-#  else()
-#    message(WARNING "could not find MPI. Trying to compile anyway, presuming the compiler/linker knows where to find it.")
-#  endif()
+#TODO - what is the best way to do this portably?
+  find_package(MPI REQUIRED)
+  if (${MPI_FOUND})
+    set (CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_CXX_COMPILE_FLAGS})
+    set (CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS})
+    set (CMAKE_C_COMPILE_FLAGS ${CMAKE_C_COMPILE_FLAGS} ${MPI_C_COMPILE_FLAGS})
+    set (CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS})
+    set (CMAKE_Fortran_COMPILE_FLAGS ${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COMPILE_FLAGS})
+    set (CMAKE_Fortran_LINK_FLAGS ${CMAKE_Fortran_LINK_FLAGS} ${MPI_Fortran_LINK_FLAGS})
+    include_directories (${MPI_INCLUDE_PATH})
+  else()
+    message(WARNING "could not find MPI. Trying to compile anyway, presuming the compiler/linker knows where to find it.")
+  endif()
 set(MPIEXEC "mpirun" CACHE STRING "")
 set(MPIEXEC_NUMPROC_FLAG "-np" CACHE STRING "")
 endif()
@@ -150,13 +137,7 @@ endif()
 # setup which kernel library is being used.
 ##############################################################################
 
-if (NOT PHIST_KERNEL_LIB)
-  set(PHIST_KERNEL_LIB $ENV{PHIST_KERNEL_LIB})
-endif()
-
-if (NOT PHIST_KERNEL_LIB)
-  message(FATAL_ERROR "PHIST_KERNEL_LIB not set.")
-endif()
+set(PHIST_KERNEL_LIB $ENV{PHIST_KERNEL_LIB} CACHE STRING "Select underlying kernel libraries for phist (epetra|tpetra|ghost|fortran)")
 
 message(STATUS "looking for " ${PHIST_KERNEL_LIB} " ...")
 
@@ -227,6 +208,7 @@ if (PHIST_KERNEL_LIB STREQUAL "fortran")
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/gemm_kernels_sC.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/spmvm_kernels_nt.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/spmvm_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/kacz_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/sdmat_module.f90)
 else()
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp)
@@ -235,10 +217,10 @@ set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_rcp_helpers.cpp)
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp)
-#                       ${PROJECT_SOURCE_DIR}/src/core/phist_taskbuf.c)
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_pgmres.cpp
-                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_belos.cpp)
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_belos.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp)
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.c
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp
@@ -246,6 +228,7 @@ set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejada.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaCorrectionSolver.cpp)
+set (PHIST_FEAST_SOURCE  ${PROJECT_SOURCE_DIR}/src/feast/phist_feastCorrectionSolver.cpp)
 
 
 include_directories(${PROJECT_BINARY_DIR})
@@ -254,20 +237,28 @@ include_directories(${PROJECT_SOURCE_DIR}/src/tools)
 include_directories(${PROJECT_SOURCE_DIR}/src/core)
 include_directories(${PROJECT_SOURCE_DIR}/src/krylov)
 include_directories(${PROJECT_SOURCE_DIR}/src/jada)
+include_directories(${PROJECT_SOURCE_DIR}/src/feast)
 include_directories(${PROJECT_SOURCE_DIR}/drivers)
 
 add_library(phist_tools STATIC ${PHIST_TOOLS_SOURCE})
 add_library(phist_core STATIC ${PHIST_CORE_SOURCE})
 add_library(phist_kernels_${PHIST_KERNEL_LIB} STATIC ${PHIST_KERNEL_SOURCE})
-add_library(phist_solvers STATIC ${PHIST_KRYLOV_SOURCE} ${PHIST_JADA_SOURCE})
+add_library(phist_solvers STATIC ${PHIST_KRYLOV_SOURCE} 
+                                 ${PHIST_JADA_SOURCE}
+                                 ${PHIST_FEAST_SOURCE})
 
 list(APPEND PHIST_LIBS phist_solvers)
 list(APPEND PHIST_LIBS phist_core)
 list(APPEND PHIST_LIBS phist_kernels_${PHIST_KERNEL_LIB})
 list(APPEND PHIST_LIBS phist_tools)
 
-if(PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
-  find_package(GHOST REQUIRED CONFIG)
+if(PHIST_KERNEL_LIB STREQUAL "ghost")
+  find_package(GHOST CONFIG)
+else()
+  find_package(GHOST CONFIG)
+endif()  
+  
+if (GHOST_FOUND)
   message(STATUS "Found GHOST ${GHOST_VERSION}")
   set(PHIST_HAVE_GHOST 1)
   include_directories(${GHOST_INCLUDE_DIRS})
@@ -302,6 +293,14 @@ if (${LIKWID_Found})
   endif ()
 else()
   message(STATUS "continuing without Likwid, you can set the environment variable LIKWID_HOME to help CMake find it")
+endif()
+
+set(PHIST_TIMEMONITOR Off CACHE BOOL "Gather detailed function-level timings using the TimeMonitor class from the Trilinos package Belos")
+if( ${PHIST_TIMEMONITOR} )
+  if(NOT "${PHIST_HAVE_BELOS}" EQUAL 1)
+    message(FATAL_ERROR "TimeMonitor requires the Belos package from Trilinos!")
+  endif()
+  message(STATUS "activated TimeMonitor timing monitoring")
 endif()
 
 configure_file ("${PROJECT_SOURCE_DIR}/src/phist_config.h.in" "${PROJECT_BINARY_DIR}/phist_config.h")
@@ -409,7 +408,7 @@ foreach (infile ${TG_CXX_Drivers})
 endforeach()
 
 # example drivers implemented in ghost
-if  (PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
+if  (PHIST_KERNEL_LIB STREQUAL "ghost")
 # TODO - make this somehow general, or probably we should
 #       actually install phist instead and push the spinChain
 #       driver to the essex/examples repo...
@@ -417,14 +416,18 @@ if  (PHIST_KERNEL_LIB STREQUAL "ghost" OR PHIST_KERNEL_LIB STREQUAL "fortran")
   message(STATUS "Found ESSEX-Physics ${ESSEX-PHYSICS_VERSION}")
 
   include_directories(${ESSEX-PHYSICS_INCLUDE_DIRS})
-  add_executable(spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
-  add_executable(spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
-  target_link_libraries(spinChain ${ESSEX-PHYSICS_LIBRARIES})
-  target_link_libraries(spinChain_subspacejada ${ESSEX-PHYSICS_LIBRARIES})
-  foreach(lib ${PHIST_LIBS})
-    target_link_libraries(spinChain ${lib})
-    target_link_libraries(spinChain_subspacejada ${lib})
-  endforeach()
+    add_executable(spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
+    add_executable(spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
+    add_executable(graphene_carp ${PROJECT_SOURCE_DIR}/drivers/graphene_carp.c ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
+    target_link_libraries(spinChain ${ESSEX-PHYSICS_LIBRARIES})
+    target_link_libraries(spinChain_subspacejada ${ESSEX-PHYSICS_LIBRARIES})
+    target_link_libraries(graphene_carp ${ESSEX-PHYSICS_LIBRARIES})
+    foreach(lib ${PHIST_LIBS})
+      target_link_libraries(spinChain ${lib})
+      target_link_libraries(spinChain_subspacejada ${lib})
+      target_link_libraries(graphene_carp ${lib})
+    endforeach()
+  endif()
 elseif(PHIST_KERNEL_LIB STREQUAL "fortran")
   include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
   add_executable(spinChain              ${PROJECT_SOURCE_DIR}/drivers/spinChain.c
@@ -432,9 +435,13 @@ elseif(PHIST_KERNEL_LIB STREQUAL "fortran")
   add_executable(spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp
                                         ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c
                                         ${PROJECT_SOURCE_DIR}/drivers/matfuncs/SpinChainSZ.c)
+  add_executable(graphene_carp ${PROJECT_SOURCE_DIR}/drivers/graphene_carp.c
+                                        ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c
+                                        ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c)
   foreach(lib ${PHIST_LIBS})
     target_link_libraries(spinChain ${lib})
     target_link_libraries(spinChain_subspacejada ${lib})
+    target_link_libraries(graphene_carp ${lib})
   endforeach()
 endif()
 

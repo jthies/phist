@@ -15,18 +15,18 @@
 #include "phist_subspacejada.h"
 
 // ghost/spinChain stuff
+#ifdef PHIST_KERNEL_LIB_GHOST
 #include "ghost.h"
 #include "ghost/util.h"
 extern "C" {
-#include "matfuncs.h"
-}
-#ifdef PHIST_KERNEL_LIB_GHOST
-extern "C" {
 void init_mtraits(ghost_sparsemat_traits_t* mtraits);
 }
+GHOST_REGISTER_DT_D(my_datatype)
 #endif
 
-GHOST_REGISTER_DT_D(my_datatype)
+extern "C" {
+#include "matfuncs.h"
+}
 
 
 // double precision type
@@ -211,12 +211,6 @@ int main(int argc, char** argv)
   //crsGraphene( -1, NULL, NULL, &info);
   SpinChainSZ( -1, NULL, NULL, &info);
 
-  if ( my_datatype != info.datatype)
-  {
-     printf("error: datatyte does not match\n");
-     exit(0);
-  }
-
 #ifdef PHIST_KERNEL_LIB_FORTRAN
   PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,
         info.nrows, info.ncols, info.row_nnz,
@@ -224,6 +218,12 @@ int main(int argc, char** argv)
 #endif
 
 #ifdef PHIST_KERNEL_LIB_GHOST
+  if ( my_datatype != info.datatype)
+  {
+     printf("error: datatyte does not match\n");
+     exit(0);
+  }
+
   ghost_error_t err=ghost_context_create(&ctx, info.nrows , 
       info.ncols,GHOST_CONTEXT_DEFAULT,NULL,GHOST_SPARSEMAT_SRC_NONE,MPI_COMM_WORLD,1.);
   if (err!=GHOST_SUCCESS)

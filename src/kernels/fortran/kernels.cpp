@@ -4,7 +4,9 @@
 #endif
 
 #include "phist_macros.h"
+#ifdef PHIST_HAVE_BELOS
 #include "phist_trilinos_macros.h"
+#endif
 #include "../phist_kernels.h"
 
 #include "phist_typedefs.h"
@@ -125,5 +127,6 @@ void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr);
 
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"
-#include "../carp_noimpl.c"
+#include "carp_def.hpp"
+
 

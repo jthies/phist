@@ -323,4 +323,19 @@ void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, i
 }
 #endif
 
+//! mixed real/complex operation: split mvec into real and imag part.
+//! if either reV or imV are NULL, it is not touched.
+#ifdef IS_COMPLEX
+# ifdef IS_DOUBLE
+void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Dmvec_t* reV, Dmvec_t* imV, int *ierr)
+{
+  *ierr=-99;
+}
+# else
+void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* imV, int *ierr)
+{
+  *ierr=-99;
+}
+# endif
+#endif
 
