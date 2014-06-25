@@ -974,7 +974,7 @@ end do
 
     deallocate(colorCount)
 
-#define DEBUG_COLPACK 1
+!#define DEBUG_COLPACK 1
 #if DEBUG_COLPACK
         open(unit=42,file='test_coloring.m',status='replace')
         write(42,*) 'n=',crsMat%nRows
@@ -1690,8 +1690,6 @@ end do
     ! start by putting the diagonal elements of A in the first column
     ! of this array, will be overwritten by the kernel
 
-!TODO - remove print statements below, they print the matrix for debugging
- 
 !$omp parallel do private(j) schedule(static)
     do i = 1,A%nRows
       nrms_ai2i(i,:)=0.d0
