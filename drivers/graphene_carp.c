@@ -238,7 +238,7 @@ int main(int argc, char** argv)
 // setup and solve via feastCorrectionSolver                     //
 ///////////////////////////////////////////////////////////////////
   TYPE(feastCorrectionSolver_ptr) fCorrSolver;
-  PHIST_ICHK_IERR(SUBR(phist_feastCorrectionSolver_create)
+  PHIST_ICHK_IERR(SUBR(feastCorrectionSolver_create)
         (&fCorrSolver, A, CARP_CG, nvec, nshifts,sigma_r, sigma_i, &ierr),ierr);
 
   PHIST_ICHK_IERR(SUBR(feastCorrectionSolver_run)

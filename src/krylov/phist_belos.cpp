@@ -41,7 +41,6 @@
 #include "phist_BelosOperatorTraits.hpp"
 
 // GMRES solver manager from the Belos package
-#ifdef PHIST_HAVE_BELOS
 #include "BelosSolverManager.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
@@ -52,9 +51,6 @@
 #include "phist_gen_d.h"
 #include "phist_belos_def.hpp"
 
-#ifdef PHIST_KERNEL_LIB_EPETRA
-#undef PHIST_HAVE_BELOS
-#endif
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_belos_def.hpp"

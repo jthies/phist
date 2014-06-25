@@ -361,6 +361,7 @@ set(SOURCES
   ${PHIST_CORE_SOURCE}
   ${PHIST_KRYLOV_SOURCE}
   ${PHIST_JADA_SOURCE}
+  ${PHIST_FEAST_SOURCE}
 )
 
 set(TEST_SOURCES
@@ -425,18 +426,17 @@ if  (PHIST_KERNEL_LIB STREQUAL "ghost")
   message(STATUS "Found ESSEX-Physics ${ESSEX-PHYSICS_VERSION}")
 
   include_directories(${ESSEX-PHYSICS_INCLUDE_DIRS})
-    add_executable(spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
-    add_executable(spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
-    add_executable(graphene_carp ${PROJECT_SOURCE_DIR}/drivers/graphene_carp.c ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
-    target_link_libraries(spinChain ${ESSEX-PHYSICS_LIBRARIES})
-    target_link_libraries(spinChain_subspacejada ${ESSEX-PHYSICS_LIBRARIES})
-    target_link_libraries(graphene_carp ${ESSEX-PHYSICS_LIBRARIES})
-    foreach(lib ${PHIST_LIBS})
-      target_link_libraries(spinChain ${lib})
-      target_link_libraries(spinChain_subspacejada ${lib})
-      target_link_libraries(graphene_carp ${lib})
-    endforeach()
-  endif()
+  add_executable(spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
+  add_executable(spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
+  add_executable(graphene_carp ${PROJECT_SOURCE_DIR}/drivers/graphene_carp.c ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
+  target_link_libraries(spinChain ${ESSEX-PHYSICS_LIBRARIES})
+  target_link_libraries(spinChain_subspacejada ${ESSEX-PHYSICS_LIBRARIES})
+  target_link_libraries(graphene_carp ${ESSEX-PHYSICS_LIBRARIES})
+  foreach(lib ${PHIST_LIBS})
+    target_link_libraries(spinChain ${lib})
+    target_link_libraries(spinChain_subspacejada ${lib})
+    target_link_libraries(graphene_carp ${lib})
+  endforeach()
 elseif(PHIST_KERNEL_LIB STREQUAL "fortran")
   include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
   add_executable(spinChain              ${PROJECT_SOURCE_DIR}/drivers/spinChain.c
