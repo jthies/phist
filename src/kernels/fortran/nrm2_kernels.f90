@@ -10,7 +10,7 @@ subroutine dnrm2_strided_1(nrows, vec, ldv, vnrm)
 
   vnrm = 0.
 !$omp parallel do reduction(+:vnrm) schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     vnrm = vnrm + vec(1,i)**2
   end do
   vnrm = sqrt(vnrm)
@@ -26,7 +26,7 @@ subroutine dnrm2_strided_2(nrows, vec, ldv, vnrm)
 
   vnrm = 0.
 !$omp parallel do reduction(+:vnrm) schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     vnrm = vnrm + vec(1:2,i)**2
   end do
   vnrm = sqrt(vnrm)
@@ -42,7 +42,7 @@ subroutine dnrm2_strided_4(nrows, vec, ldv, vnrm)
 
   vnrm = 0.
 !$omp parallel do reduction(+:vnrm) schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     vnrm = vnrm + vec(1:4,i)**2
   end do
   vnrm = sqrt(vnrm)
@@ -58,7 +58,7 @@ subroutine dnrm2_strided_8(nrows, vec, ldv, vnrm)
 
   vnrm = 0.
 !$omp parallel do reduction(+:vnrm) schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     vnrm = vnrm + vec(1:8,i)**2
   end do
   vnrm = sqrt(vnrm)
@@ -74,7 +74,7 @@ subroutine dnrm2_1(nrows, vec, vnrm)
 
   vnrm = 0.
 !$omp parallel do reduction(+:vnrm) schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     vnrm = vnrm + vec(i)**2
   end do
   vnrm = sqrt(vnrm)
@@ -90,7 +90,7 @@ subroutine dnrm2_2(nrows, vec, vnrm)
 
   vnrm = 0.
 !$omp parallel do reduction(+:vnrm) schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     vnrm = vnrm + vec(:,i)**2
   end do
   vnrm = sqrt(vnrm)
@@ -106,7 +106,7 @@ subroutine dnrm2_4(nrows, vec, vnrm)
 
   vnrm = 0.
 !$omp parallel do reduction(+:vnrm) schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     vnrm = vnrm + vec(:,i)**2
   end do
   vnrm = sqrt(vnrm)
@@ -122,7 +122,7 @@ subroutine dnrm2_8(nrows, vec, vnrm)
 
   vnrm = 0.
 !$omp parallel do reduction(+:vnrm) schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     vnrm = vnrm + vec(:,i)**2
   end do
   vnrm = sqrt(vnrm)
@@ -138,7 +138,7 @@ subroutine dnrm2_general(nrows, nvec, vec, ldv, vnrm)
 
   vnrm = 0.
 !$omp parallel do reduction(+:vnrm) schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     vnrm(1:nvec) = vnrm(1:nvec) + vec(1:nvec,i)**2
   end do
   vnrm(1:nvec) = sqrt(vnrm(1:nvec))

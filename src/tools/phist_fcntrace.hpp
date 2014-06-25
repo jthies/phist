@@ -3,6 +3,10 @@
 
 #ifndef NO_INCLUDES_IN_HEADERS
 #include "phist_config.h"
+/* needs to be included before system headers for some intel compilers+mpi */
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
 #include <string>
 #ifdef PHIST_HAVE_LIKWID
 #include <likwid.h>

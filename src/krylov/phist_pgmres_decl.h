@@ -36,6 +36,7 @@ typedef struct TYPE(pgmresState)
   _ST_ *rs_;            //! rotated projected residual (e.g. ...*q_3*q_2*q_1*e1 )
   _MT_ normR0_;         //! initial (explicit) residual norm
   _MT_ normR_;          //! current (implicit) residual norm
+  _ST_ prevBeta_;       //! previous secondary diagonal entry for the MINRES variant (from the unrotated Hessenberg (here tridiagonal) matrix)
 
   void *Vbuff;          //! ring buffer for the subspaces V
   //@}

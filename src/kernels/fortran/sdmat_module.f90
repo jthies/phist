@@ -1,3 +1,4 @@
+#include "phist_config.h"
 module sdmat_module
   implicit none
   private
@@ -103,6 +104,9 @@ contains
     !--------------------------------------------------------------------------------
     type(sdmat_t), pointer :: sdmat
     integer, pointer :: comm
+#ifdef TESTING
+    integer(C_INTPTR_T) :: dummy
+#endif
     !--------------------------------------------------------------------------------
 
     allocate(sdmat)
@@ -118,7 +122,7 @@ contains
       sdmat%comm = MPI_COMM_NULL
     end if
 #ifdef TESTING
-    write(*,*) 'creating new sdmat with dimensions:', nrows, ncols, 'address', c_loc(sdmat)
+    write(*,*) 'creating new sdmat with dimensions:', nrows, ncols, 'address', transfer(c_loc(sdmat),dummy)
     flush(6)
 #endif
     allocate(sdmat%val(nrows,ncols))
@@ -136,10 +140,13 @@ contains
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(sdmat_t), pointer :: sdmat
+#ifdef TESTING
+    integer(C_INTPTR_T) :: dummy
+#endif
     !--------------------------------------------------------------------------------
 
 #ifdef TESTING
-    write(*,*) 'deleting sdmat at address', sdmat_ptr
+    write(*,*) 'deleting sdmat at address', transfer(sdmat_ptr,dummy)
     flush(6)
 #endif
     if( c_associated(sdmat_ptr) ) then
@@ -163,11 +170,14 @@ contains
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(sdmat_t), pointer :: sdmat
+#ifdef TESTING
+    integer(C_INTPTR_T) :: dummy
+#endif
     !--------------------------------------------------------------------------------
 
 #ifdef TESTING
-    !write(*,*) 'extract view of sdmat at address', sdmat_ptr
-    !flush(6)
+    write(*,*) 'extract view of sdmat at address', transfer(sdmat_ptr,dummy)
+    flush(6)
 #endif
     if( c_associated(sdmat_ptr) ) then
       call c_f_pointer(sdmat_ptr, sdmat)
@@ -232,10 +242,13 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(sdmat_t), pointer :: sdmat, view
+#ifdef TESTING
+    integer(C_INTPTR_T) :: dummy
+#endif
     !--------------------------------------------------------------------------------
 
 #ifdef TESTING
-    write(*,*) 'create view of sdmat at address', sdmat_ptr
+    write(*,*) 'create view of sdmat at address', transfer(sdmat_ptr,dummy)
     flush(6)
 #endif
     if( .not. c_associated(sdmat_ptr) ) then
@@ -253,14 +266,14 @@ contains
         return
       end if
 #ifdef TESTING
-      write(*,*) 'reusing view at address', view_ptr
+      write(*,*) 'reusing view at address', transfer(view_ptr,dummy)
       flush(6)
 #endif
     else
       allocate(view)
       view_ptr = c_loc(view)
 #ifdef TESTING
-      write(*,*) 'created new view at address', view_ptr
+      write(*,*) 'created new view at address', transfer(view_ptr,dummy)
       flush(6)
 #endif
     end if

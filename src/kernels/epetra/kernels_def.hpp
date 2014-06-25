@@ -1,27 +1,3 @@
-#include "phist_macros.h"
-#include "phist_typedefs.h"
-#include "phist_kernels.h"
-
-#include "Epetra_config.h"
-
-#include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#include "Epetra_BlockMap.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_Vector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_CrsMatrix.h"
-
-#include "Teuchos_StandardCatchMacros.hpp"
-#include "EpetraExt_CrsMatrixIn.h"
-
-#include "epetra_helpers.h"
-
-#include "BelosEpetraAdapter.hpp"
-#include "BelosTsqrOrthoManager.hpp"
-
 extern "C" {
 
 // \name Matrix input from a file
@@ -338,6 +314,7 @@ void SUBR(mvec_delete)(TYPE(mvec_ptr) vV, int* ierr)
 void SUBR(sdMat_delete)(TYPE(sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
+  if(vM==NULL) return;
   CAST_PTR_FROM_VOID(Epetra_MultiVector,M,vM,*ierr);
   delete M;
   }

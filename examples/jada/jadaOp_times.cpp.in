@@ -20,10 +20,6 @@
 #include ${PHIST_TG_HFILE}
 #include "phist_ScalarTraits.hpp"
 
-#ifdef PHIST_TIMEMONITOR
-#include <Teuchos_TimeMonitor.hpp>
-#endif
-
 typedef phist::ScalarTraits<_ST_> st;
 
 // small c++ string helper function
@@ -120,14 +116,8 @@ int main(int argc, char** argv)
 
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(x,st::one(),&ierr),ierr);
 
-#ifdef PHIST_TIMEMONITOR
-  Teuchos::RCP<Teuchos::Time> time = Teuchos::TimeMonitor::getNewTimer("jadaOp_times");
-#endif
   for(int i = 0; i < 120/nvecs; i++)
   {
-#ifdef PHIST_TIMEMONITOR
-    Teuchos::TimeMonitor timeMon( *time );
-#endif
 #ifdef PHIST_HAVE_LIKWID
 #pragma omp parallel
     {
@@ -144,9 +134,6 @@ int main(int argc, char** argv)
     }
 #endif
   }
-#ifdef PHIST_TIMEMONITOR
-  Teuchos::TimeMonitor::summarize();
-#endif
   PHIST_ICHK_IERR(SUBR(jadaOp_delete)(&jadaOp,&ierr),ierr);
   delete sigma;
   PHIST_ICHK_IERR(SUBR(mvec_delete)(q,&ierr),ierr);

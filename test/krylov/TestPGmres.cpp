@@ -10,6 +10,7 @@
 #include "phist_kernels.h"
 #include "phist_enums.h"
 #include "phist_pgmres.h"
+#include "phist_pminres.h"
 #include "phist_ScalarTraits.hpp"
 #include "../kernels/KernelTest.h"
 #include "../kernels/KernelTestWithMap.h"
@@ -71,4 +72,60 @@ using namespace testing;
 #define CLASSNAME ZTestPGmres
 #include "phist_gen_z.h"
 #include "TestPGmres_def.hpp"
+
+
+#undef MATNAME
+#undef MAXBAS
+#undef _N_
+#undef _M_
+#undef TOLA
+#undef TOLB
+
+
+
+#undef CLASSNAME
+#define MATNAME "symmMat"
+#define MATSYMMETRIC
+#define _N_ 20
+#define _M_ 5
+
+#define MAXBAS 12
+//TODO - tune these settings
+#define TOLA 2.5e-2
+#define TOLB 1.0e-3
+
+#ifdef PHIST_HAVE_SP
+
+#define CLASSNAME STestPGmres_symmMat
+#include "phist_gen_s.h"
+#include "TestPGmres_def.hpp"
+#undef CLASSNAME
+
+#endif
+
+#define CLASSNAME DTestPGmres_symmMat
+#include "phist_gen_d.h"
+#include "TestPGmres_def.hpp"
+#undef CLASSNAME
+
+#undef TOLA
+#undef TOLB
+//TODO - tune these settings
+#define TOLA 2.5e-2
+#define TOLB 1.0e-4
+
+#ifdef PHIST_HAVE_SP
+
+#define CLASSNAME CTestPGmres_symmMat
+#include "phist_gen_c.h"
+#include "TestPGmres_def.hpp"
+#undef CLASSNAME
+
+#endif
+
+#define CLASSNAME ZTestPGmres_symmMat
+#include "phist_gen_z.h"
+#include "TestPGmres_def.hpp"
+
+
 

@@ -226,7 +226,7 @@ subroutine dspmvm_1(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx
   integer(kind=8) :: j
 
 !$omp parallel do private(tmp) schedule(static)
-  do i = 1, nlocal
+  do i = 1, nlocal, 1
     tmp(:) = shifts*x(:,i)
     do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp(:) = tmp(:) + val(j)*x(:,col_idx(j))
@@ -254,7 +254,7 @@ subroutine dspmvm_2(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx
   integer(kind=8) :: j
 
 !$omp parallel do private(tmp) schedule(static)
-  do i = 1, nlocal
+  do i = 1, nlocal, 1
     tmp(:) = shifts*x(:,i)
     do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp(:) = tmp(:) + val(j)*x(:,col_idx(j))
@@ -282,7 +282,7 @@ subroutine dspmvm_4(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx
   integer(kind=8) :: j
 
 !$omp parallel do private(tmp) schedule(static)
-  do i = 1, nlocal
+  do i = 1, nlocal, 1
     tmp(:) = shifts*x(:,i)
     do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp(:) = tmp(:) + val(j)*x(:,col_idx(j))
@@ -310,7 +310,7 @@ subroutine dspmvm_8(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx
   integer(kind=8) :: j
 
 !$omp parallel do private(tmp) schedule(static)
-  do i = 1, nlocal
+  do i = 1, nlocal, 1
     tmp(:) = shifts*x(:,i)
     do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp(:) = tmp(:) + val(j)*x(:,col_idx(j))
@@ -340,7 +340,7 @@ subroutine dspmvm_strided_1(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr,
   integer(kind=8) :: j
 
 !$omp parallel do private(tmp) schedule(static)
-  do i = 1, nlocal
+  do i = 1, nlocal, 1
     tmp(:) = shifts*x(1:1,i)
     do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp(:) = tmp(:) + val(j)*x(1:1,col_idx(j))
@@ -368,7 +368,7 @@ subroutine dspmvm_strided_2(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr,
   integer(kind=8) :: j
 
 !$omp parallel do private(tmp) schedule(static)
-  do i = 1, nlocal
+  do i = 1, nlocal, 1
     tmp(:) = shifts*x(1:2,i)
     do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp(:) = tmp(:) + val(j)*x(1:2,col_idx(j))
@@ -396,7 +396,7 @@ subroutine dspmvm_strided_4(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr,
   integer(kind=8) :: j
 
 !$omp parallel do private(tmp) schedule(static)
-  do i = 1, nlocal
+  do i = 1, nlocal, 1
     tmp(:) = shifts*x(1:4,i)
     do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp(:) = tmp(:) + val(j)*x(1:4,col_idx(j))
@@ -424,7 +424,7 @@ subroutine dspmvm_strided_8(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr,
   integer(kind=8) :: j
 
 !$omp parallel do private(tmp) schedule(static)
-  do i = 1, nlocal
+  do i = 1, nlocal, 1
     tmp(:) = shifts*x(1:8,i)
     do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp(:) = tmp(:) + val(j)*x(1:8,col_idx(j))
@@ -453,7 +453,7 @@ subroutine dspmvm_generic(nvec, nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_
   integer(kind=8) :: j
 
 !$omp parallel do private(tmp) schedule(static)
-  do i = 1, nlocal
+  do i = 1, nlocal, 1
     tmp(:) = shifts*x(1:nvec,i)
     do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp(:) = tmp(:) + val(j)*x(1:nvec,col_idx(j))

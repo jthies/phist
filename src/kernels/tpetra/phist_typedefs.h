@@ -1,6 +1,12 @@
 #ifndef PHIST_TYPEDEFS_H
 #define PHIST_TYPEDEFS_H
 
+#include "phist_config.h"
+/* needs to be included before system headers for some intel compilers+mpi */
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
 #ifndef NO_INCLUDES_IN_HEADERS
 #ifdef __cplusplus
 //#include <cinttypes>

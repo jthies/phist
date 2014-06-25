@@ -1,6 +1,11 @@
 #include "phist_config.h"
+/* needs to be included before system headers for some intel compilers+mpi */
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
 #include "../phist_kernels.h"
 #include "phist_trilinos_macros.h"
+#include "phist_typedefs.h"
 #include "phist_typedefs.h"
 #include "Epetra_config.h"
 #ifdef PHIST_HAVE_MPI
@@ -8,9 +13,26 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
+#include "Epetra_BlockMap.h"
+#include "Epetra_LocalMap.h"
+#include "Epetra_Vector.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_CrsMatrix.h"
+
+#include "Teuchos_StandardCatchMacros.hpp"
+#include "EpetraExt_CrsMatrixIn.h"
+
+#include "BelosEpetraAdapter.hpp"
+#include "BelosTsqrOrthoManager.hpp"
+
+
 
 #ifdef PHIST_TIMEMONITOR
-#include <Teuchos_TimeMonitor.hpp>
+#include "phist_timemonitor.hpp"
+namespace phist_TimeMonitor
+{
+  Timer::TimeDataMap Timer::_timingResults;
+}
 #endif
 #include "epetra_helpers.cpp"
 #include "phist_ScalarTraits.hpp"
@@ -44,7 +66,7 @@ void phist_kernels_finalize(int* ierr)
   LIKWID_MARKER_CLOSE;
 #endif
 #ifdef PHIST_TIMEMONITOR
-  Teuchos::TimeMonitor::summarize();
+  phist_TimeMonitor::Timer::summarize();
 #endif
 #ifdef PHIST_HAVE_MPI
   *ierr=MPI_Finalize();

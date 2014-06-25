@@ -2,6 +2,10 @@
 #define KERNELS_GHOST_TYPEDEFS_HPP
 
 #include "phist_config.h"
+/* needs to be included before system headers for some intel compilers+mpi */
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
 
 #ifdef PHIST_HAVE_BELOS
 #include "Teuchos_RCP.hpp"

@@ -6,7 +6,7 @@ subroutine dcopy_1(nrows, x, y)
   integer :: i
 
 !$omp parallel do schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     y(i) = x(i)
   end do
 end subroutine dcopy_1
@@ -19,7 +19,7 @@ subroutine dcopy_general(nvec, nrows, x, ldx, y, ldy)
   integer :: i
 
 !$omp parallel do schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     y(1:nvec,i) = x(1:nvec,i)
   end do
 end subroutine dcopy_general
@@ -33,7 +33,7 @@ subroutine dscal_1(nrows, alpha, x)
   integer :: i
 
 !$omp parallel do schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     x(:,i) = alpha(:)*x(:,i)
   end do
 end subroutine dscal_1
@@ -46,7 +46,7 @@ subroutine dscal_2(nrows, alpha, x)
   integer :: i
 
 !$omp parallel do schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     x(:,i) = alpha(:)*x(:,i)
   end do
 end subroutine dscal_2
@@ -59,7 +59,7 @@ subroutine dscal_4(nrows, alpha, x)
   integer :: i
 
 !$omp parallel do schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     x(:,i) = alpha(:)*x(:,i)
   end do
 end subroutine dscal_4
@@ -72,7 +72,7 @@ subroutine dscal_8(nrows, alpha, x)
   integer :: i
 
 !$omp parallel do schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     x(:,i) = alpha(:)*x(:,i)
   end do
 end subroutine dscal_8
@@ -86,7 +86,7 @@ subroutine dscal_strided_1(nrows, alpha, x, ldx)
   integer :: i
 
 !$omp parallel do schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     x(1,i) = alpha(1)*x(1,i)
   end do
 end subroutine dscal_strided_1
@@ -99,7 +99,7 @@ subroutine dscal_strided_2(nrows, alpha, x, ldx)
   integer :: i
 
 !$omp parallel do schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     x(1:2,i) = alpha(:)*x(1:2,i)
   end do
 end subroutine dscal_strided_2
@@ -112,7 +112,7 @@ subroutine dscal_strided_4(nrows, alpha, x, ldx)
   integer :: i
 
 !$omp parallel do schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     x(1:4,i) = alpha(:)*x(1:4,i)
   end do
 end subroutine dscal_strided_4
@@ -125,7 +125,7 @@ subroutine dscal_strided_8(nrows, alpha, x, ldx)
   integer :: i
 
 !$omp parallel do schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     x(1:8,i) = alpha(:)*x(1:8,i)
   end do
 end subroutine dscal_strided_8
@@ -138,7 +138,7 @@ subroutine dscal_general(nrows, nvec, alpha, x, ldx)
   integer :: i
 
 !$omp parallel do schedule(static)
-  do i = 1, nrows
+  do i = 1, nrows, 1
     x(1:nvec,i) = alpha(:)*x(1:nvec,i)
   end do
 end subroutine dscal_general
@@ -155,12 +155,12 @@ subroutine daxpby_1(nrows, alpha, x, beta, y)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       y(i) = alpha*x(i)
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       y(i) = alpha*x(i) + beta*y(i)
     end do
   end if
@@ -310,12 +310,12 @@ subroutine daxpby_2(nrows, alpha, x, beta, y)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       y(:,i) = alpha(:)*x(:,i)
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       y(:,i) = alpha(:)*x(:,i) + beta*y(:,i)
     end do
   end if
@@ -332,12 +332,12 @@ subroutine daxpby_4(nrows, alpha, x, beta, y)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       y(:,i) = alpha(:)*x(:,i)
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       y(:,i) = alpha(:)*x(:,i) + beta*y(:,i)
     end do
   end if
@@ -354,12 +354,12 @@ subroutine daxpby_8(nrows, alpha, x, beta, y)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       y(:,i) = alpha(:)*x(:,i) + beta*y(:,i)
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       y(:,i) = alpha(:)*x(:,i) + beta*y(:,i)
     end do
   end if
@@ -377,12 +377,12 @@ subroutine daxpby_strided_1(nrows, alpha, x, ldx, beta, y, ldy)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       y(1,i) = alpha*x(1,i)
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       y(1,i) = alpha*x(1,i) + beta*y(1,i)
     end do
   end if
@@ -399,12 +399,12 @@ subroutine daxpby_strided_2(nrows, alpha, x, ldx, beta, y, ldy)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       y(1:2,i) = alpha*x(1:2,i)
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       y(1:2,i) = alpha*x(1:2,i) + beta*y(1:2,i)
     end do
   end if
@@ -421,12 +421,12 @@ subroutine daxpby_strided_4(nrows, alpha, x, ldx, beta, y, ldy)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       y(1:4,i) = alpha*x(1:4,i)
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       y(1:4,i) = alpha*x(1:4,i) + beta*y(1:4,i)
     end do
   end if
@@ -443,12 +443,12 @@ subroutine daxpby_strided_8(nrows, alpha, x, ldx, beta, y, ldy)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       y(1:8,i) = alpha*x(1:8,i)
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       y(1:8,i) = alpha*x(1:8,i) + beta*y(1:8,i)
     end do
   end if
@@ -465,12 +465,12 @@ subroutine daxpby_generic(nrows, nvec, alpha, x, ldx, beta, y, ldy)
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       y(1:nvec,i) = alpha*x(1:nvec,i)
     end do
   else
 !$omp parallel do schedule(static)
-    do i = 1, nrows
+    do i = 1, nrows, 1
       y(1:nvec,i) = alpha*x(1:nvec,i) + beta*y(1:nvec,i)
     end do
   end if

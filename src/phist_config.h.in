@@ -18,5 +18,6 @@
 #cmakedefine PHIST_HAVE_LIKWID
 #cmakedefine LIKWID_PERFMON
 #cmakedefine PHIST_TIMEMONITOR
+#cmakedefine PHIST_TIMEMONITOR_PERLINE
 
 #endif

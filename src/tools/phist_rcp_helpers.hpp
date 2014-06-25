@@ -2,7 +2,10 @@
 #define PHIST_RCP_HELPERS_HPP
 
 #include "phist_config.h"
+/* needs to be included before system headers for some intel compilers+mpi */
+#ifdef PHIST_HAVE_MPI
 #include <mpi.h>
+#endif
 // we only need RCP's if we want to interact
 // with the iterative solvers in Belos
 #ifdef PHIST_HAVE_BELOS

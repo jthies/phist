@@ -2,7 +2,7 @@
 #define PHIST_MACROS_H
 
 #include "phist_config.h"
-
+/* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
@@ -94,10 +94,25 @@
 #define PHIST_BAD_CAST -88
 #define PHIST_NOT_IMPLEMENTED -99
 
+#if defined(__cplusplus) && ( defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE) )
+#include "phist_timemonitor.hpp"
+#endif
+
+// "line-level" timings using PHIST_CHK macros
+#if defined(__cplusplus) && defined(PHIST_TIMEMONITOR_PERLINE)
+#include <string.h>
+#define PHIST_STRINGIFY_MACRO(l) #l
+#define PHIST_FILE_LINE_REMOVE_PATH(f) (strrchr(f, '/') ? strrchr(f, '/') + 1 : f)
+#define PHIST_FILE_LINE_MACRO(f,l) PHIST_FILE_LINE_REMOVE_PATH(f ":" PHIST_STRINGIFY_MACRO(l))
+#define PHIST_TIMEMONITOR_PERLINE_MACRO phist_TimeMonitor::Timer TimerFrom_PERLINE_MACRO(PHIST_FILE_LINE_MACRO(__FILE__,__LINE__));
+#else
+#define PHIST_TIMEMONITOR_PERLINE_MACRO
+#endif
+
 //! checks an ierr flag passed to a void function for non-zero value, assigns it to FLAG,
 //! prints an error message and returns if non-zero (to be used in void functions)
 #ifdef __cplusplus
-#define PHIST_CHK_IERR(func,FLAG) {\
+#define PHIST_CHK_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
 try {func; if (FLAG!=PHIST_SUCCESS) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return;}} \
@@ -110,7 +125,7 @@ catch (int iexc) {PHIST_OUT(PHIST_ERROR,"int Exception caught in call %s (value 
 catch (...) {PHIST_OUT(PHIST_ERROR,"unknown Exception caught in call %s\n(file %s, line %d)\n",\
 (#func),(__FILE__),(__LINE__)); (FLAG)=-77; return;}}
 #else
-#define PHIST_CHK_IERR(func,FLAG) {\
+#define PHIST_CHK_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
 {func; if (FLAG!=PHIST_SUCCESS) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return;}}}
@@ -120,7 +135,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #include "ghost/config.h"
 #include "ghost/types.h"
 // check return value from GHOST
-#define PHIST_CHK_GERR(func,FLAG) {\
+#define PHIST_CHK_GERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
 ghost_error_t gerr=func; FLAG=(int)gerr; if (gerr!=GHOST_SUCCESS) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_ghost_error2str(gerr)),(#func),(__FILE__),(__LINE__)); return;}\
@@ -130,7 +145,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 //! prints an error message and returns if non-zero (to be used in void functions)
 #ifndef PHIST_CHK_NEG_IERR
 #ifdef __cplusplus
-#define PHIST_CHK_NEG_IERR(func,FLAG) {\
+#define PHIST_CHK_NEG_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
 try {func; if (FLAG < PHIST_SUCCESS) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return;}} \
@@ -152,7 +167,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 
 
 //! like PHIST_CHK_IERR, but returns ierr (to be used in int functions returning an error code)
-#define PHIST_ICHK_IERR(func,FLAG) {\
+#define PHIST_ICHK_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
 {func; if (FLAG!=PHIST_SUCCESS) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return FLAG;}}}
@@ -174,24 +189,16 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #endif
 
 #ifdef __cplusplus
-# ifdef PHIST_TIMEMONITOR
 # include "phist_fcntrace.hpp"
-#   include <Teuchos_TimeMonitor.hpp>
+# ifdef PHIST_TIMEMONITOR
 #   if (PHIST_OUTLEV>=PHIST_TRACE) || defined(LIKWID_PERFMON)
 #     define ENTER_FCN(s) FcnTracer YouCantHaveMultiple_ENTER_FCN_StatementsInOneScope(s);\
-                          static Teuchos::RCP<Teuchos::Time> TimeFrom_ENTER_FCN; \
-                          if( TimeFrom_ENTER_FCN.is_null() ) \
-                              TimeFrom_ENTER_FCN = Teuchos::TimeMonitor::getNewTimer(s); \
-                          Teuchos::TimeMonitor TimeMonFrom_ENTER_FCN( *TimeFrom_ENTER_FCN );
+                          phist_TimeMonitor::Timer TimerFrom_ENTER_FCN(s);
 #   else
-#     define ENTER_FCN(s) static Teuchos::RCP<Teuchos::Time> TimeFrom_ENTER_FCN; \
-                          if( TimeFrom_ENTER_FCN.is_null() ) \
-                              TimeFrom_ENTER_FCN = Teuchos::TimeMonitor::getNewTimer(s); \
-                          Teuchos::TimeMonitor TimeMonFrom_ENTER_FCN( *TimeFrom_ENTER_FCN );
+#     define ENTER_FCN(s) phist_TimeMonitor::Timer TimerFrom_ENTER_FCN(s);
 #   endif
 # else
 #   if (PHIST_OUTLEV>=PHIST_TRACE) || defined(LIKWID_PERFMON)
-#   include "phist_fcntrace.hpp"
 #     define ENTER_FCN(s) FcnTracer YouCantHaveMultiple_ENTER_FCN_StatementsInOneScope(s);
 #   else
 #     define ENTER_FCN(s)
