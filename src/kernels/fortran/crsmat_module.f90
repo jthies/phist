@@ -54,6 +54,17 @@ module crsmat_module
     !--------------------------------------------------------------------------------
   end type CrsMat_t
 
+  !! a simple sparse vector object, used to implement averaging 
+  !! of received values in carp_sweep without tedium.           
+  !! TODO: this object may cause NUMA problems
+  type sparseArray_t
+  
+  integer :: n !! maximum idx allowed
+  integer :: nnz !! number of elements stored
+  integer, allocatable :: idx(:) !! my local indices into a full vector representation
+  real(kind=8), allocatable :: val(:) !! val(i)=v(idx(i))
+  
+  end type sparseArray_t
 
   !> interface of function-ptr for crsMat_create_fromRowFunc
   abstract interface
@@ -1661,14 +1672,19 @@ end do
     real(kind=c_double), intent(in) :: shifts_r(numShifts), shifts_i(numShifts)
     TYPE(C_PTR), value :: nrms_ai2i_ptr
     real(kind=8), pointer, dimension(:,:) :: nrms_ai2i
-    type(C_PTR)                     :: work_ptr
+    type(C_PTR), intent(out) :: work_ptr
     integer(C_INT),   intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(CrsMat_t), pointer :: A
+    ! this array contains the 1/np, where np is the number of procs contributing
+    ! to a value in the 'receive' area (the elements sent during regular spMVM)
+    type(sparseArray_t), pointer :: invProcCount
 
     !--------------------------------------------------------------------------------
     
-    integer :: i, theShape(2)
+    integer, allocatable, dimension(:) :: procCount !! temporary array
+    integer :: theShape(2), sendBuffSize
+    integer :: i,k,l
     integer(kind=8) :: j
 
     if( .not. c_associated(A_ptr)) then
@@ -1685,8 +1701,6 @@ end do
     theShape(2)=numShifts
     call c_f_pointer(nrms_ai2i_ptr,nrms_ai2i,theShape)
 
-!write(*,*) 'A%nRows=',A%nRows
-    
     ! start by putting the diagonal elements of A in the first column
     ! of this array, will be overwritten by the kernel
 
@@ -1703,14 +1717,42 @@ end do
     ! compute inverse row norms for shift i in column i
     call crsmat_norms_ai2i(numShifts, A%nRows, A%nEntries, &
         A%row_offset, A%val, shifts_r,shifts_i,nrms_ai2i)
-    ! work is not used
-    work_ptr=c_null_ptr
+    
+    ! work is used to store the averaging coefficients for the x halo
+    ! received from other processes (in a sparseArray_t object)
+    allocate(procCount(A%nRows))
+    procCount(1:A%nRows)=1 ! contains for every owned node the number
+                           ! of contributing procs (default 1, just me)
+    
+    do i=1,A%comm_buff%nSendProcs, 1
+      k = A%comm_buff%sendInd(i)
+      l = A%comm_buff%sendInd(i+1)
+      do j = k, l-1, 1
+        procCount(A%comm_buff%sendRowBlkInd(j)) = &
+        procCount(A%comm_buff%sendRowBlkInd(j)) + 1
+      end do
+    end do
+
+    allocate(invProcCount)
+    invProcCount%n=A%nRows
+    invProcCount%nnz=count(procCount.gt.1)
+    allocate(invProcCount%idx(invProcCount%nnz))
+    allocate(invProcCount%val(invProcCount%nnz))
+    j=0
+    do i=0,A%nRows
+      if (procCount(i) .gt. 1) then
+        j=j+1
+        invProcCount%val(j)=1.0/dble(procCount(i))
+        invProcCount%idx(j)=i
+      end if
+    end do
+    deallocate(procCount)
+    work_ptr=c_loc(invProcCount)    
     
     if (A%row_map%me==0 .and. A%row_map%coloringType==2) then
       write(6,*) 'CARP will exploit local dist-2 coloring'
       flush(6)
     end if
-
   end subroutine phist_Dcarp_setup
 
   subroutine phist_Dcarp_sweep(A_ptr, numShifts, shifts_r, shifts_i, &
@@ -1731,6 +1773,7 @@ end do
     type(CrsMat_t), pointer :: A
     real(kind=8), pointer :: nrms_ai2i(:,:)
     type(MVec_t), pointer :: x_r, x_i, b
+    type(sparseArray_t), pointer :: invProcCount
     
     !--------------------------------------------------------------------------------
     integer :: iSys,i,j,k,l
@@ -1759,10 +1802,17 @@ end do
       return
     end if
 
+    if ( .not. c_associated(work_ptr) ) then
+      write(*,*) 'work is NULL'
+      ierr = -88
+      return
+    end if
+
     call c_f_pointer(A_ptr,A)
     theShape(1) = A%nRows
     theShape(2) = numShifts
     call c_f_pointer(nrms_ai2i_ptr,nrms_ai2i,theShape)
+    call c_f_pointer(work_ptr,invProcCount)
 
     ! determin data layout of b
     if (.not. b_is_zero) then
@@ -1921,7 +1971,7 @@ end do
       end if
 
       ! exchange values and average
-      call Dcarp_average(A,x_r, x_i, ierr)
+      call Dcarp_average(A,x_r, x_i, invProcCount, ierr)
       if (ierr/=0) then
         write(*,*) 'call Dcarp_average returned ierr=',ierr
         return
@@ -1959,7 +2009,7 @@ end do
       end if
 
       ! exchange values and average
-      call Dcarp_average(A,x_r, x_i, ierr)
+      call Dcarp_average(A,x_r, x_i, invProcCount, ierr)
       if (ierr/=0) then
         write(*,*) 'call Dcarp_average returned ierr=',ierr
         return
@@ -1976,7 +2026,19 @@ end do
     integer(c_int), value :: numShifts
     type(C_PTR), value :: work_ptr
     integer(c_int), intent(out) :: ierr
-        
+    !-----------------------------------------!
+    TYPE(sparseArray_t), pointer :: invProcCount
+    
+    ! the C top layer allocated nrms_ai2i, so it also deletes them
+    
+    call c_f_pointer(work_ptr, invProcCount)
+    if (allocated(invProcCount%idx)) then
+      deallocate(invProcCount%idx)
+    end if
+    if (allocated(invProcCount%val)) then
+      deallocate(invProcCount%val)
+    end if
+    
   end subroutine phist_Dcarp_destroy
 
 ! private subroutine to exchange halo elements and average
@@ -1987,7 +2049,7 @@ end do
 ! for the local nodes ghosted on other procs and update them
 ! by averaging. Before the next spMVM or CARP sweep, a standard
 ! halo import occurs to update the values on the other procs.
-subroutine Dcarp_average(A,xr,xi,ierr)
+subroutine Dcarp_average(A,xr,xi,invProcCount, ierr)
   use mpi
   implicit none
 
@@ -1997,7 +2059,7 @@ subroutine Dcarp_average(A,xr,xi,ierr)
   ! contributions to a local x entry. In principle we could
   ! set this up once and for all.
   ! (TODO, or maybe it already exists somewhere?)
-  real(kind=8), dimension(A%nRows) :: divBy
+  type(sparseArray_t), intent(in)  :: invProcCount
   integer :: ierr
 
   ! local
@@ -2051,10 +2113,6 @@ subroutine Dcarp_average(A,xr,xi,ierr)
                        A%row_map%Comm,A%comm_buff%recvRequests(i),ierr)
     end do
 
-  ! while we're waiting... 
-  divBy(:)=1.d0
-
-
     if( A%comm_buff%nSendProcs .gt. 0 ) then
       ! wait till all data arrived
       call mpi_waitall(A%comm_buff%nSendProcs,&
@@ -2076,20 +2134,16 @@ subroutine Dcarp_average(A,xr,xi,ierr)
           xi%val(xi%jmin:xi%jmax,A%comm_buff%sendRowBlkInd(j)) &
         = xi%val(xi%jmin:xi%jmax,A%comm_buff%sendRowBlkInd(j)) &
         + A%comm_buff%sendData(nvec+1:2*nvec,j)
-        
-          divBy(A%comm_buff%sendRowBlkInd(j)) &
-        = divBy(A%comm_buff%sendRowBlkInd(j)) + 1.d0
-        
+                
       end do
     end do
-    
-    ! average. In this prototype implementation, we just
-    ! divide *all* x entries by divBy, the interior ones
-    ! are divided by 1.
-!$omp parallel do schedule(static)
-    do i=1,A%nRows
-      xr%val(xr%jmin:xr%jmax,i) = xr%val(xr%jmin:xr%jmax,i)/divBy(i)
-      xi%val(xi%jmin:xi%jmax,i) = xi%val(xi%jmin:xi%jmax,i)/divBy(i)
+
+    ! average: divide entries summed up from others by the number of
+    ! contributors (in invProcCount constructed in carp_setup)
+    do i=1,invProcCount%nnz
+      k=invProcCount%idx(i)
+      xr%val(xr%jmin:xr%jmax,k) = xr%val(xr%jmin:xr%jmax,k)*invProcCount%val(i)
+      xi%val(xi%jmin:xi%jmax,k) = xi%val(xi%jmin:xi%jmax,k)*invProcCount%val(i)
     end do
 end subroutine Dcarp_average
 
