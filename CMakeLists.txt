@@ -85,7 +85,7 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
   set (CMAKE_Fortran_FLAGS_DEBUG "-check all -debug")
 
   # for ipo
-  set_property(DIRECTORY . PROPERTY INTERPROCEDURAL_OPTIMIZATION 1)
+# set_property(DIRECTORY . PROPERTY INTERPROCEDURAL_OPTIMIZATION 1)
 
 else()
 
