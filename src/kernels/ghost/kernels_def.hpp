@@ -139,6 +139,7 @@ void SUBR(mvec_create)(TYPE(mvec_ptr)* vV,
   ghost_densemat_traits_t vtraits = map->vtraits_template;/*ghost_cloneVtraits(map->vtraits_template);*/
         vtraits.ncols=nvec;
         vtraits.datatype = st::ghost_dt;
+        vtraits.flags = (ghost_densemat_flags_t)(vtraits.flags & ~GHOST_DENSEMAT_VIEW);
   PHIST_CHK_GERR(ghost_densemat_create(&result,map->ctx,vtraits),*ierr);
   ST zero = st::zero();
   // this allocates the vector and fills it with zeros
