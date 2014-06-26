@@ -453,16 +453,18 @@ if  (PHIST_KERNEL_LIB STREQUAL "ghost")
 
   add_executable(spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
   add_executable(spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
-  add_executable(graphene_carp ${PROJECT_SOURCE_DIR}/drivers/graphene_carp.c ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
+
+# TODO - this driver doesn't link and we don't have the kernels yet, re-enable it at a later point
+#  add_executable(graphene_carp ${PROJECT_SOURCE_DIR}/drivers/graphene_carp.c ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
 
   target_link_libraries(spinChain ${ESSEX-PHYSICS_LIBRARIES})
   target_link_libraries(spinChain_subspacejada ${ESSEX-PHYSICS_LIBRARIES})
-  target_link_libraries(graphene_carp ${ESSEX_PHYSICS_LIBRARIES})
+#  target_link_libraries(graphene_carp ${ESSEX_PHYSICS_LIBRARIES})
 
   foreach(lib ${PHIST_LIBS})
     target_link_libraries(spinChain ${lib})
     target_link_libraries(spinChain_subspacejada ${lib})
-    target_link_libraries(graphene_carp ${lib})
+#    target_link_libraries(graphene_carp ${lib})
   endforeach()
 
 elseif(PHIST_KERNEL_LIB STREQUAL "fortran")

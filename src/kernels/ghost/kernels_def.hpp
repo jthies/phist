@@ -172,7 +172,7 @@ void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
     return;
   }
 
-  PHIST_CHK_GERR(result->viewPlain(result,(void*)values,vtraits.nrows,vtraits.ncols,0,0,lda),*ierr);
+  PHIST_CHK_GERR(result->viewPlain(result,(void*)values,0,0,lda),*ierr);
   *vV=(TYPE(mvec_ptr))(result);
   return;
 }
