@@ -777,7 +777,14 @@ void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  
+
+#ifdef PHIST_TIMEMONITOR
+  int nvec;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, ierr), *ierr);
+  for(int i = 0; i < nvec; i++)
+    phist_totalMatVecCount();
+#endif
+
   CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t,A,vA,*ierr);
   CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,x,vx,*ierr);
   CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,y,vy,*ierr);
@@ -797,7 +804,14 @@ void SUBR(crsMatT_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  
+ 
+#ifdef PHIST_TIMEMONITOR
+  int nvec;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, ierr), *ierr);
+  for(int i = 0; i < nvec; i++)
+    phist_totalMatVecCount();
+#endif
+ 
   CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t,A,vA,*ierr);
   CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,x,vx,*ierr);
   CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,y,vy,*ierr);

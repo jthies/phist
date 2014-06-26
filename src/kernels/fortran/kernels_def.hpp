@@ -328,6 +328,14 @@ void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
     TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
+
+#ifdef PHIST_TIMEMONITOR
+  int nvec;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x, &nvec, ierr), *ierr);
+  for(int i = 0; i < nvec; i++)
+    phist_totalMatVecCount();
+#endif
+
   void SUBR(crsMat_times_mvec_f)(_ST_ alpha, TYPE(const_crsMat_ptr) A, 
       TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr);
   PHIST_CHK_IERR(SUBR(crsMat_times_mvec_f)(alpha,A,x,beta,y,ierr),*ierr);
@@ -346,6 +354,14 @@ void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
         const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
+
+#ifdef PHIST_TIMEMONITOR
+  int nvec;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x, &nvec, ierr), *ierr);
+  for(int i = 0; i < nvec; i++)
+    phist_totalMatVecCount();
+#endif
+
   void SUBR(crsMat_times_mvec_vadd_mvec_f)(_ST_ alpha, TYPE(const_crsMat_ptr) A, 
       const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr);
   PHIST_CHK_IERR(SUBR(crsMat_times_mvec_vadd_mvec_f)(alpha,A,shifts,x,beta,y,ierr),*ierr);

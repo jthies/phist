@@ -720,6 +720,14 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* ierr)
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *ierr=0;
+
+#ifdef PHIST_TIMEMONITOR
+  int nvec;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, ierr), *ierr);
+  for(int i = 0; i < nvec; i++)
+    phist_totalMatVecCount();
+#endif
+
   CAST_PTR_FROM_VOID(ghost_sparsemat_t,A,vA,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,x,vx,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,y,vy,*ierr);
@@ -778,6 +786,14 @@ void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *ierr=0;
+
+#ifdef PHIST_TIMEMONITOR
+  int nvec;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, ierr), *ierr);
+  for(int i = 0; i < nvec; i++)
+    phist_totalMatVecCount();
+#endif
+
   CAST_PTR_FROM_VOID(ghost_sparsemat_t,A,vA,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,x,vx,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,y,vy,*ierr);

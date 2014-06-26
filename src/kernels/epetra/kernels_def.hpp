@@ -464,6 +464,14 @@ void SUBR(crsMat_times_mvec)(double alpha, TYPE(const_crsMat_ptr) vA, TYPE(const
 double beta, TYPE(mvec_ptr) vy, int* ierr)
   {
   *ierr=0;
+
+#ifdef PHIST_TIMEMONITOR
+  int nvec;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, ierr), *ierr);
+  for(int i = 0; i < nvec; i++)
+    phist_totalMatVecCount();
+#endif
+
   CAST_PTR_FROM_VOID(const Epetra_CrsMatrix,A,vA,*ierr);
   CAST_PTR_FROM_VOID(const Epetra_MultiVector,x,vx,*ierr);
   CAST_PTR_FROM_VOID(Epetra_MultiVector,y,vy,*ierr);
@@ -543,9 +551,14 @@ void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
 
-  PHIST_CHK_IERR(SUBR(crsMat_times_mvec)(alpha, A, x, beta, y, ierr), *ierr);
   int nvec;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x, &nvec, ierr), *ierr);
+#ifdef PHIST_TIMEMONITOR
+  for(int i = 0; i < nvec; i++)
+    phist_totalMatVecCount();
+#endif
+
+  PHIST_CHK_IERR(SUBR(crsMat_times_mvec)(alpha, A, x, beta, y, ierr), *ierr);
   _ST_ alpha_shifts[nvec];
   for(int i = 0; i < nvec; i++)
     alpha_shifts[i] = alpha*shifts[i];

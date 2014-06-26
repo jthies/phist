@@ -166,6 +166,14 @@ void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr)
   *iupper = map->MaxMyGID();
   }
 
+#ifdef PHIST_TIMEMONITOR
+void phist_totalMatVecCount()
+{
+  ENTER_FCN(__FUNCTION__);
+}
+#endif
+
+
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "../kernels_noimpl.c"
