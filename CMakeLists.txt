@@ -308,9 +308,6 @@ if( ${PHIST_TIMEMONITOR} )
   message(STATUS "activated TimeMonitor timing monitoring")
 endif()
 set(PHIST_TIMEMONITOR_PERLINE Off CACHE BOOL "Gather timing information for each line with a PHIST_CHK_* macro!")
-if( ${PHIST_TIMEMONITOR_PERLINE} )
-  message(WARNING "activated line-based TimeMonitor")
-endif()
 
 configure_file ("${PROJECT_SOURCE_DIR}/src/phist_config.h.in" "${PROJECT_BINARY_DIR}/phist_config.h")
 
