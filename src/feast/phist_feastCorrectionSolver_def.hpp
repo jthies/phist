@@ -4,7 +4,6 @@ void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me,
         linSolv_t method,
         int blockSize,
         int numShifts, _MT_ sigma_r[], _MT_ sigma_i[],
-        _MT_ tol, int maxIter,
         int *ierr)
 {
 #include "phist_std_typedefs.hpp"
@@ -19,6 +18,7 @@ void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me,
   (*me)->sigma_i_ = new MT[numShifts];
   (*me)->rhs_=NULL;
   (*me)->method_=method;
+
   for (int i=0;i<numShifts;i++)
   {
     (*me)->sigma_r_[i]=sigma_r[i];
@@ -27,20 +27,19 @@ void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me,
   
   if (method==CARP_CG)
   {
-    const_map_ptr_t map=NULL;
-    PHIST_CHK_IERR(SUBR(crsMat_get_row_map)(A,&map,ierr),*ierr);
+#ifdef PHIST_KERNEL_LIB_GHOST
+// GHOST has mixed arithmetic built in, we could simply use the complex kernels
+// (with complex shifts and vectors) but pass in a real-valued matrix (in theory...)
+#warning "for ghost we should use the complex carp_cg but pass in the real matrix."
+         "Using the real arithmetic version may cost performance..."
+
+#endif  
     // create one CARP-CG object per shift.
     (*me)->carp_cgStates_ = new TYPE(carp_cgState_ptr)[numShifts];
     
     PHIST_CHK_IERR(SUBR(carp_cgStates_create)
-        ((*me)->carp_cgStates_,numShifts,map,blockSize,maxIter,ierr),*ierr);
-    
-    for (int i=0;i<numShifts;i++)
-    {
-      (*me)->carp_cgStates_[i]->tol = tol;
-      (*me)->carp_cgStates_[i]->sigma_r = sigma_r[i];
-      (*me)->carp_cgStates_[i]->sigma_i = sigma_i[i];
-    }
+        ((*me)->carp_cgStates_,numShifts,sigma_r,sigma_i,
+        A, blockSize,ierr),*ierr);    
   }
   else
   {
@@ -87,6 +86,7 @@ void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) me, int 
 //!                 desired tolerance
 void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
                                     TYPE(const_mvec_ptr) rhs,
+                                    _MT_ tol, int maxIter,
                                     TYPE(mvec_ptr) sol_r[],
                                     TYPE(mvec_ptr) sol_i[],
                                     int *ierr)
@@ -96,26 +96,24 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
   *ierr=0;
   if (me->method_==CARP_CG)
   {
+    MT* normsB=NULL;
     // reset all CG states. Use the given sol vectors as starting guess.
     for (int i=0; i<me->numShifts_; i++)
     {
-#ifdef IS_COMPLEX
-      PHIST_CHK_IERR(SUBR(carp_cgState_reset)(me->carp_cgStates_[i],
-        sol_r[i],NULL,ierr),*ierr);
-#else
-      PHIST_CHK_IERR(SUBR(carp_cgState_reset)(me->carp_cgStates_[i],
-        sol_r[i],sol_i[i],ierr),*ierr);
-#endif
+      PHIST_CHK_IERR(SUBR(carp_cgState_reset)(me->carp_cgStates_[i],rhs,normsB,ierr),*ierr);
+      // compute ||b|| only for first system, then copy it
+      normsB=me->carp_cgStates_[0]->normB_;
     }
     // now iterate the systems with the different shifts
     // (and the same multiple RHS each). At this point
     // we put the further parallelisation into the hand of
     // the carp_cg implementation, which might delegate shifts
-    // to other nodes, use a queuing system etc.
-    int nIter=0; // not sure why exactly this counter, but we'll see.
+    // to other nodes, use a queuing system etc. The starting
+    // vectors are taken as received by this function and passed
+    // on to carp_cg.
     PHIST_CHK_IERR(SUBR(carp_cgStates_iterate)
-        (me->A_, rhs, me->carp_cgStates_, me->numShifts_,  
-                sol_r, sol_i, &nIter,ierr),*ierr);
+                (me->carp_cgStates_, me->numShifts_, 
+                sol_r, sol_i, tol, maxIter,ierr),*ierr);
   }
   else
   {

@@ -25,4 +25,3 @@
 #include "phist_carp_cg_def.hpp"
 #include "phist_gen_z.h"
 #include "phist_carp_cg_def.hpp"
-

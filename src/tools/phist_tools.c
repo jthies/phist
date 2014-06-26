@@ -12,6 +12,7 @@ const char* phist_retcode2str(int code)
   {
   if (code==PHIST_SUCCESS) return "success";
   else if (code==PHIST_FUNCTIONAL_ERROR) return "functional error";
+  else if (code==PHIST_INVALID_INPUT) return "invalid input";
   else if (code==PHIST_INTEGER_OVERFLOW) return "int overflow";
   else if (code==PHIST_CAUGHT_EXCEPTION) return "caught exception";
   else if (code==PHIST_BAD_CAST) return "bad cast or NULL pointer";

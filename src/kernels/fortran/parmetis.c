@@ -1,3 +1,4 @@
+#include "phist_config.h"
 /*! \file parmetis.c
  * \brief defines the parmetis wrapper function parmetis_v3_partkway_f_
  * \author Achim Basermann, Melven Zoellner
