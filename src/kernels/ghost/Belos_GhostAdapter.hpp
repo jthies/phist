@@ -645,7 +645,6 @@ using ::phist::GhostMV;
       ghost_densemat_t* Mghost;
       ghost_densemat_create(&Mghost,ctx,dmtraits);
       Mghost->viewPlain(Mghost, (void*)M.values(),
-                Mghost->traits.nrows, Mghost->traits.ncols,
                 0,0,Mghost->traits.nrowspadded);
 
     return Mghost;
