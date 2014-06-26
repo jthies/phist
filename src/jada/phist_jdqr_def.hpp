@@ -267,7 +267,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   
   while (nconv<numEigs && it < maxIter)
   {
-    //TODO - thoroughly check the switch from 1-based m in MATLAB to 0-based here
     if (expand)
     {
       PHIST_DEB("EXPAND basis by %d vector(s)\n",nv);
@@ -302,29 +301,14 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       PHIST_CHK_IERR(SUBR(mvec_set_block)(V,t_ptr,m0,m-1,ierr),*ierr);
       // compute AV(:,m) = A*V(:,m)
       PHIST_CHK_IERR(A_op->apply(st::one(),A_op->A,Vm,st::zero(),AVm,ierr),*ierr);
+
       // Galerkin for non-Hermitian A
-#if 0
-      //BUG: this variant does not work correctly in parallel. Should check out why (TODO).
-      //     It is probably also less efficient because it requires three messages rather 
-      //     than one.
-      // M(1:m-1,m)=V(:,1:m-1)'*AV(:,m);
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m0-1,m0,m-1,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,AVm,st::zero(),Mv,ierr),*ierr);
-      // M(m,1:m-1)=V(:,m)'*AV(:,1:m-1);
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,m0,m-1,0,m0-1,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vm,AVv,st::zero(),Mv,ierr),*ierr);
-      // M(m,m)=V(:,m)'*AV(:,m) note that we could do this using a dot product in the
-      // single-vector case, but we want to extend it to a block variant so we use the more
-      // general dense matmul.
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,m0,m-1,m0,m-1,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vm,AVm,st::zero(),Mv,ierr),*ierr);
-#else
       PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,ierr),*ierr);
       // compute M = V'A*V
       PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-1,0,m-1,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,AVv,st::zero(),Mv,ierr),*ierr);
-#endif
+
       PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,ierr),*ierr);
       PHIST_DEB("basis size is now m=%d\n",m);
@@ -379,7 +363,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     }
     else
     {
-      expand=1;//TODO - handle nv correctly
+      expand=1;// the expand flag is just used at start-up
+               // for starting with a vector or some Arnoldi steps.
     }
       
     // now do a Schur decomposition of M into S and T, with the
@@ -493,7 +478,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 //}
     PHIST_SOUT(PHIST_INFO,"JDQR Iter %d\tdim(V)=%d\ttheta=%8.4g%+8.4gi\t\tr_est=%8.4e\n",it,m,ct::real(theta),ct::imag(theta),nrm[0]);
   // deflate converged eigenpairs
-  while (nrm[0]<=tol)
+  if (nrm[0]<=tol)
   {
     mm=0;// counts iterations for next theta
     // number of converged eigenpairs: +2 for complex conjugate pairs in real case
@@ -559,7 +544,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // (TODO: is it desirable to do them in order?)
 
     ev_pos+=nv; // skip conjugate ev for real case w/ cmplx theta
-                // TODO: we would have to add it ot Q anyway, wouldn't we?
     theta=ev[ev_pos];
     nv=1;
 #ifndef IS_COMPLEX
@@ -626,7 +610,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
         (T_raw,ldT,S_raw,ldS,m,nselect,nsort,which,tol,ev,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,m-1,0,m-1,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m-1,0,m-1,ierr),*ierr);
-  } //while (deflate)
+  } //if (deflate)
 
   if (nrm[0]>100*prev_nrm)
   {
@@ -693,10 +677,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // In the real case with complex Ritz value theta,
     // we solve the update equation in real arithmetic with
     // real shift. This results in a linear system with two
-    // right-hand sides. (TODO: if this occurs frequently 
-    // in our target applications we should allow complex
-    // shifts here so that the Newton character of JD is 
-    // preserved).
+    // right-hand sides.
 
     // the block case is not implemented here:
     // (I-uu')A(I-uu')*t - (I-uu')t*Theta=-r
@@ -711,7 +692,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     innerTol[1] = std::max(tol,mt::one()/((MT)(2<<mm)));
     PHIST_SOUT(PHIST_VERBOSE,"inner conv tol: %g\n",innerTol[0]);
 
-    // allow at most 25 iterations (TODO: make these settings available to the user)
+    // allow at most 25 iterations
     int nIt=25;
       PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, NULL, Qtil, NULL, 
                                                       sigma, rtil_ptr, NULL, 

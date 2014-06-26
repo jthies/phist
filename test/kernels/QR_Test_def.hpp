@@ -9,12 +9,15 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
 public:
 
+  typedef KernelTestWithVectors<_ST_,_N_,_NV_> VTest;
+  typedef KernelTestWithSdMats<_ST_,_NV_,_NV_> MTest;
+
   /*! Set up routine.
    */
   virtual void SetUp()
     {
-    KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
-    KernelTestWithSdMats<_ST_,_NV_,_NV_>::SetUp();
+    VTest::SetUp();
+    MTest::SetUp();
     if (typeImplemented_)
       {
       SUBR(mvec_random)(vec1_,&ierr_);
@@ -23,7 +26,7 @@ public:
         {
         for (int i=0;i<stride_*nloc_;i+=stride_)
           {
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
           vec2_vp_[j+i*lda_] = vec1_vp_[j+i*lda_];
 #else
           vec2_vp_[j*lda_+i] = vec1_vp_[j*lda_+i];
@@ -37,8 +40,8 @@ public:
    */
   virtual void TearDown() 
     {
-    KernelTestWithVectors<_ST_,_N_,_NV_>::TearDown();
-    KernelTestWithSdMats<_ST_,_NV_,_NV_>::TearDown();
+    VTest::TearDown();
+    MTest::TearDown();
     }
 
 };
@@ -50,6 +53,9 @@ public:
 //      PrintVector(*cout,"QR_Test V",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
       SUBR(mvec_QR)(vec2_,mat1_,&ierr_);
       ASSERT_EQ(0,ierr_);
+      // doing a QR decomp must not relocate data:
+      ASSERT_EQ(true,MTest::pointerUnchanged(mat1_,mat1_vp_,m_lda_));
+      ASSERT_EQ(true,VTest::pointerUnchanged(vec2_,vec2_vp_,lda_));
 //      PrintVector(*cout,"QR_Test Q",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
       ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
       ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
@@ -72,7 +78,7 @@ public:
         // set last two columns to same vector
         for (int i=0;i<stride_*nloc_;i+=stride_)
           {
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
           vec1_vp_[(nvec_-1)+i*lda_] = vec1_vp_[(nvec_-2)+i*lda_];
 #else
           vec1_vp_[(nvec_-1)*lda_+i] = vec1_vp_[(nvec_-2)*lda_+i];
@@ -93,9 +99,9 @@ public:
     }
 
   TEST_F(CLASSNAME, with_one_vectors) 
-    {
+  {
     if (typeImplemented_)
-      {
+    {
       SUBR(mvec_put_value)(vec1_,st::one(),&ierr_);
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&ierr_);
@@ -107,6 +113,10 @@ public:
       // check that we anyway got something orthogonal back
       ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
       ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
-      }
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      PHIST_DEB("R=\n");
+      SUBR(sdMat_print)(mat1_,&ierr_);
+#endif
     }
+  }
 

@@ -44,7 +44,7 @@ On the RRZE systems proceed as follows to build PHIST with GHOST (substitute $PR
   module load cmake
   cd build/
   PHIST_KERNEL_LIB=ghost CC=icc CXX=icpc 
-  cmake .. -DTrilinos_HOME=$TRILINOS_HOME -DGHOST_DIR=$PREFIX/lib/ghost -DESSEX-PHYSICS_DIR=$PREFIX/lib/essex-physics -DMPIEXEC=mpirun_rrze
+  cmake .. -DTrilinos_HOME=$TRILINOS_HOME -DGHOST_DIR=$PREFIX/lib/ghost -DESSEX_INSTALL_DIR=$PREFIX/ -DMPIEXEC=mpirun_rrze
   make 
 
 It is sufficient to set GHOST_HOME and TRILINOS_HOME as environement variables (or Ghost_HOME, Trilinos_HOME)

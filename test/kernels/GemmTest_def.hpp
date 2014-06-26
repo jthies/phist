@@ -35,7 +35,7 @@ void BuildTestCase1()
     for (int i=0; i<stride_*nloc_; i+=stride_)
       {
       MT ij = (MT)((i+ilower+1)*(j+1));
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       vec1_vp_[j+i*lda_] = ij*st::one() + ij*st::cmplx_I();
       vec2_vp_[j+i*lda_] = st::one()/(ij - ij*st::cmplx_I());
 #else
@@ -61,7 +61,7 @@ void PrintTestCase()
     {
     for (int j=0;j<nvec_;j++)
       {
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       std::cout << vec1_vp_[j+i*lda_] << "  ";
 #else
       std::cout << vec1_vp_[j*lda_+i] << "  ";
@@ -74,7 +74,7 @@ void PrintTestCase()
     {
     for (int j=0;j<nvec_;j++)
       {
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       std::cout << vec2_vp_[j+i*lda_] << "  ";
 #else
       std::cout << vec2_vp_[j*lda_+i] << "  ";
@@ -105,19 +105,19 @@ void PrintTestCase()
       _ST_ beta=st::zero();
       SUBR(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1));
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1,mflag_));
 
       alpha=(_MT_)0.5*st::one();
       beta=(_MT_)0.5*st::one();
       SUBR(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1));
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1,mflag_));
 
       alpha=(_MT_)0.3*st::one(); 
       beta=(_MT_)0.7*st::one();
       SUBR(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1));
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1,mflag_));
       }
     }
     

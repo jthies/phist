@@ -1,3 +1,11 @@
+#include "phist_config.h"
+#ifdef PHIST_HAVE_GHOST
+#include "ghost/config.h"
+#else
+// this is for the crsMat_fromMatFunc, if we don't have
+// ghost we assume 64 bit ints in that interface
+#define GHOST_HAVE_LONGIDX 1
+#endif
 extern "C" {
 
 void SUBR(type_avail)(int *ierr)
@@ -426,10 +434,16 @@ void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, i
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace_f)(V, M, ierr), *ierr);
 }
 
-void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, int nrows, int ncols, int maxnne, void (*rowFunPtr)(int64_t,int64_t*,int64_t*,void*), int *ierr)
+#ifdef GHOST_HAVE_LONGIDX
+void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, int nrows, int ncols, int maxnne, int (*rowFunPtr)(int64_t,int64_t*,int64_t*,void*), int *ierr)
 {
+  void SUBR(crsMat_create_fromRowFunc_f)(TYPE(crsMat_ptr)*, int, int, int, int (*)(int64_t,int64_t*,int64_t*,void*), int*);
+#else
+void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, int nrows, int ncols, int maxnne, int (*rowFunPtr)(int32_t,int32_t*,int32_t*,void*), int *ierr)
+{
+  void SUBR(crsMat_create_fromRowFunc_f)(TYPE(crsMat_ptr)*, int, int, int, int (*)(int32_t,int32_t*,int32_t*,void*), int*);
+#endif
   ENTER_FCN(__FUNCTION__);
-  void SUBR(crsMat_create_fromRowFunc_f)(TYPE(crsMat_ptr)*, int, int, int, void (*)(int64_t,int64_t*,int64_t*,void*), int*);
   PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc_f)(A, nrows, ncols, maxnne, rowFunPtr, ierr), *ierr);
 }
 

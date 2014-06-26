@@ -23,6 +23,10 @@ extern "C" {
 #define LAPACK_SUBR(NAME,name) name ## _
 #define BLAS_SUBR(NAME,name) name ## _
 
+#ifdef PHIST_SDMATS_ROW_MAJOR
+#warning "lapack calls will not work for row-major sdMats"
+#endif
+
 // we add lapack subroutines as we go along implementing things.
 
 ///////////////////////////////////////////////////////////////////////////////////////////

@@ -380,6 +380,7 @@ void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* ierr)
 
 void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* ierr)
   {
+  *ierr=0;
   CAST_PTR_FROM_VOID(const Epetra_MultiVector,M,vM,*ierr);
   std::cout << *M;
   }

@@ -355,8 +355,11 @@ namespace ghost {
     TEUCHOS_TEST_FOR_EXCEPTION(_A->traits.flags & GHOST_DENSEMAT_SCATTERED,    
                 std::invalid_argument,
                 "ghost::TsqrAdaptor<Scalar>::getNonConstView(mv) requires constant stride in mv");
-                
-    Teuchos::ArrayRCP<ST> values((scalar_type*)_A->val[0],0,A_len,false);
+
+    scalar_type* valptr;
+    ghost_densemat_valptr(_A,(void**)&valptr);
+                    
+    Teuchos::ArrayRCP<ST> values(valptr,0,A_len,false);
     Teuchos::RCP<node_type> node = createNode();
     Kokkos::MultiVector<scalar_type, node_type> KMV(node);
     KMV.initializeValues ((size_t)_A->traits.nrows,

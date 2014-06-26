@@ -1,3 +1,9 @@
+#include "phist_config.h"
+#ifdef PHIST_HAVE_GHOST
+#include "ghost/config.h"
+#else
+#define GHOST_HAVE_LONGIDX 1
+#endif
 #include "phist_macros.h"
 
 /*! these functions need to be provided by a kernel module  
@@ -137,11 +143,12 @@ void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* ierr);
 
 //! extract view from multi-vector. Sets the user-provided val pointer to point to the
 //! beginning of the first vector, and puts the leading dimension of the array into lda,
-//! such that the first element of vector i is val[i*lda]. Note that lda may be larger
-//! than the actual local vector length as obtained by mvec_my_length. This function is
-//! dangerous in the sense that it would force the underlying kernel lib to implement the
-//! data layout in this given fashion. A library that does not guarantee this should return
-//! -99 here ("not implemented")
+//! such that the element j of vector i is val[i*lda+j]. If PHIST_MVECS_ROW_MAJJOR is
+//! #defined, the storage is transposed and element j of vector i is found at val[j*lda+i].
+//! Note that lda may be larger than the actual local vector length as obtained by 
+//! mvec_my_length. This function is dangerous in the sense that it would force the 
+//! underlying kernel lib to implement the data layout in either of these formats.
+//! library that does not guarantee this should return -99 here ("not implemented")
 void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val,
         lidx_t* lda, int* ierr);
 
@@ -335,7 +342,13 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) V,
 
 
 #ifdef PHIST_KERNEL_LIB_FORTRAN
-void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, int nrows, int ncols, int maxnne, void (*rowFunPtr)(int64_t,int64_t*,int64_t*,void*), int *ierr);
+// the row functions in the physics repo use 32 or 64 bit integers depending on how ghost is 
+// compiled, that's why the interface depends on ghost here
+#ifdef GHOST_HAVE_LONGIDX
+void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, int nrows, int ncols, int maxnne, int (*rowFunPtr)(int64_t,int64_t*,int64_t*,void*), int *ierr);
+#else
+void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, int nrows, int ncols, int maxnne, int (*rowFunPtr)(int32_t,int32_t*,int32_t*,void*), int *ierr);
+#endif
 void SUBR(mvec_gather_mvecs)(TYPE(mvec_ptr) V, TYPE(const_mvec_ptr) W[], int nblocks, int *ierr);
 void SUBR(mvec_scatter_mvecs)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W[], int nblocks, int *ierr);
 void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int *ierr);
@@ -343,16 +356,6 @@ void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, i
 
 
 //!@}
-
-//! mixed real/complex operation: split mvec into real and imag part.
-//! if either reV or imV are NULL, it is not touched.
-#ifdef IS_COMPLEX
-# ifdef IS_DOUBLE
-void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Dmvec_t* reV, Dmvec_t* imV, int *ierr);
-# else
-void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* imV, int *ierr);
-# endif
-#endif
 
 #ifdef __cplusplus
 } //extern "C"

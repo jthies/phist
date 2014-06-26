@@ -1,12 +1,27 @@
 #include "phist_config.h"
+#ifdef PHIST_HAVE_GHOST
+#include "ghost/config.h"
+#else
+#define GHOST_HAVE_LONGIDX 1
+#endif
+
+!TODO - move into the module as integer, parameter :: ghost_idx_t
+! (didn't work for some reason)
+#ifdef GHOST_HAVE_LONGIDX
+#define GHOST_IDX_T C_INT64_T
+#else
+#define GHOST_IDX_T C_INT32_T
+#endif
+
 
 module crsmat_module
   use map_module, only: Map_t, map_setup
   use mvec_module, only: MVec_t, mvec_scale
+  
   implicit none
   private
-
   public :: CrsMat_t
+
   !public :: phist_DcrsMat_read_mm
   !public :: phist_DcrsMat_create_fromRowFunc
   !public :: phist_DcrsMat_delete
@@ -68,13 +83,14 @@ module crsmat_module
 
   !> interface of function-ptr for crsMat_create_fromRowFunc
   abstract interface
-    subroutine matRowFunc(row, nnz, cols, vals)
+    function matRowFunc(row, nnz, cols, vals) result(ierr)
       use, intrinsic :: iso_c_binding
-      integer(C_INT64_T), value :: row
-      integer(C_INT64_T), intent(inout) :: nnz
-      integer(C_INT64_T), intent(inout) :: cols(*)
+      integer(C_INT) :: ierr
+      integer(GHOST_IDX_T), value :: row
+      integer(GHOST_IDX_T), intent(inout) :: nnz
+      integer(GHOST_IDX_T), intent(inout) :: cols(*)
       real(C_DOUBLE),     intent(inout) :: vals(*)
-    end subroutine matRowFunc
+    end function matRowFunc
   end interface
 
 contains
@@ -1448,11 +1464,11 @@ end do
     type(CrsMat_t), pointer :: A
     procedure(matRowFunc), pointer :: rowFunc
     !--------------------------------------------------------------------------------
-    integer(kind=8), allocatable :: idx(:,:)
+    integer(kind=GHOST_IDX_T), allocatable :: idx(:,:)
     real(kind=8), allocatable :: val(:)
     integer(kind=8) :: i, globalRows, globalCols
     integer(kind=8) :: j, j_, globalEntries
-    integer(kind=8) :: i_, nne
+    integer(kind=GHOST_IDX_T) :: i_, nne
     integer :: funit
     !--------------------------------------------------------------------------------
 
@@ -1494,7 +1510,8 @@ end do
     do i = 1, A%nRows, 1
 !$omp ordered
       i_ = A%row_map%distrib(A%row_map%me)+i-2
-      call rowFunc(i_, nne, idx(:,1), val)
+      ierr = rowFunc(i_, nne, idx(:,1), val)
+      if( ierr .ne. 0 ) call exit()
       j = A%row_offset(i)
       j_ = j + int(nne-1,kind=8)
       A%global_col_idx(j:j_) = idx(1:nne,1)+1

@@ -222,7 +222,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+1,_M_>,
         // check A*Vm = AVm
         opA->apply(-st::one(),opA->A,Vm_,st::one(),AVm_,&ierr);
         ASSERT_EQ(0,ierr);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
         ASSERT_NEAR(mt::one(),ArrayEqual(vec2_vp_,nvec_,nloc_,lda_,stride_,st::zero()), (MT)50.*releps(V_));
 #else
         ASSERT_NEAR(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,st::zero()), (MT)50.*releps(V_));

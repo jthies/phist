@@ -1,4 +1,8 @@
 #include "phist_config.h"
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+#include <iostream>
 #include "phist_macros.h"
 #include "../phist_kernels.h"
 
@@ -134,8 +138,13 @@ ghost_densemat_traits_t phist_default_vtraits()
   vtraits.nrows=0; // get from context
   vtraits.nrowshalo=0; // get from context
   vtraits.nrowspadded=0; // get from context
-  vtraits.flags = (ghost_densemat_flags_t)(GHOST_DENSEMAT_DEFAULT|GHOST_DENSEMAT_HOST|GHOST_DENSEMAT_LHS);
+  vtraits.flags = (ghost_densemat_flags_t)(GHOST_DENSEMAT_DEFAULT|GHOST_DENSEMAT_HOST|GHOST_DENSEMAT_NO_HALO);
   vtraits.ncols=1;
+#ifdef PHIST_MVECS_ROW_MAJOR
+  vtraits.storage=GHOST_DENSEMAT_ROWMAJOR;
+#else  
+  vtraits.storage=GHOST_DENSEMAT_COLMAJOR;
+#endif
   return vtraits;
   }
 
@@ -159,7 +168,7 @@ void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int
   // we want to create one we need to get the 'map' from the matrix (e.g. the
   // domain map which is the same as the col map in ghost). A RHS vector can
   // be used as LHS, however.
-  map->vtraits_template.flags = GHOST_DENSEMAT_LHS;
+  map->vtraits_template.flags = GHOST_DENSEMAT_NO_HALO;
 
   *vmap=(map_ptr_t)(map);
   }

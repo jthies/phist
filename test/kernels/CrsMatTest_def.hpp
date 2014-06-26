@@ -36,7 +36,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
 #ifndef SKIP_ZERO_MAT
       SUBR(read_mat)("spshift",nglob_,&A4_,&ierr_);
 #else
-      A4_ = NULL;
+      A4_ = A1_;
 #endif
       
       if (A0_==NULL || A1_==NULL || A2_==NULL || A3_==NULL || A4_==NULL)
@@ -125,11 +125,7 @@ void rebuildVectors(TYPE(const_crsMat_ptr) A)
     SUBR(mvec_vadd_mvec)(alpha_shifts, vec1_, st::one(), vec3_, &ierr_);
     ASSERT_EQ(0, ierr_);
 
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nvec_,nloc_,lda_,stride_), 1000*mt::eps());
-#else
-    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_), 1000*mt::eps());
-#endif
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_), 1000*mt::eps());
   }
 
 
@@ -164,7 +160,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_print)(vec1_,&ierr_);
       SUBR(mvec_print)(vec2_,&ierr_);
 #endif
-      return ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,val);
+      return ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,val,vflag_);
       }
   return mt::one();
   }
@@ -195,7 +191,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_random)(vec2_,&ierr_);
       SUBR(crsMat_times_mvec)(st::one(),A0_,vec1_,st::zero(),vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,0.0));
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,0.0,vflag_));
       }
     }
 #endif
@@ -213,11 +209,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_random)(vec2_,&ierr_);
       SUBR(crsMat_times_mvec)(st::one(),A1_,vec1_,st::zero(),vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nvec_,nloc_,lda_,stride_));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
-#endif
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_,vflag_));
 
       //alpha*I*X=alpha*X?
       alpha = random_number();
@@ -228,11 +220,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_scale)(vec1_,alpha,&ierr_);
       ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nvec_,nloc_,lda_,stride_));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_));
-#endif
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_,vflag_));
 
       //0*I*X+beta*Y = beta*Y? 
       alpha=st::zero(); 
@@ -256,11 +244,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_print)(vec2_,&ierr_);
       SUBR(mvec_print)(vec3_,&ierr_);
 #endif
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nvec_,nloc_,lda_,stride_));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_));
-#endif
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_));
 
       //I*X+beta*Y = X+beta*Y?
       alpha = st::one();
@@ -284,11 +268,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_print)(vec2_,&ierr_);
       SUBR(mvec_print)(vec3_,&ierr_);
 #endif
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nvec_,nloc_,lda_,stride_));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_));
-#endif
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_));
 
       //alpha*I*X+beta*Y = alpha*X+beta*Y?
       alpha = random_number();
@@ -314,13 +294,61 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_print)(vec2_,&ierr_);
       SUBR(mvec_print)(vec3_,&ierr_);
 #endif
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nvec_,nloc_,lda_,stride_));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_));
-#endif
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_));
       }
     }
+
+#if(_NV_>1)
+  TEST_F(CLASSNAME, A1_times_mvec_using_views)
+  {
+    if (typeImplemented_ && A1_!=NULL)
+    {
+      // matrices may have different maps
+      rebuildVectors(A1_);
+
+      ST alpha, beta;
+      //I*X=X?
+      SUBR(mvec_random)(vec1_,&ierr_);
+      SUBR(mvec_random)(vec2_,&ierr_);
+      
+      TYPE(mvec_ptr) v_in=NULL, v_out=NULL;
+      lidx_t nv =  _NV_/2;
+      lidx_t offs = _NV_%2;
+      SUBR(mvec_view_block)(vec1_,&v_in,offs,offs+nv-1,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_view_block)(vec1_,&v_out,offs+nv,offs+2*nv-1,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      
+      _ST_ *v_in_vp, *v_out_vp;
+
+// we could extract the pointers from the view, but this way we
+// have more control and make sure the data is where it should be:
+#ifdef PHIST_MVECS_ROW_MAJOR
+     v_in_vp = vec1_vp_+offs;
+     v_out_vp = vec1_vp_+offs+nv;
+#else
+     v_in_vp = vec1_vp_+offs*lda_;
+     v_out_vp = vec1_vp_+(offs+nv)*lda_;
+#endif
+#if(PHIST_OUTLEV>=PHIST_DEBUG)
+      PHIST_DEB("all random:\n");
+      SUBR(mvec_print)(vec1_,&ierr_);
+#endif
+      SUBR(crsMat_times_mvec)(st::one(),A1_,v_in,st::zero(),v_out,&ierr_);
+      ASSERT_EQ(0,ierr_);
+#if(PHIST_OUTLEV>=PHIST_DEBUG)
+      PHIST_DEB("with two identical blocks [%d..%d] and [%d..%d]:\n",
+        offs, offs+nv-1,offs+nv,offs+2*nv-1);
+      SUBR(mvec_print)(vec1_,&ierr_);
+#endif
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(v_in_vp,v_out_vp,nloc_,nv,lda_,stride_,vflag_));
+    }
+    else
+    {
+      PHIST_SOUT(PHIST_INFO,"test skipped\n");
+    }
+  }
+#endif
 
   TEST_F(CLASSNAME, A2_times_mvec)
     {
@@ -363,11 +391,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       for(int i = 0; i < nloc_; i++)
       {
         for(int j = 0; j < nvec_; j++)
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-          vec1_vp_[i*lda_+j] = (_ST_)(ilower+i + j*nglob_);
-#else
-          vec1_vp_[j*lda_+i] = (_ST_)(ilower+i + j*nglob_);
-#endif
+        {
+          vec1_vp_[VIDX(i,j,lda_)] = (_ST_)(ilower+i + j*nglob_);
+        }
       }
 
       // apply our shift matrix
@@ -387,11 +413,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       for(int i = 0; i < nloc_; i++)
       {
         for(int j = 0; j < nvec_; j++)
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-          ASSERT_REAL_EQ((ilower+i+1)%nglob_ + j*nglob_, st::real(vec2_vp_[i*lda_+j]));
-#else
-          ASSERT_REAL_EQ((ilower+i+1)%nglob_ + j*nglob_, st::real(vec2_vp_[j*lda_+i]));
-#endif
+          ASSERT_REAL_EQ((ilower+i+1)%nglob_ + j*nglob_,st::real(vec2_vp_[VIDX(i,j,lda_)]));
       }
     }
   }
@@ -419,11 +441,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       for(int i = 0; i < nloc_; i++)
       {
         for(int j = 0; j < nvec_; j++)
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-          vec1_vp_[i*lda_+j] = (_ST_)(ilower+i + j*nglob_);
-#else
-          vec1_vp_[j*lda_+i] = (_ST_)(ilower+i + j*nglob_);
-#endif
+        {
+          vec1_vp_[VIDX(i,j,lda_)] = (_ST_)(ilower+i + j*nglob_);
+        }
       }
 
       // apply our shift matrix
@@ -495,7 +515,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
         -8.1932230989204431,
         9.6675923086516082 };
 #endif
-#else
+#elif _N_ == 25 && _NV_ == 1
 #ifdef IS_COMPLEX
       _ST_ precalc_result[_N_*_NV_] = {
         _ST_(1.072230172746e+01,-1.031665649804e+00), _ST_(3.572230172746e+01,-1.031665649804e+00), _ST_(6.072230172746e+01,-1.031665649804e+00), _ST_(8.572230172746e+01,-1.031665649804e+00),
@@ -551,19 +571,18 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
         -8.1932230989204431, 16.806776901079530, 41.806776901079516, 66.806776901079530,
         9.6675923086516082, 34.667592308651606, 59.667592308651606, 84.667592308651621 };
 #endif
+#else
+  PHIST_SOUT(PHIST_INFO,"skipping test, no data available\n");
+  ST* precalc_result=NULL;
+  return;
 #endif
       // check result
       for(int i = 0; i < nloc_; i++)
       {
         for(int j = 0; j < nvec_; j++)
         {
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-          ASSERT_NEAR(st::real(precalc_result[(ilower+i)*nvec_+j]), st::real(vec2_vp_[i*lda_+j]), mt::sqrt(mt::eps()));
-          ASSERT_NEAR(st::imag(precalc_result[(ilower+i)*nvec_+j]), st::imag(vec2_vp_[i*lda_+j]), mt::sqrt(mt::eps()));
-#else
-          ASSERT_NEAR(st::real(precalc_result[(ilower+i)*nvec_+j]), st::real(vec2_vp_[j*lda_+i]), mt::sqrt(mt::eps()));
-          ASSERT_NEAR(st::imag(precalc_result[(ilower+i)*nvec_+j]), st::imag(vec2_vp_[j*lda_+i]), mt::sqrt(mt::eps()));
-#endif
+          ASSERT_NEAR(st::real(precalc_result[(ilower+i)*nvec_+j]), st::real(vec2_vp_[VIDX(i,j,lda_)]), mt::sqrt(mt::eps()));
+          ASSERT_NEAR(st::imag(precalc_result[(ilower+i)*nvec_+j]), st::imag(vec2_vp_[VIDX(i,j,lda_)]), mt::sqrt(mt::eps()));
         }
       }
     }

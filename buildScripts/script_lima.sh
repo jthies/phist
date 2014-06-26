@@ -6,7 +6,8 @@ export PHIST_KERNEL_LIB=ghost
 # in the PKG_CONFIG_PATH
 #export PKG_CONFIG_PATH=${HOME}/local:${PKG_CONFIG_PATH}
 # where to find Trilinos?
-export TRILINOS_HOME=${HOME}/sven/Trilinos
+export TRILINOS_HOME=${HOME}/local/Trilinos/pg
+export GHOST_DIR=${HOME}/local/ghost/
 
 # compilers, Likwid etc.
 export CC=/apps/intel/mpi/4.1.3.048/rrze-bin-intel/mpicc

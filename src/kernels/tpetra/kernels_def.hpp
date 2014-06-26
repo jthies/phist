@@ -658,6 +658,7 @@ void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* ierr)
 
 void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* ierr)
   {
+  *ierr=0;
   ENTER_FCN(__FUNCTION__);
   CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*ierr);
   Teuchos::FancyOStream fos(Teuchos::rcp(&std::cout,false));
@@ -1016,23 +1017,6 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   }
 
 //!@}
-
-//! mixed real/complex operation: split mvec into real and imag part.
-//! if either reV or imV are NULL, it is not touched.
-#ifdef IS_COMPLEX
-# ifdef IS_DOUBLE
-void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Dmvec_t* reV, Dmvec_t* imV, int *ierr)
-{
-  *ierr=-99;
-}
-# else
-void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* imV, int *ierr)
-{
-  *ierr=-99;
-}
-# endif
-#endif
-
 
 } // extern "C"
 

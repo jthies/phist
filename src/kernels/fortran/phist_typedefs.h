@@ -20,6 +20,9 @@ typedef int32_t lidx_t;
 //! type of global indices
 typedef int64_t gidx_t;
 
+#define PRlidx "d"
+#define PRgidx "ld"
+
 #include "phist_void_aliases.h"
 
 #endif

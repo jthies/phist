@@ -55,7 +55,7 @@ class GhostMV
     
 #ifdef TRACE_GHOSTMV_MEM
     myID=countObjects++;
-    PHIST_OUT(PHIST_INFO,"### Create GhostMV #%d, ownMem=%d",myID,ownMem);
+    PHIST_OUT(PHIST_INFO,"### Create GhostMV #%d, ownMem=%d\n",myID,ownMem);
 #endif
     }
   
@@ -65,11 +65,11 @@ class GhostMV
 #ifdef TRACE_GHOSTMV_MEM
     if (ownMem_)
       {
-      PHIST_OUT(PHIST_INFO,"### Delete GhostMV #%d",myID);
+      PHIST_OUT(PHIST_INFO,"### Delete GhostMV #%d\n",myID);
       }
     else
       {
-      PHIST_OUT(PHIST_INFO,"### Delete view GhostMV #%d",myID);
+      PHIST_OUT(PHIST_INFO,"### Delete view GhostMV #%d\n",myID);
       }
 #endif
     if (ownMem_)

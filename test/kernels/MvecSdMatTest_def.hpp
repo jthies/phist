@@ -15,6 +15,8 @@ public:
   //! mvec/sdMat sizes
   static const int n_=_N_;
   static const int m_=_M_;
+  //TODO: k is currently ignored in this test
+  static const int k_=_K_;
   
   //! V is n x m
   TYPE(mvec_ptr) V1_,V2_;
@@ -97,14 +99,14 @@ public:
     // copy data to buffer
     for(int j = 0; j < n; j++)
       for(int i = 0; i < m; i++)
-        buff[j*m+i] = mat_raw[j*lda+i];
+        buff[j*m+i] = mat_raw[MIDX(i,j,lda)];
     // broadcast
     PHIST_CHK_IERR(*ierr = MPI_Bcast(buff,m*n,::phist::ScalarTraits<_ST_>::mpi_type(),0,MPI_COMM_WORLD),*ierr);
     // check
     int error = 0;
     for(int j = 0; j < n; j++)
       for(int i = 0; i < m; i++)
-        if( buff[j*m+i] != mat_raw[j*lda+i] )
+        if( buff[j*m+i] != mat_raw[MIDX(i,j,lda)] )
           error = 1;
     int globError = 0;
     PHIST_CHK_IERR(*ierr = MPI_Allreduce(&error,&globError,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD),*ierr);
@@ -137,7 +139,7 @@ public:
       VTest::PrintVector(*cout,"ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(M1_vp_,m_,m_,ldaM1_,stride_,(ST)nglob_));
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(M1_vp_,m_,m_,ldaM1_,stride_,(ST)nglob_,mflag_));
       SUBR(sdMat_parallel_check_)(M1_,&ierr_);
       ASSERT_EQ(0,ierr_);
       }
@@ -162,11 +164,7 @@ public:
       MTest::PrintSdMat(*cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
       VTest::PrintVector(*cout,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(V2_vp_,m_,nloc_,m_,stride_,(ST)m_));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(V2_vp_,nloc_,m_,ldaV2_,stride_,(ST)m_));
-#endif
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(V2_vp_,nloc_,m_,ldaV2_,stride_,(ST)m_,vflag_));
       SUBR(sdMat_parallel_check_)(M1_,&ierr_);
       ASSERT_EQ(0,ierr_);
       }
@@ -228,7 +226,8 @@ public:
         SUBR(sdMat_view_block)(M1_,&M1,off1_M[i],off1_M[i]+m1[i]-1,off2_M[i],off2_M[i]+m2[i]-1,&ierr_);
         ASSERT_EQ(0,ierr_);
 
-        // fill V and W with ones
+        // set V1 and V2 to 0,
+        // fill (viewed) V and W with random numbers
         SUBR(mvec_put_value)(V1_,st::zero(),&ierr_);
         ASSERT_EQ(0,ierr_);
         SUBR(mvec_random)(V1,&ierr_);
@@ -243,7 +242,10 @@ public:
         SUBR(mvecT_times_mvec)(-st::one(),V1,V2,st::one(),M1,&ierr_);
         ASSERT_EQ(0,ierr_);
 
-        PHIST_DEB("Note: we are just using views inside the random vectors");
+        PHIST_DEB("Note: we are just using views inside the random vectors\n");
+        PHIST_DEB("col-range V1: [%d:%d]\n",off1[i],off1[i]+m1[i]-1);
+        PHIST_DEB("col-range V2: [%d:%d]\n",off2[i],off2[i]+m2[i]-1);
+        PHIST_DEB("idx-range M:  [%d:%d,%d:%d]\n",off1_M[i],off1_M[i]+m1[i]-1,off2_M[i],off2_M[i]+m2[i]-1);
 #if PHIST_OUTLEV>=PHIST_DEBUG
         VTest::PrintVector(*cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
         VTest::PrintVector(*cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
@@ -263,6 +265,7 @@ public:
         ASSERT_EQ(0,ierr_);
         SUBR(sdMat_delete)(M2,&ierr_);
         ASSERT_EQ(0,ierr_);
+        MTest::PrintSdMat(*cout,"zero-random'*random in correct location",M2_vp_,ldaM2_,stride_,mpi_comm_);
         SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::one(),M2_,&ierr_);
         ASSERT_EQ(0,ierr_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -272,7 +275,7 @@ public:
         ASSERT_EQ(0,ierr_);
 
         // the result should be zero!
-        ASSERT_NEAR(mt::one(),ArrayEqual(M2_vp_,m_,m_,ldaM2_,stride_,st::zero()),200*mt::eps());
+        ASSERT_NEAR(mt::one(),ArrayEqual(M2_vp_,m_,m_,ldaM2_,stride_,st::zero(),mflag_),200*mt::eps());
 
         SUBR(mvec_delete)(V1,&ierr_);
         ASSERT_EQ(0,ierr_);

@@ -20,6 +20,11 @@
 
 using namespace testing;
 
+// Tests with V NxM, W NxK, C MxK
+
+///////////////////////////////////////////////
+// case k=1                                  //
+///////////////////////////////////////////////
 #ifdef CLASSNAME
 #undef CLASSNAME
 #endif
@@ -29,25 +34,25 @@ using namespace testing;
 #define _K_ 1
 
 #ifdef PHIST_HAVE_SP
-#define CLASSNAME SMvecSdMatTest_10_1
+#define CLASSNAME SMvecSdMatTest_10_1_1
 #include "phist_gen_s.h"
 #include "MvecSdMatTest_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME CMvecSdMatTest_10_1
+#define CLASSNAME CMvecSdMatTest_10_1_1
 
 #include "phist_gen_c.h"
 #include "MvecSdMatTest_def.hpp"
 #endif
 
 #undef CLASSNAME
-#define CLASSNAME DMvecSdMatTest_10_1
+#define CLASSNAME DMvecSdMatTest_10_1_1
 
 #include "phist_gen_d.h"
 #include "MvecSdMatTest_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME ZMvecSdMatTest_10_1
+#define CLASSNAME ZMvecSdMatTest_10_1_1
 
 #include "phist_gen_z.h"
 #include "MvecSdMatTest_def.hpp"
@@ -59,13 +64,13 @@ using namespace testing;
 
 #ifdef PHIST_HAVE_SP
 #undef CLASSNAME
-#define CLASSNAME SMvecSdMatTest_64_12
+#define CLASSNAME SMvecSdMatTest_64_12_1
 
 #include "phist_gen_s.h"
 #include "MvecSdMatTest_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME CMvecSdMatTest_64_12
+#define CLASSNAME CMvecSdMatTest_64_12_1
 
 #include "phist_gen_c.h"
 #include "MvecSdMatTest_def.hpp"
@@ -73,13 +78,155 @@ using namespace testing;
 #endif
 
 #undef CLASSNAME
-#define CLASSNAME DMvecSdMatTest_64_12
+#define CLASSNAME DMvecSdMatTest_64_12_1
 
 #include "phist_gen_d.h"
 #include "MvecSdMatTest_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME ZMvecSdMatTest_64_12
+#define CLASSNAME ZMvecSdMatTest_64_12_1
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
+///////////////////////////////////////////////
+// case k=4                                  //
+///////////////////////////////////////////////
+#ifdef CLASSNAME
+#undef CLASSNAME
+#endif
+
+#undef _N_
+#undef _M_
+#undef _K_
+
+#define _N_ 10
+#define _M_ 1
+#define _K_ 4
+
+#ifdef PHIST_HAVE_SP
+#define CLASSNAME SMvecSdMatTest_10_1_4
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_10_1_4
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_10_1_4
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_10_1_4
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef _N_
+#define _N_ 64
+#undef _M_
+#define _M_ 12
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecSdMatTest_64_12_4
+
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_64_12_4
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_64_12_4
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_64_12_4
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
+///////////////////////////////////////////////
+// case k=5                                  //
+///////////////////////////////////////////////
+#ifdef CLASSNAME
+#undef CLASSNAME
+#endif
+
+#undef _N_
+#undef _M_
+#undef _K_
+
+#define _N_ 10
+#define _M_ 1
+#define _K_ 5
+
+#ifdef PHIST_HAVE_SP
+#define CLASSNAME SMvecSdMatTest_10_1_5
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_10_1_5
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_10_1_5
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_10_1_5
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef _N_
+#define _N_ 64
+#undef _M_
+#define _M_ 12
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecSdMatTest_64_12_5
+
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_64_12_5
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_64_12_5
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_64_12_5
 
 #include "phist_gen_z.h"
 #include "MvecSdMatTest_def.hpp"

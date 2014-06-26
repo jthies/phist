@@ -47,14 +47,16 @@ if (verbose_ && false)
 virtual void TearDown() {
 }
 
-static _MT_ ArrayEqual(const _ST_* array, int n, int m, lidx_t lda, lidx_t stride, _ST_ value)
+static _MT_ ArrayEqual(const _ST_* array, int n, int m, lidx_t lda, lidx_t stride, _ST_ value, bool swap_nm=false)
   {
   MT maxval=mt::zero();
   MT scal= st::abs(value);
+  int N = swap_nm? m: n;
+  int M = swap_nm? n: m;
   if (scal==mt::zero()) scal=mt::one();
-  for (int i=0;i<n*stride;i+=stride)
+  for (int i=0;i<N*stride;i+=stride)
     {
-    for (int j=0; j<m;j++)
+    for (int j=0; j<M;j++)
       {
       maxval=std::max(st::abs(array[j*lda+i]-value)/scal,maxval);
       }
@@ -63,17 +65,19 @@ static _MT_ ArrayEqual(const _ST_* array, int n, int m, lidx_t lda, lidx_t strid
   }
 
 
-static _MT_ ArraysEqual(const _ST_* arr1,const _ST_* arr2, int n, int m, lidx_t lda, lidx_t stride)
+static _MT_ ArraysEqual(const _ST_* arr1,const _ST_* arr2, int n, int m, lidx_t lda, lidx_t stride, bool swap_n_m=false)
   {
+  int N = swap_n_m? m: n;
+  int M = swap_n_m? n: m;
   _MT_ maxval=mt::zero();
-  for (int i=0;i<n*stride;i+=stride)
+  for (int i=0;i<N*stride;i+=stride)
     {
-    for (int j=0;j<m;j++)
+    for (int j=0;j<M;j++)
       {
-      MT m = st::abs(arr1[j*lda+i]-arr2[j*lda+i]);
-      MT p = (st::abs(arr1[j*lda+i])+st::abs(arr2[j*lda+i]))*(MT)0.5;
-      if (p==mt::zero()) p=mt::one();
-      maxval=std::max(m/p,maxval);
+      MT mn = st::abs(arr1[j*lda+i]-arr2[j*lda+i]);
+      MT pl = (st::abs(arr1[j*lda+i])+st::abs(arr2[j*lda+i]))*(MT)0.5;
+      if (pl==mt::zero()) pl=mt::one();
+      maxval=std::max(mn/pl,maxval);
       //std::cout << arr1[j*lda+i]<< "\t SAME ?? AS \t"<<arr2[j*lda+i]<<std::endl;
       }
 //    std::cout << std::endl;

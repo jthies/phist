@@ -65,7 +65,12 @@ void (*__malloc_initialize_hook) (void) = my_init_hook;
 void phist_kernels_init(int* argc, char*** argv, int* ierr)
 {
   *ierr=0;
-  PHIST_CHK_IERR( *ierr = MPI_Init(argc, argv), *ierr);
+  int initialized = 0;
+
+  PHIST_CHK_IERR( *ierr = MPI_Initialized(&initialized), *ierr);
+  if (!initialized) {
+      PHIST_CHK_IERR( *ierr = MPI_Init(argc, argv), *ierr);
+  }
 #ifdef PHIST_HAVE_LIKWID
   LIKWID_MARKER_INIT;
 #pragma omp parallel

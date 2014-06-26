@@ -1,4 +1,8 @@
 #include "phist_config.h"
+#ifdef PHIST_HAVE_GHOST
+#include "ghost/config.h"
+#include "ghost/types.h"
+#endif
 
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -153,8 +157,7 @@ int main(int argc, char** argv)
 
 #ifdef PHIST_KERNEL_LIB_FORTRAN
   PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,
-        info.nrows, info.ncols, info.row_nnz,
-        (void(*)(ghost_idx_t,ghost_idx_t*,ghost_idx_t*,void*))&crsGraphene, &ierr), ierr);
+        info.nrows, info.ncols, info.row_nnz,&crsGraphene, &ierr), ierr);
 #elif defined(PHIST_KERNEL_LIB_GHOST)
   if ( my_datatype != info.datatype)
   {

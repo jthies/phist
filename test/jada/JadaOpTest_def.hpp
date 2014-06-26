@@ -142,7 +142,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_times_sdMat)(st::one(),q_,mat2_,st::one(),vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()));
 #else
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()));
@@ -181,7 +181,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_times_sdMat)(st::one(),q_,mat2_,st::one(),vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()));
 #else
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()));
@@ -220,7 +220,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_times_sdMat)(st::one(),q_,mat2_,st::one(),vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
 #else
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
@@ -261,7 +261,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       SUBR(mvec_add_mvec)(-st::one(),vec5,alpha,vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
 
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
 #else
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
@@ -316,7 +316,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       SUBR(mvec_add_mvec)(st::one(),vec5,-st::one(),vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
 
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
 #else
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());

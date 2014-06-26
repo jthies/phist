@@ -29,8 +29,6 @@ typedef int lidx_t;
 //! type of global indices
 typedef int gidx_t;
 
-//#define PRlidx=PRId32
-//#define PRgidx=PRId32
 #define PRlidx "d"
 #define PRgidx "d"
 

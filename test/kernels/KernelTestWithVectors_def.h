@@ -111,11 +111,7 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
       ST sum=st::zero();
       for (int i=0;i<stride*nloc;i+=stride)
         {
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-        ST val=vec_vp[j+i*lda];
-#else
-        ST val=vec_vp[j*lda+i];
-#endif
+        ST val=vec_vp[VIDX(i,j,lda)];
         sum+=st::conj(val)*val; 
         }
       norms[j]=sum;
@@ -140,13 +136,8 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
         ST sum=st::zero();
         for (int i=0;i<stride*nloc;i+=stride)
           {
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-          ST val1=vec_vp[j1+i*lda];
-          ST val2=vec_vp[j2+i*lda];
-#else
-          ST val1=vec_vp[j1*lda+i];
-          ST val2=vec_vp[j2*lda+i];
-#endif
+          ST val1=vec_vp[VIDX(i,j1,lda)];
+          ST val2=vec_vp[VIDX(i,j2,lda)];
           sum+=val1*st::conj(val2);
           }
         sums[k++]=sum;
@@ -173,6 +164,11 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
       os << "nloc   "<<nloc<<std::endl;
       os << "lda    "<<lda<<std::endl;
       os << "stride "<<stride<<std::endl;
+#ifdef PHIST_MVECS_ROW_MAJOR
+      os << "row-major storage"<<std::endl;
+#else
+      os << "col-major storage"<<std::endl;
+#endif
       }
     for (int p=0;p<np;p++)
       {
@@ -183,11 +179,7 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
           {
           for (int j=0;j<nvec_;j++)
             {
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-            os << vec_vp[j+i*lda]<<"  ";
-#else
-            os << vec_vp[j*lda+i]<<"  ";
-#endif
+            os << vec_vp[VIDX(i,j,lda)]<<"  ";
             }//j
           os << std::endl;
           }//i
@@ -203,7 +195,15 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
       }//p
     return;
     }
-
+    
+  static bool pointerUnchanged(TYPE(mvec_ptr) V, ST* expected_location, int expected_lda)
+  { 
+    int ierr;
+    lidx_t lda;
+    ST* ptr;
+    SUBR(mvec_extract_view)(V,&ptr,&lda,&ierr);
+    return ( (ierr==0)&&(lda==expected_lda)&&(ptr==expected_location) );
+  }
 
   TYPE(mvec_ptr) vec1_, vec2_, vec3_;
   ST *vec1_vp_, *vec2_vp_, *vec3_vp_;

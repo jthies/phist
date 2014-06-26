@@ -24,10 +24,10 @@ mpath='/hpc_data/essex/WPT/';
 mpath2='/home/thie_jo/work/fredwubs/hymls/testSuite/data/Graphene/';
 
 matrix_fmt='mm';
-matrices={[mpath2,'128x64/jac.mtx'],
-          [mpath2,'256x128/jac.mtx'],
-          [mpath2,'512x256/jac.mtx']};
-
+%matrices={[mpath2,'128x64/jac.mtx'],
+%          [mpath2,'256x128/jac.mtx'],
+%          [mpath2,'512x256/jac.mtx']};
+matrices={'graphene7.mm'};
 %matrix_fmt='mat';
 %matrices={[mpath,'graphen/graphen21x4000.mat'],
 %          [mpath,'graphen/graphen22x8000.mat'],
@@ -61,12 +61,13 @@ xex=randn(n,1)./sqrt(n);
 x0=zeros(n,1);
 
 % generate 4-color ordering for Graphene (special case)
+%{
 nx=128*2^(matrixID-1);
 ny=nx/2;
 ord=color_graphene(nx,ny);
 A=A(ord,ord);
 xex=xex(ord);
-
+%}
 for shiftID=1:length(shifts)
   sigma=shifts(shiftID);
   disp(['TEST CASE: ',matrices{matrixID},' sigma=',num2str(sigma)]);

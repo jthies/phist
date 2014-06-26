@@ -150,7 +150,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       // now check the result: vec3 = jdOp_(vec2)
       jdOp_->apply(-st::one(),jdOp_->A,vec2_,st::one(),vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
 #else
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
@@ -204,7 +204,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       // now check the result: vec3 = jdOp_(vec2)
       jdOp_->apply(-st::one(),jdOp_->A,vec2_,st::one(),vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
 #else
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
@@ -274,7 +274,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       // now check the result: vec3 = jdOp_(vec2)
       jdOp_->apply(-st::one(),jdOp_->A,vec2_,st::one(),vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
 #else
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
@@ -354,7 +354,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       // now check the result: vec3[exactGuessAt] = jdOp_(vec2)[exactGuessAt]
       jdOp_->apply(-st::one(),jdOp_->A,vec2_,st::one(),vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_NEAR(mt::one(),ArrayEqual(&vec3_vp_[exactGuessAt],1,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
 #else
       ASSERT_NEAR(mt::one(),ArrayEqual(&vec3_vp_[exactGuessAt*lda_],nloc_,1,lda_,stride_,st::zero()),10*VTest::releps());
@@ -460,7 +460,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_LT(explicitResNorm[i], initialResNorm[i]);
         ASSERT_NEAR(explicitResNorm[i]/initialResNorm[i], resNorm[i], 100*VTest::releps());
       }
-//#ifdef PHIST_KERNEL_LIB_FORTRAN
+//#ifdef PHIST_MVECS_ROW_MAJOR
       //ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
 //#else
       //ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
