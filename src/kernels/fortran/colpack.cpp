@@ -1,5 +1,4 @@
 #include <cstdint>
-
 #include "phist_config.h"
 #include "phist_macros.h"
 
@@ -23,6 +22,7 @@ extern "C" void colpack_v1_0_8(int nrows, int64_t* row_ptr, int64_t* nonlocal_pt
   return;
 #else
   *ierr=0;
+
   // ColPack uses a single long sequence of inherited classes, e.g.
   // GraphColoring 
   //      GraphOrdering 
@@ -42,7 +42,7 @@ extern "C" void colpack_v1_0_8(int nrows, int64_t* row_ptr, int64_t* nonlocal_pt
 
  // first we need to count the local nonzeros (TODO - or are they readily 
  // available in crsmat_module?)
- uint32_t nzloc=0;
+ int64_t nzloc=0;
  for (int i=0;i<nrows;i++) 
  {
    nzloc+=nonlocal_ptr[i]-row_ptr[i];
@@ -51,15 +51,16 @@ extern "C" void colpack_v1_0_8(int nrows, int64_t* row_ptr, int64_t* nonlocal_pt
  uint32_t *adolc_data=new uint32_t[nzloc+nrows];
 
 //#pragma omp parallel for schedule(static)
+ int64_t pos=0;
  for (int i=0;i<nrows;i++)
  {
-   // +i because we store the row length in pos 0 of each row
-   int64_t pos=row_ptr[i]-row_ptr[0]+i; 
    adolc[i]=&(adolc_data[pos]);
+   // first entry in row is the local row length
    adolc_data[pos++]=nonlocal_ptr[i]-row_ptr[i];
    for (int j=row_ptr[i];j<nonlocal_ptr[i];j++)
    {
-     adolc_data[pos++]=col_idx[j-row_ptr[0]]-idx_base;
+     // subtract idx_base to account for 1-based input
+     adolc_data[pos++]=col_idx[j-idx_base]-idx_base;
    }
  }
 
