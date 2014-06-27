@@ -1875,10 +1875,6 @@ end if
     else
       b_is_zero=.false.
       call c_f_pointer(b_ptr,b)
-      write(*,*) 'size(b%val,1)=',size(b%val,1)
-      write(*,*) 'size(b%val,2)=',size(b%val,2)
-      write(*,*) 'A%nRows=',A%nRows
-      flush(6)
       bval_ptr=>b%val(b%jmin:b%jmax,1:A%nRows)
       ldb = size(b%val,1)
     end if
