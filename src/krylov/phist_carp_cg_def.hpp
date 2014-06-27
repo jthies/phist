@@ -185,7 +185,7 @@ void SUBR(carp_cgStates_iterate)(
 
   // some internal settings  
   int itprint=1; // how often to print the current impl. residual norms
-  int itcheck=1; // how often to check the actual expl. res norms. We
+  int itcheck=10; // how often to check the actual expl. res norms. We
                   // only stop iterating if *all* expl. res norms for
                   // a given shift are below the tolerance. The impl.
                   // res norm is based on the carp operator, and I'm not
