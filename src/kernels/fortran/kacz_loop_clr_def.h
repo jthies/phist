@@ -5,12 +5,14 @@
 !
 ! if KACZ_BZERO is #defined, the rhs vector is assumed to be 0 and not accessed.
 
+#ifdef TESTING
 #ifdef KACZ_BZERO
 write(*,*) 'KACZ-LOOP CLR with b=0, nvec=',NVEC
 #else
 write(*,*) 'KACZ-LOOP CLR, nvec=',NVEC
 #endif  
 flush(6)
+#endif
   ! shared-memory parallel implementation using coloring info in the map
   do ic = istart, iend,istep
 ! note: it doesn't make sense to try and use the same scheduling as elsewhere

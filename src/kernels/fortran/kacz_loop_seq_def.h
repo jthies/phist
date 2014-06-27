@@ -5,13 +5,14 @@
 !
 ! if KACZ_BZERO is #defined, the rhs vector is assumed to be 0 and not accessed.
 
+#ifdef TESTING
 #ifdef KACZ_BZERO
 write(*,*) 'KACZ-LOOP SEQ with b=0, nvec=',NVEC
 #else
 write(*,*) 'KACZ-LOOP SEQ, nvec=',NVEC
 #endif  
 flush(6)
-
+#endif
   
   ! sequential implementation ignoring coloring information
   ! (lexicographic or given ordering)
