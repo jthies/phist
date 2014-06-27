@@ -1816,7 +1816,7 @@ end if
     allocate(invProcCount%idx(invProcCount%nnz))
     allocate(invProcCount%val(invProcCount%nnz))
     j=0
-    do i=0,A%nRows
+    do i=1,A%nRows
       if (procCount(i) .gt. 1) then
         j=j+1
         invProcCount%val(j)=1.0/dble(procCount(i))
@@ -1856,52 +1856,49 @@ end if
     integer :: ldx, ldb, nvec
     integer :: theShape(2)
     integer :: sendBuffSize,recvBuffSize
-    logical :: strided_x, strided_b, strided
-    logical :: x_is_aligned16, handled, b_is_zero
+    logical :: b_is_zero
+    real(kind=8), dimension(0,0), target :: bzero
+    real(kind=8), contiguous, pointer, dimension(:,:) :: bval_ptr
+    
     if ( .not. c_associated(A_ptr) ) then
       write(*,*) 'A is NULL'
       ierr = -88
       return
+    else
+      call c_f_pointer(A_ptr,A)
     end if
 
     if ( .not. c_associated(b_ptr) ) then
       b_is_zero=.true.
+      bval_ptr=>bzero
+      ldb=0
     else
       b_is_zero=.false.
       call c_f_pointer(b_ptr,b)
+      write(*,*) 'size(b%val,1)=',size(b%val,1)
+      write(*,*) 'size(b%val,2)=',size(b%val,2)
+      write(*,*) 'A%nRows=',A%nRows
+      flush(6)
+      bval_ptr=>b%val(b%jmin:b%jmax,1:A%nRows)
+      ldb = size(b%val,1)
     end if
     !write(*,*) 'enter carp_sweep_f, bzero=',b_is_zero
     if ( .not. c_associated(nrms_ai2i_ptr) ) then
       write(*,*) 'nrms_ai2i is NULL'
       ierr = -88
       return
+    else
+      call c_f_pointer(nrms_ai2i_ptr,nrms_ai2i,theShape)
     end if
 
     if ( .not. c_associated(work_ptr) ) then
       write(*,*) 'work is NULL'
       ierr = -88
       return
-    end if
-
-    call c_f_pointer(A_ptr,A)
-    theShape(1) = A%nRows
-    theShape(2) = numShifts
-    call c_f_pointer(nrms_ai2i_ptr,nrms_ai2i,theShape)
-    call c_f_pointer(work_ptr,invProcCount)
-
-    ! determin data layout of b
-    if (.not. b_is_zero) then
-      if( .not. b%is_view .or. &
-      &   ( b%jmin .eq. lbound(b%val,1) .and. &
-      &     b%jmax .eq. ubound(b%val,1)       ) ) then
-        strided_b = .false.
-      else
-        strided_b = .true.
-      end if
-      ldb = size(b%val,1)
-      nvec = b%jmax-b%jmin+1
     else
-      strided_b=.false.
+      theShape(1) = A%nRows
+      theShape(2) = numShifts
+      call c_f_pointer(work_ptr,invProcCount)
     end if
 
     ! treat one shift at a time for the moment, here there
@@ -1952,29 +1949,6 @@ end if
       !write(*,*) 'bounds(2)=',lbound(x_r%val,2),ubound(x_r%val,2)
       !write(*,*) 'ldx=',ldx
     
-      ! determin data layout of x
-      if( .not. x_r%is_view .or. &
-        & ( x_r%jmin .eq. lbound(x_r%val,1) .and. &
-        &   x_r%jmax .eq. ubound(x_r%val,1)       ) ) then
-        strided_x = .false.
-      else
-        strided_x = .true.
-      end if
-
-      strided = strided_x .or. strided_b
-
-      if ( mod(loc(x_r%val(x_r%jmin,1)),16) .eq. 0 .and. &
-        (mod(ldx,2) .eq. 0 .or. ldx .eq. 1) ) then
-        x_is_aligned16 = .true.
-      else
-        x_is_aligned16 = .false.
-      end if
-    
-      ! NOTE: we assume that x_r and x_i have the same
-      !       data layout, i.e. if one of them is a view
-      !       both are, both have the correct #cols, same
-      !       ldx etc.
-
       ! exchange necessary elements of X. This is the same      
       ! operation as for an spMVM: import from the domain       
       ! map into the column map of A.                           
@@ -1983,36 +1957,18 @@ end if
         write(*,*) 'call Dcarp_import returned ierr=',ierr
         return
       end if
-      ! TODO - specialized kernels...
-      handled=.false.
 
       ! apply Kaczmarz forward sweep
-      if (.not. handled) then
-        if (.not. b_is_zero) then
-          !write(*,*) 'kacz (f)'
-          call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
+      call dkacz_selector(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 A%row_map,&
                 shifts_r(iSys),shifts_i(iSys), &
-                b%val(b%jmin,1), ldb, &
+                bval_ptr, ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
                 A%comm_buff%recvData(     1:  nvec,:),&
                 A%comm_buff%recvData(nvec+1:2*nvec,:),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 1,A%nRows,+1)
-        else
-          !write(*,*) 'kacz (f), rhs=0'
-          call dkacz_bzero_generic(nvec, A%nRows, recvBuffSize,A%nCols, a%nEntries, &
-                A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-                A%row_map,&
-                shifts_r(iSys),shifts_i(iSys), &
-                x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
-                A%comm_buff%recvData(     1:  nvec,:),&
-                A%comm_buff%recvData(nvec+1:2*nvec,:),&
-                nrms_ai2i(:,iSys),omegas(iSys),&
-                1,A%nRows,+1)        
-        end if
-      end if
 
       ! exchange values and average (export/average operation
       ! from col map into domain map)
@@ -2028,36 +1984,19 @@ end if
         write(*,*) 'call Dcarp_import returned ierr=',ierr
         return
       end if
-      ! TODO - specialized kernels...
-      handled=.false.
 
       ! apply Kaczmarz backward sweep
-      if (.not. handled) then
-        if (.not. b_is_zero) then
-          !write(*,*) 'kacz (b)'
-          call dkacz_generic(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
+      !write(*,*) 'kacz (b)'
+      call dkacz_selector(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 A%row_map,&
                 shifts_r(iSys),shifts_i(iSys), &
-                b%val(b%jmin,1), ldb, &
+                bval_ptr, ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
                 A%comm_buff%recvData(     1:  nvec,:),&
                 A%comm_buff%recvData(nvec+1:2*nvec,:),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)
-        else
-          !write(*,*) 'kacz (b), rhs=0'
-          call dkacz_bzero_generic(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
-                A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
-                A%row_map, &
-                shifts_r(iSys),shifts_i(iSys), &
-                x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
-                A%comm_buff%recvData(     1:  nvec,:),&                
-                A%comm_buff%recvData(nvec+1:2*nvec,:),&
-                nrms_ai2i(:,iSys),omegas(iSys),&
-                A%nRows,1,-1)
-        end if ! b=0? -> specialized kernel
-      end if ! not handled? -> generic
 
       ! exchange values and average, stay in domain map
       ! (i.e. do not import halo until the next call to
@@ -2191,7 +2130,7 @@ subroutine Dcarp_average(A,xr,xi,invProcCount, ierr)
       ! start buffered *isend* of my results in the halo
       ! NOTE: we assume that the data we're sending is already
       ! in the recvBuf. This is the case in carp_sweep: the halo
-      ! is imported and the kernel which is called (e.g. kacz_generic)
+      ! is imported and the kernel which is called (in kacz_selector)
       ! operates directly on the recvBuf and updates its contents.
       do i=1,A%comm_buff%nRecvProcs, 1
         k = A%comm_buff%recvInd(i)

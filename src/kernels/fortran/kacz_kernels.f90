@@ -15,7 +15,6 @@ subroutine crsmat_norms_ai2i(nshifts, nlocal, nnz, row_ptr, &
   integer :: i
   integer(kind=8) :: j
   real(kind=8) :: tmp
-
 !$omp parallel do private(tmp) schedule(static)
   do i = 1,nlocal, 1
     ! for off-diagonal elements, add aij^2 to tmp.
@@ -37,10 +36,10 @@ end subroutine crsmat_norms_ai2i
 
 !! general implementation of forward or backward Kaczmarz sweep for a single shift
 !! and possibly multiple vector columns in X and B
-subroutine dkacz_generic(nvec, nlocal, nhalo, ncols, nnz, &
+subroutine dkacz_selector(nvec, nlocal, nhalo, ncols, nnz, &
         row_ptr, halo_ptr, col_idx, val, map, &
         shift_r,shift_i, b, ldb, &
-        x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,istart,iend,istep)
+        x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,istart_in,iend_in,istep)
 
   use :: omp_lib
   use :: map_module
@@ -58,12 +57,13 @@ subroutine dkacz_generic(nvec, nlocal, nhalo, ncols, nnz, &
   real(kind=8), intent(inout) :: halo_r(nvec,nhalo),halo_i(nvec,nhalo)
   real(kind=8), intent(in) :: nrms_ai2i(nlocal)
   real(kind=8), intent(in) :: omega
-  integer, intent(in) :: istart,iend,istep
+  integer, intent(in) :: istart_in,iend_in,istep
   ! locals
   real(kind=8) :: tmp_r(nvec), tmp_i(nvec)
-  integer :: i
+  integer :: i, ic, jc, i0, i1, j0, j1, istart, iend
   integer(kind=8) :: j
   logical :: use_clr_kernel
+  logical :: use_bzero_kernel
   integer istart_clr, iend_clr
 
   ! if there is a dist-2 coloring available, call
@@ -74,195 +74,140 @@ subroutine dkacz_generic(nvec, nlocal, nhalo, ncols, nnz, &
                   (map%coloringType==2) .and. &
                   ((istep==1) .or. (istep==-1))
 
+  use_bzero_kernel=(ldb==0)
+  
   if (use_clr_kernel) then
     if (istep==1) then
-      istart_clr = 1
-      iend_clr= map%nColors
+      istart = 1
+      iend= map%nColors
+      j0=0
+      j1=-1
     else if (istep==-1) then
-      istart_clr= map%nColors+1
-      iend_clr = 2
+      istart= map%nColors+1
+      iend = 2
+      j0=-1
+      j1=0
     end if
-    call dkacz_generic_clr(nvec, nlocal, nhalo, ncols, nnz, &
-        row_ptr, halo_ptr, col_idx, val, map, &
-        shift_r,shift_i, b, ldb, &
-        x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,istart_clr,iend_clr,istep)
-    return  
+  else
+    istart=istart_in
+    iend=iend_in
   end if
 
-  ! sequential implementation ignoring coloring information
-  ! (lexicographic or given ordering)
-  do i = istart, iend,istep
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !! compute (shift_j I - A)_i*x
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    tmp_r(1:nvec) = shift_r*x_r(1:nvec,i) - &
-                    shift_i*x_i(1:nvec,i)
-    tmp_i(1:nvec) = shift_i*x_r(1:nvec,i) + &
-                    shift_r*x_i(1:nvec,i)
-    do j = row_ptr(i), halo_ptr(i)-1, 1
-      tmp_r(:) = tmp_r(:) - val(j)*x_r(1:nvec,col_idx(j))
-      tmp_i(:) = tmp_i(:) - val(j)*x_i(1:nvec,col_idx(j))
-    end do
-    do j = halo_ptr(i), row_ptr(i+1)-1, 1
-      tmp_r(:) = tmp_r(:) - val(j)*halo_r(1:nvec,col_idx(j))
-      tmp_i(:) = tmp_i(:) - val(j)*halo_i(1:nvec,col_idx(j))
-    end do
 
-    tmp_r(:)=tmp_r(:)-b(1:nvec,i)
 
-    ! Kaczmarz update of X
+  if (use_clr_kernel) then
+    if (use_bzero_kernel) then
+#define KACZ_BZERO
+      if (nvec==1) then
+#define NVEC 1
+#include "kacz_loop_clr_def.h"
+      else if (nvec==2) then
+#define NVEC 2
+#include "kacz_loop_clr_def.h"
+      else if (nvec==3) then
+#define NVEC 3
+#include "kacz_loop_clr_def.h"
+      else if (nvec==4) then
+#define NVEC 4
+#include "kacz_loop_clr_def.h"
+      else if (nvec==6) then
+#define NVEC 6
+#include "kacz_loop_clr_def.h"
+      else if (nvec==8) then
+#define NVEC 8
+#include "kacz_loop_clr_def.h"
+      else if (nvec==16) then
+#define NVEC 16
+#include "kacz_loop_clr_def.h"
+      else
+! use NVEC=nvec
+#include "kacz_loop_clr_def.h"
+      end if ! block size
+#undef KACZ_BZERO
+    else
+      if (nvec==1) then
+#define NVEC 1
+#include "kacz_loop_clr_def.h"
+      else if (nvec==2) then
+#define NVEC 2
+#include "kacz_loop_clr_def.h"
+      else if (nvec==3) then
+#define NVEC 3
+#include "kacz_loop_clr_def.h"
+      else if (nvec==4) then
+#define NVEC 4
+#include "kacz_loop_clr_def.h"
+      else if (nvec==6) then
+#define NVEC 6
+#include "kacz_loop_clr_def.h"
+      else if (nvec==8) then
+#define NVEC 8
+#include "kacz_loop_clr_def.h"
+      else if (nvec==16) then
+#define NVEC 16
+#include "kacz_loop_clr_def.h"
+      else
+! use NVEC=nvec
+#include "kacz_loop_clr_def.h"
+      end if ! block size    
+    end if ! rhs=0
+  else ! no coloring - use lexicographic kernel
+    if (use_bzero_kernel) then
+#define KACZ_BZERO
+      if (nvec==1) then
+#define NVEC 1
+#include "kacz_loop_seq_def.h"
+      else if (nvec==2) then
+#define NVEC 2
+#include "kacz_loop_seq_def.h"
+      else if (nvec==3) then
+#define NVEC 3
+#include "kacz_loop_seq_def.h"
+      else if (nvec==4) then
+#define NVEC 4
+#include "kacz_loop_seq_def.h"
+      else if (nvec==6) then
+#define NVEC 6
+#include "kacz_loop_seq_def.h"
+      else if (nvec==8) then
+#define NVEC 8
+#include "kacz_loop_seq_def.h"
+      else if (nvec==16) then
+#define NVEC 16
+#include "kacz_loop_seq_def.h"
+      else
+! use NVEC=nvec
+#include "kacz_loop_seq_def.h"
+      end if ! block size
+#undef KACZ_BZERO
+    else
+      if (nvec==1) then
+#define NVEC 1
+#include "kacz_loop_seq_def.h"
+      else if (nvec==2) then
+#define NVEC 2
+#include "kacz_loop_seq_def.h"
+      else if (nvec==3) then
+#define NVEC 3
+#include "kacz_loop_seq_def.h"
+      else if (nvec==4) then
+#define NVEC 4
+#include "kacz_loop_seq_def.h"
+      else if (nvec==6) then
+#define NVEC 6
+#include "kacz_loop_seq_def.h"
+      else if (nvec==8) then
+#define NVEC 8
+#include "kacz_loop_seq_def.h"
+      else if (nvec==16) then
+#define NVEC 16
+#include "kacz_loop_seq_def.h"
+      else
+! use NVEC=nvec
+#include "kacz_loop_seq_def.h"
+      end if ! block size    
+    end if ! rhs=0
+  end if ! use coloring for parallelization
 
-    ! a) scaling factors
-    tmp_r(:)=tmp_r(:)*omega*nrms_ai2i(i)
-    tmp_i(:)=tmp_i(:)*omega*nrms_ai2i(i)
+end subroutine dkacz_selector
 
-    ! b) projection step
-    x_r(1:nvec,i)=x_r(1:nvec,i) - (tmp_r(:)*shift_r+tmp_i(:)*shift_i)
-    x_i(1:nvec,i)=x_i(1:nvec,i) - (tmp_i(:)*shift_r-tmp_r(:)*shift_i)
-
-    do j = row_ptr(i), halo_ptr(i)-1, 1
-      x_r(1:nvec,col_idx(j)) = x_r(1:nvec,col_idx(j)) + &
-                               tmp_r(:)*val(j)
-      x_i(1:nvec,col_idx(j)) = x_i(1:nvec,col_idx(j)) + &
-                               tmp_i(:)*val(j)
-    end do
-    do j = halo_ptr(i), row_ptr(i+1)-1, 1
-      halo_r(1:nvec,col_idx(j)) = halo_r(1:nvec,col_idx(j)) + &
-                               tmp_r(:)*val(j)
-      halo_i(1:nvec,col_idx(j)) = halo_i(1:nvec,col_idx(j)) + &
-                               tmp_i(:)*val(j)
-    end do
-  end do
-
-end subroutine dkacz_generic
-
-!! variant of kacz_genric kernel that exploits coloring information
-!! in the map to generate (OpenMP) parallelism
-subroutine dkacz_generic_clr(nvec, nlocal, nhalo, ncols, nnz, &
-        row_ptr, halo_ptr, col_idx, val, map, &
-        shift_r,shift_i, b, ldb, &
-        x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,istart,iend,istep)
-
-  use :: map_module
-
-  implicit none
-
-  integer, intent(in) :: nvec, nlocal, nhalo, ncols, ldx, ldb
-  integer(kind=8), intent(in) :: nnz
-  real(kind=8), intent(in) :: shift_r, shift_i
-  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
-  integer, intent(in) :: col_idx(nnz)
-  real(kind=8), intent(in) :: val(nnz)
-  TYPE(Map_t), intent(in) :: map
-  real(kind=8), intent(inout) :: x_r(ldx,*), x_i(ldx,*),b(ldb,*)
-  real(kind=8), intent(inout) :: halo_r(nvec,nhalo),halo_i(nvec,nhalo)
-  real(kind=8), intent(in) :: nrms_ai2i(nlocal)
-  real(kind=8), intent(in) :: omega
-  integer, intent(in) :: istart,iend,istep
-  ! locals
-  real(kind=8) :: tmp_r(nvec), tmp_i(nvec)
-  integer :: i, ic, jc,j0,j1
-  integer(kind=8) :: j
-  
-  if (istep==1) then
-    j0=0
-    j1=-1
-  else if (istep==-1) then
-    j0=-1
-    j1=0
-  end if
-
-  ! shared-memory parallel implementation using coloring info in the map
-  do ic = istart, iend,istep
-! note: it doesn't make sense to try and use the same scheduling as elsewhere
-! (to avoid NUMA problems) because the ordering here is diffrent. For now, we
-! will stick with 1 MPI process per socket and think about NUMA later (we could
-! 'first touch' all vectors using the coloring if it is defined in the map, but
-! that would infringe the spMVM performance...)
-!$omp parallel do private(tmp_r,tmp_i,i,j) schedule(runtime)
-  do jc = map%color_offset(ic)+j0,map%color_offset(ic+istep)+j1,istep
-    i=map%color_idx(jc)    
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !! compute (shift_j I - A)_i*x
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    tmp_r(1:nvec) = shift_r*x_r(1:nvec,i) - &
-                    shift_i*x_i(1:nvec,i)
-    tmp_i(1:nvec) = shift_i*x_r(1:nvec,i) + &
-                    shift_r*x_i(1:nvec,i)
-    do j = row_ptr(i), halo_ptr(i)-1, 1
-      tmp_r(:) = tmp_r(:) - val(j)*x_r(1:nvec,col_idx(j))
-      tmp_i(:) = tmp_i(:) - val(j)*x_i(1:nvec,col_idx(j))
-    end do
-    do j = halo_ptr(i), row_ptr(i+1)-1, 1
-      tmp_r(:) = tmp_r(:) - val(j)*halo_r(1:nvec,col_idx(j))
-      tmp_i(:) = tmp_i(:) - val(j)*halo_i(1:nvec,col_idx(j))
-    end do
-
-    tmp_r(:)=tmp_r(:)-b(1:nvec,i)
-
-    ! Kaczmarz update of X
-
-    ! a) scaling factors
-    tmp_r(:)=tmp_r(:)*omega*nrms_ai2i(i)
-    tmp_i(:)=tmp_i(:)*omega*nrms_ai2i(i)
-
-    ! b) projection step
-    x_r(1:nvec,i)=x_r(1:nvec,i) - (tmp_r(:)*shift_r+tmp_i(:)*shift_i)
-    x_i(1:nvec,i)=x_i(1:nvec,i) - (tmp_i(:)*shift_r-tmp_r(:)*shift_i)
-
-    do j = row_ptr(i), halo_ptr(i)-1, 1
-      x_r(1:nvec,col_idx(j)) = x_r(1:nvec,col_idx(j)) + &
-                               tmp_r(:)*val(j)
-      x_i(1:nvec,col_idx(j)) = x_i(1:nvec,col_idx(j)) + &
-                               tmp_i(:)*val(j)
-    end do
-    do j = halo_ptr(i), row_ptr(i+1)-1, 1
-      halo_r(1:nvec,col_idx(j)) = halo_r(1:nvec,col_idx(j)) + &
-                               tmp_r(:)*val(j)
-      halo_i(1:nvec,col_idx(j)) = halo_i(1:nvec,col_idx(j)) + &
-                               tmp_i(:)*val(j)
-    end do
-  end do
-  end do
-end subroutine dkacz_generic_clr
-
-!! implementation of kacz_generic for the case b=0. Once kacz_generic
-!! is stable, we could copy/paste/adjust it into this function rather
-!! than creating an empty b array and calling the other kernel.
-!!
-!! We want a specialized kernel for this situation (b=0) as it occurs
-!! in every iteration of CGNM/CARP-CG except on the initial call.
-subroutine dkacz_bzero_generic(nvec, nlocal, nhalo, ncols, nnz, &
-row_ptr, halo_ptr, col_idx, val, map, &
-shift_r,shift_i,&
-x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,istart,iend,istep)
-  use :: map_module
-  implicit none
-  integer, intent(in) :: nvec, nlocal, nhalo, ncols, ldx
-  integer(kind=8), intent(in) :: nnz
-  real(kind=8), intent(in) :: shift_r, shift_i
-  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
-  integer, intent(in) :: col_idx(nnz)
-  real(kind=8), intent(in) :: val(nnz)
-  TYPE(Map_t), intent(in) :: map
-  real(kind=8), intent(inout) :: x_r(ldx,*), x_i(ldx,*)
-  real(kind=8), intent(inout) :: halo_r(nvec,nhalo),halo_i(nvec,nhalo)
-  real(kind=8), intent(in) :: nrms_ai2i(nlocal)
-  real(kind=8), intent(in) :: omega
-  integer, intent(in) :: istart,iend,istep
-  !-------------------------------------------------------------------!
-  real(kind=8) :: tmp_r(nvec), tmp_i(nvec)
-  integer :: i
-  integer(kind=8) :: j
-  real(kind=8) :: b(nvec,nlocal)
-
-!write(*,*) 'ldx=',ldx
-
-  b(:,:)=0.d0
-
-  call dkacz_generic(nvec, nlocal, nhalo, ncols, nnz, &
-row_ptr, halo_ptr, col_idx, val, map, &
-shift_r,shift_i, b, nvec, &
-x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,istart,iend,istep)
-
-end subroutine dkacz_bzero_generic
