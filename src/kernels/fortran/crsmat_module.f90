@@ -993,7 +993,7 @@ end do
     crsMat%row_map%color_offset(1)=1
     do i=1,ncolors
       crsMat%row_map%color_offset(i+1) = &
-      crsMat%row_map%color_offset(i)   +colorCount(i)
+      crsMat%row_map%color_offset(i)   + colorCount(i)
     end do
 
     colorCount(1:ncolors)=0
@@ -1004,8 +1004,9 @@ end do
     end do
 
     deallocate(colorCount)
-
-!#define DEBUG_COLPACK 1
+#ifdef TESTING
+#define DEBUG_COLPACK 1
+#endif
 #if DEBUG_COLPACK
         open(unit=42,file='test_coloring.m',status='replace')
         write(42,*) 'n=',crsMat%nRows
@@ -1033,11 +1034,144 @@ end do
           write(42,*) crsMat%row_map%color_idx(i)
         end do
         write(42,*) '];'
+
+!       permute local CRS matrix rows and cols, this will mess up MPI parallel runs and
+!       result in permuted vectors, but just for single-node performance we do it right now
+call permute_local_matrix(crsMat)
+
+        write(42,*) 'Adat2=[...'
+        do i=1,crsMat%nRows
+          do j=crsMat%row_offset(i),crsMat%nonlocal_offset(i)-1
+            write(42,"(I4,I4,E24.8)") i,crsMat%col_idx(j),crsMat%val(j)
+          end do
+        end do
+        write(42,*) '];'
+        write(42,*) 'A2=sparse(Adat2(:,1),Adat2(:,2),Adat2(:,3),n,n);'
+
         flush(42)
         close(42)
+#else
+!       permute local CRS matrix rows and cols, this will mess up MPI parallel runs and
+!       result in permuted vectors, but just for single-node performance we do it right now
+call permute_local_matrix(crsMat)
 #endif
-              
+
     end subroutine colorcrs
+
+subroutine permute_local_matrix(A)
+
+implicit none
+TYPE(crsMat_t) :: A
+integer, allocatable, dimension(:) :: row_ptr
+integer, allocatable, dimension(:) :: nonlocal_ptr
+integer, allocatable, dimension(:) :: col_idx
+real(kind=8), allocatable, dimension(:) :: val
+integer, allocatable, dimension(:) :: inv_perm
+
+integer :: ic,jc,i,k,l,ii,len_i, len_nl_i
+integer(kind=8) :: j,jj
+
+allocate(inv_perm(A%nRows))
+allocate(row_ptr(A%nRows+1))
+allocate(nonlocal_ptr(A%nRows))
+allocate(val(A%nEntries))
+allocate(col_idx(A%nEntries))
+
+do i=1,A%nRows
+  inv_perm(A%row_map%color_idx(i))=i
+end do
+
+#ifdef DEBUG_COLPACK
+write(42,*) 'iperm=[...'
+do i=1,A%nRows
+  write(42,*) inv_perm(i)
+end do
+write(42,*) '];'
+#endif
+
+#ifdef TESTING
+! quick test if the pointer is correct
+if (A%row_map%color_offset(A%row_map%nColors+1)-1/=A%nRows) then
+  stop 'color_ptr incorrect'
+end if
+do i=1,A%nRows
+  if (A%row_map%color_idx(i)<=0 .or. &
+      A%row_map%color_idx(i)>A%nRows) then
+    stop 'color_idx incorrect'
+  end if
+end do
+#endif
+
+row_ptr(1)=1
+do ic=1,A%row_map%nColors
+  ! new row index ii: colors contiguous
+  do ii=A%row_map%color_offset(ic),A%row_map%color_offset(ic+1)-1
+    ! old row index i: where to find row ii in old matrix
+    i=A%row_map%color_idx(ii)
+    len_i= A%nonlocal_offset(i)-A%row_offset(i)
+    len_nl_i=A%row_offset(i+1)-A%nonlocal_offset(i)
+    row_ptr(ii+1)=row_ptr(ii) + len_i
+    nonlocal_ptr(ii)=row_ptr(ii+1)+len_nl_i
+    do j=A%row_offset(i),A%nonlocal_offset(i)-1
+      jj=row_ptr(ii)+ (j-A%row_offset(i))
+      col_idx(jj)=inv_perm(A%col_idx(j))
+      val(jj)=A%val(j)
+    end do
+    do j=A%nonlocal_offset(i),A%row_offset(i+1)-1
+      jj=row_ptr(ii)+ (j-A%row_offset(i))
+      col_idx(jj)=A%col_idx(j)
+      val(jj)=A%val(j)
+    end do
+  end do
+end do
+
+! permute comm buffer indices
+do i=1,A%comm_buff%nSendProcs, 1
+  k = A%comm_buff%sendInd(i)
+  l = A%comm_buff%sendInd(i+1)
+  do j = k, l-1, 1
+    !send elt j comes from x(sendRowBlkInd(j)
+    A%comm_buff%sendRowBlkInd(j) = &
+    A%row_map%color_idx(A%comm_buff%sendRowBlkInd(j))
+  end do
+end do
+
+do i=1,A%comm_buff%nRecvProcs, 1
+  k = A%comm_buff%recvInd(i)
+  l = A%comm_buff%recvInd(i+1)
+  do j = k, l-1, 1
+    !send elt j comes from x(sendRowBlkInd(j)
+    A%comm_buff%recvRowBlkInd(j) = &
+    A%row_map%color_idx(A%comm_buff%recvRowBlkInd(j))
+  end do
+end do
+!write(*,*) 'dat0=[...'
+!do i=1,A%nRows
+!  do j=A%row_offset(i),A%nonlocal_offset(i)
+!    write(*,*) i,A%col_idx(j),A%val(j)
+!  end do
+!end do
+!write(*,*) '];'
+A%row_offset(1:A%nRows+1) = row_ptr(1:A%nRows+1)
+A%nonlocal_offset(1:A%nRows) = nonlocal_ptr(1:A%nrows)
+A%col_idx(1:A%nEntries) = col_idx(1:A%nEntries)
+A%val(1:A%nEntries) = val(1:A%nEntries)
+
+deallocate(inv_perm)
+deallocate(row_ptr)
+deallocate(nonlocal_ptr)
+deallocate(col_idx)
+deallocate(val)
+
+! TODO: permute comm buffer indices
+!write(*,*) 'dat1=[...'
+!do i=1,A%nRows
+!  do j=A%row_offset(i),A%nonlocal_offset(i)
+!    write(*,*) i,A%col_idx(j),A%val(j)
+!  end do
+!end do
+!write(*,*) '];'
+end subroutine permute_local_matrix
 
 #endif
 
@@ -2018,6 +2152,7 @@ end if
     TYPE(sparseArray_t), pointer :: invProcCount
     
     ! the C top layer allocated nrms_ai2i, so it also deletes them
+    ierr=0
     
     call c_f_pointer(work_ptr, invProcCount)
     if (allocated(invProcCount%idx)) then
