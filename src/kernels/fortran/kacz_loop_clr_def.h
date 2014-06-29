@@ -22,7 +22,8 @@ flush(6)
 ! that would infringe the spMVM performance...)
 !$omp parallel do private(tmp_r,tmp_i,i,j) schedule(runtime)
   do jc = map%color_offset(ic)+j0,map%color_offset(ic+istep)+j1,istep
-    i=map%color_idx(jc)    
+    !i=map%color_idx(jc)    
+    i=jc
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !! compute (shift_j I - A)_i*x
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
