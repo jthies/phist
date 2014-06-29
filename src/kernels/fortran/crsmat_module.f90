@@ -1858,7 +1858,7 @@ end if
     integer :: sendBuffSize,recvBuffSize
     logical :: b_is_zero
     real(kind=8), dimension(0,0), target :: bzero
-    real(kind=8), contiguous, pointer, dimension(:,:) :: bval_ptr
+    real(kind=8), pointer, dimension(:,:) :: bval_ptr
     
     if ( .not. c_associated(A_ptr) ) then
       write(*,*) 'A is NULL'
