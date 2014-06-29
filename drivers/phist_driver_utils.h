@@ -1,3 +1,5 @@
+#ifndef PHIST_DRIVER_UTILS_H
+#define PHIST_DRIVER_UTILS_H
 #ifdef __cplusplus
 #include <cstring>
 #else
@@ -53,3 +55,4 @@ void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, char* filename, int* ierr)
     }
   return;
   }
+#endif
