@@ -1037,7 +1037,7 @@ end do
 
 !       permute local CRS matrix rows and cols, this will mess up MPI parallel runs and
 !       result in permuted vectors, but just for single-node performance we do it right now
-call permute_local_matrix(crsMat)
+!call permute_local_matrix(crsMat)
 
         write(42,*) 'Adat2=[...'
         do i=1,crsMat%nRows
@@ -1053,7 +1053,7 @@ call permute_local_matrix(crsMat)
 #else
 !       permute local CRS matrix rows and cols, this will mess up MPI parallel runs and
 !       result in permuted vectors, but just for single-node performance we do it right now
-call permute_local_matrix(crsMat)
+!call permute_local_matrix(crsMat)
 #endif
 
     end subroutine colorcrs

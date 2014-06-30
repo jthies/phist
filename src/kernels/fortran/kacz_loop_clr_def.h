@@ -22,8 +22,12 @@ flush(6)
 ! that would infringe the spMVM performance...)
 !$omp parallel do private(tmp_r,tmp_i,i,j) schedule(runtime)
   do jc = map%color_offset(ic)+j0,map%color_offset(ic+istep)+j1,istep
-    !i=map%color_idx(jc)    
-    i=jc
+    ! two variants: a) seems to be faster on an Emmy Socket. To test the alternative,
+    ! uncomment the call permute_local_matrix line in crsmat_module.f90
+    ! a) unpermuted matrix, indirect addressing:
+    i=map%color_idx(jc)    
+    ! b) matrix so that the nodes of a colors form contiguous blocks
+    !i=jc
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !! compute (shift_j I - A)_i*x
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
