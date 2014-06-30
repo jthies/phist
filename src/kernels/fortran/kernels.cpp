@@ -88,7 +88,8 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
 #pragma omp parallel
   {
     int tid = omp_get_thread_num();
-    int coreid = tid;// + 10*(rank%2);
+//    int coreid = tid;// + 10*(rank%2);
+    int coreid = tid + 10*(rank%2);
     cpu_set_t *cpu = CPU_ALLOC(40);
     size_t size = CPU_ALLOC_SIZE(40);
     CPU_ZERO_S(size, cpu);

@@ -933,7 +933,7 @@ end do
     ! local variables
     integer :: i
     integer(kind=8) :: j
-    integer(c_int), target :: colors(crsMat%nRows)
+    integer(c_int), target, allocatable :: colors(:)
     integer :: ncolors
     integer, allocatable, dimension(:) :: colorCount
     
@@ -959,6 +959,8 @@ end do
       end subroutine colpack
 
     end interface
+
+    allocate(colors(crsMat%nRows))
 
     c_rp=c_loc(crsMat%row_offset(1))
     c_nlp=c_loc(crsMat%nonlocal_offset(1))
@@ -1055,6 +1057,8 @@ end do
 !       result in permuted vectors, but just for single-node performance we do it right now
 !call permute_local_matrix(crsMat)
 #endif
+
+    deallocate(colors)
 
     end subroutine colorcrs
 
