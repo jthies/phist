@@ -82,8 +82,7 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) S_array[], int numSys, in
 //! this function is used if the RHS vector changes but the matrix and shift
 //! sigma stays the same. The solver is reset to start solving the new system
 //! (sigma*I-A)x=rhs. If normsB==NULL, the two-norm of B is computed in S->normB_,
-//! otherwise it is copied from the given pointer (length S->nvec_). rhs must have 
-//! the same number of vectors (S->nvec_).
+//! otherwise it is copied from the given pointer (length num_vectors of rhs).
 void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
                 TYPE(const_mvec_ptr) rhs,
                 _MT_* normsB,

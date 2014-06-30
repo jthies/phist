@@ -22,6 +22,12 @@ void SUBR(private_compResid)(TYPE(const_crsMat_ptr) A, int nvec, _ST_ sigma, _MT
 void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR, 
         _MT_ const* normR0, _MT_ const* normB);
 
+// allocate CG vector blocks
+void SUBR(private_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* ierr);
+// allocate CG vector blocks
+void SUBR(private_carp_cgState_dealloc)(TYPE(carp_cgState_ptr) S, int* ierr);
+
+
 // create new state objects. We just get an array of (NULL-)pointers
 void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
         _MT_ sigma_r[], _MT_ sigma_i[],
@@ -58,6 +64,14 @@ void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
     state[i]->sigma_r_=sigma_r[i];
     state[i]->sigma_i_=sigma_i[i];
     state[i]->nvec_=nvec;
+
+    state[i]->normR0_= new MT[nvec];
+    state[i]->normB_= new MT[nvec];
+    state[i]->normR= new MT[nvec];
+
+    state[i]->beta_ =  new MT[nvec];
+    state[i]->alpha_ = new ST[nvec];
+    state[i]->alpha_i_ = new MT[nvec];
     
     state[i]->nrms_ai2i_=nrms_ai2i+i*nloc;
     state[i]->aux_=aux;
@@ -66,33 +80,6 @@ void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
                                 // gave good results for Graphene
                                 // in the matlab tests.
 
-    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->q_,map,nvec,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->r_,map,nvec,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->p_,map,nvec,ierr),*ierr);
-    // z is the preconditioned residual in CG, but as we don't have
-    // additional preconditioning, we set z=r.
-    state[i]->z_=state[i]->r_;
-    
-    state[i]->beta_ =  new MT[nvec];
-    state[i]->alpha_ = new ST[nvec];
-
-#ifndef IS_COMPLEX
-    // separate imaginary parts of the vectors
-    state[i]->alpha_i_ = new MT[nvec];
-    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->qi_,map,nvec,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->ri_,map,nvec,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_create)(&state[i]->pi_,map,nvec,ierr),*ierr);
-    state[i]->zi_=state[i]->ri_;
-#else
-    state[i]->qi_=NULL;
-    state[i]->ri_=NULL;
-    state[i]->pi_=NULL;
-    state[i]->zi_=NULL;
-#endif
-    
-    state[i]->normR0_= new MT[nvec];
-    state[i]->normB_= new MT[nvec];
-    state[i]->normR= new MT[nvec];
     for (int j=0;j<nvec;j++)
     {
       state[i]->normR0_[j]=-mt::one(); // not initialized
@@ -102,6 +89,54 @@ void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
   }
 }
 
+void SUBR(private_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+  
+    int nvec=S->nvec_;
+    const void* map=NULL;
+    PHIST_CHK_IERR(SUBR(mvec_get_map)(S->b_,&map,ierr),*ierr);
+  
+    PHIST_CHK_IERR(SUBR(mvec_create)(&S->q_,map,nvec,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&S->r_,map,nvec,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&S->p_,map,nvec,ierr),*ierr);
+    // z is the preconditioned residual in CG, but as we don't have
+    // additional preconditioning, we set z=r.
+    S->z_=S->r_;    
+
+#ifndef IS_COMPLEX
+    // separate imaginary parts of the vectors
+    PHIST_CHK_IERR(SUBR(mvec_create)(&S->qi_,map,nvec,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&S->ri_,map,nvec,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&S->pi_,map,nvec,ierr),*ierr);
+    S->zi_=S->ri_;
+#else
+    S->qi_=NULL;
+    S->ri_=NULL;
+    S->pi_=NULL;
+    S->zi_=NULL;
+#endif
+    
+}
+
+void SUBR(private_carp_cgState_dealloc)(TYPE(carp_cgState_ptr) S, int* ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+  
+    PHIST_CHK_IERR(SUBR(mvec_delete)(S->q_,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(S->r_,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(S->p_,ierr),*ierr);
+    // z is the preconditioned residual in CG, but as we don't have
+    // additional preconditioning, we set z=r.
+    
+#ifndef IS_COMPLEX
+    // separate imaginary parts of the vectors
+    PHIST_CHK_IERR(SUBR(mvec_delete)(S->qi_,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(S->ri_,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(S->pi_,ierr),*ierr);
+#endif
+    
+}
 
 //! delete cgState object
 void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) state[], int numSys, int* ierr)
@@ -110,28 +145,21 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) state[], int numSys, int*
   *ierr=0;
   for (int i=0;i<numSys;i++)
   {
-    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->q_,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->r_,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->p_,ierr),*ierr);
-#ifndef IS_COMPLEX
-    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->qi_,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->ri_,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_delete)(state[i]->pi_,ierr),*ierr);
-#endif
-    delete [] state[i]->alpha_;
-    delete [] state[i]->alpha_i_;
-    delete [] state[i]->beta_;
-    delete [] state[i]->normR;
     delete [] state[i]->normR0_;
     delete [] state[i]->normB_;
+    delete [] state[i]->normR;
+
+    delete [] state[i]->beta_;
+    delete [] state[i]->alpha_;
+    delete [] state[i]->alpha_i_;
+
     delete state[i];
   }
 }
 
 // reset pcg state. If normsB==NULL, the two-norm of 
 // B is computed, otherwise it is copied from the given
-// pointer (length S->nvec_). B must have the same number
-// of vectors (S->nvec_).
+// pointer (length num_vectors of B).
 void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
         TYPE(const_mvec_ptr) B,
         _MT_* normsB,
@@ -145,14 +173,27 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
   S->b_=B;
   int nvec;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(B,&nvec,ierr),*ierr);
-  if (nvec!=S->nvec_)
-  {
-    PHIST_SOUT(PHIST_ERROR,"number of vectors in b must not change in %s",__FUNCTION__);
-    *ierr=PHIST_INVALID_INPUT;
-    return;
-  }
   S->ierr = -1;
   S->numIter = 0;
+
+  if (nvec!=S->nvec_)
+  {
+    delete [] S->normR0_;
+    S->normR0_= new MT[nvec];
+    
+    delete [] S->normB_;
+    S->normB_= new MT[nvec];
+
+    delete [] S->normR;
+    S->normR= new MT[nvec];
+
+    delete [] S->beta_;
+    S->beta_ =  new MT[nvec];
+    delete [] S->alpha_;
+    S->alpha_ = new ST[nvec];
+    delete [] S->alpha_i_;
+    S->alpha_i_ = new MT[nvec];
+  }// reallocate scalars if nvec changes
 
   for (int i=0; i<nvec; i++)
   {
@@ -195,12 +236,6 @@ void SUBR(carp_cgStates_iterate)(
   int numSolved=0;
   TYPE(mvec_ptr) bnul=NULL; // we can just pass in b=NULL if all entries for a carp_sweep
                             // are 0 (during CG iteration), for clarity we give it a name
-/*
-  const void* map;
-  PHIST_CHK_IERR(SUBR(crsMat_get_range_map)(S_array[0]->A_,&map,ierr),*ierr);           
-  PHIST_CHK_IERR(SUBR(mvec_create)(&bnul,map,nvec,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_put_value)(bnul,st::zero(),ierr),*ierr);
-*/
 
 ////////////////////////////////////////////////////
 // solve systems for one shift at a time, here we //
@@ -224,6 +259,9 @@ void SUBR(carp_cgStates_iterate)(
     TYPE(mvec_ptr) x=X_r[ishift];
     TYPE(mvec_ptr) xi=X_i[ishift];
     
+    // allocate CG vectors: one per rhs
+    PHIST_CHK_IERR(SUBR(private_carp_cgState_alloc)(S,ierr),*ierr);
+
     TYPE(mvec_ptr) r =S->r_;
     TYPE(mvec_ptr) ri =S->ri_;
 
@@ -489,7 +527,10 @@ void SUBR(carp_cgStates_iterate)(
     {
       S->normR[j]=std::sqrt(S->normR[j]);
     }
-    
+  
+    // to save memory, deallocate CG vector data
+    PHIST_CHK_IERR(SUBR(private_carp_cgState_dealloc)(S,ierr),*ierr);
+  
   } // for all shifts, solve (s[j]I-A)X[j]=B
 
 
