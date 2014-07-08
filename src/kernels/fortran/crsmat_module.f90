@@ -1955,7 +1955,11 @@ end if
     
     ! work is used to store the averaging coefficients for the x halo
     ! received from other processes (in a sparseArray_t object)
-    allocate(procCount(A%nRows))
+    allocate(procCount(A%nRows),stat=ierr)
+    if (ierr/=0) then
+      ierr=-44
+      return
+    end if
     procCount(1:A%nRows)=1 ! contains for every owned node the number
                            ! of contributing procs (default 1, just me)
     
@@ -1971,8 +1975,12 @@ end if
     allocate(invProcCount)
     invProcCount%n=A%nRows
     invProcCount%nnz=count(procCount.gt.1)
-    allocate(invProcCount%idx(invProcCount%nnz))
-    allocate(invProcCount%val(invProcCount%nnz))
+    allocate(invProcCount%idx(invProcCount%nnz),&
+             invProcCount%val(invProcCount%nnz), stat=ierr)
+    if (ierr/=0) then
+      ierr=-44
+      return
+    end if
     j=0
     do i=1,A%nRows
       if (procCount(i) .gt. 1) then
@@ -2090,8 +2098,12 @@ end if
       recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
 
       if( .not. allocated(A%comm_buff%recvData) ) then
-        allocate(A%comm_buff%recvData(2*nvec,recvBuffSize))
-        allocate(A%comm_buff%sendData(2*nvec,sendBuffSize))
+        allocate(A%comm_buff%recvData(2*nvec,recvBuffSize),&
+                 A%comm_buff%sendData(2*nvec,sendBuffSize),stat=ierr)
+        if (ierr/=0) then
+          ierr=-44
+          return
+        end if
       end if
 
       ldx = size(x_r%val,1)
