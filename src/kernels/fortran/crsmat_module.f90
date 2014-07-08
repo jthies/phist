@@ -521,7 +521,7 @@ end do
     end if
 
     ! determine recvRowProc vector
-    allocate(rowSendProcGlob(crsMat%row_map%distrib(crsMat%row_map%nProcs)-1),...
+    allocate(rowSendProcGlob(crsMat%row_map%distrib(crsMat%row_map%nProcs)-1),&
              offsets(crsMat%row_map%nProcs), stat=ierr)
     if (ierr/=0) then
       ierr=-44
