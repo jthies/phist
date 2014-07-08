@@ -74,11 +74,11 @@ contains
       map%distrib(i) = map%distrib(i-1) + map%nlocal(i-1)
     end do
 
-!#ifdef TESTING
+#ifdef TESTING
 write(*,*) map%me, 'setting up map with nglob = ', n_glob, ', nProcs = ', map%nProcs, &
   &  ', distrib = ', map%distrib, ', nlocal = ', map%nlocal
 flush(6)
-!#endif
+#endif
     if( map%distrib(map%nProcs) .ne. n_glob+1 ) then
       ierr = -1
     else

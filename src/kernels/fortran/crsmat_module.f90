@@ -1476,8 +1476,13 @@ end subroutine permute_local_matrix
     A%nCols = A%nRows
 
     ! allocate temporary buffers
-    allocate(idx(globalEntries,2))
-    allocate(val(globalEntries))
+    allocate(idx(globalEntries,2), &
+             val(globalEntries),&
+             stat=ierr)
+    if (ierr/=0) then
+      ierr=-55
+      return
+    end if
 
     ! read data
     j = 0
@@ -1497,9 +1502,13 @@ end subroutine permute_local_matrix
 
 
     ! allocate crs matrix
-    allocate(A%row_offset(A%nRows+1))
-    allocate(A%global_col_idx(A%nEntries))
-    allocate(A%val(A%nEntries))
+    allocate(A%row_offset(A%nRows+1),&
+             A%global_col_idx(A%nEntries),&
+             A%val(A%nEntries),stat=ierr)
+    if (ierr/=0) then
+      ierr=-55
+      return
+    end if
 
     ! try to respect NUMA
 !$omp parallel do schedule(static)
@@ -1640,14 +1649,23 @@ end subroutine permute_local_matrix
     A%nEntries = int(maxnne_per_row,kind=8)*int(A%nRows,kind=8)
 
     ! allocate temporary buffers
-    allocate(idx(maxnne_per_row,2))
-    allocate(val(maxnne_per_row))
+    allocate(idx(maxnne_per_row,2),&
+             val(maxnne_per_row),stat=ierr)
+
+    if (ierr/=0) then
+      ierr=-55
+      return
+    end if
 
     ! allocate crs matrix
-    allocate(A%row_offset(A%nRows+1))
-    allocate(A%global_col_idx(A%nEntries))
-    allocate(A%val(A%nEntries))
+    allocate(A%row_offset(A%nRows+1),&
+             A%global_col_idx(A%nEntries),&
+             A%val(A%nEntries),stat=ierr)
 
+    if (ierr/=0) then
+      ierr=-55
+      return
+    end if
 
 call mpi_barrier(MPI_COMM_WORLD, ierr)
 wtime = mpi_wtime()
@@ -1672,6 +1690,7 @@ call mpi_barrier(MPI_COMM_WORLD, ierr)
 wtime = mpi_wtime() - wtime
 if( A%row_map%me .eq. 0 ) then
   write(*,*) 'read matrix from row func in', wtime, 'seconds'
+  flush(6)
 end if
 
 wtime = mpi_wtime()
@@ -1682,6 +1701,7 @@ call mpi_barrier(MPI_COMM_WORLD, ierr)
 wtime = mpi_wtime() - wtime
 if( A%row_map%me .eq. 0 ) then
   write(*,*) 'sort global cols in', wtime, 'seconds'
+  flush(6)
 end if
 
 

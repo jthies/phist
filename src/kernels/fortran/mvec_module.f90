@@ -1033,7 +1033,11 @@ contains
     write(*,*) 'creating new mvec with dimensions:', nvec, map%nlocal(map%me), 'address', transfer(c_loc(mvec),dummy)
     flush(6)
 #endif
-    allocate(mvec%val(nvec,max(1,map%nlocal(map%me))))
+    allocate(mvec%val(nvec,max(1,map%nlocal(map%me))),stat=ierr)
+    if (ierr/=0) then
+      ierr=-44
+      return
+    end if
     ! that should hopefully help in cases of NUMA
 !$omp parallel do schedule(static)
     do i = 1, size(mvec%val,2), 1
