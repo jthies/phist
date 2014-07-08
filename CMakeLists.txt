@@ -42,7 +42,7 @@ enable_language (Fortran)
 # compiler-dependent flags 
 ##############################################################################
 
-set(OUTLEV_DEBUG 99)
+set(OUTLEV_DEBUG 5)
 set(OUTLEV_RELEASE 3)
 
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
@@ -437,7 +437,7 @@ foreach (infile ${TG_CXX_Drivers})
 endforeach()
 
 # example drivers implemented in ghost
-if  (PHIST_KERNEL_LIB STREQUAL "ghost")
+if  (PHIST_HAVE_GHOST)
 # TODO - make this somehow general, or probably we should
 #       actually install phist instead and push the spinChain
 #       driver to the essex/examples repo...
@@ -447,20 +447,21 @@ if  (PHIST_KERNEL_LIB STREQUAL "ghost")
   include_directories(${ESSEX-PHYSICS_INCLUDE_DIRS})
   add_executable(spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
   add_executable(spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
-# TODO - this driver doesn't link and we don't have the kernels yet, re-enable it at a later point
-#  add_executable(graphene_carp ${PROJECT_SOURCE_DIR}/drivers/graphene_carp.c ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
+  add_executable(graphene_carp ${PROJECT_SOURCE_DIR}/drivers/graphene_carp.c ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
 #  add_executable(graphene_carp_as_ghost_task ${PROJECT_SOURCE_DIR}/drivers/graphene_carp_as_ghost_task.c ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
   target_link_libraries(spinChain ${ESSEX-PHYSICS_LIBRARIES})
   target_link_libraries(spinChain_subspacejada ${ESSEX-PHYSICS_LIBRARIES})
-#  target_link_libraries(graphene_carp ${ESSEX-PHYSICS_LIBRARIES})
+  target_link_libraries(graphene_carp ${ESSEX-PHYSICS_LIBRARIES})
 #  target_link_libraries(graphene_carp_as_ghost_task ${ESSEX-PHYSICS_LIBRARIES})
   foreach(lib ${PHIST_LIBS})
     target_link_libraries(spinChain ${lib})
     target_link_libraries(spinChain_subspacejada ${lib})
-#    target_link_libraries(graphene_carp ${lib})
+    target_link_libraries(graphene_carp ${lib})
 #    target_link_libraries(graphene_carp_as_ghost_task ${lib})
   endforeach()
 elseif(PHIST_KERNEL_LIB STREQUAL "fortran")
+# even without the ghost/physics libs we include certain matfuncs for the
+# test cases SpinSZ and Graphene for testing purposes.
   include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
   add_executable(spinChain              ${PROJECT_SOURCE_DIR}/drivers/spinChain.c
                                         ${PROJECT_SOURCE_DIR}/drivers/matfuncs/SpinChainSZ.c)
