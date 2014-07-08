@@ -521,14 +521,21 @@ end do
     end if
 
     ! determine recvRowProc vector
-    allocate(rowSendProcGlob(crsMat%row_map%distrib(crsMat%row_map%nProcs)-1))
+    allocate(rowSendProcGlob(crsMat%row_map%distrib(crsMat%row_map%nProcs)-1),...
+             offsets(crsMat%row_map%nProcs), stat=ierr)
+    if (ierr/=0) then
+      ierr=-44
+      return
+    end if
 #warning "cannot allgatherv more than max-int32 elements!"
-    allocate(offsets(crsMat%row_map%nProcs))
     offsets = crsMat%row_map%distrib(0:crsMat%row_map%nProcs-1)-1
 !write(*,*) 'offsets', offsets
     call mpi_allgatherv(rowSendProc,crsMat%nRows,MPI_INTEGER8,&
       & rowSendProcGlob,crsMat%row_map%nlocal,offsets,MPI_INTEGER8, &
       & crsMat%row_map%comm, ierr)
+      if (ierr/=0) then
+        return
+      end if
 !if( crsMat%row_map%me .eq. 0 ) then
   !write(*,*) 'rowSendProcGlob', rowSendProcGlob
 !end if
@@ -539,8 +546,12 @@ end do
       end if
     end do
 
-    allocate(rowRecvProc(nd_new))
-    allocate(crsMat%global_row_idx(nd_new))
+    allocate(rowRecvProc(nd_new), &
+             crsMat%global_row_idx(nd_new), stat=ierr)
+    if (ierr/=0) then
+      ierr=-44
+      return
+    end if
     nRecvProcs = 1
     if( nd_new .eq. 0 ) nRecvProcs = 0
     nd_new = 0
@@ -569,7 +580,11 @@ end do
       crsMat%row_map%distrib(i) = crsMat%row_map%distrib(i-1) + crsMat%row_map%distrib(i)
     end do
     crsMat%row_map%nlocal = int(crsMat%row_map%distrib(1:crsMat%row_map%nProcs) - crsMat%row_map%distrib(0:crsMat%row_map%nProcs-1),kind=4)
-    allocate(glob_row_permut(crsMat%row_map%distrib(crsMat%row_map%nProcs)-1))
+    allocate(glob_row_permut(crsMat%row_map%distrib(crsMat%row_map%nProcs)-1), stat=ierr)
+    if (ierr/=0) then
+      ierr=-44
+      return
+    end if
     do i = 1, size(glob_row_permut), 1
       glob_row_permut( i ) = crsMat%row_map%distrib( rowSendProcGlob(i) )
       crsMat%row_map%distrib( rowSendProcGlob(i) ) = &
@@ -646,7 +661,11 @@ end do
     do i = 1, crsMat%row_map%nProcs, 1
       procSendCount(i) = procSendCount(i)+procSendCount(i-1)
     end do
-    allocate(sendBuff_row_blk(sendBuffInd(nSendProcs+1)))
+    allocate(sendBuff_row_blk(sendBuffInd(nSendProcs+1)), stat=ierr)
+    if (ierr/=0) then
+      ierr=-44
+      return
+    end if
     sendBuff_row_blk=0
     do i = 1, crsMat%nRows, 1
       rowSendProc(i) = sendIdsInd(rowSendProc(i))
@@ -680,7 +699,11 @@ end do
       row_blk_new(i+1) = row_blk_new(i) + row_blk_new(i+1)
     end do
 !write(*,*) 'row_blk_new', row_blk_new
-    allocate(col_ind_new(row_blk_new(nd_new+1)-1))
+    allocate(col_ind_new(row_blk_new(nd_new+1)-1), stat=ierr)
+    if (ierr/=0) then
+      ierr=-44
+      return
+    end if
     if( nd_new .gt. 0 ) jProc = rowRecvProc(1)
     k = 1
     l = 1
@@ -701,7 +724,11 @@ end do
 
 
     ! reorder local matrix entries, so they can be sent block-wise
-    allocate(buff_ind(crsMat%nEntries))
+    allocate(buff_ind(crsMat%nEntries), stat=ierr)
+    if (ierr/=0) then
+      ierr=-44
+      return
+    end if
     do i = 1, crsMat%nRows, 1
       procSendCount(sendIds(rowSendProc(i))) = &
         & procSendCount(sendIds(rowSendProc(i))) + 1
@@ -730,7 +757,11 @@ end do
 
     ! finish col_ind receive and create buffer for value
     call mpi_waitall(nRecvProcs,recvRequest(:,1),recvStatus(:,:,1),ierr)
-    allocate(value_new(row_blk_new(nd_new+1)-1))
+    allocate(value_new(row_blk_new(nd_new+1)-1), stat=ierr)
+    if (ierr/=0) then
+      ierr=-44
+      return
+    end if
     if( nd_new .gt. 0 ) jProc = rowRecvProc(1)
     k = 1
     l = 1
@@ -770,15 +801,23 @@ end do
     ! try to respect NUMA
     crsMat%nRows = nd_new
     crsMat%nEntries = row_blk_new(nd_new+1)-1
-    allocate(crsMat%row_offset(crsMat%nRows+1))
+    allocate(crsMat%row_offset(crsMat%nRows+1), stat=ierr)
+    if (ierr/=0) then
+      ierr=-44
+      return
+    end if
 !$omp parallel do schedule(static)
     do i = 1, crsMat%nRows+1, 1
       crsMat%row_offset(i) = row_blk_new(i)
     end do
     deallocate(row_blk_new)
 
-    allocate(crsMat%global_col_idx(crsMat%nEntries))
-    allocate(crsMat%val(crsMat%nEntries))
+    allocate(crsMat%global_col_idx(crsMat%nEntries), &
+             crsMat%val(crsMat%nEntries), stat=ierr)
+    if (ierr/=0) then
+      ierr=-44
+      return
+    end if             
 !$omp parallel do schedule(static)
     do i = 1, crsMat%nRows, 1
       do j = crsMat%row_offset(i), crsMat%row_offset(i+1)-1, 1
@@ -825,8 +864,12 @@ end do
       allocate(vtxdist(0:crsMat%row_map%nProcs))
       vtxdist=crsMat%row_map%distrib
       ! count non diagonal elements
-      allocate(xadj(crsMat%nRows+1))
-      allocate(vwgt(crsMat%nRows))
+      allocate(xadj(crsMat%nRows+1), &
+               vwgt(crsMat%nRows), stat=ierr)
+      if (ierr/=0) then
+        ierr=-44
+        return
+      end if
       j = 1
       xadj(1) = 1
       do i = 1, crsMat%nRows, 1
@@ -838,7 +881,11 @@ end do
         xadj(i+1) = j
         vwgt(i) = crsMat%row_offset(i+1)-crsMat%row_offset(i)
       end do
-      allocate(adjncy(xadj(crsMat%nRows+1)-1))
+      allocate(adjncy(xadj(crsMat%nRows+1)-1), stat=ierr)
+      if (ierr/=0) then
+        ierr=-44
+        return
+      end if
       !nullify(adjwgt)
       j = 1
       edgecut = 0
@@ -864,7 +911,11 @@ end do
 
       ! make symmetric graph from non-symmetric matrix pattern
       !call parudgraph(mpi,vtxdist,xadj,adjncy,adjwgt)
-      allocate(adjwgt(xadj(crsMat%nRows+1)-1))
+      allocate(adjwgt(xadj(crsMat%nRows+1)-1),stat=ierr)
+      if (ierr/=0) then
+        ierr=-44
+        return
+      end if
       adjwgt = 2
 #warning "matrix reordering only implemented for the symmetric case, will fail otherwise!"
       ! the edge weights are 1 for single edges and 2 for edges in both
@@ -1541,6 +1592,9 @@ end subroutine permute_local_matrix
 !write(*,*) 'col_idx', A%global_col_idx
 !write(*,*) 'val', A%val
     call repartcrs(A,3,ierr)
+    if (ierr/=0) then
+      return
+    end if
 !write(*,*) 'row_offset', A%row_offset
 !write(*,*) 'col_idx', A%global_col_idx
 !write(*,*) 'val', A%val
@@ -1575,7 +1629,7 @@ end subroutine permute_local_matrix
     call sort_rows_local_nonlocal(A)
 
 #ifdef PHIST_HAVE_COLPACK
-!    call colorcrs(A,2,3,ierr)
+    call colorcrs(A,2,3,ierr)
 #endif
 
     write(*,*) 'created new crsMat with dimensions', A%nRows, A%nCols, A%nEntries
@@ -1685,6 +1739,12 @@ end if
 wtime = mpi_wtime()
 
     call repartcrs(A,3,ierr)
+    if (ierr/=0) then
+      if( A%row_map%me .eq. 0 ) then
+        write(*,*) 'repartitioning failed with error code ',ierr
+      end if
+      return
+    end if
 
 call mpi_barrier(MPI_COMM_WORLD, ierr)
 wtime = mpi_wtime() - wtime
@@ -1741,6 +1801,12 @@ end if
     !TODO - make the coloring optional, it only makes sense
     !       for CARP-CG right now
     call colorcrs(A,2,3,ierr)
+    if (ierr/=0) then
+      if( A%row_map%me .eq. 0 ) then
+        write(*,*) 'graph coloring failed'
+      end if
+      return
+    end if
 #endif
 
     ! calculate actual global dimension
