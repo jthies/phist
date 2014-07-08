@@ -984,7 +984,7 @@ end do
     ! local variables
     integer :: i
     integer(kind=8) :: j
-    integer(c_int), target :: colors(crsMat%nRows)
+    integer(c_int), target, allocatable :: colors(:)
     integer :: ncolors
     integer, allocatable, dimension(:) :: colorCount
     
@@ -1010,6 +1010,8 @@ end do
       end subroutine colpack
 
     end interface
+
+    allocate(colors(crsMat%nRows))
 
     c_rp=c_loc(crsMat%row_offset(1))
     c_nlp=c_loc(crsMat%nonlocal_offset(1))
@@ -1106,6 +1108,8 @@ end do
 !       result in permuted vectors, but just for single-node performance we do it right now
 !call permute_local_matrix(crsMat)
 #endif
+
+    deallocate(colors)
 
     end subroutine colorcrs
 
@@ -1523,8 +1527,13 @@ end subroutine permute_local_matrix
     A%nCols = A%nRows
 
     ! allocate temporary buffers
-    allocate(idx(globalEntries,2))
-    allocate(val(globalEntries))
+    allocate(idx(globalEntries,2), &
+             val(globalEntries),&
+             stat=ierr)
+    if (ierr/=0) then
+      ierr=-55
+      return
+    end if
 
     ! read data
     j = 0
@@ -1544,9 +1553,13 @@ end subroutine permute_local_matrix
 
 
     ! allocate crs matrix
-    allocate(A%row_offset(A%nRows+1))
-    allocate(A%global_col_idx(A%nEntries))
-    allocate(A%val(A%nEntries))
+    allocate(A%row_offset(A%nRows+1),&
+             A%global_col_idx(A%nEntries),&
+             A%val(A%nEntries),stat=ierr)
+    if (ierr/=0) then
+      ierr=-55
+      return
+    end if
 
     ! try to respect NUMA
 !$omp parallel do schedule(static)
@@ -1690,14 +1703,23 @@ end subroutine permute_local_matrix
     A%nEntries = int(maxnne_per_row,kind=8)*int(A%nRows,kind=8)
 
     ! allocate temporary buffers
-    allocate(idx(maxnne_per_row,2))
-    allocate(val(maxnne_per_row))
+    allocate(idx(maxnne_per_row,2),&
+             val(maxnne_per_row),stat=ierr)
+
+    if (ierr/=0) then
+      ierr=-55
+      return
+    end if
 
     ! allocate crs matrix
-    allocate(A%row_offset(A%nRows+1))
-    allocate(A%global_col_idx(A%nEntries))
-    allocate(A%val(A%nEntries))
+    allocate(A%row_offset(A%nRows+1),&
+             A%global_col_idx(A%nEntries),&
+             A%val(A%nEntries),stat=ierr)
 
+    if (ierr/=0) then
+      ierr=-55
+      return
+    end if
 
 call mpi_barrier(MPI_COMM_WORLD, ierr)
 wtime = mpi_wtime()
@@ -1722,6 +1744,7 @@ call mpi_barrier(MPI_COMM_WORLD, ierr)
 wtime = mpi_wtime() - wtime
 if( A%row_map%me .eq. 0 ) then
   write(*,*) 'read matrix from row func in', wtime, 'seconds'
+  flush(6)
 end if
 
 wtime = mpi_wtime()
@@ -1732,6 +1755,7 @@ call mpi_barrier(MPI_COMM_WORLD, ierr)
 wtime = mpi_wtime() - wtime
 if( A%row_map%me .eq. 0 ) then
   write(*,*) 'sort global cols in', wtime, 'seconds'
+  flush(6)
 end if
 
 
@@ -1997,7 +2021,11 @@ end if
     
     ! work is used to store the averaging coefficients for the x halo
     ! received from other processes (in a sparseArray_t object)
-    allocate(procCount(A%nRows))
+    allocate(procCount(A%nRows),stat=ierr)
+    if (ierr/=0) then
+      ierr=-44
+      return
+    end if
     procCount(1:A%nRows)=1 ! contains for every owned node the number
                            ! of contributing procs (default 1, just me)
     
@@ -2013,8 +2041,12 @@ end if
     allocate(invProcCount)
     invProcCount%n=A%nRows
     invProcCount%nnz=count(procCount.gt.1)
-    allocate(invProcCount%idx(invProcCount%nnz))
-    allocate(invProcCount%val(invProcCount%nnz))
+    allocate(invProcCount%idx(invProcCount%nnz),&
+             invProcCount%val(invProcCount%nnz), stat=ierr)
+    if (ierr/=0) then
+      ierr=-44
+      return
+    end if
     j=0
     do i=1,A%nRows
       if (procCount(i) .gt. 1) then
@@ -2132,8 +2164,12 @@ end if
       recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
 
       if( .not. allocated(A%comm_buff%recvData) ) then
-        allocate(A%comm_buff%recvData(2*nvec,recvBuffSize))
-        allocate(A%comm_buff%sendData(2*nvec,sendBuffSize))
+        allocate(A%comm_buff%recvData(2*nvec,recvBuffSize),&
+                 A%comm_buff%sendData(2*nvec,sendBuffSize),stat=ierr)
+        if (ierr/=0) then
+          ierr=-44
+          return
+        end if
       end if
 
       ldx = size(x_r%val,1)

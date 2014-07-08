@@ -30,7 +30,7 @@ extern "C" void colpack_v1_0_8(int nrows, int64_t* row_ptr, int64_t* nonlocal_pt
   //              ...
   // ... all the way, so we just need a single object to represent the graph and the ordering 
   // and everything
-  ColPack::GraphColoring GC;
+  ColPack::GraphColoring *GC=new ColPack::GraphColoring();
 
   // the input format this package accepts is called "ADOL-C compressed row". I have
   // looked in an obscure paper, ADOL-C is something about automatic differentiation
@@ -64,7 +64,7 @@ extern "C" void colpack_v1_0_8(int nrows, int64_t* row_ptr, int64_t* nonlocal_pt
    }
  }
 
-  int i_HighestDegree = GC.BuildGraphFromRowCompressedFormat(adolc, nrows);
+  int i_HighestDegree = GC->BuildGraphFromRowCompressedFormat(adolc, nrows);
   
   delete [] adolc_data;
   delete [] adolc;
@@ -76,16 +76,16 @@ extern "C" void colpack_v1_0_8(int nrows, int64_t* row_ptr, int64_t* nonlocal_pt
   if (dist==2)
   {
     // this function returns 1 on success
-    PHIST_CHK_IERR(*ierr=GC.DistanceTwoColoring()-1,*ierr);
+    PHIST_CHK_IERR(*ierr=GC->DistanceTwoColoring()-1,*ierr);
 #if PHIST_OUTLEV>=PHIST_VERBOSE
 int verbose=2;
 #else
 int verbose=1;
 #endif
 #ifdef TESTING
-    PHIST_CHK_IERR(*ierr=GC.CheckDistanceTwoColoring(verbose),*ierr);
+    PHIST_CHK_IERR(*ierr=GC->CheckDistanceTwoColoring(verbose),*ierr);
 #else
-    PHIST_CHK_IERR(*ierr=GC.CheckQuickDistanceTwoColoring(verbose),*ierr);
+    PHIST_CHK_IERR(*ierr=GC->CheckQuickDistanceTwoColoring(verbose),*ierr);
 #endif
   }
   else
@@ -93,8 +93,8 @@ int verbose=1;
     PHIST_CHK_IERR(*ierr=PHIST_INVALID_INPUT,*ierr);
   }
 
-  *ncolors = GC.GetVertexColorCount();
-  std::vector<int>& colorVec=*(GC.GetVertexColorsPtr());
+  *ncolors = GC->GetVertexColorCount();
+  std::vector<int>& colorVec=*(GC->GetVertexColorsPtr());
 
   PHIST_CHK_IERR(*ierr=nrows-colorVec.size(),*ierr);
   
@@ -102,6 +102,7 @@ int verbose=1;
   {
     colors[i]=colorVec[i];
   }
+  delete GC;
   return;
 #endif
 }
