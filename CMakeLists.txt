@@ -107,6 +107,16 @@ set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -DPHIST_OUTLEV=$
 set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELWITHDEBINFO} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
 set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -DPHIST_OUTLEV=${OUTLEV_DEBUG}")
 
+# try to detect if we can use C++11 Lambdas
+include(CheckCXXSourceCompiles)
+CHECK_CXX_SOURCE_COMPILES("
+  int main(int argc, char** argv)
+  {
+    auto lfunc = [&](){ int _argc = argc; };
+    return 0;
+  }
+" PHIST_HAVE_CXX11_LAMBDAS
+)
 ##############################################################################
 # set enable precision?
 ##############################################################################

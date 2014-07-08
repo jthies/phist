@@ -39,7 +39,11 @@ namespace phist_TimeMonitor
 
 #include <ghost.h>
 #include <ghost/machine.h>
+#include <ghost/thpool.h>
+#include <ghost/pumap.h>
+#include <ghost/locality.h>
 #include <limits>
+#include "phist_ghost_macros.hpp"
 
 namespace phist
   {
@@ -71,26 +75,42 @@ typedef struct ghost_map_t
 
 // initialize ghost
 void phist_kernels_init(int* argc, char*** argv, int* ierr)
-  {
+{
   *ierr=0;
   ghost_init(*argc, *argv);
-  //ghost_pinThreads(GHOST_PIN_PHYS,NULL);
-  char *str;
+
+  char *str = NULL;
   ghost_string(&str);
-  printf("%s\n",str);
+  PHIST_SOUT(PHIST_INFO,"%s\n",str);
   free(str); str = NULL;
+
   ghost_machine_string(&str);
-  printf("%s\n",str);
+  PHIST_SOUT(PHIST_INFO,"%s\n",str);
   free(str); str = NULL;
+
+  ghost_thpool_t *thpool;
+  int nnuma = 0;
+  int npu = 0;
+
+  ghost_thpool_get(&thpool);
+  ghost_machine_nnuma(&nnuma);
+  ghost_machine_npu(&npu,GHOST_NUMANODE_ANY);
+
+  ghost_pumap_string(&str);
+  PHIST_SOUT(PHIST_VERBOSE,"%s\n",str);
+  free(str); str = NULL;
+
+  PHIST_SOUT(PHIST_VERBOSE,"The thread pool consists of %d threads\n",thpool->nThreads);
+
 #ifdef PHIST_HAVE_LIKWID
   LIKWID_MARKER_INIT;
   LIKWID_MARKER_START("phist<ghost>");
 #endif
-  }
+}
 
 // finalize ghost
 void phist_kernels_finalize(int* ierr)
-  {
+{
 #ifdef PHIST_HAVE_LIKWID
   LIKWID_MARKER_STOP("phist<ghost>");
   LIKWID_MARKER_CLOSE;
@@ -100,7 +120,7 @@ void phist_kernels_finalize(int* ierr)
 #endif
   ghost_finalize();
   *ierr=0;
-  }
+}
 
 
 //! simply returns MPI_COMM_WORLD, the only MPI_Comm used in ghost.
