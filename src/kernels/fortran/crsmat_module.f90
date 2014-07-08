@@ -1508,15 +1508,17 @@ end subroutine permute_local_matrix
     end if
 
     ! read second line (comment)
-    read(funit,*) line
+    read(funit,'(A)') line
+    line = adjustl(line)
     do while( line(1:1) .eq. '%' )
       read(funit,'(A)') line
+      line = adjustl(line)
     end do
 
     allocate(A)
 
     ! now read the dimensions
-    read(funit,*) globalRows, globalCols, globalEntries
+    read(line,*) globalRows, globalCols, globalEntries
     write(*,*) 'CrsMat:', globalRows, globalCols, globalEntries
     flush(6)
 
