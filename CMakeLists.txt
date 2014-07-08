@@ -1,19 +1,5 @@
 cmake_minimum_required(VERSION 2.8.10)
 
-# If the user specifies -DCMAKE_BUILD_TYPE on the command line, take their definition
-# and dump it in the cache along with proper documentation, otherwise set CMAKE_BUILD_TYPE
-# to Debug prior to calling PROJECT()
-#
-IF(DEFINED CMAKE_BUILD_TYPE)
-   SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "Choose the type of build, 
-options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used), Debug, Release, RelWithDebInfo")
-ELSE()
-   SET(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build,
-options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used), Debug, Release, RelWithDebInfo")
-ENDIF()
-
-message(STATUS "build type: ${CMAKE_BUILD_TYPE}")
-
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
 
@@ -25,6 +11,11 @@ set(PHIST_VERSION_PATCH 99)
 set(PHIST_VERSION_PATCH ${PHIST_VERSION_PATCH}-beta)
 set(PRODUCT_NAME phist-${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
 
+if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug, Release" FORCE)
+else()
+  set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: Debug, Release" FORCE)
+endif()
 option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
 option(PHIST_ENABLE_SP "Enable single precision functions and drivers" OFF)
 if (DEFINED LAPACK_LIBS)
@@ -41,7 +32,6 @@ enable_language (Fortran)
 ##############################################################################
 # compiler-dependent flags 
 ##############################################################################
-
 set(OUTLEV_DEBUG 99)
 set(OUTLEV_RELEASE 3)
 
@@ -254,10 +244,10 @@ include_directories(${PROJECT_SOURCE_DIR}/src/jada)
 include_directories(${PROJECT_SOURCE_DIR}/src/feast)
 include_directories(${PROJECT_SOURCE_DIR}/drivers)
 
-add_library(phist_tools STATIC ${PHIST_TOOLS_SOURCE})
-add_library(phist_core STATIC ${PHIST_CORE_SOURCE})
-add_library(phist_kernels_${PHIST_KERNEL_LIB} STATIC ${PHIST_KERNEL_SOURCE})
-add_library(phist_solvers STATIC ${PHIST_KRYLOV_SOURCE} 
+add_library(phist_tools SHARED ${PHIST_TOOLS_SOURCE})
+add_library(phist_core SHARED ${PHIST_CORE_SOURCE})
+add_library(phist_kernels_${PHIST_KERNEL_LIB} SHARED ${PHIST_KERNEL_SOURCE})
+add_library(phist_solvers SHARED ${PHIST_KRYLOV_SOURCE} 
                                  ${PHIST_JADA_SOURCE}
                                  ${PHIST_FEAST_SOURCE})
 
@@ -269,7 +259,7 @@ list(APPEND PHIST_LIBS phist_tools)
 if(PHIST_KERNEL_LIB STREQUAL "ghost")
   find_package(GHOST REQUIRED CONFIG)
 else()
-  find_package(GHOST CONFIG)
+  find_package(GHOST CONFIG QUIET)
 endif()
 if (GHOST_FOUND)
   message(STATUS "Found GHOST ${GHOST_VERSION}")
@@ -277,6 +267,8 @@ if (GHOST_FOUND)
   include_directories(${GHOST_INCLUDE_DIRS})
   link_directories(${GHOST_LIBRARY_DIRS})
   list(APPEND PHIST_LIBS ${GHOST_LIBRARIES})
+else()
+  message(STATUS "GHOST not found, some functionality will be disabled and return -99 ('not implemented')")
 endif()
 
 # load parmetis for reordering fortran
@@ -417,10 +409,11 @@ foreach (infile ${TG_C_Drivers})
   foreach (tc ${TG_Types})
     STRING(TOLOWER \"phist_gen_${tc}.h\" PHIST_TG_HFILE)
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.c)
-    add_executable(${tc}${filebase} ${tc}${filebase}.c)
+    add_executable(phist_${tc}${filebase} ${tc}${filebase}.c)
     foreach(lib ${PHIST_LIBS})
-      target_link_libraries(${tc}${filebase} ${lib})
+      target_link_libraries(phist_${tc}${filebase} ${lib})
     endforeach()
+    install(TARGETS phist_${tc}${filebase} RUNTIME DESTINATION bin)
   endforeach()
 endforeach()
 
@@ -429,10 +422,11 @@ foreach (infile ${TG_CXX_Drivers})
   foreach (tc ${TG_Types})
     STRING(TOLOWER \"phist_gen_${tc}.h\" PHIST_TG_HFILE)
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.cpp)
-    add_executable(${tc}${filebase} ${tc}${filebase}.cpp)
+    add_executable(phist_${tc}${filebase} ${tc}${filebase}.cpp)
     foreach(lib ${PHIST_LIBS})
-      target_link_libraries(${tc}${filebase} ${lib})
+      target_link_libraries(phist_${tc}${filebase} ${lib})
     endforeach()
+    install(TARGETS phist_${tc}${filebase} RUNTIME DESTINATION bin)
   endforeach()
 endforeach()
 
@@ -445,46 +439,52 @@ if  (PHIST_KERNEL_LIB STREQUAL "ghost")
   message(STATUS "Found ESSEX-Physics ${ESSEX-PHYSICS_VERSION}")
 
   include_directories(${ESSEX-PHYSICS_INCLUDE_DIRS})
-  add_executable(spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
-  add_executable(spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
+  add_executable(phist_spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
+  add_executable(phist_spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
 # TODO - this driver doesn't link and we don't have the kernels yet, re-enable it at a later point
 #  add_executable(graphene_carp ${PROJECT_SOURCE_DIR}/drivers/graphene_carp.c ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
 #  add_executable(graphene_carp_as_ghost_task ${PROJECT_SOURCE_DIR}/drivers/graphene_carp_as_ghost_task.c ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
-  target_link_libraries(spinChain ${ESSEX-PHYSICS_LIBRARIES})
-  target_link_libraries(spinChain_subspacejada ${ESSEX-PHYSICS_LIBRARIES})
+  target_link_libraries(phist_spinChain ${ESSEX-PHYSICS_LIBRARIES})
+  target_link_libraries(phist_spinChain_subspacejada ${ESSEX-PHYSICS_LIBRARIES})
 #  target_link_libraries(graphene_carp ${ESSEX-PHYSICS_LIBRARIES})
 #  target_link_libraries(graphene_carp_as_ghost_task ${ESSEX-PHYSICS_LIBRARIES})
   foreach(lib ${PHIST_LIBS})
-    target_link_libraries(spinChain ${lib})
-    target_link_libraries(spinChain_subspacejada ${lib})
+    target_link_libraries(phist_spinChain ${lib})
+    target_link_libraries(phist_spinChain_subspacejada ${lib})
 #    target_link_libraries(graphene_carp ${lib})
 #    target_link_libraries(graphene_carp_as_ghost_task ${lib})
   endforeach()
+  install(TARGETS phist_spinChain RUNTIME DESTINATION bin)
+  install(TARGETS phist_spinChain_subspacejada RUNTIME DESTINATION bin)
 elseif(PHIST_KERNEL_LIB STREQUAL "fortran")
   include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
-  add_executable(spinChain              ${PROJECT_SOURCE_DIR}/drivers/spinChain.c
+  add_executable(phist_spinChain              ${PROJECT_SOURCE_DIR}/drivers/spinChain.c
                                         ${PROJECT_SOURCE_DIR}/drivers/matfuncs/SpinChainSZ.c)
-  add_executable(spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp
+  add_executable(phist_spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp
                                         ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c
                                         ${PROJECT_SOURCE_DIR}/drivers/matfuncs/SpinChainSZ.c)
-  add_executable(graphene_carp ${PROJECT_SOURCE_DIR}/drivers/graphene_carp.c
+  add_executable(phist_graphene_carp ${PROJECT_SOURCE_DIR}/drivers/graphene_carp.c
                                         ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c
                                         ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c)
-  add_executable(graphene_carp_as_ghost_task ${PROJECT_SOURCE_DIR}/drivers/graphene_carp_as_ghost_task.c
+  add_executable(phist_graphene_carp_as_ghost_task ${PROJECT_SOURCE_DIR}/drivers/graphene_carp_as_ghost_task.c
                                         ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c
                                         ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c)
   foreach(lib ${PHIST_LIBS})
-    target_link_libraries(spinChain ${lib})
-    target_link_libraries(spinChain_subspacejada ${lib})
-    target_link_libraries(graphene_carp ${lib})
-    target_link_libraries(graphene_carp_as_ghost_task ${lib})
+    target_link_libraries(phist_spinChain ${lib})
+    target_link_libraries(phist_spinChain_subspacejada ${lib})
+    target_link_libraries(phist_graphene_carp ${lib})
+    target_link_libraries(phist_graphene_carp_as_ghost_task ${lib})
   endforeach()
+  install(TARGETS phist_spinChain RUNTIME DESTINATION bin)
+  install(TARGETS phist_spinChain_subspacejada RUNTIME DESTINATION bin)
+  install(TARGETS phist_graphene_carp RUNTIME DESTINATION bin)
+  install(TARGETS phist_graphene_carp_as_ghost_task RUNTIME DESTINATION bin)
 endif()
 
-install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phist-targets ARCHIVE DESTINATION lib)
-install(TARGETS phist_tools EXPORT phist-targets ARCHIVE DESTINATION lib)
-install(TARGETS phist_core EXPORT phist-targets ARCHIVE DESTINATION lib)
-install(TARGETS phist_solvers EXPORT phist-targets ARCHIVE DESTINATION lib)
+install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phist-targets LIBRARY DESTINATION lib)
+install(TARGETS phist_tools EXPORT phist-targets LIBRARY DESTINATION lib)
+install(TARGETS phist_core EXPORT phist-targets LIBRARY DESTINATION lib)
+install(TARGETS phist_solvers EXPORT phist-targets LIBRARY DESTINATION lib)
 
 install(FILES ${PROJECT_BINARY_DIR}/phist_config.h DESTINATION include/phist)
 
@@ -524,9 +524,9 @@ file(GLOB C_Examples ${CMAKE_SOURCE_DIR}/examples/*/*.c )
 
 foreach (infile ${C_Examples})
   get_filename_component(filebase ${infile} NAME_WE)
-  add_executable(${filebase} ${infile})
+  add_executable(phist_${filebase} ${infile})
   foreach(lib ${PHIST_LIBS})
-    target_link_libraries(${filebase} ${lib})
+    target_link_libraries(phist_${filebase} ${lib})
   endforeach()
 endforeach()
 
@@ -600,9 +600,7 @@ endif()
 # Adding optinal target "doc" to generate Doxygen documentation
 find_package(Doxygen)
 if (DOXYGEN_FOUND)
-    add_custom_target(doc
-    ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cmake/phist.doxyfile
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+    add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cmake/phist.doxyfile WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
 
 # Add optional target "coverage" to genereate code coverage report (console / XML)
@@ -626,10 +624,11 @@ add_custom_target(audit DEPENDS coverage cppcheck)
 set(CPACK_PACKAGE_VERSION "${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH}")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE.txt")
 set(CPACK_GENERATOR ZIP)
-#install(TARGETS ${PRODUCT_NAME} RUNTIME DESTINATION bin)
 #install(FILES "${CMAKE_SOURCE_DIR}/AUTHORS.txt" DESTINATION .)
 #install(FILES "${CMAKE_SOURCE_DIR}/CHANGES.txt" DESTINATION .)
-#install(FILES "${CMAKE_SOURCE_DIR}/LICENSE.txt" DESTINATION .)
-#install(FILES "${CMAKE_SOURCE_DIR}/README.txt" DESTINATION .)
-#install(DIRECTORY "${CMAKE_SOURCE_DIR}/doc/html" DESTINATION doc)
+install(FILES "${CMAKE_SOURCE_DIR}/LICENSE.txt" DESTINATION .)
+install(FILES "${CMAKE_SOURCE_DIR}/README.txt" DESTINATION .)
+if (DOXYGEN_FOUND)
+  install(DIRECTORY "${CMAKE_SOURCE_DIR}/doc/html" DESTINATION doc)
+endif()
 include(CPack)
