@@ -501,7 +501,7 @@ install(TARGETS phist_solvers EXPORT phist-targets LIBRARY DESTINATION lib)
 
 install(FILES ${PROJECT_BINARY_DIR}/phist_config.h DESTINATION include/phist)
 
-file(GLOB PHIST_HEADERS ${CMAKE_SOURCE_DIR}/src/*/*.h )
+file(GLOB PHIST_HEADERS ${CMAKE_SOURCE_DIR}/src/*/*.h ${CMAKE_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/phist_typedefs.h)
 install(FILES ${PHIST_HEADERS} DESTINATION include/phist)
 
 # test drivers

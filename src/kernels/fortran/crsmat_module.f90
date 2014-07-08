@@ -1509,9 +1509,9 @@ end subroutine permute_local_matrix
 
     ! read second line (comment)
     read(funit,*) line
-    if( line(1:1) .ne. '%' ) then
-      call abort
-    end if
+    do while( line(1:1) .eq. '%' )
+      read(funit,'(A)') line
+    end do
 
     allocate(A)
 
