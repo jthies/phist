@@ -24,9 +24,7 @@ void init_mtraits(ghost_sparsemat_traits_t* mtraits);
 GHOST_REGISTER_DT_D(my_datatype)
 #endif
 
-extern "C" {
 #include "matfuncs.h"
-}
 
 
 // double precision type
