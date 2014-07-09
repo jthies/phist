@@ -38,13 +38,11 @@ namespace phist_TimeMonitor
 using namespace phist::tpetra;
 
 
-extern "C" {
-
 static int myMpiSession=0;
 
 // initialize kernel library. Should at least call MPI_Init if it has not been called
 // but is required.
-void phist_kernels_init(int* argc, char*** argv, int* ierr)
+extern "C" void phist_kernels_init(int* argc, char*** argv, int* ierr)
 {
 #ifdef PHIST_HAVE_MPI
   int mpi_initialized;
@@ -63,7 +61,7 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
       
   // finalize kernel library. Should at least call MPI_Finalize if it has not been called
   // but is required.
-  void phist_kernels_finalize(int* ierr)
+  extern "C" void phist_kernels_finalize(int* ierr)
   {
 #ifdef PHIST_HAVE_LIKWID
     LIKWID_MARKER_STOP("phist<tpetra>");
@@ -82,14 +80,14 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
             
 
 //!
-void phist_comm_create(comm_ptr_t* vcomm, int* ierr)
+extern "C" void phist_comm_create(comm_ptr_t* vcomm, int* ierr)
 {
   *ierr=0;
   *vcomm = (comm_ptr_t)(Teuchos::DefaultComm<int>::getComm().get());
 }
 
 //!
-void phist_comm_delete(comm_ptr_t vcomm, int* ierr)
+extern "C" void phist_comm_delete(comm_ptr_t vcomm, int* ierr)
 {
   *ierr=0;
   TOUCH(vcomm);
@@ -98,14 +96,14 @@ void phist_comm_delete(comm_ptr_t vcomm, int* ierr)
 
 
 //!
-void phist_comm_get_rank(const_comm_ptr_t vcomm, int* rank, int* ierr)
+extern "C" void phist_comm_get_rank(const_comm_ptr_t vcomm, int* rank, int* ierr)
 {
   *ierr=0;
   CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
   *rank=comm->getRank();
 }
 //!
-void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* ierr)
+extern "C" void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* ierr)
 {
   *ierr=0;
   CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
@@ -117,7 +115,7 @@ void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* ierr)
 // and doesn't have a direct equivalent in epetra or ghost. The function checks if a file
 // node.xml exists in which the node parameters like "Num Threads" can be set, otherwise
 // it just uses default parameters.
-void phist_tpetra_node_create(node_t** node, const_comm_ptr_t vcomm, int* ierr)
+extern "C" void phist_tpetra_node_create(node_t** node, const_comm_ptr_t vcomm, int* ierr)
 {
   *ierr=0;
   CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
@@ -155,7 +153,7 @@ void phist_tpetra_node_create(node_t** node, const_comm_ptr_t vcomm, int* ierr)
 }
 
 //!
-void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int *ierr)
+extern "C" void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int *ierr)
 {
   *ierr=0;
   CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
@@ -171,7 +169,7 @@ node_t* node;
 }
 
 //!
-void phist_map_delete(map_ptr_t vmap, int *ierr)
+extern "C" void phist_map_delete(map_ptr_t vmap, int *ierr)
 {
   *ierr=0;
   CAST_PTR_FROM_VOID(map_t,map,vmap,*ierr);
@@ -180,7 +178,7 @@ void phist_map_delete(map_ptr_t vmap, int *ierr)
 }
 
 //!
-void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr)
+extern "C" void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr)
 {
   *ierr=0;
   CAST_PTR_FROM_VOID(const map_t,map,vmap,*ierr);
@@ -189,7 +187,7 @@ void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr
 }
 
 //!
-void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr)
+extern "C" void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr)
 {
   *ierr=0;
   CAST_PTR_FROM_VOID(const map_t,map,vmap,*ierr);
@@ -199,7 +197,7 @@ void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr)
 //! returns the smallest global index in the map appearing on my partition. ierr is set to 1
 //! in case the map is not contiguous, because in that case it may be that the
 //! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
-void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* ierr)
+extern "C" void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* ierr)
 {
   *ierr=0;
   CAST_PTR_FROM_VOID(const map_t,map,vmap,*ierr);
@@ -209,7 +207,7 @@ void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* ierr)
 //! returns the largest global index in the map appearing on my partition. ierr is set to 1
 //! in case the map is not contiguous, because in that case it may be that the
 //! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
-void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr)
+extern "C" void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr)
 {
   *ierr=0;
   CAST_PTR_FROM_VOID(const map_t,map,vmap,*ierr);
@@ -217,10 +215,8 @@ void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr)
   *iupper = map->getMaxGlobalIndex();
 }
 
-} // extern "C"
-
 #ifdef PHIST_TIMEMONITOR
-void phist_totalMatVecCount()
+extern "C" void phist_totalMatVecCount()
 {
   ENTER_FCN(__FUNCTION__);
 }

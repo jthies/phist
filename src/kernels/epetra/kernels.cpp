@@ -45,7 +45,7 @@ extern "C" {
 
 // initialize kernel library. Should at least call MPI_Init if it has not been called
 // but is required.
-void phist_kernels_init(int* argc, char*** argv, int* ierr)
+extern "C" void phist_kernels_init(int* argc, char*** argv, int* ierr)
   {
   *ierr=0;
 #ifdef PHIST_HAVE_MPI
@@ -59,7 +59,7 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
 
 // finalize kernel library. Should at least call MPI_Finalize if it has not been called
 // but is required.
-void phist_kernels_finalize(int* ierr)
+extern "C" void phist_kernels_finalize(int* ierr)
   {
 #ifdef PHIST_HAVE_LIKWID
   LIKWID_MARKER_STOP("phist<epetra>");
@@ -75,7 +75,7 @@ void phist_kernels_finalize(int* ierr)
 
 
 //!
-void phist_comm_create(comm_ptr_t* vcomm, int* ierr)
+extern "C" void phist_comm_create(comm_ptr_t* vcomm, int* ierr)
   {
   *ierr=0;
 #ifdef PHIST_HAVE_MPI
@@ -88,7 +88,7 @@ void phist_comm_create(comm_ptr_t* vcomm, int* ierr)
   }
 
 //!
-void phist_comm_delete(comm_ptr_t vcomm, int* ierr)
+extern "C" void phist_comm_delete(comm_ptr_t vcomm, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(Epetra_Comm,comm,vcomm,*ierr);
@@ -97,21 +97,21 @@ void phist_comm_delete(comm_ptr_t vcomm, int* ierr)
   }
 
 //!
-void phist_comm_get_rank(const_comm_ptr_t vcomm, int* rank, int* ierr)
+extern "C" void phist_comm_get_rank(const_comm_ptr_t vcomm, int* rank, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*ierr);
   *rank=comm->MyPID();
   }
 //!
-void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* ierr)
+extern "C" void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*ierr);
   *size=comm->NumProc();
   }
 //!
-void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int *ierr)
+extern "C" void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int *ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*ierr);
@@ -121,7 +121,7 @@ void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int
   }
 
 //!
-void phist_map_delete(map_ptr_t vmap, int *ierr)
+extern "C" void phist_map_delete(map_ptr_t vmap, int *ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(Epetra_BlockMap,map,vmap,*ierr);
@@ -130,7 +130,7 @@ void phist_map_delete(map_ptr_t vmap, int *ierr)
   }
   
 //!
-void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr)
+extern "C" void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(const Epetra_BlockMap,map,vmap,*ierr);
@@ -138,7 +138,7 @@ void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr
   }
 
 //!
-void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr)
+extern "C" void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(const Epetra_BlockMap,map,vmap,*ierr);
@@ -148,7 +148,7 @@ void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr)
 //! returns the smallest global index in the map appearing on my partition. ierr is set to 1
 //! in case the map is not contiguous, because in that case it may be that the
 //! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
-void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* ierr)
+extern "C" void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(const Epetra_BlockMap,map,vmap,*ierr);
@@ -158,7 +158,7 @@ void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* ierr)
 //! returns the largest global index in the map appearing on my partition. ierr is set to 1
 //! in case the map is not contiguous, because in that case it may be that the
 //! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
-void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr)
+extern "C" void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr)
   {
   *ierr=0;
   CAST_PTR_FROM_VOID(const Epetra_BlockMap,map,vmap,*ierr);
@@ -167,7 +167,7 @@ void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr)
   }
 
 #ifdef PHIST_TIMEMONITOR
-void phist_totalMatVecCount()
+extern "C" void phist_totalMatVecCount()
 {
   ENTER_FCN(__FUNCTION__);
 }
