@@ -2,10 +2,13 @@
 //! The feastCorrectionSolver uses carp_cg to calculate approximate solutions to a set 
 //! of FEAST correction equations. It provides a simple interface and takes care of 
 //! optimally pipelining the operations.
-//! In each call to solve(), numShifts linear systems with numBlocks right-hand sides
+//! In each call to run(), numShifts linear systems with numBlocks right-hand sides
 //! are solved simultaneously. Whenever a shift changes or the number of shifts/systems
 //! changes, the object must be destroyed and rebuilt (This is just a first guess at
 //! what may be a useful interface)
+//! The systems to be solved are (sigma[j]I-A)(Xr[k]+i*Xi[k])=B[k],
+//! where Xr, Xi and B are mvecs with blockSize columns, and sigma[j] are numShifts complex 
+//! shifts.
 typedef struct TYPE(feastCorrectionSolver)
 {
   TYPE(const_crsMat_ptr) A_;
@@ -26,7 +29,6 @@ typedef TYPE(feastCorrectionSolver) const * TYPE(const_feastCorrectionSolver_ptr
 
 //! create a feastCorrectionSolver object. You have to specify the number of rhs 
 //! per shift (blockSize), the number of shifts (numShifts), and the complex shifts
-
 void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *fCorrSolver, 
         TYPE(const_crsMat_ptr) A, linSolv_t method,
         int blockSize, int numShifts,
