@@ -174,7 +174,7 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
   {
     PHIST_OUT(PHIST_ERROR,"viewing plain data as ghost_vec only works "
                           "for node-local or trivially parallel matrices!\n");
-    PHIST_OUT(PHIST_ERROR,"nrows=%" PRlidx ", nrowshalo=%" PRlidx ", lda=%d\n",
+    PHIST_OUT(PHIST_ERROR,"nrows=%" PRlidx ", nrowshalo=%" PRlidx ", lda=%" PRlidx "\n",
         vtraits.nrows,vtraits.nrowshalo,lda);
     *ierr=-1;
     return;
