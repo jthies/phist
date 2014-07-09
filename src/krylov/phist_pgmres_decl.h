@@ -20,7 +20,7 @@ typedef struct TYPE(pgmresState)
 {
   //! \name input and output args:
   //@{
-  const int id;         //! used to identify the system solved, set in pgmresSates_create, don't modify!
+  int id;               //! used to identify the system solved, set in pgmresSates_create, don't modify!
   _MT_ tol;             //! convergence tolerance for this system (can be adjusted any time)
   int status;           //! -2: not initialized, -1: resetted, 0: converged, 1: not yet converged, 2: max iters exceeded
   int totalIter;        //! counts the total number of iterations (also over restarts)
