@@ -187,7 +187,7 @@ extern "C" void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm
 }
 
 //!
-extern "C" void phist_map_get_local_length(const_map_ptr_t vmap, int* nloc, int* ierr)
+extern "C" void phist_map_get_local_length(const_map_ptr_t vmap, lidx_t* nloc, int* ierr)
 {
   *ierr=0;
   CAST_PTR_FROM_VOID(const map_t,map,vmap,*ierr);

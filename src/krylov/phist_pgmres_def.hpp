@@ -1,5 +1,14 @@
 #include "phist_pgmres_helper_def.hpp"
 
+#ifdef PHIST_OUTLEV
+#undef PHIST_OUTLEV
+#endif
+#define PHIST_OUTLEV 0
+
+#ifdef TESTING
+#undef TESTING
+#endif
+
 // create new state objects. We just get an array of (NULL-)pointers
 void SUBR(pgmresStates_create)(TYPE(pgmresState_ptr) state[], int numSys, const_map_ptr_t map, int maxBas,int* ierr)
 {
@@ -254,7 +263,8 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
     _ST_ *y = &yglob[S[i]->id+ldy*(maxCurDimV-S[i]->curDimV_)];
 
 
-#if PHIST_OUTLEV>=PHIST_DEBUG
+#if 0
+//PHIST_OUTLEV>=PHIST_DEBUG
     PHIST_SOUT(PHIST_DEBUG,"pgmres_updateSol[%d], curDimV=%d, H=\n",i,S[i]->curDimV_);
     {
       TYPE(sdMat_ptr) H = NULL;
