@@ -242,7 +242,7 @@ extern "C" void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* 
   CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*ierr);
   int me;
   ghost_rank(&me,map->ctx->mpicomm);
-  *iupper = map->ctx->lfRow[me+1]-1;
+  *iupper = map->ctx->lfRow[me]+map->ctx->lnrows[me]-1;
   }
 
 // small helper function to preclude integer overflows (ghost allows 64 bit local indices, 
