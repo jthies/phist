@@ -21,19 +21,20 @@ maxIt=10000;
 tol=1.0e-12;
 
 mpath='/hpc_data/essex/WPT/';
-mpath2='/home/thie_jo/work/fredwubs/hymls/testSuite/data/Graphene/';
+mpath2='../test/matrices/graphene/';
 
 matrix_fmt='mm';
-%matrices={[mpath2,'128x64/jac.mtx'],
-%          [mpath2,'256x128/jac.mtx'],
-%          [mpath2,'512x256/jac.mtx']};
-matrices={'graphene7.mm'};
+matrices={[mpath2,'128x64/A.mm'],
+          [mpath2,'256x128/A.mm'],
+          [mpath2,'512x256/A.mm']};
+
 %matrix_fmt='mat';
 %matrices={[mpath,'graphen/graphen21x4000.mat'],
 %          [mpath,'graphen/graphen22x8000.mat'],
 %          [mpath,'graphen/graphen21x40000.mat']};
+
 load([mpath,'shifts/graphene_shifts.mat']);
-shifts=graphene_shifts;
+shifts=graphene_shifts(1:end/2);
 
 
 %matrix_fmt='mat';
