@@ -33,9 +33,12 @@ matrices={[mpath2,'128x64/A.mm'],
 %          [mpath,'graphen/graphen22x8000.mat'],
 %          [mpath,'graphen/graphen21x40000.mat']};
 
-load([mpath,'shifts/graphene_shifts.mat']);
-shifts=graphene_shifts(1:end/2);
-
+shifts=[
+-8.688545543610785e-01+4.622378249881184e-02i
+-8.327943188096251e-01+2.328334729055193e-01i
+-6.737109172894157e-01+5.028921785737676e-01i
+-3.394892641666588e-01+7.109553036523395e-01i
+];
 
 %matrix_fmt='mat';
 %matrices={[mpath,'lap_cit/LAP_CIT_396.mat'],
