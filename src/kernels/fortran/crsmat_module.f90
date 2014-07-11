@@ -1533,7 +1533,7 @@ end subroutine permute_local_matrix
              val(globalEntries),&
              stat=ierr)
     if (ierr/=0) then
-      ierr=-55
+      ierr=-44
       return
     end if
 
@@ -1559,7 +1559,7 @@ end subroutine permute_local_matrix
              A%global_col_idx(A%nEntries),&
              A%val(A%nEntries),stat=ierr)
     if (ierr/=0) then
-      ierr=-55
+      ierr=-44
       return
     end if
 
@@ -1709,7 +1709,7 @@ end subroutine permute_local_matrix
              val(maxnne_per_row),stat=ierr)
 
     if (ierr/=0) then
-      ierr=-55
+      ierr=-44
       return
     end if
 
@@ -1719,13 +1719,15 @@ end subroutine permute_local_matrix
              A%val(A%nEntries),stat=ierr)
 
     if (ierr/=0) then
-      ierr=-55
+      ierr=-44
       return
     end if
 
 call mpi_barrier(MPI_COMM_WORLD, ierr)
 wtime = mpi_wtime()
 
+    ! note: the matFuncs in the physics repo are not
+    ! thread-safe (as of Jul 2014), hence the 'ordered' clause.
     ! get data, try to respect NUMA
     A%row_offset(1) = 1_8
 !$omp parallel do schedule(static) ordered
