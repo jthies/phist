@@ -17,8 +17,12 @@ module map_module
     integer :: comm
     integer :: nProcs
     integer :: me
+    !! offset array, length (0:nProcs)
     integer(kind=8), allocatable :: distrib(:)
+    !! for each MPI process, contains the number of local elements (0:nProcs-1)
     integer,         allocatable :: nlocal(:)
+    !! for global reorderings (1:nlocal(me)), not allocated by default
+    integer(kind=8), allocatable :: global_idx(:)
     
     ! the may map contain coloring information:
     ! to access the elements of a vector (or rows of
@@ -136,6 +140,9 @@ flush(6)
     end if
     if (allocated(map%color_idx)) then
       deallocate(map%color_idx)
+    end if
+    if (allocated(map%global_idx)) then
+      deallocate(map%global_idx)
     end if
     deallocate(map)
     ierr = 0
