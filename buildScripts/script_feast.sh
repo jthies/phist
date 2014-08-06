@@ -21,4 +21,7 @@ cmake -DCMAKE_BUILD_TYPE=Release \
       -DPHIST_KERNEL_LIB=fortran \
       -DPARMETIS_DIR=${PARMETIS_DIR} \
       -DCOLPACK_DIR=${COLPACK_DIR} \
-      ${SRC_DIR}
+      -DCMAKE_C_COMPILER=mpicc \
+      -DCMAKE_CXX_COMPILER=mpicxx \
+      -DCMAKE_Fortran_COMPILER=mpif90 \
+	${SRC_DIR}
