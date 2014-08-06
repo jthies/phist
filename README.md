@@ -1,5 +1,5 @@
-What is PHIST?
-==============
+#What is PHIST?
+===============
 
 The DLR contribution to the ESSEX (Equipping Sparse Solvers for Exa-Scale)
 has the working title "PHIST" (Pipelined Hybrid-parallel Iterative Solver Toolkit).
@@ -44,8 +44,8 @@ Choices supported right now are:
 * tpetra
 * ghost
 
-Stand-alone version
-===================
+# Stand-alone version
+=====================
 
 The PHIST project can be compiled and used without any additional dependencies if the
 `fortran' kernel lib is used. For better performance, one should use the optional 
@@ -53,8 +53,8 @@ third-party libraries (TPLs) ParMETIS (for repartitioning the matrix) and ColPac
 enabling intra-node parallelism in CARP-CG), or switch to ghost+TPLs. Note that we currently 
 do not support the use of GPUs/Xeon PHI even with ghost as kernel lib.
 
-Dependencies and optional packages
-==================================
+# Dependencies and optional packages
+====================================
 
 * fortran
     * optional:
@@ -80,8 +80,8 @@ cmake   -DPHIST_KERNEL_LIB=ghost \
         -DGHOST_DIR=<path to ghost lib dir> \
         <path to phist dir>
 
-PHIST Installation (details)
-============================
+# PHIST Installation (details)
+==============================
 
 make a build directory:
 
@@ -96,8 +96,8 @@ As a start, use the fortran kernel lib without TPLs:
   cd build/
   cmake -DPHIST_KERNEL_LIB=fortran ..
 
-Testing the installation
-========================
+## Testing the installation
+===========================
 
 To run some unit tests type
   
@@ -113,8 +113,8 @@ The code coverage of the tests can be shown using
   
   make coverage
 
-Installation instructions for the RRZE systems
-==============================================
+## Installation instructions for the RRZE systems
+=================================================
 
 NOTE: This section is a bit outdated as Trilinos is now no longer
 a dependency of phist.
@@ -141,11 +141,11 @@ Now go to the build directory, configure and compile:
   cmake ..
   make
 
-Directory structure
-===================
+# Directory structure
+=====================
 
-Example Drivers
-===============
+# Example Drivers
+=================
 
 By default, only double precision versions of libraries and drivers are compiled. There 
 are four types of drivers
