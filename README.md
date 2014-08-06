@@ -9,17 +9,22 @@ The git repository can be checked out using the command
 
 PHIST contains 
 
-* an abstract `kernel' interface layer defining the basic operations commonly used in iterative linear algebra solvers
+* an abstract `kernel' interface layer defining the basic operations commonly used in 
+  iterative linear algebra solvers
 * implementations of the interface using
-  * own optimized Fortran 90 kernels (MPI+OpenMP)
-  * Trilinos (epetra or tpetra)
-  * GHOST (developed in ESSEX, MPI+X)
+    * own optimized Fortran 90 kernels (MPI+OpenMP)
+    * Trilinos (epetra or tpetra)
+    * GHOST (developed in ESSEX, MPI+X)
 * some algorithms implemented using the interface layer:
-  * Jacobi-Davidson eigenvalue solvers for nonsymmetric matrices, suitable for finding a few exterior eigenvalues (standard eigenvalue problems up to now)
-    * a simple single-vector JDQR with GMRES preconditioner
-    * reduced communication block JDQR with (pipelined) GMRES or MinRes preconditioning
-  * MinRes and GMRES linear solvers
-  * Hybrid parallel CARP-CG (Gordon & Gordon, 2010), a row projection method suitable as inner linear solver in FEAST (interior eigenvalue computations)
+    * Jacobi-Davidson eigenvalue solvers for nonsymmetric matrices, suitable for finding a 
+    few exterior eigenvalues (standard eigenvalue problems up to now)
+        * a simple single-vector JDQR with GMRES preconditioner
+        * reduced communication block JDQR with (pipelined) GMRES or MinRes preconditioning
+    * MinRes and GMRES linear solvers
+    * Hybrid parallel CARP-CG (Gordon & Gordon, 2010), a row projection method suitable as 
+    inner linear solver in FEAST (interior eigenvalue computations)
+* an interface to the Trilinos library Belos for ghost, which allows using some more 
+iterative linear solvers.
 
 Depending on the kernel library, real and complex, single and double precision versions are 
 available. The interface functions and all algorithms provided have a simple C interface
