@@ -150,7 +150,9 @@ endif()
 # setup which kernel library is being used.
 ##############################################################################
 
-set(PHIST_KERNEL_LIB $ENV{PHIST_KERNEL_LIB} CACHE STRING "Select underlying kernel libraries for phist (epetra|tpetra|ghost|fortran)")
+if("${PHIST_KERNEL_LIB}" STREQUAL "")
+  set(PHIST_KERNEL_LIB $ENV{PHIST_KERNEL_LIB} CACHE STRING "Select underlying kernel libraries for phist (epetra|tpetra|ghost|fortran)")
+endif()
 
 message(STATUS "looking for " ${PHIST_KERNEL_LIB} " ...")
 
@@ -170,7 +172,7 @@ elseif (PHIST_KERNEL_LIB STREQUAL "fortran")
   set(PHIST_KERNEL_LIB_FORTRAN 1)
   set(PHIST_MVECS_ROW_MAJOR 1)
 else ()
-  message( FATAL_ERROR "PHIST_KERNEL_LIB not set" )
+  message( FATAL_ERROR "PHIST_KERNEL_LIB not set or not recognized" )
 endif ()
 
 # test for Belos (Trilinos library of iterative solvers).

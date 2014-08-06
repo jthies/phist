@@ -90,6 +90,10 @@ cmake   -DPHIST_KERNEL_LIB=ghost \
 # PHIST Installation (details) #
 --------------------------------
 
+Some sample build scripts are available in phist/buildScripts, they may provide
+a good starting point, although they might be somewhat outdated and paths may have to be 
+adjusted.
+
 make a build directory:
 
   mkdir build
