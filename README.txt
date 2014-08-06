@@ -1,26 +1,75 @@
-0) Introduction
+0) What is PHIST?
+=================
 
-the DLR contribution to the ESSEX (Equipping Sparse Solvers for Exa-Scale)
+The DLR contribution to the ESSEX (Equipping Sparse Solvers for Exa-Scale)
 has the working title "PHIST" (Pipelined Hybrid-parallel Iterative Solver Toolkit).
 The git repository can be checked out using the command
 
   git clone git@bitbucket.org:essex/phist
 
-1a) Installing extra ESSEX libraries
+PHIST contains 
 
-We support several different implementations of the basic linear algebra operations
-in PHIST, which are set by the variable PHIST_KERNEL_LIB (see below). If you choose
-ghost as kernel library, a number of example drivers are activated which also require 
-the ESSEX Physics libraries to be installed:
+* an abstract `kernel' interface layer defining the basic operations commonly used
+  in iterative linear algebra solvers
+  
+* implementations of the interface using
+  * own optimized Fortran 90 kernels (MPI+OpenMP)
+  * Trilinos (epetra or tpetra)
+  * GHOST (developed in ESSEX, MPI+X)
 
-  https://bitbucket.org/essex/physics
+* some algorithms implemented using the interface layer:
+  * Jacobi-Davidson eigenvalue solvers for nonsymmetric matrices,
+    suitable for finding a few exterior eigenvalues 
+    (standard eigenvalue problems up to now)
+  ** a simple single-vector JDQR with GMRES preconditioner
+  ** reduced communication block JDQR with (pipelined) GMRES or MinRes preconditioning
+  
+  * MinRes and GMRES linear solvers
+  * Hybrid parallel CARP-CG (Gordon & Gordon, 2010), a row projection method suitable as 
+  inner linear solver in FEAST (interior eigenvalue computations)
 
-Follow the instructions in order to build and install the libraries.
-Obviously you also need to build and install GHOST on your system:
+Depending on the kernel library, real and complex, single and double precision versions are 
+available. The interface functions and all algorithms provided have a simple C interface
+callable from basically any high level programming language. Data structures are only passed 
+around as opaque void pointers to increase portability. 
 
-  https://bitbucket.org/essex/ghost
+The kernel library to be used has to be chosen before configuring/building the project by 
+setting the environment variable PHIST_KERNEL_LIB to either
 
-1b) PHIST Installation
+* fortran
+* epetra
+* tpetra
+* ghost
+
+Stand-alone version
+===================
+
+The PHIST project can be compiled and used without any additional dependencies if the
+`fortran' kernel lib is used. For better performance, one should use the optional 
+third-party libraries (TPLs) ParMETIS (for repartitioning the matrix) and ColPack (for 
+enabling intra-node parallelism in CARP-CG), or switch to ghost+TPLs. Note that we currently 
+do not support the use of GPUs/Xeon PHI even with ghost as kernel lib.
+
+Dependencies and optional packages
+==================================
+
+* fortran
+** optional:
+*** ParMETIS: http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview
+*** ColPack: http://cscapes.cs.purdue.edu/coloringpage/software.htm
+*** essex/physics: https://bitbucket.org/essex/physics
+* ghost
+** required:
+*** essex/ghost: https://bitbucket.org/essex/ghost
+*** essex/physics: https://bitbucket.org/essex/physics
+** optional: depends on ghost installation
+* epetra/tpetra
+** required:
+*** Trilinos: http://trilinos.sandia.gov/
+** optional: depends on Trilinos installation
+
+PHIST Installation
+==================
 
 make a build directory:
 
