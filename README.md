@@ -57,19 +57,21 @@ Dependencies and optional packages
 ==================================
 
 * fortran
-  - optional:
-    + ParMETIS: http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview
-    + ColPack: http://cscapes.cs.purdue.edu/coloringpage/software.htm
-    + essex/physics: https://bitbucket.org/essex/physics
+    * optional:
+        * ParMETIS: http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview
+        * ColPack: http://cscapes.cs.purdue.edu/coloringpage/software.htm
+        * essex/physics: https://bitbucket.org/essex/physics (if not available, some
+          example physics problems like the spin chain and graphene have been copied into
+          the phist repo and will be used, but they might be outdated).
 * ghost
-  - required:
-    + essex/ghost: https://bitbucket.org/essex/ghost
-    + essex/physics: https://bitbucket.org/essex/physics
-  - optional: depends on ghost installation
+    * required:
+        * essex/ghost: https://bitbucket.org/essex/ghost
+        * essex/physics: https://bitbucket.org/essex/physics
+    * optional: depends on ghost installation
 * epetra/tpetra
-  - required:
-    + Trilinos: http://trilinos.sandia.gov/
-  - optional: depends on Trilinos installation
+    * required:
+        * Trilinos: http://trilinos.sandia.gov/
+  - * optional: depends on Trilinos installation
 
 Typically CMake will automatically find the TPL if you pass the
 variable (TPL_NAME)_DIR to the cmake command, for instance:
@@ -78,8 +80,8 @@ cmake   -DPHIST_KERNEL_LIB=ghost \
         -DGHOST_DIR=<path to ghost lib dir> \
         <path to phist dir>
 
-PHIST Installation
-==================
+PHIST Installation (details)
+============================
 
 make a build directory:
 
@@ -143,9 +145,25 @@ Directory structure
 ===================
 
 Example Drivers
-###############
+===============
 
-An example of using kernel functions can be found in
+By default, only double precision versions of libraries and drivers are compiled. There 
+are four types of drivers
 
-  examples/kernels/main-kernel-usage.c
+* *test drivers* that follow the naming convention phist-X.Y.Z-<name>-test. These 
+executables are run by the 'make test' command, but they can also be run as stand-alone
+programs for debugging purposes. Their sources are in phist/test/ and are based on the 
+googletest framework.
 
+* *benchmark drivers* like DcrsMat_times_mvec_times which are written to benchmark certain 
+kernel operations
+
+* *algorithm drivers* that read a matrix from a file and solve e.g. an eigenvalue problem. 
+Examples are phist_Djdqr, phist_Zsubspacejada etc. These drivers take a range of command 
+line 
+parameters, a list of which is printed when the executable is called without input args.
+
+* *application drivers* that do not read a matrix from a file but build it from a function 
+defined in the essex/physics repository. Examples of such drivers are phist_spinChain (which 
+uses Djdqr) or phist_graphene_carp (which solves linear systems with graphene matrices and 
+complex shifts using CARP-CG).
