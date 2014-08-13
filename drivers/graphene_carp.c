@@ -35,16 +35,21 @@ int main(int argc, char** argv)
   {
      if ( argc < 4 )
      {
-          printf("Usage: graphene_carp <nx> <ny> <shiftFile> <num vecs>\n"
-                 "                     <tol> <maxIter>\n"
-                 "       where: TODO - document/complete args, for now\n"
-                 "       please look in the source file %s\n",__FILE__);
-          exit(0); 
+          PHIST_SOUT(PHIST_ERROR,"Usage: graphene_carp <nx> <ny> <shiftFile> <num vecs>\n"
+                                 "                     <tol> <maxIter>\n"
+                                 "       where: TODO - document/complete args, for now\n"
+                                 "       please look in the source file %s\n",__FILE__);
+          PHIST_SOUT(PHIST_ERROR,"Alternative: instead of specifying nx and ny, you may \n"
+                                 "             pass in -1 and a file name from which a  \n"
+                                 "             matrix should be read.\n");
+          exit(0);
      }
 
   int rank, num_proc;
   int i, ierr;
   int verbose;
+  int read_matrix=0;
+  const char* mat_file;
 
   comm_ptr_t comm;
   
@@ -56,7 +61,6 @@ int main(int argc, char** argv)
                                   // so that we can check the error for at least one
                                   // of the systems.
   MT *resid, *err0;
-  
   int nshifts,nvec, maxIter;
   MT tol;
   MT *sigma_r, *sigma_i;
@@ -70,10 +74,18 @@ int main(int argc, char** argv)
 
   verbose= (rank==0);
 
-  // problem size
-  ghost_idx_t WL[2];
-  WL[0] = atoi(argv[1]);
-  WL[1] = atoi(argv[2]);
+  if (atoi(argv[1])==-1)
+  {
+    read_matrix=1;
+    mat_file=argv[2];
+  }
+  else if (atoi(argv[1])<=0)
+  {
+    PHIST_SOUT(PHIST_ERROR,"nx must be larger than 0 or equal to -1 (for file input). \n"
+               "Run the program without arguments to get a usage message\n");
+    return -1;
+  }
+
   char* shiftFileName=argv[3];
   
   if (argc>=5)
@@ -137,54 +149,68 @@ int main(int argc, char** argv)
   }
   
   fclose(shiftFile);
-  
-  // setup matrix
+
+    // setup matrix
 #ifdef PHIST_KERNEL_LIB_GHOST
-  ghost_context_t * ctx = NULL;
-  ghost_sparsemat_t * mat = NULL;
+    ghost_context_t * ctx = NULL;
+    ghost_sparsemat_t * mat = NULL;
 #else
-  TYPE(crsMat_ptr) mat = NULL;
+    TYPE(crsMat_ptr) mat = NULL;
 #endif
 
-  ghost_idx_t DIM = WL[0]*WL[1];
-  matfuncs_info_t info;
-  crsGraphene( -2, WL, NULL, NULL);
-  crsGraphene( -1, NULL, NULL, &info);
+
+  
+  if (!read_matrix)
+  {
+    //TODO - just use kernel interface crsMat_fromRowFunc instead
+    ghost_idx_t WL[2];
+    WL[0] = atoi(argv[1]);;
+    WL[1] = atoi(argv[2]);
+  
+    ghost_idx_t DIM = WL[0]*WL[1];
+    matfuncs_info_t info;
+    crsGraphene( -2, WL, NULL, NULL);
+    crsGraphene( -1, NULL, NULL, &info);
 
 #ifdef PHIST_KERNEL_LIB_FORTRAN
-  PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,
+    PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,
         info.nrows, info.ncols, info.row_nnz,
         (void(*)(ghost_idx_t,ghost_idx_t*,ghost_idx_t*,void*))&crsGraphene, &ierr), ierr);
 #elif defined(PHIST_KERNEL_LIB_GHOST)
-  if ( my_datatype != info.datatype)
-  {
-    printf("error: datatyte does not match\n");
-    exit(0);
-  }
+    if ( my_datatype != info.datatype)
+    {
+      printf("error: datatyte does not match\n");
+      exit(0);
+    }
 
-  ghost_error_t err=ghost_context_create(&ctx, info.nrows ,
-      info.ncols,GHOST_CONTEXT_DEFAULT,NULL,0,MPI_COMM_WORLD,1.);
-  if (err!=GHOST_SUCCESS)
-  {
-    PHIST_OUT(PHIST_ERROR,"error returned from createContext (file %s, line %d)",__FILE__,__LINE__);
-  }
+    ghost_error_t err=ghost_context_create(&ctx, info.nrows ,
+        info.ncols,GHOST_CONTEXT_DEFAULT,NULL,0,MPI_COMM_WORLD,1.);
+    if (err!=GHOST_SUCCESS)
+    {
+      PHIST_OUT(PHIST_ERROR,"error returned from createContext (file %s, line %d)",__FILE__,__LINE__);
+    }
 
-  ghost_sparsemat_traits_t mtraits = GHOST_SPARSEMAT_TRAITS_INITIALIZER;
-  mtraits.datatype = my_datatype;
-  ghost_sparsemat_create(&mat,ctx,&mtraits,1);
-  ghost_sparsemat_src_rowfunc_t src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
-  src.func = &crsGraphene;
+    ghost_sparsemat_traits_t mtraits = GHOST_SPARSEMAT_TRAITS_INITIALIZER;
+    mtraits.datatype = my_datatype;
+    ghost_sparsemat_create(&mat,ctx,&mtraits,1);
+    ghost_sparsemat_src_rowfunc_t src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
+    src.func = &crsGraphene;
 
-  src.maxrowlen = info.row_nnz;
-  mat->fromRowFunc(mat, &src);
-  char *str;
-  ghost_sparsemat_string(&str,mat);
-  printf("%s\n",str);
-  free(str); str = NULL;
+    src.maxrowlen = info.row_nnz;
+    mat->fromRowFunc(mat, &src);
+    char *str;
+    ghost_sparsemat_string(&str,mat);
+    printf("%s\n",str);
+    free(str); str = NULL;
 #else
 #error 'this driver is only available for the fortran and ghost kernel libs'
 #endif
-
+  }
+  else
+  {
+    PHIST_ICHK_IERR(SUBR(crsMat_read)(&mat,mat_file,&ierr),ierr);
+  }
+  
   PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(mat, &map,&ierr),ierr);
 
   PHIST_ICHK_IERR(SUBR(mvec_create)(&B,map,nvec,&ierr),ierr);

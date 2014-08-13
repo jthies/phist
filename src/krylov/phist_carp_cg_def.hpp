@@ -7,6 +7,10 @@
 //      compared to using proper complex vectors, we should check if the kernel 
 //      lib supports mixed real/complex arithmetic and use it if possible.
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// private helper functions                                                                      //
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 //
 void SUBR(private_dotProd)(TYPE(const_mvec_ptr) v, TYPE(const_mvec_ptr) vi,
                            TYPE(const_mvec_ptr) w, TYPE(const_mvec_ptr) wi,
@@ -27,6 +31,9 @@ void SUBR(private_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* ierr);
 // allocate CG vector blocks
 void SUBR(private_carp_cgState_dealloc)(TYPE(carp_cgState_ptr) S, int* ierr);
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// public interface                                                                              //
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 // create new state objects. We just get an array of (NULL-)pointers
 void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
@@ -259,6 +266,31 @@ void SUBR(carp_cgStates_iterate)(
     TYPE(mvec_ptr) x=X_r[ishift];
     TYPE(mvec_ptr) xi=X_i[ishift];
     
+    int nvecX,nvecB;
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(b,&nvecB,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x,&nvecX,ierr),*ierr);
+    
+    if (nvec!=nvecB || nvec!=nvecX)
+    {
+      PHIST_SOUT(PHIST_ERROR,"input vectors to %s must have same num vectors as block size \n"
+                             "passed to constructor (expected %d, found nvec(X)=%d, nvec(B)=%d instead)\n"
+                             "(in %d, line %d)\n",
+        __FUNCTION__,nvec,nvecX,nvecB,__FILE__,__LINE__);
+      *ierr=-1;
+      return;      
+    }
+#ifndef IS_COMPLEX
+    if (xi!=NULL)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_num_vectors)(xi,&nvecX,ierr),*ierr);
+      if (nvec!=nvecX)
+      {
+        PHIST_SOUT(PHIST_ERROR,"input vectors X_i to %s must have same num vectors as X_r and B\n");
+        *ierr=-1;
+        return;
+      }
+    }
+#endif    
     // allocate CG vectors: one per rhs
     PHIST_CHK_IERR(SUBR(private_carp_cgState_alloc)(S,ierr),*ierr);
 

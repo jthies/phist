@@ -48,7 +48,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     set (CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS} -dH -O0 -g -fstack-protector-all -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
   endif ()
 
-  set (CMAKE_CXX_FLAGS "-fopenmp -std=c++11")
+  set (CMAKE_CXX_FLAGS "-fopenmp -std=c++0x")
   set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O2")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS} -O2")
   if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
@@ -150,7 +150,9 @@ endif()
 # setup which kernel library is being used.
 ##############################################################################
 
-set(PHIST_KERNEL_LIB $ENV{PHIST_KERNEL_LIB} CACHE STRING "Select underlying kernel libraries for phist (epetra|tpetra|ghost|fortran)")
+if("${PHIST_KERNEL_LIB}" STREQUAL "")
+  set(PHIST_KERNEL_LIB $ENV{PHIST_KERNEL_LIB} CACHE STRING "Select underlying kernel libraries for phist (epetra|tpetra|ghost|fortran)")
+endif()
 
 message(STATUS "looking for " ${PHIST_KERNEL_LIB} " ...")
 
@@ -170,7 +172,7 @@ elseif (PHIST_KERNEL_LIB STREQUAL "fortran")
   set(PHIST_KERNEL_LIB_FORTRAN 1)
   set(PHIST_MVECS_ROW_MAJOR 1)
 else ()
-  message( FATAL_ERROR "PHIST_KERNEL_LIB not set" )
+  message( FATAL_ERROR "PHIST_KERNEL_LIB not set or not recognized" )
 endif ()
 
 # test for Belos (Trilinos library of iterative solvers).
