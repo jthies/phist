@@ -29,7 +29,7 @@ ASSERT_EQ(0,ierr_);
   }
 
 static const int nglob_=_Nglob;
-int nloc_;
+lidx_t nloc_;
 map_ptr_t map_;
 
 
