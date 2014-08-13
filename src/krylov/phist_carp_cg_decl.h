@@ -12,8 +12,6 @@
 // need the complicated queuing of vectors in pgmres.
 typedef struct TYPE(carp_cgState) {
 
-//TODO - imaginary parts of vectors where needed.
-
   //! \name output args:
   //@{
   int id; //! can be used to identify the system solved here (the shift to which this 
