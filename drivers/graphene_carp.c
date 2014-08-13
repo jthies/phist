@@ -48,7 +48,7 @@ int main(int argc, char** argv)
   int rank, num_proc;
   int i, ierr;
   int verbose;
-  int read_matrix;
+  int read_matrix=0;
   const char* mat_file;
 
   comm_ptr_t comm;
