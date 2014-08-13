@@ -17,11 +17,11 @@ public:
     
     if (typeImplemented_)
       {
-      nq_ = std::min(3*nvec_+1,nglob_-4);
+      nq_ = std::min(3*nvec_+1,(int)nglob_-4);
 #ifdef HAVE_MPI
       // note: TSQR does not work if nvec>nloc (that wouldn't really be a 'tall skinny 
       // matrix' but a 'short fat and sliced matrix')
-      nq_ = std::min(nloc_,nq_);
+      nq_ = std::min((int)nloc_,nq_);
       int nq_local = nq_;
       ierr_ = MPI_Allreduce(&nq_local,&nq_,1,MPI_INT,MPI_MIN,mpi_comm_);
       ASSERT_EQ(0,ierr_);
