@@ -29,16 +29,20 @@ typedef  complex double d_complex_t;
 #include "ghost/types.h"
 
 //! type of node-local indices. 
-typedef ghost_idx_t lidx_t;
+typedef ghost_lidx_t lidx_t;
 
 //! type of global indices
-typedef ghost_idx_t gidx_t;
+typedef ghost_gidx_t gidx_t;
 
-#ifdef GHOST_HAVE_LONGIDX
+#ifdef GHOST_HAVE_LONGIDX_LOCAL
 #define PRlidx "lld"
-#define PRgidx "lld"
 #else
 #define PRlidx "d"
+#endif
+
+#ifdef GHOST_HAVE_LONGIDX_GLOBAL
+#define PRgidx "lld"
+#else
 #define PRgidx "d"
 #endif
 
