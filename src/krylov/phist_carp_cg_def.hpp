@@ -232,7 +232,13 @@ void SUBR(carp_cgStates_iterate)(
   *ierr = 0;
 
   // some internal settings  
-  int itprint=1; // how often to print the current impl. residual norms
+
+  // how often to print the current impl. residual norms
+#if PHIST_OUTLEV>=PHIST_VERBOSE
+  int itprint=1; 
+#else
+  int itprint=-1; 
+#endif
   int itcheck=10; // how often to check the actual expl. res norms. We
                   // only stop iterating if *all* expl. res norms for
                   // a given shift are below the tolerance. The impl.
@@ -243,6 +249,7 @@ void SUBR(carp_cgStates_iterate)(
   int numSolved=0;
   TYPE(mvec_ptr) bnul=NULL; // we can just pass in b=NULL if all entries for a carp_sweep
                             // are 0 (during CG iteration), for clarity we give it a name
+
 
 ////////////////////////////////////////////////////
 // solve systems for one shift at a time, here we //
@@ -274,7 +281,7 @@ void SUBR(carp_cgStates_iterate)(
     {
       PHIST_SOUT(PHIST_ERROR,"input vectors to %s must have same num vectors as block size \n"
                              "passed to constructor (expected %d, found nvec(X)=%d, nvec(B)=%d instead)\n"
-                             "(in %d, line %d)\n",
+                             "(in %s, line %d)\n",
         __FUNCTION__,nvec,nvecX,nvecB,__FILE__,__LINE__);
       *ierr=-1;
       return;      
@@ -285,7 +292,7 @@ void SUBR(carp_cgStates_iterate)(
       PHIST_CHK_IERR(SUBR(mvec_num_vectors)(xi,&nvecX,ierr),*ierr);
       if (nvec!=nvecX)
       {
-        PHIST_SOUT(PHIST_ERROR,"input vectors X_i to %s must have same num vectors as X_r and B\n");
+        PHIST_SOUT(PHIST_ERROR,"input vectors X_i to %s must have same num vectors as X_r and B\n",__FUNCTION__);
         *ierr=-1;
         return;
       }
@@ -462,7 +469,20 @@ void SUBR(carp_cgStates_iterate)(
       {
         PHIST_CHK_IERR(SUBR(private_compResid)(A, nvec, sigma, sigma_i,
                          b, x, xi, NULL, NULL, S->normR, ierr),*ierr);
-        if ( it%itprint==0)
+        
+        // check for convergence. 
+        // TODO - which convergence criterion should we use?
+        // For the moment, we use ||r||_2/||b||_2 < tol
+        numConverged=0;
+        for (int j=0;j<nvec;j++)
+        {
+          if (S->normR[j]<reltol2[j])
+          {
+            numConverged++;
+          }
+        }
+        
+        if ( (it%itprint==0 && itprint>0) || (numConverged==nvec))
         {
 #ifdef IS_COMPLEX
           ST tmp[nvec];
@@ -476,17 +496,6 @@ void SUBR(carp_cgStates_iterate)(
           SUBR(private_printResid)(it, nvec, tmp, S->normR0_, S->normB_);
         }
         
-        // check for convergence. 
-        // TODO - which convergence criterion should we use?
-        // For the moment, we use ||r||_2/||b||_2 < tol
-        numConverged=0;
-        for (int j=0;j<nvec;j++)
-        {
-          if (S->normR[j]<reltol2[j])
-          {
-            numConverged++;
-          }
-        }
         if (numConverged==nvec)
         {
         // print footer
@@ -709,7 +718,7 @@ void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR,
   const char* carp_label = "CARP_CG";
   if (nvec==0)
   {
-    PHIST_SOUT(PHIST_INFO,"%s\tit\t||r||/||b||\t||r||/||r0||\n",carp_label);
+    PHIST_SOUT(PHIST_INFO,"%s\tit\t||r||\t||r||/||b||\t||r||/||r0||\n",carp_label);
   }
   else if (nvec==-1)
   {
@@ -717,14 +726,14 @@ void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR,
   }
   else
   {
-    ST tmp=mt::sqrt(st::real(normR[0]));
-    PHIST_SOUT(PHIST_INFO,"%s %d\t%e\t%e\n",carp_label,it,
-          tmp/normB[0],tmp/normR0[0])
+    MT tmp=mt::sqrt(st::real(normR[0]));
+    PHIST_SOUT(PHIST_INFO,"%s %d\t%e\t%e\t%e\n",carp_label,it,
+          tmp,tmp/normB[0],tmp/normR0[0])
     for (int j=1;j<nvec;j++)
     {
       MT tmp=mt::sqrt(st::real(normR[j]));
-      PHIST_SOUT(PHIST_INFO,"%s\t\t%e\t%e\n",carp_label,
-             tmp/normB[j],tmp/normR0[j]);
+      PHIST_SOUT(PHIST_INFO,"%s\t\t%e\t%e\t%e\n",carp_label,
+             tmp,tmp/normB[j],tmp/normR0[j]);
     }
   }
 }
