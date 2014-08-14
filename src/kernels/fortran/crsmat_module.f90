@@ -2094,7 +2094,6 @@ end if
     integer :: sendBuffSize,recvBuffSize
     logical :: b_is_zero
     real(kind=8), dimension(0,0), target :: bzero
-    real(kind=8), pointer, dimension(:,:) :: bval_ptr
     
     if ( .not. c_associated(A_ptr) ) then
       write(*,*) 'A is NULL'
@@ -2106,12 +2105,10 @@ end if
 
     if ( .not. c_associated(b_ptr) ) then
       b_is_zero=.true.
-      bval_ptr=>bzero
       ldb=0
     else
       b_is_zero=.false.
       call c_f_pointer(b_ptr,b)
-      bval_ptr=>b%val(b%jmin:b%jmax,1:A%nRows)
       ldb = size(b%val,1)
     end if
     !write(*,*) 'enter carp_sweep_f, bzero=',b_is_zero
@@ -2195,17 +2192,29 @@ end if
       end if
 
       ! apply Kaczmarz forward sweep
+      if (b_is_zero) then
       call dkacz_selector(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 A%row_map,&
                 shifts_r(iSys),shifts_i(iSys), &
-                bval_ptr, ldb, &
+                bzero, ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
                 A%comm_buff%recvData(     1:  nvec,:),&
                 A%comm_buff%recvData(nvec+1:2*nvec,:),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 1,A%nRows,+1)
-
+        else
+      call dkacz_selector(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
+                A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+                A%row_map,&
+                shifts_r(iSys),shifts_i(iSys), &
+                b%val(b%jmin,1), ldb, &
+                x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
+                A%comm_buff%recvData(     1:  nvec,:),&
+                A%comm_buff%recvData(nvec+1:2*nvec,:),&
+                nrms_ai2i(:,iSys),omegas(iSys),&
+                1,A%nRows,+1)        
+        end if
       ! exchange values and average (export/average operation
       ! from col map into domain map)
       call Dcarp_average(A,x_r, x_i, invProcCount, ierr)
@@ -2223,17 +2232,29 @@ end if
 
       ! apply Kaczmarz backward sweep
       !write(*,*) 'kacz (b)'
+      if (b_is_zero) then
       call dkacz_selector(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 A%row_map,&
                 shifts_r(iSys),shifts_i(iSys), &
-                bval_ptr, ldb, &
+                bzero, ldb, &
+                x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
+                A%comm_buff%recvData(     1:  nvec,:),&
+                A%comm_buff%recvData(nvec+1:2*nvec,:),&
+                nrms_ai2i(:,iSys),omegas(iSys),&
+                A%nRows,1,-1)      
+      else
+      call dkacz_selector(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
+                A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+                A%row_map,&
+                shifts_r(iSys),shifts_i(iSys), &
+                b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
                 A%comm_buff%recvData(     1:  nvec,:),&
                 A%comm_buff%recvData(nvec+1:2*nvec,:),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)
-
+      end if
       ! exchange values and average, stay in domain map
       ! (i.e. do not import halo until the next call to
       ! carp_sweep)
