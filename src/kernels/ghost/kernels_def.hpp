@@ -930,9 +930,11 @@ PHIST_GHOST_TASK_BEGIN
   // GHOST has experimental specialized kernels which we want to test here.
   // presently, ghost calls the gemm kernel as fallback if the block size is
   // not available.
+#ifdef PHIST_MVECS_ROW_MAJOR
   PHIST_CHK_GERR(ghost_tsmttsm(C, V, W, (void*)&alpha, (void*)&beta),*ierr);
-  //PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_ALL_REDUCE),*ierr);
-
+#else
+  PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_ALL_REDUCE),*ierr);
+#endif
 PHIST_GHOST_TASK_END
   }
 
@@ -969,10 +971,11 @@ PHIST_GHOST_TASK_BEGIN
     // GHOST has experimental specialized kernels which we want to test here:
     // TODO - the role of alpha and beta is not clear in this kernel, until
     // this functionality is stable we use the gemm kernel as fallback
-//    PHIST_CHK_GERR(ghost_tsmm(W, V, C,(void*)&alpha),*ierr);
-    char trans[]="N";
-    PHIST_CHK_GERR(ghost_gemm(W,V,trans,C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE),*ierr);
-
+#ifdef PHIST_MVECS_ROW_MAJOR
+    PHIST_CHK_GERR(ghost_tsmm(W, V, C,(void*)&alpha,(void*)&beta),*ierr);
+#else
+    PHIST_CHK_GERR(ghost_gemm(W,V,(char*)"N",C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE),*ierr);
+#endif
 PHIST_GHOST_TASK_END
   }
 //! n x m serial dense matrix times m x k serial dense matrix gives n x k sdMat,
