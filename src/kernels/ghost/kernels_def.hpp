@@ -324,6 +324,34 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* l
 #endif
 }
 
+extern "C" void SUBR(mvec_to_device)(TYPE(mvec_ptr) vV, int* ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+  CAST_PTR_FROM_VOID(ghost_densemat_t,V, vV, *ierr);
+  PHIST_CHK_GERR(V->upload(V),*ierr);
+}
+
+extern "C" void SUBR(mvec_from_device)(TYPE(mvec_ptr) vV, int* ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+  CAST_PTR_FROM_VOID(ghost_densemat_t,V, vV, *ierr);
+  PHIST_CHK_GERR(V->download(V),*ierr);
+}
+
+extern "C" void SUBR(sdMat_to_device)(TYPE(sdMat_ptr) vM, int* ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+  CAST_PTR_FROM_VOID(ghost_densemat_t,M, vM, *ierr);
+  PHIST_CHK_GERR(M->upload(M),*ierr);
+}
+
+extern "C" void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) vM, int* ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+  CAST_PTR_FROM_VOID(ghost_densemat_t,M, vM, *ierr);
+  PHIST_CHK_GERR(M->download(M),*ierr);
+}
+
 extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);

@@ -450,3 +450,5 @@ void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, int nrows, int ncols, 
 }
 
 }
+
+#include "../kernels_nogpu.c"

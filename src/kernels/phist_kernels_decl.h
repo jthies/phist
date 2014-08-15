@@ -142,13 +142,39 @@ void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* ierr);
 //! Note that lda may be larger than the actual local vector length as obtained by 
 //! mvec_my_length. This function is dangerous in the sense that it would force the 
 //! underlying kernel lib to implement the data layout in either of these formats.
-//! library that does not guarantee this should return -99 here ("not implemented")
+//! library that does not guarantee this should return -99 here ("not implemented").
+//!
+//! Note on accelerators: the pointer obtained lives on the CPU, in order to make sure
+//!     the data is consistent with the copy on a GPU, always call mvec_download before
+//!     accessing the raw data and mvec_upload after manipulating it. Make sure that you
+//!     know which copy is up-to-date at what point.
+//!
 void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val,
         lidx_t* lda, int* ierr);
 
-//! extract view from serial dense matrix. See comment for mvec_extract_view for details.
+//! extract view from serial dense matrix. See comment for mvec_extract_view for details,
+//! the macro indicating row-major storage layout is PHIST_SDMATS_ROW_MAJOR.
 void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) M, _ST_** val,
         lidx_t* lda, int* ierr);
+
+//@}
+
+//! \name data transfer between host and device (for kernel libs that support GPUs).
+//! This function should return 0 if a GPU transfer is not needed, for instance because
+//! the kernel lib does not support GPUs or the object was not created to live on a GPU.
+//@{
+
+//! copy serial multi-vector (mvec) data from the host CPU to the GPU.
+void SUBR(sdMat_to_device)(TYPE(mvec_ptr) V, int* ierr);
+
+//! copy multi-vector (mvec) data from the GPU to the host CPU
+void SUBR(sdMat_from_device)(TYPE(mvec_ptr) V, int* ierr);
+
+//! copy serial dense matrix (sdmat) data from the host CPU to the GPU.
+void SUBR(sdMat_to_device)(TYPE(sdMat_ptr) M, int* ierr);
+
+//! copy serial dense matrix (sdmat) data from the GPU to the host CPU
+void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) M, int* ierr);
 
 //@}
 
