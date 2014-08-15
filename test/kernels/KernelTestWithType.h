@@ -34,6 +34,8 @@ virtual void TearDown() {
 
 };
 
+#include "phist_kernels.h"
+
 #ifdef PHIST_HAVE_SP
 
 # include "phist_gen_s.h"

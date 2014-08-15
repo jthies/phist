@@ -145,7 +145,7 @@ void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* ierr);
 //! library that does not guarantee this should return -99 here ("not implemented").
 //!
 //! Note on accelerators: the pointer obtained lives on the CPU, in order to make sure
-//!     the data is consistent with the copy on a GPU, always call mvec_download before
+//!     the data is consistent with the copy on a GPU, always call mvec_from_device before
 //!     accessing the raw data and mvec_upload after manipulating it. Make sure that you
 //!     know which copy is up-to-date at what point.
 //!
@@ -165,10 +165,10 @@ void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) M, _ST_** val,
 //@{
 
 //! copy serial multi-vector (mvec) data from the host CPU to the GPU.
-void SUBR(sdMat_to_device)(TYPE(mvec_ptr) V, int* ierr);
+void SUBR(mvec_to_device)(TYPE(mvec_ptr) V, int* ierr);
 
 //! copy multi-vector (mvec) data from the GPU to the host CPU
-void SUBR(sdMat_from_device)(TYPE(mvec_ptr) V, int* ierr);
+void SUBR(mvec_from_device)(TYPE(mvec_ptr) V, int* ierr);
 
 //! copy serial dense matrix (sdmat) data from the host CPU to the GPU.
 void SUBR(sdMat_to_device)(TYPE(sdMat_ptr) M, int* ierr);

@@ -82,7 +82,6 @@ extern "C" void SUBR(crsMat_get_row_map)(TYPE(const_crsMat_ptr) vA, const_map_pt
   ghost_map_t* map = new ghost_map_t;
   map->ctx = A->context;
   map->vtraits_template=phist_default_vtraits();
-  map->vtraits_template.flags=GHOST_DENSEMAT_NO_HALO;
   *vmap = (const_map_ptr_t)map;
 }
 
@@ -197,7 +196,6 @@ PHIST_GHOST_TASK_BEGIN
   *ierr=0;
   ghost_densemat_t* result;
   ghost_densemat_traits_t dmtraits=GHOST_DENSEMAT_TRAITS_INITIALIZER;
-        dmtraits.flags = GHOST_DENSEMAT_DEFAULT; 
         dmtraits.nrows=nrows;
         dmtraits.nrowshalo=nrows;
         dmtraits.nrowspadded=nrows;
@@ -952,14 +950,7 @@ PHIST_GHOST_TASK_BEGIN
   W->traits.nrows,W->traits.ncols,
   C->traits.nrows,C->traits.ncols);
 
-  // GHOST has experimental specialized kernels which we want to test here.
-  // presently, ghost calls the gemm kernel as fallback if the block size is
-  // not available.
-#ifdef PHIST_MVECS_ROW_MAJOR
-  PHIST_CHK_GERR(ghost_tsmttsm(C, V, W, (void*)&alpha, (void*)&beta),*ierr);
-#else
   PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_ALL_REDUCE),*ierr);
-#endif
 PHIST_GHOST_TASK_END
   }
 
@@ -992,15 +983,7 @@ PHIST_GHOST_TASK_BEGIN
     //PHIST_DEB("V'C with V %" PRlidx "x%d, C %dx%d and result %" PRlidx "x%d\n", nrV,ncV,nrC,ncC,nrW,ncW);
 #endif
     // note: C is replicated, so this operation is a purely local one.
-
-    // GHOST has experimental specialized kernels which we want to test here:
-    // TODO - the role of alpha and beta is not clear in this kernel, until
-    // this functionality is stable we use the gemm kernel as fallback
-#ifdef PHIST_MVECS_ROW_MAJOR
-    PHIST_CHK_GERR(ghost_tsmm(W, V, C,(void*)&alpha,(void*)&beta),*ierr);
-#else
     PHIST_CHK_GERR(ghost_gemm(W,V,(char*)"N",C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE),*ierr);
-#endif
 PHIST_GHOST_TASK_END
   }
 //! n x m serial dense matrix times m x k serial dense matrix gives n x k sdMat,

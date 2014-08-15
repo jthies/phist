@@ -66,9 +66,9 @@ public:
       ST val = (_ST_)42.0 + (ST)3.0*st::cmplx_I();
       SUBR(mvec_put_value)(vec1_,val,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,val,vflag_));
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(vec1_,val));
 
-      // check that the random function does not change the pointer
+      // check that the put_value function does not change the pointer
       ST* ptr;
       lidx_t lda_new;
       SUBR(mvec_extract_view)(vec1_,&ptr,&lda_new,&ierr_);
@@ -82,11 +82,15 @@ public:
   {
     if (typeImplemented_)
     {
+      SUBR(mvec_from_device)(vec1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
       for (int j=0;j<nvec_;j++)
         for (int i=0;i<nloc_*stride_;i+=stride_)
         {
           vec2_vp_[VIDX(i,j,lda_)]=mt::one()/st::conj(vec1_vp_[VIDX(i,j,lda_)]);
         }
+      SUBR(mvec_to_device)(vec2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
       _ST_ dots_ref[_NV_];
       _ST_ dots[_NV_];
       SUBR(mvec_dot_mvec)(vec1_,vec2_,dots_ref,&ierr_);
@@ -96,6 +100,8 @@ public:
 
       // test two random vectors
       SUBR(mvec_random)(vec2_, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_from_device)(vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_dot_mvec)(vec1_,vec2_,dots_ref,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -122,6 +128,9 @@ public:
     if (typeImplemented_)
       {
       SUBR(mvec_random)(vec1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      
+      SUBR(mvec_from_device)(vec1_,&ierr_);
       ASSERT_EQ(0,ierr_);
       
       // check that the random function does not change the pointer
@@ -216,15 +225,17 @@ public:
       PHIST_OUT(9,"axpy, alpha=%f+%f i, beta=%f+%f i",st::real(alpha),
         st::imag(alpha),st::real(beta),st::imag(beta));
 #if PHIST_OUTLEV>=PHIST_DEBUG
+      SUBR(mvec_from_device)(vec2_,&ierr_);
       PrintVector(std::cerr,"before scale",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
 #endif
       SUBR(mvec_add_mvec)(alpha,vec1_,beta,vec2_,&ierr_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
+      SUBR(mvec_from_device)(vec2_,&ierr_);
       PrintVector(std::cerr,"after scale",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
 #endif
       ASSERT_EQ(0,ierr_);
             
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,beta,vflag_));
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(vec2_,beta));
       }
     
     }
@@ -268,7 +279,7 @@ public:
       TYPE(mvec_ptr) v1_vv=NULL;
       SUBR(mvec_view_block)(v1_view,&v1_vv,0,jmax-jmin,&ierr_);
       ASSERT_EQ(0,ierr_);
-      
+
       // now this should delete the original view and create a new one,
       // all vectors must remain valid:
       SUBR(mvec_view_block)(vec1_,&v1_view,jmin,jmax,&ierr_);
@@ -298,6 +309,10 @@ public:
       _ST_ val = random_number();
       SUBR(mvec_put_value)(v1_view,val,&ierr_);
       ASSERT_EQ(0,ierr_);
+
+      SUBR(mvec_from_device)(vec1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(&vec1_vp_[VIDX(0,jmin,lda_)],nloc_,jmax-jmin+1,lda_,stride_,val,vflag_));
 
       // new norms after changing columns
@@ -454,7 +469,7 @@ public:
 
       SUBR(mvec_scale)(vec2_,scale,&ierr_);
       ASSERT_EQ(0,ierr_);
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,scale,vflag_));
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(vec2_,scale));
 
       SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -462,14 +477,18 @@ public:
       scale = st::prand();
       SUBR(mvec_scale)(vec1_,scale,&ierr_);
       ASSERT_EQ(0,ierr_);
+      SUBR(mvec_from_device)(vec2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
       // apply scale to vec2_ by hand
       for(int i = 0; i < nloc_; i++)
         for(int j = 0; j < nvec_; j++)
         {
           vec2_vp_[VIDX(i,j,lda_)] *= scale;
         }
+      SUBR(mvec_to_device)(vec2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
 
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_,vflag_));
+      ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
     }
   }
 
