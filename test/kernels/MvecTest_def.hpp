@@ -168,6 +168,19 @@ public:
       }
     }
 
+  TEST_F(CLASSNAME, upload_download)
+  {
+    // just tests that the upload and from_device functions return 0
+    // and do not crash.
+    if (typeImplemented_)
+    {
+      SUBR(mvec_to_device)(vec1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_from_device)(vec1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+    }
+  }
+
   // 2-norm, nrm2=sqrt(v'v)
   TEST_F(CLASSNAME, norm2)
   {

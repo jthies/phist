@@ -326,6 +326,14 @@ extern "C" void SUBR(mvec_to_device)(TYPE(mvec_ptr) vV, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
   CAST_PTR_FROM_VOID(ghost_densemat_t,V, vV, *ierr);
+  PHIST_SOUT(PHIST_DEBUG,"ghost densemat upload\n"
+                         "nrows=%" PRlidx ", ncols=%" PRlidx "\n"
+                         "nrowshalo=%" PRlidx "\n"
+                         "nrowspadded=%" PRlidx ", ncolspadded=%" PRlidx "\n",
+                         V->traits.nrows, V->traits.ncols, 
+                         V->traits.nrowshalo,
+                         V->traits.nrowspadded, V->traits.ncolspadded);
+  PHIST_SOUT(PHIST_DEBUG,"V flags: %d\n",(int)V->traits.flags);
   PHIST_CHK_GERR(V->upload(V),*ierr);
 }
 

@@ -51,6 +51,20 @@ public:
       }
     }
 
+  TEST_F(CLASSNAME, upload_download)
+  {
+    // just tests that the upload and download functions return 0
+    // and do not crash.
+    if (typeImplemented_)
+    {
+      SUBR(sdMat_to_device)(mat1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_from_device)(mat1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+    }
+  }
+
+
   // view certain rows and columns of a serial dense matrix,
   // manipulate them and check the original matrix has changed.
   TEST_F(CLASSNAME, view_block)
