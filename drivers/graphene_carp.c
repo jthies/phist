@@ -191,7 +191,7 @@ int main(int argc, char** argv)
 #elif defined(PHIST_KERNEL_LIB_GHOST)
     if ( my_datatype != info.datatype)
     {
-      printf("error: datatyte does not match\n");
+      printf("error: datatype does not match\n");
       exit(0);
     }
 
@@ -215,7 +215,8 @@ int main(int argc, char** argv)
     printf("%s\n",str);
     free(str); str = NULL;
 #else
-#error 'this driver is only available for the fortran and ghost kernel libs'
+    PHIST_SOUT(PHIST_ERROR,"this driver is only available for the fortran and ghost kernel libs\n");
+    exit(-1);
 #endif
   }
   else
