@@ -1,4 +1,3 @@
-#include "ghost/util.h"
 #include "ghost/sell.h"
 
 // we implement only the double precision real type D
@@ -207,10 +206,8 @@ PHIST_GHOST_TASK_BEGIN
         dmtraits.datatype=st::ghost_dt;
 #ifdef PHIST_SDMATS_ROW_MAJOR
         dmtraits.storage=GHOST_DENSEMAT_ROWMAJOR;
-        dmtraits.ncolspadded=PAD(nrows,GHOST_PAD_MAX);
 #else
         dmtraits.storage=GHOST_DENSEMAT_COLMAJOR;
-        dmtraits.nrowspadded=PAD(nrows,GHOST_PAD_MAX);
 #endif
   // I think the sdMat should not have a context
   ghost_context_t* ctx=NULL;

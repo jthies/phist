@@ -18,7 +18,6 @@
 #include "MpiRootOnlyPrinter.hpp"
 #ifdef PHIST_HAVE_GHOST
 #include "ghost.h"
-#include "ghost/util.h"
 #include "ghost/taskq.h"
 #endif
 

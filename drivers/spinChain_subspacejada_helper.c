@@ -2,7 +2,6 @@
 #ifdef PHIST_KERNEL_LIB_GHOST
 
 #include "ghost.h"
-#include "ghost/util.h"
 #include "matfuncs.h"
 
 GHOST_REGISTER_DT_D(my_datatype_)
