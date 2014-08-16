@@ -2,17 +2,23 @@
 #define PHIST_KERNELS_H
 
 #include "phist_config.h"
+
+#ifndef NO_INCLUDES_IN_HEADERS
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
 #include "phist_macros.h"
 
-//! note: the phist_typedefs.h file is provided in the subdirectory
-//! where the interface is implemented (e.g. ghost/, tpetra/).
+// note: the phist_typedefs.h file is provided in the subdirectory
+// where the interface is implemented (e.g. ghost/, tpetra/).
 #include "phist_typedefs.h"
+#endif
 
-//! the kernels are based on a number of abstract concepts, which are
+//! @file phist_kernels.h
+//! @brief Definition of an abstract interface for basic operations needed by iterative solvers.
+//!
+//! The kernels are based on a number of abstract concepts, which are
 //! simply void* into a "kernel library":
 //! - comm_t: encapsulates MPI, currently the interface does not really
 //!   allow you to do much with this object, except use it to build other
@@ -32,6 +38,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//! \name data-type independent kernel functions
+//!@{
 
 //! initialize kernel library. Should at least call MPI_Init if it has not been called
 //! but is required.
@@ -71,23 +80,35 @@ void phist_map_get_iupper(const_map_ptr_t map, gidx_t* iupper, int* ierr);
 } // extern "C"
 #endif
 
+//!@}
+
 //! include file for the basic operations (kernels)
 //! in single/double, real/complex.
 #ifdef PHIST_HAVE_SP
+/*!\name single precision real kernel functions */
+/*!@{*/
 #include "phist_gen_s.h"
 #include "phist_kernels_decl.h"
 #include "phist_carp_decl.h"
+/*!@}*/
+/*!\name single precision complex kernel functions */
+/*!@{*/
 #include "phist_gen_c.h"
 #include "phist_kernels_decl.h"
 #include "phist_carp_decl.h"
+/*!@}*/
 #endif
 
+/*!\name double precision real kernel functions */
+/*!@{*/
 #include "phist_gen_d.h"
 #include "phist_kernels_decl.h"
 #include "phist_carp_decl.h"
-
+/*!@}*/
+/*!\name double precision complex kernel functions */
+/*!@{*/
 #include "phist_gen_z.h"
 #include "phist_kernels_decl.h"
 #include "phist_carp_decl.h"
-
+/*!@}*/
 #endif

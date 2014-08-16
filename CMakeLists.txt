@@ -324,6 +324,7 @@ endif()
 set(PHIST_TIMEMONITOR_PERLINE Off CACHE BOOL "Gather timing information for each line with a PHIST_CHK_* macro!")
 
 configure_file ("${PROJECT_SOURCE_DIR}/src/phist_config.h.in" "${PROJECT_BINARY_DIR}/phist_config.h")
+configure_file ("${PROJECT_SOURCE_DIR}/src/doxygen_preprocess.sh.in" "${PROJECT_BINARY_DIR}/doxygen_preprocess.sh")
 
 foreach(PKG ${LOAD_TRILI_PKG})
   find_package(${PKG} REQUIRED)

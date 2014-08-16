@@ -1,6 +1,9 @@
 #include "phist_macros.h"
 
-/*! these functions need to be provided by a kernel module  
+/*! @file phist_kernels_decl.h 
+    @brief basic operations involving matrices and vectors 
+
+    these functions need to be provided by a kernel module  
     in order to be used by the iterative solvers implemen-  
     ted in this library. Matrices and vectors are passed    
     around as void pointers, which is not nice but it is    
@@ -34,12 +37,13 @@
 extern "C" {
 #endif
 
-//! returns 0 if the library implements the data type, -99 otherwise.
+
+//! @ingroup typedkernels
+//! @brief returns 0 if the library implements the data type, -99 otherwise.
 void SUBR(type_avail)(int* ierr);
 
 //! \name Matrix input from a file
-
-//@{
+//!@{
 
 //! read a matrix from a MatrixMarket (ASCII) file
 void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* A, 
@@ -54,7 +58,6 @@ void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* A, const char* filename,int* ierr);
 //!@}
 
 //! \name get information about the data distribution in a matrix (maps)
-
 //!@{
 
 //! get the row distribution of the matrix
@@ -75,8 +78,7 @@ void SUBR(crsMat_get_range_map)(TYPE(const_crsMat_ptr) A,
 //@}
 
 //! \name constructors
-
-//@{
+//!@{
 //! create a block-vector.
 void SUBR(mvec_create)(TYPE(mvec_ptr)* V, const_map_ptr_t map, int nvec, 
         int* ierr);
@@ -97,11 +99,10 @@ void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, const_map_ptr_t map,
 void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M, 
         int nrows, int ncols, const_comm_ptr_t comm, int* ierr);
 
-//@}
+//!@}
 
 //! \name destructors
-
-//@{
+//!@{
 
 //!
 void SUBR(crsMat_delete)(TYPE(crsMat_ptr) A, int* ierr);
@@ -112,10 +113,10 @@ void SUBR(mvec_delete)(TYPE(mvec_ptr) V, int* ierr);
 //!
 void SUBR(sdMat_delete)(TYPE(sdMat_ptr) M, int* ierr);
 
-//@}
+//!@}
 
 //! \name getting data from objects
-//@{
+//!@{
 
 //! retrieve local length of the vectors in V
 void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) V, lidx_t* len, int* ierr);
@@ -157,12 +158,12 @@ void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val,
 void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) M, _ST_** val,
         lidx_t* lda, int* ierr);
 
-//@}
+//!@}
 
 //! \name data transfer between host and device (for kernel libs that support GPUs).
 //! This function should return 0 if a GPU transfer is not needed, for instance because
 //! the kernel lib does not support GPUs or the object was not created to live on a GPU.
-//@{
+//!@{
 
 //! copy serial multi-vector (mvec) data from the host CPU to the GPU.
 void SUBR(mvec_to_device)(TYPE(mvec_ptr) V, int* ierr);
@@ -176,7 +177,7 @@ void SUBR(sdMat_to_device)(TYPE(sdMat_ptr) M, int* ierr);
 //! copy serial dense matrix (sdmat) data from the GPU to the host CPU
 void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) M, int* ierr);
 
-//@}
+//!@}
 
 //! get a new vector that is a view of some columns of the original one,
 //! Vblock = V(:,jmin:jmax). The new object Vblock is created but does not

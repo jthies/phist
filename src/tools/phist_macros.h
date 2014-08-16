@@ -2,12 +2,14 @@
 #define PHIST_MACROS_H
 
 #include "phist_config.h"
+
+#ifndef NO_INCLUDES_IN_HEADERS
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
 
-#ifndef NO_INCLUDES_IN_HEADERS
 #include "phist_tools.h"
 #ifdef __cplusplus
 #include <cstdio>
