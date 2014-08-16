@@ -76,39 +76,41 @@ void phist_map_get_ilower(const_map_ptr_t map, gidx_t* ilower, int* ierr);
 //! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
 void phist_map_get_iupper(const_map_ptr_t map, gidx_t* iupper, int* ierr);
 
+
+//!@}
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
 
-//!@}
 
 //! include file for the basic operations (kernels)
 //! in single/double, real/complex.
 #ifdef PHIST_HAVE_SP
-/*!\name single precision real kernel functions */
-/*!@{*/
+//! \name single precision real kernel functions
+//!@{
 #include "phist_gen_s.h"
 #include "phist_kernels_decl.h"
 #include "phist_carp_decl.h"
-/*!@}*/
+//!@}
 /*!\name single precision complex kernel functions */
-/*!@{*/
+//!@{
 #include "phist_gen_c.h"
 #include "phist_kernels_decl.h"
 #include "phist_carp_decl.h"
-/*!@}*/
+//!@}
 #endif
 
 /*!\name double precision real kernel functions */
-/*!@{*/
+//!@{
 #include "phist_gen_d.h"
 #include "phist_kernels_decl.h"
 #include "phist_carp_decl.h"
-/*!@}*/
+//!@}
 /*!\name double precision complex kernel functions */
-/*!@{*/
+//!@{
 #include "phist_gen_z.h"
 #include "phist_kernels_decl.h"
 #include "phist_carp_decl.h"
-/*!@}*/
+//!@}
 #endif

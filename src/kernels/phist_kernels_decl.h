@@ -37,15 +37,21 @@
 extern "C" {
 #endif
 
+/*! \defgroup crsmat functions concerning sparse matrices (crsMat_t) */
 
-//! @ingroup typedkernels
+/*! \defgroup mvec functions concerning multi-vectors (mvec_t) */
+
+/*! \defgroup sdmat functions concerning serial dense matrices (sdMat_t) */
+
 //! @brief returns 0 if the library implements the data type, -99 otherwise.
 void SUBR(type_avail)(int* ierr);
 
+//! \addtogroup crsmat
+//!@{
 //! \name Matrix input from a file
 //!@{
 
-//! read a matrix from a MatrixMarket (ASCII) file
+//! read a matrix from a MatrixMarket (ASCII) file \ingroup(crsmat)
 void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* A, 
         const char* filename,int* ierr);
 
@@ -56,8 +62,12 @@ void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* A, const char* filename,int* ierr);
 void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* A, const char* filename,int* ierr);
 
 //!@}
+//!@}
 
 //! \name get information about the data distribution in a matrix (maps)
+//!@{
+
+//! \addtogroup crsmat
 //!@{
 
 //! get the row distribution of the matrix
@@ -76,9 +86,14 @@ void SUBR(crsMat_get_domain_map)(TYPE(const_crsMat_ptr) A,
 void SUBR(crsMat_get_range_map)(TYPE(const_crsMat_ptr) A,
         const_map_ptr_t* map, int* ierr);
 //@}
+//@}
 
 //! \name constructors
 //!@{
+
+//! \addtogroup mvec
+//!@{
+
 //! create a block-vector.
 void SUBR(mvec_create)(TYPE(mvec_ptr)* V, const_map_ptr_t map, int nvec, 
         int* ierr);
@@ -89,6 +104,10 @@ void SUBR(mvec_create)(TYPE(mvec_ptr)* V, const_map_ptr_t map, int nvec,
 void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, const_map_ptr_t map, 
         _ST_* values, lidx_t lda, int nvec, 
         int* ierr);
+
+//!@}
+
+//! construct small (replicated) dense matrix \ingroup sdmat
 
 //! create a serial dense n x m matrix on all procs in comm, 
 //! with column major ordering and the capability to communicate.
@@ -104,18 +123,21 @@ void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M,
 //! \name destructors
 //!@{
 
-//!
+//! \ingroup crsmat
 void SUBR(crsMat_delete)(TYPE(crsMat_ptr) A, int* ierr);
 
-//!
+//! \ingroup mvec
 void SUBR(mvec_delete)(TYPE(mvec_ptr) V, int* ierr);
 
-//!
+//! \ingroup sdmat
 void SUBR(sdMat_delete)(TYPE(sdMat_ptr) M, int* ierr);
 
 //!@}
 
 //! \name getting data from objects
+//!@{
+
+//! \addtogroup mvec
 //!@{
 
 //! retrieve local length of the vectors in V
@@ -129,12 +151,6 @@ void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) V, const_comm_ptr_t* comm, int* ie
 
 //! retrieve number of vectors/columns in V
 void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) V, int* nvec, int* ierr);
-
-//! get number of cols in local dense matrix
-void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) M, int* nrows, int* ierr);
-
-//! get number of cols in local dense matrix
-void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* ierr);
 
 //! extract view from multi-vector. Sets the user-provided val pointer to point to the
 //! beginning of the first vector, and puts the leading dimension of the array into lda,
@@ -152,6 +168,19 @@ void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* ierr);
 //!
 void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val,
         lidx_t* lda, int* ierr);
+
+//!@}
+
+//! \addtogroup sdmat
+//!@{
+
+//! get number of cols in local dense matrix
+void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) M, int* nrows, int* ierr);
+
+//! get number of cols in local dense matrix
+void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* ierr);
+
+//!@}
 
 //! extract view from serial dense matrix. See comment for mvec_extract_view for details,
 //! the macro indicating row-major storage layout is PHIST_SDMATS_ROW_MAJOR.
