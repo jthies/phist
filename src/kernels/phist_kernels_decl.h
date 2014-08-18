@@ -85,14 +85,11 @@ void SUBR(crsMat_get_range_map)(TYPE(const_crsMat_ptr) A,
 //! \name constructors
 //@{
 
-//!   \defgroup mvec functions concerning multi-vectors (mvec_t) 
-///@{
-
-//! create a block-vector.
+//! create a block-vector. \ingroup mvec
 void SUBR(mvec_create)(TYPE(mvec_ptr)* V, const_map_ptr_t map, int nvec, 
         int* ierr);
 
-//! create a block-vector as view of raw data. 
+//! create a block-vector as view of raw data. \ingroup mvec
 
 //! The map tells the object how many rows it should 'see' in the 
 //! data (at most lda, the leading dimension of the 2D array values).
@@ -100,11 +97,7 @@ void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, const_map_ptr_t map,
         _ST_* values, lidx_t lda, int nvec, 
         int* ierr);
 
-///@}
-
-//!   \defgroup sdmat functions concerning small dense matrices (sdMat_t) 
-///@{
-//! construct small (replicated) dense matrix
+//! construct small (replicated) dense matrix \ingroup sdmat
 
 //! create a serial dense n x m matrix on all procs in comm, 
 //! with column major ordering and the capability to communicate.
@@ -115,7 +108,6 @@ void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, const_map_ptr_t map,
 void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M, 
         int nrows, int ncols, const_comm_ptr_t comm, int* ierr);
 
-///@}
 //@}
 
 //! \name destructors
@@ -135,22 +127,21 @@ void SUBR(sdMat_delete)(TYPE(sdMat_ptr) M, int* ierr);
 //! \name getting data from objects
 //@{
 
-//! \addtogroup mvec
-///@{
-
-//! retrieve local length of the vectors in V
+//! retrieve local length of the vectors in V \ingroup mvec
 void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) V, lidx_t* len, int* ierr);
 
-//! retrieve the map of the vectors in V
+//! retrieve the map of the vectors in V \ingroup mvec
 void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) V, const_map_ptr_t* map, int* ierr);
 
-//! retrieve the comm used for MPI communication in V
+//! retrieve the comm used for MPI communication in V \ingroup mvec
 void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) V, const_comm_ptr_t* comm, int* ierr);
 
-//! retrieve number of vectors/columns in V
+//! retrieve number of vectors/columns in V \ingroup mvec
 void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) V, int* nvec, int* ierr);
 
-//! extract view from multi-vector. Sets the user-provided val pointer to point to the
+//! extract view from multi-vector. \ingroup mvec
+
+//! Sets the user-provided val pointer to point to the
 //! beginning of the first vector, and puts the leading dimension of the array into lda,
 //! such that the element j of vector i is val[i*lda+j]. If PHIST_MVECS_ROW_MAJJOR is
 //! #defined, the storage is transposed and element j of vector i is found at val[j*lda+i].
@@ -167,24 +158,18 @@ void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) V, int* nvec, int* ierr);
 void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val,
         lidx_t* lda, int* ierr);
 
-///@}
-
-//! \addtogroup sdmat
-///@{
-
-//! get number of cols in local dense matrix
+//! get number of cols in local dense matrix \ingroup sdmat
 void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) M, int* nrows, int* ierr);
 
-//! get number of cols in local dense matrix
+//! get number of cols in local dense matrix. \ingroup sdmat
 void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* ierr);
 
-//! extract view from serial dense matrix. See comment for mvec_extract_view for details,
+//! extract view from serial dense matrix. \ingroup sdmat
+
+//! See comment for mvec_extract_view for details,
 //! the macro indicating row-major storage layout is PHIST_SDMATS_ROW_MAJOR.
 void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) M, _ST_** val,
         lidx_t* lda, int* ierr);
-
-///@}
-
 
 //@}
 
@@ -208,7 +193,7 @@ void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) M, int* ierr);
 
 //@}
 
-//! \addtogroup mvec
+//!   \defgroup mvec functions concerning multi-vectors (mvec_t) 
 //@{
 
 //! get a new vector that is a view of some columns of the original one.
@@ -253,7 +238,7 @@ void SUBR(mvec_set_block)(TYPE(mvec_ptr) V,
 
 //@}
 
-//! \addtogroup sdmat
+//!   \defgroup sdmat functions concerning small dense matrices (sdMat_t) 
 //@{
 
 //! get a new matrix that is a view of some rows and columns of the original one, 
@@ -303,32 +288,29 @@ void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) M, int* ierr);
 //! \name Numerical functions
 //@{
 
-//! \addtogroup mvec
-///@{
-
-//! column-wise 2-norm
+//! column-wise 2-norm \ingroup mvec
 
 //! compute the 2-norm) of each column of v
 //! (vnrm[i] must be pre-allocated by caller)
 void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) V, 
                         _MT_* vnrm, int *ierr);
 
-//! normalize each column
+//! normalize each column. \ingroup mvec
 
 //! normalize (in the 2-norm) each column of v and return ||v||_2
 //! for each vector i in vnrm[i] (must be pre-allocated by caller)
 void SUBR(mvec_normalize)(TYPE(mvec_ptr) V, 
                             _MT_* vnrm, int* ierr);
 
-//! scale each column i of v and by scalar
+//! scale each column i of v and by scalar. \ingroup mvec
 void SUBR(mvec_scale)(TYPE(mvec_ptr) V, 
                             _ST_ scalar, int* ierr);
 
-//! scale each column i of v and by scalar[i]
+//! scale each column i of v and by scalar[i]. \ingroup mvec
 void SUBR(mvec_vscale)(TYPE(mvec_ptr) V, 
                             const _ST_* scalar, int* ierr);
 
-//! y=alpha*x+beta*y.
+//! y=alpha*x+beta*y. \ingroup mvec
 
 //! This function can also be used for special cases such as
 //! alpha=0 => scale y
@@ -338,22 +320,26 @@ void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) X,
                             _ST_ beta,  TYPE(mvec_ptr)       Y,     
                             int* ierr);
 
-//! y[i]=alpha[i]*x[i]+beta*y[i]
+//! y[i]=alpha[i]*x[i]+beta*y[i]. \ingroup mvec
 void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) X,
                           const _ST_ beta,  TYPE(mvec_ptr)       Y,     
                           int* ierr);
 
 
-//! dot product of vectors v_i and w_i, i=1..numvecs
+//! dot product of vectors v_i and w_i, i=1..numvecs. \ingroup mvec
 void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) V, 
                             TYPE(const_mvec_ptr) W, 
                             _ST_* vw, int* ierr);
+
+//! inner product of two multi-vectors. \ingroup mvec
 
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix
 //! C=alpha*V'*W+beta*C. C is replicated on all MPI processes sharing V and W.
 void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V, 
                                        TYPE(const_mvec_ptr) W, 
                                        _ST_ beta, TYPE(sdMat_ptr) C, int* ierr);
+
+//! multi-vector times small dense matrix. \ingroup mvec
 
 //! n x m multi-vector times m x k dense matrix gives n x k multi-vector,
 //! W=alpha*V*C + beta*W
@@ -363,22 +349,21 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
                                        int* ierr);
 
 
-///@}
-
-//! \addtogroup sdmat
-///@{
-
-//! B=alpha*A+beta*B
+//! B=alpha*A+beta*B. \ingroup sdmat
 void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
                             _ST_ beta,  TYPE(sdMat_ptr)       B,     
                             int* ierr);
 
+//! C=beta*C+alpha*A*B. \ingroup sdmat
+
 //! n x m serial dense matrix times m x k serial dense matrix gives n x k serial dense matrix,
 //! C=alpha*V*W + beta*C
 void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
-                                           TYPE(const_sdMat_ptr) W, 
-                               _ST_ beta, TYPE(sdMat_ptr) C,
-                                       int* ierr);
+                                         TYPE(const_sdMat_ptr) W, 
+                              _ST_ beta,       TYPE(sdMat_ptr) C,
+                              int* ierr);
+
+//! C=beta*C+alpha*V'W. \ingroup sdmat
 
 //! n x m conj. transposed serial dense matrix times m x k serial dense matrix gives m x k serial dense matrix,
 //! C=alpha*V*W + beta*C
@@ -388,10 +373,8 @@ void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
                                        int* ierr);
 
 
-///@}
-
 //! \addtogroup crsmat
-///@{
+//@{
 
 //! y=alpha*A*x+beta*y.
 
@@ -413,7 +396,7 @@ void SUBR(crsMatT_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
 void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
         const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr);
 
-///@}
+//@}
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular. \ingroup mvec
 
