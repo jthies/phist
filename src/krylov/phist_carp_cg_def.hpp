@@ -724,6 +724,24 @@ void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR,
   {
     PHIST_SOUT(PHIST_INFO,"%s\tfinished after %d iterations.\n",carp_label,it);
   }
+  else if (PHIST_OUTLEV<=PHIST_INFO && nvec>2)
+  {
+    // print maximum and minimum residual norms only
+    int max_pos=0, min_pos=0;
+    ST nrmR[2];
+    MT nrmB[2],nrmR0[2];
+    for (int i=1;i<nvec;i++)
+    {
+      if (st::real(normR[i])>st::real(normR[max_pos])) max_pos=i;
+      if (st::real(normR[i])<st::real(normR[min_pos])) min_pos=i;
+    }
+    nrmR[0]=normR[min_pos]; nrmR[1]=normR[max_pos];
+    nrmR0[0]=normR0[min_pos]; nrmR0[1]=normR0[max_pos];
+    nrmB[0]=normB[min_pos]; nrmB[1]=normB[max_pos];
+
+    PHIST_SOUT(PHIST_INFO,"min and max residuals:\n");
+    SUBR(private_printResid)(it,2,nrmR,nrmR0,nrmB);
+  }
   else
   {
     MT tmp=mt::sqrt(st::real(normR[0]));
