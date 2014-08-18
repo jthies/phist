@@ -15,6 +15,9 @@
 #include "phist_typedefs.h"
 #endif
 
+//! \defgroup kernels (kernel function interface)
+//@{
+
 //! @file phist_kernels.h
 //! @brief Definition of an abstract interface for basic operations needed by iterative solvers.
 //!
@@ -114,3 +117,4 @@ void phist_map_get_iupper(const_map_ptr_t map, gidx_t* iupper, int* ierr);
 #include "phist_carp_decl.h"
 //!@}
 #endif
+//@}
