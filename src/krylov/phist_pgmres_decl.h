@@ -1,4 +1,11 @@
-//!
+//! \defgroup linear_solvers Iterative methods for linear systems
+//@{
+
+//! \defgroup pgmres pipelined GMRES solver for general linear systems
+//@{
+
+//! gmres state object
+
 //! iteration status object for the pipelined GMRES
 //! iteration we currently use as approximate solver
 //! for the correction equation. To initialize the
@@ -15,7 +22,6 @@
 //! because the iteration will otherwise not start up
 //! correctly. See test/krylov/TestPGmres for examples
 //! of using this object to build up a restarted GMRES.
-//!
 typedef struct TYPE(pgmresState)
 {
   //! \name input and output args:
@@ -119,3 +125,5 @@ void SUBR( pgmresState_reset ) (TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b,
 //!
 void SUBR( pgmresStates_updateSol ) (TYPE(pgmresState_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, _MT_ *resNorm, bool scaleSolutionToOne, int* ierr);
 
+//@}
+//@}
