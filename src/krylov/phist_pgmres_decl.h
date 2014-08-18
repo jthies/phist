@@ -1,7 +1,7 @@
 //! \defgroup linear_solvers Iterative methods for linear systems
 //@{
 
-//! \defgroup pgmres pipelined GMRES solver for general linear systems
+//! \defgroup pgmres Pipelined GMRES solver for general linear systems
 //@{
 
 //! gmres state object
