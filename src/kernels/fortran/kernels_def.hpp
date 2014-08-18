@@ -449,6 +449,7 @@ void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, int nrows, int ncols, 
   PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc_f)(A, nrows, ncols, maxnne, rowFunPtr, ierr), *ierr);
 }
 
+#include "../kernels_nogpu.c"
+
 }
 
-#include "../kernels_nogpu.c"

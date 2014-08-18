@@ -159,15 +159,18 @@ void phist_totalMatVecCount()
 #include "phist_gen_s.h"
 #include "../kernels_noimpl.c"
 #include "../carp_noimpl.c"
+#include "../kernels_nogpu.c"
 
 #include "phist_gen_c.h"
 #include "../kernels_noimpl.c"
 #include "../carp_noimpl.c"
+#include "../kernels_nogpu.c"
 #endif
 
 #include "phist_gen_z.h"
 #include "../kernels_noimpl.c"
 #include "../carp_noimpl.c"
+#include "../kernels_nogpu.c"
 
 } //extern "C"
 
