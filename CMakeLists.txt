@@ -331,7 +331,6 @@ foreach(dir ${dirs})
 endforeach()
 
 configure_file ("${PROJECT_SOURCE_DIR}/src/phist_config.h.in" "${PROJECT_BINARY_DIR}/phist_config.h")
-configure_file ("${PROJECT_SOURCE_DIR}/doc/doxygen_preprocess.sh.in" "${PROJECT_BINARY_DIR}/doxygen_preprocess.sh")
 configure_file ("${PROJECT_SOURCE_DIR}/doc/phist.doxyfile.in" "${PROJECT_BINARY_DIR}/phist.doxyfile")
 
 foreach(PKG ${LOAD_TRILI_PKG})

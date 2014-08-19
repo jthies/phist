@@ -689,7 +689,7 @@ IMAGE_PATH             =
 # If FILTER_PATTERNS is specified, this tag will be
 # ignored.
 
-INPUT_FILTER           = ${CMAKE_BINARY_DIR}/doxygen_preprocess.sh
+INPUT_FILTER           = "cpp -C -DDOXYGEN ${INCLUDE_FLAGS} -I."
 
 # The FILTER_PATTERNS tag can be used to specify filters on a per file pattern
 # basis.
