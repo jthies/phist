@@ -2,11 +2,16 @@
 #define PHIST_JADA_OP_H
 
 #include "phist_config.h"
+
+#ifndef DOXYGEN
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
 #include "phist_operator.h"
+
+#endif //DOXYGEN
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

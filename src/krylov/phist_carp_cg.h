@@ -2,12 +2,17 @@
 #define PHIST_PCG_H
 
 #include "phist_config.h"
+
+#ifndef DOXYGEN
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
 #include "phist_enums.h"
 #include "phist_typedefs.h"
+
+#endif //DOXYGEN
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,4 +1,7 @@
 #include "phist_config.h"
+
+#ifndef DOXYGEN
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -8,6 +11,8 @@
 #include <vector>
 #include <complex>
 #include "phist_enums.h"
+
+#endif
 
 // compare functors with tolerance
 

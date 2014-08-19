@@ -1,10 +1,16 @@
 #ifndef PHIST_DRIVER_UTILS_H
 #define PHIST_DRIVER_UTILS_H
+
+#ifndef DOXYGEN
+
 #ifdef __cplusplus
 #include <cstring>
 #else
 #include <string.h>
 #endif
+
+#endif //DOXYGEN
+
 typedef _ST_ ST;
 typedef _MT_ MT;
 typedef TYPE(mvec_ptr) mvec_ptr_t;
