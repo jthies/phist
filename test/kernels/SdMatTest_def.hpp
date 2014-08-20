@@ -87,6 +87,7 @@ public:
       ASSERT_EQ(lda,m_lda_);
 
       SUBR(sdMat_from_device)(mat1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+imin+jmin*lda,val_ptr,imax-imin+1,jmax-jmin+1,lda,stride));
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -106,6 +107,7 @@ public:
       ASSERT_EQ(0,ierr_);
 
       SUBR(sdMat_from_device)(mat1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+imin+jmin*lda,val_ptr,imax-imin+1,jmax-jmin+1,lda,stride));
       
 #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -304,6 +306,10 @@ public:
       ASSERT_EQ(0,ierr_);
 #endif
 
+      SUBR(sdMat_from_device)(mat1_,&ierr_);
+      SUBR(sdMat_from_device)(mat2_,&ierr_);
+      SUBR(sdMat_from_device)(mat3_,&ierr_);
+
       // subtract matrix product by hand
       for(int i = 0; i < nrows_; i++)
         for(int j = 0; j < ncols_; j++)
@@ -313,6 +319,7 @@ public:
             mat2_vp_[MIDX(i,j,m_lda_)] -= mat1_vp_[MIDX(i,k,m_lda_)]*mat3_vp_[MIDX(k,j,m_lda_)];
           }
         }
+      ASSERT_EQ(0,ierr_);
       // check result
       ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0,mflag_),10*mt::eps());
     }
@@ -339,6 +346,10 @@ public:
       ASSERT_EQ(0,ierr_);
 */
 #endif
+
+      SUBR(sdMat_from_device)(mat1_,&ierr_);
+      SUBR(sdMat_from_device)(mat2_,&ierr_);
+      SUBR(sdMat_from_device)(mat3_,&ierr_);
 
       // subtract matrix product by hand
       for(int i = 0; i < nrows_; i++)
