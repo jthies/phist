@@ -234,6 +234,7 @@ set (PHIST_FEAST_SOURCE  ${PROJECT_SOURCE_DIR}/src/feast/phist_feastCorrectionSo
 
 
 include_directories(${PROJECT_BINARY_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/src/kernels)
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB})
 include_directories(${PROJECT_SOURCE_DIR}/src/tools)
 include_directories(${PROJECT_SOURCE_DIR}/src/core)
@@ -323,8 +324,15 @@ if( ${PHIST_TIMEMONITOR} )
 endif()
 set(PHIST_TIMEMONITOR_PERLINE Off CACHE BOOL "Gather timing information for each line with a PHIST_CHK_* macro!")
 
+set(INCLUDE_FLAGS "")
+get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+foreach(dir ${dirs})
+  set(INCLUDE_FLAGS "${INCLUDE_FLAGS} -I${dir}")
+endforeach()
+
 configure_file ("${PROJECT_SOURCE_DIR}/src/phist_config.h.in" "${PROJECT_BINARY_DIR}/phist_config.h")
-configure_file ("${PROJECT_SOURCE_DIR}/src/doxygen_preprocess.sh.in" "${PROJECT_BINARY_DIR}/doxygen_preprocess.sh")
+configure_file ("${PROJECT_SOURCE_DIR}/doc/doxygen_preprocess.sh.in" "${PROJECT_BINARY_DIR}/doxygen_preprocess.sh")
+configure_file ("${PROJECT_SOURCE_DIR}/doc/phist.doxyfile.in" "${PROJECT_BINARY_DIR}/phist.doxyfile")
 
 foreach(PKG ${LOAD_TRILI_PKG})
   find_package(${PKG} REQUIRED)
@@ -601,7 +609,7 @@ endif()
 # Adding optinal target "doc" to generate Doxygen documentation
 find_package(Doxygen)
 if (DOXYGEN_FOUND)
-    add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cmake/phist.doxyfile WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+    add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/phist.doxyfile WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
 
 # Add optional target "coverage" to genereate code coverage report (console / XML)

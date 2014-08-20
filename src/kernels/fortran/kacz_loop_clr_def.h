@@ -7,9 +7,9 @@
 
 #ifdef TESTING
 #ifdef KACZ_BZERO
-write(*,*) 'KACZ-LOOP CLR with b=0, nvec=',NVEC
+!write(*,*) 'KACZ-LOOP CLR with b=0, nvec=',NVEC
 #else
-write(*,*) 'KACZ-LOOP CLR, nvec=',NVEC
+!write(*,*) 'KACZ-LOOP CLR, nvec=',NVEC
 #endif  
 flush(6)
 #endif
