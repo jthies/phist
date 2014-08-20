@@ -250,6 +250,11 @@ void SUBR(carp_cgStates_iterate)(
   TYPE(mvec_ptr) bnul=NULL; // we can just pass in b=NULL if all entries for a carp_sweep
                             // are 0 (during CG iteration), for clarity we give it a name
 
+if (numSys>0)
+{
+  PHIST_SOUT(PHIST_VERBOSE,"run CARP-CG with %d rhs/shift and %d shifts.\n",
+        S_array[0]->nvec_,numSys);
+}
 
 ////////////////////////////////////////////////////
 // solve systems for one shift at a time, here we //

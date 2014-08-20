@@ -98,8 +98,7 @@ int main(int argc, char** argv)
   }
   
   // walk through array of vectors in blocks of <blockSize>,
-  // for testing we implement this using views
-  blockSize=8;
+  blockSize=nrhs;
 
   if (argc>=6)
   {
@@ -107,6 +106,9 @@ int main(int argc, char** argv)
   }
 
   blockSize=MIN(nrhs,blockSize);
+ 
+ PHIST_SOUT(PHIST_VERBOSE,"Solve with %d rhs/shift and block size %d\n",
+        nrhs,blockSize);
   
   if (argc>=7)
   {
@@ -271,6 +273,14 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(-1.0,mat,X_r_ex0,1.0,B,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_i[0],X_i_ex0,1.0,B,&ierr),ierr);
 
+/*
+TYPE(sdMat_ptr) Rtmp=NULL;
+PHIST_ICHK_IERR(SUBR(sdMat_create)(&Rtmp,nrhs,nrhs,NULL,&ierr),ierr);
+PHIST_ICHK_IERR(SUBR(mvec_random)(B,&ierr),ierr);
+PHIST_ICHK_IERR(SUBR(mvec_QR)(B,Rtmp,&ierr),ierr);
+PHIST_ICHK_IERR(SUBR(sdMat_delete)(Rtmp,&ierr),ierr);
+*/
+
 ///////////////////////////////////////////////////////////////////
 // setup and solve via feastCorrectionSolver                     //
 ///////////////////////////////////////////////////////////////////
@@ -279,26 +289,10 @@ int main(int argc, char** argv)
         (&fCorrSolver, mat, CARP_CG, blockSize, nshifts,sigma_r, sigma_i, &ierr),ierr);
 
   int numBlocks=nrhs/blockSize;
-  if (numBlocks*blockSize!=nrhs)
-  {
-    PHIST_SOUT(PHIST_ERROR,"for the moment, nrhs (%d) must be a multiple of blockSize (%d).", 
-    nrhs,blockSize);
-  }
-  for (int blk=0;blk<numBlocks;blk++)
-  {
-    TYPE(mvec_ptr) vB, vX_r[nshifts], vX_i[nshifts];
-    vB=NULL;
-    for (int i=0;i<nshifts;i++)
-    {
-      vX_r[i]=NULL;
-      vX_i[i]=NULL;
-      PHIST_ICHK_IERR(SUBR(mvec_view_block)(X_r[i],&vX_r[i],blk*blockSize,(blk+1)*blockSize-1,&ierr),ierr);
-      PHIST_ICHK_IERR(SUBR(mvec_view_block)(X_i[i],&vX_i[i],blk*blockSize,(blk+1)*blockSize-1,&ierr),ierr);
-    }
-    PHIST_ICHK_IERR(SUBR(mvec_view_block)(B,&vB,blk*blockSize,(blk+1)*blockSize-1,&ierr),ierr);
-    PHIST_ICHK_IERR(SUBR(feastCorrectionSolver_run)
-        (fCorrSolver, vB, tol, maxIter,vX_r, vX_i, &ierr),ierr);
-  }
+
+  PHIST_ICHK_IERR(SUBR(feastCorrectionSolver_run)
+        (fCorrSolver, B, tol, maxIter,X_r, X_i, &ierr),ierr);
+
 ///////////////////////////////////////////////////////////////////
 // compute residuals and error                                   //
 ///////////////////////////////////////////////////////////////////

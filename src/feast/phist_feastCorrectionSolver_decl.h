@@ -28,7 +28,8 @@ typedef TYPE(feastCorrectionSolver) const * TYPE(const_feastCorrectionSolver_ptr
 
 
 //! create a feastCorrectionSolver object. You have to specify the number of rhs 
-//! per shift (blockSize), the number of shifts (numShifts), and the complex shifts
+//! per shift to be treated simultaneously (blockSize), the number of shifts 
+//! (numShifts), and the complex shifts
 void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *fCorrSolver, 
         TYPE(const_crsMat_ptr) A, linSolv_t method,
         int blockSize, int numShifts,
@@ -44,12 +45,15 @@ void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) fCorrSol
 //! arguments:
 //! fCorrSolver    the feastCorrectionSolver object
 //! rhs            rhs of the correction equations, rhs is the same for all
-//!                to shift[i] in create()
+//!                systems corresponding to to shift[i] in create().
 //! tol             desired accuracy (gmres residual tolerance) of the individual systems
 //! maxIter         maximal number of iterations after which individial systems should be aborted
 //! sol             returns approximate solution vectors, sol[i] belongs to shift[i] and rhs
 //! ierr            a value > 0 indicates the number of systems that have not converged to the 
 //!                 desired tolerance
+//!
+//! rhs and sol_r/sol_i must have the same number of columns (vectors), but it does *not* 
+//! need to be identical to the blockSize specified in the create() function.
 void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) fCorrSolver,
                                     TYPE(const_mvec_ptr) rhs,
                                     const _MT_ tol, int maxIter,
