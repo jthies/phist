@@ -18,12 +18,24 @@ public:
     KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
     if (typeImplemented_)
       {
+
+      // we need to somehow initialize the vectors. Here we choose
+      // to do it manually (and not rely on the functions mvec_random
+      // and mvec_put_value provided by the kernel lib).
+      // In order for the tests to work we must get
+      // the data to the GPU if necessary, even if this
+      // functionality has not been tested (strictly speaking).
+      // In SdMat_test we use the provided functions instead, hopefully
+      // the diversity here will lead to a well-covered code in total.
+            
       for (int j=0;j<nvec_;j++)
         for (int i=0;i<nloc_*stride_;i+=stride_)
           {
           vec1_vp_[VIDX(i,j,lda_)]=random_number();
           vec2_vp_[VIDX(i,j,lda_)]=st::one();
           }
+      SUBR(mvec_to_device)(vec1_,&ierr_);
+      SUBR(mvec_to_device)(vec2_,&ierr_);
       }
     }
 
@@ -196,6 +208,8 @@ public:
           vec1_vp_[VIDX(i,j,lda_)]=ilower+i;
         }
       }
+      SUBR(mvec_to_device)(vec1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
       MT expect = 0.0;
       for (int i=0;i<_N_;i++)
       {
@@ -223,7 +237,7 @@ public:
       SUBR(mvec_add_mvec)(alpha,vec1_,beta,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
 
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_,vflag_));
+      ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
       }
     
     }
@@ -274,7 +288,9 @@ public:
           vec1_vp_[VIDX(i,j,lda_)] = alpha[j]*vec1_vp_[VIDX(i,j,lda_)]+beta;
         }
       }
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_,vflag_));
+      SUBR(mvec_to_device)(vec1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
     }
   }
 
@@ -384,6 +400,9 @@ public:
       // set data in the inner view to yet another value
       _ST_ inner_val = st::prand();
       SUBR(mvec_put_value)(view2, inner_val, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      SUBR(mvec_from_device)(vec1_,&ierr_);
       ASSERT_EQ(0,ierr_);
 
       // now use the raw data to verify results
@@ -517,6 +536,10 @@ public:
       ASSERT_EQ(0,ierr_);
 
       SUBR(mvec_vscale)(vec1_,scale,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_from_device)(vec1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_from_device)(vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
       // apply scale to vec2_ by hand
       for(int i = 0; i < nloc_; i++)

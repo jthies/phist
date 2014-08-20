@@ -44,7 +44,7 @@ extern "C" {
 //! returns 0 if the library implements the data type, -99 otherwise.
 void SUBR(type_avail)(int* ierr);
 
-//!   \defgroup crsmat functions concerning sparse matrices (crsMat_t) 
+//!   \defgroup crsmat Sparse matrix functions (crsMat_t) 
 //@{
 //! \name Matrix input from a file
 ///@{
@@ -193,7 +193,7 @@ void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) M, int* ierr);
 
 //@}
 
-//!   \defgroup mvec functions concerning multi-vectors (mvec_t) 
+//!   \defgroup mvec Multi-vector functions (mvec_t) 
 //@{
 
 //! get a new vector that is a view of some columns of the original one.
@@ -238,7 +238,7 @@ void SUBR(mvec_set_block)(TYPE(mvec_ptr) V,
 
 //@}
 
-//!   \defgroup sdmat functions concerning small dense matrices (sdMat_t) 
+//!   \defgroup sdmat Small dense matrix functions (sdMat_t) 
 //@{
 
 //! get a new matrix that is a view of some rows and columns of the original one, 

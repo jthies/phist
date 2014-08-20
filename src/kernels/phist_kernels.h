@@ -15,7 +15,7 @@
 #include "phist_typedefs.h"
 #endif
 
-//! \defgroup kernels (kernel function interface)
+//! \defgroup kernels Kernel function interface
 //@{
 
 //! @file phist_kernels.h
