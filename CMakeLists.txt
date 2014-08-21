@@ -6,9 +6,9 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
 # Define some custom variables
 project(PHIST)
 set(PHIST_VERSION_MAJOR 0)
-set(PHIST_VERSION_MINOR 7)
+set(PHIST_VERSION_MINOR 8)
 set(PHIST_VERSION_PATCH 0)
-#set(PHIST_VERSION_PATCH ${PHIST_VERSION_PATCH}-beta)
+set(PHIST_VERSION_PATCH ${PHIST_VERSION_PATCH}-beta)
 set(PRODUCT_NAME phist-${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
@@ -606,7 +606,7 @@ endif()
 
 # Custom targets: doc, cppcheck, coverage, audit
 # Adding optinal target "doc" to generate Doxygen documentation
-find_package(Doxygen)
+find_package(Doxygen 1.7.0)
 if (DOXYGEN_FOUND)
     add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/phist.doxyfile WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
