@@ -33,6 +33,8 @@ typedef struct TYPE(carp_cgState) {
 
   int ierr; //! error code returned by this CARP-CG instance
 
+  int *conv; //! set to 1 if system j has converged to the required tolerance
+
   //@}
   
   //! \name input data set by constructor
@@ -56,6 +58,7 @@ typedef struct TYPE(carp_cgState) {
   void* aux_; // work arg to carp_sweep (dep. on kernel lib)
   _MT_ omega_;// relaxation parameter
   //@}
+
   //! \name  internal CG data structures
   //@{
   TYPE(mvec_ptr) q_, r_, p_, z_; //! CG helper vectors, one column per RHS
@@ -104,6 +107,9 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
 //! or A and the shift sigma are real, X_i may be NULL. This function
 //! performs up to maxIter CARP-CG steps on each of the numSys linear
 //! systems and returns if all of them have either converged or failed.
+//! Converged systems are 'locked', their x vectors are no longer updated
+//! but for simplicity we keep doing operations like matvecs on them. It
+//! is therefore advisable to not use too many columns per state object.
 void SUBR(carp_cgStates_iterate)(
         TYPE(carp_cgState_ptr) S_array[], int numSys,
         TYPE(mvec_ptr) X_r[], TYPE(mvec_ptr) X_i[],

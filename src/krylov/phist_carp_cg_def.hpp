@@ -24,7 +24,7 @@ void SUBR(private_compResid)(TYPE(const_crsMat_ptr) A, int nvec, _ST_ sigma, _MT
 
 // pretty-print convergence history. nvec=0: print header. nvec=-1: print footer
 void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR, 
-        _MT_ const* normR0, _MT_ const* normB);
+        _MT_ const* normR0, _MT_ const* normB, int const* locked);
 
 // allocate CG vector blocks
 void SUBR(private_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* ierr);
@@ -72,6 +72,8 @@ void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
     state[i]->sigma_i_=sigma_i[i];
     state[i]->nvec_=nvec;
 
+    state[i]->conv = new int[nvec];
+    
     state[i]->normR0_= new MT[nvec];
     state[i]->normB_= new MT[nvec];
     state[i]->normR= new MT[nvec];
@@ -89,6 +91,7 @@ void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
 
     for (int j=0;j<nvec;j++)
     {
+      state[i]->conv[j]=0;
       state[i]->normR0_[j]=-mt::one(); // not initialized
       state[i]->normB_[j]=-mt::one(); // not initialized
       state[i]->normR[j]=-mt::one(); // not initialized
@@ -152,6 +155,8 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) state[], int numSys, int*
   *ierr=0;
   for (int i=0;i<numSys;i++)
   {
+    delete [] state[i]->conv;
+
     delete [] state[i]->normR0_;
     delete [] state[i]->normB_;
     delete [] state[i]->normR;
@@ -185,6 +190,9 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
 
   if (nvec!=S->nvec_)
   {
+    delete [] S->conv;
+    S->conv= new int[nvec];
+
     delete [] S->normR0_;
     S->normR0_= new MT[nvec];
     
@@ -204,6 +212,7 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
 
   for (int i=0; i<nvec; i++)
   {
+    S->conv[i]=0;
     S->normR0_[i]=-mt::one(); // needs to be computed in next iterate call
   }
   if (normsB==NULL)
@@ -220,17 +229,18 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
   return;
 }
 
-// implementation of pcg on several systems with multiple RHS each
+// implementation of pcg on several systems with multiple RHS each.
+//
 void SUBR(carp_cgStates_iterate)(
         TYPE(carp_cgState_ptr) S_array[], int numSys,
         TYPE(mvec_ptr) X_r[], TYPE(mvec_ptr) X_i[],
-        _MT_ tol, int maxIter, 
+        _MT_ tol, int maxIter,
         int* ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr = 0;
-
+  
   // some internal settings  
 
   // how often to print the current impl. residual norms
@@ -277,7 +287,14 @@ if (numSys>0)
     TYPE(const_mvec_ptr) b=S->b_;
     TYPE(mvec_ptr) x=X_r[ishift];
     TYPE(mvec_ptr) xi=X_i[ishift];
-    
+
+  // could be used for premature termination of the loop,
+  // but right now we don't allw the user to do that.
+  int minConv=nvec;
+   
+   if (minConv<=0)   minConv=nvec;
+   if (minConv>nvec) minConv=nvec;
+ 
     int nvecX,nvecB;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(b,&nvecB,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x,&nvecX,ierr),*ierr);
@@ -322,6 +339,8 @@ if (numSys>0)
     ST* alpha=S->alpha_;
     MT* alpha_i=S->alpha_i_;
     MT* beta=S->beta_;
+    
+    int *conv=S->conv;
 
     int numConverged=0;
 
@@ -353,8 +372,8 @@ if (numSys>0)
     MT reltol2[nvec];
     for (int j=0;j<nvec;j++)
     {
-      //reltol2[j]=tol*tol*S->normR[j];
-      reltol2[j]=tol*tol*S->normB_[j]*S->normB_[j];
+      reltol2[j]=tol*tol*S->normR[j];
+      reltol2[j]=std::max(reltol2[j],tol*tol*S->normB_[j]*S->normB_[j]);
     }
 
     // initial Kaczmarz/CARP sweep. Note that our function carp_sweep operates
@@ -396,8 +415,8 @@ if (numSys>0)
     if (itprint>0)
     {
       // print header
-      SUBR(private_printResid)(0,0,NULL,NULL,NULL);
-      SUBR(private_printResid)(0,nvec,r2_new,S->normR0_,S->normB_);
+      SUBR(private_printResid)(0,0,NULL,NULL,NULL,NULL);
+      SUBR(private_printResid)(0,nvec,r2_new,S->normR0_,S->normB_,S->conv);
     }
     for (int it=1;it<maxIter; it++)
     {
@@ -434,10 +453,11 @@ if (numSys>0)
       PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,alpha,alpha_i,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(private_dotProd)(p,pi,q,qi,nvec,denom,denom_i,ierr),*ierr);
       MT minus_alpha_i[nvec];
+      // stop updating x if the system is already converged (1-conv[j])
 #ifdef IS_COMPLEX
         for (int j=0;j<nvec;j++)
         {
-          alpha[j]=alpha[j]/denom[j];
+          alpha[j]=(ST)(1-conv[j])*(alpha[j]/denom[j]);
         }
         // update x <- x + alpha*p
         PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,ierr),*ierr);
@@ -446,7 +466,7 @@ if (numSys>0)
       {
         for (int j=0;j<nvec;j++)
         {
-          alpha[j]=alpha[j]/denom[j];
+          alpha[j]=(ST)(1-conv[j])*(alpha[j]/denom[j]);
         }
         // update x <- x + alpha*p
         PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,ierr),*ierr);
@@ -458,6 +478,7 @@ if (numSys>0)
           CT tmp1(alpha[j],alpha_i[j]);
           CT tmp2(denom[j],denom_i[j]);
           CT tmp3=tmp1/tmp2;
+          tmp1*=(MT)(1-conv[j]);
           alpha[j]=ct::real(tmp3);
           alpha_i[j]    = ct::imag(tmp3);
           minus_alpha_i[j]=-ct::imag(tmp3);
@@ -483,11 +504,12 @@ if (numSys>0)
         {
           if (S->normR[j]<reltol2[j])
           {
+            conv[j]=1;
             numConverged++;
           }
         }
         
-        if ( (it%itprint==0 && itprint>0) || (numConverged==nvec))
+        if ( (it%itprint==0 && itprint>0) || (numConverged>=minConv))
         {
 #ifdef IS_COMPLEX
           ST tmp[nvec];
@@ -498,15 +520,15 @@ if (numSys>0)
 #else
           ST* tmp=S->normR;
 #endif          
-          SUBR(private_printResid)(it, nvec, tmp, S->normR0_, S->normB_);
+          SUBR(private_printResid)(it, nvec, tmp, S->normR0_, S->normB_,S->conv);
         }
         
-        if (numConverged==nvec)
+        if (numConverged>=minConv)
         {
-        // print footer
-        SUBR(private_printResid)(it,-1,NULL,NULL,NULL);
-          numSolved++; 
-          break;
+          // print footer
+          SUBR(private_printResid)(it,-1,NULL,NULL,NULL,NULL);
+            numSolved++; 
+            break;
         }
       }
 
@@ -717,7 +739,7 @@ void SUBR(private_dotProd)(TYPE(const_mvec_ptr) v, TYPE(const_mvec_ptr) vi,
 // print residual info. If we get nvec=0, the input arrays are ignored
 // and a header is printed.
 void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR, 
-        _MT_ const* normR0, _MT_ const* normB)
+        _MT_ const* normR0, _MT_ const* normB, int const* locked)
 {
 #include "phist_std_typedefs.hpp"
   const char* carp_label = "CARP_CG";
@@ -745,18 +767,21 @@ void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR,
     nrmB[0]=normB[min_pos]; nrmB[1]=normB[max_pos];
 
     PHIST_SOUT(PHIST_INFO,"min and max residuals:\n");
-    SUBR(private_printResid)(it,2,nrmR,nrmR0,nrmB);
+    SUBR(private_printResid)(it,2,nrmR,nrmR0,nrmB,(int const*)NULL);
   }
   else
   {
     MT tmp=mt::sqrt(st::real(normR[0]));
-    PHIST_SOUT(PHIST_INFO,"%s %d\t%e\t%e\t%e\n",carp_label,it,
-          tmp,tmp/normB[0],tmp/normR0[0])
+    std::string lock_str="";
+    if (locked!=NULL) lock_str=locked[0]?"(converged)":"";
+    PHIST_SOUT(PHIST_INFO,"%s %d\t%e\t%e\t%e\t%s\n",carp_label,it,
+          tmp,tmp/normB[0],tmp/normR0[0],lock_str.c_str());
     for (int j=1;j<nvec;j++)
     {
+      if (locked!=NULL) lock_str=locked[j]?"(locked)":"";
       MT tmp=mt::sqrt(st::real(normR[j]));
-      PHIST_SOUT(PHIST_INFO,"%s\t\t%e\t%e\t%e\n",carp_label,
-             tmp,tmp/normB[j],tmp/normR0[j]);
+      PHIST_SOUT(PHIST_INFO,"%s\t\t%e\t%e\t%e\t%s\n",carp_label,
+             tmp,tmp/normB[j],tmp/normR0[j],lock_str.c_str());
     }
   }
 }
