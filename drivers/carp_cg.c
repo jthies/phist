@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <math.h>
 
 #include "phist_macros.h"
 #include "phist_enums.h"
@@ -25,6 +26,12 @@ GHOST_REGISTER_DT_D(my_datatype)
 #include "phist_gen_d.h"
 #include "phist_driver_utils.h"
 
+typedef enum {
+FROM_FILE=0,
+GRAPHENE=1,
+ANDERSON=2
+} problem_t;
+
 // This driver routine creates the Graphene Hamiltonian,
 // reads in a number of complex shifts from a textfile, 
 // and attempts to solve some linear systems (sI-A)x=b  
@@ -33,23 +40,24 @@ GHOST_REGISTER_DT_D(my_datatype)
 // later use in FEAST.                                  
 int main(int argc, char** argv)
   {
-     if ( argc < 4 )
+     if ( argc < 3 )
      {
-          PHIST_SOUT(PHIST_ERROR,"Usage: graphene_carp <nx> <ny> <shiftFile> <num vecs>\n"
-                                 "                     <block size> <tol> <maxIter>\n"
-                                 "       where: TODO - document/complete args, for now\n"
-                                 "       please look in the source file %s\n",__FILE__);
-          PHIST_SOUT(PHIST_ERROR,"Alternative: instead of specifying nx and ny, you may \n"
-                                 "             pass in -1 and a file name from which a  \n"
-                                 "             matrix should be read.\n");
+          PHIST_SOUT(PHIST_ERROR,"Usage: carp_cg <problem> <shiftFile> <num vecs>\n"
+                                 "               <block size> <tol> <maxIter>\n"
+                                 "  where: <problem> can either be a filename or\n"
+                                 "           \"graphene<L>\" or \"anderson<L>\"\n"
+                                 "         <shiftFile>: see \"exampleRuns/graphene_shifts.txt\" for an example\n"
+                                 "         etc. all other args get default values if omitted\n");
           exit(0);
      }
 
   int rank, num_proc;
   int i, ierr;
   int verbose;
-  int read_matrix=0;
-  const char* mat_file;
+  problem_t mat_type=FROM_FILE; // 0: read 1: graphene 2: anderson
+
+  const char* problem;
+  int L; // problem size for Graphene (L x L grid) or the Anderson model (L^3 grid)
 
   comm_ptr_t comm;
   
@@ -73,24 +81,48 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&ierr),ierr);
 
   verbose= (rank==0);
+  int iarg=1;
 
-  if (atoi(argv[1])==-1)
-  {
-    read_matrix=1;
-    mat_file=argv[2];
-  }
-  else if (atoi(argv[1])<=0)
-  {
-    PHIST_SOUT(PHIST_ERROR,"nx must be larger than 0 or equal to -1 (for file input). \n"
-               "Run the program without arguments to get a usage message\n");
-    return -1;
-  }
+  // check if the first arg is of the grapheneN or andersonN form,
+  // otherwise try to read a file
+  mat_type=FROM_FILE;
 
-  char* shiftFileName=argv[3];
+  problem = argv[iarg++];
+  if (strlen(problem)>=8)
+  {
+    if (strncmp(problem,"graphene",8)==0)
+    {
+      mat_type=GRAPHENE;
+    }
+    else if (strncmp(problem,"anderson",8)==0)
+    {
+      mat_type=ANDERSON;
+    }
+    if (mat_type!=FROM_FILE)
+    {
+      // make sure all remaining characters are
+      for (int i=8;i<strlen(problem);i++)
+      {
+        if (problem[i]<'0' || problem[i]>'9')
+        {
+          mat_type=FROM_FILE;
+          break;
+        }
+      }
+    }
+    if (mat_type!=FROM_FILE)
+    {
+      const char* strL=problem+8;
+      L=atoi(strL);
+      if (L<0) mat_type=FROM_FILE;
+    }
+  }
   
-  if (argc>=5)
+  char* shiftFileName=argv[iarg++];
+  
+  if (argc>iarg)
   {
-    nrhs=atoi(argv[4]);
+    nrhs=atoi(argv[iarg++]);
   }
   else
   {
@@ -100,9 +132,9 @@ int main(int argc, char** argv)
   // walk through array of vectors in blocks of <blockSize>,
   blockSize=nrhs;
 
-  if (argc>=6)
+  if (argc>iarg)
   {
-    blockSize=atoi(argv[5]);
+    blockSize=atoi(argv[iarg++]);
   }
 
   blockSize=MIN(nrhs,blockSize);
@@ -110,17 +142,17 @@ int main(int argc, char** argv)
  PHIST_SOUT(PHIST_VERBOSE,"Solve with %d rhs/shift and block size %d\n",
         nrhs,blockSize);
   
-  if (argc>=7)
+  if (argc>iarg)
   {
-    tol=atof(argv[6]);
+    tol=atof(argv[iarg++]);
   }
   else
   {
     tol=(MT)1.0e-12;
   }
-  if (argc>=8)
+  if (argc>iarg)
   {
-    maxIter=atoi(argv[7]);
+    maxIter=atoi(argv[iarg++]);
   }
   else
   {
@@ -165,65 +197,41 @@ int main(int argc, char** argv)
   fclose(shiftFile);
 
     // setup matrix
-#ifdef PHIST_KERNEL_LIB_GHOST
-    ghost_context_t * ctx = NULL;
-    ghost_sparsemat_t * mat = NULL;
-#else
     TYPE(crsMat_ptr) mat = NULL;
-#endif
-
-
   
-  if (!read_matrix)
+  if (mat_type==GRAPHENE)
   {
-    //TODO - just use kernel interface crsMat_fromRowFunc instead
+    PHIST_SOUT(PHIST_INFO,"problem type: Graphene %d x %d\n",L,L);
     ghost_idx_t WL[2];
-    WL[0] = atoi(argv[1]);;
-    WL[1] = atoi(argv[2]);
+    WL[0] = L;
+    WL[1] = L;
   
     ghost_idx_t DIM = WL[0]*WL[1];
     matfuncs_info_t info;
     crsGraphene( -2, WL, NULL, NULL);
     crsGraphene( -1, NULL, NULL, &info);
 
-#ifdef PHIST_KERNEL_LIB_FORTRAN
     PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,
         info.nrows, info.ncols, info.row_nnz,
         (void(*)(ghost_idx_t,ghost_idx_t*,ghost_idx_t*,void*))&crsGraphene, &ierr), ierr);
-#elif defined(PHIST_KERNEL_LIB_GHOST)
-    if ( my_datatype != info.datatype)
-    {
-      printf("error: datatype does not match\n");
-      exit(0);
-    }
+  }
+  else if (mat_type==ANDERSON)
+  {
+    PHIST_SOUT(PHIST_INFO,"problem type: Anderson %d x %d %d\n",L,L,L);
+    ghost_idx_t LL=L;
+  
+    matfuncs_info_t info;
+    anderson( -2, &LL, NULL, NULL);
+    anderson( -1, NULL, NULL, &info);
 
-    ghost_error_t err=ghost_context_create(&ctx, info.nrows ,
-        info.ncols,GHOST_CONTEXT_DEFAULT,NULL,0,MPI_COMM_WORLD,1.);
-    if (err!=GHOST_SUCCESS)
-    {
-      PHIST_OUT(PHIST_ERROR,"error returned from createContext (file %s, line %d)",__FILE__,__LINE__);
-    }
-
-    ghost_sparsemat_traits_t mtraits = GHOST_SPARSEMAT_TRAITS_INITIALIZER;
-    mtraits.datatype = my_datatype;
-    ghost_sparsemat_create(&mat,ctx,&mtraits,1);
-    ghost_sparsemat_src_rowfunc_t src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
-    src.func = &crsGraphene;
-
-    src.maxrowlen = info.row_nnz;
-    mat->fromRowFunc(mat, &src);
-    char *str;
-    ghost_sparsemat_string(&str,mat);
-    printf("%s\n",str);
-    free(str); str = NULL;
-#else
-    PHIST_SOUT(PHIST_ERROR,"this driver is only available for the fortran and ghost kernel libs\n");
-    exit(-1);
-#endif
+    PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,
+        info.nrows, info.ncols, info.row_nnz,
+        (void(*)(ghost_idx_t,ghost_idx_t*,ghost_idx_t*,void*))&anderson, &ierr), ierr);
   }
   else
   {
-    PHIST_ICHK_IERR(SUBR(crsMat_read)(&mat,mat_file,&ierr),ierr);
+    PHIST_SOUT(PHIST_INFO,"read matrix from file '%s'\n",problem);
+    PHIST_ICHK_IERR(SUBR(crsMat_read)(&mat,(char*)problem,&ierr),ierr);
   }
   
   PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(mat, &map,&ierr),ierr);

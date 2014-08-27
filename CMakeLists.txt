@@ -448,17 +448,14 @@ if  (PHIST_HAVE_GHOST)
 
   add_executable(phist_spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
   add_executable(phist_spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
-  add_executable(phist_graphene_carp ${PROJECT_SOURCE_DIR}/drivers/graphene_carp.c ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
-#  add_executable(phist_graphene_carp_as_ghost_task ${PROJECT_SOURCE_DIR}/drivers/graphene_carp_as_ghost_task.c ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
+  add_executable(phist_carp_cg ${PROJECT_SOURCE_DIR}/drivers/carp_cg.c ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
   target_link_libraries(phist_spinChain ${ESSEX-PHYSICS_LIBRARIES})
   target_link_libraries(phist_spinChain_subspacejada ${ESSEX-PHYSICS_LIBRARIES})
-  target_link_libraries(phist_graphene_carp ${ESSEX-PHYSICS_LIBRARIES})
-#  target_link_libraries(phist_graphene_carp_as_ghost_task ${ESSEX-PHYSICS_LIBRARIES})
+  target_link_libraries(phist_carp_cg ${ESSEX-PHYSICS_LIBRARIES})
   foreach(lib ${PHIST_LIBS})
     target_link_libraries(phist_spinChain ${lib})
     target_link_libraries(phist_spinChain_subspacejada ${lib})
-    target_link_libraries(phist_graphene_carp ${lib})
-#    target_link_libraries(phist_graphene_carp_as_ghost_task ${lib})
+    target_link_libraries(phist_carp_cg ${lib})
   endforeach()
   install(TARGETS phist_spinChain RUNTIME DESTINATION bin)
   install(TARGETS phist_spinChain_subspacejada RUNTIME DESTINATION bin)
@@ -471,22 +468,17 @@ elseif(PHIST_KERNEL_LIB STREQUAL "fortran")
   add_executable(phist_spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp
                                         ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c
                                         ${PROJECT_SOURCE_DIR}/drivers/matfuncs/SpinChainSZ.c)
-  add_executable(phist_graphene_carp ${PROJECT_SOURCE_DIR}/drivers/graphene_carp.c
-                                        ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c
-                                        ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c)
-  add_executable(phist_graphene_carp_as_ghost_task ${PROJECT_SOURCE_DIR}/drivers/graphene_carp_as_ghost_task.c
+  add_executable(phist_carp_cg ${PROJECT_SOURCE_DIR}/drivers/carp_cg.c
                                         ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c
                                         ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c)
   foreach(lib ${PHIST_LIBS})
     target_link_libraries(phist_spinChain ${lib})
     target_link_libraries(phist_spinChain_subspacejada ${lib})
-    target_link_libraries(phist_graphene_carp ${lib})
-    target_link_libraries(phist_graphene_carp_as_ghost_task ${lib})
+    target_link_libraries(phist_carp_cg ${lib})
   endforeach()
   install(TARGETS phist_spinChain RUNTIME DESTINATION bin)
   install(TARGETS phist_spinChain_subspacejada RUNTIME DESTINATION bin)
-  install(TARGETS phist_graphene_carp RUNTIME DESTINATION bin)
-  install(TARGETS phist_graphene_carp_as_ghost_task RUNTIME DESTINATION bin)
+  install(TARGETS phist_carp_cg RUNTIME DESTINATION bin)
 endif()
 
 install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phist-targets LIBRARY DESTINATION lib)
