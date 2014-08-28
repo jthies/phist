@@ -778,7 +778,7 @@ void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR,
           tmp,tmp/normB[0],tmp/normR0[0],lock_str.c_str());
     for (int j=1;j<nvec;j++)
     {
-      if (locked!=NULL) lock_str=locked[j]?"(locked)":"";
+      if (locked!=NULL) lock_str=locked[j]?"(converged)":"";
       MT tmp=mt::sqrt(st::real(normR[j]));
       PHIST_SOUT(PHIST_INFO,"%s\t\t%e\t%e\t%e\t%s\n",carp_label,
              tmp,tmp/normB[j],tmp/normR0[j],lock_str.c_str());

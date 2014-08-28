@@ -215,7 +215,8 @@ else()
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp)
 endif()
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c
-                        ${PROJECT_SOURCE_DIR}/src/tools/phist_rcp_helpers.cpp)
+                        ${PROJECT_SOURCE_DIR}/src/tools/phist_rcp_helpers.cpp
+                        ${PROJECT_SOURCE_DIR}/src/tools/phist_driver_utils.c)
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp)
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
@@ -470,7 +471,8 @@ elseif(PHIST_KERNEL_LIB STREQUAL "fortran")
                                         ${PROJECT_SOURCE_DIR}/drivers/matfuncs/SpinChainSZ.c)
   add_executable(phist_carp_cg ${PROJECT_SOURCE_DIR}/drivers/carp_cg.c
                                         ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c
-                                        ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c)
+                                        ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c
+                                        ${PROJECT_SOURCE_DIR}/drivers/matfuncs/anderson.c)
   foreach(lib ${PHIST_LIBS})
     target_link_libraries(phist_spinChain ${lib})
     target_link_libraries(phist_spinChain_subspacejada ${lib})

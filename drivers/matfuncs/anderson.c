@@ -1,5 +1,7 @@
 #include "matfuncs.h"
-
+#ifdef WRITE_MATRIX
+#include <mpi.h>
+#endif
 #ifndef anderson_L
 #define anderson_L 16.5
 #endif
@@ -49,16 +51,22 @@ if (kk<0) kk+=nz;
   return (kk*ny+jj)*nx+ii;
 }
 
-int anderson( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *vals){
+int anderson( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals){
 
-	static ghost_idx_t nx = 4 ;
-	ghost_idx_t ny=nx;
-	ghost_idx_t nz=nx;
-	ghost_idx_t N = nx*ny*nz;
+	static ghost_lidx_t nx = 0 ;
+	ghost_lidx_t ny=nx;
+	ghost_lidx_t nz=nx;
+	ghost_gidx_t N = nx*ny*nz;
 
-	ghost_idx_t           max_row_nnz  = 7;
+	ghost_lidx_t           max_row_nnz  = 7;
 
-
+#ifdef WRITE_MATRIX
+        int me;
+        MPI_Comm_rank(MPI_COMM_WORLD,&me);
+        char fname[8];
+        sprintf(fname,"mat%d.txt",me);
+        FILE* deb=fopen(fname,"a");
+#endif
         if ((row >-1 ) && (row <N)){       //  defined output -- write entries of #row in *cols and *vals
 	                                   //                    return number of entries
                 double * dvals = vals;
@@ -78,6 +86,19 @@ int anderson( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *vals){
                 dvals[i]=-1; cols[i++]=ijk2gid(nx,ny,nz,ii,jj,kk+1);
                 dvals[i]=-1; cols[i++]=ijk2gid(nx,ny,nz,ii,jj,kk-1);
                 *nnz = i;
+#ifdef WRITE_MATRIX
+        for (i=0;i<*nnz;i++)
+        {
+          fprintf(deb,"%d %d %24.16e\n",(int)row,(int)cols[i],dvals[i]);
+          if (cols[i]<0 || cols[i]>=N)
+          {
+            fprintf(stdout,"proc %d, global row %d: column index %d found\n",me,row,cols[i]);
+            fflush(stdout);
+          }
+        }
+                
+	fclose(deb);
+#endif
         return 0;
         }
 
@@ -95,16 +116,21 @@ int anderson( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *vals){
 
 		info->hermit    =  1;
 		info->eig_info  =  0;
-
+#ifdef WRITE_MATRIX
+                fprintf(deb,"%ld %ld %ld\n",N,N,N*7);
+   		fclose(deb);
+#endif
 		return 0;
 	}else if ( row == -2) 
 	{
 		nx = nnz[0];
 		ny = nx;
 		nz = nx;
-
-		//printf("W,L = %d, %d\n",W,L);
-		//printf("nnz = %d\n",max_row_nnz);
+#ifdef WRITE_MATRIX
+                fprintf(deb,"MatrixMarket matrix coordinate real general");
+                fprintf(deb,"%Anderson model, %dx%dx%d\n",nx,ny,nz);
+		fclose(deb);
+#endif
 		return 0;
 	}
 

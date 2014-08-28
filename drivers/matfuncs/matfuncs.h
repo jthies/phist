@@ -10,6 +10,8 @@
 #include <ghost.h>
 #else
 typedef int64_t ghost_idx_t;
+typedef int64_t ghost_gidx_t;
+typedef int64_t ghost_lidx_t;
 #define PRIDX "PRId64"
 // just dummy values, simply ignored!
 #define GHOST_SPARSEMAT_SYMM_GENERAL 0x1
