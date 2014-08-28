@@ -25,4 +25,19 @@ typedef TYPE(const_op_ptr) const_op_ptr_t;
 //! and calls the appropriate kernel routine to read the matrix
 void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, char* filename, int* ierr);
 
+//! quick matrix generation routine
+
+//! generate a test matrix described by a string. Currently this
+//! is only implemented in real double precision (D), in which case
+//! we support "graphene<L>" (an L x L graphene problem) or "anderson<L>"
+//! (an L x L x L Anderson model problem with periodic BC). Any other string
+//! is assumed to be a matrix filename and passed to crsMat_read, which recognizes
+//! files ending on '.mm', '.bin' or '.rua'.
+//!
+//! Example: phist_Dcreate_matrix(&A, "anderson42",&ierr) will generate the Anderson
+//! model problem on a 42^3 grid, whereas the string "anderson42.mm" will be interpreted
+//! as a filename.
+void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const char* problem, int* ierr);
+
+
 #endif
