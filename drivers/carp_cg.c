@@ -218,7 +218,17 @@ int main(int argc, char** argv)
   
   // x_r = 1/sig_i(A-sig_r I)x_i
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_r[0]/sigma_i[0],X_i_ex0,0.0,X_r_ex0,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(1.0/sigma_i[0],mat,X_i_ex0,1.0,X_r_ex0,&ierr),ierr);
+  if (sigma_i[0]!=(MT)0.0)
+  {
+    PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(1.0/sigma_i[0],mat,X_i_ex0,1.0,X_r_ex0,&ierr),ierr);
+  }
+  else
+  {
+    TYPE(mvec_ptr) tmp = X_i_ex0;
+    X_i_ex0=X_r_ex0;
+    X_r_ex0=tmp;
+    PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_i_ex0,0.0,&ierr),ierr);
+  }
   
   // compute rhs B to match this exact solution for sigma[0]:
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_r[0],X_r_ex0,0.0,B,&ierr),ierr);
