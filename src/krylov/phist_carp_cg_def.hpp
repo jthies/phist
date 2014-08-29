@@ -255,7 +255,7 @@ void SUBR(carp_cgStates_iterate)(
                   // res norm is based on the carp operator, and I'm not
                   // sure how much sense it would make to use it as an
                   // indication of convergence.
-
+  itcheck=std::min(itcheck,maxIter);
   int numSolved=0;
   TYPE(mvec_ptr) bnul=NULL; // we can just pass in b=NULL if all entries for a carp_sweep
                             // are 0 (during CG iteration), for clarity we give it a name
