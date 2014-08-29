@@ -464,6 +464,10 @@ install(TARGETS phist_tools EXPORT phist-targets LIBRARY DESTINATION lib)
 install(TARGETS phist_core EXPORT phist-targets LIBRARY DESTINATION lib)
 install(TARGETS phist_solvers EXPORT phist-targets LIBRARY DESTINATION lib)
 
+if (NOT ESSEX-PHYSICS_FOUND)
+  install(TARGETS phist_matfuncs EXPORT phist-targets LIBRARY DESTINATION  lib)
+endif()
+
 install(FILES ${PROJECT_BINARY_DIR}/phist_config.h DESTINATION include/phist)
 
 file(GLOB PHIST_HEADERS ${CMAKE_SOURCE_DIR}/src/*/*.h ${CMAKE_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/phist_typedefs.h)
