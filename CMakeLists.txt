@@ -74,7 +74,7 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
   set (CMAKE_Fortran_FLAGS "-openmp -fpp -mkl")
   set (CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS} -O3 -xHOST -no-prec-div")
-  set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -check all -warn all -debug -traceback -DTESTING")
+  set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -check all -debug -traceback -DTESTING")
 
   # for ipo
   # melven: probably not useful or even dangerous?

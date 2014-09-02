@@ -417,7 +417,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) V,
 //! in ghost and how the test problems in essex/physics are defined.
 void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, 
         gidx_t nrows, gidx_t ncols, lidx_t maxnne, 
-        void (*rowFunPtr)(ghost_gidx_t,ghost_gidx_t*,ghost_lidx_t*,void*), int *ierr);
+        int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int *ierr);
 
 // TODO: make these compulsory
 #ifdef PHIST_KERNEL_LIB_FORTRAN

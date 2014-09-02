@@ -14,6 +14,7 @@ extern "C" void colpack_v1_0_8(int nrows, int64_t* row_ptr, int64_t* nonlocal_pt
         int* ncolors, int* colors, int dist, int idx_base, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
+  *ierr=0;
 #ifndef PHIST_HAVE_COLPACK
   PHIST_SOUT(PHIST_ERROR,"%s not implemented, ColPack not available.\n"
                          "(file %s, line %d)\n",
@@ -82,9 +83,11 @@ int verbose=2;
 #else
 int verbose=1;
 #endif
-#ifdef TESTING
+#ifdef TESTING__disabled_because_of_issue_67
+    PHIST_SOUT(PHIST_VERBOSE,"thoroughly test local dist-2 coloring\n");
     PHIST_CHK_IERR(*ierr=GC->CheckDistanceTwoColoring(verbose),*ierr);
 #else
+    PHIST_SOUT(PHIST_VERBOSE,"quickly test local dist-2 coloring\n");
     PHIST_CHK_IERR(*ierr=GC->CheckQuickDistanceTwoColoring(verbose),*ierr);
 #endif
   }
@@ -102,6 +105,9 @@ int verbose=1;
   {
     colors[i]=colorVec[i];
   }
+
+PHIST_SOUT(PHIST_VERBOSE,"number of local colors (rank 0): %d\n",*ncolors);
+
   delete GC;
   return;
 #endif

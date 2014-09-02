@@ -15,11 +15,11 @@
 #define D_AC  (1.5*graphene_a_unit)
 #endif
 
-int crsGraphene( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *vals){
+int crsGraphene( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals){
 
-	static ghost_idx_t L = 4 ;
-	static ghost_idx_t W = 4 ;
-	ghost_idx_t N = L*W;
+	static ghost_gidx_t L = 4 ;
+	static ghost_gidx_t W = 4 ;
+	ghost_gidx_t N = L*W;
 
 	static int32_t zigzag_first         = 1;
 	static int32_t long_range_hopping   = 1;
@@ -39,18 +39,18 @@ int crsGraphene( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *val
 	static double t2 = -0.1/2.78;;
 	static double t3 = -0.095/2.78;
 
-	ghost_idx_t           max_row_nnz  = 4 ;
+	ghost_gidx_t           max_row_nnz  = 4 ;
 	if(long_range_hopping) max_row_nnz += 9 ;
 
 
 	if ((row >-1 ) && (row <N)){       //  defined output -- write entries of #row in *cols and *vals
 	                                   //                    return number of entries
 		double * dvals = vals;
-		ghost_idx_t i = 0 ;
+		ghost_gidx_t i = 0 ;
 
 
-		ghost_idx_t w = row%W;
-		ghost_idx_t l = row/W;
+		ghost_gidx_t w = row%W;
+		ghost_gidx_t l = row/W;
 
 		int32_t   uplink = (int32_t)( (l+w+basis_place  )& 1  );
 		
@@ -177,11 +177,11 @@ int crsGraphene( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *val
 		//else{
 			// todo  !zigzag_first    }
 
-		ghost_idx_t j;
-		if( i>max_row_nnz ) printf("corrupt max_row_nnz for row %"PRIDX"   nnz = %"PRIDX" \n",row, i);
-		for( j=0;j<i;j++ ) if( (cols[j]<0) || (cols[j]>=N) ) printf("corrupt col_idx in row %"PRIDX"    (w,l) =(%"PRIDX",%"PRIDX") : col[%"PRIDX"] = %"PRIDX"\n", row, w,l, j, cols[j]);
+		ghost_gidx_t j;
+		if( i>max_row_nnz ) printf("corrupt max_row_nnz for row %" PRGIDX "   nnz = %" PRGIDX " \n",row, i);
+		for( j=0;j<i;j++ ) if( (cols[j]<0) || (cols[j]>=N) ) printf("corrupt col_idx in row %"PRGIDX"    (w,l) =(%"PRGIDX",%"PRGIDX") : col[%"PRGIDX"] = %"PRGIDX"\n", row, w,l, j, cols[j]);
 
-		*nnz = i;
+		*nnz = (ghost_lidx_t)i;
 		return 0;
 	}
 
@@ -212,8 +212,8 @@ int crsGraphene( ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *val
 		return 0;
 	}else if ( row == -3) {
 		double * dvals = vals;
-		W     = (ghost_idx_t)(dvals[0]/D_ZZ);
-		L     = (ghost_idx_t)(dvals[1]/D_AC);
+		W     = (ghost_gidx_t)(dvals[0]/D_ZZ);
+		L     = (ghost_gidx_t)(dvals[1]/D_AC);
 		L += L&1;
 		W += W&1;
 		

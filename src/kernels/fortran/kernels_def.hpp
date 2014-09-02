@@ -444,13 +444,14 @@ void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, i
 
 void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, 
         gidx_t nrows, gidx_t ncols, lidx_t maxnne, 
-                void (*rowFunPtr)(ghost_gidx_t,ghost_gidx_t*,ghost_lidx_t*,void*), int 
-                *ierr)
+                int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), 
+                int *ierr)
 {
   ENTER_FCN(__FUNCTION__);
   void SUBR(crsMat_create_fromRowFunc_f)(TYPE(crsMat_ptr)*, gidx_t, gidx_t, 
-  lidx_t, void (*)(ghost_gidx_t,ghost_gidx_t*,ghost_lidx_t*,void*), int*);
-  PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc_f)(A, nrows, ncols, maxnne, rowFunPtr, ierr), *ierr);
+  lidx_t, void (*)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int*);
+  PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc_f)(A, nrows, ncols, maxnne, 
+        (void(*)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*))rowFunPtr, ierr), *ierr);
 }
 
 #include "../kernels_nogpu.c"

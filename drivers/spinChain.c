@@ -128,17 +128,17 @@ int main(int argc, char** argv)
   TYPE(crsMat_ptr) mat = NULL;
 #endif
 
-  ghost_idx_t DIM;
-  ghost_idx_t conf_spinZ[3] = {nSpins,nSpins/2,0};
-  SpinChainSZ( -2, &DIM, conf_spinZ, NULL);
+  ghost_gidx_t DIM;
+  ghost_lidx_t conf_spinZ[3] = {nSpins,nSpins/2,0};
+  SpinChainSZ( -2, conf_spinZ, &DIM, NULL);
 
 
   matfuncs_info_t info;
-  SpinChainSZ( -1, NULL, NULL, &info);
+  SpinChainSZ( (ghost_gidx_t)-1, NULL, NULL, &info);
 #ifdef PHIST_KERNEL_LIB_FORTRAN
   PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,
         info.nrows, info.ncols, info.row_nnz,
-        (void(*)(ghost_idx_t,ghost_idx_t*,ghost_idx_t*,void*))&SpinChainSZ, &ierr), ierr);
+        &SpinChainSZ, &ierr), ierr);
 #endif
 
 #ifdef PHIST_KERNEL_LIB_GHOST
