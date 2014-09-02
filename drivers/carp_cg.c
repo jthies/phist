@@ -20,7 +20,6 @@
 #include "ghost.h"
 GHOST_REGISTER_DT_D(my_datatype)
 #endif
-#include "matfuncs.h"
 
 
 #include "phist_gen_d.h"

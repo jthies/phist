@@ -7,21 +7,23 @@ module crsmat_module
   use map_module, only: Map_t, map_setup
   use mvec_module, only: MVec_t, mvec_scale
   implicit none
+
   private
 
+
 #ifndef PHIST_HAVE_GHOST
-  integer, parameter :: G_LIDX_T = C_INT32_T
-  integer, parameter :: G_GIDX_T = C_INT64_T
+#define G_LIDX_T C_INT32_T
+#define G_GIDX_T C_INT64_T
 #else
 #ifdef GHOST_LONGIDX_LOCAL
-  integer, parameter :: G_LIDX_T = C_INT64_T
+#define G_LIDX_T C_INT64_T
 #else
-  integer, parameter :: G_LIDX_T = C_INT32_T
+#define G_LIDX_T C_INT32_T
 #endif
 #ifdef GHOST_LONGIDX_GLOBAL
-  integer, parameter :: G_GIDX_T = C_INT64_T
+#define G_GIDX_T C_INT64_T
 #else
-  integer, parameter :: G_GIDX_T = C_INT32_T
+#define G_GIDX_T C_INT32_T
 #endif
 #endif
 
@@ -90,9 +92,9 @@ module crsmat_module
   abstract interface
     subroutine matRowFunc(row, nnz, cols, vals)
       use, intrinsic :: iso_c_binding
-      integer(C_INT64_T), value :: row
-      integer(C_INT32_T), intent(inout) :: nnz
-      integer(C_INT64_T), intent(inout) :: cols(*)
+      integer(G_GIDX_T), value :: row
+      integer(G_LIDX_T), intent(inout) :: nnz
+      integer(G_GIDX_T), intent(inout) :: cols(*)
       real(C_DOUBLE),     intent(inout) :: vals(*)
     end subroutine matRowFunc
   end interface
@@ -1685,19 +1687,19 @@ end subroutine permute_local_matrix
     use mpi
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
-    integer(G_GIDX_T),     value       :: nrows, ncols
-    integer(G_LIDX_T), value           :: maxnne_per_row
+    integer(kind=C_INT64_T),     value       :: nrows, ncols
+    integer(C_INT32_T), value           :: maxnne_per_row
     type(C_FUNPTR),     value       :: rowFunc_ptr
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(CrsMat_t), pointer :: A
     procedure(matRowFunc), pointer :: rowFunc
     !--------------------------------------------------------------------------------
-    integer(kind=8), allocatable :: idx(:,:)
+    integer(kind=G_GIDX_T), allocatable :: idx(:,:)
     real(kind=8), allocatable :: val(:)
     integer(kind=8) :: i, globalRows, globalCols
     integer(kind=G_GIDX_T) :: j, j_, globalEntries
-    integer(kind=8) :: i_
+    integer(kind=G_GIDX_T) :: i_
     integer(kind=G_LIDX_T) :: nne
     integer :: funit
     integer(kind=8) :: localDim(2), globalDim(2)
@@ -1848,6 +1850,7 @@ if( A%row_map%me .eq. 0 ) then
 end if
 
 #ifdef PHIST_HAVE_COLPACK
+    wtime = mpi_wtime()
     !TODO - make the coloring optional, it only makes sense
     !       for CARP-CG right now
     call colorcrs(A,2,3,ierr)
@@ -1856,6 +1859,11 @@ end if
         write(*,*) 'graph coloring failed'
       end if
       return
+    end if
+    call mpi_barrier(MPI_COMM_WORLD, ierr)
+    wtime = mpi_wtime() - wtime
+    if( A%row_map%me .eq. 0 ) then
+      write(*,*) 'local dist-2 coloring in', wtime, 'seconds'
     end if
 #endif
 

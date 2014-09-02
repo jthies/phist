@@ -95,31 +95,31 @@ void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const char* problem, int* ierr)
   if (mat_type==GRAPHENE)
   {
     PHIST_SOUT(PHIST_INFO,"problem type: Graphene %d x %d\n",L,L);
-    ghost_idx_t WL[2];
+    ghost_lidx_t WL[2];
     WL[0] = L;
     WL[1] = L;
   
-    ghost_idx_t DIM = WL[0]*WL[1];
+    ghost_gidx_t DIM = WL[0]*WL[1];
     matfuncs_info_t info;
     crsGraphene( -2, WL, NULL, NULL);
     crsGraphene( -1, NULL, NULL, &info);
 
     PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc)(mat,
-        info.nrows, info.ncols, info.row_nnz,
-        (void(*)(ghost_idx_t,ghost_idx_t*,ghost_idx_t*,void*))&crsGraphene, ierr), *ierr);
+        (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,
+        &crsGraphene, ierr), *ierr);
   }
   else if (mat_type==ANDERSON)
   {
     PHIST_SOUT(PHIST_INFO,"problem type: Anderson %d x %d %d\n",L,L,L);
-    ghost_idx_t LL=L;
+    ghost_lidx_t LL=L;
   
     matfuncs_info_t info;
     anderson( -2, &LL, NULL, NULL);
     anderson( -1, NULL, NULL, &info);
 
     PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc)(mat,
-        info.nrows, info.ncols, info.row_nnz,
-        (void(*)(ghost_idx_t,ghost_idx_t*,ghost_idx_t*,void*))&anderson, ierr), *ierr);
+        (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,
+        &anderson, ierr), *ierr);
   }
   else
   {
