@@ -25,8 +25,9 @@ mpath2='../test/matrices/graphene/';
 
 matrix_fmt='mm';
 matrices={[mpath2,'128x64/A.mm'],
-          [mpath2,'256x128/A.mm'],
-          [mpath2,'512x256/A.mm']};
+          %[mpath2,'256x128/A.mm'],
+          %[mpath2,'512x256/A.mm']
+          };
 
 %matrix_fmt='mat';
 %matrices={[mpath,'graphen/graphen21x4000.mat'],
@@ -34,10 +35,10 @@ matrices={[mpath2,'128x64/A.mm'],
 %          [mpath,'graphen/graphen21x40000.mat']};
 
 shifts=[
--8.688545543610785e-01+4.622378249881184e-02i
--8.327943188096251e-01+2.328334729055193e-01i
--6.737109172894157e-01+5.028921785737676e-01i
--3.394892641666588e-01+7.109553036523395e-01i
+8.688545543610785e-01+4.622378249881184e-02i
+%-8.327943188096251e-01+2.328334729055193e-01i
+%6.737109172894157e-01+5.028921785737676e-01i
+%3.394892641666588e-01+7.109553036523395e-01i
 ];
 
 %matrix_fmt='mat';
@@ -125,10 +126,28 @@ end % skipGMRES?
 %
 opts.sigma=sigma;
 opts.omega=1.0;
+opts.cfreq=10000;
 opts.tol=tol;
 opts.maxIter=maxIt;
 tic;
-[x3,flag3,relres3,iter3,resvec3,Tlan3] = carp_cg(A, b, x0, opts);
+%b = elem_destr(b);
+%[x3,flag3,relres3,iter1,resvec3,Tlan3] = carp_cg(A, b, x0, opts);
+%opts.cfreq=10;
+%disp('done1');
+[x3,flag3,relres3,iter2,resvec3,Tlan3, c_steps1] = carp_cg2(A, b, x0, opts);
+%opts.cfreq=100;
+%disp('done2');
+%[x3,flag3,relres3,iter3,resvec3,Tlan3, c_steps2] = carp_cg3(A, b, x0, opts);
+%opts.cfreq=10;
+%disp('done3');
+%[x3,flag3,relres3,iter4,resvec3,Tlan3, c_steps3] = carp_cg4(A, b, x0, opts);
+%normal = iter1
+autodetect = [iter2, c_steps1]
+%SS100 = [iter3, c_steps2]
+%SS10 = [iter4, c_steps3]
+%disp('done4');
+%opts.cfreq=2;
+%[x3,flag3,relres3,iter3,resvec3,Tlan3] = carp_cg5(A, b, x0, opts);
 toc
 disp(sprintf('CARP-CG: iters %d, relres %e\n',iter3, relres3));
 disp(sprintf('expl. resid: %e, error %e\n',norm(A*x3-sigma*x3-b),norm(x3-xex)));

@@ -1,4 +1,4 @@
-function [x,flag,relres,iter,resvec, Tlan]=carp_cg(A,b,x0,opts)
+function [x,flag,relres,iter,resvec,Tlan]=carp_cg(A,b,x0,opts)
 %                                                               
 % [x,flag,relres,iter,resvec, Tlan]=carp_cg(A,b,x0,opts)        
 %                                                               
@@ -24,6 +24,10 @@ verbose=getopt(opts,'verbose',true);
 itprint=1;
 itcheck=1;
 
+errormode = false;
+correction_needed = false;
+
+
 flag=0;
 relres=1.0;
 iter = 0; % total iterations
@@ -32,6 +36,7 @@ resvec=[];
 wantT=(nargout>=6);
 n=size(A,1);
 
+cfreq = getopt(opts,'cfreq',100);          %correction frequency
 tol=getopt(opts,'tol',1e-8);
 maxIter=getopt(opts,'maxIter',300);
 omega=getopt(opts,'omega',1.7);
@@ -88,8 +93,7 @@ if (deflMethod~=0)
   %AV= A*V - sigma*V;
   AV=V-dkswp(A,sigma,B,bnul,V,omega,nrm_ai2);
   E=V'*AV;
-end
-
+end  
 
 nrm_b=norm(b);
 nrm_r0=norm(A*x0-sigma*x0-b);
@@ -97,6 +101,7 @@ reltol2=tol*tol*nrm_b*nrm_b;
 
 x=x0;
 r=dkswp(A,sigma,B,b,x,omega,nrm_ai2)-x;
+
 if (deflMethod==2)
   Vtr=V'*r;
   vr=E\Vtr;
@@ -106,6 +111,7 @@ if (deflMethod==2)
   z=z+V*vr;
 else
   z=apply_op(r,M);
+
 end
 p=z;
 
@@ -119,56 +125,153 @@ alpha_old=0;
 beta_old=0;
 
 disp(sprintf('%d\t%e\t%e',0,sqrt(r2_new),sqrt(r2_new)/nrm_b));
-for k=1:maxIter
-  q=p-dkswp(A,sigma,B,bnul,p,omega,nrm_ai2);
-  alpha = (r'*z)/(p'*q);
-  x=x+alpha*p;
-  if (mod(k-1,itcheck)==0)
-    nrm_r = norm(A*x-sigma*x-b);
-    if (mod(k-1,itprint)==0)
-      disp(sprintf('%d\t%e\t%e',k,nrm_r,nrm_r/nrm_b));
-    end
-    relres=nrm_r/nrm_b;
-    resvec=[resvec,nrm_r];
-    if (nrm_r<tol*nrm_r0)
-      break;
-    end
-  end
-  r=r-alpha*q;
-  if (deflMethod==2)
-    Vtr=V'*r;
-    vr=E\Vtr;
-    rtil=r-AV*(vr);
-    z=apply_op(rtil,M);
-    z=z-AV*(E\(V'*z));
-    z=z+V*vr;
-  else
-    z=apply_op(r,M);
-  end
-  r2_old=r2_new;
-  r2_new=r'*z;
-  beta=r2_new/r2_old;
-  p=z+beta*p;
+for k=1:maxIter 
+  if((mod(k,cfreq) == 0) | (correction_needed==true))   %self stabilizing carp-cg, cfreq = correction frequency    
+  %if(0)                              
+    q = p-dkswp(A,sigma,B,bnul,p,omega,nrm_ai2);
+    r=dkswp(A,sigma,B,b,x,omega,nrm_ai2)-x;
+    alpha = (r'*p)/(p'*q);
+    x=x+alpha*p;
 
-  if (deflMethod==1)
-    p = p - V*(AV'*z);
-  end
-  relres=sqrt(r2_old)/nrm_b;
-  %fprintf('\t%d\t%e\n',k,relres);
-  %if (r2_old<reltol2) 
-  %  break;
-  %end
-  if (wantT)
-    lanD0=[lanD0;1/alpha];
-    lanD1=[lanD1;sqrt(beta)/alpha];
-    if (k>1)
-      lanD0(k) = lanD0(k)+beta_old/alpha_old;
+    if (mod(k-1,itcheck)==0)
+      nrm_r = norm(A*x-sigma*x-b);
+       if (mod(k-1,itprint)==0)
+        disp(sprintf('%d\t%e\t%e\t%e\t%e',k,nrm_r,nrm_r/nrm_b,nrm_r-tol*nrm_r0,nrm_r0));
+      end
+      relres=nrm_r/nrm_b;
+      resvec=[resvec,nrm_r];
+
+      if (nrm_r<=tol*nrm_r0)
+        save residuum_100p.txt resvec -ASCII;
+        break;
+      end
     end
-    alpha_old=alpha;
-    beta_old=beta;
+    r=r-alpha*q;
+
+    if (deflMethod==2)
+      Vtr=V'*r;
+      vr=E\Vtr;
+      rtil=r-AV*(vr);
+      z=apply_op(rtil,M);
+      z=z-AV*(E\(V'*z));
+      z=z+V*vr;
+    else
+      z=apply_op(r,M);
+    end
+    r2_old=r2_new;
+    r2_new=r'*z;
+    beta = -(r'*q)/(p'*q);
+    p = r + beta*p;
+
+    if (deflMethod==1)
+      p = p - V*(AV'*z);
+    end
+    relres=sqrt(r2_old)/nrm_b;
+
+   if (wantT)
+      lanD0=[lanD0;1/alpha];
+      lanD1=[lanD1;sqrt(beta)/alpha];
+      if (k>1)
+        lanD0(k) = lanD0(k)+beta_old/alpha_old;
+      end
+      alpha_old=alpha;
+      beta_old=beta;
+    end
+  else                                                 %normal carp-cg                                                                 
+    q=p-dkswp(A,sigma,B,bnul,p,omega,nrm_ai2);
+
+    %provoke pseudo-random error
+    if errormode
+      q = elem_destr(q);     %endless loop
+    end
+
+    alpha = (r'*z)/(p'*q);
+    x=x+alpha*p;
+
+    if (mod(k-1,itcheck)==0)
+      nrm_r = norm(A*x-sigma*x-b);
+      if (mod(k-1,itprint)==0)
+        disp(sprintf('%d\t%e\t%e\t%e',k,nrm_r,nrm_r/nrm_b,nrm_r-tol*nrm_r0));
+      end
+      relres=nrm_r/nrm_b;
+      resvec=[resvec,nrm_r];
+
+      if (nrm_r<tol*nrm_r0)
+        save residuum_100p.txt resvec -ASCII;
+        break;
+      end
+    end
+    r=r-alpha*q;
+
+    %provoke pseudo-random error
+    
+    if errormode
+      for i = 1:10
+        r = elem_destr(r);       %endless loop
+      end
+    end
+
+    if (deflMethod==2)
+      Vtr=V'*r;
+      vr=E\Vtr;
+      rtil=r-AV*(vr);
+      z=apply_op(rtil,M);
+      z=z-AV*(E\(V'*z));
+      z=z+V*vr;
+    else
+      z=apply_op(r,M);
+      %provoke pseudo-random error
+      if errormode
+      %for i = 1:100
+        z = elem_destr(z);    %plenty more steps, slows the process a lot
+      %end
+      end
+    end
+    r2_old=r2_new;
+
+    r2_new=r'*z;
+    beta=r2_new/r2_old;
+    p=z+beta*p;
+
+    %provoke pseudo-random error
+    if errormode
+      p = elem_destr(p);    %plenty more time, D0 = 0, E0 = other value
+    end
+
+    if (deflMethod==1)
+      p = p - V*(AV'*z);
+    end
+    relres=sqrt(r2_old)/nrm_b;
+    %fprintf('\t%d\t%e\n',k,relres);
+    %if (r2_old<reltol2) 
+    %  break;
+    %end
+  if (wantT)
+      lanD0=[lanD0;1/alpha];
+      lanD1=[lanD1;sqrt(beta)/alpha];
+
+      %provoke pseudo-random error
+      if errormode
+      %for i = 1:1000
+         lanD1 = elem_destr(lanD1);    %plenty more time, E0 = 0
+      %end
+      end
+      if (k>1)
+        lanD0(k) = lanD0(k)+beta_old/alpha_old;
+
+        %provoke pseudo-random error
+        if errormode
+        %for i = 1:1000
+          lanD0 = elem_destr(lanD0);    %plenty more time, D0 = 0, E0 = other value
+        %end
+        end
+      end
+      alpha_old=alpha;
+      beta_old=beta;
+    end
   end
 end
-iter=k;
+iter=k
 
 if iter>=maxIter
   flag=1;
@@ -182,5 +285,4 @@ if (wantT)
   disp(['E0=',num2str(lanD1(1))]);
 %Tlan=[lanD1, lanD0,[0;lanD1(1:k-1)]];
 end
-
 end
