@@ -1931,6 +1931,8 @@ end if
     else
       ierr = -88
     end if
+    
+    ierr=0
 
     !--------------------------------------------------------------------------------
   end subroutine phist_DcrsMat_get_map
