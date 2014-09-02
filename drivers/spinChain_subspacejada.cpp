@@ -17,7 +17,6 @@
 // ghost/spinChain stuff
 #ifdef PHIST_KERNEL_LIB_GHOST
 #include "ghost.h"
-#include "ghost/util.h"
 extern "C" {
 void init_mtraits(ghost_sparsemat_traits_t* mtraits);
 }

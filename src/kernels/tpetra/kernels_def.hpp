@@ -1032,4 +1032,5 @@ extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* 
 # endif
 #endif
 
-
+//TODO: tpetra supports GPUs, implement the interface
+#include "../kernels_nogpu.c"

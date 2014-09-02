@@ -1,7 +1,7 @@
 #ifndef PHIST_FCN_TRACE_HPP
 #define PHIST_FCN_TRACE_HPP
 
-#ifndef NO_INCLUDES_IN_HEADERS
+#ifndef DOXYGEN
 #include "phist_config.h"
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI

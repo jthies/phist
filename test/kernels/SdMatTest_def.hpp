@@ -51,6 +51,20 @@ public:
       }
     }
 
+  TEST_F(CLASSNAME, upload_download)
+  {
+    // just tests that the upload and download functions return 0
+    // and do not crash.
+    if (typeImplemented_)
+    {
+      SUBR(sdMat_to_device)(mat1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_from_device)(mat1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+    }
+  }
+
+
   // view certain rows and columns of a serial dense matrix,
   // manipulate them and check the original matrix has changed.
   TEST_F(CLASSNAME, view_block)
@@ -71,6 +85,9 @@ public:
       SUBR(sdMat_extract_view)(m1_view,&val_ptr,&lda,&ierr_);
       ASSERT_EQ(0,ierr_);
       ASSERT_EQ(lda,m_lda_);
+
+      SUBR(sdMat_from_device)(mat1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+imin+jmin*lda,val_ptr,imax-imin+1,jmax-jmin+1,lda,stride));
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -88,6 +105,10 @@ public:
       _ST_ val = random_number();
       SUBR(sdMat_put_value)(m1_view,val,&ierr_);
       ASSERT_EQ(0,ierr_);
+
+      SUBR(sdMat_from_device)(mat1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+imin+jmin*lda,val_ptr,imax-imin+1,jmax-jmin+1,lda,stride));
       
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(sdMat_print)(m1_view,&ierr_);
@@ -107,6 +128,9 @@ public:
       _ST_ outer_val = st::rand();
       SUBR(sdMat_put_value)(mat1_,outer_val,&ierr_);
       ASSERT_EQ(0,ierr_);
+      
+      SUBR(sdMat_from_device)(mat1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
 
       // now create a view
       int imin=std::min(3,nrows_-1);
@@ -122,6 +146,9 @@ public:
       SUBR(sdMat_put_value)(view,view_val,&ierr_);
       ASSERT_EQ(0,ierr_);
 
+      SUBR(sdMat_from_device)(mat1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
       // view part of view
       int nrows_view = imax-imin+1;
       int ncols_view = jmax-jmin+1;
@@ -133,11 +160,13 @@ public:
       TYPE(sdMat_ptr) view2 = NULL;
       SUBR(sdMat_view_block)(view, &view2, imin2,imax2,jmin2, jmax2, &ierr_);
       ASSERT_EQ(0,ierr_);
-
+      
       // set data in the inner view to yet another value
       _ST_ inner_val = st::rand();
       SUBR(sdMat_put_value)(view2, inner_val, &ierr_);
       ASSERT_EQ(0,ierr_);
+
+      SUBR(sdMat_from_device)(mat1_,&ierr_);
 
       // now use the raw data to verify results
       for(int i = 0; i < nrows_; i++)
@@ -194,7 +223,7 @@ public:
       SUBR(sdMat_add_sdMat)(st::one(),mat1_,st::zero(),mat2_,&ierr_);
 
       // did the assignment operation above work, M2=M1?
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
+      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat1_,mat2_));
       
       SUBR(sdMat_create)(&m1_copy,imax-imin+1,jmax-jmin+1,comm_,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -213,6 +242,12 @@ public:
       lidx_t lda;
       SUBR(sdMat_extract_view)(m1_copy,&val_ptr,&lda,&ierr_);
       ASSERT_EQ(0,ierr_);
+      
+      SUBR(sdMat_from_device)(mat1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_from_device)(m1_copy,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      
       //note: can't use ArraysEqual here because we (may) have different strides      
       _MT_ maxval=mt::zero();
       for (int i=imin;i<=imax;i++)
@@ -240,7 +275,7 @@ public:
       ASSERT_EQ(true,pointerUnchanged(mat1_,mat1_vp_,m_lda_));
       ASSERT_EQ(true,pointerUnchanged(mat2_,mat2_vp_,m_lda_));
       
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
+      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat1_,mat2_));
 
       // copy back in the changed block
       SUBR(sdMat_set_block)(mat1_,m1_copy,imin,imax,jmin,jmax,&ierr_);
@@ -253,6 +288,8 @@ public:
 #endif      
       
       // check that the corresponding entries have changed
+      SUBR(sdMat_from_device)(mat1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(&mat1_vp_[MIDX(imin,jmin,m_lda_)],imax-imin+1,jmax-jmin+1,m_lda_,stride,val,mflag_));
       }
     }
@@ -269,6 +306,10 @@ public:
       ASSERT_EQ(0,ierr_);
 #endif
 
+      SUBR(sdMat_from_device)(mat1_,&ierr_);
+      SUBR(sdMat_from_device)(mat2_,&ierr_);
+      SUBR(sdMat_from_device)(mat3_,&ierr_);
+
       // subtract matrix product by hand
       for(int i = 0; i < nrows_; i++)
         for(int j = 0; j < ncols_; j++)
@@ -278,6 +319,7 @@ public:
             mat2_vp_[MIDX(i,j,m_lda_)] -= mat1_vp_[MIDX(i,k,m_lda_)]*mat3_vp_[MIDX(k,j,m_lda_)];
           }
         }
+      ASSERT_EQ(0,ierr_);
       // check result
       ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0,mflag_),10*mt::eps());
     }
@@ -304,6 +346,10 @@ public:
       ASSERT_EQ(0,ierr_);
 */
 #endif
+
+      SUBR(sdMat_from_device)(mat1_,&ierr_);
+      SUBR(sdMat_from_device)(mat2_,&ierr_);
+      SUBR(sdMat_from_device)(mat3_,&ierr_);
 
       // subtract matrix product by hand
       for(int i = 0; i < nrows_; i++)

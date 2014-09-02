@@ -161,7 +161,14 @@ ghost_densemat_traits_t phist_default_vtraits()
   vtraits.nrows=0; // get from context
   vtraits.nrowshalo=0; // get from context
   vtraits.nrowspadded=0; // get from context
-  vtraits.flags = (ghost_densemat_flags_t)(GHOST_DENSEMAT_DEFAULT|GHOST_DENSEMAT_HOST|GHOST_DENSEMAT_NO_HALO);
+  // ghost should set these correctly depending on GHOST_TYPE if we set HOST and DEVICE to 0
+  int new_flags =   (int)vtraits.flags;
+      new_flags|=    (int)GHOST_DENSEMAT_NO_HALO;
+      new_flags&=   ~(int)GHOST_DENSEMAT_HOST;
+      new_flags&=   ~(int)GHOST_DENSEMAT_DEVICE;
+  vtraits.flags = (ghost_densemat_flags_t)new_flags;
+
+  ~GHOST_DENSEMAT_DEVICE;
   vtraits.ncols=1;
 #ifdef PHIST_MVECS_ROW_MAJOR
   vtraits.storage=GHOST_DENSEMAT_ROWMAJOR;
@@ -191,7 +198,10 @@ extern "C" void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t
   // we want to create one we need to get the 'map' from the matrix (e.g. the
   // domain map which is the same as the col map in ghost). A RHS vector can
   // be used as LHS, however.
-  map->vtraits_template.flags = GHOST_DENSEMAT_NO_HALO;
+  int new_flags=(int)map->vtraits_template.flags;
+  new_flags |= (int)GHOST_DENSEMAT_NO_HALO;
+  map->vtraits_template.flags=(ghost_densemat_flags_t)new_flags;
+  // ghost should set these correctly depending on GHOST_TYPE if we set HOST and DEVICE to 0
 
   *vmap=(map_ptr_t)(map);
   }

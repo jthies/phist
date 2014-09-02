@@ -1,6 +1,8 @@
 #ifndef PHIST_CONFIG_H
 #define PHIST_CONFIG_H
 
+#cmakedefine PHIST_OUTLEV ${PHIST_OUTLEV}
+
 #cmakedefine PHIST_HAVE_CXX11_LAMBDAS
 #cmakedefine PHIST_HAVE_MPI
 #cmakedefine PHIST_HAVE_SP

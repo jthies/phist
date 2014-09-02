@@ -7,7 +7,7 @@
 #include <mpi.h>
 #endif
 
-#ifndef NO_INCLUDES_IN_HEADERS
+#ifndef DOXYGEN
 #ifdef __cplusplus
 //#include <cinttypes>
 #include <complex>

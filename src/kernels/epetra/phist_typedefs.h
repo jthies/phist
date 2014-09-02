@@ -9,7 +9,7 @@
 
 #ifdef __cplusplus
 
-#ifndef NO_INCLUDES_IN_HEADERS
+#ifndef DOXYGEN
 //#include <cinttypes>
 #include <complex>
 //! single precision complex type
@@ -19,7 +19,7 @@ typedef std::complex<double> d_complex_t;
 
 #else
 
-#ifndef NO_INCLUDES_IN_HEADERS
+#ifndef DOXYGEN
 //#include <inttypes.h>
 #include <complex.h>
 typedef float complex s_complex_t;

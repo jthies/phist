@@ -2,6 +2,9 @@
 #define PHIST_PGMRES_H
 
 #include "phist_config.h"
+
+#ifndef DOXYGEN
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -9,6 +12,8 @@
 #include "phist_operator.h"
 #include "phist_enums.h"
 #include "phist_typedefs.h"
+
+#endif //DOXYGEN
 
 #ifdef __cplusplus
 extern "C" {

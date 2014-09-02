@@ -2,7 +2,10 @@
 #define PHIST_BELOS_OPERATOR_TRAITS_HPP
 
 #include "phist_config.h"
+
 /* needs to be included before system headers for some intel compilers+mpi */
+#ifndef DOXYGEN
+
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
@@ -14,6 +17,12 @@
 #include "phist_ScalarTraits.hpp"
 #include "BelosTypes.hpp"
 #include <BelosOperatorTraits.hpp>
+
+#endif
+
+#endif //DOXYGEN
+
+#ifdef PHIST_HAVE_BELOS
 
 // this file is mostly copied from the Belos Tpetra adapter implementation in Trilinos 11.2.4
 

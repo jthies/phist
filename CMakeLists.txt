@@ -28,13 +28,13 @@ enable_language (C)
 enable_language (CXX)
 enable_language (Fortran)
 
+# output behavior
+set(PHIST_OUTLEV 3 CACHE STRING "PHIST verbosity (default 3, 'VERBOSE')")
 
 ##############################################################################
 # compiler-dependent flags 
 ##############################################################################
 
-set(OUTLEV_DEBUG 5)
-set(OUTLEV_RELEASE 3)
 
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 
@@ -92,21 +92,6 @@ else()
 
 endif ()
 
-
-# append output level to C, C++ and Fortran flags
-# remark(melven): we could also use add_definitions here..
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DPHIST_OUTLEV=${OUTLEV_DEBUG}")
-
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DPHIST_OUTLEV=${OUTLEV_DEBUG}")
-
-set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
-set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELWITHDEBINFO} -DPHIST_OUTLEV=${OUTLEV_RELEASE}")
-set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -DPHIST_OUTLEV=${OUTLEV_DEBUG}")
-
 # try to detect if we can use C++11 Lambdas
 include(CheckCXXSourceCompiles)
 CHECK_CXX_SOURCE_COMPILES("
@@ -154,7 +139,7 @@ if("${PHIST_KERNEL_LIB}" STREQUAL "")
   set(PHIST_KERNEL_LIB $ENV{PHIST_KERNEL_LIB} CACHE STRING "Select underlying kernel libraries for phist (epetra|tpetra|ghost|fortran)")
 endif()
 
-message(STATUS "looking for " ${PHIST_KERNEL_LIB} " ...")
+message(STATUS "kernel lib " ${PHIST_KERNEL_LIB} " ...")
 
 set(LOAD_TRILI_PKG,"")
 if  (PHIST_KERNEL_LIB STREQUAL "epetra")
@@ -186,8 +171,24 @@ find_package(Belos)
 if (${Belos_FOUND})
   list(APPEND LOAD_TRILI_PKG "Belos")
   set(PHIST_HAVE_BELOS 1)
+  message(STATUS "Found belos")
 else()
-  message(STATUS "Belos not found, some functionality will be disabled and return -99 ('not implemented')")
+  message(STATUS "Belos not found.")
+endif()
+
+# even without the essex-physics libs we include certain matfuncs for the
+# test cases SpinSZ and Graphene for testing purposes.
+find_package(ESSEX-PHYSICS CONFIG)
+if (ESSEX-PHYSICS_FOUND)
+  message(STATUS "Found ESSEX-Physics ${ESSEX-PHYSICS_VERSION}")
+
+  include_directories(${ESSEX-PHYSICS_INCLUDE_DIRS})
+
+  link_libraries(${ESSEX-PHYSICS_LIBRARIES})
+else()
+  message(STATUS "ESSEX-Physics not found, willl use supplementary implementation")
+  include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
+  link_libraries(phist_matfuncs)
 endif()
 
 
@@ -230,7 +231,8 @@ else()
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp)
 endif()
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c
-                        ${PROJECT_SOURCE_DIR}/src/tools/phist_rcp_helpers.cpp)
+                        ${PROJECT_SOURCE_DIR}/src/tools/phist_rcp_helpers.cpp
+                        ${PROJECT_SOURCE_DIR}/src/tools/phist_driver_utils.c)
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp)
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
@@ -249,6 +251,7 @@ set (PHIST_FEAST_SOURCE  ${PROJECT_SOURCE_DIR}/src/feast/phist_feastCorrectionSo
 
 
 include_directories(${PROJECT_BINARY_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/src/kernels)
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB})
 include_directories(${PROJECT_SOURCE_DIR}/src/tools)
 include_directories(${PROJECT_SOURCE_DIR}/src/core)
@@ -263,11 +266,13 @@ add_library(phist_kernels_${PHIST_KERNEL_LIB} SHARED ${PHIST_KERNEL_SOURCE})
 add_library(phist_solvers SHARED ${PHIST_KRYLOV_SOURCE} 
                                  ${PHIST_JADA_SOURCE}
                                  ${PHIST_FEAST_SOURCE})
-
-list(APPEND PHIST_LIBS phist_solvers)
-list(APPEND PHIST_LIBS phist_core)
-list(APPEND PHIST_LIBS phist_kernels_${PHIST_KERNEL_LIB})
-list(APPEND PHIST_LIBS phist_tools)
+add_library(phist_matfuncs SHARED ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c
+                                  ${PROJECT_SOURCE_DIR}/drivers/matfuncs/SpinChainSZ.c
+                                  ${PROJECT_SOURCE_DIR}/drivers/matfuncs/anderson.c)
+link_libraries(phist_solvers)
+link_libraries(phist_core)
+link_libraries(phist_kernels_${PHIST_KERNEL_LIB})
+link_libraries(phist_tools)
 
 if(PHIST_KERNEL_LIB STREQUAL "ghost")
   find_package(GHOST REQUIRED CONFIG)
@@ -279,7 +284,7 @@ if (GHOST_FOUND)
   set(PHIST_HAVE_GHOST 1)
   include_directories(${GHOST_INCLUDE_DIRS})
   link_directories(${GHOST_LIBRARY_DIRS})
-  list(APPEND PHIST_LIBS ${GHOST_LIBRARIES})
+  link_libraries(${GHOST_LIBRARIES})
 else()
   message(STATUS "GHOST not found, some functionality will be disabled and return -99 ('not implemented')")
 endif()
@@ -292,7 +297,7 @@ if(PHIST_KERNEL_LIB STREQUAL "fortran")
     set(PHIST_HAVE_PARMETIS On)
     include_directories(${PARMETIS_INCLUDE_DIRS})
     link_directories(${PARMETIS_LIBRARY_DIRS})
-    list(APPEND PHIST_LIBS ${PARMETIS_LIBRARIES})
+    link_libraries(${PARMETIS_LIBRARIES})
     message(STATUS "ParMETIS found, enabled matrix reordering!")
   else()
     message(STATUS "ParMETIS not found, no matrix reordering!")
@@ -310,7 +315,7 @@ if(PHIST_KERNEL_LIB STREQUAL "fortran")
     set(PHIST_HAVE_COLPACK 1)
     include_directories(${COLPACK_INCLUDE_DIRS})
     link_directories(${COLPACK_LIBRARY_DIRS})
-    list(APPEND PHIST_LIBS ${COLPACK_LIBRARIES})
+    link_libraries(${COLPACK_LIBRARIES})
     message(STATUS "ColPack found, enabled matrix coloring!")
   else()
     message(STATUS "ColPack not found, no matrix coloring!")
@@ -323,7 +328,7 @@ if (${LIKWID_Found})
   set(PHIST_HAVE_LIKWID 1)
   include_directories(${LIKWID_INCLUDE_DIRS})
   link_directories(${LIKWID_LIBRARY_DIRS})
-  list(APPEND PHIST_LIBS ${LIKWID_LIBRARIES} -pthread)
+  link_libraries(PHIST_LIBS ${LIKWID_LIBRARIES} -pthread)
   if (${LIKWID_PERFMON})
     message(STATUS "activated Likwid performance monitoring")
     add_definitions(-DLIKWID_PERFMON)
@@ -338,7 +343,14 @@ if( ${PHIST_TIMEMONITOR} )
 endif()
 set(PHIST_TIMEMONITOR_PERLINE Off CACHE BOOL "Gather timing information for each line with a PHIST_CHK_* macro!")
 
+set(INCLUDE_FLAGS "")
+get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+foreach(dir ${dirs})
+  set(INCLUDE_FLAGS "${INCLUDE_FLAGS} -I${dir}")
+endforeach()
+
 configure_file ("${PROJECT_SOURCE_DIR}/src/phist_config.h.in" "${PROJECT_BINARY_DIR}/phist_config.h")
+configure_file ("${PROJECT_SOURCE_DIR}/doc/phist.doxyfile.in" "${PROJECT_BINARY_DIR}/phist.doxyfile")
 
 foreach(PKG ${LOAD_TRILI_PKG})
   find_package(${PKG} REQUIRED)
@@ -348,16 +360,16 @@ foreach(PKG ${LOAD_TRILI_PKG})
     include_directories(${${PKG}_TPL_INCLUDE_DIRS})
     link_directories(${${PKG}_LIBRARY_DIRS})
     link_directories(${${PKG}_TPL_LIBRARY_DIRS})
-    list(APPEND PHIST_LIBS ${${PKG}_LIBRARIES})
-    list(APPEND PHIST_LIBS ${${PKG}_TPL_LIBRARIES})
+    link_libraries(${${PKG}_LIBRARIES})
+    link_libraries(${${PKG}_TPL_LIBRARIES})
   else()
     message(FATAL_ERROR ${PKG} " was not found")
   endif()
 
 endforeach()
 
-list(APPEND PHIST_LIBS ${LAPACK_LIBS})
-list(APPEND PHIST_LIBS ${MPI_CXX_LIBRARIES})
+link_libraries(${LAPACK_LIBS})
+link_libraries(${MPI_CXX_LIBRARIES})
 
 set(GCOVR_EXCLUDES -e src/kernels/kernels_noimpl.c
                    -e src/tools/tools.c)
@@ -423,9 +435,6 @@ foreach (infile ${TG_C_Drivers})
     STRING(TOLOWER \"phist_gen_${tc}.h\" PHIST_TG_HFILE)
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.c)
     add_executable(phist_${tc}${filebase} ${tc}${filebase}.c)
-    foreach(lib ${PHIST_LIBS})
-      target_link_libraries(phist_${tc}${filebase} ${lib})
-    endforeach()
     install(TARGETS phist_${tc}${filebase} RUNTIME DESTINATION bin)
   endforeach()
 endforeach()
@@ -436,70 +445,28 @@ foreach (infile ${TG_CXX_Drivers})
     STRING(TOLOWER \"phist_gen_${tc}.h\" PHIST_TG_HFILE)
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.cpp)
     add_executable(phist_${tc}${filebase} ${tc}${filebase}.cpp)
-    foreach(lib ${PHIST_LIBS})
-      target_link_libraries(phist_${tc}${filebase} ${lib})
-    endforeach()
     install(TARGETS phist_${tc}${filebase} RUNTIME DESTINATION bin)
   endforeach()
 endforeach()
 
-# example drivers implemented in ghost
-if  (PHIST_HAVE_GHOST)
-# TODO - make this somehow general, or probably we should
-#       actually install phist instead and push the spinChain
-#       driver to the essex/examples repo...
-  find_package(ESSEX-PHYSICS REQUIRED CONFIG)
-  message(STATUS "Found ESSEX-Physics ${ESSEX-PHYSICS_VERSION}")
+# example drivers using matfuncs
 
-  include_directories(${ESSEX-PHYSICS_INCLUDE_DIRS})
+add_executable(phist_spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
+add_executable(phist_spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
+add_executable(phist_carp_cg ${PROJECT_SOURCE_DIR}/drivers/carp_cg.c)
 
-  add_executable(phist_spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
-  add_executable(phist_spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
-  add_executable(graphene_carp ${PROJECT_SOURCE_DIR}/drivers/graphene_carp.c ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
-#  add_executable(graphene_carp_as_ghost_task ${PROJECT_SOURCE_DIR}/drivers/graphene_carp_as_ghost_task.c ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
-  target_link_libraries(phist_spinChain ${ESSEX-PHYSICS_LIBRARIES})
-  target_link_libraries(phist_spinChain_subspacejada ${ESSEX-PHYSICS_LIBRARIES})
-  target_link_libraries(graphene_carp ${ESSEX-PHYSICS_LIBRARIES})
-#  target_link_libraries(graphene_carp_as_ghost_task ${ESSEX-PHYSICS_LIBRARIES})
-  foreach(lib ${PHIST_LIBS})
-    target_link_libraries(phist_spinChain ${lib})
-    target_link_libraries(phist_spinChain_subspacejada ${lib})
-    target_link_libraries(graphene_carp ${lib})
-#    target_link_libraries(graphene_carp_as_ghost_task ${lib})
-  endforeach()
-  install(TARGETS phist_spinChain RUNTIME DESTINATION bin)
-  install(TARGETS phist_spinChain_subspacejada RUNTIME DESTINATION bin)
-elseif(PHIST_KERNEL_LIB STREQUAL "fortran")
-# even without the ghost/physics libs we include certain matfuncs for the
-# test cases SpinSZ and Graphene for testing purposes.
-  include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
-  add_executable(phist_spinChain              ${PROJECT_SOURCE_DIR}/drivers/spinChain.c
-                                        ${PROJECT_SOURCE_DIR}/drivers/matfuncs/SpinChainSZ.c)
-  add_executable(phist_spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp
-                                        ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c
-                                        ${PROJECT_SOURCE_DIR}/drivers/matfuncs/SpinChainSZ.c)
-  add_executable(phist_graphene_carp ${PROJECT_SOURCE_DIR}/drivers/graphene_carp.c
-                                        ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c
-                                        ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c)
-  add_executable(phist_graphene_carp_as_ghost_task ${PROJECT_SOURCE_DIR}/drivers/graphene_carp_as_ghost_task.c
-                                        ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c
-                                        ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c)
-  foreach(lib ${PHIST_LIBS})
-    target_link_libraries(phist_spinChain ${lib})
-    target_link_libraries(phist_spinChain_subspacejada ${lib})
-    target_link_libraries(phist_graphene_carp ${lib})
-    target_link_libraries(phist_graphene_carp_as_ghost_task ${lib})
-  endforeach()
-  install(TARGETS phist_spinChain RUNTIME DESTINATION bin)
-  install(TARGETS phist_spinChain_subspacejada RUNTIME DESTINATION bin)
-  install(TARGETS phist_graphene_carp RUNTIME DESTINATION bin)
-  install(TARGETS phist_graphene_carp_as_ghost_task RUNTIME DESTINATION bin)
-endif()
+install(TARGETS phist_spinChain RUNTIME DESTINATION bin)
+install(TARGETS phist_spinChain_subspacejada RUNTIME DESTINATION bin)
+install(TARGETS phist_carp_cg RUNTIME DESTINATION bin)
 
 install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phist-targets LIBRARY DESTINATION lib)
 install(TARGETS phist_tools EXPORT phist-targets LIBRARY DESTINATION lib)
 install(TARGETS phist_core EXPORT phist-targets LIBRARY DESTINATION lib)
 install(TARGETS phist_solvers EXPORT phist-targets LIBRARY DESTINATION lib)
+
+if (NOT ESSEX-PHYSICS_FOUND)
+  install(TARGETS phist_matfuncs EXPORT phist-targets LIBRARY DESTINATION  lib)
+endif()
 
 install(FILES ${PROJECT_BINARY_DIR}/phist_config.h DESTINATION include/phist)
 
@@ -615,7 +582,7 @@ endif()
 # Adding optinal target "doc" to generate Doxygen documentation
 find_package(Doxygen)
 if (DOXYGEN_FOUND)
-    add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cmake/phist.doxyfile WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+    add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/phist.doxyfile WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
 
 # Add optional target "coverage" to genereate code coverage report (console / XML)
@@ -642,8 +609,8 @@ set(CPACK_GENERATOR ZIP)
 #install(FILES "${CMAKE_SOURCE_DIR}/AUTHORS.txt" DESTINATION .)
 #install(FILES "${CMAKE_SOURCE_DIR}/CHANGES.txt" DESTINATION .)
 install(FILES "${CMAKE_SOURCE_DIR}/LICENSE.txt" DESTINATION .)
-install(FILES "${CMAKE_SOURCE_DIR}/README.txt" DESTINATION .)
-if (DOXYGEN_FOUND)
-  install(DIRECTORY "${CMAKE_SOURCE_DIR}/doc/html" DESTINATION doc)
-endif()
+install(FILES "${CMAKE_SOURCE_DIR}/README.md" DESTINATION .)
+#if (DOXYGEN_FOUND)
+#  install(DIRECTORY "${CMAKE_SOURCE_DIR}/doc/html" DESTINATION doc)
+#endif()
 include(CPack)

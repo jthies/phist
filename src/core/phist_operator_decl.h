@@ -1,4 +1,7 @@
 
+//! \defgroup core Core functionality used by algorithms
+//@{
+
 //!\name basic operator concept, "something that only provides Y=alpha*Op*X + beta*Y"
 //@{
 
@@ -27,6 +30,8 @@ void SUBR(op_wrap_crsMat)(TYPE(op_ptr) op, TYPE(const_crsMat_ptr) A, int* ierr);
 
 //! create the identity operator that returns Y=alpha*X+beta*Y
 void SUBR(op_identity)(TYPE(op_ptr) op, int* ierr);
+
+//@}
 
 //@}
 

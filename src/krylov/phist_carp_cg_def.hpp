@@ -7,6 +7,10 @@
 //      compared to using proper complex vectors, we should check if the kernel 
 //      lib supports mixed real/complex arithmetic and use it if possible.
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// private helper functions                                                                      //
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 //
 void SUBR(private_dotProd)(TYPE(const_mvec_ptr) v, TYPE(const_mvec_ptr) vi,
                            TYPE(const_mvec_ptr) w, TYPE(const_mvec_ptr) wi,
@@ -20,13 +24,16 @@ void SUBR(private_compResid)(TYPE(const_crsMat_ptr) A, int nvec, _ST_ sigma, _MT
 
 // pretty-print convergence history. nvec=0: print header. nvec=-1: print footer
 void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR, 
-        _MT_ const* normR0, _MT_ const* normB);
+        _MT_ const* normR0, _MT_ const* normB, int const* locked);
 
 // allocate CG vector blocks
 void SUBR(private_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* ierr);
 // allocate CG vector blocks
 void SUBR(private_carp_cgState_dealloc)(TYPE(carp_cgState_ptr) S, int* ierr);
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// public interface                                                                              //
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 // create new state objects. We just get an array of (NULL-)pointers
 void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
@@ -65,6 +72,8 @@ void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
     state[i]->sigma_i_=sigma_i[i];
     state[i]->nvec_=nvec;
 
+    state[i]->conv = new int[nvec];
+    
     state[i]->normR0_= new MT[nvec];
     state[i]->normB_= new MT[nvec];
     state[i]->normR= new MT[nvec];
@@ -82,6 +91,7 @@ void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
 
     for (int j=0;j<nvec;j++)
     {
+      state[i]->conv[j]=0;
       state[i]->normR0_[j]=-mt::one(); // not initialized
       state[i]->normB_[j]=-mt::one(); // not initialized
       state[i]->normR[j]=-mt::one(); // not initialized
@@ -145,6 +155,8 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) state[], int numSys, int*
   *ierr=0;
   for (int i=0;i<numSys;i++)
   {
+    delete [] state[i]->conv;
+
     delete [] state[i]->normR0_;
     delete [] state[i]->normB_;
     delete [] state[i]->normR;
@@ -178,6 +190,9 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
 
   if (nvec!=S->nvec_)
   {
+    delete [] S->conv;
+    S->conv= new int[nvec];
+
     delete [] S->normR0_;
     S->normR0_= new MT[nvec];
     
@@ -197,6 +212,7 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
 
   for (int i=0; i<nvec; i++)
   {
+    S->conv[i]=0;
     S->normR0_[i]=-mt::one(); // needs to be computed in next iterate call
   }
   if (normsB==NULL)
@@ -213,29 +229,42 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
   return;
 }
 
-// implementation of pcg on several systems with multiple RHS each
+// implementation of pcg on several systems with multiple RHS each.
+//
 void SUBR(carp_cgStates_iterate)(
         TYPE(carp_cgState_ptr) S_array[], int numSys,
         TYPE(mvec_ptr) X_r[], TYPE(mvec_ptr) X_i[],
-        _MT_ tol, int maxIter, 
+        _MT_ tol, int maxIter,
         int* ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr = 0;
-
+  
   // some internal settings  
-  int itprint=1; // how often to print the current impl. residual norms
+
+  // how often to print the current impl. residual norms
+#if PHIST_OUTLEV>=PHIST_VERBOSE
+  int itprint=1; 
+#else
+  int itprint=-1; 
+#endif
   int itcheck=10; // how often to check the actual expl. res norms. We
                   // only stop iterating if *all* expl. res norms for
                   // a given shift are below the tolerance. The impl.
                   // res norm is based on the carp operator, and I'm not
                   // sure how much sense it would make to use it as an
                   // indication of convergence.
-
+  itcheck=std::min(itcheck,maxIter);
   int numSolved=0;
   TYPE(mvec_ptr) bnul=NULL; // we can just pass in b=NULL if all entries for a carp_sweep
                             // are 0 (during CG iteration), for clarity we give it a name
+
+if (numSys>0)
+{
+  PHIST_SOUT(PHIST_VERBOSE,"run CARP-CG with %d rhs/shift and %d shifts.\n",
+        S_array[0]->nvec_,numSys);
+}
 
 ////////////////////////////////////////////////////
 // solve systems for one shift at a time, here we //
@@ -258,7 +287,39 @@ void SUBR(carp_cgStates_iterate)(
     TYPE(const_mvec_ptr) b=S->b_;
     TYPE(mvec_ptr) x=X_r[ishift];
     TYPE(mvec_ptr) xi=X_i[ishift];
+
+  // could be used for premature termination of the loop,
+  // but right now we don't allw the user to do that.
+  int minConv=nvec;
+   
+   if (minConv<=0)   minConv=nvec;
+   if (minConv>nvec) minConv=nvec;
+ 
+    int nvecX,nvecB;
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(b,&nvecB,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x,&nvecX,ierr),*ierr);
     
+    if (nvec!=nvecB || nvec!=nvecX)
+    {
+      PHIST_SOUT(PHIST_ERROR,"input vectors to %s must have same num vectors as block size \n"
+                             "passed to constructor (expected %d, found nvec(X)=%d, nvec(B)=%d instead)\n"
+                             "(in %s, line %d)\n",
+        __FUNCTION__,nvec,nvecX,nvecB,__FILE__,__LINE__);
+      *ierr=-1;
+      return;      
+    }
+#ifndef IS_COMPLEX
+    if (xi!=NULL)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_num_vectors)(xi,&nvecX,ierr),*ierr);
+      if (nvec!=nvecX)
+      {
+        PHIST_SOUT(PHIST_ERROR,"input vectors X_i to %s must have same num vectors as X_r and B\n",__FUNCTION__);
+        *ierr=-1;
+        return;
+      }
+    }
+#endif    
     // allocate CG vectors: one per rhs
     PHIST_CHK_IERR(SUBR(private_carp_cgState_alloc)(S,ierr),*ierr);
 
@@ -278,6 +339,8 @@ void SUBR(carp_cgStates_iterate)(
     ST* alpha=S->alpha_;
     MT* alpha_i=S->alpha_i_;
     MT* beta=S->beta_;
+    
+    int *conv=S->conv;
 
     int numConverged=0;
 
@@ -309,8 +372,8 @@ void SUBR(carp_cgStates_iterate)(
     MT reltol2[nvec];
     for (int j=0;j<nvec;j++)
     {
-      //reltol2[j]=tol*tol*S->normR[j];
-      reltol2[j]=tol*tol*S->normB_[j]*S->normB_[j];
+      reltol2[j]=tol*tol*S->normR[j];
+      reltol2[j]=std::max(reltol2[j],tol*tol*S->normB_[j]*S->normB_[j]);
     }
 
     // initial Kaczmarz/CARP sweep. Note that our function carp_sweep operates
@@ -352,8 +415,8 @@ void SUBR(carp_cgStates_iterate)(
     if (itprint>0)
     {
       // print header
-      SUBR(private_printResid)(0,0,NULL,NULL,NULL);
-      SUBR(private_printResid)(0,nvec,r2_new,S->normR0_,S->normB_);
+      SUBR(private_printResid)(0,0,NULL,NULL,NULL,NULL);
+      SUBR(private_printResid)(0,nvec,r2_new,S->normR0_,S->normB_,S->conv);
     }
     for (int it=1;it<maxIter; it++)
     {
@@ -390,10 +453,11 @@ void SUBR(carp_cgStates_iterate)(
       PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,alpha,alpha_i,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(private_dotProd)(p,pi,q,qi,nvec,denom,denom_i,ierr),*ierr);
       MT minus_alpha_i[nvec];
+      // stop updating x if the system is already converged (1-conv[j])
 #ifdef IS_COMPLEX
         for (int j=0;j<nvec;j++)
         {
-          alpha[j]=alpha[j]/denom[j];
+          alpha[j]=(ST)(1-conv[j])*(alpha[j]/denom[j]);
         }
         // update x <- x + alpha*p
         PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,ierr),*ierr);
@@ -402,7 +466,7 @@ void SUBR(carp_cgStates_iterate)(
       {
         for (int j=0;j<nvec;j++)
         {
-          alpha[j]=alpha[j]/denom[j];
+          alpha[j]=(ST)(1-conv[j])*(alpha[j]/denom[j]);
         }
         // update x <- x + alpha*p
         PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,ierr),*ierr);
@@ -414,6 +478,7 @@ void SUBR(carp_cgStates_iterate)(
           CT tmp1(alpha[j],alpha_i[j]);
           CT tmp2(denom[j],denom_i[j]);
           CT tmp3=tmp1/tmp2;
+          tmp1*=(MT)(1-conv[j]);
           alpha[j]=ct::real(tmp3);
           alpha_i[j]    = ct::imag(tmp3);
           minus_alpha_i[j]=-ct::imag(tmp3);
@@ -430,7 +495,21 @@ void SUBR(carp_cgStates_iterate)(
       {
         PHIST_CHK_IERR(SUBR(private_compResid)(A, nvec, sigma, sigma_i,
                          b, x, xi, NULL, NULL, S->normR, ierr),*ierr);
-        if ( it%itprint==0)
+        
+        // check for convergence. 
+        // TODO - which convergence criterion should we use?
+        // For the moment, we use ||r||_2/||b||_2 < tol
+        numConverged=0;
+        for (int j=0;j<nvec;j++)
+        {
+          if (S->normR[j]<reltol2[j])
+          {
+            conv[j]=1;
+            numConverged++;
+          }
+        }
+        
+        if ( (it%itprint==0 && itprint>0) || (numConverged>=minConv))
         {
 #ifdef IS_COMPLEX
           ST tmp[nvec];
@@ -441,26 +520,15 @@ void SUBR(carp_cgStates_iterate)(
 #else
           ST* tmp=S->normR;
 #endif          
-          SUBR(private_printResid)(it, nvec, tmp, S->normR0_, S->normB_);
+          SUBR(private_printResid)(it, nvec, tmp, S->normR0_, S->normB_,S->conv);
         }
         
-        // check for convergence. 
-        // TODO - which convergence criterion should we use?
-        // For the moment, we use ||r||_2/||b||_2 < tol
-        numConverged=0;
-        for (int j=0;j<nvec;j++)
+        if (numConverged>=minConv)
         {
-          if (S->normR[j]<reltol2[j])
-          {
-            numConverged++;
-          }
-        }
-        if (numConverged==nvec)
-        {
-        // print footer
-        SUBR(private_printResid)(it,-1,NULL,NULL,NULL);
-          numSolved++; 
-          break;
+          // print footer
+          SUBR(private_printResid)(it,-1,NULL,NULL,NULL,NULL);
+            numSolved++; 
+            break;
         }
       }
 
@@ -671,28 +739,49 @@ void SUBR(private_dotProd)(TYPE(const_mvec_ptr) v, TYPE(const_mvec_ptr) vi,
 // print residual info. If we get nvec=0, the input arrays are ignored
 // and a header is printed.
 void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR, 
-        _MT_ const* normR0, _MT_ const* normB)
+        _MT_ const* normR0, _MT_ const* normB, int const* locked)
 {
 #include "phist_std_typedefs.hpp"
   const char* carp_label = "CARP_CG";
   if (nvec==0)
   {
-    PHIST_SOUT(PHIST_INFO,"%s\tit\t||r||/||b||\t||r||/||r0||\n",carp_label);
+    PHIST_SOUT(PHIST_INFO,"%s\tit\t||r||\t||r||/||b||\t||r||/||r0||\n",carp_label);
   }
   else if (nvec==-1)
   {
     PHIST_SOUT(PHIST_INFO,"%s\tfinished after %d iterations.\n",carp_label,it);
   }
+  else if (PHIST_OUTLEV<=PHIST_INFO && nvec>2)
+  {
+    // print maximum and minimum residual norms only
+    int max_pos=0, min_pos=0;
+    ST nrmR[2];
+    MT nrmB[2],nrmR0[2];
+    for (int i=1;i<nvec;i++)
+    {
+      if (st::real(normR[i])>st::real(normR[max_pos])) max_pos=i;
+      if (st::real(normR[i])<st::real(normR[min_pos])) min_pos=i;
+    }
+    nrmR[0]=normR[min_pos]; nrmR[1]=normR[max_pos];
+    nrmR0[0]=normR0[min_pos]; nrmR0[1]=normR0[max_pos];
+    nrmB[0]=normB[min_pos]; nrmB[1]=normB[max_pos];
+
+    PHIST_SOUT(PHIST_INFO,"min and max residuals:\n");
+    SUBR(private_printResid)(it,2,nrmR,nrmR0,nrmB,(int const*)NULL);
+  }
   else
   {
-    ST tmp=mt::sqrt(st::real(normR[0]));
-    PHIST_SOUT(PHIST_INFO,"%s %d\t%e\t%e\n",carp_label,it,
-          tmp/normB[0],tmp/normR0[0])
+    MT tmp=mt::sqrt(st::real(normR[0]));
+    std::string lock_str="";
+    if (locked!=NULL) lock_str=locked[0]?"(converged)":"";
+    PHIST_SOUT(PHIST_INFO,"%s %d\t%e\t%e\t%e\t%s\n",carp_label,it,
+          tmp,tmp/normB[0],tmp/normR0[0],lock_str.c_str());
     for (int j=1;j<nvec;j++)
     {
+      if (locked!=NULL) lock_str=locked[j]?"(converged)":"";
       MT tmp=mt::sqrt(st::real(normR[j]));
-      PHIST_SOUT(PHIST_INFO,"%s\t\t%e\t%e\n",carp_label,
-             tmp/normB[j],tmp/normR0[j]);
+      PHIST_SOUT(PHIST_INFO,"%s\t\t%e\t%e\t%e\t%s\n",carp_label,
+             tmp,tmp/normB[j],tmp/normR0[j],lock_str.c_str());
     }
   }
 }

@@ -702,3 +702,4 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
 
 //!@}
 
+#include "../kernels_nogpu.c"

@@ -46,7 +46,7 @@ sigma=getopt(opts,'sigma',0.0);
 B=getopt(opts,'massmat',speye(n));
 deflMethod=0;
 if ~isempty(seedSpace)
-  deflMethod=1; % deflMethod 1: simple A-orthogonal deflation
+  deflMethod=2; % deflMethod 1: simple A-orthogonal deflation
                 %            2: BNN (Tang et al paper)
                 % so far nothing is working in terms of deflation.
                 % This method is equivalent to balancing Neumann-Neumann,

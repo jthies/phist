@@ -1,3 +1,10 @@
+//! \addtogroup jada
+//@{
+
+//! \defgroup bjdqr Jacobi-Davidson QR method with blocking, locking and restart
+//@{
+
+
 //! Tries to compute a partial schur form $(Q,R)$ of dimension nEig
 //! of the stencil $A*x-\lambda*B*x$ with a general linear operator $A$ and a
 //! hermitian positive definite (hpd.) linear operator $B$ using a
@@ -40,3 +47,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
                          bool symmetric,
                          TYPE(mvec_ptr) Q,         TYPE(sdMat_ptr) R,
                          _MT_* resNorm,            int* ierr);
+
+//@}
+
+//@}

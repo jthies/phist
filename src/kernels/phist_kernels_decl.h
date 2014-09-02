@@ -1,6 +1,12 @@
 #include "phist_macros.h"
 
-/*! these functions need to be provided by a kernel module  
+//! \addtogroup kernels
+//@{
+
+/*! @file phist_kernels_decl.h 
+    @brief basic operations involving matrices and vectors 
+
+    these functions need to be provided by a kernel module  
     in order to be used by the iterative solvers implemen-  
     ted in this library. Matrices and vectors are passed    
     around as void pointers, which is not nice but it is    
@@ -34,14 +40,16 @@
 extern "C" {
 #endif
 
+
 //! returns 0 if the library implements the data type, -99 otherwise.
 void SUBR(type_avail)(int* ierr);
 
-//! \name Matrix input from a file
-
+//!   \defgroup crsmat Sparse matrix functions (crsMat_t) 
 //@{
+//! \name Matrix input from a file
+///@{
 
-//! read a matrix from a MatrixMarket (ASCII) file
+//! read a matrix from a MatrixMarket (ASCII) file \ingroup(crsmat)
 void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* A, 
         const char* filename,int* ierr);
 
@@ -51,11 +59,10 @@ void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* A, const char* filename,int* ierr);
 //! read a matrix from a Ghost CRS (binary) file.
 void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* A, const char* filename,int* ierr);
 
-//!@}
+///@}
 
 //! \name get information about the data distribution in a matrix (maps)
-
-//!@{
+///@{
 
 //! get the row distribution of the matrix
 void SUBR(crsMat_get_row_map)(TYPE(const_crsMat_ptr) A, 
@@ -72,21 +79,25 @@ void SUBR(crsMat_get_domain_map)(TYPE(const_crsMat_ptr) A,
 //! get the map for vectors y in y=A*x
 void SUBR(crsMat_get_range_map)(TYPE(const_crsMat_ptr) A,
         const_map_ptr_t* map, int* ierr);
+///@}
 //@}
 
 //! \name constructors
-
 //@{
-//! create a block-vector.
+
+//! create a block-vector. \ingroup mvec
 void SUBR(mvec_create)(TYPE(mvec_ptr)* V, const_map_ptr_t map, int nvec, 
         int* ierr);
 
-//! create a block-vector as view of raw data. The map tells the object
-//! how many rows it should 'see' in the data (at most lda, the leading
-//! dimension of the 2D array values).
+//! create a block-vector as view of raw data. \ingroup mvec
+
+//! The map tells the object how many rows it should 'see' in the 
+//! data (at most lda, the leading dimension of the 2D array values).
 void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, const_map_ptr_t map, 
         _ST_* values, lidx_t lda, int nvec, 
         int* ierr);
+
+//! construct small (replicated) dense matrix \ingroup sdmat
 
 //! create a serial dense n x m matrix on all procs in comm, 
 //! with column major ordering and the capability to communicate.
@@ -100,16 +111,15 @@ void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M,
 //@}
 
 //! \name destructors
-
 //@{
 
-//!
+//! delete crsMat \ingroup crsmat
 void SUBR(crsMat_delete)(TYPE(crsMat_ptr) A, int* ierr);
 
-//!
+//! delete mvec \ingroup mvec
 void SUBR(mvec_delete)(TYPE(mvec_ptr) V, int* ierr);
 
-//!
+//! delete sdMat \ingroup sdmat
 void SUBR(sdMat_delete)(TYPE(sdMat_ptr) M, int* ierr);
 
 //@}
@@ -117,42 +127,77 @@ void SUBR(sdMat_delete)(TYPE(sdMat_ptr) M, int* ierr);
 //! \name getting data from objects
 //@{
 
-//! retrieve local length of the vectors in V
+//! retrieve local length of the vectors in V \ingroup mvec
 void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) V, lidx_t* len, int* ierr);
 
-//! retrieve the map of the vectors in V
+//! retrieve the map of the vectors in V \ingroup mvec
 void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) V, const_map_ptr_t* map, int* ierr);
 
-//! retrieve the comm used for MPI communication in V
+//! retrieve the comm used for MPI communication in V \ingroup mvec
 void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) V, const_comm_ptr_t* comm, int* ierr);
 
-//! retrieve number of vectors/columns in V
+//! retrieve number of vectors/columns in V \ingroup mvec
 void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) V, int* nvec, int* ierr);
 
-//! get number of cols in local dense matrix
-void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) M, int* nrows, int* ierr);
+//! extract view from multi-vector. \ingroup mvec
 
-//! get number of cols in local dense matrix
-void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* ierr);
-
-//! extract view from multi-vector. Sets the user-provided val pointer to point to the
+//! Sets the user-provided val pointer to point to the
 //! beginning of the first vector, and puts the leading dimension of the array into lda,
 //! such that the element j of vector i is val[i*lda+j]. If PHIST_MVECS_ROW_MAJJOR is
 //! #defined, the storage is transposed and element j of vector i is found at val[j*lda+i].
 //! Note that lda may be larger than the actual local vector length as obtained by 
 //! mvec_my_length. This function is dangerous in the sense that it would force the 
 //! underlying kernel lib to implement the data layout in either of these formats.
-//! library that does not guarantee this should return -99 here ("not implemented")
+//! library that does not guarantee this should return -99 here ("not implemented").
+//!
+//! Note on accelerators: the pointer obtained lives on the CPU, in order to make sure
+//!     the data is consistent with the copy on a GPU, always call mvec_from_device before
+//!     accessing the raw data and mvec_upload after manipulating it. Make sure that you
+//!     know which copy is up-to-date at what point.
+//!
 void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val,
         lidx_t* lda, int* ierr);
 
-//! extract view from serial dense matrix. See comment for mvec_extract_view for details.
+//! get number of cols in local dense matrix \ingroup sdmat
+void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) M, int* nrows, int* ierr);
+
+//! get number of cols in local dense matrix. \ingroup sdmat
+void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* ierr);
+
+//! extract view from serial dense matrix. \ingroup sdmat
+
+//! See comment for mvec_extract_view for details,
+//! the macro indicating row-major storage layout is PHIST_SDMATS_ROW_MAJOR.
 void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) M, _ST_** val,
         lidx_t* lda, int* ierr);
 
 //@}
 
-//! get a new vector that is a view of some columns of the original one,
+//! \name data transfer between host and device (for kernel libs that support GPUs).
+//!
+//! These functions should return 0 if a GPU transfer is not needed, for instance because
+//! the kernel lib does not support GPUs or the object was not created to live on a GPU.
+//@{
+
+//! copy multi-vector (mvec) data from the host CPU to the GPU. \ingroup mvec
+void SUBR(mvec_to_device)(TYPE(mvec_ptr) V, int* ierr);
+
+//! copy multi-vector (mvec) data from the GPU to the host CPU \ingroup mvec
+void SUBR(mvec_from_device)(TYPE(mvec_ptr) V, int* ierr);
+
+//! copy serial dense matrix (sdmat) data from the host CPU to the GPU. \ingroup sdmat
+void SUBR(sdMat_to_device)(TYPE(sdMat_ptr) M, int* ierr);
+
+//! copy serial dense matrix (sdmat) data from the GPU to the host CPU \ingroup sdmat
+void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) M, int* ierr);
+
+//@}
+
+//!   \defgroup mvec Multi-vector functions (mvec_t) 
+//@{
+
+//! get a new vector that is a view of some columns of the original one.
+
 //! Vblock = V(:,jmin:jmax). The new object Vblock is created but does not
 //! allocate memory for the vector entries, instead using the entries from V
 //! directly. When mvec_delete(Vblock) is called, the library has to take care
@@ -191,6 +236,11 @@ void SUBR(mvec_set_block)(TYPE(mvec_ptr) V,
                              TYPE(const_mvec_ptr) Vblock,
                              int jmin, int jmax, int* ierr);
 
+//@}
+
+//!   \defgroup sdmat Small dense matrix functions (sdMat_t) 
+//@{
+
 //! get a new matrix that is a view of some rows and columns of the original one, 
 //! Mblock = M(imin:imax,jmin:jmax). The behavior is analogous to mvec_view_block.
 //! If on entry, *Mblock!=NULL, this function should delete *Mblock so that
@@ -215,46 +265,53 @@ void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M,
                              TYPE(const_sdMat_ptr) Mblock,
                              int imin, int imax, int jmin, int jmax, int* ierr);
 
-//! put scalar value into all elements of a multi-vector
+//@}
+
+//! put scalar value into all elements of a multi-vector \ingroup mvec
 void SUBR(mvec_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* ierr);
 
-//! put scalar value into all elements of a serial dense matrix
+//! put scalar value into all elements of a serial dense matrix \ingroup mvec
 void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) V, _ST_ value, int* ierr);
 
-//! put random numbers into all elements of a multi-vector
+//! put random numbers into all elements of a multi-vector \ingroup mvec
 void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* ierr);
 
-//! put random numbers into all elements of a serial dense matrix
+//! put random numbers into all elements of a serial dense matrix \ingroup sdmat
 void SUBR(sdMat_random)(TYPE(sdMat_ptr) V, int* ierr);
 
-//! print a vector to the screen (for debugging)
+//! print a vector to the screen (for debugging) \ingroup mvec
 void SUBR(mvec_print)(TYPE(const_mvec_ptr) V, int* ierr);
 
-//! print an sdMat to the screen (for debugging)
+//! print an sdMat to the screen (for debugging) \ingroup sdmat
 void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) M, int* ierr);
 
 //! \name Numerical functions
-//!@{
+//@{
+
+//! column-wise 2-norm \ingroup mvec
 
 //! compute the 2-norm) of each column of v
 //! (vnrm[i] must be pre-allocated by caller)
 void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) V, 
-                            _MT_* vnrm, int* ierr);
+                        _MT_* vnrm, int *ierr);
+
+//! normalize each column. \ingroup mvec
 
 //! normalize (in the 2-norm) each column of v and return ||v||_2
 //! for each vector i in vnrm[i] (must be pre-allocated by caller)
 void SUBR(mvec_normalize)(TYPE(mvec_ptr) V, 
                             _MT_* vnrm, int* ierr);
 
-//! scale each column i of v and by scalar
+//! scale each column i of v and by scalar. \ingroup mvec
 void SUBR(mvec_scale)(TYPE(mvec_ptr) V, 
                             _ST_ scalar, int* ierr);
 
-//! scale each column i of v and by scalar[i]
+//! scale each column i of v and by scalar[i]. \ingroup mvec
 void SUBR(mvec_vscale)(TYPE(mvec_ptr) V, 
                             const _ST_* scalar, int* ierr);
 
-//! y=alpha*x+beta*y.
+//! y=alpha*x+beta*y. \ingroup mvec
+
 //! This function can also be used for special cases such as
 //! alpha=0 => scale y
 //! alpha=1, beta=0 => copy y=x
@@ -263,42 +320,26 @@ void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) X,
                             _ST_ beta,  TYPE(mvec_ptr)       Y,     
                             int* ierr);
 
-//! y[i]=alpha[i]*x[i]+beta*y[i]
+//! y[i]=alpha[i]*x[i]+beta*y[i]. \ingroup mvec
 void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) X,
                           const _ST_ beta,  TYPE(mvec_ptr)       Y,     
-                            int* ierr);
+                          int* ierr);
 
-//! B=alpha*A+beta*B
-void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
-                            _ST_ beta,  TYPE(sdMat_ptr)       B,     
-                            int* ierr);
 
-//! y=alpha*A*x+beta*y. The scalars alpha and beta are expected to be of the
-//! same type as the entries in the vectors and matrix. Mixing of types is
-//! not allowed.
-void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A, 
-        TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr);
-
-//! y=alpha*A^H*x+beta*y. The scalars alpha and beta are expected to be of the
-//! same type as the entries in the vectors and matrix. Mixing of types is
-//! not allowed. In the complex case, the conjugate transpose is used.
-void SUBR(crsMatT_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A, 
-        TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr);
-
-//! y[i]=alpha*(A*x[i]+shifts[i]*x[i]) + beta*y[i]
-void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
-        const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr);
-
-//! dot product of vectors v_i and w_i, i=1..numvecs
+//! dot product of vectors v_i and w_i, i=1..numvecs. \ingroup mvec
 void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) V, 
                             TYPE(const_mvec_ptr) W, 
                             _ST_* vw, int* ierr);
+
+//! inner product of two multi-vectors. \ingroup mvec
 
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix
 //! C=alpha*V'*W+beta*C. C is replicated on all MPI processes sharing V and W.
 void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V, 
                                        TYPE(const_mvec_ptr) W, 
                                        _ST_ beta, TYPE(sdMat_ptr) C, int* ierr);
+
+//! multi-vector times small dense matrix. \ingroup mvec
 
 //! n x m multi-vector times m x k dense matrix gives n x k multi-vector,
 //! W=alpha*V*C + beta*W
@@ -307,12 +348,22 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
                            _ST_ beta,  TYPE(mvec_ptr) W, 
                                        int* ierr);
 
+
+//! B=alpha*A+beta*B. \ingroup sdmat
+void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
+                            _ST_ beta,  TYPE(sdMat_ptr)       B,     
+                            int* ierr);
+
+//! C=beta*C+alpha*A*B. \ingroup sdmat
+
 //! n x m serial dense matrix times m x k serial dense matrix gives n x k serial dense matrix,
 //! C=alpha*V*W + beta*C
 void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
-                                           TYPE(const_sdMat_ptr) W, 
-                               _ST_ beta, TYPE(sdMat_ptr) C,
-                                       int* ierr);
+                                         TYPE(const_sdMat_ptr) W, 
+                              _ST_ beta,       TYPE(sdMat_ptr) C,
+                              int* ierr);
+
+//! C=beta*C+alpha*V'W. \ingroup sdmat
 
 //! n x m conj. transposed serial dense matrix times m x k serial dense matrix gives m x k serial dense matrix,
 //! C=alpha*V*W + beta*C
@@ -322,7 +373,33 @@ void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
                                        int* ierr);
 
 
-//! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.   
+//! \addtogroup crsmat
+//@{
+
+//! y=alpha*A*x+beta*y.
+
+//! The scalars alpha and beta are expected to be of the
+//! same type as the entries in the vectors and matrix. Mixing of types is
+//! not allowed.
+void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A, 
+        TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr);
+
+//! y=alpha*A^H*x+beta*y.
+
+//! The scalars alpha and beta are expected to be of the
+//! same type as the entries in the vectors and matrix. Mixing of types is
+//! not allowed. In the complex case, the conjugate transpose is used.
+void SUBR(crsMatT_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A, 
+        TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr);
+
+//! y[i]=alpha*(A*x[i]+shifts[i]*x[i]) + beta*y[i]
+void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
+        const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr);
+
+//@}
+
+//! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular. \ingroup mvec
+
 //! Q is computed in place of V. If V does not have full rank, ierr>0   
 //! indicates the dimension of the null-space of V. The first m-ierr    
 //! columns of Q are an orthogonal basis of the column space of V, the  
@@ -334,16 +411,23 @@ void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
 void SUBR(mvec_QR)(TYPE(mvec_ptr) V, 
                      TYPE(sdMat_ptr) R, int* ierr);
 
+//! create matrix from a function that returns entries row-wise
 
+//! this is the same form in which matrices are created from functions
+//! in ghost and how the test problems in essex/physics are defined.
+void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, 
+        gidx_t nrows, gidx_t ncols, lidx_t maxnne, 
+        void (*rowFunPtr)(ghost_gidx_t,ghost_gidx_t*,ghost_lidx_t*,void*), int *ierr);
+
+// TODO: make these compulsory
 #ifdef PHIST_KERNEL_LIB_FORTRAN
-void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, int nrows, int ncols, int maxnne, void (*rowFunPtr)(int64_t,int64_t*,int64_t*,void*), int *ierr);
 void SUBR(mvec_gather_mvecs)(TYPE(mvec_ptr) V, TYPE(const_mvec_ptr) W[], int nblocks, int *ierr);
 void SUBR(mvec_scatter_mvecs)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W[], int nblocks, int *ierr);
 void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int *ierr);
 #endif
 
 
-//!@}
+//@}
 
 //! mixed real/complex operation: split mvec into real and imag part.
 //! if either reV or imV are NULL, it is not touched.
@@ -358,3 +442,4 @@ void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* imV, int *i
 #ifdef __cplusplus
 } //extern "C"
 #endif
+//@}

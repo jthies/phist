@@ -2,9 +2,38 @@ clear all;
 close all;
 setpath;
 
-mex -largeArrayDims krylov/dkswp2.c
-mex -largeArrayDims krylov/nrms_ai2.c
+% is this Octave or MATLAB?
+is_octave=false;
+is_matlab=false;
+p=path;
 
+global is_octave is_matlab
+
+is_octave=index(p,'octave')||index(p,'OCTAVE');
+is_matlab=index(p,'matlab')||index(p,'MATLAB');
+
+if (is_octave && is_matlab)
+  % probably octave
+  is_matlab=false;
+end
+
+if (~is_octave && ~is_matlab)
+  % give a warning
+  warning('cannot determine wether this is matlab or octave');
+  is_matlab=true;
+end
+
+if (is_matlab) 
+  disp('Assuming that this is MATLAB');
+end
+if (is_octave) 
+  disp('Assuming that this is GNU octave');
+end
+if (is_matlab)
+  disp('using MEX C kernel for the Kaczmarz sweep');
+  mex -largeArrayDims krylov/dkswp2.c
+  mex -largeArrayDims krylov/nrms_ai2_c.c
+end
 %for debugging - make results reproducible
 %rand('seed',77);
 %randn('seed',42);
@@ -41,6 +70,12 @@ shifts=[
 %3.394892641666588e-01+7.109553036523395e-01i
 ];
 
+lmin=min(real(shifts));
+lmax=max(real(shifts));
+
+matrix_fmt='anderson';
+matrices={8,16,32,64};
+shifts=shifts-lmin-(lmin+lmax)/2;
 %matrix_fmt='mat';
 %matrices={[mpath,'lap_cit/LAP_CIT_396.mat'],
 %          [mpath,'lap_cit/LAP_CIT_1059.mat'],
@@ -57,6 +92,8 @@ if strcmp(matrix_fmt,'mat')
   A=tmp.S;
 elseif strcmp(matrix_fmt,'mm')
   A=mmread(matrices{matrixID});
+elseif strcmp(matrix_fmt,'anderson')
+  A=anderson(matrices{matrixID},16.5);
 else
   error('matrix format "',matrix_fmt,'" not known');
 end
@@ -250,7 +287,6 @@ legend(leg);
 %title(matrices{matrixID});
 %hold off;
 end
-
 
 %ritz = sort(eig(full(Tlan3)));
 

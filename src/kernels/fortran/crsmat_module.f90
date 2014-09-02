@@ -1,9 +1,29 @@
 #include "phist_config.h"
+#ifdef PHIST_HAVE_GHOST
+#include "ghost/config.h"
+#endif
 module crsmat_module
+  use, intrinsic :: iso_c_binding
   use map_module, only: Map_t, map_setup
   use mvec_module, only: MVec_t, mvec_scale
   implicit none
   private
+
+#ifndef PHIST_HAVE_GHOST
+  integer, parameter :: G_LIDX_T = C_INT32_T
+  integer, parameter :: G_GIDX_T = C_INT64_T
+#else
+#ifdef GHOST_LONGIDX_LOCAL
+  integer, parameter :: G_LIDX_T = C_INT64_T
+#else
+  integer, parameter :: G_LIDX_T = C_INT32_T
+#endif
+#ifdef GHOST_LONGIDX_GLOBAL
+  integer, parameter :: G_GIDX_T = C_INT64_T
+#else
+  integer, parameter :: G_GIDX_T = C_INT32_T
+#endif
+#endif
 
   public :: CrsMat_t
   !public :: phist_DcrsMat_read_mm
@@ -71,7 +91,7 @@ module crsmat_module
     subroutine matRowFunc(row, nnz, cols, vals)
       use, intrinsic :: iso_c_binding
       integer(C_INT64_T), value :: row
-      integer(C_INT64_T), intent(inout) :: nnz
+      integer(C_INT32_T), intent(inout) :: nnz
       integer(C_INT64_T), intent(inout) :: cols(*)
       real(C_DOUBLE),     intent(inout) :: vals(*)
     end subroutine matRowFunc
@@ -1665,7 +1685,8 @@ end subroutine permute_local_matrix
     use mpi
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
-    integer(C_INT64_T),     value       :: nrows, ncols, maxnne_per_row
+    integer(G_GIDX_T),     value       :: nrows, ncols
+    integer(G_LIDX_T), value           :: maxnne_per_row
     type(C_FUNPTR),     value       :: rowFunc_ptr
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
@@ -1675,8 +1696,9 @@ end subroutine permute_local_matrix
     integer(kind=8), allocatable :: idx(:,:)
     real(kind=8), allocatable :: val(:)
     integer(kind=8) :: i, globalRows, globalCols
-    integer(kind=8) :: j, j_, globalEntries
-    integer(kind=8) :: i_, nne
+    integer(kind=G_GIDX_T) :: j, j_, globalEntries
+    integer(kind=8) :: i_
+    integer(kind=G_LIDX_T) :: nne
     integer :: funit
     integer(kind=8) :: localDim(2), globalDim(2)
     real(kind=8) :: wtime
@@ -2094,7 +2116,6 @@ end if
     integer :: sendBuffSize,recvBuffSize
     logical :: b_is_zero
     real(kind=8), dimension(0,0), target :: bzero
-    real(kind=8), pointer, dimension(:,:) :: bval_ptr
     
     if ( .not. c_associated(A_ptr) ) then
       write(*,*) 'A is NULL'
@@ -2106,12 +2127,10 @@ end if
 
     if ( .not. c_associated(b_ptr) ) then
       b_is_zero=.true.
-      bval_ptr=>bzero
       ldb=0
     else
       b_is_zero=.false.
       call c_f_pointer(b_ptr,b)
-      bval_ptr=>b%val(b%jmin:b%jmax,1:A%nRows)
       ldb = size(b%val,1)
     end if
     !write(*,*) 'enter carp_sweep_f, bzero=',b_is_zero
@@ -2195,17 +2214,29 @@ end if
       end if
 
       ! apply Kaczmarz forward sweep
+      if (b_is_zero) then
       call dkacz_selector(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 A%row_map,&
                 shifts_r(iSys),shifts_i(iSys), &
-                bval_ptr, ldb, &
+                bzero, ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
                 A%comm_buff%recvData(     1:  nvec,:),&
                 A%comm_buff%recvData(nvec+1:2*nvec,:),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 1,A%nRows,+1)
-
+        else
+      call dkacz_selector(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
+                A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+                A%row_map,&
+                shifts_r(iSys),shifts_i(iSys), &
+                b%val(b%jmin,1), ldb, &
+                x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
+                A%comm_buff%recvData(     1:  nvec,:),&
+                A%comm_buff%recvData(nvec+1:2*nvec,:),&
+                nrms_ai2i(:,iSys),omegas(iSys),&
+                1,A%nRows,+1)        
+        end if
       ! exchange values and average (export/average operation
       ! from col map into domain map)
       call Dcarp_average(A,x_r, x_i, invProcCount, ierr)
@@ -2223,17 +2254,29 @@ end if
 
       ! apply Kaczmarz backward sweep
       !write(*,*) 'kacz (b)'
+      if (b_is_zero) then
       call dkacz_selector(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 A%row_map,&
                 shifts_r(iSys),shifts_i(iSys), &
-                bval_ptr, ldb, &
+                bzero, ldb, &
+                x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
+                A%comm_buff%recvData(     1:  nvec,:),&
+                A%comm_buff%recvData(nvec+1:2*nvec,:),&
+                nrms_ai2i(:,iSys),omegas(iSys),&
+                A%nRows,1,-1)      
+      else
+      call dkacz_selector(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
+                A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+                A%row_map,&
+                shifts_r(iSys),shifts_i(iSys), &
+                b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
                 A%comm_buff%recvData(     1:  nvec,:),&
                 A%comm_buff%recvData(nvec+1:2*nvec,:),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)
-
+      end if
       ! exchange values and average, stay in domain map
       ! (i.e. do not import halo until the next call to
       ! carp_sweep)

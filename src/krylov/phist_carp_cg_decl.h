@@ -1,3 +1,9 @@
+//! \addtogroup linear_solvers
+//@{
+
+//! \defgroup carp_cg CARP-CG row projection method for general (shifted) linear systems
+//@{
+
 // Pipelined CARP-CG solver for general shifted matrices sigma[j]I-A.
 // The algorithm is CG on the minimum norm problem AA'x=b with SSOR pre-
 // conditioning, implemented following the work of Bjoerck and Elfving (1979).
@@ -8,11 +14,11 @@
 // same shift but different RHS (nvec>1)
 //
 
-// the usage of carp_cg is very similar to that of pgmres, except that we don't
-// need the complicated queuing of vectors in pgmres.
-typedef struct TYPE(carp_cgState) {
+//! state object for CARP-CG
 
-//TODO - imaginary parts of vectors where needed.
+//! the usage of carp_cg is very similar to that of pgmres, except that we don't
+//! need the complicated queuing of vectors in pgmres.
+typedef struct TYPE(carp_cgState) {
 
   //! \name output args:
   //@{
@@ -26,6 +32,8 @@ typedef struct TYPE(carp_cgState) {
   _MT_ *normR;  //! stores current (implicit) residual norms
 
   int ierr; //! error code returned by this CARP-CG instance
+
+  int *conv; //! set to 1 if system j has converged to the required tolerance
 
   //@}
   
@@ -50,6 +58,7 @@ typedef struct TYPE(carp_cgState) {
   void* aux_; // work arg to carp_sweep (dep. on kernel lib)
   _MT_ omega_;// relaxation parameter
   //@}
+
   //! \name  internal CG data structures
   //@{
   TYPE(mvec_ptr) q_, r_, p_, z_; //! CG helper vectors, one column per RHS
@@ -69,6 +78,8 @@ typedef struct TYPE(carp_cgState) {
 typedef TYPE(carp_cgState)* TYPE(carp_cgState_ptr);
 typedef TYPE(carp_cgState) const * TYPE(const_cgState_ptr);
 
+// constructor
+
 //! Create an array of CG state objects to solve a set of numSys linear systems
 //! (sigma[j]I-A)X=B. The systems all have the same rhs B, consisting of nvec  
 //! columns.
@@ -76,8 +87,10 @@ void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) S_array[],
         int nshifts, _MT_ sigma_r[], _MT_ sigma_i[],
         TYPE(const_crsMat_ptr) A, int numRhs, int* ierr);
 
-//!
+//! destructor
 void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) S_array[], int numSys, int* ierr);
+
+//! reset solver state
 
 //! this function is used if the RHS vector changes but the matrix and shift
 //! sigma stays the same. The solver is reset to start solving the new system
@@ -89,13 +102,20 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
                 int *ierr);
 
 //! CARP-CG iterations on all linear systems in the array.
+
 //! To set the RHS vector, use reset() beforehand. If X is complex
 //! or A and the shift sigma are real, X_i may be NULL. This function
 //! performs up to maxIter CARP-CG steps on each of the numSys linear
 //! systems and returns if all of them have either converged or failed.
+//! Converged systems are 'locked', their x vectors are no longer updated
+//! but for simplicity we keep doing operations like matvecs on them. It
+//! is therefore advisable to not use too many columns per state object.
 void SUBR(carp_cgStates_iterate)(
         TYPE(carp_cgState_ptr) S_array[], int numSys,
         TYPE(mvec_ptr) X_r[], TYPE(mvec_ptr) X_i[],
         _MT_ tol, int maxIter,
         int* ierr);
 
+//@}
+
+//@}

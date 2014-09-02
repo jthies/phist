@@ -1,3 +1,9 @@
+//! \defgroup jada Jacobi-Davidson style eigenvalue solvers
+//@{
+
+//! \defgroup jdqr single-vector JDQR method with deflation and restart
+//@{
+
 //! tries to compute a given number of eigenpairs (num_eig) of 
 //! an general operator A using the Jacobi-Davidson QR (JDQR)
 //! method. We allow for generalized EVPs here, A*x=lambda*B*x,
@@ -37,3 +43,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
         int* ierr);
          
          
+//@}
+
+//@}
