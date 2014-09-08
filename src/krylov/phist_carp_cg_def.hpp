@@ -320,6 +320,9 @@ if (numSys>0)
       }
     }
 #endif    
+
+    PHIST_SOUT(PHIST_VERBOSE,"CARP_CG for shift %d (%f%+fi)\n",ishift,sigma_r,sigma_i);
+
     // allocate CG vectors: one per rhs
     PHIST_CHK_IERR(SUBR(private_carp_cgState_alloc)(S,ierr),*ierr);
 
