@@ -9,8 +9,12 @@ p=path;
 
 global is_octave is_matlab
 
-is_octave=index(p,'octave')||index(p,'OCTAVE');
-is_matlab=index(p,'matlab')||index(p,'MATLAB');
+if exist('index')
+  is_octave=index(p,'octave')||index(p,'OCTAVE');
+  is_matlab=index(p,'matlab')||index(p,'MATLAB');
+else
+  is_matlab=true;
+end
 
 if (is_octave && is_matlab)
   % probably octave
