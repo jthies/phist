@@ -14,7 +14,7 @@ else
   if (size(sigma,1)>1)
     error('nrms_ai2: sigma must be a row vector');
   end
-  nrms=kron(-2*sigma,full(spdiags(A,0))+sigma*sigma)
+  nrms=kron(-2*sigma,full(spdiags(A,0))+sigma*sigma);
   for i=1:n
     tmp=A(i,:)*A(i,:)';
     nrms(i,:)=nrms(i,:)+repmat(tmp,1,m);
