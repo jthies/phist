@@ -9,8 +9,10 @@
 #ifdef PHIST_HAVE_GHOST
 #include <ghost.h>
 #else
-typedef int64_t ghost_idx_t;
-#define PRIDX "PRId64"
+typedef int64_t ghost_gidx_t;
+typedef int32_t ghost_lidx_t;
+#define PRGIDX "PRId64"
+#define PRLIDX "PRId32"
 // just dummy values, simply ignored!
 #define GHOST_SPARSEMAT_SYMM_GENERAL 0x1
 #define GHOST_DT_DOUBLE 0x2
@@ -25,9 +27,9 @@ typedef struct {
 	int32_t base;
 	int32_t symmetry;
 	int32_t datatype;
-	ghost_idx_t nrows;
-	ghost_idx_t ncols;
-	ghost_idx_t row_nnz;
+	ghost_gidx_t nrows;
+	ghost_gidx_t ncols;
+	ghost_lidx_t row_nnz;
 
 	int32_t      hermit;
 	int32_t      eig_info;
@@ -41,9 +43,9 @@ typedef struct {
 extern "C" {
 #endif
 
-int SpinChainSZ(   ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *vals);
-int crsGraphene(   ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *vals);
-int anderson(      ghost_idx_t row, ghost_idx_t *nnz, ghost_idx_t *cols, void *vals);
+int SpinChainSZ(   ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals);
+int crsGraphene(   ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals);
+int anderson(      ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals);
 #ifdef __cplusplus
 }
 #endif

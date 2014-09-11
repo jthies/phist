@@ -41,7 +41,7 @@ void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me,
     (*me)->carp_cgStates_ = new TYPE(carp_cgState_ptr)[numShifts];
     
     PHIST_CHK_IERR(SUBR(carp_cgStates_create)
-        ((*me)->carp_cgStates_,numShifts,sigma_r,sigma_i,
+        ((*me)->carp_cgStates_,numShifts,(*me)->sigma_r_,(*me)->sigma_i_,
         A, blockSize,ierr),*ierr);    
   }
   else
@@ -110,8 +110,8 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
 
   for (int c0=0;c0<nrhs;c0+=blockSize)
   {
-  int c1=std::min(c0+blockSize,nrhs);
-  int bs=c1-c0;
+  int c1=std::min(c0+blockSize,nrhs)-1;
+  int bs=c1-c0+1;
   PHIST_SOUT(PHIST_VERBOSE,"SOLVE SYSTEMS (%d:%d)\n",c0,c1);
     if (me->method_==CARP_CG)
     {

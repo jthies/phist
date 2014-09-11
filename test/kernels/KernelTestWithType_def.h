@@ -51,7 +51,8 @@ static _MT_ MvecEqual(TYPE(mvec_ptr) V, _ST_ value)
   {
   int ierr;
   _ST_* val;
-  lidx_t lda,n,m;
+  lidx_t lda,n;
+  int m;
   
   SUBR(mvec_from_device)(V,&ierr);
   if (ierr!=PHIST_SUCCESS) return (_MT_)(-mt::one());
@@ -69,7 +70,8 @@ static _MT_ MvecsEqual(TYPE(mvec_ptr) V1, TYPE(mvec_ptr) V2)
   {
   int ierr;
   _ST_ *val,*val2;
-  lidx_t lda,n,m,lda2,n2,m2;
+  lidx_t lda,n,lda2,n2;
+  int m,m2;
   
   SUBR(mvec_from_device)(V1,&ierr);
   if (ierr!=PHIST_SUCCESS) return (_MT_)(-mt::one());
@@ -101,7 +103,8 @@ static _MT_ SdMatEqual(TYPE(mvec_ptr) V, _ST_ value)
   {
   int ierr;
   _ST_* val;
-  lidx_t lda,n,m;
+  lidx_t lda;
+  int n,m;
   
   SUBR(sdMat_from_device)(V,&ierr);
   if (ierr!=PHIST_SUCCESS) return (_MT_)(-mt::one());
@@ -119,7 +122,8 @@ static _MT_ SdMatsEqual(TYPE(sdMat_ptr) V1, TYPE(sdMat_ptr) V2)
   {
   int ierr;
   _ST_ *val, *val2;
-  lidx_t lda,n,m,lda2,n2,m2;
+  lidx_t lda,lda2;
+  int n,m,n2,m2;
   
   SUBR(sdMat_from_device)(V1,&ierr);
   if (ierr!=PHIST_SUCCESS) return (_MT_)(-mt::one());

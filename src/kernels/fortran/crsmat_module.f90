@@ -1,9 +1,31 @@
 #include "phist_config.h"
+#ifdef PHIST_HAVE_GHOST
+#include "ghost/config.h"
+#endif
 module crsmat_module
+  use, intrinsic :: iso_c_binding
   use map_module, only: Map_t, map_setup
   use mvec_module, only: MVec_t, mvec_scale
   implicit none
+
   private
+
+
+#ifndef PHIST_HAVE_GHOST
+#define G_LIDX_T C_INT32_T
+#define G_GIDX_T C_INT64_T
+#else
+#ifdef GHOST_LONGIDX_LOCAL
+#define G_LIDX_T C_INT64_T
+#else
+#define G_LIDX_T C_INT32_T
+#endif
+#ifdef GHOST_LONGIDX_GLOBAL
+#define G_GIDX_T C_INT64_T
+#else
+#define G_GIDX_T C_INT32_T
+#endif
+#endif
 
   public :: CrsMat_t
   !public :: phist_DcrsMat_read_mm
@@ -70,9 +92,9 @@ module crsmat_module
   abstract interface
     subroutine matRowFunc(row, nnz, cols, vals)
       use, intrinsic :: iso_c_binding
-      integer(C_INT64_T), value :: row
-      integer(C_INT64_T), intent(inout) :: nnz
-      integer(C_INT64_T), intent(inout) :: cols(*)
+      integer(G_GIDX_T), value :: row
+      integer(G_LIDX_T), intent(inout) :: nnz
+      integer(G_GIDX_T), intent(inout) :: cols(*)
       real(C_DOUBLE),     intent(inout) :: vals(*)
     end subroutine matRowFunc
   end interface
@@ -1061,6 +1083,8 @@ end do
 #define DEBUG_COLPACK 1
 #endif
 #if DEBUG_COLPACK
+! for n>=10,000 the file gets big and the format used below won't fit
+if (crsMat%nRows<10000) then
         open(unit=42,file='test_coloring.m',status='replace')
         write(42,*) 'n=',crsMat%nRows
         write(42,*) 'Adat=[...'
@@ -1103,6 +1127,7 @@ end do
 
         flush(42)
         close(42)
+end if
 #else
 !       permute local CRS matrix rows and cols, this will mess up MPI parallel runs and
 !       result in permuted vectors, but just for single-node performance we do it right now
@@ -1665,18 +1690,20 @@ end subroutine permute_local_matrix
     use mpi
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
-    integer(C_INT64_T),     value       :: nrows, ncols, maxnne_per_row
+    integer(kind=C_INT64_T),     value       :: nrows, ncols
+    integer(C_INT32_T), value           :: maxnne_per_row
     type(C_FUNPTR),     value       :: rowFunc_ptr
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(CrsMat_t), pointer :: A
     procedure(matRowFunc), pointer :: rowFunc
     !--------------------------------------------------------------------------------
-    integer(kind=8), allocatable :: idx(:,:)
+    integer(kind=G_GIDX_T), allocatable :: idx(:,:)
     real(kind=8), allocatable :: val(:)
     integer(kind=8) :: i, globalRows, globalCols
-    integer(kind=8) :: j, j_, globalEntries
-    integer(kind=8) :: i_, nne
+    integer(kind=G_GIDX_T) :: j, j_, globalEntries
+    integer(kind=G_GIDX_T) :: i_
+    integer(kind=G_LIDX_T) :: nne
     integer :: funit
     integer(kind=8) :: localDim(2), globalDim(2)
     real(kind=8) :: wtime
@@ -1826,6 +1853,7 @@ if( A%row_map%me .eq. 0 ) then
 end if
 
 #ifdef PHIST_HAVE_COLPACK
+    wtime = mpi_wtime()
     !TODO - make the coloring optional, it only makes sense
     !       for CARP-CG right now
     call colorcrs(A,2,3,ierr)
@@ -1834,6 +1862,11 @@ end if
         write(*,*) 'graph coloring failed'
       end if
       return
+    end if
+    call mpi_barrier(MPI_COMM_WORLD, ierr)
+    wtime = mpi_wtime() - wtime
+    if( A%row_map%me .eq. 0 ) then
+      write(*,*) 'local dist-2 coloring in', wtime, 'seconds'
     end if
 #endif
 
@@ -1898,6 +1931,8 @@ end if
     else
       ierr = -88
     end if
+    
+    ierr=0
 
     !--------------------------------------------------------------------------------
   end subroutine phist_DcrsMat_get_map

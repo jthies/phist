@@ -411,9 +411,16 @@ void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
 void SUBR(mvec_QR)(TYPE(mvec_ptr) V, 
                      TYPE(sdMat_ptr) R, int* ierr);
 
+//! create matrix from a function that returns entries row-wise
+
+//! this is the same form in which matrices are created from functions
+//! in ghost and how the test problems in essex/physics are defined.
+void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, 
+        gidx_t nrows, gidx_t ncols, lidx_t maxnne, 
+        int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int *ierr);
+
 // TODO: make these compulsory
 #ifdef PHIST_KERNEL_LIB_FORTRAN
-void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, int nrows, int ncols, int maxnne, void (*rowFunPtr)(int64_t,int64_t*,int64_t*,void*), int *ierr);
 void SUBR(mvec_gather_mvecs)(TYPE(mvec_ptr) V, TYPE(const_mvec_ptr) W[], int nblocks, int *ierr);
 void SUBR(mvec_scatter_mvecs)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W[], int nblocks, int *ierr);
 void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int *ierr);

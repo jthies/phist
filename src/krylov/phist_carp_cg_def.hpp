@@ -255,7 +255,7 @@ void SUBR(carp_cgStates_iterate)(
                   // res norm is based on the carp operator, and I'm not
                   // sure how much sense it would make to use it as an
                   // indication of convergence.
-
+  itcheck=std::min(itcheck,maxIter);
   int numSolved=0;
   TYPE(mvec_ptr) bnul=NULL; // we can just pass in b=NULL if all entries for a carp_sweep
                             // are 0 (during CG iteration), for clarity we give it a name
@@ -320,6 +320,9 @@ if (numSys>0)
       }
     }
 #endif    
+
+    PHIST_SOUT(PHIST_VERBOSE,"CARP_CG for shift %d (%f%+fi)\n",ishift,sigma_r,sigma_i);
+
     // allocate CG vectors: one per rhs
     PHIST_CHK_IERR(SUBR(private_carp_cgState_alloc)(S,ierr),*ierr);
 
@@ -778,7 +781,7 @@ void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR,
           tmp,tmp/normB[0],tmp/normR0[0],lock_str.c_str());
     for (int j=1;j<nvec;j++)
     {
-      if (locked!=NULL) lock_str=locked[j]?"(locked)":"";
+      if (locked!=NULL) lock_str=locked[j]?"(converged)":"";
       MT tmp=mt::sqrt(st::real(normR[j]));
       PHIST_SOUT(PHIST_INFO,"%s\t\t%e\t%e\t%e\t%s\n",carp_label,
              tmp,tmp/normB[j],tmp/normR0[j],lock_str.c_str());

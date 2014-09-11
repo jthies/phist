@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <math.h>
 
 #include "phist_macros.h"
 #include "phist_enums.h"
@@ -19,11 +20,16 @@
 #include "ghost.h"
 GHOST_REGISTER_DT_D(my_datatype)
 #endif
-#include "matfuncs.h"
 
 
 #include "phist_gen_d.h"
 #include "phist_driver_utils.h"
+
+typedef enum {
+FROM_FILE=0,
+GRAPHENE=1,
+ANDERSON=2
+} problem_t;
 
 // This driver routine creates the Graphene Hamiltonian,
 // reads in a number of complex shifts from a textfile, 
@@ -33,26 +39,23 @@ GHOST_REGISTER_DT_D(my_datatype)
 // later use in FEAST.                                  
 int main(int argc, char** argv)
   {
-     if ( argc < 4 )
+     if ( argc < 2 )
      {
-          PHIST_SOUT(PHIST_ERROR,"Usage: graphene_carp <nx> <ny> <shiftFile> <num vecs>\n"
-                                 "                     <block size> <tol> <maxIter>\n"
-                                 "       where: TODO - document/complete args, for now\n"
-                                 "       please look in the source file %s\n",__FILE__);
-          PHIST_SOUT(PHIST_ERROR,"Alternative: instead of specifying nx and ny, you may \n"
-                                 "             pass in -1 and a file name from which a  \n"
-                                 "             matrix should be read.\n");
+          PHIST_SOUT(PHIST_ERROR,"Usage: carp_cg <problem> <shiftFile> <num vecs>\n"
+                                 "               <block size> <tol> <maxIter>\n"
+                                 "  where: <problem> can either be a filename or\n"
+                                 "           \"graphene<L>\" or \"anderson<L>\"\n"
+                                 "         <shiftFile>: see \"exampleRuns/graphene_shifts.txt\" for an example.\n"
+                                 "                      If omitted, no shift is used.\n"
+                                 "         etc. all other args get default values if omitted\n");
           exit(0);
      }
 
   int rank, num_proc;
   int i, ierr;
   int verbose;
-  int read_matrix=0;
-  const char* mat_file;
 
-  comm_ptr_t comm;
-  
+  comm_ptr_t comm;  
   const_map_ptr_t map; // map (element distribution) of vectors according to 
                        // the distribution of matrix rows
   mvec_ptr_t B, *X_r, *X_i; // multivectors that will hold the RHS and the 
@@ -73,24 +76,17 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&ierr),ierr);
 
   verbose= (rank==0);
-
-  if (atoi(argv[1])==-1)
-  {
-    read_matrix=1;
-    mat_file=argv[2];
-  }
-  else if (atoi(argv[1])<=0)
-  {
-    PHIST_SOUT(PHIST_ERROR,"nx must be larger than 0 or equal to -1 (for file input). \n"
-               "Run the program without arguments to get a usage message\n");
-    return -1;
-  }
-
-  char* shiftFileName=argv[3];
+  int iarg=1;
+  const char* problem = argv[iarg++];
   
-  if (argc>=5)
+  char* shiftFileName=NULL;
+  if (argc>iarg)
   {
-    nrhs=atoi(argv[4]);
+    shiftFileName=argv[iarg++];
+  }  
+  if (argc>iarg)
+  {
+    nrhs=atoi(argv[iarg++]);
   }
   else
   {
@@ -100,131 +96,86 @@ int main(int argc, char** argv)
   // walk through array of vectors in blocks of <blockSize>,
   blockSize=nrhs;
 
-  if (argc>=6)
+  if (argc>iarg)
   {
-    blockSize=atoi(argv[5]);
+    blockSize=atoi(argv[iarg++]);
   }
 
   blockSize=MIN(nrhs,blockSize);
  
- PHIST_SOUT(PHIST_VERBOSE,"Solve with %d rhs/shift and block size %d\n",
+  PHIST_SOUT(PHIST_VERBOSE,"Solve with %d rhs/shift and block size %d\n",
         nrhs,blockSize);
   
-  if (argc>=7)
+  if (argc>iarg)
   {
-    tol=atof(argv[6]);
+    tol=atof(argv[iarg++]);
   }
   else
   {
     tol=(MT)1.0e-12;
   }
-  if (argc>=8)
+  if (argc>iarg)
   {
-    maxIter=atoi(argv[7]);
+    maxIter=atoi(argv[iarg++]);
   }
   else
   {
     maxIter=1000;
   }
   
-  
-  FILE *shiftFile=fopen(shiftFileName,"r");
-  
-  if (!shiftFile)
+  if (shiftFileName==NULL)
   {
-    PHIST_SOUT(PHIST_ERROR,"could not open %s for reading the shifts\n",shiftFileName);
-    exit(-1);
-  }
-
-  fscanf(shiftFile,"%d",&nshifts);
-  
-  if (nshifts<=0)
-  {
-    PHIST_SOUT(PHIST_ERROR,"first line of shift file should be nshifts>0 [int]\n"
-                           "found: %d in file %s\n",nshifts,shiftFileName);
-    exit(-1);
-  }
-  
-  PHIST_SOUT(PHIST_VERBOSE,"using %d shifts:\n",nshifts);
-  PHIST_SOUT(PHIST_VERBOSE,"================\n");
-  
-  sigma_r = (MT*)malloc(nshifts*sizeof(MT));
-  sigma_i = (MT*)malloc(nshifts*sizeof(MT));
-  
-  for (i=0;i<nshifts;i++)
-  {
-    fscanf(shiftFile,"%lf %lf",&sigma_r[i],&sigma_i[i]);
-    PHIST_SOUT(PHIST_VERBOSE,"sigma[%d]= %g + %gi\n",i,sigma_r[i],sigma_i[i]);
-    if (sigma_i[i]==(MT)0.0)
-    {
-      PHIST_SOUT(PHIST_ERROR,"all shifts must have a non-zero imaginary part\n");
-      exit(-1);
-    }
-  }
-  
-  fclose(shiftFile);
-
-    // setup matrix
-#ifdef PHIST_KERNEL_LIB_GHOST
-    ghost_context_t * ctx = NULL;
-    ghost_sparsemat_t * mat = NULL;
-#else
-    TYPE(crsMat_ptr) mat = NULL;
-#endif
-
-
-  
-  if (!read_matrix)
-  {
-    //TODO - just use kernel interface crsMat_fromRowFunc instead
-    ghost_idx_t WL[2];
-    WL[0] = atoi(argv[1]);;
-    WL[1] = atoi(argv[2]);
-  
-    ghost_idx_t DIM = WL[0]*WL[1];
-    matfuncs_info_t info;
-    crsGraphene( -2, WL, NULL, NULL);
-    crsGraphene( -1, NULL, NULL, &info);
-
-#ifdef PHIST_KERNEL_LIB_FORTRAN
-    PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,
-        info.nrows, info.ncols, info.row_nnz,
-        (void(*)(ghost_idx_t,ghost_idx_t*,ghost_idx_t*,void*))&crsGraphene, &ierr), ierr);
-#elif defined(PHIST_KERNEL_LIB_GHOST)
-    if ( my_datatype != info.datatype)
-    {
-      printf("error: datatype does not match\n");
-      exit(0);
-    }
-
-    ghost_error_t err=ghost_context_create(&ctx, info.nrows ,
-        info.ncols,GHOST_CONTEXT_DEFAULT,NULL,0,MPI_COMM_WORLD,1.);
-    if (err!=GHOST_SUCCESS)
-    {
-      PHIST_OUT(PHIST_ERROR,"error returned from createContext (file %s, line %d)",__FILE__,__LINE__);
-    }
-
-    ghost_sparsemat_traits_t mtraits = GHOST_SPARSEMAT_TRAITS_INITIALIZER;
-    mtraits.datatype = my_datatype;
-    ghost_sparsemat_create(&mat,ctx,&mtraits,1);
-    ghost_sparsemat_src_rowfunc_t src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
-    src.func = &crsGraphene;
-
-    src.maxrowlen = info.row_nnz;
-    mat->fromRowFunc(mat, &src);
-    char *str;
-    ghost_sparsemat_string(&str,mat);
-    printf("%s\n",str);
-    free(str); str = NULL;
-#else
-    PHIST_SOUT(PHIST_ERROR,"this driver is only available for the fortran and ghost kernel libs\n");
-    exit(-1);
-#endif
+    nshifts=1;
+    sigma_r=(MT*)malloc(1*sizeof(MT));
+    sigma_i=(MT*)malloc(1*sizeof(MT));
+    *sigma_r=0.0;
+    *sigma_i=0.0;
   }
   else
   {
-    PHIST_ICHK_IERR(SUBR(crsMat_read)(&mat,mat_file,&ierr),ierr);
+    FILE *shiftFile=fopen(shiftFileName,"r");
+  
+    if (!shiftFile)
+    {
+      PHIST_SOUT(PHIST_ERROR,"could not open %s for reading the shifts\n",shiftFileName);
+      exit(-1);
+    }
+
+    fscanf(shiftFile,"%d",&nshifts);
+  
+    if (nshifts<=0)
+    {
+      PHIST_SOUT(PHIST_ERROR,"first line of shift file should be nshifts>0 [int]\n"
+                           "found: %d in file %s\n",nshifts,shiftFileName);
+      exit(-1);
+    }
+  
+    PHIST_SOUT(PHIST_VERBOSE,"using %d shifts:\n",nshifts);
+    PHIST_SOUT(PHIST_VERBOSE,"================\n");
+  
+    sigma_r = (MT*)malloc(nshifts*sizeof(MT));
+    sigma_i = (MT*)malloc(nshifts*sizeof(MT));
+  
+    for (i=0;i<nshifts;i++)
+    {
+      fscanf(shiftFile,"%lf %lf",&sigma_r[i],&sigma_i[i]);
+      PHIST_SOUT(PHIST_VERBOSE,"sigma[%d]= %g + %gi\n",i,sigma_r[i],sigma_i[i]);
+      if (sigma_i[i]==(MT)0.0)
+      {
+        PHIST_SOUT(PHIST_ERROR,"all shifts must have a non-zero imaginary part\n");
+        exit(-1);
+      }
+    }
+  
+    fclose(shiftFile);
   }
+    
+  // setup matrix
+  TYPE(crsMat_ptr) mat = NULL;
+  
+  // this is in the tools/driver_utils.h header, a useful tool for
+  // generating our favorite test matrices or reading them from a file:
+  PHIST_ICHK_IERR(SUBR(create_matrix)(&mat,problem,&ierr),ierr);
   
   PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(mat, &map,&ierr),ierr);
 
@@ -266,7 +217,17 @@ int main(int argc, char** argv)
   
   // x_r = 1/sig_i(A-sig_r I)x_i
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_r[0]/sigma_i[0],X_i_ex0,0.0,X_r_ex0,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(1.0/sigma_i[0],mat,X_i_ex0,1.0,X_r_ex0,&ierr),ierr);
+  if (sigma_i[0]!=(MT)0.0)
+  {
+    PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(1.0/sigma_i[0],mat,X_i_ex0,1.0,X_r_ex0,&ierr),ierr);
+  }
+  else
+  {
+    TYPE(mvec_ptr) tmp = X_i_ex0;
+    X_i_ex0=X_r_ex0;
+    X_r_ex0=tmp;
+    PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_i_ex0,0.0,&ierr),ierr);
+  }
   
   // compute rhs B to match this exact solution for sigma[0]:
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_r[0],X_r_ex0,0.0,B,&ierr),ierr);
@@ -299,12 +260,13 @@ PHIST_ICHK_IERR(SUBR(sdMat_delete)(Rtmp,&ierr),ierr);
 
 PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,X_r[0],ONE,X_r_ex0,&ierr),ierr);
 PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,X_i[0],ONE,X_i_ex0,&ierr),ierr);
-double nrm_err0_1, nrm_err0_2;
-PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(X_i_ex0,X_i_ex0,&nrm_err0_1,&ierr),ierr);
-PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(X_r_ex0,X_r_ex0,&nrm_err0_2,&ierr),ierr);
+double nrm_err0_1[nrhs], nrm_err0_2[nrhs];
+PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(X_i_ex0,X_i_ex0,nrm_err0_1,&ierr),ierr);
+PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(X_r_ex0,X_r_ex0,nrm_err0_2,&ierr),ierr);
 
-PHIST_SOUT(PHIST_VERBOSE,"err in re(x): %e\n",SQRT(nrm_err0_2));
-PHIST_SOUT(PHIST_VERBOSE,"       im(x): %e\n",SQRT(nrm_err0_1));
+PHIST_SOUT(PHIST_VERBOSE,"for first shift, first rhs:\n");
+PHIST_SOUT(PHIST_VERBOSE,"err in re(x): %e\n",SQRT(nrm_err0_2[0]));
+PHIST_SOUT(PHIST_VERBOSE,"       im(x): %e\n",SQRT(nrm_err0_1[0]));
 
 ///////////////////////////////////////////////////////////////////
 // clean up afterwards                                           //
@@ -314,12 +276,8 @@ PHIST_SOUT(PHIST_VERBOSE,"       im(x): %e\n",SQRT(nrm_err0_1));
 
   free(sigma_r);
   free(sigma_i);
-#ifdef PHIST_KERNEL_LIB_GHOST
-  mat->destroy(mat);
-  ghost_context_destroy(ctx);
-#else
+
   PHIST_ICHK_IERR(SUBR(crsMat_delete)(mat,&ierr),ierr);
-#endif
   PHIST_ICHK_IERR(SUBR(mvec_delete)(B,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X_r_ex0,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X_i_ex0,&ierr),ierr);
