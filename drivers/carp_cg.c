@@ -260,12 +260,13 @@ PHIST_ICHK_IERR(SUBR(sdMat_delete)(Rtmp,&ierr),ierr);
 
 PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,X_r[0],ONE,X_r_ex0,&ierr),ierr);
 PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,X_i[0],ONE,X_i_ex0,&ierr),ierr);
-double nrm_err0_1, nrm_err0_2;
-PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(X_i_ex0,X_i_ex0,&nrm_err0_1,&ierr),ierr);
-PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(X_r_ex0,X_r_ex0,&nrm_err0_2,&ierr),ierr);
+double nrm_err0_1[nrhs], nrm_err0_2[nrhs];
+PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(X_i_ex0,X_i_ex0,nrm_err0_1,&ierr),ierr);
+PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(X_r_ex0,X_r_ex0,nrm_err0_2,&ierr),ierr);
 
-PHIST_SOUT(PHIST_VERBOSE,"err in re(x): %e\n",SQRT(nrm_err0_2));
-PHIST_SOUT(PHIST_VERBOSE,"       im(x): %e\n",SQRT(nrm_err0_1));
+PHIST_SOUT(PHIST_VERBOSE,"for first shift, first rhs:\n");
+PHIST_SOUT(PHIST_VERBOSE,"err in re(x): %e\n",SQRT(nrm_err0_2[0]));
+PHIST_SOUT(PHIST_VERBOSE,"       im(x): %e\n",SQRT(nrm_err0_1[0]));
 
 ///////////////////////////////////////////////////////////////////
 // clean up afterwards                                           //

@@ -1083,6 +1083,8 @@ end do
 #define DEBUG_COLPACK 1
 #endif
 #if DEBUG_COLPACK
+! for n>=10,000 the file gets big and the format used below won't fit
+if (crsMat%nRows<10000) then
         open(unit=42,file='test_coloring.m',status='replace')
         write(42,*) 'n=',crsMat%nRows
         write(42,*) 'Adat=[...'
@@ -1125,6 +1127,7 @@ end do
 
         flush(42)
         close(42)
+end if
 #else
 !       permute local CRS matrix rows and cols, this will mess up MPI parallel runs and
 !       result in permuted vectors, but just for single-node performance we do it right now
@@ -1928,6 +1931,8 @@ end if
     else
       ierr = -88
     end if
+    
+    ierr=0
 
     !--------------------------------------------------------------------------------
   end subroutine phist_DcrsMat_get_map
