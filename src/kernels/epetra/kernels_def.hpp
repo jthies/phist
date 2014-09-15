@@ -9,13 +9,10 @@ extern "C" void SUBR(type_avail)(int* ierr)
   }
 
 //! read a matrix from a MatrixMarket (ASCII) file
-extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
+extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+        const char* filename,int* ierr)
   {
-#ifdef HAVE_MPI
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm comm;
-#endif
+  CAST_PTR_FROM_VOID(const Epetra_Comm*,comm,vcomm,*ierr);
   Epetra_CrsMatrix* A=NULL;
   *ierr=EpetraExt::MatrixMarketFileToCrsMatrix(filename,comm,A);
   *vA = (TYPE(crsMat_ptr))(A);
@@ -27,14 +24,16 @@ extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const char* filename,
   }
 
 //! read a matrix from a Ghost CRS (binary) file.
-extern "C" void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
+extern "C" void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+const char* filename,int* ierr)
   {
   // TODO - not implemented (should read the binary file format defined by ghost)
   *ierr=-99;
   }
 
 //! read a matrix from a Harwell-Boeing (HB) file
-extern "C" void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
+extern "C" void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+const char* filename,int* ierr)
   {
   *ierr=-99; // not implemented in epetra
   }

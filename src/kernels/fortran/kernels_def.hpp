@@ -5,20 +5,24 @@ void SUBR(type_avail)(int *ierr)
   *ierr=0;
 }
 
-void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* A, const char* filename,int* ierr)
+void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* A, const_comm_ptr_t vcomm,
+        const char* filename,int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
-  void SUBR(crsMat_read_mm_f)(void*A,int fname_len, const char* fname, int* ierr);
-  PHIST_CHK_IERR(SUBR(crsMat_read_mm_f)(A,strlen(filename),filename,ierr),*ierr);
+  void SUBR(crsMat_read_mm_f)(void*A,MPI_FInt* fcomm, int fname_len, const char* fname, int* ierr);
+  MPI_FInt fcomm = MPI_Comm_c2f((MPI_Comm)(*vcomm))
+  PHIST_CHK_IERR(SUBR(crsMat_read_mm_f)(A,&fcomm,strlen(filename),filename,ierr),*ierr);
 }
 
-void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* A, const char* filename,int* ierr)
+void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* A, const_comm_ptr_t vcomm,
+const char* filename,int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
   *ierr=-99;
 }
 
-void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* A, const char* filename,int* ierr)
+void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* A, const_comm_ptr_t vcomm,
+const char* filename,int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
   *ierr=-99;
@@ -442,15 +446,16 @@ void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, i
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace_f)(V, M, ierr), *ierr);
 }
 
-void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, 
+void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, const_comm_ptr_t vcomm,
         gidx_t nrows, gidx_t ncols, lidx_t maxnne, 
                 int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), 
                 int *ierr)
 {
   ENTER_FCN(__FUNCTION__);
-  void SUBR(crsMat_create_fromRowFunc_f)(TYPE(crsMat_ptr)*, gidx_t, gidx_t, 
+  void SUBR(crsMat_create_fromRowFunc_f)(TYPE(crsMat_ptr)*, MPI_FInt* fcomm,gidx_t, gidx_t, 
   lidx_t, void (*)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int*);
-  PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc_f)(A, nrows, ncols, maxnne, 
+  MPI_FInt fcomm = MPI_Comm_c2f((MPI_Comm)(*vcomm));
+  PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc_f)(A, &fcomm, nrows, ncols, maxnne, 
         (void(*)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*))rowFunPtr, ierr), *ierr);
 }
 

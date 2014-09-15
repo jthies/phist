@@ -1489,12 +1489,14 @@ end subroutine permute_local_matrix
 
   !==================================================================================
   !> read MatrixMarket file
-  subroutine phist_DcrsMat_read_mm(A_ptr, filename_len, filename_ptr, ierr) bind(C,name='phist_DcrsMat_read_mm_f')
+  subroutine phist_DcrsMat_read_mm(A_ptr, comm, filename_len, filename_ptr, ierr) &
+  bind(C,name='phist_DcrsMat_read_mm_f')
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
     use mpi
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
+    integer :: comm
     integer(C_INT),     value       :: filename_len
     character(C_CHAR),  intent(in)  :: filename_ptr(filename_len)
     integer(C_INT),     intent(out) :: ierr
@@ -1547,7 +1549,7 @@ end subroutine permute_local_matrix
     write(*,*) 'CrsMat:', globalRows, globalCols, globalEntries
     flush(6)
 
-    call map_setup(A%row_map, MPI_COMM_WORLD, globalRows, ierr)
+    call map_setup(A%row_map, comm, globalRows, ierr)
     if( ierr .ne. 0 ) return
 
     A%nRows = A%row_map%nlocal(A%row_map%me)
@@ -1684,7 +1686,8 @@ end subroutine permute_local_matrix
 
   !==================================================================================
   !> read MatrixMarket file
-  subroutine phist_DcrsMat_create_fromRowFunc(A_ptr, nrows, ncols, maxnne_per_row, rowFunc_ptr, ierr) bind(C,name='phist_DcrsMat_create_fromRowFunc_f')
+  subroutine phist_DcrsMat_create_fromRowFunc(A_ptr, comm,nrows, ncols, maxnne_per_row, &
+  rowFunc_ptr, ierr) bind(C,name='phist_DcrsMat_create_fromRowFunc_f')
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
     use mpi
@@ -1707,6 +1710,7 @@ end subroutine permute_local_matrix
     integer :: funit
     integer(kind=8) :: localDim(2), globalDim(2)
     real(kind=8) :: wtime
+    integer :: comm
     !--------------------------------------------------------------------------------
 
     ! get procedure pointer
@@ -1719,7 +1723,7 @@ end subroutine permute_local_matrix
     globalCols = ncols
     globalEntries = int(maxnne_per_row,kind=8)*int(nrows,kind=8)
 
-    call map_setup(A%row_map, MPI_COMM_WORLD, globalRows, ierr)
+    call map_setup(A%row_map, comm, globalRows, ierr)
     if( ierr .ne. 0 ) return
     if( A%row_map%me .eq. 0 ) then
       write(*,*) 'creating matrix from rowFunc'
