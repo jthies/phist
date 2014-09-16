@@ -97,25 +97,6 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-
-  if (me->procType==PHIST_FEAST_MASTER)
-  {
-    // distribute the work
-    //TODO
-    
-    // collect the results
-    //TODO
-    
-    // master does not work
-    return;
-  }
-  else if (pme->procType==PHIST_FEAST_SLAVE)
-  {
-    // receive rhs columns
-    //TODO
-  }
-  
-  // slaves and generic processes: run solver
   
   // this function solves nshifts*nrhs linear systems and groups them
   // somehow into blocks of size bs. The outer loop if over the columns
@@ -217,11 +198,4 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
       *ierr=-99;
     }
   }
-
-  if (pme->procType==PHIST_FEAST_SLAVE)
-  {
-    // send solution columns
-    //TODO
-  }
-
 }

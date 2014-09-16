@@ -165,6 +165,9 @@ int main(int argc, char** argv)
   }
 
 
+  comm_ptr_t comm = NULL;
+  // wrap MPI_COMM_WORLD
+  PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
 
   //------------------------------- setup matrices and vectors --------------------- 
 
@@ -173,12 +176,12 @@ int main(int argc, char** argv)
   crsMat_ptr_t A = NULL;
   if( endsWith(filename_A,".mm") )
   {
-    PHIST_ICHK_IERR(SUBR(crsMat_read_mm)(&A,filename_A.c_str(),&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(crsMat_read_mm)(&A,comm,filename_A.c_str(),&ierr),ierr);
   }
   else if( endsWith(filename_A,".cua") )
   {
 #ifdef IS_COMPLEX
-    PHIST_ICHK_IERR(SUBR(crsMat_read_hb)(&A,filename_A.c_str(),&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(crsMat_read_hb)(&A,comm,filename_A.c_str(),&ierr),ierr);
 #else
     PHIST_SOUT(PHIST_ERROR,"error, invoked real version of this program for complex matrix with ending '.cua'\n");
     return 1;
@@ -190,12 +193,12 @@ int main(int argc, char** argv)
     PHIST_SOUT(PHIST_ERROR,"error, invoked complex version of this program for real matrix with ending '.rua'\n");
     return 1;
 #else
-    PHIST_ICHK_IERR(SUBR(crsMat_read_hb)(&A,filename_A.c_str(),&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(crsMat_read_hb)(&A,comm,filename_A.c_str(),&ierr),ierr);
 #endif
   }
   else if( endsWith(filename_A,".bin") || endsWith(filename_A,".crs"))
   {
-    PHIST_ICHK_IERR(SUBR(crsMat_read_bin)(&A,filename_A.c_str(),&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(crsMat_read_bin)(&A,comm,filename_A.c_str(),&ierr),ierr);
   }
   else
   {
@@ -209,8 +212,6 @@ int main(int argc, char** argv)
   // we need the domain map of the matrix
   const_map_ptr_t map = NULL;
   PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(A,&map,&ierr),ierr);
-  const_comm_ptr_t comm = NULL;
-  PHIST_ICHK_IERR(phist_map_get_comm(map,&comm,&ierr),ierr);
 
   // setup necessary vectors and matrices for the schur form
   mvec_ptr_t Q = NULL;
