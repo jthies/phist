@@ -24,6 +24,10 @@ typedef int MPI_Status;
 
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //! \defgroup mpi_kernels additional operations implemented for all libs at once
 //@{
 
@@ -44,3 +48,7 @@ typedef int MPI_Status;
 
 #endif
 //@}
+
+#ifdef __cplusplus
+} //extern "C"
+#endif

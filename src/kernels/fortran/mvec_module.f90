@@ -258,7 +258,7 @@ contains
     end if
 
     localNrm = vnrm*vnrm
-    call MPI_Allreduce(localNrm,vnrm,nvec,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
+    call MPI_Allreduce(localNrm,vnrm,nvec,MPI_DOUBLE_PRECISION,MPI_SUM,mvec%map%comm,ierr)
     vnrm = sqrt(vnrm)
 
     !--------------------------------------------------------------------------------
@@ -571,7 +571,7 @@ contains
     end if
 
     localDot = dot
-    call MPI_Allreduce(localDot,dot,nvec,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
+    call MPI_Allreduce(localDot,dot,nvec,MPI_DOUBLE_PRECISION,MPI_SUM,x%map%comm,ierr)
 
     !--------------------------------------------------------------------------------
   end subroutine mvec_dot_mvec
@@ -874,7 +874,7 @@ contains
     else
       tmp_ = tmp
     end if
-    call MPI_Allreduce(tmp_,tmp,nvecv*nvecw,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
+    call MPI_Allreduce(tmp_,tmp,nvecv*nvecw,MPI_DOUBLE_PRECISION,MPI_SUM,v%map%comm,ierr)
 
     M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
     !--------------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 #include <limits>
 
-void SUBR(mvec_Isend)(TYPE(const_mvec_ptr) V, int dest, int tag, 
+extern "C" void SUBR(mvec_Isend)(TYPE(const_mvec_ptr) V, int dest, int tag, 
         MPI_Comm comm, MPI_Request* req, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
@@ -46,7 +46,7 @@ void SUBR(mvec_Isend)(TYPE(const_mvec_ptr) V, int dest, int tag,
   MPI_Type_free(&mpi_vtype);
 }
 
-void SUBR(mvec_Irecv)(TYPE(const_mvec_ptr) V, int dest, int tag, 
+extern "C" void SUBR(mvec_Irecv)(TYPE(const_mvec_ptr) V, int dest, int tag, 
         MPI_Comm comm, MPI_Request* req, int* ierr)
 {
 #include "phist_std_typedefs.hpp"

@@ -1754,7 +1754,7 @@ end subroutine permute_local_matrix
       return
     end if
 
-call mpi_barrier(MPI_COMM_WORLD, ierr)
+call mpi_barrier(A%row_map%comm, ierr)
 wtime = mpi_wtime()
 
     ! note: the matFuncs in the physics repo are not
@@ -1775,7 +1775,7 @@ wtime = mpi_wtime()
     end do
     A%nEntries = A%row_offset(A%nRows+1)-1
 
-call mpi_barrier(MPI_COMM_WORLD, ierr)
+call mpi_barrier(A%row_map%comm, ierr)
 wtime = mpi_wtime() - wtime
 if( A%row_map%me .eq. 0 ) then
   write(*,*) 'read matrix from row func in', wtime, 'seconds'
@@ -1786,7 +1786,7 @@ wtime = mpi_wtime()
 
     call sort_global_cols(A)
 
-call mpi_barrier(MPI_COMM_WORLD, ierr)
+call mpi_barrier(A%row_map%comm, ierr)
 wtime = mpi_wtime() - wtime
 if( A%row_map%me .eq. 0 ) then
   write(*,*) 'sort global cols in', wtime, 'seconds'
@@ -1805,7 +1805,7 @@ wtime = mpi_wtime()
       return
     end if
 
-call mpi_barrier(MPI_COMM_WORLD, ierr)
+call mpi_barrier(A%row_map%comm, ierr)
 wtime = mpi_wtime() - wtime
 if( A%row_map%me .eq. 0 ) then
   write(*,*) 'repartitioned in', wtime, 'seconds'
@@ -1839,7 +1839,7 @@ wtime = mpi_wtime()
 
     call setup_commBuff(A, A%comm_buff)
 
-call mpi_barrier(MPI_COMM_WORLD, ierr)
+call mpi_barrier(A%row_map%comm, ierr)
 wtime = mpi_wtime() - wtime
 if( A%row_map%me .eq. 0 ) then
   write(*,*) 'setup comm buffers in', wtime, 'seconds'
@@ -1850,7 +1850,7 @@ wtime = mpi_wtime()
 
     call sort_rows_local_nonlocal(A)
 
-call mpi_barrier(MPI_COMM_WORLD, ierr)
+call mpi_barrier(A%row_map%comm, ierr)
 wtime = mpi_wtime() - wtime
 if( A%row_map%me .eq. 0 ) then
   write(*,*) 'sorted rows local/nonlocal in', wtime, 'seconds'
@@ -1867,7 +1867,7 @@ end if
       end if
       return
     end if
-    call mpi_barrier(MPI_COMM_WORLD, ierr)
+    call mpi_barrier(A%row_map%comm, ierr)
     wtime = mpi_wtime() - wtime
     if( A%row_map%me .eq. 0 ) then
       write(*,*) 'local dist-2 coloring in', wtime, 'seconds'
