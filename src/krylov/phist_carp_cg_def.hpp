@@ -240,8 +240,12 @@ void SUBR(carp_cgStates_iterate)(
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr = 0;
-  
-  // some internal settings  
+  //getchar();
+  // some internal settings 
+  bool correction_needed = false; 
+  int cor_count = 0;
+  double cor_tol = 0.999;
+        std::cout << tol << std:: endl;
 
   // how often to print the current impl. residual norms
 #if PHIST_OUTLEV>=PHIST_VERBOSE
@@ -249,7 +253,7 @@ void SUBR(carp_cgStates_iterate)(
 #else
   int itprint=-1; 
 #endif
-  int itcheck=10; // how often to check the actual expl. res norms. We
+  int itcheck=1; // how often to check the actual expl. res norms. We
                   // only stop iterating if *all* expl. res norms for
                   // a given shift are below the tolerance. The impl.
                   // res norm is based on the carp operator, and I'm not
@@ -277,6 +281,7 @@ if (numSys>0)
 ////////////////////////////////////////////////////
   for (int ishift=0;ishift<numSys; ishift++)
   {
+    PHIST_SOUT(PHIST_INFO,"HIER PASSIERT IRGENDWAS.\n");                                                            ///////////////////////////////////////////////////////////////////
     // get some pointers to avoid the 'S_array[ishift]->' all the time
     TYPE(carp_cgState_ptr) S = S_array[ishift];
     TYPE(const_crsMat_ptr) A=S->A_;
@@ -373,6 +378,7 @@ if (numSys>0)
     }
     S->ierr=1; // unumConverged
     MT reltol2[nvec];
+
     for (int j=0;j<nvec;j++)
     {
       reltol2[j]=tol*tol*S->normR[j];
@@ -421,12 +427,15 @@ if (numSys>0)
       SUBR(private_printResid)(0,0,NULL,NULL,NULL,NULL);
       SUBR(private_printResid)(0,nvec,r2_new,S->normR0_,S->normB_,S->conv);
     }
+
+    PHIST_SOUT(PHIST_INFO,"HIER FAENGT DER EIGENTLICHE CARP-CG TEIL AN UND ICH BRAUCHE EINE AUSGABE DAMIT ICH DIESEN TEIL WIEDERFINDEN KANN.\n");                                                            ///////////////////////////////////////////////////////////////////
+    //maxIter =10000;
     for (int it=1;it<maxIter; it++)
     {
-      // apply operator, I-carp_sweep(...) to p. Note that our function carp_sweep operates
-      // in place, so we first copy p to q again. The rhs vector is 0, which the
-      // kernel lib should understand if we pass in NULL.
-
+      //getchar();
+      if(correction_needed == true ){
+        cor_count++;
+        correction_needed = false;
       //q=p-carp_sweep(A,sigma,B,bnul,p,omega,nrm_ai2);
       PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),p,st::zero(),q,ierr),*ierr);
 #ifndef IS_COMPLEX
@@ -446,6 +455,25 @@ if (numSys>0)
       }
 #endif
 
+//r=carp_sweep(A,sigma,B,b,x,omega,nrm_ai2)-x;
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),x,st::zero(),r,ierr),*ierr);
+#ifndef IS_COMPLEX
+    if (rc_variant)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),xi,st::zero(),ri,ierr),*ierr);
+    }
+#endif
+    // double carp sweep in place, updates r=dkswp(sI-A,omega,r)
+    PHIST_CHK_IERR(SUBR(carp_sweep)(A, 1, &sigma_r, &sigma_i,b,&r,&ri,
+          S->nrms_ai2i_,S->aux_,&S->omega_,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-st::one(),x,st::one(),r,ierr),*ierr);
+#ifndef IS_COMPLEX
+    if (rc_variant)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-st::one(),xi,st::one(),ri,ierr),*ierr);
+    }
+#endif
+
       ////////////////////////////
       // update solution x      //
       ////////////////////////////
@@ -456,6 +484,7 @@ if (numSys>0)
       PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,alpha,alpha_i,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(private_dotProd)(p,pi,q,qi,nvec,denom,denom_i,ierr),*ierr);
       MT minus_alpha_i[nvec];
+
       // stop updating x if the system is already converged (1-conv[j])
 #ifdef IS_COMPLEX
         for (int j=0;j<nvec;j++)
@@ -511,7 +540,7 @@ if (numSys>0)
             numConverged++;
           }
         }
-        
+
         if ( (it%itprint==0 && itprint>0) || (numConverged>=minConv))
         {
 #ifdef IS_COMPLEX
@@ -521,9 +550,9 @@ if (numSys>0)
             tmp[j]=(ST)S->normR[j];
           }
 #else
-          ST* tmp=S->normR;
+          ST* tmp=S->normR; 
 #endif          
-          SUBR(private_printResid)(it, nvec, tmp, S->normR0_, S->normB_,S->conv);
+          SUBR(private_printResid)(it, nvec, tmp, S->normR0_, S->normB_,S->conv);                                                          ///////////////////////////////////////////////////////////////////
         }
         
         if (numConverged>=minConv)
@@ -542,6 +571,7 @@ if (numSys>0)
         minus_alpha[j]=-alpha[j];
       }
       PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha,q,st::one(),r,ierr),*ierr);
+
 #ifndef IS_COMPLEX
       if (rc_variant)
       {
@@ -555,6 +585,7 @@ if (numSys>0)
 
       for (int j=0;j<nvec;j++)
       {
+        //PHIST_SOUT(PHIST_INFO,"TESTFA2 %d \t %e \t %e \t %e\n",it, r2_old[j], std::abs(r2_new[j]), std::abs(r2_new[j])/r2_old[j]);
         r2_old[j]=std::abs(r2_new[j]);
       }
       PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,r2_new,NULL,ierr),*ierr);
@@ -562,10 +593,32 @@ if (numSys>0)
       // arithmetic here because r!=z => above dotProd has imag!=0.
       // Only for symmetric preconditioning would we get a Hermitian
       // Lanczos matrix and thus a real beta on the diagonal.
+
+      ST upper  [nvec];
+      MT upper_i[nvec];
+      ST lower  [nvec];
+      MT lower_i[nvec];
+
+      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,q,qi,nvec,upper,upper_i,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(private_dotProd)(p,pi,q,qi,nvec,lower,lower_i,ierr),*ierr);
+
       for (int j=0;j<nvec;j++)
-      {
-        beta[j]=std::abs(r2_new[j])/r2_old[j];
-      }
+        {
+#ifndef IS_COMPLEX
+          CT tmp1(upper[j],upper_i[j]);
+          CT tmp2(lower[j],lower_i[j]);
+          CT tmp3=-tmp1/tmp2;
+          //tmp1*=(MT)(1-conv[j]);
+          beta[j]=ct::real(tmp3);
+#else
+          beta[j]=ct::real(upper[j]/lower[j]);
+#endif    
+          if(beta[j] > cor_tol){
+            correction_needed = true;
+            PHIST_SOUT(PHIST_INFO,"CSTEP.\t%e\n",beta[j]);
+          }    
+        }
+
       //p=z+beta*p;
 #ifdef IS_COMPLEX
       ST tmp[nvec];
@@ -588,8 +641,198 @@ if (numSys>0)
         PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),zi,st::one(),pi,ierr),*ierr);
       }
 #endif
+
+
+
+
+
+
+      }else{
+      correction_needed = false;  
+      //PHIST_SOUT(PHIST_INFO,"DIESE ZEILE MUESSTE JEDE ITERATION ERSCHEINEN, WAS SIE AUCH TUT.\n");                                                            ///////////////////////////////////////////////////////////////////
+      // apply operator, I-carp_sweep(...) to p. Note that our function carp_sweep operates
+      // in place, so we first copy p to q again. The rhs vector is 0, which the
+      // kernel lib should understand if we pass in NULL.
+
+      //q=p-carp_sweep(A,sigma,B,bnul,p,omega,nrm_ai2);
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),p,st::zero(),q,ierr),*ierr);
+#ifndef IS_COMPLEX
+      if (rc_variant)
+      {
+        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),pi,st::zero(),qi,ierr),*ierr);
+      }
+#endif
+      // double carp sweep in place, updates q to carp_sweep(p)
+      PHIST_CHK_IERR(SUBR(carp_sweep)(A, 1, &sigma_r, &sigma_i,bnul,&q,&qi,
+          S->nrms_ai2i_,S->aux_,&S->omega_,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),p,-st::one(),q,ierr),*ierr);
+#ifndef IS_COMPLEX
+      if (rc_variant)
+      {
+        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),pi,-st::one(),qi,ierr),*ierr);
+      }
+#endif
+
+      ////////////////////////////
+      // update solution x      //
+      ////////////////////////////
+      
+      //alpha = (r'*z)/(p'*q);
+      ST denom  [nvec];
+      MT denom_i[nvec];
+      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,alpha,alpha_i,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(private_dotProd)(p,pi,q,qi,nvec,denom,denom_i,ierr),*ierr);
+      MT minus_alpha_i[nvec];
+
+      // stop updating x if the system is already converged (1-conv[j])
+#ifdef IS_COMPLEX
+        for (int j=0;j<nvec;j++)
+        {
+          alpha[j]=(ST)(1-conv[j])*(alpha[j]/denom[j]);
+        }
+        // update x <- x + alpha*p
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,ierr),*ierr);
+#else
+      if (!rc_variant)
+      {
+        for (int j=0;j<nvec;j++)
+        {
+          alpha[j]=(ST)(1-conv[j])*(alpha[j]/denom[j]);
+        }
+        // update x <- x + alpha*p
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,ierr),*ierr);
+      }
+      else
+      {
+        for (int j=0;j<nvec;j++)
+        {
+          CT tmp1(alpha[j],alpha_i[j]);
+          CT tmp2(denom[j],denom_i[j]);
+          CT tmp3=tmp1/tmp2;
+          tmp1*=(MT)(1-conv[j]);
+          alpha[j]=ct::real(tmp3);
+          alpha_i[j]    = ct::imag(tmp3);
+          minus_alpha_i[j]=-ct::imag(tmp3);
+        }
+        // update x <- x + alpha*p
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha_i,pi,st::one(),x,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,pi,st::one(),xi,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha_i,p,st::one(),xi,ierr),*ierr);
+      }
+#endif
+      if ( it%itcheck == 0)
+      {
+        //PHIST_SOUT(PHIST_INFO,"TESTFALL Test %d \t%e\n",it, S->normR);
+        PHIST_CHK_IERR(SUBR(private_compResid)(A, nvec, sigma, sigma_i,
+                         b, x, xi, NULL, NULL, S->normR, ierr),*ierr);
+        
+        // check for convergence. 
+        // TODO - which convergence criterion should we use?
+        // For the moment, we use ||r||_2/||b||_2 < tol
+        numConverged=0;
+        for (int j=0;j<nvec;j++)
+        {
+          if (S->normR[j]<reltol2[j])
+          {
+            conv[j]=1;
+            numConverged++;
+          }
+        }
+
+        
+        if ( (it%itprint==0 && itprint>0) || (numConverged>=minConv))
+        {
+#ifdef IS_COMPLEX
+          ST tmp[nvec];
+          for (int j=0;j<nvec;j++)
+          {
+            tmp[j]=(ST)S->normR[j];
+            //PHIST_SOUT(PHIST_INFO,"TESTFALL %e.\n",tmp[j]);
+          }
+#else
+          ST* tmp=S->normR;
+          //PHIST_SOUT(PHIST_INFO,"TESTFALL %e.\n",tmp);
+#endif          
+          SUBR(private_printResid)(it, nvec, tmp, S->normR0_, S->normB_,S->conv);
+          //PHIST_SOUT(PHIST_INFO,"TESTFALL %d.\n",nvec);                                                            ///////////////////////////////////////////////////////////////////
+        }
+        
+        if (numConverged>=minConv)
+        {
+          // print footer
+          SUBR(private_printResid)(it,-1,NULL,NULL,NULL,NULL);
+            numSolved++; 
+            break;
+        }
+        //PHIST_SOUT(PHIST_INFO,"TESTFALL KORREKT %d \t%e\n",it, ierr);
+        //PHIST_SOUT(PHIST_INFO,"TESTFALL %d \t %e \t %e \t %e\n",it, S->normR , S->normR0_, S->normB_);
+      }
+
+      //r=r-alpha*q;
+      ST minus_alpha[nvec];
+      for (int j=0;j<nvec;j++)
+      {
+        minus_alpha[j]=-alpha[j];
+      }
+      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha,q,st::one(),r,ierr),*ierr);
+      //PHIST_SOUT(PHIST_INFO,"ALPHA :\t%e\n",alpha;
+
+#ifndef IS_COMPLEX
+      if (rc_variant)
+      {
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(      alpha_i,qi,st::one(),r,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha,  qi,st::one(),ri,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha_i,q, st::one(),ri,ierr),*ierr);
+      }
+#endif
+//  z=apply_op(r,M):
+// .. do nothing ...
+
+      for (int j=0;j<nvec;j++)
+      {
+        //PHIST_SOUT(PHIST_INFO,"TESTFA2 %d \t %e \t %e \t %e\n",it, r2_old[j], std::abs(r2_new[j]), std::abs(r2_new[j])/r2_old[j]);
+        r2_old[j]=std::abs(r2_new[j]);
+      }
+      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,r2_new,NULL,ierr),*ierr);
+      //note: for a precond M!=I I think we need complex
+      // arithmetic here because r!=z => above dotProd has imag!=0.
+      // Only for symmetric preconditioning would we get a Hermitian
+      // Lanczos matrix and thus a real beta on the diagonal.
+      for (int j=0;j<nvec;j++)
+      {
+        beta[j]=std::abs(r2_new[j])/r2_old[j];
+        if(beta[j] > cor_tol){
+          correction_needed = true;
+          //PHIST_SOUT(PHIST_INFO,"CSTEP theoretically needed.\t%e\n",beta[j]);
+        }
+      }
+
+      //PHIST_SOUT(PHIST_INFO,"BETA :\t%e\n",beta);
+      //p=z+beta*p;
+#ifdef IS_COMPLEX
+      ST tmp[nvec];
+      for (int j=0;j<nvec;j++)
+      {
+        tmp[j]=(ST)beta[j];
+      }
+      PHIST_CHK_IERR(SUBR(mvec_vscale)(p,tmp,ierr),*ierr);
+#else
+      PHIST_CHK_IERR(SUBR(mvec_vscale)(p,beta,ierr),*ierr);
+      if (rc_variant)
+      {
+        PHIST_CHK_IERR(SUBR(mvec_vscale)(pi,beta,ierr),*ierr);
+      }
+#endif
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),z,st::one(),p,ierr),*ierr);
+#ifndef IS_COMPLEX
+      if (rc_variant)
+      {
+        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),zi,st::one(),pi,ierr),*ierr);
+      }
+#endif
+    }// endof else
     }// CG iterations (it)
-  
     //...
     
     // take square root so that normR is indeed the norm, not the
@@ -601,12 +844,11 @@ if (numSys>0)
   
     // to save memory, deallocate CG vector data
     PHIST_CHK_IERR(SUBR(private_carp_cgState_dealloc)(S,ierr),*ierr);
-  
+
   } // for all shifts, solve (s[j]I-A)X[j]=B
 
-
+  std::cout << "Beta>1: " << cor_count << std::endl;
   *ierr=numSys-numSolved;
-      
   return;
 }
 
@@ -749,13 +991,16 @@ void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR,
   if (nvec==0)
   {
     PHIST_SOUT(PHIST_INFO,"%s\tit\t||r||\t||r||/||b||\t||r||/||r0||\n",carp_label);
+    //PHIST_SOUT(PHIST_INFO,"TEST1.\n"); 
   }
   else if (nvec==-1)
   {
     PHIST_SOUT(PHIST_INFO,"%s\tfinished after %d iterations.\n",carp_label,it);
+   // PHIST_SOUT(PHIST_INFO,"TEST2.\n"); 
   }
   else if (PHIST_OUTLEV<=PHIST_INFO && nvec>2)
   {
+    // PHIST_SOUT(PHIST_INFO,"TEST3.\n"); 
     // print maximum and minimum residual norms only
     int max_pos=0, min_pos=0;
     ST nrmR[2];
@@ -776,6 +1021,7 @@ void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR,
   {
     MT tmp=mt::sqrt(st::real(normR[0]));
     std::string lock_str="";
+    //PHIST_SOUT(PHIST_INFO,"TEST4 %e.\n",tmp/normB[0]); 
     if (locked!=NULL) lock_str=locked[0]?"(converged)":"";
     PHIST_SOUT(PHIST_INFO,"%s %d\t%e\t%e\t%e\t%s\n",carp_label,it,
           tmp,tmp/normB[0],tmp/normR0[0],lock_str.c_str());
