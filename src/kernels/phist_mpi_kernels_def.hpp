@@ -8,7 +8,7 @@ extern "C" void SUBR(mvec_Isend)(TYPE(const_mvec_ptr) V, int dest, int tag,
         MPI_Comm comm, MPI_Request* req, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
-  PHIST_OUT(PHIST_INFO,"do Isend\n");
+  PHIST_OUT(PHIST_DEBUG,"do Isend\n");
   PHIST_CHK_IERR(SUBR(mvec_transfer)(V,dest,tag,comm,req,0,ierr),*ierr);
 }
 
@@ -16,7 +16,7 @@ extern "C" void SUBR(mvec_Irecv)(TYPE(const_mvec_ptr) V, int dest, int tag,
         MPI_Comm comm, MPI_Request* req, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
-  PHIST_OUT(PHIST_INFO,"do Irecv\n");
+  PHIST_OUT(PHIST_DEBUG,"do Irecv\n");
   PHIST_CHK_IERR(SUBR(mvec_transfer)(V,dest,tag,comm,req,1,ierr),*ierr);
 }
 
@@ -56,7 +56,7 @@ void SUBR(mvec_transfer)(TYPE(const_mvec_ptr) V, int dest, int tag,
     return;
   }
   int num_send=(int)(nloc*nvec);
-  PHIST_OUT(PHIST_INFO,"tag: %d, num elements: %d\n",tag,num_send);
+  PHIST_OUT(PHIST_DEBUG,"tag: %d, num elements: %d\n",tag,num_send);
   if (flag==0)
   {
     MPI_Isend(val,num_send,st::mpi_type(),dest,tag,comm,req);
