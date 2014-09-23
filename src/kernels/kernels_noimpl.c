@@ -11,17 +11,20 @@ void SUBR(type_avail)(int *ierr)
   *ierr=-99;
 }
 
-void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* A, const char* filename,int* ierr)
+void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
+        const char* filename,int* ierr)
 {
   *ierr=-99;
 }
 
-void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* A, const char* filename,int* ierr)
+void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
+        const char* filename,int* ierr)
 {
   *ierr=-99;
 }
 
-void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* A, const char* filename,int* ierr)
+void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
+        const char* filename,int* ierr)
 {
   *ierr=-99;
 }

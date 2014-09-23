@@ -9,15 +9,16 @@ extern "C" void SUBR(type_avail)(int* ierr)
 //@{
 
 //! read a matrix from a MatrixMarket (ASCII) file
-extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
+extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+        const char* filename,int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
   Tpetra::MatrixMarket::Reader<Traits<_ST_>::crsMat_t> reader;
   std::string fstring(filename);
 
   Teuchos::RCP<Traits<_ST_>::crsMat_t> A;
-
-  Teuchos::RCP<const comm_t> comm_ptr = Teuchos::DefaultComm<int>::getComm();
+  CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
+  Teuchos::RCP<const comm_t> comm_ptr = Teuchos::rcp(comm,false);
 
   node_t* node;
   PHIST_CHK_IERR(phist_tpetra_node_create(&node,(const_comm_ptr_t)comm_ptr.get(),ierr),*ierr);
@@ -29,7 +30,8 @@ extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const char* filename,
   }
 
 //! read a matrix from a Ghost CRS (binary) file.
-extern "C" void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
+extern "C" void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+        const char* filename,int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
   // TODO - not implemented (should read the binary file format defined by ghost)
@@ -39,12 +41,14 @@ extern "C" void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename
   }
 
 //! read a matrix from a Harwell-Boeing (HB) file
-extern "C" void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
+extern "C" void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+const char* filename,int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
+  CAST_PTR_FROM_VOID(const comm_t,_comm,vcomm,*ierr);
   std::string fname(filename);
-  Teuchos::RCP<const comm_t> comm = Teuchos::DefaultComm<int>::getComm();
+  Teuchos::RCP<const comm_t> comm = Teuchos::rcp(_comm,false);
   Teuchos::ParameterList nodeParams;
   
   Teuchos::RCP<Traits<_ST_>::crsMat_t> A;
@@ -57,6 +61,17 @@ extern "C" void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* vA, const char* filename,
   *vA = (TYPE(crsMat_ptr))(Aptr.get());
   }
 //!@}
+
+extern "C" void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, const_comm_ptr_t vcomm,
+        gidx_t nrows, gidx_t ncols, lidx_t maxnne,
+                int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*),
+                int *ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+  *ierr=-99;
+  return;
+}
+                                                            
 
 //! \name get information about the data distribution in a matrix (maps)
 

@@ -11,7 +11,8 @@ extern "C" void SUBR(type_avail)(int* ierr)
 
 
 //! read a matrix from a MatrixMarket (ASCII) file
-extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
+extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+const char* filename,int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
   TOUCH(vA);
@@ -20,7 +21,8 @@ extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const char* filename,
 }
 
 //! read a matrix from a Ghost CRS (binary) file.
-extern "C" void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
+extern "C" void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+const char* filename,int* ierr)
 {
   *ierr=0;
   ENTER_FCN(__FUNCTION__);
@@ -60,7 +62,8 @@ PHIST_GHOST_TASK_END
 }
 
 //! read a matrix from a Harwell-Boeing (HB) file
-extern "C" void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
+extern "C" void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+const char* filename,int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
   TOUCH(vA);
@@ -1191,7 +1194,7 @@ extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* 
 # endif
 #endif
 
-void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, 
+void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, const_comm_ptr_t vcomm,
         gidx_t nrows, gidx_t ncols, gidx_t maxnne, 
                 void (*rowFunPtr)(gidx_t,gidx_t*,lidx_t*,void*), int *ierr)
 {

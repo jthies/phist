@@ -136,7 +136,7 @@ int main(int argc, char** argv)
   matfuncs_info_t info;
   SpinChainSZ( (ghost_gidx_t)-1, NULL, NULL, &info);
 #ifdef PHIST_KERNEL_LIB_FORTRAN
-  PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,
+  PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,comm,
         info.nrows, info.ncols, info.row_nnz,
         &SpinChainSZ, &ierr), ierr);
 #endif

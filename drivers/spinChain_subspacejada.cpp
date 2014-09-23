@@ -45,6 +45,10 @@ int main(int argc, char** argv)
   int ierr;
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
 
+  comm_ptr_t comm = NULL;
+  PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
+
+
 
 
   //------------------------------- parse input parameters ------------------------- 
@@ -209,7 +213,7 @@ int main(int argc, char** argv)
   SpinChainSZ( -1, NULL, NULL, &info);
 
 #ifdef PHIST_KERNEL_LIB_FORTRAN
-  PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,
+  PHIST_ICHK_IERR(SUBR(crsMat_create_fromRowFunc)(&mat,comm,
         info.nrows, info.ncols, info.row_nnz,
         &SpinChainSZ, &ierr), 
         ierr);
@@ -245,10 +249,6 @@ int main(int argc, char** argv)
   // create an operator from A
   op_ptr_t opA = new TYPE(op);
   PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(opA,mat,&ierr),ierr);
-
-  // we need the domain map of the matrix
-  const_comm_ptr_t comm = NULL;
-  PHIST_ICHK_IERR(phist_map_get_comm(opA->domain_map,&comm,&ierr),ierr);
 
   // setup necessary vectors and matrices for the schur form
   mvec_ptr_t Q = NULL;
