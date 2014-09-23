@@ -1196,7 +1196,7 @@ extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* 
 
 void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, const_comm_ptr_t vcomm,
         gidx_t nrows, gidx_t ncols, gidx_t maxnne, 
-                void (*rowFunPtr)(gidx_t,gidx_t*,lidx_t*,void*), int *ierr)
+                int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int *ierr)
 {
   ENTER_FCN(__FUNCTION__);
   *ierr=-99;
