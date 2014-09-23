@@ -2101,10 +2101,10 @@ end if
     deallocate(procCount)
     work_ptr=c_loc(invProcCount)    
     
-    if (A%row_map%me==0 .and. A%row_map%coloringType==2) then
-      write(6,*) 'CARP will exploit local dist-2 coloring'
-      flush(6)
-    end if
+    !if (A%row_map%me==0 .and. A%row_map%coloringType==2) then
+      !write(6,*) 'CARP will exploit local dist-2 coloring'
+      !flush(6)
+    !end if
   end subroutine phist_Dcarp_setup
 
   subroutine phist_Dcarp_sweep(A_ptr, numShifts, shifts_r, shifts_i, &
