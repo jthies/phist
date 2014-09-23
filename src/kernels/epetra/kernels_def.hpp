@@ -12,9 +12,10 @@ extern "C" void SUBR(type_avail)(int* ierr)
 extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
         const char* filename,int* ierr)
   {
-  CAST_PTR_FROM_VOID(const Epetra_Comm*,comm,vcomm,*ierr);
+  ENTER_FCN(__FUNCTION__);
+  CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*ierr);
   Epetra_CrsMatrix* A=NULL;
-  *ierr=EpetraExt::MatrixMarketFileToCrsMatrix(filename,comm,A);
+  *ierr=EpetraExt::MatrixMarketFileToCrsMatrix(filename,*comm,A);
   *vA = (TYPE(crsMat_ptr))(A);
   
 /*  std::cerr << "filename was '"<<filename<<"'"<<std::endl;
@@ -38,6 +39,17 @@ const char* filename,int* ierr)
   *ierr=-99; // not implemented in epetra
   }
 //!@}
+
+extern "C" void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, const_comm_ptr_t vcomm,
+        gidx_t nrows, gidx_t ncols, lidx_t maxnne,
+                int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*),
+                int *ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+  *ierr=-99;
+return;
+}
+
 
 //! \name get information about the data distribution in a matrix (maps)
 
@@ -701,4 +713,6 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
 
 //!@}
 
+extern "C" {
 #include "../kernels_nogpu.c"
+}
