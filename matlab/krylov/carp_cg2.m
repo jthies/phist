@@ -1,4 +1,4 @@
-function [x,flag,relres,iter,resvec,Tlan, c_steps]=carp_cg(A,b,x0,opts)
+function [x,flag,relres,iter,resvec,Tlan, c_steps, beta_pos]=carp_cg(A,b,x0,opts)
 %                                                               
 % [x,flag,relres,iter,resvec, Tlan]=carp_cg(A,b,x0,opts)        
 %                                                               
@@ -24,9 +24,10 @@ verbose=getopt(opts,'verbose',true);
 itprint=1;
 itcheck=1;
 
-errormode = true;
+errormode = false;
 correction_needed = false;
 c_steps = 0; 
+beta_pos = 0;
 
 flag=0;
 relres=1.0;
@@ -57,6 +58,12 @@ end
 % diagonal and sub/super diagonal of the Lanczos method
 lanD0=[];
 lanD1=[];
+
+%%%FOR TEST REASONS AND COMPARISON WITH PHIST_CARP_CG ONLY%%%%%
+%for k = 1:size(b)
+%  b(k) = k;
+%  %b(k) = 1;
+%end
 
 %{
 idrS=4;
@@ -126,6 +133,7 @@ beta_old=0;
 
 disp(sprintf('%d\t%e\t%e',0,sqrt(r2_new),sqrt(r2_new)/nrm_b));
 for k=1:maxIter
+
   if(correction_needed==true)   %self stabilizing carp-cg
   correction_needed = false;  
   c_steps = c_steps + 1;                               
@@ -133,27 +141,25 @@ for k=1:maxIter
     r=dkswp(A,sigma,B,b,x,omega,nrm_ai2)-x;
     alpha = (r'*p)/(p'*q);
     x=x+alpha*p;
-
     if (mod(k-1,itcheck)==0)
       nrm_r = norm(A*x-sigma*x-b);
        if (mod(k-1,itprint)==0)
-        disp(sprintf('%d\t%e\t%e\t%e\t%e CS',k,nrm_r,nrm_r/nrm_b,nrm_r-tol*nrm_r0,relres));
+        disp(sprintf('%d\t%e\t%e\t%e\t%e CS',k,nrm_r,nrm_r/nrm_b,nrm_r/nrm_r0,relres));
       end
       relres=nrm_r/nrm_b;
       resvec=[resvec,nrm_r];
 
       if (nrm_r<=tol*nrm_r0)
-        save residuum_100p_auto.txt resvec -ASCII;
         break;
       end
 
-      if(k>1 & ((nrm_r / resvec(k-1)) > 0.9999) )
+      if(k>1 & ((nrm_r / resvec(k-1)) > 0.99) )
         correction_needed = true;
       end
 
     end
     r=r-alpha*q;
-
+    
     if (deflMethod==2)
       Vtr=V'*r;
       vr=E\Vtr;
@@ -168,8 +174,12 @@ for k=1:maxIter
     r2_new=r'*z;
 
     beta = -(r'*q)/(p'*q);
+    if beta >= 1
+      beta_pos = beta_pos + 1;
+      %disp(sprintf('%e \t CS BETA\n',beta));
+    end
     p = r + beta*p;
-
+    
     if (deflMethod==1)
       p = p - V*(AV'*z);
     end
@@ -187,35 +197,39 @@ for k=1:maxIter
   else                                                 %normal carp-cg                                                                 
     correction_needed = false;   
     q=p-dkswp(A,sigma,B,bnul,p,omega,nrm_ai2);
-
+        
     %provoke pseudo-random error
     if errormode
       q = elem_destr(q);     %endless loop
     end
 
     alpha = (r'*z)/(p'*q);
-    x=x+alpha*p;
 
+    x=x+alpha*p;
+    
     if (mod(k-1,itcheck)==0)
       nrm_r = norm(A*x-sigma*x-b);
       if (mod(k-1,itprint)==0)
-        disp(sprintf('%d\t%e\t%e\t%e\t%e',k,nrm_r,nrm_r/nrm_b,nrm_r-tol*nrm_r0, relres));
+        disp(sprintf('%d\t%e\t%e\t%e\t%e',k,nrm_r,nrm_r/nrm_b,nrm_r/nrm_r0, relres));
       end
       relres=nrm_r/nrm_b;
       resvec=[resvec,nrm_r];
 
       if (nrm_r<tol*nrm_r0)
-        save residuum_100p_auto.txt resvec -ASCII;
         break;
       end
 
-      if(k>1 & ((nrm_r / resvec(k-1)) > 0.9999) )
+      %if k>1
+      %  (nrm_r / resvec(k-1))
+      %end
+
+      if(k>1 & ((nrm_r / resvec(k-1)) > 0.99) )
         correction_needed = true;   
       end
 
     end
     r=r-alpha*q;
-
+    
     %provoke pseudo-random error
     
     if errormode
@@ -244,8 +258,12 @@ for k=1:maxIter
 
     r2_new=r'*z;
     beta=r2_new/r2_old;
+    if beta >= 1
+      beta_pos=beta_pos+1;
+      %disp(sprintf('%e \t BETA \n',beta));
+    end
     p=z+beta*p;
-
+       
     %provoke pseudo-random error
     if errormode
       p = elem_destr(p);    %plenty more time, D0 = 0, E0 = other value
@@ -285,9 +303,19 @@ for k=1:maxIter
   end
   if errormode
     if(k==3 | k==9| k==27| k==31| k==56| k==64 | k==81 | k==100)
-      x = elem_destr(x);
+      %x = elem_destr(x);
+      for i = 1:10
+        x(i) = 0;
+      end
     end
   end
+
+  %if mod(k,100) == 0
+  %  for i = 1:10
+  %    x(i) = 0;
+  %  end
+  %end
+
 end
 iter=k
 

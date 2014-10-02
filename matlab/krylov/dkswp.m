@@ -14,6 +14,7 @@ if isempty(nm_operations)
 end
 
 if (is_matlab)
+%if (0)
 
 % call mex function
 x=dkswp2(A', sigma, B, b, x, omega, nrm_ai2);
@@ -25,6 +26,7 @@ else
 
 n=size(A,1);
 A=A-sigma*speye(n);
+%A=sigma*speye(n)-A;
 
 
 %tic;

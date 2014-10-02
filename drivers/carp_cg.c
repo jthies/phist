@@ -234,6 +234,29 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(-1.0,mat,X_r_ex0,1.0,B,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_i[0],X_i_ex0,1.0,B,&ierr),ierr);
 
+//// ZUM TESTEN ////
+
+
+  for (int i=0;i<nshifts;i++)
+  {
+    // start with zero vector to make runs reproducible
+    PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_r[i],ZERO,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_i[i],ZERO,&ierr),ierr);
+    }
+    MT* bval=NULL;
+    lidx_t lda,nloc;
+    PHIST_ICHK_IERR(SUBR(mvec_my_length)(B,&nloc,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_extract_view)(B,&bval,&lda,&ierr),ierr);
+    
+    for (lidx_t i=0; i<nloc;i++)
+    {
+      bval[i]=(_ST_)(i+1);
+      //bval[i]=(_ST_)1;
+    }
+
+
+////////////////////
+
 /*
 TYPE(sdMat_ptr) Rtmp=NULL;
 PHIST_ICHK_IERR(SUBR(sdMat_create)(&Rtmp,nrhs,nrhs,NULL,&ierr),ierr);

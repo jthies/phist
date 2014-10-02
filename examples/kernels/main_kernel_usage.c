@@ -67,13 +67,13 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(phist_Dmvec_num_vectors(y,&nvec_y,&ierr),ierr);
   
   fprintf(stdout,"rank %d: x has local length %d and %d vectors\n",rank,(int)nloc_x,(int)nvec_x);
-  fprintf(stdout,"rank %d: y has local length %d and %d vectors\n",rank,(int)nloc_y,(int)nvec_y);
+  //fprintf(stdout,"rank %d: y has local length %d and %d vectors\n",rank,(int)nloc_y,(int)nvec_y);
   
   PHIST_ICHK_IERR(phist_Dmvec_extract_view(x,&x_val,&lda_x,&ierr),ierr);
   PHIST_ICHK_IERR(phist_Dmvec_extract_view(y,&y_val,&lda_y,&ierr),ierr);
   
   // set x=1
-  PHIST_ICHK_IERR(phist_Dmvec_put_value(x,42.0,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_Dmvec_put_value(x,1.0,&ierr),ierr);
   PHIST_ICHK_IERR(phist_Dmvec_put_value(y,-99.0,&ierr),ierr);
 
   // print initial vectors

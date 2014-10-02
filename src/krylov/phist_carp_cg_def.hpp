@@ -31,6 +31,10 @@ void SUBR(private_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* ierr);
 // allocate CG vector blocks
 void SUBR(private_carp_cgState_dealloc)(TYPE(carp_cgState_ptr) S, int* ierr);
 
+// destroy vector elements to test automatic fault-detection
+void SUBR(destroy_vector_elements_at_random)(TYPE(mvec_ptr) V, double probability, int nloc, int *ierr); 
+void SUBR(show_vector_elements)(TYPE(mvec_ptr) V, int *ierr) ;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // public interface                                                                              //
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -77,6 +81,7 @@ void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
     state[i]->normR0_= new MT[nvec];
     state[i]->normB_= new MT[nvec];
     state[i]->normR= new MT[nvec];
+    state[i]->normR_old= new MT[nvec];
 
     state[i]->beta_ =  new MT[nvec];
     state[i]->alpha_ = new ST[nvec];
@@ -160,6 +165,7 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) state[], int numSys, int*
     delete [] state[i]->normR0_;
     delete [] state[i]->normB_;
     delete [] state[i]->normR;
+    delete [] state[i]->normR_old;
 
     delete [] state[i]->beta_;
     delete [] state[i]->alpha_;
@@ -201,6 +207,9 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
 
     delete [] S->normR;
     S->normR= new MT[nvec];
+
+    delete [] S->normR_old;
+    S->normR_old= new MT[nvec];
 
     delete [] S->beta_;
     S->beta_ =  new MT[nvec];
@@ -244,8 +253,9 @@ void SUBR(carp_cgStates_iterate)(
   // some internal settings 
   bool correction_needed = false; 
   int cor_count = 0;
-  double cor_tol = 0.999;
-        std::cout << tol << std:: endl;
+  double cor_tol = 0.99;
+  int debugstate = 1000;
+  //std::cout << tol << std:: endl;
 
   // how often to print the current impl. residual norms
 #if PHIST_OUTLEV>=PHIST_VERBOSE
@@ -281,7 +291,7 @@ if (numSys>0)
 ////////////////////////////////////////////////////
   for (int ishift=0;ishift<numSys; ishift++)
   {
-    PHIST_SOUT(PHIST_INFO,"HIER PASSIERT IRGENDWAS.\n");                                                            ///////////////////////////////////////////////////////////////////
+    //PHIST_SOUT(PHIST_INFO,"HIER PASSIERT IRGENDWAS.\n");                                                            ///////////////////////////////////////////////////////////////////
     // get some pointers to avoid the 'S_array[ishift]->' all the time
     TYPE(carp_cgState_ptr) S = S_array[ishift];
     TYPE(const_crsMat_ptr) A=S->A_;
@@ -374,6 +384,7 @@ if (numSys>0)
       for (int j=0;j<nvec;j++)
       {
         S->normR0_[j]=std::sqrt(S->normR[j]);
+        S->normR_old[j] = S->normR0_[j];
       }
     }
     S->ierr=1; // unumConverged
@@ -428,14 +439,33 @@ if (numSys>0)
       SUBR(private_printResid)(0,nvec,r2_new,S->normR0_,S->normB_,S->conv);
     }
 
-    PHIST_SOUT(PHIST_INFO,"HIER FAENGT DER EIGENTLICHE CARP-CG TEIL AN UND ICH BRAUCHE EINE AUSGABE DAMIT ICH DIESEN TEIL WIEDERFINDEN KANN.\n");                                                            ///////////////////////////////////////////////////////////////////
+    //getchar();
+    //PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
+    //PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
+    //PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+
+    //PHIST_SOUT(PHIST_INFO,"HIER FAENGT DER EIGENTLICHE CARP-CG TEIL AN UND ICH BRAUCHE EINE AUSGABE DAMIT ICH DIESEN TEIL WIEDERFINDEN KANN.\n");                                                            ///////////////////////////////////////////////////////////////////
     //maxIter =10000;
+
     for (int it=1;it<maxIter; it++)
-    {
-      //getchar();
+    {    
+      //if(it % 100 == 0){
+      // getchar();  
+      //}
+      
+      if(it>debugstate){
+      std::cout << "Initial vectors. " << std::endl;
+      getchar();
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+      }
+
       if(correction_needed == true ){
-        cor_count++;
+        std::cout << "Cstep done." <<std::endl;
         correction_needed = false;
+        cor_count++;
       //q=p-carp_sweep(A,sigma,B,bnul,p,omega,nrm_ai2);
       PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),p,st::zero(),q,ierr),*ierr);
 #ifndef IS_COMPLEX
@@ -454,6 +484,16 @@ if (numSys>0)
         PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),pi,-st::one(),qi,ierr),*ierr);
       }
 #endif
+      
+      if(it>debugstate){
+      std::cout << "Nach Q-Sweep. " << std::endl;
+      getchar();
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+      }
+      
 
 //r=carp_sweep(A,sigma,B,b,x,omega,nrm_ai2)-x;
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),x,st::zero(),r,ierr),*ierr);
@@ -473,6 +513,15 @@ if (numSys>0)
       PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-st::one(),xi,st::one(),ri,ierr),*ierr);
     }
 #endif
+      
+      if(it>debugstate){
+      std::cout << "Nach RC-Sweep. " << std::endl;
+      getchar();
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+      }
 
       ////////////////////////////
       // update solution x      //
@@ -481,7 +530,7 @@ if (numSys>0)
       //alpha = (r'*z)/(p'*q);
       ST denom  [nvec];
       MT denom_i[nvec];
-      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,alpha,alpha_i,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,p,pi,nvec,alpha,alpha_i,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(private_dotProd)(p,pi,q,qi,nvec,denom,denom_i,ierr),*ierr);
       MT minus_alpha_i[nvec];
 
@@ -522,12 +571,26 @@ if (numSys>0)
         PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha_i,p,st::one(),xi,ierr),*ierr);
       }
 #endif
+      
+      if(it>debugstate){
+      std::cout << "Nach X-Sweep. " << std::endl;
+      getchar();
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+      }
+      
 
       if ( it%itcheck == 0)
-      {
+      {  
+        for (int j=0;j<nvec;j++)
+        {
+          S->normR_old[j] = (S->normR[j]);
+        }
         PHIST_CHK_IERR(SUBR(private_compResid)(A, nvec, sigma, sigma_i,
                          b, x, xi, NULL, NULL, S->normR, ierr),*ierr);
-        
+        //std::cout << *(S->normR) <<" " << *(S->normR_old)<< " "<< (*(S->normR)/(*(S->normR_old))) << std::endl;
         // check for convergence. 
         // TODO - which convergence criterion should we use?
         // For the moment, we use ||r||_2/||b||_2 < tol
@@ -550,9 +613,15 @@ if (numSys>0)
             tmp[j]=(ST)S->normR[j];
           }
 #else
-          ST* tmp=S->normR; 
+          ST* tmp=S->normR;
 #endif          
-          SUBR(private_printResid)(it, nvec, tmp, S->normR0_, S->normB_,S->conv);                                                          ///////////////////////////////////////////////////////////////////
+          SUBR(private_printResid)(it, nvec, tmp, S->normR0_, S->normB_,S->conv);  
+                                                                  ///////////////////////////////////////////////////////////////////
+          if(std::sqrt(*(S->normR))/std::sqrt(*(S->normR_old)) > cor_tol){
+            correction_needed = true;
+            //std::cout <<  std::sqrt(*(S->normR)) << " " << std::sqrt((*(S->normR_old))) << " "<< std::sqrt(*(S->normR))/std::sqrt((*(S->normR_old))) <<std::endl;
+            //std::cout << "Cstep needed, because " << std::sqrt(*(S->normR))/std::sqrt((*(S->normR_old))) <<" > " << cor_tol <<std::endl;
+          }
         }
         
         if (numConverged>=minConv)
@@ -580,12 +649,21 @@ if (numSys>0)
         PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha_i,q, st::one(),ri,ierr),*ierr);
       }
 #endif
+      
+      if(it>debugstate){
+      std::cout << "Nach R-Sweep. " << *alpha << std::endl;
+      getchar();
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+    }
+      
 //  z=apply_op(r,M):
 // .. do nothing ...
 
       for (int j=0;j<nvec;j++)
       {
-        //PHIST_SOUT(PHIST_INFO,"TESTFA2 %d \t %e \t %e \t %e\n",it, r2_old[j], std::abs(r2_new[j]), std::abs(r2_new[j])/r2_old[j]);
         r2_old[j]=std::abs(r2_new[j]);
       }
       PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,r2_new,NULL,ierr),*ierr);
@@ -612,11 +690,7 @@ if (numSys>0)
           beta[j]=ct::real(tmp3);
 #else
           beta[j]=ct::real(upper[j]/lower[j]);
-#endif    
-          if(beta[j] > cor_tol){
-            correction_needed = true;
-            PHIST_SOUT(PHIST_INFO,"CSTEP.\t%e\n",beta[j]);
-          }    
+#endif       
         }
 
       //p=z+beta*p;
@@ -641,7 +715,15 @@ if (numSys>0)
         PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),zi,st::one(),pi,ierr),*ierr);
       }
 #endif
-
+      
+      if(it>debugstate){
+      std::cout << "Nach P-Sweep. " << *beta << std::endl;
+      getchar();
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+      }
 
 
 
@@ -672,6 +754,15 @@ if (numSys>0)
         PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),pi,-st::one(),qi,ierr),*ierr);
       }
 #endif
+      
+      if(it>debugstate){
+      std::cout << "Nach Q-Sweep. " << std::endl;
+      getchar();
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+      }
 
       ////////////////////////////
       // update solution x      //
@@ -721,12 +812,30 @@ if (numSys>0)
         PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha_i,p,st::one(),xi,ierr),*ierr);
       }
 #endif
+      
+      if(it>debugstate){
+      std::cout << "Nach X-Sweep. " << std::endl;
+      getchar();
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+    }
+    
+      
+
       if ( it%itcheck == 0)
       {
-        //PHIST_SOUT(PHIST_INFO,"TESTFALL Test %d \t%e\n",it, S->normR);
+        for (int j=0;j<nvec;j++)
+        {
+          S->normR_old[j] = S->normR[j];
+        }
         PHIST_CHK_IERR(SUBR(private_compResid)(A, nvec, sigma, sigma_i,
                          b, x, xi, NULL, NULL, S->normR, ierr),*ierr);
+        //std::cout << *(S->normR) <<" " << *(S->normR_old)<< " "<< (*(S->normR)/(*(S->normR_old))) << std::endl;
         
+
+
         // check for convergence. 
         // TODO - which convergence criterion should we use?
         // For the moment, we use ||r||_2/||b||_2 < tol
@@ -748,16 +857,19 @@ if (numSys>0)
           for (int j=0;j<nvec;j++)
           {
             tmp[j]=(ST)S->normR[j];
-            //PHIST_SOUT(PHIST_INFO,"TESTFALL %e.\n",tmp[j]);
           }
 #else
           ST* tmp=S->normR;
-          //PHIST_SOUT(PHIST_INFO,"TESTFALL %e.\n",tmp);
 #endif          
           SUBR(private_printResid)(it, nvec, tmp, S->normR0_, S->normB_,S->conv);
-          //PHIST_SOUT(PHIST_INFO,"TESTFALL %d.\n",nvec);                                                            ///////////////////////////////////////////////////////////////////
+          //std::cout <<  std::sqrt(*(S->normR)) << " " << std::sqrt((*(S->normR_old))) << " "<< std::sqrt(*(S->normR))/std::sqrt((*(S->normR_old))) <<std::endl;
+          if(std::sqrt(*(S->normR))/std::sqrt(*(S->normR_old)) > cor_tol){
+            correction_needed = true;
+            std::cout <<  std::sqrt(*(S->normR)) << " " << std::sqrt((*(S->normR_old))) << " "<< std::sqrt(*(S->normR))/std::sqrt((*(S->normR_old))) <<std::endl;
+            std::cout << "Cstep needed, because " << std::sqrt(*(S->normR))/std::sqrt((*(S->normR_old))) <<" > " << cor_tol <<std::endl;
+          }
         }
-        
+
         if (numConverged>=minConv)
         {
           // print footer
@@ -765,8 +877,6 @@ if (numSys>0)
             numSolved++; 
             break;
         }
-        //PHIST_SOUT(PHIST_INFO,"TESTFALL KORREKT %d \t%e\n",it, ierr);
-        //PHIST_SOUT(PHIST_INFO,"TESTFALL %d \t %e \t %e \t %e\n",it, S->normR , S->normR0_, S->normB_);
       }
 
       //r=r-alpha*q;
@@ -776,7 +886,7 @@ if (numSys>0)
         minus_alpha[j]=-alpha[j];
       }
       PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha,q,st::one(),r,ierr),*ierr);
-      //PHIST_SOUT(PHIST_INFO,"ALPHA :\t%e\n",alpha;
+
 
 #ifndef IS_COMPLEX
       if (rc_variant)
@@ -786,12 +896,23 @@ if (numSys>0)
         PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha_i,q, st::one(),ri,ierr),*ierr);
       }
 #endif
+      
+      if(it>debugstate){
+      std::cout << "Nach R-Sweep. " << *alpha << std::endl;
+      getchar();
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+      }
+      
+
 //  z=apply_op(r,M):
 // .. do nothing ...
 
       for (int j=0;j<nvec;j++)
       {
-        //PHIST_SOUT(PHIST_INFO,"TESTFA2 %d \t %e \t %e \t %e\n",it, r2_old[j], std::abs(r2_new[j]), std::abs(r2_new[j])/r2_old[j]);
+        //std::cout << it << " "<<r2_old[j]<< " "<< std::abs(r2_new[j])<< " "<< std::abs(r2_new[j]/r2_old[j]) << " "<<std::sqrt(std::abs(r2_old[j]))<< " "<<std::sqrt(std::abs(r2_new[j])) << " "<<std::sqrt(std::abs(r2_new[j]))/std::sqrt(std::abs(r2_old[j]))<< std::endl;;
         r2_old[j]=std::abs(r2_new[j]);
       }
       PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,r2_new,NULL,ierr),*ierr);
@@ -802,13 +923,8 @@ if (numSys>0)
       for (int j=0;j<nvec;j++)
       {
         beta[j]=std::abs(r2_new[j])/r2_old[j];
-        if(beta[j] > cor_tol){
-          correction_needed = true;
-          //PHIST_SOUT(PHIST_INFO,"CSTEP theoretically needed.\t%e\n",beta[j]);
-        }
       }
 
-      //PHIST_SOUT(PHIST_INFO,"BETA :\t%e\n",beta);
       //p=z+beta*p;
 #ifdef IS_COMPLEX
       ST tmp[nvec];
@@ -831,6 +947,106 @@ if (numSys>0)
         PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),zi,st::one(),pi,ierr),*ierr);
       }
 #endif
+      
+      if(it>debugstate){
+      std::cout << "Nach P-Sweep. " << *beta<< std::endl;
+      getchar();
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+      }
+      
+      //std::cout << std::sqrt(*(S->normR)) << std::endl;
+
+    /*
+    if(it % 70 == 0){
+      //std::cout << "Destruction completed " <<std::endl;
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(r, 0.0, 2000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(ri, 0.0, 2000, ierr),*ierr);
+
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(p, 0.0, 2000,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(pi, 0.0, 2000,ierr),*ierr);
+      
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(q, 0.0, 2000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(qi, 0.0, 2000, ierr),*ierr);
+
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(z, 0.0, 2000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(zi, 0.0, 2000, ierr),*ierr);
+      
+      //TODO
+    }
+    
+    if(true){
+      if(it==3 || it==9|| it==27|| it==31|| it==56|| it==64 || it==81 || it==100){
+        PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(x, 0.0, 2000, ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(xi, 0.0, 2000, ierr),*ierr);
+      }
+    }
+    
+    
+    //TEST CASES IF PROCESS IS KILLED BY WHATEVER
+    int mynode;
+    MPI_Comm_rank(MPI_COMM_WORLD,&mynode);
+    //std::cout << "Rank: " << mynode << std::endl;
+    if(mynode == 2 && it==77){
+      //2.001
+      //8.001
+      //17.001
+      std::cout << std::endl <<" DONE " << std::endl << std::endl;
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(r, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(ri, 0.0, 17000, ierr),*ierr);
+
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(p, 0.0, 17000,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(pi, 0.0, 17000,ierr),*ierr);
+      
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(q, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(qi, 0.0, 17000, ierr),*ierr);
+
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(z, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(zi, 0.0, 17000, ierr),*ierr);
+
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(x, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(xi, 0.0, 17000, ierr),*ierr);
+    }
+    
+    if(mynode == 3 && it==277){
+      std::cout << std::endl <<" DONE " << std::endl << std::endl;
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(r, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(ri, 0.0, 17000, ierr),*ierr);
+
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(p, 0.0, 17000,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(pi, 0.0, 17000,ierr),*ierr);
+      
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(q, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(qi, 0.0, 17000, ierr),*ierr);
+
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(z, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(zi, 0.0, 17000, ierr),*ierr);
+
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(x, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(xi, 0.0, 17000, ierr),*ierr);
+    }
+
+    if(mynode == 1 && it==15){
+      std::cout << std::endl <<" DONE " << std::endl << std::endl;
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(r, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(ri, 0.0, 17000, ierr),*ierr);
+
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(p, 0.0, 17000,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(pi, 0.0, 17000,ierr),*ierr);
+      
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(q, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(qi, 0.0, 17000, ierr),*ierr);
+
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(z, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(zi, 0.0, 17000, ierr),*ierr);
+
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(x, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(xi, 0.0, 17000, ierr),*ierr);
+    }
+    */
+
     }// endof else
     }// CG iterations (it)
     //...
@@ -847,7 +1063,7 @@ if (numSys>0)
 
   } // for all shifts, solve (s[j]I-A)X[j]=B
 
-  std::cout << "Beta>1: " << cor_count << std::endl;
+  std::cout << "CSteps: " << cor_count << std::endl;
   *ierr=numSys-numSolved;
   return;
 }
@@ -1031,6 +1247,58 @@ void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR,
       MT tmp=mt::sqrt(st::real(normR[j]));
       PHIST_SOUT(PHIST_INFO,"%s\t\t%e\t%e\t%e\t%s\n",carp_label,
              tmp,tmp/normB[j],tmp/normR0[j],lock_str.c_str());
+    }
+  }
+}
+
+void SUBR(destroy_vector_elements_at_random)(TYPE(mvec_ptr) V, double probability, int nloc, int *ierr) 
+{
+#include "phist_std_typedefs.hpp"
+//std::cout << "Function used." <<std::endl;
+  ST* V_val;
+  lidx_t lda;
+  int nvec;
+  ST tmp;
+  double rand_prob;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_extract_view)(V,&V_val,&lda,ierr),*ierr);
+  //std::cout << "nloc " << nloc <<std::endl;
+  for (int i=0; i<nloc; i++)
+  {
+    //std::cout << "First loop." <<std::endl;
+    for (int j=0;j<nvec; j++)
+    {
+      rand_prob=std::abs(mt::rand());
+      //std::cout << "rand_prob "<< rand_prob <<std::endl;
+      //std::cout << "Second loop." <<std::endl
+      if (rand_prob>probability){
+        //std::cout << "Element destroyed." <<std::endl;
+       
+        tmp = V_val[i*lda+j]; 
+        V_val[i*lda+j] =st::rand();
+        //V_val[i*lda+j] =0;
+        //std::cout << j << std::endl;
+        //std::cout << "Changed Value from " << tmp << " to " << V_val[i*lda+j] << std::endl;
+      }
+    }
+  }
+  //std::cout <<" Destruction complete " << std::endl;
+}
+
+void SUBR(show_vector_elements)(TYPE(mvec_ptr) V, int *ierr) 
+{
+  #include "phist_std_typedefs.hpp"
+ST* V_val;
+lidx_t lda;
+int nvec;
+int nloc = 1;
+PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,ierr),*ierr);
+PHIST_CHK_IERR(SUBR(mvec_extract_view)(V,&V_val,&lda,ierr),*ierr);
+for (int i=0; i<nloc; i++)
+  {
+    for (int j=0;j<nvec; j++)
+    {
+        std::cout << "Element is "<< -V_val[i*lda+j] << std::endl;
     }
   }
 }

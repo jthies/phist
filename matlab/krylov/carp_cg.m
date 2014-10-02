@@ -36,7 +36,7 @@ resvec=[];
 wantT=(nargout>=6);
 n=size(A,1);
 
-cfreq = getopt(opts,'cfreq',100);          %correction frequency
+cfreq = getopt(opts,'cfreq',10000);          %correction frequency
 tol=getopt(opts,'tol',1e-8);
 maxIter=getopt(opts,'maxIter',300);
 omega=getopt(opts,'omega',1.7);
@@ -142,7 +142,6 @@ for k=1:maxIter
       resvec=[resvec,nrm_r];
 
       if (nrm_r<=tol*nrm_r0)
-        save residuum_100p.txt resvec -ASCII;
         break;
       end
     end
@@ -197,7 +196,6 @@ for k=1:maxIter
       resvec=[resvec,nrm_r];
 
       if (nrm_r<tol*nrm_r0)
-        save residuum_100p.txt resvec -ASCII;
         break;
       end
     end

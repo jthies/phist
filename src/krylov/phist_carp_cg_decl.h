@@ -71,6 +71,7 @@ typedef struct TYPE(carp_cgState) {
 
   _MT_ *normB_ ; //! two-norm of rhs vector (for stopping criteria)
   _MT_ *normR0_; //! stores initial (explicit) residual norms (for stopping criteria)
+  _MT_ *normR_old;
   
   //@}
 } TYPE(carp_cgState);
