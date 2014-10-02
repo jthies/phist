@@ -38,14 +38,14 @@ int main(int argc, char** argv)
 
   PHIST_ICHK_IERR(phist_comm_create(&comm_world,&ierr),ierr);
 #ifdef PHIST_KERNEL_LIB_GHOST
-  PHIST_ICHK_IERR(phist_DcrsMat_read_bin(&A,filename,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_DcrsMat_read_bin(&A,filename,comm,&ierr),ierr);
   ghost_sparsemat_t* A_ghost = (ghost_sparsemat_t*)A;
   char *str;
   ghost_sparsemat_string(&str,A_ghost);
   printf("%s\n",str);
   free(str); str = NULL;
 #else
-  PHIST_ICHK_IERR(phist_DcrsMat_read_mm(&A,filename,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_DcrsMat_read_mm(&A,filename,comm,&ierr),ierr);
 #endif  
   PHIST_ICHK_IERR(phist_DcrsMat_get_range_map(A, &range_map, &ierr),ierr);
   PHIST_ICHK_IERR(phist_DcrsMat_get_domain_map(A, &domain_map, &ierr),ierr);

@@ -108,11 +108,14 @@ flush(6)
     integer(C_INT),     intent(out) :: ierr
     !------------------------------------------------------------
     type(Map_t), pointer :: map
+    INTEGER, POINTER :: comm
     !------------------------------------------------------------
+
+    call c_f_pointer(comm_ptr,comm)
 
     allocate(map)
 
-    call map_setup(map, MPI_COMM_WORLD, n_glob, ierr)
+    call map_setup(map, comm, n_glob, ierr)
 
     map_ptr = c_loc(map)
 

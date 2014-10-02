@@ -1,5 +1,6 @@
 // auto-detects the file type by looking at the file extension
-void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, char* filename, int* ierr)
+void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
+        char* filename, int* ierr)
 {
   char *c=&filename[0];
   int isMM=0;
@@ -18,15 +19,15 @@ void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, char* filename, int* ierr)
   isHB=!strcmp(c,"rua")||!strcmp(c,"cua");
   if (isMM)
   {
-    PHIST_CHK_IERR(SUBR(crsMat_read_mm)(A,filename,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(crsMat_read_mm)(A,comm,filename,ierr),*ierr);
   }
   else if (isHB)
   {
-    PHIST_CHK_IERR(SUBR(crsMat_read_hb)(A,filename,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(crsMat_read_hb)(A,comm,filename,ierr),*ierr);
   }
   else if (isCRS)
   {
-    PHIST_CHK_IERR(SUBR(crsMat_read_bin)(A,filename,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(crsMat_read_bin)(A,comm,filename,ierr),*ierr);
   }
   else
   {
@@ -50,7 +51,8 @@ GRAPHENE=1,
 ANDERSON=2
 } problem_t;
 
-void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const char* problem, int* ierr)
+void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
+        const char* problem, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
@@ -104,7 +106,7 @@ void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const char* problem, int* ierr)
     crsGraphene( -2, WL, NULL, NULL);
     crsGraphene( -1, NULL, NULL, &info);
 
-    PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc)(mat,
+    PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc)(mat,comm,
         (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,
         &crsGraphene, ierr), *ierr);
   }
@@ -117,20 +119,21 @@ void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const char* problem, int* ierr)
     anderson( -2, &LL, NULL, NULL);
     anderson( -1, NULL, NULL, &info);
 
-    PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc)(mat,
+    PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc)(mat,comm,
         (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,
         &anderson, ierr), *ierr);
   }
   else
   {
     PHIST_SOUT(PHIST_INFO,"read matrix from file '%s'\n",problem);
-    PHIST_CHK_IERR(SUBR(crsMat_read)(mat,(char*)problem,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(crsMat_read)(mat,comm,(char*)problem,ierr),*ierr);
   }
   
   return;
 }
 #else
-void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const char* problem, int* ierr)
+void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
+        const char* problem, int* ierr)
 {
   *ierr=-99;
 }

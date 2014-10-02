@@ -9,15 +9,13 @@ extern "C" void SUBR(type_avail)(int* ierr)
   }
 
 //! read a matrix from a MatrixMarket (ASCII) file
-extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
+extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+        const char* filename,int* ierr)
   {
-#ifdef HAVE_MPI
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm comm;
-#endif
+  ENTER_FCN(__FUNCTION__);
+  CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*ierr);
   Epetra_CrsMatrix* A=NULL;
-  *ierr=EpetraExt::MatrixMarketFileToCrsMatrix(filename,comm,A);
+  *ierr=EpetraExt::MatrixMarketFileToCrsMatrix(filename,*comm,A);
   *vA = (TYPE(crsMat_ptr))(A);
   
 /*  std::cerr << "filename was '"<<filename<<"'"<<std::endl;
@@ -27,18 +25,31 @@ extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const char* filename,
   }
 
 //! read a matrix from a Ghost CRS (binary) file.
-extern "C" void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
+extern "C" void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+const char* filename,int* ierr)
   {
   // TODO - not implemented (should read the binary file format defined by ghost)
   *ierr=-99;
   }
 
 //! read a matrix from a Harwell-Boeing (HB) file
-extern "C" void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* vA, const char* filename,int* ierr)
+extern "C" void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+const char* filename,int* ierr)
   {
   *ierr=-99; // not implemented in epetra
   }
 //!@}
+
+extern "C" void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, const_comm_ptr_t vcomm,
+        gidx_t nrows, gidx_t ncols, lidx_t maxnne,
+                int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*),
+                int *ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+  *ierr=-99;
+return;
+}
+
 
 //! \name get information about the data distribution in a matrix (maps)
 
@@ -702,4 +713,6 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
 
 //!@}
 
+extern "C" {
 #include "../kernels_nogpu.c"
+}

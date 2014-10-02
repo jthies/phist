@@ -175,7 +175,7 @@ int main(int argc, char** argv)
   
   // this is in the tools/driver_utils.h header, a useful tool for
   // generating our favorite test matrices or reading them from a file:
-  PHIST_ICHK_IERR(SUBR(create_matrix)(&mat,problem,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(create_matrix)(&mat,comm,problem,&ierr),ierr);
   
   PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(mat, &map,&ierr),ierr);
 

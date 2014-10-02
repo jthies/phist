@@ -25,7 +25,8 @@ typedef TYPE(const_op_ptr) const_op_ptr_t;
 
 //! auto-detects the file type by looking at the file extension
 //! and calls the appropriate kernel routine to read the matrix
-void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, char* filename, int* ierr);
+void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm, 
+        char* filename, int* ierr);
 
 //! quick matrix generation routine
 
@@ -39,7 +40,8 @@ void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, char* filename, int* ierr);
 //! Example: phist_Dcreate_matrix(&A, "anderson42",&ierr) will generate the Anderson
 //! model problem on a 42^3 grid, whereas the string "anderson42.mm" will be interpreted
 //! as a filename.
-void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const char* problem, int* ierr);
+void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
+        const char* problem, int* ierr);
 
 
 #endif

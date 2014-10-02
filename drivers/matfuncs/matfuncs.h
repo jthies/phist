@@ -6,11 +6,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "phist_kernels.h"
+
 #ifdef PHIST_HAVE_GHOST
 #include <ghost.h>
 #else
-typedef int64_t ghost_gidx_t;
-typedef int32_t ghost_lidx_t;
 #define PRGIDX "PRId64"
 #define PRLIDX "PRId32"
 // just dummy values, simply ignored!

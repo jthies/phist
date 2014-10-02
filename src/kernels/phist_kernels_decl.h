@@ -50,14 +50,16 @@ void SUBR(type_avail)(int* ierr);
 ///@{
 
 //! read a matrix from a MatrixMarket (ASCII) file \ingroup(crsmat)
-void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* A, 
+void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
         const char* filename,int* ierr);
 
 //! read a matrix from a Harwell-Boeing file
-void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* A, const char* filename,int* ierr);
+void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
+        const char* filename,int* ierr);
 
 //! read a matrix from a Ghost CRS (binary) file.
-void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* A, const char* filename,int* ierr);
+void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
+const char* filename,int* ierr);
 
 ///@}
 
@@ -415,7 +417,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) V,
 
 //! this is the same form in which matrices are created from functions
 //! in ghost and how the test problems in essex/physics are defined.
-void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, 
+void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, const_comm_ptr_t comm,
         gidx_t nrows, gidx_t ncols, lidx_t maxnne, 
         int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int *ierr);
 
