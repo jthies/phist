@@ -1007,7 +1007,8 @@ contains
   !==================================================================================
   ! wrapper routines 
 
-  subroutine phist_Dmvec_create(mvec_ptr, map_ptr, nvec, ierr) bind(C,name='phist_Dmvec_create_f')
+  subroutine phist_Dmvec_create(mvec_ptr, map_ptr, nvec, ierr) &
+    & bind(C,name='phist_Dmvec_create_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: mvec_ptr
@@ -1039,6 +1040,10 @@ contains
       return
     end if
     ! that should hopefully help in cases of NUMA
+!$omp parallel do schedule(static)
+    do i = 1, size(mvec%val,2), 1
+      mvec%val(:,i) = 0._8 + i
+    end do
 !$omp parallel do schedule(static)
     do i = 1, size(mvec%val,2), 1
       mvec%val(:,i) = 0._8
@@ -1355,7 +1360,8 @@ contains
   end subroutine phist_Dmvec_scatter_mvecs
 
 
-  subroutine phist_Dmvec_put_value(mvec_ptr, val, ierr) bind(C,name='phist_Dmvec_put_value_f')
+  subroutine phist_Dmvec_put_value(mvec_ptr, val, ierr) &
+    & bind(C,name='phist_Dmvec_put_value_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),        value         :: mvec_ptr
