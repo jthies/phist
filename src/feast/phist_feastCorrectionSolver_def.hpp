@@ -165,7 +165,7 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
       // to other nodes, use a queuing system etc. The starting
       // vectors are taken as received by this function and passed
       // on to carp_cg.
-      PHIST_CHK_IERR(SUBR(carp_cgStates_iterate)
+      PHIST_CHK_NEG_IERR(SUBR(carp_cgStates_iterate)
                 (me->carp_cgStates_, me->numShifts_, 
                 x_r, x_i, tol, maxIter,ierr),*ierr);
       // reset to original block size if fewer systems were solved.
