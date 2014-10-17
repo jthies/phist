@@ -2,18 +2,18 @@
 void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
         char* filename, int* ierr)
 {
-  char *c=&filename[0];
+  char *c=filename+strlen(filename)-1;
   int isMM=0;
   int isCRS=0;
   int isHB=0;
   
-  while (*c)
+  while (c!=filename)
   {
     if (*c=='.') break;
-    c++;
+    c--;
   }
   c++;
-  isMM=!strcmp(c,"mm");
+  isMM=(!strcmp(c,"mm"))||(!strcmp(c,"mtx"));
   isCRS=!strcmp(c,"crs");
   isCRS=isCRS||!strcmp(c,"bin");
   isHB=!strcmp(c,"rua")||!strcmp(c,"cua");
@@ -97,13 +97,18 @@ void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
   if (mat_type==GRAPHENE)
   {
     PHIST_SOUT(PHIST_INFO,"problem type: Graphene %d x %d\n",L,L);
+    double gamma=0.2;
     ghost_lidx_t WL[2];
     WL[0] = L;
     WL[1] = L;
   
     ghost_gidx_t DIM = WL[0]*WL[1];
     matfuncs_info_t info;
+    // set problem size
     crsGraphene( -2, WL, NULL, NULL);
+    // set disorder
+    crsGraphene( -5, NULL, NULL,&gamma);
+    // get matrix info
     crsGraphene( -1, NULL, NULL, &info);
 
     PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc)(mat,comm,
@@ -112,7 +117,7 @@ void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
   }
   else if (mat_type==ANDERSON)
   {
-    PHIST_SOUT(PHIST_INFO,"problem type: Anderson %d x %d %d\n",L,L,L);
+    PHIST_SOUT(PHIST_INFO,"problem type: Anderson %d x %d x %d\n",L,L,L);
     ghost_lidx_t LL=L;
   
     matfuncs_info_t info;
