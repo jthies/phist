@@ -22,7 +22,9 @@ namespace phist_TimeMonitor
   Timer::TimeDataMap Timer::_timingResults;
 }
 #endif
-
+#ifdef PHIST_HAVE_BELOS
+#include "Teuchos_TimeMonitor.hpp"
+#endif
 #ifdef PHIST_HAVE_LIKWID
 #include <likwid.h>
 #endif
@@ -109,6 +111,12 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
   }
   std::cout << oss.str() << std::endl;
 
+#ifdef PHIST_SEPARATE_OUT_FILES
+std::ostringstream oss2;
+oss2 << "phist"<<rank<<".out";
+PHIST_OUT_out=fopen(oss2.str().c_str(),"w");
+#endif
+
 #ifdef PHIST_HAVE_LIKWID
   LIKWID_MARKER_INIT;
 #pragma omp parallel
@@ -131,7 +139,18 @@ void phist_kernels_finalize(int* ierr)
   LIKWID_MARKER_CLOSE;
 #endif
 #ifdef PHIST_TIMEMONITOR
+# ifdef PHIST_HAVE_BELOS
+  Teuchos::TimeMonitor::summarize (std::cout,true,true,false,
+        Teuchos::Union,"",true);
+# else
   phist_TimeMonitor::Timer::summarize();
+# endif
+#endif
+#ifdef PHIST_SEPARATE_OUT_FILES
+if (PHIST_OUT_out!=NULL)
+{
+  fclose(PHIST_OUT_out);
+}
 #endif
   PHIST_CHK_IERR( *ierr = MPI_Finalize(), *ierr);
   *ierr=0;
