@@ -7,16 +7,17 @@
 #include <mpi.h>
 #endif
 
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#endif
 
+#ifdef PHIST_HAVE_KOKKOS
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DefaultKernels.hpp"
-
 #endif
 
 #include "ghost.h"
@@ -24,7 +25,7 @@
 #include "phist_typedefs.h"
 #include "phist_ScalarTraits.hpp"
 
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_KOKKOS
 typedef Kokkos::DefaultNode::DefaultNodeType node_t;
 #endif
 
@@ -34,10 +35,11 @@ class Traits
 
 public:
 
-#ifdef PHIST_HAVE_BELOS  
+#ifdef PHIST_HAVE_KOKKOS
   //!
   typedef typename Kokkos::DefaultKernels<ST,lidx_t,node_t>::SparseOps localOps_t;
-
+#endif
+#ifdef PHIST_HAVE_TEUCHOS
   //! serial dense matrix from Teuchos, we need this for e.g. the BLAS interface.
   //! Note: the index type *must* be int here, not int64_t, so we decided to have
   //! phist local indices ints, even if ghost uses int64_t.
@@ -54,7 +56,7 @@ public:
   //! CRS matrices
   typedef ghost_sparsemat_t crsMat_t;
 
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
   //! create a Teuchos' view of a local mvec/sdMat
   static Teuchos::RCP<const Teuchos_sdMat_t> CreateTeuchosView(Teuchos::RCP<const sdMat_t> M, int* ierr)
     {

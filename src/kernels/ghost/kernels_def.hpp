@@ -1144,7 +1144,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   PHIST_CHK_IERR(*ierr=nrows-(V->traits.ncols),*ierr);
 #endif
 
-#ifdef PHIST_HAVE_BELOS
+#if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
 
   PHIST_DEB("do TSQR on col-major ghost data structures\n");
   PHIST_DEB("create Teuchos view of R\n");
@@ -1170,7 +1170,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   PHIST_DEB("V has %d columns and rank %d\n",ncols,rank);
   *ierr = ncols-rank;// return positive number if rank not full.
 #else
-  *ierr=-99; // no Belos, no TSQR (right now)
+  *ierr=-99; // no Trilinos, no TSQR, no mvec_QR (right now)
 #endif
   return;
   }
