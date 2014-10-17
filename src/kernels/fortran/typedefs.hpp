@@ -7,13 +7,14 @@
 #include <mpi.h>
 #endif
 
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
-
+#endif
+#ifdef PHIST_HAVE_KOKKOS
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DefaultKernels.hpp"
 
@@ -36,7 +37,7 @@ public:
   //! serial dense matrix
   typedef void sdMat_t;
 
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
   //! serial dense matrix from Teuchos, we need this for e.g. the BLAS interface.
   typedef Teuchos::SerialDenseMatrix<lidx_t,ST> Teuchos_sdMat_t;
 #endif

@@ -166,12 +166,32 @@ endif ()
 # may not work, in particular the mvec_QR function is currently
 # implemented via Belos by all kernel libs except "Fortran"
 
+find_package(Teuchos)
+
+if (${Teuchos_FOUND})
+  list(APPEND LOAD_TRILI_PKG "Teuchos")
+  set(PHIST_HAVE_TEUCHOS 1)
+  message(STATUS "Found Teuchos")
+else()
+  message(STATUS "Teuchos not found.")
+endif()
+
+find_package(Kokkos)
+
+if (${Kokkos_FOUND})
+  list(APPEND LOAD_TRILI_PKG "Kokkos")
+  set(PHIST_HAVE_KOKKOS 1)
+  message(STATUS "Found Kokkos")
+else()
+  message(STATUS "Kokkos not found.")
+endif()
+
 find_package(Belos)
 
 if (${Belos_FOUND})
   list(APPEND LOAD_TRILI_PKG "Belos")
   set(PHIST_HAVE_BELOS 1)
-  message(STATUS "Found belos")
+  message(STATUS "Found Belos")
 else()
   message(STATUS "Belos not found.")
 endif()
@@ -181,7 +201,7 @@ endif()
 find_package(ESSEX-PHYSICS CONFIG)
 if (ESSEX-PHYSICS_FOUND)
   message(STATUS "Found ESSEX-Physics ${ESSEX-PHYSICS_VERSION}")
-
+  set(PHIST_HAVE_ESSEX_PHYSICS 1)
   include_directories(${ESSEX-PHYSICS_INCLUDE_DIRS})
 
   link_libraries(${ESSEX-PHYSICS_LIBRARIES})
@@ -268,9 +288,13 @@ add_library(phist_kernels_${PHIST_KERNEL_LIB} SHARED ${PHIST_KERNEL_SOURCE})
 add_library(phist_solvers SHARED ${PHIST_KRYLOV_SOURCE} 
                                  ${PHIST_JADA_SOURCE}
                                  ${PHIST_FEAST_SOURCE})
+
+if (NOT ESSEX-PHYSICS_FOUND)
 add_library(phist_matfuncs SHARED ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c
                                   ${PROJECT_SOURCE_DIR}/drivers/matfuncs/SpinChainSZ.c
                                   ${PROJECT_SOURCE_DIR}/drivers/matfuncs/anderson.c)
+endif()
+
 link_libraries(phist_solvers)
 link_libraries(phist_core)
 link_libraries(phist_kernels_${PHIST_KERNEL_LIB})

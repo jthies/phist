@@ -5,7 +5,7 @@
 #endif
 
 #include "phist_macros.h"
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
 #include "phist_trilinos_macros.h"
 #endif
 #include "../phist_kernels.h"
@@ -22,7 +22,7 @@ namespace phist_TimeMonitor
   Timer::TimeDataMap Timer::_timingResults;
 }
 #endif
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 #ifdef PHIST_HAVE_LIKWID
@@ -139,7 +139,7 @@ void phist_kernels_finalize(int* ierr)
   LIKWID_MARKER_CLOSE;
 #endif
 #ifdef PHIST_TIMEMONITOR
-# ifdef PHIST_HAVE_BELOS
+# ifdef PHIST_HAVE_TEUCHOS
   Teuchos::TimeMonitor::summarize (std::cout,true,true,false,
         Teuchos::Union,"",true);
 # else

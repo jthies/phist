@@ -16,7 +16,12 @@
 #cmakedefine PHIST_SDMATS_ROW_MAJOR
   
 #cmakedefine PHIST_HAVE_GHOST
+#cmakedefine PHIST_HAVE_ESSEX_PHYSICS
+
+#cmakedefine PHIST_HAVE_TEUCHOS
+#cmakedefine PHIST_HAVE_KOKKOS
 #cmakedefine PHIST_HAVE_BELOS
+
 #cmakedefine PHIST_HAVE_PARMETIS
 #cmakedefine PHIST_HAVE_COLPACK
 #cmakedefine PHIST_HAVE_LIKWID

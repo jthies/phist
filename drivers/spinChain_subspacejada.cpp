@@ -23,8 +23,11 @@ void init_mtraits(ghost_sparsemat_traits_t* mtraits);
 GHOST_REGISTER_DT_D(my_datatype)
 #endif
 
+#ifdef PHIST_HAVE_ESSEX_PHYSICS
+#include "essex-physics/matfuncs.h"
+#else
 #include "matfuncs.h"
-
+#endif
 
 // double precision type
 #include "phist_gen_d.h"

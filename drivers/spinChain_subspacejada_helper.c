@@ -2,7 +2,12 @@
 #ifdef PHIST_KERNEL_LIB_GHOST
 
 #include "ghost.h"
+
+#ifdef PHIST_HAVE_ESSEX_PHYSICS
+#include "essex-physics/matfuncs.h"
+#else
 #include "matfuncs.h"
+#endif
 
 GHOST_REGISTER_DT_D(my_datatype_)
 

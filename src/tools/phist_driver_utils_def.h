@@ -42,9 +42,11 @@ void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
 #ifdef PHIST_KERNEL_LIB_GHOST
 #include "ghost.h"
 #endif
-
+#ifdef PHIST_HAVE_ESSEX_PHYSICS
+#include "essex-physics/matfuncs.h"
+#else
 #include "matfuncs.h"
-
+#endif
 typedef enum {
 FROM_FILE=0,
 GRAPHENE=1,
