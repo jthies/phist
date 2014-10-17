@@ -20,10 +20,18 @@
 
 #include "phist_defs.h"
 
+#if defined(PHIST_HAVE_BELOS) && defined(__cplusplus)
+# include "Teuchos_TimeMonitor.hpp"
+#endif
+
+static FILE* PHIST_OUT_out=NULL;
+
 #ifdef PHIST_HAVE_MPI
 #define PHIST_OUT(level,msg, ...) {\
         if(PHIST_OUTLEV >= level) {\
-                FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
+                if (PHIST_OUT_out==NULL||PHIST_OUT_out==stderr||PHIST_OUT_out==stdout) { \
+                PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
+                } \
                 int PHIST_OUT_me,PHIST_OUT_np,PHIST_OUT_ini,PHIST_OUT_fini;\
                 MPI_Initialized(&PHIST_OUT_ini); \
                 if (PHIST_OUT_ini) MPI_Finalized(&PHIST_OUT_fini); \
@@ -41,7 +49,9 @@
 #else
 #define PHIST_OUT(level,msg, ...) {\
         if(PHIST_OUTLEV >= level) {\
-                FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
+                if (PHIST_OUT_out==NULL) { \
+                PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
+                } \
                 fprintf(PHIST_OUT_out,msg,##__VA_ARGS__);\
                 fflush(PHIST_OUT_out);\
                 }\
@@ -49,9 +59,14 @@
 #endif
 
 #ifdef PHIST_HAVE_MPI
+# ifdef PHIST_SEPARATE_OUT_FILES
+#define PHIST_SOUT(level,msg, ...) PHIST_OUT(level,msg,##__VA_ARGS__);
+# else
 #define PHIST_SOUT(level,msg, ...) {\
         if(PHIST_OUTLEV >= level) {\
-                FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
+                if (PHIST_OUT_out==NULL) { \
+                PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
+                } \
                 int PHIST_OUT_me,PHIST_OUT_ini,PHIST_OUT_fini;\
                 MPI_Initialized(&PHIST_OUT_ini); \
                 if (PHIST_OUT_ini) MPI_Finalized(&PHIST_OUT_fini); \
@@ -63,10 +78,13 @@
                 fflush(PHIST_OUT_out);}\
         }\
 }
+# endif
 #else
 #define PHIST_SOUT(level,msg, ...) {\
         if(PHIST_OUTLEV >= level) {\
-                FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
+                if (PHIST_OUT_out==NULL) { \
+                PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
+                } \
                 fprintf(PHIST_OUT_out,msg,##__VA_ARGS__);\
                 fflush(PHIST_OUT_out);\
         }\
@@ -175,7 +193,14 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #     define ENTER_FCN(s) FcnTracer YouCantHaveMultiple_ENTER_FCN_StatementsInOneScope(s);\
                           phist_TimeMonitor::Timer TimerFrom_ENTER_FCN(s);
 #   else
+#    ifdef PHIST_HAVE_BELOS
+#     define ENTER_FCN(s) static Teuchos::RCP<Teuchos::Time> TimeFrom_ENTER_FCN; \
+                          if( TimeFrom_ENTER_FCN.is_null() ) \
+                              TimeFrom_ENTER_FCN = Teuchos::TimeMonitor::getNewTimer(s); \
+                          Teuchos::TimeMonitor TimeMonFrom_ENTER_FCN( *TimeFrom_ENTER_FCN);
+#    else
 #     define ENTER_FCN(s) phist_TimeMonitor::Timer TimerFrom_ENTER_FCN(s);
+#    endif
 #   endif
 # else
 #   if (PHIST_OUTLEV>=PHIST_TRACE) || defined(LIKWID_PERFMON)
