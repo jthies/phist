@@ -169,13 +169,20 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #endif
 
 #ifdef __cplusplus
+# ifdef SCOREP_USER_ENABLE
+#   include <scorep/SCOREP_User.h>
+# else
+#   define SCOREP_USER_REGION(a, b)
+# endif
 # include "phist_fcntrace.hpp"
 # ifdef PHIST_TIMEMONITOR
 #   if (PHIST_OUTLEV>=PHIST_TRACE) || defined(LIKWID_PERFMON)
 #     define ENTER_FCN(s) FcnTracer YouCantHaveMultiple_ENTER_FCN_StatementsInOneScope(s);\
-                          phist_TimeMonitor::Timer TimerFrom_ENTER_FCN(s);
+                          phist_TimeMonitor::Timer TimerFrom_ENTER_FCN(s);\
+                          SCOREP_USER_REGION(s, SCOREP_USER_REGION_TYPE_FUNCTION);
 #   else
-#     define ENTER_FCN(s) phist_TimeMonitor::Timer TimerFrom_ENTER_FCN(s);
+#     define ENTER_FCN(s) phist_TimeMonitor::Timer TimerFrom_ENTER_FCN(s);\
+                          SCOREP_USER_REGION(s, SCOREP_USER_REGION_TYPE_FUNCTION);
 #   endif
 # else
 #   if (PHIST_OUTLEV>=PHIST_TRACE) || defined(LIKWID_PERFMON)

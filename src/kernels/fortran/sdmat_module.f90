@@ -65,6 +65,7 @@ contains
     type(SDMat_t),  intent(inout) :: C
     !--------------------------------------------------------------------------------
     integer :: m, n, k, lda, ldb, ldc
+    integer :: i, j
     !--------------------------------------------------------------------------------
 
     ! determine data layout
@@ -82,11 +83,27 @@ contains
     ldc = size(C%val,1)
 
     ! just call the BLAS
-    call dgemm(transA,transB,m,n,k,alpha,A%val(A%imin,A%jmin),lda, &
-      &                                  B%val(B%imin,B%jmin),ldb, &
-      &                            beta, C%val(C%imin,C%jmin),ldc  )
+    !call dgemm(transA,transB,m,n,k,alpha,A%val(A%imin,A%jmin),lda, &
+    !  &                                  B%val(B%imin,B%jmin),ldb, &
+    !  &                            beta, C%val(C%imin,C%jmin),ldc  )
 
     !--------------------------------------------------------------------------------
+
+
+    if( transA .eq. 'N' ) then
+      do i = 0, m-1
+        do j = 0, n-1
+          C%val(C%imin+i,C%jmin+j) = alpha * sum(A%val(A%imin+i,A%jmin:A%jmax)*B%val(B%imin:B%imax,B%jmin+j)) + beta*C%val(C%imin+i,C%jmin+j)
+        end do
+      end do
+    else ! transA = 'T'
+      do i = 0, m-1
+        do j = 0, n-1
+          C%val(C%imin+i,C%jmin+j) = alpha * sum(A%val(A%imin:A%imax,A%jmin+i)*B%val(B%imin:B%imax,B%jmin+j)) + beta*C%val(C%imin+i,C%jmin+j)
+        end do
+      end do
+    end if
+
   end subroutine sdmat_times_sdmat
 
 
