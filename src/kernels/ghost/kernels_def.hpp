@@ -36,11 +36,11 @@ PHIST_GHOST_TASK_BEGIN
         *mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
         //mtraits->format = GHOST_SPARSEMAT_CRS;
         mtraits->format = GHOST_SPARSEMAT_SELL;
-        //ghost_sell_aux_t aux = GHOST_SELL_AUX_INITIALIZER;
-        //aux.C = 4;
-        //mtraits->aux = &aux;
-        //mtraits->sortScope = 8;
-        //mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT|GHOST_SPARSEMAT_PERMUTE);
+        ghost_sell_aux_t aux = GHOST_SELL_AUX_INITIALIZER;
+        aux.C = 32;
+        mtraits->aux = &aux;
+        mtraits->sortScope = 64;
+        mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT|GHOST_SPARSEMAT_PERMUTE);
         mtraits->datatype = st::ghost_dt;
         char* cfname=const_cast<char*>(filename);
 // TODO - check ghost return codes everywhere like this
@@ -212,7 +212,7 @@ PHIST_GHOST_TASK_BEGIN
 #endif
   // I think the sdMat should not have a context
   ghost_context_t* ctx=NULL;
-  PHIST_CHK_GERR(ghost_context_create(&ctx,nrows, ncols, GHOST_CONTEXT_DEFAULT, 
+  PHIST_CHK_GERR(ghost_context_create(&ctx,nrows, ncols, GHOST_CONTEXT_REDUNDANT, 
         NULL, GHOST_SPARSEMAT_SRC_NONE, *comm, 1.0),*ierr);
   ghost_densemat_create(&result,ctx,dmtraits);
   ST zero = st::zero();
@@ -395,6 +395,12 @@ else
     
     *lda = M->traits.ncolspadded;
   }*/
+}
+
+extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* ierr)
+{
+  *ierr=-99;
+  return;
 }
 
 //! get a new vector that is a view of some columns of the original one,

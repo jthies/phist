@@ -193,6 +193,14 @@ extern "C" void SUBR(sdMat_extract_view)(DsdMat_ptr_t vM, double** val, lidx_t* 
   PHIST_CHK_IERR(*ierr=M->ExtractView(val,lda),*ierr);
   }
 
+extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* ierr)
+{
+  //TODO: create importer, v_out->Import(v_in)
+  //TODO: possibly crate a wrapper phist_map_t which keeps the importer as well
+  *ierr=-99;
+  return;
+}
+
 //! get a new vector that is a view of some columns of the original one,
 //! Vblock = V(:,jmin:jmax). The new object Vblock is created but does not
 //! allocate memory for the vector entries, instead using the entries from V

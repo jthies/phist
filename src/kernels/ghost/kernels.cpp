@@ -69,6 +69,7 @@ typedef struct ghost_map_t
   {
   ghost_context_t* ctx;
   ghost_densemat_traits_t vtraits_template;
+  ghost_permutation_t *permutation;
   } ghost_map_t;
 
 // initialize ghost
@@ -202,6 +203,8 @@ extern "C" void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t
   new_flags |= (int)GHOST_DENSEMAT_NO_HALO;
   map->vtraits_template.flags=(ghost_densemat_flags_t)new_flags;
   // ghost should set these correctly depending on GHOST_TYPE if we set HOST and DEVICE to 0
+
+  map->permutation=NULL; //permutation is defined by a matrix object.
 
   *vmap=(map_ptr_t)(map);
   }

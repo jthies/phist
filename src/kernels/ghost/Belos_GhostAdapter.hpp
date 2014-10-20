@@ -623,11 +623,12 @@ using ::phist::GhostMV;
   {
     ENTER_FCN(__FUNCTION__);
       ghost_densemat_traits_t dmtraits=GHOST_DENSEMAT_TRAITS_INITIALIZER;
-                dmtraits.flags = GHOST_DENSEMAT_DEFAULT;
+                dmtraits.flags = GHOST_DENSEMAT_NO_HALO;
                 dmtraits.nrows=M.numRows();
                 dmtraits.nrowshalo=M.numRows();
                 dmtraits.nrowspadded=M.stride();
                 dmtraits.ncols=M.numCols();
+                dmtraits.ncolspadded=M.numCols();
                 // Teuchos sdMats are always column major
                 dmtraits.storage=GHOST_DENSEMAT_COLMAJOR;
                 dmtraits.datatype=st::ghost_dt;
@@ -638,7 +639,7 @@ using ::phist::GhostMV;
       MPI_Comm comm = MPI_COMM_WORLD;
       ghost_context_t* ctx=NULL;
       ghost_error_t gerr=ghost_context_create(&ctx,M.numRows(), M.numRows(), 
-          GHOST_CONTEXT_DEFAULT, NULL, GHOST_SPARSEMAT_SRC_NONE, comm, 1.0);
+          GHOST_CONTEXT_REDUNDANT, NULL, GHOST_SPARSEMAT_SRC_NONE, comm, 1.0);
       if (gerr!=GHOST_SUCCESS) PHIST_OUT(PHIST_ERROR,"GHOST error (%s) in file %s, line %d",
         phist_ghost_error2str(gerr),__FILE__,__LINE__);
       //TODO - check return values everywhere

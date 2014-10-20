@@ -198,6 +198,10 @@ void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) M, int* ierr);
 //!   \defgroup mvec Multi-vector functions (mvec_t) 
 //@{
 
+//! this function can be e.g. used to permute or redistribute vectors, the vector
+//! entries of v_in will be copied into v_out, which may be based on a different map.
+void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* ierr);
+
 //! get a new vector that is a view of some columns of the original one.
 
 //! Vblock = V(:,jmin:jmax). The new object Vblock is created but does not
