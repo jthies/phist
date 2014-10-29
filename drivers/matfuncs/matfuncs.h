@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "phist_config.h"
 #include "phist_kernels.h"
 
 #ifdef PHIST_HAVE_GHOST
@@ -17,7 +18,7 @@
 #define GHOST_SPARSEMAT_SYMM_GENERAL 0x1
 #define GHOST_DT_DOUBLE 0x2
 #define GHOST_DT_REAL 0x4
-#define GHOST_HAVE_LONGIDX
+#define GHOST_HAVE_LONGIDX_GLOBAL
 #endif
 
 

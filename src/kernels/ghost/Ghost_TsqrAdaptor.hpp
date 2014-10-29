@@ -103,7 +103,9 @@ namespace ghost {
   public:
     typedef phist::GhostMV MV;
     typedef ST scalar_type;
-    // note: ghost in principle allows more than 2M rows/core, but TSQR doesn't
+    // note: ghost in principle allows more than 2M rows/core, but TSQR doesn't.
+    // This should not be a problem, however, as we only deal with dense matrices
+    // here and no indices typically appear in the interface.
     typedef int ordinal_type;
     // integer type for Teuchos::SerialDenseMatrix objects
     typedef int blas_idx_type;

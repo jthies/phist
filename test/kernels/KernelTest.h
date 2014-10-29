@@ -16,6 +16,9 @@ typedef int MPI_Comm;
 #include "phist_typedefs.h"
 #include "phist_kernels.h"
 
+#ifdef PHIST_HAVE_GHOST
+#include "ghost/taskq.h"
+#endif
 #ifdef PHIST_MVECS_ROW_MAJOR
 #define VIDX(i,j,lda) ((j)+(i)*(lda))
 #else
@@ -121,6 +124,9 @@ virtual void TearDown()
 	delete cout;
 	delete cerr;
 #endif
+#ifdef PHIST_HAVE_GHOST
+    ghost_taskq_waitall();
+#endif  
   }
   
 ::testing::AssertionResult AssertNotNull(void* ptr)
