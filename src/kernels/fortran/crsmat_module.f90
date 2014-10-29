@@ -1564,7 +1564,6 @@ end subroutine permute_local_matrix
   !> read MatrixMarket file
   subroutine phist_DcrsMat_read_mm(A_ptr, comm, filename_len, filename_ptr, ierr) &
     & bind(C,name='phist_DcrsMat_read_mm_f') ! circumvent bug in opari (openmp instrumentalization)
-  bind(C,name='phist_DcrsMat_read_mm_f')
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
     use mpi
