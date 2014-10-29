@@ -49,6 +49,7 @@ module crsmat_module
     real(kind=8), allocatable :: sendData(:,:)        !< send buffer, has size (nb,sendBuffInd(nSendProcs+1)-1)
     real(kind=8), allocatable :: recvData(:,:)        !< recv buffer, has size (nb,recvBuffInd(nRecvProcs+1)-1)
     integer,      allocatable :: sendRowBlkInd(:)     !< local row block index of the data in the sendBuffer, has size (sendBuffInd(nSendProcs+1)-1)
+    integer,      allocatable :: sendBuffInd(:,:)     !< sorted Variant of sendRowBlkInd, hast size (size(sendRowBlkInd),2), first entry is the local row block index, second is the index in the send buffer
     integer(kind=8), allocatable :: recvRowBlkInd(:)     !< global row block index of the data in the recvBuffer, has size (recvBuffInd(nRecvProcs+1)-1)
     integer,      allocatable :: sendRequests(:)      !< buffer for mpi send requests, has size (nSendProcs)
     integer,      allocatable :: recvRequests(:)      !< buffer for mpi receive requests, has size (nRecvProcs)
@@ -295,7 +296,18 @@ end do
     combuff%sendRowBlkInd = int(sendRowBlkInd - firstrow+1,kind=4)
 
     call mpi_waitall(combuff%nRecvProcs,combuff%recvRequests,&
-     &              combuff%recvStatus,ierr)
+      &              combuff%recvStatus,ierr)
+
+
+    ! get sorted variant of sendRowBlkInd for faster copy-to-buffer later
+    allocate(combuff%sendBuffInd(size(combuff%sendRowBlkInd),2))
+    do i = 1, size(combuff%sendRowBlkInd), 1
+      combuff%sendBuffInd(i,1) = combuff%sendRowBlkInd(i)
+      combuff%sendBuffInd(i,2) = i
+    end do
+    call sortInd(combuff%sendBuffInd(:,1), combuff%sendBuffInd(:,2))
+    !write(*,*) 'sendBuffInd 1', combuff%sendBuffInd(:,1)
+    !write(*,*) 'sendBuffInd 2', combuff%sendBuffInd(:,2)
 
   end subroutine setup_commBuff
 
@@ -313,6 +325,24 @@ end do
     end do
 
   end subroutine sort
+
+  subroutine sortInd(array, ind)
+    use m_mrgrnk
+    integer(kind=4), intent(inout) :: array(1:)
+    integer(kind=4), intent(out) :: ind(1:)
+    integer(kind=8), allocatable :: tmp(:,:)
+    integer :: i
+
+    allocate(tmp(size(array),2))
+    tmp(:,1) = int(array,kind=8)
+    call mrgrnk(tmp(:,1),tmp(:,2))
+    do i = 1, size(array)
+      array(i) = int(tmp(tmp(i,2),1),kind=4)
+    end do
+    ind = int(tmp(:,2),kind=4)
+
+  end subroutine sortInd
+
 
 
   subroutine sort_global_cols(A)
@@ -1268,7 +1298,7 @@ end subroutine permute_local_matrix
     real(kind=8),   intent(in)    :: beta
     type(MVec_t),   intent(inout) :: y
     !--------------------------------------------------------------------------------
-    integer :: nvec, ldx, ldy, recvBuffSize
+    integer :: nvec, ldx, ldy, recvBuffSize, sendBuffSize
     logical :: strided_x, strided_y, strided
     logical :: y_is_aligned16, handled
     integer :: i, j, k, l, ierr
@@ -1321,56 +1351,99 @@ end subroutine permute_local_matrix
     ! we could also set up persistent communication channels here... and use MPI_Startall later
     if( allocated(A%comm_buff%recvData) ) then
       if( size(A%comm_buff%recvData,1) .ne. nvec ) then
+        ! deallocate old receive buffer
+        do i = 1, A%comm_buff%nRecvProcs
+          call mpi_request_free(A%comm_buff%recvRequests(i), ierr)
+        end do
+        ! deallocate old send buffer
         deallocate(A%comm_buff%recvData)
+        do i = 1, A%comm_buff%nSendProcs
+          call mpi_request_free(A%comm_buff%sendRequests(i), ierr)
+        end do
         deallocate(A%comm_buff%sendData)
       end if
     end if
     if( .not. allocated(A%comm_buff%recvData) ) then
+      ! allocate new receive buffer
       allocate(A%comm_buff%recvData(nvec,A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1))
+      do i = 1, A%comm_buff%nRecvProcs
+        k = A%comm_buff%recvInd(i)
+        l = A%comm_buff%recvInd(i+1)
+        call mpi_recv_init(A%comm_buff%recvData(:,k:l-1),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
+          &                A%comm_buff%recvProcId(i),3,A%row_map%Comm,A%comm_buff%recvRequests(i),ierr)
+      end do
+      ! allocate new send buffer
       allocate(A%comm_buff%sendData(nvec,A%comm_buff%sendInd(A%comm_buff%nSendProcs+1)-1))
+      do i=1,A%comm_buff%nSendProcs, 1
+        k = A%comm_buff%sendInd(i)
+        l = A%comm_buff%sendInd(i+1)
+        call mpi_ssend_init(A%comm_buff%sendData(:,k:l-1),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
+          &                 A%comm_buff%sendProcId(i),3,A%row_map%Comm,A%comm_buff%sendRequests(i),ierr)
+      end do
     end if
 
-    do i=1,A%comm_buff%nRecvProcs, 1
-      k = A%comm_buff%recvInd(i)
-      l = A%comm_buff%recvInd(i+1)
-      call mpi_irecv(A%comm_buff%recvData(:,k:l-1),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
-        &            A%comm_buff%recvProcId(i),3,A%row_map%Comm,A%comm_buff%recvRequests(i),ierr)
-    end do
-
-    ! start buffer isend
-!$omp parallel
-    do i=1,A%comm_buff%nSendProcs, 1
-      k = A%comm_buff%sendInd(i)
-      l = A%comm_buff%sendInd(i+1)
-!$omp do schedule(static)
-      do j = k, l-1, 1
-        A%comm_buff%sendData(:,j) = x%val(x%jmin:x%jmax,A%comm_buff%sendRowBlkInd(j))
-      end do
-    end do
-!$omp end parallel
-
-    do i=1,A%comm_buff%nSendProcs, 1
-      k = A%comm_buff%sendInd(i)
-      l = A%comm_buff%sendInd(i+1)
-      call mpi_isend(A%comm_buff%sendData(:,k:l-1),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
-        &            A%comm_buff%sendProcId(i),3,A%row_map%Comm,A%comm_buff%sendRequests(i),ierr)
-    end do
-
+    ! start receiving (e.g. irecv)
     if( A%comm_buff%nRecvProcs .gt. 0 ) then
-      ! wait till all data arrived
+      call mpi_startall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStatus,ierr)
+    end if
+
+
+    sendBuffSize = size(A%comm_buff%sendBuffInd,1)
+    ! gather send data in buffer
+    if( nvec .eq. 1 ) then
+      if( strided_x ) then
+        call dspmv_buff_cpy_strided_1(A%nrows, sendBuffSize, ldx, x%val(x%jmin,1), A%comm_buff%sendBuffInd, A%comm_buff%sendData)
+      else
+        call dspmv_buff_cpy_1(A%nrows, sendBuffSize, x%val, A%comm_buff%sendBuffInd, A%comm_buff%sendData)
+      end if
+    else if( nvec .eq. 2 ) then
+      if( strided_x ) then
+        call dspmv_buff_cpy_strided_2(A%nrows, sendBuffSize, ldx, x%val(x%jmin,1), A%comm_buff%sendBuffInd, A%comm_buff%sendData)
+      else
+        call dspmv_buff_cpy_2(A%nrows, sendBuffSize, x%val, A%comm_buff%sendBuffInd, A%comm_buff%sendData)
+      end if
+    else if( nvec .eq. 4 ) then
+      if( strided_x ) then
+        call dspmv_buff_cpy_strided_4(A%nrows, sendBuffSize, ldx, x%val(x%jmin,1), A%comm_buff%sendBuffInd, A%comm_buff%sendData)
+      else
+        call dspmv_buff_cpy_4(A%nrows, sendBuffSize, x%val, A%comm_buff%sendBuffInd, A%comm_buff%sendData)
+      end if
+    else if( nvec .eq. 8 ) then
+      if( strided_x ) then
+        call dspmv_buff_cpy_strided_8(A%nrows, sendBuffSize, ldx, x%val(x%jmin,1), A%comm_buff%sendBuffInd, A%comm_buff%sendData)
+      else
+        call dspmv_buff_cpy_8(A%nrows, sendBuffSize, x%val, A%comm_buff%sendBuffInd, A%comm_buff%sendData)
+      end if
+    else
+      call dspmv_buff_cpy_general(nvec, A%nrows, sendBuffSize, ldx, x%val(x%jmin,1), A%comm_buff%sendBuffInd, A%comm_buff%sendData)
+    end if
+
+!!$omp parallel do schedule(static)
+!    do i = 1, size(A%comm_buff%sendBuffInd,1), 1
+!      k = A%comm_buff%sendBuffInd(i,1)
+!      l = A%comm_buff%sendBuffInd(i,2)
+!      A%comm_buff%sendData(:,l) = x%val(x%jmin:x%jmax,k)
+!    end do
+
+
+    ! start sending (e.g. issend)
+    if( A%comm_buff%nSendProcs .gt. 0 ) then
+      call mpi_startall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
+    end if
+
+    ! wait till all data arrived
+    if( A%comm_buff%nRecvProcs .gt. 0 ) then
       call mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStatus,ierr)
     end if
 
-    recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
-
+    ! also wait till all data was sent to circumvent dumb MPI implementations that don't do that in the background!
     if( A%comm_buff%nSendProcs .gt. 0 ) then
-      ! also wait till all data was sent to circumvent dumb MPI implementations
-      ! that don't do that in the background!
       call mpi_waitall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
     end if
 
 
 
+    recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
     handled = .false.
     !try to use NT stores if possible
     if( beta .eq. 0 .and. y_is_aligned16 ) then
@@ -1490,6 +1563,7 @@ end subroutine permute_local_matrix
   !==================================================================================
   !> read MatrixMarket file
   subroutine phist_DcrsMat_read_mm(A_ptr, comm, filename_len, filename_ptr, ierr) &
+    & bind(C,name='phist_DcrsMat_read_mm_f') ! circumvent bug in opari (openmp instrumentalization)
   bind(C,name='phist_DcrsMat_read_mm_f')
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
@@ -1686,8 +1760,8 @@ end subroutine permute_local_matrix
 
   !==================================================================================
   !> read MatrixMarket file
-  subroutine phist_DcrsMat_create_fromRowFunc(A_ptr, comm,nrows, ncols, maxnne_per_row, &
-  rowFunc_ptr, ierr) bind(C,name='phist_DcrsMat_create_fromRowFunc_f')
+  subroutine phist_DcrsMat_create_fromRowFunc(A_ptr, comm,nrows, ncols, maxnne_per_row, rowFunc_ptr, ierr) &
+    & bind(C,name='phist_DcrsMat_create_fromRowFunc_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
     use mpi
@@ -1899,6 +1973,7 @@ end if
     integer(C_INT), intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(CrsMat_t), pointer :: A
+    integer :: i
 #ifdef TESTING
     integer(C_INTPTR_T) :: dummy
 #endif
@@ -1909,7 +1984,24 @@ end if
     flush(6)
 #endif
     if( c_associated(A_ptr) ) then
+      ! get pointer
       call c_f_pointer(A_ptr,A)
+
+      ! free all mpi requests
+      if( allocated(A%comm_buff%recvData) ) then
+        ! deallocate old receive buffer
+        do i = 1, A%comm_buff%nRecvProcs
+          call mpi_request_free(A%comm_buff%recvRequests(i), ierr)
+        end do
+        ! deallocate old send buffer
+        deallocate(A%comm_buff%recvData)
+        do i = 1, A%comm_buff%nSendProcs
+          call mpi_request_free(A%comm_buff%sendRequests(i), ierr)
+        end do
+        deallocate(A%comm_buff%sendData)
+      end if
+
+      ! deallocate matrix
       deallocate(A)
     end if
     ierr = 0
@@ -2006,9 +2098,8 @@ end if
 
   !==================================================================================
 
-  subroutine phist_Dcarp_setup(A_ptr, numShifts, &
-        shifts_r, shifts_i, nrms_ai2i_ptr, work_ptr,ierr) &
-  bind(C,name='phist_Dcarp_setup_f')
+  subroutine phist_Dcarp_setup(A_ptr, numShifts, shifts_r, shifts_i, nrms_ai2i_ptr, work_ptr,ierr) &
+    & bind(C,name='phist_Dcarp_setup_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),      value         :: A_ptr
