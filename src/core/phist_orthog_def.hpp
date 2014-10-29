@@ -127,7 +127,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   // norms after first CGS sweep. This could be done cheaper by using R1 computed below,
   // since ||W_j||_2 = ||R1_j||_2 (TODO - that's how it's done in Belos).
   PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW1,ierr),*ierr);
-  PHIST_DEB("orthog: normW1 is %e\n", normW1);
+  PHIST_DEB("orthog: normW1[0] is %e\n", normW1[0]);
 
   // special case which cannot be detected in mvec_QR if W in span(V) (because mvec_QR uses a relative tolerance):
   MT maxNormW1 = 0;

@@ -322,12 +322,12 @@ void SUBR(mvec_scatter_mvecs)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W[], int nb
 {
   *ierr=-99;
 }
+#endif
 
 void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int* ierr)
 {
   *ierr=-99;
 }
-#endif
 
 //! mixed real/complex operation: split mvec into real and imag part.
 //! if either reV or imV are NULL, it is not touched.

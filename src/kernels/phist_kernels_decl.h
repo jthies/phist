@@ -353,6 +353,10 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
                                        TYPE(const_sdMat_ptr) C,
                            _ST_ beta,  TYPE(mvec_ptr) W, 
                                        int* ierr);
+//! M <- V*M
+void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int *ierr);
+
+
 
 
 //! B=alpha*A+beta*B. \ingroup sdmat
@@ -429,9 +433,7 @@ void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, const_comm_ptr_t comm,
 #ifdef PHIST_KERNEL_LIB_FORTRAN
 void SUBR(mvec_gather_mvecs)(TYPE(mvec_ptr) V, TYPE(const_mvec_ptr) W[], int nblocks, int *ierr);
 void SUBR(mvec_scatter_mvecs)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W[], int nblocks, int *ierr);
-void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int *ierr);
 #endif
-
 
 //@}
 

@@ -34,12 +34,14 @@ PHIST_GHOST_TASK_BEGIN
 
   ghost_sparsemat_traits_t *mtraits=new ghost_sparsemat_traits_t;
         *mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
-        //mtraits->format = GHOST_SPARSEMAT_CRS;
+//        mtraits->format = GHOST_SPARSEMAT_CRS;
+
         mtraits->format = GHOST_SPARSEMAT_SELL;
         ghost_sell_aux_t aux = GHOST_SELL_AUX_INITIALIZER;
         aux.C = 32;
         mtraits->aux = &aux;
         mtraits->sortScope = 64;
+
         mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT|GHOST_SPARSEMAT_PERMUTE);
         mtraits->datatype = st::ghost_dt;
         char* cfname=const_cast<char*>(filename);
@@ -399,7 +401,33 @@ else
 
 extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* ierr)
 {
-  *ierr=-99;
+  CAST_PTR_FROM_VOID(ghost_densemat_t,V_in,v_in,*ierr);
+  CAST_PTR_FROM_VOID(ghost_densemat_t,V_out,v_out,*ierr);
+  
+  if (V_in->context!=V_out->context)
+  {
+    PHIST_SOUT(PHIST_WARNING,"function %s only implemented for simple permutation operations\n"
+                             "where the result and input vectors have the same context and  \n"
+                             "one of them may be permuted\n",__FUNCTION__);
+    *ierr=PHIST_NOT_IMPLEMENTED;
+    return;
+  }
+  
+  bool resultPermuted=false;//V_out->flags && IS_PERMUTED;
+  bool inputPermuted=false;//V_out->flags && IS_PERMUTED;
+  
+  // first copy the data
+  PHIST_CHK_GERR(V_out->fromVec(V_out,V_in,0,0),*ierr);
+  // check permutation state
+  if (resultPermuted==inputPermuted) return;
+  if (resultPermuted)
+  {
+    PHIST_CHK_GERR(V_out->permute(V_out,V_out->context->permutation,GHOST_PERMUTATION_ORIG2PERM),*ierr);
+  }
+  else
+  {
+    PHIST_CHK_GERR(V_out->permute(V_out,V_out->context->permutation,GHOST_PERMUTATION_PERM2ORIG),*ierr);
+  }
   return;
 }
 
@@ -1001,6 +1029,36 @@ PHIST_GHOST_TASK_BEGIN
 #endif
     // note: C is replicated, so this operation is a purely local one.
     PHIST_CHK_GERR(ghost_gemm(W,V,(char*)"N",C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE),*ierr);
+PHIST_GHOST_TASK_END
+  }
+
+//! C <- V*C
+extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) vV,
+                                       TYPE(const_sdMat_ptr) vC,
+                                       int* ierr)
+  {
+#include "phist_std_typedefs.hpp"
+    ENTER_FCN(__FUNCTION__);
+PHIST_GHOST_TASK_BEGIN
+    *ierr=0;
+    CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
+    CAST_PTR_FROM_VOID(ghost_densemat_t,C,vC,*ierr);
+
+    lidx_t nrV;
+    int ncV, nrC, ncC;
+    nrV=V->traits.nrows;  ncV=V->traits.ncols;
+     nrC=C->traits.nrows;  ncC=V->traits.ncols;
+
+#ifdef TESTING
+    PHIST_CHK_IERR(*ierr=nrC-ncV,*ierr);
+    PHIST_CHK_IERR(*ierr=nrC-ncC,*ierr);
+    //PHIST_DEB("V'C with V %" PRlidx "x%d, C %dx%d and result %" PRlidx "x%d\n", nrV,ncV,nrC,ncC,nrW,ncW);
+#endif
+    // note: C is replicated, so this operation is a purely local one.
+    ST alpha=st::one();
+    ST beta=st::zero();
+    // ghost internally picks the in-place variant of possible
+    PHIST_CHK_GERR(ghost_gemm(V,V,(char*)"N",C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE),*ierr);
 PHIST_GHOST_TASK_END
   }
 //! n x m serial dense matrix times m x k serial dense matrix gives n x k sdMat,

@@ -31,6 +31,19 @@
 
 // this file is mostly copied from the Belos Tpetra adapter implementation in Trilinos 11.2.4
 
+#ifndef CHK_GERR
+#define CHK_GERR(CALL,RETURNVALUE) \
+  { \
+    if (GHOST_SUCCESS!=CALL) \
+    { \
+      PHIST_SOUT(PHIST_ERROR,"ghost call %s failed (%s,%d)",#CALL,__FILE__,__LINE__);\
+      return RETURNVALUE;\
+    }\
+  }
+#endif
+
+
+
 namespace Belos {
 
 using ::phist::GhostMV;
@@ -283,7 +296,9 @@ using ::phist::GhostMV;
 	}
       
       ghost_densemat_t* result=NULL;
-      _mv->viewCols(_mv,&result,index.ubound()-index.lbound()+1, index.lbound());
+      ghost_lidx_t offs=index.lbound();
+      ghost_lidx_t nc=(ghost_lidx_t)(index.ubound()-index.lbound()+1);
+      CHK_GERR(_mv->viewCols(_mv,&result,nc,offs),Teuchos::null);
 
       return phist::rcp(result,true);
     }
@@ -642,6 +657,14 @@ using ::phist::GhostMV;
           GHOST_CONTEXT_REDUNDANT, NULL, GHOST_SPARSEMAT_SRC_NONE, comm, 1.0);
       if (gerr!=GHOST_SUCCESS) PHIST_OUT(PHIST_ERROR,"GHOST error (%s) in file %s, line %d",
         phist_ghost_error2str(gerr),__FILE__,__LINE__);
+
+#if PHIST_OUTLEV >= PHIST_DEBUG
+  char *str;
+  ghost_context_string(&str,ctx);
+  PHIST_SOUT(PHIST_DEBUG,"sdMat context:\n%s\n",str);
+  free(str); str = NULL;
+#endif
+            
       //TODO - check return values everywhere
       ghost_densemat_t* Mghost;
       ghost_densemat_create(&Mghost,ctx,dmtraits);
