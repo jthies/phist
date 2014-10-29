@@ -196,6 +196,8 @@ public:
   {
     if(typeImplemented_)
     {
+      SUBR(sdMat_from_device)(mat1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
       // check that the imaginary part is not zero everywhere!
       MT maxAbsIm = mt::zero();
       for(int i = 0; i < nrows_; i++)
