@@ -147,7 +147,13 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
     {
       if( std::abs(me->pgmresStates_[i]->status) == 1 )
       {
+#ifdef IS_COMPLEX
+        PHIST_SOUT(PHIST_INFO, "\t%d (%f%+fi)", index[me->pgmresStates_[i]->id], 
+        -st::real(sigma[index[me->pgmresStates_[i]->id]]),
+        -st::imag(sigma[index[me->pgmresStates_[i]->id]]));
+#else
         PHIST_SOUT(PHIST_INFO, "\t%d (%f)", index[me->pgmresStates_[i]->id], -sigma[index[me->pgmresStates_[i]->id]]);
+#endif
         activeStates.push_back(me->pgmresStates_[i]);
         firstId = std::min(firstId,activeStates.back()->id);
       }

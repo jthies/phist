@@ -244,6 +244,14 @@ extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t*
   *ierr=0; 
   }
 
+extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* ierr)
+{
+  // TODO: create importer, v_out->Import(v_in)
+  // TODO: possibly create a wrapper phist_map_t which keeps the importer as well.
+  *ierr=-99;
+  return;
+}
+
 //! get a new vector that is a view of some columns of the original one,
 //! Vblock = V(:,jmin:jmax). The new object Vblock is created but does not
 //! allocate memory for the vector entries, instead using the entries from V
@@ -1048,4 +1056,7 @@ extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* 
 #endif
 
 //TODO: tpetra supports GPUs, implement the interface
+extern "C" {
 #include "../kernels_nogpu.c"
+}
+#include "../kernels_no_inplace_VC.cpp"

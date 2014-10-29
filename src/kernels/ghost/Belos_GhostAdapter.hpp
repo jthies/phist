@@ -31,6 +31,19 @@
 
 // this file is mostly copied from the Belos Tpetra adapter implementation in Trilinos 11.2.4
 
+#ifndef CHK_GERR
+#define CHK_GERR(CALL,RETURNVALUE) \
+  { \
+    if (GHOST_SUCCESS!=CALL) \
+    { \
+      PHIST_SOUT(PHIST_ERROR,"ghost call %s failed (%s,%d)",#CALL,__FILE__,__LINE__);\
+      return RETURNVALUE;\
+    }\
+  }
+#endif
+
+
+
 namespace Belos {
 
 using ::phist::GhostMV;
@@ -100,8 +113,8 @@ using ::phist::GhostMV;
       TEUCHOS_TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= GetNumberVecs(mv), std::runtime_error,
           "Belos::MultiVecTraits<Scalar,GhostMV>::CloneCopy(mv,index): indices must be < mv.traits.ncols.");
 
-      ghost_idx_t imin=0;
-      ghost_idx_t ilen=_mv->traits.nrows;
+      ghost_lidx_t imin=0;
+      ghost_lidx_t ilen=_mv->traits.nrows;
 
       bool contig=true;
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
@@ -115,8 +128,8 @@ using ::phist::GhostMV;
       if (contig)
       {
         ghost_densemat_t *result = NULL;
-        ghost_idx_t ilen=_mv->traits.nrows;
-        ghost_idx_t imin=0;
+        ghost_lidx_t ilen=_mv->traits.nrows;
+        ghost_lidx_t imin=0;
         _mv->clone(_mv,&result,ilen,imin,index.size(),index[0]);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -228,17 +241,17 @@ using ::phist::GhostMV;
     //        view is to make it a 'scattered' view.
     if (constStride==false || stride!=1)
     {
-#ifdef GHOST_HAVE_LONGIDX
+#ifdef GHOST_HAVE_LONGIDX_LOCAL
       // ghost expects long ints here, while we get ints. So we copy them over:
-      std::vector<ghost_idx_t> clone_index(index.size());
+      std::vector<ghost_lidx_t> clone_index(index.size());
       for (int i=0;i<index.size();i++)
       {
-        clone_index[i]=(ghost_idx_t)index[i];
+        clone_index[i]=(ghost_lidx_t)index[i];
       }
 #else
-      const std::vector<ghost_idx_t>& clone_index=index;
+      const std::vector<ghost_lidx_t>& clone_index=index;
 #endif
-      _mv->viewScatteredCols(_mv,&result,(ghost_idx_t)index.size(),(ghost_idx_t*)&clone_index[0]);
+      _mv->viewScatteredCols(_mv,&result,(ghost_lidx_t)index.size(),(ghost_lidx_t*)&clone_index[0]);
     }
     else
     {
@@ -283,7 +296,9 @@ using ::phist::GhostMV;
 	}
       
       ghost_densemat_t* result=NULL;
-      _mv->viewCols(_mv,&result,index.ubound()-index.lbound()+1, index.lbound());
+      ghost_lidx_t offs=index.lbound();
+      ghost_lidx_t nc=(ghost_lidx_t)(index.ubound()-index.lbound()+1);
+      CHK_GERR(_mv->viewCols(_mv,&result,nc,offs),Teuchos::null);
 
       return phist::rcp(result,true);
     }
@@ -623,11 +638,12 @@ using ::phist::GhostMV;
   {
     ENTER_FCN(__FUNCTION__);
       ghost_densemat_traits_t dmtraits=GHOST_DENSEMAT_TRAITS_INITIALIZER;
-                dmtraits.flags = GHOST_DENSEMAT_DEFAULT;
+                dmtraits.flags = GHOST_DENSEMAT_NO_HALO;
                 dmtraits.nrows=M.numRows();
                 dmtraits.nrowshalo=M.numRows();
                 dmtraits.nrowspadded=M.stride();
                 dmtraits.ncols=M.numCols();
+                dmtraits.ncolspadded=M.numCols();
                 // Teuchos sdMats are always column major
                 dmtraits.storage=GHOST_DENSEMAT_COLMAJOR;
                 dmtraits.datatype=st::ghost_dt;
@@ -638,9 +654,17 @@ using ::phist::GhostMV;
       MPI_Comm comm = MPI_COMM_WORLD;
       ghost_context_t* ctx=NULL;
       ghost_error_t gerr=ghost_context_create(&ctx,M.numRows(), M.numRows(), 
-          GHOST_CONTEXT_DEFAULT, NULL, GHOST_SPARSEMAT_SRC_NONE, comm, 1.0);
+          GHOST_CONTEXT_REDUNDANT, NULL, GHOST_SPARSEMAT_SRC_NONE, comm, 1.0);
       if (gerr!=GHOST_SUCCESS) PHIST_OUT(PHIST_ERROR,"GHOST error (%s) in file %s, line %d",
         phist_ghost_error2str(gerr),__FILE__,__LINE__);
+
+#if PHIST_OUTLEV >= PHIST_DEBUG
+  char *str;
+  ghost_context_string(&str,ctx);
+  PHIST_SOUT(PHIST_DEBUG,"sdMat context:\n%s\n",str);
+  free(str); str = NULL;
+#endif
+            
       //TODO - check return values everywhere
       ghost_densemat_t* Mghost;
       ghost_densemat_create(&Mghost,ctx,dmtraits);

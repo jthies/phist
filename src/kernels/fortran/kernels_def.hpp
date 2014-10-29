@@ -139,6 +139,13 @@ extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) V, _ST_** val, lidx_t* 
   PHIST_CHK_IERR(SUBR(sdMat_extract_view_f)(V,val,lda,ierr),*ierr);
 }
 
+extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* ierr)
+{
+  //TODO - we do not allow reversing the ParMETIS partitioning right now
+  *ierr=0;
+  return;
+}
+
 extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) V,
     TYPE(mvec_ptr)* Vblock,
     int jmin, int jmax, int* ierr)
