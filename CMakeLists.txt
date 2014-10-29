@@ -396,7 +396,9 @@ foreach(PKG ${LOAD_TRILI_PKG})
 endforeach()
 
 link_libraries(${LAPACK_LIBS})
-link_libraries(${MPI_CXX_LIBRARIES})
+if(NOT PHIST_KERNEL_LIB STREQUAL "ghost") #use MPI libs as found by GHOST in this case. otherwise, a clash between thread-safe and normal MPI will occur
+    link_libraries(${MPI_CXX_LIBRARIES})
+endif()
 
 set(GCOVR_EXCLUDES -e src/kernels/kernels_noimpl.c
                    -e src/tools/tools.c)

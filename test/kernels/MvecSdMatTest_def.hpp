@@ -267,6 +267,12 @@ public:
         PHIST_DEB("col-range V2: [%d:%d]\n",off2[i],off2[i]+m2[i]-1);
         PHIST_DEB("idx-range M:  [%d:%d,%d:%d]\n",off1_M[i],off1_M[i]+m1[i]-1,off2_M[i],off2_M[i]+m2[i]-1);
 #if PHIST_OUTLEV>=PHIST_DEBUG
+        SUBR(mvec_from_device)(V1_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_from_device)(V2_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(sdMat_from_device)(M1_,&ierr_);
+        ASSERT_EQ(0,ierr_);
         VTest::PrintVector(*cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
         VTest::PrintVector(*cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
         MTest::PrintSdMat(*cout,"zero-random'*random",M1_vp_,ldaM1_,stride_,mpi_comm_);
@@ -285,10 +291,14 @@ public:
         ASSERT_EQ(0,ierr_);
         SUBR(sdMat_delete)(M2,&ierr_);
         ASSERT_EQ(0,ierr_);
+        SUBR(sdMat_from_device)(M2_,&ierr_);
+        ASSERT_EQ(0,ierr_);
         MTest::PrintSdMat(*cout,"zero-random'*random in correct location",M2_vp_,ldaM2_,stride_,mpi_comm_);
         SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::one(),M2_,&ierr_);
         ASSERT_EQ(0,ierr_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
+        SUBR(sdMat_from_device)(M2_,&ierr_);
+        ASSERT_EQ(0,ierr_);
         MTest::PrintSdMat(*cout,"zero-random'*random+random'*random",M2_vp_,ldaM2_,stride_,mpi_comm_);
 #endif
         SUBR(sdMat_parallel_check_)(M2_,&ierr_);
