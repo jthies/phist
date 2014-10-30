@@ -253,7 +253,7 @@ else()
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp)
 endif()
-set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.c
+set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.cpp
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_rcp_helpers.cpp
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_driver_utils.c)
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
