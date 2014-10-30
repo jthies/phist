@@ -26,7 +26,10 @@
 #include "phist_ScalarTraits.hpp"
 
 #ifdef PHIST_HAVE_KOKKOS
+/*
 typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+*/
+typedef Kokkos::SerialNode node_t;
 #endif
 
 template <typename ST>
