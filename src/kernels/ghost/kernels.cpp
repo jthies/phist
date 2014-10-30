@@ -19,13 +19,6 @@
 #include "Belos_GhostAdapter.hpp"
 #include "BelosTsqrOrthoManager.hpp"
 #endif
-#ifdef PHIST_TIMEMONITOR
-#include "phist_timemonitor.hpp"
-namespace phist_TimeMonitor
-{
-  Timer::TimeDataMap Timer::_timingResults;
-}
-#endif
 
 #include "phist_GhostMV.hpp"
 
@@ -109,7 +102,11 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* ierr)
 
 #ifdef PHIST_HAVE_LIKWID
   LIKWID_MARKER_INIT;
-  LIKWID_MARKER_START("phist<ghost>");
+#pragma omp parallel
+  {
+    LIKWID_MARKER_THREADINIT;
+    LIKWID_MARKER_START("phist<ghost>");
+  }
 #endif
 }
 
@@ -117,12 +114,13 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* ierr)
 extern "C" void phist_kernels_finalize(int* ierr)
 {
 #ifdef PHIST_HAVE_LIKWID
-  LIKWID_MARKER_STOP("phist<ghost>");
+#pragma omp parallel
+  {
+    LIKWID_MARKER_STOP("phist<ghost>");
+  }
   LIKWID_MARKER_CLOSE;
 #endif
-#ifdef PHIST_TIMEMONITOR
-  phist_TimeMonitor::Timer::summarize();
-#endif
+PHIST_CXX_TIMER_SUMMARIZE;
   ghost_finalize();
   *ierr=0;
 }

@@ -20,6 +20,17 @@
 
 #include "phist_defs.h"
 
+#if defined(__cplusplus) && defined(PHIST_TIMEMONITOR)
+# ifdef PHIST_HAVE_TEUCHOS
+/* the Teuchos time monitor is a bit fancier when it comes    */
+/* to non bulk-synchronous execution models like master/slave */
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_DefaultComm.hpp"
+# else
+# include "phist_timemonitor.hpp"
+# endif
+#endif
+
 #ifdef PHIST_HAVE_MPI
 #define PHIST_OUT(level,msg, ...) {\
         if(PHIST_OUTLEV >= level) {\
@@ -75,7 +86,21 @@
 
 
 #if defined(__cplusplus) && ( defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE) )
-#include "phist_timemonitor.hpp"
+# ifdef PHIST_HAVE_TEUCHOS
+#     define PHIST_CXX_TIMER(s) static Teuchos::RCP<Teuchos::Time> TimeFrom_PHIST_CXX_TIMER; \
+                          if( TimeFrom_PHIST_CXX_TIMER.is_null() ) \
+                              TimeFrom_PHIST_CXX_TIMER = Teuchos::TimeMonitor::getNewTimer(s); \
+                          Teuchos::TimeMonitor TimeMonFrom_PHIST_CXX_TIMER(*TimeFrom_PHIST_CXX_TIMER);
+#     define PHIST_CXX_TIMER_SUMMARIZE \
+Teuchos::TimeMonitor::summarize(Teuchos::DefaultComm<int>::getComm(), \
+std::cout,true,true,false, Teuchos::Union,"",true);
+# else
+#     define PHIST_CXX_TIMER(s) phist_TimeMonitor::Timer TimerFrom_PHIST_CXX_TIMER(s);
+#     define PHIST_CXX_TIMER_SUMMARIZE phist_TimeMonitor::Timer::summarize();
+# endif
+#else
+#define PHIST_CXX_TIMER(s)
+#define PHIST_CXX_TIMERS_SUMMARIZE
 #endif
 
 // "line-level" timings using PHIST_CHK macros
@@ -175,26 +200,19 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #   define SCOREP_USER_REGION(a, b)
 # endif
 # include "phist_fcntrace.hpp"
-# ifdef PHIST_TIMEMONITOR
-#   if (PHIST_OUTLEV>=PHIST_TRACE) || defined(LIKWID_PERFMON)
+# if (PHIST_OUTLEV>=PHIST_TRACE) || defined(LIKWID_PERFMON)
 #     define ENTER_FCN(s) FcnTracer YouCantHaveMultiple_ENTER_FCN_StatementsInOneScope(s);\
-                          phist_TimeMonitor::Timer TimerFrom_ENTER_FCN(s);\
+                          PHIST_CXX_TIMER(s);\
                           SCOREP_USER_REGION(s, SCOREP_USER_REGION_TYPE_FUNCTION);
-#   else
-#     define ENTER_FCN(s) phist_TimeMonitor::Timer TimerFrom_ENTER_FCN(s);\
-                          SCOREP_USER_REGION(s, SCOREP_USER_REGION_TYPE_FUNCTION);
-#   endif
 # else
-#   if (PHIST_OUTLEV>=PHIST_TRACE) || defined(LIKWID_PERFMON)
-#     define ENTER_FCN(s) FcnTracer YouCantHaveMultiple_ENTER_FCN_StatementsInOneScope(s);
-#   else
-#     define ENTER_FCN(s)
-#   endif
+#     define ENTER_FCN(s) PHIST_CXX_TIMER(s);\
+                          SCOREP_USER_REGION(s, SCOREP_USER_REGION_TYPE_FUNCTION);
 # endif
 #else
 # define ENTER_FCN(s)
 #endif
 
+/* this macro can be used to avoid compiler warnings about unused variables */
 #ifndef TOUCH
 #define TOUCH(x) (void)(x);
 #endif

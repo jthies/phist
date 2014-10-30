@@ -8,7 +8,7 @@
 #include "phist_enums.h"
 
 
-const char* phist_retcode2str(int code)
+extern "C" const char* phist_retcode2str(int code)
   {
   if (code==PHIST_SUCCESS) return "success";
   else if (code==PHIST_FUNCTIONAL_ERROR) return "functional error";
@@ -22,19 +22,29 @@ const char* phist_retcode2str(int code)
   }
 
 #ifdef PHIST_KERNEL_LIB_GHOST
-const char* phist_ghost_error2str(ghost_error_t code)
+extern "C" const char* phist_ghost_error2str(ghost_error_t code)
   {
       return ghost_error_string(code);
   }
 #endif
 
-const char* eigSort2str(eigSort_t s)
+extern "C" const char* eigSort2str(eigSort_t s)
   {
   return s==LM?"LM":s==SM?"SM":s==LR?"LR":s==SR?"SR":s==NONE?"none":s==TARGET?"target":"unknown eigsort_t";
   }
       
 
-const char* linSolv2str(linSolv_t s)
+extern "C" const char* linSolv2str(linSolv_t s)
   {
   return s==GMRES?"GMRES":s==CARP_CG?"CARP-CG":s==DO_NOTHING?"do nothing":"unknown linSolv_t";
   }
+
+#ifdef PHIST_TIMEMONITOR
+# ifndef PHIST_HAVE_TEUCHOS
+# include "phist_TimeMonitor.hpp"
+namespace phist_TimeMonitor
+{
+  Timer::TimeDataMap Timer::_timingResults;
+}
+# endif  
+#endif  

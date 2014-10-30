@@ -34,13 +34,13 @@ PHIST_GHOST_TASK_BEGIN
 
   ghost_sparsemat_traits_t *mtraits=new ghost_sparsemat_traits_t;
         *mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
-//        mtraits->format = GHOST_SPARSEMAT_CRS;
+        mtraits->format = GHOST_SPARSEMAT_CRS;
 
-        mtraits->format = GHOST_SPARSEMAT_SELL;
-        ghost_sell_aux_t aux = GHOST_SELL_AUX_INITIALIZER;
-        aux.C = 32;
-        mtraits->aux = &aux;
-        mtraits->sortScope = 64;
+//        mtraits->format = GHOST_SPARSEMAT_SELL;
+//        ghost_sell_aux_t aux = GHOST_SELL_AUX_INITIALIZER;
+//        aux.C = 32;
+//        mtraits->aux = &aux;
+//        mtraits->sortScope = 64;
 
         mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT|GHOST_SPARSEMAT_PERMUTE);
         mtraits->datatype = st::ghost_dt;
@@ -1075,7 +1075,7 @@ PHIST_GHOST_TASK_BEGIN
   CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,C,vC,*ierr);
   char trans[]="N";  
-  PHIST_CHK_GERR(ghost_gemm(C, V, trans,W, (char*)"N", (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE),*ierr);
+  PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,trans,(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE),*ierr);
 PHIST_GHOST_TASK_END
   }
 

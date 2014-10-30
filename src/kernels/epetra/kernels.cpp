@@ -25,15 +25,6 @@
 #include "BelosEpetraAdapter.hpp"
 #include "BelosTsqrOrthoManager.hpp"
 
-
-
-#ifdef PHIST_TIMEMONITOR
-#include "phist_timemonitor.hpp"
-namespace phist_TimeMonitor
-{
-  Timer::TimeDataMap Timer::_timingResults;
-}
-#endif
 #include "epetra_helpers.cpp"
 #include "phist_ScalarTraits.hpp"
 
@@ -65,9 +56,7 @@ extern "C" void phist_kernels_finalize(int* ierr)
   LIKWID_MARKER_STOP("phist<epetra>");
   LIKWID_MARKER_CLOSE;
 #endif
-#ifdef PHIST_TIMEMONITOR
-  phist_TimeMonitor::Timer::summarize();
-#endif
+PHIST_CXX_TIMER_SUMMARIZE;
 #ifdef PHIST_HAVE_MPI
   *ierr=MPI_Finalize();
 #endif  

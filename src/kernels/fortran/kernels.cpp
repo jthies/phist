@@ -14,14 +14,6 @@
 #include "typedefs.hpp"
 #include "phist_ScalarTraits.hpp"
 
-
-#ifdef PHIST_TIMEMONITOR
-#include "phist_timemonitor.hpp"
-namespace phist_TimeMonitor
-{
-  Timer::TimeDataMap Timer::_timingResults;
-}
-#endif
 #ifdef PHIST_HAVE_TEUCHOS
 #include "Teuchos_TimeMonitor.hpp"
 #endif
@@ -138,14 +130,7 @@ void phist_kernels_finalize(int* ierr)
   }
   LIKWID_MARKER_CLOSE;
 #endif
-#ifdef PHIST_TIMEMONITOR
-# ifdef PHIST_HAVE_TEUCHOS
-  Teuchos::TimeMonitor::summarize (std::cout,true,true,false,
-        Teuchos::Union,"",true);
-# else
-  phist_TimeMonitor::Timer::summarize();
-# endif
-#endif
+PHIST_TIMER_SUMMARIZE
 #ifdef PHIST_SEPARATE_OUT_FILES
 if (PHIST_OUT_out!=NULL)
 {
