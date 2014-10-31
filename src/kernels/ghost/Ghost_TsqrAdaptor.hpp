@@ -11,6 +11,8 @@
 #include <mpi.h>
 #endif
 #include "phist_typedefs.h"
+// in this local include file we currently hard-code the Kokkos node type (node_t) (TODO)
+#include "typedefs.hpp"
 #include "ghost.h"
 #include "ghost/omp.h"
 #include "phist_GhostMV.hpp"
@@ -109,7 +111,7 @@ namespace ghost {
     typedef int ordinal_type;
     // integer type for Teuchos::SerialDenseMatrix objects
     typedef int blas_idx_type;
-    typedef typename Kokkos::DefaultNode::DefaultNodeType node_type; // TODO - Node argument not yet used
+    typedef node_t node_type; // TODO - Node argument not yet used
     typedef Teuchos::SerialDenseMatrix<blas_idx_type, scalar_type> dense_matrix_type;
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 

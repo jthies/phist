@@ -92,7 +92,7 @@
                               TimeFrom_PHIST_CXX_TIMER = Teuchos::TimeMonitor::getNewTimer(s); \
                           Teuchos::TimeMonitor TimeMonFrom_PHIST_CXX_TIMER(*TimeFrom_PHIST_CXX_TIMER);
 #     define PHIST_CXX_TIMER_SUMMARIZE \
-Teuchos::TimeMonitor::summarize(Teuchos::DefaultComm<int>::getComm(), \
+Teuchos::TimeMonitor::summarize(Teuchos::DefaultComm<int>::getComm().ptr(), \
 std::cout,true,true,false, Teuchos::Union,"",true);
 # else
 #     define PHIST_CXX_TIMER(s) phist_TimeMonitor::Timer TimerFrom_PHIST_CXX_TIMER(s);
