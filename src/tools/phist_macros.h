@@ -92,9 +92,15 @@
                           if( TimeFrom_PHIST_CXX_TIMER.is_null() ) \
                               TimeFrom_PHIST_CXX_TIMER = Teuchos::TimeMonitor::getNewTimer(s); \
                           Teuchos::TimeMonitor TimeMonFrom_PHIST_CXX_TIMER(*TimeFrom_PHIST_CXX_TIMER);
+#if TRILINOS_MAJOR_MINOR_VERSION < 110800
+#     define PHIST_CXX_TIMER_SUMMARIZE \
+Teuchos::TimeMonitor::summarize(Teuchos::DefaultComm<int>::getComm().ptr(), \
+std::cout,true,true,false, Teuchos::Union,"");
+#else
 #     define PHIST_CXX_TIMER_SUMMARIZE \
 Teuchos::TimeMonitor::summarize(Teuchos::DefaultComm<int>::getComm().ptr(), \
 std::cout,true,true,false, Teuchos::Union,"",true);
+#endif
 # else
 #     define PHIST_CXX_TIMER(s) phist_TimeMonitor::Timer TimerFrom_PHIST_CXX_TIMER(s);
 #     define PHIST_CXX_TIMER_SUMMARIZE phist_TimeMonitor::Timer::summarize();
