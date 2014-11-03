@@ -1384,7 +1384,8 @@ end subroutine permute_local_matrix
 
     ! start receiving (e.g. irecv)
     if( A%comm_buff%nRecvProcs .gt. 0 ) then
-      call mpi_startall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStatus,ierr)
+      !call mpi_startall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStatus,ierr)
+      call mpi_startall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,ierr)
     end if
 
 
@@ -1428,7 +1429,8 @@ end subroutine permute_local_matrix
 
     ! start sending (e.g. issend)
     if( A%comm_buff%nSendProcs .gt. 0 ) then
-      call mpi_startall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
+      !call mpi_startall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
+      call mpi_startall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,ierr)
     end if
 
     ! wait till all data arrived
