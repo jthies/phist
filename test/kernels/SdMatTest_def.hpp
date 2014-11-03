@@ -233,7 +233,7 @@ public:
       ASSERT_EQ(0,ierr_);
       
 #if PHIST_OUTLEV>=PHIST_DEBUG && !defined(PHIST_KERNEL_LIB_FORTRAN)
-      PHIST_SOUT(PHIST_DEBUG,"i=[%"PRlidx",%"PRlidx"], j=[%"PRlidx",%"PRlidx"]\n",
+      PHIST_SOUT(PHIST_DEBUG,"i=[%" PRlidx ",%" PRlidx "], j=[%" PRlidx ",%" PRlidx "]\n",
         imin,imax,jmin,jmax);
       PHIST_SOUT(PHIST_DEBUG,"Original matrix:\n");
       SUBR(sdMat_print)(mat1_,&ierr_);
