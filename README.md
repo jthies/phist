@@ -45,9 +45,6 @@ Choices supported right now are:
 * tpetra
 * ghost
 
-
-
-
 -----------------------
 # Stand-alone version #
 -----------------------
@@ -106,6 +103,19 @@ As a start, use the fortran kernel lib without TPLs:
 
   cd build/
   cmake -DPHIST_KERNEL_LIB=fortran ..
+
+Available targets for building just a certain component (libraries, 
+drivers, or tests) are
+
+  make libs
+  make drivers
+  make tests
+
+Required for installation via
+
+  make install
+
+is only the libs target.
 
 ------------------------------
 ## Testing the installation ##
