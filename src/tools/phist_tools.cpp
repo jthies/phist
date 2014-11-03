@@ -41,7 +41,7 @@ extern "C" const char* linSolv2str(linSolv_t s)
 
 #ifdef PHIST_TIMEMONITOR
 # ifndef PHIST_HAVE_TEUCHOS
-# include "phist_TimeMonitor.hpp"
+# include "phist_timemonitor.hpp"
 namespace phist_TimeMonitor
 {
   Timer::TimeDataMap Timer::_timingResults;

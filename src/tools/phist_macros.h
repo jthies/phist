@@ -20,17 +20,6 @@
 
 #include "phist_defs.h"
 
-#if defined(__cplusplus) && defined(PHIST_TIMEMONITOR)
-# ifdef PHIST_HAVE_TEUCHOS
-/* the Teuchos time monitor is a bit fancier when it comes    */
-/* to non bulk-synchronous execution models like master/slave */
-#include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_DefaultComm.hpp"
-# else
-# include "phist_timemonitor.hpp"
-# endif
-#endif
-
 #ifdef PHIST_HAVE_MPI
 #define PHIST_OUT(level,msg, ...) {\
         if(PHIST_OUTLEV >= level) {\
@@ -82,6 +71,18 @@
                 fflush(PHIST_OUT_out);\
         }\
 }
+#endif
+
+/* PHIST_SOUT is used in phist_timemonitor.hpp */
+#if defined(__cplusplus) && defined(PHIST_TIMEMONITOR)
+# ifdef PHIST_HAVE_TEUCHOS
+/* the Teuchos time monitor is a bit fancier when it comes    */
+/* to non bulk-synchronous execution models like master/slave */
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_DefaultComm.hpp"
+# else
+# include "phist_timemonitor.hpp"
+# endif
 #endif
 
 

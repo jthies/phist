@@ -1,7 +1,11 @@
 #include "matfuncs.h"
+
+#include <math.h>
+
 #ifdef WRITE_MATRIX
 #include <mpi.h>
 #endif
+
 #ifndef anderson_L
 #define anderson_L 16.5
 #endif
