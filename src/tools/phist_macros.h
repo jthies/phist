@@ -20,17 +20,6 @@
 
 #include "phist_defs.h"
 
-#if defined(__cplusplus) && defined(PHIST_TIMEMONITOR)
-# ifdef PHIST_HAVE_TEUCHOS
-/* the Teuchos time monitor is a bit fancier when it comes    */
-/* to non bulk-synchronous execution models like master/slave */
-#include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_DefaultComm.hpp"
-# else
-# include "phist_timemonitor.hpp"
-# endif
-#endif
-
 #ifdef PHIST_HAVE_MPI
 #define PHIST_OUT(level,msg, ...) {\
         if(PHIST_OUTLEV >= level) {\
@@ -84,6 +73,18 @@
 }
 #endif
 
+/* PHIST_SOUT is used in phist_timemonitor.hpp */
+#if defined(__cplusplus) && defined(PHIST_TIMEMONITOR)
+# ifdef PHIST_HAVE_TEUCHOS
+/* the Teuchos time monitor is a bit fancier when it comes    */
+/* to non bulk-synchronous execution models like master/slave */
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_DefaultComm.hpp"
+# else
+# include "phist_timemonitor.hpp"
+# endif
+#endif
+
 
 #if defined(__cplusplus) && ( defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE) )
 # ifdef PHIST_HAVE_TEUCHOS
@@ -91,9 +92,15 @@
                           if( TimeFrom_PHIST_CXX_TIMER.is_null() ) \
                               TimeFrom_PHIST_CXX_TIMER = Teuchos::TimeMonitor::getNewTimer(s); \
                           Teuchos::TimeMonitor TimeMonFrom_PHIST_CXX_TIMER(*TimeFrom_PHIST_CXX_TIMER);
+#if TRILINOS_MAJOR_MINOR_VERSION < 110800
+#     define PHIST_CXX_TIMER_SUMMARIZE \
+Teuchos::TimeMonitor::summarize(Teuchos::DefaultComm<int>::getComm().ptr(), \
+std::cout,true,true,false, Teuchos::Union,"");
+#else
 #     define PHIST_CXX_TIMER_SUMMARIZE \
 Teuchos::TimeMonitor::summarize(Teuchos::DefaultComm<int>::getComm().ptr(), \
 std::cout,true,true,false, Teuchos::Union,"",true);
+#endif
 # else
 #     define PHIST_CXX_TIMER(s) phist_TimeMonitor::Timer TimerFrom_PHIST_CXX_TIMER(s);
 #     define PHIST_CXX_TIMER_SUMMARIZE phist_TimeMonitor::Timer::summarize();

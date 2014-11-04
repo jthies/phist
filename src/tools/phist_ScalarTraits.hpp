@@ -40,8 +40,8 @@ class ScalarTraits< float >
   //! alternative typename for ST
   typedef float scalar_t;
 #ifdef PHIST_HAVE_GHOST
-  static const ghost_datatype_t ghost_dt = (ghost_datatype_t)(GHOST_DT_FLOAT|GHOST_DT_REAL);
-  static const ghost_datatype_t c_ghost_dt = (ghost_datatype_t)(GHOST_DT_FLOAT|GHOST_DT_COMPLEX);
+  static ghost_datatype_t ghost_dt = (ghost_datatype_t)((int)GHOST_DT_FLOAT|(int)GHOST_DT_REAL);
+  static ghost_datatype_t c_ghost_dt = (ghost_datatype_t)((int)GHOST_DT_FLOAT|(int)GHOST_DT_COMPLEX);
 #endif  
   typedef Sop_t op_t;
   typedef Smvec_t mvec_t;
@@ -161,8 +161,8 @@ class ScalarTraits< double >
   //! alternative typename for ST
   typedef double scalar_t;
 #ifdef PHIST_HAVE_GHOST
-  static const ghost_datatype_t ghost_dt = (ghost_datatype_t)(GHOST_DT_DOUBLE|GHOST_DT_REAL);
-  static const ghost_datatype_t c_ghost_dt = (ghost_datatype_t)(GHOST_DT_DOUBLE|GHOST_DT_COMPLEX);
+  static const ghost_datatype_t ghost_dt = (ghost_datatype_t)((int)GHOST_DT_DOUBLE|(int)GHOST_DT_REAL);
+  static const ghost_datatype_t c_ghost_dt = (ghost_datatype_t)((int)GHOST_DT_DOUBLE|(int)GHOST_DT_COMPLEX);
 #endif  
   typedef Dop_t op_t; 
   typedef Dmvec_t mvec_t; 

@@ -5,6 +5,7 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
 
 # Define some custom variables
 project(PHIST)
+SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 set(PHIST_VERSION_MAJOR 0)
 set(PHIST_VERSION_MINOR 8)
 set(PHIST_VERSION_PATCH 0)
@@ -29,7 +30,15 @@ enable_language (CXX)
 enable_language (Fortran)
 
 # output behavior
-set(PHIST_OUTLEV 3 CACHE STRING "PHIST verbosity (default 3, 'VERBOSE')")
+set(PHIST_OUTLEV 3 CACHE STRING "PHIST verbosity (debug 3, 'VERBOSE')")
+if(CMAKE_BUILD_TYPE MATCHES Release)
+	set(PHIST_OUTLEV 2 CACHE STRING "PHIST verbosity (release 2, 'INFO')")
+endif()
+
+# lists of libraries, executables, tests
+set(library_list)
+set(driver_list)
+set(test_list)
 
 ##############################################################################
 # compiler-dependent flags 
@@ -123,7 +132,11 @@ if (${PHIST_ENABLE_MPI})
     set (CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS} ${MPI_C_LINK_FLAGS})
     set (CMAKE_Fortran_COMPILE_FLAGS ${CMAKE_Fortran_COMPILE_FLAGS} ${MPI_Fortran_COMPILE_FLAGS})
     set (CMAKE_Fortran_LINK_FLAGS ${CMAKE_Fortran_LINK_FLAGS} ${MPI_Fortran_LINK_FLAGS})
+# For now, just include everything
     include_directories (${MPI_INCLUDE_PATH})
+    include_directories (${MPI_C_INCLUDE_PATH})
+    include_directories (${MPI_CXX_INCLUDE_PATH})
+    include_directories (${MPI_Fortran_INCLUDE_PATH})
   else()
     message(WARNING "could not find MPI. Trying to compile anyway, presuming the compiler/linker knows where to find it.")
   endif()
@@ -290,10 +303,16 @@ add_library(phist_solvers SHARED ${PHIST_KRYLOV_SOURCE}
                                  ${PHIST_JADA_SOURCE}
                                  ${PHIST_FEAST_SOURCE})
 
+LIST(APPEND library_list phist_tools)
+LIST(APPEND library_list phist_core)
+LIST(APPEND library_list phist_kernels_${PHIST_KERNEL_LIB})
+LIST(APPEND library_list phist_solvers)
+
 if (NOT ESSEX-PHYSICS_FOUND)
 add_library(phist_matfuncs SHARED ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c
                                   ${PROJECT_SOURCE_DIR}/drivers/matfuncs/SpinChainSZ.c
                                   ${PROJECT_SOURCE_DIR}/drivers/matfuncs/anderson.c)
+LIST(APPEND library_list phist_matfuncs)
 endif()
 
 link_libraries(phist_solvers)
@@ -457,14 +476,15 @@ endforeach()
 file(GLOB TG_C_Drivers ${CMAKE_SOURCE_DIR}/drivers/*.c.in )
 file(GLOB TG_CXX_Drivers ${CMAKE_SOURCE_DIR}/drivers/*.cpp.in )
 
-
 foreach (infile ${TG_C_Drivers})
   get_filename_component(filebase ${infile} NAME_WE)
   foreach (tc ${TG_Types})
     STRING(TOLOWER \"phist_gen_${tc}.h\" PHIST_TG_HFILE)
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.c)
     add_executable(phist_${tc}${filebase} ${tc}${filebase}.c)
-    install(TARGETS phist_${tc}${filebase} RUNTIME DESTINATION bin)
+    install(TARGETS phist_${tc}${filebase} RUNTIME DESTINATION bin OPTIONAL)
+    # added
+    LIST(APPEND driver_list phist_${tc}${filebase})
   endforeach()
 endforeach()
 
@@ -474,7 +494,8 @@ foreach (infile ${TG_CXX_Drivers})
     STRING(TOLOWER \"phist_gen_${tc}.h\" PHIST_TG_HFILE)
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.cpp)
     add_executable(phist_${tc}${filebase} ${tc}${filebase}.cpp)
-    install(TARGETS phist_${tc}${filebase} RUNTIME DESTINATION bin)
+    install(TARGETS phist_${tc}${filebase} RUNTIME DESTINATION bin OPTIONAL)
+    LIST(APPEND driver_list phist_${tc}${filebase})
   endforeach()
 endforeach()
 
@@ -484,9 +505,13 @@ add_executable(phist_spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
 add_executable(phist_spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
 add_executable(phist_carp_cg ${PROJECT_SOURCE_DIR}/drivers/carp_cg.c)
 
-install(TARGETS phist_spinChain RUNTIME DESTINATION bin)
-install(TARGETS phist_spinChain_subspacejada RUNTIME DESTINATION bin)
-install(TARGETS phist_carp_cg RUNTIME DESTINATION bin)
+install(TARGETS phist_spinChain RUNTIME DESTINATION bin OPTIONAL)
+install(TARGETS phist_spinChain_subspacejada RUNTIME DESTINATION bin OPTIONAL)
+install(TARGETS phist_carp_cg RUNTIME DESTINATION bin OPTIONAL)
+
+LIST(APPEND driver_list phist_spinChain)
+LIST(APPEND driver_list phist_spinChain_subspacejada)
+LIST(APPEND driver_list phist_carp_cg)
 
 install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phist-targets LIBRARY DESTINATION lib)
 install(TARGETS phist_tools EXPORT phist-targets LIBRARY DESTINATION lib)
@@ -524,7 +549,8 @@ foreach(label ${PHIST_TESTS})
   list(APPEND ${label_uc}_TEST_SOURCES ${TEST_SOURCES})
 
   add_executable(${PRODUCT_NAME}-${label}-test ${${label_uc}_TEST_SOURCES} ${TEST_DEPENDS})
-  
+  LIST(APPEND test_list ${PRODUCT_NAME}-${label}-test)
+
 endforeach()
 
 # some example drivers which haven't made their way into the drivers/ directory
@@ -533,6 +559,7 @@ file(GLOB C_Examples ${CMAKE_SOURCE_DIR}/examples/*/*.c )
 foreach (infile ${C_Examples})
   get_filename_component(filebase ${infile} NAME_WE)
   add_executable(phist_${filebase} ${infile})
+  LIST(APPEND test_list phist_${filebase})
 endforeach()
 
 # type generic examples routines are compiled from .c or .cpp files
@@ -546,6 +573,7 @@ foreach (infile ${TG_C_Examples})
     STRING(TOLOWER \"phist_gen_${tc}.h\" PHIST_TG_HFILE)
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.c)
     add_executable(${tc}${filebase} ${tc}${filebase}.c)
+    LIST(APPEND test_list ${tc}${filebase})
   endforeach()
 endforeach()
 
@@ -555,6 +583,7 @@ foreach (infile ${TG_CXX_Examples})
     STRING(TOLOWER \"phist_gen_${tc}.h\" PHIST_TG_HFILE)
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.cpp)
     add_executable(${tc}${filebase} ${tc}${filebase}.cpp)
+    LIST(APPEND test_list ${tc}${filebase})
   endforeach()
 endforeach()
 
@@ -631,3 +660,8 @@ install(FILES "${CMAKE_SOURCE_DIR}/README.md" DESTINATION .)
 #  install(DIRECTORY "${CMAKE_SOURCE_DIR}/doc/html" DESTINATION doc)
 #endif()
 include(CPack)
+
+# Custom targets
+add_custom_target(libs DEPENDS ${library_list})
+add_custom_target(drivers DEPENDS ${driver_list})
+add_custom_target(tests DEPENDS ${test_list})
