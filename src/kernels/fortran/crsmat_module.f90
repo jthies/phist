@@ -1564,14 +1564,15 @@ end subroutine permute_local_matrix
 
   !==================================================================================
   !> read MatrixMarket file
-  subroutine phist_DcrsMat_read_mm(A_ptr, comm, filename_len, filename_ptr, ierr) &
+  subroutine phist_DcrsMat_read_mm(A_ptr, comm_ptr, filename_len, filename_ptr, ierr) &
     & bind(C,name='phist_DcrsMat_read_mm_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
     use mpi
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
-    integer :: comm
+    type(C_PTR),        value  :: comm_ptr
+    integer, pointer :: comm
     integer(C_INT),     value       :: filename_len
     character(C_CHAR),  intent(in)  :: filename_ptr(filename_len)
     integer(C_INT),     intent(out) :: ierr
@@ -1623,7 +1624,7 @@ end subroutine permute_local_matrix
     read(line,*) globalRows, globalCols, globalEntries
     write(*,*) 'CrsMat:', globalRows, globalCols, globalEntries
     flush(6)
-
+    call c_f_pointer(comm_ptr, comm)
     call map_setup(A%row_map, comm, globalRows, ierr)
     if( ierr .ne. 0 ) return
 
@@ -1761,13 +1762,14 @@ end subroutine permute_local_matrix
 
   !==================================================================================
   !> read MatrixMarket file
-  subroutine phist_DcrsMat_create_fromRowFunc(A_ptr, comm,nrows, ncols, maxnne_per_row, rowFunc_ptr, ierr) &
+  subroutine phist_DcrsMat_create_fromRowFunc(A_ptr, comm_ptr,nrows, ncols, maxnne_per_row, rowFunc_ptr, ierr) &
     & bind(C,name='phist_DcrsMat_create_fromRowFunc_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
     use mpi
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: A_ptr
+    type(C_PTR),        value  :: comm_ptr
     integer(kind=C_INT64_T),     value       :: nrows, ncols
     integer(C_INT32_T), value           :: maxnne_per_row
     type(C_FUNPTR),     value       :: rowFunc_ptr
@@ -1785,11 +1787,12 @@ end subroutine permute_local_matrix
     integer :: funit
     integer(kind=8) :: localDim(2), globalDim(2)
     real(kind=8) :: wtime
-    integer :: comm
+    integer, pointer :: comm
     !--------------------------------------------------------------------------------
 
     ! get procedure pointer
     call c_f_procpointer(rowFunc_ptr, rowFunc)
+    call c_f_pointer(comm_ptr, comm)
 
     allocate(A)
 
