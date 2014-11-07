@@ -21,7 +21,7 @@ virtual void SetUp()
     ASSERT_EQ(0,this->ierr_);
     SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&this->lda_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
-    ASSERT_EQ(lda,this->lda_);
+    lda=this->lda_;
     SUBR(mvec_create)(&vec2_,this->map_,this->nvec_,&this->ierr_);
     ASSERT_EQ(0,this->ierr_);
     SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&this->lda_,&this->ierr_);
