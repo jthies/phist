@@ -209,7 +209,7 @@ int main(int argc, char** argv)
   ghost_lidx_t DIM;
   //TODO - get from command line
   ghost_gidx_t conf_spinZ[3] = {nSpins,nSpins/2,0};
-  SpinChainSZ( -2, &DIM, conf_spinZ, NULL);
+  SpinChainSZ( -2, conf_spinZ, &DIM, NULL);
 
   matfuncs_info_t info;
   //crsGraphene( -1, NULL, NULL, &info);

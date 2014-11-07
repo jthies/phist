@@ -322,9 +322,9 @@ int SpinChainSZ( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 
 	// =================================================================
 	else if ( row == -2 ) {
-		L      = cols[0];
-		NUp    = cols[1];
-		useOBC = cols[2];
+		L      = nnz[0];
+		NUp    = nnz[1];
+		useOBC = nnz[2];
 		if(L&1) { printf("abort -> need even L!\n"); exit(0); }
 		lutlead  = malloc( sizeof(idx_t)* (power_of_2(L/2)+1));
 		luttrail = malloc( sizeof(idx_t)*  power_of_2(L/2)   );
@@ -333,7 +333,7 @@ int SpinChainSZ( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 		revcnt   = malloc( sizeof(idx_t)* (L+1) );
 		//imask    = malloc( sizeof(ghost_gidx_t)*  L    );
 		
-		*nnz = Binomial( L, NUp);
+		*cols = Binomial( L, NUp);
 		
 		idx_t i;
 		
