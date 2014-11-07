@@ -29,4 +29,10 @@
 #cmakedefine PHIST_TIMEMONITOR
 #cmakedefine PHIST_TIMEMONITOR_PERLINE
 
+#ifdef PHIST_KERNEL_LIB_GHOST
+#cmakedefine PHIST_USE_SELL
+#cmakedefine PHIST_SELL_C ${PHIST_SELL_C}
+#cmakedefine PHIST_SELL_SIGMA ${PHIST_SELL_SIGMA}
+#endif
+
 #endif
