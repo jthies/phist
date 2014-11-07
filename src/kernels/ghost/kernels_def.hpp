@@ -1263,7 +1263,7 @@ extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* 
 # endif
 #endif
 
-void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, const_comm_ptr_t vcomm,
+void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *vA, const_comm_ptr_t vcomm,
         gidx_t nrows, gidx_t ncols, lidx_t maxnne, 
                 int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int *ierr)
 {
@@ -1289,12 +1289,15 @@ PHIST_GHOST_TASK_BEGIN
         mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT);
 #endif
         mtraits->datatype = st::ghost_dt;
-        char* cfname=const_cast<char*>(filename);
-// TODO - check ghost return codes everywhere like this
   PHIST_CHK_GERR(ghost_context_create(&ctx,0,0,
-        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_FILE,MPI_COMM_WORLD,1.0),*ierr);
+        GHOST_CONTEXT_DEFAULT,NULL,GHOST_SPARSEMAT_SRC_FUNC,MPI_COMM_WORLD,1.0),*ierr);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,mtraits,1),*ierr);                               
-  PHIST_CHK_GERR(mat->fromRowFunc(mat,cfname),*ierr);
+
+  ghost_sparsemat_src_rowfunc_t src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
+  src.func = rowFunPtr;
+  src.maxrowlen = maxnne;
+      
+  PHIST_CHK_GERR(mat->fromRowFunc(mat,&src),*ierr);
 #if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;
   ghost_context_string(&str,ctx);
