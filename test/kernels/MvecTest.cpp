@@ -51,7 +51,7 @@ using namespace testing;
 #undef _N_
 #define _N_ 16
 #undef _NV_
-#define _NV_ 3
+#define _NV_ 9
 
 #ifdef PHIST_HAVE_SP
 #undef CLASSNAME
