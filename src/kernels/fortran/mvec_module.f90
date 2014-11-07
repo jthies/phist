@@ -1185,8 +1185,22 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec, view
+!#ifdef TESTING
+!    integer(C_INTPTR_T) :: dummy
+!#endif
     !--------------------------------------------------------------------------------
 
+    if( jmin .lt. 0 .or. jmax .lt. jmin ) then
+      write(*,*) 'Trying to create a view with jmin', jmin, 'and jmax', jmax
+      flush(6)
+      ierr = -88
+      return
+    end if
+
+!#ifdef TESTING
+!    write(*,*) 'create view of mvec at address', transfer(mvec_ptr,dummy)
+!    flush(6)
+!#endif
     if( c_associated(mvec_ptr) ) then
       call c_f_pointer(mvec_ptr, mvec)
       if( c_associated(view_ptr) ) then
@@ -1197,9 +1211,17 @@ contains
           ierr = -88
           return
         end if
+!#ifdef TESTING
+!      write(*,*) 'reusing view at address', transfer(view_ptr,dummy)
+!      flush(6)
+!#endif
       else
         allocate(view)
         view_ptr = c_loc(view)
+!#ifdef TESTING
+!      write(*,*) 'created new view at address', transfer(view_ptr,dummy)
+!      flush(6)
+!#endif
       end if
       view%is_view = .true.
       view%jmin = mvec%jmin+jmin
@@ -1535,6 +1557,15 @@ contains
     call c_f_pointer(x_ptr, x)
     call c_f_pointer(y_ptr, y)
 
+    if( x%jmin .lt. 1 ) then
+      ierr = -1
+      return
+    end if
+    if( y%jmin .lt. 1 ) then
+      ierr = -1
+      return
+    end if
+
     call mvec_add_mvec(alpha, x, beta, y)
     ierr = 0
 
@@ -1553,19 +1584,35 @@ contains
     integer :: nvec
     !--------------------------------------------------------------------------------
 
-    if( beta .ne. 0 .and. .not. c_associated(y_ptr) ) then
+    !if( beta .ne. 0 .and. .not. c_associated(y_ptr) ) then
+    if( .not. c_associated(y_ptr) ) then
       ierr = -88
       return
     end if
-    call c_f_pointer(y_ptr, y)
-    nvec = y%jmax-y%jmin+1
 
-    if( any(alpha(1:nvec) .ne. 0) .and. .not. c_associated(x_ptr) ) then
+    !if( any(alpha(1:nvec) .ne. 0) .and. .not. c_associated(x_ptr) ) then
+    if( .not. c_associated(x_ptr) ) then
       ierr = -88
       return
     end if
+
     call c_f_pointer(x_ptr, x)
+    call c_f_pointer(y_ptr, y)
 
+    if( y%jmin .lt. 1 ) then
+      ierr = -1
+      return
+    end if
+    if( x%jmin .lt. 1 ) then
+      ierr = -1
+      return
+    end if
+
+    nvec = y%jmax-y%jmin+1
+    if( nvec .ne. x%jmax-x%jmin+1 ) then
+      ierr = -1
+      return
+    end if
 
     call mvec_vadd_mvec(alpha, x, beta, y)
     ierr = 0
