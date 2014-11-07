@@ -1289,7 +1289,7 @@ PHIST_GHOST_TASK_BEGIN
         mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT);
 #endif
         mtraits->datatype = st::ghost_dt;
-  PHIST_CHK_GERR(ghost_context_create(&ctx,0,0,
+  PHIST_CHK_GERR(ghost_context_create(&ctx,nrows,ncols,
         GHOST_CONTEXT_DEFAULT,NULL,GHOST_SPARSEMAT_SRC_FUNC,MPI_COMM_WORLD,1.0),*ierr);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,mtraits,1),*ierr);                               
 
