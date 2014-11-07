@@ -28,7 +28,7 @@ ASSERT_EQ(0,ierr_);
   KernelTest::TearDown();
   }
 
-static const int nglob_=_Nglob;
+static const gidx_t nglob_=_Nglob;
 lidx_t nloc_;
 map_ptr_t map_;
 
@@ -36,6 +36,6 @@ map_ptr_t map_;
 };
 
 template<int n>
-const int KernelTestWithMap<n>::nglob_;
+const gidx_t KernelTestWithMap<n>::nglob_;
 
 #endif
