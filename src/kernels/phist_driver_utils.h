@@ -43,5 +43,7 @@ void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
 void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
         const char* problem, int* ierr);
 
+int phist_sizeof_lidx();
+int phist_sizeof_gidx();
 
 #endif
