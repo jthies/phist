@@ -1,4 +1,7 @@
+#include "phist_config.h"
+#ifdef PHIST_USE_SELL
 #include "ghost/sell.h"
+#endif
 
 // we implement only the double precision real type D
 extern "C" void SUBR(type_avail)(int* ierr)
@@ -42,6 +45,7 @@ PHIST_GHOST_TASK_BEGIN
         mtraits->aux = &aux;
         mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT|GHOST_SPARSEMAT_PERMUTE);
 #else
+#warning "GHOST interface compiled to use the reference CRS format, will probably not yield optimal performance"
         mtraits->format = GHOST_SPARSEMAT_CRS;
         mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT);
 #endif
@@ -454,7 +458,7 @@ extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
     //PHIST_DEB("destroying previous vector (view)\n");
     tmp->destroy(tmp);
   }
-  PHIST_CHK_IERR(*ierr=(Vblock->traits.flags&GHOST_DENSEMAT_VIEW-GHOST_DENSEMAT_VIEW),*ierr);
+  PHIST_CHK_IERR(*ierr=((Vblock->traits.flags&GHOST_DENSEMAT_VIEW)-GHOST_DENSEMAT_VIEW),*ierr);
   *vVblock = (TYPE(mvec_ptr))Vblock;
 }
 
@@ -529,7 +533,7 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMbloc
     CAST_PTR_FROM_VOID(ghost_densemat_t,tmp,*vMblock,*ierr);
     tmp->destroy(tmp);
   }
-  PHIST_CHK_IERR(*ierr=(Mblock->traits.flags&GHOST_DENSEMAT_VIEW-GHOST_DENSEMAT_VIEW),*ierr);
+  PHIST_CHK_IERR(*ierr=((Mblock->traits.flags&GHOST_DENSEMAT_VIEW)-GHOST_DENSEMAT_VIEW),*ierr);
   *vMblock = (TYPE(sdMat_ptr))Mblock;
 }
 
@@ -1046,12 +1050,11 @@ PHIST_GHOST_TASK_BEGIN
     CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
     CAST_PTR_FROM_VOID(ghost_densemat_t,C,vC,*ierr);
 
-    lidx_t nrV;
+#ifdef TESTING
     int ncV, nrC, ncC;
-    nrV=V->traits.nrows;  ncV=V->traits.ncols;
+    ncV=V->traits.ncols;
      nrC=C->traits.nrows;  ncC=V->traits.ncols;
 
-#ifdef TESTING
     PHIST_CHK_IERR(*ierr=nrC-ncV,*ierr);
     PHIST_CHK_IERR(*ierr=nrC-ncC,*ierr);
     //PHIST_DEB("V'C with V %" PRlidx "x%d, C %dx%d and result %" PRlidx "x%d\n", nrV,ncV,nrC,ncC,nrW,ncW);

@@ -173,7 +173,6 @@ ghost_densemat_traits_t phist_default_vtraits()
       new_flags&=   ~(int)GHOST_DENSEMAT_DEVICE;
   vtraits.flags = (ghost_densemat_flags_t)new_flags;
 
-  ~GHOST_DENSEMAT_DEVICE;
   vtraits.ncols=1;
 #ifdef PHIST_MVECS_ROW_MAJOR
   vtraits.storage=GHOST_DENSEMAT_ROWMAJOR;
