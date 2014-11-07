@@ -50,7 +50,8 @@ void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
 typedef enum {
 FROM_FILE=0,
 GRAPHENE=1,
-ANDERSON=2
+ANDERSON=2,
+SPINSZ=3
 } problem_t;
 
 void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
@@ -65,21 +66,31 @@ void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
   // check if the first arg is of the grapheneN or andersonN form,
   // otherwise try to read a file
   mat_type=FROM_FILE;
-
-  if (strlen(problem)>=8)
+  int pos=0;
+  if (strlen(problem)>=6)
+  {
+    if (strncmp(problem,"spinSZ",6)==0)
+    {
+      mat_type=SPINSZ;
+      pos=6;
+    }
+  }
+  else if (strlen(problem)>=8)
   {
     if (strncmp(problem,"graphene",8)==0)
     {
       mat_type=GRAPHENE;
+      pos=8;
     }
     else if (strncmp(problem,"anderson",8)==0)
     {
       mat_type=ANDERSON;
+      pos=8;
     }
     if (mat_type!=FROM_FILE)
     {
       // make sure all remaining characters are
-      for (int i=8;i<strlen(problem);i++)
+      for (int i=pos;i<strlen(problem);i++)
       {
         if (problem[i]<'0' || problem[i]>'9')
         {
@@ -88,12 +99,13 @@ void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
         }
       }
     }
-    if (mat_type!=FROM_FILE)
-    {
-      const char* strL=problem+8;
-      L=atoi(strL);
-      if (L<0) mat_type=FROM_FILE;
-    }
+  }
+
+  if (mat_type!=FROM_FILE)
+  {
+    const char* strL=problem+pos;
+    L=atoi(strL);
+    if (L<0) mat_type=FROM_FILE;
   }
   
   if (mat_type==GRAPHENE)
@@ -129,6 +141,22 @@ void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
     PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc)(mat,comm,
         (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,
         &anderson, ierr), *ierr);
+  }
+  else if (mat_type==SPINSZ)
+  {
+    PHIST_SOUT(PHIST_INFO,"problem type: spinSZ[%d]\n",L);
+
+
+    ghost_gidx_t DIM;
+    ghost_lidx_t conf_spinZ[3] = {L,L/2,0};
+    SpinChainSZ( -2, conf_spinZ, &DIM, NULL);
+
+    matfuncs_info_t info;
+    SpinChainSZ( -1, NULL, NULL, &info);
+
+    PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc)(mat,comm,
+        (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,
+        &SpinChainSZ, ierr), *ierr);
   }
   else
   {

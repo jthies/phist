@@ -14,17 +14,11 @@
 #include "phist_operator.h"
 #include "phist_subspacejada.h"
 #include ${PHIST_TG_HFILE}
+#include "phist_driver_utils.h"
 
 
 #include "phist_ScalarTraits.hpp"
 #include "phist_std_typedefs.hpp"
-
-// small c++ string helper function
-bool endsWith(const std::string& s, const std::string& suffix)
-{
-  return s.rfind(suffix) == (s.size()-suffix.size());
-}
-
 
 int main(int argc, char** argv)
 {
@@ -38,12 +32,11 @@ int main(int argc, char** argv)
   // check arguments
   if( argc < 2 )
   {
-    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A filename> [<invariant subspace dimension>] [<which>] [<tol>] [<max iters> <JD block size> <min basis> <max basis> <GMRES block size> <GMRES subspace dimension> <initial shift> <initial shift iterations> <GMRES use IMGS> <GMRES abort when first converged in block>]\n", argv[0]);
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A> [<invariant subspace dimension>] [<which>] [<tol>] [<max iters> <JD block size> <min basis> <max basis> <GMRES block size> <GMRES subspace dimension> <initial shift> <initial shift iterations> <GMRES use IMGS> <GMRES abort when first converged in block>]\n", argv[0]);
     return 1;
   }
 
-  // get file name of matrix A
-  const std::string filename_A(argv[1]);
+  const char* problem=argv[1];
 
   // number of eigenvalues to compute
   int nEig = 8;
@@ -172,39 +165,12 @@ int main(int argc, char** argv)
   //------------------------------- setup matrices and vectors --------------------- 
 
   // we have gathered all input parameters...
-  // read matrix A
+  // read or create matrix A using our helper function from driver_utils,
+  // which can handle matrix files like name.mm, name.bin etc. but also our
+  // favorite test cases spinSZ<N>, graphene<N> etc.
   crsMat_ptr_t A = NULL;
-  if( endsWith(filename_A,".mm") )
-  {
-    PHIST_ICHK_IERR(SUBR(crsMat_read_mm)(&A,comm,filename_A.c_str(),&ierr),ierr);
-  }
-  else if( endsWith(filename_A,".cua") )
-  {
-#ifdef IS_COMPLEX
-    PHIST_ICHK_IERR(SUBR(crsMat_read_hb)(&A,comm,filename_A.c_str(),&ierr),ierr);
-#else
-    PHIST_SOUT(PHIST_ERROR,"error, invoked real version of this program for complex matrix with ending '.cua'\n");
-    return 1;
-#endif
-  }
-  else if( endsWith(filename_A,".rua") )
-  {
-#ifdef IS_COMPLEX
-    PHIST_SOUT(PHIST_ERROR,"error, invoked complex version of this program for real matrix with ending '.rua'\n");
-    return 1;
-#else
-    PHIST_ICHK_IERR(SUBR(crsMat_read_hb)(&A,comm,filename_A.c_str(),&ierr),ierr);
-#endif
-  }
-  else if( endsWith(filename_A,".bin") || endsWith(filename_A,".crs"))
-  {
-    PHIST_ICHK_IERR(SUBR(crsMat_read_bin)(&A,comm,filename_A.c_str(),&ierr),ierr);
-  }
-  else
-  {
-    PHIST_SOUT(PHIST_ERROR,"unknown file ending of matrix file '%s'\n",filename_A.c_str());
-    return 1;
-  }
+  PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,problem,&ierr), ierr);
+  
   // create an operator from A
   op_ptr_t opA = new TYPE(op);
   PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(opA,A,&ierr),ierr);
@@ -223,8 +189,8 @@ int main(int argc, char** argv)
   // setup start vector (currently to (1 0 1 0 .. ) )
   mvec_ptr_t v0 = NULL;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&v0,map,1,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_random)(v0,&ierr),ierr);
-  //PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::one(),&ierr),ierr);
+//  PHIST_ICHK_IERR(SUBR(mvec_random)(v0,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::one(),&ierr),ierr);
   // initialize random number generator in parallel
 /*
   int ilower, iupper;

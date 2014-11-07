@@ -14,6 +14,8 @@
 #include "phist_operator.h"
 #include "phist_subspacejada.h"
 
+#warning this driver is deprecated, phist_Dsubspacejada can generate the matrix when passed the string "spinSZ<L>"
+
 // ghost/spinChain stuff
 #ifdef PHIST_KERNEL_LIB_GHOST
 #include "ghost.h"
@@ -206,9 +208,9 @@ int main(int argc, char** argv)
 #else
   TYPE(crsMat_ptr) mat = NULL;
 #endif
-  ghost_lidx_t DIM;
+  ghost_gidx_t DIM;
   //TODO - get from command line
-  ghost_gidx_t conf_spinZ[3] = {nSpins,nSpins/2,0};
+  ghost_lidx_t conf_spinZ[3] = {nSpins,nSpins/2,0};
   SpinChainSZ( -2, conf_spinZ, &DIM, NULL);
 
   matfuncs_info_t info;

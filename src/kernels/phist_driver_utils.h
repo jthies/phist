@@ -21,6 +21,10 @@ typedef TYPE(op_ptr) op_ptr_t;
 typedef TYPE(const_op_ptr) const_op_ptr_t;
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //! read matrix from some supported file format
 
 //! auto-detects the file type by looking at the file extension
@@ -45,5 +49,9 @@ void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
 
 int phist_sizeof_lidx();
 int phist_sizeof_gidx();
+
+#ifdef __cplusplus
+} //extern "C"
+#endif
 
 #endif
