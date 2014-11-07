@@ -207,11 +207,11 @@ PHIST_GHOST_TASK_BEGIN
   *ierr=0;
   ghost_densemat_t* result;
   ghost_densemat_traits_t dmtraits=GHOST_DENSEMAT_TRAITS_INITIALIZER;
-        dmtraits.nrows=nrows;
-        dmtraits.nrowshalo=nrows;
-        dmtraits.nrowspadded=nrows;
-        dmtraits.ncols=ncols;
-        dmtraits.ncolspadded=ncols;
+        dmtraits.nrows=(ghost_lidx_t)nrows;
+        dmtraits.nrowshalo=(ghost_lidx_t)nrows;
+        dmtraits.nrowspadded=(ghost_lidx_t)nrows;
+        dmtraits.ncols=(ghost_lidx_t)ncols;
+        dmtraits.ncolspadded=(ghost_lidx_t)ncols;
         dmtraits.datatype=st::ghost_dt;
 #ifdef PHIST_SDMATS_ROW_MAJOR
         dmtraits.storage=GHOST_DENSEMAT_ROWMAJOR;
@@ -220,7 +220,8 @@ PHIST_GHOST_TASK_BEGIN
 #endif
   // I think the sdMat should not have a context
   ghost_context_t* ctx=NULL;
-  PHIST_CHK_GERR(ghost_context_create(&ctx,nrows, ncols, GHOST_CONTEXT_REDUNDANT, 
+  PHIST_CHK_GERR(ghost_context_create(&ctx,(ghost_gidx_t)nrows, 
+        (ghost_gidx_t)ncols, GHOST_CONTEXT_REDUNDANT, 
         NULL, GHOST_SPARSEMAT_SRC_NONE, *comm, 1.0),*ierr);
   ghost_densemat_create(&result,ctx,dmtraits);
   ST zero = st::zero();
@@ -281,7 +282,7 @@ extern "C" void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) vV, int* nvec, int* 
   *ierr = 0;
   CAST_PTR_FROM_VOID(const ghost_densemat_t,V,vV,*ierr);
   PHIST_CHK_IERR(*ierr=check_local_size(V->traits.ncols),*ierr);
-  *nvec = V->traits.ncols;
+  *nvec = (int)(V->traits.ncols);
 }
 
 //! get number of rows in local dense matrix
@@ -291,7 +292,7 @@ extern "C" void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) vM, int* nrows, int*
   *ierr=0;
   CAST_PTR_FROM_VOID(const ghost_densemat_t,M,vM,*ierr);
   PHIST_CHK_IERR(*ierr=check_local_size(M->traits.nrows),*ierr);
-  *nrows = M->traits.nrows;
+  *nrows = (int)(M->traits.nrows);
 }
   
 //! get number of cols in local dense matrix
@@ -300,7 +301,7 @@ extern "C" void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) vM, int* ncols, int*
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
   CAST_PTR_FROM_VOID(const ghost_densemat_t,M,vM,*ierr);
-  *ncols = M->traits.ncols;
+  *ncols = (int)(M->traits.ncols);
 }
 
 
@@ -331,6 +332,42 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* l
 #else
   *lda = V->traits.nrowspadded;
 #endif
+}
+
+extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+  CAST_PTR_FROM_VOID(ghost_densemat_t,M, vM, *ierr);
+
+  if (M->traits.flags & GHOST_DENSEMAT_SCATTERED)
+  {
+    PHIST_OUT(PHIST_ERROR,"%s: cannot view data with non-constant stride using "
+        "this function (file %s, line %d)\n", __FUNCTION__, __FILE__, __LINE__);
+    *ierr=-1;
+    return;
+  }
+
+  PHIST_CHK_GERR(ghost_densemat_valptr(M,(void**)val),*ierr);
+
+  PHIST_CHK_IERR(*ierr=check_local_size(M->traits.nrowspadded),*ierr);
+
+#ifdef PHIST_SDMATS_ROW_MAJOR
+  *lda = M->traits.ncolspadded;
+#else
+  *lda = M->traits.nrowspadded;
+#endif
+
+/*
+  if (M->traits.storage==GHOST_DENSEMAT_ROWMAJOR)
+  {
+    *lda = M->traits.nrowspadded;
+  }
+else
+  {
+
+    
+    *lda = M->traits.ncolspadded;
+  }*/
 }
 
 extern "C" void SUBR(mvec_to_device)(TYPE(mvec_ptr) vV, int* ierr)
@@ -367,42 +404,6 @@ extern "C" void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) vM, int* ierr)
   ENTER_FCN(__FUNCTION__);
   CAST_PTR_FROM_VOID(ghost_densemat_t,M, vM, *ierr);
   PHIST_CHK_GERR(M->download(M),*ierr);
-}
-
-extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* ierr)
-{
-  ENTER_FCN(__FUNCTION__);
-  CAST_PTR_FROM_VOID(ghost_densemat_t,M, vM, *ierr);
-
-  if (M->traits.flags & GHOST_DENSEMAT_SCATTERED)
-  {
-    PHIST_OUT(PHIST_ERROR,"%s: cannot view data with non-constant stride using "
-        "this function (file %s, line %d)\n", __FUNCTION__, __FILE__, __LINE__);
-    *ierr=-1; 
-    return;
-  }
-
-  PHIST_CHK_GERR(ghost_densemat_valptr(M,(void**)val),*ierr);
-
-  PHIST_CHK_IERR(*ierr=check_local_size(M->traits.nrowspadded),*ierr);
-
-#ifdef PHIST_SDMATS_ROW_MAJOR
-  *lda = M->traits.ncolspadded;
-#else
-  *lda = M->traits.nrowspadded;
-#endif
-
-/*
-  if (M->traits.storage==GHOST_DENSEMAT_ROWMAJOR)
-  {
-    *lda = M->traits.nrowspadded;
-  }
-else
-  {
-
-    
-    *lda = M->traits.ncolspadded;
-  }*/
 }
 
 extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* ierr)
@@ -659,7 +660,7 @@ extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* ierr)
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
   std::cout << "# local rows: "<<V->traits.nrows<<std::endl;
   std::cout << "# vectors:    "<<V->traits.ncols<<std::endl;
-  char *str;
+  char *str=NULL;
   V->string(V,&str);
   std::cout << str <<std::endl;
   free(str); str = NULL;
@@ -672,7 +673,7 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* ierr)
   CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*ierr);
   std::cout << "# rows: "<<M->traits.nrows<<std::endl;
   std::cout << "# cols: "<<M->traits.ncols<<std::endl;
-  char *str;
+  char *str=NULL;
   M->string(M,&str);
   std::cout << str <<std::endl;
   free(str); str = NULL;
