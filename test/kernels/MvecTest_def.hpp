@@ -444,7 +444,6 @@ public:
 
       _MT_ norms_V1[nvec_];
       _MT_ norms_V1copy[nvec_];
-      
       SUBR(mvec_norm2)(vec1_,norms_V1,&ierr_);
       ASSERT_EQ(0,ierr_);      
 

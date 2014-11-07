@@ -1,5 +1,5 @@
 /*! Test fixture. */
-template<int _Nglob, int _Nvec>
+template<gidx_t _Nglob, int _Nvec>
 class KernelTestWithVectors<_ST_,_Nglob,_Nvec> : 
         public virtual KernelTestWithType< _ST_ >,
         public virtual KernelTestWithMap<_Nglob> 
@@ -210,6 +210,6 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
   lidx_t lda_, stride_;
   };
 
-template<int n, int nvec>
+template<gidx_t n, int nvec>
 const int KernelTestWithVectors<_ST_,n,nvec>::nvec_;
 

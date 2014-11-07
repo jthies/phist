@@ -5,7 +5,7 @@
 
 /** 
  */
-template<int _Nglob>
+template<gidx_t _Nglob>
 class KernelTestWithMap: public virtual KernelTest
 {
 public:
@@ -35,7 +35,7 @@ map_ptr_t map_;
 
 };
 
-template<int n>
+template<gidx_t n>
 const gidx_t KernelTestWithMap<n>::nglob_;
 
 #endif
