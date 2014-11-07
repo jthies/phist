@@ -96,7 +96,7 @@ module crsmat_module
       integer(G_GIDX_T), value :: row
       integer(G_LIDX_T), intent(inout) :: nnz
       integer(G_GIDX_T), intent(inout) :: cols(*)
-      real(C_DOUBLE),     intent(inout) :: vals(*)
+      real(C_DOUBLE),    intent(inout) :: vals(*)
     end subroutine matRowFunc
   end interface
 

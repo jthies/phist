@@ -251,6 +251,7 @@ endif ()
 if (PHIST_KERNEL_LIB STREQUAL "fortran")
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_driver_utils.c
+                          ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/env_module.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/fortran/map_module.f90
@@ -274,6 +275,7 @@ if (PHIST_KERNEL_LIB STREQUAL "fortran")
 else()
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_driver_utils.c
+                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde.f90
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp)
 endif()
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.cpp
