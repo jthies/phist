@@ -166,9 +166,17 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   set(PHIST_KERNEL_LIB_GHOST 1)
   set(PHIST_MVECS_ROW_MAJOR 1 CACHE STRING "wether multi-vectors should be stored in row-major ordering")
   set(PHIST_SDMATS_ROW_MAJOR 0 CACHE STRING "store sdMats in row-major order (not supported by our algorithms..." )
+
+#TODO: this is in fact matrix dependent and should be configured at run time, 
+#      not compile time
+  set(PHIST_USE_SELL OFF CACHE BOOL "Use the GHOST SELL-C-sigma sparse matrix format")
+  set(PHIST_SELL_C 1 CACHE INTEGER "chunk size C for the SELL-C-sigma format")
+  set(PHIST_SELL_SIGMA 1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format")
+
 elseif (PHIST_KERNEL_LIB STREQUAL "fortran")
   set(PHIST_KERNEL_LIB_FORTRAN 1)
   set(PHIST_MVECS_ROW_MAJOR 1)
+
 else ()
   message( FATAL_ERROR "PHIST_KERNEL_LIB not set or not recognized" )
 endif ()

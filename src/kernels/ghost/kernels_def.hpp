@@ -34,15 +34,17 @@ PHIST_GHOST_TASK_BEGIN
 
   ghost_sparsemat_traits_t *mtraits=new ghost_sparsemat_traits_t;
         *mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
-        mtraits->format = GHOST_SPARSEMAT_CRS;
-
-//        mtraits->format = GHOST_SPARSEMAT_SELL;
-//        ghost_sell_aux_t aux = GHOST_SELL_AUX_INITIALIZER;
-//        aux.C = 32;
-//        mtraits->aux = &aux;
-//        mtraits->sortScope = 64;
-
+#ifdef PHIST_USE_SELL
+        mtraits->format = GHOST_SPARSEMAT_SELL;
+        ghost_sell_aux_t aux = GHOST_SELL_AUX_INITIALIZER;
+        aux.C = PHIST_SELL_C;
+        mtraits->sortScope = PHIST_SELL_SIGMA;
+        mtraits->aux = &aux;
         mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT|GHOST_SPARSEMAT_PERMUTE);
+#else
+        mtraits->format = GHOST_SPARSEMAT_CRS;
+        mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT);
+#endif
         mtraits->datatype = st::ghost_dt;
         char* cfname=const_cast<char*>(filename);
 // TODO - check ghost return codes everywhere like this
