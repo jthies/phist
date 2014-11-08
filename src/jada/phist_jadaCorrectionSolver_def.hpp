@@ -1,18 +1,18 @@
 //! create a jadaCorrectionSolver object
-void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, int pgmresBlockDim, const_map_ptr_t map, 
-        linSolv_t method, int pgmresMaxBase, bool useMINRES, int *ierr)
+void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, int blockedGMRESBlockDim, const_map_ptr_t map, 
+        linSolv_t method, int blockedGMRESMaxBase, bool useMINRES, int *ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr = 0;
   if (method==GMRES)
   {
-    PHIST_CHK_IERR( *ierr = (pgmresBlockDim <= 0) ? -1 : 0, *ierr);
+    PHIST_CHK_IERR( *ierr = (blockedGMRESBlockDim <= 0) ? -1 : 0, *ierr);
 
     *me = new TYPE(jadaCorrectionSolver);
-    (*me)->gmresBlockDim_ = pgmresBlockDim;
-    (*me)->pgmresStates_  = new TYPE(pgmresState_ptr)[pgmresBlockDim];
-    PHIST_CHK_IERR(SUBR(pgmresStates_create)((*me)->pgmresStates_, pgmresBlockDim, map, pgmresMaxBase, ierr), *ierr);
+    (*me)->gmresBlockDim_ = blockedGMRESBlockDim;
+    (*me)->blockedGMRESstates_  = new TYPE(blockedGMRESstate_ptr)[blockedGMRESBlockDim];
+    PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)((*me)->blockedGMRESstates_, blockedGMRESBlockDim, map, blockedGMRESMaxBase, ierr), *ierr);
     (*me)->useMINRES_ = useMINRES;
   }
   else if (method==CARP_CG)
@@ -33,8 +33,8 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) me, int *i
   ENTER_FCN(__FUNCTION__);
   *ierr = 0;
 
-  PHIST_CHK_IERR(SUBR(pgmresStates_delete)(me->pgmresStates_, me->gmresBlockDim_, ierr), *ierr);
-  delete[] me->pgmresStates_;
+  PHIST_CHK_IERR(SUBR(blockedGMRESstates_delete)(me->blockedGMRESstates_, me->gmresBlockDim_, ierr), *ierr);
+  delete[] me->blockedGMRESstates_;
   delete me;
 }
 
@@ -75,7 +75,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   // make sure all states are reset
   for(int i = 0; i < me->gmresBlockDim_; i++)
   {
-    PHIST_CHK_IERR(SUBR(pgmresState_reset)(me->pgmresStates_[i], NULL, NULL, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(me->blockedGMRESstates_[i], NULL, NULL, ierr), *ierr);
   }
 
   // current and maximal block dimension
@@ -106,7 +106,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   TYPE(mvec_ptr) res_i = NULL;
   TYPE(mvec_ptr) t_i   = NULL;
 
-  // total number of pgmres-iterations performed, not used
+  // total number of blockedGMRES-iterations performed, not used
   int nTotalIter = 0;
 
   // number of unconverged systems to be returned
@@ -124,37 +124,37 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
     {
       if( nextSystem >= totalNumSys )
         break;
-      if( me->pgmresStates_[i]->status == -2 )
+      if( me->blockedGMRESstates_[i]->status == -2 )
       {
         // setup the next system waiting to be solved
         int ind = nextSystem;
         if( resIndex != NULL )
           ind = resIndex[ind];
         PHIST_CHK_IERR(SUBR(mvec_view_block)((TYPE(mvec_ptr))res, &res_i, ind, ind, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR(pgmresState_reset)(me->pgmresStates_[i], res_i, NULL, ierr), *ierr);
-        me->pgmresStates_[i]->tol = tol[nextSystem];
-        index[me->pgmresStates_[i]->id] = nextSystem;
+        PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(me->blockedGMRESstates_[i], res_i, NULL, ierr), *ierr);
+        me->blockedGMRESstates_[i]->tol = tol[nextSystem];
+        index[me->blockedGMRESstates_[i]->id] = nextSystem;
 
         nextSystem++;
       }
     }
 
     // gather systems that are waiting to be iterated
-    std::vector<TYPE(pgmresState_ptr)> activeStates;
+    std::vector<TYPE(blockedGMRESstate_ptr)> activeStates;
     int firstId = max_k;
     PHIST_SOUT(PHIST_INFO, "Iterating systems:");
     for(int i = 0; i < max_k; i++)
     {
-      if( std::abs(me->pgmresStates_[i]->status) == 1 )
+      if( std::abs(me->blockedGMRESstates_[i]->status) == 1 )
       {
 #ifdef IS_COMPLEX
-        PHIST_SOUT(PHIST_INFO, "\t%d (%f%+fi)", index[me->pgmresStates_[i]->id], 
-        -st::real(sigma[index[me->pgmresStates_[i]->id]]),
-        -st::imag(sigma[index[me->pgmresStates_[i]->id]]));
+        PHIST_SOUT(PHIST_INFO, "\t%d (%f%+fi)", index[me->blockedGMRESstates_[i]->id], 
+        -st::real(sigma[index[me->blockedGMRESstates_[i]->id]]),
+        -st::imag(sigma[index[me->blockedGMRESstates_[i]->id]]));
 #else
-        PHIST_SOUT(PHIST_INFO, "\t%d (%f)", index[me->pgmresStates_[i]->id], -sigma[index[me->pgmresStates_[i]->id]]);
+        PHIST_SOUT(PHIST_INFO, "\t%d (%f)", index[me->blockedGMRESstates_[i]->id], -sigma[index[me->blockedGMRESstates_[i]->id]]);
 #endif
-        activeStates.push_back(me->pgmresStates_[i]);
+        activeStates.push_back(me->blockedGMRESstates_[i]);
         firstId = std::min(firstId,activeStates.back()->id);
       }
     }
@@ -170,11 +170,11 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
     // actually iterate
     if( me->useMINRES_ )
     {
-      PHIST_CHK_NEG_IERR(SUBR(pminresStates_iterate)(&jadaOp, &activeStates[0], k, &nTotalIter, ierr), *ierr);
+      PHIST_CHK_NEG_IERR(SUBR(blockedMINRESstates_iterate)(&jadaOp, &activeStates[0], k, &nTotalIter, ierr), *ierr);
     }
     else
     {
-      PHIST_CHK_NEG_IERR(SUBR(pgmresStates_iterate)(&jadaOp, &activeStates[0], k, &nTotalIter, useIMGS, ierr), *ierr);
+      PHIST_CHK_NEG_IERR(SUBR(blockedGMRESstates_iterate)(&jadaOp, &activeStates[0], k, &nTotalIter, useIMGS, ierr), *ierr);
     }
 
 
@@ -184,10 +184,10 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
       int ind = index[activeStates[0]->id];
       PHIST_CHK_IERR(SUBR(mvec_view_block)(t, &t_i, ind, ind+k-1, ierr), *ierr);
       _MT_ tmp[k];
-      PHIST_CHK_IERR(SUBR(pgmresStates_updateSol)(&activeStates[0], k, t_i, tmp, false, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR(blockedGMRESstates_updateSol)(&activeStates[0], k, t_i, tmp, false, ierr), *ierr);
       for(int i = 0; i < k; i++)
       {
-        PHIST_CHK_IERR(SUBR(pgmresState_reset)(activeStates[i], NULL, NULL, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(activeStates[i], NULL, NULL, ierr), *ierr);
       }
     }
     else
@@ -201,14 +201,14 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
           int ind = index[activeStates[i]->id];
           PHIST_CHK_IERR(SUBR(mvec_view_block)(t, &t_i, ind, ind, ierr), *ierr);
           _MT_ tmp;
-          PHIST_CHK_IERR(SUBR(pgmresStates_updateSol)(&activeStates[i], 1, t_i, &tmp, false, ierr), *ierr);
+          PHIST_CHK_IERR(SUBR(blockedGMRESstates_updateSol)(&activeStates[i], 1, t_i, &tmp, false, ierr), *ierr);
 
           if( activeStates[i]->status == 2 && activeStates[i]->totalIter >= maxIter )
             nUnconvergedSystems++;
           else if( activeStates[i]->status == 2 )
           {
             // prepare restart
-            PHIST_CHK_IERR(SUBR(pgmresState_reset)(activeStates[i], NULL, t_i, ierr), *ierr);
+            PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(activeStates[i], NULL, t_i, ierr), *ierr);
             continue;
           }
 /*
@@ -232,7 +232,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
 */
 
           // reset to be free in the next iteration
-          PHIST_CHK_IERR(SUBR(pgmresState_reset)(activeStates[i], NULL, NULL, ierr), *ierr);
+          PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(activeStates[i], NULL, NULL, ierr), *ierr);
         }
       }
     }

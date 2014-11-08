@@ -10,8 +10,8 @@
 #include <mpi.h>
 #endif
 #include "phist_kernels.h"
-#include "phist_pgmres.h"
-#include "phist_pminres.h"
+#include "phist_blockedgmres.h"
+#include "phist_blockedminres.h"
 
 #endif // DOXYGEN
 

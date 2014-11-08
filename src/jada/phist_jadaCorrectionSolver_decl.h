@@ -1,13 +1,13 @@
 //!
-//! The jadaCorrectionSolver uses the pgmres to calculate approximate solutions to a set of Jacobi-Davidson correction equations.
+//! The jadaCorrectionSolver uses the blockedGMRES to calculate approximate solutions to a set of Jacobi-Davidson correction equations.
 //! It provides a simple interface and takes care of restarting/pipelining issues
 //!
 typedef struct TYPE(jadaCorrectionSolver)
 {
   //! \name internal data structures
   //@{
-  int                   gmresBlockDim_;     //! number of pgmres states iterated at once
-  TYPE(pgmresState_ptr) *pgmresStates_;     //! pgmres states
+  int                   gmresBlockDim_;     //! number of blockedGMRES states iterated at once
+  TYPE(blockedGMRESstate_ptr) *blockedGMRESstates_;     //! blockedGMRES states
   bool                  useMINRES_;         //! switch to minres for symmetric matrices
   //@}
 } TYPE(jadaCorrectionSolver);
@@ -18,7 +18,7 @@ typedef TYPE(jadaCorrectionSolver) const * TYPE(const_jadaCorrectionSolver_ptr);
 
 
 //! create a jadaCorrectionSolver object
-void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *jdCorrSolver, int pgmresBlockDim, const_map_ptr_t map, 
+void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *jdCorrSolver, int blockedGMRESBlockDim, const_map_ptr_t map, 
         linSolv_t method, int maxBase, bool useMINRES, int *ierr);
 
 //! delete a jadaCorrectionSolver object

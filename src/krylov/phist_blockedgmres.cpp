@@ -12,7 +12,7 @@
 #endif
 
 #include "phist_macros.h"
-#include "phist_pgmres.h"
+#include "phist_blockedgmres.h"
 #include "phist_jadaOp.hpp"
 #include "phist_kernels.h"
 #include "phist_lapack.h"
@@ -22,12 +22,12 @@
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
-#include "phist_pgmres_def.hpp"
+#include "phist_blockedgmres_def.hpp"
 #include "phist_gen_c.h"
-#include "phist_pgmres_def.hpp"
+#include "phist_blockedgmres_def.hpp"
 #endif
 #include "phist_gen_d.h"
-#include "phist_pgmres_def.hpp"
+#include "phist_blockedgmres_def.hpp"
 #include "phist_gen_z.h"
-#include "phist_pgmres_def.hpp"
+#include "phist_blockedgmres_def.hpp"
 

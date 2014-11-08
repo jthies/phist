@@ -16,8 +16,8 @@
 
 //! state object for CARP-CG
 
-//! the usage of carp_cg is very similar to that of pgmres, except that we don't
-//! need the complicated queuing of vectors in pgmres.
+//! the usage of carp_cg is very similar to that of blockedGMRES, except that we don't
+//! need the complicated queuing of vectors in blockedGMRES.
 typedef struct TYPE(carp_cgState) {
 
   //! \name output args:

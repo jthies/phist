@@ -58,8 +58,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
         SUBR(op_wrap_crsMat)(opA_,A_,&ierr_);
         ASSERT_EQ(0,ierr_);
         
-        state_=new TYPE(pgmresState_ptr)[m_];
-        SUBR(pgmresStates_create)(state_,m_,map_,maxBas_,&ierr_);
+        state_=new TYPE(blockedGMRESstate_ptr)[m_];
+        SUBR(blockedGMRESstates_create)(state_,m_,map_,maxBas_,&ierr_);
         
         ASSERT_EQ(0,ierr_);
         xex_=vec1_;
@@ -92,7 +92,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
 
         SUBR(crsMat_delete)(A_,&ierr_);
         ASSERT_EQ(0,ierr_);
-        SUBR(pgmresStates_delete)(state_,m_,&ierr);
+        SUBR(blockedGMRESstates_delete)(state_,m_,&ierr);
         ASSERT_EQ(0,ierr_);
         delete [] state_;
       }
@@ -101,7 +101,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
     }
 
     TYPE(op_ptr) opA_;
-    TYPE(pgmresState_ptr) *state_;
+    TYPE(blockedGMRESstate_ptr) *state_;
 
   protected:
   
@@ -112,7 +112,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
 
 
     // ========================= the actual arnoldi test =========================
-    void doPGmresTest(int nrhs, int nrestarts, MT tol, bool useMINRES)
+    void doBlockedGMRESTest(int nrhs, int nrestarts, MT tol, bool useMINRES)
     {
       ENTER_FCN(__FUNCTION__);
       if( typeImplemented_ )
@@ -151,24 +151,24 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
             SUBR(mvec_view_block)(b,&b_i,i,i,&ierr_);
             if( nr == 0 )
             {
-              SUBR(pgmresState_reset)(state_[i],b_i,x_i,&ierr_);
+              SUBR(blockedGMRESstate_reset)(state_[i],b_i,x_i,&ierr_);
               ASSERT_EQ(0,ierr_);
             }
             else
             {
-              SUBR(pgmresState_reset)(state_[i],NULL,x_i,&ierr_);
+              SUBR(blockedGMRESstate_reset)(state_[i],NULL,x_i,&ierr_);
               ASSERT_EQ(0,ierr_);
             }
           }
           // iterate for MAXBAS iterations
           int nIter = 0;
           if( useMINRES )
-            SUBR(pminresStates_iterate)(opA_,state_,nrhs,&nIter, &ierr2);
+            SUBR(blockedMINRESstates_iterate)(opA_,state_,nrhs,&nIter, &ierr2);
           else
-            SUBR(pgmresStates_iterate)(opA_,state_,nrhs,&nIter,true, &ierr2);
+            SUBR(blockedGMRESstates_iterate)(opA_,state_,nrhs,&nIter,true, &ierr2);
           ASSERT_TRUE(ierr2>=0);
           _MT_ resNorm[nrhs];
-          SUBR(pgmresStates_updateSol)(state_,nrhs,x,resNorm,false,&ierr_);
+          SUBR(blockedGMRESstates_updateSol)(state_,nrhs,x,resNorm,false,&ierr_);
           ASSERT_EQ(0,ierr_);
           if (ierr2==0) break; // converged
         }
@@ -226,51 +226,51 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
 };
 
 // test unrestarted GMRES with tolerance TOL1
-TEST_F(CLASSNAME, simple_pgmres) 
+TEST_F(CLASSNAME, simple_blockedGMRES) 
 {
   int nrestarts=0;
   int nrhs=1;
-  doPGmresTest(nrhs,nrestarts,TOLA,false);
+  doBlockedGMRESTest(nrhs,nrestarts,TOLA,false);
 }
 
 // test restarted GMRES with tolerance TOL2
-TEST_F(CLASSNAME, restarted_pgmres) 
+TEST_F(CLASSNAME, restarted_blockedGMRES) 
 {
   int nrestarts=5;
   int nrhs=1;
-  doPGmresTest(nrhs,nrestarts,TOLB,false);
+  doBlockedGMRESTest(nrhs,nrestarts,TOLB,false);
 }
 
 // test unrestarted GMRES with tolerance TOL1
-TEST_F(CLASSNAME, multiple_simple_pgmres) 
+TEST_F(CLASSNAME, multiple_simple_blockedGMRES) 
 {
   int nrestarts=0;
   int nrhs=4;
-  doPGmresTest(nrhs,nrestarts,TOLA,false);
+  doBlockedGMRESTest(nrhs,nrestarts,TOLA,false);
 }
 
 #ifdef MATSYMMETRIC
 // test unrestarted GMRES with tolerance TOL1
-TEST_F(CLASSNAME, simple_pminres) 
+TEST_F(CLASSNAME, simple_blockedminres) 
 {
   int nrestarts=0;
   int nrhs=1;
-  doPGmresTest(nrhs,nrestarts,TOLA,true);
+  doBlockedGMRESTest(nrhs,nrestarts,TOLA,true);
 }
 
 // test restarted GMRES with tolerance TOL2
-TEST_F(CLASSNAME, restarted_pminres) 
+TEST_F(CLASSNAME, restarted_blockedminres) 
 {
   int nrestarts=5;
   int nrhs=1;
-  doPGmresTest(nrhs,nrestarts,TOLB,true);
+  doBlockedGMRESTest(nrhs,nrestarts,TOLB,true);
 }
 
 // test unrestarted GMRES with tolerance TOL1
-TEST_F(CLASSNAME, multiple_simple_pminres) 
+TEST_F(CLASSNAME, multiple_simple_blockedminres) 
 {
   int nrestarts=0;
   int nrhs=4;
-  doPGmresTest(nrhs,nrestarts,TOLA,true);
+  doBlockedGMRESTest(nrhs,nrestarts,TOLA,true);
 }
 #endif

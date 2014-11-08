@@ -1,7 +1,7 @@
 //! \defgroup linear_solvers Iterative methods for linear systems
 //@{
 
-//! \defgroup pgmres Pipelined GMRES solver for general linear systems
+//! \defgroup blockedGMRES blocked GMRES solver for general linear systems
 //@{
 
 //! gmres state object
@@ -20,13 +20,13 @@
 //! the reset function again. It is important to call
 //! reset before the first usage of the object in gmres
 //! because the iteration will otherwise not start up
-//! correctly. See test/krylov/TestPGmres for examples
+//! correctly. See test/krylov/TestBlockedGMRES for examples
 //! of using this object to build up a restarted GMRES.
-typedef struct TYPE(pgmresState)
+typedef struct TYPE(blockedGMRESstate)
 {
   //! \name input and output args:
   //@{
-  int id;               //! used to identify the system solved, set in pgmresSates_create, don't modify!
+  int id;               //! used to identify the system solved, set in blockedGMRESSates_create, don't modify!
   _MT_ tol;             //! convergence tolerance for this system (can be adjusted any time)
   int status;           //! -2: not initialized, -1: resetted, 0: converged, 1: not yet converged, 2: max iters exceeded
   int totalIter;        //! counts the total number of iterations (also over restarts)
@@ -46,11 +46,11 @@ typedef struct TYPE(pgmresState)
 
   void *Vbuff;          //! ring buffer for the subspaces V
   //@}
-} TYPE(pgmresState);
+} TYPE(blockedGMRESstate);
 
-typedef TYPE(pgmresState)* TYPE(pgmresState_ptr);
+typedef TYPE(blockedGMRESstate)* TYPE(blockedGMRESstate_ptr);
 
-typedef TYPE(pgmresState) const * TYPE(const_pgmresState_ptr);
+typedef TYPE(blockedGMRESstate) const * TYPE(const_blockedGMRESstate_ptr);
 
 //!
 //! a simple GMRES implementation that works on several vectors simultaneously,
@@ -82,9 +82,9 @@ typedef TYPE(pgmresState) const * TYPE(const_pgmresState_ptr);
 //! or a negative value if an error occurred related to this particular system.
 //! The global ierr flag will then be set to -1. (0 for "someone converged" and +1 for
 //! someone reached max iters")
-//! \warning you cannot mix together states from different calls to pgmresStates_create!
+//! \warning you cannot mix together states from different calls to blockedGMRESstates_create!
 //!
-void SUBR( pgmresStates_iterate ) (TYPE(const_op_ptr) Op, TYPE(pgmresState_ptr) S_array[], int numSys, int* nIter, bool useIMGS, int* ierr);
+void SUBR( blockedGMRESstates_iterate ) (TYPE(const_op_ptr) Op, TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int* nIter, bool useIMGS, int* ierr);
 
 //!
 //! create an array of gmresState objects. The method's input parameters
@@ -95,26 +95,26 @@ void SUBR( pgmresStates_iterate ) (TYPE(const_op_ptr) Op, TYPE(pgmresState_ptr) 
 //! The array of pointers must be allocated beforehand, but the individual structs 
 //! are allocated by this method.
 //!
-void SUBR( pgmresStates_create ) (TYPE(pgmresState_ptr) S_array[], int numSys, const_map_ptr_t map, int maxBas, int* ierr);
+void SUBR( blockedGMRESstates_create ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys, const_map_ptr_t map, int maxBas, int* ierr);
 
 //!
 //! delete an set of gmresState objects. Only the individual structs are destroyed,
 //! The csller has to delete the array and nullify it.
-//! \warning you cannot delete individual states, but must pass the whole array created with pgmresStates_create
+//! \warning you cannot delete individual states, but must pass the whole array created with blockedGMRESstates_create
 //!
-void SUBR( pgmresStates_delete ) (TYPE(pgmresState_ptr) S_array[], int numSys, int* ierr);
+void SUBR( blockedGMRESstates_delete ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int* ierr);
 
 //!
 //! this function can be used to force a clean restart of the associated GMRES
 //! solver. It is necessary to call this function before the first call to
-//! pgmres_iterate. The input starting vector x0 may be NULL, in that case this function
+//! blockedGMRES_iterate. The input starting vector x0 may be NULL, in that case this function
 //! will generate a random initial guess. x0 does not have to be normalized in advance.
 //! The input RHS may also be NULL, meaning 'keep old RHS', but not on the first call to
 //! reset. If one of the RHS vectors changes between calls to gmres, reset with the new
 //! rhs should be called for that gmresState, otherwise a messed up Krylov sequence will
 //! result and the convergence criterion will not be consistent.
 //!
-void SUBR( pgmresState_reset ) (TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b, TYPE(const_mvec_ptr) x0, int *ierr);
+void SUBR( blockedGMRESstate_reset ) (TYPE(blockedGMRESstate_ptr) S, TYPE(const_mvec_ptr) b, TYPE(const_mvec_ptr) x0, int *ierr);
 
 //!
 //! For each of the state objects i passed in, update the current approximation x(:,i) using 
@@ -123,7 +123,7 @@ void SUBR( pgmresState_reset ) (TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b,
 //! solution. The function is 'vectorized' in the same way as iterate, so an array of states 
 //! and multivector x can be passed in.
 //!
-void SUBR( pgmresStates_updateSol ) (TYPE(pgmresState_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, _MT_ *resNorm, bool scaleSolutionToOne, int* ierr);
+void SUBR( blockedGMRESstates_updateSol ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, _MT_ *resNorm, bool scaleSolutionToOne, int* ierr);
 
 //@}
 //@}
