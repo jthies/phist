@@ -506,10 +506,76 @@ PHIST_GHOST_TASK_BEGIN
   *ierr=0;
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,Vblock,vVblock,*ierr);
-  // TODO - bounds checking
+
+#ifdef TESTING
+int nv_v,nv_vb;
+lidx_t nr_v,nr_vb;
+PHIST_CHK_IERR(*ierr=V->elSize-Vblock->elSize,*ierr);
+PHIST_CHK_IERR(*ierr=V->elSize-sizeof(_ST_),*ierr);
+PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nv_v,ierr),*ierr);
+PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Vblock,&nv_vb,ierr),*ierr);
+PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&nr_v,ierr),*ierr);
+PHIST_CHK_IERR(SUBR(mvec_my_length)(Vblock,&nr_vb,ierr),*ierr);
+  if ((nr_v!=nr_vb) || ((jmax-jmin+1)!=nv_vb) ||
+      (jmin<0) || (jmax>nv_v))
+      {
+        PHIST_SOUT(PHIST_ERROR,"mvec_set_block: you are trying to set\n"
+                               "V(%d:%" PRlidx ",%d:%d)=Vb(%d:%" PRlidx ",%d:%d)\n"
+                               "(with V %" PRlidx "x%d)\n",
+                               1,nr_v,jmin,jmax,1,nr_vb,1,nv_vb,nr_v,nv_v);
+        *ierr=PHIST_INVALID_INPUT;
+        return;
+      }
+#endif
+
+  // as ghost uses memcpy, avoid passing in vectors that actually
+  // view the same data (this may happen in subspacejada as it is
+  // implemented right now)
+  _ST_ *v_ptr=NULL,*vb_ptr=NULL;
+  lidx_t ldv,ldvb;
+  PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))vV,&v_ptr,&ldv,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))vVblock,&vb_ptr,&ldvb,ierr),*ierr);
+  
+  if (ldv!=ldvb)
+  {
+    PHIST_SOUT(PHIST_WARNING,"mvec_set_block with ghost might require\n"
+                             " same leading dimension of vector blocks, but\n"
+                             " I am not quite sure about this. (file %s, line %d)\n",
+                             __FILE__,__LINE__);
+  }
+  
+  // as far as I know ghost just calls memcpy(a,b), which
+  // (I think) is ill-defined if the arrays overlap. If the
+  // data is already in the correct location, return here.
+  // otherwise, give a warning.
+  if (vb_ptr == v_ptr + ldv*jmin)
+  {
+    PHIST_SOUT(PHIST_DEBUG,"mvec_set_block: data already in the correct location.\n");
+    *ierr=0;
+    return;
+  }
+  else if ( (vb_ptr                   <= v_ptr + ldv*jmax) &&
+            (vb_ptr+ldvb*(jmax-jmin)  >= v_ptr + ldv*jmin) )
+  {
+    PHIST_SOUT(PHIST_ERROR,"mvec_set_block: overlapping memory locations!\n");
+    *ierr=PHIST_INVALID_INPUT;
+    return;
+  }
+
   // create a view of the requested columns of V
   ghost_densemat_t *Vcols=NULL;
   V->viewCols(V,&Vcols,(ghost_lidx_t)(jmax-jmin+1),(ghost_lidx_t)jmin);
+#ifdef TESTING
+  _ST_* vc_ptr=NULL;
+  lidx_t ldvc;
+  PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))Vcols,&vc_ptr,&ldvc,ierr),*ierr);
+  PHIST_CHK_IERR(*ierr=ldvc-ldv,*ierr);
+  if (vc_ptr!=v_ptr+jmin*ldvc)
+  {
+    PHIST_SOUT(PHIST_ERROR,"tmp view incorrect in mvec_set_block (file %s, line %d)\n",
+        __FILE__,__LINE__);
+  }
+#endif
   // copy the data
   Vcols->fromVec(Vcols,Vblock,0,0);
   // delete the view
