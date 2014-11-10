@@ -67,7 +67,7 @@ int main(int argc, char** argv)
       which = SR;
     else
     {
-      PHIST_SOUT(PHIST_ERROR,"error parsing argument 3 <which> ('%s'), it should be one of LM, SM, LR or SR\n", argv[4]);
+      PHIST_SOUT(PHIST_ERROR,"error parsing argument 4 <which> ('%s'), it should one of LM, SM, LR or SR\n", argv[4]);
       return 1;
     }
   }
