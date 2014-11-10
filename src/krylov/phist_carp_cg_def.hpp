@@ -272,7 +272,7 @@ if (numSys>0)
 // level of parallelism etc.                      //
 // The multiple RHS per shift are treated with a  //
 // separate Krylov space per shift, like in       //
-// pgmres, but here there is no memory overhead   //
+// blockedGMRES, but here there is no memory overhead   //
 // because we're doing CG.                        //
 ////////////////////////////////////////////////////
   for (int ishift=0;ishift<numSys; ishift++)

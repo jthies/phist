@@ -445,7 +445,7 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, ierr),
     std::vector<int> resPermutation(nEig_);
     for(int i = 0; i < nEig_; i++)
       resPermutation[i] = i;
-    if( symmetric )
+    if( false ) // symmetric ) // doesn't work always?
     {
       PHIST_CHK_IERR( SUBR(ReorderPartialSchurDecomp)(R_H_raw+offR_H, ldaR_H, Q_H_raw+offQ_H, ldaQ_H, nV-nConvEig, nEig_-nConvEig, which, sqrt(tol), resNorm+nConvEig, ev_H+nConvEig, &resPermutation[nConvEig], ierr), *ierr);
       for(int i = nConvEig; i < nEig_; i++)

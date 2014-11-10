@@ -51,9 +51,27 @@ typedef enum {
 FROM_FILE=0,
 GRAPHENE=1,
 ANDERSON=2,
-SPINSZ=3
+SPINSZ=3,
+MATPDE=4
 } problem_t;
 
+// definitions for MATPDE
+void MATPDE_initDimensions(int, int, gidx_t*, lidx_t*);
+void MATPDE_rowFunc(gidx_t, lidx_t*, lidx_t*, void*);
+
+int str_starts_with(const char *s1, const char *s2)
+{
+  int minLen = strlen(s2);
+  if( strlen(s1) < minLen )
+    return 0;
+
+  if( strncmp(s1, s2, minLen) == 0 )
+    return 1;
+
+  return 0;
+}
+
+// TODO: we should do this in C++ with a map where you can easily add new function pointers... (melven)
 void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
         const char* problem, int* ierr)
 {
@@ -67,36 +85,36 @@ void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
   // otherwise try to read a file
   mat_type=FROM_FILE;
   int pos=0;
-  if (strlen(problem)>=6)
+  if( str_starts_with(problem,"spinSZ") )
   {
-    if (strncmp(problem,"spinSZ",6)==0)
-    {
-      mat_type=SPINSZ;
-      pos=6;
-    }
+    mat_type=SPINSZ;
+    pos=strlen("spinSZ");
   }
-  else if (strlen(problem)>=8)
+  else if( str_starts_with(problem,"graphene") )
   {
-    if (strncmp(problem,"graphene",8)==0)
+    mat_type=GRAPHENE;
+    pos=strlen("graphene");
+  }
+  else if( str_starts_with(problem,"anderson") )
+  {
+    mat_type=ANDERSON;
+    pos=strlen("anderson");
+  }
+  else if( str_starts_with(problem,"matpde") )
+  {
+    mat_type=MATPDE;
+    pos=strlen("matpde");
+  }
+
+  if (mat_type!=FROM_FILE)
+  {
+    // make sure all remaining characters are
+    for (int i=pos;i<strlen(problem);i++)
     {
-      mat_type=GRAPHENE;
-      pos=8;
-    }
-    else if (strncmp(problem,"anderson",8)==0)
-    {
-      mat_type=ANDERSON;
-      pos=8;
-    }
-    if (mat_type!=FROM_FILE)
-    {
-      // make sure all remaining characters are
-      for (int i=pos;i<strlen(problem);i++)
+      if (problem[i]<'0' || problem[i]>'9')
       {
-        if (problem[i]<'0' || problem[i]>'9')
-        {
-          mat_type=FROM_FILE;
-          break;
-        }
+        mat_type=FROM_FILE;
+        break;
       }
     }
   }
@@ -157,6 +175,16 @@ void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
     PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc)(mat,comm,
         (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,
         &SpinChainSZ, ierr), *ierr);
+  }
+  else if (mat_type==MATPDE)
+  {
+    PHIST_SOUT(PHIST_INFO,"problem type: MATPDE %d x %d\n", L, L);
+    gidx_t nrows, ncols;
+    lidx_t row_nnz;
+    MATPDE_initDimensions(L, L, &nrows, &row_nnz);
+    ncols = nrows;
+    PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc)(mat, comm, 
+          nrows, ncols, row_nnz, &MATPDE_rowFunc, ierr), *ierr);
   }
   else
   {

@@ -1,4 +1,4 @@
-#include "phist_pgmres_helper_def.hpp"
+#include "phist_blockedgmres_helper_def.hpp"
 
 #ifdef PHIST_OUTLEV
 #undef PHIST_OUTLEV
@@ -10,7 +10,7 @@
 #endif
 
 // create new state objects. We just get an array of (NULL-)pointers
-void SUBR(pgmresStates_create)(TYPE(pgmresState_ptr) state[], int numSys, const_map_ptr_t map, int maxBas,int* ierr)
+void SUBR(blockedGMRESstates_create)(TYPE(blockedGMRESstate_ptr) state[], int numSys, const_map_ptr_t map, int maxBas,int* ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
@@ -34,10 +34,10 @@ void SUBR(pgmresStates_create)(TYPE(pgmresState_ptr) state[], int numSys, const_
   for(int i = 0; i < numSys; i++)
   {
     // initialization data for the next state
-    TYPE(pgmresState) tmp = {i,(_MT_)0.5,-2,0,-1,0,NULL,NULL,NULL,NULL,NULL,-mt::one(),-mt::one(),st::zero(),NULL};
+    TYPE(blockedGMRESstate) tmp = {i,(_MT_)0.5,-2,0,-1,0,NULL,NULL,NULL,NULL,NULL,-mt::one(),-mt::one(),st::zero(),NULL};
 
     // create state
-    state[i] = new TYPE(pgmresState)(tmp);
+    state[i] = new TYPE(blockedGMRESstate)(tmp);
 
     // allocate members
     PHIST_CHK_IERR(SUBR( sdMat_create )(&state[i]->H_, maxBas+1, maxBas, comm, ierr), *ierr);
@@ -57,8 +57,8 @@ void SUBR(pgmresStates_create)(TYPE(pgmresState_ptr) state[], int numSys, const_
 }
 
 
-// delete pgmresState object
-void SUBR(pgmresStates_delete)(TYPE(pgmresState_ptr) state[], int numSys, int* ierr)
+// delete blockedGMRESstate object
+void SUBR(blockedGMRESstates_delete)(TYPE(blockedGMRESstate_ptr) state[], int numSys, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
@@ -88,8 +88,8 @@ void SUBR(pgmresStates_delete)(TYPE(pgmresState_ptr) state[], int numSys, int* i
 }
 
 
-// reset pgmres state.
-void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b, TYPE(const_mvec_ptr) x0, int *ierr)
+// reset blockedGMRES state.
+void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mvec_ptr) b, TYPE(const_mvec_ptr) x0, int *ierr)
 {
 #include "phist_std_typedefs.hpp"  
   ENTER_FCN(__FUNCTION__);
@@ -120,7 +120,7 @@ void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b, TY
 
   if( b == NULL && (S->normR0_ == -mt::one() || S->status == -2) )
   {
-    PHIST_OUT(PHIST_ERROR,"on the first call to pgmresState_reset you *must* provide the RHS vector");
+    PHIST_OUT(PHIST_ERROR,"on the first call to blockedGMRESstate_reset you *must* provide the RHS vector");
     *ierr=-1;
     return;
   }
@@ -175,7 +175,7 @@ void SUBR(pgmresState_reset)(TYPE(pgmresState_ptr) S, TYPE(const_mvec_ptr) b, TY
 
 
 // calculate approximate solution
-void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mvec_ptr) x, _MT_* resNorm, bool scaleSolutionToOne, int* ierr)
+void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int numSys, TYPE(mvec_ptr) x, _MT_* resNorm, bool scaleSolutionToOne, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
@@ -265,7 +265,7 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
 
 #if 0
 //PHIST_OUTLEV>=PHIST_DEBUG
-    PHIST_SOUT(PHIST_DEBUG,"pgmres_updateSol[%d], curDimV=%d, H=\n",i,S[i]->curDimV_);
+    PHIST_SOUT(PHIST_DEBUG,"blockedGMRES_updateSol[%d], curDimV=%d, H=\n",i,S[i]->curDimV_);
     {
       TYPE(sdMat_ptr) H = NULL;
       PHIST_CHK_IERR(SUBR(sdMat_view_block)(S[i]->H_, &H, 0, m-1, 0, m-1, ierr), *ierr);
@@ -377,7 +377,7 @@ void SUBR(pgmresStates_updateSol)(TYPE(pgmresState_ptr) S[], int numSys, TYPE(mv
 
 
 // implementation of gmres on several systems simultaneously
-void SUBR(pgmresStates_iterate)(TYPE(const_op_ptr) Aop, TYPE(pgmresState_ptr) S[], int numSys, int* nIter, bool useIMGS, int* ierr)
+void SUBR(blockedGMRESstates_iterate)(TYPE(const_op_ptr) Aop, TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, bool useIMGS, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
@@ -594,7 +594,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
         {
           if( !(needAnotherIteration && useIMGS) )
             break;
-          PHIST_SOUT(PHIST_INFO, "Additional MGS iteration in PGMRES!\n");
+          PHIST_SOUT(PHIST_INFO, "Additional MGS iteration in blockedGMRES!\n");
         }
 
 
@@ -621,7 +621,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
             int j_ = j - (maxCurDimV-S[i]->curDimV_);
             if( j_ >= 0 )
             {
-    //std::cout << "In pgmres arnoldi: j " << j << " Vind " << Vind << " i " << i << " j_ " << j_ << " curDimV " << S[i]->curDimV_ << std::endl;
+    //std::cout << "In blockedGMRES arnoldi: j " << j << " Vind " << Vind << " i " << i << " j_ " << j_ << " curDimV " << S[i]->curDimV_ << std::endl;
               if( !calculatedDot )
               {
                 // MGS step for single system

@@ -96,7 +96,7 @@ module crsmat_module
       integer(G_GIDX_T), value :: row
       integer(G_LIDX_T), intent(inout) :: nnz
       integer(G_GIDX_T), intent(inout) :: cols(*)
-      real(C_DOUBLE),     intent(inout) :: vals(*)
+      real(C_DOUBLE),    intent(inout) :: vals(*)
     end subroutine matRowFunc
   end interface
 
@@ -1584,7 +1584,11 @@ end subroutine permute_local_matrix
     character(len=100) :: line
     integer(kind=8), allocatable :: idx(:,:)
     real(kind=8), allocatable :: val(:)
-    integer(kind=8) :: i, i_, j, globalRows, globalCols, globalEntries
+    integer(kind=8) :: i, i_, j, k, globalRows, globalCols, globalEntries, nRows
+    logical :: symmetric
+    integer(kind=8) :: tmp_idx(2,2)
+    real(kind=8) :: tmp_val(2)
+    integer :: newEntries
     !--------------------------------------------------------------------------------
 
     do i = 1, filename_len
@@ -1603,7 +1607,11 @@ end subroutine permute_local_matrix
     read(funit,'(A)') line
     write(*,*) line
     flush(6)
-    if( trim(line) .ne. '%%MatrixMarket matrix coordinate real general' ) then
+    if( trim(line) .eq. '%%MatrixMarket matrix coordinate real general' ) then
+      symmetric = .false.
+    elseif( trim(line) .eq. '%%MatrixMarket matrix coordinate real symmetric' ) then
+      symmetric = .true.
+    else
       write(*,*) 'unsupported format'
       flush(6)
       ierr = -99
@@ -1621,7 +1629,12 @@ end subroutine permute_local_matrix
     allocate(A)
 
     ! now read the dimensions
-    read(line,*) globalRows, globalCols, globalEntries
+    read(line,*) globalRows, globalCols, nRows
+    if( symmetric ) then
+      globalEntries = nRows * 2 - min(globalRows,globalCols)
+    else
+      globalEntries = nRows
+    end if
     write(*,*) 'CrsMat:', globalRows, globalCols, globalEntries
     flush(6)
     call c_f_pointer(comm_ptr, comm)
@@ -1642,14 +1655,29 @@ end subroutine permute_local_matrix
 
     ! read data
     j = 0
-    do i = 1, globalEntries, 1
-      read(funit,*) idx(j+1,1), idx(j+1,2), val(j+1)
-      if( idx(j+1,1) .ge. A%row_map%distrib(A%row_map%me) .and. &
-        & idx(j+1,1) .lt. A%row_map%distrib(A%row_map%me+1)     ) then
-        j = j + 1
-        ! already subtract offset of this proc
-        idx(j,1) = idx(j,1) -  A%row_map%distrib(A%row_map%me) + 1
+    do i = 1, nRows, 1
+      read(funit,*) tmp_idx(1,1), tmp_idx(1,2), tmp_val(1)
+      if( symmetric .and. tmp_idx(1,1) .ne. tmp_idx(1,2) ) then
+        tmp_idx(2,1) = tmp_idx(1,2)
+        tmp_idx(2,2) = tmp_idx(1,1)
+        tmp_val(2)   = tmp_val(1)
+        newEntries = 2
+      else
+        newEntries = 1
       end if
+
+      do k = 1, newEntries, 1
+        idx(j+1,:) = tmp_idx(k,:)
+        val(j+1) = tmp_val(k)
+
+        if( idx(j+1,1) .ge. A%row_map%distrib(A%row_map%me) .and. &
+          & idx(j+1,1) .lt. A%row_map%distrib(A%row_map%me+1)     ) then
+          j = j + 1
+          ! already subtract offset of this proc
+          idx(j,1) = idx(j,1) -  A%row_map%distrib(A%row_map%me) + 1
+        end if
+      end do
+
     end do
     A%nEntries = j
 

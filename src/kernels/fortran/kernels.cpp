@@ -130,8 +130,7 @@ void phist_kernels_finalize(int* ierr)
   }
   LIKWID_MARKER_CLOSE;
 #endif
-// Defined nowhere.
-//PHIST_TIMER_SUMMARIZE
+PHIST_CXX_TIMER_SUMMARIZE
 #ifdef PHIST_SEPARATE_OUT_FILES
 if (PHIST_OUT_out!=NULL)
 {

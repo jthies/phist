@@ -9,8 +9,8 @@
 #include "phist_macros.h"
 #include "phist_kernels.h"
 #include "phist_enums.h"
-#include "phist_pgmres.h"
-#include "phist_pminres.h"
+#include "phist_blockedgmres.h"
+#include "phist_blockedminres.h"
 #include "phist_ScalarTraits.hpp"
 #include "../kernels/KernelTest.h"
 #include "../kernels/KernelTestWithMap.h"
@@ -42,16 +42,16 @@ using namespace testing;
 
 #ifdef PHIST_HAVE_SP
 
-#define CLASSNAME STestPGmres
+#define CLASSNAME STestBlockedGMRES
 #include "phist_gen_s.h"
-#include "TestPGmres_def.hpp"
+#include "TestBlockedGMRES_def.hpp"
 #undef CLASSNAME
 
 #endif
 
-#define CLASSNAME DTestPGmres
+#define CLASSNAME DTestBlockedGMRES
 #include "phist_gen_d.h"
-#include "TestPGmres_def.hpp"
+#include "TestBlockedGMRES_def.hpp"
 #undef CLASSNAME
 
 #undef TOLA
@@ -62,16 +62,16 @@ using namespace testing;
 
 #ifdef PHIST_HAVE_SP
 
-#define CLASSNAME CTestPGmres
+#define CLASSNAME CTestBlockedGMRES
 #include "phist_gen_c.h"
-#include "TestPGmres_def.hpp"
+#include "TestBlockedGMRES_def.hpp"
 #undef CLASSNAME
 
 #endif
 
-#define CLASSNAME ZTestPGmres
+#define CLASSNAME ZTestBlockedGMRES
 #include "phist_gen_z.h"
-#include "TestPGmres_def.hpp"
+#include "TestBlockedGMRES_def.hpp"
 
 
 #undef MATNAME
@@ -96,16 +96,16 @@ using namespace testing;
 
 #ifdef PHIST_HAVE_SP
 
-#define CLASSNAME STestPGmres_symmMat
+#define CLASSNAME STestBlockedGMRES_symmMat
 #include "phist_gen_s.h"
-#include "TestPGmres_def.hpp"
+#include "TestBlockedGMRES_def.hpp"
 #undef CLASSNAME
 
 #endif
 
-#define CLASSNAME DTestPGmres_symmMat
+#define CLASSNAME DTestBlockedGMRES_symmMat
 #include "phist_gen_d.h"
-#include "TestPGmres_def.hpp"
+#include "TestBlockedGMRES_def.hpp"
 #undef CLASSNAME
 
 #undef TOLA
@@ -116,16 +116,16 @@ using namespace testing;
 
 #ifdef PHIST_HAVE_SP
 
-#define CLASSNAME CTestPGmres_symmMat
+#define CLASSNAME CTestBlockedGMRES_symmMat
 #include "phist_gen_c.h"
-#include "TestPGmres_def.hpp"
+#include "TestBlockedGMRES_def.hpp"
 #undef CLASSNAME
 
 #endif
 
-#define CLASSNAME ZTestPGmres_symmMat
+#define CLASSNAME ZTestBlockedGMRES_symmMat
 #include "phist_gen_z.h"
-#include "TestPGmres_def.hpp"
+#include "TestBlockedGMRES_def.hpp"
 
 
 

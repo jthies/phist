@@ -1,5 +1,5 @@
-#ifndef PHIST_PMINRES_H
-#define PHIST_PMINRES_H
+#ifndef PHIST_BLOCKEDGMRES_H
+#define PHIST_BLOCKEDGMRES_H
 
 #include "phist_config.h"
 
@@ -12,7 +12,6 @@
 #include "phist_operator.h"
 #include "phist_enums.h"
 #include "phist_typedefs.h"
-#include "phist_pgmres.h"
 
 #endif //DOXYGEN
 
@@ -21,14 +20,14 @@ extern "C" {
 #endif
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
-#include "phist_pminres_decl.h"
+#include "phist_blockedgmres_decl.h"
 #include "phist_gen_c.h"
-#include "phist_pminres_decl.h"
+#include "phist_blockedgmres_decl.h"
 #endif
 #include "phist_gen_d.h"
-#include "phist_pminres_decl.h"
+#include "phist_blockedgmres_decl.h"
 #include "phist_gen_z.h"
-#include "phist_pminres_decl.h"
+#include "phist_blockedgmres_decl.h"
 #ifdef __cplusplus
 }
 #endif
