@@ -45,12 +45,13 @@ contains
   end subroutine MATPDE_initDimensions
 
 
-  subroutine MATPDE_rowFunc(row, nnz, cols, vals) bind(C, name='MATPDE_rowFunc')
+  function MATPDE_rowFunc(row, nnz, cols, vals) result(the_result) bind(C, name='MATPDE_rowFunc')
     use, intrinsic :: iso_c_binding
     integer(G_GIDX_T), value :: row
     integer(G_LIDX_T), intent(inout) :: nnz
     integer(G_GIDX_T), intent(inout) :: cols(*)
     real(C_DOUBLE),    intent(inout) :: vals(*)
+    integer(C_INT) :: the_result
 
 ! copied from MatrixMarket, original description:
     !
@@ -211,7 +212,9 @@ contains
 
     cols(1:nnz) = cols(1:nnz) - 1
 
-  end subroutine MATPDE_rowFunc
+    the_result = 0
+    
+  end function MATPDE_rowFunc
 
 
   pure function pc(x,y)

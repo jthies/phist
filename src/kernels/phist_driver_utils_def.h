@@ -57,7 +57,7 @@ MATPDE=4
 
 // definitions for MATPDE
 void MATPDE_initDimensions(int, int, gidx_t*, lidx_t*);
-void MATPDE_rowFunc(gidx_t, lidx_t*, lidx_t*, void*);
+int MATPDE_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
 
 int str_starts_with(const char *s1, const char *s2)
 {
