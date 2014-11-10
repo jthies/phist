@@ -512,16 +512,10 @@ endforeach()
 
 # example drivers using matfuncs
 
-add_executable(phist_spinChain ${PROJECT_SOURCE_DIR}/drivers/spinChain.c)
-add_executable(phist_spinChain_subspacejada ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada.cpp ${PROJECT_SOURCE_DIR}/drivers/spinChain_subspacejada_helper.c)
 add_executable(phist_carp_cg ${PROJECT_SOURCE_DIR}/drivers/carp_cg.c)
 
-install(TARGETS phist_spinChain RUNTIME DESTINATION bin OPTIONAL)
-install(TARGETS phist_spinChain_subspacejada RUNTIME DESTINATION bin OPTIONAL)
 install(TARGETS phist_carp_cg RUNTIME DESTINATION bin OPTIONAL)
 
-LIST(APPEND driver_list phist_spinChain)
-LIST(APPEND driver_list phist_spinChain_subspacejada)
 LIST(APPEND driver_list phist_carp_cg)
 
 install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phist-targets LIBRARY DESTINATION lib)
