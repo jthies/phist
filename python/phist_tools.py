@@ -9,14 +9,25 @@ import ctypes as _ct
 # load the library
 _phist_tools = _ct.CDLL(name='libphist_tools.so', mode=_ct.RTLD_GLOBAL)
 
+
+
 #--------------------------------------------------------------------------------
-# phist_retcode2str
+# from phist_tools.h
 _phist_tools.phist_retcode2str.argtypes = (_ct.c_int,)
 _phist_tools.phist_retcode2str.restype = _ct.c_char_p
 _phist_tools.phist_retcode2str.__doc__ = 'convert phist return code to string (e.g. "ERROR")'
 
 phist_retcode2str = _phist_tools.phist_retcode2str
 
+#--------------------------------------------------------------------------------
+# from phist_enums.h
+eigSort_t = _ct.c_uint
+eigSort_NONE = _ct.c_uint(0)
+eigSort_LM = _ct.c_uint(1)
+eigSort_SM = _ct.c_uint(2)
+eigSort_LR = _ct.c_uint(3)
+eigSort_SR = _ct.c_uint(4)
+eigSort_TARGET = _ct.c_uint(5)
 
 
 #--------------------------------------------------------------------------------
@@ -39,6 +50,16 @@ def PYST_CHK_IERR(phist_fcn, *args):
     if err.value != 0:
         raise PYST_Exception(err.value)
 
+# for functions that may return positive values
+def PYST_CHK_NEG_IERR(phist_fcn, *args):
+    '''Run the phist function phist_fcn with given arguments and append, check and return the ierr flag'''
+    err = _ct.c_int()
+    args_with_err = [v for v in args]
+    args_with_err.append(_ct.pointer(err))
+    phist_fcn(*args_with_err)
+    if err.value < 0:
+        raise PYST_Exception(err.value)
+    return err.value
 
 #--------------------------------------------------------------------------------
 # tests

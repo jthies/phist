@@ -32,31 +32,38 @@ int main(int argc, char** argv)
   // check arguments
   if( argc < 2 )
   {
-    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A> [<invariant subspace dimension>] [<which>] [<tol>] [<max iters> <JD block size> <min basis> <max basis> <GMRES block size> <GMRES subspace dimension> <initial shift> <initial shift iterations> <GMRES use IMGS> <GMRES abort when first converged in block>]\n", argv[0]);
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A> [<symmetric/hermitian>] [<invariant subspace dimension>] [<which>] [<tol>] [<max iters> <JD block size> <min basis> <max basis> <GMRES block size> <GMRES subspace dimension> <initial shift> <initial shift iterations> <GMRES use IMGS> <GMRES abort when first converged in block>]\n", argv[0]);
     return 1;
   }
-
   const char* problem=argv[1];
 
-  // number of eigenvalues to compute
-  int nEig = 8;
+
+  bool symmetric = false;
   if( argc > 2 )
   {
     std::istringstream iss(argv[2]);
+    iss >> symmetric;
+  }
+
+  // number of eigenvalues to compute
+  int nEig = 8;
+  if( argc > 3 )
+  {
+    std::istringstream iss(argv[3]);
     iss >> nEig;
   }
 
   // which eigenvalues to compute
   eigSort_t which = LM;
-  if( argc > 3 )
+  if( argc > 4 )
   {
-    if( argv[3] == std::string("LM") )
+    if( argv[4] == std::string("LM") )
       which = LM;
-    else if( argv[3] == std::string("SM") )
+    else if( argv[4] == std::string("SM") )
       which = SM;
-    else if( argv[3] == std::string("LR") )
+    else if( argv[4] == std::string("LR") )
       which = LR;
-    else if( argv[3] == std::string("SR") )
+    else if( argv[4] == std::string("SR") )
       which = SR;
     else
     {
@@ -67,9 +74,9 @@ int main(int argc, char** argv)
 
   // desired accuracy: residuum tolerance
   _MT_ tol = mt::eps()*10000;
-  if( argc > 4 )
+  if( argc > 5 )
   {
-    std::istringstream iss(argv[4]);
+    std::istringstream iss(argv[5]);
     iss >> tol;
     if( tol <= mt::eps() )
     {
@@ -79,81 +86,81 @@ int main(int argc, char** argv)
 
   // maximum number of iterations
   int nIter = 250;
-  if( argc > 5 )
+  if( argc > 6 )
   {
-    std::istringstream iss(argv[5]);
+    std::istringstream iss(argv[6]);
     iss >> nIter;
   }
 
   // block size
   int blockDim = 4;
-  if( argc > 6 )
+  if( argc > 7 )
   {
-    std::istringstream iss(argv[6]);
+    std::istringstream iss(argv[7]);
     iss >> blockDim;
   }
 
   // min basis size
   int minBase = std::min(20,nEig+blockDim-1);
-  if( argc > 7 )
+  if( argc > 8 )
   {
-    std::istringstream iss(argv[7]);
+    std::istringstream iss(argv[8]);
     iss >> minBase;
   }
 
   // max basis size
   int maxBase = std::max(80, minBase+blockDim);
-  if( argc > 8 )
+  if( argc > 9 )
   {
-    std::istringstream iss(argv[8]);
+    std::istringstream iss(argv[9]);
     iss >> maxBase;
   }
 
   // inner GMRES block size
   int innerBlockDim = std::min(2, blockDim);
-  if( argc > 9 )
+  if( argc > 10 )
   {
-    std::istringstream iss(argv[9]);
+    std::istringstream iss(argv[10]);
     iss >> innerBlockDim;
   }
 
   // inner GMRES subspace dimension
   int innerMaxBase = 25;
-  if( argc > 10 )
+  if( argc > 11 )
   {
-    std::istringstream iss(argv[10]);
+    std::istringstream iss(argv[11]);
     iss >> innerMaxBase;
   }
 
   // initial shift
   _ST_ initialShift = st::zero();
-  if( argc > 11 )
+  if( argc > 12 )
   {
-    std::istringstream iss(argv[11]);
+    std::istringstream iss(argv[12]);
     iss >> initialShift;
   }
 
   // number of initial iterations with fixed initial shift
   int initialShiftIters = 0;
-  if( argc > 12 )
+  if( argc > 13 )
   {
-    std::istringstream iss(argv[12]);
+    std::istringstream iss(argv[13]);
     iss >> initialShiftIters;
   }
 
   // in the inner GMRES: use a iterated modified gram schmidt (more accurate, but quite costly!)
   bool innerIMGS = true;
-  if( argc > 13 )
+  if( argc > 14 )
   {
-    std::istringstream iss(argv[13]);
+    std::istringstream iss(argv[14]);
     iss >> innerIMGS;
   }
 
   // in the inner GMRES: abort solving a block when first system converged (effectively disables pipelining, but only "blocking" may be faster for now)
   bool innerGMRESabortAfterFirstConverged = false;
-  if( argc > 14 )
+  if( argc > 15 )
   {
-    std::istringstream iss(argv[14]);
+    std::istringstream iss(argv[15]);
     iss >> innerGMRESabortAfterFirstConverged;
   }
 
@@ -216,7 +223,7 @@ int main(int argc, char** argv)
 
   //------------------------------- run block JaDa algorithm ----------------------- 
   PHIST_ICHK_IERR(SUBR(subspacejada)(opA, NULL, v0, which, tol, nEig, &nIter, blockDim, minBase, maxBase,
-        innerBlockDim, innerMaxBase, initialShiftIters, initialShift, innerIMGS, innerGMRESabortAfterFirstConverged, false,
+        innerBlockDim, innerMaxBase, initialShiftIters, initialShift, innerIMGS, innerGMRESabortAfterFirstConverged, symmetric,
         Q, R, resNorm, &ierr), ierr);
   int nConvergedEig = 0;
   for(int i = 0; i < nEig; i++)
