@@ -480,11 +480,18 @@ PHIST_GHOST_TASK_BEGIN
 #ifdef TESTING
 // nonzero error code if #vectors in Vblock too small or large
   PHIST_CHK_IERR(*ierr=(jmax-jmin+1)-Vblock->traits.ncols,*ierr);
+  PHIST_CHK_IERR(*ierr=((jmin<0)||(jmax>=V->traits.ncols))?PHIST_INVALID_INPUT:0,*ierr);
+  // The phist kernel interface requires Vblock to be created by mvec_create, 
+  // which calls fromScalar to allocate the block of memory. So we perform a few
+  // safety checks here
+  PHIST_CHK_IERR(*ierr=(Vblock->traits.nrows==V->traits.nrows)?0:PHIST_INVALID_INPUT,*ierr)
+  // not sure what the ghost function fromVec actually supports, but I think 
+  // this makes sense:
+  PHIST_CHK_IERR(*ierr=(Vblock->traits.nrowspadded==V->traits.nrowspadded)?0:PHIST_INVALID_INPUT,*ierr)
 #else
   TOUCH(jmax);
 #endif  
-  //TODO check bounds of Vblock
-  Vblock->fromVec(Vblock,V,0,jmin);
+  Vblock->fromVec(Vblock,V,(ghost_lidx_t)0,(ghost_lidx_t)jmin);
 PHIST_GHOST_TASK_END
 }
 
@@ -501,8 +508,8 @@ PHIST_GHOST_TASK_BEGIN
   CAST_PTR_FROM_VOID(ghost_densemat_t,Vblock,vVblock,*ierr);
   // TODO - bounds checking
   // create a view of the requested columns of V
-  ghost_densemat_t *Vcols;
-  V->viewCols(V,&Vcols,jmax-jmin+1,jmin);
+  ghost_densemat_t *Vcols=NULL;
+  V->viewCols(V,&Vcols,(ghost_lidx_t)(jmax-jmin+1),(ghost_lidx_t)jmin);
   // copy the data
   Vcols->fromVec(Vcols,Vblock,0,0);
   // delete the view
