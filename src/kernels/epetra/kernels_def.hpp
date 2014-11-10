@@ -42,13 +42,33 @@ const char* filename,int* ierr)
 }
 //!@}
 
-extern "C" void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, const_comm_ptr_t vcomm,
+extern "C" void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *vA, const_comm_ptr_t vcomm,
         gidx_t nrows, gidx_t ncols, lidx_t maxnne,
                 int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*),
                 int *ierr)
 {
   ENTER_FCN(__FUNCTION__);
-  *ierr=-99;
+  CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*ierr);
+  gidx_t cols[maxnne];
+  double vals[maxnne];
+
+  Epetra_CrsMatrix* A=NULL;
+  Epetra_Map* map=NULL;
+  TRY_CATCH(map = new Epetra_Map(nrows,0,*comm),*ierr);
+  TRY_CATCH(A   = new Epetra_CrsMatrix(Copy,*map,maxnne),*ierr);
+  
+  for (lidx_t i=0; i<A->NumMyRows(); i++)
+  {
+    ghost_gidx_t row = A->GRID(i);
+    ghost_lidx_t row_nnz;
+    
+    rowFunPtr(row,&row_nnz,cols,vals);
+    TRY_CATCH(A->InsertGlobalValues(row,row_nnz,vals,cols),*ierr);
+  }
+  TRY_CATCH(A->FillComplete(),*ierr);
+  *vA = (TYPE(crsMat_ptr))(A);
+
+
 return;
 }
 
