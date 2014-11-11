@@ -3,7 +3,7 @@
 
 #cmakedefine PHIST_OUTLEV ${PHIST_OUTLEV}
 
-/*#cmakedefine PHIST_HAVE_CXX11_LAMBDAS*/
+#cmakedefine PHIST_HAVE_CXX11_LAMBDAS
 #cmakedefine PHIST_HAVE_MPI
 #cmakedefine PHIST_HAVE_SP
 
