@@ -597,6 +597,15 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMbloc
   *ierr=0;
   CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*ierr);
 
+#ifdef TESTING
+  if (imin<0||jmin<0||imax>M->traits.nrows||jmax>M->traits.ncols)
+  {
+    PHIST_OUT(PHIST_ERROR,"%s: range out of bounds of matrix\n"
+                          "requested range: (%d:%d,%d:%d), matrix dim: %dx%d\n",
+                          __FUNCTION__,
+                          imin,imax,jmin,jmax,M->traits.nrows,M->traits.ncols);
+  }
+#endif
   //TODO: we only view the host side of the vector here, this function should
   //      eventually be moved into ghost and the accelerator stuff added.
 
@@ -627,15 +636,44 @@ PHIST_GHOST_TASK_BEGIN
   *ierr=0;
   CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,Mblock,vMblock,*ierr);
- 
-  /*
-  ghost_densemat_t* Mb_view=NULL;
-  PHIST_CHK_IERR(SUBR(sdMat_view_block)(vM,(TYPE(sdMat_ptr)*)&Mb_view,imin,imax,jmin,jmax,ierr),*ierr);
-  Mb_view->fromVec(Mb_view,Mblock,0,0);
-  Mb_view->destroy(Mb_view);
-  */ 
-  
-  M->fromVec(Mblock,M,imin,jmin);
+
+#ifdef TESTING
+  int nr=imax-imin+1;
+  int nc=jmax-jmin+1;
+  if (Mblock->traits.nrows!=nr || Mblock->traits.ncols!=nc)
+  {
+    PHIST_SOUT(PHIST_ERROR,"result block has wrong dimensions %dx%d, "
+                           "requested range is (%d:%d,%d:%d)\n",
+                           Mblock->traits.nrows,Mblock->traits.ncols,imin,imax,jmin,jmax);
+    *ierr=PHIST_INVALID_INPUT;
+    return;
+  }
+  if (imin<0 || imax>M->traits.nrows ||
+      jmin<0 || jmax>M->traits.ncols )
+  {
+    PHIST_SOUT(PHIST_ERROR,"requested range invalid. M is %dx%d, "
+                           "requested range is (%d:%d,%d:%d)\n",
+                           M->traits.nrows,M->traits.ncols,imin,imax,jmin,jmax);
+    *ierr=PHIST_INVALID_INPUT;
+    return;
+  }
+#endif 
+  _ST_ *m_ptr, *mb_ptr;
+  lidx_t ldm, ldmb;
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)((void*)M,&m_ptr,&ldm,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)((void*)Mblock,&mb_ptr,&ldmb,ierr),*ierr);
+#ifdef PHIST_SDMATS_ROW_MAJOR
+// if we ever want that...
+#error "row-major sdMats not implemented here"
+#endif  
+  if (mb_ptr==m_ptr+ldm*jmin+imin)
+  {
+    PHIST_SOUT(PHIST_DEBUG,"%s: data already in place.\n",__FUNCTION__);
+    *ierr=0;
+    return;
+  }
+  //TODO: check for overlapping data regions?
+  Mblock->fromVec(Mblock,M,imin,jmin);
 PHIST_GHOST_TASK_END
 }
 
