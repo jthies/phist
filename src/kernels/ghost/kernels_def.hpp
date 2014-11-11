@@ -1115,6 +1115,9 @@ PHIST_GHOST_TASK_BEGIN
 PHIST_GHOST_TASK_END
   }
 
+#if 1
+#include "../kernels_no_inplace_VC.cpp"
+#else
 //! C <- V*C
 extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) vV,
                                        TYPE(const_sdMat_ptr) vC,
@@ -1143,6 +1146,8 @@ PHIST_GHOST_TASK_BEGIN
     PHIST_CHK_GERR(ghost_gemm(V,V,(char*)"N",C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE),*ierr);
 PHIST_GHOST_TASK_END
   }
+#endif
+
 //! n x m serial dense matrix times m x k serial dense matrix gives n x k sdMat,
 //! C=alpha*V*W + beta*C (serial XGEMM wrapper)
 extern "C" void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
