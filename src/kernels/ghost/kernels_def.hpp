@@ -1268,6 +1268,8 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
 
   PHIST_DEB("mvec_QR: multi-vector case\n");
 
+#if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
+
   if (
   (V->traits.flags&GHOST_DENSEMAT_SCATTERED) ||
   (R->traits.flags&GHOST_DENSEMAT_SCATTERED))
@@ -1287,13 +1289,16 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     PHIST_DEB("we need to make the memory layout of V and/or R conform with TSQR\n");
     if (transV)
     {
-      if (V->traits.flags&GHOST_DENSEMAT_VIEW) 
-      {
-        PHIST_SOUT(PHIST_ERROR,"mvec_QR: cannot handle scattered vectors\n");
-        *ierr=-1; // can't handle view + memtranspose in ghost, yet
-      }
       PHIST_DEB("memtranspose V\n");
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      PHIST_SOUT(PHIST_DEBUG,"V before memtranspose:\n");
+      PHIST_CHK_IERR(SUBR(mvec_print)(V,ierr),*ierr);
+#endif
       PHIST_CHK_GERR(V->memtranspose(V),*ierr);
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      PHIST_SOUT(PHIST_DEBUG,"V after memtranspose:\n");
+      PHIST_CHK_IERR(SUBR(mvec_print)(V,ierr),*ierr);
+#endif
     }
     if (transR)
     {
@@ -1333,8 +1338,6 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   PHIST_CHK_IERR(*ierr=nrows-(V->traits.ncols),*ierr);
 #endif
 
-#if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
-
   PHIST_DEB("do TSQR on col-major ghost data structures\n");
   PHIST_DEB("create Teuchos view of R\n");
   Teuchos::RCP<Traits<_ST_ >::Teuchos_sdMat_t> R_view;
@@ -1354,11 +1357,22 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   params->set("relativeRankTolerance",rankTol);
   PHIST_DEB("set TSQR parameters\n");
   tsqr.setParameterList(params);
+#if PHIST_OUTLEV>=PHIST_VERBOSE
+  static bool firstCall=true;
+  if (firstCall)
+  {
+    std::stringstream ss;
+    ss << *params;
+    PHIST_SOUT(PHIST_VERBOSE,"TSQR parameters:\n%s\n",ss.str().c_str());
+    firstCall=false;
+  }
+#endif
 
   TRY_CATCH(rank = tsqr.normalize(mv_V,R_view),*ierr);
   PHIST_DEB("V has %d columns and rank %d\n",ncols,rank);
   *ierr = ncols-rank;// return positive number if rank not full.
 #else
+  //TODO: use SVQB from ghost alternatively
   *ierr=-99; // no Trilinos, no TSQR, no mvec_QR (right now)
 #endif
   return;

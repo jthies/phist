@@ -15,33 +15,40 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #endif
 
-#ifdef PHIST_HAVE_KOKKOS
-#include "Kokkos_DefaultNode.hpp"
-#include "Kokkos_DefaultKernels.hpp"
-#endif
-
 #include "ghost.h"
 
 #include "phist_typedefs.h"
 #include "phist_ScalarTraits.hpp"
 
-#ifdef PHIST_HAVE_KOKKOS
-/*
-typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+/* Kokkos is the Trilinos package for node-optimized kernel routines.
+   we use it in conjunction with TSQR, the robust and communication-efficient
+   'tall skinny matrix' QR factoriztion.
+   
+   While Kokkos supports a large number of node types (serial, CUDA, OpenMP, Threadpool 
+   (aka TPI), Intel TBB...),
+   TSQR only supports TBB and TPI (as of version 11.12.2).
 */
+#ifdef PHIST_HAVE_KOKKOS
+#include "KokkosClassic_config.h"
+/*typedef Kokkos::DefaultNode::DefaultNodeType node_t;*/
+# if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+# include "Kokkos_TPINode.hpp"
+typedef Kokkos::TPINode node_t;
+# elif defined(HAVE_KOKKOSCLASSIC_TBB)
+# include "Kokkos_TBBNode.hpp"
+typedef Kokkos::TbbNode node_t;
+# else
+# warning "Your Trilinos installation does not support ThreadPool or Intel TBB, so we use the serial node for the TSQR interface!"
+# include "Kokkos_SerialNode.hpp"
 typedef Kokkos::SerialNode node_t;
+# endif
 #endif
-
 template <typename ST>
 class Traits
   {
 
 public:
 
-#ifdef PHIST_HAVE_KOKKOS
-  //!
-  typedef typename Kokkos::DefaultKernels<ST,lidx_t,node_t>::SparseOps localOps_t;
-#endif
 #ifdef PHIST_HAVE_TEUCHOS
   //! serial dense matrix from Teuchos, we need this for e.g. the BLAS interface.
   //! Note: the index type *must* be int here, not int64_t, so we decided to have

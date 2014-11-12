@@ -61,16 +61,16 @@
 #ifndef __Ghost_TsqrAdaptor_hpp
 #define __Ghost_TsqrAdaptor_hpp
 
-#include <Tpetra_ConfigDefs.hpp> // HAVE_TPETRA_TSQR, etc.
-
-#ifdef HAVE_TPETRA_TSQR
+#ifdef PHIST_HAVE_KOKKOS
+# ifndef PHIST_HAVE_TEUCHOS
+#error "Teuchos and Kokkos are required for the TSQR interface of GHT"
+# endif
 #  include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
 #  include <Tsqr.hpp> // full (internode + intranode) TSQR
 #  include <Tsqr_DistTsqr.hpp> // internode TSQR
 // Subclass of TSQR::MessengerBase, implemented using Teuchos
 // communicator template helper functions
 #  include <Tsqr_TeuchosMessenger.hpp> 
-#  include <Tpetra_MultiVector.hpp>
 #  include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
 #  include <stdexcept>
 
@@ -108,10 +108,13 @@ namespace ghost {
     // note: ghost in principle allows more than 2M rows/core, but TSQR doesn't.
     // This should not be a problem, however, as we only deal with dense matrices
     // here and no indices typically appear in the interface.
+#ifdef GHOST_HAVE_LONGIDX_LOCAL
+# warning "the TSQR interface may be buggy with 64-bit local indices, you should recompile ghost without GHOST_HAVE_LONGIDX_LOCAL"    
+#endif
     typedef int ordinal_type;
     // integer type for Teuchos::SerialDenseMatrix objects
     typedef int blas_idx_type;
-    typedef node_t node_type; // TODO - Node argument not yet used
+    typedef node_t node_type;
     typedef Teuchos::SerialDenseMatrix<blas_idx_type, scalar_type> dense_matrix_type;
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
@@ -393,7 +396,7 @@ namespace ghost {
 
 } // namespace ghost
 
-#endif // HAVE_TPETRA_TSQR
+#endif // PHIST_HAVE_KOKKOS
 
 #endif // __Tpetra_TsqrAdaptor_hpp
 
