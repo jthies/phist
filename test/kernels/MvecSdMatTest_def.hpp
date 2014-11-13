@@ -184,6 +184,32 @@ public:
       }
     }
 
+  // check ones(n,m)*ones(m,m)=m*ones(n,m)
+  TEST_F(CLASSNAME, mvec_times_sdMat_in_place)
+    {
+    if (typeImplemented_)
+      {
+      // fill V and W with ones
+      SUBR(mvec_put_value)(V1_,st::one(),&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_put_value)(M1_,st::one(),&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_times_sdMat_inplace)(V1_,M1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      SUBR(mvec_from_device)(V1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_from_device)(M1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      MTest::PrintSdMat(*cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
+      VTest::PrintVector(*cout,"ones*ones",V1_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+#endif
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V1_,(ST)m_));
+      SUBR(sdMat_parallel_check_)(M1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      }
+    }
+
   // random check
   TEST_F(CLASSNAME, random_mvecT_times_mvec) 
     {
