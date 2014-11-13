@@ -146,7 +146,11 @@ endif()
 ##############################################################################
 
 if("${PHIST_KERNEL_LIB}" STREQUAL "")
-  set(PHIST_KERNEL_LIB $ENV{PHIST_KERNEL_LIB} CACHE STRING "Select underlying kernel libraries for phist (epetra|tpetra|ghost|fortran)")
+  if ("$ENV{PHIST_KERNEL_LIB}" STREQUAL "")
+    set(PHIST_KERNEL_LIB "fortran" CACHE STRING "Select underlying kernel libraries for phist (epetra|tpetra|ghost|fortran)")
+  else()
+    set(PHIST_KERNEL_LIB $ENV{PHIST_KERNEL_LIB} CACHE STRING "Select underlying kernel libraries for phist (epetra|tpetra|ghost|fortran)")  
+  endif()
 endif()
 
 message(STATUS "kernel lib " ${PHIST_KERNEL_LIB} " ...")
@@ -553,8 +557,16 @@ endforeach()
 
 # some example drivers which haven't made their way into the drivers/ directory
 file(GLOB C_Examples ${CMAKE_SOURCE_DIR}/examples/*/*.c )
+file(GLOB CXX_Examples ${CMAKE_SOURCE_DIR}/examples/*/*.cpp )
 
 foreach (infile ${C_Examples})
+  get_filename_component(filebase ${infile} NAME_WE)
+  add_executable(phist_${filebase} ${infile})
+  target_link_libraries(phist_${filebase} ${library_list})
+  LIST(APPEND test_list phist_${filebase})
+endforeach()
+
+foreach (infile ${CXX_Examples})
   get_filename_component(filebase ${infile} NAME_WE)
   add_executable(phist_${filebase} ${infile})
   target_link_libraries(phist_${filebase} ${library_list})
