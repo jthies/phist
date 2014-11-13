@@ -1164,9 +1164,6 @@ PHIST_GHOST_TASK_BEGIN
 PHIST_GHOST_TASK_END
   }
 
-#if 1
-#include "../kernels_no_inplace_VC.cpp"
-#else
 //! C <- V*C
 extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) vV,
                                        TYPE(const_sdMat_ptr) vC,
@@ -1195,7 +1192,6 @@ PHIST_GHOST_TASK_BEGIN
     PHIST_CHK_GERR(ghost_gemm(V,V,(char*)"N",C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE),*ierr);
 PHIST_GHOST_TASK_END
   }
-#endif
 
 //! n x m serial dense matrix times m x k serial dense matrix gives n x k sdMat,
 //! C=alpha*V*W + beta*C (serial XGEMM wrapper)
@@ -1299,11 +1295,13 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     PHIST_DEB("we need to make the memory layout of V and/or R conform with TSQR\n");
     if (transV)
     {
+      PHIST_CXX_TIMER("memtranspose for TSQR");
       PHIST_DEB("memtranspose V\n");
       PHIST_CHK_GERR(V->memtranspose(V),*ierr);
     }
     if (transR)
     {
+      PHIST_CXX_TIMER("memtranspose for TSQR");
       PHIST_DEB("memtranspose R\n");
       PHIST_CHK_GERR(R->memtranspose(R),*ierr);
     }
@@ -1314,11 +1312,13 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     SUBR(mvec_QR)(V,R,&ierr_final);
     if (transV)
     {
+      PHIST_CXX_TIMER("memtranspose for TSQR");
       PHIST_DEB("memtranspose back V\n");
       PHIST_CHK_GERR(V->memtranspose(V),*ierr);
     }
     if (transR)
     {
+      PHIST_CXX_TIMER("memtranspose for TSQR");
       PHIST_DEB("memtranspose back R\n");
       PHIST_CHK_GERR(R->memtranspose(R),*ierr);
     }
