@@ -882,13 +882,24 @@ PHIST_GHOST_TASK_BEGIN
   *ierr=0;
   CAST_PTR_FROM_VOID(ghost_densemat_t,X,vX,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,Y,vY,*ierr);
-  if (beta==st::one())
+  ST a=alpha, b=beta;
+  if (alpha==st::zero())
   {
-    Y->axpy(Y,X,(void*)&alpha);
+    if (beta!=st::one())
+    {
+      PHIST_DEB("scale output Y=beta*Y");
+      PHIST_CHK_GERR(Y->scale(Y,(void*)&b),*ierr);
+    }
+  }
+  else if (beta==st::one())
+  {
+    PHIST_DEB("axpy operation: Y=alpha*X+Y");
+    PHIST_CHK_GERR(Y->axpy(Y,X,(void*)&a),*ierr);
   }
   else
   {
-    Y->axpby(Y,X,(void*)&alpha,(void*)&beta);
+    PHIST_DEB("general case: Y=alpha*X+beta*Y");
+    PHIST_CHK_GERR(Y->axpby(Y,X,(void*)&a,(void*)&b),*ierr);
   }
 PHIST_GHOST_TASK_END
 }
@@ -1269,7 +1280,6 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   PHIST_DEB("mvec_QR: multi-vector case\n");
 
 #if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
-
   if (
   (V->traits.flags&GHOST_DENSEMAT_SCATTERED) ||
   (R->traits.flags&GHOST_DENSEMAT_SCATTERED))
@@ -1290,15 +1300,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     if (transV)
     {
       PHIST_DEB("memtranspose V\n");
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      PHIST_SOUT(PHIST_DEBUG,"V before memtranspose:\n");
-      PHIST_CHK_IERR(SUBR(mvec_print)(V,ierr),*ierr);
-#endif
       PHIST_CHK_GERR(V->memtranspose(V),*ierr);
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      PHIST_SOUT(PHIST_DEBUG,"V after memtranspose:\n");
-      PHIST_CHK_IERR(SUBR(mvec_print)(V,ierr),*ierr);
-#endif
     }
     if (transR)
     {

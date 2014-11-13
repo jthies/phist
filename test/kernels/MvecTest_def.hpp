@@ -268,6 +268,31 @@ public:
     }
 
   // X = Y*diag(a_1,...,a_nvec) + a*X
+  TEST_F(CLASSNAME, random_add)
+  {
+    if( typeImplemented_ )
+    {
+      ST beta = st::prand();
+      ST alpha= st::prand();
+
+      SUBR(mvec_add_mvec)(alpha,vec1_,beta,vec2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // calculate solution by hand
+      for(int i = 0; i < nloc_; i++)
+      {
+        for(int j = 0; j < nvec_; j++)
+        {
+          vec1_vp_[VIDX(i,j,lda_)] = alpha*vec1_vp_[VIDX(i,j,lda_)]+beta;
+        }
+      }
+      SUBR(mvec_to_device)(vec1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
+    }
+  }
+
+  // X = Y*diag(a_1,...,a_nvec) + a*X
   TEST_F(CLASSNAME, random_vadd)
   {
     if( typeImplemented_ )
