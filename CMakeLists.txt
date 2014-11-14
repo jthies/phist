@@ -145,7 +145,10 @@ endif()
 # setup which kernel library is being used.
 ##############################################################################
 
-set(PHIST_KERNEL_LIB "fortran" CACHE STRING "Select underlying kernel libraries for phist (epetra|tpetra|ghost|fortran)")  
+if (PHIST_KERNEL_LIB STREQUAL "")
+  set(PHIST_KERNEL_LIB "fortran")
+endif()
+set(PHIST_KERNEL_LIB ${PHIST_KERNEL_LIB} CACHE STRING "Select underlying kernel libraries for phist (epetra|tpetra|ghost|fortran)")  
 message(STATUS "kernel lib " ${PHIST_KERNEL_LIB} " ...")
 
 set(LOAD_TRILI_PKG,"")
@@ -163,7 +166,7 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
 
 #TODO: this is in fact matrix dependent and should be configured at run time, 
 #      not compile time
-  set(PHIST_USE_SELL OFF CACHE BOOL "Use the GHOST SELL-C-sigma sparse matrix format")
+  set(PHIST_USE_SELL ON CACHE BOOL "Use the GHOST SELL-C-sigma sparse matrix format")
   set(PHIST_SELL_C 1 CACHE INTEGER "chunk size C for the SELL-C-sigma format")
   set(PHIST_SELL_SIGMA 1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format")
 
