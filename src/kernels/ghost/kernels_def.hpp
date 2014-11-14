@@ -148,6 +148,8 @@ PHIST_GHOST_TASK_BEGIN
   ghost_densemat_t* result;
   ghost_densemat_traits_t vtraits = map->vtraits_template;/*ghost_cloneVtraits(map->vtraits_template);*/
         vtraits.ncols=nvec;
+        vtraits.ncolsorig=nvec;
+        vtraits.ncolspadded=0;
         vtraits.datatype = st::ghost_dt;
         vtraits.flags = (ghost_densemat_flags_t)(vtraits.flags & ~GHOST_DENSEMAT_VIEW);
   PHIST_CHK_GERR(ghost_densemat_create(&result,map->ctx,vtraits),*ierr);

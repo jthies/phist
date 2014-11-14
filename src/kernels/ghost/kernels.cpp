@@ -164,8 +164,12 @@ ghost_densemat_traits_t phist_default_vtraits()
   {
   ghost_densemat_traits_t vtraits = GHOST_DENSEMAT_TRAITS_INITIALIZER;
   vtraits.nrows=0; // get from context
+  vtraits.nrowsorig=0; // get from context
   vtraits.nrowshalo=0; // get from context
-  vtraits.nrowspadded=0; // get from context
+  vtraits.nrowspadded=0; // leave padding to ghost
+  vtraits.ncols=0; // set in mvec_create
+  vtraits.ncolsorig=0; // set in mvec_create
+  vtraits.ncolspadded=0; // leave padding to ghost
   // ghost should set these correctly depending on GHOST_TYPE if we set HOST and DEVICE to 0
   int new_flags =   (int)vtraits.flags;
       new_flags|=    (int)GHOST_DENSEMAT_NO_HALO;
