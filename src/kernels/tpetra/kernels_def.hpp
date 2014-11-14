@@ -62,13 +62,42 @@ const char* filename,int* ierr)
   }
 //!@}
 
-extern "C" void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, const_comm_ptr_t vcomm,
+extern "C" void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *vA, const_comm_ptr_t vcomm,
         gidx_t nrows, gidx_t ncols, lidx_t maxnne,
                 int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*),
                 int *ierr)
 {
   ENTER_FCN(__FUNCTION__);
-  *ierr=-99;
+
+  CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
+  Teuchos::RCP<const comm_t> comm_ptr = Teuchos::rcp(comm,false);
+  Traits<_ST_>::crsMat_t* A=NULL;
+
+  map_ptr_t map=NULL;
+  PHIST_CHK_IERR(phist_map_create(&map,vcomm,nrows,ierr),*ierr);
+  const phist::tpetra::map_t* tpetra_map=(const phist::tpetra::map_t*)map;
+Teuchos::RCP<const phist::tpetra::map_t> map_ptr=Teuchos::rcp(tpetra_map,true);
+A=new Traits<_ST_>::crsMat_t(map_ptr,(int)maxnne);
+
+  gidx_t cols[maxnne];
+  _ST_ vals[maxnne];
+
+  //TODO: this can't be the way, what about the Kokkos node?
+  for (lidx_t i=0; i<A->getNodeNumRows(); i++)
+  {
+    ghost_gidx_t row = tpetra_map->getGlobalElement(i);
+    ghost_lidx_t row_nnz;
+
+    rowFunPtr(row,&row_nnz,cols,vals);
+
+    Teuchos::ArrayView<gidx_t> cols_v(cols,row_nnz);
+    Teuchos::ArrayView<_ST_> vals_v(vals,row_nnz);
+    
+    TRY_CATCH(A->insertGlobalValues (row,cols_v,vals_v),*ierr);
+  }
+  TRY_CATCH(A->fillComplete(),*ierr);
+                            
+  *vA = (TYPE(crsMat_ptr))(A);  
   return;
 }
                                                             
@@ -345,6 +374,7 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
                              int jmin, int jmax, int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
+  *ierr=0;
   CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
   CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,Vblock,vVblock,*ierr);
 
