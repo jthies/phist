@@ -15,6 +15,7 @@
 #include "typedefs.hpp"
 #include "ghost.h"
 #include "ghost/omp.h"
+#include "ghost/machine.h"
 #include "phist_GhostMV.hpp"
 
 // @HEADER
@@ -163,6 +164,20 @@ namespace ghost {
         RCP<ParameterList> params = parameterList ("TSQR implementation");
         params->set ("NodeTsqr", *(nodeTsqr_->getValidParameters ()));
         params->set ("DistTsqr", *(distTsqr_->getValidParameters ()));
+
+
+        int ncores;
+        ghost_machine_ncore(&ncores,GHOST_NUMANODE_ANY);
+
+        uint64_t cache_size;
+        ghost_machine_outercache_size(&cache_size);
+        
+        params->sublist("NodeTsqr").
+                set("Num Tasks", ncores);
+
+        params->sublist("NodeTsqr").
+                set("Cache Size Hint",cache_size);
+
         defaultParams_ = params;
       }
       return defaultParams_;
