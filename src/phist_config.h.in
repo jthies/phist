@@ -20,6 +20,7 @@
 
 #cmakedefine PHIST_HAVE_TEUCHOS
 #cmakedefine PHIST_HAVE_KOKKOS
+#cmakedefine PHIST_HAVE_ANASAZI
 #cmakedefine PHIST_HAVE_BELOS
 
 #cmakedefine PHIST_HAVE_PARMETIS

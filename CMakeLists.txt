@@ -218,6 +218,18 @@ else()
   message(STATUS "Belos not found.")
 endif()
 
+# if Anasazi is found we provide a simple interface to their
+# block algorithms (e.g. Block Lanczos/Arnoldi)
+find_package(Anasazi)
+
+if (${Anasazi_FOUND})
+  list(APPEND LOAD_TRILI_PKG "Anasazi")
+  set(PHIST_HAVE_ANASAZI 1)
+  message(STATUS "Found Anasazi")
+else()
+  message(STATUS "Anasazi not found.")
+endif()
+
 # even without the essex-physics libs we include certain matfuncs for the
 # test cases SpinSZ and Graphene for testing purposes.
 find_package(ESSEX-PHYSICS CONFIG)
