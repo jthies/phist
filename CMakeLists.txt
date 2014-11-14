@@ -145,14 +145,7 @@ endif()
 # setup which kernel library is being used.
 ##############################################################################
 
-if("${PHIST_KERNEL_LIB}" STREQUAL "")
-  if ("$ENV{PHIST_KERNEL_LIB}" STREQUAL "")
-    set(PHIST_KERNEL_LIB "fortran" CACHE STRING "Select underlying kernel libraries for phist (epetra|tpetra|ghost|fortran)")
-  else()
-    set(PHIST_KERNEL_LIB $ENV{PHIST_KERNEL_LIB} CACHE STRING "Select underlying kernel libraries for phist (epetra|tpetra|ghost|fortran)")  
-  endif()
-endif()
-
+set(PHIST_KERNEL_LIB "fortran" CACHE STRING "Select underlying kernel libraries for phist (epetra|tpetra|ghost|fortran)")  
 message(STATUS "kernel lib " ${PHIST_KERNEL_LIB} " ...")
 
 set(LOAD_TRILI_PKG,"")
