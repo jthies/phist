@@ -1,9 +1,9 @@
 #include "matfuncs.h"
 
-#ifdef GHOST_HAVE_LONGIDX
-  #define idx_t uint64_t
+#if defined(GHOST_HAVE_LONGIDX)||defined(GHOST_HAVE_LONGIDX_GLOBAL)
+  #define idx_t int64_t
 #else
-  #define idx_t uint32_t
+  #define idx_t int32_t
 #endif
 
 
@@ -406,7 +406,7 @@ int SpinChainSZ( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
     return 0;
 	}
 
-	printf("SpinChainSZ(): error in row %"PRGIDX"\n",row);
+	printf("SpinChainSZ(): error in row %" PRGIDX "\n",row);
 	*nnz = -1;
 	return 1;              //  error
 }
@@ -515,7 +515,7 @@ int crsSpinChain( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void 
 		return 0;
 	}
 	
-	printf("SpinChainSZ(): error in row %"PRGIDX"\n",row);
+	printf("SpinChainSZ(): error in row %" PRGIDX "\n",row);
 	*nnz = -1;
 	return 1;              //  error
 }
