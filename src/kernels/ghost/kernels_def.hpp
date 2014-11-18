@@ -19,6 +19,7 @@ const char* filename,int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
   TOUCH(vA);
+  TOUCH(vcomm);
   TOUCH(filename);
   *ierr = -99; // not implemented in ghost, use converter script to bin crs
 }
@@ -31,7 +32,12 @@ const char* filename,int* ierr)
   ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
 PHIST_GHOST_TASK_BEGIN
-
+  CAST_PTR_FROM_VOID(const MPI_Comm,comm,vcomm,*ierr);
+  if (filename==NULL)
+  {
+    *ierr=PHIST_INVALID_INPUT;
+    return;
+  }
   ghost_sparsemat_t* mat;
   ghost_context_t *ctx;
 
@@ -53,7 +59,7 @@ PHIST_GHOST_TASK_BEGIN
         char* cfname=const_cast<char*>(filename);
 // TODO - check ghost return codes everywhere like this
   PHIST_CHK_GERR(ghost_context_create(&ctx,0,0,
-        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_FILE,MPI_COMM_WORLD,1.0),*ierr);
+        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_FILE,*comm,1.0),*ierr);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,mtraits,1),*ierr);                               
   PHIST_CHK_GERR(mat->fromFile(mat,cfname),*ierr);
 #if PHIST_OUTLEV >= PHIST_VERBOSE
@@ -75,6 +81,7 @@ const char* filename,int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
   TOUCH(vA);
+  TOUCH(vcomm);
   TOUCH(filename);
   *ierr = -99; // not implemented in ghost, use converter script to bin crs
 }
@@ -1411,6 +1418,7 @@ PHIST_GHOST_TASK_BEGIN
 
   ghost_sparsemat_t* mat;
   ghost_context_t *ctx;
+  CAST_PTR_FROM_VOID(const MPI_Comm, comm, vcomm, *ierr);
 
   ghost_sparsemat_traits_t *mtraits=new ghost_sparsemat_traits_t;
         *mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
@@ -1428,7 +1436,7 @@ PHIST_GHOST_TASK_BEGIN
 #endif
         mtraits->datatype = st::ghost_dt;
   PHIST_CHK_GERR(ghost_context_create(&ctx,nrows,ncols,
-        GHOST_CONTEXT_DEFAULT,NULL,GHOST_SPARSEMAT_SRC_FUNC,MPI_COMM_WORLD,1.0),*ierr);
+        GHOST_CONTEXT_DEFAULT,NULL,GHOST_SPARSEMAT_SRC_FUNC,*comm,1.0),*ierr);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,mtraits,1),*ierr);                               
 
   ghost_sparsemat_src_rowfunc_t src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;

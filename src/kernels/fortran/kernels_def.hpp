@@ -11,6 +11,11 @@ extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* A, const_comm_ptr_t vcomm
         const char* filename,int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
+  if (filename==NULL)
+  {
+    *ierr=PHIST_INVALID_INPUT;
+    return;
+  }
   void SUBR(crsMat_read_mm_f)(void*A,const_comm_ptr_t comm, int fname_len, const char* fname, int* ierr);
   PHIST_CHK_IERR(SUBR(crsMat_read_mm_f)(A,vcomm,strlen(filename),filename,ierr),*ierr);
 }

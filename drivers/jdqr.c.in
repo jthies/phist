@@ -77,13 +77,14 @@ int main(int argc, char** argv)
 
   if (argc<2)
   {
-    if (verbose) fprintf(stdout,"Usage: ./Xjdqr <mat file> <num eigs> <which> <tol> <max it>\n"
+    if (verbose) fprintf(stdout,"Usage: %s <matrix> <num eigs> <which> <tol> <max it>\n"
                                 "               <min bas> <max bas> <arno> <init shift> <solver type>\n\n"
-                                "       \"mat file\" is the matrix file to be read (compulsory)\n\n"
+                                "       \"matrix\" is the matrix file to be read/created (compulsory)\n\n"
                                 "       all other args are optional but are interpreted in the order given, so only the last\n"
                                 "       few can be left out.\n\n"
                                 "TODO - documentation of options. For now, look in the driver file %s for more details.\n",
-                                __FILE__);
+                                argv[0],__FILE__);
+        SUBR(create_matrix)(NULL,NULL,"usage",&ierr);
     return 1;
   }
 

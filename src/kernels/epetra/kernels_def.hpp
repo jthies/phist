@@ -14,6 +14,11 @@ extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcom
 {
   ENTER_FCN(__FUNCTION__);
   CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*ierr);
+  if (filename==NULL)
+  {
+    *ierr=PHIST_INVALID_INPUT;
+    return;
+  }
   Epetra_CrsMatrix* A=NULL;
   *ierr=EpetraExt::MatrixMarketFileToCrsMatrix(filename,*comm,A);
   *vA = (TYPE(crsMat_ptr))(A);

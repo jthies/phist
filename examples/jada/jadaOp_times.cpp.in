@@ -15,18 +15,12 @@
 #include "phist_enums.h"
 #include "phist_kernels.h"
 #include "phist_operator.h"
-#include "phist_driver_utils.h"
 #include "phist_jadaOp.hpp"
 #include ${PHIST_TG_HFILE}
 #include "phist_ScalarTraits.hpp"
+#include "phist_driver_utils.h"
 
 typedef phist::ScalarTraits<_ST_> st;
-
-// small c++ string helper function
-bool endsWith(const std::string& s, const std::string& suffix)
-{
-  return s.rfind(suffix) == (s.size()-suffix.size());
-}
 
 int main(int argc, char** argv)
 {
@@ -45,6 +39,7 @@ int main(int argc, char** argv)
   mvec_ptr_t q = NULL;
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
 
   PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&ierr),ierr);
@@ -54,47 +49,18 @@ int main(int argc, char** argv)
 
   if (argc<4)
   {
-    if (verbose) fprintf(stdout,"Usage: %s <matrix filename> <nprojvecs> <nvecs>\n", argv[0]);
+    PHIST_SOUT(PHIST_INFO,"Usage: %s <matrix> <nprojvecs> <nvecs>\n", argv[0]);
+    // print usage message for creating/reading a matrix
+    SUBR(create_matrix)(NULL, NULL, "usage",&ierr);
     return 1;
   }
 
-  std::string filename(argv[1]);
+  const char* matname=argv[1];
   int nproj = atoi(argv[2]);
   int nvecs = atoi(argv[3]);
   
 
-  if( endsWith(filename,".mm") )
-  {
-    PHIST_ICHK_IERR(SUBR(crsMat_read_mm)(&A,comm,filename.c_str(),&ierr),ierr);
-  }
-  else if( endsWith(filename,".cua") )
-  {
-#ifdef IS_COMPLEX
-    PHIST_ICHK_IERR(SUBR(crsMat_read_hb)(&A,comm,filename.c_str(),&ierr),ierr);
-#else
-    PHIST_SOUT(PHIST_ERROR,"error, invoked real version of this program for complex matrix with ending '.cua'");
-    return 1;
-#endif
-  }
-  else if( endsWith(filename,".rua") )
-  {
-#ifdef IS_COMPLEX
-    PHIST_SOUT(PHIST_ERROR,"error, invoked complex version of this program for real matrix with ending '.rua'");
-    return 1;
-#else
-    PHIST_ICHK_IERR(SUBR(crsMat_read_hb)(&A,comm,filename.c_str(),&ierr),ierr);
-#endif
-  }
-  else if( endsWith(filename,".bin") )
-  {
-    PHIST_ICHK_IERR(SUBR(crsMat_read_bin)(&A,comm,filename.c_str(),&ierr),ierr);
-  }
-  else
-  {
-    PHIST_SOUT(PHIST_ERROR,"unknown file ending of matrix file '%s'",filename.c_str());
-    return 1;
-  }
-
+  PHIST_ICHK_IERR(SUBR(create_matrix)(&A, comm, matname, &ierr),ierr);
   PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(A, &map,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&x,map,nvecs,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&y,map,nvecs,&ierr),ierr);

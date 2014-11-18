@@ -36,6 +36,43 @@ void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
   return;
 }
 
+void SUBR(create_matrix_usage)(void)
+{
+    int ierr;
+    MPI_Comm comm=MPI_COMM_WORLD;
+    PHIST_SOUT(PHIST_INFO,"\nsupported matrix formats:\n\n");
+    SUBR(crsMat_read_mm)(NULL,&comm,NULL,&ierr);
+    if (ierr!=PHIST_NOT_IMPLEMENTED)
+    {
+      PHIST_SOUT(PHIST_INFO," * Matrix Market ascii format (.mm|.mtx)\n");
+    }
+    SUBR(crsMat_read_hb)(NULL,&comm,NULL,&ierr);
+    if (ierr!=PHIST_NOT_IMPLEMENTED)
+    {
+#ifdef IS_COMPLEX
+      PHIST_SOUT(PHIST_INFO," * Harwell Boeing ascii format (.cua)\n");
+#else
+      PHIST_SOUT(PHIST_INFO," * Harwell Boeing ascii format (.rua)\n");
+#endif
+    }
+    SUBR(crsMat_read_bin)(NULL,&comm,NULL,&ierr);
+    if (ierr!=PHIST_NOT_IMPLEMENTED)
+    {
+      PHIST_SOUT(PHIST_INFO," * GHOST binary CRS format (.bin|.crs)\n");
+    }
+
+#if defined(IS_DOUBLE) && !defined(IS_COMPLEX)
+PHIST_SOUT(PHIST_INFO,"\n\nInstead of a matrix file you can also specify a string describing\n"
+                      "one of our scalable test problems, e.g. \n"
+                      "graphene<L> for an L times L graphene sheet,\n"
+                      "spinSZ<L> for a spin chain of L spins\n"
+                      "anderson<L> for an L^3 model problem for the Anderson localization\n"
+                      "matpde<L> for an L^2 eigenproblem from a scalar elliptic partial \n"
+                      "          differential equation\n");
+#endif
+
+}
+
 #if defined(IS_DOUBLE) && !defined(IS_COMPLEX)
 
 // ghost/physics
@@ -80,6 +117,13 @@ void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
   problem_t mat_type=FROM_FILE; // default: assume that 'which' is a file name
 
   int L; // problem size for Graphene (L x L grid) or the Anderson model (L^3 grid)
+
+  if (strcmp(problem,"usage")==0)
+  {
+    *ierr=0;
+    SUBR(create_matrix_usage)();
+    return;
+  }
 
   // check if the first arg is of the grapheneN or andersonN form,
   // otherwise try to read a file
@@ -198,6 +242,15 @@ void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
 void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
         const char* problem, int* ierr)
 {
-  *ierr=-99;
+  *ierr=0;
+  if (strcmp(problem,"usage")==0)
+  {
+    *ierr=0;
+    SUBR(create_matrix_usage)();
+    PHIST_SOUT(PHIST_INFO,"read matrix from file '%s'\n",problem);
+    PHIST_CHK_IERR(SUBR(crsMat_read)(mat,comm,(char*)problem,ierr),*ierr);
+    return;
+  }
+
 }
 #endif

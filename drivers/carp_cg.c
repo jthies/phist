@@ -39,20 +39,22 @@ ANDERSON=2
 // later use in FEAST.                                  
 int main(int argc, char** argv)
   {
+     int ierr;
      if ( argc < 2 )
      {
-          PHIST_SOUT(PHIST_ERROR,"Usage: carp_cg <problem> <shiftFile> <num vecs>\n"
+       PHIST_SOUT(PHIST_ERROR,"Usage: carp_cg    <problem> <shiftFile> <num vecs>\n"
                                  "               <block size> <tol> <maxIter>\n"
-                                 "  where: <problem> can either be a filename or\n"
-                                 "           \"graphene<L>\" or \"anderson<L>\"\n"
+                                 "  where: <problem> describes the input matrix (see below)\n"
                                  "         <shiftFile>: see \"exampleRuns/graphene_shifts.txt\" for an example.\n"
                                  "                      If omitted, no shift is used.\n"
                                  "         etc. all other args get default values if omitted\n");
-          exit(0);
+       // print usage message for creating/reading a matrix
+       SUBR(create_matrix)(NULL, NULL, "usage",&ierr);
+       exit(1);
      }
 
   int rank, num_proc;
-  int i, ierr;
+  int i;
   int verbose;
 
   comm_ptr_t comm;  

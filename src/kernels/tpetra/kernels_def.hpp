@@ -13,6 +13,12 @@ extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcom
         const char* filename,int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
+  if (filename==NULL)
+  {
+    *ierr=PHIST_INVALID_INPUT;
+    return;
+  }
+
   Tpetra::MatrixMarket::Reader<Traits<_ST_>::crsMat_t> reader;
   std::string fstring(filename);
 
@@ -45,6 +51,13 @@ extern "C" void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcom
 const char* filename,int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
+
+  if (filename==NULL)
+  {
+    *ierr=PHIST_INVALID_INPUT;
+    return;
+  }
+
   *ierr=0;
   CAST_PTR_FROM_VOID(const comm_t,_comm,vcomm,*ierr);
   std::string fname(filename);

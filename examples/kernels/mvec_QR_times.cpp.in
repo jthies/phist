@@ -34,6 +34,9 @@ int main(int argc, char** argv)
   sdMat_ptr_t R = NULL;
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+
+PHIST_MAIN_TASK_BEGIN
+
   PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
 
   if (argc!=4)
@@ -85,6 +88,8 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(mvec_delete)(Y,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(sdMat_delete)(R,&ierr),ierr);
   PHIST_ICHK_IERR(phist_map_delete(map,&ierr),ierr);
+
+PHIST_MAIN_TASK_END
 
   PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
 
