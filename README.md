@@ -35,15 +35,15 @@ around as opaque void pointers to increase portability.
 The kernel library to be used has to be chosen before configuring/building the project by 
 either
 
-* setting the environment variable PHIST_KERNEL_LIB or
 * passing -DPHIST_KERNEL_LIB=<choice> to cmake.
+* using ccmake and modifying the corresponding entry.
 
 Choices supported right now are:
 
-* fortran
+* fortran (supplied with phist, chosen by default)
+* ghost
 * epetra
 * tpetra
-* ghost
 
 -----------------------
 # Stand-alone version #
