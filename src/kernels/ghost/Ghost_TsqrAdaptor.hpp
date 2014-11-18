@@ -402,7 +402,10 @@ namespace ghost {
  static Teuchos::RCP<node_type> createNode()
     {
     Teuchos::ParameterList nodeParams(node_type::getDefaultParameters());
-    nodeParams.set("Num Threads",ghost_omp_nthread());
+
+    int ncores;
+    ghost_machine_ncore(&ncores,GHOST_NUMANODE_ANY);
+    nodeParams.set("Num Threads",ncores);
     Teuchos::RCP<node_type> node = Teuchos::rcp(new node_type(nodeParams));
     return node;
     }

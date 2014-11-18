@@ -36,9 +36,6 @@ class Traits
   {
   public:
   
-  //!
-  typedef typename Kokkos::DefaultKernels<ST,lidx_t,node_t>::SparseOps localOps_t;
-
   //! multi vectors
   typedef Tpetra::MultiVector<ST,lidx_t,gidx_t,node_t> mvec_t;
 
@@ -49,10 +46,10 @@ class Traits
   typedef Teuchos::SerialDenseMatrix<lidx_t,ST> Teuchos_sdMat_t;
 
   //! CRS matrices
-  typedef Tpetra::CrsMatrix<ST,lidx_t,gidx_t,node_t,localOps_t> crsMat_t;
+  typedef Tpetra::CrsMatrix<ST,lidx_t,gidx_t,node_t> crsMat_t;
 
   //! for performing the MVM
-  typedef Tpetra::CrsMatrixMultiplyOp<ST,ST,lidx_t,gidx_t,node_t,localOps_t> crsMVM_t;
+  typedef Tpetra::CrsMatrixMultiplyOp<ST,ST,lidx_t,gidx_t,node_t> crsMVM_t;
 
   //! scalar 1
   static inline ST one(){return Teuchos::ScalarTraits<ST>::one();}
