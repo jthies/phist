@@ -534,6 +534,9 @@ install(FILES ${PROJECT_BINARY_DIR}/phist_config.h DESTINATION include/phist)
 file(GLOB PHIST_HEADERS ${CMAKE_SOURCE_DIR}/src/*/*.h ${CMAKE_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/phist_typedefs.h)
 install(FILES ${PHIST_HEADERS} DESTINATION include/phist)
 
+file(GLOB PYTHON_HEADERS ${CMAKE_SOURCE_DIR}/python/*.py)
+install(FILES ${PYTHON_HEADERS} DESTINATION lib/python)
+
 # test drivers
 if( "${CMAKE_BUILD_TYPE}" MATCHES "Release" )
   set(PHIST_TESTS kernels
