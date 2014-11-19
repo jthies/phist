@@ -281,6 +281,10 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
     for(int j = 0; j < nV; j++) \
       equalEps = std::max(equalEps, std::abs(Htmp_raw[i*ldaHtmp+j])); \
   PHIST_OUT(PHIST_INFO, "Line %d: H - V'*AV: %e\n", __LINE__, equalEps); \
+  /* PHIST_SOUT(PHIST_INFO, "H:\n"); */ \
+  /* PHIST_CHK_IERR(SUBR( sdMat_print )(H, ierr), *ierr); */ \
+  /* PHIST_SOUT(PHIST_INFO, "H - V'*AV:\n"); */ \
+  /* PHIST_CHK_IERR(SUBR( sdMat_print )(Htmp, ierr), *ierr); */ \
 }
 #else
 #define TESTING_CHECK_SUBSPACE_INVARIANTS
@@ -517,7 +521,18 @@ PHIST_SOUT(PHIST_INFO,"\n");
     {
       PHIST_SOUT(PHIST_INFO,"In iteration %d: Current approximation for eigenvalue %d is %16.8g%+16.8gi with residuum %e\n", *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]), resNorm[i]);
       if( resNorm[i] <= tol && i == nConvEig+nNewConvEig )
+      {
+#ifndef IS_COMPLEX
+        // detect complex conjugate eigenvalue pairs
+        if( std::abs(ct::imag(ev_H[i])) > tol && i+1 < std::max(nEig, nEig_) )
+        {
+          if( ct::abs(ct::conj(ev_H[i]) - ev_H[i+1]) < sqrt(tol) && resNorm[i+1] <= tol )
+            nNewConvEig+=2;
+          continue;
+        }
+#endif
         nNewConvEig++;
+      }
       else if( blockDim == 1 )
         break;
     }
@@ -546,15 +561,36 @@ PHIST_SOUT(PHIST_INFO,"\n");
       if( nV + 2*blockDim > maxBase )
       {
         PHIST_SOUT(PHIST_INFO,"Shrinking search space (one iteration earlier) from %d to %d\n", nV, minBase);
-        PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  nConvEig, nV-1,          nConvEig, minBase-1,    ierr), *ierr);
+        if( symmetric )
+        {
+          PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  nConvEig, nV-1,          nConvEig, minBase-1,    ierr), *ierr);
+        }
+        else
+        {
+          PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  0, nV-1,          0, minBase-1,    ierr), *ierr);
+        }
       }
       else
       {
-        PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  nConvEig, nV-1,          nConvEig, nV-1,    ierr), *ierr);
+        if( symmetric )
+        {
+          PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  nConvEig, nV-1,          nConvEig, nV-1,    ierr), *ierr);
+        }
+        else
+        {
+          PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  0, nV-1,          0, nV-1,    ierr), *ierr);
+        }
       }
 
       // reorder V and H
-      PHIST_CHK_IERR(SUBR( transform_searchSpace ) (V, AV, BV, H, Q_H, B_op != NULL, ierr), *ierr);
+      if( symmetric )
+      {
+        PHIST_CHK_IERR(SUBR( transform_searchSpace ) (V, AV, BV, H, Q_H, B_op != NULL, ierr), *ierr);
+      }
+      else
+      {
+        PHIST_CHK_IERR(SUBR( transform_searchSpace ) (Vful, AVful, BVful, Hful, Q_H, B_op != NULL, ierr), *ierr);
+      }
 
       nConvEig = nConvEig+nNewConvEig;
 
@@ -576,16 +612,10 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
     std::vector<int> selectedRes(blockDim);
     for(int i = 0; i < nEig_ && k < blockDim; i++)
     {
-#ifndef IS_COMPLEX
-      if( std::abs(ct::imag(ev_H[i])) > tol )
-      {
-        PHIST_SOUT(PHIST_WARNING,"real case with complex conjugate eigenvalues not fully implemented yet!\n");
-      }
-#endif
-      // only allow i >= nEig for multiple eigenvalues
+      // only allow i >= nEig for multiple eigenvalues and complex conjugated eigenpairs
       if( i >= nEig )
       {
-        if( ct::abs(ev_H[i] - ev_H[i-1]) > mt::sqrt(tol) )
+        if( ct::abs(ev_H[i] - ev_H[i-1]) > mt::sqrt(tol) || ct::abs(ct::conj(ev_H[i]) - ev_H[i-1]) > mt::sqrt(tol) )
           break;
       }
 
@@ -612,7 +642,7 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
       }
     }
     // deflate with more vectors if there are multiple, partly converged eigenvalues
-    while( k_+1 < nEig_ && ct::abs(ev_H[k_+1]-ev_H[k_]) < 10*ct::abs(ev_H[k_+1])*mt::sqrt(tol) )
+    while( k_+1 < nEig_ && (ct::abs(ev_H[k_+1]-ev_H[k_]) < 10*ct::abs(ev_H[k_+1])*mt::sqrt(tol)) || (ct::abs(ct::conj(ev_H[k_+1])-ev_H[k_]) < mt::sqrt(tol)) )
       k_++;
 
 PHIST_SOUT(PHIST_INFO,"selectedRes: ");
@@ -626,12 +656,21 @@ PHIST_SOUT(PHIST_INFO,"\n");
     {
       PHIST_SOUT(PHIST_INFO,"Shrinking search space from %d to %d\n", nV, minBase);
 
-      // nothing to do if no converged eigenvalues this iteration
+      // nothing to do if converged eigenvalues this iteration
       if( nNewConvEig == 0 )
       {
-        PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  nConvEig, nV-1,          nConvEig, minBase-1,    ierr), *ierr);
+        if( symmetric )
+        {
+          PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  nConvEig, nV-1,          nConvEig, minBase-1,    ierr), *ierr);
 
-        PHIST_CHK_IERR(SUBR( transform_searchSpace ) (V, AV, BV, H, Q_H, B_op != NULL, ierr), *ierr);
+          PHIST_CHK_IERR(SUBR( transform_searchSpace ) (V, AV, BV, H, Q_H, B_op != NULL, ierr), *ierr);
+        }
+        else
+        {
+          PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  0, nV-1,          0, minBase-1,    ierr), *ierr);
+
+          PHIST_CHK_IERR(SUBR( transform_searchSpace ) (Vful, AVful, BVful, Hful, Q_H, B_op != NULL, ierr), *ierr);
+        }
       }
 
       nV = minBase;
