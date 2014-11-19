@@ -40,9 +40,9 @@
 
 // Block Krylov-Schur solver manager from the Anasazi package
 #ifdef PHIST_HAVE_ANASAZI
+#include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziSolverManager.hpp"
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
-#include "AnasaziPseudoBlockKrylovSchurSolMgr.hpp"
 #endif
 
 #include "phist_gen_d.h"

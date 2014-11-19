@@ -1,5 +1,5 @@
-#ifndef PHIST_BELOS_OPERATOR_TRAITS_HPP
-#define PHIST_BELOS_OPERATOR_TRAITS_HPP
+#ifndef PHIST_ANASAZI_OPERATOR_TRAITS_HPP
+#define PHIST_ANASAZI_OPERATOR_TRAITS_HPP
 
 #include "phist_config.h"
 
@@ -9,7 +9,7 @@
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
-
+#endif
 
 #if defined(PHIST_HAVE_ANASAZI) && defined(PHIST_HAVE_BELOS)
 
@@ -25,7 +25,7 @@ namespace Anasazi
 //! as they are essentially the same.
 template <class Scalar, class MV>
 class OperatorTraits <Scalar, MV, typename phist::ScalarTraits<Scalar>::op_t >
-  : public Belos::OperatorTraits<Scalar, MV, typename phist::ScalarTraits<Scalar>::op_t >
+  : public ::Belos::OperatorTraits<Scalar, MV, typename phist::ScalarTraits<Scalar>::op_t >
 {
 };
 
