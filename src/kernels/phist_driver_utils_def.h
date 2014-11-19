@@ -223,8 +223,9 @@ void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
   else if (mat_type==MATPDE)
   {
     PHIST_SOUT(PHIST_INFO,"problem type: MATPDE %d x %d\n", L, L);
-    gidx_t nrows, ncols;
-    lidx_t row_nnz;
+    gidx_t nrows = -1;
+    gidx_t ncols = -1;
+    lidx_t row_nnz = -1;
     MATPDE_initDimensions(L, L, &nrows, &row_nnz);
     ncols = nrows;
     PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc)(mat, comm, 

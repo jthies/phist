@@ -1416,8 +1416,8 @@ void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *vA, const_comm_ptr_t vcom
 #include "phist_std_typedefs.hpp"
 PHIST_GHOST_TASK_BEGIN
 
-  ghost_sparsemat_t* mat;
-  ghost_context_t *ctx;
+  ghost_sparsemat_t* mat = NULL;
+  ghost_context_t *ctx = NULL;
   CAST_PTR_FROM_VOID(const MPI_Comm, comm, vcomm, *ierr);
 
   ghost_sparsemat_traits_t *mtraits=new ghost_sparsemat_traits_t;
