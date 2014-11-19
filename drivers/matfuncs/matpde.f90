@@ -1,4 +1,7 @@
 #include "phist_config.h"
+#ifdef PHIST_HAVE_GHOST
+#include "ghost/config.h"
+#endif
 
 #ifndef PHIST_HAVE_GHOST
 #define G_LIDX_T C_INT32_T
