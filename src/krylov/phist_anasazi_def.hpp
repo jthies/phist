@@ -6,7 +6,7 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
                          int numBlocks,
                          bool symmetric,
                          TYPE(mvec_ptr) vX,         _ST_* eigs,
-                         _MT_* resNorm,            int* ierr)
+                         int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
 #ifndef PHIST_HAVE_ANASAZI
@@ -170,7 +170,10 @@ try {
   eigs[i]=soln.Evals[i].realpart;
 #endif
   }
-#warning "eigenvectors not returned yet"  
+
+  MV* evecs = (MV*)(soln.Evecs.getRawPtr());
+  PHIST_CHK_IERR(SUBR(mvec_get_block)(evecs,vX,0,*nEig-1, ierr),*ierr);
+  
   return;
 #endif /* PHIST_HAVE_ANASAZI */
   }// end of anasazi
