@@ -517,14 +517,16 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
     // check for converged eigenvalues
     int nNewConvEig = 0;
-    for(int i = nConvEig; i < std::min(nEig, nEig_); i++)
+    for(int i = nConvEig; i < nEig_; i++)
     {
       PHIST_SOUT(PHIST_INFO,"In iteration %d: Current approximation for eigenvalue %d is %16.8g%+16.8gi with residuum %e\n", *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]), resNorm[i]);
+      if( i >= nEig )
+        continue;
       if( resNorm[i] <= tol && i == nConvEig+nNewConvEig )
       {
 #ifndef IS_COMPLEX
         // detect complex conjugate eigenvalue pairs
-        if( std::abs(ct::imag(ev_H[i])) > tol && i+1 < std::max(nEig, nEig_) )
+        if( std::abs(ct::imag(ev_H[i])) > tol && i+1 < nEig_ )
         {
           if( ct::abs(ct::conj(ev_H[i]) - ev_H[i+1]) < sqrt(tol) && resNorm[i+1] <= tol )
             nNewConvEig+=2;
@@ -615,7 +617,7 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
       // only allow i >= nEig for multiple eigenvalues and complex conjugated eigenpairs
       if( i >= nEig )
       {
-        if( ct::abs(ev_H[i] - ev_H[i-1]) > mt::sqrt(tol) || ct::abs(ct::conj(ev_H[i]) - ev_H[i-1]) > mt::sqrt(tol) )
+        if( ct::abs(ev_H[i] - ev_H[i-1]) > mt::sqrt(tol) && ct::abs(ct::conj(ev_H[i]) - ev_H[i-1]) > mt::sqrt(tol) )
           break;
       }
 
@@ -642,12 +644,12 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
       }
     }
     // deflate with more vectors if there are multiple, partly converged eigenvalues
-    while( k_+1 < nEig_ && (ct::abs(ev_H[k_+1]-ev_H[k_]) < 10*ct::abs(ev_H[k_+1])*mt::sqrt(tol)) || (ct::abs(ct::conj(ev_H[k_+1])-ev_H[k_]) < mt::sqrt(tol)) )
+    while( k_+1 < nEig_ && (ct::abs(ev_H[k_+1]-ev_H[k_]) < 10*ct::abs(ev_H[k_+1])*mt::sqrt(tol) || ct::abs(ct::conj(ev_H[k_+1])-ev_H[k_]) < mt::sqrt(tol)) )
       k_++;
 
 PHIST_SOUT(PHIST_INFO,"selectedRes: ");
 for(int i = 0; i < k; i++)
-  PHIST_SOUT(PHIST_INFO,"\t%d", selectedRes[i]);
+  PHIST_SOUT(PHIST_INFO,"\t%d (%e)", selectedRes[i], resNorm[selectedRes[i]]);
 PHIST_SOUT(PHIST_INFO,"\n");
 
 
@@ -679,67 +681,70 @@ PHIST_SOUT(PHIST_INFO,"\n");
 TESTING_CHECK_SUBSPACE_INVARIANTS;
     }
 
-    // calculate corrections
-    // setup jadaOp
-    // set correction views and temporary jadaOp-storage
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,  &t,     0, k-1,  ierr), *ierr);
-    // we only need to view first part of Q
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,   &Qtil,  0, k_, ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ_,  &BQtil, 0, k_, ierr), *ierr);
-    // set tolerances
-    for(int i = 0; i < k; i++)
+    if( k > 0 ) 
     {
-      if( resNorm[nConvEig+i] > 4*lastOuterRes[nConvEig+i] )
-        innerTol[nConvEig+i] = 1.;
-      innerTol[nConvEig+i] *= 0.5;
-      lastOuterRes[nConvEig+i] = resNorm[nConvEig+i];
-    }
+      // calculate corrections
+      // setup jadaOp
+      // set correction views and temporary jadaOp-storage
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_,  &t,     0, k-1,  ierr), *ierr);
+      // we only need to view first part of Q
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,   &Qtil,  0, k_, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ_,  &BQtil, 0, k_, ierr), *ierr);
+      // set tolerances
+      for(int i = 0; i < k; i++)
+      {
+        if( resNorm[nConvEig+i] > 4*lastOuterRes[nConvEig+i] )
+          innerTol[nConvEig+i] = 1.;
+        innerTol[nConvEig+i] *= 0.5;
+        lastOuterRes[nConvEig+i] = resNorm[nConvEig+i];
+      }
 
-    for(int i = 0; i < blockDim; i++)
-      selectedRes[i] -= nConvEig;
-    PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, B_op, Qtil, BQtil, sigma, res, &selectedRes[0],
-                                                  &innerTol[nConvEig], innerMaxBase, t, innerIMGS, innerGMRESabortAfterFirstConverged, ierr), *ierr);
+      for(int i = 0; i < blockDim; i++)
+        selectedRes[i] -= nConvEig-nNewConvEig;
+      PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, B_op, Qtil, BQtil, sigma, res, &selectedRes[0],
+                                                    &innerTol[nConvEig], innerMaxBase, t, innerIMGS, innerGMRESabortAfterFirstConverged, ierr), *ierr);
 
-    // get solution and reuse res for At
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_, &Vv,  0, k-1, ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (At_,&AVv, 0, k-1, ierr), *ierr);
+      // get solution and reuse res for At
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_, &Vv,  0, k-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (At_,&AVv, 0, k-1, ierr), *ierr);
 
-    // enlarge search space
-    // first update views
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  &HVv, 0,     nV-1,      nV,    nV+k-1,    ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  &HvV, nV,    nV+k-1,    0,     nV-1,      ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  &Hvv, nV,    nV+k-1,    nV,    nV+k-1,    ierr), *ierr);
-    // orthogonalize t as Vv (reuse R_H)
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,     k-1,       ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H,nV,    nV+k-1,    nV,    nV+k-1,    ierr), *ierr);
-    PHIST_CHK_NEG_IERR(SUBR( orthog ) (Vful, Vv, Rr_H, R_H, 5, ierr), *ierr);
-    int randomVecs = *ierr;
-    // TODO: only take non-random vector if *ierr > 0
-    // calculate AVv, BVv
-    PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vv, st::zero(), AVv, ierr), *ierr);
-    if( B_op != NULL )
-    {
-      PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BVv,                   nV,    nV+k-1,    ierr), *ierr);
-      PHIST_CHK_IERR( B_op->apply(st::one(), B_op->A, Vv, st::zero(), BVv, ierr), *ierr);
-    }
-    // update H
-    PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vful,  AVv, st::zero(), HVv, ierr), *ierr);
-    // for the symmetric case use AVv*V here, so we don't need AV at all
-    if( !symmetric )
-    {
-      PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vv, AVful,  st::zero(), HvV, ierr), *ierr);
-    }
-    else
-    {
-      PHIST_CHK_IERR(SUBR(sdMat_view_block) (sdMI_, &sdMI, 0, nV-1, 0, nV-1, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat)(st::one(), HVv, sdMI, st::zero(), HvV, ierr), *ierr);
-    }
-    PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vv, AVv, st::zero(), Hvv, ierr), *ierr);
-    // use set block to put Vv and AVv really into V and AV
-    PHIST_CHK_IERR(SUBR( mvec_set_block ) (V_,  Vv,  nV, nV+k-1, ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_set_block ) (AV_, AVv, nV, nV+k-1, ierr), *ierr);
-    // increase nV
-    nV = nV + k;
+      // enlarge search space
+      // first update views
+      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  &HVv, 0,     nV-1,      nV,    nV+k-1,    ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  &HvV, nV,    nV+k-1,    0,     nV-1,      ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  &Hvv, nV,    nV+k-1,    nV,    nV+k-1,    ierr), *ierr);
+      // orthogonalize t as Vv (reuse R_H)
+      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,     k-1,       ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H,nV,    nV+k-1,    nV,    nV+k-1,    ierr), *ierr);
+      PHIST_CHK_NEG_IERR(SUBR( orthog ) (Vful, Vv, Rr_H, R_H, 5, ierr), *ierr);
+      int randomVecs = *ierr;
+      // TODO: only take non-random vector if *ierr > 0
+      // calculate AVv, BVv
+      PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vv, st::zero(), AVv, ierr), *ierr);
+      if( B_op != NULL )
+      {
+        PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BVv,                   nV,    nV+k-1,    ierr), *ierr);
+        PHIST_CHK_IERR( B_op->apply(st::one(), B_op->A, Vv, st::zero(), BVv, ierr), *ierr);
+      }
+      // update H
+      PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vful,  AVv, st::zero(), HVv, ierr), *ierr);
+      // for the symmetric case use AVv*V here, so we don't need AV at all
+      if( !symmetric )
+      {
+        PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vv, AVful,  st::zero(), HvV, ierr), *ierr);
+      }
+      else
+      {
+        PHIST_CHK_IERR(SUBR(sdMat_view_block) (sdMI_, &sdMI, 0, nV-1, 0, nV-1, ierr), *ierr);
+        PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat)(st::one(), HVv, sdMI, st::zero(), HvV, ierr), *ierr);
+      }
+      PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vv, AVv, st::zero(), Hvv, ierr), *ierr);
+      // use set block to put Vv and AVv really into V and AV
+      PHIST_CHK_IERR(SUBR( mvec_set_block ) (V_,  Vv,  nV, nV+k-1, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_set_block ) (AV_, AVv, nV, nV+k-1, ierr), *ierr);
+      // increase nV
+      nV = nV + k;
+    } // k > 0
 
     UPDATE_SUBSPACE_VIEWS;
 TESTING_CHECK_SUBSPACE_INVARIANTS;

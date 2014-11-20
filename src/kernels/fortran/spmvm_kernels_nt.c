@@ -31,9 +31,10 @@ void dspmvm_nt_1_c(int nrows, double alpha, const long *restrict row_ptr, const 
     printf("not aligned %lx\n", (uintptr_t)(void*)lhsv);
     exit(1);
   }
+  int nrows2 = nrows/2;
 
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < nrows/2; i++)
+  for(int i = 0; i < nrows2; i++)
   {
     double lhs1 = shifts[0]*rhsv[2*i];
 

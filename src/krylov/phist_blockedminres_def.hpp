@@ -157,6 +157,11 @@ PHIST_SOUT(PHIST_INFO,"\n");
     }
   }
 
+  for (int i=0;i<numSys;i++)
+  {
+    PHIST_SOUT(PHIST_VERBOSE,"[%d]: %d\t%8.4e\t(%8.4e)\n", i, S[i]->curDimV_-1,S[i]->normR_/S[i]->normR0_,S[i]->normR_);
+  }
+
   while( anyConverged == 0 && anyFailed == 0 )
   {
     //    % get new vector for y
@@ -432,13 +437,10 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
 
 
-#if PHIST_OUTLEV>=PHIST_VERBOSE
     for (int i=0;i<numSys;i++)
     {
-    PHIST_SOUT(PHIST_VERBOSE,"[%d]: %d\t%8.4e\t(%8.4e)\n",i,
-          S[i]->curDimV_-1,S[i]->normR_/S[i]->normR0_,S[i]->normR_);
+      PHIST_SOUT(PHIST_VERBOSE,"[%d]: %d\t%8.4e\t(%8.4e)\n", i, S[i]->curDimV_-1, S[i]->normR_/S[i]->normR0_, S[i]->normR_);
     }
-#endif
 
     (*nIter)++;
   }

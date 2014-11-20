@@ -326,7 +326,7 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
       for(int j = 0; j < m; j++)
         scale += st::real(st::conj(y[ldy*j])*y[ldy*j]);
       scale = mt::one()/sqrt(scale);
-      PHIST_SOUT(PHIST_DEBUG,"scaling solution with: %8.4e\n", scale);
+      PHIST_DEB("scaling solution with: %8.4e\n", scale);
       for(int j = 0; j < m; j++)
         y[ldy*j] *= scale;
     }
@@ -335,11 +335,17 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
 
   // add up solution
   TYPE(mvec_ptr) Vj = NULL, x_i = NULL;
+  PHIST_DEB("blockedGMRESstates_updateSol maxCurDimV = %d, sharedCurDimV = %d, ordered = %d\n", maxCurDimV, sharedCurDimV, (int)ordered);
   for(int j = 0; j < maxCurDimV-1; j++)
   {
     int Vind = mvecBuff->prevIndex(lastVind,maxCurDimV-1-j);
     _ST_ *yj = yglob + ldy*j;
-//std::cout << "j " << j << " yj " << *yj << " maxCurDimV " << maxCurDimV << " sharedCurDimV " << sharedCurDimV << " Vind " << Vind << std::endl;
+    PHIST_DEB("blockedGMRESstates_updateSol j = %d, Vind = %d, yj = ", j, Vind);
+    for(int i = 0; i < numSys; i++)
+    {
+      PHIST_DEB("\t%e (%d)", yj[S[i]->id], S[i]->id);
+    }
+    PHIST_DEB("\n");
 
     if( j >= maxCurDimV-sharedCurDimV && ordered )
     {
@@ -522,6 +528,11 @@ PHIST_SOUT(PHIST_INFO,"\n");
       S[i]->status = 2; // mark as failed/restart needed
       anyFailed++;
     }
+  }
+
+  for (int i=0;i<numSys;i++)
+  {
+    PHIST_SOUT(PHIST_VERBOSE,"[%d]: %d\t%8.4e\t(%8.4e)\n", i, S[i]->curDimV_-1,S[i]->normR_/S[i]->normR0_,S[i]->normR_);
   }
 
   while( anyConverged == 0 && anyFailed == 0 )
