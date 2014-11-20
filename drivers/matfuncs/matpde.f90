@@ -1,15 +1,18 @@
 #include "phist_config.h"
+#ifdef PHIST_HAVE_GHOST
+#include "ghost/config.h"
+#endif
 
 #ifndef PHIST_HAVE_GHOST
 #define G_LIDX_T C_INT32_T
 #define G_GIDX_T C_INT64_T
 #else
-#ifdef GHOST_LONGIDX_LOCAL
+#ifdef GHOST_HAVE_LONGIDX_LOCAL
 #define G_LIDX_T C_INT64_T
 #else
 #define G_LIDX_T C_INT32_T
 #endif
-#ifdef GHOST_LONGIDX_GLOBAL
+#ifdef GHOST_HAVE_LONGIDX_GLOBAL
 #define G_GIDX_T C_INT64_T
 #else
 #define G_GIDX_T C_INT32_T

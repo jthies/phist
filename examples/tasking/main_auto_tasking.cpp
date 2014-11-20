@@ -35,6 +35,6 @@ int main(int argc, char* argv[])
 int main()
 {
   std::cout << "this driver does nothing unless you use GHOST as kernel lib\n";
-  return;
+  return 0;
 }
 #endif

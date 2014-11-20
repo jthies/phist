@@ -88,7 +88,7 @@ std::istream& operator>>(std::istream& is, linSolv_t& s)
 }
 
 #ifdef PHIST_TIMEMONITOR
-# ifndef PHIST_HAVE_TEUCHOS
+# ifndef PHIST_USE_TEUCHOS_TIMEMONITOR
 # include "phist_timemonitor.hpp"
 namespace phist_TimeMonitor
 {
