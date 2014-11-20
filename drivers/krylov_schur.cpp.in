@@ -96,7 +96,7 @@ PHIST_MAIN_TASK_BEGIN
 
   if (ierr!=0)
     {
-    PHIST_SOUT(PHIST_WARNING,"code %d returned from Belos BlockGMRES\n",ierr);
+    PHIST_SOUT(PHIST_WARNING,"code %d returned from Anasazi\n",ierr);
     if (ierr<0) return ierr;
     }
   PHIST_OUT(1,"number of iterations performed: %d\n",num_iters);
@@ -111,7 +111,7 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_SOUT(PHIST_VERBOSE,"Ritz value\timp. res\texp. res\n");
   for (i=0;i<how_many;i++)
   {
-    PHIST_SOUT(PHIST_VERBOSE,"%8.4e\t%8.4e\t%8.4e",st::real(eigs[i]),resid[i],expRes[i]);
+    PHIST_SOUT(PHIST_VERBOSE,"%8.4e\t%8.4e\t%8.4e\n",st::real(eigs[i]),resid[i],expRes[i]);
   }
     
   PHIST_ICHK_IERR(SUBR(crsMat_delete)(A,&ierr),ierr);
