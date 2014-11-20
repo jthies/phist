@@ -1,5 +1,5 @@
-#ifndef PHIST_BELOS_H
-#define PHIST_BELOS_H
+#ifndef PHIST_ANASAZI_H
+#define PHIST_ANASAZI_H
 
 #include "phist_config.h"
 
@@ -13,20 +13,22 @@
 
 #endif //DOXYGEN
 
+#include "phist_enums.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
-#include "phist_belos_decl.h"
+#include "phist_anasazi_decl.h"
 #include "phist_gen_c.h"
-#include "phist_belos_decl.h"
+#include "phist_anasazi_decl.h"
 #endif
 #include "phist_gen_d.h"
-#include "phist_belos_decl.h"
+#include "phist_anasazi_decl.h"
 #include "phist_gen_z.h"
-#include "phist_belos_decl.h"
+#include "phist_anasazi_decl.h"
 
 #ifdef __cplusplus
 }
