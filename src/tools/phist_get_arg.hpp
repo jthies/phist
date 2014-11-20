@@ -17,7 +17,7 @@ T get_arg(int argc, char** argv, int pos, T& default_val)
   else
   {
     std::stringstream ss(argv[pos]);;
-    ss>>T;
+    ss>>result;
   }
 return result;
 }
