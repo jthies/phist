@@ -187,6 +187,7 @@ find_package(Teuchos)
 if (${Teuchos_FOUND})
   list(APPEND LOAD_TRILI_PKG "Teuchos")
   set(PHIST_HAVE_TEUCHOS 1)
+  set(PHIST_USE_TEUCHOS_TIMEMONITOR On CACHE BOOL "Use Timemonitor from Trilinos package Teuchos instead of builtin one.")
   message(STATUS "Found Teuchos")
 else()
   message(STATUS "Teuchos not found.")
@@ -296,6 +297,7 @@ set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.c
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedgmres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedminres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_belos.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasazi.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp)
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.c
@@ -533,6 +535,9 @@ install(FILES ${PROJECT_BINARY_DIR}/phist_config.h DESTINATION include/phist)
 
 file(GLOB PHIST_HEADERS ${CMAKE_SOURCE_DIR}/src/*/*.h ${CMAKE_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/phist_typedefs.h)
 install(FILES ${PHIST_HEADERS} DESTINATION include/phist)
+
+file(GLOB PYTHON_HEADERS ${CMAKE_SOURCE_DIR}/python/*.py)
+install(FILES ${PYTHON_HEADERS} DESTINATION lib/python)
 
 # test drivers
 if( "${CMAKE_BUILD_TYPE}" MATCHES "Release" )

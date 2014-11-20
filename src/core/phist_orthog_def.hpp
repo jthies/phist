@@ -109,12 +109,31 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   
   // determine original norms of W vectors and breakdown tolerance
   PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW0,ierr),*ierr);
-  PHIST_DEB("orthog: normW0 is %e\n", normW0);
   breakdown = normW0[0];
-  for (int i=1;i<k;i++) breakdown=std::min(normW0[i], breakdown);
+  PHIST_DEB("orthog: normW0 is");
+  for (int i=0;i<k;i++)
+  {
+    breakdown=std::min(normW0[i], breakdown);
+    PHIST_DEB(" %e", normW0[i]);
+  }
   breakdown*=mt::eps()*1000;
+  PHIST_DEB("\n");
   
   // orthogonalize against V (first CGS sweep)
+#ifdef TESTING
+{
+  _MT_ normV[m];
+  PHIST_CHK_IERR(SUBR(mvec_norm2)(V,normV,ierr),*ierr);
+  PHIST_DEB("orthog: normV is");
+  for(int i = 0; i < m; i++)
+  {
+    PHIST_DEB(" %e", normV[i]);
+  }
+  PHIST_DEB("\n");
+}
+#endif
+
+
 
   //R2=V'*W;
   PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,W,st::zero(),R2,ierr),*ierr);

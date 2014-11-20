@@ -1,10 +1,12 @@
 // Anasazi: block krylov methods from Trilinos
-void SUBR(anasazi)(TYPE(const_op_ptr) Op, 
-        TYPE(mvec_ptr) vX,
-        TYPE(const_mvec_ptr) vB, 
-        _MT_ tol,int *num_iters, int max_blocks,
-        int variant, int* nConv,
-        int* ierr)
+void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
+                         TYPE(const_mvec_ptr) v0,  eigSort_t which,
+                         _MT_ tol,                 int *nEig,
+                         int* nIter,               int blockDim,
+                         int numBlocks,
+                         bool symmetric,
+                         TYPE(mvec_ptr) vX,         _ST_* eigs,
+                         int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
 #ifndef PHIST_HAVE_ANASAZI
@@ -22,20 +24,36 @@ void SUBR(anasazi)(TYPE(const_op_ptr) Op,
   typedef MV AnasaziMV;
 #endif
   typedef st::op_t OP; // gives Sop_t, Dop_t etc.
+  typedef Anasazi::MultiVecTraits<ST,AnasaziMV> MVT;
 
   bool status=true;
-  ENTER_FCN(__FUNCTION__);
   *ierr=0;
   
-  int numRhs=1;// get from input vectors
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vX,&numRhs,ierr),*ierr);
+  int variant=0;// only block Krylov-Schur implemented
   
   Teuchos::RCP<AnasaziMV> X = phist::rcp((MV*)vX, false);
-  Teuchos::RCP<const AnasaziMV> B = phist::rcp((const MV*)vB, false);
+  Teuchos::RCP<AnasaziMV> X0;
+  if (v0!=NULL)
+  {
+    X0 = phist::rcp((MV*)v0, false);
+  }
+  else
+  {
+    X0=MVT::Clone(*X,blockDim);
+  }
+
   // note: our operator nas no destructor, so we should
   // actually wrap it like the ghost_densemat_t (cf. phist_rcp_helpers and phist_GhostMV),
   // but since Anasazi does nothing but apply the operator it is not necessary here.
-  Teuchos::RCP<const OP> A = Teuchos::rcp((const OP*)Op, false);
+  Teuchos::RCP<const OP> A = Teuchos::rcp((const OP*)A_op, false);
+  Teuchos::RCP<const OP> B=Teuchos::null;
+  if (B_op!=NULL)
+  {
+     B = Teuchos::rcp((const OP*)B_op, false);
+  }
+
+  // this can be used to provide e.g. the operation (A-sigma*B)^{-1}
+  Teuchos::RCP<const OP> Op=Teuchos::null;
 
 ////////////////////////////////////////////////////////////////////
 // setup the environment, I/O, read params etc. (Teuchos package) //
@@ -58,32 +76,13 @@ void SUBR(anasazi)(TYPE(const_op_ptr) Op,
   // read parameters from our XML file
   Teuchos::RCP<Teuchos::ParameterList> anasaziList 
         = Teuchos::rcp(new Teuchos::ParameterList("phist/anasazi"));
-  if (variant==0 || variant==1)
-  {
-    //GMRES restarting
-    anasaziList->set("Num Blocks",max_blocks);
-  }
-  if (variant==1||variant==3)
-  {
-    //pseudo-block, set stopping criterion
-    int dq;
-    if (nConv==NULL) 
-    {
-      dq=numRhs;
-    }
-    else
-    {
-      dq=*nConv;
-    }
-    anasaziList->set("Deflation Quorum",dq);
-  }
-  anasaziList->set("Maximum Iterations",*num_iters);
-  anasaziList->set("Block Size",numRhs);
-  anasaziList->set("Orthogonalization","DGKS");
+
+  anasaziList->set("Which",std::string(eigSort2str(which)));
+  anasaziList->set("Block Size",blockDim);
+  anasaziList->set("Num Blocks",numBlocks);
+  anasaziList->set("Maximum Restarts",(int)(*nIter/numBlocks));
+  anasaziList->set("Orthogonalization","SVQB");
   anasaziList->set("Convergence Tolerance",tol);
-  anasaziList->set("Output Frequency",1);
-  anasaziList->set("Show Maximum Residual Norm Only",true);
-  anasaziList->set("Output Style",::Anasazi::Brief);
   int verb=::Anasazi::Errors+::Anasazi::Warnings;
 #if PHIST_OUTLEV>=PHIST_INFO
   verb+=   ::Anasazi::IterationDetails
@@ -96,16 +95,30 @@ void SUBR(anasazi)(TYPE(const_op_ptr) Op,
   anasaziList->set("Verbosity",verb);
 
   anasaziList->set("Output Stream",out->getOStream());
+  
+  Teuchos::RCP<Anasazi::Eigenproblem<ST,AnasaziMV,OP> > eigenProblem
+        = Teuchos::rcp(new Anasazi::BasicEigenproblem<ST,AnasaziMV,OP>());
 
-// create Anasazi problem interface
-Teuchos::RCP<Anasazi::LinearProblem<ST,AnasaziMV,OP> > linearSystem
-        = Teuchos::rcp(new Anasazi::LinearProblem<ST,AnasaziMV,OP>(A,X,B));
+eigenProblem->setA(A);
+if (B!=Teuchos::null)
+{
+  eigenProblem->setM(B);
+}
+if (Op!=Teuchos::null)
+{
+  eigenProblem->setOperator(Op);
+}
+eigenProblem->setHermitian(symmetric);        
+eigenProblem->setNEV(*nEig);
+eigenProblem->setInitVec(X0);
+
+    PHIST_CHK_IERR(*ierr=eigenProblem->setProblem()?0:-1,*ierr);
 
 Teuchos::RCP<Anasazi::SolverManager<ST,AnasaziMV, OP> > anasazi;
 if (variant==0)
   {
   anasazi = Teuchos::rcp(new Anasazi::BlockKrylovSchurSolMgr<ST,AnasaziMV, OP>
-        (linearSystem, anasaziList));
+        (eigenProblem, *anasaziList));
   }
 else
   {
@@ -124,14 +137,43 @@ else
 // solve the system!                                                 //
 ///////////////////////////////////////////////////////////////////////
 try {
-    linearSystem->setProblem();
     Anasazi::ReturnType result=anasazi->solve();
-    *num_iters = anasazi->getNumIters();
-    *out << "Anasazi returned '"<<Anasazi::convertReturnTypeToString(result)<<"'"<<std::endl;
+    *nIter = anasazi->getNumIters();
+    *out << "Anasazi returned '"
+        << (result==Anasazi::Converged?  "Converged":
+          (result==Anasazi::Unconverged?"Unconverged":
+                               "<unknown return flag>"))
+          <<"'"<<std::endl;
     if (result!=Anasazi::Converged) *ierr=1;
   } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,status);
 
-  if (!status) *ierr=PHIST_CAUGHT_EXCEPTION; 
+  if (!status)
+  {
+    *ierr=PHIST_CAUGHT_EXCEPTION;
+    return;
+  }
+  
+  const Anasazi::Eigensolution<ST,AnasaziMV>& soln=eigenProblem->getSolution();
+  *nEig=soln.numVecs;
+#ifndef IS_COMPLEX
+  if (!symmetric)
+  {
+    PHIST_SOUT(PHIST_WARNING,"%s, returning only real parts of eigenvalues\n"
+                             "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
+  }
+#endif
+  for (int i=0;i<*nEig; i++)
+  {
+#ifdef IS_COMPLEX
+  eigs[i]=std::complex<MT>(soln.Evals[i].realpart,soln.Evals[i].imagpart);
+#else
+  eigs[i]=soln.Evals[i].realpart;
+#endif
+  }
+
+  MV* evecs = (MV*)(soln.Evecs.getRawPtr());
+  PHIST_CHK_IERR(SUBR(mvec_get_block)(evecs,vX,0,*nEig-1, ierr),*ierr);
+  
   return;
-#endif /* PHIST_HAVE_BELOS */
+#endif /* PHIST_HAVE_ANASAZI */
   }// end of anasazi

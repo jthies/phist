@@ -8,6 +8,7 @@
 #endif
 
 #include <ghost.h>
+#include <ghost/machine.h>
 
 
 #ifdef PHIST_HAVE_CXX11_LAMBDAS
@@ -21,7 +22,7 @@ void phist_execute_lambda_as_ghost_task(LFunc context)
 
   ghost_task_t *task = NULL;
   // do not use hyperthreads
-  int nhreads;
+  int nthreads;
   ghost_machine_ncore(&nthreads,GHOST_NUMANODE_ANY);
   ghost_task_create(&task, nthreads, 0, void_lambda_caller, (void*) &context, 
         GHOST_TASK_DEFAULT, NULL, 0);

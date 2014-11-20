@@ -75,7 +75,7 @@
 
 /* PHIST_SOUT is used in phist_timemonitor.hpp */
 #if defined(__cplusplus) && defined(PHIST_TIMEMONITOR)
-# ifdef PHIST_HAVE_TEUCHOS
+#ifdef PHIST_USE_TEUCHOS_TIMENONITOR
 /* the Teuchos time monitor is a bit fancier when it comes    */
 /* to non bulk-synchronous execution models like master/slave */
 #include "Teuchos_TimeMonitor.hpp"
@@ -87,7 +87,7 @@
 
 
 #if defined(__cplusplus) && ( defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE) )
-# ifdef PHIST_HAVE_TEUCHOS
+# ifdef PHIST_USE_TEUCHOS_TIMEMONITOR
 #     define PHIST_CXX_TIMER(s) static Teuchos::RCP<Teuchos::Time> TimeFrom_PHIST_CXX_TIMER; \
                           if( TimeFrom_PHIST_CXX_TIMER.is_null() ) \
                               TimeFrom_PHIST_CXX_TIMER = Teuchos::TimeMonitor::getNewTimer(s); \

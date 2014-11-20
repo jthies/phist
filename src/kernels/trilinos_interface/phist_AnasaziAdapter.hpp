@@ -15,6 +15,7 @@
 #include "./typedefs.hpp"
 #include "phist_tools.h"
 #include "phist_macros.h"
+
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_Array.hpp>
 
@@ -30,6 +31,8 @@
 #endif // HAVE_ANASAZI_TSQR
 
 #include "Belos_GhostAdapter.hpp"
+
+using namespace phist;
 
 namespace Anasazi 
 {

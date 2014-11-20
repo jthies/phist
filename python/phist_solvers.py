@@ -72,6 +72,15 @@ for _varT in ('S', 'D', 'C', 'Z'):
                                             _mvec_ptr, _sdMat_ptr,
                                             _MT_p, c_int_p), skip_if_missing=True)
 
+    # from phist_jdqr_decl.h
+    #void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
+    #                TYPE(mvec_ptr) X, _ST_* evals, _MT_* resid, int* is_cmplx,
+    #                phist_jadaOpts_t options, int* num_eigs, int* num_iters,
+    #                int* ierr);
+    #_declare(None, _prefix+'jdqr', (_op_ptr, _op_ptr,
+    #                                _mvec_ptr, _ST_p, _MT_p, c_int_p,
+    #                                phist_jadaOpts_t, c_int_p, c_int_p,
+    #                                c_int_p), skip_if_missing=True)
 
 #--------------------------------------------------------------------------------
 # tests / sample code
