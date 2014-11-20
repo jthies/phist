@@ -644,12 +644,12 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
       }
     }
     // deflate with more vectors if there are multiple, partly converged eigenvalues
-    while( k_+1 < nEig_ && (ct::abs(ev_H[k_+1]-ev_H[k_]) < 10*ct::abs(ev_H[k_+1])*mt::sqrt(tol)) || (ct::abs(ct::conj(ev_H[k_+1])-ev_H[k_]) < mt::sqrt(tol)) )
+    while( k_+1 < nEig_ && (ct::abs(ev_H[k_+1]-ev_H[k_]) < 10*ct::abs(ev_H[k_+1])*mt::sqrt(tol) || ct::abs(ct::conj(ev_H[k_+1])-ev_H[k_]) < mt::sqrt(tol)) )
       k_++;
 
 PHIST_SOUT(PHIST_INFO,"selectedRes: ");
 for(int i = 0; i < k; i++)
-  PHIST_SOUT(PHIST_INFO,"\t%d", selectedRes[i]);
+  PHIST_SOUT(PHIST_INFO,"\t%d (%e)", selectedRes[i], resNorm[selectedRes[i]]);
 PHIST_SOUT(PHIST_INFO,"\n");
 
 
@@ -700,7 +700,7 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
       }
 
       for(int i = 0; i < blockDim; i++)
-        selectedRes[i] -= nConvEig;
+        selectedRes[i] -= nConvEig-nNewConvEig;
       PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, B_op, Qtil, BQtil, sigma, res, &selectedRes[0],
                                                     &innerTol[nConvEig], innerMaxBase, t, innerIMGS, innerGMRESabortAfterFirstConverged, ierr), *ierr);
 
