@@ -2,6 +2,9 @@
 #define PHIST_GETARG_HPP
 
 #ifdef __cplusplus
+
+#include <iostream>
+
 // command-line parsing tool for C++ main programs
 // if the given position is smaller than argc, parse
 // the argument argv[pos], otherwise use the default value
