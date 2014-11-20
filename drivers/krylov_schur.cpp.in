@@ -12,19 +12,20 @@
 #include ${PHIST_TG_HFILE}
 
 #include "phist_driver_utils.h"
+#include "phist_ScalarTraits.hpp"
 
 int main(int argc, char** argv)
   {
+#include "phist_std_typedefs.hpp"
   int i, ierr;
 
   comm_ptr_t comm;
   crsMat_ptr_t A;
-  op_ptr_t A_op, B_op; // this is a wrapper for the CRS matrix which we pass to the actual 
-  solver
+  op_ptr_t A_op, B_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
   
   const_map_ptr_t map; // map (element distribution) of vectors according to 
                        // the distribution of matrix rows
-  mvec_ptr_t X,X,R;// multivectors for eigenvectors and residuals
+  mvec_ptr_t X,R;// multivectors for eigenvectors and residuals
 
   char* matname;
     
@@ -36,8 +37,7 @@ int main(int argc, char** argv)
   int how_many=10;
   int max_iters=300;
   int block_size=1;
-  int min_bas=10;
-  int max_bas=20;
+  int num_blocks=20;
 
   int variant=0; // only block Krylov-Schur accessible via this driver right now.
   
@@ -50,7 +50,7 @@ PHIST_MAIN_TASK_BEGIN
   if (argc<2)
   {
     PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A> <symmetric/hermitian> <how many> <which> <tol>\n"
-                           "          <max iters> <block size> <min basis> <max basis>\n"
+                           "          <max iters> <block size> <num blocks>\n"
                            "(all but the first argument get default values if omitted)\n", 
                            argv[0]);
     // print usage message for creating/reading a matrix
@@ -68,8 +68,7 @@ PHIST_MAIN_TASK_BEGIN
   GET_ARG(tol,p++);
   GET_ARG(max_iters,p++);
   GET_ARG(block_size,p++);
-  GET_ARG(min_bas,p++);
-  GET_ARG(max_bas,p++);
+  GET_ARG(num_blocks,p++);
 
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&ierr),ierr);
   
@@ -88,23 +87,24 @@ PHIST_MAIN_TASK_BEGIN
 
   MT resid[how_many];
   ST eigs[how_many];
-  ST expRes[how_many];
+  MT expRes[how_many];
+  int num_iters=max_iters;
 
-  SUBR(anasazi)(A_op,B_op,X,which,tol,&how_many,
-        &num_iters,block_size,min_bas,max_bas,
+  SUBR(anasazi)(A_op,B_op,NULL,which,tol,&how_many,
+        &num_iters,block_size,num_blocks,
         sym,X,eigs,resid,&ierr);
 
   if (ierr!=0)
     {
-    if (verbose) fprintf(stdout,"code %d returned from Belos BlockGMRES\n",ierr);
+    PHIST_SOUT(PHIST_WARNING,"code %d returned from Belos BlockGMRES\n",ierr);
     if (ierr<0) return ierr;
     }
   PHIST_OUT(1,"number of iterations performed: %d\n",num_iters);
   PHIST_OUT(1,"number of eigenpairs computed: %d\n",how_many);
 
   /* compute residual norms */
-  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(ONE,A,X,ZERO,R,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_vadd_mvec)(eigs,X,-ONE,R,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(st::one(),A,X,st::zero(),R,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_vadd_mvec)(eigs,X,-st::one(),R,&ierr),ierr);
   
   PHIST_ICHK_IERR(SUBR(mvec_norm2)(R,expRes,&ierr),ierr);
   

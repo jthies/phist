@@ -9,8 +9,8 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
                          TYPE(const_mvec_ptr) v0,  eigSort_t which,
                          _MT_ tol,                 int *nEig,
                          int* nIter,               int blockDim,
-                         int minBase,              int maxBase,
+                         int numBlocks,
                          bool symmetric,
-                         TYPE(mvec_ptr) Q,         _ST_* eigs,
+                         TYPE(mvec_ptr) vX,         _ST_* eigs,
                          _MT_* resNorm,            int* ierr);
 
