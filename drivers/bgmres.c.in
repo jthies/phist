@@ -34,7 +34,7 @@ int main(int argc, char** argv)
   MT *rnorm2; /* for computing the residual norm axplicitly */
   MT *norm2; /* for computing the error norms after the solve */
   MT *xnorm2, *bnorm2; /* for scaling, norm of exact solution and rhs */
-  char* filename;
+  char* matname;
   
   int num_iters;
   int max_iters,max_blocks,num_rhs;
@@ -51,11 +51,12 @@ int main(int argc, char** argv)
 
   if (argc<2)
     {
-    if (verbose) fprintf(stdout,"Usage: ./Xbgmres <mat file> [<max iters> [<tol> [<num rhs> [<max blocks>]]]]\n");
+    if (verbose) fprintf(stdout,"Usage: ./Xbgmres <matrix> [<max iters> [<tol> [<num rhs> [<max blocks>]]]]\n");
+    SUBR(create_matrix)(NULL,NULL,"usage",&ierr);
     return 1;
     }
 
-  filename = argv[1];
+  matname = argv[1];
   
   if (argc<3)
     {
@@ -95,11 +96,11 @@ int main(int argc, char** argv)
 
   if (verbose) 
     {
-    PHIST_OUT(0,"matrix file: %s\n",filename);
+    PHIST_OUT(0,"matrix: %s\n",matname);
     PHIST_OUT(0,"number of rhs: %d\n",num_rhs);
     }  
 
-  PHIST_ICHK_IERR(SUBR(crsMat_read)(&A,comm,filename,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&ierr),ierr);
   
   /* we assume domain map = range map here, which is reasonable for something
      you want to put into a linear solver */
