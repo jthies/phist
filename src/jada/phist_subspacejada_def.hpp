@@ -582,11 +582,15 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
     // check for converged eigenvalues
     int nNewConvEig = 0;
-    for(int i = nConvEig; i < nEig_; i++)
+    for(int i = nConvEig; i < nEig; i++)
     {
       PHIST_SOUT(PHIST_INFO,"In iteration %d: Current approximation for eigenvalue %d is %16.8g%+16.8gi with residuum %e\n", *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]), resNorm[i]);
-      if( i >= nEig )
-        continue;
+#ifndef IS_COMPLEX
+      if( std::abs(ct::imag(ev_H[i])) > tol && blockDim == 1 )
+      {
+        PHIST_SOUT(PHIST_WARNING, "Detected possible complex-conjugate eigenpair, but blockDim == 1 (you need at least blockDim=2 to detect complex-conjugate eigenpairs correctly)!\n");
+      }
+#endif
       if( resNorm[i] <= tol && i == nConvEig+nNewConvEig )
       {
 #ifndef IS_COMPLEX
