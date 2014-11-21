@@ -107,10 +107,16 @@ namespace phist
 #endif
 
   template<typename ST>
-  void* ref2ptr(MultiVector<ST>& V);
+  void* ref2ptr(MultiVector<ST>& V)
+    {
+    return (void*)V.get();
+    }
   
   template<typename ST>
-  const void* ref2ptr(const MultiVector<ST>& V);
+  const void* ref2ptr(const MultiVector<ST>& V)
+    {
+    return (const void*)V.get();
+    }
 
   } // namespace phist
 #endif /* PHIST_HAVE_TEUCHOS */

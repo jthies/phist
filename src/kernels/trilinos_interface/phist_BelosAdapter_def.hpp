@@ -13,10 +13,18 @@ using ::phist::ScalarTraits;
     typedef ::phist::MultiVector< _ST_ > MV;
     typedef ::phist::ScalarTraits<Scalar> st;
     typedef typename st::magn_t magn_t;
+
     //! serial dense matrix from Teuchos, we need this for e.g. the BLAS interface.
     //! Note: the index type *must* be int here, not int64_t, so we decided to have
     //! phist local indices ints, even if ghost uses int64_t.
     typedef Teuchos::SerialDenseMatrix<int,Scalar> Teuchos_sdMat_t;
+
+#ifdef HAVE_BELOS_TSQR
+    /// \typedef tsqr_adaptor_type
+    /// \brief TsqrAdaptor specialization for ghost_densemat_t
+    ///
+    typedef phist::TsqrAdaptor<Scalar> tsqr_adaptor_type;
+#endif // HAVE_BELOS_TSQR
 
     static Teuchos::RCP<MV> Clone( const MV& mv, const int numvecs )
     {
@@ -312,6 +320,7 @@ using ::phist::ScalarTraits;
 private:
 
   static int ierr_;
+
 
 private:
 

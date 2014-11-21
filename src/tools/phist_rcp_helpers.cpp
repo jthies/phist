@@ -8,9 +8,9 @@
 
 namespace phist
   {
-#ifdef PHIST_KERNEL_LIB_GHOST
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
 
+#ifdef PHIST_KERNEL_LIB_GHOST
   // rcp for ghost_densemat_t, includes creating the GhostMV wrapper
   Teuchos::RCP<GhostMV> rcp(ghost_densemat_t* rawPtr, bool ownMem)
     {
@@ -28,6 +28,22 @@ namespace phist
     // if it is no longer needed.
     return Teuchos::rcp(new GhostMV(const_cast<ghost_densemat_t*>(rawPtr),ownMem),true);
     }
+
+  //!\name ref2ptr specialization for Ghost: input GhostMV, output ghost_densemat_t*
+  //@{
+
+  // get mvec pointer from reference (implementation for GhostMV that returns
+  // ghost_densemat_t*)
+  template<>
+  void* ref2ptr(GhostMV& V)
+    {
+    return (void*)V.get();
+    }
+
+  //@}
+
+
+#endif
 
 // special functions for the general phist/belos interface,
 // to avoid the problem that all
@@ -63,6 +79,8 @@ namespace phist
     return Teuchos::rcp(new MultiVector<s_complex_t>(const_cast<Cmvec_ptr_t>(rawPtr),ownMem),true);
   }
 
+#endif
+
 
   //
   Teuchos::RCP<MultiVector<double> > Drcp(Dmvec_ptr_t rawPtr, bool ownMem)
@@ -74,7 +92,7 @@ namespace phist
   }
 
   //
-  Teuchos::RCP<const MultiVector<double> > Drcp(Sconst_mvec_ptr_t rawPtr, bool ownMem)
+  Teuchos::RCP<const MultiVector<double> > Drcp(Dconst_mvec_ptr_t rawPtr, bool ownMem)
   {
     return Teuchos::rcp(new MultiVector<double>(const_cast<Dmvec_ptr_t>(rawPtr),ownMem),true);
   }
@@ -94,36 +112,5 @@ namespace phist
     return Teuchos::rcp(new MultiVector<d_complex_t>(const_cast<Zmvec_ptr_t>(rawPtr),ownMem),true);
   }
 
-#endif
-
-  //!\name ref2ptr specialization for Ghost: input GhostMV, output ghost_densemat_t*
-  //@{
-
-  // get mvec pointer from reference (implementation for GhostMV that returns
-  // ghost_densemat_t*)
-  template<>
-  void* ref2ptr(GhostMV& V)
-    {
-    return (void*)V.get();
-    }
-
-  // get const mvec pointer from const reference (implementation for GhostMV that returns
-  // const ghost_densemat_t*)
-  template<>
-  const void* ref2ptr(const GhostMV& V)
-    {
-    return (const void*)V.get();
-    }
-    
-  template<typename ST>
-  const void* ref2ptr(const MultiVector<ST>& V)
-    {
-    return (const void*)V.get();
-    }
-
-    }
-  //@}
-
-#endif
 #endif
   } // namespace phist
