@@ -50,36 +50,36 @@ namespace phist
 
 #ifdef PHIST_HAVE_SP
   //! rcp for Smvec_t
-  Teuchos::RCP<MultiVector<float> > rcp(Smvec_ptr_t rawPtr, 
+  Teuchos::RCP<MultiVector<float>> Srcp(Smvec_ptr_t rawPtr, 
         bool ownMem=true);
 
   //! rcp for const Smvec_t
-  Teuchos::RCP<const MultiVector<float> > rcp(Sconst_mvec_ptr_t rawPtr, 
+  Teuchos::RCP<const MultiVector<float> > Srcp(Sconst_mvec_ptr_t rawPtr, 
         bool ownMem=true);
 
   //! rcp for Cmvec_t
-  Teuchos::RCP<MultiVector<s_complex_t> > rcp(Cmvec_ptr_t rawPtr, 
+  Teuchos::RCP<MultiVector<s_complex_t> > Crcp(Cmvec_ptr_t rawPtr, 
         bool ownMem=true);
 
   //! rcp for const Cmvec_t
-  Teuchos::RCP<const MultiVector<s_complex_t> > rcp(Cconst_mvec_ptr_t rawPtr, 
+  Teuchos::RCP<const MultiVector<s_complex_t> > Crcp(Cconst_mvec_ptr_t rawPtr, 
         bool ownMem=true);
 #endif
 
   //! rcp for Dmvec_t
-  Teuchos::RCP<MultiVector<double> > rcp(Dmvec_ptr_t rawPtr, 
+  Teuchos::RCP<MultiVector<double> > Drcp(Dmvec_ptr_t rawPtr, 
         bool ownMem=true);
 
   //! rcp for const Dmvec_t
-  Teuchos::RCP<const MultiVector<double> > rcp(Dconst_mvec_ptr_t rawPtr, 
+  Teuchos::RCP<const MultiVector<double> > Drcp(Dconst_mvec_ptr_t rawPtr, 
         bool ownMem=true);
 
   //! rcp for Zmvec_t
-  Teuchos::RCP<MultiVector<d_complex_t> > rcp(Zmvec_ptr_t rawPtr, 
+  Teuchos::RCP<MultiVector<d_complex_t> > Zrcp(Zmvec_ptr_t rawPtr, 
         bool ownMem=true);
 
   //! rcp for const Zmvec_t
-  Teuchos::RCP<const MultiVector<d_complex_t> > rcp(Zconst_mvec_t rawPtr, 
+  Teuchos::RCP<const MultiVector<d_complex_t> > Zrcp(Zconst_mvec_ptr_t rawPtr, 
         bool ownMem=true);
 
 
@@ -108,7 +108,7 @@ namespace phist
 
   template<typename ST>
   void* ref2ptr(MultiVector<ST>& V);
-
+  
   template<typename ST>
   const void* ref2ptr(const MultiVector<ST>& V);
 
