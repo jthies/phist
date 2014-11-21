@@ -33,8 +33,9 @@
 #  include "Tpetra_MultiVector.hpp"
 #  include "AnasaziTpetraAdapter.hpp"
 # else
-#  warning "anasazi only supported with ghost, epetra and tpetra right now"
-#  undef PHIST_HAVE_ANASAZI
+// use general phist/anasazi interface
+#include "phist_MultiVector.hpp"
+#include "phist_AnasaziAdapter.hpp"
 # endif
 #endif
 

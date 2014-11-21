@@ -9,7 +9,6 @@
 
 #if defined(PHIST_HAVE_ANASAZI)&&defined(PHIST_HAVE_BELOS)
 
-#include "ghost.h"
 #include "phist_typedefs.h"
 #include "phist_ScalarTraits.hpp"
 #include "./typedefs.hpp"
@@ -34,7 +33,8 @@ namespace Anasazi
 {
 
   template<typename ST>
-  class MultiVecTraits<ST,MultiVector>: public Belos::MultiVecTraits<ST,MultiVector>
+  class MultiVecTraits<ST,MultiVector<ST> >
+        : public Belos::MultiVecTraits<ST,MultiVector<ST> >
   {
   };
 }// namespace Anasazi

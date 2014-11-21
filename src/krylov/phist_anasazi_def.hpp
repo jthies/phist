@@ -1,3 +1,5 @@
+#define PHIST_rcp phist::PREFIX(rcp)
+
 // Anasazi: block krylov methods from Trilinos
 void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
                          TYPE(const_mvec_ptr) v0,  eigSort_t which,
@@ -22,6 +24,9 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 #elif defined(PHIST_KERNEL_LIB_EPETRA)
   typedef Epetra_MultiVector MV; 
   typedef MV AnasaziMV;
+#else
+  typedef st::mvec_t MV;
+  typedef phist::MultiVector< _ST_ > AnasaziMV;
 #endif
   typedef st::op_t OP; // gives Sop_t, Dop_t etc.
   typedef Anasazi::MultiVecTraits<ST,AnasaziMV> MVT;
@@ -31,11 +36,11 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   
   int variant=0;// only block Krylov-Schur implemented
   
-  Teuchos::RCP<AnasaziMV> X = phist::rcp((MV*)vX, false);
+  Teuchos::RCP<AnasaziMV> X = PHIST_rcp((MV*)vX, false);
   Teuchos::RCP<AnasaziMV> X0;
   if (v0!=NULL)
   {
-    X0 = phist::rcp((MV*)v0, false);
+    X0 = PHIST_rcp((MV*)v0, false);
   }
   else
   {
@@ -177,3 +182,4 @@ try {
   return;
 #endif /* PHIST_HAVE_ANASAZI */
   }// end of anasazi
+#undef PHIST_rcp

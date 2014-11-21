@@ -117,6 +117,7 @@ using ::phist::ScalarTraits;
       // functionality into the phist::MultiVector wrapper by storing
       // an array of contiguous views.
       PHIST_TCHK_IERR(ierr_=-99,ierr_);
+      return Teuchos::null;
     }
 
     static Teuchos::RCP<MV> 
