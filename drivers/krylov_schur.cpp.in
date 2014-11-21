@@ -85,18 +85,17 @@ PHIST_MAIN_TASK_BEGIN
   B_op = NULL;
   PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(A_op,A,&ierr),ierr);
 
-  MT resid[how_many];
   ST eigs[how_many];
-  MT expRes[how_many];
+  MT resid[how_many];
   int num_iters=max_iters;
 
   SUBR(anasazi)(A_op,B_op,NULL,which,tol,&how_many,
         &num_iters,block_size,num_blocks,
-        sym,X,eigs,resid,&ierr);
+        sym,X,eigs,&ierr);
 
   if (ierr!=0)
     {
-    PHIST_SOUT(PHIST_WARNING,"code %d returned from Belos BlockGMRES\n",ierr);
+    PHIST_SOUT(PHIST_WARNING,"code %d returned from Anasazi\n",ierr);
     if (ierr<0) return ierr;
     }
   PHIST_OUT(1,"number of iterations performed: %d\n",num_iters);
@@ -106,12 +105,12 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(st::one(),A,X,st::zero(),R,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_vadd_mvec)(eigs,X,-st::one(),R,&ierr),ierr);
   
-  PHIST_ICHK_IERR(SUBR(mvec_norm2)(R,expRes,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(R,resid,&ierr),ierr);
   
-  PHIST_SOUT(PHIST_VERBOSE,"Ritz value\timp. res\texp. res\n");
+  PHIST_SOUT(PHIST_VERBOSE,"Eigenvalue\tresidual\n");
   for (i=0;i<how_many;i++)
   {
-    PHIST_SOUT(PHIST_VERBOSE,"%8.4e\t%8.4e\t%8.4e",st::real(eigs[i]),resid[i],expRes[i]);
+    PHIST_SOUT(PHIST_VERBOSE,"%8.4e\t%8.4e\n",st::real(eigs[i]),resid[i]);
   }
     
   PHIST_ICHK_IERR(SUBR(crsMat_delete)(A,&ierr),ierr);

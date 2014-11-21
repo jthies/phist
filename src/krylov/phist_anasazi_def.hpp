@@ -6,7 +6,7 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
                          int numBlocks,
                          bool symmetric,
                          TYPE(mvec_ptr) vX,         _ST_* eigs,
-                         _MT_* resNorm,            int* ierr)
+                         int* ierr)
   {
   ENTER_FCN(__FUNCTION__);
 #ifndef PHIST_HAVE_ANASAZI
@@ -24,6 +24,7 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   typedef MV AnasaziMV;
 #endif
   typedef st::op_t OP; // gives Sop_t, Dop_t etc.
+  typedef Anasazi::MultiVecTraits<ST,AnasaziMV> MVT;
 
   bool status=true;
   *ierr=0;
@@ -31,6 +32,15 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   int variant=0;// only block Krylov-Schur implemented
   
   Teuchos::RCP<AnasaziMV> X = phist::rcp((MV*)vX, false);
+  Teuchos::RCP<AnasaziMV> X0;
+  if (v0!=NULL)
+  {
+    X0 = phist::rcp((MV*)v0, false);
+  }
+  else
+  {
+    X0=MVT::Clone(*X,blockDim);
+  }
 
   // note: our operator nas no destructor, so we should
   // actually wrap it like the ghost_densemat_t (cf. phist_rcp_helpers and phist_GhostMV),
@@ -43,7 +53,7 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   }
 
   // this can be used to provide e.g. the operation (A-sigma*B)^{-1}
-  Teuchos::RCP<const OP> transOp=Teuchos::null;
+  Teuchos::RCP<const OP> Op=Teuchos::null;
 
 ////////////////////////////////////////////////////////////////////
 // setup the environment, I/O, read params etc. (Teuchos package) //
@@ -94,13 +104,15 @@ if (B!=Teuchos::null)
 {
   eigenProblem->setM(B);
 }
-if (transOp!=Teuchos::null)
+if (Op!=Teuchos::null)
 {
-  eigenProblem->setOperator(transOp);
+  eigenProblem->setOperator(Op);
 }
 eigenProblem->setHermitian(symmetric);        
 eigenProblem->setNEV(*nEig);
-//TODO: setOperator, setInitVec
+eigenProblem->setInitVec(X0);
+
+    PHIST_CHK_IERR(*ierr=eigenProblem->setProblem()?0:-1,*ierr);
 
 Teuchos::RCP<Anasazi::SolverManager<ST,AnasaziMV, OP> > anasazi;
 if (variant==0)
@@ -125,7 +137,6 @@ else
 // solve the system!                                                 //
 ///////////////////////////////////////////////////////////////////////
 try {
-    eigenProblem->setProblem();
     Anasazi::ReturnType result=anasazi->solve();
     *nIter = anasazi->getNumIters();
     *out << "Anasazi returned '"
@@ -159,7 +170,10 @@ try {
   eigs[i]=soln.Evals[i].realpart;
 #endif
   }
-#warning "eigenvectors not returned yet"  
+
+  MV* evecs = (MV*)(soln.Evecs.getRawPtr());
+  PHIST_CHK_IERR(SUBR(mvec_get_block)(evecs,vX,0,*nEig-1, ierr),*ierr);
+  
   return;
 #endif /* PHIST_HAVE_ANASAZI */
   }// end of anasazi
