@@ -1,5 +1,5 @@
-#ifndef ANASAZI_GHOST_ADAPTER_HPP
-#define ANASAZI_GHOST_ADAPTER_HPP
+#ifndef ANASAZI_PHIST_ADAPTER_HPP
+#define ANASAZI_PHIST_ADAPTER_HPP
 
 #include "phist_config.h"
 /* needs to be included before system headers for some intel compilers+mpi */
@@ -23,22 +23,18 @@
 #include <AnasaziTypes.hpp>
 #include <AnasaziMultiVecTraits.hpp>
 
-#include "phist_GhostMV.hpp"
+#include "phist_MultiVector.hpp"
 #include "phist_rcp_helpers.hpp"
 
-#ifdef HAVE_ANASAZI_TSQR
-#  include <Ghost_TsqrAdaptor.hpp>
-#endif // HAVE_ANASAZI_TSQR
-
-#include "Belos_GhostAdapter.hpp"
+#include "phist_BelosAdapter.hpp"
 
 using namespace phist;
 
-namespace Anasazi 
+namespace Anasazi
 {
 
   template<typename ST>
-  class MultiVecTraits<ST,GhostMV>: public Belos::MultiVecTraits<ST,GhostMV>
+  class MultiVecTraits<ST,MultiVector>: public Belos::MultiVecTraits<ST,MultiVector>
   {
   };
 }// namespace Anasazi

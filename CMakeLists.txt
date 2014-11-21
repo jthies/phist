@@ -312,6 +312,7 @@ set (PHIST_FEAST_SOURCE  ${PROJECT_SOURCE_DIR}/src/feast/phist_feastCorrectionSo
 include_directories(${PROJECT_BINARY_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels)
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB})
+include_directories(${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface)
 include_directories(${PROJECT_SOURCE_DIR}/src/tools)
 include_directories(${PROJECT_SOURCE_DIR}/src/core)
 include_directories(${PROJECT_SOURCE_DIR}/src/krylov)

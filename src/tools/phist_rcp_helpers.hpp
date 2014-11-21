@@ -8,13 +8,16 @@
 #endif
 // we only need RCP's if we want to interact
 // with the iterative solvers in Belos
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
 #include "Teuchos_RCP.hpp"
 
 #ifdef PHIST_KERNEL_LIB_GHOST
 #include "ghost.h"
 #include "ghost/phist_GhostMV.hpp"
 #endif
+
+#include "trilinos_interface/phist_MultiVector.hpp"
+#include "phist_void_aliases.h"
 
 //! in this file we define various helper functions to cope with
 //! the problem that ghost vectors (classical C structs) do not 
@@ -38,19 +41,47 @@ namespace phist
   //! specialization for const ghost_densemat_t
   Teuchos::RCP<const GhostMV> rcp(const ghost_densemat_t* rawPtr, bool ownMem=true);
 
-#elif defined(PHIST_KERNEL_LIB_FORTRAN)
+#elif defined(PHIST_KERNEL_LIB_TPETRA)||defined(PHIST_KERNEL_LIB_EPETRA)
+// for any C++ based libraries we can just use Teuchos::rcp
 
-  //! rcp for fortran mvec, includes creating the FortranMV wrapper
-  //Teuchos::RCP<FortranMV> rcp(void* rawPtr, bool ownMem=true);
-
-  ////! specialization for const FortranMV
-  //Teuchos::RCP<const FortranMV> rcp(const void* rawPtr, bool ownMem=true);
-
-
-#else
   //! standard rcp() function from Teuchos
   using Teuchos::rcp;
 #endif
+
+#ifdef PHIST_HAVE_SP
+  //! rcp for Smvec_t
+  Teuchos::RCP<MultiVector<float> > rcp(Smvec_ptr_t rawPtr, 
+        bool ownMem=true);
+
+  //! rcp for const Smvec_t
+  Teuchos::RCP<const MultiVector<float> > rcp(Sconst_mvec_ptr_t rawPtr, 
+        bool ownMem=true);
+
+  //! rcp for Cmvec_t
+  Teuchos::RCP<MultiVector<s_complex_t> > rcp(Cmvec_ptr_t rawPtr, 
+        bool ownMem=true);
+
+  //! rcp for const Cmvec_t
+  Teuchos::RCP<const MultiVector<s_complex_t> > rcp(Cconst_mvec_ptr_t rawPtr, 
+        bool ownMem=true);
+#endif
+
+  //! rcp for Dmvec_t
+  Teuchos::RCP<MultiVector<double> > rcp(Dmvec_ptr_t rawPtr, 
+        bool ownMem=true);
+
+  //! rcp for const Dmvec_t
+  Teuchos::RCP<const MultiVector<double> > rcp(Dconst_mvec_ptr_t rawPtr, 
+        bool ownMem=true);
+
+  //! rcp for Zmvec_t
+  Teuchos::RCP<MultiVector<d_complex_t> > rcp(Zmvec_ptr_t rawPtr, 
+        bool ownMem=true);
+
+  //! rcp for const Zmvec_t
+  Teuchos::RCP<const MultiVector<d_complex_t> > rcp(Zconst_mvec_t rawPtr, 
+        bool ownMem=true);
+
 
   //! get mvec pointer from reference
   template<typename MV>
@@ -73,15 +104,14 @@ namespace phist
 
   template<>
   const void* ref2ptr(const GhostMV& V);
-
-#elif defined(PHIST_KERNEL_LIB_FORTRAN)
-
-  //template<>
-  //void* ref2ptr(FortranMV& V);
-
-  //template<>
-  //const void* ref2ptr(const FortranMV& V);
 #endif
+
+  template<typename ST>
+  void* ref2ptr(MultiVector<ST>& V);
+
+  template<typename ST>
+  const void* ref2ptr(const MultiVector<ST>& V);
+
   } // namespace phist
-#endif /* PHIST_HAVE_BELOS */
+#endif /* PHIST_HAVE_TEUCHOS */
 #endif

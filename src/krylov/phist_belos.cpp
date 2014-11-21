@@ -14,14 +14,13 @@
 
 #ifdef PHIST_HAVE_BELOS
 
-#include "phist_rcp_helpers.hpp"
-#include "phist_BelosOperatorTraits.hpp"
-
 // Trilinos stuff
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_FancyOStream.hpp"
+
+#include "phist_rcp_helpers.hpp"
 
 # ifdef PHIST_KERNEL_LIB_GHOST
 #  include "ghost.h"
@@ -33,10 +32,14 @@
 #  include "Tpetra_MultiVector.hpp"
 #  include "BelosTpetraAdapter.hpp"
 # else
-#  warning "belos only supported with ghost, epetra and tpetra right now"
-#  undef PHIST_HAVE_BELOS
+// use general phist interface to Belos (may not be complete)
+#  include "phist_MultiVector.hpp"
+#  include "phist_BelosAdapter.hpp"
 # endif
+
+#include "phist_BelosOperatorTraits.hpp"
 #endif
+
 
 // GMRES solver manager from the Belos package
 #ifdef PHIST_HAVE_BELOS

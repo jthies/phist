@@ -1,5 +1,5 @@
 // Belos: block krylov methods from Trilinos
-void SUBR(belos)(TYPE(const_op_ptr) Op, 
+extern "C" void SUBR(belos)(TYPE(const_op_ptr) Op, 
         TYPE(mvec_ptr) vX,
         TYPE(const_mvec_ptr) vB, 
         _MT_ tol,int *num_iters, int max_blocks,
@@ -8,7 +8,7 @@ void SUBR(belos)(TYPE(const_op_ptr) Op,
   {
 #ifndef PHIST_HAVE_BELOS
   ENTER_FCN(__FUNCTION__);
-  *ierr = 99;
+  *ierr = -99;
 #else
 #include "phist_std_typedefs.hpp"  
 #ifdef PHIST_KERNEL_LIB_GHOST
@@ -20,6 +20,9 @@ void SUBR(belos)(TYPE(const_op_ptr) Op,
 #elif defined(PHIST_KERNEL_LIB_EPETRA)
   typedef Epetra_MultiVector MV; 
   typedef MV BelosMV;
+#else
+typedef st::mvec_t MV;
+typedef phist::MultiVector< _ST_ > BelosMV;
 #endif
   typedef st::op_t OP; // gives Sop_t, Dop_t etc.
 
