@@ -164,8 +164,8 @@ using ::phist::ScalarTraits;
   { 
       ENTER_FCN(__FUNCTION__);
       int nvec;
-      TYPE(const_mvec_ptr) v=mv.get();
-      PHIST_TCHK_IERR(SUBR(mvec_num_vectors)(v,&nvec,&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_num_vectors)(mv.get(),&nvec,&ierr_),ierr_);
+      return nvec;
   }
 
 
