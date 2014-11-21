@@ -78,6 +78,7 @@ std::istream& operator>>(std::istream& is, eigSort_t& s)
   std::string tmp;
   is>>tmp;
   s=str2eigSort(tmp.c_str());
+  return is;
 }
 
 std::istream& operator>>(std::istream& is, linSolv_t& s)
@@ -85,6 +86,7 @@ std::istream& operator>>(std::istream& is, linSolv_t& s)
   std::string tmp;
   is>>tmp;
   s=str2linSolv(tmp.c_str());
+  return is;
 }
 
 #ifdef PHIST_TIMEMONITOR
