@@ -68,6 +68,13 @@ void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M,
   *ierr=-99;
 }
 
+void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
+        _ST_* values, lidx_t lda, int nrows, int ncols,
+        int* ierr)
+{
+  *ierr=-99;
+}
+
 void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) V, lidx_t* len, int* ierr)
 {
   *ierr=-99;

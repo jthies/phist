@@ -239,6 +239,13 @@ PHIST_GHOST_TASK_BEGIN
 PHIST_GHOST_TASK_END
 }
 
+void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
+        _ST_* values, lidx_t lda, int nrows, int ncols,
+        int* ierr)
+{
+  *ierr=-99;
+}
+
 //@}
 
 //! retrieve local length of the vectors in V

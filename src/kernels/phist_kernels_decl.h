@@ -110,6 +110,14 @@ void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, const_map_ptr_t map,
 void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M, 
         int nrows, int ncols, const_comm_ptr_t comm, int* ierr);
 
+//! create a replicated matrix as view of raw data. \ingroup sdmat
+
+//! obviously it depends on the data viewed wether the matrix is actually
+//! "replicated" on all nodes.
+void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm, 
+        _ST_* values, lidx_t lda, int nrows, int ncols,
+        int* ierr);
+
 //@}
 
 //! \name destructors

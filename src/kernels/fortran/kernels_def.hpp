@@ -85,6 +85,14 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M,
   PHIST_CHK_IERR(SUBR(sdMat_create_f)(M,nrows,ncols,comm,ierr),*ierr);
 }
 
+extern "C" void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
+        _ST_* values, lidx_t lda, int nrows, int ncols,
+        int* ierr)
+{
+  *ierr=-99;
+}
+                  
+
 extern "C" void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) V, lidx_t* len, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);

@@ -212,6 +212,14 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
   *vM=(TYPE(sdMat_ptr))(M);
   }
 
+void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
+        _ST_* values, lidx_t lda, int nrows, int ncols,
+        int* ierr)
+{
+  *ierr=-99;
+}
+
+
 //@}
 
 //! retrieve local length of the vectors in V
