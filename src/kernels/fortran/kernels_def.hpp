@@ -89,7 +89,10 @@ extern "C" void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t com
         _ST_* values, lidx_t lda, int nrows, int ncols,
         int* ierr)
 {
-  *ierr=-99;
+  ENTER_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"  
+  void SUBR(sdMat_create_view_f)(TYPE(sdMat_ptr)*,const_comm_ptr_t,void*, lidx_t, int,int,int*);
+  PHIST_CHK_IERR(SUBR(sdMat_create_view_f)(M,comm,(void*)values,lda,nrows,ncols,ierr),*ierr);
 }
                   
 

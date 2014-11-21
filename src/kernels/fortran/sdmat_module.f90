@@ -149,6 +149,49 @@ contains
 
   end subroutine phist_DsdMat_create
 
+  subroutine phist_DsdMat_create_view(sdmat_ptr, comm_ptr,c_val,lda,nrows,ncols,ierr) &
+  bind(C,name='phist_DsdMat_create_view_f')
+    use, intrinsic :: iso_c_binding
+    use mpi
+    !--------------------------------------------------------------------------------
+    type(C_PTR),        intent(out) :: sdmat_ptr
+    type(C_PTR),        value       :: comm_ptr
+    integer(C_INT64_T), value       :: lda
+    integer(C_INT),     value       :: nrows, ncols
+    REAL(c_double), target          :: c_val(lda,ncols)
+    integer(C_INT),     intent(out) :: ierr
+    !--------------------------------------------------------------------------------
+    type(sdmat_t), pointer :: sdmat
+    integer, pointer :: comm
+    integer(kind=C_INT64_T) :: ncols64
+#ifdef TESTING
+    integer(C_INTPTR_T) :: dummy
+#endif
+    !--------------------------------------------------------------------------------
+
+    allocate(sdmat)
+    sdmat%is_view = .true.
+    
+    sdmat%imin = 1
+    sdmat%imax = nrows
+    sdmat%jmin = 1
+    sdmat%jmax = ncols
+    if( c_associated(comm_ptr) ) then
+      call c_f_pointer(comm_ptr, comm)
+      sdmat%comm = comm
+    else
+      sdmat%comm = MPI_COMM_NULL
+    end if
+#ifdef TESTING
+    write(*,*) 'creating sdmat view with dimensions:', nrows, ncols, 'address', transfer(c_loc(sdmat),dummy)
+    flush(6)
+#endif
+    sdmat%val=>c_val
+      sdmat_ptr = c_loc(sdmat)
+      ierr = 0
+
+  end subroutine phist_DsdMat_create_view
+
 
   subroutine phist_DsdMat_delete(sdmat_ptr, ierr) bind(C,name='phist_DsdMat_delete_f')
     use, intrinsic :: iso_c_binding
