@@ -57,7 +57,7 @@ extern "C" eigSort_t str2eigSort(const char* c_str)
   else if (str=="LR") s=LR;
   else if (str=="SR") s=SR;
   else if (str=="none"||str=="NONE") s=NONE;
-  else if (str=="target"||str=="TARGET") s=NONE;
+  else if (str=="target"||str=="TARGET") s=TARGET;
   return s;
 }
       
