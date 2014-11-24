@@ -1,7 +1,8 @@
 #define PHIST_rcp phist::PREFIX(rcp)
 
 // Anasazi: block krylov methods from Trilinos
-void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
+void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) Ainv_op, 
+                         TYPE(const_op_ptr) B_op,
                          TYPE(const_mvec_ptr) v0,  eigSort_t which,
                          _MT_ tol,                 int *nEig,
                          int* nIter,               int blockDim,
@@ -59,6 +60,11 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
   // this can be used to provide e.g. the operation (A-sigma*B)^{-1}
   Teuchos::RCP<const OP> Op=Teuchos::null;
+
+  if (Ainv_op!=NULL)
+  {
+     Op = Teuchos::rcp((const OP*)Ainv_op, false);
+  }
 
 ////////////////////////////////////////////////////////////////////
 // setup the environment, I/O, read params etc. (Teuchos package) //
@@ -176,9 +182,11 @@ try {
 #endif
   }
 
-  MV* evecs = (MV*)(soln.Evecs.getRawPtr());
-  PHIST_CHK_IERR(SUBR(mvec_get_block)(evecs,vX,0,*nEig-1, ierr),*ierr);
-  
+  if (*nEig>0)
+  {
+    MV* evecs = (MV*)(soln.Evecs.getRawPtr());
+    PHIST_CHK_IERR(SUBR(mvec_get_block)(evecs,vX,0,*nEig-1, ierr),*ierr);
+  }
   return;
 #endif /* PHIST_HAVE_ANASAZI */
   }// end of anasazi
