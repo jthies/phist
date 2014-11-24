@@ -124,7 +124,9 @@ int main(int argc, char** argv)
   {
     maxIter=1000;
   }
-  
+
+    int num_complex=0;
+    
   if (shiftFileName==NULL)
   {
     nshifts=1;
@@ -162,16 +164,27 @@ int main(int argc, char** argv)
     {
       fscanf(shiftFile,"%lf %lf",&sigma_r[i],&sigma_i[i]);
       PHIST_SOUT(PHIST_VERBOSE,"sigma[%d]= %g + %gi\n",i,sigma_r[i],sigma_i[i]);
-      if (sigma_i[i]==(MT)0.0)
+      if (sigma_i[i]!=(MT)0.0)
       {
-        PHIST_SOUT(PHIST_ERROR,"all shifts must have a non-zero imaginary part\n");
-        exit(-1);
+        num_complex++;
       }
     }
   
     fclose(shiftFile);
   }
-    
+  
+  if (!(num_complex==0||num_complex==nshifts))
+  {
+    PHIST_SOUT(PHIST_ERROR,
+    "the way we construct the real-valued rhs\n"
+    "to the complex linear system (sI-A)X=B below\n"
+    "requires all shifts to have a non-zero imaginary\n"
+    "part. If all shifts are real, we simply use a real\n"
+    "valued exact solution\n"
+    "(file %s, line %d)\n",__FILE__,__LINE__);
+    return -1;
+  }
+  
   // setup matrix
   TYPE(crsMat_ptr) mat = NULL;
   
@@ -203,6 +216,17 @@ int main(int argc, char** argv)
 // generate linear systems                                 //
 /////////////////////////////////////////////////////////////
 
+if (num_complex==0)
+{
+  PHIST_ICHK_IERR(SUBR(mvec_random)(X_r_ex0,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_i_ex0,ZERO,&ierr),ierr);
+    
+  // compute rhs B to match this exact solution for sigma[0]:
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_r[0],X_r_ex0,0.0,B,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(-1.0,mat,X_r_ex0,1.0,B,&ierr),ierr);
+}
+else
+{
 // we assume that all shifts have a non-zero imaginary part.
 // The complex linear systems j=0..nshifts-1 are given by
 // (sigma[j]*I-A)(X_r[j]+i*X_i[j])=B+0i (i=sqrt(-1)).
@@ -236,6 +260,7 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(-1.0,mat,X_r_ex0,1.0,B,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_i[0],X_i_ex0,1.0,B,&ierr),ierr);
 
+}
 /*
 TYPE(sdMat_ptr) Rtmp=NULL;
 PHIST_ICHK_IERR(SUBR(sdMat_create)(&Rtmp,nrhs,nrhs,NULL,&ierr),ierr);
