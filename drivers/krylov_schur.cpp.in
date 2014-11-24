@@ -17,6 +17,22 @@
 #include ${PHIST_TG_HFILE}
 #include "phist_driver_utils.h"
 
+void SUBR(print_usage)(char* argv[],int pos)
+{
+    int ierr;
+    if (pos>0)
+    {
+    PHIST_SOUT(PHIST_ERROR,"argument %d had an invalid value (%s)\n",pos,argv[pos]);
+    }
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A> <symmetric/hermitian> <how many> <which> <tol>\n"
+                           "          <max iters> <block size> <num blocks>\n"
+                           "(all but the first argument get default values if omitted)\n"
+                           "Which may be of the form \"TARGET\" <real value>\n",
+                           argv[0]);
+    // print usage message for creating/reading a matrix
+    SUBR(create_matrix)(NULL, NULL, "usage",&ierr);
+}
+
 int main(int argc, char** argv)
 {
 #include "phist_std_typedefs.hpp"
@@ -55,14 +71,7 @@ PHIST_MAIN_TASK_BEGIN
 
   if (argc<2)
   {
-    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A> <symmetric/hermitian> <how many> <which> <tol>\n"
-                           "          <max iters> <block size> <num blocks>\n"
-                           "(all but the first argument get default values if omitted)\n"
-                           "Which may be of the form \"TARGET\" <real value>\n",
-                           argv[0]);
-    // print usage message for creating/reading a matrix
-    SUBR(create_matrix)(NULL, NULL, "usage",&ierr);
-
+    SUBR(print_usage)(argv,0);
     return 1;
   }
 
@@ -70,6 +79,11 @@ PHIST_MAIN_TASK_BEGIN
   
   int p=2;
   GET_ARG(sym,p++);
+  if (sym!=0 && sym!=1)
+  {
+  SUBR(print_usage)(argv,p-1);
+  return PHIST_INVALID_INPUT;
+  }
   GET_ARG(how_many,p++);
   GET_ARG(which,p++);
   if (which==TARGET)
