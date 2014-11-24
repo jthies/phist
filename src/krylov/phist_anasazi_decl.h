@@ -5,7 +5,8 @@
 //! 
 //! input parameters: similar to subspacejada (TODO: documentation)
 //!
-void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
+void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) Ainv_op,
+                         TYPE(const_op_ptr) B_op,
                          TYPE(const_mvec_ptr) v0,  eigSort_t which,
                          _MT_ tol,                 int *nEig,
                          int* nIter,               int blockDim,

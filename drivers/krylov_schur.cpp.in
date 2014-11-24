@@ -9,19 +9,24 @@
 #include "phist_kernels.h"
 #include "phist_operator.h"
 #include "phist_anasazi.h"
-#include ${PHIST_TG_HFILE}
-
-#include "phist_driver_utils.h"
 #include "phist_ScalarTraits.hpp"
 
+// wrap iterative linear solver as operator
+#include "phist_iter_op.h"
+
+#include ${PHIST_TG_HFILE}
+#include "phist_driver_utils.h"
+
 int main(int argc, char** argv)
-  {
+{
 #include "phist_std_typedefs.hpp"
   int i, ierr;
 
   comm_ptr_t comm;
   crsMat_ptr_t A;
   op_ptr_t A_op, B_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  op_ptr_t Ainv_op; // wrapper for an iterative linear solver for computing interior 
+                    // eigenvalues (used if which=TARGET)
   
   const_map_ptr_t map; // map (element distribution) of vectors according to 
                        // the distribution of matrix rows
@@ -32,6 +37,7 @@ int main(int argc, char** argv)
   // default input parameters:
   MT tol=1.0e-6;
   eigSort_t which=LM;
+  ST target_value;
   
   int sym=0;
   int how_many=10;
@@ -51,7 +57,8 @@ PHIST_MAIN_TASK_BEGIN
   {
     PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A> <symmetric/hermitian> <how many> <which> <tol>\n"
                            "          <max iters> <block size> <num blocks>\n"
-                           "(all but the first argument get default values if omitted)\n", 
+                           "(all but the first argument get default values if omitted)\n"
+                           "Which may be of the form \"TARGET\" <real value>\n",
                            argv[0]);
     // print usage message for creating/reading a matrix
     SUBR(create_matrix)(NULL, NULL, "usage",&ierr);
@@ -65,6 +72,10 @@ PHIST_MAIN_TASK_BEGIN
   GET_ARG(sym,p++);
   GET_ARG(how_many,p++);
   GET_ARG(which,p++);
+  if (which==TARGET)
+  {
+    GET_ARG(target_value,p++);
+  }
   GET_ARG(tol,p++);
   GET_ARG(max_iters,p++);
   GET_ARG(block_size,p++);
@@ -83,13 +94,28 @@ PHIST_MAIN_TASK_BEGIN
   /* create operator wrapper for computing Y=A*X using a CRS matrix */
   A_op = new TYPE(op);
   B_op = NULL;
+  Ainv_op = NULL;
   PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(A_op,A,&ierr),ierr);
+ 
+  bool shift_invert=false; 
+  if (which==TARGET)
+  {
+    shift_invert=true;
+    ST shift=-target_value;
+    which=LM;
+    Ainv_op = new TYPE(op);
+    MT linTol=std::max(tol/10,2*mt::eps());
+    int linIter=1000;
+    linSolv_t method=CARP_CG;
+    PHIST_ICHK_IERR(SUBR(op_wrap_solver)(Ainv_op,A,shift,
+        method,block_size,linTol,linIter,&ierr),ierr);
+  }
 
   ST eigs[how_many];
   MT resid[how_many];
   int num_iters=max_iters;
 
-  SUBR(anasazi)(A_op,B_op,NULL,which,tol,&how_many,
+  SUBR(anasazi)(A_op,Ainv_op,B_op,NULL,which,tol,&how_many,
         &num_iters,block_size,num_blocks,
         sym,X,eigs,&ierr);
 
@@ -107,6 +133,14 @@ PHIST_MAIN_TASK_BEGIN
   
   PHIST_ICHK_IERR(SUBR(mvec_norm2)(R,resid,&ierr),ierr);
   
+  if (shift_invert)
+  {
+    for (i=0;i<how_many;i++)
+    {
+      eigs[i]=st::one()/eigs[i]+target_value;
+    }
+  }
+  
   PHIST_SOUT(PHIST_VERBOSE,"Eigenvalue\tresidual\n");
   for (i=0;i<how_many;i++)
   {
@@ -122,4 +156,4 @@ PHIST_MAIN_TASK_END
 
   PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
   return ierr;
-  }
+}

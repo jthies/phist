@@ -184,8 +184,12 @@ try {
 
   if (*nEig>0)
   {
-    MV* evecs = (MV*)(soln.Evecs.getRawPtr());
-    PHIST_CHK_IERR(SUBR(mvec_get_block)(evecs,vX,0,*nEig-1, ierr),*ierr);
+    AnasaziMV* evecs = soln.Evecs.getRawPtr();
+    MV* _evecs=(MV*)evecs;
+#if defined(PHIST_KERNEL_LIB_GHOST)||defined(PHIST_KERNEL_LIB_FORTRAN)
+    _evecs=evecs->get();
+#endif
+    PHIST_CHK_IERR(SUBR(mvec_get_block)(_evecs,vX,0,*nEig-1, ierr),*ierr);
   }
   return;
 #endif /* PHIST_HAVE_ANASAZI */

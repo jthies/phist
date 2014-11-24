@@ -286,7 +286,8 @@ if (numSys>0)
     int nvec=S->nvec_;
     TYPE(const_mvec_ptr) b=S->b_;
     TYPE(mvec_ptr) x=X_r[ishift];
-    TYPE(mvec_ptr) xi=X_i[ishift];
+    TYPE(mvec_ptr) xi=NULL;
+    if (X_i!=NULL) xi=X_i[ishift];
 
   // could be used for premature termination of the loop,
   // but right now we don't allw the user to do that.
@@ -641,7 +642,7 @@ void SUBR(private_compResid)(TYPE(const_crsMat_ptr) A, int nvec, _ST_ sigma, _MT
     PHIST_CHK_IERR(SUBR(mvec_get_map)(x,&map,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_create)(&R,map,nvec,ierr),*ierr);
   }
-  if (RI==NULL)
+  if (RI==NULL && rc_variant)
   {
     const_map_ptr_t map;
     PHIST_CHK_IERR(SUBR(mvec_get_map)(xi,&map,ierr),*ierr);
