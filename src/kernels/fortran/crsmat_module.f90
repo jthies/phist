@@ -2582,7 +2582,6 @@ end if
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1), ldx, &
                 A%comm_buff%recvData(     1:  nvec,:),&
-                A%comm_buff%recvData(nvec+1:2*nvec,:),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 1,A%nRows,+1)        
         end if
@@ -2613,7 +2612,6 @@ end if
                 bzero, ldb, &
                 x_r%val(x_r%jmin,1),ldx, &
                 A%comm_buff%recvData(     1:  nvec,:),&
-                A%comm_buff%recvData(nvec+1:2*nvec,:),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)      
       else
@@ -2624,7 +2622,6 @@ end if
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1), ldx, &
                 A%comm_buff%recvData(     1:  nvec,:),&
-                A%comm_buff%recvData(nvec+1:2*nvec,:),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)
       end if
