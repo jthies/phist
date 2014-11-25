@@ -155,7 +155,11 @@ PHIST_MAIN_TASK_BEGIN
   {
     for (i=0;i<how_many;i++)
     {
-      eigs[i]=st::one()/eigs[i]+target_value;
+      // NOTE: the feastCorrectionSolver that is used
+      //       internally defines the operator to be
+      //       inverted as sI-A, so the eigenvalues 
+      //       returned have the wrong sign.
+      eigs[i]=target_value - st::one()/eigs[i];
     }
   }
   
