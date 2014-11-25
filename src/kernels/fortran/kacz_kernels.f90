@@ -34,6 +34,9 @@ subroutine crsmat_norms_ai2i(nshifts, nlocal, nnz, row_ptr, &
   end do
 end subroutine crsmat_norms_ai2i
 
+!! variant with real matrix and rhs but complex shift and x vector
+#define KACZ_RC_VARIANT
+
 !! general implementation of forward or backward Kaczmarz sweep for a single shift
 !! and possibly multiple vector columns in X and B
 subroutine dkacz_selector(nvec, nlocal, nhalo, ncols, nnz, &
@@ -210,4 +213,185 @@ subroutine dkacz_selector(nvec, nlocal, nhalo, ncols, nnz, &
   end if ! use coloring for parallelization
 
 end subroutine dkacz_selector
+
+
+!! all-real variant
+#undef KACZ_RC_VARIANT
+
+!! general implementation of forward or backward Kaczmarz sweep for a single shift
+!! and possibly multiple vector columns in X and B
+subroutine dkacz_selector_real(nvec, nlocal, nhalo, ncols, nnz, &
+        row_ptr, halo_ptr, col_idx, val, map, &
+        shift_r, b, ldb, &
+        x_r, ldx, halo_r, nrms_ai2i,omega,istart_in,iend_in,istep)
+
+  use :: omp_lib
+  use :: map_module
+
+  implicit none
+
+  integer, intent(in) :: nvec, nlocal, nhalo, ncols, ldx, ldb
+  integer(kind=8), intent(in) :: nnz
+  real(kind=8), intent(in) :: shift_r
+  integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
+  integer, intent(in) :: col_idx(nnz)
+  real(kind=8), intent(in) :: val(nnz)
+  TYPE(Map_t), intent(in) :: map
+  real(kind=8), intent(inout) :: x_r(ldx,*), b(ldb,*)
+  real(kind=8), intent(inout) :: halo_r(nvec,nhalo)
+  real(kind=8), intent(in) :: nrms_ai2i(nlocal)
+  real(kind=8), intent(in) :: omega
+  integer, intent(in) :: istart_in,iend_in,istep
+  ! locals
+  real(kind=8) :: tmp_r(nvec),tmp_i(nvec)
+  integer :: i, ic, jc, i0, i1, j0, j1, istart, iend
+  integer(kind=8) :: j
+  logical :: use_clr_kernel
+  logical :: use_bzero_kernel
+  integer istart_clr, iend_clr
+
+  ! if there is a dist-2 coloring available, call
+  ! an alternative kernel.
+  use_clr_kernel= (map%nColors>0) .and. &
+                  allocated(map%color_offset) .and. &
+                  allocated(map%color_idx) .and. &
+                  (map%coloringType==2) .and. &
+                  ((istep==1) .or. (istep==-1))
+
+  use_bzero_kernel=(ldb==0)
+
+  if (use_clr_kernel) then
+    if (istep==1) then
+      istart = 1
+      iend= map%nColors
+      j0=0
+      j1=-1
+    else if (istep==-1) then
+      istart= map%nColors+1
+      iend = 2
+      j0=-1
+      j1=0
+    end if
+  else
+    istart=istart_in
+    iend=iend_in
+  end if
+
+
+
+  if (use_clr_kernel) then
+    if (use_bzero_kernel) then
+#define KACZ_BZERO
+      if (nvec==1) then
+#define NVEC 1
+#include "kacz_loop_clr_def.h"
+      else if (nvec==2) then
+#define NVEC 2
+#include "kacz_loop_clr_def.h"
+      else if (nvec==3) then
+#define NVEC 3
+#include "kacz_loop_clr_def.h"
+      else if (nvec==4) then
+#define NVEC 4
+#include "kacz_loop_clr_def.h"
+      else if (nvec==6) then
+#define NVEC 6
+#include "kacz_loop_clr_def.h"
+      else if (nvec==8) then
+#define NVEC 8
+#include "kacz_loop_clr_def.h"
+      else if (nvec==16) then
+#define NVEC 16
+#include "kacz_loop_clr_def.h"
+      else
+! use NVEC=nvec
+#include "kacz_loop_clr_def.h"
+      end if ! block size
+#undef KACZ_BZERO
+    else
+      if (nvec==1) then
+#define NVEC 1
+#include "kacz_loop_clr_def.h"
+      else if (nvec==2) then
+#define NVEC 2
+#include "kacz_loop_clr_def.h"
+      else if (nvec==3) then
+#define NVEC 3
+#include "kacz_loop_clr_def.h"
+      else if (nvec==4) then
+#define NVEC 4
+#include "kacz_loop_clr_def.h"
+      else if (nvec==6) then
+#define NVEC 6
+#include "kacz_loop_clr_def.h"
+      else if (nvec==8) then
+#define NVEC 8
+#include "kacz_loop_clr_def.h"
+      else if (nvec==16) then
+#define NVEC 16
+#include "kacz_loop_clr_def.h"
+      else
+! use NVEC=nvec
+#include "kacz_loop_clr_def.h"
+      end if ! block size    
+    end if ! rhs=0
+  else ! no coloring - use lexicographic kernel
+    if (use_bzero_kernel) then
+#define KACZ_BZERO
+      if (nvec==1) then
+#define NVEC 1
+#include "kacz_loop_seq_def.h"
+      else if (nvec==2) then
+#define NVEC 2
+#include "kacz_loop_seq_def.h"
+      else if (nvec==3) then
+#define NVEC 3
+#include "kacz_loop_seq_def.h"
+      else if (nvec==4) then
+#define NVEC 4
+#include "kacz_loop_seq_def.h"
+      else if (nvec==6) then
+#define NVEC 6
+#include "kacz_loop_seq_def.h"
+      else if (nvec==8) then
+#define NVEC 8
+#include "kacz_loop_seq_def.h"
+      else if (nvec==16) then
+#define NVEC 16
+#include "kacz_loop_seq_def.h"
+      else
+! use NVEC=nvec
+#include "kacz_loop_seq_def.h"
+      end if ! block size
+#undef KACZ_BZERO
+    else
+      if (nvec==1) then
+#define NVEC 1
+#include "kacz_loop_seq_def.h"
+      else if (nvec==2) then
+#define NVEC 2
+#include "kacz_loop_seq_def.h"
+      else if (nvec==3) then
+#define NVEC 3
+#include "kacz_loop_seq_def.h"
+      else if (nvec==4) then
+#define NVEC 4
+#include "kacz_loop_seq_def.h"
+      else if (nvec==6) then
+#define NVEC 6
+#include "kacz_loop_seq_def.h"
+      else if (nvec==8) then
+#define NVEC 8
+#include "kacz_loop_seq_def.h"
+      else if (nvec==16) then
+#define NVEC 16
+#include "kacz_loop_seq_def.h"
+      else
+! use NVEC=nvec
+#include "kacz_loop_seq_def.h"
+      end if ! block size    
+    end if ! rhs=0
+  end if ! use coloring for parallelization
+
+end subroutine dkacz_selector_real
 

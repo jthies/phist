@@ -38,12 +38,39 @@ void SUBR(carp_sweep)(TYPE(const_crsMat_ptr) A, int numShifts,
         TYPE(mvec_ptr) X_r[], TYPE(mvec_ptr) X_i[],
         _MT_ const* nrm_ai2i, void* const work,
         _MT_ const * omega, int* ierr);
-  
+  void SUBR(carp_sweep_real_f)(TYPE(const_crsMat_ptr) A, int numShifts, 
+        _MT_ const sigma_r[],
+        TYPE(const_mvec_ptr) Rhs, 
+        TYPE(mvec_ptr) X_r[],
+        _MT_ const* nrm_ai2i, void* const work,
+        _MT_ const * omega, int* ierr);
+#include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  PHIST_CHK_IERR(SUBR(carp_sweep_f)(A, numShifts,
+  bool is_complex=!(X_i==NULL||sigma_i==NULL);
+  if (is_complex)
+  {
+    is_complex=false;
+    for (int i=0;i<numShifts;i++)
+    {
+      if (sigma_i[i]!=mt::zero()) 
+      {
+        is_complex=true;
+      }
+    }
+  }
+  if (is_complex||true)
+  {
+    PHIST_CHK_IERR(SUBR(carp_sweep_f)(A, numShifts,
         sigma_r, sigma_i, Rhs, X_r, X_i, nrm_ai2i, work,
         omega, ierr),*ierr);
+  }
+  else
+  {
+    PHIST_CHK_IERR(SUBR(carp_sweep_real_f)(A, numShifts,
+        sigma_r, Rhs, X_r, nrm_ai2i, work,
+        omega, ierr),*ierr);
+  }
   return;
 }
 
