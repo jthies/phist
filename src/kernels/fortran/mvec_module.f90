@@ -1,4 +1,9 @@
 #include "phist_config.h"
+#if PHIST_OUTLEV<4
+# ifdef TESTING
+# undef TESTING
+# endif
+#endif
 module mvec_module
   use map_module, only: Map_t
   use sdmat_module, only: SDMat_t

@@ -1,4 +1,9 @@
 #include "phist_config.h"
+#if PHIST_OUTLEV<4
+# ifdef TESTING
+# undef TESTING
+# endif
+#endif
 #ifdef PHIST_HAVE_GHOST
 #include "ghost/config.h"
 #endif
@@ -2429,6 +2434,212 @@ end if
     
   end subroutine phist_Dcarp_sweep
 
+
+  ! variant of carp_sweep with real matrix, real shift, and real vectors
+  subroutine phist_Dcarp_sweep_real(A_ptr, numShifts, shifts_r, &
+        b_ptr, x_r_ptr, nrms_ai2i_ptr, work_ptr, omegas, ierr) &
+  bind(C,name='phist_Dcarp_sweep_real_f')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    !--------------------------------------------------------------------------------
+    type(C_PTR),      value         :: A_ptr, b_ptr
+    integer(c_int),   value    :: numShifts
+    type(C_PTR)                     :: x_r_ptr(numShifts)
+    real(kind=c_double), intent(in) :: shifts_r(numShifts)
+    real(kind=c_double), intent(in) :: omegas(numShifts)
+    type(C_PTR),      value         :: nrms_ai2i_ptr,work_ptr
+    integer(C_INT),   intent(out)   :: ierr
+    !--------------------------------------------------------------------------------
+    type(CrsMat_t), pointer :: A
+    real(kind=8), pointer :: nrms_ai2i(:,:)
+    type(MVec_t), pointer :: x_r, b
+    type(sparseArray_t), pointer :: invProcCount
+    
+    !--------------------------------------------------------------------------------
+    integer :: iSys,i,j,k,l
+    integer :: ldx, ldb, nvec
+    integer :: theShape(2)
+    integer :: sendBuffSize,recvBuffSize
+    logical :: b_is_zero
+    real(kind=8), dimension(0,0), target :: bzero
+
+    ierr=0
+    
+    if ( .not. c_associated(A_ptr) ) then
+      write(*,*) 'A is NULL'
+      ierr = -88
+      return
+    else
+      call c_f_pointer(A_ptr,A)
+    end if
+
+    if ( .not. c_associated(b_ptr) ) then
+      b_is_zero=.true.
+      ldb=0
+    else
+      b_is_zero=.false.
+      call c_f_pointer(b_ptr,b)
+      ldb = size(b%val,1)
+    end if
+    !write(*,*) 'enter carp_sweep_f, bzero=',b_is_zero
+    if ( .not. c_associated(nrms_ai2i_ptr) ) then
+      write(*,*) 'nrms_ai2i is NULL'
+      ierr = -88
+      return
+    else
+      call c_f_pointer(nrms_ai2i_ptr,nrms_ai2i,theShape)
+    end if
+
+    if ( .not. c_associated(work_ptr) ) then
+      write(*,*) 'work is NULL'
+      ierr = -88
+      return
+    else
+      theShape(1) = A%nRows
+      theShape(2) = numShifts
+      call c_f_pointer(work_ptr,invProcCount)
+    end if
+
+    ! treat one shift at a time for the moment, here there
+    ! is potential for additional parallelism, of course,
+    ! but the user can also handle this level himself by
+    ! passsing in one shift at a time to this function.
+    do iSys=1,numShifts
+      
+      ! check that all C pointers are non-null
+      if ( .not. c_associated(x_r_ptr(iSys)) ) then
+        write(*,*) 'an input mvec x is NULL, index ',iSys
+        ierr = -88
+        return
+      end if
+      call c_f_pointer(x_r_ptr(iSys),x_r)
+
+      nvec = x_r%jmax-x_r%jmin+1
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      ! (re-)allocate communication buffers,
+      ! space for 2*nvecs vector halos is needed
+      ! because we have x_r and x_i (complex x).
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
+      if( allocated(A%comm_buff%recvData) ) then
+        if( size(A%comm_buff%recvData,1) .ne. nvec ) then
+          deallocate(A%comm_buff%recvData)
+          deallocate(A%comm_buff%sendData)
+        end if
+      end if
+
+      sendBuffSize = A%comm_buff%sendInd(A%comm_buff%nSendProcs+1)-1
+      recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
+
+      if( .not. allocated(A%comm_buff%recvData) ) then
+        allocate(A%comm_buff%recvData(nvec,recvBuffSize),&
+                 A%comm_buff%sendData(nvec,sendBuffSize),stat=ierr)
+        if (ierr/=0) then
+          ierr=-44
+          return
+        end if
+      end if
+
+      ldx = size(x_r%val,1)
+    
+      !write(*,*) 'nvec=',nvec
+      !write(*,*) 'x_r%jmin=',x_r%jmin
+      !write(*,*) 'x_r%jmax=',x_r%jmax
+      !write(*,*) 'bounds(1)=',lbound(x_r%val,1),ubound(x_r%val,1)
+      !write(*,*) 'bounds(2)=',lbound(x_r%val,2),ubound(x_r%val,2)
+      !write(*,*) 'ldx=',ldx
+    
+      ! exchange necessary elements of X. This is the same      
+      ! operation as for an spMVM: import from the domain       
+      ! map into the column map of A.                           
+      !
+      ! The function will ignore the dummy argument x_i=x_r and
+      ! communicate only x_r if it sees that the buffer is too small
+      ! for two mvecs.
+      call Dcarp_import(A,x_r,x_r,ierr)
+      if (ierr/=0) then
+        write(*,*) 'call Dcarp_import returned ierr=',ierr
+        return
+      end if
+
+      ! apply Kaczmarz forward sweep
+      if (b_is_zero) then
+      call dkacz_selector_real(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
+                A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+                A%row_map,&
+                shifts_r(iSys), &
+                bzero, ldb, &
+                x_r%val(x_r%jmin,1),ldx, &
+                A%comm_buff%recvData(     1:  nvec,:),&
+                nrms_ai2i(:,iSys),omegas(iSys),&
+                1,A%nRows,+1)
+        else
+      call dkacz_selector_real(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
+                A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+                A%row_map,&
+                shifts_r(iSys), &
+                b%val(b%jmin,1), ldb, &
+                x_r%val(x_r%jmin,1), ldx, &
+                A%comm_buff%recvData(     1:  nvec,:),&
+                A%comm_buff%recvData(nvec+1:2*nvec,:),&
+                nrms_ai2i(:,iSys),omegas(iSys),&
+                1,A%nRows,+1)        
+        end if
+      ! exchange values and average (export/average operation
+      ! from col map into domain map)
+      !
+      ! as in kacz_import, will check dimension of buffers and ignore x_i.
+      call Dcarp_average(A,x_r, x_r, invProcCount, ierr)
+      if (ierr/=0) then
+        write(*,*) 'call Dcarp_average returned ierr=',ierr
+        return
+      end if
+      ! import again into the column map (get updated halo elements)
+      ! before the backward sweep
+      call Dcarp_import(A,x_r,x_r,ierr)
+      if (ierr/=0) then
+        write(*,*) 'call Dcarp_import returned ierr=',ierr
+        return
+      end if
+
+      ! apply Kaczmarz backward sweep
+      !write(*,*) 'kacz (b)'
+      if (b_is_zero) then
+      call dkacz_selector_real(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
+                A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+                A%row_map,&
+                shifts_r(iSys), &
+                bzero, ldb, &
+                x_r%val(x_r%jmin,1),ldx, &
+                A%comm_buff%recvData(     1:  nvec,:),&
+                A%comm_buff%recvData(nvec+1:2*nvec,:),&
+                nrms_ai2i(:,iSys),omegas(iSys),&
+                A%nRows,1,-1)      
+      else
+      call dkacz_selector_real(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
+                A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
+                A%row_map,&
+                shifts_r(iSys), &
+                b%val(b%jmin,1), ldb, &
+                x_r%val(x_r%jmin,1), ldx, &
+                A%comm_buff%recvData(     1:  nvec,:),&
+                A%comm_buff%recvData(nvec+1:2*nvec,:),&
+                nrms_ai2i(:,iSys),omegas(iSys),&
+                A%nRows,1,-1)
+      end if
+      ! exchange values and average, stay in domain map
+      ! (i.e. do not import halo until the next call to
+      ! carp_sweep)
+      call Dcarp_average(A,x_r, x_r, invProcCount, ierr)
+      if (ierr/=0) then
+        write(*,*) 'call Dcarp_average returned ierr=',ierr
+        return
+      end if
+    end do ! shifts
+    
+  end subroutine phist_Dcarp_sweep_real
+
   subroutine phist_Dcarp_destroy(A_ptr, numShifts, work_ptr, ierr) &
   bind(C,name='phist_Dcarp_destroy_f')
     use, intrinsic :: iso_c_binding
@@ -2467,17 +2678,21 @@ subroutine Dcarp_import(A,xr,xi, ierr)
   integer, intent(out) :: ierr
 
   ! local
-  integer :: nvec
+  integer :: nvec,nrecv
   integer :: i,j,k,l
 
   nvec=xr%jmax-xr%jmin+1
+  nrecv=size(A%comm_buff%recvData,1)
+  if (nrecv/=nvec .and. nrecv/=2*nvec) then
+    write(*,*) 'WARNING: unexpected buffer size in ',__FILE__,' line ',__LINE__
+  end if
 
       
   ! start buffer irecv
   do i=1,A%comm_buff%nRecvProcs
     k = A%comm_buff%recvInd(i)
     l = A%comm_buff%recvInd(i+1)
-    call mpi_irecv(A%comm_buff%recvData(:,k:l-1),(l-k)*2*nvec,MPI_DOUBLE_PRECISION,&
+    call mpi_irecv(A%comm_buff%recvData(1:nrecv,k:l-1),(l-k)*nrecv,MPI_DOUBLE_PRECISION,&
                    A%comm_buff%recvProcId(i),3,A%row_map%Comm,A%comm_buff%recvRequests(i),ierr)
   end do
 
@@ -2488,14 +2703,16 @@ subroutine Dcarp_import(A,xr,xi, ierr)
     do j = k, l-1, 1
       A%comm_buff%sendData(1:nvec,j) = &
         xr%val(xr%jmin:xr%jmax,A%comm_buff%sendRowBlkInd(j))
+      if (nrecv==2*nvec) then
       A%comm_buff%sendData(nvec+1:2*nvec,j) = &
         xi%val(xi%jmin:xi%jmax,A%comm_buff%sendRowBlkInd(j))
+      end if
     end do
   end do
   do i=1,A%comm_buff%nSendProcs, 1
     k = A%comm_buff%sendInd(i)
     l = A%comm_buff%sendInd(i+1)
-    call mpi_isend(A%comm_buff%sendData(:,k:l-1),(l-k)*2*nvec,MPI_DOUBLE_PRECISION,&
+    call mpi_isend(A%comm_buff%sendData(1:nrecv,k:l-1),(l-k)*2*nrecv,MPI_DOUBLE_PRECISION,&
         &          A%comm_buff%sendProcId(i),3,A%row_map%Comm,A%comm_buff%sendRequests(i),ierr)
   end do
   if( A%comm_buff%nRecvProcs .gt. 0 ) then
@@ -2526,10 +2743,11 @@ subroutine Dcarp_average(A,xr,xi,invProcCount, ierr)
   integer :: ierr
 
   ! local
-  integer :: sendBuffSize,recvBuffSize, nvec
+  integer :: sendBuffSize,recvBuffSize, nvec, nrecv
   integer :: i,j,k,l
 
   nvec=xr%jmax-xr%jmin+1
+  nrecv=size(A%comm_buff%recvData,1)
 
   ! in this subroutine we assume that the (updated) halo elements
   ! are still in the receive buffer (recvData) from the previous 
@@ -2543,7 +2761,7 @@ subroutine Dcarp_average(A,xr,xi,invProcCount, ierr)
       do i=1,A%comm_buff%nSendProcs, 1
         k = A%comm_buff%sendInd(i)
         l = A%comm_buff%sendInd(i+1)
-        call mpi_irecv(A%comm_buff%sendData(:,k:l-1),(l-k)*2*nvec,MPI_DOUBLE_PRECISION,&
+        call mpi_irecv(A%comm_buff%sendData(1:nrecv,k:l-1),(l-k)*nrecv,MPI_DOUBLE_PRECISION,&
                        A%comm_buff%sendProcId(i),3,A%row_map%Comm,A%comm_buff%sendRequests(i),ierr)
       end do
 
@@ -2555,7 +2773,7 @@ subroutine Dcarp_average(A,xr,xi,invProcCount, ierr)
       do i=1,A%comm_buff%nRecvProcs, 1
         k = A%comm_buff%recvInd(i)
         l = A%comm_buff%recvInd(i+1)
-        call mpi_isend(A%comm_buff%recvData(:,k:l-1),(l-k)*2*nvec,&
+        call mpi_isend(A%comm_buff%recvData(1:nrecv,k:l-1),(l-k)*nrecv,&
                        MPI_DOUBLE_PRECISION,A%comm_buff%recvProcId(i),3,&
                        A%row_map%Comm,A%comm_buff%recvRequests(i),ierr)
     end do
@@ -2577,11 +2795,11 @@ subroutine Dcarp_average(A,xr,xi,invProcCount, ierr)
           xr%val(xr%jmin:xr%jmax,A%comm_buff%sendRowBlkInd(j)) &
         = xr%val(xr%jmin:xr%jmax,A%comm_buff%sendRowBlkInd(j)) &
         + A%comm_buff%sendData(1:nvec,j)
-
+        if (nrecv==2*nvec) then
           xi%val(xi%jmin:xi%jmax,A%comm_buff%sendRowBlkInd(j)) &
         = xi%val(xi%jmin:xi%jmax,A%comm_buff%sendRowBlkInd(j)) &
         + A%comm_buff%sendData(nvec+1:2*nvec,j)
-                
+        end if        
       end do
     end do
 
@@ -2590,7 +2808,9 @@ subroutine Dcarp_average(A,xr,xi,invProcCount, ierr)
     do i=1,invProcCount%nnz
       k=invProcCount%idx(i)
       xr%val(xr%jmin:xr%jmax,k) = xr%val(xr%jmin:xr%jmax,k)*invProcCount%val(i)
-      xi%val(xi%jmin:xi%jmax,k) = xi%val(xi%jmin:xi%jmax,k)*invProcCount%val(i)
+      if (nrecv==2*nvec) then
+        xi%val(xi%jmin:xi%jmax,k) = xi%val(xi%jmin:xi%jmax,k)*invProcCount%val(i)
+      end if
     end do
 end subroutine Dcarp_average
 

@@ -1,4 +1,9 @@
 #include "phist_config.h"
+#if PHIST_OUTLEV<4
+# ifdef TESTING
+# undef TESTING
+# endif
+#endif
 module sdmat_module
   implicit none
   private
