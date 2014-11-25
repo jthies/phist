@@ -94,6 +94,11 @@ PHIST_MAIN_TASK_BEGIN
   GET_ARG(max_iters,p++);
   GET_ARG(block_size,p++);
   GET_ARG(num_blocks,p++);
+  
+  if (num_blocks*block_size<how_many+10)
+  {
+    num_blocks=(how_many+10)/block_size;
+  }
 
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&ierr),ierr);
   
@@ -138,9 +143,8 @@ PHIST_MAIN_TASK_BEGIN
     PHIST_SOUT(PHIST_WARNING,"code %d returned from Anasazi\n",ierr);
     if (ierr<0) return ierr;
     }
-  PHIST_OUT(1,"number of iterations performed: %d\n",num_iters);
-  PHIST_OUT(1,"number of eigenpairs computed: %d\n",how_many);
-
+  PHIST_SOUT(PHIST_INFO,"number of iterations performed: %d\n",num_iters);
+  PHIST_SOUT(PHIST_INFO,"number of eigenpairs computed: %d\n",how_many);
   /* compute residual norms */
   PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(st::one(),A,X,st::zero(),R,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_vadd_mvec)(eigs,X,-st::one(),R,&ierr),ierr);
