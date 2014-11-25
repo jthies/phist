@@ -140,7 +140,7 @@ else
 #if PHIST_OUTLEV>PHIST_DEBUG
   PHIST_DEB("valid Anasazi parameters:\n");
   std::cerr << *anasazi->getValidParameters();
-  PHIST_DEB("current GMRES parameters:\n");
+  PHIST_DEB("current Anasazi parameters:\n");
   std::cerr << *anasazi->getCurrentParameters();
 #endif
 
@@ -155,7 +155,14 @@ try {
           (result==Anasazi::Unconverged?"Unconverged":
                                "<unknown return flag>"))
           <<"'"<<std::endl;
-    if (result!=Anasazi::Converged) *ierr=1;
+    if (result!=Anasazi::Converged)
+    { 
+      PHIST_SOUT(PHIST_WARNING,"if not all requested eigenvalues\n"
+                               "converged, the returned eigenvectors\n"
+                               "are incorrect, probably due to incorrect\n"
+                               "sorting or a missing function call (issue #79)\n");
+      *ierr=1;
+    }
   } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,status);
 
   if (!status)
@@ -170,7 +177,9 @@ try {
   if (!symmetric)
   {
     PHIST_SOUT(PHIST_WARNING,"%s, returning only real parts of eigenvalues\n"
-                             "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
+                             "and the eigenvectors are stored in compressed form\n"
+                             "(file %s, line %d)\n",
+                             __FUNCTION__,__FILE__,__LINE__);
   }
 #endif
   for (int i=0;i<*nEig; i++)
@@ -191,6 +200,7 @@ try {
 #endif
     PHIST_CHK_IERR(SUBR(mvec_get_block)(_evecs,vX,0,*nEig-1, ierr),*ierr);
   }
+  PHIST_SOUT(PHIST_VERBOSE,"returning nEig=%d, nIter=%d\n",*nEig,*nIter);
   return;
 #endif /* PHIST_HAVE_ANASAZI */
   }// end of anasazi
