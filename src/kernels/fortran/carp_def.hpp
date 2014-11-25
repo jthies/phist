@@ -59,7 +59,7 @@ void SUBR(carp_sweep)(TYPE(const_crsMat_ptr) A, int numShifts,
       }
     }
   }
-  if (is_complex||true)
+  if (is_complex)
   {
     PHIST_CHK_IERR(SUBR(carp_sweep_f)(A, numShifts,
         sigma_r, sigma_i, Rhs, X_r, X_i, nrm_ai2i, work,
