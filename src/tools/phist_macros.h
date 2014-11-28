@@ -200,12 +200,24 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #define PHIST_DEB(msg, ...)
 #endif
 
+/* ENTER_FCN definition */
 #ifdef __cplusplus
 # ifdef SCOREP_USER_ENABLE
 #   include <scorep/SCOREP_User.h>
 # else
 #   define SCOREP_USER_REGION(a, b)
 # endif
+# ifdef PHIST_KERNEL_LIB_GHOST
+#   include "ghost/task.h"
+#   define PHIST_GHOST_CHK_IN_TASK(s, ierr) { \
+      ghost_task_t *curtask = NULL; \
+      PHIST_CHK_GERR(ghost_task_cur(&curtask), ierr); \
+      if( curtask == NULL ) { \
+        PHIST_SOUT(PHIST_WARNING, "Called %s outside a ghost task!\n", s); }\
+      }
+# else
+#   define PHIST_GHOST_CHK_IN_TASK(s, ierr)
+#endif
 # include "phist_fcntrace.hpp"
 # if (PHIST_OUTLEV>=PHIST_TRACE) || defined(LIKWID_PERFMON)
 #     define ENTER_FCN(s) FcnTracer YouCantHaveMultiple_ENTER_FCN_StatementsInOneScope(s);\
