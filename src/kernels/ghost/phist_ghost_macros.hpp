@@ -34,7 +34,7 @@ PHIST_DEB("enqueuing C++11-lambda as GHOST task and waiting for it\n");
 
 // some helpful macros
 /*
-#define PHIST_GHOST_TASK_BEGIN phist_execute_lambda_as_ghost_task( [&]() {
+#define PHIST_GHOST_TASK_BEGIN phist_execute_lambda_as_ghost_task( [&]() -> void {
 #define PHIST_GHOST_TASK_END   } );
 */
 #else /* PHIST_HAVE_CXX11_LAMBDAS */

@@ -107,8 +107,7 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(SUBR(mvec_delete)(y,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(crsMat_delete)(A,&ierr),ierr);
 
-  PHIST_MAIN_TASK_END
-
+PHIST_MAIN_TASK_END
   PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
 
   return ierr;
