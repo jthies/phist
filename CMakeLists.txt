@@ -83,7 +83,7 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
   set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -xHOST -no-prec-div")
   set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
 
-  set (CMAKE_Fortran_FLAGS "-openmp -fpp -mkl")
+  set (CMAKE_Fortran_FLAGS "-openmp -fpp -mkl -align array64byte")
   set (CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS} -O3 -xHOST -no-prec-div")
   set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -check all -debug -traceback -DTESTING")
 

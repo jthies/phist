@@ -7,6 +7,7 @@ subroutine dspmv_buff_cpy_1(nlocal, nbuff, val, ind, buff)
   integer, intent(in) :: ind(nbuff,2)
   real(kind=8), intent(out) :: buff(nbuff)
   integer :: i
+!dir$ assume_aligned val:64, ind:64, buff:64
 
 !$omp parallel do schedule(static)
   do i = 1, nbuff, 1
@@ -23,6 +24,7 @@ subroutine dspmv_buff_cpy_2(nlocal, nbuff, val, ind, buff)
   integer, intent(in) :: ind(nbuff,2)
   real(kind=8), intent(out) :: buff(2,nbuff)
   integer :: i
+!dir$ assume_aligned val:64, ind:64, buff:64
 
 !$omp parallel do schedule(static)
   do i = 1, nbuff, 1
@@ -39,6 +41,7 @@ subroutine dspmv_buff_cpy_4(nlocal, nbuff, val, ind, buff)
   integer, intent(in) :: ind(nbuff,2)
   real(kind=8), intent(out) :: buff(4,nbuff)
   integer :: i
+!dir$ assume_aligned val:64, ind:64, buff:64
 
 !$omp parallel do schedule(static)
   do i = 1, nbuff, 1
@@ -55,6 +58,7 @@ subroutine dspmv_buff_cpy_8(nlocal, nbuff, val, ind, buff)
   integer, intent(in) :: ind(nbuff,2)
   real(kind=8), intent(out) :: buff(8,nbuff)
   integer :: i
+!dir$ assume_aligned val:64, ind:64, buff:64
 
 !$omp parallel do schedule(static)
   do i = 1, nbuff, 1
@@ -87,6 +91,7 @@ subroutine dspmv_buff_cpy_strided_2(nlocal, nbuff, ldx, val, ind, buff)
   integer, intent(in) :: ind(nbuff,2)
   real(kind=8), intent(out) :: buff(2,nbuff)
   integer :: i
+!dir$ assume_aligned val:8, ind:64, buff:64
 
 !$omp parallel do schedule(static)
   do i = 1, nbuff, 1
@@ -103,6 +108,7 @@ subroutine dspmv_buff_cpy_strided_4(nlocal, nbuff, ldx, val, ind, buff)
   integer, intent(in) :: ind(nbuff,2)
   real(kind=8), intent(out) :: buff(4,nbuff)
   integer :: i
+!dir$ assume_aligned val:8, ind:64, buff:64
 
 !$omp parallel do schedule(static)
   do i = 1, nbuff, 1
@@ -120,6 +126,7 @@ subroutine dspmv_buff_cpy_strided_8(nlocal, nbuff, ldx, val, ind, buff)
   integer, intent(in) :: ind(nbuff,2)
   real(kind=8), intent(out) :: buff(8,nbuff)
   integer :: i
+!dir$ assume_aligned val:8, ind:64, buff:64
 
 !$omp parallel do schedule(static)
   do i = 1, nbuff, 1
@@ -136,6 +143,7 @@ subroutine dspmv_buff_cpy_general(nvec, nlocal, nbuff, ldx, val, ind, buff)
   integer, intent(in) :: ind(nbuff,2)
   real(kind=8), intent(out) :: buff(nvec,nbuff)
   integer :: i
+!dir$ assume_aligned val:8, ind:64, buff:64
 
 !$omp parallel do schedule(static)
   do i = 1, nbuff, 1

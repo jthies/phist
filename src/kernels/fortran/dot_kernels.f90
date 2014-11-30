@@ -7,6 +7,7 @@ subroutine ddot_strided_1(nrows, v, ldv, w, ldw, vdot)
   real(kind=8), intent(in)  :: v(ldv,*), w(ldw,*)
   real(kind=8), intent(out) :: vdot
   integer :: i
+!dir$ assume_aligned v:8, w:8
 
   vdot = 0.
 !$omp parallel do reduction(+:vdot) schedule(static)
@@ -22,6 +23,7 @@ subroutine ddot_strided_2(nrows, v, ldv, w, ldw, vdot)
   real(kind=8), intent(in)  :: v(ldv,*), w(ldw,*)
   real(kind=8), intent(out) :: vdot(2)
   integer :: i
+!dir$ assume_aligned v:8, w:8
 
   vdot = 0.
 !$omp parallel do reduction(+:vdot) schedule(static)
@@ -37,6 +39,7 @@ subroutine ddot_strided_4(nrows, v, ldv, w, ldw, vdot)
   real(kind=8), intent(in)  :: v(ldv,*), w(ldw,*)
   real(kind=8), intent(out) :: vdot(4)
   integer :: i
+!dir$ assume_aligned v:8, w:8
 
   vdot = 0.
 !$omp parallel do reduction(+:vdot) schedule(static)
@@ -52,6 +55,7 @@ subroutine ddot_strided_8(nrows, v, ldv, w, ldw, vdot)
   real(kind=8), intent(in)  :: v(ldv,*), w(ldw,*)
   real(kind=8), intent(out) :: vdot(8)
   integer :: i
+!dir$ assume_aligned v:8, w:8
 
   vdot = 0.
 !$omp parallel do reduction(+:vdot) schedule(static)
@@ -67,6 +71,7 @@ subroutine ddot_1(nrows, v, w, vdot)
   real(kind=8), intent(in)  :: v(nrows), w(nrows)
   real(kind=8), intent(out) :: vdot
   integer :: i
+!dir$ assume_aligned v:64, w:64
 
   vdot = 0.
 !$omp parallel do reduction(+:vdot) schedule(static)
@@ -82,6 +87,7 @@ subroutine ddot_2(nrows, v, w, vdot)
   real(kind=8), intent(in)  :: v(2,nrows), w(2,nrows)
   real(kind=8), intent(out) :: vdot(2)
   integer :: i
+!dir$ assume_aligned v:64, w:64
 
   vdot = 0.
 !$omp parallel do reduction(+:vdot) schedule(static)
@@ -97,6 +103,7 @@ subroutine ddot_4(nrows, v, w, vdot)
   real(kind=8), intent(in)  :: v(4,nrows), w(4,nrows)
   real(kind=8), intent(out) :: vdot(4)
   integer :: i
+!dir$ assume_aligned v:64, w:64
 
   vdot = 0.
 !$omp parallel do reduction(+:vdot) schedule(static)
@@ -112,6 +119,7 @@ subroutine ddot_8(nrows, v, w, vdot)
   real(kind=8), intent(in)  :: v(8,nrows), w(8,nrows)
   real(kind=8), intent(out) :: vdot(8)
   integer :: i
+!dir$ assume_aligned v:64, w:64
 
   vdot = 0.
 !$omp parallel do reduction(+:vdot) schedule(static)
@@ -127,6 +135,7 @@ subroutine ddot_general(nrows, nvec, v, ldv, w, ldw, vdot)
   real(kind=8), intent(in)  :: v(ldv,*), w(ldw,*)
   real(kind=8), intent(out) :: vdot(nvec)
   integer :: i
+!dir$ assume_aligned v:8, w:8
 
   vdot = 0.
 !$omp parallel do reduction(+:vdot) schedule(static)
