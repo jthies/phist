@@ -40,7 +40,7 @@ typedef gidx_t ghost_gidx_t;
 //!   over processors
 //! - multi-vector (mvec_t): a dense matrix with N rows and m<<N columns, with a row-wise
 //!   distribution over computational nodes. The storage may be either column-major or
-//!   or column-major. In the latter case, the macro PHIST_MVECS_ROW_MAJOR should be 
+//!   or row-major. In the latter case, the macro PHIST_MVECS_ROW_MAJOR should be 
 //!   defined.
 //! - sdMat_t - a small serial dense matrix, replicated on all MPI processes.
 //! - crsMat_t: sparse matrix in *any* storage format (TODO: rename it)
