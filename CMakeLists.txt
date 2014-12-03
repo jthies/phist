@@ -468,10 +468,9 @@ set(GCOVR_EXCLUDES -e src/kernels/kernels_noimpl.c
                    -e src/tools/tools.c)
 
 # Custom properties
-set(INTEGRATION_BUILD 0 CACHE STRING "Indicates an integration build")
-set(PYTHON_INTERPRETER python CACHE STRING "String Path to the Python interpreter")
-set(GCOVR_SCRIPT /usr/bin/gcovr CACHE STRING "Path to the gcovr script")
-set(CPPCHECK_EXECUTABLE /usr/bin/cppcheck CACHE STRING "Path to the cppcheck executable")
+set(INTEGRATION_BUILD Off CACHE BOOL "Indicates an integration build")
+find_program(GCOVR_SCRIPT gcovr)
+find_program(CPPCHECK_EXECUTABLE cppcheck)
 if (${INTEGRATION_BUILD})
     set(GCOVR_OPTIONS -r src ${GCOVR_EXCLUDES} --xml -o coverage.xml CACHE STRING "String gcovr options")
     set(CPPCHECK_OPTIONS src --enable=all --xml 2> cppcheck.xml CACHE STRING "cppcheck options")
@@ -694,8 +693,7 @@ endif()
 
 # Add optional target "coverage" to genereate code coverage report (console / XML)
 if (GCOVR_SCRIPT)
-    add_custom_target(coverage
-    ${PYTHON_INTERPRETER} ${GCOVR_SCRIPT} ${GCOVR_OPTIONS}
+    add_custom_target(coverage ${GCOVR_SCRIPT} ${GCOVR_OPTIONS}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
 
