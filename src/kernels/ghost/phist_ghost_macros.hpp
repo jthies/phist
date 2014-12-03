@@ -21,10 +21,7 @@ void phist_execute_lambda_as_ghost_task(LFunc context)
   auto void_lambda_caller = [] (void* context) -> void* {(*(LFunc*)context)(); return NULL;};
 
   ghost_task_t *task = NULL;
-  // do not use hyperthreads
-  int nthreads;
-  ghost_machine_ncore(&nthreads,GHOST_NUMANODE_ANY);
-  ghost_task_create(&task, nthreads, 0, void_lambda_caller, (void*) &context, 
+  ghost_task_create(&task, GHOST_TASK_FILL_ALL, 0, void_lambda_caller, (void*) &context, 
         GHOST_TASK_DEFAULT, NULL, 0);
 PHIST_DEB("enqueuing C++11-lambda as GHOST task and waiting for it\n");
   ghost_task_enqueue(task);
