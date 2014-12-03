@@ -1,3 +1,4 @@
+#include "phist_config.h"
 ! gemm kernels for mecT_times_mvec
 
 subroutine dgemm_sC_1(nrows,nvecw,v,w,M)
@@ -12,7 +13,9 @@ subroutine dgemm_sC_1(nrows,nvecw,v,w,M)
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
   do i_ = 1, nrows, 4
+#ifdef PHIST_HAVE_OPENMP_SIMD
 !$omp simd collapse(2)
+#endif
   do i = i_, i_+3
     do j = 1, nvecw, 1
 !dir$ vector aligned
@@ -36,7 +39,9 @@ if( modulo(nvecw,2) .eq. 1 ) then
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
   do i_ = 1, nrows, 4
+#ifdef PHIST_HAVE_OPENMP_SIMD
 !$omp simd collapse(2)
+#endif
   do i = i_, i_+3
     do j = 1, nvecw, 1
 !dir$ vector aligned
@@ -48,7 +53,9 @@ else if( modulo(nvecw,2) .eq. 0 ) then
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
   do i_ = 1, nrows, 2
+#ifdef PHIST_HAVE_OPENMP_SIMD
 !$omp simd collapse(2)
+#endif
   do i = i_, i_+1
     do j = 1, nvecw, 1
 !dir$ vector aligned
@@ -73,7 +80,9 @@ if( modulo(nvecw,2) .eq. 1 ) then
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
   do i_ = 1, nrows, 4
+#ifdef PHIST_HAVE_OPENMP_SIMD
 !$omp simd collapse(2)
+#endif
   do i = i_, i_+3, 1
     do j = 1, nvecw, 1
 !dir$ vector aligned
@@ -85,7 +94,9 @@ else if( modulo(nvecw,4) .eq. 2 ) then
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
   do i_ = 1, nrows, 2
+#ifdef PHIST_HAVE_OPENMP_SIMD
 !$omp simd collapse(2)
+#endif
   do i = i_, i_+1, 1
     do j = 1, nvecw, 1
 !dir$ vector aligned
