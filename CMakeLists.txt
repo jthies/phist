@@ -50,31 +50,40 @@ set(external_libs)
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 
   message(STATUS "using GNU compiler flags")
-  set (CMAKE_C_FLAGS "-fopenmp -std=c99")
-  set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O3 -ffast-math -march=native")
-  set (CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -O2 -g")
-  if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
-    set (CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS} -dH -O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+
+  if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.9)
+    set (CMAKE_C_FLAGS        "-fopenmp -std=c99")
+    set (CMAKE_CXX_FLAGS      "-fopenmp -std=c++0x")
+    set (CMAKE_Fortran_FLAGS  "-fopenmp -cpp -ffree-line-length-none")
   else ()
-    set (CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS} -dH -O0 -g -fstack-protector-all -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_C_FLAGS        "-fopenmp -fopenmp-simd -std=c99")
+    set (CMAKE_CXX_FLAGS      "-fopenmp -fopenmp-simd -std=c++0x")
+    set (CMAKE_Fortran_FLAGS  "-fopenmp -fopenmp-simd -cpp -ffree-line-length-none")
   endif ()
 
-  set (CMAKE_CXX_FLAGS "-fopenmp -std=c++0x")
-  set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O2")
-  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS} -O2")
+  set (CMAKE_C_FLAGS_RELEASE        "-O3 -ffast-math -march=native")
+  set (CMAKE_CXX_FLAGS_RELEASE      "-O2")
+  set (CMAKE_Fortran_FLAGS_RELEASE  "-march=native -O3 -ffast-math")
+
+  set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -g")
+  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -g")
+  set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
+
   if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
-    set (CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS} -dH -O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+    set (CMAKE_C_FLAGS_DEBUG       "-dH -O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+    set (CMAKE_CXX_FLAGS_DEBUG     "-dH -O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+    set (CMAKE_Fortran_FLAGS_DEBUG "-dH -O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all")
   else ()
-    set (CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS} -dH -O0 -g -fstack-protector-all -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_C_FLAGS_DEBUG       "-dH -O0 -g -fstack-protector-all -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_CXX_FLAGS_DEBUG     "-dH -O0 -g -fstack-protector-all -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_Fortran_FLAGS_DEBUG "-dH -O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all")
   endif ()
 
-  set (CMAKE_Fortran_FLAGS "-fopenmp -cpp -ffree-line-length-none")
-  set (CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS} -march=native -O3 -ffast-math")
-  set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -dH -O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all")
 
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
   message(STATUS "using INTEL compiler flags")
+
   set (CMAKE_C_FLAGS "-openmp -Wno-unused-variable -mkl -std=c99")
   set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O3 -xHOST -no-prec-div")
   set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
@@ -83,7 +92,7 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
   set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -xHOST -no-prec-div")
   set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
 
-  set (CMAKE_Fortran_FLAGS "-openmp -fpp -mkl")
+  set (CMAKE_Fortran_FLAGS "-openmp -fpp -mkl -align array64byte")
   set (CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS} -O3 -xHOST -no-prec-div")
   set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -check all -debug -traceback -DTESTING")
 
@@ -105,6 +114,7 @@ endif ()
 
 # try to detect if we can use C++11 Lambdas
 include(CheckCXXSourceCompiles)
+include(CheckFortranSourceCompiles)
 CHECK_CXX_SOURCE_COMPILES("
   int main(int argc, char** argv)
   {
@@ -113,6 +123,19 @@ CHECK_CXX_SOURCE_COMPILES("
   }
 " PHIST_HAVE_CXX11_LAMBDAS
 )
+CHECK_Fortran_SOURCE_COMPILES("
+  program test
+    implicit none
+    integer :: i
+    real :: x(8)
+    !$omp simd
+    do i = 1, 8
+      x(i) = 0.
+    end do
+  end program test
+" PHIST_HAVE_OPENMP_SIMD
+)
+
 ##############################################################################
 # set enable precision?
 ##############################################################################
@@ -438,7 +461,7 @@ endforeach()
 
 target_link_libraries(phist_tools ${LAPACK_LIBS})
 if(NOT PHIST_KERNEL_LIB STREQUAL "ghost") #use MPI libs as found by GHOST in this case. otherwise, a clash between thread-safe and normal MPI will occur
-    target_link_libraries(phist_tools ${MPI_CXX_LIBRARIES})
+  target_link_libraries(phist_tools ${MPI_CXX_LIBRARIES} ${MPI_C_LIBRARIES} ${MPI_Fortran_LIBRARIES})
 endif()
 
 set(GCOVR_EXCLUDES -e src/kernels/kernels_noimpl.c

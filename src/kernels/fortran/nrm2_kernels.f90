@@ -7,6 +7,7 @@ subroutine dnrm2_strided_1(nrows, vec, ldv, vnrm)
   real(kind=8), intent(in)  :: vec(ldv,*)
   real(kind=8), intent(out) :: vnrm
   integer :: i
+!dir$ assume_aligned vec:8
 
   vnrm = 0.
 !$omp parallel do reduction(+:vnrm) schedule(static)
@@ -23,6 +24,7 @@ subroutine dnrm2_strided_2(nrows, vec, ldv, vnrm)
   real(kind=8), intent(in)  :: vec(ldv,*)
   real(kind=8), intent(out) :: vnrm(2)
   integer :: i
+!dir$ assume_aligned vec:8
 
   vnrm = 0.
 !$omp parallel do reduction(+:vnrm) schedule(static)
@@ -39,6 +41,7 @@ subroutine dnrm2_strided_4(nrows, vec, ldv, vnrm)
   real(kind=8), intent(in)  :: vec(ldv,*)
   real(kind=8), intent(out) :: vnrm(4)
   integer :: i
+!dir$ assume_aligned vec:8
 
   vnrm = 0.
 !$omp parallel do reduction(+:vnrm) schedule(static)
@@ -55,6 +58,7 @@ subroutine dnrm2_strided_8(nrows, vec, ldv, vnrm)
   real(kind=8), intent(in)  :: vec(ldv,*)
   real(kind=8), intent(out) :: vnrm(8)
   integer :: i
+!dir$ assume_aligned vec:8
 
   vnrm = 0.
 !$omp parallel do reduction(+:vnrm) schedule(static)
@@ -71,6 +75,7 @@ subroutine dnrm2_1(nrows, vec, vnrm)
   real(kind=8), intent(in)  :: vec(nrows)
   real(kind=8), intent(out) :: vnrm
   integer :: i
+!dir$ assume_aligned vec:64
 
   vnrm = 0.
 !$omp parallel do reduction(+:vnrm) schedule(static)
@@ -87,6 +92,7 @@ subroutine dnrm2_2(nrows, vec, vnrm)
   real(kind=8), intent(in)  :: vec(2,nrows)
   real(kind=8), intent(out) :: vnrm(2)
   integer :: i
+!dir$ assume_aligned vec:64
 
   vnrm = 0.
 !$omp parallel do reduction(+:vnrm) schedule(static)
@@ -103,6 +109,7 @@ subroutine dnrm2_4(nrows, vec, vnrm)
   real(kind=8), intent(in)  :: vec(4,nrows)
   real(kind=8), intent(out) :: vnrm(4)
   integer :: i
+!dir$ assume_aligned vec:64
 
   vnrm = 0.
 !$omp parallel do reduction(+:vnrm) schedule(static)
@@ -119,6 +126,7 @@ subroutine dnrm2_8(nrows, vec, vnrm)
   real(kind=8), intent(in)  :: vec(8,nrows)
   real(kind=8), intent(out) :: vnrm(8)
   integer :: i
+!dir$ assume_aligned vec:64
 
   vnrm = 0.
 !$omp parallel do reduction(+:vnrm) schedule(static)
@@ -135,6 +143,7 @@ subroutine dnrm2_general(nrows, nvec, vec, ldv, vnrm)
   real(kind=8), intent(in)  :: vec(ldv,*)
   real(kind=8), intent(out) :: vnrm(nvec)
   integer :: i
+!dir$ assume_aligned vec:8
 
   vnrm = 0.
 !$omp parallel do reduction(+:vnrm) schedule(static)

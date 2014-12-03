@@ -213,7 +213,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
       ghost_task_t *curtask = NULL; \
       PHIST_CHK_GERR(ghost_task_cur(&curtask), ierr); \
       if( curtask == NULL ) { \
-        PHIST_SOUT(PHIST_WARNING, "Called %s outside a ghost task!\n", s); }\
+        PHIST_SOUT(PHIST_DEBUG, "Called %s outside a ghost task!\n", s); }\
       }
 # else
 #   define PHIST_GHOST_CHK_IN_TASK(s, ierr)
