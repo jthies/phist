@@ -224,6 +224,7 @@ subroutine dspmvm_1(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx
   real(kind=8) :: tmp(1)
   integer :: i
   integer(kind=8) :: j
+!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x:64, halo:64, y:64
 
 !$omp parallel do private(tmp) schedule(static)
   do i = 1, nlocal, 1
@@ -252,6 +253,7 @@ subroutine dspmvm_2(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx
   real(kind=8) :: tmp(2)
   integer :: i
   integer(kind=8) :: j
+!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x:64, halo:64, y:64
 
 !$omp parallel do private(tmp) schedule(static)
   do i = 1, nlocal, 1
@@ -280,6 +282,7 @@ subroutine dspmvm_4(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx
   real(kind=8) :: tmp(4)
   integer :: i
   integer(kind=8) :: j
+!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x:64, halo:64, y:64
 
 !$omp parallel do private(tmp) schedule(static)
   do i = 1, nlocal, 1
@@ -308,6 +311,7 @@ subroutine dspmvm_8(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx
   real(kind=8) :: tmp(8)
   integer :: i
   integer(kind=8) :: j
+!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x:64, halo:64, y:64
 
 !$omp parallel do private(tmp) schedule(static)
   do i = 1, nlocal, 1
@@ -338,6 +342,7 @@ subroutine dspmvm_strided_1(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr,
   real(kind=8) :: tmp(1)
   integer :: i
   integer(kind=8) :: j
+!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x:8, halo:64, y:8
 
 !$omp parallel do private(tmp) schedule(static)
   do i = 1, nlocal, 1
@@ -366,6 +371,7 @@ subroutine dspmvm_strided_2(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr,
   real(kind=8) :: tmp(2)
   integer :: i
   integer(kind=8) :: j
+!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x:8, halo:64, y:8
 
 !$omp parallel do private(tmp) schedule(static)
   do i = 1, nlocal, 1
@@ -394,6 +400,7 @@ subroutine dspmvm_strided_4(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr,
   real(kind=8) :: tmp(4)
   integer :: i
   integer(kind=8) :: j
+!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x:8, halo:64, y:8
 
 !$omp parallel do private(tmp) schedule(static)
   do i = 1, nlocal, 1
@@ -422,6 +429,7 @@ subroutine dspmvm_strided_8(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr,
   real(kind=8) :: tmp(8)
   integer :: i
   integer(kind=8) :: j
+!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x:8, halo:64, y:8
 
 !$omp parallel do private(tmp) schedule(static)
   do i = 1, nlocal, 1
@@ -451,6 +459,7 @@ subroutine dspmvm_generic(nvec, nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_
   real(kind=8) :: tmp(nvec)
   integer :: i
   integer(kind=8) :: j
+!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x:8, halo:64, y:8
 
 !$omp parallel do private(tmp) schedule(static)
   do i = 1, nlocal, 1
