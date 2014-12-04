@@ -488,6 +488,7 @@ target_link_libraries(phist_tools ${LAPACK_LIBS})
 if(NOT PHIST_KERNEL_LIB STREQUAL "ghost") #use MPI libs as found by GHOST in this case. otherwise, a clash between thread-safe and normal MPI will occur
   target_link_libraries(phist_tools ${MPI_CXX_LIBRARIES} ${MPI_C_LIBRARIES} ${MPI_Fortran_LIBRARIES})
 endif()
+target_link_libraries(phist_tools m) #link the C-math library as it may not be automatically included in pure C programs
 
 set(GCOVR_EXCLUDES -e src/kernels/kernels_noimpl.c
                    -e src/tools/tools.c)
