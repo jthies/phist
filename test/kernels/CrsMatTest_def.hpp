@@ -71,7 +71,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
 
 void rebuildVectors(TYPE(const_crsMat_ptr) A)
   {
-  if (haveMats_ && typeImplemented_)
+  if (typeImplemented_ && haveMats_)
     {
     // set vec1 to be a valid X, vec2 a valid Y in Y=AX
     const_map_ptr_t range_map, domain_map;

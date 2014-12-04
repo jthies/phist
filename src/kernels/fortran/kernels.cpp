@@ -23,7 +23,13 @@
 
 #include <malloc.h>
 #include <cstring>
+#ifdef PHIST_HAVE_OPENMP
 #include <omp.h>
+#else
+namespace{
+int omp_get_thread_num() {return 0;}
+}
+#endif
 #include <sched.h>
 #include <iostream>
 
@@ -79,18 +85,26 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
 
   int rank;
   PHIST_CHK_IERR( *ierr = MPI_Comm_rank(MPI_COMM_WORLD, &rank), *ierr);
+#ifdef PHIST_HAVE_OPENMP
+  PHIST_SOUT(PHIST_WARNING,"Trying to pin the OpenMP threads to the cores without caring about the real topology of the system.\n"\
+                           "Thus, this may fail/crash. Use GHOST kernels!\n"\
+                           "Assuming %d NUMA domains per node, with %d cores per NUMA domain and %d SMT threads per core\n",
+                           PHIST_FORTRAN_PIN_NUMA_DOMAINS, PHIST_FORTRAN_PIN_CORES_PER_NUMA, PHIST_FORTRAN_PIN_SMTTHREADS_PER_CORE);
 #pragma omp parallel
   {
+    // WARNING: the pinning may crash/fail depending on the settings/machine
+    //          use GHOST kernels
     int tid = omp_get_thread_num();
-//    int coreid = tid;// + 10*(rank%2);
-    int coreid = tid + 10*(rank%2);
-    cpu_set_t *cpu = CPU_ALLOC(40);
-    size_t size = CPU_ALLOC_SIZE(40);
+    int coreid = tid + PHIST_FORTRAN_PIN_CORES_PER_NUMA*( rank % PHIST_FORTRAN_PIN_NUMA_DOMAINS);
+    const int totalSmtCores = PHIST_FORTRAN_PIN_CORES_PER_NUMA*PHIST_FORTRAN_PIN_NUMA_DOMAINS*PHIST_FORTRAN_PIN_SMTTHREADS_PER_CORE;
+    cpu_set_t *cpu = CPU_ALLOC(totalSmtCores);
+    size_t size = CPU_ALLOC_SIZE(totalSmtCores);
     CPU_ZERO_S(size, cpu);
     CPU_SET_S(coreid, size, cpu);
     sched_setaffinity(0, size, cpu);
     CPU_FREE(cpu);
   }
+#endif
 
   std::ostringstream oss;
   oss << "rank: " << rank << ", cores(thread):";

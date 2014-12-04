@@ -23,8 +23,6 @@
 // encapsulates functions and classes needed for function level time monitoring
 namespace phist_TimeMonitor
 {
-  void summarize();
-
   // used to time a function
   class Timer
   {
@@ -118,6 +116,9 @@ namespace phist_TimeMonitor
 
         // consider only timers from the first process!
         MPI_Bcast(&nTimers, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+        if( nTimers == 0 )
+          return;
 
         // get timer names from the first process
         std::string fcnNameList;

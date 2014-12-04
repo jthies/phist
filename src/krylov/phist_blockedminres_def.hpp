@@ -200,14 +200,22 @@ PHIST_SOUT(PHIST_INFO,"\n");
     //    % lanczos update
     {
       _ST_ prevBeta[maxId+1-minId];
-      //_ST_ prevBeta_[maxId+1-minId];
       std::vector<_MT_> beta(maxId+1-minId, -mt::one());
       _ST_ alpha[maxId+1-minId];
 
       // alpha = work_x' * work_y
-      PHIST_CHK_IERR( SUBR(mvec_dot_mvec) (work_x, work_y, alpha, ierr), *ierr);
-      for(int i = 0; i < maxId+1-minId; i++)
-        alpha[i] = -alpha[i];
+      if( sharedCurDimV > 0 )
+      {
+        PHIST_CHK_IERR( SUBR(mvec_dot_mvec) (work_x, work_y, alpha, ierr), *ierr);
+      }
+      for(int i = 0; i < numSys; i++)
+      {
+        if( S[i]->curDimV_ > 0 )
+          alpha[S[i]->id-minId] = -alpha[S[i]->id-minId];
+        else
+          alpha[S[i]->id-minId] = st::zero();
+      }
+
       // obtain prevBeta from state
       for(int i = 0; i < numSys; i++)
       {
@@ -216,18 +224,18 @@ PHIST_SOUT(PHIST_INFO,"\n");
         else
           prevBeta[S[i]->id-minId] = st::zero();
       }
+
       // lanczos: work_y = work_y - beta*v_(k-1) - alpha*work_x
-      int prevVind = mvecBuff->prevIndex(S[0]->lastVind_,2);
-      PHIST_CHK_IERR( SUBR(mvec_view_block) (mvecBuff->at(prevVind), &Vk, minId, maxId, ierr), *ierr);
-      //PHIST_CHK_IERR( SUBR(mvec_dot_mvec) (Vk, work_y, prevBeta_, ierr), *ierr);
-      //PHIST_SOUT(PHIST_INFO, "prevBeta (correct val)");
-      //for(int i = 0; i < maxId+1-minId; i++)
-      //{
-        //PHIST_SOUT(PHIST_INFO, "\t%8.4e (%8.4e)", prevBeta[i], prevBeta_[i]);
-      //}
-      //PHIST_SOUT(PHIST_INFO, "\n");
-      PHIST_CHK_IERR( SUBR(mvec_vadd_mvec) (alpha,    work_x, st::one(), work_y, ierr), *ierr);
-      PHIST_CHK_IERR( SUBR(mvec_vadd_mvec) (prevBeta, Vk,     st::one(), work_y, ierr), *ierr);
+      if(sharedCurDimV > 0)
+      {
+        PHIST_CHK_IERR( SUBR(mvec_vadd_mvec) (alpha,    work_x, st::one(), work_y, ierr), *ierr);
+      }
+      if( sharedCurDimV > 1)
+      {
+        int prevVind = mvecBuff->prevIndex(S[0]->lastVind_,2);
+        PHIST_CHK_IERR( SUBR(mvec_view_block) (mvecBuff->at(prevVind), &Vk, minId, maxId, ierr), *ierr);
+        PHIST_CHK_IERR( SUBR(mvec_vadd_mvec) (prevBeta, Vk,     st::one(), work_y, ierr), *ierr);
+      }
 
       // calculate new beta
       PHIST_CHK_IERR( SUBR(mvec_norm2) (work_y, &beta[0], ierr), *ierr);
