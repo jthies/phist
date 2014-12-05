@@ -1,3 +1,7 @@
+#include "phist_config.h"
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
 // Copyright 2008, Google Inc.
 // All rights reserved.
 //
@@ -2250,9 +2254,23 @@ Message& Message::operator <<(const ::wstring& wstr) {
 #endif  // GTEST_HAS_GLOBAL_WSTRING
 
 // AssertionResult constructors.
+// Used in EXPECT_TRUE/FALSE(bool_expression).
+AssertionResult::AssertionResult(bool success)
+{
+#ifdef PHIST_HAVE_MPI
+  int localSuccess = success;
+  int globalAndSuccess, globalOrSuccess;
+  int ierr = 0;
+  ierr = ierr || MPI_Allreduce(&localSuccess, &globalAndSuccess, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
+  ierr = ierr || MPI_Allreduce(&localSuccess, &globalOrSuccess, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+  globalFailure_ = ierr || (globalAndSuccess != globalOrSuccess);
+#endif
+  success_ = success;
+}
+
 // Used in EXPECT_TRUE/FALSE(assertion_result).
 AssertionResult::AssertionResult(const AssertionResult& other)
-    : success_(other.success_),
+    : success_(other.success_), globalFailure_(other.globalFailure_),
       message_(other.message_.get() != NULL ?
                new ::std::string(*other.message_) :
                static_cast< ::std::string*>(NULL)) {

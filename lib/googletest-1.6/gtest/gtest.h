@@ -1,3 +1,4 @@
+#include "phist_config.h"
 // Copyright 2005, Google Inc.
 // All rights reserved.
 //
@@ -17293,10 +17294,14 @@ class GTEST_API_ AssertionResult {
   // Used in EXPECT_TRUE/FALSE(assertion_result).
   AssertionResult(const AssertionResult& other);
   // Used in the EXPECT_TRUE/FALSE(bool_expression).
-  explicit AssertionResult(bool success) : success_(success) {}
+  explicit AssertionResult(bool success);
 
   // Returns true iff the assertion succeeded.
+#ifdef PHIST_HAVE_MPI
+  operator bool() const { return success_ && !globalFailure_; }  // NOLINT
+#else
   operator bool() const { return success_; }  // NOLINT
+#endif
 
   // Returns the assertion's negation. Used with EXPECT/ASSERT_FALSE.
   AssertionResult operator!() const;
@@ -17336,6 +17341,10 @@ class GTEST_API_ AssertionResult {
 
   // Stores result of the assertion predicate.
   bool success_;
+#ifdef PHIST_HAVE_MPI
+  // Marks different results on different processes or MPI failure
+  bool globalFailure_;
+#endif
   // Stores the message describing the condition in case the expectation
   // construct is not satisfied with the predicate's outcome.
   // Referenced via a pointer to avoid taking too much stack frame space
