@@ -478,6 +478,10 @@ GTEST_DECLARE_bool_(death_test_use_fork);
 
 namespace internal {
 
+#ifdef PHIST_HAVE_MPI
+// MPI communicator
+MPI_Comm GTEST_MPI_COMM;
+#endif
 // The value of GetTestTypeId() as seen from within the Google Test
 // library.  This is solely for testing GetTestTypeId().
 GTEST_API_ extern const TypeId kTestTypeIdInGoogleTest;
@@ -2261,8 +2265,8 @@ AssertionResult::AssertionResult(bool success)
   int localSuccess = success;
   int globalAndSuccess, globalOrSuccess;
   int ierr = 0;
-  ierr = ierr || MPI_Allreduce(&localSuccess, &globalAndSuccess, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
-  ierr = ierr || MPI_Allreduce(&localSuccess, &globalOrSuccess, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+  ierr = ierr || MPI_Allreduce(&localSuccess, &globalAndSuccess, 1, MPI_INT, MPI_LAND, internal::GTEST_MPI_COMM);
+  ierr = ierr || MPI_Allreduce(&localSuccess, &globalOrSuccess, 1, MPI_INT, MPI_LOR, internal::GTEST_MPI_COMM);
   globalFailure_ = ierr || (globalAndSuccess != globalOrSuccess);
 #endif
   success_ = success;
@@ -6194,6 +6198,19 @@ void InitGoogleTestImpl(int* argc, CharType** argv) {
 
   ParseGoogleTestFlagsOnly(argc, argv);
   GetUnitTestImpl()->PostFlagParsingInit();
+
+#ifdef PHIST_HAVE_MPI
+  int ierr = MPI_Comm_dup(MPI_COMM_WORLD, &GTEST_MPI_COMM);
+  if( ierr != 0 )
+  {
+    GTEST_LOG_(WARNING) << "Unable to create own MPI Comm, use MPI_COMM_WORLD instead!";
+    GTEST_MPI_COMM = MPI_COMM_WORLD;
+  }
+  else
+  {
+    GTEST_LOG_(INFO) << "Created own MPI communicator for google-test assertions!";
+  }
+#endif
 }
 
 }  // namespace internal

@@ -16,8 +16,8 @@
 
 GTEST_API_ int main(int argc, char **argv) {
     int ierr,test_result;
-    testing::InitGoogleTest(&argc, argv);
     phist_kernels_init(&argc,&argv,&ierr);
+    testing::InitGoogleTest(&argc, argv);
 
     int rank = 0;
 #ifdef PHIST_HAVE_MPI

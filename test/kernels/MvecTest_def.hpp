@@ -431,24 +431,30 @@ public:
       ASSERT_EQ(0,ierr_);
 
       // now use the raw data to verify results
+      _MT_ outerErr = mt::zero();
+      _MT_ viewErr = mt::zero();
+      _MT_ innerErr = mt::zero();
       for(int i = 0; i < nloc_; i++)
       {
         for(int j = 0; j < nvec_; j++)
         {
           if( j < jmin || j > jmax )
           {
-            ASSERT_REAL_EQ(mt::zero(), st::abs(vec1_vp_[VIDX(i,j,lda_)]-outer_val));
+            outerErr = std::max(outerErr, st::abs(vec1_vp_[VIDX(i,j,lda_)]-outer_val));
           }
           else if( j < jmin+jmin2 || j > jmin+jmax2 )
           {
-            ASSERT_REAL_EQ(mt::zero(), st::abs(vec1_vp_[VIDX(i,j,lda_)]-view_val));
+            viewErr = std::max(viewErr, st::abs(vec1_vp_[VIDX(i,j,lda_)]-view_val));
           }
           else
           {
-            ASSERT_REAL_EQ(mt::zero(), st::abs(vec1_vp_[VIDX(i,j,lda_)]-inner_val));
+            innerErr = std::max(innerErr, st::abs(vec1_vp_[VIDX(i,j,lda_)]-inner_val));
           }
         }
       }
+      ASSERT_REAL_EQ(mt::zero(), outerErr);
+      ASSERT_REAL_EQ(mt::zero(), viewErr);
+      ASSERT_REAL_EQ(mt::zero(), innerErr);
     }
   }
 

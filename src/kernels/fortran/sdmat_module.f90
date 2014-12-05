@@ -384,11 +384,14 @@ contains
 
   subroutine phist_DsdMat_random(sdmat_ptr, ierr) bind(C,name='phist_DsdMat_random_f')
     use, intrinsic :: iso_c_binding
+    use mpi
     !--------------------------------------------------------------------------------
     type(C_PTR),        value         :: sdmat_ptr
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(SDMat_t), pointer :: sdmat
+    real(kind=8), allocatable :: buff(:,:)
+    integer :: m, n
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(sdmat_ptr) ) then
@@ -398,8 +401,14 @@ contains
 
     call c_f_pointer(sdmat_ptr, sdmat)
 
-    call random_number(sdmat%val(sdmat%imin:sdmat%imax,sdmat%jmin:sdmat%jmax))
+    m = sdmat%imax-sdmat%imin+1
+    n = sdmat%jmax-sdmat%jmin+1
+    allocate(buff(m,n))
+    call random_number(buff)
+
     ierr = 0
+    call MPI_Bcast(buff, m*n, MPI_DOUBLE_PRECISION, sdmat%comm, 0, ierr);
+    sdmat%val(sdmat%imin:sdmat%imax,sdmat%jmin:sdmat%jmax) = buff
 
   end subroutine phist_DsdMat_random
 

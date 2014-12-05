@@ -125,7 +125,7 @@ void rebuildVectors(TYPE(const_crsMat_ptr) A)
     SUBR(mvec_vadd_mvec)(alpha_shifts, vec1_, st::one(), vec3_, &ierr_);
     ASSERT_EQ(0, ierr_);
 
-    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_), 1000*mt::eps());
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_), sqrt(mt::eps()));
   }
 
 
@@ -410,10 +410,20 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
 #endif
 
       // check result
-      for(int i = 0; i < nloc_; i++)
+      for(int i = 0; i < nglob_; i++)
       {
         for(int j = 0; j < nvec_; j++)
-          ASSERT_REAL_EQ((ilower+i+1)%nglob_ + j*nglob_,st::real(vec2_vp_[VIDX(i,j,lda_)]));
+        {
+          if( i >= ilower && i < ilower+nloc_ )
+          {
+            ASSERT_REAL_EQ((i+1)%nglob_ + j*nglob_,st::real(vec2_vp_[VIDX(i-ilower,j,lda_)]));
+          }
+          else
+          {
+            // also assert elements of other processes, s.t. all processes do the same number of asserts!
+            ASSERT_REAL_EQ((i+1)%nglob_ + j*nglob_, (i+1)%nglob_ + j*nglob_);
+          }
+        }
       }
     }
   }
@@ -577,14 +587,11 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
   return;
 #endif
       // check result
+      _MT_ err = 0;
       for(int i = 0; i < nloc_; i++)
-      {
         for(int j = 0; j < nvec_; j++)
-        {
-          ASSERT_NEAR(st::real(precalc_result[(ilower+i)*nvec_+j]), st::real(vec2_vp_[VIDX(i,j,lda_)]), mt::sqrt(mt::eps()));
-          ASSERT_NEAR(st::imag(precalc_result[(ilower+i)*nvec_+j]), st::imag(vec2_vp_[VIDX(i,j,lda_)]), mt::sqrt(mt::eps()));
-        }
-      }
+          err = std::max(err, st::abs( precalc_result[(ilower+i)*nvec_+j] - vec2_vp_[VIDX(i,j,lda_)] ));
+      ASSERT_NEAR(err, mt::zero(), mt::sqrt(mt::eps()));
     }
   }
 
