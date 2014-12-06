@@ -117,7 +117,7 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
   # for ipo
   # melven: probably not useful or even dangerous?
   #  kernel routines should probably best optimized individually;
-  #  for fortran: I'm passing arrays as scalars in fortran (call by reference),
+  #  for builtin kernels: I'm passing arrays as scalars in builtin kernels (call by reference),
   #               because the kernel routines would be too complex otherwise
   #               (and they should be fast and not complex!).
   #               The compiler best shouldn't be able to know about this...
@@ -191,7 +191,7 @@ endif()
 # setup which kernel library is being used.
 ##############################################################################
 
-set(PHIST_KERNEL_LIB "fortran" CACHE STRING "Select underlying kernel libraries for phist (epetra|tpetra|ghost|fortran)")
+set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra)")
 message(STATUS "kernel lib " ${PHIST_KERNEL_LIB} " ...")
 
 set(LOAD_TRILI_PKG,"")
@@ -213,16 +213,16 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   set(PHIST_SELL_C 1 CACHE INTEGER "chunk size C for the SELL-C-sigma format")
   set(PHIST_SELL_SIGMA 1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format")
 
-elseif (PHIST_KERNEL_LIB STREQUAL "fortran")
-  set(PHIST_KERNEL_LIB_FORTRAN 1)
+elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
+  set(PHIST_KERNEL_LIB_BUILTIN 1)
   set(PHIST_MVECS_ROW_MAJOR 1)
-  set(PHIST_FORTRAN_PIN_CORES_PER_NUMA 10 CACHE STRING "Number of cores in one NUMA domain, used for pinning with the Fortran kernels")
-  set(PHIST_FORTRAN_PIN_NUMA_DOMAINS 2 CACHE STRING "Number of NUMA domains per node, used for pinning with the Fortran kernels")
-  set(PHIST_FORTRAN_PIN_SMTTHREADS_PER_CORE 2 CACHE STRING "Number of SMT threads per core, used for pinning with the Fortran kernels")
-  if( PHIST_HAVE_OPENMP )
-    message(STATUS "Pinning configured for ${PHIST_FORTRAN_PIN_NUMA_DOMAINS} NUMA domain(s) per node with ${PHIST_FORTRAN_PIN_CORES_PER_NUMA} core(s) each with ${PHIST_FORTRAN_PIN_SMTTHREADS_PER_CORE} SMT thread(s) each.")
-  else()
-    message(STATUS "OpenMP and thus pinning disabled!")
+  option(PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS "Try to pin the threads to cores using sched_setaffinity (based on simple heuristics; for Intel use env KMP_AFFINITY=\"granularity=fine,compact,1,0\"" On)
+
+  if( PHIST_ENABLE_SP )
+    message(FATAL_ERROR "Builtin kernel lib does not support single-precision calculations!")
+  endif()
+  if( NOT PHIST_HAVE_MPI )
+    message(FATAL_ERROR "Builtin kernel lib requires MPI!")
   endif()
 else ()
   message( FATAL_ERROR "PHIST_KERNEL_LIB not set or not recognized" )
@@ -232,14 +232,14 @@ endif ()
 # We recommend linking with Belos because we use its Tsqr
 # interface. If Belos is not found, important functionality
 # may not work, in particular the mvec_QR function is currently
-# implemented via Belos by all kernel libs except "Fortran"
+# implemented via Belos by all kernel libs except "builtin"
 
 find_package(Teuchos)
 
 if (${Teuchos_FOUND})
   list(APPEND LOAD_TRILI_PKG "Teuchos")
   set(PHIST_HAVE_TEUCHOS 1)
-  set(PHIST_USE_TEUCHOS_TIMEMONITOR On CACHE BOOL "Use Timemonitor from Trilinos package Teuchos instead of builtin one.")
+  option(PHIST_USE_TEUCHOS_TIMEMONITOR "Use TimeMonitor from Trilinos package Teuchos instead of builtin one." On)
   message(STATUS "Found Teuchos")
 else()
   message(STATUS "Teuchos not found.")
@@ -291,7 +291,7 @@ endif()
 
 
 # these specific versions of type-generic drivers have to be created
-if  (PHIST_KERNEL_LIB STREQUAL "epetra" OR PHIST_KERNEL_LIB STREQUAL "fortran")
+if  (PHIST_KERNEL_LIB STREQUAL "epetra" OR PHIST_KERNEL_LIB STREQUAL "builtin")
 set(TG_Types D)
 else ()
   if (PHIST_ENABLE_SP)
@@ -305,30 +305,30 @@ else ()
   endif ()
 endif ()
 
-if (PHIST_KERNEL_LIB STREQUAL "fortran")
+if (PHIST_KERNEL_LIB STREQUAL "builtin")
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_driver_utils.c
                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/env_module.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/map_module.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/mrgrnk.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/crsmat_module.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/parmetis.c
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/colpack.cpp
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/mvec_module.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/nrm2_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/axpy_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/axpy_kernels_nt.c
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/gather_scatter_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/dot_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/gemm_kernels_sB.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/gemm_kernels_sC.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/spmvm_kernels_nt.c
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/spmvm_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/spmv_buff_cpy_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/kacz_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/sdmat_module.f90)
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/env_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/map_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/mrgrnk.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/crsmat_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/parmetis.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/colpack.cpp
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/mvec_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/nrm2_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/axpy_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/axpy_kernels_nt.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gather_scatter_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/dot_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sC.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmvm_kernels_nt.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmvm_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmv_buff_cpy_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/kacz_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_module.f90)
 else()
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_driver_utils.c
@@ -405,8 +405,8 @@ else()
   message(STATUS "GHOST not found, some functionality will be disabled and return -99 ('not implemented')")
 endif()
 
-# load parmetis for reordering fortran
-if(PHIST_KERNEL_LIB STREQUAL "fortran")
+# load parmetis for reordering builtin
+if(PHIST_KERNEL_LIB STREQUAL "builtin")
   
   find_package(ParMETIS)
   if(PARMETIS_FOUND)

@@ -1,5 +1,5 @@
-#ifndef KERNELS_FORTRAN_TYPEDEFS_HPP
-#define KERNELS_FORTRAN_TYPEDEFS_HPP
+#ifndef KERNELS_BUILTIN_TYPEDEFS_HPP
+#define KERNELS_BUILTIN_TYPEDEFS_HPP
 
 #include "phist_config.h"
 /* needs to be included before system headers for some intel compilers+mpi */

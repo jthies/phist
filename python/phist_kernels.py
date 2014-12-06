@@ -14,7 +14,7 @@ try:
     print 'Success.'
 except OSError:
     print 'Failed. Trying builtin kernels'
-    _phist_kernels = _ct.CDLL(name='libphist_kernels_fortran.so', mode=_ct.RTLD_GLOBAL)
+    _phist_kernels = _ct.CDLL(name='libphist_kernels_builtin.so', mode=_ct.RTLD_GLOBAL)
     print 'Success.'
 
 

@@ -2,6 +2,8 @@
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
+#else
+#error "builtin kernels only work with MPI"
 #endif
 
 #include "phist_macros.h"
@@ -14,35 +16,111 @@
 #include "typedefs.hpp"
 #include "phist_ScalarTraits.hpp"
 
-#ifdef PHIST_HAVE_TEUCHOS
-#include "Teuchos_TimeMonitor.hpp"
-#endif
 #ifdef PHIST_HAVE_LIKWID
 #include <likwid.h>
 #endif
 
-#include <malloc.h>
-#include <cstring>
+#include <sys/resource.h>
+
 #ifdef PHIST_HAVE_OPENMP
 #include <omp.h>
 #else
 namespace{
 int omp_get_thread_num() {return 0;}
+int omp_get_num_threads() {return 1;}
 }
 #endif
+#ifdef PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS
+#include <string>
+#include <map>
+#include <sstream>
 #include <sched.h>
-#include <iostream>
 
+namespace {
+// thread pinning using simple heuristics
+void pinThreads()
+{
+  int ierr = 0;
+  // gather system information
+  // threads
+  int nThreads = 1;
+#pragma omp parallel shared(nThreads)
+  {
+#pragma omp critical
+    nThreads = omp_get_num_threads();
+  }
+  // MPI rank
+  int myRank, nRanks;
+  PHIST_CHK_IERR( ierr = MPI_Comm_rank(MPI_COMM_WORLD, &myRank), ierr);
+  PHIST_CHK_IERR( ierr = MPI_Comm_size(MPI_COMM_WORLD, &nRanks), ierr);
+  // nodes
+  int ranksPerNode = 1;
+  int myRankInNode = 0;
+  {
+    char myNodeId[MPI_MAX_PROCESSOR_NAME];
+    int nodeId_strlen = 0;
+    PHIST_CHK_IERR( ierr = MPI_Get_processor_name(myNodeId, &nodeId_strlen), ierr);
+    char allNodeId[nRanks][MPI_MAX_PROCESSOR_NAME];
+    PHIST_CHK_IERR( ierr = MPI_Allgather(myNodeId, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, allNodeId, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, MPI_COMM_WORLD), ierr);
+    // on the same node the node ids are identical
+    std::map<std::string,int> nodeNameSet;
+    for(int i = 0; i < nRanks; i++)
+    {
+      if( i == myRank )
+        myRankInNode = nodeNameSet[(std::string(myNodeId))];
+      nodeNameSet[(std::string(myNodeId))]++;
+    }
+    ranksPerNode = nRanks / nodeNameSet.size();
+  }
+  int myCPU_SETSIZE = std::max(CPU_SETSIZE, ranksPerNode*nThreads);
+
+  PHIST_SOUT(PHIST_WARNING,"Trying to pin the OpenMP threads to the cores based on simple heuristics (may fail, use GHOST instead!).\n"\
+                           "Using %d ranks per node with %d threads each\n",
+                           ranksPerNode, nThreads);
+
+#pragma omp parallel
+  {
+    int tid = omp_get_thread_num();
+    int targetCoreId = nThreads*myRankInNode + tid;
+
+    cpu_set_t *cpu = CPU_ALLOC(myCPU_SETSIZE);
+    size_t size = CPU_ALLOC_SIZE(myCPU_SETSIZE);
+    CPU_ZERO_S(size, cpu);
+    CPU_SET_S(targetCoreId, size, cpu);
+    sched_setaffinity(0, size, cpu);
+    CPU_FREE(cpu);
+  }
+
+  // print result
+  std::ostringstream oss;
+#pragma omp parallel
+  {
+    int tid = omp_get_thread_num();
+    int coreid = sched_getcpu();
+#pragma omp critical
+    oss << "\t" << coreid << " (" << tid << ")";
+  }
+  if( myRank < ranksPerNode )
+  {
+    PHIST_OUT(PHIST_INFO, "Result of pinning is coreId(threadId): %s\n", oss.str().c_str());
+  }
+}
+}
+#endif
+
+
+// remember if we initialized the MPI
+namespace {
+int mpiInitializedBefore = false;
+}
 
 extern "C" {
-
-#ifndef PHIST_HAVE_MPI
-#error "fortran kernels only work with MPI"
-#endif
 
 
 // comment in for glibc/gcc and memory alignment problems...
 /*
+#include <malloc.h>
+#include <cstring>
 // force all memory allocations to be 16 byte aligned!
 static void*(*old_malloc_hook)(size_t,const void*);
 static void * my_malloc_hook (size_t size, const void *caller)
@@ -76,70 +154,47 @@ void init_random_seed(void);
 void phist_kernels_init(int* argc, char*** argv, int* ierr)
 {
   *ierr=0;
-  int initialized = 0;
 
-  PHIST_CHK_IERR( *ierr = MPI_Initialized(&initialized), *ierr);
-  if (!initialized) {
+  PHIST_CHK_IERR( *ierr = MPI_Initialized(&mpiInitializedBefore), *ierr);
+  if (!mpiInitializedBefore)
+  {
   	PHIST_CHK_IERR( *ierr = MPI_Init(argc, argv), *ierr);
   }
 
-  int rank;
-  PHIST_CHK_IERR( *ierr = MPI_Comm_rank(MPI_COMM_WORLD, &rank), *ierr);
-#ifdef PHIST_HAVE_OPENMP
-  PHIST_SOUT(PHIST_WARNING,"Trying to pin the OpenMP threads to the cores without caring about the real topology of the system.\n"\
-                           "Thus, this may fail/crash. Use GHOST kernels!\n"\
-                           "Assuming %d NUMA domains per node, with %d cores per NUMA domain and %d SMT threads per core\n",
-                           PHIST_FORTRAN_PIN_NUMA_DOMAINS, PHIST_FORTRAN_PIN_CORES_PER_NUMA, PHIST_FORTRAN_PIN_SMTTHREADS_PER_CORE);
-#pragma omp parallel
-  {
-    // WARNING: the pinning may crash/fail depending on the settings/machine
-    //          use GHOST kernels
-    int tid = omp_get_thread_num();
-    int coreid = tid + PHIST_FORTRAN_PIN_CORES_PER_NUMA*( rank % PHIST_FORTRAN_PIN_NUMA_DOMAINS);
-    const int totalSmtCores = PHIST_FORTRAN_PIN_CORES_PER_NUMA*PHIST_FORTRAN_PIN_NUMA_DOMAINS*PHIST_FORTRAN_PIN_SMTTHREADS_PER_CORE;
-    cpu_set_t *cpu = CPU_ALLOC(totalSmtCores);
-    size_t size = CPU_ALLOC_SIZE(totalSmtCores);
-    CPU_ZERO_S(size, cpu);
-    CPU_SET_S(coreid, size, cpu);
-    sched_setaffinity(0, size, cpu);
-    CPU_FREE(cpu);
-  }
-#endif
+  // allow unlimited stack
+  struct rlimit rlim = { RLIM_INFINITY, RLIM_INFINITY };
+  PHIST_CHK_IERR( *ierr = setrlimit(RLIMIT_STACK, &rlim), *ierr);;
 
-  std::ostringstream oss;
-  oss << "rank: " << rank << ", cores(thread):";
-#pragma omp parallel
-  {
-    int tid = omp_get_thread_num();
-    int coreid = sched_getcpu();
-#pragma omp critical
-    oss << "\t" << coreid << " (" << tid << ")";
-  }
-  std::cout << oss.str() << std::endl;
+#ifdef PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS
+  pinThreads();
+#endif
 
 #ifdef PHIST_HAVE_LIKWID
   LIKWID_MARKER_INIT;
 #pragma omp parallel
   {
     LIKWID_MARKER_THREADINIT;
-    LIKWID_MARKER_START("phist<fortran>");
+    LIKWID_MARKER_START("phist<builtin>");
   }
 #endif
   init_random_seed();
 }
 
-// finalize fortran
+// finalize builtin kernels
 void phist_kernels_finalize(int* ierr)
 {
 #ifdef PHIST_HAVE_LIKWID
 #pragma omp parallel
   {
-    LIKWID_MARKER_STOP("phist<fortran>");
+    LIKWID_MARKER_STOP("phist<builtin>");
   }
   LIKWID_MARKER_CLOSE;
 #endif
 PHIST_CXX_TIMER_SUMMARIZE
-  PHIST_CHK_IERR( *ierr = MPI_Finalize(), *ierr);
+  if( !mpiInitializedBefore )
+  {
+    PHIST_CHK_IERR( *ierr = MPI_Finalize(), *ierr);
+  }
   *ierr=0;
 }
 

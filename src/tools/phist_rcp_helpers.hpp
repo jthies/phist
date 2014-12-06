@@ -38,7 +38,7 @@ namespace phist
   //! specialization for const ghost_densemat_t
   Teuchos::RCP<const GhostMV> rcp(const ghost_densemat_t* rawPtr, bool ownMem=true);
 
-#elif defined(PHIST_KERNEL_LIB_FORTRAN)
+#elif defined(PHIST_KERNEL_LIB_BUILTIN)
 
   //! rcp for fortran mvec, includes creating the FortranMV wrapper
   //Teuchos::RCP<FortranMV> rcp(void* rawPtr, bool ownMem=true);
@@ -74,7 +74,7 @@ namespace phist
   template<>
   const void* ref2ptr(const GhostMV& V);
 
-#elif defined(PHIST_KERNEL_LIB_FORTRAN)
+#elif defined(PHIST_KERNEL_LIB_BUILTIN)
 
   //template<>
   //void* ref2ptr(FortranMV& V);

@@ -4,7 +4,6 @@
 # required core operations (CARP etc.) in the fortran kernel implementation.
 
 # compile without Trilinios and override env var for kernel lib
-unset PHIST_KERNEL_LIB
 unset TRILINOS_HOME
 unset Trilinos_HOME
 
@@ -17,9 +16,7 @@ CC=mpicc
 CXX=mpicxx
 FC=mpif90
 SRC_DIR=${HOME}/essex/phist
-cmake -DCMAKE_BUILD_TYPE=Release \
-      -DPHIST_KERNEL_LIB=fortran \
-      -DPARMETIS_DIR=${PARMETIS_DIR} \
+cmake -DPARMETIS_DIR=${PARMETIS_DIR} \
       -DCOLPACK_DIR=${COLPACK_DIR} \
       -DCMAKE_C_COMPILER=mpicc \
       -DCMAKE_CXX_COMPILER=mpicxx \

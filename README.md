@@ -13,9 +13,9 @@ PHIST contains
 * an abstract `kernel' interface layer defining the basic operations commonly used in 
   iterative linear algebra solvers
 * implementations of the interface using
-    * own optimized Fortran 90 kernels (MPI+OpenMP)
-    * Trilinos (epetra or tpetra)
+    * builtin sample implementation (MPI+OpenMP)
     * GHOST (developed in ESSEX, MPI+X)
+    * Trilinos (epetra or tpetra)
 * some algorithms implemented using the interface layer:
     * Jacobi-Davidson eigenvalue solvers for nonsymmetric matrices, suitable for finding a 
     few exterior eigenvalues (standard eigenvalue problems up to now)
@@ -40,7 +40,7 @@ either
 
 Choices supported right now are:
 
-* fortran (supplied with phist, chosen by default)
+* builtin (supplied with phist, chosen by default)
 * ghost
 * epetra
 * tpetra
@@ -50,7 +50,7 @@ Choices supported right now are:
 -----------------------
 
 The PHIST project can be compiled and used without any additional dependencies if the
-`fortran' kernel lib is used. For better performance, one should use the optional 
+`builtin' kernel lib is used. For better performance, one should use the optional 
 third-party libraries (TPLs) ParMETIS (for repartitioning the matrix) and ColPack (for 
 enabling intra-node parallelism in CARP-CG), or switch to ghost+TPLs. Note that we currently 
 do not support the use of GPUs/Xeon PHI even with ghost as kernel lib.
@@ -59,17 +59,17 @@ do not support the use of GPUs/Xeon PHI even with ghost as kernel lib.
 # Dependencies and optional packages #
 --------------------------------------
 
-* fortran
+* builtin
     * optional:
-        * ParMETIS: http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview
-        * ColPack: http://cscapes.cs.purdue.edu/coloringpage/software.htm
-        * essex/physics: https://bitbucket.org/essex/physics (if not available, some
+        * ParMETIS:       http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview
+        * ColPack:        http://cscapes.cs.purdue.edu/coloringpage/software.htm
+        * essex/physics:  https://bitbucket.org/essex/physics (if not available, some
           example physics problems like the spin chain and graphene have been copied into
           the phist repo and will be used, but they might be outdated).
 * ghost
     * required:
-        * essex/ghost: https://bitbucket.org/essex/ghost
-        * essex/physics: https://bitbucket.org/essex/physics
+        * essex/ghost:    https://bitbucket.org/essex/ghost
+        * essex/physics:  https://bitbucket.org/essex/physics
     * optional: depends on ghost installation
 * epetra/tpetra
     * required:
@@ -79,9 +79,9 @@ do not support the use of GPUs/Xeon PHI even with ghost as kernel lib.
 Typically CMake will automatically find the TPL if you pass the
 variable (TPL_NAME)_DIR to the cmake command, for instance:
 
-cmake   -DPHIST_KERNEL_LIB=ghost \
-        -DGHOST_DIR=<path to ghost lib dir> \
-        <path to phist dir>
+  cmake   -DPHIST_KERNEL_LIB=ghost \
+          -DGHOST_DIR=<path to ghost lib dir> \
+          <path to phist dir>
 
 --------------------------------
 # PHIST Installation (details) #
@@ -99,10 +99,10 @@ you need cmake and MPI, on the DLR systems, use
 
   module add cmake openmpi
 
-As a start, use the fortran kernel lib without TPLs:
+As a start, use the builtin kernel lib without TPLs:
 
   cd build/
-  cmake -DPHIST_KERNEL_LIB=fortran ..
+  cmake -DPHIST_KERNEL_LIB=builtin ..
 
 Available targets for building just a certain component (libraries, 
 drivers, or tests) are

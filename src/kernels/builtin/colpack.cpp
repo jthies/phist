@@ -6,7 +6,7 @@
 #include "ColPack/ColPackHeaders.h"
 #endif
 // interface to ColPack's graph coloring algorithms. 
-// Input: local CRS arrays as used in the fortran kernels (only local edges are considered)
+// Input: local CRS arrays as used in the builtin kernels (only local edges are considered)
 //        dist: only distance 2 supported for now
 //        *ncolors: will contain the number of colurs
 //        colors: dimension nrows, preallocated by user, contains 0-based color values.
