@@ -1,5 +1,5 @@
-#ifndef BELOS_GHOST_MV_HPP
-#define BELOS_GHOST_MV_HPP
+#ifndef PHIST_MULTIVECTOR_HPP
+#define PHIST_MULTIVECTOR_HPP
 
 #include "phist_config.h"
 /* needs to be included before system headers for some intel compilers+mpi */
@@ -49,7 +49,7 @@ namespace phist {
 //! in order to get a ghost_vec_t* from a  
 //! MultiVector object (or whatever the underly-
 //! ing kernel lib uses as vector format).
-template<typename ST>
+template<typename __ST>
 class MultiVector
 {
 // all instances of this class that are actually used
