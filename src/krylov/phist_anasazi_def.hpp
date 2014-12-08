@@ -126,13 +126,6 @@ else
   *ierr=-99;
   }
 
-#if PHIST_OUTLEV>PHIST_DEBUG
-  PHIST_DEB("valid Anasazi parameters:\n");
-  std::cerr << *anasazi->getValidParameters();
-  PHIST_DEB("current GMRES parameters:\n");
-  std::cerr << *anasazi->getCurrentParameters();
-#endif
-
 ///////////////////////////////////////////////////////////////////////
 // solve the system!                                                 //
 ///////////////////////////////////////////////////////////////////////
