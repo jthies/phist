@@ -75,7 +75,7 @@
 
 /* PHIST_SOUT is used in phist_timemonitor.hpp */
 #if defined(__cplusplus) && defined(PHIST_TIMEMONITOR)
-#ifdef PHIST_USE_TEUCHOS_TIMENONITOR
+#ifdef PHIST_USE_TEUCHOS_TIMEMONITOR
 /* the Teuchos time monitor is a bit fancier when it comes    */
 /* to non bulk-synchronous execution models like master/slave */
 #include "Teuchos_TimeMonitor.hpp"
