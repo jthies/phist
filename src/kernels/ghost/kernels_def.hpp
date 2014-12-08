@@ -28,10 +28,11 @@ const char* filename,int* ierr)
 extern "C" void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
 const char* filename,int* ierr)
 {
-  *ierr=0;
   ENTER_FCN(__FUNCTION__);
+  *ierr=0;
 #include "phist_std_typedefs.hpp"
 PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   CAST_PTR_FROM_VOID(const MPI_Comm,comm,vcomm,*ierr);
   if (filename==NULL)
   {
@@ -148,9 +149,10 @@ extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vV,
         const_map_ptr_t vmap, int nvec, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
+  *ierr=0;
 #include "phist_std_typedefs.hpp"
 PHIST_GHOST_TASK_BEGIN
-  *ierr=0;
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   CAST_PTR_FROM_VOID(const ghost_map_t, map,vmap,*ierr);
   ghost_densemat_t* result;
   ghost_densemat_traits_t vtraits = map->vtraits_template;/*ghost_cloneVtraits(map->vtraits_template);*/
@@ -210,10 +212,11 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
         const_comm_ptr_t vcomm, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
+  *ierr=0;
   CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*ierr);
 #include "phist_std_typedefs.hpp"
 PHIST_GHOST_TASK_BEGIN
-  *ierr=0;
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   ghost_densemat_t* result;
   ghost_densemat_traits_t dmtraits=GHOST_DENSEMAT_TRAITS_INITIALIZER;
         dmtraits.nrows=(ghost_lidx_t)nrows;
@@ -488,8 +491,9 @@ extern "C" void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
                              int jmin, int jmax, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
-PHIST_GHOST_TASK_BEGIN
   *ierr=0;
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,Vblock,vVblock,*ierr);
   *ierr=0;
@@ -518,8 +522,9 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
                              int jmin, int jmax, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
-PHIST_GHOST_TASK_BEGIN
   *ierr=0;
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,Vblock,vVblock,*ierr);
 
@@ -648,8 +653,9 @@ extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
                              int imin, int imax, int jmin, int jmax, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
-PHIST_GHOST_TASK_BEGIN
   *ierr=0;
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,Mblock,vMblock,*ierr);
 
@@ -700,8 +706,9 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
                              int imin, int imax, int jmin, int jmax, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
-PHIST_GHOST_TASK_BEGIN
   *ierr=0;
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,Mblock,vMblock,*ierr);
 
   ghost_densemat_t* Mb_view=NULL;
@@ -753,8 +760,9 @@ extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) vM, int* ierr)
 extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, _ST_ value, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
-PHIST_GHOST_TASK_BEGIN
   *ierr=0;
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
   PHIST_DEB("put value, V @ %p. V->traits.nrows=%" PRlidx "\n",V,V->traits.nrows);
   V->fromScalar(V,(void*)&value);
@@ -765,8 +773,9 @@ PHIST_GHOST_TASK_END
 extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vV, _ST_ value, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
-PHIST_GHOST_TASK_BEGIN
   *ierr=0;
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
   V->fromScalar(V,(void*)&value);
 PHIST_GHOST_TASK_END
@@ -776,8 +785,9 @@ PHIST_GHOST_TASK_END
 extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
-PHIST_GHOST_TASK_BEGIN
   *ierr=0;
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
   V->fromRand(V);
 PHIST_GHOST_TASK_END
@@ -814,8 +824,9 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* ierr)
 extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
-PHIST_GHOST_TASK_BEGIN
   *ierr=0;
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*ierr);
   M->fromRand(M);
 PHIST_GHOST_TASK_END
@@ -829,10 +840,11 @@ PHIST_GHOST_TASK_END
                             _MT_* vnrm, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
+  *ierr=0;
 #include "phist_std_typedefs.hpp"  
 PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   int i,nv;
-  *ierr=0;
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);  
   nv=V->traits.ncols;
   _ST_ tmp[V->traits.ncols];
@@ -842,9 +854,9 @@ PHIST_GHOST_TASK_BEGIN
 PHIST_GHOST_TASK_END
 }
 
-  //! normalize (in the 2-norm) each column of v and return ||v||_2
-  //! for each vector i in vnrm[i] (must be pre-allocated by caller)
-  extern "C" void SUBR(mvec_normalize)(TYPE(mvec_ptr) vV,
+//! normalize (in the 2-norm) each column of v and return ||v||_2
+//! for each vector i in vnrm[i] (must be pre-allocated by caller)
+extern "C" void SUBR(mvec_normalize)(TYPE(mvec_ptr) vV,
                             _MT_* vnrm, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
@@ -865,8 +877,9 @@ extern "C" void SUBR(mvec_scale)(TYPE(mvec_ptr) vV,
                             _ST_ scalar, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
-PHIST_GHOST_TASK_BEGIN
   *ierr=0;
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);  
   V->scale(V,(void*)&scalar);
   return;
@@ -878,9 +891,10 @@ extern "C" void SUBR(mvec_vscale)(TYPE(mvec_ptr) vV,
                             const _ST_* scalar, int* ierr)
 {
   ENTER_FCN(__FUNCTION__);
+  *ierr=0;
 #include "phist_std_typedefs.hpp"  
 PHIST_GHOST_TASK_BEGIN
-  *ierr=0;
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);  
   V->vscale(V,(void*)scalar);
   return;
@@ -892,10 +906,11 @@ extern "C" void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vX,
                             _ST_ beta,  TYPE(mvec_ptr)       vY, 
                             int* ierr)
 {
-#include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
-PHIST_GHOST_TASK_BEGIN
   *ierr=0;
+#include "phist_std_typedefs.hpp"
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,X,vX,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,Y,vY,*ierr);
   ST a=alpha, b=beta;
@@ -925,10 +940,11 @@ extern "C" void SUBR(mvec_vadd_mvec)(const _ST_ *alpha, TYPE(const_mvec_ptr) vX,
                             _ST_ beta,  TYPE(mvec_ptr)       vY, 
                             int* ierr)
 {
-#include "phist_std_typedefs.hpp"
   ENTER_FCN(__FUNCTION__);
-PHIST_GHOST_TASK_BEGIN
   *ierr=0;
+#include "phist_std_typedefs.hpp"
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,X,vX,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,Y,vY,*ierr);
   if(beta == st::one())
@@ -987,6 +1003,7 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* ierr)
     else if (beta!=st::one())
     {
 PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
       y->scale(y,(void*)&beta);
 PHIST_GHOST_TASK_END
     }
@@ -994,6 +1011,7 @@ PHIST_GHOST_TASK_END
   else
   {
 PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
     ghost_spmv_flags_t spMVM_opts=GHOST_SPMV_DEFAULT;
     // currently the vector mode is the only one working with MPI and multiple RHS
     spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_VECTOR);
@@ -1054,6 +1072,7 @@ extern "C" void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_
   else
   {
 PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
     int nvec;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, ierr), *ierr);
 
@@ -1108,10 +1127,11 @@ PHIST_GHOST_TASK_END
 
 //! dot product of vectors v_i and w_i, i=1..numvecs
 extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) vV, TYPE(const_mvec_ptr) vW, _ST_* s, int* ierr)
-  {
+{
   ENTER_FCN(__FUNCTION__);
-PHIST_GHOST_TASK_BEGIN
   *ierr=0;
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*ierr);
   ghost_dot(s,V,W);
@@ -1121,10 +1141,11 @@ PHIST_GHOST_TASK_END
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix
 //! C=alpha*V'*W+beta*C. C is replicated on all MPI processes sharing V and W.
 extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE(const_mvec_ptr) vW, _ST_ beta, TYPE(sdMat_ptr) vC, int* ierr)
-  {
+{
   ENTER_FCN(__FUNCTION__);
-PHIST_GHOST_TASK_BEGIN
   *ierr=0;
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,C,vC,*ierr);
@@ -1154,11 +1175,12 @@ extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
                                        TYPE(const_sdMat_ptr) vC,
                            _ST_ beta,  TYPE(mvec_ptr) vW,
                                        int* ierr)
-  {
-#include "phist_std_typedefs.hpp"
+{
     ENTER_FCN(__FUNCTION__);
-PHIST_GHOST_TASK_BEGIN
     *ierr=0;
+#include "phist_std_typedefs.hpp"
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
     CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
     CAST_PTR_FROM_VOID(ghost_densemat_t,C,vC,*ierr);
     CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*ierr);
@@ -1185,10 +1207,11 @@ extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) vV,
                                        TYPE(const_sdMat_ptr) vC,
                                        int* ierr)
   {
-#include "phist_std_typedefs.hpp"
     ENTER_FCN(__FUNCTION__);
+  *ierr=0;
+#include "phist_std_typedefs.hpp"
 PHIST_GHOST_TASK_BEGIN
-    *ierr=0;
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
     CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
     CAST_PTR_FROM_VOID(ghost_densemat_t,C,vC,*ierr);
 
@@ -1215,10 +1238,11 @@ extern "C" void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
                                          TYPE(const_sdMat_ptr) vW,
                               _ST_ beta, TYPE(sdMat_ptr) vC,
                                          int* ierr)
-  {
+{
   ENTER_FCN(__FUNCTION__);
-PHIST_GHOST_TASK_BEGIN
   *ierr=0;
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,C,vC,*ierr);
@@ -1233,10 +1257,11 @@ extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
                                          TYPE(const_sdMat_ptr) vW,
                               _ST_ beta, TYPE(sdMat_ptr) vC,
                                          int* ierr)
-  {
+{
   ENTER_FCN(__FUNCTION__);
-PHIST_GHOST_TASK_BEGIN
   *ierr=0;
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*ierr);
   CAST_PTR_FROM_VOID(ghost_densemat_t,C,vC,*ierr);
@@ -1420,8 +1445,10 @@ void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *vA, const_comm_ptr_t vcom
                 int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int *ierr)
 {
   ENTER_FCN(__FUNCTION__);
+  *ierr = 0;
 #include "phist_std_typedefs.hpp"
 PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
 
   ghost_sparsemat_t* mat = NULL;
   ghost_context_t *ctx = NULL;

@@ -32,7 +32,7 @@
 //! ghost_densemat_t ref2ptr(V) just defaults to &V.
 
 namespace phist 
-  {
+{
 #ifdef PHIST_KERNEL_LIB_GHOST
 
   //! rcp for ghost_densemat_t, includes creating the GhostMV wrapper
@@ -104,6 +104,7 @@ namespace phist
 
   template<>
   const void* ref2ptr(const GhostMV& V);
+
 #endif
 
   template<typename ST>
@@ -118,6 +119,6 @@ namespace phist
     return (const void*)V.get();
     }
 
-  } // namespace phist
+} // namespace phist
 #endif /* PHIST_HAVE_TEUCHOS */
 #endif

@@ -80,7 +80,7 @@ void SUBR(mvec_transfer)(TYPE(const_mvec_ptr) V, int dest, int tag,
     return;
   }
   mpi_stride=(int)lda;
-#ifdef MVECS_ROW_MAJOR
+#ifdef PHIST_MVECS_ROW_MAJOR
   mpi_chunksize=nvec;
   mpi_count=nloc;
 #else

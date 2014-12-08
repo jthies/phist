@@ -1,3 +1,4 @@
+#include "phist_config.h"
 !! compute for a given shift sigma=shift_r+shift_i the 2-norm of each row
 !! of the matrix shift[j]*I-A and store the inverse of the results in the
 !! columns j of the block vector nrms_ai2i. On entry, nrms_ai2i(:,1) should
@@ -43,8 +44,9 @@ subroutine dkacz_selector(nvec, nlocal, nhalo, ncols, nnz, &
         row_ptr, halo_ptr, col_idx, val, map, &
         shift_r,shift_i, b, ldb, &
         x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,istart_in,iend_in,istep)
-
+#ifdef PHIST_HAVE_OPENMP
   use :: omp_lib
+#endif
   use :: map_module
 
   implicit none

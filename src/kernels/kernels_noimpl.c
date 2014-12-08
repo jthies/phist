@@ -319,7 +319,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* ierr)
   *ierr=-99;
 }
 
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_KERNEL_LIB_BUILTIN
 void SUBR(mvec_gather_mvecs)(TYPE(mvec_ptr) V, TYPE(const_mvec_ptr) W[], int nblocks, int *ierr)
 {
   *ierr=-99;

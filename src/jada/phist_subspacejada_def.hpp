@@ -1,3 +1,62 @@
+//! small helper function that checks if an sdMat is symmetric
+void SUBR(sdMat_check_symmetrie)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*ierr)
+{
+  ENTER_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+
+  // check dimensions
+  int m, n;
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(mat, &m, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(mat, &n, ierr), *ierr);
+  if( m != n )
+  {
+    *ierr = 1;
+    return;
+  }
+
+  // create tmp storage
+  TYPE(sdMat_ptr) tmp = NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp, m, n, NULL, ierr), *ierr);
+
+  // construct identity matrix
+  TYPE(sdMat_ptr) id = NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&id, m, n, NULL, ierr), *ierr);
+  {
+    _ST_ *id_raw = NULL;
+    lidx_t lda;
+    PHIST_CHK_IERR(SUBR( sdMat_put_value ) (id, st::zero(), ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_extract_view) (id, &id_raw, &lda, ierr), *ierr);
+    for(int i = 0; i < m; i++)
+      id_raw[i*lda+i] = st::one();
+  }
+
+
+  // set tmp to transposed
+  PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat)(st::one(), mat, id, st::zero(), tmp, ierr), *ierr);
+  // subtract mat
+  PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(-st::one(), mat, st::one(), tmp, ierr), *ierr);
+  // calc max. abs. value of mat^T-mat
+  _MT_ maxVal = mt::zero();
+  {
+    _ST_ *tmp_raw = NULL;
+    lidx_t lda;
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(tmp, &tmp_raw, &lda, ierr), *ierr);
+    for(int i = 0; i < m; i++)
+      for(int j = 0; j < n; j++)
+        maxVal = std::max(maxVal, st::abs(tmp_raw[i*lda+j]));
+  }
+  PHIST_SOUT(PHIST_VERBOSE, "Symmetrie deviation of projection %e\n", maxVal);
+
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(id, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(tmp, ierr), *ierr);
+
+  if( maxVal < tol )
+    *ierr = 0;
+  else
+    *ierr = 1;
+}
+
+
 //! Tries to compute a partial schur form $(Q,R)$ of dimension nEig
 //! of the stencil $A*x-\lambda*B*x$ with a general linear operator $A$ and a
 //! hermitian positive definite (hpd.) linear operator $B$ using a
@@ -143,8 +202,8 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   {
     _ST_ *sdMI_raw = NULL;
     lidx_t lda;
-    PHIST_CHK_IERR(SUBR( sdMat_extract_view) (sdMI_, &sdMI_raw, &lda, ierr), *ierr);
     PHIST_CHK_IERR(SUBR( sdMat_put_value ) (sdMI_, st::zero(), ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_extract_view) (sdMI_, &sdMI_raw, &lda, ierr), *ierr);
     for(int i = 0; i < maxBase; i++)
       sdMI_raw[i*lda+i] = st::one();
   }
@@ -340,6 +399,12 @@ PHIST_CHK_IERR(SUBR( mvec_view_block ) (Q_,  &Q,  0, nEig_-1, ierr), *ierr);
 PHIST_CHK_IERR(SUBR( mvec_view_block ) (BQ_, &BQ, 0, nEig_-1, ierr), *ierr);
 PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, ierr), *ierr);
 
+    // for convenience check symmetrie of H (shouldn't much hurt the performance)
+    if( symmetric )
+    {
+      PHIST_CHK_IERR(SUBR(sdMat_check_symmetrie)(Hful, tol, ierr), *ierr);
+    }
+
     // calculate sorted Schur form of H in (Q_H,R_H)
     // we only update part of Q_H,R_H, so first set Q_H, R_H to zero
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0,     nV-1,      0,     nV-1,      ierr), *ierr);
@@ -517,11 +582,15 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
     // check for converged eigenvalues
     int nNewConvEig = 0;
-    for(int i = nConvEig; i < nEig_; i++)
+    for(int i = nConvEig; i < nEig; i++)
     {
       PHIST_SOUT(PHIST_INFO,"In iteration %d: Current approximation for eigenvalue %d is %16.8g%+16.8gi with residuum %e\n", *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]), resNorm[i]);
-      if( i >= nEig )
-        continue;
+#ifndef IS_COMPLEX
+      if( std::abs(ct::imag(ev_H[i])) > tol && blockDim == 1 )
+      {
+        PHIST_SOUT(PHIST_WARNING, "Detected possible complex-conjugate eigenpair, but blockDim == 1 (you need at least blockDim=2 to detect complex-conjugate eigenpairs correctly)!\n");
+      }
+#endif
       if( resNorm[i] <= tol && i == nConvEig+nNewConvEig )
       {
 #ifndef IS_COMPLEX

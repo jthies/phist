@@ -4,6 +4,7 @@ subroutine dcopy_1(nrows, x, y)
   real(kind=8), intent(in) :: x(nrows)
   real(kind=8), intent(out) :: y(nrows)
   integer :: i
+!dir$ assume_aligned x:64, y:64
 
 !$omp parallel do schedule(static)
   do i = 1, nrows, 1
@@ -17,6 +18,7 @@ subroutine dcopy_general(nvec, nrows, x, ldx, y, ldy)
   real(kind=8), intent(in) :: x(ldx,*)
   real(kind=8), intent(out) :: y(ldy,*)
   integer :: i
+!dir$ assume_aligned x:8, y:8
 
 !$omp parallel do schedule(static)
   do i = 1, nrows, 1
@@ -29,8 +31,9 @@ subroutine dscal_1(nrows, alpha, x)
   implicit none
   integer, intent(in) :: nrows
   real(kind=8), intent(in) :: alpha(1)
-  real(kind=8), intent(inout) :: x(1,*)
+  real(kind=8), intent(inout) :: x(1,nrows)
   integer :: i
+!dir$ assume_aligned x:64
 
 !$omp parallel do schedule(static)
   do i = 1, nrows, 1
@@ -42,8 +45,9 @@ subroutine dscal_2(nrows, alpha, x)
   implicit none
   integer, intent(in) :: nrows
   real(kind=8), intent(in) :: alpha(2)
-  real(kind=8), intent(inout) :: x(2,*)
+  real(kind=8), intent(inout) :: x(2,nrows)
   integer :: i
+!dir$ assume_aligned x:64
 
 !$omp parallel do schedule(static)
   do i = 1, nrows, 1
@@ -55,8 +59,9 @@ subroutine dscal_4(nrows, alpha, x)
   implicit none
   integer, intent(in) :: nrows
   real(kind=8), intent(in) :: alpha(4)
-  real(kind=8), intent(inout) :: x(4,*)
+  real(kind=8), intent(inout) :: x(4,nrows)
   integer :: i
+!dir$ assume_aligned x:64
 
 !$omp parallel do schedule(static)
   do i = 1, nrows, 1
@@ -68,8 +73,9 @@ subroutine dscal_8(nrows, alpha, x)
   implicit none
   integer, intent(in) :: nrows
   real(kind=8), intent(in) :: alpha(8)
-  real(kind=8), intent(inout) :: x(8,*)
+  real(kind=8), intent(inout) :: x(8,nrows)
   integer :: i
+!dir$ assume_aligned x:64
 
 !$omp parallel do schedule(static)
   do i = 1, nrows, 1
@@ -84,6 +90,7 @@ subroutine dscal_strided_1(nrows, alpha, x, ldx)
   real(kind=8), intent(in) :: alpha(1)
   real(kind=8), intent(inout) :: x(ldx,*)
   integer :: i
+!dir$ assume_aligned x:8
 
 !$omp parallel do schedule(static)
   do i = 1, nrows, 1
@@ -97,6 +104,7 @@ subroutine dscal_strided_2(nrows, alpha, x, ldx)
   real(kind=8), intent(in) :: alpha(2)
   real(kind=8), intent(inout) :: x(ldx,*)
   integer :: i
+!dir$ assume_aligned x:8
 
 !$omp parallel do schedule(static)
   do i = 1, nrows, 1
@@ -110,6 +118,7 @@ subroutine dscal_strided_4(nrows, alpha, x, ldx)
   real(kind=8), intent(in) :: alpha(4)
   real(kind=8), intent(inout) :: x(ldx,*)
   integer :: i
+!dir$ assume_aligned x:8
 
 !$omp parallel do schedule(static)
   do i = 1, nrows, 1
@@ -123,6 +132,7 @@ subroutine dscal_strided_8(nrows, alpha, x, ldx)
   real(kind=8), intent(in) :: alpha(8)
   real(kind=8), intent(inout) :: x(ldx,*)
   integer :: i
+!dir$ assume_aligned x:8
 
 !$omp parallel do schedule(static)
   do i = 1, nrows, 1
@@ -136,6 +146,7 @@ subroutine dscal_general(nrows, nvec, alpha, x, ldx)
   real(kind=8), intent(in) :: alpha(nvec)
   real(kind=8), intent(inout) :: x(ldx,*)
   integer :: i
+!dir$ assume_aligned x:8
 
 !$omp parallel do schedule(static)
   do i = 1, nrows, 1
@@ -152,6 +163,7 @@ subroutine daxpby_1(nrows, alpha, x, beta, y)
   real(kind=8), intent(in) :: x(nrows)
   real(kind=8), intent(inout) :: y(nrows)
   integer :: i
+!dir$ assume_aligned x:64, y:64
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
@@ -307,6 +319,7 @@ subroutine daxpby_2(nrows, alpha, x, beta, y)
   real(kind=8), intent(in) :: x(2,nrows)
   real(kind=8), intent(inout) :: y(2,nrows)
   integer :: i
+!dir$ assume_aligned x:64, y:64
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
@@ -329,6 +342,7 @@ subroutine daxpby_4(nrows, alpha, x, beta, y)
   real(kind=8), intent(in) :: x(4,nrows)
   real(kind=8), intent(inout) :: y(4,nrows)
   integer :: i
+!dir$ assume_aligned x:64, y:64
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
@@ -351,6 +365,7 @@ subroutine daxpby_8(nrows, alpha, x, beta, y)
   real(kind=8), intent(in) :: x(8,nrows)
   real(kind=8), intent(inout) :: y(8,nrows)
   integer :: i
+!dir$ assume_aligned x:64, y:64
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
@@ -374,6 +389,7 @@ subroutine daxpby_strided_1(nrows, alpha, x, ldx, beta, y, ldy)
   real(kind=8), intent(in) :: x(ldx,*)
   real(kind=8), intent(inout) :: y(ldy,*)
   integer :: i
+!dir$ assume_aligned x:8, y:8
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
@@ -396,6 +412,7 @@ subroutine daxpby_strided_2(nrows, alpha, x, ldx, beta, y, ldy)
   real(kind=8), intent(in) :: x(ldx,*)
   real(kind=8), intent(inout) :: y(ldy,*)
   integer :: i
+!dir$ assume_aligned x:8, y:8
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
@@ -418,6 +435,7 @@ subroutine daxpby_strided_4(nrows, alpha, x, ldx, beta, y, ldy)
   real(kind=8), intent(in) :: x(ldx,*)
   real(kind=8), intent(inout) :: y(ldy,*)
   integer :: i
+!dir$ assume_aligned x:8, y:8
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
@@ -440,6 +458,7 @@ subroutine daxpby_strided_8(nrows, alpha, x, ldx, beta, y, ldy)
   real(kind=8), intent(in) :: x(ldx,*)
   real(kind=8), intent(inout) :: y(ldy,*)
   integer :: i
+!dir$ assume_aligned x:8, y:8
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)
@@ -462,6 +481,7 @@ subroutine daxpby_generic(nrows, nvec, alpha, x, ldx, beta, y, ldy)
   real(kind=8), intent(in) :: x(ldx,*)
   real(kind=8), intent(inout) :: y(ldy,*)
   integer :: i
+!dir$ assume_aligned x:8, y:8
 
   if( beta .eq. 0 ) then
 !$omp parallel do schedule(static)

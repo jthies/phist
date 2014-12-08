@@ -7,11 +7,11 @@
 #error "this file should be included after a phist_gen_X header"
 #endif
 
-#if defined(PHIST_KERNEL_LIB_GHOST)&&defined(HAVE_CXX11_LAMBDAS)&&defined(__cplusplus)
-#include "ghost/phist_ghost_macros.h"
+#if defined(PHIST_KERNEL_LIB_GHOST)&&defined(PHIST_HAVE_CXX11_LAMBDAS)&&defined(__cplusplus)
+#include "ghost/phist_ghost_macros.hpp"
 // some helpful macros
-#define PHIST_MAIN_TASK_BEGIN phist_execute_lambda_as_ghost_task( [&]() {
-#define PHIST_MAIN_TASK_END   } );
+#define PHIST_MAIN_TASK_BEGIN phist_execute_lambda_as_ghost_task( [&]()->int {
+#define PHIST_MAIN_TASK_END   return 0;} );
 #else
 #define PHIST_MAIN_TASK_BEGIN
 #define PHIST_MAIN_TASK_END

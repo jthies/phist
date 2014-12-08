@@ -153,7 +153,7 @@ void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) V, int* nvec, int* ierr);
 
 //! Sets the user-provided val pointer to point to the
 //! beginning of the first vector, and puts the leading dimension of the array into lda,
-//! such that the element j of vector i is val[i*lda+j]. If PHIST_MVECS_ROW_MAJJOR is
+//! such that the element j of vector i is val[i*lda+j]. If PHIST_MVECS_ROW_MAJOR is
 //! #defined, the storage is transposed and element j of vector i is found at val[j*lda+i].
 //! Note that lda may be larger than the actual local vector length as obtained by 
 //! mvec_my_length. This function is dangerous in the sense that it would force the 
@@ -438,7 +438,7 @@ void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, const_comm_ptr_t comm,
         int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int *ierr);
 
 // TODO: make these compulsory
-#ifdef PHIST_KERNEL_LIB_FORTRAN
+#ifdef PHIST_KERNEL_LIB_BUILTIN
 void SUBR(mvec_gather_mvecs)(TYPE(mvec_ptr) V, TYPE(const_mvec_ptr) W[], int nblocks, int *ierr);
 void SUBR(mvec_scatter_mvecs)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W[], int nblocks, int *ierr);
 #endif

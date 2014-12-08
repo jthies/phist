@@ -1,5 +1,5 @@
 #ifndef PHIST_HAVE_MPI  
-#error "fortran kernels don't work without MPI"
+#error "builtin kernels don't work without MPI"
 #endif
 
 extern "C" void SUBR(type_avail)(int *ierr)

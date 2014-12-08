@@ -19,14 +19,21 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     {
       VTest::SetUp();
       MTest::SetUp();
-      
+
+      int localTooSmall = 0;
+      int globalTooSmall = 0;
       if (nloc_<_NVP_)
       {
         // disable the test because TSQR will not work.
         // This situation occurs if we have a small matrix (_N_=25, say)
         // and many Q vectors (e.g. 10) with multiple MPI procs.
-        typeImplemented_=false;
+        localTooSmall = 1;
+        MTest::TearDown();
+        VTest::TearDown();
       }
+      ierr_ = MPI_Allreduce(&localTooSmall, &globalTooSmall, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+      ASSERT_EQ(0,ierr_);
+      typeImplemented_ = !globalTooSmall;
 
       if (typeImplemented_)
       {

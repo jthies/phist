@@ -1,3 +1,4 @@
+#include "phist_config.h"
 ! gemm kernels for mecT_times_mvec
 
 subroutine dgemm_sC_1(nrows,nvecw,v,w,M)
@@ -7,6 +8,7 @@ subroutine dgemm_sC_1(nrows,nvecw,v,w,M)
   real(kind=8), intent(in) :: w(nvecw,nrows)
   real(kind=8), intent(out) :: M(1,nvecw)
   integer :: i, j
+!dir$ assume_aligned v:64, w:64, M:64
 
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
@@ -25,6 +27,7 @@ subroutine dgemm_sC_2(nrows,nvecw,v,w,M)
   real(kind=8), intent(in) :: w(nvecw,nrows)
   real(kind=8), intent(out) :: M(2,nvecw)
   integer :: i, j
+!dir$ assume_aligned v:64, w:64, M:64
 
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
@@ -43,6 +46,7 @@ subroutine dgemm_sC_4(nrows,nvecw,v,w,M)
   real(kind=8), intent(in) :: w(nvecw,nrows)
   real(kind=8), intent(out) :: M(4,nvecw)
   integer :: i, j
+!dir$ assume_aligned v:64, w:64, M:64
 
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
@@ -61,6 +65,7 @@ subroutine dgemm_sC_8(nrows,nvecw,v,w,M)
   real(kind=8), intent(in) :: w(nvecw,nrows)
   real(kind=8), intent(out) :: M(8,nvecw)
   integer :: i, j
+!dir$ assume_aligned v:64, w:64, M:64
 
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
@@ -80,6 +85,7 @@ subroutine dgemm_sC_strided_1(nrows,nvecw,v,w,ldw,M)
   real(kind=8), intent(in) :: w(ldw,nrows)
   real(kind=8), intent(out) :: M(1,nvecw)
   integer :: i, j
+!dir$ assume_aligned v:64, w:8, M:64
 
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
@@ -98,6 +104,7 @@ subroutine dgemm_sC_strided_2(nrows,nvecw,v,w,ldw,M)
   real(kind=8), intent(in) :: w(ldw,nrows)
   real(kind=8), intent(out) :: M(2,nvecw)
   integer :: i, j
+!dir$ assume_aligned v:64, w:8, M:64
 
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
@@ -116,6 +123,7 @@ subroutine dgemm_sC_strided_4(nrows,nvecw,v,w,ldw,M)
   real(kind=8), intent(in) :: w(ldw,nrows)
   real(kind=8), intent(out) :: M(4,nvecw)
   integer :: i, j
+!dir$ assume_aligned v:64, w:8, M:64
 
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
@@ -134,6 +142,7 @@ subroutine dgemm_sC_strided_8(nrows,nvecw,v,w,ldw,M)
   real(kind=8), intent(in) :: w(ldw,nrows)
   real(kind=8), intent(out) :: M(8,nvecw)
   integer :: i, j
+!dir$ assume_aligned v:64, w:8, M:64
 
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)
@@ -153,6 +162,7 @@ subroutine dgemm_sC_generic(nrows,nvecv,nvecw,v,ldv,w,ldw,M)
   real(kind=8), intent(in) :: w(ldw,nrows)
   real(kind=8), intent(out) :: M(nvecv,nvecw)
   integer :: i, j
+!dir$ assume_aligned v:8, w:8, M:64
 
   M = 0.
 !$omp parallel do reduction(+:M) schedule(static)

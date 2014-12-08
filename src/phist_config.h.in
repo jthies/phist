@@ -4,17 +4,19 @@
 #cmakedefine PHIST_OUTLEV ${PHIST_OUTLEV}
 
 #cmakedefine PHIST_HAVE_CXX11_LAMBDAS
+#cmakedefine PHIST_HAVE_OPENMP_SIMD
 #cmakedefine PHIST_HAVE_MPI
+#cmakedefine PHIST_HAVE_OPENMP
 #cmakedefine PHIST_HAVE_SP
 
 #cmakedefine PHIST_KERNEL_LIB_EPETRA
 #cmakedefine PHIST_KERNEL_LIB_TPETRA
 #cmakedefine PHIST_KERNEL_LIB_GHOST
-#cmakedefine PHIST_KERNEL_LIB_FORTRAN
-  
+#cmakedefine PHIST_KERNEL_LIB_BUILTIN
+
 #cmakedefine PHIST_MVECS_ROW_MAJOR
 #cmakedefine PHIST_SDMATS_ROW_MAJOR
-  
+
 #cmakedefine PHIST_HAVE_GHOST
 #cmakedefine PHIST_HAVE_ESSEX_PHYSICS
 
@@ -29,11 +31,14 @@
 #cmakedefine LIKWID_PERFMON
 #cmakedefine PHIST_TIMEMONITOR
 #cmakedefine PHIST_TIMEMONITOR_PERLINE
+#cmakedefine PHIST_USE_TEUCHOS_TIMEMONITOR
 
 #ifdef PHIST_KERNEL_LIB_GHOST
 #cmakedefine PHIST_USE_SELL
 #cmakedefine PHIST_SELL_C ${PHIST_SELL_C}
 #cmakedefine PHIST_SELL_SIGMA ${PHIST_SELL_SIGMA}
 #endif
+
+#cmakedefine PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS
 
 #endif

@@ -13,11 +13,12 @@ set(PHIST_VERSION_PATCH ${PHIST_VERSION_PATCH}-beta)
 set(PRODUCT_NAME phist-${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug, Release" FORCE)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Release, RelWithDebug, Debug" FORCE)
 else()
-  set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: Debug, Release" FORCE)
+  set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: Release, RelWithDebug, Debug" FORCE)
 endif()
 option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
+option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
 option(PHIST_ENABLE_SP "Enable single precision functions and drivers" OFF)
 if (DEFINED LAPACK_LIBS)
   set(LAPACK_LIBS ${LAPACK_LIBS} CACHE STRING "how to link with lapack (and blas)")
@@ -38,6 +39,10 @@ set(library_list)
 set(driver_list)
 set(test_list)
 
+# lists of external libraries for executables and tests to link, e.g.
+# GHOST. TODO: also for essex-physics?
+set(external_libs)
+
 ##############################################################################
 # compiler-dependent flags 
 ##############################################################################
@@ -46,47 +51,73 @@ set(test_list)
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
 
   message(STATUS "using GNU compiler flags")
-  set (CMAKE_C_FLAGS "-fopenmp -std=c99")
-  set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O3 -ffast-math -march=native")
-  set (CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -O2 -g")
+
+  set (CMAKE_C_FLAGS        "-std=c99")
+  set (CMAKE_CXX_FLAGS      "-std=c++0x")
+  set (CMAKE_Fortran_FLAGS  "-cpp -ffree-line-length-none")
+  if( PHIST_ENABLE_OPENMP )
+    set(PHIST_HAVE_OPENMP 1)
+    if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.9)
+      set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -fopenmp")
+      set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -fopenmp")
+      set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -fopenmp")
+    else ()
+      set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -fopenmp -fopenmp-simd")
+      set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -fopenmp -fopenmp-simd")
+      set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -fopenmp -fopenmp-simd")
+    endif ()
+  endif()
+
+  set (CMAKE_C_FLAGS_RELEASE        "-O3 -ffast-math -march=native")
+  set (CMAKE_CXX_FLAGS_RELEASE      "-O2")
+  set (CMAKE_Fortran_FLAGS_RELEASE  "-march=native -O3 -ffast-math")
+
+  set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -g")
+  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -g")
+  set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
+
   if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
-    set (CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS} -dH -O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+    set (CMAKE_C_FLAGS_DEBUG       "-dH -O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+    set (CMAKE_CXX_FLAGS_DEBUG     "-dH -O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+    set (CMAKE_Fortran_FLAGS_DEBUG "-dH -O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all")
   else ()
-    set (CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS} -dH -O0 -g -fstack-protector-all -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_C_FLAGS_DEBUG       "-dH -O0 -g -fstack-protector-all -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_CXX_FLAGS_DEBUG     "-dH -O0 -g -fstack-protector-all -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_Fortran_FLAGS_DEBUG "-dH -O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all")
   endif ()
 
-  set (CMAKE_CXX_FLAGS "-fopenmp -std=c++0x")
-  set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O2")
-  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS} -O2")
-  if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
-    set (CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS} -dH -O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
-  else ()
-    set (CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS} -dH -O0 -g -fstack-protector-all -DTESTING -fopenmp -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
-  endif ()
-
-  set (CMAKE_Fortran_FLAGS "-fopenmp -cpp -ffree-line-length-none")
-  set (CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS} -march=native -O3 -ffast-math")
-  set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -dH -O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all")
 
 elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
   message(STATUS "using INTEL compiler flags")
-  set (CMAKE_C_FLAGS "-openmp -Wno-unused-variable -mkl -std=c99")
-  set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O3 -xHOST -no-prec-div")
-  set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
 
-  set (CMAKE_CXX_FLAGS "-openmp -Wno-unused-variable -mkl -std=c++0x")
-  set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -xHOST -no-prec-div")
-  set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
+  set (CMAKE_C_FLAGS        "-Wno-unused-variable -mkl -std=c99")
+  set (CMAKE_CXX_FLAGS      "-Wno-unused-variable -mkl -std=c++0x")
+  set (CMAKE_Fortran_FLAGS  "-fpp -mkl -align array64byte")
 
-  set (CMAKE_Fortran_FLAGS "-openmp -fpp -mkl")
-  set (CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS} -O3 -xHOST -no-prec-div")
-  set (CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -check all -debug -traceback -DTESTING")
+  if( PHIST_ENABLE_OPENMP )
+    set(PHIST_HAVE_OPENMP 1)
+    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -openmp")
+    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -openmp")
+    set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -openmp")
+  endif()
+
+  set (CMAKE_C_FLAGS_RELEASE        "-O3 -xHOST -no-prec-div")
+  set (CMAKE_CXX_FLAGS_RELEASE      "-O3 -xHOST -no-prec-div")
+  set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 -xHOST -no-prec-div")
+
+  set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -debug")
+  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -debug")
+  set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -debug")
+
+  set (CMAKE_C_FLAGS_DEBUG        "-check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
+  set (CMAKE_CXX_FLAGS_DEBUG      "-check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
+  set (CMAKE_Fortran_FLAGS_DEBUG  "-check all -debug -traceback -DTESTING")
 
   # for ipo
   # melven: probably not useful or even dangerous?
   #  kernel routines should probably best optimized individually;
-  #  for fortran: I'm passing arrays as scalars in fortran (call by reference),
+  #  for builtin kernels: I'm passing arrays as scalars in builtin kernels (call by reference),
   #               because the kernel routines would be too complex otherwise
   #               (and they should be fast and not complex!).
   #               The compiler best shouldn't be able to know about this...
@@ -101,6 +132,7 @@ endif ()
 
 # try to detect if we can use C++11 Lambdas
 include(CheckCXXSourceCompiles)
+include(CheckFortranSourceCompiles)
 CHECK_CXX_SOURCE_COMPILES("
   int main(int argc, char** argv)
   {
@@ -109,6 +141,19 @@ CHECK_CXX_SOURCE_COMPILES("
   }
 " PHIST_HAVE_CXX11_LAMBDAS
 )
+CHECK_Fortran_SOURCE_COMPILES("
+  program test
+    implicit none
+    integer :: i
+    real :: x(8)
+    !$omp simd
+    do i = 1, 8
+      x(i) = 0.
+    end do
+  end program test
+" PHIST_HAVE_OPENMP_SIMD
+)
+
 ##############################################################################
 # set enable precision?
 ##############################################################################
@@ -146,7 +191,7 @@ endif()
 # setup which kernel library is being used.
 ##############################################################################
 
-set(PHIST_KERNEL_LIB "fortran" CACHE STRING "Select underlying kernel libraries for phist (epetra|tpetra|ghost|fortran)")
+set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra)")
 message(STATUS "kernel lib " ${PHIST_KERNEL_LIB} " ...")
 
 set(LOAD_TRILI_PKG,"")
@@ -168,10 +213,17 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   set(PHIST_SELL_C 1 CACHE INTEGER "chunk size C for the SELL-C-sigma format")
   set(PHIST_SELL_SIGMA 1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format")
 
-elseif (PHIST_KERNEL_LIB STREQUAL "fortran")
-  set(PHIST_KERNEL_LIB_FORTRAN 1)
+elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
+  set(PHIST_KERNEL_LIB_BUILTIN 1)
   set(PHIST_MVECS_ROW_MAJOR 1)
+  option(PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS "Try to pin the threads to cores using sched_setaffinity (based on simple heuristics; for Intel use env KMP_AFFINITY=\"granularity=fine,compact,1,0\"" On)
 
+  if( PHIST_ENABLE_SP )
+    message(FATAL_ERROR "Builtin kernel lib does not support single-precision calculations!")
+  endif()
+  if( NOT PHIST_HAVE_MPI )
+    message(FATAL_ERROR "Builtin kernel lib requires MPI!")
+  endif()
 else ()
   message( FATAL_ERROR "PHIST_KERNEL_LIB not set or not recognized" )
 endif ()
@@ -180,14 +232,14 @@ endif ()
 # We recommend linking with Belos because we use its Tsqr
 # interface. If Belos is not found, important functionality
 # may not work, in particular the mvec_QR function is currently
-# implemented via Belos by all kernel libs except "Fortran"
+# implemented via Belos by all kernel libs except "builtin"
 
 find_package(Teuchos)
 
 if (${Teuchos_FOUND})
   list(APPEND LOAD_TRILI_PKG "Teuchos")
   set(PHIST_HAVE_TEUCHOS 1)
-  set(PHIST_USE_TEUCHOS_TIMEMONITOR On CACHE BOOL "Use Timemonitor from Trilinos package Teuchos instead of builtin one.")
+  option(PHIST_USE_TEUCHOS_TIMEMONITOR "Use TimeMonitor from Trilinos package Teuchos instead of builtin one." On)
   message(STATUS "Found Teuchos")
 else()
   message(STATUS "Teuchos not found.")
@@ -233,13 +285,13 @@ if (ESSEX-PHYSICS_FOUND)
   set(PHIST_HAVE_ESSEX_PHYSICS 1)
   include_directories(${ESSEX-PHYSICS_INCLUDE_DIRS})
 else()
-  message(STATUS "ESSEX-Physics not found, willl use supplementary implementation")
+  message(STATUS "ESSEX-Physics not found, will use supplementary implementation")
   include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
 endif()
 
 
 # these specific versions of type-generic drivers have to be created
-if  (PHIST_KERNEL_LIB STREQUAL "epetra" OR PHIST_KERNEL_LIB STREQUAL "fortran")
+if  (PHIST_KERNEL_LIB STREQUAL "epetra" OR PHIST_KERNEL_LIB STREQUAL "builtin")
 set(TG_Types D)
 else ()
   if (PHIST_ENABLE_SP)
@@ -253,31 +305,30 @@ else ()
   endif ()
 endif ()
 
-if (PHIST_KERNEL_LIB STREQUAL "fortran")
+if (PHIST_KERNEL_LIB STREQUAL "builtin")
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_driver_utils.c
-                          ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_BelosAdapter.cpp
                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/env_module.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/map_module.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/mrgrnk.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/crsmat_module.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/parmetis.c
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/colpack.cpp
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/mvec_module.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/nrm2_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/axpy_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/axpy_kernels_nt.c
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/gather_scatter_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/dot_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/gemm_kernels_sB.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/gemm_kernels_sC.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/spmvm_kernels_nt.c
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/spmvm_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/spmv_buff_cpy_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/kacz_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/fortran/sdmat_module.f90)
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/env_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/map_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/mrgrnk.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/crsmat_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/parmetis.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/colpack.cpp
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/mvec_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/nrm2_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/axpy_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/axpy_kernels_nt.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gather_scatter_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/dot_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sC.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmvm_kernels_nt.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmvm_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmv_buff_cpy_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/kacz_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_module.f90)
 else()
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_driver_utils.c
@@ -299,8 +350,7 @@ set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.c
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedminres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_belos.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasazi.cpp
-                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp
-                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_iter_op.cpp)
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp)
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.c
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp
@@ -314,7 +364,6 @@ set (PHIST_FEAST_SOURCE  ${PROJECT_SOURCE_DIR}/src/feast/phist_feastCorrectionSo
 include_directories(${PROJECT_BINARY_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels)
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB})
-include_directories(${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface)
 include_directories(${PROJECT_SOURCE_DIR}/src/tools)
 include_directories(${PROJECT_SOURCE_DIR}/src/core)
 include_directories(${PROJECT_SOURCE_DIR}/src/krylov)
@@ -349,13 +398,15 @@ if (GHOST_FOUND)
   set(PHIST_HAVE_GHOST 1)
   include_directories(${GHOST_INCLUDE_DIRS})
   link_directories(${GHOST_LIBRARY_DIRS})
-  target_link_libraries(phist_tools ${GHOST_LIBRARIES})
+  # Moved to applications (tests and drivers)
+  #target_link_libraries(phist_tools ${GHOST_LIBRARIES})
+  LIST(APPEND external_libs ${GHOST_LIBRARIES})
 else()
   message(STATUS "GHOST not found, some functionality will be disabled and return -99 ('not implemented')")
 endif()
 
-# load parmetis for reordering fortran
-if(PHIST_KERNEL_LIB STREQUAL "fortran")
+# load parmetis for reordering builtin
+if(PHIST_KERNEL_LIB STREQUAL "builtin")
   
   find_package(ParMETIS)
   if(PARMETIS_FOUND)
@@ -393,7 +444,7 @@ if (${LIKWID_Found})
   set(PHIST_HAVE_LIKWID 1)
   include_directories(${LIKWID_INCLUDE_DIRS})
   link_directories(${LIKWID_LIBRARY_DIRS})
-  target_link_libraries(phist_tools ${LIKWID_LIBRARIES} -pthread)
+  target_link_libraries(phist_tools ${LIKWID_LIBRARIES})
   if (${LIKWID_PERFMON})
     message(STATUS "activated Likwid performance monitoring")
     add_definitions(-DLIKWID_PERFMON)
@@ -435,17 +486,17 @@ endforeach()
 
 target_link_libraries(phist_tools ${LAPACK_LIBS})
 if(NOT PHIST_KERNEL_LIB STREQUAL "ghost") #use MPI libs as found by GHOST in this case. otherwise, a clash between thread-safe and normal MPI will occur
-    target_link_libraries(phist_tools ${MPI_CXX_LIBRARIES})
+  target_link_libraries(phist_tools ${MPI_CXX_LIBRARIES} ${MPI_C_LIBRARIES} ${MPI_Fortran_LIBRARIES})
 endif()
+target_link_libraries(phist_tools m) #link the C-math library as it may not be automatically included in pure C programs
 
 set(GCOVR_EXCLUDES -e src/kernels/kernels_noimpl.c
                    -e src/tools/tools.c)
 
 # Custom properties
-set(INTEGRATION_BUILD 0 CACHE STRING "Indicates an integration build")
-set(PYTHON_INTERPRETER python CACHE STRING "String Path to the Python interpreter")
-set(GCOVR_SCRIPT /usr/bin/gcovr CACHE STRING "Path to the gcovr script")
-set(CPPCHECK_EXECUTABLE /usr/bin/cppcheck CACHE STRING "Path to the cppcheck executable")
+set(INTEGRATION_BUILD Off CACHE BOOL "Indicates an integration build")
+find_program(GCOVR_SCRIPT gcovr)
+find_program(CPPCHECK_EXECUTABLE cppcheck)
 if (${INTEGRATION_BUILD})
     set(GCOVR_OPTIONS -r src ${GCOVR_EXCLUDES} --xml -o coverage.xml CACHE STRING "String gcovr options")
     set(CPPCHECK_OPTIONS src --enable=all --xml 2> cppcheck.xml CACHE STRING "cppcheck options")
@@ -502,6 +553,7 @@ foreach (infile ${TG_C_Drivers})
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.c)
     add_executable(phist_${tc}${filebase} ${tc}${filebase}.c)
     target_link_libraries(phist_${tc}${filebase} ${library_list})
+    target_link_libraries(phist_${tc}${filebase} ${external_libs})
     install(TARGETS phist_${tc}${filebase} RUNTIME DESTINATION bin OPTIONAL)
     # added
     LIST(APPEND driver_list phist_${tc}${filebase})
@@ -515,6 +567,7 @@ foreach (infile ${TG_CXX_Drivers})
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.cpp)
     add_executable(phist_${tc}${filebase} ${tc}${filebase}.cpp)
     target_link_libraries(phist_${tc}${filebase} ${library_list})
+    target_link_libraries(phist_${tc}${filebase} ${external_libs})
     install(TARGETS phist_${tc}${filebase} RUNTIME DESTINATION bin OPTIONAL)
     LIST(APPEND driver_list phist_${tc}${filebase})
   endforeach()
@@ -524,6 +577,7 @@ endforeach()
 
 add_executable(phist_carp_cg ${PROJECT_SOURCE_DIR}/drivers/carp_cg.c)
 target_link_libraries(phist_carp_cg ${library_list})
+target_link_libraries(phist_carp_cg ${external_libs})
 
 install(TARGETS phist_carp_cg RUNTIME DESTINATION bin OPTIONAL)
 
@@ -565,6 +619,8 @@ foreach(label ${PHIST_TESTS})
 
   add_executable(${PRODUCT_NAME}-${label}-test ${${label_uc}_TEST_SOURCES} ${TEST_DEPENDS})
   target_link_libraries(${PRODUCT_NAME}-${label}-test ${library_list})
+  target_link_libraries(${PRODUCT_NAME}-${label}-test ${external_libs})
+  target_link_libraries(${PRODUCT_NAME}-${label}-test pthread)
   LIST(APPEND test_list ${PRODUCT_NAME}-${label}-test)
 
 endforeach()
@@ -577,6 +633,7 @@ foreach (infile ${C_Examples})
   get_filename_component(filebase ${infile} NAME_WE)
   add_executable(phist_${filebase} ${infile})
   target_link_libraries(phist_${filebase} ${library_list})
+  target_link_libraries(phist_${filebase} ${external_libs})
   LIST(APPEND test_list phist_${filebase})
 endforeach()
 
@@ -584,6 +641,7 @@ foreach (infile ${CXX_Examples})
   get_filename_component(filebase ${infile} NAME_WE)
   add_executable(phist_${filebase} ${infile})
   target_link_libraries(phist_${filebase} ${library_list})
+  target_link_libraries(phist_${filebase} ${external_libs})
   LIST(APPEND test_list phist_${filebase})
 endforeach()
 
@@ -599,6 +657,7 @@ foreach (infile ${TG_C_Examples})
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.c)
     add_executable(${tc}${filebase} ${tc}${filebase}.c)
     target_link_libraries(${tc}${filebase} ${library_list})
+    target_link_libraries(${tc}${filebase} ${external_libs})
     LIST(APPEND test_list ${tc}${filebase})
   endforeach()
 endforeach()
@@ -610,6 +669,7 @@ foreach (infile ${TG_CXX_Examples})
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.cpp)
     add_executable(${tc}${filebase} ${tc}${filebase}.cpp)
     target_link_libraries(${tc}${filebase} ${library_list})
+    target_link_libraries(${tc}${filebase} ${external_libs})
     LIST(APPEND test_list ${tc}${filebase})
   endforeach()
 endforeach()
@@ -626,11 +686,13 @@ else()
 endif()
 
 foreach(np ${PHIST_MPI_TEST_NPROCS})
+  math(EXPR TEST_OMP_NUM_THREADS "8/${np}")
   foreach(label ${PHIST_TESTS})
-    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} ./${PRODUCT_NAME}-${label}-test --gtest_output=xml:test_output_np${np}/${label}/xunit.xml)
+    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=guided ./${PRODUCT_NAME}-${label}-test --gtest_output=xml:test_output_np${np}/${label}/xunit.xml)
     add_test(NAME test-${label}_np${np} COMMAND ${TEST_COMMAND})
     set_tests_properties(test-${label}_np${np} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
     set_tests_properties(test-${label}_np${np} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
+    set_tests_properties(test-${label}_np${np} PROPERTIES TIMEOUT 60)
   endforeach()
 endforeach()
 
@@ -660,8 +722,7 @@ endif()
 
 # Add optional target "coverage" to genereate code coverage report (console / XML)
 if (GCOVR_SCRIPT)
-    add_custom_target(coverage
-    ${PYTHON_INTERPRETER} ${GCOVR_SCRIPT} ${GCOVR_OPTIONS}
+    add_custom_target(coverage ${GCOVR_SCRIPT} ${GCOVR_OPTIONS}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
 

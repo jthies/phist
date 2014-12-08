@@ -232,7 +232,7 @@ public:
       SUBR(sdMat_get_block)(mat1_,m1_copy,imin,imax,jmin,jmax,&ierr_);
       ASSERT_EQ(0,ierr_);
       
-#if PHIST_OUTLEV>=PHIST_DEBUG && !defined(PHIST_KERNEL_LIB_FORTRAN)
+#if PHIST_OUTLEV>=PHIST_DEBUG && !defined(PHIST_KERNEL_LIB_BUILTIN)
       PHIST_SOUT(PHIST_DEBUG,"i=[%" PRlidx ",%" PRlidx "], j=[%" PRlidx ",%" PRlidx "]\n",
         imin,imax,jmin,jmax);
       PHIST_SOUT(PHIST_DEBUG,"Original matrix:\n");

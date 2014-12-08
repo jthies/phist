@@ -1,3 +1,7 @@
+#include "phist_config.h"
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
 // Copyright 2008, Google Inc.
 // All rights reserved.
 //
@@ -474,6 +478,10 @@ GTEST_DECLARE_bool_(death_test_use_fork);
 
 namespace internal {
 
+#ifdef PHIST_HAVE_MPI
+// MPI communicator
+MPI_Comm GTEST_MPI_COMM;
+#endif
 // The value of GetTestTypeId() as seen from within the Google Test
 // library.  This is solely for testing GetTestTypeId().
 GTEST_API_ extern const TypeId kTestTypeIdInGoogleTest;
@@ -2250,9 +2258,23 @@ Message& Message::operator <<(const ::wstring& wstr) {
 #endif  // GTEST_HAS_GLOBAL_WSTRING
 
 // AssertionResult constructors.
+// Used in EXPECT_TRUE/FALSE(bool_expression).
+AssertionResult::AssertionResult(bool success)
+{
+#ifdef PHIST_HAVE_MPI
+  int localSuccess = success;
+  int globalAndSuccess, globalOrSuccess;
+  int ierr = 0;
+  ierr = ierr || MPI_Allreduce(&localSuccess, &globalAndSuccess, 1, MPI_INT, MPI_LAND, internal::GTEST_MPI_COMM);
+  ierr = ierr || MPI_Allreduce(&localSuccess, &globalOrSuccess, 1, MPI_INT, MPI_LOR, internal::GTEST_MPI_COMM);
+  globalFailure_ = ierr || (globalAndSuccess != globalOrSuccess);
+#endif
+  success_ = success;
+}
+
 // Used in EXPECT_TRUE/FALSE(assertion_result).
 AssertionResult::AssertionResult(const AssertionResult& other)
-    : success_(other.success_),
+    : success_(other.success_), globalFailure_(other.globalFailure_),
       message_(other.message_.get() != NULL ?
                new ::std::string(*other.message_) :
                static_cast< ::std::string*>(NULL)) {
@@ -6176,6 +6198,19 @@ void InitGoogleTestImpl(int* argc, CharType** argv) {
 
   ParseGoogleTestFlagsOnly(argc, argv);
   GetUnitTestImpl()->PostFlagParsingInit();
+
+#ifdef PHIST_HAVE_MPI
+  int ierr = MPI_Comm_dup(MPI_COMM_WORLD, &GTEST_MPI_COMM);
+  if( ierr != 0 )
+  {
+    GTEST_LOG_(WARNING) << "Unable to create own MPI Comm, use MPI_COMM_WORLD instead!";
+    GTEST_MPI_COMM = MPI_COMM_WORLD;
+  }
+  else
+  {
+    GTEST_LOG_(INFO) << "Created own MPI communicator for google-test assertions!";
+  }
+#endif
 }
 
 }  // namespace internal
