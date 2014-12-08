@@ -289,7 +289,6 @@ else()
   include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
 endif()
 
-
 # these specific versions of type-generic drivers have to be created
 if  (PHIST_KERNEL_LIB STREQUAL "epetra" OR PHIST_KERNEL_LIB STREQUAL "builtin")
 set(TG_Types D)
@@ -365,6 +364,7 @@ set (PHIST_FEAST_SOURCE  ${PROJECT_SOURCE_DIR}/src/feast/phist_feastCorrectionSo
 include_directories(${PROJECT_BINARY_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels)
 include_directories(${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB})
+include_directories(${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface)
 include_directories(${PROJECT_SOURCE_DIR}/src/tools)
 include_directories(${PROJECT_SOURCE_DIR}/src/core)
 include_directories(${PROJECT_SOURCE_DIR}/src/krylov)
