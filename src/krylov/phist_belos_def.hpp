@@ -1,9 +1,9 @@
-#if defined PHIST_KERNEL_LIB_FORTRAN
+#if defined PHIST_KERNEL_LIB_BUILTIN
 // use the correct rcp function, this is a bit adhoc
 // and should be implemented nicer
-#define PHIST_RCP phist::PREFIX(rcp)
+#define PHIST_rcp phist::PREFIX(rcp)
 #else
-#define PHIST_RCP phist::rcp
+#define PHIST_rcp phist::rcp
 #endif
 
 // Belos: block krylov methods from Trilinos
@@ -41,8 +41,8 @@ typedef phist::MultiVector< _ST_ > BelosMV;
   int numRhs=1;// get from input vectors
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vX,&numRhs,ierr),*ierr);
   
-  Teuchos::RCP<BelosMV> X = PHIST_RCP((MV*)vX, false);
-  Teuchos::RCP<const BelosMV> B = PHIST_RCP((const MV*)vB, false);
+  Teuchos::RCP<BelosMV> X = PHIST_rcp((MV*)vX, false);
+  Teuchos::RCP<const BelosMV> B = PHIST_rcp((const MV*)vB, false);
   // note: our operator nas no destructor, so we should
   // actually wrap it like the ghost_densemat_t (cf. phist_rcp_helpers and phist_GhostMV),
   // but since Belos does nothing but apply the operator it is not necessary here.
@@ -162,4 +162,4 @@ try {
 #endif /* PHIST_HAVE_BELOS */
   }// end of belos
 
-#undef PHIST_RCP
+#undef PHIST_rcp
