@@ -50,7 +50,7 @@ namespace phist
 
 #ifdef PHIST_HAVE_SP
   //! rcp for Smvec_t
-  Teuchos::RCP<MultiVector<float>> Srcp(Smvec_ptr_t rawPtr, 
+  Teuchos::RCP<MultiVector<float> > Srcp(Smvec_ptr_t rawPtr, 
         bool ownMem=true);
 
   //! rcp for const Smvec_t
@@ -67,7 +67,7 @@ namespace phist
 #endif
 
   //! rcp for Dmvec_t
-  Teuchos::RCP<MultiVector<double> > Drcp(Dmvec_ptr_t rawPtr, 
+  Teuchos::RCP< ::phist::MultiVector<double> > Drcp(Dmvec_ptr_t rawPtr, 
         bool ownMem=true);
 
   //! rcp for const Dmvec_t
