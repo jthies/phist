@@ -40,6 +40,13 @@ namespace phist
     return (void*)V.get();
     }
 
+  //!
+  template<>
+  void const* ref2ptr(GhostMV const& V)
+    {
+    return (void const*)V.get();
+    }
+
   //@}
 
 

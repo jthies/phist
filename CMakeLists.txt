@@ -350,7 +350,8 @@ set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.c
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedminres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_belos.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasazi.cpp
-                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp)
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_iter_op.cpp)
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.c
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp

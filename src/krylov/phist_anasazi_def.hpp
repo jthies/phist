@@ -1,5 +1,13 @@
+#ifdef PHIST_KERNEL_LIB_BUILTIN
+// this should be done for wrapping the actual phist void-pointers
+// as typed multivectors, this macro will expand to S/D/C/Zrcp because
+// overloading is not possible on return type only.
 #define PHIST_rcp phist::PREFIX(rcp)
-
+#else
+// For C++ objects (E/Tpetra libs) this results in Teuchos::rcp,
+// for GHOST we have our own implementation of the function
+#define PHIST_rcp phist::rcp
+#endif
 // Anasazi: block krylov methods from Trilinos
 void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) Ainv_op, 
                          TYPE(const_op_ptr) B_op,
