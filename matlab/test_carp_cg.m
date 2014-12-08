@@ -58,8 +58,9 @@ mpath2='../test/matrices/graphene/';
 
 matrix_fmt='mm';
 matrices={[mpath2,'128x64/A.mm'],
-          [mpath2,'256x128/A.mm'],
-          [mpath2,'512x256/A.mm']};
+          %[mpath2,'256x128/A.mm'],
+          %[mpath2,'512x256/A.mm']
+          };
 
 %matrix_fmt='mat';
 %matrices={[mpath,'graphen/graphen21x4000.mat'],
@@ -68,17 +69,17 @@ matrices={[mpath2,'128x64/A.mm'],
 
 shifts=[
 -8.688545543610785e-01+4.622378249881184e-02i
--8.327943188096251e-01+2.328334729055193e-01i
--6.737109172894157e-01+5.028921785737676e-01i
--3.394892641666588e-01+7.109553036523395e-01i
+%-8.327943188096251e-01+2.328334729055193e-01i
+%6.737109172894157e-01+5.028921785737676e-01i
+%3.394892641666588e-01+7.109553036523395e-01i
 ];
 
 lmin=min(real(shifts));
 lmax=max(real(shifts));
 
-matrix_fmt='anderson';
-matrices={8,16,32,64};
-shifts=shifts-lmin-(lmin+lmax)/2;
+%matrix_fmt='anderson';
+%matrices={8,16,32,64};
+%shifts=shifts-lmin-(lmin+lmax)/2;
 %matrix_fmt='mat';
 %matrices={[mpath,'lap_cit/LAP_CIT_396.mat'],
 %          [mpath,'lap_cit/LAP_CIT_1059.mat'],
@@ -165,13 +166,23 @@ end
 end % skipGMRES?
 %
 opts.sigma=sigma;
+%opts.sigma=conj(sigma);
 opts.omega=1.0;
 opts.tol=tol;
 opts.maxIter=maxIt;
+%A = -A;
 tic;
-[x3,flag3,relres3,iter3,resvec3,Tlan3] = carp_cg(A, b, x0, opts);
+
+
+
+[x3,flag3,relres3,iter1,resvec3,Tlan3] = carp_cg(A, b, x0, opts);
+
+[x3,flag3,relres3,iter2,resvec3,Tlan3, c_steps1, beta_pos] = carp_cg2(A, b, x0, opts);
+
+autodetect = [iter2, c_steps1, beta_pos]
+
 toc
-disp(sprintf('CARP-CG: iters %d, relres %e\n',iter3, relres3));
+disp(sprintf('CARP-CG: iters %d, relres %e\n',iter1, relres3));
 disp(sprintf('expl. resid: %e, error %e\n',norm(A*x3-sigma*x3-b),norm(x3-xex)));
 
 if (flag3~=0)
