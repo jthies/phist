@@ -41,7 +41,24 @@ public:
     {
     KernelTestWithType<_ST_>::SetUp();
     KernelTestWithMap<_N_>::SetUp();
-    if (this->typeImplemented_)
+
+      if(typeImplemented_)
+      {
+
+        // disable the test because TSQR will not work.
+        // This situation occurs if we have a small matrix (_N_=25, say)
+        // and many Q vectors (e.g. 10) with multiple MPI procs.
+        int globalTooSmall = _N_ < _M_ || _N_ < _K_;
+#ifdef PHIST_HAVE_MPI
+        int localTooSmall = nloc_ < _M_ || nloc_ < _K_;
+        ierr_ = MPI_Allreduce(&localTooSmall, &globalTooSmall, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+        ASSERT_EQ(0,ierr_);
+#endif
+        typeImplemented_ = typeImplemented_ && globalTooSmall==0;
+      }
+
+
+    if (typeImplemented_)
       {
       // create vectors V, W and vector views for setting/checking entries
       SUBR(mvec_create)(&V_,this->map_,this->m_,&this->ierr_);

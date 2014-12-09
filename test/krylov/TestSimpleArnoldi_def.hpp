@@ -34,6 +34,21 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
 
       if( typeImplemented_ )
       {
+
+        // disable the test because TSQR will not work.
+        // This situation occurs if we have a small matrix (_N_=25, say)
+        // and many Q vectors (e.g. 10) with multiple MPI procs.
+        int globalTooSmall = _N_ < BLOCK_SIZE1;
+#ifdef PHIST_HAVE_MPI
+        int localTooSmall = nloc_ < BLOCK_SIZE1;
+        ierr_ = MPI_Allreduce(&localTooSmall, &globalTooSmall, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+        ASSERT_EQ(0,ierr_);
+#endif
+        typeImplemented_ = typeImplemented_ && !globalTooSmall;
+      }
+
+      if( typeImplemented_ )
+      {
         // read matrices
         SUBR(read_mat)("speye",nglob_,&Aeye_,&ierr_);
         ASSERT_EQ(0,ierr_);

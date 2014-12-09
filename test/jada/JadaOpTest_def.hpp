@@ -20,20 +20,20 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       VTest::SetUp();
       MTest::SetUp();
 
-      int localTooSmall = 0;
-      int globalTooSmall = 0;
-      if (nloc_<_NVP_)
+      if( typeImplemented_ )
       {
+
         // disable the test because TSQR will not work.
         // This situation occurs if we have a small matrix (_N_=25, say)
         // and many Q vectors (e.g. 10) with multiple MPI procs.
-        localTooSmall = 1;
-        MTest::TearDown();
-        VTest::TearDown();
+        int globalTooSmall = _N_ < _NVP_;
+#ifdef PHIST_HAVE_MPI
+        int localTooSmall = nloc_ < _NVP_;
+        ierr_ = MPI_Allreduce(&localTooSmall, &globalTooSmall, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+        ASSERT_EQ(0,ierr_);
+#endif
+        typeImplemented_ = typeImplemented_ && !globalTooSmall;
       }
-      ierr_ = MPI_Allreduce(&localTooSmall, &globalTooSmall, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
-      ASSERT_EQ(0,ierr_);
-      typeImplemented_ = !globalTooSmall;
 
       if (typeImplemented_)
       {
@@ -71,8 +71,6 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     */
     virtual void TearDown() 
     {
-      MTest::TearDown();
-      VTest::TearDown();
       if (typeImplemented_)
       {
         delete opI_;
@@ -85,6 +83,9 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(0,ierr_);
         delete[] sigma_;
       }
+
+      MTest::TearDown();
+      VTest::TearDown();
     }
 
     TYPE(crsMat_ptr) A1_; 
