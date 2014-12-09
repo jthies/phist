@@ -3,6 +3,21 @@
 #include "ghost/sell.h"
 #endif
 
+/* previously we started every kernel function as a task, but since this
+   means that the threads need to be created every time, we now just start
+   the main program as a task instead
+*/   
+#ifdef PHIST_GHOST_TASK_BEGIN
+#undef PHIST_GHOST_TASK_BEGIN
+#endif
+#ifdef PHIST_GHOST_TASK_END
+#undef PHIST_GHOST_TASK_END
+#endif
+
+#define PHIST_GHOST_TASK_BEGIN
+#define PHIST_GHOST_TASK_END
+
+
 // we implement only the double precision real type D
 extern "C" void SUBR(type_avail)(int* ierr)
 {
