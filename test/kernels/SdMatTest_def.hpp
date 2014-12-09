@@ -370,3 +370,37 @@ public:
 
     }
   }
+
+
+  // the result of sdMat_random must be equal on all processes (if a comm. is given in sdMat_create!)
+  TEST_F(CLASSNAME, parallel_random)
+  {
+    if( typeImplemented_ )
+    {
+      int stride = 1;
+
+      SUBR(sdMat_random)(mat1_, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      int rank = 0;
+      phist_comm_get_rank(comm_, &rank, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      if( rank == 0 )
+      {
+        SUBR(sdMat_add_sdMat)(st::one(), mat1_, st::zero(), mat2_, &ierr_);
+      }
+      else
+      {
+        ierr_ = 0;
+      }
+      ASSERT_EQ(0, ierr_);
+#ifdef PHIST_HAVE_MPI
+      int size = sizeof(_ST_)*(MIDX(nrows_-1,ncols_-1,m_lda_) - MIDX(0,0,m_lda_) + 1);
+      ierr_ = MPI_Bcast(mat2_vp_, size, MPI_BYTE, 0, MPI_COMM_WORLD);
+      ASSERT_EQ(0,ierr_);
+#endif
+
+      ASSERT_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
+    }
+  }
