@@ -12,9 +12,9 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
     *ierr=0;
     int m, rank;
     lidx_t ldb;
-    _ST_*  b;
+    _ST_*  B_raw;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(B,&b,&ldb,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(B,&B_raw,&ldb,ierr),*ierr);
     _MT_ D[m], Dinv[m]; // sqrt of diag of V'V (and its inverse)
     _MT_ E[m], Einv[m]; // sqrt of eigenvalues of (scaled) V'V (and its inverse)
     
@@ -23,7 +23,7 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
     // scaling factors: inverse diagonal elements
     for (int i=0; i<m; i++) 
     {
-      _MT_ d=st::real(b[i*ldb+i]);
+      _MT_ d=st::real(B_raw[i*ldb+i]);
       // note: diagonal entry must be real
       D[i] = mt::sqrt(d);
       if (mt::abs(d)>mt::eps())
@@ -40,7 +40,7 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
     {
       for(int j=0; j<m; j++)  
       {
-        b[j*ldb+i] *= Dinv[i]*Dinv[j];
+        B_raw[j*ldb+i] *= Dinv[i]*Dinv[j];
       }
     }
 
@@ -49,10 +49,10 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
 // eigenvectors as columns of B
 #ifdef IS_COMPLEX
     PHIST_CHK_IERR(*ierr=PHIST_LAPACKE(heevd)
-        (SDMAT_FLAG, 'V' , 'U', m, (mt::blas_cmplx_t*)b, ldb, E),*ierr);
+        (SDMAT_FLAG, 'V' , 'U', m, (mt::blas_cmplx_t*)B_raw, ldb, E),*ierr);
 #else
     PHIST_CHK_IERR(*ierr=PHIST_LAPACKE(syevd)
-        (SDMAT_FLAG, 'V' , 'U', m, b, ldb, E),*ierr);
+        (SDMAT_FLAG, 'V' , 'U', m, B_raw, ldb, E),*ierr);
 #endif
 
     // determine rank of input matrix
@@ -87,9 +87,9 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
       for(int j=0;j<m;j++)
       {
 #ifdef PHIST_SDMATS_ROW_MAJOR
-        b[i*ldb+j] *= Dinv[i]*E[j];
+        B_raw[i*ldb+j] *= Dinv[i]*E[j];
 #else
-        b[j*ldb+i] *= Dinv[i]*E[j];
+        B_raw[j*ldb+i] *= Dinv[i]*E[j];
 #endif
       }
     }

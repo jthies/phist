@@ -165,7 +165,7 @@ void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) V, int* nvec, int* ierr);
 //!     accessing the raw data and mvec_upload after manipulating it. Make sure that you
 //!     know which copy is up-to-date at what point.
 //!
-void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val,
+void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** V_raw,
         lidx_t* lda, int* ierr);
 
 //! get number of cols in local dense matrix \ingroup sdmat
@@ -178,7 +178,7 @@ void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* ierr);
 
 //! See comment for mvec_extract_view for details,
 //! the macro indicating row-major storage layout is PHIST_SDMATS_ROW_MAJOR.
-void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) M, _ST_** val,
+void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) M, _ST_** M_raw,
         lidx_t* lda, int* ierr);
 
 //@}
