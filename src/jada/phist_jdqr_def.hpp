@@ -774,7 +774,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     }
 #ifdef IS_COMPLEX
     MT* rwork = work+4*nconv;
-    PHIST_CHK_IERR(PREFIX(TREVC)(side, howmny, NULL, &nconv, (const mt::blas_cmplx_t*)R_raw, &ildR, 
+    PHIST_CHK_IERR(PREFIX(TREVC)(side, howmny, NULL, &nconv, (mt::blas_cmplx_t*)R_raw, &ildR, 
     NULL, &ildS, (mt::blas_cmplx_t*)S_raw, &ildS, &nconv, &m_out, (mt::blas_cmplx_t*)work, 
     rwork, ierr),*ierr);
 #else
