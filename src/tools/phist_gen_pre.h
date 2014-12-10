@@ -81,8 +81,8 @@
 #undef TYPE
 #endif
 
-#ifdef LAPACKE_PREFIX
-#undef LAPACKE_PREFIX
+#ifdef PHIST_LAPACKE
+#undef PHIST_LAPACKE
 #endif
 
 #ifdef ASSERT_REAL_EQ

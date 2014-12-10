@@ -7,8 +7,6 @@
 #define ASSERT_REAL_EQ(expected,actual) ASSERT_FLOAT_EQ(expected,actual)
 #endif
 
-#define LAPACKE_PREFIX(s) LAPACKE_ ## SPREFIX(s)
-
 // check if the standard things are defined in a previously included gen_x.h file
 #ifndef _ST_
 #error "macro _ST_ not defined"
@@ -20,6 +18,10 @@
 
 #ifndef SPREFIX
 #error "macro SPREFIX not defined"
+#endif
+
+#ifndef PHIST_LAPACKE
+#error "macro PHIST_LAPACKE not defined"
 #endif
 
 #ifndef SUBR

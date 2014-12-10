@@ -36,4 +36,7 @@
 // how to build up the name of a type
 #define TYPE(name) D ## name ## _t
 
+// how to call a lapack routine via the C interface, e.g. PHIST_LAPACKE(getrf)
+#define PHIST_LAPACKE(name) LAPACKE_d ## name
+
 #include "phist_gen_post.h"

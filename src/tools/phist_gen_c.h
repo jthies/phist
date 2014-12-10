@@ -1,6 +1,5 @@
 #include "phist_gen_pre.h"
 
-
 #define IS_COMPLEX
 #define _ST_ s_complex_t
 
@@ -24,7 +23,6 @@
 
 #endif
 
-
 // adds type prefix to a specifier, e.g. PREFIX(gemm) -> Dgemm
 #define PREFIX(name) C ## name
 
@@ -36,5 +34,8 @@
 
 // how to build up the name of a type
 #define TYPE(name) C ## name ## _t
+
+// how to call a lapack routine via the C interface, e.g. PHIST_LAPACKE(getrf)
+#define PHIST_LAPACKE(name) LAPACKE_c ## name
 
 #include "phist_gen_post.h"

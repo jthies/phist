@@ -8,6 +8,9 @@
 #define SUBR(name) phist_S ## name
 #define TYPE(name) S ## name ## _t
 
+// how to call a lapack routine via the C interface, e.g. PHIST_LAPACKE(getrf)
+#define PHIST_LAPACKE(name) LAPACKE_s ## name
+
 // C++ users should use the class phist::ScalarTraits and
 // phist_std_typedefs.hpp for all of this:
 #ifndef __cplusplus
