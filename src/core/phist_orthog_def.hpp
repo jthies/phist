@@ -324,22 +324,24 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   delete [] normW1;
   }
 
-void SUBR(mvec_QR_fallback)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int *ierr)
+void SUBR(mvec_QR_fallback)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int *ierr)
 {
       ENTER_FCN(__FUNCTION__);
+      int k;
+      PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&k,ierr),*ierr);
       int dim0=k;
       // try a couple of times to get a full rank
       // orthogonal matrix, otherwise just give up
       for (int i=0;i<3;i++)
       {
         // use fallback kernel: SVQB
-        PHIST_CHK_NEG_IERR(SUBR(svqb)(W,R1,ierr),*ierr);
+        PHIST_CHK_NEG_IERR(SUBR(svqb)(V,B,ierr),*ierr);
         dim0=*ierr;
         if (dim0==0) break;
-        TYPE(mvec_ptr) W0=NULL;
-        PHIST_CHK_IERR(SUBR(mvec_view_block)(W,&W0,0,dim0-1,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_random)(W0,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_delete)(W0,ierr),*ierr);
+        TYPE(mvec_ptr) V0=NULL;
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&V0,0,dim0-1,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_random)(V0,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_delete)(V0,ierr),*ierr);
       }
-
+      return;
 }

@@ -7,6 +7,7 @@
 // least if V is of full rank.
 void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
 {
+#include "phist_std_typedefs.hpp"
     ENTER_FCN(__FUNCTION__);
     *ierr=0;
     int m, rank;
@@ -20,14 +21,14 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),B,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_from_device)(B,ierr),*ierr);
     // scaling factors: inverse diagonal elements
-    for (int i=0; i<n; i++) 
+    for (int i=0; i<m; i++) 
     {
-      _MT_ d=(_MT_)b[i*ldb+i];
+      _MT_ d=st::real(b[i*ldb+i]);
       // note: diagonal entry must be real
       D[i] = mt::sqrt(d);
       if (mt::abs(d)>mt::eps())
       {
-        Dinv[i] = mt::one()/mt::sqrt(b[i*ldb+i]);
+        Dinv[i] = mt::one()/D[i];
       }
       else
       {
@@ -39,18 +40,18 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
     {
       for(int j=0; j<m; j++)  
       {
-        b[j*ldr+i] *= Dinv[i]*Dinv[j];
+        b[j*ldb+i] *= Dinv[i]*Dinv[j];
       }
     }
 // compute eigenvalues/vectors of scaled B, eigenvalues
 // are given in order of ascending magnitude in E, corresponding
 // eigenvectors as columns of B
 #ifdef IS_COMPLEX
-    PHIST_CHK_IERR(*ierr=LAPACKE_PREFIX(heevd)
-        (SDMAT_FLAG, 'V' , 'U', n, b, ldb, E),*ierr);
+    PHIST_CHK_IERR(*ierr=PHIST_LAPACKE(heevd)
+        (SDMAT_FLAG, 'V' , 'U', m, (mt::blas_cmplx_t*)b, ldb, E),*ierr);
 #else
-    PHIST_CHK_IERR(*ierr=LAPACKE_PREFIX(syevd)
-        (SDMAT_FLAG, 'V' , 'U', n, b, ldb, E),*ierr);
+    PHIST_CHK_IERR(*ierr=PHIST_LAPACKE(syevd)
+        (SDMAT_FLAG, 'V' , 'U', m, b, ldb, E),*ierr);
 #endif
 
     // determine rank of input matrix
@@ -65,7 +66,7 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
     {
       for(int i=0; i<m; i++)
       {
-        if (mt::abs(eigs[i]<10*emax*mt::eps()))
+        if (mt::abs(E[i]<10*emax*mt::eps()))
         {
           rank--;
           E[i]=mt::zero();
@@ -80,19 +81,21 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
     }
 
     // scale the eigenvector matrix, B <- Dinv * B * Einv
-    for( j=0;j<n;j++)  
+    for(int i=0; i<m; i++)
     {
+      for(int j=0;j<m;j++)
+      {
 #ifdef PHIST_SDMATS_ROW_MAJOR
-      b[i*ldb+j] *= Dinv[i]*E[j];
+        b[i*ldb+j] *= Dinv[i]*E[j];
 #else
-      b[j*ldb+i] *= Dinv[i]*E[j];
+        b[j*ldb+i] *= Dinv[i]*E[j];
 #endif
       }
     }
     // compute V <- V*B to get an orthogonal V (up to the first (m-rank) columns,
     // which will be exactly zero)
-    PHIST_ICHK_IERR(SUBR(sdMat_to_device)(B,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_times_sdmat_in_place)(st::one(),V,B,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(B,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(V,B,ierr),*ierr);
 
 
 // the return value of this function is the rank of the null space of V on entry
