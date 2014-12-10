@@ -33,10 +33,51 @@ extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcom
 const char* filename,int* ierr)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  PHIST_TOUCH(vA);
-  PHIST_TOUCH(vcomm);
-  PHIST_TOUCH(filename);
-  *ierr = -99; // not implemented in ghost, use converter script to bin crs
+  *ierr=0;
+#include "phist_std_typedefs.hpp"
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(const MPI_Comm,comm,vcomm,*ierr);
+  if (filename==NULL)
+  {
+    *ierr=PHIST_INVALID_INPUT;
+    return;
+  }
+  ghost_sparsemat_t* mat;
+  ghost_context_t *ctx;
+
+  ghost_sparsemat_traits_t *mtraits=new ghost_sparsemat_traits_t;
+        *mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
+#ifdef PHIST_USE_SELL
+        mtraits->format = GHOST_SPARSEMAT_SELL;
+        ghost_sell_aux_t aux = GHOST_SELL_AUX_INITIALIZER;
+        aux.C = PHIST_SELL_C;
+        mtraits->sortScope = PHIST_SELL_SIGMA;
+        mtraits->aux = &aux;
+        mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT|GHOST_SPARSEMAT_PERMUTE);
+#else
+#warning "GHOST interface compiled to use the reference CRS format, will probably not yield optimal performance"
+        mtraits->format = GHOST_SPARSEMAT_CRS;
+        mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT);
+#endif
+        mtraits->datatype = st::ghost_dt;
+        char* cfname=const_cast<char*>(filename);
+// TODO - check ghost return codes everywhere like this
+  PHIST_CHK_GERR(ghost_context_create(&ctx,0,0,
+        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_MM,*comm,1.0),*ierr);
+  PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,mtraits,1),*ierr);                               
+  PHIST_CHK_GERR(mat->fromMM(mat,cfname),*ierr);
+#if PHIST_OUTLEV >= PHIST_VERBOSE
+  char *str;
+  ghost_context_string(&str,ctx);
+  PHIST_SOUT(PHIST_VERBOSE,"%s\n",str);
+  free(str); str = NULL;
+  ghost_sparsemat_string(&str,mat);
+  PHIST_SOUT(PHIST_VERBOSE,"%s\n",str);
+  free(str); str = NULL;
+#endif
+  *vA = (TYPE(crsMat_ptr))mat;
+PHIST_GHOST_TASK_END
 }
 
 //! read a matrix from a Ghost CRS (binary) file.
