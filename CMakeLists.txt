@@ -23,7 +23,18 @@ option(PHIST_ENABLE_SP "Enable single precision functions and drivers" OFF)
 if (DEFINED LAPACK_LIBS)
   set(LAPACK_LIBS ${LAPACK_LIBS} CACHE STRING "how to link with lapack (and blas)")
 elseif(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
+#TODO: this assumes that if you use the intel compilers, you also have MKL (!)
   set(LAPACK_LIBS "lapack;blas" CACHE STRING "how to link with lapack (and blas)")
+endif()
+
+# try to find a MKL header in the default location
+if (NOT MKL_INCLUDE_DIR)
+    message(STATUS "Try to find MKL in default paths and via MKLROOT")
+    find_path(MKL_INCLUDE_DIR mkl.h $ENV{MKLROOT}/include)
+endif()
+if (MKL_INCLUDE_DIR)
+    set(PHIST_HAVE_MKL 1)
+    include_directories(${MKL_INCLUDE_DIR})
 endif()
 
 
