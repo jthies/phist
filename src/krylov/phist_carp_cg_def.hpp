@@ -463,6 +463,11 @@ if (numSys>0)
       PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
       }
 
+      /* This code implements the self-stabilizing CG described in Sao & Vuduc, ScalA'14
+      proceedings. The implementation was done by Florian Fritzen in an internship and seems
+      way too invasive to me, this if statement should be reduced to the few lines it is
+      actually supposed to touch (TODO).
+      */
       if(correction_needed == true ){
         std::cout << "Cstep done." <<std::endl;
         correction_needed = false;
@@ -1265,6 +1270,7 @@ void SUBR(destroy_vector_elements_at_random)(TYPE(mvec_ptr) V, double probabilit
   double rand_prob;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_extract_view)(V,&V_val,&lda,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_from_device)(V,ierr),*ierr);
   //std::cout << "nloc " << nloc <<std::endl;
   for (int i=0; i<nloc; i++)
   {
@@ -1285,6 +1291,7 @@ void SUBR(destroy_vector_elements_at_random)(TYPE(mvec_ptr) V, double probabilit
       }
     }
   }
+  PHIST_CHK_IERR(SUBR(mvec_to_device)(V,ierr),*ierr);
   //std::cout <<" Destruction complete " << std::endl;
 }
 
@@ -1297,6 +1304,7 @@ int nvec;
 int nloc = 1;
 PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,ierr),*ierr);
 PHIST_CHK_IERR(SUBR(mvec_extract_view)(V,&V_val,&lda,ierr),*ierr);
+PHIST_CHK_IERR(SUBR(mvec_from_device)(V,ierr),*ierr);
 for (int i=0; i<nloc; i++)
   {
     for (int j=0;j<nvec; j++)

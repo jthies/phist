@@ -314,6 +314,7 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
       *ierr=PHIST_INTEGER_OVERFLOW;
       return;
     }
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)(S[i]->H_,ierr),*ierr);
     PHIST_CHK_IERR(PREFIX(TRSV)("U","N","N",&m,(st::blas_scalar_t*)H_raw,&ildH,(st::blas_scalar_t*)y, &ildy),*ierr);
 
 
@@ -569,6 +570,11 @@ PHIST_SOUT(PHIST_INFO,"\n");
       mvecBuff->incRef(nextIndex);
     }
 
+    for(int i = 0; i < numSys; i++)
+    {
+      // get H daat from GPU (if it resides there)
+      PHIST_CHK_IERR(SUBR(sdMat_from_device)(S[i]->H_,ierr),*ierr);
+    }
 
     //    % arnoldi update with iterated modified gram schmidt
     {
@@ -620,6 +626,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
           // store in H (and do MGS steps for single systems)
           for(int i = 0; i < numSys; i++)
           {
+            PHIST_CHK_IERR(SUBR(sdMat_from_device)(S[i]->H_,ierr),*ierr);
             int j_ = j - (maxCurDimV-S[i]->curDimV_);
             if( j_ >= 0 )
             {
@@ -636,13 +643,18 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
               // store in H
               ST *Hj=NULL;
-              lidx_t ldH; 
+              lidx_t ldH;
               PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
               Hj += (S[i]->curDimV_-1)*ldH;
               Hj[j_] += -tmp[S[i]->id-minId];
             }
           }
         }
+      }
+
+      for(int i = 0; i < numSys; i++)
+      {
+        PHIST_CHK_IERR(SUBR(sdMat_to_device)(S[i]->H_,ierr),*ierr);
       }
 
       // normalize resulting vector
@@ -662,7 +674,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
         {
           // raw view of H
           ST *Hj=NULL;
-          lidx_t ldH; 
+          lidx_t ldH;
           PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
           Hj += (S[i]->curDimV_-1)*ldH;
           Hj[j] = ynorm[S[i]->id-minId];
@@ -673,6 +685,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
         scale[i] = st::one() / ynorm[i];
       PHIST_CHK_IERR(SUBR(mvec_vscale)(work_y, scale, ierr), *ierr);
     }
+
     maxCurDimV++;
     sharedCurDimV++;
 #ifdef TESTING
@@ -800,6 +813,11 @@ PHIST_SOUT(PHIST_INFO,"\n");
       S[i]->normR_=st::abs(S[i]->rs_[j]);
     }
 
+    for(int i = 0; i < numSys; i++)
+    {
+      // push H to GPU if necessary
+      PHIST_CHK_IERR(SUBR(sdMat_to_device)(S[i]->H_,ierr),*ierr);
+    }
 
     //    % check convergence, update subspace dimension etc
     for(int i = 0; i < numSys; i++)

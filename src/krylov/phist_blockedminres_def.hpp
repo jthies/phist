@@ -196,6 +196,10 @@ PHIST_SOUT(PHIST_INFO,"\n");
       mvecBuff->incRef(nextIndex);
     }
 
+    for(int i = 0; i < numSys; i++)
+    {
+      PHIST_CHK_IERR(SUBR(sdMat_from_device)(S[i]->H_,ierr),*ierr);
+    }
 
     //    % lanczos update
     {
@@ -412,6 +416,11 @@ PHIST_SOUT(PHIST_INFO,"\n");
       S[i]->normR_=st::abs(S[i]->rs_[j]);
     }
 
+
+    for(int i = 0; i < numSys; i++)
+    {
+      PHIST_CHK_IERR(SUBR(sdMat_to_device)(S[i]->H_,ierr),*ierr);
+    }
 
     //    % check convergence, update subspace dimension etc
     for(int i = 0; i < numSys; i++)
