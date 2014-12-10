@@ -1,3 +1,7 @@
+// helper routine in case the kernel lib does not provide mvec_QR, which
+// is quite an advanced kernel to ask for.
+void SUBR(mvec_QR_fallback)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int *ierr);
+
 //                                                               
 // This is the main orthogonalization routine in PHIST.          
 // It takes an orthogonal basis V and a set of vectors W,        
@@ -319,3 +323,23 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   delete [] normW0;
   delete [] normW1;
   }
+
+void SUBR(mvec_QR_fallback)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int *ierr)
+{
+      ENTER_FCN(__FUNCTION__);
+      int dim0=k;
+      // try a couple of times to get a full rank
+      // orthogonal matrix, otherwise just give up
+      for (int i=0;i<3;i++)
+      {
+        // use fallback kernel: SVQB
+        PHIST_CHK_NEG_IERR(SUBR(svqb)(W,R1,ierr),*ierr);
+        dim0=*ierr;
+        if (dim0==0) break;
+        TYPE(mvec_ptr) W0=NULL;
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(W,&W0,0,dim0-1,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_random)(W0,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_delete)(W0,ierr),*ierr);
+      }
+
+}

@@ -423,9 +423,11 @@ void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
 //! columns of Q are an orthogonal basis of the column space of V, the  
 //! remaining columns form a basis for the null space.                  
 //!                                                                     
-//! TODO: our current three implementations of this function (ghost,    
-//!     tpetra and epetra) are identical, it would be nicer to move this
-//!     function into core/ so we have a single implementation.         
+//! As it is quite a high demand from the kernel lib to supply a rank-  
+//! revealing QR, it is not strictly necessary to provide this function.
+//! The orthog routine (in core/phist_orthog.h) for instance checks for 
+//! a return value of -99 (not implemented) and uses a PHIST-based      
+//! implementation of SVQB instead, which only requires mvec/sdMat ops. 
 void SUBR(mvec_QR)(TYPE(mvec_ptr) V, 
                      TYPE(sdMat_ptr) R, int* ierr);
 

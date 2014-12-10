@@ -1,6 +1,19 @@
 #ifndef PHIST_LAPACK_H
 #define PHIST_LAPACK_H
 
+//TODO: cmake integration of lapacke
+//      I think we should gradually move towards
+//      using lapacke everywhere
+#include "lapacke.h"
+
+#ifdef PHIST_SDMATS_ROW_MAJOR
+#define SDMAT_FLAG LAPACK_ROW_MAJOR
+#else
+#define SDMAT_FLAG LAPACK_COL_MAJOR
+#endif
+
+// to allow calling fortran-style lapack interfaces, define a complex type for C
+
 typedef struct Sblas_cmplx_t {
 float re;
 float im;
@@ -13,6 +26,9 @@ double im;
 
 typedef int blas_idx_t;
 
+
+// we provide some C interfaces to lapack routines, it may be
+// a better idea to use LAPACKE everywhere (see comment above)
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,6 +40,9 @@ extern "C" {
 #define BLAS_SUBR(NAME,name) name ## _
 
 #ifdef PHIST_SDMATS_ROW_MAJOR
+/* we might use LAPACKE for this case, but we don't really need the support
+for row-major sdMats right now, I think
+*/
 #warning "lapack calls will not work for row-major sdMats"
 #endif
 

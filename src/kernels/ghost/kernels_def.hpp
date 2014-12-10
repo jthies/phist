@@ -1415,7 +1415,6 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   PHIST_DEB("V has %d columns and rank %d\n",ncols,rank);
   *ierr = ncols-rank;// return positive number if rank not full.
 #else
-  //TODO: use SVQB from ghost alternatively
   *ierr=-99; // no Trilinos, no TSQR, no mvec_QR (right now)
 #endif
   return;

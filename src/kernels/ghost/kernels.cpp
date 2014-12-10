@@ -20,6 +20,13 @@
 #include "BelosTsqrOrthoManager.hpp"
 #endif
 
+#ifdef PHIST_HAVE_ANASAZI
+#include "phist_trilinos_macros.h"
+#include "Anasazi_GhostAdapter.hpp"
+#include "phist_AnasaziOperatorTraits.hpp"
+#include "AnasaziSVQBOrthoManager.hpp"
+#endif
+
 #include "phist_GhostMV.hpp"
 
 #ifdef PHIST_HAVE_LIKWID

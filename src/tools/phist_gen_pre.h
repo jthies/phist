@@ -69,12 +69,20 @@
 #undef PREFIX
 #endif
 
+#ifdef SPREFIX
+#undef SPREFIX
+#endif
+
 #ifdef SUBR
 #undef SUBR
 #endif
 
 #ifdef TYPE
 #undef TYPE
+#endif
+
+#ifdef LAPACKE_PREFIX
+#undef LAPACKE_PREFIX
 #endif
 
 #ifdef ASSERT_REAL_EQ
