@@ -1,4 +1,4 @@
-#include "phist_gen_pre.h"
+#include "phist_gen_clean.h"
 
 #define IS_DOUBLE
 
@@ -39,4 +39,4 @@
 // how to call a lapack routine via the C interface, e.g. PHIST_LAPACKE(getrf)
 #define PHIST_LAPACKE(name) LAPACKE_d ## name
 
-#include "phist_gen_post.h"
+#include "phist_gen_common.h"

@@ -3,7 +3,7 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, int b
         linSolv_t method, int blockedGMRESMaxBase, bool useMINRES, int *ierr)
 {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr = 0;
   if (method==GMRES)
   {
@@ -30,7 +30,7 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, int b
 void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) me, int *ierr)
 {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr = 0;
 
   PHIST_CHK_IERR(SUBR(blockedGMRESstates_delete)(me->blockedGMRESstates_, me->gmresBlockDim_, ierr), *ierr);
@@ -64,7 +64,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
                                     int *                 ierr)
 {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr = 0;
 
   PHIST_CHK_IERR(*ierr = (maxIter <= 0) ? -1 : 0, *ierr);

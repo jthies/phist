@@ -20,5 +20,6 @@ typedef const void* const_map_ptr_t;
 #include "phist_void_aliases_decl.h"
 #include "phist_gen_z.h"
 #include "phist_void_aliases_decl.h"
+#include "phist_gen_clean.h"
 
 #endif

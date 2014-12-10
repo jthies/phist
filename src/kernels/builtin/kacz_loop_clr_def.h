@@ -18,7 +18,7 @@ flush(6)
 ! note: it doesn't make sense to try and use the same scheduling as elsewhere
 ! (to avoid NUMA problems) because the ordering here is diffrent. For now, we
 ! will stick with 1 MPI process per socket and think about NUMA later (we could
-! 'first touch' all vectors using the coloring if it is defined in the map, but
+! 'first PHIST_TOUCH' all vectors using the coloring if it is defined in the map, but
 ! that would infringe the spMVM performance...)
 !$omp parallel do private(tmp_r,tmp_i,i,j) schedule(runtime)
   do jc = map%color_offset(ic)+j0,map%color_offset(ic+istep)+j1,istep

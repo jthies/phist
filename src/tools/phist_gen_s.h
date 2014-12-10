@@ -1,4 +1,4 @@
-#include "phist_gen_pre.h"
+#include "phist_gen_clean.h"
 
 // scalar type
 #define _ST_ float
@@ -26,4 +26,4 @@
 #define ONE 1.0f
 #endif
 
-#include "phist_gen_post.h"
+#include "phist_gen_common.h"

@@ -36,7 +36,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      int numSweeps,
                      int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
 
   int m,k;
@@ -326,7 +326,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 
 void SUBR(mvec_QR_fallback)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int *ierr)
 {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       int k;
       PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&k,ierr),*ierr);
       int dim0=k;

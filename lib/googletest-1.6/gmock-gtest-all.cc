@@ -6200,13 +6200,15 @@ void InitGoogleTestImpl(int* argc, CharType** argv) {
   GetUnitTestImpl()->PostFlagParsingInit();
 
 #ifdef PHIST_HAVE_MPI
+  int rank = 0;
   int ierr = MPI_Comm_dup(MPI_COMM_WORLD, &GTEST_MPI_COMM);
+  ierr = ierr | MPI_Comm_rank(GTEST_MPI_COMM, &rank);
   if( ierr != 0 )
   {
     GTEST_LOG_(WARNING) << "Unable to create own MPI Comm, use MPI_COMM_WORLD instead!";
     GTEST_MPI_COMM = MPI_COMM_WORLD;
   }
-  else
+  else if( rank == 0 )
   {
     GTEST_LOG_(INFO) << "Created own MPI communicator for google-test assertions!";
   }

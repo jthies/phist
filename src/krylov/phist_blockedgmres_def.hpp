@@ -4,7 +4,7 @@
 void SUBR(blockedGMRESstates_create)(TYPE(blockedGMRESstate_ptr) state[], int numSys, const_map_ptr_t map, int maxBas,int* ierr)
 {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
 
   if (numSys <= 0)
@@ -51,12 +51,12 @@ void SUBR(blockedGMRESstates_create)(TYPE(blockedGMRESstate_ptr) state[], int nu
 // delete blockedGMRESstate object
 void SUBR(blockedGMRESstates_delete)(TYPE(blockedGMRESstate_ptr) state[], int numSys, int* ierr)
 {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
 #ifndef PHIST_HAVE_BELOS
   if (numSys==0) return;
   
-    CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, state[0]->Vbuff, *ierr);    
+    PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, state[0]->Vbuff, *ierr);    
     PHIST_CHK_IERR(mvecBuff->delete_mvecs(ierr), *ierr);
     
     delete mvecBuff;
@@ -70,7 +70,7 @@ void SUBR(blockedGMRESstates_delete)(TYPE(blockedGMRESstate_ptr) state[], int nu
     delete [] state[i]->sn_;
     delete [] state[i]->rs_;
 #ifdef PHIST_HAVE_BELOS
-    CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuff, state[i]->Vbuff, *ierr);
+    PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuff, state[i]->Vbuff, *ierr);
     PHIST_CHK_IERR((*mvecBuff)->delete_mvecs(ierr), *ierr);
     delete mvecBuff;
 #endif
@@ -83,15 +83,15 @@ void SUBR(blockedGMRESstates_delete)(TYPE(blockedGMRESstate_ptr) state[], int nu
 void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mvec_ptr) b, TYPE(const_mvec_ptr) x0, int *ierr)
 {
 #include "phist_std_typedefs.hpp"  
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
 
   // get mvecBuff
 #ifdef PHIST_HAVE_BELOS
-  CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S->Vbuff, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S->Vbuff, *ierr);
   Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
 #else
-  CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S->Vbuff, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S->Vbuff, *ierr);
 #endif
 
   // release mvecs currently marked used by this state
@@ -169,7 +169,7 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
 void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int numSys, TYPE(mvec_ptr) x, _MT_* resNorm, bool scaleSolutionToOne, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr = 0;
 
   if( numSys <= 0 )
@@ -190,20 +190,20 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
     PHIST_CHK_IERR(*ierr = (S[i]->lastVind_ != lastVind) ? -1 : 0, *ierr);
 
 #ifdef PHIST_HAVE_BELOS
-  CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *ierr);
   Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
 #else
-  CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S[0]->Vbuff, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S[0]->Vbuff, *ierr);
 #endif
 
   // make sure all systems use the same mvecBuff
   for(int i = 0; i < numSys; i++)
   {
 #ifdef PHIST_HAVE_BELOS
-    CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *ierr);
+    PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *ierr);
     PHIST_CHK_IERR(*ierr = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *ierr);
 #else
-    CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuffPtr_i, S[i]->Vbuff, *ierr);
+    PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuffPtr_i, S[i]->Vbuff, *ierr);
     PHIST_CHK_IERR(*ierr = (mvecBuffPtr_i != mvecBuff) ? -1 : 0, *ierr);
 #endif
   }
@@ -377,7 +377,7 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
 void SUBR(blockedGMRESstates_iterate)(TYPE(const_op_ptr) Aop, TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, bool useIMGS, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr = 0;
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -401,20 +401,20 @@ void SUBR(blockedGMRESstates_iterate)(TYPE(const_op_ptr) Aop, TYPE(blockedGMRESs
     minId = std::min(minId,S[i]->id);
 
 #ifdef PHIST_HAVE_BELOS
-  CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *ierr);
   Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
 #else
-  CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S[0]->Vbuff, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S[0]->Vbuff, *ierr);
 #endif
 
   // make sure all systems use the same mvecBuff
   for(int i = 0; i < numSys; i++)
   {
 #ifdef PHIST_HAVE_BELOS
-    CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *ierr);
+    PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *ierr);
     PHIST_CHK_IERR(*ierr = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *ierr);
 #else
-    CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuffPtr_i, S[i]->Vbuff, *ierr);
+    PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuffPtr_i, S[i]->Vbuff, *ierr);
     PHIST_CHK_IERR(*ierr = (mvecBuffPtr_i != mvecBuff) ? -1 : 0, *ierr);
 #endif
   }

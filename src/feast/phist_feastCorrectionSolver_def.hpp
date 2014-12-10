@@ -7,7 +7,7 @@ void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me,
         int *ierr)
 {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr = 0;
   
   PHIST_SOUT(PHIST_VERBOSE,"creating feastCorrection solver with\n"
@@ -55,7 +55,7 @@ void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me,
 void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) me, int *ierr)
 {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
 
   me->A_=NULL;
@@ -95,7 +95,7 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
                                     int *ierr)
 {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
   
   // this function solves nshifts*nrhs linear systems and groups them

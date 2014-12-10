@@ -126,7 +126,7 @@ class ScalarTraits< float >
   //! imaginary part (0 for real data types)
   static inline magn_t imag(const scalar_t& x)
     {
-    TOUCH(x)
+    PHIST_TOUCH(x)
     return 0.0f;
     }
     
@@ -247,7 +247,7 @@ class ScalarTraits< double >
   //! imaginary part (0 for real data types)
   static inline magn_t imag(const scalar_t& x)
     {
-    TOUCH(x)
+    PHIST_TOUCH(x)
     return 0.0;
     }
     

@@ -17,6 +17,15 @@
 #define PHIST_MAIN_TASK_END
 #endif
 
+#ifdef MAX
+  #undef MAX
+  #endif
+  #define MAX(a,b) ((a)<(b)?(b):(a))
+#ifdef MIN
+#undef MIN
+#endif
+#define MIN(a,b) ((b)<(a)?(b):(a))
+
 typedef _ST_ ST;
 typedef _MT_ MT;
 typedef TYPE(mvec_ptr) mvec_ptr_t;

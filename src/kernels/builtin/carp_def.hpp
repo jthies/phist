@@ -10,7 +10,7 @@ void SUBR(carp_setup)(TYPE(const_crsMat_ptr) A, int numShifts,
         _MT_ const sigma_r[], _MT_ const sigma_i[],
         _MT_ *nrms_ai2i, void** work, int* ierr);
 
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
   const_map_ptr_t map;
   int nlocal;
@@ -45,7 +45,7 @@ void SUBR(carp_sweep)(TYPE(const_crsMat_ptr) A, int numShifts,
         _MT_ const* nrm_ai2i, void* const work,
         _MT_ const * omega, int* ierr);
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
   bool is_complex=!(X_i==NULL||sigma_i==NULL);
   if (is_complex)
@@ -80,7 +80,7 @@ _MT_* nrms_ai2i, void* work, int *ierr)
   void SUBR(carp_destroy_f)(TYPE(const_crsMat_ptr) A, int numShifts,
         void* work, int *ierr);
 
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
   delete [] nrms_ai2i;
   PHIST_CHK_IERR(SUBR(carp_destroy_f)(A,numShifts,work,ierr),*ierr);

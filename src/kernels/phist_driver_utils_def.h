@@ -112,7 +112,7 @@ int str_starts_with(const char *s1, const char *s2)
 void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
         const char* problem, int* ierr)
 {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
   problem_t mat_type=FROM_FILE; // default: assume that 'which' is a file name
 

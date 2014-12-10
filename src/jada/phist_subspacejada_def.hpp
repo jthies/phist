@@ -1,7 +1,7 @@
 //! small helper function that checks if an sdMat is symmetric
 void SUBR(sdMat_check_symmetrie)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*ierr)
 {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
 
   // check dimensions
@@ -101,7 +101,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
                          _MT_* resNorm,            int* ierr)
 {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *ierr = 0;
 

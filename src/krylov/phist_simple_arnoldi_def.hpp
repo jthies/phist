@@ -11,7 +11,7 @@
 void SUBR(simple_arnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op, TYPE(const_mvec_ptr) v0,
         TYPE(mvec_ptr) V, TYPE(mvec_ptr) AV, TYPE(mvec_ptr) BV, TYPE(sdMat_ptr) H, int m, int* ierr)
 {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *ierr = 0;
   if( B_op != NULL )
@@ -117,7 +117,7 @@ void SUBR(simple_blockArnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
                                TYPE(mvec_ptr) V, TYPE(mvec_ptr) AV, TYPE(mvec_ptr) BV,
                                TYPE(sdMat_ptr) H, int m, int bs, int* ierr)
 {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *ierr = 0;
   if( B_op != NULL )

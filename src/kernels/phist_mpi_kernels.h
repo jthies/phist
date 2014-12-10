@@ -46,6 +46,8 @@ extern "C" {
 #include "phist_gen_z.h"
 #include "phist_mpi_kernels_decl.h"
 
+#include "phist_gen_clean.h"
+
 #endif
 //@}
 

@@ -34,9 +34,6 @@ public:
 
 };
 
-// note: the numerical functions of sdMat are not tested up to now. This makes sense as
-// in all three kernel libs we want to support (Epetra, Tpetra, Ghost) an sdMat is just
-// an mvec with a local map.
   TEST_F(CLASSNAME, get_attributes)
     {
     if (typeImplemented_)
@@ -64,6 +61,69 @@ public:
     }
   }
 
+  // X = 1*Y + 0*X = Y
+  TEST_F(CLASSNAME, copy_by_axpy)
+  {
+    if (typeImplemented_)
+    {
+      ST alpha = st::one();
+      ST beta  = st::zero();
+      SUBR(sdMat_add_sdMat)(alpha,mat1_,beta,mat2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat1_,mat2_));
+    }
+
+  }
+
+  // X = 0*Y + a*X = a*X
+  TEST_F(CLASSNAME, scale_by_axpy)
+  {
+    if (typeImplemented_)
+    {
+      ST alpha = st::zero();
+      ST beta  = st::prand();
+      PHIST_OUT(9,"axpy, alpha=%f+%f i, beta=%f+%f i",st::real(alpha),
+          st::imag(alpha),st::real(beta),st::imag(beta));
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      SUBR(sdMat_from_device)(mat2_,&ierr_);
+      PrintVector(std::cerr,"before scale",mat2_vp_,nrows_,m_lda_,stride_,mpi_comm_);
+#endif
+      SUBR(sdMat_add_sdMat)(alpha,mat1_,beta,mat2_,&ierr_);
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      SUBR(sdMat_from_device)(mat2_,&ierr_);
+      PrintVector(std::cerr,"after scale",mat2_vp_,nrows_,m_lda_,stride_,mpi_comm_);
+#endif
+      ASSERT_EQ(0,ierr_);
+
+      ASSERT_REAL_EQ(mt::one(),SdMatEqual(mat2_,beta*((ST)42.0)));
+    }
+  }
+
+  // X = a*Y + b*X
+  TEST_F(CLASSNAME, random_add)
+  {
+    if( typeImplemented_ )
+    {
+      ST beta = st::prand();
+      ST alpha= st::prand();
+
+      SUBR(sdMat_add_sdMat)(alpha,mat1_,beta,mat2_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // calculate solution by hand
+      for(int i = 0; i < nrows_; i++)
+      {
+        for(int j = 0; j < ncols_; j++)
+        {
+          mat1_vp_[MIDX(i,j,m_lda_)] = alpha*mat1_vp_[MIDX(i,j,m_lda_)]+beta;
+        }
+      }
+      SUBR(sdMat_to_device)(mat1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat1_,mat2_));
+    }
+  }
 
   // view certain rows and columns of a serial dense matrix,
   // manipulate them and check the original matrix has changed.
@@ -367,6 +427,69 @@ public:
       }
       // check result
       ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0,mflag_),10*mt::eps());
+
+    }
+  }
+
+
+  // the result of sdMat_random must be equal on all processes (if a comm. is given in sdMat_create!)
+  TEST_F(CLASSNAME, parallel_random)
+  {
+    if( typeImplemented_ )
+    {
+      int stride = 1;
+
+      int rank = 0;
+      phist_comm_get_rank(comm_, &rank, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      SUBR(sdMat_random)(mat1_, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      if( rank == 0 )
+      {
+        SUBR(sdMat_add_sdMat)(st::one(), mat1_, st::zero(), mat2_, &ierr_);
+      }
+      else
+      {
+        ierr_ = 0;
+      }
+      ASSERT_EQ(0, ierr_);
+#ifdef PHIST_HAVE_MPI
+      int size = sizeof(_ST_)*(MIDX(nrows_-1,ncols_-1,m_lda_) - MIDX(0,0,m_lda_) + 1);
+      ierr_ = MPI_Bcast(mat2_vp_, size, MPI_BYTE, 0, MPI_COMM_WORLD);
+      ASSERT_EQ(0,ierr_);
+#endif
+
+      ASSERT_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
+
+
+      // don't trick me (the test) by just using the same initilization for the random number generator on all processes!
+      if( rank == 0 )
+      {
+        st::rand();
+      }
+
+
+      // do the same test again...
+      SUBR(sdMat_random)(mat1_, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      if( rank == 0 )
+      {
+        SUBR(sdMat_add_sdMat)(st::one(), mat1_, st::zero(), mat2_, &ierr_);
+      }
+      else
+      {
+        ierr_ = 0;
+      }
+      ASSERT_EQ(0, ierr_);
+#ifdef PHIST_HAVE_MPI
+      ierr_ = MPI_Bcast(mat2_vp_, size, MPI_BYTE, 0, MPI_COMM_WORLD);
+      ASSERT_EQ(0,ierr_);
+#endif
+
+      ASSERT_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
 
     }
   }

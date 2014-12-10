@@ -22,7 +22,7 @@ extern "C" void SUBR(private_iter_op_apply)
     *ierr=PHIST_INVALID_INPUT;
     return;
   }
-  CAST_PTR_FROM_VOID(TYPE(iter_solver_op),op,arg,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(TYPE(iter_solver_op),op,arg,*ierr);
   PHIST_CHK_IERR(SUBR(feastCorrectionSolver_run)
         (op->fCS,X,op->tol,op->maxIters, &Y, NULL, ierr),*ierr);
   return;
@@ -37,7 +37,7 @@ void SUBR(op_wrap_solver)(TYPE(op_ptr) Ainv_op,TYPE(const_crsMat_ptr) A, _ST_ sh
         linSolv_t method,int block_size, _MT_ tol,int maxIter,int* ierr)
 {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
 #ifdef IS_COMPLEX
   // there is no complex feastCorrectionSolver right now, I think.
   *ierr=PHIST_NOT_IMPLEMENTED;

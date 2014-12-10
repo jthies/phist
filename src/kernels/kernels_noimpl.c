@@ -128,12 +128,6 @@ void SUBR(mvec_view_block)(TYPE(mvec_ptr) V,
   *ierr=-99;
 }
 
-void SUBR(mvec_view_scattered)(TYPE(mvec_ptr) V, TYPE(mvec_ptr)* Vscat,
-    int* cols, int ncols, int* ierr)
-{
-  *ierr=-99;
-}
-
 void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) V,
     TYPE(mvec_ptr) Vblock,
     int jmin, int jmax, int* ierr)
@@ -322,11 +316,13 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* ierr)
 #ifdef PHIST_KERNEL_LIB_BUILTIN
 void SUBR(mvec_gather_mvecs)(TYPE(mvec_ptr) V, TYPE(const_mvec_ptr) W[], int nblocks, int *ierr)
 {
+  PHIST_MARK_AS_EXPERIMENTAL(__FUNCTION__)
   *ierr=-99;
 }
 
 void SUBR(mvec_scatter_mvecs)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W[], int nblocks, int *ierr)
 {
+  PHIST_MARK_AS_EXPERIMENTAL(__FUNCTION__)
   *ierr=-99;
 }
 #endif

@@ -8,7 +8,7 @@
 void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
-    ENTER_FCN(__FUNCTION__);
+    PHIST_ENTER_FCN(__FUNCTION__);
     *ierr=0;
     int m, rank;
     lidx_t ldb;

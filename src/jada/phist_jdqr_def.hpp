@@ -36,7 +36,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
         phist_jadaOpts_t opts, int* num_eigs, int* num_iters,
         int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
 
   int nconv=0; // number of converged eigenpairs
@@ -714,7 +714,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   // eigenvectors so the user can restart from them.                    
   // In that case the value of the residual norm in resid should be     
   // considered an upper bound (or updated, of course).                 
-  TOUCH(Rv); // we would need it for this
+  PHIST_TOUCH(Rv); // we would need it for this
   
   // some sanity checks - the user provides only num_eigs+1 slots
   nconv = std::min(numEigs+1,nconv);
@@ -754,7 +754,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
         is_cmplx[i]=0;
         }
 #else
-      TOUCH(is_cmplx);
+      PHIST_TOUCH(is_cmplx);
 #endif    
       i++;
       }

@@ -45,7 +45,7 @@ void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
         TYPE(const_crsMat_ptr) A, int nvec,int* ierr)
 {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
   if (numSys==0) return;
   
@@ -106,7 +106,7 @@ void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
 
 void SUBR(private_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* ierr)
 {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   
     int nvec=S->nvec_;
     const void* map=NULL;
@@ -136,7 +136,7 @@ void SUBR(private_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* ierr)
 
 void SUBR(private_carp_cgState_dealloc)(TYPE(carp_cgState_ptr) S, int* ierr)
 {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   
     PHIST_CHK_IERR(SUBR(mvec_delete)(S->q_,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_delete)(S->r_,ierr),*ierr);
@@ -156,7 +156,7 @@ void SUBR(private_carp_cgState_dealloc)(TYPE(carp_cgState_ptr) S, int* ierr)
 //! delete cgState object
 void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) state[], int numSys, int* ierr)
 {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
   for (int i=0;i<numSys;i++)
   {
@@ -184,7 +184,7 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
         int *ierr)
 {
 #include "phist_std_typedefs.hpp"  
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
 
   // new rhs -> need to recompute ||b-A*x0||
@@ -247,7 +247,7 @@ void SUBR(carp_cgStates_iterate)(
         int* ierr)
 {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr = 0;
   //getchar();
   // some internal settings 
@@ -1080,7 +1080,7 @@ void SUBR(private_compResid)(TYPE(const_crsMat_ptr) A, int nvec, _ST_ sigma, _MT
                        _MT_  *nrms2, int *ierr)
 {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
 
 #ifndef IS_COMPLEX
   bool rc_variant= (sigma_i!=mt::zero()) ||
@@ -1161,7 +1161,7 @@ void SUBR(private_dotProd)(TYPE(const_mvec_ptr) v, TYPE(const_mvec_ptr) vi,
                            int nvec, _ST_ *dots, _MT_ *dotsi, int *ierr)
 {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
 #ifndef IS_COMPLEX
   // a NULL pointer for vi or wi is interpreted as the
   // imaginary part of v (w) being 0, which means there

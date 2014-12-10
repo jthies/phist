@@ -19,7 +19,7 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) Ainv_op,
                          TYPE(mvec_ptr) vX,         _ST_* eigs,
                          int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
 #ifndef PHIST_HAVE_ANASAZI
   *ierr = -99;
 #else

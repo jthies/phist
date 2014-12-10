@@ -30,20 +30,13 @@ PHIST_DEB("enqueuing C++11-lambda as GHOST task and waiting for it\n");
 }
 
 // some helpful macros
-/*
+
 #define PHIST_GHOST_TASK_BEGIN phist_execute_lambda_as_ghost_task( [&]() -> void {
 #define PHIST_GHOST_TASK_END   } );
-*/
+
 #else /* PHIST_HAVE_CXX11_LAMBDAS */
 
 #warning "C++11 not supported, not using GHOST tasking mechanism!"
 #endif /* PHIST_HAVE_CXX11_LAMBDAS */
-
-/* previously we started every kernel function as a task, but since this
-   means that the threads need to be created every time, we now just start
-   the main program as a task instead
-*/   
-#define PHIST_GHOST_TASK_BEGIN
-#define PHIST_GHOST_TASK_END
 
 #endif /* PHIST_GHOST_MACROS_HPP */
