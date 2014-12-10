@@ -179,6 +179,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   // set normW1 to diag(R1)
   _ST_ *R1_raw = NULL;
   lidx_t ldaR1;
+  PHIST_CHK_IERR(SUBR(sdMat_from_device)(R1,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R1,&R1_raw,&ldaR1,ierr),*ierr);
   for(int i = 0; i < k; i++)
     normW1[i] = std::min(normW1[i],st::abs(R1_raw[i+ldaR1*i]));
@@ -276,6 +277,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 
     _ST_ *R1p_raw = NULL;
     lidx_t ldaR1p;
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)(R1p,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R1p,&R1p_raw,&ldaR1p,ierr),*ierr);
     for(int i = 0; i < k; i++)
       normW1[i] = std::min(normW1[i],st::abs(R1p_raw[i+ldaR1p*i]));

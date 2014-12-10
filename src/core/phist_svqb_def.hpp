@@ -43,6 +43,7 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
         b[j*ldb+i] *= Dinv[i]*Dinv[j];
       }
     }
+
 // compute eigenvalues/vectors of scaled B, eigenvalues
 // are given in order of ascending magnitude in E, corresponding
 // eigenvectors as columns of B
@@ -92,9 +93,12 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
 #endif
       }
     }
+
+    // GPU upload (if this is a GPU process) as we modified B manually
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(B,ierr),*ierr);
+
     // compute V <- V*B to get an orthogonal V (up to the first (m-rank) columns,
     // which will be exactly zero)
-    PHIST_CHK_IERR(SUBR(sdMat_to_device)(B,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(V,B,ierr),*ierr);
 
 
