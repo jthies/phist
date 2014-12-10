@@ -39,4 +39,3 @@
 #include "phist_jdqr_def.hpp"
 #include "phist_gen_z.h"
 #include "phist_jdqr_def.hpp"
-

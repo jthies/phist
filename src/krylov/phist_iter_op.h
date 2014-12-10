@@ -16,5 +16,6 @@
 #include "phist_iter_op_decl.h"
 #include "phist_gen_z.h"
 #include "phist_iter_op_decl.h"
+#include "phist_gen_clean.h"
 
 #endif

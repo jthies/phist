@@ -12,7 +12,7 @@ extern "C" void SUBR(type_avail)(int* ierr)
 extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
         const char* filename,int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   if (filename==NULL)
   {
     *ierr=PHIST_INVALID_INPUT;
@@ -23,14 +23,14 @@ extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcom
   std::string fstring(filename);
 
   Teuchos::RCP<Traits<_ST_>::crsMat_t> A;
-  CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
   Teuchos::RCP<const comm_t> comm_ptr = Teuchos::rcp(comm,false);
 
   node_t* node;
   PHIST_CHK_IERR(phist_tpetra_node_create(&node,(const_comm_ptr_t)comm_ptr.get(),ierr),*ierr);
   Teuchos::RCP<node_t> node_ptr = Teuchos::rcp(node,true);
   
-  TRY_CATCH(A=reader.readSparseFile(fstring,comm_ptr,node_ptr),*ierr);
+  PHIST_TRY_CATCH(A=reader.readSparseFile(fstring,comm_ptr,node_ptr),*ierr);
   Teuchos::Ptr<Traits<_ST_>::crsMat_t> Aptr = A.release();
   *vA = (TYPE(crsMat_ptr))(Aptr.get());
   }
@@ -39,10 +39,10 @@ extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcom
 extern "C" void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
         const char* filename,int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   // TODO - not implemented (should read the binary file format defined by ghost)
-  TOUCH(vA);
-  TOUCH(filename);
+  PHIST_TOUCH(vA);
+  PHIST_TOUCH(filename);
   *ierr=-99;
   }
 
@@ -50,7 +50,7 @@ extern "C" void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vco
 extern "C" void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
 const char* filename,int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
 
   if (filename==NULL)
   {
@@ -59,7 +59,7 @@ const char* filename,int* ierr)
   }
 
   *ierr=0;
-  CAST_PTR_FROM_VOID(const comm_t,_comm,vcomm,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const comm_t,_comm,vcomm,*ierr);
   std::string fname(filename);
   Teuchos::RCP<const comm_t> comm = Teuchos::rcp(_comm,false);
   Teuchos::ParameterList nodeParams;
@@ -68,8 +68,8 @@ const char* filename,int* ierr)
   Teuchos::RCP<node_t> node = Teuchos::rcp(new node_t(nodeParams));
   Teuchos::RCP<map_t> rowMap=Teuchos::null; // assume linear distribution for now
   Teuchos::RCP<Teuchos::ParameterList> params=Teuchos::null;
-  //TRY_CATCH(Tpetra::Utils::readHBMatrix(fname,comm,node,A,rowMap, params),*ierr);
-  TRY_CATCH(Tpetra::Utils::readHBMatrix(fname,comm,node,A),*ierr);
+  //PHIST_TRY_CATCH(Tpetra::Utils::readHBMatrix(fname,comm,node,A,rowMap, params),*ierr);
+  PHIST_TRY_CATCH(Tpetra::Utils::readHBMatrix(fname,comm,node,A),*ierr);
   Teuchos::Ptr<Traits<_ST_>::crsMat_t> Aptr = A.release();
   *vA = (TYPE(crsMat_ptr))(Aptr.get());
   }
@@ -80,9 +80,9 @@ extern "C" void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *vA, const_comm
                 int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*),
                 int *ierr)
 {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
 
-  CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
   Teuchos::RCP<const comm_t> comm_ptr = Teuchos::rcp(comm,false);
   Traits<_ST_>::crsMat_t* A=NULL;
 
@@ -106,9 +106,9 @@ A=new Traits<_ST_>::crsMat_t(map_ptr,(int)maxnne);
     Teuchos::ArrayView<gidx_t> cols_v(cols,row_nnz);
     Teuchos::ArrayView<_ST_> vals_v(vals,row_nnz);
     
-    TRY_CATCH(A->insertGlobalValues (row,cols_v,vals_v),*ierr);
+    PHIST_TRY_CATCH(A->insertGlobalValues (row,cols_v,vals_v),*ierr);
   }
-  TRY_CATCH(A->fillComplete(),*ierr);
+  PHIST_TRY_CATCH(A->fillComplete(),*ierr);
                             
   *vA = (TYPE(crsMat_ptr))(A);  
   return;
@@ -121,9 +121,9 @@ A=new Traits<_ST_>::crsMat_t(map_ptr,(int)maxnne);
 //! get the row distribution of the matrix
 extern "C" void SUBR(crsMat_get_row_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
   *vmap = (const_map_ptr_t)(A->getRowMap().get());
   }
 
@@ -131,25 +131,25 @@ extern "C" void SUBR(crsMat_get_row_map)(TYPE(const_crsMat_ptr) vA, const_map_pt
 extern "C" void SUBR(crsMat_get_col_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
   *vmap = (const_map_ptr_t)(A->getColMap().get());
   }
 
 //! get the map for vectors x in y=A*x
 extern "C" void SUBR(crsMat_get_domain_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
   *vmap = (const_map_ptr_t)(A->getDomainMap().get());
   }
 
 //! get the map for vectors y in y=A*x
 extern "C" void SUBR(crsMat_get_range_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t, A, vA, *ierr);
   *vmap = (const_map_ptr_t)(A->getRangeMap().get());
   }
 //@}
@@ -161,9 +161,9 @@ extern "C" void SUBR(crsMat_get_range_map)(TYPE(const_crsMat_ptr) vA, const_map_
 //! at val in column major ordering.
 extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap, int nvec, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(const map_t, map, vmap, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(const map_t, map, vmap, *ierr);
   Teuchos::RCP<const map_t> map_ptr = Teuchos::rcp(map,false);
   Traits<_ST_>::mvec_t* V = new Traits<_ST_>::mvec_t(map_ptr,nvec);
   *vV=(TYPE(mvec_ptr))(V);
@@ -176,8 +176,8 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
         _ST_* values, lidx_t lda, int nvec,
         int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
-  CAST_PTR_FROM_VOID(const map_t, map, vmap, *ierr);
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(const map_t, map, vmap, *ierr);
   Teuchos::RCP<const map_t> map_ptr = Teuchos::rcp(map,false);
   Teuchos::ArrayView<_ST_> val_ptr(values,lda*nvec);
   Traits<_ST_>::mvec_t* V = new Traits<_ST_>::mvec_t(map_ptr,val_ptr,lda,nvec);
@@ -189,7 +189,7 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
 extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols, 
         const_comm_ptr_t vcomm, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
   const comm_t* comm = (const comm_t*)vcomm;
 
@@ -226,7 +226,7 @@ void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
 extern "C" void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) vV, lidx_t* len, int* ierr)
   {
   *ierr=0;
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
   *len = V->getLocalLength();
   }
 
@@ -234,7 +234,7 @@ extern "C" void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) vV, lidx_t* len, int* 
 extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, const_map_ptr_t* vmap, int* ierr)
   {
   *ierr=0;
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*ierr);
   *vmap=(const_map_ptr_t)(V->getMap().get());
   }
 
@@ -242,7 +242,7 @@ extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, const_map_ptr_t* vma
 extern "C" void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) vV, const_comm_ptr_t* vcomm, int* ierr)
   {
   *ierr=0;
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*ierr);
   *vcomm=(const_comm_ptr_t)(V->getMap()->getComm().get());
   }
 
@@ -251,7 +251,7 @@ extern "C" void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) vV, const_comm_ptr_t* v
 extern "C" void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) vV, int* nvec, int* ierr)
   {
   *ierr=0;
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*ierr);
   *nvec = V->getNumVectors();
   }
 
@@ -259,7 +259,7 @@ extern "C" void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) vV, int* nvec, int* 
 extern "C" void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) vM, int* nrows, int* ierr)
   {
   *ierr=0;
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*ierr);
   *nrows = M->getLocalLength();
   }
 
@@ -267,7 +267,7 @@ extern "C" void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) vM, int* nrows, int*
 extern "C" void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) vM, int* ncols, int* ierr)
   {
   *ierr=0;
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*ierr);
   *ncols = M->getNumVectors();
   }
 
@@ -275,9 +275,9 @@ extern "C" void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) vM, int* ncols, int*
 //! extract view from multi-vector
 extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
   Teuchos::ArrayRCP<_ST_> val_ptr = V->get1dViewNonConst();
   *val = val_ptr.getRawPtr();
   *lda = V->getStride();
@@ -286,8 +286,8 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* l
 //! extract view from serial dense matrix
 extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
-  CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,M,vM,*ierr);
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,M,vM,*ierr);
   Teuchos::ArrayRCP<_ST_> valptr = M->get1dViewNonConst();
   *val = valptr.getRawPtr();
   *lda=M->getStride();
@@ -311,9 +311,9 @@ extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
                              TYPE(mvec_ptr)* vVblock,
                              int jmin, int jmax, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
 
 #ifdef TESTING
   if (jmax<jmin)
@@ -334,10 +334,10 @@ extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
 
 
   Teuchos::RCP<Traits<_ST_>::mvec_t> Vblock;
-  TRY_CATCH(Vblock = V->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
+  PHIST_TRY_CATCH(Vblock = V->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
   if (*vVblock!=NULL)
     {
-    CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,tmp,*vVblock,*ierr);
+    PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,tmp,*vVblock,*ierr);
     delete tmp;
     }
   *vVblock = (TYPE(mvec_ptr))(Vblock.release().get());                        
@@ -351,10 +351,10 @@ extern "C" void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
                              TYPE(mvec_ptr) vVblock,
                              int jmin, int jmax, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*ierr);
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,Vblock,vVblock,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,Vblock,vVblock,*ierr);
 
 #ifdef TESTING
   if (jmax<jmin)
@@ -384,7 +384,7 @@ extern "C" void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
 
   // get a view of the columns of V first
   Teuchos::RCP<const Traits<_ST_>::mvec_t> Vcols;
-  TRY_CATCH(Vcols = V->subView(Teuchos::Range1D(jmin,jmax)),*ierr);
+  PHIST_TRY_CATCH(Vcols = V->subView(Teuchos::Range1D(jmin,jmax)),*ierr);
   *Vblock = *Vcols; // copy operation
   }
 
@@ -394,10 +394,10 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
                              TYPE(const_mvec_ptr) vVblock,
                              int jmin, int jmax, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,Vblock,vVblock,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,Vblock,vVblock,*ierr);
 
 #ifdef TESTING
   if (jmax<jmin)
@@ -428,9 +428,9 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
 
   // get a view of the columns of V first
   Teuchos::RCP<Traits<_ST_>::mvec_t> Vcols;
-  TRY_CATCH(Vcols = V->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
+  PHIST_TRY_CATCH(Vcols = V->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
   // copy operation
-  TRY_CATCH(*Vcols = *Vblock, *ierr);
+  PHIST_TRY_CATCH(*Vcols = *Vblock, *ierr);
   }
 
 //! get a new matrix that is a view of some rows and columns of the original one,
@@ -439,13 +439,13 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
                              TYPE(sdMat_ptr)* vMblock,
                              int imin, int imax, int jmin, int jmax, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,M,vM,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,M,vM,*ierr);
 
   if (*vMblock!=NULL)
     {
-    CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,tmp,*vMblock,*ierr);
+    PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,tmp,*vMblock,*ierr);
     delete tmp;
     }
 
@@ -473,7 +473,7 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
 
   if (nrows==M->getLocalLength())
     {
-    TRY_CATCH(Mblock = M->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
+    PHIST_TRY_CATCH(Mblock = M->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
     }
   else
     {
@@ -481,12 +481,12 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
         (nrows, 0, M->getMap()->getComm(),Tpetra::LocallyReplicated));
     if (ncols==M->getNumVectors())
       {
-      TRY_CATCH(Mblock = M->offsetViewNonConst(smap,imin),*ierr);    
+      PHIST_TRY_CATCH(Mblock = M->offsetViewNonConst(smap,imin),*ierr);    
       }
     else
       {
-      TRY_CATCH(Mtmp = M->offsetViewNonConst(smap,imin),*ierr);
-      TRY_CATCH(Mblock = Mtmp->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
+      PHIST_TRY_CATCH(Mtmp = M->offsetViewNonConst(smap,imin),*ierr);
+      PHIST_TRY_CATCH(Mblock = Mtmp->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
       // note: Mtmp and Mblock are 'persistent views' of the data, meaning that if the
       //       viewed object is deleted, the view remains. So we can simply allow
       //       Mtmp to be deleted at this point.
@@ -506,9 +506,9 @@ extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
                              int imin, int imax, int jmin, int jmax, int* ierr)
   {
   *ierr=0;
-  ENTER_FCN(__FUNCTION__);
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*ierr);
-  CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,Mblock,vMblock,*ierr);
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,Mblock,vMblock,*ierr);
   
   Teuchos::RCP<const Traits<_ST_>::sdMat_t> Mview,Mtmp;
 
@@ -541,7 +541,7 @@ extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
 
   if (imin==0 && imax==M->getLocalLength()-1)
     {
-    TRY_CATCH(Mview = M->subView(Teuchos::Range1D(jmin,jmax)),*ierr);
+    PHIST_TRY_CATCH(Mview = M->subView(Teuchos::Range1D(jmin,jmax)),*ierr);
     }
   else
     {
@@ -550,12 +550,12 @@ extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
         (nrows, 0, M->getMap()->getComm(),Tpetra::LocallyReplicated));
     if (imin==0 && imax==M->getNumVectors())
       {
-      TRY_CATCH(Mview = M->offsetView(smap,imin),*ierr);
+      PHIST_TRY_CATCH(Mview = M->offsetView(smap,imin),*ierr);
       }
     else
       {
-      TRY_CATCH(Mtmp = M->offsetView(smap,imin),*ierr);
-      TRY_CATCH(Mview = Mtmp->subView(Teuchos::Range1D(jmin,jmax)),*ierr);
+      PHIST_TRY_CATCH(Mtmp = M->offsetView(smap,imin),*ierr);
+      PHIST_TRY_CATCH(Mview = Mtmp->subView(Teuchos::Range1D(jmin,jmax)),*ierr);
       }
     }
   *Mblock = *Mview; // copy operation
@@ -568,9 +568,9 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
                              int imin, int imax, int jmin, int jmax, int* ierr)
   {
   *ierr=0;
-  ENTER_FCN(__FUNCTION__);
-  CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,M,vM,*ierr);
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,Mblock,vMblock,*ierr);
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,M,vM,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,Mblock,vMblock,*ierr);
 
 #ifdef TESTING
   if (jmax<jmin||imax<imin)
@@ -602,7 +602,7 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
 
   if (imin==0 && imax==M->getLocalLength()-1)
     {
-    TRY_CATCH(Mview = M->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
+    PHIST_TRY_CATCH(Mview = M->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
     }
   else
     {
@@ -611,12 +611,12 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
         (nrows, 0, M->getMap()->getComm(),Tpetra::LocallyReplicated));
     if (imin==0 && imax==M->getNumVectors())
       {
-      TRY_CATCH(Mview = M->offsetViewNonConst(smap,imin),*ierr);
+      PHIST_TRY_CATCH(Mview = M->offsetViewNonConst(smap,imin),*ierr);
       }
     else
       {
-      TRY_CATCH(Mtmp = M->offsetViewNonConst(smap,imin),*ierr);
-      TRY_CATCH(Mview = Mtmp->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
+      PHIST_TRY_CATCH(Mtmp = M->offsetViewNonConst(smap,imin),*ierr);
+      PHIST_TRY_CATCH(Mview = Mtmp->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*ierr);
       }
     }
   *Mview = *Mblock; // copy operation
@@ -630,29 +630,29 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
 //!
 extern "C" void SUBR(crsMat_delete)(TYPE(crsMat_ptr) vA, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(Traits<_ST_>::crsMat_t,A,vA,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::crsMat_t,A,vA,*ierr);
   delete A;
   }
 
 //!
 extern "C" void SUBR(mvec_delete)(TYPE(mvec_ptr) vV, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
   if (vV==NULL) return;
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
   delete V;
   }
 
 //!
 extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) vM, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
   if (vM==NULL) return;
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,M,vM,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,M,vM,*ierr);
   delete M;
   }
 
@@ -664,27 +664,27 @@ extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) vM, int* ierr)
 //! put scalar value into all elements of a multi-vector
 extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, _ST_ value, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
-  TRY_CATCH(V->putScalar(value),*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_TRY_CATCH(V->putScalar(value),*ierr);
   }
 
 //! put scalar value into all elements of a multi-vector
 extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vM, _ST_ value, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,M,vM,*ierr);
-  TRY_CATCH(M->putScalar(value),*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,M,vM,*ierr);
+  PHIST_TRY_CATCH(M->putScalar(value),*ierr);
   }
 
 //! put random numbers into all elements of a multi-vector
 extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
 #ifdef TESTING
   PHIST_SOUT(PHIST_WARNING,"gathering global vector (only in TESTING mode)\n");
   // make results reproducible by doing a sequential randomization and then a 'scatter'
@@ -697,18 +697,18 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* ierr)
   Teuchos::RCP<import_t> import = Teuchos::rcp(new import_t(gmap,map));
   Teuchos::RCP<Traits< _ST_ >::mvec_t> gvec = Teuchos::rcp
         (new Traits< _ST_ >::mvec_t(gmap,V->getNumVectors()));
-  TRY_CATCH(gvec->randomize(),*ierr);
-  TRY_CATCH(V->doImport(*gvec,*import,Tpetra::INSERT),*ierr);
+  PHIST_TRY_CATCH(gvec->randomize(),*ierr);
+  PHIST_TRY_CATCH(V->doImport(*gvec,*import,Tpetra::INSERT),*ierr);
 #else
-  TRY_CATCH(V->randomize(),*ierr);
+  PHIST_TRY_CATCH(V->randomize(),*ierr);
 #endif
   }
 
 extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr = 0;
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*ierr);
   Teuchos::FancyOStream fos(Teuchos::rcp(&std::cout,false));
   fos << std::scientific << std::setw(16) << std::setprecision(12);
   V->describe(fos,Teuchos::VERB_EXTREME);
@@ -717,8 +717,8 @@ extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* ierr)
 extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* ierr)
   {
   *ierr=0;
-  ENTER_FCN(__FUNCTION__);
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*ierr);
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*ierr);
   Teuchos::FancyOStream fos(Teuchos::rcp(&std::cout,false));
   fos << std::scientific << std::setw(16) << std::setprecision(12);
   M->describe(fos,Teuchos::VERB_EXTREME);
@@ -728,10 +728,10 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* ierr)
 //! put random numbers into all elements of a serial dense matrix
 extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,M,vM,*ierr);
-  TRY_CATCH(M->randomize(),*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,M,vM,*ierr);
+  PHIST_TRY_CATCH(M->randomize(),*ierr);
   }
 
   //! compute the 2-norm of each column of v                   
@@ -739,12 +739,12 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* ierr)
   extern "C" void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) vV,
                             _MT_* vnrm, int* ierr) 
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*ierr);
 int nvec = V->getNumVectors();
   Teuchos::ArrayView<_MT_> norms(vnrm,nvec);
-  TRY_CATCH(V->norm2(norms),*ierr);
+  PHIST_TRY_CATCH(V->norm2(norms),*ierr);
   return;
   }
 
@@ -755,13 +755,13 @@ int nvec = V->getNumVectors();
                             _MT_* vnrm, int* ierr) 
   {
 #include "phist_std_typedefs.hpp"  
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
 int nvec = V->getNumVectors();
   Teuchos::ArrayView<_MT_> norms(vnrm,nvec);
   Teuchos::Array<_ST_> scaling(nvec);
-  TRY_CATCH(V->norm2(norms),*ierr);
+  PHIST_TRY_CATCH(V->norm2(norms),*ierr);
   for (int i=0;i<nvec;i++)
     {
     if (norms[i]==mt::zero())
@@ -773,7 +773,7 @@ int nvec = V->getNumVectors();
       scaling[i]=st::one()/norms[i];
       }
     }
-  TRY_CATCH(V->scale(scaling),*ierr);
+  PHIST_TRY_CATCH(V->scale(scaling),*ierr);
   return;
   }
 
@@ -781,10 +781,10 @@ int nvec = V->getNumVectors();
 extern "C" void SUBR(mvec_scale)(TYPE(mvec_ptr) vV, 
                             _ST_ scalar, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
-  TRY_CATCH(V->scale(scalar),*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_TRY_CATCH(V->scale(scalar),*ierr);
   return;
   }
 
@@ -792,12 +792,12 @@ extern "C" void SUBR(mvec_scale)(TYPE(mvec_ptr) vV,
 extern "C" void SUBR(mvec_vscale)(TYPE(mvec_ptr) vV, 
                             const _ST_* scalar, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
 int nvec = V->getNumVectors();
   Teuchos::ArrayView<_ST_> scal((_ST_*)scalar,nvec);
-  TRY_CATCH(V->scale(scal),*ierr);
+  PHIST_TRY_CATCH(V->scale(scal),*ierr);
   return;
   }
 
@@ -806,11 +806,11 @@ extern "C" void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vX,
                             _ST_ beta,  TYPE(mvec_ptr)       vY, 
                             int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,X,vX,*ierr);
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,Y,vY,*ierr);
-  TRY_CATCH(Y->update(alpha,*X,beta),*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,X,vX,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,Y,vY,*ierr);
+  PHIST_TRY_CATCH(Y->update(alpha,*X,beta),*ierr);
   }
 
 //! y[i]=alpha[i]*x[i]+beta*y[i], i=1..nvec
@@ -818,13 +818,13 @@ extern "C" void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) vX
                             _ST_ beta,  TYPE(mvec_ptr)       vY, 
                             int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,X,vX,*ierr);
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,Y,vY,*ierr);
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,X,vX,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,Y,vY,*ierr);
   
   for (int i=0;i<X->getNumVectors(); i++)
     {
-    TRY_CATCH(Y->getVectorNonConst(i)->update(alpha[i],*X->getVector(i), beta),*ierr);
+    PHIST_TRY_CATCH(Y->getVectorNonConst(i)->update(alpha[i],*X->getVector(i), beta),*ierr);
     }
   }
 
@@ -833,10 +833,10 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
                             _ST_ beta,  TYPE(sdMat_ptr)       vB, 
                             int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,A,vA,*ierr);
-  CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,B,vB,*ierr);
-  TRY_CATCH(B->update(alpha,*A,beta),*ierr);
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,A,vA,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,B,vB,*ierr);
+  PHIST_TRY_CATCH(B->update(alpha,*A,beta),*ierr);
   }
 
 
@@ -847,7 +847,7 @@ extern "C" void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
                                         int* ierr)
   {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
 
 #ifdef PHIST_TIMEMONITOR
@@ -857,13 +857,13 @@ extern "C" void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
     phist_totalMatVecCount();
 #endif
 
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t,A,vA,*ierr);
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,x,vx,*ierr);
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,y,vy,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t,A,vA,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,x,vx,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,y,vy,*ierr);
   PHIST_OUT(PHIST_TRACE,"alpha=%g+i%g\n",st::real(alpha),st::imag(alpha));
   PHIST_OUT(PHIST_TRACE,"beta=%g+i%g\n",st::real(beta),st::imag(beta));
   Traits<_ST_>::crsMVM_t spMVM(Teuchos::rcp(A,false));
-  TRY_CATCH(spMVM.apply(*x,*y,Teuchos::NO_TRANS,alpha,beta),*ierr);
+  PHIST_TRY_CATCH(spMVM.apply(*x,*y,Teuchos::NO_TRANS,alpha,beta),*ierr);
 
   }
 
@@ -874,7 +874,7 @@ extern "C" void SUBR(crsMatT_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
                                         int* ierr)
   {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
  
 #ifdef PHIST_TIMEMONITOR
@@ -884,16 +884,16 @@ extern "C" void SUBR(crsMatT_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
     phist_totalMatVecCount();
 #endif
  
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t,A,vA,*ierr);
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,x,vx,*ierr);
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,y,vy,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t,A,vA,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,x,vx,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,y,vy,*ierr);
   PHIST_OUT(PHIST_TRACE,"alpha=%g+i%g\n",st::real(alpha),st::imag(alpha));
   PHIST_OUT(PHIST_TRACE,"beta=%g+i%g\n",st::real(beta),st::imag(beta));
   Traits<_ST_>::crsMVM_t spMVM(Teuchos::rcp(A,false));
 #ifdef IS_COMPLEX
-  TRY_CATCH(spMVM.apply(*x,*y,Teuchos::CONJ_TRANS,alpha,beta),*ierr);
+  PHIST_TRY_CATCH(spMVM.apply(*x,*y,Teuchos::CONJ_TRANS,alpha,beta),*ierr);
 #else
-  TRY_CATCH(spMVM.apply(*x,*y,Teuchos::TRANS,alpha,beta),*ierr);
+  PHIST_TRY_CATCH(spMVM.apply(*x,*y,Teuchos::TRANS,alpha,beta),*ierr);
 #endif
   }
 
@@ -902,7 +902,7 @@ extern "C" void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_
         const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
 
   PHIST_CHK_IERR(SUBR(crsMat_times_mvec)(alpha, A, x, beta, y, ierr), *ierr);
@@ -919,12 +919,12 @@ extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) vv, TYPE(const_mvec_ptr
 int* 
 ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,v,vv,*ierr);
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,w,vw,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,v,vv,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,w,vw,*ierr);
   Teuchos::ArrayView<_ST_> dots(s,v->getNumVectors());
-  TRY_CATCH(v->dot(*w,dots),*ierr);
+  PHIST_TRY_CATCH(v->dot(*w,dots),*ierr);
   }
 
 //! dense tall skinny matrix-matrix product yielding a serial dense matrix
@@ -933,18 +933,18 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
                            TYPE(const_mvec_ptr) vW, _ST_ beta, 
                            TYPE(sdMat_ptr) vC, int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*ierr);
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,W,vW,*ierr);
-  CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,C,vC,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,W,vW,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,C,vC,*ierr);
 //PHIST_DEB("V is %dx%d, W is %dx%d, C is %dx%d\n",V->getLocalLength(),V->getNumVectors(),
 //                                                 W->getLocalLength(),W->getNumVectors(),
 //                                                 C->getLocalLength(),C->getNumVectors());
 #ifdef IS_COMPLEX
-  TRY_CATCH(C->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS,alpha,*V,*W,beta),*ierr);
+  PHIST_TRY_CATCH(C->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS,alpha,*V,*W,beta),*ierr);
 #else
-  TRY_CATCH(C->multiply(Teuchos::TRANS, Teuchos::NO_TRANS,alpha,*V,*W,beta),*ierr);
+  PHIST_TRY_CATCH(C->multiply(Teuchos::TRANS, Teuchos::NO_TRANS,alpha,*V,*W,beta),*ierr);
 #endif
   }
 
@@ -955,16 +955,16 @@ extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
                            _ST_ beta,  TYPE(mvec_ptr) vW,
                                        int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*ierr);
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,C,vC,*ierr);
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,W,vW,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,C,vC,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,W,vW,*ierr);
 
 //PHIST_DEB("V is %dx%d, C is %dx%d, W is %dx%d\n",V->getLocalLength(),V->getNumVectors(),
 //                                                 C->getLocalLength(),C->getNumVectors(),
 //                                                 W->getLocalLength(),W->getNumVectors());
-  TRY_CATCH(W->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,
+  PHIST_TRY_CATCH(W->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,
         alpha, *V, *C, beta), *ierr);
   }
 
@@ -975,12 +975,12 @@ extern "C" void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
                                _ST_ beta, TYPE(sdMat_ptr) vC,
                                        int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,V,vV,*ierr);
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,W,vW,*ierr);
-  CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,C,vC,*ierr);
-  TRY_CATCH(C->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,W,vW,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,C,vC,*ierr);
+  PHIST_TRY_CATCH(C->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,
         alpha, *V, *W, beta), *ierr);
   }
 
@@ -992,12 +992,12 @@ extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
                                _ST_ beta, TYPE(sdMat_ptr) vC,
                                        int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,V,vV,*ierr);
-  CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,W,vW,*ierr);
-  CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,C,vC,*ierr);
-  TRY_CATCH(C->multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,W,vW,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,C,vC,*ierr);
+  PHIST_TRY_CATCH(C->multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,
         alpha, *V, *W, beta), *ierr);
   }
 
@@ -1011,10 +1011,10 @@ extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
 extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
-  CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,R,vR,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,R,vR,*ierr);
   int rank;
   MT rankTol=1000*mt::eps();
   if (V->getNumVectors()==1)
@@ -1042,7 +1042,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   
   if (R->isConstantStride()==false)
     {
-    TOUCH(vR);
+    PHIST_TOUCH(vR);
     *ierr = -1;
     return;
     }
@@ -1082,7 +1082,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   params->set("relativeRankTolerance",rankTol);
   tsqr.setParameterList(params);
 
-  TRY_CATCH(rank = tsqr.normalize(*V,R_view),*ierr);  
+  PHIST_TRY_CATCH(rank = tsqr.normalize(*V,R_view),*ierr);  
   *ierr = ncols-rank;// return positive number if rank not full.
   PHIST_DEB("mvec_QR: ncols=%d, rank=%d, returning %d\n",ncols,rank,*ierr);
   return;

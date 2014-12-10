@@ -23,5 +23,6 @@
 #include "phist_jadaOp_decl.hpp"
 #include "phist_gen_z.h"
 #include "phist_jadaOp_decl.hpp"
+#include "phist_gen_clean.h"
 
 #endif

@@ -69,7 +69,7 @@ using ::phist::GhostMV;
 
     static Teuchos::RCP<GhostMV > Clone( const GhostMV& mv, const int numvecs )
     {
-    ENTER_FCN(__FUNCTION__);    
+    PHIST_ENTER_FCN(__FUNCTION__);    
       ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
       ghost_densemat_traits_t vtraits = _mv->traits;
       // copy the data even if the input vector is itself a view
@@ -88,7 +88,7 @@ using ::phist::GhostMV;
 
     static Teuchos::RCP<GhostMV > CloneCopy( const GhostMV& mv )
     {
-    ENTER_FCN(__FUNCTION__);    
+    PHIST_ENTER_FCN(__FUNCTION__);    
       ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
       ghost_densemat_traits_t vtraits = _mv->traits;
       // copy the data even if the input vector is itself a view
@@ -102,7 +102,7 @@ using ::phist::GhostMV;
 
     static Teuchos::RCP<GhostMV > CloneCopy( const GhostMV& mv, const std::vector<int>& index )
     {
-      ENTER_FCN(__FUNCTION__);    
+      PHIST_ENTER_FCN(__FUNCTION__);    
       ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
       TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,GhostMV>::CloneCopy(mv,index): numvecs must be greater than zero.");
@@ -180,7 +180,7 @@ using ::phist::GhostMV;
     CloneCopy (const GhostMV& mv, 
 	       const Teuchos::Range1D& index)
     {
-      ENTER_FCN(__FUNCTION__);    
+      PHIST_ENTER_FCN(__FUNCTION__);    
       ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
       const bool validRange = index.size() > 0 && 
 	index.lbound() >= 0 && 
@@ -210,7 +210,7 @@ using ::phist::GhostMV;
 
     static Teuchos::RCP<GhostMV > CloneViewNonConst( GhostMV& mv, const std::vector<int>& index )
     {
-      ENTER_FCN(__FUNCTION__);    
+      PHIST_ENTER_FCN(__FUNCTION__);    
       ghost_densemat_t* _mv = mv.get();
       TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,GhostMV>::CloneView(mv,index): numvecs must be greater than zero.");
@@ -268,7 +268,7 @@ using ::phist::GhostMV;
     CloneViewNonConst (GhostMV& mv, 
 		       const Teuchos::Range1D& index)
     {
-      ENTER_FCN(__FUNCTION__);    
+      PHIST_ENTER_FCN(__FUNCTION__);    
       ghost_densemat_t* _mv=mv.get();
       // NOTE (mfh 11 Jan 2011) We really should check for possible
       // overflow of int here.  However, the number of columns in a
@@ -306,7 +306,7 @@ using ::phist::GhostMV;
 
     static Teuchos::RCP<const GhostMV > CloneView(const GhostMV& mv, const std::vector<int>& index )
     {
-      ENTER_FCN(__FUNCTION__);    
+      PHIST_ENTER_FCN(__FUNCTION__);    
       return Teuchos::rcp_dynamic_cast<const GhostMV >
         (CloneViewNonConst(const_cast<GhostMV&>(mv),index));
     }
@@ -315,7 +315,7 @@ using ::phist::GhostMV;
     CloneView (const GhostMV& mv, 
 	       const Teuchos::Range1D& index)
     {
-      ENTER_FCN(__FUNCTION__);    
+      PHIST_ENTER_FCN(__FUNCTION__);    
       return Teuchos::rcp_dynamic_cast<const GhostMV >
         (CloneViewNonConst(const_cast<GhostMV&>(mv),index));
     }
@@ -343,7 +343,7 @@ using ::phist::GhostMV;
                                  const Teuchos_sdMat_t& B, 
                                  Scalar beta, GhostMV& mv )
     {
-      ENTER_FCN(__FUNCTION__);    
+      PHIST_ENTER_FCN(__FUNCTION__);    
       // create view of Teuchos matrix as GhostMV
       ghost_densemat_t* Bghost=createGhostViewOfTeuchosSDM(B);
       ghost_densemat_t* _A = (ghost_densemat_t*)A.get();
@@ -360,7 +360,7 @@ using ::phist::GhostMV;
     // the memcopy we use if either alpha or beta are 0.
     static void MvAddMv( Scalar alpha, const GhostMV& A, Scalar beta, const GhostMV& B, GhostMV& mv )
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       ghost_densemat_t* _mv = mv.get();
       ghost_densemat_t* _A = (ghost_densemat_t*)A.get();
       ghost_densemat_t* _B = (ghost_densemat_t*)B.get();
@@ -421,14 +421,14 @@ using ::phist::GhostMV;
 
     static void MvScale ( GhostMV& mv, Scalar alpha )
     {
-      ENTER_FCN(__FUNCTION__);    
+      PHIST_ENTER_FCN(__FUNCTION__);    
       ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
       _mv->scale(_mv,(void*)&alpha); 
     }
 
     static void MvScale ( GhostMV& mv, const std::vector<Scalar>& alphas )
     {
-      ENTER_FCN(__FUNCTION__);    
+      PHIST_ENTER_FCN(__FUNCTION__);    
       ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
       void* val = (void*)(&alphas[0]);
       _mv->vscale(_mv,val);
@@ -437,7 +437,7 @@ using ::phist::GhostMV;
     // C=alpha*A*B
     static void MvTransMv( Scalar alpha, const GhostMV& A, const GhostMV& B, Teuchos_sdMat_t& C)
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       ghost_densemat_t* Cghost=createGhostViewOfTeuchosSDM(C);
 
       Scalar beta = st::zero();
@@ -453,7 +453,7 @@ using ::phist::GhostMV;
 
     static void MvDot( const GhostMV& A, const GhostMV& B, std::vector<Scalar> &dots)
     {
-      ENTER_FCN(__FUNCTION__);    
+      PHIST_ENTER_FCN(__FUNCTION__);    
       TEUCHOS_TEST_FOR_EXCEPTION(GetNumberVecs(A) != GetNumberVecs(B),std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,GhostMV>::MvDot(A,B,dots): A and B must have the same number of vectors.");
 
@@ -466,7 +466,7 @@ using ::phist::GhostMV;
 
     static void MvNorm(const GhostMV& mv, std::vector<magn_t> &normvec, NormType type=TwoNorm)
     {
-      ENTER_FCN(__FUNCTION__);    
+      PHIST_ENTER_FCN(__FUNCTION__);    
       ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
       Teuchos::Array<Scalar> av(normvec.size());
       Teuchos::ArrayView<typename st::magn_t> nv(normvec);
@@ -503,7 +503,7 @@ using ::phist::GhostMV;
 
     static void SetBlock( const GhostMV& A, const std::vector<int>& index, GhostMV& mv )
     {
-      ENTER_FCN(__FUNCTION__);    
+      PHIST_ENTER_FCN(__FUNCTION__);    
       // note the dual meaning of get() here: RCP.get() gives raw pointer to GhostMV,
       // GhostMV.get() gives raw pointer to ghost_densemat_t
       
@@ -526,7 +526,7 @@ using ::phist::GhostMV;
 	      const Teuchos::Range1D& index, 
 	      GhostMV& mv)
     {
-      ENTER_FCN(__FUNCTION__);        
+      PHIST_ENTER_FCN(__FUNCTION__);        
       // We've already validated the static casts above.
       const int numColsA = GetNumberVecs(A);
       const int numColsMv = GetNumberVecs(mv);
@@ -581,7 +581,7 @@ using ::phist::GhostMV;
     Assign (const GhostMV& A, 
 	    GhostMV& mv)
     {
-      ENTER_FCN(__FUNCTION__);        
+      PHIST_ENTER_FCN(__FUNCTION__);        
       // Range1D bounds are signed; size_t is unsigned.
       // Assignment of GhostMV is a deep copy.
 
@@ -636,7 +636,7 @@ using ::phist::GhostMV;
   static ghost_densemat_t* createGhostViewOfTeuchosSDM
         (const Teuchos_sdMat_t& M)
   {
-    ENTER_FCN(__FUNCTION__);
+    PHIST_ENTER_FCN(__FUNCTION__);
       ghost_densemat_traits_t dmtraits=GHOST_DENSEMAT_TRAITS_INITIALIZER;
                 dmtraits.flags = GHOST_DENSEMAT_NO_HALO;
                 dmtraits.nrows=M.numRows();

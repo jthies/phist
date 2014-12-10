@@ -32,7 +32,7 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
          int m, int nselect, int nsort, eigSort_t which, _MT_ tol, 
          void* v_ev, int *ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   // this is for XGEES (computing the Schur form)
   int lwork = std::max(20*m,2*nselect*(m-nselect));
@@ -199,7 +199,7 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
 void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
       int m, int nselected, eigSort_t which, _MT_ tol, _MT_* resNorm, void* v_ev, int* permutation, int *ierr)
 {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *ierr = 0;
 

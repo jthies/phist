@@ -15,7 +15,7 @@ extern "C" void SUBR(belos)(TYPE(const_op_ptr) Op,
         int* ierr)
   {
 #ifndef PHIST_HAVE_BELOS
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr = -99;
 #else
 #include "phist_std_typedefs.hpp"  
@@ -35,7 +35,7 @@ typedef phist::MultiVector< _ST_ > BelosMV;
   typedef st::op_t OP; // gives Sop_t, Dop_t etc.
 
   bool status=true;
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
   
   int numRhs=1;// get from input vectors

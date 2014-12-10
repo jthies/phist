@@ -1,5 +1,4 @@
-#include "phist_gen_pre.h"
-
+#include "phist_gen_clean.h"
 
 #define IS_COMPLEX
 #define _ST_ s_complex_t
@@ -34,4 +33,4 @@
 // how to build up the name of a type
 #define TYPE(name) C ## name ## _t
 
-#include "phist_gen_post.h"
+#include "phist_gen_common.h"

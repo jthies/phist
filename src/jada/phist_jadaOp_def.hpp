@@ -60,8 +60,8 @@ void SUBR(jadaOp_apply)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
     _ST_ beta, TYPE(mvec_ptr) Y, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
-  CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *ierr);
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *ierr);
 
   PHIST_CHK_IERR(*ierr = (jadaOp->B_op != NULL) ? -99 : 0, *ierr);
 
@@ -83,12 +83,12 @@ void SUBR(jadaOp_apply)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
     PHIST_CHK_IERR(jadaOp->A_op->apply_shifted(alpha, jadaOp->A_op->A, jadaOp->sigma, X, beta, Y, ierr),*ierr);
     // tmp <- V'*Y
 {
-ENTER_FCN("mvecT_times_mvec");
+PHIST_ENTER_FCN("mvecT_times_mvec");
     PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (st::one(),  jadaOp->V,  Y,   st::zero(), tmp, ierr), *ierr);
 }
     // Y <- Y - V*tmp
 {
-ENTER_FCN("mvec_times_sdMat");
+PHIST_ENTER_FCN("mvec_times_sdMat");
     PHIST_CHK_IERR( SUBR( mvec_times_sdMat ) (-st::one(), jadaOp->BV, tmp, st::one(),  Y,   ierr), *ierr);
 }
     PHIST_CHK_IERR( SUBR( sdMat_delete ) (tmp, ierr), *ierr);
@@ -137,7 +137,7 @@ void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,    TYPE(const_op_ptr)    B_
                          TYPE(op_ptr)          jdOp,    int*                  ierr)
 {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr = 0;
 
   int i;
@@ -192,7 +192,7 @@ void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,    TYPE(const_op_ptr)    B_
 // deallocate jadaOp struct
 void SUBR(jadaOp_delete)(TYPE(op_ptr) jdOp, int *ierr)
 {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr = 0;
 
   // get jadaOp

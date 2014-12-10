@@ -212,7 +212,7 @@ void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr);
 #ifdef PHIST_TIMEMONITOR
 void phist_totalMatVecCount()
 {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
 }
 #endif
 

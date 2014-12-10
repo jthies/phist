@@ -1,5 +1,4 @@
-#include "phist_gen_pre.h"
-
+#include "phist_gen_clean.h"
 
 // type specifier
 #define _TP_ 'Z'
@@ -32,4 +31,4 @@
 // how to build up the name of a type
 #define TYPE(name) Z ## name ## _t
 
-#include "phist_gen_post.h"
+#include "phist_gen_common.h"

@@ -32,7 +32,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      int numSweeps,
                      int* ierr)
   {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
 
   int m,k;

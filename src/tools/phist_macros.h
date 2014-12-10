@@ -191,15 +191,6 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); throw FLAG;}}}
 #endif
-#ifdef MAX
-#undef MAX
-#endif
-#define MAX(a,b) ((a)<(b)?(b):(a))
-
-#ifdef MIN
-#undef MIN
-#endif
-#define MIN(a,b) ((b)<(a)?(b):(a))
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
 #define PHIST_DEB(msg, ...) PHIST_OUT(PHIST_DEBUG,msg,##__VA_ARGS__);
@@ -207,7 +198,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #define PHIST_DEB(msg, ...)
 #endif
 
-/* ENTER_FCN definition */
+/* PHIST_ENTER_FCN definition */
 #ifdef __cplusplus
 # ifdef SCOREP_USER_ENABLE
 #   include <scorep/SCOREP_User.h>
@@ -227,24 +218,27 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #endif
 # include "phist_fcntrace.hpp"
 # if (PHIST_OUTLEV>=PHIST_TRACE) || defined(LIKWID_PERFMON)
-#     define ENTER_FCN(s) FcnTracer YouCantHaveMultiple_ENTER_FCN_StatementsInOneScope(s);\
+#     define PHIST_ENTER_FCN(s) FcnTracer YouCantHaveMultiple_PHIST_ENTER_FCN_StatementsInOneScope(s);\
                           PHIST_CXX_TIMER(s);\
                           SCOREP_USER_REGION(s, SCOREP_USER_REGION_TYPE_FUNCTION);
 # else
-#     define ENTER_FCN(s) PHIST_CXX_TIMER(s);\
+#     define PHIST_ENTER_FCN(s) PHIST_CXX_TIMER(s);\
                           SCOREP_USER_REGION(s, SCOREP_USER_REGION_TYPE_FUNCTION);
 # endif
 #else
-# define ENTER_FCN(s)
+# define PHIST_ENTER_FCN(s)
 #endif
+
+/* print a warning that an untested / experimental function is called */
+#define PHIST_MARK_AS_EXPERIMENTAL(s) PHIST_SOUT(PHIST_WARNING, "Called experimental (untested) %s\n", s);
 
 /* this macro can be used to avoid compiler warnings about unused variables */
-#ifndef TOUCH
-#define TOUCH(x) (void)(x);
+#ifndef PHIST_TOUCH
+#define PHIST_TOUCH(x) (void)(x);
 #endif
 
-#ifndef CAST_PTR_FROM_VOID
-#define CAST_PTR_FROM_VOID(_TYPE_,_PTR_,_VPTR_,_FLAG_) \
+#ifndef PHIST_CAST_PTR_FROM_VOID
+#define PHIST_CAST_PTR_FROM_VOID(_TYPE_,_PTR_,_VPTR_,_FLAG_) \
 _TYPE_ *_PTR_ = NULL; \
 _PTR_=(_TYPE_*)(_VPTR_); \
 if (_PTR_==NULL) {_FLAG_=-88; PHIST_OUT(PHIST_ERROR,"bad cast in file %s, line %d.\n",\

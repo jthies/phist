@@ -13,7 +13,7 @@
 extern "C" void colpack_v1_0_8(int nrows, int64_t* row_ptr, int64_t* nonlocal_ptr, int* col_idx, 
         int* ncolors, int* colors, int dist, int idx_base, int* ierr)
 {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
 #ifndef PHIST_HAVE_COLPACK
   PHIST_SOUT(PHIST_ERROR,"%s not implemented, ColPack not available.\n"

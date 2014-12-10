@@ -87,7 +87,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
       int ierr;
       if( typeImplemented_ )
       {
-        ENTER_FCN(__FUNCTION__);
+        PHIST_ENTER_FCN(__FUNCTION__);
         delete opA_;
 
         SUBR(crsMat_delete)(A_,&ierr_);
@@ -114,7 +114,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
     // ========================= the actual arnoldi test =========================
     void doBlockedGMRESTest(int nrhs, int nrestarts, MT tol, bool useMINRES)
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       if( typeImplemented_ )
       {
         ASSERT_TRUE(nrhs<=m_);

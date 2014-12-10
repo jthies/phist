@@ -6,9 +6,9 @@ extern "C" {
 void SUBR(carp_create)(TYPE(const_crsMat_ptr) vA, TYPE(carpData)** dat_ptr, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  CAST_PTR_FROM_VOID(const Epetra_CrsMatrix, A, vA, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix, A, vA, *ierr);
   const Epetra_Map& rowMap = A->RowMap();
   const Epetra_Map& colMap = A->ColMap();
   TYPE(carpData)* dat = new TYPE(carpData);
@@ -45,7 +45,7 @@ void SUBR(carp_create)(TYPE(const_crsMat_ptr) vA, TYPE(carpData)** dat_ptr, int*
 
 void SUBR(carp_delete)(TYPE(carpData)* dat, int* ierr)
 {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
   if (dat==NULL) return;
   *ierr=-99; //TODO - this can probably  be implemented in a kernel-lib independent way
@@ -55,11 +55,11 @@ void SUBR(carp_fb)(TYPE(carpData)* dat, TYPE(const_crsMat_ptr) vA,
         TYPE(const_mvec_ptr) vB, _ST_ const * sigma, 
         TYPE(const_mvec_ptr) vrhs, TYPE(mvec_ptr) vsol, int* ierr)
 {
-  ENTER_FCN(__FUNCTION__);
-  CAST_PTR_FROM_VOID(const Epetra_CrsMatrix, A, vA, *ierr);
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix, A, vA, *ierr);
   const Epetra_Vector* B = (const Epetra_Vector*)(vB);
-  CAST_PTR_FROM_VOID(const Epetra_MultiVector, rhs, vrhs, *ierr);
-  CAST_PTR_FROM_VOID(Epetra_MultiVector, sol, vsol, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector, rhs, vrhs, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector, sol, vsol, *ierr);
   
 #ifdef TESTING
 if ( (sol->Map().SameAs(rhs->Map())==false) ||
@@ -82,7 +82,7 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
     }
     else
     {
-      CAST_PTR_FROM_VOID(Epetra_MultiVector,xLoc,dat->xLoc_,*ierr);
+      PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,xLoc,dat->xLoc_,*ierr);
       if (xLoc->NumVectors()!=nvecs)
       {
         delete xLoc;
@@ -104,13 +104,13 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
   }
   
   // import the sol vector into the column map of A
-  CAST_PTR_FROM_VOID(Epetra_MultiVector,xLoc,dat->xLoc_,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,xLoc,dat->xLoc_,*ierr);
   if (needImport)
   {
     PHIST_CHK_IERR(*ierr=xLoc->Import(*sol, *A->Importer(),Insert),*ierr);
   }
-  CAST_PTR_FROM_VOID(const Epetra_Vector,diagA,dat->diagA_,*ierr);
-  CAST_PTR_FROM_VOID(const Epetra_Vector,rowScaling,dat->rowScaling_,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_Vector,diagA,dat->diagA_,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_Vector,rowScaling,dat->rowScaling_,*ierr);
 
   int* col;
   int len;

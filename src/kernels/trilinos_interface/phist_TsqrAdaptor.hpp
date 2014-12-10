@@ -344,7 +344,7 @@ namespace phist {
     {
       throw -99;
       /*
-      TOUCH(mv);
+      PHIST_TOUCH(mv);
       // TODO - we only use the default node here,
       node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_, 
                 createNode());

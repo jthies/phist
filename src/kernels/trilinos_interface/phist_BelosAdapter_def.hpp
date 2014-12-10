@@ -28,7 +28,7 @@ using ::phist::ScalarTraits;
 
     static Teuchos::RCP<MV> Clone( const MV& mv, const int numvecs )
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       TYPE(const_mvec_ptr) mv_in;
       TYPE(mvec_ptr) mv_out=NULL;
       mv_in=mv.get();
@@ -40,7 +40,7 @@ using ::phist::ScalarTraits;
 
     static Teuchos::RCP<MV> CloneCopy( const MV& mv )
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       int nvec=GetNumberVecs(mv);
       Teuchos::RCP<MV> v_out=Clone(mv,nvec);
       PHIST_TCHK_IERR(SUBR(mvec_get_block)(mv.get(),v_out->get(),0,nvec-1,&ierr_),ierr_);
@@ -49,7 +49,7 @@ using ::phist::ScalarTraits;
 
     static Teuchos::RCP<MV> CloneCopy( const MV& mv, const std::vector<int>& index )
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
 
       if (is_contig(index))
       {
@@ -88,7 +88,7 @@ using ::phist::ScalarTraits;
     CloneCopy (const MV& mv, 
 	       const Teuchos::Range1D& index)
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       TYPE(const_mvec_ptr) v_in;
       TYPE(mvec_ptr) v_out;
       const_map_ptr_t map;
@@ -106,7 +106,7 @@ using ::phist::ScalarTraits;
     static Teuchos::RCP<MV> CloneViewNonConst( MV& mv, 
     const std::vector<int>& index )
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       if (is_contig(index))
       {
         Teuchos::Range1D r(index[0],*(index.end()-1));
@@ -124,7 +124,7 @@ using ::phist::ScalarTraits;
     CloneViewNonConst (MV& mv, 
 		       const Teuchos::Range1D& index)
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       TYPE(mvec_ptr) v_in, v_out=NULL;
       v_in=mv.get();
 
@@ -135,7 +135,7 @@ using ::phist::ScalarTraits;
 
     static Teuchos::RCP<const MV > CloneView(const MV& mv, const std::vector<int>& index )
     {
-      ENTER_FCN(__FUNCTION__);    
+      PHIST_ENTER_FCN(__FUNCTION__);    
       return Teuchos::rcp_dynamic_cast<const MV >
         (CloneViewNonConst(const_cast<MV&>(mv),index));
     }
@@ -144,14 +144,14 @@ using ::phist::ScalarTraits;
     CloneView (const MV& mv, 
 	       const Teuchos::Range1D& index)
     {
-      ENTER_FCN(__FUNCTION__);    
+      PHIST_ENTER_FCN(__FUNCTION__);    
       return Teuchos::rcp_dynamic_cast<const MV >
         (CloneViewNonConst(const_cast<MV&>(mv),index));
     }
 
     static int GetVecLength( const MV& mv )
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       // I think this should return the global length, but
       // I don't see why that would ever be necessary (?)
       // Anyway, the phist interface gives access only to 
@@ -163,7 +163,7 @@ using ::phist::ScalarTraits;
 
   static int GetNumberVecs( const MV& mv )
   { 
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       int nvec;
       PHIST_TCHK_IERR(SUBR(mvec_num_vectors)(mv.get(),&nvec,&ierr_),ierr_);
       return nvec;
@@ -172,7 +172,7 @@ using ::phist::ScalarTraits;
 
     static bool HasConstantStride( const MV& mv )
     { 
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       // the phist interface does not currently allow
       // 'scattered' vectors as they are called in ghost.
       return true;
@@ -182,7 +182,7 @@ using ::phist::ScalarTraits;
                                  const Teuchos_sdMat_t& B, 
                                  Scalar beta, MV& mv )
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       PHIST_TCHK_IERR(SUBR(mvec_times_sdMat)(alpha,A.get(),convertSDM(B),beta,mv.get(),&ierr_),ierr_);
     }
 
@@ -191,39 +191,39 @@ using ::phist::ScalarTraits;
     // the memcopy we use if either alpha or beta are 0.
     static void MvAddMv( Scalar alpha, const MV& A, Scalar beta, const MV& B, MV& mv )
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       PHIST_TCHK_IERR(SUBR(mvec_add_mvec)(alpha,A.get(),st::zero(),mv.get(),&ierr_),ierr_);
       PHIST_TCHK_IERR(SUBR(mvec_add_mvec)(beta,B.get(),st::one(),mv.get(),&ierr_),ierr_);
     }
 
     static void MvScale ( MV& mv, Scalar alpha )
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       PHIST_TCHK_IERR(SUBR(mvec_scale)(mv.get(),alpha,&ierr_),ierr_);
     }
 
     static void MvScale ( MV& mv, const std::vector<Scalar>& alphas )
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       PHIST_TCHK_IERR(SUBR(mvec_vscale)(mv.get(),&alphas[0],&ierr_),ierr_);
     }
 
     // C=alpha*A*B
     static void MvTransMv( Scalar alpha, const MV& A, const MV& B, Teuchos_sdMat_t& C)
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       PHIST_TCHK_IERR(SUBR(mvecT_times_mvec)(alpha,A.get(),B.get(),st::zero(),convertSDM(C),&ierr_),ierr_);
     }
 
     static void MvDot( const MV& A, const MV& B, std::vector<Scalar> &dots)
     {
-      ENTER_FCN(__FUNCTION__);    
+      PHIST_ENTER_FCN(__FUNCTION__);    
       PHIST_TCHK_IERR(SUBR(mvec_dot_mvec)(A.get(),B.get(),&dots[0],&ierr_),ierr_);
     }
 
     static void MvNorm(const MV& mv, std::vector<magn_t> &normvec, NormType type=TwoNorm)
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       if (type!=TwoNorm)
       {
         PHIST_SOUT(PHIST_WARNING,"can only compute 2-norm in this interface\n"
@@ -234,7 +234,7 @@ using ::phist::ScalarTraits;
 
     static void SetBlock( const MV& A, const std::vector<int>& index, MV& mv )
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       if (is_contig(index))
       {
       SetBlock(A,Teuchos::Range1D(index[0],*(index.end()-1)), mv);
@@ -253,7 +253,7 @@ using ::phist::ScalarTraits;
 	      const Teuchos::Range1D& index, 
 	      MV& mv)
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       PHIST_CHK_IERR(SUBR(mvec_set_block)(mv.get(),A.get(),index.lbound(),index.ubound(),&ierr_),ierr_);
     }
 
@@ -261,7 +261,7 @@ using ::phist::ScalarTraits;
     Assign (const MV& A, 
 	    MV& mv)
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       int nvecA;
       PHIST_TCHK_IERR(SUBR(mvec_num_vectors)(A.get(),&nvecA,&ierr_),ierr_);
       PHIST_TCHK_IERR(SUBR(mvec_get_block)(A.get(),mv.get(),0,nvecA-1,&ierr_),ierr_);
@@ -270,19 +270,19 @@ using ::phist::ScalarTraits;
 
     static void MvRandom( MV& mv )
     { 
-      ENTER_FCN(__FUNCTION__); 
+      PHIST_ENTER_FCN(__FUNCTION__); 
       PHIST_TCHK_IERR(SUBR(mvec_random)(mv.get(),&ierr_),ierr_);
     }
 
     static void MvInit( MV& mv, Scalar alpha = st::zero() )
     {
-      ENTER_FCN(__FUNCTION__); 
+      PHIST_ENTER_FCN(__FUNCTION__); 
       PHIST_TCHK_IERR(SUBR(mvec_put_value)(mv.get(),alpha,&ierr_),ierr_);
     }
 
     static void MvPrint( const MV& mv, std::ostream& os )
     {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       //TODO: we could probably mess with
       //      stream buffers etc to redirect
       //      the output from mvec_print to 
@@ -300,7 +300,7 @@ using ::phist::ScalarTraits;
   static TYPE(const_sdMat_ptr) convertSDM
         (const Teuchos_sdMat_t& M)
   {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       return (TYPE(const_sdMat_ptr))convertSDM((Teuchos_sdMat_t&)(M));
   }
 
@@ -308,7 +308,7 @@ using ::phist::ScalarTraits;
   static TYPE(sdMat_ptr) convertSDM
         (Teuchos_sdMat_t& M)
   {
-      ENTER_FCN(__FUNCTION__);
+      PHIST_ENTER_FCN(__FUNCTION__);
       TYPE(sdMat_ptr) M_out=0;
       // oh oh, memory leak
       comm_ptr_t comm=NULL;

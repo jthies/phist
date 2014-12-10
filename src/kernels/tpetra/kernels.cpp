@@ -80,7 +80,7 @@ extern "C" void phist_comm_create(comm_ptr_t* vcomm, int* ierr)
 extern "C" void phist_comm_delete(comm_ptr_t vcomm, int* ierr)
 {
   *ierr=0;
-  TOUCH(vcomm);
+  PHIST_TOUCH(vcomm);
   // note - as comm_create returns a raw pointer to the default comm, we should not delete it.
 }
 
@@ -89,14 +89,14 @@ extern "C" void phist_comm_delete(comm_ptr_t vcomm, int* ierr)
 extern "C" void phist_comm_get_rank(const_comm_ptr_t vcomm, int* rank, int* ierr)
 {
   *ierr=0;
-  CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
   *rank=comm->getRank();
 }
 //!
 extern "C" void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* ierr)
 {
   *ierr=0;
-  CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
   *size=comm->getSize();
 }
 
@@ -108,7 +108,7 @@ extern "C" void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* ierr
 extern "C" void phist_tpetra_node_create(node_t** node, const_comm_ptr_t vcomm, int* ierr)
 {
   *ierr=0;
-  CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
   Teuchos::RCP<Teuchos::ParameterList> nodeParams=Teuchos::rcp(new Teuchos::ParameterList);
   // check if the file exists
   bool haveNodeFile=false;
@@ -146,7 +146,7 @@ extern "C" void phist_tpetra_node_create(node_t** node, const_comm_ptr_t vcomm, 
 extern "C" void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int *ierr)
 {
   *ierr=0;
-  CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*ierr);
   
   Teuchos::RCP<const comm_t> comm_ptr = Teuchos::rcp(comm,false);
 node_t* node;
@@ -162,7 +162,7 @@ node_t* node;
 extern "C" void phist_map_delete(map_ptr_t vmap, int *ierr)
 {
   *ierr=0;
-  CAST_PTR_FROM_VOID(map_t,map,vmap,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(map_t,map,vmap,*ierr);
   delete map;
   vmap=NULL;
 }
@@ -171,7 +171,7 @@ extern "C" void phist_map_delete(map_ptr_t vmap, int *ierr)
 extern "C" void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr)
 {
   *ierr=0;
-  CAST_PTR_FROM_VOID(const map_t,map,vmap,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const map_t,map,vmap,*ierr);
   Teuchos::RCP<const comm_t> comm = map->getComm();
   *vcomm = (const_comm_ptr_t)(comm.get());
 }
@@ -180,7 +180,7 @@ extern "C" void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm
 extern "C" void phist_map_get_local_length(const_map_ptr_t vmap, lidx_t* nloc, int* ierr)
 {
   *ierr=0;
-  CAST_PTR_FROM_VOID(const map_t,map,vmap,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const map_t,map,vmap,*ierr);
   *nloc = map->getNodeNumElements();
 }
 
@@ -190,7 +190,7 @@ extern "C" void phist_map_get_local_length(const_map_ptr_t vmap, lidx_t* nloc, i
 extern "C" void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* ierr)
 {
   *ierr=0;
-  CAST_PTR_FROM_VOID(const map_t,map,vmap,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const map_t,map,vmap,*ierr);
   if (map->isContiguous()==false) *ierr=1;
   *ilower = map->getMinGlobalIndex();
 }
@@ -200,7 +200,7 @@ extern "C" void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* 
 extern "C" void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr)
 {
   *ierr=0;
-  CAST_PTR_FROM_VOID(const map_t,map,vmap,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const map_t,map,vmap,*ierr);
   if (map->isContiguous()==false) *ierr=1;
   *iupper = map->getMaxGlobalIndex();
 }
@@ -208,7 +208,7 @@ extern "C" void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* 
 #ifdef PHIST_TIMEMONITOR
 extern "C" void phist_totalMatVecCount()
 {
-  ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_FCN(__FUNCTION__);
 }
 #endif
 

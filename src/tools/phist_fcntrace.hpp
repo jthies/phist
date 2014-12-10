@@ -14,7 +14,7 @@
 #endif
 
 // this is an object that prints a message when created and when destroyed.
-// Its sole purpose is to implement a macro ENTER_FCN (phist_macros.h) that
+// Its sole purpose is to implement a macro PHIST_ENTER_FCN (phist_macros.h) that
 // will generate output like this:
 // ENTER xyz
 // ...

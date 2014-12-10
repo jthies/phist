@@ -20,7 +20,7 @@ void SUBR(private_idOp_apply)(_ST_ alpha, const void* A, TYPE(const_mvec_ptr) X,
         _ST_ beta, TYPE(mvec_ptr) Y, int* ierr)
 {
   *ierr=0;
-  TOUCH(A)
+  PHIST_TOUCH(A)
   SUBR(mvec_add_mvec)(alpha,X,beta,Y,ierr);
 }
 
@@ -29,7 +29,7 @@ void SUBR(private_idOp_apply_shifted)(_ST_ alpha, const void* A, _ST_ const *sig
         TYPE(const_mvec_ptr) X,  _ST_ beta, TYPE(mvec_ptr) Y, int* ierr)
 {
   *ierr=0;
-  TOUCH(A)
+  PHIST_TOUCH(A)
   int nvec;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nvec,ierr),*ierr);
   _ST_ shifts[nvec];
