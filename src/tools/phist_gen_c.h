@@ -29,7 +29,7 @@
 #define PREFIX(name) C ## name
 
 // adds lower case type prefix to a specifier, e.g. SPREFIX(gemm) -> dgemm
-#define PREFIX(name) C ## name
+#define SPREFIX(name) c ## name
 
 // how to build up the name of a subroutine (void function)
 #define SUBR(name) phist_C ## name
