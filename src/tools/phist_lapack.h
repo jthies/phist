@@ -235,16 +235,16 @@ const Dblas_cmplx_t* a, const blas_idx_t* lda, Dblas_cmplx_t* b, const blas_idx_
 //      XTRTRV - solve triangular linear system with single vector                       //
 ///////////////////////////////////////////////////////////////////////////////////////////
 void STRSV(const char* uplo, const char* trans, const char* diag, const blas_idx_t* n,
-const float* a, const blas_idx_t* lda, float* b, const blas_idx_t* incb, int* info);
+const float* a, const blas_idx_t* lda, float* b, const blas_idx_t* incb);
 
 void DTRSV(const char* uplo, const char* trans, const char* diag, const blas_idx_t* n,
-const double* a, const blas_idx_t* lda, double* b, const blas_idx_t* incb, int* info);
+const double* a, const blas_idx_t* lda, double* b, const blas_idx_t* incb);
 
 void CTRSV(const char* uplo, const char* trans, const char* diag, const blas_idx_t* n,
-const Sblas_cmplx_t* a, const blas_idx_t* lda, Sblas_cmplx_t* b, const blas_idx_t* incb, int* info);
+const Sblas_cmplx_t* a, const blas_idx_t* lda, Sblas_cmplx_t* b, const blas_idx_t* incb);
 
 void ZTRSV(const char* uplo, const char* trans, const char* diag, const blas_idx_t* n,
-const Dblas_cmplx_t* a, const blas_idx_t* lda, Dblas_cmplx_t* b, const blas_idx_t* incb, int* info);
+const Dblas_cmplx_t* a, const blas_idx_t* lda, Dblas_cmplx_t* b, const blas_idx_t* incb);
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //      XTRTRM - solve triangular linear system with rhs matrix                          //

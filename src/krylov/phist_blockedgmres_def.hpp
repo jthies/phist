@@ -314,7 +314,7 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
       *ierr=PHIST_INTEGER_OVERFLOW;
       return;
     }
-    PHIST_CHK_IERR(PREFIX(TRSV)("U","N","N",&m,(st::blas_scalar_t*)H_raw,&ildH,(st::blas_scalar_t*)y, &ildy, ierr),*ierr);
+    PHIST_CHK_IERR(PREFIX(TRSV)("U","N","N",&m,(st::blas_scalar_t*)H_raw,&ildH,(st::blas_scalar_t*)y, &ildy),*ierr);
 
 
     // if we are only interested in the directions Vi*yi and appropriate AVi*yi,
