@@ -3,6 +3,7 @@
 #include "phist_MultiVector.hpp"
 #include "phist_BelosAdapter.hpp"
 
+#ifdef PHIST_HAVE_BELOS
 /* this file is just to put some static member variables somewhere */ 
 namespace Belos {
 
@@ -13,3 +14,4 @@ int MultiVecTraits<s_complex_t, ::phist::MultiVector<s_complex_t> >::ierr_;
 int MultiVecTraits<double, ::phist::MultiVector<double> >::ierr_;
 int MultiVecTraits<d_complex_t, ::phist::MultiVector<d_complex_t> >::ierr_;
 }
+#endif
