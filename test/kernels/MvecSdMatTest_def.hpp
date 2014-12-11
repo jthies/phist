@@ -116,7 +116,9 @@ public:
 
     if( globError )
     {
+#if PHIST_OUTLEV>=PHIST_DEBUG
       PHIST_CHK_IERR(SUBR(sdMat_print)(mat,ierr),*ierr);
+#endif
       *ierr = -1;
       return;
     }
@@ -317,9 +319,11 @@ public:
         ASSERT_EQ(0,ierr_);
         SUBR(sdMat_delete)(M2,&ierr_);
         ASSERT_EQ(0,ierr_);
+#if PHIST_OUTLEV>=PHIST_DEBUG
         SUBR(sdMat_from_device)(M2_,&ierr_);
         ASSERT_EQ(0,ierr_);
         MTest::PrintSdMat(*cout,"zero-random'*random in correct location",M2_vp_,ldaM2_,stride_,mpi_comm_);
+#endif
         SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::one(),M2_,&ierr_);
         ASSERT_EQ(0,ierr_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
