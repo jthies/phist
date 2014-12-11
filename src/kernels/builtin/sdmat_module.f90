@@ -455,7 +455,9 @@ contains
     call random_number(buff)
 
     ierr = 0
-    call MPI_Bcast(buff, m*n, MPI_DOUBLE_PRECISION, sdmat%comm, 0, ierr);
+    if( sdmat%comm .ne. MPI_COMM_NULL ) then
+      call MPI_Bcast(buff, m*n, MPI_DOUBLE_PRECISION, sdmat%comm, 0, ierr);
+    end if
     sdmat%val(sdmat%imin:sdmat%imax,sdmat%jmin:sdmat%jmax) = buff
 
   end subroutine phist_DsdMat_random
