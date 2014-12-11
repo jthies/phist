@@ -24,7 +24,8 @@ if (DEFINED LAPACK_LIBS)
   set(LAPACK_LIBS ${LAPACK_LIBS} CACHE STRING "how to link with lapack (and blas)")
 elseif(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
 #TODO: this assumes that if you use the intel compilers, you also have MKL (!)
-  set(LAPACK_LIBS "lapack;blas" CACHE STRING "how to link with lapack (and blas)")
+  set(LAPACK_LIBS "lapacke;lapack;blas" CACHE STRING "how to link with lapack 
+  (and blas)")
 endif()
 
 # try to find a MKL header in the default location
