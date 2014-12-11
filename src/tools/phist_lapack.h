@@ -5,39 +5,26 @@
 //      I think we should gradually move towards
 //      using lapacke everywhere
 #ifdef PHIST_HAVE_MKL
-#include "mkl_lapack.h"
-#include "mkl_lapacke.h"
-#else
-#include "lapacke.h"
-#endif
-#ifdef PHIST_SDMATS_ROW_MAJOR
-#define SDMAT_FLAG LAPACK_ROW_MAJOR
-#else
-#define SDMAT_FLAG LAPACK_COL_MAJOR
-#endif
-
-// to allow calling fortran-style lapack interfaces, define a complex type for C
-#ifdef PHIST_HAVE_MKL
+# include "mkl_lapack.h"
+# include "mkl_lapacke.h"
 typedef const char blas_char_t;
 typedef MKL_Complex8 Sblas_cmplx_t;
 typedef MKL_Complex16 Dblas_cmplx_t;
 typedef MKL_INT blas_idx_t;
 #else
-/*
-typedef struct Sblas_cmplx_t {
-float re;
-float im;
-} Sblas_cmplx_t;
-
-typedef struct Dblas_cmplx_t {
-double re;
-double im;
-} Dblas_cmplx_t;
-*/
-typedef _Complex float Sblas_cmplx_t;
-typedef _Complex double Dblas_cmplx_t;
+# define lapack_complex_float s_complex_t
+# define lapack_complex_double d_complex_t
+# include "lapacke.h"
+typedef lapack_complex_float Sblas_cmplx_t;
+typedef lapack_complex_double Dblas_cmplx_t;
 typedef int blas_idx_t;
 typedef char blas_char_t;
+#endif
+
+#ifdef PHIST_SDMATS_ROW_MAJOR
+#define SDMAT_FLAG LAPACK_ROW_MAJOR
+#else
+#define SDMAT_FLAG LAPACK_COL_MAJOR
 #endif
 
 // TODO - cmake/blas/lapack integration.
