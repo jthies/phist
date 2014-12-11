@@ -64,11 +64,11 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
 
 #ifdef IS_COMPLEX
   PHIST_DEB("call complex %cGEES\n",st::type_char());
-  PHIST_CHK_IERR(PREFIX(GEES)(jobvs,sort,NULL,&m,(blas_cmplx_t*)T,&ldT,
+  PHIST_CHK_IERR(PREFIX(GEES)((blas_char_t*)jobvs,(blas_char_t*)sort,NULL,&m,(blas_cmplx_t*)T,&ldT,
          &sdim,(blas_cmplx_t*)ev,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)work,&lwork,ev_r,NULL,ierr),*ierr);
 #else
   PHIST_DEB("call real %cGEES\n",st::type_char());
-  PHIST_CHK_IERR(PREFIX(GEES)(jobvs,sort,NULL,&m,T,&ldT,
+  PHIST_CHK_IERR(PREFIX(GEES)((blas_char_t*)jobvs,(blas_char_t*)sort,NULL,&m,T,&ldT,
          &sdim,ev_r,ev_i,S,&ldS,work,&lwork,NULL,ierr),*ierr);
   for (int i=0;i<m;i++)
     {
@@ -130,10 +130,10 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
     for (int i=0;i<nselect;i++) 
       select[std::abs(idx[i])]=1;
 #ifdef IS_COMPLEX
-    PHIST_CHK_IERR(PREFIX(TRSEN)(job,compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)ev,&nsorted,
+    PHIST_CHK_IERR(PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)ev,&nsorted,
           &S_cond, &sep, (blas_cmplx_t*)work, &lwork, ierr),*ierr);
 #else
-    PHIST_CHK_IERR(PREFIX(TRSEN)(job,compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
+    PHIST_CHK_IERR(PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
           &S_cond, &sep, work, &lwork, iwork, &liwork, ierr),*ierr);   
     for (int i=0;i<m;i++)
     {
@@ -170,10 +170,10 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
                                    // we pass in ev+i
      int nsorted_before=nsorted;
 #ifdef IS_COMPLEX
-     PHIST_CHK_IERR(PREFIX(TRSEN)(job,compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,
+     PHIST_CHK_IERR(PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,
         (blas_cmplx_t*)ev,&nsorted,&S_cond, &sep, (blas_cmplx_t*)work, &lwork, ierr),*ierr);
 #else
-     PHIST_CHK_IERR(PREFIX(TRSEN)(job,compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
+     PHIST_CHK_IERR(PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
           &S_cond, &sep, work, &lwork, iwork, &liwork, ierr),*ierr);   
     for (int j=0;j<m;j++)
       {
@@ -284,9 +284,11 @@ void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
     int ilst = pos+1;
 PHIST_SOUT(PHIST_DEBUG,"swapping %d %d in unconverged eigenvalues\n",ifst-1,ilst-1);
 #ifdef IS_COMPLEX
-    PHIST_CHK_IERR( PREFIX(TREXC) (compq, &m, (blas_cmplx_t*) T, &ldT, (blas_cmplx_t*) S, &ldS, &ifst, &ilst, ierr), *ierr);
+    PHIST_CHK_IERR( PREFIX(TREXC) ((blas_char_t*)compq, &m, (blas_cmplx_t*) T, 
+    &ldT, (blas_cmplx_t*) S, &ldS, &ifst, &ilst, ierr), *ierr);
 #else
-    PHIST_CHK_IERR( PREFIX(TREXC) (compq, &m, T, &ldT, S, &ldS, &ifst, &ilst, work, ierr), *ierr);
+    PHIST_CHK_IERR( PREFIX(TREXC) ((blas_char_t*)compq, &m, T, &ldT, S, &ldS, 
+    &ifst, &ilst, work, ierr), *ierr);
 #endif
 PHIST_DEB("ifst = %d,\t ilst = %d\n", ifst-1, ilst-1);
 
