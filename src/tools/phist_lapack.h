@@ -47,7 +47,7 @@ typedef char blas_char_t;
 // used we're fine. The lower case/underscore variant here works for
 // linux systems, typically.
 #ifndef PHIST_HAVE_MKL
-#define LAPACK_SUBR(NAME,name) LAPACK_ ## name
+#define LAPACK_SUBR(NAME,name) name ## _
 #else
 #define LAPACK_SUBR(NAME,name) name ## _
 #endif
