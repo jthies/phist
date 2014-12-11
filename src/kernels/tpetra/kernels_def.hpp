@@ -728,10 +728,27 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* ierr)
 //! put random numbers into all elements of a serial dense matrix
 extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* ierr)
   {
+#include "phist_std_typedefs.hpp"  
   PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,M,vM,*ierr);
+#ifdef PHIST_HAVE_MPI
+  // generate the same data on all processes,
+  // by using an allreduction^^ not very nice, but works
+  // TODO: improve this
+  int myRank = M->getMap()->getComm()->getRank();
+  if( myRank == 0 )
+  {
+    PHIST_TRY_CATCH(M->randomize(),*ierr);
+  }
+  else
+  {
+    PHIST_TRY_CATCH(M->putScalar(st::zero()),*ierr);
+  }
+  PHIST_TRY_CATCH(M->reduce(),*ierr);
+#else
   PHIST_TRY_CATCH(M->randomize(),*ierr);
+#endif
   }
 
   //! compute the 2-norm of each column of v                   
