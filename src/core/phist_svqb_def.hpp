@@ -87,9 +87,9 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
       for(int j=0;j<m;j++)
       {
 #ifdef PHIST_SDMATS_ROW_MAJOR
-        B_raw[i*ldb+j] *= Dinv[i]*E[j];
+        B_raw[i*ldb+j] *= Dinv[i]*Einv[j];
 #else
-        B_raw[j*ldb+i] *= Dinv[i]*E[j];
+        B_raw[j*ldb+i] *= Dinv[i]*Einv[j];
 #endif
       }
     }
