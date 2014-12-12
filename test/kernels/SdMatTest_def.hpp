@@ -81,18 +81,19 @@ public:
   {
     if (typeImplemented_)
     {
+      int stride = 1;
       ST alpha = st::zero();
       ST beta  = st::prand();
       PHIST_OUT(9,"axpy, alpha=%f+%f i, beta=%f+%f i",st::real(alpha),
           st::imag(alpha),st::real(beta),st::imag(beta));
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(sdMat_from_device)(mat2_,&ierr_);
-      PrintVector(std::cerr,"before scale",mat2_vp_,nrows_,m_lda_,stride_,mpi_comm_);
+      //PrintVector(std::cerr,"before scale",mat2_vp_,nrows_,m_lda_,stride,mpi_comm_);
 #endif
       SUBR(sdMat_add_sdMat)(alpha,mat1_,beta,mat2_,&ierr_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(sdMat_from_device)(mat2_,&ierr_);
-      PrintVector(std::cerr,"after scale",mat2_vp_,nrows_,m_lda_,stride_,mpi_comm_);
+      //PrintVector(std::cerr,"after scale",mat2_vp_,nrows_,m_lda_,stride,mpi_comm_);
 #endif
       ASSERT_EQ(0,ierr_);
 

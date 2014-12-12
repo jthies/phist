@@ -1044,6 +1044,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     ST* Rval = R->get1dViewNonConst().getRawPtr();
     PHIST_DEB("single vector QR, R=%8.4e\n",nrm);
     rank=1;
+    *Rval=(ST)nrm;
     if (nrm<rankTol)
       {
       PHIST_DEB("zero vector detected\n");
@@ -1051,8 +1052,8 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
       PHIST_CHK_IERR(SUBR(mvec_random)(vV,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
       rank=0;// dimension of null space
+      *Rval=st::zero();
       }
-    *Rval=(ST)nrm;
     *ierr=1-rank;
     return;
     }

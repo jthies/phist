@@ -3,6 +3,14 @@
 #include <mpi.h>
 #endif
 
+#ifdef PHIST_KERNEL_LIB_GHOST
+#if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
+#define HAVE_MVEC_QR
+#endif
+#else
+#define HAVE_MVEC_QR
+#endif
+
 #include "gtest/gtest.h"
 //#include "gmock/gmock.h"
 

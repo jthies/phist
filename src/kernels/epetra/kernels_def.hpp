@@ -737,7 +737,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,R,vR,*ierr);
 
   int rank;
-  MT rankTol=32*mt::eps();
+  MT rankTol=1000*mt::eps();
   if (V->NumVectors()==1)
     {
     // we need a special treatment here because TSQR
@@ -750,6 +750,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     int ldR;
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&Rval,&ldR,ierr),*ierr);
     rank=1;
+    *Rval=(ST)nrm;
     if (nrm<rankTol)
       {
       PHIST_DEB("zero vector detected\n");
@@ -757,8 +758,8 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
       PHIST_CHK_IERR(SUBR(mvec_random)(vV,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
       rank=0;// dimension of null space
+      *Rval=st::zero();
       }
-    *Rval=(ST)nrm;
     *ierr=1-rank;
     return;
     }
