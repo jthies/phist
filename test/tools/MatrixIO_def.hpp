@@ -19,21 +19,21 @@ void SUBR(read_mat)(const char* filebase,int nglob,TYPE(crsMat_ptr) *ptr, int* i
   sprintf(binfile,"%c%s%d.bin",tpc,filebase,nglob);
   sprintf(crsfile,"%c%s%d.crs",tpc,filebase,nglob);
   
-  std::cout << "Looking for matrix \'"<<filebase<<"\'...\n";
-  std::cout << "... try \'"<<mmfile<<"\'\n";
+  PHIST_SOUT(PHIST_DEBUG, "Looking for matrix \'%s\'..\n", filebase);
+  PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", mmfile);
   SUBR(crsMat_read_mm)(ptr,comm,mmfile,&_ierr);
   if (_ierr!=PHIST_SUCCESS) // kernel lib can't read MatrixMarket format or file not found
   {
-    std::cout << "... try \'"<<hbfile<<"\'\n";
+    PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", hbfile);
     SUBR(crsMat_read_hb)(ptr,comm,hbfile,&_ierr);
     if (_ierr!=PHIST_SUCCESS) // kernel lib can't read Harwell-Boeing or file not found
     {
-      std::cout << "... try \'"<<binfile<<"\'\n";
+      PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", binfile);
       SUBR(crsMat_read_bin)(ptr,comm,binfile,&_ierr);
       if (_ierr!=PHIST_SUCCESS) // kernel lib can't read binCRS or file not found
       {
         // try same format, different extension
-        std::cout << "... try \'"<<crsfile<<"\'\n";
+        PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", crsfile);
         SUBR(crsMat_read_bin)(ptr,comm,crsfile,&_ierr);
       }
     }

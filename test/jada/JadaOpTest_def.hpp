@@ -73,27 +73,30 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     {
       if (typeImplemented_)
       {
-        delete opI_;
+        if( opI_ != NULL )
+          delete opI_;
         SUBR(crsMat_delete)(A1_,&ierr_);
         ASSERT_EQ(0,ierr_);
-        delete opA1_;
+        if( opA1_ != NULL )
+          delete opA1_;
         SUBR(crsMat_delete)(I_,&ierr_);
         ASSERT_EQ(0,ierr_);
         SUBR(mvec_delete)(q_,&ierr_);
         ASSERT_EQ(0,ierr_);
-        delete[] sigma_;
+        if( sigma_ != NULL)
+          delete[] sigma_;
       }
 
       MTest::TearDown();
       VTest::TearDown();
     }
 
-    TYPE(crsMat_ptr) A1_; 
-    TYPE(op_ptr) opA1_;
-    TYPE(crsMat_ptr) I_; 
-    TYPE(op_ptr) opI_;
-    TYPE(mvec_ptr) q_;
-    _ST_* sigma_;
+    TYPE(crsMat_ptr) A1_ = NULL;
+    TYPE(op_ptr) opA1_ = NULL;
+    TYPE(crsMat_ptr) I_ = NULL;
+    TYPE(op_ptr) opI_ = NULL;
+    TYPE(mvec_ptr) q_ = NULL;
+    _ST_* sigma_ = NULL;
 };
 
 

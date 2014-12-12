@@ -1266,7 +1266,7 @@ void SUBR(destroy_vector_elements_at_random)(TYPE(mvec_ptr) V, double probabilit
   ST* V_val;
   lidx_t lda;
   int nvec;
-  ST tmp;
+  //ST tmp;
   double rand_prob;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_extract_view)(V,&V_val,&lda,ierr),*ierr);
@@ -1283,7 +1283,7 @@ void SUBR(destroy_vector_elements_at_random)(TYPE(mvec_ptr) V, double probabilit
       if (rand_prob>probability){
         //std::cout << "Element destroyed." <<std::endl;
        
-        tmp = V_val[i*lda+j]; 
+        //tmp = V_val[i*lda+j];
         V_val[i*lda+j] =st::rand();
         //V_val[i*lda+j] =0;
         //std::cout << j << std::endl;

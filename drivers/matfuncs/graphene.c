@@ -31,9 +31,9 @@ int crsGraphene( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 	
 	static	double gamma = 0.;  // disorder
 	
-	static	double Dot_R = 0.;
-	static	double Dot_V = 0.;
-	static int32_t use_dots         = 0;
+  //static	double Dot_R = 0.;
+  //static	double Dot_V = 0.;
+  //static int32_t use_dots         = 0;
 	
 	static double t1 = -1.;
 	static double t2 = -0.1/2.78;;
@@ -217,9 +217,9 @@ int crsGraphene( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 		L += L&1;
 		W += W&1;
 		
-		Dot_R = dvals[2];
-		Dot_V = dvals[3];
-		use_dots = 1;
+    //Dot_R = dvals[2];
+    //Dot_V = dvals[3];
+    //use_dots = 1;
 		
 		cols[0] = W;
 		cols[1] = L;

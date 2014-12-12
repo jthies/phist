@@ -308,7 +308,7 @@ end do
     allocate(combuff%sendBuffInd(size(combuff%sendRowBlkInd),2))
     do i = 1, size(combuff%sendRowBlkInd), 1
       combuff%sendBuffInd(i,1) = combuff%sendRowBlkInd(i)
-      combuff%sendBuffInd(i,2) = i
+      combuff%sendBuffInd(i,2) = int(i,kind=4)
     end do
     call sortInd(combuff%sendBuffInd(:,1), combuff%sendBuffInd(:,2))
     !write(*,*) 'sendBuffInd 1', combuff%sendBuffInd(:,1)
@@ -385,6 +385,7 @@ end do
   end subroutine sort_global_cols
 
 
+#ifdef PHIST_HAVE_PARMETIS
   !> rearranges the entries in crsMat_t%val and crsMat_t%global_col_idx in a given order
   !! \param crsMat matrix to reorder
   !! \param new_ind array of size crsMat%nEntries with new position of each block
@@ -420,6 +421,7 @@ end do
     end do
 
   end subroutine reord_val_global_col
+#endif
 
 
 
@@ -1306,7 +1308,7 @@ end subroutine permute_local_matrix
     integer :: nvec, ldx, ldy, recvBuffSize, sendBuffSize
     logical :: strided_x, strided_y, strided
     logical :: y_is_aligned16, handled
-    integer :: i, j, k, l, ierr
+    integer :: i, k, l, ierr
     !--------------------------------------------------------------------------------
 
     ! if alpha == 0, only scale y
@@ -1423,13 +1425,6 @@ end subroutine permute_local_matrix
     else
       call dspmv_buff_cpy_general(nvec, A%nrows, sendBuffSize, ldx, x%val(x%jmin,1), A%comm_buff%sendBuffInd, A%comm_buff%sendData)
     end if
-
-!!$omp parallel do schedule(static)
-!    do i = 1, size(A%comm_buff%sendBuffInd,1), 1
-!      k = A%comm_buff%sendBuffInd(i,1)
-!      l = A%comm_buff%sendBuffInd(i,2)
-!      A%comm_buff%sendData(:,l) = x%val(x%jmin:x%jmax,k)
-!    end do
 
 
     ! start sending (e.g. issend)
@@ -1589,7 +1584,8 @@ end subroutine permute_local_matrix
     character(len=100) :: line
     integer(kind=8), allocatable :: idx(:,:)
     real(kind=8), allocatable :: val(:)
-    integer(kind=8) :: i, i_, j, k, globalRows, globalCols, globalEntries, nRows
+    integer(kind=8) :: i, j, k, globalRows, globalCols, globalEntries, nRows
+    !integer(kind=8) :: i_
     logical :: symmetric
     integer(kind=8) :: tmp_idx(2,2)
     real(kind=8) :: tmp_val(2)
@@ -1817,7 +1813,7 @@ end subroutine permute_local_matrix
     integer(kind=G_GIDX_T) :: j, j_, globalEntries
     integer(kind=G_GIDX_T) :: i_
     integer(kind=G_LIDX_T) :: nne
-    integer :: funit
+    !integer :: funit
     integer(kind=8) :: localDim(2), globalDim(2)
     real(kind=8) :: wtime
     integer, pointer :: comm
@@ -2155,7 +2151,7 @@ end if
     !--------------------------------------------------------------------------------
     
     integer, allocatable, dimension(:) :: procCount !! temporary array
-    integer :: theShape(2), sendBuffSize
+    integer :: theShape(2)
     integer :: i,k,l
     integer(kind=8) :: j
 
@@ -2255,7 +2251,7 @@ end if
     type(sparseArray_t), pointer :: invProcCount
     
     !--------------------------------------------------------------------------------
-    integer :: iSys,i,j,k,l
+    integer :: iSys
     integer :: ldx, ldb, nvec
     integer :: theShape(2)
     integer :: sendBuffSize,recvBuffSize
@@ -2456,7 +2452,7 @@ end if
     type(sparseArray_t), pointer :: invProcCount
     
     !--------------------------------------------------------------------------------
-    integer :: iSys,i,j,k,l
+    integer :: iSys
     integer :: ldx, ldb, nvec
     integer :: theShape(2)
     integer :: sendBuffSize,recvBuffSize
@@ -2740,7 +2736,7 @@ subroutine Dcarp_average(A,xr,xi,invProcCount, ierr)
   integer :: ierr
 
   ! local
-  integer :: sendBuffSize,recvBuffSize, nvec, nrecv
+  integer :: nvec, nrecv
   integer :: i,j,k,l
 
   nvec=xr%jmax-xr%jmin+1

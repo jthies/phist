@@ -55,7 +55,6 @@ int main(int argc, char** argv)
 
   int rank, num_proc;
   int i;
-  int verbose;
 
   comm_ptr_t comm;  
   const_map_ptr_t map; // map (element distribution) of vectors according to 
@@ -77,7 +76,7 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&ierr),ierr);
   PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&ierr),ierr);
 
-  verbose= (rank==0);
+  //int verbose= (rank==0);
   int iarg=1;
   const char* problem = argv[iarg++];
   

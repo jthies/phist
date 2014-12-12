@@ -128,6 +128,91 @@ void rebuildVectors(TYPE(const_crsMat_ptr) A)
     ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_), sqrt(mt::eps()));
   }
 
+#if _NV_ > 1
+  void test_crsMat_times_mvec_with_views(_ST_ alpha, TYPE(const_crsMat_ptr) A, _ST_ beta, int imin, int imax)
+  {
+    if( !typeImplemented_ )
+      return;
+
+    // set up mvecs
+    SUBR(mvec_random)(vec1_, &ierr_);
+    ASSERT_EQ(0, ierr_);
+    SUBR(mvec_random)(vec2_, &ierr_);
+    ASSERT_EQ(0, ierr_);
+
+    SUBR(mvec_add_mvec)(st::one(), vec2_, st::zero(), vec3_, &ierr_);
+    ASSERT_EQ(0, ierr_);
+
+    // create views
+    TYPE(mvec_ptr) vec1_view = NULL;
+    SUBR(mvec_view_block)(vec1_, &vec1_view, imin, imax, &ierr_);
+    ASSERT_EQ(0, ierr_);
+    TYPE(mvec_ptr) vec2_view = NULL;
+    SUBR(mvec_view_block)(vec2_, &vec2_view, imin, imax, &ierr_);
+    ASSERT_EQ(0, ierr_);
+
+    SUBR(crsMat_times_mvec)(alpha, A, vec1_view, beta, vec2_view, &ierr_);
+    ASSERT_EQ(0, ierr_);
+
+    // make sure nothing changed outside of viewed block
+    ASSERT_REAL_EQ(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,imin,lda_,stride_,vflag_));
+    ASSERT_REAL_EQ(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imax+1,lda_),vec3_vp_+VIDX(0,imax+1,lda_),nloc_,nvec_-imax-1,lda_,stride_,vflag_));
+
+    // calculation for full block as reference
+    SUBR(crsMat_times_mvec)(alpha, A, vec1_, beta, vec3_, &ierr_);
+    ASSERT_EQ(0, ierr_);
+
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imin,lda_),vec3_vp_+VIDX(0,imin,lda_),nloc_,imax-imin+1,lda_,stride_,vflag_), sqrt(mt::eps()));
+
+    // delete view
+    SUBR(mvec_delete)(vec2_view, &ierr_);
+    ASSERT_EQ(0, ierr_);
+    SUBR(mvec_delete)(vec1_view, &ierr_);
+    ASSERT_EQ(0, ierr_);
+  }
+
+  void test_crsMat_times_mvec_vadd_mvec_with_views(_ST_ alpha, TYPE(const_crsMat_ptr) A, _ST_ shifts[_NV_], _ST_ beta, int imin, int imax)
+  {
+    if( !typeImplemented_ )
+      return;
+
+    // set up mvecs
+    SUBR(mvec_random)(vec1_, &ierr_);
+    ASSERT_EQ(0, ierr_);
+    SUBR(mvec_random)(vec2_, &ierr_);
+    ASSERT_EQ(0, ierr_);
+
+    SUBR(mvec_add_mvec)(st::one(), vec2_, st::zero(), vec3_, &ierr_);
+    ASSERT_EQ(0, ierr_);
+
+    // create a view
+    TYPE(mvec_ptr) vec1_view = NULL;
+    SUBR(mvec_view_block)(vec1_, &vec1_view, imin, imax, &ierr_);
+    ASSERT_EQ(0, ierr_);
+    TYPE(mvec_ptr) vec2_view = NULL;
+    SUBR(mvec_view_block)(vec2_, &vec2_view, imin, imax, &ierr_);
+    ASSERT_EQ(0, ierr_);
+
+    SUBR(crsMat_times_mvec_vadd_mvec)(alpha, A, shifts+imin, vec1_view, beta, vec2_view, &ierr_);
+    ASSERT_EQ(0, ierr_);
+
+    // make sure nothing changed outside of viewed block
+    ASSERT_REAL_EQ(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,imin,lda_,stride_,vflag_));
+    ASSERT_REAL_EQ(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imax+1,lda_),vec3_vp_+VIDX(0,imax+1,lda_),nloc_,nvec_-imax-1,lda_,stride_,vflag_));
+
+    // calculation for full block as reference
+    SUBR(crsMat_times_mvec_vadd_mvec)(alpha, A, shifts, vec1_, beta, vec3_, &ierr_);
+    ASSERT_EQ(0, ierr_);
+
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imin,lda_),vec3_vp_+VIDX(0,imin,lda_),nloc_,imax-imin+1,lda_,stride_,vflag_), sqrt(mt::eps()));
+
+    // delete view
+    SUBR(mvec_delete)(vec2_view, &ierr_);
+    ASSERT_EQ(0, ierr_);
+    SUBR(mvec_delete)(vec1_view, &ierr_);
+    ASSERT_EQ(0, ierr_);
+  }
+#endif
 
 TYPE(crsMat_ptr) A0_; // all zero matrix
 TYPE(crsMat_ptr) A1_; // identity matrix
@@ -225,7 +310,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       //0*I*X+beta*Y = beta*Y? 
       alpha=st::zero(); 
       beta=random_number();
+#if PHIST_OUTLEV>=PHIST_INFO
       std::cout << "MVM with A=I, alpha="<<alpha<<", beta="<<beta<<std::endl;
+#endif
       SUBR(mvec_random)(vec1_,&ierr_); 
       SUBR(mvec_random)(vec2_,&ierr_); 
 #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -249,7 +336,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       //I*X+beta*Y = X+beta*Y?
       alpha = st::one();
       beta = random_number();
+#if PHIST_OUTLEV>=PHIST_INFO
       std::cout << "MVM with A=I, alpha="<<alpha<<", beta="<<beta<<std::endl;
+#endif
       SUBR(mvec_random)(vec1_,&ierr_);
       SUBR(mvec_random)(vec2_,&ierr_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -273,7 +362,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       //alpha*I*X+beta*Y = alpha*X+beta*Y?
       alpha = random_number();
       beta = random_number();
+#if PHIST_OUTLEV>=PHIST_INFO
       std::cout << "MVM with A=I, alpha="<<alpha<<", beta="<<beta<<std::endl;
+#endif
       SUBR(mvec_random)(vec1_,&ierr_);
       SUBR(mvec_random)(vec2_,&ierr_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -299,7 +390,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     }
 
 #if(_NV_>1)
-  TEST_F(CLASSNAME, A1_times_mvec_using_views)
+  TEST_F(CLASSNAME, A1_times_mvec_using_two_views_of_the_same_vec)
   {
     if (typeImplemented_ && A1_!=NULL)
     {
@@ -323,13 +414,8 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
 
 // we could extract the pointers from the view, but this way we
 // have more control and make sure the data is where it should be:
-#ifdef PHIST_MVECS_ROW_MAJOR
-     v_in_vp = vec1_vp_+offs;
-     v_out_vp = vec1_vp_+offs+nv;
-#else
-     v_in_vp = vec1_vp_+offs*lda_;
-     v_out_vp = vec1_vp_+(offs+nv)*lda_;
-#endif
+     v_in_vp = vec1_vp_+VIDX(0,offs,lda_);
+     v_out_vp = vec1_vp_+VIDX(0,offs+nv,lda_);
 #if(PHIST_OUTLEV>=PHIST_DEBUG)
       PHIST_DEB("all random:\n");
       SUBR(mvec_print)(vec1_,&ierr_);
@@ -397,7 +483,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       }
 
       // apply our shift matrix
+#if PHIST_OUTLEV>=PHIST_INFO
       std::cout << "MVM with A='shift', alpha=1, beta=0"<<std::endl;
+#endif
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_print)(vec1_,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -457,7 +545,9 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       }
 
       // apply our shift matrix
+#if PHIST_OUTLEV>=PHIST_INFO
       std::cout << "MVM with A='rand', alpha=1, beta=0"<<std::endl;
+#endif
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_print)(vec1_,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -653,4 +743,250 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
 
     test_crsMat_times_mvec_vadd_mvec(alpha, A2_, shifts, beta);
   }
+
+#if _NV_ > 1
+  TEST_F(CLASSNAME, crsMat_times_mvec_random_with_view_0_0)
+  {
+    // matrices may have different maps
+    rebuildVectors(A2_);
+
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    test_crsMat_times_mvec_with_views(alpha, A2_, beta, 0, 0);
+  }
+
+  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_random_with_view_0_0)
+  {
+    // matrices may have different maps
+    rebuildVectors(A2_);
+
+    _ST_ shifts[_NV_];
+    for(int i = 0; i < _NV_; i++)
+      shifts[i] = st::prand();
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    test_crsMat_times_mvec_vadd_mvec_with_views(alpha, A2_, shifts, beta, 0, 0);
+  }
+
+  TEST_F(CLASSNAME, crsMat_times_mvec_random_with_view_1_1)
+  {
+    // matrices may have different maps
+    rebuildVectors(A2_);
+
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    test_crsMat_times_mvec_with_views(alpha, A2_, beta, 1, 1);
+  }
+
+  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_random_with_view_1_1)
+  {
+    // matrices may have different maps
+    rebuildVectors(A2_);
+
+    _ST_ shifts[_NV_];
+    for(int i = 0; i < _NV_; i++)
+      shifts[i] = st::prand();
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    test_crsMat_times_mvec_vadd_mvec_with_views(alpha, A2_, shifts, beta, 1, 1);
+  }
+#endif
+
+
+#if _NV_ > 3
+  TEST_F(CLASSNAME, crsMat_times_mvec_random_with_view_1_2)
+  {
+    // matrices may have different maps
+    rebuildVectors(A2_);
+
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    test_crsMat_times_mvec_with_views(alpha, A2_, beta, 1, 2);
+  }
+
+  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_random_with_view_1_2)
+  {
+    // matrices may have different maps
+    rebuildVectors(A2_);
+
+    _ST_ shifts[_NV_];
+    for(int i = 0; i < _NV_; i++)
+      shifts[i] = st::prand();
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    test_crsMat_times_mvec_vadd_mvec_with_views(alpha, A2_, shifts, beta, 1, 2);
+  }
+#endif
+
+
+#if _NV_ > 3
+  TEST_F(CLASSNAME, crsMat_times_mvec_random_with_view_2_3)
+  {
+    // matrices may have different maps
+    rebuildVectors(A2_);
+
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    test_crsMat_times_mvec_with_views(alpha, A2_, beta, 2, 3);
+  }
+
+  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_random_with_view_2_3)
+  {
+    // matrices may have different maps
+    rebuildVectors(A2_);
+
+    _ST_ shifts[_NV_];
+    for(int i = 0; i < _NV_; i++)
+      shifts[i] = st::prand();
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    test_crsMat_times_mvec_vadd_mvec_with_views(alpha, A2_, shifts, beta, 2, 3);
+  }
+#endif
+
+
+#if _NV_ > 4
+  TEST_F(CLASSNAME, crsMat_times_mvec_random_with_view_1_4)
+  {
+    // matrices may have different maps
+    rebuildVectors(A2_);
+
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    test_crsMat_times_mvec_with_views(alpha, A2_, beta, 1, 4);
+  }
+
+  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_random_with_view_1_4)
+  {
+    // matrices may have different maps
+    rebuildVectors(A2_);
+
+    _ST_ shifts[_NV_];
+    for(int i = 0; i < _NV_; i++)
+      shifts[i] = st::prand();
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    test_crsMat_times_mvec_vadd_mvec_with_views(alpha, A2_, shifts, beta, 1, 4);
+  }
+#endif
+
+
+#if _NV_ >= 4
+  TEST_F(CLASSNAME, crsMat_times_mvec_random_with_same_vec_views_0_1__2_3)
+  {
+    if( !typeImplemented_ )
+      return;
+
+    // matrices may have different maps
+    rebuildVectors(A2_);
+
+    // random data
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+    SUBR(mvec_random)(vec1_, &ierr_);
+    ASSERT_EQ(0,ierr_);
+
+    // safe vec1_
+    SUBR(mvec_add_mvec)(st::one(), vec1_, st::zero(), vec2_, &ierr_);
+    ASSERT_EQ(0,ierr_);
+    SUBR(mvec_add_mvec)(st::one(), vec1_, st::zero(), vec3_, &ierr_);
+    ASSERT_EQ(0,ierr_);
+
+    // create views
+    TYPE(mvec_ptr) vin = NULL;
+    SUBR(mvec_view_block)(vec1_, &vin, 2, 3, &ierr_);
+    ASSERT_EQ(0,ierr_);
+    TYPE(mvec_ptr) vout = NULL;
+    SUBR(mvec_view_block)(vec1_, &vout, 0, 1, &ierr_);
+    ASSERT_EQ(0,ierr_);
+    TYPE(mvec_ptr) vref = NULL;
+    SUBR(mvec_view_block)(vec2_, &vref, 0, 1, &ierr_);
+    ASSERT_EQ(0,ierr_);
+
+    // first generate reference data (safe calculation)
+    SUBR(crsMat_times_mvec)(alpha, A2_, vin, beta, vref, &ierr_);
+    ASSERT_EQ(0,ierr_);
+    // calculation (unsafe aliasing!)
+    SUBR(crsMat_times_mvec)(alpha, A2_, vin, beta, vout, &ierr_);
+    ASSERT_EQ(0,ierr_);
+
+    // check vin
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec1_vp_+VIDX(0,2,lda_),vec3_vp_+VIDX(0,2,lda_),nloc_,2,lda_,stride_,vflag_), mt::eps());
+    // check result
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec1_vp_,vec2_vp_,nloc_,2,lda_,stride_,vflag_), sqrt(mt::eps()));
+
+    // delete views
+    SUBR(mvec_delete)(vref, &ierr_);
+    ASSERT_EQ(0,ierr_);
+    SUBR(mvec_delete)(vout, &ierr_);
+    ASSERT_EQ(0,ierr_);
+    SUBR(mvec_delete)(vin, &ierr_);
+    ASSERT_EQ(0,ierr_);
+  }
+
+  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_random_with_same_vec_views_0_1__2_3)
+  {
+    if( !typeImplemented_ )
+      return;
+
+    // matrices may have different maps
+    rebuildVectors(A2_);
+
+    // random data
+    _ST_ shifts[2];
+    for(int i = 0; i < 2; i++)
+      shifts[i] = st::prand();
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+    SUBR(mvec_random)(vec1_, &ierr_);
+    ASSERT_EQ(0,ierr_);
+
+    // safe vec1_
+    SUBR(mvec_add_mvec)(st::one(), vec1_, st::zero(), vec2_, &ierr_);
+    ASSERT_EQ(0,ierr_);
+    SUBR(mvec_add_mvec)(st::one(), vec1_, st::zero(), vec3_, &ierr_);
+    ASSERT_EQ(0,ierr_);
+    // create views
+    TYPE(mvec_ptr) vin = NULL;
+    SUBR(mvec_view_block)(vec1_, &vin, 2, 3, &ierr_);
+    ASSERT_EQ(0,ierr_);
+    TYPE(mvec_ptr) vout = NULL;
+    SUBR(mvec_view_block)(vec1_, &vout, 0, 1, &ierr_);
+    ASSERT_EQ(0,ierr_);
+    TYPE(mvec_ptr) vref = NULL;
+    SUBR(mvec_view_block)(vec2_, &vref, 0, 1, &ierr_);
+    ASSERT_EQ(0,ierr_);
+
+    // first generate reference data (safe calculation)
+    SUBR(crsMat_times_mvec_vadd_mvec)(alpha, A2_, shifts, vin, beta, vref, &ierr_);
+    ASSERT_EQ(0,ierr_);
+    // calculation (unsafe aliasing!)
+    SUBR(crsMat_times_mvec_vadd_mvec)(alpha, A2_, shifts, vin, beta, vout, &ierr_);
+    ASSERT_EQ(0,ierr_);
+
+    // check vin
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec1_vp_+VIDX(0,2,lda_),vec3_vp_+VIDX(0,2,lda_),nloc_,2,lda_,stride_,vflag_), mt::eps());
+    // check result
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec1_vp_,vec2_vp_,nloc_,2,lda_,stride_,vflag_), sqrt(mt::eps()));
+
+    // delete views
+    SUBR(mvec_delete)(vref, &ierr_);
+    ASSERT_EQ(0,ierr_);
+    SUBR(mvec_delete)(vout, &ierr_);
+    ASSERT_EQ(0,ierr_);
+    SUBR(mvec_delete)(vin, &ierr_);
+    ASSERT_EQ(0,ierr_);
+  }
+#endif
+
 

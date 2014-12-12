@@ -64,36 +64,37 @@ public:
     KernelTestWithVectors<_ST_,_N_,_NV_>::TearDown();
     if (typeImplemented_)
       {
-    SUBR(mvec_delete)(Q_,&ierr_);
-    ASSERT_EQ(0,ierr_);
-    delete[] sigma;
+      SUBR(mvec_delete)(Q_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      if( sigma != NULL)
+        delete[] sigma;
       ASSERT_EQ(0,delete_mat(A1_));
       ASSERT_EQ(0,delete_mat(A2_));
       }
     }
 
-TYPE(crsMat_ptr) A1_; 
-TYPE(crsMat_ptr) A2_; 
+  TYPE(crsMat_ptr) A1_ = NULL;
+  TYPE(crsMat_ptr) A2_ = NULL;
 
-// for testing the jada operator
-int nq_;
-TYPE(mvec_ptr) Q_;
-_ST_* sigma;
+  // for testing the jada operator
+  int nq_ = 0;
+  TYPE(mvec_ptr) Q_ = NULL;
+  _ST_* sigma = NULL;
 
-protected:
+  protected:
 
-int delete_mat(TYPE(crsMat_ptr) A)
-  {
-  if (A!=NULL)
+  int delete_mat(TYPE(crsMat_ptr) A)
     {
-    SUBR(crsMat_delete)(A,&ierr_);
+    if (A!=NULL)
+      {
+      SUBR(crsMat_delete)(A,&ierr_);
+      }
+    return ierr_;
     }
-  return ierr_;
-  }
 
 #ifdef PHIST_HAVE_BELOS
-int doBelosTests(TYPE(crsMat_ptr) A)
-  {
+  int doBelosTests(TYPE(crsMat_ptr) A)
+    {
     if (typeImplemented_ && haveMats_)
       {
       Teuchos::RCP<Belos::OutputManager<ST> > MyOM
@@ -127,12 +128,12 @@ int doBelosTests(TYPE(crsMat_ptr) A)
 //TODO - I'm getting an 'undefined reference' linker error here
       PHIST_ICHK_IERR(SUBR(jadaOp_delete)(&jdOp,&ierr_),ierr_);
       }
-  return ierr_;
-  }
+    return ierr_;
+    }
 #endif
 
-bool haveMats_;
-};
+  bool haveMats_;
+  };
 
   TEST_F(CLASSNAME, read_matrices) 
     {
