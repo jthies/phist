@@ -1,6 +1,7 @@
 #ifndef KERNEL_TEST_WITHTYPEH
 #define KERNEL_TEST_WITHTYPEH
 
+#include "phist_config.h"
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif

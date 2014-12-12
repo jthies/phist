@@ -118,7 +118,7 @@ contains
     real(kind=8), parameter :: beta = 20., gamma = 0.
     !     ..
     !     .. Scalar variables ..
-    integer(kind=8) :: i, ix, jy, index, jd, iai, n, nz
+    integer(kind=8) :: ix, jy, index, jd
     real(kind=8) :: bndry( 4 )
     real(kind=8) :: hx, hy, hy2, ra, rb, coef
     real(kind=8) :: p12, pm12, q12, qm12, xi, rij, r1, rm1, sij, s1, sm1, yj

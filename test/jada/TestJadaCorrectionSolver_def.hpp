@@ -84,14 +84,18 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       {
         SUBR(jadaOp_delete)(jdOp_,&ierr_);
         ASSERT_EQ(0,ierr_);
-        delete jdOp_;
-        delete opA_;
+        if( jdOp_ != NULL )
+          delete jdOp_;
+        if( opA_ != NULL )
+          delete opA_;
         SUBR(crsMat_delete)(A_,&ierr_);
         ASSERT_EQ(0,ierr_);
         SUBR(mvec_delete)(q_,&ierr_);
         ASSERT_EQ(0,ierr_);
-        delete[] sigma_;
-        delete[] negSigma_;
+        if( sigma_ != NULL )
+          delete[] sigma_;
+        if( negSigma_ != NULL )
+          delete[] negSigma_;
       }
     }
 
@@ -141,12 +145,12 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       }
     }
 
-    TYPE(crsMat_ptr) A_;
-    TYPE(op_ptr) opA_;
-    TYPE(op_ptr) jdOp_;
-    TYPE(mvec_ptr) q_;
-    _ST_* sigma_;
-    _ST_* negSigma_;
+    TYPE(crsMat_ptr) A_ = NULL;
+    TYPE(op_ptr) opA_ = NULL;
+    TYPE(op_ptr) jdOp_ = NULL;
+    TYPE(mvec_ptr) q_ = NULL;
+    _ST_* sigma_ = NULL;
+    _ST_* negSigma_ = NULL;
 };
 
 

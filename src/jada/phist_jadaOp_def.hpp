@@ -195,8 +195,13 @@ void SUBR(jadaOp_delete)(TYPE(op_ptr) jdOp, int *ierr)
   PHIST_ENTER_FCN(__FUNCTION__);
   *ierr = 0;
 
+  if( jdOp == NULL )
+    return;
+
   // get jadaOp
   TYPE(jadaOp_data) *jadaOp = (TYPE(jadaOp_data)*) jdOp->A;
+  if( jdOp->A == NULL )
+    return;
 
   // delete temporary arrays
   PHIST_CHK_IERR(SUBR(mvec_delete)(jadaOp->X_proj, ierr), *ierr);

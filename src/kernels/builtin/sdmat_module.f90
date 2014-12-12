@@ -60,7 +60,8 @@ contains
 
   !==================================================================================
   ! gemm operation for SDMat_t
-  subroutine sdmat_times_sdmat(transA,transB,alpha,A,B,beta,C)
+  subroutine sdmat_times_sdmat(transA,transB,alpha,A,B,beta,C,ierr)
+    use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     character(len=1),intent(in)   :: transA, transB
     real(kind=8),   intent(in)    :: alpha
@@ -68,6 +69,7 @@ contains
     type(SDMat_t),  intent(in)    :: B
     real(kind=8),   intent(in)    :: beta
     type(SDMat_t),  intent(inout) :: C
+    integer(kind=C_INT), intent(out)  :: ierr
     !--------------------------------------------------------------------------------
     integer :: m, n, k, lda, ldb, ldc
     integer :: i, j
@@ -95,7 +97,12 @@ contains
     !--------------------------------------------------------------------------------
 
 
-    if( transA .eq. 'N' ) then
+    if( transB .ne. 'N' .and. transB .ne. 'n' ) then
+      ierr = -99
+      return
+    end if
+
+    if( transA .eq. 'N' .or. transA .eq. 'n' ) then
       do i = 0, m-1
         do j = 0, n-1
           C%val(C%imin+i,C%jmin+j) = alpha * sum(A%val(A%imin+i,A%jmin:A%jmax)*B%val(B%imin:B%imax,B%jmin+j)) + beta*C%val(C%imin+i,C%jmin+j)
@@ -108,6 +115,8 @@ contains
         end do
       end do
     end if
+
+    ierr = 0
 
   end subroutine sdmat_times_sdmat
 
@@ -168,7 +177,6 @@ contains
     !--------------------------------------------------------------------------------
     type(sdmat_t), pointer :: sdmat
     integer, pointer :: comm
-    integer(kind=C_INT64_T) :: ncols64
 #ifdef TESTING
     integer(C_INTPTR_T) :: dummy
 #endif
@@ -535,9 +543,7 @@ contains
     call c_f_pointer(B_ptr, B)
     call c_f_pointer(M_ptr, M)
 
-    call sdmat_times_sdmat('N','N',alpha, A, B, beta, M)
-
-    ierr = 0
+    call sdmat_times_sdmat('N','N',alpha, A, B, beta, M, ierr)
 
   end subroutine phist_DsdMat_times_sdMat
 
@@ -563,9 +569,7 @@ contains
     call c_f_pointer(B_ptr, B)
     call c_f_pointer(M_ptr, M)
 
-    call sdmat_times_sdmat('T','N',alpha, A, B, beta, M)
-
-    ierr = 0
+    call sdmat_times_sdmat('T','N',alpha, A, B, beta, M, ierr)
 
   end subroutine phist_DsdMatT_times_sdMat
 
