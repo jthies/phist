@@ -488,9 +488,9 @@ public:
       ASSERT_EQ(0,ierr_);
       SUBR(sdMat_view_block)(mat1_, &vd, 3,5, 1,6, &ierr_);
       ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_view_block)(mat1_, &vl, 0,5, 1,2, &ierr_);
+      SUBR(sdMat_view_block)(mat1_, &vl, 0,4, 1,2, &ierr_);
       ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_view_block)(mat1_, &vr, 1,6, 3,4, &ierr_);
+      SUBR(sdMat_view_block)(mat1_, &vr, 1,5, 3,4, &ierr_);
       ASSERT_EQ(0,ierr_);
 
 
@@ -515,9 +515,9 @@ public:
       ASSERT_EQ(0,ierr_);
       SUBR(sdMat_view_block)(mat2_, &ref_vd, 3,5, 1,6, &ierr_);
       ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_view_block)(mat2_, &ref_vl, 0,5, 1,2, &ierr_);
+      SUBR(sdMat_view_block)(mat2_, &ref_vl, 0,4, 1,2, &ierr_);
       ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_view_block)(mat2_, &ref_vr, 1,6, 3,4, &ierr_);
+      SUBR(sdMat_view_block)(mat2_, &ref_vr, 1,5, 3,4, &ierr_);
       ASSERT_EQ(0,ierr_);
 
 
