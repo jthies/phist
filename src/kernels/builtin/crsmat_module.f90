@@ -239,7 +239,7 @@ end if
     do i=1,combuff%nSendProcs,1
       j=combuff%sendInd(i)
       k=combuff%sendInd(i+1)
-      call mpi_irecv(sendRowBlkInd(j:k-1),k-j,MPI_INTEGER8,&
+      call mpi_irecv(sendRowBlkInd(j:k-1),int(k-j),MPI_INTEGER8,&
         &            combuff%sendProcId(i),20,mat%row_map%Comm,&
         &            combuff%sendRequests(i),ierr)
     end do
@@ -277,7 +277,7 @@ end if
       j=combuff%recvInd(i)
       k=combuff%recvInd(i+1)
       call sort(combuff%recvRowBlkInd(j:k-1))
-      call mpi_isend(combuff%recvRowBlkInd(j:k-1),k-j,MPI_INTEGER8,&
+      call mpi_isend(combuff%recvRowBlkInd(j:k-1),int(k-j),MPI_INTEGER8,&
         &            combuff%recvProcId(i),20,mat%row_map%Comm,&
         &            combuff%recvRequests(i),ierr)
     end do
