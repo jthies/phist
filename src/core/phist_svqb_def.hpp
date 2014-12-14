@@ -58,7 +58,7 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* ierr)
         (SDMAT_FLAG, 'V' , 'U', m, B_raw, ldb, E),*ierr);
 #endif
 
-PHIST_SOUT(PHIST_DEBUG,"singular values of V:\n");
+PHIST_SOUT(PHIST_DEBUG,"singular values of W:\n");
 for (int i=0;i<m;i++) PHIST_SOUT(PHIST_DEBUG,"%24.16e\n",sqrt(E[i]));
 
     // determine rank of input matrix
@@ -106,7 +106,6 @@ for (int i=0;i<m;i++) PHIST_SOUT(PHIST_DEBUG,"%24.16e\n",sqrt(E[i]));
     // compute V <- V*B to get an orthogonal V (up to the first (m-rank) columns,
     // which will be exactly zero)
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(V,B,ierr),*ierr);
-
 
 // the return value of this function is the rank of the null space of V on entry
 *ierr=m-rank;

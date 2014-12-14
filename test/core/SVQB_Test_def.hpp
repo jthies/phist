@@ -10,6 +10,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 public:
 
   typedef KernelTestWithVectors<_ST_,_N_,_NV_> VTest;
+  typedef KernelTestWithVectors<_ST_,_N_,_NV_-1> VTest_m_minus_1;
+  typedef KernelTestWithVectors<_ST_,_N_,1> VTest_1;
   typedef KernelTestWithSdMats<_ST_,_NV_,_NV_> MTest;
 
   /*! Set up routine.
@@ -47,17 +49,22 @@ public:
   _MT_ nrms_[_NV_];
 };
 
-  TEST_F(CLASSNAME, DISABLED_with_random_vectors) 
+  TEST_F(CLASSNAME, with_random_vectors) 
     {
     if (typeImplemented_)
       {
-//      PrintVector(*cout,"SVQB_Test V",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+     //PrintVector(*cout,"SVQB_Test V",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
       SUBR(svqb)(vec2_,mat1_,nrms_,&ierr_);
       ASSERT_EQ(0,ierr_);
+
       // doing a SVQB decomp must not relocate data:
       ASSERT_EQ(true,MTest::pointerUnchanged(mat1_,mat1_vp_,m_lda_));
       ASSERT_EQ(true,VTest::pointerUnchanged(vec2_,vec2_vp_,lda_));
-//      PrintVector(*cout,"SVQB_Test Q",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+      //PrintVector(*cout,"SVQB_Test Q",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+      /*
+      PHIST_SOUT(PHIST_DEBUG,"B matrix:\n");
+      SUBR(sdMat_print)(mat1_,&ierr_);
+      */
       // check norms
       _MT_ nrms_ref[_NV_];
       SUBR(mvec_norm2)(vec1_,nrms_ref,&ierr_);
@@ -76,7 +83,7 @@ public:
       }
     }
 
-  TEST_F(CLASSNAME, DISABLED_with_rank_deficiency) 
+  TEST_F(CLASSNAME, with_rank_deficiency) 
     {
     if (typeImplemented_)
       {
@@ -113,10 +120,21 @@ public:
       {
         ASSERT_REAL_EQ(nrms_ref[i], nrms_[i]);
       }
-      // check that we anyway got something orthogonal back
-      ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
+      // SVQB will return a block with the first <dim0> columns zero,
+      // and the remaining orthonormal
+      _ST_* vec2_col1=NULL;
+#ifdef PHIST_MVECS_ROW_MAJOR
+      vec2_col1 = vec2_vp_+1;
+#else
+      vec2_col1 = vec2_vp_+lda_;
+#endif
       // the factor 2 in releps here is because otherwise fails the test by a fraction of releps
-      ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.0*releps(vec1_));
+      ASSERT_EQ(mt::one(), ArrayEqual(vec2_vp_,nloc_,1,lda_,stride_,st::zero(),vflag_));
+      if (nvec_>1)
+      {
+        ASSERT_NEAR(mt::one(),VTest_m_minus_1::ColsAreNormalized(vec2_col1,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
+        ASSERT_NEAR(mt::one(),VTest_m_minus_1::ColsAreOrthogonal(vec2_col1,nloc_,lda_,stride_,mpi_comm_),(MT)100.0*releps(vec1_));
+      }
 
       // check Q=V*B
       SUBR(mvec_times_sdMat)(-st::one(),vec1_,mat1_,st::one(),vec2_,&ierr_);
@@ -125,7 +143,7 @@ public:
       }
     }
 
-  TEST_F(CLASSNAME, DISABLED_with_one_vectors) 
+  TEST_F(CLASSNAME, with_one_vectors) 
   {
     if (typeImplemented_)
     {
@@ -145,13 +163,21 @@ public:
       {
         ASSERT_REAL_EQ(nrms_ref[i], nrms_[i]);
       }
-      // check that we anyway got something orthogonal back
-      ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
-      ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      PHIST_DEB("B=\n");
-      SUBR(sdMat_print)(mat1_,&ierr_);
+
+      // SVQB will return a block with the first <dim0> columns zero,
+      // and the remaining orthonormal
+      _ST_* vec2_col1=NULL;
+#ifdef PHIST_MVECS_ROW_MAJOR
+      vec2_col1 = vec2_vp_+nvec_-1;
+#else
+      vec2_col1 = vec2_vp_+(nvec_-1)*lda_;
 #endif
+      // the factor 2 in releps here is because otherwise fails the test by a fraction of releps
+      ASSERT_EQ(mt::one(), ArrayEqual(vec2_vp_,nloc_,nvec_-1,lda_,stride_,st::zero(),vflag_));
+      if (nvec_>1)
+      {
+        ASSERT_NEAR(mt::one(),VTest_1::ColsAreNormalized(vec2_col1,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
+      }
 
       // check Q=V*B
       SUBR(mvec_times_sdMat)(-st::one(),vec1_,mat1_,st::one(),vec2_,&ierr_);
