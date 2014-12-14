@@ -480,7 +480,7 @@ namespace internal {
 
 #ifdef PHIST_HAVE_MPI
 // MPI communicator
-MPI_Comm GTEST_MPI_COMM;
+MPI_Comm GTEST_MPI_COMM = MPI_COMM_WORLD;
 #endif
 // The value of GetTestTypeId() as seen from within the Google Test
 // library.  This is solely for testing GetTestTypeId().
@@ -3993,8 +3993,18 @@ void PrintFullTestCommentIfPresent(const TestInfo& test_info) {
   const char* const type_param = test_info.type_param();
   const char* const value_param = test_info.value_param();
 
+#ifdef PHIST_HAVE_MPI
+  int nprocs = 0;
+  MPI_Comm_size(GTEST_MPI_COMM, &nprocs);
+  printf(", where MPI_np = %d", nprocs);
+#endif
+
   if (type_param != NULL || value_param != NULL) {
+#ifdef PHIST_HAVE_MPI
+    printf(" and ");
+#else
     printf(", where ");
+#endif
     if (type_param != NULL) {
       printf("TypeParam = %s", type_param);
       if (value_param != NULL)
@@ -4086,10 +4096,20 @@ void PrettyUnitTestResultPrinter::OnTestCaseStart(const TestCase& test_case) {
       FormatCountableNoun(test_case.test_to_run_count(), "test", "tests");
   ColoredPrintf(COLOR_GREEN, "[----------] ");
   printf("%s from %s", counts.c_str(), test_case_name_.c_str());
+#ifdef PHIST_HAVE_MPI
+  int nprocs = 0;
+  MPI_Comm_size(GTEST_MPI_COMM, &nprocs);
+  printf(", where MPI_nprocs = %d", nprocs);
+#endif
   if (test_case.type_param() == NULL) {
     printf("\n");
   } else {
-    printf(", where TypeParam = %s\n", test_case.type_param());
+#ifdef PHIST_HAVE_MPI
+    printf(" and ");
+#else
+    printf(", where ");
+#endif
+    printf("TypeParam = %s\n", test_case.type_param());
   }
   fflush(stdout);
 }
@@ -4554,6 +4574,12 @@ void XmlUnitTestResultPrinter::OutputXmlTestInfo(::std::ostream* stream,
   *stream << "    <testcase name=\""
           << EscapeXmlAttribute(test_info.name()).c_str() << "\"";
 
+#ifdef PHIST_HAVE_MPI
+  int nprocs = 0;
+  MPI_Comm_size(GTEST_MPI_COMM, &nprocs);
+  *stream << " mpi_nprocs=\"" << nprocs
+          << "\"";
+#endif
   if (test_info.value_param() != NULL) {
     *stream << " value_param=\"" << EscapeXmlAttribute(test_info.value_param())
             << "\"";
