@@ -20,10 +20,11 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* ierr)
     _MT_ Dinv[m]; // inverse sqrt of V'V
     _MT_ E[m], Einv[m]; // sqrt of eigenvalues of (scaled) V'V (and its inverse)
     
+    // S=V'V
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),B,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_from_device)(B,ierr),*ierr);
-    // scaling factors: inverse diagonal elements
-    for (int i=0; i<m; i++) 
+    // scaling factors: sqrt of inverse diagonal elements
+    for (int i=0; i<m; i++)
     {
       _MT_ d=st::real(B_raw[i*ldb+i]);
       // note: diagonal entry must be real
@@ -37,12 +38,12 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* ierr)
         Dinv[i] = mt::zero();
       }
     }
-    // scale matrix V'V
+    // scale matrix S^=V'V with ones on diagonal
     for (int i=0; i<m; i++)
     {
-      for(int j=0; j<m; j++)  
+      for(int j=0; j<m; j++) 
       {
-        B_raw[j*ldb+i] *= Dinv[i]*Dinv[j];
+        B_raw[i*ldb+j] *= Dinv[i]*Dinv[j];
       }
     }
 
@@ -56,6 +57,9 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* ierr)
     PHIST_CHK_IERR(*ierr=PHIST_LAPACKE(syevd)
         (SDMAT_FLAG, 'V' , 'U', m, B_raw, ldb, E),*ierr);
 #endif
+
+PHIST_SOUT(PHIST_DEBUG,"singular values of V:\n");
+for (int i=0;i<m;i++) PHIST_SOUT(PHIST_DEBUG,"%24.16e\n",sqrt(E[i]));
 
     // determine rank of input matrix
     MT emax=mt::abs(E[m-1]); 
@@ -77,8 +81,8 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* ierr)
         }
         else
         {
-          E[i] = sqrt(E[i]);
           Einv[i] = mt::one()/sqrt(E[i]);
+          E[i] = sqrt(E[i]);
         }
       }
     }
