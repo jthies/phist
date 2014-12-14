@@ -480,7 +480,7 @@ namespace internal {
 
 #ifdef PHIST_HAVE_MPI
 // MPI communicator
-MPI_Comm GTEST_MPI_COMM;
+MPI_Comm GTEST_MPI_COMM = MPI_COMM_WORLD;
 #endif
 // The value of GetTestTypeId() as seen from within the Google Test
 // library.  This is solely for testing GetTestTypeId().
@@ -3993,6 +3993,12 @@ void PrintFullTestCommentIfPresent(const TestInfo& test_info) {
   const char* const type_param = test_info.type_param();
   const char* const value_param = test_info.value_param();
 
+#ifdef PHIST_HAVE_MPI
+  int nprocs = 0;
+  MPI_Comm_size(GTEST_MPI_COMM, &nprocs);
+  printf(" with %d MPI proc(s)", nprocs);
+#endif
+
   if (type_param != NULL || value_param != NULL) {
     printf(", where ");
     if (type_param != NULL) {
@@ -4086,6 +4092,11 @@ void PrettyUnitTestResultPrinter::OnTestCaseStart(const TestCase& test_case) {
       FormatCountableNoun(test_case.test_to_run_count(), "test", "tests");
   ColoredPrintf(COLOR_GREEN, "[----------] ");
   printf("%s from %s", counts.c_str(), test_case_name_.c_str());
+#ifdef PHIST_HAVE_MPI
+  int nprocs = 0;
+  MPI_Comm_size(GTEST_MPI_COMM, &nprocs);
+  printf(" with %d MPI proc(s)", nprocs);
+#endif
   if (test_case.type_param() == NULL) {
     printf("\n");
   } else {
@@ -4597,10 +4608,18 @@ void XmlUnitTestResultPrinter::OutputXmlTestInfo(::std::ostream* stream,
 // Prints an XML representation of a TestCase object
 void XmlUnitTestResultPrinter::PrintXmlTestCase(FILE* out,
                                                 const TestCase& test_case) {
+#ifdef PHIST_HAVE_MPI
+  int nprocs = 0;
+  MPI_Comm_size(GTEST_MPI_COMM, &nprocs);
+  char test_case_name[256];
+  snprintf(test_case_name, 256, "%s_np%d.%s", PHIST_TESTSUITE, nprocs, test_case.name());
+#else
+  const char* test_case_name = test_case.name();
+#endif
   fprintf(out,
           "  <testsuite name=\"%s\" tests=\"%d\" failures=\"%d\" "
           "disabled=\"%d\" ",
-          EscapeXmlAttribute(test_case.name()).c_str(),
+          EscapeXmlAttribute(test_case_name).c_str(),
           test_case.total_test_count(),
           test_case.failed_test_count(),
           test_case.disabled_test_count());
@@ -4609,7 +4628,7 @@ void XmlUnitTestResultPrinter::PrintXmlTestCase(FILE* out,
           FormatTimeInMillisAsSeconds(test_case.elapsed_time()).c_str());
   for (int i = 0; i < test_case.total_test_count(); ++i) {
     ::std::stringstream stream;
-    OutputXmlTestInfo(&stream, test_case.name(), *test_case.GetTestInfo(i));
+    OutputXmlTestInfo(&stream, test_case_name, *test_case.GetTestInfo(i));
     fprintf(out, "%s", StringStreamToString(&stream).c_str());
   }
   fprintf(out, "  </testsuite>\n");
@@ -7079,7 +7098,7 @@ class ExecDeathTest : public ForkingDeathTest {
 class Arguments {
  public:
   Arguments() {
-    args_.push_back(NULL);
+    args_.push_back((char*)NULL);
   }
 
   ~Arguments() {
