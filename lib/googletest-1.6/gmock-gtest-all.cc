@@ -3996,15 +3996,11 @@ void PrintFullTestCommentIfPresent(const TestInfo& test_info) {
 #ifdef PHIST_HAVE_MPI
   int nprocs = 0;
   MPI_Comm_size(GTEST_MPI_COMM, &nprocs);
-  printf(", where MPI_np = %d", nprocs);
+  printf(" with %d MPI proc(s)", nprocs);
 #endif
 
   if (type_param != NULL || value_param != NULL) {
-#ifdef PHIST_HAVE_MPI
-    printf(" and ");
-#else
     printf(", where ");
-#endif
     if (type_param != NULL) {
       printf("TypeParam = %s", type_param);
       if (value_param != NULL)
@@ -4099,17 +4095,12 @@ void PrettyUnitTestResultPrinter::OnTestCaseStart(const TestCase& test_case) {
 #ifdef PHIST_HAVE_MPI
   int nprocs = 0;
   MPI_Comm_size(GTEST_MPI_COMM, &nprocs);
-  printf(", where MPI_nprocs = %d", nprocs);
+  printf(" with %d MPI proc(s)", nprocs);
 #endif
   if (test_case.type_param() == NULL) {
     printf("\n");
   } else {
-#ifdef PHIST_HAVE_MPI
-    printf(" and ");
-#else
-    printf(", where ");
-#endif
-    printf("TypeParam = %s\n", test_case.type_param());
+    printf(", where TypeParam = %s\n", test_case.type_param());
   }
   fflush(stdout);
 }
@@ -4574,12 +4565,6 @@ void XmlUnitTestResultPrinter::OutputXmlTestInfo(::std::ostream* stream,
   *stream << "    <testcase name=\""
           << EscapeXmlAttribute(test_info.name()).c_str() << "\"";
 
-#ifdef PHIST_HAVE_MPI
-  int nprocs = 0;
-  MPI_Comm_size(GTEST_MPI_COMM, &nprocs);
-  *stream << " mpi_nprocs=\"" << nprocs
-          << "\"";
-#endif
   if (test_info.value_param() != NULL) {
     *stream << " value_param=\"" << EscapeXmlAttribute(test_info.value_param())
             << "\"";
@@ -4623,10 +4608,18 @@ void XmlUnitTestResultPrinter::OutputXmlTestInfo(::std::ostream* stream,
 // Prints an XML representation of a TestCase object
 void XmlUnitTestResultPrinter::PrintXmlTestCase(FILE* out,
                                                 const TestCase& test_case) {
+#ifdef PHIST_HAVE_MPI
+  int nprocs = 0;
+  MPI_Comm_size(GTEST_MPI_COMM, &nprocs);
+  char test_case_name[256];
+  snprintf(test_case_name, 256, "%s_np%d.%s", PHIST_TESTSUITE, nprocs, test_case.name());
+#else
+  const char* test_case_name = test_case.name();
+#endif
   fprintf(out,
           "  <testsuite name=\"%s\" tests=\"%d\" failures=\"%d\" "
           "disabled=\"%d\" ",
-          EscapeXmlAttribute(test_case.name()).c_str(),
+          EscapeXmlAttribute(test_case_name).c_str(),
           test_case.total_test_count(),
           test_case.failed_test_count(),
           test_case.disabled_test_count());
@@ -4635,7 +4628,7 @@ void XmlUnitTestResultPrinter::PrintXmlTestCase(FILE* out,
           FormatTimeInMillisAsSeconds(test_case.elapsed_time()).c_str());
   for (int i = 0; i < test_case.total_test_count(); ++i) {
     ::std::stringstream stream;
-    OutputXmlTestInfo(&stream, test_case.name(), *test_case.GetTestInfo(i));
+    OutputXmlTestInfo(&stream, test_case_name, *test_case.GetTestInfo(i));
     fprintf(out, "%s", StringStreamToString(&stream).c_str());
   }
   fprintf(out, "  </testsuite>\n");
