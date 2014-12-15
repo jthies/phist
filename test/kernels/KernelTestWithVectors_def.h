@@ -124,27 +124,32 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
 
   // check if vectors are mutually orthogonal after QR factorization
   static MT ColsAreOrthogonal(ST* vec_vp, lidx_t nloc, lidx_t lda, lidx_t stride,MPI_Comm mpi_comm) 
-    {
+  {
     MT res=mt::one();
     int nsums=(nvec_*nvec_-nvec_)/2;
-      ST sums[nsums];
+    if(nsums == 0)
+      return mt::one();
+    else
+    {
+      ST sums[nsums+1];
       int k=0;
       for (int j1=0;j1<nvec_;j1++)
-      for (int j2=j1+1;j2<nvec_;j2++)
+        for (int j2=j1+1;j2<nvec_;j2++)
         {
-        ST sum=st::zero();
-        for (int i=0;i<stride*nloc;i+=stride)
+          ST sum=st::zero();
+          for (int i=0;i<stride*nloc;i+=stride)
           {
-          ST val1=vec_vp[VIDX(i,j1,lda)];
-          ST val2=vec_vp[VIDX(i,j2,lda)];
-          sum+=val1*st::conj(val2);
+            ST val1=vec_vp[VIDX(i,j1,lda)];
+            ST val2=vec_vp[VIDX(i,j2,lda)];
+            sum+=val1*st::conj(val2);
           }
-        sums[k++]=sum;
+          sums[k++]=sum;
         }
       global_sum(sums,nsums,mpi_comm);
       res=ArrayEqual(sums,nsums,1,nsums,1,st::zero());
       return res;
-      }
+    }
+  }
 
   // check if vectors are mutually orthogonal after QR factorization
   static void PrintVector(std::ostream& os, std::string label, 
