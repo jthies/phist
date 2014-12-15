@@ -1,5 +1,6 @@
 ! hopefully fast spMVM kernels for beta != 0 (and thus without nontemporary stores)
-#define TOUCH(var) if(.false.) call NOT_A_FUNCTION(var)
+! prevent compiler warnings for unused dummy variables
+#define TOUCH(var) if(.false.) call TOUCH_EMPTY_FUNCTION(var)
 
 subroutine dspmvm_NT_1(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, halo, y)
   implicit none
