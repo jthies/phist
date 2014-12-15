@@ -1,51 +1,14 @@
 // helper routine in case the kernel lib does not provide mvec_QR, which
 // is quite an advanced kernel to ask for.
-void SUBR(mvec_QR_fallback)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, _MT_* nrmsV, int *ierr);
+void SUBR(mvec_QB)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* nrmsV, int *ierr);
 
-//! orthogonalize an mvec against an already orthogonal one. \ingroup core
-
-//! This is the main orthogonalization routine in PHIST.           
-//! It takes an orthogonal basis V and a set of vectors W,         
-//! and computes [Q,R1,R2] such that Q*R1 = W-V*R2, Q'Q=I.         
-//! (Q overwrites W here).                                         
-//! The matrices R1 and R2 must be pre-allocated by the caller.    
-//!                                                                
-//! The algorithm used is up to numSweeps steps of classical       
-//! block Gram-Schmidt, alternated with QR factorizations to       
-//! normalize W. The method stops if the reduction in norm of W    
-//! by a CGS step is less than approx. a factor sqrt(2).           
-//!                                                                
-//! If we find that W-V*R2 does not have full column rank,         
-//! the matrix Q is augmented with random vectors which are made   
-//! mutually orthogonal and orthogonal against V. In this case the 
-//! dimension of the null space of W-V*R2 is returned in ierr>0.   
-//!                                                                
-//! The implementation makes use of the kernel function mvec_QR    
-//! for the inner orthogonalization of W. If this function is not  
-//! implemented by the kernel lib (i.e. returns -99), we use a     
-//! fallback variant based on the SVQB algorithm. In this case,    
-//! the relation Q*R1 = W-V*R2 does not hold, but Q is orthonormal 
-//! and orthogonal against V anyway with the nullspace replaced    
-//! by random vectors. To indicate the invalid R's, ierr=-7 is     
-//! returned (which means that the rank of V is lost to the out-   
-//! side world, even though it was computed and the corresponding  
-//! columns of Q were randomized).                                 
-//!                                                                
-//! If no random orthogonal vectors can be generated (after some   
-//! tries) ierr=-8 is returned. This may indicate a problem with   
-//! the random vector generator.                                   
-//!                                                                
-//! If the decrease in norm in one of the columns                  
-//! in the last CGS sweep indicates that the algorithm has not     
-//! yet converged, we return ierr=-9 to indicate that more steps   
-//! may be advisable. This should not happen in practice if        
-//! numSweeps>=2 ('twice is enough').                              
-//!                                                                
+//! orthogonalize an mvec against an already orthogonal one.
 void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      TYPE(mvec_ptr) W,
                      TYPE(sdMat_ptr) R1,
                      TYPE(sdMat_ptr) R2,
                      int numSweeps,
+                     int* rankVW,
                      int* ierr)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -63,6 +26,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 
   bool useSVQB=false;
   *ierr=0;
+  *rankVW=-1;
   
   if (V==NULL)
   {
@@ -82,6 +46,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   }
   if (k==0) // no vectors to be orthogonalized
   {
+    *rankVW=m;
     return;
   }
   if (R1==NULL)
@@ -99,14 +64,16 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     SUBR(mvec_QR)(W,R1,ierr);
     if (*ierr==PHIST_NOT_IMPLEMENTED)
     {
-      PHIST_CHK_NEG_IERR(SUBR(mvec_QR_fallback)(W,R1,normW1,ierr),*ierr);
+      PHIST_CHK_NEG_IERR(SUBR(mvec_QB)(W,R1,normW1,ierr),*ierr);
+      *rankVW=k-*ierr;
       // indicate that R1 is invalid.
-      // note: information about the rank of V is lost!
-      *ierr=-7;
+      *ierr=+2;
     }
     else
     {
       PHIST_CHK_NEG_IERR(*ierr,*ierr);
+      *rankVW=k-*ierr;
+      *ierr=std::min(*ierr,+1); // ierr=+1 means: [V,W] is rank deficient
     }
     return;
   }
@@ -231,7 +198,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   {
     // recomputes normR1 along the way, so we might as well use the memory
     // allocated for that beforehand (even though the result is already there)
-    PHIST_CHK_NEG_IERR(SUBR(mvec_QR_fallback)(W,R1,normW1,ierr),*ierr);
+    PHIST_CHK_NEG_IERR(SUBR(mvec_QB)(W,R1,normW1,ierr),*ierr);
     rankW=k-*ierr;
     useSVQB=true;
   }
@@ -272,7 +239,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
       if (useSVQB)
       {
         MT dum[k];
-        PHIST_CHK_NEG_IERR(SUBR(mvec_QR_fallback)(W,R1,dum,ierr),*ierr);
+        PHIST_CHK_NEG_IERR(SUBR(mvec_QB)(W,R1,dum,ierr),*ierr);
       }
       else
       {
@@ -336,9 +303,9 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     // it happens, we return with error code -10.                
     if (useSVQB)
     {
-      PHIST_CHK_NEG_IERR(SUBR(mvec_QR_fallback)(W,R1p,normW1,ierr),*ierr);
+      PHIST_CHK_NEG_IERR(SUBR(mvec_QB)(W,R1p,normW1,ierr),*ierr);
       // we do not update R1, it will just be flagged invalid at the end
-      // of the subroutine by setting *ierr=-7
+      // of the subroutine by setting *ierr=+2
     }
     else
     {
@@ -379,8 +346,10 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   PHIST_CHK_IERR(SUBR(sdMat_delete)(R2p,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_delete)(R1pp,ierr),*ierr);
 
-  // return size of randomly filled null space if W-V*R2 not full rank
-  if (rankW < k) *ierr = k-rankW;
+  if (rankW < k)
+  { 
+    *ierr = +1;
+  }
 
   // if in the last CGS sweep a column decreased too much in norm, 
   // return an error (we could return a warning, but since we used 
@@ -400,12 +369,14 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
       }
     }
   }//stopGS?
+
+  *rankVW=m+rankW;
   
-  if (useSVQB && ierr>=0) *ierr=-7;
+  if (useSVQB) *ierr=+2;
   return;
 }
 
-void SUBR(mvec_QR_fallback)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* nrmsV, int *ierr)
+void SUBR(mvec_QB)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* nrmsV, int *ierr)
 {
       PHIST_ENTER_FCN(__FUNCTION__);
       int k;

@@ -293,7 +293,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
           {
           PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,Qv,m0,ncVQ-1,ierr),*ierr);
           }
-        PHIST_CHK_NEG_IERR(SUBR(orthog)(Vv,t_ptr,Tv,Sv,3,ierr),*ierr);
+        int rankV;
+        PHIST_CHK_NEG_IERR(SUBR(orthog)(Vv,t_ptr,Tv,Sv,3,&rankV,ierr),*ierr);
         // reset the view of V without the Q.
         PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m0-1,ierr),*ierr);
       }
