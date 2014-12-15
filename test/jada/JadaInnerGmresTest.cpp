@@ -12,6 +12,7 @@
 #include "phist_blockedgmres.h"
 #include "phist_jadaOp.hpp"
 #include "phist_ScalarTraits.hpp"
+#include "phist_orthog.h"
 #include "../kernels/KernelTest.h"
 #include "../kernels/KernelTestWithMap.h"
 #include "../kernels/KernelTestWithType.h"
