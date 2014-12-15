@@ -372,6 +372,7 @@ extern "C" void SUBR(crsMat_delete)(TYPE(crsMat_ptr) vA, int* ierr)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
+  if(vA==NULL) return;
   PHIST_CAST_PTR_FROM_VOID(Epetra_CrsMatrix,A,vA,*ierr);
   delete A;
 }

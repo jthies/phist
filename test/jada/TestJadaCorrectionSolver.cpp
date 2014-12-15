@@ -13,6 +13,7 @@
 #include "phist_jadaOp.hpp"
 #include "phist_jadaCorrectionSolver.h"
 #include "phist_ScalarTraits.hpp"
+#include "phist_orthog.h"
 #include "../kernels/KernelTest.h"
 #include "../kernels/KernelTestWithMap.h"
 #include "../kernels/KernelTestWithType.h"

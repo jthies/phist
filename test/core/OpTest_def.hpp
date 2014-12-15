@@ -36,7 +36,8 @@ public:
       TYPE(sdMat_ptr) Rtmp;
       SUBR(sdMat_create)(&Rtmp,nq_,nq_,comm_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      SUBR(mvec_QR)(Q_,Rtmp,&ierr_);
+      int rankQ = 0;
+      SUBR(orthog)(NULL,Q_,Rtmp,NULL,4,&rankQ,&ierr_);
       ASSERT_GE(ierr_,0);
       SUBR(sdMat_delete)(Rtmp,&ierr_);
       ASSERT_EQ(0,ierr_);

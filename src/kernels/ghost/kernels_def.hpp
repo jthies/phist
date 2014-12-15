@@ -783,6 +783,7 @@ extern "C" void SUBR(crsMat_delete)(TYPE(crsMat_ptr) vA, int* ierr)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
+  if (vA==NULL) return;
   PHIST_CAST_PTR_FROM_VOID(ghost_sparsemat_t,A,vA,*ierr);
   A->destroy(A);
 }
@@ -885,6 +886,9 @@ PHIST_GHOST_TASK_BEGIN
 PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*ierr);
   M->fromRand(M);
+  // use same values on all mpi processes if we have a communicator
+  if( M->context && M->context->mpicomm )
+    M->equalize(M, 0);
 PHIST_GHOST_TASK_END
 }
 

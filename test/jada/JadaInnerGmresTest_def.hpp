@@ -34,7 +34,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         TYPE(sdMat_ptr) Rtmp;
         SUBR(sdMat_create)(&Rtmp,_NVP_,_NVP_,comm_,&ierr_);
         ASSERT_EQ(0,ierr_);
-        SUBR(mvec_QR)(q_,Rtmp,&ierr_);
+        int rankQ=0;
+        SUBR(orthog)(NULL,q_,Rtmp,NULL,4,&rankQ,&ierr_);
         ASSERT_GE(ierr_,0);
         SUBR(sdMat_delete)(Rtmp,&ierr_);
         ASSERT_EQ(0,ierr_);
