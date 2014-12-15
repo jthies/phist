@@ -1363,9 +1363,13 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
       // randomize the vector
       PHIST_CHK_IERR(SUBR(mvec_random)(vV,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,st::zero(),ierr),*ierr);
       rank=0;// dimension of null space
     }
-    PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,(ST)nrm,ierr),*ierr);
+    else
+    {
+      PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,(ST)nrm,ierr),*ierr);
+    }
     *ierr=1-rank;
     return;
   }// case ncols=1: normalize single vector
