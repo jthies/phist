@@ -294,12 +294,12 @@ public:
         PHIST_DEB("col-range V1: [%d:%d]\n",off1[i],off1[i]+m1[i]-1);
         PHIST_DEB("col-range V2: [%d:%d]\n",off2[i],off2[i]+m2[i]-1);
         PHIST_DEB("idx-range M:  [%d:%d,%d:%d]\n",off1_M[i],off1_M[i]+m1[i]-1,off2_M[i],off2_M[i]+m2[i]-1);
+        SUBR(sdMat_from_device)(M1_,&ierr_);
+        ASSERT_EQ(0,ierr_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
         SUBR(mvec_from_device)(V1_,&ierr_);
         ASSERT_EQ(0,ierr_);
         SUBR(mvec_from_device)(V2_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(sdMat_from_device)(M1_,&ierr_);
         ASSERT_EQ(0,ierr_);
         VTest::PrintVector(*cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
         VTest::PrintVector(*cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);

@@ -106,7 +106,7 @@ public:
       PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(op,A,&ierr_),ierr_);
       TYPE(op) jdOp;
       // TODO setup necessary arguments for jadaOp: AX, work
-      PHIST_ICHK_IERR(SUBR(jadaOp_create)(op,NULL,Q_,NULL,sigma,_NV_,&jdOp,&ierr_),ierr_);
+      PHIST_ICHK_IERR(SUBR(jadaOp_create)(op,NULL,Q_,NULL,sigma,nq_,&jdOp,&ierr_),ierr_);
       Teuchos::RCP<const TYPE(op)> jdOp_ptr=Teuchos::rcp(&jdOp,false);
 #ifdef PHIST_KERNEL_LIB_GHOST
       ghost_densemat_t* v = (ghost_densemat_t*)vec1_;
