@@ -265,16 +265,17 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     }
     PHIST_SOUT(PHIST_VERBOSE,"reduction in norm, GS step %d: %4.2f\n",step,maxRed);
     if (maxRed>0.85)
-      {
+    {
       stopGS=true;
       PHIST_SOUT(PHIST_VERBOSE,"stopping Gram-Schmidt\n");
       break;
-      }
+    }
     if (step>=numSweeps)
-      {
+    {
       PHIST_SOUT(PHIST_VERBOSE,"stopping Gram-Schmidt because %d steps have been performed\n", 
                 numSweeps);
-      }
+      break;
+    }
     step++;
     //R2p=V'*W;
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,W,st::zero(),R2p,ierr),*ierr);
