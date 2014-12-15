@@ -717,7 +717,7 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
     add_test(NAME test-${label}_np${np} COMMAND ${TEST_COMMAND})
     set_tests_properties(test-${label}_np${np} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
     set_tests_properties(test-${label}_np${np} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
-    set_tests_properties(test-${label}_np${np} PROPERTIES TIMEOUT 60)
+    set_tests_properties(test-${label}_np${np} PROPERTIES TIMEOUT 120)
   endforeach()
 endforeach()
 
