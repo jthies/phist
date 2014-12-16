@@ -1,9 +1,4 @@
 #include "phist_config.h"
-#if PHIST_OUTLEV<4
-# ifdef TESTING
-# undef TESTING
-# endif
-#endif
 module sdmat_module
   implicit none
   private
@@ -135,7 +130,7 @@ contains
     !--------------------------------------------------------------------------------
     type(sdmat_t), pointer :: sdmat
     integer, pointer :: comm
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
@@ -152,7 +147,7 @@ contains
     else
       sdmat%comm = MPI_COMM_NULL
     end if
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     write(*,*) 'creating new sdmat with dimensions:', nrows, ncols, 'address', transfer(c_loc(sdmat),dummy)
     flush(6)
 #endif
@@ -177,7 +172,7 @@ contains
     !--------------------------------------------------------------------------------
     type(sdmat_t), pointer :: sdmat
     integer, pointer :: comm
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
@@ -195,7 +190,7 @@ contains
     else
       sdmat%comm = MPI_COMM_NULL
     end if
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     write(*,*) 'creating sdmat view with dimensions:', nrows, ncols, 'address', transfer(c_loc(sdmat),dummy)
     flush(6)
 #endif
@@ -213,12 +208,12 @@ contains
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(sdmat_t), pointer :: sdmat
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
 
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     write(*,*) 'deleting sdmat at address', transfer(sdmat_ptr,dummy)
     flush(6)
 #endif
@@ -243,12 +238,12 @@ contains
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(sdmat_t), pointer :: sdmat
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
 
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     write(*,*) 'extract view of sdmat at address', transfer(sdmat_ptr,dummy)
     flush(6)
 #endif
@@ -315,12 +310,12 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(sdmat_t), pointer :: sdmat, view
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
 
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     write(*,*) 'create view of sdmat at address', transfer(sdmat_ptr,dummy)
     flush(6)
 #endif
@@ -338,14 +333,14 @@ contains
         ierr = -88
         return
       end if
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
       write(*,*) 'reusing view at address', transfer(view_ptr,dummy)
       flush(6)
 #endif
     else
       allocate(view)
       view_ptr = c_loc(view)
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
       write(*,*) 'created new view at address', transfer(view_ptr,dummy)
       flush(6)
 #endif
@@ -383,6 +378,14 @@ contains
     call c_f_pointer(sdmat_ptr, sdmat)
     call c_f_pointer(block_ptr,block)
 
+    if( imax-imin .ne. block%imax-block%imin .or. &
+      & jmax-jmin .ne. block%jmax-block%jmin .or. &
+      & imax-imin .gt. sdmat%imax-sdmat%imin .or. &
+      & jmax-jmin .gt. sdmat%jmax-sdmat%jmin      ) then
+      ierr = -1
+      return
+    end if
+
     block%val(block%imin:block%imax,block%jmin:block%jmax) = &
       & sdmat%val(sdmat%imin+imin:sdmat%imin+imax,sdmat%jmin+jmin:sdmat%jmin+jmax)
     ierr = 0
@@ -407,6 +410,14 @@ contains
 
     call c_f_pointer(sdmat_ptr, sdmat)
     call c_f_pointer(block_ptr,block)
+
+    if( imax-imin .ne. block%imax-block%imin .or. &
+      & jmax-jmin .ne. block%jmax-block%jmin .or. &
+      & imax-imin .gt. sdmat%imax-sdmat%imin .or. &
+      & jmax-jmin .gt. sdmat%jmax-sdmat%jmin      ) then
+      ierr = -1
+      return
+    end if
 
     sdmat%val(sdmat%imin+imin:sdmat%imin+imax,sdmat%jmin+jmin:sdmat%jmin+jmax) = &
       & block%val(block%imin:block%imax,block%jmin:block%jmax)
@@ -515,6 +526,12 @@ contains
     call c_f_pointer(A_ptr, A)
     call c_f_pointer(B_ptr, B)
 
+    if( A%imax-A%imin .ne. B%imax-B%imin .or. &
+      & A%jmax-A%jmin .ne. B%jmax-B%jmin      ) then
+      ierr = -1
+      return
+    end if
+
     call sdmat_add_sdmat(alpha, A, beta, B)
 
     ierr = 0
@@ -543,6 +560,13 @@ contains
     call c_f_pointer(B_ptr, B)
     call c_f_pointer(M_ptr, M)
 
+    if( A%jmax-A%jmin .ne. B%imax-B%imin .or. &
+      & A%imax-A%imin .ne. M%imax-M%imin .or. &
+      & B%jmax-B%jmin .ne. M%jmax-M%jmin      ) then
+      ierr = -1
+      return
+    end if
+
     call sdmat_times_sdmat('N','N',alpha, A, B, beta, M, ierr)
 
   end subroutine phist_DsdMat_times_sdMat
@@ -568,6 +592,13 @@ contains
     call c_f_pointer(A_ptr, A)
     call c_f_pointer(B_ptr, B)
     call c_f_pointer(M_ptr, M)
+
+    if( A%imax-A%imin .ne. B%imax-B%imin .or. &
+      & A%jmax-A%jmin .ne. M%imax-M%imin .or. &
+      & B%jmax-B%jmin .ne. M%jmax-M%jmin      ) then
+      ierr = -1
+      return
+    end if
 
     call sdmat_times_sdmat('T','N',alpha, A, B, beta, M, ierr)
 

@@ -5,6 +5,7 @@ module map_module
 
   public :: Map_t
   public :: map_setup
+  public :: map_compatible_map
   !public :: phist_map_create
   !public :: phist_map_delete
   !public :: phist_map_get_comm
@@ -93,6 +94,28 @@ flush(6)
   map%coloringType=0
 
   end subroutine map_setup
+
+
+  !================================================================================
+  ! check if two maps are compatible
+  function map_compatible_map(map1, map2) result(res)
+    !------------------------------------------------------------
+    type(Map_t), intent(in) :: map1, map2
+    logical                 :: res
+    !------------------------------------------------------------
+
+    res = .true.
+    if( map1%comm   .ne. map2%comm   ) res = .false.
+    if( map1%nProcs .ne. map2%nProcs ) res = .false.
+    if( map1%me     .ne. map2%me     ) res = .false.
+
+    if( .not. allocated(map1%nlocal) .or. .not. allocated(map2%nlocal) ) res = .false.
+
+    if( res ) then
+      if( any(map1%nlocal .ne. map2%nlocal) ) res = .false.
+    end if
+
+  end function map_compatible_map
 
 
   !================================================================================

@@ -5,6 +5,41 @@ class KernelTestWithVectors<_ST_,_Nglob,_Nvec> :
         public virtual KernelTestWithMap<_Nglob> 
   {
 
+private:
+
+void createVecs()
+{
+  lidx_t lda;
+  // vectors created with the same function should get the same stride (lda)
+  SUBR(mvec_create)(&vec1_,this->map_,nvec_,&this->ierr_);
+  ASSERT_EQ(0,this->ierr_);
+  SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda_,&this->ierr_);
+  ASSERT_EQ(0,this->ierr_);
+  lda=lda_;
+  SUBR(mvec_create)(&vec2_,this->map_,nvec_,&this->ierr_);
+  ASSERT_EQ(0,this->ierr_);
+  SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&lda_,&this->ierr_);
+  ASSERT_EQ(0,this->ierr_);
+  ASSERT_EQ(lda,lda_);
+  SUBR(mvec_create)(&vec3_,this->map_,nvec_,&this->ierr_);
+  ASSERT_EQ(0,this->ierr_);
+  ASSERT_EQ(lda,lda_);
+  SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&lda_,&this->ierr_);
+  ASSERT_EQ(0,this->ierr_);
+  ASSERT_EQ(lda,lda_);
+  stride_=1;
+}
+
+void deleteVecs()
+{
+  SUBR(mvec_delete)(this->vec1_,&this->ierr_);
+  ASSERT_EQ(0,this->ierr_);
+  SUBR(mvec_delete)(this->vec2_,&this->ierr_);
+  ASSERT_EQ(0,this->ierr_);
+  SUBR(mvec_delete)(this->vec3_,&this->ierr_);
+  ASSERT_EQ(0,this->ierr_);
+}
+
 public:
 
   /*! Set up routine.
@@ -12,28 +47,12 @@ public:
 virtual void SetUp()
   {
   KernelTestWithType< ST >::SetUp();
-  if (this->typeImplemented_)
+  if (typeImplemented_)
     {
     lidx_t lda;
     // vectors created with the same function should get the same stride (lda)
     KernelTestWithMap<_Nglob>::SetUp();
-    SUBR(mvec_create)(&vec1_,this->map_,this->nvec_,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
-    SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&this->lda_,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
-    lda=this->lda_;
-    SUBR(mvec_create)(&vec2_,this->map_,this->nvec_,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
-    SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&this->lda_,&this->ierr_);
-        ASSERT_EQ(0,this->ierr_);
-    ASSERT_EQ(lda,this->lda_);
-    SUBR(mvec_create)(&vec3_,this->map_,this->nvec_,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
-    ASSERT_EQ(lda,this->lda_);
-    SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&this->lda_,&this->ierr_);
-        ASSERT_EQ(0,this->ierr_);
-    ASSERT_EQ(lda,this->lda_);
-    stride_=1;
+    createVecs();
     }
   }
 
@@ -43,12 +62,24 @@ virtual void TearDown()
   {
   if (this->typeImplemented_)
     {
-    SUBR(mvec_delete)(vec1_,&this->ierr_);
-    SUBR(mvec_delete)(vec2_,&this->ierr_);
-    SUBR(mvec_delete)(vec3_,&this->ierr_);
+    deleteVecs();
     KernelTestWithMap<_Nglob>::TearDown();
     }
   KernelTestWithType< ST >::TearDown();
+  }
+
+  /*! Replace the map and rebuild vectors
+   */
+virtual void replaceMap(const_map_ptr_t map)
+  {
+    if (this->typeImplemented_)
+      {
+      deleteVecs();
+
+      KernelTestWithMap<_Nglob>::replaceMap(map);
+
+      createVecs();
+      }
   }
 
 // tolerance for tests depending on the vector length

@@ -1,11 +1,6 @@
 #include "phist_config.h"
-#if PHIST_OUTLEV<4
-# ifdef TESTING
-# undef TESTING
-# endif
-#endif
 module mvec_module
-  use map_module, only: Map_t
+  use map_module, only: Map_t, map_compatible_map
   use sdmat_module, only: SDMat_t
   implicit none
   private
@@ -1024,7 +1019,7 @@ contains
     type(MVec_t), pointer :: mvec
     type(Map_t), pointer :: map
     integer :: i
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
@@ -1035,7 +1030,7 @@ contains
     mvec%jmin = 1
     mvec%jmax = nvec
     mvec%map = map
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     write(*,*) 'creating new mvec with dimensions:', nvec, map%nlocal(map%me), 'address', transfer(c_loc(mvec),dummy)
     flush(6)
 #endif
@@ -1066,12 +1061,12 @@ contains
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
 
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     write(*,*) 'deleting mvec at address', transfer(mvec_ptr,dummy)
     flush(6)
 #endif
@@ -1096,12 +1091,12 @@ contains
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
 
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     write(*,*) 'extract view of mvec at address', transfer(mvec_ptr,dummy)
     flush(6)
 #endif
@@ -1190,7 +1185,7 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec, view
-!#ifdef TESTING
+!#if defined(TESTING) && PHIST_OUTLEV >= 4
 !    integer(C_INTPTR_T) :: dummy
 !#endif
     !--------------------------------------------------------------------------------
@@ -1202,7 +1197,7 @@ contains
       return
     end if
 
-!#ifdef TESTING
+!#if defined(TESTING) && PHIST_OUTLEV >= 4
 !    write(*,*) 'create view of mvec at address', transfer(mvec_ptr,dummy)
 !    flush(6)
 !#endif
@@ -1216,14 +1211,14 @@ contains
           ierr = -88
           return
         end if
-!#ifdef TESTING
+!#if defined(TESTING) && PHIST_OUTLEV >= 4
 !      write(*,*) 'reusing view at address', transfer(view_ptr,dummy)
 !      flush(6)
 !#endif
       else
         allocate(view)
         view_ptr = c_loc(view)
-!#ifdef TESTING
+!#if defined(TESTING) && PHIST_OUTLEV >= 4
 !      write(*,*) 'created new view at address', transfer(view_ptr,dummy)
 !      flush(6)
 !#endif
@@ -1260,6 +1255,19 @@ contains
     call c_f_pointer(mvec_ptr, mvec)
     call c_f_pointer(block_ptr,block)
 
+#if defined(TESTING) && PHIST_OUTLEV >= 4
+    if( .not. map_compatible_map(mvec%map, block%map) ) then
+      ierr = -1
+      return
+    end if
+#endif
+
+    if( jmax-jmin .ne. block%jmax-block%jmin .or. &
+      & jmax-jmin .gt. mvec%jmax-mvec%jmin        ) then
+      ierr = -1
+      return
+    end if
+
     ! create view and let mvec_add_mvec handle the rest!
     view%is_view = .true.
     view%map = mvec%map
@@ -1292,6 +1300,19 @@ contains
     call c_f_pointer(mvec_ptr, mvec)
     call c_f_pointer(block_ptr,block)
 
+#ifdef TESTING
+    if( .not. map_compatible_map(mvec%map, block%map) ) then
+      ierr = -1
+      return
+    end if
+#endif
+
+    if( jmax-jmin .ne. block%jmax-block%jmin .or. &
+      & jmax-jmin .gt. mvec%jmax-mvec%jmin        ) then
+      ierr = -1
+      return
+    end if
+
     ! create view and let mvec_add_mvec handle the rest!
     view%is_view = .true.
     view%map = mvec%map
@@ -1314,7 +1335,7 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec, tmp
-    type(MVec_t), pointer :: block_list(:)
+    type(MVec_t), allocatable :: block_list(:)
     integer :: i
     !--------------------------------------------------------------------------------
 
@@ -1331,6 +1352,14 @@ contains
         return
       end if
       call c_f_pointer(block_ptr_list(i),tmp)
+
+#ifdef TESTING
+    if( .not. map_compatible_map(mvec%map, tmp%map) ) then
+      ierr = -1
+      return
+    end if
+#endif
+
       block_list(i)%jmin = tmp%jmin
       block_list(i)%jmax = tmp%jmax
       block_list(i)%is_view = .true.
@@ -1339,7 +1368,6 @@ contains
     end do
 
     call mvec_gather_mvecs(mvec,block_list)
-    deallocate(block_list)
 
     ierr = 0
 
@@ -1355,7 +1383,7 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec, tmp
-    type(MVec_t), pointer :: block_list(:)
+    type(MVec_t), allocatable :: block_list(:)
     integer :: i
     !--------------------------------------------------------------------------------
 
@@ -1372,6 +1400,14 @@ contains
         return
       end if
       call c_f_pointer(block_ptr_list(i),tmp)
+
+#ifdef TESTING
+    if( .not. map_compatible_map(mvec%map, tmp%map) ) then
+      ierr = -1
+      return
+    end if
+#endif
+
       block_list(i)%jmin = tmp%jmin
       block_list(i)%jmax = tmp%jmax
       block_list(i)%is_view = .true.
@@ -1380,7 +1416,6 @@ contains
     end do
 
     call mvec_scatter_mvecs(mvec,block_list)
-    deallocate(block_list)
 
     ierr = 0
 
@@ -1570,6 +1605,17 @@ contains
       ierr = -1
       return
     end if
+    if( y%jmax-y%jmin .ne. x%jmax-x%jmin ) then
+      ierr = -1
+      return
+    end if
+
+#ifdef TESTING
+    if( .not. map_compatible_map(x%map, y%map) ) then
+      ierr = -1
+      return
+    end if
+#endif
 
     call mvec_add_mvec(alpha, x, beta, y)
     ierr = 0
@@ -1619,6 +1665,14 @@ contains
       return
     end if
 
+#ifdef TESTING
+    if( .not. map_compatible_map(x%map, y%map) ) then
+      ierr = -1
+      return
+    end if
+#endif
+
+
     call mvec_vadd_mvec(alpha, x, beta, y)
     ierr = 0
 
@@ -1641,6 +1695,18 @@ contains
     end if
     call c_f_pointer(x_ptr, x)
     call c_f_pointer(y_ptr, y)
+
+    if( y%jmax-y%jmin .ne. x%jmax-x%jmin ) then
+      ierr = -1
+      return
+    end if
+
+#ifdef TESTING
+    if( .not. map_compatible_map(x%map, y%map) ) then
+      ierr = -1
+      return
+    end if
+#endif
 
     call mvec_dot_mvec(x,y,dot)
 
@@ -1672,6 +1738,19 @@ contains
     call c_f_pointer(w_ptr,w)
     call c_f_pointer(M_ptr,M)
 
+    if( v%jmax-v%jmin .ne. M%imax-M%imin .or. &
+      & M%jmax-M%jmin .ne. w%jmax-w%jmin      ) then
+      ierr = -1
+      return
+    end if
+
+#ifdef TESTING
+    if( .not. map_compatible_map(v%map, w%map) ) then
+      ierr = -1
+      return
+    end if
+#endif
+
     call mvec_times_sdmat(alpha,v,M,beta,w)
 
     ierr = 0
@@ -1698,6 +1777,12 @@ contains
 
     call c_f_pointer(v_ptr,v)
     call c_f_pointer(M_ptr,M)
+
+    if( v%jmax-v%jmin .ne. M%imax-M%imin .or. &
+      & M%jmax-M%jmin .gt. v%jmax-v%jmin      ) then
+      ierr = -1
+      return
+    end if
 
     call mvec_times_sdmat_inplace(v,M)
 
@@ -1728,6 +1813,19 @@ contains
     call c_f_pointer(w_ptr,w)
     call c_f_pointer(M_ptr,M)
 
+    if( v%jmax-v%jmin .ne. M%imax-M%imin .or. &
+      & M%jmax-M%jmin .ne. w%jmax-w%jmin      ) then
+      ierr = -1
+      return
+    end if
+
+#ifdef TESTING
+    if( .not. map_compatible_map(v%map, w%map) ) then
+      ierr = -1
+      return
+    end if
+#endif
+
     call mvecT_times_mvec(alpha,v,w,beta,M)
 
     ierr = 0
@@ -1753,6 +1851,12 @@ contains
 
     call c_f_pointer(v_ptr,v)
     call c_f_pointer(R_ptr,R)
+
+    if( v%jmax-v%jmin .ne. R%imax-R%imin .or. &
+      & v%jmax-v%jmin .ne. R%jmax-R%jmin      ) then
+      ierr = -1
+      return
+    end if
 
     call mvec_QR(v,R,ierr)
 
