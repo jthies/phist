@@ -4,7 +4,7 @@ set -e
 ## default options and declarations
 # kernel lib
 KERNELS="builtin" # ghost epetra tpetra
-PRGENV="gcc-4.9" # intel-13.0 gcc-4.8
+PRGENV="gcc-4.9.2-openmpi" # intel-13.0.1-mpich gcc-4.8.2-openmpi
 FLAGS="" # optional-libs
 
 # list of modules to load
@@ -17,12 +17,6 @@ MODULES_KERNELS=(
   ["epetra"]="trilinos"
   ["tpetra"]="trilinos" )
 
-declare -A MODULES_PRGENV
-MODULES_PRGENV=(
-  ["gcc-4.9"]="PrgEnv/gcc-4.9.2-openmpi"
-  ["intel-13.0"]="PrgEnv/intel-13.0.1-mpich"
-  ["gcc-4.8"]="PrgEnv/gcc-4.8.2-openmpi" )
-
 declare -A MODULES_KERNELS_OPTIONAL
 MODULES_KERNELS_OPTIONAL=(
   ["builtin"]="parmetis trilinos"
@@ -32,7 +26,7 @@ MODULES_KERNELS_OPTIONAL=(
 
 
 ## parse command line arguments
-usage() { echo "Usage: $0 [-k <builtin|ghost|epetra|tpetra>] [-e <gcc-4.9|intel-13.0|gcc-4.8>] [-f <optional-libs>]" 1>&2; exit 1; }
+usage() { echo "Usage: $0 [-k <builtin|ghost|epetra|tpetra>] [-e <PrgEnv/module-string>] [-f <optional-libs>]" 1>&2; exit 1; }
 
 while getopts "k:e:f:h" o; do
     case "${o}" in
@@ -42,7 +36,6 @@ while getopts "k:e:f:h" o; do
             ;;
         e)
             PRGENV=${OPTARG}
-            ((PRGENV == "gcc-4.9" || PRGENV == "intel-13.0" || PRGENV == "gcc-4.8")) || usage
             ;;
         f)
             FLAGS=${OPTARG}
@@ -65,9 +58,9 @@ export MODULEPATH=/tools/modulesystem/modulefiles
 module() { eval `/usr/bin/modulecmd bash $*`; }
 
 # load modules
-for m in ${MODULES_PRGENV["$PRGENV"]};    do module load $m; done
-for m in $MODULES_BASIC;                  do module load $m; done
-for m in ${MODULES_KERNELS["$KERNELS"]};  do module load $m; done
+module load "PrgEnv/$PRGENV"
+for m in $MODULES_BASIC; do module load $m; done
+for m in ${MODULES_KERNELS["$KERNELS"]}; do module load $m; done
 if [[ "$FLAGS" = *"optional-libs"* ]]; then
   for m in ${MODULES_KERNELS_OPTIONAL["$KERNELS"]}; do module load $m; done
 fi
