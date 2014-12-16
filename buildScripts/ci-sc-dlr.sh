@@ -38,7 +38,7 @@ while getopts "k:e:f:h" o; do
             MODULES_PRGENV=${OPTARG}
             ;;
         f)
-            FLAGS=" ${OPTARG}"
+            FLAGS=${OPTARG}
             ;;
         h)
             usage
@@ -89,6 +89,11 @@ ulimit -v unlimited
 
 ## actually build and run tests
 error=0
+
+# nice _flags folder
+if [ "$FLAGS" != "" ]; then
+  FLAGS=" ${FLAGS}"
+fi
 
 # release build
 mkdir build_${KERNELS}_${COMPILER}_release${FLAGS// /_}; cd $_
