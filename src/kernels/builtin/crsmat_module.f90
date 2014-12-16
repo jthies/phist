@@ -631,6 +631,9 @@ end do
         end if
       end do
     end do
+    ! copy to map
+    allocate(crsMat%row_map%global_idx(size(crsMat%global_row_idx)))
+    crsMat%row_map%global_idx = crsMat%global_row_idx
 
     crsMat%row_map%distrib=0
     do i = 1, size(rowSendProcGlob), 1

@@ -296,6 +296,7 @@ extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t*
 
 extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* ierr)
 {
+  PHIST_ENTER_FCN(__FUNCTION__);
   // TODO: create importer, v_out->Import(v_in)
   // TODO: possibly create a wrapper phist_map_t which keeps the importer as well.
   *ierr=-99;

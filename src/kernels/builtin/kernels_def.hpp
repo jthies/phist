@@ -30,6 +30,7 @@ extern "C" {
   void SUBR(mvec_set_block_f)(TYPE(mvec_ptr),TYPE(const_mvec_ptr),int,int,int*);
   void SUBR(mvec_times_sdMat_f)(_ST_,TYPE(const_mvec_ptr),TYPE(const_sdMat_ptr),_ST_,TYPE(mvec_ptr),int*);
   void SUBR(mvec_times_sdMat_inplace_f)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int*);
+  void SUBR(mvec_to_mvec_f)(TYPE(const_mvec_ptr),TYPE(mvec_ptr),int*);
   void SUBR(mvec_vadd_mvec_f)(const _ST_*,TYPE(const_mvec_ptr),_ST_,TYPE(mvec_ptr),int*);
   void SUBR(mvec_view_block_f)(TYPE(mvec_ptr),TYPE(mvec_ptr)*,int,int,int*);
   void SUBR(mvec_vscale_f)(TYPE(mvec_ptr),const _ST_*,int*);
@@ -188,8 +189,12 @@ extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) V, _ST_** val, lidx_t* 
 
 extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* ierr)
 {
-  //TODO - we do not allow reversing the ParMETIS partitioning right now
+#ifndef PHIST_HAVE_PARMETIS
+  // we don't need this when no reordering occurs!
   *ierr=PHIST_NOT_IMPLEMENTED;
+#else
+  PHIST_CHK_IERR(SUBR(mvec_to_mvec_f)(v_in, v_out, ierr),*ierr);
+#endif
 }
 
 extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) V,

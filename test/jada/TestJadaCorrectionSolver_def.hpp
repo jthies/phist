@@ -9,7 +9,6 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   public:
     typedef KernelTestWithVectors<_ST_,_N_,_NV_> VTest;
-    typedef KernelTestWithVectors<_ST_,_N_,_NVP_> VProjTest;
     typedef KernelTestWithSdMats<_ST_,_NVP_,_NV_> MTest;
 
 
@@ -22,6 +21,15 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
       if (typeImplemented_)
       {
+        SUBR(read_mat)(MATNAME,nglob_,&A_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        ASSERT_TRUE(A_ != NULL);
+        opA_ = new TYPE(op);
+        SUBR(op_wrap_crsMat)(opA_, A_, &ierr_);
+        ASSERT_EQ(0,ierr_);
+
+        replaceMap(opA_->domain_map);
+
         SUBR(mvec_create)(&q_,map_,_NVP_,&ierr_);
         ASSERT_EQ(0,ierr_);
         sigma_ = new _ST_[_NV_];
@@ -43,13 +51,6 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         SUBR(orthog)(NULL,q_,Rtmp,NULL,4,&rankQ,&ierr_);
         ASSERT_GE(ierr_,0);
         SUBR(sdMat_delete)(Rtmp,&ierr_);
-        ASSERT_EQ(0,ierr_);
-
-        SUBR(read_mat)(MATNAME,nglob_,&A_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        ASSERT_TRUE(A_ != NULL);
-        opA_ = new TYPE(op);
-        SUBR(op_wrap_crsMat)(opA_, A_, &ierr_);
         ASSERT_EQ(0,ierr_);
 
         jdOp_ = new TYPE(op);

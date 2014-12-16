@@ -117,6 +117,45 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
       }
     }
 
+    virtual void replaceMap(const_map_ptr_t map)
+    {
+      if( typeImplemented_ )
+      {
+        // delete vecs
+        SUBR(mvec_delete)(v0_,&ierr_); v0_ = NULL;
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(V_,&ierr_); V_ = NULL;
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(Vm_,&ierr_); Vm_ = NULL;
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(AV_,&ierr_); AV_ = NULL;
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(AVm_,&ierr_); AVm_ = NULL;
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(VH_,&ierr_); VH_ = NULL;
+        ASSERT_EQ(0,ierr_);
+
+        VTest::replaceMap(map);
+
+        // recreate vecs
+        SUBR(mvec_view_block)(vec2_,&v0_,0,0,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_view_block)(vec1_,&V_,0,m_+BLOCK_SIZE1-1,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_extract_view)(V_,&V_vp_,&ldaV_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        stride_ = 1;
+        SUBR(mvec_view_block)(vec1_,&Vm_,0,m_-1,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_view_block)(vec2_,&AV_,BLOCK_SIZE1,m_+BLOCK_SIZE1-1,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_view_block)(vec2_,&AVm_,0,m_-1,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_view_block)(vec3_,&VH_,BLOCK_SIZE1,m_+BLOCK_SIZE1-1,&ierr_);
+        ASSERT_EQ(0,ierr_);
+      }
+    }
+
     //! Clean up.
     virtual void TearDown()
     {
@@ -294,6 +333,9 @@ TEST_F(CLASSNAME, Aeye_v0ones)
 {
   if( typeImplemented_)
   {
+    replaceMap(opAeye_->domain_map);
+    ASSERT_EQ(0,ierr_);
+
     int ierr;
     SUBR(mvec_put_value)(v0_,st::one(),&ierr);
     ASSERT_EQ(0,ierr);
@@ -305,6 +347,9 @@ TEST_F(CLASSNAME, Azero_v0ones)
 {
   if( typeImplemented_)
   {
+    replaceMap(opAzero_->domain_map);
+    ASSERT_EQ(0,ierr_);
+
     int ierr;
     SUBR(mvec_put_value)(v0_,st::one(),&ierr);
     ASSERT_EQ(0,ierr);
@@ -316,6 +361,9 @@ TEST_F(CLASSNAME, Arand_v0ones)
 {
   if( typeImplemented_)
   {
+    replaceMap(opArand_->domain_map);
+    ASSERT_EQ(0,ierr_);
+
     int ierr;
     SUBR(mvec_put_value)(v0_,st::one(),&ierr);
     ASSERT_EQ(0,ierr);
@@ -327,6 +375,9 @@ TEST_F(CLASSNAME, Arand_nodiag_v0ones)
 {
   if( typeImplemented_)
   {
+    replaceMap(opArand_nodiag_->domain_map);
+    ASSERT_EQ(0,ierr_);
+
     int ierr;
     SUBR(mvec_put_value)(v0_,st::one(),&ierr);
     ASSERT_EQ(0,ierr);
@@ -339,6 +390,9 @@ TEST_F(CLASSNAME, extended_Aeye_v0ones)
 {
   if( typeImplemented_)
   {
+    replaceMap(opAeye_->domain_map);
+    ASSERT_EQ(0,ierr_);
+
     int ierr;
     SUBR(mvec_put_value)(v0_,st::one(),&ierr);
     ASSERT_EQ(0,ierr);
@@ -351,6 +405,9 @@ TEST_F(CLASSNAME, extended_Azero_v0ones)
 {
   if( typeImplemented_)
   {
+    replaceMap(opAzero_->domain_map);
+    ASSERT_EQ(0,ierr_);
+
     int ierr;
     SUBR(mvec_put_value)(v0_,st::one(),&ierr);
     ASSERT_EQ(0,ierr);
@@ -362,6 +419,9 @@ TEST_F(CLASSNAME, extended_Arand_v0ones)
 {
   if( typeImplemented_)
   {
+    replaceMap(opArand_->domain_map);
+    ASSERT_EQ(0,ierr_);
+
     int ierr;
     SUBR(mvec_put_value)(v0_,st::one(),&ierr);
     ASSERT_EQ(0,ierr);
@@ -373,6 +433,9 @@ TEST_F(CLASSNAME, extended_Arand_nodiag_v0ones)
 {
   if( typeImplemented_)
   {
+    replaceMap(opArand_nodiag_->domain_map);
+    ASSERT_EQ(0,ierr_);
+
     int ierr;
     SUBR(mvec_put_value)(v0_,st::one(),&ierr);
     ASSERT_EQ(0,ierr);

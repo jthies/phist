@@ -40,6 +40,7 @@ module mvec_module
   public :: mvec_times_sdmat_inplace
   !public :: phist_DmvecT_times_mvec
   public :: mvecT_times_mvec
+  !public :: phist_Dmvec_to_mvec
   !public :: phist_Dmvec_QR
   public :: mvec_QR
 
@@ -1831,6 +1832,100 @@ contains
     ierr = 0
 
   end subroutine phist_DmvecT_times_mvec
+
+
+  subroutine phist_Dmvec_to_mvec(v_ptr, w_ptr, ierr) bind(C,name='phist_Dmvec_to_mvec_f')
+    use, intrinsic :: iso_c_binding
+    use mpi
+    !--------------------------------------------------------------------------------
+    type(C_PTR),        value         :: v_ptr, w_ptr
+    integer(C_INT),     intent(out)   :: ierr
+    !--------------------------------------------------------------------------------
+    type(MVec_t), pointer :: v, w
+    !--------------------------------------------------------------------------------
+    integer :: nvec, i, nglobal
+    integer(kind=8), allocatable :: globalIdx(:), invGlobalIdx(:)
+    integer, allocatable :: counts(:), offsets(:)
+    real(kind=8), allocatable :: globalVec(:,:), sendBuff(:,:)
+    !--------------------------------------------------------------------------------
+
+    if( .not. c_associated(v_ptr) .or. &
+      & .not. c_associated(w_ptr)      ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(v_ptr,v)
+    call c_f_pointer(w_ptr,w)
+
+    if( v%jmax-v%jmin .ne. w%jmax-w%jmin ) then
+      ierr = -1
+      return
+    end if
+
+    ! we assume v and w have different maps...
+    if( .not. map_compatible_map(v%map, w%map, reorder=.true.) ) then
+      ierr = -1
+      return
+    end if
+
+    ! we do this in two steps, first put all elements in ascending order, then redistribute them
+    ! (this is not optimal, but we shouldn't need this subroutine very often)
+    nvec = v%jmax-v%jmin+1
+    nglobal = v%map%distrib(v%map%nProcs)-1
+    if( allocated(v%map%global_idx) ) then
+
+      allocate(globalIdx(nglobal))
+      ! get all data globally! doesn't work for too large matrices
+      call MPI_Allgatherv(v%map%global_idx, v%map%nlocal(v%map%me), MPI_INTEGER8, &
+        &                 globalIdx, v%map%nlocal, int(v%map%distrib-1), MPI_INTEGER8, &
+        &                 v%map%comm, ierr)
+
+      ! get the inverse global index
+      allocate(invGlobalIdx(nglobal))
+      write(*,*) 'distributed globalIdx', globalIdx
+      do i = 1, nglobal
+        invGlobalIdx(globalIdx(i)) = i
+      end do
+      write(*,*) 'calculated invGlobalIdx', invGlobalIdx
+
+    else
+
+      allocate(invGlobalIdx(nglobal))
+      do i = 1, nglobal
+        invGlobalIdx(i) = i
+      end do
+      write(*,*) 'generated invGlobalIdx', invGlobalIdx
+
+    end if
+
+    ! get all data globally! doesn't work for too large matrices
+    allocate(globalVec(nvec,v%map%distrib(v%map%nProcs)-1))
+    allocate(counts(0:size(v%map%nlocal)-1))
+    counts = v%map%nlocal*nvec
+    allocate(offsets(0:size(v%map%distrib)-1))
+    offsets = int(v%map%distrib-1)*nvec
+    allocate(sendBuff(nvec,v%map%nlocal(v%map%me)))
+    sendBuff = v%val(v%jmin:v%jmax,:)
+    call MPI_Allgatherv(sendBuff, counts(v%map%me), MPI_DOUBLE_PRECISION, &
+      &                 globalVec, counts, offsets, MPI_DOUBLE_PRECISION, &
+      &                 v%map%comm, ierr)
+
+
+    ! copy data to target vector w
+    if( allocated(w%map%global_idx) ) then
+      do i = 1, w%map%nlocal(w%map%me)
+        w%val(w%jmin:w%jmax,i) = globalVec(:,invGlobalIdx(w%map%global_idx(i)))
+      end do
+    else
+      do i = 1, w%map%nlocal(w%map%me)
+        w%val(w%jmin:w%jmax,i) = globalVec(:,invGlobalIdx(i+w%map%distrib(w%map%me)-1))
+      end do
+    end if
+
+    ierr = 0
+
+  end subroutine phist_Dmvec_to_mvec
 
 
   subroutine phist_Dmvec_QR(v_ptr, R_ptr, ierr) bind(C,name='phist_Dmvec_QR_f')
