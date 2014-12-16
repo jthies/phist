@@ -679,7 +679,7 @@ end do
       jProc_ = -1
       if( i .le. nd_new ) jProc_ = rowRecvProc(i)
       if( jProc .ne. jProc_ ) then
-        call mpi_irecv(row_blk_new(k+1),i-k,MPI_INTEGER8, &
+        call mpi_irecv(row_blk_new(k+1),int(i-k),MPI_INTEGER8, &
           &           jProc,0,crsMat%row_map%comm, recvRequest(l,1), ierr)
         k = i
         l = l + 1
@@ -742,8 +742,8 @@ end do
 !write(*,*) 'sendBuff_row_blk', sendBuff_row_blk
     do i = 1, nSendProcs, 1
       call mpi_send(sendBuff_row_blk(sendBuffInd(i)+1), &
-        &     sendBuffInd(i+1)-sendBuffInd(i), MPI_INTEGER8, &
-        &     sendIds(i), 0, crsMat%row_map%comm, ierr)
+        &     int(sendBuffInd(i+1)-sendBuffInd(i)), MPI_INTEGER8, &
+        &     int(sendIds(i)), 0, crsMat%row_map%comm, ierr)
     end do
     sendBuff_row_blk(1) = 1
     do i = 1, sendBuffInd(nSendProcs+1)-1, 1
@@ -771,7 +771,7 @@ end do
       if( i .le. nd_new ) jProc_ = rowRecvProc(i)
       if( jProc .ne. jProc_ ) then
         call mpi_irecv(col_ind_new(row_blk_new(k)),&
-          &           row_blk_new(i)-row_blk_new(k),MPI_INTEGER8, &
+          &           int(row_blk_new(i)-row_blk_new(k)),MPI_INTEGER8, &
           &           jProc,1,crsMat%row_map%comm, recvRequest(l,1), ierr)
         k = i
         l = l + 1
@@ -808,8 +808,8 @@ end do
     ! send col ind
     do i = 1, nSendProcs, 1
       call mpi_send(crsMat%global_col_idx(sendBuff_row_blk(sendBuffInd(i))), &
-        &  sendBuff_row_blk(sendBuffInd(i+1))-sendBuff_row_blk(sendBuffInd(i)), &
-        &  MPI_INTEGER8,sendIds(i),1,crsMat%row_map%comm, ierr)
+        &  int(sendBuff_row_blk(sendBuffInd(i+1))-sendBuff_row_blk(sendBuffInd(i))), &
+        &  MPI_INTEGER8,int(sendIds(i)),1,crsMat%row_map%comm, ierr)
     end do
     deallocate(crsMat%global_col_idx) ! not needed any more
 
@@ -829,7 +829,7 @@ end do
       if( i .le. nd_new ) jProc_ = rowRecvProc(i)
       if( jProc .ne. jProc_ ) then
         call mpi_irecv(value_new(row_blk_new(k)),&
-          &           (row_blk_new(i)-row_blk_new(k)),&
+          &           int(row_blk_new(i)-row_blk_new(k)),&
           &           MPI_DOUBLE_PRECISION, &
           &           jProc,2,crsMat%row_map%comm, recvRequest(l,1), ierr)
         k = i
@@ -842,8 +842,8 @@ end do
     ! send value
     do i = 1, nSendProcs, 1
       call mpi_send(crsMat%val(sendBuff_row_blk(sendBuffInd(i))), &
-        &  (sendBuff_row_blk(sendBuffInd(i+1))-sendBuff_row_blk(sendBuffInd(i))), &
-        &  MPI_DOUBLE_PRECISION,sendIds(i),2,crsMat%row_map%comm, ierr)
+        &  int(sendBuff_row_blk(sendBuffInd(i+1))-sendBuff_row_blk(sendBuffInd(i))), &
+        &  MPI_DOUBLE_PRECISION,int(sendIds(i)),2,crsMat%row_map%comm, ierr)
     end do
     deallocate(crsMat%val,sendBuff_row_blk) ! not needed any more
 
