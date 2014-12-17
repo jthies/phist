@@ -475,7 +475,7 @@ contains
 
     ierr = 0
     if( sdmat%comm .ne. MPI_COMM_NULL ) then
-      call MPI_Bcast(buff, m*n, MPI_DOUBLE_PRECISION, sdmat%comm, 0, ierr);
+      call MPI_Bcast(buff, m*n, MPI_DOUBLE_PRECISION, 0, sdmat%comm, ierr);
     end if
     sdmat%val(sdmat%imin:sdmat%imax,sdmat%jmin:sdmat%jmax) = buff
 
