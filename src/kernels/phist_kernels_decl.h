@@ -21,7 +21,7 @@
     the data distribution of a vector (this can be obtained from 
     a sparse matrix using the get_*_map functions). A sparse matrix 
     (crsMat), denoted by A below, typically distributed over several 
-    MPI processes. A serial dense matrix (sdMat), which is replicated
+    MPI processes. A small dense matrix (sdMat), which is replicated
     on all processes (not associated with an MPI_Comm). And
     a row-distributed vector, which may have several columns (mvec).
 
@@ -99,18 +99,18 @@ void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, const_map_ptr_t map,
         _ST_* values, lidx_t lda, int nvec, 
         int* ierr);
 
-//! construct small (replicated) dense matrix \ingroup sdmat
+//! construct small dense matrix \ingroup sdmat
 
-//! create a serial dense n x m matrix on all procs in comm, 
-//! with column major ordering and the capability to communicate.
-//! TODO - ghost can use int64_t as lidx_t, should the sdMat have
-//! long ints as well? It should be possible to view the local
-//! part of a vector as sdMat, so at least nrows should become
-//! lidx_t, I think.
+//! create a small dense n x m matrix on all procs in comm,   
+//! with column major ordering (unless PHIST_SDMATS_ROW_MAJOR).
+//! If comm!=NULL, the object has the capability to communicate
+//! and can be used in functions like mvecT_times_mvec if the  
+//! map of the mvecs uses the same comm. Otherwise, it is a lo-
+//! cal object (MPI_COMM_SELF is assumed).
 void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M, 
         int nrows, int ncols, const_comm_ptr_t comm, int* ierr);
 
-//! create a replicated matrix as view of raw data. \ingroup sdmat
+//! create a small dense matrix as view of raw data. \ingroup sdmat
 
 //! obviously it depends on the data viewed wether the matrix is actually
 //! "replicated" on all nodes.
@@ -174,7 +174,7 @@ void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) M, int* nrows, int* ierr);
 //! get number of cols in local dense matrix. \ingroup sdmat
 void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* ierr);
 
-//! extract view from serial dense matrix. \ingroup sdmat
+//! extract view from small dense matrix. \ingroup sdmat
 
 //! See comment for mvec_extract_view for details,
 //! the macro indicating row-major storage layout is PHIST_SDMATS_ROW_MAJOR.
@@ -195,10 +195,10 @@ void SUBR(mvec_to_device)(TYPE(mvec_ptr) V, int* ierr);
 //! copy multi-vector (mvec) data from the GPU to the host CPU \ingroup mvec
 void SUBR(mvec_from_device)(TYPE(mvec_ptr) V, int* ierr);
 
-//! copy serial dense matrix (sdmat) data from the host CPU to the GPU. \ingroup sdmat
+//! copy small dense matrix (sdmat) data from the host CPU to the GPU. \ingroup sdmat
 void SUBR(sdMat_to_device)(TYPE(sdMat_ptr) M, int* ierr);
 
-//! copy serial dense matrix (sdmat) data from the GPU to the host CPU \ingroup sdmat
+//! copy small dense matrix (sdmat) data from the GPU to the host CPU \ingroup sdmat
 void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) M, int* ierr);
 
 //@}
@@ -273,7 +273,7 @@ void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) M,
                              TYPE(sdMat_ptr) Mblock,
                              int imin, int imax, int jmin, int jmax, int* ierr);
 
-//! given a serial dense matrix Mblock, set M(imin:imax,jmin:jmax)=Mblock by 
+//! given a small dense matrix Mblock, set M(imin:imax,jmin:jmax)=Mblock by 
 //! copying the corresponding elements. Mblock is not modified.
 void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M, 
                              TYPE(const_sdMat_ptr) Mblock,
@@ -284,13 +284,13 @@ void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M,
 //! put scalar value into all elements of a multi-vector \ingroup mvec
 void SUBR(mvec_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* ierr);
 
-//! put scalar value into all elements of a serial dense matrix \ingroup mvec
+//! put scalar value into all elements of a small dense matrix \ingroup mvec
 void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) V, _ST_ value, int* ierr);
 
 //! put random numbers into all elements of a multi-vector \ingroup mvec
 void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* ierr);
 
-//! put random numbers into all elements of a serial dense matrix \ingroup sdmat
+//! put random numbers into all elements of a small dense matrix \ingroup sdmat
 void SUBR(sdMat_random)(TYPE(sdMat_ptr) V, int* ierr);
 
 //! print a vector to the screen (for debugging) \ingroup mvec
@@ -347,7 +347,7 @@ void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) V,
 
 //! inner product of two multi-vectors. \ingroup mvec
 
-//! dense tall skinny matrix-matrix product yielding a serial dense matrix
+//! dense tall skinny matrix-matrix product yielding a small dense matrix
 //! C=alpha*V'*W+beta*C. C is replicated on all MPI processes sharing V and W.
 void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V, 
                                        TYPE(const_mvec_ptr) W, 
@@ -374,7 +374,7 @@ void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
 
 //! C=beta*C+alpha*A*B. \ingroup sdmat
 
-//! n x m serial dense matrix times m x k serial dense matrix gives n x k serial dense matrix,
+//! n x m small dense matrix times m x k small dense matrix gives n x k small dense matrix,
 //! C=alpha*V*W + beta*C
 void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
                                          TYPE(const_sdMat_ptr) W, 
@@ -383,7 +383,7 @@ void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
 
 //! C=beta*C+alpha*V'W. \ingroup sdmat
 
-//! n x m conj. transposed serial dense matrix times m x k serial dense matrix gives m x k serial dense matrix,
+//! n x m conj. transposed small dense matrix times m x k small dense matrix gives m x k small dense matrix,
 //! C=alpha*V*W + beta*C
 void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
                                            TYPE(const_sdMat_ptr) W, 
