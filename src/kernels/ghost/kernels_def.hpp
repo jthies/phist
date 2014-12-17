@@ -269,7 +269,8 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  MPI_Comm* comm=MPI_COMM_SELF;
+  MPI_Comm comm_self=MPI_COMM_SELF;
+  MPI_Comm* comm=&comm_self;
   if (vcomm==NULL) comm=(MPI_Comm*)vcomm;
 #include "phist_std_typedefs.hpp"
 PHIST_GHOST_TASK_BEGIN
