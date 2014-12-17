@@ -70,7 +70,7 @@ module list
 if [[ "$PRGENV" = "gcc"* ]]; then
   export FC="ccache gfortran" CC="ccache gcc" CXX="ccache g++"
 elif [[ "$PRGENV" = "intel"* ]]; then
-  export FC="ccache ifort" CC="ccache icc" CXX="ccache icpc"
+  export FC=ifort CC=icc CXX=icpc
 fi
 
 # "gcc -fsanitize=address" requires this

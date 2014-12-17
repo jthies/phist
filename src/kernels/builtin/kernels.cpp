@@ -20,6 +20,7 @@
 #include <likwid.h>
 #endif
 
+#include <cstring>
 #include <sys/resource.h>
 
 #ifdef PHIST_HAVE_OPENMP
