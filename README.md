@@ -117,6 +117,18 @@ Required for installation via
 
 is only the libs target.
 
+On typical clusters it is recommended to set the C/C++/Fortran compilers to
+the MPI wrappers to be used. This is in contrast to the way CMake usually handles MPI
+(by trying to extract compiler flags and library info from the wrapper and then using
+the compilers directly). We find the method used in PHIST more portable and to the intention
+of cluster administrators who provide the wrappers. For example, use
+
+cmake [...] \
+  -DCMAKE_C_COMPILER="[path/]mpicc" \
+  -DCMAKE_CXX_COMPILER="[path/]mpicxx" \
+  -DCMAKE_Fortran_COMPILER="[path/]mpif90" \
+  [...]
+
 ------------------------------
 ## Testing the installation ##
 ------------------------------
