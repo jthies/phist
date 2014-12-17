@@ -145,7 +145,7 @@ contains
       call c_f_pointer(comm_ptr, comm)
       sdmat%comm = comm
     else
-      sdmat%comm = MPI_COMM_NULL
+      sdmat%comm = MPI_COMM_SELF
     end if
 #if defined(TESTING) && PHIST_OUTLEV >= 4
     write(*,*) 'creating new sdmat with dimensions:', nrows, ncols, 'address', transfer(c_loc(sdmat),dummy)

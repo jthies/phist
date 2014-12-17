@@ -157,7 +157,16 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  PHIST_CAST_PTR_FROM_VOID(const Epetra_Comm, comm,vcomm,*ierr);
+  const Epetra_Comm* comm;
+  if (vcomm!=NULL)
+  {
+    comm=(const Epetra_Comm*)vcomm;
+  }
+  else
+  {
+    // note: this is a memory leak that we tolerate here
+    comm = new Epetra_SerialComm();
+  }
   Epetra_LocalMap localMap(nrows,0,*comm);
   Epetra_MultiVector* mv = new Epetra_MultiVector(localMap,ncols);
   if (mv==NULL) *ierr=-1;
