@@ -69,8 +69,6 @@ module list
 # use ccache to speed up build
 if [[ "$PRGENV" = "gcc"* ]]; then
   export FC="ccache gfortran" CC="ccache gcc" CXX="ccache g++"
-elif [[ "$PRGENV" = "intel"* ]]; then
-  export FC="ccache ifort" CC="ccache icc" CXX="ccache icpc"
 fi
 
 # "gcc -fsanitize=address" requires this
