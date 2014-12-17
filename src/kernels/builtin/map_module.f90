@@ -5,6 +5,7 @@ module map_module
 
   public :: Map_t
   public :: map_setup
+  public :: map_compatible_map
   !public :: phist_map_create
   !public :: phist_map_delete
   !public :: phist_map_get_comm
@@ -93,6 +94,61 @@ flush(6)
   map%coloringType=0
 
   end subroutine map_setup
+
+
+  !================================================================================
+  ! check if two maps are compatible
+  function map_compatible_map(map1, map2, reorder) result(res)
+    use mpi
+    !------------------------------------------------------------
+    type(Map_t),  intent(in)            :: map1, map2
+    logical,      intent(in), optional  :: reorder
+    logical                             :: res
+    !------------------------------------------------------------
+    logical :: localRes
+    integer :: ierr
+    !------------------------------------------------------------
+
+    res = .true.
+    if( map1%comm   .ne. map2%comm   ) res = .false.
+    if( map1%nProcs .ne. map2%nProcs ) res = .false.
+    if( map1%me     .ne. map2%me     ) res = .false.
+
+    if( .not. allocated(map1%nlocal) .or. .not. allocated(map2%nlocal) ) res = .false.
+
+    if( .not. present(reorder) ) then
+
+      ! just check local dimensions
+      if( res ) then
+        if( any(map1%nlocal .ne. map2%nlocal) ) res = .false.
+      end if
+
+    else
+
+      ! check global number of elements
+      if( map1%distrib(map1%nProcs) .ne. map2%distrib(map2%nProcs) ) res = .false.
+
+      if( .not. reorder ) then
+        ! no reordering allowed, must be identical!
+        if( any(map1%distrib .ne. map2%distrib) ) res = .false.
+
+        if( allocated(map1%global_idx) .and. allocated(map2%global_idx) ) then
+
+          if( any(map1%global_idx .ne. map2%global_idx)) then
+            res = .false.
+          end if
+          localRes = res
+          call MPI_Allreduce(localRes, res, 1, MPI_LOGICAL, MPI_LAND, map1%comm, ierr);
+
+        else if( allocated(map1%global_idx) .neqv. allocated(map2%global_idx) ) then
+          res = .false.
+        end if
+
+      end if
+
+    end if
+
+  end function map_compatible_map
 
 
   !================================================================================

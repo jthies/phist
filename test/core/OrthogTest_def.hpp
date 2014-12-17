@@ -115,7 +115,7 @@ public:
 
   // check if vectors are normalized correctly after QR factorization
   TEST_F(CLASSNAME, test_with_random_vectors) 
-    {
+  {
     if (typeImplemented_)
       {
       // fill V and W with random numbers
@@ -130,9 +130,15 @@ public:
       // copy Q=W because orthog() works in-place
       SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      // orthogonalize the m columns of V
-      SUBR(mvec_QR)(V_,R0_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      // orthogonalize the m columns of V. Test that orthog
+      // works if the first argument is NULL.
+      int rankVW=-42;
+      SUBR(orthog)(NULL,V_,R0_,NULL,1,&rankVW,&ierr_);
+      if (ierr_!=+2)
+      {
+        ASSERT_EQ(0,ierr_);
+      }
+      ASSERT_EQ(_M_,rankVW);
       // check wether this worked out
       ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),tolV);
       ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),tolV);
@@ -140,24 +146,44 @@ public:
       int nsteps=2;
 
       // now orthogonalize W against V. The result should be such that Q*R1=W-V*R2, Q'*Q=I,V'*Q=0
-      SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      
+      bool usedSVQB=false;
+      rankVW=-42;
+      SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&rankVW,&ierr_);
+      if (ierr_!=+2)
+      {
+        ASSERT_EQ(0,ierr_);
+      } 
+      else
+      {
+        // +2 means mvec_QR returned -99 (not implemented), and SVQB was used instead
+        // so that the matrix R1 is not an upper triangular matrix but W is still made
+        // orthogonal to V
+        usedSVQB=true;
+      }
+      ASSERT_EQ(m_+k_,rankVW);
       // check orthonormality of Q
       ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),tolW);
       ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),tolW);
-      
-      // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
-      SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_times_sdMat)(st::one(),V_,R2_,st::one(),W2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero(),vflag_),tolW);
+
+      if (usedSVQB)
+      {
+        //TODO - probably in this case we could ensure that the relation
+        //       Q=(W-V*R2)*B [with R1=B] holds, but currently orthog does
+        //       not promise this so we don't check for it.
+      }
+      else
+      {
+        // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
+        SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_times_sdMat)(st::one(),V_,R2_,st::one(),W2_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero(),vflag_),tolW);
       }
     }
-
+  }
   // check if random orthogonal vectors are generated automatically if filled with one-vectors
   TEST_F(CLASSNAME, test_with_one_vectors)
   {
@@ -172,9 +198,13 @@ public:
       SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&ierr_);
       ASSERT_EQ(0,ierr_);
       // orthogonalize the m columns of V
-      SUBR(mvec_QR)(V_,R0_,&ierr_);
-      ASSERT_EQ(m_-1,ierr_);
-
+      int rankVW=-42;
+      SUBR(orthog)(NULL,V_,R0_,NULL,1,&rankVW,&ierr_);
+      if (ierr_!=+2)
+      {
+        ASSERT_EQ(_M_>1? 1:0,ierr_); // 1: rank deficient [V,W]
+      }
+      ASSERT_EQ(1,rankVW);
       // check wether this worked out
       ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)10.*VTest::releps());
       ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)10.*VTest::releps());
@@ -182,9 +212,13 @@ public:
       int nsteps=2;
 
       // now orthogonalize W against V. The result should be such that Q*R1=W-V*R2, Q'*Q=I,V'*Q=0
-      SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&ierr_);
-      int dim0= k_; // dimension of null space of [V,W] is num cols(W)
-      ASSERT_EQ(dim0,ierr_);
+      rankVW=-42;
+      SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&rankVW,&ierr_);
+      if (ierr_!=+2)
+      {
+        ASSERT_EQ(+1,ierr_);
+      }
+      ASSERT_EQ(_M_,rankVW);
       
       // check orthonormality of Q
       ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),(MT)10.*WTest::releps());
@@ -264,8 +298,18 @@ public:
 
 
       // orthogonalize the m columns of V
-      SUBR(mvec_QR)(V_,R0_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      int rankVW=-42;
+      bool useSVQB=false;
+      SUBR(orthog)(NULL,V_,R0_,NULL,1,&rankVW,&ierr_);
+      if (ierr_!=+2)
+      {
+        ASSERT_EQ(0,ierr_);
+      }
+      else
+      {
+        useSVQB=true;
+      }
+      ASSERT_EQ(_M_,rankVW);
       // check wether this worked out
       ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),tolV);
       ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),tolV);
@@ -273,22 +317,29 @@ public:
       int nsteps=2;
 
       // now orthogonalize W against V. The result should be such that Q*R1=W-V*R2, Q'*Q=I,V'*Q=0
-      SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      rankVW=-42;
+      SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&rankVW,&ierr_);
+      if (ierr_!=+2)
+      {
+        ASSERT_EQ(0,ierr_);
+      }
+      ASSERT_EQ(m_+k_,rankVW);
       
       // check orthonormality of Q
       ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),tolW);
       ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),tolW);
       
       // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
-      SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_times_sdMat)(st::one(),V_,R2_,st::one(),W2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero(),vflag_),tolW);
-      
+      if (!useSVQB)
+      {
+        SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_times_sdMat)(st::one(),V_,R2_,st::one(),W2_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero(),vflag_),tolW);
+      }
       // check the location of the resulting R parts
       _ST_ *R_vp;
       lidx_t ldaR;
@@ -387,8 +438,18 @@ public:
 
 
       // orthogonalize the m columns of V
-      SUBR(mvec_QR)(V_,R0_,&ierr_);
-      ASSERT_EQ(m_-1,ierr_);
+      int rankVW=-42;
+      bool useSVQB=false;
+      SUBR(orthog)(NULL,V_,R0_,NULL,1,&rankVW,&ierr_);
+      if (ierr_!=+2)
+      {
+        ASSERT_EQ(_M_>1? 1:0,ierr_);
+      }
+      else
+      {
+        useSVQB=true;
+      }
+      ASSERT_EQ(1,rankVW);
 #if PHIST_OUTLEV>=PHIST_DEBUG
       PHIST_DEB("coeffs for QR of V:\n");
       SUBR(sdMat_print)(R0_,&ierr_);
@@ -402,23 +463,25 @@ public:
       int nsteps=2;
 
       // now orthogonalize W against V. The result should be such that Q*R1=W-V*R2, Q'*Q=I,V'*Q=0
-      SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&ierr_);
-      int dim0= k_; // dimension of null space of [V,W] is num cols(W)
-      ASSERT_EQ(dim0,ierr_);
+      rankVW=-42;
+      SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&rankVW,&ierr_);
+      ASSERT_EQ(_M_,rankVW);
       
       // check orthonormality of Q
       ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),tolW);
       ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),tolW);
       
       // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
-      SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_times_sdMat)(st::one(),V_,R2_,st::one(),W2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero(),vflag_),tolW);
-      
+      if (!useSVQB)
+      {
+        SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_times_sdMat)(st::one(),V_,R2_,st::one(),W2_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero(),vflag_),tolW);
+      }
       // check the location of the resulting R parts
       _ST_ *R_vp;
       lidx_t ldaR;

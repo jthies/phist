@@ -16,7 +16,7 @@ int main(int argc, char** argv)
   int rank, num_proc;
   int ierr;
 
-  const_comm_ptr_t comm;
+  const_comm_ptr_t comm = NULL;
   DcrsMat_ptr_t A;
   const_map_ptr_t row_map,range_map,domain_map;
   Dmvec_ptr_t x,y;
@@ -32,21 +32,12 @@ int main(int argc, char** argv)
 #endif  
   int i;
   
-  comm_ptr_t comm_world;
+  comm_ptr_t comm_world = NULL;
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
 
   PHIST_ICHK_IERR(phist_comm_create(&comm_world,&ierr),ierr);
-#ifdef PHIST_KERNEL_LIB_GHOST
-  PHIST_ICHK_IERR(phist_DcrsMat_read_bin(&A,filename,comm,&ierr),ierr);
-  ghost_sparsemat_t* A_ghost = (ghost_sparsemat_t*)A;
-  char *str;
-  ghost_sparsemat_string(&str,A_ghost);
-  printf("%s\n",str);
-  free(str); str = NULL;
-#else
-  PHIST_ICHK_IERR(phist_DcrsMat_read_mm(&A,filename,comm,&ierr),ierr);
-#endif  
+  PHIST_ICHK_IERR(phist_DcrsMat_read_mm(&A,filename,comm_world,&ierr),ierr);
   PHIST_ICHK_IERR(phist_DcrsMat_get_range_map(A, &range_map, &ierr),ierr);
   PHIST_ICHK_IERR(phist_DcrsMat_get_domain_map(A, &domain_map, &ierr),ierr);
 

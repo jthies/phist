@@ -188,7 +188,7 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
 //! ordering.
 extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols, 
         const_comm_ptr_t vcomm, int* ierr)
-  {
+{
   PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
   const comm_t* comm = (const comm_t*)vcomm;
@@ -197,20 +197,20 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
 
   //TODO - add node arg. Is there any reason to have a comm object here??
   if (comm==NULL)
-    {
+  {
     comm_ptr=Teuchos::DefaultComm<int>::getDefaultSerialComm(Teuchos::null);
-    }
+  }
   else
-    {
+  {
     comm_ptr = Teuchos::rcp(comm,false);
-    }
+  }
 
   // create local map
   Teuchos::RCP<map_t> localMap =
         Teuchos::rcp(new map_t(nrows, 0, comm_ptr, Tpetra::LocallyReplicated));
   Traits<_ST_>::sdMat_t* M = new Traits<_ST_>::mvec_t(localMap,ncols);
   *vM=(TYPE(sdMat_ptr))(M);
-  }
+}
 
 void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
         _ST_* values, lidx_t lda, int nrows, int ncols,
@@ -296,6 +296,7 @@ extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t*
 
 extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* ierr)
 {
+  PHIST_ENTER_FCN(__FUNCTION__);
   // TODO: create importer, v_out->Import(v_in)
   // TODO: possibly create a wrapper phist_map_t which keeps the importer as well.
   *ierr=-99;
@@ -632,6 +633,7 @@ extern "C" void SUBR(crsMat_delete)(TYPE(crsMat_ptr) vA, int* ierr)
   {
   PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
+  if (vA==NULL) return;
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::crsMat_t,A,vA,*ierr);
   delete A;
   }
@@ -1044,6 +1046,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     ST* Rval = R->get1dViewNonConst().getRawPtr();
     PHIST_DEB("single vector QR, R=%8.4e\n",nrm);
     rank=1;
+    *Rval=(ST)nrm;
     if (nrm<rankTol)
       {
       PHIST_DEB("zero vector detected\n");
@@ -1051,8 +1054,8 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
       PHIST_CHK_IERR(SUBR(mvec_random)(vV,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
       rank=0;// dimension of null space
+      *Rval=st::zero();
       }
-    *Rval=(ST)nrm;
     *ierr=1-rank;
     return;
     }

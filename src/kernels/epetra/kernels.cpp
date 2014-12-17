@@ -10,9 +10,8 @@
 #include "Epetra_config.h"
 #ifdef PHIST_HAVE_MPI
 #include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
 #endif
+#include "Epetra_SerialComm.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_Vector.h"

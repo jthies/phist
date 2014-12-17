@@ -9,7 +9,6 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   public:
     typedef KernelTestWithVectors<_ST_,_N_,_NV_> VTest;
-    typedef KernelTestWithVectors<_ST_,_N_,_NVP_> VProjTest;
     typedef KernelTestWithSdMats<_ST_,_NVP_,_NV_> MTest;
 
 
@@ -22,6 +21,18 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
       if (typeImplemented_)
       {
+        SUBR(read_mat)(MATNAME,nglob_,&A_,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        ASSERT_TRUE(A_ != NULL);
+        opA_ = new TYPE(op);
+        SUBR(op_wrap_crsMat)(opA_, A_, &ierr_);
+        ASSERT_EQ(0,ierr_);
+
+        const_map_ptr_t map = NULL;
+        SUBR(crsMat_get_domain_map)(A_,&map,&ierr_);
+        ASSERT_EQ(0,ierr_);
+        VTest::replaceMap(map);
+
         SUBR(mvec_create)(&q_,map_,_NVP_,&ierr_);
         ASSERT_EQ(0,ierr_);
         sigma_ = new _ST_[_NV_];
@@ -34,16 +45,10 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         TYPE(sdMat_ptr) Rtmp;
         SUBR(sdMat_create)(&Rtmp,_NVP_,_NVP_,comm_,&ierr_);
         ASSERT_EQ(0,ierr_);
-        SUBR(mvec_QR)(q_,Rtmp,&ierr_);
+        int rankQ=0;
+        SUBR(orthog)(NULL,q_,Rtmp,NULL,4,&rankQ,&ierr_);
         ASSERT_GE(ierr_,0);
         SUBR(sdMat_delete)(Rtmp,&ierr_);
-        ASSERT_EQ(0,ierr_);
-
-        SUBR(read_mat)(MATNAME,nglob_,&A_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        ASSERT_TRUE(A_ != NULL);
-        opA_ = new TYPE(op);
-        SUBR(op_wrap_crsMat)(opA_, A_, &ierr_);
         ASSERT_EQ(0,ierr_);
 
         jdOp_ = new TYPE(op);
@@ -73,21 +78,24 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       {
         SUBR(jadaOp_delete)(jdOp_,&ierr_);
         ASSERT_EQ(0,ierr_);
-        delete jdOp_;
-        delete opA_;
+        if( jdOp_ != NULL )
+          delete jdOp_;
+        if( opA_ != NULL )
+          delete opA_;
         SUBR(crsMat_delete)(A_,&ierr_);
         ASSERT_EQ(0,ierr_);
         SUBR(mvec_delete)(q_,&ierr_);
         ASSERT_EQ(0,ierr_);
-        delete[] sigma_;
+        if( sigma_ != NULL )
+          delete[] sigma_;
       }
     }
 
-    TYPE(crsMat_ptr) A_;
-    TYPE(op_ptr) opA_;
-    TYPE(op_ptr) jdOp_;
-    TYPE(mvec_ptr) q_;
-    _ST_* sigma_;
+    TYPE(crsMat_ptr) A_ = NULL;
+    TYPE(op_ptr) opA_ = NULL;
+    TYPE(op_ptr) jdOp_ = NULL;
+    TYPE(mvec_ptr) q_ = NULL;
+    _ST_* sigma_ = NULL;
 };
 
 

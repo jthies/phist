@@ -1,6 +1,14 @@
 #ifndef PHIST_CONFIG_H
 #define PHIST_CONFIG_H
 
+/*! general verbosity of PHIST:
+        0: only print errors
+        1: errors and warnings
+        2: some info about the progress of the algorthms etc.
+        3: verbose info
+        4: debugging output
+        5: function tracing
+*/
 #cmakedefine PHIST_OUTLEV ${PHIST_OUTLEV}
 
 /* some compiler/system flags */

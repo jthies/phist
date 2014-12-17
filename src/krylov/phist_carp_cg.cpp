@@ -7,6 +7,7 @@
 #include <cstring>
 #include <cmath>
 #include <vector>
+#include <iostream>
 
 #include "phist_macros.h"
 #include "phist_carp_cg.h"

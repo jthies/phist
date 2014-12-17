@@ -79,7 +79,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
       KernelTestWithType<_ST_>::TearDown();
     }
 
-    void DoSchurDecompTest(TYPE(const_sdMat_ptr) A_clone, eigSort_t which, _MT_ tol, bool onlyDoReorderTest)
+    void DoSchurDecompTest(eigSort_t which, _MT_ tol, bool onlyDoReorderTest)
     {
       if (!typeImplemented_) return;
       ASSERT_EQ(nsort_.size(),nselect_.size());
@@ -101,7 +101,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
         }
         PHIST_OUT(PHIST_INFO,"==================================================\n");
 
-        SUBR(sdMat_add_sdMat)(st::one(),A_clone,st::zero(),mat1_,&this->ierr_);
+        SUBR(sdMat_add_sdMat)(st::one(),mat3_,st::zero(),mat1_,&this->ierr_);
         ASSERT_EQ(0,this->ierr_);
 
         SUBR(sdMat_random)(mat2_,&this->ierr_);
@@ -120,7 +120,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
 
 
         PHIST_OUT(PHIST_INFO,"Checking results...\n");
-        CheckSchurDecomp(A_clone, which, nselect, nsort, tol);
+        CheckSchurDecomp(which, nselect, nsort, tol);
         if( HasFatalFailure() )
           return;
 
@@ -144,7 +144,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
 
           // should still be a valid schur decomposition!
           PHIST_OUT(PHIST_INFO,"Checking reordering results...\n");
-          CheckSchurDecomp(A_clone, which, nsort, nsort, tol);
+          CheckSchurDecomp(which, nsort, nsort, tol);
 
           // check if the permutation of resNorm is correct
           PHIST_OUT(PHIST_DEBUG,"resNorm array:\nold\t\tnew\t\tperm\n");
@@ -175,10 +175,10 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
     }//DoSchurDecompTest
 
 
-    void CheckSchurDecomp(TYPE(const_sdMat_ptr) A_clone, eigSort_t which, int nselect, int nsort, _MT_ tol)
+    void CheckSchurDecomp(eigSort_t which, int nselect, int nsort, _MT_ tol)
     {
       PHIST_DEB("check AS=ST\n");
-      SUBR(sdMat_times_sdMat)(st::one(),A_clone,mat2_,st::zero(),mat4_,&ierr_);
+      SUBR(sdMat_times_sdMat)(st::one(),mat3_,mat2_,st::zero(),mat4_,&ierr_);
       ASSERT_EQ(0,ierr_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
       //SUBR(sdMat_print)(mat4_,&ierr_);
@@ -296,13 +296,23 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
         {
           ASSERT_REAL_EQ(mt::one(),mt::one()+st::abs(mat1_vp_[j*m_lda_+j+1]));
         }
+        else
+        {
+          ASSERT_REAL_EQ(mt::one(),mt::one());
+        }
         for (int i=j+2;i<_N_;i++)
         {
           ASSERT_REAL_EQ(mt::one(),mt::one()+st::abs(mat1_vp_[j*m_lda_+i]));
         }//i
       }//j
 #endif
-    }//DoSchurDecompTest
+
+      // check that we have the same result on all processes
+      int stride = 1;
+      ASSERT_REAL_EQ(mt::one(), ArrayParallelReplicated(mat3_vp_,nrows_,ncols_,m_lda_,stride,mflag_)); // <- input matrix
+      ASSERT_REAL_EQ(mt::one(), ArrayParallelReplicated(mat1_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
+      ASSERT_REAL_EQ(mt::one(), ArrayParallelReplicated(mat2_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
+    }//CheckSchurDecomp
 };
 
 TEST_F(CLASSNAME, rand_LM) 
@@ -310,7 +320,7 @@ TEST_F(CLASSNAME, rand_LM)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->ierr_);
-    DoSchurDecompTest(mat3_,LM,mt::zero(),false);
+    DoSchurDecompTest(LM,mt::zero(),false);
   }
 }
 
@@ -319,7 +329,7 @@ TEST_F(CLASSNAME, rand_SM)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->ierr_);
-    DoSchurDecompTest(mat3_,SM,mt::zero(),false);
+    DoSchurDecompTest(SM,mt::zero(),false);
   }
 }
 
@@ -328,7 +338,7 @@ TEST_F(CLASSNAME, rand_LR)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->ierr_);
-    DoSchurDecompTest(mat3_,LR,mt::zero(),false);
+    DoSchurDecompTest(LR,mt::zero(),false);
   }
 }
 
@@ -337,28 +347,28 @@ TEST_F(CLASSNAME, rand_SR)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->ierr_);
-    DoSchurDecompTest(mat3_,SR,mt::zero(),false);
+    DoSchurDecompTest(SR,mt::zero(),false);
   }
 }
 
 TEST_F(CLASSNAME, diag_LM) 
 {
-  DoSchurDecompTest(mat3_,LM,mt::zero(),false);
+  DoSchurDecompTest(LM,mt::zero(),false);
 }
 
 TEST_F(CLASSNAME, diag_SM) 
 {
-  DoSchurDecompTest(mat3_,SM,mt::zero(),false);
+  DoSchurDecompTest(SM,mt::zero(),false);
 }
 
 TEST_F(CLASSNAME, diag_LR) 
 {
-  DoSchurDecompTest(mat3_,LR,mt::zero(),false);
+  DoSchurDecompTest(LR,mt::zero(),false);
 }
 
 TEST_F(CLASSNAME, diag_SR) 
 {
-  DoSchurDecompTest(mat3_,SR,mt::zero(),false);
+  DoSchurDecompTest(SR,mt::zero(),false);
 }
 
 
@@ -367,7 +377,7 @@ TEST_F(CLASSNAME, rand_LM_tol)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->ierr_);
-    DoSchurDecompTest(mat3_,LM,(_MT_)0.3,false);
+    DoSchurDecompTest(LM,(_MT_)0.3,false);
   }
 }
 
@@ -376,7 +386,7 @@ TEST_F(CLASSNAME, rand_SM_tol)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->ierr_);
-    DoSchurDecompTest(mat3_,SM,(_MT_)0.7,false);
+    DoSchurDecompTest(SM,(_MT_)0.7,false);
   }
 }
 
@@ -385,7 +395,7 @@ TEST_F(CLASSNAME, rand_LR_tol)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->ierr_);
-    DoSchurDecompTest(mat3_,LR,(_MT_)0.2,false);
+    DoSchurDecompTest(LR,(_MT_)0.2,false);
   }
 }
 
@@ -394,28 +404,28 @@ TEST_F(CLASSNAME, rand_SR_tol)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->ierr_);
-    DoSchurDecompTest(mat3_,SR,(_MT_)0.5,false);
+    DoSchurDecompTest(SR,(_MT_)0.5,false);
   }
 }
 
 TEST_F(CLASSNAME, diag_LM_tol)
 {
-  DoSchurDecompTest(mat3_,LM,(_MT_)0.3,false);
+  DoSchurDecompTest(LM,(_MT_)0.3,false);
 }
 
 TEST_F(CLASSNAME, diag_SM_tol)
 {
-  DoSchurDecompTest(mat3_,SM,(_MT_)0.2,false);
+  DoSchurDecompTest(SM,(_MT_)0.2,false);
 }
 
 TEST_F(CLASSNAME, diag_LR_tol)
 {
-  DoSchurDecompTest(mat3_,LR,(_MT_)0.1,false);
+  DoSchurDecompTest(LR,(_MT_)0.1,false);
 }
 
 TEST_F(CLASSNAME, diag_SR_tol)
 {
-  DoSchurDecompTest(mat3_,SR,(_MT_)0.03,false);
+  DoSchurDecompTest(SR,(_MT_)0.03,false);
 }
 
 
@@ -428,7 +438,7 @@ TEST_F(CLASSNAME, DISABLED_rand_LM_tol_reorder)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->ierr_);
-    DoSchurDecompTest(mat3_,LM,(_MT_)0.3,true);
+    DoSchurDecompTest(LM,(_MT_)0.3,true);
   }
 }
 
@@ -441,7 +451,7 @@ TEST_F(CLASSNAME, DISABLED_rand_SM_tol_reorder)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->ierr_);
-    DoSchurDecompTest(mat3_,SM,(_MT_)0.7,true);
+    DoSchurDecompTest(SM,(_MT_)0.7,true);
   }
 }
 
@@ -454,7 +464,7 @@ TEST_F(CLASSNAME, DISABLED_rand_LR_tol_reorder)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->ierr_);
-    DoSchurDecompTest(mat3_,LR,(_MT_)0.2,true);
+    DoSchurDecompTest(LR,(_MT_)0.2,true);
   }
 }
 
@@ -467,27 +477,27 @@ TEST_F(CLASSNAME, DISABLED_rand_SR_tol_reorder)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->ierr_);
-    DoSchurDecompTest(mat3_,SR,(_MT_)0.5, true);
+    DoSchurDecompTest(SR,(_MT_)0.5, true);
   }
 }
 
 TEST_F(CLASSNAME, diag_LM_tol_reorder)
 {
-  DoSchurDecompTest(mat3_,LM,(_MT_)0.3,true);
+  DoSchurDecompTest(LM,(_MT_)0.3,true);
 }
 
 TEST_F(CLASSNAME, diag_SM_tol_reorder)
 {
-  DoSchurDecompTest(mat3_,SM,(_MT_)0.2,true);
+  DoSchurDecompTest(SM,(_MT_)0.2,true);
 }
 
 TEST_F(CLASSNAME, diag_LR_tol_reorder)
 {
-  DoSchurDecompTest(mat3_,LR,(_MT_)0.1,true);
+  DoSchurDecompTest(LR,(_MT_)0.1,true);
 }
 
 TEST_F(CLASSNAME, diag_SR_tol_reorder)
 {
-  DoSchurDecompTest(mat3_,SR,(_MT_)0.03,true);
+  DoSchurDecompTest(SR,(_MT_)0.03,true);
 }
 

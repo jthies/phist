@@ -161,3 +161,7 @@ contains
 
 
 end module env_module
+
+! just used to prevent compiler warnings about unused variables
+subroutine TOUCH_EMPTY_FUNCTION(x)
+end subroutine TOUCH_EMPTY_FUNCTION

@@ -168,6 +168,46 @@ static _MT_ ArrayEqual(const _ST_* array, int n, int m, lidx_t lda, lidx_t strid
   return (MT)1.0+maxval;
   }
 
+static _MT_ ArrayParallelReplicated(const _ST_* array, int n, int m, lidx_t lda, lidx_t stride, bool swap_nm=false)
+{
+  _ST_ buff[n*m];
+  MT maxval=mt::zero();
+  int N = swap_nm? m: n;
+  int M = swap_nm? n: m;
+  int rank = 0;
+#ifdef PHIST_HAVE_MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  {
+    int nglobal_min, nglobal_max, mglobal_min, mglobal_max;
+    MPI_Allreduce(&n, &nglobal_min, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+    MPI_Allreduce(&n, &nglobal_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&m, &mglobal_min, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+    MPI_Allreduce(&m, &mglobal_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    if( nglobal_min != nglobal_max || mglobal_min != mglobal_max )
+      return (MT)-1.0;
+  }
+#endif
+
+  if( rank == 0 )
+  {
+    for (int i=0;i<N;i++)
+      for (int j=0; j<M;j++)
+        buff[i*M+j] = array[j*lda+i*stride];
+  }
+#ifdef PHIST_HAVE_MPI
+  MPI_Bcast(buff, sizeof(_ST_)*n*m, MPI_BYTE, 0, MPI_COMM_WORLD);
+#endif
+  for (int i=0;i<N;i++)
+  {
+    for (int j=0; j<M;j++)
+    {
+      MT scal= st::abs(buff[i*M+j]);
+      if (scal==mt::zero()) scal=mt::one();
+      maxval=std::max(st::abs(array[j*lda+i*stride]-buff[i*M+j])/scal,maxval);
+    }
+  }
+  return (MT)1.0+maxval;
+}
 
 static _MT_ ArraysEqual(const _ST_* arr1,const _ST_* arr2, int n, int m, lidx_t lda, lidx_t stride, bool swap_n_m=false)
   {
@@ -192,8 +232,8 @@ static _MT_ ArraysEqual(const _ST_* arr1,const _ST_* arr2, int n, int m, lidx_t 
 
 static inline _ST_ random_number() 
   {
-  return (MT)(2*std::rand()-RAND_MAX)/(MT)RAND_MAX + 
-         (MT)(2*std::rand()-RAND_MAX)/(MT)RAND_MAX * st::cmplx_I();
+  return (2*((MT)std::rand()/(MT)RAND_MAX)-1) +
+         (2*((MT)std::rand()/(MT)RAND_MAX)-1) * st::cmplx_I();
   }
 
 };

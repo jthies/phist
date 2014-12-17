@@ -1,11 +1,6 @@
 #include "phist_config.h"
-#if PHIST_OUTLEV<4
-# ifdef TESTING
-# undef TESTING
-# endif
-#endif
 module mvec_module
-  use map_module, only: Map_t
+  use map_module, only: Map_t, map_compatible_map
   use sdmat_module, only: SDMat_t
   implicit none
   private
@@ -45,6 +40,7 @@ module mvec_module
   public :: mvec_times_sdmat_inplace
   !public :: phist_DmvecT_times_mvec
   public :: mvecT_times_mvec
+  !public :: phist_Dmvec_to_mvec
   !public :: phist_Dmvec_QR
   public :: mvec_QR
 
@@ -1024,7 +1020,7 @@ contains
     type(MVec_t), pointer :: mvec
     type(Map_t), pointer :: map
     integer :: i
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
@@ -1035,7 +1031,7 @@ contains
     mvec%jmin = 1
     mvec%jmax = nvec
     mvec%map = map
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     write(*,*) 'creating new mvec with dimensions:', nvec, map%nlocal(map%me), 'address', transfer(c_loc(mvec),dummy)
     flush(6)
 #endif
@@ -1066,12 +1062,12 @@ contains
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
 
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     write(*,*) 'deleting mvec at address', transfer(mvec_ptr,dummy)
     flush(6)
 #endif
@@ -1096,12 +1092,12 @@ contains
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
 
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     write(*,*) 'extract view of mvec at address', transfer(mvec_ptr,dummy)
     flush(6)
 #endif
@@ -1190,7 +1186,7 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec, view
-!#ifdef TESTING
+!#if defined(TESTING) && PHIST_OUTLEV >= 4
 !    integer(C_INTPTR_T) :: dummy
 !#endif
     !--------------------------------------------------------------------------------
@@ -1202,7 +1198,7 @@ contains
       return
     end if
 
-!#ifdef TESTING
+!#if defined(TESTING) && PHIST_OUTLEV >= 4
 !    write(*,*) 'create view of mvec at address', transfer(mvec_ptr,dummy)
 !    flush(6)
 !#endif
@@ -1216,14 +1212,14 @@ contains
           ierr = -88
           return
         end if
-!#ifdef TESTING
+!#if defined(TESTING) && PHIST_OUTLEV >= 4
 !      write(*,*) 'reusing view at address', transfer(view_ptr,dummy)
 !      flush(6)
 !#endif
       else
         allocate(view)
         view_ptr = c_loc(view)
-!#ifdef TESTING
+!#if defined(TESTING) && PHIST_OUTLEV >= 4
 !      write(*,*) 'created new view at address', transfer(view_ptr,dummy)
 !      flush(6)
 !#endif
@@ -1260,6 +1256,19 @@ contains
     call c_f_pointer(mvec_ptr, mvec)
     call c_f_pointer(block_ptr,block)
 
+#if defined(TESTING) && PHIST_OUTLEV >= 4
+    if( .not. map_compatible_map(mvec%map, block%map) ) then
+      ierr = -1
+      return
+    end if
+#endif
+
+    if( jmax-jmin .ne. block%jmax-block%jmin .or. &
+      & jmax-jmin .gt. mvec%jmax-mvec%jmin        ) then
+      ierr = -1
+      return
+    end if
+
     ! create view and let mvec_add_mvec handle the rest!
     view%is_view = .true.
     view%map = mvec%map
@@ -1292,6 +1301,19 @@ contains
     call c_f_pointer(mvec_ptr, mvec)
     call c_f_pointer(block_ptr,block)
 
+#ifdef TESTING
+    if( .not. map_compatible_map(mvec%map, block%map) ) then
+      ierr = -1
+      return
+    end if
+#endif
+
+    if( jmax-jmin .ne. block%jmax-block%jmin .or. &
+      & jmax-jmin .gt. mvec%jmax-mvec%jmin        ) then
+      ierr = -1
+      return
+    end if
+
     ! create view and let mvec_add_mvec handle the rest!
     view%is_view = .true.
     view%map = mvec%map
@@ -1314,7 +1336,7 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec, tmp
-    type(MVec_t), pointer :: block_list(:)
+    type(MVec_t), allocatable :: block_list(:)
     integer :: i
     !--------------------------------------------------------------------------------
 
@@ -1331,6 +1353,14 @@ contains
         return
       end if
       call c_f_pointer(block_ptr_list(i),tmp)
+
+#ifdef TESTING
+    if( .not. map_compatible_map(mvec%map, tmp%map) ) then
+      ierr = -1
+      return
+    end if
+#endif
+
       block_list(i)%jmin = tmp%jmin
       block_list(i)%jmax = tmp%jmax
       block_list(i)%is_view = .true.
@@ -1339,7 +1369,6 @@ contains
     end do
 
     call mvec_gather_mvecs(mvec,block_list)
-    deallocate(block_list)
 
     ierr = 0
 
@@ -1355,7 +1384,7 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec, tmp
-    type(MVec_t), pointer :: block_list(:)
+    type(MVec_t), allocatable :: block_list(:)
     integer :: i
     !--------------------------------------------------------------------------------
 
@@ -1372,6 +1401,14 @@ contains
         return
       end if
       call c_f_pointer(block_ptr_list(i),tmp)
+
+#ifdef TESTING
+    if( .not. map_compatible_map(mvec%map, tmp%map) ) then
+      ierr = -1
+      return
+    end if
+#endif
+
       block_list(i)%jmin = tmp%jmin
       block_list(i)%jmax = tmp%jmax
       block_list(i)%is_view = .true.
@@ -1380,7 +1417,6 @@ contains
     end do
 
     call mvec_scatter_mvecs(mvec,block_list)
-    deallocate(block_list)
 
     ierr = 0
 
@@ -1570,6 +1606,17 @@ contains
       ierr = -1
       return
     end if
+    if( y%jmax-y%jmin .ne. x%jmax-x%jmin ) then
+      ierr = -1
+      return
+    end if
+
+#ifdef TESTING
+    if( .not. map_compatible_map(x%map, y%map) ) then
+      ierr = -1
+      return
+    end if
+#endif
 
     call mvec_add_mvec(alpha, x, beta, y)
     ierr = 0
@@ -1619,6 +1666,14 @@ contains
       return
     end if
 
+#ifdef TESTING
+    if( .not. map_compatible_map(x%map, y%map) ) then
+      ierr = -1
+      return
+    end if
+#endif
+
+
     call mvec_vadd_mvec(alpha, x, beta, y)
     ierr = 0
 
@@ -1641,6 +1696,18 @@ contains
     end if
     call c_f_pointer(x_ptr, x)
     call c_f_pointer(y_ptr, y)
+
+    if( y%jmax-y%jmin .ne. x%jmax-x%jmin ) then
+      ierr = -1
+      return
+    end if
+
+#ifdef TESTING
+    if( .not. map_compatible_map(x%map, y%map) ) then
+      ierr = -1
+      return
+    end if
+#endif
 
     call mvec_dot_mvec(x,y,dot)
 
@@ -1672,6 +1739,19 @@ contains
     call c_f_pointer(w_ptr,w)
     call c_f_pointer(M_ptr,M)
 
+    if( v%jmax-v%jmin .ne. M%imax-M%imin .or. &
+      & M%jmax-M%jmin .ne. w%jmax-w%jmin      ) then
+      ierr = -1
+      return
+    end if
+
+#ifdef TESTING
+    if( .not. map_compatible_map(v%map, w%map) ) then
+      ierr = -1
+      return
+    end if
+#endif
+
     call mvec_times_sdmat(alpha,v,M,beta,w)
 
     ierr = 0
@@ -1698,6 +1778,12 @@ contains
 
     call c_f_pointer(v_ptr,v)
     call c_f_pointer(M_ptr,M)
+
+    if( v%jmax-v%jmin .ne. M%imax-M%imin .or. &
+      & M%jmax-M%jmin .gt. v%jmax-v%jmin      ) then
+      ierr = -1
+      return
+    end if
 
     call mvec_times_sdmat_inplace(v,M)
 
@@ -1728,11 +1814,118 @@ contains
     call c_f_pointer(w_ptr,w)
     call c_f_pointer(M_ptr,M)
 
+    if( v%jmax-v%jmin .ne. M%imax-M%imin .or. &
+      & M%jmax-M%jmin .ne. w%jmax-w%jmin      ) then
+      ierr = -1
+      return
+    end if
+
+#ifdef TESTING
+    if( .not. map_compatible_map(v%map, w%map) ) then
+      ierr = -1
+      return
+    end if
+#endif
+
     call mvecT_times_mvec(alpha,v,w,beta,M)
 
     ierr = 0
 
   end subroutine phist_DmvecT_times_mvec
+
+
+  subroutine phist_Dmvec_to_mvec(v_ptr, w_ptr, ierr) bind(C,name='phist_Dmvec_to_mvec_f')
+    use, intrinsic :: iso_c_binding
+    use mpi
+    !--------------------------------------------------------------------------------
+    type(C_PTR),        value         :: v_ptr, w_ptr
+    integer(C_INT),     intent(out)   :: ierr
+    !--------------------------------------------------------------------------------
+    type(MVec_t), pointer :: v, w
+    !--------------------------------------------------------------------------------
+    integer :: nvec, i, nglobal
+    integer(kind=8), allocatable :: globalIdx(:), invGlobalIdx(:)
+    integer, allocatable :: counts(:), offsets(:)
+    real(kind=8), allocatable :: globalVec(:,:), sendBuff(:,:)
+    !--------------------------------------------------------------------------------
+
+    if( .not. c_associated(v_ptr) .or. &
+      & .not. c_associated(w_ptr)      ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(v_ptr,v)
+    call c_f_pointer(w_ptr,w)
+
+    if( v%jmax-v%jmin .ne. w%jmax-w%jmin ) then
+      ierr = -1
+      return
+    end if
+
+    ! we assume v and w have different maps...
+    if( .not. map_compatible_map(v%map, w%map, reorder=.true.) ) then
+      ierr = -1
+      return
+    end if
+
+    ! we do this in two steps, first put all elements in ascending order, then redistribute them
+    ! (this is not optimal, but we shouldn't need this subroutine very often)
+    nvec = v%jmax-v%jmin+1
+    nglobal = v%map%distrib(v%map%nProcs)-1
+    if( allocated(v%map%global_idx) ) then
+
+      allocate(globalIdx(nglobal))
+      ! get all data globally! doesn't work for too large matrices
+      call MPI_Allgatherv(v%map%global_idx, v%map%nlocal(v%map%me), MPI_INTEGER8, &
+        &                 globalIdx, v%map%nlocal, int(v%map%distrib-1), MPI_INTEGER8, &
+        &                 v%map%comm, ierr)
+
+      ! get the inverse global index
+      allocate(invGlobalIdx(nglobal))
+      write(*,*) 'distributed globalIdx', globalIdx
+      do i = 1, nglobal
+        invGlobalIdx(globalIdx(i)) = i
+      end do
+      write(*,*) 'calculated invGlobalIdx', invGlobalIdx
+
+    else
+
+      allocate(invGlobalIdx(nglobal))
+      do i = 1, nglobal
+        invGlobalIdx(i) = i
+      end do
+      write(*,*) 'generated invGlobalIdx', invGlobalIdx
+
+    end if
+
+    ! get all data globally! doesn't work for too large matrices
+    allocate(globalVec(nvec,v%map%distrib(v%map%nProcs)-1))
+    allocate(counts(0:size(v%map%nlocal)-1))
+    counts = v%map%nlocal*nvec
+    allocate(offsets(0:size(v%map%distrib)-1))
+    offsets = int(v%map%distrib-1)*nvec
+    allocate(sendBuff(nvec,v%map%nlocal(v%map%me)))
+    sendBuff = v%val(v%jmin:v%jmax,:)
+    call MPI_Allgatherv(sendBuff, counts(v%map%me), MPI_DOUBLE_PRECISION, &
+      &                 globalVec, counts, offsets, MPI_DOUBLE_PRECISION, &
+      &                 v%map%comm, ierr)
+
+
+    ! copy data to target vector w
+    if( allocated(w%map%global_idx) ) then
+      do i = 1, w%map%nlocal(w%map%me)
+        w%val(w%jmin:w%jmax,i) = globalVec(:,invGlobalIdx(w%map%global_idx(i)))
+      end do
+    else
+      do i = 1, w%map%nlocal(w%map%me)
+        w%val(w%jmin:w%jmax,i) = globalVec(:,invGlobalIdx(i+w%map%distrib(w%map%me)-1))
+      end do
+    end if
+
+    ierr = 0
+
+  end subroutine phist_Dmvec_to_mvec
 
 
   subroutine phist_Dmvec_QR(v_ptr, R_ptr, ierr) bind(C,name='phist_Dmvec_QR_f')
@@ -1753,6 +1946,12 @@ contains
 
     call c_f_pointer(v_ptr,v)
     call c_f_pointer(R_ptr,R)
+
+    if( v%jmax-v%jmin .ne. R%imax-R%imin .or. &
+      & v%jmax-v%jmin .ne. R%jmax-R%jmin      ) then
+      ierr = -1
+      return
+    end if
 
     call mvec_QR(v,R,ierr)
 

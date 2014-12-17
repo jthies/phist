@@ -157,7 +157,16 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  PHIST_CAST_PTR_FROM_VOID(const Epetra_Comm, comm,vcomm,*ierr);
+  const Epetra_Comm* comm;
+  if (vcomm!=NULL)
+  {
+    comm=(const Epetra_Comm*)vcomm;
+  }
+  else
+  {
+    // note: this is a memory leak that we tolerate here
+    comm = new Epetra_SerialComm();
+  }
   Epetra_LocalMap localMap(nrows,0,*comm);
   Epetra_MultiVector* mv = new Epetra_MultiVector(localMap,ncols);
   if (mv==NULL) *ierr=-1;
@@ -372,6 +381,7 @@ extern "C" void SUBR(crsMat_delete)(TYPE(crsMat_ptr) vA, int* ierr)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
+  if(vA==NULL) return;
   PHIST_CAST_PTR_FROM_VOID(Epetra_CrsMatrix,A,vA,*ierr);
   delete A;
 }
@@ -737,7 +747,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,R,vR,*ierr);
 
   int rank;
-  MT rankTol=32*mt::eps();
+  MT rankTol=1000*mt::eps();
   if (V->NumVectors()==1)
     {
     // we need a special treatment here because TSQR
@@ -750,6 +760,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     int ldR;
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&Rval,&ldR,ierr),*ierr);
     rank=1;
+    *Rval=(ST)nrm;
     if (nrm<rankTol)
       {
       PHIST_DEB("zero vector detected\n");
@@ -757,8 +768,8 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
       PHIST_CHK_IERR(SUBR(mvec_random)(vV,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
       rank=0;// dimension of null space
+      *Rval=st::zero();
       }
-    *Rval=(ST)nrm;
     *ierr=1-rank;
     return;
     }

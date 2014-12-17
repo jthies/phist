@@ -69,32 +69,46 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
       }
     }
 
+// the matrices may have individual maps, so we need to recreate all vectors with the specific map of the matrix!
 void rebuildVectors(TYPE(const_crsMat_ptr) A)
   {
   if (typeImplemented_ && haveMats_)
     {
-    // set vec1 to be a valid X, vec2 a valid Y in Y=AX
+    // set vec1 to be a valid X, vec2 and vec3 a valid Y in Y=AX
     const_map_ptr_t range_map, domain_map;
     SUBR(crsMat_get_range_map)(A,&range_map,&ierr_);
     ASSERT_EQ(0,ierr_);
     SUBR(crsMat_get_domain_map)(A,&domain_map,&ierr_);
+
     ASSERT_EQ(0,ierr_);
     SUBR(mvec_delete)(vec1_,&ierr_);
     ASSERT_EQ(0,ierr_);
     SUBR(mvec_delete)(vec2_,&ierr_);
     ASSERT_EQ(0,ierr_);
+    SUBR(mvec_delete)(vec3_,&ierr_);
+    ASSERT_EQ(0,ierr_);
 
-    SUBR(mvec_create)(&vec1_,domain_map,this->nvec_,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
     lidx_t lda;
-    SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
-    ASSERT_EQ(lda,this->lda_);
-    SUBR(mvec_create)(&vec2_,range_map,this->nvec_,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
-    SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&lda,&this->ierr_);
-        ASSERT_EQ(0,this->ierr_);
-    ASSERT_EQ(lda,this->lda_);
+    SUBR(mvec_create)(&vec1_,domain_map,nvec_,&ierr_);
+    ASSERT_EQ(0,ierr_);
+    SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda,&ierr_);
+    ASSERT_EQ(0,ierr_);
+    ASSERT_EQ(lda,lda_);
+
+    SUBR(mvec_create)(&vec2_,range_map,nvec_,&ierr_);
+    ASSERT_EQ(0,ierr_);
+    SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&lda,&ierr_);
+    ASSERT_EQ(0,ierr_);
+    ASSERT_EQ(lda,lda_);
+
+    SUBR(mvec_create)(&vec3_,range_map,nvec_,&ierr_);
+    ASSERT_EQ(0,ierr_);
+    SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&lda,&ierr_);
+    ASSERT_EQ(0,ierr_);
+    ASSERT_EQ(lda,lda_);
+
+    phist_map_get_local_length(domain_map, &nloc_, &ierr_);
+    ASSERT_EQ(0,ierr_);
     }
   }
 
@@ -348,8 +362,16 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_print)(vec2_,&ierr_);
 #endif
       //v3=v1+beta*v2
-      SUBR(mvec_add_mvec)(alpha,vec1_,st::zero(),vec3_,&ierr_);
+      SUBR(mvec_to_mvec)(vec1_,vec3_,&ierr_);
+      if( ierr_ == PHIST_NOT_IMPLEMENTED )
+      {
+        SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec3_,&ierr_);
+      }
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_scale)(vec3_, alpha, &ierr_);
+      ASSERT_EQ(0,ierr_);
       SUBR(mvec_add_mvec)(beta,vec2_,st::one(),vec3_,&ierr_);
+      ASSERT_EQ(0,ierr_);
       // v2 = v1 + beta*v2 (=alpha*v1+v3)
       SUBR(crsMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -374,7 +396,13 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_print)(vec2_,&ierr_);
 #endif
        // v3=alpha*v1+beta*v2
-      SUBR(mvec_add_mvec)(alpha, vec1_,st::zero(),vec3_,&ierr_);
+      SUBR(mvec_to_mvec)(vec1_,vec3_,&ierr_);
+      if( ierr_ == PHIST_NOT_IMPLEMENTED )
+      {
+        SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec3_,&ierr_);
+      }
+      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_scale)(vec3_, alpha, &ierr_);
       ASSERT_EQ(0,ierr_);
       SUBR(mvec_add_mvec)(beta,vec2_,st::one(),vec3_,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -466,21 +494,43 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
 
       _ST_ alpha = st::one();
       _ST_ beta = st::zero();
-      const_map_ptr_t map;
-      SUBR(crsMat_get_domain_map)(A4_,&map,&ierr_);
+
+      // create new map (which has correct order!)
+      map_ptr_t map;
+      phist_map_create(&map, comm_, nglob_, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      lidx_t nloc = 0;
+      phist_map_get_local_length(map,&nloc,&ierr_);
       ASSERT_EQ(0,ierr_);
       gidx_t ilower = 0;
       phist_map_get_ilower(map,&ilower,&ierr_);
       ASSERT_EQ(0,ierr_);
 
+      // create a vector with this map
+      TYPE(mvec_ptr) orderedVec = NULL;
+      SUBR(mvec_create)(&orderedVec, map, nvec_, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      _ST_ *orderedVec_vp = NULL;
+      lidx_t lda = 0;
+      SUBR(mvec_extract_view)(orderedVec, &orderedVec_vp, &lda, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
       // setup recognizable input
-      for(int i = 0; i < nloc_; i++)
+      for(int i = 0; i < nloc; i++)
       {
         for(int j = 0; j < nvec_; j++)
         {
-          vec1_vp_[VIDX(i,j,lda_)] = (_ST_)(ilower+i + j*nglob_);
+          orderedVec_vp[VIDX(i,j,lda)] = (_ST_)(ilower+i + j*nglob_);
         }
       }
+      // copy to vec1_
+      SUBR(mvec_to_mvec)(orderedVec, vec1_, &ierr_);
+      if( ierr_ == PHIST_NOT_IMPLEMENTED )
+      {
+        SUBR(mvec_add_mvec)(st::one(),orderedVec,st::zero(),vec1_,&ierr_);
+      }
+      ASSERT_EQ(0,ierr_);
+
 
       // apply our shift matrix
 #if PHIST_OUTLEV>=PHIST_INFO
@@ -496,15 +546,23 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_print)(vec2_,&ierr_);
       ASSERT_EQ(0,ierr_);
 #endif
+      // copy to orderedVec
+      SUBR(mvec_to_mvec)(vec2_, orderedVec, &ierr_);
+      if( ierr_ == PHIST_NOT_IMPLEMENTED )
+      {
+        SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),orderedVec,&ierr_);
+      }
+      ASSERT_EQ(0,ierr_);
+
 
       // check result
       for(int i = 0; i < nglob_; i++)
       {
         for(int j = 0; j < nvec_; j++)
         {
-          if( i >= ilower && i < ilower+nloc_ )
+          if( i >= ilower && i < ilower+nloc )
           {
-            ASSERT_REAL_EQ((i+1)%nglob_ + j*nglob_,st::real(vec2_vp_[VIDX(i-ilower,j,lda_)]));
+            ASSERT_REAL_EQ((i+1)%nglob_ + j*nglob_,st::real(orderedVec_vp[VIDX(i-ilower,j,lda)]));
           }
           else
           {
@@ -528,21 +586,43 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
 
       _ST_ alpha = st::one();
       _ST_ beta = st::zero();
-      const_map_ptr_t map;
-      SUBR(crsMat_get_domain_map)(A2_,&map,&ierr_);
+
+      // create new map (which has correct order!)
+      map_ptr_t map;
+      phist_map_create(&map, comm_, nglob_, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      lidx_t nloc = 0;
+      phist_map_get_local_length(map,&nloc,&ierr_);
       ASSERT_EQ(0,ierr_);
       gidx_t ilower = 0;
       phist_map_get_ilower(map,&ilower,&ierr_);
       ASSERT_EQ(0,ierr_);
 
+      // create a vector with this map
+      TYPE(mvec_ptr) orderedVec = NULL;
+      SUBR(mvec_create)(&orderedVec, map, nvec_, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      _ST_ *orderedVec_vp = NULL;
+      lidx_t lda = 0;
+      SUBR(mvec_extract_view)(orderedVec, &orderedVec_vp, &lda, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
       // setup recognizable input
-      for(int i = 0; i < nloc_; i++)
+      for(int i = 0; i < nloc; i++)
       {
         for(int j = 0; j < nvec_; j++)
         {
-          vec1_vp_[VIDX(i,j,lda_)] = (_ST_)(ilower+i + j*nglob_);
+          orderedVec_vp[VIDX(i,j,lda)] = (_ST_)(ilower+i + j*nglob_);
         }
       }
+      // copy to vec1_
+      SUBR(mvec_to_mvec)(orderedVec, vec1_, &ierr_);
+      if( ierr_ == PHIST_NOT_IMPLEMENTED )
+      {
+        SUBR(mvec_add_mvec)(st::one(),orderedVec,st::zero(),vec1_,&ierr_);
+      }
+      ASSERT_EQ(0,ierr_);
+
 
       // apply our shift matrix
 #if PHIST_OUTLEV>=PHIST_INFO
@@ -676,11 +756,20 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
   ST* precalc_result=NULL;
   return;
 #endif
+      // copy to orderedVec
+      SUBR(mvec_to_mvec)(vec2_, orderedVec, &ierr_);
+      if( ierr_ == PHIST_NOT_IMPLEMENTED )
+      {
+        SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),orderedVec,&ierr_);
+      }
+      ASSERT_EQ(0,ierr_);
+
+
       // check result
       _MT_ err = 0;
-      for(int i = 0; i < nloc_; i++)
+      for(int i = 0; i < nloc; i++)
         for(int j = 0; j < nvec_; j++)
-          err = std::max(err, st::abs( precalc_result[(ilower+i)*nvec_+j] - vec2_vp_[VIDX(i,j,lda_)] ));
+          err = std::max(err, st::abs( precalc_result[(ilower+i)*nvec_+j] - orderedVec_vp[VIDX(i,j,lda)] ));
       ASSERT_NEAR(err, mt::zero(), mt::sqrt(mt::eps()));
     }
   }
@@ -899,7 +988,12 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     // safe vec1_
     SUBR(mvec_add_mvec)(st::one(), vec1_, st::zero(), vec2_, &ierr_);
     ASSERT_EQ(0,ierr_);
-    SUBR(mvec_add_mvec)(st::one(), vec1_, st::zero(), vec3_, &ierr_);
+    SUBR(mvec_to_mvec)(vec1_,vec3_,&ierr_);
+    if( ierr_ == PHIST_NOT_IMPLEMENTED )
+    {
+      SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec3_,&ierr_);
+    }
+    ASSERT_EQ(0,ierr_);
     ASSERT_EQ(0,ierr_);
 
     // create views

@@ -57,9 +57,15 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
 
         SUBR(op_wrap_crsMat)(opA_,A_,&ierr_);
         ASSERT_EQ(0,ierr_);
-        
+
+        const_map_ptr_t map = NULL;
+        SUBR(crsMat_get_domain_map)(A_, &map, &ierr_);
+        ASSERT_EQ(0,ierr_);
+        replaceMap(map);
+        ASSERT_EQ(0,ierr_);
+
         state_=new TYPE(blockedGMRESstate_ptr)[m_];
-        SUBR(blockedGMRESstates_create)(state_,m_,map_,maxBas_,&ierr_);
+        SUBR(blockedGMRESstates_create)(state_,m_,map,maxBas_,&ierr_);
         
         ASSERT_EQ(0,ierr_);
         xex_=vec1_;
@@ -97,7 +103,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
         delete [] state_;
       }
       //TODO - causes segfault when deleting the map (in KernelTestWithMap::TearDown())
-//      VTest::TearDown();
+      //melven: why/where?
+      VTest::TearDown();
     }
 
     TYPE(op_ptr) opA_;

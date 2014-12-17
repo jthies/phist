@@ -81,18 +81,19 @@ public:
   {
     if (typeImplemented_)
     {
+      int stride = 1;
       ST alpha = st::zero();
       ST beta  = st::prand();
       PHIST_OUT(9,"axpy, alpha=%f+%f i, beta=%f+%f i",st::real(alpha),
           st::imag(alpha),st::real(beta),st::imag(beta));
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(sdMat_from_device)(mat2_,&ierr_);
-      PrintVector(std::cerr,"before scale",mat2_vp_,nrows_,m_lda_,stride_,mpi_comm_);
+      //PrintVector(std::cerr,"before scale",mat2_vp_,nrows_,m_lda_,stride,mpi_comm_);
 #endif
       SUBR(sdMat_add_sdMat)(alpha,mat1_,beta,mat2_,&ierr_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(sdMat_from_device)(mat2_,&ierr_);
-      PrintVector(std::cerr,"after scale",mat2_vp_,nrows_,m_lda_,stride_,mpi_comm_);
+      //PrintVector(std::cerr,"after scale",mat2_vp_,nrows_,m_lda_,stride,mpi_comm_);
 #endif
       ASSERT_EQ(0,ierr_);
 
@@ -446,23 +447,7 @@ public:
       SUBR(sdMat_random)(mat1_, &ierr_);
       ASSERT_EQ(0,ierr_);
 
-      if( rank == 0 )
-      {
-        SUBR(sdMat_add_sdMat)(st::one(), mat1_, st::zero(), mat2_, &ierr_);
-      }
-      else
-      {
-        ierr_ = 0;
-      }
-      ASSERT_EQ(0, ierr_);
-#ifdef PHIST_HAVE_MPI
-      int size = sizeof(_ST_)*(MIDX(nrows_-1,ncols_-1,m_lda_) - MIDX(0,0,m_lda_) + 1);
-      ierr_ = MPI_Bcast(mat2_vp_, size, MPI_BYTE, 0, MPI_COMM_WORLD);
-      ASSERT_EQ(0,ierr_);
-#endif
-
-      ASSERT_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
-
+      ASSERT_REAL_EQ(mt::one(), ArrayParallelReplicated(mat1_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
 
       // don't trick me (the test) by just using the same initilization for the random number generator on all processes!
       if( rank == 0 )
@@ -470,26 +455,157 @@ public:
         st::rand();
       }
 
-
       // do the same test again...
       SUBR(sdMat_random)(mat1_, &ierr_);
       ASSERT_EQ(0,ierr_);
 
-      if( rank == 0 )
-      {
-        SUBR(sdMat_add_sdMat)(st::one(), mat1_, st::zero(), mat2_, &ierr_);
-      }
-      else
-      {
-        ierr_ = 0;
-      }
-      ASSERT_EQ(0, ierr_);
-#ifdef PHIST_HAVE_MPI
-      ierr_ = MPI_Bcast(mat2_vp_, size, MPI_BYTE, 0, MPI_COMM_WORLD);
-      ASSERT_EQ(0,ierr_);
-#endif
+      ASSERT_REAL_EQ(mt::one(), ArrayParallelReplicated(mat1_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
+    }
+  }
 
-      ASSERT_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
+#if _NROWS_ >= 6 && _NCOLS_ >= 8
+  TEST_F(CLASSNAME, happy_aliasing_views)
+  {
+    if( typeImplemented_ )
+    {
+      int stride = 1;
+      SUBR(sdMat_random)(mat1_, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // set up 4 block views in one matrix to multiply around
+      TYPE(sdMat_ptr) v11 = NULL, v12 = NULL, v21 = NULL, v22 = NULL;
+      SUBR(sdMat_view_block)(mat1_, &v11, 1,2, 1,2, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(mat1_, &v21, 3,4, 1,3, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(mat1_, &v12, 0,2, 4,6, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(mat1_, &v22, 3,5, 5,6, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // set up left/right and upper/lower block view to add around
+      TYPE(sdMat_ptr) vu = NULL, vd = NULL, vl = NULL, vr = NULL;
+      SUBR(sdMat_view_block)(mat1_, &vu, 0,2, 1,6, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(mat1_, &vd, 3,5, 1,6, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(mat1_, &vl, 0,4, 1,2, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(mat1_, &vr, 1,5, 3,4, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+
+      // use "unaliased" other mat2_ as reference
+      SUBR(sdMat_add_sdMat)(st::one(), mat1_, st::zero(), mat2_, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // set up 4 block views in one matrix to multiply around
+      TYPE(sdMat_ptr) ref_v11 = NULL, ref_v12 = NULL, ref_v21 = NULL, ref_v22 = NULL;
+      SUBR(sdMat_view_block)(mat2_, &ref_v11, 1,2, 1,2, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(mat2_, &ref_v21, 3,4, 1,3, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(mat2_, &ref_v12, 0,2, 4,6, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(mat2_, &ref_v22, 3,5, 5,6, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // set up left/right and upper/lower block view to add around
+      TYPE(sdMat_ptr) ref_vu = NULL, ref_vd = NULL, ref_vl = NULL, ref_vr = NULL;
+      SUBR(sdMat_view_block)(mat2_, &ref_vu, 0,2, 1,6, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(mat2_, &ref_vd, 3,5, 1,6, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(mat2_, &ref_vl, 0,4, 1,2, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(mat2_, &ref_vr, 1,5, 3,4, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+
+      // do some operations, always start with result in reference mat2_ views than same on aliasing views in mat1_ and compare
+      _ST_ alpha = 0.7;
+      _ST_ beta = 0.3;
+
+      // sdMat_add_sdMat up/down
+      SUBR(sdMat_add_sdMat)(alpha, vu, beta, ref_vd, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_add_sdMat)(alpha, vu, beta, vd, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
+
+      // sdMat_add_sdMat left/right
+      SUBR(sdMat_add_sdMat)(alpha, vr, beta, ref_vl, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_add_sdMat)(alpha, vr, beta, vl, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
+
+      // sdMat_times_sdMat 21,22->11
+      SUBR(sdMat_times_sdMat)(alpha, v21, v22, beta, ref_v11, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_times_sdMat)(alpha, v21, v22, beta, v11, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
+
+      // sdMat_times_sdMat 22,21->12
+      SUBR(sdMat_times_sdMat)(alpha, v22, v21, beta, ref_v12, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_times_sdMat)(alpha, v22, v21, beta, v12, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
+
+
+      // sdMatT_times_sdMat 22,22->11
+      SUBR(sdMatT_times_sdMat)(alpha, v22, v22, beta, ref_v11, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMatT_times_sdMat)(alpha, v22, v22, beta, v11, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
+
+      // sdMatT_times_sdMat 21,21->12
+      SUBR(sdMatT_times_sdMat)(alpha, v21, v21, beta, ref_v12, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMatT_times_sdMat)(alpha, v21, v21, beta, v12, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
+
+      // delete ref views
+      SUBR(sdMat_delete)(ref_vr, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(ref_vl, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(ref_vd, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(ref_vu, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(ref_v11, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(ref_v12, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(ref_v21, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(ref_v22, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
+      // delete views
+      SUBR(sdMat_delete)(vr, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(vl, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(vd, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(vu, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(v11, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(v12, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(v21, &ierr_);
+      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(v22, &ierr_);
+      ASSERT_EQ(0,ierr_);
+
 
     }
   }
+#endif

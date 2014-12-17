@@ -2,10 +2,12 @@
 // If the input vector has m columns and rank r, ierr=m-r is
 // returned. Columns 0:ierr-1 of V will be zero, the remaining
 // columns will be orthogonal. If the output matrix is denoted
-// by Q, Q and V are related by Q=V*B. It is possible to obtain
-// a QR factorization by e.g. computing [q,r]=qr(B), R=r\q, at
-// least if V is of full rank.
-void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
+// by Q, Q and V are related by Q=V*B. The third argument, E, 
+// should be preallocated by the user with m elements, m being
+// the number of columns in V. On successful return (ierr>=0),
+// e[j] indicates the norm of V(:,j) before the orthogonali-  
+// zation step. On exit, V(:,j), j>*ierr has 2-norm 1.
+void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* ierr)
 {
 #include "phist_std_typedefs.hpp"
     PHIST_ENTER_FCN(__FUNCTION__);
@@ -15,13 +17,14 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
     _ST_*  B_raw;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(B,&B_raw,&ldb,ierr),*ierr);
-    _MT_ D[m], Dinv[m]; // sqrt of diag of V'V (and its inverse)
+    _MT_ Dinv[m]; // inverse sqrt of V'V
     _MT_ E[m], Einv[m]; // sqrt of eigenvalues of (scaled) V'V (and its inverse)
     
+    // S=V'V
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),B,ierr),*ierr);
     PHIST_CHK_IERR(SUBR(sdMat_from_device)(B,ierr),*ierr);
-    // scaling factors: inverse diagonal elements
-    for (int i=0; i<m; i++) 
+    // scaling factors: sqrt of inverse diagonal elements
+    for (int i=0; i<m; i++)
     {
       _MT_ d=st::real(B_raw[i*ldb+i]);
       // note: diagonal entry must be real
@@ -35,12 +38,12 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
         Dinv[i] = mt::zero();
       }
     }
-    // scale matrix V'V
-    for(int i=0; i<m; i++)
+    // scale matrix S^=V'V with ones on diagonal
+    for (int i=0; i<m; i++)
     {
-      for(int j=0; j<m; j++)  
+      for(int j=0; j<m; j++) 
       {
-        B_raw[j*ldb+i] *= Dinv[i]*Dinv[j];
+        B_raw[i*ldb+j] *= Dinv[i]*Dinv[j];
       }
     }
 
@@ -54,6 +57,9 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
     PHIST_CHK_IERR(*ierr=PHIST_LAPACKE(syevd)
         (SDMAT_FLAG, 'V' , 'U', m, B_raw, ldb, E),*ierr);
 #endif
+
+PHIST_SOUT(PHIST_DEBUG,"singular values of W:\n");
+for (int i=0;i<m;i++) PHIST_SOUT(PHIST_DEBUG,"%24.16e\n",sqrt(E[i]));
 
     // determine rank of input matrix
     MT emax=mt::abs(E[m-1]); 
@@ -75,8 +81,8 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
         }
         else
         {
-          E[i] = sqrt(E[i]);
           Einv[i] = mt::one()/sqrt(E[i]);
+          E[i] = sqrt(E[i]);
         }
       }
     }
@@ -100,7 +106,6 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* ierr)
     // compute V <- V*B to get an orthogonal V (up to the first (m-rank) columns,
     // which will be exactly zero)
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(V,B,ierr),*ierr);
-
 
 // the return value of this function is the rank of the null space of V on entry
 *ierr=m-rank;

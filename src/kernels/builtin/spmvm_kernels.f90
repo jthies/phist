@@ -1,4 +1,6 @@
 ! hopefully fast spMVM kernels for beta != 0 (and thus without nontemporary stores)
+! prevent compiler warnings for unused dummy variables
+#define TOUCH(var) if(.false.) call TOUCH_EMPTY_FUNCTION(var)
 
 subroutine dspmvm_NT_1(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx, val, shifts, x, halo, y)
   implicit none
@@ -24,6 +26,8 @@ subroutine dspmvm_NT_1(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_
       real(C_DOUBLE), intent(inout) :: y(*)
     end subroutine dspmvm_nt_1_c
   end interface
+
+  TOUCH(ncols)
 
   call dspmvm_nt_1_c(nlocal,alpha,row_ptr,halo_ptr,col_idx,val,shifts,x,halo,y)
 
@@ -53,6 +57,8 @@ subroutine dspmvm_NT_2(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_
       real(C_DOUBLE), intent(inout) :: y(*)
     end subroutine dspmvm_nt_2_c
   end interface
+
+  TOUCH(ncols)
 
   call dspmvm_nt_2_c(nlocal,alpha,row_ptr,halo_ptr,col_idx,val,shifts,x,halo,y,ldy)
 
@@ -84,6 +90,8 @@ subroutine dspmvm_NT_4(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_
     end subroutine dspmvm_nt_4_c
   end interface
 
+  TOUCH(ncols)
+
   call dspmvm_nt_4_c(nlocal,alpha,row_ptr,halo_ptr,col_idx,val,shifts,x,halo,y,ldy)
 
 end subroutine dspmvm_NT_4
@@ -113,6 +121,8 @@ subroutine dspmvm_NT_8(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_
       real(C_DOUBLE), intent(inout) :: y(*)
     end subroutine dspmvm_nt_8_c
   end interface
+
+  TOUCH(ncols)
 
   call dspmvm_nt_8_c(nlocal,alpha,row_ptr,halo_ptr,col_idx,val,shifts,x,halo,y,ldy)
 
@@ -144,6 +154,8 @@ subroutine dspmvm_NT_strided_2(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_p
     end subroutine dspmvm_nt_strided_2_c
   end interface
 
+  TOUCH(ncols)
+
   call dspmvm_nt_strided_2_c(nlocal,alpha,row_ptr,halo_ptr,col_idx,val,shifts,x,ldx,halo,y,ldy)
 
 end subroutine dspmvm_NT_strided_2
@@ -173,6 +185,8 @@ subroutine dspmvm_NT_strided_4(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_p
       real(C_DOUBLE), intent(inout) :: y(*)
     end subroutine dspmvm_nt_strided_4_c
   end interface
+
+  TOUCH(ncols)
 
   call dspmvm_nt_strided_4_c(nlocal,alpha,row_ptr,halo_ptr,col_idx,val,shifts,x,ldx,halo,y,ldy)
 
@@ -204,6 +218,8 @@ subroutine dspmvm_NT_strided_8(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_p
     end subroutine dspmvm_nt_strided_8_c
   end interface
 
+  TOUCH(ncols)
+
   call dspmvm_nt_strided_8_c(nlocal,alpha,row_ptr,halo_ptr,col_idx,val,shifts,x,ldx,halo,y,ldy)
 
 end subroutine dspmvm_NT_strided_8
@@ -225,6 +241,8 @@ subroutine dspmvm_1(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx
   integer :: i
   integer(kind=8) :: j
 !dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x:64, halo:64, y:64
+
+  TOUCH(ncols)
 
 !$omp parallel do private(tmp) schedule(static)
   do i = 1, nlocal, 1
@@ -255,6 +273,8 @@ subroutine dspmvm_2(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx
   integer(kind=8) :: j
 !dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x:64, halo:64, y:64
 
+  TOUCH(ncols)
+
 !$omp parallel do private(tmp) schedule(static)
   do i = 1, nlocal, 1
     tmp(:) = shifts*x(:,i)
@@ -284,6 +304,8 @@ subroutine dspmvm_4(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx
   integer(kind=8) :: j
 !dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x:64, halo:64, y:64
 
+  TOUCH(ncols)
+
 !$omp parallel do private(tmp) schedule(static)
   do i = 1, nlocal, 1
     tmp(:) = shifts*x(:,i)
@@ -312,6 +334,8 @@ subroutine dspmvm_8(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr, col_idx
   integer :: i
   integer(kind=8) :: j
 !dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x:64, halo:64, y:64
+
+  TOUCH(ncols)
 
 !$omp parallel do private(tmp) schedule(static)
   do i = 1, nlocal, 1
@@ -344,6 +368,8 @@ subroutine dspmvm_strided_1(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr,
   integer(kind=8) :: j
 !dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x:8, halo:64, y:8
 
+  TOUCH(ncols)
+
 !$omp parallel do private(tmp) schedule(static)
   do i = 1, nlocal, 1
     tmp(:) = shifts*x(1:1,i)
@@ -372,6 +398,8 @@ subroutine dspmvm_strided_2(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr,
   integer :: i
   integer(kind=8) :: j
 !dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x:8, halo:64, y:8
+
+  TOUCH(ncols)
 
 !$omp parallel do private(tmp) schedule(static)
   do i = 1, nlocal, 1
@@ -402,6 +430,8 @@ subroutine dspmvm_strided_4(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr,
   integer(kind=8) :: j
 !dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x:8, halo:64, y:8
 
+  TOUCH(ncols)
+
 !$omp parallel do private(tmp) schedule(static)
   do i = 1, nlocal, 1
     tmp(:) = shifts*x(1:4,i)
@@ -430,6 +460,8 @@ subroutine dspmvm_strided_8(nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_ptr,
   integer :: i
   integer(kind=8) :: j
 !dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x:8, halo:64, y:8
+
+  TOUCH(ncols)
 
 !$omp parallel do private(tmp) schedule(static)
   do i = 1, nlocal, 1
@@ -460,6 +492,8 @@ subroutine dspmvm_generic(nvec, nlocal, nhalo, ncols, nnz, alpha, row_ptr, halo_
   integer :: i
   integer(kind=8) :: j
 !dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x:8, halo:64, y:8
+
+  TOUCH(ncols)
 
 !$omp parallel do private(tmp) schedule(static)
   do i = 1, nlocal, 1

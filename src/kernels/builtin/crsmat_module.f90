@@ -1,15 +1,10 @@
 #include "phist_config.h"
-#if PHIST_OUTLEV<4
-# ifdef TESTING
-# undef TESTING
-# endif
-#endif
 #ifdef PHIST_HAVE_GHOST
 #include "ghost/config.h"
 #endif
 module crsmat_module
   use, intrinsic :: iso_c_binding
-  use map_module, only: Map_t, map_setup
+  use map_module, only: Map_t, map_setup, map_compatible_map
   use mvec_module, only: MVec_t, mvec_scale
   implicit none
 
@@ -141,7 +136,7 @@ contains
           do while( mat%global_col_idx(j) .ge. mat%row_map%distrib(jProc+1) )
             jProc=jProc+1
           end do
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
 if( mat%global_col_idx(j) .lt. mat%row_map%distrib(jProc) ) then
   write(*,*) 'CRS sorting error! me', mat%row_map%me, 'idx', mat%global_col_idx(j), &
     &        'jProc', jProc, 'distrib', mat%row_map%distrib
@@ -239,7 +234,7 @@ end if
     do i=1,combuff%nSendProcs,1
       j=combuff%sendInd(i)
       k=combuff%sendInd(i+1)
-      call mpi_irecv(sendRowBlkInd(j:k-1),k-j,MPI_INTEGER8,&
+      call mpi_irecv(sendRowBlkInd(j:k-1),int(k-j),MPI_INTEGER8,&
         &            combuff%sendProcId(i),20,mat%row_map%Comm,&
         &            combuff%sendRequests(i),ierr)
     end do
@@ -277,12 +272,12 @@ end if
       j=combuff%recvInd(i)
       k=combuff%recvInd(i+1)
       call sort(combuff%recvRowBlkInd(j:k-1))
-      call mpi_isend(combuff%recvRowBlkInd(j:k-1),k-j,MPI_INTEGER8,&
+      call mpi_isend(combuff%recvRowBlkInd(j:k-1),int(k-j),MPI_INTEGER8,&
         &            combuff%recvProcId(i),20,mat%row_map%Comm,&
         &            combuff%recvRequests(i),ierr)
     end do
 
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
 ! check that recvRowBlkInd is globally sorted
 do i = 2, size(combuff%recvRowBlkInd), 1
   if( combuff%recvRowBlkInd(i-1) .ge. combuff%recvRowBlkInd(i) ) then
@@ -308,7 +303,7 @@ end do
     allocate(combuff%sendBuffInd(size(combuff%sendRowBlkInd),2))
     do i = 1, size(combuff%sendRowBlkInd), 1
       combuff%sendBuffInd(i,1) = combuff%sendRowBlkInd(i)
-      combuff%sendBuffInd(i,2) = i
+      combuff%sendBuffInd(i,2) = int(i,kind=4)
     end do
     call sortInd(combuff%sendBuffInd(:,1), combuff%sendBuffInd(:,2))
     !write(*,*) 'sendBuffInd 1', combuff%sendBuffInd(:,1)
@@ -385,6 +380,7 @@ end do
   end subroutine sort_global_cols
 
 
+#ifdef PHIST_HAVE_PARMETIS
   !> rearranges the entries in crsMat_t%val and crsMat_t%global_col_idx in a given order
   !! \param crsMat matrix to reorder
   !! \param new_ind array of size crsMat%nEntries with new position of each block
@@ -420,6 +416,7 @@ end do
     end do
 
   end subroutine reord_val_global_col
+#endif
 
 
 
@@ -561,9 +558,17 @@ end do
 
 
     allocate(rowSendProc(crsMat%nRows))
-    ! parmetis call encapsulated, we only need the
-    ! data where each row goes
-    call calculateNewPartition(crsMat,rowSendProc)
+    ! don't call parmetis when we only have very vew elements per process, it'll segfault otherwise somehow...
+    if( (crsMat%row_map%distrib(crsMat%row_map%nProcs)-1) / crsMat%row_map%nProcs .lt. 10 ) then
+      rowSendProc = crsMat%row_map%me
+      if( outlev .ge. 1 .and. crsMat%row_map%me .eq. 0 ) then
+        write(*,*) 'WARNING: disabling parmetis as we have too few elements per node!'
+      end if
+    else
+      ! parmetis call encapsulated, we only need the
+      ! data where each row goes
+      call calculateNewPartition(crsMat,rowSendProc)
+    end if
 !write(*,*) 'rowSendProc', rowSendProc
     localErr = 0
     if( any(rowSendProc .lt. 0 .or. rowSendProc .ge. crsMat%row_map%nProcs) ) then
@@ -626,6 +631,9 @@ end do
         end if
       end do
     end do
+    ! copy to map
+    allocate(crsMat%row_map%global_idx(size(crsMat%global_row_idx)))
+    crsMat%row_map%global_idx = crsMat%global_row_idx
 
     crsMat%row_map%distrib=0
     do i = 1, size(rowSendProcGlob), 1
@@ -677,7 +685,7 @@ end do
       jProc_ = -1
       if( i .le. nd_new ) jProc_ = rowRecvProc(i)
       if( jProc .ne. jProc_ ) then
-        call mpi_irecv(row_blk_new(k+1),i-k,MPI_INTEGER8, &
+        call mpi_irecv(row_blk_new(k+1),int(i-k),MPI_INTEGER8, &
           &           jProc,0,crsMat%row_map%comm, recvRequest(l,1), ierr)
         k = i
         l = l + 1
@@ -740,8 +748,8 @@ end do
 !write(*,*) 'sendBuff_row_blk', sendBuff_row_blk
     do i = 1, nSendProcs, 1
       call mpi_send(sendBuff_row_blk(sendBuffInd(i)+1), &
-        &     sendBuffInd(i+1)-sendBuffInd(i), MPI_INTEGER8, &
-        &     sendIds(i), 0, crsMat%row_map%comm, ierr)
+        &     int(sendBuffInd(i+1)-sendBuffInd(i)), MPI_INTEGER8, &
+        &     int(sendIds(i)), 0, crsMat%row_map%comm, ierr)
     end do
     sendBuff_row_blk(1) = 1
     do i = 1, sendBuffInd(nSendProcs+1)-1, 1
@@ -769,7 +777,7 @@ end do
       if( i .le. nd_new ) jProc_ = rowRecvProc(i)
       if( jProc .ne. jProc_ ) then
         call mpi_irecv(col_ind_new(row_blk_new(k)),&
-          &           row_blk_new(i)-row_blk_new(k),MPI_INTEGER8, &
+          &           int(row_blk_new(i)-row_blk_new(k)),MPI_INTEGER8, &
           &           jProc,1,crsMat%row_map%comm, recvRequest(l,1), ierr)
         k = i
         l = l + 1
@@ -806,8 +814,8 @@ end do
     ! send col ind
     do i = 1, nSendProcs, 1
       call mpi_send(crsMat%global_col_idx(sendBuff_row_blk(sendBuffInd(i))), &
-        &  sendBuff_row_blk(sendBuffInd(i+1))-sendBuff_row_blk(sendBuffInd(i)), &
-        &  MPI_INTEGER8,sendIds(i),1,crsMat%row_map%comm, ierr)
+        &  int(sendBuff_row_blk(sendBuffInd(i+1))-sendBuff_row_blk(sendBuffInd(i))), &
+        &  MPI_INTEGER8,int(sendIds(i)),1,crsMat%row_map%comm, ierr)
     end do
     deallocate(crsMat%global_col_idx) ! not needed any more
 
@@ -827,7 +835,7 @@ end do
       if( i .le. nd_new ) jProc_ = rowRecvProc(i)
       if( jProc .ne. jProc_ ) then
         call mpi_irecv(value_new(row_blk_new(k)),&
-          &           (row_blk_new(i)-row_blk_new(k)),&
+          &           int(row_blk_new(i)-row_blk_new(k)),&
           &           MPI_DOUBLE_PRECISION, &
           &           jProc,2,crsMat%row_map%comm, recvRequest(l,1), ierr)
         k = i
@@ -840,8 +848,8 @@ end do
     ! send value
     do i = 1, nSendProcs, 1
       call mpi_send(crsMat%val(sendBuff_row_blk(sendBuffInd(i))), &
-        &  (sendBuff_row_blk(sendBuffInd(i+1))-sendBuff_row_blk(sendBuffInd(i))), &
-        &  MPI_DOUBLE_PRECISION,sendIds(i),2,crsMat%row_map%comm, ierr)
+        &  int(sendBuff_row_blk(sendBuffInd(i+1))-sendBuff_row_blk(sendBuffInd(i))), &
+        &  MPI_DOUBLE_PRECISION,int(sendIds(i)),2,crsMat%row_map%comm, ierr)
     end do
     deallocate(crsMat%val,sendBuff_row_blk) ! not needed any more
 
@@ -974,7 +982,6 @@ end do
         return
       end if
       adjwgt = 2
-#warning "matrix reordering only implemented for the symmetric case, will fail otherwise!"
       ! the edge weights are 1 for single edges and 2 for edges in both
       ! directions
 
@@ -999,22 +1006,27 @@ end do
 
       ! doesn't work with ParMetis-3.1.1, but other versions fail for empty
       ! processes
-
-  options(0) = 1
-  options(1) = 0
-  options(2) = 15
-  options(3) = 2
-
-  call ParMETIS_V3_RefineKway_f(vtxdist, xadj, adjncy, vwgt, adjwgt, &
-    &                           wgtflag, numflag, ncon, nparts, tpwgts, ubvec_refine, &
-    &                           options, edgecut_refined, rowBlkTargetProc, crsMat%row_map%comm)
-
       if( outlev .ge. 3 .and. crsMat%row_map%me .eq. 0 ) then
         write(*,*) 'repartitioning: total number of edges cut:'
         write(*,*) '                before:',edgecut_before
         write(*,*) '      after first step:',edgecut
-        write(*,*) '     after second step:',edgecut_refined
       end if
+
+      if( edgecut .gt. 0 ) then
+        options(0) = 1
+        options(1) = 0
+        options(2) = 15
+        options(3) = 2
+
+        call ParMETIS_V3_RefineKway_f(vtxdist, xadj, adjncy, vwgt, adjwgt, &
+          &                           wgtflag, numflag, ncon, nparts, tpwgts, ubvec_refine, &
+          &                           options, edgecut_refined, rowBlkTargetProc, crsMat%row_map%comm)
+
+        if( outlev .ge. 3 .and. crsMat%row_map%me .eq. 0 ) then
+          write(*,*) '     after second step:',edgecut_refined
+        end if
+      end if
+
       deallocate(xadj,adjncy,vwgt,tpwgts,vtxdist,adjwgt)
 
       rowBlkTargetProc = rowBlkTargetProc - 1
@@ -1114,7 +1126,7 @@ end do
     end do
 
     deallocate(colorCount)
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
 #define DEBUG_COLPACK 1
 #endif
 #if DEBUG_COLPACK
@@ -1292,7 +1304,7 @@ end subroutine permute_local_matrix
 
   !==================================================================================
   !> multiply crsmat with mvec
-  subroutine crsmat_times_mvec(alpha, A, shifts, x, beta, y)
+  subroutine crsmat_times_mvec(alpha, A, shifts, x, beta, y, ierr)
     use, intrinsic :: iso_c_binding, only: C_INT
     use mpi
     !--------------------------------------------------------------------------------
@@ -1302,12 +1314,27 @@ end subroutine permute_local_matrix
     type(MVec_t),   intent(in)    :: x
     real(kind=8),   intent(in)    :: beta
     type(MVec_t),   intent(inout) :: y
+    integer(C_INT), intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     integer :: nvec, ldx, ldy, recvBuffSize, sendBuffSize
     logical :: strided_x, strided_y, strided
     logical :: y_is_aligned16, handled
-    integer :: i, j, k, l, ierr
+    integer :: i, k, l
     !--------------------------------------------------------------------------------
+
+    ! check arguments
+    ierr = 0
+    if( y%jmax-y%jmin .ne. x%jmax-x%jmin ) then
+      ierr = -1
+      return
+    end if
+#ifdef TESTING
+    if( .not. map_compatible_map(A%row_map, x%map) .or. &
+      & .not. map_compatible_map(A%row_map, y%map)      ) then
+      ierr = -1
+      return
+    end if
+#endif
 
     ! if alpha == 0, only scale y
     if( alpha .eq. 0 .or. A%nEntries .eq. 0 ) then
@@ -1342,7 +1369,7 @@ end subroutine permute_local_matrix
       y_is_aligned16 = .false.
     end if
 
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     write(*,*) 'spMVM with nvec =',nvec,', ldx =',ldx,', ldy =',ldy,', y_mem_aligned16 =', y_is_aligned16, 'on proc', A%row_map%me
     flush(6)
 #endif
@@ -1423,13 +1450,6 @@ end subroutine permute_local_matrix
     else
       call dspmv_buff_cpy_general(nvec, A%nrows, sendBuffSize, ldx, x%val(x%jmin,1), A%comm_buff%sendBuffInd, A%comm_buff%sendData)
     end if
-
-!!$omp parallel do schedule(static)
-!    do i = 1, size(A%comm_buff%sendBuffInd,1), 1
-!      k = A%comm_buff%sendBuffInd(i,1)
-!      l = A%comm_buff%sendBuffInd(i,2)
-!      A%comm_buff%sendData(:,l) = x%val(x%jmin:x%jmax,k)
-!    end do
 
 
     ! start sending (e.g. issend)
@@ -1589,7 +1609,8 @@ end subroutine permute_local_matrix
     character(len=100) :: line
     integer(kind=8), allocatable :: idx(:,:)
     real(kind=8), allocatable :: val(:)
-    integer(kind=8) :: i, i_, j, k, globalRows, globalCols, globalEntries, nRows
+    integer(kind=8) :: i, j, k, globalRows, globalCols, globalEntries, nRows
+    !integer(kind=8) :: i_
     logical :: symmetric
     integer(kind=8) :: tmp_idx(2,2)
     real(kind=8) :: tmp_val(2)
@@ -1817,7 +1838,7 @@ end subroutine permute_local_matrix
     integer(kind=G_GIDX_T) :: j, j_, globalEntries
     integer(kind=G_GIDX_T) :: i_
     integer(kind=G_LIDX_T) :: nne
-    integer :: funit
+    !integer :: funit
     integer(kind=8) :: localDim(2), globalDim(2)
     real(kind=8) :: wtime
     integer, pointer :: comm
@@ -2011,12 +2032,12 @@ end if
     !--------------------------------------------------------------------------------
     type(CrsMat_t), pointer :: A
     integer :: i
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
 
-#ifdef TESTING
+#if defined(TESTING) && PHIST_OUTLEV >= 4
     write(*,*) 'deleting crsMat at address', transfer(A_ptr,dummy)
     flush(6)
 #endif
@@ -2098,9 +2119,8 @@ end if
     allocate(shifts(x%jmax-x%jmin+1))
     shifts = 0._8
 
-    call crsmat_times_mvec(alpha,A,shifts,x,beta,y)
+    call crsmat_times_mvec(alpha,A,shifts,x,beta,y,ierr)
 
-    ierr = 0
   end subroutine phist_DcrsMat_times_mvec
 
 
@@ -2128,9 +2148,8 @@ end if
     call c_f_pointer(x_ptr,x)
     call c_f_pointer(y_ptr,y)
 
-    call crsmat_times_mvec(alpha,A,shifts,x,beta,y)
+    call crsmat_times_mvec(alpha,A,shifts,x,beta,y,ierr)
 
-    ierr = 0
   end subroutine phist_DcrsMat_times_mvec_vadd_mvec
 
   !==================================================================================
@@ -2155,7 +2174,7 @@ end if
     !--------------------------------------------------------------------------------
     
     integer, allocatable, dimension(:) :: procCount !! temporary array
-    integer :: theShape(2), sendBuffSize
+    integer :: theShape(2)
     integer :: i,k,l
     integer(kind=8) :: j
 
@@ -2255,7 +2274,7 @@ end if
     type(sparseArray_t), pointer :: invProcCount
     
     !--------------------------------------------------------------------------------
-    integer :: iSys,i,j,k,l
+    integer :: iSys
     integer :: ldx, ldb, nvec
     integer :: theShape(2)
     integer :: sendBuffSize,recvBuffSize
@@ -2456,7 +2475,7 @@ end if
     type(sparseArray_t), pointer :: invProcCount
     
     !--------------------------------------------------------------------------------
-    integer :: iSys,i,j,k,l
+    integer :: iSys
     integer :: ldx, ldb, nvec
     integer :: theShape(2)
     integer :: sendBuffSize,recvBuffSize
@@ -2740,7 +2759,7 @@ subroutine Dcarp_average(A,xr,xi,invProcCount, ierr)
   integer :: ierr
 
   ! local
-  integer :: sendBuffSize,recvBuffSize, nvec, nrecv
+  integer :: nvec, nrecv
   integer :: i,j,k,l
 
   nvec=xr%jmax-xr%jmin+1

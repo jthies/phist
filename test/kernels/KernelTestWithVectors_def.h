@@ -5,6 +5,41 @@ class KernelTestWithVectors<_ST_,_Nglob,_Nvec> :
         public virtual KernelTestWithMap<_Nglob> 
   {
 
+private:
+
+void createVecs()
+{
+  lidx_t lda;
+  // vectors created with the same function should get the same stride (lda)
+  SUBR(mvec_create)(&vec1_,this->map_,nvec_,&this->ierr_);
+  ASSERT_EQ(0,this->ierr_);
+  SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda_,&this->ierr_);
+  ASSERT_EQ(0,this->ierr_);
+  lda=lda_;
+  SUBR(mvec_create)(&vec2_,this->map_,nvec_,&this->ierr_);
+  ASSERT_EQ(0,this->ierr_);
+  SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&lda_,&this->ierr_);
+  ASSERT_EQ(0,this->ierr_);
+  ASSERT_EQ(lda,lda_);
+  SUBR(mvec_create)(&vec3_,this->map_,nvec_,&this->ierr_);
+  ASSERT_EQ(0,this->ierr_);
+  ASSERT_EQ(lda,lda_);
+  SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&lda_,&this->ierr_);
+  ASSERT_EQ(0,this->ierr_);
+  ASSERT_EQ(lda,lda_);
+  stride_=1;
+}
+
+void deleteVecs()
+{
+  SUBR(mvec_delete)(this->vec1_,&this->ierr_);
+  ASSERT_EQ(0,this->ierr_);
+  SUBR(mvec_delete)(this->vec2_,&this->ierr_);
+  ASSERT_EQ(0,this->ierr_);
+  SUBR(mvec_delete)(this->vec3_,&this->ierr_);
+  ASSERT_EQ(0,this->ierr_);
+}
+
 public:
 
   /*! Set up routine.
@@ -12,28 +47,12 @@ public:
 virtual void SetUp()
   {
   KernelTestWithType< ST >::SetUp();
-  if (this->typeImplemented_)
+  if (typeImplemented_)
     {
     lidx_t lda;
     // vectors created with the same function should get the same stride (lda)
     KernelTestWithMap<_Nglob>::SetUp();
-    SUBR(mvec_create)(&vec1_,this->map_,this->nvec_,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
-    SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&this->lda_,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
-    lda=this->lda_;
-    SUBR(mvec_create)(&vec2_,this->map_,this->nvec_,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
-    SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&this->lda_,&this->ierr_);
-        ASSERT_EQ(0,this->ierr_);
-    ASSERT_EQ(lda,this->lda_);
-    SUBR(mvec_create)(&vec3_,this->map_,this->nvec_,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
-    ASSERT_EQ(lda,this->lda_);
-    SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&this->lda_,&this->ierr_);
-        ASSERT_EQ(0,this->ierr_);
-    ASSERT_EQ(lda,this->lda_);
-    stride_=1;
+    createVecs();
     }
   }
 
@@ -43,12 +62,24 @@ virtual void TearDown()
   {
   if (this->typeImplemented_)
     {
-    SUBR(mvec_delete)(vec1_,&this->ierr_);
-    SUBR(mvec_delete)(vec2_,&this->ierr_);
-    SUBR(mvec_delete)(vec3_,&this->ierr_);
+    deleteVecs();
     KernelTestWithMap<_Nglob>::TearDown();
     }
   KernelTestWithType< ST >::TearDown();
+  }
+
+  /*! Replace the map and rebuild vectors
+   */
+virtual void replaceMap(const_map_ptr_t map)
+  {
+    if (this->typeImplemented_)
+      {
+      deleteVecs();
+
+      KernelTestWithMap<_Nglob>::replaceMap(map);
+
+      createVecs();
+      }
   }
 
 // tolerance for tests depending on the vector length
@@ -124,27 +155,32 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
 
   // check if vectors are mutually orthogonal after QR factorization
   static MT ColsAreOrthogonal(ST* vec_vp, lidx_t nloc, lidx_t lda, lidx_t stride,MPI_Comm mpi_comm) 
-    {
+  {
     MT res=mt::one();
     int nsums=(nvec_*nvec_-nvec_)/2;
-      ST sums[nsums];
+    if(nsums == 0)
+      return mt::one();
+    else
+    {
+      ST sums[nsums+1];
       int k=0;
       for (int j1=0;j1<nvec_;j1++)
-      for (int j2=j1+1;j2<nvec_;j2++)
+        for (int j2=j1+1;j2<nvec_;j2++)
         {
-        ST sum=st::zero();
-        for (int i=0;i<stride*nloc;i+=stride)
+          ST sum=st::zero();
+          for (int i=0;i<stride*nloc;i+=stride)
           {
-          ST val1=vec_vp[VIDX(i,j1,lda)];
-          ST val2=vec_vp[VIDX(i,j2,lda)];
-          sum+=val1*st::conj(val2);
+            ST val1=vec_vp[VIDX(i,j1,lda)];
+            ST val2=vec_vp[VIDX(i,j2,lda)];
+            sum+=val1*st::conj(val2);
           }
-        sums[k++]=sum;
+          sums[k++]=sum;
         }
       global_sum(sums,nsums,mpi_comm);
       res=ArrayEqual(sums,nsums,1,nsums,1,st::zero());
       return res;
-      }
+    }
+  }
 
   // check if vectors are mutually orthogonal after QR factorization
   static void PrintVector(std::ostream& os, std::string label, 

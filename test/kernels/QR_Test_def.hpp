@@ -46,7 +46,11 @@ public:
 
 };
 
+#ifdef HAVE_MVEC_QR
   TEST_F(CLASSNAME, with_random_vectors) 
+#else
+  TEST_F(CLASSNAME, DISABLED_with_random_vectors)
+#endif
     {
     if (typeImplemented_)
       {
@@ -59,10 +63,19 @@ public:
 //      PrintVector(*cout,"QR_Test Q",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
       ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
       ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
+
+      // check Q*R=V
+      SUBR(mvec_times_sdMat)(-st::one(),vec2_,mat1_,st::one(),vec1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_NEAR(mt::one(), ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero(),vflag_),sqrt(mt::eps()));
       }
     }
 
+#ifdef HAVE_MVEC_QR
   TEST_F(CLASSNAME, with_rank_deficiency) 
+#else
+  TEST_F(CLASSNAME, DISABLED_with_rank_deficiency) 
+#endif
     {
     if (typeImplemented_)
       {
@@ -95,10 +108,20 @@ public:
       ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
       // the factor 2 in releps here is because otherwise fails the test by a fraction of releps
       ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.0*releps(vec1_));
+
+      // check Q*R=V
+      SUBR(mvec_times_sdMat)(-st::one(),vec2_,mat1_,st::one(),vec1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_NEAR(mt::one(), ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero(),vflag_),sqrt(mt::eps()));
       }
+
     }
 
+#ifdef HAVE_MVEC_QR
   TEST_F(CLASSNAME, with_one_vectors) 
+#else
+  TEST_F(CLASSNAME, DISABLED_with_one_vectors) 
+#endif
   {
     if (typeImplemented_)
     {
@@ -117,6 +140,10 @@ public:
       PHIST_DEB("R=\n");
       SUBR(sdMat_print)(mat1_,&ierr_);
 #endif
+      // check Q*R=V
+      SUBR(mvec_times_sdMat)(-st::one(),vec2_,mat1_,st::one(),vec1_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      ASSERT_NEAR(mt::one(), ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero(),vflag_),sqrt(mt::eps()));
     }
   }
 

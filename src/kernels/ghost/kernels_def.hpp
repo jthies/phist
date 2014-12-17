@@ -269,7 +269,9 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
-  PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*ierr);
+  MPI_Comm comm_self=MPI_COMM_SELF;
+  MPI_Comm* comm=&comm_self;
+  if (vcomm==NULL) comm=(MPI_Comm*)vcomm;
 #include "phist_std_typedefs.hpp"
 PHIST_GHOST_TASK_BEGIN
 PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
@@ -783,6 +785,7 @@ extern "C" void SUBR(crsMat_delete)(TYPE(crsMat_ptr) vA, int* ierr)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *ierr=0;
+  if (vA==NULL) return;
   PHIST_CAST_PTR_FROM_VOID(ghost_sparsemat_t,A,vA,*ierr);
   A->destroy(A);
 }
@@ -885,6 +888,9 @@ PHIST_GHOST_TASK_BEGIN
 PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *ierr);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*ierr);
   M->fromRand(M);
+  // use same values on all mpi processes if we have a communicator
+  if( M->context && M->context->mpicomm )
+    M->equalize(M, 0);
 PHIST_GHOST_TASK_END
 }
 
@@ -1356,6 +1362,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
     MT nrm;
     PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
     PHIST_DEB("single vector QR, R=%8.4e\n",nrm);
+    PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,(ST)nrm,ierr),*ierr);
     rank=1;
     if (nrm<rankTol)
     {
@@ -1363,9 +1370,10 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* ierr)
       // randomize the vector
       PHIST_CHK_IERR(SUBR(mvec_random)(vV,ierr),*ierr);
       PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,st::zero(),ierr),*ierr);
       rank=0;// dimension of null space
+      PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,st::zero(),ierr),*ierr);
     }
-    PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,(ST)nrm,ierr),*ierr);
     *ierr=1-rank;
     return;
   }// case ncols=1: normalize single vector

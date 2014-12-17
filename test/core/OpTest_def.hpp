@@ -36,7 +36,8 @@ public:
       TYPE(sdMat_ptr) Rtmp;
       SUBR(sdMat_create)(&Rtmp,nq_,nq_,comm_,&ierr_);
       ASSERT_EQ(0,ierr_);
-      SUBR(mvec_QR)(Q_,Rtmp,&ierr_);
+      int rankQ = 0;
+      SUBR(orthog)(NULL,Q_,Rtmp,NULL,4,&rankQ,&ierr_);
       ASSERT_GE(ierr_,0);
       SUBR(sdMat_delete)(Rtmp,&ierr_);
       ASSERT_EQ(0,ierr_);
@@ -64,36 +65,37 @@ public:
     KernelTestWithVectors<_ST_,_N_,_NV_>::TearDown();
     if (typeImplemented_)
       {
-    SUBR(mvec_delete)(Q_,&ierr_);
-    ASSERT_EQ(0,ierr_);
-    delete[] sigma;
+      SUBR(mvec_delete)(Q_,&ierr_);
+      ASSERT_EQ(0,ierr_);
+      if( sigma != NULL)
+        delete[] sigma;
       ASSERT_EQ(0,delete_mat(A1_));
       ASSERT_EQ(0,delete_mat(A2_));
       }
     }
 
-TYPE(crsMat_ptr) A1_; 
-TYPE(crsMat_ptr) A2_; 
+  TYPE(crsMat_ptr) A1_ = NULL;
+  TYPE(crsMat_ptr) A2_ = NULL;
 
-// for testing the jada operator
-int nq_;
-TYPE(mvec_ptr) Q_;
-_ST_* sigma;
+  // for testing the jada operator
+  int nq_ = 0;
+  TYPE(mvec_ptr) Q_ = NULL;
+  _ST_* sigma = NULL;
 
-protected:
+  protected:
 
-int delete_mat(TYPE(crsMat_ptr) A)
-  {
-  if (A!=NULL)
+  int delete_mat(TYPE(crsMat_ptr) A)
     {
-    SUBR(crsMat_delete)(A,&ierr_);
+    if (A!=NULL)
+      {
+      SUBR(crsMat_delete)(A,&ierr_);
+      }
+    return ierr_;
     }
-  return ierr_;
-  }
 
 #ifdef PHIST_HAVE_BELOS
-int doBelosTests(TYPE(crsMat_ptr) A)
-  {
+  int doBelosTests(TYPE(crsMat_ptr) A)
+    {
     if (typeImplemented_ && haveMats_)
       {
       Teuchos::RCP<Belos::OutputManager<ST> > MyOM
@@ -104,7 +106,7 @@ int doBelosTests(TYPE(crsMat_ptr) A)
       PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(op,A,&ierr_),ierr_);
       TYPE(op) jdOp;
       // TODO setup necessary arguments for jadaOp: AX, work
-      PHIST_ICHK_IERR(SUBR(jadaOp_create)(op,NULL,Q_,NULL,sigma,_NV_,&jdOp,&ierr_),ierr_);
+      PHIST_ICHK_IERR(SUBR(jadaOp_create)(op,NULL,Q_,NULL,sigma,nq_,&jdOp,&ierr_),ierr_);
       Teuchos::RCP<const TYPE(op)> jdOp_ptr=Teuchos::rcp(&jdOp,false);
 #ifdef PHIST_KERNEL_LIB_GHOST
       ghost_densemat_t* v = (ghost_densemat_t*)vec1_;
@@ -127,12 +129,12 @@ int doBelosTests(TYPE(crsMat_ptr) A)
 //TODO - I'm getting an 'undefined reference' linker error here
       PHIST_ICHK_IERR(SUBR(jadaOp_delete)(&jdOp,&ierr_),ierr_);
       }
-  return ierr_;
-  }
+    return ierr_;
+    }
 #endif
 
-bool haveMats_;
-};
+  bool haveMats_;
+  };
 
   TEST_F(CLASSNAME, read_matrices) 
     {
