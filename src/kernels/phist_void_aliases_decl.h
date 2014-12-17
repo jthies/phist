@@ -7,13 +7,13 @@ typedef void* TYPE(mvec_ptr);
 //! opaque pointer to const multi-vector objects
 typedef const void* TYPE(const_mvec_ptr);
 
-//! opaque serial dense matrix object
+//! opaque small dense matrix object
 typedef void TYPE(sdMat);
 
-//! opaque pointer to serial dense matrix objects
+//! opaque pointer to small dense matrix objects
 typedef void* TYPE(sdMat_ptr);
 
-//! opaque pointer to const serial dense matrix objects
+//! opaque pointer to const small dense matrix objects
 typedef const void* TYPE(const_sdMat_ptr);
 
 //! opaque CRS matrix
