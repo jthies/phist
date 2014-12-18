@@ -35,7 +35,12 @@ namespace phist_TimeMonitor
           return;
 #pragma omp master
 {
+#ifdef PHIST_TIMEMONITOR_FULL_TRACE
+        _timerTrace.push_back(s);
+        fcnName = getFullTraceString();
+#else
         fcnName = s;
+#endif
         wtime = MPI_Wtime();
 }
       }
@@ -51,6 +56,13 @@ namespace phist_TimeMonitor
         wtime = MPI_Wtime() - wtime;
         //PHIST_OUT(PHIST_DEBUG, "Measured %10.4e wtime for function %s\n", wtime, fcnName.c_str());
         _timingResults[fcnName].update(wtime);
+#ifdef PHIST_TIMEMONITOR_FULL_TRACE
+        if( getFullTraceString() != fcnName )
+        {
+          PHIST_SOUT(PHIST_WARNING, "PHIST_TIMEMONITOR_FULL_TRACE can not generate usefult traces as timers overlap (%s and %s)\n", fcnName.c_str(), getFullTraceString().c_str());
+        }
+        _timerTrace.pop_back();
+#endif
 }
       }
 
@@ -84,6 +96,21 @@ namespace phist_TimeMonitor
 
       typedef std::map<std::string,TimeData> TimeDataMap;
       static TimeDataMap _timingResults;
+#ifdef PHIST_TIMEMONITOR_FULL_TRACE
+      static std::vector<const char*> _timerTrace;
+
+      // function that constructs a string from the _timerTrace stack
+      std::string getFullTraceString() const
+      {
+        std::string s = "";
+        for(std::vector<const char*>::const_iterator it = _timerTrace.begin(); it != _timerTrace.end(); it++)
+        {
+          s += " > ";
+          s += *it;
+        }
+        return s;
+      }
+#endif
 
 
       // functor for sorting by keys in another vector
@@ -144,7 +171,7 @@ namespace phist_TimeMonitor
         // convert / copy everything into vectors
         for(int i = 0; i < nTimers; i++)
         {
-          iss >> fcnName.at(i);
+          std::getline(iss, fcnName.at(i));
           numberOfCalls.at(i) = _timingResults[fcnName.at(i)].numberOfCalls;
           minTime.at(i) = _timingResults[fcnName.at(i)].minTime;
           maxTime.at(i) = _timingResults[fcnName.at(i)].maxTime;
@@ -167,9 +194,18 @@ namespace phist_TimeMonitor
         SortClass sortFunc(maxTotalTime);
         std::sort(sortedIndex.begin(), sortedIndex.end(), sortFunc);
 
+        // make all fcnName strings the same length (-> nicer output)
+        int maxNameLen = 35;
+        for(int i = 0; i < nTimers; i++)
+          maxNameLen = std::max(maxNameLen, (int)fcnName.at(i).length());
+        maxNameLen = maxNameLen + 5;
+        for(int i = 0; i < nTimers; i++)
+          fcnName.at(i).resize(maxNameLen,' ');
         // print result on proc 0
+        std::string function = "function";
+        function.resize(maxNameLen, ' ');
         PHIST_SOUT(PHIST_INFO, "======================================== TIMING RESULTS ============================================\n");
-        PHIST_SOUT(PHIST_INFO, "%40s  %10s  %10s  %10s  %10s  %10s\n", "function", "mtot.time", "count", "max.time", "avg.time", "min.time");
+        PHIST_SOUT(PHIST_INFO, "%s  %10s  %10s  %10s  %10s  %10s\n", function.c_str(), "mtot.time", "count", "max.time", "avg.time", "min.time");
         int nprocs;
         MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
         for(int i_ = 0; i_ < nTimers; i_++)
@@ -179,7 +215,7 @@ namespace phist_TimeMonitor
           {
             PHIST_SOUT(PHIST_INFO, "----------------------------------------------------------------------------------------------------\n");
           }
-          PHIST_SOUT(PHIST_INFO, "%40s  %10.3e  %10lu  %10.3e  %10.3e  %10.3e\n", fcnName.at(i).c_str(), maxTotalTime.at(i), numberOfCalls.at(i), maxTime.at(i), sumTotalTime.at(i)/numberOfCalls.at(i)/nprocs, minTime.at(i));
+          PHIST_SOUT(PHIST_INFO, "%s  %10.3e  %10lu  %10.3e  %10.3e  %10.3e\n", fcnName.at(i).c_str(), maxTotalTime.at(i), numberOfCalls.at(i), maxTime.at(i), sumTotalTime.at(i)/numberOfCalls.at(i)/nprocs, minTime.at(i));
         }
         PHIST_SOUT(PHIST_INFO, "====================================================================================================\n");
       }

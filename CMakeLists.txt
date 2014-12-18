@@ -264,6 +264,9 @@ if (${Teuchos_FOUND})
 else()
   message(STATUS "Teuchos not found.")
 endif()
+if(NOT PHIST_USE_TEUCHOS_TIMEMONITOR)
+  option(PHIST_TIMEMONITOR_FULL_TRACE "Try to print full call trace in the TimeMonitor (Warning: may generate *a lot* of output)." Off)
+endif()
 
 find_package(Kokkos)
 
@@ -477,11 +480,11 @@ else()
   message(STATUS "continuing without Likwid, you can set the environment variable LIKWID_HOME to help CMake find it")
 endif()
 
-set(PHIST_TIMEMONITOR On CACHE BOOL "Gather detailed function-level timings")
+option(PHIST_TIMEMONITOR "Gather detailed function-level timings" On)
 if( ${PHIST_TIMEMONITOR} )
   message(STATUS "activated TimeMonitor timing monitoring")
 endif()
-set(PHIST_TIMEMONITOR_PERLINE Off CACHE BOOL "Gather timing information for each line with a PHIST_CHK_* macro!")
+option(PHIST_TIMEMONITOR_PERLINE "Gather timing information for each line with a PHIST_CHK_* macro!" Off)
 
 set(INCLUDE_FLAGS "")
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)

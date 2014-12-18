@@ -55,6 +55,7 @@ version of the code in addition to the standard
 #cmakedefine PHIST_TIMEMONITOR
 #cmakedefine PHIST_TIMEMONITOR_PERLINE
 #cmakedefine PHIST_USE_TEUCHOS_TIMEMONITOR
+#cmakedefine PHIST_TIMEMONITOR_FULL_TRACE
 
 /* specific settings to tune the GHOST performance */
 #ifdef PHIST_KERNEL_LIB_GHOST

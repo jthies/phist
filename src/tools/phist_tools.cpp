@@ -95,6 +95,9 @@ std::istream& operator>>(std::istream& is, linSolv_t& s)
 namespace phist_TimeMonitor
 {
   Timer::TimeDataMap Timer::_timingResults;
+#ifdef PHIST_TIMEMONITOR_FULL_TRACE
+  std::vector<const char*> Timer::_timerTrace;
+#endif
 }
 # endif  
 #endif
