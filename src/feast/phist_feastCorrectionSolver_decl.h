@@ -9,6 +9,8 @@
 //! The systems to be solved are (sigma[j]I-A)(Xr[k]+i*Xi[k])=B[k],
 //! where Xr, Xi and B are mvecs with blockSize columns, and sigma[j] are numShifts complex 
 //! shifts.
+//!
+//! \todo for GHOST we should calculate in complex numbers directly but pass in a real-valued matrix (with complex shift)
 typedef struct TYPE(feastCorrectionSolver)
 {
   TYPE(const_crsMat_ptr) A_;
