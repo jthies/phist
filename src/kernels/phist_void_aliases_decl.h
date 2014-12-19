@@ -17,11 +17,11 @@ typedef void* TYPE(sdMat_ptr);
 typedef const void* TYPE(const_sdMat_ptr);
 
 //! opaque CRS matrix
-typedef void TYPE(crsMat);
+typedef void TYPE(sparseMat);
 
 //! opaque pointer to CRS matrix objects
-typedef void* TYPE(crsMat_ptr);
+typedef void* TYPE(sparseMat_ptr);
 
 //! opaque pointer to const CRS matrix objects
-typedef const void* TYPE(const_crsMat_ptr);
+typedef const void* TYPE(const_sparseMat_ptr);
 

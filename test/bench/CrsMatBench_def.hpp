@@ -33,11 +33,11 @@ public:
     }
 
 static const int numRuns_ = (int)(4.0e6/_N_/_NV_);
-TYPE(crsMat_ptr) A_; 
+TYPE(sparseMat_ptr) A_; 
 
 protected:
 
-int read_mat(const char* filebase,TYPE(crsMat_ptr) *ptr)
+int read_mat(const char* filebase,TYPE(sparseMat_ptr) *ptr)
   {
   *ptr = NULL;
   char mmfile[256],hbfile[256],binfile[256];
@@ -51,25 +51,25 @@ int read_mat(const char* filebase,TYPE(crsMat_ptr) *ptr)
   
 //  std::cout << "Looking for matrix \'"<<filebase<<"\'...\n";
 //  std::cout << "... try \'"<<mmfile<<"\'\n";
-  SUBR(crsMat_read_mm)(ptr,mmfile,&iflag_);
+  SUBR(sparseMat_read_mm)(ptr,mmfile,&iflag_);
   if (iflag_!=PHIST_SUCCESS) // kernel lib can't read MatrixMarket format or file not found
     {
 //    std::cout << "... try \'"<<hbfile<<"\'\n";
-    SUBR(crsMat_read_hb)(ptr,hbfile,&iflag_);
+    SUBR(sparseMat_read_hb)(ptr,hbfile,&iflag_);
     if (iflag_!=PHIST_SUCCESS) // kernel lib can't read Harwell-Boeing or file not found
       {
 //      std::cout << "... try \'"<<binfile<<"\'\n";
-      SUBR(crsMat_read_bin)(ptr,binfile,&iflag_);
+      SUBR(sparseMat_read_bin)(ptr,binfile,&iflag_);
       }
     }
   return iflag_;
   }
 
-int delete_mat(TYPE(crsMat_ptr) A)
+int delete_mat(TYPE(sparseMat_ptr) A)
   {
   if (A!=NULL)
     {
-    SUBR(crsMat_delete)(A,&iflag_);
+    SUBR(sparseMat_delete)(A,&iflag_);
     }
   return iflag_;
   }
@@ -90,10 +90,10 @@ int delete_mat(TYPE(crsMat_ptr) A)
       {
       SUBR(mvec_random)(vec1_,&iflag_);
       SUBR(mvec_random)(vec2_,&iflag_);
-      PHIST_SOUT(PHIST_INFO, "running crsMat_times_mvec %d times", numRuns_);
+      PHIST_SOUT(PHIST_INFO, "running sparseMat_times_mvec %d times", numRuns_);
       for (int i=0; i<numRuns_;i++)
         {
-        SUBR(crsMat_times_mvec)(1.0,A_,vec1_,0.0,vec2_,&iflag_);
+        SUBR(sparseMat_times_mvec)(1.0,A_,vec1_,0.0,vec2_,&iflag_);
         ASSERT_EQ(0,iflag_);
         }
       }

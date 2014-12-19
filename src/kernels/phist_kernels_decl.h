@@ -20,7 +20,7 @@
     We currently request four types of objects. A 'map', defining
     the data distribution of a vector (this can be obtained from 
     a sparse matrix using the get_*_map functions). A sparse matrix 
-    (crsMat), denoted by A below, typically distributed over several 
+    (sparseMat), denoted by A below, typically distributed over several 
     MPI processes. A small dense matrix (sdMat), which is replicated
     on all processes (not associated with an MPI_Comm). And
     a row-distributed vector, which may have several columns (mvec).
@@ -44,21 +44,21 @@ extern "C" {
 //! returns 0 if the library implements the data type, -99 otherwise.
 void SUBR(type_avail)(int* iflag);
 
-//!   \defgroup crsmat Sparse matrix functions (crsMat_t) 
+//!   \defgroup crsmat Sparse matrix functions (sparseMat_t) 
 //@{
 //! \name Matrix input from a file
 ///@{
 
 //! read a matrix from a MatrixMarket (ASCII) file \ingroup(crsmat)
-void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
+void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm,
         const char* filename,int* iflag);
 
 //! read a matrix from a Harwell-Boeing file
-void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
+void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm,
         const char* filename,int* iflag);
 
 //! read a matrix from a Ghost CRS (binary) file.
-void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
+void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm,
 const char* filename,int* iflag);
 
 ///@}
@@ -67,19 +67,19 @@ const char* filename,int* iflag);
 ///@{
 
 //! get the row distribution of the matrix
-void SUBR(crsMat_get_row_map)(TYPE(const_crsMat_ptr) A, 
+void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, 
         const_map_ptr_t* map, int* iflag);
 
 //! get column distribution of a matrix
-void SUBR(crsMat_get_col_map)(TYPE(const_crsMat_ptr) A, 
+void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) A, 
         const_map_ptr_t* map, int* iflag);
 
 //! get the map for vectors x in y=A*x
-void SUBR(crsMat_get_domain_map)(TYPE(const_crsMat_ptr) A, 
+void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) A, 
         const_map_ptr_t* map, int* iflag);
 
 //! get the map for vectors y in y=A*x
-void SUBR(crsMat_get_range_map)(TYPE(const_crsMat_ptr) A,
+void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) A,
         const_map_ptr_t* map, int* iflag);
 ///@}
 //@}
@@ -123,8 +123,8 @@ void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
 //! \name destructors
 //@{
 
-//! delete crsMat \ingroup crsmat
-void SUBR(crsMat_delete)(TYPE(crsMat_ptr) A, int* iflag);
+//! delete sparseMat \ingroup crsmat
+void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) A, int* iflag);
 
 //! delete mvec \ingroup mvec
 void SUBR(mvec_delete)(TYPE(mvec_ptr) V, int* iflag);
@@ -399,7 +399,7 @@ void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
 //! The scalars alpha and beta are expected to be of the
 //! same type as the entries in the vectors and matrix. Mixing of types is
 //! not allowed.
-void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A, 
+void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
         TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag);
 
 //! y=alpha*A^H*x+beta*y.
@@ -407,11 +407,11 @@ void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
 //! The scalars alpha and beta are expected to be of the
 //! same type as the entries in the vectors and matrix. Mixing of types is
 //! not allowed. In the complex case, the conjugate transpose is used.
-void SUBR(crsMatT_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A, 
+void SUBR(sparseMatT_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
         TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag);
 
 //! y[i]=alpha*(A*x[i]+shifts[i]*x[i]) + beta*y[i]
-void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
+void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
         const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag);
 
 //@}
@@ -435,7 +435,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) V,
 
 //! this is the same form in which matrices are created from functions
 //! in ghost and how the test problems in essex/physics are defined.
-void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, const_comm_ptr_t comm,
+void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, const_comm_ptr_t comm,
         gidx_t nrows, gidx_t ncols, lidx_t maxnne, 
         int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int *iflag);
 

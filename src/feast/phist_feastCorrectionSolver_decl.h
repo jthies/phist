@@ -13,7 +13,7 @@
 //! \todo for GHOST we should calculate in complex numbers directly but pass in a real-valued matrix (with complex shift)
 typedef struct TYPE(feastCorrectionSolver)
 {
-  TYPE(const_crsMat_ptr) A_;
+  TYPE(const_sparseMat_ptr) A_;
   int numShifts_;       // number of shifts for which the system has to be solved
   _MT_ *sigma_r_;
   _MT_ *sigma_i_;
@@ -33,7 +33,7 @@ typedef TYPE(feastCorrectionSolver) const * TYPE(const_feastCorrectionSolver_ptr
 //! per shift to be treated simultaneously (blockSize), the number of shifts 
 //! (numShifts), and the complex shifts
 void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *fCorrSolver, 
-        TYPE(const_crsMat_ptr) A, linSolv_t method,
+        TYPE(const_sparseMat_ptr) A, linSolv_t method,
         int blockSize, int numShifts,
         _MT_ shifts_r[], _MT_ shifts_i[],
         int *iflag);

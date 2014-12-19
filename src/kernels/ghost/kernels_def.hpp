@@ -29,7 +29,7 @@ extern "C" void SUBR(type_avail)(int* iflag)
 
 
 //! read a matrix from a MatrixMarket (ASCII) file
-extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
 const char* filename,int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -76,12 +76,12 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   PHIST_SOUT(PHIST_VERBOSE,"%s\n",str);
   free(str); str = NULL;
 #endif
-  *vA = (TYPE(crsMat_ptr))mat;
+  *vA = (TYPE(sparseMat_ptr))mat;
 PHIST_GHOST_TASK_END
 }
 
 //! read a matrix from a Ghost CRS (binary) file.
-extern "C" void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
 const char* filename,int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -128,12 +128,12 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   PHIST_SOUT(PHIST_VERBOSE,"%s\n",str);
   free(str); str = NULL;
 #endif
-  *vA = (TYPE(crsMat_ptr))mat;
+  *vA = (TYPE(sparseMat_ptr))mat;
 PHIST_GHOST_TASK_END
 }
 
 //! read a matrix from a Harwell-Boeing (HB) file
-extern "C" void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
 const char* filename,int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -149,7 +149,7 @@ const char* filename,int* iflag)
 
 //!@{
 //! get the row distribution of the matrix
-extern "C" void SUBR(crsMat_get_row_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
@@ -164,7 +164,7 @@ extern "C" void SUBR(crsMat_get_row_map)(TYPE(const_crsMat_ptr) vA, const_map_pt
 //! we currently treat all maps as the same as we don't allow any fancy
 //! operations using them anyway and ghost can handle both halo'd (colmap)
 //! and standard (rowmap) vectors in the mvm.
-extern "C" void SUBR(crsMat_get_col_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
@@ -179,20 +179,20 @@ extern "C" void SUBR(crsMat_get_col_map)(TYPE(const_crsMat_ptr) vA, const_map_pt
 //! we currently treat all maps as the same as we don't allow any fancy
 //! operations using them anyway and ghost can handle both halo'd (colmap)
 //! and standard (rowmap) vectors in the mvm.
-extern "C" void SUBR(crsMat_get_domain_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  SUBR(crsMat_get_col_map)(vA,vmap,iflag);
+  SUBR(sparseMat_get_col_map)(vA,vmap,iflag);
 }
 
 //! get the map for vectors y in y=A*x
 //! we currently treat all maps as the same as we don't allow any fancy
 //! operations using them anyway and ghost can handle both halo'd (colmap)
 //! and standard (rowmap) vectors in the mvm.
-extern "C" void SUBR(crsMat_get_range_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  SUBR(crsMat_get_row_map)(vA,vmap,iflag);
+  SUBR(sparseMat_get_row_map)(vA,vmap,iflag);
 }
 //@}
 
@@ -781,7 +781,7 @@ PHIST_GHOST_TASK_END
 //@{
 
 //!
-extern "C" void SUBR(crsMat_delete)(TYPE(crsMat_ptr) vA, int* iflag)
+extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) vA, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
@@ -1038,7 +1038,7 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
 }
 
 //! y=alpha*A*x+beta*y.
-extern "C" void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
+extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
 _ST_ beta, TYPE(mvec_ptr) vy, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -1100,7 +1100,7 @@ PHIST_GHOST_TASK_END
 }
 
 //! y=alpha*A*x+beta*y.
-extern "C" void SUBR(crsMatT_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
+extern "C" void SUBR(sparseMatT_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
 _ST_ beta, TYPE(mvec_ptr) vy, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -1109,7 +1109,7 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* iflag)
   return;
 }
 //! y[i]=alpha*(A*x[i]+shifts[i]*x[i]) + beta*y[i]
-extern "C" void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
+extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA,
         const _ST_ shifts[], TYPE(const_mvec_ptr) vx, _ST_ beta, TYPE(mvec_ptr) vy, int* 
         iflag)
 {
@@ -1129,7 +1129,7 @@ extern "C" void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,y,vy,*iflag);
   if (alpha==st::zero())
   {
-    PHIST_CHK_IERR(SUBR(crsMat_times_mvec)(alpha,vA,vx,beta,vy,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(alpha,vA,vx,beta,vy,iflag),*iflag);
   }
   else
   {
@@ -1503,7 +1503,7 @@ extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* 
 # endif
 #endif
 
-void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *vA, const_comm_ptr_t vcomm,
+void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, const_comm_ptr_t vcomm,
         gidx_t nrows, gidx_t ncols, lidx_t maxnne, 
                 int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int *iflag)
 {
@@ -1550,7 +1550,7 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   PHIST_SOUT(PHIST_VERBOSE,"%s\n",str);
   free(str); str = NULL;
 #endif
-  *vA = (TYPE(crsMat_ptr))mat;
+  *vA = (TYPE(sparseMat_ptr))mat;
 PHIST_GHOST_TASK_END
 
   return;

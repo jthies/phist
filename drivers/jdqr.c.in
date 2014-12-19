@@ -46,7 +46,7 @@ int main(int argc, char** argv)
   int verbose;
 
   comm_ptr_t comm;
-  crsMat_ptr_t A;
+  sparseMat_ptr_t A;
   op_ptr_t A_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
   op_ptr_t B_op=NULL; // no mass matrix up to now
   
@@ -179,7 +179,7 @@ int main(int argc, char** argv)
 
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,filename,&iflag),iflag);
   
-  PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(A, &map,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&iflag),iflag);
 
   PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,num_eigs+1,&iflag),iflag);
 //  PHIST_ICHK_IERR(SUBR(mvec_random)(X,&iflag),iflag);
@@ -190,7 +190,7 @@ int main(int argc, char** argv)
   
   // create operator wrapper for computing Y=A*X using a CRS matrix
   A_op = (op_ptr_t)malloc(sizeof(TYPE(op)));
-  PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(A_op,A,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(A_op,A,&iflag),iflag);
 
   
   
@@ -233,7 +233,7 @@ int main(int argc, char** argv)
     TYPE(mvec_ptr) R=NULL,Xv=NULL;
     PHIST_ICHK_IERR(SUBR(mvec_create)(&R,map,num_eigs,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(mvec_view_block)(X,&Xv,0,num_eigs-1,&iflag),iflag);
-    PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(ONE,A,Xv,ZERO,R,&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(ONE,A,Xv,ZERO,R,&iflag),iflag);
 #ifdef IS_COMPLEX
     PHIST_ICHK_IERR(SUBR(mvec_vadd_mvec)(evals,Xv,-ONE,R,&iflag),iflag);
 #else
@@ -298,7 +298,7 @@ int main(int argc, char** argv)
   free(resid);
   free(is_cmplx);
   
-  PHIST_ICHK_IERR(SUBR(crsMat_delete)(A,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&iflag),iflag);
   free(A_op);
   PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);

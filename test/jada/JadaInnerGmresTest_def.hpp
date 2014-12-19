@@ -25,11 +25,11 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(0,iflag_);
         ASSERT_TRUE(A_ != NULL);
         opA_ = new TYPE(op);
-        SUBR(op_wrap_crsMat)(opA_, A_, &iflag_);
+        SUBR(op_wrap_sparseMat)(opA_, A_, &iflag_);
         ASSERT_EQ(0,iflag_);
 
         const_map_ptr_t map = NULL;
-        SUBR(crsMat_get_domain_map)(A_,&map,&iflag_);
+        SUBR(sparseMat_get_domain_map)(A_,&map,&iflag_);
         ASSERT_EQ(0,iflag_);
         VTest::replaceMap(map);
 
@@ -82,7 +82,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
           delete jdOp_;
         if( opA_ != NULL )
           delete opA_;
-        SUBR(crsMat_delete)(A_,&iflag_);
+        SUBR(sparseMat_delete)(A_,&iflag_);
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_delete)(q_,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -91,7 +91,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       }
     }
 
-    TYPE(crsMat_ptr) A_ = NULL;
+    TYPE(sparseMat_ptr) A_ = NULL;
     TYPE(op_ptr) opA_ = NULL;
     TYPE(op_ptr) jdOp_ = NULL;
     TYPE(mvec_ptr) q_ = NULL;
@@ -266,7 +266,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       }
 
  
-      SUBR(crsMat_times_mvec)(st::one(),A_,vec2_,st::zero(),vec1_,&iflag_);
+      SUBR(sparseMat_times_mvec)(st::one(),A_,vec2_,st::zero(),vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check the result (we have given the solution as initial guess!)
       _MT_ resNorm[_NV_];
@@ -344,7 +344,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_TRUE(state[i]->status == 0 || state[i]->status == 1);
       }
 
-      SUBR(crsMat_times_mvec)(st::one(),A_,vec2_,st::zero(),vec1_,&iflag_);
+      SUBR(sparseMat_times_mvec)(st::one(),A_,vec2_,st::zero(),vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check the result
       _MT_ resNorm[_NV_];
@@ -437,7 +437,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(nIter,state[i]->totalIter);
       }
 
-      SUBR(crsMat_times_mvec)(st::one(),A_,vec2_,st::zero(),vec1_,&iflag_);
+      SUBR(sparseMat_times_mvec)(st::one(),A_,vec2_,st::zero(),vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check the result (we have given the solution as initial guess!)
       _MT_ resNorm[_NV_];

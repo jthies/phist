@@ -58,12 +58,12 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         SUBR(read_mat)("sprandn",nglob_,&A1_,&iflag_);
         ASSERT_EQ(0,iflag_);
         opA1_ = new TYPE(op);
-        SUBR(op_wrap_crsMat)(opA1_, A1_, &iflag_);
+        SUBR(op_wrap_sparseMat)(opA1_, A1_, &iflag_);
         ASSERT_EQ(0,iflag_);
         SUBR(read_mat)("speye",nglob_,&I_,&iflag_);
         ASSERT_EQ(0,iflag_);
         opI_ = new TYPE(op);
-        SUBR(op_wrap_crsMat)(opI_, I_, &iflag_);
+        SUBR(op_wrap_sparseMat)(opI_, I_, &iflag_);
         ASSERT_EQ(0,iflag_);
       }
     }
@@ -109,11 +109,11 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       {
         if( opI_ != NULL )
           delete opI_;
-        SUBR(crsMat_delete)(A1_,&iflag_);
+        SUBR(sparseMat_delete)(A1_,&iflag_);
         ASSERT_EQ(0,iflag_);
         if( opA1_ != NULL )
           delete opA1_;
-        SUBR(crsMat_delete)(I_,&iflag_);
+        SUBR(sparseMat_delete)(I_,&iflag_);
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_delete)(q_,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -125,9 +125,9 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       VTest::TearDown();
     }
 
-    TYPE(crsMat_ptr) A1_ = NULL;
+    TYPE(sparseMat_ptr) A1_ = NULL;
     TYPE(op_ptr) opA1_ = NULL;
-    TYPE(crsMat_ptr) I_ = NULL;
+    TYPE(sparseMat_ptr) I_ = NULL;
     TYPE(op_ptr) opI_ = NULL;
     TYPE(mvec_ptr) q_ = NULL;
     _ST_* sigma_ = NULL;
@@ -140,7 +140,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     {
       // replace map to by the map of the current matrix
       const_map_ptr_t map = NULL;
-      SUBR(crsMat_get_domain_map)(A1_,&map,&iflag_);
+      SUBR(sparseMat_get_domain_map)(A1_,&map,&iflag_);
       ASSERT_EQ(0,iflag_);
       replaceMap(map);
       ASSERT_EQ(0,iflag_);
@@ -177,7 +177,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     {
       // replace map to by the map of the current matrix
       const_map_ptr_t map = NULL;
-      SUBR(crsMat_get_domain_map)(I_,&map,&iflag_);
+      SUBR(sparseMat_get_domain_map)(I_,&map,&iflag_);
       ASSERT_EQ(0,iflag_);
       replaceMap(map);
       ASSERT_EQ(0,iflag_);
@@ -221,7 +221,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     {
       // replace map to by the map of the current matrix
       const_map_ptr_t map = NULL;
-      SUBR(crsMat_get_domain_map)(I_,&map,&iflag_);
+      SUBR(sparseMat_get_domain_map)(I_,&map,&iflag_);
       ASSERT_EQ(0,iflag_);
       replaceMap(map);
       ASSERT_EQ(0,iflag_);
@@ -267,7 +267,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     {
       // replace map to by the map of the current matrix
       const_map_ptr_t map = NULL;
-      SUBR(crsMat_get_domain_map)(A1_,&map,&iflag_);
+      SUBR(sparseMat_get_domain_map)(A1_,&map,&iflag_);
       ASSERT_EQ(0,iflag_);
       replaceMap(map);
       ASSERT_EQ(0,iflag_);
@@ -313,7 +313,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     {
       // replace map to by the map of the current matrix
       const_map_ptr_t map = NULL;
-      SUBR(crsMat_get_domain_map)(A1_,&map,&iflag_);
+      SUBR(sparseMat_get_domain_map)(A1_,&map,&iflag_);
       ASSERT_EQ(0,iflag_);
       replaceMap(map);
       ASSERT_EQ(0,iflag_);
@@ -366,7 +366,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     {
       // replace map to by the map of the current matrix
       const_map_ptr_t map = NULL;
-      SUBR(crsMat_get_domain_map)(A1_,&map,&iflag_);
+      SUBR(sparseMat_get_domain_map)(A1_,&map,&iflag_);
       ASSERT_EQ(0,iflag_);
       replaceMap(map);
       ASSERT_EQ(0,iflag_);

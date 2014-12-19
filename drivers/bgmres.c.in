@@ -23,7 +23,7 @@ int main(int argc, char** argv)
   bool verbose;
 
   comm_ptr_t comm;
-  crsMat_ptr_t A;
+  sparseMat_ptr_t A;
   op_ptr_t A_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
   
   const_map_ptr_t map; // map (element distribution) of vectors according to 
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
   
   /* we assume domain map = range map here, which is reasonable for something
      you want to put into a linear solver */
-  PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(A, &map,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&iflag),iflag);
 
   /* create vectors */
   PHIST_ICHK_IERR(SUBR(mvec_create)(&XEX,map,num_rhs,&iflag),iflag);
@@ -118,11 +118,11 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(XEX,ONE,&iflag),iflag);
   
   /* compute rhs B=A*XEX */
-  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(ONE,A,XEX,ZERO,B,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(ONE,A,XEX,ZERO,B,&iflag),iflag);
   
   /* create operator wrapper for computing Y=A*X using a CRS matrix */
   A_op = (op_ptr_t)malloc(sizeof(TYPE(op)));
-  PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(A_op,A,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(A_op,A,&iflag),iflag);
   
   num_iters=max_iters;
   
@@ -137,7 +137,7 @@ int main(int argc, char** argv)
   PHIST_OUT(1,"number of iterations performed: %d\n",num_iters);
   
   /* compute residual norms */
-  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(ONE,A,X,ZERO,R,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(ONE,A,X,ZERO,R,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,B,ONE,R,&iflag),iflag);
   
   /* compute ||X - XEX||_2 */
@@ -174,7 +174,7 @@ int main(int argc, char** argv)
   free(xnorm2);
   free(bnorm2);
   
-  PHIST_ICHK_IERR(SUBR(crsMat_delete)(A,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(XEX,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(B,&iflag),iflag);

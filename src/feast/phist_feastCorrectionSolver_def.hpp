@@ -1,6 +1,6 @@
 //! create a feastCorrectionSolver object
 void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me, 
-        TYPE(const_crsMat_ptr) A,
+        TYPE(const_sparseMat_ptr) A,
         linSolv_t method,
         int blockSize,
         int numShifts, _MT_ sigma_r[], _MT_ sigma_i[],

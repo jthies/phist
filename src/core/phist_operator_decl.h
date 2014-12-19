@@ -26,7 +26,7 @@ typedef const TYPE(op)* TYPE(const_op_ptr);
 
 //! this function can be used to create an operator which encapsulates a CRS matrix.
 //! It does not allocate memory for the op struct, the caller has to do that beforehand.
-void SUBR(op_wrap_crsMat)(TYPE(op_ptr) op, TYPE(const_crsMat_ptr) A, int* iflag);
+void SUBR(op_wrap_sparseMat)(TYPE(op_ptr) op, TYPE(const_sparseMat_ptr) A, int* iflag);
 
 //! create the identity operator that returns Y=alpha*X+beta*Y
 void SUBR(op_identity)(TYPE(op_ptr) op, int* iflag);

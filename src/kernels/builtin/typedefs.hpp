@@ -43,7 +43,7 @@ public:
 #endif
 
   //! CRS matrices
-  typedef void crsMat_t;
+  typedef void sparseMat_t;
 
   //! create a Teuchos' view of a local sdMat
   //static Teuchos::RCP<const Teuchos_sdMat_t> CreateTeuchosView(Teuchos::RCP<const sdMat_t> M, int* iflag)

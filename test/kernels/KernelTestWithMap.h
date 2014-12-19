@@ -35,7 +35,7 @@ virtual void TearDown()
   KernelTest::TearDown();
 }
 
-/** replace the map, e.g. when we need to use the map of a crsMat */
+/** replace the map, e.g. when we need to use the map of a sparseMat */
 virtual void replaceMap(const_map_ptr_t map)
 {
   if( deleteMap_ )

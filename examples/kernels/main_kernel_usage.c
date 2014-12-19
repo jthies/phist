@@ -17,7 +17,7 @@ int main(int argc, char** argv)
   int iflag;
 
   const_comm_ptr_t comm = NULL;
-  DcrsMat_ptr_t A;
+  DsparseMat_ptr_t A;
   const_map_ptr_t row_map,range_map,domain_map;
   Dmvec_ptr_t x,y;
   
@@ -37,9 +37,9 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
 
   PHIST_ICHK_IERR(phist_comm_create(&comm_world,&iflag),iflag);
-  PHIST_ICHK_IERR(phist_DcrsMat_read_mm(&A,filename,comm_world,&iflag),iflag);
-  PHIST_ICHK_IERR(phist_DcrsMat_get_range_map(A, &range_map, &iflag),iflag);
-  PHIST_ICHK_IERR(phist_DcrsMat_get_domain_map(A, &domain_map, &iflag),iflag);
+  PHIST_ICHK_IERR(phist_DsparseMat_read_mm(&A,filename,comm_world,&iflag),iflag);
+  PHIST_ICHK_IERR(phist_DsparseMat_get_range_map(A, &range_map, &iflag),iflag);
+  PHIST_ICHK_IERR(phist_DsparseMat_get_domain_map(A, &domain_map, &iflag),iflag);
 
   PHIST_ICHK_IERR(phist_map_get_comm(range_map, &comm, &iflag),iflag);
   PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank, &iflag),iflag);
@@ -77,7 +77,7 @@ int main(int argc, char** argv)
     }
 
   // compute y=A*x
-  PHIST_ICHK_IERR(phist_DcrsMat_times_mvec(1.0,A,x,0.0,y,&iflag),iflag);
+  PHIST_ICHK_IERR(phist_DsparseMat_times_mvec(1.0,A,x,0.0,y,&iflag),iflag);
 
   // print result
   PHIST_OUT(1,"after MVM:");
@@ -89,7 +89,7 @@ int main(int argc, char** argv)
   // delete everything
   PHIST_ICHK_IERR(phist_Dmvec_delete(x,&iflag),iflag);
   PHIST_ICHK_IERR(phist_Dmvec_delete(y,&iflag),iflag);
-  PHIST_ICHK_IERR(phist_DcrsMat_delete(A,&iflag),iflag);
+  PHIST_ICHK_IERR(phist_DsparseMat_delete(A,&iflag),iflag);
 
   PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
   }

@@ -55,11 +55,11 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
         opA_ = new TYPE(op);
         ASSERT_TRUE(opA_ != NULL);
 
-        SUBR(op_wrap_crsMat)(opA_,A_,&iflag_);
+        SUBR(op_wrap_sparseMat)(opA_,A_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
         const_map_ptr_t map = NULL;
-        SUBR(crsMat_get_domain_map)(A_, &map, &iflag_);
+        SUBR(sparseMat_get_domain_map)(A_, &map, &iflag_);
         ASSERT_EQ(0,iflag_);
         replaceMap(map);
         ASSERT_EQ(0,iflag_);
@@ -78,7 +78,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_put_value)(sol_,st::zero(),&iflag_);
         ASSERT_EQ(0,iflag_);
-        SUBR(crsMat_times_mvec)(st::one(),A_,xex_,st::zero(),rhs_,&iflag_);
+        SUBR(sparseMat_times_mvec)(st::one(),A_,xex_,st::zero(),rhs_,&iflag_);
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_norm2)(xex_,xNorm_,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -96,7 +96,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
         PHIST_ENTER_FCN(__FUNCTION__);
         delete opA_;
 
-        SUBR(crsMat_delete)(A_,&iflag_);
+        SUBR(sparseMat_delete)(A_,&iflag_);
         ASSERT_EQ(0,iflag_);
         SUBR(blockedGMRESstates_delete)(state_,m_,&iflag);
         ASSERT_EQ(0,iflag_);
@@ -112,7 +112,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
 
   protected:
   
-    TYPE(crsMat_ptr) A_;
+    TYPE(sparseMat_ptr) A_;
     TYPE(mvec_ptr) xex_,sol_,rhs_;
     ST *xex_vp_,*rhs_vp_,*sol_vp_;
     MT bNorm_[_M_],xNorm_[_M_];
@@ -191,7 +191,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
         
         
         // compute true residual in b
-        SUBR(crsMat_times_mvec)(-st::one(),A_,x,st::one(),b,&iflag_);
+        SUBR(sparseMat_times_mvec)(-st::one(),A_,x,st::one(),b,&iflag_);
         ASSERT_EQ(0,iflag_);
         
         SUBR(mvec_norm2)(b,resNorm,&iflag_);

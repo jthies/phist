@@ -43,9 +43,9 @@ typedef gidx_t ghost_gidx_t;
 //!   or row-major. In the latter case, the macro PHIST_MVECS_ROW_MAJOR should be 
 //!   defined.
 //! - sdMat_t - a small dense matrix, replicated on all MPI processes.
-//! - crsMat_t: sparse matrix in *any* storage format (TODO: rename it)
+//! - sparseMat_t: sparse matrix in *any* storage format (TODO: rename it)
 //!
-//! The type-specific objects for mvecs, sdMats and crsMats are called
+//! The type-specific objects for mvecs, sdMats and sparseMats are called
 //! Smvec_t, Dmvec_t, Cmvec_t etc. and defined in phist_kernels_def.h
 
 #ifdef __cplusplus

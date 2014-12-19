@@ -2,15 +2,15 @@ extern "C" {
 
 // this function can be used to create an operator which encapsulates a CRS matrix.
 // It does not allocate memory for the op struct, the caller has to do that beforehand.
-void SUBR(op_wrap_crsMat)(TYPE(op_ptr) op, TYPE(const_crsMat_ptr) A, int* iflag)
+void SUBR(op_wrap_sparseMat)(TYPE(op_ptr) op, TYPE(const_sparseMat_ptr) A, int* iflag)
   {
   *iflag=0;
   op->A = A;
-  PHIST_CHK_IERR(SUBR(crsMat_get_range_map)(A,&op->range_map,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(crsMat_get_domain_map)(A,&op->domain_map,iflag),*iflag);
-  op->apply = &SUBR(crsMat_times_mvec);
-  op->applyT = &SUBR(crsMatT_times_mvec);
-  op->apply_shifted = &SUBR(crsMat_times_mvec_vadd_mvec);
+  PHIST_CHK_IERR(SUBR(sparseMat_get_range_map)(A,&op->range_map,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sparseMat_get_domain_map)(A,&op->domain_map,iflag),*iflag);
+  op->apply = &SUBR(sparseMat_times_mvec);
+  op->applyT = &SUBR(sparseMatT_times_mvec);
+  op->apply_shifted = &SUBR(sparseMat_times_mvec_vadd_mvec);
   return;
   }
 

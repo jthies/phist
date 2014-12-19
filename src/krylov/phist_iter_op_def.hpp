@@ -33,7 +33,7 @@ extern "C" void SUBR(private_iter_op_apply)
 //! is op->apply(alpha,op,X,beta,Y) will actually 
 //! approximate Y=(A-sigma*I)\X. alpha and beta are
 //! not used, resp. must be alpha=1, beta=0. 
-void SUBR(op_wrap_solver)(TYPE(op_ptr) Ainv_op,TYPE(const_crsMat_ptr) A, _ST_ shift,
+void SUBR(op_wrap_solver)(TYPE(op_ptr) Ainv_op,TYPE(const_sparseMat_ptr) A, _ST_ shift,
         linSolv_t method,int block_size, _MT_ tol,int maxIter,int* iflag)
 {
 #include "phist_std_typedefs.hpp"
@@ -60,7 +60,7 @@ void SUBR(op_wrap_solver)(TYPE(op_ptr) Ainv_op,TYPE(const_crsMat_ptr) A, _ST_ sh
   op->tol=tol;
 
   //only defined for square matrices, range=domain map
-  PHIST_CHK_IERR(SUBR(crsMat_get_range_map)(A,&Ainv_op->range_map,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sparseMat_get_range_map)(A,&Ainv_op->range_map,iflag),*iflag);
 Ainv_op->domain_map=Ainv_op->range_map;
 Ainv_op->apply=&SUBR(private_iter_op_apply);
   return;    

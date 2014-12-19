@@ -70,15 +70,15 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
     }
 
 // the matrices may have individual maps, so we need to recreate all vectors with the specific map of the matrix!
-void rebuildVectors(TYPE(const_crsMat_ptr) A)
+void rebuildVectors(TYPE(const_sparseMat_ptr) A)
   {
   if (typeImplemented_ && haveMats_)
     {
     // set vec1 to be a valid X, vec2 and vec3 a valid Y in Y=AX
     const_map_ptr_t range_map, domain_map;
-    SUBR(crsMat_get_range_map)(A,&range_map,&iflag_);
+    SUBR(sparseMat_get_range_map)(A,&range_map,&iflag_);
     ASSERT_EQ(0,iflag_);
-    SUBR(crsMat_get_domain_map)(A,&domain_map,&iflag_);
+    SUBR(sparseMat_get_domain_map)(A,&domain_map,&iflag_);
 
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_delete)(vec1_,&iflag_);
@@ -113,7 +113,7 @@ void rebuildVectors(TYPE(const_crsMat_ptr) A)
   }
 
 
-  void test_crsMat_times_mvec_vadd_mvec(_ST_ alpha, TYPE(const_crsMat_ptr) A, _ST_ shifts[_NV_], _ST_ beta)
+  void test_sparseMat_times_mvec_vadd_mvec(_ST_ alpha, TYPE(const_sparseMat_ptr) A, _ST_ shifts[_NV_], _ST_ beta)
   {
     if( !typeImplemented_ )
       return;
@@ -127,14 +127,14 @@ void rebuildVectors(TYPE(const_crsMat_ptr) A)
     SUBR(mvec_add_mvec)(st::one(), vec2_, st::zero(), vec3_, &iflag_);
     ASSERT_EQ(0, iflag_);
 
-    SUBR(crsMat_times_mvec_vadd_mvec)(alpha, A, shifts, vec1_, beta, vec2_, &iflag_);
+    SUBR(sparseMat_times_mvec_vadd_mvec)(alpha, A, shifts, vec1_, beta, vec2_, &iflag_);
     ASSERT_EQ(0, iflag_);
 
     _ST_ alpha_shifts[_NV_];
     for(int i = 0; i < _NV_; i++)
       alpha_shifts[i] = alpha*shifts[i];
 
-    SUBR(crsMat_times_mvec)(alpha, A, vec1_, beta, vec3_, &iflag_);
+    SUBR(sparseMat_times_mvec)(alpha, A, vec1_, beta, vec3_, &iflag_);
     ASSERT_EQ(0, iflag_);
     SUBR(mvec_vadd_mvec)(alpha_shifts, vec1_, st::one(), vec3_, &iflag_);
     ASSERT_EQ(0, iflag_);
@@ -143,7 +143,7 @@ void rebuildVectors(TYPE(const_crsMat_ptr) A)
   }
 
 #if _NV_ > 1
-  void test_crsMat_times_mvec_with_views(_ST_ alpha, TYPE(const_crsMat_ptr) A, _ST_ beta, int imin, int imax)
+  void test_sparseMat_times_mvec_with_views(_ST_ alpha, TYPE(const_sparseMat_ptr) A, _ST_ beta, int imin, int imax)
   {
     if( !typeImplemented_ )
       return;
@@ -165,7 +165,7 @@ void rebuildVectors(TYPE(const_crsMat_ptr) A)
     SUBR(mvec_view_block)(vec2_, &vec2_view, imin, imax, &iflag_);
     ASSERT_EQ(0, iflag_);
 
-    SUBR(crsMat_times_mvec)(alpha, A, vec1_view, beta, vec2_view, &iflag_);
+    SUBR(sparseMat_times_mvec)(alpha, A, vec1_view, beta, vec2_view, &iflag_);
     ASSERT_EQ(0, iflag_);
 
     // make sure nothing changed outside of viewed block
@@ -173,7 +173,7 @@ void rebuildVectors(TYPE(const_crsMat_ptr) A)
     ASSERT_REAL_EQ(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imax+1,lda_),vec3_vp_+VIDX(0,imax+1,lda_),nloc_,nvec_-imax-1,lda_,stride_,vflag_));
 
     // calculation for full block as reference
-    SUBR(crsMat_times_mvec)(alpha, A, vec1_, beta, vec3_, &iflag_);
+    SUBR(sparseMat_times_mvec)(alpha, A, vec1_, beta, vec3_, &iflag_);
     ASSERT_EQ(0, iflag_);
 
     ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imin,lda_),vec3_vp_+VIDX(0,imin,lda_),nloc_,imax-imin+1,lda_,stride_,vflag_), sqrt(mt::eps()));
@@ -185,7 +185,7 @@ void rebuildVectors(TYPE(const_crsMat_ptr) A)
     ASSERT_EQ(0, iflag_);
   }
 
-  void test_crsMat_times_mvec_vadd_mvec_with_views(_ST_ alpha, TYPE(const_crsMat_ptr) A, _ST_ shifts[_NV_], _ST_ beta, int imin, int imax)
+  void test_sparseMat_times_mvec_vadd_mvec_with_views(_ST_ alpha, TYPE(const_sparseMat_ptr) A, _ST_ shifts[_NV_], _ST_ beta, int imin, int imax)
   {
     if( !typeImplemented_ )
       return;
@@ -207,7 +207,7 @@ void rebuildVectors(TYPE(const_crsMat_ptr) A)
     SUBR(mvec_view_block)(vec2_, &vec2_view, imin, imax, &iflag_);
     ASSERT_EQ(0, iflag_);
 
-    SUBR(crsMat_times_mvec_vadd_mvec)(alpha, A, shifts+imin, vec1_view, beta, vec2_view, &iflag_);
+    SUBR(sparseMat_times_mvec_vadd_mvec)(alpha, A, shifts+imin, vec1_view, beta, vec2_view, &iflag_);
     ASSERT_EQ(0, iflag_);
 
     // make sure nothing changed outside of viewed block
@@ -215,7 +215,7 @@ void rebuildVectors(TYPE(const_crsMat_ptr) A)
     ASSERT_REAL_EQ(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imax+1,lda_),vec3_vp_+VIDX(0,imax+1,lda_),nloc_,nvec_-imax-1,lda_,stride_,vflag_));
 
     // calculation for full block as reference
-    SUBR(crsMat_times_mvec_vadd_mvec)(alpha, A, shifts, vec1_, beta, vec3_, &iflag_);
+    SUBR(sparseMat_times_mvec_vadd_mvec)(alpha, A, shifts, vec1_, beta, vec3_, &iflag_);
     ASSERT_EQ(0, iflag_);
 
     ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imin,lda_),vec3_vp_+VIDX(0,imin,lda_),nloc_,imax-imin+1,lda_,stride_,vflag_), sqrt(mt::eps()));
@@ -228,24 +228,24 @@ void rebuildVectors(TYPE(const_crsMat_ptr) A)
   }
 #endif
 
-TYPE(crsMat_ptr) A0_; // all zero matrix
-TYPE(crsMat_ptr) A1_; // identity matrix
-TYPE(crsMat_ptr) A2_; // general sparse matrix with nonzero diagonal
-TYPE(crsMat_ptr) A3_; // general sparse matrix with some zeros on the diagonal
-TYPE(crsMat_ptr) A4_; // orthogonal sparse matrix that "shifts" each value to the next row
+TYPE(sparseMat_ptr) A0_; // all zero matrix
+TYPE(sparseMat_ptr) A1_; // identity matrix
+TYPE(sparseMat_ptr) A2_; // general sparse matrix with nonzero diagonal
+TYPE(sparseMat_ptr) A3_; // general sparse matrix with some zeros on the diagonal
+TYPE(sparseMat_ptr) A4_; // orthogonal sparse matrix that "shifts" each value to the next row
 
 protected:
 
-int delete_mat(TYPE(crsMat_ptr) A)
+int delete_mat(TYPE(sparseMat_ptr) A)
   {
   if (A!=NULL)
     {
-    SUBR(crsMat_delete)(A,&iflag_);
+    SUBR(sparseMat_delete)(A,&iflag_);
     }
   return iflag_;
   }
 
-_MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
+_MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
   {
     if (typeImplemented_ && haveMats_)
       {
@@ -253,7 +253,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       global_sum(&val,1,mpi_comm_);
       SUBR(mvec_put_value)(vec1_,val,&iflag_);
       SUBR(mvec_random)(vec2_,&iflag_);
-      SUBR(crsMat_times_mvec)(st::one(),A,vec1_,st::zero(),vec2_,&iflag_);
+      SUBR(sparseMat_times_mvec)(st::one(),A,vec1_,st::zero(),vec2_,&iflag_);
       if (iflag_) return (_MT_)iflag_;
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_print)(vec1_,&iflag_);
@@ -288,7 +288,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
 
       SUBR(mvec_random)(vec1_,&iflag_);
       SUBR(mvec_random)(vec2_,&iflag_);
-      SUBR(crsMat_times_mvec)(st::one(),A0_,vec1_,st::zero(),vec2_,&iflag_);
+      SUBR(sparseMat_times_mvec)(st::one(),A0_,vec1_,st::zero(),vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,0.0,vflag_));
       }
@@ -306,7 +306,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       //I*X=X?
       SUBR(mvec_random)(vec1_,&iflag_);
       SUBR(mvec_random)(vec2_,&iflag_);
-      SUBR(crsMat_times_mvec)(st::one(),A1_,vec1_,st::zero(),vec2_,&iflag_);
+      SUBR(sparseMat_times_mvec)(st::one(),A1_,vec1_,st::zero(),vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_,vflag_));
 
@@ -315,7 +315,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       beta=st::zero();
       SUBR(mvec_random)(vec1_,&iflag_);
       SUBR(mvec_random)(vec2_,&iflag_);
-      SUBR(crsMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&iflag_);
+      SUBR(sparseMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_scale)(vec1_,alpha,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -339,7 +339,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_add_mvec)(beta,vec2_,st::zero(),vec3_,&iflag_); 
       ASSERT_EQ(0,iflag_); 
       // v2 = 0*v1 + beta*v2 (=v3) 
-      SUBR(crsMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&iflag_); 
+      SUBR(sparseMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&iflag_); 
       ASSERT_EQ(0,iflag_); 
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_print)(vec2_,&iflag_);
@@ -373,7 +373,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_add_mvec)(beta,vec2_,st::one(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // v2 = v1 + beta*v2 (=alpha*v1+v3)
-      SUBR(crsMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&iflag_);
+      SUBR(sparseMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_print)(vec2_,&iflag_);
@@ -407,7 +407,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_add_mvec)(beta,vec2_,st::one(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // v2 = alpha*v1 + beta*v2 (=alpha*v1+v3)
-      SUBR(crsMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&iflag_);
+      SUBR(sparseMat_times_mvec)(alpha,A1_,vec1_,beta,vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_print)(vec2_,&iflag_);
@@ -448,7 +448,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       PHIST_DEB("all random:\n");
       SUBR(mvec_print)(vec1_,&iflag_);
 #endif
-      SUBR(crsMat_times_mvec)(st::one(),A1_,v_in,st::zero(),v_out,&iflag_);
+      SUBR(sparseMat_times_mvec)(st::one(),A1_,v_in,st::zero(),v_out,&iflag_);
       ASSERT_EQ(0,iflag_);
 #if(PHIST_OUTLEV>=PHIST_DEBUG)
       PHIST_DEB("with two identical blocks [%d..%d] and [%d..%d]:\n",
@@ -540,7 +540,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_print)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 #endif
-      SUBR(crsMat_times_mvec)(alpha,A4_,vec1_,beta,vec2_,&iflag_);
+      SUBR(sparseMat_times_mvec)(alpha,A4_,vec1_,beta,vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_print)(vec2_,&iflag_);
@@ -632,7 +632,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
       SUBR(mvec_print)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 #endif
-      SUBR(crsMat_times_mvec)(alpha,A2_,vec1_,beta,vec2_,&iflag_);
+      SUBR(sparseMat_times_mvec)(alpha,A2_,vec1_,beta,vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_print)(vec2_,&iflag_);
@@ -775,7 +775,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
   }
 
 
-  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_only_scale)
+  TEST_F(CLASSNAME, sparseMat_times_mvec_vadd_mvec_only_scale)
   {
     // matrices may have different maps
     rebuildVectors(A2_);
@@ -786,11 +786,11 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     _ST_ alpha = st::zero();
     _ST_ beta = st::prand();
 
-    test_crsMat_times_mvec_vadd_mvec(alpha, A2_, shifts, beta);
+    test_sparseMat_times_mvec_vadd_mvec(alpha, A2_, shifts, beta);
   }
 
 #ifndef SKIP_ZERO_MAT
-  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_only_vadd)
+  TEST_F(CLASSNAME, sparseMat_times_mvec_vadd_mvec_only_vadd)
   {
     // matrices may have different maps
     rebuildVectors(A0_);
@@ -801,11 +801,11 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     _ST_ alpha = st::one();
     _ST_ beta = st::prand();
 
-    test_crsMat_times_mvec_vadd_mvec(alpha, A0_, shifts, beta);
+    test_sparseMat_times_mvec_vadd_mvec(alpha, A0_, shifts, beta);
   }
 #endif
 
-  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_only_spmvm)
+  TEST_F(CLASSNAME, sparseMat_times_mvec_vadd_mvec_only_spmvm)
   {
     // matrices may have different maps
     rebuildVectors(A2_);
@@ -816,10 +816,10 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     _ST_ alpha = st::prand();
     _ST_ beta = st::prand();
 
-    test_crsMat_times_mvec_vadd_mvec(alpha, A2_, shifts, beta);
+    test_sparseMat_times_mvec_vadd_mvec(alpha, A2_, shifts, beta);
   }
 
-  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_random)
+  TEST_F(CLASSNAME, sparseMat_times_mvec_vadd_mvec_random)
   {
     // matrices may have different maps
     rebuildVectors(A2_);
@@ -830,11 +830,11 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     _ST_ alpha = st::prand();
     _ST_ beta = st::prand();
 
-    test_crsMat_times_mvec_vadd_mvec(alpha, A2_, shifts, beta);
+    test_sparseMat_times_mvec_vadd_mvec(alpha, A2_, shifts, beta);
   }
 
 #if _NV_ > 1
-  TEST_F(CLASSNAME, crsMat_times_mvec_random_with_view_0_0)
+  TEST_F(CLASSNAME, sparseMat_times_mvec_random_with_view_0_0)
   {
     // matrices may have different maps
     rebuildVectors(A2_);
@@ -842,10 +842,10 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     _ST_ alpha = st::prand();
     _ST_ beta = st::prand();
 
-    test_crsMat_times_mvec_with_views(alpha, A2_, beta, 0, 0);
+    test_sparseMat_times_mvec_with_views(alpha, A2_, beta, 0, 0);
   }
 
-  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_random_with_view_0_0)
+  TEST_F(CLASSNAME, sparseMat_times_mvec_vadd_mvec_random_with_view_0_0)
   {
     // matrices may have different maps
     rebuildVectors(A2_);
@@ -856,10 +856,10 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     _ST_ alpha = st::prand();
     _ST_ beta = st::prand();
 
-    test_crsMat_times_mvec_vadd_mvec_with_views(alpha, A2_, shifts, beta, 0, 0);
+    test_sparseMat_times_mvec_vadd_mvec_with_views(alpha, A2_, shifts, beta, 0, 0);
   }
 
-  TEST_F(CLASSNAME, crsMat_times_mvec_random_with_view_1_1)
+  TEST_F(CLASSNAME, sparseMat_times_mvec_random_with_view_1_1)
   {
     // matrices may have different maps
     rebuildVectors(A2_);
@@ -867,10 +867,10 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     _ST_ alpha = st::prand();
     _ST_ beta = st::prand();
 
-    test_crsMat_times_mvec_with_views(alpha, A2_, beta, 1, 1);
+    test_sparseMat_times_mvec_with_views(alpha, A2_, beta, 1, 1);
   }
 
-  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_random_with_view_1_1)
+  TEST_F(CLASSNAME, sparseMat_times_mvec_vadd_mvec_random_with_view_1_1)
   {
     // matrices may have different maps
     rebuildVectors(A2_);
@@ -881,13 +881,13 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     _ST_ alpha = st::prand();
     _ST_ beta = st::prand();
 
-    test_crsMat_times_mvec_vadd_mvec_with_views(alpha, A2_, shifts, beta, 1, 1);
+    test_sparseMat_times_mvec_vadd_mvec_with_views(alpha, A2_, shifts, beta, 1, 1);
   }
 #endif
 
 
 #if _NV_ > 3
-  TEST_F(CLASSNAME, crsMat_times_mvec_random_with_view_1_2)
+  TEST_F(CLASSNAME, sparseMat_times_mvec_random_with_view_1_2)
   {
     // matrices may have different maps
     rebuildVectors(A2_);
@@ -895,10 +895,10 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     _ST_ alpha = st::prand();
     _ST_ beta = st::prand();
 
-    test_crsMat_times_mvec_with_views(alpha, A2_, beta, 1, 2);
+    test_sparseMat_times_mvec_with_views(alpha, A2_, beta, 1, 2);
   }
 
-  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_random_with_view_1_2)
+  TEST_F(CLASSNAME, sparseMat_times_mvec_vadd_mvec_random_with_view_1_2)
   {
     // matrices may have different maps
     rebuildVectors(A2_);
@@ -909,13 +909,13 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     _ST_ alpha = st::prand();
     _ST_ beta = st::prand();
 
-    test_crsMat_times_mvec_vadd_mvec_with_views(alpha, A2_, shifts, beta, 1, 2);
+    test_sparseMat_times_mvec_vadd_mvec_with_views(alpha, A2_, shifts, beta, 1, 2);
   }
 #endif
 
 
 #if _NV_ > 3
-  TEST_F(CLASSNAME, crsMat_times_mvec_random_with_view_2_3)
+  TEST_F(CLASSNAME, sparseMat_times_mvec_random_with_view_2_3)
   {
     // matrices may have different maps
     rebuildVectors(A2_);
@@ -923,10 +923,10 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     _ST_ alpha = st::prand();
     _ST_ beta = st::prand();
 
-    test_crsMat_times_mvec_with_views(alpha, A2_, beta, 2, 3);
+    test_sparseMat_times_mvec_with_views(alpha, A2_, beta, 2, 3);
   }
 
-  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_random_with_view_2_3)
+  TEST_F(CLASSNAME, sparseMat_times_mvec_vadd_mvec_random_with_view_2_3)
   {
     // matrices may have different maps
     rebuildVectors(A2_);
@@ -937,13 +937,13 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     _ST_ alpha = st::prand();
     _ST_ beta = st::prand();
 
-    test_crsMat_times_mvec_vadd_mvec_with_views(alpha, A2_, shifts, beta, 2, 3);
+    test_sparseMat_times_mvec_vadd_mvec_with_views(alpha, A2_, shifts, beta, 2, 3);
   }
 #endif
 
 
 #if _NV_ > 4
-  TEST_F(CLASSNAME, crsMat_times_mvec_random_with_view_1_4)
+  TEST_F(CLASSNAME, sparseMat_times_mvec_random_with_view_1_4)
   {
     // matrices may have different maps
     rebuildVectors(A2_);
@@ -951,10 +951,10 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     _ST_ alpha = st::prand();
     _ST_ beta = st::prand();
 
-    test_crsMat_times_mvec_with_views(alpha, A2_, beta, 1, 4);
+    test_sparseMat_times_mvec_with_views(alpha, A2_, beta, 1, 4);
   }
 
-  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_random_with_view_1_4)
+  TEST_F(CLASSNAME, sparseMat_times_mvec_vadd_mvec_random_with_view_1_4)
   {
     // matrices may have different maps
     rebuildVectors(A2_);
@@ -965,13 +965,13 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     _ST_ alpha = st::prand();
     _ST_ beta = st::prand();
 
-    test_crsMat_times_mvec_vadd_mvec_with_views(alpha, A2_, shifts, beta, 1, 4);
+    test_sparseMat_times_mvec_vadd_mvec_with_views(alpha, A2_, shifts, beta, 1, 4);
   }
 #endif
 
 
 #if _NV_ >= 4
-  TEST_F(CLASSNAME, crsMat_times_mvec_random_with_same_vec_views_0_1__2_3)
+  TEST_F(CLASSNAME, sparseMat_times_mvec_random_with_same_vec_views_0_1__2_3)
   {
     if( !typeImplemented_ )
       return;
@@ -1008,10 +1008,10 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     ASSERT_EQ(0,iflag_);
 
     // first generate reference data (safe calculation)
-    SUBR(crsMat_times_mvec)(alpha, A2_, vin, beta, vref, &iflag_);
+    SUBR(sparseMat_times_mvec)(alpha, A2_, vin, beta, vref, &iflag_);
     ASSERT_EQ(0,iflag_);
     // calculation (unsafe aliasing!)
-    SUBR(crsMat_times_mvec)(alpha, A2_, vin, beta, vout, &iflag_);
+    SUBR(sparseMat_times_mvec)(alpha, A2_, vin, beta, vout, &iflag_);
     ASSERT_EQ(0,iflag_);
 
     // check vin
@@ -1028,7 +1028,7 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     ASSERT_EQ(0,iflag_);
   }
 
-  TEST_F(CLASSNAME, crsMat_times_mvec_vadd_mvec_random_with_same_vec_views_0_1__2_3)
+  TEST_F(CLASSNAME, sparseMat_times_mvec_vadd_mvec_random_with_same_vec_views_0_1__2_3)
   {
     if( !typeImplemented_ )
       return;
@@ -1062,10 +1062,10 @@ _MT_ const_row_sum_test(TYPE(crsMat_ptr) A)
     ASSERT_EQ(0,iflag_);
 
     // first generate reference data (safe calculation)
-    SUBR(crsMat_times_mvec_vadd_mvec)(alpha, A2_, shifts, vin, beta, vref, &iflag_);
+    SUBR(sparseMat_times_mvec_vadd_mvec)(alpha, A2_, shifts, vin, beta, vref, &iflag_);
     ASSERT_EQ(0,iflag_);
     // calculation (unsafe aliasing!)
-    SUBR(crsMat_times_mvec_vadd_mvec)(alpha, A2_, shifts, vin, beta, vout, &iflag_);
+    SUBR(sparseMat_times_mvec_vadd_mvec)(alpha, A2_, shifts, vin, beta, vout, &iflag_);
     ASSERT_EQ(0,iflag_);
 
     // check vin

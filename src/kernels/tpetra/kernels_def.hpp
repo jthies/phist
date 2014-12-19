@@ -9,7 +9,7 @@ extern "C" void SUBR(type_avail)(int* iflag)
 //@{
 
 //! read a matrix from a MatrixMarket (ASCII) file
-extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
         const char* filename,int* iflag)
   {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -19,10 +19,10 @@ extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcom
     return;
   }
 
-  Tpetra::MatrixMarket::Reader<Traits<_ST_>::crsMat_t> reader;
+  Tpetra::MatrixMarket::Reader<Traits<_ST_>::sparseMat_t> reader;
   std::string fstring(filename);
 
-  Teuchos::RCP<Traits<_ST_>::crsMat_t> A;
+  Teuchos::RCP<Traits<_ST_>::sparseMat_t> A;
   PHIST_CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*iflag);
   Teuchos::RCP<const comm_t> comm_ptr = Teuchos::rcp(comm,false);
 
@@ -31,12 +31,12 @@ extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcom
   Teuchos::RCP<node_t> node_ptr = Teuchos::rcp(node,true);
   
   PHIST_TRY_CATCH(A=reader.readSparseFile(fstring,comm_ptr,node_ptr),*iflag);
-  Teuchos::Ptr<Traits<_ST_>::crsMat_t> Aptr = A.release();
-  *vA = (TYPE(crsMat_ptr))(Aptr.get());
+  Teuchos::Ptr<Traits<_ST_>::sparseMat_t> Aptr = A.release();
+  *vA = (TYPE(sparseMat_ptr))(Aptr.get());
   }
 
 //! read a matrix from a Ghost CRS (binary) file.
-extern "C" void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
         const char* filename,int* iflag)
   {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -47,7 +47,7 @@ extern "C" void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vco
   }
 
 //! read a matrix from a Harwell-Boeing (HB) file
-extern "C" void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
 const char* filename,int* iflag)
   {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -64,18 +64,18 @@ const char* filename,int* iflag)
   Teuchos::RCP<const comm_t> comm = Teuchos::rcp(_comm,false);
   Teuchos::ParameterList nodeParams;
   
-  Teuchos::RCP<Traits<_ST_>::crsMat_t> A;
+  Teuchos::RCP<Traits<_ST_>::sparseMat_t> A;
   Teuchos::RCP<node_t> node = Teuchos::rcp(new node_t(nodeParams));
   Teuchos::RCP<map_t> rowMap=Teuchos::null; // assume linear distribution for now
   Teuchos::RCP<Teuchos::ParameterList> params=Teuchos::null;
   //PHIST_TRY_CATCH(Tpetra::Utils::readHBMatrix(fname,comm,node,A,rowMap, params),*iflag);
   PHIST_TRY_CATCH(Tpetra::Utils::readHBMatrix(fname,comm,node,A),*iflag);
-  Teuchos::Ptr<Traits<_ST_>::crsMat_t> Aptr = A.release();
-  *vA = (TYPE(crsMat_ptr))(Aptr.get());
+  Teuchos::Ptr<Traits<_ST_>::sparseMat_t> Aptr = A.release();
+  *vA = (TYPE(sparseMat_ptr))(Aptr.get());
   }
 //!@}
 
-extern "C" void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, const_comm_ptr_t vcomm,
         gidx_t nrows, gidx_t ncols, lidx_t maxnne,
                 int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*),
                 int *iflag)
@@ -84,13 +84,13 @@ extern "C" void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *vA, const_comm
 
   PHIST_CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*iflag);
   Teuchos::RCP<const comm_t> comm_ptr = Teuchos::rcp(comm,false);
-  Traits<_ST_>::crsMat_t* A=NULL;
+  Traits<_ST_>::sparseMat_t* A=NULL;
 
   map_ptr_t map=NULL;
   PHIST_CHK_IERR(phist_map_create(&map,vcomm,nrows,iflag),*iflag);
   const phist::tpetra::map_t* tpetra_map=(const phist::tpetra::map_t*)map;
 Teuchos::RCP<const phist::tpetra::map_t> map_ptr=Teuchos::rcp(tpetra_map,true);
-A=new Traits<_ST_>::crsMat_t(map_ptr,(int)maxnne);
+A=new Traits<_ST_>::sparseMat_t(map_ptr,(int)maxnne);
 
   gidx_t cols[maxnne];
   _ST_ vals[maxnne];
@@ -110,7 +110,7 @@ A=new Traits<_ST_>::crsMat_t(map_ptr,(int)maxnne);
   }
   PHIST_TRY_CATCH(A->fillComplete(),*iflag);
                             
-  *vA = (TYPE(crsMat_ptr))(A);  
+  *vA = (TYPE(sparseMat_ptr))(A);  
   return;
 }
                                                             
@@ -119,37 +119,37 @@ A=new Traits<_ST_>::crsMat_t(map_ptr,(int)maxnne);
 
 //!@{
 //! get the row distribution of the matrix
-extern "C" void SUBR(crsMat_get_row_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
   {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t, A, vA, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, A, vA, *iflag);
   *vmap = (const_map_ptr_t)(A->getRowMap().get());
   }
 
 //! get column distribution of a matrix
-extern "C" void SUBR(crsMat_get_col_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
   {
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t, A, vA, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, A, vA, *iflag);
   *vmap = (const_map_ptr_t)(A->getColMap().get());
   }
 
 //! get the map for vectors x in y=A*x
-extern "C" void SUBR(crsMat_get_domain_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
   {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t, A, vA, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, A, vA, *iflag);
   *vmap = (const_map_ptr_t)(A->getDomainMap().get());
   }
 
 //! get the map for vectors y in y=A*x
-extern "C" void SUBR(crsMat_get_range_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
   {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t, A, vA, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, A, vA, *iflag);
   *vmap = (const_map_ptr_t)(A->getRangeMap().get());
   }
 //@}
@@ -629,12 +629,12 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
 //@{
 
 //!
-extern "C" void SUBR(crsMat_delete)(TYPE(crsMat_ptr) vA, int* iflag)
+extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) vA, int* iflag)
   {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
   if (vA==NULL) return;
-  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::crsMat_t,A,vA,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sparseMat_t,A,vA,*iflag);
   delete A;
   }
 
@@ -860,7 +860,7 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
 
 
 //! y=alpha*A*x+beta*y.
-extern "C" void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA, 
+extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, 
                                         TYPE(const_mvec_ptr) vx, 
                                         _ST_ beta, TYPE(mvec_ptr) vy, 
                                         int* iflag)
@@ -876,7 +876,7 @@ extern "C" void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
     phist_totalMatVecCount();
 #endif
 
-  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t,A,vA,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,x,vx,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,y,vy,*iflag);
   PHIST_OUT(PHIST_TRACE,"alpha=%g+i%g\n",st::real(alpha),st::imag(alpha));
@@ -887,7 +887,7 @@ extern "C" void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
   }
 
 //! y=alpha*A*x+beta*y.
-extern "C" void SUBR(crsMatT_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA, 
+extern "C" void SUBR(sparseMatT_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, 
                                         TYPE(const_mvec_ptr) vx, 
                                         _ST_ beta, TYPE(mvec_ptr) vy, 
                                         int* iflag)
@@ -903,7 +903,7 @@ extern "C" void SUBR(crsMatT_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
     phist_totalMatVecCount();
 #endif
  
-  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::crsMat_t,A,vA,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,x,vx,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,y,vy,*iflag);
   PHIST_OUT(PHIST_TRACE,"alpha=%g+i%g\n",st::real(alpha),st::imag(alpha));
@@ -917,14 +917,14 @@ extern "C" void SUBR(crsMatT_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) vA,
   }
 
 //! y[i]=alpha*(A*x[i]+shifts[i]*x[i]) + beta*y[i]
-extern "C" void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
+extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
         const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
 
-  PHIST_CHK_IERR(SUBR(crsMat_times_mvec)(alpha, A, x, beta, y, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(alpha, A, x, beta, y, iflag), *iflag);
   int nvec;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x, &nvec, iflag), *iflag);
   _ST_ alpha_shifts[nvec];

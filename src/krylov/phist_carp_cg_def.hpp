@@ -16,7 +16,7 @@ void SUBR(private_dotProd)(TYPE(const_mvec_ptr) v, TYPE(const_mvec_ptr) vi,
                            TYPE(const_mvec_ptr) w, TYPE(const_mvec_ptr) wi,
                            int nvec, _ST_   *dots, _MT_* dotsi, int *iflag);
 //
-void SUBR(private_compResid)(TYPE(const_crsMat_ptr) A, int nvec, _ST_ sigma, _MT_ sigma_i,
+void SUBR(private_compResid)(TYPE(const_sparseMat_ptr) A, int nvec, _ST_ sigma, _MT_ sigma_i,
                        TYPE(const_mvec_ptr) B,
                        TYPE(const_mvec_ptr) x, TYPE(const_mvec_ptr) xi,
                        TYPE(mvec_ptr) r,        TYPE(mvec_ptr) ri,
@@ -42,7 +42,7 @@ void SUBR(show_vector_elements)(TYPE(mvec_ptr) V, int *iflag) ;
 // create new state objects. We just get an array of (NULL-)pointers
 void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
         _MT_ sigma_r[], _MT_ sigma_i[],
-        TYPE(const_crsMat_ptr) A, int nvec,int* iflag)
+        TYPE(const_sparseMat_ptr) A, int nvec,int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -56,7 +56,7 @@ void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
         &nrms_ai2i, &aux, iflag),*iflag);    
 
   const_map_ptr_t map=NULL;
-  PHIST_CHK_IERR(SUBR(crsMat_get_row_map)(A,&map,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sparseMat_get_row_map)(A,&map,iflag),*iflag);
   lidx_t nloc;
   PHIST_CHK_IERR(phist_map_get_local_length(map,&nloc,iflag),*iflag);
   
@@ -294,7 +294,7 @@ if (numSys>0)
     //PHIST_SOUT(PHIST_INFO,"HIER PASSIERT IRGENDWAS.\n");                                                            ///////////////////////////////////////////////////////////////////
     // get some pointers to avoid the 'S_array[ishift]->' all the time
     TYPE(carp_cgState_ptr) S = S_array[ishift];
-    TYPE(const_crsMat_ptr) A=S->A_;
+    TYPE(const_sparseMat_ptr) A=S->A_;
     const MT sigma_r = S->sigma_r_;
     const MT sigma_i = S->sigma_i_;
     const ST sigma=sigma_r+st::cmplx_I()*sigma_i;
@@ -1078,7 +1078,7 @@ if (numSys>0)
 
 // compute residual r=b-(sI-A)x and ||r||_2^2 in nrms2. If r and ri are NULL, a temporary
 // vector is used and discarded.
-void SUBR(private_compResid)(TYPE(const_crsMat_ptr) A, int nvec, _ST_ sigma, _MT_ sigma_i,
+void SUBR(private_compResid)(TYPE(const_sparseMat_ptr) A, int nvec, _ST_ sigma, _MT_ sigma_i,
                        TYPE(const_mvec_ptr) B,
                        TYPE(const_mvec_ptr) x, TYPE(const_mvec_ptr) xi,
                        TYPE(mvec_ptr) r,        TYPE(mvec_ptr) ri,
@@ -1121,14 +1121,14 @@ void SUBR(private_compResid)(TYPE(const_crsMat_ptr) A, int nvec, _ST_ sigma, _MT
   // r=b
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),B,st::zero(),R,iflag),*iflag);
   // r=b-(sI-A)*x
-  PHIST_CHK_IERR(SUBR(crsMat_times_mvec_vadd_mvec)
+  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_vadd_mvec)
     (st::one(),A,shifts,x,st::one(),R,iflag),*iflag);
   if (rc_variant)
   {
     //r=r+si*xi
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(sigma_i, xi,st::one(),R,iflag),*iflag);
     //ri=(A-srI)xi
-    PHIST_CHK_IERR(SUBR(crsMat_times_mvec_vadd_mvec)
+    PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_vadd_mvec)
       (st::one(),A,shifts,xi,st::zero(),RI,iflag),*iflag);
     // ri-=si*xr
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-sigma_i,x,st::one(),RI,iflag),*iflag);

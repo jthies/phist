@@ -9,7 +9,7 @@ extern "C" void SUBR(type_avail)(int* iflag)
 }
 
 //! read a matrix from a MatrixMarket (ASCII) file
-extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
         const char* filename,int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -21,7 +21,7 @@ extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcom
   }
   Epetra_CrsMatrix* A=NULL;
   *iflag=EpetraExt::MatrixMarketFileToCrsMatrix(filename,*comm,A);
-  *vA = (TYPE(crsMat_ptr))(A);
+  *vA = (TYPE(sparseMat_ptr))(A);
   
 /*  std::cerr << "filename was '"<<filename<<"'"<<std::endl;
   if (A==NULL) {std::cerr << "EpetraExt returned NULL"<<std::endl;}
@@ -30,7 +30,7 @@ extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcom
 }
 
 //! read a matrix from a Ghost CRS (binary) file.
-extern "C" void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
 const char* filename,int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -39,7 +39,7 @@ const char* filename,int* iflag)
 }
 
 //! read a matrix from a Harwell-Boeing (HB) file
-extern "C" void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
 const char* filename,int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -47,7 +47,7 @@ const char* filename,int* iflag)
 }
 //!@}
 
-extern "C" void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, const_comm_ptr_t vcomm,
         gidx_t nrows, gidx_t ncols, lidx_t maxnne,
                 int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*),
                 int *iflag)
@@ -71,7 +71,7 @@ extern "C" void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *vA, const_comm
     PHIST_TRY_CATCH(A->InsertGlobalValues(row,row_nnz,vals,cols),*iflag);
   }
   PHIST_TRY_CATCH(A->FillComplete(),*iflag);
-  *vA = (TYPE(crsMat_ptr))(A);
+  *vA = (TYPE(sparseMat_ptr))(A);
 
 
 return;
@@ -82,7 +82,7 @@ return;
 
 //!@{
 //! get the row distribution of the matrix
-extern "C" void SUBR(crsMat_get_row_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
@@ -91,7 +91,7 @@ extern "C" void SUBR(crsMat_get_row_map)(TYPE(const_crsMat_ptr) vA, const_map_pt
 }
 
 //! get column distribution of a matrix
-extern "C" void SUBR(crsMat_get_col_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
@@ -100,7 +100,7 @@ extern "C" void SUBR(crsMat_get_col_map)(TYPE(const_crsMat_ptr) vA, const_map_pt
 }
 
 //! get the map for vectors x in y=A*x
-extern "C" void SUBR(crsMat_get_domain_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
@@ -109,7 +109,7 @@ extern "C" void SUBR(crsMat_get_domain_map)(TYPE(const_crsMat_ptr) vA, const_map
 }
 
 //! get the map for vectors y in y=A*x
-extern "C" void SUBR(crsMat_get_range_map)(TYPE(const_crsMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
@@ -377,7 +377,7 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
 //@{
 
 //!
-extern "C" void SUBR(crsMat_delete)(TYPE(crsMat_ptr) vA, int* iflag)
+extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) vA, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
@@ -559,7 +559,7 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
 }
 
 //! y=alpha*A*x+beta*y.
-extern "C" void SUBR(crsMat_times_mvec)(double alpha, TYPE(const_crsMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
+extern "C" void SUBR(sparseMat_times_mvec)(double alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
 double beta, TYPE(mvec_ptr) vy, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -608,7 +608,7 @@ double beta, TYPE(mvec_ptr) vy, int* iflag)
 }
 
 //! y=alpha*A*x+beta*y.
-extern "C" void SUBR(crsMatT_times_mvec)(double alpha, TYPE(const_crsMat_ptr) vA, 
+extern "C" void SUBR(sparseMatT_times_mvec)(double alpha, TYPE(const_sparseMat_ptr) vA, 
 TYPE(const_mvec_ptr) vx, 
 double beta, TYPE(mvec_ptr) vy, int* iflag)
 {
@@ -645,7 +645,7 @@ double beta, TYPE(mvec_ptr) vy, int* iflag)
 }
 
 //! y[i]=alpha*(A*x[i]+shifts[i]*x[i]) + beta*y[i]
-extern "C" void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
+extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
         const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
@@ -659,7 +659,7 @@ extern "C" void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_
     phist_totalMatVecCount();
 #endif
 
-  PHIST_CHK_IERR(SUBR(crsMat_times_mvec)(alpha, A, x, beta, y, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(alpha, A, x, beta, y, iflag), *iflag);
   _ST_ alpha_shifts[nvec];
   for(int i = 0; i < nvec; i++)
     alpha_shifts[i] = alpha*shifts[i];

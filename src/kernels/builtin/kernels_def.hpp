@@ -4,11 +4,11 @@
 
 // Declaration of Fortran implemented functions
 extern "C" {
-  void SUBR(crsMat_create_fromRowFunc_f)(TYPE(crsMat_ptr)*,const_comm_ptr_t comm,gidx_t,gidx_t, 
+  void SUBR(sparseMat_create_fromRowFunc_f)(TYPE(sparseMat_ptr)*,const_comm_ptr_t comm,gidx_t,gidx_t, 
       lidx_t, void (*)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int*);
-  void SUBR(crsMat_delete_f)(TYPE(crsMat_ptr) A, int* iflag);
-  void SUBR(crsMat_get_map_f)(TYPE(const_crsMat_ptr),const_map_ptr_t*,int*);
-  void SUBR(crsMat_read_mm_f)(void*A,const_comm_ptr_t comm, int fname_len, const char* fname, int* iflag);
+  void SUBR(sparseMat_delete_f)(TYPE(sparseMat_ptr) A, int* iflag);
+  void SUBR(sparseMat_get_map_f)(TYPE(const_sparseMat_ptr),const_map_ptr_t*,int*);
+  void SUBR(sparseMat_read_mm_f)(void*A,const_comm_ptr_t comm, int fname_len, const char* fname, int* iflag);
   void SUBR(mvecT_times_mvec_f)(_ST_,TYPE(const_mvec_ptr),TYPE(const_mvec_ptr),_ST_,TYPE(sdMat_ptr),int*);
   void SUBR(mvec_QR_f)(TYPE(mvec_ptr),TYPE(sdMat_ptr),int*);
   void SUBR(mvec_add_mvec_f)(_ST_,TYPE(const_mvec_ptr),_ST_,TYPE(mvec_ptr),int*);
@@ -56,7 +56,7 @@ extern "C" void SUBR(type_avail)(int *iflag)
   *iflag=0;
 }
 
-extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* A, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t vcomm,
         const char* filename,int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -65,45 +65,45 @@ extern "C" void SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* A, const_comm_ptr_t vcomm
     *iflag=PHIST_INVALID_INPUT;
     return;
   }
-  PHIST_CHK_IERR(SUBR(crsMat_read_mm_f)(A,vcomm,strlen(filename),filename,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sparseMat_read_mm_f)(A,vcomm,strlen(filename),filename,iflag),*iflag);
 }
 
-extern "C" void SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* A, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t vcomm,
 const char* filename,int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* A, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t vcomm,
 const char* filename,int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(crsMat_get_row_map)(TYPE(const_crsMat_ptr) A, const_map_ptr_t* map, int* iflag)
+extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, const_map_ptr_t* map, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  PHIST_CHK_IERR( SUBR(crsMat_get_map_f) (A,map,iflag), *iflag);
+  PHIST_CHK_IERR( SUBR(sparseMat_get_map_f) (A,map,iflag), *iflag);
 }
 
-extern "C" void SUBR(crsMat_get_col_map)(TYPE(const_crsMat_ptr) A, const_map_ptr_t* map, int* iflag)
+extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) A, const_map_ptr_t* map, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  PHIST_CHK_IERR( SUBR(crsMat_get_row_map) (A,map,iflag), *iflag);
+  PHIST_CHK_IERR( SUBR(sparseMat_get_row_map) (A,map,iflag), *iflag);
 }
 
-extern "C" void SUBR(crsMat_get_domain_map)(TYPE(const_crsMat_ptr) A, const_map_ptr_t* map, int* iflag)
+extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) A, const_map_ptr_t* map, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  PHIST_CHK_IERR( SUBR(crsMat_get_row_map) (A,map,iflag), *iflag);
+  PHIST_CHK_IERR( SUBR(sparseMat_get_row_map) (A,map,iflag), *iflag);
 }
 
-extern "C" void SUBR(crsMat_get_range_map)(TYPE(const_crsMat_ptr) A, const_map_ptr_t* map, int* iflag)
+extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) A, const_map_ptr_t* map, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  PHIST_CHK_IERR( SUBR(crsMat_get_row_map) (A,map,iflag), *iflag);
+  PHIST_CHK_IERR( SUBR(sparseMat_get_row_map) (A,map,iflag), *iflag);
 }
 
 extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* V, 
@@ -245,10 +245,10 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M,
   PHIST_CHK_IERR(SUBR(sdMat_set_block_f)(M,Mblock,imin,imax,jmin,jmax,iflag),*iflag);
 }
 
-extern "C" void SUBR(crsMat_delete)(TYPE(crsMat_ptr) A, int* iflag)
+extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) A, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  PHIST_CHK_IERR(SUBR(crsMat_delete_f)(A,iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sparseMat_delete_f)(A,iflag), *iflag);
 }
 
 extern "C" void SUBR(mvec_delete)(TYPE(mvec_ptr) V, int* iflag)
@@ -359,7 +359,7 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
   PHIST_CHK_IERR(SUBR(sdMat_add_sdMat_f)(alpha,A,beta,B,iflag),*iflag);
 }
 
-extern "C" void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A, 
+extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
     TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -371,12 +371,12 @@ extern "C" void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
     phist_totalMatVecCount();
 #endif
 
-  void SUBR(crsMat_times_mvec_f)(_ST_ alpha, TYPE(const_crsMat_ptr) A, 
+  void SUBR(sparseMat_times_mvec_f)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
       TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag);
-  PHIST_CHK_IERR(SUBR(crsMat_times_mvec_f)(alpha,A,x,beta,y,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_f)(alpha,A,x,beta,y,iflag),*iflag);
 }
 
-extern "C" void SUBR(crsMatT_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A, 
+extern "C" void SUBR(sparseMatT_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
     TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -384,7 +384,7 @@ extern "C" void SUBR(crsMatT_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
 }
 
 //! y[i]=alpha*(A*x[i]+shifts[i]*x[i]) + beta*y[i]
-extern "C" void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A,
+extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
         const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -396,9 +396,9 @@ extern "C" void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_
     phist_totalMatVecCount();
 #endif
 
-  void SUBR(crsMat_times_mvec_vadd_mvec_f)(_ST_ alpha, TYPE(const_crsMat_ptr) A, 
+  void SUBR(sparseMat_times_mvec_vadd_mvec_f)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
       const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag);
-  PHIST_CHK_IERR(SUBR(crsMat_times_mvec_vadd_mvec_f)(alpha,A,shifts,x,beta,y,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_vadd_mvec_f)(alpha,A,shifts,x,beta,y,iflag),*iflag);
 }
 
 extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) v, 
@@ -469,13 +469,13 @@ extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMa
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace_f)(V, M, iflag), *iflag);
 }
 
-extern "C" void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, const_comm_ptr_t vcomm,
         gidx_t nrows, gidx_t ncols, lidx_t maxnne, 
                 int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), 
                 int *iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc_f)(A, vcomm, nrows, ncols, maxnne, 
+  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc_f)(A, vcomm, nrows, ncols, maxnne, 
         (void(*)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*))rowFunPtr, iflag), *iflag);
 }
 

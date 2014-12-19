@@ -3,7 +3,7 @@ extern "C" {
 
 #if 0
 
-void SUBR(carp_create)(TYPE(const_crsMat_ptr) vA, TYPE(carpData)** dat_ptr, int* iflag)
+void SUBR(carp_create)(TYPE(const_sparseMat_ptr) vA, TYPE(carpData)** dat_ptr, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -51,7 +51,7 @@ void SUBR(carp_delete)(TYPE(carpData)* dat, int* iflag)
   *iflag=-99; //TODO - this can probably  be implemented in a kernel-lib independent way
 }
 
-void SUBR(carp_fb)(TYPE(carpData)* dat, TYPE(const_crsMat_ptr) vA, 
+void SUBR(carp_fb)(TYPE(carpData)* dat, TYPE(const_sparseMat_ptr) vA, 
         TYPE(const_mvec_ptr) vB, _ST_ const * sigma, 
         TYPE(const_mvec_ptr) vrhs, TYPE(mvec_ptr) vsol, int* iflag)
 {

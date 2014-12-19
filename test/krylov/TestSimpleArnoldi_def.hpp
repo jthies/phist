@@ -80,15 +80,15 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
         opArand_nodiag_ = new TYPE(op);
         ASSERT_TRUE(opArand_nodiag_ != NULL);
 
-        SUBR(op_wrap_crsMat)(opAeye_,Aeye_,&iflag);
+        SUBR(op_wrap_sparseMat)(opAeye_,Aeye_,&iflag);
         ASSERT_EQ(0,iflag);
 #ifndef SKIP_ZERO_MAT
-        SUBR(op_wrap_crsMat)(opAzero_,Azero_,&iflag);
+        SUBR(op_wrap_sparseMat)(opAzero_,Azero_,&iflag);
         ASSERT_EQ(0,iflag);
 #endif
-        SUBR(op_wrap_crsMat)(opArand_,Arand_,&iflag);
+        SUBR(op_wrap_sparseMat)(opArand_,Arand_,&iflag);
         ASSERT_EQ(0,iflag);
-        SUBR(op_wrap_crsMat)(opArand_nodiag_,Arand_nodiag_,&iflag);
+        SUBR(op_wrap_sparseMat)(opArand_nodiag_,Arand_nodiag_,&iflag);
         ASSERT_EQ(0,iflag);
 
         // setup views for needed vectors and sdMats
@@ -200,10 +200,10 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
     TYPE(op_ptr) opArand_nodiag_;
 
   protected:
-    TYPE(crsMat_ptr) Aeye_;
-    TYPE(crsMat_ptr) Azero_;
-    TYPE(crsMat_ptr) Arand_;
-    TYPE(crsMat_ptr) Arand_nodiag_;
+    TYPE(sparseMat_ptr) Aeye_;
+    TYPE(sparseMat_ptr) Azero_;
+    TYPE(sparseMat_ptr) Arand_;
+    TYPE(sparseMat_ptr) Arand_nodiag_;
 
     TYPE(mvec_ptr) v0_;
     TYPE(mvec_ptr) V_;
@@ -215,10 +215,10 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
     TYPE(sdMat_ptr) H_;
     TYPE(sdMat_ptr) Hm_;
 
-    int delete_mat(TYPE(crsMat_ptr) A)
+    int delete_mat(TYPE(sparseMat_ptr) A)
     {
       if (A!=NULL)
-        SUBR(crsMat_delete)(A,&iflag_);
+        SUBR(sparseMat_delete)(A,&iflag_);
       return iflag_;
     }
 

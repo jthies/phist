@@ -43,7 +43,7 @@ typedef struct TYPE(carp_cgState) {
   _MT_ sigma_i_; //! with sigma = sigma_r + i*sigma_i
   int nvec_; //! number of RHS vectors for this shift
 
-  TYPE(const_crsMat_ptr) A_;
+  TYPE(const_sparseMat_ptr) A_;
 
   //@}
   //! \name set by reset() function
@@ -86,7 +86,7 @@ typedef TYPE(carp_cgState) const * TYPE(const_cgState_ptr);
 //! columns.
 void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) S_array[], 
         int nshifts, _MT_ sigma_r[], _MT_ sigma_i[],
-        TYPE(const_crsMat_ptr) A, int numRhs, int* iflag);
+        TYPE(const_sparseMat_ptr) A, int numRhs, int* iflag);
 
 //! destructor
 void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) S_array[], int numSys, int* iflag);

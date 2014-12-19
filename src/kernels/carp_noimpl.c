@@ -1,4 +1,4 @@
-void SUBR(carp_setup)(TYPE(const_crsMat_ptr) A, int numShifts, 
+void SUBR(carp_setup)(TYPE(const_sparseMat_ptr) A, int numShifts, 
         _MT_ const sigma_r[], _MT_ const sigma_i[],
         _MT_ **nrms_ai2i, void** work, int* iflag)
 {
@@ -7,7 +7,7 @@ void SUBR(carp_setup)(TYPE(const_crsMat_ptr) A, int numShifts,
 }
 
 
-void SUBR(carp_sweep)(TYPE(const_crsMat_ptr) A, int numShifts, 
+void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) A, int numShifts, 
         _MT_ const sigma_r[], _MT_ const sigma_i[],
         TYPE(const_mvec_ptr) Rhs, 
         TYPE(mvec_ptr) X_r[], TYPE(mvec_ptr) X_i[],
@@ -18,7 +18,7 @@ void SUBR(carp_sweep)(TYPE(const_crsMat_ptr) A, int numShifts,
   return;
 }
 
-void SUBR(carp_destroy)(TYPE(const_crsMat_ptr) A, int numShifts,
+void SUBR(carp_destroy)(TYPE(const_sparseMat_ptr) A, int numShifts,
         _MT_* nrms_ai2i, void* work, int *iflag)
 {
   *iflag=-99;

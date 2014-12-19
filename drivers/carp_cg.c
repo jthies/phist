@@ -185,13 +185,13 @@ int main(int argc, char** argv)
   }
   
   // setup matrix
-  TYPE(crsMat_ptr) mat = NULL;
+  TYPE(sparseMat_ptr) mat = NULL;
   
   // this is in the tools/driver_utils.h header, a useful tool for
   // generating our favorite test matrices or reading them from a file:
   PHIST_ICHK_IERR(SUBR(create_matrix)(&mat,comm,problem,&iflag),iflag);
   
-  PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(mat, &map,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(mat, &map,&iflag),iflag);
 
   PHIST_ICHK_IERR(SUBR(mvec_create)(&B,map,nrhs,&iflag),iflag);
   
@@ -222,7 +222,7 @@ if (num_complex==0)
     
   // compute rhs B to match this exact solution for sigma[0]:
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_r[0],X_r_ex0,0.0,B,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(-1.0,mat,X_r_ex0,1.0,B,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(-1.0,mat,X_r_ex0,1.0,B,&iflag),iflag);
 }
 else
 {
@@ -244,7 +244,7 @@ else
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_r[0]/sigma_i[0],X_i_ex0,0.0,X_r_ex0,&iflag),iflag);
   if (sigma_i[0]!=(MT)0.0)
   {
-    PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(1.0/sigma_i[0],mat,X_i_ex0,1.0,X_r_ex0,&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(1.0/sigma_i[0],mat,X_i_ex0,1.0,X_r_ex0,&iflag),iflag);
   }
   else
   {
@@ -256,7 +256,7 @@ else
   
   // compute rhs B to match this exact solution for sigma[0]:
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_r[0],X_r_ex0,0.0,B,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(-1.0,mat,X_r_ex0,1.0,B,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(-1.0,mat,X_r_ex0,1.0,B,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_i[0],X_i_ex0,1.0,B,&iflag),iflag);
 
 }
@@ -303,7 +303,7 @@ PHIST_SOUT(PHIST_VERBOSE,"       im(x): %e\n",SQRT(nrm_err0_1[0]));
   free(sigma_r);
   free(sigma_i);
 
-  PHIST_ICHK_IERR(SUBR(crsMat_delete)(mat,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_delete)(mat,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(B,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X_r_ex0,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X_i_ex0,&iflag),iflag);

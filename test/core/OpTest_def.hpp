@@ -74,8 +74,8 @@ public:
       }
     }
 
-  TYPE(crsMat_ptr) A1_ = NULL;
-  TYPE(crsMat_ptr) A2_ = NULL;
+  TYPE(sparseMat_ptr) A1_ = NULL;
+  TYPE(sparseMat_ptr) A2_ = NULL;
 
   // for testing the jada operator
   int nq_ = 0;
@@ -84,17 +84,17 @@ public:
 
   protected:
 
-  int delete_mat(TYPE(crsMat_ptr) A)
+  int delete_mat(TYPE(sparseMat_ptr) A)
     {
     if (A!=NULL)
       {
-      SUBR(crsMat_delete)(A,&iflag_);
+      SUBR(sparseMat_delete)(A,&iflag_);
       }
     return iflag_;
     }
 
 #ifdef PHIST_HAVE_BELOS
-  int doBelosTests(TYPE(crsMat_ptr) A)
+  int doBelosTests(TYPE(sparseMat_ptr) A)
     {
     if (typeImplemented_ && haveMats_)
       {
@@ -103,7 +103,7 @@ public:
       MyOM->setVerbosity( Belos::Warnings|Belos::Debug);
       TYPE(op) *op=new TYPE(op);
       Teuchos::RCP<const TYPE(op)> op_ptr = Teuchos::rcp(op,true);
-      PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(op,A,&iflag_),iflag_);
+      PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(op,A,&iflag_),iflag_);
       TYPE(op) jdOp;
       // TODO setup necessary arguments for jadaOp: AX, work
       PHIST_ICHK_IERR(SUBR(jadaOp_create)(op,NULL,Q_,NULL,sigma,nq_,&jdOp,&iflag_),iflag_);

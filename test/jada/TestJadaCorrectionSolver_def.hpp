@@ -25,7 +25,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(0,iflag_);
         ASSERT_TRUE(A_ != NULL);
         opA_ = new TYPE(op);
-        SUBR(op_wrap_crsMat)(opA_, A_, &iflag_);
+        SUBR(op_wrap_sparseMat)(opA_, A_, &iflag_);
         ASSERT_EQ(0,iflag_);
 
         replaceMap(opA_->domain_map);
@@ -90,7 +90,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
           delete jdOp_;
         if( opA_ != NULL )
           delete opA_;
-        SUBR(crsMat_delete)(A_,&iflag_);
+        SUBR(sparseMat_delete)(A_,&iflag_);
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_delete)(q_,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -147,7 +147,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       }
     }
 
-    TYPE(crsMat_ptr) A_ = NULL;
+    TYPE(sparseMat_ptr) A_ = NULL;
     TYPE(op_ptr) opA_ = NULL;
     TYPE(op_ptr) jdOp_ = NULL;
     TYPE(mvec_ptr) q_ = NULL;
