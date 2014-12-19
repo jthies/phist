@@ -32,7 +32,15 @@
     -99: not implemented.
     -88: cast of input args from void to required type failed.
     -77: caught an exception.
-    -1: main mode of failure, for instance "memory allocation failed" in a "constructor".
+
+    etc., for a full list of defined return codes see phist_defs.h
+
+    -1..-9: function specific modes of failure, which will have to be looked up
+            in the source code (documentation) right now.
+
+    Some of the kernel functions allow passing in flags via *iflag to provide the kernel 
+    library with information about the situation in which the function is called, see the 
+    documentation of the individual functions for usage details.
 
 */
 

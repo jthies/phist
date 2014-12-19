@@ -18,6 +18,8 @@ extern "C" const char* phist_retcode2str(int code)
   else if (code==PHIST_CAUGHT_EXCEPTION) return "caught exception";
   else if (code==PHIST_BAD_CAST) return "bad cast or NULL pointer";
   else if (code==PHIST_NOT_IMPLEMENTED) return "not implemented";
+  else if (code<=-1 && code>-10) return "function-specific error";
+  else if (code>0) return "warning";
   return "unknown error";
 }
 
