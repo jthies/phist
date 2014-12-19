@@ -196,7 +196,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
 #ifdef PHIST_HAVE_ESSEX_PHYSICS
 PHIST_SOUT(PHIST_ERROR,"matrix row function \"anderson\" is only implemented in PHIST\n"
                        "and not available if you link with the essex-physics library\n");
-*ierr=-99;
+*iflag=-99;
 #else
     PHIST_SOUT(PHIST_INFO,"problem type: Anderson %d x %d x %d\n",L,L,L);
     ghost_lidx_t LL=L;
@@ -231,7 +231,7 @@ PHIST_SOUT(PHIST_ERROR,"matrix row function \"anderson\" is only implemented in 
 #ifdef PHIST_HAVE_ESSEX_PHYSICS
 PHIST_SOUT(PHIST_ERROR,"matrix row function \"matpde\" is only implemented in PHIST\n"
                        "and not available if you link with the essex-physics library\n");
-  *ierr=-99;
+  *iflag=-99;
 #else
     PHIST_SOUT(PHIST_INFO,"problem type: MATPDE %d x %d\n", L, L);
     gidx_t nrows = -1;
