@@ -19,10 +19,10 @@ typedef TYPE(jadaCorrectionSolver) const * TYPE(const_jadaCorrectionSolver_ptr);
 
 //! create a jadaCorrectionSolver object
 void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *jdCorrSolver, int blockedGMRESBlockDim, const_map_ptr_t map, 
-        linSolv_t method, int maxBase, bool useMINRES, int *ierr);
+        linSolv_t method, int maxBase, bool useMINRES, int *iflag);
 
 //! delete a jadaCorrectionSolver object
-void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver, int *ierr);
+void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver, int *iflag);
 
 
 //! calculate approximate solutions to given set of jacobi-davidson correction equations
@@ -39,7 +39,7 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolv
 //! tol             desired accuracy (gmres residual tolerance) of the individual systems
 //! maxIter         maximal number of iterations after which individial systems should be aborted
 //! t               returns approximate solution vectors
-//! ierr            a value > 0 indicates the number of systems that have not converged to the desired tolerance
+//! iflag            a value > 0 indicates the number of systems that have not converged to the desired tolerance
 void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver,
                                     TYPE(const_op_ptr)    A_op,     TYPE(const_op_ptr)    B_op, 
                                     TYPE(const_mvec_ptr)  Qtil,     TYPE(const_mvec_ptr)  BQtil,
@@ -47,4 +47,4 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver,
                                     const _MT_            tol[],    int                   maxIter,
                                     TYPE(mvec_ptr)        t,
                                     bool useIMGS,                   bool abortAfterFirstConvergedInBlock,
-                                    int *                 ierr);
+                                    int *                 iflag);

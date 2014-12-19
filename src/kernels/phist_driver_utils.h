@@ -51,7 +51,7 @@ extern "C" {
 //! auto-detects the file type by looking at the file extension
 //! and calls the appropriate kernel routine to read the matrix
 void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm, 
-        char* filename, int* ierr);
+        char* filename, int* iflag);
 
 //! quick matrix generation/input routine
 
@@ -62,12 +62,12 @@ void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
 //! is assumed to be a matrix filename and passed to crsMat_read, which recognizes
 //! files ending on '.mm', '.bin' or '.rua'.
 //!
-//! Example: phist_Dcreate_matrix(&A, comm, "anderson42",&ierr) will generate the Anderson
+//! Example: phist_Dcreate_matrix(&A, comm, "anderson42",&iflag) will generate the Anderson
 //! model problem on a 42^3 grid, whereas the string "anderson42.mm" will be interpreted
 //! as a filename. The special string "usage" causes a usage message to be printed, which
 //! contains the supported matrix file formats and the problems implemented at the moment.
 void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
-        const char* problem, int* ierr);
+        const char* problem, int* iflag);
 
 int phist_sizeof_lidx();
 int phist_sizeof_gidx();

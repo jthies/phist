@@ -1,6 +1,6 @@
 // auto-detects the file type by looking at the file extension
 void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
-        char* filename, int* ierr)
+        char* filename, int* iflag)
 {
   char *c=filename+strlen(filename)-1;
   int isMM=0;
@@ -19,35 +19,35 @@ void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
   isHB=!strcmp(c,"rua")||!strcmp(c,"cua");
   if (isMM)
   {
-    PHIST_CHK_IERR(SUBR(crsMat_read_mm)(A,comm,filename,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(crsMat_read_mm)(A,comm,filename,iflag),*iflag);
   }
   else if (isHB)
   {
-    PHIST_CHK_IERR(SUBR(crsMat_read_hb)(A,comm,filename,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(crsMat_read_hb)(A,comm,filename,iflag),*iflag);
   }
   else if (isCRS)
   {
-    PHIST_CHK_IERR(SUBR(crsMat_read_bin)(A,comm,filename,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(crsMat_read_bin)(A,comm,filename,iflag),*iflag);
   }
   else
   {
-      *ierr=-1;
+      *iflag=-1;
   }
   return;
 }
 
 void SUBR(create_matrix_usage)(void)
 {
-    int ierr;
+    int iflag;
     MPI_Comm comm=MPI_COMM_WORLD;
     PHIST_SOUT(PHIST_INFO,"\nsupported matrix formats:\n\n");
-    SUBR(crsMat_read_mm)(NULL,&comm,NULL,&ierr);
-    if (ierr!=PHIST_NOT_IMPLEMENTED)
+    SUBR(crsMat_read_mm)(NULL,&comm,NULL,&iflag);
+    if (iflag!=PHIST_NOT_IMPLEMENTED)
     {
       PHIST_SOUT(PHIST_INFO," * Matrix Market ascii format (.mm|.mtx)\n");
     }
-    SUBR(crsMat_read_hb)(NULL,&comm,NULL,&ierr);
-    if (ierr!=PHIST_NOT_IMPLEMENTED)
+    SUBR(crsMat_read_hb)(NULL,&comm,NULL,&iflag);
+    if (iflag!=PHIST_NOT_IMPLEMENTED)
     {
 #ifdef IS_COMPLEX
       PHIST_SOUT(PHIST_INFO," * Harwell Boeing ascii format (.cua)\n");
@@ -55,8 +55,8 @@ void SUBR(create_matrix_usage)(void)
       PHIST_SOUT(PHIST_INFO," * Harwell Boeing ascii format (.rua)\n");
 #endif
     }
-    SUBR(crsMat_read_bin)(NULL,&comm,NULL,&ierr);
-    if (ierr!=PHIST_NOT_IMPLEMENTED)
+    SUBR(crsMat_read_bin)(NULL,&comm,NULL,&iflag);
+    if (iflag!=PHIST_NOT_IMPLEMENTED)
     {
       PHIST_SOUT(PHIST_INFO," * GHOST binary CRS format (.bin|.crs)\n");
     }
@@ -110,17 +110,17 @@ int str_starts_with(const char *s1, const char *s2)
 
 // TODO: we should do this in C++ with a map where you can easily add new function pointers... (melven)
 void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
-        const char* problem, int* ierr)
+        const char* problem, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr=0;
+  *iflag=0;
   problem_t mat_type=FROM_FILE; // default: assume that 'which' is a file name
 
   int L; // problem size for Graphene (L x L grid) or the Anderson model (L^3 grid)
 
   if (strcmp(problem,"usage")==0)
   {
-    *ierr=0;
+    *iflag=0;
     SUBR(create_matrix_usage)();
     return;
   }
@@ -189,7 +189,7 @@ void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
 
     PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc)(mat,comm,
         (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,
-        &crsGraphene, ierr), *ierr);
+        &crsGraphene, iflag), *iflag);
   }
   else if (mat_type==ANDERSON)
   {
@@ -202,7 +202,7 @@ void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
 
     PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc)(mat,comm,
         (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,
-        &anderson, ierr), *ierr);
+        &anderson, iflag), *iflag);
   }
   else if (mat_type==SPINSZ)
   {
@@ -218,7 +218,7 @@ void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
 
     PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc)(mat,comm,
         (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,
-        &SpinChainSZ, ierr), *ierr);
+        &SpinChainSZ, iflag), *iflag);
   }
   else if (mat_type==MATPDE)
   {
@@ -229,27 +229,27 @@ void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
     MATPDE_initDimensions(L, L, &nrows, &row_nnz);
     ncols = nrows;
     PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc)(mat, comm, 
-          nrows, ncols, row_nnz, &MATPDE_rowFunc, ierr), *ierr);
+          nrows, ncols, row_nnz, &MATPDE_rowFunc, iflag), *iflag);
   }
   else
   {
     PHIST_SOUT(PHIST_INFO,"read matrix from file '%s'\n",problem);
-    PHIST_CHK_IERR(SUBR(crsMat_read)(mat,comm,(char*)problem,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(crsMat_read)(mat,comm,(char*)problem,iflag),*iflag);
   }
   
   return;
 }
 #else
 void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
-        const char* problem, int* ierr)
+        const char* problem, int* iflag)
 {
-  *ierr=0;
+  *iflag=0;
   if (strcmp(problem,"usage")==0)
   {
-    *ierr=0;
+    *iflag=0;
     SUBR(create_matrix_usage)();
     PHIST_SOUT(PHIST_INFO,"read matrix from file '%s'\n",problem);
-    PHIST_CHK_IERR(SUBR(crsMat_read)(mat,comm,(char*)problem,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(crsMat_read)(mat,comm,(char*)problem,iflag),*iflag);
     return;
   }
 

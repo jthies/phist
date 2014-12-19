@@ -1,17 +1,17 @@
 #include "phist_blockedgmres_helper_def.hpp"
 
 // create new state objects. We just get an array of (NULL-)pointers
-void SUBR(blockedGMRESstates_create)(TYPE(blockedGMRESstate_ptr) state[], int numSys, const_map_ptr_t map, int maxBas,int* ierr)
+void SUBR(blockedGMRESstates_create)(TYPE(blockedGMRESstate_ptr) state[], int numSys, const_map_ptr_t map, int maxBas,int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr=0;
+  *iflag=0;
 
   if (numSys <= 0)
     return;
 
   const_comm_ptr_t comm;
-  PHIST_CHK_IERR(phist_map_get_comm(map,&comm,ierr),*ierr);
+  PHIST_CHK_IERR(phist_map_get_comm(map,&comm,iflag),*iflag);
 
   // setup buffer of mvecs to be used later
 #ifdef PHIST_HAVE_BELOS
@@ -19,7 +19,7 @@ void SUBR(blockedGMRESstates_create)(TYPE(blockedGMRESstate_ptr) state[], int nu
 #else
   TYPE(MvecRingBuffer)* mvecBuff = new TYPE(MvecRingBuffer)(maxBas+1);
 #endif
-  PHIST_CHK_IERR( mvecBuff->create_mvecs(map, numSys, ierr), *ierr);
+  PHIST_CHK_IERR( mvecBuff->create_mvecs(map, numSys, iflag), *iflag);
 
   // set up individual states
   for(int i = 0; i < numSys; i++)
@@ -31,8 +31,8 @@ void SUBR(blockedGMRESstates_create)(TYPE(blockedGMRESstate_ptr) state[], int nu
     state[i] = new TYPE(blockedGMRESstate)(tmp);
 
     // allocate members
-    PHIST_CHK_IERR(SUBR( sdMat_create )(&state[i]->H_, maxBas+1, maxBas, comm, ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_create  )(&state[i]->b_, map,      1,            ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_create )(&state[i]->H_, maxBas+1, maxBas, comm, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_create  )(&state[i]->b_, map,      1,            iflag), *iflag);
     state[i]->cs_ = new ST[maxBas];
     state[i]->sn_ = new ST[maxBas];
     state[i]->rs_ = new ST[maxBas+1];
@@ -49,29 +49,29 @@ void SUBR(blockedGMRESstates_create)(TYPE(blockedGMRESstate_ptr) state[], int nu
 
 
 // delete blockedGMRESstate object
-void SUBR(blockedGMRESstates_delete)(TYPE(blockedGMRESstate_ptr) state[], int numSys, int* ierr)
+void SUBR(blockedGMRESstates_delete)(TYPE(blockedGMRESstate_ptr) state[], int numSys, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr=0;
+  *iflag=0;
 #ifndef PHIST_HAVE_BELOS
   if (numSys==0) return;
   
-    PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, state[0]->Vbuff, *ierr);    
-    PHIST_CHK_IERR(mvecBuff->delete_mvecs(ierr), *ierr);
+    PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, state[0]->Vbuff, *iflag);    
+    PHIST_CHK_IERR(mvecBuff->delete_mvecs(iflag), *iflag);
     
     delete mvecBuff;
 #endif
 
   for(int i = 0; i < numSys; i++)
   {
-    PHIST_CHK_IERR(SUBR( sdMat_delete ) (state[i]->H_, ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_delete  ) (state[i]->b_, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( sdMat_delete ) (state[i]->H_, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_delete  ) (state[i]->b_, iflag), *iflag);
     delete [] state[i]->cs_;
     delete [] state[i]->sn_;
     delete [] state[i]->rs_;
 #ifdef PHIST_HAVE_BELOS
-    PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuff, state[i]->Vbuff, *ierr);
-    PHIST_CHK_IERR((*mvecBuff)->delete_mvecs(ierr), *ierr);
+    PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuff, state[i]->Vbuff, *iflag);
+    PHIST_CHK_IERR((*mvecBuff)->delete_mvecs(iflag), *iflag);
     delete mvecBuff;
 #endif
     delete state[i];
@@ -80,18 +80,18 @@ void SUBR(blockedGMRESstates_delete)(TYPE(blockedGMRESstate_ptr) state[], int nu
 
 
 // reset blockedGMRES state.
-void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mvec_ptr) b, TYPE(const_mvec_ptr) x0, int *ierr)
+void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mvec_ptr) b, TYPE(const_mvec_ptr) x0, int *iflag)
 {
 #include "phist_std_typedefs.hpp"  
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr=0;
+  *iflag=0;
 
   // get mvecBuff
 #ifdef PHIST_HAVE_BELOS
-  PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S->Vbuff, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S->Vbuff, *iflag);
   Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
 #else
-  PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S->Vbuff, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S->Vbuff, *iflag);
 #endif
 
   // release mvecs currently marked used by this state
@@ -112,27 +112,27 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
   if( b == NULL && (S->normR0_ == -mt::one() || S->status == -2) )
   {
     PHIST_OUT(PHIST_ERROR,"on the first call to blockedGMRESstate_reset you *must* provide the RHS vector");
-    *ierr=-1;
+    *iflag=-1;
     return;
   }
 
   if( b != NULL )
   {
     // new rhs -> need to recompute ||b-A*x0||
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), b, st::zero(), S->b_, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), b, st::zero(), S->b_, iflag), *iflag);
     S->status = -1;
     S->totalIter = 0;
     S->normR0_ = -mt::one();
   }
 
   // set H to zero
-  PHIST_CHK_IERR(SUBR(sdMat_put_value)(S->H_, st::zero(), ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_put_value)(S->H_, st::zero(), iflag), *iflag);
 
   if( x0 == NULL )
   {
     // great, we can directly apply a first gmres step as we don't need to compute A*x0
 
-    PHIST_CHK_IERR(SUBR( mvec_norm2 ) (S->b_, &S->normR_, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_norm2 ) (S->b_, &S->normR_, iflag), *iflag);
     if( S->normR0_ < mt::zero() )
       S->normR0_ = S->normR_;
     S->rs_[0] = S->normR_;
@@ -141,20 +141,20 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
     S->lastVind_ = mvecBuff->lastIndex();
     S->curDimV_ = 1;
     TYPE(mvec_ptr) r0 = NULL;
-    PHIST_CHK_IERR(SUBR( mvec_view_block )(mvecBuff->at(S->lastVind_), &r0, S->id, S->id, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block )(mvecBuff->at(S->lastVind_), &r0, S->id, S->id, iflag), *iflag);
     mvecBuff->incRef(S->lastVind_);
     if( S->normR_ != mt::zero() )
     {
       _ST_ scale = st::one() / S->normR_;
-      PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (scale, S->b_, st::zero(), r0, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (scale, S->b_, st::zero(), r0, iflag), *iflag);
     }
-    PHIST_CHK_IERR(SUBR( mvec_delete ) (r0, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_delete ) (r0, iflag), *iflag);
   }
   else // x != NULL
   {
     // initialize everything to calculate b-A*x0 in the next call to iterate
     S->lastVind_ = mvecBuff->lastIndex();
-    PHIST_CHK_IERR(SUBR( mvec_set_block ) (mvecBuff->at(S->lastVind_), x0, S->id, S->id, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_set_block ) (mvecBuff->at(S->lastVind_), x0, S->id, S->id, iflag), *iflag);
     mvecBuff->incRef(S->lastVind_);
     S->prevBeta_ = st::zero();
   }
@@ -166,11 +166,11 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
 
 
 // calculate approximate solution
-void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int numSys, TYPE(mvec_ptr) x, _MT_* resNorm, bool scaleSolutionToOne, int* ierr)
+void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int numSys, TYPE(mvec_ptr) x, _MT_* resNorm, bool scaleSolutionToOne, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr = 0;
+  *iflag = 0;
 
   if( numSys <= 0 )
     return;
@@ -187,24 +187,24 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
   // make sure all lastVind_ are the same
   int lastVind = S[0]->lastVind_;
   for(int i = 0; i < numSys; i++)
-    PHIST_CHK_IERR(*ierr = (S[i]->lastVind_ != lastVind) ? -1 : 0, *ierr);
+    PHIST_CHK_IERR(*iflag = (S[i]->lastVind_ != lastVind) ? -1 : 0, *iflag);
 
 #ifdef PHIST_HAVE_BELOS
-  PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *iflag);
   Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
 #else
-  PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S[0]->Vbuff, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S[0]->Vbuff, *iflag);
 #endif
 
   // make sure all systems use the same mvecBuff
   for(int i = 0; i < numSys; i++)
   {
 #ifdef PHIST_HAVE_BELOS
-    PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *ierr);
-    PHIST_CHK_IERR(*ierr = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *ierr);
+    PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *iflag);
+    PHIST_CHK_IERR(*iflag = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *iflag);
 #else
-    PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuffPtr_i, S[i]->Vbuff, *ierr);
-    PHIST_CHK_IERR(*ierr = (mvecBuffPtr_i != mvecBuff) ? -1 : 0, *ierr);
+    PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuffPtr_i, S[i]->Vbuff, *iflag);
+    PHIST_CHK_IERR(*iflag = (mvecBuffPtr_i != mvecBuff) ? -1 : 0, *iflag);
 #endif
   }
 
@@ -250,7 +250,7 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
     int m = S[i]->curDimV_-1;
     ST *H_raw=NULL;
     lidx_t ldH;
-    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&H_raw,&ldH,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&H_raw,&ldH,iflag),*iflag);
     _ST_ *y = &yglob[S[i]->id+ldy*(maxCurDimV-S[i]->curDimV_)];
 
 
@@ -259,9 +259,9 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
     PHIST_SOUT(PHIST_DEBUG,"blockedGMRES_updateSol[%d], curDimV=%d, H=\n",i,S[i]->curDimV_);
     {
       TYPE(sdMat_ptr) H = NULL;
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(S[i]->H_, &H, 0, m-1, 0, m-1, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR(sdMat_print)(H,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(sdMat_delete)(H,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(S[i]->H_, &H, 0, m-1, 0, m-1, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_print)(H,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_delete)(H,iflag),*iflag);
     }
     PHIST_SOUT(PHIST_DEBUG,"rs=\n");
     for (int k=0;k<m;k++)
@@ -311,11 +311,11 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
     blas_idx_t ildy=static_cast<blas_idx_t>(ldy);
     if (ildH<0 || ildy<0)
     {
-      *ierr=PHIST_INTEGER_OVERFLOW;
+      *iflag=PHIST_INTEGER_OVERFLOW;
       return;
     }
-    PHIST_CHK_IERR(SUBR(sdMat_from_device)(S[i]->H_,ierr),*ierr);
-    PHIST_CHK_IERR(PREFIX(TRSV)("U","N","N",&m,(st::blas_scalar_t*)H_raw,&ildH,(st::blas_scalar_t*)y, &ildy),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)(S[i]->H_,iflag),*iflag);
+    PHIST_CHK_IERR(PREFIX(TRSV)("U","N","N",&m,(st::blas_scalar_t*)H_raw,&ildH,(st::blas_scalar_t*)y, &ildy),*iflag);
 
 
     // if we are only interested in the directions Vi*yi and appropriate AVi*yi,
@@ -351,8 +351,8 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
     if( j >= maxCurDimV-sharedCurDimV && ordered )
     {
       // update solution of all systems at once
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vind), &Vj, 0, maxId, ierr), *ierr);
-      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(yj, Vj, st::one(), x, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vind), &Vj, 0, maxId, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(yj, Vj, st::one(), x, iflag), *iflag);
     }
     else
     {
@@ -361,25 +361,25 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
       {
         if( j >= maxCurDimV-S[i]->curDimV_ )
         {
-          PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vind), &Vj, S[i]->id, S[i]->id, ierr), *ierr);
-          PHIST_CHK_IERR(SUBR(mvec_view_block)(x, &x_i, i, i, ierr), *ierr);
-          PHIST_CHK_IERR(SUBR(mvec_add_mvec)(yj[S[i]->id], Vj, st::one(), x, ierr), *ierr);
+          PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vind), &Vj, S[i]->id, S[i]->id, iflag), *iflag);
+          PHIST_CHK_IERR(SUBR(mvec_view_block)(x, &x_i, i, i, iflag), *iflag);
+          PHIST_CHK_IERR(SUBR(mvec_add_mvec)(yj[S[i]->id], Vj, st::one(), x, iflag), *iflag);
         }
       }
     }
   }
 
-  PHIST_CHK_IERR(SUBR(mvec_delete)(x_i, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(Vj, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(x_i, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Vj, iflag), *iflag);
 }
 
 
 // implementation of gmres on several systems simultaneously
-void SUBR(blockedGMRESstates_iterate)(TYPE(const_op_ptr) Aop, TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, bool useIMGS, int* ierr)
+void SUBR(blockedGMRESstates_iterate)(TYPE(const_op_ptr) Aop, TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, bool useIMGS, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr = 0;
+  *iflag = 0;
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
   PHIST_SOUT(PHIST_DEBUG,"starting function iterate() with %d systems\n curDimVs: ",numSys);
@@ -402,21 +402,21 @@ void SUBR(blockedGMRESstates_iterate)(TYPE(const_op_ptr) Aop, TYPE(blockedGMRESs
     minId = std::min(minId,S[i]->id);
 
 #ifdef PHIST_HAVE_BELOS
-  PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *iflag);
   Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
 #else
-  PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S[0]->Vbuff, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S[0]->Vbuff, *iflag);
 #endif
 
   // make sure all systems use the same mvecBuff
   for(int i = 0; i < numSys; i++)
   {
 #ifdef PHIST_HAVE_BELOS
-    PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *ierr);
-    PHIST_CHK_IERR(*ierr = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *ierr);
+    PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *iflag);
+    PHIST_CHK_IERR(*iflag = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *iflag);
 #else
-    PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuffPtr_i, S[i]->Vbuff, *ierr);
-    PHIST_CHK_IERR(*ierr = (mvecBuffPtr_i != mvecBuff) ? -1 : 0, *ierr);
+    PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuffPtr_i, S[i]->Vbuff, *iflag);
+    PHIST_CHK_IERR(*iflag = (mvecBuffPtr_i != mvecBuff) ? -1 : 0, *iflag);
 #endif
   }
 
@@ -437,10 +437,10 @@ void SUBR(blockedGMRESstates_iterate)(TYPE(const_op_ptr) Aop, TYPE(blockedGMRESs
     // make sure all lastVind_ are the same
     int lastVind = S[0]->lastVind_;
     for(int i = 0; i < numSys; i++)
-      PHIST_CHK_IERR(*ierr = (S[i]->lastVind_ != lastVind) ? -1 : 0, *ierr);
+      PHIST_CHK_IERR(*iflag = (S[i]->lastVind_ != lastVind) ? -1 : 0, *iflag);
 
     // x0 / last element of krylov subspace
-    PHIST_CHK_IERR(SUBR( mvec_view_block )( mvecBuff->at(lastVind), &work_x, minId, maxId, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block )( mvecBuff->at(lastVind), &work_x, minId, maxId, iflag), *iflag);
 
 #ifdef TESTING
 // print a visualization of the current state
@@ -540,11 +540,11 @@ PHIST_SOUT(PHIST_INFO,"\n");
   {
     //    % get new vector for y
     int nextIndex;
-    PHIST_CHK_IERR( mvecBuff->getNextUnused(nextIndex,ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(nextIndex), &work_y, minId, maxId, ierr), *ierr);
+    PHIST_CHK_IERR( mvecBuff->getNextUnused(nextIndex,iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(nextIndex), &work_y, minId, maxId, iflag), *iflag);
 
     //    % apply the operator of the matrix A
-    PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_x, st::zero(), work_y, ierr), *ierr);
+    PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_x, st::zero(), work_y, iflag), *iflag);
 
 
     //    % initialize GMRES for (re-)started systems
@@ -554,8 +554,8 @@ PHIST_SOUT(PHIST_INFO,"\n");
       if( j == 0 )
       {
         // (re-)start: r_0 = b - A*x_0
-        PHIST_CHK_IERR( SUBR(mvec_view_block) (work_y, &Vj, S[i]->id-minId, S[i]->id-minId, ierr), *ierr);
-        PHIST_CHK_IERR( SUBR(mvec_add_mvec) (st::one(), S[i]->b_, -st::one(), Vj, ierr), *ierr);
+        PHIST_CHK_IERR( SUBR(mvec_view_block) (work_y, &Vj, S[i]->id-minId, S[i]->id-minId, iflag), *iflag);
+        PHIST_CHK_IERR( SUBR(mvec_add_mvec) (st::one(), S[i]->b_, -st::one(), Vj, iflag), *iflag);
       }
     }
     // increment ref counters in mvecBuff and set lastVind_
@@ -573,7 +573,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
     for(int i = 0; i < numSys; i++)
     {
       // get H daat from GPU (if it resides there)
-      PHIST_CHK_IERR(SUBR(sdMat_from_device)(S[i]->H_,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_from_device)(S[i]->H_,iflag),*iflag);
     }
 
     //    % arnoldi update with iterated modified gram schmidt
@@ -586,7 +586,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
         prev_ynorm = ynorm;
         if( useIMGS || mgsIter == 1 )
         {
-          PHIST_CHK_IERR(SUBR(mvec_norm2)(work_y, &ynorm[0], ierr), *ierr);
+          PHIST_CHK_IERR(SUBR(mvec_norm2)(work_y, &ynorm[0], iflag), *iflag);
         }
 
         bool needAnotherIteration = (mgsIter == 0);
@@ -615,18 +615,18 @@ PHIST_SOUT(PHIST_INFO,"\n");
           if( j >= maxCurDimV-sharedCurDimV && maxId+1-minId == numSys )
           {
             // MGS step for all systems at once
-            PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, minId, maxId, ierr), *ierr);
-            PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vk, work_y, tmp, ierr), *ierr);
+            PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, minId, maxId, iflag), *iflag);
+            PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vk, work_y, tmp, iflag), *iflag);
             for(int i = 0; i < maxId+1-minId; i++)
               tmp[i] = -tmp[i];
-            PHIST_CHK_IERR(SUBR( mvec_vadd_mvec  ) (tmp, Vk, st::one(), work_y, ierr), *ierr);
+            PHIST_CHK_IERR(SUBR( mvec_vadd_mvec  ) (tmp, Vk, st::one(), work_y, iflag), *iflag);
             calculatedDot = true;
           }
 
           // store in H (and do MGS steps for single systems)
           for(int i = 0; i < numSys; i++)
           {
-            PHIST_CHK_IERR(SUBR(sdMat_from_device)(S[i]->H_,ierr),*ierr);
+            PHIST_CHK_IERR(SUBR(sdMat_from_device)(S[i]->H_,iflag),*iflag);
             int j_ = j - (maxCurDimV-S[i]->curDimV_);
             if( j_ >= 0 )
             {
@@ -634,17 +634,17 @@ PHIST_SOUT(PHIST_INFO,"\n");
               if( !calculatedDot )
               {
                 // MGS step for single system
-                PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, S[i]->id,       S[i]->id,       ierr), *ierr);
-                PHIST_CHK_IERR(SUBR( mvec_view_block ) (work_y,             &Vj, S[i]->id-minId, S[i]->id-minId, ierr), *ierr);
-                PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vk, Vj, &tmp[S[i]->id-minId], ierr), *ierr);
+                PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, S[i]->id,       S[i]->id,       iflag), *iflag);
+                PHIST_CHK_IERR(SUBR( mvec_view_block ) (work_y,             &Vj, S[i]->id-minId, S[i]->id-minId, iflag), *iflag);
+                PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vk, Vj, &tmp[S[i]->id-minId], iflag), *iflag);
                 tmp[S[i]->id-minId] = -tmp[S[i]->id-minId];
-                PHIST_CHK_IERR(SUBR( mvec_add_mvec   ) (tmp[S[i]->id-minId], Vk, st::one(), Vj, ierr), *ierr);
+                PHIST_CHK_IERR(SUBR( mvec_add_mvec   ) (tmp[S[i]->id-minId], Vk, st::one(), Vj, iflag), *iflag);
               }
 
               // store in H
               ST *Hj=NULL;
               lidx_t ldH;
-              PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
+              PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
               Hj += (S[i]->curDimV_-1)*ldH;
               Hj[j_] += -tmp[S[i]->id-minId];
             }
@@ -654,7 +654,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
       for(int i = 0; i < numSys; i++)
       {
-        PHIST_CHK_IERR(SUBR(sdMat_to_device)(S[i]->H_,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(sdMat_to_device)(S[i]->H_,iflag),*iflag);
       }
 
       // normalize resulting vector
@@ -675,7 +675,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
           // raw view of H
           ST *Hj=NULL;
           lidx_t ldH;
-          PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
+          PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
           Hj += (S[i]->curDimV_-1)*ldH;
           Hj[j] = ynorm[S[i]->id-minId];
         }
@@ -683,7 +683,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       _ST_ scale[maxId+1-minId];
       for(int i = 0; i < maxId+1-minId; i++)
         scale[i] = st::one() / ynorm[i];
-      PHIST_CHK_IERR(SUBR(mvec_vscale)(work_y, scale, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR(mvec_vscale)(work_y, scale, iflag), *iflag);
     }
 
     maxCurDimV++;
@@ -702,9 +702,9 @@ PHIST_SOUT(PHIST_INFO,"\n");
       {
         int Vjind = mvecBuff->prevIndex(nextIndex,j);
         int Vkind = mvecBuff->prevIndex(nextIndex,k);
-        PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vjind), &Vj, S[i]->id, S[i]->id, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vkind), &Vk, S[i]->id, S[i]->id, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(Vj,Vk,&orth[j][k],ierr), *ierr);
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vjind), &Vj, S[i]->id, S[i]->id, iflag), *iflag);
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vkind), &Vk, S[i]->id, S[i]->id, iflag), *iflag);
+        PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(Vj,Vk,&orth[j][k],iflag), *iflag);
         if( j == k )
           maxOrthErr = std::max(maxOrthErr, st::abs(orth[j][k]-st::one()));
         else
@@ -726,30 +726,30 @@ PHIST_SOUT(PHIST_INFO,"\n");
 {
   TYPE(mvec_ptr) tmpVec = NULL, tmpVec_ = NULL;
   const_map_ptr_t map;
-  PHIST_CHK_IERR(SUBR(mvec_get_map)(work_y, &map, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_create)(&tmpVec_, map, maxId+1, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, minId, maxId, ierr), *ierr);
-  PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_x, st::zero(), tmpVec, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_get_map)(work_y, &map, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&tmpVec_, map, maxId+1, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, minId, maxId, iflag), *iflag);
+  PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_x, st::zero(), tmpVec, iflag), *iflag);
   for(int i = 0; i < numSys; i++)
   {
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, S[i]->id, S[i]->id, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, S[i]->id, S[i]->id, iflag), *iflag);
     ST *Hj=NULL;
     lidx_t ldH; 
-    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
     Hj += (S[i]->curDimV_-1)*ldH;
     PHIST_SOUT(PHIST_INFO,"accuracy of last column of H of system %d:\n", i);
     for(int j = 0; j < S[i]->curDimV_; j++)
     {
       int Vjind = mvecBuff->prevIndex(nextIndex,S[i]->curDimV_-j);
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vjind), &Vj, S[i]->id, S[i]->id, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vjind), &Vj, S[i]->id, S[i]->id, iflag), *iflag);
       _ST_ Hnj;
-      PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(Vj, tmpVec, &Hnj, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(Vj, tmpVec, &Hnj, iflag), *iflag);
       PHIST_SOUT(PHIST_INFO,"\t%8.4e", st::abs(Hj[j]-Hnj));
     }
     PHIST_SOUT(PHIST_INFO,"\n");
   }
-  PHIST_CHK_IERR(SUBR(mvec_delete)(tmpVec, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(tmpVec_, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(tmpVec, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(tmpVec_, iflag), *iflag);
 }
 #endif
 
@@ -763,7 +763,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       // raw view of H
       ST *Hj=NULL;
       lidx_t ldH; 
-      PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
+      PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
       Hj += (j-1)*ldH;
       // apply previous Gives rotations to column j
       _ST_ tmp;
@@ -797,8 +797,8 @@ PHIST_SOUT(PHIST_INFO,"\n");
   _ST_ r_ = st::conj(S[i]->cs_[j-1])*Hj[j-1] + st::conj(S[i]->sn_[j-1])*Hj[j];
   _ST_ zero_ = -S[i]->sn_[j-1]*Hj[j-1] + S[i]->cs_[j-1]*Hj[j];
   PHIST_OUT(PHIST_VERBOSE,"(r, 0) = (%8.4e + i%8.4e, %8.4e+i%8.4e)\n", st::real(r_), st::imag(r_), st::real(zero_), st::imag(zero_));
-  PHIST_CHK_IERR(*ierr = (st::abs(r_-tmp) < 1.e-5) ? 0 : -1, *ierr);
-  PHIST_CHK_IERR(*ierr = (st::abs(zero_) < 1.e-5) ? 0 : -1, *ierr);
+  PHIST_CHK_IERR(*iflag = (st::abs(r_-tmp) < 1.e-5) ? 0 : -1, *iflag);
+  PHIST_CHK_IERR(*iflag = (st::abs(zero_) < 1.e-5) ? 0 : -1, *iflag);
 }
 #endif
       // eliminate Hj[j]
@@ -816,7 +816,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
     for(int i = 0; i < numSys; i++)
     {
       // push H to GPU if necessary
-      PHIST_CHK_IERR(SUBR(sdMat_to_device)(S[i]->H_,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_to_device)(S[i]->H_,iflag),*iflag);
     }
 
     //    % check convergence, update subspace dimension etc
@@ -863,15 +863,15 @@ PHIST_SOUT(PHIST_INFO,"\n");
   PHIST_SOUT(PHIST_VERBOSE,"-----------------------\n");
 
   // delete views
-  PHIST_CHK_IERR(SUBR(mvec_delete)(work_x, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(work_y, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(Vj,     ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(Vk,     ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(work_x, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(work_y, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Vj,     iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Vk,     iflag), *iflag);
 
   if (anyConverged > 0)
-    *ierr=0;
+    *iflag=0;
       
   if (anyFailed > 0)
-    *ierr=1;
+    *iflag=1;
 }
 

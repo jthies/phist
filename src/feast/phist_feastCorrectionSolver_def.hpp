@@ -4,11 +4,11 @@ void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me,
         linSolv_t method,
         int blockSize,
         int numShifts, _MT_ sigma_r[], _MT_ sigma_i[],
-        int *ierr)
+        int *iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr = 0;
+  *iflag = 0;
   
   PHIST_SOUT(PHIST_VERBOSE,"creating feastCorrection solver with\n"
                            " block size %d\n and %d shifts\n",blockSize,numShifts);
@@ -35,21 +35,21 @@ void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me,
     
     PHIST_CHK_IERR(SUBR(carp_cgStates_create)
         ((*me)->carp_cgStates_,numShifts,(*me)->sigma_r_,(*me)->sigma_i_,
-        A, blockSize,ierr),*ierr);    
+        A, blockSize,iflag),*iflag);    
   }
   else
   {
     PHIST_SOUT(PHIST_ERROR, "method %d (%s) not implemented",(int)method, linSolv2str(method));
-    *ierr=-99;
+    *iflag=-99;
   }
 }
 
 //! delete a feastCorrectionSolver object
-void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) me, int *ierr)
+void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) me, int *iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr=0;
+  *iflag=0;
 
   me->A_=NULL;
   delete [] me->sigma_r_;
@@ -57,13 +57,13 @@ void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) me, int 
   me->rhs_=NULL;
   if (me->method_==CARP_CG)
   {
-    PHIST_CHK_IERR(SUBR(carp_cgStates_delete)(me->carp_cgStates_,me->numShifts_,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(carp_cgStates_delete)(me->carp_cgStates_,me->numShifts_,iflag),*iflag);
   }
   else
   {
     PHIST_SOUT(PHIST_ERROR, "method %d (%s) not implemented",(int)(me->method_), 
         linSolv2str(me->method_));
-    *ierr=-99;
+    *iflag=-99;
   }
 
   delete me;
@@ -78,18 +78,18 @@ void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) me, int 
 //! tol             desired accuracy (gmres residual tolerance) of the individual systems
 //! maxIter         maximal number of iterations after which individial systems should be aborted
 //! sol             returns approximate solution vectors, sol[i] belongs to shift[i] and rhs
-//! ierr            a value > 0 indicates the number of systems that have not converged to the 
+//! iflag            a value > 0 indicates the number of systems that have not converged to the 
 //!                 desired tolerance
 void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
                                     TYPE(const_mvec_ptr) rhs,
                                     _MT_ tol, int maxIter,
                                     TYPE(mvec_ptr) sol_r[],
                                     TYPE(mvec_ptr) sol_i[],
-                                    int *ierr)
+                                    int *iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr=0;
+  *iflag=0;
   
   // this function solves nshifts*nrhs linear systems and groups them
   // somehow into blocks of size bs. The outer loop if over the columns
@@ -97,7 +97,7 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
   
   int blockSize=me->blockSize_;
   int nrhs;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(rhs,&nrhs,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(rhs,&nrhs,iflag),*iflag);
 
   bool copy_input_vecs= (nrhs!=blockSize);
 
@@ -117,19 +117,19 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
     {
       PHIST_SOUT(PHIST_DEBUG,"create tmp vectors\n");
       const_map_ptr_t map;
-      PHIST_CHK_IERR(SUBR(mvec_get_map)(b,&map,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_get_map)(b,&map,iflag),*iflag);
 
       x_r=new TYPE(mvec_ptr)[me->numShifts_];
       x_i=new TYPE(mvec_ptr)[me->numShifts_];
 
-      PHIST_CHK_IERR(SUBR(mvec_create)(&b,map,bs,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvec_get_block)(rhs,b,c0,c1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_create)(&b,map,bs,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_get_block)(rhs,b,c0,c1,iflag),*iflag);
       for (int i=0;i<me->numShifts_;i++)
       {
-        PHIST_CHK_IERR(SUBR(mvec_create)(&x_r[i],map,bs,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_create)(&x_i[i],map,bs,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_get_block)(sol_r[i],x_r[i],c0,c1,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_get_block)(sol_i[i],x_i[i],c0,c1,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_create)(&x_r[i],map,bs,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_create)(&x_i[i],map,bs,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_get_block)(sol_r[i],x_r[i],c0,c1,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_get_block)(sol_i[i],x_i[i],c0,c1,iflag),*iflag);
       }
     }
   
@@ -139,15 +139,15 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
       {
         PHIST_SOUT(PHIST_DEBUG,"re-construct CARP structs\n");
         PHIST_CHK_IERR(SUBR(carp_cgStates_delete)
-            (me->carp_cgStates_,me->numShifts_,ierr),*ierr);
+            (me->carp_cgStates_,me->numShifts_,iflag),*iflag);
         PHIST_CHK_IERR(SUBR(carp_cgStates_create)
             (me->carp_cgStates_,me->numShifts_,me->sigma_r_,me->sigma_i_,
-            me->A_, bs,ierr),*ierr);    
+            me->A_, bs,iflag),*iflag);    
       }
       // reset all CG states. Use the given sol vectors as starting guess.
       for (int s=0; s<me->numShifts_; s++)
       {
-        PHIST_CHK_IERR(SUBR(carp_cgState_reset)(me->carp_cgStates_[s],b,normsB,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(carp_cgState_reset)(me->carp_cgStates_[s],b,normsB,iflag),*iflag);
         // compute ||b|| only for first system, then copy it
         normsB=me->carp_cgStates_[0]->normB_;
       }
@@ -160,27 +160,27 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
       // on to carp_cg.
       PHIST_CHK_NEG_IERR(SUBR(carp_cgStates_iterate)
                 (me->carp_cgStates_, me->numShifts_, 
-                x_r, x_i, tol, maxIter,ierr),*ierr);
+                x_r, x_i, tol, maxIter,iflag),*iflag);
       // reset to original block size if fewer systems were solved.
       if (bs!=blockSize)
       {
         PHIST_SOUT(PHIST_DEBUG,"re-construct CARP structs with original block size\n");
         PHIST_CHK_IERR(SUBR(carp_cgStates_delete)
-            (me->carp_cgStates_,me->numShifts_,ierr),*ierr);
+            (me->carp_cgStates_,me->numShifts_,iflag),*iflag);
         PHIST_CHK_IERR(SUBR(carp_cgStates_create)
             (me->carp_cgStates_,me->numShifts_,me->sigma_r_,me->sigma_i_,
-            me->A_, blockSize,ierr),*ierr);    
+            me->A_, blockSize,iflag),*iflag);    
       }
       if (copy_input_vecs)
       {
         PHIST_SOUT(PHIST_DEBUG,"delete tmp vectors\n");
-        PHIST_CHK_IERR(SUBR(mvec_delete)(b,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_delete)(b,iflag),*iflag);
         for (int i=0;i<me->numShifts_;i++)
         {
-          PHIST_CHK_IERR(SUBR(mvec_set_block)(sol_r[i],x_r[i],c0,c1,ierr),*ierr);
-          PHIST_CHK_IERR(SUBR(mvec_set_block)(sol_i[i],x_i[i],c0,c1,ierr),*ierr);
-          PHIST_CHK_IERR(SUBR(mvec_delete)(x_r[i],ierr),*ierr);
-          PHIST_CHK_IERR(SUBR(mvec_delete)(x_i[i],ierr),*ierr);
+          PHIST_CHK_IERR(SUBR(mvec_set_block)(sol_r[i],x_r[i],c0,c1,iflag),*iflag);
+          PHIST_CHK_IERR(SUBR(mvec_set_block)(sol_i[i],x_i[i],c0,c1,iflag),*iflag);
+          PHIST_CHK_IERR(SUBR(mvec_delete)(x_r[i],iflag),*iflag);
+          PHIST_CHK_IERR(SUBR(mvec_delete)(x_i[i],iflag),*iflag);
         }
         delete [] x_r;
         delete [] x_i;
@@ -188,7 +188,7 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
     }
     else
     {
-      *ierr=-99;
+      *iflag=-99;
     }
   }
 }

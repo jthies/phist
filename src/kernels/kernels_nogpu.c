@@ -1,20 +1,20 @@
-void SUBR(mvec_to_device)(TYPE(mvec_ptr) V, int* ierr)
+void SUBR(mvec_to_device)(TYPE(mvec_ptr) V, int* iflag)
 {
-  *ierr=0;
+  *iflag=0;
 }
 
-void SUBR(mvec_from_device)(TYPE(mvec_ptr) V, int* ierr)
+void SUBR(mvec_from_device)(TYPE(mvec_ptr) V, int* iflag)
 {
-  *ierr=0;
+  *iflag=0;
 }
 
-void SUBR(sdMat_to_device)(TYPE(sdMat_ptr) M, int* ierr)
+void SUBR(sdMat_to_device)(TYPE(sdMat_ptr) M, int* iflag)
 {
-  *ierr=0;
+  *iflag=0;
 }
 
-void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) M, int* ierr)
+void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) M, int* iflag)
 {
-  *ierr=0;
+  *iflag=0;
 }
 

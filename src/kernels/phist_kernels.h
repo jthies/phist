@@ -57,37 +57,37 @@ extern "C" {
 
 //! initialize kernel library. Should at least call MPI_Init if it has not been called
 //! but is required.
-void phist_kernels_init(int *argc, char*** argv, int* ierr);
+void phist_kernels_init(int *argc, char*** argv, int* iflag);
 
 //! finalize kernel library. Should at least call MPI_Finalize if it has not been called
 //! but is required.
-void phist_kernels_finalize(int* ierr);
+void phist_kernels_finalize(int* iflag);
 
 //! creates a global comm object
-void phist_comm_create(comm_ptr_t* comm, int* ierr);
+void phist_comm_create(comm_ptr_t* comm, int* iflag);
 //! delete a comm object. Only do this for comms obtained by phist_comm_create.
-void phist_comm_delete(comm_ptr_t comm, int* ierr);
+void phist_comm_delete(comm_ptr_t comm, int* iflag);
 //! get the rank of the calling node
-void phist_comm_get_rank(const_comm_ptr_t comm, int* rank, int* ierr);
+void phist_comm_get_rank(const_comm_ptr_t comm, int* rank, int* iflag);
 //! get the number of MPI asks
-void phist_comm_get_size(const_comm_ptr_t comm, int* size, int* ierr);
+void phist_comm_get_size(const_comm_ptr_t comm, int* size, int* iflag);
 //! creates a map with default distribution of points
-void phist_map_create(map_ptr_t* map, const_comm_ptr_t comm, gidx_t nglob, int *ierr);
+void phist_map_create(map_ptr_t* map, const_comm_ptr_t comm, gidx_t nglob, int *iflag);
 //! delete a map object. Note that you should not do this if you got the map from
 //! anything else than phist_map_create.
-void phist_map_delete(map_ptr_t map, int *ierr);
+void phist_map_delete(map_ptr_t map, int *iflag);
 //! returns the comm object used by a map
-void phist_map_get_comm(const_map_ptr_t map, const_comm_ptr_t* comm, int* ierr);
+void phist_map_get_comm(const_map_ptr_t map, const_comm_ptr_t* comm, int* iflag);
 //! returns the local number of elements in the map
-void phist_map_get_local_length(const_map_ptr_t map, lidx_t* nloc, int* ierr);
-//! returns the smallest global index in the map appearing on my partition. ierr is set to 1
+void phist_map_get_local_length(const_map_ptr_t map, lidx_t* nloc, int* iflag);
+//! returns the smallest global index in the map appearing on my partition. iflag is set to 1
 //! in case the map is not contiguous, because in that case it may be that the
 //! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
-void phist_map_get_ilower(const_map_ptr_t map, gidx_t* ilower, int* ierr);
-//! returns the largest global index in the map appearing on my partition. ierr is set to 1
+void phist_map_get_ilower(const_map_ptr_t map, gidx_t* ilower, int* iflag);
+//! returns the largest global index in the map appearing on my partition. iflag is set to 1
 //! in case the map is not contiguous, because in that case it may be that the
 //! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
-void phist_map_get_iupper(const_map_ptr_t map, gidx_t* iupper, int* ierr);
+void phist_map_get_iupper(const_map_ptr_t map, gidx_t* iupper, int* iflag);
 
 
 //!@}

@@ -51,27 +51,27 @@ int read_mat(const char* filebase,TYPE(crsMat_ptr) *ptr)
   
 //  std::cout << "Looking for matrix \'"<<filebase<<"\'...\n";
 //  std::cout << "... try \'"<<mmfile<<"\'\n";
-  SUBR(crsMat_read_mm)(ptr,mmfile,&ierr_);
-  if (ierr_!=PHIST_SUCCESS) // kernel lib can't read MatrixMarket format or file not found
+  SUBR(crsMat_read_mm)(ptr,mmfile,&iflag_);
+  if (iflag_!=PHIST_SUCCESS) // kernel lib can't read MatrixMarket format or file not found
     {
 //    std::cout << "... try \'"<<hbfile<<"\'\n";
-    SUBR(crsMat_read_hb)(ptr,hbfile,&ierr_);
-    if (ierr_!=PHIST_SUCCESS) // kernel lib can't read Harwell-Boeing or file not found
+    SUBR(crsMat_read_hb)(ptr,hbfile,&iflag_);
+    if (iflag_!=PHIST_SUCCESS) // kernel lib can't read Harwell-Boeing or file not found
       {
 //      std::cout << "... try \'"<<binfile<<"\'\n";
-      SUBR(crsMat_read_bin)(ptr,binfile,&ierr_);
+      SUBR(crsMat_read_bin)(ptr,binfile,&iflag_);
       }
     }
-  return ierr_;
+  return iflag_;
   }
 
 int delete_mat(TYPE(crsMat_ptr) A)
   {
   if (A!=NULL)
     {
-    SUBR(crsMat_delete)(A,&ierr_);
+    SUBR(crsMat_delete)(A,&iflag_);
     }
-  return ierr_;
+  return iflag_;
   }
 
 };
@@ -88,13 +88,13 @@ int delete_mat(TYPE(crsMat_ptr) A)
     {
     if (typeImplemented_)
       {
-      SUBR(mvec_random)(vec1_,&ierr_);
-      SUBR(mvec_random)(vec2_,&ierr_);
+      SUBR(mvec_random)(vec1_,&iflag_);
+      SUBR(mvec_random)(vec2_,&iflag_);
       PHIST_SOUT(PHIST_INFO, "running crsMat_times_mvec %d times", numRuns_);
       for (int i=0; i<numRuns_;i++)
         {
-        SUBR(crsMat_times_mvec)(1.0,A_,vec1_,0.0,vec2_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(crsMat_times_mvec)(1.0,A_,vec1_,0.0,vec2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         }
       }
     }

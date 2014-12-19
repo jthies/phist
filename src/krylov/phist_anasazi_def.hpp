@@ -17,11 +17,11 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) Ainv_op,
                          int numBlocks,
                          bool symmetric,
                          TYPE(mvec_ptr) vX,         _ST_* eigs,
-                         int* ierr)
+                         int* iflag)
   {
   PHIST_ENTER_FCN(__FUNCTION__);
 #ifndef PHIST_HAVE_ANASAZI
-  *ierr = -99;
+  *iflag = -99;
 #else
 #include "phist_std_typedefs.hpp"  
 #ifdef PHIST_KERNEL_LIB_GHOST
@@ -41,7 +41,7 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) Ainv_op,
   typedef Anasazi::MultiVecTraits<ST,AnasaziMV> MVT;
 
   bool status=true;
-  *ierr=0;
+  *iflag=0;
   
   int variant=0;// only block Krylov-Schur implemented
   
@@ -131,7 +131,7 @@ eigenProblem->setHermitian(symmetric);
 eigenProblem->setNEV(*nEig);
 eigenProblem->setInitVec(X0);
 
-    PHIST_CHK_IERR(*ierr=eigenProblem->setProblem()?0:-1,*ierr);
+    PHIST_CHK_IERR(*iflag=eigenProblem->setProblem()?0:-1,*iflag);
 
 Teuchos::RCP<Anasazi::SolverManager<ST,AnasaziMV, OP> > anasazi;
 if (variant==0)
@@ -142,7 +142,7 @@ if (variant==0)
 else
   {
   PHIST_OUT(PHIST_ERROR,"anasazi variant %d is not supported",variant);
-  *ierr=-99;
+  *iflag=-99;
   }
 
 ///////////////////////////////////////////////////////////////////////
@@ -162,13 +162,13 @@ try {
                                "converged, the returned eigenvectors\n"
                                "are incorrect, probably due to incorrect\n"
                                "sorting or a missing function call (issue #79)\n");
-      *ierr=1;
+      *iflag=1;
     }
   } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,status);
 
   if (!status)
   {
-    *ierr=PHIST_CAUGHT_EXCEPTION;
+    *iflag=PHIST_CAUGHT_EXCEPTION;
     return;
   }
   
@@ -199,7 +199,7 @@ try {
 #if defined(PHIST_KERNEL_LIB_GHOST)||defined(PHIST_KERNEL_LIB_FORTRAN)
     _evecs=evecs->get();
 #endif
-    PHIST_CHK_IERR(SUBR(mvec_get_block)(_evecs,vX,0,*nEig-1, ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_get_block)(_evecs,vX,0,*nEig-1, iflag),*iflag);
   }
   PHIST_SOUT(PHIST_VERBOSE,"returning nEig=%d, nIter=%d\n",*nEig,*nIter);
   return;

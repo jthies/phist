@@ -33,8 +33,8 @@ using ::phist::ScalarTraits;
       TYPE(mvec_ptr) mv_out=NULL;
       mv_in=mv.get();
       const_map_ptr_t map=NULL;
-      PHIST_TCHK_IERR(SUBR(mvec_get_map)(mv_in,&map,&ierr_),ierr_);
-      PHIST_TCHK_IERR(SUBR(mvec_create)(&mv_out,map,(int)numvecs,&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_get_map)(mv_in,&map,&iflag_),iflag_);
+      PHIST_TCHK_IERR(SUBR(mvec_create)(&mv_out,map,(int)numvecs,&iflag_),iflag_);
       return PHIST_rcp(mv_out,true);
     }
 
@@ -43,7 +43,7 @@ using ::phist::ScalarTraits;
       PHIST_ENTER_FCN(__FUNCTION__);
       int nvec=GetNumberVecs(mv);
       Teuchos::RCP<MV> v_out=Clone(mv,nvec);
-      PHIST_TCHK_IERR(SUBR(mvec_get_block)(mv.get(),v_out->get(),0,nvec-1,&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_get_block)(mv.get(),v_out->get(),0,nvec-1,&iflag_),iflag_);
       return v_out;
     }
 
@@ -65,20 +65,20 @@ using ::phist::ScalarTraits;
       const_map_ptr_t map;
       int nvec_in, nvec_out;
       v_in=mv.get();
-      PHIST_TCHK_IERR(SUBR(mvec_num_vectors)(v_in,&nvec_in,&ierr_),ierr_);
-      PHIST_TCHK_IERR(SUBR(mvec_get_map)(v_in,&map,&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_num_vectors)(v_in,&nvec_in,&iflag_),iflag_);
+      PHIST_TCHK_IERR(SUBR(mvec_get_map)(v_in,&map,&iflag_),iflag_);
 
       nvec_out=index.size();
-      PHIST_TCHK_IERR(SUBR(mvec_create)(&v_out,map,nvec_out,&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_create)(&v_out,map,nvec_out,&iflag_),iflag_);
       
       for (int i=0;i<nvec_out;i++)
       {
-        PHIST_TCHK_IERR(SUBR(mvec_view_block)(v_out,&v_col,i,i,&ierr_),ierr_);
-        PHIST_TCHK_IERR(SUBR(mvec_get_block)(v_in,v_col,index[i],index[i],&ierr_),ierr_);
+        PHIST_TCHK_IERR(SUBR(mvec_view_block)(v_out,&v_col,i,i,&iflag_),iflag_);
+        PHIST_TCHK_IERR(SUBR(mvec_get_block)(v_in,v_col,index[i],index[i],&iflag_),iflag_);
       }
       if (v_col!=NULL)
       {
-        PHIST_TCHK_IERR(SUBR(mvec_delete)(v_col,&ierr_),ierr_);
+        PHIST_TCHK_IERR(SUBR(mvec_delete)(v_col,&iflag_),iflag_);
       }
       
       return PHIST_rcp(v_out,true);
@@ -94,11 +94,11 @@ using ::phist::ScalarTraits;
       const_map_ptr_t map;
       int nvec_out=index.ubound()-index.lbound()+1;
       v_in=mv.get();
-      PHIST_TCHK_IERR(SUBR(mvec_get_map)(v_in,&map,&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_get_map)(v_in,&map,&iflag_),iflag_);
 
-      PHIST_TCHK_IERR(SUBR(mvec_create)(&v_out,map,nvec_out,&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_create)(&v_out,map,nvec_out,&iflag_),iflag_);
       
-      PHIST_TCHK_IERR(SUBR(mvec_get_block)(v_in,v_out,index.lbound(),index.ubound(),&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_get_block)(v_in,v_out,index.lbound(),index.ubound(),&iflag_),iflag_);
       return PHIST_rcp(v_out,true);
     }
 
@@ -116,7 +116,7 @@ using ::phist::ScalarTraits;
       // If it turns out that we need them here we could build the
       // functionality into the phist::MultiVector wrapper by storing
       // an array of contiguous views.
-      PHIST_TCHK_IERR(ierr_=-99,ierr_);
+      PHIST_TCHK_IERR(iflag_=-99,iflag_);
       return Teuchos::null;
     }
 
@@ -128,7 +128,7 @@ using ::phist::ScalarTraits;
       TYPE(mvec_ptr) v_in, v_out=NULL;
       v_in=mv.get();
 
-      PHIST_TCHK_IERR(SUBR(mvec_view_block)(v_in,&v_out,index.lbound(),index.ubound(),&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_view_block)(v_in,&v_out,index.lbound(),index.ubound(),&iflag_),iflag_);
       return PHIST_rcp(v_out,true);
     }
 
@@ -157,7 +157,7 @@ using ::phist::ScalarTraits;
       // Anyway, the phist interface gives access only to 
       // the local length.
       int local_length;
-      PHIST_TCHK_IERR(SUBR(mvec_my_length)(mv.get(),&local_length,&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_my_length)(mv.get(),&local_length,&iflag_),iflag_);
       return local_length;
     }
 
@@ -165,7 +165,7 @@ using ::phist::ScalarTraits;
   { 
       PHIST_ENTER_FCN(__FUNCTION__);
       int nvec;
-      PHIST_TCHK_IERR(SUBR(mvec_num_vectors)(mv.get(),&nvec,&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_num_vectors)(mv.get(),&nvec,&iflag_),iflag_);
       return nvec;
   }
 
@@ -183,7 +183,7 @@ using ::phist::ScalarTraits;
                                  Scalar beta, MV& mv )
     {
       PHIST_ENTER_FCN(__FUNCTION__);
-      PHIST_TCHK_IERR(SUBR(mvec_times_sdMat)(alpha,A.get(),convertSDM(B),beta,mv.get(),&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_times_sdMat)(alpha,A.get(),convertSDM(B),beta,mv.get(),&iflag_),iflag_);
     }
 
     // compute mv = alpha*A + beta*B. This function is abused in Belos by aliasing mv and A 
@@ -192,33 +192,33 @@ using ::phist::ScalarTraits;
     static void MvAddMv( Scalar alpha, const MV& A, Scalar beta, const MV& B, MV& mv )
     {
       PHIST_ENTER_FCN(__FUNCTION__);
-      PHIST_TCHK_IERR(SUBR(mvec_add_mvec)(alpha,A.get(),st::zero(),mv.get(),&ierr_),ierr_);
-      PHIST_TCHK_IERR(SUBR(mvec_add_mvec)(beta,B.get(),st::one(),mv.get(),&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_add_mvec)(alpha,A.get(),st::zero(),mv.get(),&iflag_),iflag_);
+      PHIST_TCHK_IERR(SUBR(mvec_add_mvec)(beta,B.get(),st::one(),mv.get(),&iflag_),iflag_);
     }
 
     static void MvScale ( MV& mv, Scalar alpha )
     {
       PHIST_ENTER_FCN(__FUNCTION__);
-      PHIST_TCHK_IERR(SUBR(mvec_scale)(mv.get(),alpha,&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_scale)(mv.get(),alpha,&iflag_),iflag_);
     }
 
     static void MvScale ( MV& mv, const std::vector<Scalar>& alphas )
     {
       PHIST_ENTER_FCN(__FUNCTION__);
-      PHIST_TCHK_IERR(SUBR(mvec_vscale)(mv.get(),&alphas[0],&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_vscale)(mv.get(),&alphas[0],&iflag_),iflag_);
     }
 
     // C=alpha*A*B
     static void MvTransMv( Scalar alpha, const MV& A, const MV& B, Teuchos_sdMat_t& C)
     {
       PHIST_ENTER_FCN(__FUNCTION__);
-      PHIST_TCHK_IERR(SUBR(mvecT_times_mvec)(alpha,A.get(),B.get(),st::zero(),convertSDM(C),&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvecT_times_mvec)(alpha,A.get(),B.get(),st::zero(),convertSDM(C),&iflag_),iflag_);
     }
 
     static void MvDot( const MV& A, const MV& B, std::vector<Scalar> &dots)
     {
       PHIST_ENTER_FCN(__FUNCTION__);    
-      PHIST_TCHK_IERR(SUBR(mvec_dot_mvec)(A.get(),B.get(),&dots[0],&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_dot_mvec)(A.get(),B.get(),&dots[0],&iflag_),iflag_);
     }
 
     static void MvNorm(const MV& mv, std::vector<magn_t> &normvec, NormType type=TwoNorm)
@@ -229,7 +229,7 @@ using ::phist::ScalarTraits;
         PHIST_SOUT(PHIST_WARNING,"can only compute 2-norm in this interface\n"
                                  "(file %s, line %d)\n",__FILE__,__LINE__);
       }
-      PHIST_TCHK_IERR(SUBR(mvec_norm2)(mv.get(),&normvec[0],&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_norm2)(mv.get(),&normvec[0],&iflag_),iflag_);
     }
 
     static void SetBlock( const MV& A, const std::vector<int>& index, MV& mv )
@@ -254,7 +254,7 @@ using ::phist::ScalarTraits;
 	      MV& mv)
     {
       PHIST_ENTER_FCN(__FUNCTION__);
-      PHIST_CHK_IERR(SUBR(mvec_set_block)(mv.get(),A.get(),index.lbound(),index.ubound(),&ierr_),ierr_);
+      PHIST_CHK_IERR(SUBR(mvec_set_block)(mv.get(),A.get(),index.lbound(),index.ubound(),&iflag_),iflag_);
     }
 
     static void
@@ -263,21 +263,21 @@ using ::phist::ScalarTraits;
     {
       PHIST_ENTER_FCN(__FUNCTION__);
       int nvecA;
-      PHIST_TCHK_IERR(SUBR(mvec_num_vectors)(A.get(),&nvecA,&ierr_),ierr_);
-      PHIST_TCHK_IERR(SUBR(mvec_get_block)(A.get(),mv.get(),0,nvecA-1,&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_num_vectors)(A.get(),&nvecA,&iflag_),iflag_);
+      PHIST_TCHK_IERR(SUBR(mvec_get_block)(A.get(),mv.get(),0,nvecA-1,&iflag_),iflag_);
     }
 
 
     static void MvRandom( MV& mv )
     { 
       PHIST_ENTER_FCN(__FUNCTION__); 
-      PHIST_TCHK_IERR(SUBR(mvec_random)(mv.get(),&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_random)(mv.get(),&iflag_),iflag_);
     }
 
     static void MvInit( MV& mv, Scalar alpha = st::zero() )
     {
       PHIST_ENTER_FCN(__FUNCTION__); 
-      PHIST_TCHK_IERR(SUBR(mvec_put_value)(mv.get(),alpha,&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_put_value)(mv.get(),alpha,&iflag_),iflag_);
     }
 
     static void MvPrint( const MV& mv, std::ostream& os )
@@ -312,15 +312,15 @@ using ::phist::ScalarTraits;
       TYPE(sdMat_ptr) M_out=0;
       // oh oh, memory leak
       comm_ptr_t comm=NULL;
-      PHIST_TCHK_IERR(phist_comm_create(&comm,&ierr_),ierr_);
+      PHIST_TCHK_IERR(phist_comm_create(&comm,&iflag_),iflag_);
       PHIST_TCHK_IERR(SUBR(sdMat_create_view)(&M_out,comm,M.values(),
-        M.stride(),M.numRows(),M.numCols(),&ierr_),ierr_);
+        M.stride(),M.numRows(),M.numCols(),&iflag_),iflag_);
     return M_out;
   }
 
 private:
 
-  static int ierr_;
+  static int iflag_;
 
 
 private:

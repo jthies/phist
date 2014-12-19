@@ -16,12 +16,12 @@ public:
     KernelTestWithSdMats<ST,_NROWS_,_NCOLS_>::SetUp();
     if( typeImplemented_ )
     {
-      SUBR(sdMat_random)(mat1_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_put_value)(mat2_,(ST)42.0,&ierr_);
-        ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_random)(mat3_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_random)(mat1_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_put_value)(mat2_,(ST)42.0,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_random)(mat3_,&iflag_);
+        ASSERT_EQ(0,iflag_);
     }
   }
 
@@ -39,11 +39,11 @@ public:
     if (typeImplemented_)
       {
       int n;
-      SUBR(sdMat_get_nrows)(mat1_,&n,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_get_nrows)(mat1_,&n,&iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nrows_, n); 
-      SUBR(sdMat_get_ncols)(mat1_,&n,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_get_ncols)(mat1_,&n,&iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_EQ(ncols_, n); 
       }
     }
@@ -54,10 +54,10 @@ public:
     // and do not crash.
     if (typeImplemented_)
     {
-      SUBR(sdMat_to_device)(mat1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_from_device)(mat1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_to_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
     }
   }
 
@@ -68,8 +68,8 @@ public:
     {
       ST alpha = st::one();
       ST beta  = st::zero();
-      SUBR(sdMat_add_sdMat)(alpha,mat1_,beta,mat2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_add_sdMat)(alpha,mat1_,beta,mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 
       ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat1_,mat2_));
     }
@@ -87,15 +87,15 @@ public:
       PHIST_OUT(9,"axpy, alpha=%f+%f i, beta=%f+%f i",st::real(alpha),
           st::imag(alpha),st::real(beta),st::imag(beta));
 #if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(sdMat_from_device)(mat2_,&ierr_);
+      SUBR(sdMat_from_device)(mat2_,&iflag_);
       //PrintVector(std::cerr,"before scale",mat2_vp_,nrows_,m_lda_,stride,mpi_comm_);
 #endif
-      SUBR(sdMat_add_sdMat)(alpha,mat1_,beta,mat2_,&ierr_);
+      SUBR(sdMat_add_sdMat)(alpha,mat1_,beta,mat2_,&iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(sdMat_from_device)(mat2_,&ierr_);
+      SUBR(sdMat_from_device)(mat2_,&iflag_);
       //PrintVector(std::cerr,"after scale",mat2_vp_,nrows_,m_lda_,stride,mpi_comm_);
 #endif
-      ASSERT_EQ(0,ierr_);
+      ASSERT_EQ(0,iflag_);
 
       ASSERT_REAL_EQ(mt::one(),SdMatEqual(mat2_,beta*((ST)42.0)));
     }
@@ -109,8 +109,8 @@ public:
       ST beta = st::prand();
       ST alpha= st::prand();
 
-      SUBR(sdMat_add_sdMat)(alpha,mat1_,beta,mat2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_add_sdMat)(alpha,mat1_,beta,mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 
       // calculate solution by hand
       for(int i = 0; i < nrows_; i++)
@@ -120,8 +120,8 @@ public:
           mat1_vp_[MIDX(i,j,m_lda_)] = alpha*mat1_vp_[MIDX(i,j,m_lda_)]+beta;
         }
       }
-      SUBR(sdMat_to_device)(mat1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_to_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat1_,mat2_));
     }
   }
@@ -138,41 +138,41 @@ public:
       int jmin=std::min(1,ncols_-1);
       int jmax=std::min(3,ncols_-1);
       TYPE(sdMat_ptr) m1_view=NULL;
-      SUBR(sdMat_view_block)(mat1_,&m1_view,imin,imax,jmin,jmax,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(mat1_,&m1_view,imin,imax,jmin,jmax,&iflag_);
+      ASSERT_EQ(0,iflag_);
       
       _ST_* val_ptr;
       lidx_t lda;
-      SUBR(sdMat_extract_view)(m1_view,&val_ptr,&lda,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_extract_view)(m1_view,&val_ptr,&lda,&iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_EQ(lda,m_lda_);
 
-      SUBR(sdMat_from_device)(mat1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+imin+jmin*lda,val_ptr,imax-imin+1,jmax-jmin+1,lda,stride));
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(sdMat_print)(mat1_,&ierr_);
-      SUBR(sdMat_print)(m1_view,&ierr_);
+      SUBR(sdMat_print)(mat1_,&iflag_);
+      SUBR(sdMat_print)(m1_view,&iflag_);
 #endif
       
-      SUBR(sdMat_extract_view)(m1_view,&val_ptr,&lda,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_extract_view)(m1_view,&val_ptr,&lda,&iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_EQ(lda,m_lda_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+MIDX(imin,jmin,lda),val_ptr,imax-imin+1,jmax-jmin+1,lda,stride,mflag_));
 
       // set all the viewed entries to a certain value and check that the original vector is
       // changed.
       _ST_ val = random_number();
-      SUBR(sdMat_put_value)(m1_view,val,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_put_value)(m1_view,val,&iflag_);
+      ASSERT_EQ(0,iflag_);
 
-      SUBR(sdMat_from_device)(mat1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+imin+jmin*lda,val_ptr,imax-imin+1,jmax-jmin+1,lda,stride));
       
 #if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(sdMat_print)(m1_view,&ierr_);
+      SUBR(sdMat_print)(m1_view,&iflag_);
 #endif
       
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(&mat1_vp_[MIDX(imin,jmin,lda)],imax-imin+1,jmax-jmin+1,lda,stride,val,mflag_));
@@ -187,11 +187,11 @@ public:
     {
       // first set some data of the whole array
       _ST_ outer_val = st::rand();
-      SUBR(sdMat_put_value)(mat1_,outer_val,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_put_value)(mat1_,outer_val,&iflag_);
+      ASSERT_EQ(0,iflag_);
       
-      SUBR(sdMat_from_device)(mat1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 
       // now create a view
       int imin=std::min(3,nrows_-1);
@@ -199,35 +199,35 @@ public:
       int jmin=std::min(2,ncols_-1);
       int jmax=std::min(5,ncols_-1);
       TYPE(sdMat_ptr) view = NULL;
-      SUBR(sdMat_view_block)(mat1_,&view,imin,imax,jmin,jmax,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(mat1_,&view,imin,imax,jmin,jmax,&iflag_);
+      ASSERT_EQ(0,iflag_);
 
       // set the data in the view to some other value
       _ST_ view_val = st::rand();
-      SUBR(sdMat_put_value)(view,view_val,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_put_value)(view,view_val,&iflag_);
+      ASSERT_EQ(0,iflag_);
 
-      SUBR(sdMat_from_device)(mat1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 
       // view part of view
       int nrows_view = imax-imin+1;
       int ncols_view = jmax-jmin+1;
-      ASSERT_EQ(0,ierr_);
+      ASSERT_EQ(0,iflag_);
       int imin2=std::min(2,nrows_view-1);
       int imax2=std::min(4,nrows_view-1);
       int jmin2=std::min(1,ncols_view-1);
       int jmax2=std::min(3,ncols_view-1);
       TYPE(sdMat_ptr) view2 = NULL;
-      SUBR(sdMat_view_block)(view, &view2, imin2,imax2,jmin2, jmax2, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(view, &view2, imin2,imax2,jmin2, jmax2, &iflag_);
+      ASSERT_EQ(0,iflag_);
       
       // set data in the inner view to yet another value
       _ST_ inner_val = st::rand();
-      SUBR(sdMat_put_value)(view2, inner_val, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_put_value)(view2, inner_val, &iflag_);
+      ASSERT_EQ(0,iflag_);
 
-      SUBR(sdMat_from_device)(mat1_,&ierr_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
 
       // now use the raw data to verify results
       for(int i = 0; i < nrows_; i++)
@@ -257,8 +257,8 @@ public:
   {
     if(typeImplemented_)
     {
-      SUBR(sdMat_from_device)(mat1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       // check that the imaginary part is not zero everywhere!
       MT maxAbsIm = mt::zero();
       for(int i = 0; i < nrows_; i++)
@@ -283,33 +283,33 @@ public:
       TYPE(sdMat_ptr) m1_copy=NULL;
       
       // set m2=m1 to check later
-      SUBR(sdMat_add_sdMat)(st::one(),mat1_,st::zero(),mat2_,&ierr_);
+      SUBR(sdMat_add_sdMat)(st::one(),mat1_,st::zero(),mat2_,&iflag_);
 
       // did the assignment operation above work, M2=M1?
       ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat1_,mat2_));
       
-      SUBR(sdMat_create)(&m1_copy,imax-imin+1,jmax-jmin+1,comm_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_get_block)(mat1_,m1_copy,imin,imax,jmin,jmax,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_create)(&m1_copy,imax-imin+1,jmax-jmin+1,comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_get_block)(mat1_,m1_copy,imin,imax,jmin,jmax,&iflag_);
+      ASSERT_EQ(0,iflag_);
       
 #if PHIST_OUTLEV>=PHIST_DEBUG && !defined(PHIST_KERNEL_LIB_BUILTIN)
       PHIST_SOUT(PHIST_DEBUG,"i=[%" PRlidx ",%" PRlidx "], j=[%" PRlidx ",%" PRlidx "]\n",
         imin,imax,jmin,jmax);
       PHIST_SOUT(PHIST_DEBUG,"Original matrix:\n");
-      SUBR(sdMat_print)(mat1_,&ierr_);
+      SUBR(sdMat_print)(mat1_,&iflag_);
       PHIST_SOUT(PHIST_DEBUG,"This should be a copy of those columns:\n");
-      SUBR(sdMat_print)(m1_copy,&ierr_);
+      SUBR(sdMat_print)(m1_copy,&iflag_);
 #endif      
       _ST_* val_ptr;
       lidx_t lda;
-      SUBR(sdMat_extract_view)(m1_copy,&val_ptr,&lda,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_extract_view)(m1_copy,&val_ptr,&lda,&iflag_);
+      ASSERT_EQ(0,iflag_);
       
-      SUBR(sdMat_from_device)(mat1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_from_device)(m1_copy,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(m1_copy,&iflag_);
+      ASSERT_EQ(0,iflag_);
       
       //note: can't use ArraysEqual here because we (may) have different strides      
       _MT_ maxval=mt::zero();
@@ -330,8 +330,8 @@ public:
       // set all the copied entries to a certain value and check that the original vector 
       // is not changed.
       _ST_ val = random_number();
-      SUBR(sdMat_put_value)(m1_copy,val,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_put_value)(m1_copy,val,&iflag_);
+      ASSERT_EQ(0,iflag_);
       
       // check that the pointers we retrieved in SetUp() still point to the
       // location of the sdMat data
@@ -341,18 +341,18 @@ public:
       ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat1_,mat2_));
 
       // copy back in the changed block
-      SUBR(sdMat_set_block)(mat1_,m1_copy,imin,imax,jmin,jmax,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_set_block)(mat1_,m1_copy,imin,imax,jmin,jmax,&iflag_);
+      ASSERT_EQ(0,iflag_);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
       PHIST_SOUT(PHIST_DEBUG,"Changed block and copied it back in:\n");
-      SUBR(sdMat_print)(mat1_,&ierr_);
-      SUBR(sdMat_print)(m1_copy,&ierr_);
+      SUBR(sdMat_print)(mat1_,&iflag_);
+      SUBR(sdMat_print)(m1_copy,&iflag_);
 #endif      
       
       // check that the corresponding entries have changed
-      SUBR(sdMat_from_device)(mat1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(&mat1_vp_[MIDX(imin,jmin,m_lda_)],imax-imin+1,jmax-jmin+1,m_lda_,stride,val,mflag_));
       }
     }
@@ -361,17 +361,17 @@ public:
   {
     if (typeImplemented_ && nrows_ == ncols_ )
     {
-      SUBR(sdMat_times_sdMat)(st::one(),mat1_,mat3_,st::one(),mat2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_times_sdMat)(st::one(),mat1_,mat3_,st::one(),mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       PHIST_DEB("random*random+42");
 #if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(sdMat_print)(mat2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_print)(mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 #endif
 
-      SUBR(sdMat_from_device)(mat1_,&ierr_);
-      SUBR(sdMat_from_device)(mat2_,&ierr_);
-      SUBR(sdMat_from_device)(mat3_,&ierr_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      SUBR(sdMat_from_device)(mat2_,&iflag_);
+      SUBR(sdMat_from_device)(mat3_,&iflag_);
 
       // subtract matrix product by hand
       for(int i = 0; i < nrows_; i++)
@@ -382,7 +382,7 @@ public:
             mat2_vp_[MIDX(i,j,m_lda_)] -= mat1_vp_[MIDX(i,k,m_lda_)]*mat3_vp_[MIDX(k,j,m_lda_)];
           }
         }
-      ASSERT_EQ(0,ierr_);
+      ASSERT_EQ(0,iflag_);
       // check result
       ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0,mflag_),10*mt::eps());
     }
@@ -396,23 +396,23 @@ public:
       // force some complex non-zero value even if complex_random fails
       mat1_vp_[0] = std::complex<MT>( st::imag(mat1_vp_[0]), st::real(mat1_vp_[0]) );
 #endif
-      SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat3_,st::one(),mat2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat3_,st::one(),mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       PHIST_DEB("random'*random+42");
 #if PHIST_OUTLEV>=PHIST_DEBUG
 /*
-      SUBR(sdMat_print)(mat1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_print)(mat3_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_print)(mat2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_print)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_print)(mat3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_print)(mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 */
 #endif
 
-      SUBR(sdMat_from_device)(mat1_,&ierr_);
-      SUBR(sdMat_from_device)(mat2_,&ierr_);
-      SUBR(sdMat_from_device)(mat3_,&ierr_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      SUBR(sdMat_from_device)(mat2_,&iflag_);
+      SUBR(sdMat_from_device)(mat3_,&iflag_);
 
       // subtract matrix product by hand
       for(int i = 0; i < nrows_; i++)
@@ -441,11 +441,11 @@ public:
       int stride = 1;
 
       int rank = 0;
-      phist_comm_get_rank(comm_, &rank, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      phist_comm_get_rank(comm_, &rank, &iflag_);
+      ASSERT_EQ(0,iflag_);
 
-      SUBR(sdMat_random)(mat1_, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_random)(mat1_, &iflag_);
+      ASSERT_EQ(0,iflag_);
 
       ASSERT_REAL_EQ(mt::one(), ArrayParallelReplicated(mat1_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
 
@@ -456,8 +456,8 @@ public:
       }
 
       // do the same test again...
-      SUBR(sdMat_random)(mat1_, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_random)(mat1_, &iflag_);
+      ASSERT_EQ(0,iflag_);
 
       ASSERT_REAL_EQ(mt::one(), ArrayParallelReplicated(mat1_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
     }
@@ -469,57 +469,57 @@ public:
     if( typeImplemented_ )
     {
       int stride = 1;
-      SUBR(sdMat_random)(mat1_, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_random)(mat1_, &iflag_);
+      ASSERT_EQ(0,iflag_);
 
       // set up 4 block views in one matrix to multiply around
       TYPE(sdMat_ptr) v11 = NULL, v12 = NULL, v21 = NULL, v22 = NULL;
-      SUBR(sdMat_view_block)(mat1_, &v11, 1,2, 1,2, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_view_block)(mat1_, &v21, 3,4, 1,3, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_view_block)(mat1_, &v12, 0,2, 4,6, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_view_block)(mat1_, &v22, 3,5, 5,6, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(mat1_, &v11, 1,2, 1,2, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_view_block)(mat1_, &v21, 3,4, 1,3, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_view_block)(mat1_, &v12, 0,2, 4,6, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_view_block)(mat1_, &v22, 3,5, 5,6, &iflag_);
+      ASSERT_EQ(0,iflag_);
 
       // set up left/right and upper/lower block view to add around
       TYPE(sdMat_ptr) vu = NULL, vd = NULL, vl = NULL, vr = NULL;
-      SUBR(sdMat_view_block)(mat1_, &vu, 0,2, 1,6, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_view_block)(mat1_, &vd, 3,5, 1,6, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_view_block)(mat1_, &vl, 0,4, 1,2, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_view_block)(mat1_, &vr, 1,5, 3,4, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(mat1_, &vu, 0,2, 1,6, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_view_block)(mat1_, &vd, 3,5, 1,6, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_view_block)(mat1_, &vl, 0,4, 1,2, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_view_block)(mat1_, &vr, 1,5, 3,4, &iflag_);
+      ASSERT_EQ(0,iflag_);
 
 
       // use "unaliased" other mat2_ as reference
-      SUBR(sdMat_add_sdMat)(st::one(), mat1_, st::zero(), mat2_, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_add_sdMat)(st::one(), mat1_, st::zero(), mat2_, &iflag_);
+      ASSERT_EQ(0,iflag_);
 
       // set up 4 block views in one matrix to multiply around
       TYPE(sdMat_ptr) ref_v11 = NULL, ref_v12 = NULL, ref_v21 = NULL, ref_v22 = NULL;
-      SUBR(sdMat_view_block)(mat2_, &ref_v11, 1,2, 1,2, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_view_block)(mat2_, &ref_v21, 3,4, 1,3, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_view_block)(mat2_, &ref_v12, 0,2, 4,6, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_view_block)(mat2_, &ref_v22, 3,5, 5,6, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(mat2_, &ref_v11, 1,2, 1,2, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_view_block)(mat2_, &ref_v21, 3,4, 1,3, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_view_block)(mat2_, &ref_v12, 0,2, 4,6, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_view_block)(mat2_, &ref_v22, 3,5, 5,6, &iflag_);
+      ASSERT_EQ(0,iflag_);
 
       // set up left/right and upper/lower block view to add around
       TYPE(sdMat_ptr) ref_vu = NULL, ref_vd = NULL, ref_vl = NULL, ref_vr = NULL;
-      SUBR(sdMat_view_block)(mat2_, &ref_vu, 0,2, 1,6, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_view_block)(mat2_, &ref_vd, 3,5, 1,6, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_view_block)(mat2_, &ref_vl, 0,4, 1,2, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_view_block)(mat2_, &ref_vr, 1,5, 3,4, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(mat2_, &ref_vu, 0,2, 1,6, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_view_block)(mat2_, &ref_vd, 3,5, 1,6, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_view_block)(mat2_, &ref_vl, 0,4, 1,2, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_view_block)(mat2_, &ref_vr, 1,5, 3,4, &iflag_);
+      ASSERT_EQ(0,iflag_);
 
 
       // do some operations, always start with result in reference mat2_ views than same on aliasing views in mat1_ and compare
@@ -527,83 +527,83 @@ public:
       _ST_ beta = 0.3;
 
       // sdMat_add_sdMat up/down
-      SUBR(sdMat_add_sdMat)(alpha, vu, beta, ref_vd, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_add_sdMat)(alpha, vu, beta, vd, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_add_sdMat)(alpha, vu, beta, ref_vd, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_add_sdMat)(alpha, vu, beta, vd, &iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
 
       // sdMat_add_sdMat left/right
-      SUBR(sdMat_add_sdMat)(alpha, vr, beta, ref_vl, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_add_sdMat)(alpha, vr, beta, vl, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_add_sdMat)(alpha, vr, beta, ref_vl, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_add_sdMat)(alpha, vr, beta, vl, &iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
 
       // sdMat_times_sdMat 21,22->11
-      SUBR(sdMat_times_sdMat)(alpha, v21, v22, beta, ref_v11, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_times_sdMat)(alpha, v21, v22, beta, v11, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_times_sdMat)(alpha, v21, v22, beta, ref_v11, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_times_sdMat)(alpha, v21, v22, beta, v11, &iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
 
       // sdMat_times_sdMat 22,21->12
-      SUBR(sdMat_times_sdMat)(alpha, v22, v21, beta, ref_v12, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_times_sdMat)(alpha, v22, v21, beta, v12, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_times_sdMat)(alpha, v22, v21, beta, ref_v12, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_times_sdMat)(alpha, v22, v21, beta, v12, &iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
 
 
       // sdMatT_times_sdMat 22,22->11
-      SUBR(sdMatT_times_sdMat)(alpha, v22, v22, beta, ref_v11, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMatT_times_sdMat)(alpha, v22, v22, beta, v11, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMatT_times_sdMat)(alpha, v22, v22, beta, ref_v11, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMatT_times_sdMat)(alpha, v22, v22, beta, v11, &iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
 
       // sdMatT_times_sdMat 21,21->12
-      SUBR(sdMatT_times_sdMat)(alpha, v21, v21, beta, ref_v12, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMatT_times_sdMat)(alpha, v21, v21, beta, v12, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMatT_times_sdMat)(alpha, v21, v21, beta, ref_v12, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMatT_times_sdMat)(alpha, v21, v21, beta, v12, &iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
 
       // delete ref views
-      SUBR(sdMat_delete)(ref_vr, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_delete)(ref_vl, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_delete)(ref_vd, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_delete)(ref_vu, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_delete)(ref_v11, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_delete)(ref_v12, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_delete)(ref_v21, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_delete)(ref_v22, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(ref_vr, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(ref_vl, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(ref_vd, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(ref_vu, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(ref_v11, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(ref_v12, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(ref_v21, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(ref_v22, &iflag_);
+      ASSERT_EQ(0,iflag_);
 
       // delete views
-      SUBR(sdMat_delete)(vr, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_delete)(vl, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_delete)(vd, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_delete)(vu, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_delete)(v11, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_delete)(v12, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_delete)(v21, &ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_delete)(v22, &ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(vr, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(vl, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(vd, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(vu, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(v11, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(v12, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(v21, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(v22, &iflag_);
+      ASSERT_EQ(0,iflag_);
 
 
     }

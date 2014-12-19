@@ -34,7 +34,7 @@
 //! R:        small upper triangular matrix of the partial schur form (Q,R)
 //! nIter:    number of iterations performed
 //! resNorm:  norm of the residua of the schur form $A*q_i-Q*r_i, i=1,nEig$
-//! ierr:     return code of the solver (0 on success, negative on error, positive on warning)
+//! iflag:     return code of the solver (0 on success, negative on error, positive on warning)
 //!
 void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
                          TYPE(const_mvec_ptr) v0,  eigSort_t which,
@@ -46,7 +46,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
                          bool innerIMGS,           bool innerGMRESabortAfterFirstConverged,
                          bool symmetric,
                          TYPE(mvec_ptr) Q,         TYPE(sdMat_ptr) R,
-                         _MT_* resNorm,            int* ierr);
+                         _MT_* resNorm,            int* iflag);
 
 //@}
 

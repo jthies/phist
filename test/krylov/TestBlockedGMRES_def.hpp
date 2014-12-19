@@ -47,59 +47,59 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
       if( typeImplemented_ )
       {
         // read matrices
-        SUBR(read_mat)(MATNAME,n_,&A_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(read_mat)(MATNAME,n_,&A_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         ASSERT_TRUE(A_ != NULL);
 
         // wrap matrices in operators
         opA_ = new TYPE(op);
         ASSERT_TRUE(opA_ != NULL);
 
-        SUBR(op_wrap_crsMat)(opA_,A_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(op_wrap_crsMat)(opA_,A_,&iflag_);
+        ASSERT_EQ(0,iflag_);
 
         const_map_ptr_t map = NULL;
-        SUBR(crsMat_get_domain_map)(A_, &map, &ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(crsMat_get_domain_map)(A_, &map, &iflag_);
+        ASSERT_EQ(0,iflag_);
         replaceMap(map);
-        ASSERT_EQ(0,ierr_);
+        ASSERT_EQ(0,iflag_);
 
         state_=new TYPE(blockedGMRESstate_ptr)[m_];
-        SUBR(blockedGMRESstates_create)(state_,m_,map,maxBas_,&ierr_);
+        SUBR(blockedGMRESstates_create)(state_,m_,map,maxBas_,&iflag_);
         
-        ASSERT_EQ(0,ierr_);
+        ASSERT_EQ(0,iflag_);
         xex_=vec1_;
         rhs_=vec2_;
         sol_=vec3_;
         xex_vp_=vec1_vp_;
         rhs_vp_=vec2_vp_;
         sol_vp_=vec3_vp_;
-        SUBR(mvec_put_value)(xex_,st::one(),&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_put_value)(sol_,st::zero(),&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(crsMat_times_mvec)(st::one(),A_,xex_,st::zero(),rhs_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_norm2)(xex_,xNorm_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_norm2)(rhs_,bNorm_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_put_value)(xex_,st::one(),&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_put_value)(sol_,st::zero(),&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(crsMat_times_mvec)(st::one(),A_,xex_,st::zero(),rhs_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_norm2)(xex_,xNorm_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_norm2)(rhs_,bNorm_,&iflag_);
+        ASSERT_EQ(0,iflag_);
       }
     }
 
     //! Clean up.
     virtual void TearDown()
     {
-      int ierr;
+      int iflag;
       if( typeImplemented_ )
       {
         PHIST_ENTER_FCN(__FUNCTION__);
         delete opA_;
 
-        SUBR(crsMat_delete)(A_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(blockedGMRESstates_delete)(state_,m_,&ierr);
-        ASSERT_EQ(0,ierr_);
+        SUBR(crsMat_delete)(A_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(blockedGMRESstates_delete)(state_,m_,&iflag);
+        ASSERT_EQ(0,iflag_);
         delete [] state_;
       }
       //TODO - causes segfault when deleting the map (in KernelTestWithMap::TearDown())
@@ -135,67 +135,67 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
         }
 
         TYPE(mvec_ptr) x=NULL,b=NULL,xex=NULL;
-        SUBR(mvec_view_block)(xex_,&xex,0,nrhs-1,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_view_block)(sol_,&x,0,nrhs-1,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_view_block)(rhs_,&b,0,nrhs-1,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_view_block)(xex_,&xex,0,nrhs-1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_view_block)(sol_,&x,0,nrhs-1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_view_block)(rhs_,&b,0,nrhs-1,&iflag_);
+        ASSERT_EQ(0,iflag_);
         
         // start with a zero initial guess for each of the systems
-        SUBR(mvec_put_value)(x,st::zero(),&ierr_);
-//        SUBR(mvec_random)(x,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_put_value)(x,st::zero(),&iflag_);
+//        SUBR(mvec_random)(x,&iflag_);
+        ASSERT_EQ(0,iflag_);
         
-        int ierr2=0;
+        int iflag2=0;
         TYPE(mvec_ptr) x_i=NULL,b_i=NULL;
         for (int nr=0;nr<=nrestarts;nr++)
         {
           // initialize state with current approximation
           for (int i=0;i<nrhs;i++)
           {
-            SUBR(mvec_view_block)(x,&x_i,i,i,&ierr_);
-            SUBR(mvec_view_block)(b,&b_i,i,i,&ierr_);
+            SUBR(mvec_view_block)(x,&x_i,i,i,&iflag_);
+            SUBR(mvec_view_block)(b,&b_i,i,i,&iflag_);
             if( nr == 0 )
             {
-              SUBR(blockedGMRESstate_reset)(state_[i],b_i,x_i,&ierr_);
-              ASSERT_EQ(0,ierr_);
+              SUBR(blockedGMRESstate_reset)(state_[i],b_i,x_i,&iflag_);
+              ASSERT_EQ(0,iflag_);
             }
             else
             {
-              SUBR(blockedGMRESstate_reset)(state_[i],NULL,x_i,&ierr_);
-              ASSERT_EQ(0,ierr_);
+              SUBR(blockedGMRESstate_reset)(state_[i],NULL,x_i,&iflag_);
+              ASSERT_EQ(0,iflag_);
             }
           }
           // iterate for MAXBAS iterations
           int nIter = 0;
           if( useMINRES )
-            SUBR(blockedMINRESstates_iterate)(opA_,state_,nrhs,&nIter, &ierr2);
+            SUBR(blockedMINRESstates_iterate)(opA_,state_,nrhs,&nIter, &iflag2);
           else
-            SUBR(blockedGMRESstates_iterate)(opA_,state_,nrhs,&nIter,true, &ierr2);
-          ASSERT_TRUE(ierr2>=0);
+            SUBR(blockedGMRESstates_iterate)(opA_,state_,nrhs,&nIter,true, &iflag2);
+          ASSERT_TRUE(iflag2>=0);
           _MT_ resNorm[nrhs];
-          SUBR(blockedGMRESstates_updateSol)(state_,nrhs,x,resNorm,false,&ierr_);
-          ASSERT_EQ(0,ierr_);
-          if (ierr2==0) break; // converged
+          SUBR(blockedGMRESstates_updateSol)(state_,nrhs,x,resNorm,false,&iflag_);
+          ASSERT_EQ(0,iflag_);
+          if (iflag2==0) break; // converged
         }
         
-        ASSERT_EQ(0,ierr2); // GMRES indicated convergence
-        SUBR(mvec_delete)(x_i,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_delete)(b_i,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        ASSERT_EQ(0,iflag2); // GMRES indicated convergence
+        SUBR(mvec_delete)(x_i,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_delete)(b_i,&iflag_);
+        ASSERT_EQ(0,iflag_);
 
         // check residual and error norms, compare with tol
         MT resNorm[nrhs], errNorm[nrhs];
         
         
         // compute true residual in b
-        SUBR(crsMat_times_mvec)(-st::one(),A_,x,st::one(),b,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(crsMat_times_mvec)(-st::one(),A_,x,st::one(),b,&iflag_);
+        ASSERT_EQ(0,iflag_);
         
-        SUBR(mvec_norm2)(b,resNorm,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_norm2)(b,resNorm,&iflag_);
+        ASSERT_EQ(0,iflag_);
 
         for(int i = 0; i < nrhs; i++)
         {
@@ -207,11 +207,11 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
         }
 
         // check error
-        SUBR(mvec_add_mvec)(-st::one(),xex,st::one(),x,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_add_mvec)(-st::one(),xex,st::one(),x,&iflag_);
+        ASSERT_EQ(0,iflag_);
 
-        SUBR(mvec_norm2)(x,errNorm,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_norm2)(x,errNorm,&iflag_);
+        ASSERT_EQ(0,iflag_);
 
         for(int i = 0; i < nrhs; i++)
         {
@@ -222,12 +222,12 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
           ASSERT_TRUE(errNorm[i]<=20*tol*bNorm_[i]);
         }
 
-        SUBR(mvec_delete)(x,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_delete)(b,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_delete)(xex,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(x,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_delete)(b,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_delete)(xex,&iflag_);
+        ASSERT_EQ(0,iflag_);
       }
     }
 };

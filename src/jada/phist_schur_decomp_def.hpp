@@ -30,7 +30,7 @@
  //                                                                                             
 void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
          int m, int nselect, int nsort, eigSort_t which, _MT_ tol, 
-         void* v_ev, int *ierr)
+         void* v_ev, int *iflag)
   {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
@@ -65,11 +65,11 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
 #ifdef IS_COMPLEX
   PHIST_DEB("call complex %cGEES\n",st::type_char());
   PHIST_CHK_IERR(PREFIX(GEES)((blas_char_t*)jobvs,(blas_char_t*)sort,NULL,&m,(blas_cmplx_t*)T,&ldT,
-         &sdim,(blas_cmplx_t*)ev,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)work,&lwork,ev_r,NULL,ierr),*ierr);
+         &sdim,(blas_cmplx_t*)ev,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)work,&lwork,ev_r,NULL,iflag),*iflag);
 #else
   PHIST_DEB("call real %cGEES\n",st::type_char());
   PHIST_CHK_IERR(PREFIX(GEES)((blas_char_t*)jobvs,(blas_char_t*)sort,NULL,&m,T,&ldT,
-         &sdim,ev_r,ev_i,S,&ldS,work,&lwork,NULL,ierr),*ierr);
+         &sdim,ev_r,ev_i,S,&ldS,work,&lwork,NULL,iflag),*iflag);
   for (int i=0;i<m;i++)
     {
     ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
@@ -90,7 +90,7 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
     PHIST_OUT(PHIST_WARNING,"nselect=%d>=nsort=%d, or nsort>=0 "
                              "not satisfied, returning      unsorted Schur form\n",
                              nselect,nsort);
-    *ierr=1;
+    *iflag=1;
     return;
     }
 
@@ -126,15 +126,15 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
   {
     PHIST_DEB("initial sort step, nselect=%d\n",nselect);
     // sort all eigenvalues according to 'which'.
-    PHIST_CHK_IERR(SortEig(ev,m,idx,which,tol,ierr),*ierr);
+    PHIST_CHK_IERR(SortEig(ev,m,idx,which,tol,iflag),*iflag);
     for (int i=0;i<nselect;i++) 
       select[std::abs(idx[i])]=1;
 #ifdef IS_COMPLEX
     PHIST_CHK_IERR(PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)ev,&nsorted,
-          &S_cond, &sep, (blas_cmplx_t*)work, &lwork, ierr),*ierr);
+          &S_cond, &sep, (blas_cmplx_t*)work, &lwork, iflag),*iflag);
 #else
     PHIST_CHK_IERR(PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
-          &S_cond, &sep, work, &lwork, iwork, &liwork, ierr),*ierr);   
+          &S_cond, &sep, work, &lwork, iwork, &liwork, iflag),*iflag);   
     for (int i=0;i<m;i++)
     {
       ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
@@ -159,7 +159,7 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
      {
      PHIST_DEB("sort step %d, nsorted=%d [%d]\n",i,nsorted,nsort);
      // sort the next few eigenvalues (up to nselect)
-     PHIST_CHK_IERR(SortEig(ev+i,nselect-i,idx+i,which,tol,ierr),*ierr);
+     PHIST_CHK_IERR(SortEig(ev+i,nselect-i,idx+i,which,tol,iflag),*iflag);
 
      // sort next candidate to top.
      for (int j=0;j<i;j++) select[j]=1;
@@ -171,10 +171,10 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
      int nsorted_before=nsorted;
 #ifdef IS_COMPLEX
      PHIST_CHK_IERR(PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,
-        (blas_cmplx_t*)ev,&nsorted,&S_cond, &sep, (blas_cmplx_t*)work, &lwork, ierr),*ierr);
+        (blas_cmplx_t*)ev,&nsorted,&S_cond, &sep, (blas_cmplx_t*)work, &lwork, iflag),*iflag);
 #else
      PHIST_CHK_IERR(PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
-          &S_cond, &sep, work, &lwork, iwork, &liwork, ierr),*ierr);   
+          &S_cond, &sep, work, &lwork, iwork, &liwork, iflag),*iflag);   
     for (int j=0;j<m;j++)
       {
       ev[j]=std::complex<MT>(ev_r[j],ev_i[j]);
@@ -197,11 +197,11 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
 
 // reorder multiple eigenvalues in a given (partial) schur decomposition by the smallest residual norm of the unprojected problem
 void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
-      int m, int nselected, eigSort_t which, _MT_ tol, _MT_* resNorm, void* v_ev, int* permutation, int *ierr)
+      int m, int nselected, eigSort_t which, _MT_ tol, _MT_* resNorm, void* v_ev, int* permutation, int *iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
-  *ierr = 0;
+  *iflag = 0;
 
   CT* ev = (CT*) v_ev;
 
@@ -285,10 +285,10 @@ void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
 PHIST_SOUT(PHIST_DEBUG,"swapping %d %d in unconverged eigenvalues\n",ifst-1,ilst-1);
 #ifdef IS_COMPLEX
     PHIST_CHK_IERR( PREFIX(TREXC) ((blas_char_t*)compq, &m, (blas_cmplx_t*) T, 
-    &ldT, (blas_cmplx_t*) S, &ldS, &ifst, &ilst, ierr), *ierr);
+    &ldT, (blas_cmplx_t*) S, &ldS, &ifst, &ilst, iflag), *iflag);
 #else
     PHIST_CHK_IERR( PREFIX(TREXC) ((blas_char_t*)compq, &m, T, &ldT, S, &ldS, 
-    &ifst, &ilst, work, ierr), *ierr);
+    &ifst, &ilst, work, iflag), *iflag);
 #endif
 PHIST_DEB("ifst = %d,\t ilst = %d\n", ifst-1, ilst-1);
 

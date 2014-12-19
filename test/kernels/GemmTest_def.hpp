@@ -29,8 +29,8 @@ public:
 void BuildTestCase1()
   {
   gidx_t ilower;
-  phist_map_get_ilower(map_,&ilower,&ierr_);
-  ASSERT_EQ(0,ierr_);
+  phist_map_get_ilower(map_,&ilower,&iflag_);
+  ASSERT_EQ(0,iflag_);
   for (int j=0;j<nvec_;j++)
     for (int i=0; i<stride_*nloc_; i+=stride_)
       {
@@ -103,20 +103,20 @@ void PrintTestCase()
 //      PrintTestCase();
       _ST_ alpha=st::one(); 
       _ST_ beta=st::zero();
-      SUBR(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1,mflag_));
 
       alpha=(_MT_)0.5*st::one();
       beta=(_MT_)0.5*st::one();
-      SUBR(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1,mflag_));
 
       alpha=(_MT_)0.3*st::one(); 
       beta=(_MT_)0.7*st::one();
-      SUBR(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvecT_times_mvec)(alpha,vec1_,vec2_,beta,mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_NEAR(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,1,mflag_), 100*mt::eps());
       }
     }

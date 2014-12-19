@@ -41,7 +41,7 @@ namespace {
 // thread pinning using simple heuristics
 void pinThreads()
 {
-  int ierr = 0;
+  int iflag = 0;
   // gather system information
   // threads
   int nThreads = 1;
@@ -52,17 +52,17 @@ void pinThreads()
   }
   // MPI rank
   int myRank, nRanks;
-  PHIST_CHK_IERR( ierr = MPI_Comm_rank(MPI_COMM_WORLD, &myRank), ierr);
-  PHIST_CHK_IERR( ierr = MPI_Comm_size(MPI_COMM_WORLD, &nRanks), ierr);
+  PHIST_CHK_IERR( iflag = MPI_Comm_rank(MPI_COMM_WORLD, &myRank), iflag);
+  PHIST_CHK_IERR( iflag = MPI_Comm_size(MPI_COMM_WORLD, &nRanks), iflag);
   // nodes
   int ranksPerNode = 1;
   int myRankInNode = 0;
   {
     char myNodeId[MPI_MAX_PROCESSOR_NAME];
     int nodeId_strlen = 0;
-    PHIST_CHK_IERR( ierr = MPI_Get_processor_name(myNodeId, &nodeId_strlen), ierr);
+    PHIST_CHK_IERR( iflag = MPI_Get_processor_name(myNodeId, &nodeId_strlen), iflag);
     char allNodeId[nRanks][MPI_MAX_PROCESSOR_NAME];
-    PHIST_CHK_IERR( ierr = MPI_Allgather(myNodeId, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, allNodeId, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, MPI_COMM_WORLD), ierr);
+    PHIST_CHK_IERR( iflag = MPI_Allgather(myNodeId, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, allNodeId, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, MPI_COMM_WORLD), iflag);
     // on the same node the node ids are identical
     std::map<std::string,int> nodeNameSet;
     for(int i = 0; i < nRanks; i++)
@@ -152,19 +152,19 @@ void (*__malloc_initialize_hook) (void) = my_init_hook;
 void init_random_seed(void);
 
 // initialize
-void phist_kernels_init(int* argc, char*** argv, int* ierr)
+void phist_kernels_init(int* argc, char*** argv, int* iflag)
 {
-  *ierr=0;
+  *iflag=0;
 
-  PHIST_CHK_IERR( *ierr = MPI_Initialized(&mpiInitializedBefore), *ierr);
+  PHIST_CHK_IERR( *iflag = MPI_Initialized(&mpiInitializedBefore), *iflag);
   if (!mpiInitializedBefore)
   {
-  	PHIST_CHK_IERR( *ierr = MPI_Init(argc, argv), *ierr);
+  	PHIST_CHK_IERR( *iflag = MPI_Init(argc, argv), *iflag);
   }
 
   // allow unlimited stack
   struct rlimit rlim = { RLIM_INFINITY, RLIM_INFINITY };
-  PHIST_CHK_IERR( *ierr = setrlimit(RLIMIT_STACK, &rlim), *ierr);;
+  PHIST_CHK_IERR( *iflag = setrlimit(RLIMIT_STACK, &rlim), *iflag);;
 
 #ifdef PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS
   pinThreads();
@@ -182,7 +182,7 @@ void phist_kernels_init(int* argc, char*** argv, int* ierr)
 }
 
 // finalize builtin kernels
-void phist_kernels_finalize(int* ierr)
+void phist_kernels_finalize(int* iflag)
 {
 #ifdef PHIST_HAVE_LIKWID
 #pragma omp parallel
@@ -194,21 +194,21 @@ void phist_kernels_finalize(int* ierr)
 PHIST_CXX_TIMER_SUMMARIZE
   if( !mpiInitializedBefore )
   {
-    PHIST_CHK_IERR( *ierr = MPI_Finalize(), *ierr);
+    PHIST_CHK_IERR( *iflag = MPI_Finalize(), *iflag);
   }
-  *ierr=0;
+  *iflag=0;
 }
 
-void phist_comm_create(comm_ptr_t* vcomm, int* ierr);
-void phist_comm_delete(comm_ptr_t vcomm, int* ierr);
-void phist_comm_get_rank(const_comm_ptr_t vcomm, int* rank, int* ierr);
-void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* ierr);
-void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int *ierr);
-void phist_map_delete(map_ptr_t vmap, int *ierr);
-void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr);
-void phist_map_get_local_length(const_map_ptr_t vmap, lidx_t* nloc, int* ierr);
-void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* ierr);
-void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr);
+void phist_comm_create(comm_ptr_t* vcomm, int* iflag);
+void phist_comm_delete(comm_ptr_t vcomm, int* iflag);
+void phist_comm_get_rank(const_comm_ptr_t vcomm, int* rank, int* iflag);
+void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* iflag);
+void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int *iflag);
+void phist_map_delete(map_ptr_t vmap, int *iflag);
+void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* iflag);
+void phist_map_get_local_length(const_map_ptr_t vmap, lidx_t* nloc, int* iflag);
+void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* iflag);
+void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* iflag);
 
 #ifdef PHIST_TIMEMONITOR
 void phist_totalMatVecCount()

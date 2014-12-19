@@ -8,23 +8,23 @@ typedef struct {
 
 extern "C" void SUBR(private_iter_op_apply)
         (_ST_ alpha, const void* arg, TYPE(const_mvec_ptr) X,
-        _ST_ beta,  TYPE(mvec_ptr) Y, int* ierr)
+        _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
 #ifdef IS_COMPLEX
   // there is no complex feastCorrectionSolver right now, I think.
-  *ierr=PHIST_NOT_IMPLEMENTED;
+  *iflag=PHIST_NOT_IMPLEMENTED;
   return;
 #else
 
   if (alpha!=st::one()||beta!=st::zero())
   {
-    *ierr=PHIST_INVALID_INPUT;
+    *iflag=PHIST_INVALID_INPUT;
     return;
   }
-  PHIST_CAST_PTR_FROM_VOID(TYPE(iter_solver_op),op,arg,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(TYPE(iter_solver_op),op,arg,*iflag);
   PHIST_CHK_IERR(SUBR(feastCorrectionSolver_run)
-        (op->fCS,X,op->tol,op->maxIters, &Y, NULL, ierr),*ierr);
+        (op->fCS,X,op->tol,op->maxIters, &Y, NULL, iflag),*iflag);
   return;
 #endif
 }
@@ -34,13 +34,13 @@ extern "C" void SUBR(private_iter_op_apply)
 //! approximate Y=(A-sigma*I)\X. alpha and beta are
 //! not used, resp. must be alpha=1, beta=0. 
 void SUBR(op_wrap_solver)(TYPE(op_ptr) Ainv_op,TYPE(const_crsMat_ptr) A, _ST_ shift,
-        linSolv_t method,int block_size, _MT_ tol,int maxIter,int* ierr)
+        linSolv_t method,int block_size, _MT_ tol,int maxIter,int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
 #ifdef IS_COMPLEX
   // there is no complex feastCorrectionSolver right now, I think.
-  *ierr=PHIST_NOT_IMPLEMENTED;
+  *iflag=PHIST_NOT_IMPLEMENTED;
   return;
 #else
 
@@ -52,7 +52,7 @@ void SUBR(op_wrap_solver)(TYPE(op_ptr) Ainv_op,TYPE(const_crsMat_ptr) A, _ST_ sh
   MT shift_r=st::real(shift);
   MT shift_i=st::imag(shift);
   PHIST_CHK_IERR(SUBR(feastCorrectionSolver_create)(&op->fCS, A, method,
-        block_size, 1, &shift_r,&shift_i,ierr),*ierr);
+        block_size, 1, &shift_r,&shift_i,iflag),*iflag);
 
 // set remaining params and pointers
 
@@ -60,7 +60,7 @@ void SUBR(op_wrap_solver)(TYPE(op_ptr) Ainv_op,TYPE(const_crsMat_ptr) A, _ST_ sh
   op->tol=tol;
 
   //only defined for square matrices, range=domain map
-  PHIST_CHK_IERR(SUBR(crsMat_get_range_map)(A,&Ainv_op->range_map,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(crsMat_get_range_map)(A,&Ainv_op->range_map,iflag),*iflag);
 Ainv_op->domain_map=Ainv_op->range_map;
 Ainv_op->apply=&SUBR(private_iter_op_apply);
   return;    

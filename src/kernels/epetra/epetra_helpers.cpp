@@ -14,32 +14,32 @@
 #include "Epetra_MultiVector.h"
 
   //! create a Teuchos' view of a local mvec/sdMat
-  static Teuchos::RCP<const Teuchos_sdMat_t > CreateTeuchosView(Teuchos::RCP<const Epetra_MultiVector> M, int* ierr)
+  static Teuchos::RCP<const Teuchos_sdMat_t > CreateTeuchosView(Teuchos::RCP<const Epetra_MultiVector> M, int* iflag)
     {
-    *ierr=0;
+    *iflag=0;
     int stride = M->Stride();
     int nrows = M->MyLength();
     int ncols = M->NumVectors();
     int lda; 
     double *M_val;
-    *ierr=M->ExtractView(&M_val,&lda);
-    if (*ierr<0) return Teuchos::null;
+    *iflag=M->ExtractView(&M_val,&lda);
+    if (*iflag<0) return Teuchos::null;
     Teuchos::RCP<const Teuchos_sdMat_t> M_view
                   = Teuchos::rcp(new Teuchos_sdMat_t(Teuchos::View,M_val,stride,nrows,ncols));
     return M_view;
     }
 
   //! create a non-const Teuchos' view of a local mvec/sdMat
-  static Teuchos::RCP<Teuchos_sdMat_t> CreateTeuchosViewNonConst(Teuchos::RCP<Epetra_MultiVector> M, int* ierr)
+  static Teuchos::RCP<Teuchos_sdMat_t> CreateTeuchosViewNonConst(Teuchos::RCP<Epetra_MultiVector> M, int* iflag)
     {
-    *ierr=0;
+    *iflag=0;
     int stride = M->Stride();
     int nrows = M->MyLength();
     int ncols = M->NumVectors();
     int lda; 
     double *M_val;
-    *ierr=M->ExtractView(&M_val,&lda);
-    if (*ierr<0) return Teuchos::null;
+    *iflag=M->ExtractView(&M_val,&lda);
+    if (*iflag<0) return Teuchos::null;
     Teuchos::RCP<Teuchos_sdMat_t> M_view
                   = Teuchos::rcp(new Teuchos_sdMat_t(Teuchos::View,M_val,stride,nrows,ncols));
     return M_view;

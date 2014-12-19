@@ -79,9 +79,9 @@ typedef struct ghost_map_t
   } ghost_map_t;
 
 // initialize ghost
-extern "C" void phist_kernels_init(int* argc, char*** argv, int* ierr)
+extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 {
-  *ierr=0;
+  *iflag=0;
   ghost_init(*argc, *argv);
 
   char *str = NULL;
@@ -118,7 +118,7 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* ierr)
 }
 
 // finalize ghost
-extern "C" void phist_kernels_finalize(int* ierr)
+extern "C" void phist_kernels_finalize(int* iflag)
 {
 #ifdef PHIST_HAVE_LIKWID
 #pragma omp parallel
@@ -129,14 +129,14 @@ extern "C" void phist_kernels_finalize(int* ierr)
 #endif
 PHIST_CXX_TIMER_SUMMARIZE;
   ghost_finalize();
-  *ierr=0;
+  *iflag=0;
 }
 
 
 //! simply returns MPI_COMM_WORLD, the only MPI_Comm used in ghost.
-extern "C" void phist_comm_create(comm_ptr_t* vcomm, int* ierr)
+extern "C" void phist_comm_create(comm_ptr_t* vcomm, int* iflag)
   {
-  *ierr=0;
+  *iflag=0;
   // concept doesn't exist in ghost, return MPI_Comm
   MPI_Comm* comm = new MPI_Comm;
   *comm=MPI_COMM_WORLD;
@@ -144,25 +144,25 @@ extern "C" void phist_comm_create(comm_ptr_t* vcomm, int* ierr)
   }
 
 //!
-extern "C" void phist_comm_delete(comm_ptr_t vcomm, int* ierr)
+extern "C" void phist_comm_delete(comm_ptr_t vcomm, int* iflag)
   {
-  *ierr=0;
-  PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*ierr);
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*iflag);
   delete comm;
   }
 
 //!
-extern "C" void phist_comm_get_rank(const_comm_ptr_t vcomm, int* rank, int* ierr)
+extern "C" void phist_comm_get_rank(const_comm_ptr_t vcomm, int* rank, int* iflag)
   {
-  *ierr=0;
-  PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*ierr);
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*iflag);
   ghost_rank(rank,*comm);
   }
 //!
-extern "C" void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* ierr)
+extern "C" void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* iflag)
   {
-  *ierr=0;
-  PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*ierr);
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*iflag);
   ghost_nrank(size,*comm);
   }
 
@@ -196,16 +196,16 @@ ghost_densemat_traits_t phist_default_vtraits()
 //! this generates a default map with linear distribution of points among
 //! processes. Vectors based on this map will have halo points so that   
 //! they can be used as either X or Y in Y=A*X operations.
-extern "C" void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int *ierr)
+extern "C" void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int *iflag)
   {
-  *ierr=0;
-  PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*ierr);
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*iflag);
 
   ghost_map_t* map = new ghost_map_t;
   
   map->ctx=NULL;
 //TODO: check ghost_err_t return codes everywhere like this:
-  PHIST_CHK_GERR(ghost_context_create(&map->ctx,nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,GHOST_SPARSEMAT_SRC_NONE, *comm,1.0),*ierr);
+  PHIST_CHK_GERR(ghost_context_create(&map->ctx,nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,GHOST_SPARSEMAT_SRC_NONE, *comm,1.0),*iflag);
   map->vtraits_template=phist_default_vtraits();
   // in ghost terminology, we look at LHS=A*RHS, the LHS is based on the
   // row distribution of A, the RHS has halo elements to allow importing from
@@ -224,10 +224,10 @@ extern "C" void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t
   }
 
 //!
-extern "C" void phist_map_delete(map_ptr_t vmap, int *ierr)
+extern "C" void phist_map_delete(map_ptr_t vmap, int *iflag)
   {
-  *ierr=0;
-  PHIST_CAST_PTR_FROM_VOID(ghost_map_t,map,vmap,*ierr);
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(ghost_map_t,map,vmap,*iflag);
   // this is problematic because the object may be shared, so we don't delete
   // anything right now (it's just a tiny amount of data to leak for now)
   // delete map->ctx;
@@ -236,37 +236,37 @@ extern "C" void phist_map_delete(map_ptr_t vmap, int *ierr)
   }
   
 //!
-extern "C" void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* ierr)
+extern "C" void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* iflag)
   {
-  *ierr=0;
-  PHIST_CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*ierr);
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*iflag);
   *vcomm = (const_comm_ptr_t)(&map->ctx->mpicomm);
   }
 
 //!
-extern "C" void phist_map_get_local_length(const_map_ptr_t vmap, lidx_t* nloc, int* ierr)
+extern "C" void phist_map_get_local_length(const_map_ptr_t vmap, lidx_t* nloc, int* iflag)
   {
-  *ierr=0;
-  PHIST_CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*ierr);
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*iflag);
   int me;
   ghost_rank(&me,map->ctx->mpicomm);
   *nloc=map->ctx->lnrows[me];
   }
 
 //! returns the smallest global index in the map appearing on my partition.
-extern "C" void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* ierr)
+extern "C" void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* iflag)
   {
-  *ierr=0;
-  PHIST_CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*ierr);
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*iflag);
   int me;
   ghost_rank(&me,map->ctx->mpicomm);
   *ilower = map->ctx->lfRow[me];
   }
 //! returns the largest global index in the map appearing on my partition.
-extern "C" void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* ierr)
+extern "C" void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* iflag)
   {
-  *ierr=0;
-  PHIST_CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*ierr);
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*iflag);
   int me;
   ghost_rank(&me,map->ctx->mpicomm);
   *iupper = map->ctx->lfRow[me]+map->ctx->lnrows[me]-1;

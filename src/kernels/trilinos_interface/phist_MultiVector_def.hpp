@@ -71,7 +71,7 @@ class MultiVector< _ST_ >
 #endif
     if (ownMem_)
       {
-      PHIST_TCHK_IERR(SUBR(mvec_delete)(v_,&ierr_),ierr_);
+      PHIST_TCHK_IERR(SUBR(mvec_delete)(v_,&iflag_),iflag_);
       this->v_=NULL;
       }
     }
@@ -129,7 +129,7 @@ protected:
   static int countObjects;
   
   // internally used error flag
-  int ierr_;
+  int iflag_;
 
 #if 1
 //#if PHIST_OUTLEV>=PHIST_TRACE  

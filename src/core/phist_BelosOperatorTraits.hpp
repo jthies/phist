@@ -54,10 +54,10 @@ namespace Belos {
     {
     TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS,std::invalid_argument,
           "Belos::OperatorTraits<Scalar,MV,phist_op_t>:: Apply: only implemented for trans=NOTRANS up to now.");
-    int ierr;
+    int iflag;
     Scalar alpha = phist::ScalarTraits<Scalar>::one();
     Scalar beta = phist::ScalarTraits<Scalar>::zero();
-    Op.apply(alpha,Op.A,phist::ref2ptr(X), beta, phist::ref2ptr(Y),&ierr);
+    Op.apply(alpha,Op.A,phist::ref2ptr(X), beta, phist::ref2ptr(Y),&iflag);
     }
 
     static bool

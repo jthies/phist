@@ -3,5 +3,5 @@
 //! approximate Y=(A-sigma*I)\X. alpha and beta are
 //! not used, resp. must be alpha=1, beta=0. 
 void SUBR(op_wrap_solver)(TYPE(op_ptr) Ainv_op,TYPE(const_crsMat_ptr) A, 
-        _ST_ shift, linSolv_t method,int block_size, _MT_ tol,int maxIter,int* ierr);
+        _ST_ shift, linSolv_t method,int block_size, _MT_ tol,int maxIter,int* iflag);
 

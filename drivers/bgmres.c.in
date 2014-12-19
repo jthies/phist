@@ -19,7 +19,7 @@
 int main(int argc, char** argv)
   {
   int rank, num_proc;
-  int i, ierr;
+  int i, iflag;
   bool verbose;
 
   comm_ptr_t comm;
@@ -40,19 +40,19 @@ int main(int argc, char** argv)
   int max_iters,max_blocks,num_rhs;
   int variant=0; // only proper block GMRES accessible via this driver right now.
   
-  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
 
-  PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_comm_create(&comm,&iflag),iflag);
 
-  PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&ierr),ierr);
-  PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&iflag),iflag);
+  PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&iflag),iflag);
 
   verbose= (rank==0);
 
   if (argc<2)
     {
     if (verbose) fprintf(stdout,"Usage: ./Xbgmres <matrix> [<max iters> [<tol> [<num rhs> [<max blocks>]]]]\n");
-    SUBR(create_matrix)(NULL,NULL,"usage",&ierr);
+    SUBR(create_matrix)(NULL,NULL,"usage",&iflag);
     return 1;
     }
 
@@ -100,57 +100,57 @@ int main(int argc, char** argv)
     PHIST_OUT(0,"number of rhs: %d\n",num_rhs);
     }  
 
-  PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&iflag),iflag);
   
   /* we assume domain map = range map here, which is reasonable for something
      you want to put into a linear solver */
-  PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(A, &map,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(A, &map,&iflag),iflag);
 
   /* create vectors */
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&XEX,map,num_rhs,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,num_rhs,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&B,map,num_rhs,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&R,map,num_rhs,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&XEX,map,num_rhs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,num_rhs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&B,map,num_rhs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&R,map,num_rhs,&iflag),iflag);
   
   /* randomize the solution vector */
-  PHIST_ICHK_IERR(SUBR(mvec_put_value)(X,ZERO,&ierr),ierr);
-  //PHIST_ICHK_IERR(SUBR(mvec_random)(XEX,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_put_value)(XEX,ONE,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(X,ZERO,&iflag),iflag);
+  //PHIST_ICHK_IERR(SUBR(mvec_random)(XEX,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(XEX,ONE,&iflag),iflag);
   
   /* compute rhs B=A*XEX */
-  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(ONE,A,XEX,ZERO,B,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(ONE,A,XEX,ZERO,B,&iflag),iflag);
   
   /* create operator wrapper for computing Y=A*X using a CRS matrix */
   A_op = (op_ptr_t)malloc(sizeof(TYPE(op)));
-  PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(A_op,A,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(A_op,A,&iflag),iflag);
   
   num_iters=max_iters;
   
-  SUBR(belos)(A_op,X,B,tol,&num_iters,max_blocks,variant,NULL,&ierr);
+  SUBR(belos)(A_op,X,B,tol,&num_iters,max_blocks,variant,NULL,&iflag);
 
-  if (ierr!=0)
+  if (iflag!=0)
     {
-    if (verbose) fprintf(stdout,"code %d returned from Belos BlockGMRES\n",ierr);
-    if (ierr<0) return ierr;
+    if (verbose) fprintf(stdout,"code %d returned from Belos BlockGMRES\n",iflag);
+    if (iflag<0) return iflag;
     }
   
   PHIST_OUT(1,"number of iterations performed: %d\n",num_iters);
   
   /* compute residual norms */
-  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(ONE,A,X,ZERO,R,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,B,ONE,R,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(ONE,A,X,ZERO,R,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,B,ONE,R,&iflag),iflag);
   
   /* compute ||X - XEX||_2 */
   norm2=(MT*)malloc(num_rhs*sizeof(MT));
   rnorm2=(MT*)malloc(num_rhs*sizeof(MT));
   xnorm2=(MT*)malloc(num_rhs*sizeof(MT));
   bnorm2=(MT*)malloc(num_rhs*sizeof(MT));
-  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(ONE,XEX,-ONE,X,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(ONE,XEX,-ONE,X,&iflag),iflag);
 
-  PHIST_ICHK_IERR(SUBR(mvec_norm2)(R,rnorm2,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_norm2)(X,norm2,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_norm2)(XEX,xnorm2,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_norm2)(B,bnorm2,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(R,rnorm2,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(X,norm2,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(XEX,xnorm2,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(B,bnorm2,&iflag),iflag);
   
   if (verbose)
     {
@@ -174,12 +174,12 @@ int main(int argc, char** argv)
   free(xnorm2);
   free(bnorm2);
   
-  PHIST_ICHK_IERR(SUBR(crsMat_delete)(A,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_delete)(XEX,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_delete)(B,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_delete)(R,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(crsMat_delete)(A,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(XEX,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(B,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(R,&iflag),iflag);
   free(A_op);
-  PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
-  return ierr;
+  PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
+  return iflag;
   }

@@ -13,5 +13,5 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) Ainv_op,
                          int numBlocks,
                          bool symmetric,
                          TYPE(mvec_ptr) vX,         _ST_* eigs,
-                         int* ierr);
+                         int* iflag);
 

@@ -75,16 +75,16 @@ typedef TYPE(blockedGMRESstate) const * TYPE(const_blockedGMRESstate_ptr);
 //! passed to the previous reset() call.
 //!
 //! Individual status flags are contained within the structs,
-//! and a global error code is put into the last arg ierr, as usual.
+//! and a global error code is put into the last arg iflag, as usual.
 //!
 //! if system j has converged, S_array[j]->status will be set to 0 on output.
 //! Otherwise it will be set to 1 (not yet converged) or 2 (max iters exceeded),
 //! or a negative value if an error occurred related to this particular system.
-//! The global ierr flag will then be set to -1. (0 for "someone converged" and +1 for
+//! The global iflag flag will then be set to -1. (0 for "someone converged" and +1 for
 //! someone reached max iters")
 //! \warning you cannot mix together states from different calls to blockedGMRESstates_create!
 //!
-void SUBR( blockedGMRESstates_iterate ) (TYPE(const_op_ptr) Op, TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int* nIter, bool useIMGS, int* ierr);
+void SUBR( blockedGMRESstates_iterate ) (TYPE(const_op_ptr) Op, TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int* nIter, bool useIMGS, int* iflag);
 
 //!
 //! create an array of gmresState objects. The method's input parameters
@@ -95,14 +95,14 @@ void SUBR( blockedGMRESstates_iterate ) (TYPE(const_op_ptr) Op, TYPE(blockedGMRE
 //! The array of pointers must be allocated beforehand, but the individual structs 
 //! are allocated by this method.
 //!
-void SUBR( blockedGMRESstates_create ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys, const_map_ptr_t map, int maxBas, int* ierr);
+void SUBR( blockedGMRESstates_create ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys, const_map_ptr_t map, int maxBas, int* iflag);
 
 //!
 //! delete an set of gmresState objects. Only the individual structs are destroyed,
 //! The csller has to delete the array and nullify it.
 //! \warning you cannot delete individual states, but must pass the whole array created with blockedGMRESstates_create
 //!
-void SUBR( blockedGMRESstates_delete ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int* ierr);
+void SUBR( blockedGMRESstates_delete ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int* iflag);
 
 //!
 //! this function can be used to force a clean restart of the associated GMRES
@@ -114,7 +114,7 @@ void SUBR( blockedGMRESstates_delete ) (TYPE(blockedGMRESstate_ptr) S_array[], i
 //! rhs should be called for that gmresState, otherwise a messed up Krylov sequence will
 //! result and the convergence criterion will not be consistent.
 //!
-void SUBR( blockedGMRESstate_reset ) (TYPE(blockedGMRESstate_ptr) S, TYPE(const_mvec_ptr) b, TYPE(const_mvec_ptr) x0, int *ierr);
+void SUBR( blockedGMRESstate_reset ) (TYPE(blockedGMRESstate_ptr) S, TYPE(const_mvec_ptr) b, TYPE(const_mvec_ptr) x0, int *iflag);
 
 //!
 //! For each of the state objects i passed in, update the current approximation x(:,i) using 
@@ -123,7 +123,7 @@ void SUBR( blockedGMRESstate_reset ) (TYPE(blockedGMRESstate_ptr) S, TYPE(const_
 //! solution. The function is 'vectorized' in the same way as iterate, so an array of states 
 //! and multivector x can be passed in.
 //!
-void SUBR( blockedGMRESstates_updateSol ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, _MT_ *resNorm, bool scaleSolutionToOne, int* ierr);
+void SUBR( blockedGMRESstates_updateSol ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, _MT_ *resNorm, bool scaleSolutionToOne, int* iflag);
 
 //@}
 //@}

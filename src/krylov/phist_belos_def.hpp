@@ -12,11 +12,11 @@ extern "C" void SUBR(belos)(TYPE(const_op_ptr) Op,
         TYPE(const_mvec_ptr) vB, 
         _MT_ tol,int *num_iters, int max_blocks,
         int variant, int* nConv,
-        int* ierr)
+        int* iflag)
   {
 #ifndef PHIST_HAVE_BELOS
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr = -99;
+  *iflag = -99;
 #else
 #include "phist_std_typedefs.hpp"  
 #ifdef PHIST_KERNEL_LIB_GHOST
@@ -36,10 +36,10 @@ typedef phist::MultiVector< _ST_ > BelosMV;
 
   bool status=true;
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr=0;
+  *iflag=0;
   
   int numRhs=1;// get from input vectors
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vX,&numRhs,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vX,&numRhs,iflag),*iflag);
   
   Teuchos::RCP<BelosMV> X = PHIST_rcp((MV*)vX, false);
   Teuchos::RCP<const BelosMV> B = PHIST_rcp((const MV*)vB, false);
@@ -136,7 +136,7 @@ else if (variant==3)
 else
   {
   PHIST_OUT(PHIST_ERROR,"belos variant %d is not supported",variant);
-  *ierr=-99;
+  *iflag=-99;
   }
 
 #if PHIST_OUTLEV>PHIST_DEBUG
@@ -154,10 +154,10 @@ try {
     Belos::ReturnType result=belos->solve();
     *num_iters = belos->getNumIters();
     *out << "Belos returned '"<<Belos::convertReturnTypeToString(result)<<"'"<<std::endl;
-    if (result!=Belos::Converged) *ierr=1;
+    if (result!=Belos::Converged) *iflag=1;
   } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,status);
 
-  if (!status) *ierr=PHIST_CAUGHT_EXCEPTION; 
+  if (!status) *iflag=PHIST_CAUGHT_EXCEPTION; 
   return;
 #endif /* PHIST_HAVE_BELOS */
   }// end of belos

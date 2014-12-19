@@ -68,16 +68,16 @@ public:
 
 #ifdef PHIST_HAVE_TEUCHOS
   //! create a Teuchos' view of a local mvec/sdMat
-  static Teuchos::RCP<const Teuchos_sdMat_t> CreateTeuchosView(Teuchos::RCP<const sdMat_t> M, int* ierr)
+  static Teuchos::RCP<const Teuchos_sdMat_t> CreateTeuchosView(Teuchos::RCP<const sdMat_t> M, int* iflag)
     {
-    *ierr=0;
+    *iflag=0;
     lidx_t stride = M->traits.nrowspadded;
     lidx_t nrows = M->traits.nrows;
     lidx_t ncols = M->traits.ncols;
 
     if (M->traits.datatype != phist::ScalarTraits<ST>::ghost_dt)
       {
-      *ierr=-1;
+      *iflag=-1;
       return Teuchos::null;
       }
     
@@ -88,13 +88,13 @@ public:
     }
 
   //! create a non-const Teuchos' view of a local mvec/sdMat
-  static Teuchos::RCP<Teuchos_sdMat_t> CreateTeuchosViewNonConst(Teuchos::RCP<sdMat_t> M, int* ierr)
+  static Teuchos::RCP<Teuchos_sdMat_t> CreateTeuchosViewNonConst(Teuchos::RCP<sdMat_t> M, int* iflag)
     {
-    *ierr=0;
+    *iflag=0;
     
     if (M->traits.flags & GHOST_DENSEMAT_SCATTERED)
       {
-      *ierr=-1;
+      *iflag=-1;
       PHIST_OUT(PHIST_ERROR,"to create a Teuchos view we need constant stride in ghost_vec_t");
       return Teuchos::null;
       }
@@ -105,7 +105,7 @@ public:
     
     if (M->traits.datatype != phist::ScalarTraits<ST>::ghost_dt)
       {
-      *ierr=-2;
+      *iflag=-2;
       PHIST_OUT(PHIST_ERROR,"incorrect data type in ghost_vec_t");
       return Teuchos::null;
       }

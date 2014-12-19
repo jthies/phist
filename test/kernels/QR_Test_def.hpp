@@ -20,8 +20,8 @@ public:
     MTest::SetUp();
     if (typeImplemented_)
       {
-      SUBR(mvec_random)(vec1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_random)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       for (int j=0;j<nvec_;j++)
         {
         for (int i=0;i<stride_*nloc_;i+=stride_)
@@ -55,8 +55,8 @@ public:
     if (typeImplemented_)
       {
 //      PrintVector(*cout,"QR_Test V",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
-      SUBR(mvec_QR)(vec2_,mat1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_QR)(vec2_,mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       // doing a QR decomp must not relocate data:
       ASSERT_EQ(true,MTest::pointerUnchanged(mat1_,mat1_vp_,m_lda_));
       ASSERT_EQ(true,VTest::pointerUnchanged(vec2_,vec2_vp_,lda_));
@@ -65,8 +65,8 @@ public:
       ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
 
       // check Q*R=V
-      SUBR(mvec_times_sdMat)(-st::one(),vec2_,mat1_,st::one(),vec1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_times_sdMat)(-st::one(),vec2_,mat1_,st::one(),vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_NEAR(mt::one(), ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero(),vflag_),sqrt(mt::eps()));
       }
     }
@@ -81,13 +81,13 @@ public:
       {
       if (nvec_==1)
         {
-        SUBR(mvec_put_value)(vec1_,st::zero(),&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_put_value)(vec1_,st::zero(),&iflag_);
+        ASSERT_EQ(0,iflag_);
         }
       else
         {
-        SUBR(mvec_random)(vec1_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_random)(vec1_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         // set last two columns to same vector
         for (int i=0;i<stride_*nloc_;i+=stride_)
           {
@@ -98,20 +98,20 @@ public:
 #endif
           }
         }
-      SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 
-      SUBR(mvec_QR)(vec2_,mat1_,&ierr_);
+      SUBR(mvec_QR)(vec2_,mat1_,&iflag_);
       // check that the rank deficiency was detected
-      ASSERT_EQ(1, ierr_);
+      ASSERT_EQ(1, iflag_);
       // check that we anyway got something orthogonal back
       ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
       // the factor 2 in releps here is because otherwise fails the test by a fraction of releps
       ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.0*releps(vec1_));
 
       // check Q*R=V
-      SUBR(mvec_times_sdMat)(-st::one(),vec2_,mat1_,st::one(),vec1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_times_sdMat)(-st::one(),vec2_,mat1_,st::one(),vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_NEAR(mt::one(), ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero(),vflag_),sqrt(mt::eps()));
       }
 
@@ -125,24 +125,24 @@ public:
   {
     if (typeImplemented_)
     {
-      SUBR(mvec_put_value)(vec1_,st::one(),&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_put_value)(vec1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 
-      SUBR(mvec_QR)(vec2_,mat1_,&ierr_);
+      SUBR(mvec_QR)(vec2_,mat1_,&iflag_);
       // check that the rank deficiency was detected
-      ASSERT_EQ(std::max(nvec_-1,0), ierr_);
+      ASSERT_EQ(std::max(nvec_-1,0), iflag_);
       // check that we anyway got something orthogonal back
       ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
       ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
 #if PHIST_OUTLEV>=PHIST_DEBUG
       PHIST_DEB("R=\n");
-      SUBR(sdMat_print)(mat1_,&ierr_);
+      SUBR(sdMat_print)(mat1_,&iflag_);
 #endif
       // check Q*R=V
-      SUBR(mvec_times_sdMat)(-st::one(),vec2_,mat1_,st::one(),vec1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_times_sdMat)(-st::one(),vec2_,mat1_,st::one(),vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_NEAR(mt::one(), ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero(),vflag_),sqrt(mt::eps()));
     }
   }

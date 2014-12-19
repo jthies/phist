@@ -11,18 +11,18 @@
 //        *ncolors: will contain the number of colurs
 //        colors: dimension nrows, preallocated by user, contains 0-based color values.
 extern "C" void colpack_v1_0_8(int nrows, int64_t* row_ptr, int64_t* nonlocal_ptr, int* col_idx, 
-        int* ncolors, int* colors, int dist, int idx_base, int* ierr)
+        int* ncolors, int* colors, int dist, int idx_base, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr=0;
+  *iflag=0;
 #ifndef PHIST_HAVE_COLPACK
   PHIST_SOUT(PHIST_ERROR,"%s not implemented, ColPack not available.\n"
                          "(file %s, line %d)\n",
   __FUNCTION__,__FILE__,__LINE__);
-  *ierr=PHIST_NOT_IMPLEMENTED;
+  *iflag=PHIST_NOT_IMPLEMENTED;
   return;
 #else
-  *ierr=0;
+  *iflag=0;
 
   // ColPack uses a single long sequence of inherited classes, e.g.
   // GraphColoring 
@@ -72,12 +72,12 @@ extern "C" void colpack_v1_0_8(int nrows, int64_t* row_ptr, int64_t* nonlocal_pt
 
   if (dist==1)
   {
-    PHIST_CHK_IERR(*ierr=PHIST_NOT_IMPLEMENTED,*ierr);
+    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
   }
   if (dist==2)
   {
     // this function returns 1 on success
-    PHIST_CHK_IERR(*ierr=GC->DistanceTwoColoring()-1,*ierr);
+    PHIST_CHK_IERR(*iflag=GC->DistanceTwoColoring()-1,*iflag);
 #if PHIST_OUTLEV>=PHIST_VERBOSE
 int verbose=2;
 #else
@@ -85,21 +85,21 @@ int verbose=1;
 #endif
 #ifdef TESTING__disabled_because_of_issue_67
     PHIST_SOUT(PHIST_VERBOSE,"thoroughly test local dist-2 coloring\n");
-    PHIST_CHK_IERR(*ierr=GC->CheckDistanceTwoColoring(verbose),*ierr);
+    PHIST_CHK_IERR(*iflag=GC->CheckDistanceTwoColoring(verbose),*iflag);
 #else
     PHIST_SOUT(PHIST_VERBOSE,"quickly test local dist-2 coloring\n");
-    PHIST_CHK_IERR(*ierr=GC->CheckQuickDistanceTwoColoring(verbose),*ierr);
+    PHIST_CHK_IERR(*iflag=GC->CheckQuickDistanceTwoColoring(verbose),*iflag);
 #endif
   }
   else
   {
-    PHIST_CHK_IERR(*ierr=PHIST_INVALID_INPUT,*ierr);
+    PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
   }
 
   *ncolors = GC->GetVertexColorCount();
   std::vector<int>& colorVec=*(GC->GetVertexColorsPtr());
 
-  PHIST_CHK_IERR(*ierr=nrows-colorVec.size(),*ierr);
+  PHIST_CHK_IERR(*iflag=nrows-colorVec.size(),*iflag);
   
   for (int i=0;i<nrows;i++)
   {

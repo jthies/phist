@@ -36,10 +36,10 @@ void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *fCorrSo
         TYPE(const_crsMat_ptr) A, linSolv_t method,
         int blockSize, int numShifts,
         _MT_ shifts_r[], _MT_ shifts_i[],
-        int *ierr);
+        int *iflag);
 
 //! delete a feastCorrectionSolver object
-void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) fCorrSolver, int *ierr);
+void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) fCorrSolver, int *iflag);
 
 
 //! calculate approximate solutions to given set of FEAST correction equations
@@ -51,7 +51,7 @@ void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) fCorrSol
 //! tol             desired accuracy (gmres residual tolerance) of the individual systems
 //! maxIter         maximal number of iterations after which individial systems should be aborted
 //! sol             returns approximate solution vectors, sol[i] belongs to shift[i] and rhs
-//! ierr            a value > 0 indicates the number of systems that have not converged to the 
+//! iflag            a value > 0 indicates the number of systems that have not converged to the 
 //!                 desired tolerance
 //!
 //! rhs and sol_r/sol_i must have the same number of columns (vectors), but it does *not* 
@@ -61,4 +61,4 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) fCorrSolver
                                     const _MT_ tol, int maxIter,
                                     TYPE(mvec_ptr) sol_r[],
                                     TYPE(mvec_ptr) sol_i[],
-                                    int *ierr);
+                                    int *iflag);

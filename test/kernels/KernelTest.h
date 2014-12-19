@@ -41,7 +41,7 @@ public:
  bool haveS_, haveD_, haveC_, haveZ_;
  MPI_Comm mpi_comm_;
  unsigned int rseed_;//random number seed
- int ierr_, mpi_rank_, mpi_size_;
+ int iflag_, mpi_rank_, mpi_size_;
 
  //! these flags determine how to traverse arrays
  #ifdef PHIST_MVECS_ROW_MAJOR
@@ -68,26 +68,26 @@ public:
 	{
 #ifdef PHIST_HAVE_MPI	
 	mpi_comm_=MPI_COMM_WORLD;
-	phist_comm_create(&comm_,&ierr_);
-	ASSERT_EQ(0,ierr_);
-        ierr_=MPI_Comm_rank(mpi_comm_,&mpi_rank_);
-	ASSERT_EQ(0,ierr_);
-        ierr_=MPI_Comm_size(mpi_comm_,&mpi_size_);
-	ASSERT_EQ(0,ierr_);
+	phist_comm_create(&comm_,&iflag_);
+	ASSERT_EQ(0,iflag_);
+        iflag_=MPI_Comm_rank(mpi_comm_,&mpi_rank_);
+	ASSERT_EQ(0,iflag_);
+        iflag_=MPI_Comm_size(mpi_comm_,&mpi_size_);
+	ASSERT_EQ(0,iflag_);
 #else
         mpi_comm_=-1;
         mpi_rank_=0;
         mpi_size_=1;
 #endif
 #ifdef PHIST_HAVE_SP
-	phist_Stype_avail(&ierr_); haveS_=(ierr_==0);
-	phist_Ctype_avail(&ierr_); haveC_=(ierr_==0);
+	phist_Stype_avail(&iflag_); haveS_=(iflag_==0);
+	phist_Ctype_avail(&iflag_); haveC_=(iflag_==0);
 #else
         haveS_=false;
         haveC_=false;
 #endif
-	phist_Dtype_avail(&ierr_); haveD_=(ierr_==0);
-	phist_Ztype_avail(&ierr_); haveZ_=(ierr_==0);
+	phist_Dtype_avail(&iflag_); haveD_=(iflag_==0);
+	phist_Ztype_avail(&iflag_); haveZ_=(iflag_==0);
 #if 0	
 	rdbuf_bak = std::cout.rdbuf();
 	e_rdbuf_bak = std::cerr.rdbuf();
@@ -114,8 +114,8 @@ virtual void TearDown()
              // base classes of a derived class, so it is not clear when to
              // delete it without a smart pointer concept.
     {
-    phist_comm_delete(comm_,&ierr_);
-    ASSERT_EQ(0,ierr_);
+    phist_comm_delete(comm_,&iflag_);
+    ASSERT_EQ(0,iflag_);
     comm_=NULL;
     }
 #if 0
