@@ -45,7 +45,7 @@ void SUBR(sdMat_check_symmetrie)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
       for(int j = 0; j < n; j++)
         maxVal = std::max(maxVal, st::abs(tmp_raw[i*lda+j]));
   }
-  PHIST_SOUT(PHIST_VERBOSE, "Symmetrie deviation of projection %e\n", maxVal);
+  PHIST_SOUT(PHIST_VERBOSE, "Symmetry deviation of projection %e\n", maxVal);
 
   PHIST_CHK_IERR(SUBR(sdMat_delete)(id, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_delete)(tmp, iflag), *iflag);
@@ -109,6 +109,9 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   // this way we always have a fixed blockDim AND it should make the calculation
   // of the last eigenvalues more stable in some cases
   int nEig_ = nEig + blockDim - 1;
+  
+  // initialize residual norms to -1 to indicate that they haven't been computed
+  for (int i=0;i<nEig; i++) resNorm[i]=-mt::one();
 
   //------------------------------- check arguments --------------------------------
   if( blockDim < 1 )
