@@ -97,3 +97,36 @@ using namespace ::testing;
 #define CLASSNAME ZCrsMatTest_25_7
 #include "phist_gen_z.h"
 #include "CrsMatTest_def.hpp"
+
+//////////////////////////////////////////
+// symmetric matrix tests               //
+//////////////////////////////////////////
+
+#undef CLASSNAME
+#undef _N_
+#undef _NV_
+#define _N_ 163
+#define _NV_ 30
+
+#ifdef PHIST_HAVE_SP
+
+# define CLASSNAME SSymmMatTest_163_30
+# include "phist_gen_s.h"
+# include "SymmMatTest_def.hpp"
+# undef CLASSNAME
+
+# define CLASSNAME CSymmMatTest_163_30
+# include "phist_gen_c.h"
+# include "SymmMatTest_def.hpp"
+#undef CLASSNAME
+
+#endif
+
+# define CLASSNAME DSymmMatTest_163_30
+#include "phist_gen_d.h"
+#include "SymmMatTest_def.hpp"
+#undef CLASSNAME
+
+# define CLASSNAME ZSymmMatTest_163_30
+#include "phist_gen_z.h"
+#include "SymmMatTest_def.hpp"
