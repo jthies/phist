@@ -8,10 +8,10 @@
 namespace Belos {
 
 #ifdef PHIST_HAVE_SP
-int MultiVecTraits<float,::phist::MultiVector<float> >::ierr_;
-int MultiVecTraits<s_complex_t, ::phist::MultiVector<s_complex_t> >::ierr_;
+int MultiVecTraits<float,::phist::MultiVector<float> >::iflag_;
+int MultiVecTraits<s_complex_t, ::phist::MultiVector<s_complex_t> >::iflag_;
 #endif
-int MultiVecTraits<double, ::phist::MultiVector<double> >::ierr_;
-int MultiVecTraits<d_complex_t, ::phist::MultiVector<d_complex_t> >::ierr_;
+int MultiVecTraits<double, ::phist::MultiVector<double> >::iflag_;
+int MultiVecTraits<d_complex_t, ::phist::MultiVector<d_complex_t> >::iflag_;
 }
 #endif

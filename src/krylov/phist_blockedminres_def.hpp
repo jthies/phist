@@ -1,11 +1,11 @@
 #include "phist_blockedgmres_helper_def.hpp"
 
 // implementation of minres on several systems simultaneously
-void SUBR(blockedMINRESstates_iterate)(TYPE(const_op_ptr) Aop, TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, int* ierr)
+void SUBR(blockedMINRESstates_iterate)(TYPE(const_op_ptr) Aop, TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr = 0;
+  *iflag = 0;
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
   PHIST_SOUT(PHIST_DEBUG,"starting function iterate() with %d systems\n curDimVs: ",numSys);
@@ -28,21 +28,21 @@ void SUBR(blockedMINRESstates_iterate)(TYPE(const_op_ptr) Aop, TYPE(blockedGMRES
     minId = std::min(minId,S[i]->id);
 
 #ifdef PHIST_HAVE_BELOS
-  PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *iflag);
   Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
 #else
-  PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S[0]->Vbuff, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S[0]->Vbuff, *iflag);
 #endif
 
   // make sure all systems use the same mvecBuff
   for(int i = 0; i < numSys; i++)
   {
 #ifdef PHIST_HAVE_BELOS
-    PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *ierr);
-    PHIST_CHK_IERR(*ierr = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *ierr);
+    PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *iflag);
+    PHIST_CHK_IERR(*iflag = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *iflag);
 #else
-    PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuffPtr_i, S[i]->Vbuff, *ierr);
-    PHIST_CHK_IERR(*ierr = (mvecBuffPtr_i != mvecBuff) ? -1 : 0, *ierr);
+    PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuffPtr_i, S[i]->Vbuff, *iflag);
+    PHIST_CHK_IERR(*iflag = (mvecBuffPtr_i != mvecBuff) ? -1 : 0, *iflag);
 #endif
   }
 
@@ -63,10 +63,10 @@ void SUBR(blockedMINRESstates_iterate)(TYPE(const_op_ptr) Aop, TYPE(blockedGMRES
     // make sure all lastVind_ are the same
     int lastVind = S[0]->lastVind_;
     for(int i = 0; i < numSys; i++)
-      PHIST_CHK_IERR(*ierr = (S[i]->lastVind_ != lastVind) ? -1 : 0, *ierr);
+      PHIST_CHK_IERR(*iflag = (S[i]->lastVind_ != lastVind) ? -1 : 0, *iflag);
 
     // x0 / last element of krylov subspace
-    PHIST_CHK_IERR(SUBR( mvec_view_block )( mvecBuff->at(lastVind), &work_x, minId, maxId, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR( mvec_view_block )( mvecBuff->at(lastVind), &work_x, minId, maxId, iflag), *iflag);
 
 #ifdef TESTING
 // print a visualization of the current state
@@ -166,11 +166,11 @@ PHIST_SOUT(PHIST_INFO,"\n");
   {
     //    % get new vector for y
     int nextIndex;
-    PHIST_CHK_IERR( mvecBuff->getNextUnused(nextIndex,ierr), *ierr);
-    PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(nextIndex), &work_y, minId, maxId, ierr), *ierr);
+    PHIST_CHK_IERR( mvecBuff->getNextUnused(nextIndex,iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(nextIndex), &work_y, minId, maxId, iflag), *iflag);
 
     //    % apply the operator of the matrix A
-    PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_x, st::zero(), work_y, ierr), *ierr);
+    PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_x, st::zero(), work_y, iflag), *iflag);
 
 
     //    % initialize MINRES for (re-)started systems
@@ -180,8 +180,8 @@ PHIST_SOUT(PHIST_INFO,"\n");
       if( j == 0 )
       {
         // (re-)start: r_0 = b - A*x_0
-        PHIST_CHK_IERR( SUBR(mvec_view_block) (work_y, &Vj, S[i]->id-minId, S[i]->id-minId, ierr), *ierr);
-        PHIST_CHK_IERR( SUBR(mvec_add_mvec) (st::one(), S[i]->b_, -st::one(), Vj, ierr), *ierr);
+        PHIST_CHK_IERR( SUBR(mvec_view_block) (work_y, &Vj, S[i]->id-minId, S[i]->id-minId, iflag), *iflag);
+        PHIST_CHK_IERR( SUBR(mvec_add_mvec) (st::one(), S[i]->b_, -st::one(), Vj, iflag), *iflag);
       }
     }
     // increment ref counters in mvecBuff and set lastVind_
@@ -198,7 +198,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
     for(int i = 0; i < numSys; i++)
     {
-      PHIST_CHK_IERR(SUBR(sdMat_from_device)(S[i]->H_,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_from_device)(S[i]->H_,iflag),*iflag);
     }
 
     //    % lanczos update
@@ -210,7 +210,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       // alpha = work_x' * work_y
       if( sharedCurDimV > 0 )
       {
-        PHIST_CHK_IERR( SUBR(mvec_dot_mvec) (work_x, work_y, alpha, ierr), *ierr);
+        PHIST_CHK_IERR( SUBR(mvec_dot_mvec) (work_x, work_y, alpha, iflag), *iflag);
       }
       for(int i = 0; i < numSys; i++)
       {
@@ -232,17 +232,17 @@ PHIST_SOUT(PHIST_INFO,"\n");
       // lanczos: work_y = work_y - beta*v_(k-1) - alpha*work_x
       if(sharedCurDimV > 0)
       {
-        PHIST_CHK_IERR( SUBR(mvec_vadd_mvec) (alpha,    work_x, st::one(), work_y, ierr), *ierr);
+        PHIST_CHK_IERR( SUBR(mvec_vadd_mvec) (alpha,    work_x, st::one(), work_y, iflag), *iflag);
       }
       if( sharedCurDimV > 1)
       {
         int prevVind = mvecBuff->prevIndex(S[0]->lastVind_,2);
-        PHIST_CHK_IERR( SUBR(mvec_view_block) (mvecBuff->at(prevVind), &Vk, minId, maxId, ierr), *ierr);
-        PHIST_CHK_IERR( SUBR(mvec_vadd_mvec) (prevBeta, Vk,     st::one(), work_y, ierr), *ierr);
+        PHIST_CHK_IERR( SUBR(mvec_view_block) (mvecBuff->at(prevVind), &Vk, minId, maxId, iflag), *iflag);
+        PHIST_CHK_IERR( SUBR(mvec_vadd_mvec) (prevBeta, Vk,     st::one(), work_y, iflag), *iflag);
       }
 
       // calculate new beta
-      PHIST_CHK_IERR( SUBR(mvec_norm2) (work_y, &beta[0], ierr), *ierr);
+      PHIST_CHK_IERR( SUBR(mvec_norm2) (work_y, &beta[0], iflag), *iflag);
       for(int i = 0; i < numSys; i++)
       {
         S[i]->prevBeta_ = beta[S[i]->id-minId];
@@ -252,7 +252,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
           // store in H
           ST *Hj=NULL;
           lidx_t ldH;
-          PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr);
+          PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag);
           Hj += (S[i]->curDimV_-1)*ldH;
           Hj[j] = -alpha[S[i]->id-minId];
 
@@ -279,7 +279,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
           // raw view of H
           ST *Hj=NULL;
           lidx_t ldH; 
-          PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
+          PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
           Hj += (S[i]->curDimV_-1)*ldH;
           Hj[j+1] = beta[S[i]->id-minId];
         }
@@ -287,7 +287,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       _ST_ scale[maxId+1-minId];
       for(int i = 0; i < maxId+1-minId; i++)
         scale[i] = st::one() / beta[i];
-      PHIST_CHK_IERR(SUBR(mvec_vscale)(work_y, scale, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR(mvec_vscale)(work_y, scale, iflag), *iflag);
     }
     maxCurDimV++;
     sharedCurDimV++;
@@ -305,9 +305,9 @@ PHIST_SOUT(PHIST_INFO,"\n");
       {
         int Vjind = mvecBuff->prevIndex(nextIndex,j);
         int Vkind = mvecBuff->prevIndex(nextIndex,k);
-        PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vjind), &Vj, S[i]->id, S[i]->id, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vkind), &Vk, S[i]->id, S[i]->id, ierr), *ierr);
-        PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(Vj,Vk,&orth[j][k],ierr), *ierr);
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vjind), &Vj, S[i]->id, S[i]->id, iflag), *iflag);
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vkind), &Vk, S[i]->id, S[i]->id, iflag), *iflag);
+        PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(Vj,Vk,&orth[j][k],iflag), *iflag);
         if( j == k )
           maxOrthErr = std::max(maxOrthErr, st::abs(orth[j][k]-st::one()));
         else
@@ -329,30 +329,30 @@ PHIST_SOUT(PHIST_INFO,"\n");
 {
   TYPE(mvec_ptr) tmpVec = NULL, tmpVec_ = NULL;
   const_map_ptr_t map;
-  PHIST_CHK_IERR(SUBR(mvec_get_map)(work_y, &map, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_create)(&tmpVec_, map, maxId+1, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, minId, maxId, ierr), *ierr);
-  PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_x, st::zero(), tmpVec, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_get_map)(work_y, &map, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&tmpVec_, map, maxId+1, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, minId, maxId, iflag), *iflag);
+  PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_x, st::zero(), tmpVec, iflag), *iflag);
   for(int i = 0; i < numSys; i++)
   {
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, S[i]->id, S[i]->id, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, S[i]->id, S[i]->id, iflag), *iflag);
     ST *Hj=NULL;
     lidx_t ldH; 
-    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
     Hj += (S[i]->curDimV_-1)*ldH;
     PHIST_SOUT(PHIST_INFO,"accuracy of last column of H of system %d:\n", i);
     for(int j = 0; j < S[i]->curDimV_; j++)
     {
       int Vjind = mvecBuff->prevIndex(nextIndex,S[i]->curDimV_-j);
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vjind), &Vj, S[i]->id, S[i]->id, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vjind), &Vj, S[i]->id, S[i]->id, iflag), *iflag);
       _ST_ Hnj;
-      PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(Vj, tmpVec, &Hnj, ierr), *ierr);
+      PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(Vj, tmpVec, &Hnj, iflag), *iflag);
       PHIST_SOUT(PHIST_INFO,"\t%8.4e", st::abs(Hj[j]-Hnj));
     }
     PHIST_SOUT(PHIST_INFO,"\n");
   }
-  PHIST_CHK_IERR(SUBR(mvec_delete)(tmpVec, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(tmpVec_, ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(tmpVec, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(tmpVec_, iflag), *iflag);
 }
 #endif
 
@@ -366,7 +366,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       // raw view of H
       ST *Hj=NULL;
       lidx_t ldH; 
-      PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,ierr),*ierr); 
+      PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
       Hj += (j-1)*ldH;
       // apply previous Gives rotations to column j
       _ST_ tmp;
@@ -400,8 +400,8 @@ PHIST_SOUT(PHIST_INFO,"\n");
   _ST_ r_ = st::conj(S[i]->cs_[j-1])*Hj[j-1] + st::conj(S[i]->sn_[j-1])*Hj[j];
   _ST_ zero_ = -S[i]->sn_[j-1]*Hj[j-1] + S[i]->cs_[j-1]*Hj[j];
   PHIST_OUT(PHIST_VERBOSE,"(r, 0) = (%8.4e + i%8.4e, %8.4e+i%8.4e)\n", st::real(r_), st::imag(r_), st::real(zero_), st::imag(zero_));
-  PHIST_CHK_IERR(*ierr = (st::abs(r_-tmp) < 1.e-5) ? 0 : -1, *ierr);
-  PHIST_CHK_IERR(*ierr = (st::abs(zero_) < 1.e-5) ? 0 : -1, *ierr);
+  PHIST_CHK_IERR(*iflag = (st::abs(r_-tmp) < 1.e-5) ? 0 : -1, *iflag);
+  PHIST_CHK_IERR(*iflag = (st::abs(zero_) < 1.e-5) ? 0 : -1, *iflag);
 }
 #endif
       // eliminate Hj[j]
@@ -419,7 +419,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
     for(int i = 0; i < numSys; i++)
     {
-      PHIST_CHK_IERR(SUBR(sdMat_to_device)(S[i]->H_,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_to_device)(S[i]->H_,iflag),*iflag);
     }
 
     //    % check convergence, update subspace dimension etc
@@ -466,15 +466,15 @@ PHIST_SOUT(PHIST_INFO,"\n");
   PHIST_SOUT(PHIST_VERBOSE,"-----------------------\n");
 
   // delete views
-  PHIST_CHK_IERR(SUBR(mvec_delete)(work_x, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(work_y, ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(Vj,     ierr), *ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(Vk,     ierr), *ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(work_x, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(work_y, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Vj,     iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Vk,     iflag), *iflag);
 
   if (anyConverged > 0)
-    *ierr=0;
+    *iflag=0;
       
   if (anyFailed > 0)
-    *ierr=1;
+    *iflag=1;
 }
 

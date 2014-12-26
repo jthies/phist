@@ -39,7 +39,7 @@ ANDERSON=2
 // later use in FEAST.                                  
 int main(int argc, char** argv)
   {
-     int ierr;
+     int iflag;
      if ( argc < 2 )
      {
        PHIST_SOUT(PHIST_ERROR,"Usage: carp_cg    <problem> <shiftFile> <num vecs>\n"
@@ -49,7 +49,7 @@ int main(int argc, char** argv)
                                  "                      If omitted, no shift is used.\n"
                                  "         etc. all other args get default values if omitted\n");
        // print usage message for creating/reading a matrix
-       SUBR(create_matrix)(NULL, NULL, "usage",&ierr);
+       SUBR(create_matrix)(NULL, NULL, "usage",&iflag);
        exit(1);
      }
 
@@ -69,12 +69,12 @@ int main(int argc, char** argv)
   MT tol;
   MT *sigma_r, *sigma_i;
   
-  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
 
-  PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_comm_create(&comm,&iflag),iflag);
 
-  PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&ierr),ierr);
-  PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&iflag),iflag);
+  PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&iflag),iflag);
 
   //int verbose= (rank==0);
   int iarg=1;
@@ -185,30 +185,30 @@ int main(int argc, char** argv)
   }
   
   // setup matrix
-  TYPE(crsMat_ptr) mat = NULL;
+  TYPE(sparseMat_ptr) mat = NULL;
   
   // this is in the tools/driver_utils.h header, a useful tool for
   // generating our favorite test matrices or reading them from a file:
-  PHIST_ICHK_IERR(SUBR(create_matrix)(&mat,comm,problem,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(create_matrix)(&mat,comm,problem,&iflag),iflag);
   
-  PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(mat, &map,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(mat, &map,&iflag),iflag);
 
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&B,map,nrhs,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&B,map,nrhs,&iflag),iflag);
   
   // vectors to hold exact solution for system 0
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&X_r_ex0,map,nrhs,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&X_i_ex0,map,nrhs,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&X_r_ex0,map,nrhs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&X_i_ex0,map,nrhs,&iflag),iflag);
   
   X_r = (TYPE(mvec_ptr)*)malloc(nshifts*sizeof(TYPE(mvec_ptr)));
   X_i = (TYPE(mvec_ptr)*)malloc(nshifts*sizeof(TYPE(mvec_ptr)));
   
   for (int i=0;i<nshifts;i++)
   {
-    PHIST_ICHK_IERR(SUBR(mvec_create)(&X_r[i],map,nrhs,&ierr),ierr);
-    PHIST_ICHK_IERR(SUBR(mvec_create)(&X_i[i],map,nrhs,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_create)(&X_r[i],map,nrhs,&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(mvec_create)(&X_i[i],map,nrhs,&iflag),iflag);
     // start with zero vector to make runs reproducible
-    PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_r[i],ZERO,&ierr),ierr);
-    PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_i[i],ZERO,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_r[i],ZERO,&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_i[i],ZERO,&iflag),iflag);
   }
 
 /////////////////////////////////////////////////////////////
@@ -217,12 +217,12 @@ int main(int argc, char** argv)
 
 if (num_complex==0)
 {
-  PHIST_ICHK_IERR(SUBR(mvec_random)(X_r_ex0,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_i_ex0,ZERO,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_random)(X_r_ex0,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_i_ex0,ZERO,&iflag),iflag);
     
   // compute rhs B to match this exact solution for sigma[0]:
-  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_r[0],X_r_ex0,0.0,B,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(-1.0,mat,X_r_ex0,1.0,B,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_r[0],X_r_ex0,0.0,B,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(-1.0,mat,X_r_ex0,1.0,B,&iflag),iflag);
 }
 else
 {
@@ -238,34 +238,34 @@ else
 // We first construct an exact solution for system 0:
 // X_i_ex0 random, X_r_ex0 to satisfy the second block row,
 // B from first row given X_r_ex0 and X_i_ex0.
-  PHIST_ICHK_IERR(SUBR(mvec_random)(X_i_ex0,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_random)(X_i_ex0,&iflag),iflag);
   
   // x_r = 1/sig_i(A-sig_r I)x_i
-  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_r[0]/sigma_i[0],X_i_ex0,0.0,X_r_ex0,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_r[0]/sigma_i[0],X_i_ex0,0.0,X_r_ex0,&iflag),iflag);
   if (sigma_i[0]!=(MT)0.0)
   {
-    PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(1.0/sigma_i[0],mat,X_i_ex0,1.0,X_r_ex0,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(1.0/sigma_i[0],mat,X_i_ex0,1.0,X_r_ex0,&iflag),iflag);
   }
   else
   {
     TYPE(mvec_ptr) tmp = X_i_ex0;
     X_i_ex0=X_r_ex0;
     X_r_ex0=tmp;
-    PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_i_ex0,0.0,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_i_ex0,0.0,&iflag),iflag);
   }
   
   // compute rhs B to match this exact solution for sigma[0]:
-  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_r[0],X_r_ex0,0.0,B,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(-1.0,mat,X_r_ex0,1.0,B,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_i[0],X_i_ex0,1.0,B,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_r[0],X_r_ex0,0.0,B,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(-1.0,mat,X_r_ex0,1.0,B,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_i[0],X_i_ex0,1.0,B,&iflag),iflag);
 
 }
 /*
 TYPE(sdMat_ptr) Rtmp=NULL;
-PHIST_ICHK_IERR(SUBR(sdMat_create)(&Rtmp,nrhs,nrhs,NULL,&ierr),ierr);
-PHIST_ICHK_IERR(SUBR(mvec_random)(B,&ierr),ierr);
-PHIST_ICHK_IERR(SUBR(mvec_QR)(B,Rtmp,&ierr),ierr);
-PHIST_ICHK_IERR(SUBR(sdMat_delete)(Rtmp,&ierr),ierr);
+PHIST_ICHK_IERR(SUBR(sdMat_create)(&Rtmp,nrhs,nrhs,NULL,&iflag),iflag);
+PHIST_ICHK_IERR(SUBR(mvec_random)(B,&iflag),iflag);
+PHIST_ICHK_IERR(SUBR(mvec_QR)(B,Rtmp,&iflag),iflag);
+PHIST_ICHK_IERR(SUBR(sdMat_delete)(Rtmp,&iflag),iflag);
 */
 
 ///////////////////////////////////////////////////////////////////
@@ -273,22 +273,22 @@ PHIST_ICHK_IERR(SUBR(sdMat_delete)(Rtmp,&ierr),ierr);
 ///////////////////////////////////////////////////////////////////
   TYPE(feastCorrectionSolver_ptr) fCorrSolver;
   PHIST_ICHK_IERR(SUBR(feastCorrectionSolver_create)
-        (&fCorrSolver, mat, CARP_CG, blockSize, nshifts,sigma_r, sigma_i, &ierr),ierr);
+        (&fCorrSolver, mat, CARP_CG, blockSize, nshifts,sigma_r, sigma_i, &iflag),iflag);
 
   int numBlocks=nrhs/blockSize;
 
   PHIST_ICHK_IERR(SUBR(feastCorrectionSolver_run)
-        (fCorrSolver, B, tol, maxIter,X_r, X_i, &ierr),ierr);
+        (fCorrSolver, B, tol, maxIter,X_r, X_i, &iflag),iflag);
 
 ///////////////////////////////////////////////////////////////////
 // compute residuals and error                                   //
 ///////////////////////////////////////////////////////////////////
 
-PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,X_r[0],ONE,X_r_ex0,&ierr),ierr);
-PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,X_i[0],ONE,X_i_ex0,&ierr),ierr);
+PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,X_r[0],ONE,X_r_ex0,&iflag),iflag);
+PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,X_i[0],ONE,X_i_ex0,&iflag),iflag);
 double nrm_err0_1[nrhs], nrm_err0_2[nrhs];
-PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(X_i_ex0,X_i_ex0,nrm_err0_1,&ierr),ierr);
-PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(X_r_ex0,X_r_ex0,nrm_err0_2,&ierr),ierr);
+PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(X_i_ex0,X_i_ex0,nrm_err0_1,&iflag),iflag);
+PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(X_r_ex0,X_r_ex0,nrm_err0_2,&iflag),iflag);
 
 PHIST_SOUT(PHIST_VERBOSE,"for first shift, first rhs:\n");
 PHIST_SOUT(PHIST_VERBOSE,"err in re(x): %e\n",SQRT(nrm_err0_2[0]));
@@ -298,20 +298,20 @@ PHIST_SOUT(PHIST_VERBOSE,"       im(x): %e\n",SQRT(nrm_err0_1[0]));
 // clean up afterwards                                           //
 ///////////////////////////////////////////////////////////////////
 
-  PHIST_ICHK_IERR(SUBR(feastCorrectionSolver_delete)(fCorrSolver,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(feastCorrectionSolver_delete)(fCorrSolver,&iflag),iflag);
 
   free(sigma_r);
   free(sigma_i);
 
-  PHIST_ICHK_IERR(SUBR(crsMat_delete)(mat,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_delete)(B,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_delete)(X_r_ex0,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_delete)(X_i_ex0,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sparseMat_delete)(mat,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(B,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(X_r_ex0,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(X_i_ex0,&iflag),iflag);
   for (int i=0;i<nshifts;i++)
   {
-    PHIST_ICHK_IERR(SUBR(mvec_delete)(X_r[i],&ierr),ierr);
-    PHIST_ICHK_IERR(SUBR(mvec_delete)(X_i[i],&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_delete)(X_r[i],&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(mvec_delete)(X_i[i],&iflag),iflag);
   }
-  PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
-  return ierr;
+  PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
+  return iflag;
   }

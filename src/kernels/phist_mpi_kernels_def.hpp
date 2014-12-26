@@ -2,45 +2,45 @@
 
 // implemnts Isend (flag=0) and Irecv (flag=1)
 void SUBR(mvec_transfer)(TYPE(const_mvec_ptr) V, int dest, int tag, 
-        MPI_Comm comm, MPI_Request* req, int flag, int* ierr);
+        MPI_Comm comm, MPI_Request* req, int flag, int* iflag);
 
 extern "C" void SUBR(mvec_Isend)(TYPE(const_mvec_ptr) V, int dest, int tag, 
-        MPI_Comm comm, MPI_Request* req, int* ierr)
+        MPI_Comm comm, MPI_Request* req, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   PHIST_OUT(PHIST_DEBUG,"do Isend\n");
-  PHIST_CHK_IERR(SUBR(mvec_transfer)(V,dest,tag,comm,req,0,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_transfer)(V,dest,tag,comm,req,0,iflag),*iflag);
 }
 
 extern "C" void SUBR(mvec_Irecv)(TYPE(const_mvec_ptr) V, int dest, int tag, 
-        MPI_Comm comm, MPI_Request* req, int* ierr)
+        MPI_Comm comm, MPI_Request* req, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   PHIST_OUT(PHIST_DEBUG,"do Irecv\n");
-  PHIST_CHK_IERR(SUBR(mvec_transfer)(V,dest,tag,comm,req,1,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_transfer)(V,dest,tag,comm,req,1,iflag),*iflag);
 }
 
 
 void SUBR(mvec_transfer)(TYPE(const_mvec_ptr) V, int dest, int tag, 
-        MPI_Comm comm, MPI_Request* req, int flag,int* ierr)
+        MPI_Comm comm, MPI_Request* req, int flag,int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr=0;
+  *iflag=0;
   ST* val;
   lidx_t lda, nloc;
   int nvec;
 
-  PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&nloc,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&nloc,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,iflag),*iflag);
 
-  PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&val,&lda,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&val,&lda,iflag),*iflag);
   int imax=std::numeric_limits<int>::max();
 
 #if 1
   if (nloc*nvec>imax)
   {
-    *ierr=PHIST_INTEGER_OVERFLOW;
+    *iflag=PHIST_INTEGER_OVERFLOW;
     return;
   }
 #ifdef PHIST_MVECS_ROW_MAJOR
@@ -52,7 +52,7 @@ void SUBR(mvec_transfer)(TYPE(const_mvec_ptr) V, int dest, int tag,
     PHIST_OUT(PHIST_ERROR,"general case not implemented, need lda (%d)=nloc (%d) right now\n"
                           "(file %s, line %d)\n",(int)lda,(int)nloc,__FILE__,__LINE__);
 #endif
-    *ierr=PHIST_INVALID_INPUT;
+    *iflag=PHIST_INVALID_INPUT;
     return;
   }
   int num_send=(int)(nloc*nvec);
@@ -76,7 +76,7 @@ void SUBR(mvec_transfer)(TYPE(const_mvec_ptr) V, int dest, int tag,
 
   if (lda>imax || nloc>imax)
   {
-    *ierr=PHIST_INTEGER_OVERFLOW;
+    *iflag=PHIST_INTEGER_OVERFLOW;
     return;
   }
   mpi_stride=(int)lda;

@@ -16,12 +16,12 @@ virtual void SetUp()
 {
   KernelTest::SetUp();
   map_ptr_t map;
-  phist_map_create(&map,comm_,nglob_,&ierr_);
-  ASSERT_EQ(0,ierr_);
+  phist_map_create(&map,comm_,nglob_,&iflag_);
+  ASSERT_EQ(0,iflag_);
   map_ = map;
   deleteMap_ = true;
-  phist_map_get_local_length(map_,&nloc_,&ierr_);
-  ASSERT_EQ(0,ierr_);
+  phist_map_get_local_length(map_,&nloc_,&iflag_);
+  ASSERT_EQ(0,iflag_);
 }
 
 /** clean up the global test environment */
@@ -29,24 +29,24 @@ virtual void TearDown()
 {
   if( deleteMap_ )
   {
-    phist_map_delete((map_ptr_t)map_,&ierr_);
-    ASSERT_EQ(0,ierr_);
+    phist_map_delete((map_ptr_t)map_,&iflag_);
+    ASSERT_EQ(0,iflag_);
   }
   KernelTest::TearDown();
 }
 
-/** replace the map, e.g. when we need to use the map of a crsMat */
+/** replace the map, e.g. when we need to use the map of a sparseMat */
 virtual void replaceMap(const_map_ptr_t map)
 {
   if( deleteMap_ )
   {
-    phist_map_delete((map_ptr_t)map_,&ierr_);
-    ASSERT_EQ(0,ierr_);
+    phist_map_delete((map_ptr_t)map_,&iflag_);
+    ASSERT_EQ(0,iflag_);
     deleteMap_ = false;
   }
   map_ = map;
-  phist_map_get_local_length(map_,&nloc_,&ierr_);
-  ASSERT_EQ(0,ierr_);
+  phist_map_get_local_length(map_,&nloc_,&iflag_);
+  ASSERT_EQ(0,iflag_);
 
 }
 

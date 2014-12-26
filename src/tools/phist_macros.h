@@ -121,7 +121,7 @@ std::cout,true,true,false, Teuchos::Union,"",true);
 #define PHIST_TIMEMONITOR_PERLINE_MACRO
 #endif
 
-//! checks an ierr flag passed to a void function for non-zero value, assigns it to FLAG,
+//! checks an iflag flag passed to a void function for non-zero value, assigns it to FLAG,
 //! prints an error message and returns if non-zero (to be used in void functions)
 #ifdef __cplusplus
 #define PHIST_CHK_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
@@ -153,7 +153,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 (FLAG),(phist_ghost_error2str(gerr)),(#func),(__FILE__),(__LINE__)); return;}\
 }
 #endif
-//! checks an ierr flag passed to a void function for negative value, assigns it to FLAG,
+//! checks an iflag flag passed to a void function for negative value, assigns it to FLAG,
 //! prints an error message and returns if non-zero (to be used in void functions)
 #ifndef PHIST_CHK_NEG_IERR
 #ifdef __cplusplus
@@ -178,14 +178,14 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #endif
 
 
-//! like PHIST_CHK_IERR, but returns ierr (to be used in int functions returning an error code)
+//! like PHIST_CHK_IERR, but returns iflag (to be used in int functions returning an error code)
 #define PHIST_ICHK_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
 {func; if (FLAG!=PHIST_SUCCESS) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return FLAG;}}}
 
 #ifdef __cplusplus
-//! like PHIST_CHK_IERR, but throw an exception on non-zero ierr
+//! like PHIST_CHK_IERR, but throw an exception on non-zero iflag
 #define PHIST_TCHK_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
 {func; if (FLAG!=PHIST_SUCCESS) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
@@ -207,14 +207,14 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 # endif
 # ifdef PHIST_KERNEL_LIB_GHOST
 #   include "ghost/task.h"
-#   define PHIST_GHOST_CHK_IN_TASK(s, ierr) { \
+#   define PHIST_GHOST_CHK_IN_TASK(s, iflag) { \
       ghost_task_t *curtask = NULL; \
-      PHIST_CHK_GERR(ghost_task_cur(&curtask), ierr); \
+      PHIST_CHK_GERR(ghost_task_cur(&curtask), iflag); \
       if( curtask == NULL ) { \
         PHIST_SOUT(PHIST_DEBUG, "Called %s outside a ghost task!\n", s); }\
       }
 # else
-#   define PHIST_GHOST_CHK_IN_TASK(s, ierr)
+#   define PHIST_GHOST_CHK_IN_TASK(s, iflag)
 #endif
 # include "phist_fcntrace.hpp"
 # if (PHIST_OUTLEV>=PHIST_TRACE) || defined(LIKWID_PERFMON)

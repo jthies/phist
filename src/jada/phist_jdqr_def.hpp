@@ -29,12 +29,12 @@
 //! a evals[i] +/- evals[i+1]*I forms a complex conjugate pair,
 //! and the corresponding eigenvectors are X(:,i)+/-X(:,i+1)*I.
 //! In the complex case is_cmplx is not referenced.
-//! ierr: return code of the solver (0 on success, negative on error, positive on warning)
+//! iflag: return code of the solver (0 on success, negative on error, positive on warning)
 //!
 void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
         TYPE(mvec_ptr) X, _ST_* evals, _MT_* resid, int* is_cmplx,
         phist_jadaOpts_t opts, int* num_eigs, int* num_iters,
-        int* ierr)
+        int* iflag)
   {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
@@ -114,7 +114,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   *num_eigs=0;
   nrm[0]=1.0e20;// some random large value 
   const_comm_ptr_t comm;
-  PHIST_CHK_IERR(phist_map_get_comm(A_op->range_map,&comm,ierr),*ierr);
+  PHIST_CHK_IERR(phist_map_get_comm(A_op->range_map,&comm,iflag),*iflag);
 
 #ifdef IS_COMPLEX
   const int nv_max=1;
@@ -130,48 +130,48 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
   // we need maxBas vectors to store the maximum size JaDa basis, but we add some temporary
   // storage so that we can store [V,Q], where Q contains the already converged eigenspace.
-  PHIST_CHK_IERR(SUBR(mvec_create)(&V,A_op->domain_map,maxVecs+numEigs,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_create)(&AV,A_op->domain_map,maxVecs,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_create)(&Vtmp,A_op->domain_map,maxVecs,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&V,A_op->domain_map,maxVecs+numEigs,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&AV,A_op->domain_map,maxVecs,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&Vtmp,A_op->domain_map,maxVecs,iflag),*iflag);
 
-  PHIST_CHK_IERR(SUBR(mvec_create)(&u,A_op->domain_map,nv_max,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_create)(&Au,A_op->domain_map,nv_max,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_create)(&r,A_op->domain_map,nv_max,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_create)(&rtil,A_op->domain_map,nv_max,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_create)(&t,A_op->domain_map,nv_max,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&u,A_op->domain_map,nv_max,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&Au,A_op->domain_map,nv_max,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&r,A_op->domain_map,nv_max,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&rtil,A_op->domain_map,nv_max,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&t,A_op->domain_map,nv_max,iflag),*iflag);
   
 #ifndef IS_COMPLEX
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(u,&u_r,0,0,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(Au,&Au_r,0,0,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(r,&r_r,0,0,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(rtil,&rtil_r,0,0,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(t,&t_r,0,0,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_view_block)(u,&u_r,0,0,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_view_block)(Au,&Au_r,0,0,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_view_block)(r,&r_r,0,0,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_view_block)(rtil,&rtil_r,0,0,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_view_block)(t,&t_r,0,0,iflag),*iflag);
 #endif
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&M,maxVecs,maxVecs,comm,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&M,maxVecs,maxVecs,comm,iflag),*iflag);
   // these two are made bigger because they are used as temporary storage when 
   // orthogonalizing against [V Q], which is of dimension up to n x (maxBas+numEigs)
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&S,maxVecs+numEigs,maxVecs+numEigs,comm,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&T,maxVecs+numEigs,maxVecs+numEigs,comm,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&R,numEigs,numEigs,comm,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,st::zero(),ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&S,maxVecs+numEigs,maxVecs+numEigs,comm,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&T,maxVecs+numEigs,maxVecs+numEigs,comm,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&R,numEigs,numEigs,comm,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,st::zero(),iflag),*iflag);
 
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&atil,maxVecs,nv_max,comm,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&atil,maxVecs,nv_max,comm,iflag),*iflag);
 
   // pointer to the data in M, S and T
-  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(M,&M_raw, &ldM,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S,&S_raw, &ldS,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(T,&T_raw, &ldT,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(M,&M_raw, &ldM,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S,&S_raw, &ldS,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(T,&T_raw, &ldT,iflag),*iflag);
 
   // view the first minBas+1 columns of V and H as M(1:minBas+1,1:minBas)
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,minBas,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&H0, 0,minBas,0,minBas-1,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,minBas,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&H0, 0,minBas,0,minBas-1,iflag),*iflag);
 
   // setup inner solver
   TYPE(jadaCorrectionSolver_ptr) innerSolv = NULL;
   if (innerSolvType==GMRES)
   {
     PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, nv_max, 
-        A_op->domain_map, innerSolvType, 25, false, ierr), *ierr);
+        A_op->domain_map, innerSolvType, 25, false, iflag), *iflag);
   }
 
   // print parameters passed in to the method
@@ -196,46 +196,46 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   //       use only the first vector as start vec.
   if (v0==NULL)
   {
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(X,&v0,0,0,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_random)(v0,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(X,&v0,0,0,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_random)(v0,iflag),*iflag);
     MT nrmV0;
-    PHIST_CHK_IERR(SUBR(mvec_normalize)(v0,&nrmV0,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_normalize)(v0,&nrmV0,iflag),*iflag);
   }
   else
   {
     // only use the first column of the given mvec as v0
     int nv0;
-    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v0,&nv0,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v0,&nv0,iflag),*iflag);
     if (nv0>1)
     {
       mvec_ptr_t V0=v0;
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(V0,&v0,0,0,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(V0,&v0,0,0,iflag),*iflag);
     }
   }
   if (arno)
   {
     PHIST_SOUT(1,"%d steps of Arnoldi as start-up\n",minBas);
-    PHIST_CHK_IERR(SUBR(simple_arnoldi)(A_op,NULL,v0,Vv,NULL,NULL,H0,minBas,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(simple_arnoldi)(A_op,NULL,v0,Vv,NULL,NULL,H0,minBas,iflag),*iflag);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
     PHIST_DEB("initial H (by Arnoldi)\n");
-    PHIST_CHK_IERR(SUBR(sdMat_print)(H0,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_print)(H0,iflag),*iflag);
 #endif
 
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,minBas-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,minBas-1,iflag),*iflag);
     // set Vv=V(:,1:minBas)
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,minBas-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,minBas-1,iflag),*iflag);
     // compute A*V for the first minBas columns which we have now using the Arnoldi relation
-    //PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,H0,st::zero(),AVv,ierr),*ierr);
+    //PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,H0,st::zero(),AVv,iflag),*iflag);
     // fails if orthogonal basis was extended by random vectors
-    PHIST_CHK_IERR(A_op->apply(st::one(),A_op->A,Vv,st::zero(),AVv,ierr),*ierr);
+    PHIST_CHK_IERR(A_op->apply(st::one(),A_op->A,Vv,st::zero(),AVv,iflag),*iflag);
 
     // compute initial projection M = V'AV
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,minBas-1,0,minBas-1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,AVv,st::zero(),Mv,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,minBas-1,0,minBas-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,AVv,st::zero(),Mv,iflag),*iflag);
 
     m=minBas; // number of vectors in current basis V
-    PHIST_CHK_IERR(SUBR(sdMat_delete)(H0,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_delete)(H0,iflag),*iflag);
     expand=0;
   }
   else
@@ -246,7 +246,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 #else
     t_ptr=t_r;
 #endif
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(t_ptr,v0,0,0,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(t_ptr,v0,0,0,iflag),*iflag);
     m=0;
     expand=1;
   }
@@ -254,7 +254,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   // delete the views (not the data) v0 and H0
   if (v0!=opts.v0)
   {
-    PHIST_CHK_IERR(SUBR(mvec_delete)(v0,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(v0,iflag),*iflag);
   }
 
   PHIST_SOUT(PHIST_INFO,"Start Jacobi-Davidson\n");
@@ -278,60 +278,60 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       
       // V temporarily gets extra storage to store [V Q] for the orthogonalization
       int ncVQ=m0+nconv;// number of columns of [V,Q]
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vm,m0,m-1,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVm,m0,m-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vm,m0,m-1,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVm,m0,m-1,iflag),*iflag);
 
       if (m0>0)
       {
-        PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,ncVQ-1,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m0-1,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,ncVQ-1,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m0-1,iflag),*iflag);
         // orthogonalize t against V(:,0:m-1) and the converged eigenspace Q.
         // We use T and S as temporary storage here
-        PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,nv-1,0,nv-1,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,ncVQ-1,0,nv-1,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,nv-1,0,nv-1,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,ncVQ-1,0,nv-1,iflag),*iflag);
         if (nconv>0)
           {
-          PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,Qv,m0,ncVQ-1,ierr),*ierr);
+          PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,Qv,m0,ncVQ-1,iflag),*iflag);
           }
         int rankV;
-        PHIST_CHK_NEG_IERR(SUBR(orthog)(Vv,t_ptr,Tv,Sv,3,&rankV,ierr),*ierr);
+        PHIST_CHK_NEG_IERR(SUBR(orthog)(Vv,t_ptr,Tv,Sv,3,&rankV,iflag),*iflag);
         // reset the view of V without the Q.
-        PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m0-1,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m0-1,iflag),*iflag);
       }
       // set V(:,m)=t
-      PHIST_CHK_IERR(SUBR(mvec_set_block)(V,t_ptr,m0,m-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_set_block)(V,t_ptr,m0,m-1,iflag),*iflag);
       // compute AV(:,m) = A*V(:,m)
-      PHIST_CHK_IERR(A_op->apply(st::one(),A_op->A,Vm,st::zero(),AVm,ierr),*ierr);
+      PHIST_CHK_IERR(A_op->apply(st::one(),A_op->A,Vm,st::zero(),AVm,iflag),*iflag);
 
       // Galerkin for non-Hermitian A
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,iflag),*iflag);
       // compute M = V'A*V
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-1,0,m-1,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,AVv,st::zero(),Mv,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-1,0,m-1,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,AVv,st::zero(),Mv,iflag),*iflag);
 
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,iflag),*iflag);
       PHIST_DEB("basis size is now m=%d\n",m);
 #ifdef TESTING
       // check orthogonality of [V Q]
       sdMat_ptr_t tmp1=NULL,tmp2=NULL;
       ST *tmp1_raw, *tmp2_raw;
       lidx_t ld1,ld2;
-      PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp1,m,m,comm,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(sdMat_extract_view)(tmp1,&tmp1_raw,&ld1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp1,m,m,comm,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_extract_view)(tmp1,&tmp1_raw,&ld1,iflag),*iflag);
         int ncV;
-        PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Vv,&ncV,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Vv,&ncV,iflag),*iflag);
         PHIST_SOUT(PHIST_VERBOSE,"#vectors in V: %d\n",ncV);
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,Vv,st::zero(),tmp1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,Vv,st::zero(),tmp1,iflag),*iflag);
       if (nconv>0)
       {
         int ncQ;
-        PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Qv,&ncQ,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Qv,&ncQ,iflag),*iflag);
         PHIST_SOUT(PHIST_VERBOSE,"#vectors in Q: %d\n",ncQ);
-        PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp2,m,nconv,comm,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(sdMat_extract_view)(tmp2,&tmp2_raw,&ld2,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,Qv,st::zero(),tmp2,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp2,m,nconv,comm,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(sdMat_extract_view)(tmp2,&tmp2_raw,&ld2,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,Qv,st::zero(),tmp2,iflag),*iflag);
       }
       MT err1=mt::zero(), err2=mt::zero();
       for (int i=0;i<m;i++)
@@ -355,10 +355,10 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       PHIST_SOUT(PHIST_VERBOSE,"orthogonality monitors:\n");
       PHIST_SOUT(PHIST_VERBOSE,"||V'V-I||=%e\n",err1);
       PHIST_SOUT(PHIST_VERBOSE,"||V'Q||=%e\n",err2);
-      PHIST_CHK_IERR(SUBR(sdMat_delete)(tmp1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_delete)(tmp1,iflag),*iflag);
       if (nconv>0)
       {
-        PHIST_CHK_IERR(SUBR(sdMat_delete)(tmp2,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(sdMat_delete)(tmp2,iflag),*iflag);
       }
 #endif
     }
@@ -373,9 +373,9 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
     // copy T=M. Note that as we just 'view' the upper left blocks,
     // the pointers M_raw, T_raw, S_raw are still correct
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-1,0,m-1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,m-1,0,m-1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_get_block)(Mv,Tv,0,m-1,0,m-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-1,0,m-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,m-1,0,m-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_get_block)(Mv,Tv,0,m-1,0,m-1,iflag),*iflag);
 
     // if a restart is impending, shift the next <minBas> Ritz values
     // to the top left. Shift the next <nsort> of them to the 
@@ -391,16 +391,16 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     int nselect=m;
     int nsort=nselect;
     PHIST_CHK_IERR(SUBR(SchurDecomp)
-        (T_raw,ldT,S_raw,ldS,m,nselect,nsort,which,tol,ev,ierr),*ierr);
+        (T_raw,ldT,S_raw,ldS,m,nselect,nsort,which,tol,ev,iflag),*iflag);
     int ev_pos=0;
     theta=ev[ev_pos];
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
   PHIST_DEB("it=%d, m=%d, mm=%d\n",it,m,mm);
   PHIST_DEB("projected matrix\n");
-  PHIST_CHK_IERR(SUBR(sdMat_print)(Mv,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_print)(Mv,iflag),*iflag);
   PHIST_DEB("sorted Schur form\n");
-  PHIST_CHK_IERR(SUBR(sdMat_print)(Tv,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_print)(Tv,iflag),*iflag);
 #endif
 
     nv=1; // nv==2 indicates complex eigenvalue of real matrix, we
@@ -429,15 +429,15 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 #endif
 
     // get the diagonal block (1x1 or 2x2) corresponding to theta
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Theta,0,nv-1,0,nv-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Theta,0,nv-1,0,nv-1,iflag),*iflag);
 
     // get Ritz vector corresponding to theta
     // (for complex RV in real case, two columns are extracted)
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m-1,0,nv-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m-1,0,nv-1,iflag),*iflag);
     //u=V*s;
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),u_ptr,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),u_ptr,iflag),*iflag);
     //Au=AV*s;
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),AVv,Sv,st::zero(),Au_ptr,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),AVv,Sv,st::zero(),Au_ptr,iflag),*iflag);
 
     prev_nrm=nrm[0];
     
@@ -447,26 +447,26 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // complex theta)
     
     // first: r=Au
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),Au_ptr,st::zero(),r_ptr,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),Au_ptr,st::zero(),r_ptr,iflag),*iflag);
 
     // update r = r - U*Theta
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),u_ptr,Theta,st::one(),r_ptr,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),u_ptr,Theta,st::one(),r_ptr,iflag),*iflag);
 
     // set rtil=r
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r_ptr,st::zero(),rtil_ptr,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r_ptr,st::zero(),rtil_ptr,iflag),*iflag);
 
     // project out already converged eigenvectors
     // TODO - we could use our orthog routine here instead
     if (nconv>0)
       {
       // view next ~a, a temporary vector to compute ~a=Q'*r
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(atil,&atilv,0,nconv-1,0,nv-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(atil,&atilv,0,nconv-1,0,nv-1,iflag),*iflag);
      
       //atil = Q'*r;
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Qv,r_ptr,st::zero(),atilv,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Qv,r_ptr,st::zero(),atilv,iflag),*iflag);
     
       //rtil = r-Q*atil;
-      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,atilv,st::one(),rtil_ptr,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,atilv,st::one(),rtil_ptr,iflag),*iflag);
       }
 
     //nrm=norm(rtil);
@@ -474,7 +474,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // in the complex case we pass in a 're-interpret cast' of nrm as complex,
     // which should be fine (imaginary part will be 0).
     nrm[1]=mt::zero();
-    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(rtil_ptr,rtil_ptr,(ST*)nrm,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(rtil_ptr,rtil_ptr,(ST*)nrm,iflag),*iflag);
     nrm[0]=mt::sqrt(nrm[0]+nrm[1]);
 //}
     PHIST_SOUT(PHIST_INFO,"JDQR Iter %d\tdim(V)=%d\ttheta=%8.4g%+8.4gi\t\tr_est=%8.4e\n",it,m,ct::real(theta),ct::imag(theta),nrm[0]);
@@ -491,17 +491,17 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     }
 
     // view first nconv columns of X as 'Q'
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(X,&Qv,0,nconv-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(X,&Qv,0,nconv-1,iflag),*iflag);
 
      //Q=[Q,u];
-     PHIST_CHK_IERR(SUBR(mvec_set_block)(Qv,u_ptr,nq0,nconv-1,ierr),*ierr);
+     PHIST_CHK_IERR(SUBR(mvec_set_block)(Qv,u_ptr,nq0,nconv-1,iflag),*iflag);
      //R=[R, atil;
      //   0, theta];
      if (nq0>0)
      {
-       PHIST_CHK_IERR(SUBR(sdMat_set_block)(R,atilv,0,nq0-1,nq0,nconv-1,ierr),*ierr);
+       PHIST_CHK_IERR(SUBR(sdMat_set_block)(R,atilv,0,nq0-1,nq0,nconv-1,iflag),*iflag);
      }
-     PHIST_CHK_IERR(SUBR(sdMat_set_block)(R,Theta,nq0,nconv-1,nq0,nconv-1,ierr),*ierr);
+     PHIST_CHK_IERR(SUBR(sdMat_set_block)(R,Theta,nq0,nconv-1,nq0,nconv-1,iflag),*iflag);
 
     PHIST_SOUT(PHIST_VERBOSE,"eigenvalue %d (%8.4g%+8.4gi) is converged.\n",
         nconv,ct::real(theta),ct::imag(theta));
@@ -513,32 +513,32 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     }
 
     //S=S(:,2:m); (select remaining Ritz vectors)
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m-1,nv,m-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m-1,nv,m-1,iflag),*iflag);
     //M=T(2:m,2:m);
     // let Mblock point to the first m-nv x m-nv block of M
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-nv-1,0,m-nv-1,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-nv-1,0,m-nv-1,iflag),*iflag);
     // copy T(nv+1:m,nv+1:m) into it
-    PHIST_CHK_IERR(SUBR(sdMat_get_block)(T,Mv,nv,m-1,nv,m-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_get_block)(T,Mv,nv,m-1,nv,m-1,iflag),*iflag);
     m=m-nv;
     //V=V*S;
     // It is not allowed to alias V in mvec_times_sdMat, so we use a temporary vector
     mvec_ptr_t v_tmp=NULL;
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v_tmp,0,m-1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),v_tmp,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,v_tmp,0,m-1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v_tmp,0,m-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),v_tmp,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,v_tmp,0,m-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,iflag),*iflag);
     //AV=AV*S;
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),AVv,Sv,st::zero(),v_tmp,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(AVv,v_tmp,0,m-1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),AVv,Sv,st::zero(),v_tmp,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(AVv,v_tmp,0,m-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,iflag),*iflag);
     
     // delete the temporary view (not the data, of course)
-    PHIST_CHK_IERR(SUBR(mvec_delete)(v_tmp,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(v_tmp,iflag),*iflag);
 
     //u=V(:,1);
-    PHIST_CHK_IERR(SUBR(mvec_get_block)(Vv,u_ptr,0,nv-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_get_block)(Vv,u_ptr,0,nv-1,iflag),*iflag);
     //Au=AV(:,1);
-    PHIST_CHK_IERR(SUBR(mvec_get_block)(AVv,Au_ptr,0,nv-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_get_block)(AVv,Au_ptr,0,nv-1,iflag),*iflag);
 
     // select next target ev. This need not be the next according to
     // the sort criterion because the Schur-form is not completely sorted
@@ -567,7 +567,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     }
 #endif
     // get the diagonal block (1x1 or 2x2) corresponding to theta
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Theta,ev_pos,ev_pos+nv-1,ev_pos,ev_pos+nv-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Theta,ev_pos,ev_pos+nv-1,ev_pos,ev_pos+nv-1,iflag),*iflag);
 
 //TODO: same as part CMP_RESID up there, put it in an aux function
 //{
@@ -575,29 +575,29 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // complex theta)
     
     // first: r=Au
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),Au_ptr,st::zero(),r_ptr,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),Au_ptr,st::zero(),r_ptr,iflag),*iflag);
 
     // update r = r - U*Theta
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),u_ptr,Theta,st::one(),r_ptr,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),u_ptr,Theta,st::one(),r_ptr,iflag),*iflag);
 
     // set rtil=r
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r_ptr,st::zero(),rtil_ptr,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r_ptr,st::zero(),rtil_ptr,iflag),*iflag);
 
      // view next ~a, a temporary vector to compute ~a=Q'*r
-     PHIST_CHK_IERR(SUBR(sdMat_view_block)(atil,&atilv,0,nconv-1,0,nv-1,ierr),*ierr);
+     PHIST_CHK_IERR(SUBR(sdMat_view_block)(atil,&atilv,0,nconv-1,0,nv-1,iflag),*iflag);
 
     //atil = Q'*r;
-    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Qv,r_ptr,st::zero(),atilv,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Qv,r_ptr,st::zero(),atilv,iflag),*iflag);
 
     //rtil = r-Q*atil;
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,atilv,st::one(),r_ptr,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,atilv,st::one(),r_ptr,iflag),*iflag);
       
     //nrm=norm(rtil);
     // real case with complex r: ||v+iw||=sqrt((v+iw).'*(v-iw))=sqrt(v'v+w'w).
     // in the complex case we pass in a 're-interpret cast' of nrm as complex,
     // which should be fine (imaginary part will be 0).
     nrm[1]=mt::zero();
-    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(rtil_ptr,rtil_ptr,(ST*)nrm,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(rtil_ptr,rtil_ptr,(ST*)nrm,iflag),*iflag);
     nrm[0]=mt::sqrt(nrm[0]+nrm[1]);
 //}
     // again, sort the largest Ritz value to the top
@@ -606,11 +606,11 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     nselect=m;
     nsort=nselect;
     // set T=M
-    PHIST_CHK_IERR(SUBR(sdMat_set_block)(T,Mv,0,m-1,0,m-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_set_block)(T,Mv,0,m-1,0,m-1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(SchurDecomp)
-        (T_raw,ldT,S_raw,ldS,m,nselect,nsort,which,tol,ev,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,m-1,0,m-1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m-1,0,m-1,ierr),*ierr);
+        (T_raw,ldT,S_raw,ldS,m,nselect,nsort,which,tol,ev,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Tv,0,m-1,0,m-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m-1,0,m-1,iflag),*iflag);
   } //if (deflate)
 
   if (nrm[0]>100*prev_nrm)
@@ -628,23 +628,23 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     m=minBas;
     
     //S=S(:,1:m);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m0-1,0,m-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m0-1,0,m-1,iflag),*iflag);
     //M=T(1:m,1:m);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-1,0,m-1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_get_block)(T,Mv,0,m-1,0,m-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-1,0,m-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_get_block)(T,Mv,0,m-1,0,m-1,iflag),*iflag);
     //V=V*S;
     mvec_ptr_t v_tmp=NULL;
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v_tmp,0,m-1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),v_tmp,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,v_tmp,0,m-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v_tmp,0,m-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),v_tmp,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,v_tmp,0,m-1,iflag),*iflag);
     //AV=AV*S;
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),AVv,Sv,st::zero(),v_tmp,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(AVv,v_tmp,0,m-1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_delete)(v_tmp,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),AVv,Sv,st::zero(),v_tmp,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(AVv,v_tmp,0,m-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(v_tmp,iflag),*iflag);
     //V=V(:,1:mmin);
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,iflag),*iflag);
     //AV=AV(:,1:mmin);
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,iflag),*iflag);
     solve=true;
     expand=nv;
   }
@@ -658,8 +658,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // all converged vectors (Q) and the
     // new one u:
     //Qtil=[Q,u];
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(X,&Qtil,0,nconv+nv-1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(Qtil,u_ptr,nconv,nconv+nv-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(X,&Qtil,0,nconv+nv-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(Qtil,u_ptr,nconv,nconv+nv-1,iflag),*iflag);
     CT actual_shift=theta;
     if (m<minBas && nrm[0]>1.0e-2)
     {
@@ -697,7 +697,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     int nIt=25;
       PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, NULL, Qtil, NULL, 
                                                       sigma, rtil_ptr, NULL, 
-                                                      innerTol, nIt, t_ptr, true, false, ierr), *ierr);
+                                                      innerTol, nIt, t_ptr, true, false, iflag), *iflag);
     expand=nv;
   }
   else
@@ -727,7 +727,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // provided array
     ST* R_raw=NULL;
     lidx_t ldR;
-    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&R_raw,&ldR,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&R_raw,&ldR,iflag),*iflag);
     i=0;
     while (i<nconv)
       {
@@ -770,7 +770,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     blas_idx_t ildR=static_cast<blas_idx_t>(ldR);
     if (ildS<0 || ildR<0)
     {
-    *ierr=PHIST_INTEGER_OVERFLOW;
+    *iflag=PHIST_INTEGER_OVERFLOW;
     return;
     }
 #ifdef IS_COMPLEX
@@ -778,64 +778,64 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(PREFIX(TREVC)((blas_char_t*)side, (blas_char_t*)howmny, NULL, 
     &nconv, (mt::blas_cmplx_t*)R_raw, &ildR, NULL, &ildS, 
     (mt::blas_cmplx_t*)S_raw, &ildS, &nconv, &m_out, (mt::blas_cmplx_t*)work, 
-    rwork, ierr),*ierr);
+    rwork, iflag),*iflag);
 #else
     PHIST_CHK_IERR(PREFIX(TREVC)((blas_char_t*)side, (blas_char_t*)howmny, NULL, 
     &nconv,R_raw, &ildR, NULL, &ildS, S_raw, &ildS, &nconv, &m_out, work, 
-    ierr),*ierr);
+    iflag),*iflag);
 #endif  
     delete [] work;
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,nconv-1,0,nconv-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,nconv-1,0,nconv-1,iflag),*iflag);
     TYPE(mvec_ptr) Qcopy=NULL;
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&Qcopy,0,nconv-1,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),Qv,st::zero(),Qcopy,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Qcopy,Sv,st::zero(),Qv,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_delete)(Qcopy,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&Qcopy,0,nconv-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),Qv,st::zero(),Qcopy,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Qcopy,Sv,st::zero(),Qv,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(Qcopy,iflag),*iflag);
     }// any eigenpairs converged?
 
   // free memory
   if (innerSolvType==GMRES)
   {
-    PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_delete)(innerSolv, ierr), *ierr);
+    PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_delete)(innerSolv, iflag), *iflag);
   }
-  PHIST_CHK_IERR(SUBR(mvec_delete)(V,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(AV,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(Vtmp,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(u,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(Au,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(r,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(rtil,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(t,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(V,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(AV,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Vtmp,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(u,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Au,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(r,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(rtil,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(t,iflag),*iflag);
   
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(M,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(S,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(T,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(R,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(M,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(S,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(T,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(R,iflag),*iflag);
   
   // we also call delete for the views to avoid small memory leaks
 #ifndef IS_COMPLEX
-  PHIST_CHK_IERR(SUBR(mvec_delete)(u_r,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(Au_r,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(r_r,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(rtil_r,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(t_r,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(u_r,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Au_r,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(r_r,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(rtil_r,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(t_r,iflag),*iflag);
 #endif
 
-  PHIST_CHK_IERR(SUBR(mvec_delete)(Vv,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(AVv, ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(Vm,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(AVm, ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(Qtil, ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Vv,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(AVv, iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Vm,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(AVm, iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(Qtil, iflag),*iflag);
   
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(Mv, ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(Tv, ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(Sv, ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(Theta, ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(Mv, iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(Tv, iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(Sv, iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(Theta, iflag),*iflag);
   // these may still be NULL if nothing converged
   if (nconv>0)
     {
-    PHIST_CHK_IERR(SUBR(mvec_delete)(Qv, ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_delete)(atilv, ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(Qv, iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_delete)(atilv, iflag),*iflag);
     }
   return;
   }

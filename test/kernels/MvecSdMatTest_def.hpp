@@ -41,29 +41,29 @@ public:
     if (this->typeImplemented_)
       {
       // create vectors V1 and V2, and vector views for setting/checking entries
-      SUBR(mvec_create)(&V1_,this->map_,this->m_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(mvec_put_value)(V1_,st::zero(),&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_extract_view)(V1_,&V1_vp_,&ldaV1_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(mvec_create)(&V2_,this->map_,this->m_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(mvec_put_value)(V2_,st::zero(),&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_extract_view)(V2_,&V2_vp_,&ldaV2_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
+      SUBR(mvec_create)(&V1_,this->map_,this->m_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(mvec_put_value)(V1_,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_extract_view)(V1_,&V1_vp_,&ldaV1_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(mvec_create)(&V2_,this->map_,this->m_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(mvec_put_value)(V2_,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_extract_view)(V2_,&V2_vp_,&ldaV2_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
       // create matrices M1, M2 and views.
-      SUBR(sdMat_create)(&M1_,this->m_,this->m_,this->comm_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(sdMat_put_value)(M1_,st::zero(),&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_extract_view)(M1_,&M1_vp_,&this->ldaM1_,&this->ierr_);
-      SUBR(sdMat_create)(&M2_,this->m_,this->m_,this->comm_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(sdMat_put_value)(M2_,st::zero(),&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_extract_view)(M2_,&M2_vp_,&this->ldaM2_,&this->ierr_);
+      SUBR(sdMat_create)(&M1_,this->m_,this->m_,this->comm_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(sdMat_put_value)(M1_,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_extract_view)(M1_,&M1_vp_,&this->ldaM1_,&this->iflag_);
+      SUBR(sdMat_create)(&M2_,this->m_,this->m_,this->comm_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(sdMat_put_value)(M2_,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_extract_view)(M2_,&M2_vp_,&this->ldaM2_,&this->iflag_);
       }
     stride_=1;
     }
@@ -74,10 +74,10 @@ public:
     {
     if (this->typeImplemented_)
       {
-      SUBR(mvec_delete)(V1_,&ierr_);
-      SUBR(mvec_delete)(V2_,&ierr_);
-      SUBR(sdMat_delete)(M1_,&ierr_);
-      SUBR(sdMat_delete)(M2_,&ierr_);
+      SUBR(mvec_delete)(V1_,&iflag_);
+      SUBR(mvec_delete)(V2_,&iflag_);
+      SUBR(sdMat_delete)(M1_,&iflag_);
+      SUBR(sdMat_delete)(M2_,&iflag_);
       }
     KernelTestWithMap<_N_>::TearDown();
     KernelTestWithType<_ST_>::TearDown();
@@ -85,24 +85,24 @@ public:
 
   /*! compare sdMats on several procs
    */
-  void SUBR(sdMat_parallel_check_)(TYPE(const_sdMat_ptr) mat, int* ierr)
+  void SUBR(sdMat_parallel_check_)(TYPE(const_sdMat_ptr) mat, int* iflag)
   {
-    *ierr = 0;
+    *iflag = 0;
     // TODO: use correct communicator
     int n,m;
-    PHIST_CHK_IERR(SUBR(sdMat_from_device)((void*)mat,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(mat, &m, ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(mat, &n, ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)((void*)mat,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(mat, &m, iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(mat, &n, iflag),*iflag);
     _ST_* buff = new _ST_[m*n];
     _ST_* mat_raw;
     lidx_t lda;
-    PHIST_CHK_IERR(SUBR(sdMat_extract_view)((TYPE(sdMat_ptr))mat, &mat_raw, &lda, ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)((TYPE(sdMat_ptr))mat, &mat_raw, &lda, iflag),*iflag);
     // copy data to buffer
     for(int j = 0; j < n; j++)
       for(int i = 0; i < m; i++)
         buff[j*m+i] = mat_raw[MIDX(i,j,lda)];
     // broadcast
-    PHIST_CHK_IERR(*ierr = MPI_Bcast(buff,m*n,::phist::ScalarTraits<_ST_>::mpi_type(),0,MPI_COMM_WORLD),*ierr);
+    PHIST_CHK_IERR(*iflag = MPI_Bcast(buff,m*n,::phist::ScalarTraits<_ST_>::mpi_type(),0,MPI_COMM_WORLD),*iflag);
     // check
     int error = 0;
     for(int j = 0; j < n; j++)
@@ -110,16 +110,16 @@ public:
         if( buff[j*m+i] != mat_raw[MIDX(i,j,lda)] )
           error = 1;
     int globError = 0;
-    PHIST_CHK_IERR(*ierr = MPI_Allreduce(&error,&globError,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD),*ierr);
+    PHIST_CHK_IERR(*iflag = MPI_Allreduce(&error,&globError,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD),*iflag);
 
     delete[] buff;
 
     if( globError )
     {
 #if PHIST_OUTLEV>=PHIST_DEBUG
-      PHIST_CHK_IERR(SUBR(sdMat_print)(mat,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(sdMat_print)(mat,iflag),*iflag);
 #endif
-      *ierr = -1;
+      *iflag = -1;
       return;
     }
   }
@@ -131,27 +131,27 @@ public:
     if (typeImplemented_)
       {
       // fill V and W with ones
-      SUBR(mvec_put_value)(V1_,st::one(),&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_put_value)(V2_,st::one(),&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_put_value)(V2_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(mvec_from_device)(V1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_from_device)(V2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_from_device)(M1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_from_device)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       VTest::PrintVector(*cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
       VTest::PrintVector(*cout,"ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
       ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
-      SUBR(sdMat_parallel_check_)(M1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       }
     }
 
@@ -161,28 +161,28 @@ public:
     if (typeImplemented_)
       {
       // fill V and W with ones
-      SUBR(mvec_put_value)(V1_,st::one(),&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_put_value)(V2_,(MT)42.0*st::one(),&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_put_value)(M1_,st::one(),&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,st::zero(),V2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_put_value)(V2_,(MT)42.0*st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_put_value)(M1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,st::zero(),V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(mvec_from_device)(V1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_from_device)(V2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_from_device)(M1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_from_device)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       VTest::PrintVector(*cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
       VTest::PrintVector(*cout,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
       ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,(ST)m_));
-      SUBR(sdMat_parallel_check_)(M1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       }
     }
 
@@ -192,23 +192,23 @@ public:
     if (typeImplemented_)
       {
       // fill V and W with ones
-      SUBR(mvec_put_value)(V1_,st::one(),&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_put_value)(M1_,st::one(),&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_times_sdMat_inplace)(V1_,M1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_put_value)(M1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_times_sdMat_inplace)(V1_,M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(mvec_from_device)(V1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_from_device)(M1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_from_device)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       MTest::PrintSdMat(*cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
       VTest::PrintVector(*cout,"ones*ones",V1_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
       ASSERT_REAL_EQ(mt::one(),MvecEqual(V1_,(ST)m_));
-      SUBR(sdMat_parallel_check_)(M1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       }
     }
 
@@ -218,25 +218,25 @@ public:
     if (typeImplemented_)
       {
       // fill V and W with ones
-      SUBR(mvec_random)(V1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_random)(V2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_random)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(mvec_from_device)(V1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_from_device)(V2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_from_device)(M1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_from_device)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       VTest::PrintVector(*cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
       VTest::PrintVector(*cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"random'*random",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
-      SUBR(sdMat_parallel_check_)(M1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       }
     }
 
@@ -265,84 +265,84 @@ public:
 
         // create views to parts of mvecs and sdmats
         mvec_ptr_t V1 = NULL;
-        SUBR(mvec_view_block)(V1_,&V1,off1[i],off1[i]+m1[i]-1,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_view_block)(V1_,&V1,off1[i],off1[i]+m1[i]-1,&iflag_);
+        ASSERT_EQ(0,iflag_);
         mvec_ptr_t V2 = NULL;
-        SUBR(mvec_view_block)(V2_,&V2,off2[i],off2[i]+m2[i]-1,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_view_block)(V2_,&V2,off2[i],off2[i]+m2[i]-1,&iflag_);
+        ASSERT_EQ(0,iflag_);
         sdMat_ptr_t M1 = NULL;
-        SUBR(sdMat_view_block)(M1_,&M1,off1_M[i],off1_M[i]+m1[i]-1,off2_M[i],off2_M[i]+m2[i]-1,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(sdMat_view_block)(M1_,&M1,off1_M[i],off1_M[i]+m1[i]-1,off2_M[i],off2_M[i]+m2[i]-1,&iflag_);
+        ASSERT_EQ(0,iflag_);
 
         // set V1 and V2 to 0,
         // fill (viewed) V and W with random numbers
-        SUBR(mvec_put_value)(V1_,st::zero(),&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_random)(V1,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_put_value)(V2_,st::zero(),&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_random)(V2,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_put_value)(V1_,st::zero(),&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_random)(V1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_put_value)(V2_,st::zero(),&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_random)(V2,&iflag_);
+        ASSERT_EQ(0,iflag_);
         // fill M1_ with zeros
-        SUBR(sdMat_put_value)(M1_,st::zero(),&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvecT_times_mvec)(-st::one(),V1,V2,st::one(),M1,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(sdMat_put_value)(M1_,st::zero(),&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvecT_times_mvec)(-st::one(),V1,V2,st::one(),M1,&iflag_);
+        ASSERT_EQ(0,iflag_);
 
         PHIST_DEB("Note: we are just using views inside the random vectors\n");
         PHIST_DEB("col-range V1: [%d:%d]\n",off1[i],off1[i]+m1[i]-1);
         PHIST_DEB("col-range V2: [%d:%d]\n",off2[i],off2[i]+m2[i]-1);
         PHIST_DEB("idx-range M:  [%d:%d,%d:%d]\n",off1_M[i],off1_M[i]+m1[i]-1,off2_M[i],off2_M[i]+m2[i]-1);
-        SUBR(sdMat_from_device)(M1_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(sdMat_from_device)(M1_,&iflag_);
+        ASSERT_EQ(0,iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
-        SUBR(mvec_from_device)(V1_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_from_device)(V2_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_from_device)(V1_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_from_device)(V2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         VTest::PrintVector(*cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
         VTest::PrintVector(*cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
         MTest::PrintSdMat(*cout,"zero-random'*random",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
-        SUBR(sdMat_parallel_check_)(M1_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+        ASSERT_EQ(0,iflag_);
 
         PHIST_DEB("check the result with full mvecT_times_mvec");
         // copy M1 back to correct position
-        SUBR(sdMat_put_value)(M2_,st::zero(),&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(sdMat_put_value)(M2_,st::zero(),&iflag_);
+        ASSERT_EQ(0,iflag_);
         sdMat_ptr_t M2 = NULL;
-        SUBR(sdMat_view_block)(M2_,&M2,off1[i],off1[i]+m1[i]-1,off2[i],off2[i]+m2[i]-1,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(sdMat_add_sdMat)(st::one(),M1,st::zero(),M2,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(sdMat_delete)(M2,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(sdMat_view_block)(M2_,&M2,off1[i],off1[i]+m1[i]-1,off2[i],off2[i]+m2[i]-1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(sdMat_add_sdMat)(st::one(),M1,st::zero(),M2,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(sdMat_delete)(M2,&iflag_);
+        ASSERT_EQ(0,iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
-        SUBR(sdMat_from_device)(M2_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(sdMat_from_device)(M2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         MTest::PrintSdMat(*cout,"zero-random'*random in correct location",M2_vp_,ldaM2_,stride_,mpi_comm_);
 #endif
-        SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::one(),M2_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::one(),M2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
-        SUBR(sdMat_from_device)(M2_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(sdMat_from_device)(M2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         MTest::PrintSdMat(*cout,"zero-random'*random+random'*random",M2_vp_,ldaM2_,stride_,mpi_comm_);
 #endif
-        SUBR(sdMat_parallel_check_)(M2_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(sdMat_parallel_check_)(M2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
 
         // the result should be zero!
         ASSERT_NEAR(mt::one(),ArrayEqual(M2_vp_,m_,m_,ldaM2_,stride_,st::zero(),mflag_),200*mt::eps());
 
-        SUBR(mvec_delete)(V1,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_delete)(V2,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(sdMat_delete)(M1,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(V1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_delete)(V2,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(sdMat_delete)(M1,&iflag_);
+        ASSERT_EQ(0,iflag_);
       }
       }
     }

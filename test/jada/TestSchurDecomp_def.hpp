@@ -43,8 +43,8 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
         nselect_.push_back(std::min(8,_N_));    nsort_.push_back(8);
 
         // create a diagonal matrix with some interesting features for the diag_* tests
-        SUBR(sdMat_put_value)(mat3_,st::zero(),&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(sdMat_put_value)(mat3_,st::zero(),&iflag_);
+        ASSERT_EQ(0,iflag_);
         ST *diag = new ST[nrows_];
         for (int i=0;i<nrows_;i++)
         {
@@ -101,21 +101,21 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
         }
         PHIST_OUT(PHIST_INFO,"==================================================\n");
 
-        SUBR(sdMat_add_sdMat)(st::one(),mat3_,st::zero(),mat1_,&this->ierr_);
-        ASSERT_EQ(0,this->ierr_);
+        SUBR(sdMat_add_sdMat)(st::one(),mat3_,st::zero(),mat1_,&this->iflag_);
+        ASSERT_EQ(0,this->iflag_);
 
-        SUBR(sdMat_random)(mat2_,&this->ierr_);
-        ASSERT_EQ(0,this->ierr_);
+        SUBR(sdMat_random)(mat2_,&this->iflag_);
+        ASSERT_EQ(0,this->iflag_);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
         PHIST_DEB("input matrix to Schur-decomp:\n");
-        SUBR(sdMat_print)(mat1_,&ierr_);
+        SUBR(sdMat_print)(mat1_,&iflag_);
 #endif
-        SUBR(SchurDecomp)(mat1_vp_,m_lda_,mat2_vp_,m_lda_,n_,nselect,nsort,which,tol,ev_,&this->ierr_);
+        SUBR(SchurDecomp)(mat1_vp_,m_lda_,mat2_vp_,m_lda_,n_,nselect,nsort,which,tol,ev_,&this->iflag_);
         PHIST_DEB("resulting T:\n");
 #if PHIST_OUTLEV>=PHIST_DEBUG
-        SUBR(sdMat_print)(mat1_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(sdMat_print)(mat1_,&iflag_);
+        ASSERT_EQ(0,iflag_);
 #endif
 
 
@@ -133,12 +133,12 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
           for(int i = 0; i < nsort; i++)
             resNormOrig[i] = resNorm[i] = exp(mt::prand());
           SUBR(ReorderPartialSchurDecomp)(mat1_vp_,m_lda_,mat2_vp_,m_lda_,n_,nsort,which,tol,
-              &resNorm[0],ev_,&permutation[0],&ierr_);
-          ASSERT_EQ(0,ierr_);
+              &resNorm[0],ev_,&permutation[0],&iflag_);
+          ASSERT_EQ(0,iflag_);
           PHIST_DEB("resulting T:\n");
 #if PHIST_OUTLEV>=PHIST_DEBUG
-          SUBR(sdMat_print)(mat1_,&ierr_);
-          ASSERT_EQ(0,ierr_);
+          SUBR(sdMat_print)(mat1_,&iflag_);
+          ASSERT_EQ(0,iflag_);
 #endif
 
 
@@ -178,17 +178,17 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
     void CheckSchurDecomp(eigSort_t which, int nselect, int nsort, _MT_ tol)
     {
       PHIST_DEB("check AS=ST\n");
-      SUBR(sdMat_times_sdMat)(st::one(),mat3_,mat2_,st::zero(),mat4_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_times_sdMat)(st::one(),mat3_,mat2_,st::zero(),mat4_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
-      //SUBR(sdMat_print)(mat4_,&ierr_);
-      //ASSERT_EQ(0,ierr_);
+      //SUBR(sdMat_print)(mat4_,&iflag_);
+      //ASSERT_EQ(0,iflag_);
 #endif
-      SUBR(sdMat_times_sdMat)(-st::one(),mat2_,mat1_,st::one(),mat4_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_times_sdMat)(-st::one(),mat2_,mat1_,st::one(),mat4_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
-      //SUBR(sdMat_print)(mat4_,&ierr_);
-      //ASSERT_EQ(0,ierr_);
+      //SUBR(sdMat_print)(mat4_,&iflag_);
+      //ASSERT_EQ(0,iflag_);
 #endif
       ASSERT_NEAR(mt::one(),ArrayEqual(mat4_vp_,nrows_,ncols_,m_lda_,1,st::zero()),1000*mt::eps());
 
@@ -319,7 +319,7 @@ TEST_F(CLASSNAME, rand_LM)
 {
   if( typeImplemented_ )
   {
-    SUBR(sdMat_random)(mat3_,&this->ierr_);
+    SUBR(sdMat_random)(mat3_,&this->iflag_);
     DoSchurDecompTest(LM,mt::zero(),false);
   }
 }
@@ -328,7 +328,7 @@ TEST_F(CLASSNAME, rand_SM)
 {
   if( typeImplemented_ )
   {
-    SUBR(sdMat_random)(mat3_,&this->ierr_);
+    SUBR(sdMat_random)(mat3_,&this->iflag_);
     DoSchurDecompTest(SM,mt::zero(),false);
   }
 }
@@ -337,7 +337,7 @@ TEST_F(CLASSNAME, rand_LR)
 {
   if( typeImplemented_ )
   {
-    SUBR(sdMat_random)(mat3_,&this->ierr_);
+    SUBR(sdMat_random)(mat3_,&this->iflag_);
     DoSchurDecompTest(LR,mt::zero(),false);
   }
 }
@@ -346,7 +346,7 @@ TEST_F(CLASSNAME, rand_SR)
 {
   if( typeImplemented_ )
   {
-    SUBR(sdMat_random)(mat3_,&this->ierr_);
+    SUBR(sdMat_random)(mat3_,&this->iflag_);
     DoSchurDecompTest(SR,mt::zero(),false);
   }
 }
@@ -376,7 +376,7 @@ TEST_F(CLASSNAME, rand_LM_tol)
 {
   if( typeImplemented_ )
   {
-    SUBR(sdMat_random)(mat3_,&this->ierr_);
+    SUBR(sdMat_random)(mat3_,&this->iflag_);
     DoSchurDecompTest(LM,(_MT_)0.3,false);
   }
 }
@@ -385,7 +385,7 @@ TEST_F(CLASSNAME, rand_SM_tol)
 {
   if( typeImplemented_ )
   {
-    SUBR(sdMat_random)(mat3_,&this->ierr_);
+    SUBR(sdMat_random)(mat3_,&this->iflag_);
     DoSchurDecompTest(SM,(_MT_)0.7,false);
   }
 }
@@ -394,7 +394,7 @@ TEST_F(CLASSNAME, rand_LR_tol)
 {
   if( typeImplemented_ )
   {
-    SUBR(sdMat_random)(mat3_,&this->ierr_);
+    SUBR(sdMat_random)(mat3_,&this->iflag_);
     DoSchurDecompTest(LR,(_MT_)0.2,false);
   }
 }
@@ -403,7 +403,7 @@ TEST_F(CLASSNAME, rand_SR_tol)
 {
   if( typeImplemented_ )
   {
-    SUBR(sdMat_random)(mat3_,&this->ierr_);
+    SUBR(sdMat_random)(mat3_,&this->iflag_);
     DoSchurDecompTest(SR,(_MT_)0.5,false);
   }
 }
@@ -437,7 +437,7 @@ TEST_F(CLASSNAME, DISABLED_rand_LM_tol_reorder)
 {
   if( typeImplemented_ )
   {
-    SUBR(sdMat_random)(mat3_,&this->ierr_);
+    SUBR(sdMat_random)(mat3_,&this->iflag_);
     DoSchurDecompTest(LM,(_MT_)0.3,true);
   }
 }
@@ -450,7 +450,7 @@ TEST_F(CLASSNAME, DISABLED_rand_SM_tol_reorder)
 {
   if( typeImplemented_ )
   {
-    SUBR(sdMat_random)(mat3_,&this->ierr_);
+    SUBR(sdMat_random)(mat3_,&this->iflag_);
     DoSchurDecompTest(SM,(_MT_)0.7,true);
   }
 }
@@ -463,7 +463,7 @@ TEST_F(CLASSNAME, DISABLED_rand_LR_tol_reorder)
 {
   if( typeImplemented_ )
   {
-    SUBR(sdMat_random)(mat3_,&this->ierr_);
+    SUBR(sdMat_random)(mat3_,&this->iflag_);
     DoSchurDecompTest(LR,(_MT_)0.2,true);
   }
 }
@@ -476,7 +476,7 @@ TEST_F(CLASSNAME, DISABLED_rand_SR_tol_reorder)
 {
   if( typeImplemented_ )
   {
-    SUBR(sdMat_random)(mat3_,&this->ierr_);
+    SUBR(sdMat_random)(mat3_,&this->iflag_);
     DoSchurDecompTest(SR,(_MT_)0.5, true);
   }
 }

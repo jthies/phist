@@ -145,7 +145,7 @@ contains
       call c_f_pointer(comm_ptr, comm)
       sdmat%comm = comm
     else
-      sdmat%comm = MPI_COMM_NULL
+      sdmat%comm = MPI_COMM_SELF
     end if
 #if defined(TESTING) && PHIST_OUTLEV >= 4
     write(*,*) 'creating new sdmat with dimensions:', nrows, ncols, 'address', transfer(c_loc(sdmat),dummy)
@@ -475,7 +475,7 @@ contains
 
     ierr = 0
     if( sdmat%comm .ne. MPI_COMM_NULL ) then
-      call MPI_Bcast(buff, m*n, MPI_DOUBLE_PRECISION, sdmat%comm, 0, ierr);
+      call MPI_Bcast(buff, m*n, MPI_DOUBLE_PRECISION, 0, sdmat%comm, ierr);
     end if
     sdmat%val(sdmat%imin:sdmat%imax,sdmat%jmin:sdmat%jmax) = buff
 

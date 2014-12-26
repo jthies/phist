@@ -16,22 +16,22 @@ virtual void SetUp()
   KernelTestWithType< _ST_ >::SetUp();
   if (this->typeImplemented_)
     {
-    SUBR(sdMat_create)(&mat1_,this->nrows_,this->ncols_,this->comm_,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
-    SUBR(sdMat_extract_view)(mat1_,&mat1_vp_,&this->m_lda_,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
-    SUBR(sdMat_create)(&mat2_,this->nrows_,this->ncols_,this->comm_,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
-    SUBR(sdMat_extract_view)(mat2_,&mat2_vp_,&this->m_lda_,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
-    SUBR(sdMat_create)(&mat3_,this->nrows_,this->ncols_,this->comm_,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
-    SUBR(sdMat_extract_view)(mat3_,&mat3_vp_,&this->m_lda_,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
-    SUBR(sdMat_create)(&mat4_,this->nrows_,this->ncols_,this->comm_,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
-    SUBR(sdMat_extract_view)(mat4_,&mat4_vp_,&this->m_lda_,&this->ierr_);
-    ASSERT_EQ(0,this->ierr_);
+    SUBR(sdMat_create)(&mat1_,this->nrows_,this->ncols_,this->comm_,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    SUBR(sdMat_extract_view)(mat1_,&mat1_vp_,&this->m_lda_,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    SUBR(sdMat_create)(&mat2_,this->nrows_,this->ncols_,this->comm_,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    SUBR(sdMat_extract_view)(mat2_,&mat2_vp_,&this->m_lda_,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    SUBR(sdMat_create)(&mat3_,this->nrows_,this->ncols_,this->comm_,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    SUBR(sdMat_extract_view)(mat3_,&mat3_vp_,&this->m_lda_,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    SUBR(sdMat_create)(&mat4_,this->nrows_,this->ncols_,this->comm_,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    SUBR(sdMat_extract_view)(mat4_,&mat4_vp_,&this->m_lda_,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
     }
   }
 
@@ -41,10 +41,10 @@ virtual void TearDown()
   {
   if (this->typeImplemented_)
     {
-    SUBR(sdMat_delete)(mat1_,&this->ierr_);
-    SUBR(sdMat_delete)(mat2_,&this->ierr_);
-    SUBR(sdMat_delete)(mat3_,&this->ierr_);
-    SUBR(sdMat_delete)(mat4_,&this->ierr_);
+    SUBR(sdMat_delete)(mat1_,&this->iflag_);
+    SUBR(sdMat_delete)(mat2_,&this->iflag_);
+    SUBR(sdMat_delete)(mat3_,&this->iflag_);
+    SUBR(sdMat_delete)(mat4_,&this->iflag_);
     }
   KernelTestWithType< _ST_ >::TearDown();
   KernelTest::TearDown();
@@ -100,11 +100,11 @@ static void PrintSdMat(std::ostream& os, std::string label,
 
   static bool pointerUnchanged(TYPE(sdMat_ptr) V, ST* expected_location, int expected_lda)
   {
-    int ierr;
+    int iflag;
     lidx_t lda;
     ST* ptr;
-    SUBR(sdMat_extract_view)(V,&ptr,&lda,&ierr);
-    return ( (ierr==0)&&(lda==expected_lda)&&(ptr==expected_location) );
+    SUBR(sdMat_extract_view)(V,&ptr,&lda,&iflag);
+    return ( (iflag==0)&&(lda==expected_lda)&&(ptr==expected_location) );
   }
 
   

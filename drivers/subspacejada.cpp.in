@@ -178,16 +178,16 @@ int main(int argc, char** argv)
   // read or create matrix A using our helper function from driver_utils,
   // which can handle matrix files like name.mm, name.bin etc. but also our
   // favorite test cases spinSZ<N>, graphene<N> etc.
-  crsMat_ptr_t A = NULL;
+  sparseMat_ptr_t A = NULL;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,problem,&ierr), ierr);
   
   // create an operator from A
   op_ptr_t opA = new TYPE(op);
-  PHIST_ICHK_IERR(SUBR(op_wrap_crsMat)(opA,A,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(opA,A,&ierr),ierr);
 
   // we need the domain map of the matrix
   const_map_ptr_t map = NULL;
-  PHIST_ICHK_IERR(SUBR(crsMat_get_domain_map)(A,&map,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A,&map,&ierr),ierr);
 
   // setup necessary vectors and matrices for the schur form
   mvec_ptr_t Q = NULL;
@@ -248,7 +248,7 @@ int main(int argc, char** argv)
     PHIST_SOUT(PHIST_INFO, "\t%8.4e", resNorm[i]);
 
   // calculate real residual
-  PHIST_ICHK_IERR(SUBR(crsMat_times_mvec)(st::one(),A,Q,st::zero(),res,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,Q,st::zero(),res,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Q,R,st::one(),res,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_norm2)(res,resNorm,&ierr),ierr);
   PHIST_SOUT(PHIST_INFO, "\n explicit residuum norm:");
@@ -269,7 +269,7 @@ int main(int argc, char** argv)
   // clean up operator
   delete opA;
   // delete matrix
-  PHIST_ICHK_IERR(SUBR(crsMat_delete)(A,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&ierr),ierr);
 
   PHIST_MAIN_TASK_END
 

@@ -11,33 +11,33 @@ void createVecs()
 {
   lidx_t lda;
   // vectors created with the same function should get the same stride (lda)
-  SUBR(mvec_create)(&vec1_,this->map_,nvec_,&this->ierr_);
-  ASSERT_EQ(0,this->ierr_);
-  SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda_,&this->ierr_);
-  ASSERT_EQ(0,this->ierr_);
+  SUBR(mvec_create)(&vec1_,this->map_,nvec_,&this->iflag_);
+  ASSERT_EQ(0,this->iflag_);
+  SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda_,&this->iflag_);
+  ASSERT_EQ(0,this->iflag_);
   lda=lda_;
-  SUBR(mvec_create)(&vec2_,this->map_,nvec_,&this->ierr_);
-  ASSERT_EQ(0,this->ierr_);
-  SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&lda_,&this->ierr_);
-  ASSERT_EQ(0,this->ierr_);
+  SUBR(mvec_create)(&vec2_,this->map_,nvec_,&this->iflag_);
+  ASSERT_EQ(0,this->iflag_);
+  SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&lda_,&this->iflag_);
+  ASSERT_EQ(0,this->iflag_);
   ASSERT_EQ(lda,lda_);
-  SUBR(mvec_create)(&vec3_,this->map_,nvec_,&this->ierr_);
-  ASSERT_EQ(0,this->ierr_);
+  SUBR(mvec_create)(&vec3_,this->map_,nvec_,&this->iflag_);
+  ASSERT_EQ(0,this->iflag_);
   ASSERT_EQ(lda,lda_);
-  SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&lda_,&this->ierr_);
-  ASSERT_EQ(0,this->ierr_);
+  SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&lda_,&this->iflag_);
+  ASSERT_EQ(0,this->iflag_);
   ASSERT_EQ(lda,lda_);
   stride_=1;
 }
 
 void deleteVecs()
 {
-  SUBR(mvec_delete)(this->vec1_,&this->ierr_);
-  ASSERT_EQ(0,this->ierr_);
-  SUBR(mvec_delete)(this->vec2_,&this->ierr_);
-  ASSERT_EQ(0,this->ierr_);
-  SUBR(mvec_delete)(this->vec3_,&this->ierr_);
-  ASSERT_EQ(0,this->ierr_);
+  SUBR(mvec_delete)(this->vec1_,&this->iflag_);
+  ASSERT_EQ(0,this->iflag_);
+  SUBR(mvec_delete)(this->vec2_,&this->iflag_);
+  ASSERT_EQ(0,this->iflag_);
+  SUBR(mvec_delete)(this->vec3_,&this->iflag_);
+  ASSERT_EQ(0,this->iflag_);
 }
 
 public:
@@ -86,11 +86,11 @@ virtual void replaceMap(const_map_ptr_t map)
 inline static MT releps(TYPE(const_mvec_ptr) V=NULL)
   {
   if (V==NULL) return std::sqrt((MT)_Nglob*mt::eps());
-  int nvec,ierr;
-  SUBR(mvec_num_vectors)(V,&nvec,&ierr);
+  int nvec,iflag;
+  SUBR(mvec_num_vectors)(V,&nvec,&iflag);
   MT *nrms = new MT[nvec];
   MT max_nrm=0;
-  SUBR(mvec_norm2)(V,nrms,&ierr);
+  SUBR(mvec_norm2)(V,nrms,&iflag);
   for (int i=0;i<nvec;i++)
     {
     max_nrm = std::max(max_nrm,nrms[i]);
@@ -103,30 +103,30 @@ inline static MT releps(TYPE(const_mvec_ptr) V=NULL)
 //! in-place reduction operation on scalar data type (for testing with MPI)
 static int global_sum(ST* value, int count, MPI_Comm mpi_comm)
   {
-  int ierr=0;
+  int iflag=0;
 #ifdef PHIST_HAVE_MPI
         ST* gvalue = new ST[count];
         for (int i=0;i<count;i++) gvalue[i]=st::zero();
-        ierr=MPI_Allreduce(value,gvalue,count,
+        iflag=MPI_Allreduce(value,gvalue,count,
                 st::mpi_type(), MPI_SUM, mpi_comm);
         for (int i=0;i<count;i++) value[i]=gvalue[i];
         delete [] gvalue;
 #endif
-  return ierr;
+  return iflag;
   }
 
 //! in-place reduction operation on scalar data type (for testing with MPI)
 static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
   {
-  int ierr=0;
+  int iflag=0;
 #ifdef PHIST_HAVE_MPI
         ST* gvalue = new MT[count];        
-        ierr=MPI_Allreduce(value,gvalue,count,
+        iflag=MPI_Allreduce(value,gvalue,count,
                 mt::mpi_type(), MPI_SUM, mpi_comm);
         for (int i=0;i<count;i++) value[i]=gvalue[i];
         delete [] gvalue;
 #endif
-  return ierr;
+  return iflag;
   }
 
   //! tests if each column of an mv is normalized in the 2-norm
@@ -233,11 +233,11 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
     
   static bool pointerUnchanged(TYPE(mvec_ptr) V, ST* expected_location, int expected_lda)
   { 
-    int ierr;
+    int iflag;
     lidx_t lda;
     ST* ptr;
-    SUBR(mvec_extract_view)(V,&ptr,&lda,&ierr);
-    return ( (ierr==0)&&(lda==expected_lda)&&(ptr==expected_location) );
+    SUBR(mvec_extract_view)(V,&ptr,&lda,&iflag);
+    return ( (iflag==0)&&(lda==expected_lda)&&(ptr==expected_location) );
   }
 
   TYPE(mvec_ptr) vec1_, vec2_, vec3_;

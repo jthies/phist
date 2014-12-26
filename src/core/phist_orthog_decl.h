@@ -16,7 +16,7 @@
 //! mutually orthogonal and orthogonal against V. On exit, the     
 //! variable rankWV will contain the original rank of the matrix   
 //! [V,W] before the orthogonalization/randomization of W. If [V,W]
-//! did not have full rank, *ierr=+1 is returned.                  
+//! did not have full rank, *iflag=+1 is returned.                  
 //!                                                                
 //! The implementation makes use of the kernel function mvec_QR    
 //! for the inner orthogonalization of W. If this function is not  
@@ -24,16 +24,16 @@
 //! fallback variant based on the SVQB algorithm. In this case,    
 //! the relation Q*R1 = W-V*R2 does not hold, but Q is orthonormal 
 //! and orthogonal against V anyway with the nullspace replaced    
-//! by random vectors. To indicate the invalid R's, ierr=+2 is     
+//! by random vectors. To indicate the invalid R's, iflag=+2 is     
 //! returned.                                                      
 //!                                                                
 //! If no random orthogonal vectors can be generated (after some   
-//! tries) ierr=-8 is returned. This may indicate a problem with   
+//! tries) iflag=-8 is returned. This may indicate a problem with   
 //! the random vector generator.                                   
 //!                                                                
 //! If the decrease in norm in one of the columns                  
 //! in the last CGS sweep indicates that the algorithm has not     
-//! yet converged, we return ierr=-9 to indicate that more steps   
+//! yet converged, we return iflag=-9 to indicate that more steps   
 //! may be advisable. This should not happen in practice if        
 //! numSweeps>=2 ('twice is enough').                              
 //!                                                                
@@ -41,4 +41,4 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      TYPE(mvec_ptr) W,
                      TYPE(sdMat_ptr) R1,
                      TYPE(sdMat_ptr) R2,
-                     int numSweeps, int* rankVW, int* ierr);
+                     int numSweeps, int* rankVW, int* iflag);

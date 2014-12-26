@@ -9,9 +9,11 @@
 //! The systems to be solved are (sigma[j]I-A)(Xr[k]+i*Xi[k])=B[k],
 //! where Xr, Xi and B are mvecs with blockSize columns, and sigma[j] are numShifts complex 
 //! shifts.
+//!
+//! \todo for GHOST we should calculate in complex numbers directly but pass in a real-valued matrix (with complex shift)
 typedef struct TYPE(feastCorrectionSolver)
 {
-  TYPE(const_crsMat_ptr) A_;
+  TYPE(const_sparseMat_ptr) A_;
   int numShifts_;       // number of shifts for which the system has to be solved
   _MT_ *sigma_r_;
   _MT_ *sigma_i_;
@@ -31,13 +33,13 @@ typedef TYPE(feastCorrectionSolver) const * TYPE(const_feastCorrectionSolver_ptr
 //! per shift to be treated simultaneously (blockSize), the number of shifts 
 //! (numShifts), and the complex shifts
 void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *fCorrSolver, 
-        TYPE(const_crsMat_ptr) A, linSolv_t method,
+        TYPE(const_sparseMat_ptr) A, linSolv_t method,
         int blockSize, int numShifts,
         _MT_ shifts_r[], _MT_ shifts_i[],
-        int *ierr);
+        int *iflag);
 
 //! delete a feastCorrectionSolver object
-void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) fCorrSolver, int *ierr);
+void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) fCorrSolver, int *iflag);
 
 
 //! calculate approximate solutions to given set of FEAST correction equations
@@ -49,7 +51,7 @@ void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) fCorrSol
 //! tol             desired accuracy (gmres residual tolerance) of the individual systems
 //! maxIter         maximal number of iterations after which individial systems should be aborted
 //! sol             returns approximate solution vectors, sol[i] belongs to shift[i] and rhs
-//! ierr            a value > 0 indicates the number of systems that have not converged to the 
+//! iflag            a value > 0 indicates the number of systems that have not converged to the 
 //!                 desired tolerance
 //!
 //! rhs and sol_r/sol_i must have the same number of columns (vectors), but it does *not* 
@@ -59,4 +61,4 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) fCorrSolver
                                     const _MT_ tol, int maxIter,
                                     TYPE(mvec_ptr) sol_r[],
                                     TYPE(mvec_ptr) sol_i[],
-                                    int *ierr);
+                                    int *iflag);

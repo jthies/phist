@@ -15,13 +15,13 @@
 #include "kernels/phist_kernels.h"
 
 GTEST_API_ int main(int argc, char **argv) {
-    int ierr,test_result;
-    phist_kernels_init(&argc,&argv,&ierr);
+    int iflag,test_result;
+    phist_kernels_init(&argc,&argv,&iflag);
     testing::InitGoogleTest(&argc, argv);
 
     int rank = 0;
 #ifdef PHIST_HAVE_MPI
-    ierr = MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+    iflag = MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 #endif
 
     // on MPI ranks != 0 remove the default output listeners if there are any
@@ -38,7 +38,7 @@ GTEST_API_ int main(int argc, char **argv) {
 
     test_result=RUN_ALL_TESTS();
 
-    phist_kernels_finalize(&ierr);
-    //ASSERT_INT_EQ(ierr,0);
+    phist_kernels_finalize(&iflag);
+    //ASSERT_INT_EQ(iflag,0);
     return test_result;
 }

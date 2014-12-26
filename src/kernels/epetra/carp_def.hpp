@@ -3,12 +3,12 @@ extern "C" {
 
 #if 0
 
-void SUBR(carp_create)(TYPE(const_crsMat_ptr) vA, TYPE(carpData)** dat_ptr, int* ierr)
+void SUBR(carp_create)(TYPE(const_sparseMat_ptr) vA, TYPE(carpData)** dat_ptr, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr=0;
-  PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix, A, vA, *ierr);
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix, A, vA, *iflag);
   const Epetra_Map& rowMap = A->RowMap();
   const Epetra_Map& colMap = A->ColMap();
   TYPE(carpData)* dat = new TYPE(carpData);
@@ -16,7 +16,7 @@ void SUBR(carp_create)(TYPE(const_crsMat_ptr) vA, TYPE(carpData)** dat_ptr, int*
   Epetra_Vector* diagA = new Epetra_Vector(colMap);
   Epetra_Vector* rowScaling = new Epetra_Vector(colMap);
   
-  PHIST_CHK_IERR(*ierr=A->ExtractDiagonalCopy(*diagA),*ierr);
+  PHIST_CHK_IERR(*iflag=A->ExtractDiagonalCopy(*diagA),*iflag);
   
   // compute squared two-norm of each row of A
   int* col;
@@ -25,7 +25,7 @@ void SUBR(carp_create)(TYPE(const_crsMat_ptr) vA, TYPE(carpData)** dat_ptr, int*
 #pragma omp parallel for private(len,col,val) schedule(static)
   for (int i=0;i<A->NumMyRows();i++)
   {
-    *ierr=A->ExtractMyRowView(i,len,val,col);
+    *iflag=A->ExtractMyRowView(i,len,val,col);
     (*rowScaling)[i]=0.0;
     for (int j=0;j<len;j++)
     {
@@ -43,23 +43,23 @@ void SUBR(carp_create)(TYPE(const_crsMat_ptr) vA, TYPE(carpData)** dat_ptr, int*
   dat->xLoc_=NULL;
 }
 
-void SUBR(carp_delete)(TYPE(carpData)* dat, int* ierr)
+void SUBR(carp_delete)(TYPE(carpData)* dat, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr=0;
+  *iflag=0;
   if (dat==NULL) return;
-  *ierr=-99; //TODO - this can probably  be implemented in a kernel-lib independent way
+  *iflag=-99; //TODO - this can probably  be implemented in a kernel-lib independent way
 }
 
-void SUBR(carp_fb)(TYPE(carpData)* dat, TYPE(const_crsMat_ptr) vA, 
+void SUBR(carp_fb)(TYPE(carpData)* dat, TYPE(const_sparseMat_ptr) vA, 
         TYPE(const_mvec_ptr) vB, _ST_ const * sigma, 
-        TYPE(const_mvec_ptr) vrhs, TYPE(mvec_ptr) vsol, int* ierr)
+        TYPE(const_mvec_ptr) vrhs, TYPE(mvec_ptr) vsol, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix, A, vA, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix, A, vA, *iflag);
   const Epetra_Vector* B = (const Epetra_Vector*)(vB);
-  PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector, rhs, vrhs, *ierr);
-  PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector, sol, vsol, *ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector, rhs, vrhs, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector, sol, vsol, *iflag);
   
 #ifdef TESTING
 if ( (sol->Map().SameAs(rhs->Map())==false) ||
@@ -82,7 +82,7 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
     }
     else
     {
-      PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,xLoc,dat->xLoc_,*ierr);
+      PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,xLoc,dat->xLoc_,*iflag);
       if (xLoc->NumVectors()!=nvecs)
       {
         delete xLoc;
@@ -93,7 +93,7 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
   else
   {
     // create a view that will be re-created in the next call and deleted in carp_delete
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(vsol,&dat->xLoc_,0,nvecs-1,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(vsol,&dat->xLoc_,0,nvecs-1,iflag),*iflag);
     needImport=false;
   }
 
@@ -104,13 +104,13 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
   }
   
   // import the sol vector into the column map of A
-  PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,xLoc,dat->xLoc_,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,xLoc,dat->xLoc_,*iflag);
   if (needImport)
   {
-    PHIST_CHK_IERR(*ierr=xLoc->Import(*sol, *A->Importer(),Insert),*ierr);
+    PHIST_CHK_IERR(*iflag=xLoc->Import(*sol, *A->Importer(),Insert),*iflag);
   }
-  PHIST_CAST_PTR_FROM_VOID(const Epetra_Vector,diagA,dat->diagA_,*ierr);
-  PHIST_CAST_PTR_FROM_VOID(const Epetra_Vector,rowScaling,dat->rowScaling_,*ierr);
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_Vector,diagA,dat->diagA_,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_Vector,rowScaling,dat->rowScaling_,*iflag);
 
   int* col;
   int len;
@@ -126,7 +126,7 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
     if (B!=NULL) Bii=(*B)[i];
     // the diagonal is still missing in this ||A(i,:)||^2 term:
     double nrm_ai = (*rowScaling)[i];
-    PHIST_CHK_IERR(*ierr=A->ExtractMyRowView(i,len,val,col),*ierr);
+    PHIST_CHK_IERR(*iflag=A->ExtractMyRowView(i,len,val,col),*iflag);
     double factor[nvecs];
 
     // first compute scaling factors
@@ -164,8 +164,8 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
   // R^n in which the overlapping elements appear multiple times.
   if (needImport)
   {
-    PHIST_CHK_IERR(*ierr=sol->Export(*xLoc, *(A->Importer()), Average),*ierr);
-    PHIST_CHK_IERR(*ierr=xLoc->Import(*sol, *A->Importer(),Insert),*ierr);
+    PHIST_CHK_IERR(*iflag=sol->Export(*xLoc, *(A->Importer()), Average),*iflag);
+    PHIST_CHK_IERR(*iflag=xLoc->Import(*sol, *A->Importer(),Insert),*iflag);
   }
 
   ///////////////////////////////////////////////////////////
@@ -179,7 +179,7 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
     if (B!=NULL) Bii=(*B)[i];
     // the diagonal is still missing in this ||A(i,:)||^2 term:
     double nrm_ai = (*rowScaling)[i];
-    PHIST_CHK_IERR(*ierr=A->ExtractMyRowView(i,len,val,col),*ierr);
+    PHIST_CHK_IERR(*iflag=A->ExtractMyRowView(i,len,val,col),*iflag);
     double factor[nvecs];
 
     // first compute scaling factors
@@ -210,7 +210,7 @@ if ( (sol->Map().SameAs(rhs->Map())==false) ||
 
   if (needImport)
   {
-    PHIST_CHK_IERR(*ierr=sol->Export(*xLoc, *(A->Importer()), Average),*ierr);
+    PHIST_CHK_IERR(*iflag=sol->Export(*xLoc, *(A->Importer()), Average),*iflag);
   }
 
 }//carp_fb

@@ -43,19 +43,19 @@ public:
 #endif
 
   //! CRS matrices
-  typedef void crsMat_t;
+  typedef void sparseMat_t;
 
   //! create a Teuchos' view of a local sdMat
-  //static Teuchos::RCP<const Teuchos_sdMat_t> CreateTeuchosView(Teuchos::RCP<const sdMat_t> M, int* ierr)
+  //static Teuchos::RCP<const Teuchos_sdMat_t> CreateTeuchosView(Teuchos::RCP<const sdMat_t> M, int* iflag)
   //{
-    //*ierr=0;
+    //*iflag=0;
 
     //const ST *M_val = NULL;
     //lidx_t lda;
     //int nrows, ncols;
-    //PHIST_CHK_IERR(SUBR(sdMat_extract_view)(*M,&M_val,lda,ierr),*ierr);
-    //PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(*M,&nrows,ierr),*ierr);
-    //PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(*M,&ncols,ierr),*ierr);
+    //PHIST_CHK_IERR(SUBR(sdMat_extract_view)(*M,&M_val,lda,iflag),*iflag);
+    //PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(*M,&nrows,iflag),*iflag);
+    //PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(*M,&ncols,iflag),*iflag);
 
     //Teuchos::RCP<const Teuchos_sdMat_t> M_view
       //= Teuchos::rcp(new Teuchos_sdMat_t(Teuchos::View,M_val,lda,nrows,ncols));
@@ -63,16 +63,16 @@ public:
   //}
 
   //! create a non-const Teuchos' view of a local mvec/sdMat
-  //static Teuchos::RCP<Teuchos_sdMat_t> CreateTeuchosViewNonConst(Teuchos::RCP<sdMat_t> M, int* ierr)
+  //static Teuchos::RCP<Teuchos_sdMat_t> CreateTeuchosViewNonConst(Teuchos::RCP<sdMat_t> M, int* iflag)
   //{
-    //*ierr=0;
+    //*iflag=0;
 
     //ST *M_val = NULL;
     //lidx_t lda;
     //int nrows, ncols;
-    //PHIST_CHK_IERR(SUBR(sdMat_extract_view)(*M,&M_val,lda,ierr),*ierr);
-    //PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(*M,&nrows,ierr),*ierr);
-    //PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(*M,&ncols,ierr),*ierr);
+    //PHIST_CHK_IERR(SUBR(sdMat_extract_view)(*M,&M_val,lda,iflag),*iflag);
+    //PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(*M,&nrows,iflag),*iflag);
+    //PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(*M,&ncols,iflag),*iflag);
 
     //Teuchos::RCP<Teuchos_sdMat_t> M_view
       //= Teuchos::rcp(new Teuchos_sdMat_t(Teuchos::View,M_val,lda,nrows,ncols));

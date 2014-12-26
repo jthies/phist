@@ -10,7 +10,7 @@ public:
    */
   virtual void SetUp()
     {
-    ierr_=0;
+    iflag_=0;
     KernelTestWithMap<_N_>::SetUp();
     }
 
@@ -26,7 +26,7 @@ public:
   /*! Test the comm_get_rank function. */
   TEST_F(CLASSNAME, get_comm) {
         const_comm_ptr_t comm;
-        phist_map_get_comm(map_,&comm,&ierr_);
-	ASSERT_EQ(0,ierr_);
+        phist_map_get_comm(map_,&comm,&iflag_);
+	ASSERT_EQ(0,iflag_);
 }
 

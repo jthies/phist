@@ -26,4 +26,4 @@ void SUBR(belos)(TYPE(const_op_ptr) Op,
         TYPE(const_mvec_ptr) B, 
         _MT_ tol,int* num_iters, int max_blocks,
         int variant, int *nConv,
-        int* ierr);
+        int* iflag);

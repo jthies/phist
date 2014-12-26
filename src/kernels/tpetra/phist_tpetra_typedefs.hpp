@@ -46,7 +46,7 @@ class Traits
   typedef Teuchos::SerialDenseMatrix<lidx_t,ST> Teuchos_sdMat_t;
 
   //! CRS matrices
-  typedef Tpetra::CrsMatrix<ST,lidx_t,gidx_t,node_t> crsMat_t;
+  typedef Tpetra::CrsMatrix<ST,lidx_t,gidx_t,node_t> sparseMat_t;
 
   //! for performing the MVM
   typedef Tpetra::CrsMatrixMultiplyOp<ST,ST,lidx_t,gidx_t,node_t> crsMVM_t;
@@ -58,9 +58,9 @@ class Traits
   static inline ST zero(){return Teuchos::ScalarTraits<ST>::zero();}
 
   //! create a Teuchos' view of a local mvec/sdMat
-  static Teuchos::RCP<const Teuchos_sdMat_t> CreateTeuchosView(Teuchos::RCP<const sdMat_t> M, int* ierr)
+  static Teuchos::RCP<const Teuchos_sdMat_t> CreateTeuchosView(Teuchos::RCP<const sdMat_t> M, int* iflag)
     {
-    *ierr=0;
+    *iflag=0;
     lidx_t stride = M->getStride();
     lidx_t nrows = M->getLocalLength();
     lidx_t ncols = M->getNumVectors();
@@ -70,7 +70,7 @@ class Traits
     try {
     M_tmp=M->get1dView();
     } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,status);
-    if (!status) {*ierr=-1; return Teuchos::null;}
+    if (!status) {*iflag=-1; return Teuchos::null;}
     const ST *M_val = M_tmp.getRawPtr();
     Teuchos::RCP<const Teuchos_sdMat_t> M_view
                   = Teuchos::rcp(new Teuchos_sdMat_t(Teuchos::View,M_val,stride,nrows,ncols));
@@ -78,9 +78,9 @@ class Traits
     }
 
   //! create a non-const Teuchos' view of a local mvec/sdMat
-  static Teuchos::RCP<Teuchos_sdMat_t> CreateTeuchosViewNonConst(Teuchos::RCP<sdMat_t> M, int* ierr)
+  static Teuchos::RCP<Teuchos_sdMat_t> CreateTeuchosViewNonConst(Teuchos::RCP<sdMat_t> M, int* iflag)
     {
-    *ierr=0;
+    *iflag=0;
     int stride = M->getStride();
     int nrows = M->getLocalLength();
     int ncols = M->getNumVectors();
@@ -89,7 +89,7 @@ class Traits
     try {
     M_tmp=M->get1dViewNonConst();
     } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,status);
-    if (!status) {*ierr=-1; return Teuchos::null;}
+    if (!status) {*iflag=-1; return Teuchos::null;}
     ST *M_val = M_tmp.getRawPtr();
     Teuchos::RCP<Teuchos_sdMat_t> M_view
                   = Teuchos::rcp(new Teuchos_sdMat_t(Teuchos::View,M_val,stride,nrows,ncols));

@@ -7,25 +7,25 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      TYPE(sdMat_ptr) R1,
                      TYPE(sdMat_ptr) R2,
                      int numSweeps,
-                     int* ierr)
+                     int* iflag)
   {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
 
   int m,k;
   int rankW;
-  *ierr=0;
+  *iflag=0;
   MT rankTol=mt::sqrt(mt::eps());
   
   // all vectors and matrices must be allocated.
   if (V==NULL || W==NULL || R1==NULL || R2==NULL) 
     {
-    *ierr=-1;
+    *iflag=-1;
     return;
     }
 
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&k,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&k,iflag),*iflag);
   
   if (k==0) // no vectors to be orthogonalized
     {
@@ -34,33 +34,33 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 
   if (m==0)
     {
-    PHIST_CHK_NEG_IERR(SUBR(mvec_QR)(W,R1,ierr),*ierr);
+    PHIST_CHK_NEG_IERR(SUBR(mvec_QR)(W,R1,iflag),*iflag);
     return;
     }
 
 #ifdef TESTING
 
   // check that all array dimensions are correct
-  PHIST_CHK_IERR(*ierr=(int)(V==NULL || W==NULL || R1==NULL || R2==NULL),*ierr);
+  PHIST_CHK_IERR(*iflag=(int)(V==NULL || W==NULL || R1==NULL || R2==NULL),*iflag);
 
   lidx_t n,nrR1,ncR1,nrR2,ncR2,tmp;
 
-  PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_my_length)(W,&tmp,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_my_length)(W,&tmp,iflag),*iflag);
 
-  PHIST_CHK_IERR(*ierr=((n==tmp)?0:-1),*ierr);
+  PHIST_CHK_IERR(*iflag=((n==tmp)?0:-1),*iflag);
 
-  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R1,&nrR1,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(R1,&ncR1,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R2,&nrR2,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(R2,&ncR2,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R1,&nrR1,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(R1,&ncR1,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R2,&nrR2,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(R2,&ncR2,iflag),*iflag);
 
   // Q (and W) must match R1, R1 must be square
-  PHIST_CHK_IERR(*ierr=((k==nrR1)?0:-1),*ierr);
-  PHIST_CHK_IERR((*ierr=(k==ncR1)?0:-1),*ierr);
+  PHIST_CHK_IERR(*iflag=((k==nrR1)?0:-1),*iflag);
+  PHIST_CHK_IERR((*iflag=(k==ncR1)?0:-1),*iflag);
   // V must match R2, and V*R2 must match W
-  PHIST_CHK_IERR((*ierr=(m==nrR2)?0:-1),*ierr);
-  PHIST_CHK_IERR((*ierr=(k==ncR2)?0:-1),*ierr);
+  PHIST_CHK_IERR((*iflag=(m==nrR2)?0:-1),*iflag);
+  PHIST_CHK_IERR((*iflag=(k==ncR2)?0:-1),*iflag);
 
 //  PHIST_DEB("orthog: V is %dx%d,  W is %dx%d\n"
 //                        "       R1 is %dx%d, R2 is %dx%d\n",n,m,n,k,nrR1,ncR1,nrR2,ncR2);
@@ -88,9 +88,9 @@ Teuchos::RCP<BelosMAT> R1_1 = phist::rcp((MAT*)R1,false);
 Teuchos::RCP<BelosMAT> R2_1 = phist::rcp((MAT*)R2,false);
 #ifdef PHIST_KERNEL_LIB_TPETRA
 Teuchos::RCP<TeuchosMAT> R1_2 = 
-        phist::tpetra::Traits< ST >::CreateTeuchosViewNonConst(R1_1,ierr);
+        phist::tpetra::Traits< ST >::CreateTeuchosViewNonConst(R1_1,iflag);
 Teuchos::RCP<TeuchosMAT> R2_2 = 
-        phist::tpetra::Traits< ST >::CreateTeuchosViewNonConst(R2_1,ierr);
+        phist::tpetra::Traits< ST >::CreateTeuchosViewNonConst(R2_1,iflag);
 #else
 #error "not implemented"
 #endif
@@ -144,5 +144,5 @@ ortho = imgs;
   Teuchos::Array< Teuchos::RCP<TeuchosMAT > > R2_array( 1, R2_2 );
   rankW=ortho->projectAndNormalize( *W_2, R2_array, R1_2, V_array );
 
-  *ierr = 0; //ncols-rankW;// return positive number if rank not full.
+  *iflag = 0; //ncols-rankW;// return positive number if rank not full.
   }

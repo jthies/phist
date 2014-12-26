@@ -28,7 +28,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
     //! Set up routine.
     virtual void SetUp()
     {
-      int ierr;
+      int iflag;
       MTest::SetUp();
       VTest::SetUp();
 
@@ -41,8 +41,8 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
         int globalTooSmall = _N_ < BLOCK_SIZE1;
 #ifdef PHIST_HAVE_MPI
         int localTooSmall = nloc_ < BLOCK_SIZE1;
-        ierr_ = MPI_Allreduce(&localTooSmall, &globalTooSmall, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
-        ASSERT_EQ(0,ierr_);
+        iflag_ = MPI_Allreduce(&localTooSmall, &globalTooSmall, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+        ASSERT_EQ(0,iflag_);
 #endif
         typeImplemented_ = typeImplemented_ && !globalTooSmall;
       }
@@ -50,18 +50,18 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
       if( typeImplemented_ )
       {
         // read matrices
-        SUBR(read_mat)("speye",nglob_,&Aeye_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(read_mat)("speye",nglob_,&Aeye_,&iflag_);
+        ASSERT_EQ(0,iflag_);
 #ifndef SKIP_ZERO_MAT
-        SUBR(read_mat)("spzero",nglob_,&Azero_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(read_mat)("spzero",nglob_,&Azero_,&iflag_);
+        ASSERT_EQ(0,iflag_);
 #else
         Azero_=NULL;
 #endif        
-        SUBR(read_mat)("sprandn",nglob_,&Arand_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(read_mat)("sprandn_nodiag",nglob_,&Arand_nodiag_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(read_mat)("sprandn",nglob_,&Arand_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(read_mat)("sprandn_nodiag",nglob_,&Arand_nodiag_,&iflag_);
+        ASSERT_EQ(0,iflag_);
 
         ASSERT_TRUE(Aeye_ != NULL);
 #ifndef SKIP_ZERO_MAT        
@@ -80,40 +80,40 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
         opArand_nodiag_ = new TYPE(op);
         ASSERT_TRUE(opArand_nodiag_ != NULL);
 
-        SUBR(op_wrap_crsMat)(opAeye_,Aeye_,&ierr);
-        ASSERT_EQ(0,ierr);
+        SUBR(op_wrap_sparseMat)(opAeye_,Aeye_,&iflag);
+        ASSERT_EQ(0,iflag);
 #ifndef SKIP_ZERO_MAT
-        SUBR(op_wrap_crsMat)(opAzero_,Azero_,&ierr);
-        ASSERT_EQ(0,ierr);
+        SUBR(op_wrap_sparseMat)(opAzero_,Azero_,&iflag);
+        ASSERT_EQ(0,iflag);
 #endif
-        SUBR(op_wrap_crsMat)(opArand_,Arand_,&ierr);
-        ASSERT_EQ(0,ierr);
-        SUBR(op_wrap_crsMat)(opArand_nodiag_,Arand_nodiag_,&ierr);
-        ASSERT_EQ(0,ierr);
+        SUBR(op_wrap_sparseMat)(opArand_,Arand_,&iflag);
+        ASSERT_EQ(0,iflag);
+        SUBR(op_wrap_sparseMat)(opArand_nodiag_,Arand_nodiag_,&iflag);
+        ASSERT_EQ(0,iflag);
 
         // setup views for needed vectors and sdMats
         v0_ = V_ = Vm_ = AV_ = AVm_ = VH_ = NULL;
-        SUBR(mvec_view_block)(vec2_,&v0_,0,0,&ierr);
-        ASSERT_EQ(0,ierr);
-        SUBR(mvec_view_block)(vec1_,&V_,0,m_+BLOCK_SIZE1-1,&ierr);
-        ASSERT_EQ(0,ierr);
-        SUBR(mvec_extract_view)(V_,&V_vp_,&ldaV_,&ierr);
-        ASSERT_EQ(0,ierr);
+        SUBR(mvec_view_block)(vec2_,&v0_,0,0,&iflag);
+        ASSERT_EQ(0,iflag);
+        SUBR(mvec_view_block)(vec1_,&V_,0,m_+BLOCK_SIZE1-1,&iflag);
+        ASSERT_EQ(0,iflag);
+        SUBR(mvec_extract_view)(V_,&V_vp_,&ldaV_,&iflag);
+        ASSERT_EQ(0,iflag);
         stride_ = 1;
-        SUBR(mvec_view_block)(vec1_,&Vm_,0,m_-1,&ierr);
-        ASSERT_EQ(0,ierr);
-        SUBR(mvec_view_block)(vec2_,&AV_,BLOCK_SIZE1,m_+BLOCK_SIZE1-1,&ierr);
-        ASSERT_EQ(0,ierr);
-        SUBR(mvec_view_block)(vec2_,&AVm_,0,m_-1,&ierr);
-        ASSERT_EQ(0,ierr);
-        SUBR(mvec_view_block)(vec3_,&VH_,BLOCK_SIZE1,m_+BLOCK_SIZE1-1,&ierr);
-        ASSERT_EQ(0,ierr);
+        SUBR(mvec_view_block)(vec1_,&Vm_,0,m_-1,&iflag);
+        ASSERT_EQ(0,iflag);
+        SUBR(mvec_view_block)(vec2_,&AV_,BLOCK_SIZE1,m_+BLOCK_SIZE1-1,&iflag);
+        ASSERT_EQ(0,iflag);
+        SUBR(mvec_view_block)(vec2_,&AVm_,0,m_-1,&iflag);
+        ASSERT_EQ(0,iflag);
+        SUBR(mvec_view_block)(vec3_,&VH_,BLOCK_SIZE1,m_+BLOCK_SIZE1-1,&iflag);
+        ASSERT_EQ(0,iflag);
 
         H_ = Hm_ = NULL;
-        SUBR(sdMat_view_block)(mat1_,&H_,0,m_+BLOCK_SIZE1-1,0,m_-1,&ierr);
-        ASSERT_EQ(0,ierr);
-        SUBR(sdMat_view_block)(mat2_,&Hm_,0,m_-1,0,m_-1,&ierr);
-        ASSERT_EQ(0,ierr);
+        SUBR(sdMat_view_block)(mat1_,&H_,0,m_+BLOCK_SIZE1-1,0,m_-1,&iflag);
+        ASSERT_EQ(0,iflag);
+        SUBR(sdMat_view_block)(mat2_,&Hm_,0,m_-1,0,m_-1,&iflag);
+        ASSERT_EQ(0,iflag);
       }
     }
 
@@ -122,62 +122,62 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
       if( typeImplemented_ )
       {
         // delete vecs
-        SUBR(mvec_delete)(v0_,&ierr_); v0_ = NULL;
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_delete)(V_,&ierr_); V_ = NULL;
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_delete)(Vm_,&ierr_); Vm_ = NULL;
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_delete)(AV_,&ierr_); AV_ = NULL;
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_delete)(AVm_,&ierr_); AVm_ = NULL;
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_delete)(VH_,&ierr_); VH_ = NULL;
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_delete)(v0_,&iflag_); v0_ = NULL;
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_delete)(V_,&iflag_); V_ = NULL;
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_delete)(Vm_,&iflag_); Vm_ = NULL;
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_delete)(AV_,&iflag_); AV_ = NULL;
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_delete)(AVm_,&iflag_); AVm_ = NULL;
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_delete)(VH_,&iflag_); VH_ = NULL;
+        ASSERT_EQ(0,iflag_);
 
         VTest::replaceMap(map);
 
         // recreate vecs
-        SUBR(mvec_view_block)(vec2_,&v0_,0,0,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_view_block)(vec1_,&V_,0,m_+BLOCK_SIZE1-1,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_extract_view)(V_,&V_vp_,&ldaV_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_view_block)(vec2_,&v0_,0,0,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_view_block)(vec1_,&V_,0,m_+BLOCK_SIZE1-1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_extract_view)(V_,&V_vp_,&ldaV_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         stride_ = 1;
-        SUBR(mvec_view_block)(vec1_,&Vm_,0,m_-1,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_view_block)(vec2_,&AV_,BLOCK_SIZE1,m_+BLOCK_SIZE1-1,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_view_block)(vec2_,&AVm_,0,m_-1,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_view_block)(vec3_,&VH_,BLOCK_SIZE1,m_+BLOCK_SIZE1-1,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_view_block)(vec1_,&Vm_,0,m_-1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_view_block)(vec2_,&AV_,BLOCK_SIZE1,m_+BLOCK_SIZE1-1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_view_block)(vec2_,&AVm_,0,m_-1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_view_block)(vec3_,&VH_,BLOCK_SIZE1,m_+BLOCK_SIZE1-1,&iflag_);
+        ASSERT_EQ(0,iflag_);
       }
     }
 
     //! Clean up.
     virtual void TearDown()
     {
-      int ierr;
+      int iflag;
       if( typeImplemented_ )
       {
-        SUBR(mvec_delete)(v0_,&ierr);
-        ASSERT_EQ(0,ierr);
-        SUBR(mvec_delete)(V_, &ierr);
-        ASSERT_EQ(0,ierr);
-        SUBR(mvec_delete)(Vm_, &ierr);
-        ASSERT_EQ(0,ierr);
-        SUBR(mvec_delete)(AV_,&ierr);
-        ASSERT_EQ(0,ierr);
-        SUBR(mvec_delete)(AVm_,&ierr);
-        ASSERT_EQ(0,ierr);
-        SUBR(mvec_delete)(VH_,&ierr);
-        ASSERT_EQ(0,ierr);
-        SUBR(sdMat_delete)(H_,&ierr);
-        ASSERT_EQ(0,ierr);
-        SUBR(sdMat_delete)(Hm_,&ierr);
-        ASSERT_EQ(0,ierr);
+        SUBR(mvec_delete)(v0_,&iflag);
+        ASSERT_EQ(0,iflag);
+        SUBR(mvec_delete)(V_, &iflag);
+        ASSERT_EQ(0,iflag);
+        SUBR(mvec_delete)(Vm_, &iflag);
+        ASSERT_EQ(0,iflag);
+        SUBR(mvec_delete)(AV_,&iflag);
+        ASSERT_EQ(0,iflag);
+        SUBR(mvec_delete)(AVm_,&iflag);
+        ASSERT_EQ(0,iflag);
+        SUBR(mvec_delete)(VH_,&iflag);
+        ASSERT_EQ(0,iflag);
+        SUBR(sdMat_delete)(H_,&iflag);
+        ASSERT_EQ(0,iflag);
+        SUBR(sdMat_delete)(Hm_,&iflag);
+        ASSERT_EQ(0,iflag);
 
         delete opAeye_;
         delete opAzero_;
@@ -200,10 +200,10 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
     TYPE(op_ptr) opArand_nodiag_;
 
   protected:
-    TYPE(crsMat_ptr) Aeye_;
-    TYPE(crsMat_ptr) Azero_;
-    TYPE(crsMat_ptr) Arand_;
-    TYPE(crsMat_ptr) Arand_nodiag_;
+    TYPE(sparseMat_ptr) Aeye_;
+    TYPE(sparseMat_ptr) Azero_;
+    TYPE(sparseMat_ptr) Arand_;
+    TYPE(sparseMat_ptr) Arand_nodiag_;
 
     TYPE(mvec_ptr) v0_;
     TYPE(mvec_ptr) V_;
@@ -215,11 +215,11 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
     TYPE(sdMat_ptr) H_;
     TYPE(sdMat_ptr) Hm_;
 
-    int delete_mat(TYPE(crsMat_ptr) A)
+    int delete_mat(TYPE(sparseMat_ptr) A)
     {
       if (A!=NULL)
-        SUBR(crsMat_delete)(A,&ierr_);
-      return ierr_;
+        SUBR(sparseMat_delete)(A,&iflag_);
+      return iflag_;
     }
 
 
@@ -227,19 +227,19 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
     // ========================= the actual arnoldi test =========================
     void doArnoldiTest(TYPE(const_op_ptr) opA, int blockSize = 0)
     {
-      int ierr;
+      int iflag;
       if( typeImplemented_ )
       {
         // run simple_arnoldi
         if( blockSize > 0 )
         {
-          SUBR(simple_blockArnoldi)(opA,NULL,V_,NULL,NULL,H_,m_,blockSize,&ierr);
-          ASSERT_EQ(0,ierr);
+          SUBR(simple_blockArnoldi)(opA,NULL,V_,NULL,NULL,H_,m_,blockSize,&iflag);
+          ASSERT_EQ(0,iflag);
         }
         else
         {
-          SUBR(simple_arnoldi)(opA,NULL,v0_,V_,NULL,NULL,H_,m_,&ierr);
-          ASSERT_EQ(0,ierr);
+          SUBR(simple_arnoldi)(opA,NULL,v0_,V_,NULL,NULL,H_,m_,&iflag);
+          ASSERT_EQ(0,iflag);
         }
 
         // check orthogonality of V_
@@ -247,18 +247,18 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
         ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)50.*releps(V_));
 
         // calculate A*V(:,1:m)
-        opA->apply(st::one(),opA->A,Vm_,st::zero(),AV_,&ierr);
-        ASSERT_EQ(0,ierr);
+        opA->apply(st::one(),opA->A,Vm_,st::zero(),AV_,&iflag);
+        ASSERT_EQ(0,iflag);
         // calculate V(:,1:m+BLOCK_SIZE1)*H(1:m+BLOCK_SIZE1,1:m)
-        SUBR(mvec_times_sdMat)(st::one(),V_,H_,st::zero(),VH_,&ierr);
-        ASSERT_EQ(0,ierr);
+        SUBR(mvec_times_sdMat)(st::one(),V_,H_,st::zero(),VH_,&iflag);
+        ASSERT_EQ(0,iflag);
 
         // calculate AV_' := AV_ - VH_
-        SUBR(mvec_add_mvec)(-st::one(),VH_,st::one(),AV_,&ierr);
-        ASSERT_EQ(0,ierr);
+        SUBR(mvec_add_mvec)(-st::one(),VH_,st::one(),AV_,&iflag);
+        ASSERT_EQ(0,iflag);
         _MT_ vnorm[_M_];
-        SUBR(mvec_norm2)(AV_,vnorm,&ierr);
-        ASSERT_EQ(0,ierr);
+        SUBR(mvec_norm2)(AV_,vnorm,&iflag);
+        ASSERT_EQ(0,iflag);
 
         // check AV_' = AV_ - VH_ == 0
         for(int i = 0; i < _M_; i++)
@@ -270,19 +270,19 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
     // when one is interested in AV as well
     void doExtendedArnoldiTest(TYPE(const_op_ptr) opA, int blockSize = 0)
     {
-      int ierr;
+      int iflag;
       if( typeImplemented_ )
       {
         // run simple_arnoldi
         if( blockSize > 0 )
         {
-          SUBR(simple_blockArnoldi)(opA,NULL,V_,AVm_,NULL,H_,m_,blockSize,&ierr);
-          ASSERT_EQ(0,ierr);
+          SUBR(simple_blockArnoldi)(opA,NULL,V_,AVm_,NULL,H_,m_,blockSize,&iflag);
+          ASSERT_EQ(0,iflag);
         }
         else
         {
-          SUBR(simple_arnoldi)(opA,NULL,v0_,V_,AVm_,NULL,H_,m_,&ierr);
-          ASSERT_EQ(0,ierr);
+          SUBR(simple_arnoldi)(opA,NULL,v0_,V_,AVm_,NULL,H_,m_,&iflag);
+          ASSERT_EQ(0,iflag);
         }
 
         // check orthogonality of V_
@@ -290,17 +290,17 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
         ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)50.*releps(V_));
 
         // check H = Vm'*AVm
-        SUBR(sdMat_put_value)(mat2_, st::zero(), &ierr);
-        ASSERT_EQ(0,ierr);
-        SUBR(sdMat_get_block)(H_, Hm_, 0,m_-1, 0,m_-1, &ierr);
-        ASSERT_EQ(0,ierr);
-        SUBR(mvecT_times_mvec)(-st::one(),Vm_,AVm_,st::one(),Hm_, &ierr);
-        ASSERT_EQ(0,ierr);
+        SUBR(sdMat_put_value)(mat2_, st::zero(), &iflag);
+        ASSERT_EQ(0,iflag);
+        SUBR(sdMat_get_block)(H_, Hm_, 0,m_-1, 0,m_-1, &iflag);
+        ASSERT_EQ(0,iflag);
+        SUBR(mvecT_times_mvec)(-st::one(),Vm_,AVm_,st::one(),Hm_, &iflag);
+        ASSERT_EQ(0,iflag);
         ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,m_-1,m_-1,m_lda_,stride_,st::zero()), (MT)50.*releps(V_));
 
         // check A*Vm = AVm
-        opA->apply(-st::one(),opA->A,Vm_,st::one(),AVm_,&ierr);
-        ASSERT_EQ(0,ierr);
+        opA->apply(-st::one(),opA->A,Vm_,st::one(),AVm_,&iflag);
+        ASSERT_EQ(0,iflag);
 #ifdef PHIST_MVECS_ROW_MAJOR
         ASSERT_NEAR(mt::one(),ArrayEqual(vec2_vp_,m_+BLOCK_SIZE1,nloc_,lda_,stride_,st::zero()), (MT)50.*releps(V_));
 #else
@@ -308,18 +308,18 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
 #endif
 
         // calculate A*V(:,1:m)
-        opA->apply(st::one(),opA->A,Vm_,st::zero(),AV_,&ierr);
-        ASSERT_EQ(0,ierr);
+        opA->apply(st::one(),opA->A,Vm_,st::zero(),AV_,&iflag);
+        ASSERT_EQ(0,iflag);
         // calculate V(:,1:m+BLOCK_SIZE1)*H(1:m+BLOCK_SIZE1,1:m)
-        SUBR(mvec_times_sdMat)(st::one(),V_,H_,st::zero(),VH_,&ierr);
-        ASSERT_EQ(0,ierr);
+        SUBR(mvec_times_sdMat)(st::one(),V_,H_,st::zero(),VH_,&iflag);
+        ASSERT_EQ(0,iflag);
 
         // calculate AV_' := AV_ - VH_
-        SUBR(mvec_add_mvec)(-st::one(),VH_,st::one(),AV_,&ierr);
-        ASSERT_EQ(0,ierr);
+        SUBR(mvec_add_mvec)(-st::one(),VH_,st::one(),AV_,&iflag);
+        ASSERT_EQ(0,iflag);
         _MT_ vnorm[_M_];
-        SUBR(mvec_norm2)(AV_,vnorm,&ierr);
-        ASSERT_EQ(0,ierr);
+        SUBR(mvec_norm2)(AV_,vnorm,&iflag);
+        ASSERT_EQ(0,iflag);
 
         // check AV_' = AV_ - VH_ == 0
         for(int i = 0; i < _M_; i++)
@@ -334,11 +334,11 @@ TEST_F(CLASSNAME, Aeye_v0ones)
   if( typeImplemented_)
   {
     replaceMap(opAeye_->domain_map);
-    ASSERT_EQ(0,ierr_);
+    ASSERT_EQ(0,iflag_);
 
-    int ierr;
-    SUBR(mvec_put_value)(v0_,st::one(),&ierr);
-    ASSERT_EQ(0,ierr);
+    int iflag;
+    SUBR(mvec_put_value)(v0_,st::one(),&iflag);
+    ASSERT_EQ(0,iflag);
     doArnoldiTest(opAeye_, BLOCK_SIZE);
   }
 }
@@ -348,11 +348,11 @@ TEST_F(CLASSNAME, Azero_v0ones)
   if( typeImplemented_)
   {
     replaceMap(opAzero_->domain_map);
-    ASSERT_EQ(0,ierr_);
+    ASSERT_EQ(0,iflag_);
 
-    int ierr;
-    SUBR(mvec_put_value)(v0_,st::one(),&ierr);
-    ASSERT_EQ(0,ierr);
+    int iflag;
+    SUBR(mvec_put_value)(v0_,st::one(),&iflag);
+    ASSERT_EQ(0,iflag);
     doArnoldiTest(opAzero_, BLOCK_SIZE);
   }
 }
@@ -362,11 +362,11 @@ TEST_F(CLASSNAME, Arand_v0ones)
   if( typeImplemented_)
   {
     replaceMap(opArand_->domain_map);
-    ASSERT_EQ(0,ierr_);
+    ASSERT_EQ(0,iflag_);
 
-    int ierr;
-    SUBR(mvec_put_value)(v0_,st::one(),&ierr);
-    ASSERT_EQ(0,ierr);
+    int iflag;
+    SUBR(mvec_put_value)(v0_,st::one(),&iflag);
+    ASSERT_EQ(0,iflag);
     doArnoldiTest(opArand_, BLOCK_SIZE);
   }
 }
@@ -376,11 +376,11 @@ TEST_F(CLASSNAME, Arand_nodiag_v0ones)
   if( typeImplemented_)
   {
     replaceMap(opArand_nodiag_->domain_map);
-    ASSERT_EQ(0,ierr_);
+    ASSERT_EQ(0,iflag_);
 
-    int ierr;
-    SUBR(mvec_put_value)(v0_,st::one(),&ierr);
-    ASSERT_EQ(0,ierr);
+    int iflag;
+    SUBR(mvec_put_value)(v0_,st::one(),&iflag);
+    ASSERT_EQ(0,iflag);
     doArnoldiTest(opArand_nodiag_, BLOCK_SIZE);
   }
 }
@@ -391,11 +391,11 @@ TEST_F(CLASSNAME, extended_Aeye_v0ones)
   if( typeImplemented_)
   {
     replaceMap(opAeye_->domain_map);
-    ASSERT_EQ(0,ierr_);
+    ASSERT_EQ(0,iflag_);
 
-    int ierr;
-    SUBR(mvec_put_value)(v0_,st::one(),&ierr);
-    ASSERT_EQ(0,ierr);
+    int iflag;
+    SUBR(mvec_put_value)(v0_,st::one(),&iflag);
+    ASSERT_EQ(0,iflag);
     doExtendedArnoldiTest(opAeye_, BLOCK_SIZE);
   }
 }
@@ -406,11 +406,11 @@ TEST_F(CLASSNAME, extended_Azero_v0ones)
   if( typeImplemented_)
   {
     replaceMap(opAzero_->domain_map);
-    ASSERT_EQ(0,ierr_);
+    ASSERT_EQ(0,iflag_);
 
-    int ierr;
-    SUBR(mvec_put_value)(v0_,st::one(),&ierr);
-    ASSERT_EQ(0,ierr);
+    int iflag;
+    SUBR(mvec_put_value)(v0_,st::one(),&iflag);
+    ASSERT_EQ(0,iflag);
     doExtendedArnoldiTest(opAzero_, BLOCK_SIZE);
   }
 }
@@ -420,11 +420,11 @@ TEST_F(CLASSNAME, extended_Arand_v0ones)
   if( typeImplemented_)
   {
     replaceMap(opArand_->domain_map);
-    ASSERT_EQ(0,ierr_);
+    ASSERT_EQ(0,iflag_);
 
-    int ierr;
-    SUBR(mvec_put_value)(v0_,st::one(),&ierr);
-    ASSERT_EQ(0,ierr);
+    int iflag;
+    SUBR(mvec_put_value)(v0_,st::one(),&iflag);
+    ASSERT_EQ(0,iflag);
     doExtendedArnoldiTest(opArand_, BLOCK_SIZE);
   }
 }
@@ -434,11 +434,11 @@ TEST_F(CLASSNAME, extended_Arand_nodiag_v0ones)
   if( typeImplemented_)
   {
     replaceMap(opArand_nodiag_->domain_map);
-    ASSERT_EQ(0,ierr_);
+    ASSERT_EQ(0,iflag_);
 
-    int ierr;
-    SUBR(mvec_put_value)(v0_,st::one(),&ierr);
-    ASSERT_EQ(0,ierr);
+    int iflag;
+    SUBR(mvec_put_value)(v0_,st::one(),&iflag);
+    ASSERT_EQ(0,iflag);
     doExtendedArnoldiTest(opArand_nodiag_, BLOCK_SIZE);
   }
 }

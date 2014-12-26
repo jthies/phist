@@ -6,33 +6,33 @@ class TYPE(MvecRingBuffer)
     TYPE(MvecRingBuffer)(int size) : mvecs_(size,NULL), mvecs_used_(size,0), lastIndex_(0) {}
 
     // we can handle failures probably more cleanly if not done in the constructor
-    void create_mvecs(const_map_ptr_t map, int nvecs, int* ierr)
+    void create_mvecs(const_map_ptr_t map, int nvecs, int* iflag)
     {
       for(int i = 0; i < mvecs_.size(); i++)
       {
-        PHIST_CHK_IERR(*ierr = (mvecs_[i] != NULL) ? -1 : 0, *ierr);
-        PHIST_CHK_IERR(SUBR( mvec_create ) (&mvecs_[i], map, nvecs, ierr), *ierr);
+        PHIST_CHK_IERR(*iflag = (mvecs_[i] != NULL) ? -1 : 0, *iflag);
+        PHIST_CHK_IERR(SUBR( mvec_create ) (&mvecs_[i], map, nvecs, iflag), *iflag);
       }
     }
 
     // must be called before the destructor
-    void delete_mvecs(int *ierr)
+    void delete_mvecs(int *iflag)
     {
       for(int i = 0; i < mvecs_.size(); i++)
       {
-        PHIST_CHK_IERR(SUBR( mvec_delete ) (mvecs_[i], ierr), *ierr);
+        PHIST_CHK_IERR(SUBR( mvec_delete ) (mvecs_[i], iflag), *iflag);
         mvecs_[i] = NULL;
       }
     }
 
     ~TYPE(MvecRingBuffer)()
     {
-      int ierr = 0;
+      int iflag = 0;
       // print an error if there are still allocated mvecs
       // as this could use up all memory quite fast if used multiple times!
       for(int i = 0; i < mvecs_.size(); i++)
       {
-        PHIST_CHK_IERR(ierr = (mvecs_[i] != NULL) ? -1 : 0, ierr);
+        PHIST_CHK_IERR(iflag = (mvecs_[i] != NULL) ? -1 : 0, iflag);
       }
     }
 
@@ -53,13 +53,13 @@ class TYPE(MvecRingBuffer)
     int prevIndex(int i, int n = 1) {return (i+size()-n)%size();}
 
     // get next index and make sure it is unused
-    void getNextUnused(int &nextIndex, int *ierr)
+    void getNextUnused(int &nextIndex, int *iflag)
     {
-      *ierr = 0;
+      *iflag = 0;
       nextIndex = (lastIndex_+1)%mvecs_.size();
       if( mvecs_used_[nextIndex] != 0 )
       {
-        *ierr = -1;
+        *iflag = -1;
         return;
       }
       lastIndex_ = nextIndex;

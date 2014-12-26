@@ -14,26 +14,26 @@
 //
 void SUBR(private_dotProd)(TYPE(const_mvec_ptr) v, TYPE(const_mvec_ptr) vi,
                            TYPE(const_mvec_ptr) w, TYPE(const_mvec_ptr) wi,
-                           int nvec, _ST_   *dots, _MT_* dotsi, int *ierr);
+                           int nvec, _ST_   *dots, _MT_* dotsi, int *iflag);
 //
-void SUBR(private_compResid)(TYPE(const_crsMat_ptr) A, int nvec, _ST_ sigma, _MT_ sigma_i,
+void SUBR(private_compResid)(TYPE(const_sparseMat_ptr) A, int nvec, _ST_ sigma, _MT_ sigma_i,
                        TYPE(const_mvec_ptr) B,
                        TYPE(const_mvec_ptr) x, TYPE(const_mvec_ptr) xi,
                        TYPE(mvec_ptr) r,        TYPE(mvec_ptr) ri,
-                       _MT_  *nrms, int *ierr);
+                       _MT_  *nrms, int *iflag);
 
 // pretty-print convergence history. nvec=0: print header. nvec=-1: print footer
 void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR, 
         _MT_ const* normR0, _MT_ const* normB, int const* locked);
 
 // allocate CG vector blocks
-void SUBR(private_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* ierr);
+void SUBR(private_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* iflag);
 // allocate CG vector blocks
-void SUBR(private_carp_cgState_dealloc)(TYPE(carp_cgState_ptr) S, int* ierr);
+void SUBR(private_carp_cgState_dealloc)(TYPE(carp_cgState_ptr) S, int* iflag);
 
 // destroy vector elements to test automatic fault-detection
-void SUBR(destroy_vector_elements_at_random)(TYPE(mvec_ptr) V, double probability, int nloc, int *ierr); 
-void SUBR(show_vector_elements)(TYPE(mvec_ptr) V, int *ierr) ;
+void SUBR(destroy_vector_elements_at_random)(TYPE(mvec_ptr) V, double probability, int nloc, int *iflag); 
+void SUBR(show_vector_elements)(TYPE(mvec_ptr) V, int *iflag) ;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // public interface                                                                              //
@@ -42,29 +42,29 @@ void SUBR(show_vector_elements)(TYPE(mvec_ptr) V, int *ierr) ;
 // create new state objects. We just get an array of (NULL-)pointers
 void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
         _MT_ sigma_r[], _MT_ sigma_i[],
-        TYPE(const_crsMat_ptr) A, int nvec,int* ierr)
+        TYPE(const_sparseMat_ptr) A, int nvec,int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr=0;
+  *iflag=0;
   if (numSys==0) return;
   
     // setup the CARP kernel and get the required data structures:
     MT* nrms_ai2i=NULL;
     void* aux=NULL;
     PHIST_CHK_IERR(SUBR(carp_setup)(A,numSys,sigma_r,sigma_i,
-        &nrms_ai2i, &aux, ierr),*ierr);    
+        &nrms_ai2i, &aux, iflag),*iflag);    
 
   const_map_ptr_t map=NULL;
-  PHIST_CHK_IERR(SUBR(crsMat_get_row_map)(A,&map,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sparseMat_get_row_map)(A,&map,iflag),*iflag);
   lidx_t nloc;
-  PHIST_CHK_IERR(phist_map_get_local_length(map,&nloc,ierr),*ierr);
+  PHIST_CHK_IERR(phist_map_get_local_length(map,&nloc,iflag),*iflag);
   
   for (int i=0;i<numSys;i++)
   {
     state[i] = new TYPE(carp_cgState);
     state[i]->id=i;
-    state[i]->ierr=-2;// not initialized (need to call reset())
+    state[i]->iflag=-2;// not initialized (need to call reset())
     
     state[i]->q_=NULL; state[i]->qi_=NULL;
     state[i]->r_=NULL; state[i]->ri_=NULL;
@@ -104,26 +104,26 @@ void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) state[], int numSys,
   }
 }
 
-void SUBR(private_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* ierr)
+void SUBR(private_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   
     int nvec=S->nvec_;
     const void* map=NULL;
-    PHIST_CHK_IERR(SUBR(mvec_get_map)(S->b_,&map,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_get_map)(S->b_,&map,iflag),*iflag);
   
-    PHIST_CHK_IERR(SUBR(mvec_create)(&S->q_,map,nvec,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_create)(&S->r_,map,nvec,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_create)(&S->p_,map,nvec,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&S->q_,map,nvec,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&S->r_,map,nvec,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&S->p_,map,nvec,iflag),*iflag);
     // z is the preconditioned residual in CG, but as we don't have
     // additional preconditioning, we set z=r.
     S->z_=S->r_;    
 
 #ifndef IS_COMPLEX
     // separate imaginary parts of the vectors
-    PHIST_CHK_IERR(SUBR(mvec_create)(&S->qi_,map,nvec,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_create)(&S->ri_,map,nvec,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_create)(&S->pi_,map,nvec,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&S->qi_,map,nvec,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&S->ri_,map,nvec,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&S->pi_,map,nvec,iflag),*iflag);
     S->zi_=S->ri_;
 #else
     S->qi_=NULL;
@@ -134,30 +134,30 @@ void SUBR(private_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* ierr)
     
 }
 
-void SUBR(private_carp_cgState_dealloc)(TYPE(carp_cgState_ptr) S, int* ierr)
+void SUBR(private_carp_cgState_dealloc)(TYPE(carp_cgState_ptr) S, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   
-    PHIST_CHK_IERR(SUBR(mvec_delete)(S->q_,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_delete)(S->r_,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_delete)(S->p_,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(S->q_,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(S->r_,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(S->p_,iflag),*iflag);
     // z is the preconditioned residual in CG, but as we don't have
     // additional preconditioning, we set z=r.
     
 #ifndef IS_COMPLEX
     // separate imaginary parts of the vectors
-    PHIST_CHK_IERR(SUBR(mvec_delete)(S->qi_,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_delete)(S->ri_,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_delete)(S->pi_,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(S->qi_,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(S->ri_,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(S->pi_,iflag),*iflag);
 #endif
     
 }
 
 //! delete cgState object
-void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) state[], int numSys, int* ierr)
+void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) state[], int numSys, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr=0;
+  *iflag=0;
   for (int i=0;i<numSys;i++)
   {
     delete [] state[i]->conv;
@@ -181,17 +181,17 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) state[], int numSys, int*
 void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
         TYPE(const_mvec_ptr) B,
         _MT_* normsB,
-        int *ierr)
+        int *iflag)
 {
 #include "phist_std_typedefs.hpp"  
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr=0;
+  *iflag=0;
 
   // new rhs -> need to recompute ||b-A*x0||
   S->b_=B;
   int nvec;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(B,&nvec,ierr),*ierr);
-  S->ierr = -1;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(B,&nvec,iflag),*iflag);
+  S->iflag = -1;
   S->numIter = 0;
 
   if (nvec!=S->nvec_)
@@ -226,7 +226,7 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
   }
   if (normsB==NULL)
   {
-    PHIST_CHK_IERR(SUBR(mvec_norm2)(S->b_,S->normB_,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_norm2)(S->b_,S->normB_,iflag),*iflag);
   }
   else
   {
@@ -244,11 +244,11 @@ void SUBR(carp_cgStates_iterate)(
         TYPE(carp_cgState_ptr) S_array[], int numSys,
         TYPE(mvec_ptr) X_r[], TYPE(mvec_ptr) X_i[],
         _MT_ tol, int maxIter,
-        int* ierr)
+        int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
-  *ierr = 0;
+  *iflag = 0;
   //getchar();
   // some internal settings 
   bool correction_needed = false; 
@@ -294,7 +294,7 @@ if (numSys>0)
     //PHIST_SOUT(PHIST_INFO,"HIER PASSIERT IRGENDWAS.\n");                                                            ///////////////////////////////////////////////////////////////////
     // get some pointers to avoid the 'S_array[ishift]->' all the time
     TYPE(carp_cgState_ptr) S = S_array[ishift];
-    TYPE(const_crsMat_ptr) A=S->A_;
+    TYPE(const_sparseMat_ptr) A=S->A_;
     const MT sigma_r = S->sigma_r_;
     const MT sigma_i = S->sigma_i_;
     const ST sigma=sigma_r+st::cmplx_I()*sigma_i;
@@ -312,8 +312,8 @@ if (numSys>0)
    if (minConv>nvec) minConv=nvec;
  
     int nvecX,nvecB;
-    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(b,&nvecB,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x,&nvecX,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(b,&nvecB,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x,&nvecX,iflag),*iflag);
     
     if (nvec!=nvecB || nvec!=nvecX)
     {
@@ -321,17 +321,17 @@ if (numSys>0)
                              "passed to constructor (expected %d, found nvec(X)=%d, nvec(B)=%d instead)\n"
                              "(in %s, line %d)\n",
         __FUNCTION__,nvec,nvecX,nvecB,__FILE__,__LINE__);
-      *ierr=-1;
+      *iflag=-1;
       return;      
     }
 #ifndef IS_COMPLEX
     if (xi!=NULL)
     {
-      PHIST_CHK_IERR(SUBR(mvec_num_vectors)(xi,&nvecX,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_num_vectors)(xi,&nvecX,iflag),*iflag);
       if (nvec!=nvecX)
       {
         PHIST_SOUT(PHIST_ERROR,"input vectors X_i to %s must have same num vectors as X_r and B\n",__FUNCTION__);
-        *ierr=-1;
+        *iflag=-1;
         return;
       }
     }
@@ -340,7 +340,7 @@ if (numSys>0)
     PHIST_SOUT(PHIST_VERBOSE,"CARP_CG for shift %d (%f%+fi)\n",ishift,sigma_r,sigma_i);
 
     // allocate CG vectors: one per rhs
-    PHIST_CHK_IERR(SUBR(private_carp_cgState_alloc)(S,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(private_carp_cgState_alloc)(S,iflag),*iflag);
 
     TYPE(mvec_ptr) r =S->r_;
     TYPE(mvec_ptr) ri =S->ri_;
@@ -370,25 +370,25 @@ if (numSys>0)
     const bool rc_variant=(sigma_i!=mt::zero());
 #endif
     
-    if (S->ierr==-2)
+    if (S->iflag==-2)
     {
-      *ierr=-2;
+      *iflag=-2;
       PHIST_SOUT(PHIST_ERROR, "for carp_cgState[%d], reset has not been called!\n"
                               "(file %s, line %d)\n",S->id, __FILE__,__LINE__);
       return;
     }
-    else if (S->ierr==-1)
+    else if (S->iflag==-1)
     {
       // compute initial residual normR0 after reset
       PHIST_CHK_IERR(SUBR(private_compResid)(A, nvec, sigma, sigma_i,
-                       b, x, xi, NULL, NULL, S->normR, ierr),*ierr);
+                       b, x, xi, NULL, NULL, S->normR, iflag),*iflag);
       for (int j=0;j<nvec;j++)
       {
         S->normR0_[j]=std::sqrt(S->normR[j]);
         S->normR_old[j] = S->normR0_[j];
       }
     }
-    S->ierr=1; // unumConverged
+    S->iflag=1; // unumConverged
     MT reltol2[nvec];
 
     for (int j=0;j<nvec;j++)
@@ -401,37 +401,37 @@ if (numSys>0)
     // in place, but we do not want to update x right now, we just want to
     // get a CG direction.
     //r=carp_sweep(A,sigma,B,b,x,omega,nrm_ai2)-x;
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),x,st::zero(),r,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),x,st::zero(),r,iflag),*iflag);
 #ifndef IS_COMPLEX
     if (rc_variant)
     {
-      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),xi,st::zero(),ri,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),xi,st::zero(),ri,iflag),*iflag);
     }
 #endif
     // double carp sweep in place, updates r=dkswp(sI-A,omega,r)
     PHIST_CHK_IERR(SUBR(carp_sweep)(A, 1, &sigma_r, &sigma_i,b,&r,&ri,
-          S->nrms_ai2i_,S->aux_,&S->omega_,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-st::one(),x,st::one(),r,ierr),*ierr);
+          S->nrms_ai2i_,S->aux_,&S->omega_,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-st::one(),x,st::one(),r,iflag),*iflag);
 #ifndef IS_COMPLEX
     if (rc_variant)
     {
-      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-st::one(),xi,st::one(),ri,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-st::one(),xi,st::one(),ri,iflag),*iflag);
     }
 #endif
     // z=precond(r)
     // ... we currently have z pointing to r, as there is no additional preconditioning.
     //p=z
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),z,st::zero(),p,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),z,st::zero(),p,iflag),*iflag);
 #ifndef IS_COMPLEX
     if (rc_variant)
     {
-      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),zi,st::zero(),pi,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),zi,st::zero(),pi,iflag),*iflag);
     }
 #endif
     //r2_new = r'*z. For technical reasons we store (r'z)^2 as complex type if IS_COMPLEX
     ST r2_new[nvec];
     MT r2_old[nvec];
-    PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,r2_new,NULL,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,r2_new,NULL,iflag),*iflag);
 
     if (itprint>0)
     {
@@ -441,9 +441,9 @@ if (numSys>0)
     }
 
     //getchar();
-    //PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
-    //PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
-    //PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+    //PHIST_CHK_IERR(SUBR(show_vector_elements)(r, iflag),*iflag);
+    //PHIST_CHK_IERR(SUBR(show_vector_elements)(p, iflag),*iflag);
+    //PHIST_CHK_IERR(SUBR(show_vector_elements)(x, iflag),*iflag);
 
     //PHIST_SOUT(PHIST_INFO,"HIER FAENGT DER EIGENTLICHE CARP-CG TEIL AN UND ICH BRAUCHE EINE AUSGABE DAMIT ICH DIESEN TEIL WIEDERFINDEN KANN.\n");                                                            ///////////////////////////////////////////////////////////////////
     //maxIter =10000;
@@ -457,10 +457,10 @@ if (numSys>0)
       if(it>debugstate){
       std::cout << "Initial vectors. " << std::endl;
       getchar();
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, iflag),*iflag);
       }
 
       /* This code implements the self-stabilizing CG described in Sao & Vuduc, ScalA'14
@@ -473,60 +473,60 @@ if (numSys>0)
         correction_needed = false;
         cor_count++;
       //q=p-carp_sweep(A,sigma,B,bnul,p,omega,nrm_ai2);
-      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),p,st::zero(),q,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),p,st::zero(),q,iflag),*iflag);
 #ifndef IS_COMPLEX
       if (rc_variant)
       {
-        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),pi,st::zero(),qi,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),pi,st::zero(),qi,iflag),*iflag);
       }
 #endif
       // double carp sweep in place, updates q to carp_sweep(p)
       PHIST_CHK_IERR(SUBR(carp_sweep)(A, 1, &sigma_r, &sigma_i,bnul,&q,&qi,
-          S->nrms_ai2i_,S->aux_,&S->omega_,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),p,-st::one(),q,ierr),*ierr);
+          S->nrms_ai2i_,S->aux_,&S->omega_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),p,-st::one(),q,iflag),*iflag);
 #ifndef IS_COMPLEX
       if (rc_variant)
       {
-        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),pi,-st::one(),qi,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),pi,-st::one(),qi,iflag),*iflag);
       }
 #endif
       
       if(it>debugstate){
       std::cout << "Nach Q-Sweep. " << std::endl;
       getchar();
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, iflag),*iflag);
       }
       
 
 //r=carp_sweep(A,sigma,B,b,x,omega,nrm_ai2)-x;
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),x,st::zero(),r,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),x,st::zero(),r,iflag),*iflag);
 #ifndef IS_COMPLEX
     if (rc_variant)
     {
-      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),xi,st::zero(),ri,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),xi,st::zero(),ri,iflag),*iflag);
     }
 #endif
     // double carp sweep in place, updates r=dkswp(sI-A,omega,r)
     PHIST_CHK_IERR(SUBR(carp_sweep)(A, 1, &sigma_r, &sigma_i,b,&r,&ri,
-          S->nrms_ai2i_,S->aux_,&S->omega_,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-st::one(),x,st::one(),r,ierr),*ierr);
+          S->nrms_ai2i_,S->aux_,&S->omega_,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-st::one(),x,st::one(),r,iflag),*iflag);
 #ifndef IS_COMPLEX
     if (rc_variant)
     {
-      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-st::one(),xi,st::one(),ri,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-st::one(),xi,st::one(),ri,iflag),*iflag);
     }
 #endif
       
       if(it>debugstate){
       std::cout << "Nach RC-Sweep. " << std::endl;
       getchar();
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, iflag),*iflag);
       }
 
       ////////////////////////////
@@ -536,8 +536,8 @@ if (numSys>0)
       //alpha = (r'*z)/(p'*q);
       ST denom  [nvec];
       MT denom_i[nvec];
-      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,p,pi,nvec,alpha,alpha_i,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(private_dotProd)(p,pi,q,qi,nvec,denom,denom_i,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,p,pi,nvec,alpha,alpha_i,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(private_dotProd)(p,pi,q,qi,nvec,denom,denom_i,iflag),*iflag);
       MT minus_alpha_i[nvec];
 
       // stop updating x if the system is already converged (1-conv[j])
@@ -547,7 +547,7 @@ if (numSys>0)
           alpha[j]=(ST)(1-conv[j])*(alpha[j]/denom[j]);
         }
         // update x <- x + alpha*p
-        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,iflag),*iflag);
 #else
       if (!rc_variant)
       {
@@ -556,7 +556,7 @@ if (numSys>0)
           alpha[j]=(ST)(1-conv[j])*(alpha[j]/denom[j]);
         }
         // update x <- x + alpha*p
-        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,iflag),*iflag);
       }
       else
       {
@@ -571,20 +571,20 @@ if (numSys>0)
           minus_alpha_i[j]=-ct::imag(tmp3);
         }
         // update x <- x + alpha*p
-        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha_i,pi,st::one(),x,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,pi,st::one(),xi,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha_i,p,st::one(),xi,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha_i,pi,st::one(),x,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,pi,st::one(),xi,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha_i,p,st::one(),xi,iflag),*iflag);
       }
 #endif
       
       if(it>debugstate){
       std::cout << "Nach X-Sweep. " << std::endl;
       getchar();
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, iflag),*iflag);
       }
       
 
@@ -595,7 +595,7 @@ if (numSys>0)
           S->normR_old[j] = (S->normR[j]);
         }
         PHIST_CHK_IERR(SUBR(private_compResid)(A, nvec, sigma, sigma_i,
-                         b, x, xi, NULL, NULL, S->normR, ierr),*ierr);
+                         b, x, xi, NULL, NULL, S->normR, iflag),*iflag);
         //std::cout << *(S->normR) <<" " << *(S->normR_old)<< " "<< (*(S->normR)/(*(S->normR_old))) << std::endl;
         // check for convergence. 
         // TODO - which convergence criterion should we use?
@@ -645,24 +645,24 @@ if (numSys>0)
       {
         minus_alpha[j]=-alpha[j];
       }
-      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha,q,st::one(),r,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha,q,st::one(),r,iflag),*iflag);
 
 #ifndef IS_COMPLEX
       if (rc_variant)
       {
-        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(      alpha_i,qi,st::one(),r,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha,  qi,st::one(),ri,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha_i,q, st::one(),ri,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(      alpha_i,qi,st::one(),r,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha,  qi,st::one(),ri,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha_i,q, st::one(),ri,iflag),*iflag);
       }
 #endif
       
       if(it>debugstate){
       std::cout << "Nach R-Sweep. " << *alpha << std::endl;
       getchar();
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, iflag),*iflag);
     }
       
 //  z=apply_op(r,M):
@@ -672,7 +672,7 @@ if (numSys>0)
       {
         r2_old[j]=std::abs(r2_new[j]);
       }
-      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,r2_new,NULL,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,r2_new,NULL,iflag),*iflag);
       //note: for a precond M!=I I think we need complex
       // arithmetic here because r!=z => above dotProd has imag!=0.
       // Only for symmetric preconditioning would we get a Hermitian
@@ -683,8 +683,8 @@ if (numSys>0)
       ST lower  [nvec];
       MT lower_i[nvec];
 
-      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,q,qi,nvec,upper,upper_i,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(private_dotProd)(p,pi,q,qi,nvec,lower,lower_i,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,q,qi,nvec,upper,upper_i,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(private_dotProd)(p,pi,q,qi,nvec,lower,lower_i,iflag),*iflag);
 
       for (int j=0;j<nvec;j++)
         {
@@ -706,29 +706,29 @@ if (numSys>0)
       {
         tmp[j]=(ST)beta[j];
       }
-      PHIST_CHK_IERR(SUBR(mvec_vscale)(p,tmp,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_vscale)(p,tmp,iflag),*iflag);
 #else
-      PHIST_CHK_IERR(SUBR(mvec_vscale)(p,beta,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_vscale)(p,beta,iflag),*iflag);
       if (rc_variant)
       {
-        PHIST_CHK_IERR(SUBR(mvec_vscale)(pi,beta,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_vscale)(pi,beta,iflag),*iflag);
       }
 #endif
-      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),z,st::one(),p,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),z,st::one(),p,iflag),*iflag);
 #ifndef IS_COMPLEX
       if (rc_variant)
       {
-        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),zi,st::one(),pi,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),zi,st::one(),pi,iflag),*iflag);
       }
 #endif
       
       if(it>debugstate){
       std::cout << "Nach P-Sweep. " << *beta << std::endl;
       getchar();
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, iflag),*iflag);
       }
 
 
@@ -743,31 +743,31 @@ if (numSys>0)
       // kernel lib should understand if we pass in NULL.
 
       //q=p-carp_sweep(A,sigma,B,bnul,p,omega,nrm_ai2);
-      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),p,st::zero(),q,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),p,st::zero(),q,iflag),*iflag);
 #ifndef IS_COMPLEX
       if (rc_variant)
       {
-        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),pi,st::zero(),qi,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),pi,st::zero(),qi,iflag),*iflag);
       }
 #endif
       // double carp sweep in place, updates q to carp_sweep(p)
       PHIST_CHK_IERR(SUBR(carp_sweep)(A, 1, &sigma_r, &sigma_i,bnul,&q,&qi,
-          S->nrms_ai2i_,S->aux_,&S->omega_,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),p,-st::one(),q,ierr),*ierr);
+          S->nrms_ai2i_,S->aux_,&S->omega_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),p,-st::one(),q,iflag),*iflag);
 #ifndef IS_COMPLEX
       if (rc_variant)
       {
-        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),pi,-st::one(),qi,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),pi,-st::one(),qi,iflag),*iflag);
       }
 #endif
       
       if(it>debugstate){
       std::cout << "Nach Q-Sweep. " << std::endl;
       getchar();
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, iflag),*iflag);
       }
 
       ////////////////////////////
@@ -777,8 +777,8 @@ if (numSys>0)
       //alpha = (r'*z)/(p'*q);
       ST denom  [nvec];
       MT denom_i[nvec];
-      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,alpha,alpha_i,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(private_dotProd)(p,pi,q,qi,nvec,denom,denom_i,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,alpha,alpha_i,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(private_dotProd)(p,pi,q,qi,nvec,denom,denom_i,iflag),*iflag);
       MT minus_alpha_i[nvec];
 
       // stop updating x if the system is already converged (1-conv[j])
@@ -788,7 +788,7 @@ if (numSys>0)
           alpha[j]=(ST)(1-conv[j])*(alpha[j]/denom[j]);
         }
         // update x <- x + alpha*p
-        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,iflag),*iflag);
 #else
       if (!rc_variant)
       {
@@ -797,7 +797,7 @@ if (numSys>0)
           alpha[j]=(ST)(1-conv[j])*(alpha[j]/denom[j]);
         }
         // update x <- x + alpha*p
-        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,iflag),*iflag);
       }
       else
       {
@@ -812,20 +812,20 @@ if (numSys>0)
           minus_alpha_i[j]=-ct::imag(tmp3);
         }
         // update x <- x + alpha*p
-        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha_i,pi,st::one(),x,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,pi,st::one(),xi,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha_i,p,st::one(),xi,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,p,st::one(),x,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha_i,pi,st::one(),x,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,pi,st::one(),xi,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha_i,p,st::one(),xi,iflag),*iflag);
       }
 #endif
       
       if(it>debugstate){
       std::cout << "Nach X-Sweep. " << std::endl;
       getchar();
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, iflag),*iflag);
     }
     
       
@@ -837,7 +837,7 @@ if (numSys>0)
           S->normR_old[j] = S->normR[j];
         }
         PHIST_CHK_IERR(SUBR(private_compResid)(A, nvec, sigma, sigma_i,
-                         b, x, xi, NULL, NULL, S->normR, ierr),*ierr);
+                         b, x, xi, NULL, NULL, S->normR, iflag),*iflag);
         //std::cout << *(S->normR) <<" " << *(S->normR_old)<< " "<< (*(S->normR)/(*(S->normR_old))) << std::endl;
         
 
@@ -891,25 +891,25 @@ if (numSys>0)
       {
         minus_alpha[j]=-alpha[j];
       }
-      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha,q,st::one(),r,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha,q,st::one(),r,iflag),*iflag);
 
 
 #ifndef IS_COMPLEX
       if (rc_variant)
       {
-        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(      alpha_i,qi,st::one(),r,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha,  qi,st::one(),ri,ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha_i,q, st::one(),ri,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(      alpha_i,qi,st::one(),r,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha,  qi,st::one(),ri,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha_i,q, st::one(),ri,iflag),*iflag);
       }
 #endif
       
       if(it>debugstate){
       std::cout << "Nach R-Sweep. " << *alpha << std::endl;
       getchar();
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, iflag),*iflag);
       }
       
 
@@ -921,7 +921,7 @@ if (numSys>0)
         //std::cout << it << " "<<r2_old[j]<< " "<< std::abs(r2_new[j])<< " "<< std::abs(r2_new[j]/r2_old[j]) << " "<<std::sqrt(std::abs(r2_old[j]))<< " "<<std::sqrt(std::abs(r2_new[j])) << " "<<std::sqrt(std::abs(r2_new[j]))/std::sqrt(std::abs(r2_old[j]))<< std::endl;;
         r2_old[j]=std::abs(r2_new[j]);
       }
-      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,r2_new,NULL,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,r2_new,NULL,iflag),*iflag);
       //note: for a precond M!=I I think we need complex
       // arithmetic here because r!=z => above dotProd has imag!=0.
       // Only for symmetric preconditioning would we get a Hermitian
@@ -938,29 +938,29 @@ if (numSys>0)
       {
         tmp[j]=(ST)beta[j];
       }
-      PHIST_CHK_IERR(SUBR(mvec_vscale)(p,tmp,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_vscale)(p,tmp,iflag),*iflag);
 #else
-      PHIST_CHK_IERR(SUBR(mvec_vscale)(p,beta,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_vscale)(p,beta,iflag),*iflag);
       if (rc_variant)
       {
-        PHIST_CHK_IERR(SUBR(mvec_vscale)(pi,beta,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_vscale)(pi,beta,iflag),*iflag);
       }
 #endif
-      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),z,st::one(),p,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),z,st::one(),p,iflag),*iflag);
 #ifndef IS_COMPLEX
       if (rc_variant)
       {
-        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),zi,st::one(),pi,ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),zi,st::one(),pi,iflag),*iflag);
       }
 #endif
       
       if(it>debugstate){
       std::cout << "Nach P-Sweep. " << *beta<< std::endl;
       getchar();
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(r, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(p, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(q, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(show_vector_elements)(x, iflag),*iflag);
       }
       
       //std::cout << std::sqrt(*(S->normR)) << std::endl;
@@ -970,25 +970,25 @@ if (numSys>0)
 #if 0
     if(it % 70 == 0){
       //std::cout << "Destruction completed " <<std::endl;
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(r, 0.0, 2000, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(ri, 0.0, 2000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(r, 0.0, 2000, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(ri, 0.0, 2000, iflag),*iflag);
 
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(p, 0.0, 2000,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(pi, 0.0, 2000,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(p, 0.0, 2000,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(pi, 0.0, 2000,iflag),*iflag);
       
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(q, 0.0, 2000, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(qi, 0.0, 2000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(q, 0.0, 2000, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(qi, 0.0, 2000, iflag),*iflag);
 
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(z, 0.0, 2000, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(zi, 0.0, 2000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(z, 0.0, 2000, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(zi, 0.0, 2000, iflag),*iflag);
       
       //TODO
     }
     
     if(true){
       if(it==3 || it==9|| it==27|| it==31|| it==56|| it==64 || it==81 || it==100){
-        PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(x, 0.0, 2000, ierr),*ierr);
-        PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(xi, 0.0, 2000, ierr),*ierr);
+        PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(x, 0.0, 2000, iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(xi, 0.0, 2000, iflag),*iflag);
       }
     }
     
@@ -1002,56 +1002,56 @@ if (numSys>0)
       //8.001
       //17.001
       std::cout << std::endl <<" DONE " << std::endl << std::endl;
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(r, 0.0, 17000, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(ri, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(r, 0.0, 17000, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(ri, 0.0, 17000, iflag),*iflag);
 
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(p, 0.0, 17000,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(pi, 0.0, 17000,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(p, 0.0, 17000,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(pi, 0.0, 17000,iflag),*iflag);
       
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(q, 0.0, 17000, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(qi, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(q, 0.0, 17000, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(qi, 0.0, 17000, iflag),*iflag);
 
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(z, 0.0, 17000, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(zi, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(z, 0.0, 17000, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(zi, 0.0, 17000, iflag),*iflag);
 
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(x, 0.0, 17000, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(xi, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(x, 0.0, 17000, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(xi, 0.0, 17000, iflag),*iflag);
     }
     
     if(mynode == 3 && it==277){
       std::cout << std::endl <<" DONE " << std::endl << std::endl;
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(r, 0.0, 17000, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(ri, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(r, 0.0, 17000, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(ri, 0.0, 17000, iflag),*iflag);
 
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(p, 0.0, 17000,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(pi, 0.0, 17000,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(p, 0.0, 17000,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(pi, 0.0, 17000,iflag),*iflag);
       
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(q, 0.0, 17000, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(qi, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(q, 0.0, 17000, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(qi, 0.0, 17000, iflag),*iflag);
 
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(z, 0.0, 17000, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(zi, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(z, 0.0, 17000, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(zi, 0.0, 17000, iflag),*iflag);
 
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(x, 0.0, 17000, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(xi, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(x, 0.0, 17000, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(xi, 0.0, 17000, iflag),*iflag);
     }
 
     if(mynode == 1 && it==15){
       std::cout << std::endl <<" DONE " << std::endl << std::endl;
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(r, 0.0, 17000, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(ri, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(r, 0.0, 17000, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(ri, 0.0, 17000, iflag),*iflag);
 
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(p, 0.0, 17000,ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(pi, 0.0, 17000,ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(p, 0.0, 17000,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(pi, 0.0, 17000,iflag),*iflag);
       
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(q, 0.0, 17000, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(qi, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(q, 0.0, 17000, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(qi, 0.0, 17000, iflag),*iflag);
 
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(z, 0.0, 17000, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(zi, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(z, 0.0, 17000, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(zi, 0.0, 17000, iflag),*iflag);
 
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(x, 0.0, 17000, ierr),*ierr);
-      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(xi, 0.0, 17000, ierr),*ierr);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(x, 0.0, 17000, iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(destroy_vector_elements_at_random)(xi, 0.0, 17000, iflag),*iflag);
     }
 #endif //fault injection
 
@@ -1067,22 +1067,22 @@ if (numSys>0)
     }
   
     // to save memory, deallocate CG vector data
-    PHIST_CHK_IERR(SUBR(private_carp_cgState_dealloc)(S,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(private_carp_cgState_dealloc)(S,iflag),*iflag);
 
   } // for all shifts, solve (s[j]I-A)X[j]=B
 
   std::cout << "CSteps: " << cor_count << std::endl;
-  *ierr=numSys-numSolved;
+  *iflag=numSys-numSolved;
   return;
 }
 
 // compute residual r=b-(sI-A)x and ||r||_2^2 in nrms2. If r and ri are NULL, a temporary
 // vector is used and discarded.
-void SUBR(private_compResid)(TYPE(const_crsMat_ptr) A, int nvec, _ST_ sigma, _MT_ sigma_i,
+void SUBR(private_compResid)(TYPE(const_sparseMat_ptr) A, int nvec, _ST_ sigma, _MT_ sigma_i,
                        TYPE(const_mvec_ptr) B,
                        TYPE(const_mvec_ptr) x, TYPE(const_mvec_ptr) xi,
                        TYPE(mvec_ptr) r,        TYPE(mvec_ptr) ri,
-                       _MT_  *nrms2, int *ierr)
+                       _MT_  *nrms2, int *iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -1104,14 +1104,14 @@ void SUBR(private_compResid)(TYPE(const_crsMat_ptr) A, int nvec, _ST_ sigma, _MT
   if (R==NULL)
   {
     const_map_ptr_t map;
-    PHIST_CHK_IERR(SUBR(mvec_get_map)(x,&map,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_create)(&R,map,nvec,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_get_map)(x,&map,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&R,map,nvec,iflag),*iflag);
   }
   if (RI==NULL && rc_variant)
   {
     const_map_ptr_t map;
-    PHIST_CHK_IERR(SUBR(mvec_get_map)(xi,&map,ierr),*ierr);
-    PHIST_CHK_IERR(SUBR(mvec_create)(&RI,map,nvec,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_get_map)(xi,&map,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&RI,map,nvec,iflag),*iflag);
   }
 
   // r = b-(sI-A)x=b+(A-sI)x
@@ -1119,19 +1119,19 @@ void SUBR(private_compResid)(TYPE(const_crsMat_ptr) A, int nvec, _ST_ sigma, _MT
   //    +i[(A-sr)xi - si*xr]
   
   // r=b
-  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),B,st::zero(),R,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),B,st::zero(),R,iflag),*iflag);
   // r=b-(sI-A)*x
-  PHIST_CHK_IERR(SUBR(crsMat_times_mvec_vadd_mvec)
-    (st::one(),A,shifts,x,st::one(),R,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_vadd_mvec)
+    (st::one(),A,shifts,x,st::one(),R,iflag),*iflag);
   if (rc_variant)
   {
     //r=r+si*xi
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(sigma_i, xi,st::one(),R,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(sigma_i, xi,st::one(),R,iflag),*iflag);
     //ri=(A-srI)xi
-    PHIST_CHK_IERR(SUBR(crsMat_times_mvec_vadd_mvec)
-      (st::one(),A,shifts,xi,st::zero(),RI,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_vadd_mvec)
+      (st::one(),A,shifts,xi,st::zero(),RI,iflag),*iflag);
     // ri-=si*xr
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-sigma_i,x,st::one(),RI,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-sigma_i,x,st::one(),RI,iflag),*iflag);
   }
   // now compute the 2-norm of each column
 #ifdef IS_COMPLEX
@@ -1139,7 +1139,7 @@ void SUBR(private_compResid)(TYPE(const_crsMat_ptr) A, int nvec, _ST_ sigma, _MT
 #else
           ST* tmp=nrms2;
 #endif          
-  PHIST_CHK_IERR(SUBR(private_dotProd)(R, RI, R, RI, nvec, tmp, NULL, ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(private_dotProd)(R, RI, R, RI, nvec, tmp, NULL, iflag),*iflag);
 #ifdef IS_COMPLEX
   for (int j=0;j<nvec;j++)
   {
@@ -1148,11 +1148,11 @@ void SUBR(private_compResid)(TYPE(const_crsMat_ptr) A, int nvec, _ST_ sigma, _MT
 #endif
   if (R!=r && R!=NULL)
   {
-    PHIST_CHK_IERR(SUBR(mvec_delete)(R,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(R,iflag),*iflag);
   }
   if (RI!=ri && RI!=NULL)
   {
-    PHIST_CHK_IERR(SUBR(mvec_delete)(RI,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(RI,iflag),*iflag);
   }
   return;
 }
@@ -1163,7 +1163,7 @@ void SUBR(private_compResid)(TYPE(const_crsMat_ptr) A, int nvec, _ST_ sigma, _MT
 // to be 0 and dotsi is ignored.
 void SUBR(private_dotProd)(TYPE(const_mvec_ptr) v, TYPE(const_mvec_ptr) vi,
                            TYPE(const_mvec_ptr) w, TYPE(const_mvec_ptr) wi,
-                           int nvec, _ST_ *dots, _MT_ *dotsi, int *ierr)
+                           int nvec, _ST_ *dots, _MT_ *dotsi, int *iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -1173,21 +1173,21 @@ void SUBR(private_dotProd)(TYPE(const_mvec_ptr) v, TYPE(const_mvec_ptr) vi,
   // is no contribution from that part.
   const bool rc_variant = (vi!=NULL || wi!=NULL);
 #endif
-  *ierr=0;
-  PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v,w,dots,ierr),*ierr);
+  *iflag=0;
+  PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v,w,dots,iflag),*iflag);
   #ifndef IS_COMPLEX
   if (rc_variant)
   {
     ST tmp[nvec];
-    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(vi,wi,tmp,ierr),*ierr);
+    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(vi,wi,tmp,iflag),*iflag);
     for (int j=0;j<nvec;j++)
     {
       dots[j]+=tmp[j];
     }
     if ( (v!=w || vi!=wi) && dotsi!=NULL)
     {
-      PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v,wi,dotsi,ierr),*ierr);      
-      PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(vi,w,tmp,ierr),*ierr);      
+      PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v,wi,dotsi,iflag),*iflag);      
+      PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(vi,w,tmp,iflag),*iflag);      
       for (int j=0;j<nvec;j++)
       {
         dotsi[j]-=tmp[j];
@@ -1259,7 +1259,7 @@ void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR,
   }
 }
 
-void SUBR(destroy_vector_elements_at_random)(TYPE(mvec_ptr) V, double probability, int nloc, int *ierr) 
+void SUBR(destroy_vector_elements_at_random)(TYPE(mvec_ptr) V, double probability, int nloc, int *iflag) 
 {
 #include "phist_std_typedefs.hpp"
 //std::cout << "Function used." <<std::endl;
@@ -1268,9 +1268,9 @@ void SUBR(destroy_vector_elements_at_random)(TYPE(mvec_ptr) V, double probabilit
   int nvec;
   //ST tmp;
   double rand_prob;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_extract_view)(V,&V_val,&lda,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(mvec_from_device)(V,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_extract_view)(V,&V_val,&lda,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_from_device)(V,iflag),*iflag);
   //std::cout << "nloc " << nloc <<std::endl;
   for (int i=0; i<nloc; i++)
   {
@@ -1291,20 +1291,20 @@ void SUBR(destroy_vector_elements_at_random)(TYPE(mvec_ptr) V, double probabilit
       }
     }
   }
-  PHIST_CHK_IERR(SUBR(mvec_to_device)(V,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(mvec_to_device)(V,iflag),*iflag);
   //std::cout <<" Destruction complete " << std::endl;
 }
 
-void SUBR(show_vector_elements)(TYPE(mvec_ptr) V, int *ierr) 
+void SUBR(show_vector_elements)(TYPE(mvec_ptr) V, int *iflag) 
 {
   #include "phist_std_typedefs.hpp"
 ST* V_val;
 lidx_t lda;
 int nvec;
 int nloc = 1;
-PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,ierr),*ierr);
-PHIST_CHK_IERR(SUBR(mvec_extract_view)(V,&V_val,&lda,ierr),*ierr);
-PHIST_CHK_IERR(SUBR(mvec_from_device)(V,ierr),*ierr);
+PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,iflag),*iflag);
+PHIST_CHK_IERR(SUBR(mvec_extract_view)(V,&V_val,&lda,iflag),*iflag);
+PHIST_CHK_IERR(SUBR(mvec_from_device)(V,iflag),*iflag);
 for (int i=0; i<nloc; i++)
   {
     for (int j=0;j<nvec; j++)

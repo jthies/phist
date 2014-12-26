@@ -51,8 +51,8 @@ public:
         int globalTooSmall = _N_ < _M_ || _N_ < _K_;
 #ifdef PHIST_HAVE_MPI
         int localTooSmall = nloc_ < _M_ || nloc_ < _K_;
-        ierr_ = MPI_Allreduce(&localTooSmall, &globalTooSmall, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
-        ASSERT_EQ(0,ierr_);
+        iflag_ = MPI_Allreduce(&localTooSmall, &globalTooSmall, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+        ASSERT_EQ(0,iflag_);
 #endif
         typeImplemented_ = typeImplemented_ && globalTooSmall==0;
       }
@@ -61,34 +61,34 @@ public:
     if (typeImplemented_)
       {
       // create vectors V, W and vector views for setting/checking entries
-      SUBR(mvec_create)(&V_,this->map_,this->m_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(mvec_extract_view)(V_,&V_vp_,&ldaV_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(mvec_create)(&W_,this->map_,this->k_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(mvec_extract_view)(W_,&W_vp_,&ldaW_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(mvec_create)(&Q_,this->map_,this->k_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(mvec_extract_view)(Q_,&Q_vp_,&ldaQ_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(mvec_create)(&W2_,this->map_,this->k_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(mvec_extract_view)(W2_,&W2_vp_,&ldaW2_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
+      SUBR(mvec_create)(&V_,this->map_,this->m_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(mvec_extract_view)(V_,&V_vp_,&ldaV_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(mvec_create)(&W_,this->map_,this->k_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(mvec_extract_view)(W_,&W_vp_,&ldaW_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(mvec_create)(&Q_,this->map_,this->k_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(mvec_extract_view)(Q_,&Q_vp_,&ldaQ_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(mvec_create)(&W2_,this->map_,this->k_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(mvec_extract_view)(W2_,&W2_vp_,&ldaW2_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
       // create matrices R0,R1, R2 and matrix views for setting/checking entries
-      SUBR(sdMat_create)(&R0_,this->m_,this->m_,this->comm_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(sdMat_extract_view)(R0_,&R0_vp_,&this->ldaR0_,&this->ierr_);
-      SUBR(sdMat_create)(&R1_,this->k_,this->k_,this->comm_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(sdMat_extract_view)(R1_,&R1_vp_,&this->ldaR1_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(sdMat_create)(&R2_,this->m_,this->k_,this->comm_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(sdMat_extract_view)(R2_,&R2_vp_,&this->ldaR2_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
+      SUBR(sdMat_create)(&R0_,this->m_,this->m_,this->comm_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(sdMat_extract_view)(R0_,&R0_vp_,&this->ldaR0_,&this->iflag_);
+      SUBR(sdMat_create)(&R1_,this->k_,this->k_,this->comm_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(sdMat_extract_view)(R1_,&R1_vp_,&this->ldaR1_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(sdMat_create)(&R2_,this->m_,this->k_,this->comm_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(sdMat_extract_view)(R2_,&R2_vp_,&this->ldaR2_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
       }
     stride_=1;
     }
@@ -99,13 +99,13 @@ public:
     {
     if (this->typeImplemented_)
       {
-      SUBR(mvec_delete)(V_,&ierr_);
-      SUBR(mvec_delete)(W_,&ierr_);
-      SUBR(mvec_delete)(W2_,&ierr_);
-      SUBR(mvec_delete)(Q_,&ierr_);
-      SUBR(sdMat_delete)(R0_,&ierr_);
-      SUBR(sdMat_delete)(R1_,&ierr_);
-      SUBR(sdMat_delete)(R2_,&ierr_);
+      SUBR(mvec_delete)(V_,&iflag_);
+      SUBR(mvec_delete)(W_,&iflag_);
+      SUBR(mvec_delete)(W2_,&iflag_);
+      SUBR(mvec_delete)(Q_,&iflag_);
+      SUBR(sdMat_delete)(R0_,&iflag_);
+      SUBR(sdMat_delete)(R1_,&iflag_);
+      SUBR(sdMat_delete)(R2_,&iflag_);
       }
     KernelTestWithMap<_N_>::TearDown();
     KernelTestWithType<_ST_>::TearDown();
@@ -119,24 +119,24 @@ public:
     if (typeImplemented_)
       {
       // fill V and W with random numbers
-      SUBR(mvec_random)(V_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_random)(W_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_random)(V_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(W_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       
       MT tolV=(MT)10.*VTest::releps(V_);
       MT tolW=(MT)10.*WTest::releps(W_);
 
       // copy Q=W because orthog() works in-place
-      SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       // orthogonalize the m columns of V. Test that orthog
       // works if the first argument is NULL.
       int rankVW=-42;
-      SUBR(orthog)(NULL,V_,R0_,NULL,1,&rankVW,&ierr_);
-      if (ierr_!=+2)
+      SUBR(orthog)(NULL,V_,R0_,NULL,1,&rankVW,&iflag_);
+      if (iflag_!=+2)
       {
-        ASSERT_EQ(0,ierr_);
+        ASSERT_EQ(0,iflag_);
       }
       ASSERT_EQ(_M_,rankVW);
       // check wether this worked out
@@ -148,10 +148,10 @@ public:
       // now orthogonalize W against V. The result should be such that Q*R1=W-V*R2, Q'*Q=I,V'*Q=0
       bool usedSVQB=false;
       rankVW=-42;
-      SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&rankVW,&ierr_);
-      if (ierr_!=+2)
+      SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&rankVW,&iflag_);
+      if (iflag_!=+2)
       {
-        ASSERT_EQ(0,ierr_);
+        ASSERT_EQ(0,iflag_);
       } 
       else
       {
@@ -174,12 +174,12 @@ public:
       else
       {
         // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
-        SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_times_sdMat)(st::one(),V_,R2_,st::one(),W2_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_times_sdMat)(st::one(),V_,R2_,st::one(),W2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero(),vflag_),tolW);
       }
     }
@@ -190,19 +190,19 @@ public:
     if( typeImplemented_ )
     {
       // fill V and W with one-vectors
-      SUBR(mvec_put_value)(V_,st::one(),&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_put_value)(W_,st::one(),&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_put_value)(V_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_put_value)(W_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
       // copy Q=W because orthog() works in-place
-      SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       // orthogonalize the m columns of V
       int rankVW=-42;
-      SUBR(orthog)(NULL,V_,R0_,NULL,1,&rankVW,&ierr_);
-      if (ierr_!=+2)
+      SUBR(orthog)(NULL,V_,R0_,NULL,1,&rankVW,&iflag_);
+      if (iflag_!=+2)
       {
-        ASSERT_EQ(_M_>1? 1:0,ierr_); // 1: rank deficient [V,W]
+        ASSERT_EQ(_M_>1? 1:0,iflag_); // 1: rank deficient [V,W]
       }
       ASSERT_EQ(1,rankVW);
       // check wether this worked out
@@ -213,10 +213,10 @@ public:
 
       // now orthogonalize W against V. The result should be such that Q*R1=W-V*R2, Q'*Q=I,V'*Q=0
       rankVW=-42;
-      SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&rankVW,&ierr_);
-      if (ierr_!=+2)
+      SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&rankVW,&iflag_);
+      if (iflag_!=+2)
       {
-        ASSERT_EQ(+1,ierr_);
+        ASSERT_EQ(+1,iflag_);
       }
       ASSERT_EQ(_M_,rankVW);
       
@@ -225,17 +225,17 @@ public:
       ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(Q_vp_,nloc_,ldaQ_,stride_,mpi_comm_),(MT)10.*WTest::releps());
 
       // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
-      SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_times_sdMat)(st::one(),V_,R2_,st::one(),W2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_times_sdMat)(st::one(),V_,R2_,st::one(),W2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
       PHIST_SOUT(PHIST_DEBUG,"R2=\n");
-      SUBR(sdMat_print)(R2_,&ierr_);
+      SUBR(sdMat_print)(R2_,&iflag_);
       PHIST_SOUT(PHIST_DEBUG,"R1=\n");
-      SUBR(sdMat_print)(R1_,&ierr_);
+      SUBR(sdMat_print)(R1_,&iflag_);
 #endif      
 #ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,k_,nloc_,ldaW2_,stride_,st::zero()),100*mt::eps());
@@ -255,55 +255,55 @@ public:
     if (typeImplemented_)
       {
       // fill V and W with random numbers
-      SUBR(mvec_random)(V_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_random)(W_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_random)(V_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(W_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       
       MT tolV=(MT)10.*VTest::releps(V_);
       MT tolW=(MT)10.*WTest::releps(W_);
 
       // copy Q=W because orthog() works in-place
-      SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       lidx_t nR=_M_+_K_;
       TYPE(sdMat_ptr) R=NULL;
-      SUBR(sdMat_create)(&R,nR,nR,comm_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_delete)(R0_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_create)(&R,nR,nR,comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(R0_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       R0_=NULL;
-      SUBR(sdMat_delete)(R1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(R1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       R1_=NULL;
-      SUBR(sdMat_delete)(R2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(R2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       R2_=NULL;
-      SUBR(sdMat_view_block)(R,&R0_,0,_M_-1,0,_M_-1,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(R,&R0_,0,_M_-1,0,_M_-1,&iflag_);
+      ASSERT_EQ(0,iflag_);
       // R1 is the k x k diagonal block:
-      SUBR(sdMat_view_block)(R,&R1_,_M_,_M_+_K_-1,_M_,_M_+_K_-1,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(R,&R1_,_M_,_M_+_K_-1,_M_,_M_+_K_-1,&iflag_);
+      ASSERT_EQ(0,iflag_);
       // R2 is the m'th block col with k cols and m rows
-      SUBR(sdMat_view_block)(R,&R2_,0,_M_-1,_M_,_M_+_K_-1,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(R,&R2_,0,_M_-1,_M_,_M_+_K_-1,&iflag_);
+      ASSERT_EQ(0,iflag_);
 
       // renew raw views
-      SUBR(sdMat_extract_view)(R0_,&R0_vp_,&this->ldaR0_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(sdMat_extract_view)(R1_,&R1_vp_,&this->ldaR1_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(sdMat_extract_view)(R2_,&R2_vp_,&this->ldaR2_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
+      SUBR(sdMat_extract_view)(R0_,&R0_vp_,&this->ldaR0_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(sdMat_extract_view)(R1_,&R1_vp_,&this->ldaR1_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(sdMat_extract_view)(R2_,&R2_vp_,&this->ldaR2_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
 
 
       // orthogonalize the m columns of V
       int rankVW=-42;
       bool useSVQB=false;
-      SUBR(orthog)(NULL,V_,R0_,NULL,1,&rankVW,&ierr_);
-      if (ierr_!=+2)
+      SUBR(orthog)(NULL,V_,R0_,NULL,1,&rankVW,&iflag_);
+      if (iflag_!=+2)
       {
-        ASSERT_EQ(0,ierr_);
+        ASSERT_EQ(0,iflag_);
       }
       else
       {
@@ -318,10 +318,10 @@ public:
 
       // now orthogonalize W against V. The result should be such that Q*R1=W-V*R2, Q'*Q=I,V'*Q=0
       rankVW=-42;
-      SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&rankVW,&ierr_);
-      if (ierr_!=+2)
+      SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&rankVW,&iflag_);
+      if (iflag_!=+2)
       {
-        ASSERT_EQ(0,ierr_);
+        ASSERT_EQ(0,iflag_);
       }
       ASSERT_EQ(m_+k_,rankVW);
       
@@ -332,20 +332,20 @@ public:
       // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
       if (!useSVQB)
       {
-        SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_times_sdMat)(st::one(),V_,R2_,st::one(),W2_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_times_sdMat)(st::one(),V_,R2_,st::one(),W2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero(),vflag_),tolW);
       }
       // check the location of the resulting R parts
       _ST_ *R_vp;
       lidx_t ldaR;
 
-      SUBR(sdMat_extract_view)(R,&R_vp,&ldaR,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
+      SUBR(sdMat_extract_view)(R,&R_vp,&ldaR,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
 
 #ifdef PHIST_SDMATS_ROW_MAJOR
 #warning "test not implemented for row-major sdMats"
@@ -380,7 +380,7 @@ public:
         }
 #if PHIST_OUTLEV>=PHIST_DEBUG
       PHIST_DEB("matrix H (last block-col should contain orthog-coefficients)");
-      SUBR(sdMat_print)(R,&ierr_);
+      SUBR(sdMat_print)(R,&iflag_);
 #endif    
       ASSERT_REAL_EQ(mt::one(),errR1);
       ASSERT_REAL_EQ(mt::one(),errR2);
@@ -395,55 +395,55 @@ public:
     if (typeImplemented_)
       {
       // fill V and W with random numbers
-      SUBR(mvec_put_value)(V_,st::one(),&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_put_value)(W_,st::one(),&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_put_value)(V_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_put_value)(W_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
       
       MT tolV=(MT)10.*VTest::releps(V_);
       MT tolW=(MT)10.*WTest::releps(W_);
 
       // copy Q=W because orthog() works in-place
-      SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(mvec_add_mvec)(st::one(),W_,st::zero(),Q_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       lidx_t nR=_M_+_K_;
       TYPE(sdMat_ptr) R=NULL;
-      SUBR(sdMat_create)(&R,nR,nR,comm_,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(sdMat_delete)(R0_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_create)(&R,nR,nR,comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(R0_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       R0_=NULL;
-      SUBR(sdMat_delete)(R1_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(R1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       R1_=NULL;
-      SUBR(sdMat_delete)(R2_,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_delete)(R2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       R2_=NULL;
-      SUBR(sdMat_view_block)(R,&R0_,0,_M_-1,0,_M_-1,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(R,&R0_,0,_M_-1,0,_M_-1,&iflag_);
+      ASSERT_EQ(0,iflag_);
       // R1 is the k x k diagonal block:
-      SUBR(sdMat_view_block)(R,&R1_,_M_,_M_+_K_-1,_M_,_M_+_K_-1,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(R,&R1_,_M_,_M_+_K_-1,_M_,_M_+_K_-1,&iflag_);
+      ASSERT_EQ(0,iflag_);
       // R2 is the m'th block col with k cols and m rows
-      SUBR(sdMat_view_block)(R,&R2_,0,_M_-1,_M_,_M_+_K_-1,&ierr_);
-      ASSERT_EQ(0,ierr_);
+      SUBR(sdMat_view_block)(R,&R2_,0,_M_-1,_M_,_M_+_K_-1,&iflag_);
+      ASSERT_EQ(0,iflag_);
 
       // renew raw views
-      SUBR(sdMat_extract_view)(R0_,&R0_vp_,&this->ldaR0_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(sdMat_extract_view)(R1_,&R1_vp_,&this->ldaR1_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
-      SUBR(sdMat_extract_view)(R2_,&R2_vp_,&this->ldaR2_,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
+      SUBR(sdMat_extract_view)(R0_,&R0_vp_,&this->ldaR0_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(sdMat_extract_view)(R1_,&R1_vp_,&this->ldaR1_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      SUBR(sdMat_extract_view)(R2_,&R2_vp_,&this->ldaR2_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
 
 
       // orthogonalize the m columns of V
       int rankVW=-42;
       bool useSVQB=false;
-      SUBR(orthog)(NULL,V_,R0_,NULL,1,&rankVW,&ierr_);
-      if (ierr_!=+2)
+      SUBR(orthog)(NULL,V_,R0_,NULL,1,&rankVW,&iflag_);
+      if (iflag_!=+2)
       {
-        ASSERT_EQ(_M_>1? 1:0,ierr_);
+        ASSERT_EQ(_M_>1? 1:0,iflag_);
       }
       else
       {
@@ -452,9 +452,9 @@ public:
       ASSERT_EQ(1,rankVW);
 #if PHIST_OUTLEV>=PHIST_DEBUG
       PHIST_DEB("coeffs for QR of V:\n");
-      SUBR(sdMat_print)(R0_,&ierr_);
+      SUBR(sdMat_print)(R0_,&iflag_);
       PHIST_DEB("in correct position?\n");
-      SUBR(sdMat_print)(R,&ierr_);
+      SUBR(sdMat_print)(R,&iflag_);
 #endif      
       // check wether this worked out
       ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),tolV);
@@ -464,7 +464,7 @@ public:
 
       // now orthogonalize W against V. The result should be such that Q*R1=W-V*R2, Q'*Q=I,V'*Q=0
       rankVW=-42;
-      SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&rankVW,&ierr_);
+      SUBR(orthog)(V_,Q_,R1_,R2_,nsteps,&rankVW,&iflag_);
       ASSERT_EQ(_M_,rankVW);
       
       // check orthonormality of Q
@@ -474,20 +474,20 @@ public:
       // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
       if (!useSVQB)
       {
-        SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_times_sdMat)(st::one(),V_,R2_,st::one(),W2_,&ierr_);
-        ASSERT_EQ(0,ierr_);
-        SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&ierr_);
-        ASSERT_EQ(0,ierr_);
+        SUBR(mvec_times_sdMat)(st::one(),Q_,R1_,st::zero(),W2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_times_sdMat)(st::one(),V_,R2_,st::one(),W2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_add_mvec)(-st::one(),W_,st::one(),W2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero(),vflag_),tolW);
       }
       // check the location of the resulting R parts
       _ST_ *R_vp;
       lidx_t ldaR;
 
-      SUBR(sdMat_extract_view)(R,&R_vp,&ldaR,&this->ierr_);
-      ASSERT_EQ(0,this->ierr_);
+      SUBR(sdMat_extract_view)(R,&R_vp,&ldaR,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
 
 #ifdef PHIST_SDMATS_ROW_MAJOR
 #warning "test not implemented for row-major sdMats"
@@ -522,7 +522,7 @@ public:
         }
 #if PHIST_OUTLEV>=PHIST_DEBUG
       PHIST_DEB("matrix H (last block-col should contain orthog-coefficients)");
-      SUBR(sdMat_print)(R,&ierr_);
+      SUBR(sdMat_print)(R,&iflag_);
 #endif    
       ASSERT_REAL_EQ(mt::one(),errR1);
       ASSERT_REAL_EQ(mt::one(),errR2);

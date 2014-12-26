@@ -31,7 +31,7 @@ typedef struct TYPE(carp_cgState) {
   int numIter; //! number of iterations performed since last call to reset()
   _MT_ *normR;  //! stores current (implicit) residual norms
 
-  int ierr; //! error code returned by this CARP-CG instance
+  int iflag; //! error code returned by this CARP-CG instance
 
   int *conv; //! set to 1 if system j has converged to the required tolerance
 
@@ -43,7 +43,7 @@ typedef struct TYPE(carp_cgState) {
   _MT_ sigma_i_; //! with sigma = sigma_r + i*sigma_i
   int nvec_; //! number of RHS vectors for this shift
 
-  TYPE(const_crsMat_ptr) A_;
+  TYPE(const_sparseMat_ptr) A_;
 
   //@}
   //! \name set by reset() function
@@ -86,10 +86,10 @@ typedef TYPE(carp_cgState) const * TYPE(const_cgState_ptr);
 //! columns.
 void SUBR(carp_cgStates_create)(TYPE(carp_cgState_ptr) S_array[], 
         int nshifts, _MT_ sigma_r[], _MT_ sigma_i[],
-        TYPE(const_crsMat_ptr) A, int numRhs, int* ierr);
+        TYPE(const_sparseMat_ptr) A, int numRhs, int* iflag);
 
 //! destructor
-void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) S_array[], int numSys, int* ierr);
+void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) S_array[], int numSys, int* iflag);
 
 //! reset solver state
 
@@ -100,7 +100,7 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) S_array[], int numSys, in
 void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
                 TYPE(const_mvec_ptr) rhs,
                 _MT_* normsB,
-                int *ierr);
+                int *iflag);
 
 //! CARP-CG iterations on all linear systems in the array.
 
@@ -115,7 +115,7 @@ void SUBR(carp_cgStates_iterate)(
         TYPE(carp_cgState_ptr) S_array[], int numSys,
         TYPE(mvec_ptr) X_r[], TYPE(mvec_ptr) X_i[],
         _MT_ tol, int maxIter,
-        int* ierr);
+        int* iflag);
 
 //@}
 

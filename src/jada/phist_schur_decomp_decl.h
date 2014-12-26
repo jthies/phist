@@ -33,10 +33,10 @@
  //                                                                                             
  void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
          int m, int nselect, int nsort, eigSort_t which, _MT_ tol,
-         void* ev, int *ierr);
+         void* ev, int *iflag);
 
  // reorder multiple eigenvalues in a given (partial) schur decomposition by the smallest residual norm of the unprojected problem
  // must be sorted up to nselected to work correctly!
  void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
-        int m, int nselected, eigSort_t which, _MT_ tol, _MT_* resNorm, void* ev, int* permutation, int *ierr);
+        int m, int nselected, eigSort_t which, _MT_ tol, _MT_* resNorm, void* ev, int* permutation, int *iflag);
 

@@ -34,8 +34,8 @@ typedef TYPE(const_mvec_ptr) const_mvec_ptr_t;
 typedef TYPE(sdMat_ptr) sdMat_ptr_t;
 typedef TYPE(const_sdMat_ptr) const_sdMat_ptr_t;
 
-typedef TYPE(crsMat_ptr) crsMat_ptr_t;
-typedef TYPE(const_crsMat_ptr) const_crsMat_ptr_t;
+typedef TYPE(sparseMat_ptr) sparseMat_ptr_t;
+typedef TYPE(const_sparseMat_ptr) const_sparseMat_ptr_t;
 
 #ifdef PHIST_OPERATOR_H
 typedef TYPE(op_ptr) op_ptr_t;
@@ -50,8 +50,8 @@ extern "C" {
 
 //! auto-detects the file type by looking at the file extension
 //! and calls the appropriate kernel routine to read the matrix
-void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm, 
-        char* filename, int* ierr);
+void SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm, 
+        char* filename, int* iflag);
 
 //! quick matrix generation/input routine
 
@@ -59,15 +59,15 @@ void SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm,
 //! is only implemented in real double precision (D), in which case
 //! we support e.g. "graphene<L>" (an L x L graphene problem) or "anderson<L>"
 //! (an L x L x L Anderson model problem with periodic BC). Any other string
-//! is assumed to be a matrix filename and passed to crsMat_read, which recognizes
+//! is assumed to be a matrix filename and passed to sparseMat_read, which recognizes
 //! files ending on '.mm', '.bin' or '.rua'.
 //!
-//! Example: phist_Dcreate_matrix(&A, comm, "anderson42",&ierr) will generate the Anderson
+//! Example: phist_Dcreate_matrix(&A, comm, "anderson42",&iflag) will generate the Anderson
 //! model problem on a 42^3 grid, whereas the string "anderson42.mm" will be interpreted
 //! as a filename. The special string "usage" causes a usage message to be printed, which
 //! contains the supported matrix file formats and the problems implemented at the moment.
-void SUBR(create_matrix)(TYPE(crsMat_ptr)* mat, const_comm_ptr_t comm,
-        const char* problem, int* ierr);
+void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
+        const char* problem, int* iflag);
 
 int phist_sizeof_lidx();
 int phist_sizeof_gidx();

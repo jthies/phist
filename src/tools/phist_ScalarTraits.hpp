@@ -46,13 +46,13 @@ class ScalarTraits< float >
   typedef Sop_t op_t;
   typedef Smvec_t mvec_t;
   typedef SsdMat_t sdMat_t;
-  typedef ScrsMat_t crsMat_t;
+  typedef SsparseMat_t sparseMat_t;
   typedef Sblas_cmplx_t blas_cmplx_t;
   typedef float blas_scalar_t;
   
   typedef Cop_t c_op_t; // this is just to allow a simpler implementation of the complex traits class
   typedef Cmvec_t c_mvec_t; 
-  typedef CcrsMat_t c_crsMat_t; 
+  typedef CsparseMat_t c_sparseMat_t; 
   typedef CsdMat_t c_sdMat_t; 
   
   //! for complex types, data type of real and imag part.
@@ -166,14 +166,14 @@ class ScalarTraits< double >
 #endif  
   typedef Dop_t op_t; 
   typedef Dmvec_t mvec_t; 
-  typedef DcrsMat_t crsMat_t; 
+  typedef DsparseMat_t sparseMat_t; 
   typedef DsdMat_t sdMat_t; 
   typedef Dblas_cmplx_t blas_cmplx_t;
   typedef double blas_scalar_t;
 
   typedef Zop_t c_op_t; // this is just to allow a simpler implementation of the complex traits class
   typedef Zmvec_t c_mvec_t;
-  typedef ZcrsMat_t c_crsMat_t;
+  typedef ZsparseMat_t c_sparseMat_t;
   typedef ZsdMat_t c_sdMat_t;
   
   //! for complex types, data type of real and imag part.
@@ -287,7 +287,7 @@ class ScalarTraits< std::complex<MT> >
 #endif
   typedef typename ScalarTraits<MT>::c_op_t op_t; 
   typedef typename ScalarTraits<MT>::c_mvec_t mvec_t; 
-  typedef typename ScalarTraits<MT>::c_crsMat_t crsMat_t; 
+  typedef typename ScalarTraits<MT>::c_sparseMat_t sparseMat_t; 
   typedef typename ScalarTraits<MT>::c_sdMat_t sdMat_t; 
   typedef typename ScalarTraits<MT>::blas_cmplx_t blas_cmplx_t;
   typedef typename ScalarTraits<MT>::blas_cmplx_t blas_scalar_t;

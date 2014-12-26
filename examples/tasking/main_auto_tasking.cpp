@@ -20,15 +20,15 @@ PHIST_GHOST_TASK_END
 
 int main(int argc, char* argv[])
 {
-  int ierr;
-  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+  int iflag;
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
 
   for (int i=1;i<=3;i++)
     {
     printHello(i);
     }
 
-  PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
+  PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
 }
 
 #else

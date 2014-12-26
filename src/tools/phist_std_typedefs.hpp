@@ -27,8 +27,8 @@ typedef ::phist::ScalarTraits<CT> ct;
 
 typedef st::mvec_t* mvec_ptr_t;
 typedef const st::mvec_t* const_mvec_ptr_t;
-typedef st::crsMat_t* crsMat_ptr_t;
-typedef const st::crsMat_t* const_crsMat_ptr_t;
+typedef st::sparseMat_t* sparseMat_ptr_t;
+typedef const st::sparseMat_t* const_sparseMat_ptr_t;
 typedef st::sdMat_t* sdMat_ptr_t;
 typedef const st::sdMat_t* const_sdMat_ptr_t;
 typedef st::op_t* op_ptr_t;

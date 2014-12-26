@@ -12,9 +12,9 @@ typedef Teuchos::SerialDenseMatrix<int,double> Teuchos_sdMat_t;
 class Epetra_MultiVector;
 
   //! create a Teuchos' view of a local mvec/sdMat
-  static Teuchos::RCP<const Teuchos_sdMat_t > CreateTeuchosView(Teuchos::RCP<const Epetra_MultiVector> M, int* ierr);
+  static Teuchos::RCP<const Teuchos_sdMat_t > CreateTeuchosView(Teuchos::RCP<const Epetra_MultiVector> M, int* iflag);
 
   //! create a non-const Teuchos' view of a local mvec/sdMat
-  static Teuchos::RCP<Teuchos_sdMat_t> CreateTeuchosViewNonConst(Teuchos::RCP<Epetra_MultiVector> M, int* ierr);
+  static Teuchos::RCP<Teuchos_sdMat_t> CreateTeuchosViewNonConst(Teuchos::RCP<Epetra_MultiVector> M, int* iflag);
   
 #endif
