@@ -193,7 +193,7 @@ end;
 
 % numerical values of nonzero elements of the matrix
 if job >= 2
-    aa = zeros(1:2*nnzeros,1);
+    aa = zeros(2*nnzeros,1);
     aa(1:2:2*nnzeros-1) = real(a(1:nnzeros));
     aa(2:2:2*nnzeros) = imag(a(1:nnzeros));
     if job == 2
