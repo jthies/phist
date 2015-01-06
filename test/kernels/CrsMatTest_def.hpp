@@ -20,11 +20,11 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
   /*! Set up routine.
    */
   virtual void SetUp()
-    {
+  {
     KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
     
     if (typeImplemented_)
-      {
+    {
       SUBR(read_mat)("speye",nglob_,&A1_,&iflag_);
 #ifndef SKIP_ZERO_MAT
       SUBR(read_mat)("spzero",nglob_,&A0_,&iflag_);
@@ -40,23 +40,23 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
 #endif
       
       if (A0_==NULL || A1_==NULL || A2_==NULL || A3_==NULL || A4_==NULL)
-        {
+      {
         haveMats_=false;
-        }
+      }
       else
-        {
+      {
         haveMats_=true;
-        }
       }
     }
+  }
 
   /*! Clean up.
    */
   virtual void TearDown()
-    {
+  {
     KernelTestWithVectors<_ST_,_N_,_NV_>::TearDown();
     if (typeImplemented_)
-      {
+    {
 #ifndef SKIP_ZERO_MAT
       ASSERT_EQ(0,delete_mat(A0_));
 #endif      
@@ -66,14 +66,14 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
 #ifndef SKIP_ZERO_MAT
       ASSERT_EQ(0,delete_mat(A4_));
 #endif
-      }
     }
+  }
 
 // the matrices may have individual maps, so we need to recreate all vectors with the specific map of the matrix!
 void rebuildVectors(TYPE(const_sparseMat_ptr) A)
-  {
+{
   if (typeImplemented_ && haveMats_)
-    {
+  {
     // set vec1 to be a valid X, vec2 and vec3 a valid Y in Y=AX
     const_map_ptr_t range_map, domain_map;
     SUBR(sparseMat_get_range_map)(A,&range_map,&iflag_);
@@ -109,8 +109,8 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
 
     phist_map_get_local_length(domain_map, &nloc_, &iflag_);
     ASSERT_EQ(0,iflag_);
-    }
   }
+}
 
 
   void test_sparseMat_times_mvec_vadd_mvec(_ST_ alpha, TYPE(const_sparseMat_ptr) A, _ST_ shifts[_NV_], _ST_ beta)
@@ -237,18 +237,18 @@ TYPE(sparseMat_ptr) A4_; // orthogonal sparse matrix that "shifts" each value to
 protected:
 
 int delete_mat(TYPE(sparseMat_ptr) A)
-  {
+{
   if (A!=NULL)
-    {
+  {
     SUBR(sparseMat_delete)(A,&iflag_);
-    }
-  return iflag_;
   }
+  return iflag_;
+}
 
 _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
   {
     if (typeImplemented_ && haveMats_)
-      {
+    {
       _ST_ val = random_number();
       global_sum(&val,1,mpi_comm_);
       SUBR(mvec_put_value)(vec1_,val,&iflag_);
@@ -260,7 +260,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       SUBR(mvec_print)(vec2_,&iflag_);
 #endif
       return ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,val,vflag_);
-      }
+    }
   return mt::one();
   }
 
