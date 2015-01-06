@@ -12,16 +12,22 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_> 
+class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>,
+                 public KernelTestWithSdMats<_ST_,_NV_,_NV_>
 {
 
   public:
+  
+  typedef KernelTestWithVectors<_ST_,_N_,_NV_> VTest;
+  typedef KernelTestWithSdMats<_ST_,_NV_,_NV_> MTest;
+  typedef KernelTestWithType< _MT_ > MT_Test;
 
   /*! Set up routine.
    */
   virtual void SetUp()
   {
-    KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
+    VTest::SetUp();
+    MTest::SetUp();
     
     if (typeImplemented_)
     {
@@ -54,7 +60,8 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
    */
   virtual void TearDown()
   {
-    KernelTestWithVectors<_ST_,_N_,_NV_>::TearDown();
+    VTest::TearDown();
+    MTest::TearDown();
     if (typeImplemented_)
     {
 #ifndef SKIP_ZERO_MAT
@@ -227,6 +234,119 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     ASSERT_EQ(0, iflag_);
   }
 #endif
+
+  void test_carp_kernel(TYPE(const_sparseMat_ptr) A)
+  {
+    if (!typeImplemented_) return;
+    // ColPack has trouble with the tiny
+    // local matrices that occur when partitioning a
+    // 25x25 matrix (TODO: larger CrsMat tests)
+    if (mpi_size_>1) return;
+
+    // setup the CARP kernel and get the required data structures:
+    MT* nrms_ai2i=NULL;
+    void* aux=NULL;
+    int numSys=1;
+    MT sigma_r=0.0;
+    MT sigma_i=0.0;
+    MT omega=1.0;
+    SUBR(carp_setup)(A,numSys,&sigma_r,&sigma_i,
+        &nrms_ai2i, &aux, &iflag_);
+    if (iflag_==-99) return; // CARP not implemented
+    ASSERT_EQ(0,iflag_);
+    
+    // perform single CARP forward/backward sweep with B=0 and X=v2.
+    
+    // set up mvecs
+    TYPE(mvec_ptr) B=vec1_;
+    TYPE(mvec_ptr) Xr=vec2_;
+    TYPE(mvec_ptr) Xi=vec3_;
+    SUBR(mvec_put_value)(B, st::zero(),&iflag_);
+    ASSERT_EQ(0, iflag_);
+    SUBR(mvec_random)(Xr, &iflag_);
+    ASSERT_EQ(0, iflag_);
+    SUBR(mvec_random)(Xi, &iflag_);
+    ASSERT_EQ(0, iflag_);
+    
+    MT norms_X0[_NV_];
+    MT norms_X1[_NV_];
+    MT norms_X2[_NV_];
+
+    // backup X
+    TYPE(mvec_ptr) Xr_bak=NULL;
+    TYPE(mvec_ptr) Xi_bak=NULL;
+    SUBR(mvec_create)(&Xr_bak,map_,_NV_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_create)(&Xi_bak,map_,_NV_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_add_mvec)(st::one(), Xr, st::zero(), Xr_bak, &iflag_);
+    ASSERT_EQ(0, iflag_);
+    SUBR(mvec_add_mvec)(st::one(), Xi, st::zero(), Xi_bak, &iflag_);
+    ASSERT_EQ(0, iflag_);
+    
+    SUBR(carp_sweep)(A, 1, &sigma_r, &sigma_i,B,&Xr,&Xi,
+          nrms_ai2i,aux,&omega,&iflag_);
+    ASSERT_EQ(0, iflag_);
+    
+    // compute norms before and after the sweep
+    SUBR(mvec_norm2)(Xr_bak,norms_X0,&iflag_);
+    ASSERT_EQ(0, iflag_);
+    SUBR(mvec_norm2)(Xr,norms_X1,&iflag_);
+    ASSERT_EQ(0, iflag_);
+
+    PHIST_SOUT(PHIST_VERBOSE,"||X||_2 before and after CARP sweep:\n");
+    for (int i=0; i<nvec_; i++) PHIST_SOUT(PHIST_VERBOSE,
+        "%12.8e\t%12.8e\n", norms_X0[i], norms_X1[i]);
+
+    // TEST 1: row projection must be non-increasing on the vectors norm.
+    for (int i=0; i<_NV_; i++)
+    {
+      ASSERT_TRUE(norms_X0[i]>=norms_X1[i]);
+    }
+    
+
+    // Check that it works if B=NULL is passed in
+    SUBR(mvec_add_mvec)(st::one(),Xr_bak,st::zero(),Xr,&iflag_);
+    ASSERT_EQ(0, iflag_);
+    SUBR(carp_sweep)(A, 1, &sigma_r, &sigma_i,NULL,&Xr,&Xi,
+          nrms_ai2i,aux,&omega,&iflag_);
+    ASSERT_EQ(0, iflag_);
+
+    SUBR(mvec_norm2)(Xr,norms_X2,&iflag_);
+    ASSERT_EQ(0, iflag_);
+
+    PHIST_SOUT(PHIST_VERBOSE,"||X||_2 after CARP with B=0 and B=NULL:\n");
+    for (int i=0; i<nvec_; i++) PHIST_SOUT(PHIST_VERBOSE,
+        "%12.8e\t%12.8e\n", norms_X1[i], norms_X2[i]);
+    
+    ASSERT_REAL_EQ(mt::one(),MT_Test::ArraysEqual(norms_X1,norms_X2,nvec_,1,nvec_,1,vflag_));
+      
+    // test that the forward/backward CARP operator is symmetric
+    SUBR(mvecT_times_mvec)(st::one(),Xr,Xr_bak,st::zero(),mat1_,&iflag_);
+    ASSERT_EQ(0, iflag_);
+    SUBR(sdMat_from_device)(mat1_,&iflag_);
+    ASSERT_EQ(0, iflag_);      
+    MT nonsymm=mt::zero();
+    for (int i=1; i<nvec_; i++)
+    {
+      for (int j=1; j<nvec_; j++)
+      {
+        nonsymm = std::max(nonsymm,
+                st::abs(mat1_vp_[i*lda_+j]-mat1_vp_[j*lda_+i]));
+      }
+    }
+    ASSERT_NEAR(mt::one(),mt::one()+nonsymm,100*mt::eps());
+
+    SUBR(carp_destroy)(A,1,nrms_ai2i,aux,&iflag_);
+    ASSERT_EQ(0, iflag_);
+
+  SUBR(mvec_delete)(Xr_bak,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+  SUBR(mvec_delete)(Xi_bak,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+  }
 
 TYPE(sparseMat_ptr) A0_; // all zero matrix
 TYPE(sparseMat_ptr) A1_; // identity matrix
@@ -1083,4 +1203,22 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
   }
 #endif
 
+//////////////////////////////////////////////////
+// basic tests for the CARP kernel.             //
+//////////////////////////////////////////////////
+
+TEST_F(CLASSNAME, Carp_A1)
+{
+  test_carp_kernel(A1_);
+}
+
+TEST_F(CLASSNAME, Carp_A2)
+{
+  test_carp_kernel(A2_);
+}
+
+TEST_F(CLASSNAME, Carp_A3)
+{
+  test_carp_kernel(A3_);
+}
 

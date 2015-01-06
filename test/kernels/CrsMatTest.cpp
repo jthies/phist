@@ -8,6 +8,7 @@
 
 #include "kernels/phist_kernels.h"
 #include "KernelTestWithVectors.h"
+#include "KernelTestWithSdMats.h"
 #include "../tools/MatrixIO.h"
 
 #ifdef PHIST_HAVE_MPI
