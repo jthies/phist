@@ -20,13 +20,57 @@ endif()
 option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
 option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
 option(PHIST_ENABLE_SP "Enable single precision functions and drivers" OFF)
-if (DEFINED LAPACK_LIBS)
-  set(LAPACK_LIBS ${LAPACK_LIBS} CACHE STRING "how to link with lapack (and blas)")
-elseif(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
-#TODO: this assumes that if you use the intel compilers, you also have MKL (!)
-  set(LAPACK_LIBS "lapacke;lapack;blas" CACHE STRING "how to link with lapack 
-  (and blas)")
+
+########################################################################
+# Lists of libraries, executables, tests
+########################################################################
+set(library_list)
+set(driver_list)
+set(test_list)
+
+########################################################################
+# List of external libraries for executables and tests to link, e.g.
+# GHOST, LAPACK. TODO: also for essex-physics?
+########################################################################
+set(external_libs)
+
+########################################################################
+# Deal with LAPACK and LAPACKe (but not BLAS).
+# Specify paths in CMAKE_PREFIX_PATH.
+########################################################################
+find_path(LAPACK_INCL NAMES "lapacke.h")
+if(LAPACK_INCL STREQUAL "LAPACK_INCL-NOTFOUND")
+  message(FATAL_ERROR "LAPACKe include file not found. Add the proper path to CMAKE_PREFIX_PATH.")
+else()
+  message(STATUS "LAPACKe include file found in: ${LAPACK_INCL}")
+  include_directories(${LAPACK_INCL})
 endif()
+
+if(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
+# TODO: this assumes that if you use the intel compilers, you also have MKL (!)
+
+  # LAPACKe
+  unset(LAPACK_LIBS CACHE)
+  find_library(LAPACK_LIBS NAMES "liblapacke.so" "liblapacke.a")
+  if(LAPACK_LIBS STREQUAL "LAPACK_LIBS-NOTFOUND")
+    message(FATAL_ERROR "LAPACKe libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
+  else()
+    message(STATUS "LAPACKe libraries found: ${LAPACK_LIBS}")
+    LIST(APPEND external_libs ${LAPACK_LIBS})
+  endif()
+
+  # LAPACK
+  unset(LAPACK_LIBS CACHE)
+  find_library(LAPACK_LIBS NAMES "liblapack.so" "liblapack.a")
+  if(LAPACK_LIBS STREQUAL "LAPACK_LIBS-NOTFOUND")
+    message(FATAL_ERROR "LAPACK libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
+  else()
+    message(STATUS "LAPACK libraries found: ${LAPACK_LIBS}")
+    LIST(APPEND external_libs ${LAPACK_LIBS})
+  endif()
+
+endif()
+########################################################################
 
 # try to find a MKL header in the default location
 if (NOT MKL_INCLUDE_DIR)
@@ -45,15 +89,6 @@ if(CMAKE_BUILD_TYPE MATCHES "Release")
 else()
 	set(PHIST_OUTLEV 3 CACHE STRING "PHIST verbosity (debug 3, 'VERBOSE')")
 endif()
-
-# lists of libraries, executables, tests
-set(library_list)
-set(driver_list)
-set(test_list)
-
-# lists of external libraries for executables and tests to link, e.g.
-# GHOST. TODO: also for essex-physics?
-set(external_libs)
 
 ##############################################################################
 # compiler-dependent flags 
@@ -511,7 +546,14 @@ foreach(PKG ${LOAD_TRILI_PKG})
 
 endforeach()
 
-target_link_libraries(phist_tools ${LAPACK_LIBS})
+# I kind of am fond of deferring linking of such libraries until
+# executable link time, although I could not find the exact rules for
+# unresolved static dependencies in dynamically linked shared libraries.
+# It seems that the executable can and will satisfy these dependencies
+# at static link time. [MG]
+#target_link_libraries(phist_tools ${LAPACK_LIBS})
+LIST(APPEND external_libs ${LAPACK_LIBS})
+
 if(NOT PHIST_KERNEL_LIB STREQUAL "ghost") #use MPI libs as found by GHOST in this case. otherwise, a clash between thread-safe and normal MPI will occur
   target_link_libraries(phist_tools ${MPI_CXX_LIBRARIES} ${MPI_C_LIBRARIES} ${MPI_Fortran_LIBRARIES})
 endif()
