@@ -1,6 +1,11 @@
 #include "phist_config.h"
+#include "ghost/config.h"
 #ifdef PHIST_USE_SELL
 #include "ghost/sell.h"
+#endif
+
+#ifdef GHOST_HAVE_SCOTCH_disabled
+#define USE_SCOTCH
 #endif
 
 /* previously we started every kernel function as a task, but since this
@@ -48,19 +53,23 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
 
   ghost_sparsemat_traits_t *mtraits=new ghost_sparsemat_traits_t;
         *mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
+  ghost_sparsemat_flags_t flags=GHOST_SPARSEMAT_DEFAULT;
 #ifdef PHIST_USE_SELL
         mtraits->format = GHOST_SPARSEMAT_SELL;
         ghost_sell_aux_t aux = GHOST_SELL_AUX_INITIALIZER;
         aux.C = PHIST_SELL_C;
         mtraits->sortScope = PHIST_SELL_SIGMA;
         mtraits->aux = &aux;
-        mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT|GHOST_SPARSEMAT_PERMUTE);
+        flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
 #else
 #warning "GHOST interface compiled to use the reference CRS format, will probably not yield optimal performance"
         mtraits->format = GHOST_SPARSEMAT_CRS;
-        mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT);
+#endif
+#ifdef USE_SCOTCH
+        flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
 #endif
         mtraits->datatype = st::ghost_dt;
+        mtraits->flags = flags;
         char* cfname=const_cast<char*>(filename);
 // TODO - check ghost return codes everywhere like this
   PHIST_CHK_GERR(ghost_context_create(&ctx,0,0,
@@ -100,19 +109,23 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
 
   ghost_sparsemat_traits_t *mtraits=new ghost_sparsemat_traits_t;
         *mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
+  ghost_sparsemat_flags_t flags=GHOST_SPARSEMAT_DEFAULT;
 #ifdef PHIST_USE_SELL
         mtraits->format = GHOST_SPARSEMAT_SELL;
         ghost_sell_aux_t aux = GHOST_SELL_AUX_INITIALIZER;
         aux.C = PHIST_SELL_C;
         mtraits->sortScope = PHIST_SELL_SIGMA;
         mtraits->aux = &aux;
-        mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT|GHOST_SPARSEMAT_PERMUTE);
+        flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
 #else
 #warning "GHOST interface compiled to use the reference CRS format, will probably not yield optimal performance"
         mtraits->format = GHOST_SPARSEMAT_CRS;
-        mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT);
+#endif
+#ifdef USE_SCOTCH
+        flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
 #endif
         mtraits->datatype = st::ghost_dt;
+        mtraits->flags = flags;
         char* cfname=const_cast<char*>(filename);
 // TODO - check ghost return codes everywhere like this
   PHIST_CHK_GERR(ghost_context_create(&ctx,0,0,
@@ -1519,19 +1532,23 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
 
   ghost_sparsemat_traits_t *mtraits=new ghost_sparsemat_traits_t;
         *mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
+  ghost_sparsemat_flags_t flags=GHOST_SPARSEMAT_DEFAULT;
 #ifdef PHIST_USE_SELL
         mtraits->format = GHOST_SPARSEMAT_SELL;
         ghost_sell_aux_t aux = GHOST_SELL_AUX_INITIALIZER;
         aux.C = PHIST_SELL_C;
         mtraits->sortScope = PHIST_SELL_SIGMA;
         mtraits->aux = &aux;
-        mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT|GHOST_SPARSEMAT_PERMUTE);
+        flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
 #else
 #warning "GHOST interface compiled to use the reference CRS format, will probably not yield optimal performance"
         mtraits->format = GHOST_SPARSEMAT_CRS;
-        mtraits->flags = (ghost_sparsemat_flags_t)(GHOST_SPARSEMAT_DEFAULT);
+#endif
+#ifdef USE_SCOTCH
+        flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
 #endif
         mtraits->datatype = st::ghost_dt;
+        mtraits->flags = flags;
   PHIST_CHK_GERR(ghost_context_create(&ctx,nrows,ncols,
         GHOST_CONTEXT_DEFAULT,NULL,GHOST_SPARSEMAT_SRC_FUNC,*comm,1.0),*iflag);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,mtraits,1),*iflag);                               
