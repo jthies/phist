@@ -274,9 +274,9 @@ public:
 
   // random check with partial views of partial mvecs and sdMats
   TEST_F(CLASSNAME, random_mvecT_times_mvec_with_inside_views) 
-    {
+  {
     if (typeImplemented_ && m_ > 4)
-      {
+    {
       std::vector<int> off1;
       std::vector<int> off2;
       std::vector<int> m1;
@@ -305,6 +305,21 @@ public:
         sdMat_ptr_t M1 = NULL;
         SUBR(sdMat_view_block)(M1_,&M1,off1_M[i],off1_M[i]+m1[i]-1,off2_M[i],off2_M[i]+m2[i]-1,&iflag_);
         ASSERT_EQ(0,iflag_);
+        sdMat_ptr_t M2 = NULL;
+        SUBR(sdMat_view_block)(M2_,&M2,off1[i],off1[i]+m1[i]-1,off2[i],off2[i]+m2[i]-1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        sdMat_ptr_t M3=NULL;
+        SUBR(sdMat_create)(&M3, m1[i], m2[i], comm_, &iflag_);
+        ASSERT_EQ(0,iflag_);
+        _ST_* M3_vp;
+        lidx_t lda_M3;
+        SUBR(sdMat_extract_view)(M3,&M3_vp,&lda_M3, &iflag_);
+        ASSERT_EQ(0,iflag_);
+
+        PHIST_DEB("Note: we are just using views inside the random vectors\n");
+        PHIST_DEB("col-range V1: [%d:%d]\n",off1[i],off1[i]+m1[i]-1);
+        PHIST_DEB("col-range V2: [%d:%d]\n",off2[i],off2[i]+m2[i]-1);
+        PHIST_DEB("idx-range M:  [%d:%d,%d:%d]\n",off1_M[i],off1_M[i]+m1[i]-1,off2_M[i],off2_M[i]+m2[i]-1);
 
         // set V1 and V2 to 0,
         // fill (viewed) V and W with random numbers
@@ -316,18 +331,36 @@ public:
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_random)(V2,&iflag_);
         ASSERT_EQ(0,iflag_);
-        // fill M1_ with zeros
+        // fill M1_ and M2_ with zeros
         SUBR(sdMat_put_value)(M1_,st::zero(),&iflag_);
         ASSERT_EQ(0,iflag_);
-        SUBR(mvecT_times_mvec)(-st::one(),V1,V2,st::one(),M1,&iflag_);
+        SUBR(sdMat_put_value)(M2_,st::zero(),&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(sdMat_put_value)(M3,st::zero(),&iflag_);
         ASSERT_EQ(0,iflag_);
 
-        PHIST_DEB("Note: we are just using views inside the random vectors\n");
-        PHIST_DEB("col-range V1: [%d:%d]\n",off1[i],off1[i]+m1[i]-1);
-        PHIST_DEB("col-range V2: [%d:%d]\n",off2[i],off2[i]+m2[i]-1);
-        PHIST_DEB("idx-range M:  [%d:%d,%d:%d]\n",off1_M[i],off1_M[i]+m1[i]-1,off2_M[i],off2_M[i]+m2[i]-1);
+        // first compute the full matrix V'W, giving non-zeros
+        // only in a block with offset (off1, off2) and size m1 x m2
+        SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+
+        SUBR(sdMat_from_device)(M2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+
+        // viewed vectors into regular sdMat
+        SUBR(mvecT_times_mvec)(st::one(),V1,V2,st::zero(),M3,&iflag_);
+        ASSERT_EQ(0,iflag_);
+
+        SUBR(sdMat_from_device)(M3,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        
+        // now the version with views
+        SUBR(mvecT_times_mvec)(st::one(),V1,V2,st::zero(),M1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+
         SUBR(sdMat_from_device)(M1_,&iflag_);
         ASSERT_EQ(0,iflag_);
+
 #if PHIST_OUTLEV>=PHIST_DEBUG
         SUBR(mvec_from_device)(V1_,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -335,46 +368,62 @@ public:
         ASSERT_EQ(0,iflag_);
         VTest::PrintVector(*cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
         VTest::PrintVector(*cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
-        MTest::PrintSdMat(*cout,"zero-random'*random",M1_vp_,ldaM1_,stride_,mpi_comm_);
+        
+                MTest::PrintSdMat(*cout,"random'*random without views",M2_vp_,ldaM2_,stride_,mpi_comm_);
+        PHIST_SOUT(PHIST_DEBUG,"viewed block in result");
+        SUBR(sdMat_print)(M2,&iflag_);
+        ASSERT_EQ(0,iflag_);
+
+        PHIST_SOUT(PHIST_DEBUG,"view'*view, non-viewed result");
+        SUBR(sdMat_print)(M3,&iflag_);
+        ASSERT_EQ(0,iflag_);
+
+        std::ostringstream ss;
+        ss<<"rnd'*rnd in location ("<<off1_M[i]<<":"<<off1_M[i]+m1[i]-1<<","
+                                         <<off2_M[i]<<":"<<off2_M[i]+m2[i]-1<<")";
+        MTest::PrintSdMat(*cout,ss.str().c_str(), M1_vp_,ldaM1_,stride_,mpi_comm_);
+        PHIST_SOUT(PHIST_DEBUG,"viewed block in result");
+        SUBR(sdMat_print)(M1,&iflag_);
+        ASSERT_EQ(0,iflag_);
 #endif
         SUBR(sdMat_parallel_check_)(M1_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
-        PHIST_DEB("check the result with full mvecT_times_mvec");
-        // copy M1 back to correct position
-        SUBR(sdMat_put_value)(M2_,st::zero(),&iflag_);
-        ASSERT_EQ(0,iflag_);
-        sdMat_ptr_t M2 = NULL;
-        SUBR(sdMat_view_block)(M2_,&M2,off1[i],off1[i]+m1[i]-1,off2[i],off2[i]+m2[i]-1,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        SUBR(sdMat_add_sdMat)(st::one(),M1,st::zero(),M2,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        SUBR(sdMat_delete)(M2,&iflag_);
-        ASSERT_EQ(0,iflag_);
-#if PHIST_OUTLEV>=PHIST_DEBUG
-        SUBR(sdMat_from_device)(M2_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        MTest::PrintSdMat(*cout,"zero-random'*random in correct location",M2_vp_,ldaM2_,stride_,mpi_comm_);
-#endif
-        SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::one(),M2_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-#if PHIST_OUTLEV>=PHIST_DEBUG
-        SUBR(sdMat_from_device)(M2_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        MTest::PrintSdMat(*cout,"zero-random'*random+random'*random",M2_vp_,ldaM2_,stride_,mpi_comm_);
-#endif
         SUBR(sdMat_parallel_check_)(M2_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
+        SUBR(sdMat_parallel_check_)(M3,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        
+        // subtract the result without views from the one with non-viewed target sdMat
+        SUBR(sdMat_add_sdMat)(-st::one(),M1, st::one(),M3,&iflag_);
+        ASSERT_EQ(0,iflag_);
+
         // the result should be zero!
+        SUBR(sdMat_from_device)(M3,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        ASSERT_NEAR(mt::one(),ArrayEqual(M3_vp,m1[i],m2[i],lda_M3,stride_,st::zero(),mflag_),200*mt::eps());
+
+        // subtract the two viewed blocks in the result sdMats
+        SUBR(sdMat_add_sdMat)(-st::one(),M1, st::one(),M2,&iflag_);
+        ASSERT_EQ(0,iflag_);
+
+        // the result should be zero!
+        SUBR(sdMat_from_device)(M2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         ASSERT_NEAR(mt::one(),ArrayEqual(M2_vp_,m_,m_,ldaM2_,stride_,st::zero(),mflag_),200*mt::eps());
 
+        // clean up at the end of the loop
         SUBR(mvec_delete)(V1,&iflag_);
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_delete)(V2,&iflag_);
         ASSERT_EQ(0,iflag_);
         SUBR(sdMat_delete)(M1,&iflag_);
         ASSERT_EQ(0,iflag_);
-      }
+        SUBR(sdMat_delete)(M2,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(sdMat_delete)(M3,&iflag_);
+        ASSERT_EQ(0,iflag_);
       }
     }
+  }
