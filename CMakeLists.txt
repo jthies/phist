@@ -38,7 +38,7 @@ set(external_libs)
 # Deal with LAPACK and LAPACKe (but not BLAS).
 # Specify paths in CMAKE_PREFIX_PATH.
 ########################################################################
-find_path(LAPACK_INCL NAMES "lapacke.h")
+find_path(LAPACK_INCL NAMES "lapacke.h" "mkl_lapacke.h")
 if(LAPACK_INCL STREQUAL "LAPACK_INCL-NOTFOUND")
   message(FATAL_ERROR "LAPACKe include file not found. Add the proper path to CMAKE_PREFIX_PATH.")
 else()
