@@ -5,7 +5,7 @@
 /*! Test fixure. */
 class CLASSNAME: public KernelTestWithType< _ST_ >,
                  public KernelTestWithMap<_N_>
-  {
+{
 
 public:
 
@@ -35,11 +35,11 @@ public:
   /*! Set up routine.
    */
   virtual void SetUp()
-    {
+  {
     KernelTestWithType< _ST_ >::SetUp();
     KernelTestWithMap<_N_>::SetUp();
     if (this->typeImplemented_)
-      {
+    {
       // create vectors V1 and V2, and vector views for setting/checking entries
       SUBR(mvec_create)(&V1_,this->map_,this->m_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
@@ -64,24 +64,24 @@ public:
       SUBR(sdMat_put_value)(M2_,st::zero(),&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_extract_view)(M2_,&M2_vp_,&this->ldaM2_,&this->iflag_);
-      }
-    stride_=1;
     }
+    stride_=1;
+  }
 
   /*! Clean up.
    */
   virtual void TearDown()
-    {
+  {
     if (this->typeImplemented_)
-      {
+    {
       SUBR(mvec_delete)(V1_,&iflag_);
       SUBR(mvec_delete)(V2_,&iflag_);
       SUBR(sdMat_delete)(M1_,&iflag_);
       SUBR(sdMat_delete)(M2_,&iflag_);
-      }
+    }
     KernelTestWithMap<_N_>::TearDown();
     KernelTestWithType<_ST_>::TearDown();
-    }
+  }
 
   /*! compare sdMats on several procs
    */
@@ -127,9 +127,9 @@ public:
 
   // check ones(n,m)'*ones(n,m)=n*ones(m,m)
   TEST_F(CLASSNAME, mvecT_times_mvec) 
-    {
+  {
     if (typeImplemented_)
-      {
+    {
       // fill V and W with ones
       SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -152,14 +152,14 @@ public:
       ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      }
     }
+  }
 
   // check ones(n,m)*ones(m,m)=m*ones(n,m)
   TEST_F(CLASSNAME, mvec_times_sdMat)
-    {
+  {
     if (typeImplemented_)
-      {
+    {
       // fill V and W with ones
       SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -183,14 +183,14 @@ public:
       ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,(ST)m_));
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      }
     }
+  }
 
   // check ones(n,m)*ones(m,m)=m*ones(n,m)
   TEST_F(CLASSNAME, mvec_times_sdMat_in_place)
-    {
+  {
     if (typeImplemented_)
-      {
+    {
       // fill V and W with ones
       SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -209,14 +209,14 @@ public:
       ASSERT_REAL_EQ(mt::one(),MvecEqual(V1_,(ST)m_));
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      }
     }
+  }
 
   // check ones(n,m)*ones(m,m)=m*ones(n,m)
   TEST_F(CLASSNAME, mvec_times_sdMat_in_place_with_random_data)
-    {
+  {
     if (typeImplemented_)
-      {
+    {
       // fill V and W with ones
       SUBR(mvec_random)(V1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -241,14 +241,14 @@ public:
       ASSERT_REAL_EQ(mt::one(),MvecsEqual(V1_,V2_));
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      }
     }
+  }
 
   // random check
   TEST_F(CLASSNAME, random_mvecT_times_mvec) 
-    {
+  {
     if (typeImplemented_)
-      {
+    {
       // fill V and W with ones
       SUBR(mvec_random)(V1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -269,8 +269,8 @@ public:
 #endif
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      }
     }
+  }
 
   // random check with partial views of partial mvecs and sdMats
   TEST_F(CLASSNAME, random_mvecT_times_mvec_with_inside_views) 
