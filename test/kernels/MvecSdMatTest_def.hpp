@@ -244,6 +244,93 @@ public:
     }
   }
 
+  // check that we can zero out some columns of V by multiplying
+  // a view of them with a zero sdMat.
+  TEST_F(CLASSNAME, mvec_times_sdMat_in_place_with_views)
+  {
+    if (typeImplemented_)
+    {
+      // fill V and M with ones
+      SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_put_value)(M1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // need to view a square block from M1
+      int bs=std::min(std::min(k_,m_),3);
+      
+      // create a view of a part of V and M
+      int imin=0;
+      int jmin=0;
+      
+      if (m_>bs)
+      {
+        imin++;
+      }
+      
+      if (m_>bs)
+      {
+        jmin++;
+      }
+
+      int imax=std::min(m_-1, imin+bs-1);
+      int jmax=std::min(m_-1, jmin+bs-1);
+      
+      ASSERT_EQ(jmax-jmin,imax-imin);
+
+      mvec_ptr_t V=NULL;
+      SUBR(mvec_view_block)(V1_,&V, jmin,jmax,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      sdMat_ptr_t M=NULL;
+      SUBR(sdMat_view_block)(M1_,&M, imin,imax,jmin,jmax,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(sdMat_put_value)(M,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      SUBR(mvec_from_device)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      PHIST_SOUT(PHIST_DEBUG,"range of zero M-block: (%d:%d,%d:%d)",imin,imax,jmin,jmax);
+      VTest::PrintVector(*cout,"1-vec",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      MTest::PrintSdMat(*cout,"1-mat with hole",M1_vp_,ldaM1_,stride_,mpi_comm_);
+#endif
+
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V,st::one()));
+      
+      SUBR(mvec_times_sdMat_inplace)(V,M,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V,st::zero()));
+
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      SUBR(mvec_from_device)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      PHIST_SOUT(PHIST_DEBUG,"range of zero M-block: (%d:%d,%d:%d)",imin,imax,jmin,jmax);
+      VTest::PrintVector(*cout,"1-vec with hole",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      MTest::PrintSdMat(*cout,"1-mat with hole",M1_vp_,ldaM1_,stride_,mpi_comm_);
+#endif
+            
+      SUBR(mvec_from_device)(V, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // check all vector entries, something like [1 .. 1 0 .. 0 1 .. 1] in all rows
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual( &V1_vp_[VIDX(0,0,ldaV1_)],
+        nloc_,jmin,ldaV1_,stride_,st::one(),vflag_));
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual( &V1_vp_[VIDX(0,jmin,ldaV1_)],
+        nloc_,jmax-jmin+1,ldaV1_,stride_,st::zero(),vflag_));
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual( &V1_vp_[VIDX(0,jmax+1,ldaV1_)],
+        nloc_,m_-jmax-1,ldaV1_,stride_,st::one(),vflag_));
+
+    }
+  }
+
+
   // random check
   TEST_F(CLASSNAME, random_mvecT_times_mvec) 
   {
@@ -427,3 +514,7 @@ public:
       }
     }
   }
+
+const int CLASSNAME::k_;
+const int CLASSNAME::m_;
+const int CLASSNAME::n_;
