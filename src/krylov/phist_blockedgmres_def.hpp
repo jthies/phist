@@ -344,7 +344,12 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
     PHIST_DEB("blockedGMRESstates_updateSol j = %d, Vind = %d, yj = ", j, Vind);
     for(int i = 0; i < numSys; i++)
     {
+#ifdef IS_COMPLEX
+      PHIST_DEB("\t%e%+ei (%d)", st::real(yj[S[i]->id]),
+                                 st::imag(yj[S[i]->id]), S[i]->id);
+#else
       PHIST_DEB("\t%e (%d)", yj[S[i]->id], S[i]->id);
+#endif
     }
     PHIST_DEB("\n");
 
