@@ -9,7 +9,8 @@ class CLASSNAME: public KernelTestWithType< _ST_ >,
 
 public:
 
-  typedef KernelTestWithVectors<_ST_,_N_,_M_> VTest;
+  typedef KernelTestWithVectors<_ST_,_N_,_M_> V1Test;
+  typedef KernelTestWithVectors<_ST_,_N_,_K_> V2Test;
   typedef KernelTestWithSdMats<_ST_,_M_,_M_> MTest;
 
   //! mvec/sdMat sizes
@@ -47,19 +48,19 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_extract_view)(V1_,&V1_vp_,&ldaV1_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
-      SUBR(mvec_create)(&V2_,this->map_,this->m_,&this->iflag_);
+      SUBR(mvec_create)(&V2_,this->map_,this->k_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       SUBR(mvec_put_value)(V2_,st::zero(),&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_extract_view)(V2_,&V2_vp_,&ldaV2_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       // create matrices M1, M2 and views.
-      SUBR(sdMat_create)(&M1_,this->m_,this->m_,this->comm_,&this->iflag_);
+      SUBR(sdMat_create)(&M1_,this->m_,this->k_,this->comm_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       SUBR(sdMat_put_value)(M1_,st::zero(),&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_extract_view)(M1_,&M1_vp_,&this->ldaM1_,&this->iflag_);
-      SUBR(sdMat_create)(&M2_,this->m_,this->m_,this->comm_,&this->iflag_);
+      SUBR(sdMat_create)(&M2_,this->m_,this->k_,this->comm_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       SUBR(sdMat_put_value)(M2_,st::zero(),&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -125,7 +126,7 @@ public:
   }
 };
 
-  // check ones(n,m)'*ones(n,m)=n*ones(m,m)
+  // check ones(n,m)'*ones(n,k)=n*ones(m,k)
   TEST_F(CLASSNAME, mvecT_times_mvec) 
   {
     if (typeImplemented_)
@@ -145,8 +146,8 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      VTest::PrintVector(*cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
-      VTest::PrintVector(*cout,"ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+      V1Test::PrintVector(*cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      V2Test::PrintVector(*cout,"ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
       ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
@@ -155,7 +156,70 @@ public:
     }
   }
 
-  // check ones(n,m)*ones(m,m)=m*ones(n,m)
+  // check ones(n,m)'*ones(n,m)=n*ones(m,m)
+  TEST_F(CLASSNAME, mvecT_times_mvec_with_manual_comparison) 
+  {
+    if (typeImplemented_)
+    {
+      // fill V and W with random numbers
+      SUBR(mvec_random)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(mvec_from_device)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    
+    
+      MT err_r=mt::zero();
+      MT err_i=mt::zero();
+      for (int i=0; i<m_; i++)
+        for (int j=0; j<k_; j++)
+        {
+          ST err_ij=st::zero();
+          // manually compute V1(:,i)*V2(:,j) using compensated summation ("Kahan")
+          // for achieving good accuracy
+          // (http://en.wikipedia.org/wiki/Kahan_summation_algorithm)
+          ST c = st::zero(); // a running compensation for lost low-order bits
+          for (int ii=0; ii< nloc_; ii++)
+          {
+            ST y = st::conj(V1_vp_[VIDX(ii,i,ldaV1_)])
+                 *          V2_vp_[VIDX(ii,j,ldaV2_)] - c; // c is 0 in the beginning
+            ST t = err_ij + y;          // err_ij is big, y small, so low-order digits of y are lost.
+            c = (t - err_ij) - y;  // (t - err_ij) recovers the high-order part of y; 
+                                   // subtracting y recovers -(low part of y)
+            err_ij = t;           // Algebraically, c should always 
+                                  // be zero. Beware overly-aggressive optimizing 
+                                  // compilers!
+                                  // Next time around, the lost low part will 
+                                  // be added to y in a fresh attempt.
+
+          }
+#ifdef HAVE_MPI
+          // TODO - we should use Kahan summation here as well, but since our tests are not
+          // carried out on many processes, it doesn't matter right now.
+          ST err_ij_local=err_ij;
+          MPI_Allreduce(&err_ij_local,&err_ij,1,st::mpi_type(),MPI_SUM,mpi_comm_);
+#endif
+          err_ij-=M1_vp_[MIDX(i,j,ldaM1_)];
+          err_r=std::max(err_r,st::real(err_ij));
+          err_i=std::max(err_i,st::imag(err_ij));
+        }
+      ASSERT_NEAR(mt::zero(),err_r,100*mt::eps());
+      ASSERT_NEAR(mt::zero(),err_i,100*mt::eps());
+    }
+  }
+
+  // check ones(n,m)*ones(m,k)=m*ones(n,k)
   TEST_F(CLASSNAME, mvec_times_sdMat)
   {
     if (typeImplemented_)
@@ -176,15 +240,17 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      VTest::PrintVector(*cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      V1Test::PrintVector(*cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
-      VTest::PrintVector(*cout,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+      V2Test::PrintVector(*cout,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
       ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,(ST)m_));
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }
+
+#if (_M_==_K_)
 
   // check ones(n,m)*ones(m,m)=m*ones(n,m)
   TEST_F(CLASSNAME, mvec_times_sdMat_in_place)
@@ -204,7 +270,7 @@ public:
       SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       MTest::PrintSdMat(*cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
-      VTest::PrintVector(*cout,"ones*ones",V1_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+      V1Test::PrintVector(*cout,"ones*ones",V1_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
       ASSERT_REAL_EQ(mt::one(),MvecEqual(V1_,(ST)m_));
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
@@ -235,8 +301,8 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      VTest::PrintVector(*cout,"result_inplace",V1_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
-      VTest::PrintVector(*cout,"result_out_of_place",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+      V1Test::PrintVector(*cout,"result_inplace",V1_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+      V2Test::PrintVector(*cout,"result_out_of_place",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
       ASSERT_REAL_EQ(mt::one(),MvecsEqual(V1_,V2_));
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
@@ -295,7 +361,7 @@ public:
       SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       PHIST_SOUT(PHIST_DEBUG,"range of zero M-block: (%d:%d,%d:%d)",imin,imax,jmin,jmax);
-      VTest::PrintVector(*cout,"1-vec",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      V1Test::PrintVector(*cout,"1-vec",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"1-mat with hole",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
 
@@ -312,7 +378,7 @@ public:
       SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       PHIST_SOUT(PHIST_DEBUG,"range of zero M-block: (%d:%d,%d:%d)",imin,imax,jmin,jmax);
-      VTest::PrintVector(*cout,"1-vec with hole",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      V1Test::PrintVector(*cout,"1-vec with hole",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"1-mat with hole",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
             
@@ -329,7 +395,8 @@ public:
 
     }
   }
-
+  /* m==k */
+#endif
 
   // random check
   TEST_F(CLASSNAME, random_mvecT_times_mvec) 
@@ -350,17 +417,29 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      VTest::PrintVector(*cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
-      VTest::PrintVector(*cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+      V1Test::PrintVector(*cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      V2Test::PrintVector(*cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"random'*random",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
+    
+      // to check the result, scale V1 by -1, add V1'V2 again and compare with 0
+      SUBR(mvec_scale)(V1_,-st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::one(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+  
+      // TODO - how much accuracy should we demand? With Kahan summation it should
+      //        be accurate to machine precision, but without it probably won't...
+      ASSERT_NEAR(mt::one(),SdMatEqual(M1_,st::zero()),100*mt::eps());
+    
     }
   }
 
   // random check with partial views of partial mvecs and sdMats
-  TEST_F(CLASSNAME, random_mvecT_times_mvec_with_inside_views) 
+  TEST_F(CLASSNAME, random_mvecT_times_mvec_with_inside_views)
   {
     if (typeImplemented_ && m_ > 4)
     {
@@ -378,7 +457,7 @@ public:
 
       for(int i = 0; i < off1.size(); i++)
       {
-        if( off1[i]+m1[i] > m_ || off2[i]+m2[i] > m_  || off1_M[i]+m1[i] > m_ || off2_M[i]+m2[i] > m_)
+        if( off1[i]+m1[i] > m_ || off2[i]+m2[i] > k_  || off1_M[i]+m1[i] > m_ || off2_M[i]+m2[i] > k_)
           continue;
         PHIST_SOUT(PHIST_DEBUG, "Test offsets: off1: %d, off2: %d, m1: %d, m2: %d, off1_M: %d, off2_M: %d\n", off1[i], off2[i], m1[i], m2[i], off1_M[i], off2_M[i]);
 
@@ -453,8 +532,8 @@ public:
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_from_device)(V2_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        VTest::PrintVector(*cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
-        VTest::PrintVector(*cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+        V1Test::PrintVector(*cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+        V2Test::PrintVector(*cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
         
                 MTest::PrintSdMat(*cout,"random'*random without views",M2_vp_,ldaM2_,stride_,mpi_comm_);
         PHIST_SOUT(PHIST_DEBUG,"viewed block in result");
@@ -498,7 +577,7 @@ public:
         // the result should be zero!
         SUBR(sdMat_from_device)(M2_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        ASSERT_NEAR(mt::one(),ArrayEqual(M2_vp_,m_,m_,ldaM2_,stride_,st::zero(),mflag_),200*mt::eps());
+        ASSERT_NEAR(mt::one(),ArrayEqual(M2_vp_,m_,k_,ldaM2_,stride_,st::zero(),mflag_),200*mt::eps());
 
         // clean up at the end of the loop
         SUBR(mvec_delete)(V1,&iflag_);

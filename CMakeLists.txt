@@ -692,6 +692,8 @@ foreach(label ${PHIST_TESTS})
 
   add_executable(${PRODUCT_NAME}-${label}-test ${${label_uc}_TEST_SOURCES} ${TEST_DEPENDS})
   set_target_properties(${PRODUCT_NAME}-${label}-test PROPERTIES COMPILE_DEFINITIONS "PHIST_TESTSUITE=\"${label}\"")
+  # compile tests without optimization
+  set_target_properties(${PRODUCT_NAME}-${label}-test PROPERTIES COMPILE_FLAGS "-O0")
   target_link_libraries(${PRODUCT_NAME}-${label}-test ${library_list})
   target_link_libraries(${PRODUCT_NAME}-${label}-test ${external_libs})
   target_link_libraries(${PRODUCT_NAME}-${label}-test pthread)

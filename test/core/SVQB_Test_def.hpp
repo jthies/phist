@@ -71,7 +71,7 @@ public:
       ASSERT_EQ(0,iflag_);
       for(int i = 0; i < _NV_; i++)
       {
-        ASSERT_REAL_EQ(nrms_ref[i], nrms_[i]);
+        ASSERT_NEAR(nrms_ref[i], nrms_[i],100*nrms_ref[i]*mt::eps());
       }
       ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
       ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
@@ -118,7 +118,7 @@ public:
       ASSERT_EQ(0,iflag_);
       for(int i = 0; i < _NV_; i++)
       {
-        ASSERT_REAL_EQ(nrms_ref[i], nrms_[i]);
+        ASSERT_NEAR(nrms_ref[i], nrms_[i],10*nrms_ref[i]*mt::eps());
       }
       // SVQB will return a block with the first <dim0> columns zero,
       // and the remaining orthonormal
@@ -161,7 +161,7 @@ public:
       ASSERT_EQ(0,iflag_);
       for(int i = 0; i < _NV_; i++)
       {
-        ASSERT_REAL_EQ(nrms_ref[i], nrms_[i]);
+        ASSERT_NEAR(nrms_ref[i], nrms_[i],10*nrms_ref[i]*mt::eps());
       }
 
       // SVQB will return a block with the first <dim0> columns zero,

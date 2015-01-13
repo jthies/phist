@@ -160,6 +160,38 @@ using namespace testing;
 #include "phist_gen_z.h"
 #include "MvecSdMatTest_def.hpp"
 
+// case with square sdMats (m==k)
+
+#undef _M_
+#define _M_ 4
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecSdMatTest_64_4_4
+
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_64_4_4
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_64_4_4
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_64_4_4
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
 ///////////////////////////////////////////////
 // case k=5                                  //
 ///////////////////////////////////////////////
@@ -227,6 +259,38 @@ using namespace testing;
 
 #undef CLASSNAME
 #define CLASSNAME ZMvecSdMatTest_64_12_5
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
+// case with square sdMats (m=k=5)
+
+#undef _M_
+#define _M_ 5
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecSdMatTest_64_5_5
+
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_64_5_5
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_64_5_5
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_64_5_5
 
 #include "phist_gen_z.h"
 #include "MvecSdMatTest_def.hpp"
