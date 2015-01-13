@@ -112,7 +112,7 @@ int main(int argc, char** argv)
   }
 
   // max basis size
-  int maxBase = std::max(80, minBase+blockDim);
+  int maxBase = std::max(80, minBase+5*blockDim);
   if( argc > 9 )
   {
     std::istringstream iss(argv[9]);
