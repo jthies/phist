@@ -60,7 +60,9 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
         aux.C = PHIST_SELL_C;
         mtraits->sortScope = PHIST_SELL_SIGMA;
         mtraits->aux = &aux;
-        flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
+        if (mtraits->sortScope > 1) {
+            flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
+        }
 #else
 #warning "GHOST interface compiled to use the reference CRS format, will probably not yield optimal performance"
         mtraits->format = GHOST_SPARSEMAT_CRS;
@@ -116,7 +118,9 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
         aux.C = PHIST_SELL_C;
         mtraits->sortScope = PHIST_SELL_SIGMA;
         mtraits->aux = &aux;
-        flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
+        if (mtraits->sortScope > 1) {
+            flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
+        }
 #else
 #warning "GHOST interface compiled to use the reference CRS format, will probably not yield optimal performance"
         mtraits->format = GHOST_SPARSEMAT_CRS;
@@ -1539,7 +1543,9 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
         aux.C = PHIST_SELL_C;
         mtraits->sortScope = PHIST_SELL_SIGMA;
         mtraits->aux = &aux;
-        flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
+        if (mtraits->sortScope > 1) {
+            flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
+        }
 #else
 #warning "GHOST interface compiled to use the reference CRS format, will probably not yield optimal performance"
         mtraits->format = GHOST_SPARSEMAT_CRS;
