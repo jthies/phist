@@ -112,7 +112,7 @@ namespace ghost {
 #ifdef GHOST_HAVE_LONGIDX_LOCAL
 # warning "the TSQR interface may be buggy with 64-bit local indices, you should recompile ghost without GHOST_HAVE_LONGIDX_LOCAL"    
 #endif
-    typedef int ordinal_type;
+    typedef lidx_t ordinal_type;
     // integer type for Teuchos::SerialDenseMatrix objects
     typedef int blas_idx_type;
     typedef node_t node_type;
@@ -407,6 +407,7 @@ namespace ghost {
     ghost_machine_ncore(&ncores,GHOST_NUMANODE_ANY);
     nodeParams.set("Num Threads",ncores);
     Teuchos::RCP<node_type> node = Teuchos::rcp(new node_type(nodeParams));
+    PHIST_SOUT(PHIST_VERBOSE,"TSQR compute node setup to use %d threads\n",ncores);
     return node;
     }
 
