@@ -20,6 +20,7 @@ endif()
 option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
 option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
 option(PHIST_ENABLE_SP "Enable single precision functions and drivers" OFF)
+option(PHIST_ENABLE_COMPLEX_TESTS "Enable unit tests for complex data types" ON)
 
 ########################################################################
 # Lists of libraries, executables, tests
@@ -761,10 +762,17 @@ else()
   set(PHIST_MPI_TEST_NPROCS "")
 endif()
 
+if (${PHIST_ENABLE_COMPLEX_TESTS})
+  set(GTEST_FILTER "")
+else()
+  set(GTEST_FILTER --gtest_filter=-"C*:Z*")
+endif()
+
 foreach(np ${PHIST_MPI_TEST_NPROCS})
   math(EXPR TEST_OMP_NUM_THREADS "8/${np}")
   foreach(label ${PHIST_TESTS})
-    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=guided ./${PRODUCT_NAME}-${label}-test --gtest_death_test_style=threadsafe --gtest_output=xml:test_output_np${np}/${label}/xunit.xml)
+    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=guided 
+    ./${PRODUCT_NAME}-${label}-test --gtest_death_test_style=threadsafe --gtest_output=xml:test_output_np${np}/${label}/xunit.xml ${GTEST_FILTER})
     add_test(NAME test-${label}_np${np} COMMAND ${TEST_COMMAND})
     set_tests_properties(test-${label}_np${np} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
     set_tests_properties(test-${label}_np${np} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
