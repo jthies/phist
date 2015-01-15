@@ -11,7 +11,7 @@ public:
 
   typedef KernelTestWithVectors<_ST_,_N_,_M_> V1Test;
   typedef KernelTestWithVectors<_ST_,_N_,_K_> V2Test;
-  typedef KernelTestWithSdMats<_ST_,_M_,_M_> MTest;
+  typedef KernelTestWithSdMats<_ST_,_M_,_K_> MTest;
 
   //! mvec/sdMat sizes
   static const int n_=_N_;
