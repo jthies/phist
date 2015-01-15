@@ -76,6 +76,12 @@ fi
 # "gcc -fsanitize=address" requires this
 ulimit -v unlimited
 
+# do not execute meaningless complex tests if the kernel lib doesn't support complex arithmetic
+if [[ "$KERNELS" = "tpetra" ]]; then
+  export CMPLX_TESTS=ON
+else
+  export CMPLX_TESTS=OFF
+fi
 
 ## actually build and run tests
 error=0
@@ -84,6 +90,7 @@ error=0
 mkdir build_${KERNELS}_${PRGENV}_release_${FLAGS// /_}; cd $_
 cmake -DCMAKE_BUILD_TYPE=Release  \
       -DPHIST_KERNEL_LIB=$KERNELS \
+      -DPHIST_ENABLE_COMPLEX_TESTS=${CMPLX_TESTS} \
       ..                            || error=1
 make doc                            || error=1
 make -j 6 || make                   || error=1
@@ -94,6 +101,7 @@ cd ..
 mkdir build_${KERNELS}_${PRGENV}_debug_${FLAGS// /_}; cd $_
 cmake -DCMAKE_BUILD_TYPE=Debug    \
       -DPHIST_KERNEL_LIB=$KERNELS \
+      -DPHIST_ENABLE_COMPLEX_TESTS=${CMPLX_TESTS} \
       -DINTEGRATION_BUILD=On      \
       -DGCC_SANITIZE=address      \
       ..                            || error=1
