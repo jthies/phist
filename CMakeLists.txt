@@ -762,7 +762,7 @@ else()
   set(PHIST_MPI_TEST_NPROCS "")
 endif()
 
-if (${PHIST_ENABLE_COMPLEX_TESTS})
+if (PHIST_ENABLE_COMPLEX_TESTS)
   set(GTEST_FILTER "")
 else()
   set(GTEST_FILTER --gtest_filter=-"C*:Z*")

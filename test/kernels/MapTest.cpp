@@ -14,11 +14,11 @@
 using namespace testing;
 
 #define _N_ 1
-#define CLASSNAME MapTest_1
+#define CLASSNAME XMapTest_1
 #include "MapTest_def.hpp"
 
 #undef _N_
 #define _N_ 8
 #undef CLASSNAME
-#define CLASSNAME MapTest_8
+#define CLASSNAME XMapTest_8
 #include "MapTest_def.hpp"

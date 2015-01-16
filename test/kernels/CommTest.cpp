@@ -16,7 +16,7 @@
 using namespace testing;
 
 /*! Test fixure. */
-class CommTest: public KernelTest {
+class XCommTest: public KernelTest {
 
 public:
 
@@ -37,7 +37,7 @@ public:
 };
 
   /*! Test the comm_get_rank function - is the comm in the kernel lib really MPI_COMM_WORLD?. */
-  TEST_F(CommTest, get_rank) {
+  TEST_F(XCommTest, get_rank) {
         int rank=42;
         phist_comm_get_rank(comm_,&rank,&iflag_);
 	ASSERT_EQ(0,iflag_);
@@ -45,7 +45,7 @@ public:
 }
 
   /*! Test the comm_get_size function. Is the comm in the kernel lib really MPI_COMM_WORLD? */
-  TEST_F(CommTest, get_size) {
+  TEST_F(XCommTest, get_size) {
         int size=42;
         phist_comm_get_size(comm_,&size,&iflag_);
 	ASSERT_EQ(0,iflag_);
