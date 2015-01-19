@@ -1243,7 +1243,7 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   W->traits.nrows,W->traits.ncols,
   C->traits.nrows,C->traits.ncols);
 
-  PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_ALL_REDUCE),*iflag);
+  PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_ALL_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_GHOST_TASK_END
   }
 
@@ -1277,7 +1277,7 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
     //PHIST_DEB("V'C with V %" PRlidx "x%d, C %dx%d and result %" PRlidx "x%d\n", nrV,ncV,nrC,ncC,nrW,ncW);
 #endif
     // note: C is replicated, so this operation is a purely local one.
-    PHIST_CHK_GERR(ghost_gemm(W,V,(char*)"N",C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE),*iflag);
+    PHIST_CHK_GERR(ghost_gemm(W,V,(char*)"N",C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_GHOST_TASK_END
   }
 
@@ -1307,7 +1307,7 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
     ST alpha=st::one();
     ST beta=st::zero();
     // ghost internally picks the in-place variant of possible
-    PHIST_CHK_GERR(ghost_gemm(V,V,(char*)"N",C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE),*iflag);
+    PHIST_CHK_GERR(ghost_gemm(V,V,(char*)"N",C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_GHOST_TASK_END
   }
 
@@ -1326,7 +1326,7 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,C,vC,*iflag);
   char trans[]="N";  
-  PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,trans,(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE),*iflag);
+  PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,trans,(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_GHOST_TASK_END
   }
 
@@ -1349,7 +1349,7 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
 #else
   char trans[]="T";
 #endif  
-  PHIST_CHK_GERR(ghost_gemm(C, V, trans,W, (char*)"N", (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE),*iflag);
+  PHIST_CHK_GERR(ghost_gemm(C, V, trans,W, (char*)"N", (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_GHOST_TASK_END
   }
 
