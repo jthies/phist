@@ -204,7 +204,7 @@ public:
                                   // be added to y in a fresh attempt.
 
           }
-#ifdef HAVE_MPI
+#ifdef PHIST_HAVE_MPI
           // TODO - we should use Kahan summation here as well, but since our tests are not
           // carried out on many processes, it doesn't matter right now.
           ST err_ij_local=err_ij;
