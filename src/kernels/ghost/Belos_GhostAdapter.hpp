@@ -350,7 +350,7 @@ using ::phist::GhostMV;
       ghost_densemat_t* _mv = (ghost_densemat_t*)mv.get();
       // multiply
       const char* trans="N";
-      ghost_gemm(_mv,_A,(char*)trans,Bghost,(char*)"N",&alpha,&beta,GHOST_GEMM_NO_REDUCE);
+      ghost_gemm(_mv,_A,(char*)trans,Bghost,(char*)"N",&alpha,&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT);
       
       Bghost->destroy(Bghost);
     }
@@ -447,7 +447,7 @@ using ::phist::GhostMV;
                    const_cast<ghost_densemat_t*>(B.get()),
                    (char*)"N",
                    (void*)&alpha, (void*)&beta,
-                   GHOST_GEMM_ALL_REDUCE);
+                   GHOST_GEMM_ALL_REDUCE,GHOST_GEMM_DEFAULT);
       Cghost->destroy(Cghost);
     }
 
