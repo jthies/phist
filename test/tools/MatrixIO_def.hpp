@@ -20,24 +20,23 @@ void SUBR(read_mat)(const char* filebase,int nglob,TYPE(sparseMat_ptr) *ptr, int
   sprintf(crsfile,"%c%s%d.crs",tpc,filebase,nglob);
   
   PHIST_SOUT(PHIST_DEBUG, "Looking for matrix \'%s\'..\n", filebase);
+  *iflag=0;
+
+  PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", binfile);
+  SUBR(sparseMat_read_bin)(ptr,comm,binfile,&_iflag);
+  if (_iflag==PHIST_SUCCESS) return;
+
+  // try same format, different extension
+  PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", crsfile);
+  SUBR(sparseMat_read_bin)(ptr,comm,crsfile,&_iflag);
+  if (_iflag==PHIST_SUCCESS) return;
+  
   PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", mmfile);
   SUBR(sparseMat_read_mm)(ptr,comm,mmfile,&_iflag);
-  if (_iflag!=PHIST_SUCCESS) // kernel lib can't read MatrixMarket format or file not found
-  {
-    PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", hbfile);
-    SUBR(sparseMat_read_hb)(ptr,comm,hbfile,&_iflag);
-    if (_iflag!=PHIST_SUCCESS) // kernel lib can't read Harwell-Boeing or file not found
-    {
-      PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", binfile);
-      SUBR(sparseMat_read_bin)(ptr,comm,binfile,&_iflag);
-      if (_iflag!=PHIST_SUCCESS) // kernel lib can't read binCRS or file not found
-      {
-        // try same format, different extension
-        PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", crsfile);
-        SUBR(sparseMat_read_bin)(ptr,comm,crsfile,&_iflag);
-      }
-    }
-  }
-*iflag=_iflag;
-return;
+  if (_iflag==PHIST_SUCCESS) return;
+
+  PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", hbfile);
+  SUBR(sparseMat_read_hb)(ptr,comm,hbfile,&_iflag);
+  *iflag=_iflag;
+  return;
 }//read_mat
