@@ -17,6 +17,8 @@
 #include "phist_jadaOpts.h"
 #include ${PHIST_TG_HFILE}
 #include "phist_driver_utils.h"
+#include "phist_ScalarTraits.hpp"
+#include "phist_std_typedefs.hpp"
 
 // JDQR reads an input matrix and tries to compute a given number of            
 // exterior eigenpairs at either end of the spectrum. Input parameters          
@@ -40,9 +42,14 @@
 //                      set <which> to "TARGET", in this case you should set    
 //                      arno=0 as well).
 int main(int argc, char** argv)
-  {
+{
+  int iflag=0;
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
+
+  PHIST_MAIN_TASK_BEGIN
+  
+  int i;
   int rank, num_proc;
-  int i, iflag;
   int verbose;
 
   comm_ptr_t comm;
@@ -66,8 +73,6 @@ int main(int argc, char** argv)
   
   int num_eigs,num_iters;
   
-  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
-
   PHIST_ICHK_IERR(phist_comm_create(&comm,&iflag),iflag);
 
   PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&iflag),iflag);
@@ -184,7 +189,7 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,num_eigs+1,&iflag),iflag);
 //  PHIST_ICHK_IERR(SUBR(mvec_random)(X,&iflag),iflag);
   // start with constant vector to make runs reproducible
-  PHIST_ICHK_IERR(SUBR(mvec_put_value)(X,ONE,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(X,st::one(),&iflag),iflag);
 
   PHIST_ICHK_IERR(SUBR(mvec_view_block)(X,&opts.v0,0,0,&iflag),iflag);
   
@@ -233,9 +238,9 @@ int main(int argc, char** argv)
     TYPE(mvec_ptr) R=NULL,Xv=NULL;
     PHIST_ICHK_IERR(SUBR(mvec_create)(&R,map,num_eigs,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(mvec_view_block)(X,&Xv,0,num_eigs-1,&iflag),iflag);
-    PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(ONE,A,Xv,ZERO,R,&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,Xv,st::zero(),R,&iflag),iflag);
 #ifdef IS_COMPLEX
-    PHIST_ICHK_IERR(SUBR(mvec_vadd_mvec)(evals,Xv,-ONE,R,&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(mvec_vadd_mvec)(evals,Xv,-st::one(),R,&iflag),iflag);
 #else
     // we have complex pairs as [v_r, v_i] and [lambda_r, lambda_i] right now.
     // To get the residual correct, create the block diagonal matrix D with   
@@ -243,7 +248,7 @@ int main(int argc, char** argv)
     // then compute A*X-X*D as the residual
     TYPE(sdMat_ptr) D=NULL;
     PHIST_ICHK_IERR(SUBR(sdMat_create)(&D,num_eigs,num_eigs,comm,&iflag),iflag);
-    PHIST_ICHK_IERR(SUBR(sdMat_put_value)(D,ZERO,&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(sdMat_put_value)(D,st::zero(),&iflag),iflag);
     ST *D_raw=NULL;
     lidx_t ldD;
     PHIST_ICHK_IERR(SUBR(sdMat_extract_view)(D,&D_raw,&ldD,&iflag),iflag);
@@ -260,7 +265,7 @@ int main(int argc, char** argv)
         }
       i++;
       }
-    PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(ONE,Xv,D,-ONE,R,&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Xv,D,-st::one(),R,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(sdMat_delete)(D,&iflag),iflag);
 #endif
     PHIST_ICHK_IERR(SUBR(mvec_norm2)(R,expRes,&iflag),iflag);
@@ -277,7 +282,7 @@ int main(int argc, char** argv)
       {
 #ifdef IS_COMPLEX
       fprintf(stdout,"%24.16e%+24.16ei\t%3.1e\t\t%3.1e\n",
-        REAL(evals[i]),IMAG(evals[i]),resid[i],expRes[i]);
+        st::real(evals[i]),st::imag(evals[i]),resid[i],expRes[i]);
 #else
       if (is_cmplx[i])
         {
@@ -301,6 +306,9 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&iflag),iflag);
   free(A_op);
+
+  PHIST_MAIN_TASK_END
+
   PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
   return iflag;
-  }
+}
