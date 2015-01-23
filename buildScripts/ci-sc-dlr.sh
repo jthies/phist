@@ -6,7 +6,7 @@ set -e
 KERNELS="builtin" # ghost epetra tpetra
 PRGENV="gcc-4.9.2-openmpi" # intel-13.0.1-mpich gcc-4.8.2-openmpi
 FLAGS="" # optional-libs
-
+ADD_CMAKE_FLAGS="" #optional CMake flags
 # list of modules to load
 MODULES_BASIC="cmake ccache cppcheck lapack"
 
@@ -26,9 +26,10 @@ MODULES_KERNELS_OPTIONAL=(
 
 
 ## parse command line arguments
-usage() { echo "Usage: $0 [-k <builtin|ghost|epetra|tpetra>] [-e <PrgEnv/module-string>] [-f <optional-libs>]" 1>&2; exit 1; }
+usage() { echo "Usage: $0 [-k <builtin|ghost|epetra|tpetra>] [-e <PrgEnv/module-string>] [-f <optional-libs>]"; \
+          echo "       [-c <cmake flags to be added>" 1>&2; exit 1; }
 
-while getopts "k:e:f:h" o; do
+while getopts "k:e:f:c:h" o; do
     case "${o}" in
         k)
             KERNELS=${OPTARG}
@@ -40,6 +41,9 @@ while getopts "k:e:f:h" o; do
         f)
             FLAGS=${OPTARG}
             ;;
+        c)
+            ADD_CMAKE_FLAGS=${OPTARG}
+            ;;
         h)
             usage
             ;;
@@ -50,7 +54,7 @@ while getopts "k:e:f:h" o; do
 done
 shift $((OPTIND-1))
 
-echo "Options: KERNEL_LIB=${KERNELS}, PRGENV=${PRGENV}, FLAGS=${FLAGS}"
+echo "Options: KERNEL_LIB=${KERNELS}, PRGENV=${PRGENV}, FLAGS=${FLAGS}, ADD_CMAKE_FLAGS='${ADD_CMAKE_FLAGS}'"
 
 ## prepare system for compilation
 # configure modulesystem
@@ -77,20 +81,29 @@ fi
 ulimit -v unlimited
 
 # do not execute meaningless complex tests if the kernel lib doesn't support complex arithmetic
-if [[ "$KERNELS" = "tpetra" ]]; then
+# TODO: this has to be fixed as --gtest_filtered tests are still treated as run and passed
+#if [[ "$KERNELS" = "tpetra" ]]; then
   export CMPLX_TESTS=ON
-else
-  export CMPLX_TESTS=OFF
-fi
+#else
+#  export CMPLX_TESTS=OFF
+#fi
 
 ## actually build and run tests
 error=0
 
-# release build
-mkdir build_${KERNELS}_${PRGENV}_release_${FLAGS// /_}; cd $_
+# release build including doc
+if [[ "$KERNELS" = "ghost" ]]; then
+  # this is the easiest way to make phist find ghost+dependencies
+  CMAKE_FLAGS="${ADD_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX=../../install-${PRGENV}-Release"
+else
+  CMAKE_FLAGS=${ADD_CMAKE_FLAGS}
+fi
+
+mkdir build_${KERNELS}_${PRGENV}_Release_${FLAGS// /_}; cd $_
 cmake -DCMAKE_BUILD_TYPE=Release  \
       -DPHIST_KERNEL_LIB=$KERNELS \
       -DPHIST_ENABLE_COMPLEX_TESTS=${CMPLX_TESTS} \
+      ${CMAKE_FLAGS} \
       ..                            || error=1
 make doc                            || error=1
 make -j 6 || make                   || error=1
@@ -98,12 +111,19 @@ make test                           || error=1
 cd ..
 
 # debug build
-mkdir build_${KERNELS}_${PRGENV}_debug_${FLAGS// /_}; cd $_
+if [[ "$KERNELS" = "ghost" ]]; then
+  # this is the easiest way to make phist find ghost+dependencies
+  CMAKE_FLAGS="${ADD_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX=../../install-${PRGENV}-Debug"
+else
+  CMAKE_FLAGS=${ADD_CMAKE_FLAGS}
+fi
+mkdir build_${KERNELS}_${PRGENV}_Debug_${FLAGS// /_}; cd $_
 cmake -DCMAKE_BUILD_TYPE=Debug    \
       -DPHIST_KERNEL_LIB=$KERNELS \
       -DPHIST_ENABLE_COMPLEX_TESTS=${CMPLX_TESTS} \
       -DINTEGRATION_BUILD=On      \
       -DGCC_SANITIZE=address      \
+      ${CMAKE_FLAGS} \
       ..                            || error=1
 make -j 6 || make                   || error=1
 make test                           || error=1
