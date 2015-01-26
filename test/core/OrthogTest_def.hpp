@@ -123,8 +123,8 @@ public:
                   int expectedRankVW)
   {
 
-      MT tolV=(MT)10.*VTest::releps(V_);
-      MT tolW=(MT)10.*WTest::releps(W_);
+      MT tolV=(MT)10.*VTest::releps(V);
+      MT tolW=(MT)10.*WTest::releps(W);
 
       // copy Q=W because orthog() works in-place
       SUBR(mvec_add_mvec)(st::one(),W,st::zero(),Q,&iflag_);
