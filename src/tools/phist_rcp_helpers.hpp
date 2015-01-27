@@ -14,9 +14,9 @@
 #ifdef PHIST_KERNEL_LIB_GHOST
 #include "ghost.h"
 #include "ghost/phist_GhostMV.hpp"
-#endif
-
+#elif !defined(PHIST_KERNEL_LIB_EPETRA) && !defined(PHIST_KERNEL_LIB_TPETRA)
 #include "trilinos_interface/phist_MultiVector.hpp"
+#endif
 #include "phist_void_aliases.h"
 
 //! in this file we define various helper functions to cope with
@@ -46,7 +46,7 @@ namespace phist
 
   //! standard rcp() function from Teuchos
   using Teuchos::rcp;
-#endif
+#else
 
 #ifdef PHIST_HAVE_SP
   //! rcp for Smvec_t
@@ -82,6 +82,7 @@ namespace phist
   Teuchos::RCP<const MultiVector<d_complex_t> > Zrcp(Zconst_mvec_ptr_t rawPtr, 
         bool ownMem=true);
 
+#endif
 
   //! get mvec pointer from reference
   template<typename MV>
@@ -105,7 +106,7 @@ namespace phist
   template<>
   const void* ref2ptr(const GhostMV& V);
 
-#endif
+#elif !defined(PHIST_KERNEL_LIB_EPETRA) && !defined(PHIST_KERNEL_LIB_TPETRA)
 
   template<typename ST>
   void* ref2ptr(MultiVector<ST>& V)
@@ -118,7 +119,7 @@ namespace phist
     {
     return (const void*)V.get();
     }
-
+#endif
 } // namespace phist
 #endif /* PHIST_HAVE_TEUCHOS */
 #endif

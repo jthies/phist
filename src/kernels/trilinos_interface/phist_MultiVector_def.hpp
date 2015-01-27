@@ -131,11 +131,8 @@ protected:
   // internally used error flag
   int iflag_;
 
-#if 1
-//#if PHIST_OUTLEV>=PHIST_TRACE  
   // label of this object
   int myID;
-#endif
 };
 
 } //namespace phist
