@@ -151,24 +151,24 @@ The code coverage of the tests can be shown using
 ## Installation instructions for the RRZE systems ##
 ----------------------------------------------------
 
-NOTE: This section is a bit outdated as Trilinos is now no longer
-a dependency of phist.
-
  Proceed as follows to build PHIST with GHOST (substitute 
-$PREFIX and $TRILINOS_HOME with according paths).
+$PREFIX with the path where ghost and essex-physics are installed).
+This is the easiest way to make PHIST find GHOST. It is also possible
+to pass the GHOST_DIR variable to cmake, insterad. Note that essex-physics
+is an optional package for phist, as is Trilinos.
 
   module load intel64
   module load cmake
   cd build/
-  PHIST_KERNEL_LIB=ghost CC=icc CXX=icpc 
-  cmake .. -DTrilinos_HOME=$TRILINOS_HOME -DGHOST_DIR=$PREFIX/lib/ghost -DESSEX-PHYSICS_DIR=$PREFIX/lib/essex-physics -DMPIEXEC=mpirun_rrze
+  export TRILINOS_HOME=<...> # optional, to enable using TSQR and Teuchos timeers
+  export CC="mpicc -mt_mpi" 
+  CXX="mpicxx -mt_mpi"
+  cmake    -DPHIST_KERNEL_LIB=ghost \
+           -DGHOST_DIR=$PREFIX/lib/ghost \
+           -DMPIEXEC=mpirun_rrze
   make 
 
-It is sufficient to set GHOST_HOME and TRILINOS_HOME as environement variables (or Ghost_HOME, Trilinos_HOME)
 If you want to use likwid, also set LIKWID_HOME and pass -DLIKWID_PERFMON to cmake.
-
-On LiMa at RRZE you can use the script provided in buildScripts/script_lima.sh to get 
-started.
 
 Now go to the build directory, configure and compile:
 
