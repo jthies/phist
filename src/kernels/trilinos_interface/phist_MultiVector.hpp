@@ -2,6 +2,15 @@
 #define PHIST_MULTIVECTOR_HPP
 
 #include "phist_config.h"
+
+#if defined(PHIST_KERNEL_LIB_GHOST)
+#error "for GHOST, use phist::GhostMV instead of phist::MultiVector"
+#endif
+
+#if defined(PHIST_KERNEL_LIB_EPETRA)||defined(PHIST_KERNEL_LIB_TPETRA)
+#error "for Trilinos kernel libs, use the Belos/Anasazi adapters they provide themselves"
+#endif
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>

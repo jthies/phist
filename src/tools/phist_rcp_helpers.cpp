@@ -50,7 +50,7 @@ namespace phist
   //@}
 
 
-#endif
+#elif !defined(PHIST_KERNEL_LIB_EPETRA) && !defined(PHIST_KERNEL_LIB_TPETRA)
 
 // special functions for the general phist/belos interface,
 // to avoid the problem that all
@@ -119,5 +119,6 @@ namespace phist
     return Teuchos::rcp(new MultiVector<d_complex_t>(const_cast<Zmvec_ptr_t>(rawPtr),ownMem),true);
   }
 
+#endif
 #endif
   } // namespace phist
