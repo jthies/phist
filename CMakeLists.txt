@@ -468,6 +468,8 @@ else()
   message(STATUS "GHOST not found, some functionality will be disabled and return -99 ('not implemented')")
 endif()
 
+message(STATUS "GHOST libs: "${GHOST_LIBRARIES})
+
 # load parmetis for reordering builtin
 if(PHIST_KERNEL_LIB STREQUAL "builtin")
   
