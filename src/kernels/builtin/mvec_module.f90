@@ -822,7 +822,7 @@ contains
       if( nvecw .eq. 1 ) then
         allocate(tmp(nvecw,nvecv))
         if( strided_v ) then
-          call dgemm_sC_strided_1(nrows,nvecv,w%val,v%val(w%jmin,1),ldv,tmp)
+          call dgemm_sC_strided_1(nrows,nvecv,w%val,v%val(v%jmin,1),ldv,tmp)
         else
           call dgemm_sC_1(nrows,nvecv,w%val,v%val,tmp)
         end if
@@ -831,7 +831,7 @@ contains
       else if( nvecw .eq. 2 ) then
         allocate(tmp(nvecw,nvecv))
         if( strided_v ) then
-          call dgemm_sC_strided_2(nrows,nvecv,w%val,v%val(w%jmin,1),ldv,tmp)
+          call dgemm_sC_strided_2(nrows,nvecv,w%val,v%val(v%jmin,1),ldv,tmp)
         else
           call dgemm_sC_2(nrows,nvecv,w%val,v%val,tmp)
         end if
@@ -840,7 +840,7 @@ contains
       else if( nvecw .eq. 4 ) then
         allocate(tmp(nvecw,nvecv))
         if( strided_v ) then
-          call dgemm_sC_strided_4(nrows,nvecv,w%val,v%val(w%jmin,1),ldv,tmp)
+          call dgemm_sC_strided_4(nrows,nvecv,w%val,v%val(v%jmin,1),ldv,tmp)
         else
           call dgemm_sC_4(nrows,nvecv,w%val,v%val,tmp)
         end if
@@ -849,7 +849,7 @@ contains
       else if( nvecw .eq. 8 ) then
         allocate(tmp(nvecw,nvecv))
         if( strided_v ) then
-          call dgemm_sC_strided_8(nrows,nvecv,w%val,v%val(w%jmin,1),ldv,tmp)
+          call dgemm_sC_strided_8(nrows,nvecv,w%val,v%val(v%jmin,1),ldv,tmp)
         else
           call dgemm_sC_8(nrows,nvecv,w%val,v%val,tmp)
         end if
