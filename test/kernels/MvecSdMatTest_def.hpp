@@ -250,7 +250,7 @@ public:
     }
   }
 
-#if (_M_==_K_)
+#if (_M_>=_K_)
 
   // check ones(n,m)*ones(m,m)=m*ones(n,m)
   TEST_F(CLASSNAME, mvec_times_sdMat_in_place)
@@ -272,7 +272,18 @@ public:
       MTest::PrintSdMat(*cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
       V1Test::PrintVector(*cout,"ones*ones",V1_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
-      ASSERT_REAL_EQ(mt::one(),MvecEqual(V1_,(ST)m_));
+      TYPE(mvec_ptr) V_cols=NULL;
+      SUBR(mvec_view_block)(V1_,&V_cols,0,k_-1,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V_cols,(ST)m_));
+   
+      if (k_<m_)
+      {
+        SUBR(mvec_view_block)(V1_,&V_cols,k_,m_-1,&iflag_);
+      }
+      SUBR(mvec_delete)(V_cols,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
@@ -304,12 +315,18 @@ public:
       V1Test::PrintVector(*cout,"result_inplace",V1_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       V2Test::PrintVector(*cout,"result_out_of_place",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
-      ASSERT_REAL_EQ(mt::one(),MvecsEqual(V1_,V2_));
+  
+        TYPE(mvec_ptr) V_cols=NULL;
+      SUBR(mvec_view_block)(V1_,&V_cols,0,k_-1,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_REAL_EQ(mt::one(),MvecsEqual(V_cols,V2_));
+   
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }
-
+#if (_M_==_K_)
   // check that we can zero out some columns of V by multiplying
   // a view of them with a zero sdMat.
   TEST_F(CLASSNAME, mvec_times_sdMat_in_place_with_views)
@@ -395,7 +412,11 @@ public:
 
     }
   }
-  /* m==k */
+
+/* _M_==_K_ */
+#endif
+
+/* _M_>=_K_ */
 #endif
 
   // random check
