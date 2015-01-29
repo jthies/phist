@@ -243,8 +243,8 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
         }
 
         // check orthogonality of V_
-        ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)50.*releps(V_));
-        ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)50.*releps(V_));
+        ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)200.*releps(V_));
+        ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)200.*releps(V_));
 
         // calculate A*V(:,1:m)
         opA->apply(st::one(),opA->A,Vm_,st::zero(),AV_,&iflag);
@@ -286,8 +286,8 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
         }
 
         // check orthogonality of V_
-        ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)50.*releps(V_));
-        ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)50.*releps(V_));
+        ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)200.*releps(V_));
+        ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)200.*releps(V_));
 
         // check H = Vm'*AVm
         SUBR(sdMat_put_value)(mat2_, st::zero(), &iflag);
@@ -296,15 +296,15 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
         ASSERT_EQ(0,iflag);
         SUBR(mvecT_times_mvec)(-st::one(),Vm_,AVm_,st::one(),Hm_, &iflag);
         ASSERT_EQ(0,iflag);
-        ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,m_-1,m_-1,m_lda_,stride_,st::zero()), (MT)50.*releps(V_));
+        ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,m_-1,m_-1,m_lda_,stride_,st::zero()), (MT)200.*releps(V_));
 
         // check A*Vm = AVm
         opA->apply(-st::one(),opA->A,Vm_,st::one(),AVm_,&iflag);
         ASSERT_EQ(0,iflag);
 #ifdef PHIST_MVECS_ROW_MAJOR
-        ASSERT_NEAR(mt::one(),ArrayEqual(vec2_vp_,m_+BLOCK_SIZE1,nloc_,lda_,stride_,st::zero()), (MT)50.*releps(V_));
+        ASSERT_NEAR(mt::one(),ArrayEqual(vec2_vp_,m_+BLOCK_SIZE1,nloc_,lda_,stride_,st::zero()), (MT)200.*releps(V_));
 #else
-        ASSERT_NEAR(mt::one(),ArrayEqual(vec2_vp_,nloc_,m_+BLOCK_SIZE1,lda_,stride_,st::zero()), (MT)50.*releps(V_));
+        ASSERT_NEAR(mt::one(),ArrayEqual(vec2_vp_,nloc_,m_+BLOCK_SIZE1,lda_,stride_,st::zero()), (MT)200.*releps(V_));
 #endif
 
         // calculate A*V(:,1:m)
