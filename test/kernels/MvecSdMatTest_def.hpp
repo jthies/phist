@@ -219,7 +219,8 @@ public:
     }
   }
 
-  // check ones(n,m)*ones(m,k)=m*ones(n,k)
+  // check ones(n,m)*ones(m,k)=m*ones(n,k),
+  // and ones(n,m)*ones(m,k)-m*ones(n,k)=0
   TEST_F(CLASSNAME, mvec_times_sdMat)
   {
     if (typeImplemented_)
@@ -247,6 +248,21 @@ public:
       ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,(ST)m_));
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      
+      // with adding to factor*(input vector)
+      ST alpha=2.0+2.0*st::cmplx_I();
+      SUBR(mvec_put_value)(V2_,m_*alpha,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,-st::one()/alpha,V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,st::zero()));
+
+      // with adding factor*V*C to input vector
+      SUBR(mvec_put_value)(V2_,m_*alpha,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_times_sdMat)(-alpha,V1_,M1_,st::one(),V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,st::zero()));
     }
   }
 

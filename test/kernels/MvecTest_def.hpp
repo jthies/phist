@@ -227,6 +227,39 @@ public:
     }
   }
 
+  // 2-norm, nrm2=sqrt(v'v)
+  TEST_F(CLASSNAME, norm2_of_viewed_cols)
+  {
+    if (typeImplemented_)
+    {
+      SUBR(mvec_random)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      MT nrm2[nvec_];
+      SUBR(mvec_norm2)(vec1_,nrm2,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      int jmin=std::min(1,nvec_-1);
+      int jmax=std::min(3,nvec_-1);
+      TYPE(mvec_ptr) view=NULL;
+      SUBR(mvec_view_block)(vec1_,&view,jmin,jmax,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      MT nrm2_view[jmax-jmin+1];
+
+      SUBR(mvec_norm2)(view,nrm2_view,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      for (int j=jmin;j<=jmax;j++)
+      {
+        ASSERT_REAL_EQ(nrm2[j],nrm2_view[j-jmin]);
+      }
+      
+      SUBR(mvec_delete)(view,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+    }
+  }
+
   // X = 1*Y + 0*X = Y
   TEST_F(CLASSNAME, copy_by_axpy)
     {
