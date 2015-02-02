@@ -295,10 +295,7 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   ghost_densemat_t* result;
   ghost_densemat_traits_t dmtraits=GHOST_DENSEMAT_TRAITS_INITIALIZER;
         dmtraits.nrows=(ghost_lidx_t)nrows;
-        dmtraits.nrowshalo=(ghost_lidx_t)nrows;
-        dmtraits.nrowspadded=(ghost_lidx_t)nrows;
         dmtraits.ncols=(ghost_lidx_t)ncols;
-        dmtraits.ncolspadded=(ghost_lidx_t)ncols;
         dmtraits.datatype=st::ghost_dt;
 #ifdef PHIST_SDMATS_ROW_MAJOR
         dmtraits.storage=GHOST_DENSEMAT_ROWMAJOR;
