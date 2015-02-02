@@ -251,14 +251,14 @@ public:
       
       // with adding to factor*(input vector)
       ST alpha=2.0+2.0*st::cmplx_I();
-      SUBR(mvec_put_value)(V2_,m_*alpha,&iflag_);
+      SUBR(mvec_put_value)(V2_,(ST)m_*alpha,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,-st::one()/alpha,V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,st::zero()));
 
       // with adding factor*V*C to input vector
-      SUBR(mvec_put_value)(V2_,m_*alpha,&iflag_);
+      SUBR(mvec_put_value)(V2_,(MT)m_*alpha,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_times_sdMat)(-alpha,V1_,M1_,st::one(),V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
