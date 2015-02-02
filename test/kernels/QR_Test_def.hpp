@@ -2,15 +2,19 @@
 #error "file not included correctly"
 #endif
 
+#if !defined(MVECS_VIEWED)|| !defined(SDMATS_VIEWED)
+#error "file not included correctly"
+#endif
+
 /*! Test fixure. */
-class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
-                 public virtual KernelTestWithSdMats<_ST_,_NV_,_NV_> 
+class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_,MVECS_VIEWED>,
+                 public virtual KernelTestWithSdMats<_ST_,_NV_,_NV_,SDMATS_VIEWED> 
   {
 
 public:
 
-  typedef KernelTestWithVectors<_ST_,_N_,_NV_> VTest;
-  typedef KernelTestWithSdMats<_ST_,_NV_,_NV_> MTest;
+  typedef KernelTestWithVectors<_ST_,_N_,_NV_,MVECS_VIEWED> VTest;
+  typedef KernelTestWithSdMats<_ST_,_NV_,_NV_,SDMATS_VIEWED> MTest;
 
   /*! Set up routine.
    */

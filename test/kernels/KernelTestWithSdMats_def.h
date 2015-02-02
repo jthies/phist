@@ -1,7 +1,7 @@
 
 /*! Test fixture. */
-template<int _Nrows, int _Ncols>
-class KernelTestWithSdMats<_ST_,_Nrows,_Ncols> : 
+template<int _Nrows, int _Ncols, bool _useViews>
+class KernelTestWithSdMats<_ST_,_Nrows,_Ncols, _useViews> : 
         public virtual KernelTestWithType< _ST_ >,
         public virtual KernelTest
   {
@@ -112,12 +112,16 @@ static void PrintSdMat(std::ostream& os, std::string label,
   _ST_ *mat1_vp_, *mat2_vp_, *mat3_vp_, *mat4_vp_;
   static const int nrows_=_Nrows;
   static const int ncols_=_Ncols;
+  static const bool useViews_=_useViews;
   lidx_t m_lda_;
   };
 
 
-template<int _Nrows, int _Ncols>
-const int KernelTestWithSdMats<_ST_,_Nrows,_Ncols>::nrows_;
+template<int _Nrows, int _Ncols, bool _useViews>
+const int KernelTestWithSdMats<_ST_,_Nrows,_Ncols,_useViews>::nrows_;
 
-template<int _Nrows, int _Ncols>
-const int KernelTestWithSdMats<_ST_,_Nrows,_Ncols>::ncols_;
+template<int _Nrows, int _Ncols, bool _useViews>
+const int KernelTestWithSdMats<_ST_,_Nrows,_Ncols,_useViews>::ncols_;
+
+template<int _Nrows, int _Ncols, bool _useViews>
+const bool KernelTestWithSdMats<_ST_,_Nrows,_Ncols,_useViews>::useViews_;

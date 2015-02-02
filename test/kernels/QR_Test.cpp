@@ -25,6 +25,9 @@
 
 using namespace testing;
 
+#define MVECS_VIEWED false
+#define SDMATS_VIEWED false
+
 #ifdef CLASSNAME
 #undef CLASSNAME
 #endif
@@ -58,40 +61,6 @@ using namespace testing;
 #include "phist_gen_z.h"
 #include "QR_Test_def.hpp"
 
-/* 
-// this small test causes problems in parallel because TSQR
-// requires nrows>=ncols on each MPI process.
-#undef _N_
-#define _N_ 5
-#undef _NV_
-#define _NV_ 3
-
-#ifdef PHIST_HAVE_SP
-#undef CLASSNAME
-#define CLASSNAME SQR_Test_5_3
-#include "phist_gen_s.h"
-#include "QR_Test_def.hpp"
-
-#undef CLASSNAME
-#define CLASSNAME CQR_Test_5_3
-
-#include "phist_gen_c.h"
-#include "QR_Test_def.hpp"
-
-#endif
-
-#undef CLASSNAME
-#define CLASSNAME DQR_Test_5_3
-
-#include "phist_gen_d.h"
-#include "QR_Test_def.hpp"
-
-#undef CLASSNAME
-#define CLASSNAME ZQR_Test_5_3
-
-#include "phist_gen_z.h"
-#include "QR_Test_def.hpp"
-*/
 #undef _N_
 #define _N_ 59
 #undef _NV_
@@ -120,8 +89,45 @@ using namespace testing;
 #undef CLASSNAME
 #define CLASSNAME ZQR_Test_59_5
 
+/* same test but with viewed mvecs and sdMats */
+#undef MVECS_VIEWED
+#undef SDMATS_VIEWED
+#define MVECS_VIEWED true
+#define SDMATS_VIEWED true
+
 #include "phist_gen_z.h"
 #include "QR_Test_def.hpp"
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SQR_TestViewVM_59_5
+
+#include "phist_gen_s.h"
+#include "QR_Test_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CQR_TestViewVM_59_5
+
+#include "phist_gen_c.h"
+#include "QR_Test_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DQR_ViewVMTest_59_5
+
+#include "phist_gen_d.h"
+#include "QR_Test_def.hpp"
+#undef CLASSNAME
+#define CLASSNAME ZQR_ViewVMTest_59_5
+
+#include "phist_gen_z.h"
+#include "QR_Test_def.hpp"
+
+#undef MVECS_VIEWED
+#undef SDMATS_VIEWED
+#define MVECS_VIEWED false
+#define SDMATS_VIEWED false
 
 #if 1
 // let's try something bigger...

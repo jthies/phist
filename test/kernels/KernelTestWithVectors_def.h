@@ -1,6 +1,6 @@
 /*! Test fixture. */
-template<gidx_t _Nglob, int _Nvec>
-class KernelTestWithVectors<_ST_,_Nglob,_Nvec> : 
+template<gidx_t _Nglob, int _Nvec, bool _useViews>
+class KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews> : 
         public virtual KernelTestWithType< _ST_ >,
         public virtual KernelTestWithMap<_Nglob> 
   {
@@ -9,21 +9,50 @@ private:
 
 void createVecs()
 {
-  lidx_t lda;
+  int pad_pre=0;
+  int pad_post=0;
   // vectors created with the same function should get the same stride (lda)
-  SUBR(mvec_create)(&vec1_,this->map_,nvec_,&this->iflag_);
+  lidx_t lda;
+  if (useViews_)
+  {
+    pad_pre=2;
+    pad_post=3;
+  }
+  int pad=pad_pre+pad_post;
+  SUBR(mvec_create)(&vec1_,this->map_,nvec_+pad,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
+
+  SUBR(mvec_create)(&vec2_,this->map_,nvec_+pad,&this->iflag_);
+  ASSERT_EQ(0,this->iflag_);
+
+  SUBR(mvec_create)(&vec3_,this->map_,nvec_+pad,&this->iflag_);
+  ASSERT_EQ(0,this->iflag_);
+  
+  // if requested, set vecX to views of memX
+  if (useViews_)
+  {
+    mem1_=vec1_; vec1_=NULL;
+    mem2_=vec2_; vec2_=NULL;
+    mem3_=vec3_; vec3_=NULL;
+    SUBR(mvec_view_block)(mem1_,&vec1_,pad_pre,pad_pre+nvec_-1,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    SUBR(mvec_view_block)(mem2_,&vec2_,pad_pre,pad_pre+nvec_-1,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    SUBR(mvec_view_block)(mem3_,&vec3_,pad_pre,pad_pre+nvec_-1,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+  }
+
+  // extract raw data views and check that the stride (lda) is the same for all mvecs
+  // with the same number of cols
+
   SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda_,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
   lda=lda_;
-  SUBR(mvec_create)(&vec2_,this->map_,nvec_,&this->iflag_);
-  ASSERT_EQ(0,this->iflag_);
+  
   SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&lda_,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
   ASSERT_EQ(lda,lda_);
-  SUBR(mvec_create)(&vec3_,this->map_,nvec_,&this->iflag_);
-  ASSERT_EQ(0,this->iflag_);
-  ASSERT_EQ(lda,lda_);
+  
   SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&lda_,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
   ASSERT_EQ(lda,lda_);
@@ -38,6 +67,17 @@ void deleteVecs()
   ASSERT_EQ(0,this->iflag_);
   SUBR(mvec_delete)(this->vec3_,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
+
+  // delete memory blocks if vecX are views
+  if (useViews_)
+  {
+    SUBR(mvec_delete)(this->mem1_,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    SUBR(mvec_delete)(this->mem2_,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    SUBR(mvec_delete)(this->mem3_,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+  }
 }
 
 public:
@@ -47,6 +87,7 @@ public:
 virtual void SetUp()
   {
   KernelTestWithType< ST >::SetUp();
+  mem1_=NULL; mem2_=NULL; mem3_=NULL;
   if (typeImplemented_)
     {
     lidx_t lda;
@@ -240,12 +281,20 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
     return ( (iflag==0)&&(lda==expected_lda)&&(ptr==expected_location) );
   }
 
+  //! if _useViews=true, these are larger memory blocks
+  //! holding vecX_ as an inner view. Otherwise they are NULL.
+  TYPE(mvec_ptr) mem1_, mem2_, mem3_;
+
   TYPE(mvec_ptr) vec1_, vec2_, vec3_;
   ST *vec1_vp_, *vec2_vp_, *vec3_vp_;
   static const int nvec_=_Nvec;
+  static const int useViews_=_useViews;
   lidx_t lda_, stride_;
   };
 
-template<gidx_t n, int nvec>
-const int KernelTestWithVectors<_ST_,n,nvec>::nvec_;
+template<gidx_t n, int nvec, bool useViews>
+const int KernelTestWithVectors<_ST_,n,nvec,useViews>::nvec_;
+
+template<gidx_t n, int nvec, bool useViews>
+const int KernelTestWithVectors<_ST_,n,nvec,useViews>::useViews_;
 

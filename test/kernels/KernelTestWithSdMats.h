@@ -15,7 +15,7 @@
 using namespace testing;
 
 /*! Test fixure. */
-template<typename T, int _Nrows, int _Ncols>
+template<typename T, int _Nrows, int _Ncols, bool _useViews=false>
 class KernelTestWithSdMats:
         public virtual KernelTestWithType<T>,
         public virtual KernelTest

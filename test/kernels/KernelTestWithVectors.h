@@ -15,8 +15,14 @@
 
 using namespace testing;
 
-/*! Test fixure. */
-template<typename T, gidx_t _Nglob, int _Nvec>
+/*! Base class for tests using mvecs. The class is templated on 
+ * the data type T,
+ * the global number of rows (_Nglob),
+ * the number of colums (_Nvec),
+ * _useViews (default false): setup the owned mvecs as views of larger
+   mvec blocks.
+ */
+template<typename T, gidx_t _Nglob, int _Nvec, bool _useViews=false>
 class KernelTestWithVectors:
         public virtual KernelTestWithMap<_Nglob>,
         public virtual KernelTestWithType<T>
@@ -26,6 +32,7 @@ public:
   virtual void SetUp(){}
   virtual void TearDown(){}
   int nvec_;
+  bool useViews_;
   lidx_t lda_, stride_;
 
   };
