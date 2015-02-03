@@ -533,7 +533,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       SUBR(mvec_print)(vec2_,&iflag_);
       SUBR(mvec_print)(vec3_,&iflag_);
 #endif
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_));
+      ASSERT_NEAR(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_),100*mt::eps());
       }
     }
 
