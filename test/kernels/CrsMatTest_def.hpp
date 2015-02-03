@@ -439,7 +439,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_scale)(vec1_,alpha,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_,vflag_));
+      ASSERT_NEAR(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_,vflag_),100*mt::one());
 
       //0*I*X+beta*Y = beta*Y? 
       alpha=st::zero(); 
@@ -499,7 +499,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       SUBR(mvec_print)(vec2_,&iflag_);
       SUBR(mvec_print)(vec3_,&iflag_);
 #endif
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_));
+      ASSERT_NEAR(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_),100*mt::eps());
 
       //alpha*I*X+beta*Y = alpha*X+beta*Y?
       alpha = random_number();
