@@ -6,6 +6,7 @@
 #include "phist_tools.h"
 #include "phist_macros.h"
 #include "phist_enums.h"
+#include "phist_fcntrace.hpp"
 
 
 extern "C" const char* phist_retcode2str(int code)
@@ -91,17 +92,7 @@ std::istream& operator>>(std::istream& is, linSolv_t& s)
   return is;
 }
 
-#ifdef PHIST_TIMEMONITOR
-# ifndef PHIST_USE_TEUCHOS_TIMEMONITOR
-# include "phist_timemonitor.hpp"
-namespace phist_TimeMonitor
-{
-  Timer::TimeDataMap Timer::_timingResults;
-#ifdef PHIST_TIMEMONITOR_FULL_TRACE
-  std::vector<const char*> Timer::_timerTrace;
+#ifdef PHIST_TIMINGS_FULL_TRACE
+std::vector<const char*> phist_FcnTrace::fcnTrace_;
 #endif
-}
-# endif  
-#endif
-
 

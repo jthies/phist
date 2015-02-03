@@ -55,7 +55,9 @@ extern "C" void phist_kernels_finalize(int* iflag)
   LIKWID_MARKER_STOP("phist<epetra>");
   LIKWID_MARKER_CLOSE;
 #endif
+#if defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE)
 PHIST_CXX_TIMER_SUMMARIZE;
+#endif
 #ifdef PHIST_HAVE_MPI
   *iflag=MPI_Finalize();
 #endif  

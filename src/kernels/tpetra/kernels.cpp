@@ -59,7 +59,9 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
     LIKWID_MARKER_STOP("phist<tpetra>");
     LIKWID_MARKER_CLOSE;
 #endif
+#if defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE)
 PHIST_CXX_TIMER_SUMMARIZE;
+#endif
 #ifdef PHIST_HAVE_MPI
   if (myMpiSession==1)
   {

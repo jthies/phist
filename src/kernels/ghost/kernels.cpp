@@ -127,7 +127,9 @@ extern "C" void phist_kernels_finalize(int* iflag)
   }
   LIKWID_MARKER_CLOSE;
 #endif
+#if defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE)
 PHIST_CXX_TIMER_SUMMARIZE;
+#endif
   ghost_finalize();
   *iflag=0;
 }

@@ -191,7 +191,9 @@ void phist_kernels_finalize(int* iflag)
   }
   LIKWID_MARKER_CLOSE;
 #endif
-PHIST_CXX_TIMER_SUMMARIZE
+#if defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE)
+PHIST_CXX_TIMER_SUMMARIZE;
+#endif
   if( !mpiInitializedBefore )
   {
     PHIST_CHK_IERR( *iflag = MPI_Finalize(), *iflag);

@@ -36,28 +36,28 @@ set(test_list)
 set(external_libs)
 
 ########################################################################
-# Deal with LAPACK and LAPACKe (but not BLAS).
+# Deal with LAPACK and LAPACKe
 # Specify paths in CMAKE_PREFIX_PATH.
 ########################################################################
-find_path(LAPACK_INCL NAMES "lapacke.h" "mkl_lapacke.h")
-if(LAPACK_INCL STREQUAL "LAPACK_INCL-NOTFOUND")
+find_path(LAPACKE_INCL NAMES "lapacke.h" "mkl_lapacke.h")
+if(LAPACKE_INCL STREQUAL "LAPACK_INCL-NOTFOUND")
   message(FATAL_ERROR "LAPACKe include file not found. Add the proper path to CMAKE_PREFIX_PATH.")
 else()
-  message(STATUS "LAPACKe include file found in: ${LAPACK_INCL}")
-  include_directories(${LAPACK_INCL})
+  message(STATUS "LAPACKe include file found in: ${LAPACKE_INCL}")
+  include_directories(${LAPACKE_INCL})
 endif()
 
 if(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
 # TODO: this assumes that if you use the intel compilers, you also have MKL (!)
 
   # LAPACKe
-  unset(LAPACK_LIBS CACHE)
-  find_library(LAPACK_LIBS NAMES "liblapacke.so" "liblapacke.a")
-  if(LAPACK_LIBS STREQUAL "LAPACK_LIBS-NOTFOUND")
+  unset(LAPACKE_LIBS CACHE)
+  find_library(LAPACKE_LIBS NAMES "liblapacke.so" "liblapacke.a")
+  if(LAPACKE_LIBS STREQUAL "LAPACKE_LIBS-NOTFOUND")
     message(FATAL_ERROR "LAPACKe libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
   else()
-    message(STATUS "LAPACKe libraries found: ${LAPACK_LIBS}")
-    LIST(APPEND external_libs ${LAPACK_LIBS})
+    message(STATUS "LAPACKe libraries found: ${LAPACKE_LIBS}")
+    LIST(APPEND external_libs ${LAPACKE_LIBS})
   endif()
 
   # LAPACK
@@ -69,6 +69,17 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
     message(STATUS "LAPACK libraries found: ${LAPACK_LIBS}")
     LIST(APPEND external_libs ${LAPACK_LIBS})
   endif()
+
+  # BLAS
+  unset(BLAS_LIBS CACHE)
+  find_library(BLAS_LIBS NAMES "libblas.so" "libblas.a")
+  if(BLAS_LIBS STREQUAL "BLAS_LIBS-NOTFOUND")
+    message(FATAL_ERROR "BLAS libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
+  else()
+    message(STATUS "BLAS libraries found: ${BLAS_LIBS}")
+    LIST(APPEND external_libs ${BLAS_LIBS})
+  endif()
+
 
 endif()
 ########################################################################
@@ -300,9 +311,7 @@ if (${Teuchos_FOUND})
 else()
   message(STATUS "Teuchos not found.")
 endif()
-if(NOT PHIST_USE_TEUCHOS_TIMEMONITOR)
-  option(PHIST_TIMEMONITOR_FULL_TRACE "Try to print full call trace in the TimeMonitor (Warning: may generate *a lot* of output)." Off)
-endif()
+option(PHIST_TIMINGS_FULL_TRACE "Try to print full call trace in the TimeMonitor/performance measurements (Warning: may generate *a lot* of output)." Off)
 
 find_package(Kokkos)
 
@@ -402,6 +411,7 @@ if (NOT ESSEX-PHYSICS_FOUND)
 endif()
 
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.cpp
+                        ${PROJECT_SOURCE_DIR}/src/tools/phist_timemonitor.cpp
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_rcp_helpers.cpp)
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp
@@ -468,7 +478,7 @@ else()
   message(STATUS "GHOST not found, some functionality will be disabled and return -99 ('not implemented')")
 endif()
 
-message(STATUS "GHOST libs: "${GHOST_LIBRARIES})
+message(STATUS "GHOST libs: ${GHOST_LIBRARIES}")
 
 # load parmetis for reordering builtin
 if(PHIST_KERNEL_LIB STREQUAL "builtin")
@@ -510,9 +520,11 @@ if (${LIKWID_Found})
   include_directories(${LIKWID_INCLUDE_DIRS})
   link_directories(${LIKWID_LIBRARY_DIRS})
   target_link_libraries(phist_tools ${LIKWID_LIBRARIES})
+  option(LIKWID_PERFMON "Activate function-level Likwid performance monitoring (to be used with likwid-perfctr -m)" Off)
   if (${LIKWID_PERFMON})
-    message(STATUS "activated Likwid performance monitoring")
-    add_definitions(-DLIKWID_PERFMON)
+    message(STATUS "activated function-level Likwid performance monitoring")
+  else()
+    message(STATUS "disabled function-level Likwid performance monitoring")
   endif ()
 else()
   message(STATUS "continuing without Likwid, you can set the environment variable LIKWID_HOME to help CMake find it")
@@ -555,7 +567,6 @@ endforeach()
 # It seems that the executable can and will satisfy these dependencies
 # at static link time. [MG]
 #target_link_libraries(phist_tools ${LAPACK_LIBS})
-LIST(APPEND external_libs ${LAPACK_LIBS})
 
 if(NOT GHOST_FOUND) #use MPI libs as found by GHOST in this case. otherwise, a clash between thread-safe and normal MPI will occur
   target_link_libraries(phist_tools ${MPI_CXX_LIBRARIES} ${MPI_C_LIBRARIES} ${MPI_Fortran_LIBRARIES})

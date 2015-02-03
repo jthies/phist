@@ -73,50 +73,15 @@
 }
 #endif
 
-/* PHIST_SOUT is used in phist_timemonitor.hpp */
-#if defined(__cplusplus) && defined(PHIST_TIMEMONITOR)
-#ifdef PHIST_USE_TEUCHOS_TIMEMONITOR
-/* the Teuchos time monitor is a bit fancier when it comes    */
-/* to non bulk-synchronous execution models like master/slave */
-#include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_DefaultComm.hpp"
-# else
-# include "phist_timemonitor.hpp"
-# endif
-#endif
-
-
-#if defined(__cplusplus) && ( defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE) )
-# ifdef PHIST_USE_TEUCHOS_TIMEMONITOR
-#     define PHIST_CXX_TIMER(s) static Teuchos::RCP<Teuchos::Time> TimeFrom_PHIST_CXX_TIMER; \
-                          if( TimeFrom_PHIST_CXX_TIMER.is_null() ) \
-                              TimeFrom_PHIST_CXX_TIMER = Teuchos::TimeMonitor::getNewTimer(s); \
-                          Teuchos::TimeMonitor TimeMonFrom_PHIST_CXX_TIMER(*TimeFrom_PHIST_CXX_TIMER);
-#if TRILINOS_MAJOR_MINOR_VERSION < 110800
-#     define PHIST_CXX_TIMER_SUMMARIZE \
-Teuchos::TimeMonitor::summarize(Teuchos::DefaultComm<int>::getComm().ptr(), \
-std::cout,true,true,false, Teuchos::Union,"");
-#else
-#     define PHIST_CXX_TIMER_SUMMARIZE \
-Teuchos::TimeMonitor::summarize(Teuchos::DefaultComm<int>::getComm().ptr(), \
-std::cout,true,true,false, Teuchos::Union,"",true);
-#endif
-# else
-#     define PHIST_CXX_TIMER(s) phist_TimeMonitor::Timer TimerFrom_PHIST_CXX_TIMER(s);
-#     define PHIST_CXX_TIMER_SUMMARIZE phist_TimeMonitor::Timer::summarize();
-# endif
-#else
-#define PHIST_CXX_TIMER(s)
-#define PHIST_CXX_TIMERS_SUMMARIZE
-#endif
 
 // "line-level" timings using PHIST_CHK macros
 #if defined(__cplusplus) && defined(PHIST_TIMEMONITOR_PERLINE)
-#include <string.h>
+#include "phist_timemonitor.hpp"
+#include <string>
 #define PHIST_STRINGIFY_MACRO(l) #l
 #define PHIST_FILE_LINE_REMOVE_PATH(f) (strrchr(f, '/') ? strrchr(f, '/') + 1 : f)
 #define PHIST_FILE_LINE_MACRO(f,l) PHIST_FILE_LINE_REMOVE_PATH(f ":" PHIST_STRINGIFY_MACRO(l))
-#define PHIST_TIMEMONITOR_PERLINE_MACRO phist_TimeMonitor::Timer TimerFrom_PERLINE_MACRO(PHIST_FILE_LINE_MACRO(__FILE__,__LINE__));
+#define PHIST_TIMEMONITOR_PERLINE_MACRO PHIST_CXX_TIMER(PHIST_FILE_LINE_MACRO(__FILE__,__LINE__));
 #else
 #define PHIST_TIMEMONITOR_PERLINE_MACRO
 #endif
@@ -205,6 +170,9 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 # else
 #   define SCOREP_USER_REGION(a, b)
 # endif
+# ifdef PHIST_TIMEMONITOR
+#   include "phist_timemonitor.hpp"
+# endif
 # ifdef PHIST_KERNEL_LIB_GHOST
 #   include "ghost/task.h"
 #   define PHIST_GHOST_CHK_IN_TASK(s, iflag) { \
@@ -215,15 +183,17 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
       }
 # else
 #   define PHIST_GHOST_CHK_IN_TASK(s, iflag)
-#endif
+# endif
 # include "phist_fcntrace.hpp"
-# if (PHIST_OUTLEV>=PHIST_TRACE) || defined(LIKWID_PERFMON)
-#     define PHIST_ENTER_FCN(s) FcnTracer YouCantHaveMultiple_PHIST_ENTER_FCN_StatementsInOneScope(s);\
-                          PHIST_CXX_TIMER(s);\
-                          SCOREP_USER_REGION(s, SCOREP_USER_REGION_TYPE_FUNCTION);
+# if defined(PHIST_TIMEMONITOR)
+#     define PHIST_ENTER_FCN(s) phist_FcnTrace YouCantHaveMultiple_PHIST_ENTER_FCN_StatementsInOneScope(s);\
+                                PHIST_CXX_TIMER(YouCantHaveMultiple_PHIST_ENTER_FCN_StatementsInOneScope.fcn().c_str());\
+                                SCOREP_USER_REGION(s, SCOREP_USER_REGION_TYPE_FUNCTION);
+# elif (PHIST_OUTLEV>=PHIST_TRACE) || defined(LIKWID_PERFMON)
+#     define PHIST_ENTER_FCN(s) phist_FcnTrace YouCantHaveMultiple_PHIST_ENTER_FCN_StatementsInOneScope(s);\
+                                SCOREP_USER_REGION(s, SCOREP_USER_REGION_TYPE_FUNCTION);
 # else
-#     define PHIST_ENTER_FCN(s) PHIST_CXX_TIMER(s);\
-                          SCOREP_USER_REGION(s, SCOREP_USER_REGION_TYPE_FUNCTION);
+#     define PHIST_ENTER_FCN(s) SCOREP_USER_REGION(s, SCOREP_USER_REGION_TYPE_FUNCTION);
 # endif
 #else
 # define PHIST_ENTER_FCN(s)
