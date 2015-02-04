@@ -274,6 +274,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       m+=expand;
       mm++;
       it++;
+      *num_iters=it;
+  
       // create views of V(:,1:m-1), V(:,m) and AV likewise
       
       // V temporarily gets extra storage to store [V Q] for the orthogonalization
@@ -485,6 +487,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // number of converged eigenpairs: +2 for complex conjugate pairs in real case
     int nq0=nconv;
     nconv=nconv+nv;
+    *num_eigs=nconv;// tell the user how many we return
     for (int j=nq0;j<nconv;j++)
     {
       resid[j]=nrm[0]; // will be returned to the user
@@ -707,8 +710,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   }// if solve
 }// while loop
     
-  *num_iters=it;
-  
   // TODO Sleijpen in his jdqr code does a refinement step at this      
   // point taking the information from the current V into Q and R       
   // (might be a nice feature). It also allows us to return unconverged 
@@ -719,7 +720,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   
   // some sanity checks - the user provides only num_eigs+1 slots
   nconv = std::min(numEigs+1,nconv);
-  *num_eigs=nconv;// tell the user how many we return
   
   if (nconv>0)
     {
