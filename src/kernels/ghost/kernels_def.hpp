@@ -4,8 +4,8 @@
 #include "ghost/sell.h"
 #endif
 
-#ifdef GHOST_HAVE_SCOTCH_disabled
-#define USE_SCOTCH
+#ifdef GHOST_HAVE_SCOTCH
+//#define USE_SCOTCH
 #endif
 
 /* previously we started every kernel function as a task, but since this
