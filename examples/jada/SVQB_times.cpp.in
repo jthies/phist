@@ -73,7 +73,8 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(SUBR(sdMat_create)(&B,m,m,comm,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(sdMat_create)(&QtQ,m,m,comm,&ierr),ierr);
 
-  MT total_max_error=mt::zero();
+  MT max_ortho_error=mt::zero();
+  MT max_norm_error=mt::zero();
   for (int it=0; it<k; it++)
   {
     // use a perturbation of a rank-1 matrix as input (nicely ill-conditioned)
@@ -82,10 +83,15 @@ PHIST_MAIN_TASK_BEGIN
     ST pert=(ST)1.0e-3;
     PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(pert,X,st::one(),Q,&ierr),ierr);
     // this is what we really want to benchmark
-    MT nrms[m];
-    PHIST_ICHK_IERR(SUBR(svqb)(Q,B,nrms,&ierr),ierr);
+    MT nrms_svqb[m], nrms_direct[m];
+    PHIST_ICHK_IERR(SUBR(mvec_norm2)(Q,nrms_direct,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(svqb)(Q,B,nrms_svqb,&ierr),ierr);
+    
+    // check accuracy of norm calculations in the kernel lib
+    for (int i=0;i<m;i++) max_norm_error=std::max(max_norm_error,
+        std::abs(nrms_svqb[i]-nrms_direct[i]));
 
-    // check the result
+    // check orthonormality of the result
     PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Q,Q,st::zero(),QtQ,&ierr),ierr);
     ST* q=NULL;
     lidx_t ldq;
@@ -97,9 +103,10 @@ PHIST_MAIN_TASK_BEGIN
         MT val=(i==j)? mt::one() : mt::zero();
         err=std::max(err, std::abs(q[i*ldq+j] - val));
       }
-    total_max_error=std::max(err,total_max_error);
+    max_ortho_error=std::max(err,max_ortho_error);
   }
-  PHIST_SOUT(PHIST_INFO,"Total maximum ortho-error encountered: %8.4e\n",total_max_error);
+  PHIST_SOUT(PHIST_INFO,"Total maximum ortho-error encountered: %8.4e\n",max_ortho_error);
+  PHIST_SOUT(PHIST_INFO,"Max deviation in norm calculations: %8.4e\n",max_norm_error);
   
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(Q,&ierr),ierr);
