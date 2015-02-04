@@ -696,8 +696,13 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
 #endif
 
 
-
+#if defined(PHIST_KERNEL_LIB_GHOST)&&defined(PHIST_USE_SELL)&&(PHIST_SELL_SIGMA>1)
+  // this test is broken with local reordering because we can't create
+  // an "unpermuted" vector in the map of A with the present interface.
+  TEST_F(CLASSNAME, DISABLED_A2_precalc_result)
+#else
   TEST_F(CLASSNAME, A2_precalc_result)
+#endif
   {
     if( typeImplemented_ )
     {
