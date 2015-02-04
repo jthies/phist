@@ -16,6 +16,7 @@
 #include "ghost.h"
 #include "ghost/omp.h"
 #include "ghost/machine.h"
+#include "ghost/thpool.h"
 #include "phist_GhostMV.hpp"
 
 // @HEADER
@@ -165,15 +166,12 @@ namespace ghost {
         params->set ("NodeTsqr", *(nodeTsqr_->getValidParameters ()));
         params->set ("DistTsqr", *(distTsqr_->getValidParameters ()));
 
-
-        int ncores;
-        ghost_machine_ncore(&ncores,GHOST_NUMANODE_ANY);
-
         uint64_t cache_size;
         ghost_machine_outercache_size(&cache_size);
+
         
         params->sublist("NodeTsqr").
-                set("Num Tasks", ncores);
+                set("Num Tasks", get_num_threads());
 
         params->sublist("NodeTsqr").
                 set("Cache Size Hint",cache_size);
@@ -226,6 +224,7 @@ namespace ghost {
                     dense_matrix_type& R,
                     const bool forceNonnegativeDiagonal=false)
     {
+      PHIST_ENTER_FCN(__FUNCTION__);
       typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
 
       prepareTsqr (Q); // Finish initializing TSQR.
@@ -271,6 +270,7 @@ namespace ghost {
                 dense_matrix_type& R,
                 const magnitude_type& tol)
     {
+      PHIST_ENTER_FCN(__FUNCTION__);
       typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
 
       prepareTsqr (Q); // Finish initializing TSQR.      
@@ -321,6 +321,7 @@ namespace ghost {
     void 
     prepareTsqr (const MV& mv) 
     {
+      PHIST_ENTER_FCN(__FUNCTION__);
       if (! ready_) {
         prepareDistTsqr (mv);
         prepareNodeTsqr (mv);
@@ -399,17 +400,39 @@ namespace ghost {
       return KMV;
     }
 
- static Teuchos::RCP<node_type> createNode()
+ //! check how many threads should be used by TSQR,
+ //! by looking at the GHOST thread pool.
+ static int get_num_threads()
+ {
+    int nthreads;
+    ghost_task_t *curtask = NULL; \
+    ghost_task_cur(&curtask);
+    if (curtask == NULL) 
     {
-    Teuchos::ParameterList nodeParams(node_type::getDefaultParameters());
-
-    int ncores;
-    ghost_machine_ncore(&ncores,GHOST_NUMANODE_ANY);
-    nodeParams.set("Num Threads",ncores);
-    Teuchos::RCP<node_type> node = Teuchos::rcp(new node_type(nodeParams));
-    PHIST_SOUT(PHIST_VERBOSE,"TSQR compute node setup to use %d threads\n",ncores);
-    return node;
+      PHIST_SOUT(PHIST_VERBOSE, "Called %s outside a ghost task!\n", __FUNCTION__);
+      ghost_thpool_t *thpool;
+      ghost_thpool_get(&thpool);
+      // -1: ghost has one extra worker thread (or is it the operating system?)
+      // /2: ad-hoc way to not use hyperthreads.
+      nthreads=std::max((thpool->nThreads-1)/2,1);
     }
+    else
+    {
+      nthreads=curtask->nThreads;
+    }
+    return nthreads;
+ }
+
+ static Teuchos::RCP<node_type> createNode()
+  {
+    Teuchos::ParameterList nodeParams(node_type::getDefaultParameters());
+    int nthreads=get_num_threads();
+    nodeParams.set("Num Threads",nthreads);
+    Teuchos::RCP<node_type> node = Teuchos::rcp(new node_type(nodeParams));
+    PHIST_SOUT(PHIST_VERBOSE,"TSQR node type: %s (%d threads)\n",
+    node_type::name().c_str(),nthreads);
+    return node;
+  }
 
   };
 
