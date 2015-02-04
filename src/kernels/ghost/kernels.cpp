@@ -82,6 +82,11 @@ typedef struct ghost_map_t
 extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 {
   *iflag=0;
+  // disable using Hyperthreads
+  ghost_hwconfig_t hwconfig = GHOST_HWCONFIG_INITIALIZER; 
+  hwconfig.nsmt = 1; 
+  ghost_hwconfig_set(hwconfig);
+
   ghost_init(*argc, *argv);
 
   char *str = NULL;
