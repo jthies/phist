@@ -17,7 +17,8 @@
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_MatrixIO.hpp"
 
-#include "BelosTpetraAdapter.hpp"
+#include "./Tpetra_TsqrAdaptor.hpp"
+#include "./BelosTpetraAdapter.hpp"
 #include "BelosTsqrOrthoManager.hpp"
 
 #ifdef PHIST_HAVE_LIKWID
@@ -139,7 +140,16 @@ extern "C" void phist_tpetra_node_create(node_t** node, const_comm_ptr_t vcomm, 
   {
     PHIST_SOUT(PHIST_WARNING,"File phist_node.xml not found, using default node settings in tpetra\n");
   }
-
+  const char* PHIST_NUM_THREADS=getenv("PHIST_NUM_THREADS");
+  if (PHIST_NUM_THREADS!=NULL)
+  {
+    int nThreads=atoi(PHIST_NUM_THREADS);
+    if (nThreads>0)
+    {
+      PHIST_SOUT(PHIST_VERBOSE,"taking #threads from env variable PHIST_NUM_THREADS\n");
+      nodeParams->set("Num Threads",nThreads);
+    }
+  }
   PHIST_SOUT(PHIST_VERBOSE,"# threads requested: %d\n",nodeParams->get("Num Threads",0));
   *node = new node_t(*nodeParams);
 }

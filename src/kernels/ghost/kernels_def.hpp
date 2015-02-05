@@ -8,6 +8,11 @@
 #define USE_SCOTCH
 #endif
 
+#if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
+template<>
+Teuchos::RCP<node_t> ghost::TsqrAdaptor< _ST_ >::node_=Teuchos::null;
+#endif
+
 /* previously we started every kernel function as a task, but since this
    means that the threads need to be created every time, we now just start
    the main program as a task instead

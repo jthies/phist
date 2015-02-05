@@ -3,6 +3,10 @@
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
+
+#include <cstdio>
+#include <cstdlib>
+
 #include <iostream>
 #include "phist_macros.h"
 #include "../phist_kernels.h"
@@ -89,6 +93,12 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   *iflag=0;
   // disable using Hyperthreads
   ghost_hwconfig_t hwconfig = GHOST_HWCONFIG_INITIALIZER; 
+  const char* PHIST_NUM_THREADS=getenv("PHIST_NUM_THREADS");
+  int num_threads= (PHIST_NUM_THREADS==NULL)? -1:atoi(PHIST_NUM_THREADS);
+  if (num_threads>0)
+  {
+    hwconfig.ncore = num_threads; 
+  }
   hwconfig.nsmt = 1; 
   ghost_hwconfig_set(hwconfig);
 

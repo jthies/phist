@@ -25,6 +25,10 @@
 #include "phist_GhostMV.hpp"
 #include "phist_rcp_helpers.hpp"
 
+#include "ghost/densemat.h"
+#include "ghost/densemat_rm.h"
+#include "ghost/densemat_cm.h"
+
 #ifdef HAVE_BELOS_TSQR
 #  include <Ghost_TsqrAdaptor.hpp>
 #endif // HAVE_BELOS_TSQR
@@ -80,9 +84,16 @@ using ::phist::GhostMV;
       vtraits.nrowsorig=vtraits.nrows;
       ghost_densemat_t* mv_clone;
       ghost_densemat_create(&mv_clone,_mv->context,vtraits);
-      // this allocates the memory for the vector
-      Scalar z=st::zero();
-      mv_clone->fromScalar(mv_clone,(void*)&z);
+      
+      if (mv_clone->traits.storage==GHOST_DENSEMAT_ROWMAJOR)
+      {
+        ghost_densemat_rm_malloc(mv_clone);
+      }
+      else
+      {
+        ghost_densemat_cm_malloc(mv_clone);
+      }
+
       return phist::rcp(mv_clone,true);
     }
 
