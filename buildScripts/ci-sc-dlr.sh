@@ -77,6 +77,9 @@ elif [[ "$PRGENV" = "intel"* ]]; then
   export FC=ifort CC=icc CXX=icpc
 fi
 
+# Make Intel OpenMP and MKL deterministic (e.g. calculate identical results on different MPI procs)
+export KMP_DETERMINISTIC_REDUCTION=1 MKL_CBWR="COMPATIBLE"
+
 # "gcc -fsanitize=address" requires this
 ulimit -v unlimited
 
