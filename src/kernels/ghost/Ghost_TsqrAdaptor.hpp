@@ -167,14 +167,14 @@ namespace ghost {
         params->set ("DistTsqr", *(distTsqr_->getValidParameters ()));
 
         uint64_t cache_size;
-        ghost_machine_outercache_size(&cache_size);
+        ghost_machine_innercache_size(&cache_size);
 
         
-        params->sublist("NodeTsqr").
-                set("Num Tasks", get_num_threads());
+//        params->sublist("NodeTsqr").
+//                set("Num Tasks", get_num_threads());
 
-        params->sublist("NodeTsqr").
-                set("Cache Size Hint",cache_size);
+//        params->sublist("NodeTsqr").
+//                set("Cache Size Hint",cache_size);
 
         defaultParams_ = params;
       }
@@ -336,9 +336,9 @@ namespace ghost {
     prepareNodeTsqr (const MV& mv)
     {
       PHIST_TOUCH(mv);
-      // TODO - we only use the default node here,
+      createNode();
       node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_, 
-                createNode());
+                node_);
     }
 
     /// \brief Finish internode TSQR initialization.
@@ -388,8 +388,8 @@ namespace ghost {
     ghost_densemat_valptr(_A,(void**)&valptr);
                     
     Teuchos::ArrayRCP<ST> values(valptr,0,A_len,false);
-    Teuchos::RCP<node_type> node = createNode();
-    Kokkos::MultiVector<scalar_type, node_type> KMV(node);
+    createNode();
+    Kokkos::MultiVector<scalar_type, node_type> KMV(node_);
     KMV.initializeValues ((size_t)_A->traits.nrows,
                       (size_t)_A->traits.ncols,
                       values,
@@ -423,15 +423,18 @@ namespace ghost {
     return nthreads;
  }
 
- static Teuchos::RCP<node_type> createNode()
+ static Teuchos::RCP<node_type> node_;
+
+ static void createNode()
   {
+    if (node_!=Teuchos::null) return;
     Teuchos::ParameterList nodeParams(node_type::getDefaultParameters());
     int nthreads=get_num_threads();
     nodeParams.set("Num Threads",nthreads);
-    Teuchos::RCP<node_type> node = Teuchos::rcp(new node_type(nodeParams));
+    node_ = Teuchos::rcp(new node_type(nodeParams));
     PHIST_SOUT(PHIST_VERBOSE,"TSQR node type: %s (%d threads)\n",
     node_type::name().c_str(),nthreads);
-    return node;
+    return;
   }
 
   };
