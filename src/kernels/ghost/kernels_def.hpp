@@ -1463,6 +1463,17 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
     //     if either mvecs or sdMats are row-major. 
   bool transV=(V->traits.storage==GHOST_DENSEMAT_ROWMAJOR);
   bool transR=(R->traits.storage==GHOST_DENSEMAT_ROWMAJOR);
+
+  // GHOST states the for views the vector looses its 'view' property,
+  // this is not the behavior the users expects, so return PHIST_NOT_IMPLEMENTED here
+  if( transV )
+  {
+    PHIST_CHK_IERR(*iflag = (V->traits.flags&GHOST_DENSEMAT_VIEW) ? PHIST_NOT_IMPLEMENTED : 0, *iflag);
+  }
+  if( transR )
+  {
+    PHIST_CHK_IERR(*iflag = (R->traits.flags&GHOST_DENSEMAT_VIEW) ? PHIST_NOT_IMPLEMENTED : 0, *iflag);
+  }
   
   if (transR||transV)
   {
