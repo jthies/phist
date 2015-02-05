@@ -170,8 +170,8 @@ namespace ghost {
         ghost_machine_innercache_size(&cache_size);
 
         
-//        params->sublist("NodeTsqr").
-//                set("Num Tasks", get_num_threads());
+        params->sublist("NodeTsqr").
+                set("Num Tasks", 16);
 
 //        params->sublist("NodeTsqr").
 //                set("Cache Size Hint",cache_size);
@@ -432,8 +432,8 @@ namespace ghost {
     int nthreads=get_num_threads();
     nodeParams.set("Num Threads",nthreads);
     node_ = Teuchos::rcp(new node_type(nodeParams));
-    PHIST_SOUT(PHIST_VERBOSE,"TSQR node type: %s (%d threads)\n",
-    node_type::name().c_str(),nthreads);
+    //PHIST_SOUT(PHIST_DEBUG,"TSQR node type: %s (%d threads)\n",
+    //node_type::name().c_str(),nthreads);
     return;
   }
 
