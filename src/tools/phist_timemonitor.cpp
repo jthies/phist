@@ -66,6 +66,7 @@ namespace phist_TimeMonitor
       maxTime.at(i) = _timingResults[fcnName.at(i)].maxTime;
       maxTotalTime.at(i) = _timingResults[fcnName.at(i)].totalTime;
     }
+    delete[] strBuf;
 
     // reductions over mpi processes
     tmp = minTime;
