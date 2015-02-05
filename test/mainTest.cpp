@@ -15,6 +15,9 @@
 #include "kernels/phist_kernels.h"
 #ifdef PHIST_KERNEL_LIB_GHOST
 #include "ghost/phist_ghost_macros.hpp"
+#else
+#define PHIST_GHOST_TASK_BEGIN
+#define PHIST_GHOST_TASK_END
 #endif
 
 GTEST_API_ int main(int argc, char **argv) {
