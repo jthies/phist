@@ -374,6 +374,7 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
     }
   }
 
+  delete[] yglob;
   PHIST_CHK_IERR(SUBR(mvec_delete)(x_i, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vj, iflag), *iflag);
 }

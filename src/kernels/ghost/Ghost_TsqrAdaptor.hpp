@@ -429,8 +429,8 @@ namespace ghost {
     int nthreads=get_num_threads();
     nodeParams.set("Num Threads",nthreads);
     Teuchos::RCP<node_type> node = Teuchos::rcp(new node_type(nodeParams));
-    PHIST_SOUT(PHIST_VERBOSE,"TSQR node type: %s (%d threads)\n",
-    node_type::name().c_str(),nthreads);
+    //PHIST_SOUT(PHIST_VERBOSE,"TSQR node type: %s (%d threads)\n",
+    //node_type::name().c_str(),nthreads);
     return node;
   }
 

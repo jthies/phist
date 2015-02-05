@@ -837,6 +837,7 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (Hvv, iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (HvV, iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (HVv, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( sdMat_delete ) (Hh,  iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (H,   iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (Hful,iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (Htmp,iflag), *iflag);

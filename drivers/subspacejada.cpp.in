@@ -270,6 +270,7 @@ int main(int argc, char** argv)
   delete opA;
   // delete matrix
   PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_comm_delete(comm,&ierr),ierr);
 
   PHIST_MAIN_TASK_END
 
