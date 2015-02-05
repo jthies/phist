@@ -42,6 +42,7 @@ public:
  MPI_Comm mpi_comm_;
  unsigned int rseed_;//random number seed
  int iflag_, mpi_rank_, mpi_size_;
+ KernelTest() : kernelTestSetupCounter_(0) {}
 
  //! these flags determine how to traverse arrays
  #ifdef PHIST_MVECS_ROW_MAJOR
@@ -66,53 +67,58 @@ public:
 	 */
 	virtual void SetUp() 
 	{
+    if( kernelTestSetupCounter_++ == 0 )
+    {
 #ifdef PHIST_HAVE_MPI	
-	mpi_comm_=MPI_COMM_WORLD;
-	phist_comm_create(&comm_,&iflag_);
-	ASSERT_EQ(0,iflag_);
-        iflag_=MPI_Comm_rank(mpi_comm_,&mpi_rank_);
-	ASSERT_EQ(0,iflag_);
-        iflag_=MPI_Comm_size(mpi_comm_,&mpi_size_);
-	ASSERT_EQ(0,iflag_);
+      mpi_comm_=MPI_COMM_WORLD;
+      phist_comm_create(&comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_=MPI_Comm_rank(mpi_comm_,&mpi_rank_);
+      ASSERT_EQ(0,iflag_);
+      iflag_=MPI_Comm_size(mpi_comm_,&mpi_size_);
+      ASSERT_EQ(0,iflag_);
 #else
-        mpi_comm_=-1;
-        mpi_rank_=0;
-        mpi_size_=1;
+      mpi_comm_=-1;
+      mpi_rank_=0;
+      mpi_size_=1;
 #endif
 #ifdef PHIST_HAVE_SP
-	phist_Stype_avail(&iflag_); haveS_=(iflag_==0);
-	phist_Ctype_avail(&iflag_); haveC_=(iflag_==0);
+      phist_Stype_avail(&iflag_); haveS_=(iflag_==0);
+      phist_Ctype_avail(&iflag_); haveC_=(iflag_==0);
 #else
-        haveS_=false;
-        haveC_=false;
+      haveS_=false;
+      haveC_=false;
 #endif
-	phist_Dtype_avail(&iflag_); haveD_=(iflag_==0);
-	phist_Ztype_avail(&iflag_); haveZ_=(iflag_==0);
+      phist_Dtype_avail(&iflag_); haveD_=(iflag_==0);
+      phist_Ztype_avail(&iflag_); haveZ_=(iflag_==0);
 #if 0	
-	rdbuf_bak = std::cout.rdbuf();
-	e_rdbuf_bak = std::cerr.rdbuf();
-	cout=new std::ostream(rdbuf_bak);
-	cerr=new std::ostream(e_rdbuf_bak);
-	if (mpi_rank_!=0) // this doesn't really seem to work as expected
-	  {
-	  std::cout.rdbuf(NULL);
-	  std::cerr.rdbuf(NULL);
-	  }
+      rdbuf_bak = std::cout.rdbuf();
+      e_rdbuf_bak = std::cerr.rdbuf();
+      cout=new std::ostream(rdbuf_bak);
+      cerr=new std::ostream(e_rdbuf_bak);
+      if (mpi_rank_!=0) // this doesn't really seem to work as expected
+      {
+        std::cout.rdbuf(NULL);
+        std::cerr.rdbuf(NULL);
+      }
 #else
-        cout = &std::cout;
-        cerr = &std::cerr;
+      cout = &std::cout;
+      cerr = &std::cerr;
 #endif	
-	// initialize random number sequence in a reproducible way (yet
-	// with a different seed on each MPI process)
-	rseed_ = (unsigned int)(mpi_rank_*77+42);
-	srand(rseed_);
+      // initialize random number sequence in a reproducible way (yet
+      // with a different seed on each MPI process)
+      rseed_ = (unsigned int)(mpi_rank_*77+42);
+      srand(rseed_);
+    }
 	}
 
 virtual void TearDown()
   {
-  if (false) // we do not delete the comm because it may be shared between
-             // base classes of a derived class, so it is not clear when to
-             // delete it without a smart pointer concept.
+  //if (false) // we do not delete the comm because it may be shared between
+  //           // base classes of a derived class, so it is not clear when to
+  //           // delete it without a smart pointer concept.
+  // should work if we count correctly
+  if( --kernelTestSetupCounter_ == 0 )
     {
     phist_comm_delete(comm_,&iflag_);
     ASSERT_EQ(0,iflag_);
@@ -135,6 +141,8 @@ virtual void TearDown()
   return ::testing::AssertionSuccess();
   }
 
+private:
+ int kernelTestSetupCounter_;
 };
 
 #endif

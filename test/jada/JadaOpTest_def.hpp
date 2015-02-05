@@ -55,12 +55,12 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         SUBR(sdMat_delete)(Rtmp,&iflag_);
         ASSERT_EQ(0,iflag_);
 
-        SUBR(read_mat)("sprandn",nglob_,&A1_,&iflag_);
+        SUBR(read_mat)("sprandn",comm_,nglob_,&A1_,&iflag_);
         ASSERT_EQ(0,iflag_);
         opA1_ = new TYPE(op);
         SUBR(op_wrap_sparseMat)(opA1_, A1_, &iflag_);
         ASSERT_EQ(0,iflag_);
-        SUBR(read_mat)("speye",nglob_,&I_,&iflag_);
+        SUBR(read_mat)("speye",comm_,nglob_,&I_,&iflag_);
         ASSERT_EQ(0,iflag_);
         opI_ = new TYPE(op);
         SUBR(op_wrap_sparseMat)(opI_, I_, &iflag_);
@@ -82,6 +82,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
         SUBR(mvec_create)(&q_,map_,_NVP_,&iflag_);
         ASSERT_EQ(0,iflag_);
+        if( sigma_ )
+          delete[] sigma_;
         sigma_ = new _ST_[_NV_];
         for(int i = 0; i < _NV_; i++)
           sigma_[i] = st::prand();

@@ -21,7 +21,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
       if (typeImplemented_)
       {
-        SUBR(read_mat)(MATNAME,nglob_,&A_,&iflag_);
+        SUBR(read_mat)(MATNAME,comm_,nglob_,&A_,&iflag_);
         ASSERT_EQ(0,iflag_);
         ASSERT_TRUE(A_ != NULL);
         opA_ = new TYPE(op);

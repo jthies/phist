@@ -52,7 +52,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
         shift_r_[3]=0.1; shift_i_[3]=0.1;
       
         // read matrices
-        SUBR(read_mat)(MATNAME,n_,&A_,&iflag_);
+        SUBR(read_mat)(MATNAME,comm_,n_,&A_,&iflag_);
         ASSERT_EQ(0,iflag_);
         ASSERT_TRUE(A_ != NULL);
 

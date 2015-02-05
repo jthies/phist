@@ -42,9 +42,9 @@ public:
       SUBR(sdMat_delete)(Rtmp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(read_mat)("sprandn",nglob_,&A1_,&iflag_);
+      SUBR(read_mat)("sprandn",comm_,nglob_,&A1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(read_mat)("sprandn_nodiag",nglob_,&A2_,&iflag_);
+      SUBR(read_mat)("sprandn_nodiag",comm_,nglob_,&A2_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
       if (A1_==NULL || A2_==NULL)

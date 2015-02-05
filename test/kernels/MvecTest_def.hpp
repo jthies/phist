@@ -488,6 +488,11 @@ public:
       ASSERT_REAL_EQ(mt::zero(), outerErr);
       ASSERT_REAL_EQ(mt::zero(), viewErr);
       ASSERT_REAL_EQ(mt::zero(), innerErr);
+
+      SUBR(mvec_delete)(view2, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_delete)(view, &iflag_);
+      ASSERT_EQ(0,iflag_);
     }
   }
 
@@ -553,6 +558,9 @@ public:
         {
         ASSERT_NEAR(norms_V1[j],norms_V1copy[j-jmin], 100*mt::eps());
         }
+
+      SUBR(mvec_delete)(v1_copy,&iflag_);
+      ASSERT_EQ(0,iflag_);
       }
     }
 

@@ -16,7 +16,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
     
     if (typeImplemented_)
       {
-      SUBR(read_mat)("sprandsym",nglob_,&A1_,&iflag_);
+      SUBR(read_mat)("sprandsym",comm_,nglob_,&A1_,&iflag_);
       if ( A1_==NULL )
         {
         haveMats_=false;

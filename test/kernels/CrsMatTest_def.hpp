@@ -12,8 +12,8 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>,
-                 public KernelTestWithSdMats<_ST_,_NV_,_NV_>
+class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
+                 public virtual KernelTestWithSdMats<_ST_,_NV_,_NV_>
 {
 
   public:
@@ -31,16 +31,16 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>,
     
     if (typeImplemented_)
     {
-      SUBR(read_mat)("speye",nglob_,&A1_,&iflag_);
+      SUBR(read_mat)("speye",comm_,nglob_,&A1_,&iflag_);
 #ifndef SKIP_ZERO_MAT
-      SUBR(read_mat)("spzero",nglob_,&A0_,&iflag_);
+      SUBR(read_mat)("spzero",comm_,nglob_,&A0_,&iflag_);
 #else
       A0_=A1_;
 #endif
-      SUBR(read_mat)("sprandn",nglob_,&A2_,&iflag_);
-      SUBR(read_mat)("sprandn_nodiag",nglob_,&A3_,&iflag_);
+      SUBR(read_mat)("sprandn",comm_,nglob_,&A2_,&iflag_);
+      SUBR(read_mat)("sprandn_nodiag",comm_,nglob_,&A3_,&iflag_);
 #ifndef SKIP_ZERO_MAT
-      SUBR(read_mat)("spshift",nglob_,&A4_,&iflag_);
+      SUBR(read_mat)("spshift",comm_,nglob_,&A4_,&iflag_);
 #else
       A4_ = A1_;
 #endif
@@ -576,6 +576,11 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       SUBR(mvec_print)(vec1_,&iflag_);
 #endif
       ASSERT_REAL_EQ(mt::one(),ArraysEqual(v_in_vp,v_out_vp,nloc_,nv,lda_,stride_,vflag_));
+
+      SUBR(mvec_delete)(v_out,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_delete)(v_in,&iflag_);
+      ASSERT_EQ(0,iflag_);
     }
     else
     {
@@ -691,6 +696,11 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
           }
         }
       }
+
+      SUBR(mvec_delete)(orderedVec,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      phist_map_delete(map,&iflag_);
+      ASSERT_EQ(0,iflag_);
     }
   }
 #endif
@@ -877,9 +887,13 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
         9.6675923086516082, 34.667592308651606, 59.667592308651606, 84.667592308651621 };
 #endif
 #else
-  PHIST_SOUT(PHIST_INFO,"skipping test, no data available\n");
-  ST* precalc_result=NULL;
-  return;
+      PHIST_SOUT(PHIST_INFO,"skipping test, no data available\n");
+      ST* precalc_result=NULL;
+      SUBR(mvec_delete)(orderedVec,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      phist_map_delete(map,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      return;
 #endif
       // copy to orderedVec
       SUBR(mvec_to_mvec)(vec2_, orderedVec, &iflag_);
@@ -896,6 +910,11 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
         for(int j = 0; j < nvec_; j++)
           err = std::max(err, st::abs( precalc_result[(ilower+i)*nvec_+j] - orderedVec_vp[VIDX(i,j,lda)] ));
       ASSERT_NEAR(err, mt::zero(), mt::sqrt(mt::eps()));
+
+      SUBR(mvec_delete)(orderedVec,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      phist_map_delete(map,&iflag_);
+      ASSERT_EQ(0,iflag_);
     }
   }
 

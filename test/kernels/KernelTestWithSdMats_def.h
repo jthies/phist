@@ -41,10 +41,10 @@ virtual void TearDown()
   {
   if (this->typeImplemented_)
     {
-    SUBR(sdMat_delete)(mat1_,&this->iflag_);
-    SUBR(sdMat_delete)(mat2_,&this->iflag_);
-    SUBR(sdMat_delete)(mat3_,&this->iflag_);
     SUBR(sdMat_delete)(mat4_,&this->iflag_);
+    SUBR(sdMat_delete)(mat3_,&this->iflag_);
+    SUBR(sdMat_delete)(mat2_,&this->iflag_);
+    SUBR(sdMat_delete)(mat1_,&this->iflag_);
     }
   KernelTestWithType< _ST_ >::TearDown();
   KernelTest::TearDown();

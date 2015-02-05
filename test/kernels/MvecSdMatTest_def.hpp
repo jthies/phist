@@ -3,8 +3,8 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public KernelTestWithType< _ST_ >,
-                 public KernelTestWithMap<_N_>
+class CLASSNAME: public virtual KernelTestWithType< _ST_ >,
+                 public virtual KernelTestWithMap<_N_>
 {
 
 public:
@@ -332,13 +332,16 @@ public:
       V2Test::PrintVector(*cout,"result_out_of_place",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
   
-        TYPE(mvec_ptr) V_cols=NULL;
+      TYPE(mvec_ptr) V_cols=NULL;
       SUBR(mvec_view_block)(V1_,&V_cols,0,k_-1,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       ASSERT_REAL_EQ(mt::one(),MvecsEqual(V_cols,V2_));
    
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(mvec_delete)(V_cols,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }
@@ -426,6 +429,10 @@ public:
       ASSERT_REAL_EQ(mt::one(),ArrayEqual( &V1_vp_[VIDX(0,jmax+1,ldaV1_)],
         nloc_,m_-jmax-1,ldaV1_,stride_,st::one(),vflag_));
 
+      SUBR(sdMat_delete)(M,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_delete)(V,&iflag_);
+      ASSERT_EQ(0,iflag_);
     }
   }
 

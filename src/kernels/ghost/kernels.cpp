@@ -77,6 +77,11 @@ typedef struct ghost_map_t
   ghost_densemat_traits_t vtraits_template;
   ghost_permutation_t *permutation;
   } ghost_map_t;
+#ifdef TESTING
+// workaround to delete all maps when the livetime of the corresponding object ends (it will spam a leak report otherwise!)
+#include <map>
+std::map<const void*, std::vector<ghost_map_t*> > phist_ghost_map_MAP;
+#endif
 
 // initialize ghost
 extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
@@ -235,9 +240,8 @@ extern "C" void phist_map_delete(map_ptr_t vmap, int *iflag)
   {
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(ghost_map_t,map,vmap,*iflag);
-  // this is problematic because the object may be shared, so we don't delete
-  // anything right now (it's just a tiny amount of data to leak for now)
-  // delete map->ctx;
+  // should be safe if calling order is respected? (e.g. create map, create stuff with map, destroy stuff, destroy map)
+  ghost_context_destroy(map->ctx);
   delete map;
   vmap=NULL;
   }

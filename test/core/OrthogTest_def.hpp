@@ -3,8 +3,8 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public KernelTestWithType< _ST_ >,
-                 public KernelTestWithMap<_N_>
+class CLASSNAME: public virtual KernelTestWithType< _ST_ >,
+                 public virtual KernelTestWithMap<_N_>
   {
 
 public:
@@ -344,6 +344,18 @@ return;
 #endif
       ASSERT_REAL_EQ(mt::one(),errR1);
       ASSERT_REAL_EQ(mt::one(),errR2);
+
+      SUBR(sdMat_delete)(R0_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      R0_=NULL;
+      SUBR(sdMat_delete)(R1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      R1_=NULL;
+      SUBR(sdMat_delete)(R2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      R2_=NULL;
+      SUBR(sdMat_delete)(R,&iflag_);
+      ASSERT_EQ(0,iflag_);
     }
   }
 
@@ -439,6 +451,18 @@ return;
 #endif    
       ASSERT_REAL_EQ(mt::one(),errR1);
       ASSERT_REAL_EQ(mt::one(),errR2);
+
+      SUBR(sdMat_delete)(R0_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      R0_=NULL;
+      SUBR(sdMat_delete)(R1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      R1_=NULL;
+      SUBR(sdMat_delete)(R2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      R2_=NULL;
+      SUBR(sdMat_delete)(R,&iflag_);
+      ASSERT_EQ(0,iflag_);
     }
   }
 
@@ -466,6 +490,12 @@ return;
       doOrthogTests(V, W, Q_, R0_, R1_, R2_, 
         0, 0, m_, m_+k_);
       
+      SUBR(mvec_delete)(V,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_delete)(W,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_delete)(V_big,&iflag_);
+      ASSERT_EQ(0,iflag_);
     }
   }
 
@@ -492,5 +522,12 @@ return;
       // test orthog routine, expect V and [V, W] to have rank 1
       doOrthogTests(V, W, Q_, R0_, R1_, R2_, 
         m_>1? 1:0, 1, 1, m_);
+
+      SUBR(mvec_delete)(V,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_delete)(W,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_delete)(V_big,&iflag_);
+      ASSERT_EQ(0,iflag_);
     }
   }

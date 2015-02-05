@@ -3,8 +3,8 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>,
-                 public KernelTestWithSdMats<_ST_,_NV_,_NV_> 
+class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
+                 public virtual KernelTestWithSdMats<_ST_,_NV_,_NV_> 
   {
 
 public:

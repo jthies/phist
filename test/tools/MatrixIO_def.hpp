@@ -1,9 +1,7 @@
-void SUBR(read_mat)(const char* filebase,int nglob,TYPE(sparseMat_ptr) *ptr, int* iflag)
+void SUBR(read_mat)(const char* filebase,const_comm_ptr_t comm, int nglob,TYPE(sparseMat_ptr) *ptr, int* iflag)
 {
   int _iflag;
   *ptr = NULL;
-  comm_ptr_t comm;
-  phist_comm_create(&comm,&_iflag);
   char tpc = ::phist::ScalarTraits< _ST_ >::type_char();
   char mmfile[256],hbfile[256],binfile[256],crsfile[256];
   sprintf(mmfile,"%c%s%d.mm",tpc,filebase,nglob);

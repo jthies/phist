@@ -176,6 +176,9 @@ public:
 #endif
       
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(&mat1_vp_[MIDX(imin,jmin,lda)],imax-imin+1,jmax-jmin+1,lda,stride,val,mflag_));
+
+      SUBR(sdMat_delete)(m1_view,&iflag_);
+      ASSERT_EQ(0,iflag_);
       }
     }
 
@@ -248,6 +251,11 @@ public:
           }
         }
       }
+
+      SUBR(sdMat_delete)(view2,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(view,&iflag_);
+      ASSERT_EQ(0,iflag_);
     }
   }
 
@@ -354,6 +362,9 @@ public:
       SUBR(sdMat_from_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(&mat1_vp_[MIDX(imin,jmin,m_lda_)],imax-imin+1,jmax-jmin+1,m_lda_,stride,val,mflag_));
+
+      SUBR(sdMat_delete)(m1_copy,&iflag_);
+      ASSERT_EQ(0,iflag_);
       }
     }
 

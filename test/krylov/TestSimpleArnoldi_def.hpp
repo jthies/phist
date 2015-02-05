@@ -12,8 +12,8 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
-                 public KernelTestWithVectors<_ST_,_N_,_M_+BLOCK_SIZE1>
+class CLASSNAME: public virtual KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
+                 public virtual KernelTestWithVectors<_ST_,_N_,_M_+BLOCK_SIZE1>
 {
 
   public:
@@ -50,17 +50,17 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
       if( typeImplemented_ )
       {
         // read matrices
-        SUBR(read_mat)("speye",nglob_,&Aeye_,&iflag_);
+        SUBR(read_mat)("speye",comm_,nglob_,&Aeye_,&iflag_);
         ASSERT_EQ(0,iflag_);
 #ifndef SKIP_ZERO_MAT
-        SUBR(read_mat)("spzero",nglob_,&Azero_,&iflag_);
+        SUBR(read_mat)("spzero",comm_,nglob_,&Azero_,&iflag_);
         ASSERT_EQ(0,iflag_);
 #else
         Azero_=NULL;
 #endif        
-        SUBR(read_mat)("sprandn",nglob_,&Arand_,&iflag_);
+        SUBR(read_mat)("sprandn",comm_,nglob_,&Arand_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        SUBR(read_mat)("sprandn_nodiag",nglob_,&Arand_nodiag_,&iflag_);
+        SUBR(read_mat)("sprandn_nodiag",comm_,nglob_,&Arand_nodiag_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
         ASSERT_TRUE(Aeye_ != NULL);
