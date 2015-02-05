@@ -176,6 +176,7 @@ extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, const_
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_sparsemat_t,A,vA,*iflag);
+  //!@TODO: cache this as it never gets deleted otherwise!
   ghost_map_t* map = new ghost_map_t;
   map->ctx = A->context;
   map->vtraits_template=phist_default_vtraits();
@@ -191,6 +192,7 @@ extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, const_
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_sparsemat_t,A,vA,*iflag);
+  //!@TODO: cache this as it never gets deleted otherwise!
   ghost_map_t* map = new ghost_map_t;
   map->ctx = A->context;
   map->vtraits_template=phist_default_vtraits();
@@ -344,6 +346,7 @@ extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, const_map_ptr_t* vma
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_densemat_t,V,vV,*iflag);
+  //!@TODO: cache this as it never gets deleted otherwise!
   ghost_map_t* map = new ghost_map_t;
   map->ctx=V->context; 
   map->vtraits_template=V->traits;
@@ -806,7 +809,11 @@ extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) vA, int* iflag)
   *iflag=0;
   if (vA==NULL) return;
   PHIST_CAST_PTR_FROM_VOID(ghost_sparsemat_t,A,vA,*iflag);
+  ghost_context_t *ctx = A->context;
+  ghost_sparsemat_traits_t *mtraits = A->traits;
   A->destroy(A);
+  delete mtraits;
+  ghost_context_destroy(ctx);
 }
 
 //!
@@ -826,7 +833,12 @@ extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) vM, int* iflag)
   *iflag=0;
   if (vM==NULL) return;
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*iflag);
+  ghost_context_t *ctx = NULL;
+  if( !(M->traits.flags & GHOST_DENSEMAT_VIEW) )
+    ctx = M->context;
   M->destroy(M);
+  if( ctx != NULL )
+    ghost_context_destroy(ctx);
 }
 
 //@}
