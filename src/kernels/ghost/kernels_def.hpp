@@ -1474,19 +1474,20 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   ghost_densemat_traits_t vtraits = V->traits;
     vtraits.storage=GHOST_DENSEMAT_COLMAJOR;  
     vtraits.flags = (ghost_densemat_flags_t)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_VIEW);
+    //vtraits.flags = (ghost_densemat_flags_t)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_PERMUTED); // melven: do we need this?
     vtraits.ncolsorig=vtraits.ncols;
     vtraits.nrowsorig=vtraits.nrows;
   ghost_densemat_create(&Vcopy,V->context,vtraits);
-  ghost_densemat_create(&Qcopy,V->context,vtraits);
+  //ghost_densemat_create(&Qcopy,V->context,vtraits);
       
   // this allocates the memory for the vector, copies and memTransposes the data
   PHIST_CHK_GERR(Vcopy->fromVec(Vcopy,V,0,0),*iflag);
-  PHIST_CHK_GERR(Qcopy->fromVec(Qcopy,Vcopy,0,0),*iflag);
+  //PHIST_CHK_GERR(Qcopy->fromVec(Qcopy,Vcopy,0,0),*iflag);
 
   // wrapper class for ghost_densemat_t for calling Belos.
   // The wrapper does not own the vector so it doesn't destroy it.
   phist::GhostMV mv_V(Vcopy,false);
-  phist::GhostMV mv_Q(Qcopy,false);
+  //phist::GhostMV mv_Q(Qcopy,false);
     
   int nrows = R->traits.nrows;
   ncols = R->traits.ncols;
@@ -1524,13 +1525,13 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   }
 #endif
 
-  PHIST_TRY_CATCH(rank = tsqr.normalizeOutOfPlace(mv_V,mv_Q,R_view),*iflag);
+  PHIST_TRY_CATCH(rank = tsqr.normalize(mv_V,R_view),*iflag);
   PHIST_DEB("V has %d columns and rank %d\n",ncols,rank);
-  *iflag = ncols-rank;// return positive number if rank not full.
   // copy (and memTranspose back if necessary)
-  PHIST_CHK_GERR(V->fromVec(V,Qcopy,0,0),*iflag);
+  PHIST_CHK_GERR(V->fromVec(V,Vcopy,0,0),*iflag);
   Vcopy->destroy(Vcopy);
-  Qcopy->destroy(Qcopy);
+  //Qcopy->destroy(Qcopy);
+  *iflag = ncols-rank;// return positive number if rank not full.
 #else
   *iflag=-99; // no Trilinos, no TSQR, no mvec_QR (right now)
 #endif
