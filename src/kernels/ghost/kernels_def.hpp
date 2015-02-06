@@ -1464,7 +1464,6 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   if( transR )
   {
     PHIST_CHK_IERR(*iflag=-99,*iflag);
-    return;
   }
     
   // Here the actual TSQR call with col-major V and R begins...

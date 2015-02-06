@@ -16,7 +16,15 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
     
     if (typeImplemented_)
       {
-      SUBR(read_mat)("sprandsym",comm_,nglob_,&A1_,&iflag_);
+      if( nglob_ == 20 )
+      {
+        SUBR(read_mat)("symmMat",comm_,nglob_,&A1_,&iflag_);
+      }
+      else
+      {
+        SUBR(read_mat)("sprandsym",comm_,nglob_,&A1_,&iflag_);
+      }
+      ASSERT_EQ(0,iflag_);
       if ( A1_==NULL )
         {
         haveMats_=false;
@@ -124,6 +132,10 @@ int delete_mat(TYPE(sparseMat_ptr) A)
       SUBR(sdMat_create)(&VtAV,_NV_,_NV_,comm_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvecT_times_mvec)(st::one(),vec1_,vec2_,st::zero(),VtAV,&iflag_);
+#ifdef TESTING
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_print)(VtAV,&iflag_);
+#endif
       ASSERT_EQ(0,iflag_);
 
       SUBR(sdMat_from_device)(VtAV,&iflag_);

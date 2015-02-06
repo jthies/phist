@@ -387,7 +387,8 @@ void SUBR(mvec_QB)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* nrmsV, int *iflag)
       int dim0=k;
       int return_value;
       // try a couple of times to get a full rank
-      // orthogonal matrix, otherwise just give up
+      // orthogonal matrix, otherwise just give up.
+      // We do at least 2 sweeps for robustness' sake.
       for (int i=0;i<3;i++)
       {
         // use fallback kernel: SVQB
@@ -396,7 +397,7 @@ void SUBR(mvec_QB)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* nrmsV, int *iflag)
         nrmsV_ptr=dummy;
         dim0=*iflag;
         if (i==0) return_value=dim0;
-        if (dim0==0) break;
+        else if (dim0==0) break;
         TYPE(mvec_ptr) V0=NULL;
         PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&V0,0,dim0-1,iflag),*iflag);
         PHIST_CHK_IERR(SUBR(mvec_random)(V0,iflag),*iflag);
