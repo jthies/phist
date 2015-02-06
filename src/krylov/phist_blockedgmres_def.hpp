@@ -525,7 +525,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
     // check convergence
     MT relres = S[i]->normR_ / S[i]->normR0_;
     MT absres = S[i]->normR_;
-    if( S[i]->normR0_ != -mt::one() && ( absres < 100*st::eps() || relres < S[i]->tol ) )
+    if( S[i]->normR0_ != -mt::one() && ( absres < 1000*st::eps() || relres < S[i]->tol ) )
     {
       S[i]->status = 0; // mark as converged
       anyConverged++;
@@ -836,7 +836,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       // check convergence
       MT relres = S[i]->normR_ / S[i]->normR0_;
       MT absres = S[i]->normR_;
-      if( absres < 100*st::eps() || relres < S[i]->tol )
+      if( absres < 1000*st::eps() || relres < S[i]->tol )
       {
         S[i]->status = 0; // mark as converged
         anyConverged++;
