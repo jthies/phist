@@ -1472,7 +1472,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   // call the underlying normalizeOutOfPlace function directly.
   ghost_densemat_t* Vcopy=NULL, *Qcopy=NULL;
   ghost_densemat_traits_t vtraits = V->traits;
-    vtraits.storage=GHOST_DENSEMAT_ROWMAJOR;  
+    vtraits.storage=GHOST_DENSEMAT_COLMAJOR;  
     vtraits.flags = (ghost_densemat_flags_t)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_VIEW);
     vtraits.ncolsorig=vtraits.ncols;
     vtraits.nrowsorig=vtraits.nrows;
