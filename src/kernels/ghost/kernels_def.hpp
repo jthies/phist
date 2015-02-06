@@ -1456,7 +1456,6 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   PHIST_DEB("mvec_QR: multi-vector case\n");
 
 #if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
-    *iflag=-99; /* disable TSQR for the moment */
     //TSQR for row major storage not available yet
   bool transV=(V->traits.storage==GHOST_DENSEMAT_ROWMAJOR);
   bool transR=(R->traits.storage==GHOST_DENSEMAT_ROWMAJOR);
@@ -1530,6 +1529,8 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   *iflag = ncols-rank;// return positive number if rank not full.
   // copy (and memTranspose back if necessary)
   PHIST_CHK_GERR(V->fromVec(V,Qcopy,0,0),*iflag);
+  Vcopy->destroy(Vcopy);
+  Qcopy->destroy(Qcopy);
 #else
   *iflag=-99; // no Trilinos, no TSQR, no mvec_QR (right now)
 #endif
