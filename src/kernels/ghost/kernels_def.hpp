@@ -1043,7 +1043,13 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,X,vX,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,Y,vY,*iflag);
   ST a=alpha, b=beta;
-  if (alpha==st::zero())
+  if (alpha==st::one() && beta==st::zero())
+  {
+    // copy operation
+      PHIST_DEB("copy Y=X");
+    PHIST_CHK_GERR(Y->fromVec(Y,X,0,0),*iflag);
+  }
+  else if (alpha==st::zero())
   {
     if (beta!=st::one())
     {

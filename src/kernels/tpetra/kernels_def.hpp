@@ -824,13 +824,22 @@ int nvec = V->getNumVectors();
 extern "C" void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vX,
                             _ST_ beta,  TYPE(mvec_ptr)       vY, 
                             int* iflag)
-  {
+{
+#include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,X,vX,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,Y,vY,*iflag);
-  PHIST_TRY_CATCH(Y->update(alpha,*X,beta),*iflag);
+  // special case: copy operation
+  if (alpha==st::one()&&beta==st::zero())
+  {
+    *Y=*X;
   }
+  else
+  {
+    PHIST_TRY_CATCH(Y->update(alpha,*X,beta),*iflag);
+  }
+}
 
 //! y[i]=alpha[i]*x[i]+beta*y[i], i=1..nvec
 extern "C" void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) vX,
