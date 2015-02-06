@@ -1412,7 +1412,7 @@ PHIST_GHOST_TASK_END
 //! columns of Q are an orthogonal basis of the column space of V, the  
 //! remaining columns form a basis for the null space.  
 extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
-  {
+{
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
@@ -1450,80 +1450,45 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   PHIST_DEB("mvec_QR: multi-vector case\n");
 
 #if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
-  if (
-  (V->traits.flags&GHOST_DENSEMAT_SCATTERED) ||
-  (R->traits.flags&GHOST_DENSEMAT_SCATTERED))
-  {
-    PHIST_SOUT(PHIST_ERROR,"mvec_QR: cannot handle scattered vectors\n");
-    *iflag=-1; // can't handle non-constant stride
-    return;
-  }//case vectors scattered: not implemented!
-
-    //TSQR for row major storage not available yet - explicit memtranspose
-    //     if either mvecs or sdMats are row-major. 
+    *iflag=-99; /* disable TSQR for the moment */
+    //TSQR for row major storage not available yet
   bool transV=(V->traits.storage==GHOST_DENSEMAT_ROWMAJOR);
   bool transR=(R->traits.storage==GHOST_DENSEMAT_ROWMAJOR);
 
-  // GHOST states the for views the vector looses its 'view' property,
-  // this is not the behavior the users expects, so return PHIST_NOT_IMPLEMENTED here
-  if( transV )
-  {
-    PHIST_CHK_IERR(*iflag = (V->traits.flags&GHOST_DENSEMAT_VIEW) ? PHIST_NOT_IMPLEMENTED : 0, *iflag);
-  }
   if( transR )
   {
-    PHIST_CHK_IERR(*iflag = (R->traits.flags&GHOST_DENSEMAT_VIEW) ? PHIST_NOT_IMPLEMENTED : 0, *iflag);
-  }
-  
-  if (transR||transV)
-  {
-    PHIST_DEB("we need to make the memory layout of V and/or R conform with TSQR\n");
-    if (transV)
-    {
-      PHIST_CXX_TIMER("memtranspose for TSQR");
-      PHIST_DEB("memtranspose V\n");
-      PHIST_CHK_GERR(V->memtranspose(V),*iflag);
-    }
-    if (transR)
-    {
-      PHIST_CXX_TIMER("memtranspose for TSQR");
-      PHIST_DEB("memtranspose R\n");
-      PHIST_CHK_GERR(R->memtranspose(R),*iflag);
-    }
-  
-    // do not change iflag after this call because
-    // it may carry rank information
-    int iflag_final;
-    SUBR(mvec_QR)(V,R,&iflag_final);
-    if (transV)
-    {
-      PHIST_CXX_TIMER("memtranspose for TSQR");
-      PHIST_DEB("memtranspose back V\n");
-      PHIST_CHK_GERR(V->memtranspose(V),*iflag);
-    }
-    if (transR)
-    {
-      PHIST_CXX_TIMER("memtranspose for TSQR");
-      PHIST_DEB("memtranspose back R\n");
-      PHIST_CHK_GERR(R->memtranspose(R),*iflag);
-    }
-    *iflag=iflag_final;
+    PHIST_CHK_IERR(*iflag=-99,*iflag);
     return;
-  }// need memtranspose of V or R
-  
+  }
+    
   // Here the actual TSQR call with col-major V and R begins...
+  
+  // TSQR does not do in-place QR, normalize copies the vector. So instead
+  // we copy it ourelves (and memtranspose if in row-major order) and then
+  // call the underlying normalizeOutOfPlace function directly.
+  ghost_densemat_t* Vcopy=NULL, *Qcopy=NULL;
+  ghost_densemat_traits_t vtraits = V->traits;
+    vtraits.storage=GHOST_DENSEMAT_ROWMAJOR;  
+    vtraits.flags = (ghost_densemat_flags_t)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_VIEW);
+    vtraits.ncolsorig=vtraits.ncols;
+    vtraits.nrowsorig=vtraits.nrows;
+  ghost_densemat_create(&Vcopy,V->context,vtraits);
+  ghost_densemat_create(&Qcopy,V->context,vtraits);
+      
+  // this allocates the memory for the vector, copies and memTransposes the data
+  PHIST_CHK_GERR(Vcopy->fromVec(Vcopy,V,0,0),*iflag);
+  PHIST_CHK_GERR(Qcopy->fromVec(Qcopy,Vcopy,0,0),*iflag);
 
   // wrapper class for ghost_densemat_t for calling Belos.
   // The wrapper does not own the vector so it doesn't destroy it.
-  phist::GhostMV mv_V(V,false);
+  phist::GhostMV mv_V(Vcopy,false);
+  phist::GhostMV mv_Q(Qcopy,false);
     
-#ifdef TESTING
   int nrows = R->traits.nrows;
   ncols = R->traits.ncols;
     
   PHIST_CHK_IERR(*iflag=nrows-ncols,*iflag);
   PHIST_CHK_IERR(*iflag=nrows-(V->traits.ncols),*iflag);
-#endif
 
   PHIST_DEB("do TSQR on col-major ghost data structures\n");
   PHIST_DEB("create Teuchos view of R\n");
@@ -1555,14 +1520,16 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   }
 #endif
 
-  PHIST_TRY_CATCH(rank = tsqr.normalize(mv_V,R_view),*iflag);
+  PHIST_TRY_CATCH(rank = tsqr.normalizeOutOfPlace(mv_V,mv_Q,R_view),*iflag);
   PHIST_DEB("V has %d columns and rank %d\n",ncols,rank);
   *iflag = ncols-rank;// return positive number if rank not full.
+  // copy (and memTranspose back if necessary)
+  PHIST_CHK_GERR(V->fromVec(V,Qcopy,0,0),*iflag);
 #else
   *iflag=-99; // no Trilinos, no TSQR, no mvec_QR (right now)
 #endif
   return;
-  }
+}
 
 
 //!@}
