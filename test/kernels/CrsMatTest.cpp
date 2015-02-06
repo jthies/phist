@@ -106,6 +106,35 @@ using namespace ::testing;
 #undef CLASSNAME
 #undef _N_
 #undef _NV_
+#define _N_ 20
+#define _NV_ 8
+
+#ifdef PHIST_HAVE_SP
+
+# define CLASSNAME SSymmMatTest_20_8
+# include "phist_gen_s.h"
+# include "SymmMatTest_def.hpp"
+# undef CLASSNAME
+
+# define CLASSNAME CSymmMatTest_20_8
+# include "phist_gen_c.h"
+# include "SymmMatTest_def.hpp"
+#undef CLASSNAME
+
+#endif
+
+# define CLASSNAME DSymmMatTest_20_8
+#include "phist_gen_d.h"
+#include "SymmMatTest_def.hpp"
+#undef CLASSNAME
+
+# define CLASSNAME ZSymmMatTest_20_8
+#include "phist_gen_z.h"
+#include "SymmMatTest_def.hpp"
+
+#undef CLASSNAME
+#undef _N_
+#undef _NV_
 #define _N_ 163
 #define _NV_ 30
 
