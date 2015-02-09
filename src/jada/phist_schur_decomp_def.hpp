@@ -62,19 +62,27 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
 
   PHIST_DEB("m=%d, nselect=%d, nsort=%d\n",m,nselect,nsort);
 
-#ifdef IS_COMPLEX
-  PHIST_DEB("call complex %cGEES\n",st::type_char());
-  PHIST_CHK_IERR(PREFIX(GEES)((blas_char_t*)jobvs,(blas_char_t*)sort,NULL,&m,(blas_cmplx_t*)T,&ldT,
-         &sdim,(blas_cmplx_t*)ev,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)work,&lwork,ev_r,NULL,iflag),*iflag);
-#else
-  PHIST_DEB("call real %cGEES\n",st::type_char());
-  PHIST_CHK_IERR(PREFIX(GEES)((blas_char_t*)jobvs,(blas_char_t*)sort,NULL,&m,T,&ldT,
-         &sdim,ev_r,ev_i,S,&ldS,work,&lwork,NULL,iflag),*iflag);
-  for (int i=0;i<m;i++)
+// prohibit parallel execution to assure identical results on different procs
+#pragma omp parallel
+  {
+#pragma omp master
     {
-    ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
-    }
+#ifdef IS_COMPLEX
+      PHIST_DEB("call complex %cGEES\n",st::type_char());
+      PREFIX(GEES)((blas_char_t*)jobvs,(blas_char_t*)sort,NULL,&m,(blas_cmplx_t*)T,&ldT,
+             &sdim,(blas_cmplx_t*)ev,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)work,&lwork,ev_r,NULL,iflag);
+#else
+      PHIST_DEB("call real %cGEES\n",st::type_char());
+      PREFIX(GEES)((blas_char_t*)jobvs,(blas_char_t*)sort,NULL,&m,T,&ldT,
+            &sdim,ev_r,ev_i,S,&ldS,work,&lwork,NULL,iflag);
+      for (int i=0;i<m;i++)
+      {
+        ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
+      }
 #endif
+    }
+  }
+  PHIST_CHK_IERR(;,*iflag);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
 //PHIST_OUT(0,"eigenvalues of unsorted Schur form:\n");
@@ -129,17 +137,25 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
     PHIST_CHK_IERR(SortEig(ev,m,idx,which,tol,iflag),*iflag);
     for (int i=0;i<nselect;i++) 
       select[std::abs(idx[i])]=1;
-#ifdef IS_COMPLEX
-    PHIST_CHK_IERR(PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)ev,&nsorted,
-          &S_cond, &sep, (blas_cmplx_t*)work, &lwork, iflag),*iflag);
-#else
-    PHIST_CHK_IERR(PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
-          &S_cond, &sep, work, &lwork, iwork, &liwork, iflag),*iflag);   
-    for (int i=0;i<m;i++)
+// prohibit parallel execution to assure identical results on different procs
+#pragma omp parallel
     {
-      ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
-    }
+#pragma omp master
+      {
+#ifdef IS_COMPLEX
+        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)ev,&nsorted,
+              &S_cond, &sep, (blas_cmplx_t*)work, &lwork, iflag);
+#else
+        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
+              &S_cond, &sep, work, &lwork, iwork, &liwork, iflag);
+        for (int i=0;i<m;i++)
+        {
+          ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
+        }
 #endif   
+      }
+    }
+    PHIST_CHK_IERR(;,*iflag);
     PHIST_DEB("nsorted=%d\n",nsorted);
     // *POSSIBLE PROBLEM*
     // if we select part of a complex conjugate eigenpair, trsen just increases nselect by one
@@ -169,17 +185,25 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
                                    // SortEig misses an offset i because
                                    // we pass in ev+i
      int nsorted_before=nsorted;
-#ifdef IS_COMPLEX
-     PHIST_CHK_IERR(PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,
-        (blas_cmplx_t*)ev,&nsorted,&S_cond, &sep, (blas_cmplx_t*)work, &lwork, iflag),*iflag);
-#else
-     PHIST_CHK_IERR(PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
-          &S_cond, &sep, work, &lwork, iwork, &liwork, iflag),*iflag);   
-    for (int j=0;j<m;j++)
+// prohibit parallel execution to assure identical results on different procs
+#pragma omp parallel
+    {
+#pragma omp master
       {
-      ev[j]=std::complex<MT>(ev_r[j],ev_i[j]);
-      }
+#ifdef IS_COMPLEX
+        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,
+              (blas_cmplx_t*)ev,&nsorted,&S_cond, &sep, (blas_cmplx_t*)work, &lwork, iflag);
+#else
+        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
+              &S_cond, &sep, work, &lwork, iwork, &liwork, iflag);
+        for (int j=0;j<m;j++)
+        {
+          ev[j]=std::complex<MT>(ev_r[j],ev_i[j]);
+        }
 #endif
+      }
+    }
+    PHIST_CHK_IERR(;,*iflag);
     i+= std::max(nsorted-nsorted_before,1);
     }//while
 
@@ -283,14 +307,22 @@ void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
     int ifst = pos;
     int ilst = pos+1;
 PHIST_SOUT(PHIST_DEBUG,"swapping %d %d in unconverged eigenvalues\n",ifst-1,ilst-1);
+// prohibit parallel execution to assure identical results on different procs
+#pragma omp parallel
+    {
+#pragma omp master
+      {
 #ifdef IS_COMPLEX
-    PHIST_CHK_IERR( PREFIX(TREXC) ((blas_char_t*)compq, &m, (blas_cmplx_t*) T, 
-    &ldT, (blas_cmplx_t*) S, &ldS, &ifst, &ilst, iflag), *iflag);
+        PREFIX(TREXC) ((blas_char_t*)compq, &m, (blas_cmplx_t*) T, 
+              &ldT, (blas_cmplx_t*) S, &ldS, &ifst, &ilst, iflag);
 #else
-    PHIST_CHK_IERR( PREFIX(TREXC) ((blas_char_t*)compq, &m, T, &ldT, S, &ldS, 
-    &ifst, &ilst, work, iflag), *iflag);
+        PREFIX(TREXC) ((blas_char_t*)compq, &m, T, &ldT, S, &ldS, 
+              &ifst, &ilst, work, iflag);
 #endif
-PHIST_DEB("ifst = %d,\t ilst = %d\n", ifst-1, ilst-1);
+      }
+    }
+    PHIST_CHK_IERR(;,*iflag);
+    PHIST_DEB("ifst = %d,\t ilst = %d\n", ifst-1, ilst-1);
 
     if( pos > 1 )
       pos--;
