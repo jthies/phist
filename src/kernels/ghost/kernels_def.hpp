@@ -5,7 +5,7 @@
 #endif
 
 #ifdef GHOST_HAVE_SCOTCH
-//#define USE_SCOTCH
+#define USE_SCOTCH
 #endif
 
 #if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
