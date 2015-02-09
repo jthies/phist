@@ -5,7 +5,7 @@
 #endif
 
 #ifdef GHOST_HAVE_SCOTCH
-#define USE_SCOTCH
+//#define USE_SCOTCH
 #endif
 
 #if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
@@ -558,24 +558,43 @@ extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
-  ghost_densemat_t *Vblock;
-  V->viewCols(V, &Vblock, jmax-jmin+1, jmin);
-
-  if (*vVblock!=NULL)
+  ghost_densemat_t *Vblock=(ghost_densemat_t*)(*vVblock);
+  
+  if (Vblock!=NULL)
   {
-    PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,tmp,*vVblock,*iflag);
-    //PHIST_DEB("destroying previous vector (view)\n");
+    if ( &(V->val[0][0]) == &(Vblock->val[0][0]) )
+    {
+      // if the vector is already a view of some columns in the target
+      // vector, update the view.
+      PHIST_DEB("update existing view\n");
+      PHIST_CHK_GERR(Vblock->viewSetCols(Vblock,jmax-jmin+1,jmin),*iflag);
+    }
+    else
+    {
+      // delete the vector pointed to by vVblock and create a new view
 #ifdef TESTING
-  std::map<const void*, std::vector<ghost_map_t*> >::iterator mapIt = phist_ghost_map_MAP.find(vV);
-  if( mapIt != phist_ghost_map_MAP.end() )
-  {
-    for(int i = 0; i < mapIt->second.size(); i++)
-      delete mapIt->second[i];
-    phist_ghost_map_MAP.erase(mapIt);
-  }
+      //TODO - clarify this construct with Melven, why is it done only
+      // in TESTING mode?
+      std::map<const void*, std::vector<ghost_map_t*> >::iterator mapIt = 
+        phist_ghost_map_MAP.find(vV);
+      if( mapIt != phist_ghost_map_MAP.end() )
+      {
+        for(int i = 0; i < mapIt->second.size(); i++)
+          delete mapIt->second[i];
+        phist_ghost_map_MAP.erase(mapIt);
+      }
 #endif
-    tmp->destroy(tmp);
+      PHIST_DEB("delete existing view\n");
+      Vblock->destroy(Vblock);
+      Vblock=NULL;
+    }
   }
+    
+  if (Vblock==NULL)
+  {
+    PHIST_CHK_GERR(V->viewCols(V, &Vblock, jmax-jmin+1, jmin),*iflag);
+  }
+
   PHIST_CHK_IERR(*iflag=((Vblock->traits.flags&GHOST_DENSEMAT_VIEW)-GHOST_DENSEMAT_VIEW),*iflag);
   *vVblock = (TYPE(mvec_ptr))Vblock;
 }
