@@ -567,7 +567,9 @@ extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
       // if the vector is already a view of some columns in the target
       // vector, update the view.
       PHIST_DEB("update existing view\n");
-      PHIST_CHK_GERR(Vblock->viewSetCols(Vblock,jmax-jmin+1,jmin),*iflag);
+      int coffs_old=ghost_bitmap_first(Vblock->ldmask);
+      int coffs=jmin-coffs_old;
+      PHIST_CHK_GERR(Vblock->viewSetCols(Vblock,jmax-jmin+1,coffs),*iflag);
     }
     else
     {
