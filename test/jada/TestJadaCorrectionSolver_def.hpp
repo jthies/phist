@@ -111,7 +111,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0,iflag_);
       for(int i = 0; i < _NV_; i++)
       {
-        ASSERT_NEAR(mt::one(), solutionNorm[i], VTest::releps());
+        ASSERT_NEAR(mt::one(), solutionNorm[i], 100*VTest::releps());
       }
 
       // we cannot directly compare the vectors because the solution is scaled
