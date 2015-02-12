@@ -137,8 +137,8 @@ int main(int argc, char** argv)
     for (j=0;j<nvec_y;j++)
       y_val[i*lda_x+j]=1.0;
 #else
-  for (j=0;j<nvec;j++)
-    for (i=0;i<nloc;i++)
+  for (j=0;j<nvec_y;j++)
+    for (i=0;i<nloc_y;i++)
       y_val[j*lda_x+i]=1.0;
 #endif
   // after manually manipulating vector entries, we potentially need to upload them to
