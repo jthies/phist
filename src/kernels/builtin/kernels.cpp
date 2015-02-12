@@ -6,6 +6,9 @@
 #error "builtin kernels only work with MPI"
 #endif
 
+#include <cstdlib>
+#include <cstdio>
+
 #include "phist_macros.h"
 #ifdef PHIST_HAVE_TEUCHOS
 #include "phist_trilinos_macros.h"
@@ -29,6 +32,7 @@
 namespace{
 int omp_get_thread_num() {return 0;}
 int omp_get_num_threads() {return 1;}
+void omp_set_num_threads(int nt) {return;}
 }
 #endif
 #ifdef PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS
@@ -165,6 +169,15 @@ void phist_kernels_init(int* argc, char*** argv, int* iflag)
   // allow unlimited stack
   struct rlimit rlim = { RLIM_INFINITY, RLIM_INFINITY };
   PHIST_CHK_IERR( *iflag = setrlimit(RLIMIT_STACK, &rlim), *iflag);;
+
+  // set number of OpenMP threads to $PHIST_NUM_THREADS if it is set
+  const char* PHIST_NUM_THREADS=getenv("PHIST_NUM_THREADS");
+  int num_threads= (PHIST_NUM_THREADS==NULL)? -1:atoi(PHIST_NUM_THREADS);
+  if (num_threads>0)
+  {
+    omp_set_num_threads(num_threads);
+  }
+  
 
 #ifdef PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS
   pinThreads();
