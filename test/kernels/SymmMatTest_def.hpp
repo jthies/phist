@@ -57,7 +57,6 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     SUBR(sparseMat_get_range_map)(A,&range_map,&iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(sparseMat_get_domain_map)(A,&domain_map,&iflag_);
-
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_delete)(vec1_,&iflag_);
     ASSERT_EQ(0,iflag_);
@@ -69,9 +68,8 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     lidx_t lda;
     SUBR(mvec_create)(&vec1_,domain_map,nvec_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda,&iflag_);
+    SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_EQ(lda,lda_);
 
     SUBR(mvec_create)(&vec2_,range_map,nvec_,&iflag_);
     ASSERT_EQ(0,iflag_);
