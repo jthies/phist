@@ -71,7 +71,7 @@ public:
   static Teuchos::RCP<const Teuchos_sdMat_t> CreateTeuchosView(Teuchos::RCP<const sdMat_t> M, int* iflag)
     {
     *iflag=0;
-    lidx_t stride = M->traits.nrowspadded;
+    lidx_t stride = M->stride;
     lidx_t nrows = M->traits.nrows;
     lidx_t ncols = M->traits.ncols;
 
@@ -99,7 +99,7 @@ public:
       return Teuchos::null;
       }
 
-    int stride = M->traits.nrowspadded;
+    int stride = M->stride;
     int nrows = M->traits.nrows;
     int ncols = M->traits.ncols;
     

@@ -378,7 +378,7 @@ namespace ghost {
     getNonConstView (MV& A)
     {
     ghost_densemat_t* _A=A.get();
-    lidx_t A_len = _A->traits.nrowspadded*_A->traits.ncols;
+    lidx_t A_len = _A->stride*_A->traits.ncols;
 
     TEUCHOS_TEST_FOR_EXCEPTION(_A->traits.flags & GHOST_DENSEMAT_SCATTERED,    
                 std::invalid_argument,
@@ -386,14 +386,14 @@ namespace ghost {
 
     scalar_type* valptr;
     ghost_densemat_valptr(_A,(void**)&valptr);
-                    
+                
     Teuchos::ArrayRCP<ST> values(valptr,0,A_len,false);
     createNode();
     Kokkos::MultiVector<scalar_type, node_type> KMV(node_);
     KMV.initializeValues ((size_t)_A->traits.nrows,
                       (size_t)_A->traits.ncols,
                       values,
-                      (size_t)_A->traits.nrowspadded,
+                      (size_t)_A->stride,
                       (size_t)_A->traits.nrows,
                       (size_t)_A->traits.ncols);
     
