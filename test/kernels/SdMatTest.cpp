@@ -9,10 +9,6 @@
 #include "kernels/phist_kernels.h"
 #include "KernelTestWithSdMats.h"
 
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-
 using namespace testing;
 
 #define _NROWS_ 5

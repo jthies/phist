@@ -6,6 +6,8 @@
 
 #include "phist_typedefs.h"
 #include "phist_kernels.h"
+// for sync'ing sdMats
+#include "phist_mpi_kernels.h"
 #include "KernelTestWithType.h"
 
 #ifdef PHIST_HAVE_MPI

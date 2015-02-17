@@ -301,9 +301,6 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag);
 //! put random numbers into all elements of a small dense matrix \ingroup sdmat
 void SUBR(sdMat_random)(TYPE(sdMat_ptr) V, int* iflag);
 
-//! synchronize values  of a small dense matrixamong all processes of a given communicator \ingroup sdmat
-void SUBR(sdMat_sync_values)(TYPE(sdMat_ptr) V, const_comm_ptr_t comm, int* iflag);
-
 //! print a vector to the screen (for debugging) \ingroup mvec
 void SUBR(mvec_print)(TYPE(const_mvec_ptr) V, int* iflag);
 

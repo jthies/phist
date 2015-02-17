@@ -108,3 +108,35 @@ void SUBR(mvec_transfer)(TYPE(const_mvec_ptr) V, int dest, int tag,
   MPI_Type_free(&mpi_vtype);
 #endif
 }
+
+#ifndef PHIST_KERNEL_LIB_GHOST
+// synchronize values  of a small dense matrixamong all processes of a given communicator 
+// This function is not performace-critical, it is only used for testing purposes (at least
+// it should be!)
+extern "C" void SUBR(sdMat_sync_values)(TYPE(sdMat_ptr) V, const_comm_ptr_t comm, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_FCN(__FUNCTION__);
+  *iflag=0;
+  MPI_Comm mpi_comm = *(MPI_Comm*)comm;
+  PHIST_CHK_IERR(SUBR(sdMat_from_device)(V,iflag),*iflag);
+  lidx_t lda;
+  int nrows, ncols;
+  ST* val;
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(V,&val,&lda,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(V,&nrows,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(V,&ncols,iflag),*iflag);
+  int nr=nrows;
+  int nc=ncols;
+#ifdef PHIST_SDMATS_ROW_MAJOR
+  nc=nrows; nr=ncols;
+#endif
+  for (int j=0;j<nc;j++)
+  {
+    MPI_Bcast(val+j*lda,nr,st::mpi_type(),0,mpi_comm);
+  }
+
+  PHIST_CHK_IERR(SUBR(sdMat_to_device)(V,iflag),*iflag);
+}
+
+#endif
