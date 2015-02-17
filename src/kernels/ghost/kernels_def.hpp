@@ -540,8 +540,9 @@ extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
   ghost_densemat_t *Vblock=(ghost_densemat_t*)(*vVblock);
   
-  /*if (Vblock!=NULL)
+  if (Vblock!=NULL)
   {
+/*
     if ( &(V->val[0][0]) == &(Vblock->val[0][0]) )
     {
       // if the vector is already a view of some columns in the target
@@ -569,10 +570,11 @@ extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
 #endif
       PHIST_DEB("delete existing view\n");
     }
-  }*/
+  */
     
     Vblock->destroy(Vblock);
     Vblock=NULL;
+  }
     PHIST_CHK_GERR(V->viewCols(V, &Vblock, jmax-jmin+1, jmin),*iflag);
 
   PHIST_CHK_IERR(*iflag=((Vblock->traits.flags&GHOST_DENSEMAT_VIEW)-GHOST_DENSEMAT_VIEW),*iflag);
