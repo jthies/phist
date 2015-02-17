@@ -952,9 +952,19 @@ PHIST_GHOST_TASK_BEGIN
 PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*iflag);
   M->fromRand(M);
-  // use same values on all mpi processes if we have a communicator
-  if( M->context && M->context->mpicomm )
-    M->syncValues(M, 0);
+PHIST_GHOST_TASK_END
+}
+
+//! put random numbers into all elements of a serial dense matrix
+extern "C" void SUBR(sdMat_sync_values)(TYPE(sdMat_ptr) vM, const_comm_ptr_t vcomm, int* iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+  *iflag=0;
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_mpi_comm_t,comm,vcomm,*iflag);
+  M->syncValues(M, *comm, 0);
 PHIST_GHOST_TASK_END
 }
 

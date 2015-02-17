@@ -458,6 +458,9 @@ public:
       SUBR(sdMat_random)(mat1_, &iflag_);
       ASSERT_EQ(0,iflag_);
 
+      SUBR(sdMat_sync_values)(mat1_, comm_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      
       ASSERT_REAL_EQ(mt::one(), ArrayParallelReplicated(mat1_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
 
       // don't trick me (the test) by just using the same initilization for the random number generator on all processes!
@@ -469,7 +472,10 @@ public:
       // do the same test again...
       SUBR(sdMat_random)(mat1_, &iflag_);
       ASSERT_EQ(0,iflag_);
-
+      
+      SUBR(sdMat_sync_values)(mat1_, comm_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      
       ASSERT_REAL_EQ(mt::one(), ArrayParallelReplicated(mat1_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
     }
   }
