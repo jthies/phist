@@ -286,7 +286,7 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
     return;
   }
 
-  PHIST_CHK_GERR(result->viewPlain(result,(void*)values,0,0,lda),*iflag);
+  PHIST_CHK_GERR(result->viewPlain(result,(void*)values,lda),*iflag);
   *vV=(TYPE(mvec_ptr))(result);
   return;
 }
@@ -433,13 +433,9 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* l
     return;
   }
   PHIST_CHK_GERR(ghost_densemat_valptr(V,(void**)val),*iflag);
-  PHIST_CHK_IERR(*iflag=check_local_size(V->traits.nrowspadded),*iflag);
+  PHIST_CHK_IERR(*iflag=check_local_size(V->stride),*iflag);
 
-#ifdef PHIST_MVECS_ROW_MAJOR
-  *lda = V->traits.ncolspadded;
-#else
-  *lda = V->traits.nrowspadded;
-#endif
+  *lda = V->stride;
 }
 
 extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* iflag)
@@ -457,25 +453,9 @@ extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t*
 
   PHIST_CHK_GERR(ghost_densemat_valptr(M,(void**)val),*iflag);
 
-  PHIST_CHK_IERR(*iflag=check_local_size(M->traits.nrowspadded),*iflag);
+  PHIST_CHK_IERR(*iflag=check_local_size(M->stride),*iflag);
 
-#ifdef PHIST_SDMATS_ROW_MAJOR
-  *lda = M->traits.ncolspadded;
-#else
-  *lda = M->traits.nrowspadded;
-#endif
-
-/*
-  if (M->traits.storage==GHOST_DENSEMAT_ROWMAJOR)
-  {
-    *lda = M->traits.nrowspadded;
-  }
-else
-  {
-
-    
-    *lda = M->traits.ncolspadded;
-  }*/
+  *lda = M->stride;
 }
 
 extern "C" void SUBR(mvec_to_device)(TYPE(mvec_ptr) vV, int* iflag)
@@ -560,16 +540,17 @@ extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
   ghost_densemat_t *Vblock=(ghost_densemat_t*)(*vVblock);
   
-  if (Vblock!=NULL)
+  /*if (Vblock!=NULL)
   {
     if ( &(V->val[0][0]) == &(Vblock->val[0][0]) )
     {
       // if the vector is already a view of some columns in the target
       // vector, update the view.
       PHIST_DEB("update existing view\n");
-      int coffs_old=ghost_bitmap_first(Vblock->ldmask);
+      int coffs_old = (Vblock->val[0] - Vblock->src->val[0])/Vblock->elSize;
       int coffs=jmin-coffs_old;
-      PHIST_CHK_GERR(Vblock->viewSetCols(Vblock,jmax-jmin+1,coffs),*iflag);
+      Vblock->val[0] = Vblock->src->val[0]+jmin*Vblock->elSize;
+      Vblock->traits.ncols = jmax-jmin+1;
     }
     else
     {
@@ -587,15 +568,12 @@ extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
       }
 #endif
       PHIST_DEB("delete existing view\n");
-      Vblock->destroy(Vblock);
-      Vblock=NULL;
     }
-  }
+  }*/
     
-  if (Vblock==NULL)
-  {
+    Vblock->destroy(Vblock);
+    Vblock=NULL;
     PHIST_CHK_GERR(V->viewCols(V, &Vblock, jmax-jmin+1, jmin),*iflag);
-  }
 
   PHIST_CHK_IERR(*iflag=((Vblock->traits.flags&GHOST_DENSEMAT_VIEW)-GHOST_DENSEMAT_VIEW),*iflag);
   *vVblock = (TYPE(mvec_ptr))Vblock;

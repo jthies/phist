@@ -311,6 +311,7 @@ using ::phist::GhostMV;
       ghost_lidx_t nc=(ghost_lidx_t)(index.ubound()-index.lbound()+1);
       CHK_GERR(_mv->viewCols(_mv,&result,nc,offs),Teuchos::null);
 
+
       return phist::rcp(result,true);
     }
 
@@ -649,12 +650,14 @@ using ::phist::GhostMV;
   {
     PHIST_ENTER_FCN(__FUNCTION__);
       ghost_densemat_traits_t dmtraits=GHOST_DENSEMAT_TRAITS_INITIALIZER;
-                dmtraits.flags = GHOST_DENSEMAT_NO_HALO;
+                dmtraits.flags = GHOST_DENSEMAT_NO_HALO|GHOST_DENSEMAT_VIEW;
                 dmtraits.nrows=M.numRows();
-                dmtraits.nrowshalo=M.numRows();
-                dmtraits.nrowspadded=M.stride();
+                //dmtraits.nrowshalo=M.numRows();
+//                dmtraits.nrowspadded=M.numRows();
+//                dmtraits.nrowsorig=M.numRows();
                 dmtraits.ncols=M.numCols();
-                dmtraits.ncolspadded=M.numCols();
+//                dmtraits.ncolspadded=M.numCols();
+                dmtraits.ncolsorig=M.numCols();
                 // Teuchos sdMats are always column major
                 dmtraits.storage=GHOST_DENSEMAT_COLMAJOR;
                 dmtraits.datatype=st::ghost_dt;
@@ -679,8 +682,7 @@ using ::phist::GhostMV;
       //TODO - check return values everywhere
       ghost_densemat_t* Mghost;
       ghost_densemat_create(&Mghost,ctx,dmtraits);
-      Mghost->viewPlain(Mghost, (void*)M.values(),
-                0,0,Mghost->traits.nrowspadded);
+      Mghost->viewPlain(Mghost, (void*)M.values(),M.stride());
 
     return Mghost;
   }
