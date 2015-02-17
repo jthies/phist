@@ -666,22 +666,10 @@ using ::phist::GhostMV;
       // but it is not clear wether this is handled correctly everywhere i ghost.
       // For the moment we can afford to just put in MPI_COMM_WORLD at this point.
       MPI_Comm comm = MPI_COMM_WORLD;
-      ghost_context_t* ctx=NULL;
-      ghost_error_t gerr=ghost_context_create(&ctx,M.numRows(), M.numRows(), 
-          GHOST_CONTEXT_REDUNDANT, NULL, GHOST_SPARSEMAT_SRC_NONE, comm, 1.0);
-      if (gerr!=GHOST_SUCCESS) PHIST_OUT(PHIST_ERROR,"GHOST error (%s) in file %s, line %d",
-        phist_ghost_error2str(gerr),__FILE__,__LINE__);
 
-#if PHIST_OUTLEV >= PHIST_DEBUG
-  char *str;
-  ghost_context_string(&str,ctx);
-  PHIST_SOUT(PHIST_DEBUG,"sdMat context:\n%s\n",str);
-  free(str); str = NULL;
-#endif
-            
       //TODO - check return values everywhere
       ghost_densemat_t* Mghost;
-      ghost_densemat_create(&Mghost,ctx,dmtraits);
+      ghost_densemat_create(&Mghost,NULL,dmtraits);
       Mghost->viewPlain(Mghost, (void*)M.values(),M.stride());
 
     return Mghost;

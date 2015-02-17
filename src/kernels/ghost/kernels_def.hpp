@@ -316,11 +316,7 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
         dmtraits.storage=GHOST_DENSEMAT_COLMAJOR;
 #endif
   // I think the sdMat should not have a context
-  ghost_context_t* ctx=NULL;
-  PHIST_CHK_GERR(ghost_context_create(&ctx,(ghost_gidx_t)nrows, 
-        (ghost_gidx_t)ncols, GHOST_CONTEXT_REDUNDANT, 
-        NULL, GHOST_SPARSEMAT_SRC_NONE, *comm, 1.0),*iflag);
-  ghost_densemat_create(&result,ctx,dmtraits);
+  ghost_densemat_create(&result,NULL,dmtraits);
   ST zero = st::zero();
   result->fromScalar(result,&zero);
   *vM=(TYPE(sdMat_ptr))result;
