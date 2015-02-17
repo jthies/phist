@@ -315,6 +315,8 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_random)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_sync_values)(M1_, comm_, &iflag_);
+      ASSERT_EQ(0,iflag_);
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,st::zero(),V2_,&iflag_);

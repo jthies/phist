@@ -108,6 +108,9 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
         SUBR(sdMat_random)(mat2_,&this->iflag_);
         ASSERT_EQ(0,this->iflag_);
 
+        SUBR(sdMat_sync_values)(mat2_, comm_, &iflag_);
+        ASSERT_EQ(0,iflag_);
+      
 #if PHIST_OUTLEV>=PHIST_DEBUG
         PHIST_DEB("input matrix to Schur-decomp:\n");
         SUBR(sdMat_print)(mat1_,&iflag_);
@@ -321,6 +324,7 @@ TEST_F(CLASSNAME, rand_LM)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
+    SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
     DoSchurDecompTest(LM,mt::zero(),false);
   }
 }
@@ -330,6 +334,7 @@ TEST_F(CLASSNAME, rand_SM)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
+    SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
     DoSchurDecompTest(SM,mt::zero(),false);
   }
 }
@@ -339,6 +344,7 @@ TEST_F(CLASSNAME, rand_LR)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
+    SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
     DoSchurDecompTest(LR,mt::zero(),false);
   }
 }
@@ -348,6 +354,7 @@ TEST_F(CLASSNAME, rand_SR)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
+    SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
     DoSchurDecompTest(SR,mt::zero(),false);
   }
 }
@@ -378,6 +385,7 @@ TEST_F(CLASSNAME, rand_LM_tol)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
+    SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
     DoSchurDecompTest(LM,(_MT_)0.3,false);
   }
 }
@@ -387,6 +395,7 @@ TEST_F(CLASSNAME, rand_SM_tol)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
+    SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
     DoSchurDecompTest(SM,(_MT_)0.7,false);
   }
 }
@@ -396,6 +405,7 @@ TEST_F(CLASSNAME, rand_LR_tol)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
+    SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
     DoSchurDecompTest(LR,(_MT_)0.2,false);
   }
 }
@@ -405,6 +415,7 @@ TEST_F(CLASSNAME, rand_SR_tol)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
+    SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
     DoSchurDecompTest(SR,(_MT_)0.5,false);
   }
 }
@@ -439,6 +450,7 @@ TEST_F(CLASSNAME, DISABLED_rand_LM_tol_reorder)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
+    SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
     DoSchurDecompTest(LM,(_MT_)0.3,true);
   }
 }
@@ -452,6 +464,7 @@ TEST_F(CLASSNAME, DISABLED_rand_SM_tol_reorder)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
+    SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
     DoSchurDecompTest(SM,(_MT_)0.7,true);
   }
 }
@@ -465,6 +478,7 @@ TEST_F(CLASSNAME, DISABLED_rand_LR_tol_reorder)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
+    SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
     DoSchurDecompTest(LR,(_MT_)0.2,true);
   }
 }
@@ -478,6 +492,7 @@ TEST_F(CLASSNAME, DISABLED_rand_SR_tol_reorder)
   if( typeImplemented_ )
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
+    SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
     DoSchurDecompTest(SR,(_MT_)0.5, true);
   }
 }

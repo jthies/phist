@@ -18,10 +18,14 @@ public:
     {
       SUBR(sdMat_random)(mat1_,&iflag_);
         ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_sync_values)(mat1_, comm_, &iflag_);
+      ASSERT_EQ(0,iflag_);
       SUBR(sdMat_put_value)(mat2_,(ST)42.0,&iflag_);
         ASSERT_EQ(0,iflag_);
       SUBR(sdMat_random)(mat3_,&iflag_);
         ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
+      ASSERT_EQ(0,iflag_);
     }
   }
 
@@ -487,6 +491,9 @@ public:
     {
       int stride = 1;
       SUBR(sdMat_random)(mat1_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(sdMat_sync_values)(mat1_, comm_, &iflag_);
       ASSERT_EQ(0,iflag_);
 
       // set up 4 block views in one matrix to multiply around
