@@ -71,6 +71,8 @@ void phist_comm_delete(comm_ptr_t comm, int* iflag);
 void phist_comm_get_rank(const_comm_ptr_t comm, int* rank, int* iflag);
 //! get the number of MPI asks
 void phist_comm_get_size(const_comm_ptr_t comm, int* size, int* iflag);
+//! get MPI comm. If the kernel lib does not use MPI, NULL is returned.
+void phist_comm_get_mpi_comm(const_comm_ptr_t comm, MPI_Comm* mpiComm,int* iflag);
 //! creates a map with default distribution of points
 void phist_map_create(map_ptr_t* map, const_comm_ptr_t comm, gidx_t nglob, int *iflag);
 //! delete a map object. Note that you should not do this if you got the map from

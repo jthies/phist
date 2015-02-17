@@ -86,6 +86,15 @@ extern "C" void phist_comm_delete(comm_ptr_t vcomm, int* iflag)
   vcomm=NULL;
   }
 
+#ifdef PHIST_HAVE_MPI
+extern void phist_comm_get_mpi_comm(const_comm_ptr_t vcomm, MPI_Comm* mpiComm, int* iflag)
+{
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_MpiComm,comm,vcomm,*iflag);
+  *mpiComm=comm->Comm();
+}
+#endif
+
 //!
 extern "C" void phist_comm_get_rank(const_comm_ptr_t vcomm, int* rank, int* iflag)
   {

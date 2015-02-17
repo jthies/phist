@@ -218,6 +218,14 @@ void phist_comm_create(comm_ptr_t* vcomm, int* iflag);
 void phist_comm_delete(comm_ptr_t vcomm, int* iflag);
 void phist_comm_get_rank(const_comm_ptr_t vcomm, int* rank, int* iflag);
 void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* iflag);
+#ifdef PHIST_HAVE_MPI
+void phist_comm_get_mpi_comm(const_comm_ptr_t comm, MPI_Comm* mpiComm, int* iflag)
+{
+  *iflag=0;
+  MPI_Fint fcomm = *((MPI_Fint*)comm);
+  *mpiComm = MPI_Comm_f2c(fcomm);
+}
+#endif
 void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int *iflag);
 void phist_map_delete(map_ptr_t vmap, int *iflag);
 void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* iflag);

@@ -118,7 +118,12 @@ extern "C" void SUBR(sdMat_sync_values)(TYPE(sdMat_ptr) V, const_comm_ptr_t comm
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
-  MPI_Comm mpi_comm = *(MPI_Comm*)comm;
+
+  MPI_Comm mpi_comm=MPI_COMM_WORLD;
+  // this function is not yet correctly implemented for Epetra
+#ifndef PHIST_KERNEL_LIB_EPETRA
+  PHIST_CHK_IERR(phist_comm_get_mpi_comm(comm,&mpi_comm,iflag),*iflag);
+#endif
   PHIST_CHK_IERR(SUBR(sdMat_from_device)(V,iflag),*iflag);
   lidx_t lda;
   int nrows, ncols;
@@ -131,11 +136,17 @@ extern "C" void SUBR(sdMat_sync_values)(TYPE(sdMat_ptr) V, const_comm_ptr_t comm
 #ifdef PHIST_SDMATS_ROW_MAJOR
   nc=nrows; nr=ncols;
 #endif
-  for (int j=0;j<nc;j++)
+  if (nr==lda)
   {
-    MPI_Bcast(val+j*lda,nr,st::mpi_type(),0,mpi_comm);
+    MPI_Bcast(val,nr*nc,st::mpi_type(),0,mpi_comm);
   }
-
+  else
+  {
+    for (int j=0;j<nc;j++)
+    {
+      MPI_Bcast(val+j*lda,nr,st::mpi_type(),0,mpi_comm);
+    }
+  }
   PHIST_CHK_IERR(SUBR(sdMat_to_device)(V,iflag),*iflag);
 }
 

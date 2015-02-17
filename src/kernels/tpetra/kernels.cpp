@@ -12,6 +12,10 @@
 
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#ifdef PHIST_HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#include "Teuchos_OpaqueWrapper.hpp"
+#endif
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_RCP.hpp"
 #include "MatrixMarket_Tpetra.hpp"
@@ -87,6 +91,31 @@ extern "C" void phist_comm_delete(comm_ptr_t vcomm, int* iflag)
   // note - as comm_create returns a raw pointer to the default comm, we should not delete it.
 }
 
+#ifdef PHIST_HAVE_MPI
+void phist_comm_get_mpi_comm(const_comm_ptr_t vcomm, MPI_Comm* mpiComm, int* iflag)
+{
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*iflag);
+  const Teuchos::MpiComm<int>* Teuchos_mpiComm=dynamic_cast<const Teuchos::MpiComm<int>*>(comm);
+  if (Teuchos_mpiComm==NULL)
+  {
+    *mpiComm = MPI_COMM_SELF;
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
+  Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > wrapped_mpiComm
+        = Teuchos_mpiComm->getRawMpiComm();
+  if (wrapped_mpiComm==Teuchos::null)
+  {
+    *mpiComm = MPI_COMM_SELF;
+    *iflag=PHIST_INVALID_INPUT;
+  }
+  else
+  {
+    *mpiComm = (*wrapped_mpiComm)();
+  }
+}
+#endif
 
 //!
 extern "C" void phist_comm_get_rank(const_comm_ptr_t vcomm, int* rank, int* iflag)
