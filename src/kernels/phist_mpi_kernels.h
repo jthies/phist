@@ -22,7 +22,7 @@ typedef int MPI_Status;
 // where the interface is implemented (e.g. ghost/, tpetra/).
 #include "phist_typedefs.h"
 
-#endif
+#endif /* doxygen */
 
 #ifdef __cplusplus
 extern "C" {
