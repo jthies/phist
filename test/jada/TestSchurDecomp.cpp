@@ -9,6 +9,7 @@
 
 #include "phist_macros.h"
 #include "phist_kernels.h"
+#include "phist_mpi_kernels.h"
 #include "phist_enums.h"
 #include "phist_schur_decomp.h"
 #include "../kernels/KernelTest.h"
