@@ -18,8 +18,9 @@ typedef int MPI_Status;
 #include "phist_macros.h"
 #include "phist_kernels.h"
 
-// note: the phist_typedefs.h file is provided in the subdirectory
-// where the interface is implemented (e.g. ghost/, tpetra/).
+/* note: the phist_typedefs.h file is provided in the subdirectory
+ where the interface is implemented (e.g. ghost/, tpetra/).
+ */
 #include "phist_typedefs.h"
 
 #endif /* doxygen */
@@ -28,8 +29,9 @@ typedef int MPI_Status;
 extern "C" {
 #endif
 
-//! \defgroup mpi_kernels additional operations implemented for all libs at once
-//@{
+/*! \defgroup mpi_kernels additional operations implemented for all libs at once
+@{
+*/
 
 
 #ifdef PHIST_HAVE_SP
@@ -48,9 +50,10 @@ extern "C" {
 
 #include "phist_gen_clean.h"
 
-#endif
-//@}
+/*@}*/
 
 #ifdef __cplusplus
-} //extern "C"
+} /*extern "C"*/
+#endif
+
 #endif
