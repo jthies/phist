@@ -27,6 +27,10 @@ module crsmat_module
 #endif
 #endif
 
+! this macro decides how many mvecs can be communicated at a time
+! (should be >=1 for spMVM and >=2 for the CARP kernel with complex shifts)
+#define NBLOCKS 2
+
   public :: CrsMat_t
   !public :: phist_DcrsMat_read_mm
   !public :: phist_DcrsMat_create_fromRowFunc
@@ -46,15 +50,18 @@ module crsmat_module
     integer,      allocatable :: recvProcId(:)        !< mpi ids of procs data is received from, has size (nRecvProcs)
     integer,      allocatable :: sendInd(:)           !< index in the send buffer of each proc, has size (nSendProcs+1)
     integer,      allocatable :: recvInd(:)           !< index in the receive buffer of each proc, has size (nRecvProcs+1)
-    real(kind=8), allocatable :: sendData(:,:)        !< send buffer, has size (nb,sendBuffInd(nSendProcs+1)-1)
-    real(kind=8), allocatable :: recvData(:,:)        !< recv buffer, has size (nb,recvBuffInd(nRecvProcs+1)-1)
+    ! buffers to allow sending several (nb') blocks of nb vectors each. nb' is set by the macro NBLOCKS above
+    real(kind=8), allocatable :: sendData(:,:,:)        !< send buffer, has size (nb,sendBuffInd(nSendProcs+1)-1,nb')
+    real(kind=8), allocatable :: recvData(:,:,:)        !< recv buffer, has size (nb,recvBuffInd(nRecvProcs+1)-1,nb')
     integer,      allocatable :: sendRowBlkInd(:)     !< local row block index of the data in the sendBuffer, has size (sendBuffInd(nSendProcs+1)-1)
     integer,      allocatable :: sendBuffInd(:,:)     !< sorted Variant of sendRowBlkInd, hast size (size(sendRowBlkInd),2), first entry is the local row block index, second is the index in the send buffer
     integer(kind=8), allocatable :: recvRowBlkInd(:)     !< global row block index of the data in the recvBuffer, has size (recvBuffInd(nRecvProcs+1)-1)
-    integer,      allocatable :: sendRequests(:)      !< buffer for mpi send requests, has size (nSendProcs)
-    integer,      allocatable :: recvRequests(:)      !< buffer for mpi receive requests, has size (nRecvProcs)
-    integer,      allocatable :: sendStatus(:,:)      !< buffer for mpi send status, has size (MPI_STATUS_SIZE,nSendProcs)
-    integer,      allocatable :: recvStatus(:,:)      !< buffer for mpi receive status, has size (MPI_STATUS_SIZE,nRecvProcs)
+    integer,      allocatable :: sendRequests(:)      !< buffer for mpi send requests, has     size (nSendProcs,nb')
+    integer,      allocatable :: recvRequests(:)      !< buffer for mpi receive requests, has size (nRecvProcs,nb')
+    integer,      allocatable :: inv_sendRequests(:)  !< MPI requests for reversed communication in CARP-CG
+    integer,      allocatable :: inv_recvRequests(:)  !< MPI requests for reversed communication in CARP-CG
+    integer,      allocatable :: sendStatus(:,:)      !< buffer for mpi send status, has size (MPI_STATUS_SIZE,nSendProcs,nb')
+    integer,      allocatable :: recvStatus(:,:)      !< buffer for mpi receive status, has size (MPI_STATUS_SIZE,nRecvProcs,nb')
     integer,      allocatable :: recvIndices(:)       !< buffer for indices of received data, used for mpi_wait_some, has size(nRecvProcs)
   end type CrsCommBuff_t
 
@@ -161,12 +168,16 @@ end if
     allocate(combuff%recvProcId(combuff%nRecvProcs))
     allocate(combuff%sendInd(combuff%nSendProcs+1))
     allocate(combuff%recvInd(combuff%nRecvProcs+1))
-    allocate(combuff%sendRequests(combuff%nSendProcs))
+    allocate(combuff%sendRequests(combuff%nSendProcs*NBLOCKS))
     combuff%sendRequests=MPI_REQUEST_NULL
-    allocate(combuff%recvRequests(combuff%nRecvProcs))
+    allocate(combuff%recvRequests(combuff%nRecvProcs*NBLOCKS))
     combuff%recvRequests=MPI_REQUEST_NULL
-    allocate(combuff%sendStatus(MPI_STATUS_SIZE,combuff%nSendProcs))
-    allocate(combuff%recvStatus(MPI_STATUS_SIZE,combuff%nRecvProcs))
+    allocate(combuff%inv_recvRequests(combuff%nSendProcs*NBLOCKS))
+    combuff%inv_recvRequests=MPI_REQUEST_NULL
+    allocate(combuff%inv_sendRequests(combuff%nRecvProcs*NBLOCKS))
+    combuff%inv_sendRequests=MPI_REQUEST_NULL
+    allocate(combuff%sendStatus(MPI_STATUS_SIZE,combuff%nSendProcs*NBLOCKS))
+    allocate(combuff%recvStatus(MPI_STATUS_SIZE,combuff%nRecvProcs*NBLOCKS))
     allocate(combuff%recvIndices(combuff%nRecvProcs))
 
 
@@ -310,6 +321,90 @@ end do
     !write(*,*) 'sendBuffInd 2', combuff%sendBuffInd(:,2)
 
   end subroutine setup_commBuff
+
+  !! these private subroutines need to be caleed before
+  !! an spMVM if nvec changes (not by the user, of course)
+  subroutine delete_buffers(B)
+  USE mpi
+  implicit none
+  TYPE(CrsCommBuff_t) :: B
+  integer :: i, j, ierr
+
+  ! deallocate old receive buffer
+  do j = 1, NBLOCKS
+  do i = 1, B%nRecvProcs
+     call mpi_request_free(B%recvRequests((j-1)*B%nRecvProcs+i), ierr)
+  end do
+  do i = 1, B%nSendProcs
+     call mpi_request_free(B%sendRequests((j-1)*B%nSendProcs+i), ierr)
+  end do
+  end do
+  deallocate(B%recvData)
+  deallocate(B%sendData)
+  
+  end subroutine delete_buffers
+
+  !! allocate buffers for sending/receiving vector entries,
+  !! and setup persistent communication. nvec is nb above,
+  !! and nblock is nb' above.
+  subroutine alloc_buffers(B,comm,nvec,ierr)
+  USE mpi  
+  implicit none
+  
+  TYPE(CrsCommBuff_t) :: B
+  INTEGER, intent(in) :: comm
+  INTEGER, intent(in) :: nvec
+  INTEGER, intent(out) :: ierr
+  INTEGER :: i,j,k,l
+
+  ! allocate new receive buffer
+  allocate(B%recvData(nvec,B%recvInd(B%nRecvProcs+1)-1,NBLOCKS),stat=ierr)
+  if (ierr/=0) return
+
+  ! allocate new send buffer
+  allocate(B%sendData(nvec,B%sendInd(B%nSendProcs+1)-1,NBLOCKS),stat=ierr)
+  if (ierr/=0) return
+
+  ! setup persistent communication for spMVM
+  do j = 1, NBLOCKS
+  do i = 1, B%nRecvProcs
+    k = B%recvInd(i)
+    l = B%recvInd(i+1)
+    call mpi_recv_init(B%recvData(:,k:l-1,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
+      &        B%recvProcId(i),3,comm,B%recvRequests((j-1)*B%nRecvProcs+i),ierr)
+    if (ierr/=0) return
+  end do
+
+  do i=1,B%nSendProcs, 1
+    k = B%sendInd(i)
+    l = B%sendInd(i+1)
+    call mpi_ssend_init(B%sendData(:,k:l-1,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
+      &                 B%sendProcId(i),3,comm,B%sendRequests((j-1)*B%nSendProcs+i),ierr)
+    if (ierr/=0) return
+  end do
+  end do
+
+  ! setup persistent communication inverse data transfers
+  ! (sending from recvBuf and vice versa, used in CARP)
+  do j = 1, NBLOCKS
+  do i = 1, B%nRecvProcs
+    k = B%recvInd(i)
+    l = B%recvInd(i+1)
+    call mpi_send_init(B%recvData(:,k:l-1,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
+      &              B%recvProcId(i),4,comm,B%inv_sendRequests((j-1)*B%nRecvProcs+i),ierr)
+    if (ierr/=0) return
+  end do
+
+  do i=1,B%nSendProcs, 1
+    k = B%sendInd(i)
+    l = B%sendInd(i+1)
+    call mpi_recv_init(B%sendData(:,k:l-1,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
+      &                B%sendProcId(i),4,comm,B%inv_recvRequests((j-1)*B%nSendProcs+i),ierr)
+    if (ierr/=0) return
+  end do
+  end do
+
+  end subroutine alloc_buffers
 
   subroutine sort(array)
     use m_mrgrnk
@@ -1383,35 +1478,11 @@ end subroutine permute_local_matrix
     ! we could also set up persistent communication channels here... and use MPI_Startall later
     if( allocated(A%comm_buff%recvData) ) then
       if( size(A%comm_buff%recvData,1) .ne. nvec ) then
-        ! deallocate old receive buffer
-        do i = 1, A%comm_buff%nRecvProcs
-          call mpi_request_free(A%comm_buff%recvRequests(i), ierr)
-        end do
-        ! deallocate old send buffer
-        deallocate(A%comm_buff%recvData)
-        do i = 1, A%comm_buff%nSendProcs
-          call mpi_request_free(A%comm_buff%sendRequests(i), ierr)
-        end do
-        deallocate(A%comm_buff%sendData)
+        call delete_buffers(A%comm_buff)
       end if
     end if
     if( .not. allocated(A%comm_buff%recvData) ) then
-      ! allocate new receive buffer
-      allocate(A%comm_buff%recvData(nvec,A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1))
-      do i = 1, A%comm_buff%nRecvProcs
-        k = A%comm_buff%recvInd(i)
-        l = A%comm_buff%recvInd(i+1)
-        call mpi_recv_init(A%comm_buff%recvData(:,k:l-1),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
-          &                A%comm_buff%recvProcId(i),3,A%row_map%Comm,A%comm_buff%recvRequests(i),ierr)
-      end do
-      ! allocate new send buffer
-      allocate(A%comm_buff%sendData(nvec,A%comm_buff%sendInd(A%comm_buff%nSendProcs+1)-1))
-      do i=1,A%comm_buff%nSendProcs, 1
-        k = A%comm_buff%sendInd(i)
-        l = A%comm_buff%sendInd(i+1)
-        call mpi_ssend_init(A%comm_buff%sendData(:,k:l-1),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
-          &                 A%comm_buff%sendProcId(i),3,A%row_map%Comm,A%comm_buff%sendRequests(i),ierr)
-      end do
+      call alloc_buffers(A%comm_buff,A%row_map%comm,nvec,ierr)
     end if
 
     ! start receiving (e.g. irecv)
@@ -2047,16 +2118,7 @@ end if
 
       ! free all mpi requests
       if( allocated(A%comm_buff%recvData) ) then
-        ! deallocate old receive buffer
-        do i = 1, A%comm_buff%nRecvProcs
-          call mpi_request_free(A%comm_buff%recvRequests(i), ierr)
-        end do
-        ! deallocate old send buffer
-        deallocate(A%comm_buff%recvData)
-        do i = 1, A%comm_buff%nSendProcs
-          call mpi_request_free(A%comm_buff%sendRequests(i), ierr)
-        end do
-        deallocate(A%comm_buff%sendData)
+        call delete_buffers(A%comm_buff)
       end if
 
       ! deallocate matrix
@@ -2341,9 +2403,8 @@ end if
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
       if( allocated(A%comm_buff%recvData) ) then
-        if( size(A%comm_buff%recvData,1) .ne. 2*nvec ) then
-          deallocate(A%comm_buff%recvData)
-          deallocate(A%comm_buff%sendData)
+        if( size(A%comm_buff%recvData,1) .ne. nvec ) then
+          call delete_buffers(A%comm_buff)
         end if
       end if
 
@@ -2351,8 +2412,7 @@ end if
       recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
 
       if( .not. allocated(A%comm_buff%recvData) ) then
-        allocate(A%comm_buff%recvData(2*nvec,recvBuffSize),&
-                 A%comm_buff%sendData(2*nvec,sendBuffSize),stat=ierr)
+        call alloc_buffers(A%comm_buff, A%row_map%comm, nvec,ierr)
         if (ierr/=0) then
           ierr=-44
           return
@@ -2371,7 +2431,7 @@ end if
       ! exchange necessary elements of X. This is the same      
       ! operation as for an spMVM: import from the domain       
       ! map into the column map of A.                           
-      call Dcarp_import(A,x_r,x_i,ierr)
+      call Dcarp_import2(A,x_r,x_i,ierr)
       if (ierr/=0) then
         write(*,*) 'call Dcarp_import returned ierr=',ierr
         return
@@ -2385,8 +2445,8 @@ end if
                 shifts_r(iSys),shifts_i(iSys), &
                 bzero, ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
-                A%comm_buff%recvData(     1:  nvec,:),&
-                A%comm_buff%recvData(nvec+1:2*nvec,:),&
+                A%comm_buff%recvData(1:nvec,:,1),&
+                A%comm_buff%recvData(1:nvec,:,2),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 1,A%nRows,+1)
         else
@@ -2396,21 +2456,21 @@ end if
                 shifts_r(iSys),shifts_i(iSys), &
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
-                A%comm_buff%recvData(     1:  nvec,:),&
-                A%comm_buff%recvData(nvec+1:2*nvec,:),&
+                A%comm_buff%recvData(1:nvec,:,1),&
+                A%comm_buff%recvData(1:nvec,:,2),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 1,A%nRows,+1)        
         end if
       ! exchange values and average (export/average operation
       ! from col map into domain map)
-      call Dcarp_average(A,x_r, x_i, invProcCount, ierr)
+      call Dcarp_average2(A,x_r, x_i, invProcCount, ierr)
       if (ierr/=0) then
         write(*,*) 'call Dcarp_average returned ierr=',ierr
         return
       end if
       ! import again into the column map (get updated halo elements)
       ! before the backward sweep
-      call Dcarp_import(A,x_r,x_i,ierr)
+      call Dcarp_import2(A,x_r,x_i,ierr)
       if (ierr/=0) then
         write(*,*) 'call Dcarp_import returned ierr=',ierr
         return
@@ -2425,8 +2485,8 @@ end if
                 shifts_r(iSys),shifts_i(iSys), &
                 bzero, ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
-                A%comm_buff%recvData(     1:  nvec,:),&
-                A%comm_buff%recvData(nvec+1:2*nvec,:),&
+                A%comm_buff%recvData(1:nvec,:,1),&
+                A%comm_buff%recvData(1:nvec,:,2),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)      
       else
@@ -2436,15 +2496,15 @@ end if
                 shifts_r(iSys),shifts_i(iSys), &
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
-                A%comm_buff%recvData(     1:  nvec,:),&
-                A%comm_buff%recvData(nvec+1:2*nvec,:),&
+                A%comm_buff%recvData(1:nvec,:,1),&
+                A%comm_buff%recvData(1:nvec,:,2),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)
       end if
       ! exchange values and average, stay in domain map
       ! (i.e. do not import halo until the next call to
       ! carp_sweep)
-      call Dcarp_average(A,x_r, x_i, invProcCount, ierr)
+      call Dcarp_average2(A,x_r, x_i, invProcCount, ierr)
       if (ierr/=0) then
         write(*,*) 'call Dcarp_average returned ierr=',ierr
         return
@@ -2543,8 +2603,7 @@ end if
     
       if( allocated(A%comm_buff%recvData) ) then
         if( size(A%comm_buff%recvData,1) .ne. nvec ) then
-          deallocate(A%comm_buff%recvData)
-          deallocate(A%comm_buff%sendData)
+          call delete_buffers(A%comm_buff)
         end if
       end if
 
@@ -2552,8 +2611,7 @@ end if
       recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
 
       if( .not. allocated(A%comm_buff%recvData) ) then
-        allocate(A%comm_buff%recvData(nvec,recvBuffSize),&
-                 A%comm_buff%sendData(nvec,sendBuffSize),stat=ierr)
+        call alloc_buffers(A%comm_buff, A%row_map%comm, nvec,ierr)
         if (ierr/=0) then
           ierr=-44
           return
@@ -2576,7 +2634,7 @@ end if
       ! The function will ignore the dummy argument x_i=x_r and
       ! communicate only x_r if it sees that the buffer is too small
       ! for two mvecs.
-      call Dcarp_import(A,x_r,x_r,ierr)
+      call Dcarp_import(A,x_r,ierr)
       if (ierr/=0) then
         write(*,*) 'call Dcarp_import returned ierr=',ierr
         return
@@ -2590,7 +2648,7 @@ end if
                 shifts_r(iSys), &
                 bzero, ldb, &
                 x_r%val(x_r%jmin,1),ldx, &
-                A%comm_buff%recvData(     1:  nvec,:),&
+                A%comm_buff%recvData(1:nvec,:,1),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 1,A%nRows,+1)
         else
@@ -2600,7 +2658,7 @@ end if
                 shifts_r(iSys), &
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1), ldx, &
-                A%comm_buff%recvData(     1:  nvec,:),&
+                A%comm_buff%recvData(1:nvec,:,1),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 1,A%nRows,+1)        
         end if
@@ -2608,14 +2666,14 @@ end if
       ! from col map into domain map)
       !
       ! as in kacz_import, will check dimension of buffers and ignore x_i.
-      call Dcarp_average(A,x_r, x_r, invProcCount, ierr)
+      call Dcarp_average(A,x_r, invProcCount, ierr)
       if (ierr/=0) then
         write(*,*) 'call Dcarp_average returned ierr=',ierr
         return
       end if
       ! import again into the column map (get updated halo elements)
       ! before the backward sweep
-      call Dcarp_import(A,x_r,x_r,ierr)
+      call Dcarp_import(A,x_r,ierr)
       if (ierr/=0) then
         write(*,*) 'call Dcarp_import returned ierr=',ierr
         return
@@ -2630,7 +2688,7 @@ end if
                 shifts_r(iSys), &
                 bzero, ldb, &
                 x_r%val(x_r%jmin,1),ldx, &
-                A%comm_buff%recvData(     1:  nvec,:),&
+                A%comm_buff%recvData(1:nvec,:,1),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)      
       else
@@ -2640,14 +2698,14 @@ end if
                 shifts_r(iSys), &
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1), ldx, &
-                A%comm_buff%recvData(     1:  nvec,:),&
+                A%comm_buff%recvData(1:nvec,:,1),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)
       end if
       ! exchange values and average, stay in domain map
       ! (i.e. do not import halo until the next call to
       ! carp_sweep)
-      call Dcarp_average(A,x_r, x_r, invProcCount, ierr)
+      call Dcarp_average(A,x_r, invProcCount, ierr)
       if (ierr/=0) then
         write(*,*) 'call Dcarp_average returned ierr=',ierr
         return
@@ -2681,61 +2739,119 @@ end if
   end subroutine phist_Dcarp_destroy
 
 ! import halo elements before a CARP sweep. This is the same
-! operation performed before an spMVM, but with two vectors 
-! xr and xi instead of just one (x). On exit, the halo elements
-! are found in A%comm_buf%recvBuf(1:nvec,:) (xr halo) and 
-! nvec+1:2*nvec (xi halo)
-subroutine Dcarp_import(A,xr,xi, ierr)
+! operation performed before an spMVM. On exit, the halo elements
+! are found in A%comm_buf%recvData(1:nvec,:,1)
+subroutine Dcarp_import(A,x, ierr)
   use mpi
   implicit none
 
   TYPE(crsMat_t) :: A
-  TYPE(mvec_t)   :: xr,xi
+  TYPE(mvec_t)   :: x
   integer, intent(out) :: ierr
 
   ! local
   integer :: nvec,nrecv
   integer :: i,j,k,l
 
-  nvec=xr%jmax-xr%jmin+1
+  nvec=x%jmax-x%jmin+1
   nrecv=size(A%comm_buff%recvData,1)
-  if (nrecv/=nvec .and. nrecv/=2*nvec) then
+  if (nrecv/=nvec) then
     write(*,*) 'WARNING: unexpected buffer size in ',__FILE__,' line ',__LINE__
   end if
 
       
   ! start buffer irecv
-  do i=1,A%comm_buff%nRecvProcs
-    k = A%comm_buff%recvInd(i)
-    l = A%comm_buff%recvInd(i+1)
-    call mpi_irecv(A%comm_buff%recvData(1:nrecv,k:l-1),(l-k)*nrecv,MPI_DOUBLE_PRECISION,&
-                   A%comm_buff%recvProcId(i),3,A%row_map%Comm,A%comm_buff%recvRequests(i),ierr)
-  end do
+    if( A%comm_buff%nRecvProcs .gt. 0 ) then
+      call mpi_startall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,ierr)
+    end if
 
   ! start buffer isend
   do i=1,A%comm_buff%nSendProcs, 1
     k = A%comm_buff%sendInd(i)
     l = A%comm_buff%sendInd(i+1)
     do j = k, l-1, 1
-      A%comm_buff%sendData(1:nvec,j) = &
-        xr%val(xr%jmin:xr%jmax,A%comm_buff%sendRowBlkInd(j))
-      if (nrecv==2*nvec) then
-      A%comm_buff%sendData(nvec+1:2*nvec,j) = &
-        xi%val(xi%jmin:xi%jmax,A%comm_buff%sendRowBlkInd(j))
-      end if
+      A%comm_buff%sendData(1:nvec,j,1) = &
+        x%val(x%jmin:x%jmax,A%comm_buff%sendRowBlkInd(j))
     end do
   end do
-  do i=1,A%comm_buff%nSendProcs, 1
-    k = A%comm_buff%sendInd(i)
-    l = A%comm_buff%sendInd(i+1)
-    call mpi_isend(A%comm_buff%sendData(1:nrecv,k:l-1),(l-k)*2*nrecv,MPI_DOUBLE_PRECISION,&
-        &          A%comm_buff%sendProcId(i),3,A%row_map%Comm,A%comm_buff%sendRequests(i),ierr)
-  end do
+
+    ! start sending (e.g. issend)
+    if( A%comm_buff%nSendProcs .gt. 0 ) then
+      !call mpi_startall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
+      call mpi_startall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,ierr)
+    end if
+
   if( A%comm_buff%nRecvProcs .gt. 0 ) then
     ! wait till all data arrived
     call mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStatus,ierr)
   end if
+
+  if( A%comm_buff%nSendProcs .gt. 0 ) then
+    ! wait till all data was sent
+    call mpi_waitall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
+  end if
 end subroutine Dcarp_import
+
+! like carp_import, but for two vector blocks. Halo elements are put into
+! A%comm_buff%recvData(1:nvec,:,K) for xK, K=1,2
+subroutine Dcarp_import2(A,x1,x2, ierr)
+  use mpi
+  implicit none
+
+  TYPE(crsMat_t) :: A
+  TYPE(mvec_t)   :: x1,x2
+  integer, intent(out) :: ierr
+
+  ! local
+  integer :: nvec,nrecv
+  integer :: i,j,k,l
+
+  nvec=x1%jmax-x1%jmin+1
+  if (nvec/=x2%jmax-x2%jmin+1) then
+    ierr = -55
+    return
+  end if
+  nrecv=size(A%comm_buff%recvData,1)
+  if (nrecv/=nvec) then
+    ! this should have been adjusted (if necessary) beforehand
+    ierr=-55
+    return
+  end if
+
+      
+  ! start buffer irecv
+    if( A%comm_buff%nRecvProcs .gt. 0 ) then
+      call mpi_startall(2*A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,ierr)
+    end if
+
+  ! start buffer isend
+  do i=1,A%comm_buff%nSendProcs, 1
+    k = A%comm_buff%sendInd(i)
+    l = A%comm_buff%sendInd(i+1)
+    do j = k, l-1, 1
+      A%comm_buff%sendData(1:nvec,j,1) = &
+        x1%val(x1%jmin:x1%jmax,A%comm_buff%sendRowBlkInd(j))
+      A%comm_buff%sendData(1:nvec,j,2) = &
+        x2%val(x2%jmin:x2%jmax,A%comm_buff%sendRowBlkInd(j))
+    end do
+  end do
+
+    ! start sending (e.g. issend)
+    if( A%comm_buff%nSendProcs .gt. 0 ) then
+      !call mpi_startall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
+      call mpi_startall(2*A%comm_buff%nSendProcs,A%comm_buff%sendRequests,ierr)
+    end if
+
+  if( A%comm_buff%nRecvProcs .gt. 0 ) then
+    ! wait till all data arrived
+    call mpi_waitall(2*A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStatus,ierr)
+  end if
+
+  if( A%comm_buff%nSendProcs .gt. 0 ) then
+    ! wait till all data was sent
+    call mpi_waitall(2*A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
+  end if
+end subroutine Dcarp_import2
 
 ! private subroutine to exchange halo elements and average
 !
@@ -2745,12 +2861,12 @@ end subroutine Dcarp_import
 ! for the local nodes ghosted on other procs and update them
 ! by averaging. Before the next spMVM or CARP sweep, a standard
 ! halo import occurs to update the values on the other procs.
-subroutine Dcarp_average(A,xr,xi,invProcCount, ierr)
+subroutine Dcarp_average(A,x,invProcCount, ierr)
   use mpi
   implicit none
 
   TYPE(crsMat_t) :: A
-  TYPE(mvec_t)   :: xr,xi
+  TYPE(mvec_t)   :: x
   ! this array keeps track from how many procs we receive
   ! contributions to a local x entry. In principle we could
   ! set this up once and for all.
@@ -2759,11 +2875,10 @@ subroutine Dcarp_average(A,xr,xi,invProcCount, ierr)
   integer :: ierr
 
   ! local
-  integer :: nvec, nrecv
+  integer :: nvec
   integer :: i,j,k,l
 
-  nvec=xr%jmax-xr%jmin+1
-  nrecv=size(A%comm_buff%recvData,1)
+  nvec=x%jmax-x%jmin+1
 
   ! in this subroutine we assume that the (updated) halo elements
   ! are still in the receive buffer (recvData) from the previous 
@@ -2774,30 +2889,23 @@ subroutine Dcarp_average(A,xr,xi,invProcCount, ierr)
     !       alternative values for local nodes, which we average.
 
       ! start buffered *irecv* of clones of local values
-      do i=1,A%comm_buff%nSendProcs, 1
-        k = A%comm_buff%sendInd(i)
-        l = A%comm_buff%sendInd(i+1)
-        call mpi_irecv(A%comm_buff%sendData(1:nrecv,k:l-1),(l-k)*nrecv,MPI_DOUBLE_PRECISION,&
-                       A%comm_buff%sendProcId(i),3,A%row_map%Comm,A%comm_buff%sendRequests(i),ierr)
-      end do
+      if (A%comm_buff%nSendProcs .gt. 0) then
+        call mpi_startall(A%comm_buff%nSendProcs,A%comm_buff%inv_recvRequests,ierr)
+      end if
 
       ! start buffered *isend* of my results in the halo
       ! NOTE: we assume that the data we're sending is already
       ! in the recvBuf. This is the case in carp_sweep: the halo
       ! is imported and the kernel which is called (in kacz_selector)
       ! operates directly on the recvBuf and updates its contents.
-      do i=1,A%comm_buff%nRecvProcs, 1
-        k = A%comm_buff%recvInd(i)
-        l = A%comm_buff%recvInd(i+1)
-        call mpi_isend(A%comm_buff%recvData(1:nrecv,k:l-1),(l-k)*nrecv,&
-                       MPI_DOUBLE_PRECISION,A%comm_buff%recvProcId(i),3,&
-                       A%row_map%Comm,A%comm_buff%recvRequests(i),ierr)
-    end do
+      if (A%comm_buff%nRecvProcs .gt. 0) then
+        call mpi_startall(A%comm_buff%nRecvProcs,A%comm_buff%inv_sendRequests,ierr)
+      end if
 
     if( A%comm_buff%nSendProcs .gt. 0 ) then
       ! wait till all data arrived
       call mpi_waitall(A%comm_buff%nSendProcs,&
-                       A%comm_buff%sendRequests,&
+                       A%comm_buff%inv_recvRequests,&
                        A%comm_buff%sendStatus,ierr)
     end if
     
@@ -2808,14 +2916,9 @@ subroutine Dcarp_average(A,xr,xi,invProcCount, ierr)
       l = A%comm_buff%sendInd(i+1)
       do j = k, l-1, 1
 
-          xr%val(xr%jmin:xr%jmax,A%comm_buff%sendRowBlkInd(j)) &
-        = xr%val(xr%jmin:xr%jmax,A%comm_buff%sendRowBlkInd(j)) &
-        + A%comm_buff%sendData(1:nvec,j)
-        if (nrecv==2*nvec) then
-          xi%val(xi%jmin:xi%jmax,A%comm_buff%sendRowBlkInd(j)) &
-        = xi%val(xi%jmin:xi%jmax,A%comm_buff%sendRowBlkInd(j)) &
-        + A%comm_buff%sendData(nvec+1:2*nvec,j)
-        end if        
+          x%val(x%jmin:x%jmax,A%comm_buff%sendRowBlkInd(j)) &
+        = x%val(x%jmin:x%jmax,A%comm_buff%sendRowBlkInd(j)) &
+        + A%comm_buff%sendData(1:nvec,j,1)
       end do
     end do
 
@@ -2823,12 +2926,104 @@ subroutine Dcarp_average(A,xr,xi,invProcCount, ierr)
     ! contributors (in invProcCount constructed in carp_setup)
     do i=1,invProcCount%nnz
       k=invProcCount%idx(i)
-      xr%val(xr%jmin:xr%jmax,k) = xr%val(xr%jmin:xr%jmax,k)*invProcCount%val(i)
-      if (nrecv==2*nvec) then
-        xi%val(xi%jmin:xi%jmax,k) = xi%val(xi%jmin:xi%jmax,k)*invProcCount%val(i)
-      end if
+      x%val(x%jmin:x%jmax,k) = x%val(x%jmin:x%jmax,k)*invProcCount%val(i)
     end do
+
+    if( A%comm_buff%nSendProcs .gt. 0 ) then
+      ! wait till all data was sent
+      call mpi_waitall(A%comm_buff%nRecvProcs,&
+                       A%comm_buff%inv_sendRequests,&
+                       A%comm_buff%recvStatus,ierr)
+    end if
+
 end subroutine Dcarp_average
+
+subroutine Dcarp_average2(A,x1,x2,invProcCount, ierr)
+  use mpi
+  implicit none
+
+  TYPE(crsMat_t) :: A
+  TYPE(mvec_t)   :: x1,x2
+  ! this array keeps track from how many procs we receive
+  ! contributions to a local x entry. In principle we could
+  ! set this up once and for all.
+  ! (TODO, or maybe it already exists somewhere?)
+  type(sparseArray_t), intent(in)  :: invProcCount
+  integer :: ierr
+
+  ! local
+  integer :: nvec
+  integer :: i,j,k,l
+
+  nvec=x1%jmax-x1%jmin+1
+  if (nvec/=x2%jmax-x2%jmin+1) then
+    ierr=-55
+    return
+  end if
+
+  ! in this subroutine we assume that the (updated) halo elements
+  ! are still in the receive buffer (recvData) from the previous 
+  ! import in carp_sweep.
+
+    ! NOTE: in the following communication step, send and recv bufs are deliberately 
+    !       swapped! This is because we now *send* our updated halo elements and *recv*
+    !       alternative values for local nodes, which we average.
+
+      ! start buffered *irecv* of clones of local values
+      if (A%comm_buff%nSendProcs .gt. 0) then
+        call mpi_startall(2*A%comm_buff%nSendProcs,A%comm_buff%inv_recvRequests,ierr)
+      end if
+
+      ! start buffered *isend* of my results in the halo
+      ! NOTE: we assume that the data we're sending is already
+      ! in the recvBuf. This is the case in carp_sweep: the halo
+      ! is imported and the kernel which is called (in kacz_selector)
+      ! operates directly on the recvBuf and updates its contents.
+      if (A%comm_buff%nRecvProcs .gt. 0) then
+        call mpi_startall(2*A%comm_buff%nRecvProcs,A%comm_buff%inv_sendRequests,ierr)
+      end if
+
+    if( A%comm_buff%nSendProcs .gt. 0 ) then
+      ! wait till all data arrived
+      call mpi_waitall(2*A%comm_buff%nSendProcs,&
+                       A%comm_buff%inv_recvRequests,&
+                       A%comm_buff%sendStatus,ierr)
+    end if
+    
+    ! now average the values in the local elements for which we have received
+    ! alternative values from the neighbors
+    do i=1,A%comm_buff%nSendProcs
+      k = A%comm_buff%sendInd(i)
+      l = A%comm_buff%sendInd(i+1)
+      do j = k, l-1, 1
+
+          x1%val(x1%jmin:x1%jmax,A%comm_buff%sendRowBlkInd(j)) &
+        = x1%val(x1%jmin:x1%jmax,A%comm_buff%sendRowBlkInd(j)) &
+        + A%comm_buff%sendData(1:nvec,j,1)
+
+          x2%val(x2%jmin:x2%jmax,A%comm_buff%sendRowBlkInd(j)) &
+        = x2%val(x2%jmin:x2%jmax,A%comm_buff%sendRowBlkInd(j)) &
+        + A%comm_buff%sendData(1:nvec,j,2)
+      end do
+    end do
+
+    ! average: divide entries summed up from others by the number of
+    ! contributors (in invProcCount constructed in carp_setup)
+    do i=1,invProcCount%nnz
+      k=invProcCount%idx(i)
+      x1%val(x1%jmin:x1%jmax,k) = x1%val(x1%jmin:x1%jmax,k)*invProcCount%val(i)
+      x2%val(x1%jmin:x2%jmax,k) = x2%val(x2%jmin:x2%jmax,k)*invProcCount%val(i)
+    end do
+
+    if( A%comm_buff%nSendProcs .gt. 0 ) then
+      ! wait till all data was sent
+      call mpi_waitall(2*A%comm_buff%nRecvProcs,&
+                       A%comm_buff%inv_sendRequests,&
+                       A%comm_buff%recvStatus,ierr)
+    end if
+
+
+end subroutine Dcarp_average2
 
 end module crsmat_module
 
