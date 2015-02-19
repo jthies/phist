@@ -46,9 +46,9 @@ if(COLPACK_FOUND)
   # search ColPack library
   find_library(COLPACK_LIBRARY ColPack
                PATHS ${COLPACK_DIR} ${COLPACK_ROOT}
-               PATH_SUFFIXES lib
+               PATH_SUFFIXES lib lib64
                NO_DEFAULT_PATH)
-  find_library(COLPACK_LIBRARY ColPack)
+  #find_library(COLPACK_LIBRARY ColPack)
 
   # check ColPack library
 #  if(COLPACK_LIBRARY)

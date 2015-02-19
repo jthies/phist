@@ -497,8 +497,16 @@ if(PHIST_KERNEL_LIB STREQUAL "builtin")
 #  find_package(ColPack)
   if (COLPACK_DIR)
     set(COLPACK_INCLUDE_DIRS ${COLPACK_DIR}/include)
-    set(COLPACK_LIBRARIES ${COLPACK_DIR}/lib/libColPack.so)
-    set(COLPACK_LIBRARY_DIRS ${COLPACK_DIR}/lib)
+    find_library(COLPACK_LIBRARIES ColPack
+                 PATHS ${COLPACK_DIR}
+                 PATH_SUFFIXES lib lib64
+                 NO_DEFAULT_PATH)
+    find_library(COLPACK_LIBRARY ColPack) # also check default paths, but prefer COLPACK_DIR
+    #message(STATUS "COLPACK_LIBRARIES: ${COLPACK_LIBRARIES}")
+    get_filename_component(COLPACK_LIBRARY_DIRS ${COLPACK_LIBRARIES} PATH)
+    #message(STATUS "COLPACK_LIBRARY_DIRS: ${COLPACK_LIBRARY_DIRS}")
+    #set(COLPACK_LIBRARIES ${COLPACK_DIR}/lib/libColPack.so)
+    #set(COLPACK_LIBRARY_DIRS ${COLPACK_DIR}/lib)
     set(COLPACK_FOUND 1)
   endif()
 
