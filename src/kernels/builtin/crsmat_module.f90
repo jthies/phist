@@ -56,12 +56,12 @@ module crsmat_module
     integer,      allocatable :: sendRowBlkInd(:)     !< local row block index of the data in the sendBuffer, has size (sendBuffInd(nSendProcs+1)-1)
     integer,      allocatable :: sendBuffInd(:,:)     !< sorted Variant of sendRowBlkInd, hast size (size(sendRowBlkInd),2), first entry is the local row block index, second is the index in the send buffer
     integer(kind=8), allocatable :: recvRowBlkInd(:)     !< global row block index of the data in the recvBuffer, has size (recvBuffInd(nRecvProcs+1)-1)
-    integer,      allocatable :: sendRequests(:,:)      !< buffer for mpi send requests, has     size (nSendProcs,nb')
-    integer,      allocatable :: recvRequests(:,:)      !< buffer for mpi receive requests, has size (nRecvProcs,nb')
-    integer,      allocatable :: inv_sendRequests(:,:)  !< MPI requests for reversed communication in CARP-CG
-    integer,      allocatable :: inv_recvRequests(:,:)  !< MPI requests for reversed communication in CARP-CG
-    integer,      allocatable :: sendStatus(:,:,:)      !< buffer for mpi send status, has size (MPI_STATUS_SIZE,nSendProcs,nb')
-    integer,      allocatable :: recvStatus(:,:,:)      !< buffer for mpi receive status, has size (MPI_STATUS_SIZE,nRecvProcs,nb')
+    integer,      allocatable :: sendRequests(:)      !< buffer for mpi send requests, has     size (nSendProcs,nb')
+    integer,      allocatable :: recvRequests(:)      !< buffer for mpi receive requests, has size (nRecvProcs,nb')
+    integer,      allocatable :: inv_sendRequests(:)  !< MPI requests for reversed communication in CARP-CG
+    integer,      allocatable :: inv_recvRequests(:)  !< MPI requests for reversed communication in CARP-CG
+    integer,      allocatable :: sendStatus(:,:)      !< buffer for mpi send status, has size (MPI_STATUS_SIZE,nSendProcs,nb')
+    integer,      allocatable :: recvStatus(:,:)      !< buffer for mpi receive status, has size (MPI_STATUS_SIZE,nRecvProcs,nb')
     integer,      allocatable :: recvIndices(:)       !< buffer for indices of received data, used for mpi_wait_some, has size(nRecvProcs)
   end type CrsCommBuff_t
 
@@ -168,16 +168,16 @@ end if
     allocate(combuff%recvProcId(combuff%nRecvProcs))
     allocate(combuff%sendInd(combuff%nSendProcs+1))
     allocate(combuff%recvInd(combuff%nRecvProcs+1))
-    allocate(combuff%sendRequests(combuff%nSendProcs,NBLOCKS))
+    allocate(combuff%sendRequests(combuff%nSendProcs*NBLOCKS))
     combuff%sendRequests=MPI_REQUEST_NULL
-    allocate(combuff%recvRequests(combuff%nRecvProcs,NBLOCKS))
+    allocate(combuff%recvRequests(combuff%nRecvProcs*NBLOCKS))
     combuff%recvRequests=MPI_REQUEST_NULL
-    allocate(combuff%inv_recvRequests(combuff%nSendProcs,NBLOCKS))
+    allocate(combuff%inv_recvRequests(combuff%nSendProcs*NBLOCKS))
     combuff%inv_recvRequests=MPI_REQUEST_NULL
-    allocate(combuff%inv_sendRequests(combuff%nRecvProcs,NBLOCKS))
+    allocate(combuff%inv_sendRequests(combuff%nRecvProcs*NBLOCKS))
     combuff%inv_sendRequests=MPI_REQUEST_NULL
-    allocate(combuff%sendStatus(MPI_STATUS_SIZE,combuff%nSendProcs,NBLOCKS))
-    allocate(combuff%recvStatus(MPI_STATUS_SIZE,combuff%nRecvProcs,NBLOCKS))
+    allocate(combuff%sendStatus(MPI_STATUS_SIZE,combuff%nSendProcs*NBLOCKS))
+    allocate(combuff%recvStatus(MPI_STATUS_SIZE,combuff%nRecvProcs*NBLOCKS))
     allocate(combuff%recvIndices(combuff%nRecvProcs))
 
 
@@ -209,7 +209,7 @@ end if
       jProc=combuff%recvProcId(i)
       call mpi_isend(combuff%recvInd(i+1),1,MPI_INTEGER,&
         &            jProc,10,mat%row_map%Comm,&
-        &            combuff%recvRequests(i,1),ierr)
+        &            combuff%recvRequests(i),ierr)
     end do
 
 
@@ -217,8 +217,8 @@ end if
     do i=1,combuff%nSendProcs,1
       call mpi_recv(combuff%sendInd(i+1),1,MPI_INTEGER,&
         &           MPI_ANY_SOURCE,10,mat%row_map%Comm,&
-        &           combuff%sendStatus(:,i,1),ierr)
-      combuff%sendProcId(i) = combuff%sendStatus(MPI_SOURCE,i,1)
+        &           combuff%sendStatus(:,i),ierr)
+      combuff%sendProcId(i) = combuff%sendStatus(MPI_SOURCE,i)
     end do
 
 
@@ -247,7 +247,7 @@ end if
       k=combuff%sendInd(i+1)
       call mpi_irecv(sendRowBlkInd(j:k-1),int(k-j),MPI_INTEGER8,&
         &            combuff%sendProcId(i),20,mat%row_map%Comm,&
-        &            combuff%sendRequests(i,1),ierr)
+        &            combuff%sendRequests(i),ierr)
     end do
 
     row_offset_counted=.false.
@@ -285,7 +285,7 @@ end if
       call sort(combuff%recvRowBlkInd(j:k-1))
       call mpi_isend(combuff%recvRowBlkInd(j:k-1),int(k-j),MPI_INTEGER8,&
         &            combuff%recvProcId(i),20,mat%row_map%Comm,&
-        &            combuff%recvRequests(i,1),ierr)
+        &            combuff%recvRequests(i),ierr)
     end do
 
 #if defined(TESTING) && PHIST_OUTLEV >= 4
@@ -333,10 +333,10 @@ end do
   ! deallocate old receive buffer
   do j = 1, NBLOCKS
   do i = 1, B%nRecvProcs
-     call mpi_request_free(B%recvRequests(i,j), ierr)
+     call mpi_request_free(B%recvRequests((j-1)*B%nRecvProcs+i), ierr)
   end do
   do i = 1, B%nSendProcs
-     call mpi_request_free(B%sendRequests(i,j), ierr)
+     call mpi_request_free(B%sendRequests((j-1)*B%nSendProcs+i), ierr)
   end do
   end do
   deallocate(B%recvData)
@@ -371,7 +371,7 @@ end do
     k = B%recvInd(i)
     l = B%recvInd(i+1)
     call mpi_recv_init(B%recvData(:,k:l-1,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
-      &        B%recvProcId(i),3,comm,B%recvRequests(i,j),ierr)
+      &        B%recvProcId(i),3,comm,B%recvRequests((j-1)*B%nRecvProcs+i),ierr)
     if (ierr/=0) return
   end do
 
@@ -379,7 +379,7 @@ end do
     k = B%sendInd(i)
     l = B%sendInd(i+1)
     call mpi_ssend_init(B%sendData(:,k:l-1,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
-      &                 B%sendProcId(i),3,comm,B%sendRequests(i,j),ierr)
+      &                 B%sendProcId(i),3,comm,B%sendRequests((j-1)*B%nSendProcs+i),ierr)
     if (ierr/=0) return
   end do
   end do
@@ -391,7 +391,7 @@ end do
     k = B%recvInd(i)
     l = B%recvInd(i+1)
     call mpi_send_init(B%recvData(:,k:l-1,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
-      &        B%recvProcId(i),4,comm,B%inv_sendRequests(i,j),ierr)
+      &              B%recvProcId(i),4,comm,B%inv_sendRequests((j-1)*B%nRecvProcs+i),ierr)
     if (ierr/=0) return
   end do
 
@@ -399,7 +399,7 @@ end do
     k = B%sendInd(i)
     l = B%sendInd(i+1)
     call mpi_recv_init(B%sendData(:,k:l-1,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
-      &                 B%sendProcId(i),4,comm,B%inv_recvRequests(i,j),ierr)
+      &                B%sendProcId(i),4,comm,B%inv_recvRequests((j-1)*B%nSendProcs+i),ierr)
     if (ierr/=0) return
   end do
   end do
