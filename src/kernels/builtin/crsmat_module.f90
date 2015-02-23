@@ -2359,6 +2359,10 @@ end if
       call c_f_pointer(b_ptr,b)
       ldb = size(b%val,1)
     end if
+
+    theShape(1) = A%nRows
+    theShape(2) = numShifts
+
     !write(*,*) 'enter carp_sweep_f, bzero=',b_is_zero
     if ( .not. c_associated(nrms_ai2i_ptr) ) then
       write(*,*) 'nrms_ai2i is NULL'
@@ -2373,8 +2377,6 @@ end if
       ierr = -88
       return
     else
-      theShape(1) = A%nRows
-      theShape(2) = numShifts
       call c_f_pointer(work_ptr,invProcCount)
     end if
 
@@ -2560,6 +2562,10 @@ end if
       call c_f_pointer(b_ptr,b)
       ldb = size(b%val,1)
     end if
+
+    theShape(1)=A%nRows
+    theShape(2)=numShifts
+
     !write(*,*) 'enter carp_sweep_f, bzero=',b_is_zero
     if ( .not. c_associated(nrms_ai2i_ptr) ) then
       write(*,*) 'nrms_ai2i is NULL'
@@ -2574,8 +2580,6 @@ end if
       ierr = -88
       return
     else
-      theShape(1) = A%nRows
-      theShape(2) = numShifts
       call c_f_pointer(work_ptr,invProcCount)
     end if
 
@@ -2648,8 +2652,8 @@ end if
                 shifts_r(iSys), &
                 bzero, ldb, &
                 x_r%val(x_r%jmin,1),ldx, &
-                A%comm_buff%recvData(1:nvec,:,1),&
-                nrms_ai2i(:,iSys),omegas(iSys),&
+                A%comm_buff%recvData,&
+                nrms_ai2i(1,iSys),omegas(iSys),&
                 1,A%nRows,+1)
         else
       call dkacz_selector_real(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
@@ -2658,8 +2662,8 @@ end if
                 shifts_r(iSys), &
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1), ldx, &
-                A%comm_buff%recvData(1:nvec,:,1),&
-                nrms_ai2i(:,iSys),omegas(iSys),&
+                A%comm_buff%recvData,&
+                nrms_ai2i(1,iSys),omegas(iSys),&
                 1,A%nRows,+1)        
         end if
       ! exchange values and average (export/average operation
@@ -2688,8 +2692,8 @@ end if
                 shifts_r(iSys), &
                 bzero, ldb, &
                 x_r%val(x_r%jmin,1),ldx, &
-                A%comm_buff%recvData(1:nvec,:,1),&
-                nrms_ai2i(:,iSys),omegas(iSys),&
+                A%comm_buff%recvData,&
+                nrms_ai2i(1,iSys),omegas(iSys),&
                 A%nRows,1,-1)      
       else
       call dkacz_selector_real(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
@@ -2698,8 +2702,8 @@ end if
                 shifts_r(iSys), &
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1), ldx, &
-                A%comm_buff%recvData(1:nvec,:,1),&
-                nrms_ai2i(:,iSys),omegas(iSys),&
+                A%comm_buff%recvData,&
+                nrms_ai2i(1,iSys),omegas(iSys),&
                 A%nRows,1,-1)
       end if
       ! exchange values and average, stay in domain map
