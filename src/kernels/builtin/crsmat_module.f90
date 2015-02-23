@@ -51,8 +51,8 @@ module crsmat_module
     integer,      allocatable :: sendInd(:)           !< index in the send buffer of each proc, has size (nSendProcs+1)
     integer,      allocatable :: recvInd(:)           !< index in the receive buffer of each proc, has size (nRecvProcs+1)
     ! buffers to allow sending several (nb') blocks of nb vectors each. nb' is set by the macro NBLOCKS above
-    real(kind=8), allocatable :: sendData(:,:)        !< send buffer, has size (nb,sendBuffInd(nSendProcs+1)-1,nb')
-    real(kind=8), allocatable :: recvData(:,:)        !< recv buffer, has size (nb,recvBuffInd(nRecvProcs+1)-1,nb')
+    real(kind=8), allocatable :: sendData(:,:,:)        !< send buffer, has size (nb,sendBuffInd(nSendProcs+1)-1,nb')
+    real(kind=8), allocatable :: recvData(:,:,:)        !< recv buffer, has size (nb,recvBuffInd(nRecvProcs+1)-1,nb')
     integer,      allocatable :: sendRowBlkInd(:)     !< local row block index of the data in the sendBuffer, has size (sendBuffInd(nSendProcs+1)-1)
     integer,      allocatable :: sendBuffInd(:,:)     !< sorted Variant of sendRowBlkInd, hast size (size(sendRowBlkInd),2), first entry is the local row block index, second is the index in the send buffer
     integer(kind=8), allocatable :: recvRowBlkInd(:)     !< global row block index of the data in the recvBuffer, has size (recvBuffInd(nRecvProcs+1)-1)
@@ -355,36 +355,30 @@ end do
   INTEGER, intent(in) :: comm
   INTEGER, intent(in) :: nvec
   INTEGER, intent(out) :: ierr
-  INTEGER :: i,j,offsj,k,l
-  INTEGER(KIND=8) :: sendBuffSize,recvBuffSize
-  
-  sendBuffSize=B%sendInd(B%nSendProcs+1)-1
-  recvBuffSize=B%recvInd(B%nRecvProcs+1)-1
+  INTEGER :: i,j,k,l
 
   ! allocate new receive buffer
-  allocate(B%recvData(nvec,recvBuffSize*NBLOCKS),stat=ierr)
+  allocate(B%recvData(nvec,B%recvInd(B%nRecvProcs+1)-1,NBLOCKS),stat=ierr)
   if (ierr/=0) return
 
   ! allocate new send buffer
-  allocate(B%sendData(nvec,sendBuffSize*NBLOCKS),stat=ierr)
+  allocate(B%sendData(nvec,B%sendInd(B%nSendProcs+1)-1,NBLOCKS),stat=ierr)
   if (ierr/=0) return
 
   ! setup persistent communication for spMVM
   do j = 1, NBLOCKS
-  offsj=(j-1)*recvBuffSize
   do i = 1, B%nRecvProcs
     k = B%recvInd(i)
     l = B%recvInd(i+1)
-    call mpi_recv_init(B%recvData(:,offsj+k:offsj+l-1),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
+    call mpi_recv_init(B%recvData(:,k:l-1,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
       &        B%recvProcId(i),3,comm,B%recvRequests((j-1)*B%nRecvProcs+i),ierr)
     if (ierr/=0) return
   end do
 
-  offsj=(j-1)*sendBuffSize
   do i=1,B%nSendProcs, 1
     k = B%sendInd(i)
     l = B%sendInd(i+1)
-    call mpi_ssend_init(B%sendData(:,offsj+k:offsj+l-1),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
+    call mpi_ssend_init(B%sendData(:,k:l-1,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
       &                 B%sendProcId(i),3,comm,B%sendRequests((j-1)*B%nSendProcs+i),ierr)
     if (ierr/=0) return
   end do
@@ -393,20 +387,18 @@ end do
   ! setup persistent communication inverse data transfers
   ! (sending from recvBuf and vice versa, used in CARP)
   do j = 1, NBLOCKS
-  offsj=(j-1)*recvBuffSize
   do i = 1, B%nRecvProcs
     k = B%recvInd(i)
     l = B%recvInd(i+1)
-    call mpi_send_init(B%recvData(:,offsj+k:offsj+l-1),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
+    call mpi_send_init(B%recvData(:,k:l-1,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
       &              B%recvProcId(i),4,comm,B%inv_sendRequests((j-1)*B%nRecvProcs+i),ierr)
     if (ierr/=0) return
   end do
 
-  offsj=(j-1)*sendBuffSize
   do i=1,B%nSendProcs, 1
     k = B%sendInd(i)
     l = B%sendInd(i+1)
-    call mpi_recv_init(B%sendData(:,k:l-1),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
+    call mpi_recv_init(B%sendData(:,k:l-1,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
       &                B%sendProcId(i),4,comm,B%inv_recvRequests((j-1)*B%nSendProcs+i),ierr)
     if (ierr/=0) return
   end do
@@ -2453,8 +2445,8 @@ end if
                 shifts_r(iSys),shifts_i(iSys), &
                 bzero, ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
-                A%comm_buff%recvData(1:nvec,1:recvBuffSize),&
-                A%comm_buff%recvData(1:nvec,recvBuffSize+1:2*recvBuffSize),&
+                A%comm_buff%recvData(1:nvec,:,1),&
+                A%comm_buff%recvData(1:nvec,:,2),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 1,A%nRows,+1)
         else
@@ -2464,8 +2456,8 @@ end if
                 shifts_r(iSys),shifts_i(iSys), &
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
-                A%comm_buff%recvData(1:nvec,1:recvBuffSize),&
-                A%comm_buff%recvData(1:nvec,recvBuffSize+1:2*recvBuffSize),&
+                A%comm_buff%recvData(1:nvec,:,1),&
+                A%comm_buff%recvData(1:nvec,:,2),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 1,A%nRows,+1)        
         end if
@@ -2493,8 +2485,8 @@ end if
                 shifts_r(iSys),shifts_i(iSys), &
                 bzero, ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
-                A%comm_buff%recvData(1:nvec,1:recvBuffSize),&
-                A%comm_buff%recvData(1:nvec,recvBuffSize+1:2*recvBuffSize),&
+                A%comm_buff%recvData(1:nvec,:,1),&
+                A%comm_buff%recvData(1:nvec,:,2),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)      
       else
@@ -2504,8 +2496,8 @@ end if
                 shifts_r(iSys),shifts_i(iSys), &
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
-                A%comm_buff%recvData(1:nvec,1:recvBuffSize),&
-                A%comm_buff%recvData(1:nvec,recvBuffSize+1:2*recvBuffSize),&
+                A%comm_buff%recvData(1:nvec,:,1),&
+                A%comm_buff%recvData(1:nvec,:,2),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)
       end if
@@ -2656,7 +2648,7 @@ end if
                 shifts_r(iSys), &
                 bzero, ldb, &
                 x_r%val(x_r%jmin,1),ldx, &
-                A%comm_buff%recvData,&
+                A%comm_buff%recvData(1:nvec,:,1),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 1,A%nRows,+1)
         else
@@ -2666,7 +2658,7 @@ end if
                 shifts_r(iSys), &
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1), ldx, &
-                A%comm_buff%recvData,&
+                A%comm_buff%recvData(1:nvec,:,1),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 1,A%nRows,+1)        
         end if
@@ -2696,7 +2688,7 @@ end if
                 shifts_r(iSys), &
                 bzero, ldb, &
                 x_r%val(x_r%jmin,1),ldx, &
-                A%comm_buff%recvData,&
+                A%comm_buff%recvData(1:nvec,:,1),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)      
       else
@@ -2706,7 +2698,7 @@ end if
                 shifts_r(iSys), &
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1), ldx, &
-                A%comm_buff%recvData,&
+                A%comm_buff%recvData(1:nvec,:,1),&
                 nrms_ai2i(:,iSys),omegas(iSys),&
                 A%nRows,1,-1)
       end if
@@ -2778,7 +2770,7 @@ subroutine Dcarp_import(A,x, ierr)
     k = A%comm_buff%sendInd(i)
     l = A%comm_buff%sendInd(i+1)
     do j = k, l-1, 1
-      A%comm_buff%sendData(1:nvec,j) = &
+      A%comm_buff%sendData(1:nvec,j,1) = &
         x%val(x%jmin:x%jmax,A%comm_buff%sendRowBlkInd(j))
     end do
   end do
@@ -2813,7 +2805,6 @@ subroutine Dcarp_import2(A,x1,x2, ierr)
   ! local
   integer :: nvec,nrecv
   integer :: i,j,k,l
-  integer(kind=8) :: sendBuffSize
 
   nvec=x1%jmax-x1%jmin+1
   if (nvec/=x2%jmax-x2%jmin+1) then
@@ -2827,7 +2818,6 @@ subroutine Dcarp_import2(A,x1,x2, ierr)
     return
   end if
 
-  sendBuffSize=A%comm_buff%sendInd(A%comm_buff%nSendProcs+1)-1
       
   ! start buffer irecv
     if( A%comm_buff%nRecvProcs .gt. 0 ) then
@@ -2839,9 +2829,9 @@ subroutine Dcarp_import2(A,x1,x2, ierr)
     k = A%comm_buff%sendInd(i)
     l = A%comm_buff%sendInd(i+1)
     do j = k, l-1, 1
-      A%comm_buff%sendData(1:nvec,j) = &
+      A%comm_buff%sendData(1:nvec,j,1) = &
         x1%val(x1%jmin:x1%jmax,A%comm_buff%sendRowBlkInd(j))
-      A%comm_buff%sendData(1:nvec,sendBuffSize+j) = &
+      A%comm_buff%sendData(1:nvec,j,2) = &
         x2%val(x2%jmin:x2%jmax,A%comm_buff%sendRowBlkInd(j))
     end do
   end do
@@ -2928,7 +2918,7 @@ subroutine Dcarp_average(A,x,invProcCount, ierr)
 
           x%val(x%jmin:x%jmax,A%comm_buff%sendRowBlkInd(j)) &
         = x%val(x%jmin:x%jmax,A%comm_buff%sendRowBlkInd(j)) &
-        + A%comm_buff%sendData(1:nvec,j)
+        + A%comm_buff%sendData(1:nvec,j,1)
       end do
     end do
 
@@ -2964,15 +2954,12 @@ subroutine Dcarp_average2(A,x1,x2,invProcCount, ierr)
   ! local
   integer :: nvec
   integer :: i,j,k,l
-  integer(kind=8) :: sendBuffSize
 
   nvec=x1%jmax-x1%jmin+1
   if (nvec/=x2%jmax-x2%jmin+1) then
     ierr=-55
     return
   end if
-  
-  sendBuffSize=A%comm_buff%sendInd(A%comm_buff%nSendProcs+1)-1
 
   ! in this subroutine we assume that the (updated) halo elements
   ! are still in the receive buffer (recvData) from the previous 
@@ -3012,11 +2999,11 @@ subroutine Dcarp_average2(A,x1,x2,invProcCount, ierr)
 
           x1%val(x1%jmin:x1%jmax,A%comm_buff%sendRowBlkInd(j)) &
         = x1%val(x1%jmin:x1%jmax,A%comm_buff%sendRowBlkInd(j)) &
-        + A%comm_buff%sendData(1:nvec,j)
+        + A%comm_buff%sendData(1:nvec,j,1)
 
           x2%val(x2%jmin:x2%jmax,A%comm_buff%sendRowBlkInd(j)) &
         = x2%val(x2%jmin:x2%jmax,A%comm_buff%sendRowBlkInd(j)) &
-        + A%comm_buff%sendData(1:nvec,sendBuffSize+j)
+        + A%comm_buff%sendData(1:nvec,j,2)
       end do
     end do
 
