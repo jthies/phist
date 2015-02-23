@@ -526,7 +526,6 @@ find_package(Likwid PATHS "$ENV{LIKWID_HOME}" "${CMAKE_CURRENT_SOURCE_DIR}/cmake
 if (${LIKWID_Found})
   set(PHIST_HAVE_LIKWID 1)
   include_directories(${LIKWID_INCLUDE_DIRS})
-  link_directories(${LIKWID_LIBRARY_DIRS})
   target_link_libraries(phist_tools ${LIKWID_LIBRARIES})
   option(LIKWID_PERFMON "Activate function-level Likwid performance monitoring (to be used with likwid-perfctr -m)" Off)
   if (${LIKWID_PERFMON})
