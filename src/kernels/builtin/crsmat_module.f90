@@ -356,13 +356,19 @@ end do
   INTEGER, intent(in) :: nvec
   INTEGER, intent(out) :: ierr
   INTEGER :: i,j,k,l
+  INTEGER(KIND=8) :: recvBuffSize,sendBuffSize
+
+  ! we allocate at least one element so that we can pass the first element of the
+  ! buffer to some subroutine (or the first element of the trailing dimension subarray)
 
   ! allocate new receive buffer
-  allocate(B%recvData(nvec,B%recvInd(B%nRecvProcs+1)-1,NBLOCKS),stat=ierr)
+  recvBuffSize=MAX(B%recvInd(B%nRecvProcs+1)-1,1)
+  allocate(B%recvData(nvec,recvBuffSize,NBLOCKS),stat=ierr)
   if (ierr/=0) return
 
   ! allocate new send buffer
-  allocate(B%sendData(nvec,B%sendInd(B%nSendProcs+1)-1,NBLOCKS),stat=ierr)
+  sendBuffSize=MAX(B%sendInd(B%nSendProcs+1)-1,1)
+  allocate(B%sendData(nvec,sendBuffSize,NBLOCKS),stat=ierr)
   if (ierr/=0) return
 
   ! setup persistent communication for spMVM
@@ -2342,6 +2348,8 @@ end if
     integer :: sendBuffSize,recvBuffSize
     logical :: b_is_zero
     real(kind=8), dimension(0,0), target :: bzero
+
+    ierr=0
     
     if ( .not. c_associated(A_ptr) ) then
       write(*,*) 'A is NULL'
@@ -2447,9 +2455,9 @@ end if
                 shifts_r(iSys),shifts_i(iSys), &
                 bzero, ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
-                A%comm_buff%recvData(1:nvec,:,1),&
-                A%comm_buff%recvData(1:nvec,:,2),&
-                nrms_ai2i(:,iSys),omegas(iSys),&
+                A%comm_buff%recvData(1,1,1),&
+                A%comm_buff%recvData(1,1,2),&
+                nrms_ai2i(1,iSys),omegas(iSys),&
                 1,A%nRows,+1)
         else
       call dkacz_selector(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
@@ -2458,9 +2466,9 @@ end if
                 shifts_r(iSys),shifts_i(iSys), &
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
-                A%comm_buff%recvData(1:nvec,:,1),&
-                A%comm_buff%recvData(1:nvec,:,2),&
-                nrms_ai2i(:,iSys),omegas(iSys),&
+                A%comm_buff%recvData(1,1,1),&
+                A%comm_buff%recvData(1,1,2),&
+                nrms_ai2i(1,iSys),omegas(iSys),&
                 1,A%nRows,+1)        
         end if
       ! exchange values and average (export/average operation
@@ -2487,9 +2495,9 @@ end if
                 shifts_r(iSys),shifts_i(iSys), &
                 bzero, ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
-                A%comm_buff%recvData(1:nvec,:,1),&
-                A%comm_buff%recvData(1:nvec,:,2),&
-                nrms_ai2i(:,iSys),omegas(iSys),&
+                A%comm_buff%recvData(1,1,1),&
+                A%comm_buff%recvData(1,1,2),&
+                nrms_ai2i(1,iSys),omegas(iSys),&
                 A%nRows,1,-1)      
       else
       call dkacz_selector(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
@@ -2498,9 +2506,9 @@ end if
                 shifts_r(iSys),shifts_i(iSys), &
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
-                A%comm_buff%recvData(1:nvec,:,1),&
-                A%comm_buff%recvData(1:nvec,:,2),&
-                nrms_ai2i(:,iSys),omegas(iSys),&
+                A%comm_buff%recvData(1,1,1),&
+                A%comm_buff%recvData(1,1,2),&
+                nrms_ai2i(1,iSys),omegas(iSys),&
                 A%nRows,1,-1)
       end if
       ! exchange values and average, stay in domain map
@@ -2563,8 +2571,8 @@ end if
       ldb = size(b%val,1)
     end if
 
-    theShape(1)=A%nRows
-    theShape(2)=numShifts
+    theShape(1) = A%nRows
+    theShape(2) = numShifts
 
     !write(*,*) 'enter carp_sweep_f, bzero=',b_is_zero
     if ( .not. c_associated(nrms_ai2i_ptr) ) then
@@ -2634,10 +2642,6 @@ end if
       ! exchange necessary elements of X. This is the same      
       ! operation as for an spMVM: import from the domain       
       ! map into the column map of A.                           
-      !
-      ! The function will ignore the dummy argument x_i=x_r and
-      ! communicate only x_r if it sees that the buffer is too small
-      ! for two mvecs.
       call Dcarp_import(A,x_r,ierr)
       if (ierr/=0) then
         write(*,*) 'call Dcarp_import returned ierr=',ierr
@@ -2668,8 +2672,6 @@ end if
         end if
       ! exchange values and average (export/average operation
       ! from col map into domain map)
-      !
-      ! as in kacz_import, will check dimension of buffers and ignore x_i.
       call Dcarp_average(A,x_r, invProcCount, ierr)
       if (ierr/=0) then
         write(*,*) 'call Dcarp_average returned ierr=',ierr
@@ -2752,7 +2754,6 @@ subroutine Dcarp_import(A,x, ierr)
   TYPE(crsMat_t) :: A
   TYPE(mvec_t)   :: x
   integer, intent(out) :: ierr
-
   ! local
   integer :: nvec,nrecv
   integer :: i,j,k,l
