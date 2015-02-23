@@ -220,6 +220,10 @@ end subroutine dkacz_selector
 !! all-real variant
 #undef KACZ_RC_VARIANT
 
+#if defined(__INTEL_COMPILER)&&defined(TESTING)&&defined(PHIST_HAVE_COLPACK)
+#warning "certain ifort debugging flags ('-check all', I think) break the real-only kacz kernel with coloring"
+#endif
+
 !! general implementation of forward or backward Kaczmarz sweep for a single shift
 !! and possibly multiple vector columns in X and B
 subroutine dkacz_selector_real(nvec, nlocal, nhalo, ncols, nnz, &
