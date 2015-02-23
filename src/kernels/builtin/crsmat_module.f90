@@ -370,7 +370,7 @@ end do
   do i = 1, B%nRecvProcs
     k = B%recvInd(i)
     l = B%recvInd(i+1)
-    call mpi_recv_init(B%recvData(:,k:l-1,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
+    call mpi_recv_init(B%recvData(1,k,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
       &        B%recvProcId(i),3,comm,B%recvRequests((j-1)*B%nRecvProcs+i),ierr)
     if (ierr/=0) return
   end do
@@ -378,7 +378,7 @@ end do
   do i=1,B%nSendProcs, 1
     k = B%sendInd(i)
     l = B%sendInd(i+1)
-    call mpi_ssend_init(B%sendData(:,k:l-1,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
+    call mpi_ssend_init(B%sendData(1,k,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
       &                 B%sendProcId(i),3,comm,B%sendRequests((j-1)*B%nSendProcs+i),ierr)
     if (ierr/=0) return
   end do
@@ -390,7 +390,7 @@ end do
   do i = 1, B%nRecvProcs
     k = B%recvInd(i)
     l = B%recvInd(i+1)
-    call mpi_send_init(B%recvData(:,k:l-1,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
+    call mpi_send_init(B%recvData(1,k,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
       &              B%recvProcId(i),4,comm,B%inv_sendRequests((j-1)*B%nRecvProcs+i),ierr)
     if (ierr/=0) return
   end do
@@ -398,7 +398,7 @@ end do
   do i=1,B%nSendProcs, 1
     k = B%sendInd(i)
     l = B%sendInd(i+1)
-    call mpi_recv_init(B%sendData(:,k:l-1,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
+    call mpi_recv_init(B%sendData(1,k,j),(l-k)*nvec,MPI_DOUBLE_PRECISION,&
       &                B%sendProcId(i),4,comm,B%inv_recvRequests((j-1)*B%nSendProcs+i),ierr)
     if (ierr/=0) return
   end do
