@@ -1,7 +1,7 @@
 set(LIKWID_HOME "$ENV{LIKWID_HOME}")
 if(LIKWID_HOME)
   message(STATUS "Searching for Likwid in ${LIKWID_HOME}")
-  find_library(LIKWID_LIBRARIES likwid PATH ${LIKWID_HOME} PATH_SUFFIXES lib NO_DEFAULT_PATH)
+  find_library(LIKWID_LIBRARIES likwid PATHS ${LIKWID_HOME} PATH_SUFFIXES lib NO_DEFAULT_PATH)
   if(LIKWID_LIBRARIES)
     set(LIKWID_Found true)
     set(LIKWID_INCLUDE_DIRS ${LIKWID_HOME}/include)
