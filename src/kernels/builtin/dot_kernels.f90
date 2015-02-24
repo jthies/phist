@@ -1,5 +1,7 @@
-!--------------------------------------------------------------------------------
-! hopefully fast dot variants for nvec >= 1
+!> \file dot_kernels.f90
+!! Fast parallel BLAS-dot like routines for different blocksizes for mvec_module
+!! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>"
+!!
 
 subroutine ddot_strided_1(nrows, v, ldv, w, ldw, vdot)
   implicit none

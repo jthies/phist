@@ -1,5 +1,9 @@
+!> \file gemm_kernels_sC.f90
+!! Fast parallel BLAS-gemm like subroutines for different blocksizes for mvecT_times_mvec in mvec_module
+!! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
+!!
+
 #include "phist_config.h"
-! gemm kernels for mecT_times_mvec
 
 subroutine dgemm_sC_1(nrows,nvecw,v,w,M)
   implicit none

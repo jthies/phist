@@ -1,4 +1,9 @@
-// hopefully fast spMVM kernels with nontemporary stores
+/* \file spmvm_kernels_nt.c
+ * Fast parallel spMVM kernels with nontemporal stores for different block vector sizes for crsMat_module
+ * \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
+ *
+*/
+
 #include "phist_config.h"
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI

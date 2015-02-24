@@ -1,3 +1,9 @@
+!> \file env_module.f90
+!! Defines env_module, auxiliary functions for the phist builtin kernels
+!! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
+!!
+
+!> Implements phist_comm_* subroutines for the builtin kernels and some auxiliary functions
 module env_module
   implicit none
   private

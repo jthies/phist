@@ -1,4 +1,7 @@
-! kernels to copy between different mvecs
+!> \file gather_scatter_kernels.f90
+!! Fast parallel kernels to copy between different mvecs for mvec_module
+!! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
+!!
 
 subroutine dgather_1(nrows, v, w, ldw)
   integer, intent(in) :: nrows, ldw

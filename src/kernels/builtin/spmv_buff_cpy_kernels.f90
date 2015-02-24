@@ -1,4 +1,8 @@
-! hopefully fast copy to sendbuf for spMVM
+!> \file spmv_buff_cpy_kernels.f90
+!! Fast parallel subroutines for different block sizes that copy data from a mvec to an MPI communication
+!! buffer for crsMat_module
+!! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
+!!
 
 subroutine dspmv_buff_cpy_1(nlocal, nbuff, val, ind, buff)
   implicit none

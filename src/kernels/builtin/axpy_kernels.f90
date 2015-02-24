@@ -1,3 +1,10 @@
+!> \file axpy_kernels.f90
+!! Fast parallel BLAS-axpy style subroutines for different blocksizes for mvec_module,
+!! cases which may emplyoy non-temporal stores (NT) are delegated to
+!! axpy_kernels_nt.c
+!! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
+!!
+
 subroutine dcopy_1(nrows, x, y)
   implicit none
   integer, intent(in) :: nrows

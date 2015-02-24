@@ -1,3 +1,10 @@
+/*! \file builtin/kernels_def.hpp
+ * included by builtin/kernels.cpp
+ * \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
+ * \author "Jonas Thies <Jonas.Thies@DLR.de>
+ *
+*/
+
 #ifndef PHIST_HAVE_MPI  
 #error "builtin kernels don't work without MPI"
 #endif
