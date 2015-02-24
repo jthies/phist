@@ -24,6 +24,8 @@
 #endif
 typedef phist::ScalarTraits<_ST_> st;
 
+#define NUM_SPMVMS 360
+
 // benchmark application for the sparse matrix-vector multiplication (spMVM)
 int main(int argc, char** argv)
 {
@@ -71,22 +73,20 @@ PHIST_MAIN_TASK_BEGIN
   
   PHIST_ICHK_IERR(SUBR(mvec_random)(x,&ierr),ierr);
 
-  for(int i = 0; i < 120/nvecs; i++)
+  for(int i = 0; i < NUM_SPMVMS/nvecs; i++)
   {
-    PHIST_ENTER_FCN("phist spmvm");
+    PHIST_ENTER_FCN("phist_spmvm");
     PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,x,st::zero(),y,&ierr),ierr);
   }
 
-  for(int i = 0; i < 120/nvecs; i++)
+  for(int i = 0; i < NUM_SPMVMS/nvecs; i++)
   {
-    PHIST_ENTER_FCN("phist spmvm on full views");
+    PHIST_ENTER_FCN("phist_spmvm_on_full_views");
     PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,xv,st::zero(),yv,&ierr),ierr);
   }
 
 #ifdef PHIST_KERNEL_LIB_GHOST  
-for(int i = 0; i < 120/nvecs; i++)
-{
-PHIST_ENTER_FCN("spMVM_called_directly");
+
    ghost_spmv_flags_t spMVM_opts=GHOST_SPMV_DEFAULT;
     // currently the vector mode is the only one working with MPI and multiple RHS
     spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_VECTOR);
@@ -95,7 +95,18 @@ PHIST_ENTER_FCN("spMVM_called_directly");
     ghost_sparsemat_t* gA = (ghost_sparsemat_t*)A;
     ghost_densemat_t* gx = (ghost_densemat_t*)x;
     ghost_densemat_t* gy = (ghost_densemat_t*)y;
+    ghost_densemat_t* gxv = (ghost_densemat_t*)xv;
+    ghost_densemat_t* gyv = (ghost_densemat_t*)yv;
+
+for(int i = 0; i < NUM_SPMVMS/nvecs; i++)
+{
+PHIST_ENTER_FCN("ghost_spmvm");
     ierr=ghost_spmv(gy,gA,gx,&spMVM_opts,&beta);
+}
+for(int i = 0; i < NUM_SPMVMS/nvecs; i++)
+{
+PHIST_ENTER_FCN("ghost_spmvm_on_full_views");
+    ierr=ghost_spmv(gyv,gA,gxv,&spMVM_opts,&beta);
 }
 #endif  
   PHIST_ICHK_IERR(SUBR(mvec_delete)(xv,&ierr),ierr);

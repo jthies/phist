@@ -174,6 +174,7 @@ try {
   
   const Anasazi::Eigensolution<ST,AnasaziMV>& soln=eigenProblem->getSolution();
   *nEig=soln.numVecs;
+  std::cout << "nEig="<<*nEig<<std::endl;//TROET
 #ifndef IS_COMPLEX
   if (!symmetric)
   {
@@ -196,10 +197,30 @@ try {
   {
     AnasaziMV* evecs = soln.Evecs.getRawPtr();
     MV* _evecs=(MV*)evecs;
-#if defined(PHIST_KERNEL_LIB_GHOST)||defined(PHIST_KERNEL_LIB_FORTRAN)
+#if defined(PHIST_KERNEL_LIB_GHOST)||defined(PHIST_KERNEL_LIB_BUILTIN)
     _evecs=evecs->get();
 #endif
-    PHIST_CHK_IERR(SUBR(mvec_get_block)(_evecs,vX,0,*nEig-1, iflag),*iflag);
+    TYPE(mvec_ptr) _vX=vX;
+    int nvecX;
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vX,&nvecX,iflag),*iflag);
+    if (*nEig>nvecX)
+    {
+      PHIST_SOUT(PHIST_WARNING,"given block too small to hold all "
+      "eigenvectors\n(file %s, line %d)",__FILE__,__LINE__);
+      *nEig=nvecX;
+    }
+
+    if (*nEig<nvecX)
+    {
+      _vX=NULL;
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(vX,&_vX,0,*nEig-1,iflag),*iflag);
+    }
+    
+    PHIST_CHK_IERR(SUBR(mvec_get_block)(_evecs,_vX,0,*nEig-1, iflag),*iflag);
+    if (_vX!=vX)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_delete)(_vX,iflag),*iflag);
+    }
   }
   PHIST_SOUT(PHIST_VERBOSE,"returning nEig=%d, nIter=%d\n",*nEig,*nIter);
   return;
