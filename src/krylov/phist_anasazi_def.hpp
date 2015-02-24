@@ -174,6 +174,7 @@ try {
   
   const Anasazi::Eigensolution<ST,AnasaziMV>& soln=eigenProblem->getSolution();
   *nEig=soln.numVecs;
+  std::cout << "nEig="<<*nEig<<std::endl;//TROET
 #ifndef IS_COMPLEX
   if (!symmetric)
   {
@@ -196,7 +197,7 @@ try {
   {
     AnasaziMV* evecs = soln.Evecs.getRawPtr();
     MV* _evecs=(MV*)evecs;
-#if defined(PHIST_KERNEL_LIB_GHOST)||defined(PHIST_KERNEL_LIB_FORTRAN)
+#if defined(PHIST_KERNEL_LIB_GHOST)||defined(PHIST_KERNEL_LIB_BUILTIN)
     _evecs=evecs->get();
 #endif
     PHIST_CHK_IERR(SUBR(mvec_get_block)(_evecs,vX,0,*nEig-1, iflag),*iflag);
