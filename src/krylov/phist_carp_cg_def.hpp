@@ -159,8 +159,9 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) state[], int numSys, int*
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
   
-  PHIST_CHK_IERR(SUBR(carp_delete)(A,numSys,
-        &state[0]->nrms_ai2i_, &state[0]->aux_, iflag),*iflag);    TROET
+#warning "TROET"
+  //PHIST_CHK_IERR(SUBR(carp_delete)(state[0]->A_,numSys,
+  //      &state[0]->nrms_ai2i_, &state[0]->aux_, iflag),*iflag);    TROET
   
   
   for (int i=0;i<numSys;i++)
