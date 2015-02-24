@@ -610,13 +610,11 @@ file(GLOB TestMatricesMM ${CMAKE_SOURCE_DIR}/test/matrices/*.mm)
 file(GLOB TestMatricesBIN ${CMAKE_SOURCE_DIR}/test/matrices/*.bin)
 
 foreach (mat ${TestMatricesMM})
-  get_filename_component(${mat} mat_name NAME)
-  configure_file(${mat} ${CMAKE_CURRENT_BINARY_DIR}/${mat_name} COPYONLY)
+  configure_file(${mat} ${CMAKE_CURRENT_BINARY_DIR}/ COPYONLY)
   list(APPEND TEST_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${mat_name})
 endforeach()
 foreach (mat ${TestMatricesBIN})
-  get_filename_component(${mat} mat_name NAME)
-  configure_file(${mat} ${CMAKE_CURRENT_BINARY_DIR}/${mat_name} COPYONLY)
+  configure_file(${mat} ${CMAKE_CURRENT_BINARY_DIR}/ COPYONLY)
   list(APPEND TEST_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${mat_name})
 endforeach()
 
@@ -791,6 +789,16 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
     set_tests_properties(test-${label}_np${np} PROPERTIES TIMEOUT 120)
   endforeach()
 endforeach()
+
+# Test python interface if python is available
+find_package(PythonInterp)
+if(PYTHONINTERP_FOUND)
+  foreach(pyh ${PYTHON_HEADERS})
+    get_filename_component(pyh_name ${pyh} NAME)
+    add_test(NAME test-${pyh_name} COMMAND ${PYTHON_EXECUTABLE} ${pyh})
+    set_tests_properties(test-${pyh_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
+  endforeach()
+endif()
 
 # Adding concurrency tests with valgrind-helgrind.
 # This was done by Timo for his bachelor thesis, currently
