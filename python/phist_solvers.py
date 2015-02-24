@@ -99,17 +99,17 @@ if __name__ == '__main__':
     PYST_CHK_IERR(phist_comm_create, myComm)
 
     # create a matrix
-    A = DcrsMat_ptr()
+    A = DsparseMat_ptr()
     PYST_CHK_IERR(phist_Dcreate_matrix, A, myComm, 'spinSZ8')
 
     # get map
     myMap = map_ptr()
-    PYST_CHK_IERR(phist_DcrsMat_get_domain_map, A, myMap)
+    PYST_CHK_IERR(phist_DsparseMat_get_domain_map, A, myMap)
 
     # wrap A in operator
     opA = Dop()
     opB = Dop_ptr()
-    PYST_CHK_IERR(phist_Dop_wrap_crsMat, opA, A)
+    PYST_CHK_IERR(phist_Dop_wrap_sparseMat, opA, A)
 
     # create two mvecs
     v0 = Dmvec_ptr()
@@ -139,7 +139,7 @@ if __name__ == '__main__':
     PYST_CHK_IERR(phist_Dmvec_delete, v0)
 
     # delete matrix
-    PYST_CHK_IERR(phist_DcrsMat_delete, A)
+    PYST_CHK_IERR(phist_DsparseMat_delete, A)
 
     # delete comm
     PYST_CHK_IERR(phist_comm_delete, myComm)

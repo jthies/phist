@@ -41,8 +41,8 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _MT_pp = _ct.POINTER(_MT_p)
 
     # use types from kernels
-    _crsMat_ptr = getattr(_phist_kernels, _varT+'crsMat_ptr')
-    _crsMat_ptr_p = getattr(_phist_kernels, _varT+'crsMat_ptr_p')
+    _sparseMat_ptr = getattr(_phist_kernels, _varT+'sparseMat_ptr')
+    _sparseMat_ptr_p = getattr(_phist_kernels, _varT+'sparseMat_ptr_p')
     _mvec_ptr = getattr(_phist_kernels, _varT+'mvec_ptr')
     _mvec_ptr_p = getattr(_phist_kernels, _varT+'mvec_ptr_p')
     _sdMat_ptr = getattr(_phist_kernels, _varT+'sdMat_ptr')
@@ -65,14 +65,14 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _set(_varT+'op_ptr_p', _op_ptr_p)
 
     # from phist_driver_operator_decl.h
-    #void SUBR(op_wrap_crsMat)(TYPE(op_ptr) op, TYPE(const_crsMat_ptr) A, int* ierr);
+    #void SUBR(op_wrap_sparseMat)(TYPE(op_ptr) op, TYPE(const_sparseMat_ptr) A, int* ierr);
     #void SUBR(op_identity)(TYPE(op_ptr) op, int* ierr);
-    _declare(None, _prefix+'op_wrap_crsMat', (_op_ptr, _crsMat_ptr, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'op_wrap_sparseMat', (_op_ptr, _sparseMat_ptr, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'op_identity', (_op_ptr, c_int_p), skip_if_missing=True)
 
     # from phist_orthog_decl.h
-    #void SUBR(orthog)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W, TYPE(sdMat_ptr) R1, TYPE(sdMat_ptr) R2, int numSweeps, int* ierr);
-    _declare(None, _prefix+'orthog', (_mvec_ptr, _mvec_ptr, _sdMat_ptr, _sdMat_ptr, c_int, c_int_p), skip_if_missing=True)
+    #void SUBR(orthog)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W, TYPE(sdMat_ptr) R1, TYPE(sdMat_ptr) R2, int numSweeps, int* rankVW, int* iflag);
+    _declare(None, _prefix+'orthog', (_mvec_ptr, _mvec_ptr, _sdMat_ptr, _sdMat_ptr, c_int, c_int_p, c_int_p), skip_if_missing=True)
 
 
 #--------------------------------------------------------------------------------
@@ -82,6 +82,7 @@ if __name__ == '__main__':
     # also import phist_tools
     from phist_tools import *
     from phist_kernels import *
+    import ctypes
 
     # initialize
     PYST_CHK_IERR(phist_kernels_init)
@@ -117,7 +118,8 @@ if __name__ == '__main__':
     PYST_CHK_IERR(phist_Dmvec_QR, vec1, mat1)
 
     # orthogonalize vec2 wrt. vec1
-    PYST_CHK_NEG_IERR(phist_Dorthog, vec1, vec2, mat2, mat3, 3)
+    rnkVW = ctypes.c_int()
+    PYST_CHK_NEG_IERR(phist_Dorthog, vec1, vec2, mat2, mat3, 3, rnkVW)
 
     # delete sdMats
     PYST_CHK_IERR(phist_DsdMat_delete, mat3)
