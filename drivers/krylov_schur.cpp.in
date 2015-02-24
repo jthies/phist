@@ -162,8 +162,11 @@ PHIST_MAIN_TASK_BEGIN
       eigs[i]=target_value - st::one()/eigs[i];
     }
   }
-  
-  PHIST_SOUT(PHIST_VERBOSE,"Eigenvalue\tresidual\n");
+
+  if (how_many)
+  {
+    PHIST_SOUT(PHIST_VERBOSE,"Eigenvalue\tresidual\n");
+  }
   for (i=0;i<how_many;i++)
   {
     PHIST_SOUT(PHIST_VERBOSE,"%8.4e\t%8.4e\n",st::real(eigs[i]),resid[i]);
