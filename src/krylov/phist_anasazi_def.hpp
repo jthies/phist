@@ -200,7 +200,7 @@ try {
 #if defined(PHIST_KERNEL_LIB_GHOST)||defined(PHIST_KERNEL_LIB_BUILTIN)
     _evecs=evecs->get();
 #endif
-    MV* _vX=vX;
+    TYPE(mvec_ptr) _vX=vX;
     int nvecX;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vX,&nvecX,iflag),*iflag);
     if (*nEig>nvecX)
