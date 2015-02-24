@@ -19,6 +19,9 @@
 #include "phist_driver_utils.h"
 #include "phist_ScalarTraits.hpp"
 
+#ifdef PHIST_KERNEL_LIB_GHOST  
+#include "ghost.h"
+#endif
 typedef phist::ScalarTraits<_ST_> st;
 
 // benchmark application for the sparse matrix-vector multiplication (spMVM)
@@ -31,8 +34,8 @@ int main(int argc, char** argv)
   comm_ptr_t comm = NULL;
   sparseMat_ptr_t A = NULL;
   const_map_ptr_t map = NULL;
-  mvec_ptr_t x = NULL;
-  mvec_ptr_t y = NULL;
+  mvec_ptr_t x = NULL,xv=NULL;
+  mvec_ptr_t y = NULL,yv=NULL;
   sdMat_ptr_t XH = NULL;
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
@@ -62,13 +65,41 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&x,map,nvecs,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&y,map,nvecs,&ierr),ierr);
-
+  
+  PHIST_ICHK_IERR(SUBR(mvec_view_block)(x,&xv,0,nvecs-1,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_view_block)(y,&yv,0,nvecs-1,&ierr),ierr);
+  
   PHIST_ICHK_IERR(SUBR(mvec_random)(x,&ierr),ierr);
 
   for(int i = 0; i < 120/nvecs; i++)
   {
+    PHIST_ENTER_FCN("phist spmvm");
     PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,x,st::zero(),y,&ierr),ierr);
   }
+
+  for(int i = 0; i < 120/nvecs; i++)
+  {
+    PHIST_ENTER_FCN("phist spmvm on full views");
+    PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,xv,st::zero(),yv,&ierr),ierr);
+  }
+
+#ifdef PHIST_KERNEL_LIB_GHOST  
+for(int i = 0; i < 120/nvecs; i++)
+{
+PHIST_ENTER_FCN("spMVM_called_directly");
+   ghost_spmv_flags_t spMVM_opts=GHOST_SPMV_DEFAULT;
+    // currently the vector mode is the only one working with MPI and multiple RHS
+    spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_VECTOR);
+    //void* old_scale = A->traits->scale;
+    ST beta=st::one();
+    ghost_sparsemat_t* gA = (ghost_sparsemat_t*)A;
+    ghost_densemat_t* gx = (ghost_densemat_t*)x;
+    ghost_densemat_t* gy = (ghost_densemat_t*)y;
+    ierr=ghost_spmv(gy,gA,gx,&spMVM_opts,&beta);
+}
+#endif  
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(xv,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(yv,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(x,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(y,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&ierr),ierr);
