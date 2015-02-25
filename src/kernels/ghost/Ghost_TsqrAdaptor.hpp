@@ -232,8 +232,13 @@ namespace ghost {
       KMV Q_view = getNonConstView (Q);
       tsqr_->factorExplicit (A_view, Q_view, R, false, 
                              forceNonnegativeDiagonal);
+                             
       if (node_type::name()=="TPI")
       {
+        // destroy Kokkos node to avoid spinning threads.
+        // ThreadPool (TPI) keeps threads spinning to minimize
+        // start-up overhead, but the spinning threads will kill
+        // the ghost performance in between TSQR calls.
         node_=Teuchos::null;
       }
     }
