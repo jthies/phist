@@ -277,13 +277,23 @@ PHIST_ICHK_IERR(SUBR(sdMat_delete)(Rtmp,&iflag),iflag);
 
   int numBlocks=nrhs/blockSize;
 
-  PHIST_ICHK_IERR(SUBR(feastCorrectionSolver_run)
-        (fCorrSolver, B, tol, maxIter,X_r, X_i, &iflag),iflag);
+  SUBR(feastCorrectionSolver_run)
+        (fCorrSolver, B, tol, maxIter,X_r, X_i, &iflag);
+
+  if (iflag>0)
+  {
+    PHIST_SOUT(PHIST_WARNING,"solver returned warning code %d\n",iflag);
+  }
+  else if (iflag<0)
+  {
+    PHIST_SOUT(PHIST_WARNING,"solver returned error code %d\n",iflag);
+  }
 
 ///////////////////////////////////////////////////////////////////
 // compute residuals and error                                   //
 ///////////////////////////////////////////////////////////////////
-
+if (iflag>=0)
+{
 PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,X_r[0],ONE,X_r_ex0,&iflag),iflag);
 PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,X_i[0],ONE,X_i_ex0,&iflag),iflag);
 double nrm_err0_1[nrhs], nrm_err0_2[nrhs];
@@ -293,7 +303,7 @@ PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(X_r_ex0,X_r_ex0,nrm_err0_2,&iflag),iflag);
 PHIST_SOUT(PHIST_VERBOSE,"for first shift, first rhs:\n");
 PHIST_SOUT(PHIST_VERBOSE,"err in re(x): %e\n",SQRT(nrm_err0_2[0]));
 PHIST_SOUT(PHIST_VERBOSE,"       im(x): %e\n",SQRT(nrm_err0_1[0]));
-
+}
 ///////////////////////////////////////////////////////////////////
 // clean up afterwards                                           //
 ///////////////////////////////////////////////////////////////////
