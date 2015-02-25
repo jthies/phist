@@ -126,6 +126,7 @@ subroutine dkacz_selector(nvec, nlocal, nhalo, ncols, nnz, &
 #include "kacz_loop_clr_def.h"
       else
 ! use NVEC=nvec
+#undef NVEC
 #include "kacz_loop_clr_def.h"
       end if ! block size
 #undef KACZ_BZERO
@@ -153,6 +154,7 @@ subroutine dkacz_selector(nvec, nlocal, nhalo, ncols, nnz, &
 #include "kacz_loop_clr_def.h"
       else
 ! use NVEC=nvec
+#undef NVEC
 #include "kacz_loop_clr_def.h"
       end if ! block size    
     end if ! rhs=0
@@ -182,6 +184,7 @@ subroutine dkacz_selector(nvec, nlocal, nhalo, ncols, nnz, &
 #include "kacz_loop_seq_def.h"
       else
 ! use NVEC=nvec
+#undef NVEC
 #include "kacz_loop_seq_def.h"
       end if ! block size
 #undef KACZ_BZERO
@@ -209,6 +212,7 @@ subroutine dkacz_selector(nvec, nlocal, nhalo, ncols, nnz, &
 #include "kacz_loop_seq_def.h"
       else
 ! use NVEC=nvec
+#undef NVEC
 #include "kacz_loop_seq_def.h"
       end if ! block size    
     end if ! rhs=0
@@ -311,6 +315,7 @@ subroutine dkacz_selector_real(nvec, nlocal, nhalo, ncols, nnz, &
 #include "kacz_loop_clr_def.h"
       else
 ! use NVEC=nvec
+#undef NVEC
 #include "kacz_loop_clr_def.h"
       end if ! block size
 #undef KACZ_BZERO
@@ -338,6 +343,7 @@ subroutine dkacz_selector_real(nvec, nlocal, nhalo, ncols, nnz, &
 #include "kacz_loop_clr_def.h"
       else
 ! use NVEC=nvec
+#undef NVEC
 #include "kacz_loop_clr_def.h"
       end if ! block size    
     end if ! rhs=0
@@ -367,6 +373,7 @@ subroutine dkacz_selector_real(nvec, nlocal, nhalo, ncols, nnz, &
 #include "kacz_loop_seq_def.h"
       else
 ! use NVEC=nvec
+#undef NVEC
 #include "kacz_loop_seq_def.h"
       end if ! block size
 #undef KACZ_BZERO
@@ -394,6 +401,7 @@ subroutine dkacz_selector_real(nvec, nlocal, nhalo, ncols, nnz, &
 #include "kacz_loop_seq_def.h"
       else
 ! use NVEC=nvec
+#undef NVEC
 #include "kacz_loop_seq_def.h"
       end if ! block size    
     end if ! rhs=0
