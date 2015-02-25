@@ -31,12 +31,12 @@
 #ifdef PHIST_HAVE_KOKKOS
 #include "KokkosClassic_config.h"
 /*typedef Kokkos::DefaultNode::DefaultNodeType node_t;*/
-# if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
-# include "Kokkos_TPINode.hpp"
-typedef Kokkos::TPINode node_t;
-# elif defined(HAVE_KOKKOSCLASSIC_TBB)
+# if defined(HAVE_KOKKOSCLASSIC_TBB)
 # include "Kokkos_TBBNode.hpp"
 typedef Kokkos::TBBNode node_t;
+# elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+# include "Kokkos_TPINode.hpp"
+typedef Kokkos::TPINode node_t;
 # else
 # warning "Your Trilinos installation does not support ThreadPool or Intel TBB, so we use the serial node for the TSQR interface!"
 # include "Kokkos_SerialNode.hpp"
