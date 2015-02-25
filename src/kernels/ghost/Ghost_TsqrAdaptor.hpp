@@ -232,6 +232,9 @@ namespace ghost {
       KMV Q_view = getNonConstView (Q);
       tsqr_->factorExplicit (A_view, Q_view, R, false, 
                              forceNonnegativeDiagonal);
+      // destroy Kokkos node to avoid spinning threads
+      // TODO: do not do this for nodes other than TPI
+      node_=Teuchos::null;
     }
 
     /// \brief Rank-revealing decomposition
