@@ -1,4 +1,11 @@
+!> \file map_module.f90
+!! Defines map_module, the phist_map implementation of the builtin kernels
+!! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
+!! \author "Jonas Thies <Jonas.Thies@DLR.de>
+!!
+
 #include "phist_config.h"
+!> Implements phist_map_* for builtin kernels
 module map_module
   implicit none
   private

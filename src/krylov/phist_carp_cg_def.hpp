@@ -158,6 +158,11 @@ void SUBR(carp_cgStates_delete)(TYPE(carp_cgState_ptr) state[], int numSys, int*
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
+  
+  PHIST_CHK_IERR(SUBR(carp_destroy)(state[0]->A_,numSys,
+        state[0]->nrms_ai2i_, state[0]->aux_, iflag),*iflag);
+  
+  
   for (int i=0;i<numSys;i++)
   {
     delete [] state[i]->conv;

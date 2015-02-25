@@ -1,4 +1,9 @@
-! hopefully fast spMVM kernels for beta != 0 (and thus without nontemporary stores)
+!> \file spmvm_kernels.f90
+!! Fast parallel spmvm kernels for different block sizes for crsMat_module
+!! Cases with nontemporal stores (NT) are delegated to spmvm_kernels_nt.c
+!! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
+!!
+
 ! prevent compiler warnings for unused dummy variables
 #define TOUCH(var) if(.false.) call TOUCH_EMPTY_FUNCTION(var)
 

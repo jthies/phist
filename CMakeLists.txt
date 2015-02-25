@@ -560,20 +560,13 @@ foreach(PKG ${LOAD_TRILI_PKG})
     include_directories(${${PKG}_TPL_INCLUDE_DIRS})
     link_directories(${${PKG}_LIBRARY_DIRS})
     link_directories(${${PKG}_TPL_LIBRARY_DIRS})
-    target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} ${${PKG}_LIBRARIES})
-    target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} ${${PKG}_TPL_LIBRARIES})
+    target_link_libraries(phist_tools ${${PKG}_LIBRARIES})
+    target_link_libraries(phist_tools ${${PKG}_TPL_LIBRARIES})
   else()
     message(FATAL_ERROR ${PKG} " was not found")
   endif()
 
 endforeach()
-
-# I kind of am fond of deferring linking of such libraries until
-# executable link time, although I could not find the exact rules for
-# unresolved static dependencies in dynamically linked shared libraries.
-# It seems that the executable can and will satisfy these dependencies
-# at static link time. [MG]
-#target_link_libraries(phist_tools ${LAPACK_LIBS})
 
 if(NOT GHOST_FOUND) #use MPI libs as found by GHOST in this case. otherwise, a clash between thread-safe and normal MPI will occur
   target_link_libraries(phist_tools ${MPI_CXX_LIBRARIES} ${MPI_C_LIBRARIES} ${MPI_Fortran_LIBRARIES})
@@ -617,19 +610,24 @@ file(GLOB TestMatricesMM ${CMAKE_SOURCE_DIR}/test/matrices/*.mm)
 file(GLOB TestMatricesBIN ${CMAKE_SOURCE_DIR}/test/matrices/*.bin)
 
 foreach (mat ${TestMatricesMM})
-  get_filename_component(${mat} mat_name NAME)
-  configure_file(${mat} ${CMAKE_CURRENT_BINARY_DIR}/${mat_name} COPYONLY)
+  configure_file(${mat} ${CMAKE_CURRENT_BINARY_DIR}/ COPYONLY)
   list(APPEND TEST_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${mat_name})
 endforeach()
 foreach (mat ${TestMatricesBIN})
-  get_filename_component(${mat} mat_name NAME)
-  configure_file(${mat} ${CMAKE_CURRENT_BINARY_DIR}/${mat_name} COPYONLY)
+  configure_file(${mat} ${CMAKE_CURRENT_BINARY_DIR}/ COPYONLY)
   list(APPEND TEST_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${mat_name})
 endforeach()
 
 #######################
 # Define executables  #
 #######################
+
+# Directly link all external libraries into tools as all other
+# phist libraries may depend on it and the *user* cannot now
+# what libraries to link. (melven)
+# Additionally, this is required to make the python interface work...
+message(STATUS "External libraries linked: ${external_libs}")
+target_link_libraries(phist_tools ${external_libs})
 
 # type generic driver routines are compiled from .c or .cpp files
 # which we get from .in files by preprocessing
@@ -643,7 +641,6 @@ foreach (infile ${TG_C_Drivers})
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.c)
     add_executable(phist_${tc}${filebase} ${tc}${filebase}.c)
     target_link_libraries(phist_${tc}${filebase} ${library_list})
-    target_link_libraries(phist_${tc}${filebase} ${external_libs})
     install(TARGETS phist_${tc}${filebase} RUNTIME DESTINATION bin OPTIONAL)
     # added
     LIST(APPEND driver_list phist_${tc}${filebase})
@@ -657,7 +654,6 @@ foreach (infile ${TG_CXX_Drivers})
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.cpp)
     add_executable(phist_${tc}${filebase} ${tc}${filebase}.cpp)
     target_link_libraries(phist_${tc}${filebase} ${library_list})
-    target_link_libraries(phist_${tc}${filebase} ${external_libs})
     install(TARGETS phist_${tc}${filebase} RUNTIME DESTINATION bin OPTIONAL)
     LIST(APPEND driver_list phist_${tc}${filebase})
   endforeach()
@@ -667,7 +663,6 @@ endforeach()
 
 add_executable(phist_carp_cg ${PROJECT_SOURCE_DIR}/drivers/carp_cg.c)
 target_link_libraries(phist_carp_cg ${library_list})
-target_link_libraries(phist_carp_cg ${external_libs})
 
 install(TARGETS phist_carp_cg RUNTIME DESTINATION bin OPTIONAL)
 
@@ -716,7 +711,6 @@ foreach(label ${PHIST_TESTS})
   # compile tests without optimization
   set_target_properties(${PRODUCT_NAME}-${label}-test PROPERTIES COMPILE_FLAGS "-O0")
   target_link_libraries(${PRODUCT_NAME}-${label}-test ${library_list})
-  target_link_libraries(${PRODUCT_NAME}-${label}-test ${external_libs})
   target_link_libraries(${PRODUCT_NAME}-${label}-test pthread)
   LIST(APPEND test_list ${PRODUCT_NAME}-${label}-test)
 
@@ -730,7 +724,6 @@ foreach (infile ${C_Examples})
   get_filename_component(filebase ${infile} NAME_WE)
   add_executable(phist_${filebase} ${infile})
   target_link_libraries(phist_${filebase} ${library_list})
-  target_link_libraries(phist_${filebase} ${external_libs})
   LIST(APPEND test_list phist_${filebase})
 endforeach()
 
@@ -738,7 +731,6 @@ foreach (infile ${CXX_Examples})
   get_filename_component(filebase ${infile} NAME_WE)
   add_executable(phist_${filebase} ${infile})
   target_link_libraries(phist_${filebase} ${library_list})
-  target_link_libraries(phist_${filebase} ${external_libs})
   LIST(APPEND test_list phist_${filebase})
 endforeach()
 
@@ -754,7 +746,6 @@ foreach (infile ${TG_C_Examples})
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.c)
     add_executable(${tc}${filebase} ${tc}${filebase}.c)
     target_link_libraries(${tc}${filebase} ${library_list})
-    target_link_libraries(${tc}${filebase} ${external_libs})
     LIST(APPEND test_list ${tc}${filebase})
   endforeach()
 endforeach()
@@ -766,7 +757,6 @@ foreach (infile ${TG_CXX_Examples})
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.cpp)
     add_executable(${tc}${filebase} ${tc}${filebase}.cpp)
     target_link_libraries(${tc}${filebase} ${library_list})
-    target_link_libraries(${tc}${filebase} ${external_libs})
     LIST(APPEND test_list ${tc}${filebase})
   endforeach()
 endforeach()
@@ -799,6 +789,16 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
     set_tests_properties(test-${label}_np${np} PROPERTIES TIMEOUT 120)
   endforeach()
 endforeach()
+
+# Test python interface if python is available
+find_package(PythonInterp)
+if(PYTHONINTERP_FOUND)
+  foreach(pyh ${PYTHON_HEADERS})
+    get_filename_component(pyh_name ${pyh} NAME)
+    add_test(NAME test-${pyh_name} COMMAND ${PYTHON_EXECUTABLE} ${pyh})
+    set_tests_properties(test-${pyh_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
+  endforeach()
+endif()
 
 # Adding concurrency tests with valgrind-helgrind.
 # This was done by Timo for his bachelor thesis, currently

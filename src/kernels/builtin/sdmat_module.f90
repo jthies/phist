@@ -1,4 +1,13 @@
+!> \file sdmat_module.f90
+!! Defines sdmat_module, the phist builtin implementation of phist_DsdMat_*
+!! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
+!!
+
 #include "phist_config.h"
+!> Implementation of phist_DsdMat_* of the phist builtin kernels
+!!
+!! Everything should be straight-forward - not tuned specifically for
+!! performance as it is assumed that sdMats are much smaller mvecs
 module sdmat_module
   implicit none
   private

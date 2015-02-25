@@ -1,11 +1,8 @@
-#include "phist_config.h"
 /*! \file parmetis.c
- * \brief defines the parmetis wrapper function parmetis_v3_partkway_f_
- * \author Achim Basermann, Melven Zoellner
+ * Provides a wrapper for Fortran for the C function parmetis_v3_partkway from ParMetis
+ * \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
  *
- * $Id: parmetis.c 89 2011-09-27 13:01:01Z zoel_me $
- *
- */
+*/
 
 #include "phist_config.h"
 /* needs to be included before system headers for some intel compilers+mpi */

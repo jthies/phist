@@ -1,3 +1,9 @@
+!> \file mrgrnk.f90
+!! optimized mergesort ranking implementation<br>
+!! taken from ORDERPACK 2.0<br>
+!! from the website: http://www.fortran-2000.com/rank/ (13.05.2011)
+!! \author Michel Olagno
+!!
 Module m_mrgrnk
 Integer, Parameter :: kdp = selected_real_kind(15)
 Integer, Parameter :: kli = selected_int_kind(16)

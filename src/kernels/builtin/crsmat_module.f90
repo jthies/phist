@@ -1,7 +1,15 @@
+!> \file crsmat_module.f90
+!! defines crsmat_module, the sparseMat implementation of phist builtin kernels
+!! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>"
+!! \author "Jonas Thies <Jonas.Thies@DLR.de>"
+!!
+
 #include "phist_config.h"
 #ifdef PHIST_HAVE_GHOST
 #include "ghost/config.h"
 #endif
+
+!> Implements phist_DsparseMat_* routines for the builtin kernels
 module crsmat_module
   use, intrinsic :: iso_c_binding
   use map_module, only: Map_t, map_setup, map_compatible_map

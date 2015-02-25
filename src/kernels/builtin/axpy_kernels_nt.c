@@ -1,4 +1,9 @@
-// hopefully fast axpby kernels with nontemporary stores
+/*! \file axpy_kernels_nt.c
+ * Fast parallel BLAS-axpy like functions with nontemporal stores (NT) for different blocksizes for mvec_module
+ * \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
+ *
+*/
+
 #include "phist_config.h"
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI

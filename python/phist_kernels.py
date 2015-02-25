@@ -155,12 +155,12 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _ST_pp = _ct.POINTER(_ST_p)
     _MT_pp = _ct.POINTER(_MT_p)
 
-    # crsMat
-    class _crsMat_ptr(_ct.c_void_p):
+    # sparseMat
+    class _sparseMat_ptr(_ct.c_void_p):
         pass
-    _set(_varT+'crsMat_ptr', _crsMat_ptr)
-    _crsMat_ptr_p = _ct.POINTER(_crsMat_ptr)
-    _set(_varT+'crsMat_ptr_p', _crsMat_ptr_p)
+    _set(_varT+'sparseMat_ptr', _sparseMat_ptr)
+    _sparseMat_ptr_p = _ct.POINTER(_sparseMat_ptr)
+    _set(_varT+'sparseMat_ptr_p', _sparseMat_ptr_p)
 
     # mvec
     class _mvec_ptr(_ct.c_void_p):
@@ -177,32 +177,32 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _set(_varT+'sdMat_ptr_p', _sdMat_ptr_p)
 
     # from phist_driver_utils.h
-    #void  SUBR(crsMat_read)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm, char* filename, int* ierr);
-    _declare(None, _prefix+'crsMat_read', (_crsMat_ptr_p, comm_ptr, c_char_p, c_int_p), skip_if_missing=True)
+    #void  SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm, char* filename, int* ierr);
+    _declare(None, _prefix+'sparseMat_read', (_sparseMat_ptr_p, comm_ptr, c_char_p, c_int_p), skip_if_missing=True)
 
-    #void  SUBR(create_matrix)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm, char* filename, int* ierr);
-    _declare(None, _prefix+'create_matrix', (_crsMat_ptr_p, comm_ptr, c_char_p, c_int_p), skip_if_missing=True)
+    #void  SUBR(create_matrix)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm, char* filename, int* ierr);
+    _declare(None, _prefix+'create_matrix', (_sparseMat_ptr_p, comm_ptr, c_char_p, c_int_p), skip_if_missing=True)
 
 
     # from phist_kernels_decl.h
     #void SUBR(type_avail)(int* ierr);
     _declare(None, _prefix+'type_avail', (c_int_p,), skip_if_missing=True)
 
-    #void  SUBR(crsMat_read_mm)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm, const char* filename, int* ierr);
-    #void  SUBR(crsMat_read_hb)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm, const char* filename, int* ierr);
-    #void  SUBR(crsMat_read_bin)(TYPE(crsMat_ptr)* A, const_comm_ptr_t comm, const char* filename, int* ierr);
-    _declare(None, _prefix+'crsMat_read_mm', (_crsMat_ptr_p, comm_ptr, c_char_p, c_int_p), skip_if_missing=True)
-    _declare(None, _prefix+'crsMat_read_hb', (_crsMat_ptr_p, comm_ptr, c_char_p, c_int_p), skip_if_missing=True)
-    _declare(None, _prefix+'crsMat_read_bin', (_crsMat_ptr_p, comm_ptr, c_char_p, c_int_p), skip_if_missing=True)
+    #void  SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm, const char* filename, int* ierr);
+    #void  SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm, const char* filename, int* ierr);
+    #void  SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm, const char* filename, int* ierr);
+    _declare(None, _prefix+'sparseMat_read_mm', (_sparseMat_ptr_p, comm_ptr, c_char_p, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'sparseMat_read_hb', (_sparseMat_ptr_p, comm_ptr, c_char_p, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'sparseMat_read_bin', (_sparseMat_ptr_p, comm_ptr, c_char_p, c_int_p), skip_if_missing=True)
 
-    #void SUBR(crsMat_get_row_map)(TYPE(const_crsMat_ptr) A, const_map_ptr_t* map, int* ierr);
-    #void SUBR(crsMat_get_col_map)(TYPE(const_crsMat_ptr) A, const_map_ptr_t* map, int* ierr);
-    #void SUBR(crsMat_get_range_map)(TYPE(const_crsMat_ptr) A, const_map_ptr_t* map, int* ierr);
-    #void SUBR(crsMat_get_domain_map)(TYPE(const_crsMat_ptr) A, const_map_ptr_t* map, int* ierr);
-    _declare(None, _prefix+'crsMat_get_row_map', (_crsMat_ptr, map_ptr_p, c_int_p), skip_if_missing=True)
-    _declare(None, _prefix+'crsMat_get_col_map', (_crsMat_ptr, map_ptr_p, c_int_p), skip_if_missing=True)
-    _declare(None, _prefix+'crsMat_get_range_map', (_crsMat_ptr, map_ptr_p, c_int_p), skip_if_missing=True)
-    _declare(None, _prefix+'crsMat_get_domain_map', (_crsMat_ptr, map_ptr_p, c_int_p), skip_if_missing=True)
+    #void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, const_map_ptr_t* map, int* ierr);
+    #void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) A, const_map_ptr_t* map, int* ierr);
+    #void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) A, const_map_ptr_t* map, int* ierr);
+    #void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) A, const_map_ptr_t* map, int* ierr);
+    _declare(None, _prefix+'sparseMat_get_row_map', (_sparseMat_ptr, map_ptr_p, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'sparseMat_get_col_map', (_sparseMat_ptr, map_ptr_p, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'sparseMat_get_range_map', (_sparseMat_ptr, map_ptr_p, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'sparseMat_get_domain_map', (_sparseMat_ptr, map_ptr_p, c_int_p), skip_if_missing=True)
 
     #void SUBR(mvec_create)(TYPE(mvec_ptr)* V, const_map_ptr_t map, int nvec, int* ierr);
     #void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, const_map_ptr_t map, _ST_* values, lidx_t lda, int nvec, int* ierr);
@@ -211,10 +211,10 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _declare(None, _prefix+'mvec_create_view', (_mvec_ptr_p, map_ptr, _ST_p, lidx, c_int, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'sdMat_create', (_sdMat_ptr_p, c_int, c_int, comm_ptr, c_int_p), skip_if_missing=True)
 
-    #void SUBR(crsMat_delete)(TYPE(crsMat_ptr) A, int* ierr);
+    #void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) A, int* ierr);
     #void SUBR(mvec_delete)(TYPE(mvec_ptr) V, int* ierr);
     #void SUBR(sdMat_delete)(TYPE(sdMat_ptr) M, int* ierr);
-    _declare(None, _prefix+'crsMat_delete', (_crsMat_ptr, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'sparseMat_delete', (_sparseMat_ptr, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'mvec_delete', (_mvec_ptr, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'sdMat_delete', (_sdMat_ptr, c_int_p), skip_if_missing=True)
 
@@ -303,18 +303,18 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _declare(None, _prefix+'sdMat_times_sdMat', (_ST_, _sdMat_ptr, _ST_, _sdMat_ptr, _sdMat_ptr, c_int_p), skip_if_missing=True)
     _declare(None, _prefix+'sdMatT_times_sdMat', (_ST_, _sdMat_ptr, _ST_, _sdMat_ptr, _sdMat_ptr, c_int_p), skip_if_missing=True)
 
-    #void SUBR(crsMat_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A, TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr);
-    #void SUBR(crsMatT_times_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A, TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr);
-    #void SUBR(crsMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_crsMat_ptr) A, const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr);
-    _declare(None, _prefix+'crsMat_times_mvec', (_ST_, _crsMat_ptr, _mvec_ptr, _ST_, _mvec_ptr, c_int_p), skip_if_missing=True)
-    _declare(None, _prefix+'crsMatT_times_mvec', (_ST_, _crsMat_ptr, _mvec_ptr, _ST_, _mvec_ptr, c_int_p), skip_if_missing=True)
-    _declare(None, _prefix+'crsMat_times_mvec_vadd_mvec', (_ST_, _crsMat_ptr, _ST_p, _mvec_ptr, _ST_, _mvec_ptr, c_int_p), skip_if_missing=True)
+    #void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr);
+    #void SUBR(sparseMatT_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr);
+    #void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* ierr);
+    _declare(None, _prefix+'sparseMat_times_mvec', (_ST_, _sparseMat_ptr, _mvec_ptr, _ST_, _mvec_ptr, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'sparseMatT_times_mvec', (_ST_, _sparseMat_ptr, _mvec_ptr, _ST_, _mvec_ptr, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'sparseMat_times_mvec_vadd_mvec', (_ST_, _sparseMat_ptr, _ST_p, _mvec_ptr, _ST_, _mvec_ptr, c_int_p), skip_if_missing=True)
 
     #void SUBR(mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* ierr);
     _declare(None, _prefix+'mvec_QR', (_mvec_ptr, _sdMat_ptr, c_int_p), skip_if_missing=True)
 
     # NOT IMPLEMENTED
-    #void SUBR(crsMat_create_fromRowFunc)(TYPE(crsMat_ptr) *A, const_comm_ptr_t comm, gidx_t nrows, gidx_t ncols, lidx_t maxnne, int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int *ierr);
+    #void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, const_comm_ptr_t comm, gidx_t nrows, gidx_t ncols, lidx_t maxnne, int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int *ierr);
 
 #void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Dmvec_t* reV, Dmvec_t* imV, int *ierr);
 #void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* imV, int *ierr);
@@ -360,10 +360,10 @@ if __name__ == '__main__':
     PYST_CHK_IERR(phist_map_delete, myMap)
 
     # create a matrix
-    A = DcrsMat_ptr()
+    A = DsparseMat_ptr()
     PYST_CHK_IERR(phist_Dcreate_matrix, A, myComm, 'spinSZ8')
     # get map
-    PYST_CHK_IERR(phist_DcrsMat_get_domain_map, A, myMap)
+    PYST_CHK_IERR(phist_DsparseMat_get_domain_map, A, myMap)
 
     # create two mvecs
     vec1 = Dmvec_ptr()
@@ -384,13 +384,13 @@ if __name__ == '__main__':
     PYST_CHK_IERR(phist_Dmvec_random, vec2)
 
     # QR-orthogonalize vec1
-    PYST_CHK_IERR(phist_Dmvec_QR, vec2, mat1)
+    PYST_CHK_IERR(phist_Dmvec_QR, vec2, mat2)
 
     # calculate vec1^T vec2
     PYST_CHK_IERR(phist_DmvecT_times_mvec, 1, vec1, vec2, 0, mat1)
 
     # calculate A*vec2
-    PYST_CHK_IERR(phist_DcrsMat_times_mvec, 1, A, vec2, 0, vec3)
+    PYST_CHK_IERR(phist_DsparseMat_times_mvec, 1, A, vec2, 0, vec3)
 
     # delete sdMats
     PYST_CHK_IERR(phist_DsdMat_delete, mat2)
@@ -402,7 +402,7 @@ if __name__ == '__main__':
     PYST_CHK_IERR(phist_Dmvec_delete, vec1)
 
     # delete matrix
-    PYST_CHK_IERR(phist_DcrsMat_delete, A)
+    PYST_CHK_IERR(phist_DsparseMat_delete, A)
 
     # delete comm
     PYST_CHK_IERR(phist_comm_delete, myComm)

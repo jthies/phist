@@ -1,4 +1,13 @@
+!> \file mvec_module.f90
+!! Defines mvec_module, the phist builtin implementation of phist_Dmvec_*
+!! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
+!!
+
 #include "phist_config.h"
+!> Implementations of phist_Dmvec_* for phist builtin kernels which uses row-major mvecs
+!! 
+!! Actual work is delegated to fast, parallel implementations tuned for LARGE
+!! (e.g. much larger than CPU cache) block vectors
 module mvec_module
   use map_module, only: Map_t, map_compatible_map
   use sdmat_module, only: SDMat_t

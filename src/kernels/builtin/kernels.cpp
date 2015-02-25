@@ -1,3 +1,10 @@
+/*! \file builtin/kernels.cpp
+ * wraps implementation of builtin kernel routines
+ * \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
+ * \author "Jonas Thies <Jonas.Thies@DLR.de>
+ *
+*/
+
 #include "phist_config.h"
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
