@@ -161,6 +161,11 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
       PHIST_CHK_NEG_IERR(SUBR(carp_cgStates_iterate)
                 (me->carp_cgStates_, me->numShifts_, 
                 x_r, x_i, tol, maxIter,iflag),*iflag);
+      if (*iflag==+1)
+      {
+        PHIST_SOUT(PHIST_WARNING,"CARP-CG failed to converge\n");
+        *iflag=0;
+      }
       // reset to original block size if fewer systems were solved.
       if (bs!=blockSize)
       {
