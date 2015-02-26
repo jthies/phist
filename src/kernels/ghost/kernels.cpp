@@ -125,7 +125,13 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   PHIST_SOUT(PHIST_VERBOSE,"%s\n",str);
   free(str); str = NULL;
 
-  PHIST_SOUT(PHIST_VERBOSE,"The thread pool consists of %d threads\n",thpool->nThreads);
+  PHIST_SOUT(PHIST_INFO,"The thread pool consists of %d threads\n",thpool->nThreads);
+
+#if defined(PHIST_HAVE_KOKKOS)&&defined(PHIST_HAVE_BELOS)
+   PHIST_SOUT(PHIST_INFO,"TSQR using node-type %s\n",node_t::name().c_str());
+#else
+   PHIST_SOUT(PHIST_INFO,"TSQR not available\n");
+#endif
 
 #ifdef PHIST_HAVE_LIKWID
   LIKWID_MARKER_INIT;
