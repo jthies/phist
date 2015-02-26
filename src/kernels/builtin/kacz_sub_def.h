@@ -1,4 +1,4 @@
-subroutine SUB_NAME(nlocal, nhalo, ncols, nnz, &
+subroutine SUB_NAME(nvec,nlocal, nhalo, ncols, nnz, &
         row_ptr, halo_ptr, col_idx, val, map, &
         shift_r,shift_i, b, ldb, &
         x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,&
@@ -30,8 +30,10 @@ subroutine SUB_NAME(nlocal, nhalo, ncols, nnz, &
   integer istart_clr, iend_clr
 
 #ifdef KACZ_CLR
-#include "kacz_loop_clr_def.hpp"
+#include "kacz_loop_clr_def.h"
 #else
-#include "kacz_loop_seq_def.hpp"
+#include "kacz_loop_seq_def.h"
 #endif
 end subroutine SUB_NAME
+
+#undef SUB_NAME

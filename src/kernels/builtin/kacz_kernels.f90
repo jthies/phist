@@ -1,11 +1,12 @@
 #include "phist_config.h"
 
-#define _KACZ_LOOP_ARGS_RC_ nlocal,nhalo,ncols,nnz,row_ptr,halo_ptr,col_idx,val,map,\
-shift_r,b,ldb,x_r,ldx,halo_r,nrms_ai2i,omega,istart,iend,iestep,i0,i1,j0,j1
+!! pass all subroutine args to specialized kernels:
+#define _KACZ_LOOP_ARGS_RC_ nvec,nlocal,nhalo,ncols,nnz,row_ptr,halo_ptr,col_idx,val,map,\
+shift_r,shift_i,b,ldb,x_r,x_i,ldx,halo_r,halo_i,nrms_ai2i,omega,istart,iend,istep,i0,i1,j0,j1
 
-#define _KACZ_LOOP_ARGS_ nlocal,nhalo,ncols,nnz,row_ptr,halo_ptr,col_idx,val,map,\
-shift_r,b,ldb,x_r,ldx,halo_r,nrms_ai2i,omega,istart,iend,iestep,i0,i1,j0,j1
-
+!! pass dummy args for imaginary parts in case of real matrix and real shifts
+#define _KACZ_LOOP_ARGS_  nvec,nlocal,nhalo,ncols,nnz,row_ptr,halo_ptr,col_idx,val,map,\
+shift_r,shift_r,b,ldb,x_r,x_r,ldx,halo_r,halo_r,nrms_ai2i,omega,istart,iend,istep,i0,i1,j0,j1
 
 !! compute for a given shift sigma=shift_r+shift_i the 2-norm of each row
 !! of the matrix shift[j]*I-A and store the inverse of the results in the
@@ -252,8 +253,85 @@ subroutine dkacz_selector_real(nvec, nlocal, nhalo, ncols, nnz, &
     iend=iend_in
   end if
 
+  if (use_clr_kernel) then
+    if (use_bzero_kernel) then
+      if (nvec==1) then
+        call kacz_loop_clr_b0_1(_KACZ_LOOP_ARGS_)
+      else if (nvec==2) then
+        call kacz_loop_clr_b0_2(_KACZ_LOOP_ARGS_)
+      else if (nvec==4) then
+        call kacz_loop_clr_b0_4(_KACZ_LOOP_ARGS_)
+      else if (nvec==8) then
+        call kacz_loop_clr_b0_8(_KACZ_LOOP_ARGS_)
+      else if (nvec==16) then
+        call kacz_loop_clr_b0_16(_KACZ_LOOP_ARGS_)
+      else if (nvec==32) then
+        call kacz_loop_clr_b0_32(_KACZ_LOOP_ARGS_)
+      else if (nvec==64) then
+        call kacz_loop_clr_b0_64(_KACZ_LOOP_ARGS_)
+      else
+        call kacz_loop_clr_b0_generic(_KACZ_LOOP_ARGS_)
+      end if ! block size
+    else
+      if (nvec==1) then
+        call kacz_loop_clr_1(_KACZ_LOOP_ARGS_)
+      else if (nvec==2) then
+        call kacz_loop_clr_2(_KACZ_LOOP_ARGS_)
+      else if (nvec==4) then
+        call kacz_loop_clr_4(_KACZ_LOOP_ARGS_)
+      else if (nvec==8) then
+        call kacz_loop_clr_8(_KACZ_LOOP_ARGS_)
+      else if (nvec==16) then
+        call kacz_loop_clr_16(_KACZ_LOOP_ARGS_)
+      else if (nvec==32) then
+        call kacz_loop_clr_32(_KACZ_LOOP_ARGS_)
+      else if (nvec==64) then
+        call kacz_loop_clr_64(_KACZ_LOOP_ARGS_)
+      else
+        call kacz_loop_clr_generic(_KACZ_LOOP_ARGS_)
+      end if ! block size
+    end if ! rhs=0
+  else ! no coloring - use lexicographic kernel
+    if (use_bzero_kernel) then
+      if (nvec==1) then
+        call kacz_loop_seq_b0_1(_KACZ_LOOP_ARGS_)
+      else if (nvec==2) then
+        call kacz_loop_seq_b0_2(_KACZ_LOOP_ARGS_)
+      else if (nvec==4) then
+        call kacz_loop_seq_b0_4(_KACZ_LOOP_ARGS_)
+      else if (nvec==8) then
+        call kacz_loop_seq_b0_8(_KACZ_LOOP_ARGS_)
+      else if (nvec==16) then
+        call kacz_loop_seq_b0_16(_KACZ_LOOP_ARGS_)
+      else if (nvec==32) then
+        call kacz_loop_seq_b0_32(_KACZ_LOOP_ARGS_)
+      else if (nvec==64) then
+        call kacz_loop_seq_b0_64(_KACZ_LOOP_ARGS_)
+      else
+        call kacz_loop_seq_b0_generic(_KACZ_LOOP_ARGS_)
+      end if ! block size
+    else
+      if (nvec==1) then
+        call kacz_loop_seq_1(_KACZ_LOOP_ARGS_)
+      else if (nvec==2) then
+        call kacz_loop_seq_2(_KACZ_LOOP_ARGS_)
+      else if (nvec==4) then
+        call kacz_loop_seq_4(_KACZ_LOOP_ARGS_)
+      else if (nvec==8) then
+        call kacz_loop_seq_8(_KACZ_LOOP_ARGS_)
+      else if (nvec==16) then
+        call kacz_loop_seq_16(_KACZ_LOOP_ARGS_)
+      else if (nvec==32) then
+        call kacz_loop_seq_32(_KACZ_LOOP_ARGS_)
+      else if (nvec==64) then
+        call kacz_loop_seq_64(_KACZ_LOOP_ARGS_)
+      else
+        call kacz_loop_seq_generic(_KACZ_LOOP_ARGS_)
+      end if ! block size
+    end if ! rhs=0
+  end if ! use coloring for parallelization
 
-ierr=-99
+
 
 end subroutine dkacz_selector_real
 
@@ -272,42 +350,34 @@ end subroutine dkacz_selector_real
 #define SUB_NAME kacz_loop_clr_b0_1
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 2
 #define SUB_NAME kacz_loop_clr_b0_2
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 4
 #define SUB_NAME kacz_loop_clr_b0_4
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 8
 #define SUB_NAME kacz_loop_clr_b0_8
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 16
 #define SUB_NAME kacz_loop_clr_b0_16
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 32
 #define SUB_NAME kacz_loop_clr_b0_32
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 64
 #define SUB_NAME kacz_loop_clr_b0_64
 #include "kacz_sub_def.h"
 
-#undef NVEC
-
-!! general case (kernel for block size not pre-compiled)
-subroutine kacz_loop_clr_b0_generic
-
-end subroutine kacz_loop_clr_b0_generic
+! NVEC is now not defined, so it will be
+! taken from the first arg to the subroutine
+#define SUB_NAME kacz_loop_clr_b0_generic
+#include "kacz_sub_def.h"
 
 #undef KACZ_BZERO
 
@@ -315,34 +385,31 @@ end subroutine kacz_loop_clr_b0_generic
 #define SUB_NAME kacz_loop_clr_1
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 2
 #define SUB_NAME kacz_loop_clr_2
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 4
 #define SUB_NAME kacz_loop_clr_4
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 8
 #define SUB_NAME kacz_loop_clr_8
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 16
 #define SUB_NAME kacz_loop_clr_16
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 32
 #define SUB_NAME kacz_loop_clr_32
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 64
 #define SUB_NAME kacz_loop_clr_64
+#include "kacz_sub_def.h"
+
+#define SUB_NAME kacz_loop_clr_generic
 #include "kacz_sub_def.h"
 
 #undef KACZ_CLR
@@ -352,36 +419,32 @@ end subroutine kacz_loop_clr_b0_generic
 #define SUB_NAME kacz_loop_seq_b0_1
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 2
 #define SUB_NAME kacz_loop_seq_b0_2
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 4
 #define SUB_NAME kacz_loop_seq_b0_4
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 8
 #define SUB_NAME kacz_loop_seq_b0_8
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 16
 #define SUB_NAME kacz_loop_seq_b0_16
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 32
 #define SUB_NAME kacz_loop_seq_b0_32
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 64
 #define SUB_NAME kacz_loop_seq_b0_64
 #include "kacz_sub_def.h"
 
+#define SUB_NAME kacz_loop_seq_b0_generic
+#include "kacz_sub_def.h"
 
 #undef KACZ_BZERO
 
@@ -389,38 +452,35 @@ end subroutine kacz_loop_clr_b0_generic
 #define SUB_NAME kacz_loop_seq_1
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 2
 #define SUB_NAME kacz_loop_seq_2
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 4
 #define SUB_NAME kacz_loop_seq_4
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 8
 #define SUB_NAME kacz_loop_seq_8
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 16
 #define SUB_NAME kacz_loop_seq_16
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 32
 #define SUB_NAME kacz_loop_seq_32
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 64
 #define SUB_NAME kacz_loop_seq_64
 #include "kacz_sub_def.h"
 
+#define SUB_NAME kacz_loop_seq_generic
+#include "kacz_sub_def.h"
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! REAL-ONLY                     !!
+!! REAL with complex shifts      !!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #define KACZ_RC_VARIANT
@@ -431,36 +491,29 @@ end subroutine kacz_loop_clr_b0_generic
 #define SUB_NAME kacz_loop_RC_clr_b0_1
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 2
 #define SUB_NAME kacz_loop_RC_clr_b0_2
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 4
 #define SUB_NAME kacz_loop_RC_clr_b0_4
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 8
 #define SUB_NAME kacz_loop_RC_clr_b0_8
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 16
 #define SUB_NAME kacz_loop_RC_clr_b0_16
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 32
 #define SUB_NAME kacz_loop_RC_clr_b0_32
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 64
 #define SUB_NAME kacz_loop_RC_clr_b0_64
 #include "kacz_sub_def.h"
-
 
 #undef KACZ_BZERO
 
@@ -468,34 +521,31 @@ end subroutine kacz_loop_clr_b0_generic
 #define SUB_NAME kacz_loop_RC_clr_1
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 2
 #define SUB_NAME kacz_loop_RC_clr_2
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 4
 #define SUB_NAME kacz_loop_RC_clr_4
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 8
 #define SUB_NAME kacz_loop_RC_clr_8
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 16
 #define SUB_NAME kacz_loop_RC_clr_16
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 32
 #define SUB_NAME kacz_loop_RC_clr_32
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 64
 #define SUB_NAME kacz_loop_RC_clr_64
+#include "kacz_sub_def.h"
+
+#define SUB_NAME kacz_loop_RC_clr_generic
 #include "kacz_sub_def.h"
 
 #undef KACZ_CLR
@@ -505,36 +555,32 @@ end subroutine kacz_loop_clr_b0_generic
 #define SUB_NAME kacz_loop_RC_seq_b0_1
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 2
 #define SUB_NAME kacz_loop_RC_seq_b0_2
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 4
 #define SUB_NAME kacz_loop_RC_seq_b0_4
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 8
 #define SUB_NAME kacz_loop_RC_seq_b0_8
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 16
 #define SUB_NAME kacz_loop_RC_seq_b0_16
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 32
 #define SUB_NAME kacz_loop_RC_seq_b0_32
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 64
 #define SUB_NAME kacz_loop_RC_seq_b0_64
 #include "kacz_sub_def.h"
 
+#define SUB_NAME kacz_loop_RC_seq_b0_generic
+#include "kacz_sub_def.h"
 
 #undef KACZ_BZERO
 
@@ -542,32 +588,31 @@ end subroutine kacz_loop_clr_b0_generic
 #define SUB_NAME kacz_loop_RC_seq_1
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 2
 #define SUB_NAME kacz_loop_RC_seq_2
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 4
 #define SUB_NAME kacz_loop_RC_seq_4
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 8
 #define SUB_NAME kacz_loop_RC_seq_8
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 16
 #define SUB_NAME kacz_loop_RC_seq_16
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 32
 #define SUB_NAME kacz_loop_RC_seq_32
 #include "kacz_sub_def.h"
 
-#undef NVEC
 #define NVEC 64
 #define SUB_NAME kacz_loop_RC_seq_64
 #include "kacz_sub_def.h"
+
+#define SUB_NAME kacz_loop_RC_seq_generic
+#include "kacz_sub_def.h"
+
+
