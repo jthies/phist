@@ -20,7 +20,7 @@ flush(6)
 ! will stick with 1 MPI process per socket and think about NUMA later (we could
 ! 'first PHIST_TOUCH' all vectors using the coloring if it is defined in the map, but
 ! that would infringe the spMVM performance...)
-!$omp parallel do private(tmp_r,tmp_i,i,j) schedule(runtime)
+!$omp parallel do private(tmp_r,tmp_i,i,j) schedule(static)
   do jc = map%color_offset(ic)+j0,map%color_offset(ic+istep)+j1,istep
     ! two variants: a) seems to be faster on an Emmy Socket. To test the alternative,
     ! uncomment the call permute_local_matrix line in crsmat_module.f90
