@@ -2284,6 +2284,7 @@ end if
     !--------------------------------------------------------------------------------
     integer :: iSys
     integer :: ldx, ldb, nvec
+    logical strided_x, strided_b
     integer :: theShape(2)
     integer :: sendBuffSize,recvBuffSize
     logical :: b_is_zero
@@ -2370,6 +2371,29 @@ end if
       end if
 
       ldx = size(x_r%val,1)
+    
+      ! determin data layout
+      if( .not. x_r%is_view .or. &
+        & ( x_r%jmin .eq. lbound(x_r%val,1) .and. &
+        &   x_r%jmax .eq. ubound(x_r%val,1)       ) ) then
+        strided_x = .false.
+      else
+        strided_x = .true.
+      end if
+      
+      if( .not. b%is_view .or. &
+        & ( b%jmin .eq. lbound(b%val,1) .and. &
+        &   b%jmax .eq. ubound(b%val,1)       ) ) then
+        strided_b = .false.
+      else
+        strided_b = .true.
+      end if
+      
+      if (strided_x .or. strided_b) then
+        write(*,*) "CARP kernels not implemented for strided vectors (views)"
+        ierr=-99
+        return
+      end if
     
       !write(*,*) 'nvec=',nvec
       !write(*,*) 'x_r%jmin=',x_r%jmin
@@ -2486,6 +2510,7 @@ end if
     
     !--------------------------------------------------------------------------------
     integer :: iSys
+    logical strided_x, strided_b
     integer :: ldx, ldb, nvec
     integer :: theShape(2)
     integer :: sendBuffSize,recvBuffSize
@@ -2571,6 +2596,29 @@ end if
       end if
 
       ldx = size(x_r%val,1)
+
+      ! determin data layout
+      if( .not. x_r%is_view .or. &
+        & ( x_r%jmin .eq. lbound(x_r%val,1) .and. &
+        &   x_r%jmax .eq. ubound(x_r%val,1)       ) ) then
+        strided_x = .false.
+      else
+        strided_x = .true.
+      end if
+
+      if( .not. b%is_view .or. &
+        & ( b%jmin .eq. lbound(b%val,1) .and. &
+        &   b%jmax .eq. ubound(b%val,1)       ) ) then
+        strided_b = .false.
+      else
+        strided_b = .true.
+      end if
+      
+      if (strided_x .or. strided_b) then
+        write(*,*) "CARP kernels not implemented for strided vectors (views)"
+        ierr=-99
+        return
+      end if
     
       !write(*,*) 'nvec=',nvec
       !write(*,*) 'x_r%jmin=',x_r%jmin

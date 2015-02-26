@@ -11,18 +11,18 @@ subroutine SUB_NAME(nvec,nlocal, nhalo, ncols, nnz, &
 
   implicit none
 
-  integer, intent(in) :: nlocal, nhalo, ncols, ldx, ldb
+  integer, intent(in) :: nvec, nlocal, nhalo, ncols, ldx, ldb
   integer(kind=8), intent(in) :: nnz
   real(kind=8), intent(in) :: shift_r, shift_i
   integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
   TYPE(Map_t), intent(in) :: map
-  real(kind=8), intent(inout) :: x_r(ldx,*), x_i(ldx,*),b(ldb,*)
+  real(kind=8), intent(inout) :: x_r(NVEC,*), x_i(NVEC,*),b(NVEC,*)
   real(kind=8), intent(inout) :: halo_r(NVEC,nhalo),halo_i(NVEC,nhalo)
   real(kind=8), intent(in) :: nrms_ai2i(nlocal)
   real(kind=8), intent(in) :: omega
-  integer, intent(in) :: i0, i1, j0, j1, istart, iend
+  integer, intent(in) :: i0, i1, j0, j1, istart, iend, istep
   ! locals
   real(kind=8) :: tmp_r(NVEC), tmp_i(NVEC)
   integer :: i, ic, jc
