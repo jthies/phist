@@ -555,7 +555,6 @@ configure_file ("${PROJECT_SOURCE_DIR}/doc/phist.doxyfile.in" "${PROJECT_BINARY_
 foreach(PKG ${LOAD_TRILI_PKG})
   find_package(${PKG} REQUIRED)
   if (${${PKG}_FOUND})
-    message(STATUS "Found.")
     include_directories(${${PKG}_INCLUDE_DIRS})
     include_directories(${${PKG}_TPL_INCLUDE_DIRS})
     link_directories(${${PKG}_LIBRARY_DIRS})
