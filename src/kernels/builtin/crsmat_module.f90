@@ -2381,7 +2381,9 @@ end if
         strided_x = .true.
       end if
       
-      if( .not. b%is_view .or. &
+      if( b_is_zero ) then
+        strided_b = .false.
+      else if( .not. b%is_view .or. &
         & ( b%jmin .eq. lbound(b%val,1) .and. &
         &   b%jmax .eq. ubound(b%val,1)       ) ) then
         strided_b = .false.
@@ -2606,7 +2608,9 @@ end if
         strided_x = .true.
       end if
 
-      if( .not. b%is_view .or. &
+      if( b_is_zero ) then
+        strided_b = .false.
+      else if( .not. b%is_view .or. &
         & ( b%jmin .eq. lbound(b%val,1) .and. &
         &   b%jmax .eq. ubound(b%val,1)       ) ) then
         strided_b = .false.
