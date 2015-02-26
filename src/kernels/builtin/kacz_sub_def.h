@@ -18,7 +18,7 @@ subroutine SUB_NAME(nvec,nlocal, nhalo, ncols, nnz, &
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
   TYPE(Map_t), intent(in) :: map
-  real(kind=8), intent(inout) :: x_r(NVEC,*), x_i(NVEC,*),b(NVEC,*)
+  real(kind=8), intent(inout) :: x_r(NVEC,nlocal), x_i(NVEC,nlocal),b(NVEC,nlocal)
   real(kind=8), intent(inout) :: halo_r(NVEC,nhalo),halo_i(NVEC,nhalo)
   real(kind=8), intent(in) :: nrms_ai2i(nlocal)
   real(kind=8), intent(in) :: omega
@@ -28,7 +28,12 @@ subroutine SUB_NAME(nvec,nlocal, nhalo, ncols, nnz, &
   integer :: i, ic, jc
   integer(kind=8) :: j
   integer istart_clr, iend_clr
-
+! TODO - we don't actually check the memory alignment before calling these subroutines!
+#ifdef NVEC
+!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x_r:64, halo_r:64, x_i:64, halo_i:64, b:64
+#else
+!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x_r:8, halo_r:64, x_i:8, halo_i:64, b:8
+#endif
 #ifdef KACZ_CLR
 #include "kacz_loop_clr_def.h"
 #else
