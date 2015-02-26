@@ -1,7 +1,8 @@
 subroutine SUB_NAME(nlocal, nhalo, ncols, nnz, &
         row_ptr, halo_ptr, col_idx, val, map, &
         shift_r,shift_i, b, ldb, &
-        x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,istart_in,iend_in,istep)
+        x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,&
+        istart,iend,istep,i0,i1,j0,j1)
 
 #ifdef PHIST_HAVE_OPENMP
   use :: omp_lib
