@@ -1484,76 +1484,8 @@ end subroutine permute_local_matrix
 #endif
 
 
-    ! exchange necessary elements
-!write(*,*) 'CRS', A%row_map%me, 'sendRowBlkInd', A%comm_buff%sendRowBlkInd
-!write(*,*) 'CRS', A%row_map%me, 'recvRowBlkInd', A%comm_buff%recvRowBlkInd
-
-    ! start buffer irecv
-    ! we could also set up persistent communication channels here... and use MPI_Startall later
-    if( allocated(A%comm_buff%recvData) ) then
-      if( size(A%comm_buff%recvData,1) .ne. nvec ) then
-        call delete_buffers(A%comm_buff)
-      end if
-    end if
-    if( .not. allocated(A%comm_buff%recvData) ) then
-      call alloc_buffers(A%comm_buff,A%row_map%comm,nvec,ierr)
-    end if
-
-    ! start receiving (e.g. irecv)
-    if( A%comm_buff%nRecvProcs .gt. 0 ) then
-      !call mpi_startall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStatus,ierr)
-      call mpi_startall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,ierr)
-    end if
-
-
-    sendBuffSize = size(A%comm_buff%sendBuffInd,1)
-    ! gather send data in buffer
-    if( nvec .eq. 1 ) then
-      if( strided_x ) then
-        call dspmv_buff_cpy_strided_1(A%nrows, sendBuffSize, ldx, x%val(x%jmin,1), A%comm_buff%sendBuffInd, A%comm_buff%sendData)
-      else
-        call dspmv_buff_cpy_1(A%nrows, sendBuffSize, x%val, A%comm_buff%sendBuffInd, A%comm_buff%sendData)
-      end if
-    else if( nvec .eq. 2 ) then
-      if( strided_x ) then
-        call dspmv_buff_cpy_strided_2(A%nrows, sendBuffSize, ldx, x%val(x%jmin,1), A%comm_buff%sendBuffInd, A%comm_buff%sendData)
-      else
-        call dspmv_buff_cpy_2(A%nrows, sendBuffSize, x%val, A%comm_buff%sendBuffInd, A%comm_buff%sendData)
-      end if
-    else if( nvec .eq. 4 ) then
-      if( strided_x ) then
-        call dspmv_buff_cpy_strided_4(A%nrows, sendBuffSize, ldx, x%val(x%jmin,1), A%comm_buff%sendBuffInd, A%comm_buff%sendData)
-      else
-        call dspmv_buff_cpy_4(A%nrows, sendBuffSize, x%val, A%comm_buff%sendBuffInd, A%comm_buff%sendData)
-      end if
-    else if( nvec .eq. 8 ) then
-      if( strided_x ) then
-        call dspmv_buff_cpy_strided_8(A%nrows, sendBuffSize, ldx, x%val(x%jmin,1), A%comm_buff%sendBuffInd, A%comm_buff%sendData)
-      else
-        call dspmv_buff_cpy_8(A%nrows, sendBuffSize, x%val, A%comm_buff%sendBuffInd, A%comm_buff%sendData)
-      end if
-    else
-      call dspmv_buff_cpy_general(nvec, A%nrows, sendBuffSize, ldx, x%val(x%jmin,1), A%comm_buff%sendBuffInd, A%comm_buff%sendData)
-    end if
-
-
-    ! start sending (e.g. issend)
-    if( A%comm_buff%nSendProcs .gt. 0 ) then
-      !call mpi_startall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
-      call mpi_startall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,ierr)
-    end if
-
-    ! wait till all data arrived
-    if( A%comm_buff%nRecvProcs .gt. 0 ) then
-      call mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStatus,ierr)
-    end if
-
-    ! also wait till all data was sent to circumvent dumb MPI implementations that don't do that in the background!
-    if( A%comm_buff%nSendProcs .gt. 0 ) then
-      call mpi_waitall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
-    end if
-
-
+    ! exchange necessary x data => A%comm_buff%recvData
+    call Dspmv_import(A,x,ierr)
 
     recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
     handled = .false.
@@ -2352,6 +2284,7 @@ end if
     !--------------------------------------------------------------------------------
     integer :: iSys
     integer :: ldx, ldb, nvec
+    logical strided_x, strided_b
     integer :: theShape(2)
     integer :: sendBuffSize,recvBuffSize
     logical :: b_is_zero
@@ -2438,6 +2371,31 @@ end if
       end if
 
       ldx = size(x_r%val,1)
+    
+      ! determin data layout
+      if( .not. x_r%is_view .or. &
+        & ( x_r%jmin .eq. lbound(x_r%val,1) .and. &
+        &   x_r%jmax .eq. ubound(x_r%val,1)       ) ) then
+        strided_x = .false.
+      else
+        strided_x = .true.
+      end if
+      
+      if( b_is_zero ) then
+        strided_b = .false.
+      else if( .not. b%is_view .or. &
+        & ( b%jmin .eq. lbound(b%val,1) .and. &
+        &   b%jmax .eq. ubound(b%val,1)       ) ) then
+        strided_b = .false.
+      else
+        strided_b = .true.
+      end if
+      
+      if (strided_x .or. strided_b) then
+        write(*,*) "CARP kernels not implemented for strided vectors (views)"
+        ierr=-99
+        return
+      end if
     
       !write(*,*) 'nvec=',nvec
       !write(*,*) 'x_r%jmin=',x_r%jmin
@@ -2554,6 +2512,7 @@ end if
     
     !--------------------------------------------------------------------------------
     integer :: iSys
+    logical strided_x, strided_b
     integer :: ldx, ldb, nvec
     integer :: theShape(2)
     integer :: sendBuffSize,recvBuffSize
@@ -2639,6 +2598,31 @@ end if
       end if
 
       ldx = size(x_r%val,1)
+
+      ! determin data layout
+      if( .not. x_r%is_view .or. &
+        & ( x_r%jmin .eq. lbound(x_r%val,1) .and. &
+        &   x_r%jmax .eq. ubound(x_r%val,1)       ) ) then
+        strided_x = .false.
+      else
+        strided_x = .true.
+      end if
+
+      if( b_is_zero ) then
+        strided_b = .false.
+      else if( .not. b%is_view .or. &
+        & ( b%jmin .eq. lbound(b%val,1) .and. &
+        &   b%jmax .eq. ubound(b%val,1)       ) ) then
+        strided_b = .false.
+      else
+        strided_b = .true.
+      end if
+      
+      if (strided_x .or. strided_b) then
+        write(*,*) "CARP kernels not implemented for strided vectors (views)"
+        ierr=-99
+        return
+      end if
     
       !write(*,*) 'nvec=',nvec
       !write(*,*) 'x_r%jmin=',x_r%jmin
@@ -2751,6 +2735,102 @@ end if
     end if
     
   end subroutine phist_Dcarp_destroy
+
+subroutine Dspmv_import(A,x,ierr)
+use mpi
+implicit none
+
+  TYPE(crsMat_t) :: A
+  TYPE(mvec_t)   :: x
+  integer, intent(out) :: ierr
+  ! local
+  integer :: nvec, ldx, sendBuffSize
+  logical :: strided_x
+  integer :: i,j,k,l
+
+    nvec = x%jmax-x%jmin+1
+    ldx = size(x%val,1)
+
+    ! determin data layout
+    if( .not. x%is_view .or. &
+      & ( x%jmin .eq. lbound(x%val,1) .and. &
+      &   x%jmax .eq. ubound(x%val,1)       ) ) then
+      strided_x = .false.
+    else
+      strided_x = .true.
+    end if
+
+
+    ! exchange necessary elements
+!write(*,*) 'CRS', A%row_map%me, 'sendRowBlkInd', A%comm_buff%sendRowBlkInd
+!write(*,*) 'CRS', A%row_map%me, 'recvRowBlkInd', A%comm_buff%recvRowBlkInd
+
+    ! start buffer irecv
+    ! we could also set up persistent communication channels here... and use MPI_Startall later
+    if( allocated(A%comm_buff%recvData) ) then
+      if( size(A%comm_buff%recvData,1) .ne. nvec ) then
+        call delete_buffers(A%comm_buff)
+      end if
+    end if
+    if( .not. allocated(A%comm_buff%recvData) ) then
+      call alloc_buffers(A%comm_buff,A%row_map%comm,nvec,ierr)
+    end if
+
+    ! start receiving (e.g. irecv)
+    if( A%comm_buff%nRecvProcs .gt. 0 ) then
+      !call mpi_startall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStatus,ierr)
+      call mpi_startall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,ierr)
+    end if
+
+
+    sendBuffSize = size(A%comm_buff%sendBuffInd,1)
+    ! gather send data in buffer
+    if( nvec .eq. 1 ) then
+      if( strided_x ) then
+        call dspmv_buff_cpy_strided_1(A%nrows, sendBuffSize, ldx, x%val(x%jmin,1), A%comm_buff%sendBuffInd, A%comm_buff%sendData)
+      else
+        call dspmv_buff_cpy_1(A%nrows, sendBuffSize, x%val, A%comm_buff%sendBuffInd, A%comm_buff%sendData)
+      end if
+    else if( nvec .eq. 2 ) then
+      if( strided_x ) then
+        call dspmv_buff_cpy_strided_2(A%nrows, sendBuffSize, ldx, x%val(x%jmin,1), A%comm_buff%sendBuffInd, A%comm_buff%sendData)
+      else
+        call dspmv_buff_cpy_2(A%nrows, sendBuffSize, x%val, A%comm_buff%sendBuffInd, A%comm_buff%sendData)
+      end if
+    else if( nvec .eq. 4 ) then
+      if( strided_x ) then
+        call dspmv_buff_cpy_strided_4(A%nrows, sendBuffSize, ldx, x%val(x%jmin,1), A%comm_buff%sendBuffInd, A%comm_buff%sendData)
+      else
+        call dspmv_buff_cpy_4(A%nrows, sendBuffSize, x%val, A%comm_buff%sendBuffInd, A%comm_buff%sendData)
+      end if
+    else if( nvec .eq. 8 ) then
+      if( strided_x ) then
+        call dspmv_buff_cpy_strided_8(A%nrows, sendBuffSize, ldx, x%val(x%jmin,1), A%comm_buff%sendBuffInd, A%comm_buff%sendData)
+      else
+        call dspmv_buff_cpy_8(A%nrows, sendBuffSize, x%val, A%comm_buff%sendBuffInd, A%comm_buff%sendData)
+      end if
+    else
+      call dspmv_buff_cpy_general(nvec, A%nrows, sendBuffSize, ldx, x%val(x%jmin,1), A%comm_buff%sendBuffInd, A%comm_buff%sendData)
+    end if
+
+
+    ! start sending (e.g. issend)
+    if( A%comm_buff%nSendProcs .gt. 0 ) then
+      !call mpi_startall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
+      call mpi_startall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,ierr)
+    end if
+
+    ! wait till all data arrived
+    if( A%comm_buff%nRecvProcs .gt. 0 ) then
+      call mpi_waitall(A%comm_buff%nRecvProcs,A%comm_buff%recvRequests,A%comm_buff%recvStatus,ierr)
+    end if
+
+    ! also wait till all data was sent to circumvent dumb MPI implementations that don't do that in the background!
+    if( A%comm_buff%nSendProcs .gt. 0 ) then
+      call mpi_waitall(A%comm_buff%nSendProcs,A%comm_buff%sendRequests,A%comm_buff%sendStatus,ierr)
+    end if
+
+  end subroutine Dspmv_import
 
 ! import halo elements before a CARP sweep. This is the same
 ! operation performed before an spMVM. On exit, the halo elements
