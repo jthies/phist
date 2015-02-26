@@ -515,6 +515,9 @@ end subroutine dkacz_selector_real
 #define SUB_NAME kacz_loop_RC_clr_b0_64
 #include "kacz_sub_def.h"
 
+#define SUB_NAME kacz_loop_RC_clr_b0_generic
+#include "kacz_sub_def.h"
+
 #undef KACZ_BZERO
 
 #define NVEC 1
