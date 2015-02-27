@@ -1,3 +1,14 @@
+--------------
+# Disclaimer #
+--------------
+
+This is a pre-alpha release, so **please do not expect anything to work!** Just 
+kidding... But some things may, and probably will, be broken.
+Nevertheless, please report any bugs, issues and feature requests to the [issue 
+tracker](https://bitbucket.org/essex/phist/issues).
+
+
+
 ------------------
 # What is PHIST? #
 ------------------
