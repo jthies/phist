@@ -13,11 +13,18 @@ _phist_tools = _ct.CDLL(name='libphist_tools.so', mode=_ct.RTLD_GLOBAL)
 
 #--------------------------------------------------------------------------------
 # from phist_tools.h
+#retcode2str
 _phist_tools.phist_retcode2str.argtypes = (_ct.c_int,)
 _phist_tools.phist_retcode2str.restype = _ct.c_char_p
 _phist_tools.phist_retcode2str.__doc__ = 'convert phist return code to string (e.g. "ERROR")'
-
 phist_retcode2str = _phist_tools.phist_retcode2str
+#phist_kernel_lib
+_phist_tools.phist_kernel_lib.argtypes = list()
+_phist_tools.phist_kernel_lib.restype = _ct.c_char_p
+_phist_tools.phist_kernel_lib.__doc__ = 'return configured kernel library'
+phist_kernel_lib = _phist_tools.phist_kernel_lib
+
+
 
 #--------------------------------------------------------------------------------
 # from phist_enums.h
@@ -82,3 +89,6 @@ if __name__ == '__main__':
         raise RuntimeError('PYST_CHK_IERR should have raised a PYST_Exception!')
     except PYST_Exception as e:
         print e
+
+    print 'Get the configured phist kernel lib'
+    print phist_kernel_lib()

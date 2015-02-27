@@ -21,6 +21,7 @@ const char* phist_retcode2str(int code);
 #include "ghost/types.h"
 const char* phist_ghost_error2str(ghost_error_t code);
 #endif
+const char* phist_kernel_lib();
 #ifdef __cplusplus
 }
 #endif

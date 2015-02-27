@@ -8,15 +8,8 @@ import phist_tools as _phist_tools
 
 #--------------------------------------------------------------------------------
 # load library
-try:
-    print 'Trying GHOST kernels'
-    _phist_kernels = _ct.CDLL(name='libphist_kernels_ghost.so', mode=_ct.RTLD_GLOBAL)
-    print 'Success.'
-except OSError:
-    print 'Failed. Trying builtin kernels'
-    _phist_kernels = _ct.CDLL(name='libphist_kernels_builtin.so', mode=_ct.RTLD_GLOBAL)
-    print 'Success.'
-
+print 'Using ', _phist_tools.phist_kernel_lib(), ' kernels'
+_phist_kernels = _ct.CDLL(name='libphist_kernels_'+_phist_tools.phist_kernel_lib()+'.so', mode=_ct.RTLD_GLOBAL)
 
 #--------------------------------------------------------------------------------
 # helper functions

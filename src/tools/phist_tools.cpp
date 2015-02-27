@@ -96,3 +96,17 @@ std::istream& operator>>(std::istream& is, linSolv_t& s)
 std::vector<const char*> phist_FcnTrace::fcnTrace_;
 #endif
 
+extern "C" const char* phist_kernel_lib()
+{
+#ifdef PHIST_KERNEL_LIB_BUILTIN
+  return "builtin";
+#elif defined(PHIST_KERNEL_LIB_GHOST)
+  return "ghost";
+#elif defined(PHIST_KERNEL_LIB_EPETRA)
+  return "epetra";
+#elif defined(PHIST_KERNEL_LIB_TPETRA)
+  return "tpetra";
+#else
+#error "No appropriate PHIST_KERNEL_LIB_... defined!"
+#endif
+}
