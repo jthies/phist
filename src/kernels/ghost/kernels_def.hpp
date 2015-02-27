@@ -144,7 +144,10 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
         mtraits->format = GHOST_SPARSEMAT_CRS;
 #endif
 #ifdef USE_SCOTCH
-        flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
+        if (repart)
+        {
+          flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
+        }
 #endif
         mtraits->datatype = st::ghost_dt;
         mtraits->flags = flags;
