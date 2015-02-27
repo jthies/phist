@@ -159,7 +159,9 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   //W=W-V*R2;
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),V,R2,st::one(),W,iflag),*iflag);
   // norms after first CGS sweep. This could be done cheaper by using R1 computed below,
-  // since ||W_j||_2 = ||R1_j||_2 (TODO - that's how it's done in Belos).
+  // since ||W_j||_2 = ||R1_j||_2. Since this is assuming exact arithmetic, we leave it
+  // for now and check for a (near) breakdown before the normalization step. The 
+  // normalization (mvec_QR or SVQB) will fill in random numbers in that case.
   PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW1,iflag),*iflag);
   PHIST_DEB("orthog: normW1[0] is %e\n", normW1[0]);
 
