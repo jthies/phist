@@ -100,6 +100,7 @@ int main(int argc, char** argv)
     PHIST_OUT(0,"number of rhs: %d\n",num_rhs);
     }  
 
+  iflag=PHIST_SPARSEMAT_REPARTITION;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&iflag),iflag);
   
   /* we assume domain map = range map here, which is reasonable for something

@@ -22,8 +22,8 @@
 
 int main(int argc, char** argv)
 {
-  int ierr;
-  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+  int iflag;
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
 
   PHIST_MAIN_TASK_BEGIN
 
@@ -34,7 +34,7 @@ int main(int argc, char** argv)
   {
     PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A> [<symmetric/hermitian>] [<invariant subspace dimension>] [<which>] [<tol>] [<max iters> <JD block size> <min basis> <max basis> <GMRES block size> <GMRES subspace dimension> <initial shift> <initial shift iterations> <GMRES use IMGS> <GMRES abort when first converged in block>]\n", argv[0]);
     // print usage message for creating/reading a matrix
-    SUBR(create_matrix)(NULL, NULL, "usage",&ierr);
+    SUBR(create_matrix)(NULL, NULL, "usage",&iflag);
 
     return 1;
   }
@@ -170,7 +170,7 @@ int main(int argc, char** argv)
 
   comm_ptr_t comm = NULL;
   // wrap MPI_COMM_WORLD
-  PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_comm_create(&comm,&iflag),iflag);
 
   //------------------------------- setup matrices and vectors --------------------- 
 
@@ -179,38 +179,39 @@ int main(int argc, char** argv)
   // which can handle matrix files like name.mm, name.bin etc. but also our
   // favorite test cases spinSZ<N>, graphene<N> etc.
   sparseMat_ptr_t A = NULL;
-  PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,problem,&ierr), ierr);
+  iflag=PHIST_SPARSEMAT_REPARTITION;
+  PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,problem,&iflag), iflag);
   
   // create an operator from A
   op_ptr_t opA = new TYPE(op);
-  PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(opA,A,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(opA,A,&iflag),iflag);
 
   // we need the domain map of the matrix
   const_map_ptr_t map = NULL;
-  PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A,&map,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A,&map,&iflag),iflag);
 
   // setup necessary vectors and matrices for the schur form
   mvec_ptr_t Q = NULL;
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&Q,map,nEig+blockDim-1,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&Q,map,nEig+blockDim-1,&iflag),iflag);
   sdMat_ptr_t R = NULL;
-  PHIST_ICHK_IERR(SUBR(sdMat_create)(&R,nEig+blockDim-1,nEig+blockDim-1,comm,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_create)(&R,nEig+blockDim-1,nEig+blockDim-1,comm,&iflag),iflag);
   _MT_ *resNorm = new _MT_[nEig+blockDim-1];
 
   // setup start vector (currently to (1 0 1 0 .. ) )
   mvec_ptr_t v0 = NULL;
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&v0,map,1,&ierr),ierr);
-//  PHIST_ICHK_IERR(SUBR(mvec_random)(v0,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::one(),&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&v0,map,1,&iflag),iflag);
+//  PHIST_ICHK_IERR(SUBR(mvec_random)(v0,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::one(),&iflag),iflag);
   // initialize random number generator in parallel
 /*
   int ilower, iupper;
-  PHIST_ICHK_IERR(phist_map_get_ilower(map,&ilower,&ierr),ierr);
-  PHIST_ICHK_IERR(phist_map_get_iupper(map,&iupper,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_map_get_ilower(map,&ilower,&iflag),iflag);
+  PHIST_ICHK_IERR(phist_map_get_iupper(map,&iupper,&iflag),iflag);
   //std::srand(ilower);
-  //PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::zero(),&ierr),ierr);
+  //PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::zero(),&iflag),iflag);
   _ST_* v0_raw;
   lidx_t v0_lda;
-  PHIST_ICHK_IERR(SUBR(mvec_extract_view)(v0,&v0_raw,&v0_lda,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_extract_view)(v0,&v0_raw,&v0_lda,&iflag),iflag);
   for(int i = ilower; i <= iupper; i++)
   {
     _ST_ factor = (i % 2 == 0 ? st::one() : st::zero());
@@ -221,13 +222,13 @@ int main(int argc, char** argv)
 
   // used to calculate explicit residuals
   mvec_ptr_t res;
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&res,map,nEig+blockDim-1,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&res,map,nEig+blockDim-1,&iflag),iflag);
 
 
   //------------------------------- run block JaDa algorithm ----------------------- 
   PHIST_ICHK_IERR(SUBR(subspacejada)(opA, NULL, v0, which, tol, nEig, &nIter, blockDim, minBase, maxBase,
         innerBlockDim, innerMaxBase, initialShiftIters, initialShift, innerIMGS, innerGMRESabortAfterFirstConverged, symmetric,
-        Q, R, resNorm, &ierr), ierr);
+        Q, R, resNorm, &iflag), iflag);
   int nConvergedEig = 0;
   for(int i = 0; i < nEig; i++)
     if(resNorm[i] <= tol)
@@ -235,22 +236,22 @@ int main(int argc, char** argv)
   PHIST_SOUT(PHIST_INFO, "subspacejada terminated after %d iterations and calculated %d eigenvalues;\n printing R:\n", nIter, nConvergedEig);
 #ifdef PHIST_HAVE_MPI
   int me;
-  PHIST_ICHK_IERR(ierr = MPI_Comm_rank(MPI_COMM_WORLD,&me), ierr);
+  PHIST_ICHK_IERR(iflag = MPI_Comm_rank(MPI_COMM_WORLD,&me), iflag);
   if( me == 0 )
   {
-    PHIST_ICHK_IERR(SUBR( sdMat_print ) (R, &ierr), ierr);
+    PHIST_ICHK_IERR(SUBR( sdMat_print ) (R, &iflag), iflag);
   }
 #else
-  PHIST_ICHK_IERR(SUBR( sdMat_print ) (R, &ierr), ierr);
+  PHIST_ICHK_IERR(SUBR( sdMat_print ) (R, &iflag), iflag);
 #endif
   PHIST_SOUT(PHIST_INFO, " residuum norm:");
   for(int i = 0; i < nEig; i++)
     PHIST_SOUT(PHIST_INFO, "\t%8.4e", resNorm[i]);
 
   // calculate real residual
-  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,Q,st::zero(),res,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Q,R,st::one(),res,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_norm2)(res,resNorm,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,Q,st::zero(),res,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Q,R,st::one(),res,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(res,resNorm,&iflag),iflag);
   PHIST_SOUT(PHIST_INFO, "\n explicit residuum norm:");
   for(int i = 0; i < nEig; i++)
     PHIST_SOUT(PHIST_INFO, "\t%8.4e", resNorm[i]);
@@ -261,19 +262,19 @@ int main(int argc, char** argv)
 
   //------------------------------- clear matrices and vectors --------------------- 
   // delete vectors and sdMats
-  PHIST_ICHK_IERR(SUBR(mvec_delete)(res,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(res,&iflag),iflag);
   delete[] resNorm;
-  PHIST_ICHK_IERR(SUBR(mvec_delete)(v0,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(sdMat_delete)(R,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_delete)(Q,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(v0,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sdMat_delete)(R,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(Q,&iflag),iflag);
   // clean up operator
   delete opA;
   // delete matrix
-  PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&ierr),ierr);
-  PHIST_ICHK_IERR(phist_comm_delete(comm,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
+  PHIST_ICHK_IERR(phist_comm_delete(comm,&iflag),iflag);
 
   PHIST_MAIN_TASK_END
 
-  PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
-  return ierr;
+  PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
+  return iflag;
 }

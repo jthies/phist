@@ -25,7 +25,7 @@ typedef phist::ScalarTraits<_ST_> st;
 int main(int argc, char** argv)
 {
   int rank, num_proc;
-  int ierr;
+  int iflag;
   int verbose;
 
   comm_ptr_t comm = NULL;
@@ -38,49 +38,55 @@ int main(int argc, char** argv)
   mvec_ptr_t y = NULL;
   mvec_ptr_t q = NULL;
   
-  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
 PHIST_MAIN_TASK_BEGIN
-  PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_comm_create(&comm,&iflag),iflag);
 
-  PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&ierr),ierr);
-  PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&iflag),iflag);
+  PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&iflag),iflag);
 
   verbose= (rank==0);
 
   if (argc<4)
   {
-    PHIST_SOUT(PHIST_INFO,"Usage: %s <matrix> <nprojvecs> <nvecs>\n", argv[0]);
+    PHIST_SOUT(PHIST_INFO,"Usage: %s <matrix> <nprojvecs> <nvecs> [<repart>]\n", argv[0]);
     // print usage message for creating/reading a matrix
-    SUBR(create_matrix)(NULL, NULL, "usage",&ierr);
+    SUBR(create_matrix)(NULL, NULL, "usage",&iflag);
     return 1;
   }
 
   const char* matname=argv[1];
   int nproj = atoi(argv[2]);
   int nvecs = atoi(argv[3]);
+  int repart=0;
+  if (argc>4)
+  {
+    repart=atoi(argv[4]);
+  }
   
 
-  PHIST_ICHK_IERR(SUBR(create_matrix)(&A, comm, matname, &ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&x,map,nvecs,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&y,map,nvecs,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(&opA,A,&ierr),ierr);
+  iflag=repart?PHIST_SPARSEMAT_REPARTITION: PHIST_IFLAG_DEFAULT;
+  PHIST_ICHK_IERR(SUBR(create_matrix)(&A, comm, matname, &iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&x,map,nvecs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&y,map,nvecs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(&opA,A,&iflag),iflag);
   sigma = new _ST_[nvecs];
   for(int i = 0; i < nvecs; i++)
     sigma[i] = st::rand();
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&q,map,nproj,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_put_value)(q,st::zero(),&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&q,map,nproj,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(q,st::zero(),&iflag),iflag);
   // set q vectors to unit vectors
   {
     lidx_t ldq;
     _ST_* q_raw;
-    PHIST_ICHK_IERR(SUBR(mvec_extract_view)(q,&q_raw,&ldq,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_extract_view)(q,&q_raw,&ldq,&iflag),iflag);
     for(int i = 0; i < nproj; i++)
       q_raw[i*ldq+i] = st::one();
   }
-  PHIST_ICHK_IERR(SUBR(jadaOp_create)(&opA,NULL,q,NULL,sigma,nvecs,&jadaOp,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(jadaOp_create)(&opA,NULL,q,NULL,sigma,nvecs,&jadaOp,&iflag),iflag);
 
-  PHIST_ICHK_IERR(SUBR(mvec_put_value)(x,st::one(),&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(x,st::one(),&iflag),iflag);
 
   for(int i = 0; i < 120/nvecs; i++)
   {
@@ -91,7 +97,7 @@ PHIST_MAIN_TASK_BEGIN
     }
 #endif
 
-    PHIST_ICHK_IERR(jadaOp.apply(st::one(),jadaOp.A,x,st::zero(),y,&ierr),ierr);
+    PHIST_ICHK_IERR(jadaOp.apply(st::one(),jadaOp.A,x,st::zero(),y,&iflag),iflag);
 
 #ifdef PHIST_HAVE_LIKWID
 #pragma omp parallel
@@ -100,15 +106,15 @@ PHIST_MAIN_TASK_BEGIN
     }
 #endif
   }
-  PHIST_ICHK_IERR(SUBR(jadaOp_delete)(&jadaOp,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(jadaOp_delete)(&jadaOp,&iflag),iflag);
   delete[] sigma;
-  PHIST_ICHK_IERR(SUBR(mvec_delete)(q,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_delete)(x,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_delete)(y,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(q,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(x,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(y,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
 
 PHIST_MAIN_TASK_END
-  PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
+  PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
 
-  return ierr;
+  return iflag;
 }

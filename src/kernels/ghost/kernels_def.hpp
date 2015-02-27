@@ -42,10 +42,14 @@ extern "C" void SUBR(type_avail)(int* iflag)
 extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
 const char* filename,int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
-  *iflag=0;
 #include "phist_std_typedefs.hpp"
+  PHIST_ENTER_FCN(__FUNCTION__);
 PHIST_GHOST_TASK_BEGIN
+
+  bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
+  bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
+  *iflag=0;
+  
 PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   PHIST_CAST_PTR_FROM_VOID(const MPI_Comm,comm,vcomm,*iflag);
   if (filename==NULL)
@@ -73,7 +77,10 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
         mtraits->format = GHOST_SPARSEMAT_CRS;
 #endif
 #ifdef USE_SCOTCH
+      if (repart)
+      {
         flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
+      }
 #endif
         mtraits->datatype = st::ghost_dt;
         mtraits->flags = flags;
@@ -100,10 +107,15 @@ PHIST_GHOST_TASK_END
 extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
 const char* filename,int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
-  *iflag=0;
 #include "phist_std_typedefs.hpp"
+  PHIST_ENTER_FCN(__FUNCTION__);
+
 PHIST_GHOST_TASK_BEGIN
+
+  bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
+  bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
+  *iflag=0;
+  
 PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   PHIST_CAST_PTR_FROM_VOID(const MPI_Comm,comm,vcomm,*iflag);
   if (filename==NULL)
@@ -111,6 +123,7 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
     *iflag=PHIST_INVALID_INPUT;
     return;
   }
+
   ghost_sparsemat_t* mat;
   ghost_context_t *ctx;
 
@@ -1568,10 +1581,14 @@ void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, const_comm_ptr_
         gidx_t nrows, gidx_t ncols, lidx_t maxnne, 
                 int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int *iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
-  *iflag = 0;
 #include "phist_std_typedefs.hpp"
+  PHIST_ENTER_FCN(__FUNCTION__);
 PHIST_GHOST_TASK_BEGIN
+
+  bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
+  bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
+  *iflag=0;
+  
 PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
 
   ghost_sparsemat_t* mat = NULL;
@@ -1595,7 +1612,10 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
         mtraits->format = GHOST_SPARSEMAT_CRS;
 #endif
 #ifdef USE_SCOTCH
-        flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
+        if (repart)
+        {
+          flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
+        }
 #endif
         mtraits->datatype = st::ghost_dt;
         mtraits->flags = flags;

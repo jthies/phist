@@ -189,6 +189,8 @@ int main(int argc, char** argv)
   
   // this is in the tools/driver_utils.h header, a useful tool for
   // generating our favorite test matrices or reading them from a file:
+       iflag=PHIST_SPARSEMAT_REPARTITION|
+             PHIST_SPARSEMAT_DIST2_COLOR;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&mat,comm,problem,&iflag),iflag);
   
   PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(mat, &map,&iflag),iflag);

@@ -9,6 +9,11 @@
 #include "ghost/config.h"
 #endif
 
+#include "phist_kernel_flags.h"
+
+!> simple macro to check integer flags
+#define CHECK_IFLAG(_flag,_value) (IAND(_flag,_value)==(_value))
+
 !> Implements phist_DsparseMat_* routines for the builtin kernels
 module crsmat_module
   use, intrinsic :: iso_c_binding
@@ -1619,6 +1624,7 @@ end subroutine permute_local_matrix
     character(C_CHAR),  intent(in)  :: filename_ptr(filename_len)
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
+    logical :: repart, d2clr
     type(CrsMat_t), pointer :: A
     character(len=filename_len) :: filename
     !--------------------------------------------------------------------------------
@@ -1633,6 +1639,10 @@ end subroutine permute_local_matrix
     real(kind=8) :: tmp_val(2)
     integer :: newEntries
     !--------------------------------------------------------------------------------
+    
+    repart = CHECK_IFLAG(ierr,PHIST_SPARSEMAT_REPARTITION)
+    d2clr =  CHECK_IFLAG(ierr,PHIST_SPARSEMAT_DIST2_COLOR)
+    ierr=0
 
     do i = 1, filename_len
       filename(i:i) = filename_ptr(i)
@@ -1780,7 +1790,9 @@ end subroutine permute_local_matrix
 !write(*,*) 'row_offset', A%row_offset
 !write(*,*) 'col_idx', A%global_col_idx
 !write(*,*) 'val', A%val
-    call repartcrs(A,3,ierr)
+    if (repart) then
+      call repartcrs(A,3,ierr)
+    end if
     if (ierr/=0) then
       return
     end if
@@ -1818,7 +1830,9 @@ end subroutine permute_local_matrix
     call sort_rows_local_nonlocal(A)
 
 #ifdef PHIST_HAVE_COLPACK
-    call colorcrs(A,2,3,ierr)
+    if (d2clr) then
+      call colorcrs(A,2,3,ierr)
+    end if
 #endif
 
     write(*,*) 'created new crsMat with dimensions', A%nRows, A%nCols, A%nEntries
@@ -1846,6 +1860,7 @@ end subroutine permute_local_matrix
     type(C_FUNPTR),     value       :: rowFunc_ptr
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
+    logical :: repart, d2clr
     type(CrsMat_t), pointer :: A
     procedure(matRowFunc), pointer :: rowFunc
     !--------------------------------------------------------------------------------
@@ -1861,6 +1876,9 @@ end subroutine permute_local_matrix
     integer, pointer :: comm
     !--------------------------------------------------------------------------------
 
+    repart = CHECK_IFLAG(ierr,PHIST_SPARSEMAT_REPARTITION)
+    d2clr =  CHECK_IFLAG(ierr,PHIST_SPARSEMAT_DIST2_COLOR)
+    ierr=0
     ! get procedure pointer
     call c_f_procpointer(rowFunc_ptr, rowFunc)
     call c_f_pointer(comm_ptr, comm)
@@ -1944,8 +1962,8 @@ end if
 
 
 #ifdef PHIST_HAVE_PARMETIS
-wtime = mpi_wtime()
-
+  if (repart) then
+    wtime = mpi_wtime()
     call repartcrs(A,3,ierr)
     if (ierr/=0) then
       if( A%row_map%me .eq. 0 ) then
@@ -1954,11 +1972,12 @@ wtime = mpi_wtime()
       return
     end if
 
-call mpi_barrier(A%row_map%comm, ierr)
-wtime = mpi_wtime() - wtime
-if( A%row_map%me .eq. 0 ) then
-  write(*,*) 'repartitioned in', wtime, 'seconds'
-end if
+    call mpi_barrier(A%row_map%comm, ierr)
+    wtime = mpi_wtime() - wtime
+    if( A%row_map%me .eq. 0 ) then
+      write(*,*) 'repartitioned in', wtime, 'seconds'
+    end if
+  end if
 #endif
 ! write matrix to mat.mm
 !do i_ = 0, A%row_map%nProcs-1
@@ -2006,20 +2025,20 @@ if( A%row_map%me .eq. 0 ) then
 end if
 
 #ifdef PHIST_HAVE_COLPACK
-    wtime = mpi_wtime()
-    !TODO - make the coloring optional, it only makes sense
-    !       for CARP-CG right now
-    call colorcrs(A,2,3,ierr)
-    if (ierr/=0) then
-      if( A%row_map%me .eq. 0 ) then
-        write(*,*) 'graph coloring failed'
+    if (d2clr) then
+      wtime = mpi_wtime()
+      call colorcrs(A,2,3,ierr)
+      if (ierr/=0) then
+        if( A%row_map%me .eq. 0 ) then
+          write(*,*) 'graph coloring failed'
+        end if
+        return
       end if
-      return
-    end if
-    call mpi_barrier(A%row_map%comm, ierr)
-    wtime = mpi_wtime() - wtime
-    if( A%row_map%me .eq. 0 ) then
-      write(*,*) 'local dist-2 coloring in', wtime, 'seconds'
+      call mpi_barrier(A%row_map%comm, ierr)
+      wtime = mpi_wtime() - wtime
+      if( A%row_map%me .eq. 0 ) then
+        write(*,*) 'local dist-2 coloring in', wtime, 'seconds'
+      end if
     end if
 #endif
 

@@ -19,7 +19,7 @@
 
 void SUBR(print_usage)(char* argv[],int pos)
 {
-    int ierr;
+    int iflag;
     if (pos>0)
     {
     PHIST_SOUT(PHIST_ERROR,"argument %d had an invalid value (%s)\n",pos,argv[pos]);
@@ -30,13 +30,13 @@ void SUBR(print_usage)(char* argv[],int pos)
                            "Which may be of the form \"TARGET\" <real value>\n",
                            argv[0]);
     // print usage message for creating/reading a matrix
-    SUBR(create_matrix)(NULL, NULL, "usage",&ierr);
+    SUBR(create_matrix)(NULL, NULL, "usage",&iflag);
 }
 
 int main(int argc, char** argv)
 {
 #include "phist_std_typedefs.hpp"
-  int i, ierr;
+  int i, iflag;
 
   comm_ptr_t comm;
   sparseMat_ptr_t A;
@@ -63,11 +63,11 @@ int main(int argc, char** argv)
 
   int variant=0; // only block Krylov-Schur accessible via this driver right now.
   
-  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
 
 PHIST_MAIN_TASK_BEGIN
 
-  PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_comm_create(&comm,&iflag),iflag);
 
   if (argc<2)
   {
@@ -100,21 +100,22 @@ PHIST_MAIN_TASK_BEGIN
     num_blocks=(how_many+10)/block_size;
   }
 
-  PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&ierr),ierr);
+  iflag=PHIST_SPARSEMAT_REPARTITION;
+  PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&iflag),iflag);
   
   /* we assume domain map = range map here, which is reasonable for something
      you want to put into a linear solver */
-  PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&iflag),iflag);
 
   /* create vectors */
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,how_many,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&R,map,how_many,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,how_many,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&R,map,how_many,&iflag),iflag);
   
   /* create operator wrapper for computing Y=A*X using a CRS matrix */
   A_op = new TYPE(op);
   B_op = NULL;
   Ainv_op = NULL;
-  PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(A_op,A,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(A_op,A,&iflag),iflag);
  
   bool shift_invert=false; 
   if (which==TARGET)
@@ -127,7 +128,7 @@ PHIST_MAIN_TASK_BEGIN
     int linIter=1000;
     linSolv_t method=CARP_CG;
     PHIST_ICHK_IERR(SUBR(op_wrap_solver)(Ainv_op,A,shift,
-        method,block_size,linTol,linIter,&ierr),ierr);
+        method,block_size,linTol,linIter,&iflag),iflag);
   }
 
   ST eigs[how_many];
@@ -136,20 +137,20 @@ PHIST_MAIN_TASK_BEGIN
 
   SUBR(anasazi)(A_op,Ainv_op,B_op,NULL,which,tol,&how_many,
         &num_iters,block_size,num_blocks,
-        sym,X,eigs,&ierr);
+        sym,X,eigs,&iflag);
 
-  if (ierr!=0)
+  if (iflag!=0)
     {
-    PHIST_SOUT(PHIST_WARNING,"code %d returned from Anasazi\n",ierr);
-    if (ierr<0) return ierr;
+    PHIST_SOUT(PHIST_WARNING,"code %d returned from Anasazi\n",iflag);
+    if (iflag<0) return iflag;
     }
   PHIST_SOUT(PHIST_INFO,"number of iterations performed: %d\n",num_iters);
   PHIST_SOUT(PHIST_INFO,"number of eigenpairs computed: %d\n",how_many);
   /* compute residual norms */
-  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,X,st::zero(),R,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_vadd_mvec)(eigs,X,-st::one(),R,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,X,st::zero(),R,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_vadd_mvec)(eigs,X,-st::one(),R,&iflag),iflag);
   
-  PHIST_ICHK_IERR(SUBR(mvec_norm2)(R,resid,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(R,resid,&iflag),iflag);
   
   if (shift_invert)
   {
@@ -172,13 +173,13 @@ PHIST_MAIN_TASK_BEGIN
     PHIST_SOUT(PHIST_VERBOSE,"%8.4e\t%8.4e\n",st::real(eigs[i]),resid[i]);
   }
     
-  PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_delete)(R,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(R,&iflag),iflag);
   free(A_op);
 
 PHIST_MAIN_TASK_END
 
-  PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
-  return ierr;
+  PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
+  return iflag;
 }

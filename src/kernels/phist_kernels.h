@@ -2,6 +2,7 @@
 #define PHIST_KERNELS_H
 
 #include "phist_config.h"
+#include "phist_kernel_flags.h"
 
 #ifndef DOXYGEN
 /* needs to be included before system headers for some intel compilers+mpi */

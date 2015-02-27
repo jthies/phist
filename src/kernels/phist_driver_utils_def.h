@@ -113,7 +113,6 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
         const char* problem, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  *iflag=0;
   problem_t mat_type=FROM_FILE; // default: assume that 'which' is a file name
 
   int L; // problem size for Graphene (L x L grid) or the Anderson model (L^3 grid)
