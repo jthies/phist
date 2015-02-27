@@ -44,9 +44,6 @@ subroutine crsmat_norms_ai2i(nshifts, nlocal, nnz, row_ptr, &
   end do
 end subroutine crsmat_norms_ai2i
 
-!! variant with real matrix and rhs but complex shift and x vector
-#define KACZ_RC_VARIANT
-
 !! general implementation of forward or backward Kaczmarz sweep for a single shift
 !! and possibly multiple vector columns in X and B
 subroutine dkacz_selector(nvec, nlocal, nhalo, ncols, nnz, &
