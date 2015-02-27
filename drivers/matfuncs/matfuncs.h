@@ -12,8 +12,8 @@
 #ifdef PHIST_HAVE_GHOST
 #include <ghost.h>
 #else
-#define PRGIDX "PRId64"
-#define PRLIDX "PRId32"
+#define PRGIDX PRId64
+#define PRLIDX PRId32
 // just dummy values, simply ignored!
 #define GHOST_SPARSEMAT_SYMM_GENERAL 0x1
 #define GHOST_DT_DOUBLE 0x2
