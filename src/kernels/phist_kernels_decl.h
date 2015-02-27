@@ -25,6 +25,9 @@
     on all processes (not associated with an MPI_Comm). And
     a row-distributed vector, which may have several columns (mvec).
 
+    STATUS FLAG
+    -----------
+
     Each subroutine has as its last argument the integer flag iflag, which
     should be 0 for success, positive for warnings and negative for errors.
     These standard error codes should be used:
@@ -38,10 +41,17 @@
     -1..-9: function specific modes of failure, which will have to be looked up
             in the source code (documentation) right now.
 
+    OPTIONAL ARGUMENTS
+    ------------------
+    
     Some of the kernel functions allow passing in flags via *iflag to provide the kernel 
     library with information about the situation in which the function is called, see the 
     documentation of the individual functions for usage details.
-
+    
+    NOTE: The kernel library is *not* required to honour the flags given. For instance, if 
+          you tell a function to read a matrix from a file and repartition it for 
+          minimizing communication, it may or may not do so, depending on wether TPLs are 
+          available or the kernel lib implements the feature at all.
 */
 
 #ifdef __cplusplus
@@ -55,6 +65,10 @@ void SUBR(type_avail)(int* iflag);
 //!   \defgroup crsmat Sparse matrix functions (sparseMat_t) 
 //@{
 //! \name Matrix input from a file
+//!
+//! optional flags:
+//! * PHIST_SPARSEMAT_REPARTITION
+//! * PHIST_SPARSEMAT_DIST2_COLOR (feature required for CARP-CG)
 ///@{
 
 //! read a matrix from a MatrixMarket (ASCII) file \ingroup(crsmat)
@@ -443,6 +457,11 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) V,
 
 //! this is the same form in which matrices are created from functions
 //! in ghost and how the test problems in essex/physics are defined.
+//!
+//! optional flags:
+//! * PHIST_SPARSEMAT_REPARTITION
+//! * PHIST_SPARSEMAT_DIST2_COLOR (feature required for CARP-CG)
+//!
 void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, const_comm_ptr_t comm,
         gidx_t nrows, gidx_t ncols, lidx_t maxnne, 
         int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int *iflag);
