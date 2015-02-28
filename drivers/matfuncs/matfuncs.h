@@ -1,12 +1,17 @@
 #ifndef MATFUNCS_H
 #define MATFUNCS_H
 
+#include "phist_config.h"
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
 #include <stdint.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "phist_config.h"
 #include "phist_kernels.h"
 
 #ifdef PHIST_HAVE_GHOST

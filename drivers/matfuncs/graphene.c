@@ -178,8 +178,11 @@ int crsGraphene( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 			// todo  !zigzag_first    }
 
 		ghost_gidx_t j;
-		if( i>max_row_nnz ) printf("corrupt max_row_nnz for row %" PRGIDX "   nnz = %" PRGIDX " \n",row, i);
-		for( j=0;j<i;j++ ) if( (cols[j]<0) || (cols[j]>=N) ) printf("corrupt col_idx in row %"PRGIDX"    (w,l) =(%"PRGIDX",%"PRGIDX") : col[%"PRGIDX"] = %"PRGIDX"\n", row, w,l, j, cols[j]);
+		if( i>max_row_nnz )
+      printf("corrupt max_row_nnz for row %" PRGIDX "   nnz = %" PRGIDX " \n",row, i);
+		for( j=0;j<i;j++ )
+      if( (cols[j]<0) || (cols[j]>=N) )
+        printf("corrupt col_idx in row %" PRGIDX "    (w,l) =(%" PRGIDX ",%" PRGIDX ") : col[%" PRGIDX "] = %" PRGIDX "\n", row, w,l, j, cols[j]);
 
 		*nnz = (ghost_lidx_t)i;
 		return 0;
