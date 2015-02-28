@@ -99,54 +99,54 @@ static _MT_ MvecsEqual(TYPE(mvec_ptr) V1, TYPE(mvec_ptr) V2)
   return ArraysEqual(val,val2,n,m,lda,1,KernelTest::vflag_);
   }
 
-static _MT_ SdMatEqual(TYPE(mvec_ptr) V, _ST_ value)
+static _MT_ SdMatEqual(TYPE(sdMat_ptr) M, _ST_ value)
   {
   int iflag;
   _ST_* val;
   lidx_t lda;
   int n,m;
   
-  SUBR(sdMat_from_device)(V,&iflag);
+  SUBR(sdMat_from_device)(M,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-mt::one());
-  SUBR(sdMat_extract_view)(V,&val,&lda,&iflag);
+  SUBR(sdMat_extract_view)(M,&val,&lda,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
-  SUBR(sdMat_get_nrows)(V,&n,&iflag);
+  SUBR(sdMat_get_nrows)(M,&n,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
-  SUBR(sdMat_get_ncols)(V,&m,&iflag);
+  SUBR(sdMat_get_ncols)(M,&m,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
   
   return ArrayEqual(val,n,m,lda,1,value,KernelTest::mflag_);
   }
 
-static _MT_ SdMatsEqual(TYPE(sdMat_ptr) V1, TYPE(sdMat_ptr) V2)
+static _MT_ SdMatsEqual(TYPE(sdMat_ptr) M1, TYPE(sdMat_ptr) M2)
   {
   int iflag;
   _ST_ *val, *val2;
   lidx_t lda,lda2;
   int n,m,n2,m2;
   
-  SUBR(sdMat_from_device)(V1,&iflag);
+  SUBR(sdMat_from_device)(M1,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-mt::one());
-  SUBR(sdMat_from_device)(V2,&iflag);
+  SUBR(sdMat_from_device)(M2,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-mt::one());
   
-  SUBR(sdMat_extract_view)(V1,&val,&lda,&iflag);
+  SUBR(sdMat_extract_view)(M1,&val,&lda,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
-  SUBR(sdMat_extract_view)(V1,&val2,&lda2,&iflag);
+  SUBR(sdMat_extract_view)(M2,&val2,&lda2,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
   
-  SUBR(sdMat_get_nrows)(V1,&n,&iflag);
+  SUBR(sdMat_get_nrows)(M1,&n,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
-  SUBR(sdMat_get_nrows)(V2,&n2,&iflag);
+  SUBR(sdMat_get_nrows)(M2,&n2,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
 
-  SUBR(sdMat_get_ncols)(V1,&m,&iflag);
+  SUBR(sdMat_get_ncols)(M1,&m,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
-  SUBR(sdMat_get_ncols)(V2,&m2,&iflag);
+  SUBR(sdMat_get_ncols)(M2,&m2,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
  
   // vectors not equal: dimensions mismatch
-  if (n!=n2||m!=m2) return (_MT_)(mt::one());
+  if (n!=n2||m!=m2) return (_MT_)(-mt::one());
   if (lda!=lda2) return (_MT_)(-99*mt::one()); // test not implemented
   return ArraysEqual(val,val2,n,m,lda,1,KernelTest::mflag_);
   }
