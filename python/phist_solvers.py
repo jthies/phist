@@ -2,6 +2,7 @@
 '''
 
 # imports
+from __future__ import print_function
 import ctypes as _ct
 # we need to load kernels, tools and core
 import phist_tools as _phist_tools
@@ -100,7 +101,7 @@ if __name__ == '__main__':
 
     # create a matrix
     A = DsparseMat_ptr()
-    PYST_CHK_IERR(phist_Dcreate_matrix, A, myComm, 'spinSZ8')
+    PYST_CHK_IERR(phist_Dcreate_matrix, A, myComm, b'spinSZ8')
 
     # get map
     myMap = map_ptr()
@@ -127,7 +128,7 @@ if __name__ == '__main__':
     nIter = c_int(1000)
     resNorm = (D*11)()
     res = PYST_CHK_NEG_IERR(phist_Dsubspacejada, opA, opB, v0, eigSort_SR, 1.e-8, 10, nIter, 2, 20, 40, 2, 8, 0, 0., False, True, True, vecQ, matR, resNorm)
-    print res
+    print(res)
     PYST_CHK_IERR(phist_DsdMat_print, matR)
 
 

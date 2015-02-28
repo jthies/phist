@@ -2,14 +2,16 @@
 '''
 
 # imports
+from __future__ import print_function
 import ctypes as _ct
 # we need to load phist_tools before
 import phist_tools as _phist_tools
 
 #--------------------------------------------------------------------------------
 # load library
-print 'Using ', _phist_tools.phist_kernel_lib(), ' kernels'
-_phist_kernels = _ct.CDLL(name='libphist_kernels_'+_phist_tools.phist_kernel_lib()+'.so', mode=_ct.RTLD_GLOBAL)
+_phist_kernel_lib_str = "libphist_kernels_%s.so" % _phist_tools.phist_kernel_lib().decode('utf8')
+print('Using ', _phist_kernel_lib_str)
+_phist_kernels = _ct.CDLL(name=_phist_kernel_lib_str, mode=_ct.RTLD_GLOBAL)
 
 #--------------------------------------------------------------------------------
 # helper functions
@@ -61,7 +63,7 @@ def _c_integer_type_from_size(size):
 
 _lidx_size = phist_sizeof_lidx()
 _gidx_size = phist_sizeof_gidx()
-print 'lidx size', _lidx_size, 'gidx size', _gidx_size
+print('lidx size', _lidx_size, 'gidx size', _gidx_size)
 
 class lidx(_c_integer_type_from_size(_lidx_size)):
     def __repr__(self):
@@ -85,7 +87,7 @@ _phist_kernels.phist_kernels_init.argtypes = (c_int_p, _ct.POINTER(_ct.POINTER(_
 def phist_kernels_init(ierr):
     # construct dummy args, possibly dangerours!!
     argc = c_int(1)
-    argv0 = _ct.c_char_p('dummyarg')
+    argv0 = _ct.c_char_p(b'dummyarg')
     argv = _ct.pointer(argv0)
     _phist_kernels.phist_kernels_init(_ct.byref(argc), _ct.byref(argv), ierr)
 
@@ -337,7 +339,7 @@ if __name__ == '__main__':
     me = c_int()
     PYST_CHK_IERR(phist_comm_get_size, myComm, nprocs)
     PYST_CHK_IERR(phist_comm_get_rank, myComm, me)
-    print 'nprocs', nprocs, 'me', me
+    print('nprocs', nprocs, 'me', me)
 
     # create map
     nglobal = gidx(10)
@@ -347,14 +349,14 @@ if __name__ == '__main__':
     # get number of local elements
     nlocal = lidx()
     PYST_CHK_IERR(phist_map_get_local_length, myMap, nlocal)
-    print 'global elements', nglobal, 'local elements', nlocal
+    print('global elements', nglobal, 'local elements', nlocal)
 
     # delete map
     PYST_CHK_IERR(phist_map_delete, myMap)
 
     # create a matrix
     A = DsparseMat_ptr()
-    PYST_CHK_IERR(phist_Dcreate_matrix, A, myComm, 'spinSZ8')
+    PYST_CHK_IERR(phist_Dcreate_matrix, A, myComm, b'spinSZ8')
     # get map
     PYST_CHK_IERR(phist_DsparseMat_get_domain_map, A, myMap)
 
