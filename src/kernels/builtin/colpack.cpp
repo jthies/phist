@@ -83,7 +83,7 @@ int verbose=2;
 #else
 int verbose=1;
 #endif
-#ifdef TESTING__disabled_because_of_issue_67
+#ifdef TESTING
     PHIST_SOUT(PHIST_VERBOSE,"thoroughly test local dist-2 coloring\n");
     PHIST_CHK_IERR(*iflag=GC->CheckDistanceTwoColoring(verbose),*iflag);
 #else
