@@ -80,7 +80,7 @@ static _MT_ MvecsEqual(TYPE(mvec_ptr) V1, TYPE(mvec_ptr) V2)
   
   SUBR(mvec_extract_view)(V1,&val,&lda,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
-  SUBR(mvec_extract_view)(V1,&val2,&lda2,&iflag);
+  SUBR(mvec_extract_view)(V2,&val2,&lda2,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
   
   SUBR(mvec_my_length)(V1,&n,&iflag);
