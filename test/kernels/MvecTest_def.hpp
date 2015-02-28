@@ -388,8 +388,8 @@ public:
       // type here.
       for (int j=jmin;j<=jmax;j++)
         {
-        ASSERT_REAL_EQ(norms_V1[j],norms_V1view[j-jmin]);
-        ASSERT_REAL_EQ(norms_V1[j],norms_V1vv[j-jmin]);
+        ASSERT_NEAR(norms_V1[j],norms_V1view[j-jmin],10*mt::eps());
+        ASSERT_NEAR(norms_V1[j],norms_V1vv[j-jmin],10*mt::eps());
         }
       // set all the viewed entries to a certain value and check that the original vector is 
       // changed.
@@ -400,7 +400,7 @@ public:
       SUBR(mvec_from_device)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(&vec1_vp_[VIDX(0,jmin,lda_)],nloc_,jmax-jmin+1,lda_,stride_,val,vflag_));
+      ASSERT_NEAR(mt::one(),ArrayEqual(&vec1_vp_[VIDX(0,jmin,lda_)],nloc_,jmax-jmin+1,lda_,stride_,val,vflag_),10*mt::eps());
 
       // new norms after changing columns
       SUBR(mvec_norm2)(vec1_,norms_V1,&iflag_);
@@ -416,7 +416,7 @@ public:
       ASSERT_EQ(0,iflag_);
       for (int j=0;j<nvec_;j++)
         {
-        ASSERT_REAL_EQ(norms_V1[j],norms_V1vv[j]);
+        ASSERT_NEAR(norms_V1[j],norms_V1vv[j],10*mt::eps());
         }
       }
     }

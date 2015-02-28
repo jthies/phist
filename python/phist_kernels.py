@@ -382,7 +382,13 @@ if __name__ == '__main__':
     PYST_CHK_IERR(phist_Dmvec_random, vec2)
 
     # QR-orthogonalize vec1
-    PYST_CHK_IERR(phist_Dmvec_QR, vec2, mat2)
+    try:
+        PYST_CHK_IERR(phist_Dmvec_QR, vec2, mat2)
+    except PYST_Exception as e:
+        if e.value == -99:
+            print('mvec_QR not available')
+        else:
+            raise
 
     # calculate vec1^T vec2
     PYST_CHK_IERR(phist_DmvecT_times_mvec, 1, vec1, vec2, 0, mat1)

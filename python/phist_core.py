@@ -116,7 +116,8 @@ if __name__ == '__main__':
     PYST_CHK_IERR(phist_Dmvec_random, vec2)
 
     # QR-orthogonalize vec1
-    PYST_CHK_IERR(phist_Dmvec_QR, vec1, mat1)
+    rnkV = ctypes.c_int()
+    PYST_CHK_NEG_IERR(phist_Dorthog, None, vec1, mat1, None, 1, rnkV)
 
     # orthogonalize vec2 wrt. vec1
     rnkVW = ctypes.c_int()
