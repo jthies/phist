@@ -88,8 +88,11 @@ def phist_kernels_init(ierr):
     # construct dummy args, possibly dangerours!!
     argc = c_int(1)
     argv0 = _ct.c_char_p(b'dummyarg')
-    argv = _ct.pointer(argv0)
-    _phist_kernels.phist_kernels_init(_ct.byref(argc), _ct.byref(argv), ierr)
+    argv = (_ct.c_char_p * 2)()
+    argv[0] = argv0
+    argv[1] = None
+    argv_as_p = _ct.cast(argv, _ct.POINTER(_ct.c_char_p))
+    _phist_kernels.phist_kernels_init(_ct.byref(argc), _ct.byref(argv_as_p), ierr)
 
 #void phist_kernels_finalize(int* ierr);
 _declare(None, 'phist_kernels_finalize', (c_int_p,))
