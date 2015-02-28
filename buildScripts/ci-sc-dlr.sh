@@ -98,6 +98,8 @@ error=0
 if [[ "$KERNELS" = "ghost" ]]; then
   # this is the easiest way to make phist find ghost+dependencies
   CMAKE_FLAGS="${ADD_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX=../../install-${PRGENV}-Release"
+  # also set the LD_LIBRARY_PATH appropriately
+  export LD_LIBRARY_PATH=../../install-${PRGENV}-Release/lib/ghost:../../install-${PRGENV}-Release/lib/essex-physics:$LD_LIBRARY_PATH
 else
   CMAKE_FLAGS=${ADD_CMAKE_FLAGS}
 fi
@@ -117,6 +119,8 @@ cd ..
 if [[ "$KERNELS" = "ghost" ]]; then
   # this is the easiest way to make phist find ghost+dependencies
   CMAKE_FLAGS="${ADD_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX=../../install-${PRGENV}-Debug"
+  # also set the LD_LIBRARY_PATH appropriately
+  export LD_LIBRARY_PATH=../../install-${PRGENV}-Debug/lib/ghost:../../install-${PRGENV}-Debug/lib/essex-physics:$LD_LIBRARY_PATH
 else
   CMAKE_FLAGS=${ADD_CMAKE_FLAGS}
 fi
