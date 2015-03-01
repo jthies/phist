@@ -396,13 +396,15 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmv_buff_cpy_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/kacz_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_BelosAdapter.cpp
                           )
 else()
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_driver_utils.c
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde.f90
-                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp)
+                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp
+                           ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp)
 endif()
 if (NOT ESSEX-PHYSICS_FOUND)
   LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c
@@ -411,8 +413,7 @@ if (NOT ESSEX-PHYSICS_FOUND)
 endif()
 
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.cpp
-                        ${PROJECT_SOURCE_DIR}/src/tools/phist_timemonitor.cpp
-                        ${PROJECT_SOURCE_DIR}/src/tools/phist_rcp_helpers.cpp)
+                        ${PROJECT_SOURCE_DIR}/src/tools/phist_timemonitor.cpp)
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_svqb.cpp)
