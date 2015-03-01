@@ -189,32 +189,32 @@ using ::phist::GhostMV;
 
     static Teuchos::RCP<GhostMV > 
     CloneCopy (const GhostMV& mv, 
-	       const Teuchos::Range1D& index)
+         const Teuchos::Range1D& index)
     {
       PHIST_ENTER_FCN(__FUNCTION__);    
       ghost_densemat_t* _mv = const_cast<GhostMV&>(mv).get();
       const bool validRange = index.size() > 0 && 
-	index.lbound() >= 0 && 
-	index.ubound() < GetNumberVecs(mv);
+        index.lbound() >= 0 && 
+        index.ubound() < GetNumberVecs(mv);
       if (! validRange)
-	{
-	  std::ostringstream os;
-	  os << "Belos::MultiVecTraits<Scalar, GhostMV<...> >::"
-	    "CloneCopy(mv,index=[" << index.lbound() << ", " << index.ubound() 
-	     << "]): ";
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
-			     os.str() << "Empty index range is not allowed.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
-			     os.str() << "Index range includes negative "
-			     "index/ices, which is not allowed.");
-	  // Range1D bounds are signed; size_t is unsigned.
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= GetNumberVecs(mv),
-			     std::invalid_argument, 
-			     os.str() << "Index range exceeds number of vectors " 
-			     << GetNumberVecs() << " in the input multivector.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     os.str() << "Should never get here!");
-	}
+      {
+        std::ostringstream os;
+        os << "Belos::MultiVecTraits<Scalar, GhostMV<...> >::"
+          "CloneCopy(mv,index=[" << index.lbound() << ", " << index.ubound() 
+          << "]): ";
+        TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+            os.str() << "Empty index range is not allowed.");
+        TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+            os.str() << "Index range includes negative "
+            "index/ices, which is not allowed.");
+        // Range1D bounds are signed; size_t is unsigned.
+        TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= GetNumberVecs(mv),
+            std::invalid_argument, 
+            os.str() << "Index range exceeds number of vectors " 
+            << GetNumberVecs() << " in the input multivector.");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+            os.str() << "Should never get here!");
+      }
       return phist::rcp(_mv->clone(_mv,index.ubound()-index.lbound()+1,index.lbound),true);
     }
 
@@ -277,7 +277,7 @@ using ::phist::GhostMV;
 
     static Teuchos::RCP<GhostMV > 
     CloneViewNonConst (GhostMV& mv, 
-		       const Teuchos::Range1D& index)
+           const Teuchos::Range1D& index)
     {
       PHIST_ENTER_FCN(__FUNCTION__);    
       ghost_densemat_t* _mv=mv.get();
@@ -286,25 +286,25 @@ using ::phist::GhostMV;
       // multivector typically fits in an int.
       const int numCols = static_cast<int> (_mv->traits.ncols);
       const bool validRange = index.size() > 0 && 
-	index.lbound() >= 0 && index.ubound() < numCols;
+        index.lbound() >= 0 && index.ubound() < numCols;
       if (! validRange)
-	{
-	  std::ostringstream os;
-	  os << "Belos::MultiVecTraits<Scalar, GhostMV<...> >::"
-	    "CloneViewNonConst(mv,index=[" << index.lbound() << ", " 
-	     << index.ubound() << "]): ";
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
-			     os.str() << "Empty index range is not allowed.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
-			     os.str() << "Index range includes negative "
-			     "index/ices, which is not allowed.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= numCols, std::invalid_argument, 
-			     os.str() << "Index range exceeds number of "
-			     "vectors " << numCols << " in the input "
-			     "multivector.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     os.str() << "Should never get here!");
-	}
+      {
+        std::ostringstream os;
+        os << "Belos::MultiVecTraits<Scalar, GhostMV<...> >::"
+          "CloneViewNonConst(mv,index=[" << index.lbound() << ", " 
+          << index.ubound() << "]): ";
+        TEUCHOS_TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+            os.str() << "Empty index range is not allowed.");
+        TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+            os.str() << "Index range includes negative "
+            "index/ices, which is not allowed.");
+        TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= numCols, std::invalid_argument, 
+            os.str() << "Index range exceeds number of "
+            "vectors " << numCols << " in the input "
+            "multivector.");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+            os.str() << "Should never get here!");
+      }
       
       ghost_densemat_t* result=NULL;
       ghost_lidx_t offs=index.lbound();
@@ -325,7 +325,7 @@ using ::phist::GhostMV;
 
     static Teuchos::RCP<const GhostMV > 
     CloneView (const GhostMV& mv, 
-	       const Teuchos::Range1D& index)
+         const Teuchos::Range1D& index)
     {
       PHIST_ENTER_FCN(__FUNCTION__);    
       return Teuchos::rcp_dynamic_cast<const GhostMV >
@@ -535,8 +535,8 @@ using ::phist::GhostMV;
 
     static void
     SetBlock (const GhostMV& A, 
-	      const Teuchos::Range1D& index, 
-	      GhostMV& mv)
+        const Teuchos::Range1D& index, 
+        GhostMV& mv)
     {
       PHIST_ENTER_FCN(__FUNCTION__);        
       // We've already validated the static casts above.
@@ -548,23 +548,23 @@ using ::phist::GhostMV;
       const bool validSource = index.size() <= numColsA;
 
       if (! validIndex || ! validSource)
-	{
-	  std::ostringstream os;
-	  os <<	"Belos::MultiVecTraits<Scalar, GhostMV<Scalar, ..."
-	    "> >::SetBlock(A, index=[" << index.lbound() << ", " 
-	     << index.ubound() << "], mv): ";
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
-			     os.str() << "Range lower bound must be nonnegative.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= numColsMv, std::invalid_argument,
-			     os.str() << "Range upper bound must be less than "
-			     "the number of columns " << numColsA << " in the "
-			     "'mv' output argument.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(index.size() > numColsA, std::invalid_argument,
-			     os.str() << "Range must have no more elements than"
-			     " the number of columns " << numColsA << " in the "
-			     "'A' input argument.");
-	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-	}
+  {
+    std::ostringstream os;
+    os <<  "Belos::MultiVecTraits<Scalar, GhostMV<Scalar, ..."
+      "> >::SetBlock(A, index=[" << index.lbound() << ", " 
+       << index.ubound() << "], mv): ";
+    TEUCHOS_TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+           os.str() << "Range lower bound must be nonnegative.");
+    TEUCHOS_TEST_FOR_EXCEPTION(index.ubound() >= numColsMv, std::invalid_argument,
+           os.str() << "Range upper bound must be less than "
+           "the number of columns " << numColsA << " in the "
+           "'mv' output argument.");
+    TEUCHOS_TEST_FOR_EXCEPTION(index.size() > numColsA, std::invalid_argument,
+           os.str() << "Range must have no more elements than"
+           " the number of columns " << numColsA << " in the "
+           "'A' input argument.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+  }
       typedef Teuchos::RCP<GhostMV > MV_ptr;
       typedef Teuchos::RCP<const GhostMV > const_MV_ptr;
 
@@ -573,25 +573,25 @@ using ::phist::GhostMV;
       // the index range is different than [0, (# columns in mv) - 1].
       MV_ptr mv_view;
       if (index.lbound() == 0 && index.ubound()+1 == numColsMv)
-	mv_view = Teuchos::rcpFromRef (mv); // Non-const, non-owning RCP
+        mv_view = Teuchos::rcpFromRef (mv); // Non-const, non-owning RCP
       else
-	mv_view = CloneViewNonConst (mv, index);
+        mv_view = CloneViewNonConst (mv, index);
 
       // View of the relevant column(s) of the source multivector A.
       // If A has fewer columns than mv_view, then create a view of
       // the first index.size() columns of A.
       const_MV_ptr A_view;
       if (index.size() == numColsA)
-	A_view = Teuchos::rcpFromRef (A); // Const, non-owning RCP
+        A_view = Teuchos::rcpFromRef (A); // Const, non-owning RCP
       else
-	A_view = CloneView (A, Teuchos::Range1D(0, index.size()-1));
+        A_view = CloneView (A, Teuchos::Range1D(0, index.size()-1));
 
       mv_view->get()->fromVec(mv_view->get(),A_view->get(),0,0);
     }
 
     static void
     Assign (const GhostMV& A, 
-	    GhostMV& mv)
+      GhostMV& mv)
     {
       PHIST_ENTER_FCN(__FUNCTION__);        
       // Range1D bounds are signed; size_t is unsigned.
@@ -602,7 +602,7 @@ using ::phist::GhostMV;
       if (numColsA > numColsMv)
       {
           std::ostringstream os;
-          os <<	"Belos::MultiVecTraits<Scalar, GhostMV<Scalar, ..."
+          os <<  "Belos::MultiVecTraits<Scalar, GhostMV<Scalar, ..."
             "> >::Assign(A, mv): ";
           TEUCHOS_TEST_FOR_EXCEPTION(numColsA > numColsMv, std::invalid_argument,
                              os.str() << "Input multivector 'A' has " 

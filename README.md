@@ -1,6 +1,8 @@
---------------
-# Disclaimer #
---------------
+PHIST documentation
+===================
+
+Disclaimer
+==========
 
 This is a pre-alpha release, so **please do not expect anything to work!** Just 
 kidding... But some things may, and probably will, be broken.
@@ -8,10 +10,8 @@ Nevertheless, please report any bugs, issues and feature requests to the [issue
 tracker](https://bitbucket.org/essex/phist/issues).
 
 
-
-------------------
-# What is PHIST? #
-------------------
+What is PHIST?
+==============
 
 The DLR contribution to the ESSEX (Equipping Sparse Solvers for Exa-Scale)
 has the working title "PHIST" (Pipelined Hybrid-parallel Iterative Solver Toolkit).
@@ -46,7 +46,7 @@ around as opaque void pointers to increase portability.
 The kernel library to be used has to be chosen before configuring/building the project by 
 either
 
-* passing -DPHIST_KERNEL_LIB=<choice> to cmake.
+* passing `-DPHIST_KERNEL_LIB=<choice>' to cmake.
 * using ccmake and modifying the corresponding entry.
 
 Choices supported right now are:
@@ -56,9 +56,9 @@ Choices supported right now are:
 * epetra
 * tpetra
 
------------------------
-# Stand-alone version #
------------------------
+
+Stand-alone version
+===================
 
 The PHIST project can be compiled and used without any additional dependencies if the
 `builtin' kernel lib is used. For better performance, one should use the optional 
@@ -66,9 +66,9 @@ third-party libraries (TPLs) ParMETIS (for repartitioning the matrix) and ColPac
 enabling intra-node parallelism in CARP-CG), or switch to ghost+TPLs. Note that we currently 
 do not support the use of GPUs/Xeon Phi even with ghost as kernel lib.
 
---------------------------------------
-# Dependencies and optional packages #
---------------------------------------
+
+Dependencies and optional packages
+==================================
 
 * builtin
     * optional:
@@ -93,13 +93,13 @@ do not support the use of GPUs/Xeon Phi even with ghost as kernel lib.
 Typically CMake will automatically find the TPL if you pass the
 variable `(TPL_NAME)_DIR' to the cmake command, for instance:
 
-  cmake   -DPHIST_KERNEL_LIB=ghost \
-          -DGHOST_DIR=<path to ghost lib dir> \
-          <path to phist dir>
+    > cmake   -DPHIST_KERNEL_LIB=ghost \
+              -DGHOST_DIR=<path to ghost lib dir> \
+              <path to phist dir>
 
---------------------------------
-# PHIST Installation (details) #
---------------------------------
+
+PHIST Installation (details)
+============================
 
 Some sample build scripts are available in phist/buildScripts, they may provide
 a good starting point, although they might be somewhat outdated and paths may have to be 
@@ -107,27 +107,27 @@ adjusted.
 
 make a build directory:
 
-  mkdir build
+    > mkdir build
 
 you need cmake and MPI, on the DLR systems, use
 
-  module add cmake openmpi
+    > module add cmake openmpi
 
 As a start, use the builtin kernel lib without TPLs:
 
-  cd build/
-  cmake -DPHIST_KERNEL_LIB=builtin ..
+    > cd build/
+    > cmake -DPHIST_KERNEL_LIB=builtin ..
 
 Available targets for building just a certain component (libraries, 
 drivers, or tests) are
 
-  make libs
-  make drivers
-  make tests
+    > make libs
+    > make drivers
+    > make tests
 
 Required for installation via
 
-  make install
+    > make install
 
 are only the targets libs and drivers.
 
@@ -137,58 +137,58 @@ the MPI wrappers to be used. This is in contrast to the way CMake usually handle
 the compilers directly). We find the method used in PHIST more portable and to the intention
 of cluster administrators who provide the wrappers. For example, use
 
-cmake [...] \
-  -DCMAKE_C_COMPILER="[path/]mpicc" \
-  -DCMAKE_CXX_COMPILER="[path/]mpicxx" \
-  -DCMAKE_Fortran_COMPILER="[path/]mpif90" \
-  [...]
+    > cmake [...] \
+            -DCMAKE_C_COMPILER="[path/]mpicc" \
+            -DCMAKE_CXX_COMPILER="[path/]mpicxx" \
+            -DCMAKE_Fortran_COMPILER="[path/]mpif90" \
+            [...]
 
-------------------------------
-## Testing the installation ##
-------------------------------
+
+Testing the installation
+------------------------
 
 To run some unit tests type
   
-  make test
+    > make test
   
 or 
 
-  make check
+    > make check
 
 (to get verbose error messages)
 
 The code coverage of the tests can be shown using
   
-  make coverage
+    > make coverage
 
-----------------------------------------------------
-## Installation instructions for the RRZE systems ##
-----------------------------------------------------
+
+Installation instructions for the RRZE systems
+----------------------------------------------
 
  Proceed as follows to build PHIST with GHOST (substitute 
 $PREFIX with the path where ghost and essex-physics are installed).
 This is the easiest way to make PHIST find GHOST. It is also possible
-to pass the GHOST_DIR variable to cmake, insterad. Note that essex-physics
+to pass the `GHOST_DIR' variable to cmake, insterad. Note that essex-physics
 is an optional package for phist, as is Trilinos.
 
-  module load intel64
-  module load cmake
-  cd build/
-  export TRILINOS_HOME=<...> # optional, to enable using TSQR and Teuchos timers
-  export CC="mpicc -mt_mpi"               \
-         CXX="mpicxx -mt_mpi"             \
-         FC="mpif90 -mt_mpi"
-  cmake  -DPHIST_KERNEL_LIB=ghost       \
-         -DGHOST_DIR=$PREFIX/lib/ghost  \
-         -DMPIEXEC=mpirun_rrze          \
-         ..
-  make 
+    > module load intel64
+    > module load cmake
+    > cd build/
+    > export TRILINOS_HOME=<...> # optional, to enable using TSQR and Teuchos timers
+    > export CC="mpicc -mt_mpi"               \
+             CXX="mpicxx -mt_mpi"             \
+             FC="mpif90 -mt_mpi"
+    > cmake  -DPHIST_KERNEL_LIB=ghost       \
+             -DGHOST_DIR=$PREFIX/lib/ghost  \
+             -DMPIEXEC=mpirun_rrze          \
+           ..
+    > make 
 
-If you want to use likwid, also set LIKWID_HOME and pass -DLIKWID_PERFMON to cmake.
+If you want to use likwid, also set `LIKWID_HOME' and pass `-DLIKWID_PERFMON' to cmake.
 
------------------------
-# Directory structure #
------------------------
+
+Directory structure
+===================
 
 * *phist*                main project directory
     * *src*              primary source directory
@@ -216,22 +216,21 @@ If you want to use likwid, also set LIKWID_HOME and pass -DLIKWID_PERFMON to cma
     * *exampleRuns*      output & scripts of calculations done by us, probably
                          outdated
     * *lib*              third-party libraries included (currently only googletest)
-    * *matlab*           matlab playground to try out new algorithms
 
--------------------
-# Example Drivers #
--------------------
+
+Example Drivers
+===============
 
 By default, only double precision versions of libraries and drivers are compiled. There 
 are four types of drivers
 
 * *algorithm drivers* that read a matrix from a file (or use a predefined matrix generator)
   and solve e.g. an eigenvalue problem. 
-  Examples are phist_Djdqr, phist_Zsubspacejada etc. These drivers take a range of command 
+  Examples are `phist_Djdqr', `phist_Zsubspacejada' etc. These drivers take a range of command 
   line 
   parameters, a list of which is printed when the executable is called without input args.
 
-* *benchmark drivers* like phist_DcrsMat_times_mvec_times which are written to benchmark certain 
+* *benchmark drivers* like `phist_DcrsMat_times_mvec_times' which are written to benchmark certain 
   kernel operations
 
 * *test drivers* that follow the naming convention phist-X.Y.Z-<name>-test. These 

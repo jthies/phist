@@ -48,9 +48,9 @@ namespace Belos {
 
     static void 
     Apply (const phist_op_t& Op, 
-	   const MV& X,
-	   MV& Y,
-	   ETrans trans=NOTRANS)
+     const MV& X,
+     MV& Y,
+     ETrans trans=NOTRANS)
     {
     TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS,std::invalid_argument,
           "Belos::OperatorTraits<Scalar,MV,phist_op_t>:: Apply: only implemented for trans=NOTRANS up to now.");
