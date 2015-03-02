@@ -111,8 +111,7 @@ public:
       return Teuchos::null;
       }
 
-    ST *M_val;
-    ghost_densemat_valptr(M.get(),(void**)(&M_val));
+    ST *M_val=(ST*)M.get()->val;
     
     Teuchos::RCP<Teuchos_sdMat_t> M_view
                   = Teuchos::rcp(new Teuchos_sdMat_t(Teuchos::View,M_val,stride,nrows,ncols));

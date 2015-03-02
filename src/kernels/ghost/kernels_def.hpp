@@ -444,7 +444,7 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* l
     *iflag=-2;
     return;
   }
-  PHIST_CHK_GERR(ghost_densemat_valptr(V,(void**)val),*iflag);
+  *val=(ST*)V->val;
   PHIST_CHK_IERR(*iflag=check_local_size(V->stride),*iflag);
 
   *lda = V->stride;
@@ -463,7 +463,7 @@ extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t*
     return;
   }
 
-  PHIST_CHK_GERR(ghost_densemat_valptr(M,(void**)val),*iflag);
+  *val=(_ST_*)M->val;
 
   PHIST_CHK_IERR(*iflag=check_local_size(M->stride),*iflag);
 

@@ -393,8 +393,7 @@ namespace ghost {
                 std::invalid_argument,
                 "ghost::TsqrAdaptor<Scalar>::getNonConstView(mv) requires constant stride in mv");
 
-    scalar_type* valptr;
-    ghost_densemat_valptr(_A,(void**)&valptr);
+    scalar_type* valptr=(scalar_type*)_A->val;
                 
     Teuchos::ArrayRCP<ST> values(valptr,0,A_len,false);
     createNode();
