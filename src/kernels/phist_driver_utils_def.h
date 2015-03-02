@@ -64,7 +64,7 @@ void SUBR(create_matrix_usage)(void)
 #if defined(IS_DOUBLE) && !defined(IS_COMPLEX)
 PHIST_SOUT(PHIST_INFO,"\n\nInstead of a matrix file you can also specify a string describing\n"
                       "one of our scalable test problems, e.g. \n"
-                      "graphene<L> for an L times L graphene sheet,\n"
+                      "graphene<L> or graphene<M>x<N> for an L times L (M times N) graphene sheet,\n"
                       "spinSZ<L> for a spin chain of L spins\n"
                       "anderson<L> for an L^3 model problem for the Anderson localization\n"
                       "matpde<L> for an L^2 eigenproblem from a scalar elliptic partial \n"
@@ -154,7 +154,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     // make sure all remaining characters are
     for (int i=pos;i<strlen(problem);i++)
     {
-      if (problem[i]<'0' || problem[i]>'9')
+      if (problem[i]<'0' || problem[i]>'9' && problem[i]!='x')
       {
         mat_type=FROM_FILE;
         break;
@@ -171,11 +171,26 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   
   if (mat_type==GRAPHENE)
   {
-    PHIST_SOUT(PHIST_INFO,"problem type: Graphene %d x %d\n",L,L);
+    int L1=L;
+    int L2=L;
+    for (int i=pos; i<strlen(problem);i++)
+    {
+      if (problem[i]=='x')
+      {
+        pos=i+1;
+        break;
+      }
+    }
+    L2=atoi(problem+pos);
+    if (L2<0)
+    {
+      L2=L1;
+    }
+    PHIST_SOUT(PHIST_INFO,"problem type: Graphene %d x %d\n",L1,L2);
     double gamma=0.2;
     ghost_lidx_t WL[2];
-    WL[0] = L;
-    WL[1] = L;
+    WL[0] = L1;
+    WL[1] = L2;
   
     ghost_gidx_t DIM = WL[0]*WL[1];
     matfuncs_info_t info;
