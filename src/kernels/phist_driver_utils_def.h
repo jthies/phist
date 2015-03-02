@@ -165,10 +165,11 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   if (mat_type!=FROM_FILE)
   {
     const char* strL=problem+pos;
+    gidx_t DIM;
     L=atoi(strL);
     if (L<0) mat_type=FROM_FILE;
   }
-  
+  ghost_gidx_t DIM;
   if (mat_type==GRAPHENE)
   {
     int L1=L;
@@ -192,10 +193,9 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     WL[0] = L1;
     WL[1] = L2;
   
-    ghost_gidx_t DIM = WL[0]*WL[1];
     matfuncs_info_t info;
     // set problem size
-    crsGraphene( -2, WL, NULL, NULL);
+    crsGraphene( -2, WL, &DIM, NULL);
     // set disorder
     crsGraphene( -5, NULL, NULL,&gamma);
     // get matrix info
@@ -216,7 +216,7 @@ PHIST_SOUT(PHIST_ERROR,"matrix row function \"anderson\" is only implemented in 
     ghost_lidx_t LL=L;
   
     matfuncs_info_t info;
-    anderson( -2, &LL, NULL, NULL);
+    anderson( -2, &LL, &DIM, NULL);
     anderson( -1, NULL, NULL, &info);
 
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat,comm,
@@ -228,8 +228,6 @@ PHIST_SOUT(PHIST_ERROR,"matrix row function \"anderson\" is only implemented in 
   {
     PHIST_SOUT(PHIST_INFO,"problem type: spinSZ[%d]\n",L);
 
-
-    ghost_gidx_t DIM;
     ghost_lidx_t conf_spinZ[3] = {L,L/2,0};
     SpinChainSZ( -2, conf_spinZ, &DIM, NULL);
 
