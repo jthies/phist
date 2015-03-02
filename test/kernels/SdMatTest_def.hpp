@@ -121,7 +121,7 @@ public:
       {
         for(int j = 0; j < ncols_; j++)
         {
-          mat1_vp_[MIDX(i,j,m_lda_)] = alpha*mat1_vp_[MIDX(i,j,m_lda_)]+beta;
+          mat1_vp_[MIDX(i,j,m_lda_)] = alpha*mat1_vp_[MIDX(i,j,m_lda_)]+42.0*beta;
         }
       }
       SUBR(sdMat_to_device)(mat1_,&iflag_);
