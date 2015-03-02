@@ -612,8 +612,8 @@ end do
 
 
     a = 1
-    b = size(mat%comm_buff%recvRowBlkInd)
-    n_max = int(log(real(b))/log(2.))+1
+    b = size(mat%comm_buff%recvRowBlkInd,KIND=8)
+    n_max = int(log(real(b))/log(2.),KIND=8)+1
     do n = 1, n_max, 1
       idx = (a+b)/2
       if( col .lt. mat%comm_buff%recvRowBlkInd(idx) ) then
