@@ -8,6 +8,15 @@ import ctypes as _ct
 
 #--------------------------------------------------------------------------------
 # load the library
+# try to preload the MPI library, WARNING: this may fail if there are multiple
+# MPI libraries in the PATH!
+try:
+    _mpi = _ct.CDLL(name='libmpi_mt.so', mode=_ct.RTLD_GLOBAL)
+except:
+    try:
+        _mpi = _ct.CDLL(name='libmpi.so', mode=_ct.RTLD_GLOBAL)
+    except:
+        pass
 _phist_tools = _ct.CDLL(name='libphist_tools.so', mode=_ct.RTLD_GLOBAL)
 
 

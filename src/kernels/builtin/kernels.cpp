@@ -170,7 +170,7 @@ void phist_kernels_init(int* argc, char*** argv, int* iflag)
   PHIST_CHK_IERR( *iflag = MPI_Initialized(&mpiInitializedBefore), *iflag);
   if (!mpiInitializedBefore)
   {
-  	PHIST_CHK_IERR( *iflag = MPI_Init(argc, argv), *iflag);
+    PHIST_CHK_IERR( *iflag = MPI_Init(argc, argv), *iflag);
   }
 
   // allow unlimited stack

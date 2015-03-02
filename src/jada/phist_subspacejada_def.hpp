@@ -182,7 +182,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 
   _ST_ *Q_H_raw       = NULL;
   _ST_ *R_H_raw       = NULL;
-  _ST_ *Htmp_raw 			= NULL;
+  _ST_ *Htmp_raw      = NULL;
   lidx_t ldaQ_H, ldaR_H, ldaHtmp;
 
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&V_,     A_op->domain_map, maxBase,        iflag), *iflag);
@@ -190,7 +190,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 #ifdef TESTING
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&Vtmp_,  A_op->domain_map, maxBase,                iflag), *iflag);
 #endif
-  PHIST_CHK_IERR(SUBR( mvec_create  ) (&AV_,    A_op->range_map,  maxBase,        	      iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( mvec_create  ) (&AV_,    A_op->range_map,  maxBase,                iflag), *iflag);
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&t_,     A_op->domain_map, blockDim,               iflag), *iflag);
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&At_,    A_op->range_map,  blockDim,               iflag), *iflag);
   int resDim = std::min(2*blockDim, nEig+blockDim-1);
@@ -212,7 +212,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   }
 
   PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (Q_H_,    &Q_H_raw,   &ldaQ_H,   iflag), *iflag);
-  PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (R_H_,  	&R_H_raw,   &ldaR_H,   iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (R_H_,    &R_H_raw,   &ldaR_H,   iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (Htmp_,   &Htmp_raw,  &ldaHtmp,  iflag), *iflag);
   if( B_op != NULL )
   {
@@ -301,8 +301,8 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
 #define UPDATE_SUBSPACE_VIEWS \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                         nConvEig, nV-1,      iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                        nConvEig, nV-1,      iflag), *iflag); \
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, 		&BV,                        nConvEig, nV-1,      iflag), *iflag); \
-  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  		&H,     nConvEig, nV-1,     nConvEig, nV-1,      iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                        nConvEig, nV-1,      iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     nConvEig, nV-1,     nConvEig, nV-1,      iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &Vful,                      0,        nV-1,      iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AVful,                     0,        nV-1,      iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BVful,                     0,        nV-1,      iflag), *iflag); \

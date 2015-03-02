@@ -86,7 +86,7 @@ using ::phist::ScalarTraits;
 
     static Teuchos::RCP<MV>
     CloneCopy (const MV& mv, 
-	       const Teuchos::Range1D& index)
+        const Teuchos::Range1D& index)
     {
       PHIST_ENTER_FCN(__FUNCTION__);
       TYPE(const_mvec_ptr) v_in;
@@ -122,7 +122,7 @@ using ::phist::ScalarTraits;
 
     static Teuchos::RCP<MV> 
     CloneViewNonConst (MV& mv, 
-		       const Teuchos::Range1D& index)
+        const Teuchos::Range1D& index)
     {
       PHIST_ENTER_FCN(__FUNCTION__);
       TYPE(mvec_ptr) v_in, v_out=NULL;
@@ -142,7 +142,7 @@ using ::phist::ScalarTraits;
 
     static Teuchos::RCP<const MV > 
     CloneView (const MV& mv, 
-	       const Teuchos::Range1D& index)
+        const Teuchos::Range1D& index)
     {
       PHIST_ENTER_FCN(__FUNCTION__);    
       return Teuchos::rcp_dynamic_cast<const MV >
@@ -250,8 +250,8 @@ using ::phist::ScalarTraits;
 
     static void
     SetBlock (const MV& A, 
-	      const Teuchos::Range1D& index, 
-	      MV& mv)
+        const Teuchos::Range1D& index, 
+        MV& mv)
     {
       PHIST_ENTER_FCN(__FUNCTION__);
       PHIST_CHK_IERR(SUBR(mvec_set_block)(mv.get(),A.get(),index.lbound(),index.ubound(),&iflag_),iflag_);
@@ -259,7 +259,7 @@ using ::phist::ScalarTraits;
 
     static void
     Assign (const MV& A, 
-	    MV& mv)
+        MV& mv)
     {
       PHIST_ENTER_FCN(__FUNCTION__);
       int nvecA;
