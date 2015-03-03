@@ -678,6 +678,7 @@ install(FILES ${PROJECT_BINARY_DIR}/phist_config.h DESTINATION include/phist)
 file(GLOB PHIST_HEADERS ${CMAKE_SOURCE_DIR}/src/*/*.h 
                         ${CMAKE_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/phist_typedefs.h 
                         ${CMAKE_SOURCE_DIR}/src/tools/phist_fcntrace.hpp
+                        ${CMAKE_SOURCE_DIR}/src/tools/phist_timemonitor.hpp
                         )
 install(FILES ${PHIST_HEADERS} DESTINATION include/phist)
 install(FILES ${CMAKE_SOURCE_DIR}/src/kernels/ghost/phist_ghost_macros.hpp DESTINATION include/phist/ghost)
