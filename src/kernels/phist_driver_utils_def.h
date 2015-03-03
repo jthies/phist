@@ -81,15 +81,17 @@ PHIST_SOUT(PHIST_INFO,"\n\nInstead of a matrix file you can also specify a strin
 #endif
 #ifdef PHIST_HAVE_ESSEX_PHYSICS
 #include "essex-physics/matfuncs.h"
+#include "essex-physics/bapp.h"
 #else
 #include "matfuncs.h"
 #endif
 typedef enum {
-FROM_FILE=0,
-GRAPHENE=1,
-ANDERSON=2,
-SPINSZ=3,
-MATPDE=4
+FROM_FILE,
+FROM_BAPPS,
+GRAPHENE,
+ANDERSON,
+SPINSZ,
+MATPDE
 } problem_t;
 
 // definitions for MATPDE
@@ -128,7 +130,12 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   // otherwise try to read a file
   mat_type=FROM_FILE;
   int pos=0;
-  if( str_starts_with(problem,"spinSZ") )
+  if( str_starts_with(problem,"BAPPS-") )
+  {
+    mat_type=FROM_BAPPS;
+    pos=strlen("BAPPS-");
+  }
+  else if( str_starts_with(problem,"spinSZ") )
   {
     mat_type=SPINSZ;
     pos=strlen("spinSZ");
@@ -149,7 +156,13 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     pos=strlen("matpde");
   }
 
-  if (mat_type!=FROM_FILE)
+  gidx_t DIM;
+
+  // if not from file and not from bapps, it is one
+  // of the matfuncs cases. Check that the string is
+  // correctly formatted, otherwise assume FROM_FILE
+  // after all.
+  if (mat_type!=FROM_FILE && mat_type!=FROM_BAPPS)
   {
     // make sure all remaining characters are
     for (int i=pos;i<strlen(problem);i++)
@@ -160,16 +173,13 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
         break;
       }
     }
-  }
 
-  if (mat_type!=FROM_FILE)
-  {
     const char* strL=problem+pos;
-    gidx_t DIM;
     L=atoi(strL);
     if (L<0) mat_type=FROM_FILE;
   }
-  ghost_gidx_t DIM;
+
+  // check for matfuncs cases
   if (mat_type==GRAPHENE)
   {
     int L1=L;
@@ -253,6 +263,27 @@ PHIST_SOUT(PHIST_ERROR,"matrix row function \"matpde\" is only implemented in PH
     ncols = nrows;
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
           nrows, ncols, row_nnz, &MATPDE_rowFunc, iflag), *iflag);
+#endif
+  }
+  else if (mat_type==FROM_BAPPS)
+  {
+#ifndef PHIST_HAVE_ESSEX_PHYSICS
+PHIST_SOUT(PHIST_ERROR,"BAPPS models (essex-physics/bapps) not\n"
+                       "available without essex-physics\n");
+  *iflag=-99;
+#else
+    
+    const char *matstr = problem+pos;
+    ghost_sparsemat_fromRowFunc_t matfunc;
+    bapp_select_model((char*)matstr,&matfunc);
+    
+    matfuncs_info_t info;
+                 
+    // query
+    matfunc( -2, NULL, NULL, &info);
+
+    PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
+          info.nrows, info.nrows, info.row_nnz, matfunc, iflag), *iflag);  
 #endif
   }
   else

@@ -58,7 +58,13 @@ void SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm,
 //! generate a test matrix described by a string. Currently this
 //! is only implemented in real double precision (D), in which case
 //! we support e.g. "graphene<L>" (an L x L graphene problem) or "anderson<L>"
-//! (an L x L x L Anderson model problem with periodic BC). Any other string
+//! (an L x L x L Anderson model problem with periodic BC). 
+//!
+//! Another class of test problems is available if the ESSEX-Physics library is
+//! available. If problem starts with "BAPP-", the remainder of the string is
+//! passed to the test case generation functions in essex/physics/bapps/.
+//!
+//! Any other string
 //! is assumed to be a matrix filename and passed to sparseMat_read, which recognizes
 //! files ending on '.mm', '.bin' or '.rua'.
 //!
