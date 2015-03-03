@@ -130,10 +130,10 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   // otherwise try to read a file
   mat_type=FROM_FILE;
   int pos=0;
-  if( str_starts_with(problem,"BAPPS-") )
+  if( str_starts_with(problem,"BAPP-") )
   {
     mat_type=FROM_BAPPS;
-    pos=strlen("BAPPS-");
+    pos=strlen("BAPP-");
   }
   else if( str_starts_with(problem,"spinSZ") )
   {
