@@ -338,7 +338,7 @@ public:
       SUBR(mvec_view_block)(V1_,&V_cols,0,k_-1,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      ASSERT_REAL_EQ(mt::one(),MvecsEqual(V_cols,V2_));
+      ASSERT_NEAR(mt::one(),MvecsEqual(V_cols,V2_),100*mt::eps());
    
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
