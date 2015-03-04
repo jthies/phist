@@ -617,8 +617,8 @@ end do
     ! item theoretically found after at most int(log_2(b))+1 steps,
     ! but if b is a power of two int(log_2(b)) might get rounded down
     ! to log_2(b)-1 due to fp precision !
-    ! So the secure variant uses nint(log_2(b))
-    n_max = nint(log(real(b))/log(2.),kind=8)+1
+    ! So the secure variant uses nint(log_2(b))+2
+    n_max = nint(log(real(b))/log(2.),kind=8)+2
     do n = 1, n_max, 1
       idx = a + (b-a)/2
       if( col .gt. mat%comm_buff%recvRowBlkInd(idx) ) then
