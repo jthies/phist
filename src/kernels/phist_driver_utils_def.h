@@ -273,9 +273,15 @@ PHIST_SOUT(PHIST_ERROR,"BAPPS models (essex-physics/bapps) not\n"
   *iflag=-99;
 #else
     
-    const char *matstr = problem+pos;
+    int len=strlen(problem+pos);
+    // we need to copy the string because bapp_select_model
+    // uses strsep, which destroys the string.
+    char *matstr=(char*)malloc(len+1);
+    strncpy(matstr,problem+pos,len+1);
+    PHIST_SOUT(PHIST_DEBUG,"problem '%s', matstr '%s'\n",problem,matstr);
     ghost_sparsemat_fromRowFunc_t matfunc;
-    bapp_select_model((char*)matstr,&matfunc);
+    bapp_select_model(matstr,&matfunc);
+    free(matstr);
     
     matfuncs_info_t info;
                  
