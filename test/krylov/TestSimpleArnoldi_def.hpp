@@ -262,7 +262,9 @@ class CLASSNAME: public virtual KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
 
         // check AV_' = AV_ - VH_ == 0
         for(int i = 0; i < _M_; i++)
-          ASSERT_NEAR(mt::zero(),vnorm[i],100*mt::eps());
+        {
+          ASSERT_NEAR(mt::zero(),vnorm[i],(MT)200.*releps(V_));
+        }
       }
     }
 

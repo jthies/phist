@@ -605,6 +605,7 @@ end do
 
   contains
 
+  ! small helper function, binary search for col in recvRowBlkInd
   function search_recvBuffIndex(col) result(idx)
     integer(kind=8), intent(in) :: col
     integer(kind=8) :: idx
@@ -612,21 +613,25 @@ end do
 
 
     a = 1
-    b = size(mat%comm_buff%recvRowBlkInd,KIND=8)
-    n_max = int(log(real(b))/log(2.),KIND=8)+1
+    b = size(mat%comm_buff%recvRowBlkInd,kind=8)
+    ! item theoretically found after at most int(log_2(b))+1 steps,
+    ! but if b is a power of two int(log_2(b)) might get rounded down
+    ! to log_2(b)-1 due to fp precision !
+    ! So the secure variant uses nint(log_2(b))+2
+    n_max = nint(log(real(b))/log(2.),kind=8)+2
     do n = 1, n_max, 1
-      idx = (a+b)/2
-      if( col .lt. mat%comm_buff%recvRowBlkInd(idx) ) then
-        b = idx-1
-      else if( col .gt. mat%comm_buff%recvRowBlkInd(idx) ) then
+      idx = a + (b-a)/2
+      if( col .gt. mat%comm_buff%recvRowBlkInd(idx) ) then
         a = idx+1
       else
-        exit
+        b = idx
       end if
     end do
 
     if( col .ne. mat%comm_buff%recvRowBlkInd(idx) ) then
-      write(*,*) 'Error in search_recvBuffIndex! col:', col, 'a', a, 'b', b, 'idx', idx
+      write(*,*) 'Error in search_recvBuffIndex! col:', col, 'a', a, 'b', b, 'idx', idx,  &
+        &        'recvRowBlkInd', mat%comm_buff%recvRowBlkInd(idx),                       &
+        &        'size', size(mat%comm_buff%recvRowBlkInd,kind=8)
       call exit(23)
     end if
   end function search_recvBuffIndex
