@@ -291,17 +291,25 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
         vtraits.datatype = st::ghost_dt;
 
   PHIST_CHK_GERR(ghost_densemat_create(&result,map->ctx,vtraits),*iflag);
-
-  if ((result->traits.nrows!=result->traits.nrowshalo)||(result->traits.nrowshalo!=lda))
+#ifdef PHIST_MVECS_ROW_MAJOR
+  if (result->traits.nrowshalo!=result->traits.nrows)
   {
-    PHIST_OUT(PHIST_ERROR,"viewing plain data as ghost_vec only works "
-                          "for node-local or trivially parallel matrices!\n");
-    PHIST_OUT(PHIST_ERROR,"nrows=%" PRlidx ", nrowshalo=%" PRlidx ", lda=%" PRlidx "\n",
-        vtraits.nrows,vtraits.nrowshalo,lda);
+    PHIST_OUT(PHIST_ERROR,"viewing plain data as row-major ghost_densemat_t only works \n"
+                          "for vectors without communciation buffers (for spMVM)\n");
     *iflag=-1;
     return;
   }
-
+#else
+  if ((result->traits.nrowshalo>lda))
+  {
+    PHIST_OUT(PHIST_ERROR,"viewing plain data as ghost_densemat_t only works \n"
+                          "if the given lda can accomodate the required comm buffer of the vector!\n"
+                          "nrows=%" PRlidx ", nrowshalo=" PRlidx ", lda=%" PRlidx "\n",
+        result->traits.nrows,result->traits.nrowshalo,lda);
+    *iflag=-1;
+    return;
+  }
+#endif
   PHIST_CHK_GERR(result->viewPlain(result,(void*)values,lda),*iflag);
   *vV=(TYPE(mvec_ptr))(result);
   return;
