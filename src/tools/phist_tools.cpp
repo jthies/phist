@@ -110,3 +110,5 @@ extern "C" const char* phist_kernel_lib()
 #error "No appropriate PHIST_KERNEL_LIB_... defined!"
 #endif
 }
+
+bool phist_CheckKernelFcnNesting::nestedKernelCall_ = false;

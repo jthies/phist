@@ -12,7 +12,7 @@ extern "C" void SUBR(type_avail)(int* iflag)
 extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
         const char* filename,int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*iflag);
   if (filename==NULL)
   {
@@ -33,7 +33,7 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_
 extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
 const char* filename,int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   // TODO - not implemented (should read the binary file format defined by ghost)
   *iflag=-99;
 }
@@ -42,7 +42,7 @@ const char* filename,int* iflag)
 extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
 const char* filename,int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=-99; // not implemented in epetra
 }
 //!@}
@@ -52,7 +52,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, cons
                 int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*),
                 int *iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*iflag);
   gidx_t cols[maxnne];
   double vals[maxnne];
@@ -84,7 +84,7 @@ return;
 //! get the row distribution of the matrix
 extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix,A,vA,*iflag);
   *vmap = (const_map_ptr_t)(&(A->RowMap()));
@@ -93,7 +93,7 @@ extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, const_
 //! get column distribution of a matrix
 extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix,A,vA,*iflag);
   *vmap = (const_map_ptr_t)(&(A->ColMap()));
@@ -102,7 +102,7 @@ extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, const_
 //! get the map for vectors x in y=A*x
 extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix,A,vA,*iflag);
   *vmap = (const_map_ptr_t)(&(A->DomainMap()));
@@ -111,7 +111,7 @@ extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) vA, con
 //! get the map for vectors y in y=A*x
 extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix,A,vA,*iflag);
   *vmap = (const_map_ptr_t)(&(A->RangeMap()));
@@ -126,7 +126,7 @@ extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) vA, cons
 extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vV, 
 const_map_ptr_t vmap, int nvec, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_BlockMap, map,vmap,*iflag);
   Epetra_MultiVector* result;
@@ -142,7 +142,7 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
         _ST_* values, lidx_t lda, int nvec,
         int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_BlockMap, map,vmap,*iflag);
   Epetra_MultiVector* V = new Epetra_MultiVector(View, *map, values, lda, nvec);
@@ -155,7 +155,7 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
 extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols, 
         const_comm_ptr_t vcomm, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   const Epetra_Comm* comm;
   if (vcomm!=NULL)
@@ -186,7 +186,7 @@ void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
 //! retrieve local length of the vectors in V
 extern "C" void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) vV, lidx_t* len, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag = 0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*iflag);
   *len = V->MyLength();
@@ -195,7 +195,7 @@ extern "C" void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) vV, lidx_t* len, int* 
 //! retrieve the map of the vectors in V
 extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, const_map_ptr_t* vmap, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*iflag);
   *vmap=(const_map_ptr_t)&V->Map();
@@ -204,7 +204,7 @@ extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, const_map_ptr_t* vma
 //! retrieve the comm used for MPI communication in V
 extern "C" void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) vV, const_comm_ptr_t* vcomm, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*iflag);
   *vcomm=(const_comm_ptr_t)&V->Comm();
@@ -213,7 +213,7 @@ extern "C" void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) vV, const_comm_ptr_t* v
 //! retrieve number of vectors/columns in V
 extern "C" void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) vV, int* nvec, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag = 0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*iflag);
   *nvec = V->NumVectors();
@@ -222,7 +222,7 @@ extern "C" void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) vV, int* nvec, int* 
 //! get number of cols in local dense matrix
 extern "C" void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) vM, int* nrows, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,M,vM,*iflag);
   *nrows = M->MyLength();
@@ -231,7 +231,7 @@ extern "C" void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) vM, int* nrows, int*
 //! get number of cols in local dense matrix
 extern "C" void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) vM, int* ncols, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,M,vM,*iflag);
   *ncols = M->NumVectors();
@@ -240,21 +240,21 @@ extern "C" void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) vM, int* ncols, int*
 
 extern "C" void SUBR(mvec_extract_view)(Dmvec_ptr_t vV, double** val, lidx_t* lda, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,V, vV, *iflag);
   PHIST_CHK_IERR(*iflag=V->ExtractView(val,lda),*iflag);
 }
 
 extern "C" void SUBR(sdMat_extract_view)(DsdMat_ptr_t vM, double** val, lidx_t* lda, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,M, vM, *iflag);
   PHIST_CHK_IERR(*iflag=M->ExtractView(val,lda),*iflag);
 }
 
 extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   //TODO: create importer, v_out->Import(v_in)
   //TODO: possibly crate a wrapper phist_map_t which keeps the importer as well
   *iflag=-99;
@@ -270,7 +270,7 @@ extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
                              TYPE(mvec_ptr)* vVblock,
                              int jmin, int jmax, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*iflag);
   Epetra_MultiVector *Vblock;
@@ -291,7 +291,7 @@ extern "C" void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
                              TYPE(mvec_ptr) vVblock,
                              int jmin, int jmax, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,Vblock,vVblock,*iflag);
@@ -306,7 +306,7 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
                              TYPE(const_mvec_ptr) vVblock,
                              int jmin, int jmax, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,Vblock,vVblock,*iflag);
@@ -320,7 +320,7 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
                              TYPE(sdMat_ptr)* vMblock,
                              int imin, int imax, int jmin, int jmax, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,M,vM,*iflag);
   Epetra_MultiVector *Mblock=NULL;
@@ -346,7 +346,7 @@ extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
                              TYPE(sdMat_ptr) vMblock,
                              int imin, int imax, int jmin, int jmax, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   TYPE(sdMat_ptr) vMtmp=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_view_block)((TYPE(sdMat_ptr))vM,&vMtmp,imin,imax,jmin,jmax,iflag),*iflag);
@@ -362,7 +362,7 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
                              TYPE(const_sdMat_ptr) vMblock,
                              int imin, int imax, int jmin, int jmax, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   TYPE(sdMat_ptr) vMtmp=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(vM,&vMtmp,imin,imax,jmin,jmax,iflag),*iflag);
@@ -379,7 +379,7 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
 //!
 extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) vA, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   if(vA==NULL) return;
   PHIST_CAST_PTR_FROM_VOID(Epetra_CrsMatrix,A,vA,*iflag);
@@ -389,7 +389,7 @@ extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) vA, int* iflag)
 //!
 extern "C" void SUBR(mvec_delete)(TYPE(mvec_ptr) vV, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   if (vV==NULL) return;
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*iflag);
@@ -399,7 +399,7 @@ extern "C" void SUBR(mvec_delete)(TYPE(mvec_ptr) vV, int* iflag)
 //!
 extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) vM, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   if(vM==NULL) return;
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,M,vM,*iflag);
@@ -414,7 +414,7 @@ extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) vM, int* iflag)
 //! put scalar value into all elements of a multi-vector
 extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, double value, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*iflag);
   PHIST_CHK_IERR(*iflag=V->PutScalar(value),*iflag);
@@ -423,7 +423,7 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, double value, int* iflag
 //! put scalar value into all elements of a multi-vector
 extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vV, double value, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*iflag);
   PHIST_CHK_IERR(*iflag=V->PutScalar(value),*iflag);
@@ -432,7 +432,7 @@ extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vV, double value, int* ifl
 //! put random numbers into all elements of a multi-vector
 extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*iflag);
   PHIST_CHK_IERR(*iflag=V->Random(),*iflag);
@@ -440,7 +440,7 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* iflag)
 
 extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag = 0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*iflag);
   std::cout << *V;
@@ -448,7 +448,7 @@ extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* iflag)
 
 extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,M,vM,*iflag);
   std::cout << *M;
@@ -457,7 +457,7 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
 //! put random numbers into all elements of a serial dense matrix
 extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,M,vM,*iflag);
   PHIST_CHK_IERR(*iflag=M->Random(),*iflag);
@@ -470,7 +470,7 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* iflag)
   extern "C" void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) vV,
                             _ST_* vnrm, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*iflag);  
   PHIST_CHK_IERR(*iflag=V->Norm2(vnrm),*iflag);
@@ -482,7 +482,7 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* iflag)
   extern "C" void SUBR(mvec_normalize)(TYPE(mvec_ptr) vV,
                             _ST_* vnrm, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*iflag);  
   PHIST_CHK_IERR(*iflag=V->Norm2(vnrm),*iflag);
@@ -497,7 +497,7 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* iflag)
 extern "C" void SUBR(mvec_scale)(TYPE(mvec_ptr) vV, 
                             _ST_ scalar, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*iflag);  
   PHIST_CHK_IERR(*iflag=V->Scale(scalar),*iflag);
@@ -508,7 +508,7 @@ extern "C" void SUBR(mvec_scale)(TYPE(mvec_ptr) vV,
 extern "C" void SUBR(mvec_vscale)(TYPE(mvec_ptr) vV, 
                             const _ST_* scalar, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*iflag);  
   for (int i=0;i<V->NumVectors();i++)
@@ -523,7 +523,7 @@ extern "C" void SUBR(mvec_add_mvec)(double alpha, TYPE(const_mvec_ptr) vX,
                             double beta,  TYPE(mvec_ptr)       vY, 
                             int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,X,vX,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,Y,vY,*iflag);
@@ -535,7 +535,7 @@ extern "C" void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) vX
                             _ST_ beta,  TYPE(mvec_ptr)       vY,
                             int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,X,vX,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,Y,vY,*iflag);
 
@@ -551,7 +551,7 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
                             _ST_ beta,  TYPE(sdMat_ptr)       vB,
                             int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,B,vB,*iflag);
@@ -562,7 +562,7 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
 extern "C" void SUBR(sparseMat_times_mvec)(double alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
 double beta, TYPE(mvec_ptr) vy, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
 
 #ifdef PHIST_TIMEMONITOR
@@ -612,7 +612,7 @@ extern "C" void SUBR(sparseMatT_times_mvec)(double alpha, TYPE(const_sparseMat_p
 TYPE(const_mvec_ptr) vx, 
 double beta, TYPE(mvec_ptr) vy, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,x,vx,*iflag);
@@ -649,7 +649,7 @@ extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_spar
         const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
 
   int nvec;
@@ -668,7 +668,7 @@ extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_spar
 //! dot product of vectors v_i and w_i, i=1..numvecs
 extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) vV, TYPE(const_mvec_ptr) vW, double* s, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,W,vW,*iflag);
@@ -679,7 +679,7 @@ extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) vV, TYPE(const_mvec_ptr
 //! C=V'*W. C is replicated on all MPI processes sharing V and W.
 extern "C" void SUBR(mvecT_times_mvec)(double alpha, TYPE(const_mvec_ptr) vV, TYPE(const_mvec_ptr) vW, double beta, TYPE(sdMat_ptr) vC, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,W,vW,*iflag);
@@ -695,7 +695,7 @@ extern "C" void SUBR(mvec_times_sdMat)(double alpha, TYPE(const_mvec_ptr) vV,
                            double beta,  TYPE(mvec_ptr) vW,
                                        int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,W,vW,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,C,vC,*iflag);
@@ -709,7 +709,7 @@ extern "C" void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
                                _ST_ beta, TYPE(sdMat_ptr) vC,
                                        int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,W,vW,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,C,vC,*iflag);
@@ -724,7 +724,7 @@ extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
                                _ST_ beta, TYPE(sdMat_ptr) vC,
                                        int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,W,vW,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,C,vC,*iflag);
@@ -740,7 +740,7 @@ extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
 extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*iflag);

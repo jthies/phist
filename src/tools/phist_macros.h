@@ -199,6 +199,13 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 # define PHIST_ENTER_FCN(s)
 #endif
 
+/* PHIST_ENTER_KERNEL_FCN definition (used to prevent measuring nested kernel calls) */
+#if defined(__cplusplus) || !defined(PHIST_TIMINGS_FULL_TRACE)
+# define PHIST_ENTER_KERNEL_FCN(s) phist_CheckKernelFcnNesting s_(s); PHIST_ENTER_FCN(s_.str());
+#else
+# define PHIST_ENTER_KERNEL_FCN(s)
+#endif
+
 /* print a warning that an untested / experimental function is called */
 #define PHIST_MARK_AS_EXPERIMENTAL(s) PHIST_SOUT(PHIST_WARNING, "Called experimental (untested) %s\n", s);
 

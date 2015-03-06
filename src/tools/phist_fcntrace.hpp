@@ -98,5 +98,33 @@ class phist_FcnTrace
 #endif
 };
 
+
+
+// Small helper class for PHIST_ENTER_KERNEL_FCN (phist_macros.h),
+// which returns a modified name when nested
+class phist_CheckKernelFcnNesting
+{
+  public:
+    phist_CheckKernelFcnNesting(const char* fcn)
+    {
+      if( !nestedKernelCall_ )
+        fcn_ = fcn;
+
+      nestedKernelCall_ = true;
+    }
+
+    ~phist_CheckKernelFcnNesting()
+    {
+      nestedKernelCall_ = false;
+    }
+
+    const char* str() const {return fcn_.c_str();}
+
+  private:
+    static bool nestedKernelCall_;
+    std::string fcn_;
+
+};
+
 #endif
 
