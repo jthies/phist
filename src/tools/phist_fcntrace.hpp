@@ -110,12 +110,14 @@ class phist_CheckKernelFcnNesting
       if( !nestedKernelCall_ )
         fcn_ = fcn;
 
-      nestedKernelCall_ = true;
+      if( !fcn_.empty() )
+        nestedKernelCall_ = true;
     }
 
     ~phist_CheckKernelFcnNesting()
     {
-      nestedKernelCall_ = false;
+      if( !fcn_.empty() )
+        nestedKernelCall_ = false;
     }
 
     const char* str() const {return fcn_.c_str();}

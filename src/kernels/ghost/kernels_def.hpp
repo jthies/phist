@@ -1029,7 +1029,6 @@ extern "C" void SUBR(mvec_normalize)(TYPE(mvec_ptr) vV,
   _ST_ inrm[V->traits.ncols];
   for (int i=0;i<V->traits.ncols;i++) inrm[i]=st::one()/vnrm[i];
   PHIST_CHK_IERR(SUBR(mvec_vscale)(vV,inrm,iflag),*iflag);
-  return;
 }
 
 //! scale each column i of v and by scalar[i]
@@ -1042,7 +1041,6 @@ PHIST_GHOST_TASK_BEGIN
 PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);  
   V->scale(V,(void*)&scalar);
-  return;
 PHIST_GHOST_TASK_END
 }
 
@@ -1057,7 +1055,6 @@ PHIST_GHOST_TASK_BEGIN
 PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);  
   V->vscale(V,(void*)scalar);
-  return;
 PHIST_GHOST_TASK_END
 }
 
