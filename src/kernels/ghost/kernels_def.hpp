@@ -1061,18 +1061,16 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
 PHIST_GHOST_TASK_END
 }
 
-//! y=alpha*x+beta*y
-extern "C" void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vX,
-                            _ST_ beta,  TYPE(mvec_ptr)       vY, 
+//! private function to implement y=alpha*x+beta*y for both
+//! mvecs and sdMats
+void SUBR(densemat_add_densemat)(_ST_ alpha, ghost_densemat_t* X,
+                            _ST_ beta,  ghost_densemat_t* Y, 
                             int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
 #include "phist_std_typedefs.hpp"
 PHIST_GHOST_TASK_BEGIN
 PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
-  PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,X,vX,*iflag);
-  PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,Y,vY,*iflag);
   ST a=alpha, b=beta;
   if (alpha==st::one() && beta==st::zero())
   {
@@ -1098,7 +1096,18 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
     PHIST_DEB("general case: Y=alpha*X+beta*Y");
     PHIST_CHK_GERR(Y->axpby(Y,X,(void*)&a,(void*)&b),*iflag);
   }
-PHIST_GHOST_TASK_END
+  PHIST_GHOST_TASK_END
+}
+
+//! y=alpha*x+beta*y
+extern "C" void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vX,
+                            _ST_ beta,  TYPE(mvec_ptr)       vY, 
+                            int* iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,X,vX,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,Y,vY,*iflag);
+  SUBR(densemat_add_densemat)(alpha, X, beta, Y, iflag);
 }
 
 //! y[j]=alpha[j]*x[j]+beta[j]*y[j] for all columns j
@@ -1138,7 +1147,9 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
                             int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(alpha,vA,beta,vB,iflag), *iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,A,vA,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,B,vB,*iflag);
+  PHIST_CHK_IERR(SUBR(densemat_add_densemat)(alpha,A,beta,B,iflag), *iflag);
 }
 
 //! y=alpha*A*x+beta*y.
