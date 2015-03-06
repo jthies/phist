@@ -208,8 +208,8 @@ ghost_densemat_traits_t phist_default_vtraits()
   // ghost should set these correctly depending on GHOST_TYPE if we set HOST and DEVICE to 0
   int new_flags =   (int)vtraits.flags;
  //     new_flags|=    (int)GHOST_DENSEMAT_NO_HALO;
-      //new_flags&=   ~(int)GHOST_DENSEMAT_HOST;
-      //new_flags&=   ~(int)GHOST_DENSEMAT_DEVICE;
+ //     new_flags&=   ~(int)GHOST_DENSEMAT_HOST;
+ //     new_flags&=   ~(int)GHOST_DENSEMAT_DEVICE;
   vtraits.flags = (ghost_densemat_flags_t)new_flags;
 
   vtraits.ncols=1;
