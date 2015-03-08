@@ -53,6 +53,9 @@ namespace phist_TimeMonitor
     std::vector<double> minTime(nTimers);
     std::vector<double> maxTime(nTimers);
     std::vector<double> maxTotalTime(nTimers);
+#ifdef PHIST_TIMINGS_FULL_TRACE
+    std::vector<double> maxSelfTime(nTimers);
+#endif
     std::vector<double> sumTotalTime(nTimers);
 
     std::vector<double> tmp(nTimers);
@@ -65,6 +68,9 @@ namespace phist_TimeMonitor
       minTime.at(i) = _timingResults[fcnName.at(i)].minTime;
       maxTime.at(i) = _timingResults[fcnName.at(i)].maxTime;
       maxTotalTime.at(i) = _timingResults[fcnName.at(i)].totalTime;
+#ifdef PHIST_TIMINGS_FULL_TRACE
+      maxSelfTime.at(i) = _timingResults[fcnName.at(i)].selfTime;
+#endif
     }
     delete[] strBuf;
 
@@ -76,6 +82,10 @@ namespace phist_TimeMonitor
     tmp = maxTotalTime;
     MPI_Reduce(&tmp[0],&sumTotalTime[0],nTimers,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
     MPI_Reduce(&tmp[0],&maxTotalTime[0],nTimers,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD);
+#ifdef PHIST_TIMINGS_FULL_TRACE
+    tmp = maxSelfTime;
+    MPI_Reduce(&tmp[0],&maxSelfTime[0],nTimers,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD);
+#endif
 
     // sort by total time
     std::vector<int> sortedIndex(nTimers);
@@ -95,7 +105,11 @@ namespace phist_TimeMonitor
     std::string function = "function";
     function.resize(maxNameLen, ' ');
     PHIST_SOUT(PHIST_INFO, "======================================== TIMING RESULTS ============================================\n");
+#ifdef PHIST_TIMINGS_FULL_TRACE
+    PHIST_SOUT(PHIST_INFO, "%s  %10s  %10s  %10s  %10s  %10s  %10s\n", function.c_str(), "mtot.time", "mself.time", "count", "max.time", "avg.time", "min.time");
+#else
     PHIST_SOUT(PHIST_INFO, "%s  %10s  %10s  %10s  %10s  %10s\n", function.c_str(), "mtot.time", "count", "max.time", "avg.time", "min.time");
+#endif
     int nprocs;
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     for(int i_ = 0; i_ < nTimers; i_++)
@@ -105,7 +119,11 @@ namespace phist_TimeMonitor
       {
         PHIST_SOUT(PHIST_INFO, "----------------------------------------------------------------------------------------------------\n");
       }
+#ifdef PHIST_TIMINGS_FULL_TRACE
+      PHIST_SOUT(PHIST_INFO, "%s  %10.3e  %10.3e  %10lu  %10.3e  %10.3e  %10.3e\n", fcnName.at(i).c_str(), maxTotalTime.at(i), maxSelfTime.at(i), numberOfCalls.at(i), maxTime.at(i), sumTotalTime.at(i)/numberOfCalls.at(i)/nprocs, minTime.at(i));
+#else
       PHIST_SOUT(PHIST_INFO, "%s  %10.3e  %10lu  %10.3e  %10.3e  %10.3e\n", fcnName.at(i).c_str(), maxTotalTime.at(i), numberOfCalls.at(i), maxTime.at(i), sumTotalTime.at(i)/numberOfCalls.at(i)/nprocs, minTime.at(i));
+#endif
     }
     PHIST_SOUT(PHIST_INFO, "====================================================================================================\n");
   }

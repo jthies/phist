@@ -75,6 +75,11 @@ namespace phist_TimeMonitor
         {
           wtime = get_wtime() - wtime;
           _timingResults[name].update(wtime);
+#ifdef PHIST_TIMINGS_FULL_TRACE
+          std::string parent = getNameOfParent(name);
+          if( !parent.empty() )
+            _timingResults[parent].updateChild(wtime);
+#endif
         }
       }
 
@@ -90,12 +95,18 @@ namespace phist_TimeMonitor
         unsigned long numberOfCalls;
         double minTime;
         double maxTime;
+#ifdef PHIST_TIMINGS_FULL_TRACE
+        double selfTime;
+#endif
         double totalTime;
 
         TimeData() :
           numberOfCalls(0),
           minTime(1.e100),
           maxTime(0.),
+#ifdef PHIST_TIMINGS_FULL_TRACE
+          selfTime(0.),
+#endif
           totalTime(0.)
         {}
 
@@ -105,7 +116,17 @@ namespace phist_TimeMonitor
           minTime = std::min(minTime, time);
           maxTime = std::max(maxTime, time);
           totalTime += time;
+#ifdef PHIST_TIMINGS_FULL_TRACE
+          selfTime += time;
+#endif
         }
+
+#ifdef PHIST_TIMINGS_FULL_TRACE
+        void updateChild(double time)
+        {
+          selfTime -= time;
+        }
+#endif
       };
 
 
@@ -140,6 +161,13 @@ namespace phist_TimeMonitor
         return true;
       }
 
+#ifdef PHIST_TIMINGS_FULL_TRACE
+      static std::string getNameOfParent(const std::string& child)
+      {
+        size_t len = child.find_last_of(" > ");
+        return child.substr(0, len-2);
+      }
+#endif
   };
 
 

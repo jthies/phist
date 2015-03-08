@@ -1364,7 +1364,8 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
     PHIST_CHK_GERR(ghost_gemm(W,V,(char*)"N",C,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_GHOST_TASK_END
   }
-#if 0
+#ifndef PHIST_MVECS_ROW_MAJOR
+#warning "Disabling GHOST tsmm_inplace for col-major mvecs for now..."
 #include "../kernels_no_inplace_VC.cpp"
 #else
 //! C <- V*C
@@ -1475,7 +1476,6 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
       PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,st::zero(),iflag),*iflag);
       rank=0;// dimension of null space
-      PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,st::zero(),iflag),*iflag);
     }
     *iflag=1-rank;
     return;
@@ -1508,9 +1508,14 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   ghost_densemat_create(&Vcopy,V->context,vtraits);
   ghost_densemat_create(&Qcopy,V->context,vtraits);
       
-  // this allocates the memory for the vector, copies and memTransposes the data
-  PHIST_CHK_GERR(Vcopy->fromVec(Vcopy,V,0,0),*iflag);
-  PHIST_CHK_GERR(Qcopy->fromVec(Qcopy,Vcopy,0,0),*iflag);
+  {
+    PHIST_ENTER_FCN("TSQR_memtranspose");
+    // this allocates the memory for the vector, copies and memTransposes the data
+    PHIST_CHK_GERR(Vcopy->fromVec(Vcopy,V,0,0),*iflag);
+    // this allocates the result vector
+    ST zero = st::zero();
+    PHIST_CHK_GERR(Qcopy->fromScalar(Qcopy,&zero),*iflag);
+  }
 
   // wrapper class for ghost_densemat_t for calling Belos.
   // The wrapper does not own the vector so it doesn't destroy it.
@@ -1553,10 +1558,16 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   }
 #endif
 
-  PHIST_TRY_CATCH(rank = tsqr.normalizeOutOfPlace(mv_V,mv_Q,R_view),*iflag);
+  {
+    PHIST_ENTER_FCN("TSQR");
+    PHIST_TRY_CATCH(rank = tsqr.normalizeOutOfPlace(mv_V,mv_Q,R_view),*iflag);
+  }
   PHIST_DEB("V has %d columns and rank %d\n",ncols,rank);
-  // copy (and memTranspose back if necessary)
-  PHIST_CHK_GERR(V->fromVec(V,Qcopy,0,0),*iflag);
+  {
+    PHIST_ENTER_FCN("TSQR_memtranspose");
+    // copy (and memTranspose back if necessary)
+    PHIST_CHK_GERR(V->fromVec(V,Qcopy,0,0),*iflag);
+  }
   Vcopy->destroy(Vcopy);
   Qcopy->destroy(Qcopy);
   *iflag = ncols-rank;// return positive number if rank not full.
