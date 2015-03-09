@@ -48,17 +48,6 @@ PHIST_GHOST_TASK_BEGIN
 
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
-  *iflag=0;
-  
-PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
-  PHIST_CAST_PTR_FROM_VOID(const MPI_Comm,comm,vcomm,*iflag);
-  if (filename==NULL)
-  {
-    *iflag=PHIST_INVALID_INPUT;
-    return;
-  }
-  ghost_sparsemat_t* mat;
-  ghost_context_t *ctx;
 #ifdef PHIST_USE_SELL
   int sellC = PHIST_SELL_C;
   int sellSigma = PHIST_SELL_SIGMA;
@@ -74,6 +63,17 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   }
   PHIST_SOUT(PHIST_INFO, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
 #endif
+  *iflag=0;
+  
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(const MPI_Comm,comm,vcomm,*iflag);
+  if (filename==NULL)
+  {
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
+  ghost_sparsemat_t* mat;
+  ghost_context_t *ctx;
 
   ghost_sparsemat_traits_t *mtraits=new ghost_sparsemat_traits_t;
         *mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
@@ -129,6 +129,21 @@ PHIST_GHOST_TASK_BEGIN
 
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
+#ifdef PHIST_USE_SELL
+  int sellC = PHIST_SELL_C;
+  int sellSigma = PHIST_SELL_SIGMA;
+  if( *iflag & PHIST_SPARSEMAT_OPT_SINGLESPMVM )
+  {
+    sellC = 32;
+    sellSigma = 256;
+  }
+  if( *iflag & PHIST_SPARSEMAT_OPT_BLOCKSPMVM )
+  {
+    sellC = 8;
+    sellSigma = 32;
+  }
+  PHIST_SOUT(PHIST_INFO, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
+#endif
   *iflag=0;
   
 PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
@@ -148,8 +163,8 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
 #ifdef PHIST_USE_SELL
         mtraits->format = GHOST_SPARSEMAT_SELL;
         ghost_sell_aux_t aux = GHOST_SELL_AUX_INITIALIZER;
-        aux.C = PHIST_SELL_C;
-        mtraits->sortScope = PHIST_SELL_SIGMA;
+        aux.C = sellC;
+        mtraits->sortScope = sellSigma;
         mtraits->aux = &aux;
         if (mtraits->sortScope > 1) {
             flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
@@ -1659,6 +1674,21 @@ PHIST_GHOST_TASK_BEGIN
 
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
+#ifdef PHIST_USE_SELL
+  int sellC = PHIST_SELL_C;
+  int sellSigma = PHIST_SELL_SIGMA;
+  if( *iflag & PHIST_SPARSEMAT_OPT_SINGLESPMVM )
+  {
+    sellC = 32;
+    sellSigma = 256;
+  }
+  if( *iflag & PHIST_SPARSEMAT_OPT_BLOCKSPMVM )
+  {
+    sellC = 8;
+    sellSigma = 32;
+  }
+  PHIST_SOUT(PHIST_INFO, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
+#endif
   *iflag=0;
   
 PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
@@ -1673,8 +1703,8 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
 #ifdef PHIST_USE_SELL
         mtraits->format = GHOST_SPARSEMAT_SELL;
         ghost_sell_aux_t aux = GHOST_SELL_AUX_INITIALIZER;
-        aux.C = PHIST_SELL_C;
-        mtraits->sortScope = PHIST_SELL_SIGMA;
+        aux.C = sellC;
+        mtraits->sortScope = sellSigma;
         mtraits->aux = &aux;
         if (mtraits->sortScope > 1) {
             flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
