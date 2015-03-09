@@ -29,6 +29,7 @@ module matpde_module
   real(kind=8), parameter :: pi = 4*atan(1.0_8)
 
   integer(kind=8) :: nx, ny
+  integer :: level
 
 contains
 
@@ -38,6 +39,16 @@ contains
     integer(kind=G_GIDX_T), intent(out) :: nrows
     integer(kind=G_LIDX_T), intent(out) :: maxnne_per_row
 
+    if( new_nx .ne. new_ny ) then
+      write(*,*) 'MATPDE: error, nx != ny!'
+      call exit(1)
+    end if
+    level = nint(log(1._8*new_nx)/log(2._8))
+    if( 2**level .ne. new_nx ) then
+      write(*,*) 'MATPDE: error, nx needs to be a power of 2!'
+      call exit(1)
+    end if
+
     nx = new_nx
     ny = new_ny
 
@@ -46,6 +57,53 @@ contains
     maxnne_per_row = 5
 
   end subroutine MATPDE_initDimensions
+
+
+  ! useful quadtree ordering
+  pure function idOfCoord(coord) result(id)
+    integer(kind=8), intent(in) :: coord(2)
+    integer(kind=8) :: id
+    integer(kind=8) :: fak2, fak4
+    integer(kind=8) :: upperBound
+    integer(kind=8) :: myCoord(2)
+    integer :: i
+
+    upperBound = 2**level
+    myCoord = modulo(coord, upperBound)
+
+    fak2 = 1
+    fak4 = 1
+    id = 1
+    do i = 1, level
+      id = id + fak4 * ( 1 * mod(myCoord(1)/fak2,2_8) &
+        &              + 2 * mod(myCoord(2)/fak2,2_8) )
+      fak2 = fak2 * 2
+      fak4 = fak4 * 4
+    end do
+  end function idOfCoord
+
+
+  pure function coordOfId(id) result(coord)
+    integer(kind=8), intent(in) :: id
+    integer(kind=8) :: coord(2)
+    integer(kind=8) :: tElem, fak(2)
+    integer :: bitlevel, i
+
+    fak(1) = 1
+    fak(2) = 2
+
+    bitlevel = 1
+    tElem = mod(id - 1, 4**level)
+
+    coord = 0
+    do while( (tElem / fak(1)) > 0 )
+      do i = 1, 2
+        coord(i) = coord(i) + bitlevel * int(mod(tElem/fak(i),2_8))
+      end do
+      bitlevel = bitlevel * 2
+      fak = fak * 4
+    end do
+  end function coordOfId
 
 
   function MATPDE_rowFunc(row, nnz, cols, vals) result(the_result) bind(C, name='MATPDE_rowFunc')
@@ -118,7 +176,7 @@ contains
     real(kind=8), parameter :: beta = 20., gamma = 0.
     !     ..
     !     .. Scalar variables ..
-    integer(kind=8) :: ix, jy, index, jd
+    integer(kind=8) :: ix, jy, index, jd, coord(2)
     real(kind=8) :: bndry( 4 )
     real(kind=8) :: hx, hy, hy2, ra, rb, coef
     real(kind=8) :: p12, pm12, q12, qm12, xi, rij, r1, rm1, sij, s1, sm1, yj
@@ -139,12 +197,15 @@ contains
     nnz = 0
     ! do jy = 1, ny
     !   do ix = 1, nx
-    jy = row/nx+1
-    ix = mod(row,nx)+1
+    coord = coordOfId(row+1)
+    ix = coord(1)+1
+    jy = coord(2)+1
+    !jy = row/nx+1
+    !ix = mod(row,nx)+1
       
     YJ = HY*DBLE(JY)
     XI = HX*DBLE(IX)
-    INDEX = IX + (JY-1)*NX
+    !INDEX = IX + (JY-1)*NX
     !    RHS(INDEX) = HY2*F(BETA,GAMMA,XI,YJ)
     P12  = PC (XI + 0.5*HX,YJ)
     PM12 = PC (XI - 0.5*HX,YJ)
@@ -160,35 +221,35 @@ contains
     !           DIAGONAL.
     nnz = nnz + 1
     vals(nnz) = ra*(p12 + pm12)  +  q12 + qm12  + hy2*tc(xi,yj)
-    cols(nnz) = index
+    cols(nnz) = idOfCoord((/ix-1,jy-1/)) !index
     jd = nnz
 
     !           LOWEST BAND.
     if (jy.ne.1) then
       nnz = nnz + 1
       vals(nnz) = - ( qm12 + 0.5*hy*(sij+sm1) )
-      cols(nnz) = index - nx
+      cols(nnz) = idOfCoord((/ix-1,jy-2/)) !index - nx
     end if
 
     !           SUB-DIAGONAL.
     if (ix.ne.1) then
       nnz = nnz + 1
       vals(nnz) = - ( ra*pm12 + 0.5*rb*(rij+rm1) )
-      cols(nnz) = index - 1
+      cols(nnz) = idOfCoord((/ix-2,jy-1/)) !index - 1
     end if
 
     !           SUPER-DIAGONAL.
     if (ix.ne.nx)  then
       nnz = nnz + 1
       vals(nnz) = -ra*p12 + 0.5*rb*(rij+r1)
-      cols(nnz) = index + 1
+      cols(nnz) = idOfCoord((/ix,jy-1/)) !index + 1
     end if
 
     !           HIGHEST BAND.
     if (jy.ne.ny) then
       nnz = nnz + 1
       vals(nnz) = -q12 + 0.5*hy*(sij+s1)
-      cols(nnz) = index + nx
+      cols(nnz) = idOfCoord((/ix-1,jy/)) !index + nx
     end if
 
     !           BOUNDARY CONDITIONS.
