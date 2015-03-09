@@ -1,4 +1,8 @@
 #include "matfuncs.h"
+#include "part_tools.h"
+
+#define IPERM( _row ) _row
+//#define IPERM( _row ) iperm2d(_row, 0)
 
 #ifndef graphene_a_unit
 #define graphene_a_unit 0.142 //  carbon-carbon bond length in nanometers
@@ -47,6 +51,7 @@ int crsGraphene( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 	                                   //                    return number of entries
 		double * dvals = vals;
 		ghost_gidx_t i = 0 ;
+		row = IPERM(row);
 
 
 		ghost_gidx_t w = row%W;
@@ -186,6 +191,7 @@ int crsGraphene( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 
 		*nnz = (ghost_lidx_t)i;
 		return 0;
+	for (i=0;i<*nnz;i++) cols[i]=IPERM(cols[i]);
 	}
 
 	// =================================================================
@@ -209,6 +215,7 @@ int crsGraphene( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 	}else if ( row == -2) {
 		W = nnz[0];
 		L = nnz[1];
+		iperm2d(W,L);
 
 		//printf("W,L = %d, %d\n",W,L);
 		//printf("nnz = %d\n",max_row_nnz);

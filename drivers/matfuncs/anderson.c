@@ -1,5 +1,5 @@
 #include "matfuncs.h"
-
+#include "part_tools.h"
 #include <math.h>
 
 #ifdef WRITE_MATRIX
@@ -9,6 +9,9 @@
 #ifndef anderson_L
 #define anderson_L 16.5
 #endif
+
+#define IPERM(_row) _row;
+//#define IPERM(_row) iperm3d(_row,0,0)
 
 // generate a simple matrix representing a 3D 7-point stencil
 // with random numbers on the diagonal (between -L/2 and L/2,
@@ -29,7 +32,7 @@ int gid2ijk(ghost_gidx_t gid,
     {
       return -1;
     }
-    ghost_gidx_t rem=gid;
+    ghost_gidx_t rem=IPERM(gid);
     *i=MOD(rem,nx);
     rem=(rem-*i)/nx;
     *j=MOD(rem,ny);
@@ -52,7 +55,7 @@ if (jj<0) jj+=ny;
 if (kk<0) kk+=nz;
   else if (kk>=nz) kk-=nz;
   
-  return (kk*ny+jj)*nx+ii;
+  return IPERM((kk*ny+jj)*nx+ii);
 }
 
 int anderson( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals){
@@ -61,6 +64,7 @@ int anderson( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *val
 	ghost_lidx_t ny=nx;
 	ghost_lidx_t nz=nx;
 	ghost_gidx_t N = nx*ny*nz;
+
 
 	ghost_lidx_t           max_row_nnz  = 7;
 
