@@ -18,6 +18,8 @@
 /* sparse matrix preprocessing */
 #define PHIST_SPARSEMAT_REPARTITION 1
 #define PHIST_SPARSEMAT_DIST2_COLOR 2
+#define PHIST_SPARSEMAT_OPT_SINGLESPMVM 4
+#define PHIST_SPARSEMAT_OPT_BLOCKSPMVM 8
 
 /* accuracy vs. speed */
 #define PHIST_ROBUST_REDUCTIONS 1
