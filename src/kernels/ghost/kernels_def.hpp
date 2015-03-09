@@ -263,6 +263,22 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
         vtraits.ncolspadded=0;
         vtraits.datatype = st::ghost_dt;
         vtraits.flags = (ghost_densemat_flags_t)(vtraits.flags & ~GHOST_DENSEMAT_VIEW);
+
+  // on CUDA nodes, allocate only device memory for mvecs
+  ghost_type_t ghost_type;
+  PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
+  if (ghost_type == GHOST_TYPE_CUDA) 
+  {
+    // for development purposes, allocate both host and device side right now
+    vtraits.location = GHOST_LOCATION_HOSTDEVICE;
+//    vtraits.location = GHOST_LOCATION_DEVICE;
+  } 
+  else 
+  {
+    vtraits.location = GHOST_LOCATION_HOST;
+  }
+
+
   PHIST_CHK_GERR(ghost_densemat_create(&result,map->ctx,vtraits),*iflag);
   ST zero = st::zero();
   // this allocates the vector and fills it with zeros
@@ -339,6 +355,18 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
 #else
         dmtraits.storage=GHOST_DENSEMAT_COLMAJOR;
 #endif
+  // on CUDA nodes, allocate both host and device memory for sdMats
+  ghost_type_t ghost_type;
+  PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
+  if (ghost_type == GHOST_TYPE_CUDA) 
+  {
+    dmtraits.location = GHOST_LOCATION_HOSTDEVICE;
+  } 
+  else 
+  {
+    dmtraits.location = GHOST_LOCATION_HOST;
+  }
+
   // I think the sdMat should not have a context
   ghost_densemat_create(&result,NULL,dmtraits);
   ST zero = st::zero();
@@ -448,9 +476,19 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* l
   }
   if (V->val==NULL)
   {
-    PHIST_OUT(PHIST_ERROR,"%s, pointer is NULL\n",__FUNCTION__);
-    *iflag=-2;
-    return;
+    if (V->traits.location == GHOST_LOCATION_DEVICE)
+    {
+      // need some ghost call here (TODO)
+      PHIST_OUT(PHIST_ERROR,"%s, host side of vector not allocated\n",__FUNCTION__);
+      *iflag=-99;
+      return;
+    }
+    else
+    {
+      PHIST_OUT(PHIST_ERROR,"%s, pointer is NULL\n",__FUNCTION__);
+      *iflag=-2;
+      return;
+    }
   }
   *val=(ST*)V->val;
   PHIST_CHK_IERR(*iflag=check_local_size(V->stride),*iflag);
