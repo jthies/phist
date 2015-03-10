@@ -102,7 +102,7 @@ ghost_gidx_t perm3d( ghost_gidx_t row, gidx_t arg2, gidx_t arg3 )
     np1=1;
     np2=1;
     np3=np;
-    while (np1<=np && n2<=np)
+    while (np1<=np && np2<=np)
     {
       n1_loc = n1/np1;
       n2_loc = n2/np2;
