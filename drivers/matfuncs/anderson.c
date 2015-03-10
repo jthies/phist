@@ -12,8 +12,8 @@
 #define anderson_L 16.5
 #endif
 
-#define PERM(_row) _row;
-#define IPERM(_row) _row;
+#define PERM(_row) _row
+#define IPERM(_row) _row
 //#define PERM(_row) perm3d(_row,+1,0)
 //#define IPERM(_row) perm3d(_row,-1,0)
 
