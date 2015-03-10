@@ -36,7 +36,7 @@ int gid2ijk(ghost_gidx_t gid,
     {
       return -1;
     }
-    ghost_gidx_t rem=IPERM(gid);
+    ghost_gidx_t rem=gid;
     *i=MOD(rem,nx);
     rem=(rem-*i)/nx;
     *j=MOD(rem,ny);
@@ -65,8 +65,8 @@ if (kk<0) kk+=nz;
 int anderson( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals){
 
 	static ghost_lidx_t nx = 0 ;
-	ghost_lidx_t ny=nx;
-	ghost_lidx_t nz=nx;
+	static ghost_lidx_t ny= 0;
+	static ghost_lidx_t nz= 0;
 	ghost_gidx_t N = nx*ny*nz;
 
 
@@ -139,8 +139,8 @@ int anderson( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *val
 	}else if ( row == -2) 
 	{
 		nx = nnz[0];
-		ny = nx;
-		nz = nx;
+		ny = nnz[1];
+		nz = nnz[2];
 		perm3d(nx,ny,nz);
 #ifdef WRITE_MATRIX
                 fprintf(deb,"MatrixMarket matrix coordinate real general");
