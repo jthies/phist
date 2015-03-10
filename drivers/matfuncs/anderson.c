@@ -84,10 +84,12 @@ int anderson( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *val
                 double * dvals = vals;
 
                 int ii,jj,kk;
-                gid2ijk(IPERM(row),nx,ny,nz,&ii,&jj,&kk);
+                row=IPERM(row);
+                gid2ijk(row,nx,ny,nz,&ii,&jj,&kk);
 
                 double gamma=anderson_L;
                 double V = gamma*( ((double)(rand()))/((double)(RAND_MAX)) -0.5);
+                //V=6.0; //build 3D Laplace matrix with PBC
 
                 int i=0;
                 dvals[i]=V; cols[i++]=row;

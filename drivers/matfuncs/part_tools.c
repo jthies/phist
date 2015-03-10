@@ -106,7 +106,7 @@ ghost_gidx_t perm3d( ghost_gidx_t row, gidx_t arg2, gidx_t arg3 )
     // into np cube-shaped subdomains, so for instance
     // if np=6 we allow (n1,n2,n3)=(100,200,300) but not (100,100,100).
     // The latter works, however, with np=8.
-    while (np1<=np && n2<=np)
+    while (np1<=np && np2<=np)
     {
       n1_loc = n1/np1;
       n2_loc = n2/np2;
