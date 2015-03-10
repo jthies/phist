@@ -3,19 +3,19 @@
 #include <math.h>
 
 //#define WRITE_MATRIX
-
-#ifdef WRITE_MATRIX
-#include <mpi.h>
-#endif
+#define REPARTITION
 
 #ifndef anderson_L
 #define anderson_L 16.5
 #endif
 
-#define PERM(_row) _row
-#define IPERM(_row) _row
-//#define PERM(_row) perm3d(_row,+1,0)
-//#define IPERM(_row) perm3d(_row,-1,0)
+#ifndef REPARTITION
+# define PERM(_row) _row
+# define IPERM(_row) _row
+#else
+# define PERM(_row) perm3d(_row,+1,0)
+# define IPERM(_row) perm3d(_row,-1,0)
+#endif
 
 // generate a simple matrix representing a 3D 7-point stencil
 // with random numbers on the diagonal (between -L/2 and L/2,

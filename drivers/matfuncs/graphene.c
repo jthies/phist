@@ -2,11 +2,15 @@
 #include "part_tools.h"
 
 //#define WRITE_MATRIX
+#define REPARTITION
 
-#define PERM( _row ) _row
-#define IPERM( _row ) _row
-//#define PERM( _row ) perm2d(_row, +1)
-//#define IPERM( _row ) perm2d(_row, -1)
+#ifndef REPARTITION
+# define PERM( _row ) _row
+# define IPERM( _row ) _row
+#else
+# define PERM( _row ) perm2d(_row, +1)
+# define IPERM( _row ) perm2d(_row, -1)
+#endif
 
 #ifndef graphene_a_unit
 #define graphene_a_unit 0.142 //  carbon-carbon bond length in nanometers

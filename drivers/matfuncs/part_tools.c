@@ -57,7 +57,6 @@ ghost_gidx_t perm2d( ghost_gidx_t row, gidx_t arg2 )
     int lrow=(int)(row-global_offset);
     int i1 = lrow%n1_loc;
     int i2 = (lrow-i1)/n1_loc;
-    PHIST_OUT(PHIST_DEBUG,"%ld => %ld\n",row,(ghost_gidx_t)((off2 + i2)*n1+off1+i1));
     return (ghost_gidx_t)(off2 + i2)*n1+off1+i1;
   }
   else if (arg2==+1)
