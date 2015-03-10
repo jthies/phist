@@ -29,10 +29,12 @@ subroutine SUB_NAME(nvec,nlocal, nhalo, ncols, nnz, &
   integer(kind=8) :: j
   integer istart_clr, iend_clr
 ! TODO - we don't actually check the memory alignment before calling these subroutines!
+#if 0
 #ifdef NVEC
 !dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x_r:64, halo_r:64, x_i:64, halo_i:64, b:64
 #else
 !dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x_r:8, halo_r:64, x_i:8, halo_i:64, b:8
+#endif
 #endif
 #ifdef KACZ_CLR
 #include "kacz_loop_clr_def.h"
