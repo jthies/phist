@@ -217,11 +217,32 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   }
   else if (mat_type==ANDERSON)
   {
-    PHIST_SOUT(PHIST_INFO,"problem type: Anderson %d x %d x %d\n",L,L,L);
-    ghost_lidx_t LL=L;
+    ghost_lidx_t LL[3];
+    LL[0]=L,LL[1]=L,LL[2]=L;
+
+    int L1=L;
+    int L2=L;
+    for (int j=1;j<=2;j++) 
+    {
+      for (int i=pos; i<strlen(problem);i++)
+      {
+        if (problem[i]=='x')
+        {
+          pos=i+1;
+          break;
+        }
+      }
+      LL[j]=atoi(problem+pos);
+      if (LL[j]<0)
+      {
+        LL[j]=L;
+        break;
+      }
+    }
   
+    PHIST_SOUT(PHIST_INFO,"problem type: Anderson %d x %d x %d\n",LL[0],LL[1],LL[2]);
     matfuncs_info_t info;
-    anderson( -2, &LL, &DIM, NULL);
+    anderson( -2, LL, &DIM, NULL);
     anderson( -1, NULL, NULL, &info);
 
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat,comm,
