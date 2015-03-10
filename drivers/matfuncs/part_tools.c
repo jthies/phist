@@ -102,6 +102,10 @@ ghost_gidx_t perm3d( ghost_gidx_t row, gidx_t arg2, gidx_t arg3 )
     np1=1;
     np2=1;
     np3=np;
+    // we assume that the grid can be partitioned
+    // into np cube-shaped subdomains, so for instance
+    // if np=6 we allow (n1,n2,n3)=(100,200,300) but not (100,100,100).
+    // The latter works, however, with np=8.
     while (np1<=np && n2<=np)
     {
       n1_loc = n1/np1;
@@ -164,11 +168,12 @@ ghost_gidx_t perm3d( ghost_gidx_t row, gidx_t arg2, gidx_t arg3 )
   {
     // perm: convert old GID to new one
     ghost_gidx_t rem=row;
+    // global indices (i1,i2,i3)
     int i1=rem%n1;
     rem=(rem-i1)/n1;
     int i2=rem%n2;
     int i3=(rem-i2)/n2;
-    // local indices (i,j)
+    // local indices (j1,j2,j3) on new partition
     int j1=i1%n1_loc;
     int j2=i2%n2_loc;
     int j3=i3%n3_loc;
