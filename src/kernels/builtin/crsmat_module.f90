@@ -141,6 +141,9 @@ contains
     logical,allocatable :: row_offset_counted(:)
     integer(kind=8), allocatable :: sendRowBlkInd(:)
     !--------------------------------------------------------------------------------
+    real(kind=8) :: localSendBytes, localRecvBytes, localCommTotalVolume
+    real(kind=8) :: globalCommVolume, localMaxComm, globalMaxComm
+    !--------------------------------------------------------------------------------
 
     ! determine nSendProcs and nRecvProcs
     allocate(recvnum(0:mat%row_map%nProcs-1))
@@ -333,6 +336,20 @@ end do
     !write(*,*) 'sendBuffInd 1', combuff%sendBuffInd(:,1)
     !write(*,*) 'sendBuffInd 2', combuff%sendBuffInd(:,2)
 
+    ! calculate min, max, avg, comm-volume
+    localSendBytes = size(combuff%sendRowBlkInd)*8.
+    localRecvBytes = size(combuff%recvRowBlkInd)*8.
+    localCommTotalVolume = localRecvBytes+localSendBytes
+    call mpi_reduce(localCommTotalVolume, globalCommVolume, 1, MPI_DOUBLE_PRECISION, &
+      &             MPI_SUM, 0, mat%row_map%Comm, ierr)
+    localMaxComm = max(localSendBytes, localRecvBytes)
+    call mpi_reduce(localMaxComm, globalMaxComm, 1, MPI_DOUBLE_PRECISION, &
+      &             MPI_MAX, 0, mat%row_map%Comm, ierr)
+    if( mat%row_map%me .eq. 0 ) then
+      write(*,'(A,e10.4,A,e10.4,A,e10.4)') 'Communication volume for single spMVM (Bytes): total ', globalCommVolume, &
+        &        ', per direction avg.: ', globalCommVolume/2/mat%row_map%nProcs,            &
+        &        ', and max.: ', globalMaxComm
+    end if
   end subroutine setup_commBuff
 
   !! these private subroutines need to be caleed before
@@ -1805,6 +1822,7 @@ end subroutine permute_local_matrix
 !write(*,*) 'col_idx', A%global_col_idx
 !write(*,*) 'val', A%val
 #endif
+
 
 ! write matrix to mat.mm
 !do i_ = 0, A%row_map%nProcs-1

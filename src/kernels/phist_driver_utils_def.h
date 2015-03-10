@@ -217,11 +217,6 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   }
   else if (mat_type==ANDERSON)
   {
-#ifdef PHIST_HAVE_ESSEX_PHYSICS
-PHIST_SOUT(PHIST_ERROR,"matrix row function \"anderson\" is only implemented in PHIST\n"
-                       "and not available if you link with the essex-physics library\n");
-*iflag=-99;
-#else
     PHIST_SOUT(PHIST_INFO,"problem type: Anderson %d x %d x %d\n",L,L,L);
     ghost_lidx_t LL=L;
   
@@ -232,7 +227,6 @@ PHIST_SOUT(PHIST_ERROR,"matrix row function \"anderson\" is only implemented in 
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat,comm,
         (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,
         &anderson, iflag), *iflag);
-#endif
   }
   else if (mat_type==SPINSZ)
   {
@@ -250,11 +244,6 @@ PHIST_SOUT(PHIST_ERROR,"matrix row function \"anderson\" is only implemented in 
   }
   else if (mat_type==MATPDE)
   {
-#ifdef PHIST_HAVE_ESSEX_PHYSICS
-PHIST_SOUT(PHIST_ERROR,"matrix row function \"matpde\" is only implemented in PHIST\n"
-                       "and not available if you link with the essex-physics library\n");
-  *iflag=-99;
-#else
     PHIST_SOUT(PHIST_INFO,"problem type: MATPDE %d x %d\n", L, L);
     gidx_t nrows = -1;
     gidx_t ncols = -1;
@@ -263,7 +252,6 @@ PHIST_SOUT(PHIST_ERROR,"matrix row function \"matpde\" is only implemented in PH
     ncols = nrows;
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
           nrows, ncols, row_nnz, &MATPDE_rowFunc, iflag), *iflag);
-#endif
   }
   else if (mat_type==FROM_BAPPS)
   {

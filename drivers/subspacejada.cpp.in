@@ -180,6 +180,10 @@ int main(int argc, char** argv)
   // favorite test cases spinSZ<N>, graphene<N> etc.
   sparseMat_ptr_t A = NULL;
   iflag=PHIST_SPARSEMAT_REPARTITION;
+  if( innerBlockDim == 1 )
+    iflag = iflag | PHIST_SPARSEMAT_OPT_SINGLESPMVM;
+  else
+    iflag = iflag | PHIST_SPARSEMAT_OPT_BLOCKSPMVM;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,problem,&iflag), iflag);
   
   // create an operator from A
