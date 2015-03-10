@@ -139,7 +139,7 @@ ghost_gidx_t perm3d( ghost_gidx_t row, gidx_t arg2, gidx_t arg3 )
       pid2=rem%np2;
       rem=(rem-pid2)/np2;
       pid3=rem%np3;
-      global_offset = pid*(n1_loc*n2_loc);
+      global_offset = pid*(n1_loc*n2_loc*n3_loc);
       off1=pid1*n1_loc;
       off2=pid2*n2_loc;
       off3=pid3*n3_loc;
