@@ -1,8 +1,12 @@
 #include "matfuncs.h"
 #include "part_tools.h"
 
+//#define WRITE_MATRIX
+
+#define PERM( _row ) _row
 #define IPERM( _row ) _row
-//#define IPERM( _row ) iperm2d(_row, 0)
+//#define PERM( _row ) perm2d(_row, +1)
+//#define IPERM( _row ) perm2d(_row, -1)
 
 #ifndef graphene_a_unit
 #define graphene_a_unit 0.142 //  carbon-carbon bond length in nanometers
@@ -190,8 +194,21 @@ int crsGraphene( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
         printf("corrupt col_idx in row %" PRGIDX "    (w,l) =(%" PRGIDX ",%" PRGIDX ") : col[%" PRGIDX "] = %" PRGIDX "\n", row, w,l, j, cols[j]);
 
 		*nnz = (ghost_lidx_t)i;
+#ifdef WRITE_MATRIX
+	int rank;
+	MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+	char fname[200];
+	sprintf(fname,"mat%d.txt",rank);
+	FILE *matfile=fopen(fname,"a");
+	PHIST_OUT(PHIST_DEBUG,"open file '%s'\n",fname);
+	if (!matfile) PHIST_OUT(PHIST_ERROR,"could not open file\n");
+	fprintf(matfile,"%ld:",row);
+	for (i=0;i<*nnz;i++) fprintf(matfile," %ld (%ld)",cols[i], PERM(cols[i]));
+	fprintf(matfile,"\n");
+	fclose(matfile);
+#endif
+	for (i=0;i<*nnz;i++) cols[i]=PERM(cols[i]);
 		return 0;
-	for (i=0;i<*nnz;i++) cols[i]=IPERM(cols[i]);
 	}
 
 	// =================================================================
@@ -215,7 +232,7 @@ int crsGraphene( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 	}else if ( row == -2) {
 		W = nnz[0];
 		L = nnz[1];
-		iperm2d(W,L);
+		perm2d(W,L);
 
 		//printf("W,L = %d, %d\n",W,L);
 		//printf("nnz = %d\n",max_row_nnz);

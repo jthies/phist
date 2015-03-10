@@ -2,6 +2,8 @@
 #include "part_tools.h"
 #include <math.h>
 
+//#define WRITE_MATRIX
+
 #ifdef WRITE_MATRIX
 #include <mpi.h>
 #endif
@@ -10,8 +12,10 @@
 #define anderson_L 16.5
 #endif
 
+#define PERM(_row) _row;
 #define IPERM(_row) _row;
-//#define IPERM(_row) iperm3d(_row,0,0)
+//#define PERM(_row) perm3d(_row,+1,0)
+//#define IPERM(_row) perm3d(_row,-1,0)
 
 // generate a simple matrix representing a 3D 7-point stencil
 // with random numbers on the diagonal (between -L/2 and L/2,
@@ -55,7 +59,7 @@ if (jj<0) jj+=ny;
 if (kk<0) kk+=nz;
   else if (kk>=nz) kk-=nz;
   
-  return IPERM((kk*ny+jj)*nx+ii);
+  return (kk*ny+jj)*nx+ii;
 }
 
 int anderson( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals){
@@ -71,7 +75,7 @@ int anderson( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *val
 #ifdef WRITE_MATRIX
         int me;
         MPI_Comm_rank(MPI_COMM_WORLD,&me);
-        char fname[8];
+        char fname[100];
         sprintf(fname,"mat%d.txt",me);
         FILE* deb=fopen(fname,"a");
 #endif
@@ -80,7 +84,7 @@ int anderson( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *val
                 double * dvals = vals;
 
                 int ii,jj,kk;
-                gid2ijk(row,nx,ny,nz,&ii,&jj,&kk);
+                gid2ijk(IPERM(row),nx,ny,nz,&ii,&jj,&kk);
 
                 double gamma=anderson_L;
                 double V = gamma*( ((double)(rand()))/((double)(RAND_MAX)) -0.5);
@@ -94,6 +98,9 @@ int anderson( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *val
                 dvals[i]=-1; cols[i++]=ijk2gid(nx,ny,nz,ii,jj,kk+1);
                 dvals[i]=-1; cols[i++]=ijk2gid(nx,ny,nz,ii,jj,kk-1);
                 *nnz = i;
+                
+                for (i=0; i<*nnz; i++) cols[i]=PERM(cols[i]);
+                
 #ifdef WRITE_MATRIX
         for (i=0;i<*nnz;i++)
         {
@@ -134,6 +141,7 @@ int anderson( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *val
 		nx = nnz[0];
 		ny = nx;
 		nz = nx;
+		perm3d(nx,ny,nz);
 #ifdef WRITE_MATRIX
                 fprintf(deb,"MatrixMarket matrix coordinate real general");
                 fprintf(deb,"%Anderson model, %dx%dx%d\n",nx,ny,nz);
