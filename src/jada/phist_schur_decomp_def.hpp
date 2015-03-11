@@ -31,7 +31,7 @@
 void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
          int m, int nselect, int nsort, eigSort_t which, _MT_ tol, 
          void* v_ev, int *iflag)
-  {
+{
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   // this is for XGEES (computing the Schur form)
@@ -94,13 +94,13 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
 
   if (nselect<=0) return;
   if (nsort>nselect || nsort<0)
-    {
+  {
     PHIST_OUT(PHIST_WARNING,"nselect=%d>=nsort=%d, or nsort>=0 "
                              "not satisfied, returning      unsorted Schur form\n",
                              nselect,nsort);
     *iflag=1;
     return;
-    }
+  }
 
   // find indices for the first howMany eigenvalues. A pair of complex conjugate
   // eigs is counted as a single one because we will skip solving the update equation
@@ -169,27 +169,29 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
   
   if (nselect==1) return; // the one (or two for complex pairs) selected eigenvalue
                           // according to 'which' is already 'sorted'
-  
-  int i=0;
-  while (i<nsort)
-     {
-     PHIST_DEB("sort step %d, nsorted=%d [%d]\n",i,nsorted,nsort);
-     // sort the next few eigenvalues (up to nselect)
-     PHIST_CHK_IERR(SortEig(ev+i,nselect-i,idx+i,which,tol,iflag),*iflag);
 
-     // sort next candidate to top.
-     for (int j=0;j<i;j++) select[j]=1;
-     for (int j=i;j<m;j++) select[j]=0;
-     select[std::abs(idx[i])+i]=1; // sort next one to the top
-                                   // note that the index returned by 
-                                   // SortEig misses an offset i because
-                                   // we pass in ev+i
-     int nsorted_before=nsorted;
 // prohibit parallel execution to assure identical results on different procs
 #pragma omp parallel
-    {
+  {
 #pragma omp master
+    {
+      int i=0;
+      while (i<nsort)
       {
+        PHIST_DEB("sort step %d, nsorted=%d [%d]\n",i,nsorted,nsort);
+        // sort the next few eigenvalues (up to nselect)
+        SortEig(ev+i,nselect-i,idx+i,which,tol,iflag);
+        if( *iflag != 0 )
+          break;
+
+        // sort next candidate to top.
+        for (int j=0;j<i;j++) select[j]=1;
+        for (int j=i;j<m;j++) select[j]=0;
+        select[std::abs(idx[i])+i]=1; // sort next one to the top
+        // note that the index returned by 
+        // SortEig misses an offset i because
+        // we pass in ev+i
+        int nsorted_before=nsorted;
 #ifdef IS_COMPLEX
         PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,
               (blas_cmplx_t*)ev,&nsorted,&S_cond, &sep, (blas_cmplx_t*)work, &lwork, iflag);
@@ -201,22 +203,20 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
           ev[j]=std::complex<MT>(ev_r[j],ev_i[j]);
         }
 #endif
-      }
-    }
-    PHIST_CHK_IERR(;,*iflag);
-    i+= std::max(nsorted-nsorted_before,1);
-    }//while
-
+        if( *iflag != 0 )
+          break;
+        i+= std::max(nsorted-nsorted_before,1);
+      }//while
 #if PHIST_OUTLEV>=PHIST_DEBUG
-//PHIST_OUT(0,"eigenvalues of sorted Schur form:\n");
-//for (int i=0;i<m;i++)
-  //{
-  //PHIST_OUT(0,"%d\t%16.8g%+16.8gi\n",i,ct::real(ev[i]),ct::imag(ev[i]));
-  //}
+      //PHIST_OUT(0,"eigenvalues of sorted Schur form:\n");
+      //for (int i=0;i<m;i++)
+      //{
+        //PHIST_OUT(0,"%d\t%16.8g%+16.8gi\n",i,ct::real(ev[i]),ct::imag(ev[i]));
+      //}
 #endif
-
-
+    }
   }
+}
 
 
 // reorder multiple eigenvalues in a given (partial) schur decomposition by the smallest residual norm of the unprojected problem
@@ -238,94 +238,97 @@ void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
   _ST_ work[m];
 #endif
 
-  // go through all eigenvalues and check if we need to do something
-  // using gnome sort
-  int pos = 1;
-  while( pos < nselected )
+
+// prohibit parallel execution to assure identical results on different procs
+#pragma omp parallel
   {
+#pragma omp master
+    {
+
+      // go through all eigenvalues and check if we need to do something
+      // using gnome sort
+      int pos = 1;
+      while( pos < nselected )
+      {
 #ifndef IS_COMPLEX
-    // we cannot reorder conjugate complex eigenpairs currently
-    if( ct::imag(ev[pos]) != 0 || ct::imag(ev[pos-1]) != 0 )
-    {
-      pos++;
-      continue;
-    }
+        // we cannot reorder conjugate complex eigenpairs currently
+        if( ct::imag(ev[pos]) != 0 || ct::imag(ev[pos-1]) != 0 )
+        {
+          pos++;
+          continue;
+        }
 #endif
-    // check if the next eigenvalue has same "magnitude"
-    if( which == LM && ct::abs(ev[pos]) < ct::abs(ev[pos-1])-tol )
-    {
-      pos++;
-      continue;
-    }
-    if( which == SM && ct::abs(ev[pos]) > ct::abs(ev[pos-1])+tol )
-    {
-      pos++;
-      continue;
-    }
-    if( which == LR && ct::real(ev[pos]) < ct::real(ev[pos-1])-tol )
-    {
-      pos++;
-      continue;
-    }
-    if( which == SR && ct::real(ev[pos]) > ct::real(ev[pos-1])+tol )
-    {
-      pos++;
-      continue;
-    }
+        // check if the next eigenvalue has same "magnitude"
+        if( which == LM && ct::abs(ev[pos]) < ct::abs(ev[pos-1])-tol )
+        {
+          pos++;
+          continue;
+        }
+        if( which == SM && ct::abs(ev[pos]) > ct::abs(ev[pos-1])+tol )
+        {
+          pos++;
+          continue;
+        }
+        if( which == LR && ct::real(ev[pos]) < ct::real(ev[pos-1])-tol )
+        {
+          pos++;
+          continue;
+        }
+        if( which == SR && ct::real(ev[pos]) > ct::real(ev[pos-1])+tol )
+        {
+          pos++;
+          continue;
+        }
 
-    // we have two ev with the same "magnitude", check residuum
-    if( which == LM || which == SM )
-    {
-      if( mt::abs(ct::abs(ev[pos])-ct::abs(ev[pos-1])) <= tol &&
-          resNorm[pos] >= resNorm[pos-1] )
-      {
-        pos++;
-        continue;
-      }
-    }
-    if( which == LR || which == SR )
-    {
-      if( mt::abs(ct::real(ev[pos])-ct::real(ev[pos-1])) <= tol &&
-          resNorm[pos] >= resNorm[pos-1] )
-      {
-        pos++;
-        continue;
-      }
-    }
+        // we have two ev with the same "magnitude", check residuum
+        if( which == LM || which == SM )
+        {
+          if( mt::abs(ct::abs(ev[pos])-ct::abs(ev[pos-1])) <= tol &&
+              resNorm[pos] >= resNorm[pos-1] )
+          {
+            pos++;
+            continue;
+          }
+        }
+        if( which == LR || which == SR )
+        {
+          if( mt::abs(ct::real(ev[pos])-ct::real(ev[pos-1])) <= tol &&
+              resNorm[pos] >= resNorm[pos-1] )
+          {
+            pos++;
+            continue;
+          }
+        }
 
 
-    // swap elements pos and pos-1
-    std::swap(resNorm[pos],resNorm[pos-1]);
-    std::swap(permutation[pos],permutation[pos-1]);
-    std::swap(ev[pos],ev[pos-1]);
+        // swap elements pos and pos-1
+        std::swap(resNorm[pos],resNorm[pos-1]);
+        std::swap(permutation[pos],permutation[pos-1]);
+        std::swap(ev[pos],ev[pos-1]);
 
 #ifndef IS_COMPLEX
 #warning "reordering does not work for complex-conjugate eigenpairs in the real case!"
 #endif
 
-    const char* compq = "V";
-    int ifst = pos;
-    int ilst = pos+1;
-PHIST_SOUT(PHIST_DEBUG,"swapping %d %d in unconverged eigenvalues\n",ifst-1,ilst-1);
-// prohibit parallel execution to assure identical results on different procs
-#pragma omp parallel
-    {
-#pragma omp master
-      {
+        const char* compq = "V";
+        int ifst = pos;
+        int ilst = pos+1;
+        PHIST_SOUT(PHIST_DEBUG,"swapping %d %d in unconverged eigenvalues\n",ifst-1,ilst-1);
 #ifdef IS_COMPLEX
         PREFIX(TREXC) ((blas_char_t*)compq, &m, (blas_cmplx_t*) T, 
-              &ldT, (blas_cmplx_t*) S, &ldS, &ifst, &ilst, iflag);
+            &ldT, (blas_cmplx_t*) S, &ldS, &ifst, &ilst, iflag);
 #else
         PREFIX(TREXC) ((blas_char_t*)compq, &m, T, &ldT, S, &ldS, 
-              &ifst, &ilst, work, iflag);
+            &ifst, &ilst, work, iflag);
 #endif
+        if( *iflag != 0 )
+          break;
+        PHIST_DEB("ifst = %d,\t ilst = %d\n", ifst-1, ilst-1);
+
+        if( pos > 1 )
+          pos--;
       }
     }
-    PHIST_CHK_IERR(;,*iflag);
-    PHIST_DEB("ifst = %d,\t ilst = %d\n", ifst-1, ilst-1);
-
-    if( pos > 1 )
-      pos--;
   }
 }
 

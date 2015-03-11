@@ -80,15 +80,18 @@ void SUBR(jadaOp_apply)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
     PHIST_CHK_IERR( SUBR( sdMat_create ) (&tmp, nvecp, nvec, comm, iflag), *iflag);
 
     // y_i <- alpha*(A+sigma_i I)*x_i + beta * y_i
+{
+PHIST_ENTER_FCN("phist_jadaOp_shifted_A_times_mvec");
     PHIST_CHK_IERR(jadaOp->A_op->apply_shifted(alpha, jadaOp->A_op->A, jadaOp->sigma, X, beta, Y, iflag),*iflag);
+}
     // tmp <- V'*Y
 {
-PHIST_ENTER_FCN("mvecT_times_mvec");
+PHIST_ENTER_FCN("phist_jadaOp_mvecT_times_mvec");
     PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (st::one(),  jadaOp->V,  Y,   st::zero(), tmp, iflag), *iflag);
 }
     // Y <- Y - V*tmp
 {
-PHIST_ENTER_FCN("mvec_times_sdMat");
+PHIST_ENTER_FCN("phist_jadaOp_mvec_times_sdMat");
     PHIST_CHK_IERR( SUBR( mvec_times_sdMat ) (-st::one(), jadaOp->BV, tmp, st::one(),  Y,   iflag), *iflag);
 }
     PHIST_CHK_IERR( SUBR( sdMat_delete ) (tmp, iflag), *iflag);
