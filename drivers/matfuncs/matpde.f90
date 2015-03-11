@@ -176,7 +176,7 @@ contains
     real(kind=8), parameter :: beta = 20., gamma = 0.
     !     ..
     !     .. Scalar variables ..
-    integer(kind=8) :: ix, jy, index, jd, coord(2)
+    integer(kind=8) :: ix, jy, index, jd, coord(2), coord_(2)
     real(kind=8) :: bndry( 4 )
     real(kind=8) :: hx, hy, hy2, ra, rb, coef
     real(kind=8) :: p12, pm12, q12, qm12, xi, rij, r1, rm1, sij, s1, sm1, yj
@@ -221,35 +221,39 @@ contains
     !           DIAGONAL.
     nnz = nnz + 1
     vals(nnz) = ra*(p12 + pm12)  +  q12 + qm12  + hy2*tc(xi,yj)
-    cols(nnz) = idOfCoord((/ix-1,jy-1/)) !index
+    cols(nnz) = idOfCoord(coord) !index
     jd = nnz
 
     !           LOWEST BAND.
     if (jy.ne.1) then
       nnz = nnz + 1
       vals(nnz) = - ( qm12 + 0.5*hy*(sij+sm1) )
-      cols(nnz) = idOfCoord((/ix-1,jy-2/)) !index - nx
+      coord_ = coord-(/0,1/)
+      cols(nnz) = idOfCoord(coord_) !index - nx
     end if
 
     !           SUB-DIAGONAL.
     if (ix.ne.1) then
       nnz = nnz + 1
       vals(nnz) = - ( ra*pm12 + 0.5*rb*(rij+rm1) )
-      cols(nnz) = idOfCoord((/ix-2,jy-1/)) !index - 1
+      coord_ = coord-(/1,0/)
+      cols(nnz) = idOfCoord(coord_) !index - 1
     end if
 
     !           SUPER-DIAGONAL.
     if (ix.ne.nx)  then
       nnz = nnz + 1
       vals(nnz) = -ra*p12 + 0.5*rb*(rij+r1)
-      cols(nnz) = idOfCoord((/ix,jy-1/)) !index + 1
+      coord_ = coord+(/1,0/)
+      cols(nnz) = idOfCoord(coord_) !index + 1
     end if
 
     !           HIGHEST BAND.
     if (jy.ne.ny) then
       nnz = nnz + 1
       vals(nnz) = -q12 + 0.5*hy*(sij+s1)
-      cols(nnz) = idOfCoord((/ix-1,jy/)) !index + nx
+      coord_ = coord+(/0,1/)
+      cols(nnz) = idOfCoord(coord_) !index + nx
     end if
 
     !           BOUNDARY CONDITIONS.

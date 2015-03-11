@@ -57,8 +57,6 @@ namespace phist_TimeMonitor
       // start timer
       Timer(const char* s)
       {
-#pragma omp barrier
-#pragma omp master
         if( wtime_available() )
         {
           name = s;
@@ -69,8 +67,6 @@ namespace phist_TimeMonitor
       // stop timer
       ~Timer()
       {
-#pragma omp barrier
-#pragma omp master
         if( !name.empty() && wtime_available() )
         {
           wtime = get_wtime() - wtime;
