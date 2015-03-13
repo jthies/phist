@@ -66,6 +66,75 @@ module mvec_module
     !--------------------------------------------------------------------------------
   end type MVec_t
 
+
+  !==================================================================================
+  ! interfaces to low-level kernel functions
+  interface
+    !void ddot_self_prec_1(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
+    subroutine ddot_self_prec_1(nrows, x, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: nrows
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void ddot_self_prec_2(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
+    subroutine ddot_self_prec_2(nrows, x, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: nrows
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void ddot_self_prec_4(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
+    subroutine ddot_self_prec_4(nrows, x, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: nrows
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void ddot_prec_1(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+    subroutine ddot_prec_1(nrows, x, y, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: nrows
+      real(kind=C_DOUBLE), intent(in) :: x, y
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void ddot_prec_2(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+    subroutine ddot_prec_2(nrows, x, y, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: nrows
+      real(kind=C_DOUBLE), intent(in) :: x, y
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void ddot_prec_4(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+    subroutine ddot_prec_4(nrows, x, y, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: nrows
+      real(kind=C_DOUBLE), intent(in) :: x, y
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void prec_reduction_1(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
+    subroutine prec_reduction_1(n, s, c, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: s, c
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void prec_reduction_2(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
+    subroutine prec_reduction_2(n, s, c, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: s, c
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void prec_reduction_4(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
+    subroutine prec_reduction_4(n, s, c, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: s, c
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+  end interface
+
 contains
 
   !==================================================================================
@@ -216,15 +285,19 @@ contains
 
   !==================================================================================
   !> calculate 2-norm of the vectors in a multivector
-  subroutine mvec_norm2(mvec, vnrm)
+  subroutine mvec_norm2(mvec, vnrm, iflag)
     use mpi
     !--------------------------------------------------------------------------------
-    type(MVec_t), intent(in)  :: mvec
-    real(kind=8), intent(out) :: vnrm(mvec%jmin:mvec%jmax)
+    type(MVec_t), intent(in)    :: mvec
+    real(kind=8), intent(out)   :: vnrm(mvec%jmin:mvec%jmax)
+    integer,      intent(inout) :: iflag
     !--------------------------------------------------------------------------------
-    integer :: nvec, nrows, lda, ierr
+    integer :: nvec, nrows, lda
     logical :: strided
     real(kind=8) :: localNrm(mvec%jmin:mvec%jmax)
+    real(kind=8) :: localDot_prec(mvec%jmin:mvec%jmax,2)
+    real(kind=8) :: globalDot_prec(mvec%jmin:mvec%jmax,2,mvec%map%nProcs)
+    real(kind=8) :: globalDot_prec_(mvec%jmin:mvec%jmax,mvec%map%nProcs,2)
     !--------------------------------------------------------------------------------
 
     ! determine data layout
@@ -239,6 +312,49 @@ contains
     nvec = mvec%jmax-mvec%jmin+1
     nrows = mvec%map%nlocal(mvec%map%me)
     lda = size(mvec%val,1)
+
+    ! check if we need higher precision
+    if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
+      ! check if we can do it
+      if( strided .or. mod(nrows*nvec,4) .ne. 0 ) then
+        iflag = -99
+        return
+      end if
+      if( nvec .ne. 1 .and. nvec .ne. 2 .and. nvec .ne. 4 ) then
+        iflag = -99
+        return
+      end if
+
+      if( nvec .eq. 1 ) then
+        call ddot_self_prec_1(nrows, mvec%val(mvec%jmin,1), localDot_prec(mvec%jmin,1), localDot_prec(mvec%jmin,2))
+      else if( nvec .eq. 2 ) then
+        call ddot_self_prec_2(nrows, mvec%val(mvec%jmin,1), localDot_prec(mvec%jmin,1), localDot_prec(mvec%jmin,2))
+      else if( nvec .eq. 4 ) then
+        call ddot_self_prec_4(nrows, mvec%val(mvec%jmin,1), localDot_prec(mvec%jmin,1), localDot_prec(mvec%jmin,2))
+      end if
+
+      call MPI_Allgather(localDot_prec,2*nvec,MPI_DOUBLE_PRECISION, &
+        &                globalDot_prec,2*nvec,MPI_DOUBLE_PRECISION, &
+        &                mvec%map%comm, iflag)
+
+      ! rearrange received data
+      globalDot_prec_(:,:,1) = globalDot_prec(:,1,:)
+      globalDot_prec_(:,:,2) = globalDot_prec(:,2,:)
+      if( nvec .eq. 1 ) then
+        call prec_reduction_1(mvec%map%nProcs, globalDot_prec_(mvec%jmin,1,1), globalDot_prec_(mvec%jmin,1,2), &
+          &                                    localDot_prec(mvec%jmin,1), localDot_prec(mvec%jmin,2))
+      else if( nvec .eq. 2 ) then
+        call prec_reduction_2(mvec%map%nProcs, globalDot_prec_(mvec%jmin,1,1), globalDot_prec_(mvec%jmin,1,2), &
+          &                                    localDot_prec(mvec%jmin,1), localDot_prec(mvec%jmin,2))
+      else if( nvec .eq. 4 ) then
+        call prec_reduction_4(mvec%map%nProcs, globalDot_prec_(mvec%jmin,1,1), globalDot_prec_(mvec%jmin,1,2), &
+          &                                    localDot_prec(mvec%jmin,1), localDot_prec(mvec%jmin,2))
+      end if
+      vnrm = sqrt(localDot_prec(:,1) + localDot_prec(:,2))
+
+      return
+    end if
+
     ! for single vectors call appropriate blas
     if( nvec .eq. 1 ) then
       if( strided ) then
@@ -269,7 +385,7 @@ contains
     end if
 
     localNrm = vnrm*vnrm
-    call MPI_Allreduce(localNrm,vnrm,nvec,MPI_DOUBLE_PRECISION,MPI_SUM,mvec%map%comm,ierr)
+    call MPI_Allreduce(localNrm,vnrm,nvec,MPI_DOUBLE_PRECISION,MPI_SUM,mvec%map%comm,iflag)
     vnrm = sqrt(vnrm)
 
     !--------------------------------------------------------------------------------
@@ -570,11 +686,11 @@ contains
       end if
 
       if( nvec .eq. 1 ) then
-        call ddot_prec_1(nrows, x%val(x%jmin,1), localDot_prec(x%jmin,1), localDot_prec(x%jmin,2))
+        call ddot_prec_1(nrows, x%val(x%jmin,1), y%val(y%jmin,1), localDot_prec(x%jmin,1), localDot_prec(x%jmin,2))
       else if( nvec .eq. 2 ) then
-        call ddot_prec_2(nrows, x%val(x%jmin,1), localDot_prec(x%jmin,1), localDot_prec(x%jmin,2))
+        call ddot_prec_2(nrows, x%val(x%jmin,1), y%val(y%jmin,1), localDot_prec(x%jmin,1), localDot_prec(x%jmin,2))
       else if( nvec .eq. 4 ) then
-        call ddot_prec_4(nrows, x%val(x%jmin,1), localDot_prec(x%jmin,1), localDot_prec(x%jmin,2))
+        call ddot_prec_4(nrows, x%val(x%jmin,1), y%val(y%jmin,1), localDot_prec(x%jmin,1), localDot_prec(x%jmin,2))
       end if
 
       call MPI_Allgather(localDot_prec,2*nvec,MPI_DOUBLE_PRECISION, &
@@ -952,9 +1068,11 @@ contains
     type(MVec_t) :: vi, vipn
     type(SDMat_t) :: Ripn
     real(kind=8) :: rii(1:1)
+    integer :: idum
     !--------------------------------------------------------------------------------
 
     nvec = v%jmax-v%jmin+1
+    idum = 0
 
     ! setup views vi, vipn, Ripn
     vipn%jmax = v%jmax
@@ -978,7 +1096,7 @@ contains
       ! create view of column i
       vi%jmin = v%jmin+i
       vi%jmax = v%jmin+i
-      call mvec_norm2(vi,rii)
+      call mvec_norm2(vi,rii,idum)
       R%val(R%imin+i_,R%jmin+i) = rii(1)
       if( rii(1) .lt. eps ) then
         nullSpaceDim = nullSpaceDim + 1
@@ -1037,7 +1155,7 @@ contains
         ! create view of column i
         vi%jmin = v%jmin+i
         vi%jmax = v%jmin+i
-        call mvec_norm2(vi,rii)
+        call mvec_norm2(vi,rii,idum)
         if( rii(1) .lt. eps ) then
           write(*,*) 'error during orthogonalization'
           flush(6)
@@ -1558,29 +1676,27 @@ contains
   end subroutine phist_Dmvec_print
 
 
-  subroutine phist_Dmvec_norm2(mvec_ptr, vnrm, ierr) bind(C,name='phist_Dmvec_norm2_f')
+  subroutine phist_Dmvec_norm2(mvec_ptr, vnrm, iflag) bind(C,name='phist_Dmvec_norm2_f')
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),        value         :: mvec_ptr
     real(C_DOUBLE),     intent(out)   :: vnrm(*)
-    integer(C_INT),     intent(out)   :: ierr
+    integer(C_INT),     intent(inout) :: iflag
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
     integer :: nvec
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) ) then
-      ierr = -88
+      iflag = -88
       return
     end if
 
     call c_f_pointer(mvec_ptr, mvec)
 
     nvec = mvec%jmax-mvec%jmin+1
-    call mvec_norm2(mvec, vnrm(1:nvec))
+    call mvec_norm2(mvec, vnrm(1:nvec), iflag)
     
-    ierr = 0
-
   end subroutine phist_Dmvec_norm2
 
 

@@ -79,7 +79,7 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
 
 
 // more accurate dot product x'x AVX2 kernel
-void ddot_self_prec_4_(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
+void ddot_self_prec_4(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
 {
   if( !is_aligned(x,32) )
   {
@@ -145,7 +145,7 @@ void ddot_self_prec_4_(int nrows, const double *restrict x, double *restrict res
 
 
 // more accurate dot product x'y AVX2 kernel
-void ddot_prec_4_(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+void ddot_prec_4(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
   if( !is_aligned(x,32) )
   {
@@ -219,7 +219,7 @@ void ddot_prec_4_(int nrows, const double *restrict x, const double *restrict y,
 
 
 // precise reduction of gathered MPI results of all processes for block size 1
-void prec_reduction_1_(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
+void prec_reduction_1(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
 {
   // we need to sum up s_, c_
   // we use AVX code here hoping the compiler doesn't optimize it away this way
@@ -241,7 +241,7 @@ void prec_reduction_1_(int n, const double *restrict s_, const double *restrict 
 
 
 // precise reduction of gathered MPI results of all processes for block size 2
-void prec_reduction_2_(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
+void prec_reduction_2(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
 {
   // we need to sum up s_, c_
   // we use AVX code here hoping the compiler doesn't optimize it away this way
@@ -263,7 +263,7 @@ void prec_reduction_2_(int n, const double *restrict s_, const double *restrict 
 
 
 // precise reduction of gathered MPI results of all processes for block size 4
-void prec_reduction_4_(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
+void prec_reduction_4(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
 {
   // we need to sum up s_, c_
   // we use AVX code here hoping the compiler doesn't optimize it away this way
@@ -285,54 +285,54 @@ void prec_reduction_4_(int n, const double *restrict s_, const double *restrict 
 
 
 // more accurate dot product x'x for block size 1
-void ddot_self_prec_1_(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
+void ddot_self_prec_1(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
 {
   double s[4], c[4];
 
   // assume appropriate padding with zeros!
-  ddot_self_prec_4_(nrows/4, x, s, c);
+  ddot_self_prec_4(nrows/4, x, s, c);
 
   // we still need to sum up s, c
-  prec_reduction_1_(4, s, c, res, resC);
+  prec_reduction_1(4, s, c, res, resC);
 }
 
 
 // more accurate dot product x'y for block size 1
-void ddot_prec_1_(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+void ddot_prec_1(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
   double s[4], c[4];
 
   // assume appropriate padding with zeros!
-  ddot_prec_4_(nrows/4, x, y, s, c);
+  ddot_prec_4(nrows/4, x, y, s, c);
 
   // we still need to sum up s, c
-  prec_reduction_1_(4, s, c, res, resC);
+  prec_reduction_1(4, s, c, res, resC);
 }
 
 
 // more accurate dot product x'x for block size 2
-void ddot_self_prec_2_(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
+void ddot_self_prec_2(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
 {
   double s[4], c[4];
 
   // assume appropriate padding with zeros!
-  ddot_self_prec_4_(nrows/2, x, s, c);
+  ddot_self_prec_4(nrows/2, x, s, c);
 
   // we still need to sum up s, c
-  prec_reduction_2_(2, s, c, res, resC);
+  prec_reduction_2(2, s, c, res, resC);
 }
 
 
 // more accurate dot product x'y for block size 2
-void ddot_prec_2_(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+void ddot_prec_2(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
   double s[4], c[4];
 
   // assume appropriate padding with zeros!
-  ddot_prec_4_(nrows/2, x, y, s, c);
+  ddot_prec_4(nrows/2, x, y, s, c);
 
   // we still need to sum up s, c
-  prec_reduction_2_(2, s, c, res, resC);
+  prec_reduction_2(2, s, c, res, resC);
 }
 
 

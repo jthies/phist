@@ -135,6 +135,93 @@ public:
 
   }
 
+#if (_N_ % 4 == 0 && (_NV_ == 1 || _NV_ == 2 || _NV_ == 4 ) )
+  // mvec_dot_mvec tests, more precise version
+  TEST_F(CLASSNAME, dot_mvec_prec)
+  {
+    if (typeImplemented_)
+    {
+      SUBR(mvec_from_device)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for (int j=0;j<nvec_;j++)
+        for (int i=0;i<nloc_*stride_;i+=stride_)
+        {
+          vec2_vp_[VIDX(i,j,lda_)]=mt::one()/st::conj(vec1_vp_[VIDX(i,j,lda_)]);
+        }
+      SUBR(mvec_to_device)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _ST_ dots_ref[_NV_];
+      _ST_ dots[_NV_];
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_dot_mvec)(vec1_,vec2_,dots_ref,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _ST_ val = st::one() * (ST)nglob_;
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(dots_ref,nvec_,1,nvec_,1,val));
+
+      // test two random vectors
+      SUBR(mvec_random)(vec2_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_dot_mvec)(vec1_,vec2_,dots_ref,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      for (int j=0;j<nvec_;j++)
+      {
+        dots[j] = st::zero();
+        for (int i=0;i<nloc_*stride_;i+=stride_)
+        {
+          dots[j] += st::conj(vec1_vp_[VIDX(i,j,lda_)])*vec2_vp_[VIDX(i,j,lda_)];
+        }
+#ifdef PHIST_HAVE_MPI
+        MPI_Allreduce(MPI_IN_PLACE, &dots[j], 1, st::mpi_type(), MPI_SUM, MPI_COMM_WORLD);
+#endif
+        EXPECT_NEAR(mt::zero(), st::real(dots[j]-dots_ref[j]), 100*mt::eps());
+        EXPECT_NEAR(mt::zero(), st::imag(dots[j]-dots_ref[j]), 100*mt::eps());
+      }
+    }
+
+  }
+
+  // mvec_dot_mvec tests, more precise version
+  // exploits sum_(k=1)^n 1/(k*(k+1)) = 1 - 1/(n+1)
+  TEST_F(CLASSNAME, dot_mvec_prec_hard)
+  {
+    if (typeImplemented_)
+    {
+      gidx_t ilower;     
+      phist_map_get_ilower(map_,&ilower,&iflag_);
+      SUBR(mvec_from_device)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for (int j=0;j<nvec_;j++)
+      {
+        for(int i = 0; i < nloc_; i++)
+        {
+          vec2_vp_[VIDX(i,j,lda_)]=st::one()/(ilower+i+1);
+          vec1_vp_[VIDX(i,j,lda_)]=st::one()/(ilower+i+2);
+        }
+      }
+      SUBR(mvec_to_device)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_to_device)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _ST_ dots[_NV_];
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_dot_mvec)(vec1_,vec2_,dots,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _ST_ val = (_ST_)(st::one()*(1.0l-1.0l/(_N_+1)));
+      PHIST_SOUT(PHIST_INFO, "error: %e\n", st::abs(dots[0]-val));
+      // melven: this is a *hard* precision test
+      // DO NOT CHANGE THIS TO ASSERT_NEAR!
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(dots,nvec_,1,nvec_,1,val));
+    }
+  }
+#endif
+
+
   TEST_F(CLASSNAME, random)
     {
     if (typeImplemented_)
@@ -226,6 +313,43 @@ public:
       }
     }
   }
+
+#if (_N_ % 4 == 0 && (_NV_ == 1 || _NV_ == 2 || _NV_ == 4 ) )
+  // 2-norm, nrm2=sqrt(v'v), more precise version
+  TEST_F(CLASSNAME, norm2_precise)
+  {
+    if (typeImplemented_)
+    {
+      gidx_t ilower;     
+      phist_map_get_ilower(map_,&ilower,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for (int j=0;j<nvec_;j++)
+      {
+        for (int i=0;i<nloc_*stride_;i+=stride_)
+        {
+          vec1_vp_[VIDX(i,j,lda_)]=ilower+i;
+        }
+      }
+      SUBR(mvec_to_device)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      MT expect = 0.0;
+      for (int i=0;i<_N_;i++)
+      {
+        expect+=(MT)(i*i);
+      }
+      expect=mt::sqrt(expect);
+
+      MT nrm2[nvec_];
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_norm2)(vec1_,nrm2,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for (int i=0;i<nvec_;i++)
+      {
+        ASSERT_REAL_EQ(expect,nrm2[i]);
+      }
+    }
+  }
+#endif
 
   // 2-norm, nrm2=sqrt(v'v)
   TEST_F(CLASSNAME, norm2_of_viewed_cols)
