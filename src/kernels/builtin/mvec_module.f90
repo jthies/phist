@@ -4,6 +4,7 @@
 !!
 
 #include "phist_config.h"
+#include "phist_kernel_flags.h"
 !> Implementations of phist_Dmvec_* for phist builtin kernels which uses row-major mvecs
 !! 
 !! Actual work is delegated to fast, parallel implementations tuned for LARGE
@@ -517,15 +518,19 @@ contains
 
   !==================================================================================
   ! dot product for mvecs
-  subroutine mvec_dot_mvec(x,y,dot)
+  subroutine mvec_dot_mvec(x,y,dot,iflag)
     use mpi
     !--------------------------------------------------------------------------------
-    type(MVec_t), intent(in)  :: x, y
-    real(kind=8), intent(out) :: dot(x%jmin:x%jmax)
+    type(MVec_t), intent(in)    :: x, y
+    real(kind=8), intent(out)   :: dot(x%jmin:x%jmax)
+    integer,      intent(inout) :: iflag
     !--------------------------------------------------------------------------------
     integer :: nvec, nrows, ldx, ldy, ierr
     logical :: strided_x, strided_y, strided
     real(kind=8) :: localDot(x%jmin:x%jmax)
+    real(kind=8) :: localDot_prec(x%jmin:x%jmax,2)
+    real(kind=8) :: globalDot_prec(x%jmin:x%jmax,2,x%map%nProcs)
+    real(kind=8) :: globalDot_prec_(x%jmin:x%jmax,x%map%nProcs,2)
     !--------------------------------------------------------------------------------
 
     ! determine data layout
@@ -551,6 +556,49 @@ contains
     nrows = x%map%nlocal(x%map%me)
     ldx = size(x%val,1)
     ldy = size(y%val,1)
+
+    ! check if we need higher precision
+    if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
+      ! check if we can do it
+      if( strided .or. mod(nrows*nvec,4) .ne. 0 ) then
+        iflag = -99
+        return
+      end if
+      if( nvec .ne. 1 .and. nvec .ne. 2 .and. nvec .ne. 4 ) then
+        iflag = -99
+        return
+      end if
+
+      if( nvec .eq. 1 ) then
+        call ddot_prec_1(nrows, x%val(x%jmin,1), localDot_prec(x%jmin,1), localDot_prec(x%jmin,2))
+      else if( nvec .eq. 2 ) then
+        call ddot_prec_2(nrows, x%val(x%jmin,1), localDot_prec(x%jmin,1), localDot_prec(x%jmin,2))
+      else if( nvec .eq. 4 ) then
+        call ddot_prec_4(nrows, x%val(x%jmin,1), localDot_prec(x%jmin,1), localDot_prec(x%jmin,2))
+      end if
+
+      call MPI_Allgather(localDot_prec,2*nvec,MPI_DOUBLE_PRECISION, &
+        &                globalDot_prec,2*nvec,MPI_DOUBLE_PRECISION, &
+        &                x%map%comm, iflag)
+
+      ! rearrange received data
+      globalDot_prec_(:,:,1) = globalDot_prec(:,1,:)
+      globalDot_prec_(:,:,2) = globalDot_prec(:,2,:)
+      if( nvec .eq. 1 ) then
+        call prec_reduction_1(x%map%nProcs, globalDot_prec_(x%jmin,1,1), globalDot_prec_(x%jmin,1,2), &
+          &                                 localDot_prec(x%jmin,1), localDot_prec(x%jmin,2))
+      else if( nvec .eq. 2 ) then
+        call prec_reduction_2(x%map%nProcs, globalDot_prec_(x%jmin,1,1), globalDot_prec_(x%jmin,1,2), &
+          &                                 localDot_prec(x%jmin,1), localDot_prec(x%jmin,2))
+      else if( nvec .eq. 4 ) then
+        call prec_reduction_4(x%map%nProcs, globalDot_prec_(x%jmin,1,1), globalDot_prec_(x%jmin,1,2), &
+          &                                 localDot_prec(x%jmin,1), localDot_prec(x%jmin,2))
+      end if
+      dot = localDot_prec(:,1) + localDot_prec(:,2)
+
+      return
+    end if
+
     ! for single vectors call appropriate blas
     if( nvec .eq. 1 ) then
       if( strided ) then
@@ -581,7 +629,7 @@ contains
     end if
 
     localDot = dot
-    call MPI_Allreduce(localDot,dot,nvec,MPI_DOUBLE_PRECISION,MPI_SUM,x%map%comm,ierr)
+    call MPI_Allreduce(localDot,dot,nvec,MPI_DOUBLE_PRECISION,MPI_SUM,x%map%comm,iflag)
 
     !--------------------------------------------------------------------------------
   end subroutine mvec_dot_mvec
@@ -1689,38 +1737,36 @@ contains
   end subroutine phist_Dmvec_vadd_mvec
 
 
-  subroutine phist_Dmvec_dot_mvec(x_ptr, y_ptr, dot, ierr) bind(C,name='phist_Dmvec_dot_mvec_f')
+  subroutine phist_Dmvec_dot_mvec(x_ptr, y_ptr, dot, iflag) bind(C,name='phist_Dmvec_dot_mvec_f')
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),        value         :: x_ptr, y_ptr
     real(C_DOUBLE),     intent(out)   :: dot(*)
-    integer(C_INT),     intent(out)   :: ierr
+    integer(C_INT),     intent(inout) :: iflag
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: x, y
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(x_ptr) .or. .not. c_associated(y_ptr) ) then
-      ierr = -88
+      iflag = -88
       return
     end if
     call c_f_pointer(x_ptr, x)
     call c_f_pointer(y_ptr, y)
 
     if( y%jmax-y%jmin .ne. x%jmax-x%jmin ) then
-      ierr = -1
+      iflag = -1
       return
     end if
 
 #ifdef TESTING
     if( .not. map_compatible_map(x%map, y%map) ) then
-      ierr = -1
+      iflag = -1
       return
     end if
 #endif
 
-    call mvec_dot_mvec(x,y,dot)
-
-    ierr = 0
+    call mvec_dot_mvec(x,y,dot,iflag)
 
   end subroutine phist_Dmvec_dot_mvec
 
