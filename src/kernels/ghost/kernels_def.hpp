@@ -333,12 +333,14 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
   PHIST_CAST_PTR_FROM_VOID(const ghost_map_t, map,vmap,*iflag);
   ghost_densemat_t* result;
   ghost_densemat_traits_t vtraits = map->vtraits_template;/*ghost_cloneVtraits(map->vtraits_template);*/
+        vtraits.flags|=GHOST_DENSEMAT_VIEW;
         vtraits.ncols=nvec;
         vtraits.datatype = st::ghost_dt;
 
   PHIST_CHK_GERR(ghost_densemat_create(&result,map->ctx,vtraits),*iflag);
+
 #ifdef PHIST_MVECS_ROW_MAJOR
-  if (result->traits.nrowshalo!=result->traits.nrows)
+  if (result->traits.nrowshalo!=result->traits.nrows+1)
   {
     PHIST_OUT(PHIST_ERROR,"viewing plain data as row-major ghost_densemat_t only works \n"
                           "for vectors without communciation buffers (for spMVM)\n");
@@ -346,11 +348,11 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
     return;
   }
 #else
-  if ((result->traits.nrowshalo>lda))
+  if ((result->traits.nrowshalo>lda+1))
   {
     PHIST_OUT(PHIST_ERROR,"viewing plain data as ghost_densemat_t only works \n"
                           "if the given lda can accomodate the required comm buffer of the vector!\n"
-                          "nrows=%" PRlidx ", nrowshalo=" PRlidx ", lda=%" PRlidx "\n",
+                          "nrows=%" PRlidx ", nrowshalo=%" PRlidx ", lda=%" PRlidx "\n",
         result->traits.nrows,result->traits.nrowshalo,lda);
     *iflag=-1;
     return;
