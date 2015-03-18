@@ -3,7 +3,7 @@
 #include <math.h>
 
 //#define WRITE_MATRIX
-#define REPARTITION
+//#define REPARTITION
 
 #ifndef anderson_L
 #define anderson_L 16.5
@@ -25,7 +25,7 @@
 #undef MOD
 #endif
 
-#define MOD(x,y) (((double)(y)==0.0)? (double)(x): ((double)(x) - floor((double)(x)/((double)(y)))*((double)(y))))
+#define MOD(x,y) ((y)==0)? (x): (x)-((x)/(y))*(y)
 
 
 int gid2ijk(ghost_gidx_t gid, 

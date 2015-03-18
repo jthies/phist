@@ -104,6 +104,8 @@ else
   CMAKE_FLAGS=${ADD_CMAKE_FLAGS}
 fi
 
+# let ctest print all output if there was an error!
+export CTEST_OUTPUT_ON_FAILURE=1
 mkdir build_${KERNELS}_${PRGENV}_Release_${FLAGS// /_}; cd $_
 cmake -DCMAKE_BUILD_TYPE=Release  \
       -DPHIST_KERNEL_LIB=$KERNELS \
