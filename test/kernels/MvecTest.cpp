@@ -90,13 +90,13 @@ using namespace testing;
 
 #ifdef PHIST_HAVE_SP
 #undef CLASSNAME
-#define CLASSNAME SMvecTest_4000000_1
+#define CLASSNAME SMvecTest_4M_1
 
 #include "phist_gen_s.h"
 #include "MvecTest_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME CMvecTest_4000000_1
+#define CLASSNAME CMvecTest_4M_1
 
 #include "phist_gen_c.h"
 #include "MvecTest_def.hpp"
@@ -104,14 +104,14 @@ using namespace testing;
 #endif
 
 #undef CLASSNAME
-#define CLASSNAME DMvecTest_4000000_1
+#define CLASSNAME DMvecTest_4M_1
 
 #include "phist_gen_d.h"
 #include "MvecTest_def.hpp"
 
 
 #undef CLASSNAME
-#define CLASSNAME ZMvecTest_4000000_1
+#define CLASSNAME ZMvecTest_4M_1
 
 #include "phist_gen_z.h"
 #include "MvecTest_def.hpp"
@@ -124,13 +124,13 @@ using namespace testing;
 
 #ifdef PHIST_HAVE_SP
 #undef CLASSNAME
-#define CLASSNAME SMvecTest_4000000_2
+#define CLASSNAME SMvecTest_4M_2
 
 #include "phist_gen_s.h"
 #include "MvecTest_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME CMvecTest_4000000_2
+#define CLASSNAME CMvecTest_4M_2
 
 #include "phist_gen_c.h"
 #include "MvecTest_def.hpp"
@@ -138,14 +138,14 @@ using namespace testing;
 #endif
 
 #undef CLASSNAME
-#define CLASSNAME DMvecTest_4000000_2
+#define CLASSNAME DMvecTest_4M_2
 
 #include "phist_gen_d.h"
 #include "MvecTest_def.hpp"
 
 
 #undef CLASSNAME
-#define CLASSNAME ZMvecTest_4000000_2
+#define CLASSNAME ZMvecTest_4M_2
 
 #include "phist_gen_z.h"
 #include "MvecTest_def.hpp"
@@ -158,13 +158,13 @@ using namespace testing;
 
 #ifdef PHIST_HAVE_SP
 #undef CLASSNAME
-#define CLASSNAME SMvecTest_4000000_4
+#define CLASSNAME SMvecTest_4M_4
 
 #include "phist_gen_s.h"
 #include "MvecTest_def.hpp"
 
 #undef CLASSNAME
-#define CLASSNAME CMvecTest_4000000_4
+#define CLASSNAME CMvecTest_4M_4
 
 #include "phist_gen_c.h"
 #include "MvecTest_def.hpp"
@@ -172,14 +172,14 @@ using namespace testing;
 #endif
 
 #undef CLASSNAME
-#define CLASSNAME DMvecTest_4000000_4
+#define CLASSNAME DMvecTest_4M_4
 
 #include "phist_gen_d.h"
 #include "MvecTest_def.hpp"
 
 
 #undef CLASSNAME
-#define CLASSNAME ZMvecTest_4000000_4
+#define CLASSNAME ZMvecTest_4M_4
 
 #include "phist_gen_z.h"
 #include "MvecTest_def.hpp"
