@@ -1634,6 +1634,7 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
+    integer :: i
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) ) then
@@ -1644,6 +1645,10 @@ contains
     call c_f_pointer(mvec_ptr, mvec)
 
     call random_number(mvec%val(mvec%jmin:mvec%jmax,:))
+!$omp parallel do schedule(static)
+    do i = 1, mvec%map%nlocal(mvec%map%me), 1
+      mvec%val(mvec%jmin:mvec%jmax,i) = 2.*(mvec%val(mvec%jmin:mvec%jmax,i)-0.5)
+    end do
 
     ierr = 0
 

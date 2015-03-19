@@ -481,6 +481,7 @@ contains
     n = sdmat%jmax-sdmat%jmin+1
     allocate(buff(m,n))
     call random_number(buff)
+    buff = 2*(buff-0.5)
 
     ierr = 0
     if( sdmat%comm .ne. MPI_COMM_NULL ) then

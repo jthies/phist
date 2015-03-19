@@ -156,6 +156,30 @@ public:
     }
   }
 
+
+#if( _N_ % 4 == 0 && (_M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 ) )
+  // check ones(n,m)'*ones(n,k)=n*ones(m,k)
+  TEST_F(CLASSNAME, mvecT_times_mvec_prec) 
+  {
+    if (typeImplemented_)
+    {
+      // fill V and W with ones
+      SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_put_value)(V2_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+  }
+#endif
+
+
   // check ones(n,m)'*ones(n,m)=n*ones(m,m)
   TEST_F(CLASSNAME, mvecT_times_mvec_with_manual_comparison) 
   {
@@ -179,50 +203,117 @@ public:
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
     
-    
-      MT err_r=mt::zero();
-      MT err_i=mt::zero();
+#ifdef IS_COMPLEX
+#define _ST_PREC_ std::complex<long double>
+#define CONJ_PREC(x) std::conj(x)
+#else
+#define _ST_PREC_ long double
+#define CONJ_PREC(x) x
+#endif
       for (int i=0; i<m_; i++)
+      {
         for (int j=0; j<k_; j++)
         {
-// TODO (melven): this will most probably not work, see remarks below
-// * compiler optimization will most probably optimize this away
+// melven: Kahan summation here will most probably not work, see remarks below
+// * compiler optimization!
 // * one can also improve the multiplication
 // * high precision examples are in src/kernels/builtin/*prec*
 // -> long double for reference data should be the better way (hoping/checking that long double != double!)
-          ST err_ij=st::zero();
-          // manually compute V1(:,i)*V2(:,j) using compensated summation ("Kahan")
-          // for achieving good accuracy
-          // (http://en.wikipedia.org/wiki/Kahan_summation_algorithm)
-          ST c = st::zero(); // a running compensation for lost low-order bits
+          _ST_PREC_ dot_ij = (_ST_PREC_)0;
+          long double dotAbs_ij = (long double)0;
           for (int ii=0; ii< nloc_; ii++)
           {
-            ST y = st::conj(V1_vp_[VIDX(ii,i,ldaV1_)])
-                 *          V2_vp_[VIDX(ii,j,ldaV2_)] - c; // c is 0 in the beginning
-            ST t = err_ij + y;          // err_ij is big, y small, so low-order digits of y are lost.
-            c = (t - err_ij) - y;  // (t - err_ij) recovers the high-order part of y; 
-                                   // subtracting y recovers -(low part of y)
-            err_ij = t;           // Algebraically, c should always 
-                                  // be zero. Beware overly-aggressive optimizing 
-                                  // compilers!
-                                  // Next time around, the lost low part will 
-                                  // be added to y in a fresh attempt.
-
+            _ST_PREC_ tmp = CONJ_PREC(V1_vp_[VIDX(ii,i,ldaV1_)])*V2_vp_[VIDX(ii,j,ldaV2_)];
+            dot_ij += tmp;
+            dotAbs_ij += std::abs(tmp);
           }
 #ifdef PHIST_HAVE_MPI
-          // TODO - we should use Kahan summation here as well, but since our tests are not
-          // carried out on many processes, it doesn't matter right now.
-          ST err_ij_local=err_ij;
-          MPI_Allreduce(&err_ij_local,&err_ij,1,st::mpi_type(),MPI_SUM,mpi_comm_);
+#ifdef IS_COMPLEX
+          MPI_Allreduce(MPI_IN_PLACE,&dot_ij,2,MPI_LONG_DOUBLE,MPI_SUM,mpi_comm_);
+#else
+          MPI_Allreduce(MPI_IN_PLACE,&dot_ij,1,MPI_LONG_DOUBLE,MPI_SUM,mpi_comm_);
 #endif
-          err_ij-=M1_vp_[MIDX(i,j,ldaM1_)];
-          err_r=std::max(err_r,st::real(err_ij));
-          err_i=std::max(err_i,st::imag(err_ij));
+          MPI_Allreduce(MPI_IN_PLACE,&dotAbs_ij,1,MPI_LONG_DOUBLE,MPI_SUM,mpi_comm_);
+#endif
+          _MT_ cond = dotAbs_ij / std::abs(dot_ij);
+          EXPECT_NEAR(mt::zero(), st::real((_ST_)dot_ij-M1_vp_[MIDX(i,j,ldaM1_)])/dotAbs_ij, cond*1000*mt::eps());
+          EXPECT_NEAR(mt::zero(), st::imag((_ST_)dot_ij-M1_vp_[MIDX(i,j,ldaM1_)])/dotAbs_ij, cond*1000*mt::eps());
         }
-      ASSERT_NEAR(mt::zero(),err_r,100*mt::eps());
-      ASSERT_NEAR(mt::zero(),err_i,100*mt::eps());
+      }
     }
+#undef _ST_PREC_
+#undef CONJ_PREC
   }
+
+
+#if( _N_ % 4 == 0 && (_M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 ) )
+  // check ones(n,m)'*ones(n,m)=n*ones(m,m)
+  TEST_F(CLASSNAME, mvecT_times_mvec_with_manual_comparison_prec_hard)
+  {
+    if (typeImplemented_)
+    {
+      // fill V and W with random numbers
+      SUBR(mvec_random)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(mvec_from_device)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    
+#ifdef IS_COMPLEX
+#define _ST_PREC_ std::complex<long double>
+#define CONJ_PREC(x) std::conj(x)
+#else
+#define _ST_PREC_ long double
+#define CONJ_PREC(x) x
+#endif
+      for (int i=0; i<m_; i++)
+      {
+        for (int j=0; j<k_; j++)
+        {
+// melven: Kahan summation here will most probably not work, see remarks below
+// * compiler optimization!
+// * one can also improve the multiplication
+// * high precision examples are in src/kernels/builtin/*prec*
+// -> long double for reference data should be the better way (hoping/checking that long double != double!)
+          _ST_PREC_ dot_ij = (_ST_PREC_)0;
+          long double dotAbs_ij = (long double)0;
+          for (int ii=0; ii< nloc_; ii++)
+          {
+            _ST_PREC_ tmp = CONJ_PREC(V1_vp_[VIDX(ii,i,ldaV1_)])*V2_vp_[VIDX(ii,j,ldaV2_)];
+            dot_ij += tmp;
+            dotAbs_ij += std::abs(tmp);
+          }
+#ifdef PHIST_HAVE_MPI
+#ifdef IS_COMPLEX
+          MPI_Allreduce(MPI_IN_PLACE,&dot_ij,2,MPI_LONG_DOUBLE,MPI_SUM,mpi_comm_);
+#else
+          MPI_Allreduce(MPI_IN_PLACE,&dot_ij,1,MPI_LONG_DOUBLE,MPI_SUM,mpi_comm_);
+#endif
+          MPI_Allreduce(MPI_IN_PLACE,&dotAbs_ij,1,MPI_LONG_DOUBLE,MPI_SUM,mpi_comm_);
+#endif
+          _MT_ cond = dotAbs_ij / std::abs(dot_ij);
+          PHIST_SOUT(PHIST_INFO, "error: %e (cond. number: %e, eps: %e)\n", st::abs((_ST_)dot_ij-M1_vp_[MIDX(i,j,ldaM1_)]),cond,mt::eps());
+          EXPECT_NEAR(mt::zero(), st::real((_ST_)dot_ij-M1_vp_[MIDX(i,j,ldaM1_)]), 2*cond*mt::eps());
+          EXPECT_NEAR(mt::zero(), st::imag((_ST_)dot_ij-M1_vp_[MIDX(i,j,ldaM1_)]), 2*cond*mt::eps());
+        }
+      }
+    }
+#undef _ST_PREC_
+#undef CONJ_PREC
+  }
+#endif
 
   // check ones(n,m)*ones(m,k)=m*ones(n,k),
   // and ones(n,m)*ones(m,k)-m*ones(n,k)=0
@@ -482,12 +573,63 @@ public:
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::one(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
   
-      // TODO - how much accuracy should we demand? With Kahan summation it should
-      //        be accurate to machine precision, but without it probably won't...
-      ASSERT_NEAR(mt::one(),SdMatEqual(M1_,st::zero()),100*mt::eps());
+      // but for large cases we need to respect the condition number as it won't be zero at all
+      _MT_ normV1[_M_];
+      SUBR(mvec_norm2)(V1_, normV1, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      _MT_ normV2[_K_];
+      SUBR(mvec_norm2)(V2_, normV2, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      _MT_ maxNorm12 = mt::zero();
+      for(int i = 0; i < _M_; i++)
+        for(int j = 0; j < _K_; j++)
+          maxNorm12 = std::max(maxNorm12, normV1[i]*normV2[j]);
+
+      ASSERT_NEAR(mt::one(),SdMatEqual(M1_,st::zero()),maxNorm12*100*mt::eps());
     
     }
   }
+
+#if( _N_ % 4 == 0 && (_M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 ) )
+  // random check
+  TEST_F(CLASSNAME, random_mvecT_times_mvec_prec) 
+  {
+    if (typeImplemented_)
+    {
+      // fill V and W with ones
+      SUBR(mvec_random)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    
+      // to check the result, scale V1 by -1, add V1'V2 again and compare with 0
+      SUBR(mvec_scale)(V1_,-st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::one(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+  
+      // but for large cases we need to respect the condition number as it won't be zero at all
+      _MT_ normV1[_M_];
+      SUBR(mvec_norm2)(V1_, normV1, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      _MT_ normV2[_K_];
+      SUBR(mvec_norm2)(V2_, normV2, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      _MT_ maxNorm12 = mt::zero();
+      for(int i = 0; i < _M_; i++)
+        for(int j = 0; j < _K_; j++)
+          maxNorm12 = std::max(maxNorm12, normV1[i]*normV2[j]);
+
+      // TODO: what is the correctly required precision here? 
+      ASSERT_NEAR(mt::one(),SdMatEqual(M1_,st::zero()),mt::eps());
+    }
+  }
+#endif
 
   // random check with partial views of partial mvecs and sdMats
   TEST_F(CLASSNAME, random_mvecT_times_mvec_with_inside_views)
@@ -628,7 +770,18 @@ public:
         // the result should be zero!
         SUBR(sdMat_from_device)(M2_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        ASSERT_NEAR(mt::one(),ArrayEqual(M2_vp_,m_,k_,ldaM2_,stride_,st::zero(),mflag_),200*mt::eps());
+        // but for large cases we need to respect the condition number as it won't be zero at all
+        _MT_ normV1[_M_];
+        SUBR(mvec_norm2)(V1_, normV1, &iflag_);
+        ASSERT_EQ(0,iflag_);
+        _MT_ normV2[_K_];
+        SUBR(mvec_norm2)(V2_, normV2, &iflag_);
+        ASSERT_EQ(0,iflag_);
+        _MT_ maxNorm12 = mt::zero();
+        for(int i = 0; i < _M_; i++)
+          for(int j = 0; j < _K_; j++)
+            maxNorm12 = std::max(maxNorm12, normV1[i]*normV2[j]);
+        ASSERT_NEAR(mt::one(),ArrayEqual(M2_vp_,m_,k_,ldaM2_,stride_,st::zero(),mflag_),maxNorm12*100*mt::eps());
 
         // clean up at the end of the loop
         SUBR(mvec_delete)(V1,&iflag_);

@@ -134,8 +134,8 @@ public:
         MPI_Allreduce(MPI_IN_PLACE, &dotsAbs[j], 1, mt::mpi_type(), MPI_SUM, MPI_COMM_WORLD);
 #endif
         _MT_ cond = dotsAbs[j] / st::abs(dots[j]);
-        EXPECT_NEAR(mt::zero(), st::real(dots[j]-dots_ref[j]), cond*1000*mt::eps());
-        EXPECT_NEAR(mt::zero(), st::imag(dots[j]-dots_ref[j]), cond*1000*mt::eps());
+        EXPECT_NEAR(mt::zero(), st::real(dots[j]-dots_ref[j]), dotsAbs[j]*10*mt::eps());
+        EXPECT_NEAR(mt::zero(), st::imag(dots[j]-dots_ref[j]), dotsAbs[j]*10*mt::eps());
       }
     }
 
