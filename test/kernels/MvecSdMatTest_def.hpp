@@ -185,6 +185,11 @@ public:
       for (int i=0; i<m_; i++)
         for (int j=0; j<k_; j++)
         {
+// TODO (melven): this will most probably not work, see remarks below
+// * compiler optimization will most probably optimize this away
+// * one can also improve the multiplication
+// * high precision examples are in src/kernels/builtin/*prec*
+// -> long double for reference data should be the better way (hoping/checking that long double != double!)
           ST err_ij=st::zero();
           // manually compute V1(:,i)*V2(:,j) using compensated summation ("Kahan")
           // for achieving good accuracy

@@ -295,3 +295,380 @@ using namespace testing;
 #include "phist_gen_z.h"
 #include "MvecSdMatTest_def.hpp"
 
+
+// large tests for verifying high precision calculations
+#undef _N_
+#define _N_ 4000000
+#undef _M_
+#define _M_ 1
+#undef _K_
+#define _K_ 1
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecSdMatTest_4M_1_1
+
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_4M_1_1
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_4M_1_1
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_4M_1_1
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef _K_
+#define _K_ 2
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecSdMatTest_4M_1_2
+
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_4M_1_2
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_4M_1_2
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_4M_1_2
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef _K_
+#define _K_ 4
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecSdMatTest_4M_1_4
+
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_4M_1_4
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_4M_1_4
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_4M_1_4
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
+
+#undef _M_
+#define _M_ 2
+#undef _K_
+#define _K_ 1
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecSdMatTest_4M_2_1
+
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_4M_2_1
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_4M_2_1
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_4M_2_1
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef _K_
+#define _K_ 2
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecSdMatTest_4M_2_2
+
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_4M_2_2
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_4M_2_2
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_4M_2_2
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef _K_
+#define _K_ 4
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecSdMatTest_4M_2_4
+
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_4M_2_4
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_4M_2_4
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_4M_2_4
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
+
+#undef _M_
+#define _M_ 4
+#undef _K_
+#define _K_ 1
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecSdMatTest_4M_4_1
+
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_4M_4_1
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_4M_4_1
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_4M_4_1
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef _K_
+#define _K_ 2
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecSdMatTest_4M_4_2
+
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_4M_4_2
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_4M_4_2
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_4M_4_2
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef _K_
+#define _K_ 4
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecSdMatTest_4M_4_4
+
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_4M_4_4
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_4M_4_4
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_4M_4_4
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
+
+
+#undef _M_
+#define _M_ 10
+#undef _K_
+#define _K_ 1
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecSdMatTest_4M_10_1
+
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_4M_10_1
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_4M_10_1
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_4M_10_1
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef _K_
+#define _K_ 2
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecSdMatTest_4M_10_2
+
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_4M_10_2
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_4M_10_2
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_4M_10_2
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef _K_
+#define _K_ 4
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecSdMatTest_4M_10_4
+
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_4M_10_4
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_4M_10_4
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_4M_10_4
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
+
