@@ -76,4 +76,12 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
 }
 
 
+// precise reduction of gathered MPI results of all processes for block size 1
+void prec_reduction_1(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC);
+// precise reduction of gathered MPI results of all processes for block size 2
+void prec_reduction_2(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC);
+// precise reduction of gathered MPI results of all processes for block size 4
+void prec_reduction_4(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC);
+
+
 #endif

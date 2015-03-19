@@ -652,7 +652,7 @@ void dgemm_sB_prec_2_k(int nrows, int k, const double *restrict x, const double 
   {
     // buffer for omp thread result + padding to prevent false sharing
     __m256d s_[(k/8+1)*k][nt];
-    __m256d c_[(8+1)*k][nt];
+    __m256d c_[(k/8+1)*k][nt];
 
 #pragma omp parallel shared(s_,c_)
     {
@@ -719,6 +719,97 @@ void dgemm_sB_prec_2_k(int nrows, int k, const double *restrict x, const double 
       c = _mm_add_pd(c,tmp);
       _mm_storeu_pd(&res[j*2],  s);
       _mm_storeu_pd(&resC[j*2], c);
+    }
+  }
+
+}
+
+
+// more accurate gemm product x'y AVX2 kernel
+void dgemm_sB_prec_1_k(int nrows, int k, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+{
+  if( !is_aligned(x,32) )
+  {
+    printf("not aligned %lx\n", (uintptr_t)(void*)x);
+    exit(1);
+    return;
+  }
+
+  if( !is_aligned(y,32) )
+  {
+    printf("not aligned %lx\n", (uintptr_t)(void*)y);
+    exit(1);
+    return;
+  }
+
+
+#ifdef PHIST_HAVE_OPENMP
+  int nt = omp_get_max_threads();
+#else
+  int nt = 1;
+#endif
+
+  {
+    // buffer for omp thread result + padding to prevent false sharing
+    __m256d s_[(k/8+1)*k][nt];
+    __m256d c_[(k/8+1)*k][nt];
+
+#pragma omp parallel shared(s_,c_)
+    {
+      // initialize sum
+      __m256d s[k];
+      __m256d c[k];
+      for(int j = 0; j < k; j++)
+      {
+        s[j] = _mm256_setzero_pd();
+        c[j] = _mm256_setzero_pd();
+      }
+
+#pragma omp for schedule(static)
+      for(int i = 0; i < nrows; i++)
+      {
+        __m256d xi = _mm256_load_pd(&x[4*i]);
+        for(int j = 0; j < k; j++)
+        {
+          __m256d yij = _mm256_broadcast_sd(&y[k*i+j]);
+          __m256d p, pi;
+          MM256_2MULTFMA(xi,yij,p,pi);
+          __m256d sigma, oldS = s[j];
+          MM256_FAST2SUM(oldS,p, s[j],sigma);
+          //MM256_2SUM(oldS,p, s[j],sigma); // more FP ops than Kahan-style FAST2SUM, but exacter
+          __m256d tmp = _mm256_add_pd(pi,sigma);
+          c[j] = _mm256_add_pd(c[j],tmp);
+        }
+      }
+
+      int it = omp_get_thread_num();
+      for(int j = 0; j < k; j++)
+      {
+        s_[j][it] = s[j];
+        c_[j][it] = c[j];
+      }
+    }
+
+
+    // handcoded omp reduction
+    for(int i = 1; i < nt; i++)
+    {
+      for(int j = 0; j < k; j++)
+      {
+        __m256d sigma, oldS = s_[j][0];
+        MM256_FAST2SUM(oldS, s_[j][i], s_[j][0], sigma);
+        //MM256_2SUM(oldS, s_[0][i], s_[j][0], sigma);
+        __m256d tmp = _mm256_add_pd(c_[j][i],sigma);
+        c_[j][0] = _mm256_add_pd(c_[j][0], tmp);
+      }
+    }
+
+
+    // sum up 4 elements in mm256 to 1 double
+    // and store result in res,resC
+    for(int j = 0; j < k; j++)
+    {
+      prec_reduction_1(4, &s_[j][0], &c_[j][0], &res[j], &resC[j]);
     }
   }
 

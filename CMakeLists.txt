@@ -388,6 +388,7 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/axpy_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/axpy_kernels_nt.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gather_scatter_kernels.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/prec_helpers.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/dot_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/dot_kernels_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB.f90
