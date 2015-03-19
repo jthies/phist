@@ -28,6 +28,7 @@ Teuchos::RCP<node_t> ghost::TsqrAdaptor< _ST_ >::node_=Teuchos::null;
 #define PHIST_GHOST_TASK_END
 
 
+
 // we implement only the double precision real type D
 extern "C" void SUBR(type_avail)(int* iflag)
 {
@@ -1209,15 +1210,21 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
 }
 
 //! y=alpha*A*x+beta*y.
-extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
+extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, ////////////////////////////////////////////////////////////////////
 _ST_ beta, TYPE(mvec_ptr) vy, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
+  int spmv_mode;
+  spmv_mode=*iflag;
+  
   *iflag=0;
+  
+  
 
 #ifdef PHIST_TIMEMONITOR
   int nvec;
+ 
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, iflag), *iflag);
   for(int i = 0; i < nvec; i++)
     phist_totalMatVecCount();
@@ -1236,6 +1243,7 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* iflag)
     else if (beta!=st::one())
     {
 PHIST_GHOST_TASK_BEGIN
+
 PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
       y->scale(y,(void*)&beta);
 PHIST_GHOST_TASK_END
@@ -1247,7 +1255,22 @@ PHIST_GHOST_TASK_BEGIN
 PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
     ghost_spmv_flags_t spMVM_opts=GHOST_SPMV_DEFAULT;
     // currently the vector mode is the only one working with MPI and multiple RHS
-    spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_VECTOR);
+  
+    if (spmv_mode == 0)
+    {
+      spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_VECTOR); 
+    }
+
+    else if (spmv_mode == 1)
+    {
+      spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_OVERLAP);
+    }
+
+    else if (spmv_mode == 2)
+    {
+      spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_TASK);
+    }
+
     //void* old_scale = A->traits->scale;
     if (beta==st::one())
     {
@@ -1268,7 +1291,7 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
     }
 PHIST_GHOST_TASK_END
   }
-}
+} ////////////////////////////////////////////////////////////////
 
 //! y=alpha*A*x+beta*y.
 extern "C" void SUBR(sparseMatT_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
@@ -1280,7 +1303,7 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* iflag)
   return;
 }
 //! y[i]=alpha*(A*x[i]+shifts[i]*x[i]) + beta*y[i]
-extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA,
+extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA,  
         const _ST_ shifts[], TYPE(const_mvec_ptr) vx, _ST_ beta, TYPE(mvec_ptr) vy, int* 
         iflag)
 {
