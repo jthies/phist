@@ -28,12 +28,17 @@ typedef double complex d_complex_t;
 
 #endif
 
+#include "Epetra_config.h"
 
 //! type of node-local indices
 typedef int lidx_t;
 
 //! type of global indices
+#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
 typedef int gidx_t;
+#else
+typedef long long int gidx_t;
+#endif
 
 #define PRlidx "d"
 #define PRgidx "d"
