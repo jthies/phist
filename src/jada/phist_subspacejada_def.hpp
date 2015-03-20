@@ -98,8 +98,8 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
                          bool innerIMGS,           bool innerGMRESabortAfterFirstConverged,
                          bool symmetric,
                          TYPE(mvec_ptr) Q__,       TYPE(sdMat_ptr) R_,
-
-                         _MT_* resNorm,            int* iflag)
+                         _CT_* ev,                 _MT_* resNorm,
+                         int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
@@ -833,6 +833,9 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
 
   // copy result to Q_
   PHIST_CHK_IERR(SUBR(mvec_set_block)(Q__, Q, 0, nEig_-1, iflag), *iflag);
+  // copy resulting eigenvalues to ev
+  for(int i = 0; i < nEig_; i++)
+    ev[i] = ev_H[i];
 
 
   //------------------------------- delete vectors and matrices --------------------

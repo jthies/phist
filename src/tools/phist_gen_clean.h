@@ -21,6 +21,10 @@
 #undef _MT_
 #endif
 
+#ifdef _CT_
+#undef _CT_
+#endif
+
 #ifdef CONJ
 #undef CONJ
 #endif
