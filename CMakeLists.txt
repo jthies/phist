@@ -177,8 +177,8 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -debug")
   set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -debug")
 
-  set (CMAKE_C_FLAGS_DEBUG        "-check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
-  set (CMAKE_CXX_FLAGS_DEBUG      "-check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
+  set (CMAKE_C_FLAGS_DEBUG        "-check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
+  set (CMAKE_CXX_FLAGS_DEBUG      "-check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
   set (CMAKE_Fortran_FLAGS_DEBUG  "-check all -debug -traceback -DTESTING")
 
   # for ipo
@@ -389,11 +389,12 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/axpy_kernels_nt.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gather_scatter_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/prec_helpers.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/axpy_kernels_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/dot_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/dot_kernels_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sC.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sC_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmvm_kernels_nt.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmvm_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmv_buff_cpy_kernels.f90

@@ -80,4 +80,43 @@ void prec_reduction_4(int n, const double *restrict s_, const double *restrict c
 }
 
 
+// precise reduction of gathered MPI results of all processes for larger data
+void prec_reduction_4k(int n, int k, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
+{
+  // we need to sum up s_, c_
+  // we use AVX code here hoping the compiler doesn't optimize it away this way
+  if( k % 4 != 0 )
+  {
+    printf("wrong dimensions: %i\n", k);
+    exit(1);
+    return;
+  }
+
+  __m256d s[k/4];
+  __m256d c[k/4];
+  for(int j = 0; j < k/4; j++)
+  {
+    s[j] = _mm256_loadu_pd(&s_[4*j]);
+    c[j] = _mm256_loadu_pd(&c_[4*j]);
+  }
+  for(int i = 1; i < n; i++)
+  {
+    for(int j = 0; j < k/4; j++)
+    {
+      __m256d si = _mm256_loadu_pd(&s_[k*i+4*j]);
+      __m256d ci = _mm256_loadu_pd(&c_[k*i+4*j]);
+      __m256d sigma, oldS = s[j];
+      MM256_FAST2SUM(oldS, si, s[j], sigma);
+      //MM256_2SUM(oldS, si, s, sigma);
+      __m256d tmp = _mm256_add_pd(ci,sigma);
+      c[j] = _mm256_add_pd(c[j], tmp);
+    }
+  }
+  for(int j = 0; j < k/4; j++)
+  {
+    _mm256_storeu_pd(&r[4*j],s[j]);
+    _mm256_storeu_pd(&rC[4*j],c[j]);
+  }
+}
+
 

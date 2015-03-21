@@ -133,6 +133,112 @@ module mvec_module
       real(kind=C_DOUBLE), intent(in) :: s, c
       real(kind=C_DOUBLE), intent(out) :: res, resC
     end subroutine
+    !void prec_reduction_4k(int n, int k, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
+    subroutine prec_reduction_4k(n, k, s, c, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k
+      real(kind=C_DOUBLE), intent(in) :: s, c
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void dgemm_sC_self_prec_4(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
+    subroutine dgemm_sC_self_prec_4(n, x, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void dgemm_sC_self_prec_2(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
+    subroutine dgemm_sC_self_prec_2(n, x, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void dgemm_sC_prec_4_4(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+    subroutine dgemm_sC_prec_4_4(n, x, y, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: x, y
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void dgemm_sC_prec_2_2(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+    subroutine dgemm_sC_prec_2_2(n, x, y, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: x, y
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void dgemm_sC_prec_2_1(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+    subroutine dgemm_sC_prec_2_1(n, x, y, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: x, y
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void dgemm_sC_prec_4_2(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+    subroutine dgemm_sC_prec_4_2(n, x, y, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: x, y
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void dgemm_sC_prec_4_1(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+    subroutine dgemm_sC_prec_4_1(n, x, y, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: x, y
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void dgemm_sC_prec_4_k(int nrows, int k, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+    subroutine dgemm_sC_prec_4_k(n, k, x, y, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k
+      real(kind=C_DOUBLE), intent(in) :: x, y
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void dgemm_sC_prec_2_k(int nrows, int k, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+    subroutine dgemm_sC_prec_2_k(n, k, x, y, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k
+      real(kind=C_DOUBLE), intent(in) :: x, y
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void dgemm_sC_prec_1_k(int nrows, int k, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+    subroutine dgemm_sC_prec_1_k(n, k, x, y, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k
+      real(kind=C_DOUBLE), intent(in) :: x, y
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void daxpby_prec_1(double alpha, const double *restrict a, double, beta, double *restrict b, double *restrict bC)
+    subroutine daxpby_prec_1(alpha, a, beta, b, bC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      real(kind=C_DOUBLE), value :: alpha, beta
+      real(kind=C_DOUBLE), intent(in) :: a
+      real(kind=C_DOUBLE), intent(inout) :: b, bC
+    end subroutine
+    !void daxpby_prec_2(double alpha, const double *restrict a, double, beta, double *restrict b, double *restrict bC)
+    subroutine daxpby_prec_2(alpha, a, beta, b, bC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      real(kind=C_DOUBLE), value :: alpha, beta
+      real(kind=C_DOUBLE), intent(in) :: a
+      real(kind=C_DOUBLE), intent(inout) :: b, bC
+    end subroutine
+    !void daxpby_prec_4(double alpha, const double *restrict a, double, beta, double *restrict b, double *restrict bC)
+    subroutine daxpby_prec_4(alpha, a, beta, b, bC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      real(kind=C_DOUBLE), value :: alpha, beta
+      real(kind=C_DOUBLE), intent(in) :: a
+      real(kind=C_DOUBLE), intent(inout) :: b, bC
+    end subroutine
+    !void daxpby_prec_4k(int k, double alpha, const double *restrict a, double, beta, double *restrict b, double *restrict bC)
+    subroutine daxpby_prec_4k(k, alpha, a, beta, b, bC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: k
+      real(kind=C_DOUBLE), value :: alpha, beta
+      real(kind=C_DOUBLE), intent(in) :: a
+      real(kind=C_DOUBLE), intent(inout) :: b, bC
+    end subroutine
   end interface
 
 contains
@@ -908,7 +1014,7 @@ contains
 
   !==================================================================================
   ! special gemm routine for mvecT_times_mvec
-  subroutine mvecT_times_mvec(alpha,v,w,beta,m)
+  subroutine mvecT_times_mvec(alpha,v,w,beta,m,iflag)
     use mpi
     !--------------------------------------------------------------------------------
     real(kind=8),  intent(in)    :: alpha
@@ -916,12 +1022,15 @@ contains
     type(MVec_t),  intent(in)    :: w
     real(kind=8),  intent(in)    :: beta
     type(SDMat_t), intent(inout) :: M
+    integer,       intent(inout) :: iflag
     !--------------------------------------------------------------------------------
-    integer :: nrows, nvecv, nvecw, ldv, ldw, ierr
+    integer :: nrows, nvecv, nvecw, ldv, ldw
     logical :: strided_v, strided_w
     logical :: handled, tmp_transposed
     real(kind=8), allocatable :: tmp(:,:)
     real(kind=8), allocatable :: tmp_(:,:)
+    real(kind=8), allocatable :: localBuff(:,:,:), globalBuff(:,:,:,:), globalBuff_(:,:,:,:)
+    real(kind=8), allocatable :: mBuff(:,:), mBuffC(:,:)
     !--------------------------------------------------------------------------------
 
     ! check if we only need to scale
@@ -954,6 +1063,161 @@ contains
 
     handled = .false.
     tmp_transposed = .false.
+
+    ! check if we need higher precision
+    if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
+      ! check if we can do it
+      if( strided_w .or. strided_v ) then
+        iflag = -99
+        return
+      end if
+
+      if( nvecv .eq. 4 ) then
+        handled = .true.
+        tmp_transposed = .false.
+        allocate(localBuff(4,nvecw,2))
+        if( nvecw .eq. 4 ) then
+          if( loc(v%val) .eq. loc(w%val) ) then
+            call dgemm_sC_self_prec_4(nrows, v%val(v%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+          else
+            call dgemm_sC_prec_4_4(nrows, v%val(v%jmin,1), w%val(w%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+          end if
+        else if( nvecw .eq. 2 ) then
+          call dgemm_sC_prec_4_2(nrows, v%val(v%jmin,1), w%val(w%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+        else if( nvecw .eq. 1 ) then
+          call dgemm_sC_prec_4_1(nrows, v%val(v%jmin,1), w%val(w%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+        else
+          call dgemm_sC_prec_4_k(nrows, nvecw, v%val(v%jmin,1), w%val(w%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+        end if
+      end if
+      if( .not. handled .and. nvecw .eq. 4 ) then
+        handled = .true.
+        tmp_transposed = .true.
+        allocate(localBuff(4,nvecv,2))
+        if( nvecv .eq. 2 ) then
+          call dgemm_sC_prec_4_2(nrows, w%val(w%jmin,1), v%val(v%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+        else if( nvecv .eq. 1 ) then
+          call dgemm_sC_prec_4_1(nrows, w%val(w%jmin,1), v%val(v%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+        else
+          call dgemm_sC_prec_4_k(nrows, nvecv, w%val(w%jmin,1), v%val(v%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+        end if
+      end if
+      if( .not. handled .and. nvecv .eq. 2 .and. mod(nvecv*nrows,4) .eq. 0 ) then
+        handled = .true.
+        tmp_transposed = .false.
+        allocate(localBuff(2,nvecw,2))
+        if(nvecw .eq. 2 ) then
+          if( loc(v%val) .eq. loc(w%val) ) then
+            call dgemm_sC_self_prec_2(nrows, v%val(v%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+          else
+            call dgemm_sC_prec_2_2(nrows, v%val(v%jmin,1), w%val(w%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+          end if
+        else if( nvecv .eq. 1 ) then
+          call dgemm_sC_prec_2_1(nrows, v%val(v%jmin,1), w%val(w%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+        else
+          call dgemm_sC_prec_2_k(nrows, nvecv, v%val(v%jmin,1), w%val(w%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+        end if
+      end if
+      if( .not. handled .and. nvecw .eq. 2 .and. mod(nvecw*nrows,4) .eq. 0 ) then
+        handled = .true.
+        tmp_transposed = .true.
+        allocate(localBuff(2,nvecv,2))
+        if( nvecv .eq. 1 ) then
+          call dgemm_sC_prec_2_1(nrows, w%val(w%jmin,1), v%val(v%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+        else
+          call dgemm_sC_prec_2_k(nrows, nvecv, w%val(w%jmin,1), v%val(v%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+        end if
+      end if
+      if( .not. handled .and. nvecv .eq. 1 .and. mod(nvecv*nrows,4) .eq. 0 ) then
+        handled = .true.
+        tmp_transposed = .false.
+        allocate(localBuff(1,nvecw,2))
+        if(nvecw .eq. 1 ) then
+          if( loc(v%val) .eq. loc(w%val) ) then
+            call ddot_self_prec_1(nrows, v%val(v%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+          else
+            call ddot_prec_1(nrows, v%val(v%jmin,1), w%val(w%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+          end if
+        else
+          call dgemm_sC_prec_1_k(nrows, nvecw, v%val(v%jmin,1), w%val(w%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+        end if
+      end if
+      if( .not. handled .and. nvecw .eq. 1 .and. mod(nvecw*nrows,4) .eq. 0 ) then
+        handled = .true.
+        tmp_transposed = .true.
+        allocate(localBuff(1,nvecv,2))
+        call dgemm_sC_prec_1_k(nrows, nvecv, w%val(w%jmin,1), v%val(v%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+      end if
+
+      if( .not. handled ) then
+        iflag = -99
+        return
+      end if
+write(*,*) 'here v', nvecv, v%val
+write(*,*) 'here w', nvecw, w%val
+write(*,*) 'here buff', localBuff(:,:,1)
+write(*,*) 'here buffC', localBuff(:,:,2)
+
+      ! gather results
+      if( tmp_transposed ) then
+        allocate(globalBuff(nvecw,nvecv,2,v%map%nProcs))
+        allocate(globalBuff_(nvecw,nvecv,v%map%nProcs,2))
+      else
+        allocate(globalBuff(nvecv,nvecw,2,v%map%nProcs))
+        allocate(globalBuff_(nvecv,nvecw,v%map%nProcs,2))
+      end if
+      call MPI_Allgather(localBuff,2*nvecv*nvecw,MPI_DOUBLE_PRECISION, &
+        &                globalBuff,2*nvecv*nvecw,MPI_DOUBLE_PRECISION, &
+        &                v%map%comm, iflag)
+      globalBuff_(:,:,:,1) = globalBuff(:,:,1,:)
+      globalBuff_(:,:,:,2) = globalBuff(:,:,2,:)
+write(*,*) 'here globalBuff', globalBuff_(:,:,:,1)
+write(*,*) 'here globalBuffC', globalBuff_(:,:,:,2)
+      ! MPI reduction
+      if( nvecv*nvecw .eq. 1 ) then
+        call prec_reduction_1(v%map%nProcs, globalBuff_(1,1,1,1), globalBuff_(1,1,1,2), &
+          &                                 localBuff(1,1,1), localBuff(1,1,2)          )
+      else if( nvecv*nvecw .eq. 2 ) then
+        call prec_reduction_2(v%map%nProcs, globalBuff_(1,1,1,1), globalBuff_(1,1,1,2), &
+          &                                 localBuff(1,1,1), localBuff(1,1,2)          )
+      else if( nvecv*nvecw .eq. 4 ) then
+        call prec_reduction_4(v%map%nProcs, globalBuff_(1,1,1,1), globalBuff_(1,1,1,2), &
+          &                                 localBuff(1,1,1), localBuff(1,1,2)          )
+      else
+        call prec_reduction_4k(v%map%nProcs, nvecv*nvecw, globalBuff_(1,1,1,1), globalBuff_(1,1,1,2), &
+          &                                               localBuff(1,1,1), localBuff(1,1,2)          )
+      end if
+write(*,*) 'here vTw', localBuff(:,:,1)
+write(*,*) 'here vTw _C', localBuff(:,:,2)
+
+      ! copy it to a buffer again for the final calculation of m = alpha*res + beta*m
+      allocate(mBuff(nvecv,nvecw), tmp(nvecv,nvecw), mBuffC(nvecv,nvecw))
+      mBuff = M%val(M%imin:M%imax,M%jmin:M%jmax)
+      localBuff(:,:,1) = localBuff(:,:,1) + localBuff(:,:,2)
+      if( tmp_transposed ) then
+        tmp = transpose(localBuff(:,:,1))
+      else
+        tmp = localBuff(:,:,1)
+      end if
+write(*,*) 'here mBuff', mBuff
+write(*,*) 'here tmp', tmp
+write(*,*) 'here alpha beta', alpha, beta
+      if( nvecv*nvecw .eq. 1 ) then
+        call daxpby_prec_1(alpha, tmp(1,1), beta, mBuff(1,1), mBuffC(1,1))
+      else if( nvecv*nvecw .eq. 2 ) then
+        call daxpby_prec_2(alpha, tmp(1,1), beta, mBuff(1,1), mBuffC(1,1))
+      else if( nvecv*nvecw .eq. 4 ) then
+        call daxpby_prec_4(alpha, tmp(1,1), beta, mBuff(1,1), mBuffC(1,1))
+      else
+        call daxpby_prec_4k(nvecv*nvecw, alpha, tmp(1,1), beta, mBuff(1,1), mBuffC(1,1))
+      end if
+write(*,*) 'here mBuff', mBuff
+write(*,*) 'here mBuffC', mBuffC
+      ! set result
+      M%val(M%imin:M%imax,M%jmin:M%jmax) = mBuff + mBuffC
+      return
+    end if
+
 
     if( .not. strided_v ) then
       if( nvecv .eq. 1 ) then
@@ -1048,7 +1312,7 @@ contains
     else
       tmp_ = tmp
     end if
-    call MPI_Allreduce(tmp_,tmp,nvecv*nvecw,MPI_DOUBLE_PRECISION,MPI_SUM,v%map%comm,ierr)
+    call MPI_Allreduce(tmp_,tmp,nvecv*nvecw,MPI_DOUBLE_PRECISION,MPI_SUM,v%map%comm,iflag)
 
     M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
     !--------------------------------------------------------------------------------
@@ -1064,7 +1328,7 @@ contains
     integer,        intent(out)   :: nullSpaceDim
     !--------------------------------------------------------------------------------
     real(kind=8), parameter :: eps = 1.e-10
-    integer :: i, i_, nvec, rank, k
+    integer :: i, i_, nvec, rank, k, iflag
     type(MVec_t) :: vi, vipn
     type(SDMat_t) :: Ripn
     real(kind=8) :: rii(1:1)
@@ -1110,7 +1374,7 @@ contains
           Ripn%imin = R%imin+i_
           Ripn%imax = R%imin+i_
           Ripn%jmin = R%jmin+i+1
-          call mvecT_times_mvec(1._8,vi,vipn,0._8,Ripn)
+          call mvecT_times_mvec(1._8,vi,vipn,0._8,Ripn,idum)
           call mvec_times_sdmat(-1._8,vi,Ripn,1._8,vipn)
         end if
         ! copy vi to column i_, because previous vector was not linearly independent
@@ -1144,7 +1408,7 @@ contains
         vi%jmin = v%jmin
         vi%jmax = v%jmin+rank-1
         vipn%jmin = v%jmin+rank
-        call mvecT_times_mvec(1._8,vi,vipn,0._8,Ripn)
+        call mvecT_times_mvec(1._8,vi,vipn,0._8,Ripn,idum)
         call mvec_times_sdmat(-1._8,vi,Ripn,1._8,vipn)
       end if
 
@@ -1168,7 +1432,7 @@ contains
         if( i .lt. nvec-1 ) then
           vipn%jmin = v%jmin+i+1
           Ripn%jmin = i-rank+2
-          call mvecT_times_mvec(1._8,vi,vipn,0._8,Ripn)
+          call mvecT_times_mvec(1._8,vi,vipn,0._8,Ripn,idum)
           call mvec_times_sdmat(-1._8,vi,Ripn,1._8,vipn)
         end if
       end do
@@ -1968,12 +2232,12 @@ contains
   end subroutine phist_Dmvec_times_sdMat_inplace
 
 
-  subroutine phist_DmvecT_times_mvec(alpha, v_ptr, w_ptr, beta, M_ptr, ierr) bind(C,name='phist_DmvecT_times_mvec_f')
+  subroutine phist_DmvecT_times_mvec(alpha, v_ptr, w_ptr, beta, M_ptr, iflag) bind(C,name='phist_DmvecT_times_mvec_f')
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),        value         :: v_ptr, w_ptr, M_ptr
     real(C_DOUBLE),     value         :: alpha, beta
-    integer(C_INT),     intent(out)   :: ierr
+    integer(C_INT),     intent(inout) :: iflag
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: v, w
     type(SDMat_t), pointer :: M
@@ -1982,7 +2246,7 @@ contains
     if( .not. c_associated(v_ptr) .or. &
       & .not. c_associated(w_ptr) .or. &
       & .not. c_associated(M_ptr)      ) then
-      ierr = -88
+      iflag = -88
       return
     end if
 
@@ -1992,20 +2256,18 @@ contains
 
     if( v%jmax-v%jmin .ne. M%imax-M%imin .or. &
       & M%jmax-M%jmin .ne. w%jmax-w%jmin      ) then
-      ierr = -1
+      iflag = -1
       return
     end if
 
 #ifdef TESTING
     if( .not. map_compatible_map(v%map, w%map) ) then
-      ierr = -1
+      iflag = -1
       return
     end if
 #endif
 
-    call mvecT_times_mvec(alpha,v,w,beta,M)
-
-    ierr = 0
+    call mvecT_times_mvec(alpha,v,w,beta,M,iflag)
 
   end subroutine phist_DmvecT_times_mvec
 

@@ -126,7 +126,7 @@ public:
   }
 };
 
-  // check ones(n,m)'*ones(n,k)=n*ones(m,k)
+  // check ones(n,m)'*ones(n,k)=n*ones(m,k), and columns with 1, 2, 3...
   TEST_F(CLASSNAME, mvecT_times_mvec) 
   {
     if (typeImplemented_)
@@ -150,9 +150,60 @@ public:
       V2Test::PrintVector(*cout,"ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
+      ASSERT_EQ(0,iflag_);
+
+      // fill rows with 1,2,3,4, ...
+      for (int ii=0; ii< nloc_; ii++)
+      {
+        for (int j=0; j<k_; j++)
+          V2_vp_[VIDX(ii,j,ldaV2_)] = -st::one()*(j+1);
+        for (int i=0; i<m_; i++)
+          V1_vp_[VIDX(ii,i,ldaV1_)] = st::one()*(i+1)*1./nglob_;
+      }
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // check result
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      for(int i = 0; i < m_; i++)
+      {
+        for(int j = 0; j < k_; j++)
+        {
+          _MT_ val = -mt::one()*(i+1)*(j+1);
+          ASSERT_NEAR(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]), 100*mt::eps());
+          ASSERT_NEAR(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), 100*mt::eps());
+        }
+      }
+
+      // fill columns with row/i and row/(i+1)
+      // exploits sum_(k=1)^n 1/(k*(k+1)) = 1 - 1/(n+1)
+      gidx_t ilower;     
+      phist_map_get_ilower(map_,&ilower,&iflag_);
+      for (int ii=0; ii< nloc_; ii++)
+      {
+        for (int j=0; j<k_; j++)
+          V2_vp_[VIDX(ii,j,ldaV2_)] = (_ST_) -st::one()*(j+1)*1.0l/(ilower+ii+1);
+        for (int i=0; i<m_; i++)
+          V1_vp_[VIDX(ii,i,ldaV1_)] = (_ST_) st::one()*(i+1)*1.0l/(ilower+ii+2);
+      }
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // check result
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for(int i = 0; i < m_; i++)
+      {
+        for(int j = 0; j < k_; j++)
+        {
+          _MT_ val = -mt::one()*(i+1)*(j+1)*(1.0l - 1.0l/(_N_+1));
+          ASSERT_NEAR(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]), 100*mt::eps());
+          ASSERT_NEAR(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), 100*mt::eps());
+        }
+      }
+
+
     }
   }
 
@@ -175,6 +226,59 @@ public:
       ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
+
+      // fill rows with 1,2,3,4, ...
+      for (int ii=0; ii< nloc_; ii++)
+      {
+        for (int j=0; j<k_; j++)
+          V2_vp_[VIDX(ii,j,ldaV2_)] = -st::one()*(j+1);
+        for (int i=0; i<m_; i++)
+          V1_vp_[VIDX(ii,i,ldaV1_)] = st::one()*(i+1)*1./nglob_;
+      }
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // check result
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for(int i = 0; i < m_; i++)
+      {
+        for(int j = 0; j < k_; j++)
+        {
+          _MT_ val = -mt::one()*(i+1)*(j+1);
+          ASSERT_REAL_EQ(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]));
+          ASSERT_REAL_EQ(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]));
+        }
+      }
+
+      // fill columns with row/i and row/(i+1)
+      // exploits sum_(k=1)^n 1/(k*(k+1)) = 1 - 1/(n+1)
+      gidx_t ilower;     
+      phist_map_get_ilower(map_,&ilower,&iflag_);
+      for (int ii=0; ii< nloc_; ii++)
+      {
+        for (int j=0; j<k_; j++)
+          V2_vp_[VIDX(ii,j,ldaV2_)] = (_ST_) -st::one()*(j+1)*1.0l/(ilower+ii+1);
+        for (int i=0; i<m_; i++)
+          V1_vp_[VIDX(ii,i,ldaV1_)] = (_ST_) st::one()*(i+1)*1.0l/(ilower+ii+2);
+      }
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // check result
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for(int i = 0; i < m_; i++)
+      {
+        for(int j = 0; j < k_; j++)
+        {
+          _MT_ val = -mt::one()*(i+1)*(j+1)*(1.0l - 1.0l/(_N_+1));
+          ASSERT_NEAR(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]), 100*mt::eps());
+          ASSERT_NEAR(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), 100*mt::eps());
+        }
+      }
+
+
     }
   }
 #endif
@@ -236,8 +340,8 @@ public:
           MPI_Allreduce(MPI_IN_PLACE,&dotAbs_ij,1,MPI_LONG_DOUBLE,MPI_SUM,mpi_comm_);
 #endif
           _MT_ cond = dotAbs_ij / std::abs(dot_ij);
-          EXPECT_NEAR(mt::zero(), st::real((_ST_)dot_ij-M1_vp_[MIDX(i,j,ldaM1_)])/dotAbs_ij, cond*1000*mt::eps());
-          EXPECT_NEAR(mt::zero(), st::imag((_ST_)dot_ij-M1_vp_[MIDX(i,j,ldaM1_)])/dotAbs_ij, cond*1000*mt::eps());
+          EXPECT_NEAR(st::real((_ST_)dot_ij), st::real(M1_vp_[MIDX(i,j,ldaM1_)]), dotAbs_ij*cond*1000*mt::eps());
+          EXPECT_NEAR(st::imag((_ST_)dot_ij), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), dotAbs_ij*cond*1000*mt::eps());
         }
       }
     }
@@ -305,8 +409,8 @@ public:
 #endif
           _MT_ cond = dotAbs_ij / std::abs(dot_ij);
           PHIST_SOUT(PHIST_INFO, "error: %e (cond. number: %e, eps: %e)\n", st::abs((_ST_)dot_ij-M1_vp_[MIDX(i,j,ldaM1_)]),cond,mt::eps());
-          EXPECT_NEAR(mt::zero(), st::real((_ST_)dot_ij-M1_vp_[MIDX(i,j,ldaM1_)]), 2*cond*mt::eps());
-          EXPECT_NEAR(mt::zero(), st::imag((_ST_)dot_ij-M1_vp_[MIDX(i,j,ldaM1_)]), 2*cond*mt::eps());
+          EXPECT_NEAR(st::real((_ST_)dot_ij), st::real(M1_vp_[MIDX(i,j,ldaM1_)]), 2*cond*mt::eps());
+          EXPECT_NEAR(st::imag((_ST_)dot_ij), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), 2*cond*mt::eps());
         }
       }
     }
