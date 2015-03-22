@@ -13,6 +13,7 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_
         const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*iflag);
   if (filename==NULL)
   {
@@ -53,6 +54,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, cons
                 int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*iflag);
   gidx_t cols[maxnne];
   double vals[maxnne];
@@ -61,10 +63,13 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, cons
   Epetra_Map* map=NULL;
   PHIST_TRY_CATCH(map = new Epetra_Map(nrows,0,*comm),*iflag);
   PHIST_TRY_CATCH(A   = new Epetra_CrsMatrix(Copy,*map,maxnne),*iflag);
-  
   for (lidx_t i=0; i<A->NumMyRows(); i++)
   {
-    ghost_gidx_t row = A->GRID(i);
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    ghost_gidx_t row = (ghost_gidx_t)map->GID(i);
+#else
+    ghost_gidx_t row = (ghost_gidx_t)map->GID64(i);
+#endif
     ghost_lidx_t row_nnz;
     
     rowFunPtr(row,&row_nnz,cols,vals);
