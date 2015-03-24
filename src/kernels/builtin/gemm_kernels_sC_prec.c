@@ -18,9 +18,10 @@
 // more accurate gemm product x'x AVX2 kernel
 void dgemm_sc_self_prec_4(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
 {
+  printf("Entering %s\n", __FUNCTION__);
   if( !is_aligned(x,32) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)x);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
     exit(1);
     return;
   }
@@ -100,9 +101,10 @@ void dgemm_sc_self_prec_4(int nrows, const double *restrict x, double *restrict 
 // more accurate gemm product x'x AVX2 kernel
 void dgemm_sc_self_prec_2(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
 {
+  printf("Entering %s\n", __FUNCTION__);
   if( !is_aligned(x,32) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)x);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
     exit(1);
     return;
   }
@@ -135,7 +137,7 @@ void dgemm_sc_self_prec_2(int nrows, const double *restrict x, double *restrict 
         __m256d xi = _mm256_load_pd(&x[4*i]);
         for(int j = 0; j < 2; j++)
         {
-          __m256d xij = _mm256_set_pd(x[4*i+j],x[4*i+j],x[4*i+j+2],x[4*i+j+2]);
+          __m256d xij = _mm256_set_pd(x[4*i+j+2],x[4*i+j+2],x[4*i+j],x[4*i+j]);
           __m256d p, pi;
           MM256_2MULTFMA(xi,xij,p,pi);
           __m256d sigma, oldS = s[j];
@@ -191,16 +193,17 @@ void dgemm_sc_self_prec_2(int nrows, const double *restrict x, double *restrict 
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_sc_prec_4_4(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+  printf("Entering %s\n", __FUNCTION__);
   if( !is_aligned(x,32) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)x);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
     exit(1);
     return;
   }
 
   if( !is_aligned(y,32) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)y);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
     exit(1);
     return;
   }
@@ -279,16 +282,17 @@ void dgemm_sc_prec_4_4(int nrows, const double *restrict x, const double *restri
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_sc_prec_2_2(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+  printf("Entering %s\n", __FUNCTION__);
   if( !is_aligned(x,32) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)x);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
     exit(1);
     return;
   }
 
   if( !is_aligned(y,32) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)y);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
     exit(1);
     return;
   }
@@ -317,12 +321,12 @@ void dgemm_sc_prec_2_2(int nrows, const double *restrict x, const double *restri
       }
 
 #pragma omp for schedule(static)
-      for(int i = 0; i < nrows; i++)
+      for(int i = 0; i < nrows/2; i++)
       {
         __m256d xi = _mm256_load_pd(&x[4*i]);
         for(int j = 0; j < 2; j++)
         {
-          __m256d yij = _mm256_set_pd(y[4*i+j],y[4*i+j],y[4*i+j+2],y[4*i+j+2]);
+          __m256d yij = _mm256_set_pd(y[4*i+j+2],y[4*i+j+2],y[4*i+j],y[4*i+j]);
           __m256d p, pi;
           MM256_2MULTFMA(xi,yij,p,pi);
           __m256d sigma, oldS = s[j];
@@ -378,16 +382,17 @@ void dgemm_sc_prec_2_2(int nrows, const double *restrict x, const double *restri
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_sc_prec_2_1(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+  printf("Entering %s\n", __FUNCTION__);
   if( !is_aligned(x,32) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)x);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
     exit(1);
     return;
   }
 
   if( !is_aligned(y,32) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)y);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
     exit(1);
     return;
   }
@@ -411,10 +416,10 @@ void dgemm_sc_prec_2_1(int nrows, const double *restrict x, const double *restri
       __m256d c = _mm256_setzero_pd();
 
 #pragma omp for schedule(static)
-      for(int i = 0; i < nrows; i++)
+      for(int i = 0; i < nrows/2; i++)
       {
         __m256d xi = _mm256_load_pd(&x[4*i]);
-        __m256d yij = _mm256_set_pd(y[2*i],y[2*i],y[2*i+1],y[2*i+1]);
+        __m256d yij = _mm256_set_pd(y[2*i+1],y[2*i+1],y[2*i],y[2*i]);
         __m256d p, pi;
         MM256_2MULTFMA(xi,yij,p,pi);
         __m256d sigma, oldS = s;
@@ -460,16 +465,17 @@ void dgemm_sc_prec_2_1(int nrows, const double *restrict x, const double *restri
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_sc_prec_4_2(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+  printf("Entering %s\n", __FUNCTION__);
   if( !is_aligned(x,32) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)x);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
     exit(1);
     return;
   }
 
   if( !is_aligned(y,32) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)y);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
     exit(1);
     return;
   }
@@ -503,7 +509,7 @@ void dgemm_sc_prec_4_2(int nrows, const double *restrict x, const double *restri
         __m256d xi = _mm256_load_pd(&x[4*i]);
         for(int j = 0; j < 2; j++)
         {
-          __m256d yij = _mm256_set_pd(y[4*i+j],y[4*i+j],y[4*i+j+2],y[4*i+j+2]);
+          __m256d yij = _mm256_set_pd(y[2*i+j+2],y[2*i+j+2],y[2*i+j],y[2*i+j]);
           __m256d p, pi;
           MM256_2MULTFMA(xi,yij,p,pi);
           __m256d sigma, oldS = s[j];
@@ -550,16 +556,17 @@ void dgemm_sc_prec_4_2(int nrows, const double *restrict x, const double *restri
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_sc_prec_4_1(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+  printf("Entering %s\n", __FUNCTION__);
   if( !is_aligned(x,32) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)x);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
     exit(1);
     return;
   }
 
   if( !is_aligned(y,32) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)y);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
     exit(1);
     return;
   }
@@ -623,16 +630,17 @@ void dgemm_sc_prec_4_1(int nrows, const double *restrict x, const double *restri
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_sc_prec_4_k(int nrows, int k, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+  printf("Entering %s\n", __FUNCTION__);
   if( !is_aligned(x,32) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)x);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
     exit(1);
     return;
   }
 
   if( !is_aligned(y,32) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)y);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
     exit(1);
     return;
   }
@@ -710,16 +718,17 @@ void dgemm_sc_prec_4_k(int nrows, int k, const double *restrict x, const double 
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_sc_prec_2_k(int nrows, int k, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+  printf("Entering %s\n", __FUNCTION__);
   if( !is_aligned(x,32) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)x);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
     exit(1);
     return;
   }
 
   if( !is_aligned(y,32) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)y);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
     exit(1);
     return;
   }
@@ -750,10 +759,10 @@ void dgemm_sc_prec_2_k(int nrows, int k, const double *restrict x, const double 
 #pragma omp for schedule(static)
       for(int i = 0; i < nrows; i+=2)
       {
-        __m256d xi = _mm256_load_pd(&x[i]);
+        __m256d xi = _mm256_load_pd(&x[2*i]);
         for(int j = 0; j < k; j++)
         {
-          __m256d yij = _mm256_set_pd(y[k*i+j],y[k*i+j],y[k*(i+1)+j],y[k*(i+1)+j]);
+          __m256d yij = _mm256_set_pd(y[k*(i+1)+j],y[k*(i+1)+j],y[k*i+j],y[k*i+j]);
           __m256d p, pi;
           MM256_2MULTFMA(xi,yij,p,pi);
           __m256d sigma, oldS = s[j];
@@ -810,16 +819,17 @@ void dgemm_sc_prec_2_k(int nrows, int k, const double *restrict x, const double 
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_sc_prec_1_k(int nrows, int k, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+  printf("Entering %s\n", __FUNCTION__);
   if( !is_aligned(x,32) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)x);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
     exit(1);
     return;
   }
 
   if( !is_aligned(y,32) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)y);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
     exit(1);
     return;
   }
@@ -853,7 +863,7 @@ void dgemm_sc_prec_1_k(int nrows, int k, const double *restrict x, const double 
         __m256d xi = _mm256_load_pd(&x[i]);
         for(int j = 0; j < k; j++)
         {
-          __m256d yij = _mm256_set_pd(y[k*i+j],y[k*(i+1)+j],y[k*(i+2)+j],y[k*(i+3)+j]);
+          __m256d yij = _mm256_set_pd(y[k*(i+3)+j],y[k*(i+2)+j],y[k*(i+1)+j],y[k*(i+0)+j]);
           __m256d p, pi;
           MM256_2MULTFMA(xi,yij,p,pi);
           __m256d sigma, oldS = s[j];
@@ -895,6 +905,7 @@ void dgemm_sc_prec_1_k(int nrows, int k, const double *restrict x, const double 
       _mm256_storeu_pd(sj, s_[j][0]);
       _mm256_storeu_pd(cj, c_[j][0]);
       prec_reduction_1(4, sj, cj, &res[j], &resC[j]);
+printf("bla %e %e %e %e res %e\n", sj[0], sj[1], sj[2], sj[3], res[j]);
     }
   }
 

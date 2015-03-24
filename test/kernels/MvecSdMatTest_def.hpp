@@ -158,9 +158,9 @@ public:
       for (int ii=0; ii< nloc_; ii++)
       {
         for (int j=0; j<k_; j++)
-          V2_vp_[VIDX(ii,j,ldaV2_)] = -st::one()*(j+1);
+          V2_vp_[VIDX(ii,j,ldaV2_)] = -st::one()*(_MT_)(j+1);
         for (int i=0; i<m_; i++)
-          V1_vp_[VIDX(ii,i,ldaV1_)] = st::one()*(i+1)*1./nglob_;
+          V1_vp_[VIDX(ii,i,ldaV1_)] = st::one()*(_MT_)((i+1)*1.0l/nglob_);
       }
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -172,8 +172,8 @@ public:
         for(int j = 0; j < k_; j++)
         {
           _MT_ val = -mt::one()*(i+1)*(j+1);
-          ASSERT_NEAR(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]), 100*mt::eps());
-          ASSERT_NEAR(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), 100*mt::eps());
+          ASSERT_NEAR(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*10*mt::eps());
+          ASSERT_NEAR(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*10*mt::eps());
         }
       }
 
@@ -184,9 +184,9 @@ public:
       for (int ii=0; ii< nloc_; ii++)
       {
         for (int j=0; j<k_; j++)
-          V2_vp_[VIDX(ii,j,ldaV2_)] = (_ST_) -st::one()*(j+1)*1.0l/(ilower+ii+1);
+          V2_vp_[VIDX(ii,j,ldaV2_)] = (_ST_) -st::one()*(_MT_)((j+1)*1.0l/(ilower+ii+1));
         for (int i=0; i<m_; i++)
-          V1_vp_[VIDX(ii,i,ldaV1_)] = (_ST_) st::one()*(i+1)*1.0l/(ilower+ii+2);
+          V1_vp_[VIDX(ii,i,ldaV1_)] = (_ST_) st::one()*(_MT_)((i+1)*1.0l/(ilower+ii+2));
       }
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -198,8 +198,8 @@ public:
         for(int j = 0; j < k_; j++)
         {
           _MT_ val = -mt::one()*(i+1)*(j+1)*(1.0l - 1.0l/(_N_+1));
-          ASSERT_NEAR(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]), 100*mt::eps());
-          ASSERT_NEAR(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), 100*mt::eps());
+          ASSERT_NEAR(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*10*mt::eps());
+          ASSERT_NEAR(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*10*mt::eps());
         }
       }
 
@@ -231,9 +231,9 @@ public:
       for (int ii=0; ii< nloc_; ii++)
       {
         for (int j=0; j<k_; j++)
-          V2_vp_[VIDX(ii,j,ldaV2_)] = -st::one()*(j+1);
+          V2_vp_[VIDX(ii,j,ldaV2_)] = -st::one()*(_MT_)(j+1);
         for (int i=0; i<m_; i++)
-          V1_vp_[VIDX(ii,i,ldaV1_)] = st::one()*(i+1)*1./nglob_;
+          V1_vp_[VIDX(ii,i,ldaV1_)] = st::one()*(_MT_)((i+1)*1./nglob_);
       }
       iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
@@ -258,9 +258,9 @@ public:
       for (int ii=0; ii< nloc_; ii++)
       {
         for (int j=0; j<k_; j++)
-          V2_vp_[VIDX(ii,j,ldaV2_)] = (_ST_) -st::one()*(j+1)*1.0l/(ilower+ii+1);
+          V2_vp_[VIDX(ii,j,ldaV2_)] = (_ST_) -st::one()*(_MT_)((j+1)*1.0l/(ilower+ii+1));
         for (int i=0; i<m_; i++)
-          V1_vp_[VIDX(ii,i,ldaV1_)] = (_ST_) st::one()*(i+1)*1.0l/(ilower+ii+2);
+          V1_vp_[VIDX(ii,i,ldaV1_)] = (_ST_) st::one()*(_MT_)((i+1)*1.0l/(ilower+ii+2));
       }
       iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
@@ -714,6 +714,7 @@ public:
       SUBR(mvec_scale)(V1_,-st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
 
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::one(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
   
@@ -730,7 +731,7 @@ public:
           maxNorm12 = std::max(maxNorm12, normV1[i]*normV2[j]);
 
       // TODO: what is the correctly required precision here? 
-      ASSERT_NEAR(mt::one(),SdMatEqual(M1_,st::zero()),mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatEqual(M1_,st::zero()),100*mt::eps());
     }
   }
 #endif

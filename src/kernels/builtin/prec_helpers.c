@@ -17,6 +17,7 @@
 // precise reduction of gathered MPI results of all processes for block size 1
 void prec_reduction_1(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
 {
+  printf("Entering %s\n", __FUNCTION__);
   // we need to sum up s_, c_
   // we use AVX code here hoping the compiler doesn't optimize it away this way
   __m128d s = _mm_load_sd(&s_[0]);
@@ -39,6 +40,7 @@ void prec_reduction_1(int n, const double *restrict s_, const double *restrict c
 // precise reduction of gathered MPI results of all processes for block size 2
 void prec_reduction_2(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
 {
+  printf("Entering %s\n", __FUNCTION__);
   // we need to sum up s_, c_
   // we use AVX code here hoping the compiler doesn't optimize it away this way
   __m128d s = _mm_loadu_pd(s_);
@@ -61,6 +63,7 @@ void prec_reduction_2(int n, const double *restrict s_, const double *restrict c
 // precise reduction of gathered MPI results of all processes for block size 4
 void prec_reduction_4(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
 {
+  printf("Entering %s\n", __FUNCTION__);
   // we need to sum up s_, c_
   // we use AVX code here hoping the compiler doesn't optimize it away this way
   __m256d s = _mm256_loadu_pd(s_);
@@ -83,6 +86,7 @@ void prec_reduction_4(int n, const double *restrict s_, const double *restrict c
 // precise reduction of gathered MPI results of all processes for larger data
 void prec_reduction_4k(int n, int k, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
 {
+  printf("Entering %s\n", __FUNCTION__);
   // we need to sum up s_, c_
   // we use AVX code here hoping the compiler doesn't optimize it away this way
   if( k % 4 != 0 )
@@ -119,4 +123,37 @@ void prec_reduction_4k(int n, int k, const double *restrict s_, const double *re
   }
 }
 
+
+// precise reduction of gathered MPI results of all processes for block size 2
+void prec_reduction_2k(int n, int k, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
+{
+  printf("Entering %s\n", __FUNCTION__);
+  // we need to sum up s_, c_
+  // we use AVX code here hoping the compiler doesn't optimize it away this way
+  __m128d s[k/2];
+  __m128d c[k/2];
+  for(int j = 0; j < k/2; j++)
+  {
+    s[j] = _mm_loadu_pd(&s_[2*j]);
+    c[j] = _mm_loadu_pd(&c_[2*j]);
+  }
+  for(int i = 1; i < n; i++)
+  {
+    for(int j = 0; j < k/2; j++)
+    {
+      __m128d si = _mm_loadu_pd(&s_[k*i+2*j]);
+      __m128d ci = _mm_loadu_pd(&c_[k*i+2*j]);
+      __m128d sigma, oldS = s[j];
+      MM128_FAST2SUM(oldS, si, s[j], sigma);
+      //MM128_2SUM(oldS, si, s, sigma);
+      __m128d tmp = _mm_add_pd(ci,sigma);
+      c[j] = _mm_add_pd(c[j], tmp);
+    }
+  }
+  for(int j = 0; j < k/2; j++)
+  {
+    _mm_storeu_pd(&r[2*j],s[j]);
+    _mm_storeu_pd(&rC[2*j],c[j]);
+  }
+}
 

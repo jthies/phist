@@ -33,7 +33,7 @@ void dspmvm_nt_1_c(int nrows, double alpha, const long *restrict row_ptr, const 
 {
   if( !is_aligned(lhsv,16) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)lhsv);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)lhsv);
     exit(1);
   }
   int nrows2 = nrows/2;
@@ -82,19 +82,19 @@ void dspmvm_nt_2_c(int nrows, double alpha, const long *restrict row_ptr, const 
 {
   if( !is_aligned(lhsv,16) || ldl % 2 != 0 )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)lhsv);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)lhsv);
     exit(1);
   }
 
   if( !is_aligned(rhsv,16) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)rhsv);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)rhsv);
     exit(1);
   }
 
   if( !is_aligned(halo,16) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)halo);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)halo);
     exit(1);
   }
 
@@ -140,19 +140,19 @@ void dspmvm_nt_4_c(int nrows, double alpha, const long *restrict row_ptr, const 
 {
   if( !is_aligned(lhsv,16) || ldl % 2 != 0 )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)lhsv);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)lhsv);
     exit(1);
   }
 
   if( !is_aligned(rhsv,16) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)rhsv);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)rhsv);
     exit(1);
   }
 
   if( !is_aligned(halo,16) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)halo);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)halo);
     exit(1);
   }
 
@@ -209,19 +209,19 @@ void dspmvm_nt_8_c(int nrows, double alpha, const long *restrict row_ptr, const 
 {
   if( !is_aligned(lhsv,16) || ldl % 2 != 0 )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)lhsv);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)lhsv);
     exit(1);
   }
 
   if( !is_aligned(rhsv,16) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)rhsv);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)rhsv);
     exit(1);
   }
 
   if( !is_aligned(halo,16) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)halo);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)halo);
     exit(1);
   }
 
@@ -279,13 +279,13 @@ void dspmvm_nt_strided_2_c(int nrows, double alpha, const long *restrict row_ptr
 {
   if( !is_aligned(lhsv,16) || ldl % 2 != 0 )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)lhsv);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)lhsv);
     exit(1);
   }
 
   if( !is_aligned(halo,16) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)halo);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)halo);
     exit(1);
   }
 
@@ -330,13 +330,13 @@ void dspmvm_nt_strided_4_c(int nrows, double alpha, const long *restrict row_ptr
 {
   if( !is_aligned(lhsv,16) || ldl % 2 != 0 )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)lhsv);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)lhsv);
     exit(1);
   }
 
   if( !is_aligned(halo,16) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)halo);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)halo);
     exit(1);
   }
 
@@ -392,13 +392,13 @@ void dspmvm_nt_strided_8_c(int nrows, double alpha, const long *restrict row_ptr
 {
   if( !is_aligned(lhsv,16) || ldl % 2 != 0 )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)lhsv);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)lhsv);
     exit(1);
   }
 
   if( !is_aligned(halo,16) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)halo);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)halo);
     exit(1);
   }
 

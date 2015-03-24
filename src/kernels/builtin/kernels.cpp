@@ -130,10 +130,10 @@ extern "C" {
 
 
 // comment in for glibc/gcc and memory alignment problems...
-/*
+
 #include <malloc.h>
 #include <cstring>
-// force all memory allocations to be 16 byte aligned!
+// force all memory allocations to be 32 byte aligned!
 static void*(*old_malloc_hook)(size_t,const void*);
 static void * my_malloc_hook (size_t size, const void *caller)
 {
@@ -141,11 +141,13 @@ static void * my_malloc_hook (size_t size, const void *caller)
    // Restore all old hooks
    __malloc_hook = old_malloc_hook;
    // Call recursively
-   result = memalign (16, size);
+   //result = memalign (32, size);
+   posix_memalign(&result, 32, size);
    // Save underlying hooks
    old_malloc_hook = __malloc_hook;
    // printf might call malloc, so protect it too.
-   printf ("malloc (%u) returns %p\n", (unsigned int) size, result);
+   if( (uintptr_t)result % 32 != 0 )
+     printf ("malloc (%u) returns %p\n", (unsigned int) size, result);
    // Restore our own hooks
    __malloc_hook = my_malloc_hook;
    return result;
@@ -157,7 +159,7 @@ static void my_init_hook (void)
 }
 // Override initializing hook from the C library.
 void (*__malloc_initialize_hook) (void) = my_init_hook;
-*/
+
 
 
 void init_random_seed(void);

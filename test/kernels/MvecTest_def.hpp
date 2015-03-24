@@ -227,8 +227,8 @@ public:
       {
         for(int i = 0; i < nloc_; i++)
         {
-          vec2_vp_[VIDX(i,j,lda_)]=st::one()/(ilower+i+1);
-          vec1_vp_[VIDX(i,j,lda_)]=st::one()/(ilower+i+2);
+          vec2_vp_[VIDX(i,j,lda_)]=st::one()*(1./(ilower+i+1));
+          vec1_vp_[VIDX(i,j,lda_)]=st::one()*(1./(ilower+i+2));
         }
       }
       SUBR(mvec_to_device)(vec1_,&iflag_);
@@ -239,7 +239,7 @@ public:
       iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvec_dot_mvec)(vec1_,vec2_,dots,&iflag_);
       ASSERT_EQ(0,iflag_);
-      _ST_ val = (_ST_)(st::one()*(1.0l-1.0l/(_N_+1)));
+      _ST_ val = (_ST_)(st::one()*(_MT_)(1.0l-1.0l/(_N_+1)));
       PHIST_SOUT(PHIST_INFO, "error: %e\n", st::abs(dots[0]-val));
       // melven: this is a *hard* precision test
       // DO NOT CHANGE THIS TO ASSERT_NEAR!

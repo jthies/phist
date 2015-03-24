@@ -60,6 +60,7 @@ module mvec_module
   type MVec_t
     !--------------------------------------------------------------------------------
     integer     :: jmin, jmax
+    integer(kind=8) :: paddedN
     type(Map_t) :: map
     real(kind=8), contiguous, pointer :: val(:,:) => null()
     logical     :: is_view
@@ -123,6 +124,13 @@ module mvec_module
     subroutine prec_reduction_2(n, s, c, res, resC) bind(C)
       use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
       integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: s, c
+      real(kind=C_DOUBLE), intent(out) :: res, resC
+    end subroutine
+    !void prec_reduction_2k(int n, int k, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
+    subroutine prec_reduction_2k(n, k, s, c, res, resC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k
       real(kind=C_DOUBLE), intent(in) :: s, c
       real(kind=C_DOUBLE), intent(out) :: res, resC
     end subroutine
@@ -220,6 +228,14 @@ module mvec_module
     !void daxpby_prec_2(double alpha, const double *restrict a, double, beta, double *restrict b, double *restrict bC)
     subroutine daxpby_prec_2(alpha, a, beta, b, bC) bind(C)
       use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      real(kind=C_DOUBLE), value :: alpha, beta
+      real(kind=C_DOUBLE), intent(in) :: a
+      real(kind=C_DOUBLE), intent(inout) :: b, bC
+    end subroutine
+    !void daxpby_prec_2(double alpha, const double *restrict a, double, beta, double *restrict b, double *restrict bC)
+    subroutine daxpby_prec_2k(k, alpha, a, beta, b, bC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: k
       real(kind=C_DOUBLE), value :: alpha, beta
       real(kind=C_DOUBLE), intent(in) :: a
       real(kind=C_DOUBLE), intent(inout) :: b, bC
@@ -1112,10 +1128,10 @@ contains
           else
             call dgemm_sC_prec_2_2(nrows, v%val(v%jmin,1), w%val(w%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
           end if
-        else if( nvecv .eq. 1 ) then
+        else if( nvecw .eq. 1 ) then
           call dgemm_sC_prec_2_1(nrows, v%val(v%jmin,1), w%val(w%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
         else
-          call dgemm_sC_prec_2_k(nrows, nvecv, v%val(v%jmin,1), w%val(w%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
+          call dgemm_sC_prec_2_k(nrows, nvecw, v%val(v%jmin,1), w%val(w%jmin,1), localBuff(1,1,1), localBuff(1,1,2))
         end if
       end if
       if( .not. handled .and. nvecw .eq. 2 .and. mod(nvecw*nrows,4) .eq. 0 ) then
@@ -1153,8 +1169,8 @@ contains
         iflag = -99
         return
       end if
-write(*,*) 'here v', nvecv, v%val
-write(*,*) 'here w', nvecw, w%val
+!write(*,*) 'here v', nvecv, v%val
+!write(*,*) 'here w', nvecw, w%val
 write(*,*) 'here buff', localBuff(:,:,1)
 write(*,*) 'here buffC', localBuff(:,:,2)
 
@@ -1183,9 +1199,15 @@ write(*,*) 'here globalBuffC', globalBuff_(:,:,:,2)
       else if( nvecv*nvecw .eq. 4 ) then
         call prec_reduction_4(v%map%nProcs, globalBuff_(1,1,1,1), globalBuff_(1,1,1,2), &
           &                                 localBuff(1,1,1), localBuff(1,1,2)          )
-      else
+      else if( mod(nvecv*nvecw,4) .eq. 0 ) then
         call prec_reduction_4k(v%map%nProcs, nvecv*nvecw, globalBuff_(1,1,1,1), globalBuff_(1,1,1,2), &
           &                                               localBuff(1,1,1), localBuff(1,1,2)          )
+      else if( mod(nvecv*nvecw,2) .eq. 0 ) then
+        call prec_reduction_2k(v%map%nProcs, nvecv*nvecw, globalBuff_(1,1,1,1), globalBuff_(1,1,1,2), &
+          &                                               localBuff(1,1,1), localBuff(1,1,2)          )
+      else
+        write(*,*) 'error'
+        call exit(1)
       end if
 write(*,*) 'here vTw', localBuff(:,:,1)
 write(*,*) 'here vTw _C', localBuff(:,:,2)
@@ -1208,8 +1230,13 @@ write(*,*) 'here alpha beta', alpha, beta
         call daxpby_prec_2(alpha, tmp(1,1), beta, mBuff(1,1), mBuffC(1,1))
       else if( nvecv*nvecw .eq. 4 ) then
         call daxpby_prec_4(alpha, tmp(1,1), beta, mBuff(1,1), mBuffC(1,1))
-      else
+      else if( mod(nvecv*nvecw,4) .eq. 0 ) then
         call daxpby_prec_4k(nvecv*nvecw, alpha, tmp(1,1), beta, mBuff(1,1), mBuffC(1,1))
+      else if( mod(nvecv*nvecw,2) .eq. 0 ) then
+        call daxpby_prec_2k(nvecv*nvecw, alpha, tmp(1,1), beta, mBuff(1,1), mBuffC(1,1))
+      else
+        write(*,*) 'error'
+        call exit(1)
       end if
 write(*,*) 'here mBuff', mBuff
 write(*,*) 'here mBuffC', mBuffC
@@ -1450,6 +1477,7 @@ write(*,*) 'here mBuffC', mBuffC
   subroutine phist_Dmvec_create(mvec_ptr, map_ptr, nvec, ierr) &
     & bind(C,name='phist_Dmvec_create_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
+    use, intrinsic :: omp_lib
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: mvec_ptr
     type(C_PTR),        value       :: map_ptr
@@ -1458,11 +1486,25 @@ write(*,*) 'here mBuffC', mBuffC
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
     type(Map_t), pointer :: map
-    integer :: i
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+    integer :: i, nt, padding
+    type(C_PTR) :: rawMem
+#if defined(TESTING)
     integer(C_INTPTR_T) :: dummy
 #endif
+    interface
+      function posix_memalign(p, align, n) bind(C)
+        use, intrinsic :: iso_c_binding, only: C_PTR, C_SIZE_T, C_INT
+        integer(kind=C_SIZE_T), value :: align, n
+        type(C_PTR), intent(out) :: p
+        integer(kind=C_INT) :: posix_memalign
+      end function posix_memalign
+    end interface
     !--------------------------------------------------------------------------------
+
+    if( nvec .le. 0 ) then
+      ierr=-44
+      return
+    end if
 
     call c_f_pointer(map_ptr, map)
     allocate(mvec)
@@ -1470,11 +1512,24 @@ write(*,*) 'here mBuffC', mBuffC
     mvec%jmin = 1
     mvec%jmax = nvec
     mvec%map = map
+    nt = omp_get_max_threads()
+    padding = nt*4
+    mvec%paddedN = (map%nlocal(map%me)/padding+1)*padding
 #if defined(TESTING) && PHIST_OUTLEV >= 4
     write(*,*) 'creating new mvec with dimensions:', nvec, map%nlocal(map%me), 'address', transfer(c_loc(mvec),dummy)
     flush(6)
 #endif
-    allocate(mvec%val(nvec,max(1,map%nlocal(map%me))),stat=ierr)
+    !allocate(mvec%val(nvec,max(1,map%nlocal(map%me))),stat=ierr)
+    ierr = posix_memalign(rawMem, int(32,kind=8), mvec%paddedN*8*nvec)
+    call c_f_pointer(rawMem, mvec%val, (/int(nvec,kind=8),mvec%paddedN/))
+#if defined(TESTING)
+    if( mod(transfer(c_loc(mvec%val(1,1)), dummy), 32) .ne. 0 ) then
+      write(*,*) 'Wrong memory alignment!'
+      flush(6)
+      ierr=-44
+      return
+    end if
+#endif
     if (ierr/=0) then
       ierr=-44
       return
