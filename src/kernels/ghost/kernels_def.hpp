@@ -550,6 +550,7 @@ extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t*
 
 extern "C" void SUBR(mvec_to_device)(TYPE(mvec_ptr) vV, int* iflag)
 {
+#ifdef GHOST_HAVE_CUDA
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V, vV, *iflag);
   PHIST_SOUT(PHIST_DEBUG,"ghost densemat upload\n"
@@ -561,27 +562,34 @@ extern "C" void SUBR(mvec_to_device)(TYPE(mvec_ptr) vV, int* iflag)
                          V->traits.nrowspadded, V->traits.ncolspadded);
   PHIST_SOUT(PHIST_DEBUG,"V flags: %d\n",(int)V->traits.flags);
   PHIST_CHK_GERR(V->upload(V),*iflag);
+#endif
 }
 
 extern "C" void SUBR(mvec_from_device)(TYPE(mvec_ptr) vV, int* iflag)
 {
+#ifdef GHOST_HAVE_CUDA
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V, vV, *iflag);
   PHIST_CHK_GERR(V->download(V),*iflag);
+#endif
 }
 
 extern "C" void SUBR(sdMat_to_device)(TYPE(sdMat_ptr) vM, int* iflag)
 {
+#ifdef GHOST_HAVE_CUDA
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M, vM, *iflag);
   PHIST_CHK_GERR(M->upload(M),*iflag);
+#endif
 }
 
 extern "C" void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) vM, int* iflag)
 {
+#ifdef GHOST_HAVE_CUDA
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M, vM, *iflag);
   PHIST_CHK_GERR(M->download(M),*iflag);
+#endif
 }
 
 extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* iflag)
@@ -607,11 +615,11 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   if (resultPermuted==inputPermuted) return;
   if (resultPermuted)
   {
-    PHIST_CHK_GERR(V_out->permute(V_out,GHOST_PERMUTATION_ORIG2PERM),*iflag);
+//    PHIST_CHK_GERR(V_out->permute(V_out,GHOST_PERMUTATION_ORIG2PERM),*iflag);
   }
   else
   {
-    PHIST_CHK_GERR(V_out->permute(V_out,GHOST_PERMUTATION_PERM2ORIG),*iflag);
+//    PHIST_CHK_GERR(V_out->permute(V_out,GHOST_PERMUTATION_PERM2ORIG),*iflag);
   }
   return;
 }
