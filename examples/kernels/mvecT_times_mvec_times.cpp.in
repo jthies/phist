@@ -34,6 +34,7 @@ int main(int argc, char** argv)
   comm_ptr_t comm = NULL;
   map_ptr_t map = NULL;
   mvec_ptr_t X = NULL, Y=NULL;
+  sdMat_ptr_t M = NULL;
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
 
@@ -41,18 +42,19 @@ PHIST_MAIN_TASK_BEGIN
 
   PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
 
-  if (argc!=4 && argc!=5)
+  if (argc!=5 && argc!=6)
   {
-    PHIST_SOUT(PHIST_ERROR,"Usage: %s n m k [high_prec]\n"
-                           "       perform k times: \n"
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s n m k l [high_prec]\n"
+                           "       perform l times: \n"
                            "    * vector_block dot vector_block\n"
+                           " where n is the number of rows and m, k the number of columns\n"
                            " set high_prec to 1 to request higher precision calculations!\n",
                            argv[0]);
     return 1;
   }
 
   gidx_t n;
-  int m,k;
+  int m,k,l;
   if (sizeof(gidx_t)==4)
   {
     n=atoi(argv[1]);
@@ -64,23 +66,26 @@ PHIST_MAIN_TASK_BEGIN
   
   m=atoi(argv[2]);
   k=atoi(argv[3]);
+  l=atoi(argv[4]);
   bool high_prec = false;
-  if( argc == 5 )
-    high_prec = atoi(argv[4]);
+  if( argc == 6 )
+    high_prec = atoi(argv[5]);
 
   PHIST_ICHK_IERR(phist_map_create(&map,comm,n,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,m,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&Y,map,m,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&Y,map,k,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_create)(&M,m,k,comm,&ierr),ierr);
   
-  for (int it=0; it<k; it++)
+  for (int it=0; it<l; it++)
   {
     ST value[m];
     if( high_prec )
       ierr = PHIST_ROBUST_REDUCTIONS;
     else
       ierr = 0;
-    PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(X,Y,value,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),X,Y,st::zero(),M,&ierr),ierr);
   }
+  PHIST_ICHK_IERR(SUBR(sdMat_delete)(M,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(Y,&ierr),ierr);
   PHIST_ICHK_IERR(phist_map_delete(map,&ierr),ierr);

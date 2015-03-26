@@ -1171,8 +1171,8 @@ contains
       end if
 !write(*,*) 'here v', nvecv, v%val
 !write(*,*) 'here w', nvecw, w%val
-write(*,*) 'here buff', localBuff(:,:,1)
-write(*,*) 'here buffC', localBuff(:,:,2)
+!write(*,*) 'here buff', localBuff(:,:,1)
+!write(*,*) 'here buffC', localBuff(:,:,2)
 
       ! gather results
       if( tmp_transposed ) then
@@ -1187,8 +1187,8 @@ write(*,*) 'here buffC', localBuff(:,:,2)
         &                v%map%comm, iflag)
       globalBuff_(:,:,:,1) = globalBuff(:,:,1,:)
       globalBuff_(:,:,:,2) = globalBuff(:,:,2,:)
-write(*,*) 'here globalBuff', globalBuff_(:,:,:,1)
-write(*,*) 'here globalBuffC', globalBuff_(:,:,:,2)
+!write(*,*) 'here globalBuff', globalBuff_(:,:,:,1)
+!write(*,*) 'here globalBuffC', globalBuff_(:,:,:,2)
       ! MPI reduction
       if( nvecv*nvecw .eq. 1 ) then
         call prec_reduction_1(v%map%nProcs, globalBuff_(1,1,1,1), globalBuff_(1,1,1,2), &
@@ -1209,8 +1209,8 @@ write(*,*) 'here globalBuffC', globalBuff_(:,:,:,2)
         write(*,*) 'error'
         call exit(1)
       end if
-write(*,*) 'here vTw', localBuff(:,:,1)
-write(*,*) 'here vTw _C', localBuff(:,:,2)
+!write(*,*) 'here vTw', localBuff(:,:,1)
+!write(*,*) 'here vTw _C', localBuff(:,:,2)
 
       ! copy it to a buffer again for the final calculation of m = alpha*res + beta*m
       allocate(mBuff(nvecv,nvecw), tmp(nvecv,nvecw), mBuffC(nvecv,nvecw))
@@ -1221,9 +1221,9 @@ write(*,*) 'here vTw _C', localBuff(:,:,2)
       else
         tmp = localBuff(:,:,1)
       end if
-write(*,*) 'here mBuff', mBuff
-write(*,*) 'here tmp', tmp
-write(*,*) 'here alpha beta', alpha, beta
+!write(*,*) 'here mBuff', mBuff
+!write(*,*) 'here tmp', tmp
+!write(*,*) 'here alpha beta', alpha, beta
       if( nvecv*nvecw .eq. 1 ) then
         call daxpby_prec_1(alpha, tmp(1,1), beta, mBuff(1,1), mBuffC(1,1))
       else if( nvecv*nvecw .eq. 2 ) then
@@ -1238,8 +1238,8 @@ write(*,*) 'here alpha beta', alpha, beta
         write(*,*) 'error'
         call exit(1)
       end if
-write(*,*) 'here mBuff', mBuff
-write(*,*) 'here mBuffC', mBuffC
+!write(*,*) 'here mBuff', mBuff
+!write(*,*) 'here mBuffC', mBuffC
       ! set result
       M%val(M%imin:M%imax,M%jmin:M%jmax) = mBuff + mBuffC
       return
@@ -1477,7 +1477,7 @@ write(*,*) 'here mBuffC', mBuffC
   subroutine phist_Dmvec_create(mvec_ptr, map_ptr, nvec, ierr) &
     & bind(C,name='phist_Dmvec_create_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
-    use, intrinsic :: omp_lib
+    use :: omp_lib
     !--------------------------------------------------------------------------------
     type(C_PTR),        intent(out) :: mvec_ptr
     type(C_PTR),        value       :: map_ptr
@@ -1520,7 +1520,7 @@ write(*,*) 'here mBuffC', mBuffC
     flush(6)
 #endif
     !allocate(mvec%val(nvec,max(1,map%nlocal(map%me))),stat=ierr)
-    ierr = posix_memalign(rawMem, int(32,kind=8), mvec%paddedN*8*nvec)
+    ierr = posix_memalign(rawMem, int(64,kind=8), mvec%paddedN*8*nvec)
     call c_f_pointer(rawMem, mvec%val, (/int(nvec,kind=8),mvec%paddedN/))
 #if defined(TESTING)
     if( mod(transfer(c_loc(mvec%val(1,1)), dummy), 32) .ne. 0 ) then

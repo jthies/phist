@@ -18,7 +18,9 @@
 // more accurate dot product x'x AVX2 kernel
 void ddot_self_prec_4(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   if( !is_aligned(x,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
@@ -85,7 +87,9 @@ void ddot_self_prec_4(int nrows, const double *restrict x, double *restrict res,
 // more accurate dot product x'y AVX2 kernel
 void ddot_prec_4(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   if( !is_aligned(x,32) )
   {
     printf("%s: x not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
@@ -160,7 +164,9 @@ void ddot_prec_4(int nrows, const double *restrict x, const double *restrict y, 
 // more accurate dot product x'x for block size 1
 void ddot_self_prec_1(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   double s[4], c[4];
 
   // assume appropriate padding with zeros!
@@ -174,7 +180,9 @@ void ddot_self_prec_1(int nrows, const double *restrict x, double *restrict res,
 // more accurate dot product x'y for block size 1
 void ddot_prec_1(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   double s[4], c[4];
 
   // assume appropriate padding with zeros!
@@ -188,7 +196,9 @@ void ddot_prec_1(int nrows, const double *restrict x, const double *restrict y, 
 // more accurate dot product x'x for block size 2
 void ddot_self_prec_2(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   double s[4], c[4];
 
   // assume appropriate padding with zeros!
@@ -202,7 +212,9 @@ void ddot_self_prec_2(int nrows, const double *restrict x, double *restrict res,
 // more accurate dot product x'y for block size 2
 void ddot_prec_2(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   double s[4], c[4];
 
   // assume appropriate padding with zeros!

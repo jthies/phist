@@ -18,7 +18,9 @@
 // more accurate gemm product x'x AVX2 kernel
 void dgemm_sc_self_prec_4(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   if( !is_aligned(x,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
@@ -101,7 +103,9 @@ void dgemm_sc_self_prec_4(int nrows, const double *restrict x, double *restrict 
 // more accurate gemm product x'x AVX2 kernel
 void dgemm_sc_self_prec_2(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   if( !is_aligned(x,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
@@ -193,7 +197,9 @@ void dgemm_sc_self_prec_2(int nrows, const double *restrict x, double *restrict 
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_sc_prec_4_4(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   if( !is_aligned(x,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
@@ -282,7 +288,9 @@ void dgemm_sc_prec_4_4(int nrows, const double *restrict x, const double *restri
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_sc_prec_2_2(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   if( !is_aligned(x,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
@@ -382,7 +390,9 @@ void dgemm_sc_prec_2_2(int nrows, const double *restrict x, const double *restri
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_sc_prec_2_1(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   if( !is_aligned(x,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
@@ -465,7 +475,9 @@ void dgemm_sc_prec_2_1(int nrows, const double *restrict x, const double *restri
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_sc_prec_4_2(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   if( !is_aligned(x,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
@@ -556,7 +568,9 @@ void dgemm_sc_prec_4_2(int nrows, const double *restrict x, const double *restri
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_sc_prec_4_1(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   if( !is_aligned(x,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
@@ -630,7 +644,9 @@ void dgemm_sc_prec_4_1(int nrows, const double *restrict x, const double *restri
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_sc_prec_4_k(int nrows, int k, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   if( !is_aligned(x,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
@@ -718,7 +734,9 @@ void dgemm_sc_prec_4_k(int nrows, int k, const double *restrict x, const double 
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_sc_prec_2_k(int nrows, int k, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   if( !is_aligned(x,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
@@ -819,7 +837,9 @@ void dgemm_sc_prec_2_k(int nrows, int k, const double *restrict x, const double 
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_sc_prec_1_k(int nrows, int k, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   if( !is_aligned(x,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);

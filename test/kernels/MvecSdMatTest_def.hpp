@@ -410,8 +410,8 @@ SUBR(sdMat_print)(M1_, &iflag_);
 #endif
           _MT_ cond = dotAbs_ij / std::abs(dot_ij);
           PHIST_SOUT(PHIST_INFO, "error: %e (cond. number: %e, eps: %e)\n", st::abs((_ST_)dot_ij-M1_vp_[MIDX(i,j,ldaM1_)]),cond,mt::eps());
-          EXPECT_NEAR(st::real((_ST_)dot_ij), st::real(M1_vp_[MIDX(i,j,ldaM1_)]), 2*cond*mt::eps());
-          EXPECT_NEAR(st::imag((_ST_)dot_ij), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), 2*cond*mt::eps());
+          EXPECT_NEAR(st::real((_ST_)dot_ij), st::real(M1_vp_[MIDX(i,j,ldaM1_)]), 10*cond*mt::eps());
+          EXPECT_NEAR(st::imag((_ST_)dot_ij), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), 10*cond*mt::eps());
         }
       }
     }
@@ -755,6 +755,18 @@ SUBR(sdMat_print)(M1_, &iflag_);
       off1.push_back(3);  m1.push_back(5);  off2.push_back(0);  m2.push_back(1);  off1_M.push_back(2);  off2_M.push_back(3);
       off1.push_back(7);  m1.push_back(2);  off2.push_back(4);  m2.push_back(3);  off1_M.push_back(1);  off2_M.push_back(2);
 
+      // for large cases we need to respect the condition number (which requires sum |v1_i*v2_i| bounded by the ||v_1|| * ||v_2||)
+      _MT_ normV1[_M_];
+      SUBR(mvec_norm2)(V1_, normV1, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      _MT_ normV2[_K_];
+      SUBR(mvec_norm2)(V2_, normV2, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      _MT_ maxNorm12 = mt::one();
+      for(int i = 0; i < _M_; i++)
+        for(int j = 0; j < _K_; j++)
+          maxNorm12 = std::max(maxNorm12, normV1[i]*normV2[j]);
+
       for(int i = 0; i < off1.size(); i++)
       {
         if( off1[i]+m1[i] > m_ || off2[i]+m2[i] > k_  || off1_M[i]+m1[i] > m_ || off2_M[i]+m2[i] > k_)
@@ -868,18 +880,7 @@ SUBR(sdMat_print)(M1_, &iflag_);
         // the result should be zero!
         SUBR(sdMat_from_device)(M3,&iflag_);
         ASSERT_EQ(0,iflag_);
-        // but for large cases we need to respect the condition number as it won't be zero at all
-        _MT_ normV1[_M_];
-        SUBR(mvec_norm2)(V1_, normV1, &iflag_);
-        ASSERT_EQ(0,iflag_);
-        _MT_ normV2[_K_];
-        SUBR(mvec_norm2)(V2_, normV2, &iflag_);
-        ASSERT_EQ(0,iflag_);
-        _MT_ maxNorm12 = mt::zero();
-        for(int i = 0; i < _M_; i++)
-          for(int j = 0; j < _K_; j++)
-            maxNorm12 = std::max(maxNorm12, normV1[i]*normV2[j]);
-        ASSERT_NEAR(mt::one(),ArrayEqual(M3_vp,m1[i],m2[i],lda_M3,stride_,st::zero(),mflag_),maxNorm12*100*mt::eps());
+        ASSERT_NEAR(mt::one(),ArrayEqual(M3_vp,m1[i],m2[i],lda_M3,stride_,st::zero(),mflag_),_N_*maxNorm12*10*mt::eps());
 
         // subtract the two viewed blocks in the result sdMats
         SUBR(sdMat_add_sdMat)(-st::one(),M1, st::one(),M2,&iflag_);
@@ -888,7 +889,7 @@ SUBR(sdMat_print)(M1_, &iflag_);
         // the result should be zero!
         SUBR(sdMat_from_device)(M2_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        ASSERT_NEAR(mt::one(),ArrayEqual(M2_vp_,m_,k_,ldaM2_,stride_,st::zero(),mflag_),maxNorm12*100*mt::eps());
+        ASSERT_NEAR(mt::one(),ArrayEqual(M2_vp_,m_,k_,ldaM2_,stride_,st::zero(),mflag_),_N_*maxNorm12*10*mt::eps());
 
         // clean up at the end of the loop
         SUBR(mvec_delete)(V1,&iflag_);

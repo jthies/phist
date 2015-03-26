@@ -437,7 +437,7 @@ public:
       
       for (int j=jmin;j<=jmax;j++)
       {
-        ASSERT_REAL_EQ(nrm2[j],nrm2_view[j-jmin]);
+        ASSERT_NEAR(nrm2[j],nrm2_view[j-jmin],_N_*10*mt::eps());
       }
       
       SUBR(mvec_delete)(view,&iflag_);
@@ -742,7 +742,7 @@ public:
 
       for (int j=jmin;j<=jmax;j++)
         {
-        ASSERT_NEAR(norms_V1[j],norms_V1copy[j-jmin], 100*mt::eps());
+        ASSERT_NEAR(norms_V1[j],norms_V1copy[j-jmin], _N_*10*mt::eps());
         }
 
       SUBR(mvec_delete)(v1_copy,&iflag_);

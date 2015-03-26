@@ -17,7 +17,9 @@
 // b <- alpha*a + beta*b more precise size 1
 void daxpby_prec_1(double alpha, const double *restrict a, double beta, double *restrict b, double *restrict bC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   // we use AVX code here hoping the compiler doesn't optimize it away this way
   __m128d alpha_ = _mm_set_sd(alpha);
   __m128d beta_ = _mm_set_sd(beta);
@@ -39,7 +41,9 @@ void daxpby_prec_1(double alpha, const double *restrict a, double beta, double *
 // b <- alpha*a + beta*b more precise size 2
 void daxpby_prec_2(double alpha, const double *restrict a, double beta, double *restrict b, double *restrict bC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   // we use AVX code here hoping the compiler doesn't optimize it away this way
   __m128d alpha_ = _mm_set1_pd(alpha);
   __m128d beta_ = _mm_set1_pd(beta);
@@ -61,7 +65,9 @@ void daxpby_prec_2(double alpha, const double *restrict a, double beta, double *
 // b <- alpha*a + beta*b more precise size 2
 void daxpby_prec_2k(int k, double alpha, const double *restrict a, double beta, double *restrict b, double *restrict bC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   if( k%2 != 0 )
   {
     printf("wrong dimensions: %i\n",k);
@@ -93,7 +99,9 @@ void daxpby_prec_2k(int k, double alpha, const double *restrict a, double beta, 
 // b <- alpha*a + beta*b more precise size 4
 void daxpby_prec_4(double alpha, const double *restrict a, double beta, double *restrict b, double *restrict bC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   // we use AVX code here hoping the compiler doesn't optimize it away this way
   __m256d alpha_ = _mm256_set1_pd(alpha);
   __m256d beta_ = _mm256_set1_pd(beta);
@@ -115,7 +123,9 @@ void daxpby_prec_4(double alpha, const double *restrict a, double beta, double *
 // b <- alpha*a + beta*b more precise size k (with k%4 == 0)
 void daxpby_prec_4k(int k, double alpha, const double *restrict a, double beta, double *restrict b, double *restrict bC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   if( k%4 != 0 )
   {
     printf("wrong dimensions: %i\n",k);

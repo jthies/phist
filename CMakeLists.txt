@@ -158,8 +158,8 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
   message(STATUS "using INTEL compiler flags")
 
-  set (CMAKE_C_FLAGS        "-Wno-unused-variable -mkl -std=c99")
-  set (CMAKE_CXX_FLAGS      "-Wno-unused-variable -mkl -std=c++0x")
+  set (CMAKE_C_FLAGS        "-align -Wno-unused-variable -mkl -std=c99")
+  set (CMAKE_CXX_FLAGS      "-align -Wno-unused-variable -mkl -std=c++0x")
   set (CMAKE_Fortran_FLAGS  "-fpp -mkl -align array64byte")
 
   if( PHIST_ENABLE_OPENMP )

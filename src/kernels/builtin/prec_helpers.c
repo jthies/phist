@@ -17,7 +17,9 @@
 // precise reduction of gathered MPI results of all processes for block size 1
 void prec_reduction_1(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   // we need to sum up s_, c_
   // we use AVX code here hoping the compiler doesn't optimize it away this way
   __m128d s = _mm_load_sd(&s_[0]);
@@ -40,7 +42,9 @@ void prec_reduction_1(int n, const double *restrict s_, const double *restrict c
 // precise reduction of gathered MPI results of all processes for block size 2
 void prec_reduction_2(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   // we need to sum up s_, c_
   // we use AVX code here hoping the compiler doesn't optimize it away this way
   __m128d s = _mm_loadu_pd(s_);
@@ -63,7 +67,9 @@ void prec_reduction_2(int n, const double *restrict s_, const double *restrict c
 // precise reduction of gathered MPI results of all processes for block size 4
 void prec_reduction_4(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   // we need to sum up s_, c_
   // we use AVX code here hoping the compiler doesn't optimize it away this way
   __m256d s = _mm256_loadu_pd(s_);
@@ -86,7 +92,9 @@ void prec_reduction_4(int n, const double *restrict s_, const double *restrict c
 // precise reduction of gathered MPI results of all processes for larger data
 void prec_reduction_4k(int n, int k, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   // we need to sum up s_, c_
   // we use AVX code here hoping the compiler doesn't optimize it away this way
   if( k % 4 != 0 )
@@ -127,7 +135,9 @@ void prec_reduction_4k(int n, int k, const double *restrict s_, const double *re
 // precise reduction of gathered MPI results of all processes for block size 2
 void prec_reduction_2k(int n, int k, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
+#endif
   // we need to sum up s_, c_
   // we use AVX code here hoping the compiler doesn't optimize it away this way
   __m128d s[k/2];
