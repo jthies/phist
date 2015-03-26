@@ -223,6 +223,7 @@ public:
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
+SUBR(sdMat_print)(M1_, &iflag_);
       ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -705,6 +706,7 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_random)(V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
@@ -731,7 +733,7 @@ public:
           maxNorm12 = std::max(maxNorm12, normV1[i]*normV2[j]);
 
       // TODO: what is the correctly required precision here? 
-      ASSERT_NEAR(mt::one(),SdMatEqual(M1_,st::zero()),100*mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatEqual(M1_,st::zero()),mt::sqrt(maxNorm12)*100*mt::eps());
     }
   }
 #endif
@@ -866,15 +868,6 @@ public:
         // the result should be zero!
         SUBR(sdMat_from_device)(M3,&iflag_);
         ASSERT_EQ(0,iflag_);
-        ASSERT_NEAR(mt::one(),ArrayEqual(M3_vp,m1[i],m2[i],lda_M3,stride_,st::zero(),mflag_),200*mt::eps());
-
-        // subtract the two viewed blocks in the result sdMats
-        SUBR(sdMat_add_sdMat)(-st::one(),M1, st::one(),M2,&iflag_);
-        ASSERT_EQ(0,iflag_);
-
-        // the result should be zero!
-        SUBR(sdMat_from_device)(M2_,&iflag_);
-        ASSERT_EQ(0,iflag_);
         // but for large cases we need to respect the condition number as it won't be zero at all
         _MT_ normV1[_M_];
         SUBR(mvec_norm2)(V1_, normV1, &iflag_);
@@ -886,6 +879,15 @@ public:
         for(int i = 0; i < _M_; i++)
           for(int j = 0; j < _K_; j++)
             maxNorm12 = std::max(maxNorm12, normV1[i]*normV2[j]);
+        ASSERT_NEAR(mt::one(),ArrayEqual(M3_vp,m1[i],m2[i],lda_M3,stride_,st::zero(),mflag_),maxNorm12*100*mt::eps());
+
+        // subtract the two viewed blocks in the result sdMats
+        SUBR(sdMat_add_sdMat)(-st::one(),M1, st::one(),M2,&iflag_);
+        ASSERT_EQ(0,iflag_);
+
+        // the result should be zero!
+        SUBR(sdMat_from_device)(M2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         ASSERT_NEAR(mt::one(),ArrayEqual(M2_vp_,m_,k_,ldaM2_,stride_,st::zero(),mflag_),maxNorm12*100*mt::eps());
 
         // clean up at the end of the loop

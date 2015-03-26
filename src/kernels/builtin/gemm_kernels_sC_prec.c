@@ -509,7 +509,7 @@ void dgemm_sc_prec_4_2(int nrows, const double *restrict x, const double *restri
         __m256d xi = _mm256_load_pd(&x[4*i]);
         for(int j = 0; j < 2; j++)
         {
-          __m256d yij = _mm256_set_pd(y[2*i+j+2],y[2*i+j+2],y[2*i+j],y[2*i+j]);
+          __m256d yij = _mm256_set_pd(y[2*i+j],y[2*i+j],y[2*i+j],y[2*i+j]);
           __m256d p, pi;
           MM256_2MULTFMA(xi,yij,p,pi);
           __m256d sigma, oldS = s[j];
