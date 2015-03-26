@@ -574,8 +574,8 @@ public:
       // type here.
       for (int j=jmin;j<=jmax;j++)
         {
-        ASSERT_NEAR(norms_V1[j],norms_V1view[j-jmin],sqrt(_N_)*10*mt::eps());
-        ASSERT_NEAR(norms_V1[j],norms_V1vv[j-jmin],sqrt(_N_)*10*mt::eps());
+        ASSERT_NEAR(norms_V1[j],norms_V1view[j-jmin],_N_*10*mt::eps());
+        ASSERT_NEAR(norms_V1[j],norms_V1vv[j-jmin],_N_*10*mt::eps());
         }
       // set all the viewed entries to a certain value and check that the original vector is 
       // changed.
@@ -602,7 +602,7 @@ public:
       ASSERT_EQ(0,iflag_);
       for (int j=0;j<nvec_;j++)
         {
-        ASSERT_NEAR(norms_V1[j],norms_V1vv[j],sqrt(_N_)*10*mt::eps());
+        ASSERT_NEAR(norms_V1[j],norms_V1vv[j],_N_*10*mt::eps());
         }
       }
     }
@@ -709,7 +709,7 @@ public:
       // type here.
       for (int j=jmin;j<=jmax;j++)
         {
-        ASSERT_REAL_EQ(norms_V1[j],norms_V1copy[j-jmin]);
+        ASSERT_NEAR(norms_V1[j],norms_V1copy[j-jmin],_N_*10*mt::eps());
         }
       // set all the viewed entries to a certain value and check that the original vector is 
       // changed.
@@ -723,7 +723,7 @@ public:
 
       for (int j=0;j<nvec_;j++)
         {
-        ASSERT_REAL_EQ(norms_V1[j],norms_V1copy[j]);
+        ASSERT_NEAR(norms_V1[j],norms_V1copy[j],_N_*10*mt::eps());
         }
 
       // compute the new norms
