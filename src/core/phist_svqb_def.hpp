@@ -60,6 +60,8 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* iflag)
     _ST_*  A_raw;
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(A,&A_raw,&lda,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(SchurDecomp)(B_raw, ldb, A_raw, lda, m, m, m, LM, mt::eps(), Ec, iflag), *iflag);
+    for(int i = 0; i < m; i++)
+      E[i] = ct::real(Ec[i]);
 
 PHIST_SOUT(PHIST_INFO,"singular values of W:\n");
 for (int i=0;i<m;i++) PHIST_SOUT(PHIST_INFO,"%24.16e\n",sqrt(E[i]));
