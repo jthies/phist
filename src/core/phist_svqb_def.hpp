@@ -15,12 +15,15 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* iflag)
     int m, rank;
     lidx_t ldb;
     _ST_*  B_raw;
+    bool robust = *iflag & PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(B,&B_raw,&ldb,iflag),*iflag);
     _MT_ Dinv[m]; // inverse sqrt of V'V
     _MT_ E[m], Einv[m]; // sqrt of eigenvalues of (scaled) V'V (and its inverse)
     
     // S=V'V
+    if( robust )
+      *iflag = PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),B,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_from_device)(B,iflag),*iflag);
     // scaling factors: sqrt of inverse diagonal elements
@@ -50,16 +53,16 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* iflag)
 // compute eigenvalues/vectors of scaled B, eigenvalues
 // are given in order of ascending magnitude in E, corresponding
 // eigenvectors as columns of B
-#ifdef IS_COMPLEX
-    PHIST_CHK_IERR(*iflag=PHIST_LAPACKE(heevd)
-        (SDMAT_FLAG, 'V' , 'U', m, (mt::blas_cmplx_t*)B_raw, ldb, E),*iflag);
-#else
-    PHIST_CHK_IERR(*iflag=PHIST_LAPACKE(syevd)
-        (SDMAT_FLAG, 'V' , 'U', m, B_raw, ldb, E),*iflag);
-#endif
+    _CT_ Ec[m];
+    TYPE(sdMat_ptr) A = NULL;
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&A,m,m,NULL,iflag),*iflag);
+    lidx_t lda;
+    _ST_*  A_raw;
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(A,&A_raw,&lda,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(SchurDecomp)(B_raw, ldb, A_raw, lda, m, m, m, LM, mt::eps(), Ec, iflag), *iflag);
 
-PHIST_SOUT(PHIST_DEBUG,"singular values of W:\n");
-for (int i=0;i<m;i++) PHIST_SOUT(PHIST_DEBUG,"%24.16e\n",sqrt(E[i]));
+PHIST_SOUT(PHIST_INFO,"singular values of W:\n");
+for (int i=0;i<m;i++) PHIST_SOUT(PHIST_INFO,"%24.16e\n",sqrt(E[i]));
 
     // determine rank of input matrix
     MT emax=mt::abs(E[m-1]); 
@@ -93,9 +96,9 @@ for (int i=0;i<m;i++) PHIST_SOUT(PHIST_DEBUG,"%24.16e\n",sqrt(E[i]));
       for(int j=0;j<m;j++)
       {
 #ifdef PHIST_SDMATS_ROW_MAJOR
-        B_raw[i*ldb+j] *= Dinv[i]*Einv[j];
+        B_raw[i*ldb+j] *= Dinv[i]*A_raw[i*lda+j]*Einv[j];
 #else
-        B_raw[j*ldb+i] *= Dinv[i]*Einv[j];
+        B_raw[j*ldb+i] *= Dinv[i]*A_raw[j*lda+i]*Einv[j];
 #endif
       }
     }
@@ -105,6 +108,8 @@ for (int i=0;i<m;i++) PHIST_SOUT(PHIST_DEBUG,"%24.16e\n",sqrt(E[i]));
 
     // compute V <- V*B to get an orthogonal V (up to the first (m-rank) columns,
     // which will be exactly zero)
+    if( robust )
+      *iflag = PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(V,B,iflag),*iflag);
 
 // the return value of this function is the rank of the null space of V on entry
