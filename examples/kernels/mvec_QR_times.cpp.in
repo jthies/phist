@@ -109,6 +109,8 @@ PHIST_MAIN_TASK_BEGIN
     total_max_error=std::max(err,total_max_error);
   }
   PHIST_SOUT(PHIST_INFO,"Total maximum ortho-error encountered: %8.4e\n",total_max_error);
+PHIST_SOUT(PHIST_INFO,"Example for Q^T Q:\n");
+PHIST_ICHK_IERR(SUBR(sdMat_print)(QtQ,&ierr),ierr);
 
 
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&ierr),ierr);
