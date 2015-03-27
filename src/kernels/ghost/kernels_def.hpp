@@ -550,6 +550,7 @@ extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t*
 
 extern "C" void SUBR(mvec_to_device)(TYPE(mvec_ptr) vV, int* iflag)
 {
+  *iflag=0;
 #ifdef GHOST_HAVE_CUDA
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V, vV, *iflag);
@@ -567,6 +568,7 @@ extern "C" void SUBR(mvec_to_device)(TYPE(mvec_ptr) vV, int* iflag)
 
 extern "C" void SUBR(mvec_from_device)(TYPE(mvec_ptr) vV, int* iflag)
 {
+  *iflag=0;
 #ifdef GHOST_HAVE_CUDA
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V, vV, *iflag);
@@ -576,6 +578,7 @@ extern "C" void SUBR(mvec_from_device)(TYPE(mvec_ptr) vV, int* iflag)
 
 extern "C" void SUBR(sdMat_to_device)(TYPE(sdMat_ptr) vM, int* iflag)
 {
+  *iflag=0;
 #ifdef GHOST_HAVE_CUDA
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M, vM, *iflag);
@@ -585,6 +588,7 @@ extern "C" void SUBR(sdMat_to_device)(TYPE(sdMat_ptr) vM, int* iflag)
 
 extern "C" void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) vM, int* iflag)
 {
+  *iflag=0;
 #ifdef GHOST_HAVE_CUDA
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M, vM, *iflag);
