@@ -154,31 +154,4 @@ void daxpby_prec_4k(int k, double alpha, const double *restrict a, double beta, 
   }
 }
 
-// b+eps_b <- alpha*(a+eps_a) + beta*(b+eps_b) more precise
-void daxpby_prec(int n, double alpha, const double *restrict a, const double *restrict aC, double beta, double *restrict b, double *restrict bC)
-{
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
-  printf("Entering %s\n", __FUNCTION__);
-#endif
-
-  for(int i = 0; i < n; i++)
-  {
-    // b_ <- beta*b
-    double b_, bC_;
-    DOUBLE_2MULTFMA(beta,b[i], b_, bC_);
-    bC_ = (bC_+beta*bC[i]);
-
-    // a_ <- alpha*a
-    double a_, aC_;
-    DOUBLE_2MULTFMA(alpha,a[i], a_,aC_);
-
-    // newB <- a_ + b_
-    double newB, newBC;
-    DOUBLE_2SUM(a_, b_, newB, newBC);
-    newBC = (newBC+aC_+bC_);
-
-    // round result again
-    DOUBLE_FAST2SUM(newB, newBC, b[i], bC[i]);
-  }
-}
 

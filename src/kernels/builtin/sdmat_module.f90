@@ -72,12 +72,12 @@ module sdmat_module
       real(kind=C_DOUBLE), intent(in) :: a(*),aC(*),b(*),bC(*)
       real(kind=C_DOUBLE), intent(inout) :: c(*),cC(*)
     end subroutine
-    !void cholesky_prec(int n, double *restrict a, double *restrict aC, int *rank)
-    subroutine cholesky_prec(n, a, aC, rank) bind(C)
+    !void cholesky_prec(int n, double *restrict a, double *restrict aC, int *perm, int *rank)
+    subroutine cholesky_prec(n, a, aC, perm, rank) bind(C)
       use, intrinsic :: iso_c_binding
       integer(kind=C_INT), value :: n
       real(kind=C_DOUBLE), intent(inout) :: a(*), aC(*)
-      integer(kind=C_INT), intent(out) :: rank
+      integer(kind=C_INT), intent(out) :: perm(n), rank
     end subroutine
   end interface
 contains
@@ -166,10 +166,10 @@ contains
 
   !==================================================================================
   ! precise stable cholesky factorization (returns L from A=LL^T with pivoting)
-  subroutine sdmat_cholesky(A, rank, ierr)
+  subroutine sdmat_cholesky(A, perm, rank, ierr)
     !--------------------------------------------------------------------------------
     type(SDMat_t),  intent(in)    :: A
-    integer,        intent(out)   :: rank, ierr
+    integer,        intent(out)   :: perm(A%imin:A%imax), rank, ierr
     !--------------------------------------------------------------------------------
     integer :: n
     real(kind=8), allocatable :: a_(:,:), aC_(:,:)
@@ -185,7 +185,7 @@ contains
     a_  = A%val(A%imin:A%imax,A%jmin:A%jmax)
     aC_ = A%err(A%imin:A%imax,A%jmin:A%jmax)
 
-    call cholesky_prec(n, a_,aC_, rank)
+    call cholesky_prec(n, a_,aC_, perm, rank)
 
     A%val(A%imin:A%imax,A%jmin:A%jmax) = a_
     A%err(A%imin:A%imax,A%jmin:A%jmax) = aC_
@@ -761,11 +761,11 @@ contains
   end subroutine phist_DsdMat_times_sdMatT
 
 
-  subroutine phist_DsdMat_cholesky(A_ptr, rank, ierr) bind(C,name='phist_DsdMat_cholesky_f')
+  subroutine phist_DsdMat_cholesky(A_ptr, perm, rank, ierr) bind(C,name='phist_DsdMat_cholesky_f')
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),        value         :: A_ptr
-    integer(C_INT),     intent(out)   :: rank
+    integer(C_INT),     intent(out)   :: perm(*), rank
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(SDMat_t), pointer :: A
@@ -778,7 +778,7 @@ contains
 
     call c_f_pointer(A_ptr, A)
 
-    call sdmat_cholesky(A, rank, ierr)
+    call sdmat_cholesky(A, perm, rank, ierr)
 
   end subroutine phist_DsdMat_cholesky
 

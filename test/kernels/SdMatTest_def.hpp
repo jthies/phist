@@ -719,11 +719,23 @@ public:
 
       // cholesky
       int rank = 0;
-      SUBR(sdMat_cholesky)(mat1_,&rank,&iflag_);
+      int perm[nrows_];
+      SUBR(sdMat_cholesky)(mat1_,perm,&rank,&iflag_);
       ASSERT_EQ(0,iflag_);
 //SUBR(sdMat_print)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nrows_,rank);
+      // assure that mat1_ is now permuted upper triangular
+      for(int i = 0; i < nrows_; i++)
+      {
+        for(int j = 0; j < ncols_; j++)
+        {
+          if( i > j )
+          {
+            ASSERT_REAL_EQ(mt::zero(),st::abs(mat1_vp_[MIDX(i,perm[j],m_lda_)]));
+          }
+        }
+      }
 
       // check result
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat3_, &iflag_);
@@ -737,11 +749,22 @@ public:
       ASSERT_EQ(0,iflag_);
 
       // cholesky
-      SUBR(sdMat_cholesky)(mat1_,&rank,&iflag_);
+      SUBR(sdMat_cholesky)(mat1_,perm,&rank,&iflag_);
       ASSERT_EQ(0,iflag_);
 //SUBR(sdMat_print)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nrows_-1,rank);
+      // assure that mat1_ is now permuted upper triangular
+      for(int i = 0; i < nrows_; i++)
+      {
+        for(int j = 0; j < ncols_; j++)
+        {
+          if( i > j )
+          {
+            ASSERT_REAL_EQ(mt::zero(),st::abs(mat1_vp_[MIDX(i,perm[j],m_lda_)]));
+          }
+        }
+      }
 
       // check result
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat3_, &iflag_);
@@ -775,12 +798,23 @@ SUBR(sdMat_print)(mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // cholesky
-      SUBR(sdMat_cholesky)(mat1_,&rank,&iflag_);
+      SUBR(sdMat_cholesky)(mat1_,perm,&rank,&iflag_);
       ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"L^T:\n");
 SUBR(sdMat_print)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nrows_,rank);
+      // assure that mat1_ is now permuted upper triangular
+      for(int i = 0; i < nrows_; i++)
+      {
+        for(int j = 0; j < ncols_; j++)
+        {
+          if( i > j )
+          {
+            ASSERT_REAL_EQ(mt::zero(),st::abs(mat1_vp_[MIDX(i,perm[j],m_lda_)]));
+          }
+        }
+      }
 
       // check result
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat3_, &iflag_);
@@ -817,11 +851,22 @@ SUBR(sdMat_print)(mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // cholesky
-      SUBR(sdMat_cholesky)(mat1_,&rank,&iflag_);
+      SUBR(sdMat_cholesky)(mat1_,perm,&rank,&iflag_);
       ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"L^T:\n");
 SUBR(sdMat_print)(mat1_,&iflag_);
       ASSERT_EQ(nrows_-1,rank);
+      // assure that mat1_ is now permuted upper triangular
+      for(int i = 0; i < nrows_; i++)
+      {
+        for(int j = 0; j < ncols_; j++)
+        {
+          if( i > j )
+          {
+            ASSERT_REAL_EQ(mt::zero(),st::abs(mat1_vp_[MIDX(i,perm[j],m_lda_)]));
+          }
+        }
+      }
 
       // check result
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat3_, &iflag_);
@@ -830,7 +875,7 @@ SUBR(sdMat_print)(mat1_,&iflag_);
 PHIST_SOUT(PHIST_INFO,"LL^T:\n");
 SUBR(sdMat_print)(mat3_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat3_,mat2_));
+      ASSERT_NEAR(mt::one(),SdMatsEqual(mat3_,mat2_),100*mt::eps());
     }
   }
 

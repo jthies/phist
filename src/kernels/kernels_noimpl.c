@@ -314,7 +314,7 @@ void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
   *iflag=-99;
 }
 
-void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* rank, int* iflag)
+void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, int* iflag)
 {
   *iflag=-99;
 }
