@@ -24,25 +24,62 @@ module sdmat_module
   !public :: phist_DsdMat_put_value
   !public :: phist_DsdMat_print
   !public :: phist_DsdMat_random
+  !public :: phist_DsdMat_identity
   !public :: phist_DsdMat_add_sdMat
   public :: sdmat_add_sdmat
   !public :: phist_DsdMat_times_sdMat
   !public :: phist_DsdMatT_times_sdMat
+  !public :: phist_DsdMat_times_sdMatT
+  !public :: phist_DsdMat_cholesky
   public :: sdmat_times_sdmat
+  public :: sdmat_cholesky
 
 
   !==================================================================================
-  !> sdmat with row-wise layout
+  !> sdmat with col-wise layout
+  !! also stores the error for more precise operations
   type SDMat_t
     !--------------------------------------------------------------------------------
     integer     :: imin, imax
     integer     :: jmin, jmax
     integer     :: comm
     real(kind=8), contiguous, pointer :: val(:,:) => null()
+    real(kind=8), contiguous, pointer :: err(:,:) => null()
     logical     :: is_view
     !--------------------------------------------------------------------------------
   end type SDMat_t
 
+
+  !==================================================================================
+  ! required interfaces of C functions
+  interface
+    !void daxpby_prec(int n, double alpha, const double *restrict a, const double *restrict aC,
+    !                        double beta,        double *restrict b,       double *restrict bC)
+    subroutine daxpby_prec(n,alpha,a,aC,beta,b,bC) bind(C)
+      use, intrinsic :: iso_c_binding
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha, beta
+      real(kind=C_DOUBLE), intent(in) :: a(*), aC(*)
+      real(kind=C_DOUBLE), intent(inout) :: b(*), bC(*)
+    end subroutine
+    !void dgemm_prec(int m, int n, int k, double alpha, const double *restrict a, const double *restrict aC,
+    !                                                   const double *restrict b, const double *restrict bC,
+    !                                     double beta,        double *restrict c,       double *restrict cC)
+    subroutine dgemm_prec(m,n,k, alpha,a,aC,b,bC, beta,c,cC) bind(C)
+      use, intrinsic :: iso_c_binding
+      integer(kind=C_INT), value :: m,n,k
+      real(kind=C_DOUBLE), value :: alpha, beta
+      real(kind=C_DOUBLE), intent(in) :: a(*),aC(*),b(*),bC(*)
+      real(kind=C_DOUBLE), intent(inout) :: c(*),cC(*)
+    end subroutine
+    !void cholesky_prec(int n, double *restrict a, double *restrict aC, int *rank)
+    subroutine cholesky_prec(n, a, aC, rank) bind(C)
+      use, intrinsic :: iso_c_binding
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(inout) :: a(*), aC(*)
+      integer(kind=C_INT), intent(out) :: rank
+    end subroutine
+  end interface
 contains
 
   !==================================================================================
@@ -54,10 +91,21 @@ contains
     real(kind=8),   intent(in)    :: beta
     type(SDMat_t),  intent(inout) :: B
     !--------------------------------------------------------------------------------
+    real(kind=8), allocatable :: a_(:,:), b_(:,:), aC_(:,:), bC_(:,:)
+    integer :: nr, nc
+    !--------------------------------------------------------------------------------
 
-    B%val(B%imin:B%imax,B%jmin:B%jmax) = &
-      & alpha * A%val(A%imin:A%imax,A%jmin:A%jmax)  + &
-      & beta  * B%val(B%imin:B%imax,B%jmin:B%jmax)
+    nr = B%imax-B%imin+1
+    nc = B%jmax-B%jmin+1
+    allocate(a_(nr,nc),b_(nr,nc),aC_(nr,nc),bC_(nr,nc))
+    a_  = A%val(A%imin:A%imax,A%jmin:A%jmax)
+    aC_ = A%err(A%imin:A%imax,A%jmin:A%jmax)
+    b_  = B%val(B%imin:B%imax,B%jmin:B%jmax)
+    bC_ = B%err(B%imin:B%imax,B%jmin:B%jmax)
+
+    call daxpby_prec(nr*nc,alpha,a_,aC_,beta,b_,bC_)
+    B%val(B%imin:B%imax,B%jmin:B%jmax) = b_
+    B%err(B%imin:B%imax,B%jmin:B%jmax) = bC_
 
   end subroutine sdmat_add_sdmat
 
@@ -75,54 +123,76 @@ contains
     type(SDMat_t),  intent(inout) :: C
     integer(kind=C_INT), intent(out)  :: ierr
     !--------------------------------------------------------------------------------
-    integer :: m, n, k, lda, ldb, ldc
-    integer :: i, j
+    integer :: m, n, k
+    real(kind=8), allocatable :: a_(:,:), b_(:,:), aC_(:,:), bC_(:,:), c_(:,:), cC_(:,:)
     !--------------------------------------------------------------------------------
 
     ! determine data layout
     m = C%imax-C%imin+1
     n = C%jmax-C%jmin+1
-    if( transA .eq. 'N' ) then
-      k = A%jmax-A%jmin+1
-    else if( transA .eq. 'T' ) then
+    if( transA .eq. 'T' .or. transA .eq. 't') then
       k = A%imax-A%imin+1
     else
-      call exit(1)
-    end if
-    lda = size(A%val,1)
-    ldb = size(B%val,1)
-    ldc = size(C%val,1)
-
-    ! just call the BLAS
-    !call dgemm(transA,transB,m,n,k,alpha,A%val(A%imin,A%jmin),lda, &
-    !  &                                  B%val(B%imin,B%jmin),ldb, &
-    !  &                            beta, C%val(C%imin,C%jmin),ldc  )
-
-    !--------------------------------------------------------------------------------
-
-
-    if( transB .ne. 'N' .and. transB .ne. 'n' ) then
-      ierr = -99
-      return
+      k = A%jmax-A%jmin+1
     end if
 
-    if( transA .eq. 'N' .or. transA .eq. 'n' ) then
-      do i = 0, m-1
-        do j = 0, n-1
-          C%val(C%imin+i,C%jmin+j) = alpha * sum(A%val(A%imin+i,A%jmin:A%jmax)*B%val(B%imin:B%imax,B%jmin+j)) + beta*C%val(C%imin+i,C%jmin+j)
-        end do
-      end do
-    else ! transA = 'T'
-      do i = 0, m-1
-        do j = 0, n-1
-          C%val(C%imin+i,C%jmin+j) = alpha * sum(A%val(A%imin:A%imax,A%jmin+i)*B%val(B%imin:B%imax,B%jmin+j)) + beta*C%val(C%imin+i,C%jmin+j)
-        end do
-      end do
+    allocate(a_(m,k),b_(k,n),c_(m,n),aC_(m,k),bC_(k,n),cC_(m,n))
+    if( transA .eq. 'T' .or. transA .eq. 't') then
+      a_  = transpose(A%val(A%imin:A%imax,A%jmin:A%jmax))
+      aC_ = transpose(A%err(A%imin:A%imax,A%jmin:A%jmax))
+    else
+      a_  = A%val(A%imin:A%imax,A%jmin:A%jmax)
+      aC_ = A%err(A%imin:A%imax,A%jmin:A%jmax)
     end if
+    if( transB .eq. 'T' .or. transB .eq. 't') then
+      b_  = transpose(B%val(B%imin:B%imax,B%jmin:B%jmax))
+      bC_ = transpose(B%err(B%imin:B%imax,B%jmin:B%jmax))
+    else
+      b_  = B%val(B%imin:B%imax,B%jmin:B%jmax)
+      bC_ = B%err(B%imin:B%imax,B%jmin:B%jmax)
+    end if
+    c_  = C%val(C%imin:C%imax,C%jmin:C%jmax)
+    cC_ = C%err(C%imin:C%imax,C%jmin:C%jmax)
+
+    call dgemm_prec(m,n,k, alpha,a_,aC_,b_,bC_, beta,c_,cC_)
+
+    C%val(C%imin:C%imax,C%jmin:C%jmax) = c_
+    C%err(C%imin:C%imax,C%jmin:C%jmax) = cC_
 
     ierr = 0
 
   end subroutine sdmat_times_sdmat
+
+
+  !==================================================================================
+  ! precise stable cholesky factorization (returns L from A=LL^T with pivoting)
+  subroutine sdmat_cholesky(A, rank, ierr)
+    !--------------------------------------------------------------------------------
+    type(SDMat_t),  intent(in)    :: A
+    integer,        intent(out)   :: rank, ierr
+    !--------------------------------------------------------------------------------
+    integer :: n
+    real(kind=8), allocatable :: a_(:,:), aC_(:,:)
+    !--------------------------------------------------------------------------------
+
+    n = A%imax-A%imin+1
+    if( n .ne. A%jmax-A%jmin+1 ) then
+      ierr = -88
+      return
+    end if
+
+    allocate(a_(n,n),aC_(n,n))
+    a_  = A%val(A%imin:A%imax,A%jmin:A%jmax)
+    aC_ = A%err(A%imin:A%imax,A%jmin:A%jmax)
+
+    call cholesky_prec(n, a_,aC_, rank)
+
+    A%val(A%imin:A%imax,A%jmin:A%jmax) = a_
+    A%err(A%imin:A%imax,A%jmin:A%jmax) = aC_
+
+    ierr = 0
+
+  end subroutine sdmat_cholesky
 
 
   !==================================================================================
@@ -161,7 +231,9 @@ contains
     flush(6)
 #endif
     allocate(sdmat%val(nrows,ncols))
+    allocate(sdmat%err(nrows,ncols))
     sdmat%val = 0._8
+    sdmat%err = 0._8
     sdmat_ptr = c_loc(sdmat)
     ierr = 0
 
@@ -204,8 +276,9 @@ contains
     flush(6)
 #endif
     sdmat%val=>c_val
-      sdmat_ptr = c_loc(sdmat)
-      ierr = 0
+    allocate(sdmat%err(nrows,ncols))
+    sdmat_ptr = c_loc(sdmat)
+    ierr = 0
 
   end subroutine phist_DsdMat_create_view
 
@@ -230,6 +303,7 @@ contains
       call c_f_pointer(sdmat_ptr, sdmat)
       if( .not. sdmat%is_view) then
         deallocate(sdmat%val)
+        deallocate(sdmat%err)
       end if
       deallocate(sdmat)
     end if
@@ -362,6 +436,7 @@ contains
     view%jmax = sdmat%jmin+jmax
     view%comm = sdmat%comm
     view%val => sdmat%val
+    view%err => sdmat%err
     view%is_view = .true.
 
     ierr = 0
@@ -397,6 +472,8 @@ contains
 
     block%val(block%imin:block%imax,block%jmin:block%jmax) = &
       & sdmat%val(sdmat%imin+imin:sdmat%imin+imax,sdmat%jmin+jmin:sdmat%jmin+jmax)
+    block%err(block%imin:block%imax,block%jmin:block%jmax) = &
+      & sdmat%err(sdmat%imin+imin:sdmat%imin+imax,sdmat%jmin+jmin:sdmat%jmin+jmax)
     ierr = 0
 
   end subroutine phist_DsdMat_get_block
@@ -430,6 +507,8 @@ contains
 
     sdmat%val(sdmat%imin+imin:sdmat%imin+imax,sdmat%jmin+jmin:sdmat%jmin+jmax) = &
       & block%val(block%imin:block%imax,block%jmin:block%jmax)
+    sdmat%err(sdmat%imin+imin:sdmat%imin+imax,sdmat%jmin+jmin:sdmat%jmin+jmax) = &
+      & block%err(block%imin:block%imax,block%jmin:block%jmax)
     ierr = 0
 
   end subroutine phist_DsdMat_set_block
@@ -453,6 +532,7 @@ contains
     call c_f_pointer(sdmat_ptr, sdmat)
 
     sdmat%val(sdmat%imin:sdmat%imax,sdmat%jmin:sdmat%jmax) = val
+    sdmat%err(sdmat%imin:sdmat%imax,sdmat%jmin:sdmat%jmax) = 0._8
     ierr = 0
 
   end subroutine phist_DsdMat_put_value
@@ -488,8 +568,41 @@ contains
       call MPI_Bcast(buff, m*n, MPI_DOUBLE_PRECISION, 0, sdmat%comm, ierr);
     end if
     sdmat%val(sdmat%imin:sdmat%imax,sdmat%jmin:sdmat%jmax) = buff
+    sdmat%err(sdmat%imin:sdmat%imax,sdmat%jmin:sdmat%jmax) = 0._8
 
   end subroutine phist_DsdMat_random
+
+
+  subroutine phist_DsdMat_identity(sdmat_ptr, ierr) bind(C,name='phist_DsdMat_identity_f')
+    use, intrinsic :: iso_c_binding
+    use mpi
+    !--------------------------------------------------------------------------------
+    type(C_PTR),        value         :: sdmat_ptr
+    integer(C_INT),     intent(out)   :: ierr
+    !--------------------------------------------------------------------------------
+    type(SDMat_t), pointer :: sdmat
+    integer :: i, j
+    !--------------------------------------------------------------------------------
+
+    if( .not. c_associated(sdmat_ptr) ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(sdmat_ptr, sdmat)
+
+    do i = sdmat%imin, sdmat%imax, 1
+      do j = sdmat%jmin, sdmat%jmax, 1
+        if( i-sdmat%imin .eq. j-sdmat%jmin ) then
+          sdmat%val(i,j) = 1._8
+        else
+          sdmat%val(i,j) = 0._8
+        end if
+        sdmat%err(i,j) = 0._8
+      end do
+    end do
+
+  end subroutine phist_DsdMat_identity
 
 
   subroutine phist_DsdMat_print(sdmat_ptr, ierr) bind(C,name='phist_DsdMat_print_f')
@@ -615,5 +728,58 @@ contains
   end subroutine phist_DsdMatT_times_sdMat
 
 
+  subroutine phist_DsdMat_times_sdMatT(alpha, A_ptr, B_ptr, beta, M_ptr, ierr) bind(C,name='phist_DsdMat_times_sdMatT_f')
+    use, intrinsic :: iso_c_binding
+    !--------------------------------------------------------------------------------
+    type(C_PTR),        value         :: A_ptr, B_ptr, M_ptr
+    real(C_DOUBLE),     value         :: alpha, beta
+    integer(C_INT),     intent(out)   :: ierr
+    !--------------------------------------------------------------------------------
+    type(SDMat_t), pointer :: A, B, M
+    !--------------------------------------------------------------------------------
+
+    if( .not. c_associated(A_ptr) .or. &
+      & .not. c_associated(B_ptr) .or. &
+      & .not. c_associated(M_ptr)      ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(A_ptr, A)
+    call c_f_pointer(B_ptr, B)
+    call c_f_pointer(M_ptr, M)
+
+    if( A%imax-A%imin .ne. M%imax-M%imin .or. &
+      & A%jmax-A%jmin .ne. B%jmax-B%jmin .or. &
+      & B%imax-B%imin .ne. M%jmax-M%jmin      ) then
+      ierr = -1
+      return
+    end if
+
+    call sdmat_times_sdmat('N','T',alpha, A, B, beta, M, ierr)
+
+  end subroutine phist_DsdMat_times_sdMatT
+
+
+  subroutine phist_DsdMat_cholesky(A_ptr, rank, ierr) bind(C,name='phist_DsdMat_cholesky_f')
+    use, intrinsic :: iso_c_binding
+    !--------------------------------------------------------------------------------
+    type(C_PTR),        value         :: A_ptr
+    integer(C_INT),     intent(out)   :: rank
+    integer(C_INT),     intent(out)   :: ierr
+    !--------------------------------------------------------------------------------
+    type(SDMat_t), pointer :: A
+    !--------------------------------------------------------------------------------
+
+    if( .not. c_associated(A_ptr) ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(A_ptr, A)
+
+    call sdmat_cholesky(A, rank, ierr)
+
+  end subroutine phist_DsdMat_cholesky
 
 end module sdmat_module

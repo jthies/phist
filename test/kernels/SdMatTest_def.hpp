@@ -449,6 +449,73 @@ public:
   }
 
 
+  TEST_F(CLASSNAME, sdMat_times_sdMatT)
+  {
+    if (typeImplemented_ && nrows_ == ncols_ )
+    {
+#ifdef IS_COMPLEX
+      // force some complex non-zero value even if complex_random fails
+      mat1_vp_[0] = std::complex<MT>( st::imag(mat1_vp_[0]), st::real(mat1_vp_[0]) );
+#endif
+      SUBR(sdMat_times_sdMatT)(st::one(),mat1_,mat3_,st::one(),mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      PHIST_DEB("random'*random+42");
+#if PHIST_OUTLEV>=PHIST_DEBUG
+/*
+      SUBR(sdMat_print)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_print)(mat3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_print)(mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+*/
+#endif
+
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      SUBR(sdMat_from_device)(mat2_,&iflag_);
+      SUBR(sdMat_from_device)(mat3_,&iflag_);
+
+      // subtract matrix product by hand
+      for(int i = 0; i < nrows_; i++)
+      {  
+        for(int j = 0; j < ncols_; j++)
+        {
+          for(int k = 0; k < ncols_; k++)
+          {
+            mat2_vp_[MIDX(i,j,m_lda_)] -= 
+              mat1_vp_[MIDX(i,k,m_lda_)]*st::conj(mat3_vp_[MIDX(j,k,m_lda_)]);
+          }
+        }
+      }
+      // check result
+      ASSERT_NEAR(mt::one(),ArrayEqual(mat2_vp_,nrows_,ncols_,m_lda_,1,(ST)42.0,mflag_),10*mt::eps());
+
+    }
+  }
+
+
+  // check if we can construct an identity matrix
+  TEST_F(CLASSNAME, identity)
+  {
+    if( typeImplemented_ && nrows_ == ncols_ )
+    {
+      SUBR(sdMat_identity)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for(int i = 0; i < nrows_; i++)
+      {
+        for(int j = 0; j < ncols_; j++)
+        {
+          ST val = st::zero();
+          if( i == j )
+            val = st::one();
+          ASSERT_REAL_EQ(st::real(val),st::real(mat1_vp_[MIDX(i,j,m_lda_)]));
+          ASSERT_REAL_EQ(st::imag(val),st::imag(mat1_vp_[MIDX(i,j,m_lda_)]));
+        }
+      }
+    }
+  }
+
+
   // the result of sdMat_random must be equal on all processes (if a comm. is given in sdMat_create!)
   TEST_F(CLASSNAME, parallel_random)
   {
@@ -634,3 +701,136 @@ public:
     }
   }
 #endif
+
+
+  // check rank revealing cholesky decomposition
+  TEST_F(CLASSNAME, cholesky)
+  {
+    if( typeImplemented_ && nrows_ == ncols_ )
+    {
+      // -- check identity * 42 --
+      SUBR(sdMat_identity)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_add_sdMat)(42.*st::one(), mat1_, st::zero(), mat2_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      // copy to mat1_
+      SUBR(sdMat_add_sdMat)(st::one(), mat2_, st::zero(), mat1_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // cholesky
+      int rank = 0;
+      SUBR(sdMat_cholesky)(mat1_,&rank,&iflag_);
+      ASSERT_EQ(0,iflag_);
+//SUBR(sdMat_print)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(nrows_,rank);
+
+      // check result
+      SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat3_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat3_,mat2_));
+
+
+      // -- check rank deficiency of last row/col --
+      mat2_vp_[MIDX(nrows_-1,ncols_-1,m_lda_)] = st::zero();
+      SUBR(sdMat_add_sdMat)(st::one(), mat2_, st::zero(), mat1_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // cholesky
+      SUBR(sdMat_cholesky)(mat1_,&rank,&iflag_);
+      ASSERT_EQ(0,iflag_);
+//SUBR(sdMat_print)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(nrows_-1,rank);
+
+      // check result
+      SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat3_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat3_,mat2_));
+
+
+      // -- create explicit hpd matrix from upper triangular part --
+      SUBR(sdMat_put_value)(mat1_,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      int k = (nrows_*(nrows_+1))/2;
+      for(int i = 0; i < nrows_; i++)
+      {
+        for(int j = 0; j < ncols_; j++)
+        {
+          if( i == j )
+            mat1_vp_[MIDX(i,j,m_lda_)] = ST(10*k--);
+          else if( i < j )
+            mat1_vp_[MIDX(i,j,m_lda_)] = ST(k--);
+          else
+            mat1_vp_[MIDX(i,j,m_lda_)] = st::zero();
+        }
+      }
+PHIST_SOUT(PHIST_INFO,"Predefined L^T:\n");
+SUBR(sdMat_print)(mat1_,&iflag_);
+      SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+PHIST_SOUT(PHIST_INFO,"M:\n");
+SUBR(sdMat_print)(mat2_,&iflag_);
+      SUBR(sdMat_add_sdMat)(st::one(), mat2_, st::zero(), mat1_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // cholesky
+      SUBR(sdMat_cholesky)(mat1_,&rank,&iflag_);
+      ASSERT_EQ(0,iflag_);
+PHIST_SOUT(PHIST_INFO,"L^T:\n");
+SUBR(sdMat_print)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(nrows_,rank);
+
+      // check result
+      SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat3_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(0,iflag_);
+PHIST_SOUT(PHIST_INFO,"LL^T:\n");
+SUBR(sdMat_print)(mat3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat3_,mat2_));
+
+
+      // -- create explicit hermitian semi-positive definite matrix from upper triangular part --
+      // requires working rank detection and pivoting!
+      SUBR(sdMat_put_value)(mat1_,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      k = (nrows_*(nrows_-1))/2+nrows_-1;
+      for(int i = 0; i < nrows_; i++)
+      {
+        for(int j = 1; j < ncols_; j++)
+        {
+          if( i <= j )
+            mat1_vp_[MIDX(i,j,m_lda_)] = ST(k--);
+          else
+            mat1_vp_[MIDX(i,j,m_lda_)] = st::zero();
+        }
+      }
+PHIST_SOUT(PHIST_INFO,"Predefined L^T:\n");
+SUBR(sdMat_print)(mat1_,&iflag_);
+      SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+PHIST_SOUT(PHIST_INFO,"M:\n");
+SUBR(sdMat_print)(mat2_,&iflag_);
+      SUBR(sdMat_add_sdMat)(st::one(), mat2_, st::zero(), mat1_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // cholesky
+      SUBR(sdMat_cholesky)(mat1_,&rank,&iflag_);
+      ASSERT_EQ(0,iflag_);
+PHIST_SOUT(PHIST_INFO,"L^T:\n");
+SUBR(sdMat_print)(mat1_,&iflag_);
+      ASSERT_EQ(nrows_-1,rank);
+
+      // check result
+      SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat3_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(0,iflag_);
+PHIST_SOUT(PHIST_INFO,"LL^T:\n");
+SUBR(sdMat_print)(mat3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat3_,mat2_));
+    }
+  }
+

@@ -167,3 +167,30 @@ void prec_reduction_2k(int n, int k, const double *restrict s_, const double *re
   }
 }
 
+// precise reduction of gathered MPI results of all processes for block size k
+void prec_reduction_k(int n, int k, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
+{
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
+  // we need to sum up s_, c_
+  // we use AVX code here hoping the compiler doesn't optimize it away this way
+  for(int j = 0; j < k; j++)
+  {
+    r[j] = s_[j];
+    rC[j] = c_[j];
+  }
+  for(int i = 1; i < n; i++)
+  {
+    for(int j = 0; j < k/2; j++)
+    {
+      double si = s_[k*i+j];
+      double ci = c_[k*i+j];
+      double sigma, oldS = r[j];
+      DOUBLE_FAST2SUM(oldS, si, r[j], sigma);
+      double tmp = ci+sigma;
+      rC[j] += tmp;
+    }
+  }
+}
+
