@@ -44,6 +44,8 @@ extern "C" {
   void SUBR(sdMatT_times_sdMat_f)(_ST_,TYPE(const_sdMat_ptr),TYPE(const_sdMat_ptr),_ST_,TYPE(sdMat_ptr),int*);
   void SUBR(sdMat_times_sdMatT_f)(_ST_,TYPE(const_sdMat_ptr),TYPE(const_sdMat_ptr),_ST_,TYPE(sdMat_ptr),int*);
   void SUBR(sdMat_cholesky_f)(TYPE(sdMat_ptr),int*,int*,int*);
+  void SUBR(sdMat_backwardSubst_sdMat_f)(const TYPE(sdMat_ptr), const int*, int, TYPE(sdMat_ptr), int*);
+  void SUBR(sdMat_forwardSubst_sdMat_f)(const TYPE(sdMat_ptr), const int*, int, TYPE(sdMat_ptr), int*);
   void SUBR(sdMat_add_sdMat_f)(_ST_,TYPE(const_sdMat_ptr),_ST_,TYPE(sdMat_ptr),int*);
   void SUBR(sdMat_create_f)(TYPE(sdMat_ptr)*,int,int,const_comm_ptr_t,int*);
   void SUBR(sdMat_create_view_f)(TYPE(sdMat_ptr)*,const_comm_ptr_t,void*, lidx_t, int,int,int*);
@@ -461,6 +463,18 @@ extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) C, int* perm, int* rank, in
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CHK_IERR(SUBR(sdMat_cholesky_f)(C,perm,rank,iflag),*iflag);
+}
+
+extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat_f)(R,perm,rank,X,iflag),*iflag);
+}
+
+extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CHK_IERR(SUBR(sdMat_forwardSubst_sdMat_f)(R,perm,rank,X,iflag),*iflag);
 }
 
 

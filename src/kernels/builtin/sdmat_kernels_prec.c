@@ -203,3 +203,92 @@ void cholesky_prec(int n, double *restrict a, double *restrict aC, int *perm, in
   }
 }
 
+
+// apply backward substitution with permuted upper triangular matrix
+void backward_subst_prec(int n, int k, double *restrict r, double *restrict rC, int *p, int rank, double *restrict x, double *restrict xC)
+{
+  for(int l = 0; l < k; l++)
+  {
+    double newXl[n], newXCl[n];
+    for(int i = rank-1; i >= 0; i--)
+    {
+      // for j = i+1..n
+      // x_i,l <- x_i,l - r_i,p[j]*x_p[j],l
+      double s =  -x[l*n+i], t = -xC[l*n+i];
+//printf("x_p[i=%d],l=%d: %e\n", i, l, -s);
+      for(int j = i+1; j < n; j++)
+      {
+        double rx, rxC;
+        DOUBLE_2MULTFMA(r[p[j]*n+i],newXl[p[j]],rx,rxC);
+//printf("r: %e, x: %e, r*x: %e\n", r[p[j]*n+i],x[l*n+p[j]],rx);
+        rxC = rxC + r[p[j]*n+i]*newXCl[p[j]] + rC[p[j]*n+i]*newXl[p[j]] + rC[p[j]*n+i]*newXCl[p[j]];
+        double oldS = s, oldT = t;
+        DOUBLE_2SUM(rx,oldS,s,t);
+        t = t + oldT + rxC;
+      }
+//printf("x_p[i=%d],l=%d-sum...: %e\n", i, l, -s);
+
+      // x_p[i] = x_p[i]/r_i,p[i]
+      // use a/(x+y) = a/x - a*y/x^2 + ...
+      double s_, t_;
+      DOUBLE_2DIVFMA(s,r[p[i]*n+i],s_,t_);
+      t_ = t_ - s_*rC[p[i]*n+i]/r[p[i]*n+i]*(1-rC[p[i]*n+i]/r[p[i]*n+i])+t/r[p[i]*n+i];
+      DOUBLE_FAST2SUM(s_,t_,s,t);
+      newXl[p[i]] = -s;
+      newXCl[p[i]] = -t;
+//printf("new x_p[i=%d],l=%d: %e\n", i, l, -s);
+    }
+
+    for(int i = 0; i < n; i++)
+    {
+      x[l*n+i] = newXl[i];
+      xC[l*n+i] = newXCl[i];
+    }
+  }
+}
+
+// apply forward substitution with permuted transposed upper triangular matrix
+void forward_subst_prec(int n, int k, double *restrict r, double *restrict rC, int *p, int rank, double *restrict x, double *restrict xC)
+{
+  for(int l = 0; l < k; l++)
+  {
+    double newXl[n], newXCl[n];
+    for(int i = 0; i < rank; i++)
+    {
+      // for j = i+1..n
+      // x_p[i],l <- x_p[i],l - r_j,p[i]*x_p[j],l
+      double s =  -x[l*n+p[i]], t = -xC[l*n+p[i]];
+//printf("x_p[i=%d],l=%d: %e\n", i, l, -s);
+      for(int j = 0; j < i; j++)
+      {
+        double rx, rxC;
+        DOUBLE_2MULTFMA(r[p[i]*n+j],newXl[p[j]],rx,rxC);
+//printf("r: %e, x: %e, r*x: %e\n", r[p[i]*n+j],x[l*n+p[j]],rx);
+        rxC = rxC + r[p[i]*n+j]*newXCl[p[j]] + rC[p[i]*n+j]*newXl[p[j]] + rC[p[i]*n+j]*newXCl[p[j]];
+        double oldS = s, oldT = t;
+        DOUBLE_2SUM(rx,oldS,s,t);
+        t = t + oldT + rxC;
+      }
+//printf("x_p[i=%d],l=%d-sum...: %e\n", i, l, -s);
+
+      // x_p[i] = x_p[i]/r_i,p[i]
+      // use a/(x+y) = a/x - a*y/x^2 + ...
+      double s_, t_;
+      DOUBLE_2DIVFMA(s,r[p[i]*n+i],s_,t_);
+      t_ = t_ - s_*rC[p[i]*n+i]/r[p[i]*n+i]*(1-rC[p[i]*n+i]/r[p[i]*n+i])+t/r[p[i]*n+i];
+      DOUBLE_FAST2SUM(s_,t_,s,t);
+      newXl[p[i]] = -s;
+      newXCl[p[i]] = -t;
+//printf("new x_p[i=%d],l=%d: %e\n", i, l, -s);
+    }
+
+    // unpermute result
+    for(int i = 0; i < n; i++)
+    {
+      x[l*n+i] = newXl[p[i]];
+      xC[l*n+i] = newXCl[p[i]];
+    }
+  }
+}
+
+

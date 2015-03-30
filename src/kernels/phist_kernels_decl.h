@@ -430,6 +430,16 @@ void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
 //! returns permuted lower triangular cholesky factor M for M <- M*M'
 void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, int* iflag);
 
+//! backward substitution. \ingroup sdmat
+
+//! backward substitution for pivoted upper triangular cholesky factor
+void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag);
+
+//! forward substitution. \ingroup sdmat
+
+//! forward substitution for pivoted conj. transposed upper triangular cholesky factor
+void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag);
+
 
 //! \addtogroup crsmat
 //@{

@@ -31,8 +31,12 @@ module sdmat_module
   !public :: phist_DsdMatT_times_sdMat
   !public :: phist_DsdMat_times_sdMatT
   !public :: phist_DsdMat_cholesky
+  !public :: phist_DsdMat_backwardSubst_sdMat
+  !public :: phist_DsdMat_forwardSubst_sdMat
   public :: sdmat_times_sdmat
   public :: sdmat_cholesky
+  public :: sdmat_backwardSubst_sdmat
+  public :: sdmat_forwardSubst_sdmat
 
 
   !==================================================================================
@@ -78,6 +82,22 @@ module sdmat_module
       integer(kind=C_INT), value :: n
       real(kind=C_DOUBLE), intent(inout) :: a(*), aC(*)
       integer(kind=C_INT), intent(out) :: perm(n), rank
+    end subroutine
+    !void backward_subst_prec(int n, int k, double *restrict r, double *restrict rC, int *perm, int rank, double *restrict x, double *restrict xC)
+    subroutine backward_subst_prec(n,k,r,rC,perm,rank,x,xC) bind(C)
+      use, intrinsic :: iso_c_binding
+      integer(kind=C_INT), value :: n,k,rank
+      real(kind=C_DOUBLE), intent(in) :: r(*), rC(*)
+      integer(kind=C_INT), intent(in) :: perm(n)
+      real(kind=C_DOUBLE), intent(inout) :: x(*), xC(*)
+    end subroutine
+    !void forward_subst_prec(int n, int k, double *restrict r, double *restrict rC, int *perm, int rank, double *restrict x, double *restrict xC)
+    subroutine forward_subst_prec(n,k,r,rC,perm,rank,x,xC) bind(C)
+      use, intrinsic :: iso_c_binding
+      integer(kind=C_INT), value :: n,k,rank
+      real(kind=C_DOUBLE), intent(in) :: r(*), rC(*)
+      integer(kind=C_INT), intent(in) :: perm(n)
+      real(kind=C_DOUBLE), intent(inout) :: x(*), xC(*)
     end subroutine
   end interface
 contains
@@ -193,6 +213,60 @@ contains
     ierr = 0
 
   end subroutine sdmat_cholesky
+
+
+  !==================================================================================
+  ! backward substitute permuted upper triangular cholesky factor
+  subroutine sdmat_backwardsubst_sdmat(R,perm,rank,X)
+    !--------------------------------------------------------------------------------
+    type(SDMat_t),  intent(in)    :: R
+    integer,        intent(in)    :: perm(R%imin:R%imax), rank
+    type(SDMat_t),  intent(inout) :: X
+    !--------------------------------------------------------------------------------
+    real(kind=8), allocatable :: r_(:,:), x_(:,:), rC_(:,:), xC_(:,:)
+    integer :: n, k
+    !--------------------------------------------------------------------------------
+
+    n = R%imax-R%imin+1
+    k = X%jmax-X%jmin+1
+    allocate(r_(n,n),x_(n,k),rC_(n,n),xC_(n,k))
+    r_  = R%val(R%imin:R%imax,R%jmin:R%jmax)
+    rC_ = R%err(R%imin:R%imax,R%jmin:R%jmax)
+    x_  = X%val(X%imin:X%imax,X%jmin:X%jmax)
+    xC_ = X%err(X%imin:X%imax,X%jmin:X%jmax)
+
+    call backward_subst_prec(n, k, r_, rC_, perm, rank, x_, xC_)
+    X%val(X%imin:X%imax,X%jmin:X%jmax) = x_
+    X%err(X%imin:X%imax,X%jmin:X%jmax) = xC_
+
+  end subroutine sdmat_backwardsubst_sdmat
+
+
+  !==================================================================================
+  ! forward substitute permuted transposed upper triangular cholesky factor
+  subroutine sdmat_forwardsubst_sdmat(R,perm,rank,X)
+    !--------------------------------------------------------------------------------
+    type(SDMat_t),  intent(in)    :: R
+    integer,        intent(in)    :: perm(R%imin:R%imax), rank
+    type(SDMat_t),  intent(inout) :: X
+    !--------------------------------------------------------------------------------
+    real(kind=8), allocatable :: r_(:,:), x_(:,:), rC_(:,:), xC_(:,:)
+    integer :: n, k
+    !--------------------------------------------------------------------------------
+
+    n = R%imax-R%imin+1
+    k = X%jmax-X%jmin+1
+    allocate(r_(n,n),x_(n,k),rC_(n,n),xC_(n,k))
+    r_  = R%val(R%imin:R%imax,R%jmin:R%jmax)
+    rC_ = R%err(R%imin:R%imax,R%jmin:R%jmax)
+    x_  = X%val(X%imin:X%imax,X%jmin:X%jmax)
+    xC_ = X%err(X%imin:X%imax,X%jmin:X%jmax)
+
+    call forward_subst_prec(n, k, r_, rC_, perm, rank, x_, xC_)
+    X%val(X%imin:X%imax,X%jmin:X%jmax) = x_
+    X%err(X%imin:X%imax,X%jmin:X%jmax) = xC_
+
+  end subroutine sdmat_forwardsubst_sdmat
 
 
   !==================================================================================
@@ -781,5 +855,66 @@ contains
     call sdmat_cholesky(A, perm, rank, ierr)
 
   end subroutine phist_DsdMat_cholesky
+
+
+  subroutine phist_DsdMat_backwardSubst_sdMat(A_ptr, perm, rank, X_ptr, ierr) bind(C,name='phist_DsdMat_backwardSubst_sdMat_f')
+    use, intrinsic :: iso_c_binding
+    !--------------------------------------------------------------------------------
+    type(C_PTR),        value         :: A_ptr, X_ptr
+    integer(C_INT),     intent(in)    :: perm(*)
+    integer(C_INT),     value         :: rank
+    integer(C_INT),     intent(out)   :: ierr
+    !--------------------------------------------------------------------------------
+    type(SDMat_t), pointer :: A, X
+    !--------------------------------------------------------------------------------
+
+    if( .not. c_associated(A_ptr) .or. .not. c_associated(X_ptr) ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(A_ptr, A)
+    call c_f_pointer(X_ptr, X)
+
+    if( A%imax-A%imin .ne. A%jmax-A%jmin .or. A%jmax-A%jmin .ne. X%imax-X%imin ) then
+      ierr = -1
+      return
+    end if
+
+    call sdmat_backwardsubst_sdmat(A,perm,rank,X)
+    ierr = 0
+
+  end subroutine phist_DsdMat_backwardSubst_sdMat
+
+
+  subroutine phist_DsdMat_forwardSubst_sdMat(A_ptr, perm, rank, X_ptr, ierr) bind(C,name='phist_DsdMat_forwardSubst_sdMat_f')
+    use, intrinsic :: iso_c_binding
+    !--------------------------------------------------------------------------------
+    type(C_PTR),        value         :: A_ptr, X_ptr
+    integer(C_INT),     intent(in)    :: perm(*)
+    integer(C_INT),     value         :: rank
+    integer(C_INT),     intent(out)   :: ierr
+    !--------------------------------------------------------------------------------
+    type(SDMat_t), pointer :: A, X
+    !--------------------------------------------------------------------------------
+
+    if( .not. c_associated(A_ptr) .or. .not. c_associated(X_ptr) ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(A_ptr, A)
+    call c_f_pointer(X_ptr, X)
+
+    if( A%imax-A%imin .ne. A%jmax-A%jmin .or. A%jmax-A%jmin .ne. X%imax-X%imin ) then
+      ierr = -1
+      return
+    end if
+
+    call sdmat_forwardsubst_sdmat(A,perm,rank,X)
+    ierr = 0
+
+  end subroutine phist_DsdMat_forwardSubst_sdMat
+
 
 end module sdmat_module
