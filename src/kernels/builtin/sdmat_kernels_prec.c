@@ -20,16 +20,17 @@ void daxpby_prec(int n, double alpha, const double *restrict a, const double *re
     // b_ <- beta*b
     double b_, bC_;
     DOUBLE_2MULTFMA(beta,b[i], b_, bC_);
-    bC_ = (bC_+beta*bC[i]);
+    bC_ = bC_+beta*bC[i];
 
     // a_ <- alpha*a
     double a_, aC_;
     DOUBLE_2MULTFMA(alpha,a[i], a_,aC_);
+    aC_ = aC_+alpha*aC[i];
 
     // newB <- a_ + b_
     double newB, newBC;
     DOUBLE_2SUM(a_, b_, newB, newBC);
-    newBC = (newBC+aC_+bC_);
+    newBC = newBC+aC_+bC_;
 
     // round result again
     DOUBLE_FAST2SUM(newB, newBC, b[i], bC[i]);
@@ -53,19 +54,19 @@ void dgemm_prec(int m, int n, int k, double alpha, const double *restrict a, con
       // c_ <- beta*b[j*m+i]
       double c_, cC_;
       DOUBLE_2MULTFMA(beta,c[j*m+i], c_,cC_);
-      cC_ = beta*cC[j*m+i]+cC_;
+      cC_ = cC_+beta*cC[j*m+i];
 
       for(int l = 0; l < k; l++)
       {
         // a_ <- alpha*a[l*m+i]
         double a_, aC_;
         DOUBLE_2MULTFMA(alpha,a[l*m+i], a_,aC_);
-        aC_ = alpha*aC[l*m+i]+aC_;
+        aC_ = aC_+alpha*aC[l*m+i];
 
         // tmp <- a_*b[j*k+l]
         double tmp, tmpC;
         DOUBLE_2MULTFMA(a_,b[j*k+l], tmp,tmpC);
-        tmpC = a_*bC[j*k+l]+aC_*b[j*k+l]+tmpC;
+        tmpC = tmpC+a_*bC[j*k+l]+aC_*b[j*k+l]+aC_*bC[j*k+l];
 
         // c_ <- c_ + tmp
         double oldC = c_, oldCC_ = cC_;
@@ -136,7 +137,7 @@ void cholesky_prec(int n, double *restrict a, double *restrict aC, int *perm, in
     {
       double s,t,t_;
       DOUBLE_2SQRTFMA(d[p[m]],s,t);
-      t = t + dC[p[m]]/(2*s) - dC[p[m]]*dC[p[m]]/(8*s*s*s);
+      t = t + dC[p[m]]/(2*s)*(1 - dC[p[m]]/(4*d[p[m]]) + dC[p[m]]*dC[p[m]]/(8*d[p[m]]*d[p[m]]));
       DOUBLE_FAST2SUM(s,t,l[p[m]*n+m],lC[p[m]*n+m]);
 //printf("l[m=%d,p[m=%d]] <- %e\n", m,m,l[p[m]*n+m]);
     }

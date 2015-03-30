@@ -548,6 +548,67 @@ SUBR(sdMat_print)(M1_, &iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }
+
+#if( _N_ % 4 == 0 && (_K_ == 1 || _K_ == 2 || _K_ == 4 ) )
+  // check ones(n,m)*ones(m,m)=m*ones(n,m)
+  TEST_F(CLASSNAME, mvec_times_sdMat_in_place_prec)
+  {
+    if (typeImplemented_ && m_ == k_ )
+    {
+      // fill V and W with ones
+      SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_put_value)(M1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_times_sdMat_inplace)(V1_,M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      TYPE(mvec_ptr) V_cols=NULL;
+      SUBR(mvec_view_block)(V1_,&V_cols,0,k_-1,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V_cols,(ST)m_));
+   
+      SUBR(mvec_delete)(V_cols,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+  }
+
+  // check ones(n,m)*ones(m,m)=m*ones(n,m)
+  TEST_F(CLASSNAME, mvec_times_sdMat_in_place_with_random_data_prec)
+  {
+    if (typeImplemented_ && m_ == k_ )
+    {
+      // fill V and W with ones
+      SUBR(mvec_random)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_random)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_sync_values)(M1_, comm_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,st::zero(),V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_times_sdMat_inplace)(V1_,M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+  
+      TYPE(mvec_ptr) V_cols=NULL;
+      SUBR(mvec_view_block)(V1_,&V_cols,0,k_-1,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_NEAR(mt::one(),MvecsEqual(V_cols,V2_),sqrt(mt::eps()));
+   
+      SUBR(mvec_delete)(V_cols,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+  }
+#endif
+
+
 #if (_M_==_K_)
   // check that we can zero out some columns of V by multiplying
   // a view of them with a zero sdMat.

@@ -53,7 +53,6 @@ void ddot_self_prec_4(int nrows, const double *restrict x, double *restrict res,
         MM256_2MULTFMA(xi,xi,p,pi);
         __m256d sigma, oldS = s;
         MM256_FAST2SUM(oldS,p, s,sigma);
-        //MM256_2SUM(oldS,p, s,sigma); // more FP ops than Kahan-style FAST2SUM, but exacter
         __m256d tmp = _mm256_add_pd(pi,sigma);
         c = _mm256_add_pd(c,tmp);
       }
@@ -70,8 +69,7 @@ void ddot_self_prec_4(int nrows, const double *restrict x, double *restrict res,
     for(int i = 1; i < nt; i++)
     {
       __m256d sigma, oldS = s;
-      MM256_FAST2SUM(oldS, s_[0][i], s, sigma);
-      //MM256_2SUM(oldS, s_[0][i], s, sigma);
+      MM256_2SUM(oldS, s_[0][i], s, sigma);
       __m256d tmp = _mm256_add_pd(c_[0][i],sigma);
       c = _mm256_add_pd(c, tmp);
     }
@@ -130,7 +128,6 @@ void ddot_prec_4(int nrows, const double *restrict x, const double *restrict y, 
         MM256_2MULTFMA(xi,yi,p,pi);
         __m256d sigma, oldS = s;
         MM256_FAST2SUM(oldS,p, s,sigma);
-        //MM256_2SUM(oldS,p, s,sigma); // more FP ops than Kahan-style FAST2SUM, but exacter
         __m256d tmp = _mm256_add_pd(pi,sigma);
         c = _mm256_add_pd(c,tmp);
       }
@@ -147,8 +144,7 @@ void ddot_prec_4(int nrows, const double *restrict x, const double *restrict y, 
     for(int i = 1; i < nt; i++)
     {
       __m256d sigma, oldS = s;
-      MM256_FAST2SUM(oldS, s_[0][i], s, sigma);
-      //MM256_2SUM(oldS, s_[0][i], s, sigma);
+      MM256_2SUM(oldS, s_[0][i], s, sigma);
       __m256d tmp = _mm256_add_pd(c_[0][i],sigma);
       c = _mm256_add_pd(c, tmp);
     }

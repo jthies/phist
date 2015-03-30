@@ -113,6 +113,15 @@ module mvec_module
       real(kind=C_DOUBLE), intent(in) :: x, y
       real(kind=C_DOUBLE), intent(out) :: res, resC
     end subroutine
+    !void daxpby_prec(int n, double alpha, const double *restrict a, const double *restrict aC,
+    !                        double beta,        double *restrict b,       double *restrict bC)
+    subroutine daxpby_prec(n,alpha,a,aC,beta,b,bC) bind(C)
+      use, intrinsic :: iso_c_binding
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha, beta
+      real(kind=C_DOUBLE), intent(in) :: a(*), aC(*)
+      real(kind=C_DOUBLE), intent(inout) :: b(*), bC(*)
+    end subroutine
     !void prec_reduction_1(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC)
     subroutine prec_reduction_1(n, s, c, res, resC) bind(C)
       use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
@@ -218,42 +227,26 @@ module mvec_module
       real(kind=C_DOUBLE), intent(in) :: x, y
       real(kind=C_DOUBLE), intent(out) :: res, resC
     end subroutine
-    !void daxpby_prec_1(double alpha, const double *restrict a, double, beta, double *restrict b, double *restrict bC)
-    subroutine daxpby_prec_1(alpha, a, beta, b, bC) bind(C)
+    !void dgemm_sb_inplace_prec_4(int nrows, double *restrict x, const double *restrict r, const double *restrict rC)
+    subroutine dgemm_sb_inplace_prec_4(n,x,r,rC) bind(C)
       use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
-      real(kind=C_DOUBLE), value :: alpha, beta
-      real(kind=C_DOUBLE), intent(in) :: a
-      real(kind=C_DOUBLE), intent(inout) :: b, bC
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(inout) :: x
+      real(kind=C_DOUBLE), intent(in) :: r,rC
     end subroutine
-    !void daxpby_prec_2(double alpha, const double *restrict a, double, beta, double *restrict b, double *restrict bC)
-    subroutine daxpby_prec_2(alpha, a, beta, b, bC) bind(C)
+    !void dgemm_sb_inplace_prec_2(int nrows, double *restrict x, const double *restrict r, const double *restrict rC)
+    subroutine dgemm_sb_inplace_prec_2(n,x,r,rC) bind(C)
       use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
-      real(kind=C_DOUBLE), value :: alpha, beta
-      real(kind=C_DOUBLE), intent(in) :: a
-      real(kind=C_DOUBLE), intent(inout) :: b, bC
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(inout) :: x
+      real(kind=C_DOUBLE), intent(in) :: r,rC
     end subroutine
-    !void daxpby_prec_2(double alpha, const double *restrict a, double, beta, double *restrict b, double *restrict bC)
-    subroutine daxpby_prec_2k(k, alpha, a, beta, b, bC) bind(C)
+    !void dgemm_sb_inplace_prec_1(int nrows, double *restrict x, const double *restrict r, const double *restrict rC)
+    subroutine dgemm_sb_inplace_prec_1(n,x,r,rC) bind(C)
       use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
-      integer(kind=C_INT), value :: k
-      real(kind=C_DOUBLE), value :: alpha, beta
-      real(kind=C_DOUBLE), intent(in) :: a
-      real(kind=C_DOUBLE), intent(inout) :: b, bC
-    end subroutine
-    !void daxpby_prec_4(double alpha, const double *restrict a, double, beta, double *restrict b, double *restrict bC)
-    subroutine daxpby_prec_4(alpha, a, beta, b, bC) bind(C)
-      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
-      real(kind=C_DOUBLE), value :: alpha, beta
-      real(kind=C_DOUBLE), intent(in) :: a
-      real(kind=C_DOUBLE), intent(inout) :: b, bC
-    end subroutine
-    !void daxpby_prec_4k(int k, double alpha, const double *restrict a, double, beta, double *restrict b, double *restrict bC)
-    subroutine daxpby_prec_4k(k, alpha, a, beta, b, bC) bind(C)
-      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
-      integer(kind=C_INT), value :: k
-      real(kind=C_DOUBLE), value :: alpha, beta
-      real(kind=C_DOUBLE), intent(in) :: a
-      real(kind=C_DOUBLE), intent(inout) :: b, bC
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(inout) :: x
+      real(kind=C_DOUBLE), intent(in) :: r,rC
     end subroutine
   end interface
 
@@ -995,14 +988,15 @@ contains
 
   !==================================================================================
   ! special gemm routine for mvec <- mvec*sdMat
-  subroutine mvec_times_sdmat_inplace(v,M)
+  subroutine mvec_times_sdmat_inplace(v,M,iflag)
     !--------------------------------------------------------------------------------
     type(MVec_t),  intent(in)    :: v
     type(SDMat_t), intent(in)    :: M
+    integer,       intent(inout) :: iflag
     !--------------------------------------------------------------------------------
     integer :: nrows, nvecv, nvecw, ldv
     logical :: strided_v
-    real(kind=8), allocatable :: M_(:,:)
+    real(kind=8), allocatable :: M_(:,:), MC_(:,:)
     !--------------------------------------------------------------------------------
 
     ! determine data layout
@@ -1019,10 +1013,42 @@ contains
     end if
 
     ! copy data to dense block
-    allocate(M_(nvecv,nvecw))
+    allocate(M_(nvecv,nvecw),MC_(nvecv,nvecw))
     M_ = M%val(M%imin:M%imax,M%jmin:M%jmax)
-    call dgemm_sB_generic_inplace(nrows,nvecw,nvecv,v%val(v%jmin,1),ldv,M_(1,1))
+    MC_ = M%err(M%imin:M%imax,M%jmin:M%jmax)
 
+    if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
+      ! check if we can do it
+      if( strided_v ) then
+        iflag = -99
+        return
+      end if
+
+      if( nvecv .ne. nvecw ) then
+        iflag = -99
+        return
+      end if
+
+      if( nvecv .ne. 4 .and. nvecv .ne. 2 .and. nvecv .ne. 1 ) then
+        iflag = -99
+        return
+      end if
+
+      if( nvecv .eq. 4 ) then
+        call dgemm_sB_inplace_prec_4(nrows,v%val(v%jmin,1),M_(1,1),MC_(1,1))
+      else if( nvecv .eq. 2 ) then
+        call dgemm_sB_inplace_prec_2(nrows,v%val(v%jmin,1),M_(1,1),MC_(1,1))
+      else if( nvecv .eq. 1 ) then
+        call dgemm_sB_inplace_prec_1(nrows,v%val(v%jmin,1),M_(1,1),MC_(1,1))
+      end if
+
+      iflag = 0
+      return
+    end if
+
+    ! generic case
+    call dgemm_sB_generic_inplace(nrows,nvecw,nvecv,v%val(v%jmin,1),ldv,M_(1,1))
+    iflag = 0
 
     !--------------------------------------------------------------------------------
   end subroutine mvec_times_sdmat_inplace
@@ -1043,7 +1069,7 @@ contains
     integer :: nrows, nvecv, nvecw, ldv, ldw
     logical :: strided_v, strided_w
     logical :: handled, tmp_transposed
-    real(kind=8), allocatable :: tmp(:,:)
+    real(kind=8), allocatable :: tmp(:,:), tmpC(:,:)
     real(kind=8), allocatable :: tmp_(:,:)
     real(kind=8), allocatable :: localBuff(:,:,:), globalBuff(:,:,:,:), globalBuff_(:,:,:,:)
     real(kind=8), allocatable :: mBuff(:,:), mBuffC(:,:)
@@ -1052,6 +1078,7 @@ contains
     ! check if we only need to scale
     if( alpha .eq. 0 ) then
       M%val(M%imin:M%imax,M%jmin:M%jmax) = beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
+      M%err(M%imin:M%imax,M%jmin:M%jmax) = beta*M%err(M%imin:M%imax,M%jmin:M%jmax)
       return
     end if
 
@@ -1213,35 +1240,25 @@ contains
 !write(*,*) 'here vTw _C', localBuff(:,:,2)
 
       ! copy it to a buffer again for the final calculation of m = alpha*res + beta*m
-      allocate(mBuff(nvecv,nvecw), tmp(nvecv,nvecw), mBuffC(nvecv,nvecw))
+      allocate(mBuff(nvecv,nvecw), tmp(nvecv,nvecw), mBuffC(nvecv,nvecw), tmpC(nvecv,nvecw))
       mBuff = M%val(M%imin:M%imax,M%jmin:M%jmax)
-      localBuff(:,:,1) = localBuff(:,:,1) + localBuff(:,:,2)
+      mBuffC = M%err(M%imin:M%imax,M%jmin:M%jmax)
       if( tmp_transposed ) then
         tmp = transpose(localBuff(:,:,1))
+        tmpC = transpose(localBuff(:,:,2))
       else
         tmp = localBuff(:,:,1)
+        tmpC = localBuff(:,:,2)
       end if
 !write(*,*) 'here mBuff', mBuff
 !write(*,*) 'here tmp', tmp
 !write(*,*) 'here alpha beta', alpha, beta
-      if( nvecv*nvecw .eq. 1 ) then
-        call daxpby_prec_1(alpha, tmp(1,1), beta, mBuff(1,1), mBuffC(1,1))
-      else if( nvecv*nvecw .eq. 2 ) then
-        call daxpby_prec_2(alpha, tmp(1,1), beta, mBuff(1,1), mBuffC(1,1))
-      else if( nvecv*nvecw .eq. 4 ) then
-        call daxpby_prec_4(alpha, tmp(1,1), beta, mBuff(1,1), mBuffC(1,1))
-      else if( mod(nvecv*nvecw,4) .eq. 0 ) then
-        call daxpby_prec_4k(nvecv*nvecw, alpha, tmp(1,1), beta, mBuff(1,1), mBuffC(1,1))
-      else if( mod(nvecv*nvecw,2) .eq. 0 ) then
-        call daxpby_prec_2k(nvecv*nvecw, alpha, tmp(1,1), beta, mBuff(1,1), mBuffC(1,1))
-      else
-        write(*,*) 'error'
-        call exit(1)
-      end if
+      call daxpby_prec(nvecv*nvecw,alpha,tmp(1,1),tmpC(1,1),beta,mBuff(1,1),mBuffC(1,1))
 !write(*,*) 'here mBuff', mBuff
 !write(*,*) 'here mBuffC', mBuffC
       ! set result
-      M%val(M%imin:M%imax,M%jmin:M%jmax) = mBuff + mBuffC
+      M%val(M%imin:M%imax,M%jmin:M%jmax) = mBuff
+      M%err(M%imin:M%imax,M%jmin:M%jmax) = mBuffC
       return
     end if
 
@@ -2254,12 +2271,12 @@ contains
   end subroutine phist_Dmvec_times_sdMat
 
 
-  subroutine phist_Dmvec_times_sdMat_inplace(v_ptr, M_ptr, ierr) bind(C,name='phist_Dmvec_times_sdMat_inplace_f')
+  subroutine phist_Dmvec_times_sdMat_inplace(v_ptr, M_ptr, iflag) bind(C,name='phist_Dmvec_times_sdMat_inplace_f')
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),        value         :: v_ptr
     type(C_PTR),        value         :: M_ptr
-    integer(C_INT),     intent(out)   :: ierr
+    integer(C_INT),     intent(inout) :: iflag
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: v
     type(SDMat_t), pointer :: M
@@ -2267,7 +2284,7 @@ contains
 
     if( .not. c_associated(v_ptr) .or. &
       & .not. c_associated(M_ptr)      ) then
-      ierr = -88
+      iflag = -88
       return
     end if
 
@@ -2276,13 +2293,11 @@ contains
 
     if( v%jmax-v%jmin .ne. M%imax-M%imin .or. &
       & M%jmax-M%jmin .gt. v%jmax-v%jmin      ) then
-      ierr = -1
+      iflag = -1
       return
     end if
 
-    call mvec_times_sdmat_inplace(v,M)
-
-    ierr = 0
+    call mvec_times_sdmat_inplace(v,M,iflag)
 
   end subroutine phist_Dmvec_times_sdMat_inplace
 

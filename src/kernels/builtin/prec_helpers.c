@@ -29,7 +29,7 @@ void prec_reduction_1(int n, const double *restrict s_, const double *restrict c
     __m128d si = _mm_load_sd(&s_[i]);
     __m128d ci = _mm_load_sd(&c_[i]);
     __m128d sigma, oldS = s;
-    MM128_FAST2SUM(oldS, si, s, sigma);
+    MM128_2SUM(oldS, si, s, sigma);
     //MM128_2SUM(oldS, si, s, sigma);
     __m128d tmp = _mm_add_pd(ci,sigma);
     c = _mm_add_pd(c, tmp);
@@ -54,7 +54,7 @@ void prec_reduction_2(int n, const double *restrict s_, const double *restrict c
     __m128d si = _mm_loadu_pd(&s_[2*i]);
     __m128d ci = _mm_loadu_pd(&c_[2*i]);
     __m128d sigma, oldS = s;
-    MM128_FAST2SUM(oldS, si, s, sigma);
+    MM128_2SUM(oldS, si, s, sigma);
     //MM128_2SUM(oldS, si, s, sigma);
     __m128d tmp = _mm_add_pd(ci,sigma);
     c = _mm_add_pd(c, tmp);
@@ -79,7 +79,7 @@ void prec_reduction_4(int n, const double *restrict s_, const double *restrict c
     __m256d si = _mm256_loadu_pd(&s_[4*i]);
     __m256d ci = _mm256_loadu_pd(&c_[4*i]);
     __m256d sigma, oldS = s;
-    MM256_FAST2SUM(oldS, si, s, sigma);
+    MM256_2SUM(oldS, si, s, sigma);
     //MM256_2SUM(oldS, si, s, sigma);
     __m256d tmp = _mm256_add_pd(ci,sigma);
     c = _mm256_add_pd(c, tmp);
@@ -118,7 +118,7 @@ void prec_reduction_4k(int n, int k, const double *restrict s_, const double *re
       __m256d si = _mm256_loadu_pd(&s_[k*i+4*j]);
       __m256d ci = _mm256_loadu_pd(&c_[k*i+4*j]);
       __m256d sigma, oldS = s[j];
-      MM256_FAST2SUM(oldS, si, s[j], sigma);
+      MM256_2SUM(oldS, si, s[j], sigma);
       //MM256_2SUM(oldS, si, s, sigma);
       __m256d tmp = _mm256_add_pd(ci,sigma);
       c[j] = _mm256_add_pd(c[j], tmp);
@@ -154,7 +154,7 @@ void prec_reduction_2k(int n, int k, const double *restrict s_, const double *re
       __m128d si = _mm_loadu_pd(&s_[k*i+2*j]);
       __m128d ci = _mm_loadu_pd(&c_[k*i+2*j]);
       __m128d sigma, oldS = s[j];
-      MM128_FAST2SUM(oldS, si, s[j], sigma);
+      MM128_2SUM(oldS, si, s[j], sigma);
       //MM128_2SUM(oldS, si, s, sigma);
       __m128d tmp = _mm_add_pd(ci,sigma);
       c[j] = _mm_add_pd(c[j], tmp);
@@ -187,7 +187,7 @@ void prec_reduction_k(int n, int k, const double *restrict s_, const double *res
       double si = s_[k*i+j];
       double ci = c_[k*i+j];
       double sigma, oldS = r[j];
-      DOUBLE_FAST2SUM(oldS, si, r[j], sigma);
+      DOUBLE_2SUM(oldS, si, r[j], sigma);
       double tmp = ci+sigma;
       rC[j] += tmp;
     }
