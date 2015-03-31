@@ -241,6 +241,12 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     }
   
     PHIST_SOUT(PHIST_INFO,"problem type: Anderson %d x %d x %d\n",LL[0],LL[1],LL[2]);
+#ifdef PHIST_HAVE_ESSEX_PHYSICS
+        PHIST_SOUT(PHIST_ERROR,"ERROR anderson model problem disabled with ESSEX-Physics\n" 
+                               "due to Issue #107\n");
+        *iflag=-1;
+        return;
+#else
     matfuncs_info_t info;
     anderson( -2, LL, &DIM, NULL);
     anderson( -1, NULL, NULL, &info);
@@ -248,6 +254,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat,comm,
         (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,
         &anderson, iflag), *iflag);
+#endif
   }
   else if (mat_type==SPINSZ)
   {
