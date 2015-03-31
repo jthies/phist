@@ -207,6 +207,53 @@ public:
     }
   }
 
+#if ( _M_ == _K_ )
+  // check ones(n,m)'*ones(n,m)=n*ones(m,m), and columns with 1, 2, 3...
+  TEST_F(CLASSNAME, mvecT_times_mvec_self) 
+  {
+    if( typeImplemented_ && m_ == k_ )
+    {
+      // fill V and W with ones
+      SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V1_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      SUBR(mvec_from_device)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      V1Test::PrintVector(*cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      MTest::PrintSdMat(*cout,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
+#endif
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
+      ASSERT_EQ(0,iflag_);
+
+      // fill rows with 1,2,3,4, ...
+      for (int ii=0; ii< nloc_; ii++)
+      {
+        for (int j=0; j<k_; j++)
+          V1_vp_[VIDX(ii,j,ldaV1_)] = -st::one()*(_MT_)(j+1);
+      }
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V1_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // check result
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for(int i = 0; i < m_; i++)
+      {
+        for(int j = 0; j < m_; j++)
+        {
+          _MT_ val = mt::one()*(i+1)*(j+1)*_N_;
+          ASSERT_NEAR(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*10*mt::eps()*_N_);
+          ASSERT_NEAR(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*10*mt::eps()*_N_);
+        }
+      }
+    }
+  }
+#endif
 
 #if( _N_ % 4 == 0 && (_M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 ) )
   // check ones(n,m)'*ones(n,k)=n*ones(m,k)
@@ -223,7 +270,7 @@ public:
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-SUBR(sdMat_print)(M1_, &iflag_);
+//SUBR(sdMat_print)(M1_, &iflag_);
       ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -282,6 +329,49 @@ SUBR(sdMat_print)(M1_, &iflag_);
 
     }
   }
+
+#if ( _M_ == _K_ )
+  // check ones(n,m)'*ones(n,k)=n*ones(m,k)
+  TEST_F(CLASSNAME, mvecT_times_mvec_prec_self) 
+  {
+    if( typeImplemented_ && m_ == k_ )
+    {
+      // fill V and W with ones
+      SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V1_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+//SUBR(sdMat_print)(M1_, &iflag_);
+      ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // fill rows with 1,2,3,4, ...
+      for (int ii=0; ii< nloc_; ii++)
+      {
+        for (int j=0; j<k_; j++)
+          V1_vp_[VIDX(ii,j,ldaV1_)] = -st::one()*(_MT_)(j+1);
+      }
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V1_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // check result
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for(int i = 0; i < m_; i++)
+      {
+        for(int j = 0; j < k_; j++)
+        {
+          _MT_ val = mt::one()*(i+1)*(j+1)*_N_;
+          ASSERT_REAL_EQ(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]));
+          ASSERT_REAL_EQ(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]));
+        }
+      }
+    }
+  }
+#endif
 #endif
 
 

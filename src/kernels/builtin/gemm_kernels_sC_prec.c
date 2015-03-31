@@ -119,33 +119,33 @@ void dgemm_sc_self_prec_2(int nrows, const double *restrict x, double *restrict 
 
   {
     // buffer for omp thread result + padding to prevent false sharing
-    __m256d s_[8][nt];
-    __m256d c_[8][nt];
+    __m128d s_[8][nt];
+    __m128d c_[8][nt];
 
 #pragma omp parallel shared(s_,c_)
     {
       // initialize sum
-      __m256d s[2];
-      __m256d c[2];
-      for(int j = 0; j < 2; j++)
+      __m128d s[4];
+      __m128d c[4];
+      for(int j = 0; j < 4; j++)
       {
-        s[j] = _mm256_setzero_pd();
-        c[j] = _mm256_setzero_pd();
+        s[j] = _mm_setzero_pd();
+        c[j] = _mm_setzero_pd();
       }
 
 #pragma omp for schedule(static)
       for(int i = 0; i < nrows; i++)
       {
-        __m256d xi = _mm256_load_pd(&x[4*i]);
+        __m128d xi = _mm_load_pd(&x[2*i]);
         for(int j = 0; j < 2; j++)
         {
-          __m256d xij = _mm256_set_pd(x[4*i+j+2],x[4*i+j+2],x[4*i+j],x[4*i+j]);
-          __m256d p, pi;
-          MM256_2MULTFMA(xi,xij,p,pi);
-          __m256d sigma, oldS = s[j];
-          MM256_FAST2SUM(oldS,p, s[j],sigma);
-          __m256d tmp = _mm256_add_pd(pi,sigma);
-          c[j] = _mm256_add_pd(c[j],tmp);
+          __m128d xij = _mm_set1_pd(x[2*i+j]);
+          __m128d p, pi;
+          MM128_2MULTFMA(xi,xij,p,pi);
+          __m128d sigma, oldS = s[j];
+          MM128_FAST2SUM(oldS,p, s[j],sigma);
+          __m128d tmp = _mm_add_pd(pi,sigma);
+          c[j] = _mm_add_pd(c[j],tmp);
         }
       }
 
@@ -163,32 +163,22 @@ void dgemm_sc_self_prec_2(int nrows, const double *restrict x, double *restrict 
     {
       for(int j = 0; j < 2; j++)
       {
-        __m256d sigma, oldS = s_[j][0];
-        MM256_FAST2SUM(oldS, s_[j][i], s_[j][0], sigma);
-        __m256d tmp = _mm256_add_pd(c_[j][i],sigma);
-        c_[j][0] = _mm256_add_pd(c_[j][0], tmp);
+        __m128d sigma, oldS = s_[j][0];
+        MM128_FAST2SUM(oldS, s_[j][i], s_[j][0], sigma);
+        __m128d tmp = _mm_add_pd(c_[j][i],sigma);
+        c_[j][0] = _mm_add_pd(c_[j][0], tmp);
       }
     }
 
-
-    // sum up 4 elements in mm256 to 2 elements in mm128
-    // and return result, needs to be summed up again
+    // return result, needs to be summed up
     for(int j = 0; j < 2; j++)
     {
-      __m128d s = _mm256_extractf128_pd(s_[j][0],0);
-      __m128d p = _mm256_extractf128_pd(s_[j][0],1);
-      __m128d c = _mm256_extractf128_pd(c_[j][0],0);
-      __m128d pi = _mm256_extractf128_pd(c_[j][0],1);
-      __m128d sigma, oldS = s;
-      MM128_FAST2SUM(oldS,p,s,sigma);
-      __m128d tmp = _mm_add_pd(pi,sigma);
-      c = _mm_add_pd(c,tmp);
-      _mm_storeu_pd(&res[j*2],  s);
-      _mm_storeu_pd(&resC[j*2], c);
+      _mm_storeu_pd(&res[j*2],  s_[j][0]);
+      _mm_storeu_pd(&resC[j*2], c_[j][0]);
     }
   }
-
 }
+
 
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_sc_prec_4_4(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
