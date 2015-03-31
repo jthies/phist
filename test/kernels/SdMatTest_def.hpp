@@ -707,7 +707,11 @@ public:
 
 
   // check rank revealing cholesky decomposition
+#ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, cholesky)
+#else
+  TEST_F(CLASSNAME, DISABLED_cholesky)
+#endif
   {
     if( typeImplemented_ && nrows_ == ncols_ )
     {
@@ -883,7 +887,11 @@ SUBR(sdMat_print)(mat3_,&iflag_);
   }
 
   // forward-backward substition
+#ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, forward_backward_subst)
+#else
+  TEST_F(CLASSNAME, DISABLED_forward_backward_subst)
+#endif
   {
     if( typeImplemented_ && nrows_ == ncols_ )
     {

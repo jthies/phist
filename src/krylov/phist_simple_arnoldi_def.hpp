@@ -189,6 +189,7 @@ void SUBR(simple_blockArnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R1,(i+1)*bs,(i+2)*bs-1,i*bs,(i+1)*bs-1,iflag),*iflag);
     int rankV;
     PHIST_CHK_NEG_IERR(SUBR(orthog)(Vprev,av,R1,R2,3,&rankV,iflag),*iflag);
+    *iflag = 0;
     if( rankV != (i+2)*bs-1 )
     {
       PHIST_SOUT(PHIST_INFO,"found invariant subspace in arnoldi, expanding basis with a randomly generated orthogonal vector\n");

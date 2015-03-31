@@ -257,7 +257,11 @@ public:
 
 #if( _N_ % 4 == 0 && (_M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 ) )
   // check ones(n,m)'*ones(n,k)=n*ones(m,k)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvecT_times_mvec_prec) 
+#else
+  TEST_F(CLASSNAME, DISABLED_mvecT_times_mvec_prec) 
+#endif
   {
     if (typeImplemented_)
     {
@@ -332,7 +336,11 @@ public:
 
 #if ( _M_ == _K_ )
   // check ones(n,m)'*ones(n,k)=n*ones(m,k)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvecT_times_mvec_prec_self) 
+#else
+  TEST_F(CLASSNAME, DISABLED_mvecT_times_mvec_prec_self) 
+#endif
   {
     if( typeImplemented_ && m_ == k_ )
     {
@@ -443,7 +451,11 @@ public:
 
 #if( _N_ % 4 == 0 && (_M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 ) )
   // check ones(n,m)'*ones(n,m)=n*ones(m,m)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvecT_times_mvec_with_manual_comparison_prec_hard)
+#else
+  TEST_F(CLASSNAME, DISABLED_mvecT_times_mvec_with_manual_comparison_prec_hard)
+#endif
   {
     if (typeImplemented_)
     {
@@ -641,7 +653,11 @@ public:
 
 #if( _N_ % 4 == 0 && (_K_ == 1 || _K_ == 2 || _K_ == 4 ) )
   // check ones(n,m)*ones(m,m)=m*ones(n,m)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvec_times_sdMat_in_place_prec)
+#else
+  TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_in_place_prec)
+#endif
   {
     if (typeImplemented_ && m_ == k_ )
     {
@@ -666,7 +682,11 @@ public:
   }
 
   // check ones(n,m)*ones(m,m)=m*ones(n,m)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvec_times_sdMat_in_place_with_random_data_prec)
+#else
+  TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_in_place_with_random_data_prec)
+#endif
   {
     if (typeImplemented_ && m_ == k_ )
     {
@@ -848,7 +868,11 @@ public:
 
 #if( _N_ % 4 == 0 && (_M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 ) )
   // random check
+#ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, random_mvecT_times_mvec_prec) 
+#else
+  TEST_F(CLASSNAME, DISABLED_random_mvecT_times_mvec_prec) 
+#endif
   {
     if (typeImplemented_)
     {

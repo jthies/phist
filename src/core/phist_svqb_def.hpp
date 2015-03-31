@@ -57,38 +57,40 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* iflag)
 // compute eigenvalues/vectors of scaled B, eigenvalues
 // are given in order of ascending magnitude in E, corresponding
 // eigenvectors as columns of B
-    _CT_ Ec[m];
-    TYPE(sdMat_ptr) A = NULL;
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&A,m,m,NULL,iflag),*iflag);
-    lidx_t lda;
-    _ST_*  A_raw;
-    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(A,&A_raw,&lda,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(SchurDecomp)(B_raw, ldb, A_raw, lda, m, m, 0, LM, mt::eps(), Ec, iflag), *iflag);
-    for(int i = 0; i < m; i++)
-      E[i] = ct::real(Ec[i]);
-//PHIST_CHK_IERR(SUBR(sdMat_print)(B,iflag),*iflag);
-//PHIST_CHK_IERR(SUBR(sdMat_print)(A,iflag),*iflag);
-
-#if PHIST_OUTLEV>=PHIST_DEBUG
-PHIST_SOUT(PHIST_INFO,"singular values of W:\n");
-for (int i=0;i<m;i++) PHIST_SOUT(PHIST_INFO,"%24.16e\n",sqrt(E[i]));
+#ifdef IS_COMPLEX
+    PHIST_CHK_IERR(*iflag=PHIST_LAPACKE(heevd)
+        (SDMAT_FLAG, 'V' , 'U', m, (mt::blas_cmplx_t*)B_raw, ldb, E),*iflag);
+#else
+    PHIST_CHK_IERR(*iflag=PHIST_LAPACKE(syevd)
+        (SDMAT_FLAG, 'V' , 'U', m, B_raw, ldb, E),*iflag);
 #endif
 
+PHIST_SOUT(PHIST_DEBUG,"singular values of W:\n");
+for (int i=0;i<m;i++) PHIST_SOUT(PHIST_DEBUG,"%24.16e\n",sqrt(E[i]));
+
     // determine rank of input matrix
+    MT emax=mt::abs(E[m-1]); 
     rank=m;
     
-    for(int i=0; i<m; i++)
+    if (emax<10*mt::eps())
     {
-      if(mt::abs(E[i])<10*mt::eps())
+      rank=0;
+    }
+    else
+    {
+      for(int i=0; i<m; i++)
       {
-        rank--;
-        E[i]=mt::zero();
-        Einv[i]=mt::zero();
-      }
-      else
-      {
-        Einv[i] = mt::one()/sqrt(E[i]);
-        E[i] = sqrt(E[i]);
+        if (mt::abs(E[i]<10*emax*mt::eps()))
+        {
+          rank--;
+          E[i]=mt::zero();
+          Einv[i]=mt::zero();
+        }
+        else
+        {
+          Einv[i] = mt::one()/sqrt(E[i]);
+          E[i] = sqrt(E[i]);
+        }
       }
     }
 
@@ -98,9 +100,9 @@ for (int i=0;i<m;i++) PHIST_SOUT(PHIST_INFO,"%24.16e\n",sqrt(E[i]));
       for(int j=0;j<m;j++)
       {
 #ifdef PHIST_SDMATS_ROW_MAJOR
-        B_raw[i*ldb+j] = Dinv[i]*A_raw[i*lda+j]*Einv[j];
+        B_raw[i*ldb+j] *= Dinv[i]*Einv[j];
 #else
-        B_raw[j*ldb+i] = Dinv[i]*A_raw[j*lda+i]*Einv[j];
+        B_raw[j*ldb+i] *= Dinv[i]*Einv[j];
 #endif
       }
     }

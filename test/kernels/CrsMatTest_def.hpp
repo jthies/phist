@@ -1023,7 +1023,11 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
     test_sparseMat_times_mvec_vadd_mvec(alpha, A2_, shifts, beta);
   }
 
+#ifdef PHIST_KERNEL_LIB_BUILTIN /* unsupported there! */
+  TEST_F(CLASSNAME, DISABLED_sparseMat_times_mvec_random_plain_data)
+#else
   TEST_F(CLASSNAME, sparseMat_times_mvec_random_plain_data)
+#endif
   {
     // matrices may have different maps
     rebuildVectors(A3_);

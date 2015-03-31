@@ -143,7 +143,11 @@ public:
 
 #if (_N_ % 4 == 0 && (_NV_ == 1 || _NV_ == 2 || _NV_ == 4 ) )
   // mvec_dot_mvec tests, more precise version
+#ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, dot_mvec_prec)
+#else
+  TEST_F(CLASSNAME, DISABLED_dot_mvec_prec)
+#endif
   {
     if (typeImplemented_)
     {
@@ -213,7 +217,11 @@ public:
 
   // mvec_dot_mvec tests, more precise version
   // exploits sum_(k=1)^n 1/(k*(k+1)) = 1 - 1/(n+1)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, dot_mvec_prec_hard)
+#else
+  TEST_F(CLASSNAME, DISABLED_dot_mvec_prec_hard)
+#endif
   {
     if (typeImplemented_)
     {
@@ -249,7 +257,11 @@ public:
 
   // mvec_dot_mvec tests, more precise version
   // half of the numbers a 1, then one 1.e-18, then the other half is -1
+#ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, dot_mvec_prec_veryhard)
+#else
+  TEST_F(CLASSNAME, DISABLED_dot_mvec_prec_veryhard)
+#endif
   {
     if (typeImplemented_)
     {
@@ -382,7 +394,11 @@ public:
 
 #if (_N_ % 4 == 0 && (_NV_ == 1 || _NV_ == 2 || _NV_ == 4 ) )
   // 2-norm, nrm2=sqrt(v'v), more precise version
+#ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, norm2_precise)
+#else
+  TEST_F(CLASSNAME, DISABLED_norm2_precise)
+#endif
   {
     if (typeImplemented_)
     {

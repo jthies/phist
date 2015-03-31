@@ -284,6 +284,11 @@ elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
   set(PHIST_KERNEL_LIB_BUILTIN 1)
   set(PHIST_MVECS_ROW_MAJOR 1)
   option(PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS "Try to pin the threads to cores using sched_setaffinity (based on simple heuristics; for Intel use env KMP_AFFINITY=\"granularity=fine,compact,1,0\"" On)
+  option(PHIST_KERNEL_LIB_BUILTIN_AVX2_PREC_KERNELS "Add support for high-precision kernel operations triggered with PHIST_ROBUST_REDUCTIONS, requires AVX2,FMA (e.g. Intel Haswell)" Off)
+  if(PHIST_KERNEL_LIB_BUILTIN_AVCX2_PREC_KERNELS)
+    message(STATUS "Activated experimental high-precision builtin kernel routines!")
+    set(PHIST_HIGH_PRECISION_KERNELS 1)
+  endif()
 
   if( PHIST_ENABLE_SP )
     message(FATAL_ERROR "Builtin kernel lib does not support single-precision calculations!")
@@ -388,14 +393,9 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/axpy_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/axpy_kernels_nt.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gather_scatter_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/prec_helpers.c
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_kernels_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/dot_kernels.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/dot_kernels_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sC.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sC_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmvm_kernels_nt.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmvm_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmv_buff_cpy_kernels.f90
@@ -404,6 +404,14 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_BelosAdapter.cpp
                           )
+  if(PHIST_KERNEL_LIB_BUILTIN_AVX2_PREC_KERNELS)
+    set (PHIST_KERNEL_SOURCE ${PHIST_KERNEL_SOURCE}
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/prec_helpers.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_kernels_prec.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/dot_kernels_prec.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB_prec.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sC_prec.c)
+  endif()
 else()
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_driver_utils.c
@@ -794,7 +802,7 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
     add_test(NAME test-${label}_np${np} COMMAND ${TEST_COMMAND})
     set_tests_properties(test-${label}_np${np} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
     set_tests_properties(test-${label}_np${np} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
-    set_tests_properties(test-${label}_np${np} PROPERTIES TIMEOUT 300)
+    set_tests_properties(test-${label}_np${np} PROPERTIES TIMEOUT 500)
   endforeach()
 endforeach()
 

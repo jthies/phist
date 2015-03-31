@@ -84,6 +84,8 @@ using namespace testing;
 
 #undef _N_
 /* 4000000 are required for my accuracy test ! */
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+
 #define _N_ 4000000
 #undef _NV_
 #define _NV_ 1
@@ -183,6 +185,7 @@ using namespace testing;
 
 #include "phist_gen_z.h"
 #include "MvecTest_def.hpp"
+#endif /* PHIST_HIGH_PRECISION_KERNELS */
 
 
 // the Belos Tester selects the number of vectors itself,

@@ -428,8 +428,13 @@ contains
     nrows = mvec%map%nlocal(mvec%map%me)
     lda = size(mvec%val,1)
 
+
     ! check if we need higher precision
     if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
+#ifndef PHIST_HIGH_PRECISION_KERNELS
+      iflag = -99
+      return
+#else
       ! check if we can do it
       if( strided .or. mod(nrows*nvec,4) .ne. 0 ) then
         iflag = -99
@@ -468,6 +473,7 @@ contains
       vnrm = sqrt(localDot_prec(:,1) + localDot_prec(:,2))
 
       return
+#endif
     end if
 
     ! for single vectors call appropriate blas
@@ -790,6 +796,10 @@ contains
 
     ! check if we need higher precision
     if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
+#ifndef PHIST_HIGH_PRECISION_KERNELS
+      iflag = -99
+      return
+#else
       ! check if we can do it
       if( strided .or. mod(nrows*nvec,4) .ne. 0 ) then
         iflag = -99
@@ -828,6 +838,7 @@ contains
       dot = localDot_prec(:,1) + localDot_prec(:,2)
 
       return
+#endif
     end if
 
     ! for single vectors call appropriate blas
@@ -1015,9 +1026,15 @@ contains
     ! copy data to dense block
     allocate(M_(nvecv,nvecw),MC_(nvecv,nvecw))
     M_ = M%val(M%imin:M%imax,M%jmin:M%jmax)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
     MC_ = M%err(M%imin:M%imax,M%jmin:M%jmax)
+#endif
 
     if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
+#ifndef PHIST_HIGH_PRECISION_KERNELS
+      iflag = -99
+      return
+#else
       ! check if we can do it
       if( strided_v ) then
         iflag = -99
@@ -1044,6 +1061,7 @@ contains
 
       iflag = 0
       return
+#endif
     end if
 
     ! generic case
@@ -1078,7 +1096,9 @@ contains
     ! check if we only need to scale
     if( alpha .eq. 0 ) then
       M%val(M%imin:M%imax,M%jmin:M%jmax) = beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
       M%err(M%imin:M%imax,M%jmin:M%jmax) = beta*M%err(M%imin:M%imax,M%jmin:M%jmax)
+#endif
       return
     end if
 
@@ -1109,6 +1129,10 @@ contains
 
     ! check if we need higher precision
     if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
+#ifndef PHIST_HIGH_PRECISION_KERNELS
+      iflag = -99
+      return
+#else
       ! check if we can do it
       if( strided_w .or. strided_v ) then
         iflag = -99
@@ -1260,6 +1284,7 @@ contains
       M%val(M%imin:M%imax,M%jmin:M%jmax) = mBuff
       M%err(M%imin:M%imax,M%jmin:M%jmax) = mBuffC
       return
+#endif
     end if
 
 

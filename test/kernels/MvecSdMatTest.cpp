@@ -298,6 +298,7 @@ using namespace testing;
 
 // large tests for verifying high precision calculations
 #undef _N_
+#ifdef PHIST_HIGH_PRECISION_KERNELS
 #define _N_ 4000000
 #undef _M_
 #define _M_ 1
@@ -671,4 +672,5 @@ using namespace testing;
 #include "phist_gen_z.h"
 #include "MvecSdMatTest_def.hpp"
 
+#endif /* PHIST_HIGH_PRECISION_KERNELS */
 

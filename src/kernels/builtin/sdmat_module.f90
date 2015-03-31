@@ -34,9 +34,11 @@ module sdmat_module
   !public :: phist_DsdMat_backwardSubst_sdMat
   !public :: phist_DsdMat_forwardSubst_sdMat
   public :: sdmat_times_sdmat
+#ifdef PHIST_HIGH_PRECISION_KERNELS
   public :: sdmat_cholesky
   public :: sdmat_backwardSubst_sdmat
   public :: sdmat_forwardSubst_sdmat
+#endif
 
 
   !==================================================================================
@@ -48,12 +50,15 @@ module sdmat_module
     integer     :: jmin, jmax
     integer     :: comm
     real(kind=8), contiguous, pointer :: val(:,:) => null()
+#ifdef PHIST_HIGH_PRECISION_KERNELS
     real(kind=8), contiguous, pointer :: err(:,:) => null()
+#endif
     logical     :: is_view
     !--------------------------------------------------------------------------------
   end type SDMat_t
 
 
+#ifdef PHIST_HIGH_PRECISION_KERNELS
   !==================================================================================
   ! required interfaces of C functions
   interface
@@ -100,6 +105,7 @@ module sdmat_module
       real(kind=C_DOUBLE), intent(inout) :: x(*), xC(*)
     end subroutine
   end interface
+#endif
 contains
 
   !==================================================================================
@@ -119,13 +125,22 @@ contains
     nc = B%jmax-B%jmin+1
     allocate(a_(nr,nc),b_(nr,nc),aC_(nr,nc),bC_(nr,nc))
     a_  = A%val(A%imin:A%imax,A%jmin:A%jmax)
-    aC_ = A%err(A%imin:A%imax,A%jmin:A%jmax)
     b_  = B%val(B%imin:B%imax,B%jmin:B%jmax)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+    aC_ = A%err(A%imin:A%imax,A%jmin:A%jmax)
     bC_ = B%err(B%imin:B%imax,B%jmin:B%jmax)
+#endif
 
+#ifdef PHIST_HIGH_PRECISION_KERNELS
     call daxpby_prec(nr*nc,alpha,a_,aC_,beta,b_,bC_)
+#else
+    b_ = alpha*a_+beta*b_
+#endif
+
     B%val(B%imin:B%imax,B%jmin:B%jmax) = b_
+#ifdef PHIST_HIGH_PRECISION_KERNELS
     B%err(B%imin:B%imax,B%jmin:B%jmax) = bC_
+#endif
 
   end subroutine sdmat_add_sdmat
 
@@ -159,31 +174,48 @@ contains
     allocate(a_(m,k),b_(k,n),c_(m,n),aC_(m,k),bC_(k,n),cC_(m,n))
     if( transA .eq. 'T' .or. transA .eq. 't') then
       a_  = transpose(A%val(A%imin:A%imax,A%jmin:A%jmax))
+#ifdef PHIST_HIGH_PRECISION_KERNELS
       aC_ = transpose(A%err(A%imin:A%imax,A%jmin:A%jmax))
+#endif
     else
       a_  = A%val(A%imin:A%imax,A%jmin:A%jmax)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
       aC_ = A%err(A%imin:A%imax,A%jmin:A%jmax)
+#endif
     end if
     if( transB .eq. 'T' .or. transB .eq. 't') then
       b_  = transpose(B%val(B%imin:B%imax,B%jmin:B%jmax))
+#ifdef PHIST_HIGH_PRECISION_KERNELS
       bC_ = transpose(B%err(B%imin:B%imax,B%jmin:B%jmax))
+#endif
     else
       b_  = B%val(B%imin:B%imax,B%jmin:B%jmax)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
       bC_ = B%err(B%imin:B%imax,B%jmin:B%jmax)
+#endif
     end if
     c_  = C%val(C%imin:C%imax,C%jmin:C%jmax)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
     cC_ = C%err(C%imin:C%imax,C%jmin:C%jmax)
+#endif
 
+#ifdef PHIST_HIGH_PRECISION_KERNELS
     call dgemm_prec(m,n,k, alpha,a_,aC_,b_,bC_, beta,c_,cC_)
+#else
+    c_ = alpha*matmul(a_,b_) + beta*c_
+#endif
 
     C%val(C%imin:C%imax,C%jmin:C%jmax) = c_
+#ifdef PHIST_HIGH_PRECISION_KERNELS
     C%err(C%imin:C%imax,C%jmin:C%jmax) = cC_
+#endif
 
     ierr = 0
 
   end subroutine sdmat_times_sdmat
 
 
+#ifdef PHIST_HIGH_PRECISION_KERNELS
   !==================================================================================
   ! precise stable cholesky factorization (returns L from A=LL^T with pivoting)
   subroutine sdmat_cholesky(A, perm, rank, ierr)
@@ -267,6 +299,7 @@ contains
     X%err(X%imin:X%imax,X%jmin:X%jmax) = xC_
 
   end subroutine sdmat_forwardsubst_sdmat
+#endif
 
 
   !==================================================================================
@@ -305,9 +338,11 @@ contains
     flush(6)
 #endif
     allocate(sdmat%val(nrows,ncols))
-    allocate(sdmat%err(nrows,ncols))
     sdmat%val = 0._8
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+    allocate(sdmat%err(nrows,ncols))
     sdmat%err = 0._8
+#endif
     sdmat_ptr = c_loc(sdmat)
     ierr = 0
 
@@ -350,7 +385,9 @@ contains
     flush(6)
 #endif
     sdmat%val=>c_val
+#ifdef PHIST_HIGH_PRECISION_KERNELS
     allocate(sdmat%err(nrows,ncols))
+#endif
     sdmat_ptr = c_loc(sdmat)
     ierr = 0
 
@@ -377,7 +414,9 @@ contains
       call c_f_pointer(sdmat_ptr, sdmat)
       if( .not. sdmat%is_view) then
         deallocate(sdmat%val)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
         deallocate(sdmat%err)
+#endif
       end if
       deallocate(sdmat)
     end if
@@ -510,7 +549,9 @@ contains
     view%jmax = sdmat%jmin+jmax
     view%comm = sdmat%comm
     view%val => sdmat%val
+#ifdef PHIST_HIGH_PRECISION_KERNELS
     view%err => sdmat%err
+#endif
     view%is_view = .true.
 
     ierr = 0
@@ -546,8 +587,10 @@ contains
 
     block%val(block%imin:block%imax,block%jmin:block%jmax) = &
       & sdmat%val(sdmat%imin+imin:sdmat%imin+imax,sdmat%jmin+jmin:sdmat%jmin+jmax)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
     block%err(block%imin:block%imax,block%jmin:block%jmax) = &
       & sdmat%err(sdmat%imin+imin:sdmat%imin+imax,sdmat%jmin+jmin:sdmat%jmin+jmax)
+#endif
     ierr = 0
 
   end subroutine phist_DsdMat_get_block
@@ -581,8 +624,10 @@ contains
 
     sdmat%val(sdmat%imin+imin:sdmat%imin+imax,sdmat%jmin+jmin:sdmat%jmin+jmax) = &
       & block%val(block%imin:block%imax,block%jmin:block%jmax)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
     sdmat%err(sdmat%imin+imin:sdmat%imin+imax,sdmat%jmin+jmin:sdmat%jmin+jmax) = &
       & block%err(block%imin:block%imax,block%jmin:block%jmax)
+#endif
     ierr = 0
 
   end subroutine phist_DsdMat_set_block
@@ -606,7 +651,9 @@ contains
     call c_f_pointer(sdmat_ptr, sdmat)
 
     sdmat%val(sdmat%imin:sdmat%imax,sdmat%jmin:sdmat%jmax) = val
+#ifdef PHIST_HIGH_PRECISION_KERNELS
     sdmat%err(sdmat%imin:sdmat%imax,sdmat%jmin:sdmat%jmax) = 0._8
+#endif
     ierr = 0
 
   end subroutine phist_DsdMat_put_value
@@ -642,7 +689,9 @@ contains
       call MPI_Bcast(buff, m*n, MPI_DOUBLE_PRECISION, 0, sdmat%comm, ierr);
     end if
     sdmat%val(sdmat%imin:sdmat%imax,sdmat%jmin:sdmat%jmax) = buff
+#ifdef PHIST_HIGH_PRECISION_KERNELS
     sdmat%err(sdmat%imin:sdmat%imax,sdmat%jmin:sdmat%jmax) = 0._8
+#endif
 
   end subroutine phist_DsdMat_random
 
@@ -672,7 +721,9 @@ contains
         else
           sdmat%val(i,j) = 0._8
         end if
+#ifdef PHIST_HIGH_PRECISION_KERNELS
         sdmat%err(i,j) = 0._8
+#endif
       end do
     end do
 
@@ -697,11 +748,14 @@ contains
     call c_f_pointer(sdmat_ptr, sdmat)
 
     do i = sdmat%imin, sdmat%imax
+#ifdef PHIST_HIGH_PRECISION_KERNELS
       do j = sdmat%jmin, sdmat%jmax
         write(*,'(G16.8,A1,G16.8)',advance='no') sdmat%val(i,j),'+',sdmat%err(i,j)
       end do
       write(*,*)
-      !write(*,*) sdmat%val(i,sdmat%jmin:sdmat%jmax)
+#else
+      write(*,*) sdmat%val(i,sdmat%jmin:sdmat%jmax)
+#endif
     end do
     flush(6)
     ierr = 0
@@ -839,6 +893,7 @@ contains
   end subroutine phist_DsdMat_times_sdMatT
 
 
+#ifdef PHIST_HIGH_PRECISION_KERNELS
   subroutine phist_DsdMat_cholesky(A_ptr, perm, rank, ierr) bind(C,name='phist_DsdMat_cholesky_f')
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
@@ -919,6 +974,7 @@ contains
     ierr = 0
 
   end subroutine phist_DsdMat_forwardSubst_sdMat
+#endif
 
 
 end module sdmat_module
