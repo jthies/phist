@@ -753,6 +753,24 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* iflag)
 #endif
   }
 
+//! put identity matrix into a small dense matrix \ingroup sdmat
+extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag)
+{
+#include "phist_std_typedefs.hpp"  
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag = 0;
+
+  _ST_ *V_raw = NULL;
+  lidx_t lda;
+  int m, n;
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(V, &V_raw, &lda, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(V, &m, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(V, &n, iflag), *iflag);
+  for(int i = 0; i < m; i++)
+    for(int j = 0; j < n; j++)
+      V_raw[lda*i+j] = (i==j) ? st::one() : st::zero();
+}
+
   //! compute the 2-norm of each column of v                   
   //! (vnrm[i] must be pre-allocated by caller)
   extern "C" void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) vV,
@@ -1028,6 +1046,42 @@ extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
   PHIST_TRY_CATCH(C->multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,
         alpha, *V, *W, beta), *iflag);
   }
+
+//! n x m transposed serial dense matrix times m x k serial dense matrix gives m x k serial dense matrix,
+//! C=alpha*V*W + beta*C
+extern "C" void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
+                                         TYPE(const_sdMat_ptr) vW,
+                                         _ST_ beta, TYPE(sdMat_ptr) vC,
+                                         int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,V,vV,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,W,vW,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,C,vC,*iflag);
+  PHIST_TRY_CATCH(C->multiply(Teuchos::NO_TRANS,Teuchos::CONJ_TRANS,
+        alpha, *V, *W, beta), *iflag);
+  }
+
+
+//! stable cholesky factorization with pivoting and rank-recognition for hpd. matrix
+//! returns permuted lower triangular cholesky factor M for M <- M*M'
+extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+
+//! backward substitution for pivoted upper triangular cholesky factor
+extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+
+//! forward substitution for pivoted conj. transposed upper triangular cholesky factor
+extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
 
 
 

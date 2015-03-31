@@ -1010,6 +1010,24 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
 PHIST_GHOST_TASK_END
 }
 
+//! put scalar value into all elements of a multi-vector
+extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag = 0;
+
+  _ST_ *V_raw = NULL;
+  lidx_t lda;
+  int m, n;
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(V, &V_raw, &lda, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(V, &m, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(V, &n, iflag), *iflag);
+  for(int i = 0; i < m; i++)
+    for(int j = 0; j < n; j++)
+      V_raw[lda*i+j] = (i==j) ? st::one() : st::zero();
+}
+
 //! put random numbers into all elements of a multi-vector
 extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* iflag)
 {
@@ -1521,6 +1539,48 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   PHIST_CHK_GERR(ghost_gemm(C, V, trans,W, (char*)"N", (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_GHOST_TASK_END
   }
+
+//! n x m serial dense matrix times k x m conj. transposed serial dense matrix gives m x k sdMat,
+//! C=alpha*V*W + beta*C (serial XGEMM wrapper)
+extern "C" void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
+                                         TYPE(const_sdMat_ptr) vW,
+                              _ST_ beta, TYPE(sdMat_ptr) vC,
+                                         int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag=0;
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,C,vC,*iflag);
+#ifdef IS_COMPLEX
+  char trans[]="C";
+#else
+  char trans[]="T";
+#endif  
+  PHIST_CHK_GERR(ghost_gemm(C, V, (char*)"N", W, trans, (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
+PHIST_GHOST_TASK_END
+  }
+
+//! stable cholesky factorization with pivoting and rank-recognition for hpd. matrix
+//! returns permuted lower triangular cholesky factor M for M <- M*M'
+extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+
+//! backward substitution for pivoted upper triangular cholesky factor
+extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+
+//! forward substitution for pivoted conj. transposed upper triangular cholesky factor
+extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
 
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.   
