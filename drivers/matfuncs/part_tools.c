@@ -144,6 +144,10 @@ ghost_gidx_t perm3d( ghost_gidx_t row, gidx_t arg2, gidx_t arg3 )
       off3=pid3*n3_loc;
       PHIST_SOUT(PHIST_VERBOSE,"3D partitioning: %d x %d x %d domains of size %d x %d %d\n",
                 np1, np2, np3, n1_loc, n2_loc, n3_loc);
+    
+//      PHIST_OUT(PHIST_VERBOSE,"proc (%d,%d,%d), offset %ld (%d,%d,%d)\n",
+//                pid1,pid2,pid3,global_offset,off1,off2,off3);
+    
     }
   }
   else if (n1==-2)
@@ -160,8 +164,9 @@ ghost_gidx_t perm3d( ghost_gidx_t row, gidx_t arg2, gidx_t arg3 )
     int i2=rem%n2_loc;
     rem=(rem-i2)/n2_loc;
     int i3=rem%n3_loc;
-  
-    return ((off3+i3)*n2_loc+(off2+i2))*n1_loc+i1;
+//      PHIST_OUT(PHIST_VERBOSE,"PART3D ROW %ld (%d,%d,%d) => %ld\n",row,
+//        off1+i1,off2+i2,off3+i3,((off3+i3)*n2+(off2+i2))*n1+off1+i1 );
+    return ((off3+i3)*n2+(off2+i2))*n1+off1+i1;
   }
   else if (arg2==+1)
   {
@@ -182,6 +187,8 @@ ghost_gidx_t perm3d( ghost_gidx_t row, gidx_t arg2, gidx_t arg3 )
     int p3=i3/n3_loc;
     int p = (p3*np2+p2)*np1+p1;
     ghost_gidx_t offset = p*(ghost_gidx_t)(n1_loc*n2_loc*n3_loc); 
+//        PHIST_OUT(PHIST_VERBOSE,"       COL %ld => %ld\n",row,
+//    offset + ((j3*n2_loc)+j2)*n1_loc+j1 );
     return offset + ((j3*n2_loc)+j2)*n1_loc+j1;
   }
   return -1; // shouldn't get here

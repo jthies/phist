@@ -1023,11 +1023,10 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
     test_sparseMat_times_mvec_vadd_mvec(alpha, A2_, shifts, beta);
   }
 
-#ifdef PHIST_KERNEL_LIB_BUILTIN /* unsupported there! */
+  // this test is disabled because viewing plain data does not work
+  // for some kernel libs (builtin, ghost). The function will probably
+  // be thrown out alltogether (mvec_create_view, that is).
   TEST_F(CLASSNAME, DISABLED_sparseMat_times_mvec_random_plain_data)
-#else
-  TEST_F(CLASSNAME, sparseMat_times_mvec_random_plain_data)
-#endif
   {
     // matrices may have different maps
     rebuildVectors(A3_);
