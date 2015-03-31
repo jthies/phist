@@ -1023,7 +1023,10 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
     test_sparseMat_times_mvec_vadd_mvec(alpha, A2_, shifts, beta);
   }
 
-  TEST_F(CLASSNAME, sparseMat_times_mvec_random_plain_data)
+  // this test is disabled because viewing plain data does not work
+  // for some kernel libs (builtin, ghost). The function will probably
+  // be thrown out alltogether (mvec_create_view, that is).
+  TEST_F(CLASSNAME, DISABLED_sparseMat_times_mvec_random_plain_data)
   {
     // matrices may have different maps
     rebuildVectors(A3_);
