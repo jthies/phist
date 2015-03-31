@@ -43,15 +43,16 @@ PHIST_MAIN_TASK_BEGIN
 
   PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
 
-  if (argc!=4 && argc!=5)
+  if (argc < 4 || argc > 6)
   {
-    PHIST_SOUT(PHIST_ERROR,"Usage: %s n m k [high_prec]\n"
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s n m k [high_prec] [pert.-factor]\n"
                            "       perform k times: \n"
                            "       randomize an n x m mvec\n"
                            "       orthogonalize its columns by svqb\n"
                            "       perform other operations mvec_add_mvec, \n"
                            "       mvecT_times_mvec to check for NUMA issues etc.\n"
-                           "       set high_prec to 1 to use high-precision kernels\n",
+                           "       set high_prec to 1 to use high-precision kernels\n"
+                           "       set pert.-factor to < 1.e-3 to generate harder to orthogonalize data\n",
                            argv[0]);
     return 1;
   }
@@ -70,8 +71,12 @@ PHIST_MAIN_TASK_BEGIN
   m=atoi(argv[2]);
   k=atoi(argv[3]);
   bool high_prec = false;
-  if( argc == 5 )
+  if( argc >= 5 )
     high_prec = atoi(argv[4]);
+  double pertFactor = 1.e-3;
+  if( argc >= 6 )
+    pertFactor = atof(argv[5]);
+
 
   PHIST_ICHK_IERR(phist_map_create(&map,comm,n,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,m,&ierr),ierr);
@@ -86,7 +91,7 @@ PHIST_MAIN_TASK_BEGIN
     // this determines the numa domains (thinking of OpenMP here)
     PHIST_ICHK_IERR(SUBR(mvec_random)(X,&ierr),ierr);
     PHIST_ICHK_IERR(SUBR(mvec_put_value)(Q,st::one(),&ierr),ierr);
-    ST pert=st::one()*1.0e-3;
+    ST pert=st::one()*pertFactor;
     PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(pert,X,st::one(),Q,&ierr),ierr);
     MT e[m];
     // this is what we really want to benchmark

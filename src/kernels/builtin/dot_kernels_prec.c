@@ -69,7 +69,7 @@ void ddot_self_prec_4(int nrows, const double *restrict x, double *restrict res,
     for(int i = 1; i < nt; i++)
     {
       __m256d sigma, oldS = s;
-      MM256_2SUM(oldS, s_[0][i], s, sigma);
+      MM256_FAST2SUM(oldS, s_[0][i], s, sigma);
       __m256d tmp = _mm256_add_pd(c_[0][i],sigma);
       c = _mm256_add_pd(c, tmp);
     }
@@ -144,7 +144,7 @@ void ddot_prec_4(int nrows, const double *restrict x, const double *restrict y, 
     for(int i = 1; i < nt; i++)
     {
       __m256d sigma, oldS = s;
-      MM256_2SUM(oldS, s_[0][i], s, sigma);
+      MM256_FAST2SUM(oldS, s_[0][i], s, sigma);
       __m256d tmp = _mm256_add_pd(c_[0][i],sigma);
       c = _mm256_add_pd(c, tmp);
     }

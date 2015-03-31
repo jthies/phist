@@ -85,6 +85,10 @@ void dgemm_prec(int m, int n, int k, double alpha, const double *restrict a, con
 // higher-precision + pivoting + stable low rank approximation
 void cholesky_prec(int n, double *restrict a, double *restrict aC, int *perm, int *rank)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
+
   // permutation
   int p[n];
   for(int i = 0; i < n; i++)
@@ -134,13 +138,9 @@ void cholesky_prec(int n, double *restrict a, double *restrict aC, int *perm, in
 
     // l_m,p[m] = sqrt(d_p[m])
     // uses sqrt(x+y) = sqrt(x) + y/(2*sqrt(x)) + ...
-    {
-      double s,t,t_;
-      DOUBLE_2SQRTFMA(d[p[m]],s,t);
-      t = t + dC[p[m]]/(2*s)*(1 - dC[p[m]]/(4*d[p[m]]) + dC[p[m]]*dC[p[m]]/(8*d[p[m]]*d[p[m]]));
-      DOUBLE_FAST2SUM(s,t,l[p[m]*n+m],lC[p[m]*n+m]);
-//printf("l[m=%d,p[m=%d]] <- %e\n", m,m,l[p[m]*n+m]);
-    }
+    double div_lmm,div_lCmm;
+    DOUBLE_4SQRT_NEWTONRAPHSON_FMA(d[p[m]],dC[p[m]],l[p[m]*n+m],lC[p[m]*n+m],div_lmm,div_lCmm);
+//printf("m=%d,p[m]=%d: d_pm = %e, l_m,pm = %e, div_lmm = %e\n", m, p[m], l[p[m]*n+m], div_lmm);
 
     for(int i = m+1; i < n; i++)
     {
@@ -150,26 +150,16 @@ void cholesky_prec(int n, double *restrict a, double *restrict aC, int *perm, in
         double t = -aC[p[i]*n+p[m]];
         for(int j = 0; j < m; j++)
         {
-          double ljm = l[p[m]*n+j];
-          double lCjm = lC[p[m]*n+j];
-          double lji = l[p[i]*n+j];
-          double lCji = lC[p[i]*n+j];
           double lj, ljC;
-          DOUBLE_2MULTFMA(ljm,lji,lj,ljC);
+          DOUBLE_4MULTFMA(l[p[m]*n+j],lC[p[m]*n+j],l[p[i]*n+j],lC[p[i]*n+j],lj,ljC);
 //printf("subtract ljm*lji %e\n", lj);
-          ljC = ljC+ljm*lCji+lji*lCjm + lCjm*lCji;
-          double oldS = s, t_;
-          DOUBLE_2SUM(lj,oldS,s,t_);
-          t = t + t_ + ljC;
+          double oldS = s, oldT = t;
+          DOUBLE_4SUM(oldS,oldT,lj,ljC,s,t);
         }
-        double s_, t_;
-        DOUBLE_FAST2SUM(s,t,s_,t_);
-        // use a/(x+y) = a/x - a*y/x^2 + ... to calculate s_/l_m,p[m]
-        DOUBLE_2DIVFMA(s_,l[p[m]*n+m],s,t);
-        t = t - s*lC[p[m]*n+m]/l[p[m]*n+m]*(1-lC[p[m]*n+m]/l[p[m]*n+m])+t_/l[p[m]*n+m];
-        DOUBLE_FAST2SUM(s,t,s_,t_);
-        l[p[i]*n+m] = -s_;
-        lC[p[i]*n+m] = -t_;
+        double oldS = s, oldT = t;
+        DOUBLE_4MULTFMA(div_lmm,div_lCmm,oldS,oldT,s,t);
+        l[p[i]*n+m] = -s;
+        lC[p[i]*n+m] = -t;
 //printf("l[m=%d,p[i=%d]] <- %e\n", m,i,-s_);
       }
       // d_p[i] = d_p[i]-l_m,p[i]^2
@@ -179,12 +169,10 @@ void cholesky_prec(int n, double *restrict a, double *restrict aC, int *perm, in
         double lmi = l[p[i]*n+m];
         double lCmi = lC[p[i]*n+m];
         double lm, lmC;
-        DOUBLE_2MULTFMA(lmi,lmi,lm,lmC);
+        DOUBLE_4MULTFMA(lmi,lCmi,lmi,lCmi,lm,lmC);
 //printf("lm %e\n", lm);
-        lmC = lmC+2*lmi*lCmi+lCmi*lCmi;
-        double oldS = s, t_;
-        DOUBLE_2SUM(oldS,lm,s,t_);
-        t = t + t_ + lmC;
+        double oldS = s, oldT = t;
+        DOUBLE_4SUM(oldS,oldT,lm,lmC,s,t);
         d[p[i]] = -s;
         dC[p[i]] = -t;
 //printf("d[p[i=%d]] <- %e\n", i,-s);
@@ -208,6 +196,10 @@ void cholesky_prec(int n, double *restrict a, double *restrict aC, int *perm, in
 // apply backward substitution with permuted upper triangular matrix
 void backward_subst_prec(int n, int k, double *restrict r, double *restrict rC, int *p, int rank, double *restrict x, double *restrict xC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
+
   for(int l = 0; l < k; l++)
   {
     double newXl[n], newXCl[n];
@@ -220,21 +212,18 @@ void backward_subst_prec(int n, int k, double *restrict r, double *restrict rC, 
       for(int j = i+1; j < n; j++)
       {
         double rx, rxC;
-        DOUBLE_2MULTFMA(r[p[j]*n+i],newXl[p[j]],rx,rxC);
+        DOUBLE_4MULTFMA(r[p[j]*n+i],rC[p[j]*n+i],newXl[p[j]],newXCl[p[j]],rx,rxC);
 //printf("r: %e, x: %e, r*x: %e\n", r[p[j]*n+i],x[l*n+p[j]],rx);
-        rxC = rxC + r[p[j]*n+i]*newXCl[p[j]] + rC[p[j]*n+i]*newXl[p[j]] + rC[p[j]*n+i]*newXCl[p[j]];
         double oldS = s, oldT = t;
-        DOUBLE_2SUM(rx,oldS,s,t);
-        t = t + oldT + rxC;
+        DOUBLE_4SUM(oldS,oldT,rx,rxC,s,t);
       }
 //printf("x_p[i=%d],l=%d-sum...: %e\n", i, l, -s);
 
       // x_p[i] = x_p[i]/r_i,p[i]
-      // use a/(x+y) = a/x - a*y/x^2 + ...
-      double s_, t_;
-      DOUBLE_2DIVFMA(s,r[p[i]*n+i],s_,t_);
-      t_ = t_ - s_*rC[p[i]*n+i]/r[p[i]*n+i]*(1-rC[p[i]*n+i]/r[p[i]*n+i])+t/r[p[i]*n+i];
-      DOUBLE_FAST2SUM(s_,t_,s,t);
+      double div_ri, div_riC;
+      DOUBLE_4DIV_NEWTONRAPHSON_FMA(r[p[i]*n+i],rC[p[i]*n+i],div_ri,div_riC);
+      double oldS = s, oldT = t;
+      DOUBLE_4MULTFMA(oldS,oldT,div_ri,div_riC,s,t);
       newXl[p[i]] = -s;
       newXCl[p[i]] = -t;
 //printf("new x_p[i=%d],l=%d: %e\n", i, l, -s);
@@ -251,6 +240,10 @@ void backward_subst_prec(int n, int k, double *restrict r, double *restrict rC, 
 // apply forward substitution with permuted transposed upper triangular matrix
 void forward_subst_prec(int n, int k, double *restrict r, double *restrict rC, int *p, int rank, double *restrict x, double *restrict xC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
+
   for(int l = 0; l < k; l++)
   {
     double newXl[n], newXCl[n];
@@ -263,21 +256,18 @@ void forward_subst_prec(int n, int k, double *restrict r, double *restrict rC, i
       for(int j = 0; j < i; j++)
       {
         double rx, rxC;
-        DOUBLE_2MULTFMA(r[p[i]*n+j],newXl[p[j]],rx,rxC);
+        DOUBLE_4MULTFMA(r[p[i]*n+j],rC[p[i]*n+j],newXl[p[j]],newXCl[p[j]],rx,rxC);
 //printf("r: %e, x: %e, r*x: %e\n", r[p[i]*n+j],x[l*n+p[j]],rx);
-        rxC = rxC + r[p[i]*n+j]*newXCl[p[j]] + rC[p[i]*n+j]*newXl[p[j]] + rC[p[i]*n+j]*newXCl[p[j]];
         double oldS = s, oldT = t;
-        DOUBLE_2SUM(rx,oldS,s,t);
-        t = t + oldT + rxC;
+        DOUBLE_4SUM(oldS,oldT,rx,rxC,s,t);
       }
 //printf("x_p[i=%d],l=%d-sum...: %e\n", i, l, -s);
 
       // x_p[i] = x_p[i]/r_i,p[i]
-      // use a/(x+y) = a/x - a*y/x^2 + ...
-      double s_, t_;
-      DOUBLE_2DIVFMA(s,r[p[i]*n+i],s_,t_);
-      t_ = t_ - s_*rC[p[i]*n+i]/r[p[i]*n+i]*(1-rC[p[i]*n+i]/r[p[i]*n+i])+t/r[p[i]*n+i];
-      DOUBLE_FAST2SUM(s_,t_,s,t);
+      double div_ri, div_riC;
+      DOUBLE_4DIV_NEWTONRAPHSON_FMA(r[p[i]*n+i],rC[p[i]*n+i],div_ri,div_riC);
+      double oldS = s, oldT = t;
+      DOUBLE_4MULTFMA(oldS,oldT,div_ri,div_riC,s,t);
       newXl[p[i]] = -s;
       newXCl[p[i]] = -t;
 //printf("new x_p[i=%d],l=%d: %e\n", i, l, -s);

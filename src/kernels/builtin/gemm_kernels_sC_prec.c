@@ -81,7 +81,7 @@ void dgemm_sc_self_prec_4(int nrows, const double *restrict x, double *restrict 
       for(int j = 0; j < 4; j++)
       {
         __m256d sigma, oldS = s_[j][0];
-        MM256_2SUM(oldS, s_[j][i], s_[j][0], sigma);
+        MM256_FAST2SUM(oldS, s_[j][i], s_[j][0], sigma);
         __m256d tmp = _mm256_add_pd(c_[j][i],sigma);
         c_[j][0] = _mm256_add_pd(c_[j][0], tmp);
       }
@@ -164,7 +164,7 @@ void dgemm_sc_self_prec_2(int nrows, const double *restrict x, double *restrict 
       for(int j = 0; j < 2; j++)
       {
         __m256d sigma, oldS = s_[j][0];
-        MM256_2SUM(oldS, s_[j][i], s_[j][0], sigma);
+        MM256_FAST2SUM(oldS, s_[j][i], s_[j][0], sigma);
         __m256d tmp = _mm256_add_pd(c_[j][i],sigma);
         c_[j][0] = _mm256_add_pd(c_[j][0], tmp);
       }
@@ -180,7 +180,7 @@ void dgemm_sc_self_prec_2(int nrows, const double *restrict x, double *restrict 
       __m128d c = _mm256_extractf128_pd(c_[j][0],0);
       __m128d pi = _mm256_extractf128_pd(c_[j][0],1);
       __m128d sigma, oldS = s;
-      MM128_2SUM(oldS,p,s,sigma);
+      MM128_FAST2SUM(oldS,p,s,sigma);
       __m128d tmp = _mm_add_pd(pi,sigma);
       c = _mm_add_pd(c,tmp);
       _mm_storeu_pd(&res[j*2],  s);
@@ -262,7 +262,7 @@ void dgemm_sc_prec_4_4(int nrows, const double *restrict x, const double *restri
       for(int j = 0; j < 4; j++)
       {
         __m256d sigma, oldS = s_[j][0];
-        MM256_2SUM(oldS, s_[j][i], s_[j][0], sigma);
+        MM256_FAST2SUM(oldS, s_[j][i], s_[j][0], sigma);
         __m256d tmp = _mm256_add_pd(c_[j][i],sigma);
         c_[j][0] = _mm256_add_pd(c_[j][0], tmp);
       }
@@ -353,7 +353,7 @@ void dgemm_sc_prec_2_2(int nrows, const double *restrict x, const double *restri
       for(int j = 0; j < 2; j++)
       {
         __m256d sigma, oldS = s_[j][0];
-        MM256_2SUM(oldS, s_[j][i], s_[j][0], sigma);
+        MM256_FAST2SUM(oldS, s_[j][i], s_[j][0], sigma);
         __m256d tmp = _mm256_add_pd(c_[j][i],sigma);
         c_[j][0] = _mm256_add_pd(c_[j][0], tmp);
       }
@@ -369,7 +369,7 @@ void dgemm_sc_prec_2_2(int nrows, const double *restrict x, const double *restri
       __m128d c = _mm256_extractf128_pd(c_[j][0],0);
       __m128d pi = _mm256_extractf128_pd(c_[j][0],1);
       __m128d sigma, oldS = s;
-      MM128_2SUM(oldS,p,s,sigma);
+      MM128_FAST2SUM(oldS,p,s,sigma);
       __m128d tmp = _mm_add_pd(pi,sigma);
       c = _mm_add_pd(c,tmp);
       _mm_storeu_pd(&res[j*2],  s);
@@ -440,7 +440,7 @@ void dgemm_sc_prec_2_1(int nrows, const double *restrict x, const double *restri
     for(int i = 1; i < nt; i++)
     {
       __m256d sigma, oldS = s_[0][0];
-      MM256_2SUM(oldS, s_[0][i], s_[0][0], sigma);
+      MM256_FAST2SUM(oldS, s_[0][i], s_[0][0], sigma);
       __m256d tmp = _mm256_add_pd(c_[0][i],sigma);
       c_[0][0] = _mm256_add_pd(c_[0][0], tmp);
     }
@@ -453,7 +453,7 @@ void dgemm_sc_prec_2_1(int nrows, const double *restrict x, const double *restri
     __m128d c = _mm256_extractf128_pd(c_[0][0],0);
     __m128d pi = _mm256_extractf128_pd(c_[0][0],1);
     __m128d sigma, oldS = s;
-    MM128_2SUM(oldS,p,s,sigma);
+    MM128_FAST2SUM(oldS,p,s,sigma);
     __m128d tmp = _mm_add_pd(pi,sigma);
     c = _mm_add_pd(c,tmp);
     _mm_storeu_pd(res,  s);
@@ -536,7 +536,7 @@ void dgemm_sc_prec_4_2(int nrows, const double *restrict x, const double *restri
       for(int j = 0; j < 2; j++)
       {
         __m256d sigma, oldS = s_[j][0];
-        MM256_2SUM(oldS, s_[j][i], s_[j][0], sigma);
+        MM256_FAST2SUM(oldS, s_[j][i], s_[j][0], sigma);
         __m256d tmp = _mm256_add_pd(c_[j][i],sigma);
         c_[j][0] = _mm256_add_pd(c_[j][0], tmp);
       }
@@ -614,7 +614,7 @@ void dgemm_sc_prec_4_1(int nrows, const double *restrict x, const double *restri
     for(int i = 1; i < nt; i++)
     {
       __m256d sigma, oldS = s_[0][0];
-      MM256_2SUM(oldS, s_[0][i], s_[0][0], sigma);
+      MM256_FAST2SUM(oldS, s_[0][i], s_[0][0], sigma);
       __m256d tmp = _mm256_add_pd(c_[0][i],sigma);
       c_[0][0] = _mm256_add_pd(c_[0][0], tmp);
     }
@@ -699,7 +699,7 @@ void dgemm_sc_prec_4_k(int nrows, int k, const double *restrict x, const double 
       for(int j = 0; j < k; j++)
       {
         __m256d sigma, oldS = s_[j][0];
-        MM256_2SUM(oldS, s_[j][i], s_[j][0], sigma);
+        MM256_FAST2SUM(oldS, s_[j][i], s_[j][0], sigma);
         __m256d tmp = _mm256_add_pd(c_[j][i],sigma);
         c_[j][0] = _mm256_add_pd(c_[j][0], tmp);
       }
@@ -789,7 +789,7 @@ void dgemm_sc_prec_2_k(int nrows, int k, const double *restrict x, const double 
       for(int j = 0; j < k; j++)
       {
         __m256d sigma, oldS = s_[j][0];
-        MM256_2SUM(oldS, s_[j][i], s_[j][0], sigma);
+        MM256_FAST2SUM(oldS, s_[j][i], s_[j][0], sigma);
         __m256d tmp = _mm256_add_pd(c_[j][i],sigma);
         c_[j][0] = _mm256_add_pd(c_[j][0], tmp);
       }
@@ -805,7 +805,7 @@ void dgemm_sc_prec_2_k(int nrows, int k, const double *restrict x, const double 
       __m128d c = _mm256_extractf128_pd(c_[j][0],0);
       __m128d pi = _mm256_extractf128_pd(c_[j][0],1);
       __m128d sigma, oldS = s;
-      MM128_2SUM(oldS,p,s,sigma);
+      MM128_FAST2SUM(oldS,p,s,sigma);
       __m128d tmp = _mm_add_pd(pi,sigma);
       c = _mm_add_pd(c,tmp);
       _mm_storeu_pd(&res[j*2],  s);
@@ -890,7 +890,7 @@ void dgemm_sc_prec_1_k(int nrows, int k, const double *restrict x, const double 
       for(int j = 0; j < k; j++)
       {
         __m256d sigma, oldS = s_[j][0];
-        MM256_2SUM(oldS, s_[j][i], s_[j][0], sigma);
+        MM256_FAST2SUM(oldS, s_[j][i], s_[j][0], sigma);
         __m256d tmp = _mm256_add_pd(c_[j][i],sigma);
         c_[j][0] = _mm256_add_pd(c_[j][0], tmp);
       }

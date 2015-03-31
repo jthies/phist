@@ -50,7 +50,7 @@ void dgemm_sb_inplace_prec_4(int nrows, double *restrict x, const double *restri
       __m256d oldS = s, t_;
       MM256_FAST2SUM(oldS,xij,s,t_);
       __m256d tmp = _mm256_add_pd(t,t_);
-      t = _mm256_add_pd(t,xijC_);
+      t = _mm256_add_pd(tmp,xijC_);
     }
     __m256d newX = _mm256_add_pd(s,t);
     _mm256_store_pd(&x[4*i],newX);
@@ -93,7 +93,7 @@ void dgemm_sb_inplace_prec_2(int nrows, double *restrict x, const double *restri
       __m128d oldS = s, t_;
       MM128_FAST2SUM(oldS,xij,s,t_);
       __m128d tmp = _mm_add_pd(t,t_);
-      t = _mm_add_pd(t,xijC_);
+      t = _mm_add_pd(tmp,xijC_);
     }
     __m128d newX = _mm_add_pd(s,t);
     _mm_store_pd(&x[2*i],newX);
