@@ -46,7 +46,8 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
                          bool innerIMGS,           bool innerGMRESabortAfterFirstConverged,
                          bool symmetric,
                          TYPE(mvec_ptr) Q,         TYPE(sdMat_ptr) R,
-                         _MT_* resNorm,            int* iflag);
+                         _CT_* ev,                 _MT_* resNorm,
+                        int* iflag);
 
 //@}
 

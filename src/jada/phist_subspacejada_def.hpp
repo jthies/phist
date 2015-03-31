@@ -45,15 +45,20 @@ void SUBR(sdMat_check_symmetrie)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
       for(int j = 0; j < n; j++)
         maxVal = std::max(maxVal, st::abs(tmp_raw[i*lda+j]));
   }
-  PHIST_SOUT(PHIST_VERBOSE, "Symmetry deviation of projection %e\n", maxVal);
 
   PHIST_CHK_IERR(SUBR(sdMat_delete)(id, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_delete)(tmp, iflag), *iflag);
 
   if( maxVal < tol )
+  {
+    PHIST_SOUT(PHIST_VERBOSE, "Symmetry deviation of projection %e\n", maxVal);
     *iflag = 0;
+  }
   else
+  {
+    PHIST_SOUT(PHIST_WARNING, "Symmetry deviation of projection %e exceeds tolerance (%e)\n", maxVal, tol);
     *iflag = 1;
+  }
 }
 
 
@@ -98,8 +103,8 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
                          bool innerIMGS,           bool innerGMRESabortAfterFirstConverged,
                          bool symmetric,
                          TYPE(mvec_ptr) Q__,       TYPE(sdMat_ptr) R_,
-
-                         _MT_* resNorm,            int* iflag)
+                         _CT_* ev,                 _MT_* resNorm,
+                         int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
@@ -265,7 +270,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   //------------------------------- initialize correction equation solver solver ------------------------
   TYPE(jadaCorrectionSolver_ptr) innerSolv = NULL;
   PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, innerBlockDim, A_op->domain_map, GMRES, innerMaxBase, symmetric, iflag), *iflag);
-  std::vector<_MT_> innerTol(nEig_,mt::one());
+  std::vector<_MT_> innerTol(nEig_,0.1);
   std::vector<_MT_> lastOuterRes(nEig_,mt::zero());
 
   //------------------------------- initialize subspace etc ------------------------
@@ -405,7 +410,7 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
     // for convenience check symmetrie of H (shouldn't much hurt the performance)
     if( symmetric )
     {
-      PHIST_CHK_IERR(SUBR(sdMat_check_symmetrie)(Hful, tol, iflag), *iflag);
+      PHIST_CHK_NEG_IERR(SUBR(sdMat_check_symmetrie)(Hful, tol, iflag), *iflag);
     }
 
     // calculate sorted Schur form of H in (Q_H,R_H)
@@ -585,7 +590,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
     // check for converged eigenvalues
     int nNewConvEig = 0;
-    for(int i = nConvEig; i < nEig; i++)
+    for(int i = nConvEig; i < std::min(nEig,nEig_); i++)
     {
       if (resNorm[i]>0)
       {
@@ -728,11 +733,6 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
     while( k_+1 < nEig_ && (ct::abs(ev_H[k_+1]-ev_H[k_]) < 10*ct::abs(ev_H[k_+1])*mt::sqrt(tol) || ct::abs(ct::conj(ev_H[k_+1])-ev_H[k_]) < mt::sqrt(tol)) )
       k_++;
 
-PHIST_SOUT(PHIST_INFO,"selectedRes: ");
-for(int i = 0; i < k; i++)
-  PHIST_SOUT(PHIST_INFO,"\t%d (%e)", selectedRes[i], resNorm[selectedRes[i]]);
-PHIST_SOUT(PHIST_INFO,"\n");
-
 
     // shrink search space if necessary
     if( nV + k > maxBase )
@@ -775,10 +775,18 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
       for(int i = 0; i < k; i++)
       {
         if( resNorm[nConvEig+i] > 4*lastOuterRes[nConvEig+i] )
-          innerTol[nConvEig+i] = 1.;
-        innerTol[nConvEig+i] *= 0.5;
+          innerTol[nConvEig+i] = 0.1;
+        if( innerTol[nConvEig+i] > mt::eps() )
+          innerTol[nConvEig+i] = std::max(mt::eps(), innerTol[nConvEig+i]*0.1);
+        innerTol[nConvEig+i] = std::max(innerTol[nConvEig+i], 0.1*tol/(mt::eps()+resNorm[nConvEig+i]));
+        innerTol[nConvEig+i] = std::min(innerTol[nConvEig+i], 0.1);
         lastOuterRes[nConvEig+i] = resNorm[nConvEig+i];
       }
+PHIST_SOUT(PHIST_INFO,"selectedRes: ");
+for(int i = 0; i < k; i++)
+  PHIST_SOUT(PHIST_INFO,"\t%d (%e, tol %e)", selectedRes[i], resNorm[selectedRes[i]], innerTol[nConvEig+i]);
+PHIST_SOUT(PHIST_INFO,"\n");
+
 
       for(int i = 0; i < blockDim; i++)
         selectedRes[i] -= nConvEig-nNewConvEig;
@@ -833,6 +841,9 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
 
   // copy result to Q_
   PHIST_CHK_IERR(SUBR(mvec_set_block)(Q__, Q, 0, nEig_-1, iflag), *iflag);
+  // copy resulting eigenvalues to ev
+  for(int i = 0; i < nEig_; i++)
+    ev[i] = ev_H[i];
 
 
   //------------------------------- delete vectors and matrices --------------------
