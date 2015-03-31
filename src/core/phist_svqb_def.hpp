@@ -11,45 +11,102 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
     PHIST_ENTER_FCN(__FUNCTION__);
-    int m;
     bool robust = *iflag & PHIST_ROBUST_REDUCTIONS;
     *iflag=0;
+    int m, rank;
+    lidx_t ldb;
+    _ST_*  B_raw;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
-    const_comm_ptr_t comm;
-    PHIST_CHK_IERR(SUBR(mvec_get_comm)(V,&comm,iflag),*iflag);
-    TYPE(sdMat_ptr) R = NULL;
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&R,m,m,comm,iflag),*iflag);
-
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(B,&B_raw,&ldb,iflag),*iflag);
+    _MT_ Dinv[m]; // inverse sqrt of V'V
+    _MT_ E[m], Einv[m]; // sqrt of eigenvalues of (scaled) V'V (and its inverse)
+    
     // S=V'V
     if( robust )
       *iflag = PHIST_ROBUST_REDUCTIONS;
-    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),R,iflag),*iflag);
-PHIST_SOUT(PHIST_INFO,"Q^TQ:\n");
-PHIST_CHK_IERR(SUBR(sdMat_print)(R,iflag),*iflag);
-PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R,st::zero(),B,iflag),*iflag);
-
-    // create B from R
-    int rank = 0;
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),B,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)(B,iflag),*iflag);
+//PHIST_SOUT(PHIST_INFO,"Q^T Q before scaling:\n");
+//PHIST_CHK_IERR(SUBR(sdMat_print)(B,iflag),*iflag);
+    // scaling factors: sqrt of inverse diagonal elements
+    for (int i=0; i<m; i++)
     {
-      // stable rank-revealing cholesky
-      int perm[m];
-      if( robust )
-        *iflag = PHIST_ROBUST_REDUCTIONS;
-      PHIST_CHK_IERR(SUBR(sdMat_cholesky)(R,perm,&rank,iflag),*iflag);
-PHIST_SOUT(PHIST_INFO,"R^T:\n");
-PHIST_CHK_IERR(SUBR(sdMat_print)(R,iflag),*iflag);
-PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat)(st::one(),R,R,-st::one(),B,iflag),*iflag);
-PHIST_SOUT(PHIST_INFO,"Q^TQ-RR^T:\n");
-PHIST_CHK_IERR(SUBR(sdMat_print)(B,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(sdMat_identity)(B,iflag),*iflag);
-      if( robust )
-        *iflag = PHIST_ROBUST_REDUCTIONS;
-      PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(R,perm,rank,B,iflag),*iflag);
-PHIST_SOUT(PHIST_INFO,"R^-T:\n");
-PHIST_CHK_IERR(SUBR(sdMat_print)(B,iflag),*iflag);
+      _MT_ d=st::real(B_raw[i*ldb+i]);
+      // note: diagonal entry must be real
+      D[i] = mt::sqrt(d);
+      if (mt::abs(d)>mt::eps())
+      {
+        Dinv[i] = mt::one()/D[i];
+      }
+      else
+      {
+        Dinv[i] = mt::zero();
+      }
+    }
+    // scale matrix S^=V'V with ones on diagonal
+    for (int i=0; i<m; i++)
+    {
+      for(int j=0; j<m; j++) 
+      {
+        B_raw[i*ldb+j] *= Dinv[i]*Dinv[j];
+      }
+    }
+//PHIST_SOUT(PHIST_INFO,"Q^T Q after scaling:\n");
+//PHIST_CHK_IERR(SUBR(sdMat_print)(B,iflag),*iflag);
+
+// compute eigenvalues/vectors of scaled B, eigenvalues
+// are given in order of ascending magnitude in E, corresponding
+// eigenvectors as columns of B
+    _CT_ Ec[m];
+    TYPE(sdMat_ptr) A = NULL;
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&A,m,m,NULL,iflag),*iflag);
+    lidx_t lda;
+    _ST_*  A_raw;
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(A,&A_raw,&lda,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(SchurDecomp)(B_raw, ldb, A_raw, lda, m, m, 0, LM, mt::eps(), Ec, iflag), *iflag);
+    for(int i = 0; i < m; i++)
+      E[i] = ct::real(Ec[i]);
+//PHIST_CHK_IERR(SUBR(sdMat_print)(B,iflag),*iflag);
+//PHIST_CHK_IERR(SUBR(sdMat_print)(A,iflag),*iflag);
+
+#if PHIST_OUTLEV>=PHIST_DEBUG
+PHIST_SOUT(PHIST_INFO,"singular values of W:\n");
+for (int i=0;i<m;i++) PHIST_SOUT(PHIST_INFO,"%24.16e\n",sqrt(E[i]));
+#endif
+
+    // determine rank of input matrix
+    rank=m;
+    
+    for(int i=0; i<m; i++)
+    {
+      if(mt::abs(E[i])<10*mt::eps())
+      {
+        rank--;
+        E[i]=mt::zero();
+        Einv[i]=mt::zero();
+      }
+      else
+      {
+        Einv[i] = mt::one()/sqrt(E[i]);
+        E[i] = sqrt(E[i]);
+      }
     }
 
-    PHIST_CHK_IERR(SUBR(sdMat_delete)(R,iflag),*iflag);
+    // scale the eigenvector matrix, B <- Dinv * B * Einv
+    for(int i=0; i<m; i++)
+    {
+      for(int j=0;j<m;j++)
+      {
+#ifdef PHIST_SDMATS_ROW_MAJOR
+        B_raw[i*ldb+j] = Dinv[i]*A_raw[i*lda+j]*Einv[j];
+#else
+        B_raw[j*ldb+i] = Dinv[i]*A_raw[j*lda+i]*Einv[j];
+#endif
+      }
+    }
+
+    // GPU upload (if this is a GPU process) as we modified B manually
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(B,iflag),*iflag);
 
     // compute V <- V*B to get an orthogonal V (up to the first (m-rank) columns,
     // which will be exactly zero)
