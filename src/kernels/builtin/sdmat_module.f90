@@ -698,7 +698,7 @@ contains
 
     do i = sdmat%imin, sdmat%imax
       do j = sdmat%jmin, sdmat%jmax
-        write(*,'(G16.8A1G16.8)',advance='no') sdmat%val(i,j),'+',sdmat%err(i,j)
+        write(*,'(G16.8,A1,G16.8)',advance='no') sdmat%val(i,j),'+',sdmat%err(i,j)
       end do
       write(*,*)
       !write(*,*) sdmat%val(i,sdmat%jmin:sdmat%jmax)

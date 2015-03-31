@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 
 static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
 {
