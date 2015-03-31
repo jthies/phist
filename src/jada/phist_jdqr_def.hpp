@@ -692,8 +692,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
     // 1/2^mm, but at most the outer tol as conv tol for GMRES
     MT innerTol[2];
-    innerTol[0] = std::max(tol,mt::one()/((MT)(2<<mm)));
-    innerTol[1] = std::max(tol,mt::one()/((MT)(2<<mm)));
+    innerTol[0] = std::max(tol,mt::one()/((MT)(pow(2.0,mm+1))));
+    innerTol[1] = std::max(tol,mt::one()/((MT)(pow(2.0,mm+1))));
     PHIST_SOUT(PHIST_VERBOSE,"inner conv tol: %g\n",innerTol[0]);
 
     // allow at most 25 iterations
