@@ -14,33 +14,11 @@ public:
   virtual void SetUp()
     {
     KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
+    createOrthogQ();
     
     if (typeImplemented_)
       {
-      nq_ = std::min(3*nvec_+1,(int)nglob_-4);
-#ifdef HAVE_MPI
-      // note: TSQR does not work if nvec>nloc (that wouldn't really be a 'tall skinny 
-      // matrix' but a 'short fat and sliced matrix')
-      nq_ = std::min((int)nloc_,nq_);
-      int nq_local = nq_;
-      iflag_ = MPI_Allreduce(&nq_local,&nq_,1,MPI_INT,MPI_MIN,mpi_comm_);
-      ASSERT_EQ(0,iflag_);
-#endif      
-      SUBR(mvec_create)(&Q_,map_,nq_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       sigma = new _ST_[nq_];
-
-      // create random orthogonal Q
-      SUBR(mvec_random)(Q_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      TYPE(sdMat_ptr) Rtmp;
-      SUBR(sdMat_create)(&Rtmp,nq_,nq_,comm_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      int rankQ = 0;
-      SUBR(orthog)(NULL,Q_,Rtmp,NULL,4,&rankQ,&iflag_);
-      ASSERT_GE(iflag_,0);
-      SUBR(sdMat_delete)(Rtmp,&iflag_);
-      ASSERT_EQ(0,iflag_);
 
       SUBR(read_mat)("sprandn",comm_,nglob_,&A1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -58,20 +36,72 @@ public:
       }
     }
 
+  void createOrthogQ()
+  {
+    if (typeImplemented_)
+    {
+      nq_ = std::min(3*nvec_+1,(int)nglob_-4);
+#ifdef HAVE_MPI
+      // note: TSQR does not work if nvec>nloc (that wouldn't really be a 'tall skinny 
+      // matrix' but a 'short fat and sliced matrix')
+      nq_ = std::min((int)nloc_,nq_);
+      int nq_local = nq_;
+      iflag_ = MPI_Allreduce(&nq_local,&nq_,1,MPI_INT,MPI_MIN,mpi_comm_);
+      ASSERT_EQ(0,iflag_);
+#endif      
+      SUBR(mvec_create)(&Q_,map_,nq_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // create random orthogonal Q
+      SUBR(mvec_random)(Q_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      TYPE(sdMat_ptr) Rtmp;
+      SUBR(sdMat_create)(&Rtmp,nq_,nq_,comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      int rankQ = 0;
+      SUBR(orthog)(NULL,Q_,Rtmp,NULL,4,&rankQ,&iflag_);
+      ASSERT_GE(iflag_,0);
+      SUBR(sdMat_delete)(Rtmp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+  }
+
   /*! Clean up.
    */
   virtual void TearDown() 
     {
     KernelTestWithVectors<_ST_,_N_,_NV_>::TearDown();
+    deleteOrthogQ();
     if (typeImplemented_)
       {
-      SUBR(mvec_delete)(Q_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       if( sigma != NULL)
         delete[] sigma;
       ASSERT_EQ(0,delete_mat(A1_));
       ASSERT_EQ(0,delete_mat(A2_));
       }
+    }
+
+  void deleteOrthogQ()
+  {
+    if (typeImplemented_)
+    {
+      SUBR(mvec_delete)(Q_,&iflag_); Q_=NULL;
+      ASSERT_EQ(0,iflag_);
+    }
+  }
+
+  /*! Replace the map and rebuild vectors
+   */
+  virtual void replaceMap(const_map_ptr_t map)
+    {
+      if (this->typeImplemented_)
+        {
+        deleteOrthogQ();
+
+        KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
+
+        createOrthogQ();
+        }
     }
 
   TYPE(sparseMat_ptr) A1_ = NULL;
@@ -98,6 +128,10 @@ public:
     {
     if (typeImplemented_ && haveMats_)
       {
+      const_map_ptr_t newMap = NULL;
+      PHIST_ICHK_IERR(SUBR(sparseMat_get_range_map)(A,&newMap,&iflag_),iflag_);
+      // set new map (recreates required vectors in the background!)
+      replaceMap(newMap);
       Teuchos::RCP<Belos::OutputManager<ST> > MyOM
         = Teuchos::rcp( new Belos::OutputManager<ST>() );
       MyOM->setVerbosity( Belos::Warnings|Belos::Debug);
