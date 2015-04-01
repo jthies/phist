@@ -278,6 +278,11 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     lidx_t row_nnz = -1;
     MATPDE_initDimensions(L, L, &nrows, &row_nnz);
     ncols = nrows;
+    if( *iflag & PHIST_SPARSEMAT_REPARTITION )
+    {
+      PHIST_SOUT(PHIST_INFO,"Disabling PHIST_SPARSEMAT_REPARTITION; MATPDE features a predefined partitioning!\n");
+      *iflag &= ~PHIST_SPARSEMAT_REPARTITION;
+    }
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
           nrows, ncols, row_nnz, &MATPDE_rowFunc, iflag), *iflag);
   }
