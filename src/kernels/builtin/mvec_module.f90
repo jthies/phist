@@ -1601,6 +1601,12 @@ contains
 #if defined(TESTING) && PHIST_OUTLEV >= 4
     integer(C_INTPTR_T) :: dummy
 #endif
+    interface
+      subroutine free(p) bind(C)
+        use, intrinsic :: iso_c_binding, only: C_PTR
+        type(C_PTR), value :: p
+      end subroutine free
+    end interface
     !--------------------------------------------------------------------------------
 
 #if defined(TESTING) && PHIST_OUTLEV >= 4
@@ -1610,7 +1616,7 @@ contains
     if( c_associated(mvec_ptr) ) then
       call c_f_pointer(mvec_ptr, mvec)
       if( .not. mvec%is_view) then
-        deallocate(mvec%val)
+        call free(c_loc(mvec%val))
       end if
       deallocate(mvec)
     end if

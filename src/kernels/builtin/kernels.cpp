@@ -129,6 +129,7 @@ int mpiInitializedBefore = false;
 extern "C" {
 
 
+/*
 // comment in for glibc/gcc and memory alignment problems...
 
 #include <malloc.h>
@@ -159,7 +160,7 @@ static void my_init_hook (void)
 }
 // Override initializing hook from the C library.
 void (*__malloc_initialize_hook) (void) = my_init_hook;
-
+*/
 
 
 void init_random_seed(void);
