@@ -64,11 +64,11 @@ void SUBR(create_matrix_usage)(void)
 #if defined(IS_DOUBLE) && !defined(IS_COMPLEX)
 PHIST_SOUT(PHIST_INFO,"\n\nInstead of a matrix file you can also specify a string describing\n"
                       "one of our scalable test problems, e.g. \n"
-                      "graphene<L> or graphene<M>x<N> for an L times L (M times N) graphene sheet,\n"
+                      "graphene<L> or graphene<M>x<N> for an L times L (M times N) graphene sheet\n"
                       "spinSZ<L> for a spin chain of L spins\n"
                       "anderson<L> for an L^3 model problem for the Anderson localization\n"
-                      "matpde<L> for an L^2 eigenproblem from a scalar elliptic partial \n"
-                      "          differential equation\n");
+                      "matpde<L> for an L^2 eigenproblem from a scalar elliptic partial differential equation\n"
+                      "TriToeplitz<L> for an 2^L tridiagonal Toeplitz matrix (e.g. 1D Poisson, spd, diagonal dominant)\n");
 #endif
 
 }
@@ -91,12 +91,16 @@ FROM_BAPPS,
 GRAPHENE,
 ANDERSON,
 SPINSZ,
-MATPDE
+MATPDE,
+TRITOEPLITZ
 } problem_t;
 
 // definitions for MATPDE
 void MATPDE_initDimensions(int, int, gidx_t*, lidx_t*);
 int MATPDE_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
+// definitions for TriToeplitz
+void TriToeplitz_initDimensions(int, gidx_t*, lidx_t*);
+int TriToeplitz_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
 
 int str_starts_with(const char *s1, const char *s2)
 {
@@ -155,6 +159,12 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     mat_type=MATPDE;
     pos=strlen("matpde");
   }
+  else if( str_starts_with(problem,"TriToeplitz") )
+  {
+    mat_type=TRITOEPLITZ;
+    pos=strlen("TriToeplitz");
+  }
+
 
   gidx_t DIM;
 
@@ -285,6 +295,22 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     }
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
           nrows, ncols, row_nnz, &MATPDE_rowFunc, iflag), *iflag);
+  }
+  else if(mat_type==TRITOEPLITZ)
+  {
+    PHIST_SOUT(PHIST_INFO,"problem type: TriToeplitz 2^%d\n", L, L);
+    gidx_t nrows = -1;
+    gidx_t ncols = -1;
+    lidx_t row_nnz = -1;
+    TriToeplitz_initDimensions(L, &nrows, &row_nnz);
+    ncols = nrows;
+    if( *iflag & PHIST_SPARSEMAT_REPARTITION )
+    {
+      PHIST_SOUT(PHIST_INFO,"Disabling PHIST_SPARSEMAT_REPARTITION; TriToeplitz is already tridiagonal!\n");
+      *iflag &= ~PHIST_SPARSEMAT_REPARTITION;
+    }
+    PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
+          nrows, ncols, row_nnz, &TriToeplitz_rowFunc, iflag), *iflag);
   }
   else if (mat_type==FROM_BAPPS)
   {

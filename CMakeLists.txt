@@ -384,6 +384,7 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_driver_utils.c
                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde.f90
+                          ${PROJECT_SOURCE_DIR}/drivers/matfuncs/tritoeplitz.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/env_module.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/map_module.f90
@@ -419,6 +420,7 @@ else()
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_driver_utils.c
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde.f90
+                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/tritoeplitz.f90
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp
                            ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp)
 endif()
