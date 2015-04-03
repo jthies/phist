@@ -289,6 +289,8 @@ elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
     message(STATUS "Activated experimental high-precision builtin kernel routines!")
     set(PHIST_HIGH_PRECISION_KERNELS 1)
     set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -mavx -mavx2 -mfma")
+    set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -mavx -mavx2 -mfma")
+    set (CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -mavx -mavx2 -mfma")
   endif()
 
   if( PHIST_ENABLE_SP )

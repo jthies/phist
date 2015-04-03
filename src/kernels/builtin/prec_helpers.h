@@ -174,18 +174,18 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
 {\
   __m256d m4_s, m4_t;\
   MM256_2MULTFMA(a,b,m4_s,m4_t);\
-  __m256d m4_tt = _mm256_fmadd(a,bC,m4_t);\
-  __m256d m4_ttt = _mm256_fmadd(b,aC,m4_tt);\
-  __m256d m4_tttt = _mm256_fmadd(aC,bC,m4_ttt);\
+  __m256d m4_tt = _mm256_fmadd_pd(a,bC,m4_t);\
+  __m256d m4_ttt = _mm256_fmadd_pd(b,aC,m4_tt);\
+  __m256d m4_tttt = _mm256_fmadd_pd(aC,bC,m4_ttt);\
   MM256_FAST2SUM(m4_s,m4_tttt,s,t);\
 }
 #define MM128_4MULTFMA(a,aC,b,bC,s,t)\
 {\
   __m128d m4_s, m4_t;\
   MM128_2MULTFMA(a,b,m4_s,m4_t);\
-  __m128d m4_tt = _mm_fmadd(a,bC,m4_t);\
-  __m128d m4_ttt = _mm_fmadd(b,aC,m4_tt);\
-  __m128d m4_tttt = _mm_fmadd(aC,bC,m4_ttt);\
+  __m128d m4_tt = _mm_fmadd_pd(a,bC,m4_t);\
+  __m128d m4_ttt = _mm_fmadd_pd(b,aC,m4_tt);\
+  __m128d m4_tttt = _mm_fmadd_pd(aC,bC,m4_ttt);\
   MM128_FAST2SUM(m4_s,m4_tttt,s,t);\
 }
 #define DOUBLE_4MULTFMA(a,aC,b,bC,s,t)\

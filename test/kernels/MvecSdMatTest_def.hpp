@@ -255,7 +255,7 @@ public:
   }
 #endif
 
-#if( _N_ % 4 == 0 && (_M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 ) )
+#if( _M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 )
   // check ones(n,m)'*ones(n,k)=n*ones(m,k)
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvecT_times_mvec_prec) 
@@ -449,7 +449,7 @@ public:
   }
 
 
-#if( _N_ % 4 == 0 && (_M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 ) )
+#if( _M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 )
   // check ones(n,m)'*ones(n,m)=n*ones(m,m)
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvecT_times_mvec_with_manual_comparison_prec_hard)
@@ -569,8 +569,64 @@ public:
     }
   }
 
-#if (_M_>=_K_)
+#if( _K_ == 1 || _K_ == 2 || _K_ == 4 )
+  // check ones(n,m)*ones(m,k)=m*ones(n,k),
+  // and ones(n,m)*ones(m,k)-m*ones(n,k)=0
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  TEST_F(CLASSNAME, mvec_times_sdMat_prec)
+#else
+  TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_prec)
+#endif
+  {
+    if (typeImplemented_)
+    {
+      // fill V and W with ones
+      SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_put_value)(V2_,(MT)42.0*st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_put_value)(M1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,st::zero(),V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      SUBR(mvec_from_device)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      V1Test::PrintVector(*cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      MTest::PrintSdMat(*cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
+      V2Test::PrintVector(*cout,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+#endif
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,(ST)m_));
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // with adding to factor*(input vector)
+      ST alpha=2.0+2.0*st::cmplx_I();
+      SUBR(mvec_put_value)(V2_,(ST)m_*alpha,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,-st::one()/alpha,V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,st::zero()));
 
+      // with adding factor*V*C to input vector
+      SUBR(mvec_put_value)(V2_,(MT)m_*alpha,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_times_sdMat)(-alpha,V1_,M1_,st::one(),V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,st::zero()));
+    }
+  }
+#endif
+
+
+#if (_M_>=_K_)
   // check ones(n,m)*ones(m,m)=m*ones(n,m)
   TEST_F(CLASSNAME, mvec_times_sdMat_in_place)
   {
@@ -651,7 +707,7 @@ public:
     }
   }
 
-#if( _N_ % 4 == 0 && (_K_ == 1 || _K_ == 2 || _K_ == 4 ) )
+#if( _K_ == 1 || _K_ == 2 || _K_ == 4 )
   // check ones(n,m)*ones(m,m)=m*ones(n,m)
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvec_times_sdMat_in_place_prec)
@@ -866,7 +922,7 @@ public:
     }
   }
 
-#if( _N_ % 4 == 0 && (_M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 ) )
+#if( _M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 )
   // random check
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, random_mvecT_times_mvec_prec) 

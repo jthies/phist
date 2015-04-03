@@ -177,7 +177,7 @@ void prec_reduction_k(int n, int k, const double *restrict s_, const double *res
   }
   for(int i = 1; i < n; i++)
   {
-    for(int j = 0; j < k/2; j++)
+    for(int j = 0; j < k; j++)
     {
       double si = s_[k*i+j];
       double ci = c_[k*i+j];

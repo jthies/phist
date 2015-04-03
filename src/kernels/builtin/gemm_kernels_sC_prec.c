@@ -895,7 +895,7 @@ void dgemm_sc_prec_1_k(int nrows, int k, const double *restrict x, const double 
       _mm256_storeu_pd(sj, s_[j][0]);
       _mm256_storeu_pd(cj, c_[j][0]);
       prec_reduction_1(4, sj, cj, &res[j], &resC[j]);
-printf("bla %e %e %e %e res %e\n", sj[0], sj[1], sj[2], sj[3], res[j]);
+//printf("bla %e %e %e %e res %e\n", sj[0], sj[1], sj[2], sj[3], res[j]);
     }
   }
 
