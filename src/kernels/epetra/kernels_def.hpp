@@ -21,7 +21,11 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_
     return;
   }
   Epetra_CrsMatrix* A=NULL;
+#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
   *iflag=EpetraExt::MatrixMarketFileToCrsMatrix(filename,*comm,A);
+#else
+  *iflag=EpetraExt::MatrixMarketFileToCrsMatrix64(filename,*comm,A);
+#endif
   *vA = (TYPE(sparseMat_ptr))(A);
   
 /*  std::cerr << "filename was '"<<filename<<"'"<<std::endl;
