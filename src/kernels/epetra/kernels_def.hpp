@@ -69,7 +69,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, cons
   PHIST_TRY_CATCH(A   = new Epetra_CrsMatrix(Copy,*map,maxnne),*iflag);
   for (lidx_t i=0; i<A->NumMyRows(); i++)
   {
-#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
     ghost_gidx_t row = (ghost_gidx_t)map->GID(i);
 #else
     ghost_gidx_t row = (ghost_gidx_t)map->GID64(i);
