@@ -29,7 +29,7 @@ module tritoeplitz_module
 
   integer(kind=8) :: n
 
-  real, parameter :: diagonalDominance = 1.e-3
+  real, parameter :: diagonalDominance = 1.e-8
 
 contains
 
