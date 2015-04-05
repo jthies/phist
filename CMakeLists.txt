@@ -422,6 +422,7 @@ else()
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_driver_utils.c
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde.f90
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/tritoeplitz.f90
+                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/brussolator.f90
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp
                            ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp)
 endif()
