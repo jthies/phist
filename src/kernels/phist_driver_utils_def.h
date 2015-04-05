@@ -68,7 +68,8 @@ PHIST_SOUT(PHIST_INFO,"\n\nInstead of a matrix file you can also specify a strin
                       "spinSZ<L> for a spin chain of L spins\n"
                       "anderson<L> for an L^3 model problem for the Anderson localization\n"
                       "matpde<L> for an L^2 eigenproblem from a scalar elliptic partial differential equation\n"
-                      "TriToeplitz<L> for an 2^L tridiagonal Toeplitz matrix (e.g. 1D Poisson, spd, diagonal dominant)\n");
+                      "TriToeplitz<L> for an 2^L tridiagonal Toeplitz matrix (e.g. 1D Poisson, spd, diagonal dominant)\n"
+                      "Brussolator<L> for an L^1 eigenproblem from a Brussolator wave model in chemical reaction (MVMBWM)\n");
 #endif
 
 }
@@ -92,7 +93,8 @@ GRAPHENE,
 ANDERSON,
 SPINSZ,
 MATPDE,
-TRITOEPLITZ
+TRITOEPLITZ,
+BRUSSOLATOR
 } problem_t;
 
 // definitions for MATPDE
@@ -101,6 +103,9 @@ int MATPDE_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
 // definitions for TriToeplitz
 void TriToeplitz_initDimensions(int, gidx_t*, lidx_t*);
 int TriToeplitz_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
+// definitions for Brussolator
+void Brussolator_initDimensions(int, gidx_t*, lidx_t*);
+int Brussolator_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
 
 int str_starts_with(const char *s1, const char *s2)
 {
@@ -164,6 +169,12 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     mat_type=TRITOEPLITZ;
     pos=strlen("TriToeplitz");
   }
+  else if( str_starts_with(problem,"Brussolator") )
+  {
+    mat_type=BRUSSOLATOR;
+    pos=strlen("Brussolator");
+  }
+
 
 
   gidx_t DIM;
@@ -298,7 +309,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   }
   else if(mat_type==TRITOEPLITZ)
   {
-    PHIST_SOUT(PHIST_INFO,"problem type: TriToeplitz 2^%d\n", L, L);
+    PHIST_SOUT(PHIST_INFO,"problem type: TriToeplitz 2^%d\n", L);
     gidx_t nrows = -1;
     gidx_t ncols = -1;
     lidx_t row_nnz = -1;
@@ -311,6 +322,17 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     }
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
           nrows, ncols, row_nnz, &TriToeplitz_rowFunc, iflag), *iflag);
+  }
+  else if(mat_type==BRUSSOLATOR)
+  {
+    PHIST_SOUT(PHIST_INFO,"problem type: Brussolator wave model %d^1\n", L);
+    gidx_t nrows = -1;
+    gidx_t ncols = -1;
+    lidx_t row_nnz = -1;
+    Brussolator_initDimensions(L, &nrows, &row_nnz);
+    ncols = nrows;
+    PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
+          nrows, ncols, row_nnz, &Brussolator_rowFunc, iflag), *iflag);
   }
   else if (mat_type==FROM_BAPPS)
   {
