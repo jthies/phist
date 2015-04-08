@@ -586,15 +586,15 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // set rtil=r
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r_ptr,st::zero(),rtil_ptr,iflag),*iflag);
 
-     // view next ~a, a temporary vector to compute ~a=Q'*r
-     PHIST_CHK_IERR(SUBR(sdMat_view_block)(atil,&atilv,0,nconv-1,0,nv-1,iflag),*iflag);
+    // view next ~a, a temporary vector to compute ~a=Q'*r
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(atil,&atilv,0,nconv-1,0,nv-1,iflag),*iflag);
 
     //atil = Q'*r;
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Qv,r_ptr,st::zero(),atilv,iflag),*iflag);
 
     //rtil = r-Q*atil;
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,atilv,st::one(),r_ptr,iflag),*iflag);
-      
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,atilv,st::one(),rtil_ptr,iflag),*iflag);
+
     //nrm=norm(rtil);
     // real case with complex r: ||v+iw||=sqrt((v+iw).'*(v-iw))=sqrt(v'v+w'w).
     // in the complex case we pass in a 're-interpret cast' of nrm as complex,
@@ -692,8 +692,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
     // 1/2^mm, but at most the outer tol as conv tol for GMRES
     MT innerTol[2];
-    innerTol[0] = std::max(tol,mt::one()/((MT)(2<<mm)));
-    innerTol[1] = std::max(tol,mt::one()/((MT)(2<<mm)));
+    innerTol[0] = std::max(tol,mt::one()/((MT)(pow(2.0,mm+1))));
+    innerTol[1] = std::max(tol,mt::one()/((MT)(pow(2.0,mm+1))));
     PHIST_SOUT(PHIST_VERBOSE,"inner conv tol: %g\n",innerTol[0]);
 
     // allow at most 25 iterations
