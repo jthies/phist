@@ -69,7 +69,8 @@ PHIST_SOUT(PHIST_INFO,"\n\nInstead of a matrix file you can also specify a strin
                       "anderson<L> for an L^3 model problem for the Anderson localization\n"
                       "matpde<L> for an L^2 eigenproblem from a scalar elliptic partial differential equation\n"
                       "TriToeplitz<L> for an 2^L tridiagonal Toeplitz matrix (e.g. 1D Poisson, spd, diagonal dominant)\n"
-                      "Brussolator<L> for an L^1 eigenproblem from a Brussolator wave model in chemical reaction (MVMBWM)\n");
+                      "Brussolator<L> for an L^1 eigenproblem from a Brussolator wave model in chemical reaction (MVMBWM)\n"
+                      "matpde3d<L> for an L^3 eigenproblem from a scalar elliptical partial differentian equation\n");
 #endif
 
 }
@@ -94,7 +95,8 @@ ANDERSON,
 SPINSZ,
 MATPDE,
 TRITOEPLITZ,
-BRUSSOLATOR
+BRUSSOLATOR,
+MATPDE3D
 } problem_t;
 
 // definitions for MATPDE
@@ -103,6 +105,9 @@ int MATPDE_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
 // definitions for TriToeplitz
 void TriToeplitz_initDimensions(int, gidx_t*, lidx_t*);
 int TriToeplitz_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
+// definitions for MATPDE3D
+void MATPDE3D_initDimensions(int, int, int, gidx_t*, lidx_t*);
+int MATPDE3D_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
 // definitions for Brussolator
 void Brussolator_initDimensions(int, gidx_t*, lidx_t*);
 int Brussolator_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
@@ -159,6 +164,11 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     mat_type=ANDERSON;
     pos=strlen("anderson");
   }
+  else if( str_starts_with(problem,"matpde3d") )
+  {
+    mat_type=MATPDE3D;
+    pos=strlen("matpde3d");
+  }
   else if( str_starts_with(problem,"matpde") )
   {
     mat_type=MATPDE;
@@ -174,7 +184,6 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     mat_type=BRUSSOLATOR;
     pos=strlen("Brussolator");
   }
-
 
 
   gidx_t DIM;
@@ -333,6 +342,22 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     ncols = nrows;
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
           nrows, ncols, row_nnz, &Brussolator_rowFunc, iflag), *iflag);
+  }
+  else if (mat_type==MATPDE3D)
+  {
+    PHIST_SOUT(PHIST_INFO,"problem type: MATPDE3D %d x %d x %d\n", L, L, L);
+    gidx_t nrows = -1;
+    gidx_t ncols = -1;
+    lidx_t row_nnz = -1;
+    MATPDE3D_initDimensions(L, L, L, &nrows, &row_nnz);
+    ncols = nrows;
+    if( *iflag & PHIST_SPARSEMAT_REPARTITION )
+    {
+      PHIST_SOUT(PHIST_INFO,"Disabling PHIST_SPARSEMAT_REPARTITION; MATPDE3D features a predefined partitioning!\n");
+      *iflag &= ~PHIST_SPARSEMAT_REPARTITION;
+    }
+    PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
+          nrows, ncols, row_nnz, &MATPDE3D_rowFunc, iflag), *iflag);
   }
   else if (mat_type==FROM_BAPPS)
   {

@@ -34,8 +34,7 @@ module matpde3d_module
 
 contains
 
-  subroutine MATPDE3D_initDimensions(new_nx, new_ny, new_nz, nrows, maxnne_per_row) bind(C, 
-  name='MATPDE3D_initDimensions')
+  subroutine MATPDE3D_initDimensions(new_nx, new_ny, new_nz, nrows, maxnne_per_row) bind(C,name='MATPDE3D_initDimensions')
     use, intrinsic :: iso_c_binding
     integer(kind=C_INT), value :: new_nx, new_ny, new_nz
     integer(kind=G_GIDX_T), intent(out) :: nrows
@@ -66,7 +65,7 @@ contains
   pure function idOfCoord(coord) result(id)
     integer(kind=8), intent(in) :: coord(3)
     integer(kind=8) :: id
-    integer(kind=8) :: fak2, fak4
+    integer(kind=8) :: fak2, fak8
     integer(kind=8) :: upperBound
     integer(kind=8) :: myCoord(3)
     integer :: i
@@ -75,36 +74,38 @@ contains
     myCoord = modulo(coord, upperBound)
 
     fak2 = 1
-    fak4 = 1
-    id = 1
+    fak8 = 1
+    id = 0
     do i = 1, level
-      id = id + fak4 * ( 1 * mod(myCoord(1)/fak2,2_8) &
-        &              + 2 * mod(myCoord(2)/fak2,2_8) )
+      id = id + fak8 * ( 1 * mod(myCoord(1)/fak2,2_8) &
+        &              + 2 * mod(myCoord(2)/fak2,2_8) &
+        &              + 4 * mod(myCoord(3)/fak2,2_8) )
       fak2 = fak2 * 2
-      fak4 = fak4 * 4
+      fak8 = fak8 * 8
     end do
   end function idOfCoord
 
 
   pure function coordOfId(id) result(coord)
     integer(kind=8), intent(in) :: id
-    integer(kind=8) :: coord(2)
-    integer(kind=8) :: tElem, fak(2)
+    integer(kind=8) :: coord(3)
+    integer(kind=8) :: tElem, fak(3)
     integer :: bitlevel, i
 
     fak(1) = 1
     fak(2) = 2
+    fak(3) = 4
 
     bitlevel = 1
-    tElem = mod(id - 1, 4**level)
+    tElem = mod(id, 8**level)
 
     coord = 0
     do while( (tElem / fak(1)) > 0 )
-      do i = 1, 2
+      do i = 1, 3
         coord(i) = coord(i) + bitlevel * int(mod(tElem/fak(i),2_8))
       end do
       bitlevel = bitlevel * 2
-      fak = fak * 4
+      fak = fak * 8
     end do
   end function coordOfId
 
@@ -183,6 +184,7 @@ contains
     real(kind=8) :: bndry( 6 )
     real(kind=8) :: hx, hy, hz, hy2, hz2, ra, rb, raz, rbz, coef
     real(kind=8) :: p12, pm12, q12, qm12, xi, rij, r1, rm1, sij, s1, sm1, yj
+    real(kind=8) :: qb12, qbm12, sb1, sbij, sbm1, sbmij
     real(kind=8) :: zk
 
     !     set up initial boundary conditions
@@ -207,7 +209,7 @@ contains
     nnz = 0
     ! do jy = 1, ny
     !   do ix = 1, nx
-    coord = coordOfId(row+1)
+    coord = coordOfId(row)
     ix = coord(1)+1
     jy = coord(2)+1
     kz = coord(3)+1
@@ -281,7 +283,7 @@ contains
       cols(nnz) = idOfCoord(coord_) !index + nx
     end if
 
-    if (jz.ne.nz) then
+    if (kz.ne.nz) then
       nnz = nnz + 1
       vals(nnz) = -raz*qb12 + 0.5*rbz*(sbij+sb1)
       coord_ = coord+(/0,0,1/)
@@ -320,8 +322,6 @@ contains
       if (bndry(6).eq.1) vals(jd) = vals(jd) + coef
     end if
 
-    cols(1:nnz) = cols(1:nnz) - 1
-
     the_result = 0
     
   end function MATPDE3D_rowFunc
@@ -339,10 +339,10 @@ contains
     qc = exp(x*y)
   end function qc
 
-  pure function qc(x,y,z)
+  pure function qbc(x,y,z)
     real(kind=8), intent(in) :: x, y, z
-    real(kind=8) :: qc
-    qc = exp(x*z)
+    real(kind=8) :: qbc
+    qbc = exp(x*z)
   end function qbc
 
   pure function tc(x,y,z)
@@ -371,24 +371,24 @@ contains
 
   pure function sbc(gamma, x,y,z)
     real(kind=8), intent(in) :: gamma, x, y, z
-    real(kind=8) :: sc
-    sc = gamma * (y+z)
+    real(kind=8) :: sbc
+    sbc = gamma * (y+z)
   end function sbc
 
-  pure function f(beta, gamma, x,y)
-    real(kind=8), intent(in) :: beta, gamma, x, y
+  pure function f(beta, gamma, x,y,z)
+    real(kind=8), intent(in) :: beta, gamma, x, y, z
     real(kind=8) :: f
 
     real(kind=8) pxy, pxxy, qxy, qyxy, cxy, rxy, rxxy, sxy, syxy, exy, sx, cx, sy, cy, a, ax, axx, ay, ayy
 
-    pxy  = pc(x,y)
+    pxy  = pc(x,y,z)
     pxxy = -y * exp(-x*y)
-    qxy  = qc(x,y)
+    qxy  = qc(x,y,z)
     qyxy = x * exp(x*y)
     cxy  = 1. / ( 1. + x + y)
-    rxy  = rc(beta,x,y)
+    rxy  = rc(beta,x,y,z)
     rxxy = beta
-    sxy  = sc(gamma,x,y)
+    sxy  = sc(gamma,x,y,z)
     syxy = gamma
 
     exy = exp(x*y)
