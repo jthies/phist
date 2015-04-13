@@ -567,11 +567,26 @@ contains
   pure function tc(x,y,z)
     real(kind=8), intent(in) :: x, y, z
     real(kind=8) :: tc
-  !term in front of u
+  !term in front of u.
+  ! Note that some terms appear here because
+  ! in the Gordon paper they use e.g. ru_x
+  ! whereas in matpde we assume (r u)_x + r u_x
+  if (problem==INT('ZA2')) then
+    tc = (y*z+x*z-x*y)*500
   if (problem==INT('ZA3')) then
-    tc = 100.0_8*(x+y+z)/(x*y*z)
+    tc = 50.0_8+100.0_8*(x+y+z)/(x*y*z)
+  else if (problem==INT('ZA4')) then
+    tc = 1.0e5
+  else if (problem==INT('ZA5')) then
+    tc=-1000.0_8*x
+  else if (problem==INT('ZA6')) then
+    tc=3000.0_8
   else if (problem==INT('ZA7')) then
-    tc = 1000.0_8
+    tc = 0.0_8
+  else if (problem==INT('ZA8')) then
+    tc = -5.0_8*(exp(x*y)+exp(-x*y))
+  else if (problem==INT('ZA9')) then
+    tc = -500.0_8*(exp(x*y)+exp(-x*y))
   else if (problem == INT('ZB1')) then
     tc = 1. / (1.+x+y+z)
   else
