@@ -21,77 +21,15 @@
 
 ! Generalization of MATPDE to 3D
 ! (from the NEP matrix collection in the matrix market MATPDE matrix generator)
-! We allow generating various test problems by calling some initialization
-! routines and provide simple matfuncs in matfuncs.h to wrap this functionality.
-!
-! The currently implemented test cases are:
-
-!=======================================================================================
-! (A) from Gordon & Gordon CARP-CG Paper (Parallel Computing 2009)                      
-!                                                                                       
-!1. Du +          1000u_x                                                           = F 
-!2. Du + 1000exp(xyz)(u_x   +               u_y -      u_z)                         = F 
-!3. Du +          100xu_x   -              yu_y +     zu_z  + 100(x + y + z)/(xyz)u = F 
-!4. Du -      10^5x^2(u_x   +               u_y +      u_z)                         = F 
-!5. Du -   1000(1+x^2)u_x   +           100(u_y +      u_z)                         = F 
-!6. Du -   1000[(1-2x)u_x   +         (1-2y)u_y+ (1-2z)u_z]                         = F 
-!7. Du -       1000x^2u_x                                   +                 1000u = F 
-!8. Du - d(  10exp(xy)u)/dx - d(  10exp(-xy)u)/dy                                   = F 
-!9. Du - d(1000exp(xy)u)/dx - d(1000exp(-xy)u)/dy                                   = F 
-!                                                                                       
-!analytic solutions                                                                     
-!                                                                                       
-!Problem 1: u(x,y,z) = xyz(1-x)(1-y)(1-z)                                               
-!Problem 2: u(x,y,z) = x + y + z                                                        
-!   "  3–7: u(x,y,z) = exp(xyz)sin(pi x)sin(pi y)sin(pi z)                              
-!                                                                                       
-!                                                                                       
-!boundary conditions: Dirichlet                                                         
-!                                                                                       
-!Problem 8,9: set u=1, b=A*u and use u=0 as BC                                          
-!                                                                                       
-!=======================================================================================
-! (B) problems with variable coefficentts in the diffusion term                         
-! 1. -(exp(-xyz) Ux)x - (exp(xyz) Uy)y  -( exp((1-x)(1-y)(1-z)) Uz)z 
-!    +  sin(pi y) Ux + (sin(pi y) U)x  
-!    +  sin(pi z) Uy + (sin(pi z) U)y 
-!    +  sin(pi x) Uz + (sin(pi x) U)z 
-!    +  1/(1+x+y+z) U = F
-
-!boundary conditions: Dirichlet                                                         
-!=======================================================================================
-! (C) Quantum physics benchmarks                                                        
-! - 3D model of Anderson localization                                                   
-! 1. dx^2 Du - (4+/-rnd[L])u = F, with random numbers in [-L/2 L/2] on the diagonal     
-!                                 and periodic BC                                       
-!                                 (Schenk/Bollhoefer/Roemer SIAM Review 2005)           
-!                                                                                       
-! TODO: the right-hand sides F that follow from prescribed analytic solutions U (in   
-! e.g. the A and B benchmarks) are not implemented, if we want to assess accuracy we    
-! should do that, but for now we just use b=A*x for some given x.
 module matpde3d_module
   implicit none
 
   public :: MATPDE3D_rowFunc
-  public :: MATPDE3D_initDimensions, MATPDE3D_selectProblem
+  public :: MATPDE3D_initDimensions
 
   real(kind=8), parameter :: pi = 4*atan(1.0_8)
-  
-  !! internal switch to select one of the following test problems
-  !! 1: Anderson model, -1 on off-diagonals and random numbers on diagonal
-  !! 2: convection-diffusion problem with heterogenous coefficients,
-  !!    
-  integer :: problem
-  
-  integer :: bndry( 6 )
-
 
   integer(kind=8) :: nx, ny, nz
-  
-  ! grid-size dependent parameters
-  real(kind=8) :: hx,hy,hz,hy2,hz2,ra,rb,raz,rbz
-  
-  ! for the octree ordering
   integer :: level
 
 contains
@@ -120,39 +58,8 @@ contains
 
     maxnne_per_row = 7
 
-    !     set up other parameters
-    HX = 1. / (DBLE(NX) + 1.)
-    HY = 1. / (DBLE(NY) + 1.)
-    HZ = 1. / (DBLE(NZ) + 1.)
-    HY2 = HY*HY
-    HZ2 = HZ*HZ
-    RA = (HY/HX)**2
-    RB  = HY2/HX
-    RAZ = (HY/HZ)**2
-    RBZ = (HY2/HZ)
-
-
   end subroutine MATPDE3D_initDimensions
 
-  ! select problem setup (see description above) and
-  ! boundary conditions. The problem is chosen by providing
-  ! a hex number like e.g. 0xA3 or 0xB1 to select problem A1 or B3, respectively,
-  ! and the boundary conditions are given as an integer array for the various boundaries
-  ! in the order [Z0 Z1 Y0 Y1 X0 X1] (e.g. X0 being the boundary at x=0).
-  ! The values in the array indicate the type of boundary condition:
-  !  0: homogenous Dirichlet
-  !  1: Dirichlet with a value taken the analytic solution
-  ! -1: periodic boundary conditions
-  subroutine MATPDE3D_selectProblem(prob, bc) bind(C)
-  
-  use, intrinsic :: iso_c_binding
-  integer(kind=C_INT), intent(in) :: prob
-  integer(kind=C_INT), intent(in) :: bc(6)
-  
-  problem = prob
-  bndry(1:6)=bc(1:6)
-  
-  end subroutine MATPDE3D_selectProblem
 
   ! TODO octree ordering
   pure function idOfCoord(coord) result(id)
@@ -219,7 +126,7 @@ contains
     !  Forms the 7-point central differences operator for the elliptic
     !  PDE
     !
-    !   -(P Ux)x -(Qa Uy)y  -(Qb Uz)z +  R Ux + (R U)x  +  S Uy + (S U)y + Sb Uz + (Sb U)z + T U = F
+    !   -(P Ux)x -(Qa Uy)y  -(Qb Uz)z +  R Ux + (R U)x  +  S Uy + (S U)y + Sb Uz + (Sb U)z +  T U = F
     !
     !  where P, Q(b), R, S(b) and T are the functions of x and y.  The domain
     !  is the unit cube (0,1)x(0,1)x(0,1), and the boundary condition are
@@ -274,10 +181,30 @@ contains
     !     ..
     !     .. Scalar variables ..
     integer(kind=8) :: ix, jy, kz, index, jd, coord(3), coord_(3)
+    real(kind=8) :: bndry( 6 )
     real(kind=8) :: hx, hy, hz, hy2, hz2, ra, rb, raz, rbz, coef
     real(kind=8) :: p12, pm12, q12, qm12, xi, rij, r1, rm1, sij, s1, sm1, yj
     real(kind=8) :: qb12, qbm12, sb1, sbij, sbm1, sbmij
     real(kind=8) :: zk
+
+    !     set up initial boundary conditions
+    BNDRY( 1 ) = 0.
+    BNDRY( 2 ) = 0.
+    BNDRY( 3 ) = 0.
+    BNDRY( 4 ) = 0.
+    BNDRY( 5 ) = 0.
+    BNDRY( 6 ) = 0.
+
+    !     set up other parameters
+    HX = 1. / (DBLE(NX) + 1.)
+    HY = 1. / (DBLE(NY) + 1.)
+    HZ = 1. / (DBLE(NZ) + 1.)
+    HY2 = HY*HY
+    HZ2 = HZ*HZ
+    RA = (HY/HX)**2
+    RB  = HY2/HX
+    RAZ = (HY/HZ)**2
+    RBZ = (HY2/HZ)
 
     nnz = 0
     ! do jy = 1, ny
@@ -403,214 +330,80 @@ contains
   pure function pc(x,y,z)
     real(kind=8), intent(in) :: x, y, z
     real(kind=8) :: pc
-    
-    if (problem .ge. INT('ZA1') .and. problem .le. INT('ZA9')) then
-      ! Gordon problems A 1-9
-      pc = 1.0_8
-    else if (problem .ge. INT('ZB1') .and. problem .le. INT('ZB9')) then
-      ! varying coefficient problems (B)
-      pc = exp(-x*y*z)
-    else if (problem .ge. INT('ZC1') .and. problem .le. INT('ZC9')) then
-      ! QM test cases with constant -1 in off-diagonals
-      pc = HX*HX
-    else
-      ! default
-      pc = 1.0_8
-    end if
-
+    pc = exp(-x*y)
   end function pc
 
   pure function qc(x,y,z)
     real(kind=8), intent(in) :: x, y, z
     real(kind=8) :: qc
-
-    if (problem .ge. INT('ZA1') .and. problem .le. INT('ZA9')) then
-      ! Gordon problems A1-9
-      pc = 1.0_8
-    else if (problem .ge. INT('ZB1') .and. problem .le. INT('ZB9')) then
-      ! varying coefficient problems (B)
-      qc = exp(x*y*z)
-    else if (problem .ge. INT('ZC1') .and. problem .le. INT('ZC9')) then
-      ! QM test cases with constant -1 in off-diagonals
-      qc = HY*HY
-    else
-      ! default
-      qc = 1.0_8
-    end if
-
+    qc = exp(x*y)
   end function qc
 
   pure function qbc(x,y,z)
     real(kind=8), intent(in) :: x, y, z
     real(kind=8) :: qbc
-
-    if (problem .ge. INT('ZA1') .and. problem .le. INT('ZA9')) then
-      ! Gordon problems A 1-9
-      pc = 1.0_8
-    else if (problem .ge. INT('ZB1') .and. problem .le. INT('ZB9')) then
-      ! varying coefficient problems (B)
-      qbc = exp((1.0_8-x)*(1.0_8-y)*(1.0_8-z))
-    else if (problem .ge. INT('ZC1') .and. problem .le. INT('ZC9')) then
-      ! QM test cases with constant -1 in off-diagonals
-      qbc = HZ*HZ
-    else
-      ! default
-      qbc = 1.0_8
-    end if
-
+    qbc = exp(x*z)
   end function qbc
+
+  pure function tc(x,y,z)
+    real(kind=8), intent(in) :: x, y, z
+    real(kind=8) :: tc
+    tc = 1. / (1.+x+y)
+  end function tc
+
+  pure function u(x,y, z)
+    real(kind=8), intent(in) :: x, y, z
+    real(kind=8) :: u
+    u = x * exp(x*y) * sin(pi*x) * sin(pi*y)
+  end function u
 
   pure function rc(beta, x,y, z)
     real(kind=8), intent(in) :: beta, x, y, z
     real(kind=8) :: rc
-    
-    if (problem == INT('ZA1')) then
-      rc = 500.0_8
-    else if (problem == INT('ZA2')) then
-      rc = 500.0_8*exp(x*y*z)
-    else if (problem == INT('ZA3')) then
-      rc = 50.0_8*x
-    else if (problem == INT('ZA4')) then
-      rc = -0.5e5*x*x
-    else if (problem == INT('ZA5')) then
-      rc = -500.0_8*(1.0_8+x*x)
-    else if (problem == INT('ZA6')) then
-      rc = -500.0_8*(1.0_8-2.0_8*x)
-    else if (problem == INT('ZA7')) then
-      rc = -500.0_8*x*x
-    else if (problem == INT('ZA8')) then
-      rc = -5.0_8*exp(x*y)
-    else if (problem == INT('ZA9')) then
-      rc = -500.0_8*exp(x*y)
-    else if (problem .ge. INT('ZB1') .and. problem .le. INT('ZB9')) then
-      ! varying coefficient problems (B)
-      rc = sin(pi*y)
-    else if (problem .ge. INT('ZC1') .and. problem .le. INT('ZC9')) then
-      ! QM test cases with constant -1 in off-diagonals
-      rc = 0.0_8
-    else
-      ! default
-      rc = 0.0_8
-    end if    
+    rc = beta * (x+y)
   end function rc
 
   pure function sc(gamma, x,y, z)
     real(kind=8), intent(in) :: gamma, x, y, z
     real(kind=8) :: sc
-
-    if (problem == INT('ZA1')) then
-      sc = 0.0_8
-    else if (problem == INT('ZA2')) then
-      sc = 500.0_8*exp(x*y*z)
-    else if (problem == INT('ZA3')) then
-      sc = -0.5_8*y
-    else if (problem == INT('ZA4')) then
-      sc = -0.5e5*x*x
-    else if (problem == INT('ZA5')) then
-      sc = 50.0_8
-    else if (problem == INT('ZA6')) then
-      sc = -500.0_8*(1.0_8-2.0_8*y)
-    else if (problem == INT('ZA7')) then
-      sc = 0.0_8
-    else if (problem == INT('ZA8')) then
-      sc = -5.0_8*exp(-xy)
-    else if (problem == INT('ZA9')) then
-      sc = -500.0_8*exp(-xy)
-    else if (problem .ge. INT('ZB1') .and. problem .le. INT('ZB9')) then
-      ! varying coefficient problems (B)
-      sc = sin(pi*z)
-    else if (problem .ge. INT('ZC1') .and. problem .le. INT('ZC9')) then
-      ! QM test cases with constant -1 in off-diagonals
-      sc = 0.0_8
-    else
-      ! default
-      sc = 0.0_8
-    end if    
-
+    sc = gamma * (x+y)
   end function sc
 
   pure function sbc(gamma, x,y,z)
     real(kind=8), intent(in) :: gamma, x, y, z
     real(kind=8) :: sbc
-
-    if (problem == INT('ZA1')) then
-      sc = 0.0_8
-    else if (problem == INT('ZA2')) then
-      sc = -500.0_8*exp(x*y*z)
-    else if (problem == INT('ZA3')) then
-      sc = +0.5_8*z
-    else if (problem == INT('ZA4')) then
-      sc = -0.5e5*x*x
-    else if (problem == INT('ZA5')) then
-      sc = 50.0_8
-    else if (problem == INT('ZA6')) then
-      sc = -500.0_8*(1.0_8-2.0_8*z)
-    else if (problem == INT('ZA7')) then
-      sc = 0.0_8
-    else if (problem == INT('ZA8')) then
-      sc = 0.0_8
-    else if (problem == INT('ZA9')) then
-      sc = 0.0_8
-    else if (problem .ge. INT('ZB1') .and. problem .le. INT('ZB9')) then
-      ! varying coefficient problems (B)
-      sbc = sin(pi*x)
-    else if (problem .ge. INT('ZC1') .and. problem .le. INT('ZC9')) then
-      ! QM test cases with constant -1 in off-diagonals
-      sbc = 0.0_8
-    else
-      ! default
-      sbc = 0.0_8
-    end if    
-
+    sbc = gamma * (y+z)
   end function sbc
-
-  pure function tc(x,y,z)
-    real(kind=8), intent(in) :: x, y, z
-    real(kind=8) :: tc
-  !term in front of u
-  if (problem==INT('ZA3')) then
-    tc = 100.0_8*(x+y+z)/(x*y*z)
-  else if (problem==INT('ZA7')) then
-    tc = 1000.0_8
-  else if (problem == INT('ZB1')) then
-    tc = 1. / (1.+x+y+z)
-  else
-    tc = 0.0_8
-  end if
-
-  end function tc
 
   pure function f(beta, gamma, x,y,z)
     real(kind=8), intent(in) :: beta, gamma, x, y, z
     real(kind=8) :: f
 
     real(kind=8) pxy, pxxy, qxy, qyxy, cxy, rxy, rxxy, sxy, syxy, exy, sx, cx, sy, cy, a, ax, axx, ay, ayy
-    
-    f = 0.0_8
 
-!    pxy  = pc(x,y,z)
-!    pxxy = -y * exp(-x*y)
-!    qxy  = qc(x,y,z)
-!    qyxy = x * exp(x*y)
-!    cxy  = 1. / ( 1. + x + y)
-!    rxy  = rc(beta,x,y,z)
-!    rxxy = beta
-!    sxy  = sc(gamma,x,y,z)
-!    syxy = gamma
-!
-!    exy = exp(x*y)
-!    sx  = sin(pi*x)
-!    cx  = cos(pi*x)
-!    sy  = sin(pi*y)
-!    cy  = cos(pi*y)
-!
-!    a   = x * exy * sx * sy
-!    ax  = exy * (pi * x * cx + (1. + x * y) * sx) * sy
-!    axx = exy * (pi * (-pi * x * sx + (x * y + 2.) * cx) + y * sx) * sy + y * ax
-!    ay  = exy * (pi * cy + x * sy) * x * sx
-!    ayy = x * (exy * pi * (-pi * sy + x * cy) * sx + ay)
-!
-!    f = - (pxy*axx + qxy*ayy)  + (2.*rxy - pxxy) * ax  +  (2.*sxy - qyxy) * ay  + (rxxy + syxy + cxy) * a
+    pxy  = pc(x,y,z)
+    pxxy = -y * exp(-x*y)
+    qxy  = qc(x,y,z)
+    qyxy = x * exp(x*y)
+    cxy  = 1. / ( 1. + x + y)
+    rxy  = rc(beta,x,y,z)
+    rxxy = beta
+    sxy  = sc(gamma,x,y,z)
+    syxy = gamma
+
+    exy = exp(x*y)
+    sx  = sin(pi*x)
+    cx  = cos(pi*x)
+    sy  = sin(pi*y)
+    cy  = cos(pi*y)
+
+    a   = x * exy * sx * sy
+    ax  = exy * (pi * x * cx + (1. + x * y) * sx) * sy
+    axx = exy * (pi * (-pi * x * sx + (x * y + 2.) * cx) + y * sx) * sy + y * ax
+    ay  = exy * (pi * cy + x * sy) * x * sx
+    ayy = x * (exy * pi * (-pi * sy + x * cy) * sx + ay)
+
+    f = - (pxy*axx + qxy*ayy)  + (2.*rxy - pxxy) * ax  +  (2.*sxy - qyxy) * ay  + (rxxy + syxy + cxy) * a
 
   end function f
 
