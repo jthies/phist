@@ -601,9 +601,11 @@ contains
 
   end function sbc
 
-  pure function tc(x,y,z)
+  ! because of the random_number for Anderson localization, this one can't be pure
+  function tc(x,y,z)
     real(kind=8), intent(in) :: x, y, z
     real(kind=8) :: tc
+    real(kind=8) :: r
   !term in front of u.
   ! Note that some terms appear here because
   ! in the Gordon paper they use e.g. ru_x
@@ -626,6 +628,9 @@ contains
     tc = -500.0_8*(exp(x*y)+exp(-x*y))
   else if (problem == PROB_B1) then
     tc = 1. / (1.+x+y+z)
+  else if (problem == PROB_C1) then
+    call random_number(r)
+    tc = -6.0_8 + 16.5_8*(r-0.5_8)
   else
     tc = 0.0_8
   end if
