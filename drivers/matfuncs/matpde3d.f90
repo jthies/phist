@@ -137,6 +137,64 @@ module matpde3d_module
 
 contains
 
+  !! copied from the builtin/env_module.f90 because we need some
+  !! random numbers for the Anderson model and the kernel lib   
+  !! may not initialize the Fortran random number generator.
+  subroutine init_random_seed()
+    use iso_fortran_env, only: int64
+#ifdef __INTEL_COMPILER
+    use ifport, only: getpid
+#endif
+    implicit none
+    integer, allocatable :: seed(:)
+    integer :: i, n, un, istat, dt(8), pid
+    integer(int64) :: t
+
+    call random_seed(size = n)
+    allocate(seed(n))
+    ! First try if the OS provides a random number generator
+    open(newunit=un, file="/dev/urandom", access="stream", &
+         form="unformatted", action="read", status="old", iostat=istat)
+    if (istat == 0) then
+       read(un) seed
+       close(un)
+    else
+       ! Fallback to XOR:ing the current time and pid. The PID is
+       ! useful in case one launches multiple instances of the same
+       ! program in parallel.
+       call system_clock(t)
+       if (t == 0) then
+          call date_and_time(values=dt)
+          t = (dt(1) - 1970) * 365_int64 * 24 * 60 * 60 * 1000 &
+               + dt(2) * 31_int64 * 24 * 60 * 60 * 1000 &
+               + dt(3) * 24_int64 * 60 * 60 * 1000 &
+               + dt(5) * 60 * 60 * 1000 &
+               + dt(6) * 60 * 1000 + dt(7) * 1000 &
+               + dt(8)
+       end if
+       pid = getpid()
+       t = ieor(t, int(pid, kind(t)))
+       do i = 1, n
+          seed(i) = lcg(t)
+       end do
+    end if
+    call random_seed(put=seed)
+  contains
+    ! This simple PRNG might not be good enough for real work, but is
+    ! sufficient for seeding a better PRNG.
+    function lcg(s)
+      integer :: lcg
+      integer(int64) :: s
+      if (s == 0) then
+         s = 104729
+      else
+         s = mod(s, 4294967296_int64)
+      end if
+      s = mod(s * 279470273_int64, 4294967291_int64)
+      lcg = int(mod(s, int(huge(0), int64)), kind(0))
+    end function lcg
+  end subroutine init_random_seed
+
   subroutine MATPDE3D_initDimensions(new_nx, new_ny, new_nz, nrows, maxnne_per_row) bind(C,name='MATPDE3D_initDimensions')
     use, intrinsic :: iso_c_binding
     integer(kind=C_INT), value :: new_nx, new_ny, new_nz
@@ -199,6 +257,7 @@ contains
     BNDRY(1:6)=0
   else if (problem==PROB_C1) then
     BNDRY(1:6)=-1
+    call init_random_seed()
   else
     iflag=-99    
   end if
@@ -460,7 +519,7 @@ contains
       pc = exp(-x*y*z)
     else if (problem .ge. PROB_C1 .and. problem .le. PROB_C9) then
       ! QM test cases with constant -1 in off-diagonals
-      pc = HX*HX
+      pc = 1.0_8
     else
       ! default
       pc = 1.0_8
@@ -480,7 +539,7 @@ contains
       qc = exp(x*y*z)
     else if (problem .ge. PROB_C1 .and. problem .le. PROB_C9) then
       ! QM test cases with constant -1 in off-diagonals
-      qc = HY*HY
+      qc = 1.0_8
     else
       ! default
       qc = 1.0_8
@@ -500,7 +559,7 @@ contains
       qbc = exp((1.0_8-x)*(1.0_8-y)*(1.0_8-z))
     else if (problem .ge. PROB_C1 .and. problem .le. PROB_C9) then
       ! QM test cases with constant -1 in off-diagonals
-      qbc = HZ*HZ
+      qbc = 1.0_8
     else
       ! default
       qbc = 1.0_8
@@ -641,7 +700,7 @@ contains
     tc = 1. / (1.+x+y+z)
   else if (problem == PROB_C1) then
     call random_number(r)
-    tc = -6.0_8 + 16.5_8*(r-0.5_8)
+    tc = (-6.0_8 + 16.5_8*(r-0.5_8))/hy2
   else
     tc = 0.0_8
   end if
