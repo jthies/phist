@@ -326,7 +326,7 @@ contains
     !     ..
     !     .. Scalar variables ..
     integer(kind=8) :: ix, jy, kz, index, jd, coord(3), coord_(3)
-    real(kind=8) :: hx, hy, hz, hy2, hz2, ra, rb, raz, rbz, coef
+    real(kind=8) coef
     real(kind=8) :: p12, pm12, q12, qm12, xi, rij, r1, rm1, sij, s1, sm1, yj
     real(kind=8) :: qb12, qbm12, sb1, sbij, sbm1, sbmij
     real(kind=8) :: zk

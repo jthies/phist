@@ -202,12 +202,15 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   if (mat_type!=FROM_FILE && mat_type!=FROM_BAPPS)
   {
     // make sure all remaining characters are
-    for (int i=pos;i<strlen(problem);i++)
+    if (mat_type!=FROM_BENCH3D)
     {
-      if (problem[i]<'0' || problem[i]>'9' && problem[i]!='x')
+      for (int i=pos;i<strlen(problem);i++)
       {
-        mat_type=FROM_FILE;
-        break;
+        if (problem[i]<'0' || problem[i]>'9' && problem[i]!='x')
+        {
+          mat_type=FROM_FILE;
+          break;
+        }
       }
     }
 
@@ -353,8 +356,6 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   }
   else if (mat_type==FROM_BENCH3D)
   {
-    PHIST_SOUT(PHIST_INFO,"problem type: BENCH3D %d x %d x %d\n", L, L, L);
-
       for (int i=pos; i<strlen(problem);i++)
       {
         if (problem[i]=='-')
@@ -365,6 +366,9 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
       }
 
     long int which=strtol(problem+pos, NULL, 16);
+
+    PHIST_SOUT(PHIST_INFO,"problem type: BENCH3D %x %dx%dx%d\n", (uint32_t)which,L, L, L);
+
     gidx_t nrows = -1;
     gidx_t ncols = -1;
     lidx_t row_nnz = -1;
