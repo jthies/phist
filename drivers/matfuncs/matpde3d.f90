@@ -76,6 +76,38 @@ module matpde3d_module
   public :: MATPDE3D_initDimensions, MATPDE3D_selectProblem
 
   real(kind=8), parameter :: pi = 4*atan(1.0_8)
+
+  !! flags to select the test problem, encoded using 2-digit hex numbers
+  integer, parameter :: PROB_A1=INT(Z'A1')
+  integer, parameter :: PROB_A2=INT(Z'A2')
+  integer, parameter :: PROB_A3=INT(Z'A3')
+  integer, parameter :: PROB_A4=INT(Z'A4')
+  integer, parameter :: PROB_A5=INT(Z'A5')
+  integer, parameter :: PROB_A6=INT(Z'A6')
+  integer, parameter :: PROB_A7=INT(Z'A7')
+  integer, parameter :: PROB_A8=INT(Z'A8')
+  integer, parameter :: PROB_A9=INT(Z'A9')
+
+  integer, parameter :: PROB_B1=INT(Z'B1')
+  integer, parameter :: PROB_B2=INT(Z'B2')
+  integer, parameter :: PROB_B3=INT(Z'B3')
+  integer, parameter :: PROB_B4=INT(Z'B4')
+  integer, parameter :: PROB_B5=INT(Z'B5')
+  integer, parameter :: PROB_B6=INT(Z'B6')
+  integer, parameter :: PROB_B7=INT(Z'B7')
+  integer, parameter :: PROB_B8=INT(Z'B8')
+  integer, parameter :: PROB_B9=INT(Z'B9')
+
+  integer, parameter :: PROB_C1=INT(Z'C1')
+  integer, parameter :: PROB_C2=INT(Z'C2')
+  integer, parameter :: PROB_C3=INT(Z'C3')
+  integer, parameter :: PROB_C4=INT(Z'C4')
+  integer, parameter :: PROB_C5=INT(Z'C5')
+  integer, parameter :: PROB_C6=INT(Z'C6')
+  integer, parameter :: PROB_C7=INT(Z'C7')
+  integer, parameter :: PROB_C8=INT(Z'C8')
+  integer, parameter :: PROB_C9=INT(Z'C9')
+
   
   !! internal switch to select one of the following test problems
   !! 1: Anderson model, -1 on off-diagonals and random numbers on diagonal
@@ -96,7 +128,7 @@ module matpde3d_module
 
 contains
 
-  subroutine MATPDE3D_initDimensions(new_nx, new_ny, new_nz, nrows, maxnne_per_row) bind(C,name='MATPDE3D_initDimensions')
+  subroutine MATPDE3D_initDimensions(new_nx, new_ny, new_nz, nrows, maxnne_per_row) bind(C)
     use, intrinsic :: iso_c_binding
     integer(kind=C_INT), value :: new_nx, new_ny, new_nz
     integer(kind=G_GIDX_T), intent(out) :: nrows
@@ -203,7 +235,7 @@ contains
   end function coordOfId
 
 
-  function MATPDE3D_rowFunc(row, nnz, cols, vals) result(the_result) bind(C, name='MATPDE3D_rowFunc')
+  function MATPDE3D_rowFunc(row, nnz, cols, vals) result(the_result) bind(C)
     use, intrinsic :: iso_c_binding
     integer(G_GIDX_T), value :: row
     integer(G_LIDX_T), intent(inout) :: nnz
@@ -404,13 +436,13 @@ contains
     real(kind=8), intent(in) :: x, y, z
     real(kind=8) :: pc
     
-    if (problem .ge. INT('ZA1') .and. problem .le. INT('ZA9')) then
+    if (problem .ge. PROB_A1 .and. problem .le. PROB_A9) then
       ! Gordon problems A 1-9
       pc = 1.0_8
-    else if (problem .ge. INT('ZB1') .and. problem .le. INT('ZB9')) then
+    else if (problem .ge. PROB_B1 .and. problem .le. PROB_B9) then
       ! varying coefficient problems (B)
       pc = exp(-x*y*z)
-    else if (problem .ge. INT('ZC1') .and. problem .le. INT('ZC9')) then
+    else if (problem .ge. PROB_C1 .and. problem .le. PROB_C9) then
       ! QM test cases with constant -1 in off-diagonals
       pc = HX*HX
     else
@@ -424,13 +456,13 @@ contains
     real(kind=8), intent(in) :: x, y, z
     real(kind=8) :: qc
 
-    if (problem .ge. INT('ZA1') .and. problem .le. INT('ZA9')) then
+    if (problem .ge. PROB_A1 .and. problem .le. PROB_A9) then
       ! Gordon problems A1-9
-      pc = 1.0_8
-    else if (problem .ge. INT('ZB1') .and. problem .le. INT('ZB9')) then
+      qc = 1.0_8
+    else if (problem .ge. PROB_B1 .and. problem .le. PROB_B9) then
       ! varying coefficient problems (B)
       qc = exp(x*y*z)
-    else if (problem .ge. INT('ZC1') .and. problem .le. INT('ZC9')) then
+    else if (problem .ge. PROB_C1 .and. problem .le. PROB_C9) then
       ! QM test cases with constant -1 in off-diagonals
       qc = HY*HY
     else
@@ -444,13 +476,13 @@ contains
     real(kind=8), intent(in) :: x, y, z
     real(kind=8) :: qbc
 
-    if (problem .ge. INT('ZA1') .and. problem .le. INT('ZA9')) then
+    if (problem .ge. PROB_A1 .and. problem .le. PROB_A9) then
       ! Gordon problems A 1-9
-      pc = 1.0_8
-    else if (problem .ge. INT('ZB1') .and. problem .le. INT('ZB9')) then
+      qbc = 1.0_8
+    else if (problem .ge. PROB_B1 .and. problem .le. PROB_B9) then
       ! varying coefficient problems (B)
       qbc = exp((1.0_8-x)*(1.0_8-y)*(1.0_8-z))
-    else if (problem .ge. INT('ZC1') .and. problem .le. INT('ZC9')) then
+    else if (problem .ge. PROB_C1 .and. problem .le. PROB_C9) then
       ! QM test cases with constant -1 in off-diagonals
       qbc = HZ*HZ
     else
@@ -464,28 +496,28 @@ contains
     real(kind=8), intent(in) :: beta, x, y, z
     real(kind=8) :: rc
     
-    if (problem == INT('ZA1')) then
+    if (problem == PROB_A1) then
       rc = 500.0_8
-    else if (problem == INT('ZA2')) then
+    else if (problem == PROB_A2) then
       rc = 500.0_8*exp(x*y*z)
-    else if (problem == INT('ZA3')) then
+    else if (problem == PROB_A3) then
       rc = 50.0_8*x
-    else if (problem == INT('ZA4')) then
+    else if (problem == PROB_A4) then
       rc = -0.5e5*x*x
-    else if (problem == INT('ZA5')) then
+    else if (problem == PROB_A5) then
       rc = -500.0_8*(1.0_8+x*x)
-    else if (problem == INT('ZA6')) then
+    else if (problem == PROB_A6) then
       rc = -500.0_8*(1.0_8-2.0_8*x)
-    else if (problem == INT('ZA7')) then
+    else if (problem == PROB_A7) then
       rc = -500.0_8*x*x
-    else if (problem == INT('ZA8')) then
+    else if (problem == PROB_A8) then
       rc = -5.0_8*exp(x*y)
-    else if (problem == INT('ZA9')) then
+    else if (problem == PROB_A9) then
       rc = -500.0_8*exp(x*y)
-    else if (problem .ge. INT('ZB1') .and. problem .le. INT('ZB9')) then
+    else if (problem .ge. PROB_B1 .and. problem .le. PROB_B9) then
       ! varying coefficient problems (B)
       rc = sin(pi*y)
-    else if (problem .ge. INT('ZC1') .and. problem .le. INT('ZC9')) then
+    else if (problem .ge. PROB_C1 .and. problem .le. PROB_C9) then
       ! QM test cases with constant -1 in off-diagonals
       rc = 0.0_8
     else
@@ -498,28 +530,28 @@ contains
     real(kind=8), intent(in) :: gamma, x, y, z
     real(kind=8) :: sc
 
-    if (problem == INT('ZA1')) then
+    if (problem == PROB_A1) then
       sc = 0.0_8
-    else if (problem == INT('ZA2')) then
+    else if (problem == PROB_A2) then
       sc = 500.0_8*exp(x*y*z)
-    else if (problem == INT('ZA3')) then
+    else if (problem == PROB_A3) then
       sc = -0.5_8*y
-    else if (problem == INT('ZA4')) then
+    else if (problem == PROB_A4) then
       sc = -0.5e5*x*x
-    else if (problem == INT('ZA5')) then
+    else if (problem == PROB_A5) then
       sc = 50.0_8
-    else if (problem == INT('ZA6')) then
+    else if (problem == PROB_A6) then
       sc = -500.0_8*(1.0_8-2.0_8*y)
-    else if (problem == INT('ZA7')) then
+    else if (problem == PROB_A7) then
       sc = 0.0_8
-    else if (problem == INT('ZA8')) then
-      sc = -5.0_8*exp(-xy)
-    else if (problem == INT('ZA9')) then
-      sc = -500.0_8*exp(-xy)
-    else if (problem .ge. INT('ZB1') .and. problem .le. INT('ZB9')) then
+    else if (problem == PROB_A8) then
+      sc = -5.0_8*exp(-x*y)
+    else if (problem == PROB_A9) then
+      sc = -500.0_8*exp(-x*y)
+    else if (problem .ge. PROB_B1 .and. problem .le. PROB_B9) then
       ! varying coefficient problems (B)
       sc = sin(pi*z)
-    else if (problem .ge. INT('ZC1') .and. problem .le. INT('ZC9')) then
+    else if (problem .ge. PROB_C1 .and. problem .le. PROB_C9) then
       ! QM test cases with constant -1 in off-diagonals
       sc = 0.0_8
     else
@@ -533,34 +565,34 @@ contains
     real(kind=8), intent(in) :: gamma, x, y, z
     real(kind=8) :: sbc
 
-    if (problem == INT('ZA1')) then
-      sc = 0.0_8
-    else if (problem == INT('ZA2')) then
-      sc = -500.0_8*exp(x*y*z)
-    else if (problem == INT('ZA3')) then
-      sc = +0.5_8*z
-    else if (problem == INT('ZA4')) then
-      sc = -0.5e5*x*x
-    else if (problem == INT('ZA5')) then
-      sc = 50.0_8
-    else if (problem == INT('ZA6')) then
-      sc = -500.0_8*(1.0_8-2.0_8*z)
-    else if (problem == INT('ZA7')) then
-      sc = 0.0_8
-    else if (problem == INT('ZA8')) then
-      sc = 0.0_8
-    else if (problem == INT('ZA9')) then
-      sc = 0.0_8
-    else if (problem .ge. INT('ZB1') .and. problem .le. INT('ZB9')) then
+    if (problem == PROB_A1) then
+      sbc = 0.0_8
+    else if (problem == PROB_A2) then
+      sbc = -500.0_8*exp(x*y*z)
+    else if (problem == PROB_A3) then
+      sbc = +0.5_8*z
+    else if (problem == PROB_A4) then
+      sbc = -0.5e5*x*x
+    else if (problem == PROB_A5) then
+      sbc = 50.0_8
+    else if (problem == PROB_A6) then
+      sbc = -500.0_8*(1.0_8-2.0_8*z)
+    else if (problem == PROB_A7) then
+      sbc = 0.0_8
+    else if (problem == PROB_A8) then
+      sbc = 0.0_8
+    else if (problem == PROB_A9) then
+      sbc = 0.0_8
+    else if (problem .ge. PROB_B1 .and. problem .le. PROB_B9) then
       ! varying coefficient problems (B)
       sbc = sin(pi*x)
-    else if (problem .ge. INT('ZC1') .and. problem .le. INT('ZC9')) then
+    else if (problem .ge. PROB_C1 .and. problem .le. PROB_C9) then
       ! QM test cases with constant -1 in off-diagonals
       sbc = 0.0_8
     else
       ! default
       sbc = 0.0_8
-    end if    
+    end if
 
   end function sbc
 
@@ -571,23 +603,23 @@ contains
   ! Note that some terms appear here because
   ! in the Gordon paper they use e.g. ru_x
   ! whereas in matpde we assume (r u)_x + r u_x
-  if (problem==INT('ZA2')) then
+  if (problem==PROB_A2) then
     tc = (y*z+x*z-x*y)*500
-  if (problem==INT('ZA3')) then
+  else if (problem==PROB_A3) then
     tc = 50.0_8+100.0_8*(x+y+z)/(x*y*z)
-  else if (problem==INT('ZA4')) then
+  else if (problem==PROB_A4) then
     tc = 1.0e5
-  else if (problem==INT('ZA5')) then
+  else if (problem==PROB_A5) then
     tc=-1000.0_8*x
-  else if (problem==INT('ZA6')) then
+  else if (problem==PROB_A6) then
     tc=3000.0_8
-  else if (problem==INT('ZA7')) then
+  else if (problem==PROB_A7) then
     tc = 0.0_8
-  else if (problem==INT('ZA8')) then
+  else if (problem==PROB_A8) then
     tc = -5.0_8*(exp(x*y)+exp(-x*y))
-  else if (problem==INT('ZA9')) then
+  else if (problem==PROB_A9) then
     tc = -500.0_8*(exp(x*y)+exp(-x*y))
-  else if (problem == INT('ZB1')) then
+  else if (problem == PROB_B1) then
     tc = 1. / (1.+x+y+z)
   else
     tc = 0.0_8
