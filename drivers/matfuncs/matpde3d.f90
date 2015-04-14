@@ -175,22 +175,33 @@ contains
 
   end subroutine MATPDE3D_initDimensions
 
-  ! select problem setup (see description above) and
-  ! boundary conditions. The problem is chosen by providing
-  ! a hex number like e.g. 0xA3 or 0xB1 to select problem A1 or B3, respectively,
-  ! and the boundary conditions are given as an integer array for the various boundaries
-  ! in the order [Z0 Z1 Y0 Y1 X0 X1] (e.g. X0 being the boundary at x=0).
-  ! The values in the array indicate the type of boundary condition:
-  !  0: homogenous Dirichlet
-  !  1: Dirichlet with a value taken the analytic solution
-  ! -1: periodic boundary conditions
-  subroutine MATPDE3D_selectProblem(prob, bc) bind(C,name='MATPDE3D_selectProblem')
+  ! select problem setup (see description above).
+  ! Boundary conditions are currently preset here,
+  ! we might offer an additional function selectBC
+  ! at some point
+  !
+  ! The problem is chosen by providing
+  ! a hex number like e.g. 0xA3 or 0xB1 to select problem A1 or B3, respectively
+  subroutine MATPDE3D_selectProblem(prob,iflag) bind(C,name='MATPDE3D_selectProblem')
   use, intrinsic :: iso_c_binding
-  integer(kind=C_INT), intent(in) :: prob
-  integer(kind=C_INT), intent(in) :: bc(6)
+  integer(kind=C_INT), value :: prob
+  integer(kind=C_INT), intent(inout) :: iflag
   
   problem = prob
-  BNDRY(1:6)=bc(1:6)
+  iflag=0
+  ! boundary conditions are encoded like this:
+  ! 0: hom. Dirichlet
+  ! 1: Dirichlet
+  !-1: periodic
+  if (problem.ge.PROB_A1 .and. PROBLEM.le.PROB_A7) then
+    BNDRY(1:6)=1
+  else  if (problem==PROB_B1) then
+    BNDRY(1:6)=0
+  else if (problem==PROB_C1) then
+    BNDRY(1:6)=-1
+  else
+    iflag=-99    
+  end if
   
   end subroutine MATPDE3D_selectProblem
 

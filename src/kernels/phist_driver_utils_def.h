@@ -70,7 +70,13 @@ PHIST_SOUT(PHIST_INFO,"\n\nInstead of a matrix file you can also specify a strin
                       "matpde<L> for an L^2 eigenproblem from a scalar elliptic partial differential equation\n"
                       "TriToeplitz<L> for an 2^L tridiagonal Toeplitz matrix (e.g. 1D Poisson, spd, diagonal dominant)\n"
                       "Brussolator<L> for an L^1 eigenproblem from a Brussolator wave model in chemical reaction (MVMBWM)\n"
-                      "matpde3d<L> for an L^3 eigenproblem from a scalar elliptical partial differentian equation\n");
+                      "BENCH3D-<L>-<WHICH> for an L^3 scalar problem. \n"
+                      "                    the strings have the form <A,B,C><1-9>, for instance\n"
+                      "                    B1 is an inhomogenous PDE problem similar to matpde but in 3D, C1 is the Anderson model problem\n"
+                      "                    and the 'A' problems are convection diffusion problems taken from Gordon&Gordon, ParCo'10\n"
+                      "BAPP-<string> requires the ESSEX-Physics library and adds a variety of benchmarks, for example\n"
+                      "                    'BAPP-hubbard,l=10,U=1' etc.\n"
+                      );
 #endif
 
 }
@@ -90,13 +96,13 @@ PHIST_SOUT(PHIST_INFO,"\n\nInstead of a matrix file you can also specify a strin
 typedef enum {
 FROM_FILE,
 FROM_BAPPS,
+FROM_BENCH3D,
 GRAPHENE,
 ANDERSON,
 SPINSZ,
 MATPDE,
 TRITOEPLITZ,
-BRUSSOLATOR,
-MATPDE3D
+BRUSSOLATOR
 } problem_t;
 
 // definitions for MATPDE
@@ -107,6 +113,7 @@ void TriToeplitz_initDimensions(int, gidx_t*, lidx_t*);
 int TriToeplitz_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
 // definitions for MATPDE3D
 void MATPDE3D_initDimensions(int, int, int, gidx_t*, lidx_t*);
+void MATPDE3D_selectProblem(int which, int* iflag);
 int MATPDE3D_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
 // definitions for Brussolator
 void Brussolator_initDimensions(int, gidx_t*, lidx_t*);
@@ -164,10 +171,10 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     mat_type=ANDERSON;
     pos=strlen("anderson");
   }
-  else if( str_starts_with(problem,"matpde3d") )
+  else if( str_starts_with(problem,"BENCH3D-") )
   {
-    mat_type=MATPDE3D;
-    pos=strlen("matpde3d");
+    mat_type=FROM_BENCH3D;
+    pos=strlen("BENCH3D-");
   }
   else if( str_starts_with(problem,"matpde") )
   {
@@ -303,6 +310,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   else if (mat_type==MATPDE)
   {
     PHIST_SOUT(PHIST_INFO,"problem type: MATPDE %d x %d\n", L, L);
+
     gidx_t nrows = -1;
     gidx_t ncols = -1;
     lidx_t row_nnz = -1;
@@ -343,9 +351,20 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
           nrows, ncols, row_nnz, &Brussolator_rowFunc, iflag), *iflag);
   }
-  else if (mat_type==MATPDE3D)
+  else if (mat_type==FROM_BENCH3D)
   {
-    PHIST_SOUT(PHIST_INFO,"problem type: MATPDE3D %d x %d x %d\n", L, L, L);
+    PHIST_SOUT(PHIST_INFO,"problem type: BENCH3D %d x %d x %d\n", L, L, L);
+
+      for (int i=pos; i<strlen(problem);i++)
+      {
+        if (problem[i]=='-')
+        {
+          pos=i+1;
+          break;
+        }
+      }
+
+    long int which=strtol(problem+pos, NULL, 16);
     gidx_t nrows = -1;
     gidx_t ncols = -1;
     lidx_t row_nnz = -1;
@@ -356,6 +375,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
       PHIST_SOUT(PHIST_INFO,"Disabling PHIST_SPARSEMAT_REPARTITION; MATPDE3D features a predefined partitioning!\n");
       *iflag &= ~PHIST_SPARSEMAT_REPARTITION;
     }
+    PHIST_CHK_IERR(MATPDE3D_selectProblem(which,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
           nrows, ncols, row_nnz, &MATPDE3D_rowFunc, iflag), *iflag);
   }
