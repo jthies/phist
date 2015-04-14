@@ -108,6 +108,15 @@ module matpde3d_module
   integer, parameter :: PROB_C8=INT(Z'C8')
   integer, parameter :: PROB_C9=INT(Z'C9')
 
+  ! location of boundaries in the BNDRY array
+  integer, parameter :: BOTTOM=1
+  integer, parameter :: TOP=2
+  integer, parameter :: SOUTH=3
+  integer, parameter :: NORTH=4
+  integer, parameter :: WEST=5
+  integer, parameter :: EAST=6
+
+
   
   !! internal switch to select one of the following test problems
   !! 1: Anderson model, -1 on off-diagonals and random numbers on diagonal
@@ -115,7 +124,7 @@ module matpde3d_module
   !!    
   integer :: problem
   
-  integer :: bndry( 6 )
+  integer :: BNDRY( 6 )
 
 
   integer(kind=8) :: nx, ny, nz
@@ -128,7 +137,7 @@ module matpde3d_module
 
 contains
 
-  subroutine MATPDE3D_initDimensions(new_nx, new_ny, new_nz, nrows, maxnne_per_row) bind(C)
+  subroutine MATPDE3D_initDimensions(new_nx, new_ny, new_nz, nrows, maxnne_per_row) bind(C,name='MATPDE3D_initDimensions')
     use, intrinsic :: iso_c_binding
     integer(kind=C_INT), value :: new_nx, new_ny, new_nz
     integer(kind=G_GIDX_T), intent(out) :: nrows
@@ -175,18 +184,17 @@ contains
   !  0: homogenous Dirichlet
   !  1: Dirichlet with a value taken the analytic solution
   ! -1: periodic boundary conditions
-  subroutine MATPDE3D_selectProblem(prob, bc) bind(C)
-  
+  subroutine MATPDE3D_selectProblem(prob, bc) bind(C,name='MATPDE3D_selectProblem')
   use, intrinsic :: iso_c_binding
   integer(kind=C_INT), intent(in) :: prob
   integer(kind=C_INT), intent(in) :: bc(6)
   
   problem = prob
-  bndry(1:6)=bc(1:6)
+  BNDRY(1:6)=bc(1:6)
   
   end subroutine MATPDE3D_selectProblem
 
-  ! TODO octree ordering
+  ! octree ordering
   pure function idOfCoord(coord) result(id)
     integer(kind=8), intent(in) :: coord(3)
     integer(kind=8) :: id
@@ -197,6 +205,7 @@ contains
 
     upperBound = 2**level
     myCoord = modulo(coord, upperBound)
+    WHERE(myCoord==-1) myCoord=upperBound-1
 
     fak2 = 1
     fak8 = 1
@@ -235,7 +244,7 @@ contains
   end function coordOfId
 
 
-  function MATPDE3D_rowFunc(row, nnz, cols, vals) result(the_result) bind(C)
+  function MATPDE3D_rowFunc(row, nnz, cols, vals) result(the_result) bind(C,name='MATPDE3D_rowFunc')
     use, intrinsic :: iso_c_binding
     integer(G_GIDX_T), value :: row
     integer(G_LIDX_T), intent(inout) :: nnz
@@ -295,7 +304,7 @@ contains
     !  ===================
     !
     !  BETA, GAMMA are the coefficients of the elliptic operator,
-    !  BNDRY( 4 ) are the boundary Dirichlet conditions. These parameters
+    !  BNDRY( 6 ) are the boundary conditions. These parameters
     !  may be changed, which will result in different matrices and spectral
     !  distribution.
     !
@@ -312,20 +321,16 @@ contains
     real(kind=8) :: zk
 
     nnz = 0
-    ! do jy = 1, ny
-    !   do ix = 1, nx
+
     coord = coordOfId(row)
     ix = coord(1)+1
     jy = coord(2)+1
     kz = coord(3)+1
-    !jy = row/nx+1
-    !ix = mod(row,nx)+1
       
     ZK = HZ*DBLE(KZ)
     YJ = HY*DBLE(JY)
     XI = HX*DBLE(IX)
-    !INDEX = IX + (JY-1)*NX
-    !    RHS(INDEX) = HY2*F(BETA,GAMMA,XI,YJ)
+
     P12  = PC (XI + 0.5*HX,YJ, ZK)
     PM12 = PC (XI - 0.5*HX,YJ, ZK)
     Q12  = QC (XI,YJ + 0.5*HY, ZK)
@@ -350,14 +355,14 @@ contains
     jd = nnz
 
     ! LOWEST TWO BANDS
-    if (kz.ne.1) then
+    if (kz.ne.1 .or. BNDRY(BOTTOM)==-1) then
       nnz = nnz + 1
       vals(nnz) = - ( raz*qbm12 + 0.5*rbz*(sbij+sbm1) )
       coord_ = coord-(/0,0,1/)
-      cols(nnz) = idOfCoord(coord_) 
+      cols(nnz) = idOfCoord(coord_)
     end if
 
-    if (jy.ne.1) then
+    if (jy.ne.1 .or. BNDRY(SOUTH)==-1) then
       nnz = nnz + 1
       vals(nnz) = - ( qm12 + 0.5*hy*(sij+sm1) )
       coord_ = coord-(/0,1,0/)
@@ -365,7 +370,7 @@ contains
     end if
 
     !           SUB-DIAGONAL.
-    if (ix.ne.1) then
+    if (ix.ne.1 .or. BNDRY(WEST)==-1) then
       nnz = nnz + 1
       vals(nnz) = - ( ra*pm12 + 0.5*rb*(rij+rm1) )
       coord_ = coord-(/1,0,0/)
@@ -373,7 +378,7 @@ contains
     end if
 
     !           SUPER-DIAGONAL.
-    if (ix.ne.nx)  then
+    if (ix.ne.nx .or. BNDRY(EAST)==-1)  then
       nnz = nnz + 1
       vals(nnz) = -ra*p12 + 0.5*rb*(rij+r1)
       coord_ = coord+(/1,0,0/)
@@ -381,14 +386,14 @@ contains
     end if
 
     !           HIGHEST BANDS.
-    if (jy.ne.ny) then
+    if (jy.ne.ny .or. BNDRY(NORTH)==-1) then
       nnz = nnz + 1
       vals(nnz) = -q12 + 0.5*hy*(sij+s1)
       coord_ = coord+(/0,1,0/)
       cols(nnz) = idOfCoord(coord_) !index + nx
     end if
 
-    if (kz.ne.nz) then
+    if (kz.ne.nz .or. BNDRY(top)==-1) then
       nnz = nnz + 1
       vals(nnz) = -raz*qb12 + 0.5*rbz*(sbij+sb1)
       coord_ = coord+(/0,0,1/)
@@ -399,32 +404,32 @@ contains
     if (kz.eq.1) then
       COEF = - ( RAZ*QBM12 + 0.5*RBZ*(SBIJ+SBM1) )
       !      IF (BNDRY(1).EQ.0) RHS(INDEX) = RHS(INDEX) - COEF*U(XI,YJ-HY)
-      IF (BNDRY(1).EQ.1) vals(JD) = vals(JD) + COEF
+      IF (BNDRY(BOTTOM).EQ.1) vals(JD) = vals(JD) + COEF
     end if
     if (jy.eq.1) then
       COEF = - ( QM12 + 0.5*HY*(SIJ+SM1) )
       !      IF (BNDRY(1).EQ.0) RHS(INDEX) = RHS(INDEX) - COEF*U(XI,YJ-HY)
-      IF (BNDRY(2).EQ.1) vals(JD) = vals(JD) + COEF
+      IF (BNDRY(SOUTH).EQ.1) vals(JD) = vals(JD) + COEF
     end if
     if (ix.eq.1) then
       COEF = - ( RA*PM12 + 0.5*RB*(RIJ+RM1) )
       !      IF (BNDRY(2).EQ.0) RHS(INDEX) = RHS(INDEX) - COEF*U(XI-HX,YJ)
-      IF (BNDRY(3).EQ.1) vals(JD) = vals(JD) + COEF
+      IF (BNDRY(WEST).EQ.1) vals(JD) = vals(JD) + COEF
     end if
     IF (IX.eq.NX) then
       COEF = -RA*P12 + 0.5*RB*(RIJ+R1)
       !      IF (BNDRY(3).EQ.0) RHS(INDEX) = RHS(INDEX) - COEF*U(XI+HX,YJ)
-      IF (BNDRY(4).EQ.1) vals(JD) = vals(JD) + COEF
+      IF (BNDRY(EAST).EQ.1) vals(JD) = vals(JD) + COEF
     end if
     IF (JY.eq.NY) then
       COEF = -Q12 + 0.5*HY*(SIJ+S1)
       !      IF (BNDRY(4).EQ.0) RHS(INDEX) = RHS(INDEX) - COEF*U(XI,YJ+HY)
-      if (bndry(5).eq.1) vals(jd) = vals(jd) + coef
+      if (BNDRY(NORTH).eq.1) vals(jd) = vals(jd) + coef
     end if
     IF (KZ.eq.NZ) then
       COEF = -RAZ*QB12 + 0.5*RBZ*(SBIJ+SB1)
       !      IF (BNDRY(4).EQ.0) RHS(INDEX) = RHS(INDEX) - COEF*U(XI,YJ+HY)
-      if (bndry(6).eq.1) vals(jd) = vals(jd) + coef
+      if (BNDRY(TOP).eq.1) vals(jd) = vals(jd) + coef
     end if
 
     the_result = 0
@@ -627,6 +632,14 @@ contains
 
   end function tc
 
+  ! analytical solution we prescribe
+  pure function u(x,y,z)
+  real(kind=8), intent(in) :: x, y, z
+  real(kind=8) :: u
+    u = x * exp(x*y*z) * sin(pi*x) * sin(pi*y) * sin(pi*z)
+  
+  end function u
+
   pure function f(beta, gamma, x,y,z)
     real(kind=8), intent(in) :: beta, gamma, x, y, z
     real(kind=8) :: f
@@ -651,7 +664,7 @@ contains
 !    sy  = sin(pi*y)
 !    cy  = cos(pi*y)
 !
-!    a   = x * exy * sx * sy
+!    a   = x * exy * sx * sy0
 !    ax  = exy * (pi * x * cx + (1. + x * y) * sx) * sy
 !    axx = exy * (pi * (-pi * x * sx + (x * y + 2.) * cx) + y * sx) * sy + y * ax
 !    ay  = exy * (pi * cy + x * sy) * x * sx
