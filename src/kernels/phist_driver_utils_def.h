@@ -379,7 +379,9 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
       PHIST_SOUT(PHIST_INFO,"Disabling PHIST_SPARSEMAT_REPARTITION; MATPDE3D features a predefined partitioning!\n");
       *iflag &= ~PHIST_SPARSEMAT_REPARTITION;
     }
+    int iflag_tmp=*iflag;
     PHIST_CHK_IERR(MATPDE3D_selectProblem(which,iflag),*iflag);
+    *iflag=iflag_tmp;
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
           nrows, ncols, row_nnz, &MATPDE3D_rowFunc, iflag), *iflag);
   }
