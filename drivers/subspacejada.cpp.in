@@ -200,6 +200,8 @@ int main(int argc, char** argv)
   sdMat_ptr_t R = NULL;
   PHIST_ICHK_IERR(SUBR(sdMat_create)(&R,nEig+blockDim-1,nEig+blockDim-1,comm,&iflag),iflag);
   _MT_ *resNorm = new _MT_[nEig+blockDim-1];
+  _MT_ *resNormExp = new _MT_[nEig+blockDim-1];
+  CT *ev = new CT[nEig+blockDim-1];
 
   // setup start vector (currently to (1 0 1 0 .. ) )
   mvec_ptr_t v0 = NULL;
@@ -232,34 +234,29 @@ int main(int argc, char** argv)
   //------------------------------- run block JaDa algorithm ----------------------- 
   PHIST_ICHK_IERR(SUBR(subspacejada)(opA, NULL, v0, which, tol, nEig, &nIter, blockDim, minBase, maxBase,
         innerBlockDim, innerMaxBase, initialShiftIters, initialShift, innerIMGS, innerGMRESabortAfterFirstConverged, symmetric,
-        Q, R, resNorm, &iflag), iflag);
-  int nConvergedEig = 0;
-  for(int i = 0; i < nEig; i++)
-    if(resNorm[i] <= tol)
-      nConvergedEig++;
-  PHIST_SOUT(PHIST_INFO, "subspacejada terminated after %d iterations and calculated %d eigenvalues;\n printing R:\n", nIter, nConvergedEig);
-#ifdef PHIST_HAVE_MPI
-  int me;
-  PHIST_ICHK_IERR(iflag = MPI_Comm_rank(MPI_COMM_WORLD,&me), iflag);
-  if( me == 0 )
-  {
-    PHIST_ICHK_IERR(SUBR( sdMat_print ) (R, &iflag), iflag);
-  }
-#else
-  PHIST_ICHK_IERR(SUBR( sdMat_print ) (R, &iflag), iflag);
-#endif
-  PHIST_SOUT(PHIST_INFO, " residuum norm:");
-  for(int i = 0; i < nEig; i++)
-    PHIST_SOUT(PHIST_INFO, "\t%8.4e", resNorm[i]);
+        Q, R, ev, resNorm, &iflag), iflag);
 
   // calculate real residual
   PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,Q,st::zero(),res,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Q,R,st::one(),res,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(mvec_norm2)(res,resNorm,&iflag),iflag);
-  PHIST_SOUT(PHIST_INFO, "\n explicit residuum norm:");
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(res,resNormExp,&iflag),iflag);
+  int nConvergedEig = 0;
   for(int i = 0; i < nEig; i++)
-    PHIST_SOUT(PHIST_INFO, "\t%8.4e", resNorm[i]);
+    if(resNorm[i] <= tol)
+      nConvergedEig++;
+
+  PHIST_SOUT(PHIST_INFO, "subspacejada terminated after %d iterations and calculated %d eigenvalues.", nIter, nConvergedEig);
+  PHIST_SOUT(PHIST_INFO, "\n eigenvalues:              ");
+  for(int i = 0; i < nEig; i++)
+    PHIST_SOUT(PHIST_INFO, "\t( %8.4e + i%8.4e )", ct::real(ev[i]), ct::imag(ev[i]));
+  PHIST_SOUT(PHIST_INFO, "\n (est.) ritz residual norm:");
+  for(int i = 0; i < nEig; i++)
+    PHIST_SOUT(PHIST_INFO, "\t%8.4e                  ", resNorm[i]);
+  PHIST_SOUT(PHIST_INFO, "\n explicit residual norm:   ");
+  for(int i = 0; i < nEig; i++)
+    PHIST_SOUT(PHIST_INFO, "\t%8.4e                  ", resNormExp[i]);
   PHIST_SOUT(PHIST_INFO, "\n");
+
 
 
 
@@ -267,7 +264,9 @@ int main(int argc, char** argv)
   //------------------------------- clear matrices and vectors --------------------- 
   // delete vectors and sdMats
   PHIST_ICHK_IERR(SUBR(mvec_delete)(res,&iflag),iflag);
+  delete[] ev;
   delete[] resNorm;
+  delete[] resNormExp;
   PHIST_ICHK_IERR(SUBR(mvec_delete)(v0,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(sdMat_delete)(R,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(Q,&iflag),iflag);

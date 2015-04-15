@@ -608,11 +608,11 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   if (resultPermuted==inputPermuted) return;
   if (resultPermuted)
   {
-    PHIST_CHK_GERR(V_out->permute(V_out,V_out->context->permutation,GHOST_PERMUTATION_ORIG2PERM),*iflag);
+    PHIST_CHK_GERR(V_out->permute(V_out,GHOST_PERMUTATION_ORIG2PERM),*iflag);
   }
   else
   {
-    PHIST_CHK_GERR(V_out->permute(V_out,V_out->context->permutation,GHOST_PERMUTATION_PERM2ORIG),*iflag);
+    PHIST_CHK_GERR(V_out->permute(V_out,GHOST_PERMUTATION_PERM2ORIG),*iflag);
   }
   return;
 }

@@ -36,7 +36,9 @@ for _varT in ('S', 'D', 'C', 'Z'):
     # scalar data types
     _ST_ = getattr(_phist_kernels, _varT)
     _MT_ = {'S': _phist_kernels.S, 'D': _phist_kernels.D, 'C': _phist_kernels.S, 'Z': _phist_kernels.D}[_varT]
+    _CT_ = {'S': _phist_kernels.C, 'D': _phist_kernels.Z, 'C': _phist_kernels.C, 'Z': _phist_kernels.Z}[_varT]
     _ST_p = _ct.POINTER(_ST_)
+    _CT_p = _ct.POINTER(_CT_)
     _MT_p = _ct.POINTER(_MT_)
     _ST_pp = _ct.POINTER(_ST_p)
     _MT_pp = _ct.POINTER(_MT_p)
@@ -60,7 +62,8 @@ for _varT in ('S', 'D', 'C', 'Z'):
     #        bool innerIMGS,           bool innerGMRESabortAfterFirstConverged,
     #        bool symmetric,
     #        TYPE(mvec_ptr) Q,         TYPE(sdMat_ptr) R,
-    #        _MT_* resNorm,            int* ierr);
+    #        _CT_* ev,                 _MT_* resNorm,
+    #        int* ierr);
     _declare(None, _prefix+'subspacejada', (_op_ptr, _op_ptr,
                                             _mvec_ptr, _phist_tools.eigSort_t,
                                             _MT_, c_int,
@@ -71,7 +74,7 @@ for _varT in ('S', 'D', 'C', 'Z'):
                                             _ct.c_bool, _ct.c_bool,
                                             _ct.c_bool,
                                             _mvec_ptr, _sdMat_ptr,
-                                            _MT_p, c_int_p), skip_if_missing=True)
+                                            _CT_p, _MT_p, c_int_p), skip_if_missing=True)
 
     # from phist_jdqr_decl.h
     #void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
@@ -127,9 +130,10 @@ if __name__ == '__main__':
     # call subspacejada
     nIter = c_int(1000)
     resNorm = (D*11)()
-    res = PYST_CHK_NEG_IERR(phist_Dsubspacejada, opA, opB, v0, eigSort_SR, 1.e-8, 10, nIter, 2, 20, 40, 2, 8, 0, 0., False, True, True, vecQ, matR, resNorm)
-    print(res)
-    PYST_CHK_IERR(phist_DsdMat_print, matR)
+    ev = (Z*11)()
+    res = PYST_CHK_NEG_IERR(phist_Dsubspacejada, opA, opB, v0, eigSort_SR, 1.e-8, 10, nIter, 2, 20, 40, 2, 8, 0, 0., False, True, True, vecQ, matR, ev, resNorm)
+    print('eigenvalues:  ', [ev[i][0] for i in range(10)])
+    print('ritz residual:', [resNorm[i] for i in range(10)])
 
 
     # delete sdMats
