@@ -29,6 +29,7 @@
 !=======================================================================================
 ! (A) from Gordon & Gordon CARP-CG Paper (Parallel Computing 2009)                      
 !                                                                                       
+!0. Du                                                                              = F 
 !1. Du +          1000u_x                                                           = F 
 !2. Du + 1000exp(xyz)(u_x   +               u_y -      u_z)                         = F 
 !3. Du +          100xu_x   -              yu_y +     zu_z  + 100(x + y + z)/(xyz)u = F 
@@ -52,11 +53,12 @@
 !                                                                                       
 !=======================================================================================
 ! (B) problems with variable coefficentts in the diffusion term                         
+! 0. -(exp(-xyz) Ux)x - (exp(xyz) Uy)y  -( exp((1-x)(1-y)(1-z)) Uz)z = F
 ! 1. -(exp(-xyz) Ux)x - (exp(xyz) Uy)y  -( exp((1-x)(1-y)(1-z)) Uz)z 
 !    +  sin(pi y) Ux + (sin(pi y) U)x  
 !    +  sin(pi z) Uy + (sin(pi z) U)y 
 !    +  sin(pi x) Uz + (sin(pi x) U)z 
-!    +  1/(1+x+y+z) U = F
+!    +  1/(1+x+y+z) U                                                = F
 
 !boundary conditions: Dirichlet                                                         
 !=======================================================================================
@@ -78,6 +80,7 @@ module matpde3d_module
   real(kind=8), parameter :: pi = 4*atan(1.0_8)
 
   !! flags to select the test problem, encoded using 2-digit hex numbers
+  integer, parameter :: PROB_A0=INT(Z'A0')
   integer, parameter :: PROB_A1=INT(Z'A1')
   integer, parameter :: PROB_A2=INT(Z'A2')
   integer, parameter :: PROB_A3=INT(Z'A3')
@@ -88,6 +91,7 @@ module matpde3d_module
   integer, parameter :: PROB_A8=INT(Z'A8')
   integer, parameter :: PROB_A9=INT(Z'A9')
 
+  integer, parameter :: PROB_B0=INT(Z'B0')
   integer, parameter :: PROB_B1=INT(Z'B1')
   integer, parameter :: PROB_B2=INT(Z'B2')
   integer, parameter :: PROB_B3=INT(Z'B3')
@@ -98,6 +102,7 @@ module matpde3d_module
   integer, parameter :: PROB_B8=INT(Z'B8')
   integer, parameter :: PROB_B9=INT(Z'B9')
 
+  integer, parameter :: PROB_C0=INT(Z'C0')
   integer, parameter :: PROB_C1=INT(Z'C1')
   integer, parameter :: PROB_C2=INT(Z'C2')
   integer, parameter :: PROB_C3=INT(Z'C3')
@@ -126,6 +131,10 @@ module matpde3d_module
   
   integer :: BNDRY( 6 )
 
+    ! scaling factors
+    ! reaction term t(x)*u scaled by alpha,
+    ! convective terms (x,y,z-direction) scaed by (beta,gamma,delta)
+    real(kind=8) :: alpha,beta, gamma, delta
 
   integer(kind=8) :: nx, ny, nz
   
@@ -251,16 +260,41 @@ contains
   ! 0: hom. Dirichlet
   ! 1: Dirichlet
   !-1: periodic
-  if (problem.ge.PROB_A1 .and. PROBLEM.le.PROB_A7) then
+  if (problem.ge.PROB_A0 .and. PROBLEM.le.PROB_A7) then
     BNDRY(1:6)=1
-  else  if (problem==PROB_B1) then
+  else  if (problem.ge.PROB_A8 .and. PROBLEM.le.PROB_A9) then
+    BNDRY(1:6)=0
+  else  if (problem.ge.PROB_B0 .and. PROBLEM.le.PROB_B9) then
     BNDRY(1:6)=0
   else if (problem==PROB_C1) then
     BNDRY(1:6)=-1
     call init_random_seed()
   else
-    iflag=-99    
+    iflag=-99
   end if
+  
+    ! scaling factors of convective terms (x,y,z-direction)
+    alpha=1.0_8
+    beta=1.0_8
+    gamma=1.0_8
+    delta=1.0_8
+    
+    if (problem==PROB_A0 .or. problem==PROB_B0) then
+      alpha=0.0_8
+      beta=0.0_8
+      gamma=0.0_8
+      delta=0.0_8
+    else if (problem==PROB_A8) then
+      beta=10.0_8
+      gamma=10.0_8
+    else if (problem==PROB_A9) then
+      beta=1000.0_8
+      gamma=1000.0_8
+    else if (problem==PROB_B1) then
+      beta=20.0_8
+    end if
+
+
   
   end subroutine MATPDE3D_selectProblem
 
@@ -379,9 +413,6 @@ contains
     !  distribution.
     !
     !  ==================================================================
-    !
-    !     .. Parameters ..
-    real(kind=8), parameter :: beta = 20., gamma = 0., gammab=0.
     !     ..
     !     .. Scalar variables ..
     integer(kind=8) :: ix, jy, kz, index, jd, coord(3), coord_(3)
@@ -389,7 +420,7 @@ contains
     real(kind=8) :: p12, pm12, q12, qm12, xi, rij, r1, rm1, sij, s1, sm1, yj
     real(kind=8) :: qb12, qbm12, sb1, sbij, sbm1, sbmij
     real(kind=8) :: zk
-
+    
     nnz = 0
 
     coord = coordOfId(row)
@@ -413,14 +444,14 @@ contains
     SIJ  = SC (GAMMA,XI,YJ, ZK)
     S1   = SC (GAMMA,XI,YJ + HY, ZK)
     SM1  = SC (GAMMA,XI,YJ - HY, ZK)
-    SBIJ  = SBC (GAMMAB,XI,YJ, ZK)
-    SB1   = SBC (GAMMAB,XI,YJ, ZK + HZ)
-    SBM1  = SBC (GAMMAB,XI,YJ, ZK - HZ)
+    SBIJ  = SBC (DELTA,XI,YJ, ZK)
+    SB1   = SBC (DELTA,XI,YJ, ZK + HZ)
+    SBM1  = SBC (DELTA,XI,YJ, ZK - HZ)
 
 
     !           DIAGONAL.
     nnz = nnz + 1
-    vals(nnz) = ra*(p12 + pm12)  +  q12 + qm12  + raz*(qb12+qbm12) + hy2*tc(xi,yj,zk)
+    vals(nnz) = ra*(p12 + pm12)  +  q12 + qm12  + raz*(qb12+qbm12) + hy2*tc(alpha,xi,yj,zk)
     cols(nnz) = idOfCoord(coord) !index
     jd = nnz
 
@@ -511,13 +542,13 @@ contains
     real(kind=8), intent(in) :: x, y, z
     real(kind=8) :: pc
     
-    if (problem .ge. PROB_A1 .and. problem .le. PROB_A9) then
+    if (problem .ge. PROB_A0 .and. problem .le. PROB_A9) then
       ! Gordon problems A 1-9
       pc = 1.0_8
-    else if (problem .ge. PROB_B1 .and. problem .le. PROB_B9) then
+    else if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
       ! varying coefficient problems (B)
       pc = exp(-x*y*z)
-    else if (problem .ge. PROB_C1 .and. problem .le. PROB_C9) then
+    else if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
       ! QM test cases with constant -1 in off-diagonals
       pc = 1.0_8
     else
@@ -531,13 +562,13 @@ contains
     real(kind=8), intent(in) :: x, y, z
     real(kind=8) :: qc
 
-    if (problem .ge. PROB_A1 .and. problem .le. PROB_A9) then
+    if (problem .ge. PROB_A0 .and. problem .le. PROB_A9) then
       ! Gordon problems A1-9
       qc = 1.0_8
-    else if (problem .ge. PROB_B1 .and. problem .le. PROB_B9) then
+    else if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
       ! varying coefficient problems (B)
       qc = exp(x*y*z)
-    else if (problem .ge. PROB_C1 .and. problem .le. PROB_C9) then
+    else if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
       ! QM test cases with constant -1 in off-diagonals
       qc = 1.0_8
     else
@@ -551,13 +582,13 @@ contains
     real(kind=8), intent(in) :: x, y, z
     real(kind=8) :: qbc
 
-    if (problem .ge. PROB_A1 .and. problem .le. PROB_A9) then
+    if (problem .ge. PROB_A0 .and. problem .le. PROB_A9) then
       ! Gordon problems A 1-9
       qbc = 1.0_8
-    else if (problem .ge. PROB_B1 .and. problem .le. PROB_B9) then
+    else if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
       ! varying coefficient problems (B)
       qbc = exp((1.0_8-x)*(1.0_8-y)*(1.0_8-z))
-    else if (problem .ge. PROB_C1 .and. problem .le. PROB_C9) then
+    else if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
       ! QM test cases with constant -1 in off-diagonals
       qbc = 1.0_8
     else
@@ -589,16 +620,17 @@ contains
       rc = -5.0_8*exp(x*y)
     else if (problem == PROB_A9) then
       rc = -500.0_8*exp(x*y)
-    else if (problem .ge. PROB_B1 .and. problem .le. PROB_B9) then
+    else if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
       ! varying coefficient problems (B)
       rc = sin(pi*y)
-    else if (problem .ge. PROB_C1 .and. problem .le. PROB_C9) then
+    else if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
       ! QM test cases with constant -1 in off-diagonals
       rc = 0.0_8
     else
       ! default
       rc = 0.0_8
     end if    
+    rc=rc*beta
   end function rc
 
   pure function sc(gamma, x,y, z)
@@ -619,20 +651,20 @@ contains
       sc = -500.0_8*(1.0_8-2.0_8*y)
     else if (problem == PROB_A7) then
       sc = 0.0_8
-    else if (problem == PROB_A8) then
-      sc = -5.0_8*exp(-x*y)
-    else if (problem == PROB_A9) then
-      sc = -500.0_8*exp(-x*y)
-    else if (problem .ge. PROB_B1 .and. problem .le. PROB_B9) then
+    else if (problem==PROB_A8 .or. problem==PROB_A9) then
+      sc = -0.5_8*exp(-x*y)
+    else if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
       ! varying coefficient problems (B)
       sc = sin(pi*z)
-    else if (problem .ge. PROB_C1 .and. problem .le. PROB_C9) then
+    else if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
       ! QM test cases with constant -1 in off-diagonals
       sc = 0.0_8
     else
       ! default
       sc = 0.0_8
-    end if    
+    end if
+    
+    sc=sc*gamma
 
   end function sc
 
@@ -658,21 +690,24 @@ contains
       sbc = 0.0_8
     else if (problem == PROB_A9) then
       sbc = 0.0_8
-    else if (problem .ge. PROB_B1 .and. problem .le. PROB_B9) then
+    else if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
       ! varying coefficient problems (B)
       sbc = sin(pi*x)
-    else if (problem .ge. PROB_C1 .and. problem .le. PROB_C9) then
+    else if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
       ! QM test cases with constant -1 in off-diagonals
       sbc = 0.0_8
     else
       ! default
       sbc = 0.0_8
     end if
+    
+    sbc=sbc*delta
 
   end function sbc
 
   ! because of the random_number for Anderson localization, this one can't be pure
-  function tc(x,y,z)
+  function tc(alpha,x,y,z)
+    real(kind=8), intent(in) :: alpha
     real(kind=8), intent(in) :: x, y, z
     real(kind=8) :: tc
     real(kind=8) :: r
@@ -704,6 +739,8 @@ contains
   else
     tc = 0.0_8
   end if
+
+  tc=tc*alpha
 
   end function tc
 
