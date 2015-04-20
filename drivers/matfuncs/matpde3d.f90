@@ -55,10 +55,13 @@
 ! (B) problems with variable coefficentts in the diffusion term                         
 ! 0. -(exp(-xyz) Ux)x - (exp(xyz) Uy)y  -( exp((1-x)(1-y)(1-z)) Uz)z = F
 ! 1. -(exp(-xyz) Ux)x - (exp(xyz) Uy)y  -( exp((1-x)(1-y)(1-z)) Uz)z 
-!    +  sin(pi y) Ux + (sin(pi y) U)x  
+!    +20sin(pi y) Ux + (sin(pi y) U)x  
 !    +  sin(pi z) Uy + (sin(pi z) U)y 
 !    +  sin(pi x) Uz + (sin(pi x) U)z 
 !    +  1/(1+x+y+z) U                                                = F
+! 2. as 1. but with Ux terms scaled by 50
+! 3. as 1. but with reactive term (U) scaled by 100
+! 4. as 1. but with Ux and Uy scaled by 50 and 1000, resp.
 
 !boundary conditions: Dirichlet                                                         
 !=======================================================================================
@@ -292,6 +295,15 @@ contains
       gamma=1000.0_8
     else if (problem==PROB_B1) then
       beta=20.0_8
+    else if (problem==PROB_B2) then
+      beta=1000.0_8
+    else if (problem==PROB_B3) then
+      beta=20.0_8
+      alpha=100.0_8
+    else if (problem==PROB_B4) then
+      beta =1000.0_8
+      gamma=1000.0_8
+    
     end if
 
 
