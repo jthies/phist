@@ -300,7 +300,7 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   if (ghost_type == GHOST_TYPE_CUDA) 
   {
     // for development purposes, allocate both host and device side right now
-    vtraits.location = GHOST_LOCATION_HOSTDEVICE;
+    vtraits.location = GHOST_LOCATION_HOST|GHOST_LOCATION_DEVICE;
 //    vtraits.location = GHOST_LOCATION_DEVICE;
   } 
   else 
@@ -392,7 +392,7 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
   if (ghost_type == GHOST_TYPE_CUDA) 
   {
-    dmtraits.location = GHOST_LOCATION_HOSTDEVICE;
+    dmtraits.location = GHOST_LOCATION_HOST|GHOST_LOCATION_DEVICE;
   } 
   else 
   {
