@@ -315,6 +315,10 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag);
 //! put random numbers into all elements of a small dense matrix \ingroup sdmat
 void SUBR(sdMat_random)(TYPE(sdMat_ptr) V, int* iflag);
 
+//! set all mvec elements V(i,j) by calling a function for each element
+void SUBR(mvec_put_func)(TYPE(mvec_ptr) *V,
+        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag);
+
 //! put identity matrix into a small dense matrix \ingroup sdmat
 void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag);
 

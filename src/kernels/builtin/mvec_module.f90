@@ -365,6 +365,16 @@ module mvec_module
     end subroutine
   end interface
 
+  !> interface of function-ptr for mvec_put_func
+  abstract interface
+    subroutine vecElemFunc(row, col, val)
+      use, intrinsic :: iso_c_binding
+      integer(G_GIDX_T), value :: row
+      integer(G_LIDX_T), value :: col
+      real(C_DOUBLE),    intent(inout) :: val
+    end subroutine mvecElemFunc
+  end interface
+
 contains
 
   !==================================================================================
@@ -2176,6 +2186,47 @@ contains
 
   end subroutine phist_Dmvec_put_value
 
+
+  subroutine phist_Dmvec_put_func(V_ptr, elemFunc_ptr,   ierr) &
+    & bind(C,name='phist_Dmvec_put_func_f') ! circumvent bug in opari (openmp instrumentalization)
+    use, intrinsic :: iso_c_binding
+    !--------------------------------------------------------------------------------
+    type(C_PTR),        value :: V_ptr
+    integer(C_INT64_T), value        :: row
+    integer(C_INT32_T), value        :: col
+    type(C_FUNPTR),     value       :: elemFunc_ptr
+    integer(C_INT),     intent(out) :: ierr
+    !--------------------------------------------------------------------------------
+    type(mvec_t), pointer :: V
+    procedure(mvecElemFunc), pointer :: elemFunc
+    !--------------------------------------------------------------------------------
+    integer(kind=8) :: i
+    integer(kind=G_GIDX_T) :: i_
+    integer(kind=G_LIDX_T) :: j, j_
+    !--------------------------------------------------------------------------------
+
+    ierr=0
+
+    if( .not. c_associated(V_ptr) ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(V_ptr, V)
+
+    ! get procedure pointer
+    call c_f_procpointer(elemFunc_ptr, elemFunc)
+
+! note: element function assumes 0-based indexing
+
+!$omp parallel do schedule(static)
+    do i = 1, V%map%nlocal(mvec%map%me), 1
+      i_ = V%map%distrib(V%map%me+i-2
+      do j=0,V%jmax-V%jmin
+        elemFunc(i,j,C_LOC(V%val(mvec%jmin+j,i))) 
+    end do
+
+end subroutine phist_Dmvec_put_func
 
   subroutine phist_Dmvec_random(mvec_ptr, ierr) bind(C,name='phist_Dmvec_random_f')
     use, intrinsic :: iso_c_binding

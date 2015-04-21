@@ -429,6 +429,22 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, double value, int* iflag
   PHIST_CHK_IERR(*iflag=V->PutScalar(value),*iflag);
 }
 
+extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) *vV,
+        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*iflag);
+  for (lidx_t i=0;i<V->MyLength();i++)
+  {
+    for (int j=0; j<V->NumVectors(); j++)
+    {
+      gidx_t row=V->Map().GID(i);
+      funPtr(row,j,V->Pointers[j]+i);
+    }
+  }
+}
+
 //! put scalar value into all elements of a multi-vector
 extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vV, double value, int* iflag)
 {

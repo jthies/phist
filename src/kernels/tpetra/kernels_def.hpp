@@ -672,6 +672,13 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, _ST_ value, int* iflag)
   PHIST_TRY_CATCH(V->putScalar(value),*iflag);
   }
 
+extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) *vV,
+        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag=-99;
+}
+
 //! put scalar value into all elements of a multi-vector
 extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vM, _ST_ value, int* iflag)
   {
