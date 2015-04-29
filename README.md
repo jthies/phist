@@ -21,7 +21,7 @@ The git repository can be checked out using the command
 
 PHIST contains 
 
-* an abstract `kernel' interface layer defining the basic operations commonly used in 
+* an abstract `kernel` interface layer defining the basic operations commonly used in 
   iterative linear algebra solvers
 * implementations of the interface using
     * builtin sample implementation (MPI+OpenMP)
@@ -46,7 +46,7 @@ around as opaque void pointers to increase portability.
 The kernel library to be used has to be chosen before configuring/building the project by 
 either
 
-* passing `-DPHIST_KERNEL_LIB=<choice>' to cmake.
+* passing `-DPHIST_KERNEL_LIB=<choice>` to cmake.
 * using ccmake and modifying the corresponding entry.
 
 Choices supported right now are:
@@ -61,7 +61,7 @@ Stand-alone version
 ===================
 
 The PHIST project can be compiled and used without any additional dependencies if the
-`builtin' kernel lib is used. For better performance, one should use the optional 
+`builtin` kernel lib is used. For better performance, one should use the optional 
 third-party libraries (TPLs) ParMETIS (for repartitioning the matrix) and ColPack (for 
 enabling intra-node parallelism in CARP-CG), or switch to ghost+TPLs. Note that we currently 
 do not support the use of GPUs/Xeon Phi even with ghost as kernel lib.
@@ -91,7 +91,7 @@ Dependencies and optional packages
   - * optional: depends on the Trilinos installation
 
 Typically CMake will automatically find the TPL if you pass the
-variable `(TPL_NAME)_DIR' to the cmake command, for instance:
+variable `(TPL_NAME)_DIR` to the cmake command, for instance:
 
     > cmake   -DPHIST_KERNEL_LIB=ghost \
               -DGHOST_DIR=<path to ghost lib dir> \
@@ -168,7 +168,7 @@ Installation instructions for the RRZE systems
  Proceed as follows to build PHIST with GHOST (substitute 
 $PREFIX with the path where ghost and essex-physics are installed).
 This is the easiest way to make PHIST find GHOST. It is also possible
-to pass the `GHOST_DIR' variable to cmake, insterad. Note that essex-physics
+to pass the `GHOST_DIR` variable to cmake, insterad. Note that essex-physics
 is an optional package for phist, as is Trilinos.
 
     > module load intel64
@@ -184,7 +184,7 @@ is an optional package for phist, as is Trilinos.
            ..
     > make 
 
-If you want to use likwid, also set `LIKWID_HOME' and pass `-DLIKWID_PERFMON' to cmake.
+If you want to use likwid, also set `LIKWID_HOME` and pass `-DLIKWID_PERFMON` to cmake.
 
 
 Directory structure
@@ -226,14 +226,14 @@ are four types of drivers
 
 * *algorithm drivers* that read a matrix from a file (or use a predefined matrix generator)
   and solve e.g. an eigenvalue problem. 
-  Examples are `phist_Djdqr', `phist_Zsubspacejada' etc. These drivers take a range of command 
+  Examples are `phist_Djdqr`, `phist_Zsubspacejada` etc. These drivers take a range of command 
   line 
   parameters, a list of which is printed when the executable is called without input args.
 
-* *benchmark drivers* like `phist_DcrsMat_times_mvec_times' which are written to benchmark certain 
+* *benchmark drivers* like `phist_DcrsMat_times_mvec_times` which are written to benchmark certain 
   kernel operations
 
 * *test drivers* that follow the naming convention phist-X.Y.Z-<name>-test. These 
-  executables are run by the `make test' command, but they can also be run as stand-alone
+  executables are run by the `make test` command, but they can also be run as stand-alone
   programs for debugging purposes. Their sources are in phist/test/ and are based on the 
   googletest framework.
