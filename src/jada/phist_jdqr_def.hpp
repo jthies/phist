@@ -33,10 +33,10 @@
 //!
 
 // First a forward decleration of a helper function to compute the residual
-void SUBR(computeResidual)(TYPE(const_op_ptr) B_op,
-        TYPE(mvec_ptr) r_ptr, TYPE(mvec_ptr) Au_ptr, TYPE(mvec_ptr) u_ptr,
-        TYPE(mvec_ptr) rtil_ptr, TYPE(mvec_ptr) Qv, TYPE(sdMat_ptr) Theta,
-        TYPE(sdMat_ptr) atil, TYPE(sdMat_ptr) atilv, _MT_ *resid,
+void SUBR(computeResidual)(TYPE(const_op_ptr) B_op, TYPE(mvec_ptr) r_ptr,
+        TYPE(mvec_ptr) Au_ptr, TYPE(mvec_ptr) u_ptr, TYPE(mvec_ptr) rtil_ptr,
+        TYPE(mvec_ptr) Qv, TYPE(mvec_ptr) tmp, TYPE(sdMat_ptr) Theta,
+        TYPE(sdMat_ptr) atil, TYPE(sdMat_ptr) *atilv, _MT_ *resid,
         int nv, int nconv, int* iflag);
 
 // Now the actual main function
@@ -72,7 +72,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   mvec_ptr_t    u_r=NULL, Au_r=NULL, r_r=NULL, rtil_r=NULL, t_r=NULL;
 #endif
   // these point either to u or u_r etc. to make live simpler further down
-  mvec_ptr_t u_ptr=NULL, Au_ptr=NULL, r_ptr=NULL, rtil_ptr=NULL,t_ptr=NULL;
+  mvec_ptr_t u_ptr=NULL, Au_ptr=NULL, r_ptr=NULL, rtil_ptr=NULL, t_ptr=NULL;
   // Q*s (temporary vector)
   sdMat_ptr_t atil=NULL, atilv=NULL;
   // matrix <V,AV>
@@ -161,7 +161,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   // orthogonalizing against [V Q], which is of dimension up to n x (maxBas+numEigs)
   PHIST_CHK_IERR(SUBR(sdMat_create)(&S,maxVecs+numEigs,maxVecs+numEigs,comm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&T,maxVecs+numEigs,maxVecs+numEigs,comm,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&R,numEigs,numEigs,comm,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&R,numEigs+1,numEigs+1,comm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,st::zero(),iflag),*iflag);
 
   PHIST_CHK_IERR(SUBR(sdMat_create)(&atil,maxVecs,nv_max,comm,iflag),*iflag);
@@ -305,7 +305,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
           PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,Qv,m0,ncVQ-1,iflag),*iflag);
           }
         int rankV;
-        PHIST_CHK_NEG_IERR(SUBR(orthog)(Vv,t_ptr,Tv,Sv,3,&rankV,iflag),*iflag);
+        PHIST_CHK_NEG_IERR(SUBR(orthog)(Vv,t_ptr,B_op,Tv,Sv,3,&rankV,iflag),*iflag);
         // reset the view of V without the Q.
         PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m0-1,iflag),*iflag);
       }
@@ -453,7 +453,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     prev_nrm=res_nrm;
 
     PHIST_CHK_IERR(SUBR(computeResidual)(B_op, r_ptr, Au_ptr, u_ptr,
-        rtil_ptr, Qv, Theta, atil, atilv, &res_nrm, nv, nconv, iflag),*iflag);
+        rtil_ptr, Qv, Vtmp, Theta, atil, &atilv, &res_nrm, nv, nconv, iflag),*iflag);
 
     PHIST_SOUT(PHIST_INFO,"JDQR Iter %d\tdim(V)=%d\ttheta=%8.4g%+8.4gi\t\tr_est=%8.4e\n",it,m,ct::real(theta),ct::imag(theta),res_nrm);
   // deflate converged eigenpairs
@@ -504,11 +504,11 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     mvec_ptr_t v_tmp=NULL;
     PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v_tmp,0,m-1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),v_tmp,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,v_tmp,0,m-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(V,v_tmp,0,m-1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,iflag),*iflag);
     //AV=AV*S;
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),AVv,Sv,st::zero(),v_tmp,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(AVv,v_tmp,0,m-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(AV,v_tmp,0,m-1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,iflag),*iflag);
     
     // delete the temporary view (not the data, of course)
@@ -545,11 +545,12 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       t_ptr=t_r;
     }
 #endif
+
     // get the diagonal block (1x1 or 2x2) corresponding to theta
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Theta,ev_pos,ev_pos+nv-1,ev_pos,ev_pos+nv-1,iflag),*iflag);
 
     PHIST_CHK_IERR(SUBR(computeResidual)(B_op, r_ptr, Au_ptr, u_ptr,
-        rtil_ptr, Qv, Theta, atil, atilv, &res_nrm, nv, nconv, iflag),*iflag);
+        rtil_ptr, Qv, Vtmp, Theta, atil, &atilv, &res_nrm, nv, nconv, iflag),*iflag);
 
     // again, sort the largest Ritz value to the top
 //    nselect = m==maxBas-1? minBas: 1;
@@ -587,10 +588,10 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     mvec_ptr_t v_tmp=NULL;
     PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v_tmp,0,m-1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),v_tmp,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,v_tmp,0,m-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(V,v_tmp,0,m-1,iflag),*iflag);
     //AV=AV*S;
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),AVv,Sv,st::zero(),v_tmp,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(AVv,v_tmp,0,m-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(AV,v_tmp,0,m-1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_delete)(v_tmp,iflag),*iflag);
     //V=V(:,1:mmin);
     PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,iflag),*iflag);
@@ -633,10 +634,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
     // the block case is not implemented here:
     // (I-uu')A(I-uu')*t - (I-uu')t*Theta=-r
-    if (B_op!=NULL)
-    {
-      PHIST_SOUT(PHIST_WARNING,"case B!=I not implemented (file %s, line %d)\n",__FILE__,__LINE__);
-    }
 
     // 1/2^mm, but at most the outer tol as conv tol for GMRES
     MT innerTol[2];
@@ -646,7 +643,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
     // allow at most 25 iterations
     int nIt=25;
-      PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, NULL, Qtil, NULL, 
+      PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, B_op, Qtil, NULL, 
                                                       sigma, rtil_ptr, NULL, 
                                                       innerTol, nIt, t_ptr, true, false, iflag), *iflag);
     expand=nv;
@@ -788,10 +785,10 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   return;
   }
 
-void SUBR(computeResidual)(TYPE(const_op_ptr) B_op,
-        TYPE(mvec_ptr) r_ptr, TYPE(mvec_ptr) Au_ptr, TYPE(mvec_ptr) u_ptr,
-        TYPE(mvec_ptr) rtil_ptr, TYPE(mvec_ptr) Qv, TYPE(sdMat_ptr) Theta,
-        TYPE(sdMat_ptr) atil, TYPE(sdMat_ptr) atilv, _MT_ *resid,
+void SUBR(computeResidual)(TYPE(const_op_ptr) B_op, TYPE(mvec_ptr) r_ptr,
+        TYPE(mvec_ptr) Au_ptr, TYPE(mvec_ptr) u_ptr, TYPE(mvec_ptr) rtil_ptr,
+        TYPE(mvec_ptr) Qv, TYPE(mvec_ptr) tmp, TYPE(sdMat_ptr) Theta,
+        TYPE(sdMat_ptr) atil, TYPE(sdMat_ptr) *atilv, _MT_ *resid,
         int nv, int nconv, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -801,11 +798,25 @@ void SUBR(computeResidual)(TYPE(const_op_ptr) B_op,
 
   MT nrm[2];
 
+  // pointer to temporary storage for B*Q*atil if B is defined
+  mvec_ptr_t tmp_ptr=NULL;
+
   // first: r=Au
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),Au_ptr,st::zero(),r_ptr,iflag),*iflag);
 
-  // update r = r - U*Theta
-  PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),u_ptr,Theta,st::one(),r_ptr,iflag),*iflag);
+  if (B_op != NULL)
+  {
+    // rt = B * u
+    PHIST_CHK_IERR(B_op->apply(st::one(),B_op->A,u_ptr,st::zero(),rtil_ptr,iflag),*iflag);
+
+    // update r = r - rt*Theta
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),rtil_ptr,Theta,st::one(),r_ptr,iflag),*iflag);
+  }
+  else
+  {
+    // update r = r - u*Theta
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),u_ptr,Theta,st::one(),r_ptr,iflag),*iflag);
+  }
 
   // set rtil=r
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r_ptr,st::zero(),rtil_ptr,iflag),*iflag);
@@ -815,13 +826,27 @@ void SUBR(computeResidual)(TYPE(const_op_ptr) B_op,
   if (nconv>0)
   {
     // view next ~a, a temporary vector to compute ~a=Q'*r
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(atil,&atilv,0,nconv-1,0,nv-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(atil,atilv,0,nconv-1,0,nv-1,iflag),*iflag);
 
     //atil = Q'*r;
-    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Qv,r_ptr,st::zero(),atilv,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Qv,r_ptr,st::zero(),*atilv,iflag),*iflag);
 
-    //rtil = r-Q*atil;
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,atilv,st::one(),rtil_ptr,iflag),*iflag);
+    if (B_op != NULL)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(tmp,&tmp_ptr,0,nv-1,iflag),*iflag);
+      // tmp = Q*atil
+      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Qv,*atilv,st::zero(),tmp_ptr,iflag),*iflag);
+
+      //rtil = r-B*Q*atil;
+      PHIST_CHK_IERR(B_op->apply(-st::one(),B_op->A,tmp_ptr,st::one(),rtil_ptr,iflag),*iflag);
+
+      PHIST_CHK_IERR(SUBR(mvec_delete)(tmp_ptr,iflag),*iflag);
+    }
+    else
+    {
+      //rtil = r-Q*atil;
+      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,*atilv,st::one(),rtil_ptr,iflag),*iflag);
+    }
   }
 
   //nrm=norm(rtil);

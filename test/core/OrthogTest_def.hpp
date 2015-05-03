@@ -132,7 +132,7 @@ public:
       // orthogonalize the m columns of V. Test that orthog
       // works if the first argument is NULL.
       int rankVW=-42;
-      SUBR(orthog)(NULL,V,R0,NULL,1,&rankVW,&iflag_);
+      SUBR(orthog)(NULL,V,NULL,R0,NULL,1,&rankVW,&iflag_);
       if (iflag_!=+2)
       {
         ASSERT_EQ(expect_iflagV,iflag_);
@@ -162,7 +162,7 @@ public:
       // now orthogonalize W against V. The result should be such that Q*R1=W-V*R2, Q'*Q=I,V'*Q=0
       bool usedSVQB=false;
       rankVW=-42;
-      SUBR(orthog)(V,Q,R1,R2,nsteps,&rankVW,&iflag_);
+      SUBR(orthog)(V,Q,NULL,R1,R2,nsteps,&rankVW,&iflag_);
       if (iflag_!=+2)
       {
         ASSERT_EQ(expect_iflagVW,iflag_);

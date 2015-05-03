@@ -26,7 +26,11 @@
 # ifdef PHIST_KERNEL_LIB_TPETRA
 #  include "BelosTpetraAdapter.hpp"
 #  include "phist_tpetra_typedefs.hpp"
-# else
+# elif defined(PHIST_KERNEL_LIB_EPETRA)
+#  include "Epetra_MultiVector.h"
+#  include "BelosEpetraAdapter.hpp"
+#  include "epetra_helpers.h"
+# else 
 #  error "not implemented"
 # endif
 
@@ -38,6 +42,13 @@
 # include "BelosIMGSOrthoManager.hpp"
 
 #endif /* USE_TRILINOS_ORTHO_MANAGER */
+
+#include "epetra_helpers.cpp"
+
+#include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_LocalMap.h"
+#include "Epetra_SerialComm.h"
+#include "Epetra_CrsMatrix.h"
 
 #ifdef PHIST_HAVE_SP
 # include "phist_gen_s.h"
