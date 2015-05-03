@@ -481,6 +481,9 @@ LIST(APPEND library_list phist_core)
 LIST(APPEND library_list phist_kernels_${PHIST_KERNEL_LIB})
 LIST(APPEND library_list phist_solvers)
 
+target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
+target_link_libraries(phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
+target_link_libraries(phist_solvers phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 
 if (ESSEX-PHYSICS_FOUND)
   target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} ${ESSEX-PHYSICS_LIBRARIES})
