@@ -400,7 +400,7 @@ void SUBR(mvec_QB)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* nrmsV, int *iflag)
       for (int i=0;i<3;i++)
       {
         // use fallback kernel: SVQB
-        PHIST_CHK_NEG_IERR(SUBR(svqb)(V,B,nrmsV,iflag),*iflag);
+        PHIST_CHK_NEG_IERR(SUBR(svqb)(V,B,nrmsV_ptr,iflag),*iflag);
         // next sweep do not overwrite nrmsV
         nrmsV_ptr=dummy;
         dim0=*iflag;

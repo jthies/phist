@@ -15,6 +15,24 @@ module mvec_module
   implicit none
   private
 
+!>@todo duplicated code from crsmat_module.f90
+#ifndef PHIST_HAVE_GHOST
+#define G_LIDX_T C_INT32_T
+#define G_GIDX_T C_INT64_T
+#else
+#ifdef GHOST_HAVE_LONGIDX_LOCAL
+#define G_LIDX_T C_INT64_T
+#else
+#define G_LIDX_T C_INT32_T
+#endif
+#ifdef GHOST_HAVE_LONGIDX_GLOBAL
+#define G_GIDX_T C_INT64_T
+#else
+#define G_GIDX_T C_INT32_T
+#endif
+#endif
+
+
   public :: MVec_t
   !public :: phist_Dmvec_create
   !public :: phist_Dmvec_delete
@@ -367,7 +385,7 @@ module mvec_module
 
   !> interface of function-ptr for mvec_put_func
   abstract interface
-    subroutine vecElemFunc(row, col, val)
+    subroutine mvecElemFunc(row, col, val)
       use, intrinsic :: iso_c_binding
       integer(G_GIDX_T), value :: row
       integer(G_LIDX_T), value :: col
@@ -2192,8 +2210,6 @@ contains
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),        value :: V_ptr
-    integer(C_INT64_T), value        :: row
-    integer(C_INT32_T), value        :: col
     type(C_FUNPTR),     value       :: elemFunc_ptr
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
@@ -2220,10 +2236,11 @@ contains
 ! note: element function assumes 0-based indexing
 
 !$omp parallel do schedule(static)
-    do i = 1, V%map%nlocal(mvec%map%me), 1
-      i_ = V%map%distrib(V%map%me+i-2
+    do i = 1, V%map%nlocal(V%map%me), 1
+      i_ = V%map%distrib(V%map%me)+i-2
       do j=0,V%jmax-V%jmin
-        elemFunc(i,j,C_LOC(V%val(mvec%jmin+j,i))) 
+        call elemFunc(i,j,V%val(V%jmin+j,i))
+      end do
     end do
 
 end subroutine phist_Dmvec_put_func

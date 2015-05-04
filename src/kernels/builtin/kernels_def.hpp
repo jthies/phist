@@ -288,7 +288,7 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) *V,
         int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  PHIST_CHK_IERR(SUBR(mvec_put_func_f)(V,funPtr,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_put_func_f)(V,(void(*)(ghost_gidx_t,ghost_lidx_t,void*))funPtr,iflag),*iflag);
 }
 
 extern "C" void SUBR(sdMat_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)

@@ -206,7 +206,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     {
       for (int i=pos;i<strlen(problem);i++)
       {
-        if (problem[i]<'0' || problem[i]>'9' && problem[i]!='x')
+        if ( (problem[i]<'0' || problem[i]>'9') && problem[i]!='x')
         {
           mat_type=FROM_FILE;
           break;
