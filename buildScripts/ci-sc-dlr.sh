@@ -115,7 +115,7 @@ cmake -DCMAKE_BUILD_TYPE=Release  \
       ..                            || error=1
 make doc                            || error=1
 make -j 6 || make                   || error=1
-make test                           || error=1
+make check                          || error=1
 cd ..
 
 # debug build
@@ -136,7 +136,7 @@ cmake -DCMAKE_BUILD_TYPE=Debug    \
       ${CMAKE_FLAGS} \
       ..                            || error=1
 make -j 6 || make                   || error=1
-make test                           || error=1
+make check                          || error=1
 make audit                          || error=1
 cd ..
 
