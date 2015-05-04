@@ -11,6 +11,8 @@
 #endif
 #include "phist_kernels.h"
 
+#include "phist_operator.h"
+
 #endif //DOXYGEN
 
 #ifdef __cplusplus

@@ -137,7 +137,6 @@ void cholesky_prec(int n, double *restrict a, double *restrict aC, int *perm, in
 //printf("\n");
 
     // l_m,p[m] = sqrt(d_p[m])
-    // uses sqrt(x+y) = sqrt(x) + y/(2*sqrt(x)) + ...
     double div_lmm,div_lCmm;
     DOUBLE_4SQRT_NEWTONRAPHSON_FMA(d[p[m]],dC[p[m]],l[p[m]*n+m],lC[p[m]*n+m],div_lmm,div_lCmm);
 //printf("m=%d,p[m]=%d: d_pm = %e, l_m,pm = %e, div_lmm = %e\n", m, p[m], l[p[m]*n+m], div_lmm);
@@ -194,7 +193,7 @@ void cholesky_prec(int n, double *restrict a, double *restrict aC, int *perm, in
 
 
 // apply backward substitution with permuted upper triangular matrix
-void backward_subst_prec(int n, int k, double *restrict r, double *restrict rC, int *p, int rank, double *restrict x, double *restrict xC)
+void backward_subst_prec(int n, int k, const double *restrict r, const double *restrict rC, int *p, int rank, double *restrict x, double *restrict xC)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
@@ -212,7 +211,7 @@ void backward_subst_prec(int n, int k, double *restrict r, double *restrict rC, 
       for(int j = i+1; j < n; j++)
       {
         double rx, rxC;
-        DOUBLE_4MULTFMA(r[p[j]*n+i],rC[p[j]*n+i],newXl[p[j]],newXCl[p[j]],rx,rxC);
+        DOUBLE_4MULTFMA(r[p[j]*n+i],rC[p[j]*n+i],newXl[j],newXCl[j],rx,rxC);
 //printf("r: %e, x: %e, r*x: %e\n", r[p[j]*n+i],x[l*n+p[j]],rx);
         double oldS = s, oldT = t;
         DOUBLE_4SUM(oldS,oldT,rx,rxC,s,t);
@@ -224,21 +223,21 @@ void backward_subst_prec(int n, int k, double *restrict r, double *restrict rC, 
       DOUBLE_4DIV_NEWTONRAPHSON_FMA(r[p[i]*n+i],rC[p[i]*n+i],div_ri,div_riC);
       double oldS = s, oldT = t;
       DOUBLE_4MULTFMA(oldS,oldT,div_ri,div_riC,s,t);
-      newXl[p[i]] = -s;
-      newXCl[p[i]] = -t;
+      newXl[i] = -s;
+      newXCl[i] = -t;
 //printf("new x_p[i=%d],l=%d: %e\n", i, l, -s);
     }
 
     for(int i = 0; i < n; i++)
     {
-      x[l*n+i] = newXl[i];
-      xC[l*n+i] = newXCl[i];
+      x[l*n+p[i]] = newXl[i];
+      xC[l*n+p[i]] = newXCl[i];
     }
   }
 }
 
 // apply forward substitution with permuted transposed upper triangular matrix
-void forward_subst_prec(int n, int k, double *restrict r, double *restrict rC, int *p, int rank, double *restrict x, double *restrict xC)
+void forward_subst_prec(int n, int k, const double *restrict r, const double *restrict rC, int *p, int rank, double *restrict x, double *restrict xC)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
@@ -256,7 +255,7 @@ void forward_subst_prec(int n, int k, double *restrict r, double *restrict rC, i
       for(int j = 0; j < i; j++)
       {
         double rx, rxC;
-        DOUBLE_4MULTFMA(r[p[i]*n+j],rC[p[i]*n+j],newXl[p[j]],newXCl[p[j]],rx,rxC);
+        DOUBLE_4MULTFMA(r[p[i]*n+j],rC[p[i]*n+j],newXl[j],newXCl[j],rx,rxC);
 //printf("r: %e, x: %e, r*x: %e\n", r[p[i]*n+j],x[l*n+p[j]],rx);
         double oldS = s, oldT = t;
         DOUBLE_4SUM(oldS,oldT,rx,rxC,s,t);
@@ -268,18 +267,57 @@ void forward_subst_prec(int n, int k, double *restrict r, double *restrict rC, i
       DOUBLE_4DIV_NEWTONRAPHSON_FMA(r[p[i]*n+i],rC[p[i]*n+i],div_ri,div_riC);
       double oldS = s, oldT = t;
       DOUBLE_4MULTFMA(oldS,oldT,div_ri,div_riC,s,t);
-      newXl[p[i]] = -s;
-      newXCl[p[i]] = -t;
+      newXl[i] = -s;
+      newXCl[i] = -t;
 //printf("new x_p[i=%d],l=%d: %e\n", i, l, -s);
     }
 
     // unpermute result
     for(int i = 0; i < n; i++)
     {
-      x[l*n+i] = newXl[p[i]];
-      xC[l*n+i] = newXCl[p[i]];
+      x[l*n+i] = newXl[i];
+      xC[l*n+i] = newXCl[i];
     }
   }
 }
 
+
+// create permuted backward substition factor for faster application later
+void extract_backward_subst_matrix(int n, double *restrict r, double *restrict rC, int *p, int rank, double *restrict r_, double *restrict rC_, double *restrict dinv, double *restrict dinvC)
+{
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
+
+
+  // calculate inverse diagonal entries
+  for(int i = 0; i < rank; i++)
+  {
+    DOUBLE_4DIV_NEWTONRAPHSON_FMA(r[p[i]*n+i],rC[p[i]*n+i],dinv[i],dinvC[i]);
+  }
+  for(int i = rank; i < n; i++)
+  {
+    dinv[i] = 0.;
+    dinvC[i] = 0.;
+  }
+
+  // fill lower left part of r_ with zeros
+  for(int i = 0; i < n; i++)
+  {
+    for(int j = 0; j <= i; j++)
+    {
+      r_[j*n+i] = 0.;
+      rC_[j*n+i] = 0.;
+    }
+  }
+
+  // fill upper right part of r_ with unpermuted columns of r*dinv
+  for(int i = 0; i < n; i++)
+  {
+    for(int j = i+1; j < n; j++)
+    {
+      DOUBLE_4MULTFMA(dinv[j],dinvC[j],r[p[j]*n+i],rC[p[j]*n+i],r_[j*n+i],rC_[j*n+i]);
+    }
+  }
+}
 

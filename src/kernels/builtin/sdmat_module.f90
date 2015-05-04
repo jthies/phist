@@ -88,7 +88,7 @@ module sdmat_module
       real(kind=C_DOUBLE), intent(inout) :: a(*), aC(*)
       integer(kind=C_INT), intent(out) :: perm(n), rank
     end subroutine
-    !void backward_subst_prec(int n, int k, double *restrict r, double *restrict rC, int *perm, int rank, double *restrict x, double *restrict xC)
+    !void backward_subst_prec(int n, int k, const double *restrict r, const double *restrict rC, int *perm, int rank, double *restrict x, double *restrict xC)
     subroutine backward_subst_prec(n,k,r,rC,perm,rank,x,xC) bind(C)
       use, intrinsic :: iso_c_binding
       integer(kind=C_INT), value :: n,k,rank
@@ -96,7 +96,7 @@ module sdmat_module
       integer(kind=C_INT), intent(in) :: perm(n)
       real(kind=C_DOUBLE), intent(inout) :: x(*), xC(*)
     end subroutine
-    !void forward_subst_prec(int n, int k, double *restrict r, double *restrict rC, int *perm, int rank, double *restrict x, double *restrict xC)
+    !void forward_subst_prec(int n, int k, const double *restrict r, const double *restrict rC, int *perm, int rank, double *restrict x, double *restrict xC)
     subroutine forward_subst_prec(n,k,r,rC,perm,rank,x,xC) bind(C)
       use, intrinsic :: iso_c_binding
       integer(kind=C_INT), value :: n,k,rank

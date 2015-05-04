@@ -59,7 +59,7 @@ public:
       SUBR(sdMat_create)(&Rtmp,nq_,nq_,comm_,&iflag_);
       ASSERT_EQ(0,iflag_);
       int rankQ = 0;
-      SUBR(orthog)(NULL,Q_,Rtmp,NULL,4,&rankQ,&iflag_);
+      SUBR(orthog)(NULL,Q_,NULL,Rtmp,NULL,4,&rankQ,&iflag_);
       ASSERT_GE(iflag_,0);
       SUBR(sdMat_delete)(Rtmp,&iflag_);
       ASSERT_EQ(0,iflag_);

@@ -5,6 +5,7 @@ void SUBR(mvec_QB)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* nrmsV, int *iflag)
 //! orthogonalize an mvec against an already orthogonal one.
 void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      TYPE(mvec_ptr) W,
+                     TYPE(const_op_ptr) B,
                      TYPE(sdMat_ptr) R1,
                      TYPE(sdMat_ptr) R2,
                      int numSweeps,
@@ -23,6 +24,11 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   st::sdMat_t *R1p,*R2p,*R1pp;
 
   const_comm_ptr_t comm=NULL;
+
+  if (B!=NULL)
+  {
+    PHIST_SOUT(PHIST_WARNING,"case B!=I not implemented (file %s, line %d)\n",__FILE__,__LINE__);
+  }
 
   bool useSVQB=false;
   *iflag=0;
