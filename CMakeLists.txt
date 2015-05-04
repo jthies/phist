@@ -609,10 +609,12 @@ find_program(GCOVR_SCRIPT gcovr)
 find_program(CPPCHECK_EXECUTABLE cppcheck)
 if (${INTEGRATION_BUILD})
     set(GCOVR_OPTIONS -r src ${GCOVR_EXCLUDES} --xml -o coverage.xml CACHE STRING "String gcovr options")
-    set(CPPCHECK_OPTIONS src --enable=all --xml --xml-version=2 2> cppcheck.xml CACHE STRING "cppcheck options")
+    set(CPPCHECK_OPTIONS src --enable=all --xml --xml-version=2 -q 2> cppcheck.xml CACHE STRING "cppcheck options")
+    set(CTEST_OPTIONS --force-new-ctest-process --verbose CACHE STRING "ctest options")
 else()
     set(GCOVR_OPTIONS -r src ${GCOVR_EXCLUDES} CACHE STRING "String gcovr options")
     set(CPPCHECK_OPTIONS src --enable=all CACHE STRING "cppcheck options")
+    set(CTEST_OPTIONS --force-new-ctest-process --output-on-failure CACHE STRING "ctest options")
 endif()
 
 # Define includes
@@ -842,11 +844,7 @@ endif()
 #add_test(concurrency-test: ${CMAKE_SOURCE_DIR}/test/multiple_helgrind_run.sh ${CMAKE_SOURCE_DIR}/test ${CMAKE_BINARY_DIR})
 
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
-if(INTEGRATION_BUILD)
-  add_custom_target(check COMMAND bash -c \"set -o pipefail\; ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --verbose 2>&1 | gzip -c &> test.log.gz\" COMMENT "Running tests. Output is compressed and written to test.log.gz")
-else()
-  add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --output-on-failure)
-endif()
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} ${CTEST_OPTIONS})
 
 # Activate gcov code generation
 if (CMAKE_COMPILER_IS_GNUCXX AND "${CMAKE_BUILD_TYPE}" MATCHES "Debug")

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e
+set -o pipefail
 
 ## default options and declarations
 # kernel lib
@@ -70,6 +71,9 @@ if [[ "$FLAGS" = *"optional-libs"* ]]; then
 fi
 module list
 
+# be verbose from here on
+set -x
+
 # use ccache to speed up build
 if [[ "$PRGENV" = "gcc"* ]]; then
   export FC="ccache gfortran" CC="ccache gcc" CXX="ccache g++"
@@ -112,10 +116,11 @@ cmake -DCMAKE_BUILD_TYPE=Release  \
       -DPHIST_ENABLE_COMPLEX_TESTS=${CMPLX_TESTS} \
       -DINTEGRATION_BUILD=On      \
       ${CMAKE_FLAGS} \
-      ..                            || error=1
-make doc                            || error=1
-make -j 6 || make                   || error=1
-make check                          || error=1
+      ..                                || error=1
+make doc &> doxygen.log                 || error=1
+make -j 6 || make                       || error=1
+echo "Running tests. Output is compressed and written to test.log.gz"
+make check 2>&1 | gzip -c > test.log.gz || error=1
 cd ..
 
 # debug build
@@ -134,10 +139,11 @@ cmake -DCMAKE_BUILD_TYPE=Debug    \
       -DINTEGRATION_BUILD=On      \
       -DGCC_SANITIZE=address      \
       ${CMAKE_FLAGS} \
-      ..                            || error=1
-make -j 6 || make                   || error=1
-make check                          || error=1
-make audit                          || error=1
+      ..                                || error=1
+make -j 6 || make                       || error=1
+echo "Running tests. Output is compressed and written to test.log.gz"
+make check 2>&1 | gzip -c > test.log.gz || error=1
+make audit                              || error=1
 cd ..
 
 
