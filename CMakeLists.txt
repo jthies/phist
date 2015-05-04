@@ -843,7 +843,7 @@ endif()
 
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
 if(INTEGRATION_BUILD)
-  add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --verbose &> test.log COMMENT "Running tests. Output is written to test.log")
+  add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --verbose 2>&1 | gzip -c &> test.log.gz COMMENT "Running tests. Output is compressed and written to test.log.gz")
 else()
   add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --output-on-failure)
 endif()
