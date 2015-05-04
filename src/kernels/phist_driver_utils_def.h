@@ -260,8 +260,6 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     ghost_lidx_t LL[3];
     LL[0]=L,LL[1]=L,LL[2]=L;
 
-    int L1=L;
-    int L2=L;
     for (int j=1;j<=2;j++) 
     {
       for (int i=pos; i<strlen(problem);i++)
@@ -315,10 +313,9 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     PHIST_SOUT(PHIST_INFO,"problem type: MATPDE %d x %d\n", L, L);
 
     gidx_t nrows = -1;
-    gidx_t ncols = -1;
     lidx_t row_nnz = -1;
     MATPDE_initDimensions(L, L, &nrows, &row_nnz);
-    ncols = nrows;
+    gidx_t ncols = nrows;
     if( *iflag & PHIST_SPARSEMAT_REPARTITION )
     {
       PHIST_SOUT(PHIST_INFO,"Disabling PHIST_SPARSEMAT_REPARTITION; MATPDE features a predefined partitioning!\n");
@@ -331,10 +328,9 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   {
     PHIST_SOUT(PHIST_INFO,"problem type: TriToeplitz 2^%d\n", L);
     gidx_t nrows = -1;
-    gidx_t ncols = -1;
     lidx_t row_nnz = -1;
     TriToeplitz_initDimensions(L, &nrows, &row_nnz);
-    ncols = nrows;
+    gidx_t ncols = nrows;
     if( *iflag & PHIST_SPARSEMAT_REPARTITION )
     {
       PHIST_SOUT(PHIST_INFO,"Disabling PHIST_SPARSEMAT_REPARTITION; TriToeplitz is already tridiagonal!\n");
@@ -347,10 +343,9 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   {
     PHIST_SOUT(PHIST_INFO,"problem type: Brussolator wave model %d^1\n", L);
     gidx_t nrows = -1;
-    gidx_t ncols = -1;
     lidx_t row_nnz = -1;
     Brussolator_initDimensions(L, &nrows, &row_nnz);
-    ncols = nrows;
+    gidx_t ncols = nrows;
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
           nrows, ncols, row_nnz, &Brussolator_rowFunc, iflag), *iflag);
   }
@@ -370,10 +365,9 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     PHIST_SOUT(PHIST_INFO,"problem type: BENCH3D %x %dx%dx%d\n", (uint32_t)which,L, L, L);
 
     gidx_t nrows = -1;
-    gidx_t ncols = -1;
     lidx_t row_nnz = -1;
     MATPDE3D_initDimensions(L, L, L, &nrows, &row_nnz);
-    ncols = nrows;
+    gidx_t ncols = nrows;
     if( *iflag & PHIST_SPARSEMAT_REPARTITION )
     {
       PHIST_SOUT(PHIST_INFO,"Disabling PHIST_SPARSEMAT_REPARTITION; MATPDE3D features a predefined partitioning!\n");
