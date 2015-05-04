@@ -110,6 +110,7 @@ mkdir build_${KERNELS}_${PRGENV}_Release_${FLAGS// /_}; cd $_
 cmake -DCMAKE_BUILD_TYPE=Release  \
       -DPHIST_KERNEL_LIB=$KERNELS \
       -DPHIST_ENABLE_COMPLEX_TESTS=${CMPLX_TESTS} \
+      -DINTEGRATION_BUILD=On      \
       ${CMAKE_FLAGS} \
       ..                            || error=1
 make doc                            || error=1
