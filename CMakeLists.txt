@@ -609,7 +609,7 @@ find_program(GCOVR_SCRIPT gcovr)
 find_program(CPPCHECK_EXECUTABLE cppcheck)
 if (${INTEGRATION_BUILD})
     set(GCOVR_OPTIONS -r src ${GCOVR_EXCLUDES} --xml -o coverage.xml CACHE STRING "String gcovr options")
-    set(CPPCHECK_OPTIONS src --enable=all --xml 2> cppcheck.xml CACHE STRING "cppcheck options")
+    set(CPPCHECK_OPTIONS src --enable=all --xml --xml-version=2 2> cppcheck.xml CACHE STRING "cppcheck options")
 else()
     set(GCOVR_OPTIONS -r src ${GCOVR_EXCLUDES} CACHE STRING "String gcovr options")
     set(CPPCHECK_OPTIONS src --enable=all CACHE STRING "cppcheck options")
@@ -842,7 +842,11 @@ endif()
 #add_test(concurrency-test: ${CMAKE_SOURCE_DIR}/test/multiple_helgrind_run.sh ${CMAKE_SOURCE_DIR}/test ${CMAKE_BINARY_DIR})
 
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --output-on-failure --verbose)
+if(INTEGRATION_BUILD)
+  add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --verbose &> test.log COMMENT "Running tests. Output is written to test.log")
+else()
+  add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --output-on-failure)
+endif()
 
 # Activate gcov code generation
 if (CMAKE_COMPILER_IS_GNUCXX AND "${CMAKE_BUILD_TYPE}" MATCHES "Debug")
