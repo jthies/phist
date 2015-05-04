@@ -118,8 +118,10 @@ void dgemm_sb_inplace_prec_1(int nrows, double *restrict x, const double *restri
   __m256d r_ = _mm256_broadcast_sd(r);
   __m256d rC_ = _mm256_broadcast_sd(rC);
 
+
+  int nrows4 = nrows/4;
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < nrows/4; i++)
+  for(int i = 0; i < nrows4; i++)
   {
     __m256d xi = _mm256_load_pd(&x[4*i]);
     __m256d xir, xirC;
@@ -270,8 +272,9 @@ void dgemm_sb_prec_k_1(int nrows, int k, double alpha, const double *restrict x,
   __m256d beta_ = _mm256_set1_pd(beta);
 
 
+  int nrows4 = nrows/4;
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < nrows/4; i++)
+  for(int i = 0; i < nrows4; i++)
   {
     __m256d oldY = _mm256_load_pd(&y[4*i]);
     __m256d s, t;
@@ -428,8 +431,9 @@ void dgemm_sb_prec_k_1_nt(int nrows, int k, double alpha, const double *restrict
   }
 
 
+  int nrows4 = nrows/4;
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < nrows/4; i++)
+  for(int i = 0; i < nrows4; i++)
   {
     __m256d s = _mm256_setzero_pd();
     __m256d t = _mm256_setzero_pd();
@@ -589,8 +593,9 @@ void dgemm_sb_prec_k_strided_1(int nrows, int k, double alpha, const double *res
   __m256d beta_ = _mm256_set1_pd(beta);
 
 
+  int nrows4 = nrows/4;
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < nrows/4; i++)
+  for(int i = 0; i < nrows4; i++)
   {
     __m256d oldY = _mm256_load_pd(&y[4*i]);
     __m256d s, t;
@@ -746,8 +751,9 @@ void dgemm_sb_prec_k_strided_1_nt(int nrows, int k, double alpha, const double *
   }
 
 
+  int nrows4 = nrows/4;
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < nrows/4; i++)
+  for(int i = 0; i < nrows4; i++)
   {
     __m256d s = _mm256_setzero_pd();
     __m256d t = _mm256_setzero_pd();

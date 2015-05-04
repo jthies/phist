@@ -4,7 +4,7 @@
 extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V_, 
 TYPE(const_sdMat_ptr) M_, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *iflag = 0;
 

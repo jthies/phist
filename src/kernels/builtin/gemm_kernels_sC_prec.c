@@ -306,8 +306,9 @@ void dgemm_sc_prec_2_2(int nrows, const double *restrict x, const double *restri
         c[j] = _mm256_setzero_pd();
       }
 
+      int nrows2 = nrows/2;
 #pragma omp for schedule(static)
-      for(int i = 0; i < nrows/2; i++)
+      for(int i = 0; i < nrows2; i++)
       {
         __m256d xi = _mm256_load_pd(&x[4*i]);
         for(int j = 0; j < 2; j++)
@@ -399,8 +400,9 @@ void dgemm_sc_prec_2_1(int nrows, const double *restrict x, const double *restri
       __m256d s = _mm256_setzero_pd();
       __m256d c = _mm256_setzero_pd();
 
+      int nrows2 = nrows/2;
 #pragma omp for schedule(static)
-      for(int i = 0; i < nrows/2; i++)
+      for(int i = 0; i < nrows2; i++)
       {
         __m256d xi = _mm256_load_pd(&x[4*i]);
         __m256d yij = _mm256_set_pd(y[2*i+1],y[2*i+1],y[2*i],y[2*i]);

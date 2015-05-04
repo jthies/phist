@@ -1799,7 +1799,7 @@ contains
     if( c_associated(mvec_ptr) ) then
       call c_f_pointer(mvec_ptr, mvec)
       if( .not. mvec%is_view) then
-        call free(c_loc(mvec%val))
+        call free(c_loc(mvec%val(1,1)))
       end if
       deallocate(mvec)
     end if
