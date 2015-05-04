@@ -997,7 +997,7 @@ contains
     cy = cos(k*pi*y)
     sz = sin(k*pi*z)
     cz = cos(k*pi*z)
-    exyz=exyz
+    exyz=exp(x*y*z)
 
     ux=sy*sz*exyz*(sx + pi*k*x*cx + x*y*z*sx)
   
@@ -1013,7 +1013,7 @@ contains
     cy = cos(k*pi*y)
     sz = sin(k*pi*z)
     cz = cos(k*pi*z)
-    exyz=exyz
+    exyz=exp(x*y*z)
 
     uy=x*sx*sz*exyz*(pi*k*cy + x*z*sy)
   
@@ -1029,7 +1029,7 @@ contains
     cy = cos(k*pi*y)
     sz = sin(k*pi*z)
     cz = cos(k*pi*z)
-    exyz=exyz
+    exyz=exp(x*y*z)
     
     uz=x*sx*sy*exyz*(pi*k*cz + x*y*sz)
   
@@ -1045,7 +1045,7 @@ contains
     cy = cos(k*pi*y)
     sz = sin(k*pi*z)
     cz = cos(k*pi*z)
-    exyz=exyz
+    exyz=exp(x*y*z)
     
 uxx=sy*sz*exyz*(2.0_8*pi*k*cx + 2*y*z*sx - (pi*k)**2.0*x*sx + x*y*y*z*z*sx + 2.0*pi*k*x*y*z*cx)
   
@@ -1061,7 +1061,7 @@ uxx=sy*sz*exyz*(2.0_8*pi*k*cx + 2*y*z*sx - (pi*k)**2.0*x*sx + x*y*y*z*z*sx + 2.0
     cy = cos(k*pi*y)
     sz = sin(k*pi*z)
     cz = cos(k*pi*z)
-    exyz=exyz
+    exyz=exp(x*y*z)
 
 uyy=x*sx*sz*exyz*(x*x*z*z*sy - (pi*k)**2*sy + 2.0*pi*k*x*z*cy)
   
@@ -1077,7 +1077,7 @@ uyy=x*sx*sz*exyz*(x*x*z*z*sy - (pi*k)**2*sy + 2.0*pi*k*x*z*cy)
     cy = cos(k*pi*y)
     sz = sin(k*pi*z)
     cz = cos(k*pi*z)
-    exyz=exyz
+    exyz=exp(x*y*z)
     
 uzz=x*sx*sy*exyz*(x*x*y*y*sz - (pi*k)**2*sz + 2.0*pi*k*x*y*cz)
 
