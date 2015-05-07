@@ -19,9 +19,22 @@ typedef int MPI_Comm;
 
 #ifdef PHIST_HAVE_GHOST
 #include "ghost/types.h"
+
+#if defined(PHIST_HAVE_CXX11_LAMBDAS)&&defined(__cplusplus)
+#include "ghost/phist_ghost_macros.hpp"
+// some helpful macros
+#define PHIST_MAIN_TASK_BEGIN {int task_ierr = 0; ghost_task_t* mainTask = NULL; phist_execute_lambda_as_ghost_task(&mainTask, [&]()->int {
+#define PHIST_MAIN_TASK_END   return 0;}, &task_ierr, false );PHIST_ICHK_IERR((void)task_ierr,task_ierr);}
+#else
+#define PHIST_MAIN_TASK_BEGIN
+#define PHIST_MAIN_TASK_END
+#endif
+
 #else
 typedef lidx_t ghost_lidx_t;
 typedef gidx_t ghost_gidx_t;
+#define PHIST_MAIN_TASK_BEGIN
+#define PHIST_MAIN_TASK_END
 #endif
 
 #endif
