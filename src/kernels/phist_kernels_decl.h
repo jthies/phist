@@ -448,6 +448,10 @@ void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank
 //! \addtogroup crsmat
 //@{
 
+//! Exchange elements of x between different processes, used to overlap spMVM communication with other operations.
+//! Set the flag PHIST_SPMVM_ONLY_LOCAL in the call to sparseMat_times_mvec* to indicate all data is already there!
+void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr) x, int* iflag);
+
 //! y=alpha*A*x+beta*y.
 
 //! The scalars alpha and beta are expected to be of the

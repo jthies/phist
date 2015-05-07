@@ -21,6 +21,12 @@
 #define PHIST_SPARSEMAT_OPT_SINGLESPMVM 4
 #define PHIST_SPARSEMAT_OPT_BLOCKSPMVM 8
 
+/* sparseMat_times_mvec* */
+#define PHIST_SPMVM_ONLY_LOCAL 2
+#define PHIST_SPMVM_VECTOR 4
+#define PHIST_SPMVM_OVERLAP 8
+#define PHIST_SPMVM_TASK 16
+
 /* accuracy vs. speed */
 #define PHIST_ROBUST_REDUCTIONS 1
 

@@ -14,6 +14,7 @@
 
 void printHello(int n, int* iflag)
 {
+PHIST_TASK_DECLARE(printHelloTask)
 PHIST_TASK_BEGIN(printHelloTask)
   std::cout << "Hello, World! ["<<n<<"]"<<std::endl;
 PHIST_TASK_END(iflag)
@@ -28,6 +29,10 @@ void asyncPrintHello(int* iflag)
   PHIST_CHK_IERR(phist_comm_create(&comm,iflag),*iflag);
   PHIST_CHK_IERR(phist_map_create(&map,comm,(gidx_t)1000,iflag),*iflag);
   PHIST_CHK_IERR(phist_Dmvec_create(&mvec,map,1,iflag),*iflag);
+
+PHIST_TASK_DECLARE(Task1)
+PHIST_TASK_DECLARE(Task2)
+PHIST_TASK_DECLARE(Task3)
 
 PHIST_TASK_BEGIN(Task1)
   sleep(1);
