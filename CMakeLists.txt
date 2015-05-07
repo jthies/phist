@@ -136,20 +136,27 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
 
   if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
-    set (CMAKE_C_FLAGS_DEBUG       "-dH -O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
-    set (CMAKE_CXX_FLAGS_DEBUG     "-dH -O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
-    set (CMAKE_Fortran_FLAGS_DEBUG "-dH -O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all")
+    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all")
   else ()
-    set (CMAKE_C_FLAGS_DEBUG       "-dH -O0 -g -fstack-protector-all -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
-    set (CMAKE_CXX_FLAGS_DEBUG     "-dH -O0 -g -fstack-protector-all -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
-    set (CMAKE_Fortran_FLAGS_DEBUG "-dH -O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all")
+    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -fstack-protector-all -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -fstack-protector-all -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all")
   endif ()
   if (NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
     set(GCC_SANITIZE "" CACHE STRING "What should be sanitized by GCC for a Debug build? (address, thread, undefined, leak or leave empty)")
     if (GCC_SANITIZE)
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${GCC_SANITIZE}")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${GCC_SANITIZE}")
-      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fsanitize=${GCC_SANITIZE}")
+      message(STATUS "Enabled ${GCC_SANITIZE}-sanitizer")
+      if(GCC_SANITIZE STREQUAL "thread")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${GCC_SANITIZE} -fPIC -pie")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${GCC_SANITIZE} -fPIC -pie")
+        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fsanitize=${GCC_SANITIZE} -fPIC -pie")
+      else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${GCC_SANITIZE}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${GCC_SANITIZE}")
+        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fsanitize=${GCC_SANITIZE}")
+      endif()
     endif()
   endif()
 
@@ -158,8 +165,8 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
   message(STATUS "using INTEL compiler flags")
 
-  set (CMAKE_C_FLAGS        "-Wno-unused-variable -mkl -std=c99")
-  set (CMAKE_CXX_FLAGS      "-Wno-unused-variable -mkl -std=c++0x")
+  set (CMAKE_C_FLAGS        "-align -Wno-unused-variable -mkl -std=c99")
+  set (CMAKE_CXX_FLAGS      "-align -Wno-unused-variable -mkl -std=c++0x")
   set (CMAKE_Fortran_FLAGS  "-fpp -mkl -align array64byte")
 
   if( PHIST_ENABLE_OPENMP )
@@ -177,8 +184,8 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -debug")
   set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -debug")
 
-  set (CMAKE_C_FLAGS_DEBUG        "-check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
-  set (CMAKE_CXX_FLAGS_DEBUG      "-check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
+  set (CMAKE_C_FLAGS_DEBUG        "-check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
+  set (CMAKE_CXX_FLAGS_DEBUG      "-check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
   set (CMAKE_Fortran_FLAGS_DEBUG  "-check all -debug -traceback -DTESTING")
 
   # for ipo
@@ -284,6 +291,14 @@ elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
   set(PHIST_KERNEL_LIB_BUILTIN 1)
   set(PHIST_MVECS_ROW_MAJOR 1)
   option(PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS "Try to pin the threads to cores using sched_setaffinity (based on simple heuristics; for Intel use env KMP_AFFINITY=\"granularity=fine,compact,1,0\"" On)
+  option(PHIST_KERNEL_LIB_BUILTIN_AVX2_PREC_KERNELS "Add support for high-precision kernel operations triggered with PHIST_ROBUST_REDUCTIONS, requires AVX2,FMA (e.g. Intel Haswell)" Off)
+  if(PHIST_KERNEL_LIB_BUILTIN_AVX2_PREC_KERNELS)
+    message(STATUS "Activated experimental high-precision builtin kernel routines!")
+    set(PHIST_HIGH_PRECISION_KERNELS 1)
+    set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -mavx -mavx2 -mfma")
+    set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -mavx -mavx2 -mfma")
+    set (CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -mavx -mavx2 -mfma")
+  endif()
 
   if( PHIST_ENABLE_SP )
     message(FATAL_ERROR "Builtin kernel lib does not support single-precision calculations!")
@@ -376,6 +391,9 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_driver_utils.c
                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde.f90
+                          ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde3d.f90
+                          ${PROJECT_SOURCE_DIR}/drivers/matfuncs/tritoeplitz.f90
+                          ${PROJECT_SOURCE_DIR}/drivers/matfuncs/brussolator.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/env_module.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/map_module.f90
@@ -399,10 +417,21 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_BelosAdapter.cpp
                           )
+  if(PHIST_KERNEL_LIB_BUILTIN_AVX2_PREC_KERNELS)
+    set (PHIST_KERNEL_SOURCE ${PHIST_KERNEL_SOURCE}
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/prec_helpers.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_kernels_prec.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/dot_kernels_prec.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB_prec.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sC_prec.c)
+  endif()
 else()
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_driver_utils.c
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde.f90
+                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde3d.f90
+                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/tritoeplitz.f90
+                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/brussolator.f90
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp
                            ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp)
 endif()
@@ -417,7 +446,8 @@ set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.cpp
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_timemonitor.cpp)
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp
-                       ${PROJECT_SOURCE_DIR}/src/core/phist_svqb.cpp)
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_svqb.cpp
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_svrr.cpp)
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedgmres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedminres.cpp
@@ -458,6 +488,9 @@ LIST(APPEND library_list phist_core)
 LIST(APPEND library_list phist_kernels_${PHIST_KERNEL_LIB})
 LIST(APPEND library_list phist_solvers)
 
+target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
+target_link_libraries(phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
+target_link_libraries(phist_solvers phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 
 if (ESSEX-PHYSICS_FOUND)
   target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} ${ESSEX-PHYSICS_LIBRARIES})
@@ -583,10 +616,12 @@ find_program(GCOVR_SCRIPT gcovr)
 find_program(CPPCHECK_EXECUTABLE cppcheck)
 if (${INTEGRATION_BUILD})
     set(GCOVR_OPTIONS -r src ${GCOVR_EXCLUDES} --xml -o coverage.xml CACHE STRING "String gcovr options")
-    set(CPPCHECK_OPTIONS src --enable=all --xml 2> cppcheck.xml CACHE STRING "cppcheck options")
+    set(CPPCHECK_OPTIONS src --enable=all --xml --xml-version=2 -q 2> cppcheck.xml CACHE STRING "cppcheck options")
+    set(CTEST_OPTIONS --force-new-ctest-process --verbose CACHE STRING "ctest options")
 else()
     set(GCOVR_OPTIONS -r src ${GCOVR_EXCLUDES} CACHE STRING "String gcovr options")
     set(CPPCHECK_OPTIONS src --enable=all CACHE STRING "cppcheck options")
+    set(CTEST_OPTIONS --force-new-ctest-process --output-on-failure CACHE STRING "ctest options")
 endif()
 
 # Define includes
@@ -788,7 +823,7 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
     add_test(NAME test-${label}_np${np} COMMAND ${TEST_COMMAND})
     set_tests_properties(test-${label}_np${np} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
     set_tests_properties(test-${label}_np${np} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
-    set_tests_properties(test-${label}_np${np} PROPERTIES TIMEOUT 120)
+    set_tests_properties(test-${label}_np${np} PROPERTIES TIMEOUT 500)
   endforeach()
 endforeach()
 
@@ -816,7 +851,7 @@ endif()
 #add_test(concurrency-test: ${CMAKE_SOURCE_DIR}/test/multiple_helgrind_run.sh ${CMAKE_SOURCE_DIR}/test ${CMAKE_BINARY_DIR})
 
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --output-on-failure --verbose)
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} ${CTEST_OPTIONS})
 
 # Activate gcov code generation
 if (CMAKE_COMPILER_IS_GNUCXX AND "${CMAKE_BUILD_TYPE}" MATCHES "Debug")

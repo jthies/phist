@@ -5,6 +5,7 @@ void SUBR(mvec_QB)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* nrmsV, int *iflag)
 //! orthogonalize an mvec against an already orthogonal one.
 void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      TYPE(mvec_ptr) W,
+                     TYPE(const_op_ptr) B,
                      TYPE(sdMat_ptr) R1,
                      TYPE(sdMat_ptr) R2,
                      int numSweeps,
@@ -23,6 +24,11 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   st::sdMat_t *R1p,*R2p,*R1pp;
 
   const_comm_ptr_t comm=NULL;
+
+  if (B!=NULL)
+  {
+    PHIST_SOUT(PHIST_WARNING,"case B!=I not implemented (file %s, line %d)\n",__FILE__,__LINE__);
+  }
 
   bool useSVQB=false;
   *iflag=0;
@@ -71,7 +77,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     }
     else
     {
-      PHIST_CHK_NEG_IERR(*iflag,*iflag);
+      PHIST_CHK_NEG_IERR((void)*iflag,*iflag);
       *rankVW=k-*iflag;
       *iflag=std::min(*iflag,+1); // iflag=+1 means: [V,W] is rank deficient
     }
@@ -184,7 +190,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   SUBR(mvec_QR)(W,R1,iflag);
   if (*iflag!=PHIST_NOT_IMPLEMENTED)
   {
-    PHIST_CHK_NEG_IERR(*iflag,*iflag);
+    PHIST_CHK_NEG_IERR((void)*iflag,*iflag);
     rankW=k-*iflag;
     // set normW1 to diag(R1)
     _ST_ *R1_raw = NULL;
@@ -394,7 +400,7 @@ void SUBR(mvec_QB)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* nrmsV, int *iflag)
       for (int i=0;i<3;i++)
       {
         // use fallback kernel: SVQB
-        PHIST_CHK_NEG_IERR(SUBR(svqb)(V,B,nrmsV,iflag),*iflag);
+        PHIST_CHK_NEG_IERR(SUBR(svqb)(V,B,nrmsV_ptr,iflag),*iflag);
         // next sweep do not overwrite nrmsV
         nrmsV_ptr=dummy;
         dim0=*iflag;

@@ -41,11 +41,12 @@ PHIST_MAIN_TASK_BEGIN
 
   PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
 
-  if (argc!=4)
+  if (argc!=4 && argc!=5)
   {
-    PHIST_SOUT(PHIST_ERROR,"Usage: %s n m k\n"
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s n m k [high_prec]\n"
                            "       perform k times: \n"
-                           "    * vector_block dot vector_block\n",
+                           "    * vector_block dot vector_block\n"
+                           " set high_prec to 1 to request higher precision calculations!\n",
                            argv[0]);
     return 1;
   }
@@ -63,6 +64,9 @@ PHIST_MAIN_TASK_BEGIN
   
   m=atoi(argv[2]);
   k=atoi(argv[3]);
+  bool high_prec = false;
+  if( argc == 5 )
+    high_prec = atoi(argv[4]);
 
   PHIST_ICHK_IERR(phist_map_create(&map,comm,n,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,m,&ierr),ierr);
@@ -71,6 +75,10 @@ PHIST_MAIN_TASK_BEGIN
   for (int it=0; it<k; it++)
   {
     ST value[m];
+    if( high_prec )
+      ierr = PHIST_ROBUST_REDUCTIONS;
+    else
+      ierr = 0;
     PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(X,Y,value,&ierr),ierr);
   }
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&ierr),ierr);

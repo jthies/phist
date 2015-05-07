@@ -126,7 +126,7 @@ public:
   }
 };
 
-  // check ones(n,m)'*ones(n,k)=n*ones(m,k)
+  // check ones(n,m)'*ones(n,k)=n*ones(m,k), and columns with 1, 2, 3...
   TEST_F(CLASSNAME, mvecT_times_mvec) 
   {
     if (typeImplemented_)
@@ -150,11 +150,238 @@ public:
       V2Test::PrintVector(*cout,"ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
+      ASSERT_EQ(0,iflag_);
+
+      // fill rows with 1,2,3,4, ...
+      for (int ii=0; ii< nloc_; ii++)
+      {
+        for (int j=0; j<k_; j++)
+          V2_vp_[VIDX(ii,j,ldaV2_)] = -st::one()*(_MT_)(j+1);
+        for (int i=0; i<m_; i++)
+          V1_vp_[VIDX(ii,i,ldaV1_)] = st::one()*(_MT_)((i+1)*1.0l/nglob_);
+      }
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // check result
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for(int i = 0; i < m_; i++)
+      {
+        for(int j = 0; j < k_; j++)
+        {
+          _MT_ val = -mt::one()*(i+1)*(j+1);
+          ASSERT_NEAR(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*10*mt::eps());
+          ASSERT_NEAR(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*10*mt::eps());
+        }
+      }
+
+      // fill columns with row/i and row/(i+1)
+      // exploits sum_(k=1)^n 1/(k*(k+1)) = 1 - 1/(n+1)
+      gidx_t ilower;     
+      phist_map_get_ilower(map_,&ilower,&iflag_);
+      for (int ii=0; ii< nloc_; ii++)
+      {
+        for (int j=0; j<k_; j++)
+          V2_vp_[VIDX(ii,j,ldaV2_)] = (_ST_) -st::one()*(_MT_)((j+1)*1.0l/(ilower+ii+1));
+        for (int i=0; i<m_; i++)
+          V1_vp_[VIDX(ii,i,ldaV1_)] = (_ST_) st::one()*(_MT_)((i+1)*1.0l/(ilower+ii+2));
+      }
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // check result
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for(int i = 0; i < m_; i++)
+      {
+        for(int j = 0; j < k_; j++)
+        {
+          _MT_ val = -mt::one()*(i+1)*(j+1)*(1.0l - 1.0l/(_N_+1));
+          ASSERT_NEAR(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*10*mt::eps());
+          ASSERT_NEAR(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*10*mt::eps());
+        }
+      }
+
+
+    }
+  }
+
+#if ( _M_ == _K_ )
+  // check ones(n,m)'*ones(n,m)=n*ones(m,m), and columns with 1, 2, 3...
+  TEST_F(CLASSNAME, mvecT_times_mvec_self) 
+  {
+    if( typeImplemented_ && m_ == k_ )
+    {
+      // fill V and W with ones
+      SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V1_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      SUBR(mvec_from_device)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      V1Test::PrintVector(*cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      MTest::PrintSdMat(*cout,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
+#endif
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
+      ASSERT_EQ(0,iflag_);
+
+      // fill rows with 1,2,3,4, ...
+      for (int ii=0; ii< nloc_; ii++)
+      {
+        for (int j=0; j<k_; j++)
+          V1_vp_[VIDX(ii,j,ldaV1_)] = -st::one()*(_MT_)(j+1);
+      }
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V1_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // check result
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for(int i = 0; i < m_; i++)
+      {
+        for(int j = 0; j < m_; j++)
+        {
+          _MT_ val = mt::one()*(i+1)*(j+1)*_N_;
+          ASSERT_NEAR(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*10*mt::eps()*_N_);
+          ASSERT_NEAR(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*10*mt::eps()*_N_);
+        }
+      }
+    }
+  }
+#endif
+
+#if( _M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 )
+  // check ones(n,m)'*ones(n,k)=n*ones(m,k)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  TEST_F(CLASSNAME, mvecT_times_mvec_prec) 
+#else
+  TEST_F(CLASSNAME, DISABLED_mvecT_times_mvec_prec) 
+#endif
+  {
+    if (typeImplemented_)
+    {
+      // fill V and W with ones
+      SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_put_value)(V2_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+//SUBR(sdMat_print)(M1_, &iflag_);
       ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
+
+      // fill rows with 1,2,3,4, ...
+      for (int ii=0; ii< nloc_; ii++)
+      {
+        for (int j=0; j<k_; j++)
+          V2_vp_[VIDX(ii,j,ldaV2_)] = -st::one()*(_MT_)(j+1);
+        for (int i=0; i<m_; i++)
+          V1_vp_[VIDX(ii,i,ldaV1_)] = st::one()*(_MT_)((i+1)*1./nglob_);
+      }
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // check result
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for(int i = 0; i < m_; i++)
+      {
+        for(int j = 0; j < k_; j++)
+        {
+          _MT_ val = -mt::one()*(i+1)*(j+1);
+          ASSERT_REAL_EQ(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]));
+          ASSERT_REAL_EQ(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]));
+        }
+      }
+
+      // fill columns with row/i and row/(i+1)
+      // exploits sum_(k=1)^n 1/(k*(k+1)) = 1 - 1/(n+1)
+      gidx_t ilower;     
+      phist_map_get_ilower(map_,&ilower,&iflag_);
+      for (int ii=0; ii< nloc_; ii++)
+      {
+        for (int j=0; j<k_; j++)
+          V2_vp_[VIDX(ii,j,ldaV2_)] = (_ST_) -st::one()*(_MT_)((j+1)*1.0l/(ilower+ii+1));
+        for (int i=0; i<m_; i++)
+          V1_vp_[VIDX(ii,i,ldaV1_)] = (_ST_) st::one()*(_MT_)((i+1)*1.0l/(ilower+ii+2));
+      }
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // check result
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for(int i = 0; i < m_; i++)
+      {
+        for(int j = 0; j < k_; j++)
+        {
+          _MT_ val = -mt::one()*(i+1)*(j+1)*(1.0l - 1.0l/(_N_+1));
+          ASSERT_NEAR(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]), 100*mt::eps());
+          ASSERT_NEAR(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), 100*mt::eps());
+        }
+      }
+
+
     }
   }
+
+#if ( _M_ == _K_ )
+  // check ones(n,m)'*ones(n,k)=n*ones(m,k)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  TEST_F(CLASSNAME, mvecT_times_mvec_prec_self) 
+#else
+  TEST_F(CLASSNAME, DISABLED_mvecT_times_mvec_prec_self) 
+#endif
+  {
+    if( typeImplemented_ && m_ == k_ )
+    {
+      // fill V and W with ones
+      SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V1_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+//SUBR(sdMat_print)(M1_, &iflag_);
+      ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // fill rows with 1,2,3,4, ...
+      for (int ii=0; ii< nloc_; ii++)
+      {
+        for (int j=0; j<k_; j++)
+          V1_vp_[VIDX(ii,j,ldaV1_)] = -st::one()*(_MT_)(j+1);
+      }
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V1_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // check result
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for(int i = 0; i < m_; i++)
+      {
+        for(int j = 0; j < k_; j++)
+        {
+          _MT_ val = mt::one()*(i+1)*(j+1)*_N_;
+          ASSERT_REAL_EQ(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]));
+          ASSERT_REAL_EQ(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]));
+        }
+      }
+    }
+  }
+#endif
+#endif
+
 
   // check ones(n,m)'*ones(n,m)=n*ones(m,m)
   TEST_F(CLASSNAME, mvecT_times_mvec_with_manual_comparison) 
@@ -179,45 +406,121 @@ public:
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
     
-    
-      MT err_r=mt::zero();
-      MT err_i=mt::zero();
+#ifdef IS_COMPLEX
+#define _ST_PREC_ std::complex<long double>
+#define CONJ_PREC(x) std::conj(x)
+#else
+#define _ST_PREC_ long double
+#define CONJ_PREC(x) x
+#endif
       for (int i=0; i<m_; i++)
+      {
         for (int j=0; j<k_; j++)
         {
-          ST err_ij=st::zero();
-          // manually compute V1(:,i)*V2(:,j) using compensated summation ("Kahan")
-          // for achieving good accuracy
-          // (http://en.wikipedia.org/wiki/Kahan_summation_algorithm)
-          ST c = st::zero(); // a running compensation for lost low-order bits
+// melven: Kahan summation here will most probably not work, see remarks below
+// * compiler optimization!
+// * one can also improve the multiplication
+// * high precision examples are in src/kernels/builtin/*prec*
+// -> long double for reference data should be the better way (hoping/checking that long double != double!)
+          _ST_PREC_ dot_ij = (_ST_PREC_)0;
+          long double dotAbs_ij = (long double)0;
           for (int ii=0; ii< nloc_; ii++)
           {
-            ST y = st::conj(V1_vp_[VIDX(ii,i,ldaV1_)])
-                 *          V2_vp_[VIDX(ii,j,ldaV2_)] - c; // c is 0 in the beginning
-            ST t = err_ij + y;          // err_ij is big, y small, so low-order digits of y are lost.
-            c = (t - err_ij) - y;  // (t - err_ij) recovers the high-order part of y; 
-                                   // subtracting y recovers -(low part of y)
-            err_ij = t;           // Algebraically, c should always 
-                                  // be zero. Beware overly-aggressive optimizing 
-                                  // compilers!
-                                  // Next time around, the lost low part will 
-                                  // be added to y in a fresh attempt.
-
+            _ST_PREC_ tmp = CONJ_PREC(V1_vp_[VIDX(ii,i,ldaV1_)])*V2_vp_[VIDX(ii,j,ldaV2_)];
+            dot_ij += tmp;
+            dotAbs_ij += std::abs(tmp);
           }
 #ifdef PHIST_HAVE_MPI
-          // TODO - we should use Kahan summation here as well, but since our tests are not
-          // carried out on many processes, it doesn't matter right now.
-          ST err_ij_local=err_ij;
-          MPI_Allreduce(&err_ij_local,&err_ij,1,st::mpi_type(),MPI_SUM,mpi_comm_);
+#ifdef IS_COMPLEX
+          MPI_Allreduce(MPI_IN_PLACE,&dot_ij,2,MPI_LONG_DOUBLE,MPI_SUM,mpi_comm_);
+#else
+          MPI_Allreduce(MPI_IN_PLACE,&dot_ij,1,MPI_LONG_DOUBLE,MPI_SUM,mpi_comm_);
 #endif
-          err_ij-=M1_vp_[MIDX(i,j,ldaM1_)];
-          err_r=std::max(err_r,st::real(err_ij));
-          err_i=std::max(err_i,st::imag(err_ij));
+          MPI_Allreduce(MPI_IN_PLACE,&dotAbs_ij,1,MPI_LONG_DOUBLE,MPI_SUM,mpi_comm_);
+#endif
+          _MT_ cond = dotAbs_ij / std::abs(dot_ij);
+          EXPECT_NEAR(st::real((_ST_)dot_ij), st::real(M1_vp_[MIDX(i,j,ldaM1_)]), dotAbs_ij*cond*1000*mt::eps());
+          EXPECT_NEAR(st::imag((_ST_)dot_ij), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), dotAbs_ij*cond*1000*mt::eps());
         }
-      ASSERT_NEAR(mt::zero(),err_r,100*mt::eps());
-      ASSERT_NEAR(mt::zero(),err_i,100*mt::eps());
+      }
     }
+#undef _ST_PREC_
+#undef CONJ_PREC
   }
+
+
+#if( _M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 )
+  // check ones(n,m)'*ones(n,m)=n*ones(m,m)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  TEST_F(CLASSNAME, mvecT_times_mvec_with_manual_comparison_prec_hard)
+#else
+  TEST_F(CLASSNAME, DISABLED_mvecT_times_mvec_with_manual_comparison_prec_hard)
+#endif
+  {
+    if (typeImplemented_)
+    {
+      // fill V and W with random numbers
+      SUBR(mvec_random)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(mvec_from_device)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    
+#ifdef IS_COMPLEX
+#define _ST_PREC_ std::complex<long double>
+#define CONJ_PREC(x) std::conj(x)
+#else
+#define _ST_PREC_ long double
+#define CONJ_PREC(x) x
+#endif
+      for (int i=0; i<m_; i++)
+      {
+        for (int j=0; j<k_; j++)
+        {
+// melven: Kahan summation here will most probably not work, see remarks below
+// * compiler optimization!
+// * one can also improve the multiplication
+// * high precision examples are in src/kernels/builtin/*prec*
+// -> long double for reference data should be the better way (hoping/checking that long double != double!)
+          _ST_PREC_ dot_ij = (_ST_PREC_)0;
+          long double dotAbs_ij = (long double)0;
+          for (int ii=0; ii< nloc_; ii++)
+          {
+            _ST_PREC_ tmp = CONJ_PREC(V1_vp_[VIDX(ii,i,ldaV1_)])*V2_vp_[VIDX(ii,j,ldaV2_)];
+            dot_ij += tmp;
+            dotAbs_ij += std::abs(tmp);
+          }
+#ifdef PHIST_HAVE_MPI
+#ifdef IS_COMPLEX
+          MPI_Allreduce(MPI_IN_PLACE,&dot_ij,2,MPI_LONG_DOUBLE,MPI_SUM,mpi_comm_);
+#else
+          MPI_Allreduce(MPI_IN_PLACE,&dot_ij,1,MPI_LONG_DOUBLE,MPI_SUM,mpi_comm_);
+#endif
+          MPI_Allreduce(MPI_IN_PLACE,&dotAbs_ij,1,MPI_LONG_DOUBLE,MPI_SUM,mpi_comm_);
+#endif
+          _MT_ cond = dotAbs_ij / std::abs(dot_ij);
+          PHIST_SOUT(PHIST_INFO, "error: %e (cond. number: %e, eps: %e)\n", st::abs((_ST_)dot_ij-M1_vp_[MIDX(i,j,ldaM1_)]),cond,mt::eps());
+          EXPECT_NEAR(st::real((_ST_)dot_ij), st::real(M1_vp_[MIDX(i,j,ldaM1_)]), 10*cond*mt::eps());
+          EXPECT_NEAR(st::imag((_ST_)dot_ij), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), 10*cond*mt::eps());
+        }
+      }
+    }
+#undef _ST_PREC_
+#undef CONJ_PREC
+  }
+#endif
 
   // check ones(n,m)*ones(m,k)=m*ones(n,k),
   // and ones(n,m)*ones(m,k)-m*ones(n,k)=0
@@ -266,8 +569,64 @@ public:
     }
   }
 
-#if (_M_>=_K_)
+#if( _K_ == 1 || _K_ == 2 || _K_ == 4 )
+  // check ones(n,m)*ones(m,k)=m*ones(n,k),
+  // and ones(n,m)*ones(m,k)-m*ones(n,k)=0
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  TEST_F(CLASSNAME, mvec_times_sdMat_prec)
+#else
+  TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_prec)
+#endif
+  {
+    if (typeImplemented_)
+    {
+      // fill V and W with ones
+      SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_put_value)(V2_,(MT)42.0*st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_put_value)(M1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,st::zero(),V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      SUBR(mvec_from_device)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      V1Test::PrintVector(*cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      MTest::PrintSdMat(*cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
+      V2Test::PrintVector(*cout,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+#endif
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,(ST)m_));
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // with adding to factor*(input vector)
+      ST alpha=2.0+2.0*st::cmplx_I();
+      SUBR(mvec_put_value)(V2_,(ST)m_*alpha,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,-st::one()/alpha,V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,st::zero()));
 
+      // with adding factor*V*C to input vector
+      SUBR(mvec_put_value)(V2_,(MT)m_*alpha,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_times_sdMat)(-alpha,V1_,M1_,st::one(),V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,st::zero()));
+    }
+  }
+#endif
+
+
+#if (_M_>=_K_)
   // check ones(n,m)*ones(m,m)=m*ones(n,m)
   TEST_F(CLASSNAME, mvec_times_sdMat_in_place)
   {
@@ -347,6 +706,75 @@ public:
       ASSERT_EQ(0,iflag_);
     }
   }
+
+#if( _K_ == 1 || _K_ == 2 || _K_ == 4 )
+  // check ones(n,m)*ones(m,m)=m*ones(n,m)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  TEST_F(CLASSNAME, mvec_times_sdMat_in_place_prec)
+#else
+  TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_in_place_prec)
+#endif
+  {
+    if (typeImplemented_ && m_ == k_ )
+    {
+      // fill V and W with ones
+      SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_put_value)(M1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_times_sdMat_inplace)(V1_,M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      TYPE(mvec_ptr) V_cols=NULL;
+      SUBR(mvec_view_block)(V1_,&V_cols,0,k_-1,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(V_cols,(ST)m_));
+   
+      SUBR(mvec_delete)(V_cols,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+  }
+
+  // check ones(n,m)*ones(m,m)=m*ones(n,m)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  TEST_F(CLASSNAME, mvec_times_sdMat_in_place_with_random_data_prec)
+#else
+  TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_in_place_with_random_data_prec)
+#endif
+  {
+    if (typeImplemented_ && m_ == k_ )
+    {
+      // fill V and W with ones
+      SUBR(mvec_random)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_random)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_sync_values)(M1_, comm_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,st::zero(),V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_times_sdMat_inplace)(V1_,M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+  
+      TYPE(mvec_ptr) V_cols=NULL;
+      SUBR(mvec_view_block)(V1_,&V_cols,0,k_-1,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_NEAR(mt::one(),MvecsEqual(V_cols,V2_),sqrt(mt::eps()));
+   
+      SUBR(mvec_delete)(V_cols,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+  }
+#endif
+
+
 #if (_M_==_K_)
   // check that we can zero out some columns of V by multiplying
   // a view of them with a zero sdMat.
@@ -477,12 +905,69 @@ public:
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::one(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
   
-      // TODO - how much accuracy should we demand? With Kahan summation it should
-      //        be accurate to machine precision, but without it probably won't...
-      ASSERT_NEAR(mt::one(),SdMatEqual(M1_,st::zero()),100*mt::eps());
+      // but for large cases we need to respect the condition number as it won't be zero at all
+      _MT_ normV1[_M_];
+      SUBR(mvec_norm2)(V1_, normV1, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      _MT_ normV2[_K_];
+      SUBR(mvec_norm2)(V2_, normV2, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      _MT_ maxNorm12 = mt::zero();
+      for(int i = 0; i < _M_; i++)
+        for(int j = 0; j < _K_; j++)
+          maxNorm12 = std::max(maxNorm12, normV1[i]*normV2[j]);
+
+      ASSERT_NEAR(mt::one(),SdMatEqual(M1_,st::zero()),maxNorm12*100*mt::eps());
     
     }
   }
+
+#if( _M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 )
+  // random check
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  TEST_F(CLASSNAME, random_mvecT_times_mvec_prec) 
+#else
+  TEST_F(CLASSNAME, DISABLED_random_mvecT_times_mvec_prec) 
+#endif
+  {
+    if (typeImplemented_)
+    {
+      // fill V and W with ones
+      SUBR(mvec_random)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    
+      // to check the result, scale V1 by -1, add V1'V2 again and compare with 0
+      SUBR(mvec_scale)(V1_,-st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::one(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+  
+      // but for large cases we need to respect the condition number as it won't be zero at all
+      _MT_ normV1[_M_];
+      SUBR(mvec_norm2)(V1_, normV1, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      _MT_ normV2[_K_];
+      SUBR(mvec_norm2)(V2_, normV2, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      _MT_ maxNorm12 = mt::zero();
+      for(int i = 0; i < _M_; i++)
+        for(int j = 0; j < _K_; j++)
+          maxNorm12 = std::max(maxNorm12, normV1[i]*normV2[j]);
+
+      // TODO: what is the correctly required precision here? 
+      ASSERT_NEAR(mt::one(),SdMatEqual(M1_,st::zero()),mt::sqrt(maxNorm12)*100*mt::eps());
+    }
+  }
+#endif
 
   // random check with partial views of partial mvecs and sdMats
   TEST_F(CLASSNAME, random_mvecT_times_mvec_with_inside_views)
@@ -500,6 +985,18 @@ public:
       off1.push_back(1);  m1.push_back(1);  off2.push_back(0);  m2.push_back(6);  off1_M.push_back(4);  off2_M.push_back(0);
       off1.push_back(3);  m1.push_back(5);  off2.push_back(0);  m2.push_back(1);  off1_M.push_back(2);  off2_M.push_back(3);
       off1.push_back(7);  m1.push_back(2);  off2.push_back(4);  m2.push_back(3);  off1_M.push_back(1);  off2_M.push_back(2);
+
+      // for large cases we need to respect the condition number (which requires sum |v1_i*v2_i| bounded by the ||v_1|| * ||v_2||)
+      _MT_ normV1[_M_];
+      SUBR(mvec_norm2)(V1_, normV1, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      _MT_ normV2[_K_];
+      SUBR(mvec_norm2)(V2_, normV2, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      _MT_ maxNorm12 = mt::one();
+      for(int i = 0; i < _M_; i++)
+        for(int j = 0; j < _K_; j++)
+          maxNorm12 = std::max(maxNorm12, normV1[i]*normV2[j]);
 
       for(int i = 0; i < off1.size(); i++)
       {
@@ -614,7 +1111,7 @@ public:
         // the result should be zero!
         SUBR(sdMat_from_device)(M3,&iflag_);
         ASSERT_EQ(0,iflag_);
-        ASSERT_NEAR(mt::one(),ArrayEqual(M3_vp,m1[i],m2[i],lda_M3,stride_,st::zero(),mflag_),200*mt::eps());
+        ASSERT_NEAR(mt::one(),ArrayEqual(M3_vp,m1[i],m2[i],lda_M3,stride_,st::zero(),mflag_),_N_*maxNorm12*10*mt::eps());
 
         // subtract the two viewed blocks in the result sdMats
         SUBR(sdMat_add_sdMat)(-st::one(),M1, st::one(),M2,&iflag_);
@@ -623,7 +1120,7 @@ public:
         // the result should be zero!
         SUBR(sdMat_from_device)(M2_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        ASSERT_NEAR(mt::one(),ArrayEqual(M2_vp_,m_,k_,ldaM2_,stride_,st::zero(),mflag_),200*mt::eps());
+        ASSERT_NEAR(mt::one(),ArrayEqual(M2_vp_,m_,k_,ldaM2_,stride_,st::zero(),mflag_),_N_*maxNorm12*10*mt::eps());
 
         // clean up at the end of the loop
         SUBR(mvec_delete)(V1,&iflag_);

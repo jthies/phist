@@ -233,6 +233,18 @@ void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
   for(int i = 0; i < nselected; i++)
     permutation[i] = i;
 
+#ifndef IS_COMPLEX
+  // check for complex-conjugate eigenpairs
+  for(int i = 0; i < nselected; i++)
+  {
+    if( mt::abs(ct::imag(ev[i])) > mt::eps() )
+    {
+      PHIST_SOUT(PHIST_ERROR,"reordering does not work for complex-conjugate eigenpairs in the real case!");
+      PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+    }
+  }
+#endif
+
   // work array for lapack
 #ifndef IS_COMPLEX
   _ST_ work[m];
@@ -250,6 +262,7 @@ void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
       int pos = 1;
       while( pos < nselected )
       {
+/*
 #ifndef IS_COMPLEX
         // we cannot reorder conjugate complex eigenpairs currently
         if( ct::imag(ev[pos]) != 0 || ct::imag(ev[pos-1]) != 0 )
@@ -258,6 +271,7 @@ void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
           continue;
         }
 #endif
+*/
         // check if the next eigenvalue has same "magnitude"
         if( which == LM && ct::abs(ev[pos]) < ct::abs(ev[pos-1])-tol )
         {
@@ -305,10 +319,6 @@ void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
         std::swap(resNorm[pos],resNorm[pos-1]);
         std::swap(permutation[pos],permutation[pos-1]);
         std::swap(ev[pos],ev[pos-1]);
-
-#ifndef IS_COMPLEX
-#warning "reordering does not work for complex-conjugate eigenpairs in the real case!"
-#endif
 
         const char* compq = "V";
         int ifst = pos;

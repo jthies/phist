@@ -8,6 +8,8 @@
 #include "phist_macros.h"
 #include "phist_kernels.h"
 #include "phist_lapack.h"
+#include "phist_enums.h"
+#include "phist_schur_decomp.h"
 
 #include "phist_ScalarTraits.hpp"
 

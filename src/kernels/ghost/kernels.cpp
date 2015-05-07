@@ -315,6 +315,34 @@ extern "C" void phist_totalMatVecCount()
 }
 #endif
 
+static void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
+{
+  *C = PHIST_SELL_C;
+  *sigma = PHIST_SELL_SIGMA;
+  if( flags & PHIST_SPARSEMAT_OPT_SINGLESPMVM )
+  {
+    *C = 32;
+    *sigma = 256;
+  }
+  if( flags & PHIST_SPARSEMAT_OPT_BLOCKSPMVM )
+  {
+    *C = 8;
+    *sigma = 32;
+  }
+
+  // override with max(C,32) if anything runs on a CUDA device
+  ghost_type_t gtype;
+  ghost_type_get(&gtype);
+  if (gtype==GHOST_TYPE_CUDA)
+  {
+    *C=std::max(*C,32);
+    *sigma=std::max(256,*sigma);
+  }
+  MPI_Allreduce(MPI_IN_PLACE,C,1,MPI_INT,MPI_MAX,comm);
+  MPI_Allreduce(MPI_IN_PLACE,sigma,1,MPI_INT,MPI_MAX,comm);
+
+}
+
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "kernels_def.hpp"

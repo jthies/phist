@@ -315,6 +315,13 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag);
 //! put random numbers into all elements of a small dense matrix \ingroup sdmat
 void SUBR(sdMat_random)(TYPE(sdMat_ptr) V, int* iflag);
 
+//! set all mvec elements V(i,j) by calling a function for each element
+void SUBR(mvec_put_func)(TYPE(mvec_ptr) *V,
+        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag);
+
+//! put identity matrix into a small dense matrix \ingroup sdmat
+void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag);
+
 //! print a vector to the screen (for debugging) \ingroup mvec
 void SUBR(mvec_print)(TYPE(const_mvec_ptr) V, int* iflag);
 
@@ -403,14 +410,39 @@ void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
                               _ST_ beta,       TYPE(sdMat_ptr) C,
                               int* iflag);
 
-//! C=beta*C+alpha*V'W. \ingroup sdmat
+//! C=beta*C+alpha*V'*W. \ingroup sdmat
 
-//! n x m conj. transposed small dense matrix times m x k small dense matrix gives m x k small dense matrix,
-//! C=alpha*V*W + beta*C
+//! m x n conj. transposed small dense matrix times m x k small dense matrix gives n x k small dense matrix,
+//! C=alpha*V'*W + beta*C
 void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
-                                           TYPE(const_sdMat_ptr) W, 
-                               _ST_ beta, TYPE(sdMat_ptr) C,
-                                       int* iflag);
+                                          TYPE(const_sdMat_ptr) W, 
+                              _ST_ beta,        TYPE(sdMat_ptr) C,
+                              int* iflag);
+
+//! C=beta*C+alpha*V*W'. \ingroup sdmat
+
+//! n x m small dense matrix times conj. transposed k x m small dense matrix gives n x k small dense matrix,
+//! C=alpha*V*W' + beta*C
+void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
+                                          TYPE(const_sdMat_ptr) W, 
+                              _ST_ beta,        TYPE(sdMat_ptr) C,
+                              int* iflag);
+
+//! cholesky decomposition. \ingroup sdmat
+
+//! stable cholesky factorization with pivoting and rank-recognition for hpd. matrix
+//! returns permuted lower triangular cholesky factor M for M <- M*M'
+void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, int* iflag);
+
+//! backward substitution. \ingroup sdmat
+
+//! backward substitution for pivoted upper triangular cholesky factor
+void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag);
+
+//! forward substitution. \ingroup sdmat
+
+//! forward substitution for pivoted conj. transposed upper triangular cholesky factor
+void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag);
 
 
 //! \addtogroup crsmat

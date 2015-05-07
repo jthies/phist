@@ -50,18 +50,8 @@ PHIST_GHOST_TASK_BEGIN
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
 #ifdef PHIST_USE_SELL
-  int sellC = PHIST_SELL_C;
-  int sellSigma = PHIST_SELL_SIGMA;
-  if( *iflag & PHIST_SPARSEMAT_OPT_SINGLESPMVM )
-  {
-    sellC = 32;
-    sellSigma = 256;
-  }
-  if( *iflag & PHIST_SPARSEMAT_OPT_BLOCKSPMVM )
-  {
-    sellC = 8;
-    sellSigma = 32;
-  }
+  int sellC, sellSigma;
+  get_C_sigma(&sellC,&sellSigma,*iflag, *((MPI_Comm*)vcomm));
   PHIST_SOUT(PHIST_INFO, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
 #endif
   *iflag=0;
@@ -131,18 +121,8 @@ PHIST_GHOST_TASK_BEGIN
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
 #ifdef PHIST_USE_SELL
-  int sellC = PHIST_SELL_C;
-  int sellSigma = PHIST_SELL_SIGMA;
-  if( *iflag & PHIST_SPARSEMAT_OPT_SINGLESPMVM )
-  {
-    sellC = 32;
-    sellSigma = 256;
-  }
-  if( *iflag & PHIST_SPARSEMAT_OPT_BLOCKSPMVM )
-  {
-    sellC = 8;
-    sellSigma = 32;
-  }
+  int sellC, sellSigma;
+  get_C_sigma(&sellC,&sellSigma,*iflag, *((MPI_Comm*)vcomm));
   PHIST_SOUT(PHIST_INFO, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
 #endif
   *iflag=0;
@@ -301,7 +281,7 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   if (ghost_type == GHOST_TYPE_CUDA) 
   {
     // for development purposes, allocate both host and device side right now
-    vtraits.location = GHOST_LOCATION_HOSTDEVICE;
+    vtraits.location = (ghost_location_t)(GHOST_LOCATION_HOST|GHOST_LOCATION_DEVICE);
 //    vtraits.location = GHOST_LOCATION_DEVICE;
   } 
   else 
@@ -393,7 +373,7 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
   if (ghost_type == GHOST_TYPE_CUDA) 
   {
-    dmtraits.location = GHOST_LOCATION_HOSTDEVICE;
+    dmtraits.location = (ghost_location_t)(GHOST_LOCATION_HOST|GHOST_LOCATION_DEVICE);
   } 
   else 
   {
@@ -551,6 +531,8 @@ extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t*
 
 extern "C" void SUBR(mvec_to_device)(TYPE(mvec_ptr) vV, int* iflag)
 {
+  *iflag=0;
+#ifdef GHOST_HAVE_CUDA
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V, vV, *iflag);
   PHIST_SOUT(PHIST_DEBUG,"ghost densemat upload\n"
@@ -562,27 +544,37 @@ extern "C" void SUBR(mvec_to_device)(TYPE(mvec_ptr) vV, int* iflag)
                          V->traits.nrowspadded, V->traits.ncolspadded);
   PHIST_SOUT(PHIST_DEBUG,"V flags: %d\n",(int)V->traits.flags);
   PHIST_CHK_GERR(V->upload(V),*iflag);
+#endif
 }
 
 extern "C" void SUBR(mvec_from_device)(TYPE(mvec_ptr) vV, int* iflag)
 {
+  *iflag=0;
+#ifdef GHOST_HAVE_CUDA
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V, vV, *iflag);
   PHIST_CHK_GERR(V->download(V),*iflag);
+#endif
 }
 
 extern "C" void SUBR(sdMat_to_device)(TYPE(sdMat_ptr) vM, int* iflag)
 {
+  *iflag=0;
+#ifdef GHOST_HAVE_CUDA
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M, vM, *iflag);
   PHIST_CHK_GERR(M->upload(M),*iflag);
+#endif
 }
 
 extern "C" void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) vM, int* iflag)
 {
+  *iflag=0;
+#ifdef GHOST_HAVE_CUDA
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M, vM, *iflag);
   PHIST_CHK_GERR(M->download(M),*iflag);
+#endif
 }
 
 extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* iflag)
@@ -608,11 +600,11 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   if (resultPermuted==inputPermuted) return;
   if (resultPermuted)
   {
-    PHIST_CHK_GERR(V_out->permute(V_out,GHOST_PERMUTATION_ORIG2PERM),*iflag);
+//    PHIST_CHK_GERR(V_out->permute(V_out,GHOST_PERMUTATION_ORIG2PERM),*iflag);
   }
   else
   {
-    PHIST_CHK_GERR(V_out->permute(V_out,GHOST_PERMUTATION_PERM2ORIG),*iflag);
+//    PHIST_CHK_GERR(V_out->permute(V_out,GHOST_PERMUTATION_PERM2ORIG),*iflag);
   }
   return;
 }
@@ -987,6 +979,18 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
 PHIST_GHOST_TASK_END
 }
 
+extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) *vV,
+        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag=0;
+  PHIST_GHOST_TASK_BEGIN
+  PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
+  PHIST_CHK_GERR(V->fromFunc(V,(void(*)(ghost_gidx_t,ghost_lidx_t,void*))funPtr),*iflag);
+  PHIST_GHOST_TASK_END
+}
+
 //! put scalar value into all elements of a multi-vector
 extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vV, _ST_ value, int* iflag)
 {
@@ -997,6 +1001,24 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
   V->fromScalar(V,(void*)&value);
 PHIST_GHOST_TASK_END
+}
+
+//! put scalar value into all elements of a multi-vector
+extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag = 0;
+
+  _ST_ *V_raw = NULL;
+  lidx_t lda;
+  int m, n;
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(V, &V_raw, &lda, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(V, &m, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(V, &n, iflag), *iflag);
+  for(int i = 0; i < m; i++)
+    for(int j = 0; j < n; j++)
+      V_raw[lda*i+j] = (i==j) ? st::one() : st::zero();
 }
 
 //! put random numbers into all elements of a multi-vector
@@ -1420,9 +1442,24 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   W->traits.nrows,W->traits.ncols,
   C->traits.nrows,C->traits.ncols);
 
+  // note: we do the MPI_Allreduce manually because of a present ghost bug (#185),
+  //       MPI_Allreduce called from two different places if there are GPU processes.
   PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_ALL_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
-PHIST_GHOST_TASK_END
+/*            
+  PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
+  // manual all-reduction on ghost_densemat_t
+  ghost_mpi_op_t sumOp;
+  ghost_mpi_datatype_t mpiDt;
+  PHIST_CHK_GERR(ghost_mpi_op_sum(&sumOp,C->traits.datatype),*iflag);
+  PHIST_CHK_GERR(ghost_mpi_datatype(&mpiDt,C->traits.datatype),*iflag);
+
+  if (V->context) 
+  {
+    PHIST_CHK_IERR(*iflag=MPI_Allreduce(MPI_IN_PLACE,C->val,C->traits.ncols,mpiDt,sumOp,V->context->mpicomm),*iflag);
   }
+*/
+PHIST_GHOST_TASK_END
+}
 
 
 //! n x m multi-vector times m x k dense matrix gives n x k multi-vector,
@@ -1532,6 +1569,48 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   PHIST_CHK_GERR(ghost_gemm(C, V, trans,W, (char*)"N", (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_GHOST_TASK_END
   }
+
+//! n x m serial dense matrix times k x m conj. transposed serial dense matrix gives m x k sdMat,
+//! C=alpha*V*W + beta*C (serial XGEMM wrapper)
+extern "C" void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
+                                         TYPE(const_sdMat_ptr) vW,
+                              _ST_ beta, TYPE(sdMat_ptr) vC,
+                                         int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag=0;
+PHIST_GHOST_TASK_BEGIN
+PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,C,vC,*iflag);
+#ifdef IS_COMPLEX
+  char trans[]="C";
+#else
+  char trans[]="T";
+#endif  
+  PHIST_CHK_GERR(ghost_gemm(C, V, (char*)"N", W, trans, (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
+PHIST_GHOST_TASK_END
+  }
+
+//! stable cholesky factorization with pivoting and rank-recognition for hpd. matrix
+//! returns permuted lower triangular cholesky factor M for M <- M*M'
+extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+
+//! backward substitution for pivoted upper triangular cholesky factor
+extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+
+//! forward substitution for pivoted conj. transposed upper triangular cholesky factor
+extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
 
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.   
@@ -1700,18 +1779,8 @@ PHIST_GHOST_TASK_BEGIN
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
 #ifdef PHIST_USE_SELL
-  int sellC = PHIST_SELL_C;
-  int sellSigma = PHIST_SELL_SIGMA;
-  if( *iflag & PHIST_SPARSEMAT_OPT_SINGLESPMVM )
-  {
-    sellC = 32;
-    sellSigma = 256;
-  }
-  if( *iflag & PHIST_SPARSEMAT_OPT_BLOCKSPMVM )
-  {
-    sellC = 8;
-    sellSigma = 32;
-  }
+  int sellC, sellSigma;
+  get_C_sigma(&sellC,&sellSigma,*iflag, *((MPI_Comm*)vcomm));
   PHIST_SOUT(PHIST_INFO, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
 #endif
   *iflag=0;

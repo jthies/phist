@@ -72,8 +72,8 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _declare(None, _prefix+'op_identity', (_op_ptr, c_int_p), skip_if_missing=True)
 
     # from phist_orthog_decl.h
-    #void SUBR(orthog)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W, TYPE(sdMat_ptr) R1, TYPE(sdMat_ptr) R2, int numSweeps, int* rankVW, int* iflag);
-    _declare(None, _prefix+'orthog', (_mvec_ptr, _mvec_ptr, _sdMat_ptr, _sdMat_ptr, c_int, c_int_p, c_int_p), skip_if_missing=True)
+    #void SUBR(orthog)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W, TYPE(const_op_ptr) B, TYPE(sdMat_ptr) R1, TYPE(sdMat_ptr) R2, int numSweeps, int* rankVW, int* iflag);
+    _declare(None, _prefix+'orthog', (_mvec_ptr, _mvec_ptr, _op_ptr, _sdMat_ptr, _sdMat_ptr, c_int, c_int_p, c_int_p), skip_if_missing=True)
 
 
 #--------------------------------------------------------------------------------
@@ -117,11 +117,11 @@ if __name__ == '__main__':
 
     # QR-orthogonalize vec1
     rnkV = ctypes.c_int()
-    PYST_CHK_NEG_IERR(phist_Dorthog, None, vec1, mat1, None, 1, rnkV)
+    PYST_CHK_NEG_IERR(phist_Dorthog, None, vec1, None, mat1, None, 1, rnkV)
 
     # orthogonalize vec2 wrt. vec1
     rnkVW = ctypes.c_int()
-    PYST_CHK_NEG_IERR(phist_Dorthog, vec1, vec2, mat2, mat3, 3, rnkVW)
+    PYST_CHK_NEG_IERR(phist_Dorthog, vec1, vec2, None, mat2, mat3, 3, rnkVW)
 
     # delete sdMats
     PYST_CHK_IERR(phist_DsdMat_delete, mat3)

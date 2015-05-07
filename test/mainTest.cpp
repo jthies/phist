@@ -13,17 +13,20 @@
 
 #include "gtest/gtest.h"
 #include "kernels/phist_kernels.h"
-#ifdef PHIST_KERNEL_LIB_GHOST
+#if defined(PHIST_KERNEL_LIB_GHOST)&&defined(PHIST_HAVE_CXX11_LAMBDAS)&&defined(__cplusplus)
 #include "ghost/phist_ghost_macros.hpp"
+// some helpful macros
+#define PHIST_MAIN_TASK_BEGIN {int task_ierr = 0; ghost_task_t* mainTask = NULL; phist_execute_lambda_as_ghost_task(&mainTask, [&]()->int {
+#define PHIST_MAIN_TASK_END   return 0;}, &task_ierr, false );PHIST_ICHK_IERR((void)task_ierr,task_ierr);}
 #else
-#define PHIST_GHOST_TASK_BEGIN
-#define PHIST_GHOST_TASK_END
+#define PHIST_MAIN_TASK_BEGIN
+#define PHIST_MAIN_TASK_END
 #endif
 
 GTEST_API_ int main(int argc, char **argv) {
     int iflag,test_result;
     phist_kernels_init(&argc,&argv,&iflag);
-    PHIST_GHOST_TASK_BEGIN
+    PHIST_MAIN_TASK_BEGIN
     testing::InitGoogleTest(&argc, argv);
 
     int rank = 0;
@@ -45,7 +48,7 @@ GTEST_API_ int main(int argc, char **argv) {
 
     test_result=RUN_ALL_TESTS();
 
-    PHIST_GHOST_TASK_END
+    PHIST_MAIN_TASK_END
     phist_kernels_finalize(&iflag);
     //ASSERT_INT_EQ(iflag,0);
     return test_result;

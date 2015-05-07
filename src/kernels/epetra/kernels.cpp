@@ -152,7 +152,11 @@ extern "C" void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* 
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_BlockMap,map,vmap,*iflag);
   if (map->LinearMap()==false) *iflag=1;
+#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
   *ilower = map->MinMyGID();
+#else
+  *ilower = map->MinMyGID64();
+#endif
   }
 //! returns the largest global index in the map appearing on my partition. iflag is set to 1
 //! in case the map is not contiguous, because in that case it may be that the
@@ -162,7 +166,11 @@ extern "C" void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* 
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_BlockMap,map,vmap,*iflag);
   if (map->LinearMap()==false) *iflag=1;
+#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
   *iupper = map->MaxMyGID();
+#else
+  *iupper = map->MaxMyGID64();
+#endif
   }
 
 #ifdef PHIST_TIMEMONITOR

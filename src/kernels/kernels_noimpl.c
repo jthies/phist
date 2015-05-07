@@ -208,6 +208,11 @@ void SUBR(sdMat_random)(TYPE(sdMat_ptr) M, int* iflag)
   *iflag=-99;
 }
 
+void SUBR(sdMat_identity)(TYPE(sdMat_ptr) M, int* iflag)
+{
+  *iflag=-99;
+}
+
 void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) V,
     _MT_* vnrm, int* iflag)
 {
@@ -297,6 +302,29 @@ void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
 void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
     TYPE(const_sdMat_ptr) W, 
     _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
+{
+  *iflag=-99;
+}
+
+void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
+                                          TYPE(const_sdMat_ptr) W, 
+                              _ST_ beta,        TYPE(sdMat_ptr) C,
+                              int* iflag)
+{
+  *iflag=-99;
+}
+
+void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, int* iflag)
+{
+  *iflag=-99;
+}
+
+void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
+{
+  *iflag=-99;
+}
+
+void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
 {
   *iflag=-99;
 }
