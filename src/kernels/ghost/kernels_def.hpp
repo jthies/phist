@@ -1419,22 +1419,7 @@ PHIST_GHOST_CHK_IN_TASK(__FUNCTION__, *iflag);
   W->traits.nrows,W->traits.ncols,
   C->traits.nrows,C->traits.ncols);
 
-  // note: we do the MPI_Allreduce manually because of a present ghost bug (#185),
-  //       MPI_Allreduce called from two different places if there are GPU processes.
   PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_ALL_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
-/*            
-  PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
-  // manual all-reduction on ghost_densemat_t
-  ghost_mpi_op_t sumOp;
-  ghost_mpi_datatype_t mpiDt;
-  PHIST_CHK_GERR(ghost_mpi_op_sum(&sumOp,C->traits.datatype),*iflag);
-  PHIST_CHK_GERR(ghost_mpi_datatype(&mpiDt,C->traits.datatype),*iflag);
-
-  if (V->context) 
-  {
-    PHIST_CHK_IERR(*iflag=MPI_Allreduce(MPI_IN_PLACE,C->val,C->traits.ncols,mpiDt,sumOp,V->context->mpicomm),*iflag);
-  }
-*/
 PHIST_GHOST_TASK_END
 }
 
