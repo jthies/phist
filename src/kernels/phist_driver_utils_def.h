@@ -115,6 +115,8 @@ int TriToeplitz_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
 void MATPDE3D_initDimensions(int, int, int, gidx_t*, lidx_t*);
 void MATPDE3D_selectProblem(int which, int* iflag);
 int MATPDE3D_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
+int MATPDE3D_solFunc(gidx_t, lidx_t, void*);
+int MATPDE3D_rhsFunc(gidx_t, lidx_t, void*);
 // definitions for Brussolator
 void Brussolator_initDimensions(int, gidx_t*, lidx_t*);
 int Brussolator_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
@@ -436,3 +438,39 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
 
 }
 #endif
+
+//! For testing linear solvers, generates an 'exact solution' sol and right-hand side rhs
+//! for some matrix creted by create_matrix. For most test cases, this will be some random
+//! sol vector and the rhs is computed by rhs=A*sol, but for the cases stemming from PDEs
+//! (BENCH3D-A*,B*) we presribe an analytical solution and generate the correct F for it.
+//! The mvecs sol and rhs must be created beforehand and may have an arbitrary number of 
+//! columns.
+void SUBR(create_sol_and_rhs)(const char* problem, TYPE(const_sparseMat_ptr) A,
+                        TYPE(mvec_ptr) sol, TYPE(mvec_ptr) rhs, int* iflag)
+{
+
+  PHIST_ENTER_FCN(__FUNCTION__);
+  *iflag=0;
+  int done=0;
+  // only the MATPDE3D Benchmark problems have
+  // an implementation for providing an analytical
+  // solution and exact RHS vector, for the other
+  // cases (and matrices read from a file), we use
+  // a random vector X and compute B=A*X.
+#if defined(IS_DOUBLE) && !defined(IS_COMPLEX)
+  if (str_starts_with(problem,"BENCH3D"))
+  {
+    // MATPDE3D provides these for us
+    SUBR(mvec_put_func)(sol,&MATPDE3D_solFunc,iflag);
+    if (*iflag==0) done=1;
+    SUBR(mvec_put_func)(rhs,&MATPDE3D_rhsFunc,iflag);
+    if (*iflag==0) done&=1;
+  }
+#endif
+  if (!done)
+  {
+    // if not, or not a BENCH3D case, set sol=random and rhs=A*sol
+    PHIST_CHK_IERR(SUBR(mvec_random)(sol,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(ONE,A,sol,ZERO,rhs,iflag),*iflag);
+  }
+}
