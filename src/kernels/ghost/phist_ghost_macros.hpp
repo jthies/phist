@@ -6,6 +6,7 @@
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
+#include "phist_macros.h"
 
 #include <ghost.h>
 #include <ghost/machine.h>
@@ -15,24 +16,45 @@
 
 // glue between C++11 Lambda-functions and plain old C function pointers
 template<typename LFunc>
-void phist_execute_lambda_as_ghost_task(LFunc context)
+void phist_execute_lambda_as_ghost_task(ghost_task_t **task, LFunc context, int* iflag, bool async)
 {
-  // a Lambda without capture can be converted automatically to a plain old C function pointer
-  auto void_lambda_caller = [] (void* context) -> void* {(*(LFunc*)context)(); return NULL;};
+  // ghost requires a task function of the form "void* f(void*)"
+  // a Lambda without capture can be converted automatically to a plain old C function pointer,
+  // but the context goes out of scope when this function is left (so we copy it to the heap and destroy it here!)
+  auto void_lambda_caller = [] (void* context) -> void* {
+    LFunc* pContext = (LFunc*)context;  // get the pointer to the context-lambda-object
+    (*pContext)();                      // actually run the target function
+    delete pContext;                    // delete the copy of the lambda-function-object
+    return NULL;                        // we do not return anything
+  };
 
-  ghost_task_t *task = NULL;
-  ghost_task_create(&task, GHOST_TASK_FILL_ALL, 0, void_lambda_caller, (void*) &context, 
-        GHOST_TASK_DEFAULT, NULL, 0);
+  // actually create the task and copy the context to the heap
+  PHIST_CHK_GERR(ghost_task_create(task, async ? 0 : GHOST_TASK_FILL_ALL, 0, void_lambda_caller, (void*) new LFunc(context), GHOST_TASK_DEFAULT, NULL, 0), *iflag);
 PHIST_DEB("enqueuing C++11-lambda as GHOST task and waiting for it\n");
-  ghost_task_enqueue(task);
-  ghost_task_wait(task);
-  ghost_task_destroy(task);
+  PHIST_CHK_GERR(ghost_task_enqueue(*task), *iflag);
+  if( async )
+    return;
+
+  PHIST_CHK_GERR(ghost_task_wait(*task), *iflag);
+  ghost_task_destroy(*task);
+  *task = NULL;
+}
+
+void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
+{
+  PHIST_CHK_IERR(*iflag = (*task != NULL) ? PHIST_SUCCESS : PHIST_WARNING, *iflag);
+
+  PHIST_CHK_GERR(ghost_task_wait(*task), *iflag);
+  ghost_task_destroy(*task);
+  *task = NULL;
 }
 
 // some helpful macros
 
-#define PHIST_GHOST_TASK_BEGIN phist_execute_lambda_as_ghost_task( [&]() -> void {
-#define PHIST_GHOST_TASK_END   } );
+#define PHIST_GHOST_TASK_BEGIN(taskName) ghost_task_t* taskName = NULL; phist_execute_lambda_as_ghost_task(&taskName, [&]() -> void {
+#define PHIST_GHOST_TASK_END(task_ierr)          }, task_ierr, false);PHIST_CHK_IERR((void)*(task_ierr),*(task_ierr));
+#define PHIST_GHOST_TASK_END_NOWAIT(task_ierr)   }, task_ierr, true );PHIST_CHK_IERR((void)*(task_ierr),*(task_ierr));
+#define PHIST_GHOST_TASK_WAIT(taskName,task_ierr) PHIST_CHK_IERR(phist_wait_ghost_task(&taskName,task_ierr),*(task_ierr));
 
 #else /* PHIST_HAVE_CXX11_LAMBDAS */
 

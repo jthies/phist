@@ -77,7 +77,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     }
     else
     {
-      PHIST_CHK_NEG_IERR(*iflag,*iflag);
+      PHIST_CHK_NEG_IERR((void)*iflag,*iflag);
       *rankVW=k-*iflag;
       *iflag=std::min(*iflag,+1); // iflag=+1 means: [V,W] is rank deficient
     }
@@ -190,7 +190,7 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   SUBR(mvec_QR)(W,R1,iflag);
   if (*iflag!=PHIST_NOT_IMPLEMENTED)
   {
-    PHIST_CHK_NEG_IERR(*iflag,*iflag);
+    PHIST_CHK_NEG_IERR((void)*iflag,*iflag);
     rankW=k-*iflag;
     // set normW1 to diag(R1)
     _ST_ *R1_raw = NULL;
@@ -400,7 +400,7 @@ void SUBR(mvec_QB)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* nrmsV, int *iflag)
       for (int i=0;i<3;i++)
       {
         // use fallback kernel: SVQB
-        PHIST_CHK_NEG_IERR(SUBR(svqb)(V,B,nrmsV,iflag),*iflag);
+        PHIST_CHK_NEG_IERR(SUBR(svqb)(V,B,nrmsV_ptr,iflag),*iflag);
         // next sweep do not overwrite nrmsV
         nrmsV_ptr=dummy;
         dim0=*iflag;

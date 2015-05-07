@@ -440,7 +440,7 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) *vV,
     for (int j=0; j<V->NumVectors(); j++)
     {
       gidx_t row=V->Map().GID(i);
-      funPtr(row,j,V->Pointers[j]+i);
+      funPtr(row,j,V->Pointers()[j]+i);
     }
   }
 }
