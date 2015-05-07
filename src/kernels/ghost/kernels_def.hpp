@@ -30,6 +30,7 @@ const char* filename,int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
 
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
@@ -100,6 +101,7 @@ const char* filename,int* iflag)
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
 
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
@@ -247,6 +249,7 @@ extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vV,
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
 #include "phist_std_typedefs.hpp"
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(const ghost_map_t, map,vmap,*iflag);
   ghost_densemat_t* result;
@@ -334,10 +337,8 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
-  MPI_Comm comm_self=MPI_COMM_SELF;
-  MPI_Comm* comm=&comm_self;
-  if (vcomm!=NULL) comm=(MPI_Comm*)vcomm;
 #include "phist_std_typedefs.hpp"
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   ghost_densemat_t* result;
   ghost_densemat_traits_t dmtraits=GHOST_DENSEMAT_TRAITS_INITIALIZER;
@@ -655,6 +656,7 @@ extern "C" void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,Vblock,vVblock,*iflag);
@@ -685,6 +687,7 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,Vblock,vVblock,*iflag);
@@ -815,6 +818,7 @@ extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,Mblock,vMblock,*iflag);
@@ -867,6 +871,7 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,Mblock,vMblock,*iflag);
 
@@ -948,6 +953,7 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, _ST_ value, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
   PHIST_DEB("put value, V @ %p. V->traits.nrows=%" PRlidx "\n",V,V->traits.nrows);
@@ -960,6 +966,7 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) *vV,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+PHIST_TASK_DECLARE(ComputeTask)
   PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
   PHIST_CHK_GERR(V->fromFunc(V,(void(*)(ghost_gidx_t,ghost_lidx_t,void*))funPtr),*iflag);
@@ -971,6 +978,7 @@ extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vV, _ST_ value, int* iflag
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
   V->fromScalar(V,(void*)&value);
@@ -1000,6 +1008,7 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
   V->fromRand(V);
@@ -1038,6 +1047,7 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*iflag);
   M->fromRand(M);
@@ -1049,6 +1059,7 @@ extern "C" void SUBR(sdMat_sync_values)(TYPE(sdMat_ptr) vM, const_comm_ptr_t vco
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_mpi_comm_t,comm,vcomm,*iflag);
@@ -1100,6 +1111,7 @@ extern "C" void SUBR(mvec_scale)(TYPE(mvec_ptr) vV,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);  
   V->scale(V,(void*)&scalar);
@@ -1113,6 +1125,7 @@ extern "C" void SUBR(mvec_vscale)(TYPE(mvec_ptr) vV,
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
 #include "phist_std_typedefs.hpp"  
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);  
   V->vscale(V,(void*)scalar);
@@ -1127,6 +1140,7 @@ extern "C" void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vX,
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
 #include "phist_std_typedefs.hpp"
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,X,vX,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,Y,vY,*iflag);
@@ -1166,6 +1180,7 @@ extern "C" void SUBR(mvec_vadd_mvec)(const _ST_ *alpha, TYPE(const_mvec_ptr) vX,
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
 #include "phist_std_typedefs.hpp"
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,X,vX,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,Y,vY,*iflag);
@@ -1197,12 +1212,49 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(alpha,vA,beta,vB,iflag), *iflag);
 }
 
+
+//! spMVM communication
+extern "C" void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  *iflag=0;
+
+  PHIST_CAST_PTR_FROM_VOID(ghost_sparsemat_t,A,vA,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,x,vx,*iflag);
+
+#ifdef GHOST_HAVE_MPI
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN(ComputeTask)
+    ghost_densemat_halo_comm_t comm = GHOST_DENSEMAT_HALO_COMM_INITIALIZER;
+    PHIST_CHK_GERR(x->halocommInit(x,&comm),*iflag);
+    PHIST_CHK_GERR(x->halocommStart(x,&comm),*iflag);
+    PHIST_CHK_GERR(x->halocommFinalize(x,&comm),*iflag);
+PHIST_TASK_END(iflag)
+#endif
+}
+
 //! y=alpha*A*x+beta*y.
 extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
 _ST_ beta, TYPE(mvec_ptr) vy, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
+  ghost_spmv_flags_t spMVM_opts=GHOST_SPMV_DEFAULT;
+  // ghost spmvm mode
+  if( *iflag & PHIST_SPMVM_ONLY_LOCAL )
+    spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_NOMPI);
+  else if( *iflag & PHIST_SPMVM_VECTOR )
+    spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_VECTOR);
+  else if( *iflag & PHIST_SPMVM_OVERLAP )
+    spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_OVERLAP);
+  else if( *iflag & PHIST_SPMVM_TASK )
+    spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_TASK);
+  else
+  {
+    // defaults to vector
+    spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_VECTOR);
+  }
   *iflag=0;
 
 #ifdef PHIST_TIMEMONITOR
@@ -1224,6 +1276,7 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* iflag)
     }
     else if (beta!=st::one())
     {
+    PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
       y->scale(y,(void*)&beta);
 PHIST_TASK_END(iflag);
@@ -1231,10 +1284,8 @@ PHIST_TASK_END(iflag);
   }
   else
   {
+  PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
-    ghost_spmv_flags_t spMVM_opts=GHOST_SPMV_DEFAULT;
-    // currently the vector mode is the only one working with MPI and multiple RHS
-    spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_VECTOR);
     //void* old_scale = A->traits->scale;
     if (beta==st::one())
     {
@@ -1247,11 +1298,12 @@ PHIST_TASK_BEGIN(ComputeTask)
     if (alpha!=st::one())
     {
       spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_SCALE);
-      *iflag=ghost_spmv(y,A,x,&spMVM_opts,&alpha,&beta);
+      PHIST_CHK_GERR(ghost_spmv(y,A,x,&spMVM_opts,&alpha,&beta),*iflag);
     }
     else
     {
-      *iflag=ghost_spmv(y,A,x,&spMVM_opts,&beta);
+      PHIST_CHK_GERR(ghost_spmv(y,A,x,&spMVM_opts,&beta),*iflag);
+
     }
 PHIST_TASK_END(iflag);
   }
@@ -1291,6 +1343,7 @@ extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_spar
   }
   else
   {
+  PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
     int nvec;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, iflag), *iflag);
@@ -1352,6 +1405,7 @@ extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) vV, TYPE(const_mvec_ptr
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*iflag);
   // NOTE: calculate local dot by hand and do the reduction by hand
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   //ghost_dot(s,V,W);
   PHIST_CHK_GERR(V->dot(V,s,W),*iflag);
@@ -1395,6 +1449,7 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE
   /*
   PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_ALL_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
   */
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_TASK_END(iflag);
@@ -1413,6 +1468,7 @@ extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
     PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
     *iflag=0;
 #include "phist_std_typedefs.hpp"
+  PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
     PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
     PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,C,vC,*iflag);
@@ -1446,6 +1502,7 @@ extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) vV,
     PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
 #include "phist_std_typedefs.hpp"
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
     PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
     PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,C,vC,*iflag);
@@ -1476,6 +1533,7 @@ extern "C" void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*iflag);
@@ -1494,6 +1552,7 @@ extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*iflag);
@@ -1516,6 +1575,7 @@ extern "C" void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*iflag);
@@ -1710,6 +1770,7 @@ void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, const_comm_ptr_
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
 
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;

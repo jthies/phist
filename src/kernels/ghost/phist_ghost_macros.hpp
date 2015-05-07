@@ -63,7 +63,8 @@ inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
 
 // some helpful macros
 
-#define PHIST_TASK_BEGIN(taskName) ghost_task_t* taskName = NULL; phist_execute_lambda_as_ghost_task(&taskName, [&]() -> void {
+#define PHIST_TASK_DECLARE(taskName) ghost_task_t* taskName = NULL;
+#define PHIST_TASK_BEGIN(taskName) phist_execute_lambda_as_ghost_task(&taskName, [&]() -> void {
 #define PHIST_TASK_END(task_ierr)          }, task_ierr, false);PHIST_CHK_IERR((void)*(task_ierr),*(task_ierr));
 #define PHIST_TASK_END_NOWAIT(task_ierr)   }, task_ierr, true );PHIST_CHK_IERR((void)*(task_ierr),*(task_ierr));
 #define PHIST_TASK_WAIT(taskName,task_ierr) PHIST_CHK_IERR(phist_wait_ghost_task(&taskName,task_ierr),*(task_ierr));
@@ -72,6 +73,7 @@ inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
 
 #warning "C++11 not supported, not using GHOST tasking mechanism!"
 
+#define PHIST_TASK_DECLARE(taskName)
 #define PHIST_TASK_BEGIN(taskName)
 #define PHIST_TASK_END(task_ierr)
 #define PHIST_TASK_END_NOWAIT(task_ierr)
