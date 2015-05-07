@@ -247,14 +247,28 @@ int main(int argc, char** argv)
 
   PHIST_SOUT(PHIST_INFO, "subspacejada terminated after %d iterations and calculated %d eigenvalues.", nIter, nConvergedEig);
   PHIST_SOUT(PHIST_INFO, "\n eigenvalues:              ");
-  for(int i = 0; i < nEig; i++)
-    PHIST_SOUT(PHIST_INFO, "\t( %8.4e + i%8.4e )", ct::real(ev[i]), ct::imag(ev[i]));
-  PHIST_SOUT(PHIST_INFO, "\n (est.) ritz residual norm:");
-  for(int i = 0; i < nEig; i++)
-    PHIST_SOUT(PHIST_INFO, "\t%8.4e                  ", resNorm[i]);
-  PHIST_SOUT(PHIST_INFO, "\n explicit residual norm:   ");
-  for(int i = 0; i < nEig; i++)
-    PHIST_SOUT(PHIST_INFO, "\t%8.4e                  ", resNormExp[i]);
+  if( symmetric )
+  {
+    for(int i = 0; i < nEig; i++)
+      PHIST_SOUT(PHIST_INFO, "\t%8.4e", ct::real(ev[i]));
+    PHIST_SOUT(PHIST_INFO, "\n (est.) ritz residual norm:");
+    for(int i = 0; i < nEig; i++)
+      PHIST_SOUT(PHIST_INFO, "\t%8.4e", resNorm[i]);
+    PHIST_SOUT(PHIST_INFO, "\n explicit residual norm:   ");
+    for(int i = 0; i < nEig; i++)
+      PHIST_SOUT(PHIST_INFO, "\t%8.4e", resNormExp[i]);
+  }
+  else
+  {
+    for(int i = 0; i < nEig; i++)
+      PHIST_SOUT(PHIST_INFO, "\t( %8.4e + i%8.4e )", ct::real(ev[i]), ct::imag(ev[i]));
+    PHIST_SOUT(PHIST_INFO, "\n (est.) ritz residual norm:");
+    for(int i = 0; i < nEig; i++)
+      PHIST_SOUT(PHIST_INFO, "\t%8.4e                  ", resNorm[i]);
+    PHIST_SOUT(PHIST_INFO, "\n explicit residual norm:   ");
+    for(int i = 0; i < nEig; i++)
+      PHIST_SOUT(PHIST_INFO, "\t%8.4e                  ", resNormExp[i]);
+  }
   PHIST_SOUT(PHIST_INFO, "\n");
 
 

@@ -46,7 +46,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         SUBR(sdMat_create)(&Rtmp,_NVP_,_NVP_,comm_,&iflag_);
         ASSERT_EQ(0,iflag_);
         int rankQ=0;
-        SUBR(orthog)(NULL,q_,Rtmp,NULL,4,&rankQ,&iflag_);
+        SUBR(orthog)(NULL,q_,NULL,Rtmp,NULL,4,&rankQ,&iflag_);
         ASSERT_GE(iflag_,0);
         SUBR(sdMat_delete)(Rtmp,&iflag_);
         ASSERT_EQ(0,iflag_);

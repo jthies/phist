@@ -31,6 +31,15 @@
 //! In the complex case is_cmplx is not referenced.
 //! iflag: return code of the solver (0 on success, negative on error, positive on warning)
 //!
+
+// First a forward decleration of a helper function to compute the residual
+void SUBR(computeResidual)(TYPE(const_op_ptr) B_op, TYPE(mvec_ptr) r_ptr,
+        TYPE(mvec_ptr) Au_ptr, TYPE(mvec_ptr) u_ptr, TYPE(mvec_ptr) rtil_ptr,
+        TYPE(mvec_ptr) Qv, TYPE(mvec_ptr) tmp, TYPE(sdMat_ptr) Theta,
+        TYPE(sdMat_ptr) atil, TYPE(sdMat_ptr) *atilv, _MT_ *resid,
+        int nv, int nconv, int* iflag);
+
+// Now the actual main function
 void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
         TYPE(mvec_ptr) X, _ST_* evals, _MT_* resid, int* is_cmplx,
         phist_jadaOpts_t opts, int* num_eigs, int* num_iters,
@@ -63,7 +72,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   mvec_ptr_t    u_r=NULL, Au_r=NULL, r_r=NULL, rtil_r=NULL, t_r=NULL;
 #endif
   // these point either to u or u_r etc. to make live simpler further down
-  mvec_ptr_t u_ptr=NULL, Au_ptr=NULL, r_ptr=NULL, rtil_ptr=NULL,t_ptr=NULL;
+  mvec_ptr_t u_ptr=NULL, Au_ptr=NULL, r_ptr=NULL, rtil_ptr=NULL, t_ptr=NULL;
   // Q*s (temporary vector)
   sdMat_ptr_t atil=NULL, atilv=NULL;
   // matrix <V,AV>
@@ -104,15 +113,15 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   std::complex<MT> ev[maxBas];
   
   int i,it,m,mm;
-  MT nrm[2]; // for computing residual norms
+  MT res_nrm; // residual norm
   MT prev_nrm; // previous norm, to detect wether we're still working on the same eigenvalue
-  
+
   // set output format for floating point numbers
   std::cout << std::scientific << std::setprecision(4) << std::setw(8);
 
   *num_iters=0;
   *num_eigs=0;
-  nrm[0]=1.0e20;// some random large value 
+  res_nrm=1.0e20;// some random large value 
   const_comm_ptr_t comm;
   PHIST_CHK_IERR(phist_map_get_comm(A_op->range_map,&comm,iflag),*iflag);
 
@@ -152,7 +161,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   // orthogonalizing against [V Q], which is of dimension up to n x (maxBas+numEigs)
   PHIST_CHK_IERR(SUBR(sdMat_create)(&S,maxVecs+numEigs,maxVecs+numEigs,comm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&T,maxVecs+numEigs,maxVecs+numEigs,comm,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&R,numEigs,numEigs,comm,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&R,numEigs+1,numEigs+1,comm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,st::zero(),iflag),*iflag);
 
   PHIST_CHK_IERR(SUBR(sdMat_create)(&atil,maxVecs,nv_max,comm,iflag),*iflag);
@@ -296,7 +305,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
           PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,Qv,m0,ncVQ-1,iflag),*iflag);
           }
         int rankV;
-        PHIST_CHK_NEG_IERR(SUBR(orthog)(Vv,t_ptr,Tv,Sv,3,&rankV,iflag),*iflag);
+        PHIST_CHK_NEG_IERR(SUBR(orthog)(Vv,t_ptr,B_op,Tv,Sv,3,&rankV,iflag),*iflag);
         // reset the view of V without the Q.
         PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m0-1,iflag),*iflag);
       }
@@ -441,47 +450,14 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     //Au=AV*s;
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),AVv,Sv,st::zero(),Au_ptr,iflag),*iflag);
 
-    prev_nrm=nrm[0];
-    
-// part CMP_RESID: compute residual and its norm (TODO: make this a helper function)
-//{
-    // r=Au-theta*u; ([r_r, r_i] = [Au_r, Au_i] - [u_r, u_i]*Theta in the real case with 
-    // complex theta)
-    
-    // first: r=Au
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),Au_ptr,st::zero(),r_ptr,iflag),*iflag);
+    prev_nrm=res_nrm;
 
-    // update r = r - U*Theta
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),u_ptr,Theta,st::one(),r_ptr,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(computeResidual)(B_op, r_ptr, Au_ptr, u_ptr,
+        rtil_ptr, Qv, Vtmp, Theta, atil, &atilv, &res_nrm, nv, nconv, iflag),*iflag);
 
-    // set rtil=r
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r_ptr,st::zero(),rtil_ptr,iflag),*iflag);
-
-    // project out already converged eigenvectors
-    // TODO - we could use our orthog routine here instead
-    if (nconv>0)
-      {
-      // view next ~a, a temporary vector to compute ~a=Q'*r
-      PHIST_CHK_IERR(SUBR(sdMat_view_block)(atil,&atilv,0,nconv-1,0,nv-1,iflag),*iflag);
-     
-      //atil = Q'*r;
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Qv,r_ptr,st::zero(),atilv,iflag),*iflag);
-    
-      //rtil = r-Q*atil;
-      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,atilv,st::one(),rtil_ptr,iflag),*iflag);
-      }
-
-    //nrm=norm(rtil);
-    // real case with complex r: ||v+iw||=sqrt((v+iw).'*(v-iw))=sqrt(v'v+w'w).
-    // in the complex case we pass in a 're-interpret cast' of nrm as complex,
-    // which should be fine (imaginary part will be 0).
-    nrm[1]=mt::zero();
-    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(rtil_ptr,rtil_ptr,(ST*)nrm,iflag),*iflag);
-    nrm[0]=mt::sqrt(nrm[0]+nrm[1]);
-//}
-    PHIST_SOUT(PHIST_INFO,"JDQR Iter %d\tdim(V)=%d\ttheta=%8.4g%+8.4gi\t\tr_est=%8.4e\n",it,m,ct::real(theta),ct::imag(theta),nrm[0]);
+    PHIST_SOUT(PHIST_INFO,"JDQR Iter %d\tdim(V)=%d\ttheta=%8.4g%+8.4gi\t\tr_est=%8.4e\n",it,m,ct::real(theta),ct::imag(theta),res_nrm);
   // deflate converged eigenpairs
-  if (nrm[0]<=tol)
+  if (res_nrm<=tol)
   {
     mm=0;// counts iterations for next theta
     // number of converged eigenpairs: +2 for complex conjugate pairs in real case
@@ -490,7 +466,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     *num_eigs=nconv;// tell the user how many we return
     for (int j=nq0;j<nconv;j++)
     {
-      resid[j]=nrm[0]; // will be returned to the user
+      resid[j]=res_nrm; // will be returned to the user
     }
 
     // view first nconv columns of X as 'Q'
@@ -528,11 +504,11 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     mvec_ptr_t v_tmp=NULL;
     PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v_tmp,0,m-1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),v_tmp,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,v_tmp,0,m-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(V,v_tmp,0,m-1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,iflag),*iflag);
     //AV=AV*S;
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),AVv,Sv,st::zero(),v_tmp,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(AVv,v_tmp,0,m-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(AV,v_tmp,0,m-1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,iflag),*iflag);
     
     // delete the temporary view (not the data, of course)
@@ -569,40 +545,13 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       t_ptr=t_r;
     }
 #endif
+
     // get the diagonal block (1x1 or 2x2) corresponding to theta
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Theta,ev_pos,ev_pos+nv-1,ev_pos,ev_pos+nv-1,iflag),*iflag);
 
-//TODO: same as part CMP_RESID up there, put it in an aux function
-//{
-    // r=Au-theta*u; ([r_r, r_i] = [Au_r, Au_i] - [u_r, u_i]*Theta in the real case with 
-    // complex theta)
-    
-    // first: r=Au
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),Au_ptr,st::zero(),r_ptr,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(computeResidual)(B_op, r_ptr, Au_ptr, u_ptr,
+        rtil_ptr, Qv, Vtmp, Theta, atil, &atilv, &res_nrm, nv, nconv, iflag),*iflag);
 
-    // update r = r - U*Theta
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),u_ptr,Theta,st::one(),r_ptr,iflag),*iflag);
-
-    // set rtil=r
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r_ptr,st::zero(),rtil_ptr,iflag),*iflag);
-
-     // view next ~a, a temporary vector to compute ~a=Q'*r
-     PHIST_CHK_IERR(SUBR(sdMat_view_block)(atil,&atilv,0,nconv-1,0,nv-1,iflag),*iflag);
-
-    //atil = Q'*r;
-    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Qv,r_ptr,st::zero(),atilv,iflag),*iflag);
-
-    //rtil = r-Q*atil;
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,atilv,st::one(),r_ptr,iflag),*iflag);
-      
-    //nrm=norm(rtil);
-    // real case with complex r: ||v+iw||=sqrt((v+iw).'*(v-iw))=sqrt(v'v+w'w).
-    // in the complex case we pass in a 're-interpret cast' of nrm as complex,
-    // which should be fine (imaginary part will be 0).
-    nrm[1]=mt::zero();
-    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(rtil_ptr,rtil_ptr,(ST*)nrm,iflag),*iflag);
-    nrm[0]=mt::sqrt(nrm[0]+nrm[1]);
-//}
     // again, sort the largest Ritz value to the top
 //    nselect = m==maxBas-1? minBas: 1;
 //    nsort = 1;
@@ -616,7 +565,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m-1,0,m-1,iflag),*iflag);
   } //if (deflate)
 
-  if (nrm[0]>100*prev_nrm)
+  if (res_nrm>100*prev_nrm)
   {
     // we probably aren't working on the same
     // eigenvalue anymore, so we reset the convergence
@@ -639,10 +588,10 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     mvec_ptr_t v_tmp=NULL;
     PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v_tmp,0,m-1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),v_tmp,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(Vv,v_tmp,0,m-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(V,v_tmp,0,m-1,iflag),*iflag);
     //AV=AV*S;
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),AVv,Sv,st::zero(),v_tmp,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(AVv,v_tmp,0,m-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(AV,v_tmp,0,m-1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_delete)(v_tmp,iflag),*iflag);
     //V=V(:,1:mmin);
     PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,iflag),*iflag);
@@ -664,7 +613,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR(mvec_view_block)(X,&Qtil,0,nconv+nv-1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_set_block)(Qtil,u_ptr,nconv,nconv+nv-1,iflag),*iflag);
     CT actual_shift=theta;
-    if (m<minBas && nrm[0]>1.0e-2)
+    if (m<minBas && res_nrm>1.0e-2)
     {
       PHIST_SOUT(PHIST_VERBOSE,"start-up step with fixed sigma=%f\n",initialShift);
       actual_shift=initialShift; // start-up without Arnoldi
@@ -685,20 +634,16 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
     // the block case is not implemented here:
     // (I-uu')A(I-uu')*t - (I-uu')t*Theta=-r
-    if (B_op!=NULL)
-    {
-      PHIST_SOUT(PHIST_WARNING,"case B!=I not implemented (file %s, line %d)\n",__FILE__,__LINE__);
-    }
 
     // 1/2^mm, but at most the outer tol as conv tol for GMRES
     MT innerTol[2];
-    innerTol[0] = std::max(tol,mt::one()/((MT)(2<<mm)));
-    innerTol[1] = std::max(tol,mt::one()/((MT)(2<<mm)));
+    innerTol[0] = std::max(tol,mt::one()/((MT)(pow(2.0,mm+1))));
+    innerTol[1] = std::max(tol,mt::one()/((MT)(pow(2.0,mm+1))));
     PHIST_SOUT(PHIST_VERBOSE,"inner conv tol: %g\n",innerTol[0]);
 
     // allow at most 25 iterations
     int nIt=25;
-      PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, NULL, Qtil, NULL, 
+      PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, B_op, Qtil, NULL, 
                                                       sigma, rtil_ptr, NULL, 
                                                       innerTol, nIt, t_ptr, true, false, iflag), *iflag);
     expand=nv;
@@ -840,4 +785,75 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   return;
   }
 
+void SUBR(computeResidual)(TYPE(const_op_ptr) B_op, TYPE(mvec_ptr) r_ptr,
+        TYPE(mvec_ptr) Au_ptr, TYPE(mvec_ptr) u_ptr, TYPE(mvec_ptr) rtil_ptr,
+        TYPE(mvec_ptr) Qv, TYPE(mvec_ptr) tmp, TYPE(sdMat_ptr) Theta,
+        TYPE(sdMat_ptr) atil, TYPE(sdMat_ptr) *atilv, _MT_ *resid,
+        int nv, int nconv, int* iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  // r=Au-theta*u; ([r_r, r_i] = [Au_r, Au_i] - [u_r, u_i]*Theta in the real case with 
+  // complex theta)
 
+  MT nrm[2];
+
+  // pointer to temporary storage for B*Q*atil if B is defined
+  mvec_ptr_t tmp_ptr=NULL;
+
+  // first: r=Au
+  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),Au_ptr,st::zero(),r_ptr,iflag),*iflag);
+
+  if (B_op != NULL)
+  {
+    // rt = B * u
+    PHIST_CHK_IERR(B_op->apply(st::one(),B_op->A,u_ptr,st::zero(),rtil_ptr,iflag),*iflag);
+
+    // update r = r - rt*Theta
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),rtil_ptr,Theta,st::one(),r_ptr,iflag),*iflag);
+  }
+  else
+  {
+    // update r = r - u*Theta
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),u_ptr,Theta,st::one(),r_ptr,iflag),*iflag);
+  }
+
+  // set rtil=r
+  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),r_ptr,st::zero(),rtil_ptr,iflag),*iflag);
+
+  // project out already converged eigenvectors
+  // TODO - we could use our orthog routine here instead
+  if (nconv>0)
+  {
+    // view next ~a, a temporary vector to compute ~a=Q'*r
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(atil,atilv,0,nconv-1,0,nv-1,iflag),*iflag);
+
+    //atil = Q'*r;
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Qv,r_ptr,st::zero(),*atilv,iflag),*iflag);
+
+    if (B_op != NULL)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(tmp,&tmp_ptr,0,nv-1,iflag),*iflag);
+      // tmp = Q*atil
+      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Qv,*atilv,st::zero(),tmp_ptr,iflag),*iflag);
+
+      //rtil = r-B*Q*atil;
+      PHIST_CHK_IERR(B_op->apply(-st::one(),B_op->A,tmp_ptr,st::one(),rtil_ptr,iflag),*iflag);
+
+      PHIST_CHK_IERR(SUBR(mvec_delete)(tmp_ptr,iflag),*iflag);
+    }
+    else
+    {
+      //rtil = r-Q*atil;
+      PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Qv,*atilv,st::one(),rtil_ptr,iflag),*iflag);
+    }
+  }
+
+  //nrm=norm(rtil);
+  // real case with complex r: ||v+iw||=sqrt((v+iw).'*(v-iw))=sqrt(v'v+w'w).
+  // in the complex case we pass in a 're-interpret cast' of nrm as complex,
+  // which should be fine (imaginary part will be 0).
+  nrm[1]=mt::zero();
+  PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(rtil_ptr,rtil_ptr,(ST*)nrm,iflag),*iflag);
+  *resid=mt::sqrt(nrm[0]+nrm[1]);
+}

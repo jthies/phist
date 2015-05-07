@@ -114,6 +114,7 @@ public:
       ASSERT_EQ(1, iflag_);
       // check norms
       _MT_ nrms_ref[_NV_];
+      iflag_ = 0;
       SUBR(mvec_norm2)(vec1_,nrms_ref,&iflag_);
       ASSERT_EQ(0,iflag_);
       for(int i = 0; i < _NV_; i++)

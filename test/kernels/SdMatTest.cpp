@@ -65,3 +65,33 @@ using namespace testing;
 #define CLASSNAME ZSdMatTest_6_8
 #include "phist_gen_z.h"
 #include "SdMatTest_def.hpp"
+#undef CLASSNAME
+
+#undef _NROWS_
+#undef _NCOLS_
+
+#define _NROWS_ 8
+#define _NCOLS_ 8
+
+#ifdef PHIST_HAVE_SP
+
+# define CLASSNAME SSdMatTest_8_8
+# include "phist_gen_s.h"
+# include "SdMatTest_def.hpp"
+# undef CLASSNAME
+
+# define CLASSNAME CSdMatTest_8_8
+# include "phist_gen_c.h"
+# include "SdMatTest_def.hpp"
+# undef CLASSNAME
+#endif
+
+#define CLASSNAME DSdMatTest_8_8
+#include "phist_gen_d.h"
+#include "SdMatTest_def.hpp"
+#undef CLASSNAME
+
+#define CLASSNAME ZSdMatTest_8_8
+#include "phist_gen_z.h"
+#include "SdMatTest_def.hpp"
+#undef CLASSNAME

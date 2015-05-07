@@ -26,7 +26,18 @@
 # ifdef PHIST_KERNEL_LIB_TPETRA
 #  include "BelosTpetraAdapter.hpp"
 #  include "phist_tpetra_typedefs.hpp"
-# else
+# elif defined(PHIST_KERNEL_LIB_EPETRA)
+#  include "Epetra_MultiVector.h"
+#  include "BelosEpetraAdapter.hpp"
+
+// we include the cpp file here because epetra_helpers is not
+// compiled into a library anywhere??
+#  include "epetra_helpers.cpp"
+
+#  include "Epetra_SerialComm.h"
+#  include "Epetra_SerialDenseMatrix.h"
+#  include "Epetra_CrsMatrix.h"
+# else 
 #  error "not implemented"
 # endif
 
@@ -47,6 +58,10 @@
 #endif
 
 #include "phist_gen_d.h"
-#include "phist_orthog_def.hpp"
+#ifdef USE_TRILINOS_ORTHO_MANAGER
+# include "trili_orthog_def.hpp"
+#else
+# include "phist_orthog_def.hpp"
+#endif
 #include "phist_gen_z.h"
 #include "phist_orthog_def.hpp"

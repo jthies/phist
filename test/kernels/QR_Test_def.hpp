@@ -108,6 +108,7 @@ public:
       SUBR(mvec_QR)(vec2_,mat1_,&iflag_);
       // check that the rank deficiency was detected
       ASSERT_EQ(1, iflag_);
+      iflag_ = 0;
       // check that we anyway got something orthogonal back
       ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
       // the factor 2 in releps here is because otherwise fails the test by a fraction of releps

@@ -31,6 +31,7 @@ extern "C" {
   void SUBR(mvec_num_vectors_f)(TYPE(const_mvec_ptr),int*,int*);
   void SUBR(mvec_print_f)(TYPE(const_mvec_ptr),int*);
   void SUBR(mvec_put_value_f)(TYPE(mvec_ptr),_ST_,int*);
+  void SUBR(mvec_put_func_f)(TYPE(mvec_ptr),void(*)(ghost_gidx_t,ghost_lidx_t,void*),int*);
   void SUBR(mvec_random_f)(TYPE(mvec_ptr),int*);
   void SUBR(mvec_scale_f)(TYPE(mvec_ptr),_ST_,int*);
   void SUBR(mvec_scatter_mvecs_f)(TYPE(const_mvec_ptr),TYPE(mvec_ptr) W[], int, int*);
@@ -42,6 +43,12 @@ extern "C" {
   void SUBR(mvec_view_block_f)(TYPE(mvec_ptr),TYPE(mvec_ptr)*,int,int,int*);
   void SUBR(mvec_vscale_f)(TYPE(mvec_ptr),const _ST_*,int*);
   void SUBR(sdMatT_times_sdMat_f)(_ST_,TYPE(const_sdMat_ptr),TYPE(const_sdMat_ptr),_ST_,TYPE(sdMat_ptr),int*);
+  void SUBR(sdMat_times_sdMatT_f)(_ST_,TYPE(const_sdMat_ptr),TYPE(const_sdMat_ptr),_ST_,TYPE(sdMat_ptr),int*);
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  void SUBR(sdMat_cholesky_f)(TYPE(sdMat_ptr),int*,int*,int*);
+  void SUBR(sdMat_backwardSubst_sdMat_f)(const TYPE(sdMat_ptr), const int*, int, TYPE(sdMat_ptr), int*);
+  void SUBR(sdMat_forwardSubst_sdMat_f)(const TYPE(sdMat_ptr), const int*, int, TYPE(sdMat_ptr), int*);
+#endif
   void SUBR(sdMat_add_sdMat_f)(_ST_,TYPE(const_sdMat_ptr),_ST_,TYPE(sdMat_ptr),int*);
   void SUBR(sdMat_create_f)(TYPE(sdMat_ptr)*,int,int,const_comm_ptr_t,int*);
   void SUBR(sdMat_create_view_f)(TYPE(sdMat_ptr)*,const_comm_ptr_t,void*, lidx_t, int,int,int*);
@@ -53,6 +60,7 @@ extern "C" {
   void SUBR(sdMat_print_f)(TYPE(const_sdMat_ptr),int*);
   void SUBR(sdMat_put_value_f)(TYPE(sdMat_ptr),_ST_,int*);
   void SUBR(sdMat_random_f)(TYPE(sdMat_ptr),int*);
+  void SUBR(sdMat_identity_f)(TYPE(sdMat_ptr),int*);
   void SUBR(sdMat_set_block_f)(TYPE(mvec_ptr),TYPE(const_mvec_ptr),int,int,int,int,int*);
   void SUBR(sdMat_times_sdMat_f)(_ST_,TYPE(const_sdMat_ptr),TYPE(const_sdMat_ptr),_ST_,TYPE(sdMat_ptr),int*);
   void SUBR(sdMat_view_block_f)(TYPE(mvec_ptr),TYPE(mvec_ptr)*,int,int,int,int,int*);
@@ -276,6 +284,13 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
   PHIST_CHK_IERR(SUBR(mvec_put_value_f)(V,value,iflag),*iflag);
 }
 
+extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) *V,
+        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CHK_IERR(SUBR(mvec_put_func_f)(V,(void(*)(ghost_gidx_t,ghost_lidx_t,void*))funPtr,iflag),*iflag);
+}
+
 extern "C" void SUBR(sdMat_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -304,6 +319,12 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) M, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CHK_IERR(SUBR(sdMat_random_f)(M,iflag),*iflag);
+}
+
+extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) M, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CHK_IERR(SUBR(sdMat_identity_f)(M,iflag),*iflag);
 }
 
 extern "C" void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) V,
@@ -438,6 +459,44 @@ extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat_f)(alpha,V,W,beta,C,iflag),*iflag);
+}
+
+extern "C" void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
+    TYPE(const_sdMat_ptr) W, 
+    _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CHK_IERR(SUBR(sdMat_times_sdMatT_f)(alpha,V,W,beta,C,iflag),*iflag);
+}
+
+extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) C, int* perm, int* rank, int* iflag)
+{
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CHK_IERR(SUBR(sdMat_cholesky_f)(C,perm,rank,iflag),*iflag);
+#else
+  *iflag=PHIST_NOT_IMPLEMENTED;
+#endif
+}
+
+extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
+{
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat_f)(R,perm,rank,X,iflag),*iflag);
+#else
+  *iflag=PHIST_NOT_IMPLEMENTED;
+#endif
+}
+
+extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
+{
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CHK_IERR(SUBR(sdMat_forwardSubst_sdMat_f)(R,perm,rank,X,iflag),*iflag);
+#else
+  *iflag=PHIST_NOT_IMPLEMENTED;
+#endif
 }
 
 

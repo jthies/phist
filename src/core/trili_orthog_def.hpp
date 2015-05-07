@@ -2,11 +2,14 @@
 //! by one that uses an ortho manager from Belos. This is
 //! mostly for testing our own code but can also be used to
 //! quickly incorporate new developments in their code.
+
 void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      TYPE(mvec_ptr) W,
+                     TYPE(const_op_ptr) B,
                      TYPE(sdMat_ptr) R1,
                      TYPE(sdMat_ptr) R2,
                      int numSweeps,
+                     int* rankVW,
                      int* iflag)
   {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -72,9 +75,15 @@ typedef phist::tpetra::Traits< ST >::mvec_t BelosMV;
 typedef phist::tpetra::Traits< ST >::mvec_t MAT;
 typedef phist::tpetra::Traits< ST >::mvec_t BelosMAT;
 typedef phist::tpetra::Traits< ST >::Teuchos_sdMat_t TeuchosMAT;
+#elif defined(PHIST_KERNEL_LIB_EPETRA)
+typedef Epetra_MultiVector MV;
+typedef MV MAT;
+typedef Epetra_MultiVector BelosMV;
+typedef BelosMV BelosMAT;
+typedef Teuchos::SerialDenseMatrix<int,ST > TeuchosMAT;
 #elif defined(PHIST_KERNEL_LIB_GHOST)
 typedef ghost_vec_t MV;
-typedef MV MAT
+typedef MV MAT;
 typedef phist::GhostMV BelosMV;
 typedef BelosMV BelosMAT;
 typedef Teuchos::SerialDenseMatrix<int,ST > TeuchosMAT;
@@ -91,6 +100,9 @@ Teuchos::RCP<TeuchosMAT> R1_2 =
         phist::tpetra::Traits< ST >::CreateTeuchosViewNonConst(R1_1,iflag);
 Teuchos::RCP<TeuchosMAT> R2_2 = 
         phist::tpetra::Traits< ST >::CreateTeuchosViewNonConst(R2_1,iflag);
+#elif defined(PHIST_KERNEL_LIB_EPETRA)
+        Teuchos::RCP<TeuchosMAT> R1_2 = CreateTeuchosViewNonConst(R1_1,iflag);
+        Teuchos::RCP<TeuchosMAT> R2_2 = CreateTeuchosViewNonConst(R2_1,iflag);
 #else
 #error "not implemented"
 #endif
@@ -127,6 +139,9 @@ ortho = tsqr;
 
 typedef Belos::IMGSOrthoManager<ST,MV,TYPE(op)> orthoMan_t;
 Teuchos::RCP<orthoMan_t> imgs = Teuchos::rcp(new orthoMan_t("hist/orthog/imgs"));
+if (B != NULL) {
+  imgs = Teuchos::rcp(new orthoMan_t("hist/orthog/imgs", Teuchos::rcp(B, false)));
+}
 ortho = imgs;
 
   default_params = imgs->getValidParameters();
@@ -142,7 +157,36 @@ ortho = imgs;
 
   Teuchos::ArrayView< Teuchos::RCP<const BelosMV > > V_array( &V_2, 1 );
   Teuchos::Array< Teuchos::RCP<TeuchosMAT > > R2_array( 1, R2_2 );
-  rankW=ortho->projectAndNormalize( *W_2, R2_array, R1_2, V_array );
+  *rankVW=ortho->projectAndNormalize( *W_2, R2_array, R1_2, V_array );
 
+#if PHIST_OUTLEV>=PHIST_DEBUG
+  if (B != NULL)
+  {
+    const Epetra_MultiVector *Vview = (const Epetra_MultiVector *)V;
+    Epetra_MultiVector *Wview = (Epetra_MultiVector *)V;
+
+    int m=Vview->NumVectors();
+    int k=Wview->NumVectors();
+
+    PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix,B_ptr,B->A,*iflag);
+
+    Epetra_MultiVector tmp(Wview->Map(), k);
+
+    B_ptr->Multiply(false, *Wview, tmp);
+    Epetra_SerialDenseMatrix C(m,k);
+    Epetra_SerialComm comm;
+    Epetra_LocalMap tinyMap(m,0,comm);
+    Epetra_MultiVector Cview(View,tinyMap,C.A(),C.LDA(),k);
+    Cview.Multiply('T','N',1.0,*Vview,tmp,0.0);
+
+    PHIST_DEB("V'BV matrix\n");
+    for (int i = 0; i < m; i++) {
+      for (int j = 0; j < k; j++) {
+        PHIST_DEB("%f ", C[j][i]);
+      }
+      PHIST_DEB("\n");;
+    }
+  }
+#endif
   *iflag = 0; //ncols-rankW;// return positive number if rank not full.
   }

@@ -81,6 +81,113 @@ using namespace testing;
 #include "phist_gen_z.h"
 #include "MvecTest_def.hpp"
 
+
+#undef _N_
+/* 4000000 are required for my accuracy test ! */
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+
+#define _N_ 4000000
+#undef _NV_
+#define _NV_ 1
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecTest_4M_1
+
+#include "phist_gen_s.h"
+#include "MvecTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecTest_4M_1
+
+#include "phist_gen_c.h"
+#include "MvecTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecTest_4M_1
+
+#include "phist_gen_d.h"
+#include "MvecTest_def.hpp"
+
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecTest_4M_1
+
+#include "phist_gen_z.h"
+#include "MvecTest_def.hpp"
+
+
+#undef _N_
+#define _N_ 4000000
+#undef _NV_
+#define _NV_ 2
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecTest_4M_2
+
+#include "phist_gen_s.h"
+#include "MvecTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecTest_4M_2
+
+#include "phist_gen_c.h"
+#include "MvecTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecTest_4M_2
+
+#include "phist_gen_d.h"
+#include "MvecTest_def.hpp"
+
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecTest_4M_2
+
+#include "phist_gen_z.h"
+#include "MvecTest_def.hpp"
+
+
+#undef _N_
+#define _N_ 4000000
+#undef _NV_
+#define _NV_ 4
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecTest_4M_4
+
+#include "phist_gen_s.h"
+#include "MvecTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecTest_4M_4
+
+#include "phist_gen_c.h"
+#include "MvecTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecTest_4M_4
+
+#include "phist_gen_d.h"
+#include "MvecTest_def.hpp"
+
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecTest_4M_4
+
+#include "phist_gen_z.h"
+#include "MvecTest_def.hpp"
+#endif /* PHIST_HIGH_PRECISION_KERNELS */
+
+
 // the Belos Tester selects the number of vectors itself,
 // it is enough to test it for one vector length, I think
 #ifdef PHIST_KERNEL_LIB_GHOST

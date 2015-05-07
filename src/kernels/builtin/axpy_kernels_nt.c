@@ -24,13 +24,13 @@ void daxpy_nt_2_c(int nrows, const double *restrict alpha, const double *restric
 {
   if( !is_aligned(y,16) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)y);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
     exit(1);
   }
 
   if( !is_aligned(x,16) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)x);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
     exit(1);
   }
 
@@ -53,13 +53,13 @@ void daxpy_nt_4_c(int nrows, const double *restrict alpha, const double *restric
 {
   if( !is_aligned(y,16) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)y);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
     exit(1);
   }
 
   if( !is_aligned(x,16) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)x);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
     exit(1);
   }
 
@@ -85,13 +85,13 @@ void daxpy_nt_8_c(int nrows, const double *restrict alpha, const double *restric
 {
   if( !is_aligned(y,16) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)y);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
     exit(1);
   }
 
   if( !is_aligned(x,16) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)x);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
     exit(1);
   }
 
@@ -102,7 +102,6 @@ void daxpy_nt_8_c(int nrows, const double *restrict alpha, const double *restric
     for(int k = 0; k < 4; k++)
     {
       // get x
-      const double *xp = x + 8*i + 2*k;
       __m128d x_ = _mm_load_pd(x+8*i+2*k);
       // multiply with alpha
       __m128d alpha_ = _mm_set_pd(alpha[2*k+1],alpha[2*k]);
@@ -118,7 +117,7 @@ void daxpy_nt_strided_2_c(int nrows, const double *restrict alpha, const double 
 {
   if( !is_aligned(y,16) )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)y);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
     exit(1);
   }
 
@@ -126,7 +125,6 @@ void daxpy_nt_strided_2_c(int nrows, const double *restrict alpha, const double 
   for(int i = 0; i < nrows; i++)
   {
     // get x
-    const double *xp = x + ldx*i;
     __m128d x_ = _mm_loadu_pd(x+ldx*i);
     // multiply with alpha
     __m128d alpha_ = _mm_set_pd(alpha[1],alpha[0]);
@@ -141,7 +139,7 @@ void daxpy_nt_strided_4_c(int nrows, const double *restrict alpha, const double 
 {
   if( !is_aligned(y,16) || ldy % 2 != 0 )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)y);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
     exit(1);
   }
 
@@ -166,7 +164,7 @@ void daxpy_nt_strided_8_c(int nrows, const double *restrict alpha, const double 
 {
   if( !is_aligned(y,16) || ldy % 2 != 0 )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)y);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
     exit(1);
   }
 
@@ -191,13 +189,13 @@ void dcopy_general_nt_c(int nrows, int nvec, const double *restrict x, int ldx, 
 {
   if( nvec % 2 != 0 )
   {
-    printf("not aligned nvec: %d\n", 2);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
     exit(1);
   }
 
   if( !is_aligned(y,16) || ldy % 2 != 0 )
   {
-    printf("not aligned %lx\n", (uintptr_t)(void*)y);
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
     exit(1);
   }
 

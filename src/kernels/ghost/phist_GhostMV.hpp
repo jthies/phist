@@ -61,6 +61,8 @@ class GhostMV
 #ifdef TRACE_GHOSTMV_MEM
     myID=countObjects++;
     PHIST_OUT(PHIST_INFO,"### Create GhostMV #%d, ownMem=%d\n",myID,ownMem);
+#else
+    myID=-1;
 #endif
     }
   
@@ -107,24 +109,13 @@ class GhostMV
 protected:
 
   //! disallow default constructor
-  GhostMV()
-    {
-    v_=NULL;
-    }
+  GhostMV();
   
   //! disallow copy constructor
-  GhostMV(const GhostMV& v)
-    {
-    (void)v;//unused
-    v_=NULL;
-    }
+  GhostMV(const GhostMV& v);
   
   //! disallow assignment operator
-  GhostMV& operator=(const GhostMV& v)
-    {
-    GhostMV *w = new GhostMV(v);
-    return *w;
-    }
+  GhostMV& operator=(const GhostMV& v);
   
   
   //! the wrapped object
@@ -136,11 +127,8 @@ protected:
   // give each newly created object a label so we can track where they are destroyed 
   static int countObjects;
 
-#if 1
-//#if PHIST_OUTLEV>=PHIST_TRACE  
-  // label of this object
+  // label of this object for TRACE_GHOSTMV_MEM
   int myID;
-#endif
   };
 
 } //namespace phist

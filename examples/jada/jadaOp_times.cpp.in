@@ -26,7 +26,6 @@ int main(int argc, char** argv)
 {
   int rank, num_proc;
   int iflag;
-  int verbose;
 
   comm_ptr_t comm = NULL;
   sparseMat_ptr_t A = NULL;
@@ -45,7 +44,6 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&iflag),iflag);
   PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&iflag),iflag);
 
-  verbose= (rank==0);
 
   if (argc<4)
   {

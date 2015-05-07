@@ -118,23 +118,191 @@ public:
       SUBR(mvec_dot_mvec)(vec1_,vec2_,dots_ref,&iflag_);
       ASSERT_EQ(0,iflag_);
 
+      _MT_ dotsAbs[_NV_];
       for (int j=0;j<nvec_;j++)
       {
         dots[j] = st::zero();
+        dotsAbs[j] = mt::zero();
         for (int i=0;i<nloc_*stride_;i+=stride_)
         {
-          dots[j] += st::conj(vec1_vp_[VIDX(i,j,lda_)])*vec2_vp_[VIDX(i,j,lda_)];
+          _ST_ tmp = st::conj(vec1_vp_[VIDX(i,j,lda_)])*vec2_vp_[VIDX(i,j,lda_)];
+          dots[j] += tmp;
+          dotsAbs[j] += st::abs(tmp);
         }
 #ifdef PHIST_HAVE_MPI
         MPI_Allreduce(MPI_IN_PLACE, &dots[j], 1, st::mpi_type(), MPI_SUM, MPI_COMM_WORLD);
+        MPI_Allreduce(MPI_IN_PLACE, &dotsAbs[j], 1, mt::mpi_type(), MPI_SUM, MPI_COMM_WORLD);
 #endif
-        EXPECT_NEAR(mt::zero(), st::real(dots[j]-dots_ref[j]), 100*mt::eps());
-        EXPECT_NEAR(mt::zero(), st::imag(dots[j]-dots_ref[j]), 100*mt::eps());
+        _MT_ cond = dotsAbs[j] / st::abs(dots[j]);
+        EXPECT_NEAR(mt::zero(), st::real(dots[j]-dots_ref[j]), dotsAbs[j]*10*mt::eps());
+        EXPECT_NEAR(mt::zero(), st::imag(dots[j]-dots_ref[j]), dotsAbs[j]*10*mt::eps());
       }
     }
 
   }
 
+#if (_N_ % 4 == 0 && (_NV_ == 1 || _NV_ == 2 || _NV_ == 4 ) )
+  // mvec_dot_mvec tests, more precise version
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  TEST_F(CLASSNAME, dot_mvec_prec)
+#else
+  TEST_F(CLASSNAME, DISABLED_dot_mvec_prec)
+#endif
+  {
+    if (typeImplemented_)
+    {
+      SUBR(mvec_from_device)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for (int j=0;j<nvec_;j++)
+        for (int i=0;i<nloc_*stride_;i+=stride_)
+        {
+          vec2_vp_[VIDX(i,j,lda_)]=mt::one()/st::conj(vec1_vp_[VIDX(i,j,lda_)]);
+        }
+      SUBR(mvec_to_device)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _ST_ dots_ref[_NV_];
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_dot_mvec)(vec1_,vec2_,dots_ref,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _ST_ val = st::one() * (ST)nglob_;
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(dots_ref,nvec_,1,nvec_,1,val));
+
+      // test two random vectors
+      SUBR(mvec_random)(vec2_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_dot_mvec)(vec1_,vec2_,dots_ref,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+#ifdef IS_COMPLEX
+#define _ST_PREC_ std::complex<long double>
+#define CONJ_PREC(x) std::conj(x)
+#else
+#define _ST_PREC_ long double
+#define CONJ_PREC(x) x
+#endif
+      long double dotsAbs[_NV_];
+      _ST_PREC_ dots[_NV_];
+      for (int j=0;j<nvec_;j++)
+      {
+        dots[j] = (_ST_PREC_)0;
+        dotsAbs[j] = (long double)0;
+        for (int i=0;i<nloc_*stride_;i+=stride_)
+        {
+          _ST_PREC_ tmp = CONJ_PREC(vec1_vp_[VIDX(i,j,lda_)])*vec2_vp_[VIDX(i,j,lda_)];
+          dots[j] += tmp;
+          dotsAbs[j] += std::abs(tmp);
+        }
+#ifdef PHIST_HAVE_MPI
+#ifdef IS_COMPLEX
+        MPI_Allreduce(MPI_IN_PLACE, &dots[j], 2, MPI_LONG_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#else
+        MPI_Allreduce(MPI_IN_PLACE, &dots[j], 1, MPI_LONG_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
+        MPI_Allreduce(MPI_IN_PLACE, &dotsAbs[j], 1, MPI_LONG_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
+        // cond. number of the summation
+        _MT_ cond = (_MT_)(dotsAbs[j] / std::abs(dots[j]));
+        PHIST_SOUT(PHIST_INFO, "error: %e (cond. number: %e, eps: %e)\n", st::abs((_ST_)dots[j]-dots_ref[j]),cond,mt::eps());
+        EXPECT_NEAR(mt::zero(), st::real((_ST_)dots[j]-dots_ref[j]), 2*cond*mt::eps());
+        EXPECT_NEAR(mt::zero(), st::imag((_ST_)dots[j]-dots_ref[j]), 2*cond*mt::eps());
+      }
+    }
+#undef _ST_PREC_
+#undef CONJ_PREC
+
+  }
+
+  // mvec_dot_mvec tests, more precise version
+  // exploits sum_(k=1)^n 1/(k*(k+1)) = 1 - 1/(n+1)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  TEST_F(CLASSNAME, dot_mvec_prec_hard)
+#else
+  TEST_F(CLASSNAME, DISABLED_dot_mvec_prec_hard)
+#endif
+  {
+    if (typeImplemented_)
+    {
+      gidx_t ilower;     
+      phist_map_get_ilower(map_,&ilower,&iflag_);
+      SUBR(mvec_from_device)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for (int j=0;j<nvec_;j++)
+      {
+        for(int i = 0; i < nloc_; i++)
+        {
+          vec2_vp_[VIDX(i,j,lda_)]=st::one()*(1./(ilower+i+1));
+          vec1_vp_[VIDX(i,j,lda_)]=st::one()*(1./(ilower+i+2));
+        }
+      }
+      SUBR(mvec_to_device)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_to_device)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _ST_ dots[_NV_];
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_dot_mvec)(vec1_,vec2_,dots,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _ST_ val = (_ST_)(st::one()*(_MT_)(1.0l-1.0l/(_N_+1)));
+      PHIST_SOUT(PHIST_INFO, "error: %e\n", st::abs(dots[0]-val));
+      // melven: this is a *hard* precision test
+      // DO NOT CHANGE THIS TO ASSERT_NEAR!
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(dots,nvec_,1,nvec_,1,val));
+    }
+  }
+
+  // mvec_dot_mvec tests, more precise version
+  // half of the numbers a 1, then one 1.e-18, then the other half is -1
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  TEST_F(CLASSNAME, dot_mvec_prec_veryhard)
+#else
+  TEST_F(CLASSNAME, DISABLED_dot_mvec_prec_veryhard)
+#endif
+  {
+    if (typeImplemented_)
+    {
+      gidx_t ilower;     
+      phist_map_get_ilower(map_,&ilower,&iflag_);
+      SUBR(mvec_from_device)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for (int j=0;j<nvec_;j++)
+      {
+        for(int i = 0; i < nloc_; i++)
+        {
+          if( ilower+i+1 < _N_/2 )
+            vec2_vp_[VIDX(i,j,lda_)]=st::one();
+          else if( ilower+i+1 == _N_/2 || ilower+i == _N_/2)
+            vec2_vp_[VIDX(i,j,lda_)]=st::eps();
+          else
+            vec2_vp_[VIDX(i,j,lda_)]=-st::one();
+          vec1_vp_[VIDX(i,j,lda_)]=st::one();
+        }
+      }
+      SUBR(mvec_to_device)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_to_device)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _ST_ dots[_NV_];
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_dot_mvec)(vec1_,vec2_,dots,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _ST_ val = 2*st::eps();
+      PHIST_SOUT(PHIST_INFO, "error: %e\n", st::abs(dots[0]-val));
+      // melven: this is a *hard* precision test
+      // DO NOT CHANGE THIS TO ASSERT_NEAR!
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(dots,nvec_,1,nvec_,1,val));
+    }
+  }
+#endif
+
+
+#if _N_ < 100
   TEST_F(CLASSNAME, random)
     {
     if (typeImplemented_)
@@ -179,6 +347,7 @@ public:
       ASSERT_EQ(true,minval>mt::eps()); 
       }
     }
+#endif
 
   TEST_F(CLASSNAME, upload_download)
   {
@@ -210,14 +379,46 @@ public:
       }
       SUBR(mvec_to_device)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      MT expect = 0.0;
-      for (int i=0;i<_N_;i++)
-      {
-        expect+=(MT)(i*i);
-      }
-      expect=mt::sqrt(expect);
+      // sum_(k=0)^(n-1) k^2 = 1/6*(n-1)*n*(2*n-1)
+      MT expect = (MT)std::sqrt(1.0l/6.0l*(_N_-1.0l)*_N_*(2.0l*_N_-1.0l));
 
       MT nrm2[nvec_];
+      SUBR(mvec_norm2)(vec1_,nrm2,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for (int i=0;i<nvec_;i++)
+      {
+        ASSERT_NEAR(expect,nrm2[i],expect*mt::sqrt(mt::eps()));
+      }
+    }
+  }
+
+#if (_N_ % 4 == 0 && (_NV_ == 1 || _NV_ == 2 || _NV_ == 4 ) )
+  // 2-norm, nrm2=sqrt(v'v), more precise version
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  TEST_F(CLASSNAME, norm2_precise)
+#else
+  TEST_F(CLASSNAME, DISABLED_norm2_precise)
+#endif
+  {
+    if (typeImplemented_)
+    {
+      gidx_t ilower;     
+      phist_map_get_ilower(map_,&ilower,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      for (int j=0;j<nvec_;j++)
+      {
+        for (int i=0;i<nloc_*stride_;i+=stride_)
+        {
+          vec1_vp_[VIDX(i,j,lda_)]=ilower+i;
+        }
+      }
+      SUBR(mvec_to_device)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // sum_(k=0)^(n-1) k^2 = 1/6*(n-1)*n*(2*n-1)
+      MT expect = (MT)std::sqrt(1.0l/6.0l*(_N_-1.0l)*_N_*(2.0l*_N_-1.0l));
+
+      MT nrm2[nvec_];
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvec_norm2)(vec1_,nrm2,&iflag_);
       ASSERT_EQ(0,iflag_);
       for (int i=0;i<nvec_;i++)
@@ -226,6 +427,7 @@ public:
       }
     }
   }
+#endif
 
   // 2-norm, nrm2=sqrt(v'v)
   TEST_F(CLASSNAME, norm2_of_viewed_cols)
@@ -251,7 +453,7 @@ public:
       
       for (int j=jmin;j<=jmax;j++)
       {
-        ASSERT_REAL_EQ(nrm2[j],nrm2_view[j-jmin]);
+        ASSERT_NEAR(nrm2[j],nrm2_view[j-jmin],_N_*10*mt::eps());
       }
       
       SUBR(mvec_delete)(view,&iflag_);
@@ -388,8 +590,8 @@ public:
       // type here.
       for (int j=jmin;j<=jmax;j++)
         {
-        ASSERT_NEAR(norms_V1[j],norms_V1view[j-jmin],100*mt::eps());
-        ASSERT_NEAR(norms_V1[j],norms_V1vv[j-jmin],100*mt::eps());
+        ASSERT_NEAR(norms_V1[j],norms_V1view[j-jmin],_N_*10*mt::eps());
+        ASSERT_NEAR(norms_V1[j],norms_V1vv[j-jmin],_N_*10*mt::eps());
         }
       // set all the viewed entries to a certain value and check that the original vector is 
       // changed.
@@ -416,7 +618,7 @@ public:
       ASSERT_EQ(0,iflag_);
       for (int j=0;j<nvec_;j++)
         {
-        ASSERT_NEAR(norms_V1[j],norms_V1vv[j],100*mt::eps());
+        ASSERT_NEAR(norms_V1[j],norms_V1vv[j],_N_*10*mt::eps());
         }
       }
     }
@@ -523,7 +725,7 @@ public:
       // type here.
       for (int j=jmin;j<=jmax;j++)
         {
-        ASSERT_REAL_EQ(norms_V1[j],norms_V1copy[j-jmin]);
+        ASSERT_NEAR(norms_V1[j],norms_V1copy[j-jmin],_N_*10*mt::eps());
         }
       // set all the viewed entries to a certain value and check that the original vector is 
       // changed.
@@ -537,7 +739,7 @@ public:
 
       for (int j=0;j<nvec_;j++)
         {
-        ASSERT_REAL_EQ(norms_V1[j],norms_V1copy[j]);
+        ASSERT_NEAR(norms_V1[j],norms_V1copy[j],_N_*10*mt::eps());
         }
 
       // compute the new norms
@@ -556,7 +758,7 @@ public:
 
       for (int j=jmin;j<=jmax;j++)
         {
-        ASSERT_NEAR(norms_V1[j],norms_V1copy[j-jmin], 100*mt::eps());
+        ASSERT_NEAR(norms_V1[j],norms_V1copy[j-jmin], _N_*10*mt::eps());
         }
 
       SUBR(mvec_delete)(v1_copy,&iflag_);

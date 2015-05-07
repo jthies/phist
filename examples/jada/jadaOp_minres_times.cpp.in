@@ -67,8 +67,11 @@ int main(int argc, char** argv)
   mvec_ptr_t q = NULL;
   sdMat_ptr_t R = NULL;
 
+<<<<<<< HEAD
   
 
+=======
+>>>>>>> b78e3363accf55c7f2b363e275270f42433728a4
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
   PHIST_MAIN_TASK_BEGIN
@@ -240,12 +243,15 @@ int main(int argc, char** argv)
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     //PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(st::one(), y, st::zero(), x, &iflag), iflag);
     PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(), A, x, st::zero(), y, &iflag), iflag);
 
     PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(), q, y, st::zero(), M, &iflag), iflag);
 =======
 >>>>>>> 0a85f5ba8d530190f2457f09ad229b6b6d169c8c
+=======
+>>>>>>> b78e3363accf55c7f2b363e275270f42433728a4
 
 
     /////START MINRES/////
@@ -253,6 +259,7 @@ int main(int argc, char** argv)
     while(i < maxit)
     {
       PHIST_ENTER_FCN("jadaOp_minres_iteration");
+<<<<<<< HEAD
 <<<<<<< HEAD
 {PHIST_ENTER_FCN("minres_lanczos");
 
@@ -266,6 +273,8 @@ int main(int argc, char** argv)
         scalebuf[j] = st::one()/beta[j];
       }
 =======
+=======
+>>>>>>> b78e3363accf55c7f2b363e275270f42433728a4
 
     /////LANCZOS START/////
       for (int j = 0; j < nvecs; j++)
@@ -293,12 +302,15 @@ int main(int argc, char** argv)
 
       
 
+      
+
       for (int k = 0; k < nvecs; k++)
         alpha[k]=-alpha[k];
 
       for (int k = 0; k < nvecs; k++)
         beta[k]=-beta[k];
       
+<<<<<<< HEAD
 <<<<<<< HEAD
     //y=y-beta*z
     PHIST_ICHK_IERR(SUBR(mvec_vadd_mvec)(beta,z,st::one(),y,&iflag),iflag); 
@@ -321,6 +333,8 @@ int main(int argc, char** argv)
     //compute new beta
 
 =======
+=======
+>>>>>>> b78e3363accf55c7f2b363e275270f42433728a4
 
       //y=y-alpha*x
       PHIST_ICHK_IERR(SUBR(mvec_vadd_mvec)(alpha,x,st::one(),y,&iflag),iflag);
@@ -335,7 +349,10 @@ int main(int argc, char** argv)
       for (int j = 0; j < nvecs; j++)
         beta_new[j] = st::sqrt(beta_new[j]);
 
+<<<<<<< HEAD
 >>>>>>> 0a85f5ba8d530190f2457f09ad229b6b6d169c8c
+=======
+>>>>>>> b78e3363accf55c7f2b363e275270f42433728a4
 
     for (int j = 0; j < nvecs; j++)
       beta_new[j] = st::sqrt(beta_new[j]);
@@ -388,7 +405,10 @@ int main(int argc, char** argv)
 }//end QR part      
 =======
       
+<<<<<<< HEAD
 >>>>>>> 0a85f5ba8d530190f2457f09ad229b6b6d169c8c
+=======
+>>>>>>> b78e3363accf55c7f2b363e275270f42433728a4
       //compute residue
       for (int k = 0; k < nvecs; k++)
       {
@@ -415,6 +435,7 @@ int main(int argc, char** argv)
     //std::swap(z,x);
     //std::swap(x,y);
 <<<<<<< HEAD
+<<<<<<< HEAD
       //z = V[i];
       //x = V[i+1];
       //y = V[i+2];
@@ -423,6 +444,11 @@ int main(int argc, char** argv)
       x = V[i+1];
       y = V[i+2];
 >>>>>>> 0a85f5ba8d530190f2457f09ad229b6b6d169c8c
+=======
+      z = V[i];
+      x = V[i+1];
+      y = V[i+2];
+>>>>>>> b78e3363accf55c7f2b363e275270f42433728a4
 #ifdef TESTING
     //absolute error. Also not neccessary. Just for tests
     // PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(st::one(),b,st::zero(),y,&iflag),iflag);
@@ -482,12 +508,17 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(jadaOp.apply(st::one(),jadaOp.A,solution,st::zero(),y,&iflag),iflag);
     //PHIST_SOUT(PHIST_INFO,"jadaOp solution\n");
 <<<<<<< HEAD
+<<<<<<< HEAD
   SUBR(mvec_print)(y,&iflag);
   //SUBR(mvec_print)(solution,&iflag);
 =======
     //SUBR(mvec_print)(y,&iflag);
     //SUBR(mvec_print)(solution,&iflag);
 >>>>>>> 0a85f5ba8d530190f2457f09ad229b6b6d169c8c
+=======
+    //SUBR(mvec_print)(y,&iflag);
+    //SUBR(mvec_print)(solution,&iflag);
+>>>>>>> b78e3363accf55c7f2b363e275270f42433728a4
 
   PHIST_ICHK_IERR(SUBR(jadaOp_delete)(&jadaOp,&iflag),iflag);
   delete[] sigma;
