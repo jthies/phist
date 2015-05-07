@@ -346,7 +346,7 @@ end do
     call mpi_reduce(localMaxComm, globalMaxComm, 1, MPI_DOUBLE_PRECISION, &
       &             MPI_MAX, 0, mat%row_map%Comm, ierr)
     if( mat%row_map%me .eq. 0 ) then
-      write(*,'(A,e10.4,A,e10.4,A,e10.4)') 'Communication volume for single spMVM (Bytes): total ', globalCommVolume, &
+      write(*,'(A,e12.5,A,e12.5,A,e12.5)') 'Communication volume for single spMVM (Bytes): total ', globalCommVolume, &
         &        ', per direction avg.: ', globalCommVolume/2/mat%row_map%nProcs,            &
         &        ', and max.: ', globalMaxComm
     end if
