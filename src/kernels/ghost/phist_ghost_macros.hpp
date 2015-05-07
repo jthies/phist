@@ -29,7 +29,19 @@ void phist_execute_lambda_as_ghost_task(ghost_task_t **task, LFunc context, int*
   };
 
   // actually create the task and copy the context to the heap
-  PHIST_CHK_GERR(ghost_task_create(task, async ? 0 : GHOST_TASK_FILL_ALL, 0, void_lambda_caller, (void*) new LFunc(context), GHOST_TASK_DEFAULT, NULL, 0), *iflag);
+  int nThreads = async ? 0 : GHOST_TASK_FILL_ALL;
+  ghost_task_flags_t flags = async ? GHOST_TASK_NOT_PIN : GHOST_TASK_DEFAULT;
+  PHIST_CHK_GERR(ghost_task_create(task, nThreads, 0, void_lambda_caller, (void*) new LFunc(context), flags, NULL, 0), *iflag);
+
+  // we do not use the task hierarchy - all tasks are children of the main task!
+  // So overwrite the tasks parent!
+  ghost_task_t *parentTask = NULL;
+  ghost_task_cur(&parentTask);
+  if( parentTask )
+    while(parentTask->parent)
+      parentTask = parentTask->parent;
+//  (*task)->parent = parentTask;
+
 PHIST_DEB("enqueuing C++11-lambda as GHOST task and waiting for it\n");
   PHIST_CHK_GERR(ghost_task_enqueue(*task), *iflag);
   if( async )
@@ -40,7 +52,7 @@ PHIST_DEB("enqueuing C++11-lambda as GHOST task and waiting for it\n");
   *task = NULL;
 }
 
-void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
+inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
 {
   PHIST_CHK_IERR(*iflag = (*task != NULL) ? PHIST_SUCCESS : PHIST_WARNING, *iflag);
 
@@ -51,14 +63,20 @@ void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
 
 // some helpful macros
 
-#define PHIST_GHOST_TASK_BEGIN(taskName) ghost_task_t* taskName = NULL; phist_execute_lambda_as_ghost_task(&taskName, [&]() -> void {
-#define PHIST_GHOST_TASK_END(task_ierr)          }, task_ierr, false);PHIST_CHK_IERR((void)*(task_ierr),*(task_ierr));
-#define PHIST_GHOST_TASK_END_NOWAIT(task_ierr)   }, task_ierr, true );PHIST_CHK_IERR((void)*(task_ierr),*(task_ierr));
-#define PHIST_GHOST_TASK_WAIT(taskName,task_ierr) PHIST_CHK_IERR(phist_wait_ghost_task(&taskName,task_ierr),*(task_ierr));
+#define PHIST_TASK_BEGIN(taskName) ghost_task_t* taskName = NULL; phist_execute_lambda_as_ghost_task(&taskName, [&]() -> void {
+#define PHIST_TASK_END(task_ierr)          }, task_ierr, false);PHIST_CHK_IERR((void)*(task_ierr),*(task_ierr));
+#define PHIST_TASK_END_NOWAIT(task_ierr)   }, task_ierr, true );PHIST_CHK_IERR((void)*(task_ierr),*(task_ierr));
+#define PHIST_TASK_WAIT(taskName,task_ierr) PHIST_CHK_IERR(phist_wait_ghost_task(&taskName,task_ierr),*(task_ierr));
 
 #else /* PHIST_HAVE_CXX11_LAMBDAS */
 
 #warning "C++11 not supported, not using GHOST tasking mechanism!"
+
+#define PHIST_TASK_BEGIN(taskName)
+#define PHIST_TASK_END(task_ierr)
+#define PHIST_TASK_END_NOWAIT(task_ierr)
+#define PHIST_TASK_WAIT(taskName,task_ierr)
+
 #endif /* PHIST_HAVE_CXX11_LAMBDAS */
 
 #endif /* PHIST_GHOST_MACROS_HPP */
