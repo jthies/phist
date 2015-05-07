@@ -40,7 +40,7 @@ void phist_execute_lambda_as_ghost_task(ghost_task_t **task, LFunc context, int*
   if( parentTask )
     while(parentTask->parent)
       parentTask = parentTask->parent;
-//  (*task)->parent = parentTask;
+  (*task)->parent = parentTask;
 
 PHIST_DEB("enqueuing C++11-lambda as GHOST task and waiting for it\n");
   PHIST_CHK_GERR(ghost_task_enqueue(*task), *iflag);
