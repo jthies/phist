@@ -33,14 +33,24 @@ void phist_execute_lambda_as_ghost_task(ghost_task_t **task, LFunc context, int*
   ghost_task_flags_t flags = async ? GHOST_TASK_NOT_PIN : GHOST_TASK_DEFAULT;
   PHIST_CHK_GERR(ghost_task_create(task, nThreads, 0, void_lambda_caller, (void*) new LFunc(context), flags, NULL, 0), *iflag);
 
-  // we do not use the task hierarchy - all tasks are children of the main task!
-  // So overwrite the tasks parent!
-  ghost_task_t *parentTask = NULL;
-  ghost_task_cur(&parentTask);
-  if( parentTask )
-    while(parentTask->parent)
-      parentTask = parentTask->parent;
-  (*task)->parent = parentTask;
+  // If this task is not async, it needs resources.
+  // If the parent has none, try to be adopted by the grand-parent, etc
+  if( !async )
+  {
+    ghost_task_t *newParent = NULL;
+    ghost_task_cur(&newParent);
+    if( newParent )
+    {
+      while( newParent->nThreads == 0 )
+      {
+        if( newParent->parent == NULL )
+          break;
+
+        newParent = newParent->parent;
+      }
+    }
+    (*task)->parent = newParent;
+  }
 
 PHIST_DEB("enqueuing C++11-lambda as GHOST task and waiting for it\n");
   PHIST_CHK_GERR(ghost_task_enqueue(*task), *iflag);
