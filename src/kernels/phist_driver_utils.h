@@ -65,6 +65,15 @@ void SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm,
 void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
         const char* problem, int* iflag);
 
+//! For testing linear solvers, generates an 'exact solution' sol and right-hand side rhs
+//! for some matrix creted by create_matrix. For most test cases, this will be some random
+//! sol vector and the rhs is computed by rhs=A*sol, but for the cases stemming from PDEs
+//! (BENCH3D-A*,B*) we presribe an analytical solution and generate the correct F for it.
+//! The mvecs sol and rhs must be created beforehand and may have an arbitrary number of 
+//! columns.
+void SUBR(create_sol_and_rhs)(const char* problem, TYPE(const_sparseMat_ptr) A,
+                        TYPE(mvec_ptr) sol, TYPE(mvec_ptr) rhs, int* iflag);
+
 int phist_sizeof_lidx();
 int phist_sizeof_gidx();
 

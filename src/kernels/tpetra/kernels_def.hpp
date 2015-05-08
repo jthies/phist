@@ -672,7 +672,7 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, _ST_ value, int* iflag)
   PHIST_TRY_CATCH(V->putScalar(value),*iflag);
   }
 
-extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) *vV,
+extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
         int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);

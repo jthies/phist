@@ -429,7 +429,7 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, double value, int* iflag
   PHIST_CHK_IERR(*iflag=V->PutScalar(value),*iflag);
 }
 
-extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) *vV,
+extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
         int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);

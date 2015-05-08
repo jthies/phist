@@ -73,6 +73,23 @@ module mvec_module
   public :: mvec_QR
 
 
+#ifndef PHIST_HAVE_GHOST
+#define G_LIDX_T C_INT32_T
+#define G_GIDX_T C_INT64_T
+#else
+#ifdef GHOST_HAVE_LONGIDX_LOCAL
+#define G_LIDX_T C_INT64_T
+#else
+#define G_LIDX_T C_INT32_T
+#endif
+#ifdef GHOST_HAVE_LONGIDX_GLOBAL
+#define G_GIDX_T C_INT64_T
+#else
+#define G_GIDX_T C_INT32_T
+#endif
+#endif
+
+
   !==================================================================================
   !> mvec with row-wise layout
   type MVec_t
@@ -385,11 +402,11 @@ module mvec_module
 
   !> interface of function-ptr for mvec_put_func
   abstract interface
-    subroutine mvecElemFunc(row, col, val)
+    subroutine mvecElemFunc(row, col, val_ptr)
       use, intrinsic :: iso_c_binding
       integer(G_GIDX_T), value :: row
       integer(G_LIDX_T), value :: col
-      real(C_DOUBLE),    intent(inout) :: val
+      TYPE(C_PTR), value :: val_ptr
     end subroutine mvecElemFunc
   end interface
 
@@ -2217,8 +2234,8 @@ contains
     procedure(mvecElemFunc), pointer :: elemFunc
     !--------------------------------------------------------------------------------
     integer(kind=8) :: i
-    integer(kind=G_GIDX_T) :: i_
-    integer(kind=G_LIDX_T) :: j, j_
+    integer(kind=G_GIDX_T) :: ii
+    integer(kind=G_LIDX_T) :: j, jj
     !--------------------------------------------------------------------------------
 
     ierr=0
@@ -2237,9 +2254,10 @@ contains
 
 !$omp parallel do schedule(static)
     do i = 1, V%map%nlocal(V%map%me), 1
-      i_ = V%map%distrib(V%map%me)+i-2
-      do j=0,V%jmax-V%jmin
-        call elemFunc(i,j,V%val(V%jmin+j,i))
+      ii = V%map%distrib(V%map%me)+i-2
+      do j=V%jmin,V%jmax
+        jj=j-V%jmin
+        call elemFunc(ii,jj,C_LOC(V%val(j,i)))
       end do
     end do
 
