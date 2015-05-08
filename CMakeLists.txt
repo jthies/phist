@@ -724,17 +724,18 @@ install(FILES ${PYTHON_HEADERS} DESTINATION lib/python)
 
 # test drivers
 if( "${CMAKE_BUILD_TYPE}" MATCHES "Release" )
-  set(PHIST_TESTS kernels
+  set(PHIST_TESTS task
+                  kernels
                   core
-                  jada
                   krylov
-                  bench)
-  #                sched
-else()
-  set(PHIST_TESTS kernels
-                  core
                   jada
-                  krylov)
+                  bench)
+else()
+  set(PHIST_TESTS task
+                  kernels
+                  core
+                  krylov
+                  jada)
 endif()
 
 foreach(label ${PHIST_TESTS})
@@ -825,6 +826,8 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
     set_tests_properties(test-${label}_np${np} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
     set_tests_properties(test-${label}_np${np} PROPERTIES TIMEOUT 500)
   endforeach()
+  # the task tests should be very fast (no heavy computation) - but may deadlock in case of errors!
+  set_tests_properties(test-task_np${np} PROPERTIES TIMEOUT 10)
 endforeach()
 
 # Test python interface if python is available
