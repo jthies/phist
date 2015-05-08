@@ -1,0 +1,133 @@
+{
+   MPI_Init_thread
+   drd:ConflictingAccess
+   ...
+   fun:PMPI_Init_thread
+   ...
+}
+{
+   MPI_Init
+   drd:ConflictingAccess
+   ...
+   fun:PMPI_Init
+   ...
+}
+#{
+#   OpenMPI_finalize
+#   drd:Misc
+#   ...
+#   fun:ompi_mpi_finalize
+#   ...
+#}
+{
+   OpenMPI_finalize
+   drd:ConflictingAccess
+   ...
+   fun:ompi_mpi_finalize
+   ...
+}
+#{
+#   OpenMPI_finalize
+#   drd:PthAPIerror
+#   ...
+#   fun:ompi_mpi_finalize
+#   ...
+#}
+{
+   GCC-OpenMP
+   drd:ConflictingAccess
+   ...
+   fun:gomp_free_thread
+   ...
+   fun:start_thread
+   fun:clone
+}
+{
+   GCC-OpenMP
+   drd:ConflictingAccess
+   fun:gomp_thread_start
+   ...
+   fun:start_thread
+   fun:clone
+}
+{
+   GCC-OpenMP
+   drd:ConflictingAccess
+   ...
+   fun:gomp_free_pool_helper
+   fun:gomp_thread_start
+   ...
+   fun:start_thread
+   fun:clone
+}
+{
+   OpenMPI-stuff
+   drd:ConflictingAccess
+   ...
+   fun:orte_progress_thread_engine
+   ...
+}
+{
+   GCC-OpenMP
+   drd:ConflictingAccess
+   ...
+   fun:gomp_*barrier_wait*
+   fun:gomp_thread_start
+   ...
+   fun:start_thread
+   fun:clone
+}
+{
+   GCC-OpenMP_in_ghost_taskq
+   drd:ConflictingAccess
+   ...
+   fun:taskq_findDeleteAndPinTask*
+   ...
+   ...
+   fun:start_thread
+   fun:clone
+}
+{
+   GCC-OpenMP
+   drd:ConflictingAccess
+   fun:pthread_mutex_*lock
+   fun:thread_main
+   ...
+   fun:start_thread
+   fun:clone
+}
+{
+   GCC-OpenMP
+   drd:ConflictingAccess
+   ...
+   fun:pthread_cond_*
+   fun:thread_main
+   ...
+   fun:start_thread
+   fun:clone
+}
+{
+   GCC-OpenMP
+   drd:ConflictingAccess
+   ...
+   fun:sem_wait*
+   fun:thread_main
+   ...
+   fun:start_thread
+   fun:clone
+}
+{
+   GHOST_hwloc
+   drd:ConflictingAccess
+   ...
+   fun:hwloc_*
+   ...
+}
+{
+   GHOST_finalize
+   drd:ConflictingAccess
+   fun:ghost_pumap_destroy
+   fun:ghost_finalize
+   ...
+}
+
