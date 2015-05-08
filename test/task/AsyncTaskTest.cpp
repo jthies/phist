@@ -162,7 +162,11 @@ PHIST_TASK_WAIT(Task2,&iflag_)
 
 
 // check ordering of async and compute tasks
+#ifdef PHIST_KERNEL_LIB_GHOST
 TEST_F(AsyncTaskTest, task_post_wait_step)
+#else
+TEST_F(AsyncTaskTest, DISABLED_task_post_wait_step)
+#endif
 {
 PHIST_TASK_DECLARE(Task1)
 

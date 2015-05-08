@@ -8,7 +8,7 @@
 
 
 #include "phist_macros.h"
-#include "phist_ghost_macros.hpp"
+#include "phist_tasks.h"
 #include "phist_kernels.h"
 
 

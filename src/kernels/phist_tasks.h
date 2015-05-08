@@ -1,5 +1,5 @@
-#ifndef PHIST_GHOST_MACROS_HPP
-#define PHIST_GHOST_MACROS_HPP
+#ifndef PHIST_TASKS_HPP
+#define PHIST_TASKS_HPP
 
 #include "phist_config.h"
 
@@ -8,11 +8,64 @@
 #endif
 #include "phist_macros.h"
 
+
+/*! \def PHIST_TASK_DECLARE(taskName)
+ *  Declare a tasks (e.g. a variable taskName of some type to be used later!)
+ *  \taskName new identifier
+ */
+
+/*! \def PHIST_TASK_BEGIN(taskName)
+ *  Marks the start of a task, must be followed by PHIST_TASK_END or PHIST_TASK_END_NOWAIT
+ *  \param taskName previously declared identifier (with PHIST_TASK_DECLARE)
+ */
+
+/*! \def PHIST_TASK_END(task_ierr)
+ * Marks the end of a task and waits for it to finish.
+ * With GHOST this task allocates (and blocks) all available resources (e.g. cores)!
+ * \warning currently only works in a void functions as it uses PHIST_CHK_IERR internally (so it may return with an error!)
+ * \param tas_ierr (int*), for errors
+ */
+
+/*! \def PHIST_TASK_END_NOWAIT(task_ierr)
+ * Marks the end of a task and runs it in the background
+ * With GHOST this task has no resources (e.g. cores)
+ * \warning currently only works in a void functions as it uses PHIST_CHK_IERR internally (so it may return with an error!)
+ * \param tas_ierr (int*), for errors
+ */
+
+/*! \def PHIST_TASK_WAIT(taskName,task_ierr)
+ * Waits for a background task to finish (e.g. one with PHIST_TASK_END_NOWAIT)
+ * \warning currently only works in a void functions as it uses PHIST_CHK_IERR internally (so it may return with an error!)
+ * \param taskName task identifier
+ * \param tas_ierr (int*), for errors
+ */
+
+/*! \def PHIST_TASK_POST_STEP(task_ierr)
+ * (Semaphore post) Marks some kind of progress in the *current* task (you can wait for it in *another* task with PHIST_TASK_WAIT_STEP)
+ * \warning currently only works in a void functions as it uses PHIST_CHK_IERR internally (so it may return with an error!)
+ * \param tas_ierr (int*), for errors
+ */
+
+/*! \def PHIST_TASK_WAIT_STEP(taskName,task_ierr)
+ * (Semaphore wait) Wait for a PHIST_TASK_POST_STEP to be called in the specified task
+ * \warning currently only works in a void functions as it uses PHIST_CHK_IERR internally (so it may return with an error!)
+ * \param taskName task identifier
+ * \param tas_ierr (int*), for errors
+ */
+
+/*! \def PHIST_MAIN_TASK_BEGIN
+ * Starts the main task (if required). Put it directly after phist_kernels_init
+ */
+
+/*! \def PHIST_MAIN_TASK_END
+ * Finishes the main task (if required). Put it directly before phist_kernels_finalize
+ */
+
+
+#if defined(__cplusplus) && defined(PHIST_HAVE_GHOST) && defined(PHIST_HAVE_CXX11_LAMBDAS)
 #include <ghost.h>
 #include <ghost/machine.h>
 
-
-#ifdef PHIST_HAVE_CXX11_LAMBDAS
 
 // glue between C++11 Lambda-functions and plain old C function pointers
 template<typename LFunc>
@@ -82,9 +135,12 @@ inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
 #define PHIST_TASK_POST_STEP(task_ierr) {ghost_task_t* t = NULL; ghost_task_cur(&t); sem_post(t->progressSem);}
 #define PHIST_TASK_WAIT_STEP(taskName,task_ierr) {sem_wait(taskName->progressSem);}
 
-#else /* PHIST_HAVE_CXX11_LAMBDAS */
+#define PHIST_MAIN_TASK_BEGIN {int task_ierr = 0; ghost_task_t* mainTask = NULL; phist_execute_lambda_as_ghost_task(&mainTask, [&]()->int {
+#define PHIST_MAIN_TASK_END   return 0;}, &task_ierr, false );PHIST_ICHK_IERR((void)task_ierr,task_ierr);}
 
-#warning "C++11 not supported, not using GHOST tasking mechanism!"
+
+#else /* __cplusplus && PHIST_HAVE_GHOST && PHIST_HAVE_CXX11_LAMBDAS */
+
 
 #define PHIST_TASK_DECLARE(taskName)
 #define PHIST_TASK_BEGIN(taskName)
@@ -95,6 +151,9 @@ inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
 #define PHIST_TASK_POST_STEP(task_ierr)
 #define PHIST_TASK_WAIT_STEP(taskName,task_ierr)
 
+#define PHIST_MAIN_TASK_BEGIN
+#define PHIST_MAIN_TASK_END
+
 #endif /* PHIST_HAVE_CXX11_LAMBDAS */
 
-#endif /* PHIST_GHOST_MACROS_HPP */
+#endif /* PHIST_TASKS_HPP */
