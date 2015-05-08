@@ -1410,6 +1410,9 @@ PHIST_TASK_BEGIN(ComputeTask)
   //ghost_dot(s,V,W);
   PHIST_CHK_GERR(V->dot(V,s,W),*iflag);
 PHIST_TASK_END(iflag);
+
+PHIST_TASK_POST_STEP(iflag);
+
 #ifdef GHOST_HAVE_MPI
   if (V->context) {
     ghost_mpi_op_t sumOp;
@@ -1453,6 +1456,8 @@ PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_TASK_END(iflag);
+
+PHIST_TASK_POST_STEP(iflag);
 
   PHIST_CHK_GERR(C->reduce(C,V->context->mpicomm,GHOST_ALLREDUCE),*iflag);
 }

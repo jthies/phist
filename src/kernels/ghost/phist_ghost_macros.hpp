@@ -79,6 +79,9 @@ inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
 #define PHIST_TASK_END_NOWAIT(task_ierr)   }, task_ierr, true );PHIST_CHK_IERR((void)*(task_ierr),*(task_ierr));
 #define PHIST_TASK_WAIT(taskName,task_ierr) PHIST_CHK_IERR(phist_wait_ghost_task(&taskName,task_ierr),*(task_ierr));
 
+#define PHIST_TASK_POST_STEP(task_ierr) {ghost_task_t* t = NULL; ghost_task_cur(&t); sem_post(t->progressSem);}
+#define PHIST_TASK_WAIT_STEP(taskName,task_ierr) {sem_wait(taskName->progressSem);}
+
 #else /* PHIST_HAVE_CXX11_LAMBDAS */
 
 #warning "C++11 not supported, not using GHOST tasking mechanism!"
@@ -88,6 +91,9 @@ inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
 #define PHIST_TASK_END(task_ierr)
 #define PHIST_TASK_END_NOWAIT(task_ierr)
 #define PHIST_TASK_WAIT(taskName,task_ierr)
+
+#define PHIST_TASK_POST_STEP(task_ierr)
+#define PHIST_TASK_WAIT_STEP(taskName,task_ierr)
 
 #endif /* PHIST_HAVE_CXX11_LAMBDAS */
 

@@ -92,7 +92,7 @@ PHIST_TASK_DECLARE(Task1)
   int step = 0;
 
 PHIST_TASK_BEGIN(Task1)
-  // just use a timer here so the creating thread comes first!
+  // just use a timer here so the creating thread comes first - this *is* a race condition!
   doSomething();
 #pragma omp atomic capture
   order[1] = step++;
@@ -162,42 +162,36 @@ PHIST_TASK_WAIT(Task2,&iflag_)
 
 
 // check ordering of async and compute tasks
-TEST_F(AsyncTaskTest, async_blocked_ordering)
+TEST_F(AsyncTaskTest, task_post_wait_step)
 {
 PHIST_TASK_DECLARE(Task1)
-PHIST_TASK_DECLARE(Task2)
-PHIST_TASK_DECLARE(Task3)
 
   std::vector<int> order(4,-1);
   int step = 0;
 
 // start an async task
 PHIST_TASK_BEGIN(Task1)
+
+  doSomething();
 #pragma omp atomic capture
   order[0] = step++;
+PHIST_TASK_POST_STEP(&iflag_t1)
 
-  // do some computations
-PHIST_TASK_BEGIN(Task2)
+
   doSomething();
 #pragma omp atomic capture
   order[2] = step++;
-PHIST_TASK_END(&iflag_t2_)
-
-  // do some communication in the background
-  doSomething();
-#pragma omp atomic capture
-  order[3] = step++;
 PHIST_TASK_END_NOWAIT(&iflag_)
 
 
-PHIST_TASK_BEGIN(Task3)
-  doSomething();
+PHIST_TASK_WAIT_STEP(Task1,&iflag_)
 #pragma omp atomic capture
   order[1] = step++;
-PHIST_TASK_END(&iflag_)
 
 PHIST_TASK_WAIT(Task1,&iflag_)
 
+#pragma omp atomic capture
+  order[3] = step++;
 
   std::vector<int> expectedOrder = {0,1,2,3};
   ASSERT_EQ(expectedOrder, order);
