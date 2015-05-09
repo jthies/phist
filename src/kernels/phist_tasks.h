@@ -71,6 +71,25 @@
 template<typename LFunc>
 void phist_execute_lambda_as_ghost_task(ghost_task_t **task, LFunc context, int* iflag, bool async)
 {
+  // check that the task is not already allocated/in use
+  PHIST_CHK_IERR(*iflag = (*task != NULL) ? -1 : 0, *iflag);
+  if( !async )
+  {
+    // don't create a thread at all if the current task is also not an async task
+    ghost_task_t* curTask = NULL;
+    ghost_task_cur(&curTask);
+    if( curTask != NULL )
+    {
+      bool curTaskAsync = (curTask->nThreads == 0);
+      if( !curTaskAsync )
+      {
+        // simply run the target code
+        context();
+        return;
+      }
+    }
+  }
+
   // ghost requires a task function of the form "void* f(void*)"
   // a Lambda without capture can be converted automatically to a plain old C function pointer,
   // but the context goes out of scope when this function is left (so we copy it to the heap and destroy it here!)

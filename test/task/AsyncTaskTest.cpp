@@ -163,7 +163,7 @@ PHIST_TASK_WAIT(Task2,&iflag_)
 }
 
 
-// check ordering of async and compute tasks
+// check if the task semaphore works
 #ifdef PHIST_KERNEL_LIB_GHOST
 TEST_F(AsyncTaskTest, task_post_wait_step)
 #else
@@ -193,6 +193,55 @@ PHIST_TASK_END_NOWAIT(&iflag_)
 PHIST_TASK_WAIT_STEP(Task1,&iflag_)
 #pragma omp atomic capture
   order[1] = step++;
+
+PHIST_TASK_WAIT(Task1,&iflag_)
+
+#pragma omp atomic capture
+  order[3] = step++;
+
+  std::vector<int> expectedOrder = {0,1,2,3};
+  ASSERT_EQ(expectedOrder, order);
+}
+
+
+// check ordering of async and compute tasks with the task semaphore
+#ifdef PHIST_KERNEL_LIB_GHOST
+TEST_F(AsyncTaskTest, simulate_communication_hiding)
+#else
+TEST_F(AsyncTaskTest, DISABLED_simulate_communication_hiding)
+#endif
+{
+PHIST_TASK_DECLARE(Task1)
+PHIST_TASK_DECLARE(Task3)
+
+  std::vector<int> order(4,-1);
+  int step = 0;
+
+// start an async task
+PHIST_TASK_BEGIN(Task1)
+
+PHIST_TASK_DECLARE(Task2)
+PHIST_TASK_BEGIN(Task2)
+  doSomething(); // local calculation
+#pragma omp atomic capture
+  order[0] = step++;
+PHIST_TASK_END(&iflag_t1_)
+
+PHIST_TASK_POST_STEP(&iflag_t1_)
+
+  doSomething(); // communication
+#pragma omp atomic capture
+  order[2] = step++;
+PHIST_TASK_END_NOWAIT(&iflag_)
+
+
+// wait till calculation is finished
+PHIST_TASK_WAIT_STEP(Task1,&iflag_)
+PHIST_TASK_BEGIN(Task3)
+#pragma omp atomic capture
+  order[1] = step++;
+  doSomething(); // other calculation to hide communication
+PHIST_TASK_END(&iflag_)
 
 PHIST_TASK_WAIT(Task1,&iflag_)
 
