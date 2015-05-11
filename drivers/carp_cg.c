@@ -231,12 +231,11 @@ int main(int argc, char** argv)
 
 if (num_complex==0)
 {
-  PHIST_ICHK_IERR(SUBR(mvec_random)(X_r_ex0,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(create_sol_and_rhs)(problem,mat,X_r_ex0,B,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_i_ex0,ZERO,&iflag),iflag);
     
   // compute rhs B to match this exact solution for sigma[0]:
-  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_r[0],X_r_ex0,0.0,B,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(-1.0,mat,X_r_ex0,1.0,B,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_r[0],X_r_ex0,-ONE,B,&iflag),iflag);
 }
 else
 {
