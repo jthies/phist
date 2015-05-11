@@ -605,6 +605,12 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
   PHIST_CHK_IERR(*iflag=B->Update(alpha,*A,beta),*iflag);  
 }
 
+extern "C" void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag = 0;
+}
+
 //! y=alpha*A*x+beta*y.
 extern "C" void SUBR(sparseMat_times_mvec)(double alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
 double beta, TYPE(mvec_ptr) vy, int* iflag)

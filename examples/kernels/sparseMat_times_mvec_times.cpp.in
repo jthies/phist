@@ -79,12 +79,14 @@ PHIST_MAIN_TASK_BEGIN
 
   for(int i = 0; i < NUM_SPMVMS/nvecs; i++)
   {
+    if (argc>3) iflag = atoi(argv[4]);
     PHIST_ENTER_FCN("phist_spmvm");
     PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,x,st::zero(),y,&iflag),iflag);
   }
 
   for(int i = 0; i < NUM_SPMVMS/nvecs; i++)
   {
+    if (argc>3) iflag = atoi(argv[4]);
     PHIST_ENTER_FCN("phist_spmvm_on_full_views");
     PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,xv,st::zero(),yv,&iflag),iflag);
   }
