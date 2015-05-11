@@ -555,7 +555,7 @@ contains
   !! by MATPDE3D_solFunc. The same initialization procedure
   !! as for MATPDE3D_rowFunc is required, i.e. 
   !! first initDimensions and then selectProblem.
-  function MATPDE3D_rhsFunc(row, rhsVal,col) result(the_result) bind(C,name='MATPDE3D_rhsFunc')
+  function MATPDE3D_rhsFunc(row, col, rhsVal) result(the_result) bind(C,name='MATPDE3D_rhsFunc')
     use, intrinsic :: iso_c_binding
     integer(G_GIDX_T), value :: row
     integer(G_LIDX_T), value :: col
@@ -633,7 +633,7 @@ contains
     
   end function MATPDE3D_rhsFunc
 
-  function MATPDE3D_solFunc(row, solVal,col) result(the_result) bind(C,name='MATPDE3D_solFunc')
+  function MATPDE3D_solFunc(row, col, solVal) result(the_result) bind(C,name='MATPDE3D_solFunc')
     use, intrinsic :: iso_c_binding
     integer(G_GIDX_T), value :: row
     integer(G_LIDX_T), value :: col
