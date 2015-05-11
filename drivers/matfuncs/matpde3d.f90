@@ -570,6 +570,12 @@ contains
     real(kind=8) :: p12, pm12, q12, qm12, rij, r1, rm1, sij, s1, sm1
     real(kind=8) :: qb12, qbm12, sb1, sbij, sbm1, sbmij
     
+    if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
+      ! not available
+      the_result=1
+      return
+    end if
+    
     coord = coordOfId(row)
     ix = coord(1)+1
     jy = coord(2)+1
@@ -643,6 +649,12 @@ contains
     !     .. Scalar variables ..
     integer(kind=8) :: ix, jy, kz, index, jd, coord(3)
     real(kind=8) :: xi,yj,zk
+
+    if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
+      ! not available
+      the_result=1
+      return
+    end if
     
     coord = coordOfId(row)
     ix = coord(1)+1
