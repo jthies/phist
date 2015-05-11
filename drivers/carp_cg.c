@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <strings.h>
 #include <stdbool.h>
 #include <math.h>
 
@@ -47,10 +48,10 @@ int main(int argc, char** argv)
      if ( argc < 2 )
      {
        PHIST_SOUT(PHIST_ERROR,"Usage: carp_cg    <problem> <shiftFile> <num vecs>\n"
-                                 "               <block size> <tol> <maxIter>\n"
+                                 "               <block size> <tol> <maxIter> <omega>\n"
                                  "  where: <problem> describes the input matrix (see below)\n"
                                  "         <shiftFile>: see \"exampleRuns/graphene_shifts.txt\" for an example.\n"
-                                 "                      If omitted, no shift is used.\n"
+                                 "                      If omitted or 'none', no shift is used.\n"
                                  "         etc. all other args get default values if omitted\n");
        // print usage message for creating/reading a matrix
        SUBR(create_matrix)(NULL, NULL, "usage",&iflag);
@@ -72,6 +73,7 @@ int main(int argc, char** argv)
   int nshifts,nrhs,blockSize,maxIter;
   MT tol;
   MT *sigma_r, *sigma_i;
+  MT omega; /* relaxation parameter */
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
 
@@ -88,7 +90,8 @@ int main(int argc, char** argv)
   if (argc>iarg)
   {
     shiftFileName=argv[iarg++];
-  }  
+  }
+  if (!strncasecmp(shiftFileName,"none",4)) shiftFileName=NULL;
   if (argc>iarg)
   {
     nrhs=atoi(argv[iarg++]);
@@ -126,6 +129,15 @@ int main(int argc, char** argv)
   else
   {
     maxIter=1000;
+  }
+  
+  if (argc>iarg)
+  {
+    omega=atof(argv[iarg++]);
+  }
+  else
+  {
+    omega=1.0;
   }
 
     int num_complex=0;
@@ -287,6 +299,13 @@ PHIST_ICHK_IERR(SUBR(sdMat_delete)(Rtmp,&iflag),iflag);
   TYPE(feastCorrectionSolver_ptr) fCorrSolver;
   PHIST_ICHK_IERR(SUBR(feastCorrectionSolver_create)
         (&fCorrSolver, mat, CARP_CG, blockSize, nshifts,sigma_r, sigma_i, &iflag),iflag);
+        
+  // this is not very elegant, but since this driver was meant to test the feast correction 
+  // solver in the first place, we stick with it and set parameters manually.
+  for (i=0;i<nshifts;i++)
+  {
+    fCorrSolver->carp_cgStates_[i]->omega_=omega;
+  }
 
   int numBlocks=nrhs/blockSize;
 
