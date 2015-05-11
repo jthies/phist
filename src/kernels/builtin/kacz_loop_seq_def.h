@@ -28,16 +28,25 @@ flush(6)
     tmp_i(1:NVEC) = shift_i*x_r(1:NVEC,i) + &
                     shift_r*x_i(1:NVEC,i)
 #endif
+#ifdef KACZ_NO_SHIFT
+    row_norm=0.0_8
+#endif
     do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp_r(1:NVEC) = tmp_r(1:NVEC) - val(j)*x_r(1:NVEC,col_idx(j))
 #ifdef KACZ_RC_VARIANT
       tmp_i(1:NVEC) = tmp_i(1:NVEC) - val(j)*x_i(1:NVEC,col_idx(j))
+#endif
+#ifdef KACZ_NO_SHIFT
+      row_norm=row_norm+val(j)*val(j)
 #endif
     end do
     do j = halo_ptr(i), row_ptr(i+1)-1, 1
       tmp_r(1:NVEC) = tmp_r(1:NVEC) - val(j)*halo_r(1:NVEC,col_idx(j))
 #ifdef KACZ_RC_VARIANT
       tmp_i(1:NVEC) = tmp_i(1:NVEC) - val(j)*halo_i(1:NVEC,col_idx(j))
+#endif
+#ifdef KACZ_NO_SHIFT
+      row_norm=row_norm+val(j)*val(j)
 #endif
     end do
 
@@ -47,7 +56,11 @@ flush(6)
     ! Kaczmarz update of X
 
     ! a) scaling factors
+#ifdef KACZ_NO_SHIFT
+    tmp_r(1:NVEC)=tmp_r(1:NVEC)*omega/row_norm
+#else
     tmp_r(1:NVEC)=tmp_r(1:NVEC)*omega*nrms_ai2i(i)
+#endif
 #ifdef KACZ_RC_VARIANT
     tmp_i(1:NVEC)=tmp_i(1:NVEC)*omega*nrms_ai2i(i)
 #endif
