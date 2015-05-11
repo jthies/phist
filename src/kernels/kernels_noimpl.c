@@ -183,6 +183,13 @@ void SUBR(mvec_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
   *iflag=-99;
 }
 
+void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
+        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
+{
+  *iflag=-99;
+}
+
+
 void SUBR(sdMat_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
 {
   *iflag=-99;

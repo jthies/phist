@@ -87,7 +87,7 @@ TEST_F(MainTaskTest, DISABLED_task_has_threads)
 #ifdef PHIST_KERNEL_LIB_GHOST
 TEST_F(MainTaskTest, task_is_running)
 #else
-TEST_F(MainTaskTest, DISABLED_task_has_threads)
+TEST_F(MainTaskTest, DISABLED_task_is_running)
 #endif
 {
   ASSERT_TRUE(curTask_ != NULL);

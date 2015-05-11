@@ -36,31 +36,33 @@ PHIST_TASK_DECLARE(Task1)
 PHIST_TASK_DECLARE(Task2)
 PHIST_TASK_DECLARE(Task3)
 
-  std::vector<bool> taskRun(3, false);
+  bool task1Run = false;
+  bool task2Run = false;
+  bool task3Run = false;
 
 PHIST_TASK_BEGIN(Task1)
-  taskRun[0] = true;
+  task1Run = true;
 PHIST_TASK_END(&iflag_)
 
-  ASSERT_TRUE(taskRun[0]);
-  ASSERT_FALSE(taskRun[1]);
-  ASSERT_FALSE(taskRun[2]);
+  ASSERT_TRUE(task1Run);
+  ASSERT_FALSE(task2Run);
+  ASSERT_FALSE(task3Run);
 
 PHIST_TASK_BEGIN(Task2)
-  taskRun[1] = true;
+  task2Run = true;
 PHIST_TASK_END(&iflag_)
 
-  ASSERT_TRUE(taskRun[0]);
-  ASSERT_TRUE(taskRun[1]);
-  ASSERT_FALSE(taskRun[2]);
+  ASSERT_TRUE(task1Run);
+  ASSERT_TRUE(task2Run);
+  ASSERT_FALSE(task3Run);
 
 PHIST_TASK_BEGIN(Task3)
-  taskRun[2] = true;
+  task3Run = true;
 PHIST_TASK_END(&iflag_)
 
-  ASSERT_TRUE(taskRun[0]);
-  ASSERT_TRUE(taskRun[1]);
-  ASSERT_TRUE(taskRun[2]);
+  ASSERT_TRUE(task1Run);
+  ASSERT_TRUE(task2Run);
+  ASSERT_TRUE(task3Run);
 }
 
 

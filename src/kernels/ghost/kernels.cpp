@@ -47,7 +47,6 @@
 #include <ghost/pumap.h>
 #include <ghost/locality.h>
 #include <limits>
-#include "phist_ghost_macros.hpp"
 
 #if defined(PHIST_HAVE_BELOS)||defined(PHIST_HAVE_KOKKOS)
 # if defined(GHOST_HAVE_LONGIDX_LOCAL)
