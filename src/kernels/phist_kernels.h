@@ -16,6 +16,7 @@ typedef int MPI_Comm;
 // note: the phist_typedefs.h file is provided in the subdirectory
 // where the interface is implemented (e.g. ghost/, tpetra/).
 #include "phist_typedefs.h"
+#include "phist_tasks.h"
 
 #ifdef PHIST_HAVE_GHOST
 #include "ghost/types.h"
