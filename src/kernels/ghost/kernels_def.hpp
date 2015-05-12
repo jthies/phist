@@ -30,8 +30,6 @@ const char* filename,int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-PHIST_TASK_DECLARE(ComputeTask)
-PHIST_TASK_BEGIN(ComputeTask)
 
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
@@ -41,7 +39,9 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_SOUT(PHIST_INFO, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
 #endif
   *iflag=0;
-  
+
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(const MPI_Comm,comm,vcomm,*iflag);
   if (filename==NULL)
   {
@@ -101,9 +101,6 @@ const char* filename,int* iflag)
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
-PHIST_TASK_DECLARE(ComputeTask)
-PHIST_TASK_BEGIN(ComputeTask)
-
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
 #ifdef PHIST_USE_SELL
@@ -112,7 +109,9 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_SOUT(PHIST_INFO, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
 #endif
   *iflag=0;
-  
+
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(const MPI_Comm,comm,vcomm,*iflag);
   if (filename==NULL)
   {
@@ -1778,8 +1777,6 @@ void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, const_comm_ptr_
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-PHIST_TASK_DECLARE(ComputeTask)
-PHIST_TASK_BEGIN(ComputeTask)
 
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
@@ -1790,7 +1787,8 @@ PHIST_TASK_BEGIN(ComputeTask)
 #endif
   *iflag=0;
   
-
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN(ComputeTask)
   ghost_sparsemat_t* mat = NULL;
   ghost_context_t *ctx = NULL;
   PHIST_CAST_PTR_FROM_VOID(const MPI_Comm, comm, vcomm, *iflag);
