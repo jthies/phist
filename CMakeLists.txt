@@ -616,11 +616,13 @@ find_program(GCOVR_SCRIPT gcovr)
 find_program(CPPCHECK_EXECUTABLE cppcheck)
 if (${INTEGRATION_BUILD})
     set(GCOVR_OPTIONS -r src ${GCOVR_EXCLUDES} --xml -o coverage.xml CACHE STRING "String gcovr options")
-    set(CPPCHECK_OPTIONS src --enable=all --xml --xml-version=2 -q 2> cppcheck.xml CACHE STRING "cppcheck options")
+    set(CPPCHECK_OPTIONS --force --enable=all --suppress=unusedFunction --xml --xml-version=2 -q CACHE_STRING "cppcheck options")
+    set(CPPCHECK_OPTIONS_POST 2> cppcheck.xml)
     set(CTEST_OPTIONS --force-new-ctest-process --verbose CACHE STRING "ctest options")
 else()
     set(GCOVR_OPTIONS -r src ${GCOVR_EXCLUDES} CACHE STRING "String gcovr options")
-    set(CPPCHECK_OPTIONS src --enable=all CACHE STRING "cppcheck options")
+    set(CPPCHECK_OPTIONS --force --enable=all --suppress=unusedFunction CACHE STRING "cppcheck options")
+    set(CPPCHECK_OPTIONS_POST)
     set(CTEST_OPTIONS --force-new-ctest-process --output-on-failure CACHE STRING "ctest options")
 endif()
 
@@ -880,9 +882,16 @@ endif()
 
 # Adding optional "cppcheck" target
 if (CPPCHECK_EXECUTABLE)
-    add_custom_target(cppcheck
-    ${CPPCHECK_EXECUTABLE} ${CPPCHECK_OPTIONS}
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+    # get all C and C++ sources
+    set(C_SOURCES)
+    foreach(source ${SOURCES})
+      string(REGEX MATCH ".*[.]cp?p?" c_source ${source})
+      if(c_source)
+        list(APPEND C_SOURCES ${c_source})
+      endif()
+    endforeach()
+    message(STATUS ${C_SOURCES})
+    add_custom_target(cppcheck ${CPPCHECK_EXECUTABLE} ${CPPCHECK_OPTIONS} ${INCLUDE_FLAGS} ${C_SOURCES} ${CPPCHECK_OPTIONS_POST})
 endif()
 
 # Audit target: Combines check, cppcheck, coverage
