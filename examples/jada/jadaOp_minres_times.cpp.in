@@ -274,7 +274,6 @@ void myMain(int argc, char** argv, int &iflag)
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), q, y, st::zero(), M, &iflag), iflag);
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////START MINRES/////
     int i = 0;
     while(i < maxit)
@@ -286,82 +285,81 @@ void myMain(int argc, char** argv, int &iflag)
         scalebuf[j] = st::one()/beta[j];
       }
 
-PHIST_TASK_BEGIN(Task2)
-PHIST_SOUT(PHIST_INFO,"Task 2 begin\n");
-  //scale x
-  PHIST_CHK_IERR(SUBR(mvec_vscale)(x,scalebuf,&iflag_t2),iflag_t2);
 
-PHIST_TASK_END_NOWAIT(&iflag)
-if (i > 0)
+    //scale x
+    PHIST_CHK_IERR(SUBR(mvec_vscale)(x,scalebuf,&iflag),iflag);
+if ((i < maxit - 2) && (i > 0))
 {
-  //PHIST_TASK_WAIT(Task1,&iflag)
+  
+  PHIST_TASK_WAIT(Task4,&iflag)
 }
 
 
-
-PHIST_TASK_BEGIN(Task3)
-PHIST_SOUT(PHIST_INFO,"Task 3 begin\n");
     //! W=alpha*V*C + beta*W
     //scalebuf[0] is wrong. We need a mvec_times_sdMat which can handle an array for alpha and beta
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-scalebuf[0], q, M, scalebuf[0],  y, &iflag_t3), iflag_t3);
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-scalebuf[0], q, M, scalebuf[0],  y, &iflag), iflag);
 
-PHIST_TASK_END_NOWAIT(&iflag)
-PHIST_TASK_WAIT(Task2,&iflag)
-PHIST_SOUT(PHIST_INFO,"Task 2 wait end\n");
-PHIST_TASK_WAIT(Task3,&iflag)
-PHIST_SOUT(PHIST_INFO,"Task 3 wait end\n");
 
     
-PHIST_TASK_BEGIN(Task4)
-PHIST_SOUT(PHIST_INFO,"Task 4 begin\n"); 
-    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(x, y, alpha, &iflag_t4), iflag_t4);
-    
+PHIST_TASK_BEGIN(Task1)
+    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(x, y, alpha, &iflag_t1), iflag_t1);
 PHIST_TASK_END_NOWAIT(&iflag)
-      
+PHIST_TASK_WAIT_STEP(Task1,&iflag)
 
       
 
-  
-  
-PHIST_TASK_BEGIN(Task5)
-PHIST_SOUT(PHIST_INFO,"Task 5 begin\n");      
     //y=y-beta*z
     for (int k = 0; k < nvecs; k++)
       beta[k]=-beta[k];
-    PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(beta,z,st::one(),y,&iflag_t5),iflag_t5); 
-PHIST_TASK_END_NOWAIT(&iflag)
+    PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(beta,z,st::one(),y,&iflag),iflag); 
 
-PHIST_TASK_WAIT(Task5,&iflag)
-PHIST_SOUT(PHIST_INFO,"Task 5 wait end\n");
-PHIST_TASK_WAIT(Task4,&iflag)
-PHIST_SOUT(PHIST_INFO,"Task 4 wait end\n");
-//PHIST_TASK_BEGIN(Task6)
+
+PHIST_TASK_WAIT(Task1,&iflag)
+
+
+
     //y=y-alpha*x
     for (int k = 0; k < nvecs; k++)
       alpha[k]=-alpha[k];
-    PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,x,st::one(),y,&iflag_t6),iflag_t6);
-//PHIST_TASK_END_NOWAIT(&iflag)
+    PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,x,st::one(),y,&iflag),iflag);
+
+    //pointer swap
 
     z = V[i];
     x = V[i+1];
     y = V[i+2];
-//PHIST_TASK_BEGIN(Task7)
-    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(x, x, beta_new, &iflag_t7), iflag_t7);
-    for (int j = 0; j < nvecs; j++)
-        beta_new[j] = st::sqrt(beta_new[j]);
-//PHIST_TASK_END_NOWAIT(&iflag)
+if (i < maxit - 2)
+{ 
+PHIST_TASK_BEGIN(Task3)
+  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_communicate)(A, x, &iflag_t3), iflag_t3);
+PHIST_TASK_END_NOWAIT(&iflag)
+PHIST_TASK_WAIT_STEP(Task3,&iflag)
+}
 
-//PHIST_TASK_BEGIN(Task1)
+
+PHIST_TASK_BEGIN(Task2)
+    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(x, x, beta_new, &iflag_t2), iflag_t2);
+PHIST_TASK_END_NOWAIT(&iflag)
+PHIST_TASK_WAIT_STEP(Task2,&iflag)
     if (i < maxit - 2)
     { 
-      PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(st::one(), A, x, st::zero(), y, &iflag_t1), iflag_t1);
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), q, y, st::zero(), M, &iflag_t1), iflag_t1);
+      
+      PHIST_TASK_WAIT(Task3,&iflag)
+      iflag_t3 = PHIST_SPMVM_ONLY_LOCAL;
+      PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(st::one(), A, x, st::zero(), y, &iflag_t3), iflag_t3);
+
+//PHIST_TASK_WAIT_STEP(Task3,&iflag)
+PHIST_TASK_BEGIN(Task4)
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), q, y, st::zero(), M, &iflag_t4), iflag_t4);
+      PHIST_TASK_END_NOWAIT(&iflag)
+PHIST_TASK_WAIT_STEP(Task4,&iflag)
     }
-//PHIST_TASK_END_NOWAIT(&iflag)
       
 
-//PHIST_TASK_WAIT(Task7,&iflag)
+PHIST_TASK_WAIT(Task2,&iflag)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      for (int j = 0; j < nvecs; j++)
+        beta_new[j] = st::sqrt(beta_new[j]);
 
       /////OLD GIVENS ROTATION ON NEW COLUMN OF T/////
 
@@ -438,7 +436,12 @@ PHIST_SOUT(PHIST_INFO,"Task 4 wait end\n");
     // PHIST_CHK_IERR(SUBR(mvec_norm2)(y,resNorm,&iflag),iflag);
     //PHIST_SOUT(PHIST_INFO,"absolut Fehler: %e\n", resNorm[0]);
 #endif
-      
+
+//if (i < maxit - 2)
+//{
+//  PHIST_TASK_WAIT(Task3,&iflag)
+//}
+
 
       i++;
 
@@ -446,9 +449,7 @@ PHIST_SOUT(PHIST_INFO,"Task 4 wait end\n");
     
 
     }
-    //PHIST_TASK_WAIT(Task2,&iflag)
-    //PHIST_TASK_WAIT(Task3,&iflag)
-
+    
     
   // calc. minres solution
       
