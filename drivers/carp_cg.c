@@ -90,8 +90,8 @@ int main(int argc, char** argv)
   if (argc>iarg)
   {
     shiftFileName=argv[iarg++];
+    if (!strncasecmp(shiftFileName,"none",4)) shiftFileName=NULL;
   }
-  if (!strncasecmp(shiftFileName,"none",4)) shiftFileName=NULL;
   if (argc>iarg)
   {
     nrhs=atoi(argv[iarg++]);
