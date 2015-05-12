@@ -76,7 +76,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, cons
 #endif
     ghost_lidx_t row_nnz;
     
-    rowFunPtr(row,&row_nnz,cols,vals);
+    PHIST_CHK_IERR(*iflag=rowFunPtr(row,&row_nnz,cols,vals),*iflag);
     PHIST_TRY_CATCH(A->InsertGlobalValues(row,row_nnz,vals,cols),*iflag);
   }
   PHIST_TRY_CATCH(A->FillComplete(),*iflag);
@@ -444,7 +444,7 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
 #else
     gidx_t row=V->Map().GID64(i);
 #endif
-      funPtr(row,j,V->Pointers()[j]+i);
+      PHIST_CHK_IERR(*iflag=funPtr(row,j,V->Pointers()[j]+i),*iflag);
     }
   }
 }

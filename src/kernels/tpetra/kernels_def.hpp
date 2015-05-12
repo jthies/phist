@@ -101,7 +101,7 @@ A=new Traits<_ST_>::sparseMat_t(map_ptr,(int)maxnne);
     ghost_gidx_t row = tpetra_map->getGlobalElement(i);
     ghost_lidx_t row_nnz;
 
-    rowFunPtr(row,&row_nnz,cols,vals);
+    PHIST_CHK_IERR(*iflag=rowFunPtr(row,&row_nnz,cols,vals),*iflag);
 
     Teuchos::ArrayView<gidx_t> cols_v(cols,row_nnz);
     Teuchos::ArrayView<_ST_> vals_v(vals,row_nnz);

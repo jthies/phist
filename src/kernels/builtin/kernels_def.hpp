@@ -12,7 +12,7 @@
 // Declaration of Fortran implemented functions
 extern "C" {
   void SUBR(crsMat_create_fromRowFunc_f)(TYPE(sparseMat_ptr)*,const_comm_ptr_t comm,gidx_t,gidx_t, 
-      lidx_t, void (*)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int*);
+      lidx_t, int (*)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int*);
   void SUBR(crsMat_delete_f)(TYPE(sparseMat_ptr) A, int* iflag);
   void SUBR(crsMat_get_map_f)(TYPE(const_sparseMat_ptr),const_map_ptr_t*,int*);
   void SUBR(crsMat_read_mm_f)(void*A,const_comm_ptr_t comm, int fname_len, const char* fname, int* iflag);
@@ -31,7 +31,7 @@ extern "C" {
   void SUBR(mvec_num_vectors_f)(TYPE(const_mvec_ptr),int*,int*);
   void SUBR(mvec_print_f)(TYPE(const_mvec_ptr),int*);
   void SUBR(mvec_put_value_f)(TYPE(mvec_ptr),_ST_,int*);
-  void SUBR(mvec_put_func_f)(TYPE(mvec_ptr),void(*)(ghost_gidx_t,ghost_lidx_t,void*),int*);
+  void SUBR(mvec_put_func_f)(TYPE(mvec_ptr),int(*)(ghost_gidx_t,ghost_lidx_t,void*),int*);
   void SUBR(mvec_random_f)(TYPE(mvec_ptr),int*);
   void SUBR(mvec_scale_f)(TYPE(mvec_ptr),_ST_,int*);
   void SUBR(mvec_scatter_mvecs_f)(TYPE(const_mvec_ptr),TYPE(mvec_ptr) W[], int, int*);
@@ -288,7 +288,7 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
         int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  PHIST_CHK_IERR(SUBR(mvec_put_func_f)(V,(void(*)(ghost_gidx_t,ghost_lidx_t,void*))funPtr,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_put_func_f)(V,funPtr,iflag),*iflag);
 }
 
 extern "C" void SUBR(sdMat_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
@@ -548,7 +548,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, const
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc_f)(A, vcomm, nrows, ncols, maxnne, 
-        (void(*)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*))rowFunPtr, iflag), *iflag);
+        rowFunPtr, iflag), *iflag);
 }
 
 #include "../kernels_nogpu.c"

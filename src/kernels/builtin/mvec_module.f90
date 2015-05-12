@@ -402,12 +402,13 @@ module mvec_module
 
   !> interface of function-ptr for mvec_put_func
   abstract interface
-    subroutine mvecElemFunc(row, col, val_ptr)
+    function mvecElemFunc(row, col, val_ptr) result(ierr)
       use, intrinsic :: iso_c_binding
       integer(G_GIDX_T), value :: row
       integer(G_LIDX_T), value :: col
       TYPE(C_PTR), value :: val_ptr
-    end subroutine mvecElemFunc
+      integer(C_INT) :: ierr
+    end function mvecElemFunc
   end interface
 
 contains
@@ -2236,6 +2237,7 @@ contains
     integer(kind=8) :: i
     integer(kind=G_GIDX_T) :: ii
     integer(kind=G_LIDX_T) :: j, jj
+    integer(C_INT) :: thread_ierr
     !--------------------------------------------------------------------------------
 
     ierr=0
@@ -2252,12 +2254,17 @@ contains
 
 ! note: element function assumes 0-based indexing
 
-!$omp parallel do schedule(static)
+!$omp parallel do schedule(static) private(ii,j,jj,thread_ierr)
     do i = 1, V%map%nlocal(V%map%me), 1
       ii = V%map%distrib(V%map%me)+i-2
       do j=V%jmin,V%jmax
         jj=j-V%jmin
-        call elemFunc(ii,jj,C_LOC(V%val(j,i)))
+        thread_ierr=elemFunc(ii,jj,C_LOC(V%val(j,i)))
+        if (thread_ierr/=0) then
+!$omp critical
+          ierr=thread_ierr
+!$omp end critical
+        end if
       end do
     end do
 
