@@ -1224,13 +1224,16 @@ extern "C" void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,x,vx,*iflag);
 
 #ifdef GHOST_HAVE_MPI
+    ghost_densemat_halo_comm_t comm = GHOST_DENSEMAT_HALO_COMM_INITIALIZER;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
-    ghost_densemat_halo_comm_t comm = GHOST_DENSEMAT_HALO_COMM_INITIALIZER;
     PHIST_CHK_GERR(x->halocommInit(x,&comm),*iflag);
+PHIST_TASK_END(iflag)
+PHIST_TASK_POST_STEP(iflag)
     PHIST_CHK_GERR(x->halocommStart(x,&comm),*iflag);
     PHIST_CHK_GERR(x->halocommFinalize(x,&comm),*iflag);
-PHIST_TASK_END(iflag)
+#else
+PHIST_TASK_POST_STEP(iflag)
 #endif
 }
 
