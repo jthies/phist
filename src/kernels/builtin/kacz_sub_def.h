@@ -28,6 +28,7 @@ subroutine SUB_NAME(nvec,nlocal, nhalo, ncols, nnz, &
   integer :: i, ic, jc
   integer(kind=8) :: j
   integer istart_clr, iend_clr
+  real(kind=8) :: row_norm
 ! TODO - we don't actually check the memory alignment before calling these subroutines!
 #if 0
 #ifdef NVEC

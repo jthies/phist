@@ -474,7 +474,7 @@ if (numSys>0)
       actually supposed to touch (TODO).
       */
       if(correction_needed == true ){
-        std::cout << "Cstep done." <<std::endl;
+        PHIST_SOUT(PHIST_INFO,"CARP_CG: correction step\n");
         correction_needed = false;
         cor_count++;
       //q=p-carp_sweep(A,sigma,B,bnul,p,omega,nrm_ai2);
@@ -1076,7 +1076,7 @@ if (numSys>0)
 
   } // for all shifts, solve (s[j]I-A)X[j]=B
 
-  std::cout << "CSteps: " << cor_count << std::endl;
+//  std::cout << "CSteps: " << cor_count << std::endl;
   *iflag=numSys-numSolved;
   return;
 }

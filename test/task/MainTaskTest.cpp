@@ -76,6 +76,7 @@ TEST_F(MainTaskTest, DISABLED_task_has_threads)
 {
   ASSERT_TRUE(curTask_ != NULL);
 #ifdef PHIST_KERNEL_LIB_GHOST
+  PHIST_OUT(PHIST_DEBUG, " has nThreads = %d\n", curTask_->nThreads);
   ASSERT_GT(curTask_->nThreads, 0);
 #else
   FAIL();
