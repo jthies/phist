@@ -21,25 +21,25 @@ using namespace ::testing;
 #define _NV_ 1
 
 #ifdef PHIST_HAVE_SP
-# define CLASSNAME SCrsMatTest_25_1
+# define CLASSNAME SSparseMatTest_25_1
 # include "phist_gen_s.h"
-# include "CrsMatTest_def.hpp"
+# include "SparseMatTest_def.hpp"
 # undef CLASSNAME
 
-# define CLASSNAME CCrsMatTest_25_1
+# define CLASSNAME CSparseMatTest_25_1
 # include "phist_gen_c.h"
-# include "CrsMatTest_def.hpp"
+# include "SparseMatTest_def.hpp"
 # undef CLASSNAME
 #endif
 
-#define CLASSNAME DCrsMatTest_25_1
+#define CLASSNAME DSparseMatTest_25_1
 #include "phist_gen_d.h"
-#include "CrsMatTest_def.hpp"
+#include "SparseMatTest_def.hpp"
 #undef CLASSNAME
 
-#define CLASSNAME ZCrsMatTest_25_1
+#define CLASSNAME ZSparseMatTest_25_1
 #include "phist_gen_z.h"
-#include "CrsMatTest_def.hpp"
+#include "SparseMatTest_def.hpp"
 #undef CLASSNAME
 
 #undef _N_
@@ -49,26 +49,26 @@ using namespace ::testing;
 
 #ifdef PHIST_HAVE_SP
 
-# define CLASSNAME SCrsMatTest_25_4
+# define CLASSNAME SSparseMatTest_25_4
 # include "phist_gen_s.h"
-# include "CrsMatTest_def.hpp"
+# include "SparseMatTest_def.hpp"
 # undef CLASSNAME
 
-# define CLASSNAME CCrsMatTest_25_4
+# define CLASSNAME CSparseMatTest_25_4
 # include "phist_gen_c.h"
-# include "CrsMatTest_def.hpp"
+# include "SparseMatTest_def.hpp"
 #undef CLASSNAME
 
 #endif
 
-#define CLASSNAME DCrsMatTest_25_4
+#define CLASSNAME DSparseMatTest_25_4
 #include "phist_gen_d.h"
-#include "CrsMatTest_def.hpp"
+#include "SparseMatTest_def.hpp"
 #undef CLASSNAME
 
-#define CLASSNAME ZCrsMatTest_25_4
+#define CLASSNAME ZSparseMatTest_25_4
 #include "phist_gen_z.h"
-#include "CrsMatTest_def.hpp"
+#include "SparseMatTest_def.hpp"
 
 #undef CLASSNAME
 #undef _N_
@@ -78,26 +78,26 @@ using namespace ::testing;
 
 #ifdef PHIST_HAVE_SP
 
-# define CLASSNAME SCrsMatTest_25_7
+# define CLASSNAME SSparseMatTest_25_7
 # include "phist_gen_s.h"
-# include "CrsMatTest_def.hpp"
+# include "SparseMatTest_def.hpp"
 # undef CLASSNAME
 
-# define CLASSNAME CCrsMatTest_25_7
+# define CLASSNAME CSparseMatTest_25_7
 # include "phist_gen_c.h"
-# include "CrsMatTest_def.hpp"
+# include "SparseMatTest_def.hpp"
 #undef CLASSNAME
 
 #endif
 
-#define CLASSNAME DCrsMatTest_25_7
+#define CLASSNAME DSparseMatTest_25_7
 #include "phist_gen_d.h"
-#include "CrsMatTest_def.hpp"
+#include "SparseMatTest_def.hpp"
 #undef CLASSNAME
 
-#define CLASSNAME ZCrsMatTest_25_7
+#define CLASSNAME ZSparseMatTest_25_7
 #include "phist_gen_z.h"
-#include "CrsMatTest_def.hpp"
+#include "SparseMatTest_def.hpp"
 
 //////////////////////////////////////////
 // symmetric matrix tests               //

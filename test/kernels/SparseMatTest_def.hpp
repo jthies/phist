@@ -149,6 +149,59 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_), sqrt(mt::eps()));
   }
 
+
+  void test_sparseMat_times_mvec_communicate(_ST_ alpha, TYPE(const_sparseMat_ptr) A, _ST_ beta)
+  {
+    if( !typeImplemented_ )
+      return;
+
+    // set up mvecs
+    SUBR(mvec_random)(vec1_, &iflag_);
+    ASSERT_EQ(0, iflag_);
+    SUBR(mvec_random)(vec2_, &iflag_);
+    ASSERT_EQ(0, iflag_);
+
+    SUBR(mvec_add_mvec)(st::one(), vec2_, st::zero(), vec3_, &iflag_);
+    ASSERT_EQ(0, iflag_);
+
+    SUBR(sparseMat_times_mvec_communicate)(A, vec1_, &iflag_);
+    iflag_ = PHIST_SPMVM_ONLY_LOCAL;
+    SUBR(sparseMat_times_mvec)(alpha, A, vec1_, beta, vec2_, &iflag_);
+    ASSERT_EQ(0, iflag_);
+
+    SUBR(sparseMat_times_mvec)(alpha, A, vec1_, beta, vec3_, &iflag_);
+    ASSERT_EQ(0, iflag_);
+
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_), sqrt(mt::eps()));
+  }
+
+
+  void test_sparseMat_times_mvec_vadd_mvec_communicate(_ST_ alpha, TYPE(const_sparseMat_ptr) A, _ST_ shifts[_NV_], _ST_ beta)
+  {
+    if( !typeImplemented_ )
+      return;
+
+    // set up mvecs
+    SUBR(mvec_random)(vec1_, &iflag_);
+    ASSERT_EQ(0, iflag_);
+    SUBR(mvec_random)(vec2_, &iflag_);
+    ASSERT_EQ(0, iflag_);
+
+    SUBR(mvec_add_mvec)(st::one(), vec2_, st::zero(), vec3_, &iflag_);
+    ASSERT_EQ(0, iflag_);
+
+    SUBR(sparseMat_times_mvec_communicate)(A, vec1_, &iflag_);
+    iflag_ = PHIST_SPMVM_ONLY_LOCAL;
+    SUBR(sparseMat_times_mvec_vadd_mvec)(alpha, A, shifts, vec1_, beta, vec2_, &iflag_);
+    ASSERT_EQ(0, iflag_);
+
+    SUBR(sparseMat_times_mvec_vadd_mvec)(alpha, A, shifts, vec1_, beta, vec3_, &iflag_);
+    ASSERT_EQ(0, iflag_);
+
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_), sqrt(mt::eps()));
+  }
+
+
 #if _NV_ > 1
   void test_sparseMat_times_mvec_with_views(_ST_ alpha, TYPE(const_sparseMat_ptr) A, _ST_ beta, int imin, int imax)
   {
@@ -286,7 +339,7 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     if (!typeImplemented_) return;
     // ColPack has trouble with the tiny
     // local matrices that occur when partitioning a
-    // 25x25 matrix (TODO: larger CrsMat tests)
+    // 25x25 matrix (TODO: larger SparseMat tests)
     if (mpi_size_>1) return;
 
     // setup the CARP kernel and get the required data structures:
@@ -1021,6 +1074,31 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
     _ST_ beta = st::prand();
 
     test_sparseMat_times_mvec_vadd_mvec(alpha, A2_, shifts, beta);
+  }
+
+  TEST_F(CLASSNAME, sparseMat_times_mvec_communicate_random)
+  {
+    // matrices may have different maps
+    rebuildVectors(A2_);
+
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    test_sparseMat_times_mvec_communicate(alpha, A2_, beta);
+  }
+
+  TEST_F(CLASSNAME, sparseMat_times_mvec_vadd_mvec_communicate_random)
+  {
+    // matrices may have different maps
+    rebuildVectors(A2_);
+
+    _ST_ shifts[_NV_];
+    for(int i = 0; i < _NV_; i++)
+      shifts[i] = st::prand();
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+
+    test_sparseMat_times_mvec_vadd_mvec_communicate(alpha, A2_, shifts, beta);
   }
 
   // this test is disabled because viewing plain data does not work
