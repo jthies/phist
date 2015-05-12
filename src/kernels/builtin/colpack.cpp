@@ -1,7 +1,9 @@
 #include <cstdint>
 #include "phist_config.h"
 #include "phist_macros.h"
-
+#ifndef TESTING
+#define TESTING
+#endif
 #ifdef PHIST_HAVE_COLPACK
 #include "ColPack/ColPackHeaders.h"
 #endif
@@ -44,26 +46,65 @@ extern "C" void colpack_v1_0_8(int nrows, int64_t* row_ptr, int64_t* nonlocal_pt
  // first we need to count the local nonzeros (TODO - or are they readily 
  // available in crsmat_module?)
  int64_t nzloc=0;
- for (int i=0;i<nrows;i++) 
+ int nthreads=1;
+#pragma omp parallel
+{
+#pragma omp master
+ nthreads=omp_get_num_threads();
+}
+
+ std::cout << "nthreads="<<nthreads<<std::endl; 
+
+ int64_t thread_nrows[nthreads];
+ int64_t thread_nzloc[nthreads];
+ 
+ for (int i=0; i<nthreads;i++)
  {
-   nzloc+=nonlocal_ptr[i]-row_ptr[i];
+   thread_nrows[i]=0;
+   thread_nzloc[i]=0;
  }
+ 
+#pragma omp parallel
+{
+  int thread_id=omp_get_thread_num();
+#pragma omp for schedule(static)
+  for (int i=0;i<nrows;i++)
+  {
+    thread_nrows[thread_id]++;
+    thread_nzloc[thread_id]+=nonlocal_ptr[i]-row_ptr[i];
+  }
+}
+
+for (int i=0;i<nthreads;i++)
+{
+  std::cout << i << ": "<<thread_nrows[i]<<" "<<thread_nzloc[i]<<std::endl;
+  nzloc+=thread_nzloc[i];
+}
+
 
  uint32_t *adolc_data=new uint32_t[nzloc+nrows];
 
-//#pragma omp parallel for schedule(static)
- int64_t pos=0;
- for (int i=0;i<nrows;i++)
- {
-   adolc[i]=&(adolc_data[pos]);
-   // first entry in row is the local row length
-   adolc_data[pos++]=nonlocal_ptr[i]-row_ptr[i];
-   for (int j=row_ptr[i];j<nonlocal_ptr[i];j++)
-   {
-     // subtract idx_base to account for 1-based input
-     adolc_data[pos++]=col_idx[j-idx_base]-idx_base;
-   }
- }
+#pragma omp parallel
+{
+  int thread_id=omp_get_thread_num();
+  int64_t pos=0;
+  for (int i=0; i<thread_id; i++)
+  {
+    pos+=thread_nrows[i]+thread_nzloc[i];
+  }
+#pragma omp for schedule(static)
+  for (int i=0;i<nrows;i++)
+  {
+    adolc[i]=&(adolc_data[pos]);
+    // first entry in row is the local row length
+    adolc_data[pos++]=nonlocal_ptr[i]-row_ptr[i];
+    for (int j=row_ptr[i];j<nonlocal_ptr[i];j++)
+    {
+      // subtract idx_base to account for 1-based input
+      adolc_data[pos++]=col_idx[j-idx_base]-idx_base;
+    }
+  }
+}
 
   int i_HighestDegree = GC->BuildGraphFromRowCompressedFormat(adolc, nrows);
   
