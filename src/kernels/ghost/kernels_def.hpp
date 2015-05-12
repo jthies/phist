@@ -188,12 +188,9 @@ extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, const_
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_sparsemat_t,A,vA,*iflag);
   //!@TODO: cache this as it never gets deleted otherwise!
-  ghost_map_t* map = new ghost_map_t;
+  ghost_map_t* map = mapGarbageCollector.new_map(vA);
   map->ctx = A->context;
   map->vtraits_template=phist_default_vtraits();
-#ifdef TESTING
-  phist_ghost_map_MAP[vA].push_back(map);
-#endif
   *vmap = (const_map_ptr_t)map;
 }
 
@@ -207,12 +204,9 @@ extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, const_
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_sparsemat_t,A,vA,*iflag);
   //!@TODO: cache this as it never gets deleted otherwise!
-  ghost_map_t* map = new ghost_map_t;
+  ghost_map_t* map = mapGarbageCollector.new_map(vA);
   map->ctx = A->context;
   map->vtraits_template=phist_default_vtraits();
-#ifdef TESTING
-  phist_ghost_map_MAP[vA].push_back(map);
-#endif
   *vmap = (const_map_ptr_t)map;
 }
 
@@ -395,12 +389,9 @@ extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, const_map_ptr_t* vma
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_densemat_t,V,vV,*iflag);
   //!@TODO: cache this as it never gets deleted otherwise!
-  ghost_map_t* map = new ghost_map_t;
+  ghost_map_t* map = mapGarbageCollector.new_map(vV);
   map->ctx=V->context; 
   map->vtraits_template=V->traits;
-#ifdef TESTING
-  phist_ghost_map_MAP[vV].push_back(map);
-#endif
   *vmap=(const_map_ptr_t)map;
 }
 
@@ -620,26 +611,15 @@ extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
     else
     {
       // delete the vector pointed to by vVblock and create a new view
-#ifdef TESTING
-      //TODO - clarify this construct with Melven, why is it done only
-      // in TESTING mode?
-      std::map<const void*, std::vector<ghost_map_t*> >::iterator mapIt = 
-        phist_ghost_map_MAP.find(vV);
-      if( mapIt != phist_ghost_map_MAP.end() )
-      {
-        for(int i = 0; i < mapIt->second.size(); i++)
-          delete mapIt->second[i];
-        phist_ghost_map_MAP.erase(mapIt);
-      }
-#endif
       PHIST_DEB("delete existing view\n");
     }
   */
-    
+
+    mapGarbageCollector.delete_maps(Vblock);
     Vblock->destroy(Vblock);
     Vblock=NULL;
   }
-    PHIST_CHK_GERR(V->viewCols(V, &Vblock, jmax-jmin+1, jmin),*iflag);
+  PHIST_CHK_GERR(V->viewCols(V, &Vblock, jmax-jmin+1, jmin),*iflag);
 
   PHIST_CHK_IERR(*iflag=((Vblock->traits.flags&GHOST_DENSEMAT_VIEW)-GHOST_DENSEMAT_VIEW),*iflag);
   *vVblock = (TYPE(mvec_ptr))Vblock;
@@ -892,15 +872,8 @@ extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) vA, int* iflag)
   *iflag=0;
   if (vA==NULL) return;
   PHIST_CAST_PTR_FROM_VOID(ghost_sparsemat_t,A,vA,*iflag);
-#ifdef TESTING
-  std::map<const void*, std::vector<ghost_map_t*> >::iterator mapIt = phist_ghost_map_MAP.find(vA);
-  if( mapIt != phist_ghost_map_MAP.end() )
-  {
-    for(int i = 0; i < mapIt->second.size(); i++)
-      delete mapIt->second[i];
-    phist_ghost_map_MAP.erase(mapIt);
-  }
-#endif
+
+  mapGarbageCollector.delete_maps(vA);
   ghost_context_t *ctx = A->context;
   ghost_sparsemat_traits_t *mtraits = A->traits;
   A->destroy(A);
@@ -915,15 +888,8 @@ extern "C" void SUBR(mvec_delete)(TYPE(mvec_ptr) vV, int* iflag)
   *iflag=0;
   if (vV==NULL) return;
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
-#ifdef TESTING
-  std::map<const void*, std::vector<ghost_map_t*> >::iterator mapIt = phist_ghost_map_MAP.find(vV);
-  if( mapIt != phist_ghost_map_MAP.end() )
-  {
-    for(int i = 0; i < mapIt->second.size(); i++)
-      delete mapIt->second[i];
-    phist_ghost_map_MAP.erase(mapIt);
-  }
-#endif
+
+  mapGarbageCollector.delete_maps(vV);
   V->destroy(V);
 }
 
