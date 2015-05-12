@@ -266,6 +266,11 @@ void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
   *iflag=-99;
 }
 
+void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr) x, int* iflag)
+{
+  *iflag=-99;
+}
+
 void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
     TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag)
 {
