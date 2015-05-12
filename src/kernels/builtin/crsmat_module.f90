@@ -111,13 +111,14 @@ module crsmat_module
 
   !> interface of function-ptr for crsMat_create_fromRowFunc
   abstract interface
-    subroutine matRowFunc(row, nnz, cols, vals)
+    function matRowFunc(row, nnz, cols, vals) result(ierr)
       use, intrinsic :: iso_c_binding
       integer(G_GIDX_T), value :: row
       integer(G_LIDX_T), intent(inout) :: nnz
       integer(G_GIDX_T), intent(inout) :: cols(*)
       real(C_DOUBLE),    intent(inout) :: vals(*)
-    end subroutine matRowFunc
+      integer(C_INT) :: ierr
+    end function matRowFunc
   end interface
 
 contains
@@ -1950,12 +1951,16 @@ wtime = mpi_wtime()
     ! note: the matFuncs in the physics repo are not
     ! thread-safe (as of Jul 2014), hence the 'ordered' clause.
     ! get data, try to respect NUMA
+    ! REMARK: (12.5.'15): I think the rowFuncs are thread-safe, but
+    !         we need the ordered clause because we build the row_offset
+    !         array on-the-fly. It also saves us the trouble of making
+    !         most things in the loop thread-private.
     A%row_offset(1) = 1_8
 !$omp parallel do schedule(static) ordered
     do i = 1, A%nRows, 1
 !$omp ordered
       i_ = A%row_map%distrib(A%row_map%me)+i-2
-      call rowFunc(i_, nne, idx(:,1), val)
+      ierr=rowFunc(i_, nne, idx(:,1), val)
       j = A%row_offset(i)
       j_ = j + int(nne-1,kind=8)
       A%global_col_idx(j:j_) = idx(1:nne,1)+1
