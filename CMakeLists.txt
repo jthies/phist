@@ -805,7 +805,7 @@ endforeach()
 enable_testing()
 
 if (${PHIST_ENABLE_MPI})
-  set(PHIST_MPI_TEST_NPROCS 1 2 4 7 8)
+  set(PHIST_MPI_TEST_NPROCS 1 2 4 5 6)
 else()
   set(PHIST_MPI_TEST_NPROCS "")
 endif()
@@ -817,9 +817,9 @@ else()
 endif()
 
 foreach(np ${PHIST_MPI_TEST_NPROCS})
-  math(EXPR TEST_OMP_NUM_THREADS "8/${np}")
+  math(EXPR TEST_OMP_NUM_THREADS "6/${np}")
   foreach(label ${PHIST_TESTS})
-    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=guided 
+    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=guided,256
     ./${PRODUCT_NAME}-${label}-test --gtest_death_test_style=threadsafe --gtest_output=xml:test_output_np${np}/${label}/xunit.xml ${GTEST_FILTER})
     add_test(NAME test-${label}_np${np} COMMAND ${TEST_COMMAND})
     set_tests_properties(test-${label}_np${np} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
