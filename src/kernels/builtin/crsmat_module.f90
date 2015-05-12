@@ -1,3 +1,4 @@
+#include "fdebug.h"
 !> \file crsmat_module.f90
 !! defines crsmat_module, the sparseMat implementation of phist builtin kernels
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>"
@@ -160,7 +161,7 @@ contains
           do while( mat%global_col_idx(j) .ge. mat%row_map%distrib(jProc+1) )
             jProc=jProc+1
           end do
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
 if( mat%global_col_idx(j) .lt. mat%row_map%distrib(jProc) ) then
   write(*,*) 'CRS sorting error! me', mat%row_map%me, 'idx', mat%global_col_idx(j), &
     &        'jProc', jProc, 'distrib', mat%row_map%distrib
@@ -305,7 +306,7 @@ end if
         &            combuff%recvRequests(i),ierr)
     end do
 
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
 ! check that recvRowBlkInd is globally sorted
 do i = 2, size(combuff%recvRowBlkInd), 1
   if( combuff%recvRowBlkInd(i-1) .ge. combuff%recvRowBlkInd(i) ) then
@@ -1263,7 +1264,7 @@ end do
     end do
 
     deallocate(colorCount)
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
 #define DEBUG_COLPACK 1
 #endif
 #if DEBUG_COLPACK
@@ -1506,7 +1507,7 @@ end subroutine permute_local_matrix
       y_is_aligned16 = .false.
     end if
 
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     write(*,*) 'spMVM with nvec =',nvec,', ldx =',ldx,', ldy =',ldy,', y_mem_aligned16 =', y_is_aligned16, 'on proc', A%row_map%me
     flush(6)
 #endif
@@ -2096,12 +2097,12 @@ end if
     !--------------------------------------------------------------------------------
     type(CrsMat_t), pointer :: A
     integer :: i
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
 
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     write(*,*) 'deleting crsMat at address', transfer(A_ptr,dummy)
     flush(6)
 #endif

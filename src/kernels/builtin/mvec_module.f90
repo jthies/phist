@@ -1,3 +1,4 @@
+#include "fdebug.h"
 !> \file mvec_module.f90
 !! Defines mvec_module, the phist builtin implementation of phist_Dmvec_*
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
@@ -1786,7 +1787,7 @@ contains
     nt = omp_get_max_threads()
     padding = nt*4
     mvec%paddedN = (map%nlocal(map%me)/padding+1)*padding
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     write(*,*) 'creating new mvec with dimensions:', nvec, map%nlocal(map%me), 'address', transfer(c_loc(mvec),dummy)
     flush(6)
 #endif
@@ -1827,7 +1828,7 @@ contains
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     integer(C_INTPTR_T) :: dummy
 #endif
     interface
@@ -1838,7 +1839,7 @@ contains
     end interface
     !--------------------------------------------------------------------------------
 
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     write(*,*) 'deleting mvec at address', transfer(mvec_ptr,dummy)
     flush(6)
 #endif
@@ -1863,12 +1864,12 @@ contains
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
 
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     write(*,*) 'extract view of mvec at address', transfer(mvec_ptr,dummy)
     flush(6)
 #endif
@@ -1957,7 +1958,7 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec, view
-!#if defined(TESTING) && PHIST_OUTLEV >= 4
+!#ifdef F_DEBUG
 !    integer(C_INTPTR_T) :: dummy
 !#endif
     !--------------------------------------------------------------------------------
@@ -1969,7 +1970,7 @@ contains
       return
     end if
 
-!#if defined(TESTING) && PHIST_OUTLEV >= 4
+!#ifdef F_DEBUG
 !    write(*,*) 'create view of mvec at address', transfer(mvec_ptr,dummy)
 !    flush(6)
 !#endif
@@ -1983,14 +1984,14 @@ contains
           ierr = -88
           return
         end if
-!#if defined(TESTING) && PHIST_OUTLEV >= 4
+!#ifdef F_DEBUG
 !      write(*,*) 'reusing view at address', transfer(view_ptr,dummy)
 !      flush(6)
 !#endif
       else
         allocate(view)
         view_ptr = c_loc(view)
-!#if defined(TESTING) && PHIST_OUTLEV >= 4
+!#ifdef F_DEBUG
 !      write(*,*) 'created new view at address', transfer(view_ptr,dummy)
 !      flush(6)
 !#endif
@@ -2027,7 +2028,7 @@ contains
     call c_f_pointer(mvec_ptr, mvec)
     call c_f_pointer(block_ptr,block)
 
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     if( .not. map_compatible_map(mvec%map, block%map) ) then
       ierr = -1
       return

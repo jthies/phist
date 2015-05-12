@@ -1,3 +1,4 @@
+#include "fdebug.h"
 !> \file sdmat_module.f90
 !! Defines sdmat_module, the phist builtin implementation of phist_DsdMat_*
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
@@ -316,7 +317,7 @@ contains
     !--------------------------------------------------------------------------------
     type(sdmat_t), pointer :: sdmat
     integer, pointer :: comm
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
@@ -333,7 +334,7 @@ contains
     else
       sdmat%comm = MPI_COMM_SELF
     end if
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     write(*,*) 'creating new sdmat with dimensions:', nrows, ncols, 'address', transfer(c_loc(sdmat),dummy)
     flush(6)
 #endif
@@ -362,7 +363,7 @@ contains
     !--------------------------------------------------------------------------------
     type(sdmat_t), pointer :: sdmat
     integer, pointer :: comm
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
@@ -380,7 +381,7 @@ contains
     else
       sdmat%comm = MPI_COMM_NULL
     end if
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     write(*,*) 'creating sdmat view with dimensions:', nrows, ncols, 'address', transfer(c_loc(sdmat),dummy)
     flush(6)
 #endif
@@ -401,12 +402,12 @@ contains
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(sdmat_t), pointer :: sdmat
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
 
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     write(*,*) 'deleting sdmat at address', transfer(sdmat_ptr,dummy)
     flush(6)
 #endif
@@ -434,12 +435,12 @@ contains
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(sdmat_t), pointer :: sdmat
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
 
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     write(*,*) 'extract view of sdmat at address', transfer(sdmat_ptr,dummy)
     flush(6)
 #endif
@@ -506,12 +507,12 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(sdmat_t), pointer :: sdmat, view
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
 
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     write(*,*) 'create view of sdmat at address', transfer(sdmat_ptr,dummy)
     flush(6)
 #endif
@@ -529,14 +530,14 @@ contains
         ierr = -88
         return
       end if
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
       write(*,*) 'reusing view at address', transfer(view_ptr,dummy)
       flush(6)
 #endif
     else
       allocate(view)
       view_ptr = c_loc(view)
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
       write(*,*) 'created new view at address', transfer(view_ptr,dummy)
       flush(6)
 #endif
