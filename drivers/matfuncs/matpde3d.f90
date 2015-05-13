@@ -666,6 +666,7 @@ contains
     XI = HX*DBLE(IX)
     
     solVal=U(XI,YJ,ZK,col)
+    write(*,*) 'TROET U(',row,col,') [',xi,yj,zk,'] = ',solVal
     the_result=0
     
   end function MATPDE3D_solFunc
@@ -988,7 +989,7 @@ contains
   ! the derivatives were calculated using the matlab lines
   !
   !syms x y z k pi
-  !u    = x*exp(x*y*z)*sin(k*pi*x)*sin(k*pi*y)*sin(k*pi*z);
+  !u    = x*exp(x*y*z)*sin((k+1)*pi*x)*sin((k+1)*pi*y)*sin((k+1)*pi*z);
   !ux = simplify(diff(u,x)); uy = simplify(diff(u,y)); uz=simplify(diff(u,z));
   !uxx= simplify(diff(ux,x)); uyy=simplify(diff(uy,y)); uzz= simplify(diff(uz,z));
   pure function u(x,y,z,k)
@@ -1001,7 +1002,7 @@ contains
     else if (problem==PROB_A2) then
       u = x+y+z
     else
-      u = x * exp(x*y*z) * sin(k*pi*x) * sin(k*pi*y) * sin(k*pi*z)
+      u = x * exp(x*y*z) * sin((k+1)*pi*x) * sin((k+1)*pi*y) * sin((k+1)*pi*z)
     end if
   
   end function u
@@ -1020,12 +1021,12 @@ contains
     else if (problem==PROB_A2) then
       ux=1.
     else
-      sx = sin(k*pi*x)
-      cx = cos(k*pi*x)
-      sy = sin(k*pi*y)
-      cy = cos(k*pi*y)
-      sz = sin(k*pi*z)
-      cz = cos(k*pi*z)
+      sx = sin((k+1)*pi*x)
+      cx = cos((k+1)*pi*x)
+      sy = sin((k+1)*pi*y)
+      cy = cos((k+1)*pi*y)
+      sz = sin((k+1)*pi*z)
+      cz = cos((k+1)*pi*z)
       exyz=exp(x*y*z)
       ux=sy*sz*exyz*(sx + pi*k*x*cx + x*y*z*sx)
     end if
@@ -1046,12 +1047,12 @@ contains
     else if (problem==PROB_A2) then
       uy=1.
     else
-      sx = sin(k*pi*x)
-      cx = cos(k*pi*x)
-      sy = sin(k*pi*y)
-      cy = cos(k*pi*y)
-      sz = sin(k*pi*z)
-      cz = cos(k*pi*z)
+      sx = sin((k+1)*pi*x)
+      cx = cos((k+1)*pi*x)
+      sy = sin((k+1)*pi*y)
+      cy = cos((k+1)*pi*y)
+      sz = sin((k+1)*pi*z)
+      cz = cos((k+1)*pi*z)
       exyz=exp(x*y*z)
 
       uy=x*sx*sz*exyz*(pi*k*cy + x*z*sy)
@@ -1073,12 +1074,12 @@ contains
     else if (problem==PROB_A2) then
       uz=1.
     else
-      sx = sin(k*pi*x)
-      cx = cos(k*pi*x)
-      sy = sin(k*pi*y)
-      cy = cos(k*pi*y)
-      sz = sin(k*pi*z)
-      cz = cos(k*pi*z)
+      sx = sin((k+1)*pi*x)
+      cx = cos((k+1)*pi*x)
+      sy = sin((k+1)*pi*y)
+      cy = cos((k+1)*pi*y)
+      sz = sin((k+1)*pi*z)
+      cz = cos((k+1)*pi*z)
       exyz=exp(x*y*z)
       uz=x*sx*sy*exyz*(pi*k*cz + x*y*sz)
     end if
@@ -1094,12 +1095,12 @@ contains
   if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
     uxx=0.0
   else
-    sx = sin(k*pi*x)
-    cx = cos(k*pi*x)
-    sy = sin(k*pi*y)
-    cy = cos(k*pi*y)
-    sz = sin(k*pi*z)
-    cz = cos(k*pi*z)
+    sx = sin((k+1)*pi*x)
+    cx = cos((k+1)*pi*x)
+    sy = sin((k+1)*pi*y)
+    cy = cos((k+1)*pi*y)
+    sz = sin((k+1)*pi*z)
+    cz = cos((k+1)*pi*z)
     exyz=exp(x*y*z)
     
 uxx=sy*sz*exyz*(2.0_8*pi*k*cx + 2*y*z*sx - (pi*k)**2.0*x*sx + x*y*y*z*z*sx + 2.0*pi*k*x*y*z*cx)
@@ -1115,12 +1116,12 @@ end if
   if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
     uyy=0.0
   else
-    sx = sin(k*pi*x)
-    cx = cos(k*pi*x)
-    sy = sin(k*pi*y)
-    cy = cos(k*pi*y)
-    sz = sin(k*pi*z)
-    cz = cos(k*pi*z)
+    sx = sin((k+1)*pi*x)
+    cx = cos((k+1)*pi*x)
+    sy = sin((k+1)*pi*y)
+    cy = cos((k+1)*pi*y)
+    sz = sin((k+1)*pi*z)
+    cz = cos((k+1)*pi*z)
     exyz=exp(x*y*z)
 
 uyy=x*sx*sz*exyz*(x*x*z*z*sy - (pi*k)**2*sy + 2.0*pi*k*x*z*cy)
@@ -1136,12 +1137,12 @@ end if
   if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
     uzz=0.0
   else
-    sx = sin(k*pi*x)
-    cx = cos(k*pi*x)
-    sy = sin(k*pi*y)
-    cy = cos(k*pi*y)
-    sz = sin(k*pi*z)
-    cz = cos(k*pi*z)
+    sx = sin((k+1)*pi*x)
+    cx = cos((k+1)*pi*x)
+    sy = sin((k+1)*pi*y)
+    cy = cos((k+1)*pi*y)
+    sz = sin((k+1)*pi*z)
+    cz = cos((k+1)*pi*z)
     exyz=exp(x*y*z)
   
 uzz=x*sx*sy*exyz*(x*x*y*y*sz - (pi*k)**2*sz + 2.0*pi*k*x*y*cz)
