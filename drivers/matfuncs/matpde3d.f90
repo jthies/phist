@@ -1027,7 +1027,7 @@ contains
       sz = sin((k+1)*pi*z)
       cz = cos((k+1)*pi*z)
       exyz=exp(x*y*z)
-      ux=sy*sz*exyz*(sx + pi*k*x*cx + x*y*z*sx)
+      ux=sy*sz*exyz*(sx + pi*(k+1)*x*cx + x*y*z*sx)
     end if
   
   end function ux
@@ -1054,7 +1054,7 @@ contains
       cz = cos((k+1)*pi*z)
       exyz=exp(x*y*z)
 
-      uy=x*sx*sz*exyz*(pi*k*cy + x*z*sy)
+      uy=x*sx*sz*exyz*(pi*(k+1)*cy + x*z*sy)
     end if
   end function uy
 
@@ -1080,7 +1080,7 @@ contains
       sz = sin((k+1)*pi*z)
       cz = cos((k+1)*pi*z)
       exyz=exp(x*y*z)
-      uz=x*sx*sy*exyz*(pi*k*cz + x*y*sz)
+      uz=x*sx*sy*exyz*(pi*(k+1)*cz + x*y*sz)
     end if
   
   end function uz
@@ -1102,7 +1102,8 @@ contains
     cz = cos((k+1)*pi*z)
     exyz=exp(x*y*z)
     
-uxx=sy*sz*exyz*(2.0_8*pi*k*cx + 2*y*z*sx - (pi*k)**2.0*x*sx + x*y*y*z*z*sx + 2.0*pi*k*x*y*z*cx)
+    uxx=sy*sz*exyz*(2.0_8*pi*(k+1)*cx + 2.0*y*z*sx - (pi*(k+1))**2.0*x*sx &
+    + x*y*y*z*z*sx + 2.0*pi*(k+1)*x*y*z*cx)
 end if
   
   end function uxx
@@ -1123,7 +1124,7 @@ end if
     cz = cos((k+1)*pi*z)
     exyz=exp(x*y*z)
 
-uyy=x*sx*sz*exyz*(x*x*z*z*sy - (pi*k)**2*sy + 2.0*pi*k*x*z*cy)
+    uyy=x*sx*sz*exyz*(x*x*z*z*sy - (pi*(k+1))**2*sy + 2.0*pi*(k+1)*x*z*cy)
 end if 
  
   end function uyy
@@ -1144,7 +1145,7 @@ end if
     cz = cos((k+1)*pi*z)
     exyz=exp(x*y*z)
   
-uzz=x*sx*sy*exyz*(x*x*y*y*sz - (pi*k)**2*sz + 2.0*pi*k*x*y*cz)
+    uzz=x*sx*sy*exyz*(x*x*y*y*sz - (pi*(k+1))**2*sz + 2.0*pi*(k+1)*x*y*cz)
 end if
 
   end function uzz
