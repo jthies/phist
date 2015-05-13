@@ -69,6 +69,8 @@ int main(int argc, char** argv)
   TYPE(mvec_ptr) X_r_ex0, X_i_ex0;// we construct B such that (sigma[0]*I-A)X_ex0=B,
                                   // so that we can check the error for at least one
                                   // of the systems.
+  TYPE(mvec_ptr) err_r, err_i;  // for computing errors/residuals
+  
   MT *resid, *err0;
   int nshifts,nrhs,blockSize,maxIter;
   MT tol;
@@ -224,6 +226,9 @@ int main(int argc, char** argv)
   // vectors to hold exact solution for system 0
   PHIST_ICHK_IERR(SUBR(mvec_create)(&X_r_ex0,map,nrhs,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&X_i_ex0,map,nrhs,&iflag),iflag);
+
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&err_r,map,nrhs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&err_i,map,nrhs,&iflag),iflag);
   
   X_r = (TYPE(mvec_ptr)*)malloc(nshifts*sizeof(TYPE(mvec_ptr)));
   X_i = (TYPE(mvec_ptr)*)malloc(nshifts*sizeof(TYPE(mvec_ptr)));
@@ -326,16 +331,65 @@ PHIST_ICHK_IERR(SUBR(sdMat_delete)(Rtmp,&iflag),iflag);
 ///////////////////////////////////////////////////////////////////
 if (iflag>=0)
 {
-PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,X_r[0],ONE,X_r_ex0,&iflag),iflag);
-PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,X_i[0],ONE,X_i_ex0,&iflag),iflag);
+PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(ONE,X_r_ex0,ZERO,err_r,&iflag),iflag);
+PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,X_r[0],ONE,err_r,&iflag),iflag);
+PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(ONE,X_i_ex0,ZERO,err_i,&iflag),iflag);
+PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,X_i[0],ONE,err_i,&iflag),iflag);
 double nrm_err0_1[nrhs], nrm_err0_2[nrhs];
-PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(X_i_ex0,X_i_ex0,nrm_err0_1,&iflag),iflag);
-PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(X_r_ex0,X_r_ex0,nrm_err0_2,&iflag),iflag);
+PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(err_i,err_i,nrm_err0_1,&iflag),iflag);
+PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(err_r,err_r,nrm_err0_2,&iflag),iflag);
 
 PHIST_SOUT(PHIST_VERBOSE,"for first shift, first rhs:\n");
 PHIST_SOUT(PHIST_VERBOSE,"err in re(x): %e\n",SQRT(nrm_err0_2[0]));
 PHIST_SOUT(PHIST_VERBOSE,"       im(x): %e\n",SQRT(nrm_err0_1[0]));
 }
+
+// it may be interesting to look at the residual of the exact solution,
+// because e.g. MATPDE3D provides an rhs based on an analytical solution,
+// so Ax-b will say something about the discretization error.
+if (num_complex==0)
+{
+  // our B is actually sigma_r*X_r_ex0 - A*X_r_ex0. Compute the residuals in X_r[0] and X_r_ex0
+  // in X_i[0] and X_i_ex0, respectively. Note that the `exact residual' is only 0 if B was 
+  // constructed in such a way, if the benchmark problem provides an analytical solution, the
+  // discretization error appears here (e.g. BENCH3D problems).
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(ONE,B,ZERO,err_r,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(ONE,B,ZERO,err_i,&iflag),iflag);
+
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_r[0],X_r_ex0,ONE,err_r,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_r[0],X_r[0],ONE,err_i,&iflag),iflag);
+
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(ONE,mat,X_r_ex0,ONE,err_r,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(ONE,mat,X_r[0],ONE,err_i,&iflag),iflag);
+
+  double nrm_res[nrhs],nrm_res_ex[nrhs];
+  PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(err_r,err_r,nrm_res_ex,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(err_i,err_i,nrm_res,&iflag),iflag);
+  for (i=0;i<nrhs;i++) nrm_res_ex[i]=SQRT(nrm_res_ex[i]);
+  for (i=0;i<nrhs;i++) nrm_res[i]=SQRT(nrm_res[i]);
+
+  PHIST_SOUT(PHIST_VERBOSE,"res norms for x and x_ex: %16.8e\t%16.8e\n",nrm_res[0],nrm_res_ex[0]);
+
+#if PHIST_OUTLEV>=PHIST_DEBUG
+  ST *x_val=NULL, *xex_val=NULL,*r_val=NULL,*rex_val=NULL;
+  lidx_t ldx, ldxex, ldr, ldrex,nloc;
+  PHIST_ICHK_IERR(SUBR(mvec_extract_view)(X_r_ex0,&xex_val,&ldxex,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_extract_view)(X_r[0],&x_val,&ldx,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_extract_view)(err_r,&rex_val,&ldrex,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_extract_view)(err_i,&r_val,&ldrex,&iflag),iflag);
+
+  PHIST_ICHK_IERR(SUBR(mvec_my_length)(X_r_ex0,&nloc,&iflag),iflag);
+
+  PHIST_SOUT(PHIST_DEBUG,"row\tx\tx_ex\tr\tr_ex\n");
+  for (int i=0; i<8; i++)
+  {
+    if (i>=nloc) break;
+    PHIST_SOUT(PHIST_DEBUG,"%d %16.8e %16.8e %16.8e %16.8e\n",
+          i, xex_val[i*ldxex],x_val[i*ldx],r_val[i*ldr],rex_val[i*ldrex]);
+  }
+#endif
+}
+
 ///////////////////////////////////////////////////////////////////
 // clean up afterwards                                           //
 ///////////////////////////////////////////////////////////////////
@@ -349,6 +403,8 @@ PHIST_SOUT(PHIST_VERBOSE,"       im(x): %e\n",SQRT(nrm_err0_1[0]));
   PHIST_ICHK_IERR(SUBR(mvec_delete)(B,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X_r_ex0,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X_i_ex0,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(err_r,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(err_i,&iflag),iflag);
   for (int i=0;i<nshifts;i++)
   {
     PHIST_ICHK_IERR(SUBR(mvec_delete)(X_r[i],&iflag),iflag);
