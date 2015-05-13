@@ -335,12 +335,7 @@ void myMain(int argc, char** argv, int &iflag)
     z = V[i];
     x = V[i+1];
     y = V[i+2];
-if (i < maxit - 2)
-{ 
 
-  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_communicate)(A, x, &iflag_t3), iflag_t3);
-
-}
 
 
     PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(x, x, beta_new, &iflag_t2), iflag_t2);
@@ -350,8 +345,6 @@ if (i < maxit - 2)
     { 
       
       
-    
-      iflag_t3 = PHIST_SPMVM_ONLY_LOCAL;
       PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_vadd_mvec)(st::one(), A, sigma, x, st::zero(), y, &iflag_t3), iflag_t3);
 
 
