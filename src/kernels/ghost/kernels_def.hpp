@@ -67,12 +67,15 @@ PHIST_TASK_BEGIN(ComputeTask)
 #warning "GHOST interface compiled to use the reference CRS format, will probably not yield optimal performance"
         mtraits->format = GHOST_SPARSEMAT_CRS;
 #endif
-#ifdef USE_SCOTCH
       if (repart)
       {
-        flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
-      }
+#ifdef USE_SCOTCH
+          PHIST_SOUT(PHIST_INFO, "Trying to repartition the matrix with SCOTCH\n");
+          flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
+#else
+          PHIST_SOUT(PHIST_WARNING, "SCOTCH not available, no matrix repartitioning\n");
 #endif
+      }
         mtraits->datatype = st::ghost_dt;
         mtraits->flags = flags;
         char* cfname=const_cast<char*>(filename);
@@ -81,15 +84,15 @@ PHIST_TASK_BEGIN(ComputeTask)
         GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_MM,*comm,1.0),*iflag);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,mtraits,1),*iflag);                               
   PHIST_CHK_GERR(mat->fromMM(mat,cfname),*iflag);
-#if PHIST_OUTLEV >= PHIST_VERBOSE
+//#if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;
   ghost_context_string(&str,ctx);
-  PHIST_SOUT(PHIST_VERBOSE,"%s\n",str);
+  PHIST_SOUT(PHIST_INFO,"%s\n",str);
   free(str); str = NULL;
   ghost_sparsemat_string(&str,mat);
-  PHIST_SOUT(PHIST_VERBOSE,"%s\n",str);
+  PHIST_SOUT(PHIST_INFO,"%s\n",str);
   free(str); str = NULL;
-#endif
+//#endif
   *vA = (TYPE(sparseMat_ptr))mat;
 PHIST_TASK_END(iflag);
 }
@@ -138,12 +141,15 @@ PHIST_TASK_BEGIN(ComputeTask)
 #warning "GHOST interface compiled to use the reference CRS format, will probably not yield optimal performance"
         mtraits->format = GHOST_SPARSEMAT_CRS;
 #endif
-#ifdef USE_SCOTCH
         if (repart)
         {
+#ifdef USE_SCOTCH
+          PHIST_SOUT(PHIST_INFO, "Trying to repartition the matrix with SCOTCH\n");
           flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
-        }
+#else
+          PHIST_SOUT(PHIST_WARNING, "SCOTCH not available, no matrix repartitioning\n");
 #endif
+        }
         mtraits->datatype = st::ghost_dt;
         mtraits->flags = flags;
         char* cfname=const_cast<char*>(filename);
@@ -152,15 +158,15 @@ PHIST_TASK_BEGIN(ComputeTask)
         GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_FILE,*comm,1.0),*iflag);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,mtraits,1),*iflag);                               
   PHIST_CHK_GERR(mat->fromFile(mat,cfname),*iflag);
-#if PHIST_OUTLEV >= PHIST_VERBOSE
+//#if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;
   ghost_context_string(&str,ctx);
-  PHIST_SOUT(PHIST_VERBOSE,"%s\n",str);
+  PHIST_SOUT(PHIST_INFO,"%s\n",str);
   free(str); str = NULL;
   ghost_sparsemat_string(&str,mat);
-  PHIST_SOUT(PHIST_VERBOSE,"%s\n",str);
+  PHIST_SOUT(PHIST_INFO,"%s\n",str);
   free(str); str = NULL;
-#endif
+//#endif
   *vA = (TYPE(sparseMat_ptr))mat;
 PHIST_TASK_END(iflag);
 }
@@ -1293,6 +1299,21 @@ extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_spar
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
+  ghost_spmv_flags_t spMVM_opts=GHOST_SPMV_DEFAULT;
+  // ghost spmvm mode
+  if( *iflag & PHIST_SPMVM_ONLY_LOCAL )
+    spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_NOMPI);
+  else if( *iflag & PHIST_SPMVM_VECTOR )
+    spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_VECTOR);
+  else if( *iflag & PHIST_SPMVM_OVERLAP )
+    spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_OVERLAP);
+  else if( *iflag & PHIST_SPMVM_TASK )
+    spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_TASK);
+  else
+  {
+    // defaults to vector
+    spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_VECTOR);
+  }
   *iflag=0;
 
 #ifdef PHIST_TIMEMONITOR
@@ -1311,14 +1332,11 @@ extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_spar
   }
   else
   {
-  PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
     int nvec;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, iflag), *iflag);
 
-    ghost_spmv_flags_t spMVM_opts=GHOST_SPMV_DEFAULT;
-    // currently the vector mode is the only one working with MPI and multiple RHS
-    spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_MODE_VECTOR);
     spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_VSHIFT);
     ST ghost_shifts[nvec];
     for (int i=0;i<nvec;i++) ghost_shifts[i]=-shifts[i];
@@ -1775,12 +1793,19 @@ PHIST_TASK_BEGIN(ComputeTask)
 #warning "GHOST interface compiled to use the reference CRS format, will probably not yield optimal performance"
         mtraits->format = GHOST_SPARSEMAT_CRS;
 #endif
-#ifdef USE_SCOTCH
         if (repart)
         {
+#ifdef USE_SCOTCH
+          PHIST_SOUT(PHIST_INFO, "Trying to repartition the matrix with SCOTCH\n");
           flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
-        }
+#else
+          PHIST_SOUT(PHIST_WARNING, "SCOTCH not available, no matrix repartitioning\n");
 #endif
+        }
+        else
+        {
+          PHIST_SOUT(PHIST_INFO, "No matrix repartitioning requested\n");
+        }
         mtraits->datatype = st::ghost_dt;
         mtraits->flags = flags;
   PHIST_CHK_GERR(ghost_context_create(&ctx,nrows,ncols,
@@ -1792,15 +1817,15 @@ PHIST_TASK_BEGIN(ComputeTask)
   src.maxrowlen = maxnne;
       
   PHIST_CHK_GERR(mat->fromRowFunc(mat,&src),*iflag);
-#if PHIST_OUTLEV >= PHIST_VERBOSE
+//#if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;
   ghost_context_string(&str,ctx);
-  PHIST_SOUT(PHIST_VERBOSE,"%s\n",str);
+  PHIST_SOUT(PHIST_INFO,"%s\n",str);
   free(str); str = NULL;
   ghost_sparsemat_string(&str,mat);
-  PHIST_SOUT(PHIST_VERBOSE,"%s\n",str);
+  PHIST_SOUT(PHIST_INFO,"%s\n",str);
   free(str); str = NULL;
-#endif
+//#endif
   *vA = (TYPE(sparseMat_ptr))mat;
 PHIST_TASK_END(iflag);
 
