@@ -1,3 +1,4 @@
+#include "phist_config.h"
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
@@ -69,6 +70,7 @@ int main(int argc, char** argv)
   // the PHIST_ICHK_IERR (PHIST_CHK_IERR in void functions) macros provide
   // some convenient checking of the return flag.
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
+PHIST_MAIN_TASK_BEGIN
 
   // this generates the default comm object, typically MPI_COMM_WORLD for MPI-based kernel libs
   PHIST_ICHK_IERR(phist_comm_create(&comm_world,&iflag),iflag);
@@ -205,5 +207,6 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(phist_Dmvec_delete(y,&iflag),iflag);
   PHIST_ICHK_IERR(phist_DsparseMat_delete(A,&iflag),iflag);
 
+PHIST_MAIN_TASK_END
   PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
   }

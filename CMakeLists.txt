@@ -292,6 +292,7 @@ elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
   set(PHIST_MVECS_ROW_MAJOR 1)
   option(PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS "Try to pin the threads to cores using sched_setaffinity (based on simple heuristics; for Intel use env KMP_AFFINITY=\"granularity=fine,compact,1,0\"" On)
   option(PHIST_KERNEL_LIB_BUILTIN_AVX2_PREC_KERNELS "Add support for high-precision kernel operations triggered with PHIST_ROBUST_REDUCTIONS, requires AVX2,FMA (e.g. Intel Haswell)" Off)
+  set(PHIST_BENCH_LARGE_N 64000000 CACHE STRING "Dimension for benchmarking tests (e.g. large enough to make micro benchmarks memory-bound)")
   if(PHIST_KERNEL_LIB_BUILTIN_AVX2_PREC_KERNELS)
     message(STATUS "Activated experimental high-precision builtin kernel routines!")
     set(PHIST_HIGH_PRECISION_KERNELS 1)
@@ -414,6 +415,7 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmv_buff_cpy_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/kacz_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/bench_kernels.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_BelosAdapter.cpp
                           )

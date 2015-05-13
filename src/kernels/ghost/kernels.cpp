@@ -327,6 +327,19 @@ extern "C" void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* 
   *iupper = map->ctx->lfRow[me]+map->ctx->lnrows[me]-1;
   }
 
+extern "C" void phist_bench_stream_load(double* bw, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+extern "C" void phist_bench_stream_store(double* bw, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+extern "C" void phist_bench_stream_triad(double* bw, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+
 // small helper function to preclude integer overflows (ghost allows 64 bit local indices, 
 // but we don't right now)
   template<typename idx_t>
