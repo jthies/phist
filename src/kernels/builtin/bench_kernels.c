@@ -11,6 +11,7 @@
 #endif
 #include <emmintrin.h>
 #include <omp.h>
+#include <stdlib.h>
 
 
 // define our own datatype for aligned doubles
