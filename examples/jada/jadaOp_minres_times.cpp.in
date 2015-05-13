@@ -87,10 +87,6 @@ void myMain(int argc, char** argv, int &iflag)
   mvec_ptr_t q = NULL;
   sdMat_ptr_t R = NULL;
   
-  PHIST_TASK_DECLARE(Task1);
-  PHIST_TASK_DECLARE(Task2);
-  PHIST_TASK_DECLARE(Task3);
-  PHIST_TASK_DECLARE(Task4);
   
 
   
@@ -119,9 +115,16 @@ void myMain(int argc, char** argv, int &iflag)
     repart=atoi(argv[4]);
   }
   
+  PHIST_SOUT(PHIST_INFO, "Called %s %s %d %d %d\n", argv[0], matname, nproj, nvecs, repart);
 
-  iflag=repart?PHIST_SPARSEMAT_REPARTITION: PHIST_IFLAG_DEFAULT;
-  iflag=iflag | (nvecs>1) ? PHIST_SPARSEMAT_OPT_BLOCKSPMVM : PHIST_SPARSEMAT_OPT_SINGLESPMVM;
+  iflag = PHIST_IFLAG_DEFAULT;
+  if( repart )
+    iflag |= PHIST_SPARSEMAT_REPARTITION;
+  if( nvecs > 1 )
+    iflag |= PHIST_SPARSEMAT_OPT_BLOCKSPMVM;
+  else
+    iflag |= PHIST_SPARSEMAT_OPT_SINGLESPMVM;
+PHIST_SOUT(PHIST_INFO, "create_matrix iflag %d\n", iflag);
   PHIST_CHK_IERR(SUBR(create_matrix)(&A, comm, matname, &iflag),iflag);
   PHIST_CHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&iflag),iflag);
   for(int i = 0; i < maxit+2; i++)
@@ -335,6 +338,10 @@ void myMain(int argc, char** argv, int &iflag)
     z = V[i];
     x = V[i+1];
     y = V[i+2];
+if (i < maxit - 2)
+{
+  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_communicate)(A, x, &iflag_t3), iflag_t3);
+}
 
 
 
@@ -345,6 +352,7 @@ void myMain(int argc, char** argv, int &iflag)
     { 
       
       
+      iflag_t3 = PHIST_SPMVM_ONLY_LOCAL;
       PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_vadd_mvec)(st::one(), A, sigma, x, st::zero(), y, &iflag_t3), iflag_t3);
 
 

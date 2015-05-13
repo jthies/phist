@@ -119,9 +119,16 @@ void myMain(int argc, char** argv, int &iflag)
     repart=atoi(argv[4]);
   }
   
+  PHIST_SOUT(PHIST_INFO, "Called %s %s %d %d %d\n", argv[0], matname, nproj, nvecs, repart);
 
-  iflag=repart?PHIST_SPARSEMAT_REPARTITION: PHIST_IFLAG_DEFAULT;
-  iflag=iflag | (nvecs>1) ? PHIST_SPARSEMAT_OPT_BLOCKSPMVM : PHIST_SPARSEMAT_OPT_SINGLESPMVM;
+  iflag = PHIST_IFLAG_DEFAULT;
+  if( repart )
+    iflag |= PHIST_SPARSEMAT_REPARTITION;
+  if( nvecs > 1 )
+    iflag |= PHIST_SPARSEMAT_OPT_BLOCKSPMVM;
+  else
+    iflag |= PHIST_SPARSEMAT_OPT_SINGLESPMVM;
+PHIST_SOUT(PHIST_INFO, "create_matrix iflag %d\n", iflag);
   PHIST_CHK_IERR(SUBR(create_matrix)(&A, comm, matname, &iflag),iflag);
   PHIST_CHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&iflag),iflag);
   for(int i = 0; i < maxit+2; i++)
@@ -161,6 +168,9 @@ void myMain(int argc, char** argv, int &iflag)
 
   for (int h = 0; h < 10; h++)
   {
+    for(int k = 0; k < nvecs; k++)
+    residue[k] = st::zero();
+
     PHIST_CHK_IERR(SUBR(mvec_put_value)(q,st::zero(),&iflag),iflag); 
   //PHIST_CHK_IERR(SUBR(mvec_create)(&V,map,nvecs,&iflag),iflag);
   //PHIST_CHK_IERR(SUBR(mvec_random)(V,&iflag),iflag);
