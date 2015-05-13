@@ -20,6 +20,7 @@
 #include "Teuchos_RCP.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_MatrixIO.hpp"
+#include "Tpetra_DefaultPlatform.hpp"
 
 #include "./Tpetra_TsqrAdaptor.hpp"
 #include "./BelosTpetraAdapter.hpp"
@@ -30,6 +31,7 @@
 #endif
 
 #include <fstream>
+#include <sstream>
 
 
 using namespace phist::tpetra;
@@ -50,6 +52,10 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
     *iflag=MPI_Init(argc,argv);
   }
 #endif
+  // describe yourself!
+  std::ostringstream oss;
+  Tpetra::DefaultPlatform::getDefaultPlatform().describe(oss,Teuchos::VERB_MEDIUM);
+  PHIST_SOUT(PHIST_INFO,"Tpetra platform:\n%s\n", oss.str().c_str());
 #ifdef PHIST_HAVE_LIKWID
   LIKWID_MARKER_INIT;
   LIKWID_MARKER_START("phist<tpetra>");
