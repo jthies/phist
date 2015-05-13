@@ -666,7 +666,6 @@ contains
     XI = HX*DBLE(IX)
     
     solVal=U(XI,YJ,ZK,col)
-    write(*,*) 'TROET U(',row,col,') [',xi,yj,zk,'] = ',solVal
     the_result=0
     
   end function MATPDE3D_solFunc
