@@ -86,8 +86,11 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   lidx_t ldV, ldVb; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))Vblock,&Vb_raw,&ldVb,iflag),*iflag); \
-  int nV_ = std::min(ldV,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
-  int nVb_ = std::min(ldVb,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
+  lidx_t cl_size = 64/sizeof(_ST_); \
+  int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
+  if( nV_+cl_size > ldV ) nV_ = ldV; \
+  int nVb_ = std::min(ldVb,((nV-1)/cl_size+1)*cl_size); \
+  if( nVb_+cl_size > ldVb ) nVb_ = ldVb; \
   PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,ldVb,(nV!=nVb_),0,0, STREAM_TRIAD((nV_+nVb_+(nV!=nVb_)*nVb_)*n*sizeof(_ST_))); \
   *iflag = tmp_iflag;
 
@@ -114,8 +117,11 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   lidx_t ldV, ldVb; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))Vblock,&Vb_raw,&ldVb,iflag),*iflag); \
-  int nV_ = std::min(ldV,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
-  int nVb_ = std::min(ldVb,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
+  lidx_t cl_size = 64/sizeof(_ST_); \
+  int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
+  if( nV_+cl_size > ldV ) nV_ = ldV; \
+  int nVb_ = std::min(ldVb,((nV-1)/cl_size+1)*cl_size); \
+  if( nVb_+cl_size > ldVb ) nVb_ = ldVb; \
   PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,ldVb,(nV!=nV_),0,0, STREAM_TRIAD((nV_+nVb_+(nV!=nV_)*nV_)*n*sizeof(_ST_))); \
   *iflag = tmp_iflag;
 
@@ -148,7 +154,9 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   _ST_ *V_raw; \
   lidx_t ldV; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
-  int nV_ = std::min(ldV,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
+  lidx_t cl_size = 64/sizeof(_ST_); \
+  int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
+  if( nV_+cl_size > ldV ) nV_ = ldV; \
   PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,(nV!=nV_),0,0,0, (nV==nV_)*STREAM_STORE(nV*n*sizeof(_ST_)) + (nV!=nV_)*STREAM_TRIAD(2*nV_*n*sizeof(_ST_))); \
   *iflag = tmp_iflag;
 
@@ -182,8 +190,11 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   lidx_t ldV, ldW; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))W,&W_raw,&ldW,iflag),*iflag); \
-  int nV_ = std::min(ldV,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
-  int nW_ = std::min(ldW,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
+  lidx_t cl_size = 64/sizeof(_ST_); \
+  int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
+  if( nV_+cl_size > ldV ) nV_ = ldV; \
+  int nW_ = std::min(ldW,((nV-1)/cl_size+1)*cl_size); \
+  if( nW_+cl_size > ldW ) nW_ = ldW; \
   PHIST_PERFCHECK_VERIFY(__FUNCTION__,(V!=W),nV,ldV,ldW,0,0, STREAM_LOAD((nV_+(V!=W)*nW_)*n*sizeof(_ST_))); \
   *iflag = tmp_iflag;
 
@@ -216,7 +227,9 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   _ST_ *V_raw; \
   lidx_t ldV; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
-  int nV_ = std::min(ldV,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
+  lidx_t cl_size = 64/sizeof(_ST_); \
+  int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
+  if( nV_+cl_size > ldV ) nV_ = ldV; \
   PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,0,0,0,0, STREAM_LOAD(nV_*n*sizeof(_ST_))+STREAM_TRIAD(2*nV_*n*sizeof(_ST_))); \
   *iflag = tmp_iflag;
 
@@ -249,7 +262,9 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   _ST_ *V_raw; \
   lidx_t ldV; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
-  int nV_ = std::min(ldV,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
+  lidx_t cl_size = 64/sizeof(_ST_); \
+  int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
+  if( nV_+cl_size > ldV ) nV_ = ldV; \
   PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,0,0,0,0, STREAM_TRIAD(2*nV_*n*sizeof(_ST_))); \
   *iflag = tmp_iflag;
 
@@ -283,8 +298,11 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   lidx_t ldX, ldY; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))X,&X_raw,&ldX,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))Y,&Y_raw,&ldY,iflag),*iflag); \
-  int nX_ = std::min(ldX,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
-  int nY_ = std::min(ldY,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
+  lidx_t cl_size = 64/sizeof(_ST_); \
+  int nX_ = std::min(ldX,((nV-1)/cl_size+1)*cl_size); \
+  if( nX_+cl_size > ldX ) nX_ = ldX; \
+  int nY_ = std::min(ldY,((nV-1)/cl_size+1)*cl_size); \
+  if( nY_+cl_size > ldY ) nY_ = ldY; \
   PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=st::zero()),(b!=st::zero()),nV,nX_,nY_,0, STREAM_TRIAD(((a!=st::zero())*nX_+(b!=st::zero())*nY_+nY_)*n*sizeof(_ST_))); \
   *iflag = tmp_iflag;
 
@@ -332,8 +350,11 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   lidx_t ldV, ldW; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))W,&W_raw,&ldW,iflag),*iflag); \
-  int nV_ = std::min(ldV,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
-  int nW_ = std::min(ldW,((nW-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
+  lidx_t cl_size = 64/sizeof(_ST_); \
+  int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
+  if( nV_+cl_size > ldV ) nV_ = ldV; \
+  int nW_ = std::min(ldW,((nW-1)/cl_size+1)*cl_size); \
+  if( nW_+cl_size > ldW ) nW_ = ldW; \
   PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,ldV,ldW,0,0, STREAM_LOAD((nV_+nW_)*n*sizeof(_ST_))); \
   *iflag = tmp_iflag;
 
@@ -369,8 +390,11 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   lidx_t ldV, ldW; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))W,&W_raw,&ldW,iflag),*iflag); \
-  int nV_ = std::min(ldV,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
-  int nW_ = std::min(ldW,((nW-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
+  lidx_t cl_size = 64/sizeof(_ST_); \
+  int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
+  if( nV_+cl_size > ldV ) nV_ = ldV; \
+  int nW_ = std::min(ldW,((nW-1)/cl_size+1)*cl_size); \
+  if( nW_+cl_size > ldW ) nW_ = ldW; \
   PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=st::zero()),(b!=st::zero()),nV,nW,ldV,ldW, STREAM_TRIAD(((a!=st::zero())*nV_+(b!=st::zero())*nW_+nW_)*n*sizeof(_ST_))); \
   *iflag = tmp_iflag;
 
@@ -405,8 +429,11 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   _ST_ *V_raw; \
   lidx_t ldV; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
-  int nV_ = std::min(ldV,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
-  int nW_ = std::min(ldV,((nW-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
+  lidx_t cl_size = 64/sizeof(_ST_); \
+  int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
+  if( nV_+cl_size > ldV ) nV_ = ldV; \
+  int nW_ = std::min(ldV,((nW-1)/cl_size+1)*cl_size); \
+  if( nW_+cl_size > ldV ) nW_ = ldV; \
   PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,ldV,0,0,0, STREAM_TRIAD((nV_+nW_)*n*sizeof(_ST_))); \
   *iflag = tmp_iflag;
 
