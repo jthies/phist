@@ -281,6 +281,13 @@ extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) M, int* iflag)
 extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#ifdef PHIST_PERFCHECK
+  lidx_t nlocal;
+  int nV;
+  PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&nlocal,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,nlocal, STREAM_STORE(nV*nlocal*sizeof(_ST_)));
+#endif
   PHIST_CHK_IERR(SUBR(mvec_put_value_f)(V,value,iflag),*iflag);
 }
 
@@ -440,6 +447,13 @@ extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) v,
     _ST_* s, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#ifdef PHIST_PERFCHECK
+  lidx_t nlocal;
+  int nV;
+  PHIST_CHK_IERR(SUBR(mvec_my_length)(v,&nlocal,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v,&nV,iflag),*iflag);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,nlocal, STREAM_LOAD(2*nV*nlocal*sizeof(_ST_)));
+#endif
   PHIST_CHK_IERR(SUBR(mvec_dot_mvec_f)(v,w,s,iflag),*iflag);
 }
 
@@ -448,6 +462,14 @@ extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
     _ST_ beta, TYPE(mvec_ptr) W, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#ifdef PHIST_PERFCHECK
+  lidx_t nlocal;
+  int nV, nW;
+  PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&nlocal,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&nW,iflag),*iflag);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,nlocal, STREAM_TRIAD((nV+2*nW)*nlocal*sizeof(_ST_)));
+#endif
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat_f)(alpha,V,C,beta,W,iflag),*iflag);
 }
 
@@ -511,6 +533,14 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
     _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#ifdef PHIST_PERFCHECK
+  lidx_t nlocal;
+  int nV, nW;
+  PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&nlocal,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&nW,iflag),*iflag);
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,nlocal, STREAM_LOAD((nV+nW)*nlocal*sizeof(_ST_)));
+#endif
   PHIST_CHK_IERR(SUBR(mvecT_times_mvec_f)(alpha,V,W,beta,C,iflag),*iflag);
 }
 

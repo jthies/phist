@@ -60,6 +60,7 @@ version of the code in addition to the standard
 #cmakedefine PHIST_TIMEMONITOR_PERLINE
 #cmakedefine PHIST_USE_TEUCHOS_TIMEMONITOR
 #cmakedefine PHIST_TIMINGS_FULL_TRACE
+#cmakedefine PHIST_PERFCHECK
 #cmakedefine PHIST_BENCH_LARGE_N ${PHIST_BENCH_LARGE_N}
 
 /* specific settings to tune the GHOST performance */

@@ -445,7 +445,8 @@ if (NOT ESSEX-PHYSICS_FOUND)
 endif()
 
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.cpp
-                        ${PROJECT_SOURCE_DIR}/src/tools/phist_timemonitor.cpp)
+                        ${PROJECT_SOURCE_DIR}/src/tools/phist_timemonitor.cpp
+                        ${PROJECT_SOURCE_DIR}/src/tools/phist_perfcheck.cpp)
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_svqb.cpp
@@ -575,10 +576,18 @@ else()
 endif()
 
 option(PHIST_TIMEMONITOR "Gather detailed function-level timings" On)
-if( ${PHIST_TIMEMONITOR} )
+if( PHIST_TIMEMONITOR )
   message(STATUS "activated TimeMonitor timing monitoring")
 endif()
 option(PHIST_TIMEMONITOR_PERLINE "Gather timing information for each line with a PHIST_CHK_* macro!" Off)
+option(PHIST_PERFCHECK "Check performance of operations (which have a performance model specification)" Off)
+if( PHIST_PERFCHECK )
+  message(STATUS "activated PerfCheck timing monitoring")
+  if( PHIST_PERFCHECK AND PHIST_TIMEMONITOR )
+    message(FATAL_ERROR "You cannot use PHIST_PERFCHECK and PHIST_TIMEMONITOR at once currently!")
+  endif()
+endif()
+
 
 set(INCLUDE_FLAGS "")
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)

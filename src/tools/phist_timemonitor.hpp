@@ -43,6 +43,8 @@
 # define PHIST_CXX_TIMER(s) phist_TimeMonitor::Timer TimerFrom_PHIST_CXX_TIMER(s);
 # define PHIST_CXX_TIMER_SUMMARIZE phist_TimeMonitor::Timer::summarize();
 
+#endif /* PHIST_USE_TEUCHOS_TIMEMONITOR */
+
 # include <map>
 # include <string>
 
@@ -59,22 +61,22 @@ namespace phist_TimeMonitor
       {
         if( wtime_available() )
         {
-          name = s;
-          wtime = get_wtime();
+          name_ = s;
+          wtime_ = get_wtime();
         }
       }
 
       // stop timer
       ~Timer()
       {
-        if( !name.empty() && wtime_available() )
+        if( !name_.empty() && wtime_available() )
         {
-          wtime = get_wtime() - wtime;
-          _timingResults[name].update(wtime);
+          wtime_ = get_wtime() - wtime_;
+          timingResults_[name_].update(wtime_);
 #ifdef PHIST_TIMINGS_FULL_TRACE
-          std::string parent = getNameOfParent(name);
+          std::string parent = getNameOfParent(name_);
           if( !parent.empty() )
-            _timingResults[parent].updateChild(wtime);
+            timingResults_[parent].updateChild(wtime_);
 #endif
         }
       }
@@ -82,9 +84,9 @@ namespace phist_TimeMonitor
       // calculates the results and prints them
       static void summarize(void);
 
-    private:
-      std::string name;
-      double wtime;
+    protected:
+      std::string name_;
+      double wtime_;
       // simple struct that stores data
       struct TimeData
       {
@@ -127,7 +129,7 @@ namespace phist_TimeMonitor
 
 
       typedef std::map<std::string,TimeData> TimeDataMap;
-      static TimeDataMap _timingResults;
+      static TimeDataMap timingResults_;
 
 
       static double get_wtime()
@@ -168,6 +170,5 @@ namespace phist_TimeMonitor
 
 
 }
-#endif /* PHIST_USE_TEUCHOS_TIMEMONITOR */
 
 #endif /* PHIST_TIMEMONITOR_HPP */
