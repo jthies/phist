@@ -586,6 +586,7 @@ if( PHIST_PERFCHECK )
   if( PHIST_PERFCHECK AND PHIST_TIMEMONITOR )
     message(FATAL_ERROR "You cannot use PHIST_PERFCHECK and PHIST_TIMEMONITOR at once currently!")
   endif()
+  option(PHIST_PERFCHECK_REALISTIC "Switch from ideal performance predictions to more realistic ones (e.g. for views)!")
 endif()
 
 

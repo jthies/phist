@@ -27,8 +27,8 @@
  * \param functionName name of the function, ideally with required block sizes appended
  * \param benchFormula formula to calculate expected time
  */
-#define PHIST_PERFCHECK_VERIFY(functionName,n1,n2,n3,n4, benchFormula) \
-  phist_PerfCheck::PerfCheckTimer YouCanOnlyHaveOnePerfCheckInOneScope(functionName,#n1,n1,#n2,n2,#n3,n3,#n4,n4, #benchFormula, benchFormula);
+#define PHIST_PERFCHECK_VERIFY(functionName,n1,n2,n3,n4,n5,n6, benchFormula) \
+  phist_PerfCheck::PerfCheckTimer YouCanOnlyHaveOnePerfCheckInOneScope(functionName,#n1,n1,#n2,n2,#n3,n3,#n4,n4,#n5,n5,#n6,n6, #benchFormula, benchFormula);
 
 
 /*! Defines a new benchmark for the performance check
@@ -73,8 +73,10 @@ namespace phist_PerfCheck
                                        const char* sn2, double n2, 
                                        const char* sn3, double n3, 
                                        const char* sn4, double n4, 
+                                       const char* sn5, double n5, 
+                                       const char* sn6, double n6, 
                                        const char* formula, double expectedTime) :
-        Timer(constructName(name,sn1,n1,sn2,n2,sn3,n3,sn4,n4,formula).c_str())
+        Timer(constructName(name,sn1,n1,sn2,n2,sn3,n3,sn4,n4,sn5,n5,sn6,n6,formula).c_str())
       {
         expectedResults_[name_].update(expectedTime);
       }
@@ -90,6 +92,8 @@ namespace phist_PerfCheck
                                        const char* sn2, double n2, 
                                        const char* sn3, double n3, 
                                        const char* sn4, double n4, 
+                                       const char* sn5, double n5, 
+                                       const char* sn6, double n6, 
                                        const char* formula)
       {
         std::ostringstream oss;
@@ -103,6 +107,10 @@ namespace phist_PerfCheck
           oss << "," << sn3 << "=" << n3;
         if( sn4 != std::string("0") )
           oss << "," << sn4 << "=" << n4;
+        if( sn5 != std::string("0") )
+          oss << "," << sn5 << "=" << n5;
+        if( sn6 != std::string("0") )
+          oss << "," << sn6 << "=" << n6;
         oss << ") " << formula;
 
         return oss.str();
