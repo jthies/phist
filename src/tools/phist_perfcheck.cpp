@@ -126,7 +126,7 @@ namespace phist_PerfCheck
         PHIST_SOUT(PHIST_INFO, "----------------------------------------------------------------------------------------------------------------------------------\n");
       }
       PHIST_SOUT(PHIST_INFO, "%s  %10.3e  %10.3g  %10lu  %10.3g  %10.3g  %10.3g\n", fcnName.at(i).c_str(), maxTotalExpected.at(i), 100*maxTotalExpected.at(i)/maxTotalTime.at(i), numberOfCalls.at(i),
-          100*maxExpected.at(i)/maxTime.at(i), 100*sumTotalExpected.at(i)/sumTotalTime.at(i), 100*minExpected.at(i)/minTime.at(i));
+          100*minExpected.at(i)/minTime.at(i), 100*sumTotalExpected.at(i)/sumTotalTime.at(i), 100*maxExpected.at(i)/maxTime.at(i));
     }
     PHIST_SOUT(PHIST_INFO, "==================================================================================================================================\n");
   }

@@ -27,8 +27,8 @@
  * \param functionName name of the function, ideally with required block sizes appended
  * \param benchFormula formula to calculate expected time
  */
-#define PHIST_PERFCHECK_VERIFY(functionName,n1,n2,n3, benchFormula) \
-  phist_PerfCheck::PerfCheckTimer YouCanOnlyHaveOnePerfCheckInOneScope(functionName,n1,n2,n3, #benchFormula, benchFormula);
+#define PHIST_PERFCHECK_VERIFY(functionName,n1,n2,n3,n4, benchFormula) \
+  phist_PerfCheck::PerfCheckTimer YouCanOnlyHaveOnePerfCheckInOneScope(functionName,#n1,n1,#n2,n2,#n3,n3,#n4,n4, #benchFormula, benchFormula);
 
 
 /*! Defines a new benchmark for the performance check
@@ -69,8 +69,12 @@ namespace phist_PerfCheck
   class PerfCheckTimer : public Timer
   {
     public:
-      PerfCheckTimer(const char* name, double n1, double n2, double n3, const char* formula, double expectedTime) :
-        Timer(constructName(name,n1,n2,n3,formula).c_str())
+      PerfCheckTimer(const char* name, const char* sn1, double n1, 
+                                       const char* sn2, double n2, 
+                                       const char* sn3, double n3, 
+                                       const char* sn4, double n4, 
+                                       const char* formula, double expectedTime) :
+        Timer(constructName(name,sn1,n1,sn2,n2,sn3,n3,sn4,n4,formula).c_str())
       {
         expectedResults_[name_].update(expectedTime);
       }
@@ -81,10 +85,26 @@ namespace phist_PerfCheck
     protected:
       static Timer::TimeDataMap expectedResults_;
 
-      static std::string constructName(const char* name, double n1, double n2, double n3, const char* formula)
+      static std::string constructName(const char* name, 
+                                       const char* sn1, double n1, 
+                                       const char* sn2, double n2, 
+                                       const char* sn3, double n3, 
+                                       const char* sn4, double n4, 
+                                       const char* formula)
       {
         std::ostringstream oss;
-        oss << name << "(" << n1 << "," << n2 << "," << n3 << ") " << formula;
+
+        oss << name << "(";
+        if( sn1 != std::string("0") )
+          oss << sn1 << "=" << n1;
+        if( sn2 != std::string("0") )
+          oss << "," << sn2 << "=" << n2;
+        if( sn3 != std::string("0") )
+          oss << "," << sn3 << "=" << n3;
+        if( sn4 != std::string("0") )
+          oss << "," << sn4 << "=" << n4;
+        oss << ") " << formula;
+
         return oss.str();
       }
   };
