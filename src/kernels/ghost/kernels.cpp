@@ -10,6 +10,7 @@
 #include <iostream>
 #include "phist_macros.h"
 #include "../phist_kernels.h"
+#include "phist_kernel_perfmodels.hpp"
 
 #include "phist_typedefs.h"
 #include "typedefs.hpp"
@@ -184,7 +185,12 @@ extern "C" void phist_kernels_finalize(int* iflag)
 #if defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE)
 PHIST_CXX_TIMER_SUMMARIZE;
 #endif
+PHIST_PERFCHECK_SUMMARIZE(PHIST_INFO);
   ghost_finalize();
+#ifdef PHIST_PERFCHECK
+  // prevent some strange memory errors during deallocation (due to shared lib context?)
+  phist_PerfCheck::benchmarks.clear();
+#endif
   *iflag=0;
 }
 
@@ -327,18 +333,65 @@ extern "C" void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* 
   *iupper = map->ctx->lfRow[me]+map->ctx->lnrows[me]-1;
   }
 
-extern "C" void phist_bench_stream_load(double* bw, int* iflag)
+extern "C" {
+#include "../builtin/bench_kernels.h"
+void phist_bench_stream_load(double* max_bw, int* iflag)
 {
-  *iflag = PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  double *data = NULL;
+  PHIST_SOUT(PHIST_INFO, "Streaming LOAD benchmark: ");
+  PHIST_CHK_IERR(dbench_stream_load_create(&data,iflag),*iflag);
+  *max_bw = 0.;
+  for(int i = 0; i < 10; i++)
+  {
+    double bw = 0.;
+    double res;
+    PHIST_CHK_IERR(dbench_stream_load_run(data,&res,&bw,iflag),*iflag);
+    if( bw > *max_bw ) *max_bw = bw;
+  }
+  PHIST_CHK_IERR(dbench_stream_load_destroy(data,iflag),*iflag);
+  PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s\n", *max_bw/1.e9);
 }
-extern "C" void phist_bench_stream_store(double* bw, int* iflag)
+
+void phist_bench_stream_store(double* max_bw, int* iflag)
 {
-  *iflag = PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  double *data = NULL;
+  PHIST_SOUT(PHIST_INFO, "Streaming STORE benchmark: ");
+  PHIST_CHK_IERR(dbench_stream_store_create(&data,iflag),*iflag);
+  *max_bw = 0.;
+  for(int i = 0; i < 10; i++)
+  {
+    double bw = 0.;
+    double res = 77.;
+    PHIST_CHK_IERR(dbench_stream_store_run(data,&res,&bw,iflag),*iflag);
+    if( bw > *max_bw ) *max_bw = bw;
+  }
+  PHIST_CHK_IERR(dbench_stream_store_destroy(data,iflag),*iflag);
+  PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s\n", *max_bw/1.e9);
 }
-extern "C" void phist_bench_stream_triad(double* bw, int* iflag)
+
+void phist_bench_stream_triad(double* max_bw, int* iflag)
 {
-  *iflag = PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  double *x = NULL;
+  double *y = NULL;
+  double *z = NULL;
+  PHIST_SOUT(PHIST_INFO, "Streaming TRIAD benchmark: ");
+  PHIST_CHK_IERR(dbench_stream_triad_create(&x,&y,&z,iflag),*iflag);
+  *max_bw = 0.;
+  for(int i = 0; i < 10; i++)
+  {
+    double bw = 0.;
+    double res = -53.;
+    PHIST_CHK_IERR(dbench_stream_triad_run(x,y,z,&res,&bw,iflag),*iflag);
+    if( bw > *max_bw ) *max_bw = bw;
+  }
+  PHIST_CHK_IERR(dbench_stream_triad_destroy(x,y,z,iflag),*iflag);
+  PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s\n", *max_bw/1.e9);
 }
+}
+
 
 // small helper function to preclude integer overflows (ghost allows 64 bit local indices, 
 // but we don't right now)

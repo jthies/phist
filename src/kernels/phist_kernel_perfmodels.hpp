@@ -31,28 +31,34 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 
 //! checks performance of mvec_create
 #define PHIST_PERFCHECK_VERIFY_MVEC_CREATE(map,nvec,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV = nvec; \
   PHIST_CHK_IERR(phist_map_get_local_length(map,&n,iflag),*iflag); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0, STREAM_STORE(nV*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0, STREAM_STORE(nV*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 
 //! checks performance of mvec_from_device
 #define PHIST_PERFCHECK_VERIFY_MVEC_FROM_DEVICE(V,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0, STREAM_FROM_DEVICE(nV*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0, STREAM_FROM_DEVICE(nV*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 
 //! checks performance of mvec_to_device
 #define PHIST_PERFCHECK_VERIFY_MVEC_TO_DEVICE(V,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0, STREAM_TO_DEVICE(nV*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0, STREAM_TO_DEVICE(nV*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 
 //! \def PHIST_PERFCHECK_VERIFY_MVEC_GET_BLOCK(V,Vblock,jmin,jmax,iflag)
@@ -61,15 +67,18 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVEC_GET_BLOCK(V,Vblock,jmin,jmax,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV = jmax-jmin+1; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0, STREAM_TRIAD(2*nV*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0, STREAM_TRIAD(2*nV*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #else
 
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVEC_GET_BLOCK(V,Vblock,jmin,jmax,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV = jmax-jmin+1; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
@@ -79,7 +88,8 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))Vblock,&Vb_raw,&ldVb,iflag),*iflag); \
   int nV_ = std::min(ldV,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
   int nVb_ = std::min(ldVb,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,ldVb,(nV!=nVb_),0,0, STREAM_TRIAD((nV_+nVb_+(nV!=nVb_)*nVb_)*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,ldVb,(nV!=nVb_),0,0, STREAM_TRIAD((nV_+nVb_+(nV!=nVb_)*nVb_)*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #endif
 
@@ -96,6 +106,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVEC_SET_BLOCK(V,Vblock,jmin,jmax,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV = jmax-jmin+1; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
@@ -105,7 +116,8 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))Vblock,&Vb_raw,&ldVb,iflag),*iflag); \
   int nV_ = std::min(ldV,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
   int nVb_ = std::min(ldVb,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,ldVb,(nV!=nV_),0,0, STREAM_TRIAD((nV_+nVb_+(nV!=nV_)*nV_)*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,ldVb,(nV!=nV_),0,0, STREAM_TRIAD((nV_+nVb_+(nV!=nV_)*nV_)*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #endif
 
@@ -116,16 +128,19 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVEC_PUT_VALUE(V,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0, STREAM_STORE(nV*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0, STREAM_STORE(nV*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #else
 
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVEC_PUT_VALUE(V,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
@@ -134,7 +149,8 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   lidx_t ldV; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
   int nV_ = std::min(ldV,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,(nV!=nV_),0,0,0, (nV==nV_)*STREAM_STORE(nV*n*sizeof(_ST_)) + (nV!=nV_)*STREAM_TRIAD(2*nV_*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,(nV!=nV_),0,0,0, (nV==nV_)*STREAM_STORE(nV*n*sizeof(_ST_)) + (nV!=nV_)*STREAM_TRIAD(2*nV_*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #endif
 
@@ -145,16 +161,19 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVEC_DOT_MVEC(V,W,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(V!=W),nV,0,0,0,0, STREAM_LOAD((nV+(V!=W)*nV)*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(V!=W),nV,0,0,0,0, STREAM_LOAD((nV+(V!=W)*nV)*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #else
 
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVEC_DOT_MVEC(V,W,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
@@ -165,7 +184,8 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))W,&W_raw,&ldW,iflag),*iflag); \
   int nV_ = std::min(ldV,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
   int nW_ = std::min(ldW,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(V!=W),nV,ldV,ldW,0,0, STREAM_LOAD((nV_+(V!=W)*nW_)*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(V!=W),nV,ldV,ldW,0,0, STREAM_LOAD((nV_+(V!=W)*nW_)*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #endif
 
@@ -176,16 +196,19 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVEC_NORMALIZE(V,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0, STREAM_LOAD(nV*n*sizeof(_ST_))+STREAM_TRIAD(2*nV*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0, STREAM_LOAD(nV*n*sizeof(_ST_))+STREAM_TRIAD(2*nV*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #else
 
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVEC_NORMALIZE(V,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
@@ -194,7 +217,8 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   lidx_t ldV; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
   int nV_ = std::min(ldV,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,0,0,0,0, STREAM_LOAD(nV_*n*sizeof(_ST_))+STREAM_TRIAD(2*nV_*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,0,0,0,0, STREAM_LOAD(nV_*n*sizeof(_ST_))+STREAM_TRIAD(2*nV_*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #endif
 
@@ -205,16 +229,19 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVEC_SCALE(V,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0, STREAM_TRIAD(2*nV*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0,0,0, STREAM_TRIAD(2*nV*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #else
 
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVEC_SCALE(V,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
@@ -223,7 +250,8 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   lidx_t ldV; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
   int nV_ = std::min(ldV,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,0,0,0,0, STREAM_TRIAD(2*nV_*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,ldV,0,0,0,0, STREAM_TRIAD(2*nV_*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #endif
 
@@ -234,16 +262,19 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVEC_ADD_MVEC(a,X,b,Y,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(X,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nV,iflag),*iflag); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=0),(b!=0),nV,0,0,0, STREAM_TRIAD(((a!=0)+(b!=0)+1)*nV*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=st::zero()),(b!=st::zero()),nV,0,0,0, STREAM_TRIAD(((a!=st::zero())+(b!=st::zero())+1)*nV*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #else
 
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVEC_ADD_MVEC(a,X,b,Y,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(X,&n,iflag),*iflag); \
@@ -254,20 +285,22 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))Y,&Y_raw,&ldY,iflag),*iflag); \
   int nX_ = std::min(ldX,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
   int nY_ = std::min(ldY,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=0),(b!=0),nV,nX_,nY_,0, STREAM_TRIAD(((a!=0)*nX_+(b!=0)*nY_+nY_)*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=st::zero()),(b!=st::zero()),nV,nX_,nY_,0, STREAM_TRIAD(((a!=st::zero())*nX_+(b!=st::zero())*nY_+nY_)*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #endif
 
 
 //! checks performance of mvec_vadd_mvec
 #define PHIST_PERFCHECK_VERIFY_MVEC_VADD_MVEC(as,X,b,Y,iflag) \
-  _MT_ a=mt::zero(); \
+  _MT_ as_=mt::zero(); \
   { \
     int nV; \
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nV,iflag),*iflag); \
-    for(int i = 0; i < nV; i++) a=std::max(st::abs(as[i]),a); \
+    for(int i = 0; i < nV; i++) as_=std::max(st::abs(as[i]),as_); \
   } \
-  PHIST_PERFCHECK_VERIFY_MVEC_ADD_MVEC(a,X,b,Y,iflag);
+  _ST_ a_ = as_; \
+  PHIST_PERFCHECK_VERIFY_MVEC_ADD_MVEC(a_,X,b,Y,iflag);
 
 
 //! \def PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC(V,W,iflag)
@@ -276,17 +309,20 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC(V,W,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV, nW; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&nW,iflag),*iflag); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,0,0,0,0, STREAM_LOAD((nV+nW)*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,0,0,0,0, STREAM_LOAD((nV+nW)*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #else
 
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC(V,W,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV, nW; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
@@ -298,7 +334,8 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))W,&W_raw,&ldW,iflag),*iflag); \
   int nV_ = std::min(ldV,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
   int nW_ = std::min(ldW,((nW-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,ldV,ldW,0,0, STREAM_LOAD((nV_+nW_)*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,ldV,ldW,0,0, STREAM_LOAD((nV_+nW_)*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #endif
 
@@ -309,17 +346,20 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT(a,V,b,W,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV, nW; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&nW,iflag),*iflag); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=0),(b!=0),nV,nW,0,0, STREAM_TRIAD(((a!=0)*nV+(b!=0)*nW+nW)*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=st::zero()),(b!=st::zero()),nV,nW,0,0, STREAM_TRIAD(((a!=st::zero())*nV+(b!=st::zero())*nW+nW)*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #else
 
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT(a,V,b,W,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV, nW; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
@@ -331,7 +371,8 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))W,&W_raw,&ldW,iflag),*iflag); \
   int nV_ = std::min(ldV,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
   int nW_ = std::min(ldW,((nW-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=0),(b!=0),nV,nW,ldV,ldW, STREAM_TRIAD(((a!=0)*nV_+(b!=0)*nW_+nW_)*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(a!=st::zero()),(b!=st::zero()),nV,nW,ldV,ldW, STREAM_TRIAD(((a!=st::zero())*nV_+(b!=st::zero())*nW_+nW_)*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #endif
 
@@ -342,17 +383,20 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT_INPLACE(V,M,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV, nW; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(M,&nW,iflag),*iflag); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,0,0,0,0, STREAM_TRIAD((nV+nW)*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,0,0,0,0, STREAM_TRIAD((nV+nW)*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #else
 
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT_INPLACE(V,M,iflag) \
+  int tmp_iflag = *iflag; \
   lidx_t n; \
   int nV, nW; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
@@ -363,7 +407,8 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
   int nV_ = std::min(ldV,((nV-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
   int nW_ = std::min(ldV,((nW-1)/(64/(lidx_t)sizeof(_ST_))+1)*(64/(lidx_t)sizeof(_ST_))); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,ldV,0,0,0, STREAM_TRIAD((nV_+nW_)*n*sizeof(_ST_)));
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,ldV,0,0,0, STREAM_TRIAD((nV_+nW_)*n*sizeof(_ST_))); \
+  *iflag = tmp_iflag;
 
 #endif
 
