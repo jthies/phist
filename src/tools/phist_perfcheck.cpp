@@ -115,7 +115,7 @@ namespace phist_PerfCheck
     std::string function = "function(dim) formula";
     function.resize(maxNameLen, ' ');
     PHIST_SOUT(PHIST_INFO, "================================================== PERFORMANCE CHECK RESULTS =====================================================\n");
-    PHIST_SOUT(PHIST_INFO, "%s  %10s  %10s  %10s  %10s  %10s  %10s\n", function.c_str(), "mtot.exp", "%peak-perf", "count", "max.%peak", "avg.%peak", "min.%peak");
+    PHIST_SOUT(PHIST_INFO, "%s  %10s  %10s  %10s  %10s  %10s\n", function.c_str(), "mtot.exp", "%peak-perf", "count", "max.%peak", "min.%peak");
     int nprocs;
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     for(int i_ = 0; i_ < nTimers; i_++)
@@ -125,8 +125,8 @@ namespace phist_PerfCheck
       {
         PHIST_SOUT(PHIST_INFO, "----------------------------------------------------------------------------------------------------------------------------------\n");
       }
-      PHIST_SOUT(PHIST_INFO, "%s  %10.3e  %10.3g  %10lu  %10.3g  %10.3g  %10.3g\n", fcnName.at(i).c_str(), maxTotalExpected.at(i), 100*maxTotalExpected.at(i)/maxTotalTime.at(i), numberOfCalls.at(i),
-          100*minExpected.at(i)/minTime.at(i), 100*sumTotalExpected.at(i)/sumTotalTime.at(i), 100*maxExpected.at(i)/maxTime.at(i));
+      PHIST_SOUT(PHIST_INFO, "%s  %10.3e  %10.3g  %10lu  %10.3g  %10.3g\n", fcnName.at(i).c_str(), maxTotalExpected.at(i), 100*maxTotalExpected.at(i)/maxTotalTime.at(i), numberOfCalls.at(i),
+          100*minExpected.at(i)/minTime.at(i), 100*maxExpected.at(i)/maxTime.at(i));
     }
     PHIST_SOUT(PHIST_INFO, "==================================================================================================================================\n");
   }

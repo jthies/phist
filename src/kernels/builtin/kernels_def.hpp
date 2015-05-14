@@ -125,6 +125,7 @@ extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* V,
     const_map_ptr_t map, lidx_t nvec, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_MVEC_CREATE(map,nvec,iflag);
   PHIST_CHK_IERR( SUBR(mvec_create_f) (V,map,nvec,iflag), *iflag);
 }
 
@@ -140,6 +141,7 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M,
     int nrows, int ncols, const_comm_ptr_t comm, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(sdMat_create_f)(M,nrows,ncols,comm,iflag),*iflag);
 }
 
@@ -217,6 +219,7 @@ extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) V,
     int jmin, int jmax, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(mvec_view_block_f)(V,Vblock,jmin,jmax,iflag),*iflag);
 }
 
@@ -225,6 +228,7 @@ extern "C" void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) V,
     int jmin, int jmax, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_MVEC_GET_BLOCK(V,Vblock,jmin,jmax,iflag);
   PHIST_CHK_IERR(SUBR(mvec_get_block_f)(V,Vblock,jmin,jmax,iflag),*iflag);
 }
 
@@ -233,6 +237,7 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) V,
     int jmin, int jmax, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_MVEC_SET_BLOCK(V,Vblock,jmin,jmax,iflag);
   PHIST_CHK_IERR(SUBR(mvec_set_block_f)(V,Vblock,jmin,jmax,iflag),*iflag);
 }
 
@@ -241,6 +246,7 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(mvec_ptr) M,
     int imin, int imax, int jmin, int jmax, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(sdMat_view_block_f)(M,Mblock,imin,imax,jmin,jmax,iflag),*iflag);
 }
 
@@ -249,6 +255,7 @@ extern "C" void SUBR(sdMat_get_block)(TYPE(const_mvec_ptr) M,
     int imin, int imax, int jmin, int jmax, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(sdMat_get_block_f)(M,Mblock,imin,imax,jmin,jmax,iflag),*iflag);
 }
 
@@ -257,37 +264,35 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M,
     int imin, int imax, int jmin, int jmax, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(sdMat_set_block_f)(M,Mblock,imin,imax,jmin,jmax,iflag),*iflag);
 }
 
 extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) A, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(crsMat_delete_f)(A,iflag), *iflag);
 }
 
 extern "C" void SUBR(mvec_delete)(TYPE(mvec_ptr) V, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR( SUBR(mvec_delete_f) (V,iflag),*iflag);
 }
 
 extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) M, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(sdMat_delete_f)(M,iflag),*iflag);
 }
 
 extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-#ifdef PHIST_PERFCHECK
-  lidx_t n;
-  int nV;
-  PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag);
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,0,0,0, STREAM_STORE(nV*n*sizeof(_ST_)));
-#endif
+  PHIST_PERFCHECK_VERIFY_MVEC_PUT_VALUE(V,iflag);
   PHIST_CHK_IERR(SUBR(mvec_put_value_f)(V,value,iflag),*iflag);
 }
 
@@ -295,18 +300,21 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
         int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_MVEC_PUT_VALUE(V,iflag);
   PHIST_CHK_IERR(SUBR(mvec_put_func_f)(V,(void(*)(ghost_gidx_t,ghost_lidx_t,void*))funPtr,iflag),*iflag);
 }
 
 extern "C" void SUBR(sdMat_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(sdMat_put_value_f)(V,value,iflag),*iflag);
 }
 
 extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_MVEC_PUT_VALUE(V,iflag);
   PHIST_CHK_IERR(SUBR(mvec_random_f)(V,iflag),*iflag);
 }
 
@@ -325,12 +333,14 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) M, int* iflag)
 extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) M, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(sdMat_random_f)(M,iflag),*iflag);
 }
 
 extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) M, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(sdMat_identity_f)(M,iflag),*iflag);
 }
 
@@ -338,6 +348,7 @@ extern "C" void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) V,
     _MT_* vnrm, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_MVEC_DOT_MVEC(V,V,iflag);
   PHIST_CHK_IERR(SUBR(mvec_norm2_f)(V,vnrm,iflag),*iflag);
 }
 
@@ -360,6 +371,7 @@ extern "C" void SUBR(mvec_scale)(TYPE(mvec_ptr) V,
     _ST_ scalar, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_MVEC_SCALE(V,iflag);
   PHIST_CHK_IERR(SUBR(mvec_scale_f)(V,scalar,iflag),*iflag);
 }
 
@@ -367,6 +379,7 @@ extern "C" void SUBR(mvec_vscale)(TYPE(mvec_ptr) V,
     const _ST_* scalar, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_MVEC_SCALE(V,iflag);
   PHIST_CHK_IERR(SUBR(mvec_vscale_f)(V,scalar,iflag),*iflag);
 }
 
@@ -375,6 +388,7 @@ extern "C" void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) X,
     int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_MVEC_ADD_MVEC(alpha,X,beta,Y,iflag);
   PHIST_CHK_IERR(SUBR(mvec_add_mvec_f)(alpha,X,beta,Y,iflag),*iflag);
 }
 
@@ -383,6 +397,8 @@ extern "C" void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) X,
     int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  PHIST_PERFCHECK_VERIFY_MVEC_VADD_MVEC(alpha,X,beta,Y,iflag);
   PHIST_CHK_IERR(SUBR(mvec_vadd_mvec_f)(alpha,X,beta,Y,iflag),*iflag);
 }
 
@@ -391,6 +407,7 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
     int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(sdMat_add_sdMat_f)(alpha,A,beta,B,iflag),*iflag);
 }
 
@@ -447,13 +464,7 @@ extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) v,
     _ST_* s, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-#ifdef PHIST_PERFCHECK
-  lidx_t n;
-  int nV;
-  PHIST_CHK_IERR(SUBR(mvec_my_length)(v,&n,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v,&nV,iflag),*iflag);
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(v!=w),nV,0,0, STREAM_LOAD((nV+(v!=w)*nV)*n*sizeof(_ST_)));
-#endif
+  PHIST_PERFCHECK_VERIFY_MVEC_DOT_MVEC(v,w,iflag);
   PHIST_CHK_IERR(SUBR(mvec_dot_mvec_f)(v,w,s,iflag),*iflag);
 }
 
@@ -462,14 +473,7 @@ extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
     _ST_ beta, TYPE(mvec_ptr) W, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-#ifdef PHIST_PERFCHECK
-  lidx_t n;
-  int nV, nW;
-  PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&nW,iflag),*iflag);
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(alpha!=0),nV,(beta!=0),nW, STREAM_TRIAD(((alpha!=0)*(nV+nW)+(beta!=0)*nW)*n*sizeof(_ST_)));
-#endif
+  PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT(alpha,V,beta,W,iflag);
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat_f)(alpha,V,C,beta,W,iflag),*iflag);
 }
 
@@ -478,6 +482,7 @@ extern "C" void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
     _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(sdMat_times_sdMat_f)(alpha,V,W,beta,C,iflag),*iflag);
 }
 
@@ -486,6 +491,7 @@ extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
     _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat_f)(alpha,V,W,beta,C,iflag),*iflag);
 }
 
@@ -494,6 +500,7 @@ extern "C" void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
     _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(sdMat_times_sdMatT_f)(alpha,V,W,beta,C,iflag),*iflag);
 }
 
@@ -501,6 +508,7 @@ extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) C, int* perm, int* rank, in
 {
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(sdMat_cholesky_f)(C,perm,rank,iflag),*iflag);
 #else
   *iflag=PHIST_NOT_IMPLEMENTED;
@@ -511,6 +519,7 @@ extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* pe
 {
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat_f)(R,perm,rank,X,iflag),*iflag);
 #else
   *iflag=PHIST_NOT_IMPLEMENTED;
@@ -521,6 +530,7 @@ extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* per
 {
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(sdMat_forwardSubst_sdMat_f)(R,perm,rank,X,iflag),*iflag);
 #else
   *iflag=PHIST_NOT_IMPLEMENTED;
@@ -533,14 +543,7 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
     _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-#ifdef PHIST_PERFCHECK
-  lidx_t n;
-  int nV, nW;
-  PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&nW,iflag),*iflag);
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,(alpha!=0),nV,nW,0, STREAM_LOAD((alpha!=0)*(nV+nW)*n*sizeof(_ST_)));
-#endif
+  PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC(V,W,iflag);
   PHIST_CHK_IERR(SUBR(mvecT_times_mvec_f)(alpha,V,W,beta,C,iflag),*iflag);
 }
 
@@ -568,6 +571,7 @@ extern "C" void SUBR(mvec_scatter_mvecs)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) 
 extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT_INPLACE(V,M,iflag);
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace_f)(V, M, iflag), *iflag);
 }
 

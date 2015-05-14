@@ -17,7 +17,7 @@
 #include <cstdio>
 
 #include "phist_macros.h"
-#include "phist_perfcheck.hpp"
+#include "phist_kernel_perfmodels.hpp"
 #ifdef PHIST_HAVE_TEUCHOS
 #include "phist_trilinos_macros.h"
 #endif
@@ -269,7 +269,6 @@ void phist_bench_stream_load(double* max_bw, int* iflag)
   PHIST_CHK_IERR(dbench_stream_load_destroy(data,iflag),*iflag);
   PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s\n", *max_bw/1.e9);
 }
-PHIST_PERFCHECK_BENCHMARK(STREAM_LOAD, phist_bench_stream_load);
 
 void phist_bench_stream_store(double* max_bw, int* iflag)
 {
@@ -288,7 +287,6 @@ void phist_bench_stream_store(double* max_bw, int* iflag)
   PHIST_CHK_IERR(dbench_stream_store_destroy(data,iflag),*iflag);
   PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s\n", *max_bw/1.e9);
 }
-PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 
 void phist_bench_stream_triad(double* max_bw, int* iflag)
 {
@@ -309,7 +307,6 @@ void phist_bench_stream_triad(double* max_bw, int* iflag)
   PHIST_CHK_IERR(dbench_stream_triad_destroy(x,y,z,iflag),*iflag);
   PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s\n", *max_bw/1.e9);
 }
-PHIST_PERFCHECK_BENCHMARK(STREAM_TRIAD, phist_bench_stream_triad);
 
 
 
