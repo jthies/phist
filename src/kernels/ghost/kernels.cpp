@@ -47,6 +47,7 @@
 #include <ghost/pumap.h>
 #include <ghost/locality.h>
 #include <limits>
+#include <map>
 
 #if defined(PHIST_HAVE_BELOS)||defined(PHIST_HAVE_KOKKOS)
 # if defined(GHOST_HAVE_LONGIDX_LOCAL)
@@ -80,11 +81,39 @@ typedef struct ghost_map_t
   ghost_densemat_traits_t vtraits_template;
   ghost_permutation_t *permutation;
   } ghost_map_t;
-#ifdef TESTING
-// workaround to delete all maps when the livetime of the corresponding object ends (it will spam a leak report otherwise!)
-#include <map>
-std::map<const void*, std::vector<ghost_map_t*> > phist_ghost_map_MAP;
-#endif
+
+
+namespace
+{
+  //! A Garbage collection for maps as they need to be recreated dynamically with GHOST
+  class MapGarbageCollector
+  {
+    public:
+      ghost_map_t* new_map(const void* p)
+      {
+        ghost_map_t* m = new ghost_map_t;
+        maps_[p].push_back(m);
+        return m;
+      }
+
+      void delete_maps(void* p)
+      {
+        MapCollection::iterator it = maps_.find(p);
+        if( it != maps_.end() )
+        {
+          for(int i = 0; i < it->second.size(); i++)
+            delete it->second[i];
+          maps_.erase(it);
+        }
+      }
+
+    private:
+      typedef std::map<const void*, std::vector<ghost_map_t*> > MapCollection;
+      MapCollection maps_;
+  };
+
+  MapGarbageCollector mapGarbageCollector;
+}
 
 // initialize ghost
 extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)

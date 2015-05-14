@@ -131,6 +131,13 @@ PHIST_TASK_END(&iflag_)
   ASSERT_EQ(0, tflag);
 
   ASSERT_DOUBLE_EQ(2*sqrt_n, nrm[0]);
+
+  phist_Dmvec_delete(mvec,&iflag_);
+  ASSERT_EQ(0, iflag_);
+  phist_map_delete(map,&iflag_);
+  ASSERT_EQ(0, iflag_);
+  phist_comm_delete(comm,&iflag_);
+  ASSERT_EQ(0, iflag_);
 }
 
 

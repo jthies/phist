@@ -44,6 +44,9 @@ void myMain(int argc, char** argv, int &iflag)
   int maxit = 20;
   int iflag_t1 = 0;
   int iflag_t2 = 0;
+  int iflag_t3 = 0;
+  int iflag_t4 = 0;
+  
   
   std::vector< std::vector<_ST_> > r_k;
   std::vector< std::vector<_ST_> > b_k;
@@ -84,11 +87,10 @@ void myMain(int argc, char** argv, int &iflag)
   mvec_ptr_t q = NULL;
   sdMat_ptr_t R = NULL;
   
-  PHIST_TASK_DECLARE(Task1);
-  PHIST_TASK_DECLARE(Task2);
-
   
 
+  
+  
   PHIST_CHK_IERR(phist_comm_create(&comm,&iflag),iflag);
 
   PHIST_CHK_IERR(phist_comm_get_rank(comm, &rank,&iflag),iflag);
@@ -113,18 +115,23 @@ void myMain(int argc, char** argv, int &iflag)
     repart=atoi(argv[4]);
   }
   
+  PHIST_SOUT(PHIST_INFO, "Called %s %s %d %d %d\n", argv[0], matname, nproj, nvecs, repart);
 
-  iflag=repart?PHIST_SPARSEMAT_REPARTITION: PHIST_IFLAG_DEFAULT;
-  iflag=iflag | (nvecs>1) ? PHIST_SPARSEMAT_OPT_BLOCKSPMVM : PHIST_SPARSEMAT_OPT_BLOCKSPMVM;
+  iflag = PHIST_IFLAG_DEFAULT;
+  if( repart )
+    iflag |= PHIST_SPARSEMAT_REPARTITION;
+  if( nvecs > 1 )
+    iflag |= PHIST_SPARSEMAT_OPT_BLOCKSPMVM;
+  else
+    iflag |= PHIST_SPARSEMAT_OPT_SINGLESPMVM;
+PHIST_SOUT(PHIST_INFO, "create_matrix iflag %d\n", iflag);
   PHIST_CHK_IERR(SUBR(create_matrix)(&A, comm, matname, &iflag),iflag);
   PHIST_CHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&iflag),iflag);
   for(int i = 0; i < maxit+2; i++)
   {
     PHIST_CHK_IERR(SUBR(mvec_create)(&V[i],map,nvecs,&iflag),iflag);
   }
-  x = V[0];
-  y = V[1];
-  z = V[2];
+  
   
   PHIST_CHK_IERR(SUBR(mvec_create)(&b,map,nvecs,&iflag),iflag);
   PHIST_CHK_IERR(SUBR(mvec_create)(&solution,map,nvecs,&iflag),iflag);
@@ -134,10 +141,33 @@ void myMain(int argc, char** argv, int &iflag)
   for(int i = 0; i < nvecs; i++)
     sigma[i] = st::zero();
   PHIST_CHK_IERR(SUBR(mvec_create)(&q,map,nproj,&iflag),iflag);
-  PHIST_CHK_IERR(SUBR(mvec_put_value)(q,st::zero(),&iflag),iflag);  
+  //PHIST_CHK_IERR(SUBR(mvec_put_value)(q,st::zero(),&iflag),iflag);  
   
 
+  PHIST_CHK_IERR(SUBR(jadaOp_create)(&opA,NULL,q,NULL,sigma,nvecs,&jadaOp,&iflag),iflag);
+  TYPE(sdMat_ptr) M = NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&M,nproj,nvecs,comm,&iflag),iflag);
+  TYPE(sdMat_ptr) qTx = NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&qTx,nproj,nvecs,comm,&iflag),iflag);
 
+  _MT_ *resNorm = new _MT_[nvecs];  
+
+  beta_new = new _ST_[nvecs];
+  residue = new _ST_[nvecs];
+  scalebuf = new _ST_[nvecs];
+  alpha = new _ST_[nvecs];
+  beta = new _ST_[nvecs];
+  rho1 = new _ST_[nvecs];
+  rho2 = new _ST_[nvecs];
+  rho3 = new _ST_[nvecs];
+  delta = new _ST_[nvecs];
+
+  for (int h = 0; h < 10; h++)
+  {
+    for(int k = 0; k < nvecs; k++)
+    residue[k] = st::zero();
+
+    PHIST_CHK_IERR(SUBR(mvec_put_value)(q,st::zero(),&iflag),iflag); 
   //PHIST_CHK_IERR(SUBR(mvec_create)(&V,map,nvecs,&iflag),iflag);
   //PHIST_CHK_IERR(SUBR(mvec_random)(V,&iflag),iflag);
   //PHIST_CHK_IERR(SUBR(mvec_QR)(V,R,&iflag), iflag);
@@ -154,7 +184,13 @@ void myMain(int argc, char** argv, int &iflag)
         q_raw[i*ldq+i] = st::one();
     }
   }
-  PHIST_CHK_IERR(SUBR(jadaOp_create)(&opA,NULL,q,NULL,sigma,nvecs,&jadaOp,&iflag),iflag);
+  
+
+  x = V[0];
+  y = V[1];
+  z = V[2];
+  
+
 
   PHIST_CHK_IERR(SUBR(mvec_put_value)(solution,st::zero(),&iflag),iflag);
   PHIST_CHK_IERR(SUBR(mvec_put_value)(x,st::one(),&iflag),iflag);
@@ -162,13 +198,9 @@ void myMain(int argc, char** argv, int &iflag)
 
   // ----- Setup right hand side -----
   // x <- (I-qq^T)x
-  TYPE(sdMat_ptr) M = NULL;
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&M,nproj,nvecs,comm,&iflag),iflag);////////////////////////////////
-  TYPE(sdMat_ptr) qTx = NULL;
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&qTx,nproj,nvecs,comm,&iflag),iflag);
   PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),q,x,st::zero(),qTx,&iflag),iflag);
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),q,qTx,st::one(),x,&iflag),iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(qTx,&iflag),iflag);
+  //PHIST_CHK_IERR(SUBR(sdMat_delete)(qTx,&iflag),iflag);
   // y <- A*x //y=b 
   PHIST_CHK_IERR(jadaOp.apply(st::one(),jadaOp.A,x,st::zero(),y,&iflag),iflag);
   //SUBR(mvec_print)(y,&iflag);
@@ -177,18 +209,7 @@ void myMain(int argc, char** argv, int &iflag)
   // copy result back to x
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),y,st::zero(),x,&iflag),iflag);
   
-  
-  _MT_ *resNorm = new _MT_[nvecs];  
 
-  beta_new = new _ST_[nvecs];
-  residue = new _ST_[nvecs];
-  scalebuf = new _ST_[nvecs];
-  alpha = new _ST_[nvecs];
-  beta = new _ST_[nvecs];
-  rho1 = new _ST_[nvecs];
-  rho2 = new _ST_[nvecs];
-  rho3 = new _ST_[nvecs];
-  delta = new _ST_[nvecs];
   
 
   gamma1 = new _ST_[nvecs];
@@ -241,8 +262,10 @@ void myMain(int argc, char** argv, int &iflag)
   
   
 // time the algorithm
-   
+ 
 
+
+{PHIST_ENTER_FCN("minres");  
 
   //setup startbeta=startresidue
     PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(y, y, beta, &iflag), iflag);
@@ -258,79 +281,89 @@ void myMain(int argc, char** argv, int &iflag)
 
     //PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_communicate)(A, x, &iflag), iflag);
     //iflag = PHIST_SPMVM_ONLY_LOCAL;
-    PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(st::one(), A, x, st::zero(), y, &iflag), iflag);
+    PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_vadd_mvec)(st::one(), A, sigma, x, st::zero(), y, &iflag), iflag);
 
 
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), q, y, st::zero(), M, &iflag), iflag);
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////START MINRES/////
     int i = 0;
     while(i < maxit)
     {
-      
+   
     /////LANCZOS START/////
       for (int j = 0; j < nvecs; j++)
       {
         scalebuf[j] = st::one()/beta[j];
       }
 
-PHIST_TASK_BEGIN(Task1)
-PHIST_SOUT(PHIST_INFO,"in Task 1\n");
-  //scale x
-  PHIST_CHK_IERR(SUBR(mvec_vscale)(x,scalebuf,&iflag_t1),iflag_t1);
 
-PHIST_TASK_END_NOWAIT(&iflag)
+    //scale x
     
-PHIST_SOUT(PHIST_INFO,"Task 1 no wait\n");
+    PHIST_CHK_IERR(SUBR(mvec_vscale)(x,scalebuf,&iflag),iflag);
 
-PHIST_TASK_BEGIN(Task2)
-PHIST_SOUT(PHIST_INFO,"in Task 2\n");
+    
     //! W=alpha*V*C + beta*W
     //scalebuf[0] is wrong. We need a mvec_times_sdMat which can handle an array for alpha and beta
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-scalebuf[0], q, M, scalebuf[0],  y, &iflag_t2), iflag_t2);
-PHIST_TASK_END_NOWAIT(&iflag)
-PHIST_SOUT(PHIST_INFO,"Task 2 no wait\n");
-PHIST_TASK_WAIT(Task2,&iflag)
-PHIST_SOUT(PHIST_INFO,"Task 2 wait\n");
-PHIST_TASK_WAIT(Task1,&iflag)
-PHIST_SOUT(PHIST_INFO,"Task 1 wait\n");
-    
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-scalebuf[0], q, M, scalebuf[0],  y, &iflag), iflag);
 
-    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(x, y, alpha, &iflag), iflag);
+
+ 
+
+    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(x, y, alpha, &iflag_t1), iflag_t1);
+
+
 
       
 
-      for (int k = 0; k < nvecs; k++)
-        alpha[k]=-alpha[k];
-
-      for (int k = 0; k < nvecs; k++)
-        beta[k]=-beta[k];
-      
     //y=y-beta*z
+    for (int k = 0; k < nvecs; k++)
+      beta[k]=-beta[k];
     PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(beta,z,st::one(),y,&iflag),iflag); 
 
+
+
+
+
+
     //y=y-alpha*x
+//PHIST_SOUT(PHIST_INFO,"mvec_vadd_mvec y and alpha\n")
+    for (int k = 0; k < nvecs; k++)
+      alpha[k]=-alpha[k];
     PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alpha,x,st::one(),y,&iflag),iflag);
+
+    //pointer swap
 
     z = V[i];
     x = V[i+1];
     y = V[i+2];
+if (i < maxit - 2)
+{
+  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_communicate)(A, x, &iflag_t3), iflag_t3);
+}
 
-    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(x, x, beta_new, &iflag), iflag);
+
+
+    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(x, x, beta_new, &iflag_t2), iflag_t2);
+
 
     if (i < maxit - 2)
     { 
-      PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(st::one(), A, x, st::zero(), y, &iflag), iflag);
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), q, y, st::zero(), M, &iflag), iflag);
-    }
+      
+      
+      iflag_t3 = PHIST_SPMVM_ONLY_LOCAL;
+      PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_vadd_mvec)(st::one(), A, sigma, x, st::zero(), y, &iflag_t3), iflag_t3);
 
+
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), q, y, st::zero(), M, &iflag_t4), iflag_t4);
+
+    }
+      
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       for (int j = 0; j < nvecs; j++)
         beta_new[j] = st::sqrt(beta_new[j]);
-
-    
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       /////OLD GIVENS ROTATION ON NEW COLUMN OF T/////
 
@@ -384,10 +417,10 @@ PHIST_SOUT(PHIST_INFO,"Task 1 wait\n");
 
 #ifdef TESTING
     //check orthogonality
-    // _ST_ yTz[nvecs], yTx[nvecs];
-    // SUBR(mvec_dot_mvec)(y,x,yTx,&iflag);
-    // SUBR(mvec_dot_mvec)(y,z,yTz,&iflag);
-    // PHIST_SOUT(PHIST_INFO,"y^Tx %e, y^Tz %e\n", yTx[0],yTz[0]);
+    //_ST_ yTz[nvecs], yTx[nvecs];
+    //SUBR(mvec_dot_mvec)(y,x,yTx,&iflag);
+    //SUBR(mvec_dot_mvec)(y,z,yTz,&iflag);
+    //PHIST_SOUT(PHIST_INFO,"y^Tx %e, y^Tz %e\n", yTx[0],yTz[0]);
 #endif
     //swap pointer beta
       std::swap(beta,beta_new);
@@ -395,10 +428,6 @@ PHIST_SOUT(PHIST_INFO,"Task 1 wait\n");
     //pointer swap sigma
       std::swap(c_old,c_k);
       std::swap(c_k,c_new);
-
-    //pointer swap
-    //std::swap(z,x);
-    //std::swap(x,y);
       
 #ifdef TESTING
     //absolute error. Also not neccessary. Just for tests
@@ -407,16 +436,14 @@ PHIST_SOUT(PHIST_INFO,"Task 1 wait\n");
     // PHIST_CHK_IERR(SUBR(mvec_norm2)(y,resNorm,&iflag),iflag);
     //PHIST_SOUT(PHIST_INFO,"absolut Fehler: %e\n", resNorm[0]);
 #endif
-      
+
 
       i++;
-
-
-    
-
     }
+  }//minres timer end 
     
   // calc. minres solution
+  {PHIST_ENTER_FCN("minres_solution")
       
     //backward substitution
       for (int k = 0; k < nvecs; k++)
@@ -454,12 +481,12 @@ PHIST_SOUT(PHIST_INFO,"Task 1 wait\n");
 
         PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(scalebuf,V[k],st::one(),solution,&iflag),iflag);
       }
-     // solution timer
+     }//end solution timer
    // algorithm timer
-
-  PHIST_CHK_IERR(jadaOp.apply(st::one(),jadaOp.A,solution,st::zero(),y,&iflag),iflag);
-    //PHIST_SOUT(PHIST_INFO,"jadaOp solution\n");
-  SUBR(mvec_print)(y,&iflag);
+    }//end iteration loop
+  //PHIST_CHK_IERR(jadaOp.apply(st::one(),jadaOp.A,solution,st::zero(),y,&iflag),iflag);
+  //PHIST_SOUT(PHIST_INFO,"jadaOp solution\n");
+  //SUBR(mvec_print)(y,&iflag);
   //SUBR(mvec_print)(solution,&iflag);
 
   PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jadaOp,&iflag),iflag);
@@ -468,4 +495,6 @@ PHIST_SOUT(PHIST_INFO,"Task 1 wait\n");
   PHIST_CHK_IERR(SUBR(mvec_delete)(x,&iflag),iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(y,&iflag),iflag);
   PHIST_CHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(qTx,&iflag),iflag);
+  
 }
