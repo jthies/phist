@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <sstream>
+#include <cmath>
 
 #ifdef PHIST_PERFCHECK
 # ifndef PHIST_USE_TEUCHOS_TIMEMONITOR
