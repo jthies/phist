@@ -105,7 +105,9 @@ PHIST_TASK_END_NOWAIT(&iflag_)
 
 PHIST_TASK_WAIT(Task1,&iflag_)
 
-  std::vector<int> expectedOrder = {0,1};
+  std::vector<int> expectedOrder;
+  expectedOrder.push_back(0);
+  expectedOrder.push_back(1);
   ASSERT_EQ(expectedOrder, order);
 }
 
@@ -199,7 +201,11 @@ PHIST_TASK_WAIT(Task1,&iflag_)
 #pragma omp atomic capture
   order[3] = step++;
 
-  std::vector<int> expectedOrder = {0,1,2,3};
+  std::vector<int> expectedOrder;
+  expectedOrder.push_back(0);
+  expectedOrder.push_back(1);
+  expectedOrder.push_back(2);
+  expectedOrder.push_back(3);
   ASSERT_EQ(expectedOrder, order);
 }
 
@@ -248,7 +254,11 @@ PHIST_TASK_WAIT(Task1,&iflag_)
 #pragma omp atomic capture
   order[3] = step++;
 
-  std::vector<int> expectedOrder = {0,1,2,3};
+  std::vector<int> expectedOrder;
+  expectedOrder.push_back(0);
+  expectedOrder.push_back(1);
+  expectedOrder.push_back(2);
+  expectedOrder.push_back(3);
   ASSERT_EQ(expectedOrder, order);
 }
 

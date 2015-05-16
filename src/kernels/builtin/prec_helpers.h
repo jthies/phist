@@ -53,7 +53,6 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
 // 2Sum
 // s = round(a+b)
 // s+t = a+b (exact)
-/* don't really work, probably optimized away by the compiler!
 #define MM256_2SUM(a,b,s,t) \
 {\
   s = _mm256_add_pd(a,b);\
@@ -61,7 +60,7 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
   __m256d s2_b_ = _mm256_sub_pd(s,s2_a_);\
   __m256d s2_da = _mm256_sub_pd(a,s2_a_);\
   __m256d s2_db = _mm256_sub_pd(b,s2_b_);\
-  t = _mm256_sub_pd(s2_da,s2_db);\
+  t = _mm256_add_pd(s2_da,s2_db);\
 }
 #define MM128_2SUM(a,b,s,t) \
 {\
@@ -70,21 +69,10 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
   __m128d s2_b_ = _mm_sub_pd(s,s2_a_);\
   __m128d s2_da = _mm_sub_pd(a,s2_a_);\
   __m128d s2_db = _mm_sub_pd(b,s2_b_);\
-  t = _mm_sub_pd(s2_da,s2_db);\
+  t = _mm_add_pd(s2_da,s2_db);\
 }
-*/
 #define DOUBLE_2SUM(a,b,s,t) \
 {\
-  if( abs(a) > abs(b) ) \
-  {\
-    DOUBLE_FAST2SUM(a,b,s,t); \
-  }\
-  else \
-  {\
-    DOUBLE_FAST2SUM(b,a,s,t); \
-  }\
-}
-/*
   __m128d s2_a = _mm_set_sd(a); \
   __m128d s2_b = _mm_set_sd(b); \
   __m128d s2_s, s2_t;\
@@ -92,7 +80,6 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
   _mm_store_sd(&s,s2_s);\
   _mm_store_sd(&t,s2_t);\
 }
-*/
 
 // Mult2FMA fast AVX FMA implimentation of 2Prod
 // s = round(a*b)
@@ -111,62 +98,77 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
 {\
   __m128d m2_a = _mm_set_sd(a); \
   __m128d m2_b = _mm_set_sd(b); \
-  __m128d m2_s = _mm_mul_pd(m2_a,m2_b);\
-  __m128d m2_t = _mm_fmsub_pd(m2_a,m2_b,m2_s);\
+  __m128d m2_s, m2_t;\
+  MM128_2MULTFMA(m2_a,m2_b,m2_s,m2_t);\
   _mm_store_sd(&s,m2_s);\
   _mm_store_sd(&t,m2_t);\
 }
 
-// Precise addition of two high-precision numbers (a+aC) + (b+bC) of similar size
+// Precise addition of two high-precision numbers (a+aC) + (b+bC) of same exponent (or |a| >= |b|)
 #define MM256_FAST4SUM(a,aC,b,bC,s,t)\
 {\
   __m256d s4_s, s4_t;\
   MM256_FAST2SUM(a,b,s4_s,s4_t);\
-  __m256d s4_tt = _mm256_add_pd(aC,bC);\
-  __m256d s4_ttt = _mm256_add_pd(s4_tt,s4_t);\
-  MM256_FAST2SUM(s4_s,s4_ttt,s,t);\
+  __m256d s4C_s, s4C_t;\
+  MM256_FAST2SUM(aC,bC,s4C_s,s4C_t);\
+  __m256d s4_st;\
+  MM256_FAST2SUM(s4_s,s4C_s,s,s4_st);\
+  __m256d s4_tt = _mm256_add_pd(s4_t,s4C_t);\
+  t = _mm256_add_pd(s4_tt,s4_st);\
 }
 #define MM128_FAST4SUM(a,aC,b,bC,s,t)\
 {\
   __m128d s4_s, s4_t;\
   MM128_FAST2SUM(a,b,s4_s,s4_t);\
-  __m128d s4_tt = _mm_add_pd(aC,bC);\
-  __m128d s4_ttt = _mm_add_pd(s4_tt,s4_t);\
-  MM128_FAST2SUM(s4_s,s4_ttt,s,t);\
+  __m128d s4C_s, s4C_t;\
+  MM128_FAST2SUM(aC,bC,s4C_s,s4C_t);\
+  __m128d s4_st;\
+  MM128_FAST2SUM(s4_s,s4C_s,s,s4_st);\
+  __m128d s4_tt = _mm_add_pd(s4_t,s4C_t);\
+  t = _mm_add_pd(s4_tt,s4_st);\
 }
 #define DOUBLE_FAST4SUM(a,aC,b,bC,s,t)\
 {\
   double s4_s, s4_t;\
   DOUBLE_FAST2SUM(a,b,s4_s,s4_t);\
-  double s4_tt = (aC+bC)+s4_t;\
-  DOUBLE_FAST2SUM(s4_s,s4_tt,s,t);\
+  double s4C_s, s4C_t;\
+  DOUBLE_FAST2SUM(aC,bC,s4C_s,s4C_t);\
+  double s4_st;\
+  DOUBLE_FAST2SUM(s4_s,s4C_s,s,s4_st);\
+  double s4_tt = s4_t+s4C_t;\
+  t = s4_tt + s4_st;\
 }
 
 // Precise addition of two high-precision numbers (a+aC) + (b+bC)
-/*
 #define MM256_4SUM(a,aC,b,bC,s,t)\
 {\
   __m256d s4_s, s4_t;\
   MM256_2SUM(a,b,s4_s,s4_t);\
-  __m256d s4_tt = _mm256_add_pd(aC,bC);\
-  __m256d s4_ttt = _mm256_add_pd(s4_tt,s4_t);\
-  MM256_FAST2SUM(s4_s,s4_ttt,s,t);\
+  __m256d s4C_s, s4C_t;\
+  MM256_2SUM(aC,bC,s4C_s,s4C_t);\
+  __m256d s4_st;\
+  MM256_FAST2SUM(s4_s,s4C_s,s,s4_st);\
+  __m256d s4_tt = _mm256_add_pd(s4_t,s4C_t);\
 }
 #define MM128_4SUM(a,aC,b,bC,s,t)\
 {\
   __m128d s4_s, s4_t;\
   MM128_2SUM(a,b,s4_s,s4_t);\
-  __m128d s4_tt = _mm_add_pd(aC,bC);\
-  __m128d s4_ttt = _mm_add_pd(s4_tt,s4_t);\
-  MM128_FAST2SUM(s4_s,s4_ttt,s,t);\
+  __m128d s4C_s, s4C_t;\
+  MM128_2SUM(aC,bC,s4C_s,s4C_t);\
+  __m128d s4_st;\
+  MM128_FAST2SUM(s4_s,s4C_s,s,s4_st);\
+  __m128d s4_tt = _mm_add_pd(s4_t,s4C_t);\
 }
-*/
 #define DOUBLE_4SUM(a,aC,b,bC,s,t)\
 {\
   double s4_s, s4_t;\
   DOUBLE_2SUM(a,b,s4_s,s4_t);\
-  double s4_tt = (aC+bC)+s4_t;\
-  DOUBLE_FAST2SUM(s4_s,s4_tt,s,t);\
+  double s4C_s, s4C_t;\
+  DOUBLE_2SUM(aC,bC,s4C_s,s4C_t);\
+  double s4_st;\
+  DOUBLE_FAST2SUM(s4_s,s4C_s,s,s4_st);\
+  double s4_tt = s4_t+s4C_t;\
 }
 
 // Precise multiplication of two high-precision numbers (a+aC) * (b+bC)
@@ -176,8 +178,7 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
   MM256_2MULTFMA(a,b,m4_s,m4_t);\
   __m256d m4_tt = _mm256_fmadd_pd(a,bC,m4_t);\
   __m256d m4_ttt = _mm256_fmadd_pd(b,aC,m4_tt);\
-  __m256d m4_tttt = _mm256_fmadd_pd(aC,bC,m4_ttt);\
-  MM256_FAST2SUM(m4_s,m4_tttt,s,t);\
+  MM256_FAST2SUM(m4_s,m4_ttt,s,t);\
 }
 #define MM128_4MULTFMA(a,aC,b,bC,s,t)\
 {\
@@ -185,21 +186,19 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
   MM128_2MULTFMA(a,b,m4_s,m4_t);\
   __m128d m4_tt = _mm_fmadd_pd(a,bC,m4_t);\
   __m128d m4_ttt = _mm_fmadd_pd(b,aC,m4_tt);\
-  __m128d m4_tttt = _mm_fmadd_pd(aC,bC,m4_ttt);\
-  MM128_FAST2SUM(m4_s,m4_tttt,s,t);\
+  MM128_FAST2SUM(m4_s,m4_ttt,s,t);\
 }
 #define DOUBLE_4MULTFMA(a,aC,b,bC,s,t)\
 {\
   double m4_s, m4_t;\
   DOUBLE_2MULTFMA(a,b,m4_s,m4_t);\
-  double m4_tt = m4_t + a*bC + b*aC + aC*bC;\
+  double m4_tt = m4_t + a*bC + b*aC;\
   DOUBLE_FAST2SUM(m4_s,m4_tt,s,t);\
 }
 
-// Div2FMA accurate division
+// Div2FMA (almost) accurate division
 // s = round(a/b)
 // s+t = a/b
-// (melven: I hope this is correct)
 #define MM256_2DIVFMA(a,b,s,t)\
 {\
   s = _mm256_div_pd(a,b); \
@@ -214,8 +213,8 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
 {\
   __m128d m2_a = _mm_set_sd(a); \
   __m128d m2_b = _mm_set_sd(b); \
-  __m128d m2_s = _mm_div_pd(m2_a,m2_b); \
-  __m128d m2_t = _mm_fnmadd_pd(m2_s,m2_b,m2_a); \
+  __m128d m2_s, m2_t; \
+  MM128_2DIVFMA(m2_a,m2_b,m2_s,m2_t); \
   _mm_store_sd(&s,m2_s);\
   _mm_store_sd(&t,m2_t);\
 }
@@ -227,8 +226,7 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
   /* generate initial guess */ \
   __m256d d4_zero = _mm256_setzero_pd();\
   __m256d d4_one = _mm256_set1_pd(1.);\
-  div = _mm256_div_pd(d4_one,a);\
-  divC = _mm256_setzero_pd();\
+  MM256_2DIVFMA(d4_one,a,div,divC);\
   /* use some iterations of Newton-Raphson (quadratic convergence) */ \
   for(int sq4_i = 0; sq4_i < 4; sq4_i++)\
   {\
@@ -248,8 +246,7 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
   /* generate initial guess */ \
   __m128d d4_zero = _mm_setzero_pd();\
   __m128d d4_one = _mm_set1_pd(1.);\
-  div = _mm_div_pd(d4_one,a);\
-  divC = _mm_setzero_pd();\
+  MM128_2DIVFMA(d4_one,a,div,divC);\
   /* use some iterations of Newton-Raphson (quadratic convergence) */ \
   for(int sq4_i = 0; sq4_i < 4; sq4_i++)\
   {\
@@ -269,8 +266,7 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
   /* generate initial guess */ \
   double d4_zero = 0.;\
   double d4_one = 1.;\
-  div = d4_one/a;\
-  divC = 0.;\
+  DOUBLE_2DIVFMA(d4_one,a,div,divC);\
   /* use some iterations of Newton-Raphson (quadratic convergence) */ \
   for(int sq4_i = 0; sq4_i < 4; sq4_i++)\
   {\
@@ -314,14 +310,14 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
 // Newton-Raphson iteration for precise calculation of sqrt(a+aC) and 1/sqrt(a+aC)
 #define MM256_4SQRT_NEWTONRAPHSON_FMA(a,aC,sqrt_a,sqrt_aC,divsqrt_a,divsqrt_aC)\
 {\
+  /* helper variables */ \
+  __m256d sq4_zero = _mm256_setzero_pd();\
+  __m256d sq4_half = _mm256_set1_pd(0.5);\
+  __m256d sq4_one = _mm256_set1_pd(1.);\
+  __m256d sq4_two = _mm256_set1_pd(2.);\
   /* generate initial guess */ \
   __m256d sq4_g = _mm256_sqrt_pd(a);\
   __m256d sq4_gC = _mm256_setzero_pd();\
-  __m256d sq4_half, sq4_halfC;\
-  __m256d sq4_zero = _mm256_setzero_pd();\
-  __m256d sq4_one = _mm256_set1_pd(1.);\
-  __m256d sq4_two = _mm256_set1_pd(2.);\
-  MM256_2DIVFMA(sq4_one,sq4_two,sq4_half,sq4_halfC);\
   __m256d sq4_h = _mm256_div_pd(sq4_half,sq4_g);\
   __m256d sq4_hC = _mm256_setzero_pd();\
   /* use some iterations of Newton-Raphson (quadratic convergence) */ \
@@ -331,7 +327,7 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
     MM256_4MULTFMA(sq4_g,sq4_gC,sq4_h,sq4_hC,sq4_gh,sq4_ghC);\
     sq4_gh=-sq4_gh; sq4_ghC=-sq4_ghC;\
     __m256d sq4_r, sq4_rC;\
-    MM256_FAST2SUM(sq4_half,sq4_halfC,sq4_gh,sq4_ghC,sq4_r,sq4_rC);\
+    MM256_FAST2SUM(sq4_half,sq4_zero,sq4_gh,sq4_ghC,sq4_r,sq4_rC);\
     __m256d sq4_gr, sq4_grC;\
     MM256_4MULTFMA(sq4_g,sq4_gC,sq4_r,sq4_rC,sq4_gr,sq4_grC);\
     __m256d sq4_hr, sq4_hrC;\
