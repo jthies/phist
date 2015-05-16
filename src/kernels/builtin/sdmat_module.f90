@@ -750,7 +750,7 @@ contains
     do i = sdmat%imin, sdmat%imax
 #ifdef PHIST_HIGH_PRECISION_KERNELS
       do j = sdmat%jmin, sdmat%jmax
-        write(*,'(G16.8,A1,G16.8)',advance='no') sdmat%val(i,j),'+',sdmat%err(i,j)
+        write(*,'(G24.16,A1,G24.16)',advance='no') sdmat%val(i,j),'+',sdmat%err(i,j)
       end do
       write(*,*)
 #else

@@ -19,7 +19,13 @@
 #include <math.h>
 #include <stdlib.h>
 
-static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
+#ifdef __cplusplus
+#define restrict
+#else
+#define bool _Bool
+#endif
+
+static inline bool is_aligned(const void *restrict pointer, size_t byte_count)
 {
   return (uintptr_t)pointer % byte_count == 0;
 }
@@ -174,26 +180,59 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
 // Precise multiplication of two high-precision numbers (a+aC) * (b+bC)
 #define MM256_4MULTFMA(a,aC,b,bC,s,t)\
 {\
-  __m256d m4_s, m4_t;\
-  MM256_2MULTFMA(a,b,m4_s,m4_t);\
-  __m256d m4_tt = _mm256_fmadd_pd(a,bC,m4_t);\
-  __m256d m4_ttt = _mm256_fmadd_pd(b,aC,m4_tt);\
-  MM256_FAST2SUM(m4_s,m4_ttt,s,t);\
+  __m256d m4ab_s, m4ab_t;\
+  MM256_2MULTFMA(a,b,m4ab_s,m4ab_t);\
+  __m256d m4abC_s, m4abC_t;\
+  MM256_2MULTFMA(a,bC,m4abC_s,m4abC_t);\
+  __m256d m4baC_s, m4baC_t;\
+  MM256_2MULTFMA(b,aC,m4baC_s,m4baC_t);\
+  __m256d m4C_s, m4C_st;\
+  MM256_FAST2SUM(m4abC_s,m4baC_s,m4C_s,m4C_st);\
+  __m256d m4_t, m4_tt;\
+  MM256_FAST2SUM(m4ab_t,m4C_s,m4_t,m4_tt);\
+  __m256d m4_st;\
+  MM256_FAST2SUM(m4ab_s,m4_t,s,m4_st);\
+  __m256d m4aCbC_t = _mm256_fmadd_pd(aC,bC,m4_st);\
+  __m256d m4_ttt = _mm256_add_pd(m4_tt,m4C_st);\
+  __m256d m4C_tt = _mm256_add_pd(m4abC_t,m4baC_t);\
+  __m256d m4_tttt = _mm256_add_pd(m4aCbC_t,m4C_tt);\
+  t =_mm256_add_pd(m4_tt,m4_tttt);\
 }
 #define MM128_4MULTFMA(a,aC,b,bC,s,t)\
 {\
-  __m128d m4_s, m4_t;\
-  MM128_2MULTFMA(a,b,m4_s,m4_t);\
-  __m128d m4_tt = _mm_fmadd_pd(a,bC,m4_t);\
-  __m128d m4_ttt = _mm_fmadd_pd(b,aC,m4_tt);\
-  MM128_FAST2SUM(m4_s,m4_ttt,s,t);\
+  __m128d m4ab_s, m4ab_t;\
+  MM128_2MULTFMA(a,b,m4ab_s,m4ab_t);\
+  __m128d m4abC_s, m4abC_t;\
+  MM128_2MULTFMA(a,bC,m4abC_s,m4abC_t);\
+  __m128d m4baC_s, m4baC_t;\
+  MM128_2MULTFMA(b,aC,m4baC_s,m4baC_t);\
+  __m128d m4C_s, m4C_st;\
+  MM128_FAST2SUM(m4abC_s,m4baC_s,m4C_s,m4C_st);\
+  __m128d m4_t, m4_tt;\
+  MM128_FAST2SUM(m4ab_t,m4C_s,m4_t,m4_tt);\
+  __m128d m4_st;\
+  MM128_FAST2SUM(m4ab_s,m4_t,s,m4_st);\
+  __m128d m4aCbC_t = _mm_fmadd_pd(aC,bC,m4_st);\
+  __m128d m4_ttt = _mm_add_pd(m4_tt,m4C_st);\
+  __m128d m4C_tt = _mm_add_pd(m4abC_t,m4baC_t);\
+  __m128d m4_tttt = _mm_add_pd(m4aCbC_t,m4C_tt);\
+  t =_mm_add_pd(m4_tt,m4_tttt);\
 }
 #define DOUBLE_4MULTFMA(a,aC,b,bC,s,t)\
 {\
-  double m4_s, m4_t;\
-  DOUBLE_2MULTFMA(a,b,m4_s,m4_t);\
-  double m4_tt = m4_t + a*bC + b*aC;\
-  DOUBLE_FAST2SUM(m4_s,m4_tt,s,t);\
+  double m4ab_s, m4ab_t;\
+  DOUBLE_2MULTFMA(a,b,m4ab_s,m4ab_t);\
+  double m4abC_s, m4abC_t;\
+  DOUBLE_2MULTFMA(a,bC,m4abC_s,m4abC_t);\
+  double m4baC_s, m4baC_t;\
+  DOUBLE_2MULTFMA(b,aC,m4baC_s,m4baC_t);\
+  double m4C_s, m4C_st;\
+  DOUBLE_FAST2SUM(m4abC_s,m4baC_s,m4C_s,m4C_st);\
+  double m4_t, m4_tt;\
+  DOUBLE_FAST2SUM(m4ab_t,m4C_s,m4_t,m4_tt);\
+  double m4_st;\
+  DOUBLE_FAST2SUM(m4ab_s,m4_t,s,m4_st);\
+  t = m4abC_t+m4baC_t+aC*bC+m4_st+m4_tt+m4C_st;\
 }
 
 // Div2FMA (almost) accurate division
