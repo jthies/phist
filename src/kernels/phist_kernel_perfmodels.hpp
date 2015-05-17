@@ -333,7 +333,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&nW,iflag),*iflag); \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,0,0,0,0, STREAM_LOAD((nV+nW)*n*sizeof(_ST_))); \
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,(V!=W),0,0,0, STREAM_LOAD((nV+(V!=W)*nW)*n*sizeof(_ST_))); \
   *iflag = tmp_iflag;
 
 #else
@@ -355,7 +355,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   int nW_ = std::min(ldW,((nW-1)/cl_size+1)*cl_size); \
   if( nW_+cl_size > ldW ) nW_ = ldW; \
-  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,ldV,ldW,0,0, STREAM_LOAD((nV_+nW_)*n*sizeof(_ST_))); \
+  PHIST_PERFCHECK_VERIFY(__FUNCTION__,nV,nW,(V!=W),ldV,ldW,0, STREAM_LOAD((nV_+(V!=W)*nW_)*n*sizeof(_ST_))); \
   *iflag = tmp_iflag;
 
 #endif
