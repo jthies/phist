@@ -310,6 +310,8 @@ contains
   
   end subroutine MATPDE3D_selectProblem
 
+#define USE_OCTREE_ORDERING
+
   ! octree ordering
   pure function idOfCoord(coord) result(id)
     integer(kind=8), intent(in) :: coord(3)
@@ -318,7 +320,10 @@ contains
     integer(kind=8) :: upperBound
     integer(kind=8) :: myCoord(3)
     integer :: i
-
+#ifndef USE_OCTREE_ORDERING
+ id = (coord(3)*ny+coord(2))*nx+coord(1)
+#else
+    ! octree ordering
     upperBound = 2**level
     myCoord = modulo(coord, upperBound)
     WHERE(myCoord==-1) myCoord=upperBound-1
@@ -333,6 +338,7 @@ contains
       fak2 = fak2 * 2
       fak8 = fak8 * 8
     end do
+#endif
   end function idOfCoord
 
 
@@ -342,6 +348,14 @@ contains
     integer(kind=8) :: tElem, fak(3)
     integer :: bitlevel, i
 
+#ifndef USE_OCTREE_ORDERING
+i=id
+coord(1) = mod(i,nx)
+i=(i-coord(1))/nx
+coord(2) = mod(i,ny)
+i=(i-coord(2))/ny
+coord(3) = mod(i,nz)
+#else
     fak(1) = 1
     fak(2) = 2
     fak(3) = 4
@@ -357,6 +371,7 @@ contains
       bitlevel = bitlevel * 2
       fak = fak * 8
     end do
+#endif
   end function coordOfId
 
 
@@ -612,7 +627,7 @@ contains
     !           BOUNDARY CONDITIONS.
     if (kz.eq.1 .AND. BNDRY(BOTTOM).EQ.0) THEN
       COEF = - ( RAZ*QBM12 + 0.5*RBZ*(SBIJ+SBM1) )
-      rhsVal = rhsVal - COEF*U(XI,YJ-HY,ZK,col)
+      rhsVal = rhsVal - COEF*U(XI,YJ,ZK-HZ,col)
     end if
     if (jy.eq.1 .AND. BNDRY(SOUTH).EQ.0) THEN
       COEF = - ( QM12 + 0.5*HY*(SIJ+SM1) )
@@ -632,7 +647,7 @@ contains
     end if
     IF (KZ.eq.NZ .AND. BNDRY(TOP).eq.0) then
       COEF = -RAZ*QB12 + 0.5*RBZ*(SBIJ+SB1)
-      rhsVal = rhsVal - COEF*U(XI,YJ+HY,ZK,col)
+      rhsVal = rhsVal - COEF*U(XI,YJ,ZK+HZ,col)
     end if
 
     the_result = 0
@@ -996,7 +1011,9 @@ contains
   integer(kind=4), intent(in) :: k
   real(kind=8) :: u
   
-    if (problem==PROB_A1) then
+    if (problem==PROB_A0) then
+      u = sin((k+1)*pi*x)*sin((k+1)*pi*y)*sin((k+1)*pi*z)
+    else if (problem==PROB_A1) then
       u = x * x*y*z*(1.-x)*(1.-y)*(1.-z)
     else if (problem==PROB_A2) then
       u = x+y+z
@@ -1011,7 +1028,15 @@ contains
   integer(kind=4), intent(in) :: k
   real(kind=8) :: ux, cx,cy,cz,sx,sy,sz,exyz
     
-    if (problem==PROB_A1) then
+    if (problem==PROB_A0) then
+      sx = sin((k+1)*pi*x)
+      cx = cos((k+1)*pi*x)
+      sy = sin((k+1)*pi*y)
+      cy = cos((k+1)*pi*y)
+      sz = sin((k+1)*pi*z)
+      cz = cos((k+1)*pi*z)
+      ux=(k+1)*pi*cx*sy*sz
+    else if (problem==PROB_A1) then
       if (x==0. .or. x==1.) then
         ux=0.
       else
@@ -1037,7 +1062,15 @@ contains
   integer(kind=4), intent(in) :: k
   real(kind=8) :: uy, cx,cy,cz,sx,sy,sz,exyz
 
-    if (problem==PROB_A1) then
+    if (problem==PROB_A0) then
+      sx = sin((k+1)*pi*x)
+      cx = cos((k+1)*pi*x)
+      sy = sin((k+1)*pi*y)
+      cy = cos((k+1)*pi*y)
+      sz = sin((k+1)*pi*z)
+      cz = cos((k+1)*pi*z)
+      uy=(k+1)*pi*cy*sx*sz
+    else if (problem==PROB_A1) then
       if (y==0. .or. y==1.) then
         uy=0.
       else
@@ -1064,7 +1097,15 @@ contains
   real(kind=8) :: uz, cx,cy,cz,sx,sy,sz,exyz
 
 
-    if (problem==PROB_A1) then
+    if (problem==PROB_A0) then
+      sx = sin((k+1)*pi*x)
+      cx = cos((k+1)*pi*x)
+      sy = sin((k+1)*pi*y)
+      cy = cos((k+1)*pi*y)
+      sz = sin((k+1)*pi*z)
+      cz = cos((k+1)*pi*z)
+      uz=(k+1)*pi*cz*sx*sy
+    else if (problem==PROB_A1) then
       if (z==0. .or. z==1.) then
         uz=0.
       else
@@ -1091,7 +1132,16 @@ contains
   real(kind=8) :: uxx, cx,cy,cz,sx,sy,sz,exyz
 
 
-  if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
+  if (problem==PROB_A0) then
+    sx = sin((k+1)*pi*x)
+    cx = cos((k+1)*pi*x)
+    sy = sin((k+1)*pi*y)
+    cy = cos((k+1)*pi*y)
+    sz = sin((k+1)*pi*z)
+    cz = cos((k+1)*pi*z)
+    
+    uxx=-sx*sy*sz*(pi*(k+1))**2
+  else if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
     uxx=0.0
   else
     sx = sin((k+1)*pi*x)
@@ -1113,7 +1163,16 @@ end if
   integer(kind=4), intent(in) :: k
   real(kind=8) :: uyy, cx,cy,cz,sx,sy,sz,exyz
 
-  if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
+  if (problem==PROB_A0) then
+    sx = sin((k+1)*pi*x)
+    cx = cos((k+1)*pi*x)
+    sy = sin((k+1)*pi*y)
+    cy = cos((k+1)*pi*y)
+    sz = sin((k+1)*pi*z)
+    cz = cos((k+1)*pi*z)
+    
+    uyy=-sx*sy*sz*(pi*(k+1))**2
+  else if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
     uyy=0.0
   else
     sx = sin((k+1)*pi*x)
@@ -1134,7 +1193,16 @@ end if
   integer(kind=4), intent(in) :: k
   real(kind=8) :: uzz, cx,cy,cz,sx,sy,sz,exyz
 
-  if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
+  if (problem==PROB_A0) then
+    sx = sin((k+1)*pi*x)
+    cx = cos((k+1)*pi*x)
+    sy = sin((k+1)*pi*y)
+    cy = cos((k+1)*pi*y)
+    sz = sin((k+1)*pi*z)
+    cz = cos((k+1)*pi*z)
+    
+    uzz=-sx*sy*sz*(pi*(k+1))**2
+  else if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
     uzz=0.0
   else
     sx = sin((k+1)*pi*x)
