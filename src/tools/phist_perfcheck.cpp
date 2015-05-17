@@ -105,15 +105,22 @@ namespace phist_PerfCheck
     SortClass sortFunc(maxTotalDiff);
     std::sort(sortedIndex.begin(), sortedIndex.end(), sortFunc);
 
-    // make all fcnName strings the same length (-> nicer output)
+    // make all fcnName strings the same length (-> nicer output) (and split fcnName and formula)
     int maxNameLen = 55;
+    std::vector<std::string> fcnFormula(nTimers);
     for(int i = 0; i < nTimers; i++)
+    {
+      int j = fcnName.at(i).find(' ');
+      fcnFormula.at(i) = fcnName.at(i).substr(j+1,std::string::npos);
+      fcnName.at(i) = fcnName.at(i).substr(0,j);
       maxNameLen = std::max(maxNameLen, (int)fcnName.at(i).length());
+      maxNameLen = std::max(maxNameLen, (int)fcnFormula.at(i).length());
+    }
     maxNameLen = maxNameLen + 5;
     for(int i = 0; i < nTimers; i++)
       fcnName.at(i).resize(maxNameLen,' ');
     // print result on proc 0
-    std::string function = "function(dim) formula";
+    std::string function = "function(dim) / (formula)";
     function.resize(maxNameLen, ' ');
     PHIST_SOUT(PHIST_INFO, "================================================== PERFORMANCE CHECK RESULTS =====================================================\n");
     PHIST_SOUT(PHIST_INFO, "%s  %10s  %10s  %10s  %10s  %10s\n", function.c_str(), "mtot.exp", "%peak-perf", "count", "max.%peak", "min.%peak");
@@ -128,6 +135,7 @@ namespace phist_PerfCheck
       }
       PHIST_SOUT(PHIST_INFO, "%s  %10.3e  %10.3g  %10lu  %10.3g  %10.3g\n", fcnName.at(i).c_str(), maxTotalExpected.at(i), 100*maxTotalExpected.at(i)/maxTotalTime.at(i), numberOfCalls.at(i),
           100*minExpected.at(i)/minTime.at(i), 100*maxExpected.at(i)/maxTime.at(i));
+      PHIST_SOUT(PHIST_INFO, " %s\n", fcnFormula.at(i).c_str());
     }
     PHIST_SOUT(PHIST_INFO, "==================================================================================================================================\n");
   }
