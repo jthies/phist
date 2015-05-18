@@ -10,11 +10,10 @@
 #include <algorithm>
 #include <sstream>
 
-#ifdef PHIST_TIMEMONITOR
-# ifndef PHIST_USE_TEUCHOS_TIMEMONITOR
+
 namespace phist_TimeMonitor
 {
-  Timer::TimeDataMap Timer::_timingResults;
+  Timer::TimeDataMap Timer::timingResults_;
 
   // functor for sorting by keys in another vector
   struct SortClass
@@ -28,24 +27,25 @@ namespace phist_TimeMonitor
   // calculates the results and prints them
   void Timer::summarize(void)
   {
-    int nTimers = _timingResults.size();
+    int ierr = 0;
+    int nTimers = timingResults_.size();
 
     // consider only timers from the first process!
-    MPI_Bcast(&nTimers, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    PHIST_CHK_IERR(ierr = MPI_Bcast(&nTimers, 1, MPI_INT, 0, MPI_COMM_WORLD), ierr);
 
     if( nTimers == 0 )
       return;
 
     // get timer names from the first process
     std::string fcnNameList;
-    for(TimeDataMap::const_iterator it = _timingResults.begin(); it != _timingResults.end(); it++)
+    for(TimeDataMap::const_iterator it = timingResults_.begin(); it != timingResults_.end(); it++)
       fcnNameList.append( it->first + '\n' );
     int strLen = fcnNameList.length();
-    MPI_Bcast(&strLen, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    PHIST_CHK_IERR(ierr = MPI_Bcast(&strLen, 1, MPI_INT, 0, MPI_COMM_WORLD), ierr);
     char* strBuf = new char[strLen];
     fcnNameList.copy(strBuf, strLen);
     strBuf[strLen-1] = '\0';
-    MPI_Bcast(strBuf, strLen, MPI_CHAR, 0, MPI_COMM_WORLD);
+    PHIST_CHK_IERR(ierr = MPI_Bcast(strBuf, strLen, MPI_CHAR, 0, MPI_COMM_WORLD), ierr);
     std::istringstream iss(strBuf);
 
     std::vector<std::string> fcnName(nTimers);
@@ -64,24 +64,24 @@ namespace phist_TimeMonitor
     for(int i = 0; i < nTimers; i++)
     {
       std::getline(iss, fcnName.at(i));
-      numberOfCalls.at(i) = _timingResults[fcnName.at(i)].numberOfCalls;
-      minTime.at(i) = _timingResults[fcnName.at(i)].minTime;
-      maxTime.at(i) = _timingResults[fcnName.at(i)].maxTime;
-      maxTotalTime.at(i) = _timingResults[fcnName.at(i)].totalTime;
+      numberOfCalls.at(i) = timingResults_[fcnName.at(i)].numberOfCalls;
+      minTime.at(i) = timingResults_[fcnName.at(i)].minTime;
+      maxTime.at(i) = timingResults_[fcnName.at(i)].maxTime;
+      maxTotalTime.at(i) = timingResults_[fcnName.at(i)].totalTime;
 #ifdef PHIST_TIMINGS_FULL_TRACE
-      maxSelfTime.at(i) = _timingResults[fcnName.at(i)].selfTime;
+      maxSelfTime.at(i) = timingResults_[fcnName.at(i)].selfTime;
 #endif
     }
     delete[] strBuf;
 
     // reductions over mpi processes
     tmp = minTime;
-    MPI_Reduce(&tmp[0],&minTime[0],nTimers,MPI_DOUBLE,MPI_MIN,0,MPI_COMM_WORLD);
+    PHIST_CHK_IERR(ierr = MPI_Reduce(&tmp[0],&minTime[0],nTimers,MPI_DOUBLE,MPI_MIN,0,MPI_COMM_WORLD), ierr);
     tmp = maxTime;
-    MPI_Reduce(&tmp[0],&maxTime[0],nTimers,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD);
+    PHIST_CHK_IERR(ierr = MPI_Reduce(&tmp[0],&maxTime[0],nTimers,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD), ierr);
     tmp = maxTotalTime;
-    MPI_Reduce(&tmp[0],&sumTotalTime[0],nTimers,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-    MPI_Reduce(&tmp[0],&maxTotalTime[0],nTimers,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD);
+    PHIST_CHK_IERR(ierr = MPI_Reduce(&tmp[0],&sumTotalTime[0],nTimers,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD), ierr);
+    PHIST_CHK_IERR(ierr = MPI_Reduce(&tmp[0],&maxTotalTime[0],nTimers,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD), ierr);
 #ifdef PHIST_TIMINGS_FULL_TRACE
     tmp = maxSelfTime;
     MPI_Reduce(&tmp[0],&maxSelfTime[0],nTimers,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD);
@@ -128,5 +128,3 @@ namespace phist_TimeMonitor
     PHIST_SOUT(PHIST_INFO, "====================================================================================================\n");
   }
 }
-# endif  
-#endif

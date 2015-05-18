@@ -87,7 +87,11 @@ PHIST_TASK_BEGIN(Task2)
   order.push_back(4);
 PHIST_TASK_END(&iflag_)
 
-  std::vector<int> expectedOrder = {1,2,3,4};
+  std::vector<int> expectedOrder;
+  expectedOrder.push_back(1);
+  expectedOrder.push_back(2);
+  expectedOrder.push_back(3);
+  expectedOrder.push_back(4);
   ASSERT_EQ(expectedOrder, order);
 }
 

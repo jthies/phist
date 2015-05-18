@@ -63,7 +63,13 @@ PHIST_MAIN_TASK_BEGIN
   }
   
 
-  iflag=repart?PHIST_SPARSEMAT_REPARTITION: PHIST_IFLAG_DEFAULT;
+  iflag = PHIST_IFLAG_DEFAULT;
+  if( repart )
+    iflag |= PHIST_SPARSEMAT_REPARTITION;
+  if( nvecs > 1 )
+    iflag |= PHIST_SPARSEMAT_OPT_BLOCKSPMVM;
+  else
+    iflag |= PHIST_SPARSEMAT_OPT_SINGLESPMVM;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A, comm, matname, &iflag),iflag);
   PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&x,map,nvecs,&iflag),iflag);
@@ -111,6 +117,7 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(SUBR(mvec_delete)(y,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
 
+  PHIST_ICHK_IERR(phist_comm_delete(comm,&iflag),iflag);
 PHIST_MAIN_TASK_END
   PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
 
