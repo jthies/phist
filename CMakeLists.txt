@@ -309,6 +309,7 @@ elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
 else ()
   message( FATAL_ERROR "PHIST_KERNEL_LIB not set or not recognized" )
 endif ()
+set(PHIST_BENCH_LARGE_N 64000000 CACHE STRING "Dimension for benchmarking tests (e.g. large enough to make micro benchmarks memory-bound)")
 
 # test for Belos (Trilinos library of iterative solvers).
 # We recommend linking with Belos because we use its Tsqr
@@ -414,6 +415,7 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmv_buff_cpy_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/kacz_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/bench_kernels.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_BelosAdapter.cpp
                           )
@@ -433,6 +435,7 @@ else()
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/tritoeplitz.f90
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/brussolator.f90
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp
+                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/bench_kernels.c
                            ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp)
 endif()
 if (NOT ESSEX-PHYSICS_FOUND)
@@ -443,7 +446,8 @@ if (NOT ESSEX-PHYSICS_FOUND)
 endif()
 
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.cpp
-                        ${PROJECT_SOURCE_DIR}/src/tools/phist_timemonitor.cpp)
+                        ${PROJECT_SOURCE_DIR}/src/tools/phist_timemonitor.cpp
+                        ${PROJECT_SOURCE_DIR}/src/tools/phist_perfcheck.cpp)
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_svqb.cpp
@@ -573,10 +577,19 @@ else()
 endif()
 
 option(PHIST_TIMEMONITOR "Gather detailed function-level timings" On)
-if( ${PHIST_TIMEMONITOR} )
+if( PHIST_TIMEMONITOR )
   message(STATUS "activated TimeMonitor timing monitoring")
 endif()
 option(PHIST_TIMEMONITOR_PERLINE "Gather timing information for each line with a PHIST_CHK_* macro!" Off)
+option(PHIST_PERFCHECK "Check performance of operations (which have a performance model specification)" Off)
+if( PHIST_PERFCHECK )
+  message(STATUS "activated PerfCheck timing monitoring")
+  if( PHIST_PERFCHECK AND PHIST_TIMEMONITOR )
+    message(FATAL_ERROR "You cannot use PHIST_PERFCHECK and PHIST_TIMEMONITOR at once currently!")
+  endif()
+  option(PHIST_PERFCHECK_REALISTIC "Switch from ideal performance predictions to more realistic ones (e.g. for views)!")
+endif()
+
 
 set(INCLUDE_FLAGS "")
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)

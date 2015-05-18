@@ -982,7 +982,9 @@ PHIST_SOUT(PHIST_INFO,"reconstructed X:\n");
 SUBR(sdMat_print)(mat2_,&iflag_);
 ASSERT_EQ(0,iflag_);
     // this should have reconstructed mat3_
-    ASSERT_NEAR(mt::one(),SdMatsEqual(mat3_,mat2_),sqrt(mt::eps()));
+    SUBR(sdMat_add_sdMat)(-st::one(),mat3_,st::one(),mat2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),100*mt::eps()*mt::eps());
 
     // multiply mat1_^T with identity matrix with
     SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat3_,st::zero(),mat2_,&iflag_);
@@ -997,7 +999,8 @@ ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"reconstructed X:\n");
 SUBR(sdMat_print)(mat2_,&iflag_);
 ASSERT_EQ(0,iflag_);
-    // this should have reconstructed mat2_
-    ASSERT_NEAR(mt::one(),SdMatsEqual(mat3_,mat2_),sqrt(mt::eps()));
-
+    // this should have reconstructed mat3_
+    SUBR(sdMat_add_sdMat)(-st::one(),mat3_,st::one(),mat2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),100*mt::eps()*mt::eps());
   }

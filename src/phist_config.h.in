@@ -54,12 +54,15 @@ version of the code in addition to the standard
 #cmakedefine PHIST_HAVE_COLPACK
 #cmakedefine PHIST_HAVE_LIKWID
 
-/* timing/profiling behavior */
+/* timing/profiling/benchmarking behavior */
 #cmakedefine LIKWID_PERFMON
 #cmakedefine PHIST_TIMEMONITOR
 #cmakedefine PHIST_TIMEMONITOR_PERLINE
 #cmakedefine PHIST_USE_TEUCHOS_TIMEMONITOR
 #cmakedefine PHIST_TIMINGS_FULL_TRACE
+#cmakedefine PHIST_PERFCHECK
+#cmakedefine PHIST_PERFCHECK_REALISTIC
+#cmakedefine PHIST_BENCH_LARGE_N ${PHIST_BENCH_LARGE_N}
 
 /* specific settings to tune the GHOST performance */
 #ifdef PHIST_KERNEL_LIB_GHOST

@@ -246,8 +246,9 @@ extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vV,
         const_map_ptr_t vmap, int nvec, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=0;
 #include "phist_std_typedefs.hpp"
+  *iflag=0;
+  PHIST_PERFCHECK_VERIFY_MVEC_CREATE(vmap,nvec,iflag);
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(const ghost_map_t, map,vmap,*iflag);
@@ -335,8 +336,9 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
         const_comm_ptr_t vcomm, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=0;
 #include "phist_std_typedefs.hpp"
+  *iflag=0;
+  PHIST_PERFCHECK_VERIFY_SMALL;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   ghost_densemat_t* result;
@@ -512,6 +514,7 @@ extern "C" void SUBR(mvec_to_device)(TYPE(mvec_ptr) vV, int* iflag)
   *iflag=0;
 #ifdef GHOST_HAVE_CUDA
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  //PHIST_PERFCHECK_VERIFY_TO_DEVICE(vV,iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V, vV, *iflag);
   PHIST_SOUT(PHIST_DEBUG,"ghost densemat upload\n"
                          "nrows=%" PRlidx ", ncols=%" PRlidx "\n"
@@ -530,6 +533,7 @@ extern "C" void SUBR(mvec_from_device)(TYPE(mvec_ptr) vV, int* iflag)
   *iflag=0;
 #ifdef GHOST_HAVE_CUDA
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  //PHIST_PERFCHECK_VERIFY_FROM_DEVICE(vV,iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V, vV, *iflag);
   PHIST_CHK_GERR(V->download(V),*iflag);
 #endif
@@ -540,6 +544,7 @@ extern "C" void SUBR(sdMat_to_device)(TYPE(sdMat_ptr) vM, int* iflag)
   *iflag=0;
 #ifdef GHOST_HAVE_CUDA
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M, vM, *iflag);
   PHIST_CHK_GERR(M->upload(M),*iflag);
 #endif
@@ -550,6 +555,7 @@ extern "C" void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) vM, int* iflag)
   *iflag=0;
 #ifdef GHOST_HAVE_CUDA
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M, vM, *iflag);
   PHIST_CHK_GERR(M->download(M),*iflag);
 #endif
@@ -640,7 +646,9 @@ extern "C" void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
                              int jmin, int jmax, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
   *iflag=0;
+  PHIST_PERFCHECK_VERIFY_MVEC_GET_BLOCK(vV,vVblock,jmin,jmax,iflag);
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
@@ -671,7 +679,9 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
                              int jmin, int jmax, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
   *iflag=0;
+  PHIST_PERFCHECK_VERIFY_MVEC_SET_BLOCK(vV,vVblock,jmin,jmax,iflag);
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
@@ -803,6 +813,7 @@ extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+  PHIST_PERFCHECK_VERIFY_SMALL;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*iflag);
@@ -856,6 +867,7 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+  PHIST_PERFCHECK_VERIFY_SMALL;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,Mblock,vMblock,*iflag);
@@ -924,6 +936,7 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, _ST_ value, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+  PHIST_PERFCHECK_VERIFY_MVEC_PUT_VALUE(vV,iflag);
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
@@ -936,7 +949,9 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
         int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
   *iflag=0;
+  PHIST_PERFCHECK_VERIFY_MVEC_PUT_VALUE(vV,iflag);
 PHIST_TASK_DECLARE(ComputeTask)
   PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
@@ -949,6 +964,7 @@ extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vV, _ST_ value, int* iflag
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+  PHIST_PERFCHECK_VERIFY_SMALL;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
@@ -959,9 +975,10 @@ PHIST_TASK_END(iflag);
 //! put scalar value into all elements of a multi-vector
 extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag)
 {
-#include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
   *iflag = 0;
+  PHIST_PERFCHECK_VERIFY_SMALL;
 
   _ST_ *V_raw = NULL;
   lidx_t lda;
@@ -978,7 +995,9 @@ extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag)
 extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
   *iflag=0;
+  PHIST_PERFCHECK_VERIFY_MVEC_PUT_VALUE(vV,iflag);
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
@@ -1018,6 +1037,7 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+  PHIST_PERFCHECK_VERIFY_SMALL
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*iflag);
@@ -1047,7 +1067,7 @@ PHIST_TASK_END(iflag);
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
-#include "phist_std_typedefs.hpp"  
+#include "phist_std_typedefs.hpp" 
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);  
   {
     _ST_ tmp[V->traits.ncols];
@@ -1081,7 +1101,9 @@ extern "C" void SUBR(mvec_scale)(TYPE(mvec_ptr) vV,
                             _ST_ scalar, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
   *iflag=0;
+  PHIST_PERFCHECK_VERIFY_MVEC_SCALE(vV,iflag);
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);  
@@ -1094,8 +1116,9 @@ extern "C" void SUBR(mvec_vscale)(TYPE(mvec_ptr) vV,
                             const _ST_* scalar, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=0;
 #include "phist_std_typedefs.hpp"  
+  *iflag=0;
+  PHIST_PERFCHECK_VERIFY_MVEC_SCALE(vV,iflag);
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);  
@@ -1109,8 +1132,9 @@ extern "C" void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vX,
                             int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=0;
 #include "phist_std_typedefs.hpp"
+  *iflag=0;
+  PHIST_PERFCHECK_VERIFY_MVEC_ADD_MVEC(alpha,vX,beta,vY,iflag);
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,X,vX,*iflag);
@@ -1149,8 +1173,9 @@ extern "C" void SUBR(mvec_vadd_mvec)(const _ST_ *alpha, TYPE(const_mvec_ptr) vX,
                             int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=0;
 #include "phist_std_typedefs.hpp"
+  *iflag=0;
+  PHIST_PERFCHECK_VERIFY_MVEC_VADD_MVEC(alpha,vX,beta,vY,iflag);
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,X,vX,*iflag);
@@ -1387,7 +1412,9 @@ PHIST_TASK_END(iflag);
 extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) vV, TYPE(const_mvec_ptr) vW, _ST_* s, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"  
   *iflag=0;
+  PHIST_PERFCHECK_VERIFY_MVEC_DOT_MVEC(vV,vW,iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*iflag);
   // NOTE: calculate local dot by hand and do the reduction by hand
@@ -1415,7 +1442,9 @@ PHIST_TASK_POST_STEP(iflag);
 extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE(const_mvec_ptr) vW, _ST_ beta, TYPE(sdMat_ptr) vC, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"  
   *iflag=0;
+  PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC(vV,vW,iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,W,vW,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,C,vC,*iflag);
@@ -1457,8 +1486,9 @@ extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
                                        int* iflag)
 {
     PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-    *iflag=0;
 #include "phist_std_typedefs.hpp"
+    *iflag=0;
+    PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT(alpha,vV,beta,vW,iflag);
   PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
     PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
@@ -1491,8 +1521,9 @@ extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) vV,
                                        int* iflag)
   {
     PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=0;
 #include "phist_std_typedefs.hpp"
+    *iflag=0;
+    PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT_INPLACE(vV,vC,iflag);
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
     PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
@@ -1524,6 +1555,7 @@ extern "C" void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+  PHIST_PERFCHECK_VERIFY_SMALL;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
@@ -1543,6 +1575,7 @@ extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+  PHIST_PERFCHECK_VERIFY_SMALL;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
@@ -1566,6 +1599,7 @@ extern "C" void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
+  PHIST_PERFCHECK_VERIFY_SMALL;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);

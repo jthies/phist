@@ -75,6 +75,7 @@ void phist_comm_get_rank(const_comm_ptr_t comm, int* rank, int* iflag);
 void phist_comm_get_size(const_comm_ptr_t comm, int* size, int* iflag);
 //! get MPI comm. If the kernel lib does not use MPI, NULL is returned.
 void phist_comm_get_mpi_comm(const_comm_ptr_t comm, MPI_Comm* mpiComm,int* iflag);
+
 //! creates a map with default distribution of points
 void phist_map_create(map_ptr_t* map, const_comm_ptr_t comm, gidx_t nglob, int *iflag);
 //! delete a map object. Note that you should not do this if you got the map from
@@ -93,6 +94,12 @@ void phist_map_get_ilower(const_map_ptr_t map, gidx_t* ilower, int* iflag);
 //! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
 void phist_map_get_iupper(const_map_ptr_t map, gidx_t* iupper, int* iflag);
 
+//! simple load dominated streaming benchmark
+void phist_bench_stream_load(double* bw, int* iflag);
+//! simple store dominated streaming benchmark
+void phist_bench_stream_store(double* bw, int* iflag);
+//! simple stream triad benchmark
+void phist_bench_stream_triad(double* bw, int* iflag);
 
 //!@}
 

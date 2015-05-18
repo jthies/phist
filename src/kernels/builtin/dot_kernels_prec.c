@@ -14,9 +14,11 @@
 #endif
 #include "prec_helpers.h"
 
+// define our own datatype for aligned doubles
+typedef double aligned_double __attribute__((aligned(64)));
 
 // more accurate dot product x'x AVX2 kernel
-void ddot_self_prec_4(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
+void ddot_self_prec_4(int nrows, const aligned_double *restrict x, aligned_double *restrict res, double *restrict resC)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
@@ -36,8 +38,8 @@ void ddot_self_prec_4(int nrows, const double *restrict x, double *restrict res,
 
   {
     // buffer for omp thread result + padding to prevent false sharing
-    __m256d s_[8][nt];
-    __m256d c_[8][nt];
+    __m256d s_[nt][8];
+    __m256d c_[nt][8];
 
 #pragma omp parallel shared(s_,c_)
     {
@@ -57,28 +59,26 @@ void ddot_self_prec_4(int nrows, const double *restrict x, double *restrict res,
         c = _mm256_add_pd(c,tmp);
       }
 
+
       int it = omp_get_thread_num();
-      s_[0][it] = s;
-      c_[0][it] = c;
+      s_[it][0] = s;
+      c_[it][0] = c;
     }
 
 
     // handcoded omp reduction
-    __m256d s = s_[0][0];
-    __m256d c = c_[0][0];
-    for(int i = 1; i < nt; i++)
+    __m256d s = _mm256_setzero_pd();
+    __m256d t = _mm256_setzero_pd();
+    for(int i = 0; i < nt; i++)
     {
-      __m256d sigma, oldS = s;
-      MM256_FAST2SUM(oldS, s_[0][i], s, sigma);
-      __m256d tmp = _mm256_add_pd(c_[0][i],sigma);
-      c = _mm256_add_pd(c, tmp);
+      __m256d oldS = s, oldT = t;
+      MM256_4SUM(oldS,oldT,s_[i][0],c_[i][0],s,t);
     }
 
     // return result, needs to be summed up
     _mm256_storeu_pd(res,  s);
-    _mm256_storeu_pd(resC, c);
+    _mm256_storeu_pd(resC, t);
   }
-
 }
 
 
@@ -110,8 +110,8 @@ void ddot_prec_4(int nrows, const double *restrict x, const double *restrict y, 
 
   {
     // buffer for omp thread result + padding to prevent false sharing
-    __m256d s_[8][nt];
-    __m256d c_[8][nt];
+    __m256d s_[nt][8];
+    __m256d c_[nt][8];
 
 #pragma omp parallel shared(s_,c_)
     {
@@ -133,25 +133,23 @@ void ddot_prec_4(int nrows, const double *restrict x, const double *restrict y, 
       }
 
       int it = omp_get_thread_num();
-      s_[0][it] = s;
-      c_[0][it] = c;
+      s_[it][0] = s;
+      c_[it][0] = c;
     }
 
 
     // handcoded omp reduction
-    __m256d s = s_[0][0];
-    __m256d c = c_[0][0];
-    for(int i = 1; i < nt; i++)
+    __m256d s = _mm256_setzero_pd();
+    __m256d t = _mm256_setzero_pd();
+    for(int i = 0; i < nt; i++)
     {
-      __m256d sigma, oldS = s;
-      MM256_FAST2SUM(oldS, s_[0][i], s, sigma);
-      __m256d tmp = _mm256_add_pd(c_[0][i],sigma);
-      c = _mm256_add_pd(c, tmp);
+      __m256d oldS = s, oldT = t;
+      MM256_4SUM(oldS,oldT,s_[i][0],c_[i][0],s,t);
     }
 
     // return result, needs to be summed up
     _mm256_storeu_pd(res,  s);
-    _mm256_storeu_pd(resC, c);
+    _mm256_storeu_pd(resC, t);
   }
 
 }
