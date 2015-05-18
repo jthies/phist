@@ -1011,15 +1011,12 @@ coord(3) = mod(i,nz)
   integer(kind=4), intent(in) :: k
   real(kind=8) :: omega,u
   
-  omega=pi*DBLE(k+1)
-  
-    if (problem==PROB_A0) then
-      u = sin(omega*x)*sin(omega*y)*sin(omega*z)
-    else if (problem==PROB_A1) then
-      u = x * x*y*z*(1.-x)*(1.-y)*(1.-z)
+    if (problem==PROB_A1) then
+      u = x*y*z*(1.-x)*(1.-y)*(1.-z)
     else if (problem==PROB_A2) then
       u = x+y+z
     else
+      omega=pi*DBLE(k+1)
       u = x * exp(x*y*z) * sin(omega*x) * sin(omega*y) * sin(omega*z)
     end if
   
@@ -1030,17 +1027,7 @@ coord(3) = mod(i,nz)
   integer(kind=4), intent(in) :: k
   real(kind=8) :: ux, cx,cy,cz,sx,sy,sz,exyz,omega
     
-  omega=pi*DBLE(k+1)
-
-    if (problem==PROB_A0) then
-      sx = sin(omega*x)
-      cx = cos(omega*x)
-      sy = sin(omega*y)
-      cy = cos(omega*y)
-      sz = sin(omega*z)
-      cz = cos(omega*z)
-      ux=omega*cx*sy*sz
-    else if (problem==PROB_A1) then
+    if (problem==PROB_A1) then
       if (x==0. .or. x==1.) then
         ux=0.
       else
@@ -1049,6 +1036,7 @@ coord(3) = mod(i,nz)
     else if (problem==PROB_A2) then
       ux=1.
     else
+      omega=pi*DBLE(k+1)
       sx = sin(omega*x)
       cx = cos(omega*x)
       sy = sin(omega*y)
@@ -1066,17 +1054,7 @@ coord(3) = mod(i,nz)
   integer(kind=4), intent(in) :: k
   real(kind=8) :: uy, cx,cy,cz,sx,sy,sz,exyz,omega
 
-  omega=pi*DBLE(k+1)
-
-    if (problem==PROB_A0) then
-      sx = sin(omega*x)
-      cx = cos(omega*x)
-      sy = sin(omega*y)
-      cy = cos(omega*y)
-      sz = sin(omega*z)
-      cz = cos(omega*z)
-      uy=omega*cy*sx*sz
-    else if (problem==PROB_A1) then
+    if (problem==PROB_A1) then
       if (y==0. .or. y==1.) then
         uy=0.
       else
@@ -1085,6 +1063,7 @@ coord(3) = mod(i,nz)
     else if (problem==PROB_A2) then
       uy=1.
     else
+      omega=pi*DBLE(k+1)
       sx = sin(omega*x)
       cx = cos(omega*x)
       sy = sin(omega*y)
@@ -1102,17 +1081,7 @@ coord(3) = mod(i,nz)
   integer(kind=4), intent(in) :: k
   real(kind=8) :: uz, cx,cy,cz,sx,sy,sz,exyz,omega
 
-   omega=pi*DBLE(k+1)
-
-    if (problem==PROB_A0) then
-      sx = sin(omega*x)
-      cx = cos(omega*x)
-      sy = sin(omega*y)
-      cy = cos(omega*y)
-      sz = sin(omega*z)
-      cz = cos(omega*z)
-      uz=omega*cz*sx*sy
-    else if (problem==PROB_A1) then
+    if (problem==PROB_A1) then
       if (z==0. .or. z==1.) then
         uz=0.
       else
@@ -1121,6 +1090,7 @@ coord(3) = mod(i,nz)
     else if (problem==PROB_A2) then
       uz=1.
     else
+      omega=pi*DBLE(k+1)
       sx = sin(omega*x)
       cx = cos(omega*x)
       sy = sin(omega*y)
@@ -1138,20 +1108,11 @@ coord(3) = mod(i,nz)
   integer(kind=4), intent(in) :: k
   real(kind=8) :: uxx, cx,cy,cz,sx,sy,sz,exyz,omega
 
-  omega=pi*DBLE(k+1)
 
-  if (problem==PROB_A0) then
-    sx = sin(omega*x)
-    cx = cos(omega*x)
-    sy = sin(omega*y)
-    cy = cos(omega*y)
-    sz = sin(omega*z)
-    cz = cos(omega*z)
-    
-    uxx=-sx*sy*sz*omega*omega
-  else if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
+  if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
     uxx=0.0
   else
+    omega=pi*DBLE(k+1)
     sx = sin(omega*x)
     cx = cos(omega*x)
     sy = sin(omega*y)
@@ -1162,7 +1123,7 @@ coord(3) = mod(i,nz)
     
     uxx=sy*sz*exyz*(2.0_8*omega*cx + 2.0*y*z*sx - omega*omega*x*sx &
     + x*y*y*z*z*sx + 2.0*omega*x*y*z*cx)
-end if
+  end if
   
   end function uxx
 
@@ -1171,20 +1132,10 @@ end if
   integer(kind=4), intent(in) :: k
   real(kind=8) :: uyy, cx,cy,cz,sx,sy,sz,exyz,omega
 
-  omega=pi*DBLE(k+1)
-
-  if (problem==PROB_A0) then
-    sx = sin(omega*x)
-    cx = cos(omega*x)
-    sy = sin(omega*y)
-    cy = cos(omega*y)
-    sz = sin(omega*z)
-    cz = cos(omega*z)
-    
-    uyy=-sx*sy*sz*omega*omega
-  else if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
+  if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
     uyy=0.0
   else
+    omega=pi*DBLE(k+1)
     sx = sin(omega*x)
     cx = cos(omega*x)
     sy = sin(omega*y)
@@ -1203,20 +1154,10 @@ end if
   integer(kind=4), intent(in) :: k
   real(kind=8) :: uzz, cx,cy,cz,sx,sy,sz,exyz,omega
 
-  omega=pi*DBLE(k+1)
-
-  if (problem==PROB_A0) then
-    sx = sin(omega*x)
-    cx = cos(omega*x)
-    sy = sin(omega*y)
-    cy = cos(omega*y)
-    sz = sin(omega*z)
-    cz = cos(omega*z)
-    
-    uzz=-sx*sy*sz*omega*omega
-  else if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
+  if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
     uzz=0.0
   else
+    omega=pi*DBLE(k+1)
     sx = sin(omega*x)
     cx = cos(omega*x)
     sy = sin(omega*y)
