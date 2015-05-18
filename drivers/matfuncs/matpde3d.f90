@@ -779,7 +779,7 @@ coord(3) = mod(i,nz)
 
     if (problem .ge. PROB_A0 .and. problem .le. PROB_A9) then
       ! Gordon problems A 1-9
-      dqbdz = 1.0_8
+      dqbdz = 0.0_8
     else if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
       ! varying coefficient problems (B)
       dqbdz = -((1.0_8-x)*(1.0_8-y))*exp((1.0_8-x)*(1.0_8-y)*(1.0_8-z))
@@ -1009,16 +1009,18 @@ coord(3) = mod(i,nz)
   pure function u(x,y,z,k)
   real(kind=8), intent(in) :: x, y, z
   integer(kind=4), intent(in) :: k
-  real(kind=8) :: u
+  real(kind=8) :: omega,u
+  
+  omega=pi*DBLE(k+1)
   
     if (problem==PROB_A0) then
-      u = sin((k+1)*pi*x)*sin((k+1)*pi*y)*sin((k+1)*pi*z)
+      u = sin(omega*x)*sin(omega*y)*sin(omega*z)
     else if (problem==PROB_A1) then
       u = x * x*y*z*(1.-x)*(1.-y)*(1.-z)
     else if (problem==PROB_A2) then
       u = x+y+z
     else
-      u = x * exp(x*y*z) * sin((k+1)*pi*x) * sin((k+1)*pi*y) * sin((k+1)*pi*z)
+      u = x * exp(x*y*z) * sin(omega*x) * sin(omega*y) * sin(omega*z)
     end if
   
   end function u
@@ -1026,16 +1028,18 @@ coord(3) = mod(i,nz)
   pure function ux(x,y,z,k)
   real(kind=8), intent(in) :: x, y, z
   integer(kind=4), intent(in) :: k
-  real(kind=8) :: ux, cx,cy,cz,sx,sy,sz,exyz
+  real(kind=8) :: ux, cx,cy,cz,sx,sy,sz,exyz,omega
     
+  omega=pi*DBLE(k+1)
+
     if (problem==PROB_A0) then
-      sx = sin((k+1)*pi*x)
-      cx = cos((k+1)*pi*x)
-      sy = sin((k+1)*pi*y)
-      cy = cos((k+1)*pi*y)
-      sz = sin((k+1)*pi*z)
-      cz = cos((k+1)*pi*z)
-      ux=(k+1)*pi*cx*sy*sz
+      sx = sin(omega*x)
+      cx = cos(omega*x)
+      sy = sin(omega*y)
+      cy = cos(omega*y)
+      sz = sin(omega*z)
+      cz = cos(omega*z)
+      ux=omega*cx*sy*sz
     else if (problem==PROB_A1) then
       if (x==0. .or. x==1.) then
         ux=0.
@@ -1045,14 +1049,14 @@ coord(3) = mod(i,nz)
     else if (problem==PROB_A2) then
       ux=1.
     else
-      sx = sin((k+1)*pi*x)
-      cx = cos((k+1)*pi*x)
-      sy = sin((k+1)*pi*y)
-      cy = cos((k+1)*pi*y)
-      sz = sin((k+1)*pi*z)
-      cz = cos((k+1)*pi*z)
+      sx = sin(omega*x)
+      cx = cos(omega*x)
+      sy = sin(omega*y)
+      cy = cos(omega*y)
+      sz = sin(omega*z)
+      cz = cos(omega*z)
       exyz=exp(x*y*z)
-      ux=sy*sz*exyz*(sx + pi*(k+1)*x*cx + x*y*z*sx)
+      ux=sy*sz*exyz*(sx + omega*x*cx + x*y*z*sx)
     end if
   
   end function ux
@@ -1060,16 +1064,18 @@ coord(3) = mod(i,nz)
   pure function uy(x,y,z,k)
   real(kind=8), intent(in) :: x, y, z
   integer(kind=4), intent(in) :: k
-  real(kind=8) :: uy, cx,cy,cz,sx,sy,sz,exyz
+  real(kind=8) :: uy, cx,cy,cz,sx,sy,sz,exyz,omega
+
+  omega=pi*DBLE(k+1)
 
     if (problem==PROB_A0) then
-      sx = sin((k+1)*pi*x)
-      cx = cos((k+1)*pi*x)
-      sy = sin((k+1)*pi*y)
-      cy = cos((k+1)*pi*y)
-      sz = sin((k+1)*pi*z)
-      cz = cos((k+1)*pi*z)
-      uy=(k+1)*pi*cy*sx*sz
+      sx = sin(omega*x)
+      cx = cos(omega*x)
+      sy = sin(omega*y)
+      cy = cos(omega*y)
+      sz = sin(omega*z)
+      cz = cos(omega*z)
+      uy=omega*cy*sx*sz
     else if (problem==PROB_A1) then
       if (y==0. .or. y==1.) then
         uy=0.
@@ -1079,32 +1085,33 @@ coord(3) = mod(i,nz)
     else if (problem==PROB_A2) then
       uy=1.
     else
-      sx = sin((k+1)*pi*x)
-      cx = cos((k+1)*pi*x)
-      sy = sin((k+1)*pi*y)
-      cy = cos((k+1)*pi*y)
-      sz = sin((k+1)*pi*z)
-      cz = cos((k+1)*pi*z)
+      sx = sin(omega*x)
+      cx = cos(omega*x)
+      sy = sin(omega*y)
+      cy = cos(omega*y)
+      sz = sin(omega*z)
+      cz = cos(omega*z)
       exyz=exp(x*y*z)
 
-      uy=x*sx*sz*exyz*(pi*(k+1)*cy + x*z*sy)
+      uy=x*sx*sz*exyz*(omega*cy + x*z*sy)
     end if
   end function uy
 
   pure function uz(x,y,z,k)
   real(kind=8), intent(in) :: x, y, z
   integer(kind=4), intent(in) :: k
-  real(kind=8) :: uz, cx,cy,cz,sx,sy,sz,exyz
+  real(kind=8) :: uz, cx,cy,cz,sx,sy,sz,exyz,omega
 
+   omega=pi*DBLE(k+1)
 
     if (problem==PROB_A0) then
-      sx = sin((k+1)*pi*x)
-      cx = cos((k+1)*pi*x)
-      sy = sin((k+1)*pi*y)
-      cy = cos((k+1)*pi*y)
-      sz = sin((k+1)*pi*z)
-      cz = cos((k+1)*pi*z)
-      uz=(k+1)*pi*cz*sx*sy
+      sx = sin(omega*x)
+      cx = cos(omega*x)
+      sy = sin(omega*y)
+      cy = cos(omega*y)
+      sz = sin(omega*z)
+      cz = cos(omega*z)
+      uz=omega*cz*sx*sy
     else if (problem==PROB_A1) then
       if (z==0. .or. z==1.) then
         uz=0.
@@ -1114,14 +1121,14 @@ coord(3) = mod(i,nz)
     else if (problem==PROB_A2) then
       uz=1.
     else
-      sx = sin((k+1)*pi*x)
-      cx = cos((k+1)*pi*x)
-      sy = sin((k+1)*pi*y)
-      cy = cos((k+1)*pi*y)
-      sz = sin((k+1)*pi*z)
-      cz = cos((k+1)*pi*z)
+      sx = sin(omega*x)
+      cx = cos(omega*x)
+      sy = sin(omega*y)
+      cy = cos(omega*y)
+      sz = sin(omega*z)
+      cz = cos(omega*z)
       exyz=exp(x*y*z)
-      uz=x*sx*sy*exyz*(pi*(k+1)*cz + x*y*sz)
+      uz=x*sx*sy*exyz*(omega*cz + x*y*sz)
     end if
   
   end function uz
@@ -1129,31 +1136,32 @@ coord(3) = mod(i,nz)
   pure function uxx(x,y,z,k)
   real(kind=8), intent(in) :: x, y, z
   integer(kind=4), intent(in) :: k
-  real(kind=8) :: uxx, cx,cy,cz,sx,sy,sz,exyz
+  real(kind=8) :: uxx, cx,cy,cz,sx,sy,sz,exyz,omega
 
+  omega=pi*DBLE(k+1)
 
   if (problem==PROB_A0) then
-    sx = sin((k+1)*pi*x)
-    cx = cos((k+1)*pi*x)
-    sy = sin((k+1)*pi*y)
-    cy = cos((k+1)*pi*y)
-    sz = sin((k+1)*pi*z)
-    cz = cos((k+1)*pi*z)
+    sx = sin(omega*x)
+    cx = cos(omega*x)
+    sy = sin(omega*y)
+    cy = cos(omega*y)
+    sz = sin(omega*z)
+    cz = cos(omega*z)
     
-    uxx=-sx*sy*sz*(pi*(k+1))**2
+    uxx=-sx*sy*sz*omega*omega
   else if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
     uxx=0.0
   else
-    sx = sin((k+1)*pi*x)
-    cx = cos((k+1)*pi*x)
-    sy = sin((k+1)*pi*y)
-    cy = cos((k+1)*pi*y)
-    sz = sin((k+1)*pi*z)
-    cz = cos((k+1)*pi*z)
+    sx = sin(omega*x)
+    cx = cos(omega*x)
+    sy = sin(omega*y)
+    cy = cos(omega*y)
+    sz = sin(omega*z)
+    cz = cos(omega*z)
     exyz=exp(x*y*z)
     
-    uxx=sy*sz*exyz*(2.0_8*pi*(k+1)*cx + 2.0*y*z*sx - (pi*(k+1))**2.0*x*sx &
-    + x*y*y*z*z*sx + 2.0*pi*(k+1)*x*y*z*cx)
+    uxx=sy*sz*exyz*(2.0_8*omega*cx + 2.0*y*z*sx - omega*omega*x*sx &
+    + x*y*y*z*z*sx + 2.0*omega*x*y*z*cx)
 end if
   
   end function uxx
@@ -1161,29 +1169,31 @@ end if
   pure function uyy(x,y,z,k)
   real(kind=8), intent(in) :: x, y, z
   integer(kind=4), intent(in) :: k
-  real(kind=8) :: uyy, cx,cy,cz,sx,sy,sz,exyz
+  real(kind=8) :: uyy, cx,cy,cz,sx,sy,sz,exyz,omega
+
+  omega=pi*DBLE(k+1)
 
   if (problem==PROB_A0) then
-    sx = sin((k+1)*pi*x)
-    cx = cos((k+1)*pi*x)
-    sy = sin((k+1)*pi*y)
-    cy = cos((k+1)*pi*y)
-    sz = sin((k+1)*pi*z)
-    cz = cos((k+1)*pi*z)
+    sx = sin(omega*x)
+    cx = cos(omega*x)
+    sy = sin(omega*y)
+    cy = cos(omega*y)
+    sz = sin(omega*z)
+    cz = cos(omega*z)
     
-    uyy=-sx*sy*sz*(pi*(k+1))**2
+    uyy=-sx*sy*sz*omega*omega
   else if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
     uyy=0.0
   else
-    sx = sin((k+1)*pi*x)
-    cx = cos((k+1)*pi*x)
-    sy = sin((k+1)*pi*y)
-    cy = cos((k+1)*pi*y)
-    sz = sin((k+1)*pi*z)
-    cz = cos((k+1)*pi*z)
+    sx = sin(omega*x)
+    cx = cos(omega*x)
+    sy = sin(omega*y)
+    cy = cos(omega*y)
+    sz = sin(omega*z)
+    cz = cos(omega*z)
     exyz=exp(x*y*z)
 
-    uyy=x*sx*sz*exyz*(x*x*z*z*sy - (pi*(k+1))**2*sy + 2.0*pi*(k+1)*x*z*cy)
+    uyy=x*sx*sz*exyz*(x*x*z*z*sy - omega*omega*sy + 2.0*omega*x*z*cy)
 end if 
  
   end function uyy
@@ -1191,34 +1201,37 @@ end if
   pure function uzz(x,y,z,k)
   real(kind=8), intent(in) :: x, y, z
   integer(kind=4), intent(in) :: k
-  real(kind=8) :: uzz, cx,cy,cz,sx,sy,sz,exyz
+  real(kind=8) :: uzz, cx,cy,cz,sx,sy,sz,exyz,omega
+
+  omega=pi*DBLE(k+1)
 
   if (problem==PROB_A0) then
-    sx = sin((k+1)*pi*x)
-    cx = cos((k+1)*pi*x)
-    sy = sin((k+1)*pi*y)
-    cy = cos((k+1)*pi*y)
-    sz = sin((k+1)*pi*z)
-    cz = cos((k+1)*pi*z)
+    sx = sin(omega*x)
+    cx = cos(omega*x)
+    sy = sin(omega*y)
+    cy = cos(omega*y)
+    sz = sin(omega*z)
+    cz = cos(omega*z)
     
-    uzz=-sx*sy*sz*(pi*(k+1))**2
+    uzz=-sx*sy*sz*omega*omega
   else if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
     uzz=0.0
   else
-    sx = sin((k+1)*pi*x)
-    cx = cos((k+1)*pi*x)
-    sy = sin((k+1)*pi*y)
-    cy = cos((k+1)*pi*y)
-    sz = sin((k+1)*pi*z)
-    cz = cos((k+1)*pi*z)
+    sx = sin(omega*x)
+    cx = cos(omega*x)
+    sy = sin(omega*y)
+    cy = cos(omega*y)
+    sz = sin(omega*z)
+    cz = cos(omega*z)
     exyz=exp(x*y*z)
   
-    uzz=x*sx*sy*exyz*(x*x*y*y*sz - (pi*(k+1))**2*sz + 2.0*pi*(k+1)*x*y*cz)
+    uzz=x*sx*sy*exyz*(x*x*y*y*sz - omega*omega*sz + 2.0*omega*x*y*cz)
 end if
 
   end function uzz
 
   pure function f(x,y,z,k)
+  !function f(x,y,z,k)
     real(kind=8), intent(in) :: x, y, z
     integer, intent(in) :: k
     real(kind=8) :: f
@@ -1251,10 +1264,9 @@ end if
     sb  = sbc(delta,x,y,z)
     sbz = dsbdz(delta,x,y,z)
     t   =  tc(alpha,x,y,z)
-
-    f = - (p*axx + px*ax + q*ayy + qy*ay +qb*az + qbz*azz) + &
-        +2.0*(r*ax+s*ay+sb*az) + (rx+sy+sbz+t)*a
     
+    f = - (p*axx + px*ax + q*ayy + qy*ay +qb*azz + qbz*az) + &
+        +2.0*(r*ax+s*ay+sb*az) + (rx+sy+sbz+t)*a
 
   end function f
 
