@@ -33,13 +33,13 @@
 ! (with D= -d^2/dx^2 -d^2/dy^2 -d^2/dz^2)
 !                                                                                       
 !0. Du                                                                              = F 
-!1. Du +          1000u_x                                                           = F 
-!2. Du + 1000exp(xyz)(u_x   +               u_y -      u_z)                         = F 
-!3. Du +          100xu_x   -              yu_y +     zu_z  + 100(x + y + z)/(xyz)u = F 
+!1. Du -          1000u_x                                                           = F 
+!2. Du - 1000exp(xyz)(u_x   +               u_y -      u_z)                         = F 
+!3. Du +          100xu_x   -              yu_y +     zu_z  - 100(x + y + z)/(xyz)u = F 
 !4. Du -      10^5x^2(u_x   +               u_y +      u_z)                         = F 
 !5. Du -   1000(1+x^2)u_x   +           100(u_y +      u_z)                         = F 
 !6. Du -   1000[(1-2x)u_x   +         (1-2y)u_y+ (1-2z)u_z]                         = F 
-!7. Du -       1000x^2u_x                                   +                 1000u = F 
+!7. Du -       1000x^2u_x                                   -                 1000u = F 
 !8. Du - d(  10exp(xy)u)/dx - d(  10exp(-xy)u)/dy                                   = F 
 !9. Du - d(1000exp(xy)u)/dx - d(1000exp(-xy)u)/dy                                   = F 
 !                                                                                       
@@ -389,26 +389,17 @@ coord(3) = mod(i,nz)
     real(C_DOUBLE),    intent(inout) :: vals(*)
     integer(C_INT) :: the_result
 
-! copied from MatrixMarket, original description:
-    !
     !  Purpose
     !  =======
     !
     !  Forms the 7-point central differences operator for the elliptic
     !  PDE
     !
-    !   -(P Ux)x -(Qa Uy)y  -(Qb Uz)z +  R Ux + (R U)x  +  S Uy + (S U)y + Sb Uz + (Sb U)z + T U = F
+    !   -(P Ux)x -(Q Uy)y  -(Qb Uz)z +  R Ux + (RR U)x  +  S Uy + (SS U)y + Sb Uz + (SSb U)z + T U = F
     !
-    !  where P, Q(b), R, S(b) and T are the functions of x and y.  The domain
+    !  where P, Q, ... T are functions of x and y.  The domain
     !  is the unit cube (0,1)x(0,1)x(0,1), and the boundary condition are
-    !  Dirichlet.
-    !
-    !  The matrix is a block tridiagonal matrix, there are NY blocks of
-    !  size NX by NX on the diagonal (each block is a tridiagonal matrix),
-    !  and then NY-1 blocks of size NX by NX on the sub- and super-block
-    !  diagonal positions.
-    !
-    !  Important note: the matrix A is stored in compressed ROW format.
+    !  Dirichlet, Neumann or periodic.
     !
     !  Arguments
     !  =========
@@ -450,9 +441,10 @@ coord(3) = mod(i,nz)
     !     .. Scalar variables ..
     integer(kind=8) :: ix, jy, kz, index, jd, coord(3), coord_(3)
     real(kind=8) coef
-    real(kind=8) :: p12, pm12, q12, qm12, xi, rij, r1, rm1, sij, s1, sm1, yj
-    real(kind=8) :: qb12, qbm12, sb1, sbij, sbm1, sbmij
-    real(kind=8) :: r,zk
+    real(kind=8) :: xi,yj,zk
+    real(kind=8) :: p12, pm12, q12, qm12, rij, r1, rm1, sij, s1, sm1
+    real(kind=8) :: qb12, qbm12, sbij, sbm1, sb1
+    real(kind=8) :: rnd
     
     nnz = 0
 
@@ -472,14 +464,14 @@ coord(3) = mod(i,nz)
     QB12  = QBC (XI,YJ, ZK + 0.5*HZ)
     QBM12 = QBC (XI,YJ, ZK - 0.5*HZ)
     RIJ  = RC (BETA,XI,YJ, ZK)
-    R1   = RC (BETA,XI + HX,YJ, ZK)
-    RM1  = RC (BETA,XI - HX,YJ, ZK)
+    R1   = RRC (BETA,XI + HX,YJ, ZK)
+    RM1  = RRC (BETA,XI - HX,YJ, ZK)
     SIJ  = SC (GAMMA,XI,YJ, ZK)
-    S1   = SC (GAMMA,XI,YJ + HY, ZK)
-    SM1  = SC (GAMMA,XI,YJ - HY, ZK)
+    S1   = SSC (GAMMA,XI,YJ + HY, ZK)
+    SM1  = SSC (GAMMA,XI,YJ - HY, ZK)
     SBIJ  = SBC (DELTA,XI,YJ, ZK)
-    SB1   = SBC (DELTA,XI,YJ, ZK + HZ)
-    SBM1  = SBC (DELTA,XI,YJ, ZK - HZ)
+    SB1   = SSBC (DELTA,XI,YJ, ZK + HZ)
+    SBM1  = SSBC (DELTA,XI,YJ, ZK - HZ)
 
 
     !           DIAGONAL.
@@ -490,8 +482,8 @@ coord(3) = mod(i,nz)
     
     if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
       ! add random diagonal term
-      call random_number(r)
-      vals(nnz)=vals(nnz)+alpha*(r-0.5_8)
+      call random_number(rnd)
+      vals(nnz)=vals(nnz)+alpha*(rnd-0.5_8)
     end if
 
     ! LOWEST TWO BANDS
@@ -512,7 +504,7 @@ coord(3) = mod(i,nz)
     !           SUB-DIAGONAL.
     if (ix.ne.1 .or. BNDRY(WEST)==-1) then
       nnz = nnz + 1
-      vals(nnz) = - ( ra*pm12 + 0.5*rb*(rij+rm1) )
+      vals(nnz) = - ( ra*pm12 + rb*0.5*(rij+rm1) )
       coord_ = coord-(/1,0,0/)
       cols(nnz) = idOfCoord(coord_) 
     end if
@@ -520,7 +512,7 @@ coord(3) = mod(i,nz)
     !           SUPER-DIAGONAL.
     if (ix.ne.nx .or. BNDRY(EAST)==-1)  then
       nnz = nnz + 1
-      vals(nnz) = -ra*p12 + 0.5*rb*(rij+r1)
+      vals(nnz) = -ra*p12 + rb*0.5*(rij+r1)
       coord_ = coord+(/1,0,0/)
       cols(nnz) = idOfCoord(coord_)
     end if
@@ -796,26 +788,27 @@ coord(3) = mod(i,nz)
 
   end function dqbdz
 
+  ! term in r(x,y,z)*u_x
   pure function rc(beta, x,y, z)
     real(kind=8), intent(in) :: beta, x, y, z
     real(kind=8) :: rc
     
     if (problem == PROB_A1) then
-      rc = -500.0_8
+      rc = -1000.0_8
     else if (problem == PROB_A2) then
-      rc = 500.0_8*exp(x*y*z)
+      rc = -1000.0_8*exp(x*y*z)
     else if (problem == PROB_A3) then
-      rc = 50.0_8*x
+      rc = 100.0_8*x
     else if (problem == PROB_A4) then
-      rc = -0.5e5*x*x
+      rc = 1.0e5*x*x
     else if (problem == PROB_A5) then
-      rc = -500.0_8*(1.0_8+x*x)
+      rc = 1000.0_8*(1.0_8+x*x)
     else if (problem == PROB_A6) then
-      rc = -500.0_8*(1.0_8-2.0_8*x)
+      rc = 1000.0_8*(1.0_8-2.0_8*x)
     else if (problem == PROB_A7) then
-      rc = -500.0_8*x*x
+      rc = 1000.0_8*x*x
     else if (problem == PROB_A8 .or. problem == PROB_A9) then
-      rc = -0.5_8*exp(x*y)
+      rc = -exp(x*y)
     else if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
       ! varying coefficient problems (B)
       rc = sin(pi*y)
@@ -829,43 +822,40 @@ coord(3) = mod(i,nz)
     rc=rc*beta
   end function rc
 
-  pure function drdx(beta, x,y, z)
+  ! term in (rr(x,y,z)*u)_x
+  pure function rrc(beta, x,y, z)
     real(kind=8), intent(in) :: beta, x, y, z
-    real(kind=8) :: drdx
+    real(kind=8) :: rrc
     
-    if (problem == PROB_A2) then
-      drdx = 500.0_8*y*z*exp(x*y*z)
-    else if (problem == PROB_A3) then
-      drdx = 50.0_8
-    else if (problem == PROB_A4) then
-      drdx = -1.0e5*x
-    else if (problem == PROB_A5) then
-      drdx = -1000.0_8*x
-    else if (problem == PROB_A6) then
-      drdx = 1000.0_8
-    else if (problem == PROB_A7) then
-      drdx = -1000.0_8*x
-    else if (problem == PROB_A8 .or. problem == PROB_A9) then
-      drdx = -0.5_8*y*exp(x*y)
-    else if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
-      ! varying coefficient problems (B)
-      drdx = sin(pi*y)
-    else if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
-      ! QM test cases with constant -1 in off-diagonals
-      drdx = 0.0_8
+    if (problem >= PROB_B0 .and. problem <= PROB_B9) then
+      rrc = rc(beta,x,y,z)
     else
       ! default
-      drdx = 0.0_8
+      rrc = 0.0_8
+    end if
+      !rrc=rrc*beta
+end function rrc
+
+  pure function drrdx(beta, x,y, z)
+    real(kind=8), intent(in) :: beta, x, y, z
+    real(kind=8) :: drrdx
+    
+    if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
+      ! varying coefficient problems (B)
+      drrdx = 0.0_8
+    else
+      ! default
+      drrdx = 0.0_8
     end if    
-    drdx=drdx*beta
-  end function drdx
+    drrdx=drrdx*beta
+  end function drrdx
 
   pure function sc(gamma, x,y, z)
     real(kind=8), intent(in) :: gamma, x, y, z
     real(kind=8) :: sc
 
     if (problem == PROB_A2) then
-      sc = 500.0_8*exp(x*y*z)
+      sc = -1000.0_8*exp(x*y*z)
     else if (problem == PROB_A3) then
       sc = -0.5_8*y
     else if (problem == PROB_A4) then
@@ -888,33 +878,41 @@ coord(3) = mod(i,nz)
 
   end function sc
 
-  pure function dsdy(gamma, x,y, z)
+  pure function ssc(gamma, x,y, z)
     real(kind=8), intent(in) :: gamma, x, y, z
-    real(kind=8) :: dsdy
+    real(kind=8) :: ssc
 
-    if (problem == PROB_A2) then
-      dsdy = 500.0_8*x*z*exp(x*y*z)
-    else if (problem == PROB_A3) then
-      dsdy = -0.5_8
-    else if (problem == PROB_A6) then
-      dsdy = 1000.0_8
-    else if (problem==PROB_A8 .or. problem==PROB_A9) then
-      dsdy = -0.5_8*x*z*exp(-x*y)
+    if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
+      ! varying coefficient problems (B)
+      ssc = sc(gamma,x,y,z)
     else
       ! default
-      dsdy = 0.0_8
+      ssc = 0.0_8
     end if
     
-    dsdy=dsdy*gamma
+  end function ssc
 
-  end function dsdy
+  pure function dssdy(gamma, x,y, z)
+    real(kind=8), intent(in) :: gamma, x, y, z
+    real(kind=8) :: dssdy
+
+    if (problem >=PROB_B0 .and. problem <=PROB_B9) then
+      dssdy=0.0_8
+    else
+      ! default
+      dssdy = 0.0_8
+    end if
+    
+    dssdy=dssdy*gamma
+
+  end function dssdy
 
   pure function sbc(delta, x,y,z)
     real(kind=8), intent(in) :: delta, x, y, z
     real(kind=8) :: sbc
 
     if (problem == PROB_A2) then
-      sbc = -500.0_8*exp(x*y*z)
+      sbc = +1000.0_8*exp(x*y*z)
     else if (problem == PROB_A3) then
       sbc = +0.5_8*z
     else if (problem == PROB_A4) then
@@ -935,45 +933,47 @@ coord(3) = mod(i,nz)
 
   end function sbc
 
-  pure function dsbdz(delta, x,y,z)
+  pure function ssbc(delta, x,y,z)
     real(kind=8), intent(in) :: delta, x, y, z
-    real(kind=8) :: dsbdz
+    real(kind=8) :: ssbc
 
-    if (problem == PROB_A2) then
-      dsbdz = -500.0_8*x*y*exp(x*y*z)
-    else if (problem == PROB_A3) then
-      dsbdz = +0.5_8
-    else if (problem == PROB_A6) then
-      dsbdz = -1000.0_8
+    if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
+      ! varying coefficient problems (B)
+      ssbc = sbc(delta,x,y,z)
     else
       ! default
-      dsbdz = 0.0_8
+      ssbc = 0.0_8
     end if
     
-    dsbdz=dsbdz*delta
+  end function ssbc
 
-  end function dsbdz
+  pure function dssbdz(delta, x,y,z)
+    real(kind=8), intent(in) :: delta, x, y, z
+    real(kind=8) :: dssbdz
+
+    if (problem >= PROB_B0 .and. problem <=PROB_B9) then
+      dssbdz = 0.0_8
+    else
+      ! default
+      dssbdz = 0.0_8
+    end if
+    
+    dssbdz=dssbdz*delta
+
+  end function dssbdz
 
   pure function tc(alpha,x,y,z)
     real(kind=8), intent(in) :: alpha
     real(kind=8), intent(in) :: x, y, z
     real(kind=8) :: tc
   !term in front of u.
-  ! Note that some terms appear here because
-  ! in the Gordon paper they use e.g. ru_x
-  ! whereas in matpde we assume (r u)_x + r u_x
-  if (problem==PROB_A2) then
-    tc = (y*z+x*z-x*y)*500
-  else if (problem==PROB_A3) then
-    tc = 50.0_8+100.0_8*(x+y+z)/(x*y*z)
-  else if (problem==PROB_A4) then
-    tc = 1.0e5
-  else if (problem==PROB_A5) then
-    tc=-1000.0_8*x
-  else if (problem==PROB_A6) then
-    tc=3000.0_8
-  else if (problem==PROB_A8) then
-    tc = -5.0_8*(exp(x*y)+exp(-x*y))
+  if (problem==PROB_A3) then
+    tc = (x*y*z)
+    if (tc.ne.0.0_8) then
+      tc = -100.0_8*(x+y+z)/tc
+    end if
+  else if (problem==PROB_A7) then
+    tc = -1000.0_8
   else if (problem==PROB_A9) then
     tc = -500.0_8*(exp(x*y)+exp(-x*y))
   else if (problem == PROB_B1) then
@@ -1173,7 +1173,7 @@ end if
     real(kind=8) :: f
 
     real(kind=8) :: a, ax, axx, ay, ayy, az, azz
-    real(kind=8) p, px, q, qy, qb,qbz, r, rx,s,sy,sb,sbz,t
+    real(kind=8) p, px, q, qy, qb,qbz, r, rr,rrx,s,ss,ssy,sb,ssb,ssbz,t
     
     f = 0.0_8
 
@@ -1194,15 +1194,18 @@ end if
     qb  =  qbc(x,y,z)
     qbz =  dqbdz(x,y,z)
     r   =  rc(beta,x,y,z)
-    rx  = drdx(beta,x,y,z)
+    rr   =  rrc(beta,x,y,z)
+    rrx  = drrdx(beta,x,y,z)
     s   =  sc(gamma,x,y,z)
-    sy  = dsdy(gamma,x,y,z)
+    ss   =  ssc(gamma,x,y,z)
+    ssy  = dssdy(gamma,x,y,z)
     sb  = sbc(delta,x,y,z)
-    sbz = dsbdz(delta,x,y,z)
+    ssb  = ssbc(delta,x,y,z)
+    ssbz = dssbdz(delta,x,y,z)
     t   =  tc(alpha,x,y,z)
     
     f = - (p*axx + px*ax + q*ayy + qy*ay +qb*azz + qbz*az) + &
-        +2.0*(r*ax+s*ay+sb*az) + (rx+sy+sbz+t)*a
+        + (r+rr)*ax+(s+ss)*ay+(sb+ssb)*az + (rrx+ssy+ssbz+t)*a
 
   end function f
 
