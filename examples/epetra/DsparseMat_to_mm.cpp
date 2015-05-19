@@ -7,6 +7,7 @@
 #include "phist_kernels.h"
 #include "phist_macros.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 #ifdef PHIST_KERNEL_LIB_EPETRA
 #include "Epetra_CrsMatrix.h"

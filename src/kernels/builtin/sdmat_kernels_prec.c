@@ -115,7 +115,7 @@ void cholesky_prec(int n, double *restrict a, double *restrict aC, int *perm, in
     for(int i = *rank; i < n; i++)
       err = err + d[p[i]];
 //printf("step %d, err %e\n", *rank, err);
-    if( err < 1.e-12 )
+    if( err < 1.e-16 )
       break;
 
     int m = *rank;
