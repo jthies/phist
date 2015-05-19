@@ -19,15 +19,18 @@
 #endif
 #endif
 
-! Generalization of MATPDE to 3D
-! (from the NEP matrix collection in the matrix market MATPDE matrix generator)
-! We allow generating various test problems by calling some initialization
-! routines and provide simple matfuncs in matfuncs.h to wrap this functionality.
-!
-! The currently implemented test cases are:
-
+! Generalization of MATPDE to 3D                                                        
+! (from the NEP matrix collection in the matrix market MATPDE matrix generator)         
+! We allow generating various test problems by calling some initialization              
+! routines and provide simple matfuncs in matfuncs.h to wrap this functionality.        
+! The general form of the PDE implemented can be found in the description of MATPDE3D_- 
+! rowFunc below.
+!                                                                                       
+! The currently implemented test cases are:                                             
+!                                                                                       
 !=======================================================================================
 ! (A) from Gordon & Gordon CARP-CG Paper (Parallel Computing 2009)                      
+! (with D= -d^2/dx^2 -d^2/dy^2 -d^2/dz^2)
 !                                                                                       
 !0. Du                                                                              = F 
 !1. Du +          1000u_x                                                           = F 
@@ -44,7 +47,8 @@
 !                                                                                       
 !Problem 1: u(x,y,z) = xyz(1-x)(1-y)(1-z)                                               
 !Problem 2: u(x,y,z) = x + y + z                                                        
-!   "  3–7: u(x,y,z) = exp(xyz)sin(pi x)sin(pi y)sin(pi z)                              
+!   "  3–7: u(x,y,z) = x*exp(xyz)sin(pi x)sin(pi y)sin(pi z)                            
+!           (note the factor x, in difference to what Gordon&Gordon use)                
 !                                                                                       
 !                                                                                       
 !boundary conditions: Dirichlet                                                         
@@ -52,18 +56,20 @@
 !Problem 8,9: set u=1, b=A*u and use u=0 as BC                                          
 !                                                                                       
 !=======================================================================================
+!                                                                                       
 ! (B) problems with variable coefficentts in the diffusion term                         
-! 0. -(exp(-xyz) Ux)x - (exp(xyz) Uy)y  -( exp((1-x)(1-y)(1-z)) Uz)z = F
-! 1. -(exp(-xyz) Ux)x - (exp(xyz) Uy)y  -( exp((1-x)(1-y)(1-z)) Uz)z 
-!    +20sin(pi y) Ux + (sin(pi y) U)x  
-!    +  sin(pi z) Uy + (sin(pi z) U)y 
-!    +  sin(pi x) Uz + (sin(pi x) U)z 
-!    +  1/(1+x+y+z) U                                                = F
-! 2. as 1. but with Ux terms scaled by 50
-! 3. as 1. but with reactive term (U) scaled by 100
-! 4. as 1. but with Ux and Uy scaled by 50 and 1000, resp.
-
-!boundary conditions: Dirichlet                                                         
+! 0. -(exp(-xyz) Ux)x - (exp(xyz) Uy)y  -( exp((1-x)(1-y)(1-z)) Uz)z = F                
+! 1. -(exp(-xyz) Ux)x - (exp(xyz) Uy)y  -( exp((1-x)(1-y)(1-z)) Uz)z                    
+!    +20sin(pi y) Ux + (sin(pi y) U)x                                                   
+!    +  sin(pi z) Uy + (sin(pi z) U)y                                                   
+!    +  sin(pi x) Uz + (sin(pi x) U)z                                                   
+!    +  1/(1+x+y+z) U                                                = F                
+! 2. as 1. but with Ux terms scaled by 50                                               
+! 3. as 1. but with reactive term (U) scaled by 100                                     
+! 4. as 1. but with Ux and Uy scaled by 50 and 1000, resp.                              
+! analytical solutions: as for A3-7                                                     
+! boundary conditions: Dirichlet                                                        
+!                                                                                       
 !=======================================================================================
 ! (C) Quantum physics benchmarks                                                        
 ! - 3D model of Anderson localization                                                   
@@ -71,9 +77,9 @@
 !                                 and periodic BC                                       
 !                                 (Schenk/Bollhoefer/Roemer SIAM Review 2005)           
 !                                                                                       
-! TODO: the right-hand sides F that follow from prescribed analytic solutions U (in   
+! The right-hand sides F that follow from prescribed analytic solutions U (in           
 ! e.g. the A and B benchmarks) are not implemented, if we want to assess accuracy we    
-! should do that, but for now we just use b=A*x for some given x.
+! should do that, but for now we just use b=A*x for some given x.                       
 module matpde3d_module
   implicit none
 
@@ -310,7 +316,7 @@ contains
   
   end subroutine MATPDE3D_selectProblem
 
-#define USE_OCTREE_ORDERING
+!#define USE_OCTREE_ORDERING
 
   ! octree ordering
   pure function idOfCoord(coord) result(id)
@@ -479,7 +485,7 @@ coord(3) = mod(i,nz)
     !           DIAGONAL.
     nnz = nnz + 1
     vals(nnz) = ra*(p12 + pm12)  +  q12 + qm12  + raz*(qb12+qbm12) + hy2*tc(alpha,xi,yj,zk)
-    cols(nnz) = idOfCoord(coord) !index
+    cols(nnz) = idOfCoord(coord) 
     jd = nnz
     
     if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
@@ -508,7 +514,7 @@ coord(3) = mod(i,nz)
       nnz = nnz + 1
       vals(nnz) = - ( ra*pm12 + 0.5*rb*(rij+rm1) )
       coord_ = coord-(/1,0,0/)
-      cols(nnz) = idOfCoord(coord_) !index - 1
+      cols(nnz) = idOfCoord(coord_) 
     end if
 
     !           SUPER-DIAGONAL.
@@ -516,7 +522,7 @@ coord(3) = mod(i,nz)
       nnz = nnz + 1
       vals(nnz) = -ra*p12 + 0.5*rb*(rij+r1)
       coord_ = coord+(/1,0,0/)
-      cols(nnz) = idOfCoord(coord_) !index + 1
+      cols(nnz) = idOfCoord(coord_)
     end if
 
     !           HIGHEST BANDS.
@@ -524,14 +530,14 @@ coord(3) = mod(i,nz)
       nnz = nnz + 1
       vals(nnz) = -q12 + 0.5*hy*(sij+s1)
       coord_ = coord+(/0,1,0/)
-      cols(nnz) = idOfCoord(coord_) !index + nx
+      cols(nnz) = idOfCoord(coord_)
     end if
 
     if (kz.ne.nz .or. BNDRY(top)==-1) then
       nnz = nnz + 1
       vals(nnz) = -raz*qb12 + 0.5*rbz*(sbij+sb1)
       coord_ = coord+(/0,0,1/)
-      cols(nnz) = idOfCoord(coord_) !index + nx
+      cols(nnz) = idOfCoord(coord_)
     end if
 
     !           BOUNDARY CONDITIONS.
@@ -795,7 +801,7 @@ coord(3) = mod(i,nz)
     real(kind=8) :: rc
     
     if (problem == PROB_A1) then
-      rc = 500.0_8
+      rc = -500.0_8
     else if (problem == PROB_A2) then
       rc = 500.0_8*exp(x*y*z)
     else if (problem == PROB_A3) then
@@ -858,9 +864,7 @@ coord(3) = mod(i,nz)
     real(kind=8), intent(in) :: gamma, x, y, z
     real(kind=8) :: sc
 
-    if (problem == PROB_A1) then
-      sc = 0.0_8
-    else if (problem == PROB_A2) then
+    if (problem == PROB_A2) then
       sc = 500.0_8*exp(x*y*z)
     else if (problem == PROB_A3) then
       sc = -0.5_8*y
@@ -870,8 +874,6 @@ coord(3) = mod(i,nz)
       sc = 50.0_8
     else if (problem == PROB_A6) then
       sc = -500.0_8*(1.0_8-2.0_8*y)
-    else if (problem == PROB_A7) then
-      sc = 0.0_8
     else if (problem==PROB_A8 .or. problem==PROB_A9) then
       sc = -0.5_8*exp(-x*y)
     else if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
@@ -911,9 +913,7 @@ coord(3) = mod(i,nz)
     real(kind=8), intent(in) :: delta, x, y, z
     real(kind=8) :: sbc
 
-    if (problem == PROB_A1) then
-      sbc = 0.0_8
-    else if (problem == PROB_A2) then
+    if (problem == PROB_A2) then
       sbc = -500.0_8*exp(x*y*z)
     else if (problem == PROB_A3) then
       sbc = +0.5_8*z
@@ -923,18 +923,9 @@ coord(3) = mod(i,nz)
       sbc = 50.0_8
     else if (problem == PROB_A6) then
       sbc = -500.0_8*(1.0_8-2.0_8*z)
-    else if (problem == PROB_A7) then
-      sbc = 0.0_8
-    else if (problem == PROB_A8) then
-      sbc = 0.0_8
-    else if (problem == PROB_A9) then
-      sbc = 0.0_8
     else if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
       ! varying coefficient problems (B)
       sbc = sin(pi*x)
-    else if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
-      ! QM test cases with constant -1 in off-diagonals
-      sbc = 0.0_8
     else
       ! default
       sbc = 0.0_8
@@ -981,8 +972,6 @@ coord(3) = mod(i,nz)
     tc=-1000.0_8*x
   else if (problem==PROB_A6) then
     tc=3000.0_8
-  else if (problem==PROB_A7) then
-    tc = 0.0_8
   else if (problem==PROB_A8) then
     tc = -5.0_8*(exp(x*y)+exp(-x*y))
   else if (problem==PROB_A9) then
@@ -1109,8 +1098,10 @@ coord(3) = mod(i,nz)
   real(kind=8) :: uxx, cx,cy,cz,sx,sy,sz,exyz,omega
 
 
-  if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
-    uxx=0.0
+  if (problem==PROB_A1) then
+    uxx=-2.*y*z*(y - 1.)*(z - 1.)
+  else if (problem==PROB_A2) then
+  uxx=0.0_8
   else
     omega=pi*DBLE(k+1)
     sx = sin(omega*x)
@@ -1132,8 +1123,10 @@ coord(3) = mod(i,nz)
   integer(kind=4), intent(in) :: k
   real(kind=8) :: uyy, cx,cy,cz,sx,sy,sz,exyz,omega
 
-  if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
-    uyy=0.0
+  if (problem==PROB_A1) then
+    uyy=-2.*x*z*(x - 1.)*(z - 1.)
+  else if (PROBLEM==PROB_A2) then
+    uyy=0.0_8
   else
     omega=pi*DBLE(k+1)
     sx = sin(omega*x)
@@ -1154,8 +1147,10 @@ end if
   integer(kind=4), intent(in) :: k
   real(kind=8) :: uzz, cx,cy,cz,sx,sy,sz,exyz,omega
 
-  if (problem==PROB_A1.or.PROBLEM==PROB_A2) then
-    uzz=0.0
+  if (problem==PROB_A1) then
+    uzz=-2.0*x*y*(x - 1.0)*(y - 1.0)
+  else if (PROBLEM==PROB_A2) then
+    uzz=0.0_8
   else
     omega=pi*DBLE(k+1)
     sx = sin(omega*x)
