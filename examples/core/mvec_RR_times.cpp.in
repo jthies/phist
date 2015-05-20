@@ -52,6 +52,8 @@ PHIST_MAIN_TASK_BEGIN
                            "       perform other operations mvec_add_mvec, \n"
                            "       mvecT_times_mvec to check for NUMA issues etc.\n"
                            "       set high_prec to 1 to use high-precision kernels\n"
+                           "       set high_prec to 2 to use low-precision kernels twice\n"
+                           "       set high_prec to 3 to use high-precision kernels twice\n"
                            "       set pert.-factor to < 1.e-3 to generate harder to orthogonalize data\n",
                            argv[0]);
     return 1;
@@ -71,8 +73,13 @@ PHIST_MAIN_TASK_BEGIN
   m=atoi(argv[2]);
   k=atoi(argv[3]);
   bool high_prec = false;
+  bool twice = false;
   if( argc >= 5 )
-    high_prec = atoi(argv[4]);
+  {
+    int argv4 = atoi(argv[4]);
+    high_prec = argv4 & 1;
+    twice = argv4 & 2;
+  }
   double pertFactor = 1.e-3;
   if( argc >= 6 )
     pertFactor = atof(argv[5]);
@@ -97,6 +104,12 @@ PHIST_MAIN_TASK_BEGIN
     if( high_prec )
       ierr = PHIST_ROBUST_REDUCTIONS;
     PHIST_ICHK_IERR(SUBR(svrr)(Q,R,&ierr),ierr);
+    if( twice )
+    {
+      if( high_prec )
+        ierr = PHIST_ROBUST_REDUCTIONS;
+      PHIST_ICHK_IERR(SUBR(svrr)(Q,R,&ierr),ierr);
+    }
 
     // check the result
     if( high_prec )

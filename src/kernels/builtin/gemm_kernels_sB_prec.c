@@ -39,20 +39,39 @@ void dgemm_sb_inplace_prec_4(int nrows, double *restrict x, const double *restri
 #pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
-    __m256d s = _mm256_setzero_pd();
-    __m256d t = _mm256_setzero_pd();
-    for(int j = 0; j < 4; j++)
-    {
-      __m256d xi = _mm256_broadcast_sd(&x[4*i+j]);
-      __m256d xij, xijC;
-      MM256_2MULTFMA(xi,r_[j],xij,xijC);
-      __m256d xijC_ = _mm256_fmadd_pd(xi,rC_[j],xijC);
-      __m256d oldS = s, t_;
-      MM256_FAST2SUM(oldS,xij,s,t_);
-      __m256d tmp = _mm256_add_pd(t,t_);
-      t = _mm256_add_pd(tmp,xijC_);
-    }
-    __m256d newX = _mm256_add_pd(s,t);
+    __m256d x_ = _mm256_load_pd(&x[4*i]);
+    __m256d s, t;
+    __m256d p, pi;
+    // unroll j = 0
+    __m256d xi = _mm256_permute4x64_pd(x_,0);
+    MM256_2MULTFMA(xi,r_[0],p,pi);
+    __m256d pi_ = _mm256_fmadd_pd(xi,rC_[0],pi);
+    s = p, t = pi_;
+
+    // j = 1
+    xi = _mm256_permute4x64_pd(x_,1+4*1+16*1+64*1);
+    MM256_2MULTFMA(xi,r_[1],p,pi);
+    pi_ = _mm256_fmadd_pd(xi,rC_[1],pi);
+    __m256d oldS = s, oldT = t;
+    MM256_4SUM(oldS,oldT,p,pi_,s,t);
+
+    // j = 2
+    xi = _mm256_permute4x64_pd(x_,2+4*2+16*2+64*2);
+    MM256_2MULTFMA(xi,r_[2],p,pi);
+    pi_ = _mm256_fmadd_pd(xi,rC_[2],pi);
+    oldS = s, oldT = t;
+    MM256_4SUM(oldS,oldT,p,pi_,s,t);
+
+    // j = 3
+    xi = _mm256_permute4x64_pd(x_,3+4*3+16*3+64*3);
+    MM256_2MULTFMA(xi,r_[3],p,pi);
+    pi_ = _mm256_fmadd_pd(xi,rC_[3],pi);
+    oldS = s;
+    __m256d sigma;
+    MM256_2SUM(oldS,p,s,sigma);
+    __m256d tmp = _mm256_add_pd(pi_,sigma);
+    __m256d t_ = _mm256_add_pd(t,tmp);
+    __m256d newX = _mm256_add_pd(s,t_);
     _mm256_store_pd(&x[4*i],newX);
   }
 }
@@ -82,20 +101,24 @@ void dgemm_sb_inplace_prec_2(int nrows, double *restrict x, const double *restri
 #pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
-    __m128d s = _mm_setzero_pd();
-    __m128d t = _mm_setzero_pd();
-    for(int j = 0; j < 2; j++)
-    {
-      __m128d xi = _mm_load1_pd(&x[2*i+j]);
-      __m128d xij, xijC;
-      MM128_2MULTFMA(xi,r_[j],xij,xijC);
-      __m128d xijC_ = _mm_fmadd_pd(xi,rC_[j],xijC);
-      __m128d oldS = s, t_;
-      MM128_FAST2SUM(oldS,xij,s,t_);
-      __m128d tmp = _mm_add_pd(t,t_);
-      t = _mm_add_pd(tmp,xijC_);
-    }
-    __m128d newX = _mm_add_pd(s,t);
+    __m128d x_ = _mm_load_pd(&x[2*i]);
+    __m128d s, t;
+    __m128d p, pi;
+    // unroll j = 0
+    __m128d xi = _mm_permute_pd(x_,0);
+    MM128_2MULTFMA(xi,r_[0],p,pi);
+    __m128d pi_ = _mm_fmadd_pd(xi,rC_[0],pi);
+    s = p, t = pi_;
+
+    // j = 1
+    xi = _mm_permute_pd(x_,1+2*1);
+    MM128_2MULTFMA(xi,r_[1],p,pi);
+    pi_ = _mm_fmadd_pd(xi,rC_[1],pi);
+    __m128d oldS = s, sigma;
+    MM128_2SUM(oldS,p,s,sigma);
+    __m128d tmp = _mm_add_pd(pi_,sigma);
+    __m128d t_ = _mm_add_pd(t,tmp);
+    __m128d newX = _mm_add_pd(s,t_);
     _mm_store_pd(&x[2*i],newX);
   }
 }
