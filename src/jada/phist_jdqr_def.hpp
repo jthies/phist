@@ -518,11 +518,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // delete the temporary view (not the data, of course)
     PHIST_CHK_IERR(SUBR(mvec_delete)(v_tmp,iflag),*iflag);
 
-    //u=V(:,1);
-    PHIST_CHK_IERR(SUBR(mvec_get_block)(Vv,u_ptr,0,nv-1,iflag),*iflag);
-    //Au=AV(:,1);
-    PHIST_CHK_IERR(SUBR(mvec_get_block)(AVv,Au_ptr,0,nv-1,iflag),*iflag);
-
     // select next target ev. This need not be the next according to
     // the sort criterion because the Schur-form is not completely sorted
     // (TODO: is it desirable to do them in order?)
@@ -549,6 +544,11 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       t_ptr=t_r;
     }
 #endif
+
+    //u=V(:,1);
+    PHIST_CHK_IERR(SUBR(mvec_get_block)(Vv,u_ptr,0,nv-1,iflag),*iflag);
+    //Au=AV(:,1);
+    PHIST_CHK_IERR(SUBR(mvec_get_block)(AVv,Au_ptr,0,nv-1,iflag),*iflag);
 
     // get the diagonal block (1x1 or 2x2) corresponding to theta
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Theta,ev_pos,ev_pos+nv-1,ev_pos,ev_pos+nv-1,iflag),*iflag);
