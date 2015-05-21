@@ -202,7 +202,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
   mvec_ptr_t v0=(mvec_ptr_t)opts.v0;
   //TODO - we promised to use the user-provided subspace v0, but here we
-  //       use only the first vector as start vec.
+  //       use only the first vector as start vec when Arnoldi is used.
   if (v0==NULL)
   {
     PHIST_CHK_IERR(SUBR(mvec_view_block)(X,&v0,0,0,iflag),*iflag);
@@ -210,7 +210,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     MT nrmV0;
     PHIST_CHK_IERR(SUBR(mvec_normalize)(v0,&nrmV0,iflag),*iflag);
   }
-  else
+  else if (arno)
   {
     // only use the first column of the given mvec as v0
     int nv0;
@@ -221,6 +221,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       PHIST_CHK_IERR(SUBR(mvec_view_block)(V0,&v0,0,0,iflag),*iflag);
     }
   }
+
   if (arno)
   {
     PHIST_SOUT(1,"%d steps of Arnoldi as start-up\n",minBas);
@@ -255,9 +256,12 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 #else
     t_ptr=t_r;
 #endif
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(t_ptr,v0,0,0,iflag),*iflag);
+
+    int nv0;
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v0,&nv0,iflag),*iflag);
+    t_ptr = v0;
     m=0;
-    expand=1;
+    expand=nv0;
   }
 
   // delete the views (not the data) v0 and H0
@@ -514,11 +518,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // delete the temporary view (not the data, of course)
     PHIST_CHK_IERR(SUBR(mvec_delete)(v_tmp,iflag),*iflag);
 
-    //u=V(:,1);
-    PHIST_CHK_IERR(SUBR(mvec_get_block)(Vv,u_ptr,0,nv-1,iflag),*iflag);
-    //Au=AV(:,1);
-    PHIST_CHK_IERR(SUBR(mvec_get_block)(AVv,Au_ptr,0,nv-1,iflag),*iflag);
-
     // select next target ev. This need not be the next according to
     // the sort criterion because the Schur-form is not completely sorted
     // (TODO: is it desirable to do them in order?)
@@ -545,6 +544,11 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
       t_ptr=t_r;
     }
 #endif
+
+    //u=V(:,1);
+    PHIST_CHK_IERR(SUBR(mvec_get_block)(Vv,u_ptr,0,nv-1,iflag),*iflag);
+    //Au=AV(:,1);
+    PHIST_CHK_IERR(SUBR(mvec_get_block)(AVv,Au_ptr,0,nv-1,iflag),*iflag);
 
     // get the diagonal block (1x1 or 2x2) corresponding to theta
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Theta,ev_pos,ev_pos+nv-1,ev_pos,ev_pos+nv-1,iflag),*iflag);
