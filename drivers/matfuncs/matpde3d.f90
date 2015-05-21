@@ -316,7 +316,7 @@ contains
   
   end subroutine MATPDE3D_selectProblem
 
-!#define USE_OCTREE_ORDERING
+#define USE_OCTREE_ORDERING
 
   ! octree ordering
   pure function idOfCoord(coord) result(id)
