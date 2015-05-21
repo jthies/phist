@@ -101,7 +101,7 @@ A=new Traits<_ST_>::sparseMat_t(map_ptr,(int)maxnne);
     ghost_gidx_t row = tpetra_map->getGlobalElement(i);
     ghost_lidx_t row_nnz;
 
-    rowFunPtr(row,&row_nnz,cols,vals);
+    PHIST_CHK_IERR(*iflag=rowFunPtr(row,&row_nnz,cols,vals),*iflag);
 
     Teuchos::ArrayView<gidx_t> cols_v(cols,row_nnz);
     Teuchos::ArrayView<_ST_> vals_v(vals,row_nnz);
@@ -672,6 +672,13 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, _ST_ value, int* iflag)
   PHIST_TRY_CATCH(V->putScalar(value),*iflag);
   }
 
+extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
+        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag=-99;
+}
+
 //! put scalar value into all elements of a multi-vector
 extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vM, _ST_ value, int* iflag)
   {
@@ -885,6 +892,12 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
   PHIST_TRY_CATCH(B->update(alpha,*A,beta),*iflag);
   }
 
+
+extern "C" void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag = 0;
+}
 
 //! y=alpha*A*x+beta*y.
 extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, 

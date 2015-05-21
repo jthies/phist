@@ -1,3 +1,4 @@
+#include "fdebug.h"
 !> \file crsmat_module.f90
 !! defines crsmat_module, the sparseMat implementation of phist builtin kernels
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>"
@@ -111,13 +112,14 @@ module crsmat_module
 
   !> interface of function-ptr for crsMat_create_fromRowFunc
   abstract interface
-    subroutine matRowFunc(row, nnz, cols, vals)
+    function matRowFunc(row, nnz, cols, vals) result(ierr)
       use, intrinsic :: iso_c_binding
       integer(G_GIDX_T), value :: row
       integer(G_LIDX_T), intent(inout) :: nnz
       integer(G_GIDX_T), intent(inout) :: cols(*)
       real(C_DOUBLE),    intent(inout) :: vals(*)
-    end subroutine matRowFunc
+      integer(C_INT) :: ierr
+    end function matRowFunc
   end interface
 
 contains
@@ -159,7 +161,7 @@ contains
           do while( mat%global_col_idx(j) .ge. mat%row_map%distrib(jProc+1) )
             jProc=jProc+1
           end do
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
 if( mat%global_col_idx(j) .lt. mat%row_map%distrib(jProc) ) then
   write(*,*) 'CRS sorting error! me', mat%row_map%me, 'idx', mat%global_col_idx(j), &
     &        'jProc', jProc, 'distrib', mat%row_map%distrib
@@ -304,7 +306,7 @@ end if
         &            combuff%recvRequests(i),ierr)
     end do
 
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
 ! check that recvRowBlkInd is globally sorted
 do i = 2, size(combuff%recvRowBlkInd), 1
   if( combuff%recvRowBlkInd(i-1) .ge. combuff%recvRowBlkInd(i) ) then
@@ -346,7 +348,7 @@ end do
     call mpi_reduce(localMaxComm, globalMaxComm, 1, MPI_DOUBLE_PRECISION, &
       &             MPI_MAX, 0, mat%row_map%Comm, ierr)
     if( mat%row_map%me .eq. 0 ) then
-      write(*,'(A,e10.4,A,e10.4,A,e10.4)') 'Communication volume for single spMVM (Bytes): total ', globalCommVolume, &
+      write(*,'(A,e12.5,A,e12.5,A,e12.5)') 'Communication volume for single spMVM (Bytes): total ', globalCommVolume, &
         &        ', per direction avg.: ', globalCommVolume/2/mat%row_map%nProcs,            &
         &        ', and max.: ', globalMaxComm
     end if
@@ -1262,7 +1264,7 @@ end do
     end do
 
     deallocate(colorCount)
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
 #define DEBUG_COLPACK 1
 #endif
 #if DEBUG_COLPACK
@@ -1505,7 +1507,7 @@ end subroutine permute_local_matrix
       y_is_aligned16 = .false.
     end if
 
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     write(*,*) 'spMVM with nvec =',nvec,', ldx =',ldx,', ldy =',ldy,', y_mem_aligned16 =', y_is_aligned16, 'on proc', A%row_map%me
     flush(6)
 #endif
@@ -1950,12 +1952,16 @@ wtime = mpi_wtime()
     ! note: the matFuncs in the physics repo are not
     ! thread-safe (as of Jul 2014), hence the 'ordered' clause.
     ! get data, try to respect NUMA
+    ! REMARK: (12.5.'15): I think the rowFuncs are thread-safe, but
+    !         we need the ordered clause because we build the row_offset
+    !         array on-the-fly. It also saves us the trouble of making
+    !         most things in the loop thread-private.
     A%row_offset(1) = 1_8
 !$omp parallel do schedule(static) ordered
     do i = 1, A%nRows, 1
 !$omp ordered
       i_ = A%row_map%distrib(A%row_map%me)+i-2
-      call rowFunc(i_, nne, idx(:,1), val)
+      ierr=rowFunc(i_, nne, idx(:,1), val)
       j = A%row_offset(i)
       j_ = j + int(nne-1,kind=8)
       A%global_col_idx(j:j_) = idx(1:nne,1)+1
@@ -2091,12 +2097,12 @@ end if
     !--------------------------------------------------------------------------------
     type(CrsMat_t), pointer :: A
     integer :: i
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
 
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     write(*,*) 'deleting crsMat at address', transfer(A_ptr,dummy)
     flush(6)
 #endif

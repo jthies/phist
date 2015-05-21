@@ -115,6 +115,8 @@ int TriToeplitz_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
 void MATPDE3D_initDimensions(int, int, int, gidx_t*, lidx_t*);
 void MATPDE3D_selectProblem(int which, int* iflag);
 int MATPDE3D_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
+int MATPDE3D_solFunc(gidx_t, lidx_t, void*);
+int MATPDE3D_rhsFunc(gidx_t, lidx_t, void*);
 // definitions for Brussolator
 void Brussolator_initDimensions(int, gidx_t*, lidx_t*);
 int Brussolator_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
@@ -206,7 +208,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     {
       for (int i=pos;i<strlen(problem);i++)
       {
-        if (problem[i]<'0' || problem[i]>'9' && problem[i]!='x')
+        if ( (problem[i]<'0' || problem[i]>'9') && problem[i]!='x')
         {
           mat_type=FROM_FILE;
           break;
@@ -260,8 +262,6 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     ghost_lidx_t LL[3];
     LL[0]=L,LL[1]=L,LL[2]=L;
 
-    int L1=L;
-    int L2=L;
     for (int j=1;j<=2;j++) 
     {
       for (int i=pos; i<strlen(problem);i++)
@@ -315,10 +315,9 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     PHIST_SOUT(PHIST_INFO,"problem type: MATPDE %d x %d\n", L, L);
 
     gidx_t nrows = -1;
-    gidx_t ncols = -1;
     lidx_t row_nnz = -1;
     MATPDE_initDimensions(L, L, &nrows, &row_nnz);
-    ncols = nrows;
+    gidx_t ncols = nrows;
     if( *iflag & PHIST_SPARSEMAT_REPARTITION )
     {
       PHIST_SOUT(PHIST_INFO,"Disabling PHIST_SPARSEMAT_REPARTITION; MATPDE features a predefined partitioning!\n");
@@ -331,10 +330,9 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   {
     PHIST_SOUT(PHIST_INFO,"problem type: TriToeplitz 2^%d\n", L);
     gidx_t nrows = -1;
-    gidx_t ncols = -1;
     lidx_t row_nnz = -1;
     TriToeplitz_initDimensions(L, &nrows, &row_nnz);
-    ncols = nrows;
+    gidx_t ncols = nrows;
     if( *iflag & PHIST_SPARSEMAT_REPARTITION )
     {
       PHIST_SOUT(PHIST_INFO,"Disabling PHIST_SPARSEMAT_REPARTITION; TriToeplitz is already tridiagonal!\n");
@@ -347,10 +345,9 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   {
     PHIST_SOUT(PHIST_INFO,"problem type: Brussolator wave model %d^1\n", L);
     gidx_t nrows = -1;
-    gidx_t ncols = -1;
     lidx_t row_nnz = -1;
     Brussolator_initDimensions(L, &nrows, &row_nnz);
-    ncols = nrows;
+    gidx_t ncols = nrows;
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
           nrows, ncols, row_nnz, &Brussolator_rowFunc, iflag), *iflag);
   }
@@ -370,10 +367,9 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     PHIST_SOUT(PHIST_INFO,"problem type: BENCH3D %x %dx%dx%d\n", (uint32_t)which,L, L, L);
 
     gidx_t nrows = -1;
-    gidx_t ncols = -1;
     lidx_t row_nnz = -1;
     MATPDE3D_initDimensions(L, L, L, &nrows, &row_nnz);
-    ncols = nrows;
+    gidx_t ncols = nrows;
     if( *iflag & PHIST_SPARSEMAT_REPARTITION )
     {
       PHIST_SOUT(PHIST_INFO,"Disabling PHIST_SPARSEMAT_REPARTITION; MATPDE3D features a predefined partitioning!\n");
@@ -436,3 +432,39 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
 
 }
 #endif
+
+//! For testing linear solvers, generates an 'exact solution' sol and right-hand side rhs
+//! for some matrix creted by create_matrix. For most test cases, this will be some random
+//! sol vector and the rhs is computed by rhs=A*sol, but for the cases stemming from PDEs
+//! (BENCH3D-A*,B*) we presribe an analytical solution and generate the correct F for it.
+//! The mvecs sol and rhs must be created beforehand and may have an arbitrary number of 
+//! columns.
+void SUBR(create_sol_and_rhs)(const char* problem, TYPE(const_sparseMat_ptr) A,
+                        TYPE(mvec_ptr) sol, TYPE(mvec_ptr) rhs, int* iflag)
+{
+
+  PHIST_ENTER_FCN(__FUNCTION__);
+  *iflag=0;
+  int done=0;
+  // only the MATPDE3D Benchmark problems have
+  // an implementation for providing an analytical
+  // solution and exact RHS vector, for the other
+  // cases (and matrices read from a file), we use
+  // a random vector X and compute B=A*X.
+#if defined(IS_DOUBLE) && !defined(IS_COMPLEX)
+  if (str_starts_with(problem,"BENCH3D"))
+  {
+    // MATPDE3D provides these for us
+    SUBR(mvec_put_func)(sol,&MATPDE3D_solFunc,iflag);
+    if (*iflag==0) done=1;
+    SUBR(mvec_put_func)(rhs,&MATPDE3D_rhsFunc,iflag);
+    if (*iflag==0) done&=1;
+  }
+#endif
+  if (!done)
+  {
+    // if not, or not a BENCH3D case, set sol=random and rhs=A*sol
+    PHIST_CHK_IERR(SUBR(mvec_random)(sol,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(ONE,A,sol,ZERO,rhs,iflag),*iflag);
+  }
+}

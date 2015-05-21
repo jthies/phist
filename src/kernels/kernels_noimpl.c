@@ -183,6 +183,13 @@ void SUBR(mvec_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
   *iflag=-99;
 }
 
+void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
+        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
+{
+  *iflag=-99;
+}
+
+
 void SUBR(sdMat_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
 {
   *iflag=-99;
@@ -255,6 +262,11 @@ void SUBR(mvec_vadd_mvec)(const _ST_ alpha[], TYPE(const_mvec_ptr) X,
 void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
     _ST_ beta,  TYPE(sdMat_ptr)       B, 
     int* iflag)
+{
+  *iflag=-99;
+}
+
+void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr) x, int* iflag)
 {
   *iflag=-99;
 }

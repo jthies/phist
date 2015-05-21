@@ -20,6 +20,7 @@
 #include "Teuchos_RCP.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_MatrixIO.hpp"
+#include "Tpetra_DefaultPlatform.hpp"
 
 #include "./Tpetra_TsqrAdaptor.hpp"
 #include "./BelosTpetraAdapter.hpp"
@@ -30,6 +31,7 @@
 #endif
 
 #include <fstream>
+#include <sstream>
 
 
 using namespace phist::tpetra;
@@ -50,6 +52,10 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
     *iflag=MPI_Init(argc,argv);
   }
 #endif
+  // describe yourself!
+  std::ostringstream oss;
+  Tpetra::DefaultPlatform::getDefaultPlatform().describe(oss,Teuchos::VERB_MEDIUM);
+  PHIST_SOUT(PHIST_INFO,"Tpetra platform:\n%s\n", oss.str().c_str());
 #ifdef PHIST_HAVE_LIKWID
   LIKWID_MARKER_INIT;
   LIKWID_MARKER_START("phist<tpetra>");
@@ -244,6 +250,19 @@ extern "C" void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* 
   PHIST_CAST_PTR_FROM_VOID(const map_t,map,vmap,*iflag);
   if (map->isContiguous()==false) *iflag=1;
   *iupper = map->getMaxGlobalIndex();
+}
+
+extern "C" void phist_bench_stream_load(double* bw, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+extern "C" void phist_bench_stream_store(double* bw, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
+}
+extern "C" void phist_bench_stream_triad(double* bw, int* iflag)
+{
+  *iflag = PHIST_NOT_IMPLEMENTED;
 }
 
 #ifdef PHIST_TIMEMONITOR

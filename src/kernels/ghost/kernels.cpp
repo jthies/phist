@@ -10,6 +10,7 @@
 #include <iostream>
 #include "phist_macros.h"
 #include "../phist_kernels.h"
+#include "phist_kernel_perfmodels.hpp"
 
 #include "phist_typedefs.h"
 #include "typedefs.hpp"
@@ -47,7 +48,7 @@
 #include <ghost/pumap.h>
 #include <ghost/locality.h>
 #include <limits>
-#include "phist_ghost_macros.hpp"
+#include <map>
 
 #if defined(PHIST_HAVE_BELOS)||defined(PHIST_HAVE_KOKKOS)
 # if defined(GHOST_HAVE_LONGIDX_LOCAL)
@@ -81,11 +82,39 @@ typedef struct ghost_map_t
   ghost_densemat_traits_t vtraits_template;
   ghost_permutation_t *permutation;
   } ghost_map_t;
-#ifdef TESTING
-// workaround to delete all maps when the livetime of the corresponding object ends (it will spam a leak report otherwise!)
-#include <map>
-std::map<const void*, std::vector<ghost_map_t*> > phist_ghost_map_MAP;
-#endif
+
+
+namespace
+{
+  //! A Garbage collection for maps as they need to be recreated dynamically with GHOST
+  class MapGarbageCollector
+  {
+    public:
+      ghost_map_t* new_map(const void* p)
+      {
+        ghost_map_t* m = new ghost_map_t;
+        maps_[p].push_back(m);
+        return m;
+      }
+
+      void delete_maps(void* p)
+      {
+        MapCollection::iterator it = maps_.find(p);
+        if( it != maps_.end() )
+        {
+          for(int i = 0; i < it->second.size(); i++)
+            delete it->second[i];
+          maps_.erase(it);
+        }
+      }
+
+    private:
+      typedef std::map<const void*, std::vector<ghost_map_t*> > MapCollection;
+      MapCollection maps_;
+  };
+
+  MapGarbageCollector mapGarbageCollector;
+}
 
 // initialize ghost
 extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
@@ -156,7 +185,12 @@ extern "C" void phist_kernels_finalize(int* iflag)
 #if defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE)
 PHIST_CXX_TIMER_SUMMARIZE;
 #endif
+PHIST_PERFCHECK_SUMMARIZE(PHIST_INFO);
   ghost_finalize();
+#ifdef PHIST_PERFCHECK
+  // prevent some strange memory errors during deallocation (due to shared lib context?)
+  phist_PerfCheck::benchmarks.clear();
+#endif
   *iflag=0;
 }
 
@@ -299,6 +333,66 @@ extern "C" void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* 
   *iupper = map->ctx->lfRow[me]+map->ctx->lnrows[me]-1;
   }
 
+extern "C" {
+#include "../builtin/bench_kernels.h"
+void phist_bench_stream_load(double* max_bw, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  double *data = NULL;
+  PHIST_SOUT(PHIST_INFO, "Streaming LOAD benchmark: ");
+  PHIST_CHK_IERR(dbench_stream_load_create(&data,iflag),*iflag);
+  *max_bw = 0.;
+  for(int i = 0; i < 10; i++)
+  {
+    double bw = 0.;
+    double res;
+    PHIST_CHK_IERR(dbench_stream_load_run(data,&res,&bw,iflag),*iflag);
+    if( bw > *max_bw ) *max_bw = bw;
+  }
+  PHIST_CHK_IERR(dbench_stream_load_destroy(data,iflag),*iflag);
+  PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s\n", *max_bw/1.e9);
+}
+
+void phist_bench_stream_store(double* max_bw, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  double *data = NULL;
+  PHIST_SOUT(PHIST_INFO, "Streaming STORE benchmark: ");
+  PHIST_CHK_IERR(dbench_stream_store_create(&data,iflag),*iflag);
+  *max_bw = 0.;
+  for(int i = 0; i < 10; i++)
+  {
+    double bw = 0.;
+    double res = 77.;
+    PHIST_CHK_IERR(dbench_stream_store_run(data,&res,&bw,iflag),*iflag);
+    if( bw > *max_bw ) *max_bw = bw;
+  }
+  PHIST_CHK_IERR(dbench_stream_store_destroy(data,iflag),*iflag);
+  PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s\n", *max_bw/1.e9);
+}
+
+void phist_bench_stream_triad(double* max_bw, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  double *x = NULL;
+  double *y = NULL;
+  double *z = NULL;
+  PHIST_SOUT(PHIST_INFO, "Streaming TRIAD benchmark: ");
+  PHIST_CHK_IERR(dbench_stream_triad_create(&x,&y,&z,iflag),*iflag);
+  *max_bw = 0.;
+  for(int i = 0; i < 10; i++)
+  {
+    double bw = 0.;
+    double res = -53.;
+    PHIST_CHK_IERR(dbench_stream_triad_run(x,y,z,&res,&bw,iflag),*iflag);
+    if( bw > *max_bw ) *max_bw = bw;
+  }
+  PHIST_CHK_IERR(dbench_stream_triad_destroy(x,y,z,iflag),*iflag);
+  PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s\n", *max_bw/1.e9);
+}
+}
+
+
 // small helper function to preclude integer overflows (ghost allows 64 bit local indices, 
 // but we don't right now)
   template<typename idx_t>
@@ -314,6 +408,34 @@ extern "C" void phist_totalMatVecCount()
   PHIST_ENTER_FCN(__FUNCTION__);
 }
 #endif
+
+static void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
+{
+  *C = PHIST_SELL_C;
+  *sigma = PHIST_SELL_SIGMA;
+  if( flags & PHIST_SPARSEMAT_OPT_SINGLESPMVM )
+  {
+    *C = 32;
+    *sigma = 256;
+  }
+  if( flags & PHIST_SPARSEMAT_OPT_BLOCKSPMVM )
+  {
+    *C = 8;
+    *sigma = 32;
+  }
+
+  // override with max(C,32) if anything runs on a CUDA device
+  ghost_type_t gtype;
+  ghost_type_get(&gtype);
+  if (gtype==GHOST_TYPE_CUDA)
+  {
+    *C=std::max(*C,32);
+    *sigma=std::max(256,*sigma);
+  }
+  MPI_Allreduce(MPI_IN_PLACE,C,1,MPI_INT,MPI_MAX,comm);
+  MPI_Allreduce(MPI_IN_PLACE,sigma,1,MPI_INT,MPI_MAX,comm);
+
+}
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

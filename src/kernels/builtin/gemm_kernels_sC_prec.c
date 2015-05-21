@@ -14,9 +14,12 @@
 #endif
 #include "prec_helpers.h"
 
+// define our own datatype for aligned doubles
+typedef double aligned_double __attribute__((aligned(64)));
+
 
 // more accurate gemm product x'x AVX2 kernel
-void dgemm_sc_self_prec_4(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
+void dgemm_sc_self_prec_4(int nrows, const aligned_double *restrict x, double *restrict res, double *restrict resC)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
@@ -27,6 +30,103 @@ void dgemm_sc_self_prec_4(int nrows, const double *restrict x, double *restrict 
     exit(1);
     return;
   }
+
+#ifdef PHIST_HAVE_OPENMP
+  int nt = omp_get_max_threads();
+#else
+  int nt = 1;
+#endif
+
+  {
+    // buffer for omp thread result
+    __m256d s_[nt][8];
+    __m256d c_[nt][8];
+
+#pragma omp parallel shared(s_,c_)
+    {
+      __m256d s[4];
+      __m256d c[4];
+      // initialize sum
+      for(int j = 0; j < 4; j++)
+      {
+        s[j] = _mm256_setzero_pd();
+        c[j] = _mm256_setzero_pd();
+      }
+
+#pragma omp for schedule(static)
+      for(int i = 0; i < nrows; i++)
+      {
+        __m256d xi = _mm256_load_pd(&x[4*i]);
+        __m256d xij = xi;
+        for(int j = 0; j < 3; j++)
+        {
+          __m256d p, pi;
+          MM256_2MULTFMA(xi,xij,p,pi);
+          __m256d sigma, oldS = s[j];
+          MM256_FAST2SUM(oldS,p,s[j],sigma);
+          __m256d tmp = _mm256_add_pd(pi,sigma);
+          c[j] = _mm256_add_pd(c[j],tmp);
+
+          xij = _mm256_permute4x64_pd(xij,1*1+4*2+16*3+64*0);
+        }
+      }
+
+      int it = omp_get_thread_num();
+      // store result
+      for(int j = 0; j < 4; j++)
+      {
+        s_[it][j] = s[j];
+        c_[it][j] = c[j];
+      }
+    }
+
+
+    // handcoded omp reduction
+    for(int i = 1; i < nt; i++)
+    {
+      for(int j = 0; j < 4; j++)
+      {
+        __m256d oldS = s_[0][j], oldC = c_[0][j];
+        MM256_4SUM(oldS,oldC,s_[i][j],c_[i][j],s_[0][j],c_[0][j]);
+      }
+    }
+
+    // obtain sums to construct result
+    double r[3][4], rC[3][4];
+    for(int j = 0; j < 3; j++)
+    {
+      _mm256_storeu_pd(r[j],  s_[0][j]);
+      _mm256_storeu_pd(rC[j], c_[0][j]);
+    }
+
+    // construct and return result, needs to be summed up
+    for(int i = 0; i < 3; i++)
+    {
+      for(int j = 0; j < 4; j++)
+      {
+        int j_ = (j+i)%4;
+        res[j*4+j_] = res[j_*4+j] = r[i][j];
+        resC[j*4+j_] = resC[j_*4+j] = rC[i][j];
+      }
+    }
+  }
+
+}
+
+
+// more accurate gemm product x'x AVX2 kernel
+void dgemm_sc_self_prec_2(int nrows, const aligned_double *restrict x, double *restrict res, double *restrict resC)
+{
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
+  if( !is_aligned(x,32) )
+  {
+    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
+    exit(1);
+    return;
+  }
+
 
 #ifdef PHIST_HAVE_OPENMP
   int nt = omp_get_max_threads();
@@ -42,21 +142,22 @@ void dgemm_sc_self_prec_4(int nrows, const double *restrict x, double *restrict 
 #pragma omp parallel shared(s_,c_)
     {
       // initialize sum
-      __m256d s[4];
-      __m256d c[4];
-      for(int j = 0; j < 4; j++)
+      __m256d s[2];
+      __m256d c[2];
+      for(int j = 0; j < 2; j++)
       {
         s[j] = _mm256_setzero_pd();
         c[j] = _mm256_setzero_pd();
       }
 
+      int nrows2 = nrows/2;
 #pragma omp for schedule(static)
-      for(int i = 0; i < nrows; i++)
+      for(int i = 0; i < nrows2; i++)
       {
         __m256d xi = _mm256_load_pd(&x[4*i]);
-        for(int j = 0; j < 4; j++)
+        for(int j = 0; j < 2; j++)
         {
-          __m256d xij = _mm256_broadcast_sd(&x[4*i+j]);
+          __m256d xij = _mm256_set_pd(x[4*i+j+2],x[4*i+j+2],x[4*i+j],x[4*i+j]);
           __m256d p, pi;
           MM256_2MULTFMA(xi,xij,p,pi);
           __m256d sigma, oldS = s[j];
@@ -67,7 +168,7 @@ void dgemm_sc_self_prec_4(int nrows, const double *restrict x, double *restrict 
       }
 
       int it = omp_get_thread_num();
-      for(int j = 0; j < 4; j++)
+      for(int j = 0; j < 2; j++)
       {
         s_[j][it] = s[j];
         c_[j][it] = c[j];
@@ -78,106 +179,36 @@ void dgemm_sc_self_prec_4(int nrows, const double *restrict x, double *restrict 
     // handcoded omp reduction
     for(int i = 1; i < nt; i++)
     {
-      for(int j = 0; j < 4; j++)
+      for(int j = 0; j < 2; j++)
       {
         __m256d oldS = s_[j][0], oldC = c_[j][0];
-        MM256_FAST4SUM(oldS,oldC,s_[j][i],c_[j][i],s_[j][0],c_[j][0]);
-      }
-    }
-
-    // return result, needs to be summed up
-    for(int j = 0; j < 4; j++)
-    {
-      _mm256_storeu_pd(&res[j*4],  s_[j][0]);
-      _mm256_storeu_pd(&resC[j*4], c_[j][0]);
-    }
-  }
-
-}
-
-
-// more accurate gemm product x'x AVX2 kernel
-void dgemm_sc_self_prec_2(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
-{
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
-  printf("Entering %s\n", __FUNCTION__);
-#endif
-  if( !is_aligned(x,32) )
-  {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
-    exit(1);
-    return;
-  }
-
-#ifdef PHIST_HAVE_OPENMP
-  int nt = omp_get_max_threads();
-#else
-  int nt = 1;
-#endif
-
-  {
-    // buffer for omp thread result + padding to prevent false sharing
-    __m128d s_[8][nt];
-    __m128d c_[8][nt];
-
-#pragma omp parallel shared(s_,c_)
-    {
-      // initialize sum
-      __m128d s[4];
-      __m128d c[4];
-      for(int j = 0; j < 4; j++)
-      {
-        s[j] = _mm_setzero_pd();
-        c[j] = _mm_setzero_pd();
-      }
-
-#pragma omp for schedule(static)
-      for(int i = 0; i < nrows; i++)
-      {
-        __m128d xi = _mm_load_pd(&x[2*i]);
-        for(int j = 0; j < 2; j++)
-        {
-          __m128d xij = _mm_set1_pd(x[2*i+j]);
-          __m128d p, pi;
-          MM128_2MULTFMA(xi,xij,p,pi);
-          __m128d sigma, oldS = s[j];
-          MM128_FAST2SUM(oldS,p, s[j],sigma);
-          __m128d tmp = _mm_add_pd(pi,sigma);
-          c[j] = _mm_add_pd(c[j],tmp);
-        }
-      }
-
-      int it = omp_get_thread_num();
-      for(int j = 0; j < 2; j++)
-      {
-        s_[j][it] = s[j];
-        c_[j][it] = c[j];
+        MM256_4SUM(oldS,oldC,s_[j][i],c_[j][i],s_[j][0],c_[j][0]);
       }
     }
 
 
-    // handcoded omp reduction
-    for(int i = 1; i < nt; i++)
-    {
-      for(int j = 0; j < 2; j++)
-      {
-        __m128d oldS = s_[j][0], oldC = c_[j][0];
-        MM128_FAST4SUM(oldS,oldC,s_[j][i],c_[j][i],s_[j][0],c_[j][0]);
-      }
-    }
-
-    // return result, needs to be summed up
+    // sum up 4 elements in mm256 to 2 elements in mm128
+    // and return result, needs to be summed up again
     for(int j = 0; j < 2; j++)
     {
-      _mm_storeu_pd(&res[j*2],  s_[j][0]);
-      _mm_storeu_pd(&resC[j*2], c_[j][0]);
+      __m128d s = _mm256_extractf128_pd(s_[j][0],0);
+      __m128d p = _mm256_extractf128_pd(s_[j][0],1);
+      __m128d c = _mm256_extractf128_pd(c_[j][0],0);
+      __m128d pi = _mm256_extractf128_pd(c_[j][0],1);
+      __m128d sigma, oldS = s;
+      MM128_2SUM(oldS,p,s,sigma);
+      __m128d tmp = _mm_add_pd(pi,sigma);
+      c = _mm_add_pd(c,tmp);
+      _mm_storeu_pd(&res[j*2],  s);
+      _mm_storeu_pd(&resC[j*2], c);
     }
   }
+
 }
 
 
 // more accurate gemm product x'y AVX2 kernel
-void dgemm_sc_prec_4_4(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+void dgemm_sc_prec_4_4(int nrows, const aligned_double *restrict x, const aligned_double *restrict y, double *restrict res, double *restrict resC)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
@@ -248,7 +279,7 @@ void dgemm_sc_prec_4_4(int nrows, const double *restrict x, const double *restri
       for(int j = 0; j < 4; j++)
       {
         __m256d oldS = s_[j][0], oldC = c_[j][0];
-        MM256_FAST4SUM(oldS,oldC,s_[j][i],c_[j][i],s_[j][0],c_[j][0]);
+        MM256_4SUM(oldS,oldC,s_[j][i],c_[j][i],s_[j][0],c_[j][0]);
       }
     }
 
@@ -264,7 +295,7 @@ void dgemm_sc_prec_4_4(int nrows, const double *restrict x, const double *restri
 
 
 // more accurate gemm product x'y AVX2 kernel
-void dgemm_sc_prec_2_2(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+void dgemm_sc_prec_2_2(int nrows, const aligned_double *restrict x, const aligned_double *restrict y, double *restrict res, double *restrict resC)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
@@ -306,8 +337,9 @@ void dgemm_sc_prec_2_2(int nrows, const double *restrict x, const double *restri
         c[j] = _mm256_setzero_pd();
       }
 
+      int nrows2 = nrows/2;
 #pragma omp for schedule(static)
-      for(int i = 0; i < nrows/2; i++)
+      for(int i = 0; i < nrows2; i++)
       {
         __m256d xi = _mm256_load_pd(&x[4*i]);
         for(int j = 0; j < 2; j++)
@@ -337,7 +369,7 @@ void dgemm_sc_prec_2_2(int nrows, const double *restrict x, const double *restri
       for(int j = 0; j < 2; j++)
       {
         __m256d oldS = s_[j][0], oldC = c_[j][0];
-        MM256_FAST4SUM(oldS,oldC,s_[j][i],c_[j][i],s_[j][0],c_[j][0]);
+        MM256_4SUM(oldS,oldC,s_[j][i],c_[j][i],s_[j][0],c_[j][0]);
       }
     }
 
@@ -351,7 +383,7 @@ void dgemm_sc_prec_2_2(int nrows, const double *restrict x, const double *restri
       __m128d c = _mm256_extractf128_pd(c_[j][0],0);
       __m128d pi = _mm256_extractf128_pd(c_[j][0],1);
       __m128d sigma, oldS = s;
-      MM128_FAST2SUM(oldS,p,s,sigma);
+      MM128_2SUM(oldS,p,s,sigma);
       __m128d tmp = _mm_add_pd(pi,sigma);
       c = _mm_add_pd(c,tmp);
       _mm_storeu_pd(&res[j*2],  s);
@@ -362,7 +394,7 @@ void dgemm_sc_prec_2_2(int nrows, const double *restrict x, const double *restri
 }
 
 // more accurate gemm product x'y AVX2 kernel
-void dgemm_sc_prec_2_1(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+void dgemm_sc_prec_2_1(int nrows, const aligned_double *restrict x, const aligned_double *restrict y, double *restrict res, double *restrict resC)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
@@ -399,8 +431,9 @@ void dgemm_sc_prec_2_1(int nrows, const double *restrict x, const double *restri
       __m256d s = _mm256_setzero_pd();
       __m256d c = _mm256_setzero_pd();
 
+      int nrows2 = nrows/2;
 #pragma omp for schedule(static)
-      for(int i = 0; i < nrows/2; i++)
+      for(int i = 0; i < nrows2; i++)
       {
         __m256d xi = _mm256_load_pd(&x[4*i]);
         __m256d yij = _mm256_set_pd(y[2*i+1],y[2*i+1],y[2*i],y[2*i]);
@@ -433,7 +466,7 @@ void dgemm_sc_prec_2_1(int nrows, const double *restrict x, const double *restri
     __m128d c = _mm256_extractf128_pd(c_[0][0],0);
     __m128d pi = _mm256_extractf128_pd(c_[0][0],1);
     __m128d sigma, oldS = s;
-    MM128_FAST2SUM(oldS,p,s,sigma);
+    MM128_2SUM(oldS,p,s,sigma);
     __m128d tmp = _mm_add_pd(pi,sigma);
     c = _mm_add_pd(c,tmp);
     _mm_storeu_pd(res,  s);
@@ -443,7 +476,7 @@ void dgemm_sc_prec_2_1(int nrows, const double *restrict x, const double *restri
 
 
 // more accurate gemm product x'y AVX2 kernel
-void dgemm_sc_prec_4_2(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+void dgemm_sc_prec_4_2(int nrows, const aligned_double *restrict x, const aligned_double *restrict y, double *restrict res, double *restrict resC)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
@@ -516,7 +549,7 @@ void dgemm_sc_prec_4_2(int nrows, const double *restrict x, const double *restri
       for(int j = 0; j < 2; j++)
       {
         __m256d sigma, oldS = s_[j][0];
-        MM256_FAST2SUM(oldS, s_[j][i], s_[j][0], sigma);
+        MM256_2SUM(oldS, s_[j][i], s_[j][0], sigma);
         __m256d tmp = _mm256_add_pd(c_[j][i],sigma);
         c_[j][0] = _mm256_add_pd(c_[j][0], tmp);
       }
@@ -534,7 +567,7 @@ void dgemm_sc_prec_4_2(int nrows, const double *restrict x, const double *restri
 }
 
 // more accurate gemm product x'y AVX2 kernel
-void dgemm_sc_prec_4_1(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+void dgemm_sc_prec_4_1(int nrows, const aligned_double *restrict x, const aligned_double *restrict y, double *restrict res, double *restrict resC)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
@@ -594,7 +627,7 @@ void dgemm_sc_prec_4_1(int nrows, const double *restrict x, const double *restri
     for(int i = 1; i < nt; i++)
     {
       __m256d sigma, oldS = s_[0][0];
-      MM256_FAST2SUM(oldS, s_[0][i], s_[0][0], sigma);
+      MM256_2SUM(oldS, s_[0][i], s_[0][0], sigma);
       __m256d tmp = _mm256_add_pd(c_[0][i],sigma);
       c_[0][0] = _mm256_add_pd(c_[0][0], tmp);
     }
@@ -608,7 +641,7 @@ void dgemm_sc_prec_4_1(int nrows, const double *restrict x, const double *restri
 }
 
 // more accurate gemm product x'y AVX2 kernel
-void dgemm_sc_prec_4_k(int nrows, int k, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+void dgemm_sc_prec_4_k(int nrows, int k, const aligned_double *restrict x, const aligned_double *restrict y, double *restrict res, double *restrict resC)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
@@ -679,7 +712,7 @@ void dgemm_sc_prec_4_k(int nrows, int k, const double *restrict x, const double 
       for(int j = 0; j < k; j++)
       {
         __m256d sigma, oldS = s_[j][0];
-        MM256_FAST2SUM(oldS, s_[j][i], s_[j][0], sigma);
+        MM256_2SUM(oldS, s_[j][i], s_[j][0], sigma);
         __m256d tmp = _mm256_add_pd(c_[j][i],sigma);
         c_[j][0] = _mm256_add_pd(c_[j][0], tmp);
       }
@@ -696,7 +729,7 @@ void dgemm_sc_prec_4_k(int nrows, int k, const double *restrict x, const double 
 }
 
 // more accurate gemm product x'y AVX2 kernel
-void dgemm_sc_prec_2_k(int nrows, int k, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+void dgemm_sc_prec_2_k(int nrows, int k, const aligned_double *restrict x, const aligned_double *restrict y, double *restrict res, double *restrict resC)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
@@ -769,7 +802,7 @@ void dgemm_sc_prec_2_k(int nrows, int k, const double *restrict x, const double 
       for(int j = 0; j < k; j++)
       {
         __m256d sigma, oldS = s_[j][0];
-        MM256_FAST2SUM(oldS, s_[j][i], s_[j][0], sigma);
+        MM256_2SUM(oldS, s_[j][i], s_[j][0], sigma);
         __m256d tmp = _mm256_add_pd(c_[j][i],sigma);
         c_[j][0] = _mm256_add_pd(c_[j][0], tmp);
       }
@@ -785,7 +818,7 @@ void dgemm_sc_prec_2_k(int nrows, int k, const double *restrict x, const double 
       __m128d c = _mm256_extractf128_pd(c_[j][0],0);
       __m128d pi = _mm256_extractf128_pd(c_[j][0],1);
       __m128d sigma, oldS = s;
-      MM128_FAST2SUM(oldS,p,s,sigma);
+      MM128_2SUM(oldS,p,s,sigma);
       __m128d tmp = _mm_add_pd(pi,sigma);
       c = _mm_add_pd(c,tmp);
       _mm_storeu_pd(&res[j*2],  s);
@@ -797,7 +830,7 @@ void dgemm_sc_prec_2_k(int nrows, int k, const double *restrict x, const double 
 
 
 // more accurate gemm product x'y AVX2 kernel
-void dgemm_sc_prec_1_k(int nrows, int k, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
+void dgemm_sc_prec_1_k(int nrows, int k, const aligned_double *restrict x, const aligned_double *restrict y, double *restrict res, double *restrict resC)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);

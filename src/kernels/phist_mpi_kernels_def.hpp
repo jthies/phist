@@ -7,7 +7,7 @@ void SUBR(mvec_transfer)(TYPE(const_mvec_ptr) V, int dest, int tag,
 extern "C" void SUBR(mvec_Isend)(TYPE(const_mvec_ptr) V, int dest, int tag, 
         MPI_Comm comm, MPI_Request* req, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_OUT(PHIST_DEBUG,"do Isend\n");
   PHIST_CHK_IERR(SUBR(mvec_transfer)(V,dest,tag,comm,req,0,iflag),*iflag);
 }
@@ -15,7 +15,7 @@ extern "C" void SUBR(mvec_Isend)(TYPE(const_mvec_ptr) V, int dest, int tag,
 extern "C" void SUBR(mvec_Irecv)(TYPE(const_mvec_ptr) V, int dest, int tag, 
         MPI_Comm comm, MPI_Request* req, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_OUT(PHIST_DEBUG,"do Irecv\n");
   PHIST_CHK_IERR(SUBR(mvec_transfer)(V,dest,tag,comm,req,1,iflag),*iflag);
 }
@@ -25,7 +25,7 @@ void SUBR(mvec_transfer)(TYPE(const_mvec_ptr) V, int dest, int tag,
         MPI_Comm comm, MPI_Request* req, int flag,int* iflag)
 {
 #include "phist_std_typedefs.hpp"
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   ST* val;
   lidx_t lda, nloc;
@@ -116,7 +116,7 @@ void SUBR(mvec_transfer)(TYPE(const_mvec_ptr) V, int dest, int tag,
 extern "C" void SUBR(sdMat_sync_values)(TYPE(sdMat_ptr) V, const_comm_ptr_t comm, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
 
   MPI_Comm mpi_comm=MPI_COMM_WORLD;

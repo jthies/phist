@@ -76,7 +76,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, cons
 #endif
     ghost_lidx_t row_nnz;
     
-    rowFunPtr(row,&row_nnz,cols,vals);
+    PHIST_CHK_IERR(*iflag=rowFunPtr(row,&row_nnz,cols,vals),*iflag);
     PHIST_TRY_CATCH(A->InsertGlobalValues(row,row_nnz,vals,cols),*iflag);
   }
   PHIST_TRY_CATCH(A->FillComplete(),*iflag);
@@ -429,6 +429,26 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, double value, int* iflag
   PHIST_CHK_IERR(*iflag=V->PutScalar(value),*iflag);
 }
 
+extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
+        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*iflag);
+  for (lidx_t i=0;i<V->MyLength();i++)
+  {
+    for (int j=0; j<V->NumVectors(); j++)
+    {
+#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
+    gidx_t row=V->Map().GID(i);
+#else
+    gidx_t row=V->Map().GID64(i);
+#endif
+      PHIST_CHK_IERR(*iflag=funPtr(row,j,V->Pointers()[j]+i),*iflag);
+    }
+  }
+}
+
 //! put scalar value into all elements of a multi-vector
 extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vV, double value, int* iflag)
 {
@@ -583,6 +603,12 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,B,vB,*iflag);
   PHIST_CHK_IERR(*iflag=B->Update(alpha,*A,beta),*iflag);  
+}
+
+extern "C" void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag = 0;
 }
 
 //! y=alpha*A*x+beta*y.

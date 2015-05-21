@@ -13,17 +13,11 @@
 
 #include "gtest/gtest.h"
 #include "kernels/phist_kernels.h"
-#ifdef PHIST_KERNEL_LIB_GHOST
-#include "ghost/phist_ghost_macros.hpp"
-#else
-#define PHIST_GHOST_TASK_BEGIN
-#define PHIST_GHOST_TASK_END
-#endif
 
 GTEST_API_ int main(int argc, char **argv) {
     int iflag,test_result;
     phist_kernels_init(&argc,&argv,&iflag);
-    PHIST_GHOST_TASK_BEGIN
+    PHIST_MAIN_TASK_BEGIN
     testing::InitGoogleTest(&argc, argv);
 
     int rank = 0;
@@ -45,7 +39,7 @@ GTEST_API_ int main(int argc, char **argv) {
 
     test_result=RUN_ALL_TESTS();
 
-    PHIST_GHOST_TASK_END
+    PHIST_MAIN_TASK_END
     phist_kernels_finalize(&iflag);
     //ASSERT_INT_EQ(iflag,0);
     return test_result;

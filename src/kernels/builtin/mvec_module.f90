@@ -1,3 +1,4 @@
+#include "fdebug.h"
 !> \file mvec_module.f90
 !! Defines mvec_module, the phist builtin implementation of phist_Dmvec_*
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
@@ -14,6 +15,24 @@ module mvec_module
   use sdmat_module, only: SDMat_t
   implicit none
   private
+
+!>@todo duplicated code from crsmat_module.f90
+#ifndef PHIST_HAVE_GHOST
+#define G_LIDX_T C_INT32_T
+#define G_GIDX_T C_INT64_T
+#else
+#ifdef GHOST_HAVE_LONGIDX_LOCAL
+#define G_LIDX_T C_INT64_T
+#else
+#define G_LIDX_T C_INT32_T
+#endif
+#ifdef GHOST_HAVE_LONGIDX_GLOBAL
+#define G_GIDX_T C_INT64_T
+#else
+#define G_GIDX_T C_INT32_T
+#endif
+#endif
+
 
   public :: MVec_t
   !public :: phist_Dmvec_create
@@ -53,6 +72,23 @@ module mvec_module
   !public :: phist_Dmvec_to_mvec
   !public :: phist_Dmvec_QR
   public :: mvec_QR
+
+
+#ifndef PHIST_HAVE_GHOST
+#define G_LIDX_T C_INT32_T
+#define G_GIDX_T C_INT64_T
+#else
+#ifdef GHOST_HAVE_LONGIDX_LOCAL
+#define G_LIDX_T C_INT64_T
+#else
+#define G_LIDX_T C_INT32_T
+#endif
+#ifdef GHOST_HAVE_LONGIDX_GLOBAL
+#define G_GIDX_T C_INT64_T
+#else
+#define G_GIDX_T C_INT32_T
+#endif
+#endif
 
 
   !==================================================================================
@@ -363,6 +399,17 @@ module mvec_module
       real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
       real(kind=C_DOUBLE), intent(out):: y
     end subroutine
+  end interface
+
+  !> interface of function-ptr for mvec_put_func
+  abstract interface
+    function mvecElemFunc(row, col, val_ptr) result(ierr)
+      use, intrinsic :: iso_c_binding
+      integer(G_GIDX_T), value :: row
+      integer(G_LIDX_T), value :: col
+      TYPE(C_PTR), value :: val_ptr
+      integer(C_INT) :: ierr
+    end function mvecElemFunc
   end interface
 
 contains
@@ -1740,7 +1787,7 @@ contains
     nt = omp_get_max_threads()
     padding = nt*4
     mvec%paddedN = (map%nlocal(map%me)/padding+1)*padding
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     write(*,*) 'creating new mvec with dimensions:', nvec, map%nlocal(map%me), 'address', transfer(c_loc(mvec),dummy)
     flush(6)
 #endif
@@ -1781,7 +1828,7 @@ contains
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     integer(C_INTPTR_T) :: dummy
 #endif
     interface
@@ -1792,14 +1839,14 @@ contains
     end interface
     !--------------------------------------------------------------------------------
 
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     write(*,*) 'deleting mvec at address', transfer(mvec_ptr,dummy)
     flush(6)
 #endif
     if( c_associated(mvec_ptr) ) then
       call c_f_pointer(mvec_ptr, mvec)
       if( .not. mvec%is_view) then
-        call free(c_loc(mvec%val))
+        call free(c_loc(mvec%val(1,1)))
       end if
       deallocate(mvec)
     end if
@@ -1817,12 +1864,12 @@ contains
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
 
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     write(*,*) 'extract view of mvec at address', transfer(mvec_ptr,dummy)
     flush(6)
 #endif
@@ -1911,7 +1958,7 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec, view
-!#if defined(TESTING) && PHIST_OUTLEV >= 4
+!#ifdef F_DEBUG
 !    integer(C_INTPTR_T) :: dummy
 !#endif
     !--------------------------------------------------------------------------------
@@ -1923,7 +1970,7 @@ contains
       return
     end if
 
-!#if defined(TESTING) && PHIST_OUTLEV >= 4
+!#ifdef F_DEBUG
 !    write(*,*) 'create view of mvec at address', transfer(mvec_ptr,dummy)
 !    flush(6)
 !#endif
@@ -1937,14 +1984,14 @@ contains
           ierr = -88
           return
         end if
-!#if defined(TESTING) && PHIST_OUTLEV >= 4
+!#ifdef F_DEBUG
 !      write(*,*) 'reusing view at address', transfer(view_ptr,dummy)
 !      flush(6)
 !#endif
       else
         allocate(view)
         view_ptr = c_loc(view)
-!#if defined(TESTING) && PHIST_OUTLEV >= 4
+!#ifdef F_DEBUG
 !      write(*,*) 'created new view at address', transfer(view_ptr,dummy)
 !      flush(6)
 !#endif
@@ -1981,7 +2028,7 @@ contains
     call c_f_pointer(mvec_ptr, mvec)
     call c_f_pointer(block_ptr,block)
 
-#if defined(TESTING) && PHIST_OUTLEV >= 4
+#ifdef F_DEBUG
     if( .not. map_compatible_map(mvec%map, block%map) ) then
       ierr = -1
       return
@@ -2176,6 +2223,53 @@ contains
 
   end subroutine phist_Dmvec_put_value
 
+
+  subroutine phist_Dmvec_put_func(V_ptr, elemFunc_ptr,   ierr) &
+    & bind(C,name='phist_Dmvec_put_func_f') ! circumvent bug in opari (openmp instrumentalization)
+    use, intrinsic :: iso_c_binding
+    !--------------------------------------------------------------------------------
+    type(C_PTR),        value :: V_ptr
+    type(C_FUNPTR),     value       :: elemFunc_ptr
+    integer(C_INT),     intent(out) :: ierr
+    !--------------------------------------------------------------------------------
+    type(mvec_t), pointer :: V
+    procedure(mvecElemFunc), pointer :: elemFunc
+    !--------------------------------------------------------------------------------
+    integer(kind=8) :: i
+    integer(kind=G_GIDX_T) :: ii
+    integer(kind=G_LIDX_T) :: j, jj
+    integer(C_INT) :: thread_ierr
+    !--------------------------------------------------------------------------------
+
+    ierr=0
+
+    if( .not. c_associated(V_ptr) ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(V_ptr, V)
+
+    ! get procedure pointer
+    call c_f_procpointer(elemFunc_ptr, elemFunc)
+
+! note: element function assumes 0-based indexing
+
+!$omp parallel do schedule(static) private(ii,j,jj,thread_ierr)
+    do i = 1, V%map%nlocal(V%map%me), 1
+      ii = V%map%distrib(V%map%me)+i-2
+      do j=V%jmin,V%jmax
+        jj=j-V%jmin
+        thread_ierr=elemFunc(ii,jj,C_LOC(V%val(j,i)))
+        if (thread_ierr/=0) then
+!$omp critical
+          ierr=thread_ierr
+!$omp end critical
+        end if
+      end do
+    end do
+
+end subroutine phist_Dmvec_put_func
 
   subroutine phist_Dmvec_random(mvec_ptr, ierr) bind(C,name='phist_Dmvec_random_f')
     use, intrinsic :: iso_c_binding

@@ -626,28 +626,28 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_add_sdMat)(alpha, vu, beta, vd, &iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
+      ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),100*mt::eps());
 
       // sdMat_add_sdMat left/right
       SUBR(sdMat_add_sdMat)(alpha, vr, beta, ref_vl, &iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_add_sdMat)(alpha, vr, beta, vl, &iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
+      ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),100*mt::eps());
 
       // sdMat_times_sdMat 21,22->11
       SUBR(sdMat_times_sdMat)(alpha, v21, v22, beta, ref_v11, &iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_times_sdMat)(alpha, v21, v22, beta, v11, &iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
+      ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),100*mt::eps());
 
       // sdMat_times_sdMat 22,21->12
       SUBR(sdMat_times_sdMat)(alpha, v22, v21, beta, ref_v12, &iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_times_sdMat)(alpha, v22, v21, beta, v12, &iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
+      ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),100*mt::eps());
 
 
       // sdMatT_times_sdMat 22,22->11
@@ -655,14 +655,14 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMatT_times_sdMat)(alpha, v22, v22, beta, v11, &iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
+      ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),100*mt::eps());
 
       // sdMatT_times_sdMat 21,21->12
       SUBR(sdMatT_times_sdMat)(alpha, v21, v21, beta, ref_v12, &iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMatT_times_sdMat)(alpha, v21, v21, beta, v12, &iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride));
+      ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),100*mt::eps());
 
       // delete ref views
       SUBR(sdMat_delete)(ref_vr, &iflag_);
@@ -982,7 +982,9 @@ PHIST_SOUT(PHIST_INFO,"reconstructed X:\n");
 SUBR(sdMat_print)(mat2_,&iflag_);
 ASSERT_EQ(0,iflag_);
     // this should have reconstructed mat3_
-    ASSERT_NEAR(mt::one(),SdMatsEqual(mat3_,mat2_),sqrt(mt::eps()));
+    SUBR(sdMat_add_sdMat)(-st::one(),mat3_,st::one(),mat2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),100*mt::eps()*mt::eps());
 
     // multiply mat1_^T with identity matrix with
     SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat3_,st::zero(),mat2_,&iflag_);
@@ -997,7 +999,8 @@ ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"reconstructed X:\n");
 SUBR(sdMat_print)(mat2_,&iflag_);
 ASSERT_EQ(0,iflag_);
-    // this should have reconstructed mat2_
-    ASSERT_NEAR(mt::one(),SdMatsEqual(mat3_,mat2_),sqrt(mt::eps()));
-
+    // this should have reconstructed mat3_
+    SUBR(sdMat_add_sdMat)(-st::one(),mat3_,st::one(),mat2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),100*mt::eps()*mt::eps());
   }

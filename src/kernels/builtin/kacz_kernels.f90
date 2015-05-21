@@ -1,5 +1,18 @@
 #include "phist_config.h"
 
+!! Implementation of the CARP kernel in CRS format.
+!! This file contains the core routines to set up and
+!! apply the CARP forward/back sweep required for CARP-CG.
+!! The main routine is "kacz_selector", which calls one of
+!! the specialized implementations. Special kernels exist for
+!! the cases b=0 (do not load b), #threads=1 (do not use coloring),
+!! shift=0 (compute ||ai|| on-the-fly, saving one vector load),
+!! and shift_i/=0 (complex-shifted system in real arithmetic, and
+!! for the block sizes 1,2,4,8,16,32,64. The central loops are in
+!! files included here, namely kacz_loop*, which check for macros
+!! #defined before their inclusion to determine which case they should
+!! provide.
+
 !! pass all subroutine args to specialized kernels:
 #define _KACZ_LOOP_ARGS_RC_ nvec,nlocal,nhalo,ncols,nnz,row_ptr,halo_ptr,col_idx,val,map,\
 shift_r,shift_i,b,ldb,x_r,x_i,ldx,halo_r,halo_i,nrms_ai2i,omega,istart,iend,istep,i0,i1,j0,j1
@@ -216,7 +229,9 @@ subroutine dkacz_selector_real(nvec, nlocal, nhalo, ncols, nnz, &
   integer(kind=8) :: j
   logical :: use_clr_kernel
   logical :: use_bzero_kernel
+  logical :: use_szero_kernel
   integer istart_clr, iend_clr
+  real(kind=8) :: row_norm
 
   ! if there is a dist-2 coloring available, call
   ! an alternative kernel.
@@ -227,6 +242,8 @@ subroutine dkacz_selector_real(nvec, nlocal, nhalo, ncols, nnz, &
                   ((istep==1) .or. (istep==-1))
 
   use_bzero_kernel=(ldb==0)
+  
+  use_szero_kernel=(shift_r==0.0_8)
 
   if (use_clr_kernel) then
     if (istep==1) then
@@ -247,23 +264,43 @@ subroutine dkacz_selector_real(nvec, nlocal, nhalo, ncols, nnz, &
 
   if (use_clr_kernel) then
     if (use_bzero_kernel) then
-      if (nvec==1) then
-        call kacz_loop_clr_b0_1(_KACZ_LOOP_ARGS_)
-      else if (nvec==2) then
-        call kacz_loop_clr_b0_2(_KACZ_LOOP_ARGS_)
-      else if (nvec==4) then
-        call kacz_loop_clr_b0_4(_KACZ_LOOP_ARGS_)
-      else if (nvec==8) then
-        call kacz_loop_clr_b0_8(_KACZ_LOOP_ARGS_)
-      else if (nvec==16) then
-        call kacz_loop_clr_b0_16(_KACZ_LOOP_ARGS_)
-      else if (nvec==32) then
-        call kacz_loop_clr_b0_32(_KACZ_LOOP_ARGS_)
-      else if (nvec==64) then
-        call kacz_loop_clr_b0_64(_KACZ_LOOP_ARGS_)
+      if (use_szero_kernel) then
+        if (nvec==1) then
+          call kacz_loop_clr_b0_s0_1(_KACZ_LOOP_ARGS_)
+        else if (nvec==2) then
+          call kacz_loop_clr_b0_s0_2(_KACZ_LOOP_ARGS_)
+        else if (nvec==4) then
+          call kacz_loop_clr_b0_s0_4(_KACZ_LOOP_ARGS_)
+        else if (nvec==8) then
+          call kacz_loop_clr_b0_s0_8(_KACZ_LOOP_ARGS_)
+        else if (nvec==16) then
+          call kacz_loop_clr_b0_s0_16(_KACZ_LOOP_ARGS_)
+        else if (nvec==32) then
+          call kacz_loop_clr_b0_s0_32(_KACZ_LOOP_ARGS_)
+        else if (nvec==64) then
+          call kacz_loop_clr_b0_s0_64(_KACZ_LOOP_ARGS_)
+        else
+          call kacz_loop_clr_b0_s0_generic(_KACZ_LOOP_ARGS_)
+        end if ! block size
       else
-        call kacz_loop_clr_b0_generic(_KACZ_LOOP_ARGS_)
-      end if ! block size
+        if (nvec==1) then
+          call kacz_loop_clr_b0_1(_KACZ_LOOP_ARGS_)
+        else if (nvec==2) then
+          call kacz_loop_clr_b0_2(_KACZ_LOOP_ARGS_)
+        else if (nvec==4) then
+          call kacz_loop_clr_b0_4(_KACZ_LOOP_ARGS_)
+        else if (nvec==8) then
+          call kacz_loop_clr_b0_8(_KACZ_LOOP_ARGS_)
+        else if (nvec==16) then
+          call kacz_loop_clr_b0_16(_KACZ_LOOP_ARGS_)
+        else if (nvec==32) then
+          call kacz_loop_clr_b0_32(_KACZ_LOOP_ARGS_)
+        else if (nvec==64) then
+          call kacz_loop_clr_b0_64(_KACZ_LOOP_ARGS_)
+        else
+          call kacz_loop_clr_b0_generic(_KACZ_LOOP_ARGS_)
+        end if ! block size
+      end if
     else
       if (nvec==1) then
         call kacz_loop_clr_1(_KACZ_LOOP_ARGS_)
@@ -285,23 +322,43 @@ subroutine dkacz_selector_real(nvec, nlocal, nhalo, ncols, nnz, &
     end if ! rhs=0
   else ! no coloring - use lexicographic kernel
     if (use_bzero_kernel) then
-      if (nvec==1) then
-        call kacz_loop_seq_b0_1(_KACZ_LOOP_ARGS_)
-      else if (nvec==2) then
-        call kacz_loop_seq_b0_2(_KACZ_LOOP_ARGS_)
-      else if (nvec==4) then
-        call kacz_loop_seq_b0_4(_KACZ_LOOP_ARGS_)
-      else if (nvec==8) then
-        call kacz_loop_seq_b0_8(_KACZ_LOOP_ARGS_)
-      else if (nvec==16) then
-        call kacz_loop_seq_b0_16(_KACZ_LOOP_ARGS_)
-      else if (nvec==32) then
-        call kacz_loop_seq_b0_32(_KACZ_LOOP_ARGS_)
-      else if (nvec==64) then
-        call kacz_loop_seq_b0_64(_KACZ_LOOP_ARGS_)
+      if (use_szero_kernel) then
+        if (nvec==1) then
+          call kacz_loop_seq_b0_s0_1(_KACZ_LOOP_ARGS_)
+        else if (nvec==2) then
+          call kacz_loop_seq_b0_s0_2(_KACZ_LOOP_ARGS_)
+        else if (nvec==4) then
+          call kacz_loop_seq_b0_s0_4(_KACZ_LOOP_ARGS_)
+        else if (nvec==8) then
+          call kacz_loop_seq_b0_s0_8(_KACZ_LOOP_ARGS_)
+        else if (nvec==16) then
+          call kacz_loop_seq_b0_s0_16(_KACZ_LOOP_ARGS_)
+        else if (nvec==32) then
+          call kacz_loop_seq_b0_s0_32(_KACZ_LOOP_ARGS_)
+        else if (nvec==64) then
+          call kacz_loop_seq_b0_s0_64(_KACZ_LOOP_ARGS_)
+        else
+          call kacz_loop_seq_b0_s0_generic(_KACZ_LOOP_ARGS_)
+        end if ! block size
       else
-        call kacz_loop_seq_b0_generic(_KACZ_LOOP_ARGS_)
-      end if ! block size
+        if (nvec==1) then
+          call kacz_loop_seq_b0_1(_KACZ_LOOP_ARGS_)
+        else if (nvec==2) then
+          call kacz_loop_seq_b0_2(_KACZ_LOOP_ARGS_)
+        else if (nvec==4) then
+          call kacz_loop_seq_b0_4(_KACZ_LOOP_ARGS_)
+        else if (nvec==8) then
+          call kacz_loop_seq_b0_8(_KACZ_LOOP_ARGS_)
+        else if (nvec==16) then
+          call kacz_loop_seq_b0_16(_KACZ_LOOP_ARGS_)
+        else if (nvec==32) then
+          call kacz_loop_seq_b0_32(_KACZ_LOOP_ARGS_)
+        else if (nvec==64) then
+          call kacz_loop_seq_b0_64(_KACZ_LOOP_ARGS_)
+        else
+          call kacz_loop_seq_b0_generic(_KACZ_LOOP_ARGS_)
+        end if ! block size
+      end if ! szero
     else
       if (nvec==1) then
         call kacz_loop_seq_1(_KACZ_LOOP_ARGS_)
@@ -371,7 +428,43 @@ end subroutine dkacz_selector_real
 #define SUB_NAME kacz_loop_clr_b0_generic
 #include "kacz_sub_def.h"
 
+#define KACZ_NO_SHIFT
+
+#define NVEC 1
+#define SUB_NAME kacz_loop_clr_b0_s0_1
+#include "kacz_sub_def.h"
+
+#define NVEC 2
+#define SUB_NAME kacz_loop_clr_b0_s0_2
+#include "kacz_sub_def.h"
+
+#define NVEC 4
+#define SUB_NAME kacz_loop_clr_b0_s0_4
+#include "kacz_sub_def.h"
+
+#define NVEC 8
+#define SUB_NAME kacz_loop_clr_b0_s0_8
+#include "kacz_sub_def.h"
+
+#define NVEC 16
+#define SUB_NAME kacz_loop_clr_b0_s0_16
+#include "kacz_sub_def.h"
+
+#define NVEC 32
+#define SUB_NAME kacz_loop_clr_b0_s0_32
+#include "kacz_sub_def.h"
+
+#define NVEC 64
+#define SUB_NAME kacz_loop_clr_b0_s0_64
+#include "kacz_sub_def.h"
+
+! NVEC is now not defined, so it will be
+! taken from the first arg to the subroutine
+#define SUB_NAME kacz_loop_clr_b0_s0_generic
+#include "kacz_sub_def.h"
+
 #undef KACZ_BZERO
+#undef KACZ_NO_SHIFT
 
 #define NVEC 1
 #define SUB_NAME kacz_loop_clr_1
@@ -438,6 +531,40 @@ end subroutine dkacz_selector_real
 #define SUB_NAME kacz_loop_seq_b0_generic
 #include "kacz_sub_def.h"
 
+#define KACZ_NO_SHIFT
+
+#define NVEC 1
+#define SUB_NAME kacz_loop_seq_b0_s0_1
+#include "kacz_sub_def.h"
+
+#define NVEC 2
+#define SUB_NAME kacz_loop_seq_b0_s0_2
+#include "kacz_sub_def.h"
+
+#define NVEC 4
+#define SUB_NAME kacz_loop_seq_b0_s0_4
+#include "kacz_sub_def.h"
+
+#define NVEC 8
+#define SUB_NAME kacz_loop_seq_b0_s0_8
+#include "kacz_sub_def.h"
+
+#define NVEC 16
+#define SUB_NAME kacz_loop_seq_b0_s0_16
+#include "kacz_sub_def.h"
+
+#define NVEC 32
+#define SUB_NAME kacz_loop_seq_b0_s0_32
+#include "kacz_sub_def.h"
+
+#define NVEC 64
+#define SUB_NAME kacz_loop_seq_b0_s0_64
+#include "kacz_sub_def.h"
+
+#define SUB_NAME kacz_loop_seq_b0_s0_generic
+#include "kacz_sub_def.h"
+
+#undef KACZ_NO_SHIFT
 #undef KACZ_BZERO
 
 #define NVEC 1

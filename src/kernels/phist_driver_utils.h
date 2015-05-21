@@ -7,16 +7,6 @@
 #error "this file should be included after a phist_gen_X header"
 #endif
 
-#if defined(PHIST_KERNEL_LIB_GHOST)&&defined(PHIST_HAVE_CXX11_LAMBDAS)&&defined(__cplusplus)
-#include "ghost/phist_ghost_macros.hpp"
-// some helpful macros
-#define PHIST_MAIN_TASK_BEGIN phist_execute_lambda_as_ghost_task( [&]()->int {
-#define PHIST_MAIN_TASK_END   return 0;} );
-#else
-#define PHIST_MAIN_TASK_BEGIN
-#define PHIST_MAIN_TASK_END
-#endif
-
 #ifdef MAX
   #undef MAX
   #endif
@@ -74,6 +64,15 @@ void SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm,
 //! contains the supported matrix file formats and the problems implemented at the moment.
 void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
         const char* problem, int* iflag);
+
+//! For testing linear solvers, generates an 'exact solution' sol and right-hand side rhs
+//! for some matrix creted by create_matrix. For most test cases, this will be some random
+//! sol vector and the rhs is computed by rhs=A*sol, but for the cases stemming from PDEs
+//! (BENCH3D-A*,B*) we presribe an analytical solution and generate the correct F for it.
+//! The mvecs sol and rhs must be created beforehand and may have an arbitrary number of 
+//! columns.
+void SUBR(create_sol_and_rhs)(const char* problem, TYPE(const_sparseMat_ptr) A,
+                        TYPE(mvec_ptr) sol, TYPE(mvec_ptr) rhs, int* iflag);
 
 int phist_sizeof_lidx();
 int phist_sizeof_gidx();

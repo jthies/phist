@@ -136,20 +136,27 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
 
   if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
-    set (CMAKE_C_FLAGS_DEBUG       "-dH -O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
-    set (CMAKE_CXX_FLAGS_DEBUG     "-dH -O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
-    set (CMAKE_Fortran_FLAGS_DEBUG "-dH -O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all")
+    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter")
+    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all")
   else ()
-    set (CMAKE_C_FLAGS_DEBUG       "-dH -O0 -g -fstack-protector-all -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
-    set (CMAKE_CXX_FLAGS_DEBUG     "-dH -O0 -g -fstack-protector-all -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
-    set (CMAKE_Fortran_FLAGS_DEBUG "-dH -O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all")
+    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -fstack-protector-all -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -fstack-protector-all -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs")
+    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all")
   endif ()
   if (NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
     set(GCC_SANITIZE "" CACHE STRING "What should be sanitized by GCC for a Debug build? (address, thread, undefined, leak or leave empty)")
     if (GCC_SANITIZE)
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${GCC_SANITIZE}")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${GCC_SANITIZE}")
-      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fsanitize=${GCC_SANITIZE}")
+      message(STATUS "Enabled ${GCC_SANITIZE}-sanitizer")
+      if(GCC_SANITIZE STREQUAL "thread")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${GCC_SANITIZE} -fPIC -pie")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${GCC_SANITIZE} -fPIC -pie")
+        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fsanitize=${GCC_SANITIZE} -fPIC -pie")
+      else()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${GCC_SANITIZE}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${GCC_SANITIZE}")
+        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fsanitize=${GCC_SANITIZE}")
+      endif()
     endif()
   endif()
 
@@ -302,6 +309,7 @@ elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
 else ()
   message( FATAL_ERROR "PHIST_KERNEL_LIB not set or not recognized" )
 endif ()
+set(PHIST_BENCH_LARGE_N 64000000 CACHE STRING "Dimension for benchmarking tests (e.g. large enough to make micro benchmarks memory-bound)")
 
 # test for Belos (Trilinos library of iterative solvers).
 # We recommend linking with Belos because we use its Tsqr
@@ -407,6 +415,7 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmv_buff_cpy_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/kacz_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_module.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/bench_kernels.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_BelosAdapter.cpp
                           )
@@ -426,6 +435,7 @@ else()
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/tritoeplitz.f90
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/brussolator.f90
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp
+                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/bench_kernels.c
                            ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp)
 endif()
 if (NOT ESSEX-PHYSICS_FOUND)
@@ -436,7 +446,8 @@ if (NOT ESSEX-PHYSICS_FOUND)
 endif()
 
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.cpp
-                        ${PROJECT_SOURCE_DIR}/src/tools/phist_timemonitor.cpp)
+                        ${PROJECT_SOURCE_DIR}/src/tools/phist_timemonitor.cpp
+                        ${PROJECT_SOURCE_DIR}/src/tools/phist_perfcheck.cpp)
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_svqb.cpp
@@ -566,10 +577,19 @@ else()
 endif()
 
 option(PHIST_TIMEMONITOR "Gather detailed function-level timings" On)
-if( ${PHIST_TIMEMONITOR} )
+if( PHIST_TIMEMONITOR )
   message(STATUS "activated TimeMonitor timing monitoring")
 endif()
 option(PHIST_TIMEMONITOR_PERLINE "Gather timing information for each line with a PHIST_CHK_* macro!" Off)
+option(PHIST_PERFCHECK "Check performance of operations (which have a performance model specification)" Off)
+if( PHIST_PERFCHECK )
+  message(STATUS "activated PerfCheck timing monitoring")
+  if( PHIST_PERFCHECK AND PHIST_TIMEMONITOR )
+    message(FATAL_ERROR "You cannot use PHIST_PERFCHECK and PHIST_TIMEMONITOR at once currently!")
+  endif()
+  option(PHIST_PERFCHECK_REALISTIC "Switch from ideal performance predictions to more realistic ones (e.g. for views)!")
+endif()
+
 
 set(INCLUDE_FLAGS "")
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
@@ -609,10 +629,14 @@ find_program(GCOVR_SCRIPT gcovr)
 find_program(CPPCHECK_EXECUTABLE cppcheck)
 if (${INTEGRATION_BUILD})
     set(GCOVR_OPTIONS -r src ${GCOVR_EXCLUDES} --xml -o coverage.xml CACHE STRING "String gcovr options")
-    set(CPPCHECK_OPTIONS src --enable=all --xml 2> cppcheck.xml CACHE STRING "cppcheck options")
+    set(CPPCHECK_OPTIONS --force --enable=all --suppress=unusedFunction --xml --xml-version=2 -q CACHE_STRING "cppcheck options")
+    set(CPPCHECK_OPTIONS_POST 2> cppcheck.xml)
+    set(CTEST_OPTIONS --force-new-ctest-process --verbose CACHE STRING "ctest options")
 else()
     set(GCOVR_OPTIONS -r src ${GCOVR_EXCLUDES} CACHE STRING "String gcovr options")
-    set(CPPCHECK_OPTIONS src --enable=all CACHE STRING "cppcheck options")
+    set(CPPCHECK_OPTIONS --force --enable=all --suppress=unusedFunction CACHE STRING "cppcheck options")
+    set(CPPCHECK_OPTIONS_POST)
+    set(CTEST_OPTIONS --force-new-ctest-process --output-on-failure CACHE STRING "ctest options")
 endif()
 
 # Define includes
@@ -715,17 +739,18 @@ install(FILES ${PYTHON_HEADERS} DESTINATION lib/python)
 
 # test drivers
 if( "${CMAKE_BUILD_TYPE}" MATCHES "Release" )
-  set(PHIST_TESTS kernels
+  set(PHIST_TESTS task
+                  kernels
                   core
-                  jada
                   krylov
-                  bench)
-  #                sched
-else()
-  set(PHIST_TESTS kernels
-                  core
                   jada
-                  krylov)
+                  bench)
+else()
+  set(PHIST_TESTS task
+                  kernels
+                  core
+                  krylov
+                  jada)
 endif()
 
 foreach(label ${PHIST_TESTS})
@@ -795,7 +820,7 @@ endforeach()
 enable_testing()
 
 if (${PHIST_ENABLE_MPI})
-  set(PHIST_MPI_TEST_NPROCS 1 2 4 7 8)
+  set(PHIST_MPI_TEST_NPROCS 1 2 4 5 6)
 else()
   set(PHIST_MPI_TEST_NPROCS "")
 endif()
@@ -807,15 +832,17 @@ else()
 endif()
 
 foreach(np ${PHIST_MPI_TEST_NPROCS})
-  math(EXPR TEST_OMP_NUM_THREADS "8/${np}")
+  math(EXPR TEST_OMP_NUM_THREADS "6/${np}")
   foreach(label ${PHIST_TESTS})
-    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=guided 
+    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env LSAN_OPTIONS=\"exitcode=0\" env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=guided,256
     ./${PRODUCT_NAME}-${label}-test --gtest_death_test_style=threadsafe --gtest_output=xml:test_output_np${np}/${label}/xunit.xml ${GTEST_FILTER})
     add_test(NAME test-${label}_np${np} COMMAND ${TEST_COMMAND})
     set_tests_properties(test-${label}_np${np} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
     set_tests_properties(test-${label}_np${np} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
     set_tests_properties(test-${label}_np${np} PROPERTIES TIMEOUT 500)
   endforeach()
+  # the task tests should be very fast (no heavy computation) - but may deadlock in case of errors!
+  set_tests_properties(test-task_np${np} PROPERTIES TIMEOUT 10)
 endforeach()
 
 # Test python interface if python is available
@@ -831,6 +858,7 @@ if(PYTHONINTERP_FOUND)
       set(GCC_SANITIZE_LIB "lib${GCC_SANITIZE_FIRST_CHAR}san.so")
       # work around cmake bug (specifying multiple set_tests_properties(...ENVIRONMENT...)
       set_property(TEST test-${pyh_name} APPEND PROPERTY ENVIRONMENT "LD_PRELOAD=${GCC_SANITIZE_LIB}:$ENV{LD_PRELOAD}")
+      set_property(TEST test-${pyh_name} APPEND PROPERTY ENVIRONMENT "LSAN_OPTIONS=\"exitcode=0\"")
     endif()
   endforeach()
 endif()
@@ -842,7 +870,7 @@ endif()
 #add_test(concurrency-test: ${CMAKE_SOURCE_DIR}/test/multiple_helgrind_run.sh ${CMAKE_SOURCE_DIR}/test ${CMAKE_BINARY_DIR})
 
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --output-on-failure --verbose)
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} ${CTEST_OPTIONS})
 
 # Activate gcov code generation
 if (CMAKE_COMPILER_IS_GNUCXX AND "${CMAKE_BUILD_TYPE}" MATCHES "Debug")
@@ -867,9 +895,16 @@ endif()
 
 # Adding optional "cppcheck" target
 if (CPPCHECK_EXECUTABLE)
-    add_custom_target(cppcheck
-    ${CPPCHECK_EXECUTABLE} ${CPPCHECK_OPTIONS}
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+    # get all C and C++ sources
+    set(C_SOURCES)
+    foreach(source ${SOURCES})
+      string(REGEX MATCH ".*[.]cp?p?" c_source ${source})
+      if(c_source)
+        list(APPEND C_SOURCES ${c_source})
+      endif()
+    endforeach()
+    message(STATUS ${C_SOURCES})
+    add_custom_target(cppcheck ${CPPCHECK_EXECUTABLE} ${CPPCHECK_OPTIONS} ${INCLUDE_FLAGS} ${C_SOURCES} ${CPPCHECK_OPTIONS_POST})
 endif()
 
 # Audit target: Combines check, cppcheck, coverage

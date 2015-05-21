@@ -19,24 +19,27 @@
 #endif
 #endif
 
-! Generalization of MATPDE to 3D
-! (from the NEP matrix collection in the matrix market MATPDE matrix generator)
-! We allow generating various test problems by calling some initialization
-! routines and provide simple matfuncs in matfuncs.h to wrap this functionality.
-!
-! The currently implemented test cases are:
-
+! Generalization of MATPDE to 3D                                                        
+! (from the NEP matrix collection in the matrix market MATPDE matrix generator)         
+! We allow generating various test problems by calling some initialization              
+! routines and provide simple matfuncs in matfuncs.h to wrap this functionality.        
+! The general form of the PDE implemented can be found in the description of MATPDE3D_- 
+! rowFunc below.
+!                                                                                       
+! The currently implemented test cases are:                                             
+!                                                                                       
 !=======================================================================================
 ! (A) from Gordon & Gordon CARP-CG Paper (Parallel Computing 2009)                      
+! (with D= -d^2/dx^2 -d^2/dy^2 -d^2/dz^2)
 !                                                                                       
 !0. Du                                                                              = F 
-!1. Du +          1000u_x                                                           = F 
-!2. Du + 1000exp(xyz)(u_x   +               u_y -      u_z)                         = F 
-!3. Du +          100xu_x   -              yu_y +     zu_z  + 100(x + y + z)/(xyz)u = F 
+!1. Du -          1000u_x                                                           = F 
+!2. Du - 1000exp(xyz)(u_x   +               u_y -      u_z)                         = F 
+!3. Du +          100xu_x   -              yu_y +     zu_z  - 100(x + y + z)/(xyz)u = F 
 !4. Du -      10^5x^2(u_x   +               u_y +      u_z)                         = F 
 !5. Du -   1000(1+x^2)u_x   +           100(u_y +      u_z)                         = F 
 !6. Du -   1000[(1-2x)u_x   +         (1-2y)u_y+ (1-2z)u_z]                         = F 
-!7. Du -       1000x^2u_x                                   +                 1000u = F 
+!7. Du -       1000x^2u_x                                   -                 1000u = F 
 !8. Du - d(  10exp(xy)u)/dx - d(  10exp(-xy)u)/dy                                   = F 
 !9. Du - d(1000exp(xy)u)/dx - d(1000exp(-xy)u)/dy                                   = F 
 !                                                                                       
@@ -44,7 +47,8 @@
 !                                                                                       
 !Problem 1: u(x,y,z) = xyz(1-x)(1-y)(1-z)                                               
 !Problem 2: u(x,y,z) = x + y + z                                                        
-!   "  3–7: u(x,y,z) = exp(xyz)sin(pi x)sin(pi y)sin(pi z)                              
+!   "  3–7: u(x,y,z) = x*exp(xyz)sin(pi x)sin(pi y)sin(pi z)                            
+!           (note the factor x, in difference to what Gordon&Gordon use)                
 !                                                                                       
 !                                                                                       
 !boundary conditions: Dirichlet                                                         
@@ -52,18 +56,20 @@
 !Problem 8,9: set u=1, b=A*u and use u=0 as BC                                          
 !                                                                                       
 !=======================================================================================
+!                                                                                       
 ! (B) problems with variable coefficentts in the diffusion term                         
-! 0. -(exp(-xyz) Ux)x - (exp(xyz) Uy)y  -( exp((1-x)(1-y)(1-z)) Uz)z = F
-! 1. -(exp(-xyz) Ux)x - (exp(xyz) Uy)y  -( exp((1-x)(1-y)(1-z)) Uz)z 
-!    +20sin(pi y) Ux + (sin(pi y) U)x  
-!    +  sin(pi z) Uy + (sin(pi z) U)y 
-!    +  sin(pi x) Uz + (sin(pi x) U)z 
-!    +  1/(1+x+y+z) U                                                = F
-! 2. as 1. but with Ux terms scaled by 50
-! 3. as 1. but with reactive term (U) scaled by 100
-! 4. as 1. but with Ux and Uy scaled by 50 and 1000, resp.
-
-!boundary conditions: Dirichlet                                                         
+! 0. -(exp(-xyz) Ux)x - (exp(xyz) Uy)y  -( exp((1-x)(1-y)(1-z)) Uz)z = F                
+! 1. -(exp(-xyz) Ux)x - (exp(xyz) Uy)y  -( exp((1-x)(1-y)(1-z)) Uz)z                    
+!    +20sin(pi y) Ux + (sin(pi y) U)x                                                   
+!    +  sin(pi z) Uy + (sin(pi z) U)y                                                   
+!    +  sin(pi x) Uz + (sin(pi x) U)z                                                   
+!    +  1/(1+x+y+z) U                                                = F                
+! 2. as 1. but with Ux terms scaled by 50                                               
+! 3. as 1. but with reactive term (U) scaled by 100                                     
+! 4. as 1. but with Ux and Uy scaled by 50 and 1000, resp.                              
+! analytical solutions: as for A3-7                                                     
+! boundary conditions: Dirichlet                                                        
+!                                                                                       
 !=======================================================================================
 ! (C) Quantum physics benchmarks                                                        
 ! - 3D model of Anderson localization                                                   
@@ -71,9 +77,9 @@
 !                                 and periodic BC                                       
 !                                 (Schenk/Bollhoefer/Roemer SIAM Review 2005)           
 !                                                                                       
-! TODO: the right-hand sides F that follow from prescribed analytic solutions U (in   
+! The right-hand sides F that follow from prescribed analytic solutions U (in           
 ! e.g. the A and B benchmarks) are not implemented, if we want to assess accuracy we    
-! should do that, but for now we just use b=A*x for some given x.
+! should do that, but for now we just use b=A*x for some given x.                       
 module matpde3d_module
   implicit none
 
@@ -260,13 +266,13 @@ contains
   problem = prob
   iflag=0
   ! boundary conditions are encoded like this:
-  ! 0: hom. Dirichlet
-  ! 1: Dirichlet
+  ! 0: Dirichlet
+  ! 1: Neumann
   !-1: periodic
   if (problem.ge.PROB_A0 .and. PROBLEM.le.PROB_A9) then
-    BNDRY(1:6)=1
+    BNDRY(1:6)=0
   else  if (problem.ge.PROB_B0 .and. PROBLEM.le.PROB_B9) then
-    BNDRY(1:6)=1
+    BNDRY(1:6)=0
   else if (problem==PROB_C1) then
     BNDRY(1:6)=-1
     call init_random_seed()
@@ -310,6 +316,8 @@ contains
   
   end subroutine MATPDE3D_selectProblem
 
+!#define USE_OCTREE_ORDERING
+
   ! octree ordering
   pure function idOfCoord(coord) result(id)
     integer(kind=8), intent(in) :: coord(3)
@@ -318,7 +326,10 @@ contains
     integer(kind=8) :: upperBound
     integer(kind=8) :: myCoord(3)
     integer :: i
-
+#ifndef USE_OCTREE_ORDERING
+ id = (coord(3)*ny+coord(2))*nx+coord(1)
+#else
+    ! octree ordering
     upperBound = 2**level
     myCoord = modulo(coord, upperBound)
     WHERE(myCoord==-1) myCoord=upperBound-1
@@ -333,6 +344,7 @@ contains
       fak2 = fak2 * 2
       fak8 = fak8 * 8
     end do
+#endif
   end function idOfCoord
 
 
@@ -342,6 +354,14 @@ contains
     integer(kind=8) :: tElem, fak(3)
     integer :: bitlevel, i
 
+#ifndef USE_OCTREE_ORDERING
+i=id
+coord(1) = mod(i,nx)
+i=(i-coord(1))/nx
+coord(2) = mod(i,ny)
+i=(i-coord(2))/ny
+coord(3) = mod(i,nz)
+#else
     fak(1) = 1
     fak(2) = 2
     fak(3) = 4
@@ -357,6 +377,7 @@ contains
       bitlevel = bitlevel * 2
       fak = fak * 8
     end do
+#endif
   end function coordOfId
 
 
@@ -368,26 +389,17 @@ contains
     real(C_DOUBLE),    intent(inout) :: vals(*)
     integer(C_INT) :: the_result
 
-! copied from MatrixMarket, original description:
-    !
     !  Purpose
     !  =======
     !
     !  Forms the 7-point central differences operator for the elliptic
     !  PDE
     !
-    !   -(P Ux)x -(Qa Uy)y  -(Qb Uz)z +  R Ux + (R U)x  +  S Uy + (S U)y + Sb Uz + (Sb U)z + T U = F
+    !   -(P Ux)x -(Q Uy)y  -(Qb Uz)z +  R Ux + (RR U)x  +  S Uy + (SS U)y + Sb Uz + (SSb U)z + T U = F
     !
-    !  where P, Q(b), R, S(b) and T are the functions of x and y.  The domain
+    !  where P, Q, ... T are functions of x and y.  The domain
     !  is the unit cube (0,1)x(0,1)x(0,1), and the boundary condition are
-    !  Dirichlet.
-    !
-    !  The matrix is a block tridiagonal matrix, there are NY blocks of
-    !  size NX by NX on the diagonal (each block is a tridiagonal matrix),
-    !  and then NY-1 blocks of size NX by NX on the sub- and super-block
-    !  diagonal positions.
-    !
-    !  Important note: the matrix A is stored in compressed ROW format.
+    !  Dirichlet, Neumann or periodic.
     !
     !  Arguments
     !  =========
@@ -429,9 +441,10 @@ contains
     !     .. Scalar variables ..
     integer(kind=8) :: ix, jy, kz, index, jd, coord(3), coord_(3)
     real(kind=8) coef
-    real(kind=8) :: p12, pm12, q12, qm12, xi, rij, r1, rm1, sij, s1, sm1, yj
-    real(kind=8) :: qb12, qbm12, sb1, sbij, sbm1, sbmij
-    real(kind=8) :: r,zk
+    real(kind=8) :: xi,yj,zk
+    real(kind=8) :: p12, pm12, q12, qm12, rij, r1, rm1, sij, s1, sm1
+    real(kind=8) :: qb12, qbm12, sbij, sbm1, sb1
+    real(kind=8) :: rnd
     
     nnz = 0
 
@@ -451,26 +464,26 @@ contains
     QB12  = QBC (XI,YJ, ZK + 0.5*HZ)
     QBM12 = QBC (XI,YJ, ZK - 0.5*HZ)
     RIJ  = RC (BETA,XI,YJ, ZK)
-    R1   = RC (BETA,XI + HX,YJ, ZK)
-    RM1  = RC (BETA,XI - HX,YJ, ZK)
+    R1   = RRC (BETA,XI + HX,YJ, ZK)
+    RM1  = RRC (BETA,XI - HX,YJ, ZK)
     SIJ  = SC (GAMMA,XI,YJ, ZK)
-    S1   = SC (GAMMA,XI,YJ + HY, ZK)
-    SM1  = SC (GAMMA,XI,YJ - HY, ZK)
+    S1   = SSC (GAMMA,XI,YJ + HY, ZK)
+    SM1  = SSC (GAMMA,XI,YJ - HY, ZK)
     SBIJ  = SBC (DELTA,XI,YJ, ZK)
-    SB1   = SBC (DELTA,XI,YJ, ZK + HZ)
-    SBM1  = SBC (DELTA,XI,YJ, ZK - HZ)
+    SB1   = SSBC (DELTA,XI,YJ, ZK + HZ)
+    SBM1  = SSBC (DELTA,XI,YJ, ZK - HZ)
 
 
     !           DIAGONAL.
     nnz = nnz + 1
     vals(nnz) = ra*(p12 + pm12)  +  q12 + qm12  + raz*(qb12+qbm12) + hy2*tc(alpha,xi,yj,zk)
-    cols(nnz) = idOfCoord(coord) !index
+    cols(nnz) = idOfCoord(coord) 
     jd = nnz
     
     if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
       ! add random diagonal term
-      call random_number(r)
-      vals(nnz)=vals(nnz)+alpha*(r-0.5_8)
+      call random_number(rnd)
+      vals(nnz)=vals(nnz)+alpha*(rnd-0.5_8)
     end if
 
     ! LOWEST TWO BANDS
@@ -491,17 +504,17 @@ contains
     !           SUB-DIAGONAL.
     if (ix.ne.1 .or. BNDRY(WEST)==-1) then
       nnz = nnz + 1
-      vals(nnz) = - ( ra*pm12 + 0.5*rb*(rij+rm1) )
+      vals(nnz) = - ( ra*pm12 + rb*0.5*(rij+rm1) )
       coord_ = coord-(/1,0,0/)
-      cols(nnz) = idOfCoord(coord_) !index - 1
+      cols(nnz) = idOfCoord(coord_) 
     end if
 
     !           SUPER-DIAGONAL.
     if (ix.ne.nx .or. BNDRY(EAST)==-1)  then
       nnz = nnz + 1
-      vals(nnz) = -ra*p12 + 0.5*rb*(rij+r1)
+      vals(nnz) = -ra*p12 + rb*0.5*(rij+r1)
       coord_ = coord+(/1,0,0/)
-      cols(nnz) = idOfCoord(coord_) !index + 1
+      cols(nnz) = idOfCoord(coord_)
     end if
 
     !           HIGHEST BANDS.
@@ -509,14 +522,14 @@ contains
       nnz = nnz + 1
       vals(nnz) = -q12 + 0.5*hy*(sij+s1)
       coord_ = coord+(/0,1,0/)
-      cols(nnz) = idOfCoord(coord_) !index + nx
+      cols(nnz) = idOfCoord(coord_)
     end if
 
     if (kz.ne.nz .or. BNDRY(top)==-1) then
       nnz = nnz + 1
       vals(nnz) = -raz*qb12 + 0.5*rbz*(sbij+sb1)
       coord_ = coord+(/0,0,1/)
-      cols(nnz) = idOfCoord(coord_) !index + nx
+      cols(nnz) = idOfCoord(coord_)
     end if
 
     !           BOUNDARY CONDITIONS.
@@ -555,7 +568,7 @@ contains
   !! by MATPDE3D_solFunc. The same initialization procedure
   !! as for MATPDE3D_rowFunc is required, i.e. 
   !! first initDimensions and then selectProblem.
-  function MATPDE3D_rhsFunc(row, rhsVal,col) result(the_result) bind(C,name='MATPDE3D_rhsFunc')
+  function MATPDE3D_rhsFunc(row, col, rhsVal) result(the_result) bind(C,name='MATPDE3D_rhsFunc')
     use, intrinsic :: iso_c_binding
     integer(G_GIDX_T), value :: row
     integer(G_LIDX_T), value :: col
@@ -569,6 +582,12 @@ contains
 
     real(kind=8) :: p12, pm12, q12, qm12, rij, r1, rm1, sij, s1, sm1
     real(kind=8) :: qb12, qbm12, sb1, sbij, sbm1, sbmij
+    
+    if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
+      ! not available
+      the_result=1
+      return
+    end if
     
     coord = coordOfId(row)
     ix = coord(1)+1
@@ -606,7 +625,7 @@ contains
     !           BOUNDARY CONDITIONS.
     if (kz.eq.1 .AND. BNDRY(BOTTOM).EQ.0) THEN
       COEF = - ( RAZ*QBM12 + 0.5*RBZ*(SBIJ+SBM1) )
-      rhsVal = rhsVal - COEF*U(XI,YJ-HY,ZK,col)
+      rhsVal = rhsVal - COEF*U(XI,YJ,ZK-HZ,col)
     end if
     if (jy.eq.1 .AND. BNDRY(SOUTH).EQ.0) THEN
       COEF = - ( QM12 + 0.5*HY*(SIJ+SM1) )
@@ -626,14 +645,14 @@ contains
     end if
     IF (KZ.eq.NZ .AND. BNDRY(TOP).eq.0) then
       COEF = -RAZ*QB12 + 0.5*RBZ*(SBIJ+SB1)
-      rhsVal = rhsVal - COEF*U(XI,YJ+HY,ZK,col)
+      rhsVal = rhsVal - COEF*U(XI,YJ,ZK+HZ,col)
     end if
 
     the_result = 0
     
   end function MATPDE3D_rhsFunc
 
-  function MATPDE3D_solFunc(row, solVal,col) result(the_result) bind(C,name='MATPDE3D_solFunc')
+  function MATPDE3D_solFunc(row, col, solVal) result(the_result) bind(C,name='MATPDE3D_solFunc')
     use, intrinsic :: iso_c_binding
     integer(G_GIDX_T), value :: row
     integer(G_LIDX_T), value :: col
@@ -643,6 +662,12 @@ contains
     !     .. Scalar variables ..
     integer(kind=8) :: ix, jy, kz, index, jd, coord(3)
     real(kind=8) :: xi,yj,zk
+
+    if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
+      ! not available
+      the_result=1
+      return
+    end if
     
     coord = coordOfId(row)
     ix = coord(1)+1
@@ -752,7 +777,7 @@ contains
 
     if (problem .ge. PROB_A0 .and. problem .le. PROB_A9) then
       ! Gordon problems A 1-9
-      dqbdz = 1.0_8
+      dqbdz = 0.0_8
     else if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
       ! varying coefficient problems (B)
       dqbdz = -((1.0_8-x)*(1.0_8-y))*exp((1.0_8-x)*(1.0_8-y)*(1.0_8-z))
@@ -763,26 +788,27 @@ contains
 
   end function dqbdz
 
+  ! term in r(x,y,z)*u_x
   pure function rc(beta, x,y, z)
     real(kind=8), intent(in) :: beta, x, y, z
     real(kind=8) :: rc
     
     if (problem == PROB_A1) then
-      rc = 500.0_8
+      rc = -1000.0_8
     else if (problem == PROB_A2) then
-      rc = 500.0_8*exp(x*y*z)
+      rc = -1000.0_8*exp(x*y*z)
     else if (problem == PROB_A3) then
-      rc = 50.0_8*x
+      rc = 100.0_8*x
     else if (problem == PROB_A4) then
-      rc = -0.5e5*x*x
+      rc = 1.0e5*x*x
     else if (problem == PROB_A5) then
-      rc = -500.0_8*(1.0_8+x*x)
+      rc = 1000.0_8*(1.0_8+x*x)
     else if (problem == PROB_A6) then
-      rc = -500.0_8*(1.0_8-2.0_8*x)
+      rc = 1000.0_8*(1.0_8-2.0_8*x)
     else if (problem == PROB_A7) then
-      rc = -500.0_8*x*x
+      rc = 1000.0_8*x*x
     else if (problem == PROB_A8 .or. problem == PROB_A9) then
-      rc = -0.5_8*exp(x*y)
+      rc = -exp(x*y)
     else if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
       ! varying coefficient problems (B)
       rc = sin(pi*y)
@@ -796,45 +822,40 @@ contains
     rc=rc*beta
   end function rc
 
-  pure function drdx(beta, x,y, z)
+  ! term in (rr(x,y,z)*u)_x
+  pure function rrc(beta, x,y, z)
     real(kind=8), intent(in) :: beta, x, y, z
-    real(kind=8) :: drdx
+    real(kind=8) :: rrc
     
-    if (problem == PROB_A2) then
-      drdx = 500.0_8*y*z*exp(x*y*z)
-    else if (problem == PROB_A3) then
-      drdx = 50.0_8
-    else if (problem == PROB_A4) then
-      drdx = -1.0e5*x
-    else if (problem == PROB_A5) then
-      drdx = -1000.0_8*x
-    else if (problem == PROB_A6) then
-      drdx = 1000.0_8
-    else if (problem == PROB_A7) then
-      drdx = -1000.0_8*x
-    else if (problem == PROB_A8 .or. problem == PROB_A9) then
-      drdx = -0.5_8*y*exp(x*y)
-    else if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
-      ! varying coefficient problems (B)
-      drdx = sin(pi*y)
-    else if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
-      ! QM test cases with constant -1 in off-diagonals
-      drdx = 0.0_8
+    if (problem >= PROB_B0 .and. problem <= PROB_B9) then
+      rrc = rc(beta,x,y,z)
     else
       ! default
-      drdx = 0.0_8
+      rrc = 0.0_8
+    end if
+      !rrc=rrc*beta
+end function rrc
+
+  pure function drrdx(beta, x,y, z)
+    real(kind=8), intent(in) :: beta, x, y, z
+    real(kind=8) :: drrdx
+    
+    if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
+      ! varying coefficient problems (B)
+      drrdx = 0.0_8
+    else
+      ! default
+      drrdx = 0.0_8
     end if    
-    drdx=drdx*beta
-  end function drdx
+    drrdx=drrdx*beta
+  end function drrdx
 
   pure function sc(gamma, x,y, z)
     real(kind=8), intent(in) :: gamma, x, y, z
     real(kind=8) :: sc
 
-    if (problem == PROB_A1) then
-      sc = 0.0_8
-    else if (problem == PROB_A2) then
-      sc = 500.0_8*exp(x*y*z)
+    if (problem == PROB_A2) then
+      sc = -1000.0_8*exp(x*y*z)
     else if (problem == PROB_A3) then
       sc = -0.5_8*y
     else if (problem == PROB_A4) then
@@ -843,8 +864,6 @@ contains
       sc = 50.0_8
     else if (problem == PROB_A6) then
       sc = -500.0_8*(1.0_8-2.0_8*y)
-    else if (problem == PROB_A7) then
-      sc = 0.0_8
     else if (problem==PROB_A8 .or. problem==PROB_A9) then
       sc = -0.5_8*exp(-x*y)
     else if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
@@ -859,35 +878,41 @@ contains
 
   end function sc
 
-  pure function dsdy(gamma, x,y, z)
+  pure function ssc(gamma, x,y, z)
     real(kind=8), intent(in) :: gamma, x, y, z
-    real(kind=8) :: dsdy
+    real(kind=8) :: ssc
 
-    if (problem == PROB_A2) then
-      dsdy = 500.0_8*x*z*exp(x*y*z)
-    else if (problem == PROB_A3) then
-      dsdy = -0.5_8
-    else if (problem == PROB_A6) then
-      dsdy = 1000.0_8
-    else if (problem==PROB_A8 .or. problem==PROB_A9) then
-      dsdy = -0.5_8*x*z*exp(-x*y)
+    if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
+      ! varying coefficient problems (B)
+      ssc = sc(gamma,x,y,z)
     else
       ! default
-      dsdy = 0.0_8
+      ssc = 0.0_8
     end if
     
-    dsdy=dsdy*gamma
+  end function ssc
 
-  end function dsdy
+  pure function dssdy(gamma, x,y, z)
+    real(kind=8), intent(in) :: gamma, x, y, z
+    real(kind=8) :: dssdy
+
+    if (problem >=PROB_B0 .and. problem <=PROB_B9) then
+      dssdy=0.0_8
+    else
+      ! default
+      dssdy = 0.0_8
+    end if
+    
+    dssdy=dssdy*gamma
+
+  end function dssdy
 
   pure function sbc(delta, x,y,z)
     real(kind=8), intent(in) :: delta, x, y, z
     real(kind=8) :: sbc
 
-    if (problem == PROB_A1) then
-      sbc = 0.0_8
-    else if (problem == PROB_A2) then
-      sbc = -500.0_8*exp(x*y*z)
+    if (problem == PROB_A2) then
+      sbc = +1000.0_8*exp(x*y*z)
     else if (problem == PROB_A3) then
       sbc = +0.5_8*z
     else if (problem == PROB_A4) then
@@ -896,18 +921,9 @@ contains
       sbc = 50.0_8
     else if (problem == PROB_A6) then
       sbc = -500.0_8*(1.0_8-2.0_8*z)
-    else if (problem == PROB_A7) then
-      sbc = 0.0_8
-    else if (problem == PROB_A8) then
-      sbc = 0.0_8
-    else if (problem == PROB_A9) then
-      sbc = 0.0_8
     else if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
       ! varying coefficient problems (B)
       sbc = sin(pi*x)
-    else if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
-      ! QM test cases with constant -1 in off-diagonals
-      sbc = 0.0_8
     else
       ! default
       sbc = 0.0_8
@@ -917,47 +933,47 @@ contains
 
   end function sbc
 
-  pure function dsbdz(delta, x,y,z)
+  pure function ssbc(delta, x,y,z)
     real(kind=8), intent(in) :: delta, x, y, z
-    real(kind=8) :: dsbdz
+    real(kind=8) :: ssbc
 
-    if (problem == PROB_A2) then
-      dsbdz = -500.0_8*x*y*exp(x*y*z)
-    else if (problem == PROB_A3) then
-      dsbdz = +0.5_8
-    else if (problem == PROB_A6) then
-      dsbdz = -1000.0_8
+    if (problem .ge. PROB_B0 .and. problem .le. PROB_B9) then
+      ! varying coefficient problems (B)
+      ssbc = sbc(delta,x,y,z)
     else
       ! default
-      dsbdz = 0.0_8
+      ssbc = 0.0_8
     end if
     
-    dsbdz=dsbdz*delta
+  end function ssbc
 
-  end function dsbdz
+  pure function dssbdz(delta, x,y,z)
+    real(kind=8), intent(in) :: delta, x, y, z
+    real(kind=8) :: dssbdz
+
+    if (problem >= PROB_B0 .and. problem <=PROB_B9) then
+      dssbdz = 0.0_8
+    else
+      ! default
+      dssbdz = 0.0_8
+    end if
+    
+    dssbdz=dssbdz*delta
+
+  end function dssbdz
 
   pure function tc(alpha,x,y,z)
     real(kind=8), intent(in) :: alpha
     real(kind=8), intent(in) :: x, y, z
     real(kind=8) :: tc
   !term in front of u.
-  ! Note that some terms appear here because
-  ! in the Gordon paper they use e.g. ru_x
-  ! whereas in matpde we assume (r u)_x + r u_x
-  if (problem==PROB_A2) then
-    tc = (y*z+x*z-x*y)*500
-  else if (problem==PROB_A3) then
-    tc = 50.0_8+100.0_8*(x+y+z)/(x*y*z)
-  else if (problem==PROB_A4) then
-    tc = 1.0e5
-  else if (problem==PROB_A5) then
-    tc=-1000.0_8*x
-  else if (problem==PROB_A6) then
-    tc=3000.0_8
+  if (problem==PROB_A3) then
+    tc = (x*y*z)
+    if (tc.ne.0.0_8) then
+      tc = -100.0_8*(x+y+z)/tc
+    end if
   else if (problem==PROB_A7) then
-    tc = 0.0_8
-  else if (problem==PROB_A8) then
-    tc = -5.0_8*(exp(x*y)+exp(-x*y))
+    tc = -1000.0_8
   else if (problem==PROB_A9) then
     tc = -500.0_8*(exp(x*y)+exp(-x*y))
   else if (problem == PROB_B1) then
@@ -976,120 +992,188 @@ contains
   ! the derivatives were calculated using the matlab lines
   !
   !syms x y z k pi
-  !u    = x*exp(x*y*z)*sin(k*pi*x)*sin(k*pi*y)*sin(k*pi*z);
+  !u    = x*exp(x*y*z)*sin((k+1)*pi*x)*sin((k+1)*pi*y)*sin((k+1)*pi*z);
   !ux = simplify(diff(u,x)); uy = simplify(diff(u,y)); uz=simplify(diff(u,z));
   !uxx= simplify(diff(ux,x)); uyy=simplify(diff(uy,y)); uzz= simplify(diff(uz,z));
   pure function u(x,y,z,k)
   real(kind=8), intent(in) :: x, y, z
   integer(kind=4), intent(in) :: k
-  real(kind=8) :: u
-    u = x * exp(x*y*z) * sin(k*pi*x) * sin(k*pi*y) * sin(k*pi*z)
+  real(kind=8) :: omega,u
+  
+    if (problem==PROB_A1) then
+      u = x*y*z*(1.-x)*(1.-y)*(1.-z)
+    else if (problem==PROB_A2) then
+      u = x+y+z
+    else
+      omega=pi*DBLE(k+1)
+      u = x * exp(x*y*z) * sin(omega*x) * sin(omega*y) * sin(omega*z)
+    end if
   
   end function u
 
   pure function ux(x,y,z,k)
   real(kind=8), intent(in) :: x, y, z
   integer(kind=4), intent(in) :: k
-  real(kind=8) :: ux, cx,cy,cz,sx,sy,sz,exyz
-    sx = sin(k*pi*x)
-    cx = cos(k*pi*x)
-    sy = sin(k*pi*y)
-    cy = cos(k*pi*y)
-    sz = sin(k*pi*z)
-    cz = cos(k*pi*z)
-    exyz=exyz
-
-    ux=sy*sz*exyz*(sx + pi*k*x*cx + x*y*z*sx)
+  real(kind=8) :: ux, cx,cy,cz,sx,sy,sz,exyz,omega
+    
+    if (problem==PROB_A1) then
+      if (x==0. .or. x==1.) then
+        ux=0.
+      else
+        ux = u(x,y,z,k)/x - u(x,y,z,k)/(1.-x)
+      end if
+    else if (problem==PROB_A2) then
+      ux=1.
+    else
+      omega=pi*DBLE(k+1)
+      sx = sin(omega*x)
+      cx = cos(omega*x)
+      sy = sin(omega*y)
+      cy = cos(omega*y)
+      sz = sin(omega*z)
+      cz = cos(omega*z)
+      exyz=exp(x*y*z)
+      ux=sy*sz*exyz*(sx + omega*x*cx + x*y*z*sx)
+    end if
   
   end function ux
 
   pure function uy(x,y,z,k)
   real(kind=8), intent(in) :: x, y, z
   integer(kind=4), intent(in) :: k
-  real(kind=8) :: uy, cx,cy,cz,sx,sy,sz,exyz
-    sx = sin(k*pi*x)
-    cx = cos(k*pi*x)
-    sy = sin(k*pi*y)
-    cy = cos(k*pi*y)
-    sz = sin(k*pi*z)
-    cz = cos(k*pi*z)
-    exyz=exyz
+  real(kind=8) :: uy, cx,cy,cz,sx,sy,sz,exyz,omega
 
-    uy=x*sx*sz*exyz*(pi*k*cy + x*z*sy)
-  
+    if (problem==PROB_A1) then
+      if (y==0. .or. y==1.) then
+        uy=0.
+      else
+        uy = u(x,y,z,k)/y - u(x,y,z,k)/(1.-y)
+      end if
+    else if (problem==PROB_A2) then
+      uy=1.
+    else
+      omega=pi*DBLE(k+1)
+      sx = sin(omega*x)
+      cx = cos(omega*x)
+      sy = sin(omega*y)
+      cy = cos(omega*y)
+      sz = sin(omega*z)
+      cz = cos(omega*z)
+      exyz=exp(x*y*z)
+
+      uy=x*sx*sz*exyz*(omega*cy + x*z*sy)
+    end if
   end function uy
 
   pure function uz(x,y,z,k)
   real(kind=8), intent(in) :: x, y, z
   integer(kind=4), intent(in) :: k
-  real(kind=8) :: uz, cx,cy,cz,sx,sy,sz,exyz
-    sx = sin(k*pi*x)
-    cx = cos(k*pi*x)
-    sy = sin(k*pi*y)
-    cy = cos(k*pi*y)
-    sz = sin(k*pi*z)
-    cz = cos(k*pi*z)
-    exyz=exyz
-    
-    uz=x*sx*sy*exyz*(pi*k*cz + x*y*sz)
+  real(kind=8) :: uz, cx,cy,cz,sx,sy,sz,exyz,omega
+
+    if (problem==PROB_A1) then
+      if (z==0. .or. z==1.) then
+        uz=0.
+      else
+        uz = u(x,y,z,k)/z - u(x,y,z,k)/(1.-z)
+      end if
+    else if (problem==PROB_A2) then
+      uz=1.
+    else
+      omega=pi*DBLE(k+1)
+      sx = sin(omega*x)
+      cx = cos(omega*x)
+      sy = sin(omega*y)
+      cy = cos(omega*y)
+      sz = sin(omega*z)
+      cz = cos(omega*z)
+      exyz=exp(x*y*z)
+      uz=x*sx*sy*exyz*(omega*cz + x*y*sz)
+    end if
   
   end function uz
 
   pure function uxx(x,y,z,k)
   real(kind=8), intent(in) :: x, y, z
   integer(kind=4), intent(in) :: k
-  real(kind=8) :: uxx, cx,cy,cz,sx,sy,sz,exyz
-    sx = sin(k*pi*x)
-    cx = cos(k*pi*x)
-    sy = sin(k*pi*y)
-    cy = cos(k*pi*y)
-    sz = sin(k*pi*z)
-    cz = cos(k*pi*z)
-    exyz=exyz
+  real(kind=8) :: uxx, cx,cy,cz,sx,sy,sz,exyz,omega
+
+
+  if (problem==PROB_A1) then
+    uxx=-2.*y*z*(y - 1.)*(z - 1.)
+  else if (problem==PROB_A2) then
+  uxx=0.0_8
+  else
+    omega=pi*DBLE(k+1)
+    sx = sin(omega*x)
+    cx = cos(omega*x)
+    sy = sin(omega*y)
+    cy = cos(omega*y)
+    sz = sin(omega*z)
+    cz = cos(omega*z)
+    exyz=exp(x*y*z)
     
-uxx=sy*sz*exyz*(2.0_8*pi*k*cx + 2*y*z*sx - (pi*k)**2.0*x*sx + x*y*y*z*z*sx + 2.0*pi*k*x*y*z*cx)
+    uxx=sy*sz*exyz*(2.0_8*omega*cx + 2.0*y*z*sx - omega*omega*x*sx &
+    + x*y*y*z*z*sx + 2.0*omega*x*y*z*cx)
+  end if
   
   end function uxx
 
   pure function uyy(x,y,z,k)
   real(kind=8), intent(in) :: x, y, z
   integer(kind=4), intent(in) :: k
-  real(kind=8) :: uyy, cx,cy,cz,sx,sy,sz,exyz
-    sx = sin(k*pi*x)
-    cx = cos(k*pi*x)
-    sy = sin(k*pi*y)
-    cy = cos(k*pi*y)
-    sz = sin(k*pi*z)
-    cz = cos(k*pi*z)
-    exyz=exyz
+  real(kind=8) :: uyy, cx,cy,cz,sx,sy,sz,exyz,omega
 
-uyy=x*sx*sz*exyz*(x*x*z*z*sy - (pi*k)**2*sy + 2.0*pi*k*x*z*cy)
-  
+  if (problem==PROB_A1) then
+    uyy=-2.*x*z*(x - 1.)*(z - 1.)
+  else if (PROBLEM==PROB_A2) then
+    uyy=0.0_8
+  else
+    omega=pi*DBLE(k+1)
+    sx = sin(omega*x)
+    cx = cos(omega*x)
+    sy = sin(omega*y)
+    cy = cos(omega*y)
+    sz = sin(omega*z)
+    cz = cos(omega*z)
+    exyz=exp(x*y*z)
+
+    uyy=x*sx*sz*exyz*(x*x*z*z*sy - omega*omega*sy + 2.0*omega*x*z*cy)
+end if 
+ 
   end function uyy
 
   pure function uzz(x,y,z,k)
   real(kind=8), intent(in) :: x, y, z
   integer(kind=4), intent(in) :: k
-  real(kind=8) :: uzz, cx,cy,cz,sx,sy,sz,exyz
-    sx = sin(k*pi*x)
-    cx = cos(k*pi*x)
-    sy = sin(k*pi*y)
-    cy = cos(k*pi*y)
-    sz = sin(k*pi*z)
-    cz = cos(k*pi*z)
-    exyz=exyz
-    
-uzz=x*sx*sy*exyz*(x*x*y*y*sz - (pi*k)**2*sz + 2.0*pi*k*x*y*cz)
+  real(kind=8) :: uzz, cx,cy,cz,sx,sy,sz,exyz,omega
+
+  if (problem==PROB_A1) then
+    uzz=-2.0*x*y*(x - 1.0)*(y - 1.0)
+  else if (PROBLEM==PROB_A2) then
+    uzz=0.0_8
+  else
+    omega=pi*DBLE(k+1)
+    sx = sin(omega*x)
+    cx = cos(omega*x)
+    sy = sin(omega*y)
+    cy = cos(omega*y)
+    sz = sin(omega*z)
+    cz = cos(omega*z)
+    exyz=exp(x*y*z)
+  
+    uzz=x*sx*sy*exyz*(x*x*y*y*sz - omega*omega*sz + 2.0*omega*x*y*cz)
+end if
 
   end function uzz
 
   pure function f(x,y,z,k)
+  !function f(x,y,z,k)
     real(kind=8), intent(in) :: x, y, z
     integer, intent(in) :: k
     real(kind=8) :: f
 
     real(kind=8) :: a, ax, axx, ay, ayy, az, azz
-    real(kind=8) p, px, q, qy, qb,qbz, r, rx,s,sy,sb,sbz,t
+    real(kind=8) p, px, q, qy, qb,qbz, r, rr,rrx,s,ss,ssy,sb,ssb,ssbz,t
     
     f = 0.0_8
 
@@ -1110,16 +1194,18 @@ uzz=x*sx*sy*exyz*(x*x*y*y*sz - (pi*k)**2*sz + 2.0*pi*k*x*y*cz)
     qb  =  qbc(x,y,z)
     qbz =  dqbdz(x,y,z)
     r   =  rc(beta,x,y,z)
-    rx  = drdx(beta,x,y,z)
+    rr   =  rrc(beta,x,y,z)
+    rrx  = drrdx(beta,x,y,z)
     s   =  sc(gamma,x,y,z)
-    sy  = dsdy(gamma,x,y,z)
+    ss   =  ssc(gamma,x,y,z)
+    ssy  = dssdy(gamma,x,y,z)
     sb  = sbc(delta,x,y,z)
-    sbz = dsbdz(delta,x,y,z)
+    ssb  = ssbc(delta,x,y,z)
+    ssbz = dssbdz(delta,x,y,z)
     t   =  tc(alpha,x,y,z)
-
-    f = - (p*axx + px*ax + q*ayy + qy*ay +qb*az + qbz*azz) + &
-        +2.0*(r*ax+s*ay+sb*az) + (rx+sy+sbz+t)*a
     
+    f = - (p*axx + px*ax + q*ayy + qy*ay +qb*azz + qbz*az) + &
+        + (r+rr)*ax+(s+ss)*ay+(sb+ssb)*az + (rrx+ssy+ssbz+t)*a
 
   end function f
 

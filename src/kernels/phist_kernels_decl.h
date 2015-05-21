@@ -315,6 +315,10 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag);
 //! put random numbers into all elements of a small dense matrix \ingroup sdmat
 void SUBR(sdMat_random)(TYPE(sdMat_ptr) V, int* iflag);
 
+//! set all mvec elements V(i,j) by calling a function for each element
+void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
+        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag);
+
 //! put identity matrix into a small dense matrix \ingroup sdmat
 void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag);
 
@@ -443,6 +447,10 @@ void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank
 
 //! \addtogroup crsmat
 //@{
+
+//! Exchange elements of x between different processes, used to overlap spMVM communication with other operations.
+//! Set the flag PHIST_SPMVM_ONLY_LOCAL in the call to sparseMat_times_mvec* to indicate all data is already there!
+void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr) x, int* iflag);
 
 //! y=alpha*A*x+beta*y.
 

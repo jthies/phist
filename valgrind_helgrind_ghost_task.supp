@@ -1,0 +1,136 @@
+{
+   MPI_Init_thread
+   Helgrind:Race
+   ...
+   fun:PMPI_Init_thread
+   ...
+}
+{
+   MPI_Init
+   Helgrind:Race
+   ...
+   fun:PMPI_Init
+   ...
+}
+{
+   OpenMPI_finalize
+   Helgrind:Misc
+   ...
+   fun:ompi_mpi_finalize
+   ...
+}
+{
+   OpenMPI_finalize
+   Helgrind:Race
+   ...
+   fun:ompi_mpi_finalize
+   ...
+}
+{
+   OpenMPI_finalize
+   Helgrind:PthAPIerror
+   ...
+   fun:ompi_mpi_finalize
+   ...
+}
+{
+   GCC-OpenMP
+   Helgrind:Race
+   ...
+   fun:gomp_free_thread
+   ...
+   fun:start_thread
+   fun:clone
+}
+{
+   GCC-OpenMP
+   Helgrind:Race
+   fun:gomp_thread_start
+   fun:mythread_wrapper
+   fun:start_thread
+   fun:clone
+}
+{
+   GCC-OpenMP
+   Helgrind:Race
+   ...
+   fun:gomp_free_pool_helper
+   fun:gomp_thread_start
+   fun:mythread_wrapper
+   fun:start_thread
+   fun:clone
+}
+{
+   OpenMPI-stuff
+   Helgrind:Race
+   ...
+   fun:opal_libevent2021_event_base_loop
+   fun:orte_progress_thread_engine
+   fun:mythread_wrapper
+   fun:start_thread
+   fun:clone
+}
+{
+   GCC-OpenMP
+   Helgrind:Race
+   ...
+   fun:gomp_*barrier_wait*
+   fun:gomp_thread_start
+   fun:mythread_wrapper
+   fun:start_thread
+   fun:clone
+}
+{
+   GCC-OpenMP_in_ghost_taskq
+   Helgrind:Race
+   ...
+   fun:taskq_findDeleteAndPinTask*
+   ...
+   fun:mythread_wrapper
+   fun:start_thread
+   fun:clone
+}
+{
+   GCC-OpenMP
+   Helgrind:Race
+   fun:pthread_mutex_*lock
+   fun:thread_main
+   fun:mythread_wrapper
+   fun:start_thread
+   fun:clone
+}
+{
+   GCC-OpenMP
+   Helgrind:Race
+   ...
+   fun:pthread_cond_*
+   fun:thread_main
+   fun:mythread_wrapper
+   fun:start_thread
+   fun:clone
+}
+{
+   GCC-OpenMP
+   Helgrind:Race
+   ...
+   fun:sem_wait*
+   fun:thread_main
+   fun:mythread_wrapper
+   fun:start_thread
+   fun:clone
+}
+{
+   GHOST_hwloc
+   Helgrind:Race
+   ...
+   fun:hwloc_*
+   ...
+}
+{
+   GHOST_finalize
+   Helgrind:Race
+   fun:ghost_pumap_destroy
+   fun:ghost_finalize
+   ...
+}
+
