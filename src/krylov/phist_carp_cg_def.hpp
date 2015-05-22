@@ -259,7 +259,7 @@ void SUBR(carp_cgStates_iterate)(
   bool correction_needed = false; 
   int cor_count = 0;
   double cor_tol = 0.99;
-  int debugstate = 1000;
+  int debugstate = 999999999;
   //std::cout << tol << std:: endl;
 
   // how often to print the current impl. residual norms
