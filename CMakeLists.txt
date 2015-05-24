@@ -17,6 +17,13 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
 else()
   set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: Release, RelWithDebug, Debug" FORCE)
 endif()
+
+if (NOT BUILD_SHARED_LIBS)
+    message(STATUS "No library type specified. Setting it to shared.")
+    set(BUILD_SHARED_LIBS ON CACHE BOOL "Set to ON/OFF for shared/static library build.")
+endif()
+
+
 option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
 option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
 option(PHIST_ENABLE_SP "Enable single precision functions and drivers" OFF)
@@ -480,12 +487,12 @@ include_directories(${PROJECT_SOURCE_DIR}/src/jada)
 include_directories(${PROJECT_SOURCE_DIR}/src/feast)
 include_directories(${PROJECT_SOURCE_DIR}/drivers)
 
-add_library(phist_tools SHARED ${PHIST_TOOLS_SOURCE})
-add_library(phist_core SHARED ${PHIST_CORE_SOURCE})
-add_library(phist_kernels_${PHIST_KERNEL_LIB} SHARED ${PHIST_KERNEL_SOURCE})
-add_library(phist_solvers SHARED ${PHIST_KRYLOV_SOURCE} 
-                                 ${PHIST_JADA_SOURCE}
-                                 ${PHIST_FEAST_SOURCE})
+add_library(phist_tools ${PHIST_TOOLS_SOURCE})
+add_library(phist_core ${PHIST_CORE_SOURCE})
+add_library(phist_kernels_${PHIST_KERNEL_LIB} ${PHIST_KERNEL_SOURCE})
+add_library(phist_solvers ${PHIST_KRYLOV_SOURCE} 
+                          ${PHIST_JADA_SOURCE}
+                          ${PHIST_FEAST_SOURCE})
 
 LIST(APPEND library_list phist_tools)
 LIST(APPEND library_list phist_core)
@@ -719,11 +726,18 @@ install(TARGETS phist_carp_cg RUNTIME DESTINATION bin OPTIONAL)
 
 LIST(APPEND driver_list phist_carp_cg)
 
-install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phist-targets LIBRARY DESTINATION lib)
-install(TARGETS phist_tools EXPORT phist-targets LIBRARY DESTINATION lib)
-install(TARGETS phist_core EXPORT phist-targets LIBRARY DESTINATION lib)
-install(TARGETS phist_solvers EXPORT phist-targets LIBRARY DESTINATION lib)
-
+if (${BUILD_SHARED_LIBS})
+  install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phist-targets LIBRARY DESTINATION lib)
+  install(TARGETS phist_tools EXPORT phist-targets LIBRARY DESTINATION lib)
+  install(TARGETS phist_core EXPORT phist-targets LIBRARY DESTINATION lib)
+  install(TARGETS phist_solvers EXPORT phist-targets LIBRARY DESTINATION lib)
+else()
+  install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phist-targets ARCHIVE DESTINATION 
+  lib)
+  install(TARGETS phist_tools EXPORT phist-targets ARCHIVE DESTINATION lib)
+  install(TARGETS phist_core EXPORT phist-targets ARCHIVE DESTINATION lib)
+  install(TARGETS phist_solvers EXPORT phist-targets ARCHIVE DESTINATION lib)
+endif()
 install(FILES ${PROJECT_BINARY_DIR}/phist_config.h DESTINATION include/phist)
 
 file(GLOB PHIST_HEADERS ${CMAKE_SOURCE_DIR}/src/*/*.h 
