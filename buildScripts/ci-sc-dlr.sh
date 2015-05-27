@@ -135,10 +135,12 @@ make install &> install.log             || error=1
 echo "Check installation with pkg-config project"
 mkdir jdqr_pkg_config; cd $_
 PKG_CONFIG_PATH=../$INSTALL_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH cmake ../../exampleProjects/jdqr_pkg_config || error=1
+make || error=1
 cd ..
 echo "Check installation with CMake project"
 mkdir jdqr_cmake; cd $_
 CMAKE_PREFIX_PATH=../$INSTALL_PREFIX/lib/cmake:$CMAKE_PREFIX_PATH cmake ../../exampleProjects/jdqr_cmake || error=1
+make || error=1
 cd ..
 
 cd ..
