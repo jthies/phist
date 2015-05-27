@@ -2,6 +2,12 @@
 set -e
 set -o pipefail
 
+# we need a recent bash version
+if [ "${BASH_VERSINFO}" -lt 4 ]; then
+  echo "This script requires at least bash-4.0 to run."
+  exit 1
+fi
+
 ## default options and declarations
 # kernel lib
 KERNELS="builtin" # ghost epetra tpetra
@@ -110,17 +116,30 @@ fi
 
 # let ctest print all output if there was an error!
 export CTEST_OUTPUT_ON_FAILURE=1
+INSTALL_PREFIX=../install_${KERNELS}_${PRGENV}_Release_${FLAGS// /_}
 mkdir build_${KERNELS}_${PRGENV}_Release_${FLAGS// /_}; cd $_
 cmake -DCMAKE_BUILD_TYPE=Release  \
       -DPHIST_KERNEL_LIB=$KERNELS \
       -DPHIST_ENABLE_COMPLEX_TESTS=${CMPLX_TESTS} \
       -DINTEGRATION_BUILD=On      \
+      -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
       ${CMAKE_FLAGS} \
       ..                                || error=1
 make doc &> doxygen.log                 || error=1
 make -j 6 || make                       || error=1
 echo "Running tests. Output is compressed and written to test.log.gz"
 make check 2>&1 | gzip -c > test.log.gz || error=1
+
+make install &> install.log             || error=1
+echo "Check installation with pkg-config project"
+mkdir jdqr_pkg_config; cd $_
+PKG_CONFIG_PATH=../$INSTALL_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH cmake ../../exampleProjects/jdqr_pkg_config || error=1
+cd ..
+echo "Check installation with CMake project"
+mkdir jdqr_cmake; cd $_
+CMAKE_PREFIX_PATH=../$INSTALL_PREFIX/lib/cmake:$CMAKE_PREFIX_PATH cmake ../../exampleProjects/jdqr_cmake || error=1
+cd ..
+
 cd ..
 
 # debug build
