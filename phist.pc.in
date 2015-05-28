@@ -4,8 +4,8 @@ libdir=${prefix}/lib/
 
 Name: phist
 Description: Pipelined Hybrid-parallel Iterative Solver Toolkit
-Version: @PHIST_VERSION_MAJOR@.@PHIST_VERSION_MINOR@.@PHIST_VERSION_PATCH@
-Requires: 
+Version: @PHIST_VERSION@
+Requires: @PHIST_PKG_CONFIG_REQUIRE@
 Cflags: -I${includedir}
-Libs: -L${libdir} -lphist_solvers -lphist_core -lphist_kernels_@PHIST_KERNEL_LIB@ -lphist_tools
+Libs: -L${libdir} @PHIST_PKG_CONFIG_LIBRARIES@
 

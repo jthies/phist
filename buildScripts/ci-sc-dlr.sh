@@ -148,7 +148,8 @@ cd ..
 # debug build
 if [[ "$KERNELS" = "ghost" ]]; then
   # this is the easiest way to make phist find ghost+dependencies
-  CMAKE_FLAGS="${ADD_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX=../../install-${PRGENV}-Debug"
+  export CMAKE_PREFIX_PATH=../../install-${PRGENV}-Debug/lib/ghost:$CMAKE_PREFIX_PATH
+  #CMAKE_FLAGS="${ADD_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX=../../install-${PRGENV}-Debug"
   # also set the LD_LIBRARY_PATH appropriately
   export LD_LIBRARY_PATH=../../install-${PRGENV}-Debug/lib/ghost:../../install-${PRGENV}-Debug/lib/essex-physics:$LD_LIBRARY_PATH
 else

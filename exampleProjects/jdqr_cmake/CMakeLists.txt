@@ -13,4 +13,6 @@ link_libraries(${PHIST_LIBRARIES})
 #set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_CXX_LINK_FLAGS})
 #link_libraries(${MPI_CXX_LIBRARIES})
 
+set(CXX_STANDARD 11)
+set(CXX_STANDARD_REQUIRED On)
 add_executable(Djdqr Djdqr.cpp)

@@ -38,6 +38,7 @@ set(test_list)
 # GHOST, LAPACK. TODO: also for essex-physics?
 ########################################################################
 set(external_libs)
+set(PHIST_PKG_CONFIG_REQUIRE)
 
 ########################################################################
 # Deal with LAPACK and LAPACKe
@@ -327,6 +328,7 @@ if (${Teuchos_FOUND})
   list(APPEND LOAD_TRILI_PKG "Teuchos")
   set(PHIST_HAVE_TEUCHOS 1)
   option(PHIST_USE_TEUCHOS_TIMEMONITOR "Use TimeMonitor from Trilinos package Teuchos instead of builtin one." OFF)
+  list(APPEND library_list ${Teuchos_LIBRARIES})
   message(STATUS "Found Teuchos")
 else()
   message(STATUS "Teuchos not found.")
@@ -517,6 +519,7 @@ if (GHOST_FOUND)
   # Moved to applications (tests and drivers)
   #target_link_libraries(phist_tools ${GHOST_LIBRARIES})
   LIST(APPEND external_libs ${GHOST_LIBRARIES})
+  list(APPEND PHIST_PKG_CONFIG_REQUIRE ghost)
 else()
   message(STATUS "GHOST not found, some functionality will be disabled and return -99 ('not implemented')")
 endif()
@@ -599,6 +602,11 @@ set(INCLUDE_FLAGS "")
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 foreach(dir ${dirs})
   set(INCLUDE_FLAGS "${INCLUDE_FLAGS} -I${dir}")
+endforeach()
+
+set(PHIST_PKG_CONFIG_LIBRARIES "")
+foreach(lib ${library_list})
+  set(PHIST_PKG_CONFIG_LIBRARIES "${PHIST_PKG_CONFIG_LIBRARIES} -l${lib}")
 endforeach()
 
 configure_file ("${PROJECT_SOURCE_DIR}/phist.pc.in" "${PROJECT_BINARY_DIR}/phist.pc" @ONLY)

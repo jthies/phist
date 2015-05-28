@@ -2,7 +2,22 @@ include("${CMAKE_CURRENT_LIST_DIR}/phistLibraries.cmake")
 
 @PACKAGE_INIT@
 
-set_and_check(PHIST_INCLUDE_DIRS "@PACKAGE_INCLUDE_INSTALL_DIR@")
+set_and_check(PHIST_INCLUDE_DIR "@PACKAGE_INCLUDE_INSTALL_DIR@")
+
+set(PHIST_INCLUDE_DIRS "${PHIST_INCLUDE_DIR}")
 set(PHIST_LIBRARIES "@library_list@")
+
+if(@PHIST_HAVE_GHOST@)
+  find_package(GHOST REQUIRED)
+  list(APPEND PHIST_INCLUDE_DIRS ${GHOST_INCLUDE_DIRS})
+endif()
+
+if(@PHIST_HAVE_CXX11_LAMBDAS@)
+  if(CMAKE_VERSION VERSION_LESS 3.1)
+    message(WARNING "You may need to activate C++11 by hand")
+  endif()
+  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD_REQUIRED On)
+endif()
 
 check_required_components(phist)
