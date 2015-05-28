@@ -71,6 +71,27 @@ extern "C" void SUBR(type_avail)(int *iflag)
   *iflag=0;
 }
 
+// NOTE: We accept the flags PHIST_SPARSEMAT_REPART (if ParMETIS is available,
+//       the matrix will be repartitioned), and SPARSEMAT_OPT_CARP (compute a 
+//       local dist-2 coloring if ColPack is available and omp_get_num_threads
+//       is larger than 1). The flag SPARSEMAT_DIST2_COLOR can be used for    
+//       benchmarking the performance impact of local permutation according to
+//       the coloring, or for forcing D2-coloring even with one thread. The   
+//       behavior is determined by the two flags like this:
+//       
+//                 DIST2_COLOR        0                 1
+//      OPT_CARP
+//          0                   no coloring         local permutation + WARNING
+//                                                  (breaks MPI and CARP, only for
+//                                                  benchmarking impact on spMVM)
+//                                                  
+//          1              coloring without local   like MC-CARP_CG but also use
+//                         permutation (should be   coloring kernel if only one 
+//                         used for MC-CARP_CG),    OpenMP thread is available.
+//                         no coloring if only 
+//                         one OpenMP thread
+//      
+//      note that specifying OPT_CARP has no performance impact on the spMVM at all.
 extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t vcomm,
         const char* filename,int* iflag)
 {
@@ -80,6 +101,26 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t
     *iflag=PHIST_INVALID_INPUT;
     return;
   }
+
+  if (*iflag&PHIST_SPARSEMAT_OPT_CARP && ~(*iflag&PHIST_SPARSEMAT_DIST2_COLOR))
+  {
+    int nthreads=1;
+    #pragma omp parallel
+    #pragma omp master
+    nthreads=omp_get_num_threads();
+    if (nthreads==1) 
+    {
+      // disable coloring for optimal performance.
+      PHIST_SOUT(PHIST_INFO,"NOTE: You indicated that the matrix will be used in CARP-CG,\n"
+                            "      as it seems that there is only one OpenMP thread, I \n"
+                            "      will not construct a coloring, so subsequent CARP sweeps will be sequential per MPI process.\n"
+                            "      If you want to use the coloring kernel anyway, specify the flag \n"
+                            "       PHIST_SPARSEMAT_OPT_CARP|PHIST_SPARSEMAT_DIST2_COLOR to enforce it.\n"
+                        );
+      *iflag&=~PHIST_SPARSEMAT_OPT_CARP;
+    }
+  }
+
   PHIST_CHK_IERR(SUBR(crsMat_read_mm_f)(A,vcomm,strlen(filename),filename,iflag),*iflag);
 }
 
@@ -590,12 +631,33 @@ extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMa
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace_f)(V, M, iflag), *iflag);
 }
 
+// NOTE: see the description of sparseMat_read_mm on how we treat input flags for this function
 extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, const_comm_ptr_t vcomm,
         gidx_t nrows, gidx_t ncols, lidx_t maxnne, 
                 int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), 
                 int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  if (*iflag&PHIST_SPARSEMAT_OPT_CARP && ~(*iflag&PHIST_SPARSEMAT_DIST2_COLOR))
+  {
+    int nthreads=1;
+    #pragma omp parallel
+    #pragma omp master
+    nthreads=omp_get_num_threads();
+    if (nthreads==1) 
+    {
+      // disable coloring for optimal performance.
+      PHIST_SOUT(PHIST_INFO,"NOTE: You indicated that the matrix will be used in CARP-CG,\n"
+                            "      as it seems that there is only one OpenMP thread, I \n"
+                            "      will not construct a coloring, so subsequent CARP sweeps will be sequential per MPI process.\n"
+                            "      If you want to use the coloring kernel anyway, specify the flag \n"
+                            "       PHIST_SPARSEMAT_OPT_CARP|PHIST_SPARSEMAT_DIST2_COLOR to enforce it.\n"
+                        );
+      *iflag&=~PHIST_SPARSEMAT_OPT_CARP;
+    }
+  }
+
   PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc_f)(A, vcomm, nrows, ncols, maxnne, 
         rowFunPtr, iflag), *iflag);
 }

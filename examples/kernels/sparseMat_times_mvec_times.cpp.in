@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 {
   int rank, num_proc;
   int iflag;
-  int verbose;
+  int verbose, sparseMat_flag, spmv_flag;
 
   comm_ptr_t comm = NULL;
   sparseMat_ptr_t A = NULL;
@@ -51,8 +51,15 @@ PHIST_MAIN_TASK_BEGIN
 
   if (argc<3)
   {
-    if (verbose) fprintf(stdout,"Usage: %s <matrix filename|problem string> <nvecs> [<repart>]\n", 
-    argv[0]);
+    if (verbose) fprintf(stdout,"Usage: %s <matrix filename|problem string> <nvecs> [<mat_flags> [spmv_flags]]\n"
+                                "       mat_flags: flags passed to the matrix creation routines. Default: \n"
+                                "       PHIST_SPARSEMAT_OPT_SINGLESPMVM for nvec=1, OPT_BLOCKSPMVM for nvec>1\n"
+                                "       \n"
+                                "       The flag can be constructed by bitwise OR of the following:\n"
+                                PHIST_SPARSEMAT_FLAGS_DESCRIPTION
+                                "       \n"
+                                "       spmv_flags: see phist_kernel_flags.h for a description.\n",
+        argv[0]);
     // print usage message for creating/reading a matrix
     SUBR(create_matrix)(NULL,NULL,"usage",&iflag);        
     return 1;
@@ -61,12 +68,21 @@ PHIST_MAIN_TASK_BEGIN
   const char* matname=argv[1];
   int nvecs = atoi(argv[2]);
   
-  int repart=0;
-  if (argc>3) repart = atoi(argv[3]);
+  if (argc>3)
+  { 
+    sparseMat_flag=atoi(argv[3]);
+  }
+  else
+  {
+    sparseMat_flag= nvecs>1? PHIST_SPARSEMAT_OPT_BLOCKSPMVM: PHIST_SPARSEMAT_OPT_SINGLESPMVM;
+  }
+
+  if (argc>4) spmv_flag=atoi(argv[4]);
+  else        spmv_flag=PHIST_SPMVM_VECTOR;
   
 
   // matrix generation routine from the driver_utils.h header
-  iflag=repart?PHIST_SPARSEMAT_REPARTITION: PHIST_IFLAG_DEFAULT;
+  iflag=sparseMat_flag;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&x,map,nvecs,&iflag),iflag);
@@ -79,19 +95,21 @@ PHIST_MAIN_TASK_BEGIN
 
   for(int i = 0; i < NUM_SPMVMS/nvecs; i++)
   {
-    if (argc>3) iflag = atoi(argv[4]);
+    
     PHIST_ENTER_FCN("phist_spmvm");
+    iflag=spmv_flag;
     PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,x,st::zero(),y,&iflag),iflag);
   }
 
+#if 0
   for(int i = 0; i < NUM_SPMVMS/nvecs; i++)
   {
-    if (argc>3) iflag = atoi(argv[4]);
+    iflag=spmv_flag;
     PHIST_ENTER_FCN("phist_spmvm_on_full_views");
     PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,xv,st::zero(),yv,&iflag),iflag);
   }
-
-#ifdef PHIST_KERNEL_LIB_GHOST  
+#endif
+#ifdef PHIST_KERNEL_LIB_GHOST__disabled
 
    ghost_spmv_flags_t spMVM_opts=GHOST_SPMV_DEFAULT;
     // currently the vector mode is the only one working with MPI and multiple RHS

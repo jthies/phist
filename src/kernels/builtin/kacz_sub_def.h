@@ -30,11 +30,11 @@ subroutine SUB_NAME(nvec,nlocal, nhalo, ncols, nnz, &
   integer istart_clr, iend_clr
   real(kind=8) :: row_norm
 ! TODO - we don't actually check the memory alignment before calling these subroutines!
-#if 0
+#if 1
 #ifdef NVEC
-!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x_r:64, halo_r:64, x_i:64, halo_i:64, b:64
+!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x_r:64, halo_r:64, x_i:64, halo_i:64
 #else
-!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x_r:8, halo_r:64, x_i:8, halo_i:64, b:8
+!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x_r:8, halo_r:64, x_i:8, halo_i:64
 #endif
 #endif
 #ifdef KACZ_CLR

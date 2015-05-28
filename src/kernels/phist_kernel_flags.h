@@ -17,11 +17,30 @@
 
 /* sparse matrix preprocessing */
 #define PHIST_SPARSEMAT_REPARTITION 1
+/* this flag is DEPRECATED, use SPARSEMAT_OPT_CARP instead */
+/* in the current implementation of the builtin kernels,   */
+/* DIST2_COLOR will cause a local permutation according to */
+/* colors, which breaks the MPI communication but can be   */
+/* used to assess the performance impact of coloring. A    */
+/* warning will be issued.                                 */
 #define PHIST_SPARSEMAT_DIST2_COLOR 2
 #define PHIST_SPARSEMAT_OPT_SINGLESPMVM 4
 #define PHIST_SPARSEMAT_OPT_BLOCKSPMVM 8
+#define PHIST_SPARSEMAT_OPT_CARP 16
 
-/* sparseMat_times_mvec* */
+#define PHIST_SPARSEMAT_FLAGS_DESCRIPTION \
+"     PHIST_IFLAG_DEFAULT 0 \n" \
+"     PHIST_SPARSEMAT_REPARTITION 1 \n" \
+"     PHIST_SPARSEMAT_DIST2_COLOR 2 \n" \
+"     PHIST_SPARSEMAT_OPT_SINGLESPMVM 4 \n" \
+"     PHIST_SPARSEMAT_OPT_BLOCKSPMVM 8 \n" \
+"     PHIST_SPARSEMAT_OPT_CARP 16 \n"
+
+
+/* sparseMat_times_mvec* flags, these are GHOST-sepcific up to now
+   and should not be used in the code anywhere because they are subject to
+   to change. The purpose of these flags is benchmarking only.
+   */
 #define PHIST_SPMVM_ONLY_LOCAL 2
 #define PHIST_SPMVM_VECTOR 4
 #define PHIST_SPMVM_OVERLAP 8

@@ -1178,6 +1178,12 @@ end do
 
 #ifdef PHIST_HAVE_COLPACK
 
+  !! construct a distance-K coloring of the local matrix graph using COLPACK.
+  !! By default, the local matrix is *not* permuted but data structures for indirect
+  !! color-wise access to matrix rows are constructed. If ierr==1
+  !! is found on entry, the local matrix is permuted such that
+  !! consecutive rows belong to each color, with a color pointer to indicate the beginning
+  !! of each block. This is meant only for node-level performance studies right now.
   subroutine colorcrs(crsMat,dist,outlev,ierr)
       use, intrinsic :: iso_c_binding
     use mpi
@@ -1189,6 +1195,7 @@ end do
     integer,intent(out) :: ierr
     
     ! local variables
+    logical :: permute
     integer :: i
     integer(kind=8) :: j
     integer(c_int), target, allocatable :: colors(:)
@@ -1218,6 +1225,10 @@ end do
 
     end interface
 
+    permute=.false.
+    if (ierr==1) then
+      permute=.true.
+    end if
     allocate(colors(crsMat%nRows))
 
     c_rp=c_loc(crsMat%row_offset(1))
@@ -1265,7 +1276,7 @@ end do
 
     deallocate(colorCount)
 #ifdef F_DEBUG
-#define DEBUG_COLPACK 1
+!#define DEBUG_COLPACK 1
 #endif
 #if DEBUG_COLPACK
 ! for n>=10,000 the file gets big and the format used below won't fit
@@ -1297,26 +1308,38 @@ if (crsMat%nRows<10000) then
         end do
         write(42,*) '];'
 
+!       For testing purposes only:
 !       permute local CRS matrix rows and cols, this will mess up MPI parallel runs and
-!       result in permuted vectors, but just for single-node performance we do it right now
-!call permute_local_matrix(crsMat)
+!       result in permuted vectors, but it can be used to measure the impact of the coloring
+!       on data traffic in the spMVM, for instance.
+        if (permute) then
+                call permute_local_matrix(crsMat)
+                write(42,*) '% matrix is permuted locally according to colors!'
 
-        write(42,*) 'Adat2=[...'
-        do i=1,crsMat%nRows
-          do j=crsMat%row_offset(i),crsMat%nonlocal_offset(i)-1
-            write(42,"(I4,I4,E24.8)") i,crsMat%col_idx(j),crsMat%val(j)
-          end do
-        end do
-        write(42,*) '];'
-        write(42,*) 'A2=sparse(Adat2(:,1),Adat2(:,2),Adat2(:,3),n,n);'
+                write(42,*) 'Adat2=[...'
+                do i=1,crsMat%nRows
+                  do j=crsMat%row_offset(i),crsMat%nonlocal_offset(i)-1
+                    write(42,"(I4,I4,E24.8)") i,crsMat%col_idx(j),crsMat%val(j)
+                  end do
+                end do
+                write(42,*) '];'
+                write(42,*) '% matrix permuted according to coloring'
+                write(42,*) 'A2=sparse(Adat2(:,1),Adat2(:,2),Adat2(:,3),n,n);'
+        end if
 
         flush(42)
         close(42)
+        ! can't proceed correctly because we reordered the local matrix
+        write(*,*) 'WARNING: DEBUG_COLPACK is enabled, in ',__FILE__,', line ',__LINE__
 end if
 #else
+!       For testing purposes only:
 !       permute local CRS matrix rows and cols, this will mess up MPI parallel runs and
-!       result in permuted vectors, but just for single-node performance we do it right now
-!call permute_local_matrix(crsMat)
+!       result in permuted vectors, but it can be used to measure the impact of the coloring
+!       on data traffic in the spMVM, for instance.
+if (permute) then
+        call permute_local_matrix(crsMat)
+end if        
 #endif
 
     deallocate(colors)
@@ -1648,7 +1671,7 @@ end subroutine permute_local_matrix
     character(C_CHAR),  intent(in)  :: filename_ptr(filename_len)
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
-    logical :: repart, d2clr
+    logical :: repart, d2clr, d2clr_and_permute
     type(CrsMat_t), pointer :: A
     character(len=filename_len) :: filename
     !--------------------------------------------------------------------------------
@@ -1665,9 +1688,10 @@ end subroutine permute_local_matrix
     !--------------------------------------------------------------------------------
     
     repart = CHECK_IFLAG(ierr,PHIST_SPARSEMAT_REPARTITION)
-    d2clr =  CHECK_IFLAG(ierr,PHIST_SPARSEMAT_DIST2_COLOR)
+    d2clr_and_permute =  CHECK_IFLAG(ierr,PHIST_SPARSEMAT_DIST2_COLOR)
+    d2clr = CHECK_IFLAG(ierr,PHIST_SPARSEMAT_OPT_CARP)
     ierr=0
-
+    
     do i = 1, filename_len
       filename(i:i) = filename_ptr(i)
     end do
@@ -1855,8 +1879,25 @@ end subroutine permute_local_matrix
     call sort_rows_local_nonlocal(A)
 
 #ifdef PHIST_HAVE_COLPACK
+    if (d2clr_and_permute) then
+      if (A%row_map%me==0) then
+        write(*,*) 'WARNING: you have specified the flag PHIST_SPARSEMAT_DIST2_COLOR,', &
+                   '         which is DEPRECATED and only used for benchmarking coloring ', &
+                   '         permutations. Use PHIST_SPARSEMAT_OPT_CARP instead if you want', &
+                   '         to use CARP-CG with this matrix. DIST2_COLOR will probably ', &
+                   '         break things like MPI communication.'
+      end if
+    end if
+
     if (d2clr) then
       call colorcrs(A,2,3,ierr)
+    else if (d2clr_and_permute) then
+      ierr=1
+      call colorcrs(A,2,3,ierr)
+    end if
+#else
+    if (d2clr.or.d2clr_and_permute .and. map%me==0) then
+      write(*,*) 'COLPACK not available, flags DIST2_COLOR and OPT_CARP are ignored'
     end if
 #endif
 
@@ -1885,7 +1926,7 @@ end subroutine permute_local_matrix
     type(C_FUNPTR),     value       :: rowFunc_ptr
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
-    logical :: repart, d2clr
+    logical :: repart, d2clr, d2clr_and_permute
     type(CrsMat_t), pointer :: A
     procedure(matRowFunc), pointer :: rowFunc
     !--------------------------------------------------------------------------------
@@ -1902,7 +1943,17 @@ end subroutine permute_local_matrix
     !--------------------------------------------------------------------------------
 
     repart = CHECK_IFLAG(ierr,PHIST_SPARSEMAT_REPARTITION)
-    d2clr =  CHECK_IFLAG(ierr,PHIST_SPARSEMAT_DIST2_COLOR)
+    ! deprecated flag, if set without OPT_CARP, we will do a local permutation according to
+    ! a dist-2 coloring and issue a warning because it breaks MPI communication. This is 
+    ! just for benchmarking the performance impact of the coloring now.
+    d2clr_and_permute =  CHECK_IFLAG(ierr,PHIST_SPARSEMAT_DIST2_COLOR)
+    d2clr =  CHECK_IFLAG(ierr,PHIST_SPARSEMAT_OPT_CARP)
+#ifdef F_DEBUG
+    write(*,*) 'ierr=',ierr
+    write(*,*) 'repart=',repart
+    write(*,*) 'd2clr=',d2clr
+    write(*,*) 'd2clr_and_permute=',d2clr_and_permute
+#endif
     ierr=0
     ! get procedure pointer
     call c_f_procpointer(rowFunc_ptr, rowFunc)
@@ -2054,20 +2105,25 @@ if( A%row_map%me .eq. 0 ) then
 end if
 
 #ifdef PHIST_HAVE_COLPACK
+    if (d2clr_and_permute) then
+      if (A%row_map%me==0) then
+        write(*,*) 'WARNING: you have specified the flag PHIST_SPARSEMAT_DIST2_COLOR,', &
+                   '         which is DEPRECATED and only used for benchmarking coloring ', &
+                   '         permutations. Use PHIST_SPARSEMAT_OPT_CARP instead if you want', &
+                   '         to use CARP-CG with this matrix. DIST2_COLOR will probably ', &
+                   '         break things like MPI communication.'
+      end if
+    end if
+
     if (d2clr) then
-      wtime = mpi_wtime()
       call colorcrs(A,2,3,ierr)
-      if (ierr/=0) then
-        if( A%row_map%me .eq. 0 ) then
-          write(*,*) 'graph coloring failed'
-        end if
-        return
-      end if
-      call mpi_barrier(A%row_map%comm, ierr)
-      wtime = mpi_wtime() - wtime
-      if( A%row_map%me .eq. 0 ) then
-        write(*,*) 'local dist-2 coloring in', wtime, 'seconds'
-      end if
+    else if (d2clr_and_permute) then
+      ierr=1
+      call colorcrs(A,2,3,ierr)
+    end if
+#else
+    if (d2clr.or.d2clr_and_permute .and. comm%me==0) then
+      write(*,*) 'COLPACK not available, flags DIST2_COLOR and OPT_CARP are ignored'
     end if
 #endif
 
