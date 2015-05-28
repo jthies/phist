@@ -39,6 +39,7 @@ set(test_list)
 ########################################################################
 set(external_libs)
 set(PHIST_PKG_CONFIG_REQUIRE)
+set(PHIST_PKG_CONFIG_CFLAGS)
 
 ########################################################################
 # Deal with LAPACK and LAPACKe
@@ -220,6 +221,9 @@ CHECK_CXX_SOURCE_COMPILES("
   }
 " PHIST_HAVE_CXX11_LAMBDAS
 )
+if(PHIST_HAVE_CXX11_LAMBDAS)
+  set(PHIST_PKG_CONFIG_CFLAGS "${PHIST_PKG_CONFIG_CFLAGS} -std=c++11")
+endif()
 CHECK_Fortran_SOURCE_COMPILES("
   program test
     implicit none

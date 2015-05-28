@@ -6,6 +6,6 @@ Name: phist
 Description: Pipelined Hybrid-parallel Iterative Solver Toolkit
 Version: @PHIST_VERSION@
 Requires: @PHIST_PKG_CONFIG_REQUIRE@
-Cflags: -I${includedir}
+Cflags: @PHIST_PKG_CONFIG_CFLAGS@ -I${includedir}
 Libs: -L${libdir} @PHIST_PKG_CONFIG_LIBRARIES@
 
