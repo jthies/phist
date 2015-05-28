@@ -107,12 +107,10 @@ error=0
 # release build including doc
 if [[ "$KERNELS" = "ghost" ]]; then
   # this is the easiest way to make phist find ghost+dependencies
-  export CMAKE_PREFIX_PATH=../../install-${PRGENV}-Release/lib/ghost:$CMAKE_PREFIX_PATH
-  #CMAKE_FLAGS="${ADD_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX=../../install-${PRGENV}-Release"
+  export CMAKE_PREFIX_PATH=$PWD/../install-${PRGENV}-Release/lib/ghost:$CMAKE_PREFIX_PATH
+  export PKG_CONFIG_PATH=$PWD/../install-${PRGENV}-Release/lib/pkgconfig:$PKG_CONFIG_PATH
   # also set the LD_LIBRARY_PATH appropriately
-  export LD_LIBRARY_PATH=../../install-${PRGENV}-Release/lib/ghost:../../install-${PRGENV}-Release/lib/essex-physics:$LD_LIBRARY_PATH
-else
-  CMAKE_FLAGS=${ADD_CMAKE_FLAGS}
+  export LD_LIBRARY_PATH=$PWD/../install-${PRGENV}-Release/lib/ghost:$PWD/../install-${PRGENV}-Release/lib/essex-physics:$LD_LIBRARY_PATH
 fi
 
 # let ctest print all output if there was an error!
@@ -124,7 +122,7 @@ cmake -DCMAKE_BUILD_TYPE=Release  \
       -DPHIST_ENABLE_COMPLEX_TESTS=${CMPLX_TESTS} \
       -DINTEGRATION_BUILD=On      \
       -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-      ${CMAKE_FLAGS} \
+      ${ADD_CMAKE_FLAGS} \
       ..                                || error=1
 make doc &> doxygen.log                 || error=1
 make -j 6 || make                       || error=1
@@ -148,12 +146,10 @@ cd ..
 # debug build
 if [[ "$KERNELS" = "ghost" ]]; then
   # this is the easiest way to make phist find ghost+dependencies
-  export CMAKE_PREFIX_PATH=../../install-${PRGENV}-Debug/lib/ghost:$CMAKE_PREFIX_PATH
-  #CMAKE_FLAGS="${ADD_CMAKE_FLAGS} -DCMAKE_INSTALL_PREFIX=../../install-${PRGENV}-Debug"
+  export CMAKE_PREFIX_PATH=$PWD/../install-${PRGENV}-Debug/lib/ghost:$CMAKE_PREFIX_PATH
+  export PKG_CONFIG_PATH=$PWD/../install-${PRGENV}-Debug/lib/pkgconfig:$PKG_CONFIG_PATH
   # also set the LD_LIBRARY_PATH appropriately
-  export LD_LIBRARY_PATH=../../install-${PRGENV}-Debug/lib/ghost:../../install-${PRGENV}-Debug/lib/essex-physics:$LD_LIBRARY_PATH
-else
-  CMAKE_FLAGS=${ADD_CMAKE_FLAGS}
+  export LD_LIBRARY_PATH=$PWD/../install-${PRGENV}-Debug/lib/ghost:$PWD/../install-${PRGENV}-Debug/lib/essex-physics:$LD_LIBRARY_PATH
 fi
 mkdir build_${KERNELS}_${PRGENV}_Debug_${FLAGS// /_}; cd $_
 cmake -DCMAKE_BUILD_TYPE=Debug    \
@@ -161,7 +157,7 @@ cmake -DCMAKE_BUILD_TYPE=Debug    \
       -DPHIST_ENABLE_COMPLEX_TESTS=${CMPLX_TESTS} \
       -DINTEGRATION_BUILD=On      \
       -DGCC_SANITIZE=address      \
-      ${CMAKE_FLAGS} \
+      ${ADD_CMAKE_FLAGS} \
       ..                                || error=1
 make -j 6 || make                       || error=1
 echo "Running tests. Output is compressed and written to test.log.gz"
