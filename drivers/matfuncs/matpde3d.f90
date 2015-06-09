@@ -60,13 +60,16 @@
 ! (B) problems with variable coefficentts in the diffusion term                         
 ! 0. -(exp(-xyz) Ux)x - (exp(xyz) Uy)y  -( exp((1-x)(1-y)(1-z)) Uz)z = F                
 ! 1. -(exp(-xyz) Ux)x - (exp(xyz) Uy)y  -( exp((1-x)(1-y)(1-z)) Uz)z                    
-!    +20sin(pi y) Ux + (sin(pi y) U)x                                                   
+!    +20[sin(pi y) Ux + (sin(pi y) U)x]                                                 
 !    +  sin(pi z) Uy + (sin(pi z) U)y                                                   
 !    +  sin(pi x) Uz + (sin(pi x) U)z                                                   
 !    +  1/(1+x+y+z) U                                                = F                
 ! 2. as 1. but with Ux terms scaled by 50                                               
 ! 3. as 1. but with reactive term (U) scaled by 100                                     
 ! 4. as 1. but with Ux and Uy scaled by 50 and 1000, resp.                              
+! 5. as 1 without reactive term and with the convective terms scaled by 1/dx s.t. the   
+!    ration of convective to diffusive terms stays constant upon grid refinement
+!
 ! analytical solutions: as for A3-7                                                     
 ! boundary conditions: Dirichlet                                                        
 !                                                                                       
@@ -307,6 +310,11 @@ contains
     else if (problem==PROB_B4) then
       beta =1000.0_8
       gamma=1000.0_8
+    else if (problem==PROB_B5) then
+      alpha=1.0_8/HX
+      beta =20.0_8/HY
+      gamma=1.0_8/HZ
+      delta=0.0_8
     else if (problem .ge. PROB_C0 .and. PROBLEM .le. PROB_C9) then
       ! scaling of random numbers on diagonal
       alpha=16.5
@@ -315,6 +323,23 @@ contains
 
   
   end subroutine MATPDE3D_selectProblem
+  
+  !! this subroutine can be used to adjust the scaling of the
+  !! convective (beta,gamma,delta) and reactive (alpha) terms
+  !! manually after selectProblem has already been called. This
+  !! is intended mostly to create custom PDEs from the B* benchmarks
+  subroutine MATPDE3D_setScalingFactors(alpha_in,beta_in,gamma_in,delta_in) bind(C)
+  
+  use, intrinsic :: iso_c_binding
+  implicit none
+  real(c_double), value :: alpha_in,beta_in,gamma_in,delta_in
+  
+  alpha=alpha_in
+  beta=beta_in
+  gamma=gamma_in
+  delta=delta_in
+  
+  end subroutine MATPDE3D_setScalingFactors
 
 #define USE_OCTREE_ORDERING
 
