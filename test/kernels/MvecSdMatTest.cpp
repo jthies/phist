@@ -295,6 +295,43 @@ using namespace testing;
 #include "phist_gen_z.h"
 #include "MvecSdMatTest_def.hpp"
 
+// case with 7, 11
+
+#undef _N_
+#define _N_ 512
+#undef _M_
+#define _M_ 7
+#undef _K_
+#define _K_ 11
+
+#ifdef PHIST_HAVE_SP
+#undef CLASSNAME
+#define CLASSNAME SMvecSdMatTest_512_7_11
+
+#include "phist_gen_s.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME CMvecSdMatTest_512_7_11
+
+#include "phist_gen_c.h"
+#include "MvecSdMatTest_def.hpp"
+
+#endif
+
+#undef CLASSNAME
+#define CLASSNAME DMvecSdMatTest_512_7_11
+
+#include "phist_gen_d.h"
+#include "MvecSdMatTest_def.hpp"
+
+#undef CLASSNAME
+#define CLASSNAME ZMvecSdMatTest_512_7_11
+
+#include "phist_gen_z.h"
+#include "MvecSdMatTest_def.hpp"
+
+
 
 // large tests for verifying high precision calculations
 #undef _N_

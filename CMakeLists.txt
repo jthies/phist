@@ -4,13 +4,10 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
 
 # Define some custom variables
-project(PHIST C CXX Fortran)
+project(phist C CXX Fortran)
 SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
-set(PHIST_VERSION_MAJOR 0)
-set(PHIST_VERSION_MINOR 8)
-set(PHIST_VERSION_PATCH 2)
-#set(PHIST_VERSION_PATCH ${PHIST_VERSION_PATCH}-beta)
-set(PRODUCT_NAME phist-${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH})
+set(PHIST_VERSION 0.8.2)
+set(PRODUCT_NAME phist-${PHIST_VERSION})
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Release, RelWithDebug, Debug" FORCE)
@@ -41,6 +38,8 @@ set(test_list)
 # GHOST, LAPACK. TODO: also for essex-physics?
 ########################################################################
 set(external_libs)
+set(PHIST_PKG_CONFIG_REQUIRE)
+set(PHIST_PKG_CONFIG_CFLAGS)
 
 ########################################################################
 # Deal with LAPACK and LAPACKe
@@ -222,6 +221,9 @@ CHECK_CXX_SOURCE_COMPILES("
   }
 " PHIST_HAVE_CXX11_LAMBDAS
 )
+if(PHIST_HAVE_CXX11_LAMBDAS)
+  set(PHIST_PKG_CONFIG_CFLAGS "${PHIST_PKG_CONFIG_CFLAGS} -std=c++11")
+endif()
 CHECK_Fortran_SOURCE_COMPILES("
   program test
     implicit none
@@ -264,8 +266,8 @@ if (${PHIST_ENABLE_MPI})
   else()
     message(WARNING "could not find MPI. Trying to compile anyway, presuming the compiler/linker knows where to find it.")
   endif()
-set(MPIEXEC "mpirun" CACHE STRING "")
-set(MPIEXEC_NUMPROC_FLAG "-np" CACHE STRING "")
+  set(MPIEXEC "mpirun" CACHE STRING "")
+  set(MPIEXEC_NUMPROC_FLAG "-np" CACHE STRING "")
 endif()
 
 ##############################################################################
@@ -330,6 +332,7 @@ if (${Teuchos_FOUND})
   list(APPEND LOAD_TRILI_PKG "Teuchos")
   set(PHIST_HAVE_TEUCHOS 1)
   option(PHIST_USE_TEUCHOS_TIMEMONITOR "Use TimeMonitor from Trilinos package Teuchos instead of builtin one." OFF)
+  list(APPEND library_list ${Teuchos_LIBRARIES})
   message(STATUS "Found Teuchos")
 else()
   message(STATUS "Teuchos not found.")
@@ -520,6 +523,7 @@ if (GHOST_FOUND)
   # Moved to applications (tests and drivers)
   #target_link_libraries(phist_tools ${GHOST_LIBRARIES})
   LIST(APPEND external_libs ${GHOST_LIBRARIES})
+  list(APPEND PHIST_PKG_CONFIG_REQUIRE ghost)
 else()
   message(STATUS "GHOST not found, some functionality will be disabled and return -99 ('not implemented')")
 endif()
@@ -604,8 +608,20 @@ foreach(dir ${dirs})
   set(INCLUDE_FLAGS "${INCLUDE_FLAGS} -I${dir}")
 endforeach()
 
+set(PHIST_PKG_CONFIG_LIBRARIES "")
+foreach(lib ${library_list})
+  set(PHIST_PKG_CONFIG_LIBRARIES "${PHIST_PKG_CONFIG_LIBRARIES} -l${lib}")
+endforeach()
+
+configure_file ("${PROJECT_SOURCE_DIR}/phist.pc.in" "${PROJECT_BINARY_DIR}/phist.pc" @ONLY)
 configure_file ("${PROJECT_SOURCE_DIR}/src/phist_config.h.in" "${PROJECT_BINARY_DIR}/phist_config.h")
 configure_file ("${PROJECT_SOURCE_DIR}/doc/phist.doxyfile.in" "${PROJECT_BINARY_DIR}/phist.doxyfile")
+include(CMakePackageConfigHelpers)
+set(INCLUDE_INSTALL_DIR include)
+set(LIBRARY_INSTALL_DIR lib)
+configure_package_config_file("${PROJECT_SOURCE_DIR}/phistConfig.cmake.in" "${PROJECT_BINARY_DIR}/phistConfig.cmake" INSTALL_DESTINATION ${LIBRARY_INSTALL_DIR}/cmake
+  PATH_VARS INCLUDE_INSTALL_DIR)# LIBRARY_INSTALL_DIR)
+write_basic_package_version_file("${PROJECT_BINARY_DIR}/phistConfigVersion.cmake" VERSION ${PHIST_VERSION} COMPATIBILITY SameMajorVersion)
 
 foreach(PKG ${LOAD_TRILI_PKG})
   find_package(${PKG} REQUIRED)
@@ -727,29 +743,31 @@ install(TARGETS phist_carp_cg RUNTIME DESTINATION bin OPTIONAL)
 LIST(APPEND driver_list phist_carp_cg)
 
 if (${BUILD_SHARED_LIBS})
-  install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phist-targets LIBRARY DESTINATION lib)
-  install(TARGETS phist_tools EXPORT phist-targets LIBRARY DESTINATION lib)
-  install(TARGETS phist_core EXPORT phist-targets LIBRARY DESTINATION lib)
-  install(TARGETS phist_solvers EXPORT phist-targets LIBRARY DESTINATION lib)
+  install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
+  install(TARGETS phist_tools EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
+  install(TARGETS phist_core EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
+  install(TARGETS phist_solvers EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
 else()
-  install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phist-targets ARCHIVE DESTINATION 
-  lib)
-  install(TARGETS phist_tools EXPORT phist-targets ARCHIVE DESTINATION lib)
-  install(TARGETS phist_core EXPORT phist-targets ARCHIVE DESTINATION lib)
-  install(TARGETS phist_solvers EXPORT phist-targets ARCHIVE DESTINATION lib)
+  install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
+  install(TARGETS phist_tools EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
+  install(TARGETS phist_core EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
+  install(TARGETS phist_solvers EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
 endif()
-install(FILES ${PROJECT_BINARY_DIR}/phist_config.h DESTINATION include/phist)
+install(FILES ${PROJECT_BINARY_DIR}/phistConfig.cmake        DESTINATION ${LIBRARY_INSTALL_DIR}/cmake)
+#export(EXPORT phistLibraries FILE "${PROJECT_BINARY_DIR}/phistLibraries.cmake")
+install(EXPORT phistLibraries FILE phistLibraries.cmake DESTINATION ${LIBRARY_INSTALL_DIR}/cmake)
+install(FILES ${PROJECT_BINARY_DIR}/phistConfigVersion.cmake DESTINATION ${LIBRARY_INSTALL_DIR}/cmake)
+install(FILES ${PROJECT_BINARY_DIR}/phist.pc DESTINATION ${LIBRARY_INSTALL_DIR}/pkgconfig)
+install(FILES ${PROJECT_BINARY_DIR}/phist_config.h DESTINATION ${INCLUDE_INSTALL_DIR})
 
 file(GLOB PHIST_HEADERS ${CMAKE_SOURCE_DIR}/src/*/*.h 
                         ${CMAKE_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/phist_typedefs.h 
-                        ${CMAKE_SOURCE_DIR}/src/tools/phist_fcntrace.hpp
-                        ${CMAKE_SOURCE_DIR}/src/tools/phist_timemonitor.hpp
+                        ${CMAKE_SOURCE_DIR}/src/tools/*.hpp
                         )
-install(FILES ${PHIST_HEADERS} DESTINATION include/phist)
-install(FILES ${CMAKE_SOURCE_DIR}/src/kernels/ghost/phist_ghost_macros.hpp DESTINATION include/phist/ghost)
+install(FILES ${PHIST_HEADERS} DESTINATION ${INCLUDE_INSTALL_DIR})
 
 file(GLOB PYTHON_HEADERS ${CMAKE_SOURCE_DIR}/python/*.py)
-install(FILES ${PYTHON_HEADERS} DESTINATION lib/python)
+install(FILES ${PYTHON_HEADERS} DESTINATION ${LIBRARY_INSTALL_DIR}/python)
 
 # test drivers
 if( "${CMAKE_BUILD_TYPE}" MATCHES "Release" )
@@ -917,7 +935,6 @@ if (CPPCHECK_EXECUTABLE)
         list(APPEND C_SOURCES ${c_source})
       endif()
     endforeach()
-    message(STATUS ${C_SOURCES})
     add_custom_target(cppcheck ${CPPCHECK_EXECUTABLE} ${CPPCHECK_OPTIONS} ${INCLUDE_FLAGS} ${C_SOURCES} ${CPPCHECK_OPTIONS_POST})
 endif()
 
@@ -925,16 +942,16 @@ endif()
 add_custom_target(audit DEPENDS coverage cppcheck)
 
 # Define the distribution package
-set(CPACK_PACKAGE_VERSION "${PHIST_VERSION_MAJOR}.${PHIST_VERSION_MINOR}.${PHIST_VERSION_PATCH}")
+set(CPACK_PACKAGE_VERSION "${PHIST_VERSION}")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE.txt")
-set(CPACK_GENERATOR ZIP)
-#install(FILES "${CMAKE_SOURCE_DIR}/AUTHORS.txt" DESTINATION .)
-#install(FILES "${CMAKE_SOURCE_DIR}/CHANGES.txt" DESTINATION .)
-install(FILES "${CMAKE_SOURCE_DIR}/LICENSE.txt" DESTINATION .)
-install(FILES "${CMAKE_SOURCE_DIR}/README.md" DESTINATION .)
-#if (DOXYGEN_FOUND)
-#  install(DIRECTORY "${CMAKE_SOURCE_DIR}/doc/html" DESTINATION doc)
-#endif()
+set(CPACK_SYSTEM_NAME "${CMAKE_SYSTEM_NAME}-${CMAKE_C_COMPILER_ID}-${CMAKE_C_COMPILER_VERSION}")
+set(CPACK_GENERATOR TGZ)
+
+install(FILES "${CMAKE_SOURCE_DIR}/LICENSE.txt" DESTINATION share/doc/phist)
+install(FILES "${CMAKE_SOURCE_DIR}/README.md"   DESTINATION share/doc/phist)
+if (DOXYGEN_FOUND)
+  install(DIRECTORY "${CMAKE_SOURCE_DIR}/doc/html" DESTINATION share/doc/phist)
+endif()
 include(CPack)
 
 # Custom targets
