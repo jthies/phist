@@ -101,23 +101,31 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t
     *iflag=PHIST_INVALID_INPUT;
     return;
   }
-
-  if (*iflag&PHIST_SPARSEMAT_OPT_CARP && ~(*iflag&PHIST_SPARSEMAT_DIST2_COLOR))
+  if (*iflag&PHIST_SPARSEMAT_OPT_CARP)
   {
-    int nthreads=1;
-    #pragma omp parallel
-    #pragma omp master
-    nthreads=omp_get_num_threads();
-    if (nthreads==1) 
+    if ((*iflag&PHIST_SPARSEMAT_DIST2_COLOR)==0)
     {
-      // disable coloring for optimal performance.
-      PHIST_SOUT(PHIST_INFO,"NOTE: You indicated that the matrix will be used in CARP-CG,\n"
+      int nthreads=1;
+#pragma omp parallel
+#pragma omp master
+      nthreads=omp_get_num_threads();
+      if (nthreads==1) 
+      {
+        // disable coloring for optimal performance.
+        PHIST_SOUT(PHIST_INFO,"NOTE: You indicated that the matrix will be used in CARP-CG,\n"
                             "      as it seems that there is only one OpenMP thread, I \n"
                             "      will not construct a coloring, so subsequent CARP sweeps will be sequential per MPI process.\n"
                             "      If you want to use the coloring kernel anyway, specify the flag \n"
                             "       PHIST_SPARSEMAT_OPT_CARP|PHIST_SPARSEMAT_DIST2_COLOR to enforce it.\n"
                         );
-      *iflag&=~PHIST_SPARSEMAT_OPT_CARP;
+        *iflag&=~PHIST_SPARSEMAT_OPT_CARP;
+      }
+    }
+    else
+    {
+      // force coloring even for one thread, but otherwise like
+      // PHIST_OPT_CARP
+      *iflag&=~PHIST_SPARSEMAT_DIST2_COLOR;
     }
   }
 
@@ -638,23 +646,37 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, const
                 int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-
-  if (*iflag&PHIST_SPARSEMAT_OPT_CARP && ~(*iflag&PHIST_SPARSEMAT_DIST2_COLOR))
+/*
+std::cout << "iflag="<<*iflag<<std::endl;
+std::cout << "iflag&OPT_CARP="<<(*iflag&PHIST_SPARSEMAT_OPT_CARP)<<std::endl;
+std::cout << "iflag&DIST2_COLOR="<<(*iflag&PHIST_SPARSEMAT_DIST2_COLOR)<<std::endl;
+*/
+  if (*iflag&PHIST_SPARSEMAT_OPT_CARP)
   {
-    int nthreads=1;
-    #pragma omp parallel
-    #pragma omp master
-    nthreads=omp_get_num_threads();
-    if (nthreads==1) 
+    if ((*iflag&PHIST_SPARSEMAT_DIST2_COLOR)==0)
     {
-      // disable coloring for optimal performance.
-      PHIST_SOUT(PHIST_INFO,"NOTE: You indicated that the matrix will be used in CARP-CG,\n"
+      int nthreads=1;
+#pragma omp parallel
+#pragma omp master
+      nthreads=omp_get_num_threads();
+      std::cout << "nthreads="<<nthreads<<std::endl;
+      if (nthreads==1)
+      {
+        // disable coloring for optimal performance.
+        PHIST_SOUT(PHIST_INFO,"NOTE: You indicated that the matrix will be used in CARP-CG,\n"
                             "      as it seems that there is only one OpenMP thread, I \n"
                             "      will not construct a coloring, so subsequent CARP sweeps will be sequential per MPI process.\n"
                             "      If you want to use the coloring kernel anyway, specify the flag \n"
                             "       PHIST_SPARSEMAT_OPT_CARP|PHIST_SPARSEMAT_DIST2_COLOR to enforce it.\n"
                         );
-      *iflag&=~PHIST_SPARSEMAT_OPT_CARP;
+        *iflag&=~PHIST_SPARSEMAT_OPT_CARP;
+      }
+    }
+    else
+    {
+      // force coloring even for one thread, but otherwise like
+      // PHIST_OPT_CARP
+      *iflag&=~PHIST_SPARSEMAT_DIST2_COLOR;
     }
   }
 
