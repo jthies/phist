@@ -1,4 +1,5 @@
 #include "phist_config.h"
+#include "fdebug.h"
 
 !! Implementation of the CARP kernel in CRS format.
 !! This file contains the core routines to set up and
@@ -97,7 +98,6 @@ subroutine dkacz_selector(nvec, nlocal, nhalo, ncols, nnz, &
                   allocated(map%color_idx) .and. &
                   (map%coloringType==2) .and. &
                   ((istep==1) .or. (istep==-1))
-
   use_bzero_kernel=(ldb==0)
   
   if (use_clr_kernel) then
@@ -157,7 +157,7 @@ subroutine dkacz_selector(nvec, nlocal, nhalo, ncols, nnz, &
         call kacz_loop_RC_clr_generic(_KACZ_LOOP_ARGS_RC_)
       end if ! block size
     end if ! rhs=0
-  else ! no coloring - use lexicographic kernel
+  else ! no coloring - use lexicographic sequential kernel
     if (use_bzero_kernel) then
       if (nvec==1) then
         call kacz_loop_RC_seq_b0_1(_KACZ_LOOP_ARGS_RC_)
@@ -267,6 +267,11 @@ subroutine dkacz_selector_real(nvec, nlocal, nhalo, ncols, nnz, &
       if (use_szero_kernel) then
         if (nvec==1) then
           call kacz_loop_clr_b0_s0_1(_KACZ_LOOP_ARGS_)
+          !if (istep==1) then
+          !  call kacz_fwd_clr_b0_s0_1(_KACZ_LOOP_ARGS_)            
+          !else
+          !  call kacz_back_clr_b0_s0_1(_KACZ_LOOP_ARGS_)          
+          !end if
         else if (nvec==2) then
           call kacz_loop_clr_b0_s0_2(_KACZ_LOOP_ARGS_)
         else if (nvec==4) then
@@ -320,7 +325,7 @@ subroutine dkacz_selector_real(nvec, nlocal, nhalo, ncols, nnz, &
         call kacz_loop_clr_generic(_KACZ_LOOP_ARGS_)
       end if ! block size
     end if ! rhs=0
-  else ! no coloring - use lexicographic kernel
+  else ! no coloring - use lexicographic sequential kernel
     if (use_bzero_kernel) then
       if (use_szero_kernel) then
         if (nvec==1) then
@@ -736,5 +741,4 @@ end subroutine dkacz_selector_real
 
 #define SUB_NAME kacz_loop_RC_seq_generic
 #include "kacz_sub_def.h"
-
 

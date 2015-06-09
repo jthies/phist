@@ -1338,7 +1338,12 @@ end if
 !       result in permuted vectors, but it can be used to measure the impact of the coloring
 !       on data traffic in the spMVM, for instance.
 if (permute) then
+        write(*,*) 'WARNING - matrix is permuted locally according to coloring, this is', &
+                   '          only meant for debugging/benchmarking purposes (',__FILE__,', line ',__LINE__,')'
         call permute_local_matrix(crsMat)
+        ! remove color_idx s.t. the regular (sequential)
+        ! carp kernel is called
+        deallocate(crsMat%row_map%color_idx)
 end if        
 #endif
 

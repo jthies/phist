@@ -5,11 +5,11 @@
 !
 ! if KACZ_BZERO is #defined, the rhs vector is assumed to be 0 and not accessed.
 
-#ifdef TESTING
+#ifdef F_DEBUG
 #ifdef KACZ_BZERO
-!write(*,*) 'KACZ-LOOP CLR with b=0, nvec=',NVEC
+write(*,*) 'KACZ-LOOP CLR with b=0, nvec=',NVEC
 #else
-!write(*,*) 'KACZ-LOOP CLR, nvec=',NVEC
+write(*,*) 'KACZ-LOOP CLR, nvec=',NVEC
 #endif  
 flush(6)
 #endif
@@ -80,11 +80,13 @@ flush(6)
     tmp_i(1:NVEC)=tmp_i(1:NVEC)*omega*nrms_ai2i(i)
 #endif
     ! b) projection step
-#ifdef KACZ_RC_VARIANT
+#ifndef KACZ_NO_SHIFT
+# ifdef KACZ_RC_VARIANT
     x_r(1:NVEC,i)=x_r(1:NVEC,i) - (tmp_r(1:NVEC)*shift_r+tmp_i(1:NVEC)*shift_i)
     x_i(1:NVEC,i)=x_i(1:NVEC,i) - (tmp_i(1:NVEC)*shift_r-tmp_r(1:NVEC)*shift_i)
-#else
+# else
     x_r(1:NVEC,i)=x_r(1:NVEC,i) - (tmp_r(1:NVEC)*shift_r)
+# endif
 #endif
     do j = row_ptr(i), halo_ptr(i)-1, 1
       x_r(1:NVEC,col_idx(j)) = x_r(1:NVEC,col_idx(j)) + &
