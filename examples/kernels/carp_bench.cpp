@@ -114,6 +114,10 @@ PHIST_MAIN_TASK_BEGIN
     PHIST_ICHK_IERR(SUBR(mvec_delete)(xi,&iflag),iflag);
   }
   PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
+
+  double max_bw;
+  PHIST_ICHK_IERR(phist_bench_stream_triad(&max_bw, &iflag),iflag);
+  PHIST_SOUT(PHIST_INFO,"Maximum memory bandwidth (STREAM_TRIAD): %g GB/s\n",max_bw*1.0e-9);
 PHIST_MAIN_TASK_END
   PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
 
