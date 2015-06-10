@@ -1901,7 +1901,7 @@ end subroutine permute_local_matrix
       call colorcrs(A,2,3,ierr)
     end if
 #else
-    if (d2clr.or.d2clr_and_permute .and. map%me==0) then
+    if (d2clr.or.d2clr_and_permute .and. A%row_map%me==0) then
       write(*,*) 'COLPACK not available, flags DIST2_COLOR and OPT_CARP are ignored'
     end if
 #endif
@@ -2127,7 +2127,7 @@ end if
       call colorcrs(A,2,3,ierr)
     end if
 #else
-    if (d2clr.or.d2clr_and_permute .and. comm%me==0) then
+    if (d2clr.or.d2clr_and_permute .and. A%row_map%me==0) then
       write(*,*) 'COLPACK not available, flags DIST2_COLOR and OPT_CARP are ignored'
     end if
 #endif
