@@ -1760,7 +1760,7 @@ contains
     type(Map_t), pointer :: map
     integer :: i, nt, padding
     type(C_PTR) :: rawMem
-#if defined(F_DEBUG)
+#if defined(TESTING)
     integer(C_INTPTR_T) :: dummy
 #endif
     interface
