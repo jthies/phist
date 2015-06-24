@@ -126,6 +126,7 @@ namespace phist_PerfCheck
     PHIST_SOUT(PHIST_INFO, "%s  %10s  %10s  %10s  %10s  %10s\n", function.c_str(), "mtot.exp", "%peak-perf", "count", "max.%peak", "min.%peak");
     int nprocs;
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+    double sumMaxTotalExpected = 0., sumMaxTotalTime = 0.;
     for(int i_ = 0; i_ < nTimers; i_++)
     {
       int i = sortedIndex.at(i_);
@@ -136,7 +137,13 @@ namespace phist_PerfCheck
       PHIST_SOUT(PHIST_INFO, "%s  %10.3e  %10.3g  %10lu  %10.3g  %10.3g\n", fcnName.at(i).c_str(), maxTotalExpected.at(i), 100*maxTotalExpected.at(i)/maxTotalTime.at(i), numberOfCalls.at(i),
           100*minExpected.at(i)/minTime.at(i), 100*maxExpected.at(i)/maxTime.at(i));
       PHIST_SOUT(PHIST_INFO, " %s\n", fcnFormula.at(i).c_str());
+      sumMaxTotalExpected += maxTotalExpected.at(i);
+      sumMaxTotalTime += maxTotalTime.at(i);
     }
+    PHIST_SOUT(PHIST_INFO, "==================================================================================================================================\n");
+    std::string strTotal = "total";
+    strTotal.resize(maxNameLen, ' ');
+    PHIST_SOUT(PHIST_INFO, "%s  %10.3e  %10.3g\n", strTotal.c_str(), sumMaxTotalExpected, 100*sumMaxTotalExpected/sumMaxTotalTime);
     PHIST_SOUT(PHIST_INFO, "==================================================================================================================================\n");
   }
 }
