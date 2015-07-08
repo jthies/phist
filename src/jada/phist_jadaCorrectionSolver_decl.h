@@ -1,3 +1,5 @@
+#include "phist_enums.h"
+
 //!
 //! The jadaCorrectionSolver uses the blockedGMRES to calculate approximate solutions to a set of Jacobi-Davidson correction equations.
 //! It provides a simple interface and takes care of restarting/pipelining issues
@@ -8,7 +10,8 @@ typedef struct TYPE(jadaCorrectionSolver)
   //@{
   int                   gmresBlockDim_;     //! number of blockedGMRES states iterated at once
   TYPE(blockedGMRESstate_ptr) *blockedGMRESstates_;     //! blockedGMRES states
-  bool                  useMINRES_;         //! switch to minres for symmetric matrices
+  TYPE(carp_cgState_ptr) *carp_cgStates_; //! can use CARP-CG alternatively
+  linSolv_t     method_;    //! supported values are GMRES, MINRES and CARP_CG
   //@}
 } TYPE(jadaCorrectionSolver);
 
@@ -19,7 +22,7 @@ typedef TYPE(jadaCorrectionSolver) const * TYPE(const_jadaCorrectionSolver_ptr);
 
 //! create a jadaCorrectionSolver object
 void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *jdCorrSolver, int blockedGMRESBlockDim, const_map_ptr_t map, 
-        linSolv_t method, int maxBase, bool useMINRES, int *iflag);
+        linSolv_t method, int maxBase, int *iflag);
 
 //! delete a jadaCorrectionSolver object
 void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver, int *iflag);

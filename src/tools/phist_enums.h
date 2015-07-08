@@ -17,7 +17,7 @@ typedef enum linSolv_t
 {
   DO_NOTHING=0, // do nothing: X=B
   GMRES=1, // unpreconditioned GMRES
-  MINRES=2, // unpreconditioned GMRES
+  MINRES=2, // unpreconditioned MINRES
   CARP_CG=3, // CG on the normal equations, preconditioned by CARP (parallel SSOR)
   INVALID_LINSOLV_T=99 // returned if str2linSolv gets an invalid string
 } linSolv_t;

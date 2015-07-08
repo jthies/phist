@@ -1,19 +1,19 @@
 //! create a jadaCorrectionSolver object
 void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, int blockedGMRESBlockDim, const_map_ptr_t map, 
-        linSolv_t method, int blockedGMRESMaxBase, bool useMINRES, int *iflag)
+        linSolv_t method, int blockedGMRESMaxBase, int *iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag = 0;
-  if (method==GMRES)
+  *me = new TYPE(jadaCorrectionSolver);
+  (*me)->method_ = method;
+  if (method==GMRES||method==MINRES)
   {
     PHIST_CHK_IERR( *iflag = (blockedGMRESBlockDim <= 0) ? -1 : 0, *iflag);
 
-    *me = new TYPE(jadaCorrectionSolver);
     (*me)->gmresBlockDim_ = blockedGMRESBlockDim;
     (*me)->blockedGMRESstates_  = new TYPE(blockedGMRESstate_ptr)[blockedGMRESBlockDim];
     PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)((*me)->blockedGMRESstates_, blockedGMRESBlockDim, map, blockedGMRESMaxBase, iflag), *iflag);
-    (*me)->useMINRES_ = useMINRES;
   }
   else if (method==CARP_CG)
   {
@@ -33,8 +33,15 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) me, int *i
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag = 0;
 
-  PHIST_CHK_IERR(SUBR(blockedGMRESstates_delete)(me->blockedGMRESstates_, me->gmresBlockDim_, iflag), *iflag);
-  delete[] me->blockedGMRESstates_;
+  if (me->method_==GMRES || me->method_==MINRES)
+  {
+    PHIST_CHK_IERR(SUBR(blockedGMRESstates_delete)(me->blockedGMRESstates_, me->gmresBlockDim_, iflag), *iflag);
+    delete[] me->blockedGMRESstates_;
+  }
+  else if (me->method_==CARP_CG)
+  {
+    *iflag=-99;
+  }
   delete me;
 }
 
@@ -168,9 +175,13 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
     }
 
     // actually iterate
-    if( me->useMINRES_ )
+    if( me->method_==MINRES )
     {
       PHIST_CHK_NEG_IERR(SUBR(blockedMINRESstates_iterate)(&jadaOp, &activeStates[0], k, &nTotalIter, iflag), *iflag);
+    }
+    else if (me->method_==CARP_CG)
+    {
+      *iflag=-99;
     }
     else
     {
