@@ -63,7 +63,7 @@ namespace phist_PerfCheck
   typedef std::map<std::string,double> BenchmarkMap;
 
   //! Lookup table for performance benchmark data
-  BenchmarkMap benchmarks;
+  static BenchmarkMap benchmarks;
 
   //! Performance checking timer
   class PerfCheckTimer : public Timer
