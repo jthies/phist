@@ -276,7 +276,7 @@ contains
     BNDRY(1:6)=0
   else  if (problem.ge.PROB_B0 .and. PROBLEM.le.PROB_B9) then
     BNDRY(1:6)=0
-  else if (problem==PROB_C1) then
+  else if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
     BNDRY(1:6)=-1
     call init_random_seed()
   else
@@ -315,7 +315,10 @@ contains
       beta =20.0_8/HY
       gamma=1.0_8/HZ
       delta=0.0_8
-    else if (problem .ge. PROB_C0 .and. PROBLEM .le. PROB_C9) then
+    else if (problem==PROB_C1) then
+      ! scaling of random numbers on diagonal
+      alpha=1.0
+    else if (problem==PROB_C0 .and. PROBLEM .le. PROB_C9) then
       ! scaling of random numbers on diagonal
       alpha=16.5
     end if
