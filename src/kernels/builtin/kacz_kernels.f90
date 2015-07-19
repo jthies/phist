@@ -16,16 +16,19 @@
 
 !! pass all subroutine args to specialized kernels:
 #define _KACZ_LOOP_ARGS_RC_ nvec,nlocal,nhalo,ncols,nnz,row_ptr,halo_ptr,col_idx,val,map,\
-shift_r,shift_i,b,ldb,x_r,x_i,ldx,halo_r,halo_i,nrms_ai2i,omega,istart,iend,istep,i0,i1,j0,j1
+shift_r,shift_i,b,ldb,x_r,x_i,ldx,halo_r,halo_i,omega,istart,iend,istep,i0,i1,j0,j1
 
 !! pass dummy args for imaginary parts in case of real matrix and real shifts
 #define _KACZ_LOOP_ARGS_  nvec,nlocal,nhalo,ncols,nnz,row_ptr,halo_ptr,col_idx,val,map,\
-shift_r,shift_r,b,ldb,x_r,x_r,ldx,halo_r,halo_r,nrms_ai2i,omega,istart,iend,istep,i0,i1,j0,j1
+shift_r,shift_r,b,ldb,x_r,x_r,ldx,halo_r,halo_r,omega,istart,iend,istep,i0,i1,j0,j1
 
 !! compute for a given shift sigma=shift_r+shift_i the 2-norm of each row
 !! of the matrix shift[j]*I-A and store the inverse of the results in the
 !! columns j of the block vector nrms_ai2i. On entry, nrms_ai2i(:,1) should
 !! contain the diagonal elements of A, aii, to make things easier here (!).
+!!
+!! NOTE: this function is not used anymore right now, instead we recompute the
+!!        norms on-the-fly
 subroutine crsmat_norms_ai2i(nshifts, nlocal, nnz, row_ptr, &
          val, shifts_r,shifts_i, nrms_ai2i)
   implicit none
@@ -63,7 +66,7 @@ end subroutine crsmat_norms_ai2i
 subroutine dkacz_selector(nvec, nlocal, nhalo, ncols, nnz, &
         row_ptr, halo_ptr, col_idx, val, map, &
         shift_r,shift_i, b, ldb, &
-        x_r,x_i, ldx, halo_r, halo_i,nrms_ai2i,omega,istart_in,iend_in,istep)
+        x_r,x_i, ldx, halo_r, halo_i,omega,istart_in,iend_in,istep)
 #ifdef PHIST_HAVE_OPENMP
   use :: omp_lib
 #endif
@@ -73,15 +76,14 @@ subroutine dkacz_selector(nvec, nlocal, nhalo, ncols, nnz, &
 
   integer, intent(in) :: nvec, nlocal, nhalo, ncols, ldx, ldb
   integer(kind=8), intent(in) :: nnz
-  real(kind=8), intent(in) :: shift_r, shift_i
+  real(kind=8), intent(in) :: shift_r(nvec), shift_i(nvec)
   integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
   TYPE(Map_t), intent(in) :: map
   real(kind=8), intent(inout) :: x_r(ldx,*), x_i(ldx,*),b(ldb,*)
   real(kind=8), intent(inout) :: halo_r(nvec,nhalo),halo_i(nvec,nhalo)
-  real(kind=8), intent(in) :: nrms_ai2i(nlocal)
-  real(kind=8), intent(in) :: omega
+  real(kind=8), intent(in) :: omega(nvec)
   integer, intent(in) :: istart_in,iend_in,istep
   ! locals
   real(kind=8) :: tmp_r(nvec), tmp_i(nvec)
@@ -204,7 +206,7 @@ end subroutine dkacz_selector
 subroutine dkacz_selector_real(nvec, nlocal, nhalo, ncols, nnz, &
         row_ptr, halo_ptr, col_idx, val, map, &
         shift_r, b, ldb, &
-        x_r, ldx, halo_r, nrms_ai2i,omega,istart_in,iend_in,istep)
+        x_r, ldx, halo_r,omega,istart_in,iend_in,istep)
 
   use :: omp_lib
   use :: map_module
@@ -213,15 +215,14 @@ subroutine dkacz_selector_real(nvec, nlocal, nhalo, ncols, nnz, &
 
   integer, intent(in) :: nvec, nlocal, nhalo, ncols, ldx, ldb
   integer(kind=8), intent(in) :: nnz
-  real(kind=8), intent(in) :: shift_r
+  real(kind=8), intent(in) :: shift_r(nvec)
   integer(kind=8), intent(in) :: row_ptr(nlocal+1), halo_ptr(nlocal)
   integer, intent(in) :: col_idx(nnz)
   real(kind=8), intent(in) :: val(nnz)
   TYPE(Map_t), intent(in) :: map
   real(kind=8), intent(inout) :: x_r(ldx,*), b(ldb,*)
   real(kind=8), intent(inout) :: halo_r(nvec,nhalo)
-  real(kind=8), intent(in) :: nrms_ai2i(nlocal)
-  real(kind=8), intent(in) :: omega
+  real(kind=8), intent(in) :: omega(nvec)
   integer, intent(in) :: istart_in,iend_in,istep
   ! locals
   real(kind=8) :: tmp_r(nvec),tmp_i(nvec)
@@ -243,7 +244,7 @@ subroutine dkacz_selector_real(nvec, nlocal, nhalo, ncols, nnz, &
 
   use_bzero_kernel=(ldb==0)
   
-  use_szero_kernel=(shift_r==0.0_8)
+  use_szero_kernel=ALL(shift_r==0.0_8)
 
   if (use_clr_kernel) then
     if (istep==1) then

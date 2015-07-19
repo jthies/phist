@@ -243,7 +243,7 @@ if (num_complex==0)
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_i_ex0,ZERO,&iflag),iflag);
     
   // compute rhs B to match this exact solution for sigma[0]:
-  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_r[0],X_r_ex0,-ONE,B,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_r[0],X_r_ex0,ONE,B,&iflag),iflag);
 }
 else
 {
@@ -299,8 +299,9 @@ PHIST_ICHK_IERR(SUBR(sdMat_delete)(Rtmp,&iflag),iflag);
   // this is not very elegant, but since this driver was meant to test the feast correction 
   // solver in the first place, we stick with it and set parameters manually.
   for (i=0;i<nshifts;i++)
+  for (int j=0;j<blockSize;j++)
   {
-    fCorrSolver->carp_cgStates_[i]->omega_=omega;
+    fCorrSolver->carp_cgStates_[i]->omega_[j]=omega;
   }
 
   int numBlocks=nrhs/blockSize;

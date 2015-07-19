@@ -2271,27 +2271,23 @@ end if
 
   !==================================================================================
 
-  subroutine phist_Dcarp_setup(A_ptr, numShifts, shifts_r, shifts_i, nrms_ai2i_ptr, work_ptr,ierr) &
+  subroutine phist_Dcarp_setup(A_ptr, numShifts, shifts_r, shifts_i, work_ptr,ierr) &
     & bind(C,name='phist_Dcarp_setup_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),      value         :: A_ptr
     integer(C_INT),   value         :: numShifts
     real(kind=c_double), intent(in) :: shifts_r(numShifts), shifts_i(numShifts)
-    TYPE(C_PTR), value :: nrms_ai2i_ptr
-    real(kind=8), pointer, dimension(:,:) :: nrms_ai2i
     type(C_PTR), intent(out) :: work_ptr
     integer(C_INT),   intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(CrsMat_t), pointer :: A
-    ! this array contains the 1/np, where np is the number of procs contributing
-    ! to a value in the 'receive' area (the elements sent during regular spMVM)
-    type(sparseArray_t), pointer :: invProcCount
 
     !--------------------------------------------------------------------------------
     
+    TYPE(sparseArray_t), pointer ::       invProcCount
+    
     integer, allocatable, dimension(:) :: procCount !! temporary array
-    integer :: theShape(2)
     integer :: i,k,l
     integer(kind=8) :: j
 
@@ -2305,27 +2301,7 @@ end if
 !end do
 
     call c_f_pointer(A_ptr,A)
-    theShape(1)=A%nRows
-    theShape(2)=numShifts
-    call c_f_pointer(nrms_ai2i_ptr,nrms_ai2i,theShape)
-
-    ! start by putting the diagonal elements of A in the first column
-    ! of this array, will be overwritten by the kernel
-
-!$omp parallel do private(j) schedule(static)
-    do i = 1,A%nRows
-      nrms_ai2i(i,:)=0.d0
-      do j = A%row_offset(i), A%nonlocal_offset(i)-1, 1
-        if (A%col_idx(j).eq.i) then
-          nrms_ai2i(i,1)=A%val(j)
-        end if
-      end do
-    end do
-
-    ! compute inverse row norms for shift i in column i
-    call crsmat_norms_ai2i(numShifts, A%nRows, A%nEntries, &
-        A%row_offset, A%val, shifts_r,shifts_i,nrms_ai2i)
-    
+        
     ! work is used to store the averaging coefficients for the x halo
     ! received from other processes (in a sparseArray_t object)
     allocate(procCount(A%nRows),stat=ierr)
@@ -2371,27 +2347,24 @@ end if
     !end if
   end subroutine phist_Dcarp_setup
 
-  subroutine phist_Dcarp_sweep(A_ptr, numShifts, shifts_r, shifts_i, &
-        b_ptr, x_r_ptr, x_i_ptr, nrms_ai2i_ptr, work_ptr, omegas, ierr) &
+  subroutine phist_Dcarp_sweep(A_ptr, shifts_r, shifts_i, &
+        b_ptr, x_r_ptr, x_i_ptr, work_ptr, omegas, ierr) &
   bind(C,name='phist_Dcarp_sweep_f')
     use, intrinsic :: iso_c_binding
     implicit none
     !--------------------------------------------------------------------------------
     type(C_PTR),      value         :: A_ptr, b_ptr
-    integer(c_int),   value    :: numShifts
-    type(C_PTR)                     :: x_r_ptr(numShifts), x_i_ptr(numShifts)
-    real(kind=c_double), intent(in) :: shifts_r(numShifts), shifts_i(numShifts)
-    real(kind=c_double), intent(in) :: omegas(numShifts)
-    type(C_PTR),      value         :: nrms_ai2i_ptr,work_ptr
+    real(kind=c_double), dimension(*), intent(in) :: shifts_r, shifts_i
+    type(C_PTR),      value         :: x_r_ptr, x_i_ptr
+    real(kind=c_double), intent(in) :: omegas(*)
+    type(C_PTR),      value         :: work_ptr
     integer(C_INT),   intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(CrsMat_t), pointer :: A
-    real(kind=8), pointer :: nrms_ai2i(:,:)
     type(MVec_t), pointer :: x_r, x_i, b
     type(sparseArray_t), pointer :: invProcCount
     
     !--------------------------------------------------------------------------------
-    integer :: iSys
     integer :: ldx, ldb, nvec
     logical strided_x, strided_b
     integer :: theShape(2)
@@ -2418,17 +2391,7 @@ end if
       ldb = size(b%val,1)
     end if
 
-    theShape(1) = A%nRows
-    theShape(2) = numShifts
-
     !write(*,*) 'enter carp_sweep_f, bzero=',b_is_zero
-    if ( .not. c_associated(nrms_ai2i_ptr) ) then
-      write(*,*) 'nrms_ai2i is NULL'
-      ierr = -88
-      return
-    else
-      call c_f_pointer(nrms_ai2i_ptr,nrms_ai2i,theShape)
-    end if
 
     if ( .not. c_associated(work_ptr) ) then
       write(*,*) 'work is NULL'
@@ -2438,21 +2401,16 @@ end if
       call c_f_pointer(work_ptr,invProcCount)
     end if
 
-    ! treat one shift at a time for the moment, here there
-    ! is potential for additional parallelism, of course,
-    ! but the user can also handle this level himself by
-    ! passsing in one shift at a time to this function.
-    do iSys=1,numShifts
       
       ! check that all C pointers are non-null
-      if ( .not. c_associated(x_r_ptr(iSys)) .or. &
-         & .not. c_associated(x_i_ptr(iSys)) ) then
-        write(*,*) 'an input mvec x is NULL, index ',iSys
+      if ( .not. c_associated(x_r_ptr) .or. &
+         & .not. c_associated(x_i_ptr) ) then
+        write(*,*) 'input mvec x is NULL'
         ierr = -88
         return
       end if
-      call c_f_pointer(x_r_ptr(iSys),x_r)
-      call c_f_pointer(x_i_ptr(iSys),x_i)
+      call c_f_pointer(x_r_ptr,x_r)
+      call c_f_pointer(x_i_ptr,x_i)
 
       nvec = x_r%jmax-x_r%jmin+1
 
@@ -2527,23 +2485,23 @@ end if
       call dkacz_selector(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 A%row_map,&
-                shifts_r(iSys),shifts_i(iSys), &
+                shifts_r,shifts_i, &
                 bzero, ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
                 A%comm_buff%recvData(1,1,1),&
                 A%comm_buff%recvData(1,1,2),&
-                nrms_ai2i(1,iSys),omegas(iSys),&
+                omegas(1),&
                 1,A%nRows,+1)
         else
       call dkacz_selector(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 A%row_map,&
-                shifts_r(iSys),shifts_i(iSys), &
+                shifts_r,shifts_i, &
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
                 A%comm_buff%recvData(1,1,1),&
                 A%comm_buff%recvData(1,1,2),&
-                nrms_ai2i(1,iSys),omegas(iSys),&
+                omegas(1),&
                 1,A%nRows,+1)        
         end if
       ! exchange values and average (export/average operation
@@ -2567,23 +2525,23 @@ end if
       call dkacz_selector(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 A%row_map,&
-                shifts_r(iSys),shifts_i(iSys), &
+                shifts_r(1),shifts_i(1), &
                 bzero, ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
                 A%comm_buff%recvData(1,1,1),&
                 A%comm_buff%recvData(1,1,2),&
-                nrms_ai2i(1,iSys),omegas(iSys),&
+                omegas(1),&
                 A%nRows,1,-1)      
       else
       call dkacz_selector(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 A%row_map,&
-                shifts_r(iSys),shifts_i(iSys), &
+                shifts_r(1),shifts_i(1), &
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1),x_i%val(x_i%jmin,1), ldx, &
                 A%comm_buff%recvData(1,1,1),&
                 A%comm_buff%recvData(1,1,2),&
-                nrms_ai2i(1,iSys),omegas(iSys),&
+                omegas(1),&
                 A%nRows,1,-1)
       end if
       ! exchange values and average, stay in domain map
@@ -2594,36 +2552,31 @@ end if
         write(*,*) 'call Dcarp_average returned ierr=',ierr
         return
       end if
-    end do ! shifts
     
   end subroutine phist_Dcarp_sweep
 
 
   ! variant of carp_sweep with real matrix, real shift, and real vectors
-  subroutine phist_Dcarp_sweep_real(A_ptr, numShifts, shifts_r, &
-        b_ptr, x_r_ptr, nrms_ai2i_ptr, work_ptr, omegas, ierr) &
+  subroutine phist_Dcarp_sweep_real(A_ptr, shifts_r, &
+        b_ptr, x_r_ptr, work_ptr, omegas, ierr) &
   bind(C,name='phist_Dcarp_sweep_real_f')
     use, intrinsic :: iso_c_binding
     implicit none
     !--------------------------------------------------------------------------------
     type(C_PTR),      value         :: A_ptr, b_ptr
-    integer(c_int),   value    :: numShifts
-    type(C_PTR)                     :: x_r_ptr(numShifts)
-    real(kind=c_double), intent(in) :: shifts_r(numShifts)
-    real(kind=c_double), intent(in) :: omegas(numShifts)
-    type(C_PTR),      value         :: nrms_ai2i_ptr,work_ptr
+    type(C_PTR),      value         :: x_r_ptr
+    real(kind=c_double), dimension(*), intent(in) :: shifts_r
+    real(kind=c_double), intent(in) :: omegas(*)
+    type(C_PTR),      value         :: work_ptr
     integer(C_INT),   intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(CrsMat_t), pointer :: A
-    real(kind=8), pointer :: nrms_ai2i(:,:)
     type(MVec_t), pointer :: x_r, b
     type(sparseArray_t), pointer :: invProcCount
     
     !--------------------------------------------------------------------------------
-    integer :: iSys
     logical strided_x, strided_b
     integer :: ldx, ldb, nvec
-    integer :: theShape(2)
     integer :: sendBuffSize,recvBuffSize
     logical :: b_is_zero
     real(kind=8), dimension(0,0), target :: bzero
@@ -2647,17 +2600,6 @@ end if
       ldb = size(b%val,1)
     end if
 
-    theShape(1) = A%nRows
-    theShape(2) = numShifts
-
-    !write(*,*) 'enter carp_sweep_f, bzero=',b_is_zero
-    if ( .not. c_associated(nrms_ai2i_ptr) ) then
-      write(*,*) 'nrms_ai2i is NULL'
-      ierr = -88
-      return
-    else
-      call c_f_pointer(nrms_ai2i_ptr,nrms_ai2i,theShape)
-    end if
 
     if ( .not. c_associated(work_ptr) ) then
       write(*,*) 'work is NULL'
@@ -2667,19 +2609,13 @@ end if
       call c_f_pointer(work_ptr,invProcCount)
     end if
 
-    ! treat one shift at a time for the moment, here there
-    ! is potential for additional parallelism, of course,
-    ! but the user can also handle this level himself by
-    ! passsing in one shift at a time to this function.
-    do iSys=1,numShifts
-      
       ! check that all C pointers are non-null
-      if ( .not. c_associated(x_r_ptr(iSys)) ) then
-        write(*,*) 'an input mvec x is NULL, index ',iSys
+      if ( .not. c_associated(x_r_ptr) ) then
+        write(*,*) 'an input mvec x is NULL'
         ierr = -88
         return
       end if
-      call c_f_pointer(x_r_ptr(iSys),x_r)
+      call c_f_pointer(x_r_ptr,x_r)
 
       nvec = x_r%jmax-x_r%jmin+1
 
@@ -2754,21 +2690,21 @@ end if
       call dkacz_selector_real(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 A%row_map,&
-                shifts_r(iSys), &
+                shifts_r(1), &
                 bzero, ldb, &
                 x_r%val(x_r%jmin,1),ldx, &
                 A%comm_buff%recvData,&
-                nrms_ai2i(1,iSys),omegas(iSys),&
+                omegas(1),&
                 1,A%nRows,+1)
         else
       call dkacz_selector_real(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 A%row_map,&
-                shifts_r(iSys), &
+                shifts_r(1), &
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1), ldx, &
                 A%comm_buff%recvData,&
-                nrms_ai2i(1,iSys),omegas(iSys),&
+                omegas(1),&
                 1,A%nRows,+1)        
         end if
       ! exchange values and average (export/average operation
@@ -2792,21 +2728,21 @@ end if
       call dkacz_selector_real(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 A%row_map,&
-                shifts_r(iSys), &
+                shifts_r(1), &
                 bzero, ldb, &
                 x_r%val(x_r%jmin,1),ldx, &
                 A%comm_buff%recvData,&
-                nrms_ai2i(1,iSys),omegas(iSys),&
+                omegas(1),&
                 A%nRows,1,-1)      
       else
       call dkacz_selector_real(nvec, A%nRows, recvBuffSize,A%nCols, A%nEntries, &
                 A%row_offset, A%nonlocal_offset, A%col_idx, A%val, &
                 A%row_map,&
-                shifts_r(iSys), &
+                shifts_r(1), &
                 b%val(b%jmin,1), ldb, &
                 x_r%val(x_r%jmin,1), ldx, &
                 A%comm_buff%recvData,&
-                nrms_ai2i(1,iSys),omegas(iSys),&
+                omegas(1),&
                 A%nRows,1,-1)
       end if
       ! exchange values and average, stay in domain map
@@ -2817,30 +2753,30 @@ end if
         write(*,*) 'call Dcarp_average returned ierr=',ierr
         return
       end if
-    end do ! shifts
     
   end subroutine phist_Dcarp_sweep_real
 
-  subroutine phist_Dcarp_destroy(A_ptr, numShifts, work_ptr, ierr) &
+  subroutine phist_Dcarp_destroy(A_ptr, work_ptr, ierr) &
   bind(C,name='phist_Dcarp_destroy_f')
     use, intrinsic :: iso_c_binding
 
     type(C_PTR), value :: A_ptr
-    integer(c_int), value :: numShifts
     type(C_PTR), value :: work_ptr
     integer(c_int), intent(out) :: ierr
     !-----------------------------------------!
     TYPE(sparseArray_t), pointer :: invProcCount
     
-    ! the C top layer allocated nrms_ai2i, so it also deletes them
     ierr=0
     
     call c_f_pointer(work_ptr, invProcCount)
-    if (allocated(invProcCount%idx)) then
-      deallocate(invProcCount%idx)
-    end if
-    if (allocated(invProcCount%val)) then
-      deallocate(invProcCount%val)
+    if (associated(invProcCount)) then
+        if (allocated(invProcCount%idx)) then
+          deallocate(invProcCount%idx)
+        end if
+        if (allocated(invProcCount%val)) then
+          deallocate(invProcCount%val)
+        end if
+        deallocate(invProcCount)
     end if
     
   end subroutine phist_Dcarp_destroy

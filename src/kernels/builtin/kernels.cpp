@@ -15,6 +15,7 @@
 
 #include <cstdlib>
 #include <cstdio>
+#include <iostream>
 
 #include "phist_macros.h"
 #include "phist_kernel_perfmodels.hpp"

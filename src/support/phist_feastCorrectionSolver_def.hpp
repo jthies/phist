@@ -1,3 +1,28 @@
+void SUBR(private_rebuild_carp_cgStates)(TYPE(feastCorrectionSolver_ptr) me, int bs, int* iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+  *iflag=0;
+
+        PHIST_SOUT(PHIST_DEBUG,"(re-)construct CARP structs with block size %d\n",bs);
+        _MT_ sig_r[bs],sig_i[bs];
+        for (int i=0;i<me->numShifts_; i++)
+        {
+          for (int j=0;j<bs;j++)
+          {
+          sig_r[j]=me->sigma_r_[i];
+          sig_i[j]=me->sigma_i_[i];
+          }
+          if (me->carp_cgStates_[i]!=NULL)
+          {
+            PHIST_CHK_IERR(SUBR(carp_cgState_delete)
+              (me->carp_cgStates_[i],iflag),*iflag);
+          }
+          PHIST_CHK_IERR(SUBR(carp_cgState_create)
+            (&me->carp_cgStates_[i],me->A_,bs,sig_r,sig_i,
+            iflag),*iflag);
+        }
+}
+
 //! create a feastCorrectionSolver object
 void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me, 
         TYPE(const_sparseMat_ptr) A,
@@ -32,10 +57,13 @@ void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me,
   {
     // create one CARP-CG object per shift.
     (*me)->carp_cgStates_ = new TYPE(carp_cgState_ptr)[numShifts];
-    
-    PHIST_CHK_IERR(SUBR(carp_cgStates_create)
-        ((*me)->carp_cgStates_,numShifts,(*me)->sigma_r_,(*me)->sigma_i_,
-        A, blockSize,iflag),*iflag);    
+    for (int i=0;i<numShifts;i++) (*me)->carp_cgStates_[i]=NULL;
+
+    // create one state object per shift
+    // (this could be done in any other way too, but
+    // since the 'real' memory is only allocated temporarily in
+    // _iterate, it doesn't matter too much)
+    PHIST_CHK_IERR(SUBR(private_rebuild_carp_cgStates)(*me,blockSize,iflag),*iflag);  
   }
   else
   {
@@ -57,7 +85,11 @@ void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) me, int 
   me->rhs_=NULL;
   if (me->method_==CARP_CG)
   {
-    PHIST_CHK_IERR(SUBR(carp_cgStates_delete)(me->carp_cgStates_,me->numShifts_,iflag),*iflag);
+    for (int i=0; i<me->numShifts_;i++)
+    {
+      PHIST_CHK_IERR(SUBR(carp_cgState_delete)(me->carp_cgStates_[i],iflag),*iflag);
+    }
+    delete [] me->carp_cgStates_;
   }
   else
   {
@@ -90,11 +122,11 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
-  
+
   // this function solves nshifts*nrhs linear systems and groups them
   // somehow into blocks of size bs. The outer loop if over the columns
   // (of sol and rhs), the inner over the shifts.
-  
+
   int blockSize=me->blockSize_;
   int nrhs;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(rhs,&nrhs,iflag),*iflag);
@@ -103,78 +135,65 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
 
   for (int c0=0;c0<nrhs;c0+=blockSize)
   {
-  int c1=std::min(c0+blockSize,nrhs)-1;
-  int bs=c1-c0+1;
-  PHIST_SOUT(PHIST_VERBOSE,"SOLVE SYSTEMS (%d:%d)\n",c0,c1);
+    int c1=std::min(c0+blockSize,nrhs)-1;
+    int bs=c1-c0+1;
+    PHIST_SOUT(PHIST_VERBOSE,"SOLVE SYSTEMS (%d:%d)\n",c0,c1);
     if (me->method_==CARP_CG)
     {
-    TYPE(mvec_ptr) b,*x_r,*x_i;
-    b=(TYPE(mvec_ptr))rhs;
-    x_r=sol_r;
-    x_i=sol_i;
-      
-    if (copy_input_vecs)
-    {
-      PHIST_SOUT(PHIST_DEBUG,"create tmp vectors\n");
-      const_map_ptr_t map;
-      PHIST_CHK_IERR(SUBR(mvec_get_map)(b,&map,iflag),*iflag);
-
-      x_r=new TYPE(mvec_ptr)[me->numShifts_];
-      x_i=new TYPE(mvec_ptr)[me->numShifts_];
-
-      PHIST_CHK_IERR(SUBR(mvec_create)(&b,map,bs,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(mvec_get_block)(rhs,b,c0,c1,iflag),*iflag);
-      for (int i=0;i<me->numShifts_;i++)
+      TYPE(mvec_ptr) b,*x_r,*x_i;
+      b=(TYPE(mvec_ptr))rhs;
+      x_r=sol_r;
+      x_i=sol_i;
+        
+      if (copy_input_vecs)
       {
-        PHIST_CHK_IERR(SUBR(mvec_create)(&x_r[i],map,bs,iflag),*iflag);
-        PHIST_CHK_IERR(SUBR(mvec_create)(&x_i[i],map,bs,iflag),*iflag);
-        PHIST_CHK_IERR(SUBR(mvec_get_block)(sol_r[i],x_r[i],c0,c1,iflag),*iflag);
-        PHIST_CHK_IERR(SUBR(mvec_get_block)(sol_i[i],x_i[i],c0,c1,iflag),*iflag);
+        PHIST_SOUT(PHIST_DEBUG,"create tmp vectors\n");
+        const_map_ptr_t map;
+        PHIST_CHK_IERR(SUBR(mvec_get_map)(b,&map,iflag),*iflag);
+
+        x_r=new TYPE(mvec_ptr)[me->numShifts_];
+        x_i=new TYPE(mvec_ptr)[me->numShifts_];
+
+        PHIST_CHK_IERR(SUBR(mvec_create)(&b,map,bs,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_get_block)(rhs,b,c0,c1,iflag),*iflag);
+        for (int i=0;i<me->numShifts_;i++)
+        {
+          PHIST_CHK_IERR(SUBR(mvec_create)(&x_r[i],map,bs,iflag),*iflag);
+          PHIST_CHK_IERR(SUBR(mvec_create)(&x_i[i],map,bs,iflag),*iflag);
+          PHIST_CHK_IERR(SUBR(mvec_get_block)(sol_r[i],x_r[i],c0,c1,iflag),*iflag);
+          PHIST_CHK_IERR(SUBR(mvec_get_block)(sol_i[i],x_i[i],c0,c1,iflag),*iflag);
+        }
       }
-    }
   
       MT* normsB=NULL;
       // adjust block size if fewer systems are solved.
       if (bs!=blockSize)
       {
-        PHIST_SOUT(PHIST_DEBUG,"re-construct CARP structs\n");
-        PHIST_CHK_IERR(SUBR(carp_cgStates_delete)
-            (me->carp_cgStates_,me->numShifts_,iflag),*iflag);
-        PHIST_CHK_IERR(SUBR(carp_cgStates_create)
-            (me->carp_cgStates_,me->numShifts_,me->sigma_r_,me->sigma_i_,
-            me->A_, bs,iflag),*iflag);    
+        PHIST_CHK_IERR(SUBR(private_rebuild_carp_cgStates)(me,bs,iflag),*iflag);
       }
       // reset all CG states. Use the given sol vectors as starting guess.
-      for (int s=0; s<me->numShifts_; s++)
+      for (int i=0; i<me->numShifts_; i++)
       {
-        PHIST_CHK_IERR(SUBR(carp_cgState_reset)(me->carp_cgStates_[s],b,normsB,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(carp_cgState_reset)(me->carp_cgStates_[i],b,normsB,iflag),*iflag);
         // compute ||b|| only for first system, then copy it
         normsB=me->carp_cgStates_[0]->normB_;
+
+        // now iterate the systems with the different shifts
+        // (and the same multiple RHS each). 
+        PHIST_CHK_NEG_IERR(SUBR(carp_cgState_iterate)
+                (me->carp_cgStates_[i], 
+                x_r[i], x_i[i], tol, maxIter,false,iflag),*iflag);
+        if (*iflag==+1)
+        {
+          PHIST_SOUT(PHIST_WARNING,"CARP-CG failed to converge\n");
+          *iflag=0;
+        }        
       }
-      // now iterate the systems with the different shifts
-      // (and the same multiple RHS each). At this point
-      // we put the further parallelisation into the hand of
-      // the carp_cg implementation, which might delegate shifts
-      // to other nodes, use a queuing system etc. The starting
-      // vectors are taken as received by this function and passed
-      // on to carp_cg.
-      PHIST_CHK_NEG_IERR(SUBR(carp_cgStates_iterate)
-                (me->carp_cgStates_, me->numShifts_, 
-                x_r, x_i, tol, maxIter,iflag),*iflag);
-      if (*iflag==+1)
-      {
-        PHIST_SOUT(PHIST_WARNING,"CARP-CG failed to converge\n");
-        *iflag=0;
-      }
+
       // reset to original block size if fewer systems were solved.
       if (bs!=blockSize)
       {
-        PHIST_SOUT(PHIST_DEBUG,"re-construct CARP structs with original block size\n");
-        PHIST_CHK_IERR(SUBR(carp_cgStates_delete)
-            (me->carp_cgStates_,me->numShifts_,iflag),*iflag);
-        PHIST_CHK_IERR(SUBR(carp_cgStates_create)
-            (me->carp_cgStates_,me->numShifts_,me->sigma_r_,me->sigma_i_,
-            me->A_, blockSize,iflag),*iflag);    
+        PHIST_CHK_IERR(SUBR(private_rebuild_carp_cgStates)(me,me->blockSize_,iflag),*iflag);
       }
       if (copy_input_vecs)
       {
@@ -195,5 +214,13 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
     {
       *iflag=-99;
     }
+  }
+
+  // The linear solvers implementated in PHIST solve (A-sigma*I)X=B, but the FEAST implementation
+  // in essex/feast requires the solution to (sigma*I-A)X=B, so we change the sign of X
+  for (int i=0; i<me->numShifts_; i++)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_scale)(sol_r[i],-st::one(),iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_scale)(sol_i[i],-st::one(),iflag),*iflag);
   }
 }

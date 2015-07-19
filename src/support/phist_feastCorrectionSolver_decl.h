@@ -20,6 +20,7 @@ typedef struct TYPE(feastCorrectionSolver)
   int blockSize_;       // number of vectors in each system (#cols of rhs)
   TYPE(const_mvec_ptr) rhs_; // common right-hand side for all shifts sigma[j]
   linSolv_t method_;
+  // we currently create one state object per shift
   TYPE(carp_cgState_ptr) *carp_cgStates_;
   
 } TYPE(feastCorrectionSolver);

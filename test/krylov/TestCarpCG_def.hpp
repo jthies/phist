@@ -35,7 +35,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
     static const int m_=_M_;
     
     //! shifts
-    static const int numShifts_=4;
+    static const int numShifts_=_M_;
     static MT shift_r_[numShifts_], shift_i_[numShifts_];
 
     //! Set up routine.
@@ -46,19 +46,21 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
       if( typeImplemented_ )
       {
       
-        shift_r_[0]=0.0; shift_i_[0]=0.0;
-        shift_r_[1]=0.0; shift_i_[1]=0.1;
-        shift_r_[2]=0.1; shift_i_[2]=0.0;
-        shift_r_[3]=0.1; shift_i_[3]=0.1;
+        static const _MT_ shifts_r[10]={0.0, 0.0, 0.0, 1.0, 0.1, 0.1, 0.1,-0.1,-0.1,-0.1};
+        static const _MT_ shifts_i[10]={0.0, 0.1,-0.1, 0.0, 0.0, 0.1,-0.1, 0.0, 0.1,-0.1};
+     
+        for (int i=0; i<numShifts_;i++)
+        {
+          shift_r_[i]=shifts_r[i];
+          shift_i_[i]=shifts_i[i];
+        }
       
         // read matrices
         SUBR(read_mat)(MATNAME,comm_,n_,&A_,&iflag_);
         ASSERT_EQ(0,iflag_);
         ASSERT_TRUE(A_ != NULL);
 
-        state_=new TYPE(carp_cgState_ptr)[m_];
-        SUBR(carp_cgStates_create)(state_,numShifts_,shift_r_,shift_i_,
-                A_, m_, &iflag_);
+        SUBR(carp_cgState_create)(&state_,A_,numShifts_,shift_r_,shift_i_, &iflag_);
         
         ASSERT_EQ(0,iflag_);
         xex_=vec1_;
@@ -91,16 +93,15 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
 
         SUBR(sparseMat_delete)(A_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        SUBR(carp_cgStates_delete)(state_,numShifts_,&iflag);
+        SUBR(carp_cgState_delete)(state_,&iflag);
         ASSERT_EQ(0,iflag_);
-        delete [] state_;
       }
       //TODO - causes segfault when deleting the map (in KernelTestWithMap::TearDown())
 //      VTest::TearDown();
     }
 
     TYPE(op_ptr) opA_;
-    TYPE(carp_cgState_ptr) *state_;
+    TYPE(carp_cgState_ptr) state_;
 
   protected:
   
@@ -153,13 +154,9 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
           }
           // iterate for MAXBAS iterations
           int nIter = 0;
-          if( useMINRES )
-            SUBR(pminresStates_iterate)(opA_,state_,nrhs,&nIter, &iflag2);
-          else
-            SUBR(carp_cgStates_iterate)(opA_,state_,nrhs,&nIter,true, &iflag2);
+          SUBR(pminresState_iterate)(opA_,state_,nrhs,&nIter, &iflag2);
           ASSERT_TRUE(iflag2>=0);
           _MT_ resNorm[nrhs];
-          SUBR(carp_cgStates_updateSol)(state_,nrhs,x,resNorm,false,&iflag_);
           ASSERT_EQ(0,iflag_);
           if (iflag2==0) break; // converged
         }

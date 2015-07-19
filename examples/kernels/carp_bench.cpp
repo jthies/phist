@@ -79,14 +79,10 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(SUBR(mvec_create)(&xr,map,nvecs,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_random)(xr,&iflag),iflag);
   
-  int numShifts=1;
   double sigma_r=shift_type? 42.9:0.0;
   double sigma_i=shift_type>1?-3.14159:0.0;
   double omega=1.5;
-  double* nrms_ai2i=NULL;
   void* work=NULL;
-  
-  PHIST_ICHK_IERR(SUBR(carp_setup)(A,numShifts,&sigma_r,&sigma_i,&nrms_ai2i,&work,&iflag),iflag);
   
   if (shift_type==2)
   {
@@ -98,16 +94,25 @@ PHIST_MAIN_TASK_BEGIN
     xi=NULL;
   }
   
+  MT shifts_r[nvecs],shifts_i[nvecs],omegas[nvecs];
+  for (int i=0;i<nvecs;i++)
+  {
+    shifts_r[i]=sigma_r;
+    shifts_i[i]=sigma_i;
+    omegas[i]=omega;
+  }
 
+  PHIST_ICHK_IERR(SUBR(carp_setup)(A,nvecs,shifts_r,shifts_i,&work,&iflag),iflag);
+  
   // we only study the case rhs=NULL here because it is the dominant situation in CARP-CG
   // (the rhs is only passed in in the first sweep or for correction steps).
   for(int i = 0; i < NUM_CARP/nvecs; i++)
   {
-    PHIST_ICHK_IERR(SUBR(carp_sweep)(A,numShifts,&sigma_r,&sigma_i,rhs,&xr,&xi,
-    nrms_ai2i, work, &omega, &iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(carp_sweep)(A,shifts_r,shifts_i,rhs,xr,xi,
+        work, omegas, &iflag),iflag);
   }
   
-  PHIST_ICHK_IERR(SUBR(carp_destroy)(A,numShifts,nrms_ai2i,work,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(carp_destroy)(A,work,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(xr,&iflag),iflag);
   if (xi!=NULL)
   {

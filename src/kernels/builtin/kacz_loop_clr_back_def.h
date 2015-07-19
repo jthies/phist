@@ -20,35 +20,40 @@ flush(6)
 ! will stick with 1 MPI process per socket and think about NUMA later (we could
 ! 'first PHIST_TOUCH' all vectors using the coloring if it is defined in the map, but
 ! that would infringe the spMVM performance...)
-!$omp parallel do private(tmp_r,tmp_i,i,j,row_norm) schedule(static)
+!$omp parallel do private(tmp_r,tmp_i,i,j,d,row_norm) schedule(static)
   do jc = map%color_offset(ic),map%color_offset(ic+1)-1,1
     i=map%color_idx(jc)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !! compute (shift_j I - A)_i*x
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    d=0.0_8
+    row_norm(1:NVEC)=0.0_8 ! compute row 2-norm on-the-fly
 #ifdef KACZ_NO_SHIFT
-    row_norm=0.0_8 ! compute row 2-norm on-the-fly if there is now diagonal shift
     tmp_r(1:NVEC) = 0.0_8
 # ifdef KACZ_RC_VARIANT
     tmp_i(1:NVEC) = 0.0_8
 # endif
 #else
 # ifndef KACZ_RC_VARIANT
-    tmp_r(1:NVEC) = shift_r*x_r(1:NVEC,i)
+    tmp_r(1:NVEC) = shift_r(1:NVEC)*x_r(1:NVEC,i)
 # else
-    tmp_r(1:NVEC) = shift_r*x_r(1:NVEC,i) - &
-                    shift_i*x_i(1:NVEC,i)
-    tmp_i(1:NVEC) = shift_i*x_r(1:NVEC,i) + &
-                    shift_r*x_i(1:NVEC,i)
+    tmp_r(1:NVEC) = shift_r(1:NVEC)*x_r(1:NVEC,i) - &
+                    shift_i(1:NVEC)*x_i(1:NVEC,i)
+    tmp_i(1:NVEC) = shift_i(1:NVEC)*x_r(1:NVEC,i) + &
+                    shift_r(1:NVEC)*x_i(1:NVEC,i)
 # endif
 #endif
+
     do j = row_ptr(i), halo_ptr(i)-1, 1
       tmp_r(1:NVEC) = tmp_r(1:NVEC) - val(j)*x_r(1:NVEC,col_idx(j))
 #ifdef KACZ_RC_VARIANT
       tmp_i(1:NVEC) = tmp_i(1:NVEC) - val(j)*x_i(1:NVEC,col_idx(j))
 #endif
-#ifdef KACZ_NO_SHIFT
-      row_norm=row_norm+val(j)*val(j)
+      row_norm(1)=row_norm(1)+val(j)*val(j)
+#ifndef KACZ_NO_SHIFT
+      if (col_idx(j)==j) then
+        d=val(j)
+      end if
 #endif
     end do
     do j = halo_ptr(i), row_ptr(i+1)-1, 1
@@ -56,25 +61,29 @@ flush(6)
 #ifdef KACZ_RC_VARIANT
       tmp_i(1:NVEC) = tmp_i(1:NVEC) - val(j)*halo_i(1:NVEC,col_idx(j))
 #endif
-#ifdef KACZ_NO_SHIFT
-      row_norm=row_norm+val(j)*val(j)
-#endif
+      row_norm(1)=row_norm(1)+val(j)*val(j)
     end do
 
 #ifndef KACZ_BZERO
     tmp_r(1:NVEC)=tmp_r(1:NVEC)-b(1:NVEC,i)
 #endif
 
+#ifdef KACZ_NO_SHIFT
+  row_norm(1:NVEC) = row_norm(1)
+#else
+  ! correct for real or complex shift
+  row_norm(1:NVEC) = row_norm(1) + 2*d*shift_r(1:NVEC)+shift_r(1:NVEC)*shift_r(1:NVEC)
+# ifdef KACZ_RC_VARIANT
+  row_norm(1:NVEC) = row_norm(1:NVEC)+shift_i(1:NVEC)*shift_i(1:NVEC)
+# endif
+#endif
+
     ! Kaczmarz update of X
 
     ! a) scaling factors
-#ifdef KACZ_NO_SHIFT
-    tmp_r(1:NVEC)=tmp_r(1:NVEC)*omega/row_norm
-#else
-    tmp_r(1:NVEC)=tmp_r(1:NVEC)*omega*nrms_ai2i(i)
-#endif
+    tmp_r(1:NVEC)=tmp_r(1:NVEC)*omega(1:NVEC)/row_norm(1:NVEC)
 #ifdef KACZ_RC_VARIANT
-    tmp_i(1:NVEC)=tmp_i(1:NVEC)*omega*nrms_ai2i(i)
+    tmp_i(1:NVEC)=tmp_i(1:NVEC)*omega(1:NVEC)/row_norm(1:NVEC)
 #endif
     ! b) projection step
 #ifndef KACZ_NO_SHIFT

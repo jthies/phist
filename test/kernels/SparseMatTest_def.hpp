@@ -343,14 +343,18 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     if (mpi_size_>1) return;
 
     // setup the CARP kernel and get the required data structures:
-    MT* nrms_ai2i=NULL;
     void* aux=NULL;
-    int numSys=1;
-    MT sigma_r=0.0;
-    MT sigma_i=0.0;
-    MT omega=1.0;
-    SUBR(carp_setup)(A,numSys,&sigma_r,&sigma_i,
-        &nrms_ai2i, &aux, &iflag_);
+    MT sigma_r[_NV_];
+    MT sigma_i[_NV_];
+    MT omega[_NV_];
+    for (int i=0;i<nvec_;i++)
+    {
+      sigma_r[i]=mt::zero();
+      sigma_i[i]=mt::zero();
+      omega[i]=mt::one();
+    }
+    SUBR(carp_setup)(A,nvec_,sigma_r,sigma_i,
+        &aux, &iflag_);
     if (iflag_==-99) return; // CARP not implemented
     ASSERT_EQ(0,iflag_);
     
@@ -383,8 +387,8 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     SUBR(mvec_add_mvec)(st::one(), Xi, st::zero(), Xi_bak, &iflag_);
     ASSERT_EQ(0, iflag_);
     
-    SUBR(carp_sweep)(A, 1, &sigma_r, &sigma_i,B,&Xr,&Xi,
-          nrms_ai2i,aux,&omega,&iflag_);
+    SUBR(carp_sweep)(A, sigma_r, sigma_i,B,Xr,Xi,
+          aux,omega,&iflag_);
     ASSERT_EQ(0, iflag_);
     
     // compute norms before and after the sweep
@@ -407,8 +411,8 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     // Check that it works if B=NULL is passed in
     SUBR(mvec_add_mvec)(st::one(),Xr_bak,st::zero(),Xr,&iflag_);
     ASSERT_EQ(0, iflag_);
-    SUBR(carp_sweep)(A, 1, &sigma_r, &sigma_i,NULL,&Xr,&Xi,
-          nrms_ai2i,aux,&omega,&iflag_);
+    SUBR(carp_sweep)(A, sigma_r, sigma_i,NULL,Xr,Xi,
+          aux,omega,&iflag_);
     ASSERT_EQ(0, iflag_);
 
     SUBR(mvec_norm2)(Xr,norms_X2,&iflag_);
@@ -436,7 +440,7 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     }
     ASSERT_NEAR(mt::one(),mt::one()+nonsymm,100*mt::eps());
 
-    SUBR(carp_destroy)(A,1,nrms_ai2i,aux,&iflag_);
+    SUBR(carp_destroy)(A,aux,&iflag_);
     ASSERT_EQ(0, iflag_);
 
   SUBR(mvec_delete)(Xr_bak,&iflag_);
