@@ -368,7 +368,7 @@ if (num_complex==0)
   PHIST_ICHK_IERR(SUBR(mvec_extract_view)(X_r_ex0,&xex_val,&ldxex,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_extract_view)(X_r[0],&x_val,&ldx,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_extract_view)(err_r,&rex_val,&ldrex,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(mvec_extract_view)(err_i,&r_val,&ldrex,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_extract_view)(err_i,&r_val,&ldr,&iflag),iflag);
 
   PHIST_ICHK_IERR(SUBR(mvec_my_length)(X_r_ex0,&nloc,&iflag),iflag);
 
