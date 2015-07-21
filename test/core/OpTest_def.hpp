@@ -1,3 +1,4 @@
+#include "../tools/TestHelpers.h"
 #ifndef CLASSNAME
 #error "file not included correctly."
 #endif
@@ -49,7 +50,7 @@ public:
       iflag_ = MPI_Allreduce(&nq_local,&nq_,1,MPI_INT,MPI_MIN,mpi_comm_);
       ASSERT_EQ(0,iflag_);
 #endif      
-      SUBR(mvec_create)(&Q_,map_,nq_,&iflag_);
+      PHISTTEST_MVEC_CREATE(&Q_,map_,nq_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // create random orthogonal Q

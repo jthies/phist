@@ -1,3 +1,4 @@
+#include "../tools/TestHelpers.h"
 #ifndef CLASSNAME
 #error "file not included correctly"
 #endif
@@ -42,13 +43,13 @@ public:
     if (this->typeImplemented_)
     {
       // create vectors V1 and V2, and vector views for setting/checking entries
-      SUBR(mvec_create)(&V1_,this->map_,this->m_,&this->iflag_);
+      PHISTTEST_MVEC_CREATE(&V1_,this->map_,this->m_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       SUBR(mvec_put_value)(V1_,st::zero(),&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_extract_view)(V1_,&V1_vp_,&ldaV1_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
-      SUBR(mvec_create)(&V2_,this->map_,this->k_,&this->iflag_);
+      PHISTTEST_MVEC_CREATE(&V2_,this->map_,this->k_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       SUBR(mvec_put_value)(V2_,st::zero(),&iflag_);
       ASSERT_EQ(0,iflag_);

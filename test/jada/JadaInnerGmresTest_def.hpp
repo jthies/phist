@@ -1,3 +1,4 @@
+#include "../tools/TestHelpers.h"
 #ifndef CLASSNAME
 #error "file not included correctly."
 #endif
@@ -33,7 +34,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(0,iflag_);
         VTest::replaceMap(map);
 
-        SUBR(mvec_create)(&q_,map_,_NVP_,&iflag_);
+        PHISTTEST_MVEC_CREATE(&q_,map_,_NVP_,&iflag_);
         ASSERT_EQ(0,iflag_);
         sigma_ = new _ST_[_NV_];
         for(int i = 0; i < _NV_; i++)
@@ -385,7 +386,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       // setup system with y = 0.3*jdOp^2(x) - 0.9*jdOp(x)
       {
         TYPE(mvec_ptr) tmp;
-        SUBR(mvec_create)(&tmp,map_,_NV_,&iflag_);
+        PHISTTEST_MVEC_CREATE(&tmp,map_,_NV_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
         SUBR(mvec_add_mvec)(st::one(),vec3_,st::zero(),tmp,&iflag_);

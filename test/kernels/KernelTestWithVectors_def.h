@@ -1,3 +1,4 @@
+#include "../tools/TestHelpers.h"
 /*! Test fixture. */
 template<gidx_t _Nglob, int _Nvec, bool _useViews>
 class KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews> : 
@@ -19,13 +20,13 @@ void createVecs()
     pad_post=3;
   }
   int pad=pad_pre+pad_post;
-  SUBR(mvec_create)(&vec1_,this->map_,nvec_+pad,&this->iflag_);
+  PHISTTEST_MVEC_CREATE(&vec1_,this->map_,nvec_+pad,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
 
-  SUBR(mvec_create)(&vec2_,this->map_,nvec_+pad,&this->iflag_);
+  PHISTTEST_MVEC_CREATE(&vec2_,this->map_,nvec_+pad,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
 
-  SUBR(mvec_create)(&vec3_,this->map_,nvec_+pad,&this->iflag_);
+  PHISTTEST_MVEC_CREATE(&vec3_,this->map_,nvec_+pad,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
   
   // if requested, set vecX to views of memX

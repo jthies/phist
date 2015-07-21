@@ -1,3 +1,4 @@
+#include "../tools/TestHelpers.h"
 #ifndef CLASSNAME
 #error "file not included correctly."
 #endif
@@ -96,19 +97,19 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     ASSERT_EQ(0,iflag_);
 
     lidx_t lda;
-    SUBR(mvec_create)(&vec1_,domain_map,nvec_,&iflag_);
+    PHISTTEST_MVEC_CREATE(&vec1_,domain_map,nvec_,&iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda,&iflag_);
     ASSERT_EQ(0,iflag_);
     ASSERT_EQ(lda,lda_);
 
-    SUBR(mvec_create)(&vec2_,range_map,nvec_,&iflag_);
+    PHISTTEST_MVEC_CREATE(&vec2_,range_map,nvec_,&iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&lda,&iflag_);
     ASSERT_EQ(0,iflag_);
     ASSERT_EQ(lda,lda_);
 
-    SUBR(mvec_create)(&vec3_,range_map,nvec_,&iflag_);
+    PHISTTEST_MVEC_CREATE(&vec3_,range_map,nvec_,&iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&lda,&iflag_);
     ASSERT_EQ(0,iflag_);
@@ -378,9 +379,9 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     // backup X
     TYPE(mvec_ptr) Xr_bak=NULL;
     TYPE(mvec_ptr) Xi_bak=NULL;
-    SUBR(mvec_create)(&Xr_bak,map_,_NV_,&iflag_);
+    PHISTTEST_MVEC_CREATE(&Xr_bak,map_,_NV_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    SUBR(mvec_create)(&Xi_bak,map_,_NV_,&iflag_);
+    PHISTTEST_MVEC_CREATE(&Xi_bak,map_,_NV_,&iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_add_mvec)(st::one(), Xr, st::zero(), Xr_bak, &iflag_);
     ASSERT_EQ(0, iflag_);
@@ -736,7 +737,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
 
       // create a vector with this map
       TYPE(mvec_ptr) orderedVec = NULL;
-      SUBR(mvec_create)(&orderedVec, map, nvec_, &iflag_);
+      PHISTTEST_MVEC_CREATE(&orderedVec, map, nvec_, &iflag_);
       ASSERT_EQ(0,iflag_);
       _ST_ *orderedVec_vp = NULL;
       lidx_t lda = 0;
@@ -838,7 +839,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
 
       // create a vector with this map
       TYPE(mvec_ptr) orderedVec = NULL;
-      SUBR(mvec_create)(&orderedVec, map, nvec_, &iflag_);
+      PHISTTEST_MVEC_CREATE(&orderedVec, map, nvec_, &iflag_);
       ASSERT_EQ(0,iflag_);
       _ST_ *orderedVec_vp = NULL;
       lidx_t lda = 0;

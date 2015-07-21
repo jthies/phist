@@ -36,6 +36,15 @@
 "     PHIST_SPARSEMAT_OPT_BLOCKSPMVM 8 \n" \
 "     PHIST_SPARSEMAT_OPT_CARP 16 \n"
 
+/* When this flag was passed to mvec_create, the memory for
+   the multi-vector is allocated both on host and device for CUDA
+   processes. This will allow using the functions mvec_extract_view,
+   and mvec_from/to_device, which may return an error otherwise.
+   
+   Note that for sdMats we assume that the memory is allocated both on 
+   host and device.
+   */
+#define PHIST_MVEC_REPLICATE_DEVICE_MEM 1
 
 /* sparseMat_times_mvec* flags, these are GHOST-sepcific up to now
    and should not be used in the code anywhere because they are subject to

@@ -1,3 +1,4 @@
+#include "../tools/TestHelpers.h"
 /* we don't have CARP tests yet */
 #if 0
 #ifndef CLASSNAME
@@ -82,27 +83,27 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     ASSERT_EQ(0,iflag_);
 
     lidx_t lda;
-    SUBR(mvec_create)(&vec1_,domain_map,nvec_,&iflag_);
+    PHISTTEST_MVEC_CREATE(&vec1_,domain_map,nvec_,&iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda,&iflag_);
     ASSERT_EQ(0,iflag_);
     ASSERT_EQ(lda,lda_);
 
-    SUBR(mvec_create)(&vec2_,range_map,nvec_,&iflag_);
+    PHISTTEST_MVEC_CREATE(&vec2_,range_map,nvec_,&iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&lda,&iflag_);
     ASSERT_EQ(0,iflag_);
     ASSERT_EQ(lda,lda_);
 
-    SUBR(mvec_create)(&vec3_,range_map,nvec_,&iflag_);
+    PHISTTEST_MVEC_CREATE(&vec3_,range_map,nvec_,&iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&lda,&iflag_);
     ASSERT_EQ(0,iflag_);
     ASSERT_EQ(lda,lda_);
 
-    SUBR(mvec_create)(&vec2bak_,range_map,nvec_,&iflag_);
+    PHISTTEST_MVEC_CREATE(&vec2bak_,range_map,nvec_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    SUBR(mvec_create)(&vec3bak_,range_map,nvec_,&iflag_);
+    PHISTTEST_MVEC_CREATE(&vec3bak_,range_map,nvec_,&iflag_);
     ASSERT_EQ(0,iflag_);
 
     phist_map_get_local_length(domain_map, &nloc_, &iflag_);

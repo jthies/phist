@@ -247,6 +247,7 @@ extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vV,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
+  bool replicate_cuda_mem=*iflag&PHIST_MVEC_REPLICATE_DEVICE_MEM;
   *iflag=0;
   PHIST_PERFCHECK_VERIFY_MVEC_CREATE(vmap,nvec,iflag);
 PHIST_TASK_DECLARE(ComputeTask)
@@ -265,9 +266,15 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
   if (ghost_type == GHOST_TYPE_CUDA) 
   {
-    // for development purposes, allocate both host and device side right now
-    vtraits.location = (ghost_location_t)(GHOST_LOCATION_HOST|GHOST_LOCATION_DEVICE);
-//    vtraits.location = GHOST_LOCATION_DEVICE;
+    if (replicate_cuda_mem)
+    {
+      // allocate both host and device side (useful for testing)
+      vtraits.location = (ghost_location_t)(GHOST_LOCATION_HOST|GHOST_LOCATION_DEVICE);
+    }
+    else
+    {
+      vtraits.location = GHOST_LOCATION_DEVICE;
+    }
   } 
   else 
   {
@@ -535,7 +542,12 @@ extern "C" void SUBR(mvec_from_device)(TYPE(mvec_ptr) vV, int* iflag)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   //PHIST_PERFCHECK_VERIFY_FROM_DEVICE(vV,iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V, vV, *iflag);
-  PHIST_CHK_GERR(V->download(V),*iflag);
+  ghost_type_t ghost_type;
+  PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
+  if (ghost_type == GHOST_TYPE_CUDA) 
+  {
+    PHIST_CHK_GERR(V->download(V),*iflag);
+  }
 #endif
 }
 
@@ -546,7 +558,12 @@ extern "C" void SUBR(sdMat_to_device)(TYPE(sdMat_ptr) vM, int* iflag)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M, vM, *iflag);
-  PHIST_CHK_GERR(M->upload(M),*iflag);
+  ghost_type_t ghost_type;
+  PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
+  if (ghost_type == GHOST_TYPE_CUDA) 
+  {
+    PHIST_CHK_GERR(M->upload(M),*iflag);
+  }
 #endif
 }
 

@@ -1,3 +1,4 @@
+#include "../tools/TestHelpers.h"
 #include <algorithm>
 
 #ifndef CLASSNAME
@@ -707,7 +708,7 @@ public:
       int jmin=std::min(2,nvec_-1);
       int jmax=std::min(5,nvec_-1);
       TYPE(mvec_ptr) v1_copy=NULL;
-      SUBR(mvec_create)(&v1_copy,map_,jmax-jmin+1,&iflag_);
+      PHISTTEST_MVEC_CREATE(&v1_copy,map_,jmax-jmin+1,&iflag_);
       ASSERT_EQ(0,iflag_);
       
       SUBR(mvec_get_block)(vec1_,v1_copy,jmin,jmax,&iflag_);

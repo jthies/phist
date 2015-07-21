@@ -1,3 +1,4 @@
+#include "../tools/TestHelpers.h"
 #ifndef CLASSNAME
 #error "file not included correctly"
 #endif
@@ -61,19 +62,19 @@ public:
     if (typeImplemented_)
       {
       // create vectors V, W and vector views for setting/checking entries
-      SUBR(mvec_create)(&V_,this->map_,this->m_,&this->iflag_);
+      PHISTTEST_MVEC_CREATE(&V_,this->map_,this->m_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       SUBR(mvec_extract_view)(V_,&V_vp_,&ldaV_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
-      SUBR(mvec_create)(&W_,this->map_,this->k_,&this->iflag_);
+      PHISTTEST_MVEC_CREATE(&W_,this->map_,this->k_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       SUBR(mvec_extract_view)(W_,&W_vp_,&ldaW_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
-      SUBR(mvec_create)(&Q_,this->map_,this->k_,&this->iflag_);
+      PHISTTEST_MVEC_CREATE(&Q_,this->map_,this->k_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       SUBR(mvec_extract_view)(Q_,&Q_vp_,&ldaQ_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
-      SUBR(mvec_create)(&W2_,this->map_,this->k_,&this->iflag_);
+      PHISTTEST_MVEC_CREATE(&W2_,this->map_,this->k_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       SUBR(mvec_extract_view)(W2_,&W2_vp_,&ldaW2_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
@@ -473,7 +474,7 @@ return;
     {
       TYPE(mvec_ptr) V_big=NULL, V=NULL, W=NULL;
       int ncols = m_+k_+13;// some extra padding to make the test more interesting
-      SUBR(mvec_create)(&V_big,map_,ncols,&iflag_);
+      PHISTTEST_MVEC_CREATE(&V_big,map_,ncols,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // fill entire block with random numbers
@@ -506,7 +507,7 @@ return;
     {
       TYPE(mvec_ptr) V_big=NULL, V=NULL, W=NULL;
       int ncols = m_+k_+13;// some extra padding to make the test more interesting
-      SUBR(mvec_create)(&V_big,map_,ncols,&iflag_);
+      PHISTTEST_MVEC_CREATE(&V_big,map_,ncols,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // fill entire block with ones

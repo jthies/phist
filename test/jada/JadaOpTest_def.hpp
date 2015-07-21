@@ -1,3 +1,4 @@
+#include "../tools/TestHelpers.h"
 #ifndef CLASSNAME
 #error "file not included correctly."
 #endif
@@ -37,7 +38,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
       if (typeImplemented_)
       {
-        SUBR(mvec_create)(&q_,map_,_NVP_,&iflag_);
+        PHISTTEST_MVEC_CREATE(&q_,map_,_NVP_,&iflag_);
         ASSERT_EQ(0,iflag_);
         sigma_ = new _ST_[_NV_];
         for(int i = 0; i < _NV_; i++)
@@ -80,7 +81,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
         // create new vecs
 
-        SUBR(mvec_create)(&q_,map_,_NVP_,&iflag_);
+        PHISTTEST_MVEC_CREATE(&q_,map_,_NVP_,&iflag_);
         ASSERT_EQ(0,iflag_);
         if( sigma_ )
           delete[] sigma_;
@@ -325,7 +326,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0,iflag_);
 
       TYPE(mvec_ptr) vec4;
-      SUBR(mvec_create)(&vec4,map_,_NV_,&iflag_);
+      PHISTTEST_MVEC_CREATE(&vec4,map_,_NV_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_random)(vec4,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -335,7 +336,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0,iflag_);
 
       TYPE(mvec_ptr) vec5;
-      SUBR(mvec_create)(&vec5,map_,_NV_,&iflag_);
+      PHISTTEST_MVEC_CREATE(&vec5,map_,_NV_,&iflag_);
       ASSERT_EQ(0,iflag_);
       _ST_ alpha = st::prand();
       jdOp.apply(alpha,jdOp.A,vec4,st::zero(),vec5,&iflag_);
@@ -378,7 +379,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0,iflag_);
 
       TYPE(mvec_ptr) vec4;
-      SUBR(mvec_create)(&vec4,map_,_NV_,&iflag_);
+      PHISTTEST_MVEC_CREATE(&vec4,map_,_NV_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_random)(vec4,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -388,7 +389,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0,iflag_);
 
       TYPE(mvec_ptr) vec5;
-      SUBR(mvec_create)(&vec5,map_,_NV_,&iflag_);
+      PHISTTEST_MVEC_CREATE(&vec5,map_,_NV_,&iflag_);
       SUBR(mvec_put_value)(vec5,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
       // we assume vec5 in q^orth, so make it so:
