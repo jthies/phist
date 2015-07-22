@@ -382,16 +382,32 @@ void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
                                        TYPE(const_mvec_ptr) W, 
                                        _ST_ beta, TYPE(sdMat_ptr) C, int* iflag);
 
-//! multi-vector times small dense matrix. \ingroup mvec
+//! augmented kernel with two multi-vectors. \ingroup mvec
 
-//! n x m multi-vector times m x k dense matrix gives n x k multi-vector,
+//! D=alpha*V'*W*C + beta*D, W=W*C inplace
+void SUBR(mvecT_times_mvec_times_sdMat_inplace)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
+                                                            TYPE(mvec_ptr)        W,
+                                                            TYPE(const_sdMat_ptr) C,
+                                                _ST_ beta,  TYPE(sdMat_ptr)       D,
+                                                int* iflag);
+
+//! n x m multi-vector times m x k dense matrix gives n x k multi-vector, \ingroup mvec
 //! W=alpha*V*C + beta*W
 void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V, 
                                        TYPE(const_sdMat_ptr) C,
                            _ST_ beta,  TYPE(mvec_ptr) W, 
                                        int* iflag);
-//! M <- V*M
+//! M <- V*M \ingroup mvec
 void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int *iflag);
+
+//! augmented kernel with two multi-vectors. \ingroup mvec
+
+//! W=alpha*V*C + beta*W, D=W^TW
+void SUBR(mvec_times_sdMat_augmented)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
+                                                  TYPE(const_sdMat_ptr) C,
+                                      _ST_ beta,  TYPE(mvec_ptr)        W,
+                                                  TYPE(sdMat_ptr)       D,
+                                                  int* iflag);
 
 
 

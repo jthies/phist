@@ -340,5 +340,6 @@ void phist_totalMatVecCount()
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
+#include "kernels_no_fused.cpp"
 
 
