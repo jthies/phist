@@ -748,7 +748,7 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
     PHIST_CHK_IERR(SUBR(mvec_get_map)(W,&map,iflag),*iflag);
     PHIST_CHK_IERR(phist_map_get_comm(map,&comm,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvecv,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvecw,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&nvecw,iflag),*iflag);
     int i=0, istep=4;
     bool realloc=true;
     while (i<nvecv)
@@ -770,6 +770,7 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
         realloc=false;
       }
       PHIST_CHK_IERR(SUBR(mvec_get_block)(V,vtmp,i,i+istep-1,iflag),*iflag);
+      PHIST_SOUT(PHIST_DEBUG,"compute C(%d:%d,%d:%d)\n",i,i+istep-1,0,nvecw-1);
       PHIST_CHK_IERR(SUBR(sdMat_get_block)(C,ctmp,i,i+istep-1,0,nvecw-1,iflag),*iflag);
       *iflag=iflag0;
       PHIST_CHK_IERR(SUBR(mvecT_times_mvec_f)(alpha,vtmp,W,beta,ctmp,iflag),*iflag);
