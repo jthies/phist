@@ -142,7 +142,7 @@ public:
 
   }
 
-#if (_N_ % 4 == 0 && (_NV_ == 1 || _NV_ == 2 || _NV_ == 4 ) )
+#if (_N_ % 4 == 0)
   // mvec_dot_mvec tests, more precise version
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, dot_mvec_prec)
@@ -393,7 +393,7 @@ public:
     }
   }
 
-#if (_N_ % 4 == 0 && (_NV_ == 1 || _NV_ == 2 || _NV_ == 4 ) )
+#if (_N_ % 4 == 0 )
   // 2-norm, nrm2=sqrt(v'v), more precise version
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, norm2_precise)
