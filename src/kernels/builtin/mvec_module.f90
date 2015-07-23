@@ -609,6 +609,7 @@ contains
           vtmp(1:nrows)=mvec%val(mvec%jmin+j-1,1:nrows)
           call ddot_self_prec_1(mvec%paddedN, vtmp(1), localDot_prec(mvec%jmin+j-1,1), localDot_prec(mvec%jmin+j-1,2))
         end do
+        iflag=0
         return
       end if
 
@@ -980,9 +981,7 @@ contains
             wtmp(1:nrows)=y%val(y%jmin+j-1,1:nrows)
             call ddot_prec_1(x%paddedN, vtmp(1), wtmp(1), localDot_prec(x%jmin+j-1,1), localDot_prec(x%jmin+j-1,2))
           end do
-      end if
-
-      if( nvec .eq. 1 ) then
+      else if( nvec .eq. 1 ) then
         call ddot_prec_1(x%paddedN, x%val(x%jmin,1), y%val(y%jmin,1), localDot_prec(x%jmin,1), localDot_prec(x%jmin,2))
       else if( nvec .eq. 2 ) then
         call ddot_prec_2(x%paddedN, x%val(x%jmin,1), y%val(y%jmin,1), localDot_prec(x%jmin,1), localDot_prec(x%jmin,2))
@@ -1120,6 +1119,7 @@ contains
               call dgemm_sb_prec_k_1(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp(1,j),MCtmp(1,j),beta,wtmp(1))
             end if
           end do
+          iflag=0
           return
       end if
 
