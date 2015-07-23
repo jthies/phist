@@ -526,7 +526,49 @@ extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) v,
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   PHIST_PERFCHECK_VERIFY_MVEC_DOT_MVEC(v,w,iflag);
-  PHIST_CHK_IERR(SUBR(mvec_dot_mvec_f)(v,w,s,iflag),*iflag);
+  int iflag0=*iflag;
+  SUBR(mvec_dot_mvec_f)(v,w,s,iflag);
+  if (*iflag==PHIST_NOT_IMPLEMENTED)
+  {
+    PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__);
+    Dmvec_ptr_t vtmp=NULL,wtmp=NULL;
+    *iflag=0;
+    int nvec;
+    const_map_ptr_t map=NULL;
+    PHIST_CHK_IERR(SUBR(mvec_get_map)(v,&map,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v,&nvec,iflag),*iflag);
+    int i=0, istep=4;
+    bool realloc=true;
+    while (i<nvec)
+    {
+      while (i+istep>nvec)
+      {
+        istep/=2;
+        if (!realloc)
+        {
+          PHIST_CHK_IERR(SUBR(mvec_delete)(vtmp,iflag),*iflag);
+          PHIST_CHK_IERR(SUBR(mvec_delete)(wtmp,iflag),*iflag);
+        }
+        realloc=true;
+      }
+      if (realloc)
+      {
+        PHIST_CHK_IERR(SUBR(mvec_create)(&vtmp,map,istep,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_create)(&wtmp,map,istep,iflag),*iflag);
+        realloc=false;
+      }
+      PHIST_CHK_IERR(SUBR(mvec_get_block)(v,vtmp,i,i+istep-1,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_get_block)(w,wtmp,i,i+istep-1,iflag),*iflag);
+      *iflag=iflag0;
+      PHIST_CHK_IERR(SUBR(mvec_dot_mvec_f)(vtmp,wtmp,s,iflag),*iflag);
+      i+=istep;
+    }//while
+    if (!realloc)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_delete)(vtmp,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_delete)(wtmp,iflag),*iflag);
+    }
+  }
 }
 
 extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V, 
