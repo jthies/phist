@@ -734,7 +734,54 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC(V,W,iflag);
-  PHIST_CHK_IERR(SUBR(mvecT_times_mvec_f)(alpha,V,W,beta,C,iflag),*iflag);
+  int iflag0=*iflag;
+  SUBR(mvecT_times_mvec_f)(alpha,V,W,beta,C,iflag);
+  if (*iflag==PHIST_NOT_IMPLEMENTED)
+  {
+    PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__);
+    const_comm_ptr_t comm=NULL;
+    const_map_ptr_t map=NULL;
+    Dmvec_ptr_t vtmp=NULL;
+    DsdMat_ptr_t ctmp=NULL;
+    *iflag=0;
+    int nvecv,nvecw;
+    PHIST_CHK_IERR(SUBR(mvec_get_map)(W,&map,iflag),*iflag);
+    PHIST_CHK_IERR(phist_map_get_comm(map,&comm,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvecv,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvecw,iflag),*iflag);
+    int i=0, istep=4;
+    bool realloc=true;
+    while (i<nvecv)
+    {
+      while (i+istep>nvecv)
+      {
+        istep/=2;
+        if (!realloc)
+        {
+          PHIST_CHK_IERR(SUBR(mvec_delete)(vtmp,iflag),*iflag);
+          PHIST_CHK_IERR(SUBR(sdMat_delete)(ctmp,iflag),*iflag);
+        }
+        realloc=true;
+      }
+      if (realloc)
+      {
+        PHIST_CHK_IERR(SUBR(mvec_create)(&vtmp,map,istep,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(sdMat_create)(&ctmp,istep,nvecw,comm,iflag),*iflag);
+        realloc=false;
+      }
+      PHIST_CHK_IERR(SUBR(mvec_get_block)(V,vtmp,i,i+istep-1,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_get_block)(C,ctmp,i,i+istep-1,0,nvecw-1,iflag),*iflag);
+      *iflag=iflag0;
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec_f)(alpha,vtmp,W,beta,ctmp,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_set_block)(C,ctmp,i,i+istep-1,0,nvecw-1,iflag),*iflag);
+      i+=istep;
+    }//while
+    if (!realloc)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_delete)(vtmp,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_delete)(ctmp,iflag),*iflag);
+    }
+  }
 }
 
 extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag)
