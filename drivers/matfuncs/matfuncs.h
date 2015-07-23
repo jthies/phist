@@ -51,7 +51,6 @@ extern "C" {
 
 int SpinChainSZ(   ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals);
 int crsGraphene(   ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals);
-int anderson(      ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals);
 #ifdef __cplusplus
 }
 #endif

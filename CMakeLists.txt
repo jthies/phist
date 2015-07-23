@@ -451,7 +451,6 @@ endif()
 if (NOT ESSEX-PHYSICS_FOUND)
   LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c
                                   ${PROJECT_SOURCE_DIR}/drivers/matfuncs/SpinChainSZ.c
-                                  ${PROJECT_SOURCE_DIR}/drivers/matfuncs/anderson.c
                                   ${PROJECT_SOURCE_DIR}/drivers/matfuncs/part_tools.c)
 endif()
 
