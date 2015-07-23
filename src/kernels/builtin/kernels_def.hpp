@@ -811,7 +811,6 @@ extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMa
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT_INPLACE(V,M,iflag);
-//  PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace_f)(V, M, iflag), *iflag);
   int iflag0=*iflag;
   SUBR(mvec_times_sdMat_inplace_f)(V, M, iflag);
   if (*iflag==PHIST_NOT_IMPLEMENTED)
@@ -824,13 +823,9 @@ extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMa
     PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(M,&nvecw,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_create)(&Vtmp,map,nvecw,iflag),*iflag);
     *iflag=iflag0;
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat_f)(1.0,V, M, 0.0, Vtmp, iflag), *iflag);    
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(1.0,V, M, 0.0, Vtmp, iflag), *iflag);    
     PHIST_CHK_IERR(SUBR(mvec_set_block)(V,Vtmp,0,nvecw-1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_delete)(Vtmp,iflag),*iflag);
-  }
-  else
-  {
-    PHIST_CHK_IERR(,*iflag);
   }
 }
 
