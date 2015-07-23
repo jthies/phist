@@ -575,10 +575,6 @@ contains
     real(kind=8) :: localDot_prec(mvec%jmin:mvec%jmax,2)
     real(kind=8) :: globalDot_prec(mvec%jmin:mvec%jmax,2,mvec%map%nProcs)
     real(kind=8) :: globalDot_prec_(mvec%jmin:mvec%jmax,mvec%map%nProcs,2)
-#ifdef PHIST_HIGH_PRECISION_KERNELS
-    integer :: j
-    real(kind=8), allocatable :: vtmp(:)
-#endif
     !--------------------------------------------------------------------------------
 
     ! determine data layout
@@ -602,14 +598,12 @@ contains
       return
 #else
       ! check if we can do it
-      if( strided .or. (nvec .ne. 1 .and. nvec .ne. 2 .and. nvec .ne. 4) ) then
-        write(*,*) 'WARNING: using extremely slow fallback implementation for mvec_norm2 with arbitrary block size or stride'
-        allocate(vtmp(mvec%paddedN))
-        do j=1,nvec
-          vtmp(1:nrows)=mvec%val(mvec%jmin+j-1,1:nrows)
-          call ddot_self_prec_1(mvec%paddedN, vtmp(1), localDot_prec(mvec%jmin+j-1,1), localDot_prec(mvec%jmin+j-1,2))
-        end do
-        iflag=0
+      if( strided ) then
+        iflag = -99
+        return
+      end if
+      if( nvec .ne. 1 .and. nvec .ne. 2 .and. nvec .ne. 4 ) then
+        iflag = -99
         return
       end if
 
@@ -936,10 +930,6 @@ contains
     real(kind=8) :: localDot_prec(x%jmin:x%jmax,2)
     real(kind=8) :: globalDot_prec(x%jmin:x%jmax,2,x%map%nProcs)
     real(kind=8) :: globalDot_prec_(x%jmin:x%jmax,x%map%nProcs,2)
-#ifdef PHIST_HIGH_PRECISION_KERNELS
-    integer :: j
-    real(kind=8), allocatable :: vtmp(:),wtmp(:)
-#endif
     !--------------------------------------------------------------------------------
 
     ! determine data layout
@@ -973,15 +963,16 @@ contains
       return
 #else
       ! check if we can do it
-      if( strided .or. (nvec .ne. 1 .and. nvec .ne. 2 .and. nvec .ne. 4) ) then
-          write(*,*) 'WARNING: extremely slow fallback implementation of robust mvec_dot_mvec for arbitrary block sizes or stride!'
-          allocate(vtmp(x%paddedN))
-          do j=1,nvec
-            vtmp(1:nrows)=x%val(x%jmin+j-1,1:nrows)
-            wtmp(1:nrows)=y%val(y%jmin+j-1,1:nrows)
-            call ddot_prec_1(x%paddedN, vtmp(1), wtmp(1), localDot_prec(x%jmin+j-1,1), localDot_prec(x%jmin+j-1,2))
-          end do
-      else if( nvec .eq. 1 ) then
+      if( strided ) then
+        iflag = -99
+        return
+      end if
+      if( nvec .ne. 1 .and. nvec .ne. 2 .and. nvec .ne. 4 ) then
+        iflag = -99
+        return
+      end if
+
+      if( nvec .eq. 1 ) then
         call ddot_prec_1(x%paddedN, x%val(x%jmin,1), y%val(y%jmin,1), localDot_prec(x%jmin,1), localDot_prec(x%jmin,2))
       else if( nvec .eq. 2 ) then
         call ddot_prec_2(x%paddedN, x%val(x%jmin,1), y%val(y%jmin,1), localDot_prec(x%jmin,1), localDot_prec(x%jmin,2))
@@ -1049,7 +1040,7 @@ contains
 
 
   !==================================================================================
-  ! special gemm routine for mvec times sdmat W = beta*W + alpha*V*M
+  ! special gemm routine for mvec times sdmat
   subroutine mvec_times_sdmat(alpha,v,M,beta,w,iflag)
     !--------------------------------------------------------------------------------
     real(kind=8),  intent(in)    :: alpha, beta
@@ -1061,10 +1052,6 @@ contains
     integer :: nrows, nvecv, nvecw, ldv, ldw
     logical :: strided_v, strided_w
     real(kind=8), allocatable :: Mtmp(:,:), MCtmp(:,:)
-#ifdef PHIST_HIGH_PRECISION_KERNELS
-    integer :: j
-    real(kind=8), allocatable :: wtmp(:)
-#endif
     !--------------------------------------------------------------------------------
 
     ! check if we only need to scale
@@ -1104,23 +1091,8 @@ contains
 #else
       ! check if we can do it
       if( strided_w .or. (nvecw .ne. 1 .and. nvecw .ne. 2 .and. nvecw .ne. 4) ) then
-          write(*,*) 'WARNING: extremely slow fallback implementation of robust mvec_times_sdMat for arbitrary block sizes!'
-          allocate(wtmp(w%paddedN))
-
-          allocate(Mtmp(nvecv,nvecw),MCtmp(nvecv,nvecw))
-          Mtmp = M%val(M%imin:M%imax,M%jmin:M%jmax)
-          MCtmp = M%err(M%imin:M%imax,M%jmin:M%jmax)
-
-          do j=1,nvecw
-            wtmp(1:nrows)=w%val(w%jmin+j-1,1:nrows)
-            if( strided_v ) then
-              call dgemm_sb_prec_k_strided_1(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp(1,j),MCtmp(1,j),beta,wtmp(1))
-            else
-              call dgemm_sb_prec_k_1(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp(1,j),MCtmp(1,j),beta,wtmp(1))
-            end if
-          end do
-          iflag=0
-          return
+        iflag = -99
+        return
       end if
 
       ! copy M to buffer
@@ -1293,11 +1265,19 @@ contains
       iflag = -99
       return
 #else
-      ! check if we can do it 
-      if( (nvecv .ne. 4 .and. nvecv .ne. 2 .and. nvecv .ne. 1) .or. &
-        strided_v .or. (nvecv .ne. nvecw) ) then
-        write(*,*) 'WARNING - strided or arbitrary block size high prec. mvecT_times_sdMat_in_place not implemented'
-        iflag=-99
+      ! check if we can do it
+      if( strided_v ) then
+        iflag = -99
+        return
+      end if
+
+      if( nvecv .ne. nvecw ) then
+        iflag = -99
+        return
+      end if
+
+      if( nvecv .ne. 4 .and. nvecv .ne. 2 .and. nvecv .ne. 1 ) then
+        iflag = -99
         return
       end if
 
@@ -1335,14 +1315,10 @@ contains
     integer,       intent(inout) :: iflag
     !--------------------------------------------------------------------------------
     integer :: nrows, nvecv, nvecw, ldv, ldw
-    integer :: i,j
     logical :: strided_v, strided_w
     logical :: handled, tmp_transposed
     real(kind=8), allocatable :: tmp(:,:), tmpC(:,:)
     real(kind=8), allocatable :: tmp_(:,:)
-#ifdef PHIST_HIGH_PRECISION_KERNELS
-    real(kind=8), allocatable :: vtmp(:), wtmp(:)
-#endif
     real(kind=8), allocatable :: localBuff(:,:,:), globalBuff(:,:,:,:), globalBuff_(:,:,:,:)
     real(kind=8), allocatable :: mBuff(:,:), mBuffC(:,:)
     !--------------------------------------------------------------------------------
@@ -1471,16 +1447,8 @@ contains
       end if
 
       if( .not. handled ) then
-          write(*,*) 'WARNING: extremely slow fallback implementation of robust mvecT_times_mvec for arbitrary block sizes!'
-          allocate(vtmp(v%paddedN),wtmp(w%paddedN))
-          allocate(localBuff(nvecv,nvecw,2))
-          do i=1,nvecv
-            do j=1,nvecw
-              vtmp(1:v%paddedN)=v%val(v%jmin+i-1,1:v%paddedN)
-              wtmp(1:w%paddedN)=w%val(w%jmin+j-1,1:w%paddedN)
-              call ddot_prec_1(v%paddedN, vtmp(1),wtmp(1), localBuff(i,j,1), localBuff(i,j,2))
-          end do
-        end do
+        iflag = -99
+        return
       end if
 !write(*,*) 'here v', nvecv, v%val
 !write(*,*) 'here w', nvecw, w%val
