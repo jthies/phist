@@ -603,11 +603,11 @@ contains
 #else
       ! check if we can do it
       if( strided .or. (nvec .ne. 1 .and. nvec .ne. 2 .and. nvec .ne. 4) ) then
-        write(*,*) 'WARNING: using extremely slow fallback implementation for mvec_norm2 with arbitrary block size'
+        write(*,*) 'WARNING: using extremely slow fallback implementation for mvec_norm2 with arbitrary block size or stride'
         allocate(vtmp(mvec%paddedN))
         do j=1,nvec
           vtmp(1:nrows)=mvec%val(mvec%jmin+j-1,1:nrows)
-          call ddot_self_prec_1(mvec%paddedN, vtmp(1), localDot_prec(mvec%jmin+j-1,1), localDot_prec(mvec%jmin+j-1,2))        
+          call ddot_self_prec_1(mvec%paddedN, vtmp(1), localDot_prec(mvec%jmin+j-1,1), localDot_prec(mvec%jmin+j-1,2))
         end do
         return
       end if
@@ -973,11 +973,11 @@ contains
 #else
       ! check if we can do it
       if( strided .or. (nvec .ne. 1 .and. nvec .ne. 2 .and. nvec .ne. 4) ) then
-          write(*,*) 'WARNING: extremely slow fallback implementation of robust mvecT_times_mvec for arbitrary block sizes!'
+          write(*,*) 'WARNING: extremely slow fallback implementation of robust mvec_dot_mvec for arbitrary block sizes or stride!'
           allocate(vtmp(x%paddedN))
-          vtmp(1:nrows)=x%val(x%jmin+j-1,1:nrows)
-          wtmp(1:nrows)=y%val(y%jmin+j-1,1:nrows)
           do j=1,nvec
+            vtmp(1:nrows)=x%val(x%jmin+j-1,1:nrows)
+            wtmp(1:nrows)=y%val(y%jmin+j-1,1:nrows)
             call ddot_prec_1(x%paddedN, vtmp(1), wtmp(1), localDot_prec(x%jmin+j-1,1), localDot_prec(x%jmin+j-1,2))
           end do
       end if
@@ -1050,7 +1050,7 @@ contains
 
 
   !==================================================================================
-  ! special gemm routine for mvec times sdmat
+  ! special gemm routine for mvec times sdmat W = beta*W + alpha*V*M
   subroutine mvec_times_sdmat(alpha,v,M,beta,w,iflag)
     !--------------------------------------------------------------------------------
     real(kind=8),  intent(in)    :: alpha, beta
