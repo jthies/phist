@@ -304,6 +304,15 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
   *iflag=-99;
 }
 
+void SUBR(mvec_times_sdMat_augmented)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
+                                                  TYPE(const_sdMat_ptr) C,
+                                      _ST_ beta,  TYPE(mvec_ptr)        W,
+                                                  TYPE(sdMat_ptr)       D,
+                                                  int* iflag)
+{
+  *iflag=-99;
+}
+
 void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
     TYPE(const_sdMat_ptr) W, 
     _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
@@ -344,6 +353,15 @@ void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank
 void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V, 
     TYPE(const_mvec_ptr) W, 
     _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
+{
+  *iflag=-99;
+}
+
+void SUBR(mvecT_times_mvec_times_sdMat_inplace)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
+                                                            TYPE(mvec_ptr)        W,
+                                                            TYPE(const_sdMat_ptr) C,
+                                                _ST_ beta,  TYPE(sdMat_ptr)       D,
+                                                int* iflag)
 {
   *iflag=-99;
 }

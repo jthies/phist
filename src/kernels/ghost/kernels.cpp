@@ -441,17 +441,21 @@ static void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
 #include "phist_gen_s.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
+#include "kernels_no_fused.cpp"
 
 #include "phist_gen_c.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
+#include "kernels_no_fused.cpp"
 #endif
 
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
+#include "kernels_no_fused.cpp"
 
 #include "phist_gen_z.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
+#include "kernels_no_fused.cpp"
 
