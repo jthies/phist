@@ -17,6 +17,7 @@ extern "C" {
   void SUBR(crsMat_get_map_f)(TYPE(const_sparseMat_ptr),const_map_ptr_t*,int*);
   void SUBR(crsMat_read_mm_f)(void*A,const_comm_ptr_t comm, int fname_len, const char* fname, int* iflag);
   void SUBR(mvecT_times_mvec_f)(_ST_,TYPE(const_mvec_ptr),TYPE(const_mvec_ptr),_ST_,TYPE(sdMat_ptr),int*);
+  void SUBR(mvecT_times_mvec_times_sdMat_inplace_f)(_ST_,TYPE(const_mvec_ptr),TYPE(const_mvec_ptr),TYPE(const_sdMat_ptr),_ST_,TYPE(sdMat_ptr),int*);
   void SUBR(mvec_QR_f)(TYPE(mvec_ptr),TYPE(sdMat_ptr),int*);
   void SUBR(mvec_add_mvec_f)(_ST_,TYPE(const_mvec_ptr),_ST_,TYPE(mvec_ptr),int*);
   void SUBR(mvec_create_f)(TYPE(mvec_ptr)*,const_map_ptr_t,lidx_t,int*);
@@ -37,6 +38,7 @@ extern "C" {
   void SUBR(mvec_scatter_mvecs_f)(TYPE(const_mvec_ptr),TYPE(mvec_ptr) W[], int, int*);
   void SUBR(mvec_set_block_f)(TYPE(mvec_ptr),TYPE(const_mvec_ptr),int,int,int*);
   void SUBR(mvec_times_sdMat_f)(_ST_,TYPE(const_mvec_ptr),TYPE(const_sdMat_ptr),_ST_,TYPE(mvec_ptr),int*);
+  void SUBR(mvec_times_sdMat_augmented_f)(_ST_,TYPE(const_mvec_ptr),TYPE(const_sdMat_ptr),_ST_,TYPE(mvec_ptr),TYPE(sdMat_ptr),int*);
   void SUBR(mvec_times_sdMat_inplace_f)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int*);
   void SUBR(mvec_to_mvec_f)(TYPE(const_mvec_ptr),TYPE(mvec_ptr),int*);
   void SUBR(mvec_vadd_mvec_f)(const _ST_*,TYPE(const_mvec_ptr),_ST_,TYPE(mvec_ptr),int*);
@@ -666,6 +668,18 @@ extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
   }
 }
 
+extern "C" void SUBR(mvec_times_sdMat_augmented)(_ST_ alpha,  TYPE(const_mvec_ptr)  V, 
+                                                              TYPE(const_sdMat_ptr) C, 
+                                                 _ST_ beta,   TYPE(mvec_ptr)        W,
+                                                              TYPE(sdMat_ptr)       D,
+                                                 int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT(alpha,V,beta,W,iflag);
+  PHIST_CHK_IERR(SUBR(mvec_times_sdMat_augmented_f)(alpha,V,C,beta,W,D,iflag),*iflag);
+}
+
 extern "C" void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
     TYPE(const_sdMat_ptr) W, 
     _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
@@ -784,6 +798,20 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
     }
   }
 }
+
+
+extern "C" void SUBR(mvecT_times_mvec_times_sdMat_inplace)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
+                                                                       TYPE(mvec_ptr)        W,
+                                                                       TYPE(const_sdMat_ptr) C,
+                                                           _ST_ beta,  TYPE(sdMat_ptr)       D,
+                                                           int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC(V,W,iflag);
+  PHIST_CHK_IERR(SUBR(mvecT_times_mvec_times_sdMat_inplace_f)(alpha,V,W,C,beta,D,iflag),*iflag);
+}
+
 
 extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag)
 {

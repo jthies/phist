@@ -882,7 +882,7 @@ SUBR(sdMat_print)(mat1_,&iflag_);
 PHIST_SOUT(PHIST_INFO,"LL^T:\n");
 SUBR(sdMat_print)(mat3_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_NEAR(mt::one(),SdMatsEqual(mat3_,mat2_),100*mt::eps());
+      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat3_,mat2_));
     }
   }
 
@@ -984,6 +984,9 @@ ASSERT_EQ(0,iflag_);
     // this should have reconstructed mat3_
     SUBR(sdMat_add_sdMat)(-st::one(),mat3_,st::one(),mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
+PHIST_SOUT(PHIST_INFO,"Difference:\n");
+SUBR(sdMat_print)(mat2_,&iflag_);
+ASSERT_EQ(0,iflag_);
     ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),100*mt::eps()*mt::eps());
 
     // multiply mat1_^T with identity matrix with
