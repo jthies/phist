@@ -724,14 +724,35 @@ extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* iflag)
   }
 
 extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
-  {
+{
   *iflag=0;
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*iflag);
-  Teuchos::FancyOStream fos(Teuchos::rcp(&std::cout,false));
-  fos << std::scientific << std::setw(16) << std::setprecision(12);
-  M->describe(fos,Teuchos::VERB_EXTREME);
+  //Teuchos::FancyOStream fos(Teuchos::rcp(&std::cout,false));
+  //fos << std::scientific << std::setw(12) << std::setprecision(6);
+  // this hangs if the function is called by not all MPI ranks (see #108)
+  //M->describe(fos,Teuchos::VERB_EXTREME);
+  
+  int nrows,ncols;
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(vM,&nrows,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(vM,&ncols,iflag),*iflag);
+  KokkosClassic::MultiVector<_ST_,node_t> KMV=M->getLocalMV();
+
+  std::ostringstream sos;
+
+  for (int i=0; i<nrows; i++)
+  {
+    for (int j=0; j<ncols;j++)
+    {
+      sos << std::scientific 
+          << std::setprecision(6)
+          << std::setw(16) 
+          << KMV.getValues((size_t)j)[i];
+    }
+    sos << std::endl;
   }
+  std::cout << sos.str();
+}
 
 
 //! put random numbers into all elements of a serial dense matrix

@@ -1004,3 +1004,13 @@ ASSERT_EQ(0,iflag_);
     ASSERT_EQ(0,iflag_);
     ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),100*mt::eps()*mt::eps());
   }
+
+  TEST_F(CLASSNAME, print_from_single_MPI_rank)
+  {
+    iflag_=0;
+    if (mpi_rank_==0)
+    {
+      SUBR(sdMat_print)(mat1_,&iflag_);
+    }
+    ASSERT_EQ(0,iflag_);
+  }
