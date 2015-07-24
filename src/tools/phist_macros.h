@@ -108,7 +108,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return;}}}
 #endif
 
-#ifdef PHIST_KERNEL_LIB_GHOST
+#ifdef PHIST_HAVE_GHOST
 #include "ghost/config.h"
 #include "ghost/types.h"
 // check return value from GHOST
