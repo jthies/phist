@@ -108,7 +108,7 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return;}}}
 #endif
 
-#ifdef PHIST_KERNEL_LIB_GHOST
+#ifdef PHIST_HAVE_GHOST
 #include "ghost/config.h"
 #include "ghost/types.h"
 // check return value from GHOST
@@ -146,6 +146,11 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 //! like PHIST_CHK_IERR, but returns iflag (to be used in int functions returning an error code)
 #define PHIST_ICHK_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
 {func; if (FLAG!=PHIST_SUCCESS) { \
+PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
+(FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return FLAG;}}}
+
+#define PHIST_ICHK_NEG_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
+{func; if (FLAG<PHIST_SUCCESS) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return FLAG;}}}
 

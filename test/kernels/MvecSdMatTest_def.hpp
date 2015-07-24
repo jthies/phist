@@ -256,7 +256,6 @@ public:
   }
 #endif
 
-#if( _M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 )
   // check ones(n,m)'*ones(n,k)=n*ones(m,k)
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvecT_times_mvec_prec) 
@@ -381,7 +380,6 @@ public:
     }
   }
 #endif
-#endif
 
 
   // check ones(n,m)'*ones(n,m)=n*ones(m,m)
@@ -450,7 +448,6 @@ public:
   }
 
 
-#if( _M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 )
   // check ones(n,m)'*ones(n,m)=n*ones(m,m)
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvecT_times_mvec_with_manual_comparison_prec_hard)
@@ -521,7 +518,6 @@ public:
 #undef _ST_PREC_
 #undef CONJ_PREC
   }
-#endif
 
   // check ones(n,m)*ones(m,k)=m*ones(n,k),
   // and ones(n,m)*ones(m,k)-m*ones(n,k)=0
@@ -570,7 +566,6 @@ public:
     }
   }
 
-#if( _K_ == 1 || _K_ == 2 || _K_ == 4 )
   // check ones(n,m)*ones(m,k)=m*ones(n,k),
   // and ones(n,m)*ones(m,k)-m*ones(n,k)=0
 #ifdef PHIST_HIGH_PRECISION_KERNELS
@@ -624,8 +619,6 @@ public:
       ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,st::zero()));
     }
   }
-#endif
-
 
 #if (_M_>=_K_)
   // check ones(n,m)*ones(m,m)=m*ones(n,m)
@@ -708,7 +701,6 @@ public:
     }
   }
 
-#if( _K_ == 1 || _K_ == 2 || _K_ == 4 )
   // check ones(n,m)*ones(m,m)=m*ones(n,m)
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvec_times_sdMat_in_place_prec)
@@ -773,7 +765,6 @@ public:
       ASSERT_EQ(0,iflag_);
     }
   }
-#endif
 
 
 #if (_M_==_K_)
@@ -923,7 +914,6 @@ public:
     }
   }
 
-#if( _M_ == 1 || _M_ == 2 || _M_ == 4 || _K_ == 1 || _K_ == 2 || _K_ == 4 )
   // random check
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, random_mvecT_times_mvec_prec) 
@@ -968,7 +958,6 @@ public:
       ASSERT_NEAR(mt::one(),SdMatEqual(M1_,st::zero()),mt::sqrt(maxNorm12)*100*mt::eps());
     }
   }
-#endif
 
   // random check with partial views of partial mvecs and sdMats
   TEST_F(CLASSNAME, random_mvecT_times_mvec_with_inside_views)
