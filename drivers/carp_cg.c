@@ -249,12 +249,12 @@ else
 {
 // we assume that all shifts have a non-zero imaginary part.
 // The complex linear systems j=0..nshifts-1 are given by
-// (sigma[j]*I-A)(X_r[j]+i*X_i[j])=B+0i (i=sqrt(-1)).
+// (A-sigma[j]*I)(X_r[j]+i*X_i[j])=B+0i (i=sqrt(-1)).
 //
 // The equivalent real formulation is
 //
-// | sigma_r[j]I-A      -sigma_i[j]I  | |X_r[j]|   |B|
-// | sigma_i[j]I        sigma_r[j]I-A | |X_i[j]| = |0|
+// | A-sigma_r[j]I       sigma_i[j]I  | |X_r[j]|   |B|
+// | -sigma_i[j]I        A-sigma_r[j]I | |X_i[j]| = |0|
 //
 // We first construct an exact solution for system 0:
 // X_i_ex0 random, X_r_ex0 to satisfy the second block row,
@@ -263,22 +263,12 @@ else
   
   // x_r = 1/sig_i(A-sig_r I)x_i
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_r[0]/sigma_i[0],X_i_ex0,0.0,X_r_ex0,&iflag),iflag);
-  if (sigma_i[0]!=(MT)0.0)
-  {
-    PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(1.0/sigma_i[0],mat,X_i_ex0,1.0,X_r_ex0,&iflag),iflag);
-  }
-  else
-  {
-    TYPE(mvec_ptr) tmp = X_i_ex0;
-    X_i_ex0=X_r_ex0;
-    X_r_ex0=tmp;
-    PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_i_ex0,0.0,&iflag),iflag);
-  }
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(1.0/sigma_i[0],mat,X_i_ex0,1.0,X_r_ex0,&iflag),iflag);
   
   // compute rhs B to match this exact solution for sigma[0]:
-  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_r[0],X_r_ex0,0.0,B,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(-1.0,mat,X_r_ex0,1.0,B,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_i[0],X_i_ex0,1.0,B,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_r[0],X_r_ex0,0.0,B,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(1.0,mat,X_r_ex0,1.0,B,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_i[0],X_i_ex0,1.0,B,&iflag),iflag);
 
 }
 /*
