@@ -31,6 +31,17 @@ static inline bool is_aligned(const void *restrict pointer, size_t byte_count)
 }
 
 
+// Fused multiply add operation for doubles
+static inline double double_fmadd(double a, double b, double c)
+{
+  __m128d a_ = _mm_set_sd(a);
+  __m128d b_ = _mm_set_sd(b);
+  __m128d c_ = _mm_set_sd(c);
+  __m128d d_ = _mm_fmadd_pd(a_,b_,c_);
+  double d;
+  _mm_store_sd(&d,d_);
+  return d;
+}
 // Fast2Sum (Kahan) without checking |a|>=b
 // s = round(a+b)
 // s+t = a+b (exact) for |a|>=|b|

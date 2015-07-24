@@ -28,10 +28,8 @@ void prec_reduction_1(int n, const double *restrict s_, const double *restrict c
   {
     __m128d si = _mm_load_sd(&s_[i]);
     __m128d ci = _mm_load_sd(&c_[i]);
-    __m128d sigma, oldS = s;
-    MM128_FAST2SUM(oldS, si, s, sigma);
-    __m128d tmp = _mm_add_pd(ci,sigma);
-    c = _mm_add_pd(c, tmp);
+    __m128d oldS = s, oldC = c;
+    MM128_4SUM(oldS,oldC,si,ci,s,c);
   }
   _mm_store_sd(r,s);
   _mm_store_sd(rC,c);
@@ -52,10 +50,8 @@ void prec_reduction_2(int n, const double *restrict s_, const double *restrict c
   {
     __m128d si = _mm_loadu_pd(&s_[2*i]);
     __m128d ci = _mm_loadu_pd(&c_[2*i]);
-    __m128d sigma, oldS = s;
-    MM128_FAST2SUM(oldS, si, s, sigma);
-    __m128d tmp = _mm_add_pd(ci,sigma);
-    c = _mm_add_pd(c, tmp);
+    __m128d oldS = s, oldC = c;
+    MM128_4SUM(oldS,oldC,si,ci,s,c);
   }
   _mm_storeu_pd(r,s);
   _mm_storeu_pd(rC,c);

@@ -20,20 +20,15 @@ void daxpby_prec(int n, double alpha, const double *restrict a, const double *re
     // b_ <- beta*b
     double b_, bC_;
     DOUBLE_2MULTFMA(beta,b[i], b_, bC_);
-    bC_ = bC_+beta*bC[i];
+    bC_ = double_fmadd(beta,bC[i],bC_);
 
     // a_ <- alpha*a
     double a_, aC_;
     DOUBLE_2MULTFMA(alpha,a[i], a_,aC_);
-    aC_ = aC_+alpha*aC[i];
+    aC_ = double_fmadd(alpha,aC[i],aC_);
 
     // newB <- a_ + b_
-    double newB, newBC;
-    DOUBLE_2SUM(a_, b_, newB, newBC);
-    newBC = newBC+aC_+bC_;
-
-    // round result again
-    DOUBLE_FAST2SUM(newB, newBC, b[i], bC[i]);
+    DOUBLE_4SUM(a_,aC_,b_,bC_,b[i],bC[i]);
   }
 }
 
@@ -54,28 +49,26 @@ void dgemm_prec(int m, int n, int k, double alpha, const double *restrict a, con
       // c_ <- beta*b[j*m+i]
       double c_, cC_;
       DOUBLE_2MULTFMA(beta,c[j*m+i], c_,cC_);
-      cC_ = cC_+beta*cC[j*m+i];
+      cC_ = double_fmadd(beta,cC[j*m+i],cC_);
 
       for(int l = 0; l < k; l++)
       {
         // a_ <- alpha*a[l*m+i]
         double a_, aC_;
         DOUBLE_2MULTFMA(alpha,a[l*m+i], a_,aC_);
-        aC_ = aC_+alpha*aC[l*m+i];
+        aC_ = double_fmadd(alpha,aC[l*m+i],aC_);
 
         // tmp <- a_*b[j*k+l]
         double tmp, tmpC;
-        DOUBLE_2MULTFMA(a_,b[j*k+l], tmp,tmpC);
-        tmpC = tmpC+a_*bC[j*k+l]+aC_*b[j*k+l]+aC_*bC[j*k+l];
+        DOUBLE_4MULTFMA(a_,aC_,b[j*k+l],bC[j*k+l],tmp,tmpC);
 
         // c_ <- c_ + tmp
-        double oldC = c_, oldCC_ = cC_;
-        DOUBLE_2SUM(oldC,tmp, c_, cC_);
-        cC_ = oldCC_ + cC_ + tmpC;
+        double oldC = c_, oldCC = cC_;
+        DOUBLE_4SUM(oldC,oldCC,tmp,tmpC,c_,cC_);
       }
-
-      // round result
-      DOUBLE_FAST2SUM(c_,cC_,c[j*m+i],cC[j*m+i]);
+      // store result
+      c[j*m+i] = c_;
+      cC[j*m+i] = cC_;
     }
   }
 }

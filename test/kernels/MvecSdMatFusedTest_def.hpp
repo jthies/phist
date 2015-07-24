@@ -159,7 +159,7 @@ public:
 
       // Compare results
       ASSERT_REAL_EQ(mt::one(), ArraysEqual(V1_vp_,V2_vp_,nloc_,m_,ldaV1_,stride_,vflag_));
-      ASSERT_REAL_EQ(mt::one(), ArraysEqual(W1_vp_,W2_vp_,nloc_,k_,ldaW1_,stride_,vflag_));
+      ASSERT_NEAR(mt::one(), ArraysEqual(W1_vp_,W2_vp_,nloc_,k_,ldaW1_,stride_,vflag_), sqrt(mt::eps()));
       ASSERT_REAL_EQ(mt::one(), ArraysEqual(N1_vp_,N2_vp_,k_,k_,ldaN1_,stride_,mflag_));
       ASSERT_NEAR(mt::one(), ArraysEqual(M1_vp_,M2_vp_,m_,k_,ldaM1_,stride_,mflag_), sqrt(mt::eps()));
     }
@@ -167,7 +167,7 @@ public:
 
 
   // check augmented kernel with random data
-  TEST_F(CLASSNAME, mvec_times_sdMat_augmented) 
+  TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_augmented) 
   {
     if (typeImplemented_)
     {
@@ -209,6 +209,114 @@ public:
       ASSERT_NEAR(mt::one(), ArraysEqual(N1_vp_,N2_vp_,k_,k_,ldaN1_,stride_,mflag_), sqrt(mt::eps()));
     }
   }
+
+
+#if( _K_ == 1 || _K_ == 2 || _K_ == 4 )
+  // check augmented kernel with random data
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  TEST_F(CLASSNAME, mvecT_times_mvec_times_sdMat_inplace_prec)
+#else
+  TEST_F(CLASSNAME, DISABLED_mvecT_times_mvec_times_sdMat_inplace_prec)
+#endif
+  {
+    if (typeImplemented_)
+    {
+      // fill W, V, M, N with random data
+      SUBR(mvec_random)(W1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_random)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_random)(N1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _ST_ alpha = 2.*st::one()+st::rand(), beta = 2.*st::one()+st::rand();
+
+      // copy data
+      SUBR(mvec_add_mvec)(st::one(),W1_,st::zero(),W2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_add_mvec)(st::one(),V1_,st::zero(),V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_add_sdMat)(st::one(),M1_,st::zero(),M2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_add_sdMat)(st::one(),N1_,st::zero(),N2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // actually call augmented kernel
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvecT_times_mvec_times_sdMat_inplace)(alpha,V1_,W1_,N1_,beta,M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // do the same calculation by hand
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_times_sdMat_inplace)(W2_,N2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvecT_times_mvec)(alpha,V2_,W2_,beta,M2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // Compare results
+      ASSERT_REAL_EQ(mt::one(), ArraysEqual(V1_vp_,V2_vp_,nloc_,m_,ldaV1_,stride_,vflag_));
+      ASSERT_REAL_EQ(mt::one(), ArraysEqual(W1_vp_,W2_vp_,nloc_,k_,ldaW1_,stride_,vflag_));
+      ASSERT_REAL_EQ(mt::one(), ArraysEqual(N1_vp_,N2_vp_,k_,k_,ldaN1_,stride_,mflag_));
+      ASSERT_REAL_EQ(mt::one(), ArraysEqual(M1_vp_,M2_vp_,m_,k_,ldaM1_,stride_,mflag_));
+    }
+  }
+
+  // check augmented kernel with random data
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_augmented_prec)
+#else
+  TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_augmented_prec)
+#endif
+  {
+    if (typeImplemented_)
+    {
+      // fill W, V, M, N with random data
+      SUBR(mvec_random)(W1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_random)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_random)(N1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _ST_ alpha = 2.*st::one()+st::rand(), beta = 2.*st::one()+st::rand();
+
+      // copy data
+      SUBR(mvec_add_mvec)(st::one(),W1_,st::zero(),W2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_add_mvec)(st::one(),V1_,st::zero(),V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_add_sdMat)(st::one(),M1_,st::zero(),M2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_add_sdMat)(st::one(),N1_,st::zero(),N2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // actually call augmented kernel
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_times_sdMat_augmented)(alpha,V1_,M1_,beta,W1_,N1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // do the same calculation by hand
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvec_times_sdMat)(alpha,V2_,M2_,beta,W2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_ = PHIST_ROBUST_REDUCTIONS;
+      SUBR(mvecT_times_mvec)(st::one(),W2_,W2_,st::zero(),N2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // Compare results
+      ASSERT_REAL_EQ(mt::one(), ArraysEqual(V1_vp_,V2_vp_,nloc_,m_,ldaV1_,stride_,vflag_));
+      ASSERT_REAL_EQ(mt::one(), ArraysEqual(W1_vp_,W2_vp_,nloc_,k_,ldaW1_,stride_,vflag_));
+      ASSERT_REAL_EQ(mt::one(), ArraysEqual(M1_vp_,M2_vp_,m_,k_,ldaM1_,stride_,mflag_));
+      ASSERT_REAL_EQ(mt::one(), ArraysEqual(N1_vp_,N2_vp_,k_,k_,ldaN1_,stride_,mflag_));
+    }
+  }
+
+
+#endif /* high-prec test */
+
 
 const int CLASSNAME::k_;
 const int CLASSNAME::m_;

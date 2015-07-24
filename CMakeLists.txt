@@ -420,6 +420,7 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/dot_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sC.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_fused_sCD.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmvm_kernels_nt.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmvm_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmv_buff_cpy_kernels.f90
@@ -435,7 +436,8 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_kernels_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/dot_kernels_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB_prec.c
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sC_prec.c)
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sC_prec.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_fused_sCD_prec.c)
   endif()
 else()
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
