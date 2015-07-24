@@ -154,8 +154,11 @@ inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
 #define PHIST_TASK_POST_STEP(task_ierr) {ghost_task_t* t = NULL; ghost_task_cur(&t); if( t != NULL ) sem_post(t->progressSem);}
 #define PHIST_TASK_WAIT_STEP(taskName,task_ierr) {sem_wait(taskName->progressSem);}
 
-#define PHIST_MAIN_TASK_BEGIN {int task_ierr = 0; ghost_task_t* mainTask = NULL; phist_execute_lambda_as_ghost_task(&mainTask, [&]()->int {
-#define PHIST_MAIN_TASK_END   return 0;}, &task_ierr, false );PHIST_ICHK_IERR((void)task_ierr,task_ierr);}
+// don't need a main task, every kernel function is put into a task!
+#define PHIST_MAIN_TASK_BEGIN
+#define PHIST_MAIN_TASK_END
+//#define PHIST_MAIN_TASK_BEGIN {int task_ierr = 0; ghost_task_t* mainTask = NULL; phist_execute_lambda_as_ghost_task(&mainTask, [&]()->int {
+//#define PHIST_MAIN_TASK_END   return 0;}, &task_ierr, false );PHIST_ICHK_IERR((void)task_ierr,task_ierr);}
 
 
 #else /* __cplusplus && PHIST_HAVE_GHOST && PHIST_HAVE_CXX11_LAMBDAS */

@@ -14,7 +14,7 @@
 #endif
 
 
-class MainTaskTest: public testing::Test
+class DISABLED_MainTaskTest: public testing::Test
 {
   public:
 
@@ -42,9 +42,9 @@ class MainTaskTest: public testing::Test
 
 // check that we are inside a task
 #ifdef PHIST_KERNEL_LIB_GHOST
-TEST_F(MainTaskTest, inside_task)
+TEST_F(DISABLED_MainTaskTest, inside_task)
 #else
-TEST_F(MainTaskTest, DISABLED_inside_task)
+TEST_F(DISABLED_MainTaskTest, DISABLED_inside_task)
 #endif
 {
   ASSERT_TRUE(curTask_ != NULL);
@@ -53,9 +53,9 @@ TEST_F(MainTaskTest, DISABLED_inside_task)
 
 // check that the task has no parent
 #ifdef PHIST_KERNEL_LIB_GHOST
-TEST_F(MainTaskTest, root_task)
+TEST_F(DISABLED_MainTaskTest, root_task)
 #else
-TEST_F(MainTaskTest, DISABLED_root_task)
+TEST_F(DISABLED_MainTaskTest, DISABLED_root_task)
 #endif
 {
   ASSERT_TRUE(curTask_ != NULL);
@@ -69,9 +69,9 @@ TEST_F(MainTaskTest, DISABLED_root_task)
 
 // check that the task has at least some resources
 #ifdef PHIST_KERNEL_LIB_GHOST
-TEST_F(MainTaskTest, task_has_threads)
+TEST_F(DISABLED_MainTaskTest, task_has_threads)
 #else
-TEST_F(MainTaskTest, DISABLED_task_has_threads)
+TEST_F(DISABLED_MainTaskTest, DISABLED_task_has_threads)
 #endif
 {
   ASSERT_TRUE(curTask_ != NULL);
@@ -86,9 +86,9 @@ TEST_F(MainTaskTest, DISABLED_task_has_threads)
 
 // check that the task currently runs
 #ifdef PHIST_KERNEL_LIB_GHOST
-TEST_F(MainTaskTest, task_is_running)
+TEST_F(DISABLED_MainTaskTest, task_is_running)
 #else
-TEST_F(MainTaskTest, DISABLED_task_is_running)
+TEST_F(DISABLED_MainTaskTest, DISABLED_task_is_running)
 #endif
 {
   ASSERT_TRUE(curTask_ != NULL);
