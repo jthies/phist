@@ -306,8 +306,13 @@ PHIST_ICHK_IERR(SUBR(sdMat_delete)(Rtmp,&iflag),iflag);
 
   int numBlocks=nrhs/blockSize;
 
+  //NOTE: feastCorrectionSolver is defined to solve (sigma*I-A)X=B instead of (A-sigma*I)X=B,
+  //      so at this point we change the sign of B to account for this convention.
+  PHIST_ICHK_IERR(SUBR(mvec_scale)(B,-ONE,&iflag),iflag);
   SUBR(feastCorrectionSolver_run)
         (fCorrSolver, B, tol, maxIter,X_r, X_i, &iflag);
+        int iflag_dum=0;
+  PHIST_ICHK_IERR(SUBR(mvec_scale)(B,-ONE,&iflag_dum),iflag_dum);
 
   if (iflag>0)
   {
@@ -341,22 +346,23 @@ PHIST_SOUT(PHIST_VERBOSE,"       im(x): %e\n",SQRT(nrm_err0_1[0]));
 // so Ax-b will say something about the discretization error.
 if (num_complex==0)
 {
-  // our B is actually sigma_r*X_r_ex0 - A*X_r_ex0. Compute the residuals in X_r[0] and X_r_ex0
-  // in X_i[0] and X_i_ex0, respectively. Note that the `exact residual' is only 0 if B was 
+  // our B is actually (A-sigma_r*I)X_r_ex0. Compute the residuals for X_r[0] and X_r_ex0.
+  // Note that the `exact residual' is only 0 if B was 
   // constructed in such a way, if the benchmark problem provides an analytical solution, the
   // discretization error appears here (e.g. BENCH3D problems).
-  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(ONE,B,ZERO,err_r,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(ONE,B,ZERO,err_i,&iflag),iflag);
+  TYPE(mvec_ptr) res0=err_r, res_ex0=err_i;
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(ONE,B,ZERO,res0,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(ONE,B,ZERO,res_ex0,&iflag),iflag);
 
-  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_r[0],X_r_ex0,ONE,err_r,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_r[0],X_r[0],ONE,err_i,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_r[0],X_r_ex0,ONE,res_ex0,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_r[0],X_r[0],ONE,res0,&iflag),iflag);
 
-  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(ONE,mat,X_r_ex0,ONE,err_r,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(ONE,mat,X_r[0],ONE,err_i,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(-ONE,mat,X_r_ex0,ONE,res_ex0,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(-ONE,mat,X_r[0],ONE,res0,&iflag),iflag);
 
   double nrm_res[nrhs],nrm_res_ex[nrhs];
-  PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(err_r,err_r,nrm_res_ex,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(err_i,err_i,nrm_res,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(res0,res0,nrm_res,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(res_ex0,res_ex0,nrm_res_ex,&iflag),iflag);
   for (i=0;i<nrhs;i++) nrm_res_ex[i]=SQRT(nrm_res_ex[i]);
   for (i=0;i<nrhs;i++) nrm_res[i]=SQRT(nrm_res[i]);
 
