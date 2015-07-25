@@ -57,18 +57,17 @@ void dgemm_sc_self_prec_4(int nrows, const aligned_double *restrict x, double *r
       for(int i = 0; i < nrows; i++)
       {
         __m256d xi = _mm256_load_pd(&x[4*i]);
+        // j = 0
         __m256d xij = xi;
-        for(int j = 0; j < 3; j++)
-        {
-          __m256d p, pi;
-          MM256_2MULTFMA(xi,xij,p,pi);
-          __m256d sigma, oldS = s[j];
-          MM256_FAST2SUM(oldS,p,s[j],sigma);
-          __m256d tmp = _mm256_add_pd(pi,sigma);
-          c[j] = _mm256_add_pd(c[j],tmp);
+        MM256_4DOTADD(xi,xij,s[0],c[0]);
 
-          xij = _mm256_permute4x64_pd(xij,1*1+4*2+16*3+64*0);
-        }
+        // j = 1
+        xij = _mm256_permute4x64_pd(xi,1*1+4*2+16*3+64*0);
+        MM256_4DOTADD(xi,xij,s[1],c[1]);
+
+        // j = 2
+        xij = _mm256_permute4x64_pd(xi,1*2+4*3+16*0+64*1);
+        MM256_4DOTADD(xi,xij,s[2],c[2]);
       }
 
       int it = omp_get_thread_num();
@@ -155,16 +154,11 @@ void dgemm_sc_self_prec_2(int nrows, const aligned_double *restrict x, double *r
       for(int i = 0; i < nrows2; i++)
       {
         __m256d xi = _mm256_load_pd(&x[4*i]);
-        for(int j = 0; j < 2; j++)
-        {
-          __m256d xij = _mm256_set_pd(x[4*i+j+2],x[4*i+j+2],x[4*i+j],x[4*i+j]);
-          __m256d p, pi;
-          MM256_2MULTFMA(xi,xij,p,pi);
-          __m256d sigma, oldS = s[j];
-          MM256_FAST2SUM(oldS,p, s[j],sigma);
-          __m256d tmp = _mm256_add_pd(pi,sigma);
-          c[j] = _mm256_add_pd(c[j],tmp);
-        }
+        __m256d xij = _mm256_permute_pd(xi,0);
+        MM256_4DOTADD(xi,xij,s[0],c[0]);
+
+        xij = _mm256_permute_pd(xi,1+2+4+8);
+        MM256_4DOTADD(xi,xij,s[1],c[1]);
       }
 
       int it = omp_get_thread_num();
@@ -191,16 +185,10 @@ void dgemm_sc_self_prec_2(int nrows, const aligned_double *restrict x, double *r
     // and return result, needs to be summed up again
     for(int j = 0; j < 2; j++)
     {
-      __m128d s = _mm256_extractf128_pd(s_[j][0],0);
-      __m128d p = _mm256_extractf128_pd(s_[j][0],1);
-      __m128d c = _mm256_extractf128_pd(c_[j][0],0);
-      __m128d pi = _mm256_extractf128_pd(c_[j][0],1);
-      __m128d sigma, oldS = s;
-      MM128_2SUM(oldS,p,s,sigma);
-      __m128d tmp = _mm_add_pd(pi,sigma);
-      c = _mm_add_pd(c,tmp);
-      _mm_storeu_pd(&res[j*2],  s);
-      _mm_storeu_pd(&resC[j*2], c);
+      __m128d s, c;
+      MM256TO128_4SUM(s_[j][0],c_[j][0],s,c);
+      _mm_storeu_pd(&res[2*j],  s);
+      _mm_storeu_pd(&resC[2*j], c);
     }
   }
 
@@ -255,12 +243,7 @@ void dgemm_sc_prec_4_4(int nrows, const aligned_double *restrict x, const aligne
         for(int j = 0; j < 4; j++)
         {
           __m256d yij = _mm256_broadcast_sd(&y[4*i+j]);
-          __m256d p, pi;
-          MM256_2MULTFMA(xi,yij,p,pi);
-          __m256d sigma, oldS = s[j];
-          MM256_FAST2SUM(oldS,p, s[j],sigma);
-          __m256d tmp = _mm256_add_pd(pi,sigma);
-          c[j] = _mm256_add_pd(c[j],tmp);
+          MM256_4DOTADD(xi,yij,s[j],c[j]);
         }
       }
 
@@ -342,16 +325,15 @@ void dgemm_sc_prec_2_2(int nrows, const aligned_double *restrict x, const aligne
       for(int i = 0; i < nrows2; i++)
       {
         __m256d xi = _mm256_load_pd(&x[4*i]);
-        for(int j = 0; j < 2; j++)
-        {
-          __m256d yij = _mm256_set_pd(y[4*i+j+2],y[4*i+j+2],y[4*i+j],y[4*i+j]);
-          __m256d p, pi;
-          MM256_2MULTFMA(xi,yij,p,pi);
-          __m256d sigma, oldS = s[j];
-          MM256_FAST2SUM(oldS,p, s[j],sigma);
-          __m256d tmp = _mm256_add_pd(pi,sigma);
-          c[j] = _mm256_add_pd(c[j],tmp);
-        }
+        __m256d yi = _mm256_load_pd(&y[4*i]);
+
+        // j = 0
+        __m256d yij = _mm256_permute_pd(yi,0);
+        MM256_4DOTADD(xi,yij,s[0],c[0]);
+
+        // j = 1
+        yij = _mm256_permute_pd(yi,1+2+4+8);
+        MM256_4DOTADD(xi,yij,s[1],c[1]);
       }
 
       int it = omp_get_thread_num();
@@ -378,14 +360,8 @@ void dgemm_sc_prec_2_2(int nrows, const aligned_double *restrict x, const aligne
     // and return result, needs to be summed up again
     for(int j = 0; j < 2; j++)
     {
-      __m128d s = _mm256_extractf128_pd(s_[j][0],0);
-      __m128d p = _mm256_extractf128_pd(s_[j][0],1);
-      __m128d c = _mm256_extractf128_pd(c_[j][0],0);
-      __m128d pi = _mm256_extractf128_pd(c_[j][0],1);
-      __m128d sigma, oldS = s;
-      MM128_2SUM(oldS,p,s,sigma);
-      __m128d tmp = _mm_add_pd(pi,sigma);
-      c = _mm_add_pd(c,tmp);
+      __m128d s, c;
+      MM256TO128_4SUM(s_[j][0],c_[j][0],s,c);
       _mm_storeu_pd(&res[j*2],  s);
       _mm_storeu_pd(&resC[j*2], c);
     }
@@ -436,13 +412,10 @@ void dgemm_sc_prec_2_1(int nrows, const aligned_double *restrict x, const aligne
       for(int i = 0; i < nrows2; i++)
       {
         __m256d xi = _mm256_load_pd(&x[4*i]);
-        __m256d yij = _mm256_set_pd(y[2*i+1],y[2*i+1],y[2*i],y[2*i]);
-        __m256d p, pi;
-        MM256_2MULTFMA(xi,yij,p,pi);
-        __m256d sigma, oldS = s;
-        MM256_FAST2SUM(oldS,p, s,sigma);
-        __m256d tmp = _mm256_add_pd(pi,sigma);
-        c = _mm256_add_pd(c,tmp);
+        __m128d yil = _mm_load1_pd(&y[2*i]);
+        __m128d yih = _mm_load1_pd(&y[2*i+1]);
+        __m256d yij = _mm256_set_m128d(yih,yil);
+        MM256_4DOTADD(xi,yij,s,c);
       }
 
       int it = omp_get_thread_num();
@@ -461,14 +434,8 @@ void dgemm_sc_prec_2_1(int nrows, const aligned_double *restrict x, const aligne
 
     // sum up 4 elements in mm256 to 2 elements in mm128
     // and return result, needs to be summed up again
-    __m128d s = _mm256_extractf128_pd(s_[0][0],0);
-    __m128d p = _mm256_extractf128_pd(s_[0][0],1);
-    __m128d c = _mm256_extractf128_pd(c_[0][0],0);
-    __m128d pi = _mm256_extractf128_pd(c_[0][0],1);
-    __m128d sigma, oldS = s;
-    MM128_2SUM(oldS,p,s,sigma);
-    __m128d tmp = _mm_add_pd(pi,sigma);
-    c = _mm_add_pd(c,tmp);
+    __m128d s, c;
+    MM256TO128_4SUM(s_[0][0],c_[0][0],s,c);
     _mm_storeu_pd(res,  s);
     _mm_storeu_pd(resC, c);
   }
@@ -524,13 +491,8 @@ void dgemm_sc_prec_4_2(int nrows, const aligned_double *restrict x, const aligne
         __m256d xi = _mm256_load_pd(&x[4*i]);
         for(int j = 0; j < 2; j++)
         {
-          __m256d yij = _mm256_set_pd(y[2*i+j],y[2*i+j],y[2*i+j],y[2*i+j]);
-          __m256d p, pi;
-          MM256_2MULTFMA(xi,yij,p,pi);
-          __m256d sigma, oldS = s[j];
-          MM256_FAST2SUM(oldS,p, s[j],sigma);
-          __m256d tmp = _mm256_add_pd(pi,sigma);
-          c[j] = _mm256_add_pd(c[j],tmp);
+          __m256d yij = _mm256_broadcast_sd(&y[2*i+j]);
+          MM256_4DOTADD(xi,yij,s[j],c[j]);
         }
       }
 
@@ -607,12 +569,7 @@ void dgemm_sc_prec_4_1(int nrows, const aligned_double *restrict x, const aligne
       {
         __m256d xi = _mm256_load_pd(&x[4*i]);
         __m256d yij = _mm256_broadcast_sd(&y[i]);
-        __m256d p, pi;
-        MM256_2MULTFMA(xi,yij,p,pi);
-        __m256d sigma, oldS = s;
-        MM256_FAST2SUM(oldS,p, s,sigma);
-        __m256d tmp = _mm256_add_pd(pi,sigma);
-        c = _mm256_add_pd(c,tmp);
+        MM256_4DOTADD(xi,yij,s,c);
       }
 
       int it = omp_get_thread_num();
@@ -684,12 +641,7 @@ void dgemm_sc_prec_4_k(int nrows, int k, const aligned_double *restrict x, const
         for(int j = 0; j < k; j++)
         {
           __m256d yij = _mm256_broadcast_sd(&y[k*i+j]);
-          __m256d p, pi;
-          MM256_2MULTFMA(xi,yij,p,pi);
-          __m256d sigma, oldS = s[j];
-          MM256_FAST2SUM(oldS,p, s[j],sigma);
-          __m256d tmp = _mm256_add_pd(pi,sigma);
-          c[j] = _mm256_add_pd(c[j],tmp);
+          MM256_4DOTADD(xi,yij,s[j],c[j]);
         }
       }
 
@@ -771,13 +723,10 @@ void dgemm_sc_prec_2_k(int nrows, int k, const aligned_double *restrict x, const
         __m256d xi = _mm256_load_pd(&x[2*i]);
         for(int j = 0; j < k; j++)
         {
-          __m256d yij = _mm256_set_pd(y[k*(i+1)+j],y[k*(i+1)+j],y[k*i+j],y[k*i+j]);
-          __m256d p, pi;
-          MM256_2MULTFMA(xi,yij,p,pi);
-          __m256d sigma, oldS = s[j];
-          MM256_FAST2SUM(oldS,p, s[j],sigma);
-          __m256d tmp = _mm256_add_pd(pi,sigma);
-          c[j] = _mm256_add_pd(c[j],tmp);
+          __m128d yil = _mm_load1_pd(&y[k*i+j]);
+          __m128d yih = _mm_load1_pd(&y[k*(i+1)+j]);
+          __m256d yij = _mm256_set_m128d(yih,yil);
+          MM256_4DOTADD(xi,yij,s[j],c[j]);
         }
       }
 
@@ -805,12 +754,8 @@ void dgemm_sc_prec_2_k(int nrows, int k, const aligned_double *restrict x, const
     // and return result, needs to be summed up again
     for(int j = 0; j < k; j++)
     {
-      __m128d s = _mm256_extractf128_pd(s_[j][0],0);
-      __m128d p = _mm256_extractf128_pd(s_[j][0],1);
-      __m128d c = _mm256_extractf128_pd(c_[j][0],0);
-      __m128d pi = _mm256_extractf128_pd(c_[j][0],1);
-      __m128d oldS = s, oldC = c;
-      MM128_4SUM(oldS,p,oldC,pi,s,c);
+      __m128d s, c;
+      MM256TO128_4SUM(s_[j][0],c_[j][0],s,c);
       _mm_storeu_pd(&res[j*2],  s);
       _mm_storeu_pd(&resC[j*2], c);
     }
@@ -869,12 +814,7 @@ void dgemm_sc_prec_1_k(int nrows, int k, const aligned_double *restrict x, const
         for(int j = 0; j < k; j++)
         {
           __m256d yij = _mm256_set_pd(y[k*(i+3)+j],y[k*(i+2)+j],y[k*(i+1)+j],y[k*(i+0)+j]);
-          __m256d p, pi;
-          MM256_2MULTFMA(xi,yij,p,pi);
-          __m256d sigma, oldS = s[j];
-          MM256_FAST2SUM(oldS,p, s[j],sigma);
-          __m256d tmp = _mm256_add_pd(pi,sigma);
-          c[j] = _mm256_add_pd(c[j],tmp);
+          MM256_4DOTADD(xi,yij,s[j],c[j]);
         }
       }
 
@@ -906,7 +846,6 @@ void dgemm_sc_prec_1_k(int nrows, int k, const aligned_double *restrict x, const
       _mm256_storeu_pd(sj, s_[j][0]);
       _mm256_storeu_pd(cj, c_[j][0]);
       prec_reduction_1(4, sj, cj, &res[j], &resC[j]);
-//printf("bla %e %e %e %e res %e\n", sj[0], sj[1], sj[2], sj[3], res[j]);
     }
   }
 

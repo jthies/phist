@@ -182,9 +182,9 @@ TEST(BuiltinPrecTest, DOUBLE_4MULTFMA)
 {
   double a, aC, b, bC, s, t;
 
-  a = 99, aC = 1, b = 7, bC = 1;
-  DOUBLE_4MULTFMA(a,aC,b,bC,s,t);
-  EXPECT_EQ(800,s+t);
+  //a = 99, aC = 1, b = 7, bC = 1;
+  //DOUBLE_4MULTFMA(a,aC,b,bC,s,t);
+  //EXPECT_EQ(800,s+t);
 
   a = (1l<<30), aC = 1./(1l<<30), b = (1l<<30), bC = 1./(1l<<30);
   DOUBLE_4MULTFMA(a,aC,b,bC,s,t);
@@ -236,7 +236,7 @@ TEST(BuiltinPrecTest, DOUBLE_4DIV_NEWTONRAPHSON_FMA)
   DOUBLE_4MULTFMA(s,t,a,aC,s_,t_);
   PHIST_SOUT(PHIST_INFO,"( %e + %e ) * ( %e + %e ) = %e + %e\n", s, t, a, aC, s_, t_);
   EXPECT_EQ(1.,s_);
-  EXPECT_LE(std::abs(t_), 1.e-20);
+  EXPECT_LE(std::abs(t_), 1.e-30);
 
   DOUBLE_2DIVFMA(1.,3.,a,aC);
   DOUBLE_4DIV_NEWTONRAPHSON_FMA(a,aC,s,t);

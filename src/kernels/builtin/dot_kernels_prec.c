@@ -51,12 +51,7 @@ void ddot_self_prec_4(int nrows, const aligned_double *restrict x, double *restr
       for(int i = 0; i < nrows; i++)
       {
         __m256d xi = _mm256_load_pd(&x[4*i]);
-        __m256d p, pi;
-        MM256_2MULTFMA(xi,xi,p,pi);
-        __m256d sigma, oldS = s;
-        MM256_FAST2SUM(oldS,p, s,sigma);
-        __m256d tmp = _mm256_add_pd(pi,sigma);
-        c = _mm256_add_pd(c,tmp);
+        MM256_4DOTADD(xi,xi,s,c);
       }
 
 
@@ -127,11 +122,7 @@ void ddot_fused_scale_self_prec_4(int nrows, aligned_double *restrict x, const d
         _mm256_store_pd(&x[4*i],xi);
 
         // dot (of rounded result)
-        MM256_2MULTFMA(xi,xi,p,pi);
-        __m256d sigma, oldS = s;
-        MM256_FAST2SUM(oldS,p, s,sigma);
-        __m256d tmp = _mm256_add_pd(pi,sigma);
-        c = _mm256_add_pd(c,tmp);
+        MM256_4DOTADD(xi,xi,s,c);
       }
 
 
@@ -201,12 +192,7 @@ void ddot_prec_4(int nrows, const aligned_double *restrict x, const aligned_doub
       {
         __m256d xi = _mm256_load_pd(&x[4*i]);
         __m256d yi = _mm256_load_pd(&y[4*i]);
-        __m256d p, pi;
-        MM256_2MULTFMA(xi,yi,p,pi);
-        __m256d sigma, oldS = s;
-        MM256_FAST2SUM(oldS,p, s,sigma);
-        __m256d tmp = _mm256_add_pd(pi,sigma);
-        c = _mm256_add_pd(c,tmp);
+        MM256_4DOTADD(xi,yi,s,c);
       }
 
       int it = omp_get_thread_num();
@@ -285,11 +271,7 @@ void ddot_fused_scale_prec_4(int nrows, const aligned_double *restrict x, aligne
 
         // dot
         __m256d xi = _mm256_load_pd(&x[4*i]);
-        MM256_2MULTFMA(xi,yi,p,pi);
-        __m256d sigma, oldS = s;
-        MM256_FAST2SUM(oldS,p, s,sigma);
-        __m256d tmp = _mm256_add_pd(pi,sigma);
-        c = _mm256_add_pd(c,tmp);
+        MM256_4DOTADD(xi,yi,s,c);
       }
 
       int it = omp_get_thread_num();
