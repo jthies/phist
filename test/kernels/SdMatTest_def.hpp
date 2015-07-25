@@ -1010,6 +1010,7 @@ ASSERT_EQ(0,iflag_);
 
   TEST_F(CLASSNAME, print_from_single_MPI_rank)
   {
+    if (!typeImplemented_) return;
     iflag_=0;
     if (mpi_rank_==0)
     {
