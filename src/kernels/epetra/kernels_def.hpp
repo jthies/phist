@@ -480,7 +480,22 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,M,vM,*iflag);
-  std::cout << *M;
+  // may hang if called by just one MPI process
+  //std::cout << *M;
+  
+  std::stringstream sos;
+  for (int i=0; i< M->MyLength(); i++)
+  {
+    for (int j=0;j<M->NumVectors();j++)
+    {
+      sos << std::scientific 
+          << std::setprecision(6)
+          << std::setw(16) 
+          << (*M)[j][i];
+    }
+    sos<<std::endl;
+  }
+  std::cout << sos.str();
 }
 
 //! put random numbers into all elements of a serial dense matrix
