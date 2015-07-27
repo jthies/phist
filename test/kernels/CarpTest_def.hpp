@@ -112,8 +112,8 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     SUBR(sparseMat_get_range_map)(A,&range_map,&iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(sparseMat_get_domain_map)(A,&domain_map,&iflag_);
-
     ASSERT_EQ(0,iflag_);
+    
     SUBR(mvec_delete)(vec1_,&iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_delete)(vec2_,&iflag_);
@@ -140,10 +140,25 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     ASSERT_EQ(0,iflag_);
     ASSERT_EQ(lda,lda_);
 
+    if (vec1b_)
+    {
+      SUBR(mvec_delete)(vec1b_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
     PHISTTEST_MVEC_CREATE(&vec1b_,range_map,nvec_,&iflag_);
     ASSERT_EQ(0,iflag_);
+    if (vec2b_)
+    {
+      SUBR(mvec_delete)(vec2b_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
     PHISTTEST_MVEC_CREATE(&vec2b_,range_map,nvec_,&iflag_);
     ASSERT_EQ(0,iflag_);
+    if (vec3b_)
+    {
+      SUBR(mvec_delete)(vec3b_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
     PHISTTEST_MVEC_CREATE(&vec3b_,range_map,nvec_,&iflag_);
     ASSERT_EQ(0,iflag_);
 
@@ -163,7 +178,6 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
   // and copy original X vectors to x_r_bak, x_i_bak.
   void create_and_apply_carp(TYPE(const_sparseMat_ptr) A)
   {
-    if(!typeImplemented_) return;
 
     SUBR(mvec_add_mvec)(st::one(),x_r,st::zero(),x_r_bak,&iflag_);
     ASSERT_EQ(0,iflag_);
@@ -174,14 +188,15 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
       ASSERT_EQ(0,iflag_);
     }
     void* work;
-    SUBR(carp_setup)(A, _NV_, sigma_r_, sigma_i_,
-        &work, &iflag_);
+    SUBR(carp_setup)(A, _NV_, sigma_r_, sigma_i_, &work, &iflag_);
     ASSERT_EQ(0,iflag_);
-    SUBR(carp_sweep)(A, sigma_r_, sigma_i_,b,x_r,x_i,
-        work, omega_, &iflag_);
+    
+    SUBR(carp_sweep)(A, sigma_r_, sigma_i_,b,x_r,x_i, work, omega_, &iflag_);
     ASSERT_EQ(0,iflag_);
+    
     SUBR(carp_destroy)(A, work, &iflag_);
     ASSERT_EQ(0,iflag_);
+    
     return;
   }
 
@@ -313,6 +328,7 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
       x_r=vec1_; x_r_bak=vec1b_;
       x_i=vec2_; x_i_bak=vec2b_;
       b=vec3_;
+      // copies x_r_bak=x_r, x_i_bak=x_i before the carp sweep
       create_and_apply_carp(A_);
       ASSERT_EQ(0,iflag_);
       
@@ -327,7 +343,8 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
       ASSERT_EQ(0,iflag_);
       create_and_apply_carp(A_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_NEAR(mt::one(),MvecsEqual(vec1_,vec2_),10*releps(vec1_));
+      SUBR(mvec_add_mvec)(-st::one(),vec1_,st::one(),vec2_,&iflag_);
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(vec2_,mt::zero()));
       check_symmetry(x_r_bak,x_r,10*releps(x_r_bak));
     }
   }
