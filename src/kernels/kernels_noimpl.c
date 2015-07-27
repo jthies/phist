@@ -29,6 +29,13 @@ void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm,
   *iflag=-99;
 }
 
+void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, const_comm_ptr_t comm,
+        gidx_t nrows, gidx_t ncols, lidx_t maxnne,
+        int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int *iflag)
+{
+  *iflag=-99;
+}
+
 void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, const_map_ptr_t* map, int* iflag)
 {
   *iflag=-99;
