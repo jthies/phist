@@ -25,6 +25,12 @@
 #define bool _Bool
 #endif
 
+// missing declaration
+#ifndef _mm256_set_m128d
+#define _mm256_set_m128d(/* __m128d */ hi, /* __m128d */ lo) \
+      _mm256_insertf128_pd(_mm256_castpd128_pd256(lo), (hi), 0x1)
+#endif
+
 static inline bool is_aligned(const void *restrict pointer, size_t byte_count)
 {
   return (uintptr_t)pointer % byte_count == 0;
@@ -38,6 +44,16 @@ static inline double double_fmadd(double a, double b, double c)
   __m128d b_ = _mm_set_sd(b);
   __m128d c_ = _mm_set_sd(c);
   __m128d d_ = _mm_fmadd_pd(a_,b_,c_);
+  double d;
+  _mm_store_sd(&d,d_);
+  return d;
+}
+static inline double double_fmsub(double a, double b, double c)
+{
+  __m128d a_ = _mm_set_sd(a);
+  __m128d b_ = _mm_set_sd(b);
+  __m128d c_ = _mm_set_sd(c);
+  __m128d d_ = _mm_fmsub_pd(a_,b_,c_);
   double d;
   _mm_store_sd(&d,d_);
   return d;
@@ -128,10 +144,12 @@ static inline double double_fmadd(double a, double b, double c)
   MM256_FAST2SUM(a,b,s4_s,s4_t);\
   __m256d s4C_s, s4C_t;\
   MM256_FAST2SUM(aC,bC,s4C_s,s4C_t);\
-  __m256d s4_st;\
-  MM256_FAST2SUM(s4_s,s4C_s,s,s4_st);\
-  __m256d s4_tt = _mm256_add_pd(s4_t,s4C_t);\
-  t = _mm256_add_pd(s4_tt,s4_st);\
+  __m256d s4_v, s4_vC;\
+  MM256_FAST2SUM(s4_t,s4C_s,s4_v,s4_vC);\
+  __m256d s4_w = _mm256_add_pd(s4C_t,s4_vC);\
+  __m256d s4_svC;\
+  MM256_FAST2SUM(s4_s,s4_v,s,s4_svC)\
+  t = _mm256_add_pd(s4_w,s4_svC);\
 }
 #define MM128_FAST4SUM(a,aC,b,bC,s,t)\
 {\
@@ -163,10 +181,12 @@ static inline double double_fmadd(double a, double b, double c)
   MM256_2SUM(a,b,s4_s,s4_t);\
   __m256d s4C_s, s4C_t;\
   MM256_2SUM(aC,bC,s4C_s,s4C_t);\
-  __m256d s4_st;\
-  MM256_FAST2SUM(s4_s,s4C_s,s,s4_st);\
-  __m256d s4_tt = _mm256_add_pd(s4_t,s4C_t);\
-  t = _mm256_add_pd(s4_tt,s4_st);\
+  __m256d s4_v, s4_vC;\
+  MM256_2SUM(s4_t,s4C_s,s4_v,s4_vC);\
+  __m256d s4_w = _mm256_add_pd(s4C_t,s4_vC);\
+  __m256d s4_svC;\
+  MM256_FAST2SUM(s4_s,s4_v,s,s4_svC)\
+  t = _mm256_add_pd(s4_w,s4_svC);\
 }
 #define MM128_4SUM(a,aC,b,bC,s,t)\
 {\
@@ -174,10 +194,12 @@ static inline double double_fmadd(double a, double b, double c)
   MM128_2SUM(a,b,s4_s,s4_t);\
   __m128d s4C_s, s4C_t;\
   MM128_2SUM(aC,bC,s4C_s,s4C_t);\
-  __m128d s4_st;\
-  MM128_FAST2SUM(s4_s,s4C_s,s,s4_st);\
-  __m128d s4_tt = _mm_add_pd(s4_t,s4C_t);\
-  t = _mm_add_pd(s4_tt,s4_st);\
+  __m128d s4_v, s4_vC;\
+  MM128_2SUM(s4_t,s4C_s,s4_v,s4_vC);\
+  __m128d s4_w = _mm_add_pd(s4C_t,s4_vC);\
+  __m128d s4_svC;\
+  MM128_FAST2SUM(s4_s,s4_v,s,s4_svC)\
+  t = _mm_add_pd(s4_w,s4_svC);\
 }
 #define DOUBLE_4SUM(a,aC,b,bC,s,t)\
 {\
@@ -185,67 +207,47 @@ static inline double double_fmadd(double a, double b, double c)
   DOUBLE_2SUM(a,b,s4_s,s4_t);\
   double s4C_s, s4C_t;\
   DOUBLE_2SUM(aC,bC,s4C_s,s4C_t);\
-  double s4_st;\
-  DOUBLE_FAST2SUM(s4_s,s4C_s,s,s4_st);\
-  t = s4_t+s4C_t+s4_st;\
+  double s4_v, s4_vC;\
+  DOUBLE_2SUM(s4_t,s4C_s,s4_v,s4_vC);\
+  double s4_w = s4C_t+s4_vC;\
+  double s4_svC;\
+  DOUBLE_FAST2SUM(s4_s,s4_v,s,s4_svC)\
+  t = s4_w+s4_svC;\
 }
 
 // Precise multiplication of two high-precision numbers (a+aC) * (b+bC)
-#define MM256_4MULTFMA(a,aC,b,bC,s,t)\
+#define MM256_4MULTFMA(ah,al,bh,bl,ch,cl)\
 {\
-  __m256d m4ab_s, m4ab_t;\
-  MM256_2MULTFMA(a,b,m4ab_s,m4ab_t);\
-  __m256d m4abC_s, m4abC_t;\
-  MM256_2MULTFMA(a,bC,m4abC_s,m4abC_t);\
-  __m256d m4baC_s, m4baC_t;\
-  MM256_2MULTFMA(b,aC,m4baC_s,m4baC_t);\
-  __m256d m4C_s, m4C_st;\
-  MM256_FAST2SUM(m4abC_s,m4baC_s,m4C_s,m4C_st);\
-  __m256d m4_t, m4_tt;\
-  MM256_FAST2SUM(m4ab_t,m4C_s,m4_t,m4_tt);\
-  __m256d m4_st;\
-  MM256_FAST2SUM(m4ab_s,m4_t,s,m4_st);\
-  __m256d m4aCbC_t = _mm256_fmadd_pd(aC,bC,m4_st);\
-  __m256d m4_ttt = _mm256_add_pd(m4_tt,m4C_st);\
-  __m256d m4C_tt = _mm256_add_pd(m4abC_t,m4baC_t);\
-  __m256d m4_tttt = _mm256_add_pd(m4aCbC_t,m4C_tt);\
-  t =_mm256_add_pd(m4_tt,m4_tttt);\
+  __m256d m4t1h = _mm256_mul_pd(ah,bh);\
+  __m256d m4t2  = _mm256_mul_pd(ah,bl);\
+  __m256d m4t1l = _mm256_fmsub_pd(ah,bh,m4t1h);\
+  __m256d m4t3  = _mm256_fmadd_pd(al,bh,m4t2);\
+  __m256d m4t4  = _mm256_add_pd(m4t1l,m4t3);\
+  ch            = _mm256_add_pd(m4t1h,m4t4);\
+  __m256d m4t5  = _mm256_sub_pd(ch,m4t1h);\
+  cl            = _mm256_sub_pd(m4t4,m4t5);\
 }
-#define MM128_4MULTFMA(a,aC,b,bC,s,t)\
+#define MM128_4MULTFMA(ah,al,bh,bl,ch,cl)\
 {\
-  __m128d m4ab_s, m4ab_t;\
-  MM128_2MULTFMA(a,b,m4ab_s,m4ab_t);\
-  __m128d m4abC_s, m4abC_t;\
-  MM128_2MULTFMA(a,bC,m4abC_s,m4abC_t);\
-  __m128d m4baC_s, m4baC_t;\
-  MM128_2MULTFMA(b,aC,m4baC_s,m4baC_t);\
-  __m128d m4C_s, m4C_st;\
-  MM128_FAST2SUM(m4abC_s,m4baC_s,m4C_s,m4C_st);\
-  __m128d m4_t, m4_tt;\
-  MM128_FAST2SUM(m4ab_t,m4C_s,m4_t,m4_tt);\
-  __m128d m4_st;\
-  MM128_FAST2SUM(m4ab_s,m4_t,s,m4_st);\
-  __m128d m4aCbC_t = _mm_fmadd_pd(aC,bC,m4_st);\
-  __m128d m4_ttt = _mm_add_pd(m4_tt,m4C_st);\
-  __m128d m4C_tt = _mm_add_pd(m4abC_t,m4baC_t);\
-  __m128d m4_tttt = _mm_add_pd(m4aCbC_t,m4C_tt);\
-  t =_mm_add_pd(m4_tt,m4_tttt);\
+  __m128d m4t1h = _mm_mul_pd(ah,bh);\
+  __m128d m4t2  = _mm_mul_pd(ah,bl);\
+  __m128d m4t1l = _mm_fmsub_pd(ah,bh,m4t1h);\
+  __m128d m4t3  = _mm_fmadd_pd(al,bh,m4t2);\
+  __m128d m4t4  = _mm_add_pd(m4t1l,m4t3);\
+  ch            = _mm_add_pd(m4t1h,m4t4);\
+  __m128d m4t5  = _mm_sub_pd(ch,m4t1h);\
+  cl            = _mm_sub_pd(m4t4,m4t5);\
 }
-#define DOUBLE_4MULTFMA(a,aC,b,bC,s,t)\
+#define DOUBLE_4MULTFMA(ah,al,bh,bl,ch,cl)\
 {\
-  double m4ab_s, m4ab_t;\
-  DOUBLE_2MULTFMA(a,b,m4ab_s,m4ab_t);\
-  double m4abC_s, m4abC_t;\
-  DOUBLE_2MULTFMA(a,bC,m4abC_s,m4abC_t);\
-  double m4baC_s, m4baC_t;\
-  DOUBLE_2MULTFMA(b,aC,m4baC_s,m4baC_t);\
-  double m4C_s, m4C_st;\
-  DOUBLE_FAST2SUM(m4abC_s,m4baC_s,m4C_s,m4C_st);\
-  double m4_t, m4_tt;\
-  DOUBLE_FAST2SUM(m4ab_t,m4C_s,m4_t,m4_tt);\
-  double m4_st;\
-  DOUBLE_FAST2SUM(m4ab_s,m4_t,s,m4_st);\
-  t = m4abC_t+m4baC_t+aC*bC+m4_st+m4_tt+m4C_st;\
+  double m4t1h = ah*bh;\
+  double m4t2  = ah*bl;\
+  double m4t1l = double_fmsub(ah,bh,m4t1h);\
+  double m4t3  = double_fmadd(al,bh,m4t2);\
+  double m4t4  = m4t1l+m4t3;\
+  ch           = m4t1h+m4t4;\
+  double m4t5  = ch-m4t1h;\
+  cl           = m4t4-m4t5;\
 }
 
 // Div2FMA (almost) accurate division
@@ -495,6 +497,35 @@ static inline double double_fmadd(double a, double b, double c)
 }
 
 
+// helper macro for compensated dot products
+#define MM256_4DOTADD(a,b,s,c)\
+{\
+  __m256d da4_p, da4_pi;\
+  MM256_2MULTFMA(a,b,da4_p,da4_pi);\
+  __m256d da4_sigma, da4_s = s;\
+  MM256_2SUM(da4_s,da4_p,s,da4_sigma);\
+  __m256d da4_tmp = _mm256_add_pd(da4_pi,da4_sigma);\
+  c = _mm256_add_pd(c,da4_tmp);\
+}
+// helper macro for compensated dot products, faster variant suitable for norms
+#define MM256_FAST4DOTADD(a,b,s,c)\
+{\
+  __m256d da4_p, da4_pi;\
+  MM256_2MULTFMA(a,b,da4_p,da4_pi);\
+  __m256d da4_sigma, da4_s = s;\
+  MM256_FAST2SUM(da4_s,da4_p,s,da4_sigma);\
+  __m256d da4_tmp = _mm256_add_pd(da4_pi,da4_sigma);\
+  c = _mm256_add_pd(c,da4_tmp);\
+}
+// helper macro to sum up 4 double-double numbers in MM256 to two double-double numbers in MM128
+#define MM256TO128_4SUM(a,aC,s,t)\
+{\
+  __m128d m4to2_a  = _mm256_extractf128_pd(a,0);\
+  __m128d m4to2_b  = _mm256_extractf128_pd(a,1);\
+  __m128d m4to2_aC = _mm256_extractf128_pd(aC,0);\
+  __m128d m4to2_bC = _mm256_extractf128_pd(aC,1);\
+  MM128_4SUM(m4to2_a,m4to2_aC,m4to2_b,m4to2_bC,s,t);\
+}
 
 // precise reduction of gathered MPI results of all processes for block size 1
 void prec_reduction_1(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC);
