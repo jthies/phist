@@ -1,4 +1,4 @@
-/*! \file gemm_kernels_sC_prec.c
+/*! \file gemm_kernels_sB_prec.c
  * Fast parallel BLAS-gemm like functions with high precision for different blocksizes for mvec_module
  * \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
  *
@@ -40,6 +40,7 @@ void dgemm_sb_inplace_prec_4(int nrows, double *restrict x, const double *restri
   for(int i = 0; i < nrows; i++)
   {
     __m256d x_ = _mm256_load_pd(&x[4*i]);
+
     __m256d s, t;
     __m256d p, pi;
     // unroll j = 0
@@ -52,26 +53,30 @@ void dgemm_sb_inplace_prec_4(int nrows, double *restrict x, const double *restri
     xi = _mm256_permute4x64_pd(x_,1+4*1+16*1+64*1);
     MM256_2MULTFMA(xi,r_[1],p,pi);
     pi_ = _mm256_fmadd_pd(xi,rC_[1],pi);
-    __m256d oldS = s, oldT = t;
-    MM256_4SUM(oldS,oldT,p,pi_,s,t);
+    __m256d oldS = s, sigma;
+    MM256_2SUM(oldS,p,s,sigma);
+    __m256d tmp = _mm256_add_pd(pi_,sigma);
+    t = _mm256_add_pd(t, tmp);
 
     // j = 2
     xi = _mm256_permute4x64_pd(x_,2+4*2+16*2+64*2);
     MM256_2MULTFMA(xi,r_[2],p,pi);
     pi_ = _mm256_fmadd_pd(xi,rC_[2],pi);
-    oldS = s, oldT = t;
-    MM256_4SUM(oldS,oldT,p,pi_,s,t);
+    oldS = s;
+    MM256_2SUM(oldS,p,s,sigma);
+    tmp = _mm256_add_pd(pi_,sigma);
+    t = _mm256_add_pd(t, tmp);
 
     // j = 3
     xi = _mm256_permute4x64_pd(x_,3+4*3+16*3+64*3);
     MM256_2MULTFMA(xi,r_[3],p,pi);
     pi_ = _mm256_fmadd_pd(xi,rC_[3],pi);
     oldS = s;
-    __m256d sigma;
     MM256_2SUM(oldS,p,s,sigma);
-    __m256d tmp = _mm256_add_pd(pi_,sigma);
-    __m256d t_ = _mm256_add_pd(t,tmp);
-    __m256d newX = _mm256_add_pd(s,t_);
+    tmp = _mm256_add_pd(pi_,sigma);
+    t = _mm256_add_pd(t, tmp);
+
+    __m256d newX = _mm256_add_pd(s,t);
     _mm256_store_pd(&x[4*i],newX);
   }
 }
@@ -91,35 +96,37 @@ void dgemm_sb_inplace_prec_2(int nrows, double *restrict x, const double *restri
   }
 
   // buffer rows of r
-  __m128d r_[2], rC_[2];
+  __m256d r_[2], rC_[2];
   for(int i = 0; i < 2; i++)
   {
-    r_[i] = _mm_set_pd(r[i+2],r[i]);
-    rC_[i] = _mm_set_pd(rC[i+2],rC[i]);
+    r_[i] = _mm256_set_pd(r[i+2],r[i+0],r[i+2],r[i+0]);
+    rC_[i] = _mm256_set_pd(rC[i+2],rC[i+0],rC[i+2],rC[i+0]);
   }
 
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < nrows; i++)
+  for(int i = 0; i < nrows; i+=2)
   {
-    __m128d x_ = _mm_load_pd(&x[2*i]);
-    __m128d s, t;
-    __m128d p, pi;
+    __m256d x_ = _mm256_load_pd(&x[2*i]);
+
+    __m256d s, t;
+    __m256d p, pi;
     // unroll j = 0
-    __m128d xi = _mm_permute_pd(x_,0);
-    MM128_2MULTFMA(xi,r_[0],p,pi);
-    __m128d pi_ = _mm_fmadd_pd(xi,rC_[0],pi);
+    __m256d xi = _mm256_permute_pd(x_,0);
+    MM256_2MULTFMA(xi,r_[0],p,pi);
+    __m256d pi_ = _mm256_fmadd_pd(xi,rC_[0],pi);
     s = p, t = pi_;
 
     // j = 1
-    xi = _mm_permute_pd(x_,1+2*1);
-    MM128_2MULTFMA(xi,r_[1],p,pi);
-    pi_ = _mm_fmadd_pd(xi,rC_[1],pi);
-    __m128d oldS = s, sigma;
-    MM128_2SUM(oldS,p,s,sigma);
-    __m128d tmp = _mm_add_pd(pi_,sigma);
-    __m128d t_ = _mm_add_pd(t,tmp);
-    __m128d newX = _mm_add_pd(s,t_);
-    _mm_store_pd(&x[2*i],newX);
+    xi = _mm256_permute_pd(x_,1+2*1+4*1+8*1);
+    MM256_2MULTFMA(xi,r_[1],p,pi);
+    pi_ = _mm256_fmadd_pd(xi,rC_[1],pi);
+    __m256d oldS = s, sigma;
+    MM256_2SUM(oldS,p,s,sigma);
+    __m256d tmp = _mm256_add_pd(pi_,sigma);
+    t = _mm256_add_pd(t, tmp);
+
+    __m256d newX = _mm256_add_pd(s,t);
+    _mm256_store_pd(&x[2*i],newX);
   }
 }
 
@@ -142,18 +149,18 @@ void dgemm_sb_inplace_prec_1(int nrows, double *restrict x, const double *restri
   __m256d rC_ = _mm256_broadcast_sd(rC);
 
 
-  int nrows4 = nrows/4;
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < nrows4; i++)
+  for(int i = 0; i < nrows; i+=4)
   {
-    __m256d xi = _mm256_load_pd(&x[4*i]);
+    __m256d xi = _mm256_load_pd(&x[i]);
     __m256d xir, xirC;
     MM256_2MULTFMA(xi,r_,xir,xirC);
     __m256d tmp = _mm256_fmadd_pd(xi,rC_,xirC);
     __m256d newX = _mm256_add_pd(xir,tmp);
-    _mm256_store_pd(&x[4*i],newX);
+    _mm256_store_pd(&x[i],newX);
   }
 }
+
 
 // more accurate gemm product y <- alpha*x*m + beta*y AVX2 kernel for y of blocksize 4
 void dgemm_sb_prec_k_4(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y)
@@ -178,12 +185,13 @@ void dgemm_sb_prec_k_4(int nrows, int k, double alpha, const double *restrict x,
   // buffer rows of r and multiply by alpha
   __m256d r_[k], rC_[k];
   __m256d alpha_ = _mm256_set1_pd(alpha);
-  __m256d alphaC_ = _mm256_setzero_pd();
   for(int i = 0; i < k; i++)
   {
     __m256d tmp = _mm256_set_pd(r[i+3*k],r[i+2*k],r[i+k],r[i]);
     __m256d tmpC = _mm256_set_pd(rC[i+3*k],rC[i+2*k],rC[i+k],rC[i]);
-    MM256_4MULTFMA(alpha_,alphaC_,tmp,tmpC,r_[i],rC_[i]);
+    __m256d pi;
+    MM256_2MULTFMA(alpha_,tmp,r_[i],pi);
+    rC_[i] = _mm256_fmadd_pd(alpha_,tmpC,pi);
   }
   __m256d beta_ = _mm256_set1_pd(beta);
 
@@ -200,9 +208,9 @@ void dgemm_sb_prec_k_4(int nrows, int k, double alpha, const double *restrict x,
       MM256_2MULTFMA(xi,r_[j],xij,xijC);
       __m256d xijC_ = _mm256_fmadd_pd(xi,rC_[j],xijC);
       __m256d oldS = s, t_;
-      MM256_FAST2SUM(oldS,xij,s,t_);
-      __m256d tmp = _mm256_add_pd(t,t_);
-      t = _mm256_add_pd(tmp,xijC_);
+      MM256_2SUM(oldS,xij,s,t_);
+      __m256d tmp = _mm256_add_pd(xijC_,t_);
+      t = _mm256_add_pd(t,tmp);
     }
     __m256d newY = _mm256_add_pd(s,t);
     _mm256_store_pd(&y[4*i],newY);
@@ -229,42 +237,46 @@ void dgemm_sb_prec_k_2(int nrows, int k, double alpha, const double *restrict x,
     return;
   }
 
+
   // buffer rows of r and multiply by alpha
-  __m128d r_[k], rC_[k];
-  __m128d alpha_ = _mm_set1_pd(alpha);
-  __m128d alphaC_ = _mm_setzero_pd();
+  __m256d r_[k], rC_[k];
+  __m256d alpha_ = _mm256_set1_pd(alpha);
   for(int i = 0; i < k; i++)
   {
-    __m128d tmp = _mm_set_pd(r[i+k],r[i]);
-    __m128d tmpC = _mm_set_pd(rC[i+k],rC[i]);
-    MM128_4MULTFMA(alpha_,alphaC_,tmp,tmpC,r_[i],rC_[i]);
+    __m256d tmp = _mm256_set_pd(r[i+k],r[i],r[i+k],r[i]);
+    __m256d tmpC = _mm256_set_pd(rC[i+k],rC[i],rC[i+k],rC[i]);
+    __m256d pi;
+    MM256_2MULTFMA(alpha_,tmp,r_[i],pi);
+    rC_[i] = _mm256_fmadd_pd(alpha_,tmpC,pi);
   }
-  __m128d beta_ = _mm_set1_pd(beta);
+  __m256d beta_ = _mm256_set1_pd(beta);
 
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < nrows; i++)
+  for(int i = 0; i < nrows; i+=2)
   {
-    __m128d oldY = _mm_load_pd(&y[2*i]);
-    __m128d s, t;
-    MM128_2MULTFMA(beta_,oldY,s,t);
+    __m256d oldY = _mm256_load_pd(&y[2*i]);
+    __m256d s, t;
+    MM256_2MULTFMA(beta_,oldY,s,t);
     for(int j = 0; j < k; j++)
     {
-      __m128d xi = _mm_load1_pd(&x[k*i+j]);
-      __m128d xij, xijC;
-      MM128_2MULTFMA(xi,r_[j],xij,xijC);
-      __m128d xijC_ = _mm_fmadd_pd(xi,rC_[j],xijC);
-      __m128d oldS = s, t_;
-      MM128_FAST2SUM(oldS,xij,s,t_);
-      __m128d tmp = _mm_add_pd(t,t_);
-      t = _mm_add_pd(tmp,xijC_);
+      __m128d xil = _mm_load1_pd(&x[k*i+j]);
+      __m128d xih = _mm_load1_pd(&x[k*(i+1)+j]);
+      __m256d xi  = _mm256_set_m128d(xih,xil);
+      __m256d xij, xijC;
+      MM256_2MULTFMA(xi,r_[j],xij,xijC);
+      __m256d xijC_ = _mm256_fmadd_pd(xi,rC_[j],xijC);
+      __m256d oldS = s, t_;
+      MM256_2SUM(oldS,xij,s,t_);
+      __m256d tmp = _mm256_add_pd(xijC_,t_);
+      t = _mm256_add_pd(t,tmp);
     }
-    __m128d newY = _mm_add_pd(s,t);
-    _mm_store_pd(&y[2*i],newY);
+    __m256d newY = _mm256_add_pd(s,t);
+    _mm256_store_pd(&y[2*i],newY);
   }
 }
 
 
-// more accurate gemm product y <- alpha*x*m + beta*y AVX2 kernel for y of blocksize 2
+// more accurate gemm product y <- alpha*x*m + beta*y AVX2 kernel for y of blocksize 1
 void dgemm_sb_prec_k_1(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
@@ -285,38 +297,39 @@ void dgemm_sb_prec_k_1(int nrows, int k, double alpha, const double *restrict x,
   // buffer rows of r and multiply by alpha
   __m256d r_[k], rC_[k];
   __m256d alpha_ = _mm256_set1_pd(alpha);
-  __m256d alphaC_ = _mm256_setzero_pd();
   for(int i = 0; i < k; i++)
   {
     __m256d tmp = _mm256_set1_pd(r[i]);
     __m256d tmpC = _mm256_set1_pd(rC[i]);
-    MM256_4MULTFMA(alpha_,alphaC_,tmp,tmpC,r_[i],rC_[i]);
+    __m256d pi;
+    MM256_2MULTFMA(alpha_,tmp,r_[i],pi);
+    rC_[i] = _mm256_fmadd_pd(alpha_,tmpC,pi);
   }
   __m256d beta_ = _mm256_set1_pd(beta);
 
 
-  int nrows4 = nrows/4;
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < nrows4; i++)
+  for(int i = 0; i < nrows; i+=4)
   {
-    __m256d oldY = _mm256_load_pd(&y[4*i]);
+    __m256d oldY = _mm256_load_pd(&y[i]);
     __m256d s, t;
     MM256_2MULTFMA(beta_,oldY,s,t);
     for(int j = 0; j < k; j++)
     {
-      __m256d xi = _mm256_set_pd(x[k*4*i+3*k+j],x[k*4*i+2*k+j],x[k*4*i+k+j],x[k*4*i+j]);
-      __m256d xir, xirC;
-      MM256_2MULTFMA(xi,r_[j],xir,xirC);
-      __m256d xirC_ = _mm256_fmadd_pd(xi,rC_[j],xirC);
+      __m256d xi = _mm256_set_pd(x[k*i+3*k+j],x[k*i+2*k+j],x[k*i+k+j],x[k*i+j]);
+      __m256d xij, xijC;
+      MM256_2MULTFMA(xi,r_[j],xij,xijC);
+      __m256d xijC_ = _mm256_fmadd_pd(xi,rC_[j],xijC);
       __m256d oldS = s, t_;
-      MM256_FAST2SUM(oldS,xir,s,t_);
-      __m256d tmp = _mm256_add_pd(t,t_);
-      t = _mm256_add_pd(tmp,xirC_);
+      MM256_2SUM(oldS,xij,s,t_);
+      __m256d tmp = _mm256_add_pd(xijC_,t_);
+      t = _mm256_add_pd(t,tmp);
     }
     __m256d newY = _mm256_add_pd(s,t);
-    _mm256_store_pd(&y[4*i],newY);
+    _mm256_store_pd(&y[i],newY);
   }
 }
+
 
 // more accurate gemm product y <- alpha*x*m AVX2 kernel for y of blocksize 4 with non-temporal stores
 void dgemm_sb_prec_k_4_nt(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y)
@@ -341,29 +354,35 @@ void dgemm_sb_prec_k_4_nt(int nrows, int k, double alpha, const double *restrict
   // buffer rows of r and multiply by alpha
   __m256d r_[k], rC_[k];
   __m256d alpha_ = _mm256_set1_pd(alpha);
-  __m256d alphaC_ = _mm256_setzero_pd();
   for(int i = 0; i < k; i++)
   {
     __m256d tmp = _mm256_set_pd(r[i+3*k],r[i+2*k],r[i+k],r[i]);
     __m256d tmpC = _mm256_set_pd(rC[i+3*k],rC[i+2*k],rC[i+k],rC[i]);
-    MM256_4MULTFMA(alpha_,alphaC_,tmp,tmpC,r_[i],rC_[i]);
+    __m256d pi;
+    MM256_2MULTFMA(alpha_,tmp,r_[i],pi);
+    rC_[i] = _mm256_fmadd_pd(alpha_,tmpC,pi);
   }
 
 #pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
-    __m256d s = _mm256_setzero_pd();
-    __m256d t = _mm256_setzero_pd();
-    for(int j = 0; j < k; j++)
+    __m256d s, t;
+    // j = 0
+    __m256d xi = _mm256_broadcast_sd(&x[k*i+0]);
+    __m256d pi;
+    MM256_2MULTFMA(xi,r_[0],s,pi);
+    t = _mm256_fmadd_pd(xi,rC_[0],pi);
+
+    for(int j = 1; j < k; j++)
     {
       __m256d xi = _mm256_broadcast_sd(&x[k*i+j]);
       __m256d xij, xijC;
       MM256_2MULTFMA(xi,r_[j],xij,xijC);
       __m256d xijC_ = _mm256_fmadd_pd(xi,rC_[j],xijC);
       __m256d oldS = s, t_;
-      MM256_FAST2SUM(oldS,xij,s,t_);
-      __m256d tmp = _mm256_add_pd(t,t_);
-      t = _mm256_add_pd(tmp,xijC_);
+      MM256_2SUM(oldS,xij,s,t_);
+      __m256d tmp = _mm256_add_pd(xijC_,t_);
+      t = _mm256_add_pd(t,tmp);
     }
     __m256d newY = _mm256_add_pd(s,t);
     _mm256_stream_pd(&y[4*i],newY);
@@ -390,40 +409,51 @@ void dgemm_sb_prec_k_2_nt(int nrows, int k, double alpha, const double *restrict
     return;
   }
 
+
   // buffer rows of r and multiply by alpha
-  __m128d r_[k], rC_[k];
-  __m128d alpha_ = _mm_set1_pd(alpha);
-  __m128d alphaC_ = _mm_setzero_pd();
+  __m256d r_[k], rC_[k];
+  __m256d alpha_ = _mm256_set1_pd(alpha);
   for(int i = 0; i < k; i++)
   {
-    __m128d tmp = _mm_set_pd(r[i+k],r[i]);
-    __m128d tmpC = _mm_set_pd(rC[i+k],rC[i]);
-    MM128_4MULTFMA(alpha_,alphaC_,tmp,tmpC,r_[i],rC_[i]);
+    __m256d tmp = _mm256_set_pd(r[i+k],r[i],r[i+k],r[i]);
+    __m256d tmpC = _mm256_set_pd(rC[i+k],rC[i],rC[i+k],rC[i]);
+    __m256d pi;
+    MM256_2MULTFMA(alpha_,tmp,r_[i],pi);
+    rC_[i] = _mm256_fmadd_pd(alpha_,tmpC,pi);
   }
 
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < nrows; i++)
+  for(int i = 0; i < nrows; i+=2)
   {
-    __m128d s = _mm_setzero_pd();
-    __m128d t = _mm_setzero_pd();
-    for(int j = 0; j < k; j++)
+    __m256d s, t;
+    // j = 0
+    __m128d xil = _mm_load1_pd(&x[k*i+0]);
+    __m128d xih = _mm_load1_pd(&x[k*(i+1)+0]);
+    __m256d xi  = _mm256_set_m128d(xih,xil);
+    __m256d pi;
+    MM256_2MULTFMA(xi,r_[0],s,pi);
+    t = _mm256_fmadd_pd(xi,rC_[0],pi);
+
+    for(int j = 1; j < k; j++)
     {
-      __m128d xi = _mm_load1_pd(&x[k*i+j]);
-      __m128d xij, xijC;
-      MM128_2MULTFMA(xi,r_[j],xij,xijC);
-      __m128d xijC_ = _mm_fmadd_pd(xi,rC_[j],xijC);
-      __m128d oldS = s, t_;
-      MM128_FAST2SUM(oldS,xij,s,t_);
-      __m128d tmp = _mm_add_pd(t,t_);
-      t = _mm_add_pd(tmp,xijC_);
+      xil = _mm_load1_pd(&x[k*i+j]);
+      xih = _mm_load1_pd(&x[k*(i+1)+j]);
+      xi  = _mm256_set_m128d(xih,xil);
+      __m256d xij, xijC;
+      MM256_2MULTFMA(xi,r_[j],xij,xijC);
+      __m256d xijC_ = _mm256_fmadd_pd(xi,rC_[j],xijC);
+      __m256d oldS = s, t_;
+      MM256_2SUM(oldS,xij,s,t_);
+      __m256d tmp = _mm256_add_pd(xijC_,t_);
+      t = _mm256_add_pd(t,tmp);
     }
-    __m128d newY = _mm_add_pd(s,t);
-    _mm_stream_pd(&y[2*i],newY);
+    __m256d newY = _mm256_add_pd(s,t);
+    _mm256_stream_pd(&y[2*i],newY);
   }
 }
 
 
-// more accurate gemm product y <- alpha*x*m AVX2 kernel for y of blocksize 2 with non-temporal stores
+// more accurate gemm product y <- alpha*x*m AVX2 kernel for y of blocksize 1 with non-temporal stores
 void dgemm_sb_prec_k_1_nt(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
@@ -441,40 +471,46 @@ void dgemm_sb_prec_k_1_nt(int nrows, int k, double alpha, const double *restrict
     exit(1);
     return;
   }
-
   // buffer rows of r and multiply by alpha
   __m256d r_[k], rC_[k];
   __m256d alpha_ = _mm256_set1_pd(alpha);
-  __m256d alphaC_ = _mm256_setzero_pd();
   for(int i = 0; i < k; i++)
   {
     __m256d tmp = _mm256_set1_pd(r[i]);
     __m256d tmpC = _mm256_set1_pd(rC[i]);
-    MM256_4MULTFMA(alpha_,alphaC_,tmp,tmpC,r_[i],rC_[i]);
+    __m256d pi;
+    MM256_2MULTFMA(alpha_,tmp,r_[i],pi);
+    rC_[i] = _mm256_fmadd_pd(alpha_,tmpC,pi);
   }
 
 
-  int nrows4 = nrows/4;
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < nrows4; i++)
+  for(int i = 0; i < nrows; i+=4)
   {
-    __m256d s = _mm256_setzero_pd();
-    __m256d t = _mm256_setzero_pd();
-    for(int j = 0; j < k; j++)
+    __m256d s, t;
+    // j = 0
+    __m256d xi = _mm256_set_pd(x[k*i+3*k+0],x[k*i+2*k+0],x[k*i+k+0],x[k*i+0]);
+    __m256d pi;
+    MM256_2MULTFMA(xi,r_[0],s,pi);
+    t = _mm256_fmadd_pd(xi,rC_[0],pi);
+
+    for(int j = 1; j < k; j++)
     {
-      __m256d xi = _mm256_set_pd(x[k*4*i+3*k+j],x[k*4*i+2*k+j],x[k*4*i+k+j],x[k*4*i+j]);
-      __m256d xir, xirC;
-      MM256_2MULTFMA(xi,r_[j],xir,xirC);
-      __m256d xirC_ = _mm256_fmadd_pd(xi,rC_[j],xirC);
+      xi = _mm256_set_pd(x[k*i+3*k+j],x[k*i+2*k+j],x[k*i+k+j],x[k*i+j]);
+      __m256d xij, xijC;
+      MM256_2MULTFMA(xi,r_[j],xij,xijC);
+      __m256d xijC_ = _mm256_fmadd_pd(xi,rC_[j],xijC);
       __m256d oldS = s, t_;
-      MM256_FAST2SUM(oldS,xir,s,t_);
-      __m256d tmp = _mm256_add_pd(t,t_);
-      t = _mm256_add_pd(tmp,xirC_);
+      MM256_2SUM(oldS,xij,s,t_);
+      __m256d tmp = _mm256_add_pd(xijC_,t_);
+      t = _mm256_add_pd(t,tmp);
     }
     __m256d newY = _mm256_add_pd(s,t);
-    _mm256_stream_pd(&y[4*i],newY);
+    _mm256_stream_pd(&y[i],newY);
   }
 }
+
+
 
 // more accurate gemm product y <- alpha*x*m + beta*y AVX2 kernel for y of blocksize 4
 void dgemm_sb_prec_k_strided_4(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double beta, double *restrict y)
@@ -499,12 +535,13 @@ void dgemm_sb_prec_k_strided_4(int nrows, int k, double alpha, const double *res
   // buffer rows of r and multiply by alpha
   __m256d r_[k], rC_[k];
   __m256d alpha_ = _mm256_set1_pd(alpha);
-  __m256d alphaC_ = _mm256_setzero_pd();
   for(int i = 0; i < k; i++)
   {
     __m256d tmp = _mm256_set_pd(r[i+3*k],r[i+2*k],r[i+k],r[i]);
-    __m256d tmpC = _mm256_set_pd(rC[i+3*k],rC[i+2*k],rC[i+2],rC[i]);
-    MM256_4MULTFMA(alpha_,alphaC_,tmp,tmpC,r_[i],rC_[i]);
+    __m256d tmpC = _mm256_set_pd(rC[i+3*k],rC[i+2*k],rC[i+k],rC[i]);
+    __m256d pi;
+    MM256_2MULTFMA(alpha_,tmp,r_[i],pi);
+    rC_[i] = _mm256_fmadd_pd(alpha_,tmpC,pi);
   }
   __m256d beta_ = _mm256_set1_pd(beta);
 
@@ -521,9 +558,9 @@ void dgemm_sb_prec_k_strided_4(int nrows, int k, double alpha, const double *res
       MM256_2MULTFMA(xi,r_[j],xij,xijC);
       __m256d xijC_ = _mm256_fmadd_pd(xi,rC_[j],xijC);
       __m256d oldS = s, t_;
-      MM256_FAST2SUM(oldS,xij,s,t_);
-      __m256d tmp = _mm256_add_pd(t,t_);
-      t = _mm256_add_pd(tmp,xijC_);
+      MM256_2SUM(oldS,xij,s,t_);
+      __m256d tmp = _mm256_add_pd(xijC_,t_);
+      t = _mm256_add_pd(t,tmp);
     }
     __m256d newY = _mm256_add_pd(s,t);
     _mm256_store_pd(&y[4*i],newY);
@@ -550,42 +587,46 @@ void dgemm_sb_prec_k_strided_2(int nrows, int k, double alpha, const double *res
     return;
   }
 
+
   // buffer rows of r and multiply by alpha
-  __m128d r_[k], rC_[k];
-  __m128d alpha_ = _mm_set1_pd(alpha);
-  __m128d alphaC_ = _mm_setzero_pd();
+  __m256d r_[k], rC_[k];
+  __m256d alpha_ = _mm256_set1_pd(alpha);
   for(int i = 0; i < k; i++)
   {
-    __m128d tmp = _mm_set_pd(r[i+k],r[i]);
-    __m128d tmpC = _mm_set_pd(rC[i+k],rC[i]);
-    MM128_4MULTFMA(alpha_,alphaC_,tmp,tmpC,r_[i],rC_[i]);
+    __m256d tmp = _mm256_set_pd(r[i+k],r[i],r[i+k],r[i]);
+    __m256d tmpC = _mm256_set_pd(rC[i+k],rC[i],rC[i+k],rC[i]);
+    __m256d pi;
+    MM256_2MULTFMA(alpha_,tmp,r_[i],pi);
+    rC_[i] = _mm256_fmadd_pd(alpha_,tmpC,pi);
   }
-  __m128d beta_ = _mm_set1_pd(beta);
+  __m256d beta_ = _mm256_set1_pd(beta);
 
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < nrows; i++)
+  for(int i = 0; i < nrows; i+=2)
   {
-    __m128d oldY = _mm_load_pd(&y[2*i]);
-    __m128d s, t;
-    MM128_2MULTFMA(beta_,oldY,s,t);
+    __m256d oldY = _mm256_load_pd(&y[2*i]);
+    __m256d s, t;
+    MM256_2MULTFMA(beta_,oldY,s,t);
     for(int j = 0; j < k; j++)
     {
-      __m128d xi = _mm_load1_pd(&x[ldx*i+j]);
-      __m128d xij, xijC;
-      MM128_2MULTFMA(xi,r_[j],xij,xijC);
-      __m128d xijC_ = _mm_fmadd_pd(xi,rC_[j],xijC);
-      __m128d oldS = s, t_;
-      MM128_FAST2SUM(oldS,xij,s,t_);
-      __m128d tmp = _mm_add_pd(t,t_);
-      t = _mm_add_pd(tmp,xijC_);
+      __m128d xil = _mm_load1_pd(&x[ldx*i+j]);
+      __m128d xih = _mm_load1_pd(&x[ldx*(i+1)+j]);
+      __m256d xi  = _mm256_set_m128d(xih,xil);
+      __m256d xij, xijC;
+      MM256_2MULTFMA(xi,r_[j],xij,xijC);
+      __m256d xijC_ = _mm256_fmadd_pd(xi,rC_[j],xijC);
+      __m256d oldS = s, t_;
+      MM256_2SUM(oldS,xij,s,t_);
+      __m256d tmp = _mm256_add_pd(xijC_,t_);
+      t = _mm256_add_pd(t,tmp);
     }
-    __m128d newY = _mm_add_pd(s,t);
-    _mm_store_pd(&y[2*i],newY);
+    __m256d newY = _mm256_add_pd(s,t);
+    _mm256_store_pd(&y[2*i],newY);
   }
 }
 
 
-// more accurate gemm product y <- alpha*x*m + beta*y AVX2 kernel for y of blocksize 2
+// more accurate gemm product y <- alpha*x*m + beta*y AVX2 kernel for y of blocksize 1
 void dgemm_sb_prec_k_strided_1(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double beta, double *restrict y)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
@@ -606,38 +647,39 @@ void dgemm_sb_prec_k_strided_1(int nrows, int k, double alpha, const double *res
   // buffer rows of r and multiply by alpha
   __m256d r_[k], rC_[k];
   __m256d alpha_ = _mm256_set1_pd(alpha);
-  __m256d alphaC_ = _mm256_setzero_pd();
   for(int i = 0; i < k; i++)
   {
     __m256d tmp = _mm256_set1_pd(r[i]);
     __m256d tmpC = _mm256_set1_pd(rC[i]);
-    MM256_4MULTFMA(alpha_,alphaC_,tmp,tmpC,r_[i],rC_[i]);
+    __m256d pi;
+    MM256_2MULTFMA(alpha_,tmp,r_[i],pi);
+    rC_[i] = _mm256_fmadd_pd(alpha_,tmpC,pi);
   }
   __m256d beta_ = _mm256_set1_pd(beta);
 
 
-  int nrows4 = nrows/4;
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < nrows4; i++)
+  for(int i = 0; i < nrows; i+=4)
   {
-    __m256d oldY = _mm256_load_pd(&y[4*i]);
+    __m256d oldY = _mm256_load_pd(&y[i]);
     __m256d s, t;
     MM256_2MULTFMA(beta_,oldY,s,t);
     for(int j = 0; j < k; j++)
     {
-      __m256d xi = _mm256_set_pd(x[ldx*4*i+3*ldx+j],x[ldx*4*i+2*ldx+j],x[ldx*4*i+ldx+j],x[ldx*4*i+j]);
-      __m256d xir, xirC;
-      MM256_2MULTFMA(xi,r_[j],xir,xirC);
-      __m256d xirC_ = _mm256_fmadd_pd(xi,rC_[j],xirC);
+      __m256d xi = _mm256_set_pd(x[ldx*i+3*ldx+j],x[ldx*i+2*ldx+j],x[ldx*i+ldx+j],x[ldx*i+j]);
+      __m256d xij, xijC;
+      MM256_2MULTFMA(xi,r_[j],xij,xijC);
+      __m256d xijC_ = _mm256_fmadd_pd(xi,rC_[j],xijC);
       __m256d oldS = s, t_;
-      MM256_FAST2SUM(oldS,xir,s,t_);
-      __m256d tmp = _mm256_add_pd(t,t_);
-      t = _mm256_add_pd(tmp,xirC_);
+      MM256_2SUM(oldS,xij,s,t_);
+      __m256d tmp = _mm256_add_pd(xijC_,t_);
+      t = _mm256_add_pd(t,tmp);
     }
     __m256d newY = _mm256_add_pd(s,t);
-    _mm256_store_pd(&y[4*i],newY);
+    _mm256_store_pd(&y[i],newY);
   }
 }
+
 
 // more accurate gemm product y <- alpha*x*m AVX2 kernel for y of blocksize 4 with non-temporal stores
 void dgemm_sb_prec_k_strided_4_nt(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double *restrict y)
@@ -662,29 +704,35 @@ void dgemm_sb_prec_k_strided_4_nt(int nrows, int k, double alpha, const double *
   // buffer rows of r and multiply by alpha
   __m256d r_[k], rC_[k];
   __m256d alpha_ = _mm256_set1_pd(alpha);
-  __m256d alphaC_ = _mm256_setzero_pd();
   for(int i = 0; i < k; i++)
   {
     __m256d tmp = _mm256_set_pd(r[i+3*k],r[i+2*k],r[i+k],r[i]);
     __m256d tmpC = _mm256_set_pd(rC[i+3*k],rC[i+2*k],rC[i+k],rC[i]);
-    MM256_4MULTFMA(alpha_,alphaC_,tmp,tmpC,r_[i],rC_[i]);
+    __m256d pi;
+    MM256_2MULTFMA(alpha_,tmp,r_[i],pi);
+    rC_[i] = _mm256_fmadd_pd(alpha_,tmpC,pi);
   }
 
 #pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
-    __m256d s = _mm256_setzero_pd();
-    __m256d t = _mm256_setzero_pd();
-    for(int j = 0; j < k; j++)
+    __m256d s, t;
+    // j = 0
+    __m256d xi = _mm256_broadcast_sd(&x[ldx*i+0]);
+    __m256d pi;
+    MM256_2MULTFMA(xi,r_[0],s,pi);
+    t = _mm256_fmadd_pd(xi,rC_[0],pi);
+
+    for(int j = 1; j < k; j++)
     {
       __m256d xi = _mm256_broadcast_sd(&x[ldx*i+j]);
       __m256d xij, xijC;
       MM256_2MULTFMA(xi,r_[j],xij,xijC);
       __m256d xijC_ = _mm256_fmadd_pd(xi,rC_[j],xijC);
       __m256d oldS = s, t_;
-      MM256_FAST2SUM(oldS,xij,s,t_);
-      __m256d tmp = _mm256_add_pd(t,t_);
-      t = _mm256_add_pd(tmp,xijC_);
+      MM256_2SUM(oldS,xij,s,t_);
+      __m256d tmp = _mm256_add_pd(xijC_,t_);
+      t = _mm256_add_pd(t,tmp);
     }
     __m256d newY = _mm256_add_pd(s,t);
     _mm256_stream_pd(&y[4*i],newY);
@@ -711,40 +759,51 @@ void dgemm_sb_prec_k_strided_2_nt(int nrows, int k, double alpha, const double *
     return;
   }
 
+
   // buffer rows of r and multiply by alpha
-  __m128d r_[k], rC_[k];
-  __m128d alpha_ = _mm_set1_pd(alpha);
-  __m128d alphaC_ = _mm_setzero_pd();
+  __m256d r_[k], rC_[k];
+  __m256d alpha_ = _mm256_set1_pd(alpha);
   for(int i = 0; i < k; i++)
   {
-    __m128d tmp = _mm_set_pd(r[i+k],r[i]);
-    __m128d tmpC = _mm_set_pd(rC[i+k],rC[i]);
-    MM128_4MULTFMA(alpha_,alphaC_,tmp,tmpC,r_[i],rC_[i]);
+    __m256d tmp = _mm256_set_pd(r[i+k],r[i],r[i+k],r[i]);
+    __m256d tmpC = _mm256_set_pd(rC[i+k],rC[i],rC[i+k],rC[i]);
+    __m256d pi;
+    MM256_2MULTFMA(alpha_,tmp,r_[i],pi);
+    rC_[i] = _mm256_fmadd_pd(alpha_,tmpC,pi);
   }
 
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < nrows; i++)
+  for(int i = 0; i < nrows; i+=2)
   {
-    __m128d s = _mm_setzero_pd();
-    __m128d t = _mm_setzero_pd();
-    for(int j = 0; j < k; j++)
+    __m256d s, t;
+    // j = 0
+    __m128d xil = _mm_load1_pd(&x[k*i+0]);
+    __m128d xih = _mm_load1_pd(&x[k*(i+1)+0]);
+    __m256d xi  = _mm256_set_m128d(xih,xil);
+    __m256d pi;
+    MM256_2MULTFMA(xi,r_[0],s,pi);
+    t = _mm256_fmadd_pd(xi,rC_[0],pi);
+
+    for(int j = 1; j < k; j++)
     {
-      __m128d xi = _mm_load1_pd(&x[ldx*i+j]);
-      __m128d xij, xijC;
-      MM128_2MULTFMA(xi,r_[j],xij,xijC);
-      __m128d xijC_ = _mm_fmadd_pd(xi,rC_[j],xijC);
-      __m128d oldS = s, t_;
-      MM128_FAST2SUM(oldS,xij,s,t_);
-      __m128d tmp = _mm_add_pd(t,t_);
-      t = _mm_add_pd(tmp,xijC_);
+      xil = _mm_load1_pd(&x[ldx*i+j]);
+      xih = _mm_load1_pd(&x[ldx*(i+1)+j]);
+      xi  = _mm256_set_m128d(xih,xil);
+      __m256d xij, xijC;
+      MM256_2MULTFMA(xi,r_[j],xij,xijC);
+      __m256d xijC_ = _mm256_fmadd_pd(xi,rC_[j],xijC);
+      __m256d oldS = s, t_;
+      MM256_2SUM(oldS,xij,s,t_);
+      __m256d tmp = _mm256_add_pd(xijC_,t_);
+      t = _mm256_add_pd(t,tmp);
     }
-    __m128d newY = _mm_add_pd(s,t);
-    _mm_stream_pd(&y[2*i],newY);
+    __m256d newY = _mm256_add_pd(s,t);
+    _mm256_stream_pd(&y[2*i],newY);
   }
 }
 
 
-// more accurate gemm product y <- alpha*x*m AVX2 kernel for y of blocksize 2 with non-temporal stores
+// more accurate gemm product y <- alpha*x*m AVX2 kernel for y of blocksize 1 with non-temporal stores
 void dgemm_sb_prec_k_strided_1_nt(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double *restrict y)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
@@ -765,37 +824,41 @@ void dgemm_sb_prec_k_strided_1_nt(int nrows, int k, double alpha, const double *
   // buffer rows of r and multiply by alpha
   __m256d r_[k], rC_[k];
   __m256d alpha_ = _mm256_set1_pd(alpha);
-  __m256d alphaC_ = _mm256_setzero_pd();
   for(int i = 0; i < k; i++)
   {
     __m256d tmp = _mm256_set1_pd(r[i]);
     __m256d tmpC = _mm256_set1_pd(rC[i]);
-    MM256_4MULTFMA(alpha_,alphaC_,tmp,tmpC,r_[i],rC_[i]);
+    __m256d pi;
+    MM256_2MULTFMA(alpha_,tmp,r_[i],pi);
+    rC_[i] = _mm256_fmadd_pd(alpha_,tmpC,pi);
   }
 
 
-  int nrows4 = nrows/4;
 #pragma omp parallel for schedule(static)
-  for(int i = 0; i < nrows4; i++)
+  for(int i = 0; i < nrows; i+=4)
   {
-    __m256d s = _mm256_setzero_pd();
-    __m256d t = _mm256_setzero_pd();
-    for(int j = 0; j < k; j++)
+    __m256d s, t;
+    // j = 0
+    __m256d xi = _mm256_set_pd(x[ldx*i+3*ldx+0],x[ldx*i+2*ldx+0],x[ldx*i+ldx+0],x[ldx*i+0]);
+    __m256d pi;
+    MM256_2MULTFMA(xi,r_[0],s,pi);
+    t = _mm256_fmadd_pd(xi,rC_[0],pi);
+
+    for(int j = 1; j < k; j++)
     {
-      __m256d xi = _mm256_set_pd(x[ldx*4*i+3*ldx+j],x[ldx*4*i+2*ldx+j],x[ldx*4*i+ldx+j],x[ldx*4*i+j]);
-      __m256d xir, xirC;
-      MM256_2MULTFMA(xi,r_[j],xir,xirC);
-      __m256d xirC_ = _mm256_fmadd_pd(xi,rC_[j],xirC);
+      xi = _mm256_set_pd(x[ldx*i+3*ldx+j],x[ldx*i+2*ldx+j],x[ldx*i+ldx+j],x[ldx*i+j]);
+      __m256d xij, xijC;
+      MM256_2MULTFMA(xi,r_[j],xij,xijC);
+      __m256d xijC_ = _mm256_fmadd_pd(xi,rC_[j],xijC);
       __m256d oldS = s, t_;
-      MM256_FAST2SUM(oldS,xir,s,t_);
-      __m256d tmp = _mm256_add_pd(t,t_);
-      t = _mm256_add_pd(tmp,xirC_);
+      MM256_2SUM(oldS,xij,s,t_);
+      __m256d tmp = _mm256_add_pd(xijC_,t_);
+      t = _mm256_add_pd(t,tmp);
     }
     __m256d newY = _mm256_add_pd(s,t);
-    _mm256_stream_pd(&y[4*i],newY);
+    _mm256_stream_pd(&y[i],newY);
   }
 }
-
 
 
 

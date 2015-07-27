@@ -534,6 +534,306 @@ module mvec_module
       real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
       real(kind=C_DOUBLE), intent(out):: y
     end subroutine
+    !void dgemm_sb_augmented_prec_strided_k_4(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_strided_k_4(n,k,alpha,x,ldx,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k, ldx
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_k_4(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_k_4(n,k,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_4_4(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_4_4(n,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_2_4(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_2_4(n,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_1_4(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_1_4(n,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_strided_k_2(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_strided_k_2(n,k,alpha,x,ldx,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k, ldx
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_k_2(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_k_2(n,k,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k, ldx
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_4_2(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_4_2(n,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_2_2(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_2_2(n,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_1_2(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_1_2(n,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_strided_k_1(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_strided_k_1(n,k,alpha,x,ldx,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k, ldx
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_k_1(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_k_1(n,k,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k, ldx
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_4_1(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_4_1(n,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_2_1(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_2_1(n,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_1_1(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_1_1(n,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_strided_k_4_nt(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_strided_k_4_nt(n,k,alpha,x,ldx,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k, ldx
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_k_4_nt(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_k_4_nt(n,k,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_4_4_nt(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_4_4_nt(n,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_2_4_nt(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_2_4_nt(n,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_1_4_nt(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_1_4_nt(n,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_strided_k_2_nt(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_strided_k_2_nt(n,k,alpha,x,ldx,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k, ldx
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_k_2_nt(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_k_2_nt(n,k,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k, ldx
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_4_2_nt(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_4_2_nt(n,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_2_2_nt(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_2_2_nt(n,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_1_2_nt(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_1_2_nt(n,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_strided_k_1_nt(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_strided_k_1_nt(n,k,alpha,x,ldx,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k, ldx
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_k_1_nt(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_k_1_nt(n,k,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k, ldx
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_4_1_nt(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_4_1_nt(n,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_2_1_nt(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_2_1_nt(n,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_augmented_prec_1_1_nt(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
+    subroutine dgemm_sb_augmented_prec_1_1_nt(n,alpha,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), value :: alpha
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(out):: y
+      real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
+    end subroutine
   end interface
 
   !> interface of function-ptr for mvec_put_func
@@ -1360,6 +1660,291 @@ contains
 
     !--------------------------------------------------------------------------------
   end subroutine mvec_times_sdmat
+
+  !==================================================================================
+  ! special gemm routine for the augmented mvec times sdmat variant
+  subroutine mvec_times_sdmat_augmented(alpha,v,M,beta,w,N,iflag)
+    !--------------------------------------------------------------------------------
+    real(kind=8),  intent(in)    :: alpha, beta
+    type(MVec_t),  intent(in)    :: v
+    type(SDMat_t), intent(in)    :: M
+    type(Mvec_t),  intent(inout) :: w
+    type(SDMat_t), intent(inout) :: N
+    integer,       intent(inout) :: iflag
+    !--------------------------------------------------------------------------------
+    integer :: nrows, nvecv, nvecw, ldv, ldw
+    logical :: strided_v, strided_w, handled
+    real(kind=8), allocatable :: Mtmp(:,:), MCtmp(:,:)
+    real(kind=8), allocatable :: Ntmp(:,:), NCtmp(:,:)
+    !--------------------------------------------------------------------------------
+
+    ! determine data layout
+    nrows = v%map%nlocal(v%map%me)
+    nvecv = v%jmax-v%jmin+1
+    nvecw = w%jmax-w%jmin+1
+    ldv = size(v%val,1)
+    ldw = size(w%val,1)
+    if( .not. v%is_view .or. &
+      & ( v%jmin .eq. lbound(v%val,1) .and. &
+      &   v%jmax .eq. ubound(v%val,1)       ) ) then
+      strided_v = .false.
+    else
+      strided_v = .true.
+    end if
+
+    if( .not. w%is_view .or. &
+      & ( w%jmin .eq. lbound(w%val,1) .and. &
+      &   w%jmax .eq. ubound(w%val,1)       ) ) then
+      strided_w = .false.
+    else
+      strided_w = .true.
+    end if
+
+
+    if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
+#ifndef PHIST_HIGH_PRECISION_KERNELS
+      iflag = -99
+      return
+#else
+      ! check if we can do it
+      if( strided_w .or. (nvecw .ne. 1 .and. nvecw .ne. 2 .and. nvecw .ne. 4) ) then
+        iflag = -99
+        return
+      end if
+
+      ! copy M to buffer
+      allocate(Mtmp(nvecv,nvecw),MCtmp(nvecv,nvecw))
+      Mtmp = M%val(M%imin:M%imax,M%jmin:M%jmax)
+      MCtmp = M%err(M%imin:M%imax,M%jmin:M%jmax)
+      allocate(Ntmp(nvecw,nvecw),NCtmp(nvecw,nvecw))
+
+      ! for beta=0 we can use nontemporal stores
+      if( beta .eq. 0. ) then
+        if( nvecw .eq. 4 ) then
+          if( strided_v ) then
+            if( nvecv .eq. 1 ) then
+              call dgemm_sb_augmented_prec_strided_1_4_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 2 ) then
+              call dgemm_sb_augmented_prec_strided_2_4_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 4 ) then
+              call dgemm_sb_augmented_prec_strided_4_4_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            else
+              call dgemm_sb_augmented_prec_strided_k_4_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            end if
+          else
+            if( nvecv .eq. 1 ) then
+              call dgemm_sb_augmented_prec_1_4_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 2 ) then
+              call dgemm_sb_augmented_prec_2_4_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 4 ) then
+              call dgemm_sb_augmented_prec_4_4_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            else
+              call dgemm_sb_augmented_prec_k_4_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            end if
+          end if
+        else if( nvecw .eq. 2 ) then
+          if( strided_v ) then
+            if( nvecv .eq. 1 ) then
+              call dgemm_sb_augmented_prec_strided_1_2_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 2 ) then
+              call dgemm_sb_augmented_prec_strided_2_2_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 4 ) then
+              call dgemm_sb_augmented_prec_strided_4_2_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            else
+              call dgemm_sb_augmented_prec_strided_k_2_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            end if
+          else
+            if( nvecv .eq. 1 ) then
+              call dgemm_sb_augmented_prec_1_2_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 2 ) then
+              call dgemm_sb_augmented_prec_2_2_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 4 ) then
+              call dgemm_sb_augmented_prec_4_2_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            else
+              call dgemm_sb_augmented_prec_k_2_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            end if
+          end if
+        else ! nvecw .eq. 1
+          if( strided_v ) then
+            if( nvecv .eq. 1 ) then
+              call dgemm_sb_augmented_prec_strided_1_1_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 2 ) then
+              call dgemm_sb_augmented_prec_strided_2_1_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 4 ) then
+              call dgemm_sb_augmented_prec_strided_4_1_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            else
+              call dgemm_sb_augmented_prec_strided_k_1_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            end if
+          else
+            if( nvecv .eq. 1 ) then
+              call dgemm_sb_augmented_prec_1_1_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 2 ) then
+              call dgemm_sb_augmented_prec_2_1_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 4 ) then
+              call dgemm_sb_augmented_prec_4_1_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            else
+              call dgemm_sb_augmented_prec_k_1_nt(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+            end if
+          end if
+        end if
+      else ! beta .ne. 0
+        if( nvecw .eq. 4 ) then
+          if( strided_v ) then
+            if( nvecv .eq. 1 ) then
+              call dgemm_sb_augmented_prec_strided_1_4(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 2 ) then
+              call dgemm_sb_augmented_prec_strided_2_4(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 4 ) then
+              call dgemm_sb_augmented_prec_strided_4_4(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            else
+              call dgemm_sb_augmented_prec_strided_k_4(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            end if
+          else
+            if( nvecv .eq. 1 ) then
+              call dgemm_sb_augmented_prec_1_4(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 2 ) then
+              call dgemm_sb_augmented_prec_2_4(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 4 ) then
+              call dgemm_sb_augmented_prec_4_4(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            else
+              call dgemm_sb_augmented_prec_k_4(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            end if
+          end if
+        else if( nvecw .eq. 2 ) then
+          if( strided_v ) then
+            if( nvecv .eq. 1 ) then
+              call dgemm_sb_augmented_prec_strided_1_2(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 2 ) then
+              call dgemm_sb_augmented_prec_strided_2_2(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 4 ) then
+              call dgemm_sb_augmented_prec_strided_4_2(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            else
+              call dgemm_sb_augmented_prec_strided_k_2(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            end if
+          else
+            if( nvecv .eq. 1 ) then
+              call dgemm_sb_augmented_prec_1_2(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 2 ) then
+              call dgemm_sb_augmented_prec_2_2(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 4 ) then
+              call dgemm_sb_augmented_prec_4_2(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            else
+              call dgemm_sb_augmented_prec_k_2(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            end if
+          end if
+        else ! nvecw .eq. 1
+          if( strided_v ) then
+            if( nvecv .eq. 1 ) then
+              call dgemm_sb_augmented_prec_strided_1_1(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 2 ) then
+              call dgemm_sb_augmented_prec_strided_2_1(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 4 ) then
+              call dgemm_sb_augmented_prec_strided_4_1(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            else
+              call dgemm_sb_augmented_prec_strided_k_1(v%paddedN,nvecv,alpha,v%val(v%jmin,1),ldv,Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            end if
+          else
+            if( nvecv .eq. 1 ) then
+              call dgemm_sb_augmented_prec_1_1(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 2 ) then
+              call dgemm_sb_augmented_prec_2_1(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            else if( nvecv .eq. 4 ) then
+              call dgemm_sb_augmented_prec_4_1(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            else
+              call dgemm_sb_augmented_prec_k_1(v%paddedN,nvecv,alpha,v%val(v%jmin,1),Mtmp,MCtmp,beta,w%val(w%jmin,1),Ntmp,NCtmp)
+            end if
+          end if
+        end if
+
+      end if
+      ! gather results
+      allocate(globalBuff(nvecw,nvecw,2,v%map%nProcs))
+      allocate(globalBuff_(nvecw,nvecw,v%map%nProcs,2))
+      call MPI_Allgather(localBuff,2*nvecw*nvecw,MPI_DOUBLE_PRECISION, &
+        &                globalBuff,2*nvecw*nvecw,MPI_DOUBLE_PRECISION, &
+        &                v%map%comm, iflag)
+      globalBuff_(:,:,:,1) = globalBuff(:,:,1,:)
+      globalBuff_(:,:,:,2) = globalBuff(:,:,2,:)
+!write(*,*) 'here globalBuff', globalBuff_(:,:,:,1)
+!write(*,*) 'here globalBuffC', globalBuff_(:,:,:,2)
+      ! MPI reduction
+      if( nvecw*nvecw .eq. 1 ) then
+        call prec_reduction_1(v%map%nProcs, globalBuff_(1,1,1,1), globalBuff_(1,1,1,2), &
+          &                                 localBuff(1,1,1), localBuff(1,1,2)          )
+      else if( nvecw*nvecw .eq. 4 ) then
+        call prec_reduction_4(v%map%nProcs, globalBuff_(1,1,1,1), globalBuff_(1,1,1,2), &
+          &                                 localBuff(1,1,1), localBuff(1,1,2)          )
+      else if( mod(nvecw*nvecw,4) .eq. 0 ) then
+        call prec_reduction_4k(v%map%nProcs, nvecw*nvecw, globalBuff_(1,1,1,1), globalBuff_(1,1,1,2), &
+          &                                               localBuff(1,1,1), localBuff(1,1,2)          )
+      else
+        call prec_reduction_k(v%map%nProcs, nvecw*nvecw, globalBuff_(1,1,1,1), globalBuff_(1,1,1,2), &
+          &                                              localBuff(1,1,1), localBuff(1,1,2)          )
+      end if
+!write(*,*) 'here vTw', localBuff(:,:,1)
+!write(*,*) 'here vTw _C', localBuff(:,:,2)
+
+      ! set result
+      N%val(N%imin:N%imax,N%jmin:N%jmax) = localBuff(:,:,1)
+      N%err(N%imin:N%imax,N%jmin:N%jmax) = localBuff(:,:,2)
+
+      return
+#endif
+    end if
+
+
+    handled = .false.
+    if( .not. handled ) then
+      allocate(Mtmp(nvecw,nvecv))
+      Mtmp = transpose(M%val(M%imin:M%imax,M%jmin:M%jmax))
+      ! recognize small block mvecs
+      if( .not. strided_w ) then
+        if( nvecw .eq. 1 ) then
+          if( strided_v ) then
+            call dgemm_sB_augmented_strided_1_k(nrows, nvecv, alpha, v%val(v%jmin,1), ldv, Mtmp, beta, w%val,Ntmp)
+          else
+            call dgemm_sB_augmented_1_k        (nrows, nvecv, alpha, v%val, Mtmp, beta, w%val,Ntmp)
+          end if
+          handled = .true.
+        else if( nvecw .eq. 2 ) then
+          if( strided_v ) then
+            call dgemm_sB_augmented_strided_2_k(nrows, nvecv, alpha, v%val(v%jmin,1), ldv, Mtmp, beta, w%val,Ntmp)
+          else
+            call dgemm_sB_augmented_2_k        (nrows, nvecv, alpha, v%val, Mtmp, beta, w%val,Ntmp)
+          end if
+          handled = .true.
+        else if( nvecw .eq. 4 ) then
+          if( strided_v ) then
+            call dgemm_sB_augmented_strided_4_k(nrows, nvecv, alpha, v%val(v%jmin,1), ldv, Mtmp, beta, w%val,Ntmp)
+          else
+            call dgemm_sB_augmented_4_k        (nrows, nvecv, alpha, v%val, Mtmp, beta, w%val,Ntmp)
+          end if
+          handled = .true.
+        else if( nvecw .eq. 8 ) then
+          if( strided_v ) then
+            call dgemm_sB_augmented_strided_8_k(nrows, nvecv, alpha, v%val(v%jmin,1), ldv, Mtmp, beta, w%val,Ntmp)
+          else
+            call dgemm_sB_augmented_8_k        (nrows, nvecv, alpha, v%val, Mtmp, beta, w%val,Ntmp)
+          end if
+          handled = .true.
+        end if
+      end if
+    end if
+
+    if( .not. handled ) then
+      allocate(Mtmp(nvecv,nvecw))
+      Mtmp = M%val(M%imin:M%imax,M%jmin:M%jmax)
+      call dgemm_sB_augmented_generic(nrows,nvecw,nvecv,alpha,v%val(v%jmin,1),ldv, Mtmp, beta, w%val(w%jmin,1),ldw,Ntmp)
+    end if
+
+
+    ! global reduction of result
+    allocate(NCtmp(nvecw,nvecw))
+    call MPI_Allreduce(Ntmp,NCtmp,nvecw*nvecw,MPI_DOUBLE_PRECISION,MPI_SUM,v%map%comm,iflag)
+
+    N%val(N%imin:N%imax,N%jmin:N%jmax) = NCtmp
+    !--------------------------------------------------------------------------------
+  end subroutine mvec_times_sdmat_augmented
 
 
   !==================================================================================
@@ -3074,8 +3659,7 @@ end subroutine phist_Dmvec_put_func
     end if
 #endif
 
-    !call mvec_times_sdmat_augmented(alpha,v,M,beta,w,N,iflag)
-    iflag = -99
+    call mvec_times_sdmat_augmented(alpha,v,M,beta,w,N,iflag)
 
   end subroutine phist_Dmvec_times_sdMat_augmented
 
@@ -3321,3 +3905,4 @@ end subroutine phist_Dmvec_put_func
   end subroutine phist_Dmvec_QR
 
 end module mvec_module
+
