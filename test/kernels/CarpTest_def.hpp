@@ -1,15 +1,37 @@
 #include "../tools/TestHelpers.h"
-/* we don't have CARP tests yet */
-#if 0
+
 #ifndef CLASSNAME
 #error "file not included correctly."
 #endif
 
-/*! Test fixure. 
+extern "C" {
 
-\todo this test class has a lot in common with
-CrsMatTest, we should have a common base class like
-KernelTestWithCrsMatrices<_N_> that reads the matrices etc.
+// prototype for a useful function from the driver_utils, we can't include
+// the header here because it can only be included once after a phist_gen_X header.
+void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
+        const char* problem, int* iflag);
+
+} //extern "C"
+
+/*! Test fixure. 
+  
+  basic tests for CARP kernel, creates a test matrix defined by
+  _MATNAME_ and some vectors, checks if the kernel
+  works with and without RHS, with and without real or complex shift.
+  
+  It is not easy to rigorously test this kernel routine because we give
+  the kernel lib quite some freedom in deciding e.g. on the order of Kaczmarz
+  updates and the parallelization scheme. What we can test is
+  
+  * every vector element should be updated
+  * operator should be symmetric (hermitian for complex shift), S=X'(DKSWP(X))=S'
+  
+  given an Identity matrix,
+  
+  * for rhs 0 and shift 0  x=>0
+  * for rhs 0 and shift 1  x=>x
+  ... TODO: add tests ...
+  
 */
 class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_> 
 {
@@ -21,21 +43,38 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
   virtual void SetUp()
   {
     KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
-    vec2bak_=NULL; // created in rebuildVectors
-    vec3bak_=NULL;
+    // created in rebuildVectors
+    vec1b_=NULL;
+    vec2b_=NULL; 
+    vec3b_=NULL;
     if (typeImplemented_)
     {
-      SUBR(read_mat)("speye",nglob_,&A1_,&iflag_);
-      SUBR(read_mat)("sprandn",nglob_,&A2_,&iflag_);
-      SUBR(read_mat)("sprandn_nodiag",nglob_,&A3_,&iflag_);
-      
-      if (A1_==NULL || A2_==NULL || A3_==NULL || A4_==NULL)
+      iflag_=PHIST_SPARSEMAT_OPT_CARP;
+      SUBR(create_matrix)(&A_,comm_,_MATNAME_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      iflag_=PHIST_SPARSEMAT_OPT_CARP;
+      SUBR(sparseMat_create_fromRowFunc)(&I_,comm_,_N_,_N_,1,&SUBR(idfunc),&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      for (int i=0; i<_NV_; i++)
       {
-        haveMats_=false;
+        sigma_r_[i]=mt::zero();
+        sigma_i_[i]=mt::zero();
+        omega_[i]=mt::one();
       }
-      else
+    
+      // check if CARP is implemented at all:
+      void* work;
+      SUBR(carp_setup)(I_, 1, sigma_r_, sigma_i_,
+          &work, &iflag_);
+      if (iflag_==PHIST_NOT_IMPLEMENTED) 
       {
-        haveMats_=true;
+        carpImplemented_=false;
+      }
+      else 
+      {
+        carpImplemented_=true;
+        SUBR(carp_destroy)(I_, work, &iflag_);
       }
     }
   }
@@ -47,26 +86,24 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
     KernelTestWithVectors<_ST_,_N_,_NV_>::TearDown();
     if (typeImplemented_)
     {
-      if (vec2bak_!=NULL)
+      if (vec2b_!=NULL)
       {
-        SUBR(mvec_delete)(vec2bak_,&ierr_);
+        SUBR(mvec_delete)(vec2b_,&iflag_);
       }
-      if (vec3bak_!=NULL)
+      if (vec3b_!=NULL)
       {
-        SUBR(mvec_delete)(vec3bak_,&ierr_);
+        SUBR(mvec_delete)(vec3b_,&iflag_);
       }
-      ASSERT_EQ(0,ierr_);
-      ASSERT_EQ(0,delete_mat(A1_));
-      ASSERT_EQ(0,delete_mat(A2_));
-      ASSERT_EQ(0,delete_mat(A3_));
-      PHIST
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(0,delete_mat(A_));
+      ASSERT_EQ(0,delete_mat(I_));
     }
   }
 
 // the matrices may have individual maps, so we need to recreate all vectors with the specific map of the matrix!
 void rebuildVectors(TYPE(const_sparseMat_ptr) A)
 {
-  if (typeImplemented_ && haveMats_)
+  if (typeImplemented_)
   {
     // set vec1 to be a valid X, vec2 and vec3 a valid Y in Y=AX
     const_map_ptr_t range_map, domain_map;
@@ -101,42 +138,50 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     ASSERT_EQ(0,iflag_);
     ASSERT_EQ(lda,lda_);
 
-    PHISTTEST_MVEC_CREATE(&vec2bak_,range_map,nvec_,&iflag_);
+    PHISTTEST_MVEC_CREATE(&vec1b_,range_map,nvec_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    PHISTTEST_MVEC_CREATE(&vec3bak_,range_map,nvec_,&iflag_);
+    PHISTTEST_MVEC_CREATE(&vec2b_,range_map,nvec_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    PHISTTEST_MVEC_CREATE(&vec3b_,range_map,nvec_,&iflag_);
     ASSERT_EQ(0,iflag_);
 
     phist_map_get_local_length(domain_map, &nloc_, &iflag_);
     ASSERT_EQ(0,iflag_);
+    
+    // set pointers for the tests
+    x_r=vec1_; x_r_bak=vec1b_;
+    x_i=vec2_; x_i_bak=vec2b_;
+    b=vec3_;
+
   }
 }
 
 
-  // helper function to apply [X_r, X_i] = dkswp(A-sigma*I, B, X_r, X_i)
-  // for hsift sigma_r+i*sigma_i and B in vec1_, X_r in vec2_ and X_i in vec3_.
-  void create_and_apply_carp
-        (TYPE(const_sparseMat_ptr) A, _MT_ sigma_r, _MT_ sigma_i, _MT_ omega, int* iflag)
+  // helper function to apply [x_r, x_i] = dkswp(A-sigma[j]*I, b, x_r, x_i)
+  // and copy original X vectors to x_r_bak, x_i_bak.
+  void create_and_apply_carp(TYPE(const_sparseMat_ptr) A)
   {
-    if( !typeImplemented_ )
-      return;
+    if(!typeImplemented_) return;
 
-    _MT_* nrms_ai2i;
+    SUBR(mvec_add_mvec)(st::one(),x_r,st::zero(),x_r_bak,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    if (x_i!=NULL)
+    {
+      SUBR(mvec_add_mvec)(st::one(),x_i,st::zero(),x_i_bak,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
     void* work;
-    SUBR(carp_setup)(A, 1, &sigma_r, sigma_i,
-        &nrms_ai2i_, &work, iflag);
-    ASSERT_EQ(0,*iflag);
-    SUBR(carp_sweep)(A, 1,&sigma_r,&sigma_i,vec1_,&vec2_,&vec3_,
-        nrm_ai2i, work, &omega, iflag);
-    ASSERT_EQ(0,*iflag);
-    SUBR(carp_destroy)(A, 1,
-        nrms_ai2i, work, iflag)
-    ASSERT_EQ(0,*iflag);
+    SUBR(carp_setup)(A, _NV_, sigma_r_, sigma_i_,
+        &work, &iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(carp_sweep)(A, sigma_r_, sigma_i_,x_r,x_i,b,
+        work, omega_, &iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(carp_destroy)(A, work, &iflag_);
+    ASSERT_EQ(0,iflag_);
+    return;
   }
-
-TYPE(sparseMat_ptr) A1_; // identity matrix
-TYPE(sparseMat_ptr) A2_; // general sparse matrix with nonzero diagonal
-TYPE(sparseMat_ptr) A3_; // general sparse matrix with some zeros on the diagonal
-TYPE(sparseMat_ptr) A4_; // orthogonal sparse matrix that "shifts" each value to the next row
 
 protected:
 
@@ -149,115 +194,102 @@ int delete_mat(TYPE(sparseMat_ptr) A)
   return iflag_;
   }
 
-_MT_ check_symmetry(TYPE(sparseMat_ptr) A)
-{
-    if (typeImplemented_ && haveMats_)
-    {
-      //TODO test not implemented
-    }
-  return mt::one();
-}
-
- // assuming the "old" X is in vec2bak_ + i*vec3bal_, and the
- // updated one after the sweep in vec2_+i*vec3_, check some 
- // basic properties.
- 
- // norm of x less or equal after the sweep to before (note that we
- // project out some components!)
-_MT_ check_nonincreasing(TYPE(sparseMat_ptr) A)
-{
-    if (typeImplemented_ && haveMats_)
-    {
-      _MT_ nrms_old[nvec_], nrms_new[nvec_];
-      _MT_ imTim_old[nvec_], imTim_new[nvec_];
-
-      SUBR(mvec_norm2)(vec2bak_,nrms_old,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_norm2)(vec3bak_,imTim_old,&ierr_);
-      ASSERT_EQ(0,ierr_);
-
-      SUBR(mvec_norm2)(vec2_,nrms_new,&ierr_);
-      ASSERT_EQ(0,ierr_);
-      SUBR(mvec_norm2)(vec3_,imTim_new,&ierr_);
-      ASSERT_EQ(0,ierr_);
-
-    for (int i=0;i<nvec_;i++)
-    {  
-      nrms_old[i]=mt::sqrt(nrms_old[i]*nrms_old[i] + imTim_old[i]*imTim_old[i])
-      nrms_new[i]=mt::sqrt(nrms_new[i]*nrms_new[i] + imTim_new[i]*imTim_new[i])
-      ASSERT_TRUE(nrms_r_new[i]<=nrms_old[i]);
-    }
-  }
-  return mt::one();
-}
-
-  bool haveMats_;
-};
-
-  TEST_F(CLASSNAME, read_matrices)
+void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10*mt::eps())
   {
+    _MT_ max_err=mt::zero();
     if (typeImplemented_)
     {
-      ASSERT_TRUE(AssertNotNull(A0_));
-      ASSERT_TRUE(AssertNotNull(A1_));
-      ASSERT_TRUE(AssertNotNull(A2_));
-      ASSERT_TRUE(AssertNotNull(A3_));
+      TYPE(sdMat_ptr) M=NULL;
+      SUBR(sdMat_create)(&M,_NV_,_NV_,comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvecT_times_mvec)(st::one(),X,OPX,st::zero(),M,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      lidx_t ldm;
+      _ST_* M_raw=NULL;
+      SUBR(sdMat_extract_view)(M,&M_raw,&ldm,&iflag_);
+      for (int i=0; i<_NV_; i++)
+      {
+        for (int j=i+1; j<_NV_;j++)
+        {
+          max_err = std::max(max_err,std::abs(M_raw[i*ldm+j]-M_raw[j*ldm+i]));
+        }
+      }
+    }
+    ASSERT_NEAR(mt::one(),max_err+mt::one(),tol);
+  }
+
+  TYPE(sparseMat_ptr) A_, I_;
+  TYPE(mvec_ptr) vec1b_,vec2b_,vec3b_;
+  // mere pointers to allow e.g. passing in b=NULL
+  TYPE(mvec_ptr) x_r, x_i, x_r_bak, x_i_bak, b;
+
+  _MT_ sigma_r_[_NV_], sigma_i_[_NV_], omega_[_NV_];
+
+  bool carpImplemented_;
+
+};
+
+  TEST_F(CLASSNAME, create_matrices)
+  {
+    if (typeImplemented_ && carpImplemented_)
+    {
+      ASSERT_TRUE(AssertNotNull(A_));
+      ASSERT_TRUE(AssertNotNull(I_));
     }
   }
 
-  TEST_F(CLASSNAME, A1_unshifted)
+  // test if the kernel works correctly if b=NULL is given (should be same as b=zeros(n,1))
+  TEST_F(CLASSNAME, A_bnull)
   {
-    if (typeImplemented_ && haveMats_)
+    if (typeImplemented_ && carpImplemented_)
     {
-      // matrices may have different maps
-      rebuildVectors(A1_);
-
-      MT_ sigma_r=mt::zero(), sigma_i=mt::zero();
-
-      //CARP(A=I,b=0,x)=x?
+      rebuildVectors(A_);
 
       SUBR(mvec_random)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       SUBR(mvec_put_value)(vec2_,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
       SUBR(mvec_put_value)(vec3_,st::zero(),&iflag_);
-
-      create_and_apply_carp(A1_, mt::zero(), mt::zero(), mt::one(), &iflag_);
       ASSERT_EQ(0,iflag_);
       
-      ASSERT_EQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,st::zero(),vflag_));
-      ASSERT_EQ(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero(),vflag_));
+      x_r=vec1_; x_r_bak=vec1b_;
+      x_i=vec2_; x_i_bak=vec2b_;
+      b=vec3_;
+      create_and_apply_carp(A_);
+      ASSERT_EQ(0,iflag_);
+      x_r=vec2_; x_r_bak=vec2b_;
+      x_i=NULL; x_i_bak=NULL;
+      b=NULL;
+      // reset x_r to original values, and try with b=x_i=NULL (should give same result)
+      SUBR(mvec_add_mvec)(st::one(),vec1b_,st::zero(),vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      create_and_apply_carp(A_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
+      check_symmetry(x_r_bak,x_r);
     }
   }
 
-
-
-
-
-
-
-  TEST_F(CLASSNAME, A2_unshifted)
+  TEST_F(CLASSNAME, Identity_yields_zero)
   {
-    if (typeImplemented_ && haveMats_)
+    if (typeImplemented_ && carpImplemented_)
     {
       // matrices may have different maps
-      rebuildVectors(A2_);
+      rebuildVectors(I_);
+      
+      SUBR(mvec_random)(x_r,&iflag_);
+      ASSERT_EQ(0,iflag_);
 
-      MT_ sigma_r=mt::zero(), sigma_i=mt::zero();
-
-      //CARP(A=I,b=0,x)=x?
-
-      SUBR(mvec_random)(vec1_,&iflag_);
-      SUBR(mvec_random)(vec2_,&iflag_);
-      SUBR(mvec_put_value)(vec3_,st::zero(),&iflag_);
-
-      create_and_apply_carp(A2, mt::zero(), mt::zero(), mt::one(), &iflag_);
+      create_and_apply_carp(I_);
       ASSERT_EQ(0,iflag_);
       
-      // real X should stay real
-      ASSERT_EQ(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero(),vflag_));
+      // real X should be zero now (all rows of I projected out)
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(vec1_,st::zero()));
       
-      // check basic invariants
-      ASSERT_EQ(mt::one(),check_symmetry());
-      ASSERT_EQ(mt::one(),check_nonincreasing());
+    }
   }
-}
-#endif
+
+//TODO - more tests like this could be invented, in particular
+//       involving real or complex shifts
