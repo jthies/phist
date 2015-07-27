@@ -8,6 +8,10 @@ void SUBR(carp_setup)(TYPE(const_sparseMat_ptr) A, int numShifts,
 {
   //TODO: maybe the halocommInit call could go here?
   *iflag=0;
+  
+  // CARP sweep not implemented, we indicate this here already
+  // to avoid confusion in the tests
+  *iflag=-99;
   return;
 }
 
