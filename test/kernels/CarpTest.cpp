@@ -65,7 +65,7 @@ if the setup routine returns -99, further tests will not be run
 # include "CarpTest_def.hpp"
 # undef CLASSNAME
 
-# define CLASSNAME CCarpTest_512_1
+# define CLASSNAME DISABLED_CCarpTest_512_1
 # include "phist_gen_c.h"
 # include "CarpTest_def.hpp"
 # undef CLASSNAME
@@ -76,7 +76,7 @@ if the setup routine returns -99, further tests will not be run
 #include "CarpTest_def.hpp"
 #undef CLASSNAME
 
-#define CLASSNAME ZCarpTest_512_1
+#define CLASSNAME DISABLED_ZCarpTest_512_1
 #include "phist_gen_z.h"
 #include "CarpTest_def.hpp"
 #undef CLASSNAME
@@ -91,7 +91,7 @@ if the setup routine returns -99, further tests will not be run
 # include "CarpTest_def.hpp"
 # undef CLASSNAME
 
-# define CLASSNAME CCarpTest_512_4
+# define CLASSNAME DISABLED_CCarpTest_512_4
 # include "phist_gen_c.h"
 # include "CarpTest_def.hpp"
 #undef CLASSNAME
@@ -103,7 +103,7 @@ if the setup routine returns -99, further tests will not be run
 #include "CarpTest_def.hpp"
 #undef CLASSNAME
 
-#define CLASSNAME ZCarpTest_512_4
+#define CLASSNAME DISABLED_ZCarpTest_512_4
 #include "phist_gen_z.h"
 #include "CarpTest_def.hpp"
 
@@ -118,7 +118,7 @@ if the setup routine returns -99, further tests will not be run
 # include "CarpTest_def.hpp"
 # undef CLASSNAME
 
-# define CLASSNAME CCarpTest_512_7
+# define CLASSNAME DISABLED_CCarpTest_512_7
 # include "phist_gen_c.h"
 # include "CarpTest_def.hpp"
 #undef CLASSNAME
@@ -130,6 +130,6 @@ if the setup routine returns -99, further tests will not be run
 #include "CarpTest_def.hpp"
 #undef CLASSNAME
 
-#define CLASSNAME ZCarpTest_512_7
+#define CLASSNAME DISABLED_ZCarpTest_512_7
 #include "phist_gen_z.h"
 #include "CarpTest_def.hpp"
