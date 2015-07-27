@@ -38,6 +38,8 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
 
   public:
 
+  typedef KernelTestWithType<MT> MT_Test;
+
   /*! Set up routine.
    */
   virtual void SetUp()
@@ -240,8 +242,62 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
     }
   }
 
+
+  // make sure the operator is deterministic (important for CGMN)
+  TEST_F(CLASSNAME, operator_is_deterministic)
+  {
+    if (typeImplemented_ && carpImplemented_)
+    {
+      rebuildVectors(A_);
+
+      SUBR(mvec_random)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      for (int i=0; i<_NV_; i++)
+      {
+        sigma_r_[i]=(MT)i;
+        sigma_i_[i]=mt::one()-mt::one()/(MT)(i+1);
+        omega_[i]=mt::one()+mt::one()/(MT)(i+1);
+      }
+      
+      x_r=vec1_; x_r_bak=vec1b_;
+      x_i=vec2_; x_i_bak=vec2b_;
+      b=vec3_;
+      create_and_apply_carp(A_);
+      ASSERT_EQ(0,iflag_);
+            
+      MT norm1r[_NV_], norm1i[_NV_];
+      SUBR(mvec_norm2)(x_r,norm1r,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_norm2)(x_i,norm1i,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // reset x_r and x_i to original vectors
+      SUBR(mvec_add_mvec)(st::one(),vec1b_,st::zero(),vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_add_mvec)(st::one(),vec2b_,st::zero(),vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      create_and_apply_carp(A_);
+      ASSERT_EQ(0,iflag_);
+
+      MT norm2r[_NV_], norm2i[_NV_];
+      SUBR(mvec_norm2)(x_r,norm2r,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_norm2)(x_i,norm2i,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_NEAR(mt::one(),MT_Test::ArraysEqual(norm1r,norm2r,_NV_,1,_NV_,1),10*mt::eps());
+      ASSERT_NEAR(mt::one(),MT_Test::ArraysEqual(norm1i,norm2i,_NV_,1,_NV_,1),10*mt::eps());
+    }
+  }
+
+
   // test if the kernel works correctly if b=NULL is given (should be same as b=zeros(n,1))
-  TEST_F(CLASSNAME, A_bnull)
+  TEST_F(CLASSNAME, works_with_bnull)
   {
     if (typeImplemented_ && carpImplemented_)
     {
