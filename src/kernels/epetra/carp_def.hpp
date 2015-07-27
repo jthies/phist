@@ -1,7 +1,7 @@
 //! kernels to implement CARP for the matrix sigma[j]I-A.
 
 typedef struct {
-Teuchos::RCP<Epetra_Map> colMap_;
+Teuchos::RCP<Epetra_Vector> invProcWeights_;
 Teuchos::RCP<Epetra_MultiVector> xLoc_;
 Teuchos::RCP<Epetra_MultiVector> xLoc_i_;
 } carpWork_t;
@@ -86,7 +86,21 @@ extern "C" void SUBR(carp_setup)(TYPE(const_sparseMat_ptr) vA, int numShifts,
   carpWork_t *dat=new carpWork_t;
   dat->xLoc_=Teuchos::null; // (re)allocated in sweep kernel depending on #rhs
   dat->xLoc_i_=Teuchos::null; 
-
+  
+  dat->invProcWeights_=Teuchos::rcp(new Epetra_Vector(A->ColMap()));
+  
+  PHIST_CHK_IERR(SUBR(mvec_put_value)((void*)dat->invProcWeights_.get(),st::one(),iflag),*iflag);
+  if (A->Importer()!=NULL)
+  {
+    Teuchos::RCP<Epetra_Vector> locWeights = Teuchos::rcp(new Epetra_Vector(A->RowMap()));
+    PHIST_CHK_IERR(*iflag=locWeights->Export(*dat->invProcWeights_,*(A->Importer()),Add),*iflag);
+    PHIST_CHK_IERR(*iflag=dat->invProcWeights_->Import(*locWeights,*(A->Importer()),Insert),*iflag);
+    for (int i=0; i<dat->invProcWeights_->MyLength(); i++)
+    {
+      double& ipw_i = (*dat->invProcWeights_)[i];
+      ipw_i=1.0/ipw_i;
+    }
+  }
   *work=(void*)dat;
 }
 
@@ -138,7 +152,7 @@ extern "C" void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) vA,
        "implemented\n(file %s, line %d)\n",__FILE__,__LINE__);
     }
 
-    if (sol->Map().Comm().NumProc()==1)
+    if (A->Importer()==NULL)
     {
       dat->xLoc_=Teuchos::rcp(sol,false);
       if (rc_variant) dat->xLoc_i_=Teuchos::rcp(sol_i,false);
@@ -199,7 +213,18 @@ extern "C" void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) vA,
     // R^n in which the overlapping elements appear multiple times.
     if (dat->xLoc_.get()!=sol)
     {
-      PHIST_CHK_IERR(*iflag=sol->Export(*dat->xLoc_, *(A->Importer()), Average),*iflag);
+      for (int i=0; i<dat->xLoc_->MyLength();i++)
+      {
+        for (int j=0; j< dat->xLoc_->NumVectors(); j++)
+        {
+          (*dat->xLoc_)[j][i]*=(*dat->invProcWeights_)[i];
+          if (rc_variant)
+          {
+            (*dat->xLoc_i_)[j][i]*=(*dat->invProcWeights_)[i];
+          }
+        }
+      }
+      PHIST_CHK_IERR(*iflag=sol->Export(*dat->xLoc_, *(A->Importer()), Add),*iflag);
       PHIST_CHK_IERR(*iflag=dat->xLoc_->Import(*sol, *A->Importer(),Insert),*iflag);
     }
     if (rc_variant && dat->xLoc_i_.get()!=sol_i)
@@ -226,7 +251,18 @@ extern "C" void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) vA,
 
     if (dat->xLoc_.get()!=sol)
     {
-      PHIST_CHK_IERR(*iflag=sol->Export(*dat->xLoc_, *(A->Importer()), Average),*iflag);
+      for (int i=0; i<dat->xLoc_->MyLength();i++)
+      {
+        for (int j=0; j< dat->xLoc_->NumVectors(); j++)
+        {
+          (*dat->xLoc_)[j][i]*=(*dat->invProcWeights_)[i];
+          if (rc_variant)
+          {
+            (*dat->xLoc_i_)[j][i]*=(*dat->invProcWeights_)[i];
+          }
+        }
+      }
+      PHIST_CHK_IERR(*iflag=sol->Export(*dat->xLoc_, *(A->Importer()), Add),*iflag);
     }
     if (rc_variant && dat->xLoc_i_.get()!=sol_i)
     {
