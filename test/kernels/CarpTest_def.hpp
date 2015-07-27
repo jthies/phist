@@ -175,7 +175,7 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     SUBR(carp_setup)(A, _NV_, sigma_r_, sigma_i_,
         &work, &iflag_);
     ASSERT_EQ(0,iflag_);
-    SUBR(carp_sweep)(A, sigma_r_, sigma_i_,x_r,x_i,b,
+    SUBR(carp_sweep)(A, sigma_r_, sigma_i_,b,x_r,x_i,
         work, omega_, &iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(carp_destroy)(A, work, &iflag_);
@@ -259,16 +259,20 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
       b=vec3_;
       create_and_apply_carp(A_);
       ASSERT_EQ(0,iflag_);
+      
+      // check that x_i is still 0 (shift was 0+0i)
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(vec2_,st::zero()));
+      
       x_r=vec2_; x_r_bak=vec2b_;
       x_i=NULL; x_i_bak=NULL;
       b=NULL;
       // reset x_r to original values, and try with b=x_i=NULL (should give same result)
-      SUBR(mvec_add_mvec)(st::one(),vec1b_,st::zero(),vec1_,&iflag_);
+      SUBR(mvec_add_mvec)(st::one(),vec1b_,st::zero(),vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
       create_and_apply_carp(A_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
-      check_symmetry(x_r_bak,x_r);
+      ASSERT_NEAR(mt::one(),MvecsEqual(vec1_,vec2_),10*releps(vec1_));
+      check_symmetry(x_r_bak,x_r,10*releps(x_r_bak));
     }
   }
 
