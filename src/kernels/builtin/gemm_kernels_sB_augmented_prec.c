@@ -55,8 +55,8 @@ void dgemm_sb_augmented_prec_strided_k_4(int nrows, int k, double alpha, const d
 
   {
     // buffer for omp thread result + padding to prevent false sharing
-    __m256d ds_[(k/8+1)*8][nt];
-    __m256d dc_[(k/8+1)*8][nt];
+    __m256d ds_[nt][(k/8+1)*8];
+    __m256d dc_[nt][(k/8+1)*8];
 
 #pragma omp parallel shared(ds_,dc_)
     {
@@ -106,8 +106,8 @@ void dgemm_sb_augmented_prec_strided_k_4(int nrows, int k, double alpha, const d
       int it = omp_get_thread_num();
       for(int j = 0; j < 4; j++)
       {
-        ds_[j][it] = ds[j];
-        dc_[j][it] = dc[j];
+        ds_[it][j] = ds[j];
+        dc_[it][j] = dc[j];
       }
     }
     // handcoded omp reduction
@@ -143,21 +143,33 @@ void dgemm_sb_augmented_prec_strided_k_4(int nrows, int k, double alpha, const d
 
 void dgemm_sb_augmented_prec_k_4(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_4(nrows, k, alpha, x, k, r, rC, beta, y, d, dC);
 }
 
 void dgemm_sb_augmented_prec_4_4(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_4(nrows, 4, alpha, x, 4, r, rC, beta, y, d, dC);
 }
 
 void dgemm_sb_augmented_prec_2_4(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_4(nrows, 2, alpha, x, 2, r, rC, beta, y, d, dC);
 }
 
 void dgemm_sb_augmented_prec_1_4(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_4(nrows, 1, alpha, x, 1, r, rC, beta, y, d, dC);
 }
 
@@ -280,21 +292,33 @@ void dgemm_sb_augmented_prec_strided_k_2(int nrows, int k, double alpha, const d
 
 void dgemm_sb_augmented_prec_k_2(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_2(nrows, k, alpha, x, k, r, rC, beta, y, d, dC);
 }
 
 void dgemm_sb_augmented_prec_4_2(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_2(nrows, 4, alpha, x, 4, r, rC, beta, y, d, dC);
 }
 
 void dgemm_sb_augmented_prec_2_2(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_2(nrows, 2, alpha, x, 2, r, rC, beta, y, d, dC);
 }
 
 void dgemm_sb_augmented_prec_1_2(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_2(nrows, 1, alpha, x, 1, r, rC, beta, y, d, dC);
 }
 
@@ -394,21 +418,33 @@ void dgemm_sb_augmented_prec_strided_k_1(int nrows, int k, double alpha, const d
 
 void dgemm_sb_augmented_prec_k_1(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_1(nrows, k, alpha, x, k, r, rC, beta, y, d, dC);
 }
 
 void dgemm_sb_augmented_prec_4_1(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_1(nrows, 4, alpha, x, 4, r, rC, beta, y, d, dC);
 }
 
 void dgemm_sb_augmented_prec_2_1(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_1(nrows, 2, alpha, x, 2, r, rC, beta, y, d, dC);
 }
 
 void dgemm_sb_augmented_prec_1_1(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_1(nrows, 1, alpha, x, 1, r, rC, beta, y, d, dC);
 }
 
@@ -545,21 +581,33 @@ void dgemm_sb_augmented_prec_strided_k_4_nt(int nrows, int k, double alpha, cons
 
 void dgemm_sb_augmented_prec_k_4_nt(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_4_nt(nrows, k, alpha, x, k, r, rC, y, d, dC);
 }
 
 void dgemm_sb_augmented_prec_4_4_nt(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_4_nt(nrows, 4, alpha, x, 4, r, rC, y, d, dC);
 }
 
 void dgemm_sb_augmented_prec_2_4_nt(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_4_nt(nrows, 2, alpha, x, 2, r, rC, y, d, dC);
 }
 
 void dgemm_sb_augmented_prec_1_4_nt(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_4_nt(nrows, 1, alpha, x, 1, r, rC, y, d, dC);
 }
 
@@ -687,21 +735,33 @@ void dgemm_sb_augmented_prec_strided_k_2_nt(int nrows, int k, double alpha, cons
 
 void dgemm_sb_augmented_prec_k_2_nt(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_2_nt(nrows, k, alpha, x, k, r, rC, y, d, dC);
 }
 
 void dgemm_sb_augmented_prec_4_2_nt(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_2_nt(nrows, 4, alpha, x, 4, r, rC, y, d, dC);
 }
 
 void dgemm_sb_augmented_prec_2_2_nt(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_2_nt(nrows, 2, alpha, x, 2, r, rC, y, d, dC);
 }
 
 void dgemm_sb_augmented_prec_1_2_nt(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_2_nt(nrows, 1, alpha, x, 1, r, rC, y, d, dC);
 }
 
@@ -804,21 +864,33 @@ void dgemm_sb_augmented_prec_strided_k_1_nt(int nrows, int k, double alpha, cons
 
 void dgemm_sb_augmented_prec_k_1_nt(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_1_nt(nrows, k, alpha, x, k, r, rC, y, d, dC);
 }
 
 void dgemm_sb_augmented_prec_4_1_nt(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_1_nt(nrows, 4, alpha, x, 4, r, rC, y, d, dC);
 }
 
 void dgemm_sb_augmented_prec_2_1_nt(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_1_nt(nrows, 2, alpha, x, 2, r, rC, y, d, dC);
 }
 
 void dgemm_sb_augmented_prec_1_1_nt(int nrows, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
 {
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+  printf("Entering %s\n", __FUNCTION__);
+#endif
   dgemm_sb_augmented_prec_strided_k_1_nt(nrows, 1, alpha, x, 1, r, rC, y, d, dC);
 }
 
