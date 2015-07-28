@@ -234,11 +234,11 @@ lidx_t lda1, lidx_t lda2, lidx_t stride, bool swap_n_m=false)
       MT pl = (st::abs(arr1[j*lda1+i])+st::abs(arr2[j*lda2+i]))*(MT)0.5;
       if (pl==mt::zero()) pl=mt::one();
       maxval=std::max(mn/pl,maxval);
-      std::cout << arr1[j*lda1+i]<< "\t SAME ?? AS \t"<<arr2[j*lda2+i]<<std::endl;
+      //std::cout << arr1[j*lda1+i]<< "\t SAME ?? AS \t"<<arr2[j*lda2+i]<<std::endl;
       }
-    std::cout << std::endl;
+    //std::cout << std::endl;
     }
-  std::cout << "MAX VAL: "<<maxval<<std::endl;
+  //std::cout << "MAX VAL: "<<maxval<<std::endl;
   return mt::one()+maxval;
   }
 
