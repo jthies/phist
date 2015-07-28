@@ -205,7 +205,7 @@ void dgemm_sb_augmented_prec_strided_k_2(int nrows, int k, double alpha, const d
     __m256d ds_[8][nt];
     __m256d dc_[8][nt];
 
-#pragma omp parallel shared(s_,c_)
+#pragma omp parallel shared(ds_,dc_)
     {
       // initialize sum
       __m256d ds[2];
@@ -269,7 +269,7 @@ void dgemm_sb_augmented_prec_strided_k_2(int nrows, int k, double alpha, const d
     // and return result, needs to be summed up again
     for(int j = 0; j < 2; j++)
     {
-      __m128d s, c;
+      __m128d ds, dc;
       MM256TO128_4SUM(ds_[j][0],dc_[j][0],ds,dc);
       _mm_storeu_pd(&d[j*2],  ds);
       _mm_storeu_pd(&dC[j*2], dc);
@@ -341,7 +341,7 @@ void dgemm_sb_augmented_prec_strided_k_1(int nrows, int k, double alpha, const d
     __m256d ds_[8][nt];
     __m256d dc_[8][nt];
 
-#pragma omp parallel shared(s_,c_)
+#pragma omp parallel shared(ds_,dc_)
     {
       // initialize sum
       __m256d ds = _mm256_setzero_pd();
@@ -383,13 +383,13 @@ void dgemm_sb_augmented_prec_strided_k_1(int nrows, int k, double alpha, const d
       __m256d oldS = ds_[0][0], oldC = dc_[0][0];
       MM256_4SUM(oldS,oldC,ds_[0][i],dc_[0][i],ds_[0][0],dc_[0][0]);
     }
-  }
 
-  // we still need to sum up s, c
-  double s[4], c[4];
-  _mm256_storeu_pd(s, ds_[0][0]);
-  _mm256_storeu_pd(c, dc_[0][0]);
-  prec_reduction_1(4, s, c, d, dC);
+    // we still need to sum up s, c
+    double s[4], c[4];
+    _mm256_storeu_pd(s, ds_[0][0]);
+    _mm256_storeu_pd(c, dc_[0][0]);
+    prec_reduction_1(4, s, c, d, dC);
+  }
 }
 
 void dgemm_sb_augmented_prec_k_1(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y, double *restrict d, double *restrict dC)
@@ -414,7 +414,7 @@ void dgemm_sb_augmented_prec_1_1(int nrows, double alpha, const double *restrict
 
 
 // more accurate gemm product y <- alpha*x*m AVX2 kernel for y of blocksize 4 with non-temporal stores
-void dgemm_sb_augmented_prec_k_4_nt(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
+void dgemm_sb_augmented_prec_strided_k_4_nt(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
@@ -565,7 +565,7 @@ void dgemm_sb_augmented_prec_1_4_nt(int nrows, double alpha, const double *restr
 
 
 // more accurate gemm product y <- alpha*x*m AVX2 kernel for y of blocksize 2 with non-temporal stores
-void dgemm_sb_augmented_prec_k_2_nt(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
+void dgemm_sb_augmented_prec_strided_k_2_nt(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
@@ -606,7 +606,7 @@ void dgemm_sb_augmented_prec_k_2_nt(int nrows, int k, double alpha, const double
     __m256d ds_[8][nt];
     __m256d dc_[8][nt];
 
-#pragma omp parallel shared(s_,c_)
+#pragma omp parallel shared(ds_,dc_)
     {
       // initialize sum
       __m256d ds[2];
@@ -642,7 +642,7 @@ void dgemm_sb_augmented_prec_k_2_nt(int nrows, int k, double alpha, const double
           __m256d tmp = _mm256_add_pd(xijC_,t_);
           t = _mm256_add_pd(t,tmp);
         }
-        _mm256d yi = _mm256_add_pd(s,t);
+        __m256d yi = _mm256_add_pd(s,t);
         _mm256_stream_pd(&y[2*i],yi);
 
         // multiply new row yi with itself
@@ -676,7 +676,7 @@ void dgemm_sb_augmented_prec_k_2_nt(int nrows, int k, double alpha, const double
     // and return result, needs to be summed up again
     for(int j = 0; j < 2; j++)
     {
-      __m128d s, c;
+      __m128d ds, dc;
       MM256TO128_4SUM(ds_[j][0],dc_[j][0],ds,dc);
       _mm_storeu_pd(&d[j*2],  ds);
       _mm_storeu_pd(&dC[j*2], dc);
@@ -707,7 +707,7 @@ void dgemm_sb_augmented_prec_1_2_nt(int nrows, double alpha, const double *restr
 
 
 // more accurate gemm product y <- alpha*x*m AVX2 kernel for y of blocksize 1 with non-temporal stores
-void dgemm_sb_augmented_prec_k_1_nt(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
+void dgemm_sb_augmented_prec_strided_k_1_nt(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
 {
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
@@ -747,7 +747,7 @@ void dgemm_sb_augmented_prec_k_1_nt(int nrows, int k, double alpha, const double
     __m256d ds_[8][nt];
     __m256d dc_[8][nt];
 
-#pragma omp parallel shared(s_,c_)
+#pragma omp parallel shared(ds_,dc_)
     {
       // initialize sum
       __m256d ds = _mm256_setzero_pd();
@@ -775,7 +775,7 @@ void dgemm_sb_augmented_prec_k_1_nt(int nrows, int k, double alpha, const double
           __m256d tmp = _mm256_add_pd(xijC_,t_);
           t = _mm256_add_pd(t,tmp);
         }
-        yi = _mm256_add_pd(s,t);
+        __m256d yi = _mm256_add_pd(s,t);
         _mm256_stream_pd(&y[i],yi);
 
         // multiply new row yi with itself
@@ -793,13 +793,13 @@ void dgemm_sb_augmented_prec_k_1_nt(int nrows, int k, double alpha, const double
       __m256d oldS = ds_[0][0], oldC = dc_[0][0];
       MM256_4SUM(oldS,oldC,ds_[0][i],dc_[0][i],ds_[0][0],dc_[0][0]);
     }
-  }
 
-  // we still need to sum up s, c
-  double s[4], c[4];
-  _mm256_storeu_pd(s, ds_[0][0]);
-  _mm256_storeu_pd(c, dc_[0][0]);
-  prec_reduction_1(4, s, c, d, dC);
+    // we still need to sum up s, c
+    double ds[4], dc[4];
+    _mm256_storeu_pd(ds, ds_[0][0]);
+    _mm256_storeu_pd(dc, dc_[0][0]);
+    prec_reduction_1(4, ds, dc, d, dC);
+  }
 }
 
 void dgemm_sb_augmented_prec_k_1_nt(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, double *restrict d, double *restrict dC)
