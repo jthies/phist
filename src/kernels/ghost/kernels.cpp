@@ -124,6 +124,11 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   ghost_hwconfig_t hwconfig = GHOST_HWCONFIG_INITIALIZER; 
   const char* PHIST_NUM_THREADS=getenv("PHIST_NUM_THREADS");
   int num_threads= (PHIST_NUM_THREADS==NULL)? -1:atoi(PHIST_NUM_THREADS);
+  ghost_type_t gtype;
+  ghost_type_get(&gtype);
+// avoid hanging ghost tasks because this MPI rank gets only one core,
+// so let ghost handle this situation even if PHIST_NUM_THREADS is set.
+  if (gtype==GHOST_TYPE_CUDA) num_threads=-1;
   if (num_threads>0)
   {
     hwconfig.ncore = num_threads; 

@@ -1693,6 +1693,17 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
 
   PHIST_DEB("mvec_QR: multi-vector case\n");
 
+#ifdef GHOST_HAVE_CUDA
+  ghost_type_t ghost_type;
+  PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
+  if (ghost_type == GHOST_TYPE_CUDA)
+  {
+    *iflag=-99;
+    return;
+  }
+#endif
+
+
 #if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
     //TSQR for row major storage not available yet
   bool transV=(V->traits.storage==GHOST_DENSEMAT_ROWMAJOR);
