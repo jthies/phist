@@ -41,7 +41,8 @@ void SUBR(computeResidual)(TYPE(const_op_ptr) B_op, TYPE(mvec_ptr) r_ptr,
 
 // Now the actual main function
 void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
-        TYPE(mvec_ptr) X, _ST_* evals, _MT_* resid, int* is_cmplx,
+                TYPE(mvec_ptr) X, TYPE(mvec_ptr) Qout, TYPE(sdMat_ptr) Rout,
+                _ST_* evals, _MT_* resid, int* is_cmplx,
         phist_jadaOpts_t opts, int* num_eigs, int* num_iters,
         int* iflag)
   {
@@ -161,7 +162,15 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   // orthogonalizing against [V Q], which is of dimension up to n x (maxBas+numEigs)
   PHIST_CHK_IERR(SUBR(sdMat_create)(&S,maxVecs+numEigs,maxVecs+numEigs,comm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&T,maxVecs+numEigs,maxVecs+numEigs,comm,iflag),*iflag);
+
+  if (Rout == NULL)
+  {
   PHIST_CHK_IERR(SUBR(sdMat_create)(&R,numEigs+1,numEigs+1,comm,iflag),*iflag);
+  }
+  else
+  {
+    R = Rout;
+  }
   PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,st::zero(),iflag),*iflag);
 
   PHIST_CHK_IERR(SUBR(sdMat_create)(&atil,maxVecs,nv_max,comm,iflag),*iflag);
@@ -734,7 +743,14 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     delete [] work;
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,nconv-1,0,nconv-1,iflag),*iflag);
     TYPE(mvec_ptr) Qcopy=NULL;
+    if (Qout == NULL)
+    {
     PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&Qcopy,0,nconv-1,iflag),*iflag);
+    }
+    else
+    {
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(Qout,&Qcopy,0,nconv-1,iflag),*iflag);
+    }
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),Qv,st::zero(),Qcopy,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Qcopy,Sv,st::zero(),Qv,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_delete)(Qcopy,iflag),*iflag);
@@ -757,7 +773,10 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(sdMat_delete)(M,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_delete)(S,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_delete)(T,iflag),*iflag);
+  if (Rout == NULL)
+  {
   PHIST_CHK_IERR(SUBR(sdMat_delete)(R,iflag),*iflag);
+  }
   
   // we also call delete for the views to avoid small memory leaks
 #ifndef IS_COMPLEX
