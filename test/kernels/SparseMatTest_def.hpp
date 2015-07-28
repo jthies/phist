@@ -230,11 +230,11 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     ASSERT_EQ(0, iflag_);
 
     // make sure nothing changed outside of viewed block
-    ASSERT_REAL_EQ(mt::one(), MvecsEqual(vec2_,vec3_));
     SUBR(mvec_from_device)(vec2_,&iflag_);
     ASSERT_EQ(0, iflag_);
     SUBR(mvec_from_device)(vec3_,&iflag_);
     ASSERT_EQ(0, iflag_);
+    ASSERT_REAL_EQ(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,imin,lda_,stride_,vflag_));
     ASSERT_REAL_EQ(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imax+1,lda_),vec3_vp_+VIDX(0,imax+1,lda_),nloc_,nvec_-imax-1,lda_,stride_,vflag_));
 
     // calculation for full block as reference
@@ -279,12 +279,12 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     SUBR(sparseMat_times_mvec_vadd_mvec)(alpha, A, shifts+imin, vec1_view, beta, vec2_view, &iflag_);
     ASSERT_EQ(0, iflag_);
 
-    // make sure nothing changed outside of viewed block
-    ASSERT_REAL_EQ(mt::one(), MvecsEqual(vec2_,vec3_));
     SUBR(mvec_from_device)(vec2_,&iflag_);
     ASSERT_EQ(0, iflag_);
     SUBR(mvec_from_device)(vec3_,&iflag_);
     ASSERT_EQ(0, iflag_);
+    // make sure nothing changed outside of viewed block
+    ASSERT_REAL_EQ(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,imin,lda_,stride_,vflag_));
     ASSERT_REAL_EQ(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imax+1,lda_),vec3_vp_+VIDX(0,imax+1,lda_),nloc_,nvec_-imax-1,lda_,stride_,vflag_));
 
     // calculation for full block as reference
