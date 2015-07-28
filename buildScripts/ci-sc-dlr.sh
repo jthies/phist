@@ -137,7 +137,7 @@ make || error=1
 cd ..
 echo "Check installation with CMake project"
 mkdir jdqr_cmake; cd $_
-CMAKE_PREFIX_PATH=../$INSTALL_PREFIX/lib/cmake:$CMAKE_PREFIX_PATH cmake ../../exampleProjects/jdqr_cmake || error=1
+CMAKE_PREFIX_PATH=../$INSTALL_PREFIX:$CMAKE_PREFIX_PATH cmake ../../exampleProjects/jdqr_cmake || error=1
 make || error=1
 cd ..
 

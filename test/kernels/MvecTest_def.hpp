@@ -822,7 +822,7 @@ public:
           vec2_vp_[VIDX(i,j,lda_)] *= scale[j];
         }
 
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_,vflag_));
+      ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
     }
   }
 

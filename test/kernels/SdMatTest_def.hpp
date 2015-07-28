@@ -148,6 +148,9 @@ public:
       TYPE(sdMat_ptr) m1_view=NULL;
       SUBR(sdMat_view_block)(mat1_,&m1_view,imin,imax,jmin,jmax,&iflag_);
       ASSERT_EQ(0,iflag_);
+
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       
       _ST_* val_ptr;
       lidx_t lda;
