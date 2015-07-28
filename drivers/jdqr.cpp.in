@@ -216,7 +216,7 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(mvec_extract_view)(X,&valX0,&lda,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_normalize)(X,nrmX0,&iflag),iflag);
 
-  SUBR(jdqr)(A_op,B_op,X,evals,resid,is_cmplx, 
+  SUBR(jdqr)(A_op,B_op,X,NULL,NULL,evals,resid,is_cmplx, 
         opts,
         &num_eigs,&num_iters,
         &iflag);
