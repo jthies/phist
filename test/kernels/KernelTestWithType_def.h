@@ -94,8 +94,8 @@ static _MT_ MvecsEqual(TYPE(mvec_ptr) V1, TYPE(mvec_ptr) V2)
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
  
   // vectors not equal: dimensions mismatch
-  if (n!=n2||m!=m2) return (_MT_)(mt::one());
-  if (lda!=lda2) 
+  if (n!=n2||m!=m2) return (_MT_)(-mt::one());
+  if (lda!=lda2)
   {
     return ArraysEqualWithDifferentLDA(val,val2,n,m,lda,lda2,1,KernelTest::vflag_);
   }
@@ -234,11 +234,11 @@ lidx_t lda1, lidx_t lda2, lidx_t stride, bool swap_n_m=false)
       MT pl = (st::abs(arr1[j*lda1+i])+st::abs(arr2[j*lda2+i]))*(MT)0.5;
       if (pl==mt::zero()) pl=mt::one();
       maxval=std::max(mn/pl,maxval);
-      //std::cout << arr1[j*lda+i]<< "\t SAME ?? AS \t"<<arr2[j*lda+i]<<std::endl;
+      std::cout << arr1[j*lda1+i]<< "\t SAME ?? AS \t"<<arr2[j*lda2+i]<<std::endl;
       }
-//    std::cout << std::endl;
+    std::cout << std::endl;
     }
-  //std::cout << "MAX VAL: "<<maxval<<std::endl;
+  std::cout << "MAX VAL: "<<maxval<<std::endl;
   return mt::one()+maxval;
   }
 

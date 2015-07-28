@@ -147,7 +147,7 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     SUBR(mvec_vadd_mvec)(alpha_shifts, vec1_, st::one(), vec3_, &iflag_);
     ASSERT_EQ(0, iflag_);
 
-    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_), sqrt(mt::eps()));
+    ASSERT_NEAR(mt::one(), MvecsEqual(vec2_,vec3_),sqrt(mt::eps()));
   }
 
 
@@ -173,7 +173,7 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     SUBR(sparseMat_times_mvec)(alpha, A, vec1_, beta, vec3_, &iflag_);
     ASSERT_EQ(0, iflag_);
 
-    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_), sqrt(mt::eps()));
+    ASSERT_NEAR(mt::one(), MvecsEqual(vec2_,vec3_), sqrt(mt::eps()));
   }
 
 
@@ -199,7 +199,7 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     SUBR(sparseMat_times_mvec_vadd_mvec)(alpha, A, shifts, vec1_, beta, vec3_, &iflag_);
     ASSERT_EQ(0, iflag_);
 
-    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_), sqrt(mt::eps()));
+    ASSERT_NEAR(mt::one(), MvecsEqual(vec2_,vec3_), sqrt(mt::eps()));
   }
 
 
@@ -230,13 +230,21 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     ASSERT_EQ(0, iflag_);
 
     // make sure nothing changed outside of viewed block
-    ASSERT_REAL_EQ(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,imin,lda_,stride_,vflag_));
+    ASSERT_REAL_EQ(mt::one(), MvecsEqual(vec2_,vec3_));
+    SUBR(mvec_from_device)(vec2_,&iflag_);
+    ASSERT_EQ(0, iflag_);
+    SUBR(mvec_from_device)(vec3_,&iflag_);
+    ASSERT_EQ(0, iflag_);
     ASSERT_REAL_EQ(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imax+1,lda_),vec3_vp_+VIDX(0,imax+1,lda_),nloc_,nvec_-imax-1,lda_,stride_,vflag_));
 
     // calculation for full block as reference
     SUBR(sparseMat_times_mvec)(alpha, A, vec1_, beta, vec3_, &iflag_);
     ASSERT_EQ(0, iflag_);
 
+    SUBR(mvec_from_device)(vec2_,&iflag_);
+    ASSERT_EQ(0, iflag_);
+    SUBR(mvec_from_device)(vec3_,&iflag_);
+    ASSERT_EQ(0, iflag_);
     ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imin,lda_),vec3_vp_+VIDX(0,imin,lda_),nloc_,imax-imin+1,lda_,stride_,vflag_), sqrt(mt::eps()));
 
     // delete view
@@ -272,13 +280,21 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     ASSERT_EQ(0, iflag_);
 
     // make sure nothing changed outside of viewed block
-    ASSERT_REAL_EQ(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,imin,lda_,stride_,vflag_));
+    ASSERT_REAL_EQ(mt::one(), MvecsEqual(vec2_,vec3_));
+    SUBR(mvec_from_device)(vec2_,&iflag_);
+    ASSERT_EQ(0, iflag_);
+    SUBR(mvec_from_device)(vec3_,&iflag_);
+    ASSERT_EQ(0, iflag_);
     ASSERT_REAL_EQ(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imax+1,lda_),vec3_vp_+VIDX(0,imax+1,lda_),nloc_,nvec_-imax-1,lda_,stride_,vflag_));
 
     // calculation for full block as reference
     SUBR(sparseMat_times_mvec_vadd_mvec)(alpha, A, shifts, vec1_, beta, vec3_, &iflag_);
     ASSERT_EQ(0, iflag_);
 
+    SUBR(mvec_from_device)(vec2_,&iflag_);
+    ASSERT_EQ(0, iflag_);
+    SUBR(mvec_from_device)(vec3_,&iflag_);
+    ASSERT_EQ(0, iflag_);
     ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imin,lda_),vec3_vp_+VIDX(0,imin,lda_),nloc_,imax-imin+1,lda_,stride_,vflag_), sqrt(mt::eps()));
 
     // delete view
@@ -330,8 +346,7 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     SUBR(mvec_delete)(vec3, &iflag_);
     ASSERT_EQ(0, iflag_);
 
-    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_), 
-    sqrt(mt::eps()));
+    ASSERT_NEAR(mt::one(), MvecsEqual(vec2_,vec3_), sqrt(mt::eps()));
 
   }
 
@@ -532,7 +547,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       SUBR(mvec_random)(vec2_,&iflag_);
       SUBR(sparseMat_times_mvec)(st::one(),A1_,vec1_,st::zero(),vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_,vflag_));
+      ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
 
       //alpha*I*X=alpha*X?
       alpha = random_number();
@@ -543,7 +558,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_scale)(vec1_,alpha,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec1_vp_,vec2_vp_,nloc_,nvec_,lda_,stride_,vflag_));
+      ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
 
       //0*I*X+beta*Y = beta*Y? 
       alpha=st::zero(); 
@@ -569,7 +584,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       SUBR(mvec_print)(vec2_,&iflag_);
       SUBR(mvec_print)(vec3_,&iflag_);
 #endif
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_));
+      ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec2_,vec3_));
 
       //I*X+beta*Y = X+beta*Y?
       alpha = st::one();
@@ -603,7 +618,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       SUBR(mvec_print)(vec2_,&iflag_);
       SUBR(mvec_print)(vec3_,&iflag_);
 #endif
-      ASSERT_NEAR(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_),100*mt::eps());
+      ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),100*mt::eps());
 
       //alpha*I*X+beta*Y = alpha*X+beta*Y?
       alpha = random_number();
@@ -637,7 +652,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       SUBR(mvec_print)(vec2_,&iflag_);
       SUBR(mvec_print)(vec3_,&iflag_);
 #endif
-      ASSERT_NEAR(mt::one(),ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride_,vflag_),100*mt::eps());
+      ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),100*mt::eps());
       }
     }
 
@@ -679,7 +694,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
         offs, offs+nv-1,offs+nv,offs+2*nv-1);
       SUBR(mvec_print)(vec1_,&iflag_);
 #endif
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(v_in_vp,v_out_vp,nloc_,nv,lda_,stride_,vflag_));
+      ASSERT_REAL_EQ(mt::one(),MvecsEqual(v_in,v_out));
 
       SUBR(mvec_delete)(v_out,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -1304,6 +1319,12 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
     ASSERT_EQ(0,iflag_);
 
     // check vin
+    SUBR(mvec_from_device)(vec1_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_from_device)(vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_from_device)(vec3_,&iflag_);
+    ASSERT_EQ(0,iflag_);
     ASSERT_NEAR(mt::one(), ArraysEqual(vec1_vp_+VIDX(0,2,lda_),vec3_vp_+VIDX(0,2,lda_),nloc_,2,lda_,stride_,vflag_), mt::eps());
     // check result
     ASSERT_NEAR(mt::one(), ArraysEqual(vec1_vp_,vec2_vp_,nloc_,2,lda_,stride_,vflag_), sqrt(mt::eps()));
@@ -1358,6 +1379,12 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
     ASSERT_EQ(0,iflag_);
 
     // check vin
+    SUBR(mvec_from_device)(vec1_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_from_device)(vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_from_device)(vec3_,&iflag_);
+    ASSERT_EQ(0,iflag_);
     ASSERT_NEAR(mt::one(), ArraysEqual(vec1_vp_+VIDX(0,2,lda_),vec3_vp_+VIDX(0,2,lda_),nloc_,2,lda_,stride_,vflag_), mt::eps());
     // check result
     ASSERT_NEAR(mt::one(), ArraysEqual(vec1_vp_,vec2_vp_,nloc_,2,lda_,stride_,vflag_), sqrt(mt::eps()));
@@ -1371,23 +1398,4 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
     ASSERT_EQ(0,iflag_);
   }
 #endif
-
-//////////////////////////////////////////////////
-// basic tests for the CARP kernel.             //
-//////////////////////////////////////////////////
-// tests disabled for now, they run on Emmy but not in the Jenkins builds at DLR
-TEST_F(CLASSNAME, DISABLED_Carp_A1)
-{
-  test_carp_kernel(A1_);
-}
-
-TEST_F(CLASSNAME, DISABLED_Carp_A2)
-{
-  test_carp_kernel(A2_);
-}
-
-TEST_F(CLASSNAME, DISABLED_Carp_A3)
-{
-  test_carp_kernel(A3_);
-}
 
