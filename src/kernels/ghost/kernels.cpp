@@ -124,12 +124,15 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   ghost_hwconfig_t hwconfig = GHOST_HWCONFIG_INITIALIZER; 
   const char* PHIST_NUM_THREADS=getenv("PHIST_NUM_THREADS");
   int num_threads= (PHIST_NUM_THREADS==NULL)? -1:atoi(PHIST_NUM_THREADS);
-  ghost_type_t gtype;
-  ghost_type_get(&gtype);
-// avoid hanging ghost tasks because this MPI rank gets only one core,
-// so let ghost handle this situation even if PHIST_NUM_THREADS is set.
-  if (gtype==GHOST_TYPE_CUDA) num_threads=-1;
-  if (num_threads>0)
+
+  // if the user sets both PHIST_NUM_THREADS and GHOST_TYPE=cuda,
+  // avoid hanging ghost tasks because this process will get only one core.
+  // So let ghost handle this situation even if PHIST_NUM_THREADS is set.
+  // This will not handle the situation correctly where multiple MPI processes
+  // are started on a node and rank 1 gets the GPU automatically, I think (cf. #128)
+  const char* GHOST_TYPE=getenv("GHOST_TYPE");
+  if (GHOST_TYPE && !strcasecmp(GHOST_TYPE,"cuda")) num_threads=-1;
+  if (num_threads!=-1)
   {
     hwconfig.ncore = num_threads; 
   }

@@ -498,7 +498,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       SUBR(mvec_print)(vec1_,&iflag_);
       SUBR(mvec_print)(vec2_,&iflag_);
 #endif
-      return ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,val,vflag_);
+      return MvecEqual(vec2_,val);
     }
   return mt::one();
   }
@@ -529,7 +529,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       SUBR(mvec_random)(vec2_,&iflag_);
       SUBR(sparseMat_times_mvec)(st::one(),A0_,vec1_,st::zero(),vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec2_vp_,nloc_,nvec_,lda_,stride_,0.0,vflag_));
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(vec2_,0.0,vflag_));
       }
     }
 #endif
