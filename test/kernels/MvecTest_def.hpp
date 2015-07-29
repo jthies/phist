@@ -5,6 +5,24 @@
 #error "file not included correctly"
 #endif
 
+#ifdef F_INIT
+#undef F_INIT
+#endif
+//#define F_INIT(a,b)  (ONE/((_ST_)(a)+(_ST_)(b)+ONE) + _CMPLX_I_*((_ST_)(a)-(_ST_)(b)))
+#define F_INIT(a,b)  (st::one()/((ST)(a)+(ST)(b)+st::one()) +st::cmplx_I()*((ST)(a)-(ST)(b)))
+
+
+// some function to test mvec_put_func
+#ifdef FIRST_INSTANCE
+int PREFIX(mvecInitializer)(ghost_gidx_t i, ghost_lidx_t j, void* vval)
+{
+#include "phist_std_typedefs.hpp"
+  _ST_* val = (_ST_*)vval;
+  *val = F_INIT(i,j);
+  return 0;
+}
+#endif
+
 /*! Test fixure. */
 class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_> 
   {
@@ -827,7 +845,27 @@ public:
   }
 
 
-// TODO - missing tests
+TEST_F(CLASSNAME,put_func)
+{
+  if (!typeImplemented_) return;
+  SUBR(mvec_put_func)(vec1_,&PREFIX(mvecInitializer),&iflag_);
+  ASSERT_EQ(0,iflag_);
+  
+  gidx_t ilower, iupper;
+  phist_map_get_ilower(map_,&ilower,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  phist_map_get_iupper(map_,&ilower,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  
+  for (gidx_t i=ilower; i<=iupper; i++)
+    for (lidx_t j=0; j<nvec_; j++)
+    {
+      vec2_vp_[VIDX(i,j,lda_)]=F_INIT(i,j);
+    }
+  SUBR(mvec_to_device)(vec2_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
+}
 
 // only test the Belos interface for ghost, we didn't write
 // the interfaces for Epetra or Tpetra so it is not our problem.

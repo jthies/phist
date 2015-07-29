@@ -17,6 +17,9 @@
 
 using namespace testing;
 
+// define MvecInitializer functions
+#define FIRST_INSTANCE
+
 #define _N_ 9
 #define _NV_ 1
 #ifdef CLASSNAME
@@ -47,6 +50,8 @@ using namespace testing;
 
 #include "phist_gen_z.h"
 #include "MvecTest_def.hpp"
+
+#undef FIRST_INSTANCE
 
 #undef _N_
 #define _N_ 16
