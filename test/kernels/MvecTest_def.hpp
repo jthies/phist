@@ -854,7 +854,7 @@ TEST_F(CLASSNAME,put_func)
   gidx_t ilower, iupper;
   phist_map_get_ilower(map_,&ilower,&iflag_);
   ASSERT_EQ(0,iflag_);
-  phist_map_get_iupper(map_,&ilower,&iflag_);
+  phist_map_get_iupper(map_,&iupper,&iflag_);
   ASSERT_EQ(0,iflag_);
   
   for (gidx_t i=ilower; i<=iupper; i++)
