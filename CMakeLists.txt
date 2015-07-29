@@ -373,7 +373,7 @@ endif()
 
 # even without the essex-physics libs we include certain matfuncs for the
 # test cases SpinSZ and Graphene for testing purposes.
-find_package(ESSEX-PHYSICS CONFIG)
+find_package(ESSEX-PHYSICS CONFIG QUIET)
 if (ESSEX-PHYSICS_FOUND)
   message(STATUS "Found ESSEX-Physics ${ESSEX-PHYSICS_VERSION}")
   set(PHIST_HAVE_ESSEX_PHYSICS 1)
