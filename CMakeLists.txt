@@ -961,7 +961,7 @@ set(CPACK_GENERATOR TGZ)
 install(FILES "${CMAKE_SOURCE_DIR}/LICENSE.txt" DESTINATION share/doc/phist)
 install(FILES "${CMAKE_SOURCE_DIR}/README.md"   DESTINATION share/doc/phist)
 if (DOXYGEN_FOUND)
-  install(DIRECTORY "${CMAKE_SOURCE_DIR}/doc/html" DESTINATION share/doc/phist)
+  install(DIRECTORY "${CMAKE_SOURCE_DIR}/doc/html" DESTINATION share/doc/phist OPTIONAL)
 endif()
 include(CPack)
 
