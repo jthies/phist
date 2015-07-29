@@ -11,7 +11,18 @@ typedef struct TYPE(jadaCorrectionSolver)
   int                   gmresBlockDim_;     //! number of blockedGMRES states iterated at once
   TYPE(blockedGMRESstate_ptr) *blockedGMRESstates_;     //! blockedGMRES states
   TYPE(carp_cgState_ptr) *carp_cgStates_; //! can use CARP-CG alternatively
-  linSolv_t     method_;    //! supported values are GMRES, MINRES and CARP_CG
+  linSolv_t     method_;    //! supported values are GMRES, MINRES, CARP_CG and CUSTOM.
+  void* customSolverData_;
+  void (*customSolver_create)( void** customSolverData,int blockDim, const_map_ptr_t map, int maxBase, int* iflag);
+  void (*customSolver_delete)( void*  customSolverData, int* iflag);
+  void (*customSolver_run)(            void*  customSolverData,
+                                    TYPE(const_op_ptr)    A_op,     TYPE(const_op_ptr)    B_op, 
+                                    TYPE(const_mvec_ptr)  Qtil,     TYPE(const_mvec_ptr)  BQtil,
+                                    const _ST_            sigma[],  TYPE(const_mvec_ptr)  res,      const int resIndex[], 
+                                    const _MT_            tol[],    int                   maxIter,
+                                    TYPE(mvec_ptr)        t,
+                                    bool useIMGS,                   bool abortAfterFirstConvergedInBlock,
+                                    int *                 iflag);
   //@}
 } TYPE(jadaCorrectionSolver);
 
