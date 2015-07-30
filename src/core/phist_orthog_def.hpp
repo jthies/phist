@@ -1,3 +1,7 @@
+#ifdef HAVE_TRILINOS_ORTHO_MANAGER
+// provide trili_orthog as fallback if B!=NULL
+#include "trili_orthog_def.hpp"
+#endif
 // helper routine in case the kernel lib does not provide mvec_QR, which
 // is quite an advanced kernel to ask for.
 void SUBR(mvec_QB)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* nrmsV, int *iflag);
@@ -27,7 +31,21 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 
   if (B!=NULL)
   {
-    PHIST_SOUT(PHIST_WARNING,"case B!=I not implemented (file %s, line %d)\n",__FILE__,__LINE__);
+#ifdef HAVE_TRILINOS_ORTHO_MANAGER
+  static bool first_call=true;
+  if (first_call)
+  {
+    PHIST_SOUT(PHIST_WARNING,"using trilinos ortho manager for B-orthogonalization\n");
+    first_call=false;
+  }
+  
+  SUBR(trili_orthog)(V,W,B,R1,R2,numSweeps,rankVW,iflag);
+  return;    
+#else
+    PHIST_SOUT(PHIST_ERROR,"case B!=I not implemented (file %s, line %d)\n",__FILE__,__LINE__);
+    *iflag=PHIST_NOT_IMPLEMENTED;
+    return;
+#endif
   }
 
   bool useSVQB=false;

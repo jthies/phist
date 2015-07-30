@@ -13,43 +13,6 @@
 
 #include "phist_ScalarTraits.hpp"
 
-//#ifdef PHIST_KERNEL_LIB_TPETRA
-//#define USE_TRILINOS_ORTHO_MANAGER
-//#endif
-
-#ifdef USE_TRILINOS_ORTHO_MANAGER
-
-# include "phist_rcp_helpers.hpp"
-# include "phist_operator.h"
-# include "phist_BelosOperatorTraits.hpp"
-
-# ifdef PHIST_KERNEL_LIB_TPETRA
-#  include "BelosTpetraAdapter.hpp"
-#  include "phist_tpetra_typedefs.hpp"
-# elif defined(PHIST_KERNEL_LIB_EPETRA)
-#  include "Epetra_MultiVector.h"
-#  include "BelosEpetraAdapter.hpp"
-
-// we include the cpp file here because epetra_helpers is not
-// compiled into a library anywhere??
-#  include "epetra_helpers.cpp"
-
-#  include "Epetra_SerialComm.h"
-#  include "Epetra_SerialDenseMatrix.h"
-#  include "Epetra_CrsMatrix.h"
-# else 
-#  error "not implemented"
-# endif
-
-# include "BelosOrthoManager.hpp"
-// we can try any of the methods implemented in Belos:
-# include "BelosTsqrOrthoManager.hpp"
-# include "BelosDGKSOrthoManager.hpp"
-# include "BelosICGSOrthoManager.hpp"
-# include "BelosIMGSOrthoManager.hpp"
-
-#endif /* USE_TRILINOS_ORTHO_MANAGER */
-
 #ifdef PHIST_HAVE_SP
 # include "phist_gen_s.h"
 # include "phist_orthog_def.hpp"
@@ -58,10 +21,6 @@
 #endif
 
 #include "phist_gen_d.h"
-#ifdef USE_TRILINOS_ORTHO_MANAGER
-# include "trili_orthog_def.hpp"
-#else
 # include "phist_orthog_def.hpp"
-#endif
 #include "phist_gen_z.h"
 #include "phist_orthog_def.hpp"

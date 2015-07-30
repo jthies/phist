@@ -3,7 +3,49 @@
 //! mostly for testing our own code but can also be used to
 //! quickly incorporate new developments in their code.
 
-void SUBR(orthog)(TYPE(const_mvec_ptr) V,
+// possibly we could even do this for ghost and builtin, but
+// we just use Trilinos as a fallback for B-orthogonalization
+// with HYMLS right now and will eventually provide our own
+// kernels for it
+#if defined(PHIST_KERNEL_LIB_TPETRA)||(defined(PHIST_KERNEL_LIB_EPETRA)&&defined(IS_DOUBLE)&&!defined(IS_COMPLEX))
+#define HAVE_TRILINOS_ORTHO_MANAGER
+#endif
+
+#ifdef HAVE_TRILINOS_ORTHO_MANAGER
+
+# include "phist_rcp_helpers.hpp"
+# include "phist_operator.h"
+# include "phist_BelosOperatorTraits.hpp"
+
+# ifdef PHIST_KERNEL_LIB_TPETRA
+#  include "BelosTpetraAdapter.hpp"
+#  include "phist_tpetra_typedefs.hpp"
+# elif defined(PHIST_KERNEL_LIB_EPETRA)
+#  include "Epetra_MultiVector.h"
+#  include "BelosEpetraAdapter.hpp"
+
+// we include the cpp file here because epetra_helpers is not
+// compiled into a library anywhere??
+#  include "epetra_helpers.cpp"
+
+#  include "Epetra_SerialComm.h"
+#  include "Epetra_SerialDenseMatrix.h"
+#  include "Epetra_CrsMatrix.h"
+# else 
+#  error "not implemented"
+# endif
+
+# include "BelosOrthoManager.hpp"
+// we can try any of the methods implemented in Belos:
+# include "BelosTsqrOrthoManager.hpp"
+# include "BelosDGKSOrthoManager.hpp"
+# include "BelosICGSOrthoManager.hpp"
+# include "BelosIMGSOrthoManager.hpp"
+
+#endif /* HAVE_TRILINOS_ORTHO_MANAGER */
+
+
+void SUBR(trili_orthog)(TYPE(const_mvec_ptr) V,
                      TYPE(mvec_ptr) W,
                      TYPE(const_op_ptr) B,
                      TYPE(sdMat_ptr) R1,
