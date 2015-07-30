@@ -261,7 +261,6 @@ flush(6)
 
     call c_f_pointer(map_ptr, map)
     ilower = map%distrib(map%me)-1
-    write(*,*) 'ilower=',ilower
     ierr = 0
   end subroutine phist_map_get_ilower
 
@@ -279,7 +278,6 @@ flush(6)
 
     call c_f_pointer(map_ptr, map)
     iupper = map%distrib(map%me+1)-2
-    write(*,*) 'iupper=',iupper
     ierr = 0
   end subroutine phist_map_get_iupper
 
