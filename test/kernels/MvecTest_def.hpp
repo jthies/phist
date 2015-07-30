@@ -857,11 +857,16 @@ TEST_F(CLASSNAME,put_func)
   phist_map_get_iupper(map_,&iupper,&iflag_);
   ASSERT_EQ(0,iflag_);
   
-  for (gidx_t i=ilower; i<=iupper; i++)
+  ASSERT_EQ(nloc_,iupper-ilower+1);
+  
+  for (lidx_t i=0;i<nloc_; i++)
+  {
+    gidx_t ii = (gidx_t)i + ilower;
     for (lidx_t j=0; j<nvec_; j++)
     {
-      vec2_vp_[VIDX(i,j,lda_)]=F_INIT(i,j);
+      vec2_vp_[VIDX(i,j,lda_)]=F_INIT(ii,j);
     }
+  }
   SUBR(mvec_to_device)(vec2_,&iflag_);
   ASSERT_EQ(0,iflag_);
   ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
