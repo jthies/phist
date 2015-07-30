@@ -44,11 +44,12 @@ if (verbose_ && false)
   }
 }
 
-virtual void TearDown() {
+virtual void TearDown() 
+{
 }
 
 static _MT_ MvecEqual(TYPE(mvec_ptr) V, _ST_ value)
-  {
+{
   int iflag;
   _ST_* val;
   lidx_t lda,n;
@@ -63,11 +64,22 @@ static _MT_ MvecEqual(TYPE(mvec_ptr) V, _ST_ value)
   SUBR(mvec_num_vectors)(V,&m,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
   
-  return ArrayEqual(val,n,m,lda,1,value,KernelTest::vflag_);
+  int return_value=ArrayEqual(val,n,m,lda,1,value,KernelTest::vflag_);
+#if PHIST_OUTLEV>=PHIST_DEBUG
+  int print_vec_loc,print_vec;
+  print_vec_loc=(std::abs(return_value-mt::one())>std::sqrt(mt::eps())&&(n<=100))?1:0;
+  MPI_Allreduce(&print_vec_loc,&print_vec,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
+  if (print_vec)
+  {
+    PHIST_SOUT(PHIST_DEBUG,"MvecEqual, val=%8.4e%+8.4ei, vec:\n",st::real(value),st::imag(value));
+    SUBR(mvec_print)(V,&iflag);
+  }
+#endif
+  return return_value;
   }
 
 static _MT_ MvecsEqual(TYPE(mvec_ptr) V1, TYPE(mvec_ptr) V2)
-  {
+{
   int iflag;
   _ST_ *val,*val2;
   lidx_t lda,n,lda2,n2;
@@ -95,18 +107,32 @@ static _MT_ MvecsEqual(TYPE(mvec_ptr) V1, TYPE(mvec_ptr) V2)
  
   // vectors not equal: dimensions mismatch
   if (n!=n2||m!=m2) return (_MT_)(-mt::one());
+  MT return_value=mt::one();
   if (lda!=lda2)
   {
-    return ArraysEqualWithDifferentLDA(val,val2,n,m,lda,lda2,1,KernelTest::vflag_);
+    return_value=ArraysEqualWithDifferentLDA(val,val2,n,m,lda,lda2,1,KernelTest::vflag_);
   }
   else
   {
-    return ArraysEqual(val,val2,n,m,lda,1,KernelTest::vflag_);
+    return_value=ArraysEqual(val,val2,n,m,lda,1,KernelTest::vflag_);
   }
+#if PHIST_OUTLEV>=PHIST_DEBUG
+  int print_vecs_loc,print_vecs;
+  print_vecs_loc=(std::abs(return_value-mt::one())>std::sqrt(mt::eps())&&(n<=100))?1:0;
+  MPI_Allreduce(&print_vecs_loc,&print_vecs,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
+  if (print_vecs)
+  {
+    PHIST_SOUT(PHIST_DEBUG,"MvecsEqual vec1:\n");
+    SUBR(mvec_print)(V1,&iflag);
+    PHIST_SOUT(PHIST_DEBUG,"MvecsEqual vec2:\n");
+    SUBR(mvec_print)(V2,&iflag);
   }
+#endif
+  return return_value;
+}
 
 static _MT_ SdMatEqual(TYPE(sdMat_ptr) M, _ST_ value)
-  {
+{
   int iflag;
   _ST_* val;
   lidx_t lda;
@@ -121,11 +147,19 @@ static _MT_ SdMatEqual(TYPE(sdMat_ptr) M, _ST_ value)
   SUBR(sdMat_get_ncols)(M,&m,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
   
-  return ArrayEqual(val,n,m,lda,1,value,KernelTest::mflag_);
+  MT return_value=ArrayEqual(val,n,m,lda,1,value,KernelTest::mflag_);
+#if PHIST_OUTLEV>=PHIST_DEBUG
+  if (std::abs(return_value-mt::one())>std::sqrt(mt::eps()))
+  {
+    PHIST_SOUT(PHIST_DEBUG,"SdMatEqual, val=%8.4e%+8.4ei,  mat:\n",st::real(value),st::imag(value));
+    SUBR(sdMat_print)(M,&iflag);
   }
+#endif
+  return return_value;
+}
 
 static _MT_ SdMatsEqual(TYPE(sdMat_ptr) M1, TYPE(sdMat_ptr) M2)
-  {
+{
   int iflag;
   _ST_ *val, *val2;
   lidx_t lda,lda2;
@@ -154,11 +188,22 @@ static _MT_ SdMatsEqual(TYPE(sdMat_ptr) M1, TYPE(sdMat_ptr) M2)
   // vectors not equal: dimensions mismatch
   if (n!=n2||m!=m2) return (_MT_)(-mt::one());
   if (lda!=lda2) return (_MT_)(-99*mt::one()); // test not implemented
-  return ArraysEqual(val,val2,n,m,lda,1,KernelTest::mflag_);
+  MT return_value=ArraysEqual(val,val2,n,m,lda,1,KernelTest::mflag_);
+#if PHIST_OUTLEV>=PHIST_DEBUG
+  if (std::abs(return_value-mt::one())>std::sqrt(mt::eps()))
+  {
+    PHIST_SOUT(PHIST_DEBUG,"SdMatsEqual mat1:\n");
+    SUBR(sdMat_print)(M1,&iflag);
+    PHIST_SOUT(PHIST_DEBUG,"SdMatsEqual mat2:\n");
+    SUBR(sdMat_print)(M2,&iflag);
   }
+#endif
+
+  return return_value;
+}
 
 static _MT_ ArrayEqual(const _ST_* array, int n, int m, lidx_t lda, lidx_t stride, _ST_ value, bool swap_nm=false)
-  {
+{
   MT maxval=mt::zero();
   MT scal= st::abs(value);
   int N = swap_nm? m: n;
@@ -172,7 +217,7 @@ static _MT_ ArrayEqual(const _ST_* array, int n, int m, lidx_t lda, lidx_t strid
       }
     }
   return (MT)1.0+maxval;
-  }
+}
 
 static _MT_ ArrayParallelReplicated(const _ST_* array, int n, int m, lidx_t lda, lidx_t stride, bool swap_nm=false)
 {
@@ -216,37 +261,37 @@ static _MT_ ArrayParallelReplicated(const _ST_* array, int n, int m, lidx_t lda,
 }
 
 static _MT_ ArraysEqual(const _ST_* arr1,const _ST_* arr2, int n, int m, lidx_t lda, lidx_t stride, bool swap_n_m=false)
-  {
+{
     return ArraysEqualWithDifferentLDA(arr1,arr2,n,m,lda,lda,stride,swap_n_m);
-  }
+}
   
 static _MT_ ArraysEqualWithDifferentLDA(const _ST_* arr1,const _ST_* arr2, int n, int m, 
 lidx_t lda1, lidx_t lda2, lidx_t stride, bool swap_n_m=false)
-  {
+{
   int N = swap_n_m? m: n;
   int M = swap_n_m? n: m;
   _MT_ maxval=mt::zero();
   for (int i=0;i<N*stride;i+=stride)
-    {
+  {
     for (int j=0;j<M;j++)
-      {
+    {
       MT mn = st::abs(arr1[j*lda1+i]-arr2[j*lda2+i]);
       MT pl = (st::abs(arr1[j*lda1+i])+st::abs(arr2[j*lda2+i]))*(MT)0.5;
       if (pl==mt::zero()) pl=mt::one();
       maxval=std::max(mn/pl,maxval);
       //std::cout << arr1[j*lda1+i]<< "\t SAME ?? AS \t"<<arr2[j*lda2+i]<<std::endl;
-      }
-    //std::cout << std::endl;
     }
+    //std::cout << std::endl;
+  }
   //std::cout << "MAX VAL: "<<maxval<<std::endl;
   return mt::one()+maxval;
-  }
+}
 
 static inline _ST_ random_number() 
-  {
+{
   return (2*((MT)std::rand()/(MT)RAND_MAX)-1) +
          (2*((MT)std::rand()/(MT)RAND_MAX)-1) * st::cmplx_I();
-  }
+}
 
 };
 
