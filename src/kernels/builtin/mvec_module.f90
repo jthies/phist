@@ -3254,8 +3254,9 @@ contains
     procedure(mvecElemFunc), pointer :: elemFunc
     !--------------------------------------------------------------------------------
     integer(kind=8) :: i
+    integer(kind=4) :: j
     integer(kind=G_GIDX_T) :: ii
-    integer(kind=G_LIDX_T) :: j, jj
+    integer(kind=G_LIDX_T) :: jj
     integer(C_INT) :: thread_ierr
     !--------------------------------------------------------------------------------
 
@@ -3278,7 +3279,9 @@ contains
       ii = V%map%distrib(V%map%me)+i-2
       do j=V%jmin,V%jmax
         jj=j-V%jmin
+        write(*,*) ii,jj
         thread_ierr=elemFunc(ii,jj,C_LOC(V%val(j,i)))
+        write(*,*) ii,jj,V%val(j,i)
         if (thread_ierr/=0) then
 !$omp critical
           ierr=thread_ierr
@@ -3325,7 +3328,7 @@ end subroutine phist_Dmvec_put_func
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
-    integer :: i
+    integer :: i,j
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) ) then
@@ -3336,7 +3339,10 @@ end subroutine phist_Dmvec_put_func
     call c_f_pointer(mvec_ptr, mvec)
 
     do i = 1, mvec%map%nlocal(mvec%map%me), 1
-      write(*,*) mvec%val(mvec%jmin:mvec%jmax,i)
+      do j=mvec%jmin,mvec%jmax
+        write(*,'(G16.8,A2)',advance='no') mvec%val(j,i),'  '
+      end do
+      write(*,*)
     end do
     flush(6)
     ierr = 0
