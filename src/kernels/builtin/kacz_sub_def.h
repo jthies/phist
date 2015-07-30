@@ -30,9 +30,9 @@ subroutine SUB_NAME(nvec,nlocal, nhalo, ncols, nnz, &
   real(kind=8) :: row_norm(NVEC)
   real(kind=8) :: d
 #ifdef NVEC
-!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x_r:64, halo_r:64, x_i:64, halo_i:64
+!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x_r:64, halo_r:64, x_i:64, halo_i:8
 #else
-!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x_r:8, halo_r:64, x_i:8, halo_i:64
+!dir$ assume_aligned row_ptr:64, halo_ptr:64, col_idx:64, val:64, x_r:8, halo_r:64, x_i:8, halo_i:8
 #endif
 
 ! include file that contains the outer (i-) loop over the matrix rows
