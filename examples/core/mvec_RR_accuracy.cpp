@@ -4,6 +4,7 @@
 #include <mpi.h>
 #endif
 
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -30,11 +31,14 @@ typedef phist::ScalarTraits<MT> mt;
 // function that performs numerical tests
 static int run_tests1(Dmvec_ptr_t X, bool high_prec);
 
+extern "C" {
+
 // Hilbert matrix generating function
 int hilbert(ghost_gidx_t i, ghost_lidx_t j, void* val)
 {
   ST* dval=(ST*)val;
-  *dval = st::one()/((ST)i+(ST)j+1);
+  *dval = st::one()/((ST)i+(ST)j+st::one());
+  std::cout<<"TROET "<<i<<" "<<j<<" "<<*dval<<std::endl;
   return 0;
 }
 
@@ -46,7 +50,7 @@ int synth1(ghost_gidx_t i, ghost_lidx_t j, void* val)
   {
     *dval = st::one();
   }
-  else if (i==j+1)
+  else if (i==(gidx_t)(j+1))
   {
     ST e=st::eps();
     *dval = st::rand()*e*e*e;
@@ -57,6 +61,8 @@ int synth1(ghost_gidx_t i, ghost_lidx_t j, void* val)
   }
   return 0;
 }
+
+}//extern "C"
 
 //! benchmark the function svrr, given k, n, m
 //! do k times: randomize an n x m mvec and orthogonalize
@@ -83,10 +89,9 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A,&cmap,&ierr),ierr);
 
   // TEST CASE 1: K_20(A,1)
-  map = (map_ptr_t)cmap;
   for (m=20;m<=30;m+=10)
   {
-    PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,m,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_create)(&X,cmap,m,&ierr),ierr);
   
     TYPE(mvec_ptr) vi=NULL,vj=NULL;
     PHIST_ICHK_IERR(SUBR(mvec_put_value)(X,st::one(),&ierr),ierr);
@@ -113,8 +118,8 @@ PHIST_MAIN_TASK_BEGIN
     PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&ierr),ierr);
   }
 
-  n=100;
-  m=100;
+  n=20;
+  m=20;
   PHIST_ICHK_IERR(phist_map_create(&map,comm,n,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,m,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_put_func)(X,&hilbert,&ierr),ierr);
@@ -123,9 +128,10 @@ PHIST_MAIN_TASK_BEGIN
     PHIST_SOUT(PHIST_INFO,"PROBLEM: Hilbert%dx%d matrix, high_prec\n",(int)n,(int)m);
     run_tests1(X,true);
     PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&ierr),ierr);
+    PHIST_ICHK_IERR(phist_map_delete(map,&ierr),ierr);
 
-  n=101;
-  m=100;
+  n=21;
+  m=20;
   PHIST_ICHK_IERR(phist_map_create(&map,comm,n,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,m,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_put_func)(X,&synth1,&ierr),ierr);
@@ -134,6 +140,7 @@ PHIST_MAIN_TASK_BEGIN
     PHIST_SOUT(PHIST_INFO,"PROBLEM: Synth%dx%d matrix, high_prec\n",(int)n,(int)m);
     run_tests1(X,true);
     PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&ierr),ierr);
+    PHIST_ICHK_IERR(phist_map_delete(map,&ierr),ierr);
   
 PHIST_MAIN_TASK_END
 
@@ -148,23 +155,37 @@ PHIST_MAIN_TASK_END
 
 int run_tests1(Dmvec_ptr_t X, bool high_prec)
 {
+#ifndef PHIST_HIGH_PRECISION_KERNELS
+  if (high_prec) 
+  {
+    PHIST_SOUT(PHIST_ERROR,"high precision kernels not available\n");
+    return -99;
+  }
+#endif
   int ierr=0;
   const_comm_ptr_t comm=NULL;
   const_map_ptr_t map=NULL;
   mvec_ptr_t Q=NULL;
   sdMat_ptr_t R = NULL, QtQ=NULL;
   
-  gidx_t n;
+  lidx_t n;
   int m;
 
   PHIST_ICHK_IERR(SUBR(mvec_get_map)(X,&map,&ierr),ierr);
   PHIST_ICHK_IERR(phist_map_get_comm(map,&comm,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_my_length)(X,&n,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_num_vectors)(X,&m,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&Q,map,m,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(sdMat_create)(&R,m,m,comm,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(sdMat_create)(&QtQ,m,m,comm,&ierr),ierr);
   
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(st::one(),X,st::zero(),Q,&ierr),ierr);
+  
+  if (!high_prec && n<200)
+  {
+    PHIST_SOUT(PHIST_INFO,"input matrix:\n");
+    PHIST_ICHK_IERR(SUBR(mvec_print)(X,&ierr),ierr);
+  }
   
   for (int it=0; it<5; it++)
   {
