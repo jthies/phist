@@ -11,7 +11,7 @@ static void SUBR(orthogrr_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* 
     PHIST_CHK_IERR(SUBR(sdMat_identity)(R_1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(RR,perm,*rank,R_1,iflag),*iflag);
   }
-PHIST_CHK_IERR(SUBR(sdMat_print)(R_1,iflag),*iflag);
+//PHIST_CHK_IERR(SUBR(sdMat_print)(R_1,iflag),*iflag);
 }
 
 
