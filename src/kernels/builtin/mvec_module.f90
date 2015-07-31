@@ -1851,6 +1851,7 @@ contains
 
 
     handled = .false.
+    allocate(Ntmp(nvecw,nvecw),NCtmp(nvecw,nvecw))
     if( .not. handled ) then
       allocate(Mtmp(nvecw,nvecv))
       Mtmp = transpose(M%val(M%imin:M%imax,M%jmin:M%jmax))
@@ -1886,17 +1887,18 @@ contains
           handled = .true.
         end if
       end if
+      deallocate(Mtmp)
     end if
 
     if( .not. handled ) then
       allocate(Mtmp(nvecv,nvecw))
       Mtmp = M%val(M%imin:M%imax,M%jmin:M%jmax)
       call dgemm_sB_augmented_generic(nrows,nvecw,nvecv,alpha,v%val(v%jmin,1),ldv, Mtmp, beta, w%val(w%jmin,1),ldw,Ntmp)
+      deallocate(Mtmp)
     end if
 
 
     ! global reduction of result
-    allocate(NCtmp(nvecw,nvecw))
     call MPI_Allreduce(Ntmp,NCtmp,nvecw*nvecw,MPI_DOUBLE_PRECISION,MPI_SUM,v%map%comm,iflag)
 
     N%val(N%imin:N%imax,N%jmin:N%jmax) = NCtmp
@@ -3877,6 +3879,7 @@ end subroutine phist_Dmvec_put_func
       return
     end if
 
+    write(*,*) 'entering mvec_QR'
     call mvec_QR(v,R,ierr)
 
   end subroutine phist_Dmvec_QR

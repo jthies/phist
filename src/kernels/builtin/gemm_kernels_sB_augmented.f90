@@ -23,6 +23,7 @@ subroutine dgemm_sB_augmented_1_k(nrows,k,alpha, A, B, beta, C, D)
       do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
+      Dtmp = Dtmp + C(1,i)*C(1,i)
     end do
   else
     Dtmp = 0.
@@ -108,7 +109,7 @@ subroutine dgemm_sB_augmented_4_k(nrows,k,alpha, A, B, beta, C, D)
       do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
-      do j = 1, 2, 1
+      do j = 1, 4, 1
         Dtmp(j:,j) = Dtmp(j:,j) + C(j,i)*C(j:,i)
       end do
     end do
@@ -120,7 +121,7 @@ subroutine dgemm_sB_augmented_4_k(nrows,k,alpha, A, B, beta, C, D)
       do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
-      do j = 1, 2, 1
+      do j = 1, 4, 1
         Dtmp(j:,j) = Dtmp(j:,j) + C(j,i)*C(j:,i)
       end do
     end do
@@ -128,8 +129,8 @@ subroutine dgemm_sB_augmented_4_k(nrows,k,alpha, A, B, beta, C, D)
   end if
 
   ! compose result
-  do j = 1, 2, 1
-    do i = j, 2, 1
+  do j = 1, 4, 1
+    do i = j, 4, 1
       D(i,j) = Dtmp(i,j)
       D(j,i) = Dtmp(i,j)
     end do
@@ -156,7 +157,7 @@ subroutine dgemm_sB_augmented_8_k(nrows,k,alpha, A, B, beta, C, D)
       do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
-      do j = 1, 2, 1
+      do j = 1, 8, 1
         Dtmp(j:,j) = Dtmp(j:,j) + C(j,i)*C(j:,i)
       end do
     end do
@@ -168,7 +169,7 @@ subroutine dgemm_sB_augmented_8_k(nrows,k,alpha, A, B, beta, C, D)
       do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
-      do j = 1, 2, 1
+      do j = 1, 8, 1
         Dtmp(j:,j) = Dtmp(j:,j) + C(j,i)*C(j:,i)
       end do
     end do
@@ -176,8 +177,8 @@ subroutine dgemm_sB_augmented_8_k(nrows,k,alpha, A, B, beta, C, D)
   end if
 
   ! compose result
-  do j = 1, 2, 1
-    do i = j, 2, 1
+  do j = 1, 8, 1
+    do i = j, 8, 1
       D(i,j) = Dtmp(i,j)
       D(j,i) = Dtmp(i,j)
     end do
@@ -292,7 +293,7 @@ subroutine dgemm_sB_augmented_4_strided_k(nrows,k,alpha, A, lda, B, beta, C, D)
       do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
-      do j = 1, 2, 1
+      do j = 1, 4, 1
         Dtmp(j:,j) = Dtmp(j:,j) + C(j,i)*C(j:,i)
       end do
     end do
@@ -304,14 +305,20 @@ subroutine dgemm_sB_augmented_4_strided_k(nrows,k,alpha, A, lda, B, beta, C, D)
       do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
-      do j = 1, 2, 1
+      do j = 1, 4, 1
         Dtmp(j:,j) = Dtmp(j:,j) + C(j,i)*C(j:,i)
       end do
     end do
 
   end if
 
-  D = Dtmp
+  ! compose result
+  do j = 1, 4, 1
+    do i = j, 4, 1
+      D(i,j) = Dtmp(i,j)
+      D(j,i) = Dtmp(i,j)
+    end do
+  end do
 end subroutine dgemm_sB_augmented_4_strided_k
 
 subroutine dgemm_sB_augmented_8_strided_k(nrows,k,alpha, A, lda, B, beta, C, D)
@@ -334,7 +341,7 @@ subroutine dgemm_sB_augmented_8_strided_k(nrows,k,alpha, A, lda, B, beta, C, D)
       do j = 1, k, 1
         C(:,i) = C(:,i) + alpha*B(:,j)*A(j,i)
       end do
-      do j = 1, 2, 1
+      do j = 1, 8, 1
         Dtmp(j:,j) = Dtmp(j:,j) + C(j,i)*C(j:,i)
       end do
     end do
@@ -351,8 +358,8 @@ subroutine dgemm_sB_augmented_8_strided_k(nrows,k,alpha, A, lda, B, beta, C, D)
   end if
 
   ! compose result
-  do j = 1, 2, 1
-    do i = j, 2, 1
+  do j = 1, 8, 1
+    do i = j, 8, 1
       D(i,j) = Dtmp(i,j)
       D(j,i) = Dtmp(i,j)
     end do
@@ -384,7 +391,7 @@ subroutine dgemm_sB_augmented_generic(m,n,k,alpha,A,lda,B,beta,C,ldc, D)
       do j = 1, n, 1
         C(j,i) = alpha*sum(B(:,j)*A(1:k,i))
       end do
-      do j = 1, 2, 1
+      do j = 1, n, 1
         Dtmp(j:,j) = Dtmp(j:,j) + C(j,i)*C(j:,i)
       end do
     end do
@@ -395,15 +402,15 @@ subroutine dgemm_sB_augmented_generic(m,n,k,alpha,A,lda,B,beta,C,ldc, D)
       do j = 1, n, 1
         C(j,i) = beta*C(j,i) + alpha*sum(B(:,j)*A(1:k,i))
       end do
-      do j = 1, 2, 1
+      do j = 1, n, 1
         Dtmp(j:,j) = Dtmp(j:,j) + C(j,i)*C(j:,i)
       end do
     end do
   end if
 
   ! compose result
-  do j = 1, 2, 1
-    do i = j, 2, 1
+  do j = 1, n, 1
+    do i = j, n, 1
       D(i,j) = Dtmp(i,j)
       D(j,i) = Dtmp(i,j)
     end do
@@ -436,8 +443,8 @@ subroutine dgemm_sB_augmented_generic_inplace(m,n,k,A,lda,B, D)
   end do
 
   ! compose result
-  do j = 1, 2, 1
-    do i = j, 2, 1
+  do j = 1, n, 1
+    do i = j, n, 1
       D(i,j) = Dtmp(i,j)
       D(j,i) = Dtmp(i,j)
     end do

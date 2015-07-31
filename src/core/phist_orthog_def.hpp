@@ -159,8 +159,8 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   //R2=V'*W;
   PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,W,st::zero(),R2,iflag),*iflag);
 #ifdef TESTING
-  PHIST_SOUT(PHIST_INFO,"R2:\n");
-  PHIST_CHK_IERR(SUBR(sdMat_print)(R2, iflag), *iflag);
+  //PHIST_SOUT(PHIST_INFO,"R2:\n");
+  //PHIST_CHK_IERR(SUBR(sdMat_print)(R2, iflag), *iflag);
 #endif
   //W=W-V*R2;
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),V,R2,st::one(),W,iflag),*iflag);
@@ -211,8 +211,8 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     useSVQB=true;
   }
 #ifdef TESTING
-  PHIST_SOUT(PHIST_VERBOSE,"rankW is %d, R1:\n", rankW);
-  PHIST_CHK_IERR(SUBR(sdMat_print)(R1, iflag), *iflag);
+  //PHIST_SOUT(PHIST_VERBOSE,"rankW is %d, R1:\n", rankW);
+  //PHIST_CHK_IERR(SUBR(sdMat_print)(R1, iflag), *iflag);
   if (useSVQB)
   {
     PHIST_SOUT(PHIST_VERBOSE,"orthog uses fallback SVQB kernel\n");

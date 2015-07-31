@@ -209,7 +209,7 @@ public:
 
 
   // check augmented kernel with random data
-  TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_augmented) 
+  TEST_F(CLASSNAME, mvec_times_sdMat_augmented) 
   {
     if (typeImplemented_)
     {
@@ -254,7 +254,7 @@ public:
 
 
   // check augmented kernel with random data
-  TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_augmented_nt) 
+  TEST_F(CLASSNAME, mvec_times_sdMat_augmented_nt) 
   {
     if (typeImplemented_)
     {
