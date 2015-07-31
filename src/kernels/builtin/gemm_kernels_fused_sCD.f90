@@ -512,7 +512,7 @@ subroutine dgemm_fused_sCD_generic_self(nrows,nvecw,w,ldw,N,M)
   real(kind=8), intent(out) :: M(nvecw,nvecw)
   real(kind=8) :: work(nvecw)
   integer :: i, j
-!dir$ assume_aligned v:8, w:8, M:64, N:64
+!dir$ assume_aligned w:8, M:64, N:64
 
   M = 0.
 !$omp parallel do reduction(+:M) private(work) schedule(static)

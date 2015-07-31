@@ -675,8 +675,21 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, _ST_ value, int* iflag)
 extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
         int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
 {
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=-99;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);  
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*iflag);
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<_ST_> > V_data = V->get2dViewNonConst ();
+
+  lidx_t nloc = V->getLocalLength();
+  lidx_t nvec = V->getNumVectors();
+  for (lidx_t j=0; j<nvec; j++) 
+  {
+    for (lidx_t i=0; i<nloc; i++)
+    {
+      gidx_t gid = V->getMap()->getGlobalElement(i);
+      PHIST_CHK_IERR(*iflag=funPtr(gid,j,(void*)(&(V_data[j][i]))),*iflag); 
+    }
+  }
 }
 
 //! put scalar value into all elements of a multi-vector

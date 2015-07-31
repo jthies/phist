@@ -19,6 +19,18 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, int b
   {
     *iflag=-99;
   }
+  else if (method==USER_DEFINED)
+  {
+    if ((*me)->customSolver_create==NULL)
+    {
+      PHIST_SOUT(PHIST_VERBOSE,"USER_DEFINED solver required but pointer to function not set\n"
+                             "(file %s, line %d)\n",__FILE__,__LINE__);
+      // this may be OK, maybe the solver needs no create/delete
+      *iflag=0;
+      return;
+    }
+    PHIST_CHK_IERR((*me)->customSolver_create(&((*me)->customSolverData_), blockedGMRESBlockDim,map,blockedGMRESMaxBase,iflag),*iflag);
+  }
   else
   {
     PHIST_SOUT(PHIST_ERROR, "method %d (%s) not implemented",(int)method, linSolv2str(method));
@@ -41,6 +53,18 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) me, int *i
   else if (me->method_==CARP_CG)
   {
     *iflag=-99;
+  }
+  else if (me->method_==USER_DEFINED)
+  {
+    if (me->customSolver_delete==NULL)
+    {
+      PHIST_SOUT(PHIST_VERBOSE,"USER_DEFINED solver required but pointer to function not set\n"
+                             "(file %s, line %d)\n",__FILE__,__LINE__);
+      // this may be OK, maybe the solver needs no create/delete
+      *iflag=0;
+      return;
+    }
+    PHIST_CHK_IERR(me->customSolver_delete(me->customSolverData_,iflag),*iflag);
   }
   delete me;
 }

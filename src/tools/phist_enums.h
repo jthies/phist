@@ -19,6 +19,7 @@ typedef enum linSolv_t
   GMRES=1, // unpreconditioned GMRES
   MINRES=2, // unpreconditioned MINRES
   CARP_CG=3, // CG on the normal equations, preconditioned by CARP (parallel SSOR)
+  USER_DEFINED=98,// user wants to provide custom solver
   INVALID_LINSOLV_T=99 // returned if str2linSolv gets an invalid string
 } linSolv_t;
 

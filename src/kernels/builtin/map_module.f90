@@ -277,7 +277,7 @@ flush(6)
     !------------------------------------------------------------
 
     call c_f_pointer(map_ptr, map)
-    iupper = map%distrib(map%me+1)-1
+    iupper = map%distrib(map%me+1)-2
     ierr = 0
   end subroutine phist_map_get_iupper
 
