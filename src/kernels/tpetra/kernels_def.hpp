@@ -43,7 +43,7 @@ extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* vA, const_comm_ptr
   // TODO - not implemented (should read the binary file format defined by ghost)
   PHIST_TOUCH(vA);
   PHIST_TOUCH(filename);
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
   }
 
 //! read a matrix from a Harwell-Boeing (HB) file
@@ -216,7 +216,7 @@ void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
         _ST_* values, lidx_t lda, int nrows, int ncols,
         int* iflag)
 {
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
 
@@ -299,7 +299,7 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   // TODO: create importer, v_out->Import(v_in)
   // TODO: possibly create a wrapper phist_map_t which keeps the importer as well.
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
   return;
 }
 
@@ -1226,12 +1226,12 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
 # ifdef IS_DOUBLE
 extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Dmvec_t* reV, Dmvec_t* imV, int *iflag)
 {
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
 }
 # else
 extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* imV, int *iflag)
 {
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
 }
 # endif
 #endif

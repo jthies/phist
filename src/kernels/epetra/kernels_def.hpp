@@ -40,7 +40,7 @@ const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   // TODO - not implemented (should read the binary file format defined by ghost)
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
 //! read a matrix from a Harwell-Boeing (HB) file
@@ -48,7 +48,7 @@ extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_
 const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=-99; // not implemented in epetra
+  *iflag=PHIST_NOT_IMPLEMENTED; // not implemented in epetra
 }
 //!@}
 
@@ -186,7 +186,7 @@ void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
         _ST_* values, lidx_t lda, int nrows, int ncols,
         int* iflag)
 {
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
 
@@ -266,7 +266,7 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   //TODO: create importer, v_out->Import(v_in)
   //TODO: possibly crate a wrapper phist_map_t which keeps the importer as well
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
   return;
 }
 

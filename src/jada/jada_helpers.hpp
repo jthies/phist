@@ -134,7 +134,7 @@ void SortEig(std::complex<MT>* ev,int n,int* idx,eigSort_t which, _MT_ tol, int*
   else if (which!=NONE)
   {
     // sort type not implemented
-    *iflag=-99;
+    *iflag=PHIST_NOT_IMPLEMENTED;
   }
 
   for (int i=0;i<n;i++)

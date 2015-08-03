@@ -11,7 +11,7 @@ void SUBR(carp_setup)(TYPE(const_sparseMat_ptr) A, int numShifts,
   
   // CARP sweep not implemented, we indicate this here already
   // to avoid confusion in the tests
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
   return;
 }
 
@@ -23,7 +23,7 @@ void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) A,
         void* const work,
         _MT_ const * omega, int* iflag)
 {
-*iflag=-99;
+*iflag=PHIST_NOT_IMPLEMENTED;
 return;
 #if 0
     ghost_densemat_halo_comm_t comm = GHOST_DENSEMAT_HALO_COMM_INITIALIZER;

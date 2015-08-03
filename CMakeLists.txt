@@ -422,6 +422,7 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB_augmented.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sC.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_fused_sCD.f90
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB_add_sD.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmvm_kernels_nt.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmvm_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmv_buff_cpy_kernels.f90
@@ -438,6 +439,7 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/dot_kernels_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB_augmented_prec.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB_add_sD_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sC_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_fused_sCD_prec.c)
   endif()
@@ -465,6 +467,7 @@ set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_svqb.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthogrr.cpp
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_orthogrrfused.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_svrr.cpp)
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedgmres.cpp

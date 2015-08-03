@@ -6,6 +6,7 @@
 
 #include "phist_config.h"
 #include "phist_kernel_flags.h"
+#include "phist_defs.h"
 !> Implementations of phist_Dmvec_* for phist builtin kernels which uses row-major mvecs
 !! 
 !! Actual work is delegated to fast, parallel implementations tuned for LARGE
@@ -834,6 +835,142 @@ module mvec_module
       real(kind=C_DOUBLE), intent(out):: y
       real(kind=C_DOUBLE), intent(out) :: d(*), dC(*)
     end subroutine
+
+    !void dgemm_sb_add_sd_prec_strided_k_4(int nrows, int k, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
+    subroutine dgemm_sb_add_sd_prec_strided_k_4(n,k,x,ldx,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k, ldx
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(inout) :: y
+      real(kind=C_DOUBLE), intent(in) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_add_sd_prec_k_4(int nrows, int k, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
+    subroutine dgemm_sb_add_sd_prec_k_4(n,k,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(inout) :: y
+      real(kind=C_DOUBLE), intent(in) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_add_sd_prec_4_4(int nrows, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
+    subroutine dgemm_sb_add_sd_prec_4_4(n,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(inout) :: y
+      real(kind=C_DOUBLE), intent(in) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_add_sd_prec_2_4(int nrows, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
+    subroutine dgemm_sb_add_sd_prec_2_4(n,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(inout) :: y
+      real(kind=C_DOUBLE), intent(in) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_add_sd_prec_1_4(int nrows, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
+    subroutine dgemm_sb_add_sd_prec_1_4(n,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(inout) :: y
+      real(kind=C_DOUBLE), intent(in) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_add_sd_prec_strided_k_2(int nrows, int k, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
+    subroutine dgemm_sb_add_sd_prec_strided_k_2(n,k,x,ldx,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k, ldx
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(inout) :: y
+      real(kind=C_DOUBLE), intent(in) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_add_sd_prec_k_2(int nrows, int k, double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
+    subroutine dgemm_sb_add_sd_prec_k_2(n,k,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(inout) :: y
+      real(kind=C_DOUBLE), intent(in) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_add_sd_prec_4_2(int nrows, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
+    subroutine dgemm_sb_add_sd_prec_4_2(n,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(inout) :: y
+      real(kind=C_DOUBLE), intent(in) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_add_sd_prec_2_2(int nrows, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
+    subroutine dgemm_sb_add_sd_prec_2_2(n,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(inout) :: y
+      real(kind=C_DOUBLE), intent(in) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_add_sd_prec_1_2(int nrows, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
+    subroutine dgemm_sb_add_sd_prec_1_2(n,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(inout) :: y
+      real(kind=C_DOUBLE), intent(in) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_add_sd_prec_strided_k_1(int nrows, int k, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
+    subroutine dgemm_sb_add_sd_prec_strided_k_1(n,k,x,ldx,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k, ldx
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(inout) :: y
+      real(kind=C_DOUBLE), intent(in) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_add_sd_prec_k_1(int nrows, int k, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
+    subroutine dgemm_sb_add_sd_prec_k_1(n,k,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n, k
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(inout) :: y
+      real(kind=C_DOUBLE), intent(in) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_add_sd_prec_4_1(int nrows, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
+    subroutine dgemm_sb_add_sd_prec_4_1(n,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(inout) :: y
+      real(kind=C_DOUBLE), intent(in) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_add_sd_prec_2_1(int nrows, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
+    subroutine dgemm_sb_add_sd_prec_2_1(n,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(inout) :: y
+      real(kind=C_DOUBLE), intent(in) :: d(*), dC(*)
+    end subroutine
+    !void dgemm_sb_add_sd_prec_1_1(int nrows, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
+    subroutine dgemm_sb_add_sd_prec_1_1(n,x,r,rC,y,d,dC) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(in) :: x
+      real(kind=C_DOUBLE), intent(in) :: r(*),rC(*)
+      real(kind=C_DOUBLE), intent(inout) :: y
+      real(kind=C_DOUBLE), intent(in) :: d(*), dC(*)
+    end subroutine
   end interface
 
   !> interface of function-ptr for mvec_put_func
@@ -1029,16 +1166,16 @@ contains
     ! check if we need higher precision
     if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
 #ifndef PHIST_HIGH_PRECISION_KERNELS
-      iflag = -99
+      iflag = PHIST_NOT_IMPLEMENTED
       return
 #else
       ! check if we can do it
       if( strided ) then
-        iflag = -99
+        iflag = PHIST_NOT_IMPLEMENTED
         return
       end if
       if( nvec .ne. 1 .and. nvec .ne. 2 .and. nvec .ne. 4 ) then
-        iflag = -99
+        iflag = PHIST_NOT_IMPLEMENTED
         return
       end if
 
@@ -1394,16 +1531,16 @@ contains
     ! check if we need higher precision
     if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
 #ifndef PHIST_HIGH_PRECISION_KERNELS
-      iflag = -99
+      iflag = PHIST_NOT_IMPLEMENTED
       return
 #else
       ! check if we can do it
       if( strided ) then
-        iflag = -99
+        iflag = PHIST_NOT_IMPLEMENTED
         return
       end if
       if( nvec .ne. 1 .and. nvec .ne. 2 .and. nvec .ne. 4 ) then
-        iflag = -99
+        iflag = PHIST_NOT_IMPLEMENTED
         return
       end if
 
@@ -1521,12 +1658,12 @@ contains
 
     if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
 #ifndef PHIST_HIGH_PRECISION_KERNELS
-      iflag = -99
+      iflag = PHIST_NOT_IMPLEMENTED
       return
 #else
       ! check if we can do it
       if( strided_w .or. (nvecw .ne. 1 .and. nvecw .ne. 2 .and. nvecw .ne. 4) ) then
-        iflag = -99
+        iflag = PHIST_NOT_IMPLEMENTED
         return
       end if
 
@@ -1705,12 +1842,12 @@ contains
 
     if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
 #ifndef PHIST_HIGH_PRECISION_KERNELS
-      iflag = -99
+      iflag = PHIST_NOT_IMPLEMENTED
       return
 #else
       ! check if we can do it
       if( strided_w .or. (nvecw .ne. 1 .and. nvecw .ne. 2 .and. nvecw .ne. 4) ) then
-        iflag = -99
+        iflag = PHIST_NOT_IMPLEMENTED
         return
       end if
 
@@ -1907,6 +2044,168 @@ contains
 
 
   !==================================================================================
+  ! special gemm routine for the augmented mvec times sdmat variant
+  subroutine mvec_times_sdmat_add_mvec_times_sdMat(v,M,w,N,iflag)
+    use mpi
+    !--------------------------------------------------------------------------------
+    type(MVec_t),  intent(in)    :: v
+    type(SDMat_t), intent(in)    :: M
+    type(Mvec_t),  intent(inout) :: w
+    type(SDMat_t), intent(in) :: N
+    integer,       intent(inout) :: iflag
+    !--------------------------------------------------------------------------------
+    integer :: nrows, nvecv, nvecw, ldv, ldw
+    logical :: strided_v, strided_w, handled
+    real(kind=8), allocatable :: Mtmp(:,:), MCtmp(:,:)
+    real(kind=8), allocatable :: Ntmp(:,:), NCtmp(:,:)
+    !--------------------------------------------------------------------------------
+
+    ! determine data layout
+    nrows = v%map%nlocal(v%map%me)
+    nvecv = v%jmax-v%jmin+1
+    nvecw = w%jmax-w%jmin+1
+    ldv = size(v%val,1)
+    ldw = size(w%val,1)
+    if( .not. v%is_view .or. &
+      & ( v%jmin .eq. lbound(v%val,1) .and. &
+      &   v%jmax .eq. ubound(v%val,1)       ) ) then
+      strided_v = .false.
+    else
+      strided_v = .true.
+    end if
+
+    if( .not. w%is_view .or. &
+      & ( w%jmin .eq. lbound(w%val,1) .and. &
+      &   w%jmax .eq. ubound(w%val,1)       ) ) then
+      strided_w = .false.
+    else
+      strided_w = .true.
+    end if
+
+
+    if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
+#ifndef PHIST_HIGH_PRECISION_KERNELS
+      iflag = PHIST_NOT_IMPLEMENTED
+      return
+#else
+      ! check if we can do it
+      if( strided_w .or. (nvecw .ne. 1 .and. nvecw .ne. 2 .and. nvecw .ne. 4) ) then
+        iflag = PHIST_NOT_IMPLEMENTED
+        return
+      end if
+
+      ! copy M to buffer
+      allocate(Mtmp(nvecv,nvecw),MCtmp(nvecv,nvecw))
+      Mtmp = M%val(M%imin:M%imax,M%jmin:M%jmax)
+      MCtmp = M%err(M%imin:M%imax,M%jmin:M%jmax)
+      allocate(Ntmp(nvecw,nvecw),NCtmp(nvecw,nvecw))
+      Ntmp = N%val(N%imin:N%imax,N%jmin:N%jmax)
+      NCtmp = N%err(N%imin:N%imax,N%jmin:N%jmax)
+
+      if( nvecw .eq. 4 ) then
+        if( strided_v ) then
+          call dgemm_sb_add_sd_prec_strided_k_4(v%paddedN,nvecv,v%val(v%jmin,1),ldv,Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+        else
+          if( nvecv .eq. 1 ) then
+            call dgemm_sb_add_sd_prec_1_4(v%paddedN,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+          else if( nvecv .eq. 2 ) then
+            call dgemm_sb_add_sd_prec_2_4(v%paddedN,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+          else if( nvecv .eq. 4 ) then
+            call dgemm_sb_add_sd_prec_4_4(v%paddedN,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+          else
+            call dgemm_sb_add_sd_prec_k_4(v%paddedN,nvecv,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+          end if
+        end if
+      else if( nvecw .eq. 2 ) then
+        if( strided_v ) then
+          call dgemm_sb_add_sd_prec_strided_k_2(v%paddedN,nvecv,v%val(v%jmin,1),ldv,Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+        else
+          if( nvecv .eq. 1 ) then
+            call dgemm_sb_add_sd_prec_1_2(v%paddedN,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+          else if( nvecv .eq. 2 ) then
+            call dgemm_sb_add_sd_prec_2_2(v%paddedN,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+          else if( nvecv .eq. 4 ) then
+            call dgemm_sb_add_sd_prec_4_2(v%paddedN,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+          else
+            call dgemm_sb_add_sd_prec_k_2(v%paddedN,nvecv,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+          end if
+        end if
+      else ! nvecw .eq. 1
+        if( strided_v ) then
+          call dgemm_sb_add_sd_prec_strided_k_1(v%paddedN,nvecv,v%val(v%jmin,1),ldv,Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+        else
+          if( nvecv .eq. 1 ) then
+            call dgemm_sb_add_sd_prec_1_1(v%paddedN,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+          else if( nvecv .eq. 2 ) then
+            call dgemm_sb_add_sd_prec_2_1(v%paddedN,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+          else if( nvecv .eq. 4 ) then
+            call dgemm_sb_add_sd_prec_4_1(v%paddedN,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+          else
+            call dgemm_sb_add_sd_prec_k_1(v%paddedN,nvecv,v%val(v%jmin,1),Mtmp,MCtmp,w%val(w%jmin,1),Ntmp,NCtmp)
+          end if
+        end if
+      end if
+
+      iflag = 0
+      return
+#endif
+    end if
+
+
+    handled = .false.
+    allocate(Ntmp(nvecw,nvecw))
+    Ntmp = transpose(N%val(N%imin:N%imax,N%jmin:N%jmax))
+    if( .not. handled ) then
+      allocate(Mtmp(nvecw,nvecv))
+      Mtmp = transpose(M%val(M%imin:M%imax,M%jmin:M%jmax))
+      ! recognize small block mvecs
+      if( .not. strided_w ) then
+        if( nvecw .eq. 1 ) then
+          if( strided_v ) then
+            call dgemm_sB_add_sd_1_strided_k(nrows, nvecv, v%val(v%jmin,1), ldv, Mtmp, w%val,Ntmp)
+          else
+            call dgemm_sB_add_sd_1_k        (nrows, nvecv, v%val, Mtmp, w%val,Ntmp)
+          end if
+          handled = .true.
+        else if( nvecw .eq. 2 ) then
+          if( strided_v ) then
+            call dgemm_sB_add_sd_2_strided_k(nrows, nvecv, v%val(v%jmin,1), ldv, Mtmp, w%val,Ntmp)
+          else
+            call dgemm_sB_add_sd_2_k        (nrows, nvecv, v%val, Mtmp, w%val,Ntmp)
+          end if
+          handled = .true.
+        else if( nvecw .eq. 4 ) then
+          if( strided_v ) then
+            call dgemm_sB_add_sd_4_strided_k(nrows, nvecv, v%val(v%jmin,1), ldv, Mtmp, w%val,Ntmp)
+          else
+            call dgemm_sB_add_sd_4_k        (nrows, nvecv, v%val, Mtmp, w%val,Ntmp)
+          end if
+          handled = .true.
+        else if( nvecw .eq. 8 ) then
+          if( strided_v ) then
+            call dgemm_sB_add_sd_8_strided_k(nrows, nvecv, v%val(v%jmin,1), ldv, Mtmp, w%val,Ntmp)
+          else
+            call dgemm_sB_add_sd_8_k        (nrows, nvecv, v%val, Mtmp, w%val,Ntmp)
+          end if
+          handled = .true.
+        end if
+      end if
+      deallocate(Mtmp)
+    end if
+
+    if( .not. handled ) then
+      allocate(Mtmp(nvecv,nvecw))
+      Mtmp = M%val(M%imin:M%imax,M%jmin:M%jmax)
+      call dgemm_sB_add_sd_generic(nrows,nvecw,nvecv,v%val(v%jmin,1),ldv, Mtmp, w%val(w%jmin,1),ldw,Ntmp)
+      deallocate(Mtmp)
+    end if
+
+    iflag = 0
+    !--------------------------------------------------------------------------------
+  end subroutine mvec_times_sdmat_add_mvec_times_sdmat
+
+
+  !==================================================================================
   ! special gemm routine for mvec <- mvec*sdMat
   subroutine mvec_times_sdmat_inplace(v,M,iflag)
     !--------------------------------------------------------------------------------
@@ -1941,22 +2240,22 @@ contains
 
     if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
 #ifndef PHIST_HIGH_PRECISION_KERNELS
-      iflag = -99
+      iflag = PHIST_NOT_IMPLEMENTED
       return
 #else
       ! check if we can do it
       if( strided_v ) then
-        iflag = -99
+        iflag = PHIST_NOT_IMPLEMENTED
         return
       end if
 
       if( nvecv .ne. nvecw ) then
-        iflag = -99
+        iflag = PHIST_NOT_IMPLEMENTED
         return
       end if
 
       if( nvecv .ne. 4 .and. nvecv .ne. 2 .and. nvecv .ne. 1 ) then
-        iflag = -99
+        iflag = PHIST_NOT_IMPLEMENTED
         return
       end if
 
@@ -2039,12 +2338,12 @@ contains
     ! check if we need higher precision
     if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
 #ifndef PHIST_HIGH_PRECISION_KERNELS
-      iflag = -99
+      iflag = PHIST_NOT_IMPLEMENTED
       return
 #else
       ! check if we can do it
       if( strided_w .or. strided_v ) then
-        iflag = -99
+        iflag = PHIST_NOT_IMPLEMENTED
         return
       end if
 
@@ -2126,7 +2425,7 @@ contains
       end if
 
       if( .not. handled ) then
-        iflag = -99
+        iflag = PHIST_NOT_IMPLEMENTED
         return
       end if
 !write(*,*) 'here v', nvecv, v%val
@@ -2364,12 +2663,12 @@ contains
     ! check if we need higher precision
     if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
 #ifndef PHIST_HIGH_PRECISION_KERNELS
-      iflag = -99
+      iflag = PHIST_NOT_IMPLEMENTED
       return
 #else
       ! check if we can do it
       if( strided_w .or. strided_v ) then
-        iflag = -99
+        iflag = PHIST_NOT_IMPLEMENTED
         return
       end if
 
@@ -2451,7 +2750,7 @@ contains
       end if
 
       if( .not. handled ) then
-        iflag = -99
+        iflag = PHIST_NOT_IMPLEMENTED
         return
       end if
 !write(*,*) 'here v', nvecv, v%val
@@ -3647,6 +3946,50 @@ end subroutine phist_Dmvec_put_func
     call mvec_times_sdmat_augmented(alpha,v,M,beta,w,N,iflag)
 
   end subroutine phist_Dmvec_times_sdMat_augmented
+
+
+  subroutine phist_Dmvec_times_sdMat_add_mvec_times_sdMat(v_ptr, M_ptr, w_ptr, N_ptr, iflag) bind(C,name='phist_Dmvec_times_sdMat_add_mvec_times_sdMat_f')
+    use, intrinsic :: iso_c_binding
+    !--------------------------------------------------------------------------------
+    type(C_PTR),        value         :: v_ptr, w_ptr
+    type(C_PTR),        value         :: M_ptr, N_ptr
+    integer(C_INT),     intent(inout) :: iflag
+    !--------------------------------------------------------------------------------
+    type(MVec_t), pointer :: v, w
+    type(SDMat_t), pointer :: M, N
+    !--------------------------------------------------------------------------------
+
+    if( .not. c_associated(v_ptr) .or. &
+      & .not. c_associated(w_ptr) .or. &
+      & .not. c_associated(M_ptr) .or. &
+      & .not. c_associated(N_ptr)      ) then
+      iflag = -88
+      return
+    end if
+
+    call c_f_pointer(v_ptr,v)
+    call c_f_pointer(w_ptr,w)
+    call c_f_pointer(M_ptr,M)
+    call c_f_pointer(N_ptr,N)
+
+    if( v%jmax-v%jmin .ne. M%imax-M%imin .or. &
+      & M%jmax-M%jmin .ne. w%jmax-w%jmin .or. &
+      & N%imax-N%imin .ne. N%jmax-N%jmin .or. &
+      & w%jmax-w%jmin .ne. N%imax-N%imin      ) then
+      iflag = -1
+      return
+    end if
+
+#ifdef TESTING
+    if( .not. map_compatible_map(v%map, w%map) ) then
+      iflag = -1
+      return
+    end if
+#endif
+
+    call mvec_times_sdMat_add_mvec_times_sdMat(v,M,w,N,iflag)
+
+  end subroutine phist_Dmvec_times_sdMat_add_mvec_times_sdMat
 
 
 

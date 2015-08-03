@@ -179,7 +179,7 @@ const char* filename,int* iflag)
   PHIST_TOUCH(vA);
   PHIST_TOUCH(vcomm);
   PHIST_TOUCH(filename);
-  *iflag = -99; // not implemented in ghost, use converter script to bin crs
+  *iflag = PHIST_NOT_IMPLEMENTED; // not implemented in ghost, use converter script to bin crs
 }
 
 //!@}
@@ -382,7 +382,7 @@ void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
         _ST_* values, lidx_t lda, int nrows, int ncols,
         int* iflag)
 {
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
 //@}
@@ -480,7 +480,7 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* l
     {
       // need some ghost call here (TODO)
       PHIST_OUT(PHIST_ERROR,"%s, host side of vector not allocated\n",__FUNCTION__);
-      *iflag=-99;
+      *iflag=PHIST_NOT_IMPLEMENTED;
       return;
     }
     else
@@ -1331,7 +1331,7 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
   return;
 }
 //! y[i]=alpha*(A*x[i]+shifts[i]*x[i]) + beta*y[i]
@@ -1698,7 +1698,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
   if (ghost_type == GHOST_TYPE_CUDA)
   {
-    *iflag=-99;
+    *iflag=PHIST_NOT_IMPLEMENTED;
     return;
   }
 #endif
@@ -1711,7 +1711,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
 
   if( transR )
   {
-    PHIST_CHK_IERR(*iflag=-99,*iflag);
+    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
   }
     
   // Here the actual TSQR call with col-major V and R begins...
@@ -1793,7 +1793,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   Qcopy->destroy(Qcopy);
   *iflag = ncols-rank;// return positive number if rank not full.
 #else
-  *iflag=-99; // no Trilinos, no TSQR, no mvec_QR (right now)
+  *iflag=PHIST_NOT_IMPLEMENTED; // no Trilinos, no TSQR, no mvec_QR (right now)
 #endif
   return;
 }
@@ -1807,12 +1807,12 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
 # ifdef IS_DOUBLE
 extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Dmvec_t* reV, Dmvec_t* imV, int *iflag)
 {
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
 }
 # else
 extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* imV, int *iflag)
 {
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
 }
 # endif
 #endif

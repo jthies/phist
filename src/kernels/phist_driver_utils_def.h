@@ -346,7 +346,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
 #ifndef PHIST_HAVE_ESSEX_PHYSICS
 PHIST_SOUT(PHIST_ERROR,"BAPPS models (essex-physics/bapps) not\n"
                        "available without essex-physics\n");
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
 #else
     
     int len=strlen(problem+pos);

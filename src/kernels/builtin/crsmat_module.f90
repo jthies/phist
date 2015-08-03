@@ -11,6 +11,7 @@
 #endif
 
 #include "phist_kernel_flags.h"
+#include "phist_defs.h"
 
 !> simple macro to check integer flags
 #define CHECK_IFLAG(_flag,_value) (IAND(_flag,_value)==(_value))
@@ -1720,7 +1721,7 @@ end subroutine permute_local_matrix
     else
       write(*,*) 'unsupported format'
       flush(6)
-      ierr = -99
+      ierr = PHIST_NOT_IMPLEMENTED
       return
     end if
 
@@ -2460,7 +2461,7 @@ end if
       
       if (strided_x .or. strided_b) then
         write(*,*) "CARP kernels not implemented for strided vectors (views)"
-        ierr=-99
+        ierr=PHIST_NOT_IMPLEMENTED
         return
       end if
     
@@ -2665,7 +2666,7 @@ end if
       
       if (strided_x .or. strided_b) then
         write(*,*) "CARP kernels not implemented for strided vectors (views)"
-        ierr=-99
+        ierr=PHIST_NOT_IMPLEMENTED
         return
       end if
     

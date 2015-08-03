@@ -401,7 +401,6 @@ void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
 void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int *iflag);
 
 //! augmented kernel with two multi-vectors. \ingroup mvec
-
 //! W=alpha*V*C + beta*W, D=W^TW
 void SUBR(mvec_times_sdMat_augmented)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
                                                   TYPE(const_sdMat_ptr) C,
@@ -409,6 +408,13 @@ void SUBR(mvec_times_sdMat_augmented)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
                                                   TYPE(sdMat_ptr)       D,
                                                   int* iflag);
 
+//! augmented kernel with two multi-vectors. \ingroup mvec
+//! W <- = V*C + W*D
+void SUBR(mvec_times_sdMat_add_mvec_times_sdMat)(TYPE(const_mvec_ptr) V, 
+                                                 TYPE(const_sdMat_ptr) C,
+                                                 TYPE(mvec_ptr) W, 
+                                                 TYPE(const_sdMat_ptr) D,
+                                                 int* iflag);
 
 
 

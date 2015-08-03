@@ -67,8 +67,7 @@ void dgemm_prec(int m, int n, int k, double alpha, const double *restrict a, con
         DOUBLE_4SUM(oldC,oldCC,tmp,tmpC,c_,cC_);
       }
       // store result
-      c[j*m+i] = c_;
-      cC[j*m+i] = cC_;
+      DOUBLE_FAST2SUM(c_,cC_,c[j*m+i],cC[j*m+i]);
     }
   }
 }

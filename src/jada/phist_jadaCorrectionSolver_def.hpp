@@ -17,7 +17,7 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, int b
   }
   else if (method==CARP_CG)
   {
-    *iflag=-99;
+    *iflag=PHIST_NOT_IMPLEMENTED;
   }
   else if (method==USER_DEFINED)
   {
@@ -34,7 +34,7 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, int b
   else
   {
     PHIST_SOUT(PHIST_ERROR, "method %d (%s) not implemented",(int)method, linSolv2str(method));
-    *iflag=-99;
+    *iflag=PHIST_NOT_IMPLEMENTED;
   }
 }
 
@@ -52,7 +52,7 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) me, int *i
   }
   else if (me->method_==CARP_CG)
   {
-    *iflag=-99;
+    *iflag=PHIST_NOT_IMPLEMENTED;
   }
   else if (me->method_==USER_DEFINED)
   {
@@ -205,7 +205,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
     }
     else if (me->method_==CARP_CG)
     {
-      *iflag=-99;
+      *iflag=PHIST_NOT_IMPLEMENTED;
     }
     else
     {

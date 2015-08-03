@@ -225,7 +225,7 @@ namespace phist {
                     dense_matrix_type& R,
                     const bool forceNonnegativeDiagonal=false)
     {
-    throw -99;
+    throw PHIST_NOT_IMPLEMENTED;
 /*
       typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
 
@@ -273,7 +273,7 @@ namespace phist {
                 dense_matrix_type& R,
                 const magnitude_type& tol)
     {
-      return -99;
+      return PHIST_NOT_IMPLEMENTED;
 /*
       typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
 
@@ -326,7 +326,7 @@ namespace phist {
     void 
     prepareTsqr (const MV& mv) 
     {
-      throw -99;
+      throw PHIST_NOT_IMPLEMENTED;
 /*
       if (! ready_) {
         prepareDistTsqr (mv);
@@ -342,7 +342,7 @@ namespace phist {
     void
     prepareNodeTsqr (const MV& mv)
     {
-      throw -99;
+      throw PHIST_NOT_IMPLEMENTED;
       /*
       PHIST_TOUCH(mv);
       // TODO - we only use the default node here,
@@ -360,7 +360,7 @@ namespace phist {
     void
     prepareDistTsqr (const MV& mv)
     {
-      throw -99;
+      throw PHIST_NOT_IMPLEMENTED;
 /*
       using Teuchos::RCP;
       using Teuchos::rcp_implicit_cast;
@@ -390,7 +390,7 @@ namespace phist {
     static Kokkos::MultiVector<scalar_type,node_type>
     getNonConstView (MV& A)
     {
-throw -99;
+throw PHIST_NOT_IMPLEMENTED;
     Teuchos::RCP<node_type> node = createNode();
     Kokkos::MultiVector<scalar_type, node_type> KMV(node);
 

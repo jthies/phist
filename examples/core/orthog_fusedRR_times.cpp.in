@@ -17,6 +17,7 @@
 #include "phist_operator.h"
 #include "phist_orthog.h"
 #include "phist_orthogrr.h"
+#include "phist_orthogrrfused.h"
 
 #include "phist_ScalarTraits.hpp"
 
@@ -74,6 +75,8 @@ PHIST_MAIN_TASK_BEGIN
                            "       set high_prec to 1 to use high-precision kernels\n"
                            "       set high_prec to 2 to use low-precision kernels twice\n"
                            "       set high_prec to 3 to use high-precision kernels twice\n"
+                           "       set high_prec to 4 to use low-precision fusedRR kernels\n"
+                           "       set high_prec to 5 to use high-precision fusedRR kernels\n"
                            "       set pert.-factor to < 1.e-3 to generate harder to orthogonalize data\n",
                            argv[0]);
     return 1;
@@ -94,12 +97,14 @@ PHIST_MAIN_TASK_BEGIN
   k=atoi(argv[3]);
   l=atoi(argv[4]);
   bool high_prec = false;
+  bool fusedRR = false;
   bool twice = false;
   if( argc >= 6 )
   {
     int argv5 = atoi(argv[5]);
     high_prec = argv5 & 1;
     twice = argv5 & 2;
+    fusedRR = argv5 & 4;
   }
   double pertFactorX = 1.e-3;
   double pertFactorV = 1.e-3;
@@ -148,12 +153,19 @@ PHIST_MAIN_TASK_BEGIN
     // this is what we really want to benchmark
     if( high_prec )
       ierr = PHIST_ROBUST_REDUCTIONS;
-    PHIST_ICHK_IERR(SUBR(orthogrr)(V,Q,VtQ,R,QtQ,&ierr),ierr);
-    if( twice )
+    if( fusedRR )
     {
-      if( high_prec )
-        ierr = PHIST_ROBUST_REDUCTIONS;
+      PHIST_ICHK_IERR(SUBR(orthogrrfused)(V,Q,VtQ,R,QtQ,&ierr),ierr);
+    }
+    else
+    {
       PHIST_ICHK_IERR(SUBR(orthogrr)(V,Q,VtQ,R,QtQ,&ierr),ierr);
+      if( twice )
+      {
+        if( high_prec )
+          ierr = PHIST_ROBUST_REDUCTIONS;
+        PHIST_ICHK_IERR(SUBR(orthogrr)(V,Q,VtQ,R,QtQ,&ierr),ierr);
+      }
     }
 
     // check the result

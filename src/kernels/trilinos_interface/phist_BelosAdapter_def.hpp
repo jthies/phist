@@ -116,7 +116,7 @@ using ::phist::ScalarTraits;
       // If it turns out that we need them here we could build the
       // functionality into the phist::MultiVector wrapper by storing
       // an array of contiguous views.
-      PHIST_TCHK_IERR(iflag_=-99,iflag_);
+      PHIST_TCHK_IERR(iflag_=PHIST_NOT_IMPLEMENTED,iflag_);
       return Teuchos::null;
     }
 

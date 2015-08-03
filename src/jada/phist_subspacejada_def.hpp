@@ -122,32 +122,32 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   if( blockDim < 1 )
   {
     PHIST_SOUT(PHIST_ERROR, "parameter blockDim < 1!\n");
-    PHIST_CHK_IERR(*iflag = -99, *iflag);
+    PHIST_CHK_IERR(*iflag = PHIST_NOT_IMPLEMENTED, *iflag);
   }
   if( innerBlockDim > blockDim || innerBlockDim < 1)
   {
     PHIST_SOUT(PHIST_ERROR, "parameter innerBlockDim > blockDim || innerBlockDim < 1!\n");
-    PHIST_CHK_IERR(*iflag = -99, *iflag);
+    PHIST_CHK_IERR(*iflag = PHIST_NOT_IMPLEMENTED, *iflag);
   }
   if( minBase < nEig_ )
   {
     PHIST_SOUT(PHIST_ERROR, "parameter minBase < nEig+blockDim-1!\n");
-    PHIST_CHK_IERR(*iflag = -99, *iflag);
+    PHIST_CHK_IERR(*iflag = PHIST_NOT_IMPLEMENTED, *iflag);
   }
   if( minBase+blockDim > maxBase )
   {
     PHIST_SOUT(PHIST_ERROR, "parameter minBase+blockDim > maxBase!\n");
-    PHIST_CHK_IERR(*iflag = -99, *iflag);
+    PHIST_CHK_IERR(*iflag = PHIST_NOT_IMPLEMENTED, *iflag);
   }
   if( maxBase < nEig+blockDim )
   {
     PHIST_SOUT(PHIST_ERROR, "paramater maxBase < nEig+blockDim!\n");
-    PHIST_CHK_IERR(*iflag = -99, *iflag);
+    PHIST_CHK_IERR(*iflag = PHIST_NOT_IMPLEMENTED, *iflag);
   }
   if( B_op != NULL )
   {
     PHIST_SOUT(PHIST_ERROR,"case B_op != NULL (e.g. B != I) not implemented yet!\n");
-    PHIST_CHK_IERR(*iflag = -99, *iflag);
+    PHIST_CHK_IERR(*iflag = PHIST_NOT_IMPLEMENTED, *iflag);
   }
 /*
   if( minBase % innerBlockDim != 0 )
