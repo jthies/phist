@@ -1225,6 +1225,22 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(alpha,vA,beta,vB,iflag), *iflag);
 }
 
+//! B=alpha*A+beta*B
+extern "C" void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
+                            _ST_ beta,  TYPE(sdMat_ptr)       vB,
+                            int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag=0;
+  // simple workaround
+  TYPE(sdMat_ptr) I = NULL;
+  int m = 0;
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(vA,&m,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&I,m,m,NULL,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_identity)(I,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat)(alpha,vA,I,beta,vB,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(I,iflag),*iflag);
+}
 
 //! spMVM communication
 extern "C" void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, int* iflag)

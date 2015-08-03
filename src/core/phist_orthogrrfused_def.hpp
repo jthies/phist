@@ -1,5 +1,6 @@
 static void SUBR(orthogrrfused_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, TYPE(sdMat_ptr) WR_1, int* rank, int* iflag)
 {
+#include "phist_std_typedefs.hpp"
   int m = 0, n = 0;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(RR,&m,iflag),*iflag);
   // create R and R_1 from RR
@@ -16,10 +17,10 @@ static void SUBR(orthogrrfused_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, 
       TYPE(sdMat_ptr) WR_1t = NULL;
       PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(WR_1,&n,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_create)(&WR_1t,m,n,NULL,iflag),*iflag);
-      //PHIST_CHK_IERR(SUBR(sdMatT_add_sdMat)(-st::one(),WR_1,st::zero(),WR_1t,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMatT_add_sdMat)(-st::one(),WR_1,st::zero(),WR_1t,iflag),*iflag);
       //PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(RR,perm,*rank,WR_1t,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_forwardSubst_sdMat)(RR,perm,*rank,WR_1t,iflag),*iflag);
-      //PHIST_CHK_IERR(SUBR(sdMatT_add_sdMat)(st::one(),WR_1t,st::zero(),WR_1,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMatT_add_sdMat)(st::one(),WR_1t,st::zero(),WR_1,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_delete)(WR_1t,iflag),*iflag);
     }
   }
@@ -30,6 +31,12 @@ static void SUBR(orthogrrfused_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, 
 // Q*R_1 = V - W*R_2 with R_2=W'*V
 // result returned in place as V
 // correct V'V must be supplied and is returned!
+//
+// Trying to exploit one-step kernel:
+// V <- W*M + V*N
+// from
+// (V-W*WtV)'*(V-W*WtV) = VtV - VtW*WtV - VtW*WtV + VtW*WtW*WtV = VtV - 2 VtW*WtV + VtW*WtV = VtV - VtW*WtV
+// for previously orthog. V (wrt. itself) -> I - WtV'*WtV
 void SUBR(orthogrrfused)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2, TYPE(sdMat_ptr) R1, TYPE(const_sdMat_ptr) VtV, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
@@ -72,10 +79,11 @@ void SUBR(orthogrrfused)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_pt
     int WVrank = 0;
     PHIST_CHK_IERR(SUBR(sdMat_identity)(R,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat)(-st::one(),WtV,WtV,st::one(),R,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),WtV,st::zero(),WtV_,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(orthogrrfused_cholrr)(R,R_1,WtV_,&WVrank,iflag),*iflag);
 
     // respect R_1 and sign in WtV
-    PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(-st::one(),WtV,R_1,st::zero(),WtV_,iflag),*iflag);
+    //PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(-st::one(),WtV,R_1,st::zero(),WtV_,iflag),*iflag);
 
     // all in one fused kernel
     // V <- V*R_1 + W*WtV_

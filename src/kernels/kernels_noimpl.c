@@ -273,6 +273,13 @@ void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
+void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
+    _ST_ beta,  TYPE(sdMat_ptr)       B, 
+    int* iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+
 void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr) x, int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;

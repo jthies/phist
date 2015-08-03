@@ -423,6 +423,12 @@ void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
                             _ST_ beta,  TYPE(sdMat_ptr)       B,     
                             int* iflag);
 
+//! B=alpha*A'+beta*B. \ingroup sdmat
+void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
+                            _ST_ beta,  TYPE(sdMat_ptr)       B,     
+                            int* iflag);
+
+
 //! C=beta*C+alpha*A*B. \ingroup sdmat
 
 //! n x m small dense matrix times m x k small dense matrix gives n x k small dense matrix,
