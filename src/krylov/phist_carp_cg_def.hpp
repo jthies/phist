@@ -215,7 +215,7 @@ void SUBR(carp_cgState_reset)(TYPE(carp_cgState_ptr) S,
 
   if (nvec!=S->nvec_)
   {
-    *iflag=-99;
+    *iflag=PHIST_NOT_IMPLEMENTED;
     PHIST_SOUT(PHIST_ERROR,"cannot reset with different #vectors in the current implementation,\n"
                            "you will have to destroy the object and create it anew.\n"
                            "(file %s, line %d)\n",__FILE__,__LINE__);

@@ -2,7 +2,7 @@ void SUBR(carp_setup)(TYPE(const_sparseMat_ptr) A, int numShifts,
         _MT_ const sigma_r[], _MT_ const sigma_i[],
         void** work, int* iflag)
 {
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
   return;
 }
 
@@ -14,14 +14,14 @@ void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) A,
         void* const work,
         _MT_ const * omega, int* iflag)
 {
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
   return;
 }
 
 void SUBR(carp_destroy)(TYPE(const_sparseMat_ptr) A,
         void* work, int *iflag)
 {
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
   return;
 }
 

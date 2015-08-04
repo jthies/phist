@@ -56,7 +56,7 @@ extern "C" void SUBR(carp_setup)(TYPE(const_sparseMat_ptr) vA, int numShifts,
       !rowMap.SameAs(A->DomainMap()))
       {
         PHIST_SOUT(PHIST_ERROR,"Epetra CARP implementation currently needs a simple square matrix.\n");
-        *iflag=-99;
+        *iflag=PHIST_NOT_IMPLEMENTED;
         return;
       }
   

@@ -147,6 +147,43 @@ contains
 
 
   !==================================================================================
+  ! axpby operation for SDMat_t
+  subroutine sdmatT_add_sdmat(alpha,A,beta,B)
+    !--------------------------------------------------------------------------------
+    real(kind=8),   intent(in)    :: alpha
+    type(SDMat_t),  intent(in)    :: A
+    real(kind=8),   intent(in)    :: beta
+    type(SDMat_t),  intent(inout) :: B
+    !--------------------------------------------------------------------------------
+    real(kind=8), allocatable :: a_(:,:), b_(:,:), aC_(:,:), bC_(:,:)
+    integer :: nr, nc
+    !--------------------------------------------------------------------------------
+
+    nr = B%imax-B%imin+1
+    nc = B%jmax-B%jmin+1
+    allocate(a_(nr,nc),b_(nr,nc),aC_(nr,nc),bC_(nr,nc))
+    a_  = transpose(A%val(A%imin:A%imax,A%jmin:A%jmax))
+    b_  = B%val(B%imin:B%imax,B%jmin:B%jmax)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+    aC_ = transpose(A%err(A%imin:A%imax,A%jmin:A%jmax))
+    bC_ = B%err(B%imin:B%imax,B%jmin:B%jmax)
+#endif
+
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+    call daxpby_prec(nr*nc,alpha,a_,aC_,beta,b_,bC_)
+#else
+    b_ = alpha*a_+beta*b_
+#endif
+
+    B%val(B%imin:B%imax,B%jmin:B%jmax) = b_
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+    B%err(B%imin:B%imax,B%jmin:B%jmax) = bC_
+#endif
+
+  end subroutine sdmatT_add_sdmat
+
+
+  !==================================================================================
   ! gemm operation for SDMat_t
   subroutine sdmat_times_sdmat(transA,transB,alpha,A,B,beta,C,ierr)
     use, intrinsic :: iso_c_binding
@@ -793,6 +830,37 @@ contains
     ierr = 0
 
   end subroutine phist_DsdMat_add_sdMat
+
+
+  subroutine phist_DsdMatT_add_sdMat(alpha, A_ptr, beta, B_ptr, ierr) bind(C,name='phist_DsdMatT_add_sdMat_f')
+    use, intrinsic :: iso_c_binding
+    !--------------------------------------------------------------------------------
+    type(C_PTR),        value         :: A_ptr, B_ptr
+    real(C_DOUBLE),     value         :: alpha, beta
+    integer(C_INT),     intent(out)   :: ierr
+    !--------------------------------------------------------------------------------
+    type(SDMat_t), pointer :: A, B
+    !--------------------------------------------------------------------------------
+
+    if( .not. c_associated(A_ptr) .or. .not. c_associated(B_ptr) ) then
+      ierr = -88
+      return
+    end if
+
+    call c_f_pointer(A_ptr, A)
+    call c_f_pointer(B_ptr, B)
+
+    if( A%imax-A%imin .ne. B%jmax-B%jmin .or. &
+      & A%jmax-A%jmin .ne. B%imax-B%imin      ) then
+      ierr = -1
+      return
+    end if
+
+    call sdmatT_add_sdmat(alpha, A, beta, B)
+
+    ierr = 0
+
+  end subroutine phist_DsdMatT_add_sdMat
 
 
   subroutine phist_DsdMat_times_sdMat(alpha, A_ptr, B_ptr, beta, M_ptr, ierr) bind(C,name='phist_DsdMat_times_sdMat_f')

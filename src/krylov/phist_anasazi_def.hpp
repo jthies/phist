@@ -21,7 +21,7 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) Ainv_op,
   {
   PHIST_ENTER_FCN(__FUNCTION__);
 #ifndef PHIST_HAVE_ANASAZI
-  *iflag = -99;
+  *iflag = PHIST_NOT_IMPLEMENTED;
 #else
 #include "phist_std_typedefs.hpp"  
 #ifdef PHIST_KERNEL_LIB_GHOST
@@ -142,7 +142,7 @@ if (variant==0)
 else
   {
   PHIST_OUT(PHIST_ERROR,"anasazi variant %d is not supported",variant);
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
   }
 
 ///////////////////////////////////////////////////////////////////////

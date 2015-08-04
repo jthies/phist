@@ -39,6 +39,7 @@ extern "C" {
   void SUBR(mvec_set_block_f)(TYPE(mvec_ptr),TYPE(const_mvec_ptr),int,int,int*);
   void SUBR(mvec_times_sdMat_f)(_ST_,TYPE(const_mvec_ptr),TYPE(const_sdMat_ptr),_ST_,TYPE(mvec_ptr),int*);
   void SUBR(mvec_times_sdMat_augmented_f)(_ST_,TYPE(const_mvec_ptr),TYPE(const_sdMat_ptr),_ST_,TYPE(mvec_ptr),TYPE(sdMat_ptr),int*);
+  void SUBR(mvec_times_sdMat_add_mvec_times_sdMat_f)(TYPE(const_mvec_ptr),TYPE(const_sdMat_ptr),TYPE(mvec_ptr),TYPE(const_sdMat_ptr),int*);
   void SUBR(mvec_times_sdMat_inplace_f)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int*);
   void SUBR(mvec_to_mvec_f)(TYPE(const_mvec_ptr),TYPE(mvec_ptr),int*);
   void SUBR(mvec_vadd_mvec_f)(const _ST_*,TYPE(const_mvec_ptr),_ST_,TYPE(mvec_ptr),int*);
@@ -52,6 +53,7 @@ extern "C" {
   void SUBR(sdMat_forwardSubst_sdMat_f)(const TYPE(sdMat_ptr), const int*, int, TYPE(sdMat_ptr), int*);
 #endif
   void SUBR(sdMat_add_sdMat_f)(_ST_,TYPE(const_sdMat_ptr),_ST_,TYPE(sdMat_ptr),int*);
+  void SUBR(sdMatT_add_sdMat_f)(_ST_,TYPE(const_sdMat_ptr),_ST_,TYPE(sdMat_ptr),int*);
   void SUBR(sdMat_create_f)(TYPE(sdMat_ptr)*,int,int,const_comm_ptr_t,int*);
   void SUBR(sdMat_create_view_f)(TYPE(sdMat_ptr)*,const_comm_ptr_t,void*, lidx_t, int,int,int*);
   void SUBR(sdMat_delete_f)(TYPE(sdMat_ptr),int*);
@@ -511,6 +513,15 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
   PHIST_CHK_IERR(SUBR(sdMat_add_sdMat_f)(alpha,A,beta,B,iflag),*iflag);
 }
 
+extern "C" void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
+    _ST_ beta,  TYPE(sdMat_ptr)       B, 
+    int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
+  PHIST_CHK_IERR(SUBR(sdMatT_add_sdMat_f)(alpha,A,beta,B,iflag),*iflag);
+}
+
 extern "C" void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -678,6 +689,18 @@ extern "C" void SUBR(mvec_times_sdMat_augmented)(_ST_ alpha,  TYPE(const_mvec_pt
 #include "phist_std_typedefs.hpp"
   PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT(alpha,V,beta,W,iflag);
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat_augmented_f)(alpha,V,C,beta,W,D,iflag),*iflag);
+}
+
+extern "C" void SUBR(mvec_times_sdMat_add_mvec_times_sdMat)(TYPE(const_mvec_ptr) V, 
+                                                            TYPE(const_sdMat_ptr) C,
+                                                            TYPE(mvec_ptr) W, 
+                                                            TYPE(const_sdMat_ptr) D,
+                                                            int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT(st::one(),V,st::one(),W,iflag);
+  PHIST_CHK_IERR(SUBR(mvec_times_sdMat_add_mvec_times_sdMat_f)(V,C,W,D,iflag),*iflag);
 }
 
 extern "C" void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 

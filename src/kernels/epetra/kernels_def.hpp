@@ -40,7 +40,7 @@ const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   // TODO - not implemented (should read the binary file format defined by ghost)
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
 //! read a matrix from a Harwell-Boeing (HB) file
@@ -48,7 +48,7 @@ extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_
 const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=-99; // not implemented in epetra
+  *iflag=PHIST_NOT_IMPLEMENTED; // not implemented in epetra
 }
 //!@}
 
@@ -186,7 +186,7 @@ void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
         _ST_* values, lidx_t lda, int nrows, int ncols,
         int* iflag)
 {
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
 
@@ -266,7 +266,7 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   //TODO: create importer, v_out->Import(v_in)
   //TODO: possibly crate a wrapper phist_map_t which keeps the importer as well
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
   return;
 }
 
@@ -618,6 +618,23 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,B,vB,*iflag);
   PHIST_CHK_IERR(*iflag=B->Update(alpha,*A,beta),*iflag);  
+}
+
+//! B=alpha*A+beta*B
+extern "C" void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
+                            _ST_ beta,  TYPE(sdMat_ptr)       vB,
+                            int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag=0;
+  // simple workaround
+  TYPE(sdMat_ptr) I = NULL;
+  int m = 0;
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(vA,&m,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&I,m,m,NULL,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_identity)(I,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat)(alpha,vA,I,beta,vB,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(I,iflag),*iflag);
 }
 
 extern "C" void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, int* iflag)

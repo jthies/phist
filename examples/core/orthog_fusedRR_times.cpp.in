@@ -1,0 +1,232 @@
+#include "phist_config.h"
+
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#ifdef PHIST_HAVE_LIKWID
+#include "likwid.h"
+#endif
+
+#include "phist_macros.h"
+#include "phist_enums.h"
+#include "phist_kernels.h"
+#include "phist_operator.h"
+#include "phist_orthog.h"
+#include "phist_orthogrr.h"
+#include "phist_orthogrrfused.h"
+
+#include "phist_ScalarTraits.hpp"
+
+#include ${PHIST_TG_HFILE}
+#include "phist_driver_utils.h"
+
+typedef phist::ScalarTraits<ST> st;
+typedef phist::ScalarTraits<MT> mt;
+
+// small helper function
+void sdMat_orthoError(const_sdMat_ptr_t M, ST d, MT *err, int *ierr)
+{
+  ST* q=NULL;
+  lidx_t ldq;
+  int n, m;
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(M,&n,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(M,&m,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)((sdMat_ptr_t)M,&q,&ldq,ierr),*ierr);
+  *err=mt::zero();
+  for (int i=0;i<m;i++)
+    for (int j=0;j<n;j++)
+    {
+      ST val=(i==j)? d : mt::zero();
+      *err=std::max(*err, std::abs(q[i*ldq+j] - val));
+    }
+}
+
+//! benchmark the function orthogrr, given k, n, m
+//! do k times: randomize an n x m mvec and orthogonalize
+//! it using orthogrr.
+int main(int argc, char** argv)
+{
+  int ierr;
+
+  comm_ptr_t comm = NULL;
+  map_ptr_t map = NULL;
+  mvec_ptr_t X = NULL, Q=NULL, V=NULL;
+  sdMat_ptr_t QtQ=NULL, VtV=NULL, VtQ=NULL, VtX=NULL, QtX=NULL;
+  
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
+
+PHIST_MAIN_TASK_BEGIN
+
+  PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
+
+  if (argc < 5 || argc > 9)
+  {
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s n m k l [high_prec] [pert.-factors 1 and 2] [desired eps]\n"
+                           "       create a n x k orthogonal mvec\n"
+                           "       perform l times: \n"
+                           "       randomize an n x m mvec\n"
+                           "       orthogonalize its columns by orthogrr wrt. the n x k block\n"
+                           "       perform other operations mvec_add_mvec, \n"
+                           "       mvecT_times_mvec to check for NUMA issues etc.\n"
+                           "       set high_prec to 1 to use high-precision kernels\n"
+                           "       set high_prec to 2 to use low-precision kernels twice\n"
+                           "       set high_prec to 3 to use high-precision kernels twice\n"
+                           "       set high_prec to 4 to use low-precision fusedRR kernels\n"
+                           "       set high_prec to 5 to use high-precision fusedRR kernels\n"
+                           "       set pert.-factor to < 1.e-3 to generate harder to orthogonalize data\n",
+                           argv[0]);
+    return 1;
+  }
+
+  gidx_t n;
+  int m,k,l;
+  if (sizeof(gidx_t)==4)
+  {
+    n=atoi(argv[1]);
+  }
+  else
+  {
+    n=atol(argv[1]);
+  }
+  
+  m=atoi(argv[2]);
+  k=atoi(argv[3]);
+  l=atoi(argv[4]);
+  bool high_prec = false;
+  bool fusedRR = false;
+  bool twice = false;
+  if( argc >= 6 )
+  {
+    int argv5 = atoi(argv[5]);
+    high_prec = argv5 & 1;
+    twice = argv5 & 2;
+    fusedRR = argv5 & 4;
+  }
+  double pertFactorX = 1.e-3;
+  double pertFactorV = 1.e-3;
+  if( argc >= 7 )
+    pertFactorX = atof(argv[6]);
+  if( argc >= 8 )
+    pertFactorV = atof(argv[7]);
+  MT desiredEps = 100*mt::eps();
+  if( argc >= 9 )
+    desiredEps = atof(argv[8]);
+
+
+  PHIST_ICHK_IERR(phist_map_create(&map,comm,n,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_create)(&VtV,k,k,comm,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&V,map,k,&ierr),ierr);
+  int rankV;
+  // call orthog twice to obtain accurate orthog. random vectors
+  PHIST_ICHK_NEG_IERR(SUBR(orthog)(NULL,V,NULL,VtV,NULL,2,&rankV,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(orthog)(NULL,V,NULL,VtV,NULL,2,&rankV,&ierr),ierr);
+  if( high_prec )
+    ierr = PHIST_ROBUST_REDUCTIONS;
+  PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),VtV,&ierr),ierr);
+  MT err;
+  PHIST_ICHK_IERR(sdMat_orthoError(VtV,st::one(),&err,&ierr),ierr);
+  PHIST_SOUT(PHIST_INFO,"Ortho-error of block V: %8.4e\n", err);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,m,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&Q,map,m,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_create)(&VtQ,k,m,comm,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_create)(&VtX,k,m,comm,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_create)(&QtQ,m,m,comm,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_create)(&QtX,m,m,comm,&ierr),ierr);
+  
+  MT total_max_errorQ = mt::zero();
+  MT total_max_errorV = mt::zero();
+  MT total_max_errorR2 = mt::zero();
+  MT total_max_errorR1 = mt::zero();
+  MT total_max_errorXnorm = mt::zero();
+
+  for (int it=0; it<l; it++)
+  {
+    // this determines the numa domains (thinking of OpenMP here)
+    PHIST_ICHK_IERR(SUBR(mvec_random)(X,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_put_value)(Q,st::one(),&ierr),ierr);
+    ST pertX=st::one()*pertFactorX;
+    PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(pertX,X,st::one(),Q,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(sdMat_random)(VtQ,&ierr),ierr);
+    ST pertV=st::one()*pertFactorV;
+    if( high_prec )
+      ierr = PHIST_ROBUST_REDUCTIONS;
+    // also calculate QtQ
+    PHIST_ICHK_IERR(SUBR(mvec_times_sdMat_augmented)(st::one(),V,VtQ,pertV,Q,QtQ,&ierr),ierr);
+    // save old X
+    PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(st::one(),Q,st::zero(),X,&ierr),ierr);
+
+    int maxIter = twice ? 2 : 1;
+    // this is what we really want to benchmark
+    if( high_prec )
+      ierr = PHIST_ROBUST_REDUCTIONS;
+    if( fusedRR )
+    {
+      PHIST_ICHK_IERR(SUBR(orthogrrfused)(V,Q,VtX,QtX,QtQ,&ierr),ierr);
+    }
+    else
+    {
+      PHIST_ICHK_IERR(SUBR(orthogrr)(V,Q,VtX,QtX,QtQ,desiredEps,maxIter,&ierr),ierr);
+    }
+
+    // check the result
+    // QtQ
+    if( high_prec )
+      ierr = PHIST_ROBUST_REDUCTIONS;
+    PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Q,Q,st::zero(),QtQ,&ierr),ierr);
+    PHIST_ICHK_IERR(sdMat_orthoError(QtQ,st::one(),&err,&ierr),ierr);
+    total_max_errorQ=std::max(err,total_max_errorQ);
+    // VtQ
+    if( high_prec )
+      ierr = PHIST_ROBUST_REDUCTIONS;
+    PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,Q,st::zero(),VtQ,&ierr),ierr);
+    PHIST_ICHK_IERR(sdMat_orthoError(VtQ,st::zero(),&err,&ierr),ierr);
+    total_max_errorV=std::max(err,total_max_errorV);
+    // R2 := VtX
+    PHIST_ICHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),VtX,st::zero(),VtQ,&ierr),ierr);
+    if( high_prec )
+      ierr = PHIST_ROBUST_REDUCTIONS;
+    PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(-st::one(),V,X,st::one(),VtQ,&ierr),ierr);
+    PHIST_ICHK_IERR(sdMat_orthoError(VtQ,st::zero(),&err,&ierr),ierr);
+    total_max_errorR2=std::max(err,total_max_errorR2);
+    // R1 := QtX
+    PHIST_ICHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),QtX,st::zero(),QtQ,&ierr),ierr);
+    if( high_prec )
+      ierr = PHIST_ROBUST_REDUCTIONS;
+    PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(-st::one(),Q,X,st::one(),QtQ,&ierr),ierr);
+    PHIST_ICHK_IERR(sdMat_orthoError(QtQ,st::zero(),&err,&ierr),ierr);
+    total_max_errorR1=std::max(err,total_max_errorR1);
+    // reconstruct X = Q*QtX + V*VtX
+    PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Q,QtX,-st::one(),X,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(st::one(),V,VtX,st::one(),X,&ierr),ierr);
+    MT Xnorm[m];
+    PHIST_ICHK_IERR(SUBR(mvec_norm2)(X,Xnorm,&ierr),ierr);
+    for(int i = 0; i < m; i++)
+      total_max_errorXnorm=std::max(Xnorm[i],total_max_errorXnorm);
+  }
+  PHIST_SOUT(PHIST_INFO,"Total maximum ortho-error QtQ encountered: %8.4e\n",total_max_errorQ);
+  PHIST_SOUT(PHIST_INFO,"Total maximum ortho-error VtQ encountered: %8.4e\n",total_max_errorV);
+  PHIST_SOUT(PHIST_INFO,"Total maximum error R2-VtX encountered: %8.4e\n",total_max_errorR2);
+  PHIST_SOUT(PHIST_INFO,"Total maximum error R1-QtX encountered: %8.4e\n",total_max_errorR1);
+  PHIST_SOUT(PHIST_INFO,"Total maximum error norm X-(Q*QtX+V*VtX) encountered: %8.4e\n",total_max_errorXnorm);
+PHIST_SOUT(PHIST_INFO,"Example for Q^T Q:\n");
+PHIST_ICHK_IERR(SUBR(sdMat_print)(QtQ,&ierr),ierr);
+
+
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(Q,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_delete)(QtQ,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_delete)(VtQ,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_delete)(VtX,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_delete)(QtX,&ierr),ierr);
+  PHIST_ICHK_IERR(phist_map_delete(map,&ierr),ierr);
+
+PHIST_MAIN_TASK_END
+
+  PHIST_ICHK_IERR(phist_kernels_finalize(&ierr),ierr);
+
+  return ierr;
+}

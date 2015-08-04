@@ -67,8 +67,7 @@ void dgemm_prec(int m, int n, int k, double alpha, const double *restrict a, con
         DOUBLE_4SUM(oldC,oldCC,tmp,tmpC,c_,cC_);
       }
       // store result
-      c[j*m+i] = c_;
-      cC[j*m+i] = cC_;
+      DOUBLE_FAST2SUM(c_,cC_,c[j*m+i],cC[j*m+i]);
     }
   }
 }
@@ -94,11 +93,13 @@ void cholesky_prec(int n, double *restrict a, double *restrict aC, int *perm, in
     lC[i] = 0.;
   }
   // diagonal entries
-  double d[n], dC[n];
+  double d[n], dC[n], diagNorm = 0;
   for(int i = 0; i < n; i++)
   {
     DOUBLE_FAST2SUM(a[i*n+i],aC[i*n+i],d[i],dC[i]);
+    diagNorm += d[i]*d[i];
   }
+  diagNorm = sqrt(diagNorm);
 
   *rank = 0;
   while(*rank < n)
@@ -108,7 +109,7 @@ void cholesky_prec(int n, double *restrict a, double *restrict aC, int *perm, in
     for(int i = *rank; i < n; i++)
       err = err + d[p[i]];
 //printf("step %d, err %e\n", *rank, err);
-    if( err < 1.e-16 )
+    if( err < 1.e-25*diagNorm )
       break;
 
     int m = *rank;

@@ -63,7 +63,7 @@ void SUBR(jadaOp_apply)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
   PHIST_ENTER_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *iflag);
 
-  PHIST_CHK_IERR(*iflag = (jadaOp->B_op != NULL) ? -99 : 0, *iflag);
+  PHIST_CHK_IERR(*iflag = (jadaOp->B_op != NULL) ? PHIST_NOT_IMPLEMENTED : 0, *iflag);
 
   if( alpha == st::zero() )
   {

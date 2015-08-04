@@ -16,7 +16,7 @@ extern "C" void SUBR(belos)(TYPE(const_op_ptr) Op,
   {
 #ifndef PHIST_HAVE_BELOS
   PHIST_ENTER_FCN(__FUNCTION__);
-  *iflag = -99;
+  *iflag = PHIST_NOT_IMPLEMENTED;
 #else
 #include "phist_std_typedefs.hpp"  
 #ifdef PHIST_KERNEL_LIB_GHOST
@@ -136,7 +136,7 @@ else if (variant==3)
 else
   {
   PHIST_OUT(PHIST_ERROR,"belos variant %d is not supported",variant);
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
   }
 
 #if PHIST_OUTLEV>PHIST_DEBUG

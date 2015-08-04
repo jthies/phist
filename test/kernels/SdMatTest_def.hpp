@@ -134,6 +134,32 @@ public:
     }
   }
 
+  // X = a*Y' + b*X
+  TEST_F(CLASSNAME, random_sdMatT_add_sdMat)
+  {
+    if( typeImplemented_ && nrows_ == ncols_ )
+    {
+      ST beta = st::prand();
+      ST alpha= st::prand();
+
+      SUBR(sdMatT_add_sdMat)(alpha,mat1_,beta,mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // calculate solution by hand
+      for(int i = 0; i < nrows_; i++)
+      {
+        for(int j = 0; j < ncols_; j++)
+        {
+          mat3_vp_[MIDX(i,j,m_lda_)] = alpha*st::conj(mat1_vp_[MIDX(j,i,m_lda_)])+42.0*beta;
+        }
+      }
+      SUBR(sdMat_to_device)(mat3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat3_,mat2_));
+    }
+  }
+
+
   // view certain rows and columns of a serial dense matrix,
   // manipulate them and check the original matrix has changed.
   TEST_F(CLASSNAME, view_block)

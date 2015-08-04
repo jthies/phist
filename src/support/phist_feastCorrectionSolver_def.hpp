@@ -68,7 +68,7 @@ void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me,
   else
   {
     PHIST_SOUT(PHIST_ERROR, "method %d (%s) not implemented",(int)method, linSolv2str(method));
-    *iflag=-99;
+    *iflag=PHIST_NOT_IMPLEMENTED;
   }
 }
 
@@ -95,7 +95,7 @@ void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) me, int 
   {
     PHIST_SOUT(PHIST_ERROR, "method %d (%s) not implemented",(int)(me->method_), 
         linSolv2str(me->method_));
-    *iflag=-99;
+    *iflag=PHIST_NOT_IMPLEMENTED;
   }
 
   delete me;
@@ -212,7 +212,7 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
     }
     else
     {
-      *iflag=-99;
+      *iflag=PHIST_NOT_IMPLEMENTED;
     }
   }
 
