@@ -247,6 +247,15 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
       os << "col-major storage"<<std::endl;
 #endif
       }
+    if (_Nglob>100)
+    {
+      if (rank==0)
+      {
+        os << "(values not printed because vector to big)"<<std::endl;
+      }
+      return;
+    }
+      
     for (int p=0;p<np;p++)
       {
       if (p==rank)
