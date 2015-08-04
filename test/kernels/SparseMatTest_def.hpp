@@ -1399,3 +1399,143 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
   }
 #endif
 
+#ifdef FIRST_TIME
+
+int PREFIX(idfunc)(ghost_gidx_t row, ghost_lidx_t *len, ghost_gidx_t* cols, void* vval)
+{
+  *len=1;
+  _ST_* val = (_ST_*)vval;
+  val[0]=(_ST_)1.0;
+  cols[0]=row;
+  return 0;
+}
+
+int PREFIX(some_rowFunc)(ghost_gidx_t row, ghost_lidx_t *len, ghost_gidx_t* cols, void* vval)
+{
+#include "phist_std_typedefs.hpp"
+  _ST_* val = (_ST_*)vval;
+
+  *len=5;
+  for (int i=0; i<*len; i++)
+  {
+    cols[i]=(ghost_gidx_t)(((row+i-2)*3)%_N_);
+    if (cols[i]<0) cols[i]+=_N_;
+    val[i]=(ST)(i+1)/(ST)(row+1) + st::cmplx_I()*(ST)(row-cols[i]);
+  }
+  return 0;
+}
+
+#endif
+
+TEST_F(CLASSNAME,create_A_fromRowFunc)
+{
+  if (!typeImplemented_) return;
+
+  TYPE(sparseMat_ptr) A=NULL;
+  ghost_lidx_t nnzr = 5;
+  iflag_=0; // do not ask for reordering etc.
+  SUBR(sparseMat_create_fromRowFunc)(&A,comm_, _N_,_N_,nnzr,
+                &PREFIX(some_rowFunc),&iflag_);
+  ASSERT_EQ(0,iflag_);
+  rebuildVectors(A);
+  
+  SUBR(mvec_random)(vec1_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  
+  SUBR(sparseMat_times_mvec)(st::one(), A, vec1_,st::zero(),vec2_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  
+  SUBR(mvec_from_device)(vec2_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+
+#if _N_<=100
+  // test if the resulting matrix is correct by applying it ot the identity matrix
+  // and checking all its entries
+  const_map_ptr_t rowMap=NULL;
+  gidx_t ilower, iupper;
+  lidx_t nloc;
+  SUBR(sparseMat_get_row_map)(A,&rowMap,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  // these functions should return iflag!=0 if the map is not 'linear', i.e. has 
+  // contiguous monotonously increasing indices across partitions
+  phist_map_get_ilower(rowMap,&ilower,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      phist_map_get_iupper(rowMap,&iupper,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      phist_map_get_local_length(rowMap,&nloc,&iflag_);
+      ASSERT_EQ(0,iflag_);
+  
+  TYPE(mvec_ptr) Adense=NULL, I=NULL;
+    PHISTTEST_MVEC_CREATE(&Adense,rowMap,_N_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+    PHISTTEST_MVEC_CREATE(&I,rowMap,_N_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  
+  _ST_ *Ival=NULL,*Aval=NULL;
+  lidx_t ldI,ldA;
+  SUBR(mvec_extract_view)(I,&Ival,&ldI,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  SUBR(mvec_extract_view)(Adense,&Aval,&ldA,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  int len;
+  _ST_ val[nnzr];
+  gidx_t col[nnzr];
+  for (lidx_t i=0; i<nloc; i++)
+  {
+    gidx_t row = ilower+i;
+    for (gidx_t j=0; j<_N_; j++)
+    {
+      Ival[VIDX(i,j,ldI)]=st::zero();
+      Aval[VIDX(i,j,ldI)]=st::zero();
+    }
+    Ival[VIDX(i,row,ldI)]=st::one();
+  
+    // put A into the dense mvec structure
+    int len;
+    iflag_=PREFIX(some_rowFunc)(row,&len,col,(void*)val);
+    for (int j=0; j<len;j++)
+    {
+      Aval[VIDX(i,col[j],ldA)]=val[j];
+    }
+  }
+  // subtract A*I as computed by the kernel lib => should be 0!
+  SUBR(mvec_to_device)(Adense,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  SUBR(mvec_to_device)(I,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  SUBR(sparseMat_times_mvec)(-st::one(),A,I,st::one(),Adense,&iflag_);
+  ASSERT_EQ(0,iflag_);
+        
+  ASSERT_REAL_EQ(mt::one(),MvecEqual(Adense,st::zero()));
+#endif
+
+  SUBR(sparseMat_delete)(A,&iflag_);
+    ASSERT_EQ(0,iflag_);
+  SUBR(mvec_delete)(Adense,&iflag_);
+    ASSERT_EQ(0,iflag_);
+  SUBR(mvec_delete)(I,&iflag_);
+    ASSERT_EQ(0,iflag_);
+}
+
+TEST_F(CLASSNAME,create_I_fromRowFunc)
+{
+  if (!typeImplemented_) return;
+
+  TYPE(sparseMat_ptr) A=NULL;
+  ghost_gidx_t nnzr = 1;
+  iflag_=0; // do not ask for reordering etc.
+  SUBR(sparseMat_create_fromRowFunc)(&A,comm_, _N_,_N_,nnzr,
+                &PREFIX(idfunc),&iflag_);
+  ASSERT_EQ(0,iflag_);
+  rebuildVectors(A);
+  
+  SUBR(mvec_random)(vec1_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  
+  SUBR(sparseMat_times_mvec)(st::one(), A, vec1_,st::zero(),vec2_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  
+  ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
+  SUBR(sparseMat_delete)(A,&iflag_);
+  
+}

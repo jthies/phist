@@ -17,6 +17,10 @@
 
 using namespace ::testing;
 
+// included source code will define row functions,
+// after we had all data types (S,D,C,Z) we undef it
+#define FIRST_TIME
+
 #define _N_ 25
 #define _NV_ 1
 
@@ -41,6 +45,8 @@ using namespace ::testing;
 #include "phist_gen_z.h"
 #include "SparseMatTest_def.hpp"
 #undef CLASSNAME
+
+#undef FIRST_TIME
 
 #undef _N_
 #undef _NV_

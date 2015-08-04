@@ -3279,9 +3279,8 @@ contains
       ii = V%map%distrib(V%map%me)+i-2
       do j=V%jmin,V%jmax
         jj=j-V%jmin
-        write(*,*) ii,jj
         thread_ierr=elemFunc(ii,jj,C_LOC(V%val(j,i)))
-        write(*,*) ii,jj,V%val(j,i)
+        !write(*,*) ii,jj,V%val(j,i)
         if (thread_ierr/=0) then
 !$omp critical
           ierr=thread_ierr
