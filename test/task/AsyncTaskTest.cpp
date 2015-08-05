@@ -263,3 +263,119 @@ PHIST_TASK_WAIT(Task1,&iflag_)
 }
 
 
+// anonymous namespace
+namespace
+{
+  const int maxLevel = 4;
+  const int recursiveRespawns = 7;
+  const int totalTasks = 847;
+  bool globalErr = false;
+  int totalTasksRun = 0;
+
+  // helper class for stress test
+  class SpawnTasks
+  {
+    private:
+      PHIST_TASK_DECLARE(task_);
+      int ierr_;
+      int workId_, level_, nextLevel_;
+      bool executed_;
+      std::vector<SpawnTasks> childTasks_;
+
+      // disallow copy constructor etc
+      SpawnTasks(const SpawnTasks&) = delete;
+      SpawnTasks& operator=(const SpawnTasks&) = delete;
+
+    public:
+      // move constructor
+      SpawnTasks(SpawnTasks&&) = default;
+
+      SpawnTasks()
+      {
+        ierr_ = 0;
+        executed_ = false;
+        workId_ = -1;
+        level_ = -1;
+
+      }
+      void runTask(int workId, int level)
+      {
+        workId_ = workId;
+        level_ = level;
+        nextLevel_ = level+1;
+        if( level_ > maxLevel )
+        {
+          executed_ = true;
+          return;
+        }
+        if( level_ == maxLevel && workId_ % 2 ) // TODO: for now only use blocking tasks at the highest level!
+        {
+          PHIST_TASK_BEGIN(task_);
+          if( workId_ % 3 == 0)
+          {
+            childTasks_.resize(recursiveRespawns);
+            for(int i = 0; i < recursiveRespawns; i++)
+              childTasks_[i].runTask(i, nextLevel_);
+          }
+#pragma omp atomic update
+          totalTasksRun++;
+          if( workId_ % 4 == 1 && level_ % 4 == 2)
+            usleep(1000);
+          childTasks_.clear();
+          executed_ = true;
+          PHIST_TASK_END(&ierr_);
+        }
+        else
+        {
+          PHIST_TASK_BEGIN(task_);
+          if( workId_ % 3 == 0)
+          {
+            childTasks_.resize(recursiveRespawns);
+            for(int i = 0; i < recursiveRespawns; i++)
+              childTasks_[i].runTask(i, nextLevel_);
+          }
+#pragma omp atomic update
+          totalTasksRun++;
+          if( workId_ % 4 == 0 && level_ % 2 == 0)
+            usleep(1000);
+          executed_ = true;
+
+          // wait for child tasks
+          childTasks_.clear();
+
+          PHIST_TASK_END_NOWAIT(&ierr_);
+
+          // wait for this task to run before leaving scope!
+          PHIST_TASK_WAIT(task_,&ierr_);
+        }
+      }
+      ~SpawnTasks()
+      {
+        if( ierr_ != 0 || !executed_ )
+        {
+#pragma omp atomic update
+          globalErr |= true;
+        }
+      }
+  };
+}
+
+
+TEST_F(AsyncTaskTest, DISABLED_stressTest)
+{
+  // just start a crazy bunch of tasks and verify that all run
+  globalErr = false;
+  totalTasksRun = 0;
+  PHIST_SOUT(PHIST_INFO,"Starting tasking stress test...\n");
+  {
+    std::vector<SpawnTasks> rootTasks;
+    rootTasks.resize(recursiveRespawns);
+    for(int i = 0; i < recursiveRespawns; i++)
+      rootTasks[i].runTask(i, 0);
+    rootTasks.clear();
+  }
+  PHIST_SOUT(PHIST_INFO,"Finished tasking stress test (%d tasks executed)\n", totalTasksRun);
+  EXPECT_FALSE(globalErr);
+  EXPECT_EQ(totalTasks,totalTasksRun);
+}
+

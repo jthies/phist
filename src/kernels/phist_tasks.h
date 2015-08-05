@@ -68,87 +68,124 @@
 
 
 // glue between C++11 Lambda-functions and plain old C function pointers
-template<typename LFunc>
-void phist_execute_lambda_as_ghost_task(ghost_task_t **task, LFunc context, int* iflag, bool async)
+namespace
 {
-  // check that the task is not already allocated/in use
-  PHIST_CHK_IERR(*iflag = (*task != NULL) ? -1 : 0, *iflag);
-  if( !async )
-  {
-    // don't create a thread at all if the current task is also not an async task
-    ghost_task_t* curTask = NULL;
-    ghost_task_cur(&curTask);
-    if( curTask != NULL )
+template<typename LFunc>
+class WrapLambdaForGhostTask
+{
+  public:
+    // constructor
+    WrapLambdaForGhostTask(ghost_task_t **task, const LFunc &context, int* iflag, bool async)
     {
-      bool curTaskAsync = (curTask->nThreads == 0);
-      if( !curTaskAsync )
+      // check that the task is not already allocated/in use
+      PHIST_CHK_IERR(*iflag = (*task != NULL) ? -1 : 0, *iflag);
+      if( !async )
       {
-        // simply run the target code
-        context();
+        // don't create a thread at all if the current task is also not an async task
+        ghost_task_t* curTask = NULL;
+        ghost_task_cur(&curTask);
+        if( curTask != NULL )
+        {
+          bool curTaskAsync = (curTask->nThreads == 0);
+          if( !curTaskAsync )
+          {
+            // simply run the target code
+            context();
+            return;
+          }
+        }
+      }
+
+
+      // actually create the task and copy the context to the heap
+      {
+        int nThreads = async ? 0 : GHOST_TASK_FILL_ALL;
+        ghost_task_flags_t flags = async ? GHOST_TASK_NOT_PIN : GHOST_TASK_DEFAULT;
+        PHIST_CHK_GERR(ghost_task_create(task, nThreads, 0, void_lambda_caller, (void*) new LFunc(context), flags, NULL, 0), *iflag);
+      }
+
+      // If this task is not async, it needs resources.
+      // If the parent has none, try to be adopted by the grand-parent, etc
+      if( !async )
+      {
+        ghost_task_t *newParent = NULL;
+        ghost_task_cur(&newParent);
+        if( newParent )
+        {
+          while( newParent->nThreads == 0 )
+          {
+            if( newParent->parent == NULL )
+              break;
+
+            newParent = newParent->parent;
+          }
+        }
+        (*task)->parent = newParent;
+      }
+
+      PHIST_DEB("enqueuing C++11-lambda as GHOST task and waiting for it\n");
+      PHIST_CHK_GERR(ghost_task_enqueue(*task), *iflag);
+      if( async )
         return;
-      }
+
+      PHIST_CHK_GERR(ghost_task_wait(*task), *iflag);
+      ghost_task_destroy(*task);
+      *task = NULL;
     }
-  }
 
-  // ghost requires a task function of the form "void* f(void*)"
-  // a Lambda without capture can be converted automatically to a plain old C function pointer,
-  // but the context goes out of scope when this function is left (so we copy it to the heap and destroy it here!)
-  auto void_lambda_caller = [] (void* context) -> void* {
-    LFunc* pContext = (LFunc*)context;  // get the pointer to the context-lambda-object
-    (*pContext)();                      // actually run the target function
-    delete pContext;                    // delete the copy of the lambda-function-object
-    return NULL;                        // we do not return anything
-  };
+    // C++11 move constructor
+    WrapLambdaForGhostTask(WrapLambdaForGhostTask&&) = default;
 
-  // actually create the task and copy the context to the heap
-  int nThreads = async ? 0 : GHOST_TASK_FILL_ALL;
-  ghost_task_flags_t flags = async ? GHOST_TASK_NOT_PIN : GHOST_TASK_DEFAULT;
-  PHIST_CHK_GERR(ghost_task_create(task, nThreads, 0, void_lambda_caller, (void*) new LFunc(context), flags, NULL, 0), *iflag);
+  private:
+    // hide default constructor etc
+    WrapLambdaForGhostTask() = delete;
+    WrapLambdaForGhostTask(const WrapLambdaForGhostTask&) = delete;
+    WrapLambdaForGhostTask& operator=(const WrapLambdaForGhostTask&) = delete;
 
-  // If this task is not async, it needs resources.
-  // If the parent has none, try to be adopted by the grand-parent, etc
-  if( !async )
-  {
-    ghost_task_t *newParent = NULL;
-    ghost_task_cur(&newParent);
-    if( newParent )
+    // ghost requires a task function of the form "void* f(void*)"
+    // a Lambda without capture can be converted automatically to a plain old C function pointer,
+    // but the context goes out of scope when this function is left (so we copy it to the heap and destroy it here!)
+    static void* void_lambda_caller(void* context)
     {
-      while( newParent->nThreads == 0 )
-      {
-        if( newParent->parent == NULL )
-          break;
-
-        newParent = newParent->parent;
-      }
+      (*(LFunc*)context)();               // run the target function
+      delete (LFunc*)context;             // delete the copy of the lambda-function object
+      return NULL;                        // we do not return anything
     }
-    (*task)->parent = newParent;
+};
+
+// actually wrap a lambda for ghost and run it (creates an instance of WrapLambdaForGhostTask)
+template<typename LFunc>
+inline WrapLambdaForGhostTask<LFunc> phist_execute_lambda_as_ghost_task(ghost_task_t **task, const LFunc &context, int* iflag, bool async)
+{
+  return WrapLambdaForGhostTask<LFunc>(task,context,iflag,async);
+}
+
+// wait till a task is finished
+inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
+{
+  PHIST_CHK_IERR(*iflag = (*task != NULL) ? PHIST_SUCCESS : PHIST_WARNING, *iflag);
+
+  // warn if we wait for a blocking task from within another blocking task -> deadlock
+  ghost_task_t* curTask = NULL;
+  ghost_task_cur(&curTask);
+  if( curTask != NULL )
+  {
+    PHIST_CHK_IERR(*iflag = (*task)->nThreads > 0 && curTask->nThreads > 0 ? PHIST_WARNING : PHIST_SUCCESS, *iflag);
   }
 
-PHIST_DEB("enqueuing C++11-lambda as GHOST task and waiting for it\n");
-  PHIST_CHK_GERR(ghost_task_enqueue(*task), *iflag);
-  if( async )
-    return;
 
   PHIST_CHK_GERR(ghost_task_wait(*task), *iflag);
   ghost_task_destroy(*task);
   *task = NULL;
 }
-
-inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
-{
-  PHIST_CHK_IERR(*iflag = (*task != NULL) ? PHIST_SUCCESS : PHIST_WARNING, *iflag);
-
-  PHIST_CHK_GERR(ghost_task_wait(*task), *iflag);
-  ghost_task_destroy(*task);
-  *task = NULL;
 }
 
 // some helpful macros
 
 #define PHIST_TASK_DECLARE(taskName) ghost_task_t* taskName = NULL;
-#define PHIST_TASK_BEGIN(taskName) phist_execute_lambda_as_ghost_task(&taskName, [&]() -> void {
-#define PHIST_TASK_END(task_ierr)          }, task_ierr, false);PHIST_CHK_IERR((void)*(task_ierr),*(task_ierr));
-#define PHIST_TASK_END_NOWAIT(task_ierr)   }, task_ierr, true );PHIST_CHK_IERR((void)*(task_ierr),*(task_ierr));
+#define PHIST_TASK_BEGIN(taskName) phist_execute_lambda_as_ghost_task(&taskName, ([&]() -> void {
+#define PHIST_TASK_END(task_ierr)          }), task_ierr, false);PHIST_CHK_IERR((void)*(task_ierr),*(task_ierr));
+#define PHIST_TASK_END_NOWAIT(task_ierr)   }), task_ierr, true );PHIST_CHK_IERR((void)*(task_ierr),*(task_ierr));
 #define PHIST_TASK_WAIT(taskName,task_ierr) PHIST_CHK_IERR(phist_wait_ghost_task(&taskName,task_ierr),*(task_ierr));
 
 #define PHIST_TASK_POST_STEP(task_ierr) {ghost_task_t* t = NULL; ghost_task_cur(&t); if( t != NULL ) sem_post(t->progressSem);}
