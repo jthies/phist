@@ -129,6 +129,28 @@ class ScalarTraits< float >
     PHIST_TOUCH(x)
     return 0.0f;
     }
+
+  //! maximum value
+  //! \warning in contrast std::max and fmax actually return NaN when any argument is NaN
+  static inline scalar_t max(const scalar_t& x, const scalar_t& y)
+  {
+    if( x != x )
+      return x;
+    if( x >  y )
+      return x;
+    return y;
+  }
+    
+  //! minimum value
+  //! \warning in contrast std::max and fmax actually return NaN when any argument is NaN
+  static inline scalar_t min(const scalar_t& x, const scalar_t& y)
+  {
+    if( x != x )
+      return x;
+    if( x <  y )
+      return x;
+    return y;
+  }
     
   //! scalar 0
   static inline scalar_t zero()
@@ -250,6 +272,28 @@ class ScalarTraits< double >
     PHIST_TOUCH(x)
     return 0.0;
     }
+
+  //! maximum value
+  //! \warning in contrast std::max and fmax actually return NaN when any argument is NaN
+  static inline scalar_t max(const scalar_t& x, const scalar_t& y)
+  {
+    if( x != x )
+      return x;
+    if( x >  y )
+      return x;
+    return y;
+  }
+    
+  //! minimum value
+  //! \warning in contrast std::max and fmax actually return NaN when any argument is NaN
+  static inline scalar_t min(const scalar_t& x, const scalar_t& y)
+  {
+    if( x != x )
+      return x;
+    if( x <  y )
+      return x;
+    return y;
+  }
     
   //! scalar 0
   static inline scalar_t zero()
@@ -363,6 +407,28 @@ class ScalarTraits< std::complex<MT> >
     {
     return std::imag(x);
     }
+    
+  //! maximum value
+  //! \warning in contrast std::max and fmax actually return NaN when any argument is NaN
+  static inline scalar_t max(const scalar_t& x, const scalar_t& y)
+  {
+    if( x != x )
+      return x;
+    if( std::abs(x) >  std::abs(y) )
+      return x;
+    return y;
+  }
+    
+  //! minimum value
+  //! \warning in contrast std::max and fmax actually return NaN when any argument is NaN
+  static inline scalar_t min(const scalar_t& x, const scalar_t& y)
+  {
+    if( x != x )
+      return x;
+    if( std::abs(x) <  std::abs(y) )
+      return x;
+    return y;
+  }
     
   //! scalar 0
   static inline scalar_t zero()

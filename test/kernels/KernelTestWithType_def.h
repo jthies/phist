@@ -213,7 +213,7 @@ static _MT_ ArrayEqual(const _ST_* array, int n, int m, lidx_t lda, lidx_t strid
     {
     for (int j=0; j<M;j++)
       {
-      maxval=std::max(st::abs(array[j*lda+i]-value)/scal,maxval);
+      maxval=mt::max(st::abs(array[j*lda+i]-value)/scal,maxval);
       }
     }
   return (MT)1.0+maxval;
@@ -254,7 +254,7 @@ static _MT_ ArrayParallelReplicated(const _ST_* array, int n, int m, lidx_t lda,
     {
       MT scal= st::abs(buff[i*M+j]);
       if (scal==mt::zero()) scal=mt::one();
-      maxval=std::max(st::abs(array[j*lda+i*stride]-buff[i*M+j])/scal,maxval);
+      maxval=mt::max(st::abs(array[j*lda+i*stride]-buff[i*M+j])/scal,maxval);
     }
   }
   return (MT)1.0+maxval;
@@ -278,7 +278,7 @@ lidx_t lda1, lidx_t lda2, lidx_t stride, bool swap_n_m=false)
       MT mn = st::abs(arr1[j*lda1+i]-arr2[j*lda2+i]);
       MT pl = (st::abs(arr1[j*lda1+i])+st::abs(arr2[j*lda2+i]))*(MT)0.5;
       if (pl==mt::zero()) pl=mt::one();
-      maxval=std::max(mn/pl,maxval);
+      maxval=mt::max(mn/pl,maxval);
       //std::cout << arr1[j*lda1+i]<< "\t SAME ?? AS \t"<<arr2[j*lda2+i]<<std::endl;
     }
     //std::cout << std::endl;

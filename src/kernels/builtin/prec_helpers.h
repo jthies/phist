@@ -2,6 +2,8 @@
  * Some helpful definitions for fast parallel BLAS like functions with high precision for different blocksizes for mvec_module
  * \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
  *
+ * Parts of this file are based on the presentation in Muller et. al., "Handbook of Floating-Point Arithmetic" (2010).
+ *
 */
 
 #ifndef PREC_HELPERS_H
