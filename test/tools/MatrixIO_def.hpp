@@ -1,6 +1,5 @@
 void SUBR(read_mat)(const char* filebase,const_comm_ptr_t comm, int nglob,TYPE(sparseMat_ptr) *ptr, int* iflag)
 {
-  int _iflag;
   *ptr = NULL;
   char tpc = ::phist::ScalarTraits< _ST_ >::type_char();
   char mmfile[256],hbfile[256],binfile[256],crsfile[256];
@@ -21,20 +20,18 @@ void SUBR(read_mat)(const char* filebase,const_comm_ptr_t comm, int nglob,TYPE(s
   *iflag=0;
 
   PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", binfile);
-  SUBR(sparseMat_read_bin)(ptr,comm,binfile,&_iflag);
-  if (_iflag==PHIST_SUCCESS) return;
+  SUBR(sparseMat_read_bin)(ptr,comm,binfile,iflag);
+  if (*iflag==PHIST_SUCCESS) return;
 
   // try same format, different extension
   PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", crsfile);
-  SUBR(sparseMat_read_bin)(ptr,comm,crsfile,&_iflag);
-  if (_iflag==PHIST_SUCCESS) return;
+  SUBR(sparseMat_read_bin)(ptr,comm,crsfile,iflag);
+  if (*iflag==PHIST_SUCCESS) return;
   
   PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", mmfile);
-  SUBR(sparseMat_read_mm)(ptr,comm,mmfile,&_iflag);
-  if (_iflag==PHIST_SUCCESS) return;
+  SUBR(sparseMat_read_mm)(ptr,comm,mmfile,iflag);
+  if (*iflag==PHIST_SUCCESS) return;
 
   PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", hbfile);
-  SUBR(sparseMat_read_hb)(ptr,comm,hbfile,&_iflag);
-  *iflag=_iflag;
-  return;
+  SUBR(sparseMat_read_hb)(ptr,comm,hbfile,iflag);
 }//read_mat
