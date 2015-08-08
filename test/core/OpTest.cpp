@@ -37,36 +37,9 @@
 
 using namespace testing;
 
-#ifdef CLASSNAME
-#undef CLASSNAME
-#endif
+#define _BASENAME_ OpTest
 
 #define _N_ 25
-#define _NV_ 8
-
-#define CLASSNAME DOpTest_25_8
-
-#include "phist_gen_d.h"
-#include "OpTest_def.hpp"
-#undef CLASSNAME
-
-#ifndef PHIST_KERNEL_LIB_EPETRA
-
-#ifdef PHIST_HAVE_SP
-
-# define CLASSNAME SOpTest_25_8
-# include "phist_gen_s.h"
-# include "OpTest_def.hpp"
-# undef CLASSNAME
-
-# define CLASSNAME COpTest_25_8
-# include "phist_gen_c.h"
-# include "OpTest_def.hpp"
-# undef CLASSNAME
-#endif
-
-#define CLASSNAME ZOpTest_25_8
-#include "phist_gen_z.h"
-#include "OpTest_def.hpp"
-#endif
+#define _M_ 8
+#include "../phist_typed_test_gen.h"
 

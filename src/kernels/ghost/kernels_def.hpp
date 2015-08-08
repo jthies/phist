@@ -1029,6 +1029,7 @@ extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
   std::cout << "# local rows: "<<V->traits.nrows<<std::endl;
   std::cout << "# vectors:    "<<V->traits.ncols<<std::endl;
+  std::cout << "# stride:     "<<V->stride<<std::endl;
   char *str=NULL;
   V->string(V,&str);
   std::cout << str <<std::endl;
@@ -1042,6 +1043,7 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*iflag);
   std::cout << "# rows: "<<M->traits.nrows<<std::endl;
   std::cout << "# cols: "<<M->traits.ncols<<std::endl;
+  std::cout << "# stride: "<<M->stride<<std::endl;
   char *str=NULL;
   M->string(M,&str);
   std::cout << str <<std::endl;

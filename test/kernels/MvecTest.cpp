@@ -11,185 +11,37 @@
 #include "KernelTestWithMap.h"
 #include "KernelTestWithVectors.h"
 
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-
 using namespace testing;
+
+#define _BASENAME_ MvecTest
 
 // define MvecInitializer functions
 #define FIRST_INSTANCE
-
 #define _N_ 9
-#define _NV_ 1
-#ifdef CLASSNAME
-#undef CLASSNAME
-#endif
-#ifdef PHIST_HAVE_SP
-#define CLASSNAME SMvecTest_9_1
-#include "phist_gen_s.h"
-#include "MvecTest_def.hpp"
-
-#undef CLASSNAME
-#define CLASSNAME CMvecTest_9_1
-
-#include "phist_gen_c.h"
-#include "MvecTest_def.hpp"
-
-#endif
-
-#undef CLASSNAME
-#define CLASSNAME DMvecTest_9_1
-
-#include "phist_gen_d.h"
-#include "MvecTest_def.hpp"
-
-
-#undef CLASSNAME
-#define CLASSNAME ZMvecTest_9_1
-
-#include "phist_gen_z.h"
-#include "MvecTest_def.hpp"
-
+#define _M_ 1
+#include "../phist_typed_test_gen.h"
 #undef FIRST_INSTANCE
 
-#undef _N_
 #define _N_ 16
-#undef _NV_
-#define _NV_ 9
-
-#ifdef PHIST_HAVE_SP
-#undef CLASSNAME
-#define CLASSNAME SMvecTest_16_9
-
-#include "phist_gen_s.h"
-#include "MvecTest_def.hpp"
-
-#undef CLASSNAME
-#define CLASSNAME CMvecTest_16_9
-
-#include "phist_gen_c.h"
-#include "MvecTest_def.hpp"
-
-#endif
-
-#undef CLASSNAME
-#define CLASSNAME DMvecTest_16_9
-
-#include "phist_gen_d.h"
-#include "MvecTest_def.hpp"
+#define _M_ 9
+#include "../phist_typed_test_gen.h"
 
 
-#undef CLASSNAME
-#define CLASSNAME ZMvecTest_16_9
-
-#include "phist_gen_z.h"
-#include "MvecTest_def.hpp"
-
-
-#undef _N_
 /* 4000000 are required for my accuracy test ! */
 #ifdef PHIST_HIGH_PRECISION_KERNELS
 
 #define _N_ 4000000
-#undef _NV_
-#define _NV_ 1
+#define _M_ 1
+#include "../phist_typed_test_gen.h"
 
-#ifdef PHIST_HAVE_SP
-#undef CLASSNAME
-#define CLASSNAME SMvecTest_4M_1
-
-#include "phist_gen_s.h"
-#include "MvecTest_def.hpp"
-
-#undef CLASSNAME
-#define CLASSNAME CMvecTest_4M_1
-
-#include "phist_gen_c.h"
-#include "MvecTest_def.hpp"
-
-#endif
-
-#undef CLASSNAME
-#define CLASSNAME DMvecTest_4M_1
-
-#include "phist_gen_d.h"
-#include "MvecTest_def.hpp"
-
-
-#undef CLASSNAME
-#define CLASSNAME ZMvecTest_4M_1
-
-#include "phist_gen_z.h"
-#include "MvecTest_def.hpp"
-
-
-#undef _N_
 #define _N_ 4000000
-#undef _NV_
-#define _NV_ 2
+#define _M_ 2
+#include "../phist_typed_test_gen.h"
 
-#ifdef PHIST_HAVE_SP
-#undef CLASSNAME
-#define CLASSNAME SMvecTest_4M_2
-
-#include "phist_gen_s.h"
-#include "MvecTest_def.hpp"
-
-#undef CLASSNAME
-#define CLASSNAME CMvecTest_4M_2
-
-#include "phist_gen_c.h"
-#include "MvecTest_def.hpp"
-
-#endif
-
-#undef CLASSNAME
-#define CLASSNAME DMvecTest_4M_2
-
-#include "phist_gen_d.h"
-#include "MvecTest_def.hpp"
-
-
-#undef CLASSNAME
-#define CLASSNAME ZMvecTest_4M_2
-
-#include "phist_gen_z.h"
-#include "MvecTest_def.hpp"
-
-
-#undef _N_
 #define _N_ 4000000
-#undef _NV_
-#define _NV_ 4
+#define _M_ 4
+#include "../phist_typed_test_gen.h"
 
-#ifdef PHIST_HAVE_SP
-#undef CLASSNAME
-#define CLASSNAME SMvecTest_4M_4
-
-#include "phist_gen_s.h"
-#include "MvecTest_def.hpp"
-
-#undef CLASSNAME
-#define CLASSNAME CMvecTest_4M_4
-
-#include "phist_gen_c.h"
-#include "MvecTest_def.hpp"
-
-#endif
-
-#undef CLASSNAME
-#define CLASSNAME DMvecTest_4M_4
-
-#include "phist_gen_d.h"
-#include "MvecTest_def.hpp"
-
-
-#undef CLASSNAME
-#define CLASSNAME ZMvecTest_4M_4
-
-#include "phist_gen_z.h"
-#include "MvecTest_def.hpp"
 #endif /* PHIST_HIGH_PRECISION_KERNELS */
 
 
@@ -211,37 +63,9 @@ using namespace testing;
 #endif
 
 
-#undef _N_
 #define _N_ 237
-#undef _NV_
-#define _NV_ 4
-
-#ifdef PHIST_HAVE_SP
-#undef CLASSNAME
-#define CLASSNAME SMvecTest_237_4
-
-#include "phist_gen_s.h"
-#include "MvecTest_def.hpp"
-
-#undef CLASSNAME
-#define CLASSNAME CMvecTest_237_4
-
-#include "phist_gen_c.h"
-#include "MvecTest_def.hpp"
-
-#endif
-
-#undef CLASSNAME
-#define CLASSNAME DMvecTest_237_4
-
-#include "phist_gen_d.h"
-#include "MvecTest_def.hpp"
-
-#undef CLASSNAME
-#define CLASSNAME ZMvecTest_237_4
-
-#include "phist_gen_z.h"
-#include "MvecTest_def.hpp"
+#define _M_ 4
+#include "../phist_typed_test_gen.h"
 
 #ifdef DO_BELOS_TESTS
 #undef DO_BELOS_TESTS

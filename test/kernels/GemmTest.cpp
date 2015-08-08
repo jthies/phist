@@ -10,66 +10,75 @@
 #include "KernelTestWithVectors.h"
 #include "KernelTestWithSdMats.h"
 
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-
 using namespace testing;
 
+#define _BASENAME_ GemmTest
+
+#define _N_ 1
+#define _M_ 1
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 2
+#define _M_ 1
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 1
+#define _M_ 2
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 2
+#define _M_ 2
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 3
+#define _M_ 2
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 2
+#define _M_ 3
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 4
+#define _M_ 3
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 4
+#define _M_ 2
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 4
+#define _M_ 1
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 1
+#define _M_ 4
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 2
+#define _M_ 4
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 5
+#define _M_ 4
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 4
+#define _M_ 5
+#include "../phist_typed_test_gen.h"
+
 #define _N_ 12
-#define _NV_ 9
-#ifdef CLASSNAME
-#undef CLASSNAME
-#endif
-
-#ifdef PHIST_HAVE_SP
-#define CLASSNAME SGemmTest_12_9
-#include "phist_gen_s.h"
-#include "GemmTest_def.hpp"
-#undef CLASSNAME
-
-#define CLASSNAME CGemmTest_12_9
-#include "phist_gen_c.h"
-#include "GemmTest_def.hpp"
-#undef CLASSNAME
-
-#endif
-
-
-#define CLASSNAME DGemmTest_12_9
-#include "phist_gen_d.h"
-#include "GemmTest_def.hpp"
-#undef CLASSNAME
-
-#define CLASSNAME ZGemmTest_12_9
-#include "phist_gen_z.h"
-#include "GemmTest_def.hpp"
-#undef _N_
+#define _M_ 9
+#include "../phist_typed_test_gen.h"
 
 #define _N_ 13
-#undef _NV_
-#define _NV_ 18
-#undef CLASSNAME
+#define _M_ 18
+#include "../phist_typed_test_gen.h"
 
-#ifdef PHIST_HAVE_SP
+#define _N_ 1
+#define _M_ 19
+#include "../phist_typed_test_gen.h"
 
-#define CLASSNAME SGemmTest_13_18
-#include "phist_gen_s.h"
-#include "GemmTest_def.hpp"
-#undef CLASSNAME
+#define _N_ 4
+#define _M_ 15
+#include "../phist_typed_test_gen.h"
 
-#define CLASSNAME CGemmTest_13_18
-#include "phist_gen_c.h"
-#include "GemmTest_def.hpp"
-#undef CLASSNAME
-
-#endif
-
-#define CLASSNAME DGemmTest_13_18
-#include "phist_gen_d.h"
-#include "GemmTest_def.hpp"
-#undef CLASSNAME
-
-#define CLASSNAME ZGemmTest_13_18
-#include "phist_gen_z.h"
-#include "GemmTest_def.hpp"

@@ -813,6 +813,7 @@ foreach(label ${PHIST_TESTS})
   set_target_properties(${PRODUCT_NAME}-${label}-test PROPERTIES COMPILE_FLAGS "-O0")
   target_link_libraries(${PRODUCT_NAME}-${label}-test ${library_list})
   target_link_libraries(${PRODUCT_NAME}-${label}-test pthread)
+  target_include_directories(${PRODUCT_NAME}-${label}-test PUBLIC ${CMAKE_SOURCE_DIR}/test/${label})
   LIST(APPEND test_list ${PRODUCT_NAME}-${label}-test)
 
 endforeach()
