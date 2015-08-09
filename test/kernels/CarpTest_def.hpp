@@ -49,6 +49,8 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
     vec1b_=NULL;
     vec2b_=NULL; 
     vec3b_=NULL;
+    A_=NULL;
+    I_=NULL;
     if (typeImplemented_)
     {
       iflag_=PHIST_SPARSEMAT_OPT_CARP;
@@ -77,6 +79,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
       {
         carpImplemented_=true;
         SUBR(carp_destroy)(I_, work, &iflag_);
+        ASSERT_EQ(0,iflag_);
       }
     }
   }
@@ -88,15 +91,21 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
     KernelTestWithVectors<_ST_,_N_,_NV_>::TearDown();
     if (typeImplemented_)
     {
+      if (vec1b_!=NULL)
+      {
+        SUBR(mvec_delete)(vec1b_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      }
       if (vec2b_!=NULL)
       {
         SUBR(mvec_delete)(vec2b_,&iflag_);
+        ASSERT_EQ(0,iflag_);
       }
       if (vec3b_!=NULL)
       {
         SUBR(mvec_delete)(vec3b_,&iflag_);
+        ASSERT_EQ(0,iflag_);
       }
-      ASSERT_EQ(0,iflag_);
       ASSERT_EQ(0,delete_mat(A_));
       ASSERT_EQ(0,delete_mat(I_));
     }
@@ -202,11 +211,12 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
 
 protected:
 
-int delete_mat(TYPE(sparseMat_ptr) A)
+int delete_mat(TYPE(sparseMat_ptr) &A)
   {
   if (A!=NULL)
     {
     SUBR(sparseMat_delete)(A,&iflag_);
+    A = 0;
     }
   return iflag_;
   }
@@ -233,6 +243,8 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
           max_err = std::max(max_err,std::abs(M_raw[i*ldm+j]-M_raw[j*ldm+i]));
         }
       }
+      SUBR(sdMat_delete)(M,&iflag_);
+      ASSERT_EQ(0,iflag_);
     }
     ASSERT_NEAR(mt::one(),max_err+mt::one(),tol);
   }

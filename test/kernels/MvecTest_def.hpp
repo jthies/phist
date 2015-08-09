@@ -254,8 +254,8 @@ public:
       {
         for(int i = 0; i < nloc_; i++)
         {
-          vec2_vp_[VIDX(i,j,lda_)]=st::one()*(1./(ilower+i+1));
-          vec1_vp_[VIDX(i,j,lda_)]=st::one()*(1./(ilower+i+2));
+          vec2_vp_[VIDX(i,j,lda_)]=st::one()*((MT)1./(ilower+i+1));
+          vec1_vp_[VIDX(i,j,lda_)]=st::one()*((MT)1./(ilower+i+2));
         }
       }
       SUBR(mvec_to_device)(vec1_,&iflag_);

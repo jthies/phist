@@ -1232,7 +1232,7 @@ end if
     ssbz = dssbdz(delta,x,y,z)
     t   =  tc(alpha,x,y,z)
     
-    f = - (p*axx + px*ax + q*ayy + qy*ay +qb*azz + qbz*az) + &
+    f = - (p*axx + px*ax + q*ayy + qy*ay +qb*azz + qbz*az)   &
         + (r+rr)*ax+(s+ss)*ay+(sb+ssb)*az + (rrx+ssy+ssbz+t)*a
 
   end function f

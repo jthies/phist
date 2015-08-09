@@ -106,8 +106,8 @@ PHIST_MAIN_TASK_BEGIN
     twice = argv5 & 2;
     fusedRR = argv5 & 4;
   }
-  double pertFactorX = 1.e-3;
-  double pertFactorV = 1.e-3;
+  MT pertFactorX = 1.e-3;
+  MT pertFactorV = 1.e-3;
   if( argc >= 7 )
     pertFactorX = atof(argv[6]);
   if( argc >= 8 )

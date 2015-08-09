@@ -82,7 +82,7 @@ PHIST_MAIN_TASK_BEGIN
     {
       for(int j = 0; j < nvecs; j++)
       {
-        ST val = (ST)  ((ilower+i)%2-0.5)*cos(0.1*(ilower+i));
+        ST val = ST(  ((ilower+i)%2-0.5)*cos(0.1*(ilower+i)) );
 #ifdef PHIST_MVECS_ROW_MAJOR
         x_raw[i*ldx+j] = val;
 #else

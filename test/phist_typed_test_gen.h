@@ -40,10 +40,12 @@
 #include CLASSFILE_DEF
 #undef CLASSNAME
 
+#ifdef PHIST_HAVE_CMPLX
 #define CLASSNAME CLASSNAME_FROM_TYPE(C)
 #include "phist_gen_c.h"
 #include CLASSFILE_DEF
 #undef CLASSNAME
+#endif
 #endif
 
 #define CLASSNAME CLASSNAME_FROM_TYPE(D)
@@ -51,10 +53,12 @@
 #include CLASSFILE_DEF
 #undef CLASSNAME
 
+#ifdef PHIST_HAVE_CMPLX
 #define CLASSNAME CLASSNAME_FROM_TYPE(Z)
 #include "phist_gen_z.h"
 #include CLASSFILE_DEF
 #undef CLASSNAME
+#endif
 
 // remove definitions
 #undef CF_EVAL_QUOTE

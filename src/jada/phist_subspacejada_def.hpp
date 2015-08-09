@@ -43,7 +43,7 @@ void SUBR(sdMat_check_symmetrie)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(tmp, &tmp_raw, &lda, iflag), *iflag);
     for(int i = 0; i < m; i++)
       for(int j = 0; j < n; j++)
-        maxVal = std::max(maxVal, st::abs(tmp_raw[i*lda+j]));
+        maxVal = mt::max(maxVal, st::abs(tmp_raw[i*lda+j]));
   }
 
   PHIST_CHK_IERR(SUBR(sdMat_delete)(id, iflag), *iflag);
@@ -324,10 +324,10 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   /* check orthogonality of V, BV, Q */ \
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vful, BVful, st::zero(), Htmp, iflag), *iflag); \
-  _MT_ orthEps = std::abs(Htmp_raw[0] - st::one()); \
+  _MT_ orthEps = st::abs(Htmp_raw[0] - st::one()); \
   for(int i = 0; i < nV; i++) \
     for(int j = 0; j < nV; j++) \
-      orthEps = std::max(orthEps, std::abs(Htmp_raw[i*ldaHtmp+j] - ((i==j) ? st::one() : st::zero()))); \
+      orthEps = mt::max(orthEps, st::abs(Htmp_raw[i*ldaHtmp+j] - ((i==j) ? st::one() : st::zero()))); \
   PHIST_OUT(PHIST_INFO, "Line %d: B-orthogonality of V: %e\n", __LINE__, orthEps); \
  \
   /* check AV = A*V */ \
@@ -338,16 +338,16 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR( mvec_norm2 ) (Vtmp, normVtmp, iflag), *iflag); \
   _MT_ equalEps = normVtmp[0]; \
   for(int i = 0; i < nV; i++) \
-    equalEps = std::max(equalEps, normVtmp[i]); \
+    equalEps = mt::max(equalEps, normVtmp[i]); \
   PHIST_OUT(PHIST_INFO, "Line %d: AV - A*V: %e\n", __LINE__, equalEps); \
   /* check H = V'*A*V */ \
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vful, AVful, st::zero(), Htmp, iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( sdMat_add_sdMat ) (-st::one(), Hful, st::one(), Htmp, iflag), *iflag); \
-  equalEps = std::abs(Htmp_raw[0]); \
+  equalEps = st::abs(Htmp_raw[0]); \
   for(int i = 0; i < nV; i++) \
     for(int j = 0; j < nV; j++) \
-      equalEps = std::max(equalEps, std::abs(Htmp_raw[i*ldaHtmp+j])); \
+      equalEps = mt::max(equalEps, st::abs(Htmp_raw[i*ldaHtmp+j])); \
   PHIST_OUT(PHIST_INFO, "Line %d: H - V'*AV: %e\n", __LINE__, equalEps); \
   /* PHIST_SOUT(PHIST_INFO, "H:\n"); */ \
   /* PHIST_CHK_IERR(SUBR( sdMat_print )(H, iflag), *iflag); */ \
@@ -458,7 +458,7 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
   _MT_ absErr = mt::zero();
   for(int i = 0; i < nEig_; i++)
     for(int j = 0; j < nV; j++)
-      absErr = std::max(absErr, st::abs(Htmp_raw[i*ldaHtmp+j]));
+      absErr = mt::max(absErr, st::abs(Htmp_raw[i*ldaHtmp+j]));
   PHIST_SOUT(PHIST_INFO, "H*Q_H - Q_H*R_H: %8.4e\n", absErr);
   //PHIST_CHK_IERR(SUBR(sdMat_print)(H, iflag), *iflag);
   //PHIST_CHK_IERR(SUBR(sdMat_print)(Q_H, iflag), *iflag);
@@ -495,10 +495,10 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
   // check that the residual is orthogonal to Q (should be by construction!)
   PHIST_CHK_IERR( SUBR( sdMat_view_block ) (Htmp_, &Htmp, 0, nEig_-1, nConvEig, nEig_-1, iflag), *iflag);
   PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (st::one(), Q, t_res, st::zero(), Htmp, iflag), *iflag);
-  _MT_ equalEps = std::abs(Htmp_raw[0]);
+  _MT_ equalEps = st::abs(Htmp_raw[0]);
   for(int i = 0; i < nEig_; i++)
     for(int j = nConvEig; j < nEig_; j++)
-      equalEps = std::max(equalEps, std::abs(Htmp_raw[i*ldaHtmp+j]));
+      equalEps = mt::max(equalEps, st::abs(Htmp_raw[i*ldaHtmp+j]));
   PHIST_OUT(PHIST_INFO, "Res orthogonality wrt. Q: %e\n", equalEps);
   // calculate explicit residual
   // AQ - BQR
@@ -604,7 +604,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
         *nIter, i+1, ct::real(ev_H[i]),ct::imag(ev_H[i]));
       }
 #ifndef IS_COMPLEX
-      if( std::abs(ct::imag(ev_H[i])) > tol && blockDim == 1 )
+      if( mt::abs(ct::imag(ev_H[i])) > tol && blockDim == 1 )
       {
         PHIST_SOUT(PHIST_WARNING, "Detected possible complex-conjugate eigenpair, but blockDim == 1 (you need at least blockDim=2 to detect complex-conjugate eigenpairs correctly)!\n");
       }
@@ -613,7 +613,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       {
 #ifndef IS_COMPLEX
         // detect complex conjugate eigenvalue pairs
-        if( std::abs(ct::imag(ev_H[i])) > tol && i+1 < nEig_ )
+        if( mt::abs(ct::imag(ev_H[i])) > tol && i+1 < nEig_ )
         {
           if( ct::abs(ct::conj(ev_H[i]) - ev_H[i+1]) < sqrt(tol) && resNorm[i+1] <= tol )
             nNewConvEig+=2;
@@ -778,9 +778,9 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
         if( resNorm[nConvEig+i] > 4*lastOuterRes[nConvEig+i] )
           innerTol[nConvEig+i] = 0.1;
         if( innerTol[nConvEig+i] > mt::eps() )
-          innerTol[nConvEig+i] = std::max(mt::eps(), innerTol[nConvEig+i]*0.1);
-        innerTol[nConvEig+i] = std::max(innerTol[nConvEig+i], 0.1*tol/(mt::eps()+resNorm[nConvEig+i]));
-        innerTol[nConvEig+i] = std::min(innerTol[nConvEig+i], 0.1);
+          innerTol[nConvEig+i] = mt::max(mt::eps(), innerTol[nConvEig+i]*0.1);
+        innerTol[nConvEig+i] = mt::max(innerTol[nConvEig+i], 0.1*tol/(mt::eps()+resNorm[nConvEig+i]));
+        innerTol[nConvEig+i] = mt::min(innerTol[nConvEig+i], 0.1);
         lastOuterRes[nConvEig+i] = resNorm[nConvEig+i];
       }
 PHIST_SOUT(PHIST_INFO,"selectedRes: ");

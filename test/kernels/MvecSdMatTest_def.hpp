@@ -550,7 +550,7 @@ public:
       ASSERT_EQ(0,iflag_);
       
       // with adding to factor*(input vector)
-      ST alpha=2.0+2.0*st::cmplx_I();
+      ST alpha=(ST)2.0+(ST)2.0*st::cmplx_I();
       SUBR(mvec_put_value)(V2_,(ST)m_*alpha,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,-st::one()/alpha,V2_,&iflag_);
@@ -579,7 +579,7 @@ public:
       // fill V and W with ones
       SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(mvec_put_value)(V2_,(MT)42.0*st::one(),&iflag_);
+      SUBR(mvec_put_value)(V2_,(ST)42.0*st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_put_value)(M1_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -602,7 +602,7 @@ public:
       ASSERT_EQ(0,iflag_);
       
       // with adding to factor*(input vector)
-      ST alpha=2.0+2.0*st::cmplx_I();
+      ST alpha=(ST)2+(ST)2*st::cmplx_I();
       SUBR(mvec_put_value)(V2_,(ST)m_*alpha,&iflag_);
       ASSERT_EQ(0,iflag_);
       iflag_ = PHIST_ROBUST_REDUCTIONS;

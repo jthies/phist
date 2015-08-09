@@ -1,15 +1,29 @@
-# - Check if given C source compiles and links into an executable
-# CHECK_Fortran_SOURCE_COMPILES(<code> <var> [FAIL_REGEX <fail-regex>])
-#  <code>       - source code to try to compile, must define 'main'
-#  <var>        - variable to store whether the source code compiled
-#  <fail-regex> - fail if test output matches this regex
-# The following variables may be set before calling this macro to
-# modify the way the check is run:
+#.rst:
+# CheckFortranSourceCompiles
+# --------------------------
 #
-#  CMAKE_REQUIRED_FLAGS = string of compile command line flags
-#  CMAKE_REQUIRED_DEFINITIONS = list of macros to define (-DFOO=bar)
-#  CMAKE_REQUIRED_INCLUDES = list of include directories
-#  CMAKE_REQUIRED_LIBRARIES = list of libraries to link
+# Check if given Fortran source compiles and links into an executable::
+#
+#   CHECK_Fortran_SOURCE_COMPILES(<code> <var> [FAIL_REGEX <fail-regex>])
+#
+# The arguments are:
+#
+# ``<code>``
+#   Source code to try to compile.  It must define a PROGRAM entry point.
+# ``<var>``
+#   Variable to store whether the source code compiled.
+#   Will be created as an internal cache variable.
+# ``<fail-regex>``
+#   Fail if test output matches this regex.
+#
+# The following variables may be set before calling this macro to modify
+# the way the check is run::
+#
+#   CMAKE_REQUIRED_FLAGS = string of compile command line flags
+#   CMAKE_REQUIRED_DEFINITIONS = list of macros to define (-DFOO=bar)
+#   CMAKE_REQUIRED_INCLUDES = list of include directories
+#   CMAKE_REQUIRED_LIBRARIES = list of libraries to link
+#   CMAKE_REQUIRED_QUIET = execute quietly without messages
 
 #=============================================================================
 # Copyright 2005-2009 Kitware, Inc.
@@ -27,7 +41,7 @@
 
 
 macro(CHECK_Fortran_SOURCE_COMPILES SOURCE VAR)
-  if("${VAR}" MATCHES "^${VAR}$")
+  if(NOT DEFINED "${VAR}")
     set(_FAIL_REGEX)
     set(_key)
     foreach(arg ${ARGN})
@@ -56,7 +70,9 @@ macro(CHECK_Fortran_SOURCE_COMPILES SOURCE VAR)
     file(WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src.f90"
       "${SOURCE}\n")
 
-    message(STATUS "Performing Test ${VAR}")
+    if(NOT CMAKE_REQUIRED_QUIET)
+      message(STATUS "Performing Test ${VAR}")
+    endif()
     try_compile(${VAR}
       ${CMAKE_BINARY_DIR}
       ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src.f90
@@ -74,19 +90,22 @@ macro(CHECK_Fortran_SOURCE_COMPILES SOURCE VAR)
 
     if(${VAR})
       set(${VAR} 1 CACHE INTERNAL "Test ${VAR}")
-      message(STATUS "Performing Test ${VAR} - Success")
+      if(NOT CMAKE_REQUIRED_QUIET)
+        message(STATUS "Performing Test ${VAR} - Success")
+      endif()
       file(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log
-        "Performing C SOURCE FILE Test ${VAR} succeded with the following output:\n"
+        "Performing Fortran SOURCE FILE Test ${VAR} succeded with the following output:\n"
         "${OUTPUT}\n"
         "Source file was:\n${SOURCE}\n")
     else()
-      message(STATUS "Performing Test ${VAR} - Failed")
+      if(NOT CMAKE_REQUIRED_QUIET)
+        message(STATUS "Performing Test ${VAR} - Failed")
+      endif()
       set(${VAR} "" CACHE INTERNAL "Test ${VAR}")
       file(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log
-        "Performing C SOURCE FILE Test ${VAR} failed with the following output:\n"
+        "Performing Fortran SOURCE FILE Test ${VAR} failed with the following output:\n"
         "${OUTPUT}\n"
         "Source file was:\n${SOURCE}\n")
     endif()
   endif()
 endmacro()
-

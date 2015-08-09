@@ -72,7 +72,7 @@ PHIST_MAIN_TASK_BEGIN
   bool high_prec = false;
   if( argc >= 5 )
     high_prec = atoi(argv[4]);
-  double pertFactor = 1.e-3;
+  MT pertFactor = 1.e-3;
   if( argc >= 6 )
     pertFactor = atof(argv[5]);
 

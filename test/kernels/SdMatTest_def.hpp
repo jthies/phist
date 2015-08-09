@@ -125,7 +125,7 @@ public:
       {
         for(int j = 0; j < ncols_; j++)
         {
-          mat1_vp_[MIDX(i,j,m_lda_)] = alpha*mat1_vp_[MIDX(i,j,m_lda_)]+42.0*beta;
+          mat1_vp_[MIDX(i,j,m_lda_)] = alpha*mat1_vp_[MIDX(i,j,m_lda_)]+(ST)42.0*beta;
         }
       }
       SUBR(sdMat_to_device)(mat1_,&iflag_);
@@ -150,7 +150,7 @@ public:
       {
         for(int j = 0; j < ncols_; j++)
         {
-          mat3_vp_[MIDX(i,j,m_lda_)] = alpha*st::conj(mat1_vp_[MIDX(j,i,m_lda_)])+42.0*beta;
+          mat3_vp_[MIDX(i,j,m_lda_)] = alpha*st::conj(mat1_vp_[MIDX(j,i,m_lda_)])+(ST)42.0*beta;
         }
       }
       SUBR(sdMat_to_device)(mat3_,&iflag_);
@@ -747,7 +747,7 @@ public:
       // -- check identity * 42 --
       SUBR(sdMat_identity)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_add_sdMat)(42.*st::one(), mat1_, st::zero(), mat2_, &iflag_);
+      SUBR(sdMat_add_sdMat)((ST)42, mat1_, st::zero(), mat2_, &iflag_);
       ASSERT_EQ(0,iflag_);
       // copy to mat1_
       SUBR(sdMat_add_sdMat)(st::one(), mat2_, st::zero(), mat1_, &iflag_);

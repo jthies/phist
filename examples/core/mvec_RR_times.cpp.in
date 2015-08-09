@@ -80,7 +80,7 @@ PHIST_MAIN_TASK_BEGIN
     high_prec = argv4 & 1;
     twice = argv4 & 2;
   }
-  double pertFactor = 1.e-3;
+  MT pertFactor = 1.e-3;
   if( argc >= 6 )
     pertFactor = atof(argv[5]);
 

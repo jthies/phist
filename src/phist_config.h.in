@@ -23,6 +23,12 @@ version of the code in addition to the standard
 */
 #cmakedefine PHIST_HAVE_SP
 
+/* do you want to compile the complex valued
+version of the code (only available for some
+kernel libs) ?
+*/
+#cmakedefine PHIST_HAVE_CMPLX
+
 /* do we have support for higher precision kernel routines (Kahan-style reductions etc.)?
 */
 #cmakedefine PHIST_HIGH_PRECISION_KERNELS

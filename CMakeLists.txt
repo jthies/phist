@@ -23,8 +23,6 @@ endif()
 
 option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
 option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
-option(PHIST_ENABLE_SP "Enable single precision functions and drivers" OFF)
-option(PHIST_ENABLE_COMPLEX_TESTS "Enable unit tests for complex data types" ON)
 
 ########################################################################
 # Lists of libraries, executables, tests
@@ -237,16 +235,6 @@ CHECK_Fortran_SOURCE_COMPILES("
 " PHIST_HAVE_OPENMP_SIMD
 )
 
-##############################################################################
-# set enable precision?
-##############################################################################
-if (${PHIST_ENABLE_SP})
-  set(PHIST_HAVE_SP 1)
-endif ()
-##############################################################################
-# setup MPI
-##############################################################################
-
 if (${PHIST_ENABLE_MPI})
   set(PHIST_HAVE_MPI 1)
 #TODO - what is the best way to do this portably?
@@ -281,17 +269,17 @@ set(LOAD_TRILI_PKG,"")
 if  (PHIST_KERNEL_LIB STREQUAL "epetra")
   list(APPEND LOAD_TRILI_PKG "EpetraExt")
   set(PHIST_KERNEL_LIB_EPETRA 1)
+
 elseif  (PHIST_KERNEL_LIB STREQUAL "tpetra")
   list(APPEND LOAD_TRILI_PKG "Tpetra")
   set(PHIST_KERNEL_LIB_TPETRA 1)
+
 elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   # we already link with ghost because of the queuing system  
   set(PHIST_KERNEL_LIB_GHOST 1)
   set(PHIST_MVECS_ROW_MAJOR 1 CACHE STRING "wether multi-vectors should be stored in row-major ordering")
   set(PHIST_SDMATS_ROW_MAJOR 0 CACHE STRING "store sdMats in row-major order (not supported by our algorithms..." )
 
-#TODO: this is in fact matrix dependent and should be configured at run time, 
-#      not compile time
   set(PHIST_USE_SELL ON CACHE BOOL "Use the GHOST SELL-C-sigma sparse matrix format")
   set(PHIST_SELL_C 1 CACHE INTEGER "chunk size C for the SELL-C-sigma format")
   set(PHIST_SELL_SIGMA 1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format")
@@ -309,9 +297,6 @@ elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
     set (CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -mavx -mavx2 -mfma")
   endif()
 
-  if( PHIST_ENABLE_SP )
-    message(FATAL_ERROR "Builtin kernel lib does not support single-precision calculations!")
-  endif()
   if( NOT PHIST_HAVE_MPI )
     message(FATAL_ERROR "Builtin kernel lib requires MPI!")
   endif()
@@ -383,18 +368,46 @@ else()
   include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
 endif()
 
+##############################################################################
+# enable single precision and complex valued calculation if supported
+##############################################################################
+if( "${PHIST_KERNEL_LIB}" MATCHES "tpetra|ghost" )
+  set(PHIST_SUPPORT_SP ON)
+  set(PHIST_SUPPORT_CMPLX ON)
+else()
+  set(PHIST_SUPPORT_SP OFF)
+  set(PHIST_SUPPORT_CMPLX OFF)
+endif()
+
+option(PHIST_ENABLE_SP "Enable single precision functions and drivers" ${PHIST_SUPPORT_SP})
+option(PHIST_ENABLE_CMPLX "Enable complex valued functions and drivers" ${PHIST_SUPPORT_CMPLX})
+
+if (PHIST_ENABLE_SP)
+  if(NOT PHIST_SUPPORT_SP)
+    message(WARNING "Enabled PHIST_ENABLE_SP, but ${PHIST_KERNEL_LIB} kernel lib does not support single-precision calculations!")
+  endif()
+  set(PHIST_HAVE_SP 1)
+endif ()
+
+if (PHIST_ENABLE_CMPLX)
+  if(NOT PHIST_SUPPORT_CMPLX)
+    message(WARNING "Enabled PHIST_ENABLE_CMPLX, but ${PHIST_KERNEL_LIB} kernel lib does not support complex-valued calculations!")
+  endif()
+  set(PHIST_HAVE_CMPLX 1)
+endif()
+
 # these specific versions of type-generic drivers have to be created
-if  (PHIST_KERNEL_LIB STREQUAL "epetra" OR PHIST_KERNEL_LIB STREQUAL "builtin")
-set(TG_Types D)
-else ()
-  if (PHIST_ENABLE_SP)
-    set(TG_Types S 
-                 D 
-                 C 
-                 Z)
+if (PHIST_ENABLE_SP)
+  if (PHIST_ENABLE_CMPLX)
+    set(TG_Types S D C Z)
   else ()
-    set(TG_Types D
-                 Z)
+    set(TG_Types S D)
+  endif ()
+else ()
+  if (PHIST_ENABLE_CMPLX)
+    set(TG_Types D Z)
+  else ()
+    set(TG_Types D)
   endif ()
 endif ()
 
@@ -609,7 +622,6 @@ if( PHIST_PERFCHECK )
   endif()
   option(PHIST_PERFCHECK_REALISTIC "Switch from ideal performance predictions to more realistic ones (e.g. for views)!")
 endif()
-
 
 set(INCLUDE_FLAGS "")
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
@@ -874,17 +886,11 @@ else()
   set(PHIST_MPI_TEST_NPROCS "")
 endif()
 
-if (PHIST_ENABLE_COMPLEX_TESTS)
-  set(GTEST_FILTER "")
-else()
-  set(GTEST_FILTER "--gtest_filter=-C*:Z*")
-endif()
-
 foreach(np ${PHIST_MPI_TEST_NPROCS})
   math(EXPR TEST_OMP_NUM_THREADS "6/${np}")
   foreach(label ${PHIST_TESTS})
     set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env LSAN_OPTIONS=\"exitcode=0\" env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=guided,256
-    ./${PRODUCT_NAME}-${label}-test --gtest_death_test_style=threadsafe --gtest_output=xml:test_output_np${np}/${label}/xunit.xml ${GTEST_FILTER})
+    ./${PRODUCT_NAME}-${label}-test --gtest_death_test_style=threadsafe --gtest_output=xml:test_output_np${np}/${label}/xunit.xml)
     add_test(NAME test-${label}_np${np} COMMAND ${TEST_COMMAND})
     set_tests_properties(test-${label}_np${np} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
     set_tests_properties(test-${label}_np${np} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
