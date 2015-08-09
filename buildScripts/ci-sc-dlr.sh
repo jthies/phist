@@ -93,14 +93,6 @@ export KMP_DETERMINISTIC_REDUCTION=1 MKL_CBWR="COMPATIBLE"
 # "gcc -fsanitize=address" requires this
 ulimit -v unlimited
 
-# do not execute meaningless complex tests if the kernel lib doesn't support complex arithmetic
-# TODO: this has to be fixed as --gtest_filtered tests are still treated as run and passed
-#if [[ "$KERNELS" = "tpetra" ]]; then
-  export CMPLX_TESTS=ON
-#else
-#  export CMPLX_TESTS=OFF
-#fi
-
 ## actually build and run tests
 error=0
 
@@ -119,7 +111,6 @@ INSTALL_PREFIX=../install_${KERNELS}_${PRGENV}_Release_${FLAGS// /_}
 mkdir build_${KERNELS}_${PRGENV}_Release_${FLAGS// /_}; cd $_
 cmake -DCMAKE_BUILD_TYPE=Release  \
       -DPHIST_KERNEL_LIB=$KERNELS \
-      -DPHIST_ENABLE_COMPLEX_TESTS=${CMPLX_TESTS} \
       -DINTEGRATION_BUILD=On      \
       -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
       ${ADD_CMAKE_FLAGS} \
@@ -154,7 +145,6 @@ fi
 mkdir build_${KERNELS}_${PRGENV}_Debug_${FLAGS// /_}; cd $_
 cmake -DCMAKE_BUILD_TYPE=Debug    \
       -DPHIST_KERNEL_LIB=$KERNELS \
-      -DPHIST_ENABLE_COMPLEX_TESTS=${CMPLX_TESTS} \
       -DINTEGRATION_BUILD=On      \
       -DGCC_SANITIZE=address      \
       ${ADD_CMAKE_FLAGS} \
