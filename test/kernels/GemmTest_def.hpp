@@ -97,7 +97,7 @@ void PrintTestCase()
   // vec1'*vec2 gives a real-valued matrix as defined in mat2
   TEST_F(CLASSNAME, with_real_result)
     {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       BuildTestCase1();
 //      PrintTestCase();

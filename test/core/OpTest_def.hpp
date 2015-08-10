@@ -17,7 +17,7 @@ public:
     KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
     createOrthogQ();
     
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       sigma = new _ST_[nq_];
 
@@ -39,7 +39,7 @@ public:
 
   void createOrthogQ()
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       nq_ = std::min(3*nvec_+1,(int)nglob_-4);
 #ifdef HAVE_MPI
@@ -73,7 +73,7 @@ public:
     {
     KernelTestWithVectors<_ST_,_N_,_NV_>::TearDown();
     deleteOrthogQ();
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       if( sigma != NULL)
         delete[] sigma;
@@ -84,7 +84,7 @@ public:
 
   void deleteOrthogQ()
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       SUBR(mvec_delete)(Q_,&iflag_); Q_=NULL;
       ASSERT_EQ(0,iflag_);
@@ -95,7 +95,7 @@ public:
    */
   virtual void replaceMap(const_map_ptr_t map)
     {
-      if (this->typeImplemented_)
+      if (typeImplemented_ && !problemTooSmall_)
         {
         deleteOrthogQ();
 
@@ -127,7 +127,7 @@ public:
 #ifdef PHIST_HAVE_BELOS
   int doBelosTests(TYPE(sparseMat_ptr) A)
     {
-    if (typeImplemented_ && haveMats_)
+    if (typeImplemented_ && !problemTooSmall_ && haveMats_)
       {
       const_map_ptr_t newMap = NULL;
       PHIST_ICHK_IERR(SUBR(sparseMat_get_range_map)(A,&newMap,&iflag_),iflag_);
@@ -173,7 +173,7 @@ public:
 
   TEST_F(CLASSNAME, read_matrices) 
     {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       ASSERT_TRUE(AssertNotNull(A1_));
       ASSERT_TRUE(AssertNotNull(A2_));
@@ -188,7 +188,7 @@ public:
   TEST_F(CLASSNAME, belos_opTests) 
 #endif
     {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       ASSERT_EQ(0,doBelosTests(A1_));
       ASSERT_EQ(0,doBelosTests(A2_));

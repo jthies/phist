@@ -44,7 +44,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
     {
       VTest::SetUp();
 
-      if( typeImplemented_ )
+      if( typeImplemented_ && !problemTooSmall_ )
       {
         // read matrices
         SUBR(read_mat)(MATNAME,comm_,n_,&A_,&iflag_);
@@ -91,7 +91,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
     virtual void TearDown()
     {
       int iflag;
-      if( typeImplemented_ )
+      if( typeImplemented_ && !problemTooSmall_ )
       {
         PHIST_ENTER_FCN(__FUNCTION__);
         delete opA_;
@@ -122,7 +122,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
     void doBlockedGMRESTest(int nrhs, int nrestarts, MT tol, bool useMINRES)
     {
       PHIST_ENTER_FCN(__FUNCTION__);
-      if( typeImplemented_ )
+      if( typeImplemented_ && !problemTooSmall_ )
       {
         ASSERT_TRUE(nrhs<=m_);
         // up to now we only test the case of one matrix, one rhs here (TODO)

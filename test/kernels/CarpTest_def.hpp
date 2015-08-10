@@ -51,7 +51,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
     vec3b_=NULL;
     A_=NULL;
     I_=NULL;
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       iflag_=PHIST_SPARSEMAT_OPT_CARP;
       SUBR(create_matrix)(&A_,comm_,_MATNAME_,&iflag_);
@@ -89,7 +89,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
   virtual void TearDown()
   {
     KernelTestWithVectors<_ST_,_N_,_NV_>::TearDown();
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       if (vec1b_!=NULL)
       {
@@ -114,7 +114,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
 // the matrices may have individual maps, so we need to recreate all vectors with the specific map of the matrix!
 void rebuildVectors(TYPE(const_sparseMat_ptr) A)
 {
-  if (typeImplemented_)
+  if (typeImplemented_ && !problemTooSmall_)
   {
     // set vec1 to be a valid X, vec2 and vec3 a valid Y in Y=AX
     const_map_ptr_t range_map, domain_map;
@@ -224,7 +224,7 @@ int delete_mat(TYPE(sparseMat_ptr) &A)
 void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10*mt::eps())
   {
     _MT_ max_err=mt::zero();
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       TYPE(sdMat_ptr) M=NULL;
       SUBR(sdMat_create)(&M,_NV_,_NV_,comm_,&iflag_);
@@ -262,7 +262,7 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
 
   TEST_F(CLASSNAME, create_matrices)
   {
-    if (typeImplemented_ && carpImplemented_)
+    if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
     {
       ASSERT_TRUE(AssertNotNull(A_));
       ASSERT_TRUE(AssertNotNull(I_));
@@ -273,7 +273,7 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
   // make sure the operator is deterministic (important for CGMN)
   TEST_F(CLASSNAME, operator_is_deterministic)
   {
-    if (typeImplemented_ && carpImplemented_)
+    if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
     {
       rebuildVectors(A_);
 
@@ -326,7 +326,7 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
   // test if the kernel works correctly if b=NULL is given (should be same as b=zeros(n,1))
   TEST_F(CLASSNAME, works_with_bnull)
   {
-    if (typeImplemented_ && carpImplemented_)
+    if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
     {
       rebuildVectors(A_);
 
@@ -363,7 +363,7 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
 
   TEST_F(CLASSNAME, Identity_yields_zero)
   {
-    if (typeImplemented_ && carpImplemented_)
+    if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
     {
       // matrices may have different maps
       rebuildVectors(I_);

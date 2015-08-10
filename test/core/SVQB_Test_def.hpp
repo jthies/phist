@@ -20,7 +20,7 @@ public:
     {
     VTest::SetUp();
     MTest::SetUp();
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       SUBR(mvec_random)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -51,7 +51,7 @@ public:
 
   TEST_F(CLASSNAME, with_random_vectors) 
     {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
      //PrintVector(*cout,"SVQB_Test V",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
       SUBR(svqb)(vec2_,mat1_,nrms_,&iflag_);
@@ -85,7 +85,7 @@ public:
 
   TEST_F(CLASSNAME, with_rank_deficiency) 
     {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       if (nvec_==1)
         {
@@ -146,7 +146,7 @@ public:
 
   TEST_F(CLASSNAME, with_one_vectors) 
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       SUBR(mvec_put_value)(vec1_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);

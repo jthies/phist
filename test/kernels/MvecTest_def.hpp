@@ -35,7 +35,7 @@ public:
   virtual void SetUp()
     {
     KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
 
       // we need to somehow initialize the vectors. Here we choose
@@ -69,7 +69,7 @@ public:
 
   TEST_F(CLASSNAME, my_length)
     {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       lidx_t nloc;
       SUBR(mvec_my_length)(vec1_,&nloc,&iflag_);
@@ -80,7 +80,7 @@ public:
 
   TEST_F(CLASSNAME, num_vectors) 
     {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       int nvec;
       SUBR(mvec_num_vectors)(vec1_,&nvec,&iflag_);
@@ -92,7 +92,7 @@ public:
 
   TEST_F(CLASSNAME, put_value) 
     {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       ST val = (_ST_)42.0 + (ST)3.0*st::cmplx_I();
       SUBR(mvec_put_value)(vec1_,val,&iflag_);
@@ -111,7 +111,7 @@ public:
 
   TEST_F(CLASSNAME, dot_mvec)
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       SUBR(mvec_from_device)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -168,7 +168,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_dot_mvec_prec)
 #endif
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       SUBR(mvec_from_device)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -242,7 +242,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_dot_mvec_prec_hard)
 #endif
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       gidx_t ilower;     
       phist_map_get_ilower(map_,&ilower,&iflag_);
@@ -282,7 +282,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_dot_mvec_prec_veryhard)
 #endif
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       gidx_t ilower;     
       phist_map_get_ilower(map_,&ilower,&iflag_);
@@ -324,7 +324,7 @@ public:
 #if _N_ < 100
   TEST_F(CLASSNAME, random)
     {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       SUBR(mvec_random)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -372,7 +372,7 @@ public:
   {
     // just tests that the upload and from_device functions return 0
     // and do not crash.
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       SUBR(mvec_to_device)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -384,7 +384,7 @@ public:
   // 2-norm, nrm2=sqrt(v'v)
   TEST_F(CLASSNAME, norm2)
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       gidx_t ilower;     
       phist_map_get_ilower(map_,&ilower,&iflag_);
@@ -419,7 +419,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_norm2_precise)
 #endif
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       gidx_t ilower;     
       phist_map_get_ilower(map_,&ilower,&iflag_);
@@ -451,7 +451,7 @@ public:
   // 2-norm, nrm2=sqrt(v'v)
   TEST_F(CLASSNAME, norm2_of_viewed_cols)
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       SUBR(mvec_random)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -484,7 +484,7 @@ public:
   // X = 1*Y + 0*X = Y
   TEST_F(CLASSNAME, copy_by_axpy)
     {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       ST alpha = st::one();
       ST beta  = st::zero();
@@ -499,7 +499,7 @@ public:
   // X = 0*Y + a*X = a*X
   TEST_F(CLASSNAME, scale_by_axpy)
     {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       ST alpha = st::zero();
       ST beta  = st::prand();
@@ -524,7 +524,7 @@ public:
   // X = Y*diag(a_1,...,a_nvec) + a*X
   TEST_F(CLASSNAME, random_add)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       ST beta = st::prand();
       ST alpha= st::prand();
@@ -549,7 +549,7 @@ public:
   // X = Y*diag(a_1,...,a_nvec) + a*X
   TEST_F(CLASSNAME, random_vadd)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       ST beta = st::prand();
       ST alpha[_NV_];
@@ -577,7 +577,7 @@ public:
   // correct locations in the original one
   TEST_F(CLASSNAME, view_block)
     {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       int jmin=std::min(2,nvec_-1);
       int jmax=std::min(5,nvec_-1);
@@ -647,7 +647,7 @@ public:
   // (not knowing wether a mvec is actually a view or not!)
   TEST_F(CLASSNAME, nested_view_block)
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // first set some data of the whole array
       _ST_ outer_val = st::prand();
@@ -721,7 +721,7 @@ public:
   // copy in and out columns
   TEST_F(CLASSNAME, get_set_block)
     {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       int jmin=std::min(2,nvec_-1);
       int jmax=std::min(5,nvec_-1);
@@ -787,7 +787,7 @@ public:
 
   TEST_F(CLASSNAME, scale)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       _ST_ scale = st::prand();
 
@@ -818,7 +818,7 @@ public:
 
   TEST_F(CLASSNAME, vscale)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       _ST_ scale[_NV_];
       for(int i = 0; i < _NV_; i++)
@@ -847,7 +847,8 @@ public:
 
 TEST_F(CLASSNAME,put_func)
 {
-  if (!typeImplemented_) return;
+  if (!typeImplemented_ || problemTooSmall_)
+    return;
   SUBR(mvec_put_func)(vec1_,&PREFIX(mvecInitializer),&iflag_);
   ASSERT_EQ(0,iflag_);
   
@@ -878,7 +879,7 @@ TEST_F(CLASSNAME,put_func)
   // runs all tests from the Belos MvTraits tester
   TEST_F(CLASSNAME, belos_iface)
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       Teuchos::RCP<Belos::OutputManager<ST> > MyOM
         = Teuchos::rcp( new Belos::OutputManager<ST>() );

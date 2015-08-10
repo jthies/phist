@@ -43,7 +43,7 @@ public:
     KernelTestWithType<_ST_>::SetUp();
     KernelTestWithMap<_N_>::SetUp();
 
-      if(typeImplemented_)
+      if(typeImplemented_ && !problemTooSmall_)
       {
 
         // disable the test because TSQR will not work.
@@ -55,11 +55,11 @@ public:
         iflag_ = MPI_Allreduce(&localTooSmall, &globalTooSmall, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
         ASSERT_EQ(0,iflag_);
 #endif
-        typeImplemented_ = typeImplemented_ && globalTooSmall==0;
+        problemTooSmall_ = globalTooSmall != 0;
       }
 
 
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       // create vectors V, W and vector views for setting/checking entries
       PHISTTEST_MVEC_CREATE(&V_,this->map_,this->m_,&this->iflag_);
@@ -98,7 +98,7 @@ public:
    */
   virtual void TearDown()
     {
-    if (this->typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       SUBR(mvec_delete)(V_,&iflag_);
       SUBR(mvec_delete)(W_,&iflag_);
@@ -220,7 +220,7 @@ public:
   // check if vectors are normalized correctly after QR factorization
   TEST_F(CLASSNAME, test_with_random_vectors)
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       // fill V and W with random numbers
       SUBR(mvec_random)(V_,&iflag_);
@@ -237,7 +237,7 @@ public:
   // check if random orthogonal vectors are generated automatically if filled with one-vectors
   TEST_F(CLASSNAME, test_with_one_vectors)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       // fill V and W with one-vectors
       SUBR(mvec_put_value)(V_,st::one(),&iflag_);
@@ -258,7 +258,7 @@ public:
   //                    0  R1]
   TEST_F(CLASSNAME, random_vectors_into_viewed_R)
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill V and W with random numbers
       SUBR(mvec_random)(V_,&iflag_);
@@ -365,7 +365,7 @@ return;
   //                    0  R1]
   TEST_F(CLASSNAME, one_vectors_into_viewed_R)
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill V and W with random numbers
       SUBR(mvec_put_value)(V_,st::one(),&iflag_);
@@ -470,7 +470,7 @@ return;
   // check if we can orthogonalize W against V where V and W are views into Z=[V W].
   TEST_F(CLASSNAME, random_vectors_viewing_same_block)
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       TYPE(mvec_ptr) V_big=NULL, V=NULL, W=NULL;
       int ncols = m_+k_+13;// some extra padding to make the test more interesting
@@ -503,7 +503,7 @@ return;
   // check if we can orthogonalize W against V where V and W are views into Z=[V W].
   TEST_F(CLASSNAME, one_vectors_viewing_same_block)
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       TYPE(mvec_ptr) V_big=NULL, V=NULL, W=NULL;
       int ncols = m_+k_+13;// some extra padding to make the test more interesting

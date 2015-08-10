@@ -22,7 +22,23 @@ public:
     {
     VTest::SetUp();
     MTest::SetUp();
-    if (typeImplemented_)
+
+    if(typeImplemented_ && !problemTooSmall_)
+    {
+
+      // disable the test because TSQR will not work.
+      // This situation occurs if we have a small matrix (_N_=25, say)
+      // and many Q vectors (e.g. 10) with multiple MPI procs.
+      int globalTooSmall = _N_ < _NV_;
+#ifdef PHIST_HAVE_MPI
+      int localTooSmall = nloc_ < _NV_;
+      iflag_ = MPI_Allreduce(&localTooSmall, &globalTooSmall, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+      ASSERT_EQ(0,iflag_);
+#endif
+      problemTooSmall_ = globalTooSmall != 0;
+    }
+
+    if (typeImplemented_ && !problemTooSmall_)
       {
       SUBR(mvec_random)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -56,7 +72,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_with_random_vectors)
 #endif
     {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
 //      PrintVector(*cout,"QR_Test V",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
       SUBR(mvec_QR)(vec2_,mat1_,&iflag_);
@@ -81,7 +97,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_with_rank_deficiency) 
 #endif
     {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       if (nvec_==1)
         {
@@ -128,7 +144,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_with_one_vectors) 
 #endif
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       SUBR(mvec_put_value)(vec1_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);

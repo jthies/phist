@@ -1,6 +1,11 @@
 #ifndef PHIST_KERNEL_TEST_WITH_VECTORS_H
 #define PHIST_KERNEL_TEST_WITH_VECTORS_H
 
+#include "phist_config.h"
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
 #include "gtest/gtest.h"
 //#include "gmock/gmock.h"
 
@@ -8,10 +13,6 @@
 #include "phist_kernels.h"
 #include "KernelTestWithMap.h"
 #include "KernelTestWithType.h"
-
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
 
 using namespace testing;
 

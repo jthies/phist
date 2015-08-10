@@ -21,7 +21,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       VTest::SetUp();
       MTest::SetUp();
 
-      if( typeImplemented_ )
+      if( typeImplemented_ && !problemTooSmall_ )
       {
 
         // disable the test because TSQR will not work.
@@ -33,10 +33,10 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         iflag_ = MPI_Allreduce(&localTooSmall, &globalTooSmall, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
         ASSERT_EQ(0,iflag_);
 #endif
-        typeImplemented_ = typeImplemented_ && !globalTooSmall;
+        problemTooSmall_ = globalTooSmall != 0;
       }
 
-      if (typeImplemented_)
+      if (typeImplemented_ && !problemTooSmall_)
       {
         PHISTTEST_MVEC_CREATE(&q_,map_,_NVP_,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -71,7 +71,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
     virtual void replaceMap(const_map_ptr_t map)
     {
-      if (typeImplemented_)
+      if (typeImplemented_ && !problemTooSmall_)
       {
         // delete old vecs
         SUBR(mvec_delete)(q_,&iflag_);
@@ -108,7 +108,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     */
     virtual void TearDown() 
     {
-      if (typeImplemented_)
+      if (typeImplemented_ && !problemTooSmall_)
       {
         if( opI_ != NULL )
           delete opI_;
@@ -139,7 +139,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, create_and_delete)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       // replace map to by the map of the current matrix
       const_map_ptr_t map = NULL;
@@ -160,7 +160,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, DISABLE_create_and_delete_generalized)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       // we need fitting maps??
 
@@ -176,7 +176,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, apply_only_projection)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       // replace map to by the map of the current matrix
       const_map_ptr_t map = NULL;
@@ -220,7 +220,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, apply_shifted_projection)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       // replace map to by the map of the current matrix
       const_map_ptr_t map = NULL;
@@ -266,7 +266,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, apply_check_result)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       // replace map to by the map of the current matrix
       const_map_ptr_t map = NULL;
@@ -312,7 +312,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, apply_test_alpha)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       // replace map to by the map of the current matrix
       const_map_ptr_t map = NULL;
@@ -365,7 +365,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, apply_test_beta)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       // replace map to by the map of the current matrix
       const_map_ptr_t map = NULL;

@@ -82,7 +82,8 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
 
     void DoSchurDecompTest(eigSort_t which, _MT_ tol, bool onlyDoReorderTest)
     {
-      if (!typeImplemented_) return;
+      if( !typeImplemented_ )
+        return;
       ASSERT_EQ(nsort_.size(),nselect_.size());
       for (int c=0; c < nselect_.size(); c++)
       {
@@ -90,17 +91,17 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
         int nsort = nsort_[c];
         if( onlyDoReorderTest && nsort == 0 )
           continue;
-        PHIST_OUT(PHIST_INFO,"==================================================\n");
+        PHIST_SOUT(PHIST_INFO,"==================================================\n");
         if( which == LM ) {
-          PHIST_OUT(PHIST_INFO,"CASE LM nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
+          PHIST_SOUT(PHIST_INFO,"CASE LM nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
         } else if( which == SM ) {
-          PHIST_OUT(PHIST_INFO,"CASE SM nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
+          PHIST_SOUT(PHIST_INFO,"CASE SM nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
         } else if( which == LR ) {
-          PHIST_OUT(PHIST_INFO,"CASE LR nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
+          PHIST_SOUT(PHIST_INFO,"CASE LR nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
         } else if( which == SR ) {
-          PHIST_OUT(PHIST_INFO,"CASE SR nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
+          PHIST_SOUT(PHIST_INFO,"CASE SR nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
         }
-        PHIST_OUT(PHIST_INFO,"==================================================\n");
+        PHIST_SOUT(PHIST_INFO,"==================================================\n");
 
         SUBR(sdMat_add_sdMat)(st::one(),mat3_,st::zero(),mat1_,&this->iflag_);
         ASSERT_EQ(0,this->iflag_);
@@ -123,7 +124,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
 #endif
 
 
-        PHIST_OUT(PHIST_INFO,"Checking results...\n");
+        PHIST_SOUT(PHIST_INFO,"Checking results...\n");
         CheckSchurDecomp(which, nselect, nsort, tol);
         if( HasFatalFailure() )
           return;
@@ -147,14 +148,14 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
 
 
           // should still be a valid schur decomposition!
-          PHIST_OUT(PHIST_INFO,"Checking reordering results...\n");
+          PHIST_SOUT(PHIST_INFO,"Checking reordering results...\n");
           CheckSchurDecomp(which, nsort, nsort, tol);
 
           // check if the permutation of resNorm is correct
-          PHIST_OUT(PHIST_DEBUG,"resNorm array:\nold\t\tnew\t\tperm\n");
+          PHIST_SOUT(PHIST_DEBUG,"resNorm array:\nold\t\tnew\t\tperm\n");
           for(int i = 0; i < nsort; i++)
           {
-            PHIST_OUT(PHIST_DEBUG,"%8.4e\t%8.4e\t%d\n",resNormOrig[i],resNorm[i],permutation[i]);
+            PHIST_SOUT(PHIST_DEBUG,"%8.4e\t%8.4e\t%d\n",resNormOrig[i],resNorm[i],permutation[i]);
             ASSERT_TRUE( resNorm.at(i) == resNormOrig.at(permutation[i]) );
           }
 
@@ -196,14 +197,14 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
 #endif
       ASSERT_NEAR(mt::one(),ArrayEqual(mat4_vp_,nrows_,ncols_,m_lda_,1,st::zero()),1000*mt::eps());
 
-      PHIST_OUT(PHIST_DEBUG,"eigenvalue array:\n");
+      PHIST_SOUT(PHIST_DEBUG,"eigenvalue array:\n");
       for (int i=0;i<n_;i++)
       {
         // test the traits class on the way:
         ASSERT_REAL_EQ(ct::abs(ev_[i]),std::abs(ev_[i]));
         ASSERT_REAL_EQ(ct::real(ev_[i]),std::real(ev_[i]));
         ASSERT_REAL_EQ(ct::imag(ev_[i]),std::imag(ev_[i]));
-        PHIST_OUT(PHIST_DEBUG,"%8.4f%+8.4fi\tabs=%8.4f\n",ct::real(ev_[i]),ct::imag(ev_[i]),ct::abs(ev_[i]));
+        PHIST_SOUT(PHIST_DEBUG,"%8.4f%+8.4fi\tabs=%8.4f\n",ct::real(ev_[i]),ct::imag(ev_[i]),ct::abs(ev_[i]));
       }
 
 

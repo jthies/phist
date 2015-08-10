@@ -14,7 +14,7 @@ virtual void SetUp()
   {
   KernelTest::SetUp();
   KernelTestWithType< _ST_ >::SetUp();
-  if (this->typeImplemented_)
+  if (typeImplemented_)
     {
     SUBR(sdMat_create)(&mat1_,this->nrows_,this->ncols_,this->comm_,&this->iflag_);
     ASSERT_EQ(0,this->iflag_);
@@ -39,7 +39,7 @@ virtual void SetUp()
    */
 virtual void TearDown() 
   {
-  if (this->typeImplemented_)
+  if (typeImplemented_)
     {
     SUBR(sdMat_delete)(mat4_,&this->iflag_);
     SUBR(sdMat_delete)(mat3_,&this->iflag_);

@@ -45,7 +45,7 @@ public:
   {
     KernelTestWithType< _ST_ >::SetUp();
     KernelTestWithMap<_N_>::SetUp();
-    if (this->typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // create vectors V1 and V2, and vector views for setting/checking entries
       PHISTTEST_MVEC_CREATE(&V1_,this->map_,this->m_,&this->iflag_);
@@ -104,7 +104,7 @@ public:
    */
   virtual void TearDown()
   {
-    if (this->typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       SUBR(mvec_delete)(V1_,&iflag_);
       SUBR(mvec_delete)(V2_,&iflag_);
@@ -124,7 +124,7 @@ public:
   // check augmented kernel with random data
   TEST_F(CLASSNAME, mvecT_times_mvec_times_sdMat_inplace) 
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill W, V, M, N with random data
       SUBR(mvec_random)(W1_,&iflag_);
@@ -170,7 +170,7 @@ public:
   // check augmented kernel with random data
   TEST_F(CLASSNAME, mvecT_times_mvec_times_sdMat_inplace_self) 
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill V, M, N with random data
       SUBR(mvec_random)(V1_,&iflag_);
@@ -211,7 +211,7 @@ public:
   // check augmented kernel with random data
   TEST_F(CLASSNAME, mvec_times_sdMat_augmented) 
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill W, V, M, N with random data
       SUBR(mvec_random)(W1_,&iflag_);
@@ -256,7 +256,7 @@ public:
   // check augmented kernel with random data
   TEST_F(CLASSNAME, mvec_times_sdMat_augmented_nt) 
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill W, V, M, N with random data
       SUBR(mvec_random)(W1_,&iflag_);
@@ -301,7 +301,7 @@ public:
   // check augmented kernel with random data
   TEST_F(CLASSNAME, mvec_times_sdMat_add_mvec_times_sdMat) 
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill W, V, M, N with random data
       SUBR(mvec_random)(W1_,&iflag_);
@@ -350,7 +350,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_mvecT_times_mvec_times_sdMat_inplace_prec)
 #endif
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill W, V, M, N with random data
       SUBR(mvec_random)(W1_,&iflag_);
@@ -404,7 +404,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_mvecT_times_mvec_times_sdMat_inplace_prec_self)
 #endif
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill V, M, N with random data
       SUBR(mvec_random)(V1_,&iflag_);
@@ -453,7 +453,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_augmented_prec)
 #endif
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill W, V, M, N with random data
       SUBR(mvec_random)(W1_,&iflag_);
@@ -507,7 +507,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_add_mvec_times_sdMat_prec)
 #endif
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill W, V, M, N with random data
       SUBR(mvec_random)(W1_,&iflag_);
@@ -559,7 +559,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_add_mvec_times_sdMat_prec_N0)
 #endif
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill W, V, M, N with random data
       SUBR(mvec_random)(W1_,&iflag_);
@@ -612,7 +612,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_add_mvec_times_sdMat_prec_M0)
 #endif
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill W, V, M, N with random data
       SUBR(mvec_random)(W1_,&iflag_);

@@ -43,7 +43,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
     {
       VTest::SetUp();
 
-      if( typeImplemented_ )
+      if( typeImplemented_ && !problemTooSmall_ )
       {
       
         static const _MT_ shifts_r[10]={0.0, 0.0, 0.0, 1.0, 0.1, 0.1, 0.1,-0.1,-0.1,-0.1};
@@ -86,7 +86,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
     virtual void TearDown()
     {
       int iflag;
-      if( typeImplemented_ )
+      if( typeImplemented_ && !problemTooSmall_ )
       {
         PHIST_ENTER_FCN(__FUNCTION__);
         delete opA_;
@@ -115,7 +115,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
     void doCarpCGTest(TYPE(mvec_ptr) B, TYPE(mvec_ptr) Xr, TYPE(mvec_ptr) X_i, MT tol)
     {
       PHIST_ENTER_FCN(__FUNCTION__);
-      if( typeImplemented_ )
+      if( typeImplemented_ && !problemTooSmall_ )
       {
         int nrhs=nvec_;
         TYPE(mvec_ptr) x=NULL,b=NULL,xex=NULL;

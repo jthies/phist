@@ -1029,6 +1029,7 @@ extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
   std::cout << "# local rows: "<<V->traits.nrows<<std::endl;
   std::cout << "# vectors:    "<<V->traits.ncols<<std::endl;
+  std::cout << "# row major:  "<<(V->traits.storage & GHOST_DENSEMAT_ROWMAJOR);
   std::cout << "# stride:     "<<V->stride<<std::endl;
   char *str=NULL;
   V->string(V,&str);
@@ -1041,9 +1042,10 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
   *iflag=0;
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*iflag);
-  std::cout << "# rows: "<<M->traits.nrows<<std::endl;
-  std::cout << "# cols: "<<M->traits.ncols<<std::endl;
-  std::cout << "# stride: "<<M->stride<<std::endl;
+  std::cout << "# rows:       "<<M->traits.nrows<<std::endl;
+  std::cout << "# cols:       "<<M->traits.ncols<<std::endl;
+  std::cout << "# row major:  "<<(M->traits.storage & GHOST_DENSEMAT_ROWMAJOR);
+  std::cout << "# stride:     "<<M->stride<<std::endl;
   char *str=NULL;
   M->string(M,&str);
   std::cout << str <<std::endl;

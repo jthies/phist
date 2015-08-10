@@ -36,8 +36,9 @@
 
 using namespace phist::tpetra;
 
-
+namespace {
 static int myMpiSession=0;
+}
 
 // initialize kernel library. Should at least call MPI_Init if it has not been called
 // but is required.
@@ -173,7 +174,13 @@ extern "C" void phist_tpetra_node_create(node_t** node, const_comm_ptr_t vcomm, 
   }
   else
   {
-    PHIST_SOUT(PHIST_WARNING,"File phist_node.xml not found, using default node settings in tpetra\n");
+    // print the next message only once
+    static int globalWarningPrinted = false;
+    int warningPrinted;
+#pragma omp atomic capture
+    warningPrinted = globalWarningPrinted++;
+    int outputLevel = warningPrinted > 0 ? PHIST_VERBOSE : PHIST_WARNING;
+    PHIST_SOUT(outputLevel,"File phist_node.xml not found, using default node settings in tpetra\n");
   }
   const char* PHIST_NUM_THREADS=getenv("PHIST_NUM_THREADS");
   if (PHIST_NUM_THREADS!=NULL)

@@ -32,7 +32,7 @@ class CLASSNAME: public virtual KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
       MTest::SetUp();
       VTest::SetUp();
 
-      if( typeImplemented_ )
+      if( typeImplemented_ && !problemTooSmall_ )
       {
 
         // disable the test because TSQR will not work.
@@ -44,10 +44,10 @@ class CLASSNAME: public virtual KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
         iflag_ = MPI_Allreduce(&localTooSmall, &globalTooSmall, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
         ASSERT_EQ(0,iflag_);
 #endif
-        typeImplemented_ = typeImplemented_ && !globalTooSmall;
+        problemTooSmall_ = globalTooSmall != 0;
       }
 
-      if( typeImplemented_ )
+      if( typeImplemented_ && !problemTooSmall_ )
       {
         // read matrices
         SUBR(read_mat)("speye",comm_,nglob_,&Aeye_,&iflag_);
@@ -119,7 +119,7 @@ class CLASSNAME: public virtual KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
 
     virtual void replaceMap(const_map_ptr_t map)
     {
-      if( typeImplemented_ )
+      if( typeImplemented_ && !problemTooSmall_ )
       {
         // delete vecs
         SUBR(mvec_delete)(v0_,&iflag_); v0_ = NULL;
@@ -160,7 +160,7 @@ class CLASSNAME: public virtual KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
     virtual void TearDown()
     {
       int iflag;
-      if( typeImplemented_ )
+      if( typeImplemented_ && !problemTooSmall_ )
       {
         SUBR(mvec_delete)(v0_,&iflag);
         ASSERT_EQ(0,iflag);
@@ -228,7 +228,7 @@ class CLASSNAME: public virtual KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
     void doArnoldiTest(TYPE(const_op_ptr) opA, int blockSize = 0)
     {
       int iflag;
-      if( typeImplemented_ )
+      if( typeImplemented_ && !problemTooSmall_ )
       {
         // run simple_arnoldi
         if( blockSize > 0 )
@@ -273,7 +273,7 @@ class CLASSNAME: public virtual KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
     void doExtendedArnoldiTest(TYPE(const_op_ptr) opA, int blockSize = 0)
     {
       int iflag;
-      if( typeImplemented_ )
+      if( typeImplemented_ && !problemTooSmall_ )
       {
         // run simple_arnoldi
         if( blockSize > 0 )
@@ -333,7 +333,7 @@ class CLASSNAME: public virtual KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
 
 TEST_F(CLASSNAME, Aeye_v0ones) 
 {
-  if( typeImplemented_)
+  if( typeImplemented_ && !problemTooSmall_)
   {
     replaceMap(opAeye_->domain_map);
     ASSERT_EQ(0,iflag_);
@@ -347,7 +347,7 @@ TEST_F(CLASSNAME, Aeye_v0ones)
 #ifndef SKIP_ZERO_MAT
 TEST_F(CLASSNAME, Azero_v0ones) 
 {
-  if( typeImplemented_)
+  if( typeImplemented_ && !problemTooSmall_)
   {
     replaceMap(opAzero_->domain_map);
     ASSERT_EQ(0,iflag_);
@@ -361,7 +361,7 @@ TEST_F(CLASSNAME, Azero_v0ones)
 #endif
 TEST_F(CLASSNAME, Arand_v0ones) 
 {
-  if( typeImplemented_)
+  if( typeImplemented_ && !problemTooSmall_)
   {
     replaceMap(opArand_->domain_map);
     ASSERT_EQ(0,iflag_);
@@ -375,7 +375,7 @@ TEST_F(CLASSNAME, Arand_v0ones)
 
 TEST_F(CLASSNAME, Arand_nodiag_v0ones) 
 {
-  if( typeImplemented_)
+  if( typeImplemented_ && !problemTooSmall_)
   {
     replaceMap(opArand_nodiag_->domain_map);
     ASSERT_EQ(0,iflag_);
@@ -390,7 +390,7 @@ TEST_F(CLASSNAME, Arand_nodiag_v0ones)
 
 TEST_F(CLASSNAME, extended_Aeye_v0ones) 
 {
-  if( typeImplemented_)
+  if( typeImplemented_ && !problemTooSmall_)
   {
     replaceMap(opAeye_->domain_map);
     ASSERT_EQ(0,iflag_);
@@ -405,7 +405,7 @@ TEST_F(CLASSNAME, extended_Aeye_v0ones)
 #ifndef SKIP_ZERO_MAT
 TEST_F(CLASSNAME, extended_Azero_v0ones) 
 {
-  if( typeImplemented_)
+  if( typeImplemented_ && !problemTooSmall_)
   {
     replaceMap(opAzero_->domain_map);
     ASSERT_EQ(0,iflag_);
@@ -419,7 +419,7 @@ TEST_F(CLASSNAME, extended_Azero_v0ones)
 #endif
 TEST_F(CLASSNAME, extended_Arand_v0ones) 
 {
-  if( typeImplemented_)
+  if( typeImplemented_ && !problemTooSmall_)
   {
     replaceMap(opArand_->domain_map);
     ASSERT_EQ(0,iflag_);
@@ -433,7 +433,7 @@ TEST_F(CLASSNAME, extended_Arand_v0ones)
 
 TEST_F(CLASSNAME, extended_Arand_nodiag_v0ones) 
 {
-  if( typeImplemented_)
+  if( typeImplemented_ && !problemTooSmall_)
   {
     replaceMap(opArand_nodiag_->domain_map);
     ASSERT_EQ(0,iflag_);

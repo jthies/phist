@@ -15,7 +15,7 @@ public:
     {
     KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
     
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       read_mat(MATNAME,&A_);
       }
@@ -26,7 +26,7 @@ public:
   virtual void TearDown() 
     {
     KernelTestWithVectors<_ST_,_N_,_NV_>::TearDown();
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       ASSERT_EQ(0,delete_mat(A_));
       }
@@ -78,7 +78,7 @@ int delete_mat(TYPE(sparseMat_ptr) A)
 
   TEST_F(CLASSNAME, read_matrix) 
     {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       ASSERT_TRUE(AssertNotNull(A_));
       }
@@ -86,7 +86,7 @@ int delete_mat(TYPE(sparseMat_ptr) A)
 
   TEST_F(CLASSNAME, times_mvec) 
     {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       SUBR(mvec_random)(vec1_,&iflag_);
       SUBR(mvec_random)(vec2_,&iflag_);

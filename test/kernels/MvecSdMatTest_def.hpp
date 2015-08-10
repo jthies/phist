@@ -40,7 +40,7 @@ public:
   {
     KernelTestWithType< _ST_ >::SetUp();
     KernelTestWithMap<_N_>::SetUp();
-    if (this->typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // create vectors V1 and V2, and vector views for setting/checking entries
       PHISTTEST_MVEC_CREATE(&V1_,this->map_,this->m_,&this->iflag_);
@@ -74,7 +74,7 @@ public:
    */
   virtual void TearDown()
   {
-    if (this->typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       SUBR(mvec_delete)(V1_,&iflag_);
       SUBR(mvec_delete)(V2_,&iflag_);
@@ -130,7 +130,7 @@ public:
   // check ones(n,m)'*ones(n,k)=n*ones(m,k), and columns with 1, 2, 3...
   TEST_F(CLASSNAME, mvecT_times_mvec) 
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill V and W with ones
       SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
@@ -212,7 +212,7 @@ public:
   // check ones(n,m)'*ones(n,m)=n*ones(m,m), and columns with 1, 2, 3...
   TEST_F(CLASSNAME, mvecT_times_mvec_self) 
   {
-    if( typeImplemented_ && m_ == k_ )
+    if( typeImplemented_ && !problemTooSmall_ && m_ == k_ )
     {
       // fill V and W with ones
       SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
@@ -263,7 +263,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_mvecT_times_mvec_prec) 
 #endif
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill V and W with ones
       SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
@@ -342,7 +342,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_mvecT_times_mvec_prec_self) 
 #endif
   {
-    if( typeImplemented_ && m_ == k_ )
+    if( typeImplemented_ && !problemTooSmall_ && m_ == k_ )
     {
       // fill V and W with ones
       SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
@@ -385,7 +385,7 @@ public:
   // check ones(n,m)'*ones(n,m)=n*ones(m,m)
   TEST_F(CLASSNAME, mvecT_times_mvec_with_manual_comparison) 
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill V and W with random numbers
       SUBR(mvec_random)(V1_,&iflag_);
@@ -455,7 +455,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_mvecT_times_mvec_with_manual_comparison_prec_hard)
 #endif
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill V and W with random numbers
       SUBR(mvec_random)(V1_,&iflag_);
@@ -523,7 +523,7 @@ public:
   // and ones(n,m)*ones(m,k)-m*ones(n,k)=0
   TEST_F(CLASSNAME, mvec_times_sdMat)
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill V and W with ones
       SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
@@ -574,7 +574,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_prec)
 #endif
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill V and W with ones
       SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
@@ -624,7 +624,7 @@ public:
   // check ones(n,m)*ones(m,m)=m*ones(n,m)
   TEST_F(CLASSNAME, mvec_times_sdMat_in_place)
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill V and W with ones
       SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
@@ -661,7 +661,7 @@ public:
   // check ones(n,m)*ones(m,m)=m*ones(n,m)
   TEST_F(CLASSNAME, mvec_times_sdMat_in_place_with_random_data)
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill V and W with ones
       SUBR(mvec_random)(V1_,&iflag_);
@@ -708,7 +708,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_in_place_prec)
 #endif
   {
-    if (typeImplemented_ && m_ == k_ )
+    if (typeImplemented_ && !problemTooSmall_ && m_ == k_ )
     {
       // fill V and W with ones
       SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
@@ -737,7 +737,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_in_place_with_random_data_prec)
 #endif
   {
-    if (typeImplemented_ && m_ == k_ )
+    if (typeImplemented_ && !problemTooSmall_ && m_ == k_ )
     {
       // fill V and W with ones
       SUBR(mvec_random)(V1_,&iflag_);
@@ -772,7 +772,7 @@ public:
   // a view of them with a zero sdMat.
   TEST_F(CLASSNAME, mvec_times_sdMat_in_place_with_views)
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill V and M with ones
       SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
@@ -867,7 +867,7 @@ public:
   // random check
   TEST_F(CLASSNAME, random_mvecT_times_mvec) 
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill V and W with ones
       SUBR(mvec_random)(V1_,&iflag_);
@@ -921,7 +921,7 @@ public:
   TEST_F(CLASSNAME, DISABLED_random_mvecT_times_mvec_prec) 
 #endif
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       // fill V and W with ones
       SUBR(mvec_random)(V1_,&iflag_);
@@ -962,7 +962,7 @@ public:
   // random check with partial views of partial mvecs and sdMats
   TEST_F(CLASSNAME, random_mvecT_times_mvec_with_inside_views)
   {
-    if (typeImplemented_ && m_ > 4)
+    if (typeImplemented_ && !problemTooSmall_ && m_ > 4)
     {
       std::vector<int> off1;
       std::vector<int> off2;

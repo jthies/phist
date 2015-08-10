@@ -30,7 +30,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     VTest::SetUp();
     MTest::SetUp();
     
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       SUBR(read_mat)("speye",comm_,nglob_,&A1_,&iflag_);
 #ifndef SKIP_ZERO_MAT
@@ -63,7 +63,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
   {
     VTest::TearDown();
     MTest::TearDown();
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
 #ifndef SKIP_ZERO_MAT
       ASSERT_EQ(0,delete_mat(A0_));
@@ -80,7 +80,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 // the matrices may have individual maps, so we need to recreate all vectors with the specific map of the matrix!
 void rebuildVectors(TYPE(const_sparseMat_ptr) A)
 {
-  if (typeImplemented_ && haveMats_)
+  if (typeImplemented_ && !problemTooSmall_ && haveMats_)
   {
     // set vec1 to be a valid X, vec2 and vec3 a valid Y in Y=AX
     const_map_ptr_t range_map, domain_map;
@@ -123,7 +123,7 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
 
   void test_sparseMat_times_mvec_vadd_mvec(_ST_ alpha, TYPE(const_sparseMat_ptr) A, _ST_ shifts[_NV_], _ST_ beta)
   {
-    if( !typeImplemented_ )
+    if( !typeImplemented_ || problemTooSmall_ )
       return;
 
     // set up mvecs
@@ -153,7 +153,7 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
 
   void test_sparseMat_times_mvec_communicate(_ST_ alpha, TYPE(const_sparseMat_ptr) A, _ST_ beta)
   {
-    if( !typeImplemented_ )
+    if( !typeImplemented_ || problemTooSmall_ )
       return;
 
     // set up mvecs
@@ -179,7 +179,7 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
 
   void test_sparseMat_times_mvec_vadd_mvec_communicate(_ST_ alpha, TYPE(const_sparseMat_ptr) A, _ST_ shifts[_NV_], _ST_ beta)
   {
-    if( !typeImplemented_ )
+    if( !typeImplemented_ || problemTooSmall_ )
       return;
 
     // set up mvecs
@@ -206,7 +206,7 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
 #if _NV_ > 1
   void test_sparseMat_times_mvec_with_views(_ST_ alpha, TYPE(const_sparseMat_ptr) A, _ST_ beta, int imin, int imax)
   {
-    if( !typeImplemented_ )
+    if( !typeImplemented_ || problemTooSmall_ )
       return;
 
     // set up mvecs
@@ -256,7 +256,7 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
 
   void test_sparseMat_times_mvec_vadd_mvec_with_views(_ST_ alpha, TYPE(const_sparseMat_ptr) A, _ST_ shifts[_NV_], _ST_ beta, int imin, int imax)
   {
-    if( !typeImplemented_ )
+    if( !typeImplemented_ || problemTooSmall_ )
       return;
 
     // set up mvecs
@@ -307,7 +307,7 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
   
   void test_sparseMat_times_mvec_on_plain_data(_ST_ alpha, TYPE(const_sparseMat_ptr) A, _ST_ beta)
   {
-    if( !typeImplemented_ )
+    if( !typeImplemented_ || problemTooSmall_ )
       return;
       
     const_map_ptr_t map1,map2;
@@ -352,7 +352,8 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
 
   void test_carp_kernel(TYPE(const_sparseMat_ptr) A)
   {
-    if (!typeImplemented_) return;
+    if( !typeImplemented_ || problemTooSmall_ )
+      return;
     // ColPack has trouble with the tiny
     // local matrices that occur when partitioning a
     // 25x25 matrix (TODO: larger SparseMat tests)
@@ -486,7 +487,7 @@ int delete_mat(TYPE(sparseMat_ptr) A)
 
 _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
   {
-    if (typeImplemented_ && haveMats_)
+    if (typeImplemented_ && !problemTooSmall_ && haveMats_)
     {
       _ST_ val = random_number();
       global_sum(&val,1,mpi_comm_);
@@ -508,7 +509,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
 
   TEST_F(CLASSNAME, read_matrices) 
     {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       ASSERT_TRUE(AssertNotNull(A0_));
       ASSERT_TRUE(AssertNotNull(A1_));
@@ -520,7 +521,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
 #ifndef SKIP_ZERO_MAT
   TEST_F(CLASSNAME, A0_times_mvec) 
     {
-    if (typeImplemented_ && haveMats_)
+    if (typeImplemented_ && !problemTooSmall_ && haveMats_)
       {
       // matrices may have different maps
       rebuildVectors(A0_);
@@ -536,7 +537,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
 
   TEST_F(CLASSNAME, A1_times_mvec)
     {
-    if (typeImplemented_ && haveMats_)
+    if (typeImplemented_ && !problemTooSmall_ && haveMats_)
       {
       // matrices may have different maps
       rebuildVectors(A1_);
@@ -659,7 +660,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
 #if(_NV_>1)
   TEST_F(CLASSNAME, A1_times_mvec_using_two_views_of_the_same_vec)
   {
-    if (typeImplemented_ && A1_!=NULL)
+    if (typeImplemented_ && !problemTooSmall_ && A1_!=NULL)
     {
       // matrices may have different maps
       rebuildVectors(A1_);
@@ -731,7 +732,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
 #ifndef SKIP_ZERO_MAT
   TEST_F(CLASSNAME, shift_mvec)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       // matrices may have different maps
       rebuildVectors(A4_);
@@ -833,7 +834,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
   TEST_F(CLASSNAME, A2_precalc_result)
 #endif
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       // matrices may have different maps
       rebuildVectors(A2_);
@@ -1277,7 +1278,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
 #if _NV_ >= 4
   TEST_F(CLASSNAME, sparseMat_times_mvec_random_with_same_vec_views_0_1__2_3)
   {
-    if( !typeImplemented_ )
+    if( !typeImplemented_ || problemTooSmall_ )
       return;
 
     // matrices may have different maps
@@ -1340,7 +1341,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
 
   TEST_F(CLASSNAME, sparseMat_times_mvec_vadd_mvec_random_with_same_vec_views_0_1__2_3)
   {
-    if( !typeImplemented_ )
+    if( !typeImplemented_ || problemTooSmall_ )
       return;
 
     // matrices may have different maps
@@ -1429,7 +1430,8 @@ int PREFIX(some_rowFunc)(ghost_gidx_t row, ghost_lidx_t *len, ghost_gidx_t* cols
 
 TEST_F(CLASSNAME,create_A_fromRowFunc)
 {
-  if (!typeImplemented_) return;
+  if( !typeImplemented_ || problemTooSmall_ )
+    return;
 
   TYPE(sparseMat_ptr) A=NULL;
   ghost_lidx_t nnzr = 5;
@@ -1519,7 +1521,8 @@ TEST_F(CLASSNAME,create_A_fromRowFunc)
 
 TEST_F(CLASSNAME,create_I_fromRowFunc)
 {
-  if (!typeImplemented_) return;
+  if( !typeImplemented_ || problemTooSmall_ )
+    return;
 
   TYPE(sparseMat_ptr) A=NULL;
   ghost_gidx_t nnzr = 1;

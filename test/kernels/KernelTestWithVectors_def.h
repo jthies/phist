@@ -89,7 +89,8 @@ virtual void SetUp()
   {
   KernelTestWithType< ST >::SetUp();
   mem1_=NULL; mem2_=NULL; mem3_=NULL;
-  if (typeImplemented_)
+  // GCC 4.9 doesn't compile this without this->, compiler bug?
+  if (this->typeImplemented_ && !this->problemTooSmall_)
     {
     lidx_t lda;
     // vectors created with the same function should get the same stride (lda)
@@ -102,7 +103,8 @@ virtual void SetUp()
    */
 virtual void TearDown() 
   {
-  if (this->typeImplemented_)
+  // GCC 4.9 doesn't compile this without this->, compiler bug?
+  if (this->typeImplemented_ && !this->problemTooSmall_)
     {
     deleteVecs();
     KernelTestWithMap<_Nglob>::TearDown();
@@ -114,7 +116,8 @@ virtual void TearDown()
    */
 virtual void replaceMap(const_map_ptr_t map)
   {
-    if (this->typeImplemented_)
+  // GCC 4.9 doesn't compile this without this->, compiler bug?
+    if (this->typeImplemented_ && !this->problemTooSmall_)
       {
       deleteVecs();
 

@@ -20,7 +20,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       VTest::SetUp();
       MTest::SetUp();
 
-      if (typeImplemented_)
+      if (typeImplemented_ && !problemTooSmall_)
       {
         SUBR(read_mat)(MATNAME,comm_,nglob_,&A_,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -83,7 +83,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     {
       MTest::TearDown();
       VTest::TearDown();
-      if (typeImplemented_)
+      if (typeImplemented_ && !problemTooSmall_)
       {
         SUBR(jadaOp_delete)(jdOp_,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -159,7 +159,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, create_and_delete)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
       SUBR(jadaCorrectionSolver_create)(&solver, 3, map_, GMRES, _MAXBAS_, &iflag_);
@@ -171,7 +171,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, selftest)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       std::vector<_MT_> tol(_NV_, VTest::releps());
       checkResiduals(&tol[0]);
@@ -180,7 +180,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, single)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
       SUBR(jadaCorrectionSolver_create)(&solver, 1, map_, GMRES, _MAXBAS_, &iflag_);
@@ -222,7 +222,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, all_at_once)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
       SUBR(jadaCorrectionSolver_create)(&solver, _NV_, map_, GMRES, _MAXBAS_, &iflag_);
@@ -253,7 +253,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, one_after_another)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
       SUBR(jadaCorrectionSolver_create)(&solver, 1, map_, GMRES, _MAXBAS_, &iflag_);
@@ -284,7 +284,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, pipelined_2)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
       SUBR(jadaCorrectionSolver_create)(&solver, 2, map_, GMRES, _MAXBAS_, &iflag_);
@@ -315,7 +315,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, pipelined_4)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
       SUBR(jadaCorrectionSolver_create)(&solver, 4, map_, GMRES, _MAXBAS_, &iflag_);

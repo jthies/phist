@@ -15,7 +15,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
     {
     KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
     
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
       {
       if( nglob_ == 20 )
       {
@@ -42,7 +42,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
   virtual void TearDown()
   {
     KernelTestWithVectors<_ST_,_N_,_NV_>::TearDown();
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       ASSERT_EQ(0,delete_mat(A1_));
     }
@@ -51,7 +51,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
 // the matrices may have individual maps, so we need to recreate all vectors with the specific map of the matrix!
 void rebuildVectors(TYPE(const_sparseMat_ptr) A)
 {
-  if (typeImplemented_ && haveMats_)
+  if (typeImplemented_ && !problemTooSmall_ && haveMats_)
   {
     // set vec1 to be a valid X, vec2 and vec3 a valid Y in Y=AX
     const_map_ptr_t range_map, domain_map;
@@ -108,7 +108,7 @@ int delete_mat(TYPE(sparseMat_ptr) A)
 
   TEST_F(CLASSNAME, read_matrices) 
   {
-    if (typeImplemented_)
+    if (typeImplemented_ && !problemTooSmall_)
     {
       ASSERT_TRUE(AssertNotNull(A1_));
     }
@@ -116,7 +116,7 @@ int delete_mat(TYPE(sparseMat_ptr) A)
 
   TEST_F(CLASSNAME, A1_probe_symmetry)
   {
-    if (typeImplemented_ && haveMats_)
+    if (typeImplemented_ && !problemTooSmall_ && haveMats_)
     {
 
       // matrices may have different maps

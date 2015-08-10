@@ -20,7 +20,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       VTest::SetUp();
       MTest::SetUp();
 
-      if (typeImplemented_)
+      if (typeImplemented_ && !problemTooSmall_)
       {
         SUBR(read_mat)(MATNAME,comm_,nglob_,&A_,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -75,7 +75,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     {
       MTest::TearDown();
       VTest::TearDown();
-      if (typeImplemented_)
+      if (typeImplemented_ && !problemTooSmall_)
       {
         SUBR(jadaOp_delete)(jdOp_,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -102,7 +102,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, create_and_delete)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(blockedGMRESstate_ptr) state[_NV_];
       SUBR(blockedGMRESstates_create)(state, _NV_, map_, _MAXBAS_, &iflag_);
@@ -116,7 +116,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, reset_and_updateSol_single_without_iteration)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(blockedGMRESstate_ptr) state[_NV_];
       SUBR(blockedGMRESstates_create)(state, _NV_, map_, _MAXBAS_, &iflag_);
@@ -173,7 +173,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, reset_and_updateSol_vector_without_iteration)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(blockedGMRESstate_ptr) state[_NV_];
       SUBR(blockedGMRESstates_create)(state, _NV_, map_, _MAXBAS_, &iflag_);
@@ -227,7 +227,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, iterate_with_exact_initial_guess)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(blockedGMRESstate_ptr) state[_NV_];
       SUBR(blockedGMRESstates_create)(state, _NV_, map_, _MAXBAS_, &iflag_);
@@ -298,7 +298,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, iterate_with_single_exact_initial_guess)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(blockedGMRESstate_ptr) state[_NV_];
       SUBR(blockedGMRESstates_create)(state, _NV_, map_, _MAXBAS_, &iflag_);
@@ -355,7 +355,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       // resnorm should be set now
       for(int i = 0; i < _NV_; i++)
       {
-        PHIST_OUT(PHIST_INFO,"resNorm[%d] = %8.4e\n", i, resNorm[i]);
+        PHIST_SOUT(PHIST_INFO,"resNorm[%d] = %8.4e\n", i, resNorm[i]);
         ASSERT_TRUE(resNorm[i] >= mt::zero());
       }
       ASSERT_NEAR(mt::one(), resNorm[exactGuessAt], 10*VTest::releps());
@@ -377,7 +377,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
   TEST_F(CLASSNAME, iterate_a_bit)
   {
-    if( typeImplemented_ )
+    if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(blockedGMRESstate_ptr) state[_NV_];
       SUBR(blockedGMRESstates_create)(state, _NV_, map_, _MAXBAS_, &iflag_);

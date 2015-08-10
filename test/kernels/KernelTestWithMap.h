@@ -15,6 +15,7 @@ public:
 virtual void SetUp()
 {
   KernelTest::SetUp();
+  problemTooSmall_ = mpi_size_ > nglob_;
   map_ptr_t map;
   phist_map_create(&map,comm_,nglob_,&iflag_);
   ASSERT_EQ(0,iflag_);
@@ -54,6 +55,7 @@ static const gidx_t nglob_=_Nglob;
 lidx_t nloc_;
 const_map_ptr_t map_;
 bool deleteMap_;
+bool problemTooSmall_;
 };
 
 template<gidx_t n>
