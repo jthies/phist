@@ -14,8 +14,8 @@ public:
    */
   virtual void SetUp()
     {
-    KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
     KernelTestWithSdMats<_ST_,_NV_,_NV_>::SetUp();
+    KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
     }
 
   /*! Clean up.
