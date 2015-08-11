@@ -373,7 +373,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   // I think the sdMat should not have a context
   ghost_densemat_create(&result,NULL,dmtraits);
   ST zero = st::zero();
-  result->fromScalar(result,&zero);
+  PHIST_CHK_GERR(result->fromScalar(result,&zero),*iflag);
   *vM=(TYPE(sdMat_ptr))result;
 PHIST_TASK_END(iflag);
 }
@@ -685,7 +685,7 @@ PHIST_TASK_BEGIN(ComputeTask)
 #else
   PHIST_TOUCH(jmax);
 #endif  
-  Vblock->fromVec(Vblock,V,(ghost_lidx_t)0,(ghost_lidx_t)jmin);
+  PHIST_CHK_GERR(Vblock->fromVec(Vblock,V,(ghost_lidx_t)0,(ghost_lidx_t)jmin),*iflag);
 PHIST_TASK_END(iflag);
 }
 
@@ -777,7 +777,7 @@ PHIST_CHK_IERR(SUBR(mvec_my_length)(Vblock,&nr_vb,iflag),*iflag);
   }
 #endif
   // copy the data
-  Vcols->fromVec(Vcols,Vblock,0,0);
+  PHIST_CHK_GERR(Vcols->fromVec(Vcols,Vblock,0,0),*iflag);
   // delete the view
   Vcols->destroy(Vcols);
 PHIST_TASK_END(iflag);
@@ -872,7 +872,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     return;
   }
   //TODO: check for overlapping data regions?
-  Mblock->fromVec(Mblock,M,imin,jmin);
+  PHIST_CHK_GERR(Mblock->fromVec(Mblock,M,imin,jmin),*iflag);
 PHIST_TASK_END(iflag);
 }
 
@@ -891,7 +891,7 @@ PHIST_TASK_BEGIN(ComputeTask)
 
   ghost_densemat_t* Mb_view=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(vM,(TYPE(sdMat_ptr)*)&Mb_view,imin,imax,jmin,jmax,iflag),*iflag);
-  Mb_view->fromVec(Mb_view,Mblock,0,0);
+  PHIST_CHK_GERR(Mb_view->fromVec(Mb_view,Mblock,0,0),*iflag);
   Mb_view->destroy(Mb_view);
 PHIST_TASK_END(iflag);
 }
@@ -1029,7 +1029,7 @@ extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
   std::cout << "# local rows: "<<V->traits.nrows<<std::endl;
   std::cout << "# vectors:    "<<V->traits.ncols<<std::endl;
-  std::cout << "# row major:  "<<(V->traits.storage & GHOST_DENSEMAT_ROWMAJOR);
+  std::cout << "# row major:  "<<(V->traits.storage & GHOST_DENSEMAT_ROWMAJOR)<<std::endl;
   std::cout << "# stride:     "<<V->stride<<std::endl;
   char *str=NULL;
   V->string(V,&str);
@@ -1044,7 +1044,7 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,M,vM,*iflag);
   std::cout << "# rows:       "<<M->traits.nrows<<std::endl;
   std::cout << "# cols:       "<<M->traits.ncols<<std::endl;
-  std::cout << "# row major:  "<<(M->traits.storage & GHOST_DENSEMAT_ROWMAJOR);
+  std::cout << "# row major:  "<<(M->traits.storage & GHOST_DENSEMAT_ROWMAJOR)<<std::endl;
   std::cout << "# stride:     "<<M->stride<<std::endl;
   char *str=NULL;
   M->string(M,&str);
@@ -1490,6 +1490,11 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE
 #else
   char trans[]="T";
 #endif  
+  _ST_ mybeta = st::zero();
+  int rank = 0;
+  PHIST_CHK_IERR(*iflag = MPI_Comm_rank(V->context->mpicomm,&rank),*iflag);
+  if( rank == 0 )
+    mybeta = beta;
 
     lidx_t ncC = C->traits.ncols;
 
@@ -1506,7 +1511,7 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE
   */
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
-  PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
+  PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&mybeta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_TASK_END(iflag);
 
 PHIST_TASK_POST_STEP(iflag);
