@@ -302,7 +302,24 @@ elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
     set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -mavx -mavx2 -mfma")
     set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -mavx -mavx2 -mfma")
     set (CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -mavx -mavx2 -mfma")
-  endif()
+
+    find_package (MPACK) 
+    if (MPACK_FOUND)
+      include_directories(${MPACK_INCLUDE_DIRS})
+      link_directories(${MPACK_LIBRARY_DIRS})
+      message(STATUS "TROET ${MPACK_INCLUDE_DIRS}")
+      message(STATUS "mpack found, enabled high precision lapack!")
+      if (MPACK_QD_FOUND)
+        set(PHIST_HAVE_MPACK_QD 1)
+      else()
+        message(WARNING "found MPACK, but not MPACK_QD, which is the only supported implementation right now")
+      endif()
+    else()
+      message(WARNING "did not find mlapack_dd library, as you are compiling with high precision kernels, you may want to provide this library."
+                      "It can be obtained from http://mplapack.sourceforge.net/ and should be compiled with support for double-double (dd) core operations."
+                      "If it is already installed and you want to use it, set MPACK_DIR to provide a hint where it can be found.")
+    endif()
+endif()
 
   if( NOT PHIST_HAVE_MPI )
     message(FATAL_ERROR "Builtin kernel lib requires MPI!")
@@ -455,6 +472,9 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
   if(PHIST_KERNEL_LIB_BUILTIN_AVX2_PREC_KERNELS)
     set (PHIST_KERNEL_SOURCE ${PHIST_KERNEL_SOURCE}
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/prec_helpers.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/prec_kernels_d.c
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/prec_kernels.cpp
+                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/mlapack_wrapper.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_kernels_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/dot_kernels_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB_prec.c
@@ -535,6 +555,9 @@ target_link_libraries(phist_core                             phist_kernels_${PHI
 target_link_libraries(phist_solvers               phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 target_link_libraries(phist_support phist_solvers phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 
+if (MPACK_FOUND)
+      target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} ${MPACK_LIBRARIES})
+endif()
 if (ESSEX-PHYSICS_FOUND)
   target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} ${ESSEX-PHYSICS_LIBRARIES})
 endif()

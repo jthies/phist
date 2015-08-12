@@ -1,3 +1,4 @@
+
 static void SUBR(orthogrr_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* rank, int* iflag)
 {
   int m = 0;
@@ -11,6 +12,19 @@ static void SUBR(orthogrr_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* 
     PHIST_CHK_IERR(SUBR(sdMat_identity)(R_1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(RR,perm,*rank,R_1,iflag),*iflag);
   }
+//PHIST_CHK_IERR(SUBR(sdMat_print)(R_1,iflag),*iflag);
+}
+
+static void SUBR(orthogrr_svqb)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* rank, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  // compute B s.t. V*B=Q is orthogonal, with RR=V'V on input
+  // and inv(B) on output, and R_1=B on output.
+  
+  // we first copy the input matrix because B and B_1 are exchanged in the definition of
+  // the kernel routine sdMat_qb:
+  PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),RR,st::zero(),R_1,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_qb)(R_1,RR,rank,iflag),*iflag);
 //PHIST_CHK_IERR(SUBR(sdMat_print)(R_1,iflag),*iflag);
 }
 
@@ -57,7 +71,11 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
       // so calculate first "R" factor
       int Vrank = 0;
       PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),VtV,st::zero(),R,iflag),*iflag);
+#ifdef ORTHOGRR_USE_SVQB
+      PHIST_CHK_IERR(SUBR(orthogrr_svqb)(R,R_1,&Vrank,iflag),*iflag);
+#else
       PHIST_CHK_IERR(SUBR(orthogrr_cholrr)(R,R_1,&Vrank,iflag),*iflag);
+#endif
       rank = std::min(rank,Vrank);
 
       // V <- V*R_1 and WtV <- W'*V

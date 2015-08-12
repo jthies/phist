@@ -203,6 +203,18 @@ void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* iflag);
 void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) M, _ST_** M_raw,
         lidx_t* lda, int* iflag);
 
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+//! extract pointer to least significant bits of double-double matrix elements,
+//! this obviously makes some assumptions on how the high precision arithmetic is
+//! implemented by the kernel lib, but as we will only support these features with
+//! builtin and ghost kernels for now, it's the easiest way of providing some
+//! common implemetations for e.g. lapack-like routines in higher precision.
+//!
+//! NOTE: the array is assumed to have the same storage layout as the one obtained by
+//! sdMat_extract_view and should be synchronized with accelerator data by sdMat_from/to_device
+void SUBR(sdMat_extract_error)(TYPE(sdMat_ptr) M, _ST_** MC_raw, int* iflag);
+#endif
+
 //@}
 
 //! \name data transfer between host and device (for kernel libs that support GPUs).
@@ -455,23 +467,6 @@ void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
                                           TYPE(const_sdMat_ptr) W, 
                               _ST_ beta,        TYPE(sdMat_ptr) C,
                               int* iflag);
-
-//! cholesky decomposition. \ingroup sdmat
-
-//! stable cholesky factorization with pivoting and rank-recognition for hpd. matrix
-//! returns permuted lower triangular cholesky factor M for M <- M*M'
-void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, int* iflag);
-
-//! backward substitution. \ingroup sdmat
-
-//! backward substitution for pivoted upper triangular cholesky factor
-void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag);
-
-//! forward substitution. \ingroup sdmat
-
-//! forward substitution for pivoted conj. transposed upper triangular cholesky factor
-void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag);
-
 
 //! \addtogroup crsmat
 //@{

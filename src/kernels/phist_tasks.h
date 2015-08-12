@@ -133,8 +133,10 @@ class WrapLambdaForGhostTask
       *task = NULL;
     }
 
+#if 0
     // C++11 move constructor
     WrapLambdaForGhostTask(WrapLambdaForGhostTask&&) = default;
+#endif
 
   private:
     // hide default constructor etc

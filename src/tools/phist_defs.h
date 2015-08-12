@@ -31,5 +31,6 @@ code alike */
 #define PHIST_CAUGHT_EXCEPTION -77
 #define PHIST_BAD_CAST -88
 #define PHIST_NOT_IMPLEMENTED -99
+#define PHIST_DEPRECATED +99
 
 #endif

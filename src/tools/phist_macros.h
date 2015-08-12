@@ -90,7 +90,10 @@
 //! prints an error message and returns if non-zero (to be used in void functions)
 #ifdef __cplusplus
 #define PHIST_CHK_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
-try {func; if (FLAG!=PHIST_SUCCESS) { \
+try {func; if (FLAG==PHIST_DEPRECATED) { \
+PHIST_OUT(PHIST_WARNING,"Warning: function %s is DEPRECATED!\n (file %s, line %d)\n",(#func),(__FILE__),(__LINE__)); \
+FLAG=PHIST_SUCCESS; \
+} else if (FLAG!=PHIST_SUCCESS) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return;}} \
 catch (std::exception e) {PHIST_OUT(PHIST_ERROR,"Exception caught in call %s (%s)\n(file %s, line %d)\n",\
@@ -103,7 +106,10 @@ catch (...) {PHIST_OUT(PHIST_ERROR,"unknown Exception caught in call %s\n(file %
 (#func),(__FILE__),(__LINE__)); (FLAG)=-77; return;}}
 #else
 #define PHIST_CHK_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
-{func; if (FLAG!=PHIST_SUCCESS) { \
+{func; if (FLAG==PHIST_DEPRECATED) { \
+PHIST_OUT(PHIST_WARNING,"Warning: function %s is DEPRECATED!\n (file %s, line %d)\n",(#func),(__FILE__),(__LINE__)); \
+FLAG=PHIST_SUCCESS; \
+} else if (FLAG!=PHIST_SUCCESS) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
 (FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return;}}}
 #endif
@@ -145,9 +151,11 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 
 //! like PHIST_CHK_IERR, but returns iflag (to be used in int functions returning an error code)
 #define PHIST_ICHK_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
-{func; if (FLAG!=PHIST_SUCCESS) { \
+{func; if ((FLAG)!=PHIST_SUCCESS && (FLAG)!=PHIST_DEPRECATED) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
-(FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return FLAG;}}}
+(FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); return FLAG;} \
+else if (FLAG==PHIST_DEPRECATED) { FLAG=PHIST_SUCCESS; \
+PHIST_OUT(PHIST_WARNING,"Warning, function %s is DEPRECATED.\n(file %s, line %d)\n",(#func),(__FILE__),(__LINE__));}}}
 
 #define PHIST_ICHK_NEG_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
 {func; if (FLAG<PHIST_SUCCESS) { \
@@ -157,9 +165,12 @@ PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line 
 #ifdef __cplusplus
 //! like PHIST_CHK_IERR, but throw an exception on non-zero iflag
 #define PHIST_TCHK_IERR(func,FLAG) { PHIST_TIMEMONITOR_PERLINE_MACRO \
-{func; if (FLAG!=PHIST_SUCCESS) { \
+{func; if (FLAG!=PHIST_SUCCESS && FLAG!=PHIST_DEPRECATED) { \
 PHIST_OUT(PHIST_ERROR,"Error code %d (%s) returned from call %s\n(file %s, line %d)\n",\
-(FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); throw FLAG;}}}
+(FLAG),(phist_retcode2str(FLAG)),(#func),(__FILE__),(__LINE__)); throw FLAG;} \
+else if (FLAG==PHIST_DEPRECATED) { FLAG=PHIST_SUCCESS; \
+PHIST_OUT(PHIST_WARNING,"Warning, function %s is DEPRECATED.\n(file %s, line %d)\n",(#func),__FILE__,__LINE__);}}}
+
 #endif
 
 #if PHIST_OUTLEV>=PHIST_DEBUG

@@ -80,6 +80,13 @@
 !                                 and periodic BC                                       
 !                                 (Schenk/Bollhoefer/Roemer SIAM Review 2005)           
 !                                                                                       
+!=======================================================================================
+! (D) nonlinear scalar PDEs
+!
+! you should call MATPDE3D_setSol before rowFunc or rhsFunc. The PDEs are not implemented
+! or defined yet, I imgine e.g.
+! Du + alpha*d/dx(u^beta) = F, 1<=beta, 0<=alpha
+!
 ! The right-hand sides F that follow from prescribed analytic solutions U (in           
 ! e.g. the A and B benchmarks) are not implemented, if we want to assess accuracy we    
 ! should do that, but for now we just use b=A*x for some given x.                       
@@ -125,6 +132,17 @@ module matpde3d_module
   integer, parameter :: PROB_C8=INT(Z'C8')
   integer, parameter :: PROB_C9=INT(Z'C9')
 
+  integer, parameter :: PROB_D0=INT(Z'D0')
+  integer, parameter :: PROB_D1=INT(Z'D1')
+  integer, parameter :: PROB_D2=INT(Z'D2')
+  integer, parameter :: PROB_D3=INT(Z'D3')
+  integer, parameter :: PROB_D4=INT(Z'D4')
+  integer, parameter :: PROB_D5=INT(Z'D5')
+  integer, parameter :: PROB_D6=INT(Z'D6')
+  integer, parameter :: PROB_D7=INT(Z'D7')
+  integer, parameter :: PROB_D8=INT(Z'D8')
+  integer, parameter :: PROB_D9=INT(Z'D9')
+
   ! location of boundaries in the BNDRY array
   integer, parameter :: BOTTOM=1
   integer, parameter :: TOP=2
@@ -139,22 +157,29 @@ module matpde3d_module
   !! 1: Anderson model, -1 on off-diagonals and random numbers on diagonal
   !! 2: convection-diffusion problem with heterogenous coefficients,
   !!    
-  integer :: problem
+  integer, save :: problem
   
-  integer :: BNDRY( 6 )
+  integer, save :: BNDRY( 6 )
 
     ! scaling factors
     ! reaction term t(x)*u scaled by alpha,
     ! convective terms (x,y,z-direction) scaed by (beta,gamma,delta)
-    real(kind=8) :: alpha,beta, gamma, delta
+    real(kind=8),save :: alpha,beta, gamma, delta
 
-  integer(kind=8) :: nx, ny, nz
+  integer(kind=8), save :: nx, ny, nz
   
   ! grid-size dependent parameters
-  real(kind=8) :: hx,hy,hz,hy2,hz2,ra,rb,raz,rbz
+  real(kind=8), save :: hx,hy,hz,hy2,hz2,ra,rb,raz,rbz
   
-  ! for the octree ordering
-  integer :: level
+  ! for the octree ordering. If set to -1, no octree ordering will be used
+  integer, save :: level
+
+  ! for the 'D' test cases (nonlinear scalar PDEs), we allow setting the local
+  ! part of the 3D array U before calls to MATPDE3D_rowFunc
+  integer, save :: imin, imax, jmin, jmax, kmin, kmax
+  
+  ! for D* test cases
+  REAL(kind=8), dimension(:,:,:), ALLOCATABLE, SAVE :: Uin
 
 contains
 
@@ -221,17 +246,17 @@ contains
     integer(kind=C_INT), value :: new_nx, new_ny, new_nz
     integer(kind=G_GIDX_T), intent(out) :: nrows
     integer(kind=G_LIDX_T), intent(out) :: maxnne_per_row
-
+    
     if( new_nx .ne. new_ny .or. new_nx .ne. new_nz) then
-      write(*,*) 'MATPDE3D: error, nx != ny or nx != nz!'
-      call exit(1)
-    end if
-    level = nint(log(1._8*new_nx)/log(2._8))
-    if( 2**level .ne. new_nx ) then
-      write(*,*) 'MATPDE3D: error, nx needs to be a power of 2!'
-      call exit(1)
-    end if
-
+      write(*,*) 'WARNING: MATPDE3D, no octree ordering because nx != ny or nx != nz.'
+      level=-1
+    else
+      level = nint(log(1._8*new_nx)/log(2._8))
+      if( 2**level .ne. new_nx ) then
+        write(*,*) 'WARNING: MATPDE3D, no octree ordering because nx is not a power of 2.'
+        level=-1
+      end if
+    endif
     nx = new_nx
     ny = new_ny
     nz = new_nz
@@ -253,6 +278,25 @@ contains
 
 
   end subroutine MATPDE3D_initDimensions
+  
+  !! this function is meant for the nonlinear test cases D*, it should be
+  !! called before MATPDE3D_rowFunc at the beginning of a Newton iteration.
+  !! The input array should be of length (imax-imin+1)*(jmin-jmax+1)*(kmin-kmax+1),
+  !! and jmin/max etc should include ghost nodes. In case of periodic boundary conditions,
+  !! i/j/kmin may be -1 or nx/y/z. We assume 0-based indexing
+  subroutine MATPDE3D_setSol(imin,imax,jmin,jmax,kmin,kmax,Ulocal, ierr)
+  
+  use, intrinsic :: iso_c_binding
+  
+  integer(C_INT), value :: imin,imax,jmin,jmax,kmin,kmax
+  real(kind=C_DOUBLE) :: Ulocal((imax-imin+1)*(jmax-jmin+1)*(kmax-kmin+1))
+  integer(C_INT), intent(OUT) :: ierr
+  
+  allocate(Uin(imin:imax,jmin:jmax,kmin:kmax), STAT=ierr)
+  
+  ! TODO
+  
+  end subroutine MATPDE3D_setSol
 
   ! select problem setup (see description above).
   ! Boundary conditions are currently preset here,
@@ -279,6 +323,10 @@ contains
   else if (problem .ge. PROB_C0 .and. problem .le. PROB_C9) then
     BNDRY(1:6)=-1
     call init_random_seed()
+  else if (problem .ge. PROB_D0 .and. problem .le. PROB_D9) then
+    BNDRY(1:6)=0
+    !! disable octree ordering
+    level=-1
   else
     iflag=-99
   end if
@@ -344,9 +392,7 @@ contains
   
   end subroutine MATPDE3D_setScalingFactors
 
-#define USE_OCTREE_ORDERING
-
-  ! octree ordering
+  ! octree or lexicographic (if level=-1) ordering
   pure function idOfCoord(coord) result(id)
     integer(kind=8), intent(in) :: coord(3)
     integer(kind=8) :: id
@@ -354,9 +400,9 @@ contains
     integer(kind=8) :: upperBound
     integer(kind=8) :: myCoord(3)
     integer :: i
-#ifndef USE_OCTREE_ORDERING
- id = (coord(3)*ny+coord(2))*nx+coord(1)
-#else
+if (level==-1) then
+   id = (coord(3)*ny+coord(2))*nx+coord(1)
+else
     ! octree ordering
     upperBound = 2**level
     myCoord = modulo(coord, upperBound)
@@ -372,7 +418,7 @@ contains
       fak2 = fak2 * 2
       fak8 = fak8 * 8
     end do
-#endif
+end if
   end function idOfCoord
 
 
@@ -382,14 +428,14 @@ contains
     integer(kind=8) :: tElem, fak(3)
     integer :: bitlevel, i
 
-#ifndef USE_OCTREE_ORDERING
-i=id
-coord(1) = mod(i,nx)
-i=(i-coord(1))/nx
-coord(2) = mod(i,ny)
-i=(i-coord(2))/ny
-coord(3) = mod(i,nz)
-#else
+if (level==-1) then
+  i=id
+  coord(1) = mod(i,nx)
+  i=(i-coord(1))/nx
+  coord(2) = mod(i,ny)
+  i=(i-coord(2))/ny
+  coord(3) = mod(i,nz)
+else
     fak(1) = 1
     fak(2) = 2
     fak(3) = 4
@@ -405,7 +451,7 @@ coord(3) = mod(i,nz)
       bitlevel = bitlevel * 2
       fak = fak * 8
     end do
-#endif
+end if
   end function coordOfId
 
 

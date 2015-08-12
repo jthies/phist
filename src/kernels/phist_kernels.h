@@ -115,12 +115,14 @@ void phist_bench_stream_triad(double* bw, int* iflag);
 //!@{
 #include "phist_gen_s.h"
 #include "phist_kernels_decl.h"
+#include "phist_prec_kernels_decl.h"
 #include "phist_carp_decl.h"
 //!@}
 /*!\name single precision complex kernel functions */
 //!@{
 #include "phist_gen_c.h"
 #include "phist_kernels_decl.h"
+#include "phist_prec_kernels_decl.h"
 #include "phist_carp_decl.h"
 //!@}
 #endif
@@ -129,12 +131,14 @@ void phist_bench_stream_triad(double* bw, int* iflag);
 //!@{
 #include "phist_gen_d.h"
 #include "phist_kernels_decl.h"
+#include "phist_prec_kernels_decl.h"
 #include "phist_carp_decl.h"
 //!@}
 /*!\name double precision complex kernel functions */
 //!@{
 #include "phist_gen_z.h"
 #include "phist_kernels_decl.h"
+#include "phist_prec_kernels_decl.h"
 #include "phist_carp_decl.h"
 //!@}
 #include "phist_gen_clean.h"

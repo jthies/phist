@@ -128,6 +128,13 @@ void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) V, _ST_** val, lidx_t* lda, int* i
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+void SUBR(sdMat_extract_error)(TYPE(sdMat_ptr) M, _ST_** MC_raw, int* iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+#endif
+
 void SUBR(mvec_view_block)(TYPE(mvec_ptr) V,
     TYPE(mvec_ptr)* Vblock,
     int jmin, int jmax, int* iflag)
@@ -354,21 +361,6 @@ void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) V,
                                           TYPE(const_sdMat_ptr) W, 
                               _ST_ beta,        TYPE(sdMat_ptr) C,
                               int* iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
-
-void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, int* iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
-
-void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
-
-void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }

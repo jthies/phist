@@ -3640,7 +3640,7 @@ end subroutine phist_Dmvec_put_func
 
     do i = 1, mvec%map%nlocal(mvec%map%me), 1
       do j=mvec%jmin,mvec%jmax
-        write(*,'(G16.8,A2)',advance='no') mvec%val(j,i),'  '
+        write(*,'(G25.16,A2)',advance='no') mvec%val(j,i),'  '
       end do
       write(*,*)
     end do
