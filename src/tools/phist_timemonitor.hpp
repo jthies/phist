@@ -72,12 +72,15 @@ namespace phist_TimeMonitor
         if( !name_.empty() && wtime_available() )
         {
           wtime_ = get_wtime() - wtime_;
-          timingResults_[name_].update(wtime_);
+#pragma omp critical (phist_timemonitor)
+          {
+            timingResults_[name_].update(wtime_);
 #ifdef PHIST_TIMINGS_FULL_TRACE
-          std::string parent = getNameOfParent(name_);
-          if( !parent.empty() )
-            timingResults_[parent].updateChild(wtime_);
+            std::string parent = getNameOfParent(name_);
+            if( !parent.empty() )
+              timingResults_[parent].updateChild(wtime_);
 #endif
+          }
         }
       }
 
@@ -146,7 +149,9 @@ namespace phist_TimeMonitor
       // helper function to determine if mpi is initialized
       static bool wtime_available()
       {
-#ifdef PHIST_HAVE_MPI
+#if defined(PHIST_HAVE_OPENMP)
+        return true;
+#elif defined(PHIST_HAVE_MPI)
         int mpi_ini;
         MPI_Initialized(&mpi_ini);
         if( !mpi_ini )
@@ -154,9 +159,9 @@ namespace phist_TimeMonitor
         MPI_Finalized(&mpi_ini);
         if( mpi_ini )
           return false;
+#else
+        return false;
 #endif
-
-        return true;
       }
 
 #ifdef PHIST_TIMINGS_FULL_TRACE

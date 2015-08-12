@@ -111,4 +111,8 @@ extern "C" const char* phist_kernel_lib()
 #endif
 }
 
+#ifdef PHIST_HAVE_CXX11_THREADLOCAL
+thread_local bool phist_CheckKernelFcnNesting::nestedKernelCall_ = false;
+#else
 bool phist_CheckKernelFcnNesting::nestedKernelCall_ = false;
+#endif

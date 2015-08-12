@@ -123,7 +123,11 @@ class phist_CheckKernelFcnNesting
     const char* str() const {return fcn_.c_str();}
 
   private:
+#ifdef PHIST_HAVE_CXX11_THREADLOCAL
+    thread_local static bool nestedKernelCall_;
+#else
     static bool nestedKernelCall_;
+#endif
     std::string fcn_;
 
 };
