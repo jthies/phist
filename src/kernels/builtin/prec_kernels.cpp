@@ -57,8 +57,8 @@ extern "C" {
 
 
 #include "phist_gen_d.h"
-} //extern "C"
 #ifdef PHIST_HAVE_HIGH_PRECISION_KERNELS
+} //extern "C"
 #include "prec_kernels_def.hpp"
 #else
 #include "../kernels_noprec.c"
