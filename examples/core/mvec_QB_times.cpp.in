@@ -94,24 +94,11 @@ PHIST_MAIN_TASK_BEGIN
     ST pert=st::one()*pertFactor;
     PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(pert,X,st::one(),Q,&ierr),ierr);
     // this is what we really want to benchmark
+
+    MT e[m];
     if( high_prec )
-    {
-      ierr = PHIST_ROBUST_REDUCTIONS;
-      PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Q,Q,st::zero(),R,&ierr),ierr);
-      // note: you do not need to set the flag for this routine, it is always carried
-      // out in high precision or will return -99 (not implemented) if that's not possible.
-      int rank;
-      PHIST_ICHK_IERR(SUBR(sdMat_qb)(R,NULL,&rank,&ierr),ierr);
-      PHIST_SOUT(PHIST_INFO,"robust svqb found rank %d\n",rank);
-      ierr = PHIST_ROBUST_REDUCTIONS;
-      PHIST_ICHK_IERR(SUBR(mvec_times_sdMat_inplace)(Q,R,&ierr),ierr);
-      
-    }
-    else
-    {
-      MT e[m];
-      PHIST_ICHK_IERR(SUBR(svqb)(Q,R,e,&ierr),ierr);
-    }
+    ierr=PHIST_ROBUST_REDUCTIONS;
+    PHIST_ICHK_IERR(SUBR(svqb)(Q,R,e,&ierr),ierr);
 
     // check the result
     if( high_prec )

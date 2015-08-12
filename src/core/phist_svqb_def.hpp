@@ -17,15 +17,36 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* iflag)
     lidx_t ldb;
     _ST_*  B_raw;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(B,&B_raw,&ldb,iflag),*iflag);
-    _MT_ Dinv[m]; // inverse sqrt of V'V
-    _MT_ E[m], Einv[m]; // sqrt of eigenvalues of (scaled) V'V (and its inverse)
-    
+
     // S=V'V
     if( robust )
       *iflag = PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),B,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_from_device)(B,iflag),*iflag);
+
+    // try to call high-precision variant
+    if( robust )
+    {
+      int rank;
+      SUBR(sdMat_qb)(B,NULL,&rank,iflag);
+      if (*iflag!=PHIST_NOT_IMPLEMENTED)
+      {
+        PHIST_CHK_IERR(*iflag,*iflag);
+        *iflag = PHIST_ROBUST_REDUCTIONS;
+        PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(V,B,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(sdMat_to_device)(B,iflag),*iflag);
+        *iflag=m-rank;
+        return;
+      }
+      else
+      {
+        PHIST_SOUT(PHIST_VERBOSE,"sdMat_qb not available, using standard double-precision svqb\n");
+      }
+    }
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(B,&B_raw,&ldb,iflag),*iflag);
+    _MT_ Dinv[m]; // inverse sqrt of V'V
+    _MT_ E[m], Einv[m]; // sqrt of eigenvalues of (scaled) V'V (and its inverse)
+    
 //PHIST_SOUT(PHIST_INFO,"Q^T Q before scaling:\n");
 //PHIST_CHK_IERR(SUBR(sdMat_print)(B,iflag),*iflag);
     // scaling factors: sqrt of inverse diagonal elements
