@@ -226,6 +226,16 @@ CHECK_CXX_SOURCE_COMPILES("
     return 0;
   }
 " PHIST_HAVE_CXX11_THREADLOCAL)
+CHECK_CXX_SOURCE_COMPILES("
+  class C {
+  C(){}
+  C(C&&)=default;
+  };
+  int main(int argc, char** argv)
+  {
+    C c;
+  }
+" PHIST_HAVE_CXX11_MOVEDEFAULT)
 if(PHIST_HAVE_CXX11_LAMBDAS OR PHIST_HAVE_CXX11_THREADLOCAL)
   set(PHIST_PKG_CONFIG_CFLAGS "${PHIST_PKG_CONFIG_CFLAGS} -std=c++11")
 endif()

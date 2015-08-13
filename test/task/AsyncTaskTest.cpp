@@ -283,13 +283,20 @@ namespace
       std::vector<SpawnTasks> childTasks_;
 
       // disallow copy constructor etc
+#ifdef PHIST_HAVE_CXX11_MOVEDEFAULT
       SpawnTasks(const SpawnTasks&) = delete;
       SpawnTasks& operator=(const SpawnTasks&) = delete;
+#endif
 
     public:
+
+#ifdef PHIST_HAVE_CXX11_MOVEDEFAULT
       // move constructor
       SpawnTasks(SpawnTasks&&) = default;
-
+      SpawnTasks& operator=(const SpawnTasks&) = default;
+#else
+      SpawnTasks(const SpawnTasks&) = default;
+#endif
       SpawnTasks()
       {
         ierr_ = 0;
@@ -360,7 +367,7 @@ namespace
   };
 }
 
-
+#ifdef PHIST_HAVE_CXX11_MOVEDEFAULT
 TEST_F(AsyncTaskTest, DISABLED_stressTest)
 {
   // just start a crazy bunch of tasks and verify that all run
@@ -378,4 +385,4 @@ TEST_F(AsyncTaskTest, DISABLED_stressTest)
   EXPECT_FALSE(globalErr);
   EXPECT_EQ(totalTasks,totalTasksRun);
 }
-
+#endif

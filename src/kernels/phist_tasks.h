@@ -133,8 +133,10 @@ class WrapLambdaForGhostTask
       *task = NULL;
     }
 
+#ifdef PHIST_HAVE_CXX11_MOVEDEFAULT
     // C++11 move constructor
     WrapLambdaForGhostTask(WrapLambdaForGhostTask&&) = default;
+#endif
 
   private:
     // hide default constructor etc
