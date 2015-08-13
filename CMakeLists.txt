@@ -228,6 +228,7 @@ CHECK_CXX_SOURCE_COMPILES("
 " PHIST_HAVE_CXX11_THREADLOCAL)
 CHECK_CXX_SOURCE_COMPILES("
   class C {
+  public:
   C(){}
   C(C&&)=default;
   };
