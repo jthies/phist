@@ -293,9 +293,9 @@ namespace
 #ifdef PHIST_HAVE_CXX11_MOVEDEFAULT
       // move constructor
       SpawnTasks(SpawnTasks&&) = default;
-      SpawnTasks& operator=(const SpawnTasks&) = default;
 #else
       SpawnTasks(const SpawnTasks&) = default;
+      SpawnTasks& operator=(const SpawnTasks&) = default;
 #endif
       SpawnTasks()
       {
