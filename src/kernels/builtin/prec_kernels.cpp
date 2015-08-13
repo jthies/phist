@@ -51,13 +51,13 @@ extern "C" {
 #include "phist_gen_z.h"
 #include "../kernels_noprec.c"
 
-#ifdef PHIST_HAVE_HIGH_PRECISION_KERNELS
+#ifdef PHIST_HIGH_PRECISION_KERNELS
 #include "prec_kernels_d.h"
 #endif
 
 
 #include "phist_gen_d.h"
-#ifdef PHIST_HAVE_HIGH_PRECISION_KERNELS
+#ifdef PHIST_HIGH_PRECISION_KERNELS
 } //extern "C"
 #include "prec_kernels_def.hpp"
 #else
