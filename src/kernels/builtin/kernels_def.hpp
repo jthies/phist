@@ -809,8 +809,35 @@ extern "C" void SUBR(mvecT_times_mvec_times_sdMat_inplace)(_ST_ alpha, TYPE(cons
 
 extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag)
 {
+#include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   // trilinos tsqr would be better but seems to expect column-major mvecs
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  int robust=(*iflag&PHIST_ROBUST_REDUCTIONS);
+  if (robust)
+  {
+    // use Cholesky-QR
+    int m,rank;
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
+    *iflag=PHIST_ROBUST_REDUCTIONS;
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),R,iflag),*iflag);
+    int perm[m];
+    PHIST_CHK_IERR(SUBR(sdMat_cholesky)(R,perm,&rank,iflag),*iflag);
+    
+    // construct inv(R)
+    TYPE(sdMat_ptr) R_1=NULL;
+    const_comm_ptr_t comm;
+    PHIST_CHK_IERR(SUBR(mvec_get_comm)(V,&comm,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&R_1,m,m,comm,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_identity)(R_1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(R,perm,rank,R_1,iflag),*iflag);
+    *iflag=PHIST_ROBUST_REDUCTIONS;
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(V,R_1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_delete)(R_1,iflag),*iflag);
+    *iflag=m-rank;
+    return;
+  }
+#endif
   PHIST_CHK_NEG_IERR(SUBR(mvec_QR_f)(V,R,iflag),*iflag);
 }
 
