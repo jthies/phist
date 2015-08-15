@@ -13,6 +13,33 @@
 
 namespace phist_TimeMonitor
 {
+
+      Timer::Timer(const char *s)
+      {
+        if( wtime_available() )
+        {
+          name_ = s;
+          wtime_ = get_wtime();
+        }
+      }
+
+      Timer::~Timer()
+      {
+        if( !name_.empty() && wtime_available() )
+        {
+          wtime_ = get_wtime() - wtime_;
+#pragma omp critical (phist_timemonitor)
+          {
+            timingResults_[name_].update(wtime_);
+#ifdef PHIST_TIMINGS_FULL_TRACE
+            std::string parent = getNameOfParent(name_);
+            if( !parent.empty() )
+              timingResults_[parent].updateChild(wtime_);
+#endif
+          }
+        }
+      }
+
   Timer::TimeDataMap Timer::timingResults_;
 
   // functor for sorting by keys in another vector
