@@ -231,7 +231,7 @@ int main(int argc, char** argv)
     fprintf(stdout,"Found %d eigenpairs after %d iterations\n",num_eigs,num_iters);
     }
 
-  MT expRes[MIN(num_eigs,1)];
+  MT expRes[MAX(num_eigs,1)];
 
   if (num_eigs>0)
     {
