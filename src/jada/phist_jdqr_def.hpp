@@ -108,6 +108,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   int minBas = opts.minBas;
   int maxBas = opts.maxBas;
   linSolv_t innerSolvType = opts.innerSolvType;
+  int innerSolvMaxBas = opts.innerSolvMaxBas;
+  int innerSolvBlockSize = opts.innerSolvBlockSize;
   bool arno=(bool)opts.arno;
   MT initialShift=(MT)opts.initialShift;
 
@@ -186,9 +188,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
   // setup inner solver
   TYPE(jadaCorrectionSolver_ptr) innerSolv = NULL;
-
-  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, nv_max, 
-        A_op->domain_map, innerSolvType, 25, iflag), *iflag);
 
   // print parameters passed in to the method
   PHIST_SOUT(PHIST_VERBOSE,"====================\n");
@@ -652,12 +651,19 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     innerTol[1] = std::max(tol,mt::one()/((MT)(pow(2.0,mm+1))));
     PHIST_SOUT(PHIST_VERBOSE,"inner conv tol: %g\n",innerTol[0]);
 
-    // allow at most 25 iterations
-    int nIt=25;
+    opts.innerSolvBlockSize=nv;
+    PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, opts,
+          A_op->domain_map, iflag), *iflag);
+
+
+    // allow at most the given number of iterations
+    int nIt=opts.innerSolvMaxIters;
       PHIST_CHK_NEG_IERR(SUBR(jadaCorrectionSolver_run)(innerSolv, A_op, B_op, Qtil, NULL, 
                                                       sigma, rtil_ptr, NULL, 
-                                                      innerTol, nIt, t_ptr, true, false, iflag), *iflag);
+                                                      innerTol, nIt, t_ptr, opts.innerSolvRobust, false, iflag), *iflag);
     expand=nv;
+    PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_delete)(innerSolv,iflag),*iflag);
+    innerSolv=NULL;
   }
   else
   {
@@ -756,11 +762,6 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     PHIST_CHK_IERR(SUBR(mvec_delete)(Qcopy,iflag),*iflag);
     }// any eigenpairs converged?
 
-  // free memory
-  if (innerSolvType==GMRES)
-  {
-    PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_delete)(innerSolv, iflag), *iflag);
-  }
   PHIST_CHK_IERR(SUBR(mvec_delete)(V,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(AV,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vtmp,iflag),*iflag);

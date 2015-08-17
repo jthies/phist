@@ -1,6 +1,8 @@
 #ifndef PHIST_SUBSPACEJADA_H
 #define PHIST_SUBSPACEJADA_H
 
+#ifndef DOXYGEN
+
 #include "phist_config.h"
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
@@ -8,6 +10,9 @@
 #endif
 #include "phist_operator.h"
 #include "phist_enums.h"
+#include "phist_jadaOpts.h"
+
+#endif /* DOXYGEN */
 
 #ifdef __cplusplus
 extern "C" {

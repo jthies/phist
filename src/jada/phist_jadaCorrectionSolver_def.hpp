@@ -1,39 +1,37 @@
 //! create a jadaCorrectionSolver object
-void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, int blockedGMRESBlockDim, const_map_ptr_t map, 
-        linSolv_t method, int blockedGMRESMaxBase, int *iflag)
+void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist_jadaOpts_t opts,
+        const_map_ptr_t map, int *iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag = 0;
   *me = new TYPE(jadaCorrectionSolver);
-  (*me)->method_ = method;
-  if (method==GMRES||method==MINRES)
+  (*me)->method_ = opts.innerSolvType;
+  if ((*me)->method_==GMRES||(*me)->method_==MINRES)
   {
-    PHIST_CHK_IERR( *iflag = (blockedGMRESBlockDim <= 0) ? -1 : 0, *iflag);
+    PHIST_CHK_IERR( *iflag = (opts.innerSolvBlockSize <= 0) ? -1 : 0, *iflag);
 
-    (*me)->gmresBlockDim_ = blockedGMRESBlockDim;
-    (*me)->blockedGMRESstates_  = new TYPE(blockedGMRESstate_ptr)[blockedGMRESBlockDim];
-    PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)((*me)->blockedGMRESstates_, blockedGMRESBlockDim, map, blockedGMRESMaxBase, iflag), *iflag);
+    (*me)->gmresBlockDim_ = opts.innerSolvBlockSize;
+    (*me)->blockedGMRESstates_  = new TYPE(blockedGMRESstate_ptr)[(*me)->gmresBlockDim_];
+    PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)((*me)->blockedGMRESstates_, opts.innerSolvBlockSize, map, opts.innerSolvMaxBas, iflag), *iflag);
   }
-  else if (method==CARP_CG)
+  else if ((*me)->method_==CARP_CG)
   {
     *iflag=PHIST_NOT_IMPLEMENTED;
   }
-  else if (method==USER_DEFINED)
+  else if ((*me)->method_==USER_DEFINED)
   {
-    if ((*me)->customSolver_create==NULL)
+    if (opts.customSolver_run==NULL && opts.customSolver_run1==NULL)
     {
-      PHIST_SOUT(PHIST_VERBOSE,"USER_DEFINED solver required but pointer to function not set\n"
-                             "(file %s, line %d)\n",__FILE__,__LINE__);
-      // this may be OK, maybe the solver needs no create/delete
-      *iflag=0;
-      return;
+      *iflag=-88;
     }
-    PHIST_CHK_IERR((*me)->customSolver_create(&((*me)->customSolverData_), blockedGMRESBlockDim,map,blockedGMRESMaxBase,iflag),*iflag);
+    (*me)->customSolver_=opts.customSolver;
+    (*me)->customSolver_run=opts.customSolver_run;
+    (*me)->customSolver_run1=opts.customSolver_run1;
   }
   else
   {
-    PHIST_SOUT(PHIST_ERROR, "method %d (%s) not implemented",(int)method, linSolv2str(method));
+    PHIST_SOUT(PHIST_ERROR, "method %d (%s) not implemented",(int)(*me)->method_, linSolv2str((*me)->method_));
     *iflag=PHIST_NOT_IMPLEMENTED;
   }
 }
@@ -56,15 +54,6 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) me, int *i
   }
   else if (me->method_==USER_DEFINED)
   {
-    if (me->customSolver_delete==NULL)
-    {
-      PHIST_SOUT(PHIST_VERBOSE,"USER_DEFINED solver required but pointer to function not set\n"
-                             "(file %s, line %d)\n",__FILE__,__LINE__);
-      // this may be OK, maybe the solver needs no create/delete
-      *iflag=0;
-      return;
-    }
-    PHIST_CHK_IERR(me->customSolver_delete(me->customSolverData_,iflag),*iflag);
   }
   delete me;
 }
@@ -97,6 +86,36 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag = 0;
+
+  if (me->method_==USER_DEFINED)
+  {
+    int numSys;
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(t,&numSys,iflag),*iflag);
+    if (numSys==1 && me->customSolver_run1!=NULL)
+    {
+      PHIST_CHK_IERR(me->customSolver_run1(me->customSolver_,A_op,B_op,Qtil,BQtil,(double)st::real(sigma[0]),
+        (double)st::imag(sigma[0]), res,
+        (double)tol[0],maxIter,t,useIMGS,iflag),*iflag);
+    }
+    else if (me->customSolver_run!=NULL)
+    {
+      double sr[numSys], si[numSys],dtol[numSys];
+      for (int i=0;i<numSys;i++)
+      {
+        sr[i]=st::real(sigma[i]);
+        si[i]=st::imag(sigma[i]);
+        dtol[i]=(double)tol[i];
+      }
+      PHIST_CHK_IERR(me->customSolver_run(me->customSolver_,A_op,B_op,Qtil,BQtil,sr,si,res,resIndex,
+        dtol,maxIter,t,useIMGS,abortAfterFirstConvergedInBlock,iflag),*iflag);
+    }
+    else
+    {
+      PHIST_SOUT(PHIST_ERROR,"custom solver requested but function not set in jadaOpts struct\n");
+      *iflag=-88;
+    }
+    return;
+  }
 
   PHIST_CHK_IERR(*iflag = (maxIter <= 0) ? -1 : 0, *iflag);
 

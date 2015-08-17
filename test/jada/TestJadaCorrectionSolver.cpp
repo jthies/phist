@@ -19,6 +19,7 @@
 #include "../kernels/KernelTestWithType.h"
 #include "../kernels/KernelTestWithSdMats.h"
 #include "../kernels/KernelTestWithVectors.h"
+#include "JadaTestWithOpts.hpp"
 
 #include "../tools/MatrixIO.h"
 

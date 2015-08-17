@@ -183,12 +183,7 @@ void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,    TYPE(const_op_ptr)    B_
                            // nested way.
 
   // print some useful data
-  PHIST_SOUT(PHIST_VERBOSE, "Created jadaOp with %d projection vectors and shifts ",   nvecp);
-  for (i = 0; i < nvec; i++)
-  {
-    PHIST_SOUT(PHIST_VERBOSE, "\t(%8.4e+i%8.4e)", st::real(sigma[i]), st::imag(sigma[i]));
-  }
-  PHIST_SOUT(PHIST_VERBOSE, ".\n");
+  PHIST_SOUT(PHIST_DEBUG, "Created jadaOp with %d projection vectors and %d shifts\n",   nvecp,nvec);
 }
 
 

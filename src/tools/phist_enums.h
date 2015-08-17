@@ -23,6 +23,14 @@ typedef enum linSolv_t
   INVALID_LINSOLV_T=99 // returned if str2linSolv gets an invalid string
 } linSolv_t;
 
+typedef enum matSym_t {
+  GENERAL=0,    /*! no known symmetry properties */
+  HERMITIAN=1,  /*! A=A^H */
+  COMPLEX_SYMMETRIC=2, /*! A=A^T */
+  PATTERN_SYMMETRIC=3, /*! G=G^T with G_ij=1 if A_ij!=0, G_ij=0 otherwise */ 
+  INVALID_MATSYM_T=99
+} matSym_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif

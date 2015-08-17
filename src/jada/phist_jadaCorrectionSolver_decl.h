@@ -12,16 +12,33 @@ typedef struct TYPE(jadaCorrectionSolver)
   TYPE(blockedGMRESstate_ptr) *blockedGMRESstates_;     //! blockedGMRES states
   TYPE(carp_cgState_ptr) *carp_cgStates_; //! can use CARP-CG alternatively
   linSolv_t     method_;    //! supported values are GMRES, MINRES, CARP_CG and CUSTOM.
-  void* customSolverData_;
-  void (*customSolver_create)( void** customSolverData,int blockDim, const_map_ptr_t map, int maxBase, int* iflag);
-  void (*customSolver_delete)( void*  customSolverData, int* iflag);
-  void (*customSolver_run)(            void*  customSolverData,
-                                    TYPE(const_op_ptr)    A_op,     TYPE(const_op_ptr)    B_op, 
-                                    TYPE(const_mvec_ptr)  Qtil,     TYPE(const_mvec_ptr)  BQtil,
-                                    const _ST_            sigma[],  TYPE(const_mvec_ptr)  res,      const int resIndex[], 
-                                    const _MT_            tol[],    int                   maxIter,
+
+
+  //! pointer to solver object if innerSolvType==USER_DEFINED
+  void* customSolver_;
+
+  //! this function is used instead of phist_jadaCorrectionSolver_run if innerSolvType is USER_DEFINED.
+  //! For jdqr or subspacejada with block size 1 it is enough to implement the simpler interface below,
+  //! we first check in those cases if that interface is set before checking for this one.
+  void (*customSolver_run)(         void*  customSolverData,
+                                    void const*    A_op,       void const*    B_op,
+                                    void const*    Qtil,       void const*    BQtil,
+                                    const double sigma_r[],    const double sigma_i[],  
+                                    TYPE(const_mvec_ptr)  res, const int resIndex[],
+                                    const double        tol[], int       maxIter,
                                     TYPE(mvec_ptr)        t,
-                                    bool useIMGS,                   bool abortAfterFirstConvergedInBlock,
+                                    int robust,                   int abortAfterFirstConvergedInBlock,
+                                    int *                 iflag);
+
+  //! simplified interface if only single-vector jdqr or subspacejada is used.
+  void (*customSolver_run1)(        void*  customSolverData,
+                                    void const*    A_op,     void const*    B_op,
+                                    void const*    Qtil,     void const*    BQtil,
+                                    double   sigma_r,        double sigma_i, 
+                                     TYPE(const_mvec_ptr)  res,
+                                    const double           tol,    int                   maxIter,
+                                    TYPE(mvec_ptr)        t,
+                                    int robust,
                                     int *                 iflag);
   //@}
 } TYPE(jadaCorrectionSolver);
@@ -32,9 +49,9 @@ typedef TYPE(jadaCorrectionSolver) const * TYPE(const_jadaCorrectionSolver_ptr);
 
 
 //! create a jadaCorrectionSolver object
-void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *jdCorrSolver, int blockedGMRESBlockDim, const_map_ptr_t map, 
-        linSolv_t method, int maxBase, int *iflag);
-
+void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist_jadaOpts_t opts,
+        const_map_ptr_t map, int *iflag);
+        
 //! delete a jadaCorrectionSolver object
 void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver, int *iflag);
 

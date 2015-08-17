@@ -4,7 +4,7 @@
 #include "phist_config.h"
 
 #ifndef DOXYGEN
-\
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -13,6 +13,7 @@
 #include "phist_blockedgmres.h"
 #include "phist_blockedminres.h"
 #include "phist_carp_cg.h"
+#include "phist_jadaOpts.h"
 
 #endif // DOXYGEN
 

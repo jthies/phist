@@ -62,59 +62,53 @@ void SUBR(sdMat_check_symmetrie)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
 }
 
 
-//! Tries to compute a partial schur form $(Q,R)$ of dimension nEig
+//! Tries to compute a partial schur form $(Q,R)$ of dimension opts.numEigs
 //! of the stencil $A*x-\lambda*B*x$ with a general linear operator $A$ and a
 //! hermitian positive definite (hpd.) linear operator $B$ using a
 //! block-Jacobi-Davidson QR method. <br>
 //! The generalized eigenvalues $\lambda_i$ are the diagonal entries of the
 //! partial schur form $A*Q = B*Q*R$ returned. <br>
 //!
-//! Input arguments:
-//!
-//! A_op:     pointer to the operator A
-//! B_op:     pointer to the hpd. operator B (if B==NULL, B=I is assumed)
-//! v0:       start vector to construct a start basis using <minBase> Arnoldi-iteraions
-//! which:    decide at which end of the spectrum to look for eigenvalues
-//! tol:      convergence tolerance
-//! nEig:     number of desired eigenpairs (e.g. dimension of the partial schur form)
-//! nIter:    maximum number of iterations allowed
-//! blockDim: block size, calculates <blockDim> corrections in each iteration
-//! minBase:  start up from a basis consisting of minBas vectors (using Arnoldi)
-//! maxBase:  when the basis reaches <maxBase> vectors, restart from <minBase> vectors.
-//! innerBlockDim: block dimension used in the inner GMRES itersion
-//! innerMaxBase:  restart inner GMRES after this number of iterations
-//! 
-//! Output arguments:
-//!
-//! nEig:     number of converged eigenpairs (e.g. dimension of (Q,R))
-//! Q:        orthogonal vectors of the partial schur form (Q,R)
-//! R:        small upper triangular matrix of the partial schur form (Q,R)
-//! nIter:    number of iterations performed
-//! resNorm:  norm of the residua of the schur form $A*q_i-Q*r_i, i=1,nEig$
-//! iflag:     return code of the solver (0 on success, negative on error, positive on warning)
+//! see header file for further documentation of the parameters
 //!
 void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
-                         TYPE(const_mvec_ptr) v0,  eigSort_t which,
-                         _MT_ tol,                 int nEig,
-                         int* nIter,               int blockDim,
-                         int minBase,              int maxBase,
-                         int innerBlockDim,        int innerMaxBase,
-                         int initialShiftIter,     _ST_ initialShift,
-                         bool innerIMGS,           bool innerGMRESabortAfterFirstConverged,
-                         bool symmetric,
+                         phist_jadaOpts_t opts,
                          TYPE(mvec_ptr) Q__,       TYPE(sdMat_ptr) R_,
                          _CT_* ev,                 _MT_* resNorm,
+                         int* nConv,               int* nIter,
                          int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *iflag = 0;
 
+  // copy options
+  TYPE(const_mvec_ptr) v0=opts.v0;
+  eigSort_t which=opts.which;
+  _MT_ tol=opts.convTol;
+  int nEig=opts.numEigs;
+  int blockDim=opts.blockSize;
+  int maxIter =opts.maxIters;
+                         
+int minBase=opts.minBas;
+int maxBase=opts.maxBas;
+int innerBlockDim=opts.innerSolvBlockSize;        
+int innerMaxBase=opts.innerSolvMaxBas;
+int initialShiftIter=opts.initialShiftIters;   
+_ST_ initialShift   =(_ST_)opts.initialShift;
+                         
+bool innerIMGS=(opts.innerSolvRobust!=0);
+bool innerGMRESabortAfterFirstConverged=opts.innerSolvStopAfterFirstConverged;
+bool symmetric=opts.symmetry==HERMITIAN;
+#ifndef IS_COMPLEX
+symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
+#endif
+
   // extended number of searched eigenvalues in order to respect the block dimension,
   // this way we always have a fixed blockDim AND it should make the calculation
   // of the last eigenvalues more stable in some cases
   int nEig_ = nEig + blockDim - 1;
-  
+
   // initialize residual norms to -1 to indicate that they haven't been computed
   for (int i=0;i<nEig; i++) resNorm[i]=-mt::one();
 
@@ -270,7 +264,7 @@ void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   //------------------------------- initialize correction equation solver solver ------------------------
   TYPE(jadaCorrectionSolver_ptr) innerSolv = NULL;
   linSolv_t method = symmetric? MINRES: GMRES;
-  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, innerBlockDim, A_op->domain_map, method, innerMaxBase, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, opts, A_op->domain_map, iflag), *iflag);
   std::vector<_MT_> innerTol(nEig_,0.1);
   std::vector<_MT_> lastOuterRes(nEig_,mt::zero());
 
@@ -363,8 +357,8 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
 
 
   //----------------------------------- MAIN LOOP ----------------------------------
-  int maxIter = *nIter;
   int Qsize = 0;
+  *nConv=0;
   for(*nIter = 0; *nIter < maxIter; (*nIter)++)
   {
 // dynamically adjust current number of "sought" eigenvalues, so we do not consider the 20th eigenvalue if the 1st is not calculated yet!
@@ -634,12 +628,14 @@ PHIST_SOUT(PHIST_INFO,"\n");
     if( nConvEig + nNewConvEig >= nEig )
     {
       nConvEig += nNewConvEig;
+      *nConv=nConvEig;
       PHIST_SOUT(PHIST_INFO,"In iteration %d: all eigenvalues converged!\n", *nIter);
       break;
     }
 
     if( *nIter >= maxIter )
     {
+      *nConv=nConvEig;
       PHIST_SOUT(PHIST_INFO,"Reached maximum number of iterations!\n");
       break;
     }
@@ -682,6 +678,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       }
 
       nConvEig = nConvEig+nNewConvEig;
+      *nConv=nConvEig;
 
       // update views if necessary
       if( nV + 2*blockDim > maxBase )
