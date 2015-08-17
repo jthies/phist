@@ -814,7 +814,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag)
   // trilinos tsqr would be better but seems to expect column-major mvecs
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   int robust=(*iflag&PHIST_ROBUST_REDUCTIONS);
-  if (robust)
+  if (robust&&false)
   {
     // use Cholesky-QR
     int m,rank;
