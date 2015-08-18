@@ -113,7 +113,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   bool arno=(bool)opts.arno;
   MT initialShift=(MT)opts.initialShift;
 
-  std::complex<MT> ev[maxBas];
+  std::complex<MT> ev[maxBas+1];
   
   int i,it,m,mm;
   MT res_nrm; // residual norm
@@ -585,9 +585,10 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   // restart if necessary
   if (m>=maxBas)
   {
-    PHIST_SOUT(PHIST_VERBOSE,"restart JDQR\n");
     int m0=m;
     m=minBas;
+
+    PHIST_SOUT(PHIST_VERBOSE,"restart JDQR, shrink basis from %d to %d vectors\n",m0,m);
     
     //S=S(:,1:m);
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,m0-1,0,m-1,iflag),*iflag);

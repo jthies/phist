@@ -116,7 +116,7 @@ cmake -DCMAKE_BUILD_TYPE=Release  \
       ${ADD_CMAKE_FLAGS} \
       ..                                || error=1
 make doc &> doxygen.log                 || error=1
-make -j 6 || make                       || error=1
+make -j 24 || make                      || error=1
 echo "Running tests. Output is compressed and written to test.log.gz"
 make check 2>&1 | gzip -c > test.log.gz || error=1
 
@@ -149,7 +149,7 @@ cmake -DCMAKE_BUILD_TYPE=Debug    \
       -DGCC_SANITIZE=address      \
       ${ADD_CMAKE_FLAGS} \
       ..                                || error=1
-make -j 6 || make                       || error=1
+make -j 24 || make                      || error=1
 echo "Running tests. Output is compressed and written to test.log.gz"
 make check 2>&1 | gzip -c > test.log.gz || error=1
 make audit                              || error=1
