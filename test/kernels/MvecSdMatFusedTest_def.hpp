@@ -200,9 +200,9 @@ public:
       ASSERT_EQ(0,iflag_);
 
       // Compare results
-      ASSERT_NEAR(mt::one(), ArraysEqual(V1_vp_,V2_vp_,nloc_,m_,ldaV1_,stride_,vflag_), 10000*mt::eps());
-      ASSERT_REAL_EQ(mt::one(), ArraysEqual(N1_vp_,N2_vp_,k_,k_,ldaN1_,stride_,mflag_));
-      ASSERT_NEAR(mt::one(), ArraysEqual(M1_vp_,M2_vp_,m_,k_,ldaM1_,stride_,mflag_), sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(), MvecsEqual(V1_,V2_,mt::one()), 10000*mt::eps());
+      ASSERT_REAL_EQ(mt::one(), SdMatsEqual(N1_,N2_));
+      ASSERT_NEAR(mt::one(), SdMatsEqual(M1_,M2_), sqrt(mt::eps()));
     }
   }
 #endif
@@ -246,7 +246,7 @@ public:
 
       // Compare results
       ASSERT_REAL_EQ(mt::one(), MvecsEqual(V1_,V2_));
-      ASSERT_NEAR(mt::one(), MvecsEqual(W1_,W2_), 1000*mt::eps());
+      ASSERT_NEAR(mt::one(), MvecsEqual(W1_,W2_,mt::one()), 1000*mt::eps());
       ASSERT_REAL_EQ(mt::one(), SdMatsEqual(M1_,M2_));
       ASSERT_NEAR(mt::one(), SdMatsEqual(N1_,N2_), sqrt(mt::eps()));
     }
@@ -290,10 +290,10 @@ public:
       ASSERT_EQ(0,iflag_);
 
       // Compare results
-      ASSERT_REAL_EQ(mt::one(), ArraysEqual(V1_vp_,V2_vp_,nloc_,m_,ldaV1_,stride_,vflag_));
-      ASSERT_NEAR(mt::one(), ArraysEqual(W1_vp_,W2_vp_,nloc_,k_,ldaW1_,stride_,vflag_), 10000*mt::eps());
-      ASSERT_REAL_EQ(mt::one(), ArraysEqual(M1_vp_,M2_vp_,m_,k_,ldaM1_,stride_,mflag_));
-      ASSERT_NEAR(mt::one(), ArraysEqual(N1_vp_,N2_vp_,k_,k_,ldaN1_,stride_,mflag_), sqrt(mt::eps()));
+      ASSERT_REAL_EQ(mt::one(), MvecsEqual(V1_,V2_));
+      ASSERT_NEAR(mt::one(), MvecsEqual(W1_,W2_,mt::one()), 10000*mt::eps());
+      ASSERT_REAL_EQ(mt::one(), SdMatsEqual(M1_,M2_));
+      ASSERT_NEAR(mt::one(), SdMatsEqual(M1_,M2_), sqrt(mt::eps()));
     }
   }
 
@@ -335,7 +335,7 @@ public:
 
       // Compare results
       ASSERT_REAL_EQ(mt::one(), MvecsEqual(V1_,V2_));
-      ASSERT_NEAR(mt::one(), MvecsEqual(W1_,W2_), mt::sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(), MvecsEqual(W1_,W2_,mt::one()), mt::sqrt(mt::eps()));
       ASSERT_REAL_EQ(mt::one(), SdMatsEqual(M1_,M2_));
       ASSERT_REAL_EQ(mt::one(), SdMatsEqual(N1_,N2_));
     }

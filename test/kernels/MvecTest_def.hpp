@@ -542,7 +542,7 @@ public:
       }
       SUBR(mvec_to_device)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_NEAR(mt::one(),MvecsEqual(vec1_,vec2_), 1000*mt::eps());
+      ASSERT_NEAR(mt::one(),MvecsEqual(vec1_,vec2_,mt::one()), 1000*mt::eps());
     }
   }
 
@@ -569,7 +569,7 @@ public:
       }
       SUBR(mvec_to_device)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_NEAR(mt::one(),MvecsEqual(vec1_,vec2_), 1000*mt::eps());
+      ASSERT_NEAR(mt::one(),MvecsEqual(vec1_,vec2_, mt::one()), 1000*mt::eps());
     }
   }
 
