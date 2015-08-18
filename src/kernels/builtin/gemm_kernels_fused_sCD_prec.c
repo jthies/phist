@@ -79,26 +79,30 @@ void dgemm_fused_scd_self_prec_4(int nrows, aligned_double *restrict x, double *
           xi_ = _mm256_permute4x64_pd(xi,1+4*1+16*1+64*1);
           MM256_2MULTFMA(xi_,scal_[1],p,pi);
           pi_ = _mm256_fmadd_pd(xi_,scalC_[1],pi);
-          __m256d oldS = s, oldT = t;
-          MM256_4SUM(oldS,oldT,p,pi_,s,t);
+          __m256d oldS = s, sigma;
+          MM256_2SUM(oldS,p,s,sigma);
+          __m256d tmp = _mm256_add_pd(pi_,sigma);
+          t = _mm256_add_pd(t, tmp);
 
           // j = 2
           xi_ = _mm256_permute4x64_pd(xi,2+4*2+16*2+64*2);
           MM256_2MULTFMA(xi_,scal_[2],p,pi);
           pi_ = _mm256_fmadd_pd(xi_,scalC_[2],pi);
-          oldS = s, oldT = t;
-          MM256_4SUM(oldS,oldT,p,pi_,s,t);
+          oldS = s;
+          MM256_2SUM(oldS,p,s,sigma); 
+          tmp = _mm256_add_pd(pi_,sigma);
+          t = _mm256_add_pd(t, tmp);
 
           // j = 3
           xi_ = _mm256_permute4x64_pd(xi,3+4*3+16*3+64*3);
           MM256_2MULTFMA(xi_,scal_[3],p,pi);
           pi_ = _mm256_fmadd_pd(xi_,scalC_[3],pi);
           oldS = s;
-          __m256d sigma;
           MM256_2SUM(oldS,p,s,sigma);
-          __m256d tmp = _mm256_add_pd(pi_,sigma);
-          __m256d t_ = _mm256_add_pd(t,tmp);
-          xi = _mm256_add_pd(s,t_);
+          tmp = _mm256_add_pd(pi_,sigma);
+          t = _mm256_add_pd(t,tmp);
+
+          xi = _mm256_add_pd(s,t);
           _mm256_store_pd(&x[4*i],xi);
         }
 
@@ -225,8 +229,9 @@ void dgemm_fused_scd_self_prec_2(int nrows, aligned_double *restrict x, const do
           __m256d oldS = s, sigma;
           MM256_2SUM(oldS,p,s,sigma);
           __m256d tmp = _mm256_add_pd(pi_,sigma);
-          __m256d t_ = _mm256_add_pd(t,tmp);
-          xi = _mm256_add_pd(s,t_);
+          t = _mm256_add_pd(t,tmp);
+
+          xi = _mm256_add_pd(s,t);
           _mm256_store_pd(&x[4*i],xi);
         }
 
@@ -339,26 +344,30 @@ void dgemm_fused_scd_prec_k_4(int nrows, int k, const aligned_double *restrict y
           xi_ = _mm256_permute4x64_pd(xi,1+4*1+16*1+64*1);
           MM256_2MULTFMA(xi_,scal_[1],p,pi);
           pi_ = _mm256_fmadd_pd(xi_,scalC_[1],pi);
-          __m256d oldS = s, oldT = t;
-          MM256_4SUM(oldS,oldT,p,pi_,s,t);
+          __m256d oldS = s, sigma;
+          MM256_2SUM(oldS,p,s,sigma);
+          __m256d tmp = _mm256_add_pd(pi_,sigma);
+          t = _mm256_add_pd(t, tmp);
 
           // j = 2
           xi_ = _mm256_permute4x64_pd(xi,2+4*2+16*2+64*2);
           MM256_2MULTFMA(xi_,scal_[2],p,pi);
           pi_ = _mm256_fmadd_pd(xi_,scalC_[2],pi);
-          oldS = s, oldT = t;
-          MM256_4SUM(oldS,oldT,p,pi_,s,t);
+          oldS = s;
+          MM256_2SUM(oldS,p,s,sigma);
+          tmp = _mm256_add_pd(pi_,sigma);
+          t = _mm256_add_pd(t, tmp);
 
           // j = 3
           xi_ = _mm256_permute4x64_pd(xi,3+4*3+16*3+64*3);
           MM256_2MULTFMA(xi_,scal_[3],p,pi);
           pi_ = _mm256_fmadd_pd(xi_,scalC_[3],pi);
           oldS = s;
-          __m256d sigma;
           MM256_2SUM(oldS,p,s,sigma);
-          __m256d tmp = _mm256_add_pd(pi_,sigma);
-          __m256d t_ = _mm256_add_pd(t,tmp);
-          xi = _mm256_add_pd(s,t_);
+          tmp = _mm256_add_pd(pi_,sigma);
+          t = _mm256_add_pd(t,tmp);
+
+          xi = _mm256_add_pd(s,t);
           _mm256_store_pd(&x[4*i],xi);
         }
 
@@ -497,8 +506,9 @@ void dgemm_fused_scd_prec_k_2(int nrows, int k, const aligned_double *restrict y
           __m256d oldS = s, sigma;
           MM256_2SUM(oldS,p,s,sigma);
           __m256d tmp = _mm256_add_pd(pi_,sigma);
-          __m256d t_ = _mm256_add_pd(t,tmp);
-          xi = _mm256_add_pd(s,t_);
+          t = _mm256_add_pd(t,tmp);
+
+          xi = _mm256_add_pd(s,t);
           _mm256_store_pd(&x[2*i],xi);
         }
 
