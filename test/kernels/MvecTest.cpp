@@ -27,8 +27,8 @@ using namespace testing;
 #include "../phist_typed_test_gen.h"
 
 
-/* 4000000 are required for my accuracy test ! */
-#ifdef PHIST_HIGH_PRECISION_KERNELS
+// large high precision tests (too slow in debug mode)
+#if defined(PHIST_HIGH_PRECISION_KERNELS) && !defined(TESTING)
 
 #define _N_ 4000000
 #define _M_ 1

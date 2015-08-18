@@ -11,7 +11,7 @@ fi
 ## default options and declarations
 # kernel lib
 KERNELS="builtin" # ghost epetra tpetra
-PRGENV="gcc-4.9.2-openmpi" # intel-13.0.1-mpich gcc-4.8.2-openmpi
+PRGENV="gcc-5.1.0-openmpi" # intel-13.0.1-mpich gcc-4.9.2-openmpi
 FLAGS="" # optional-libs
 ADD_CMAKE_FLAGS="" #optional CMake flags
 # list of modules to load

@@ -97,8 +97,8 @@ using namespace testing;
 #define _K_ 11
 #include "../phist_typed_test_gen.h"
 
-// large tests for verifying high precision calculations
-#ifdef PHIST_HIGH_PRECISION_KERNELS
+// large high precision tests (too slow in debug mode)
+#if defined(PHIST_HIGH_PRECISION_KERNELS) && !defined(TESTING)
 
 #define _N_ 4000000
 #define _M_ 1
