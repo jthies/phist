@@ -27,8 +27,8 @@
  * \param functionName name of the function, ideally with required block sizes appended
  * \param benchFormula formula to calculate expected time
  */
-#define PHIST_PERFCHECK_VERIFY(functionName,n1,n2,n3,n4,n5,n6, benchFormula) \
-  phist_PerfCheck::PerfCheckTimer YouCanOnlyHaveOnePerfCheckInOneScope(functionName,#n1,n1,#n2,n2,#n3,n3,#n4,n4,#n5,n5,#n6,n6, #benchFormula, benchFormula);
+#define PHIST_PERFCHECK_VERIFY(functionName,n1,n2,n3,n4,n5,n6,n7, benchFormula) \
+  phist_PerfCheck::PerfCheckTimer YouCanOnlyHaveOnePerfCheckInOneScope(functionName,#n1,n1,#n2,n2,#n3,n3,#n4,n4,#n5,n5,#n6,n6,#n7,n7, #benchFormula, benchFormula);
 
 
 /*! Defines a new benchmark for the performance check
@@ -75,8 +75,9 @@ namespace phist_PerfCheck
                                        const char* sn4, double n4, 
                                        const char* sn5, double n5, 
                                        const char* sn6, double n6, 
+                                       const char* sn7, double n7, 
                                        const char* formula, double expectedTime) :
-        Timer(constructName(name,sn1,n1,sn2,n2,sn3,n3,sn4,n4,sn5,n5,sn6,n6,formula).c_str())
+        Timer(constructName(name,sn1,n1,sn2,n2,sn3,n3,sn4,n4,sn5,n5,sn6,n6,sn7,n7,formula).c_str())
       {
         expectedResults_[name_].update(expectedTime);
       }
@@ -94,6 +95,7 @@ namespace phist_PerfCheck
                                        const char* sn4, double n4, 
                                        const char* sn5, double n5, 
                                        const char* sn6, double n6, 
+                                       const char* sn7, double n7, 
                                        const char* formula)
       {
         std::ostringstream oss;
@@ -111,6 +113,8 @@ namespace phist_PerfCheck
           oss << "," << sn5 << "=" << n5;
         if( sn6 != std::string("0") )
           oss << "," << sn6 << "=" << n6;
+        if( sn7 != std::string("0") )
+          oss << "," << sn7 << "=" << n7;
         oss << ") " << formula;
 
         return oss.str();

@@ -200,9 +200,15 @@ PHIST_MAIN_TASK_BEGIN
     PHIST_ICHK_IERR(sdMat_orthoError(QtQ,st::zero(),&err,&ierr),ierr);
     total_max_errorR1=std::max(err,total_max_errorR1);
     // reconstruct X = Q*QtX + V*VtX
+    if( high_prec )
+      ierr = PHIST_ROBUST_REDUCTIONS;
     PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Q,QtX,-st::one(),X,&ierr),ierr);
+    if( high_prec )
+      ierr = PHIST_ROBUST_REDUCTIONS;
     PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(st::one(),V,VtX,st::one(),X,&ierr),ierr);
     MT Xnorm[m];
+    if( high_prec )
+      ierr = PHIST_ROBUST_REDUCTIONS;
     PHIST_ICHK_IERR(SUBR(mvec_norm2)(X,Xnorm,&ierr),ierr);
     for(int i = 0; i < m; i++)
       total_max_errorXnorm=std::max(Xnorm[i],total_max_errorXnorm);

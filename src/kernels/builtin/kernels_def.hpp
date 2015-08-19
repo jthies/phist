@@ -802,7 +802,7 @@ extern "C" void SUBR(mvecT_times_mvec_times_sdMat_inplace)(_ST_ alpha, TYPE(cons
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
-  PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC(V,W,iflag);
+  PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC_TIMES_SDMAT(V,W,iflag);
   PHIST_CHK_IERR(SUBR(mvecT_times_mvec_times_sdMat_inplace_f)(alpha,V,W,C,beta,D,iflag),*iflag);
 }
 
