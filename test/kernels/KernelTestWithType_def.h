@@ -78,7 +78,7 @@ static _MT_ MvecEqual(TYPE(mvec_ptr) V, _ST_ value)
   return return_value;
   }
 
-static _MT_ MvecsEqual(TYPE(mvec_ptr) V1, TYPE(mvec_ptr) V2)
+static _MT_ MvecsEqual(TYPE(mvec_ptr) V1, TYPE(mvec_ptr) V2, _MT_ relTo = mt::zero())
 {
   int iflag;
   _ST_ *val,*val2;
@@ -110,11 +110,11 @@ static _MT_ MvecsEqual(TYPE(mvec_ptr) V1, TYPE(mvec_ptr) V2)
   MT return_value=mt::one();
   if (lda!=lda2)
   {
-    return_value=ArraysEqualWithDifferentLDA(val,val2,n,m,lda,lda2,1,KernelTest::vflag_);
+    return_value=ArraysEqualWithDifferentLDA(val,val2,n,m,lda,lda2,1,KernelTest::vflag_,relTo);
   }
   else
   {
-    return_value=ArraysEqual(val,val2,n,m,lda,1,KernelTest::vflag_);
+    return_value=ArraysEqual(val,val2,n,m,lda,1,KernelTest::vflag_,relTo);
   }
 #if PHIST_OUTLEV>=PHIST_DEBUG
   int print_vecs_loc,print_vecs;
@@ -260,13 +260,13 @@ static _MT_ ArrayParallelReplicated(const _ST_* array, int n, int m, lidx_t lda,
   return (MT)1.0+maxval;
 }
 
-static _MT_ ArraysEqual(const _ST_* arr1,const _ST_* arr2, int n, int m, lidx_t lda, lidx_t stride, bool swap_n_m=false)
+static _MT_ ArraysEqual(const _ST_* arr1,const _ST_* arr2, int n, int m, lidx_t lda, lidx_t stride, bool swap_n_m=false, _MT_ relTo=mt::zero())
 {
-    return ArraysEqualWithDifferentLDA(arr1,arr2,n,m,lda,lda,stride,swap_n_m);
+    return ArraysEqualWithDifferentLDA(arr1,arr2,n,m,lda,lda,stride,swap_n_m,relTo);
 }
   
 static _MT_ ArraysEqualWithDifferentLDA(const _ST_* arr1,const _ST_* arr2, int n, int m, 
-lidx_t lda1, lidx_t lda2, lidx_t stride, bool swap_n_m=false)
+lidx_t lda1, lidx_t lda2, lidx_t stride, bool swap_n_m=false, _MT_ relTo = mt::zero())
 {
   int N = swap_n_m? m: n;
   int M = swap_n_m? n: m;
@@ -276,7 +276,8 @@ lidx_t lda1, lidx_t lda2, lidx_t stride, bool swap_n_m=false)
     for (int j=0;j<M;j++)
     {
       MT mn = st::abs(arr1[j*lda1+i]-arr2[j*lda2+i]);
-      MT pl = (st::abs(arr1[j*lda1+i])+st::abs(arr2[j*lda2+i]))*(MT)0.5;
+      MT pl = relTo;
+      if (pl==mt::zero()) pl = (st::abs(arr1[j*lda1+i])+st::abs(arr2[j*lda2+i]))*(MT)0.5;
       if (pl==mt::zero()) pl=mt::one();
       maxval=mt::max(mn/pl,maxval);
       //std::cout << arr1[j*lda1+i]<< "\t SAME ?? AS \t"<<arr2[j*lda2+i]<<std::endl;

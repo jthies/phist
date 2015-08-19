@@ -131,9 +131,11 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     endif ()
   endif()
 
-  set (CMAKE_C_FLAGS_RELEASE        "-O3 -ffast-math -march=native")
+  # -ffast-math kills high precision stuff!
+  set(FAST_MATH "-fno-math-errno -ffinite-math-only -fno-signed-zeros -fno-trapping-math")
+  set (CMAKE_C_FLAGS_RELEASE        "-O3 ${FAST_MATH} -march=native")
   set (CMAKE_CXX_FLAGS_RELEASE      "-O2")
-  set (CMAKE_Fortran_FLAGS_RELEASE  "-march=native -O3 -ffast-math")
+  set (CMAKE_Fortran_FLAGS_RELEASE  "-march=native -O3 ${FAST_MATH}")
 
   set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -g")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -g")
@@ -311,9 +313,9 @@ elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
   if(PHIST_KERNEL_LIB_BUILTIN_AVX2_PREC_KERNELS)
     message(STATUS "Activated experimental high-precision builtin kernel routines!")
     set(PHIST_HIGH_PRECISION_KERNELS 1)
-    set (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -mavx -mavx2 -mfma")
-    set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -mavx -mavx2 -mfma")
-    set (CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -mavx -mavx2 -mfma")
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx -mavx2 -mfma")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx -mavx2 -mfma")
+    set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mavx -mavx2 -mfma")
 
     if (NOT MPACK_FOUND)
       message(WARNING "did not find mlapack_dd library, as you are compiling with high precision kernels, you may want to provide this library."
@@ -910,13 +912,13 @@ endforeach()
 enable_testing()
 
 if (${PHIST_ENABLE_MPI})
-  set(PHIST_MPI_TEST_NPROCS 1 2 4 5 6)
+  set(PHIST_MPI_TEST_NPROCS 1 2 3 12 24)
 else()
   set(PHIST_MPI_TEST_NPROCS "")
 endif()
 
 foreach(np ${PHIST_MPI_TEST_NPROCS})
-  math(EXPR TEST_OMP_NUM_THREADS "6/${np}")
+  math(EXPR TEST_OMP_NUM_THREADS "24/${np}")
   foreach(label ${PHIST_TESTS})
     set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env LSAN_OPTIONS=\"exitcode=0\" env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=guided,256
     ./${PRODUCT_NAME}-${label}-test --gtest_death_test_style=threadsafe --gtest_output=xml:test_output_np${np}/${label}/xunit.xml)
