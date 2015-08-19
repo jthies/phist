@@ -8,19 +8,29 @@
 
 void phist_jadaOpts_setDefaults(phist_jadaOpts_t *opts)
 {
-opts->numEigs=6; 
-opts->which=LM; 
+  opts->numEigs=6; 
+  opts->which=LM; 
 
-opts->innerSolvType=GMRES;
+  opts->maxIters=300;
+  opts->blockSize=1;
+  opts->minBas=10;
+  opts->maxBas=20;
+  opts->convTol=1.0e-12;
 
-opts->maxIters=300; 
-opts->blockSize=1; 
-opts->minBas=10;
-opts->maxBas=20;
-opts->convTol=1.0e-12;
+  opts->v0=NULL;
+  opts->arno=1;
+  opts->initialShift=0.0;
+  opts->initialShiftIters=0;
 
-opts->v0=NULL; 
-opts->arno=1;
-opts->initialShift=0.0; 
+  opts->innerSolvType=GMRES;
+  opts->innerSolvMaxBas=20;
+  opts->innerSolvMaxIters=20;
+  opts->innerSolvBlockSize=1;
+  opts->innerSolvStopAfterFirstConverged=0;
+  opts->innerSolvRobust=1;
+
+  opts->customSolver=NULL;
+  opts->customSolver_run1=NULL;
+  opts->customSolver_run=NULL;
 
 }

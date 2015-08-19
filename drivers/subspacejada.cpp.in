@@ -12,6 +12,7 @@
 #include "phist_enums.h"
 #include "phist_kernels.h"
 #include "phist_operator.h"
+#include "phist_jadaOpts.h"
 #include "phist_subspacejada.h"
 #include ${PHIST_TG_HFILE}
 #include "phist_driver_utils.h"
@@ -230,11 +231,34 @@ int main(int argc, char** argv)
   mvec_ptr_t res;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&res,map,nEig+blockDim-1,&iflag),iflag);
 
+  // fill the jadaOpts struct to pass settings to the solver
+  phist_jadaOpts_t opts;
+  phist_jadaOpts_setDefaults(&opts);
+
+
+  // TODO: nicer way reading jada parameters from command line or
+  // input file
+  opts.which=which;
+  opts.convTol=tol;
+  opts.numEigs=nEig;
+  opts.maxIters=nIter;
+  opts.blockSize=blockDim;
+  opts.minBas=minBase;
+  opts.maxBas=maxBase;
+  opts.symmetry=symmetric?HERMITIAN:GENERAL;
+  opts.initialShiftIters=initialShiftIters;
+  opts.initialShift=initialShift;
+
+  opts.innerSolvType=symmetric?MINRES:GMRES;
+  opts.innerSolvBlockSize=innerBlockDim;
+  opts.innerSolvMaxBas=innerMaxBase;
+  opts.innerSolvRobust=innerIMGS;
+  opts.innerSolvStopAfterFirstConverged=innerGMRESabortAfterFirstConverged; 
+  opts.v0=v0;
 
   //------------------------------- run block JaDa algorithm ----------------------- 
-  PHIST_ICHK_IERR(SUBR(subspacejada)(opA, NULL, v0, which, tol, nEig, &nIter, blockDim, minBase, maxBase,
-        innerBlockDim, innerMaxBase, initialShiftIters, initialShift, innerIMGS, innerGMRESabortAfterFirstConverged, symmetric,
-        Q, R, ev, resNorm, &iflag), iflag);
+  PHIST_ICHK_IERR(SUBR(subspacejada)(opA, NULL, opts,
+        Q, R, ev, resNorm, &nEig, &nIter, &iflag), iflag);
 
   // calculate real residual
   PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,Q,st::zero(),res,&iflag),iflag);

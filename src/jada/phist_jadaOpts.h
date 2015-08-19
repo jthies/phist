@@ -15,14 +15,15 @@ typedef struct phist_jadaOpts_t {
 // what do you want to compute?
 int numEigs; //! howmany eigenpairs are sought?
 eigSort_t which; //! LM, SM, LR, SR, or TARGET
-linSolv_t innerSolvType; //! GMRES, MINRES, CARP_CG, USER_DEFINED currently supported.
-                         //! If set to USER_DEFINED, you have to provide the customSolver*
-                         //! interface below.
 double convTol; //! convergence tolerance for eigenvalues
+matSym_t symmetry; //! Symmetry properties of the matrix
 
-// JaDa configuration
+////////////////////////////////////
+// JaDa configuration             //
+////////////////////////////////////
+
 int maxIters; //! maximum iterations allowed
-int blockSize; //! only for block methods (subspacejada and blockjada)
+int blockSize; //! only for block methods (subspacejada)
 int minBas; //! number of vectors retained upon restart
 int maxBas; //! maximum number of vectors allowed in the basis
 
@@ -33,20 +34,52 @@ int arno; //! 0: no Arnoldi steps. 1: minBas Arnoldi steps to start up.
 double initialShift; //! can be used to start with an initial shift
                      //! (ignored if arno!=0)
 
-  //! custom solver data structure if innerSolvType is USER_DEFINED
-void* customSolver_;
-#if 0  
-  void (*customSolver_create)( void** customSolverData,int blockDim, const_map_ptr_t map, int maxBase, int* iflag);
-  void (*customSolver_delete)( void*  customSolverData, int* iflag);
-  void (*customSolver_run)(            void*  customSolverData,
-                                    void const*    A_op,     void const*    B_op,
-                                    void const*    Qtil,     void const*    BQtil,
-                                    const _ST_            sigma[],  TYPE(const_mvec_ptr)  res,      const int resIndex[],
-                                    const _MT_            tol[],    int                   maxIter,
-                                    TYPE(mvec_ptr)        t,
-                                    bool useIMGS,                   bool abortAfterFirstConvergedInBlock,
-                                    int *                 iflag);
-#endif  
+int initialShiftIters; // perform given number of iterations with a fixed shift
+
+/*//////////////////////////////////
+// inner solver configuration     //
+//////////////////////////////////*/
+
+linSolv_t innerSolvType; /*! GMRES, MINRES, CARP_CG, USER_DEFINED currently supported.
+                          * If set to USER_DEFINED, you have to provide the customSolver*
+                          * interface below.
+                          */
+int innerSolvBlockSize;
+int innerSolvMaxBas;
+int innerSolvMaxIters;
+int innerSolvRobust; /*! extra effort to get good jada updates
+                      * (in practice this may mean a more accurate orthogonalization etc.)
+                      */
+int innerSolvStopAfterFirstConverged;
+
+
+  //! pointer to solver object if innerSolvType==USER_DEFINED
+  void* customSolver;
+
+  //! this function is used instead of phist_jadaCorrectionSolver_run if innerSolvType is USER_DEFINED.
+  //! For jdqr or subspacejada with block size 1 it is enough to implement the simpler interface below,
+  //! we first check in those cases if that interface is set before checking for this one.
+  //! note that the scalar arguments are always passed in as doubles so that a single function pointer can
+  //! be used in this untyped struct.
+  void (*customSolver_run)(         void*       customSolverData,
+                                    void const* A_op,      void const*    B_op,
+                                    void const* Qtil,      void const*    BQtil,
+                                    const double sigma_r[], const double sigma_i[],  
+                                    void const* res,        const int resIndex[],
+                                    const double tol[],       int maxIter,
+                                    void* t,                int robust,
+                                    int abortAfterFirstConvergedInBlock,
+                                    int * iflag);
+
+  //! simplified interface if only single-vector jdqr or subspacejada is used.
+  void (*customSolver_run1)(        void*  customSolverData,
+                                    void const* A_op,     void const*    B_op,
+                                    void const* Qtil,     void const*    BQtil,
+                                    const double sigma,   double sigma_i,
+                                    void const* res,      double tol,
+                                    int maxIter,          void* t,
+                                    int robust,
+                                    int * iflag);
 
 } phist_jadaOpts_t;
 

@@ -5,7 +5,8 @@
 
 /*! Test fixure. */
 class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
-                 public virtual KernelTestWithSdMats<_ST_,_NVP_,_NV_>
+                 public virtual KernelTestWithSdMats<_ST_,_NVP_,_NV_>,
+                 public JadaTestWithOpts
 {
 
   public:
@@ -19,6 +20,10 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     {
       VTest::SetUp();
       MTest::SetUp();
+      JadaTestWithOpts::SetUp();
+
+      jadaOpts_.innerSolvType=GMRES;
+      jadaOpts_.maxBas=_MAXBAS_;
 
       if (typeImplemented_ && !problemTooSmall_)
       {
@@ -162,7 +167,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(&solver, 3, map_, GMRES, _MAXBAS_, &iflag_);
+      jadaOpts_.blockSize=3;
+      SUBR(jadaCorrectionSolver_create)(&solver, jadaOpts_, map_, &iflag_);
       ASSERT_EQ(0, iflag_);
       SUBR(jadaCorrectionSolver_delete)(solver, &iflag_);
       ASSERT_EQ(0, iflag_);
@@ -183,7 +189,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(&solver, 1, map_, GMRES, _MAXBAS_, &iflag_);
+      jadaOpts_.blockSize=1;
+      SUBR(jadaCorrectionSolver_create)(&solver, jadaOpts_, map_, &iflag_);
       ASSERT_EQ(0, iflag_);
 
       TYPE(mvec_ptr) t_i = NULL;
@@ -203,7 +210,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         ASSERT_EQ(0, iflag_);
 
         // run
-        SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, &sigma_[i], res_i, NULL, &tol[i], 200, t_i, true, false, &iflag_);
+        SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, &sigma_[i],res_i, NULL, &tol[i], 200, t_i, 1, 0, &iflag_);
         ASSERT_EQ(0, iflag_);
       }
 
@@ -225,21 +232,22 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(&solver, _NV_, map_, GMRES, _MAXBAS_, &iflag_);
+      jadaOpts_.blockSize=_NV_;
+      SUBR(jadaCorrectionSolver_create)(&solver, jadaOpts_, map_, &iflag_);
       ASSERT_EQ(0, iflag_);
 
-      _MT_ tol[_NV_];
+      double tol[_NV_];
       for(int i = 0; i < _NV_; i++)
       {
         // create some random tolerance
-        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
+        tol[i] = (double)exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
       }
 
       SUBR(mvec_put_value)(vec2_, st::zero(), &iflag_);
       ASSERT_EQ(0, iflag_);
 
       // run
-      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, true, false, &iflag_);
+      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_,vec3_, NULL, tol, 200, vec2_, 1, 0, &iflag_);
       ASSERT_EQ(0, iflag_);
 
       // check all solutions
@@ -256,7 +264,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(&solver, 1, map_, GMRES, _MAXBAS_, &iflag_);
+      jadaOpts_.blockSize=1;
+      SUBR(jadaCorrectionSolver_create)(&solver, jadaOpts_, map_, &iflag_);
       ASSERT_EQ(0, iflag_);
 
       _MT_ tol[_NV_];
@@ -270,7 +279,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0, iflag_);
 
       // run
-      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, true, false, &iflag_);
+      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, 1, 0, &iflag_);
       ASSERT_EQ(0, iflag_);
 
       // check all solutions
@@ -287,21 +296,22 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(&solver, 2, map_, GMRES, _MAXBAS_, &iflag_);
+      jadaOpts_.blockSize=2;
+      SUBR(jadaCorrectionSolver_create)(&solver, jadaOpts_, map_, &iflag_);
       ASSERT_EQ(0, iflag_);
 
-      _MT_ tol[_NV_];
+      double tol[_NV_];
       for(int i = 0; i < _NV_; i++)
       {
         // create some random tolerance
-        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
+        tol[i] = (double)exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
       }
 
       SUBR(mvec_put_value)(vec2_, st::zero(), &iflag_);
       ASSERT_EQ(0, iflag_);
 
       // run
-      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, true, false, &iflag_);
+      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, 1, 0, &iflag_);
       ASSERT_EQ(0, iflag_);
 
       // check all solutions
@@ -318,21 +328,22 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(jadaCorrectionSolver_ptr) solver = NULL;
-      SUBR(jadaCorrectionSolver_create)(&solver, 4, map_, GMRES, _MAXBAS_, &iflag_);
+      jadaOpts_.blockSize=4;
+      SUBR(jadaCorrectionSolver_create)(&solver, jadaOpts_, map_, &iflag_);
       ASSERT_EQ(0, iflag_);
 
-      _MT_ tol[_NV_];
+      double tol[_NV_];
       for(int i = 0; i < _NV_; i++)
       {
         // create some random tolerance
-        tol[i] = exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
+        tol[i] = (double)exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
       }
 
       SUBR(mvec_put_value)(vec2_, st::zero(), &iflag_);
       ASSERT_EQ(0, iflag_);
 
       // run
-      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, true, false, &iflag_);
+      SUBR(jadaCorrectionSolver_run)(solver, opA_, NULL, q_, NULL, sigma_, vec3_, NULL, tol, 200, vec2_, 1, 0, &iflag_);
       ASSERT_EQ(0, iflag_);
 
       // check all solutions

@@ -10,6 +10,14 @@ typedef struct TYPE(op) {
  const void* A; //! data structure needed for representing A
  const_map_ptr_t range_map; //! map for vectors Y in Y=A*X
  const_map_ptr_t domain_map; //! map for vectors X in Y=A*X
+ void const* aux; //! This field can be used to carry along
+                  //! additional info like a space which
+                  //! is projected out of the operator etc.,
+                  //! it is currently ignored in phist but
+                  //! used in HYMLS to implement a custom
+                  //! residual evaluation. In the future we
+                  //! want to provide some mechanism to add
+                  //! user-defined projections
  //! pointer to function for computing Y=alpha*A*X+beta*Y
  void (*apply)(_ST_ alpha, const void* A, 
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag);
