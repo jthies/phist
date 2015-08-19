@@ -26,10 +26,10 @@ MODULES_KERNELS=(
 
 declare -A MODULES_KERNELS_OPTIONAL
 MODULES_KERNELS_OPTIONAL=(
-  ["builtin"]="parmetis trilinos"
-  ["ghost"]="trilinos"
-  ["epetra"]=""
-  ["tpetra"]="" )
+  ["builtin"]="mpack ColPack parmetis trilinos"
+  ["ghost"]="mpack trilinos"
+  ["epetra"]="mpack"
+  ["tpetra"]="mpack" )
 
 
 ## parse command line arguments

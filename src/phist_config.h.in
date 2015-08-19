@@ -35,15 +35,6 @@ kernel libs) ?
 */
 #cmakedefine PHIST_HIGH_PRECISION_KERNELS
 
-/* do we have access to MPACK (multi-precision BLAS/LAPACK and GMP (GNU Multiple Precision library)
-   This is currently not used/implemented.
-*/
-#cmakedefine PHIST_HAVE_MPACK_GMP
-
-/* MPACK with QD library, used in robust SVQB with builtin kernels
-*/
-#cmakedefine PHIST_HAVE_MPACK_QD
-
 /* which library provides the basic matrix/vector operations? */
 #cmakedefine PHIST_KERNEL_LIB_EPETRA
 #cmakedefine PHIST_KERNEL_LIB_TPETRA
@@ -70,6 +61,14 @@ kernel libs) ?
 #cmakedefine PHIST_HAVE_PARMETIS
 #cmakedefine PHIST_HAVE_COLPACK
 #cmakedefine PHIST_HAVE_LIKWID
+/* do we have access to MPACK (multi-precision BLAS/LAPACK and GMP (GNU Multiple Precision library)
+ * This is currently not used/implemented.
+ */
+#cmakedefine PHIST_HAVE_MPACK_GMP
+/* MPACK with QD library, used in robust SVQB with builtin kernels 
+ */
+#cmakedefine PHIST_HAVE_MPACK_QD
+
 
 /* timing/profiling/benchmarking behavior */
 #cmakedefine LIKWID_PERFMON

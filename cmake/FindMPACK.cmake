@@ -23,31 +23,26 @@
 #
 # find_package(MPACK)
 
-find_path(MPACK_INCLUDE_DIR 
-          NAMES mpack/mpack_config.h
+find_path(MPACK_INCLUDE_DIR mpack_config.h
           PATHS ${MPACK_DIR} ${MPACK_ROOT}
-          PATH_SUFFIXES include
-          NO_DEFAULT_PATH
+          PATH_SUFFIXES include mpack
           DOC "Include directory of MPACK")
-find_path(MPACK_INCLUDE_DIR mpack/mpack_config.h)
 
-find_path(MPACK_QD_INCLUDE_DIR qd/qd_config.h
+find_path(MPACK_QD_INCLUDE_DIR qd_config.h
           PATHS ${MPACK_DIR} ${MPACK_ROOT}
-          PATH_SUFFIXES include
-          NO_DEFAULT_PATH
+          PATH_SUFFIXES include qd
           DOC "Include directory of QD")
-find_path(MPACK_QD_INCLUDE_DIR qd/qd_config.h)
 
 #check MPACK headers
 include(CMakePushCheckState)
 cmake_push_check_state() # Save variables
-set(CMAKE_REQUIRED_INCLUDES ${CMKE_REQUIRED_INCLUDES}
+set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES}
                             ${MPACK_INCLUDE_DIR}
                             ${MPACK_QD_INCLUDE_DIR})
 include(CheckIncludeFileCXX)
-check_include_file_cxx(mpack/mpack_config.h MPACK_FOUND)
+check_include_file_cxx(mpack_config.h MPACK_FOUND)
 include(CheckIncludeFile)
-check_include_file(qd/qd_config.h MPACK_QD_FOUND)
+check_include_file(qd_config.h MPACK_QD_FOUND)
 
 set(MPACK_INCLUDE_PATH ${CMAKE_REQUIRED_INCLUDES})
 

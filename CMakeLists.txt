@@ -315,18 +315,7 @@ elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
     set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -mavx -mavx2 -mfma")
     set (CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -mavx -mavx2 -mfma")
 
-    find_package (MPACK) 
-    if (MPACK_FOUND)
-      include_directories(${MPACK_INCLUDE_DIRS})
-      link_directories(${MPACK_LIBRARY_DIRS})
-      message(STATUS "TROET ${MPACK_INCLUDE_DIRS}")
-      message(STATUS "mpack found, enabled high precision lapack!")
-      if (MPACK_QD_FOUND)
-        set(PHIST_HAVE_MPACK_QD 1)
-      else()
-        message(WARNING "found MPACK, but not MPACK_QD, which is the only supported implementation right now")
-      endif()
-    else()
+    if (NOT MPACK_FOUND)
       message(WARNING "did not find mlapack_dd library, as you are compiling with high precision kernels, you may want to provide this library."
                       "It can be obtained from http://mplapack.sourceforge.net/ and should be compiled with support for double-double (dd) core operations."
                       "If it is already installed and you want to use it, set MPACK_DIR to provide a hint where it can be found.")
@@ -593,7 +582,19 @@ else()
   message(STATUS "GHOST not found, some functionality will be disabled and return -99 ('not implemented')")
 endif()
 
-message(STATUS "GHOST libs: ${GHOST_LIBRARIES}")
+#message(STATUS "GHOST libs: ${GHOST_LIBRARIES}")
+
+  find_package (MPACK)
+  if (MPACK_FOUND)
+      include_directories(${MPACK_INCLUDE_DIRS})
+      link_directories(${MPACK_LIBRARY_DIRS})
+      message(STATUS "mpack found, enabled high precision lapack!")
+      if (MPACK_QD_FOUND)
+        set(PHIST_HAVE_MPACK_QD 1)
+      else()
+        message(WARNING "found MPACK, but not MPACK_QD, which is the only supported implementation right now")
+      endif()
+  endif()
 
 # load parmetis for reordering builtin
 if(PHIST_KERNEL_LIB STREQUAL "builtin")
@@ -609,21 +610,7 @@ if(PHIST_KERNEL_LIB STREQUAL "builtin")
     message(STATUS "ParMETIS not found, no matrix reordering!")
   endif()
 
-#  find_package(ColPack)
-  if (COLPACK_DIR)
-    set(COLPACK_INCLUDE_DIRS ${COLPACK_DIR}/include)
-    find_library(COLPACK_LIBRARIES ColPack
-                 PATHS ${COLPACK_DIR}
-                 PATH_SUFFIXES lib lib64
-                 NO_DEFAULT_PATH)
-    find_library(COLPACK_LIBRARY ColPack) # also check default paths, but prefer COLPACK_DIR
-    #message(STATUS "COLPACK_LIBRARIES: ${COLPACK_LIBRARIES}")
-    get_filename_component(COLPACK_LIBRARY_DIRS ${COLPACK_LIBRARIES} PATH)
-    #message(STATUS "COLPACK_LIBRARY_DIRS: ${COLPACK_LIBRARY_DIRS}")
-    #set(COLPACK_LIBRARIES ${COLPACK_DIR}/lib/libColPack.so)
-    #set(COLPACK_LIBRARY_DIRS ${COLPACK_DIR}/lib)
-    set(COLPACK_FOUND 1)
-  endif()
+  find_package(ColPack)
 
   if(COLPACK_FOUND)
     set(PHIST_HAVE_COLPACK 1)
