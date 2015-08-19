@@ -18,12 +18,8 @@
 
 find_path(COLPACK_INCLUDE_DIR ColPackHeaders.h
           PATHS ${COLPACK_DIR} ${COLPACK_ROOT}
-          PATH_SUFFIXES include/ColPack
-          NO_DEFAULT_PATH
+          PATH_SUFFIXES include ColPack
           DOC "Include directory of ColPack")
-find_path(COLPACK_INCLUDE_DIR ColPackHeaders.h)
-
-message("TROET ${COLPACK_INCLUDE_DIR}")
 
 set(COLPACK_LIB_NAME ColPack
           PATHS ${COLPACK_DIR} ${COLPACK_ROOT}
@@ -35,10 +31,10 @@ set(COLPACK_LIBRARY ColPack_LIBRARY-NOTFOUND
 #check ColPack headers
 include(CMakePushCheckState)
 cmake_push_check_state() # Save variables
-include(CheckIncludeFile)
+include(CheckIncludeFileCXX)
 set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${COLPACK_INCLUDE_DIR})
 set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
-check_include_file(ColPackHeaders.h COLPACK_FOUND)
+check_include_file_cxx(ColPackHeaders.h COLPACK_FOUND)
 if(COLPACK_FOUND)
   set(ColPack_INCLUDE_PATH ${CMAKE_REQUIRED_INCLUDES})
   set(ColPack_COMPILE_FLAGS "${CMAKE_REQUIRED_FLAGS}")
@@ -48,7 +44,7 @@ if(COLPACK_FOUND)
                PATHS ${COLPACK_DIR} ${COLPACK_ROOT}
                PATH_SUFFIXES lib lib64
                NO_DEFAULT_PATH)
-  #find_library(COLPACK_LIBRARY ColPack)
+  find_library(COLPACK_LIBRARY ColPack)
 
   # check ColPack library
 #  if(COLPACK_LIBRARY)
@@ -56,6 +52,7 @@ if(COLPACK_FOUND)
 #    include(CheckFunctionExists)
 #    check_function_exists(ColPack_v3_partkway HAVE_COLPACK)
 #  endif(COLPACK_LIBRARY)
+  set(HAVE_COLPACK 1)
 endif(COLPACK_FOUND)
 
 # behave like a CMake module is supposed to behave
