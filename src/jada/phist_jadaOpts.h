@@ -31,8 +31,9 @@ int maxBas; //! maximum number of vectors allowed in the basis
 void* v0; //! can be used to pass in a start-up vector(-space) (can have any number of 
           //! columns). v0 is assumed to be orthonormal.
 int arno; //! 0: no Arnoldi steps. 1: minBas Arnoldi steps to start up.
-double initialShift; //! can be used to start with an initial shift
-                     //! (ignored if arno!=0)
+double initialShift_r; //! can be used to start with an initial shift
+                       //! (ignored if arno!=0)
+double initialShift_i; //! imaginary part of initial shift
 
 int initialShiftIters; // perform given number of iterations with a fixed shift
 
