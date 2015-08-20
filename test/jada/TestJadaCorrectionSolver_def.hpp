@@ -236,11 +236,11 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       SUBR(jadaCorrectionSolver_create)(&solver, jadaOpts_, map_, &iflag_);
       ASSERT_EQ(0, iflag_);
 
-      double tol[_NV_];
+      _MT_ tol[_NV_];
       for(int i = 0; i < _NV_; i++)
       {
         // create some random tolerance
-        tol[i] = (double)exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
+        tol[i] = (_MT_)exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
       }
 
       SUBR(mvec_put_value)(vec2_, st::zero(), &iflag_);
@@ -300,11 +300,11 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       SUBR(jadaCorrectionSolver_create)(&solver, jadaOpts_, map_, &iflag_);
       ASSERT_EQ(0, iflag_);
 
-      double tol[_NV_];
+      _MT_ tol[_NV_];
       for(int i = 0; i < _NV_; i++)
       {
         // create some random tolerance
-        tol[i] = (double)exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
+        tol[i] = (_MT_)exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
       }
 
       SUBR(mvec_put_value)(vec2_, st::zero(), &iflag_);
@@ -332,11 +332,11 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       SUBR(jadaCorrectionSolver_create)(&solver, jadaOpts_, map_, &iflag_);
       ASSERT_EQ(0, iflag_);
 
-      double tol[_NV_];
+      _MT_ tol[_NV_];
       for(int i = 0; i < _NV_; i++)
       {
         // create some random tolerance
-        tol[i] = (double)exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
+        tol[i] = (_MT_)exp((_MT_)-8*mt::one() + (_MT_)4*mt::prand());
       }
 
       SUBR(mvec_put_value)(vec2_, st::zero(), &iflag_);
