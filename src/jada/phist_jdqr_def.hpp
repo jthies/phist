@@ -111,7 +111,8 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   int innerSolvMaxBas = opts.innerSolvMaxBas;
   int innerSolvBlockSize = opts.innerSolvBlockSize;
   bool arno=(bool)opts.arno;
-  MT initialShift=(MT)opts.initialShift;
+  CT initialShift=(ST)opts.initialShift_r
+                 +(ST)opts.initialShift_i*st::cmplx_I();
 
   std::complex<MT> ev[maxBas+1];
   
@@ -202,7 +203,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_SOUT(PHIST_VERBOSE,"innerSolvType\t%s\n",linSolv2str(innerSolvType));
   if (!arno)
   {
-    PHIST_SOUT(PHIST_VERBOSE,"initialShift\t%4.2g\n",initialShift);
+    PHIST_SOUT(PHIST_VERBOSE,"initialShift\t%4.2g%+4.2g\n",(MT)ct::real(initialShift),(MT)ct::imag(initialShift));
   }
   PHIST_SOUT(PHIST_VERBOSE,"====================\n");
 
@@ -626,8 +627,9 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     CT actual_shift=theta;
     if (m<minBas && res_nrm>1.0e-2)
     {
-      PHIST_SOUT(PHIST_VERBOSE,"start-up step with fixed sigma=%f\n",initialShift);
-      actual_shift=initialShift; // start-up without Arnoldi
+      PHIST_SOUT(PHIST_VERBOSE,"start-up step with fixed sigma=%4.2f%+4.2f\n",
+        (MT)ct::real(initialShift),(MT)ct::imag(initialShift));
+      actual_shift=(CT)initialShift; // start-up without Arnoldi
     }
 #ifdef IS_COMPLEX
     sigma[0] = actual_shift;

@@ -137,7 +137,7 @@ int main(int argc, char** argv)
   }
 
   // initial shift
-  _ST_ initialShift = st::zero();
+  _CT_ initialShift = ct::zero();
   if( argc > 12 )
   {
     std::istringstream iss(argv[12]);
@@ -247,7 +247,8 @@ int main(int argc, char** argv)
   opts.maxBas=maxBase;
   opts.symmetry=symmetric?HERMITIAN:GENERAL;
   opts.initialShiftIters=initialShiftIters;
-  opts.initialShift=initialShift;
+  opts.initialShift_r=ct::real(initialShift);
+  opts.initialShift_r=ct::imag(initialShift);
 
   opts.innerSolvType=symmetric?MINRES:GMRES;
   opts.innerSolvBlockSize=innerBlockDim;

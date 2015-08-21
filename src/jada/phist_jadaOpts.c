@@ -19,7 +19,8 @@ void phist_jadaOpts_setDefaults(phist_jadaOpts_t *opts)
 
   opts->v0=NULL;
   opts->arno=1;
-  opts->initialShift=0.0;
+  opts->initialShift_r=0.0;
+  opts->initialShift_i=0.0;
   opts->initialShiftIters=0;
 
   opts->innerSolvType=GMRES;
