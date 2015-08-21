@@ -619,7 +619,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       SUBR(mvec_print)(vec2_,&iflag_);
       SUBR(mvec_print)(vec3_,&iflag_);
 #endif
-      ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),100*mt::eps());
+      ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_,mt::one()),1000*mt::eps());
 
       //alpha*I*X+beta*Y = alpha*X+beta*Y?
       alpha = random_number();
