@@ -14,6 +14,7 @@ KERNELS="builtin" # ghost epetra tpetra
 PRGENV="gcc-5.1.0-openmpi" # intel-13.0.1-mpich gcc-4.9.2-openmpi
 FLAGS="" # optional-libs
 ADD_CMAKE_FLAGS="" #optional CMake flags
+VECT_EXT="native"
 # list of modules to load
 MODULES_BASIC="cmake ccache cppcheck lapack"
 
@@ -34,9 +35,9 @@ MODULES_KERNELS_OPTIONAL=(
 
 ## parse command line arguments
 usage() { echo "Usage: $0 [-k <builtin|ghost|epetra|tpetra>] [-e <PrgEnv/module-string>] [-f <optional-libs>]"; \
-          echo "       [-c <cmake flags to be added>" 1>&2; exit 1; }
+          echo "       [-c <cmake flags to be added>] [-v <SSE|AVX|AVX2>]" 1>&2; exit 1; }
 
-while getopts "k:e:f:c:h" o; do
+while getopts "k:e:f:c:v:h" o; do
     case "${o}" in
         k)
             KERNELS=${OPTARG}
@@ -51,6 +52,9 @@ while getopts "k:e:f:c:h" o; do
         c)
             ADD_CMAKE_FLAGS=${OPTARG}
             ;;
+        v)
+            VECT_EXT=${OPTARG}
+            ;;
         h)
             usage
             ;;
@@ -61,7 +65,7 @@ while getopts "k:e:f:c:h" o; do
 done
 shift $((OPTIND-1))
 
-echo "Options: KERNEL_LIB=${KERNELS}, PRGENV=${PRGENV}, FLAGS=${FLAGS}, ADD_CMAKE_FLAGS='${ADD_CMAKE_FLAGS}'"
+echo "Options: KERNEL_LIB=${KERNELS}, PRGENV=${PRGENV}, FLAGS=${FLAGS}, ADD_CMAKE_FLAGS='${ADD_CMAKE_FLAGS}', VECT_EXT=${VECT_EXT}"
 
 ## prepare system for compilation
 # configure modulesystem
@@ -99,10 +103,10 @@ error=0
 # release build including doc
 if [[ "$KERNELS" = "ghost" ]]; then
   # this is the easiest way to make phist find ghost+dependencies
-  export CMAKE_PREFIX_PATH=$PWD/../install-${PRGENV}-Release/lib/ghost:$CMAKE_PREFIX_PATH
-  export PKG_CONFIG_PATH=$PWD/../install-${PRGENV}-Release/lib/pkgconfig:$PKG_CONFIG_PATH
+  export CMAKE_PREFIX_PATH=$PWD/../install-${PRGENV}-Release-${VECT_EXT}/lib/ghost:$CMAKE_PREFIX_PATH
+  export PKG_CONFIG_PATH=$PWD/../install-${PRGENV}-Release-${VECT_EXT}/lib/pkgconfig:$PKG_CONFIG_PATH
   # also set the LD_LIBRARY_PATH appropriately
-  export LD_LIBRARY_PATH=$PWD/../install-${PRGENV}-Release/lib/ghost:$PWD/../install-${PRGENV}-Release/lib/essex-physics:$LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH=$PWD/../install-${PRGENV}-Release-${VECT_EXT}/lib/ghost:$PWD/../install-${PRGENV}-Release-${VECT_EXT}/lib/essex-physics:$LD_LIBRARY_PATH
 fi
 
 # let ctest print all output if there was an error!
@@ -137,10 +141,10 @@ cd ..
 # debug build
 if [[ "$KERNELS" = "ghost" ]]; then
   # this is the easiest way to make phist find ghost+dependencies
-  export CMAKE_PREFIX_PATH=$PWD/../install-${PRGENV}-Debug/lib/ghost:$CMAKE_PREFIX_PATH
-  export PKG_CONFIG_PATH=$PWD/../install-${PRGENV}-Debug/lib/pkgconfig:$PKG_CONFIG_PATH
+  export CMAKE_PREFIX_PATH=$PWD/../install-${PRGENV}-Debug-${VECT_EXT}/lib/ghost:$CMAKE_PREFIX_PATH
+  export PKG_CONFIG_PATH=$PWD/../install-${PRGENV}-Debug-${VECT_EXT}/lib/pkgconfig:$PKG_CONFIG_PATH
   # also set the LD_LIBRARY_PATH appropriately
-  export LD_LIBRARY_PATH=$PWD/../install-${PRGENV}-Debug/lib/ghost:$PWD/../install-${PRGENV}-Debug/lib/essex-physics:$LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH=$PWD/../install-${PRGENV}-Debug-${VECT_EXT}/lib/ghost:$PWD/../install-${PRGENV}-Debug-${VECT_EXT}/lib/essex-physics:$LD_LIBRARY_PATH
 fi
 mkdir build_${KERNELS}_${PRGENV}_Debug_${FLAGS// /_}; cd $_
 cmake -DCMAKE_BUILD_TYPE=Debug    \
