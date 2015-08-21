@@ -16,7 +16,7 @@ FLAGS="" # optional-libs
 ADD_CMAKE_FLAGS="" #optional CMake flags
 VECT_EXT="native"
 # list of modules to load
-MODULES_BASIC="cmake ccache cppcheck lapack"
+MODULES_BASIC="cmake ccache cppcheck lapack gcovr doxygen"
 
 declare -A MODULES_KERNELS
 MODULES_KERNELS=( 
