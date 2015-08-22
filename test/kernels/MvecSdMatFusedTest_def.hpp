@@ -159,7 +159,7 @@ public:
 
       // Compare results
       ASSERT_REAL_EQ(mt::one(), MvecsEqual(V1_,V2_));
-      ASSERT_NEAR(mt::one(), MvecsEqual(W1_,W2_), sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(), MvecsEqual(W1_,W2_,mt::one()), sqrt(mt::eps()));
       ASSERT_REAL_EQ(mt::one(), SdMatsEqual(N1_,N2_));
       ASSERT_NEAR(mt::one(), SdMatsEqual(M1_,M2_), sqrt(mt::eps()));
     }
