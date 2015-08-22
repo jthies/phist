@@ -158,7 +158,7 @@ static _MT_ SdMatEqual(TYPE(sdMat_ptr) M, _ST_ value)
   return return_value;
 }
 
-static _MT_ SdMatsEqual(TYPE(sdMat_ptr) M1, TYPE(sdMat_ptr) M2)
+static _MT_ SdMatsEqual(TYPE(sdMat_ptr) M1, TYPE(sdMat_ptr) M2, _MT_ relTo = mt::zero())
 {
   int iflag;
   _ST_ *val, *val2;
@@ -188,7 +188,7 @@ static _MT_ SdMatsEqual(TYPE(sdMat_ptr) M1, TYPE(sdMat_ptr) M2)
   // vectors not equal: dimensions mismatch
   if (n!=n2||m!=m2) return (_MT_)(-mt::one());
   if (lda!=lda2) return (_MT_)(-99*mt::one()); // test not implemented
-  MT return_value=ArraysEqual(val,val2,n,m,lda,1,KernelTest::mflag_);
+  MT return_value=ArraysEqual(val,val2,n,m,lda,1,KernelTest::mflag_,relTo);
 #if PHIST_OUTLEV>=PHIST_DEBUG
   if (std::abs(return_value-mt::one())>std::sqrt(mt::eps()))
   {

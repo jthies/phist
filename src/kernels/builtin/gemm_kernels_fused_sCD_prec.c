@@ -131,12 +131,15 @@ void dgemm_fused_scd_self_prec_4(int nrows, aligned_double *restrict x, double *
 
 
     // handcoded omp reduction
-    for(int i = 1; i < nt; i++)
+    __m256d s[4], c[4];
+    for(int j = 0; j < 4; j++)
     {
-      for(int j = 0; j < 4; j++)
+      s[j] = _mm256_setzero_pd();
+      c[j] = _mm256_setzero_pd();
+      for(int i = 0; i < nt; i++)
       {
-        __m256d oldS = s_[0][j], oldC = c_[0][j];
-        MM256_4SUM(oldS,oldC,s_[i][j],c_[i][j],s_[0][j],c_[0][j]);
+        __m256d oldS = s[j], oldC = c[j];
+        MM256_4SUM(oldS,oldC,s_[i][j],c_[i][j],s[j],c[j]);
       }
     }
 
@@ -144,8 +147,8 @@ void dgemm_fused_scd_self_prec_4(int nrows, aligned_double *restrict x, double *
     double r[3][4], rC[3][4];
     for(int j = 0; j < 3; j++)
     {
-      _mm256_storeu_pd(r[j],  s_[0][j]);
-      _mm256_storeu_pd(rC[j], c_[0][j]);
+      _mm256_storeu_pd(r[j],  s[j]);
+      _mm256_storeu_pd(rC[j], c[j]);
     }
 
     // construct and return result, needs to be summed up
@@ -193,8 +196,8 @@ void dgemm_fused_scd_self_prec_2(int nrows, aligned_double *restrict x, const do
 
   {
     // buffer for omp thread result + padding to prevent false sharing
-    __m256d s_[8][nt];
-    __m256d c_[8][nt];
+    __m256d s_[nt][8];
+    __m256d c_[nt][8];
 
 #pragma omp parallel shared(s_,c_)
     {
@@ -246,31 +249,33 @@ void dgemm_fused_scd_self_prec_2(int nrows, aligned_double *restrict x, const do
       int it = omp_get_thread_num();
       for(int j = 0; j < 2; j++)
       {
-        s_[j][it] = s[j];
-        c_[j][it] = c[j];
+        s_[it][j] = s[j];
+        c_[it][j] = c[j];
       }
     }
 
 
     // handcoded omp reduction
-    for(int i = 1; i < nt; i++)
+    __m256d s[2], c[2];
+    for(int j = 0; j < 2; j++)
     {
-      for(int j = 0; j < 2; j++)
+      s[j] = _mm256_setzero_pd();
+      c[j] = _mm256_setzero_pd();
+      for(int i = 0; i < nt; i++)
       {
-        __m256d oldS = s_[j][0], oldC = c_[j][0];
-        MM256_4SUM(oldS,oldC,s_[j][i],c_[j][i],s_[j][0],c_[j][0]);
+        __m256d oldS = s[j], oldC = c[j];
+        MM256_4SUM(oldS,oldC,s_[i][j],c_[i][j],s[j],c[j]);
       }
     }
-
 
     // sum up 4 elements in mm256 to 2 elements in mm128
     // and return result, needs to be summed up again
     for(int j = 0; j < 2; j++)
     {
-      __m128d s, c;
-      MM256TO128_4SUM(s_[j][0],c_[j][0],s,c);
-      _mm_storeu_pd(&res[j*2],  s);
-      _mm_storeu_pd(&resC[j*2], c);
+      __m128d s2, c2;
+      MM256TO128_4SUM(s[j],c[j],s2,c2);
+      _mm_storeu_pd(&res[j*2],  s2);
+      _mm_storeu_pd(&resC[j*2], c2);
     }
   }
 
@@ -312,8 +317,8 @@ void dgemm_fused_scd_prec_k_4(int nrows, int k, const aligned_double *restrict y
 
   {
     // buffer for omp thread result + padding to prevent false sharing
-    __m256d s_[(k/8+1)*8][nt];
-    __m256d c_[(k/8+1)*8][nt];
+    __m256d s_[nt][(k/8+1)*8];
+    __m256d c_[nt][(k/8+1)*8];
 
 #pragma omp parallel shared(s_,c_)
     {
@@ -382,27 +387,30 @@ void dgemm_fused_scd_prec_k_4(int nrows, int k, const aligned_double *restrict y
       int it = omp_get_thread_num();
       for(int j = 0; j < k; j++)
       {
-        s_[j][it] = s[j];
-        c_[j][it] = c[j];
+        s_[it][j] = s[j];
+        c_[it][j] = c[j];
       }
     }
 
 
     // handcoded omp reduction
-    for(int i = 1; i < nt; i++)
+    __m256d s[k], c[k];
+    for(int j = 0; j < k; j++)
     {
-      for(int j = 0; j < k; j++)
+      s[j] = _mm256_setzero_pd();
+      c[j] = _mm256_setzero_pd();
+      for(int i = 0; i < nt; i++)
       {
-        __m256d oldS = s_[j][0], oldC = c_[j][0];
-        MM256_4SUM(oldS,oldC,s_[j][i],c_[j][i],s_[j][0],c_[j][0]);
+        __m256d oldS = s[j], oldC = c[j];
+        MM256_4SUM(oldS,oldC,s_[i][j],c_[i][j],s[j],c[j]);
       }
     }
 
     // return result, needs to be summed up
     for(int j = 0; j < k; j++)
     {
-      _mm256_storeu_pd(&res[j*4],  s_[j][0]);
-      _mm256_storeu_pd(&resC[j*4], c_[j][0]);
+      _mm256_storeu_pd(&res[j*4],  s[j]);
+      _mm256_storeu_pd(&resC[j*4], c[j]);
     }
   }
 
@@ -471,8 +479,8 @@ void dgemm_fused_scd_prec_k_2(int nrows, int k, const aligned_double *restrict y
 
   {
     // buffer for omp thread result + padding to prevent false sharing
-    __m256d s_[(k/8+1)*8][nt];
-    __m256d c_[(k/8+1)*8][nt];
+    __m256d s_[nt][(k/8+1)*8];
+    __m256d c_[nt][(k/8+1)*8];
 
 #pragma omp parallel shared(s_,c_)
     {
@@ -525,31 +533,33 @@ void dgemm_fused_scd_prec_k_2(int nrows, int k, const aligned_double *restrict y
       int it = omp_get_thread_num();
       for(int j = 0; j < k; j++)
       {
-        s_[j][it] = s[j];
-        c_[j][it] = c[j];
+        s_[it][j] = s[j];
+        c_[it][j] = c[j];
       }
     }
 
 
     // handcoded omp reduction
-    for(int i = 1; i < nt; i++)
+    __m256d s[k], c[k];
+    for(int j = 0; j < k; j++)
     {
-      for(int j = 0; j < k; j++)
+      s[j] = _mm256_setzero_pd();
+      c[j] = _mm256_setzero_pd();
+      for(int i = 0; i < nt; i++)
       {
-        __m256d oldS = s_[j][0], oldC = c_[j][0];
-        MM256_4SUM(oldS,oldC,s_[j][i],c_[j][i],s_[j][0],c_[j][0]);
+        __m256d oldS = s[j], oldC = c[j];
+        MM256_4SUM(oldS,oldC,s_[i][j],c_[i][j],s[j],c[j]);
       }
     }
-
 
     // sum up 4 elements in mm256 to 2 elements in mm128
     // and return result, needs to be summed up again
     for(int j = 0; j < k; j++)
     {
-      __m128d s, c;
-      MM256TO128_4SUM(s_[j][0],c_[j][0],s,c);
-      _mm_storeu_pd(&res[j*2],  s);
-      _mm_storeu_pd(&resC[j*2], c);
+      __m128d s2, c2;
+      MM256TO128_4SUM(s[j],c[j],s2,c2);
+      _mm_storeu_pd(&res[j*2],  s2);
+      _mm_storeu_pd(&resC[j*2], c2);
     }
   }
 
@@ -613,8 +623,8 @@ void dgemm_fused_scd_prec_k_1(int nrows, int k, const aligned_double *restrict y
   __m256d scalC_ = _mm256_broadcast_sd(scalC);
   {
     // buffer for omp thread result + padding to prevent false sharing
-    __m256d s_[(k/8+1)*8][nt];
-    __m256d c_[(k/8+1)*8][nt];
+    __m256d s_[nt][(k/8+1)*8];
+    __m256d c_[nt][(k/8+1)*8];
 
 #pragma omp parallel shared(s_,c_)
     {
@@ -651,30 +661,33 @@ void dgemm_fused_scd_prec_k_1(int nrows, int k, const aligned_double *restrict y
       int it = omp_get_thread_num();
       for(int j = 0; j < k; j++)
       {
-        s_[j][it] = s[j];
-        c_[j][it] = c[j];
+        s_[it][j] = s[j];
+        c_[it][j] = c[j];
       }
     }
+
 
 
     // handcoded omp reduction
-    for(int i = 1; i < nt; i++)
+    __m256d s[k], c[k];
+    for(int j = 0; j < k; j++)
     {
-      for(int j = 0; j < k; j++)
+      s[j] = _mm256_setzero_pd();
+      c[j] = _mm256_setzero_pd();
+      for(int i = 0; i < nt; i++)
       {
-        __m256d oldS = s_[j][0], oldC = c_[j][0];
-        MM256_4SUM(oldS,oldC,s_[j][i],c_[j][i],s_[j][0],c_[j][0]);
+        __m256d oldS = s[j], oldC = c[j];
+        MM256_4SUM(oldS,oldC,s_[i][j],c_[i][j],s[j],c[j]);
       }
     }
-
 
     // sum up 4 elements in mm256 to 1 double
     // and store result in res,resC
     for(int j = 0; j < k; j++)
     {
       double sj[4], cj[4];
-      _mm256_storeu_pd(sj, s_[j][0]);
-      _mm256_storeu_pd(cj, c_[j][0]);
+      _mm256_storeu_pd(sj, s[j]);
+      _mm256_storeu_pd(cj, c[j]);
       prec_reduction_1(4, sj, cj, &res[j], &resC[j]);
     }
   }
