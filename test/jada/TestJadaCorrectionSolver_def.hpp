@@ -25,6 +25,20 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       jadaOpts_.innerSolvType=GMRES;
       jadaOpts_.maxBas=_MAXBAS_;
 
+      if( typeImplemented_ && !problemTooSmall_ )
+      {
+        // disable the test because TSQR will not work.
+        // This situation occurs if we have a small matrix (_N_=25, say)
+        // and many Q vectors (e.g. 10) with multiple MPI procs.
+        int globalTooSmall = _N_ <= std::min(_NVP_,_NV_);
+#ifdef PHIST_HAVE_MPI
+        int localTooSmall = nloc_ <= std::min(_NVP_,_NV_);
+        iflag_ = MPI_Allreduce(&localTooSmall, &globalTooSmall, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+        ASSERT_EQ(0,iflag_);
+#endif
+        problemTooSmall_ = globalTooSmall != 0;
+      }
+
       if (typeImplemented_ && !problemTooSmall_)
       {
         SUBR(read_mat)(MATNAME,comm_,nglob_,&A_,&iflag_);
