@@ -248,7 +248,7 @@ int main(int argc, char** argv)
   opts.symmetry=symmetric?HERMITIAN:GENERAL;
   opts.initialShiftIters=initialShiftIters;
   opts.initialShift_r=ct::real(initialShift);
-  opts.initialShift_r=ct::imag(initialShift);
+  opts.initialShift_i=ct::imag(initialShift);
 
   opts.innerSolvType=symmetric?MINRES:GMRES;
   opts.innerSolvBlockSize=innerBlockDim;
