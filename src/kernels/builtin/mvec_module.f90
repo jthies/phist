@@ -111,6 +111,20 @@ module mvec_module
   !==================================================================================
   ! interfaces to low-level kernel functions
   interface
+    !void drandom_1(int nrows, double *restrict y, int64_t pre_skip, int64_t post_skip);
+    subroutine drandom_1(nrows, y, pre_skip, post_skip) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE, C_INT64_T
+      integer(kind=C_INT), value :: nrows
+      real(kind=C_DOUBLE), intent(out) :: y
+      integer(kind=C_INT64_T), value :: pre_skip, post_skip
+    end subroutine
+    !void drandom_general(int nvec, int nrows, double *restrict v, int ldv, int64_t pre_skip, int64_t post_skip)
+    subroutine drandom_general(nvec, nrows, y, ldv, pre_skip, post_skip) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE, C_INT64_T
+      integer(kind=C_INT), value :: nvec, nrows, ldv
+      real(kind=C_DOUBLE), intent(out) :: y
+      integer(kind=C_INT64_T), value :: pre_skip, post_skip
+    end subroutine
     !void ddot_self_prec_1(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
     subroutine ddot_self_prec_1(nrows, x, res, resC) bind(C)
       use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
@@ -1133,7 +1147,6 @@ contains
 
 
   subroutine mvec_random(mvec)
-    !use random_module, only: drandom_1, drandom_general
     !--------------------------------------------------------------------------------
     type(MVec_t), intent(inout) :: mvec
     !--------------------------------------------------------------------------------
@@ -3617,7 +3630,6 @@ contains
 end subroutine phist_Dmvec_put_func
 
   subroutine phist_Dmvec_random(mvec_ptr, ierr) bind(C,name='phist_Dmvec_random_f')
-    !use random_module, only: drandom_1, drandom_general
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),        value         :: mvec_ptr

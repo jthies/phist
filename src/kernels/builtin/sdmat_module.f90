@@ -51,10 +51,16 @@ module sdmat_module
   end type SDMat_t
 
 
-#ifdef PHIST_HIGH_PRECISION_KERNELS
   !==================================================================================
   ! required interfaces of C functions
   interface
+    !void phist_Drandom_number(int n, double*x);
+    subroutine phist_Drandom_number(n,x) bind(C,name='phist_Drandom_number')
+      use, intrinsic :: iso_c_binding, only: C_INT, C_DOUBLE
+      integer(kind=C_INT), value :: n
+      real(kind=C_DOUBLE), intent(out) :: x
+    end subroutine
+#ifdef PHIST_HIGH_PRECISION_KERNELS
     !void daxpby_prec(int n, double alpha, const double *restrict a, const double *restrict aC,
     !                        double beta,        double *restrict b,       double *restrict bC)
     subroutine daxpby_prec(n,alpha,a,aC,beta,b,bC) bind(C)
@@ -74,8 +80,8 @@ module sdmat_module
       real(kind=C_DOUBLE), intent(in) :: a(*),aC(*),b(*),bC(*)
       real(kind=C_DOUBLE), intent(inout) :: c(*),cC(*)
     end subroutine
-  end interface
 #endif
+  end interface
 contains
 
   !==================================================================================
@@ -602,7 +608,6 @@ contains
 
 
   subroutine phist_DsdMat_random(sdmat_ptr, ierr) bind(C,name='phist_DsdMat_random_f')
-    use random_module, only: phist_Drandom_number
     use, intrinsic :: iso_c_binding
     use mpi
     !--------------------------------------------------------------------------------

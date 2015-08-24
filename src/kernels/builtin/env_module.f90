@@ -16,6 +16,11 @@ module env_module
   public :: phist_comm_get_size
   !public :: init_random_seed
 
+  ! C declarations
+  interface
+    subroutine phist_random_init() bind(C)
+    end subroutine
+  end interface
 contains
 
   !================================================================================
@@ -109,7 +114,6 @@ contains
   !================================================================================
   ! seed fortran "random_number", copied from gcc.gnu.org
   subroutine init_random_seed() bind(C,name="init_random_seed")
-    use random_module, only: phist_random_seed
     use iso_fortran_env, only: int64
 #ifdef __INTEL_COMPILER
     use ifport, only: getpid
@@ -148,7 +152,7 @@ contains
        end do
     end if
     call random_seed(put=seed)
-    call phist_random_seed(2309234)
+    call phist_random_init()
 
   contains
     ! This simple PRNG might not be good enough for real work, but is
