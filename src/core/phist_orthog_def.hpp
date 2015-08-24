@@ -1,3 +1,14 @@
+// allow using orthog routines from Trilinos because we don't have
+// B-orthogonalization yet
+
+// possibly we could even do this for ghost and builtin, but
+// we just use Trilinos as a fallback for B-orthogonalization
+// with HYMLS right now and will eventually provide our own
+// kernels for it
+#if defined(PHIST_KERNEL_LIB_TPETRA)||(defined(PHIST_KERNEL_LIB_EPETRA)&&defined(IS_DOUBLE)&&!defined(IS_COMPLEX))
+#define HAVE_TRILINOS_ORTHO_MANAGER
+#endif
+
 #ifdef HAVE_TRILINOS_ORTHO_MANAGER
 // provide trili_orthog as fallback if B!=NULL
 #include "trili_orthog_def.hpp"
@@ -432,3 +443,7 @@ void SUBR(mvec_QB)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* nrmsV, int *iflag)
       *iflag=return_value;// dimension of nullspace found infirst sweep
       return;
 }
+
+#ifdef HAVE_TRILINOS_ORTHO_MANAGER
+#undef HAVE_TRILINOS_ORTHO_MANAGER
+#endif

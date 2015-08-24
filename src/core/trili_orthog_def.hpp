@@ -3,14 +3,6 @@
 //! mostly for testing our own code but can also be used to
 //! quickly incorporate new developments in their code.
 
-// possibly we could even do this for ghost and builtin, but
-// we just use Trilinos as a fallback for B-orthogonalization
-// with HYMLS right now and will eventually provide our own
-// kernels for it
-#if defined(PHIST_KERNEL_LIB_TPETRA)||(defined(PHIST_KERNEL_LIB_EPETRA)&&defined(IS_DOUBLE)&&!defined(IS_COMPLEX))
-#define HAVE_TRILINOS_ORTHO_MANAGER
-#endif
-
 #ifdef HAVE_TRILINOS_ORTHO_MANAGER
 
 # include "phist_rcp_helpers.hpp"
