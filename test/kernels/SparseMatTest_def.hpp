@@ -489,7 +489,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
   {
     if (typeImplemented_ && !problemTooSmall_ && haveMats_)
     {
-      _ST_ val = random_number();
+      _ST_ val = st::prand();
       global_sum(&val,1,mpi_comm_);
       SUBR(mvec_put_value)(vec1_,val,&iflag_);
       SUBR(mvec_random)(vec2_,&iflag_);
@@ -551,7 +551,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
 
       //alpha*I*X=alpha*X?
-      alpha = random_number();
+      alpha = st::prand();
       beta=st::zero();
       SUBR(mvec_random)(vec1_,&iflag_);
       SUBR(mvec_random)(vec2_,&iflag_);
@@ -563,7 +563,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
 
       //0*I*X+beta*Y = beta*Y? 
       alpha=st::zero(); 
-      beta=random_number();
+      beta=st::prand();
 #if PHIST_OUTLEV>=PHIST_INFO
       std::cout << "MVM with A=I, alpha="<<alpha<<", beta="<<beta<<std::endl;
 #endif
@@ -589,7 +589,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
 
       //I*X+beta*Y = X+beta*Y?
       alpha = st::one();
-      beta = random_number();
+      beta = st::prand();
 #if PHIST_OUTLEV>=PHIST_INFO
       std::cout << "MVM with A=I, alpha="<<alpha<<", beta="<<beta<<std::endl;
 #endif
@@ -622,8 +622,8 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_,mt::one()),1000*mt::eps());
 
       //alpha*I*X+beta*Y = alpha*X+beta*Y?
-      alpha = random_number();
-      beta = random_number();
+      alpha = st::prand();
+      beta = st::prand();
 #if PHIST_OUTLEV>=PHIST_INFO
       std::cout << "MVM with A=I, alpha="<<alpha<<", beta="<<beta<<std::endl;
 #endif
@@ -653,7 +653,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       SUBR(mvec_print)(vec2_,&iflag_);
       SUBR(mvec_print)(vec3_,&iflag_);
 #endif
-      ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_),1000*mt::eps());
+      ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_,mt::one()),1000*mt::eps());
       }
     }
 

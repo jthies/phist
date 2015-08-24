@@ -51,6 +51,7 @@ module mvec_module
   public :: mvec_scatter_mvecs
   !public :: phist_Dmvec_put_value
   !public :: phist_Dmvec_random
+  public :: mvec_random
   !public :: phist_Dmvec_print
   !public :: phist_Dmvec_norm2
   public :: mvec_norm2
@@ -1130,6 +1131,29 @@ contains
     !--------------------------------------------------------------------------------
   end subroutine mvec_scatter_mvecs
 
+
+  subroutine mvec_random(mvec)
+    !use random_module, only: drandom_1, drandom_general
+    !--------------------------------------------------------------------------------
+    type(MVec_t), intent(inout) :: mvec
+    !--------------------------------------------------------------------------------
+    integer :: nvec, nrows, ldx
+    integer(kind=8) :: pre_skip, post_skip
+    !--------------------------------------------------------------------------------
+
+    nrows = mvec%map%nlocal(mvec%map%me)
+    nvec = mvec%jmax-mvec%jmin+1
+    ldx = size(mvec%val,1)
+    pre_skip = mvec%map%distrib(mvec%map%me)*nvec-1
+    post_skip = (mvec%map%distrib(mvec%map%nProcs)-mvec%map%distrib(mvec%map%me+1))*nvec
+
+    if( nvec .eq. ldx ) then
+      call drandom_1(nvec*nrows, mvec%val(1,1), pre_skip, post_skip)
+    else
+      call drandom_general(nvec, nrows, mvec%val(mvec%jmin,1), ldx, pre_skip, post_skip)
+    end if
+
+  end subroutine mvec_random
 
 
   !==================================================================================
@@ -3009,7 +3033,9 @@ contains
     ! try to generate orthogonal random vectors
     if( nullSpaceDim .gt. 0 ) then
       rank = nvec - nullSpaceDim
-      call random_number(v%val(v%jmin+rank:v%jmax,1:v%map%nlocal(v%map%me)))
+      ! reuse vipn for view
+      vipn%jmin = v%jmin+rank
+      call mvec_random(vipn)
 
       ! reuse Ripn for temporary storage
       Ripn%val=>null()
@@ -3125,15 +3151,10 @@ contains
       ierr=-44
       return
     end if
+
     ! that should hopefully help in cases of NUMA
-!$omp parallel do schedule(static)
-    do i = 1, size(mvec%val,2), 1
-      mvec%val(:,i) = 0._8 + i
-    end do
-!$omp parallel do schedule(static)
-    do i = 1, size(mvec%val,2), 1
-      mvec%val(:,i) = 0._8
-    end do
+    call dset_1(size(mvec%val), mvec%val, 0._8)
+
     mvec_ptr = c_loc(mvec)
     ierr = 0
 
@@ -3523,7 +3544,6 @@ contains
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
-    integer :: i
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) ) then
@@ -3533,10 +3553,14 @@ contains
 
     call c_f_pointer(mvec_ptr, mvec)
 
-!$omp parallel do schedule(static)
-    do i = 1, mvec%map%nlocal(mvec%map%me), 1
-      mvec%val(mvec%jmin:mvec%jmax,i) = val
-    end do
+    if( .not. mvec%is_view .or. &
+      & ( mvec%jmin .eq. lbound(mvec%val,1) .and. &
+      &   mvec%jmax .eq. ubound(mvec%val,1)       ) ) then
+
+      call dset_1(size(mvec%val,1)*mvec%map%nlocal(mvec%map%me), mvec%val(1,1), val)
+    else
+      call dset_general(mvec%jmax-mvec%jmin+1, mvec%map%nlocal(mvec%map%me), mvec%val(mvec%jmin,1), size(mvec%val,1), val)
+    end if
 
     ierr = 0
 
@@ -3593,13 +3617,15 @@ contains
 end subroutine phist_Dmvec_put_func
 
   subroutine phist_Dmvec_random(mvec_ptr, ierr) bind(C,name='phist_Dmvec_random_f')
+    !use random_module, only: drandom_1, drandom_general
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
     type(C_PTR),        value         :: mvec_ptr
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
-    integer :: i, nrows
+    integer :: nvec, nrows, ldx
+    integer(kind=8) :: pre_skip, post_skip
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) ) then
@@ -3608,13 +3634,7 @@ end subroutine phist_Dmvec_put_func
     end if
 
     call c_f_pointer(mvec_ptr, mvec)
-
-    nrows = mvec%map%nlocal(mvec%map%me)
-    call random_number(mvec%val(mvec%jmin:mvec%jmax,1:nrows))
-!$omp parallel do schedule(static)
-    do i = 1, nrows, 1
-      mvec%val(mvec%jmin:mvec%jmax,i) = 2.*(mvec%val(mvec%jmin:mvec%jmax,i)-0.5)
-    end do
+    call mvec_random(mvec)
 
     ierr = 0
 
@@ -3628,7 +3648,7 @@ end subroutine phist_Dmvec_put_func
     integer(C_INT),     intent(out)   :: ierr
     !--------------------------------------------------------------------------------
     type(MVec_t), pointer :: mvec
-    integer :: i,j
+    integer :: i,j, iproc
     !--------------------------------------------------------------------------------
 
     if( .not. c_associated(mvec_ptr) ) then
@@ -3638,13 +3658,21 @@ end subroutine phist_Dmvec_put_func
 
     call c_f_pointer(mvec_ptr, mvec)
 
-    do i = 1, mvec%map%nlocal(mvec%map%me), 1
-      do j=mvec%jmin,mvec%jmax
-        write(*,'(G25.16,A2)',advance='no') mvec%val(j,i),'  '
-      end do
-      write(*,*)
+    do iproc = 0, mvec%map%nProcs-1, 1
+
+      if( iproc .eq. mvec%map%me ) then
+        do i = 1, mvec%map%nlocal(mvec%map%me), 1
+          do j=mvec%jmin,mvec%jmax
+            write(*,'(G25.16,A2)',advance='no') mvec%val(j,i),'  '
+          end do
+          write(*,*)
+        end do
+        flush(6)
+      end if
+
+      call MPI_Barrier(mvec%map%comm, ierr)
     end do
-    flush(6)
+
     ierr = 0
 
   end subroutine phist_Dmvec_print

@@ -602,6 +602,7 @@ contains
 
 
   subroutine phist_DsdMat_random(sdmat_ptr, ierr) bind(C,name='phist_DsdMat_random_f')
+    use random_module, only: phist_Drandom_number
     use, intrinsic :: iso_c_binding
     use mpi
     !--------------------------------------------------------------------------------
@@ -623,18 +624,14 @@ contains
     m = sdmat%imax-sdmat%imin+1
     n = sdmat%jmax-sdmat%jmin+1
     allocate(buff(m,n))
-    call random_number(buff)
-    buff = 2*(buff-0.5)
+    call phist_Drandom_number(size(buff), buff(1,1))
 
-    ierr = 0
-    if( sdmat%comm .ne. MPI_COMM_NULL ) then
-      call MPI_Bcast(buff, m*n, MPI_DOUBLE_PRECISION, 0, sdmat%comm, ierr);
-    end if
     sdmat%val(sdmat%imin:sdmat%imax,sdmat%jmin:sdmat%jmax) = buff
 #ifdef PHIST_HIGH_PRECISION_KERNELS
     sdmat%err(sdmat%imin:sdmat%imax,sdmat%jmin:sdmat%jmax) = 0._8
 #endif
 
+    ierr = 0
   end subroutine phist_DsdMat_random
 
 

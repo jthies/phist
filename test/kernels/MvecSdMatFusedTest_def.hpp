@@ -135,7 +135,7 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_random)(N1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      _ST_ alpha = (ST)2*st::one()+st::rand(), beta = (ST)2*st::one()+st::rand();
+      _ST_ alpha = (ST)2*st::one()+st::prand(), beta = (ST)2*st::one()+st::prand();
 
       // copy data
       SUBR(mvec_add_mvec)(st::one(),W1_,st::zero(),W2_,&iflag_);
@@ -179,7 +179,7 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_random)(N1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      _ST_ alpha = (ST)2*st::one()+st::rand(), beta = (ST)2*st::one()+st::rand();
+      _ST_ alpha = (ST)2*st::one()+st::prand(), beta = (ST)2*st::one()+st::prand();
 
       // copy data
       SUBR(mvec_add_mvec)(st::one(),V1_,st::zero(),V2_,&iflag_);
@@ -222,7 +222,7 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_random)(N1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      _ST_ alpha = (ST)2*st::one()+st::rand(), beta = (ST)2*st::one()+st::rand();
+      _ST_ alpha = (ST)2*st::one()+st::prand(), beta = (ST)2*st::one()+st::prand();
 
       // copy data
       SUBR(mvec_add_mvec)(st::one(),W1_,st::zero(),W2_,&iflag_);
@@ -267,7 +267,7 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_random)(N1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      _ST_ alpha = (ST)2*st::one()+st::rand(), beta = 0.;
+      _ST_ alpha = (ST)2*st::one()+st::prand(), beta = 0.;
 
       // copy data
       SUBR(mvec_add_mvec)(st::one(),W1_,st::zero(),W2_,&iflag_);
@@ -361,7 +361,7 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_random)(N1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      _ST_ alpha = (ST)2*st::one()+st::rand(), beta = (ST)2*st::one()+st::rand();
+      _ST_ alpha = (ST)2*st::one()+st::prand(), beta = (ST)2*st::one()+st::prand();
 
       // copy data
       SUBR(mvec_add_mvec)(st::one(),W1_,st::zero(),W2_,&iflag_);
@@ -413,7 +413,7 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_random)(N1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      _ST_ alpha = (ST)2*st::one()+st::rand(), beta = (ST)2*st::one()+st::rand();
+      _ST_ alpha = (ST)2*st::one()+st::prand(), beta = (ST)2*st::one()+st::prand();
 
       // copy data
       SUBR(mvec_add_mvec)(st::one(),V1_,st::zero(),V2_,&iflag_);
@@ -464,7 +464,7 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_random)(N1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      _ST_ alpha = (ST)2*st::one()+st::rand(), beta = (ST)2*st::one()+st::rand();
+      _ST_ alpha = (ST)2*st::one()+st::prand(), beta = (ST)2*st::one()+st::prand();
 
       // copy data
       SUBR(mvec_add_mvec)(st::one(),W1_,st::zero(),W2_,&iflag_);
@@ -493,7 +493,7 @@ public:
       ASSERT_REAL_EQ(mt::one(), MvecsEqual(V1_,V2_));
       ASSERT_REAL_EQ(mt::one(), MvecsEqual(W1_,W2_));
       ASSERT_REAL_EQ(mt::one(), SdMatsEqual(M1_,M2_));
-      ASSERT_REAL_EQ(mt::one(), SdMatsEqual(N1_,N2_));
+      ASSERT_NEAR(mt::one(), SdMatsEqual(N1_,N2_), 100*mt::eps());
     }
   }
 #endif

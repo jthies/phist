@@ -226,7 +226,7 @@ public:
     if (typeImplemented_)
     {
       // first set some data of the whole array
-      _ST_ outer_val = st::rand();
+      _ST_ outer_val = st::prand();
       SUBR(sdMat_put_value)(mat1_,outer_val,&iflag_);
       ASSERT_EQ(0,iflag_);
       
@@ -243,7 +243,7 @@ public:
       ASSERT_EQ(0,iflag_);
 
       // set the data in the view to some other value
-      _ST_ view_val = st::rand();
+      _ST_ view_val = st::prand();
       SUBR(sdMat_put_value)(view,view_val,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -263,7 +263,7 @@ public:
       ASSERT_EQ(0,iflag_);
       
       // set data in the inner view to yet another value
-      _ST_ inner_val = st::rand();
+      _ST_ inner_val = st::prand();
       SUBR(sdMat_put_value)(view2, inner_val, &iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -562,8 +562,10 @@ public:
       SUBR(sdMat_random)(mat1_, &iflag_);
       ASSERT_EQ(0,iflag_);
 
+#ifndef PHIST_KERNEL_LIB_BUILTIN
       SUBR(sdMat_sync_values)(mat1_, comm_, &iflag_);
       ASSERT_EQ(0,iflag_);
+#endif
       
       ASSERT_REAL_EQ(mt::one(), ArrayParallelReplicated(mat1_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
 
@@ -577,10 +579,20 @@ public:
       SUBR(sdMat_random)(mat1_, &iflag_);
       ASSERT_EQ(0,iflag_);
       
+#ifndef PHIST_KERNEL_LIB_BUILTIN
       SUBR(sdMat_sync_values)(mat1_, comm_, &iflag_);
       ASSERT_EQ(0,iflag_);
+#endif
       
       ASSERT_REAL_EQ(mt::one(), ArrayParallelReplicated(mat1_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
+
+#ifdef PHIST_KERNEL_LIB_BUILTIN
+      // verify prand doesn't "outsync" sdMat_random
+      _ST_ val = st::prand();
+      SUBR(sdMat_random)(mat1_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(), ArrayParallelReplicated(mat1_vp_,nrows_,ncols_,m_lda_,stride,mflag_));
+#endif
     }
   }
 

@@ -21,10 +21,10 @@ public:
   static const int k_=_K_;
   
   //! V is n x m
-  TYPE(mvec_ptr) V1_,V2_;
+  TYPE(mvec_ptr) V1_ = NULL, V2_ = NULL;
 
   //! M is m x m
-  TYPE(sdMat_ptr) M1_,M2_;
+  TYPE(sdMat_ptr) M1_ = NULL, M2_ = NULL;
   
   _ST_ *V1_vp_,*V2_vp_,*M1_vp_,*M2_vp_;
   
@@ -67,6 +67,17 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_extract_view)(M2_,&M2_vp_,&this->ldaM2_,&this->iflag_);
     }
+    else
+    {
+      V1_ = NULL;
+      V1_vp_ = NULL;
+      V2_ = NULL;
+      V2_vp_ = NULL;
+      M1_ = NULL;
+      M1_vp_ = NULL;
+      M2_ = NULL;
+      M2_vp_ = NULL;
+    }
     stride_=1;
   }
 
@@ -76,10 +87,10 @@ public:
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
-      SUBR(mvec_delete)(V1_,&iflag_);
-      SUBR(mvec_delete)(V2_,&iflag_);
-      SUBR(sdMat_delete)(M1_,&iflag_);
-      SUBR(sdMat_delete)(M2_,&iflag_);
+      SUBR(mvec_delete)(V1_,&iflag_); V1_ = NULL;
+      SUBR(mvec_delete)(V2_,&iflag_); V2_ = NULL;
+      SUBR(sdMat_delete)(M1_,&iflag_); M1_ = NULL;
+      SUBR(sdMat_delete)(M2_,&iflag_); M2_ = NULL;
     }
     KernelTestWithMap<_N_>::TearDown();
     KernelTestWithType<_ST_>::TearDown();
@@ -152,6 +163,7 @@ public:
       MTest::PrintSdMat(*cout,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
       ASSERT_EQ(0,iflag_);
 
@@ -510,8 +522,8 @@ public:
 #endif
           _MT_ cond = dotAbs_ij / std::abs(dot_ij);
           PHIST_SOUT(PHIST_INFO, "error: %e (cond. number: %e, eps: %e)\n", st::abs((_ST_)dot_ij-M1_vp_[MIDX(i,j,ldaM1_)]),cond,mt::eps());
-          EXPECT_NEAR(st::real((_ST_)dot_ij), st::real(M1_vp_[MIDX(i,j,ldaM1_)]), 10*cond*mt::eps());
-          EXPECT_NEAR(st::imag((_ST_)dot_ij), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), 10*cond*mt::eps());
+          EXPECT_NEAR(st::real((_ST_)dot_ij), st::real(M1_vp_[MIDX(i,j,ldaM1_)]), 20*cond*mt::eps());
+          EXPECT_NEAR(st::imag((_ST_)dot_ij), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), 20*cond*mt::eps());
         }
       }
     }
@@ -1126,6 +1138,33 @@ public:
       }
     }
   }
+
+#ifdef PHIST_KERNEL_LIB_BUILTIN
+  // the result of sdMat_random must be equal on all processes even after calling mvec_random
+  TEST_F(CLASSNAME, parallel_random)
+  {
+    if (typeImplemented_ && !problemTooSmall_ )
+    {
+      SUBR(mvec_random)(V1_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_random)(M1_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_print)(M1_,&iflag_);
+
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // and do it again
+      SUBR(mvec_random)(V1_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_random)(M1_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+  }
+#endif
 
 const int CLASSNAME::k_;
 const int CLASSNAME::m_;

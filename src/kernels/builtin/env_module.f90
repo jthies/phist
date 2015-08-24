@@ -109,6 +109,7 @@ contains
   !================================================================================
   ! seed fortran "random_number", copied from gcc.gnu.org
   subroutine init_random_seed() bind(C,name="init_random_seed")
+    use random_module, only: phist_random_seed
     use iso_fortran_env, only: int64
 #ifdef __INTEL_COMPILER
     use ifport, only: getpid
@@ -147,6 +148,8 @@ contains
        end do
     end if
     call random_seed(put=seed)
+    call phist_random_seed(2309234)
+
   contains
     ! This simple PRNG might not be good enough for real work, but is
     ! sufficient for seeding a better PRNG.

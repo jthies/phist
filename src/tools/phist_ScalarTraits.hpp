@@ -20,6 +20,10 @@
 #include "ghost.h"
 #endif
 
+#ifdef PHIST_KERNEL_LIB_BUILTIN
+extern "C" void phist_Drandom_number(int,double*);
+#endif
+
 namespace phist {
 
 template<typename ST>
@@ -235,9 +239,14 @@ class ScalarTraits< double >
   //! same random number on all processed
   static inline scalar_t prand()
   {
+#ifdef PHIST_KERNEL_LIB_BUILTIN
+    double tmp = 0;
+    phist_Drandom_number(1,&tmp);
+#else
     scalar_t tmp = rand();
 #ifdef PHIST_HAVE_MPI
     MPI_Bcast(&tmp, 1, mpi_type(), 0, MPI_COMM_WORLD);
+#endif
 #endif
     return tmp;
   }

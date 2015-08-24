@@ -5,6 +5,34 @@
 !! \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
 !!
 
+subroutine dset_1(nrows, y, val)
+  implicit none
+  integer, intent(in) :: nrows
+  real(kind=8), intent(out) :: y(nrows)
+  real(kind=8), intent(in) :: val
+  integer :: i
+!dir$ assume_aligned y:64
+
+!$omp parallel do schedule(static)
+  do i = 1, nrows, 1
+    y(i) = val
+  end do
+end subroutine dset_1
+
+subroutine dset_general(nvec, nrows, y, ldy, val)
+  implicit none
+  integer, intent(in) :: nvec, nrows, ldy
+  real(kind=8), intent(out) :: y(ldy,*)
+  real(kind=8), intent(in) :: val
+  integer :: i
+!dir$ assume_aligned y:8
+
+!$omp parallel do schedule(static)
+  do i = 1, nrows, 1
+    y(1:nvec,i) = val
+  end do
+end subroutine dset_general
+
 subroutine dcopy_1(nrows, x, y)
   implicit none
   integer, intent(in) :: nrows
