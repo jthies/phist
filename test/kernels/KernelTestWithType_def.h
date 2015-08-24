@@ -21,6 +21,9 @@ virtual void SetUp() {
 int iflag;
 SUBR(type_avail)(&iflag);
 typeImplemented_=(iflag==0);
+#ifdef PHIST_KERNEL_LIB_BUILTIN
+init_random_seed();
+#endif
 
 int rank=0;
 #ifdef PHIST_HAVE_MPI
