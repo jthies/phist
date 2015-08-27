@@ -151,7 +151,7 @@ int main(int argc, char** argv)
 
   if (argc>=10)
   {
-    opts.initialShift=atof(argv[9]);
+    opts.initialShift_r=atof(argv[9]);
   }
   
   if (argc>=11)
