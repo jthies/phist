@@ -55,6 +55,7 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _op._fields_ = [('A', _ct.c_void_p),
                     ('range_map', _map_ptr),
                     ('domain_map', _map_ptr),
+                    ('aux',   _ct.c_void_p),
                     ('apply', _ct.c_void_p),
                     ('applyT', _ct.c_void_p),
                     ('apply_shifted', _ct.c_void_p)]

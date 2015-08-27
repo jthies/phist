@@ -629,7 +629,19 @@ static void init_lookup_tables()
   uint64_t sum = x+y+z;
   if( sum != 1666297717051644203ULL )
   {
-    printf("phist_random selftest: state sum: %llu (should be %llu)\n", x+y+z, 1666297717051644203ULL);
+    printf("phist_random selftest: result after 10^8 steps: %llu (should be %llu)\n", x+y+z, 1666297717051644203ULL);
+    exit(1);
+  }
+  // check skipping
+  x = random_state.x;
+  y = random_state.y;
+  z = random_state.z;
+  c = random_state.c;
+  KISS_SKIP(100000000, &x,&y,&z,&c);
+  sum = x+y+z;
+  if( sum != 1666297717051644203ULL )
+  {
+    printf("phist_random selftest: result after skipping 10^8 steps: %llu (should be %llu)\n", x+y+z, 1666297717051644203ULL);
     exit(1);
   }
 #endif

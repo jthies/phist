@@ -38,13 +38,39 @@ phist_kernel_lib = _phist_tools.phist_kernel_lib
 
 #--------------------------------------------------------------------------------
 # from phist_enums.h
+# eigSort
 eigSort_t = _ct.c_uint
-eigSort_NONE = _ct.c_uint(0)
-eigSort_LM = _ct.c_uint(1)
-eigSort_SM = _ct.c_uint(2)
-eigSort_LR = _ct.c_uint(3)
-eigSort_SR = _ct.c_uint(4)
-eigSort_TARGET = _ct.c_uint(5)
+eigSort_NONE    = _ct.c_uint(0)
+eigSort_LM      = _ct.c_uint(1)
+eigSort_SM      = _ct.c_uint(2)
+eigSort_LR      = _ct.c_uint(3)
+eigSort_SR      = _ct.c_uint(4)
+eigSort_TARGET  = _ct.c_uint(5)
+_phist_tools.eigSort2str.argtypes = (eigSort_t,)
+_phist_tools.eigSort2str.resType = _ct.c_char_p
+eigSort2str = _phist_tools.eigSort2str
+_phist_tools.str2eigSort.argtypes = (_ct.c_char_p,)
+_phist_tools.str2eigSort.resType = eigSort_t
+str2eigSort = _phist_tools.str2eigSort
+# linSolv
+linSolv_t = _ct.c_uint
+linSolv_DO_NOTHING   = _ct.c_uint(0)
+linSolv_GMRES        = _ct.c_uint(1)
+linSolv_MINRES       = _ct.c_uint(2)
+linSolv_CARP_CG      = _ct.c_uint(3)
+linSolv_USER_DEFINED = _ct.c_uint(98)
+_phist_tools.linSolv2str.argtypes = (linSolv_t,)
+_phist_tools.linSolv2str.resType = _ct.c_char_p
+linSolv2str = _phist_tools.linSolv2str
+_phist_tools.str2linSolv.argtypes = (_ct.c_char_p,)
+_phist_tools.str2linSolv.resType = linSolv_t
+str2linSolv = _phist_tools.str2linSolv
+# matSym
+matSym_t = _ct.c_uint
+matSym_GENERAL            = _ct.c_uint(0)
+matSym_HERMITIAN          = _ct.c_uint(1)
+matSym_COMPLEX_SYMMETRIC  = _ct.c_uint(2)
+matSym_PATTERN_SYMMETRIC  = _ct.c_uint(3)
 
 
 #--------------------------------------------------------------------------------
