@@ -1149,7 +1149,6 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_random)(M1_, &iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_print)(M1_,&iflag_);
 
       SUBR(sdMat_parallel_check_)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
