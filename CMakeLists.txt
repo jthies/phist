@@ -753,7 +753,6 @@ endforeach()
 # phist libraries may depend on it and the *user* cannot now
 # what libraries to link. (melven)
 # Additionally, this is required to make the python interface work...
-message(STATUS "External libraries linked: ${external_libs}")
 target_link_libraries(phist_tools ${external_libs})
 
 # type generic driver routines are compiled from .c or .cpp files
@@ -949,12 +948,6 @@ if(PYTHONINTERP_FOUND)
     endif()
   endforeach()
 endif()
-
-# Adding concurrency tests with valgrind-helgrind.
-# This was done by Timo for his bachelor thesis, currently
-# the whole tasking thing is not working and the use/portability
-# of automated valgrind tests is questionable, so we skip this test for now.
-#add_test(concurrency-test: ${CMAKE_SOURCE_DIR}/test/multiple_helgrind_run.sh ${CMAKE_SOURCE_DIR}/test ${CMAKE_BINARY_DIR})
 
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} ${CTEST_OPTIONS})
