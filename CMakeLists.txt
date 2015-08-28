@@ -406,7 +406,12 @@ else()
   set(PHIST_SUPPORT_CMPLX OFF)
 endif()
 
-option(PHIST_ENABLE_SP "Enable single precision functions and drivers" ${PHIST_SUPPORT_SP})
+if( NOT PHIST_ENABLE_SP AND "${PHIST_KERNEL_LIB}" MATCHES "ghost" )
+  message(WARNING "Disabling single precision as it is not fully working in GHOST (yet)!")
+  option(PHIST_ENABLE_SP "Enable single precision functions and drivers" OFF)
+else()
+  option(PHIST_ENABLE_SP "Enable single precision functions and drivers" ${PHIST_SUPPORT_SP})
+endif()
 option(PHIST_ENABLE_CMPLX "Enable complex valued functions and drivers" ${PHIST_SUPPORT_CMPLX})
 
 if (PHIST_ENABLE_SP)
