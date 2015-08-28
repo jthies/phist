@@ -12,7 +12,7 @@ fi
 # kernel lib
 KERNELS="builtin" # ghost epetra tpetra
 PRGENV="gcc-5.1.0-openmpi" # intel-13.0.1-mpich gcc-4.9.2-openmpi
-FLAGS="" # optional-libs
+FLAGS="default" # optional-libs
 ADD_CMAKE_FLAGS="" #optional CMake flags
 VECT_EXT="native"
 # list of modules to load
