@@ -85,14 +85,8 @@ using ::phist::GhostMV;
       ghost_densemat_t* mv_clone;
       ghost_densemat_create(&mv_clone,_mv->context,vtraits);
       
-      if (mv_clone->traits.storage==GHOST_DENSEMAT_ROWMAJOR)
-      {
-        ghost_densemat_rm_malloc(mv_clone);
-      }
-      else
-      {
-        ghost_densemat_cm_malloc(mv_clone);
-      }
+      Scalar zero = st::zero();
+      mv_clone->fromScalar(mv_clone,&zero),*iflag);
 
       return phist::rcp(mv_clone,true);
     }
