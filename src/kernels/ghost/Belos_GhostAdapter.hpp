@@ -86,7 +86,7 @@ using ::phist::GhostMV;
       ghost_densemat_create(&mv_clone,_mv->context,vtraits);
       
       Scalar zero = st::zero();
-      mv_clone->fromScalar(mv_clone,&zero),*iflag);
+      mv_clone->fromScalar(mv_clone,&zero);
 
       return phist::rcp(mv_clone,true);
     }
