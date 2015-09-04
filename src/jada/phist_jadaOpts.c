@@ -10,6 +10,7 @@ void phist_jadaOpts_setDefaults(phist_jadaOpts_t *opts)
 {
   opts->numEigs=6; 
   opts->which=LM; 
+  opts->how=STANDARD;
 
   opts->maxIters=300;
   opts->blockSize=1;
