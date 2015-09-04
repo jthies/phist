@@ -38,9 +38,16 @@ extern "C" const char* eigSort2str(eigSort_t s)
          s==SM?"SM":
          s==LR?"LR":
          s==SR?"SR":
-         s==NONE?"none":
-         s==TARGET?"target":
-                   "invalid";
+         s==NONE?"NONE":
+         s==TARGET?"TARGET":
+                   "INVALID";
+}
+
+extern "C" const char* eigExtr2str(eigExtr_t s)
+{
+  return s==STANDARD?"STANDARD":
+         s==HARMONIC?"HARMONIC":
+                   "INVALID";
 }
 
 extern "C" const char* linSolv2str(linSolv_t s)
@@ -48,9 +55,9 @@ extern "C" const char* linSolv2str(linSolv_t s)
   return   s==GMRES?"GMRES":
            s==MINRES?"MINRES":
            s==CARP_CG?"CARP_CG":
-           s==DO_NOTHING?"do_nothing":
-           s==USER_DEFINED?"user_defined":
-                         "invalid";
+           s==DO_NOTHING?"DO_NOTHING":
+           s==USER_DEFINED?"USER_DEFINED":
+                         "INVALID";
 }
 
 extern "C" eigSort_t str2eigSort(const char* c_str)
@@ -63,6 +70,15 @@ extern "C" eigSort_t str2eigSort(const char* c_str)
   else if (str=="SR") s=SR;
   else if (str=="none"||str=="NONE") s=NONE;
   else if (str=="target"||str=="TARGET") s=TARGET;
+  return s;
+}
+
+extern "C" eigExtr_t str2eigExtr(const char* c_str)
+{
+  std::string str(c_str);
+  eigExtr_t s=INVALID_EIGEXTR_T;
+  if ((str=="STANDARD")||(str=="standard")) s=STANDARD;
+  else if ((str=="HARMONIC")||(str=="harmonic")) s=HARMONIC;
   return s;
 }
       
@@ -84,6 +100,14 @@ std::istream& operator>>(std::istream& is, eigSort_t& s)
   std::string tmp;
   is>>tmp;
   s=str2eigSort(tmp.c_str());
+  return is;
+}
+
+std::istream& operator>>(std::istream& is, eigExtr_t& s)
+{
+  std::string tmp;
+  is>>tmp;
+  s=str2eigExtr(tmp.c_str());
   return is;
 }
 

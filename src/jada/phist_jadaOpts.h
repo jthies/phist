@@ -17,6 +17,11 @@ int numEigs; //! howmany eigenpairs are sought?
 eigSort_t which; //! LM, SM, LR, SR, or TARGET
 double convTol; //! convergence tolerance for eigenvalues
 matSym_t symmetry; //! Symmetry properties of the matrix
+eigExtr_t how; //! use standaard or harmonic Ritz values, etc.
+               //! Generally, one should use STANDARD for extreme
+               //! eigenvalues (at the border of the spectrum), and
+               //! HARMONIC for inner ones. Other methods may be
+               //! added later.
 
 ////////////////////////////////////
 // JaDa configuration             //
