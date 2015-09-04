@@ -105,6 +105,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   MT tol = opts.convTol;
   int maxIter=opts.maxIters;
   eigSort_t which=opts.which;
+  eigExtr_t how=opts.how;
   int minBas = opts.minBas;
   int maxBas = opts.maxBas;
   linSolv_t innerSolvType = opts.innerSolvType;
