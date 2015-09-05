@@ -20,6 +20,7 @@ extern "C" const char* phist_retcode2str(int code)
   else if (code==PHIST_BAD_CAST) return "bad cast or NULL pointer";
   else if (code==PHIST_NOT_IMPLEMENTED) return "not implemented";
   else if (code<=-1 && code>-10) return "function-specific error";
+  else if (code==PHIST_DEPRECATED) return "deprecated";
   else if (code>0) return "warning";
   return "unknown error";
 }
@@ -47,7 +48,8 @@ extern "C" const char* linSolv2str(linSolv_t s)
   return   s==GMRES?"GMRES":
            s==MINRES?"MINRES":
            s==CARP_CG?"CARP_CG":
-           s==DO_NOTHING?"do__nothing":
+           s==DO_NOTHING?"do_nothing":
+           s==USER_DEFINED?"user_defined":
                          "invalid";
 }
 
@@ -73,6 +75,7 @@ extern "C" linSolv_t str2linSolv(const char* c_str)
   else if (str=="minres"||str=="MINRES") s=MINRES;
   else if (str=="carp_cg"||str=="CARP_CG") s=CARP_CG;
   else if (str=="do_nothing"||str=="DO_NOTHING") s=DO_NOTHING;
+  else if (str=="user_defined"||str=="USER_DEFINED") s=USER_DEFINED;
   return s;
 }
 
