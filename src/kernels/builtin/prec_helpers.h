@@ -502,23 +502,16 @@ static inline double double_fmsub(double a, double b, double c)
 // helper macro for compensated dot products
 #define MM256_4DOTADD(a,b,s,c)\
 {\
-  __m256d da4_p, da4_pi;\
-  MM256_2MULTFMA(a,b,da4_p,da4_pi);\
-  __m256d da4_sigma, da4_s = s;\
-  MM256_2SUM(da4_s,da4_p,s,da4_sigma);\
-  __m256d da4_tmp = _mm256_add_pd(da4_pi,da4_sigma);\
-  c = _mm256_add_pd(c,da4_tmp);\
+  __m256d da4_oldS = s, da4_oldC = c;\
+  s = _mm256_fmadd_pd(a,b,da4_oldS);\
+  __m256d da4_ab_ = _mm256_sub_pd(s,da4_oldS);\
+  __m256d da4_s_ = _mm256_sub_pd(s,da4_ab_);\
+  __m256d da4_dab = _mm256_fmsub_pd(a,b,da4_ab_);\
+  __m256d da4_ds = _mm256_sub_pd(da4_oldS,da4_s_);\
+  __m256d da4_c = _mm256_add_pd(da4_ds,da4_dab);\
+  c = _mm256_add_pd(da4_c,da4_oldC);\
 }
-// helper macro for compensated dot products, faster variant suitable for norms
-#define MM256_FAST4DOTADD(a,b,s,c)\
-{\
-  __m256d da4_p, da4_pi;\
-  MM256_2MULTFMA(a,b,da4_p,da4_pi);\
-  __m256d da4_sigma, da4_s = s;\
-  MM256_FAST2SUM(da4_s,da4_p,s,da4_sigma);\
-  __m256d da4_tmp = _mm256_add_pd(da4_pi,da4_sigma);\
-  c = _mm256_add_pd(c,da4_tmp);\
-}
+
 // helper macro to sum up 4 double-double numbers in MM256 to two double-double numbers in MM128
 #define MM256TO128_4SUM(a,aC,s,t)\
 {\

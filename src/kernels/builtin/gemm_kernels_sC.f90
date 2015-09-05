@@ -5,6 +5,83 @@
 
 #include "phist_config.h"
 
+subroutine dgemm_sC_1_1(nrows,v,w,M)
+  implicit none
+  integer, intent(in) :: nrows
+  real(kind=8), intent(in) :: v(1,nrows)
+  real(kind=8), intent(in) :: w(1,nrows)
+  real(kind=8), intent(out) :: M(1,1)
+  integer :: i, j
+!dir$ assume_aligned v:64, w:64, M:64
+
+  M = 0.
+!$omp parallel do reduction(+:M) schedule(static)
+  do i = 1, nrows, 1
+    do j = 1, 1, 1
+      M(:,j) = M(:,j) + v(:,i)*w(j,i)
+    end do
+  end do
+
+end subroutine dgemm_sC_1_1
+
+subroutine dgemm_sC_2_2(nrows,v,w,M)
+  implicit none
+  integer, intent(in) :: nrows
+  real(kind=8), intent(in) :: v(2,nrows)
+  real(kind=8), intent(in) :: w(2,nrows)
+  real(kind=8), intent(out) :: M(2,2)
+  integer :: i, j
+!dir$ assume_aligned v:64, w:64, M:64
+
+  M = 0.
+!$omp parallel do reduction(+:M) schedule(static)
+  do i = 1, nrows, 1
+    do j = 1, 2, 1
+      M(:,j) = M(:,j) + v(:,i)*w(j,i)
+    end do
+  end do
+
+end subroutine dgemm_sC_2_2
+
+subroutine dgemm_sC_4_4(nrows,v,w,M)
+  implicit none
+  integer, intent(in) :: nrows
+  real(kind=8), intent(in) :: v(4,nrows)
+  real(kind=8), intent(in) :: w(4,nrows)
+  real(kind=8), intent(out) :: M(4,4)
+  integer :: i, j
+!dir$ assume_aligned v:64, w:64, M:64
+
+  M = 0.
+!$omp parallel do reduction(+:M) schedule(static)
+  do i = 1, nrows, 1
+    do j = 1, 4, 1
+      M(:,j) = M(:,j) + v(:,i)*w(j,i)
+    end do
+  end do
+
+end subroutine dgemm_sC_4_4
+
+subroutine dgemm_sC_8_8(nrows,v,w,M)
+  implicit none
+  integer, intent(in) :: nrows
+  real(kind=8), intent(in) :: v(8,nrows)
+  real(kind=8), intent(in) :: w(8,nrows)
+  real(kind=8), intent(out) :: M(8,8)
+  integer :: i, j
+!dir$ assume_aligned v:64, w:64, M:64
+
+  M = 0.
+!$omp parallel do reduction(+:M) schedule(static)
+  do i = 1, nrows, 1
+    do j = 1, 8, 1
+      M(:,j) = M(:,j) + v(:,i)*w(j,i)
+    end do
+  end do
+
+end subroutine dgemm_sC_8_8
+
+
 subroutine dgemm_sC_1(nrows,nvecw,v,w,M)
   implicit none
   integer, intent(in) :: nrows, nvecw

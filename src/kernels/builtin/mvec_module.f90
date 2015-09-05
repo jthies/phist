@@ -2309,6 +2309,27 @@ contains
 #endif
     end if
 
+    ! special implementations
+    if( .not. strided_v .and. nvecv .eq. nvecw ) then
+      if( nvecv .eq. 8 ) then
+        call dgemm_sB_8_8_inplace(nrows,v%val(v%jmin,1),M_(1,1))
+        iflag = 0
+        return
+      else if( nvecv .eq. 4 ) then
+        call dgemm_sB_4_4_inplace(nrows,v%val(v%jmin,1),M_(1,1))
+        iflag = 0
+        return
+      else if( nvecv .eq. 2 ) then
+        call dgemm_sB_2_2_inplace(nrows,v%val(v%jmin,1),M_(1,1))
+        iflag = 0
+        return
+      else if( nvecv .eq. 1 ) then
+        call dgemm_sB_1_1_inplace(nrows,v%val(v%jmin,1),M_(1,1))
+        iflag = 0
+        return
+      end if
+    end if
+
     ! generic case
     call dgemm_sB_generic_inplace(nrows,nvecw,nvecv,v%val(v%jmin,1),ldv,M_(1,1))
     iflag = 0
@@ -2538,6 +2559,8 @@ contains
         allocate(tmp(nvecv,nvecw))
         if( strided_w ) then
           call dgemm_sC_strided_1(nrows,nvecw,v%val,w%val(w%jmin,1),ldw,tmp)
+        else if( nvecw .eq. 1 ) then
+          call dgemm_sC_1_1(nrows,v%val,w%val,tmp)
         else
           call dgemm_sC_1(nrows,nvecw,v%val,w%val,tmp)
         end if
@@ -2546,6 +2569,8 @@ contains
         allocate(tmp(nvecv,nvecw))
         if( strided_w ) then
           call dgemm_sC_strided_2(nrows,nvecw,v%val,w%val(w%jmin,1),ldw,tmp)
+        else if( nvecw .eq. 2 ) then
+          call dgemm_sC_2_2(nrows,v%val,w%val,tmp)
         else
           call dgemm_sC_2(nrows,nvecw,v%val,w%val,tmp)
         end if
@@ -2554,6 +2579,8 @@ contains
         allocate(tmp(nvecv,nvecw))
         if( strided_w ) then
           call dgemm_sC_strided_4(nrows,nvecw,v%val,w%val(w%jmin,1),ldw,tmp)
+        else if( nvecw .eq. 4 ) then
+          call dgemm_sC_4_4(nrows,v%val,w%val,tmp)
         else
           call dgemm_sC_4(nrows,nvecw,v%val,w%val,tmp)
         end if
@@ -2562,6 +2589,8 @@ contains
         allocate(tmp(nvecv,nvecw))
         if( strided_w ) then
           call dgemm_sC_strided_8(nrows,nvecw,v%val,w%val(w%jmin,1),ldw,tmp)
+        else if( nvecw .eq. 8 ) then
+          call dgemm_sC_8_8(nrows,v%val,w%val,tmp)
         else
           call dgemm_sC_8(nrows,nvecw,v%val,w%val,tmp)
         end if

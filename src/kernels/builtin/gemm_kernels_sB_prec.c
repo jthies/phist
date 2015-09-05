@@ -193,14 +193,22 @@ void dgemm_sb_prec_k_4(int nrows, int k, double alpha, const double *restrict x,
     MM256_2MULTFMA(alpha_,tmp,r_[i],pi);
     rC_[i] = _mm256_fmadd_pd(alpha_,tmpC,pi);
   }
-  __m256d beta_ = _mm256_set1_pd(beta);
 
+  __m256d beta_ = _mm256_set1_pd(beta);
 #pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
-    __m256d oldY = _mm256_load_pd(&y[4*i]);
     __m256d s, t;
-    MM256_2MULTFMA(beta_,oldY,s,t);
+    if( beta == 0. )
+    {
+      s = _mm256_setzero_pd();
+      t = _mm256_setzero_pd();
+    }
+    else
+    {
+      __m256d oldY = _mm256_load_pd(&y[4*i]);
+      MM256_2MULTFMA(beta_,oldY,s,t);
+    }
     for(int j = 0; j < k; j++)
     {
       __m256d xi = _mm256_broadcast_sd(&x[k*i+j]);
@@ -213,7 +221,10 @@ void dgemm_sb_prec_k_4(int nrows, int k, double alpha, const double *restrict x,
       t = _mm256_add_pd(t,tmp);
     }
     __m256d newY = _mm256_add_pd(s,t);
-    _mm256_store_pd(&y[4*i],newY);
+    if( beta == 0. )
+      _mm256_stream_pd(&y[4*i],newY);
+    else
+      _mm256_store_pd(&y[4*i],newY);
   }
 }
 
@@ -254,9 +265,17 @@ void dgemm_sb_prec_k_2(int nrows, int k, double alpha, const double *restrict x,
 #pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i+=2)
   {
-    __m256d oldY = _mm256_load_pd(&y[2*i]);
     __m256d s, t;
-    MM256_2MULTFMA(beta_,oldY,s,t);
+    if( beta == 0. )
+    {
+      s = _mm256_setzero_pd();
+      t = _mm256_setzero_pd();
+    }
+    else
+    {
+      __m256d oldY = _mm256_load_pd(&y[2*i]);
+      MM256_2MULTFMA(beta_,oldY,s,t);
+    }
     for(int j = 0; j < k; j++)
     {
       __m128d xil = _mm_load1_pd(&x[k*i+j]);
@@ -271,7 +290,10 @@ void dgemm_sb_prec_k_2(int nrows, int k, double alpha, const double *restrict x,
       t = _mm256_add_pd(t,tmp);
     }
     __m256d newY = _mm256_add_pd(s,t);
-    _mm256_store_pd(&y[2*i],newY);
+    if( beta == 0. )
+      _mm256_stream_pd(&y[2*i],newY);
+    else
+      _mm256_store_pd(&y[2*i],newY);
   }
 }
 
@@ -311,9 +333,17 @@ void dgemm_sb_prec_k_1(int nrows, int k, double alpha, const double *restrict x,
 #pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i+=4)
   {
-    __m256d oldY = _mm256_load_pd(&y[i]);
     __m256d s, t;
-    MM256_2MULTFMA(beta_,oldY,s,t);
+    if( beta == 0. )
+    {
+      s = _mm256_setzero_pd();
+      t = _mm256_setzero_pd();
+    }
+    else
+    {
+      __m256d oldY = _mm256_load_pd(&y[i]);
+      MM256_2MULTFMA(beta_,oldY,s,t);
+    }
     for(int j = 0; j < k; j++)
     {
       __m256d xi = _mm256_set_pd(x[k*i+3*k+j],x[k*i+2*k+j],x[k*i+k+j],x[k*i+j]);
@@ -326,7 +356,10 @@ void dgemm_sb_prec_k_1(int nrows, int k, double alpha, const double *restrict x,
       t = _mm256_add_pd(t,tmp);
     }
     __m256d newY = _mm256_add_pd(s,t);
-    _mm256_store_pd(&y[i],newY);
+    if( beta == 0. )
+      _mm256_stream_pd(&y[i],newY);
+    else
+      _mm256_store_pd(&y[i],newY);
   }
 }
 
