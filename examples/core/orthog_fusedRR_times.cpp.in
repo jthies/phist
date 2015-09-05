@@ -182,7 +182,7 @@ PHIST_MAIN_TASK_BEGIN
     PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Q,Q,st::zero(),QtQ,&ierr),ierr);
     PHIST_ICHK_IERR(sdMat_orthoError(QtQ,st::one(),rank,&err,&ierr),ierr);
     total_max_errorQ=std::max(err,total_max_errorQ);
-//if( it == l-1 )
+if( it == l-1 )
 {
   PHIST_SOUT(PHIST_INFO,"Example for Q^T Q (rank %d):\n", rank);
   PHIST_ICHK_IERR(SUBR(sdMat_print)(QtQ,&ierr),ierr);
