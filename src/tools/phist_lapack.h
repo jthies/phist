@@ -41,7 +41,7 @@ typedef char blas_char_t;
 
 #define BLAS_SUBR(NAME,name) name ## _
 
-/* GEMM */
+/* GEMM - matrix-matrix multiplication */
 #define SGEMM BLAS_SUBR(SGEMM,sgemm)
 #define DGEMM BLAS_SUBR(DGEMM,dgemm)
 #define CGEMM BLAS_SUBR(CGEMM,cgemm)
@@ -49,32 +49,37 @@ typedef char blas_char_t;
 /* STEQR */
 #define SSTEQR LAPACK_SUBR(SSTEQR,ssteqr)
 #define DSTEQR LAPACK_SUBR(DSTEQR,dsteqr)
-/* GEES */
+/* GEES - compute Schur form and eigenvalues A */
 #define SGEES LAPACK_SUBR(SGEES,sgees)
 #define DGEES LAPACK_SUBR(DGEES,dgees)
 #define CGEES LAPACK_SUBR(CGEES,cgees)
 #define ZGEES LAPACK_SUBR(ZGEES,zgees)
-/* GGEV */
+/* GGES - compute generalized Schur form and eigenvalues of (A,B) */
 #define SGGES LAPACK_SUBR(SGGES,sgges)
 #define DGGES LAPACK_SUBR(DGGES,dgges)
 #define CGGES LAPACK_SUBR(CGGES,cgges)
 #define ZGGES LAPACK_SUBR(ZGGES,zgges)
-/* TRSEN */
+/* TRSEN - sort Schur form */
 #define STRSEN LAPACK_SUBR(STRSEN,strsen)
 #define DTRSEN LAPACK_SUBR(DTRSEN,dtrsen)
 #define CTRSEN LAPACK_SUBR(CTRSEN,ctrsen)
 #define ZTRSEN LAPACK_SUBR(ZTRSEN,ztrsen)
-/* TREXC */
+/* TRSEN - sort generalized Schur form */
+#define STGSEN LAPACK_SUBR(STGSEN,stgsen)
+#define DTGSEN LAPACK_SUBR(DTGSEN,dtgsen)
+#define CTGSEN LAPACK_SUBR(CTGSEN,ctgsen)
+#define ZTGSEN LAPACK_SUBR(ZTGSEN,ztgsen)
+/* TREXC - swap rows in Schur form */
 #define STREXC LAPACK_SUBR(STREXC,strexc)
 #define DTREXC LAPACK_SUBR(DTREXC,dtrexc)
 #define CTREXC LAPACK_SUBR(CTREXC,ctrexc)
 #define ZTREXC LAPACK_SUBR(ZTREXC,ztrexc)
-/* TREVC */
+/* TREVC - compute eigenvectors */
 #define STREVC LAPACK_SUBR(STREVC,strevc)
 #define DTREVC LAPACK_SUBR(DTREVC,dtrevc)
 #define CTREVC LAPACK_SUBR(CTREVC,ctrevc)
 #define ZTREVC LAPACK_SUBR(ZTREVC,ztrevc)
-/* TRTRS */
+/* TRTRS - triangular solve */
 #define STRTRS LAPACK_SUBR(STRTRS,strtrs)
 #define DTRTRS LAPACK_SUBR(DTRTRS,dtrtrs)
 #define CTRTRS LAPACK_SUBR(CTRTRS,ctrtrs)
