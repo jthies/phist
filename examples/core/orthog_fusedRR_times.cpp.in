@@ -153,10 +153,11 @@ PHIST_MAIN_TASK_BEGIN
     PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(pertX,X,st::one(),Q,&ierr),ierr);
     PHIST_ICHK_IERR(SUBR(sdMat_random)(VtQ,&ierr),ierr);
     ST pertV=st::one()*pertFactorV;
+    // also calculate QtQ
+    PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(st::one(),V,VtQ,pertV,Q,&ierr),ierr);
     if( high_prec )
       ierr = PHIST_ROBUST_REDUCTIONS;
-    // also calculate QtQ
-    PHIST_ICHK_IERR(SUBR(mvec_times_sdMat_augmented)(st::one(),V,VtQ,pertV,Q,QtQ,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Q,Q,st::zero(),QtQ,&ierr),ierr);
     // save old X
     PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(st::one(),Q,st::zero(),X,&ierr),ierr);
 

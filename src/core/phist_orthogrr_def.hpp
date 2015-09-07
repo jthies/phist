@@ -65,7 +65,8 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
     PHIST_CHK_IERR(SUBR(sdMat_put_value)(R2,st::zero(),iflag),*iflag);
 
     // allow multiple sweeps (2 should be enough if high prec is used!)
-    for(int iter = 0; iter < maxIter; iter++)
+    int iter = 0;
+    for(; iter < maxIter; iter++)
     {
       // we already have the current VtV!
       // so calculate first "R" factor
@@ -91,7 +92,10 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
       PHIST_CHK_IERR(SUBR(sdMat_normF)(WtV,&WtV_err,iflag),*iflag);
       PHIST_SOUT(PHIST_INFO, "orthogRR: iter %d phase 1, desired eps %8.4e, WtV err. %8.4e, (est.) VtV err. %8.4e\n", iter, desiredEps, WtV_err, VtV_err);
       if( WtV_err <= desiredEps )
+      {
+        iter++;
         break;
+      }
 
       // update R2 <- R2 + W'*V = R2 + WtV*R
       PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),WtV,R,st::one(),R2,iflag),*iflag);
@@ -117,12 +121,18 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
       // possibly perform another full sweep with W, if R_1 is too badly conditioned
       PHIST_SOUT(PHIST_INFO, "orthogRR: iter %d phase 2, desired eps %8.4e, (est.) WtV err. %8.4e, VtV err. %8.4e\n", iter, desiredEps, WtV_err, VtV_err);
       if( WtV_err <= desiredEps )
+      {
+        iter++;
         break;
+      }
     }
 
-    // possibly omit "scaling" step, if VtV is already ok
-    if( VtV_err > desiredEps )
+    // continue iteration with VtV
+    for(; iter <= maxIter; iter++)
     {
+      if( VtV_err <= desiredEps )
+        break;
+
       // V <- V*R_1, VtV <- V'*V
       if( robust )
         *iflag = PHIST_ROBUST_REDUCTIONS;
@@ -131,6 +141,18 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
       // update R1 <- R * R1
       PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R1,st::zero(),R1_tmp,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R,R1_tmp,st::zero(),R1,iflag),*iflag);
+
+      // calculate new R factor
+      int Vrank = 0;
+      PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),VtV,st::zero(),R,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(orthogrr_cholrr)(R,R_1,&Vrank,iflag),*iflag);
+      rank = std::min(rank,Vrank);
+
+      // calculate error
+      PHIST_CHK_IERR(SUBR(sdMat_identity)(VtV_I,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),VtV,-st::one(),VtV_I,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_normF)(VtV_I,&VtV_err,iflag),*iflag);
+      PHIST_SOUT(PHIST_INFO, "orthogRR: iter %d phase 3, desired eps %8.4e, VtV err. %8.4e\n", iter-1, desiredEps, VtV_err);
     }
 
 
