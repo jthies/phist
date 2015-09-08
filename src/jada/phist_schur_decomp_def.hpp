@@ -218,6 +218,227 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
   }
 }
 
+// generalized Schur Decomposition, (S,T)->(~S,~T,VS,WS) such that
+// (T,S) = ( VS*~S*WS^T, VS*~T*WS^T ), with ~S upper Schur and ~T upper triangular. The
+// generalized Eigenvalues are returned in _CT_* ev[i]. As the lapack routine (XGGES) returns 
+// ev=alpha/beta, beta may be found to be 0. In this case, we set *iflag=1 and ev[i]=0.
+void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
+                          _ST_* VS, int ldVS, _ST_* WS, int ldWS,
+                          int m, int nselect, int nsort, eigSort_t which, _MT_ tol,
+                          void* v_ev, int* iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  // this is for XGGES (computing the Schur form)
+  int lwork = std::max(8*m+16,1024);
+                          // min required workspace is 8*m+16
+                          // for GGES 
+  
+  MT rwork[lwork];      // used as work in the real case
+  int clwork=2*m;       // dimension of work in the complex case
+  ST alpha[m], alphai[2*m], beta[m]; // in the complex case, alphai is used as WORK
+
+  const char *jobvsl="V"; // compute the left Ritz vectors in VS
+  const char *jobvsr="V"; // compute the right Ritz vectors in WR
+  const char *sort="N";  // do not sort Ritz values (we do that later
+                          // because gees only accepts the simple select
+                          // function which does not compare the Ritz values)
+  int sdim;
+  CT* ev = (CT*)v_ev;
+  bool some_beta_zero=false;
+
+  // can select at most m Ritz values (and at least 0)
+  nselect=std::max(0,std::min(nselect,m));
+  // can sort at most nselect Ritz values (and at least 0)
+  nsort=std::max(0,std::min(nsort,nselect));
+
+  PHIST_DEB("m=%d, nselect=%d, nsort=%d\n",m,nselect,nsort);
+
+// prohibit parallel execution to assure identical results on different procs
+#pragma omp parallel
+  {
+#pragma omp master
+    {
+#ifdef IS_COMPLEX
+      PHIST_DEB("call complex %cGGES\n",st::type_char());
+      PREFIX(GGES)((blas_char_t*)jobvsl,(blas_char_t*)jobvsr,(blas_char_t*)sort,NULL,&m,(blas_cmplx_t*)S,&ldS,
+             (blas_cmplx_t*)T, &ldT, &sdim,(blas_cmplx_t*)alpha, (blas_cmplx_t*)beta,
+             (blas_cmplx_t*)VS,&ldVS, (blas_cmplx_t*)WS, &ldWS, (blas_cmplx_t*)alphai, &clwork, rwork, NULL, iflag);
+#else
+      PHIST_DEB("call real %cGGES\n",st::type_char());
+      PREFIX(GGES)((blas_char_t*)jobvsl,(blas_char_t*)jobvsr,(blas_char_t*)sort,NULL,&m,S,&ldS,
+             T, &ldT, &sdim, alpha, alphai, beta,
+             VS,&ldVS, WS, &ldWS, rwork, &lwork, NULL, iflag);
+      
+      for (int i=0;i<m;i++)
+      {
+        ev[i]=ct::zero();
+        if (std::abs(beta[i])>mt::eps())
+        {
+          ev[i]=std::complex<MT>(alpha[i],alphai[i])/beta[i];
+        }
+        else
+        {
+          some_beta_zero=true;
+        }
+      }
+#endif
+    }
+  }
+  PHIST_CHK_IERR(;,*iflag);
+
+#if PHIST_OUTLEV>=PHIST_DEBUG
+//PHIST_OUT(0,"eigenvalues of unsorted Schur form:\n");
+//for (int i=0;i<m;i++)
+//{
+  //PHIST_OUT(0,"%d\t%16.8g%+16.8gi\n",i,ct::real(ev[i]),ct::imag(ev[i]));
+//}
+#endif
+
+  if (nselect<=0)
+  { 
+    *iflag=0;
+    return;
+  }
+  if (nsort>nselect || nsort<0)
+  {
+    PHIST_OUT(PHIST_WARNING,"nselect=%d>=nsort=%d, or nsort>=0 "
+                             "not satisfied, returning      unsorted Schur form\n",
+                             nselect,nsort);
+    *iflag=1;
+    return;
+  }
+  
+  // sorting of QZ factorization not implemented
+  
+  *iflag=PHIST_NOT_IMPLEMENTED;
+  return;
+
+//[
+#if 0
+
+//TODO - the function to sort a generalized Schur form in lapack is called XTGSEN
+
+  // find indices for the first howMany eigenvalues. A pair of complex conjugate
+  // eigs is counted as a single one because we will skip solving the update equation
+  // in that case. howMany is adjusted to include the pairs on output, for instance,
+  // if howMany=1 on input but the first eig encountered is a complex conjugate pair,
+  // the 2x2 block is shifted to the upper left of T and howMany=2 on output.
+  int idx[m];
+
+  // permute the first <nselect> eigenvalues according to idx
+  // to the top left, taking the vectors along
+  int select[m];
+  int nsorted=0;
+
+  for (int i=0;i<m;i++) select[i]=0;
+
+  // call lapack routine to reorder Schur form
+  MT pl, pr;// not used
+  MT dif[2];
+  bool wantq=true,wantz=true;
+
+  int liwork=m+6;
+  int iwork[liwork];
+
+  if (nselect<m)
+  {
+    PHIST_DEB("initial sort step, nselect=%d\n",nselect);
+    // sort all eigenvalues according to 'which'.
+    PHIST_CHK_IERR(SortEig(ev,m,idx,which,tol,iflag),*iflag);
+    for (int i=0;i<nselect;i++) 
+      select[std::abs(idx[i])]=1;
+// prohibit parallel execution to assure identical results on different procs
+#pragma omp parallel
+    {
+#pragma omp master
+      {
+        int ijob=0; // do not retrieve info on conditioning or deflating subspaces, maybe we could use it somehow?
+#ifdef IS_COMPLEX
+        PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
+                (blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)T,&ldT,alpha,beta,
+                (blas_cmplx_t*)VS,&ldVS,(blas_cmplx_t*)WS,ldWS,&m,
+                &pl,&pr,dif,rwork,lwork,iwork,liwork,iflag);
+#else
+        PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
+                (blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)T,&ldT,alpha,alphai,beta,
+                (blas_cmplx_t*)VS,&ldVS,(blas_cmplx_t*)WS,ldWS,&m,
+                &pl,&pr,dif,rwork,lwork,iwork,liwork,iflag);
+
+
+        for (int i=0;i<m;i++)
+        {
+          ev[i]=std::complex<MT>(alpha[i],alphai[i])/beta[i];
+        }
+#endif   
+      }
+    }
+    PHIST_CHK_IERR(;,*iflag);
+    // TROET - continue here
+    // TODO  - what about nsorted?
+    PHIST_DEB("nsorted=%d\n",nsorted);
+    // *POSSIBLE PROBLEM*
+    // if we select part of a complex conjugate eigenpair, trsen just increases nselect by one
+    if( nsorted > nselect )
+    {
+      PHIST_DEB("detected nsorted > nselect, try to continue with nsort <- nselect and nselect <- nsorted\n");
+      nsort = nselect;
+      nselect = nsorted;
+    }
+  }//nselect<m
+  
+  if (nselect==1) return; // the one (or two for complex pairs) selected eigenvalue
+                          // according to 'which' is already 'sorted'
+
+// prohibit parallel execution to assure identical results on different procs
+#pragma omp parallel
+  {
+#pragma omp master
+    {
+      int i=0;
+      while (i<nsort)
+      {
+        PHIST_DEB("sort step %d, nsorted=%d [%d]\n",i,nsorted,nsort);
+        // sort the next few eigenvalues (up to nselect)
+        SortEig(ev+i,nselect-i,idx+i,which,tol,iflag);
+        if( *iflag != 0 )
+          break;
+
+        // sort next candidate to top.
+        for (int j=0;j<i;j++) select[j]=1;
+        for (int j=i;j<m;j++) select[j]=0;
+        select[std::abs(idx[i])+i]=1; // sort next one to the top
+        // note that the index returned by 
+        // SortEig misses an offset i because
+        // we pass in ev+i
+        int nsorted_before=nsorted;
+#ifdef IS_COMPLEX
+        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,
+              (blas_cmplx_t*)ev,&nsorted,&S_cond, &sep, (blas_cmplx_t*)work, &lwork, iflag);
+#else
+        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
+              &S_cond, &sep, work, &lwork, iwork, &liwork, iflag);
+        for (int j=0;j<m;j++)
+        {
+          ev[j]=std::complex<MT>(ev_r[j],ev_i[j]);
+        }
+#endif
+        if( *iflag != 0 )
+          break;
+        i+= std::max(nsorted-nsorted_before,1);
+      }//while
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      //PHIST_OUT(0,"eigenvalues of sorted Schur form:\n");
+      //for (int i=0;i<m;i++)
+      //{
+        //PHIST_OUT(0,"%d\t%16.8g%+16.8gi\n",i,ct::real(ev[i]),ct::imag(ev[i]));
+      //}
+#endif
+    }
+  }
+#endif
+//]
+}
 
 // reorder multiple eigenvalues in a given (partial) schur decomposition by the smallest residual norm of the unprojected problem
 void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
