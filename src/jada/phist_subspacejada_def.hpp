@@ -100,6 +100,7 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 #endif
 
   eigExtr_t how=opts.how;
+  
   if (how==HARMONIC)
   {
     PHIST_SOUT(PHIST_ERROR,"if you want to use harmonic Ritz values, please use the harmonicjada routine instead\n");
