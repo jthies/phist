@@ -55,7 +55,7 @@ int main(int argc, char** argv)
   comm_ptr_t comm = NULL;
   map_ptr_t map = NULL;
   mvec_ptr_t X = NULL, Q=NULL, V=NULL;
-  sdMat_ptr_t QtQ=NULL, VtV=NULL, VtQ=NULL, VtX=NULL, QtX=NULL;
+  sdMat_ptr_t QtQ=NULL, VtV_I=NULL, VtQ=NULL, VtX=NULL, QtX=NULL;
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
 
@@ -118,17 +118,18 @@ PHIST_MAIN_TASK_BEGIN
 
 
   PHIST_ICHK_IERR(phist_map_create(&map,comm,n,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(sdMat_create)(&VtV,k,k,comm,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_create)(&VtV_I,k,k,comm,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&V,map,k,&ierr),ierr);
   int rankV;
   // call orthog twice to obtain accurate orthog. random vectors
-  PHIST_ICHK_NEG_IERR(SUBR(orthog)(NULL,V,NULL,VtV,NULL,2,&rankV,&ierr),ierr);
-  PHIST_ICHK_IERR(SUBR(orthog)(NULL,V,NULL,VtV,NULL,2,&rankV,&ierr),ierr);
+  PHIST_ICHK_NEG_IERR(SUBR(orthog)(NULL,V,NULL,VtV_I,NULL,2,&rankV,&ierr),ierr);
+  ierr = 0;
+  PHIST_ICHK_IERR(SUBR(sdMat_identity)(VtV_I,&ierr),ierr);
   if( high_prec )
     ierr = PHIST_ROBUST_REDUCTIONS;
-  PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),VtV,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,-st::one(),VtV_I,&ierr),ierr);
   MT err;
-  PHIST_ICHK_IERR(sdMat_orthoError(VtV,st::one(),k,&err,&ierr),ierr);
+  PHIST_ICHK_IERR(sdMat_orthoError(VtV_I,st::zero(),k,&err,&ierr),ierr);
   PHIST_SOUT(PHIST_INFO,"Ortho-error of block V: %8.4e\n", err);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,m,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&Q,map,m,&ierr),ierr);
@@ -163,15 +164,24 @@ PHIST_MAIN_TASK_BEGIN
 
     int maxIter = twice ? 3 : 1;
     // this is what we really want to benchmark
-    if( high_prec )
-      ierr = PHIST_ROBUST_REDUCTIONS;
     if( fusedRR )
     {
+      if( high_prec )
+        ierr = PHIST_ROBUST_REDUCTIONS;
       PHIST_ICHK_NEG_IERR(SUBR(orthogrrfused)(V,Q,VtX,QtX,QtQ,&ierr),ierr);
     }
     else
     {
-      PHIST_ICHK_NEG_IERR(SUBR(orthogrr)(V,Q,VtX,QtX,QtQ,desiredEps,maxIter,&ierr),ierr);
+      if( high_prec )
+      {
+        ierr = PHIST_ROBUST_REDUCTIONS;
+        PHIST_ICHK_NEG_IERR(SUBR(orthogrr)(V,Q,VtX,QtX,VtV_I,QtQ,desiredEps,maxIter,&ierr),ierr);
+      }
+      else
+      {
+        // only with high_prec we can really provice a useful VtV_I
+        PHIST_ICHK_NEG_IERR(SUBR(orthogrr)(V,Q,VtX,QtX,NULL,QtQ,desiredEps,maxIter,&ierr),ierr);
+      }
     }
     int rank = m-ierr;
     rankMisses += ierr;
@@ -235,6 +245,7 @@ if( it == l-1 )
   PHIST_ICHK_IERR(SUBR(sdMat_delete)(QtQ,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(sdMat_delete)(VtQ,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(sdMat_delete)(VtX,&ierr),ierr);
+  PHIST_ICHK_IERR(SUBR(sdMat_delete)(VtV_I,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(sdMat_delete)(QtX,&ierr),ierr);
   PHIST_ICHK_IERR(phist_map_delete(map,&ierr),ierr);
 
