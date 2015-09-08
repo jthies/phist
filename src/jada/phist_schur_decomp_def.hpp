@@ -309,7 +309,6 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
     return;
   }
   
-
   //The function to sort a generalized Schur form in lapack is called XTGSEN
 
   // find indices for the first howMany eigenvalues. A pair of complex conjugate
@@ -374,6 +373,7 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
       }
     }
     PHIST_CHK_IERR(;,*iflag);
+
     // TODO  - what about nsorted?
     PHIST_DEB("nsorted=%d\n",nsorted);
     // *POSSIBLE PROBLEM*
@@ -421,7 +421,6 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
                 (blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)T,&ldT,alpha,alphai,beta,
                 (blas_cmplx_t*)VS,&ldVS,(blas_cmplx_t*)WS,ldWS,&m,
                 &pl,&pr,dif,rwork,lwork,iwork,liwork,iflag);
-
 
         for (int i=0;i<m;i++)
         {
