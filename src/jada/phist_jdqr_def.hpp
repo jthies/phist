@@ -123,6 +123,14 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 
   // set output format for floating point numbers
   std::cout << std::scientific << std::setprecision(4) << std::setw(8);
+  
+  if (how!=STANDARD)
+  {
+    PHIST_SOUT(PHIST_ERROR,"only Ritz extraction is implemented (jadaOpts.how=%s), found %s\n",
+        eigExtr2str(STANDARD),eigExtr2str(how));
+    *iflag=PHIST_NOT_IMPLEMENTED;
+    return;
+  }
 
   *num_iters=0;
   *num_eigs=0;

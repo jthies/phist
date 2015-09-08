@@ -98,6 +98,16 @@ bool symmetric=opts.symmetry==HERMITIAN;
 symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 #endif
 
+  eigExtr_t how=opts.how;
+  if (how!=STANDARD)
+  {
+    PHIST_SOUT(PHIST_ERROR,"only Ritz extraction is implemented (jadaOpts.how=%s), found %s\n",
+        eigExtr2str(STANDARD),eigExtr2str(how));
+    *iflag=PHIST_NOT_IMPLEMENTED;
+    return;
+  }
+
+
   // extended number of searched eigenvalues in order to respect the block dimension,
   // this way we always have a fixed blockDim AND it should make the calculation
   // of the last eigenvalues more stable in some cases
