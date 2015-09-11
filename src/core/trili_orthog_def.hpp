@@ -193,7 +193,8 @@ ortho = imgs;
   Teuchos::Array< Teuchos::RCP<TeuchosMAT > > R2_array( 1, R2_2 );
   *rankVW=ortho->projectAndNormalize( *W_2, R2_array, R1_2, V_array );
 
-#if PHIST_OUTLEV>=PHIST_DEBUG
+#ifdef PHIST_KERNEL_LIB_EPETRA
+# if PHIST_OUTLEV>=PHIST_DEBUG
   if (B != NULL)
   {
     const Epetra_MultiVector *Vview = (const Epetra_MultiVector *)V;
@@ -221,6 +222,7 @@ ortho = imgs;
       PHIST_DEB("\n");;
     }
   }
+# endif
 #endif
   *iflag = 0; //ncols-rankW;// return positive number if rank not full.
   }
