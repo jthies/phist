@@ -6,6 +6,7 @@
 
 #include "phist_config.h"
 #include "prec_helpers.h"
+#include "phist_defs.h"
 
 #ifdef PHIST_HAVE_MPACK_QD
 
@@ -16,7 +17,7 @@
 #include "mpack/mpack_config.h"
 #include "mpack/mlapack_dd.h"
 
-#if PHIST_OUTLEV>=PHIST_DEBUG
+#if( PHIST_OUTLEV >= PHIST_DEBUG )
 void printmat(int N, int M, dd_real * A, int LDA)
 {
     dd_real mtmp;
@@ -62,7 +63,7 @@ for (int i=0; i<n; i++)
     A[i+j*n].x[1] = aC[i+j*lda];
   }
 }
-#if PHIST_OUTLEV>=PHIST_DEBUG
+#if( PHIST_OUTLEV >= PHIST_DEBUG )
     printf("%%in Rsyev,\n A =");
     printmat(n, n, A, n);
     printf("\n");
@@ -98,7 +99,7 @@ for (int i=0; i<n; i++)
   }
 }
 
-#if PHIST_OUTLEV>=PHIST_DEBUG
+#if( PHIST_OUTLEV >= PHIST_DEBUG )
     printf("%%in Rsyev, eigenvalues \n");
     printf("w =");
     printmat(n, 1, W, 1);

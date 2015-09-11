@@ -35,7 +35,7 @@ MODULES_KERNELS_OPTIONAL=(
 
 ## parse command line arguments
 usage() { echo "Usage: $0 [-k <builtin|ghost|epetra|tpetra>] [-e <PrgEnv/module-string>] [-f <optional-libs>]"; \
-          echo "       [-c <cmake flags to be added>] [-v <SSE|AVX|AVX2>]" 1>&2; exit 1; }
+          echo "       [-c <cmake flags to be added>] [-v <SSE|AVX|AVX2|CUDA>]" 1>&2; exit 1; }
 
 while getopts "k:e:f:c:v:h" o; do
     case "${o}" in
@@ -78,6 +78,9 @@ for m in $MODULES_BASIC; do module load $m; done
 for m in ${MODULES_KERNELS["$KERNELS"]}; do module load $m; done
 if [[ "$FLAGS" = *"optional-libs"* ]]; then
   for m in ${MODULES_KERNELS_OPTIONAL["$KERNELS"]}; do module load $m; done
+fi
+if [ "${VECT_EXT}" = "CUDA" ]; then
+  module load cuda
 fi
 module list
 

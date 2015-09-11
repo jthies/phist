@@ -507,6 +507,82 @@ subroutine dgemm_sB_generic(m,n,k,alpha,A,lda,B,beta,C,ldc)
 end subroutine dgemm_sB_generic
 
 
+subroutine dgemm_sB_1_1_inplace(m,A,B)
+  implicit none
+  integer, intent(in) :: m
+  real(kind=8), intent(inout) :: A(1,m)
+  real(kind=8), intent(in) :: B(1,1)
+  integer :: i, j
+  real(kind=8) :: work(1)
+!dir$ assume_aligned A:8, B:64
+
+!$omp parallel do private(work) schedule(static)
+  do i = 1, m, 1
+    do j = 1, 1, 1
+      work(j) = sum(A(1:1,i)*B(:,j))
+    end do
+    A(1:1,i) = work(:)
+  end do
+
+end subroutine dgemm_sB_1_1_inplace
+
+subroutine dgemm_sB_2_2_inplace(m,A,B)
+  implicit none
+  integer, intent(in) :: m
+  real(kind=8), intent(inout) :: A(2,m)
+  real(kind=8), intent(in) :: B(2,2)
+  integer :: i, j
+  real(kind=8) :: work(2)
+!dir$ assume_aligned A:8, B:64
+
+!$omp parallel do private(work) schedule(static)
+  do i = 1, m, 1
+    do j = 1, 2, 1
+      work(j) = sum(A(1:2,i)*B(:,j))
+    end do
+    A(1:2,i) = work(:)
+  end do
+
+end subroutine dgemm_sB_2_2_inplace
+
+subroutine dgemm_sB_4_4_inplace(m,A,B)
+  implicit none
+  integer, intent(in) :: m
+  real(kind=8), intent(inout) :: A(4,m)
+  real(kind=8), intent(in) :: B(4,4)
+  integer :: i, j
+  real(kind=8) :: work(4)
+!dir$ assume_aligned A:8, B:64
+
+!$omp parallel do private(work) schedule(static)
+  do i = 1, m, 1
+    do j = 1, 4, 1
+      work(j) = sum(A(1:4,i)*B(:,j))
+    end do
+    A(1:4,i) = work(:)
+  end do
+
+end subroutine dgemm_sB_4_4_inplace
+
+subroutine dgemm_sB_8_8_inplace(m,A,B)
+  implicit none
+  integer, intent(in) :: m
+  real(kind=8), intent(inout) :: A(8,m)
+  real(kind=8), intent(in) :: B(8,8)
+  integer :: i, j
+  real(kind=8) :: work(8)
+!dir$ assume_aligned A:8, B:64
+
+!$omp parallel do private(work) schedule(static)
+  do i = 1, m, 1
+    do j = 1, 8, 1
+      work(j) = sum(A(1:8,i)*B(:,j))
+    end do
+    A(1:8,i) = work(:)
+  end do
+
+end subroutine dgemm_sB_8_8_inplace
+
 subroutine dgemm_sB_generic_inplace(m,n,k,A,lda,B)
   implicit none
   integer, intent(in) :: m,n,k,lda
