@@ -368,7 +368,7 @@ namespace
 }
 
 #ifdef PHIST_HAVE_CXX11_MOVEDEFAULT
-TEST_F(AsyncTaskTest, DISABLED_stressTest)
+TEST_F(AsyncTaskTest, stressTest)
 {
   // just start a crazy bunch of tasks and verify that all run
   globalErr = false;

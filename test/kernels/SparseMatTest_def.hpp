@@ -1402,7 +1402,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
 
 #ifdef FIRST_TIME
 
-int PREFIX(idfunc)(ghost_gidx_t row, ghost_lidx_t *len, ghost_gidx_t* cols, void* vval)
+int PREFIX(idfunc)(ghost_gidx_t row, ghost_lidx_t *len, ghost_gidx_t* cols, void* vval, void *arg)
 {
   *len=1;
   _ST_* val = (_ST_*)vval;
@@ -1411,7 +1411,7 @@ int PREFIX(idfunc)(ghost_gidx_t row, ghost_lidx_t *len, ghost_gidx_t* cols, void
   return 0;
 }
 
-int PREFIX(some_rowFunc)(ghost_gidx_t row, ghost_lidx_t *len, ghost_gidx_t* cols, void* vval)
+int PREFIX(some_rowFunc)(ghost_gidx_t row, ghost_lidx_t *len, ghost_gidx_t* cols, void* vval, void *arg)
 {
 #include "phist_std_typedefs.hpp"
   _ST_* val = (_ST_*)vval;
@@ -1494,7 +1494,7 @@ TEST_F(CLASSNAME,create_A_fromRowFunc)
   
     // put A into the dense mvec structure
     int len;
-    iflag_=PREFIX(some_rowFunc)(row,&len,col,(void*)val);
+    iflag_=PREFIX(some_rowFunc)(row,&len,col,(void*)val,NULL);
     for (int j=0; j<len;j++)
     {
       Aval[VIDX(i,col[j],ldA)]=val[j];

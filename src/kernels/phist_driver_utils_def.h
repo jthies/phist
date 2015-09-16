@@ -105,19 +105,19 @@ BRUSSOLATOR
 
 // definitions for MATPDE
 void MATPDE_initDimensions(int, int, gidx_t*, lidx_t*);
-int MATPDE_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
+int MATPDE_rowFunc(gidx_t, lidx_t*, gidx_t*, void*, void*);
 // definitions for TriToeplitz
 void TriToeplitz_initDimensions(int, gidx_t*, lidx_t*);
-int TriToeplitz_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
+int TriToeplitz_rowFunc(gidx_t, lidx_t*, gidx_t*, void*, void*);
 // definitions for MATPDE3D
 void MATPDE3D_initDimensions(int, int, int, gidx_t*, lidx_t*);
 void MATPDE3D_selectProblem(int which, int* iflag);
-int MATPDE3D_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
+int MATPDE3D_rowFunc(gidx_t, lidx_t*, gidx_t*, void*, void*);
 int MATPDE3D_solFunc(gidx_t, lidx_t, void*);
 int MATPDE3D_rhsFunc(gidx_t, lidx_t, void*);
 // definitions for Brussolator
 void Brussolator_initDimensions(int, gidx_t*, lidx_t*);
-int Brussolator_rowFunc(gidx_t, lidx_t*, gidx_t*, void*);
+int Brussolator_rowFunc(gidx_t, lidx_t*, gidx_t*, void*, void*);
 
 int str_starts_with(const char *s1, const char *s2)
 {
@@ -246,11 +246,11 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   
     matfuncs_info_t info;
     // set problem size
-    crsGraphene( -2, WL, &DIM, NULL);
+    crsGraphene( -2, WL, &DIM, NULL, NULL);
     // set disorder
-    crsGraphene( -5, NULL, NULL,&gamma);
+    crsGraphene( -5, NULL, NULL,&gamma, NULL);
     // get matrix info
-    crsGraphene( -1, NULL, NULL, &info);
+    crsGraphene( -1, NULL, NULL, &info, NULL);
 
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat,comm,
         (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,
@@ -261,10 +261,10 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     PHIST_SOUT(PHIST_INFO,"problem type: spinSZ[%d]\n",L);
 
     ghost_lidx_t conf_spinZ[3] = {L,L/2,0};
-    SpinChainSZ( -2, conf_spinZ, &DIM, NULL);
+    SpinChainSZ( -2, conf_spinZ, &DIM, NULL, NULL);
 
     matfuncs_info_t info;
-    SpinChainSZ( -1, NULL, NULL, &info);
+    SpinChainSZ( -1, NULL, NULL, &info, NULL);
 
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat,comm,
         (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,
@@ -362,7 +362,7 @@ PHIST_SOUT(PHIST_ERROR,"BAPPS models (essex-physics/bapps) not\n"
     matfuncs_info_t info;
                  
     // query
-    matfunc( -2, NULL, NULL, &info);
+    matfunc( -2, NULL, NULL, &info, NULL);
 
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
           info.nrows, info.nrows, info.row_nnz, matfunc, iflag), *iflag);  
