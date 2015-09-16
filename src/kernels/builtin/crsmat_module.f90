@@ -113,12 +113,13 @@ module crsmat_module
 
   !> interface of function-ptr for crsMat_create_fromRowFunc
   abstract interface
-    function matRowFunc(row, nnz, cols, vals) result(ierr)
+    function matRowFunc(row, nnz, cols, vals,data_arg) result(ierr)
       use, intrinsic :: iso_c_binding
       integer(G_GIDX_T), value :: row
       integer(G_LIDX_T), intent(inout) :: nnz
       integer(G_GIDX_T), intent(inout) :: cols(*)
       real(C_DOUBLE),    intent(inout) :: vals(*)
+      TYPE(c_ptr), value :: data_arg
       integer(C_INT) :: ierr
     end function matRowFunc
   end interface
@@ -1919,7 +1920,7 @@ end subroutine permute_local_matrix
 
   !==================================================================================
   !> read MatrixMarket file
-  subroutine phist_DcrsMat_create_fromRowFunc(A_ptr, comm_ptr,nrows, ncols, maxnne_per_row, rowFunc_ptr, ierr) &
+  subroutine phist_DcrsMat_create_fromRowFunc(A_ptr, comm_ptr,nrows, ncols, maxnne_per_row, data_arg, rowFunc_ptr, ierr) &
     & bind(C,name='phist_DcrsMat_create_fromRowFunc_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
@@ -1929,6 +1930,7 @@ end subroutine permute_local_matrix
     type(C_PTR),        value  :: comm_ptr
     integer(kind=C_INT64_T),     value       :: nrows, ncols
     integer(C_INT32_T), value           :: maxnne_per_row
+    type(C_PTR),        value :: data_arg
     type(C_FUNPTR),     value       :: rowFunc_ptr
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
@@ -2018,7 +2020,7 @@ wtime = mpi_wtime()
     do i = 1, A%nRows, 1
 !$omp ordered
       i_ = A%row_map%distrib(A%row_map%me)+i-2
-      ierr=rowFunc(i_, nne, idx(:,1), val)
+      ierr=rowFunc(i_, nne, idx(:,1), val,data_arg)
       j = A%row_offset(i)
       j_ = j + int(nne-1,kind=8)
       A%global_col_idx(j:j_) = idx(1:nne,1)+1

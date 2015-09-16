@@ -76,8 +76,8 @@ const char* filename,int* iflag)
 //!@}
 
 extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, const_comm_ptr_t vcomm,
-        gidx_t nrows, gidx_t ncols, lidx_t maxnne,
-                int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*),
+        gidx_t nrows, gidx_t ncols, lidx_t maxnne, void* last_arg,
+                int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*,void*),
                 int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -101,7 +101,7 @@ A=new Traits<_ST_>::sparseMat_t(map_ptr,(int)maxnne);
     ghost_gidx_t row = tpetra_map->getGlobalElement(i);
     ghost_lidx_t row_nnz;
 
-    PHIST_CHK_IERR(*iflag=rowFunPtr(row,&row_nnz,cols,vals),*iflag);
+    PHIST_CHK_IERR(*iflag=rowFunPtr(row,&row_nnz,cols,vals,last_arg),*iflag);
 
     Teuchos::ArrayView<gidx_t> cols_v(cols,row_nnz);
     Teuchos::ArrayView<_ST_> vals_v(vals,row_nnz);

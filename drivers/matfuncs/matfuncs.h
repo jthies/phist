@@ -49,8 +49,8 @@ typedef struct {
 extern "C" {
 #endif
 
-int SpinChainSZ(   ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals);
-int crsGraphene(   ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals);
+int SpinChainSZ(   ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals, void* data);
+int crsGraphene(   ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals, void* data);
 #ifdef __cplusplus
 }
 #endif

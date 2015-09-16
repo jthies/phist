@@ -253,7 +253,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     crsGraphene( -1, NULL, NULL, &info, NULL);
 
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat,comm,
-        (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,
+        (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,NULL,
         &crsGraphene, iflag), *iflag);
   }
   else if (mat_type==SPINSZ)
@@ -267,7 +267,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     SpinChainSZ( -1, NULL, NULL, &info, NULL);
 
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat,comm,
-        (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,
+        (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,NULL,
         &SpinChainSZ, iflag), *iflag);
   }
   else if (mat_type==MATPDE)
@@ -284,7 +284,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
       *iflag &= ~PHIST_SPARSEMAT_REPARTITION;
     }
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
-          nrows, ncols, row_nnz, &MATPDE_rowFunc, iflag), *iflag);
+          nrows, ncols, row_nnz, NULL, &MATPDE_rowFunc, iflag), *iflag);
   }
   else if(mat_type==TRITOEPLITZ)
   {
@@ -299,7 +299,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
       *iflag &= ~PHIST_SPARSEMAT_REPARTITION;
     }
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
-          nrows, ncols, row_nnz, &TriToeplitz_rowFunc, iflag), *iflag);
+          nrows, ncols, row_nnz, NULL, &TriToeplitz_rowFunc, iflag), *iflag);
   }
   else if(mat_type==BRUSSOLATOR)
   {
@@ -309,7 +309,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     Brussolator_initDimensions(L, &nrows, &row_nnz);
     gidx_t ncols = nrows;
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
-          nrows, ncols, row_nnz, &Brussolator_rowFunc, iflag), *iflag);
+          nrows, ncols, row_nnz, NULL, &Brussolator_rowFunc, iflag), *iflag);
   }
   else if (mat_type==FROM_BENCH3D)
   {
@@ -339,7 +339,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     PHIST_CHK_IERR(MATPDE3D_selectProblem(which,iflag),*iflag);
     *iflag=iflag_tmp;
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
-          nrows, ncols, row_nnz, &MATPDE3D_rowFunc, iflag), *iflag);
+          nrows, ncols, row_nnz, NULL, &MATPDE3D_rowFunc, iflag), *iflag);
   }
   else if (mat_type==FROM_BAPPS)
   {
@@ -365,7 +365,7 @@ PHIST_SOUT(PHIST_ERROR,"BAPPS models (essex-physics/bapps) not\n"
     matfunc( -2, NULL, NULL, &info, NULL);
 
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
-          info.nrows, info.nrows, info.row_nnz, matfunc, iflag), *iflag);  
+          info.nrows, info.nrows, info.row_nnz, NULL, matfunc, iflag), *iflag);  
 #endif
   }
   else

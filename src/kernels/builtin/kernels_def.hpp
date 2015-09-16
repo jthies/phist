@@ -12,7 +12,7 @@
 // Declaration of Fortran implemented functions
 extern "C" {
   void SUBR(crsMat_create_fromRowFunc_f)(TYPE(sparseMat_ptr)*,const_comm_ptr_t comm,gidx_t,gidx_t, 
-      lidx_t, int (*)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int*);
+      lidx_t, void*, int (*)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*,void*), int*);
   void SUBR(crsMat_delete_f)(TYPE(sparseMat_ptr) A, int* iflag);
   void SUBR(crsMat_get_map_f)(TYPE(const_sparseMat_ptr),const_map_ptr_t*,int*);
   void SUBR(crsMat_read_mm_f)(void*A,const_comm_ptr_t comm, int fname_len, const char* fname, int* iflag);
@@ -880,8 +880,8 @@ extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMa
 
 // NOTE: see the description of sparseMat_read_mm on how we treat input flags for this function
 extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, const_comm_ptr_t vcomm,
-        gidx_t nrows, gidx_t ncols, lidx_t maxnne, 
-                int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), 
+        gidx_t nrows, gidx_t ncols, lidx_t maxnne, void* last_arg,
+                int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*,void*), 
                 int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -919,7 +919,7 @@ std::cout << "iflag&DIST2_COLOR="<<(*iflag&PHIST_SPARSEMAT_DIST2_COLOR)<<std::en
     }
   }
 
-  PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc_f)(A, vcomm, nrows, ncols, maxnne, 
+  PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc_f)(A, vcomm, nrows, ncols, maxnne, last_arg,
         rowFunPtr, iflag), *iflag);
 }
 

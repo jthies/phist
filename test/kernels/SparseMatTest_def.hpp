@@ -1436,7 +1436,7 @@ TEST_F(CLASSNAME,create_A_fromRowFunc)
   TYPE(sparseMat_ptr) A=NULL;
   ghost_lidx_t nnzr = 5;
   iflag_=0; // do not ask for reordering etc.
-  SUBR(sparseMat_create_fromRowFunc)(&A,comm_, _N_,_N_,nnzr,
+  SUBR(sparseMat_create_fromRowFunc)(&A,comm_, _N_,_N_,nnzr,NULL,
                 &PREFIX(some_rowFunc),&iflag_);
   ASSERT_EQ(0,iflag_);
   rebuildVectors(A);
@@ -1527,7 +1527,7 @@ TEST_F(CLASSNAME,create_I_fromRowFunc)
   TYPE(sparseMat_ptr) A=NULL;
   ghost_gidx_t nnzr = 1;
   iflag_=0; // do not ask for reordering etc.
-  SUBR(sparseMat_create_fromRowFunc)(&A,comm_, _N_,_N_,nnzr,
+  SUBR(sparseMat_create_fromRowFunc)(&A,comm_, _N_,_N_,nnzr,NULL,
                 &PREFIX(idfunc),&iflag_);
   ASSERT_EQ(0,iflag_);
   rebuildVectors(A);

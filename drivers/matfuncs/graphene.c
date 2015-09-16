@@ -27,7 +27,7 @@
 #define D_AC  (1.5*graphene_a_unit)
 #endif
 
-int crsGraphene( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals){
+int crsGraphene( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals, void* data){
 
 	static ghost_gidx_t L = 4 ;
 	static ghost_gidx_t W = 4 ;

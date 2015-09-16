@@ -194,7 +194,7 @@ idx_t bitcount(idx_t i){
 	}
 
 
-int SpinChainSZ( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals){
+int SpinChainSZ( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals, void* data){
 
 	static ghost_gidx_t L   = 0;
 	static ghost_gidx_t NUp = 0;
@@ -413,7 +413,7 @@ int SpinChainSZ( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 
 
 
-int crsSpinChain( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals ){
+int crsSpinChain( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals, void* data ){
 
 	static ghost_gidx_t L   = 1;
 	static double Jx = 1.;
