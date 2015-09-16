@@ -553,7 +553,7 @@ static inline void CNG_SKIP(uint64_t n, uint64_t *restrict z)
 // KISS transformed to double [-1,1)
 static inline double KISSD(uint64_t *restrict x, uint64_t *restrict y, uint64_t *restrict z, uint64_t *restrict c)
 {
-  return 1.0d/(1ULL<<63) * (MWC(x,c) + XSH(y) + CNG(z)) - 1.0d;
+  return 1.0/(1ULL<<63) * (MWC(x,c) + XSH(y) + CNG(z)) - 1.0;
 }
 
 // skip a list of random numbers (state jump ahead)
