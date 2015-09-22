@@ -104,6 +104,9 @@ typedef phist::MultiVector< _ST_ > BelosMV;
   verb+=   ::Belos::FinalSummary
          + ::Belos::TimingDetails;
 #endif
+#if PHIST_OUTLEV>=PHIST_DEBUG
+  verb+=   ::Belos::Debug;
+#endif
   belosList->set("Verbosity",verb);
 
   belosList->set("Output Stream",out->getOStream());
