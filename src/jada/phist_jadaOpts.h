@@ -18,9 +18,9 @@ eigSort_t which; //! LM, SM, LR, SR, or TARGET
 double convTol; //! convergence tolerance for eigenvalues
 matSym_t symmetry; //! Symmetry properties of the matrix
 
-////////////////////////////////////
-// JaDa configuration             //
-////////////////////////////////////
+/**********************************
+ * JaDa configuration             *
+ **********************************/
 
 int maxIters; //! maximum iterations allowed
 int blockSize; //! only for block methods (subspacejada)
@@ -37,9 +37,9 @@ double initialShift_i; //! imaginary part of initial shift
 
 int initialShiftIters; // perform given number of iterations with a fixed shift
 
-/*//////////////////////////////////
-// inner solver configuration     //
-//////////////////////////////////*/
+/**********************************
+ * inner solver configuration     *
+ **********************************/
 
 linSolv_t innerSolvType; /*! GMRES, MINRES, CARP_CG, USER_DEFINED currently supported.
                           * If set to USER_DEFINED, you have to provide the customSolver*
