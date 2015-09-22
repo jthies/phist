@@ -355,7 +355,7 @@ using ::phist::GhostMV;
       ghost_densemat_t* _mv = (ghost_densemat_t*)mv.get();
       ghost_densemat_t* Bghost=createGhostViewOfTeuchosSDM(B);
 #ifdef GHOST_HAVE_CUDA
-      if (Bghost->traits.location&GHOST_LOCATION_DEVICE)
+      if (_A->traits.location&GHOST_LOCATION_DEVICE)
       {
         Bghost->upload(Bghost);
       }
@@ -453,7 +453,7 @@ using ::phist::GhostMV;
       ghost_densemat_t* Cghost=createGhostViewOfTeuchosSDM(C);
 
 #ifdef GHOST_HAVE_CUDA
-      if (Cghost->traits.location&GHOST_LOCATION_DEVICE)
+      if (A.get()->traits.location&GHOST_LOCATION_DEVICE)
       {
         // upload data (even though we don't need it) to allocate device memory for B
         Cghost->upload(Cghost);
@@ -469,7 +469,7 @@ using ::phist::GhostMV;
                    (void*)&alpha, (void*)&beta,
                    GHOST_GEMM_ALL_REDUCE,GHOST_GEMM_DEFAULT);
 #ifdef GHOST_HAVE_CUDA
-      if (Cghost->traits.location&GHOST_LOCATION_DEVICE)
+      if (A.get()->traits.location&GHOST_LOCATION_DEVICE)
       {
         Cghost->download(Cghost);
       }
@@ -676,6 +676,9 @@ using ::phist::GhostMV;
                 // Teuchos sdMats are always column major
                 dmtraits.storage=GHOST_DENSEMAT_COLMAJOR;
                 dmtraits.datatype=st::ghost_dt;
+                
+                // always view host memory
+                dmtraits.location=GHOST_LOCATION_HOST;
 
       // The context and communicator are supposed to be irrelevant in an sdMat,
       // but it is not clear wether this is handled correctly everywhere i ghost.
