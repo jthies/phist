@@ -351,9 +351,15 @@ using ::phist::GhostMV;
     {
       PHIST_ENTER_FCN(__FUNCTION__);    
       // create view of Teuchos matrix as GhostMV
-      ghost_densemat_t* Bghost=createGhostViewOfTeuchosSDM(B);
       ghost_densemat_t* _A = (ghost_densemat_t*)A.get();
       ghost_densemat_t* _mv = (ghost_densemat_t*)mv.get();
+      ghost_densemat_t* Bghost=createGhostViewOfTeuchosSDM(B);
+#ifdef GHOST_HAVE_CUDA
+      if (Bghost->traits.location&GHOST_LOCATION_DEVICE)
+      {
+        Bghost->upload(Bghost);
+      }
+#endif      
       // multiply
       const char* trans="N";
       ghost_gemm(_mv,_A,(char*)trans,Bghost,(char*)"N",&alpha,&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT);
@@ -446,6 +452,14 @@ using ::phist::GhostMV;
       PHIST_ENTER_FCN(__FUNCTION__);
       ghost_densemat_t* Cghost=createGhostViewOfTeuchosSDM(C);
 
+#ifdef GHOST_HAVE_CUDA
+      if (Cghost->traits.location&GHOST_LOCATION_DEVICE)
+      {
+        // upload data (even though we don't need it) to allocate device memory for B
+        Cghost->upload(Cghost);
+      }
+#endif      
+
       Scalar beta = st::zero();
       const char* trans=phist::ScalarTraits<Scalar>::is_complex()? "C": "T";
       ghost_gemm(Cghost,  const_cast<ghost_densemat_t*>(A.get()),
@@ -454,6 +468,13 @@ using ::phist::GhostMV;
                    (char*)"N",
                    (void*)&alpha, (void*)&beta,
                    GHOST_GEMM_ALL_REDUCE,GHOST_GEMM_DEFAULT);
+#ifdef GHOST_HAVE_CUDA
+      if (Cghost->traits.location&GHOST_LOCATION_DEVICE)
+      {
+        Cghost->download(Cghost);
+      }
+#endif      
+
       Cghost->destroy(Cghost);
     }
 
