@@ -89,4 +89,13 @@ kernel libs) ?
 
 #cmakedefine PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS
 
+/* disallow Trilinos versions newer than 11.12.x because they have a
+   new interface to Tpetra/Kokkos/TSQR (cf. #124)
+*/
+#ifdef PHIST_HAVE_KOKKOS
+#include "Trilinos_version.h"
+#if ((TRILINOS_MAJOR_VERSION>11)||((TRILINOS_MAJOR_VERSION==11)&&(TRILINOS_MINOR_VERSION>1112)))
+#error "Trilinos version >11.12 is not supported by PHIST, yet (cf. issue #124)"
+#endif
+#endif
 #endif
