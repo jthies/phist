@@ -111,8 +111,8 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) Ainv_op,
   verb+=   ::Anasazi::FinalSummary
          + ::Anasazi::TimingDetails;
 #endif
-  verb+= ::Anasazi::Debug;
 #if PHIST_OUTLEV>=PHIST_DEBUG
+  verb+= ::Anasazi::Debug;
 #endif
   anasaziList->set("Verbosity",verb);
 
