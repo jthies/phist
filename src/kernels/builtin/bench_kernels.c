@@ -78,6 +78,7 @@ void dbench_stream_store_create(double** x, int* ierr)
 //! purely store dominated micro benchmark (for large n), actually writes sum values and determines the bandwidth
 void dbench_stream_store_run(aligned_double *restrict x, const double* res, double *restrict bw, int *restrict ierr)
 {
+#ifndef PHIST_BUILD_MIC
   // start timing
   double wtime = omp_get_wtime();
 
@@ -97,6 +98,9 @@ void dbench_stream_store_run(aligned_double *restrict x, const double* res, doub
   *bw = sizeof(double)*PHIST_BENCH_LARGE_N / wtime;
 
   *ierr = 0;
+#else
+#warning "Micro benchmarks not yet implemented for MIC!"
+#endif
 }
 
 
@@ -119,6 +123,7 @@ void dbench_stream_triad_create(double** x, double** y, double** z, int* ierr)
 //! stream triad micro benchmark, determines the bandwidth
 void dbench_stream_triad_run(const aligned_double *restrict x, const aligned_double *restrict y, aligned_double *restrict z, const double *restrict res, double *restrict bw, int *restrict ierr)
 {
+#ifndef PHIST_BUILD_MIC
   // start timing
   double wtime = omp_get_wtime();
 
@@ -149,6 +154,9 @@ void dbench_stream_triad_run(const aligned_double *restrict x, const aligned_dou
   *bw = 3*sizeof(double)*PHIST_BENCH_LARGE_N / wtime;
 
   *ierr = 0;
+#else
+#warning "Micro benchmarks not yet implemented for MIC!"
+#endif
 }
 
 

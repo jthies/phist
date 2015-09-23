@@ -23,6 +23,7 @@ endif()
 
 option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
 option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
+option(PHIST_BUILD_MIC "Build for Intel MIC" OFF)
 
 ########################################################################
 # Lists of libraries, executables, tests
@@ -183,9 +184,15 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
     set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -openmp")
   endif()
 
-  set (CMAKE_C_FLAGS_RELEASE        "-O3 -xHOST -no-prec-div")
-  set (CMAKE_CXX_FLAGS_RELEASE      "-O3 -xHOST -no-prec-div")
-  set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 -xHOST -no-prec-div")
+  if (PHIST_BUILD_MIC)
+      set (CMAKE_C_FLAGS_RELEASE        "-O3 -no-prec-div -mmic")
+      set (CMAKE_CXX_FLAGS_RELEASE      "-O3 -no-prec-div -mmic")
+      set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 -no-prec-div -mmic")
+  else()
+      set (CMAKE_C_FLAGS_RELEASE        "-O3 -no-prec-div -xHOST")
+      set (CMAKE_CXX_FLAGS_RELEASE      "-O3 -no-prec-div -xHOST")
+      set (CMAKE_Fortran_FLAGS_RELEASE  "-O3 -no-prec-div -xHOST")
+  endif()
 
   set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -debug")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -debug")
@@ -194,6 +201,11 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
   set (CMAKE_C_FLAGS_DEBUG        "-check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
   set (CMAKE_CXX_FLAGS_DEBUG      "-check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
   set (CMAKE_Fortran_FLAGS_DEBUG  "-check all -debug -traceback -DTESTING")
+  if (PHIST_BUILD_MIC)
+      set (CMAKE_C_FLAGS_DEBUG        "-mmic -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
+      set (CMAKE_CXX_FLAGS_DEBUG      "-mmic -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
+      set (CMAKE_Fortran_FLAGS_DEBUG  "-mmic -check all -debug -traceback -DTESTING")
+  endif()
 
   # for ipo
   # melven: probably not useful or even dangerous?
