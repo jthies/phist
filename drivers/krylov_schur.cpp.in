@@ -176,7 +176,7 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(R,&iflag),iflag);
-  free(A_op);
+  delete A_op;
 
 PHIST_MAIN_TASK_END
 
