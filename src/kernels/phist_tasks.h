@@ -128,7 +128,10 @@ class WrapLambdaForGhostTask
       if( async )
         return;
 
-      PHIST_CHK_GERR(ghost_task_wait(*task), *iflag);
+      // the user might reuse the iflag in the task for convenience, so do not overwrite it!
+      ghost_error_t task_wait_err = ghost_task_wait(*task);
+      PHIST_CHK_IERR(/* inside task */,*iflag);
+      PHIST_CHK_GERR(task_wait_err/* = ghost_task_wait(*task)*/,*iflag);
       ghost_task_destroy(*task);
       *task = NULL;
     }
