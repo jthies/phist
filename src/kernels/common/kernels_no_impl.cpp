@@ -407,4 +407,5 @@ extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Sconst_mvec* reV, phi
 #include "kernels_no_VC_add_WD.cpp"
 #include "kernels_no_carp.cpp"
 #include "kernels_no_gpu.cpp"
+#include "kernels_no_io.cpp"
 #include "kernels_no_fused.cpp"

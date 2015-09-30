@@ -1916,7 +1916,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
   return;
 }
 
-void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
+extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
         phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
                 phist_sparseMat_rowFunc rowFunPtr, void* last_arg, int *iflag)
 {
@@ -1978,3 +1978,34 @@ PHIST_TASK_END(iflag);
   return;
 }
 
+extern "C" void SUBR(mvec_write_bin)(TYPE(const_mvec_ptr) vV, const char* filename, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
+  PHIST_CHK_GERR(V->toFile(V,(char*)filename,1),*iflag);
+}
+
+extern "C" void SUBR(mvec_read_bin)(TYPE(mvec_ptr) vV, const char* filename, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
+  PHIST_CHK_GERR(V->fromFile(V,(char*)filename,1),*iflag);
+}
+
+extern "C" void SUBR(sdMat_write_bin)(TYPE(const_sdMat_ptr) vM, const char* filename, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M,vM,*iflag);
+  PHIST_CHK_GERR(M->toFile(M,(char*)filename,0),*iflag);
+}
+
+extern "C" void SUBR(sdMat_read_bin)(TYPE(sdMat_ptr) vM, const char* filename, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M,vM,*iflag);
+  PHIST_CHK_GERR(M->fromFile(M,(char*)filename,0),*iflag);
+}
