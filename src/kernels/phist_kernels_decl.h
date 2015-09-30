@@ -231,6 +231,26 @@ void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) M, int* iflag);
 
 //@}
 
+//!   \defgroup mvec and sdMat I/O
+/*! note: these functions only read and write the data, not the map, comm etc.
+If you want to read an mvec from file, you have to create it first with a consitent map object.
+ */
+//@{
+
+//! write mvec data to file
+void SUBR(mvec_write_bin)(TYPE(const_mvec_ptr) V, const char* filename, int* iflag);
+
+//! read mvec data from file
+void SUBR(mvec_read_bin)(TYPE(mvec_ptr) V, const char* filename, int* iflag);
+
+//! write sdMat data to file
+void SUBR(sdMat_write_bin)(TYPE(const_sdMat_ptr) M, const char* filename, int* iflag);
+
+//! read sdMat data from file
+void SUBR(sdMat_read_bin)(TYPE(sdMat_ptr) M, const char* filename, int* iflag);
+
+//@}
+
 //!   \defgroup mvec Multi-vector functions (mvec_t) 
 //@{
 
