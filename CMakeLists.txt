@@ -194,6 +194,8 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
   set (CMAKE_C_FLAGS_DEBUG        "-check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
   set (CMAKE_CXX_FLAGS_DEBUG      "-check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
   set (CMAKE_Fortran_FLAGS_DEBUG  "-check all -debug -traceback -DTESTING")
+  # this is for some reason required with Intel 15 on Emmy:
+  set (CMAKE_EXE_LINKER_FLAGS_DEBUG "-lifcore -lifport")
 
   # for ipo
   # melven: probably not useful or even dangerous?
