@@ -232,7 +232,7 @@ if __name__ == '__main__':
     jadaOpts.v0 = v0
     jadaOpts.which = eigSort_SR
     jadaOpts.convTol = 1.e-8
-    jadaOpts.maxIters = 1000
+    jadaOpts.maxIters = 50
     nIter = c_int()
     nConv = c_int()
     resNorm = (D*11)()

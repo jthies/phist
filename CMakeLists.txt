@@ -944,7 +944,7 @@ if(PYTHONINTERP_FOUND)
   foreach(pyh ${PYTHON_HEADERS})
     get_filename_component(pyh_name ${pyh} NAME)
     add_test(NAME test-${pyh_name} COMMAND ${PYTHON_EXECUTABLE} ${pyh})
-    set_tests_properties(test-${pyh_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
+    set_tests_properties(test-${pyh_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH} PHIST_NUM_THREADS=12 OMP_NUM_THREADS=12 OMP_SCHEDULE=guided,250")
     if( GCC_SANITIZE )
       # we need to LD_PRELOAD the respective lib<.>san.so library
       string(SUBSTRING ${GCC_SANITIZE} 0 1 GCC_SANITIZE_FIRST_CHAR)
