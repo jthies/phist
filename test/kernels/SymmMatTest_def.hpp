@@ -131,7 +131,7 @@ int delete_mat(TYPE(sparseMat_ptr) A)
       SUBR(sdMat_create)(&VtAV,_NV_,_NV_,comm_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvecT_times_mvec)(st::one(),vec1_,vec2_,st::zero(),VtAV,&iflag_);
-#ifdef TESTING
+#if PHIST_OUTLEV>=PHIST_DEBUG
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_print)(VtAV,&iflag_);
 #endif

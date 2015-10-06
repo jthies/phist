@@ -708,7 +708,7 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* iflag)
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*iflag);
 #ifdef TESTING
-  PHIST_SOUT(PHIST_WARNING,"gathering global vector (only in TESTING mode)\n");
+  PHIST_SOUT(PHIST_DEBUG,"gathering global vector (only in TESTING mode)\n");
   // make results reproducible by doing a sequential randomization and then a 'scatter'
   Teuchos::RCP<const map_t> map = V->getMap();
   gidx_t nglob=map->getGlobalNumElements();

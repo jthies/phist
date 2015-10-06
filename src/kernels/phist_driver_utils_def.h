@@ -137,6 +137,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   problem_t mat_type=FROM_FILE; // default: assume that 'which' is a file name
+  int outlev = *iflag & PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
 
   int L; // problem size for Graphene (L x L grid) or the Anderson model (L^3 grid)
 
@@ -238,7 +239,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     {
       L2=L1;
     }
-    PHIST_SOUT(PHIST_INFO,"problem type: Graphene %d x %d\n",L1,L2);
+    PHIST_SOUT(outlev,"problem type: Graphene %d x %d\n",L1,L2);
     double gamma=0.2;
     ghost_lidx_t WL[2];
     WL[0] = L1;
@@ -258,7 +259,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   }
   else if (mat_type==SPINSZ)
   {
-    PHIST_SOUT(PHIST_INFO,"problem type: spinSZ[%d]\n",L);
+    PHIST_SOUT(outlev,"problem type: spinSZ[%d]\n",L);
 
     ghost_lidx_t conf_spinZ[3] = {L,L/2,0};
     SpinChainSZ( -2, conf_spinZ, &DIM, NULL, NULL);
@@ -272,7 +273,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   }
   else if (mat_type==MATPDE)
   {
-    PHIST_SOUT(PHIST_INFO,"problem type: MATPDE %d x %d\n", L, L);
+    PHIST_SOUT(outlev,"problem type: MATPDE %d x %d\n", L, L);
 
     gidx_t nrows = -1;
     lidx_t row_nnz = -1;
@@ -280,7 +281,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     gidx_t ncols = nrows;
     if( *iflag & PHIST_SPARSEMAT_REPARTITION )
     {
-      PHIST_SOUT(PHIST_INFO,"Disabling PHIST_SPARSEMAT_REPARTITION; MATPDE features a predefined partitioning!\n");
+      PHIST_SOUT(outlev,"Disabling PHIST_SPARSEMAT_REPARTITION; MATPDE features a predefined partitioning!\n");
       *iflag &= ~PHIST_SPARSEMAT_REPARTITION;
     }
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
@@ -288,14 +289,14 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   }
   else if(mat_type==TRITOEPLITZ)
   {
-    PHIST_SOUT(PHIST_INFO,"problem type: TriToeplitz 2^%d\n", L);
+    PHIST_SOUT(outlev,"problem type: TriToeplitz 2^%d\n", L);
     gidx_t nrows = -1;
     lidx_t row_nnz = -1;
     TriToeplitz_initDimensions(L, &nrows, &row_nnz);
     gidx_t ncols = nrows;
     if( *iflag & PHIST_SPARSEMAT_REPARTITION )
     {
-      PHIST_SOUT(PHIST_INFO,"Disabling PHIST_SPARSEMAT_REPARTITION; TriToeplitz is already tridiagonal!\n");
+      PHIST_SOUT(outlev,"Disabling PHIST_SPARSEMAT_REPARTITION; TriToeplitz is already tridiagonal!\n");
       *iflag &= ~PHIST_SPARSEMAT_REPARTITION;
     }
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
@@ -303,7 +304,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   }
   else if(mat_type==BRUSSOLATOR)
   {
-    PHIST_SOUT(PHIST_INFO,"problem type: Brussolator wave model %d^1\n", L);
+    PHIST_SOUT(outlev,"problem type: Brussolator wave model %d^1\n", L);
     gidx_t nrows = -1;
     lidx_t row_nnz = -1;
     Brussolator_initDimensions(L, &nrows, &row_nnz);
@@ -324,7 +325,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
 
     long int which=strtol(problem+pos, NULL, 16);
 
-    PHIST_SOUT(PHIST_INFO,"problem type: BENCH3D %x %dx%dx%d\n", (uint32_t)which,L, L, L);
+    PHIST_SOUT(outlev,"problem type: BENCH3D %x %dx%dx%d\n", (uint32_t)which,L, L, L);
 
     gidx_t nrows = -1;
     lidx_t row_nnz = -1;
@@ -332,7 +333,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     gidx_t ncols = nrows;
     if( *iflag & PHIST_SPARSEMAT_REPARTITION )
     {
-      PHIST_SOUT(PHIST_INFO,"Disabling PHIST_SPARSEMAT_REPARTITION; MATPDE3D features a predefined partitioning!\n");
+      PHIST_SOUT(outlev,"Disabling PHIST_SPARSEMAT_REPARTITION; MATPDE3D features a predefined partitioning!\n");
       *iflag &= ~PHIST_SPARSEMAT_REPARTITION;
     }
     int iflag_tmp=*iflag;
@@ -370,7 +371,7 @@ PHIST_SOUT(PHIST_ERROR,"BAPPS models (essex-physics/bapps) not\n"
   }
   else
   {
-    PHIST_SOUT(PHIST_INFO,"read matrix from file '%s'\n",problem);
+    PHIST_SOUT(outlev,"read matrix from file '%s'\n",problem);
     PHIST_CHK_IERR(SUBR(sparseMat_read)(mat,comm,(char*)problem,iflag),*iflag);
   }
   
@@ -380,15 +381,14 @@ PHIST_SOUT(PHIST_ERROR,"BAPPS models (essex-physics/bapps) not\n"
 void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
         const char* problem, int* iflag)
 {
-  *iflag=0;
   if (strcmp(problem,"usage")==0)
   {
-    *iflag=0;
     SUBR(create_matrix_usage)();
     PHIST_SOUT(PHIST_INFO,"read matrix from file '%s'\n",problem);
     PHIST_CHK_IERR(SUBR(sparseMat_read)(mat,comm,(char*)problem,iflag),*iflag);
     return;
   }
+  *iflag=0;
 
 }
 #endif

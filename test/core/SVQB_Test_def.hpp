@@ -133,7 +133,7 @@ public:
       ASSERT_NEAR(mt::one(), ArrayEqual(vec2_vp_,nloc_,1,lda_,stride_,st::zero(),vflag_), 100*mt::eps());
       if (nvec_>1)
       {
-        ASSERT_NEAR(mt::one(),VTest_m_minus_1::ColsAreNormalized(vec2_col1,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
+        ASSERT_NEAR(mt::one(),VTest_m_minus_1::ColsAreNormalized(vec2_col1,nloc_,lda_,stride_,mpi_comm_),(MT)100.0*releps(vec1_));
         ASSERT_NEAR(mt::one(),VTest_m_minus_1::ColsAreOrthogonal(vec2_col1,nloc_,lda_,stride_,mpi_comm_),(MT)100.0*releps(vec1_));
       }
 

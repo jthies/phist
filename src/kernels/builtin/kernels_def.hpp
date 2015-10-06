@@ -114,12 +114,15 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t
       if (nthreads==1) 
       {
         // disable coloring for optimal performance.
-        PHIST_SOUT(PHIST_INFO,"NOTE: You indicated that the matrix will be used in CARP-CG,\n"
-                            "      as it seems that there is only one OpenMP thread, I \n"
-                            "      will not construct a coloring, so subsequent CARP sweeps will be sequential per MPI process.\n"
-                            "      If you want to use the coloring kernel anyway, specify the flag \n"
-                            "       PHIST_SPARSEMAT_OPT_CARP|PHIST_SPARSEMAT_DIST2_COLOR to enforce it.\n"
-                        );
+        if( !(*iflag & PHIST_SPARSEMAT_QUIET) )
+        {
+          PHIST_SOUT(PHIST_INFO,"NOTE: You indicated that the matrix will be used in CARP-CG,\n"
+                              "      as it seems that there is only one OpenMP thread, I \n"
+                              "      will not construct a coloring, so subsequent CARP sweeps will be sequential per MPI process.\n"
+                              "      If you want to use the coloring kernel anyway, specify the flag \n"
+                              "       PHIST_SPARSEMAT_OPT_CARP|PHIST_SPARSEMAT_DIST2_COLOR to enforce it.\n"
+                          );
+        }
         *iflag&=~PHIST_SPARSEMAT_OPT_CARP;
       }
     }
@@ -902,12 +905,15 @@ std::cout << "iflag&DIST2_COLOR="<<(*iflag&PHIST_SPARSEMAT_DIST2_COLOR)<<std::en
       if (nthreads==1)
       {
         // disable coloring for optimal performance.
-        PHIST_SOUT(PHIST_INFO,"NOTE: You indicated that the matrix will be used in CARP-CG,\n"
-                            "      as it seems that there is only one OpenMP thread, I \n"
-                            "      will not construct a coloring, so subsequent CARP sweeps will be sequential per MPI process.\n"
-                            "      If you want to use the coloring kernel anyway, specify the flag \n"
-                            "       PHIST_SPARSEMAT_OPT_CARP|PHIST_SPARSEMAT_DIST2_COLOR to enforce it.\n"
-                        );
+        if( !(*iflag & PHIST_SPARSEMAT_QUIET) )
+        {
+          PHIST_SOUT(PHIST_INFO,"NOTE: You indicated that the matrix will be used in CARP-CG,\n"
+                              "      as it seems that there is only one OpenMP thread, I \n"
+                              "      will not construct a coloring, so subsequent CARP sweeps will be sequential per MPI process.\n"
+                              "      If you want to use the coloring kernel anyway, specify the flag \n"
+                              "       PHIST_SPARSEMAT_OPT_CARP|PHIST_SPARSEMAT_DIST2_COLOR to enforce it.\n"
+                          );
+        }
         *iflag&=~PHIST_SPARSEMAT_OPT_CARP;
       }
     }

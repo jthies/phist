@@ -3018,6 +3018,9 @@ contains
     real(kind=8) :: rii(1:1)
     integer :: idum
     !--------------------------------------------------------------------------------
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+    write(*,*) 'entering mvec_QR'
+#endif
 
     nvec = v%jmax-v%jmin+1
     idum = 0
@@ -4296,7 +4299,6 @@ end subroutine phist_Dmvec_put_func
       return
     end if
 
-    write(*,*) 'entering mvec_QR'
     call mvec_QR(v,R,ierr)
 
   end subroutine phist_Dmvec_QR

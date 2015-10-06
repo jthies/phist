@@ -17,21 +17,24 @@ void SUBR(read_mat)(const char* filebase,const_comm_ptr_t comm, int nglob,TYPE(s
   sprintf(crsfile,"%c%s%d.crs",tpc,filebase,nglob);
   
   PHIST_SOUT(PHIST_DEBUG, "Looking for matrix \'%s\'..\n", filebase);
-  *iflag=0;
 
   PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", binfile);
+  *iflag = PHIST_OUTLEV>=PHIST_DEBUG ? 0 : PHIST_SPARSEMAT_QUIET;
   SUBR(sparseMat_read_bin)(ptr,comm,binfile,iflag);
   if (*iflag==PHIST_SUCCESS) return;
 
   // try same format, different extension
   PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", crsfile);
+  *iflag = PHIST_OUTLEV>=PHIST_DEBUG ? 0 : PHIST_SPARSEMAT_QUIET;
   SUBR(sparseMat_read_bin)(ptr,comm,crsfile,iflag);
   if (*iflag==PHIST_SUCCESS) return;
   
   PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", mmfile);
+  *iflag = PHIST_OUTLEV>=PHIST_DEBUG ? 0 : PHIST_SPARSEMAT_QUIET;
   SUBR(sparseMat_read_mm)(ptr,comm,mmfile,iflag);
   if (*iflag==PHIST_SUCCESS) return;
 
   PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", hbfile);
+  *iflag = PHIST_OUTLEV>=PHIST_DEBUG ? 0 : PHIST_SPARSEMAT_QUIET;
   SUBR(sparseMat_read_hb)(ptr,comm,hbfile,iflag);
 }//read_mat

@@ -56,7 +56,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
       iflag_=PHIST_SPARSEMAT_OPT_CARP;
       SUBR(create_matrix)(&A_,comm_,_MATNAME_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      iflag_=PHIST_SPARSEMAT_OPT_CARP;
+      iflag_=PHIST_SPARSEMAT_OPT_CARP | PHIST_SPARSEMAT_QUIET;
       SUBR(sparseMat_create_fromRowFunc)(&I_,comm_,_N_,_N_,1,NULL,&SUBR(idfunc),&iflag_);
       ASSERT_EQ(0,iflag_);
 

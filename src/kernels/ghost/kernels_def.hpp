@@ -33,6 +33,7 @@ const char* filename,int* iflag)
 
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
+  int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
 #ifdef PHIST_USE_SELL
   int sellC, sellSigma;
   get_C_sigma(&sellC,&sellSigma,*iflag, *((MPI_Comm*)vcomm));
@@ -70,10 +71,10 @@ PHIST_TASK_BEGIN(ComputeTask)
       if (repart)
       {
 #ifdef USE_SCOTCH
-          PHIST_SOUT(PHIST_INFO, "Trying to repartition the matrix with SCOTCH\n");
+          PHIST_SOUT(outlev, "Trying to repartition the matrix with SCOTCH\n");
           flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
 #else
-          PHIST_SOUT(PHIST_WARNING, "SCOTCH not available, no matrix repartitioning\n");
+          PHIST_SOUT(outlev, "SCOTCH not available, no matrix repartitioning\n");
 #endif
       }
         mtraits->datatype = st::ghost_dt;
@@ -84,13 +85,12 @@ PHIST_TASK_BEGIN(ComputeTask)
         GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_MM,*comm,1.0),*iflag);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,mtraits,1),*iflag);                               
   PHIST_CHK_GERR(mat->fromMM(mat,cfname),*iflag);
-//#if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;
   ghost_context_string(&str,ctx);
-  PHIST_SOUT(PHIST_INFO,"%s\n",str);
+  PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
   ghost_sparsemat_string(&str,mat);
-  PHIST_SOUT(PHIST_INFO,"%s\n",str);
+  PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
 //#endif
   *vA = (TYPE(sparseMat_ptr))mat;
@@ -106,10 +106,11 @@ const char* filename,int* iflag)
 
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
+  int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
 #ifdef PHIST_USE_SELL
   int sellC, sellSigma;
   get_C_sigma(&sellC,&sellSigma,*iflag, *((MPI_Comm*)vcomm));
-  PHIST_SOUT(PHIST_INFO, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
+  PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
 #endif
   *iflag=0;
 
@@ -144,10 +145,10 @@ PHIST_TASK_BEGIN(ComputeTask)
         if (repart)
         {
 #ifdef USE_SCOTCH
-          PHIST_SOUT(PHIST_INFO, "Trying to repartition the matrix with SCOTCH\n");
+          PHIST_SOUT(outlev, "Trying to repartition the matrix with SCOTCH\n");
           flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
 #else
-          PHIST_SOUT(PHIST_WARNING, "SCOTCH not available, no matrix repartitioning\n");
+          PHIST_SOUT(outlev, "SCOTCH not available, no matrix repartitioning\n");
 #endif
         }
         mtraits->datatype = st::ghost_dt;
@@ -161,10 +162,10 @@ PHIST_TASK_BEGIN(ComputeTask)
 //#if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;
   ghost_context_string(&str,ctx);
-  PHIST_SOUT(PHIST_INFO,"%s\n",str);
+  PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
   ghost_sparsemat_string(&str,mat);
-  PHIST_SOUT(PHIST_INFO,"%s\n",str);
+  PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
 //#endif
   *vA = (TYPE(sparseMat_ptr))mat;
@@ -1872,10 +1873,11 @@ void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, const_comm_ptr_
 
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
+  int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
 #ifdef PHIST_USE_SELL
   int sellC, sellSigma;
   get_C_sigma(&sellC,&sellSigma,*iflag, *((MPI_Comm*)vcomm));
-  PHIST_SOUT(PHIST_INFO, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
+  PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
 #endif
   *iflag=0;
   
@@ -1904,15 +1906,15 @@ PHIST_TASK_BEGIN(ComputeTask)
         if (repart)
         {
 #ifdef USE_SCOTCH
-          PHIST_SOUT(PHIST_INFO, "Trying to repartition the matrix with SCOTCH\n");
+          PHIST_SOUT(outlev, "Trying to repartition the matrix with SCOTCH\n");
           flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
 #else
-          PHIST_SOUT(PHIST_WARNING, "SCOTCH not available, no matrix repartitioning\n");
+          PHIST_SOUT(outlev, "SCOTCH not available, no matrix repartitioning\n");
 #endif
         }
         else
         {
-          PHIST_SOUT(PHIST_INFO, "No matrix repartitioning requested\n");
+          PHIST_SOUT(outlev, "No matrix repartitioning requested\n");
         }
         mtraits->datatype = st::ghost_dt;
         mtraits->flags = flags;
@@ -1928,10 +1930,10 @@ PHIST_TASK_BEGIN(ComputeTask)
 //#if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;
   ghost_context_string(&str,ctx);
-  PHIST_SOUT(PHIST_INFO,"%s\n",str);
+  PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
   ghost_sparsemat_string(&str,mat);
-  PHIST_SOUT(PHIST_INFO,"%s\n",str);
+  PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
 //#endif
   *vA = (TYPE(sparseMat_ptr))mat;
