@@ -47,6 +47,7 @@
 #include <ghost/thpool.h>
 #include <ghost/pumap.h>
 #include <ghost/locality.h>
+#include <ghost/timing.h>
 #include <limits>
 #include <map>
 
@@ -194,6 +195,10 @@ extern "C" void phist_kernels_finalize(int* iflag)
 PHIST_CXX_TIMER_SUMMARIZE;
 #endif
 PHIST_PERFCHECK_SUMMARIZE(PHIST_INFO);
+  char* ghostTimings = NULL;
+  PHIST_CHK_GERR(ghost_timing_summarystring(&ghostTimings), *iflag);
+  PHIST_SOUT(PHIST_INFO,"%s\n",ghostTimings);
+  free(ghostTimings);
   ghost_finalize();
 #ifdef PHIST_PERFCHECK
   // prevent some strange memory errors during deallocation (due to shared lib context?)
