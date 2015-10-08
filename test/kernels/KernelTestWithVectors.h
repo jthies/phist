@@ -23,7 +23,7 @@ using namespace testing;
  * _useViews (default false): setup the owned mvecs as views of larger
    mvec blocks.
  */
-template<typename T, gidx_t _Nglob, int _Nvec, bool _useViews=false>
+template<typename T, gidx_t _Nglob, int _Nvec, int _useViews=0>
 class KernelTestWithVectors:
         public virtual KernelTestWithMap<_Nglob>,
         public virtual KernelTestWithType<T>
@@ -33,7 +33,7 @@ public:
   virtual void SetUp(){}
   virtual void TearDown(){}
   int nvec_;
-  bool useViews_;
+  int useViews_;
   lidx_t lda_, stride_;
 
   };

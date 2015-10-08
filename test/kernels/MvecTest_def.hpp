@@ -24,7 +24,7 @@ int PREFIX(mvecInitializer)(ghost_gidx_t i, ghost_lidx_t j, void* vval)
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_> 
+class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_> 
   {
 
 public:
@@ -34,7 +34,7 @@ public:
    */
   virtual void SetUp()
     {
-    KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
+    KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_>::SetUp();
     if (typeImplemented_ && !problemTooSmall_)
       {
 
@@ -62,7 +62,7 @@ public:
    */
   virtual void TearDown() 
     {
-    KernelTestWithVectors<_ST_,_N_,_NV_>::TearDown();
+    KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_>::TearDown();
     }
 
 };

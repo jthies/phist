@@ -1,6 +1,6 @@
 #include "../tools/TestHelpers.h"
 /*! Test fixture. */
-template<gidx_t _Nglob, int _Nvec, bool _useViews>
+template<gidx_t _Nglob, int _Nvec, int _useViews>
 class KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews> : 
         public virtual KernelTestWithType< _ST_ >,
         public virtual KernelTestWithMap<_Nglob> 
@@ -10,23 +10,25 @@ private:
 
 void createVecs()
 {
+  bool align_p2=(useViews_==2);
   int pad_pre=0;
-  int pad_post=0;
+  int npadded=nvec_;
   // vectors created with the same function should get the same stride (lda)
   lidx_t lda;
   if (useViews_)
   {
-    pad_pre=2;
-    pad_post=3;
+    pad_pre=align_p2?8:3;
+    // padding to power of 2
+    int npadded_p2=(int)ceil(log((double)(nvec_+pad_pre))/log(2.0))+1;
+    npadded=align_p2?npadded_p2:nvec_+pad_pre;
   }
-  int pad=pad_pre+pad_post;
-  PHISTTEST_MVEC_CREATE(&vec1_,this->map_,nvec_+pad,&this->iflag_);
+  PHISTTEST_MVEC_CREATE(&vec1_,this->map_,npadded,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
 
-  PHISTTEST_MVEC_CREATE(&vec2_,this->map_,nvec_+pad,&this->iflag_);
+  PHISTTEST_MVEC_CREATE(&vec2_,this->map_,npadded,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
 
-  PHISTTEST_MVEC_CREATE(&vec3_,this->map_,nvec_+pad,&this->iflag_);
+  PHISTTEST_MVEC_CREATE(&vec3_,this->map_,npadded,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
   
   // if requested, set vecX to views of memX
@@ -305,9 +307,10 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
   lidx_t lda_, stride_;
   };
 
-template<gidx_t n, int nvec, bool useViews>
+template<gidx_t n, int nvec, int useViews>
 const int KernelTestWithVectors<_ST_,n,nvec,useViews>::nvec_;
 
-template<gidx_t n, int nvec, bool useViews>
+template<gidx_t n, int nvec, int useViews>
 const int KernelTestWithVectors<_ST_,n,nvec,useViews>::useViews_;
+
 

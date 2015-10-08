@@ -15,6 +15,8 @@ using namespace testing;
 
 #define _BASENAME_ MvecTest
 
+#define _USE_VIEWS_ 0
+
 // define MvecInitializer functions
 #define FIRST_INSTANCE
 #define _N_ 9
@@ -116,6 +118,39 @@ using namespace testing;
 #define _M_ 4
 #include "../phist_typed_test_gen.h"
 
+#undef _BASENAME_
+#define _BASENAME_ MvecTestWithUnalignedViews
+#undef _USE_VIEWS_
+#define _USE_VIEWS_ 1
+
+// define MvecInitializer functions
+#define _N_ 237
+#define _M_ 4
+#define CLASSFILE_DEF "MvecTest_def.hpp"
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 237
+#define _M_ 9
+#define CLASSFILE_DEF "MvecTest_def.hpp"
+#include "../phist_typed_test_gen.h"
+
+#undef _BASENAME_
+#define _BASENAME_ MvecTestWithAlignedViews
+
+#undef _USE_VIEWS_
+#define _USE_VIEWS_ 2
+
+#define _N_ 237
+#define _M_ 4
+#define CLASSFILE_DEF "MvecTest_def.hpp"
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 237
+#define _M_ 9
+#define CLASSFILE_DEF "MvecTest_def.hpp"
+#include "../phist_typed_test_gen.h"
+
 #ifdef DO_BELOS_TESTS
 #undef DO_BELOS_TESTS
 #endif
+
