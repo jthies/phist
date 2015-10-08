@@ -24,3 +24,11 @@ using namespace testing;
 #define _N_ 8
 #define _M_ 8
 #include "../phist_typed_test_gen.h"
+
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 12
+#define _M_ 25
+#include "../phist_typed_test_gen.h"

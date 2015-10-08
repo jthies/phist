@@ -46,6 +46,10 @@ using namespace testing;
 #define _M_ 7
 #include "../phist_typed_test_gen.h"
 
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
+
 #undef MVECS_VIEWED
 #undef SDMATS_VIEWED
 #define MVECS_VIEWED false

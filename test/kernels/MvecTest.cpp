@@ -26,6 +26,55 @@ using namespace testing;
 #define _M_ 9
 #include "../phist_typed_test_gen.h"
 
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 100
+#define _M_ 1
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 100
+#define _M_ 2
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 100
+#define _M_ 3
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 100
+#define _M_ 4
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 100
+#define _M_ 5
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 100
+#define _M_ 6
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 100
+#define _M_ 7
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 100
+#define _M_ 8
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 100
+#define _M_ 9
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 100
+#define _M_ 10
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 100
+#define _M_ 17
+#include "../phist_typed_test_gen.h"
+
+
 
 // large high precision tests (too slow in debug mode)
 #if defined(PHIST_HIGH_PRECISION_KERNELS) && !defined(TESTING)

@@ -45,6 +45,21 @@ using namespace testing;
 #define _K_ 1
 #include "../phist_typed_test_gen.h"
 
+#define _N_ 25
+#define _M_ 12
+#define _K_ 12
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 25
+#define _M_ 1
+#define _K_ 12
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 25
+#define _M_ 12
+#define _K_ 1
+#include "../phist_typed_test_gen.h"
+
 #define _N_ 64
 #define _M_ 2
 #define _K_ 2

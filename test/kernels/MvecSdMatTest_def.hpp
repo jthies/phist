@@ -185,8 +185,8 @@ public:
         for(int j = 0; j < k_; j++)
         {
           _MT_ val = -mt::one()*(i+1)*(j+1);
-          ASSERT_NEAR(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*10*mt::eps());
-          ASSERT_NEAR(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*10*mt::eps());
+          ASSERT_NEAR(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*20*mt::eps());
+          ASSERT_NEAR(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*20*mt::eps());
         }
       }
 
@@ -211,8 +211,8 @@ public:
         for(int j = 0; j < k_; j++)
         {
           _MT_ val = -mt::one()*(i+1)*(j+1)*(1.0l - 1.0l/(_N_+1));
-          ASSERT_NEAR(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*10*mt::eps());
-          ASSERT_NEAR(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*10*mt::eps());
+          ASSERT_NEAR(val, st::real(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*20*mt::eps());
+          ASSERT_NEAR(mt::zero(), st::imag(M1_vp_[MIDX(i,j,ldaM1_)]), _N_*20*mt::eps());
         }
       }
 

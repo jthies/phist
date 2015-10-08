@@ -3384,6 +3384,7 @@ contains
       view%is_view = .true.
       view%jmin = mvec%jmin+jmin
       view%jmax = mvec%jmin+jmax
+      view%paddedN = mvec%paddedN
       view%map=mvec%map
       view%val=>mvec%val
       ierr = 0
