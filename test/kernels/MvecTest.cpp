@@ -118,12 +118,13 @@ using namespace testing;
 #define _M_ 4
 #include "../phist_typed_test_gen.h"
 
+// some tests on views of mvecs
+
 #undef _BASENAME_
 #define _BASENAME_ MvecTestWithUnalignedViews
 #undef _USE_VIEWS_
 #define _USE_VIEWS_ 1
 
-// define MvecInitializer functions
 #define _N_ 237
 #define _M_ 4
 #define CLASSFILE_DEF "MvecTest_def.hpp"

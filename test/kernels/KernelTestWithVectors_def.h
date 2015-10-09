@@ -11,38 +11,43 @@ private:
 void createVecs()
 {
   bool align_p2=(useViews_==2);
-  int pad_pre=0;
+  int pad_pre=0, pad_post=0;
   int npadded=nvec_;
   // vectors created with the same function should get the same stride (lda)
   lidx_t lda;
   if (useViews_)
   {
     pad_pre=align_p2?8:3;
+    pad_post=7;
     // padding to power of 2
-    int npadded_p2=(int)ceil(log((double)(nvec_+pad_pre))/log(2.0))+1;
-    npadded=align_p2?npadded_p2:nvec_+pad_pre;
+    int pow_p2=(int)ceil(log((double)(nvec_+pad_pre+pad_post))/log(2.0))+1;
+    npadded=align_p2?(int)pow(2.0,(double)pow_p2): nvec_+pad_pre+pad_post;
   }
-  PHISTTEST_MVEC_CREATE(&vec1_,this->map_,npadded,&this->iflag_);
+  PHISTTEST_MVEC_CREATE(&mem1_,this->map_,npadded,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
 
-  PHISTTEST_MVEC_CREATE(&vec2_,this->map_,npadded,&this->iflag_);
+  PHISTTEST_MVEC_CREATE(&mem2_,this->map_,npadded,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
 
-  PHISTTEST_MVEC_CREATE(&vec3_,this->map_,npadded,&this->iflag_);
+  PHISTTEST_MVEC_CREATE(&mem3_,this->map_,npadded,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
   
   // if requested, set vecX to views of memX
   if (useViews_)
   {
-    mem1_=vec1_; vec1_=NULL;
-    mem2_=vec2_; vec2_=NULL;
-    mem3_=vec3_; vec3_=NULL;
+    vec1_=NULL; vec2_=NULL; vec3_=NULL;
     SUBR(mvec_view_block)(mem1_,&vec1_,pad_pre,pad_pre+nvec_-1,&this->iflag_);
     ASSERT_EQ(0,this->iflag_);
     SUBR(mvec_view_block)(mem2_,&vec2_,pad_pre,pad_pre+nvec_-1,&this->iflag_);
     ASSERT_EQ(0,this->iflag_);
     SUBR(mvec_view_block)(mem3_,&vec3_,pad_pre,pad_pre+nvec_-1,&this->iflag_);
     ASSERT_EQ(0,this->iflag_);
+  }
+  else
+  {
+    vec1_=mem1_;
+    vec2_=mem2_;
+    vec3_=mem3_;
   }
 
   // extract raw data views and check that the stride (lda) is the same for all mvecs

@@ -18,16 +18,21 @@ virtual void SetUp()
   {
     bool align_p2=(useViews_==2);
     int pad_nr_pre=0, pad_nc_pre=0;
+    int pad_nr_post=0, pad_nc_post=0;
     int nr_padded=nrows_, nc_padded=ncols_;
     if (useViews_)
     {
       pad_nr_pre=align_p2?8:3;
+      pad_nr_post=1;
       pad_nc_pre=align_p2?8:5;
+      pad_nc_post=1;
     // padding to power of 2
-    int nr_padded_p2=(int)ceil(log((double)(nrows_+pad_nr_pre))/log(2.0))+1;
-    int nc_padded_p2=(int)ceil(log((double)(ncols_+pad_nc_pre))/log(2.0))+1;
-    nr_padded=align_p2?nr_padded_p2:nrows_+pad_nr_pre;
-    nc_padded=align_p2?nc_padded_p2:ncols_+pad_nc_pre;
+    int nr_pow_p2=(int)ceil(log((double)(nrows_+pad_nr_pre+pad_nr_post))/log(2.0))+1;
+    int nc_pow_p2=(int)ceil(log((double)(ncols_+pad_nc_pre+pad_nc_post))/log(2.0))+1;
+    int nr_padded_p2=(int)pow(2.0,(double)nr_pow_p2);
+    int nc_padded_p2=(int)pow(2.0,(double)nc_pow_p2);
+    nr_padded=align_p2?nr_padded_p2:nrows_+pad_nr_pre+pad_nr_post;
+    nc_padded=align_p2?nc_padded_p2:ncols_+pad_nc_pre+pad_nc_post;
   }
 
     SUBR(sdMat_create)(&mem1_,nr_padded,nc_padded,this->comm_,&this->iflag_);
@@ -82,10 +87,10 @@ virtual void TearDown()
   {
     if (useViews_)
     {
-      SUBR(sdMat_delete)(mem4_,&this->iflag_);
-      SUBR(sdMat_delete)(mem3_,&this->iflag_);
+      SUBR(sdMat_delete)(mem1_,&this->iflag_);
       SUBR(sdMat_delete)(mem2_,&this->iflag_);
-      SUBR(sdMat_delete)(mem1_,&this->iflag_);    
+      SUBR(sdMat_delete)(mem3_,&this->iflag_);
+      SUBR(sdMat_delete)(mem4_,&this->iflag_);    
     }
     SUBR(sdMat_delete)(mem4_,&this->iflag_);
     SUBR(sdMat_delete)(mem3_,&this->iflag_);
@@ -105,7 +110,7 @@ static void PrintSdMat(std::ostream& os, std::string label,
     MPI_Comm_size(mpi_comm,&np);
 #endif    
     if (rank==0)
-      {
+    {
       os << std::endl<<label <<"="<<std::endl;
       os << "nproc  "<<np<<std::endl;
       os << "nrows  "<<nrows_<<std::endl;
@@ -116,23 +121,23 @@ static void PrintSdMat(std::ostream& os, std::string label,
       os << "row-major storage"<<std::endl;
 #else
       os << "col-major storage"<<std::endl;
-#endif      
-      }
+#endif
+    }
     for (int p=0;p<np;p++)
-      {
+    {
       if (p==rank)
-        {
+      {
         os << " @ rank "<<p<<" @"<<std::endl;
         for (int i=0;i<stride*nrows_;i+=stride)
-          {
+        {
           for (int j=0;j<ncols_;j++)
-            {
+          {
             os << mat_vp[MIDX(i,j,lda)]<<"  ";
-            }//j
+          }//j
           os << std::endl;
-          }//i
+        }//i
         os << std::flush;
-        }//rank==p
+      }//rank==p
 #ifdef PHIST_HAVE_MPI
         MPI_Barrier(mpi_comm);
         MPI_Barrier(mpi_comm);
@@ -140,7 +145,7 @@ static void PrintSdMat(std::ostream& os, std::string label,
         MPI_Barrier(mpi_comm);
         MPI_Barrier(mpi_comm);
 #endif
-      }//p
+    }//p
     return;
 }
 

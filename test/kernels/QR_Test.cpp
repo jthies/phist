@@ -24,8 +24,8 @@ using namespace testing;
 
 #define _BASENAME_ QR_Test
 
-#define MVECS_VIEWED false
-#define SDMATS_VIEWED false
+#define MVECS_VIEWED 0
+#define SDMATS_VIEWED 0
 
 #define _N_ 24
 #define _M_ 1
@@ -35,28 +35,34 @@ using namespace testing;
 #define _M_ 5
 #include "../phist_typed_test_gen.h"
 
-
-/* same test but with viewed mvecs and sdMats */
-#undef MVECS_VIEWED
-#undef SDMATS_VIEWED
-#define MVECS_VIEWED true
-#define SDMATS_VIEWED true
-
-#define _N_ 59
-#define _M_ 7
-#include "../phist_typed_test_gen.h"
-
-#define _N_ 25
-#define _M_ 12
-#include "../phist_typed_test_gen.h"
-
-#undef MVECS_VIEWED
-#undef SDMATS_VIEWED
-#define MVECS_VIEWED false
-#define SDMATS_VIEWED false
-
 // let's try something bigger...
 #define _N_ 9999
 #define _M_ 65
 #include "../phist_typed_test_gen.h"
 
+/* small test but with viewed mvecs and sdMats */
+#undef MVECS_VIEWED
+#undef SDMATS_VIEWED
+#define MVECS_VIEWED 1
+#define SDMATS_VIEWED 1
+
+#undef _BASENAME_
+#define _BASENAME_ QR_TestWithUnalignedViews
+
+#define _N_ 111
+#define _M_ 8
+#define CLASSFILE_DEF "QR_Test_def.hpp"
+#include "../phist_typed_test_gen.h"
+
+#undef MVECS_VIEWED
+#undef SDMATS_VIEWED
+#define MVECS_VIEWED 2
+#define SDMATS_VIEWED 2
+
+#undef _BASENAME_
+#define _BASENAME_ QR_TestWithAlignedViews
+
+#define _N_ 111
+#define _M_ 8
+#define CLASSFILE_DEF "QR_Test_def.hpp"
+#include "../phist_typed_test_gen.h"
