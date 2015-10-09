@@ -682,7 +682,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CHK_IERR(*iflag=(Vblock->traits.nrows==V->traits.nrows)?0:PHIST_INVALID_INPUT,*iflag)
   // not sure what the ghost function fromVec actually supports, but I think 
   // this makes sense:
-  PHIST_CHK_IERR(*iflag=(Vblock->traits.nrowspadded==V->traits.nrowspadded)?0:PHIST_INVALID_INPUT,*iflag)
+  //PHIST_CHK_IERR(*iflag=(Vblock->traits.nrowspadded==V->traits.nrowspadded)?0:PHIST_INVALID_INPUT,*iflag)
 #else
   PHIST_TOUCH(jmax);
 #endif  
