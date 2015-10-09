@@ -11,17 +11,18 @@ private:
 void createVecs()
 {
   bool align_p2=(useViews_==2);
-  int pad_pre=0, pad_post=0;
+  pad_pre_=0, pad_post_=0;
   nvecPadded_=nvec_;
   // vectors created with the same function should get the same stride (lda)
   lidx_t lda;
   if (useViews_)
   {
-    pad_pre=align_p2?8:3;
-    pad_post=7;
+    pad_pre_=align_p2?8:3;
+    pad_post_=7;
     // padding to power of 2
-    int pow_p2=(int)ceil(log((double)(nvec_+pad_pre+pad_post))/log(2.0))+1;
-    nvecPadded_=align_p2?(int)pow(2.0,(double)pow_p2): nvec_+pad_pre+pad_post;
+    int pow_p2=(int)ceil(log((double)(nvec_+pad_pre_+pad_post_))/log(2.0))+1;
+    nvecPadded_=align_p2?(int)pow(2.0,(double)pow_p2): nvec_+pad_pre_+pad_post_;
+    pad_post_ = nvecPadded_-pad_pre_-nvec_;
   }
   PHISTTEST_MVEC_CREATE(&mem1_,this->map_,nvecPadded_,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
@@ -36,11 +37,11 @@ void createVecs()
   if (useViews_)
   {
     vec1_=NULL; vec2_=NULL; vec3_=NULL;
-    SUBR(mvec_view_block)(mem1_,&vec1_,pad_pre,pad_pre+nvec_-1,&this->iflag_);
+    SUBR(mvec_view_block)(mem1_,&vec1_,pad_pre_,pad_pre_+nvec_-1,&this->iflag_);
     ASSERT_EQ(0,this->iflag_);
-    SUBR(mvec_view_block)(mem2_,&vec2_,pad_pre,pad_pre+nvec_-1,&this->iflag_);
+    SUBR(mvec_view_block)(mem2_,&vec2_,pad_pre_,pad_pre_+nvec_-1,&this->iflag_);
     ASSERT_EQ(0,this->iflag_);
-    SUBR(mvec_view_block)(mem3_,&vec3_,pad_pre,pad_pre+nvec_-1,&this->iflag_);
+    SUBR(mvec_view_block)(mem3_,&vec3_,pad_pre_,pad_pre_+nvec_-1,&this->iflag_);
     ASSERT_EQ(0,this->iflag_);
 
     SUBR(mvec_put_value)(mem1_,(_ST_)-101.,&this->iflag_);
@@ -78,12 +79,25 @@ void createVecs()
   SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&lda_,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
   ASSERT_EQ(lda,lda_);
-  stride_=1;
 
+  // extract raw data of complete memory block
+  SUBR(mvec_extract_view)(mem1_,&mem1_vp_,&lda_,&this->iflag_);
+  ASSERT_EQ(0,this->iflag_);
+  ASSERT_EQ(lda,lda_);
+  
+  SUBR(mvec_extract_view)(mem2_,&mem2_vp_,&lda_,&this->iflag_);
+  ASSERT_EQ(0,this->iflag_);
+  ASSERT_EQ(lda,lda_);
+  
+  SUBR(mvec_extract_view)(mem3_,&mem3_vp_,&lda_,&this->iflag_);
+  ASSERT_EQ(0,this->iflag_);
+  ASSERT_EQ(lda,lda_);
+
+  stride_=1;
   if (useViews_)
   {
     PHIST_SOUT(PHIST_DEBUG,"Setting up the views with pad_pre %d and pad_post %d (complete padding %d, lda %d)\n", 
-        pad_pre, nvecPadded_-nvec_-pad_pre, nvecPadded_, lda_);
+        pad_pre_, pad_post_, nvecPadded_, lda_);
   }
 }
 
@@ -92,31 +106,21 @@ void deleteVecs()
   // verify nobody touched the unviewed parts!
   if (useViews_)
   {
-    // extract raw data
-    SUBR(mvec_extract_view)(mem1_,&vec1_vp_,&lda_,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-    lidx_t lda=lda_;
-    
-    SUBR(mvec_extract_view)(mem2_,&vec2_vp_,&lda_,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-    ASSERT_EQ(lda,lda_);
-    
-    SUBR(mvec_extract_view)(mem3_,&vec3_vp_,&lda_,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-    ASSERT_EQ(lda,lda_);
+    // check pre padding is still the same
+    ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem1_vp_,this->nloc_,pad_pre_,lda_,stride_,(_ST_)-101.,this->vflag_));
+    ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem2_vp_,this->nloc_,pad_pre_,lda_,stride_,(_ST_)-102.,this->vflag_));
+    ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem3_vp_,this->nloc_,pad_pre_,lda_,stride_,(_ST_)-103.,this->vflag_));
 
-    // set data in the view itself
-    SUBR(mvec_put_value)(vec1_,(_ST_)-101.,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-    SUBR(mvec_put_value)(vec2_,(_ST_)-102.,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-    SUBR(mvec_put_value)(vec3_,(_ST_)-103.,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-
-    // check whole memory block
-    ASSERT_REAL_EQ(mt::one(), ArrayEqual(vec1_vp_,this->nloc_,nvecPadded_,lda_,stride_,(_ST_)-101.,this->vflag_));
-    ASSERT_REAL_EQ(mt::one(), ArrayEqual(vec2_vp_,this->nloc_,nvecPadded_,lda_,stride_,(_ST_)-102.,this->vflag_));
-    ASSERT_REAL_EQ(mt::one(), ArrayEqual(vec3_vp_,this->nloc_,nvecPadded_,lda_,stride_,(_ST_)-103.,this->vflag_));
+    // check post padding is still the same
+#ifdef PHIST_MVECS_ROW_MAJOR
+    ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem1_vp_+pad_pre_+nvec_,this->nloc_,pad_post_,lda_,stride_,(_ST_)-101.,this->vflag_));
+    ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem2_vp_+pad_pre_+nvec_,this->nloc_,pad_post_,lda_,stride_,(_ST_)-102.,this->vflag_));
+    ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem3_vp_+pad_pre_+nvec_,this->nloc_,pad_post_,lda_,stride_,(_ST_)-103.,this->vflag_));
+#else
+    ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem1_vp_+(pad_pre_+nvec_)*lda_,this->nloc_,pad_post_,lda_,stride_,(_ST_)-101.,this->vflag_));
+    ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem2_vp_+(pad_pre_+nvec_)*lda_,this->nloc_,pad_post_,lda_,stride_,(_ST_)-102.,this->vflag_));
+    ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem3_vp_+(pad_pre_+nvec_)*lda_,this->nloc_,pad_post_,lda_,stride_,(_ST_)-103.,this->vflag_));
+#endif
   }
 
   SUBR(mvec_delete)(this->vec1_,&this->iflag_);
@@ -354,11 +358,12 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
   //! if _useViews=true, these are larger memory blocks
   //! holding vecX_ as an inner view. Otherwise they are NULL.
   TYPE(mvec_ptr) mem1_, mem2_, mem3_;
+  ST *mem1_vp_, *mem2_vp_, *mem3_vp_;
 
   TYPE(mvec_ptr) vec1_, vec2_, vec3_;
   ST *vec1_vp_, *vec2_vp_, *vec3_vp_;
   static const int nvec_=_Nvec;
-  int nvecPadded_;
+  int nvecPadded_, pad_pre_, pad_post_;
   static const int useViews_=_useViews;
   lidx_t lda_, stride_;
   };
