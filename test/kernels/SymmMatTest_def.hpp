@@ -4,19 +4,21 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_> 
+class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_> 
 {
 
   public:
+    typedef KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_> VTest;
 
   /*! Set up routine.
    */
   virtual void SetUp()
-    {
-    KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
-    
+  {
+    VTest::SetUp();
+
+    haveMats_ = false;
     if (typeImplemented_ && !problemTooSmall_)
-      {
+    {
       if( nglob_ == 20 )
       {
         SUBR(read_mat)("symmMat",comm_,nglob_,&A1_,&iflag_);
@@ -26,68 +28,27 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
         SUBR(read_mat)("sprandsym",comm_,nglob_,&A1_,&iflag_);
       }
       ASSERT_EQ(0,iflag_);
-      if ( A1_==NULL )
-        {
-        haveMats_=false;
-        }
-      else
-        {
-        haveMats_=true;
-        }
+      if( A1_ != NULL )
+      {
+        haveMats_ = true;
+
+        const_map_ptr_t range_map;
+        SUBR(sparseMat_get_range_map)(A1_,&range_map,&iflag_);
+        replaceMap(range_map);
       }
     }
+  }
 
   /*! Clean up.
    */
   virtual void TearDown()
   {
-    KernelTestWithVectors<_ST_,_N_,_NV_>::TearDown();
+    VTest::TearDown();
     if (typeImplemented_ && !problemTooSmall_)
     {
       ASSERT_EQ(0,delete_mat(A1_));
     }
   }
-
-// the matrices may have individual maps, so we need to recreate all vectors with the specific map of the matrix!
-void rebuildVectors(TYPE(const_sparseMat_ptr) A)
-{
-  if (typeImplemented_ && !problemTooSmall_ && haveMats_)
-  {
-    // set vec1 to be a valid X, vec2 and vec3 a valid Y in Y=AX
-    const_map_ptr_t range_map, domain_map;
-    SUBR(sparseMat_get_range_map)(A,&range_map,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(sparseMat_get_domain_map)(A,&domain_map,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_delete)(vec1_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_delete)(vec2_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_delete)(vec3_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-
-    lidx_t lda;
-    PHISTTEST_MVEC_CREATE(&vec1_,domain_map,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-
-    PHISTTEST_MVEC_CREATE(&vec2_,range_map,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&lda,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    ASSERT_EQ(lda,lda_);
-
-    PHISTTEST_MVEC_CREATE(&vec3_,range_map,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&lda,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    ASSERT_EQ(lda,lda_);
-
-    phist_map_get_local_length(domain_map, &nloc_, &iflag_);
-    ASSERT_EQ(0,iflag_);
-  }
-}
 
 
 TYPE(sparseMat_ptr) A1_; // some random symmetric matrix
@@ -118,10 +79,6 @@ int delete_mat(TYPE(sparseMat_ptr) A)
   {
     if (typeImplemented_ && !problemTooSmall_ && haveMats_)
     {
-
-      // matrices may have different maps
-      rebuildVectors(A1_);
-
       SUBR(mvec_random)(vec1_,&iflag_);
       SUBR(mvec_random)(vec2_,&iflag_);
       SUBR(sparseMat_times_mvec)(st::one(),A1_,vec1_,st::zero(),vec2_,&iflag_);

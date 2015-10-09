@@ -13,14 +13,14 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
-                 public virtual KernelTestWithSdMats<_ST_,_NV_,_NV_>
+class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_>,
+                 public virtual KernelTestWithSdMats<_ST_,_NV_,_NV_,_USE_VIEWS_>
 {
 
   public:
   
-  typedef KernelTestWithVectors<_ST_,_N_,_NV_> VTest;
-  typedef KernelTestWithSdMats<_ST_,_NV_,_NV_> MTest;
+  typedef KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_> VTest;
+  typedef KernelTestWithSdMats<_ST_,_NV_,_NV_,_USE_VIEWS_> MTest;
   typedef KernelTestWithType< _MT_ > MT_Test;
 
   /*! Set up routine.
@@ -82,41 +82,10 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
 {
   if (typeImplemented_ && !problemTooSmall_ && haveMats_)
   {
-    // set vec1 to be a valid X, vec2 and vec3 a valid Y in Y=AX
-    const_map_ptr_t range_map, domain_map;
+    const_map_ptr_t range_map;
     SUBR(sparseMat_get_range_map)(A,&range_map,&iflag_);
     ASSERT_EQ(0,iflag_);
-    SUBR(sparseMat_get_domain_map)(A,&domain_map,&iflag_);
-
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_delete)(vec1_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_delete)(vec2_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_delete)(vec3_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-
-    lidx_t lda;
-    PHISTTEST_MVEC_CREATE(&vec1_,domain_map,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    ASSERT_EQ(lda,lda_);
-
-    PHISTTEST_MVEC_CREATE(&vec2_,range_map,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&lda,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    ASSERT_EQ(lda,lda_);
-
-    PHISTTEST_MVEC_CREATE(&vec3_,range_map,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&lda,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    ASSERT_EQ(lda,lda_);
-
-    phist_map_get_local_length(domain_map, &nloc_, &iflag_);
-    ASSERT_EQ(0,iflag_);
+    replaceMap(range_map);
   }
 }
 
