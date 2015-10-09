@@ -87,10 +87,10 @@ virtual void TearDown()
   {
     if (useViews_)
     {
-      SUBR(sdMat_delete)(mem1_,&this->iflag_);
-      SUBR(sdMat_delete)(mem2_,&this->iflag_);
-      SUBR(sdMat_delete)(mem3_,&this->iflag_);
-      SUBR(sdMat_delete)(mem4_,&this->iflag_);    
+      SUBR(sdMat_delete)(mat1_,&this->iflag_);
+      SUBR(sdMat_delete)(mat2_,&this->iflag_);
+      SUBR(sdMat_delete)(mat3_,&this->iflag_);
+      SUBR(sdMat_delete)(mat4_,&this->iflag_);    
     }
     SUBR(sdMat_delete)(mem4_,&this->iflag_);
     SUBR(sdMat_delete)(mem3_,&this->iflag_);
