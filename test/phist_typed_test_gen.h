@@ -28,6 +28,7 @@
 
 // construct test def file name. The user may overrule this by pre-defining CLASSFILE_DEF
 #ifndef CLASSFILE_DEF
+#define CLASSFILE_DEF_WAS_UNDEFINED
 #define CLASSFILE_DEF CF_EVAL_CONCATENATE_AND_QUOTE(_BASENAME_)
 #define CF_EVAL_QUOTE(y) CF_QUOTE(y)
 #define CF_QUOTE(x) #x
@@ -72,7 +73,10 @@
 #undef CN_CONCATENATE
 #undef CN_EVAL_CONCATENATE
 
+#ifdef CLASSFILE_DEF_WAS_UNDEFINED
 #undef CLASSFILE_DEF
+#undef CLASSFILE_DEF_WAS_UNDEFINED
+#endif
 #undef BASENAME_DIM
 
 #undef _N_

@@ -12,7 +12,7 @@ void createVecs()
 {
   bool align_p2=(useViews_==2);
   int pad_pre=0, pad_post=0;
-  int npadded=nvec_;
+  nvecPadded_=nvec_;
   // vectors created with the same function should get the same stride (lda)
   lidx_t lda;
   if (useViews_)
@@ -21,15 +21,15 @@ void createVecs()
     pad_post=7;
     // padding to power of 2
     int pow_p2=(int)ceil(log((double)(nvec_+pad_pre+pad_post))/log(2.0))+1;
-    npadded=align_p2?(int)pow(2.0,(double)pow_p2): nvec_+pad_pre+pad_post;
+    nvecPadded_=align_p2?(int)pow(2.0,(double)pow_p2): nvec_+pad_pre+pad_post;
   }
-  PHISTTEST_MVEC_CREATE(&mem1_,this->map_,npadded,&this->iflag_);
+  PHISTTEST_MVEC_CREATE(&mem1_,this->map_,nvecPadded_,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
 
-  PHISTTEST_MVEC_CREATE(&mem2_,this->map_,npadded,&this->iflag_);
+  PHISTTEST_MVEC_CREATE(&mem2_,this->map_,nvecPadded_,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
 
-  PHISTTEST_MVEC_CREATE(&mem3_,this->map_,npadded,&this->iflag_);
+  PHISTTEST_MVEC_CREATE(&mem3_,this->map_,nvecPadded_,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
   
   // if requested, set vecX to views of memX
@@ -41,6 +41,20 @@ void createVecs()
     SUBR(mvec_view_block)(mem2_,&vec2_,pad_pre,pad_pre+nvec_-1,&this->iflag_);
     ASSERT_EQ(0,this->iflag_);
     SUBR(mvec_view_block)(mem3_,&vec3_,pad_pre,pad_pre+nvec_-1,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+
+    SUBR(mvec_put_value)(mem1_,(_ST_)-101.,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    SUBR(mvec_put_value)(mem2_,(_ST_)-102.,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    SUBR(mvec_put_value)(mem3_,(_ST_)-103.,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+
+    SUBR(mvec_put_value)(vec1_,st::zero(),&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    SUBR(mvec_put_value)(vec2_,st::zero(),&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    SUBR(mvec_put_value)(vec3_,st::zero(),&this->iflag_);
     ASSERT_EQ(0,this->iflag_);
   }
   else
@@ -65,10 +79,46 @@ void createVecs()
   ASSERT_EQ(0,this->iflag_);
   ASSERT_EQ(lda,lda_);
   stride_=1;
+
+  if (useViews_)
+  {
+    PHIST_SOUT(PHIST_DEBUG,"Setting up the views with pad_pre %d and pad_post %d (complete padding %d, lda %d)\n", 
+        pad_pre, nvecPadded_-nvec_-pad_pre, nvecPadded_, lda_);
+  }
 }
 
 void deleteVecs()
 {
+  // verify nobody touched the unviewed parts!
+  if (useViews_)
+  {
+    // extract raw data
+    SUBR(mvec_extract_view)(mem1_,&vec1_vp_,&lda_,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    lidx_t lda=lda_;
+    
+    SUBR(mvec_extract_view)(mem2_,&vec2_vp_,&lda_,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    ASSERT_EQ(lda,lda_);
+    
+    SUBR(mvec_extract_view)(mem3_,&vec3_vp_,&lda_,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    ASSERT_EQ(lda,lda_);
+
+    // set data in the view itself
+    SUBR(mvec_put_value)(vec1_,(_ST_)-101.,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    SUBR(mvec_put_value)(vec2_,(_ST_)-102.,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    SUBR(mvec_put_value)(vec3_,(_ST_)-103.,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+
+    // check whole memory block
+    ASSERT_REAL_EQ(mt::one(), ArrayEqual(vec1_vp_,this->nloc_,nvecPadded_,lda_,stride_,(_ST_)-101.,this->vflag_));
+    ASSERT_REAL_EQ(mt::one(), ArrayEqual(vec2_vp_,this->nloc_,nvecPadded_,lda_,stride_,(_ST_)-102.,this->vflag_));
+    ASSERT_REAL_EQ(mt::one(), ArrayEqual(vec3_vp_,this->nloc_,nvecPadded_,lda_,stride_,(_ST_)-103.,this->vflag_));
+  }
+
   SUBR(mvec_delete)(this->vec1_,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
   SUBR(mvec_delete)(this->vec2_,&this->iflag_);
@@ -308,6 +358,7 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
   TYPE(mvec_ptr) vec1_, vec2_, vec3_;
   ST *vec1_vp_, *vec2_vp_, *vec3_vp_;
   static const int nvec_=_Nvec;
+  int nvecPadded_;
   static const int useViews_=_useViews;
   lidx_t lda_, stride_;
   };
