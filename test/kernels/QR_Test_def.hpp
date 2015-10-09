@@ -154,6 +154,7 @@ public:
       SUBR(mvec_QR)(vec2_,mat1_,&iflag_);
       // check that the rank deficiency was detected
       ASSERT_EQ(std::max(nvec_-1,0), iflag_);
+      iflag_ = 0;
       // check that we anyway got something orthogonal back
       ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
       ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
