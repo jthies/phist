@@ -162,6 +162,9 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   // number of unconverged systems to be returned
   int nUnconvergedSystems = 0;
 
+// put all iterations in one big compute task; this speeds up the tests with ghost (significantly)
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN(ComputeTask)
   // iterate while there's at least one system remaining
   while( k > 0 )
   {
@@ -301,6 +304,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   // delete views
   PHIST_CHK_IERR(SUBR(mvec_delete)(res_i, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(t_i,   iflag), *iflag);
+PHIST_TASK_END(iflag)
   // delete the jadaOp
   PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jadaOp, iflag), *iflag);
 
