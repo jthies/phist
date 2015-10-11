@@ -99,18 +99,20 @@ using namespace testing;
 // the Belos Tester selects the number of vectors itself,
 // it is enough to test it for one vector length, I think
 #ifdef PHIST_KERNEL_LIB_GHOST
-#ifdef PHIST_HAVE_BELOS
+# ifdef PHIST_HAVE_BELOS
 // ghost views of mvecs are not general enough to pass these
-// tests for row-major ordering
-#ifndef PHIST_MVECS_ROW_MAJOR
-#define DO_BELOS_TESTS
-#include "phist_GhostMV.hpp"
-#include "phist_rcp_helpers.hpp"
-#include "Belos_GhostAdapter.hpp"
-#include "BelosMVOPTester.hpp"
-#include "BelosOutputManager.hpp"
-#endif
-#endif
+// tests for row-major ordering, however, in our own adapted
+// version of the MVOPTester, we use only ascending col in- 
+// dices, which should work with scattered views in GHOST.
+//#  ifndef PHIST_MVECS_ROW_MAJOR
+#  define DO_BELOS_TESTS
+#  include "phist_GhostMV.hpp"
+#  include "phist_rcp_helpers.hpp"
+#  include "Belos_GhostAdapter.hpp"
+#  include "./BelosMVOPTester.hpp"
+#  include "BelosOutputManager.hpp"
+//      #  endif
+# endif
 #endif
 
 
@@ -129,6 +131,10 @@ using namespace testing;
 #define _M_ 4
 #define CLASSFILE_DEF "MvecTest_def.hpp"
 #include "../phist_typed_test_gen.h"
+
+#ifdef DO_BELOS_TESTS
+#undef DO_BELOS_TESTS
+#endif
 
 #define _N_ 237
 #define _M_ 9
@@ -151,7 +157,4 @@ using namespace testing;
 #define CLASSFILE_DEF "MvecTest_def.hpp"
 #include "../phist_typed_test_gen.h"
 
-#ifdef DO_BELOS_TESTS
-#undef DO_BELOS_TESTS
-#endif
 

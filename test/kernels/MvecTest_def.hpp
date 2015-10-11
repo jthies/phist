@@ -889,7 +889,7 @@ TEST_F(CLASSNAME,put_func)
       Teuchos::RCP<phist::GhostMV> ivec = phist::rcp(v,false);
 
       // test the multivector and its adapter
-      bool berr=Belos::TestMultiVecTraits<ST,phist::GhostMV>(MyOM,ivec);
+      bool berr=Belos::TestMultiVecTraits<ST,phist::GhostMV>(MyOM,ivec,nglob_);
       ASSERT_EQ(true,berr);
     }
   }
