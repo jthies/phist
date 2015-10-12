@@ -740,6 +740,17 @@ public:
       SUBR(mvec_norm2)(v1_copy,norms_V1copy,&iflag_);
       ASSERT_EQ(0,iflag_);
 
+#if PHIST_OUTLEV>=PHIST_DEBUG      
+      PHIST_SOUT(PHIST_INFO,"original mvec:\n");
+      SUBR(mvec_print)(vec1_,&iflag_);
+
+      PHIST_SOUT(PHIST_INFO,"copy of cols [%d..%d]:\n",jmin,jmax);
+      SUBR(mvec_print)(v1_copy,&iflag_);
+for (int j=0;j<nvec_;j++)
+{
+  PHIST_SOUT(PHIST_DEBUG,"%12.5e\t%12.5e\n",norms_V1[j],(j>=jmin && j<=jmax)? norms_V1copy[j-jmin]:-mt::one());
+}
+#endif
       // compare elements one-by-one because our ArraysEqual expects ST rather than MT as 
       // type here.
       for (int j=jmin;j<=jmax;j++)
@@ -839,7 +850,11 @@ public:
         {
           vec2_vp_[VIDX(i,j,lda_)] *= scale[j];
         }
-
+      SUBR(mvec_to_device)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      //TROET
+      //SUBR(mvec_print)(vec1_,&iflag_);
+      //SUBR(mvec_print)(vec2_,&iflag_);
       ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
     }
   }
