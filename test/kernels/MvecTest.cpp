@@ -14,6 +14,7 @@
 using namespace testing;
 
 #define _BASENAME_ MvecTest
+#define CLASSFILE_DEF "MvecTest_def.hpp"
 
 #define _USE_VIEWS_ 0
 
@@ -127,12 +128,10 @@ using namespace testing;
 
 #define _N_ 237
 #define _M_ 4
-#define CLASSFILE_DEF "MvecTest_def.hpp"
 #include "../phist_typed_test_gen.h"
 
 #define _N_ 237
 #define _M_ 9
-#define CLASSFILE_DEF "MvecTest_def.hpp"
 #include "../phist_typed_test_gen.h"
 
 #undef _BASENAME_
@@ -143,12 +142,10 @@ using namespace testing;
 
 #define _N_ 237
 #define _M_ 4
-#define CLASSFILE_DEF "MvecTest_def.hpp"
 #include "../phist_typed_test_gen.h"
 
 #define _N_ 237
 #define _M_ 9
-#define CLASSFILE_DEF "MvecTest_def.hpp"
 #include "../phist_typed_test_gen.h"
 
 #ifdef DO_BELOS_TESTS

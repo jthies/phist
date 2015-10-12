@@ -3,18 +3,18 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public KernelTestWithSdMats<_ST_,_NROWS_,_NCOLS_> 
+class CLASSNAME: public KernelTestWithSdMats<_ST_,_NROWS_,_NCOLS_,_USE_VIEWS_> 
   {
 
 public:
 
-  typedef KernelTestWithSdMats<_ST_,_NROWS_,_NCOLS_> MTest;
+  typedef KernelTestWithSdMats<_ST_,_NROWS_,_NCOLS_,_USE_VIEWS_> MTest;
 
   /*! Set up routine.
    */
   virtual void SetUp()
   {
-    KernelTestWithSdMats<ST,_NROWS_,_NCOLS_>::SetUp();
+    MTest::SetUp();
     if( typeImplemented_ )
     {
       SUBR(sdMat_random)(mat1_,&iflag_);
@@ -33,9 +33,9 @@ public:
   /*! Clean up.
    */
   virtual void TearDown() 
-    {
-    KernelTestWithSdMats<ST,_NROWS_,_NCOLS_>::TearDown();
-    }
+  {
+    MTest::TearDown();
+  }
 
   /*! internal tests for forward/backward substition
    */
