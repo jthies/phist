@@ -334,6 +334,9 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
   }
 
 
+// put all iterations in one big compute task; this speeds up the tests with ghost (significantly)
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN(ComputeTask)
   // add up solution
   TYPE(mvec_ptr) Vj = NULL, x_i = NULL;
   PHIST_DEB("blockedGMRESstates_updateSol maxCurDimV = %d, sharedCurDimV = %d, ordered = %d\n", maxCurDimV, sharedCurDimV, (int)ordered);
@@ -374,9 +377,10 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
     }
   }
 
-  delete[] yglob;
   PHIST_CHK_IERR(SUBR(mvec_delete)(x_i, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vj, iflag), *iflag);
+PHIST_TASK_END(iflag)
+  delete[] yglob;
 }
 
 
@@ -542,6 +546,9 @@ PHIST_SOUT(PHIST_INFO,"\n");
     PHIST_SOUT(PHIST_VERBOSE,"[%d]: %d\t%8.4e\t(%8.4e)\n", i, S[i]->curDimV_-1,S[i]->normR_/S[i]->normR0_,S[i]->normR_);
   }
 
+// put all iterations in one big compute task; this speeds up the tests with ghost (significantly)
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN(ComputeTask)
   while( anyConverged == 0 && anyFailed == 0 )
   {
     //    % get new vector for y
@@ -862,6 +869,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
     (*nIter)++;
   }
+PHIST_TASK_END(iflag)
 
   PHIST_SOUT(PHIST_VERBOSE,"%d converged, %d failed.\n",anyConverged,anyFailed);
   PHIST_SOUT(PHIST_VERBOSE,"-----------------------\n");

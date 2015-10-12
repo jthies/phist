@@ -199,7 +199,7 @@ void drandom_general(int nvec, int nrows, double *restrict v, int ldv, int64_t p
 #endif
 
       // jump to first index of this thread
-      KISS_SKIP(pre_skip+threadOffset[it], &x,&y,&z,&c);
+      KISS_SKIP(pre_skip+nvec*threadOffset[it], &x,&y,&z,&c);
 
       // loop
       for(int i = threadOffset[it]; i < threadOffset[it+1]; i++)

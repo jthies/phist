@@ -920,7 +920,7 @@ endforeach()
 enable_testing()
 
 if (${PHIST_ENABLE_MPI})
-  set(PHIST_MPI_TEST_NPROCS 1 2 3 12 24)
+  set(PHIST_MPI_TEST_NPROCS 1 2 3 24)
 else()
   set(PHIST_MPI_TEST_NPROCS "")
 endif()
