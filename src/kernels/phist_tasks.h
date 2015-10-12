@@ -79,11 +79,11 @@ class WrapLambdaForGhostTask
     {
       // check that the task is not already allocated/in use
       PHIST_CHK_IERR(*iflag = (*task != NULL) ? -1 : 0, *iflag);
+      ghost_task_t* curTask = NULL;
+      ghost_task_cur(&curTask);
       if( !async )
       {
         // don't create a thread at all if the current task is also not an async task
-        ghost_task_t* curTask = NULL;
-        ghost_task_cur(&curTask);
         if( curTask != NULL )
         {
           bool curTaskAsync = (curTask->nThreads == 0);
@@ -100,7 +100,7 @@ class WrapLambdaForGhostTask
       // actually create the task and copy the context to the heap
       {
         int nThreads = async ? 0 : GHOST_TASK_FILL_ALL;
-        ghost_task_flags_t flags = async ? GHOST_TASK_NOT_PIN : GHOST_TASK_DEFAULT;
+        ghost_task_flags_t flags = GHOST_TASK_DEFAULT;
         PHIST_CHK_GERR(ghost_task_create(task, nThreads, 0, void_lambda_caller, (void*) new LFunc(context), flags, NULL, 0), *iflag);
       }
 
@@ -108,16 +108,14 @@ class WrapLambdaForGhostTask
       // If the parent has none, try to be adopted by the grand-parent, etc
       if( !async )
       {
-        ghost_task_t *newParent = NULL;
-        ghost_task_cur(&newParent);
+        ghost_task_t *newParent = curTask;
         if( newParent )
         {
           while( newParent->nThreads == 0 )
           {
-            if( newParent->parent == NULL )
-              break;
-
             newParent = newParent->parent;
+            if( newParent == NULL )
+              break;
           }
         }
         (*task)->parent = newParent;
@@ -160,13 +158,13 @@ class WrapLambdaForGhostTask
 
 // actually wrap a lambda for ghost and run it (creates an instance of WrapLambdaForGhostTask)
 template<typename LFunc>
-inline WrapLambdaForGhostTask<LFunc> phist_execute_lambda_as_ghost_task(ghost_task_t **task, const LFunc &context, int* iflag, bool async)
+static inline WrapLambdaForGhostTask<LFunc> phist_execute_lambda_as_ghost_task(ghost_task_t **task, const LFunc &context, int* iflag, bool async)
 {
   return WrapLambdaForGhostTask<LFunc>(task,context,iflag,async);
 }
 
 // wait till a task is finished
-inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
+static inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
 {
   PHIST_CHK_IERR(*iflag = (*task != NULL) ? PHIST_SUCCESS : PHIST_WARNING, *iflag);
 
@@ -187,20 +185,46 @@ inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
 
 // some helpful macros
 
-#define PHIST_TASK_DECLARE(taskName) ghost_task_t* taskName = NULL;
-#define PHIST_TASK_BEGIN(taskName) phist_execute_lambda_as_ghost_task(&taskName, ([&]() -> void {
-#define PHIST_TASK_END(task_ierr)          }), task_ierr, false);PHIST_CHK_IERR((void)*(task_ierr),*(task_ierr));
-#define PHIST_TASK_END_NOWAIT(task_ierr)   }), task_ierr, true );PHIST_CHK_IERR((void)*(task_ierr),*(task_ierr));
-#define PHIST_TASK_WAIT(taskName,task_ierr) PHIST_CHK_IERR(phist_wait_ghost_task(&taskName,task_ierr),*(task_ierr));
+#define PHIST_TASK_DECLARE(taskName) \
+  ghost_task_t* taskName = NULL;
 
-#define PHIST_TASK_POST_STEP(task_ierr) {ghost_task_t* t = NULL; ghost_task_cur(&t); if( t != NULL ) sem_post(t->progressSem);}
-#define PHIST_TASK_WAIT_STEP(taskName,task_ierr) {sem_wait(taskName->progressSem);}
+#define PHIST_TASK_BEGIN(taskName) \
+  phist_execute_lambda_as_ghost_task(&taskName, ([&]() -> void {
 
-// don't need a main task, every kernel function is put into a task!
-#define PHIST_MAIN_TASK_BEGIN
-#define PHIST_MAIN_TASK_END
-//#define PHIST_MAIN_TASK_BEGIN {int task_ierr = 0; ghost_task_t* mainTask = NULL; phist_execute_lambda_as_ghost_task(&mainTask, [&]()->int {
-//#define PHIST_MAIN_TASK_END   return 0;}, &task_ierr, false );PHIST_ICHK_IERR((void)task_ierr,task_ierr);}
+#define PHIST_TASK_END(task_ierr) \
+        }), task_ierr, false);\
+  PHIST_CHK_IERR((void)*(task_ierr),*(task_ierr));
+
+#define PHIST_TASK_END_NOWAIT(task_ierr) \
+        }), task_ierr, true );\
+  PHIST_CHK_IERR((void)*(task_ierr),*(task_ierr));
+
+#define PHIST_TASK_WAIT(taskName,task_ierr) \
+  PHIST_CHK_IERR(phist_wait_ghost_task(&taskName,task_ierr),*(task_ierr));
+
+
+#define PHIST_TASK_POST_STEP(task_ierr) {\
+  ghost_task_t* t = NULL;\
+  ghost_task_cur(&t);\
+  if( t != NULL )\
+    sem_post(t->progressSem);}
+
+#define PHIST_TASK_WAIT_STEP(taskName,task_ierr) {\
+  sem_wait(taskName->progressSem);}
+
+
+// define the main task as asynchronuous task, such that it is at least pinned to the correct socket
+//#define PHIST_MAIN_TASK_BEGIN
+//#define PHIST_MAIN_TASK_END
+#define PHIST_MAIN_TASK_BEGIN {\
+  int mainTask_ierr = 0;\
+  ghost_task_t* mainTask = NULL;\
+  phist_execute_lambda_as_ghost_task(&mainTask, [&]()->int {
+
+#define PHIST_MAIN_TASK_END \
+      return 0;}, &mainTask_ierr, true);\
+  PHIST_ICHK_IERR((void)mainTask_ierr,mainTask_ierr);\
+  PHIST_ICHK_IERR(phist_wait_ghost_task(&mainTask,&mainTask_ierr),mainTask_ierr);}
 
 
 #else /* __cplusplus && PHIST_HAVE_GHOST && PHIST_HAVE_CXX11_LAMBDAS */

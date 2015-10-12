@@ -173,11 +173,6 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 
 #ifdef PHIST_HAVE_LIKWID
   LIKWID_MARKER_INIT;
-#pragma omp parallel
-  {
-    LIKWID_MARKER_THREADINIT;
-    LIKWID_MARKER_START("phist<ghost>");
-  }
 #endif
 }
 
@@ -185,10 +180,6 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 extern "C" void phist_kernels_finalize(int* iflag)
 {
 #ifdef PHIST_HAVE_LIKWID
-#pragma omp parallel
-  {
-    LIKWID_MARKER_STOP("phist<ghost>");
-  }
   LIKWID_MARKER_CLOSE;
 #endif
 #if defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE)
