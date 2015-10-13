@@ -68,43 +68,77 @@ endif()
 # TODO Always prefer MKL over others?
 if(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
 # TODO: this assumes that if you use the intel compilers, you also have MKL (!)
-
-  # LAPACKe
-  unset(LAPACKE_LIBS CACHE)
-  find_library(LAPACKE_LIBS NAMES "liblapacke.so" "liblapacke.a")
-  if(LAPACKE_LIBS STREQUAL "LAPACKE_LIBS-NOTFOUND")
-    if(NOT PHIST_HAVE_MKL)
+#=======================================================================
+  if(PHIST_HAVE_MKL)
+    # TODO write a module for that
+#-----------------------------------------------------------------------
+    # interface
+    unset(MKL_INTERFACE_LIBS CACHE)
+    find_library(MKL_INTERFACE_LIBS NAMES mkl_intel_ilp64 PATHS "$ENV{MKLROOT}/lib/*")
+    if(MKL_INTERFACE_LIBS STREQUAL "MKL_INTERFACE_LIBS-NOTFOUND")
+      message(FATAL_ERROR "Could not find MKL interface library. Is the MKLROOT environment variable set properly?")
+    else()
+      message(STATUS "MKL interface library found: ${MKL_INTERFACE_LIBS}")
+      LIST(APPEND external_libs ${MKL_INTERFACE_LIBS})
+    endif()
+#-----------------------------------------------------------------------
+    # threading or sequential
+    unset(MKL_THREADING_LIBS CACHE)
+    if( PHIST_ENABLE_OPENMP )
+      # linking the GNU variant, we shouldn't need libiomp5.
+      find_library(MKL_THREADING_LIBS NAMES mkl_gnu_thread PATHS "$ENV{MKLROOT}/lib/*")
+    else()
+      find_library(MKL_THREADING_LIBS NAMES mkl_sequential PATHS "$ENV{MKLROOT}/lib/*")
+    endif()
+    if(MKL_THREADING_LIBS STREQUAL "MKL_THREADING_LIBS-NOTFOUND")
+      message(FATAL_ERROR "Could not find MKL threading library. Is the MKLROOT environment variable set properly?")
+    else()
+      message(STATUS "MKL threading library found: ${MKL_THREADING_LIBS}")
+      LIST(APPEND external_libs ${MKL_THREADING_LIBS})
+    endif()
+#-----------------------------------------------------------------------
+    # core libs
+    unset(MKL_COMPUTING_LIBS CACHE)
+    find_library(MKL_COMPUTING_LIBS NAMES mkl_core PATHS "$ENV{MKLROOT}/lib/*")
+    if(MKL_COMPUTING_LIBS STREQUAL "MKL_COMPUTING_LIBS-NOTFOUND")
+      message(FATAL_ERROR "Could not find MKL computing library. Is the MKLROOT environment variable set properly?")
+    else()
+      message(STATUS "MKL computing library found: ${MKL_COMPUTING_LIBS}")
+      LIST(APPEND external_libs ${MKL_COMPUTING_LIBS})
+    endif()
+  else()
+#=======================================================================
+    # LAPACKe
+    unset(LAPACKE_LIBS CACHE)
+    find_library(LAPACKE_LIBS NAMES "liblapacke.so" "liblapacke.a")
+    if(LAPACKE_LIBS STREQUAL "LAPACKE_LIBS-NOTFOUND")
       message(FATAL_ERROR "LAPACKe libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
+    else()
+      message(STATUS "LAPACKe libraries found: ${LAPACKE_LIBS}")
+      LIST(APPEND external_libs ${LAPACKE_LIBS})
     endif()
-  else()
-    message(STATUS "LAPACKe libraries found: ${LAPACKE_LIBS}")
-    LIST(APPEND external_libs ${LAPACKE_LIBS})
-  endif()
-
-  # LAPACK
-  unset(LAPACK_LIBS CACHE)
-  find_library(LAPACK_LIBS NAMES "liblapack.so" "liblapack.a")
-  if(LAPACK_LIBS STREQUAL "LAPACK_LIBS-NOTFOUND")
-    if(NOT PHIST_HAVE_MKL)
+#-----------------------------------------------------------------------
+    # LAPACK
+    unset(LAPACK_LIBS CACHE)
+    find_library(LAPACK_LIBS NAMES "liblapack.so" "liblapack.a")
+    if(LAPACK_LIBS STREQUAL "LAPACK_LIBS-NOTFOUND")
       message(FATAL_ERROR "LAPACK libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
+    else()
+      message(STATUS "LAPACK libraries found: ${LAPACK_LIBS}")
+      LIST(APPEND external_libs ${LAPACK_LIBS})
     endif()
-  else()
-    message(STATUS "LAPACK libraries found: ${LAPACK_LIBS}")
-    LIST(APPEND external_libs ${LAPACK_LIBS})
-  endif()
-
-  # BLAS
-  unset(BLAS_LIBS CACHE)
-  find_library(BLAS_LIBS NAMES "libblas.so" "libblas.a")
-  if(BLAS_LIBS STREQUAL "BLAS_LIBS-NOTFOUND")
-    if(NOT PHIST_HAVE_MKL)
+#-----------------------------------------------------------------------
+    # BLAS
+    unset(BLAS_LIBS CACHE)
+    find_library(BLAS_LIBS NAMES "libblas.so" "libblas.a")
+    if(BLAS_LIBS STREQUAL "BLAS_LIBS-NOTFOUND")
       message(FATAL_ERROR "BLAS libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
+    else()
+      message(STATUS "BLAS libraries found: ${BLAS_LIBS}")
+      LIST(APPEND external_libs ${BLAS_LIBS})
     endif()
-  else()
-    message(STATUS "BLAS libraries found: ${BLAS_LIBS}")
-    LIST(APPEND external_libs ${BLAS_LIBS})
+#=======================================================================
   endif()
-
 endif()
 ########################################################################
 
@@ -138,6 +172,11 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
       set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -fopenmp -fopenmp-simd")
       set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -fopenmp -fopenmp-simd")
     endif ()
+  endif()
+
+  if(PHIST_HAVE_MKL)
+    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -DMKL_ILP64")
+    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -DMKL_ILP64")
   endif()
 
   # -ffast-math kills high precision stuff!
