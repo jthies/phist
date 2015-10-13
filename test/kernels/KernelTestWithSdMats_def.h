@@ -90,25 +90,11 @@ virtual void SetUp()
       mat4_=mem4_;
     }
     
-    // get raw access to the matrix storage
+    // get pointers to the whole memory block
     lidx_t lda;
-    SUBR(sdMat_extract_view)(mat1_,&mat1_vp_,&lda,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-    this->m_lda_ = lda;
-    SUBR(sdMat_extract_view)(mat2_,&mat2_vp_,&lda,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-    ASSERT_EQ(this->m_lda_,lda);
-    SUBR(sdMat_extract_view)(mat3_,&mat3_vp_,&lda,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-    ASSERT_EQ(this->m_lda_,lda);
-    SUBR(sdMat_extract_view)(mat4_,&mat4_vp_,&lda,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-    ASSERT_EQ(this->m_lda_,lda);
-
-    // also get pointers to the whole memory block
     SUBR(sdMat_extract_view)(mem1_,&mem1_vp_,&lda,&this->iflag_);
     ASSERT_EQ(0,this->iflag_);
-    ASSERT_EQ(this->m_lda_,lda);
+    this->m_lda_ = lda;
     SUBR(sdMat_extract_view)(mem2_,&mem2_vp_,&lda,&this->iflag_);
     ASSERT_EQ(0,this->iflag_);
     ASSERT_EQ(this->m_lda_,lda);
@@ -118,6 +104,30 @@ virtual void SetUp()
     SUBR(sdMat_extract_view)(mem4_,&mem4_vp_,&lda,&this->iflag_);
     ASSERT_EQ(0,this->iflag_);
     ASSERT_EQ(this->m_lda_,lda);
+
+    // get raw access to the matrix storage
+    lidx_t lda2;
+    SUBR(sdMat_extract_view)(mat1_,&mat1_vp_,&lda,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    lda2 = lda;
+    SUBR(sdMat_extract_view)(mat2_,&mat2_vp_,&lda,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    ASSERT_EQ(lda2,lda);
+    SUBR(sdMat_extract_view)(mat3_,&mat3_vp_,&lda,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    ASSERT_EQ(lda2,lda);
+    SUBR(sdMat_extract_view)(mat4_,&mat4_vp_,&lda,&this->iflag_);
+    ASSERT_EQ(0,this->iflag_);
+    ASSERT_EQ(lda2,lda);
+
+    // lda might be irrelevant for small views and thus not set by the kernel library
+#ifdef PHIST_SDMATS_ROW_MAJOR
+    if( nrows_ > 1 ) {
+#else
+    if( ncols_ > 1 ) {
+#endif
+      ASSERT_EQ(this->m_lda_,lda2);
+    }
   }
 }
 
@@ -231,11 +241,30 @@ static void PrintSdMat(std::ostream& os, std::string label,
 
   static bool pointerUnchanged(TYPE(sdMat_ptr) V, ST* expected_location, int expected_lda)
   {
-    int iflag;
-    lidx_t lda;
-    ST* ptr;
+    int iflag = 0;
+    lidx_t lda = 0;
+    ST* ptr = NULL;
     SUBR(sdMat_extract_view)(V,&ptr,&lda,&iflag);
-    return ( (iflag==0)&&(lda==expected_lda)&&(ptr==expected_location) );
+    if( iflag!= PHIST_SUCCESS )
+      return false;
+
+    lidx_t n = 0;
+#ifdef PHIST_SDMATS_ROW_MAJOR
+    SUBR(sdMat_get_nrows)(V,&n,&iflag);
+#else
+    SUBR(sdMat_get_ncols)(V,&n,&iflag);
+#endif
+    if( iflag!= PHIST_SUCCESS )
+      return false;
+
+    if( ptr!=expected_location )
+      return false;
+
+    // epetra doesn't set lda appropriately for single cols/rows (as it is not needed)
+    if( n > 1 && lda!=expected_lda )
+      return false;
+
+    return true;
   }
 
   

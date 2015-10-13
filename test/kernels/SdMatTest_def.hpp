@@ -182,11 +182,17 @@ public:
       lidx_t lda;
       SUBR(sdMat_extract_view)(m1_view,&val_ptr,&lda,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_EQ(lda,m_lda_);
+#if PHIST_SDMAT_ROW_MAJOR
+      if( imax-imin > 1 ) {
+#else
+      if( jmax-jmin > 1 ) {
+#endif
+        ASSERT_EQ(lda,m_lda_);
+      }
 
       SUBR(sdMat_from_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+imin+jmin*lda,val_ptr,imax-imin+1,jmax-jmin+1,lda,stride));
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+MIDX(imin,jmin,m_lda_),val_ptr,imax-imin+1,jmax-jmin+1,m_lda_,stride));
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(sdMat_print)(mat1_,&iflag_);
@@ -195,8 +201,14 @@ public:
       
       SUBR(sdMat_extract_view)(m1_view,&val_ptr,&lda,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_EQ(lda,m_lda_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+MIDX(imin,jmin,lda),val_ptr,imax-imin+1,jmax-jmin+1,lda,stride,mflag_));
+#if PHIST_SDMAT_ROW_MAJOR
+      if( imax-imin > 1 ) {
+#else
+      if( jmax-jmin > 1 ) {
+#endif
+        ASSERT_EQ(lda,m_lda_);
+      }
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+MIDX(imin,jmin,m_lda_),val_ptr,imax-imin+1,jmax-jmin+1,m_lda_,stride,mflag_));
 
       // set all the viewed entries to a certain value and check that the original vector is
       // changed.
@@ -206,13 +218,13 @@ public:
 
       SUBR(sdMat_from_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+imin+jmin*lda,val_ptr,imax-imin+1,jmax-jmin+1,lda,stride));
+      ASSERT_REAL_EQ(mt::one(),ArraysEqual(mat1_vp_+MIDX(imin,jmin,m_lda_),val_ptr,imax-imin+1,jmax-jmin+1,m_lda_,stride));
       
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(sdMat_print)(m1_view,&iflag_);
 #endif
       
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(&mat1_vp_[MIDX(imin,jmin,lda)],imax-imin+1,jmax-jmin+1,lda,stride,val,mflag_));
+      ASSERT_REAL_EQ(mt::one(),ArrayEqual(&mat1_vp_[MIDX(imin,jmin,m_lda_)],imax-imin+1,jmax-jmin+1,m_lda_,stride,val,mflag_));
 
       SUBR(sdMat_delete)(m1_view,&iflag_);
       ASSERT_EQ(0,iflag_);

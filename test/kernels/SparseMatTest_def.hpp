@@ -647,12 +647,12 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       SUBR(mvec_view_block)(vec1_,&v_out,offs+nv,offs+2*nv-1,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      _ST_ *v_in_vp, *v_out_vp;
+     // _ST_ *v_in_vp, *v_out_vp;
 
 // we could extract the pointers from the view, but this way we
 // have more control and make sure the data is where it should be:
-     v_in_vp = vec1_vp_+VIDX(0,offs,lda_);
-     v_out_vp = vec1_vp_+VIDX(0,offs+nv,lda_);
+     //v_in_vp = vec1_vp_+VIDX(0,offs,lda_);
+     //v_out_vp = vec1_vp_+VIDX(0,offs+nv,lda_);
 #if(PHIST_OUTLEV>=PHIST_DEBUG)
       PHIST_DEB("all random:\n");
       SUBR(mvec_print)(vec1_,&iflag_);

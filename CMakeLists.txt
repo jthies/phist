@@ -51,6 +51,21 @@ else()
   include_directories(${LAPACKE_INCL})
 endif()
 
+# Try to find an MKL header in the default location. Do this first, so
+# in case the MKL is available but no Intel compiler is used, not
+# finding LAPACK(e)/BLAS later on is not an error.
+if (NOT MKL_INCLUDE_DIR)
+  message(STATUS "Try to find MKL in default paths and via MKLROOT")
+  find_path(MKL_INCLUDE_DIR mkl.h $ENV{MKLROOT}/include)
+endif()
+if (MKL_INCLUDE_DIR)
+  set(PHIST_HAVE_MKL 1)
+  include_directories(${MKL_INCLUDE_DIR})
+endif()
+
+# For non-Intel compilers, check for additional LAPACK(e)/BLAS libraries.
+# If the MKL is present, not finding the required libs is not an error.
+# TODO Always prefer MKL over others?
 if(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
 # TODO: this assumes that if you use the intel compilers, you also have MKL (!)
 
@@ -58,7 +73,9 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
   unset(LAPACKE_LIBS CACHE)
   find_library(LAPACKE_LIBS NAMES "liblapacke.so" "liblapacke.a")
   if(LAPACKE_LIBS STREQUAL "LAPACKE_LIBS-NOTFOUND")
-    message(FATAL_ERROR "LAPACKe libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
+    if(NOT PHIST_HAVE_MKL)
+      message(FATAL_ERROR "LAPACKe libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
+    endif()
   else()
     message(STATUS "LAPACKe libraries found: ${LAPACKE_LIBS}")
     LIST(APPEND external_libs ${LAPACKE_LIBS})
@@ -68,7 +85,9 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
   unset(LAPACK_LIBS CACHE)
   find_library(LAPACK_LIBS NAMES "liblapack.so" "liblapack.a")
   if(LAPACK_LIBS STREQUAL "LAPACK_LIBS-NOTFOUND")
-    message(FATAL_ERROR "LAPACK libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
+    if(NOT PHIST_HAVE_MKL)
+      message(FATAL_ERROR "LAPACK libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
+    endif()
   else()
     message(STATUS "LAPACK libraries found: ${LAPACK_LIBS}")
     LIST(APPEND external_libs ${LAPACK_LIBS})
@@ -78,26 +97,16 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
   unset(BLAS_LIBS CACHE)
   find_library(BLAS_LIBS NAMES "libblas.so" "libblas.a")
   if(BLAS_LIBS STREQUAL "BLAS_LIBS-NOTFOUND")
-    message(FATAL_ERROR "BLAS libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
+    if(NOT PHIST_HAVE_MKL)
+      message(FATAL_ERROR "BLAS libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
+    endif()
   else()
     message(STATUS "BLAS libraries found: ${BLAS_LIBS}")
     LIST(APPEND external_libs ${BLAS_LIBS})
   endif()
 
-
 endif()
 ########################################################################
-
-# try to find a MKL header in the default location
-if (NOT MKL_INCLUDE_DIR)
-    message(STATUS "Try to find MKL in default paths and via MKLROOT")
-    find_path(MKL_INCLUDE_DIR mkl.h $ENV{MKLROOT}/include)
-endif()
-if (MKL_INCLUDE_DIR)
-    set(PHIST_HAVE_MKL 1)
-    include_directories(${MKL_INCLUDE_DIR})
-endif()
-
 
 # output behavior
 if(CMAKE_BUILD_TYPE MATCHES "Release")

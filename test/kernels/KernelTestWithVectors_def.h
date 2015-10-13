@@ -13,8 +13,6 @@ void createVecs()
   bool align_p2=(useViews_==2);
   pad_pre_=0, pad_post_=0;
   nvecPadded_=nvec_;
-  // vectors created with the same function should get the same stride (lda)
-  lidx_t lda;
   if (useViews_)
   {
     pad_pre_=align_p2?8:3;
@@ -65,33 +63,49 @@ void createVecs()
     vec3_=mem3_;
   }
 
-  // extract raw data views and check that the stride (lda) is the same for all mvecs
-  // with the same number of cols
-
-  SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda_,&this->iflag_);
-  ASSERT_EQ(0,this->iflag_);
-  lda=lda_;
-  
-  SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&lda_,&this->iflag_);
-  ASSERT_EQ(0,this->iflag_);
-  ASSERT_EQ(lda,lda_);
-  
-  SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&lda_,&this->iflag_);
-  ASSERT_EQ(0,this->iflag_);
-  ASSERT_EQ(lda,lda_);
+  // vectors created with the same function should get the same stride (lda)
+  lidx_t lda;
 
   // extract raw data of complete memory block
-  SUBR(mvec_extract_view)(mem1_,&mem1_vp_,&lda_,&this->iflag_);
+  SUBR(mvec_extract_view)(mem1_,&mem1_vp_,&lda,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
-  ASSERT_EQ(lda,lda_);
+  lda_=lda;
   
-  SUBR(mvec_extract_view)(mem2_,&mem2_vp_,&lda_,&this->iflag_);
+  SUBR(mvec_extract_view)(mem2_,&mem2_vp_,&lda,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
-  ASSERT_EQ(lda,lda_);
+  ASSERT_EQ(lda_,lda);
   
-  SUBR(mvec_extract_view)(mem3_,&mem3_vp_,&lda_,&this->iflag_);
+  SUBR(mvec_extract_view)(mem3_,&mem3_vp_,&lda,&this->iflag_);
   ASSERT_EQ(0,this->iflag_);
-  ASSERT_EQ(lda,lda_);
+  ASSERT_EQ(lda_,lda);
+
+
+  // extract raw data of viewed block
+  lidx_t lda2;
+  SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda2,&this->iflag_);
+  ASSERT_EQ(0,this->iflag_);
+  lda = lda2;
+  
+  SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&lda2,&this->iflag_);
+  ASSERT_EQ(0,this->iflag_);
+  ASSERT_EQ(lda,lda2);
+  
+  SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&lda2,&this->iflag_);
+  ASSERT_EQ(0,this->iflag_);
+  ASSERT_EQ(lda,lda2);
+
+  // lda might be irrelevant for small views and not set by the kernel library
+#ifdef PHIST_MVECS_ROW_MAJOR
+  if( this->nloc_ > 1 ) {
+#else
+  if( nvec_ > 1 ) {
+#endif
+    ASSERT_EQ(lda_,lda2);
+  } else {
+    ASSERT_EQ(lda_,lda_);
+  }
+
+
 
   stride_=1;
   if (useViews_)
