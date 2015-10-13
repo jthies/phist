@@ -26,12 +26,15 @@
 #define _NROWS_ _N_
 #define _NCOLS_ _M_
 
-// construct test def file name
+// construct test def file name. The user may overrule this by pre-defining CLASSFILE_DEF
+#ifndef CLASSFILE_DEF
+#define CLASSFILE_DEF_WAS_UNDEFINED
 #define CLASSFILE_DEF CF_EVAL_CONCATENATE_AND_QUOTE(_BASENAME_)
 #define CF_EVAL_QUOTE(y) CF_QUOTE(y)
 #define CF_QUOTE(x) #x
 #define CF_EVAL_CONCATENATE_AND_QUOTE(x) CF_CONCATENATE_AND_QUOTE(x)
 #define CF_CONCATENATE_AND_QUOTE(x) CF_EVAL_QUOTE(x##_def.hpp)
+#endif
 
 // different types
 #ifdef PHIST_HAVE_SP
@@ -70,7 +73,10 @@
 #undef CN_CONCATENATE
 #undef CN_EVAL_CONCATENATE
 
+#ifdef CLASSFILE_DEF_WAS_UNDEFINED
 #undef CLASSFILE_DEF
+#undef CLASSFILE_DEF_WAS_UNDEFINED
+#endif
 #undef BASENAME_DIM
 
 #undef _N_

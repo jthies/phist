@@ -168,12 +168,6 @@ void dgemm_sb_prec_k_4(int nrows, int k, double alpha, const double *restrict x,
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
-  if( !is_aligned(x,32) )
-  {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
-    exit(1);
-    return;
-  }
   if( !is_aligned(y,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
@@ -235,12 +229,6 @@ void dgemm_sb_prec_k_2(int nrows, int k, double alpha, const double *restrict x,
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
-  if( !is_aligned(x,32) )
-  {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
-    exit(1);
-    return;
-  }
   if( !is_aligned(y,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
@@ -304,12 +292,6 @@ void dgemm_sb_prec_k_1(int nrows, int k, double alpha, const double *restrict x,
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
-  if( !is_aligned(x,32) )
-  {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
-    exit(1);
-    return;
-  }
   if( !is_aligned(y,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
@@ -370,12 +352,6 @@ void dgemm_sb_prec_k_4_nt(int nrows, int k, double alpha, const double *restrict
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
-  if( !is_aligned(x,32) )
-  {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
-    exit(1);
-    return;
-  }
   if( !is_aligned(y,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
@@ -429,12 +405,6 @@ void dgemm_sb_prec_k_2_nt(int nrows, int k, double alpha, const double *restrict
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
-  if( !is_aligned(x,32) )
-  {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
-    exit(1);
-    return;
-  }
   if( !is_aligned(y,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
@@ -492,12 +462,6 @@ void dgemm_sb_prec_k_1_nt(int nrows, int k, double alpha, const double *restrict
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
-  if( !is_aligned(x,32) )
-  {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
-    exit(1);
-    return;
-  }
   if( !is_aligned(y,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
@@ -551,12 +515,6 @@ void dgemm_sb_prec_k_strided_4(int nrows, int k, double alpha, const double *res
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
-  if( !is_aligned(x,32) )
-  {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
-    exit(1);
-    return;
-  }
   if( !is_aligned(y,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
@@ -665,12 +623,6 @@ void dgemm_sb_prec_k_strided_1(int nrows, int k, double alpha, const double *res
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
-  if( !is_aligned(x,32) )
-  {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
-    exit(1);
-    return;
-  }
   if( !is_aligned(y,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
@@ -720,12 +672,6 @@ void dgemm_sb_prec_k_strided_4_nt(int nrows, int k, double alpha, const double *
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
-  if( !is_aligned(x,32) )
-  {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
-    exit(1);
-    return;
-  }
   if( !is_aligned(y,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
@@ -779,12 +725,6 @@ void dgemm_sb_prec_k_strided_2_nt(int nrows, int k, double alpha, const double *
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
-  if( !is_aligned(x,32) )
-  {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
-    exit(1);
-    return;
-  }
   if( !is_aligned(y,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
@@ -842,12 +782,6 @@ void dgemm_sb_prec_k_strided_1_nt(int nrows, int k, double alpha, const double *
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
-  if( !is_aligned(x,32) )
-  {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
-    exit(1);
-    return;
-  }
   if( !is_aligned(y,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);

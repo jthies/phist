@@ -52,53 +52,96 @@ else()
   include_directories(${LAPACKE_INCL})
 endif()
 
-if(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
-# TODO: this assumes that if you use the intel compilers, you also have MKL (!)
-
-  # LAPACKe
-  unset(LAPACKE_LIBS CACHE)
-  find_library(LAPACKE_LIBS NAMES "liblapacke.so" "liblapacke.a")
-  if(LAPACKE_LIBS STREQUAL "LAPACKE_LIBS-NOTFOUND")
-    message(FATAL_ERROR "LAPACKe libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
-  else()
-    message(STATUS "LAPACKe libraries found: ${LAPACKE_LIBS}")
-    LIST(APPEND external_libs ${LAPACKE_LIBS})
-  endif()
-
-  # LAPACK
-  unset(LAPACK_LIBS CACHE)
-  find_library(LAPACK_LIBS NAMES "liblapack.so" "liblapack.a")
-  if(LAPACK_LIBS STREQUAL "LAPACK_LIBS-NOTFOUND")
-    message(FATAL_ERROR "LAPACK libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
-  else()
-    message(STATUS "LAPACK libraries found: ${LAPACK_LIBS}")
-    LIST(APPEND external_libs ${LAPACK_LIBS})
-  endif()
-
-  # BLAS
-  unset(BLAS_LIBS CACHE)
-  find_library(BLAS_LIBS NAMES "libblas.so" "libblas.a")
-  if(BLAS_LIBS STREQUAL "BLAS_LIBS-NOTFOUND")
-    message(FATAL_ERROR "BLAS libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
-  else()
-    message(STATUS "BLAS libraries found: ${BLAS_LIBS}")
-    LIST(APPEND external_libs ${BLAS_LIBS})
-  endif()
-
-
-endif()
-########################################################################
-
-# try to find a MKL header in the default location
+# Try to find an MKL header in the default location. Do this first, so
+# in case the MKL is available but no Intel compiler is used, not
+# finding LAPACK(e)/BLAS later on is not an error.
 if (NOT MKL_INCLUDE_DIR)
-    message(STATUS "Try to find MKL in default paths and via MKLROOT")
-    find_path(MKL_INCLUDE_DIR mkl.h $ENV{MKLROOT}/include)
+  message(STATUS "Try to find MKL in default paths and via MKLROOT")
+  find_path(MKL_INCLUDE_DIR mkl.h $ENV{MKLROOT}/include)
 endif()
 if (MKL_INCLUDE_DIR)
-    set(PHIST_HAVE_MKL 1)
-    include_directories(${MKL_INCLUDE_DIR})
+  set(PHIST_HAVE_MKL 1)
+  include_directories(${MKL_INCLUDE_DIR})
 endif()
 
+# For non-Intel compilers, check for additional LAPACK(e)/BLAS libraries.
+# If the MKL is present, not finding the required libs is not an error.
+# TODO Always prefer MKL over others?
+if(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
+# TODO: this assumes that if you use the intel compilers, you also have MKL (!)
+#=======================================================================
+  if(PHIST_HAVE_MKL)
+    # TODO write a module for that
+#-----------------------------------------------------------------------
+    # interface
+    unset(MKL_INTERFACE_LIBS CACHE)
+    find_library(MKL_INTERFACE_LIBS NAMES mkl_intel_ilp64 PATHS "$ENV{MKLROOT}/lib/*")
+    if(MKL_INTERFACE_LIBS STREQUAL "MKL_INTERFACE_LIBS-NOTFOUND")
+      message(FATAL_ERROR "Could not find MKL interface library. Is the MKLROOT environment variable set properly?")
+    else()
+      message(STATUS "MKL interface library found: ${MKL_INTERFACE_LIBS}")
+      LIST(APPEND external_libs ${MKL_INTERFACE_LIBS})
+    endif()
+#-----------------------------------------------------------------------
+    # threading or sequential
+    unset(MKL_THREADING_LIBS CACHE)
+    if( PHIST_ENABLE_OPENMP )
+      # linking the GNU variant, we shouldn't need libiomp5.
+      find_library(MKL_THREADING_LIBS NAMES mkl_gnu_thread PATHS "$ENV{MKLROOT}/lib/*")
+    else()
+      find_library(MKL_THREADING_LIBS NAMES mkl_sequential PATHS "$ENV{MKLROOT}/lib/*")
+    endif()
+    if(MKL_THREADING_LIBS STREQUAL "MKL_THREADING_LIBS-NOTFOUND")
+      message(FATAL_ERROR "Could not find MKL threading library. Is the MKLROOT environment variable set properly?")
+    else()
+      message(STATUS "MKL threading library found: ${MKL_THREADING_LIBS}")
+      LIST(APPEND external_libs ${MKL_THREADING_LIBS})
+    endif()
+#-----------------------------------------------------------------------
+    # core libs
+    unset(MKL_COMPUTING_LIBS CACHE)
+    find_library(MKL_COMPUTING_LIBS NAMES mkl_core PATHS "$ENV{MKLROOT}/lib/*")
+    if(MKL_COMPUTING_LIBS STREQUAL "MKL_COMPUTING_LIBS-NOTFOUND")
+      message(FATAL_ERROR "Could not find MKL computing library. Is the MKLROOT environment variable set properly?")
+    else()
+      message(STATUS "MKL computing library found: ${MKL_COMPUTING_LIBS}")
+      LIST(APPEND external_libs ${MKL_COMPUTING_LIBS})
+    endif()
+  else()
+#=======================================================================
+    # LAPACKe
+    unset(LAPACKE_LIBS CACHE)
+    find_library(LAPACKE_LIBS NAMES "liblapacke.so" "liblapacke.a")
+    if(LAPACKE_LIBS STREQUAL "LAPACKE_LIBS-NOTFOUND")
+      message(FATAL_ERROR "LAPACKe libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
+    else()
+      message(STATUS "LAPACKe libraries found: ${LAPACKE_LIBS}")
+      LIST(APPEND external_libs ${LAPACKE_LIBS})
+    endif()
+#-----------------------------------------------------------------------
+    # LAPACK
+    unset(LAPACK_LIBS CACHE)
+    find_library(LAPACK_LIBS NAMES "liblapack.so" "liblapack.a")
+    if(LAPACK_LIBS STREQUAL "LAPACK_LIBS-NOTFOUND")
+      message(FATAL_ERROR "LAPACK libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
+    else()
+      message(STATUS "LAPACK libraries found: ${LAPACK_LIBS}")
+      LIST(APPEND external_libs ${LAPACK_LIBS})
+    endif()
+#-----------------------------------------------------------------------
+    # BLAS
+    unset(BLAS_LIBS CACHE)
+    find_library(BLAS_LIBS NAMES "libblas.so" "libblas.a")
+    if(BLAS_LIBS STREQUAL "BLAS_LIBS-NOTFOUND")
+      message(FATAL_ERROR "BLAS libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
+    else()
+      message(STATUS "BLAS libraries found: ${BLAS_LIBS}")
+      LIST(APPEND external_libs ${BLAS_LIBS})
+    endif()
+#=======================================================================
+  endif()
+endif()
+########################################################################
 
 # output behavior
 if(CMAKE_BUILD_TYPE MATCHES "Release")
@@ -130,6 +173,11 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
       set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -fopenmp -fopenmp-simd")
       set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -fopenmp -fopenmp-simd")
     endif ()
+  endif()
+
+  if(PHIST_HAVE_MKL)
+    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -DMKL_ILP64")
+    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -DMKL_ILP64")
   endif()
 
   # -ffast-math kills high precision stuff!
@@ -206,6 +254,8 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
       set (CMAKE_CXX_FLAGS_DEBUG      "-mmic -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
       set (CMAKE_Fortran_FLAGS_DEBUG  "-mmic -check all -debug -traceback -DTESTING")
   endif()
+  # this is for some reason required with Intel 15 on Emmy:
+  set (CMAKE_EXE_LINKER_FLAGS_DEBUG "-lifcore -lifport")
 
   # for ipo
   # melven: probably not useful or even dangerous?
@@ -289,6 +339,7 @@ if (${PHIST_ENABLE_MPI})
   endif()
   set(MPIEXEC "mpirun" CACHE STRING "")
   set(MPIEXEC_NUMPROC_FLAG "-np" CACHE STRING "")
+  set(MPIEXEC_ENVIRONMENT "OMPI_MCA_hwloc_base_binding_policy=none" CACHE STRING "")
 endif()
 
 ##############################################################################
@@ -929,7 +980,7 @@ endforeach()
 enable_testing()
 
 if (${PHIST_ENABLE_MPI})
-  set(PHIST_MPI_TEST_NPROCS 1 2 3 12 24)
+  set(PHIST_MPI_TEST_NPROCS 1 2 3 24)
 else()
   set(PHIST_MPI_TEST_NPROCS "")
 endif()
@@ -937,12 +988,13 @@ endif()
 foreach(np ${PHIST_MPI_TEST_NPROCS})
   math(EXPR TEST_OMP_NUM_THREADS "24/${np}")
   foreach(label ${PHIST_TESTS})
-    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env LSAN_OPTIONS=\"exitcode=0\" env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=guided,256
+    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env LSAN_OPTIONS=\"exitcode=0\" env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=guided
     ./${PRODUCT_NAME}-${label}-test --gtest_death_test_style=threadsafe --gtest_output=xml:test_output_np${np}/${label}/xunit.xml)
     add_test(NAME test-${label}_np${np} COMMAND ${TEST_COMMAND})
     set_tests_properties(test-${label}_np${np} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
     set_tests_properties(test-${label}_np${np} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
     set_tests_properties(test-${label}_np${np} PROPERTIES TIMEOUT 500)
+    set_tests_properties(test-${label}_np${np} PROPERTIES ENVIRONMENT ${MPIEXEC_ENVIRONMENT})
   endforeach()
   # the task tests should be very fast (no heavy computation) - but may deadlock in case of errors!
   set_tests_properties(test-task_np${np} PROPERTIES TIMEOUT 10)
@@ -954,7 +1006,7 @@ if(PYTHONINTERP_FOUND)
   foreach(pyh ${PYTHON_HEADERS})
     get_filename_component(pyh_name ${pyh} NAME)
     add_test(NAME test-${pyh_name} COMMAND ${PYTHON_EXECUTABLE} ${pyh})
-    set_tests_properties(test-${pyh_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH}")
+    set_tests_properties(test-${pyh_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH} PHIST_NUM_THREADS=12 OMP_NUM_THREADS=12 OMP_SCHEDULE=guided")
     if( GCC_SANITIZE )
       # we need to LD_PRELOAD the respective lib<.>san.so library
       string(SUBSTRING ${GCC_SANITIZE} 0 1 GCC_SANITIZE_FIRST_CHAR)

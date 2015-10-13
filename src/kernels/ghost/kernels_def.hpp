@@ -33,6 +33,7 @@ const char* filename,int* iflag)
 
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
+  int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
 #ifdef PHIST_USE_SELL
   int sellC, sellSigma;
   get_C_sigma(&sellC,&sellSigma,*iflag, *((MPI_Comm*)vcomm));
@@ -70,10 +71,10 @@ PHIST_TASK_BEGIN(ComputeTask)
       if (repart)
       {
 #ifdef USE_SCOTCH
-          PHIST_SOUT(PHIST_INFO, "Trying to repartition the matrix with SCOTCH\n");
+          PHIST_SOUT(outlev, "Trying to repartition the matrix with SCOTCH\n");
           flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
 #else
-          PHIST_SOUT(PHIST_WARNING, "SCOTCH not available, no matrix repartitioning\n");
+          PHIST_SOUT(outlev, "SCOTCH not available, no matrix repartitioning\n");
 #endif
       }
         mtraits->datatype = st::ghost_dt;
@@ -84,13 +85,12 @@ PHIST_TASK_BEGIN(ComputeTask)
         GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_MM,*comm,1.0),*iflag);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,mtraits,1),*iflag);                               
   PHIST_CHK_GERR(mat->fromMM(mat,cfname),*iflag);
-//#if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;
   ghost_context_string(&str,ctx);
-  PHIST_SOUT(PHIST_INFO,"%s\n",str);
+  PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
   ghost_sparsemat_string(&str,mat);
-  PHIST_SOUT(PHIST_INFO,"%s\n",str);
+  PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
 //#endif
   *vA = (TYPE(sparseMat_ptr))mat;
@@ -106,10 +106,11 @@ const char* filename,int* iflag)
 
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
+  int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
 #ifdef PHIST_USE_SELL
   int sellC, sellSigma;
   get_C_sigma(&sellC,&sellSigma,*iflag, *((MPI_Comm*)vcomm));
-  PHIST_SOUT(PHIST_INFO, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
+  PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
 #endif
   *iflag=0;
 
@@ -144,10 +145,10 @@ PHIST_TASK_BEGIN(ComputeTask)
         if (repart)
         {
 #ifdef USE_SCOTCH
-          PHIST_SOUT(PHIST_INFO, "Trying to repartition the matrix with SCOTCH\n");
+          PHIST_SOUT(outlev, "Trying to repartition the matrix with SCOTCH\n");
           flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
 #else
-          PHIST_SOUT(PHIST_WARNING, "SCOTCH not available, no matrix repartitioning\n");
+          PHIST_SOUT(outlev, "SCOTCH not available, no matrix repartitioning\n");
 #endif
         }
         mtraits->datatype = st::ghost_dt;
@@ -161,10 +162,10 @@ PHIST_TASK_BEGIN(ComputeTask)
 //#if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;
   ghost_context_string(&str,ctx);
-  PHIST_SOUT(PHIST_INFO,"%s\n",str);
+  PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
   ghost_sparsemat_string(&str,mat);
-  PHIST_SOUT(PHIST_INFO,"%s\n",str);
+  PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
 //#endif
   *vA = (TYPE(sparseMat_ptr))mat;
@@ -681,7 +682,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CHK_IERR(*iflag=(Vblock->traits.nrows==V->traits.nrows)?0:PHIST_INVALID_INPUT,*iflag)
   // not sure what the ghost function fromVec actually supports, but I think 
   // this makes sense:
-  PHIST_CHK_IERR(*iflag=(Vblock->traits.nrowspadded==V->traits.nrowspadded)?0:PHIST_INVALID_INPUT,*iflag)
+  //PHIST_CHK_IERR(*iflag=(Vblock->traits.nrowspadded==V->traits.nrowspadded)?0:PHIST_INVALID_INPUT,*iflag)
 #else
   PHIST_TOUCH(jmax);
 #endif  
@@ -1006,6 +1007,7 @@ extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag)
   for(int i = 0; i < m; i++)
     for(int j = 0; j < n; j++)
       V_raw[lda*i+j] = (i==j) ? st::one() : st::zero();
+  PHIST_CHK_IERR(SUBR(sdMat_to_device)(V,iflag),*iflag);
 }
 
 //! put random numbers into all elements of a multi-vector
@@ -1511,7 +1513,28 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE
   */
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
-  PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&mybeta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
+  ghost_error_t gemm_err = ghost_gemm(C,V,trans,W,(char*)"N",(void*)&alpha,(void*)&mybeta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT);
+  if( gemm_err == GHOST_ERR_NOT_IMPLEMENTED )
+  {
+    // copy result
+    ghost_densemat_t* Ccopy=NULL;
+    ghost_densemat_traits_t vtraits = C->traits;
+    vtraits.storage=GHOST_DENSEMAT_ROWMAJOR;  
+    vtraits.flags = (ghost_densemat_flags_t)((int)vtraits.flags & ~(int)GHOST_DENSEMAT_VIEW);
+    vtraits.ncolsorig=vtraits.ncols;
+    vtraits.nrowsorig=vtraits.nrows;
+    ghost_densemat_create(&Ccopy,C->context,vtraits);
+
+    // this allocates the memory for the vector, copies and memTransposes the data
+    PHIST_CHK_GERR(Ccopy->fromVec(Ccopy,C,0,0),*iflag);
+
+    PHIST_CHK_GERR(gemm_err = ghost_gemm(Ccopy,V,trans,W,(char*)"N",(void*)&alpha,(void*)&mybeta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
+
+    // memtranspose data
+    PHIST_CHK_GERR(C->fromVec(C,Ccopy,0,0),*iflag);
+    Ccopy->destroy(Ccopy);
+  }
+  PHIST_CHK_GERR(gemm_err,*iflag);
 PHIST_TASK_END(iflag);
 
 PHIST_TASK_POST_STEP(iflag);
@@ -1655,25 +1678,6 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CHK_GERR(ghost_gemm(C, V, (char*)"N", W, trans, (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_TASK_END(iflag);
   }
-
-//! stable cholesky factorization with pivoting and rank-recognition for hpd. matrix
-//! returns permuted lower triangular cholesky factor M for M <- M*M'
-extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, int* iflag)
-{
-  *iflag = PHIST_NOT_IMPLEMENTED;
-}
-
-//! backward substitution for pivoted upper triangular cholesky factor
-extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
-{
-  *iflag = PHIST_NOT_IMPLEMENTED;
-}
-
-//! forward substitution for pivoted conj. transposed upper triangular cholesky factor
-extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
-{
-  *iflag = PHIST_NOT_IMPLEMENTED;
-}
 
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.   
@@ -1851,10 +1855,11 @@ void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, const_comm_ptr_
 
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
+  int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
 #ifdef PHIST_USE_SELL
   int sellC, sellSigma;
   get_C_sigma(&sellC,&sellSigma,*iflag, *((MPI_Comm*)vcomm));
-  PHIST_SOUT(PHIST_INFO, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
+  PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
 #endif
   *iflag=0;
   
@@ -1883,15 +1888,15 @@ PHIST_TASK_BEGIN(ComputeTask)
         if (repart)
         {
 #ifdef USE_SCOTCH
-          PHIST_SOUT(PHIST_INFO, "Trying to repartition the matrix with SCOTCH\n");
+          PHIST_SOUT(outlev, "Trying to repartition the matrix with SCOTCH\n");
           flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
 #else
-          PHIST_SOUT(PHIST_WARNING, "SCOTCH not available, no matrix repartitioning\n");
+          PHIST_SOUT(outlev, "SCOTCH not available, no matrix repartitioning\n");
 #endif
         }
         else
         {
-          PHIST_SOUT(PHIST_INFO, "No matrix repartitioning requested\n");
+          PHIST_SOUT(outlev, "No matrix repartitioning requested\n");
         }
         mtraits->datatype = st::ghost_dt;
         mtraits->flags = flags;
@@ -1907,10 +1912,10 @@ PHIST_TASK_BEGIN(ComputeTask)
 //#if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;
   ghost_context_string(&str,ctx);
-  PHIST_SOUT(PHIST_INFO,"%s\n",str);
+  PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
   ghost_sparsemat_string(&str,mat);
-  PHIST_SOUT(PHIST_INFO,"%s\n",str);
+  PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
 //#endif
   *vA = (TYPE(sparseMat_ptr))mat;

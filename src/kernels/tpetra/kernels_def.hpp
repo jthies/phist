@@ -708,7 +708,7 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* iflag)
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*iflag);
 #ifdef TESTING
-  PHIST_SOUT(PHIST_WARNING,"gathering global vector (only in TESTING mode)\n");
+  PHIST_SOUT(PHIST_DEBUG,"gathering global vector (only in TESTING mode)\n");
   // make results reproducible by doing a sequential randomization and then a 'scatter'
   Teuchos::RCP<const map_t> map = V->getMap();
   gidx_t nglob=map->getGlobalNumElements();
@@ -1125,28 +1125,6 @@ extern "C" void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
   PHIST_TRY_CATCH(C->multiply(Teuchos::NO_TRANS,Teuchos::CONJ_TRANS,
         alpha, *V, *W, beta), *iflag);
   }
-
-
-//! stable cholesky factorization with pivoting and rank-recognition for hpd. matrix
-//! returns permuted lower triangular cholesky factor M for M <- M*M'
-extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, int* iflag)
-{
-  *iflag = PHIST_NOT_IMPLEMENTED;
-}
-
-//! backward substitution for pivoted upper triangular cholesky factor
-extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
-{
-  *iflag = PHIST_NOT_IMPLEMENTED;
-}
-
-//! forward substitution for pivoted conj. transposed upper triangular cholesky factor
-extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
-{
-  *iflag = PHIST_NOT_IMPLEMENTED;
-}
-
-
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.   
 //! Q is computed in place of V. If V does not have full rank, iflag>0   

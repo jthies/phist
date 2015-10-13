@@ -27,6 +27,7 @@
 #define PHIST_SPARSEMAT_OPT_SINGLESPMVM 4
 #define PHIST_SPARSEMAT_OPT_BLOCKSPMVM 8
 #define PHIST_SPARSEMAT_OPT_CARP 16
+#define PHIST_SPARSEMAT_QUIET 32
 
 #define PHIST_SPARSEMAT_FLAGS_DESCRIPTION \
 "     PHIST_IFLAG_DEFAULT 0 \n" \
@@ -34,7 +35,8 @@
 "     PHIST_SPARSEMAT_DIST2_COLOR 2 \n" \
 "     PHIST_SPARSEMAT_OPT_SINGLESPMVM 4 \n" \
 "     PHIST_SPARSEMAT_OPT_BLOCKSPMVM 8 \n" \
-"     PHIST_SPARSEMAT_OPT_CARP 16 \n"
+"     PHIST_SPARSEMAT_OPT_CARP 16 \n" \
+"     PHIST_SPARSEMAT_QUIET 32 \n"
 
 /* When this flag was passed to mvec_create, the memory for
    the multi-vector is allocated both on host and device for CUDA

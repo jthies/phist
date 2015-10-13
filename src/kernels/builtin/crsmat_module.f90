@@ -131,10 +131,11 @@ contains
   !> calculate the communication scheme that is needed for matrix vector
   !! multiplication for a distributed matrix in crs format.
   !! Also allocates necessary buffer space.
-  subroutine setup_commBuff(mat,combuff)
+  subroutine setup_commBuff(mat,combuff, verbose)
     use mpi
     type(CrsMat_t),      intent(in)    :: mat
     type(CrsCommBuff_t), intent(inout) :: combuff
+    logical,             intent(in)    :: verbose
     !--------------------------------------------------------------------------------
     integer,allocatable :: recvnum(:)
     integer,allocatable :: sendnum(:)
@@ -349,7 +350,7 @@ end do
     localMaxComm = max(localSendBytes, localRecvBytes)
     call mpi_reduce(localMaxComm, globalMaxComm, 1, MPI_DOUBLE_PRECISION, &
       &             MPI_MAX, 0, mat%row_map%Comm, ierr)
-    if( mat%row_map%me .eq. 0 ) then
+    if( verbose .and. mat%row_map%me .eq. 0 ) then
       write(*,'(A,e12.5,A,e12.5,A,e12.5)') 'Communication volume for single spMVM (Bytes): total ', globalCommVolume, &
         &        ', per direction avg.: ', globalCommVolume/2/mat%row_map%nProcs,            &
         &        ', and max.: ', globalMaxComm
@@ -1692,11 +1693,13 @@ end subroutine permute_local_matrix
     integer(kind=8) :: tmp_idx(2,2)
     real(kind=8) :: tmp_val(2)
     integer :: newEntries
+    logical :: verbose
     !--------------------------------------------------------------------------------
     
     repart = CHECK_IFLAG(ierr,PHIST_SPARSEMAT_REPARTITION)
     d2clr_and_permute =  CHECK_IFLAG(ierr,PHIST_SPARSEMAT_DIST2_COLOR)
     d2clr = CHECK_IFLAG(ierr,PHIST_SPARSEMAT_OPT_CARP)
+    verbose = .not. CHECK_IFLAG(ierr,PHIST_SPARSEMAT_QUIET)
     ierr=0
     
     do i = 1, filename_len
@@ -1704,8 +1707,10 @@ end subroutine permute_local_matrix
     end do
 
     ! open the file
-    write(*,*) 'reading file:', filename
-    flush(6)
+    if( verbose ) then
+      write(*,*) 'reading file:', filename
+      flush(6)
+    end if
     open(unit   = newunit(funit), file    = filename, &
       &  action = 'read',         status  = 'old',    &
       &  iostat = ierr)
@@ -1713,15 +1718,19 @@ end subroutine permute_local_matrix
 
     ! read first line
     read(funit,'(A)') line
-    write(*,*) line
-    flush(6)
+    if( verbose ) then
+      write(*,*) line
+      flush(6)
+    end if
     if( trim(line) .eq. '%%MatrixMarket matrix coordinate real general' ) then
       symmetric = .false.
     elseif( trim(line) .eq. '%%MatrixMarket matrix coordinate real symmetric' ) then
       symmetric = .true.
     else
-      write(*,*) 'unsupported format'
-      flush(6)
+      if( verbose ) then
+        write(*,*) 'unsupported format'
+        flush(6)
+      end if
       ierr = PHIST_NOT_IMPLEMENTED
       return
     end if
@@ -1743,10 +1752,12 @@ end subroutine permute_local_matrix
     else
       globalEntries = nRows
     end if
-    write(*,*) 'CrsMat:', globalRows, globalCols, globalEntries
-    flush(6)
+    if( verbose ) then
+      write(*,*) 'CrsMat:', globalRows, globalCols, globalEntries
+      flush(6)
+    end if
     call c_f_pointer(comm_ptr, comm)
-    call map_setup(A%row_map, comm, globalRows, ierr)
+    call map_setup(A%row_map, comm, globalRows, verbose, ierr)
     if( ierr .ne. 0 ) return
 
     A%nRows = A%row_map%nlocal(A%row_map%me)
@@ -1882,12 +1893,12 @@ end subroutine permute_local_matrix
 !end do
 
 
-    call setup_commBuff(A, A%comm_buff)
+    call setup_commBuff(A, A%comm_buff, verbose)
     call sort_rows_local_nonlocal(A)
 
 #ifdef PHIST_HAVE_COLPACK
     if (d2clr_and_permute) then
-      if (A%row_map%me==0) then
+      if (verbose .and. A%row_map%me==0) then
         write(*,*) 'WARNING: you have specified the flag PHIST_SPARSEMAT_DIST2_COLOR,', &
                    '         which is DEPRECATED and only used for benchmarking coloring ', &
                    '         permutations. Use PHIST_SPARSEMAT_OPT_CARP instead if you want', &
@@ -1903,13 +1914,15 @@ end subroutine permute_local_matrix
       call colorcrs(A,2,3,ierr)
     end if
 #else
-    if (d2clr.or.d2clr_and_permute .and. A%row_map%me==0) then
+    if (verbose .and. (d2clr.or.d2clr_and_permute) .and. A%row_map%me==0) then
       write(*,*) 'COLPACK not available, flags DIST2_COLOR and OPT_CARP are ignored'
     end if
 #endif
 
-    write(*,*) 'created new crsMat with dimensions', A%nRows, A%nCols, A%nEntries
-    flush(6)
+    if( verbose ) then
+      write(*,*) 'created new crsMat with dimensions', A%nRows, A%nCols, A%nEntries
+      flush(6)
+    end if
     A_ptr = c_loc(A)
 
     ierr = 0
@@ -1948,6 +1961,7 @@ end subroutine permute_local_matrix
     integer(kind=8) :: localDim(2), globalDim(2)
     real(kind=8) :: wtime
     integer, pointer :: comm
+    logical :: verbose
     !--------------------------------------------------------------------------------
 
     repart = CHECK_IFLAG(ierr,PHIST_SPARSEMAT_REPARTITION)
@@ -1956,11 +1970,14 @@ end subroutine permute_local_matrix
     ! just for benchmarking the performance impact of the coloring now.
     d2clr_and_permute =  CHECK_IFLAG(ierr,PHIST_SPARSEMAT_DIST2_COLOR)
     d2clr =  CHECK_IFLAG(ierr,PHIST_SPARSEMAT_OPT_CARP)
+    verbose = .not. CHECK_IFLAG(ierr,PHIST_SPARSEMAT_QUIET)
 #ifdef F_DEBUG
-    write(*,*) 'ierr=',ierr
-    write(*,*) 'repart=',repart
-    write(*,*) 'd2clr=',d2clr
-    write(*,*) 'd2clr_and_permute=',d2clr_and_permute
+    if( verbose ) then
+      write(*,*) 'ierr=',ierr
+      write(*,*) 'repart=',repart
+      write(*,*) 'd2clr=',d2clr
+      write(*,*) 'd2clr_and_permute=',d2clr_and_permute
+    end if
 #endif
     ierr=0
     ! get procedure pointer
@@ -1974,9 +1991,9 @@ end subroutine permute_local_matrix
     globalCols = ncols
     globalEntries = int(maxnne_per_row,kind=8)*int(nrows,kind=8)
 
-    call map_setup(A%row_map, comm, globalRows, ierr)
+    call map_setup(A%row_map, comm, globalRows, verbose, ierr)
     if( ierr .ne. 0 ) return
-    if( A%row_map%me .eq. 0 ) then
+    if( verbose .and. A%row_map%me .eq. 0 ) then
       write(*,*) 'creating matrix from rowFunc'
       write(*,*) 'CrsMat:', globalRows, globalCols, globalEntries
       flush(6)
@@ -2032,7 +2049,7 @@ wtime = mpi_wtime()
 
 call mpi_barrier(A%row_map%comm, ierr)
 wtime = mpi_wtime() - wtime
-if( A%row_map%me .eq. 0 ) then
+if( verbose .and. A%row_map%me .eq. 0 ) then
   write(*,*) 'read matrix from row func in', wtime, 'seconds'
   flush(6)
 end if
@@ -2043,7 +2060,7 @@ wtime = mpi_wtime()
 
 call mpi_barrier(A%row_map%comm, ierr)
 wtime = mpi_wtime() - wtime
-if( A%row_map%me .eq. 0 ) then
+if( verbose .and. A%row_map%me .eq. 0 ) then
   write(*,*) 'sort global cols in', wtime, 'seconds'
   flush(6)
 end if
@@ -2054,7 +2071,7 @@ end if
     wtime = mpi_wtime()
     call repartcrs(A,3,ierr)
     if (ierr/=0) then
-      if( A%row_map%me .eq. 0 ) then
+      if( verbose .and. A%row_map%me .eq. 0 ) then
         write(*,*) 'repartitioning failed with error code ',ierr
       end if
       return
@@ -2062,7 +2079,7 @@ end if
 
     call mpi_barrier(A%row_map%comm, ierr)
     wtime = mpi_wtime() - wtime
-    if( A%row_map%me .eq. 0 ) then
+    if( verbose .and. A%row_map%me .eq. 0 ) then
       write(*,*) 'repartitioned in', wtime, 'seconds'
     end if
   end if
@@ -2093,11 +2110,11 @@ end if
 
 wtime = mpi_wtime()
 
-    call setup_commBuff(A, A%comm_buff)
+    call setup_commBuff(A, A%comm_buff, verbose)
 
 call mpi_barrier(A%row_map%comm, ierr)
 wtime = mpi_wtime() - wtime
-if( A%row_map%me .eq. 0 ) then
+if( verbose .and. A%row_map%me .eq. 0 ) then
   write(*,*) 'setup comm buffers in', wtime, 'seconds'
 end if
 
@@ -2108,13 +2125,13 @@ wtime = mpi_wtime()
 
 call mpi_barrier(A%row_map%comm, ierr)
 wtime = mpi_wtime() - wtime
-if( A%row_map%me .eq. 0 ) then
+if( verbose .and. A%row_map%me .eq. 0 ) then
   write(*,*) 'sorted rows local/nonlocal in', wtime, 'seconds'
 end if
 
 #ifdef PHIST_HAVE_COLPACK
     if (d2clr_and_permute) then
-      if (A%row_map%me==0) then
+      if (verbose .and. A%row_map%me==0) then
         write(*,*) 'WARNING: you have specified the flag PHIST_SPARSEMAT_DIST2_COLOR,', &
                    '         which is DEPRECATED and only used for benchmarking coloring ', &
                    '         permutations. Use PHIST_SPARSEMAT_OPT_CARP instead if you want', &
@@ -2130,7 +2147,7 @@ end if
       call colorcrs(A,2,3,ierr)
     end if
 #else
-    if (d2clr.or.d2clr_and_permute .and. A%row_map%me==0) then
+    if (verbose .and. (d2clr.or.d2clr_and_permute) .and. A%row_map%me==0) then
       write(*,*) 'COLPACK not available, flags DIST2_COLOR and OPT_CARP are ignored'
     end if
 #endif
@@ -2140,7 +2157,7 @@ end if
     localDim(2) = A%nEntries
     call mpi_allreduce(localDim, globalDim, 2, MPI_INTEGER8, MPI_SUM, &
       &                A%row_map%comm, ierr)
-    if( A%row_map%me .eq. 0 ) then
+    if( verbose .and. A%row_map%me .eq. 0 ) then
       write(*,*) 'created new crsMat with dimensions', globalDim
       flush(6)
     end if

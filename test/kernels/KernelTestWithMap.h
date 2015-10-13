@@ -17,6 +17,7 @@ virtual void SetUp()
   KernelTest::SetUp();
   problemTooSmall_ = mpi_size_ > nglob_;
   map_ptr_t map;
+  iflag_=PHIST_SPARSEMAT_QUIET;
   phist_map_create(&map,comm_,nglob_,&iflag_);
   ASSERT_EQ(0,iflag_);
   map_ = map;

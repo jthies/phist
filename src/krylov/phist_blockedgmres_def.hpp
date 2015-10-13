@@ -275,7 +275,7 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
       y[ldy*j] = S[i]->rs_[j];
 
 
-#ifdef TESTING
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_DEBUG)
 {
   // setup e-vector
   _ST_ e[m+1];
@@ -334,6 +334,9 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
   }
 
 
+// put all iterations in one big compute task; this speeds up the tests with ghost (significantly)
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN(ComputeTask)
   // add up solution
   TYPE(mvec_ptr) Vj = NULL, x_i = NULL;
   PHIST_DEB("blockedGMRESstates_updateSol maxCurDimV = %d, sharedCurDimV = %d, ordered = %d\n", maxCurDimV, sharedCurDimV, (int)ordered);
@@ -374,9 +377,10 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
     }
   }
 
-  delete[] yglob;
   PHIST_CHK_IERR(SUBR(mvec_delete)(x_i, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vj, iflag), *iflag);
+PHIST_TASK_END(iflag)
+  delete[] yglob;
 }
 
 
@@ -542,6 +546,9 @@ PHIST_SOUT(PHIST_INFO,"\n");
     PHIST_SOUT(PHIST_VERBOSE,"[%d]: %d\t%8.4e\t(%8.4e)\n", i, S[i]->curDimV_-1,S[i]->normR_/S[i]->normR0_,S[i]->normR_);
   }
 
+// put all iterations in one big compute task; this speeds up the tests with ghost (significantly)
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN(ComputeTask)
   while( anyConverged == 0 && anyFailed == 0 )
   {
     //    % get new vector for y
@@ -608,7 +615,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
         {
           if( !(needAnotherIteration && useIMGS) )
             break;
-          PHIST_SOUT(PHIST_INFO, "Additional MGS iteration in blockedGMRES!\n");
+          PHIST_SOUT(PHIST_DEBUG, "Additional MGS iteration in blockedGMRES!\n");
         }
 
 
@@ -717,15 +724,10 @@ PHIST_SOUT(PHIST_INFO,"\n");
           maxOrthErr = std::max(maxOrthErr, st::abs(orth[j][k]));
       }
     }
-    PHIST_SOUT(PHIST_INFO,"subspace orthogonality of subspace %d: %8.4e\n", i, maxOrthErr);
-    //for(int j = 0; j < nj; j++)
-    //{
-      //for(int k = 0; k < nj; k++)
-      //{
-        //PHIST_SOUT(PHIST_INFO,"\t%8.4e", st::abs(orth[j][k]-( (j==k) ? st::one() : st::zero() )) );
-      //}
-      //PHIST_SOUT(PHIST_INFO,"\n");
-    //}
+    if( maxOrthErr > 100*mt::eps() )
+    {
+      PHIST_SOUT(PHIST_INFO,"subspace orthogonality of subspace %d: %8.4e\n", i, maxOrthErr);
+    }
   }
 }
 // check arnoldi/krylov property for last (untransformed row of H): AV_k = V_(k+1) * H_(k+1,k)
@@ -743,16 +745,19 @@ PHIST_SOUT(PHIST_INFO,"\n");
     lidx_t ldH; 
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
     Hj += (S[i]->curDimV_-1)*ldH;
-    PHIST_SOUT(PHIST_INFO,"accuracy of last column of H of system %d:\n", i);
+    _MT_ maxHerr = mt::zero();
     for(int j = 0; j < S[i]->curDimV_; j++)
     {
       int Vjind = mvecBuff->prevIndex(nextIndex,S[i]->curDimV_-j);
       PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vjind), &Vj, S[i]->id, S[i]->id, iflag), *iflag);
       _ST_ Hnj;
       PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(Vj, tmpVec, &Hnj, iflag), *iflag);
-      PHIST_SOUT(PHIST_INFO,"\t%8.4e", st::abs(Hj[j]-Hnj));
+      maxHerr = std::max(maxHerr, st::abs(Hj[j]-Hnj));
     }
-    PHIST_SOUT(PHIST_INFO,"\n");
+    if( maxHerr > 100*mt::eps() )
+    {
+      PHIST_SOUT(PHIST_INFO,"accuracy of last column of H of system %d: %8.4e\n", i, maxHerr);
+    }
   }
   PHIST_CHK_IERR(SUBR(mvec_delete)(tmpVec, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(tmpVec_, iflag), *iflag);
@@ -797,12 +802,12 @@ PHIST_SOUT(PHIST_INFO,"\n");
 #endif
 #ifdef TESTING
 {
-  PHIST_OUT(PHIST_VERBOSE,"(Hj[j-1],Hj[j]) = (%8.4e+i%8.4e, %8.4e + i%8.4e)\n", st::real(Hj[j-1]), st::imag(Hj[j-1]),st::real(Hj[j]),st::imag(Hj[j]));
-  PHIST_OUT(PHIST_VERBOSE,"(c,s) = (%8.4e+i%8.4e, %8.4e+i%8.4e)\n", st::real(S[i]->cs_[j-1]),st::imag(S[i]->cs_[j-1]),st::real(S[i]->sn_[j-1]),st::imag(S[i]->sn_[j-1]));
-  PHIST_OUT(PHIST_VERBOSE,"r = %8.4e + i%8.4e\n", st::real(tmp),st::imag(tmp));
+  PHIST_OUT(PHIST_DEBUG,"(Hj[j-1],Hj[j]) = (%8.4e+i%8.4e, %8.4e + i%8.4e)\n", st::real(Hj[j-1]), st::imag(Hj[j-1]),st::real(Hj[j]),st::imag(Hj[j]));
+  PHIST_OUT(PHIST_DEBUG,"(c,s) = (%8.4e+i%8.4e, %8.4e+i%8.4e)\n", st::real(S[i]->cs_[j-1]),st::imag(S[i]->cs_[j-1]),st::real(S[i]->sn_[j-1]),st::imag(S[i]->sn_[j-1]));
+  PHIST_OUT(PHIST_DEBUG,"r = %8.4e + i%8.4e\n", st::real(tmp),st::imag(tmp));
   _ST_ r_ = st::conj(S[i]->cs_[j-1])*Hj[j-1] + st::conj(S[i]->sn_[j-1])*Hj[j];
   _ST_ zero_ = -S[i]->sn_[j-1]*Hj[j-1] + S[i]->cs_[j-1]*Hj[j];
-  PHIST_OUT(PHIST_VERBOSE,"(r, 0) = (%8.4e + i%8.4e, %8.4e+i%8.4e)\n", st::real(r_), st::imag(r_), st::real(zero_), st::imag(zero_));
+  PHIST_OUT(PHIST_DEBUG,"(r, 0) = (%8.4e + i%8.4e, %8.4e+i%8.4e)\n", st::real(r_), st::imag(r_), st::real(zero_), st::imag(zero_));
   PHIST_CHK_IERR(*iflag = (st::abs(r_-tmp) < 1.e-5) ? 0 : -1, *iflag);
   PHIST_CHK_IERR(*iflag = (st::abs(zero_) < 1.e-5) ? 0 : -1, *iflag);
 }
@@ -864,6 +869,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
     (*nIter)++;
   }
+PHIST_TASK_END(iflag)
 
   PHIST_SOUT(PHIST_VERBOSE,"%d converged, %d failed.\n",anyConverged,anyFailed);
   PHIST_SOUT(PHIST_VERBOSE,"-----------------------\n");

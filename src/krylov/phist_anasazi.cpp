@@ -41,6 +41,9 @@
 
 // Block Krylov-Schur solver manager from the Anasazi package
 #ifdef PHIST_HAVE_ANASAZI
+// adaptation of a basic ortho class from Trili 11.12 to avoid 
+// col-wise norm calculations
+#include "./AnasaziMatOrthoManager.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziSolverManager.hpp"
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"

@@ -146,6 +146,16 @@ extern "C" void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* ifla
 // it just uses default parameters.
 extern "C" void phist_tpetra_node_create(node_t** node, const_comm_ptr_t vcomm, int* iflag)
 {
+  // print messages only once
+  int outputLevel;
+  {
+    static int globalMessagesPrinted = 0;
+    int messagesPrinted;
+#pragma omp atomic capture
+    messagesPrinted = globalMessagesPrinted++;
+    outputLevel = messagesPrinted > 0 ? PHIST_DEBUG : PHIST_INFO;
+  }
+
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*iflag);
   Teuchos::RCP<Teuchos::ParameterList> nodeParams=Teuchos::rcp(new Teuchos::ParameterList);
@@ -174,12 +184,6 @@ extern "C" void phist_tpetra_node_create(node_t** node, const_comm_ptr_t vcomm, 
   }
   else
   {
-    // print the next message only once
-    static int globalWarningPrinted = false;
-    int warningPrinted;
-#pragma omp atomic capture
-    warningPrinted = globalWarningPrinted++;
-    int outputLevel = warningPrinted > 0 ? PHIST_VERBOSE : PHIST_WARNING;
     PHIST_SOUT(outputLevel,"File phist_node.xml not found, using default node settings in tpetra\n");
   }
   const char* PHIST_NUM_THREADS=getenv("PHIST_NUM_THREADS");
@@ -188,11 +192,11 @@ extern "C" void phist_tpetra_node_create(node_t** node, const_comm_ptr_t vcomm, 
     int nThreads=atoi(PHIST_NUM_THREADS);
     if (nThreads>0)
     {
-      PHIST_SOUT(PHIST_VERBOSE,"taking #threads from env variable PHIST_NUM_THREADS\n");
+      PHIST_SOUT(outputLevel,"taking #threads from env variable PHIST_NUM_THREADS\n");
       nodeParams->set("Num Threads",nThreads);
     }
   }
-  PHIST_SOUT(PHIST_VERBOSE,"# threads requested: %d\n",nodeParams->get("Num Threads",0));
+  PHIST_SOUT(outputLevel,"# threads requested: %d\n",nodeParams->get("Num Threads",0));
   *node = new node_t(*nodeParams);
 }
 

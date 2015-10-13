@@ -47,6 +47,11 @@ void phist_Dprec_cholesky(double *__restrict__ a, double *__restrict__ aC, lidx_
     DOUBLE_FAST2SUM(a[i*lda+i],aC[i*lda+i],d[i],dC[i]);
     diagNorm += d[i]*d[i];
   }
+  if( diagNorm == 0 )
+  {
+    printf("Warning zero diagonal in %s\n", __FUNCTION__);
+    diagNorm = 1.e-32;
+  }
 
   *rank = 0;
   while(*rank < n)
@@ -155,7 +160,7 @@ void phist_Dprec_backwardSubst(const double *__restrict__ r, const double *__res
       {
         double rx, rxC;
         DOUBLE_4MULTFMA(r[p[j]*ldr+i],rC[p[j]*ldr+i],newXl[j],newXCl[j],rx,rxC);
-//printf("r: %e, x: %e, r*x: %e\n", r[p[j]*n+i],x[l*n+p[j]],rx);
+//printf("r: %e, x: %e, r*x: %e\n", r[p[j]*ldr+i],x[l*ldx+p[j]],rx);
         double oldS = s, oldT = t;
         DOUBLE_4SUM(oldS,oldT,rx,rxC,s,t);
       }
@@ -163,7 +168,7 @@ void phist_Dprec_backwardSubst(const double *__restrict__ r, const double *__res
 
       // x_p[i] = x_p[i]/r_i,p[i]
       double div_ri, div_riC;
-      DOUBLE_4DIV_NEWTONRAPHSON_FMA(r[p[i]*n+i],rC[p[i]*n+i],div_ri,div_riC);
+      DOUBLE_4DIV_NEWTONRAPHSON_FMA(r[p[i]*ldr+i],rC[p[i]*ldr+i],div_ri,div_riC);
       double oldS = s, oldT = t;
       DOUBLE_4MULTFMA(oldS,oldT,div_ri,div_riC,s,t);
       newXl[i] = -s;
@@ -200,7 +205,7 @@ void phist_Dprec_forwardSubst(const double *__restrict__ r, const double *__rest
       {
         double rx, rxC;
         DOUBLE_4MULTFMA(r[p[i]*ldr+j],rC[p[i]*ldr+j],newXl[j],newXCl[j],rx,rxC);
-//printf("r: %e, x: %e, r*x: %e\n", r[p[i]*n+j],x[l*n+p[j]],rx);
+//printf("r: %e, x: %e, r*x: %e\n", r[p[i]*ldr+j],x[l*ldr+p[j]],rx);
         double oldS = s, oldT = t;
         DOUBLE_4SUM(oldS,oldT,rx,rxC,s,t);
       }
@@ -295,8 +300,8 @@ void phist_Dprec_qb(double *__restrict__ a, double *__restrict__ aC,
   {
     for(int j=0;j<n;j++)
     {
-      double aij=a[j*n+i], tmp;
-      double aijC=aC[j*n+i], tmpC;
+      double aij=a[j*lda+i], tmp;
+      double aijC=aC[j*lda+i], tmpC;
       DOUBLE_4MULTFMA(aij,aijC,di[i],diC[i],tmp,tmpC);
       DOUBLE_4MULTFMA(tmp,tmpC,wi[j],wiC[j],a[j*lda+i],aC[j*lda+i]);
       if (bi!=NULL)

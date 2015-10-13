@@ -59,6 +59,9 @@ void SUBR(simple_arnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op, TYPE
   PHIST_CHK_IERR(SUBR(sdMat_put_value)(H,st::zero(),iflag),*iflag);
 
 
+// put all iterations in one big compute task; this speeds up the tests with ghost (significantly)
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN(ComputeTask)
   // Arnoldi loop
   for(int i = 0; i < m; i++)
   {
@@ -100,6 +103,7 @@ void SUBR(simple_arnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op, TYPE
     // swap vectors
     std::swap(v, av);
   }
+PHIST_TASK_END(iflag)
 
 
   // delete views
@@ -169,6 +173,9 @@ void SUBR(simple_blockArnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   PHIST_CHK_IERR(SUBR(sdMat_put_value)(H,st::zero(),iflag),*iflag);
 
 
+// put all iterations in one big compute task; this speeds up the tests with ghost (significantly)
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN(ComputeTask)
   // Arnoldi loop
   for(int i = 0; i < m/bs; i++)
   {
@@ -206,6 +213,7 @@ void SUBR(simple_blockArnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
     // swap vectors
     std::swap(v, av);
   }
+PHIST_TASK_END(iflag)
 
 
   // delete views

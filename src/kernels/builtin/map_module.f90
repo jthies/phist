@@ -5,6 +5,13 @@
 !!
 
 #include "phist_config.h"
+#include "phist_kernel_flags.h"
+#include "phist_defs.h"
+
+!> simple macro to check integer flags
+#define CHECK_IFLAG(_flag,_value) (IAND(_flag,_value)==(_value))
+
+
 !> Implements phist_map_* for builtin kernels
 module map_module
   implicit none
@@ -52,12 +59,13 @@ contains
 
   !================================================================================
   ! setup map from comm and number of rows
-  subroutine map_setup(map, comm, n_glob, ierr)
+  subroutine map_setup(map, comm, n_glob, verbose, ierr)
     use mpi
     !------------------------------------------------------------
     type(Map_t),    intent(inout) :: map
     integer,        intent(in)  :: comm
     integer(kind=8),intent(in)  :: n_glob
+    logical,        intent(in)  :: verbose
     integer,        intent(out) :: ierr
     !------------------------------------------------------------
     integer :: i
@@ -67,7 +75,7 @@ contains
     call mpi_comm_size(map%comm, map%nProcs, ierr)
     call mpi_Comm_rank(map%comm, map%me, ierr)
 
-    if( map%me .eq. 0 ) then
+    if( verbose .and. map%me .eq. 0 ) then
       write(*,*) 'map%nProcs', map%nProcs
     end if
 
@@ -87,9 +95,11 @@ contains
     end do
 
 #ifdef TESTING
-write(*,*) map%me, 'setting up map with nglob = ', n_glob, ', nProcs = ', map%nProcs, &
-  &  ', distrib = ', map%distrib, ', nlocal = ', map%nlocal
-flush(6)
+if( verbose ) then
+  write(*,*) map%me, 'setting up map with nglob = ', n_glob, ', nProcs = ', map%nProcs, &
+    &  ', distrib = ', map%distrib, ', nlocal = ', map%nlocal
+  flush(6)
+end if
 #endif
     if( map%distrib(map%nProcs) .ne. n_glob+1 ) then
       ierr = -1
@@ -171,14 +181,16 @@ flush(6)
     integer(C_INT),     intent(out) :: ierr
     !------------------------------------------------------------
     type(Map_t), pointer :: map
-    INTEGER, POINTER :: comm
+    integer, pointer :: comm
+    logical :: verbose
     !------------------------------------------------------------
+    verbose = .not. CHECK_IFLAG(ierr,PHIST_SPARSEMAT_QUIET)
 
     call c_f_pointer(comm_ptr,comm)
 
     allocate(map)
 
-    call map_setup(map, comm, n_glob, ierr)
+    call map_setup(map, comm, n_glob, verbose, ierr)
 
     map_ptr = c_loc(map)
 
