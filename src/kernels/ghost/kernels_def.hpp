@@ -1007,6 +1007,7 @@ extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag)
   for(int i = 0; i < m; i++)
     for(int j = 0; j < n; j++)
       V_raw[lda*i+j] = (i==j) ? st::one() : st::zero();
+  PHIST_CHK_IERR(SUBR(sdMat_to_device)(V,iflag),*iflag);
 }
 
 //! put random numbers into all elements of a multi-vector
