@@ -19,6 +19,9 @@
 #cmakedefine PHIST_HAVE_MPI
 #cmakedefine PHIST_HAVE_OPENMP
 
+/* cross-compile for Intel MIC */
+#cmakedefine PHIST_BUILD_MIC
+
 /* do you want to compile the single-precision
 version of the code in addition to the standard 
 (double)? 
