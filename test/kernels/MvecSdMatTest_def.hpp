@@ -112,46 +112,6 @@ public:
     KernelTestWithType<_ST_>::TearDown();
   }
 
-  /*! compare sdMats on several procs
-   */
-  void SUBR(sdMat_parallel_check_)(TYPE(const_sdMat_ptr) mat, int* iflag)
-  {
-    *iflag = 0;
-    // TODO: use correct communicator
-    int n,m;
-    PHIST_CHK_IERR(SUBR(sdMat_from_device)((void*)mat,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(mat, &m, iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(mat, &n, iflag),*iflag);
-    _ST_* buff = new _ST_[m*n];
-    _ST_* mat_raw;
-    lidx_t lda;
-    PHIST_CHK_IERR(SUBR(sdMat_extract_view)((TYPE(sdMat_ptr))mat, &mat_raw, &lda, iflag),*iflag);
-    // copy data to buffer
-    for(int j = 0; j < n; j++)
-      for(int i = 0; i < m; i++)
-        buff[j*m+i] = mat_raw[MIDX(i,j,lda)];
-    // broadcast
-    PHIST_CHK_IERR(*iflag = MPI_Bcast(buff,m*n,::phist::ScalarTraits<_ST_>::mpi_type(),0,MPI_COMM_WORLD),*iflag);
-    // check
-    int error = 0;
-    for(int j = 0; j < n; j++)
-      for(int i = 0; i < m; i++)
-        if( buff[j*m+i] != mat_raw[MIDX(i,j,lda)] )
-          error = 1;
-    int globError = 0;
-    PHIST_CHK_IERR(*iflag = MPI_Allreduce(&error,&globError,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD),*iflag);
-
-    delete[] buff;
-
-    if( globError )
-    {
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      PHIST_CHK_IERR(SUBR(sdMat_print)(mat,iflag),*iflag);
-#endif
-      *iflag = -1;
-      return;
-    }
-  }
 };
 
   // check ones(n,m)'*ones(n,k)=n*ones(m,k), and columns with 1, 2, 3...
@@ -178,7 +138,7 @@ public:
       V2Test::PrintVector(*cout,"ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
       ASSERT_EQ(0,iflag_);
@@ -194,7 +154,7 @@ public:
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check result
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       for(int i = 0; i < m_; i++)
       {
@@ -220,7 +180,7 @@ public:
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check result
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       for(int i = 0; i < m_; i++)
       {
@@ -256,7 +216,7 @@ public:
       V1Test::PrintVector(*cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
       ASSERT_EQ(0,iflag_);
 
@@ -269,7 +229,7 @@ public:
       SUBR(mvecT_times_mvec)(st::one(),V1_,V1_,st::zero(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check result
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       for(int i = 0; i < m_; i++)
       {
@@ -304,7 +264,7 @@ public:
 
 //SUBR(sdMat_print)(M1_, &iflag_);
       ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // fill rows with 1,2,3,4, ...
@@ -319,7 +279,7 @@ public:
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check result
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       for(int i = 0; i < m_; i++)
       {
@@ -346,7 +306,7 @@ public:
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check result
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       for(int i = 0; i < m_; i++)
       {
@@ -381,7 +341,7 @@ public:
 
 //SUBR(sdMat_print)(M1_, &iflag_);
       ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // fill rows with 1,2,3,4, ...
@@ -394,7 +354,7 @@ public:
       SUBR(mvecT_times_mvec)(st::one(),V1_,V1_,st::zero(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check result
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       for(int i = 0; i < m_; i++)
       {
@@ -430,7 +390,7 @@ public:
       SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
     
 #ifdef IS_COMPLEX
@@ -501,7 +461,7 @@ public:
       SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
     
 #ifdef IS_COMPLEX
@@ -574,7 +534,7 @@ public:
       V2Test::PrintVector(*cout,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
       ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,(ST)m_));
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
       // with adding to factor*(input vector)
@@ -626,7 +586,7 @@ public:
       V2Test::PrintVector(*cout,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
       ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,(ST)m_));
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
       // with adding to factor*(input vector)
@@ -681,7 +641,7 @@ public:
       SUBR(mvec_delete)(V_cols,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }
@@ -698,7 +658,7 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_sync_values)(M1_, comm_, &iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,st::zero(),V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -721,7 +681,7 @@ public:
 
       ASSERT_NEAR(mt::one(),MvecsEqual(V_cols,V2_),sqrt(mt::eps()));
    
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       SUBR(mvec_delete)(V_cols,&iflag_);
@@ -774,7 +734,7 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_sync_values)(M1_, comm_, &iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvec_times_sdMat)(st::one(),V1_,M1_,st::zero(),V2_,&iflag_);
@@ -915,7 +875,7 @@ public:
       V2Test::PrintVector(*cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
       MTest::PrintSdMat(*cout,"random'*random",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
     
       // to check the result, scale V1 by -1, add V1'V2 again and compare with 0
@@ -959,7 +919,7 @@ public:
       iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
     
       // to check the result, scale V1 by -1, add V1'V2 again and compare with 0
@@ -1113,13 +1073,13 @@ public:
         SUBR(sdMat_print)(M1,&iflag_);
         ASSERT_EQ(0,iflag_);
 #endif
-        SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+        MTest::sdMat_parallel_check(M1_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
-        SUBR(sdMat_parallel_check_)(M2_,&iflag_);
+        MTest::sdMat_parallel_check(M2_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
-        SUBR(sdMat_parallel_check_)(M3,&iflag_);
+        MTest::sdMat_parallel_check(M3,&iflag_);
         ASSERT_EQ(0,iflag_);
         
         // subtract the result without views from the one with non-viewed target sdMat
@@ -1166,7 +1126,7 @@ public:
       SUBR(sdMat_random)(M1_, &iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // and do it again
@@ -1175,7 +1135,7 @@ public:
       SUBR(sdMat_random)(M1_, &iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(sdMat_parallel_check_)(M1_,&iflag_);
+      MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }

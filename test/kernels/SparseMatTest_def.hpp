@@ -1511,3 +1511,49 @@ TEST_F(CLASSNAME,create_I_fromRowFunc)
   SUBR(sparseMat_delete)(A,&iflag_);
   
 }
+
+
+TEST_F(CLASSNAME,mvecT_times_mvec_after_spmvm)
+{
+  if( !typeImplemented_ || problemTooSmall_ )
+    return;
+
+  rebuildVectors(A2_);
+
+  // fill vectors with ones
+  SUBR(mvec_put_value)(vec1_,st::one(),&iflag_);
+  ASSERT_EQ(0,iflag_);
+  SUBR(mvec_put_value)(vec2_,st::one(),&iflag_);
+  ASSERT_EQ(0,iflag_);
+
+  // perform an matrix-vector multiplication (to possibly fill up halo/padding with data)
+  SUBR(sparseMat_times_mvec)(st::one(),A2_,vec1_,st::one(),vec2_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  SUBR(sparseMat_times_mvec_communicate)(A1_,vec2_,&iflag_);
+
+  // fill columns with row/i and row/(i+1)
+  // exploits sum_(k=1)^n 1/(k*(k+1)) = 1 - 1/(n+1)
+  gidx_t ilower;     
+  phist_map_get_ilower(map_,&ilower,&iflag_);
+  for (int ii=0; ii< nloc_; ii++)
+  {
+    for (int j=0; j<nvec_; j++)
+      vec2_vp_[VIDX(ii,j,lda_)] = (_ST_) -st::one()*(_MT_)((j+1)*1.0l/(ilower+ii+1));
+    for (int i=0; i<nvec_; i++)
+      vec1_vp_[VIDX(ii,i,lda_)] = (_ST_) st::one()*(_MT_)((i+1)*1.0l/(ilower+ii+2));
+  }
+  SUBR(mvecT_times_mvec)(st::one(),vec1_,vec2_,st::zero(),mat1_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  // check result
+  sdMat_parallel_check(mat1_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  for(int i = 0; i < nvec_; i++)
+  {
+    for(int j = 0; j < nvec_; j++)
+    {
+      _MT_ val = -mt::one()*(i+1)*(j+1)*(1.0l - 1.0l/(_N_+1));
+      ASSERT_NEAR(val, st::real(mat1_vp_[MIDX(i,j,m_lda_)]), _N_*20*mt::eps());
+      ASSERT_NEAR(mt::zero(), st::imag(mat1_vp_[MIDX(i,j,m_lda_)]), _N_*20*mt::eps());
+    }
+  }
+}

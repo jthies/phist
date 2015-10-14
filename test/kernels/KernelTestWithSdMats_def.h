@@ -267,6 +267,46 @@ static void PrintSdMat(std::ostream& os, std::string label,
     return true;
   }
 
+  /*! compare sdMats on several procs
+   */
+  static void sdMat_parallel_check(TYPE(const_sdMat_ptr) mat, int* iflag)
+  {
+    *iflag = 0;
+    // TODO: use correct communicator
+    int n,m;
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)((void*)mat,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(mat, &m, iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(mat, &n, iflag),*iflag);
+    _ST_* buff = new _ST_[m*n];
+    _ST_* mat_raw;
+    lidx_t lda;
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)((TYPE(sdMat_ptr))mat, &mat_raw, &lda, iflag),*iflag);
+    // copy data to buffer
+    for(int j = 0; j < n; j++)
+      for(int i = 0; i < m; i++)
+        buff[j*m+i] = mat_raw[MIDX(i,j,lda)];
+    // broadcast
+    PHIST_CHK_IERR(*iflag = MPI_Bcast(buff,m*n,::phist::ScalarTraits<_ST_>::mpi_type(),0,MPI_COMM_WORLD),*iflag);
+    // check
+    int error = 0;
+    for(int j = 0; j < n; j++)
+      for(int i = 0; i < m; i++)
+        if( buff[j*m+i] != mat_raw[MIDX(i,j,lda)] )
+          error = 1;
+    int globError = 0;
+    PHIST_CHK_IERR(*iflag = MPI_Allreduce(&error,&globError,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD),*iflag);
+
+    delete[] buff;
+
+    if( globError )
+    {
+#if PHIST_OUTLEV>=PHIST_DEBUG
+      PHIST_CHK_IERR(SUBR(sdMat_print)(mat,iflag),*iflag);
+#endif
+      *iflag = -1;
+      return;
+    }
+  }
   
   TYPE(sdMat_ptr) mem1_, mem2_, mem3_, mem4_;
   TYPE(sdMat_ptr) mat1_, mat2_, mat3_, mat4_;
