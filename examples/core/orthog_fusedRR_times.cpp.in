@@ -73,8 +73,8 @@ PHIST_MAIN_TASK_BEGIN
                            "       perform other operations mvec_add_mvec, \n"
                            "       mvecT_times_mvec to check for NUMA issues etc.\n"
                            "       set high_prec to 1 to use high-precision kernels\n"
-                           "       set high_prec to 2 to use low-precision kernels twice/3 times\n"
-                           "       set high_prec to 3 to use high-precision kernels twice/3 times\n"
+                           "       set high_prec to 2 to use iterated low-precision kernels times\n"
+                           "       set high_prec to 3 to use iterated high-precision kernels times\n"
                            "       set high_prec to 4 to use low-precision fusedRR kernels\n"
                            "       set high_prec to 5 to use high-precision fusedRR kernels\n"
                            "       set pert.-factor to < 1.e-3 to generate harder to orthogonalize data\n",
@@ -98,12 +98,12 @@ PHIST_MAIN_TASK_BEGIN
   l=atoi(argv[4]);
   bool high_prec = false;
   bool fusedRR = false;
-  bool twice = false;
+  bool iterated = false;
   if( argc >= 6 )
   {
     int argv5 = atoi(argv[5]);
     high_prec = argv5 & 1;
-    twice = argv5 & 2;
+    iterated = argv5 & 2;
     fusedRR = argv5 & 4;
   }
   MT pertFactorX = 1.e-3;
@@ -162,7 +162,7 @@ PHIST_MAIN_TASK_BEGIN
     // save old X
     PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(st::one(),Q,st::zero(),X,&ierr),ierr);
 
-    int maxIter = twice ? 3 : 1;
+    int maxIter = iterated ? 3 : 1;
     // this is what we really want to benchmark
     if( fusedRR )
     {

@@ -113,8 +113,8 @@ int delete_mat(TYPE(sparseMat_ptr) A)
           sum=std::min(sum,st::abs(cij)+st::abs(cji));
           diff=std::max(diff,st::abs(st::conj(cij)-cji));
         }
-      ASSERT_NEAR(mt::zero(),diff,1000*mt::eps());
-      ASSERT_TRUE(sum>1000*mt::eps());
+      ASSERT_NEAR(mt::zero(),diff,sqrt(mt::eps()));
+      ASSERT_TRUE(sum>sqrt(mt::eps()));
 
       SUBR(sdMat_delete)(VtAV,&iflag_);
       ASSERT_EQ(0,iflag_);
