@@ -137,7 +137,11 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   {
     hwconfig.ncore = num_threads; 
   }
+#ifdef PHIST_BUILD_MIC
+  hwconfig.nsmt = 3; 
+#else
   hwconfig.nsmt = 1; 
+#endif
   ghost_hwconfig_set(hwconfig);
 
   ghost_init(*argc, *argv);

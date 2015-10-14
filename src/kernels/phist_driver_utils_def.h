@@ -70,9 +70,10 @@ PHIST_SOUT(PHIST_INFO,"\n\nInstead of a matrix file you can also specify a strin
                       "TriToeplitz<L> for an 2^L tridiagonal Toeplitz matrix (e.g. 1D Poisson, spd, diagonal dominant)\n"
                       "Brussolator<L> for an L^1 eigenproblem from a Brussolator wave model in chemical reaction (MVMBWM)\n"
                       "BENCH3D-<L>-<WHICH> for an L^3 scalar problem. \n"
-                      "                    the strings have the form <A,B,C><1-9>, for instance\n"
+                      "                    the strings have the form <A,B,C><0-9>, for instance\n"
                       "                    B1 is an inhomogenous PDE problem similar to matpde but in 3D, C1 is the Anderson model problem\n"
-                      "                    and the 'A' problems are convection diffusion problems taken from Gordon&Gordon, ParCo'10\n"
+                      "                    and the 'A' problems are convection diffusion problems taken from Gordon&Gordon, ParCo'10.\n"
+                      "                    The '0' cases are symmetric matrices, A0=Laplace, B0=variable coefficient diffusion.\n"
                       "BAPP-<string> requires the ESSEX-Physics library and adds a variety of benchmarks, for example\n"
                       "                    'BAPP-hubbard,l=10,U=1' etc.\n"
                       );

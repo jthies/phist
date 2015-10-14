@@ -21,20 +21,13 @@ void SUBR(sdMat_check_symmetrie)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
   // construct identity matrix
   TYPE(sdMat_ptr) id = NULL;
   PHIST_CHK_IERR(SUBR(sdMat_create)(&id, m, n, NULL, iflag), *iflag);
-  {
-    _ST_ *id_raw = NULL;
-    lidx_t lda;
-    PHIST_CHK_IERR(SUBR( sdMat_put_value ) (id, st::zero(), iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( sdMat_extract_view) (id, &id_raw, &lda, iflag), *iflag);
-    for(int i = 0; i < m; i++)
-      id_raw[i*lda+i] = st::one();
-  }
-
+  PHIST_CHK_IERR(SUBR( sdMat_identity) (id, iflag), *iflag);
 
   // set tmp to transposed
   PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat)(st::one(), mat, id, st::zero(), tmp, iflag), *iflag);
   // subtract mat
   PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(-st::one(), mat, st::one(), tmp, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_from_device)(tmp,iflag),*iflag);
   // calc max. abs. value of mat^T-mat
   _MT_ maxVal = mt::zero();
   {
@@ -202,14 +195,7 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&R_H_,   maxBase,          maxBase,  range_comm,   iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&sdMI_,  maxBase,          maxBase,  range_comm,   iflag), *iflag);
   // construct identity matrix
-  {
-    _ST_ *sdMI_raw = NULL;
-    lidx_t lda;
-    PHIST_CHK_IERR(SUBR( sdMat_put_value ) (sdMI_, st::zero(), iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( sdMat_extract_view) (sdMI_, &sdMI_raw, &lda, iflag), *iflag);
-    for(int i = 0; i < maxBase; i++)
-      sdMI_raw[i*lda+i] = st::one();
-  }
+  PHIST_CHK_IERR(SUBR( sdMat_identity ) (sdMI_, iflag), *iflag);
 
   PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (Q_H_,    &Q_H_raw,   &ldaQ_H,   iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (R_H_,    &R_H_raw,   &ldaR_H,   iflag), *iflag);

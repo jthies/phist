@@ -1007,6 +1007,7 @@ extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag)
   for(int i = 0; i < m; i++)
     for(int j = 0; j < n; j++)
       V_raw[lda*i+j] = (i==j) ? st::one() : st::zero();
+  PHIST_CHK_IERR(SUBR(sdMat_to_device)(V,iflag),*iflag);
 }
 
 //! put random numbers into all elements of a multi-vector
@@ -1677,25 +1678,6 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CHK_GERR(ghost_gemm(C, V, (char*)"N", W, trans, (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_TASK_END(iflag);
   }
-
-//! stable cholesky factorization with pivoting and rank-recognition for hpd. matrix
-//! returns permuted lower triangular cholesky factor M for M <- M*M'
-extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, int* iflag)
-{
-  *iflag = PHIST_NOT_IMPLEMENTED;
-}
-
-//! backward substitution for pivoted upper triangular cholesky factor
-extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
-{
-  *iflag = PHIST_NOT_IMPLEMENTED;
-}
-
-//! forward substitution for pivoted conj. transposed upper triangular cholesky factor
-extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank, TYPE(sdMat_ptr) X, int* iflag)
-{
-  *iflag = PHIST_NOT_IMPLEMENTED;
-}
 
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.   
