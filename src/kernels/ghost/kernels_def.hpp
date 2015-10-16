@@ -388,6 +388,17 @@ void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
 
 //@}
 
+//! retrieve global size of sparse matrix A
+extern "C" void SUBR(sparseMat_global_size)(TYPE(sparseMat_ptr) vA, gidx_t* s, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag = 0;
+  PHIST_CAST_PTR_FROM_VOID(const ghost_sparsemat_t,A,vA,*iflag);
+  // TODO add this check for global indices?
+  //PHIST_CHK_IERR(*iflag=check_local_size(V->traits.nrows),*iflag);
+  *s = A->context->gnrows;
+}
+
 //! retrieve local length of the vectors in V
 extern "C" void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) vV, lidx_t* len, int* iflag)
 {
