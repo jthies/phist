@@ -49,3 +49,12 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      TYPE(sdMat_ptr) R1,
                      TYPE(sdMat_ptr) R2,
                      int numSweeps, int* rankVW, int* iflag);
+
+
+//! for timing measurements provide access to a trilinos orthog manager
+void SUBR(trili_orthog)(TYPE(const_mvec_ptr) V,
+                        TYPE(mvec_ptr) W,
+                        TYPE(const_op_ptr) B,
+                        TYPE(sdMat_ptr) R1,
+                        TYPE(sdMat_ptr) R2,
+                        int numSweeps, int* rankVW, int* iflag);

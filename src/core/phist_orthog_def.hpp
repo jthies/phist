@@ -329,8 +329,8 @@ void SUBR(orthog)(TYPE(const_mvec_ptr) V,
       PHIST_CHK_IERR(SUBR(sdMat_delete)(R2p_rand,iflag),*iflag);
     }
 
-    //R2=R2+R2';
-    PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R2p,st::one(),R2,iflag),*iflag);
+    //R2=R2+R2'*R1;
+    PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R2p,R1,st::one(),R2,iflag),*iflag);
 
     // again, the norm can be computed from the coefficients in R2p (TODO)
     PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW1,iflag),*iflag);    
