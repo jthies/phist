@@ -9,10 +9,9 @@
 #define HAVE_TRILINOS_ORTHO_MANAGER
 #endif
 
-#ifdef HAVE_TRILINOS_ORTHO_MANAGER
 // provide trili_orthog as fallback if B!=NULL
 #include "trili_orthog_def.hpp"
-#endif
+
 // helper routine in case the kernel lib does not provide mvec_QR, which
 // is quite an advanced kernel to ask for.
 void SUBR(mvec_QB)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* nrmsV, int *iflag);

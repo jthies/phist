@@ -23,8 +23,6 @@
 #  include "Epetra_SerialComm.h"
 #  include "Epetra_SerialDenseMatrix.h"
 #  include "Epetra_CrsMatrix.h"
-# else 
-#  error "not implemented"
 # endif
 
 # include "BelosOrthoManager.hpp"
@@ -46,8 +44,12 @@ void SUBR(trili_orthog)(TYPE(const_mvec_ptr) V,
                      int* rankVW,
                      int* iflag)
   {
+#ifndef HAVE_TRILINOS_ORTHO_MANAGER
+  *iflag = PHIST_NOT_IMPLEMENTED;
+#else
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
+
 
   int m,k;
   int rankW;
@@ -225,4 +227,5 @@ ortho = imgs;
 # endif
 #endif
   *iflag = 0; //ncols-rankW;// return positive number if rank not full.
+#endif /* HAVE_TRILINOS_ORTHO_MANAGER */
   }
