@@ -222,6 +222,15 @@ void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
 
 //@}
 
+//! retrieve global size of sparse matrix A
+extern "C" void SUBR(sparseMat_global_size)(TYPE(sparseMat_ptr) vA, gidx_t* s, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag = 0;
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t,A,vA,*iflag);
+  *s = A->getGlobalNumRows(); // NumGlobalRows64?
+}
+
 //! retrieve local length of the vectors in V
 extern "C" void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) vV, lidx_t* len, int* iflag)
   {

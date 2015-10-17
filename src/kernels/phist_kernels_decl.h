@@ -159,6 +159,9 @@ void SUBR(sdMat_delete)(TYPE(sdMat_ptr) M, int* iflag);
 //! \name getting data from objects
 //@{
 
+//! get global sparseMat size \ingroup crsmat
+void SUBR(sparseMat_global_size)(TYPE(sparseMat_ptr) A, gidx_t* s, int* iflag);
+
 //! retrieve local length of the vectors in V \ingroup mvec
 void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) V, lidx_t* len, int* iflag);
 
