@@ -121,6 +121,20 @@ class WrapLambdaForGhostTask
         (*task)->parent = newParent;
       }
 
+      // if this task is async, it may create new async tasks that
+      // finish later than this one (or vice versa),
+      // so all async tasks need to be children of the main task
+      if( async )
+      {
+        ghost_task_t *newParent = curTask;
+        if( newParent )
+        {
+          while( newParent->parent )
+            newParent = newParent->parent;
+        }
+        (*task)->parent = newParent;
+      }
+
       PHIST_DEB("enqueuing C++11-lambda as GHOST task and waiting for it\n");
       PHIST_CHK_GERR(ghost_task_enqueue(*task), *iflag);
       if( async )
