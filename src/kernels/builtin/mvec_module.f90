@@ -2076,6 +2076,9 @@ contains
     call MPI_Allreduce(Ntmp,NCtmp,nvecw*nvecw,MPI_DOUBLE_PRECISION,MPI_SUM,v%map%comm,iflag)
 
     N%val(N%imin:N%imax,N%jmin:N%jmax) = NCtmp
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+    N%err(N%imin:N%imax,N%jmin:N%jmax) = 0.
+#endif
     !--------------------------------------------------------------------------------
   end subroutine mvec_times_sdmat_augmented
 
@@ -2658,6 +2661,9 @@ contains
     call MPI_Allreduce(tmp_,tmp,nvecv*nvecw,MPI_DOUBLE_PRECISION,MPI_SUM,v%map%comm,iflag)
 
     M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+    M%err(M%imin:M%imax,M%jmin:M%jmax) = 0.
+#endif
     !--------------------------------------------------------------------------------
   end subroutine mvecT_times_mvec
 
@@ -2999,6 +3005,9 @@ contains
     call MPI_Allreduce(tmp_,tmp,nvecv*nvecw,MPI_DOUBLE_PRECISION,MPI_SUM,v%map%comm,iflag)
 
     M%val(M%imin:M%imax,M%jmin:M%jmax) = alpha*tmp+beta*M%val(M%imin:M%imax,M%jmin:M%jmax)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+    M%err(M%imin:M%imax,M%jmin:M%jmax) = 0.
+#endif
     !--------------------------------------------------------------------------------
   end subroutine mvecT_times_mvec_times_sdMat_inplace
 
@@ -3091,6 +3100,10 @@ contains
       Ripn%jmax = nullSpaceDim
       allocate(Ripn%val(Ripn%imax,Ripn%jmax))
       Ripn%val = 0._8
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+      allocate(Ripn%err(Ripn%imax,Ripn%jmax))
+      Ripn%err = 0._8
+#endif
 
       if( rank .gt. 0 ) then
         ! orthog. random vectors wrt. previous vectors
@@ -3114,6 +3127,9 @@ contains
           flush(6)
           nullSpaceDim = -1
           deallocate(Ripn%val)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+          deallocate(Ripn%err)
+#endif
           return
         end if
         rii(1) = 1._8/rii(1)
@@ -3127,6 +3143,9 @@ contains
       end do
 
       deallocate(Ripn%val)
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+      deallocate(Ripn%err)
+#endif
     end if
 
     !--------------------------------------------------------------------------------
@@ -3182,7 +3201,7 @@ contains
     flush(6)
 #endif
     !allocate(mvec%val(nvec,max(1,map%nlocal(map%me))),stat=ierr)
-    ierr = posix_memalign(rawMem, int(64,kind=C_SIZE_T), int(mvec%paddedN*8*nvec,kind=C_SIZE_T))
+    ierr = posix_memalign(rawMem, int(64,kind=C_SIZE_T), int(mvec%paddedN*8_8*nvec,kind=C_SIZE_T))
     call c_f_pointer(rawMem, mvec%val, (/nvec,mvec%paddedN/))
 #if defined(TESTING)
     if( mod(transfer(c_loc(mvec%val(1,1)), dummy), 32) .ne. 0 ) then

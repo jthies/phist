@@ -1,6 +1,7 @@
 
 static void SUBR(orthogrr_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* rank, int* iflag)
 {
+  PHIST_ENTER_FCN(__FUNCTION__);
   int m = 0;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(RR,&m,iflag),*iflag);
   // create R and R_1 from RR
@@ -15,8 +16,10 @@ static void SUBR(orthogrr_cholrr)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* 
 //PHIST_CHK_IERR(SUBR(sdMat_print)(R_1,iflag),*iflag);
 }
 
+
 static void SUBR(orthogrr_svqb)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* rank, int* iflag)
 {
+  PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   // compute B s.t. V*B=Q is orthogonal, with RR=V'V on input
   // and inv(B) on output, and R_1=B on output.
@@ -26,6 +29,18 @@ static void SUBR(orthogrr_svqb)(TYPE(sdMat_ptr) RR, TYPE(sdMat_ptr) R_1, int* ra
   PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),RR,st::zero(),R_1,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_qb)(R_1,RR,rank,iflag),*iflag);
 //PHIST_CHK_IERR(SUBR(sdMat_print)(R_1,iflag),*iflag);
+}
+
+
+static void SUBR(sdMat_rank_identity)(TYPE(sdMat_ptr) I, const int k, int* iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  PHIST_CHK_IERR(SUBR(sdMat_put_value)(I,st::zero(),iflag),*iflag);
+  TYPE(sdMat_ptr) Ik = NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)(I,&Ik,0,k-1,0,k-1,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_identity)(Ik,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(Ik,iflag),*iflag);
 }
 
 
@@ -130,11 +145,14 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
         PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R,R1_tmp,st::zero(),R1,iflag),*iflag);
       }
       // check if we really need another orthogonalization step with W
-      VtV_err *= robust ? mt::eps() : mt::sqrt(mt::eps());
-      VtV_err += WtV_err;
+      if( robust )
+        VtV_err = std::max(VtV_err*mt::eps(),mt::eps());
+      else
+        VtV_err = std::max(VtV_err*mt::sqrt(mt::eps()),mt::eps());
       PHIST_CHK_IERR(SUBR(sdMat_normF)(WtV,&WtV_err,iflag),*iflag);
+      VtV_err += WtV_err;
       PHIST_SOUT(PHIST_INFO, "orthogRR: iter %d phase 1, desired eps %8.4e, WtV err. %8.4e, (est.) VtV err. %8.4e\n", iter, desiredEps, WtV_err, VtV_err);
-      if( WtV_err*VtV_err <= desiredEps*desiredEps )
+      if( WtV_err <= desiredEps && WtV_err*VtV_err <= desiredEps*desiredEps )
       { 
         // calculated WtV_err is small enough (in contrast to estimated WtV_err from the previous iteration)
         // we may need to recalculate VtV below
@@ -163,7 +181,7 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
       // estimate error
       PHIST_CHK_IERR(SUBR(sdMat_normF)(R_1,&WtV_err,iflag),*iflag);
       WtV_err *= mt::eps();
-      PHIST_CHK_IERR(SUBR(sdMat_identity)(VtV_I,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_rank_identity)(VtV_I,rank,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),VtV,-st::one(),VtV_I,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_normF)(VtV_I,&VtV_err,iflag),*iflag);
 
@@ -216,7 +234,7 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
       rank = std::min(rank,Vrank);
 
       // calculate error
-      PHIST_CHK_IERR(SUBR(sdMat_identity)(VtV_I,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_rank_identity)(VtV_I,rank,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),VtV,-st::one(),VtV_I,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_normF)(VtV_I,&VtV_err,iflag),*iflag);
       PHIST_SOUT(PHIST_INFO, "orthogRR: iter %d phase 3, desired eps %8.4e, VtV err. %8.4e\n", iter-1, desiredEps, VtV_err);

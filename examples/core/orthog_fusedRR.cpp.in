@@ -162,7 +162,7 @@ PHIST_MAIN_TASK_BEGIN
     // save old X
     PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(st::one(),Q,st::zero(),X,&ierr),ierr);
 
-    int maxIter = iterated ? 3 : 1;
+    int maxIter = iterated ? 4 : 1;
     // this is what we really want to benchmark
     if( fusedRR )
     {
