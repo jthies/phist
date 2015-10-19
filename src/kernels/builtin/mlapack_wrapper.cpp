@@ -42,6 +42,7 @@ void printmat(int N, int M, dd_real * A, int LDA)
 
 //! symmetric eigenvalue decomposition in simulated quad precision (using function
 //! Rsyev, cf. lapack routine dsyev)
+//! in contrast to dsyev we return the eigenvalues in reversed order!
 extern "C" void phist_Drsyev(int n, double *restrict a, double *restrict aC, int lda,
                        double *restrict w, double *restrict wC, int *iflag)
 {
@@ -83,19 +84,20 @@ for (int i=0; i<n; i++)
 
     delete [] work;
 
+// set eigenvalues in reversed order
     for (int i=0; i<n; i++)
     {
-      w[i]=W[i].x[0];
-      wC[i]=W[i].x[1];
+      w[i]=W[n-i-1].x[0];
+      wC[i]=W[n-i-1].x[1];
     }
 
-//copy A matrix to GMP data structure
+//copy A matrix from GMP data structure in reversed order
 for (int i=0; i<n; i++)
 {
   for (int j=0; j<n; j++)
   {
-    a [i+j*lda]=A[i+j*n].x[0];
-    aC[i+j*lda]=A[i+j*n].x[1];
+    a [i+j*lda]=A[i+(n-j-1)*n].x[0];
+    aC[i+j*lda]=A[i+(n-j-1)*n].x[1];
   }
 }
 

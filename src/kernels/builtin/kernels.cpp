@@ -95,6 +95,19 @@ void pinThreads()
                            "Using %d ranks per node with %d threads each\n",
                            ranksPerNode, nThreads);
 
+  // pin the main thread
+  {
+    int targetCoreId = nThreads*myRankInNode;
+
+    cpu_set_t *cpu = CPU_ALLOC(myCPU_SETSIZE);
+    size_t size = CPU_ALLOC_SIZE(myCPU_SETSIZE);
+    CPU_ZERO_S(size, cpu);
+    CPU_SET_S(targetCoreId, size, cpu);
+    sched_setaffinity(0, size, cpu);
+    CPU_FREE(cpu);
+  }
+
+  // pin the OpenMP threads
 #pragma omp parallel
   {
     int tid = omp_get_thread_num();

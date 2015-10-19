@@ -25,7 +25,7 @@ for acc in 2 4; do
       mpi_procs=24
       logname="orthog_large_nv${nv}_nb${nb}_acc${acc}_dev${dev}_np${mpi_procs}_nt${omp_threads}.log"
       echo "Run ${logname}"
-      OMP_SCHEDULE=guided,1000 OMP_NUM_THREADS=${omp_threads} PHIST_NUM_THREADS=${omp_threads} mpirun -np ${mpi_procs} ./Dorthog 12000000 $nb $nv 100 $acc $dev $dev 1.e-12 &> ${logname}
+      OMP_SCHEDULE=guided,1000 OMP_NUM_THREADS=${omp_threads} PHIST_NUM_THREADS=${omp_threads} mpirun -np ${mpi_procs} ./Dorthog 4000000 $nb $nv 300 $acc $dev $dev 1.e-12 &> ${logname}
     done
   done
 done

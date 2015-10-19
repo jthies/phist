@@ -84,6 +84,7 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
 
     // allow multiple sweeps (2 should be enough if high prec is used!)
     int iter = 0;
+    bool VtV_updated = true;
     for(; iter < maxIter; iter++)
     {
       // we already have the current VtV!
@@ -129,12 +130,15 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
         PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R,R1_tmp,st::zero(),R1,iflag),*iflag);
       }
       // check if we really need another orthogonalization step with W
-      VtV_err = mt::eps();
+      VtV_err *= robust ? mt::eps() : mt::sqrt(mt::eps());
+      VtV_err += WtV_err;
       PHIST_CHK_IERR(SUBR(sdMat_normF)(WtV,&WtV_err,iflag),*iflag);
       PHIST_SOUT(PHIST_INFO, "orthogRR: iter %d phase 1, desired eps %8.4e, WtV err. %8.4e, (est.) VtV err. %8.4e\n", iter, desiredEps, WtV_err, VtV_err);
-      if( WtV_err <= desiredEps )
-      {
-        iter++;
+      if( WtV_err*VtV_err <= desiredEps*desiredEps )
+      { 
+        // calculated WtV_err is small enough (in contrast to estimated WtV_err from the previous iteration)
+        // we may need to recalculate VtV below
+        VtV_updated = false;
         break;
       }
 
@@ -178,16 +182,27 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
       if( VtV_err <= desiredEps )
         break;
 
-      // V <- V*R_1, VtV <- V'*V
-      if( robust )
-        *iflag = PHIST_ROBUST_REDUCTIONS;
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec_times_sdMat_inplace)(st::one(),V,V,R_1,st::zero(),VtV,iflag),*iflag);
-
-      // update R1 <- R * R1
-      if( R1 != NULL )
+      // we need to recalculate VtV
+      if( !VtV_updated )
       {
-        PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R1,st::zero(),R1_tmp,iflag),*iflag);
-        PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R,R1_tmp,st::zero(),R1,iflag),*iflag);
+        if( robust )
+          *iflag = PHIST_ROBUST_REDUCTIONS;
+        PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),VtV,iflag),*iflag);
+        VtV_updated = true;
+      }
+      else
+      {
+        // V <- V*R_1, VtV <- V'*V
+        if( robust )
+          *iflag = PHIST_ROBUST_REDUCTIONS;
+        PHIST_CHK_IERR(SUBR(mvecT_times_mvec_times_sdMat_inplace)(st::one(),V,V,R_1,st::zero(),VtV,iflag),*iflag);
+
+        // update R1 <- R * R1
+        if( R1 != NULL )
+        {
+          PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R1,st::zero(),R1_tmp,iflag),*iflag);
+          PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R,R1_tmp,st::zero(),R1,iflag),*iflag);
+        }
       }
 
       // calculate new R factor

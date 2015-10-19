@@ -244,7 +244,16 @@ void phist_Dprec_qb(double *__restrict__ a, double *__restrict__ aC,
   double d[n], dC[n], di[n], diC[n];
   for (int i=0; i<n; i++)
   {
-    DOUBLE_4SQRT_NEWTONRAPHSON_FMA(a[i*lda+i],aC[i*lda+i],d[i],dC[i],di[i],diC[i]);
+    // prevent nans
+    if( a[i*lda+i] < SINGTOL )
+    {
+      d[i] = dC[i] = 0.;
+      di[i] = diC[i] = 0.;
+    }
+    else
+    {
+      DOUBLE_4SQRT_NEWTONRAPHSON_FMA(a[i*lda+i],aC[i*lda+i],d[i],dC[i],di[i],diC[i]);
+    }
   }
   
   // scale input matrix from left and right => diagonal elements 1
@@ -262,34 +271,25 @@ void phist_Dprec_qb(double *__restrict__ a, double *__restrict__ aC,
 
   // determine rank of input matrix and 1/sqrt(w)
   double wi[n], wiC[n];
-  double emax=fabs(w[n-1]);
   *rank=(int)n;
   
-  if (emax<SINGTOL)
+  // set w=sqrt(w) and wi=1/sqrt(w)
+  for(int i=0; i<n; i++)
   {
-    PHIST_SOUT(PHIST_DEBUG,"matrix has rank 0\n");
-    *rank=0;
-  }
-  else
-  {
-    // set w=sqrt(w) and wi=1/sqrt(w)
-    for(int i=0; i<n; i++)
+    PHIST_SOUT(PHIST_DEBUG,"SV[%d]=%25.16e%+8.4e\n",i,w[i],wC[i]);
+    if (w[i]<SINGTOL)
     {
-      PHIST_SOUT(PHIST_DEBUG,"SV[%d]=%25.16e%+8.4e\n",i,w[i],wC[i]);
-      if (w[i]<SINGTOL)
-      {
-        *rank--;
-        w[i]=0.0; wC[i]=0.0;
-        wi[i]=0.0; wiC[i]=0.0;
-        PHIST_SOUT(PHIST_DEBUG,"<-0\n");
-      }
-      else
-      {
-        double sqrt_w, sqrt_wC;
-        DOUBLE_4SQRT_NEWTONRAPHSON_FMA(w[i],wC[i],sqrt_w,sqrt_wC,wi[i],wiC[i]);
-        w[i]=sqrt_w;
-        wC[i]=sqrt_wC;
-      }
+      (*rank)--;
+      w[i]=0.0; wC[i]=0.0;
+      wi[i]=0.0; wiC[i]=0.0;
+      PHIST_SOUT(PHIST_DEBUG,"<-0\n");
+    }
+    else
+    {
+      double sqrt_w, sqrt_wC;
+      DOUBLE_4SQRT_NEWTONRAPHSON_FMA(w[i],wC[i],sqrt_w,sqrt_wC,wi[i],wiC[i]);
+      w[i]=sqrt_w;
+      wC[i]=sqrt_wC;
     }
   }
 
