@@ -487,31 +487,31 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
     
       // test that the global number of rows/cols is correct in the objects
       gidx_t gnrows, gncols;
-      SUBR(sparseMat_get_global_nrows)(A0_,&gnrows,&iflag_);
+      SUBR(sparseMat_global_nrows)(A0_,&gnrows,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(gnrows,nglob_);
-      SUBR(sparseMat_get_global_ncols)(A0_,&gncols,&iflag_);
+      SUBR(sparseMat_global_ncols)(A0_,&gncols,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(gncols,nglob_);
 
-      SUBR(sparseMat_get_global_nrows)(A1_,&gnrows,&iflag_);
+      SUBR(sparseMat_global_nrows)(A1_,&gnrows,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(gnrows,nglob_);
-      SUBR(sparseMat_get_global_ncols)(A1_,&gncols,&iflag_);
+      SUBR(sparseMat_global_ncols)(A1_,&gncols,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(gncols,nglob_);
 
-      SUBR(sparseMat_get_global_nrows)(A2_,&gnrows,&iflag_);
+      SUBR(sparseMat_global_nrows)(A2_,&gnrows,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(gnrows,nglob_);
-      SUBR(sparseMat_get_global_ncols)(A2_,&gncols,&iflag_);
+      SUBR(sparseMat_global_ncols)(A2_,&gncols,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(gncols,nglob_);
 
-      SUBR(sparseMat_get_global_nrows)(A3_,&gnrows,&iflag_);
+      SUBR(sparseMat_global_nrows)(A3_,&gnrows,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(gnrows,nglob_);
-      SUBR(sparseMat_get_global_ncols)(A3_,&gncols,&iflag_);
+      SUBR(sparseMat_global_ncols)(A3_,&gncols,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(gncols,nglob_);
     

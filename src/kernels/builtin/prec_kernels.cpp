@@ -42,14 +42,14 @@ extern "C" {
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
-#include "../kernels_noprec.c"
+#include "../common/kernels_noprec.c"
 
 #include "phist_gen_c.h"
-#include "../kernels_noprec.c"
+#include "../common/kernels_noprec.c"
 #endif
 
 #include "phist_gen_z.h"
-#include "../kernels_noprec.c"
+#include "../common/kernels_noprec.c"
 
 #ifdef PHIST_HIGH_PRECISION_KERNELS
 #include "prec_kernels_d.h"
@@ -61,6 +61,6 @@ extern "C" {
 } //extern "C"
 #include "prec_kernels_def.hpp"
 #else
-#include "../kernels_noprec.c"
+#include "../common/kernels_noprec.c"
 } //extern "C"
 #endif

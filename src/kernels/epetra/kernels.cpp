@@ -204,24 +204,24 @@ extern "C" void phist_totalMatVecCount()
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
-#include "../kernels_noimpl.c"
-#include "../kernels_nogpu.c"
-#include "../carp_noimpl.c"
+#include "../common/kernels_noimpl.c"
+#include "../common/kernels_nogpu.c"
+#include "../common/carp_noimpl.c"
 
 #include "phist_gen_c.h"
-#include "../kernels_noimpl.c"
-#include "../kernels_nogpu.c"
-#include "../carp_noimpl.c"
+#include "../common/kernels_noimpl.c"
+#include "../common/kernels_nogpu.c"
+#include "../common/carp_noimpl.c"
 #endif
 #include "phist_gen_z.h"
-#include "../kernels_noimpl.c"
-#include "../kernels_nogpu.c"
-#include "../carp_noimpl.c"
+#include "../common/kernels_noimpl.c"
+#include "../common/kernels_nogpu.c"
+#include "../common/carp_noimpl.c"
 
 } //extern "C"
 
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
-#include "kernels_no_fused.cpp"
+#include "../common/kernels_no_fused.cpp"
 

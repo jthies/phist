@@ -915,6 +915,6 @@ std::cout << "iflag&DIST2_COLOR="<<(*iflag&PHIST_SPARSEMAT_DIST2_COLOR)<<std::en
         rowFunPtr, iflag), *iflag);
 }
 
-#include "../kernels_nogpu.c"
+#include "../common/kernels_nogpu.c"
 
 

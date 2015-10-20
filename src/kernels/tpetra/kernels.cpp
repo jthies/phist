@@ -295,20 +295,20 @@ extern "C" void phist_totalMatVecCount()
 #include "phist_gen_s.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
-#include "kernels_no_fused.cpp"
+#include "../common/kernels_no_fused.cpp"
 
 #include "phist_gen_c.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
-#include "kernels_no_fused.cpp"
+#include "../common/kernels_no_fused.cpp"
 #endif
 
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
-#include "kernels_no_fused.cpp"
+#include "../common/kernels_no_fused.cpp"
 
 #include "phist_gen_z.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
-#include "kernels_no_fused.cpp"
+#include "../common/kernels_no_fused.cpp"
