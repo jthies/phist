@@ -242,6 +242,14 @@ extern "C" void phist_map_get_local_length(const_map_ptr_t vmap, lidx_t* nloc, i
   *nloc = map->getNodeNumElements();
 }
 
+//!
+extern "C" void phist_map_get_global_length(const_map_ptr_t vmap, gidx_t* nglob, int* iflag)
+{
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(const map_t,map,vmap,*iflag);
+  *nglob = map->getGlobalNumElements();
+}
+
 //! returns the smallest global index in the map appearing on my partition. iflag is set to 1
 //! in case the map is not contiguous, because in that case it may be that the
 //! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.

@@ -27,7 +27,7 @@ extern "C" {
   void SUBR(mvec_gather_mvecs_f)(TYPE(mvec_ptr),TYPE(const_mvec_ptr) W[], int, int*);
   void SUBR(mvec_get_block_f)(TYPE(const_mvec_ptr),TYPE(mvec_ptr),int,int,int*);
   void SUBR(mvec_get_map_f)(TYPE(const_mvec_ptr),const_map_ptr_t*,int*);
-  void SUBR(mvec_my_length_f)(TYPE(const_mvec_ptr),lidx_t*,int*);
+//  void SUBR(mvec_my_length_f)(TYPE(const_mvec_ptr),lidx_t*,int*);
   void SUBR(mvec_norm2_f)(TYPE(const_mvec_ptr),_MT_*,int*);
   void SUBR(mvec_num_vectors_f)(TYPE(const_mvec_ptr),int*,int*);
   void SUBR(mvec_print_f)(TYPE(const_mvec_ptr),int*);
@@ -209,24 +209,10 @@ extern "C" void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t com
 }
                   
 
-extern "C" void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) V, lidx_t* len, int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  PHIST_CHK_IERR(SUBR(mvec_my_length_f)(V,len,iflag),*iflag);
-}
-
 extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) V, const_map_ptr_t* map, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CHK_IERR(SUBR(mvec_get_map_f)(V,map,iflag),*iflag);
-}
-
-extern "C" void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) V, const_comm_ptr_t* comm, int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  const_map_ptr_t map;
-  PHIST_CHK_IERR(SUBR(mvec_get_map)(V,&map,iflag),*iflag);
-  PHIST_CHK_IERR(phist_map_get_comm(map,comm,iflag),*iflag);
 }
 
 extern "C" void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) V, int* nvec, int* iflag)

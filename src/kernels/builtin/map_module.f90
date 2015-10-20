@@ -259,6 +259,21 @@ end if
     ierr = 0
   end subroutine phist_map_get_local_length
 
+  subroutine phist_map_get_global_length(map_ptr, nglob, ierr) bind(C)
+    use, intrinsic :: iso_c_binding
+    use mpi
+    !------------------------------------------------------------
+    type(C_PTR),    value       :: map_ptr
+    integer(C_INT64_T), intent(out) :: nglob, ierr
+    !------------------------------------------------------------
+    type(Map_t), pointer :: map
+    !------------------------------------------------------------
+
+    call c_f_pointer(map_ptr, map)
+    nglob = map%distrib(map%nProcs)
+    ierr = 0
+  end subroutine phist_map_get_global_length
+
 
   subroutine phist_map_get_ilower(map_ptr, ilower, ierr) bind(C)
     use, intrinsic :: iso_c_binding

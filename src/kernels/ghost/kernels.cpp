@@ -322,6 +322,15 @@ extern "C" void phist_map_get_local_length(const_map_ptr_t vmap, lidx_t* nloc, i
   *nloc=map->ctx->lnrows[me];
   }
 
+//!
+extern "C" void phist_map_get_global_length(const_map_ptr_t vmap, gidx_t* nglob, int* iflag)
+  {
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*iflag);
+  int me;
+  *nglob=map->ctx->gnrows;
+  }
+
 //! returns the smallest global index in the map appearing on my partition.
 extern "C" void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* iflag)
   {

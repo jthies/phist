@@ -82,21 +82,7 @@ void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-void SUBR(sparseMat_global_size)(TYPE(sparseMat_ptr) A, gidx_t*, int* iflag){
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
-
-void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) V, lidx_t* len, int* iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
-
 void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) V, const_map_ptr_t* map, int* iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
-
-void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) V, const_comm_ptr_t* comm, int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }

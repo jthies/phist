@@ -388,27 +388,6 @@ void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
 
 //@}
 
-//! retrieve global size of sparse matrix A
-extern "C" void SUBR(sparseMat_global_size)(TYPE(sparseMat_ptr) vA, gidx_t* s, int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag = 0;
-  PHIST_CAST_PTR_FROM_VOID(const ghost_sparsemat_t,A,vA,*iflag);
-  // TODO add this check for global indices?
-  //PHIST_CHK_IERR(*iflag=check_local_size(V->traits.nrows),*iflag);
-  *s = A->context->gnrows;
-}
-
-//! retrieve local length of the vectors in V
-extern "C" void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) vV, lidx_t* len, int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag = 0;
-  PHIST_CAST_PTR_FROM_VOID(const ghost_densemat_t,V,vV,*iflag);
-  PHIST_CHK_IERR(*iflag=check_local_size(V->traits.nrows),*iflag);
-  *len = V->traits.nrows;
-}
-
 //! retrieve the map of the vectors in V
 extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, const_map_ptr_t* vmap, int* iflag)
 {
@@ -420,27 +399,6 @@ extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, const_map_ptr_t* vma
   map->ctx=V->context; 
   map->vtraits_template=V->traits;
   *vmap=(const_map_ptr_t)map;
-}
-
-//! retrieve the comm used for MPI communication in V
-extern "C" void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) vV, const_comm_ptr_t* vcomm, int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const ghost_densemat_t,V,vV,*iflag);
-
-  if (V->context!=NULL)
-  {
-    *vcomm=(const_comm_ptr_t)&(V->context->mpicomm);
-  }
-  else
-  {
-    PHIST_OUT(PHIST_WARNING,"in mvec_get_comm: ghost_densemat_t without context!\n");
-    MPI_Comm* comm = new MPI_Comm;
-    *comm=MPI_COMM_SELF;
-    *vcomm=(const_comm_ptr_t)(comm);
-  }
-  return;
 }
 
 //! retrieve number of vectors/columns in V

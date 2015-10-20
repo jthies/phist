@@ -263,6 +263,7 @@ void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int
 void phist_map_delete(map_ptr_t vmap, int *iflag);
 void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* iflag);
 void phist_map_get_local_length(const_map_ptr_t vmap, lidx_t* nloc, int* iflag);
+void phist_map_get_global_length(const_map_ptr_t vmap, gidx_t* nglob, int* iflag);
 void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* iflag);
 void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* iflag);
 

@@ -571,6 +571,9 @@ if (NOT ESSEX-PHYSICS_FOUND)
                                   ${PROJECT_SOURCE_DIR}/drivers/matfuncs/part_tools.c)
 endif()
 
+# sopme `derived' kernel functions, e.g. mvec_my_length is implemented via mvec_get_map/map_get_local_lenth etc.
+LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/kernels_common_impl.c)
+
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.cpp
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_timemonitor.cpp
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_perfcheck.cpp)

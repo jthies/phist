@@ -222,23 +222,6 @@ void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
 
 //@}
 
-//! retrieve global size of sparse matrix A
-extern "C" void SUBR(sparseMat_global_size)(TYPE(sparseMat_ptr) vA, gidx_t* s, int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag = 0;
-  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t,A,vA,*iflag);
-  *s = A->getGlobalNumRows(); // NumGlobalRows64?
-}
-
-//! retrieve local length of the vectors in V
-extern "C" void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) vV, lidx_t* len, int* iflag)
-  {
-  *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*iflag);
-  *len = V->getLocalLength();
-  }
-
 //! retrieve the map of the vectors in V
 extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, const_map_ptr_t* vmap, int* iflag)
   {
@@ -246,15 +229,6 @@ extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, const_map_ptr_t* vma
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*iflag);
   *vmap=(const_map_ptr_t)(V->getMap().get());
   }
-
-//! retrieve the comm used for MPI communication in V
-extern "C" void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) vV, const_comm_ptr_t* vcomm, int* iflag)
-  {
-  *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*iflag);
-  *vcomm=(const_comm_ptr_t)(V->getMap()->getComm().get());
-  }
-
 
 //! retrieve number of vectors/columns in V
 extern "C" void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) vV, int* nvec, int* iflag)
