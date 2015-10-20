@@ -44,9 +44,13 @@
 // adaptation of a basic ortho class from Trili 11.12 to avoid 
 // col-wise norm calculations
 #include "./AnasaziMatOrthoManager.hpp"
+#include "./AnasaziSVQBOrthoManager.hpp"
+#include "./AnasaziTsqrOrthoManagerImpl.hpp"
+#include "AnasaziTsqrOrthoManager.hpp"
+// enable TSQR
+#include "./AnasaziBlockKrylovSchurSolMgr.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziSolverManager.hpp"
-#include "AnasaziBlockKrylovSchurSolMgr.hpp"
 #endif
 
 #include "phist_gen_d.h"

@@ -30,11 +30,13 @@
   \brief  Templated virtual class for providing orthogonalization/orthonormalization methods with matrix-based
           inner products.
 */
+#ifndef PHIST_ANASAZI_MATORTHOMANAGER_HPP
+
 #ifdef ANASAZI_MATORTHOMANAGER_HPP
 #error "phist_AnasaziMatOrthoManager.hpp should be included before the original file"
 #endif
 
-#ifndef ANASAZI_MATORTHOMANAGER_HPP
+#define PHIST_ANASAZI_MATORTHOMANAGER_HPP
 #define ANASAZI_MATORTHOMANAGER_HPP
 
 /*! \class Anasazi::MatOrthoManager
