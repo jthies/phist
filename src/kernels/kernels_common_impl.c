@@ -4,6 +4,8 @@
 #include <mpi.h>
 #endif
 
+#include <stdlib.h>
+
 #include "phist_kernels.h"
 
 #ifdef PHIST_HAVE_SP

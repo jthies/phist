@@ -42,3 +42,14 @@ void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) V, const_comm_ptr_t* comm, int* if
   PHIST_CHK_IERR(phist_map_get_comm(map,comm,iflag),*iflag);
 }
 
+//! y[i]=alpha*(A*x+shift*x) + beta*y
+void SUBR(sparseMat_times_mvec_add_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
+        _ST_ shift, TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag)
+{
+  int nv;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x,&nv,iflag),*iflag);
+  _ST_* shifts=(_ST_*)malloc(nv*sizeof(_ST_));;
+  for (int i=0;i<nv;i++) shifts[i]=shift;
+  SUBR(sparseMat_times_mvec_vadd_mvec)(alpha,A,shifts,x,beta,y,iflag);
+  free(shifts);
+}
