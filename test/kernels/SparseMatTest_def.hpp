@@ -477,21 +477,52 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
 };
 
   TEST_F(CLASSNAME, read_matrices) 
-    {
+  {
     if (typeImplemented_ && !problemTooSmall_)
-      {
+    {
       ASSERT_TRUE(AssertNotNull(A0_));
       ASSERT_TRUE(AssertNotNull(A1_));
       ASSERT_TRUE(AssertNotNull(A2_));
       ASSERT_TRUE(AssertNotNull(A3_));
-      }
+    
+      // test that the global number of rows/cols is correct in the objects
+      gidx_t gnrows, gncols;
+      SUBR(sparseMat_get_global_nrows)(A0_,&gnrows,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(gnrows,nglob_);
+      SUBR(sparseMat_get_global_ncols)(A0_,&gncols,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(gncols,nglob_);
+
+      SUBR(sparseMat_get_global_nrows)(A1_,&gnrows,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(gnrows,nglob_);
+      SUBR(sparseMat_get_global_ncols)(A1_,&gncols,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(gncols,nglob_);
+
+      SUBR(sparseMat_get_global_nrows)(A2_,&gnrows,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(gnrows,nglob_);
+      SUBR(sparseMat_get_global_ncols)(A2_,&gncols,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(gncols,nglob_);
+
+      SUBR(sparseMat_get_global_nrows)(A3_,&gnrows,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(gnrows,nglob_);
+      SUBR(sparseMat_get_global_ncols)(A3_,&gncols,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(gncols,nglob_);
+    
     }
+  }
 
 #ifndef SKIP_ZERO_MAT
   TEST_F(CLASSNAME, A0_times_mvec) 
-    {
+  {
     if (typeImplemented_ && !problemTooSmall_ && haveMats_)
-      {
+    {
       // matrices may have different maps
       rebuildVectors(A0_);
 
@@ -500,14 +531,14 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       SUBR(sparseMat_times_mvec)(st::one(),A0_,vec1_,st::zero(),vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),MvecEqual(vec2_,0.0));
-      }
     }
+  }
 #endif
 
   TEST_F(CLASSNAME, A1_times_mvec)
-    {
+  {
     if (typeImplemented_ && !problemTooSmall_ && haveMats_)
-      {
+    {
       // matrices may have different maps
       rebuildVectors(A1_);
 
@@ -623,8 +654,8 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       SUBR(mvec_print)(vec3_,&iflag_);
 #endif
       ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_,mt::one()),1000*mt::eps());
-      }
     }
+  }
 
 #if(_NV_>1)
   TEST_F(CLASSNAME, A1_times_mvec_using_two_views_of_the_same_vec)

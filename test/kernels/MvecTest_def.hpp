@@ -68,32 +68,43 @@ public:
 };
 
   TEST_F(CLASSNAME, my_length)
-    {
+  {
     if (typeImplemented_ && !problemTooSmall_)
-      {
+    {
       lidx_t nloc;
       SUBR(mvec_my_length)(vec1_,&nloc,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nloc_, nloc); 
-      }
     }
+  }
+
+  TEST_F(CLASSNAME, global_length)
+  {
+    if (typeImplemented_ && !problemTooSmall_)
+    {
+      gidx_t nglob;
+      SUBR(mvec_global_length)(vec1_,&nglob,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(nglob_, nglob); 
+    }
+  }
 
   TEST_F(CLASSNAME, num_vectors) 
-    {
+  {
     if (typeImplemented_ && !problemTooSmall_)
-      {
+    {
       int nvec;
       SUBR(mvec_num_vectors)(vec1_,&nvec,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nvec_, nvec);
-      }
     }
+  }
 
 
   TEST_F(CLASSNAME, put_value) 
-    {
+  {
     if (typeImplemented_ && !problemTooSmall_)
-      {
+    {
       ST val = (_ST_)42.0 + (ST)3.0*st::cmplx_I();
       SUBR(mvec_put_value)(vec1_,val,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -106,8 +117,8 @@ public:
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(lda_,lda_new);
       ASSERT_EQ(vec1_vp_,ptr);
-      }
     }
+  }
 
   TEST_F(CLASSNAME, dot_mvec)
   {
