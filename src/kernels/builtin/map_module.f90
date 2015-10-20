@@ -270,7 +270,7 @@ end if
     !------------------------------------------------------------
 
     call c_f_pointer(map_ptr, map)
-    nglob = map%distrib(map%nProcs)
+    nglob = map%distrib(map%nProcs)-1
     ierr = 0
   end subroutine phist_map_get_global_length
 
