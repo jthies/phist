@@ -139,6 +139,13 @@ virtual void TearDown()
   {
     if (useViews_)
     {
+   
+      // download memory from device 
+      SUBR(sdMat_from_device)((void*)mem1_,&this->iflag_);
+      SUBR(sdMat_from_device)((void*)mem2_,&this->iflag_);
+      SUBR(sdMat_from_device)((void*)mem3_,&this->iflag_);
+      SUBR(sdMat_from_device)((void*)mem4_,&this->iflag_);
+
       // check pre col padding is still the same
       ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem1_vp_,nrows_,pad_nc_pre_,this->m_lda_,1,(_ST_)-1001.,this->mflag_));
       ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem2_vp_,nrows_,pad_nc_pre_,this->m_lda_,1,(_ST_)-1002.,this->mflag_));
