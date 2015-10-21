@@ -1,4 +1,3 @@
-#include "phist_kernels_carp_decl.h"
 
 extern "C" {
 
