@@ -1,5 +1,3 @@
-#include "phist_carp_decl.h"
-
 extern "C" {
 
 void SUBR(carp_setup)(TYPE(const_sparseMat_ptr) A, int numShifts, 
