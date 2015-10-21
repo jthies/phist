@@ -16,12 +16,11 @@
 #include <cstdlib>
 #include <cstdio>
 #include <iostream>
+#include <string>
+#include <map>
 
 #include "phist_macros.h"
 #include "phist_kernel_perfmodels.hpp"
-#ifdef PHIST_HAVE_TEUCHOS
-#include "phist_trilinos_macros.h"
-#endif
 #include "../phist_kernels.h"
 
 #include "phist_typedefs.h"
@@ -81,11 +80,12 @@ void pinThreads()
     PHIST_CHK_IERR( iflag = MPI_Allgather(myNodeId, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, allNodeId, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, MPI_COMM_WORLD), iflag);
     // on the same node the node ids are identical
     std::map<std::string,int> nodeNameSet;
+    std::string myNodeIdStr(myNodeId);
     for(int i = 0; i < nRanks; i++)
     {
       if( i == myRank )
-        myRankInNode = nodeNameSet[(std::string(myNodeId))];
-      nodeNameSet[(std::string(myNodeId))]++;
+        myRankInNode = nodeNameSet[myNodeIdStr];
+      nodeNameSet[myNodeIdStr]++;
     }
     ranksPerNode = nRanks / nodeNameSet.size();
   }
