@@ -447,7 +447,7 @@ static void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
   if (gtype==GHOST_TYPE_CUDA)
   {
     *C=std::max(*C,32);
-    *sigma=std::max(256,*sigma);
+//    *sigma=std::max(256,*sigma);
   }
   MPI_Allreduce(MPI_IN_PLACE,C,1,MPI_INT,MPI_MAX,comm);
   MPI_Allreduce(MPI_IN_PLACE,sigma,1,MPI_INT,MPI_MAX,comm);
