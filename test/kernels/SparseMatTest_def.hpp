@@ -861,6 +861,8 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       lidx_t lda = 0;
       SUBR(mvec_extract_view)(orderedVec, &orderedVec_vp, &lda, &iflag_);
       ASSERT_EQ(0,iflag_);
+      
+      SUBR(mvec_from_device)(orderedVec, &iflag_);
 
       // setup recognizable input
       for(int i = 0; i < nloc; i++)
@@ -870,6 +872,9 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
           orderedVec_vp[VIDX(i,j,lda)] = (_ST_)(ilower+i + j*nglob_);
         }
       }
+      
+      SUBR(mvec_to_device)(orderedVec, &iflag_);
+      
       // copy to vec1_
       SUBR(mvec_to_mvec)(orderedVec, vec1_, &iflag_);
       if( iflag_ == PHIST_NOT_IMPLEMENTED )
@@ -877,7 +882,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
         SUBR(mvec_add_mvec)(st::one(),orderedVec,st::zero(),vec1_,&iflag_);
       }
       ASSERT_EQ(0,iflag_);
-
+      
 
       // apply our shift matrix
 #if PHIST_OUTLEV>=PHIST_INFO
@@ -888,6 +893,7 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
       ASSERT_EQ(0,iflag_);
 #endif
       SUBR(sparseMat_times_mvec)(alpha,A2_,vec1_,beta,vec2_,&iflag_);
+      
       ASSERT_EQ(0,iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_print)(vec2_,&iflag_);
@@ -1022,7 +1028,9 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
         SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),orderedVec,&iflag_);
       }
       ASSERT_EQ(0,iflag_);
-
+      
+      // download result
+      SUBR(mvec_from_device)(orderedVec, &iflag_);
 
       // check result
       _MT_ err = 0;
