@@ -120,6 +120,11 @@ void deleteVecs()
   // verify nobody touched the unviewed parts!
   if (useViews_)
   {
+    // download memory from device 
+    SUBR(mvec_from_device)((void*)mem1_,&this->iflag_);
+    SUBR(mvec_from_device)((void*)mem2_,&this->iflag_);
+    SUBR(mvec_from_device)((void*)mem3_,&this->iflag_);
+   
     // check pre padding is still the same
     ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem1_vp_,this->nloc_,pad_pre_,lda_,stride_,(_ST_)-101.,this->vflag_));
     ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem2_vp_,this->nloc_,pad_pre_,lda_,stride_,(_ST_)-102.,this->vflag_));
