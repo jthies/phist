@@ -1581,8 +1581,11 @@ TEST_F(CLASSNAME,mvecT_times_mvec_after_spmvm)
     for (int i=0; i<nvec_; i++)
       vec1_vp_[VIDX(ii,i,lda_)] = (_ST_) st::one()*(_MT_)((i+1)*1.0l/(ilower+ii+2));
   }
+  SUBR(mvec_to_device)(vec1_,&iflag_);
+  SUBR(mvec_to_device)(vec2_,&iflag_);
   SUBR(mvecT_times_mvec)(st::one(),vec1_,vec2_,st::zero(),mat1_,&iflag_);
   ASSERT_EQ(0,iflag_);
+  SUBR(sdMat_from_device)(mat1_,&iflag_);
   // check result
   sdMat_parallel_check(mat1_,&iflag_);
   ASSERT_EQ(0,iflag_);
