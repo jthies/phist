@@ -295,7 +295,7 @@ PHIST_TASK_END(iflag);
 //! create a block-vector as view of raw data. The map tells the object
 //! how many rows it should 'see' in the data (at most lda, the leading
 //! dimension of the 2D array values). CAVEAT: This function only works
-//! if nrowshalo==nrows in the map, which is in general only the case for
+//! if nrowshalo==nrowspadded in the map, which is in general only the case for
 //! if there is only 1 MPI process or the matrix is trivially parallel.
 extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap, 
         _ST_* values, lidx_t lda, int nvec,
@@ -314,7 +314,7 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
   PHIST_CHK_GERR(ghost_densemat_create(&result,map->ctx,vtraits),*iflag);
 
 #ifdef PHIST_MVECS_ROW_MAJOR
-  if (result->traits.nrowshalo!=result->traits.nrows+1)
+  if (result->traits.nrowshalo!=result->traits.nrowspadded+1)
   {
     PHIST_OUT(PHIST_ERROR,"viewing plain data as row-major ghost_densemat_t only works \n"
                           "for vectors without communciation buffers (for spMVM)\n");
