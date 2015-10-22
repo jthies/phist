@@ -679,6 +679,10 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_add_sdMat)(alpha, vu, beta, vd, &iflag_);
       ASSERT_EQ(0,iflag_);
+     
+      // download and check 
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      SUBR(sdMat_from_device)(mat2_,&iflag_);
       ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),100*mt::eps());
 
       // sdMat_add_sdMat left/right
@@ -686,6 +690,10 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_add_sdMat)(alpha, vr, beta, vl, &iflag_);
       ASSERT_EQ(0,iflag_);
+      
+      // download and check 
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      SUBR(sdMat_from_device)(mat2_,&iflag_);
       ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),100*mt::eps());
 
       // sdMat_times_sdMat 21,22->11
@@ -693,6 +701,10 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_times_sdMat)(alpha, v21, v22, beta, v11, &iflag_);
       ASSERT_EQ(0,iflag_);
+      
+      // download and check 
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      SUBR(sdMat_from_device)(mat2_,&iflag_);
       ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),100*mt::eps());
 
       // sdMat_times_sdMat 22,21->12
@@ -700,6 +712,10 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_times_sdMat)(alpha, v22, v21, beta, v12, &iflag_);
       ASSERT_EQ(0,iflag_);
+      
+      // download and check 
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      SUBR(sdMat_from_device)(mat2_,&iflag_);
       ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),100*mt::eps());
 
 
@@ -708,6 +724,10 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMatT_times_sdMat)(alpha, v22, v22, beta, v11, &iflag_);
       ASSERT_EQ(0,iflag_);
+      
+      // download and check 
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      SUBR(sdMat_from_device)(mat2_,&iflag_);
       ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),100*mt::eps());
 
       // sdMatT_times_sdMat 21,21->12
@@ -715,6 +735,10 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMatT_times_sdMat)(alpha, v21, v21, beta, v12, &iflag_);
       ASSERT_EQ(0,iflag_);
+      
+      // download and check 
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      SUBR(sdMat_from_device)(mat2_,&iflag_);
       ASSERT_NEAR   (mt::one(),ArraysEqual(mat1_vp_,mat2_vp_,nrows_,ncols_,m_lda_,stride),100*mt::eps());
 
       // delete ref views
