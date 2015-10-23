@@ -315,7 +315,7 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
       return;
     }
     PHIST_CHK_IERR(SUBR(sdMat_from_device)(S[i]->H_,iflag),*iflag);
-    PHIST_CHK_IERR(PREFIX(TRSV)("U","N","N",&m,(st::blas_scalar_t*)H_raw,&ildH,(st::blas_scalar_t*)y, &ildy),*iflag);
+    PHIST_CHK_IERR(PREFIX(TRSV)("U","N","N",(blas_idx_t *)&m,(st::blas_scalar_t*)H_raw,&ildH,(st::blas_scalar_t*)y, &ildy),*iflag);
 
 
     // if we are only interested in the directions Vi*yi and appropriate AVi*yi,
