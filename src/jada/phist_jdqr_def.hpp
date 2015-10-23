@@ -741,13 +741,13 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
 #ifdef IS_COMPLEX
     MT* rwork = work+4*nconv;
     PHIST_CHK_IERR(PREFIX(TREVC)((blas_char_t*)side, (blas_char_t*)howmny, NULL, 
-    &nconv, (mt::blas_cmplx_t*)R_raw, &ildR, NULL, &ildS, 
-    (mt::blas_cmplx_t*)S_raw, &ildS, &nconv, &m_out, (mt::blas_cmplx_t*)work, 
-    rwork, iflag),*iflag);
+    (blas_idx_t *)&nconv, (mt::blas_cmplx_t*)R_raw, &ildR, NULL, &ildS, 
+    (mt::blas_cmplx_t*)S_raw, &ildS, (blas_idx_t *)&nconv, (blas_idx_t *)&m_out, (mt::blas_cmplx_t*)work, 
+    rwork, (blas_idx_t *)iflag),*iflag);
 #else
     PHIST_CHK_IERR(PREFIX(TREVC)((blas_char_t*)side, (blas_char_t*)howmny, NULL, 
-    &nconv,R_raw, &ildR, NULL, &ildS, S_raw, &ildS, &nconv, &m_out, work, 
-    iflag),*iflag);
+    (blas_idx_t *)&nconv,R_raw, &ildR, NULL, &ildS, S_raw, &ildS, (blas_idx_t *)&nconv, (blas_idx_t *)&m_out, work, 
+    (blas_idx_t *)iflag),*iflag);
 #endif  
     delete [] work;
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,nconv-1,0,nconv-1,iflag),*iflag);
