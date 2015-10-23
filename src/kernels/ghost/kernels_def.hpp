@@ -942,7 +942,7 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
 PHIST_TASK_DECLARE(ComputeTask)
   PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
-  PHIST_CHK_GERR(V->fromFunc(V,(void(*)(ghost_gidx_t,ghost_lidx_t,void*))funPtr),*iflag);
+  PHIST_CHK_GERR(V->fromFunc(V,funPtr),*iflag);
   PHIST_TASK_END(iflag);
 }
 
