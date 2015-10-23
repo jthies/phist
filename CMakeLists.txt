@@ -75,7 +75,7 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
 #-----------------------------------------------------------------------
     # interface
     unset(MKL_INTERFACE_LIBS CACHE)
-    find_library(MKL_INTERFACE_LIBS NAMES mkl_intel_ilp64 PATHS "$ENV{MKLROOT}/lib/*")
+    find_library(MKL_INTERFACE_LIBS NAMES mkl_intel_lp64 PATHS "$ENV{MKLROOT}/lib/*")
     if(MKL_INTERFACE_LIBS STREQUAL "MKL_INTERFACE_LIBS-NOTFOUND")
       message(FATAL_ERROR "Could not find MKL interface library. Is the MKLROOT environment variable set properly?")
     else()

@@ -69,12 +69,12 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
     {
 #ifdef IS_COMPLEX
       PHIST_DEB("call complex %cGEES\n",st::type_char());
-      PREFIX(GEES)((blas_char_t*)jobvs,(blas_char_t*)sort,NULL,(blas_idx_t *)&m,(blas_cmplx_t*)T,(blas_idx_t *)&ldT,
-             (blas_idx_t *)&sdim,(blas_cmplx_t*)ev,(blas_cmplx_t*)S,(blas_idx_t *)&ldS,(blas_cmplx_t*)work,(blas_idx_t *)&lwork,ev_r,NULL,(blas_idx_t *)iflag);
+      PREFIX(GEES)((blas_char_t*)jobvs,(blas_char_t*)sort,NULL,&m,(blas_cmplx_t*)T,&ldT,
+             &sdim,(blas_cmplx_t*)ev,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)work,&lwork,ev_r,NULL,iflag);
 #else
       PHIST_DEB("call real %cGEES\n",st::type_char());
-      PREFIX(GEES)((blas_char_t*)jobvs,(blas_char_t*)sort,NULL,(blas_idx_t *)&m,T,(blas_idx_t *)&ldT,
-            (blas_idx_t *)&sdim,ev_r,ev_i,S,(blas_idx_t *)&ldS,work,(blas_idx_t *)&lwork,NULL,(blas_idx_t *)iflag);
+      PREFIX(GEES)((blas_char_t*)jobvs,(blas_char_t*)sort,NULL,&m,T,&ldT,
+            &sdim,ev_r,ev_i,S,&ldS,work,&lwork,NULL,iflag);
       for (int i=0;i<m;i++)
       {
         ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
@@ -143,11 +143,11 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
 #pragma omp master
       {
 #ifdef IS_COMPLEX
-        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,(blas_idx_t *)select,(blas_idx_t *)&m,(blas_cmplx_t*)T,(blas_idx_t *)&ldT,(blas_cmplx_t*)S,(blas_idx_t *)&ldS,(blas_cmplx_t*)ev,(blas_idx_t *)&nsorted,
-              &S_cond, &sep, (blas_cmplx_t*)work, (blas_idx_t *)&lwork, (blas_idx_t *)iflag);
+        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)ev,&nsorted,
+              &S_cond, &sep, (blas_cmplx_t*)work, &lwork, iflag);
 #else
-        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,(blas_idx_t *)select,(blas_idx_t *)&m,T,(blas_idx_t *)&ldT,S,(blas_idx_t *)&ldS,ev_r,ev_i,(blas_idx_t *)&nsorted,
-              &S_cond, &sep, work, (blas_idx_t *)&lwork, (blas_idx_t *)iwork, (blas_idx_t *)&liwork, (blas_idx_t *)iflag);
+        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
+              &S_cond, &sep, work, &lwork, iwork, &liwork, iflag);
         for (int i=0;i<m;i++)
         {
           ev[i]=std::complex<MT>(ev_r[i],ev_i[i]);
@@ -193,11 +193,11 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
         // we pass in ev+i
         int nsorted_before=nsorted;
 #ifdef IS_COMPLEX
-        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,(blas_idx_t *)select,(blas_idx_t *)&m,(blas_cmplx_t*)T,(blas_idx_t *)&ldT,(blas_cmplx_t*)S,(blas_idx_t *)&ldS,
-              (blas_cmplx_t*)ev,(blas_idx_t *)&nsorted,&S_cond, &sep, (blas_cmplx_t*)work, (blas_idx_t *)&lwork, (blas_idx_t *)iflag);
+        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,
+              (blas_cmplx_t*)ev,&nsorted,&S_cond, &sep, (blas_cmplx_t*)work, &lwork, iflag);
 #else
-        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,(blas_idx_t *)select,(blas_idx_t *)&m,T,(blas_idx_t *)&ldT,S,(blas_idx_t *)&ldS,ev_r,ev_i,(blas_idx_t *)&nsorted,
-              &S_cond, &sep, work, (blas_idx_t *)&lwork, (blas_idx_t *)iwork, (blas_idx_t *)&liwork, (blas_idx_t *)iflag);
+        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
+              &S_cond, &sep, work, &lwork, iwork, &liwork, iflag);
         for (int j=0;j<m;j++)
         {
           ev[j]=std::complex<MT>(ev_r[j],ev_i[j]);
@@ -325,11 +325,11 @@ void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
         int ilst = pos+1;
         PHIST_SOUT(PHIST_DEBUG,"swapping %d %d in unconverged eigenvalues\n",ifst-1,ilst-1);
 #ifdef IS_COMPLEX
-        PREFIX(TREXC) ((blas_char_t*)compq, (blas_idx_t *)&m, (blas_cmplx_t*) T, 
-            (blas_idx_t *)&ldT, (blas_cmplx_t*) S, (blas_idx_t *)&ldS, (blas_idx_t *)&ifst, (blas_idx_t *)&ilst, (blas_idx_t *)iflag);
+        PREFIX(TREXC) ((blas_char_t*)compq, &m, (blas_cmplx_t*) T, 
+            &ldT, (blas_cmplx_t*) S, &ldS, &ifst, &ilst, iflag);
 #else
-        PREFIX(TREXC) ((blas_char_t*)compq, (blas_idx_t *)&m, T, (blas_idx_t *)&ldT, S, (blas_idx_t *)&ldS, 
-            (blas_idx_t *)&ifst, (blas_idx_t *)&ilst, work, (blas_idx_t *)iflag);
+        PREFIX(TREXC) ((blas_char_t*)compq, &m, T, &ldT, S, &ldS, 
+            &ifst, &ilst, work, iflag);
 #endif
         if( *iflag != 0 )
           break;
