@@ -1547,7 +1547,7 @@ PHIST_TASK_END(iflag);
   }
 #ifndef PHIST_MVECS_ROW_MAJOR
 #warning "Disabling GHOST tsmm_inplace for col-major mvecs for now..."
-#include "../kernels_no_inplace_VC.cpp"
+#include "../common/kernels_no_inplace_VC.cpp"
 #else
 //! C <- V*C
 extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) vV,
