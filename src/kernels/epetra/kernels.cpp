@@ -149,7 +149,11 @@ extern "C" void phist_map_get_global_length(const_map_ptr_t vmap, gidx_t* nglob,
   {
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_BlockMap,map,vmap,*iflag);
+#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
   *nglob = map->NumGlobalElements();
+#else
+  *nglob = map->NumGlobalElements64();
+#endif
   }
 
 //! returns the smallest global index in the map appearing on my partition. iflag is set to 1
