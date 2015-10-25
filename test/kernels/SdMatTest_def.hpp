@@ -59,13 +59,86 @@ public:
   TEST_F(CLASSNAME, upload_download)
   {
     // just tests that the upload and download functions return 0
-    // and do not crash.
+    // and do not crash. Note that it is not easy to verify the  
+    // correctness of the functions in our current settings: the 
+    // semantics are different if there is an accelerator, and we
+    // do not have a function to test wether ther is one.
     if (typeImplemented_)
     {
       SUBR(sdMat_to_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_from_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
+    }
+  }
+
+  TEST_F(CLASSNAME, sync_values)
+  {
+    if (typeImplemented_)
+    {
+      // manually set values depending on MPI rank
+      for(int i = 0; i < nrows_; i++)
+      {
+        for(int j = 0; j < ncols_; j++)
+        {
+          mat1_vp_[MIDX(i,j,m_lda_)] = (mpi_rank_*nrows_+i)*ncols_+j;
+          mat2_vp_[MIDX(i,j,m_lda_)] = i*ncols_+j; // this should be the result on all procs
+        }
+      }
+      
+      // synchronize
+      SUBR(sdMat_to_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_to_device)(mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_sync_values)(mat1_,comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // make sure everyone has the values set by rank 0
+      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat1_,mat2_));
+    }
+  }
+
+  TEST_F(CLASSNAME, sync_values_of_view)
+  {
+    if (typeImplemented_)
+    {
+      _ST_ a0=(_ST_)((mpi_rank_+1)*1234);
+      SUBR(sdMat_put_value)(mat1_,a0,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_put_value)(mat2_,a0,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      int i0=std::min(1,nrows_-1);
+      int i1=nrows_-1;
+      int j0=std::min(1,ncols_-1);
+      int j1=ncols_-1;
+      // manually set values depending on MPI rank
+      for(int i = i0; i <= i1; i++)
+      {
+        for(int j = j0; j <= j1; j++)
+        {
+          mat1_vp_[MIDX(i,j,m_lda_)] = (mpi_rank_*nrows_+i)*ncols_+j;
+          mat2_vp_[MIDX(i,j,m_lda_)] = i*ncols_+j; // this should be the result on all procs
+        }
+      }
+      
+      // synchronize
+      SUBR(sdMat_to_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_to_device)(mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      TYPE(sdMat_ptr) mat1v=NULL;
+      SUBR(sdMat_view_block)(mat1_,&mat1v,i0,i1,j0,j1,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_sync_values)(mat1v,comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_delete)(mat1v,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      // make sure everyone has the values set by rank 0
+      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat1_,mat2_));
     }
   }
 

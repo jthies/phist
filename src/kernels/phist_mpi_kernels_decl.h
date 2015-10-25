@@ -14,7 +14,7 @@ void SUBR(mvec_Irecv)(TYPE(const_mvec_ptr) V, int dest, int tag,
 
 /*! synchronize values  of a small dense matrix among all processes of a given communicator \ingroup sdmat
 
- This function is inteded for testing purposes only and should *not* be used in any 
+ This function is intended for testing purposes only and should *not* be used in any 
  performance-relevant situations. Kernel libs not based on MPI *must* provide their
  own implementation (as done by GHOST).
  */
