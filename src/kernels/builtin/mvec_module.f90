@@ -3045,6 +3045,9 @@ contains
     Ripn%jmax = R%jmax
     Ripn%is_view = .true.
     Ripn%val => R%val
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+    Ripn%err => R%err
+#endif
     Ripn%comm = R%comm
 
     ! simple modified gram schmidt... probably SLOW
