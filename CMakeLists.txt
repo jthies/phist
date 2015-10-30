@@ -109,9 +109,19 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
     endif()
   else()
 #=======================================================================
+    # First search external non-system paths to allow the use of 
+    # non-default libraries. Only if nothing is found there also search
+    # system paths.
+    # Maybe even add a special variable for LAPACK, LAPACKe and BLAS
+    # paths.
+
     # LAPACKe
     unset(LAPACKE_LIBS CACHE)
-    find_library(LAPACKE_LIBS NAMES "liblapacke.so" "liblapacke.a")
+    find_library(LAPACKE_LIBS NAMES "liblapacke.so" "liblapacke.a" NO_CMAKE_SYSTEM_PATH NO_SYSTEM_ENVIRONMENT_PATH)
+    if(LAPACKE_LIBS STREQUAL "LAPACKE_LIBS-NOTFOUND")
+      # we could add NO_CMAKE_PATH and NO_CMAKE_ENVIRONMENT_PATH because we already searched there
+      find_library(LAPACKE_LIBS NAMES "liblapacke.so" "liblapacke.a")
+    endif()
     if(LAPACKE_LIBS STREQUAL "LAPACKE_LIBS-NOTFOUND")
       message(FATAL_ERROR "LAPACKe libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
     else()
@@ -121,7 +131,10 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
 #-----------------------------------------------------------------------
     # LAPACK
     unset(LAPACK_LIBS CACHE)
-    find_library(LAPACK_LIBS NAMES "liblapack.so" "liblapack.a")
+    find_library(LAPACK_LIBS NAMES "liblapack.so" "liblapack.a" NO_CMAKE_SYSTEM_PATH NO_SYSTEM_ENVIRONMENT_PATH)
+    if(LAPACK_LIBS STREQUAL "LAPACK_LIBS-NOTFOUND")
+      find_library(LAPACK_LIBS NAMES "liblapack.so" "liblapack.a")
+    endif()
     if(LAPACK_LIBS STREQUAL "LAPACK_LIBS-NOTFOUND")
       message(FATAL_ERROR "LAPACK libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
     else()
@@ -131,7 +144,10 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
 #-----------------------------------------------------------------------
     # BLAS
     unset(BLAS_LIBS CACHE)
-    find_library(BLAS_LIBS NAMES "libblas.so" "libblas.a")
+    find_library(BLAS_LIBS NAMES "libblas.so" "libblas.a" NO_CMAKE_SYSTEM_PATH NO_SYSTEM_ENVIRONMENT_PATH)
+    if(BLAS_LIBS STREQUAL "BLAS_LIBS-NOTFOUND")
+      find_library(BLAS_LIBS NAMES "libblas.so" "libblas.a")
+    endif()
     if(BLAS_LIBS STREQUAL "BLAS_LIBS-NOTFOUND")
       message(FATAL_ERROR "BLAS libraries not found. Add the proper path to CMAKE_PREFIX_PATH.")
     else()
