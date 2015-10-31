@@ -19,6 +19,12 @@
  *  \param taskName previously declared identifier (with PHIST_TASK_DECLARE)
  */
 
+/*! \def PHIST_TASK_BEGIN_SMALLDETERMINISTIC(taskName)
+ *  Marks the start of a task, must be followed by PHIST_TASK_END or PHIST_TASK_END_NOWAIT.
+ *  Only uses one thread to make results deterministic.
+ *  \param taskName previously declared identifier (with PHIST_TASK_DECLARE)
+ */
+
 /*! \def PHIST_TASK_END(task_ierr)
  * Marks the end of a task and waits for it to finish.
  * With GHOST this task allocates (and blocks) all available resources (e.g. cores)!
@@ -75,7 +81,7 @@ class WrapLambdaForGhostTask
 {
   public:
     // constructor
-    WrapLambdaForGhostTask(ghost_task_t **task, const LFunc &context, int* iflag, bool async)
+    WrapLambdaForGhostTask(ghost_task_t **task, bool deterministicOneThread, const LFunc &context, int* iflag, bool async)
     {
       // check that the task is not already allocated/in use
       PHIST_CHK_IERR(*iflag = (*task != NULL) ? -1 : 0, *iflag);
@@ -100,6 +106,8 @@ class WrapLambdaForGhostTask
       // actually create the task and copy the context to the heap
       {
         int nThreads = async ? 0 : GHOST_TASK_FILL_ALL;
+        if( deterministicOneThread )
+          nThreads = 1;
         ghost_task_flags_t flags = GHOST_TASK_DEFAULT;
         PHIST_CHK_GERR(ghost_task_create(task, nThreads, 0, void_lambda_caller, (void*) new LFunc(context), flags, NULL, 0), *iflag);
       }
@@ -172,9 +180,9 @@ class WrapLambdaForGhostTask
 
 // actually wrap a lambda for ghost and run it (creates an instance of WrapLambdaForGhostTask)
 template<typename LFunc>
-static inline WrapLambdaForGhostTask<LFunc> phist_execute_lambda_as_ghost_task(ghost_task_t **task, const LFunc &context, int* iflag, bool async)
+static inline WrapLambdaForGhostTask<LFunc> phist_execute_lambda_as_ghost_task(ghost_task_t **task, bool deterministicOneThread, const LFunc &context, int* iflag, bool async)
 {
-  return WrapLambdaForGhostTask<LFunc>(task,context,iflag,async);
+  return WrapLambdaForGhostTask<LFunc>(task,deterministicOneThread,context,iflag,async);
 }
 
 // wait till a task is finished
@@ -203,7 +211,10 @@ static inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
   ghost_task_t* taskName = NULL;
 
 #define PHIST_TASK_BEGIN(taskName) \
-  phist_execute_lambda_as_ghost_task(&taskName, ([&]() -> void {
+  phist_execute_lambda_as_ghost_task(&taskName, false, ([&]() -> void {
+
+#define PHIST_TASK_BEGIN_SMALLDETERMINISTIC(taskName) \
+  phist_execute_lambda_as_ghost_task(&taskName, true, ([&]() -> void {
 
 #define PHIST_TASK_END(task_ierr) \
         }), task_ierr, false);\
@@ -233,7 +244,7 @@ static inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
 #define PHIST_MAIN_TASK_BEGIN {\
   int mainTask_ierr = 0;\
   ghost_task_t* mainTask = NULL;\
-  phist_execute_lambda_as_ghost_task(&mainTask, [&]()->int {
+  phist_execute_lambda_as_ghost_task(&mainTask, false, [&]()->int {
 
 #define PHIST_MAIN_TASK_END \
       return 0;}, &mainTask_ierr, true);\
@@ -246,6 +257,7 @@ static inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
 
 #define PHIST_TASK_DECLARE(taskName)
 #define PHIST_TASK_BEGIN(taskName)
+#define PHIST_TASK_BEGIN_SMALLDETERMINISTIC(taskName)
 #define PHIST_TASK_END(task_ierr)
 #define PHIST_TASK_END_NOWAIT(task_ierr)
 #define PHIST_TASK_WAIT(taskName,task_ierr)
