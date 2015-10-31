@@ -43,6 +43,7 @@ kernel libs) ?
 #cmakedefine PHIST_KERNEL_LIB_TPETRA
 #cmakedefine PHIST_KERNEL_LIB_GHOST
 #cmakedefine PHIST_KERNEL_LIB_BUILTIN
+#cmakedefine PHIST_KERNEL_LIB_MAGMA
 
 #cmakedefine PHIST_MVECS_ROW_MAJOR
 #cmakedefine PHIST_SDMATS_ROW_MAJOR
