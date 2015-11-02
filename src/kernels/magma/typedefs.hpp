@@ -20,11 +20,20 @@ class Traits
 public:
   
   //! multi vectors
-  typedef void mvec_t;
+  struct mvec_t
+  {
+    lidx_t n, nvec, stride;
+    bool is_view;
+    ST* data;
+  };
 
   //! serial dense matrix
-  typedef void sdMat_t;
-
+  struct sdMat_t
+  {
+    lidx_t nrows, ncols, stride;
+    bool is_view;
+    ST* data;
+  };
 
   //! CRS matrices
   typedef void sparseMat_t;
