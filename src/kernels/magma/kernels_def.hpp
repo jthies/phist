@@ -222,8 +222,13 @@ extern "C" void SUBR(sdMat_get_block)(TYPE(const_mvec_ptr) vM,
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,M,vM,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,Mblock,vMblock,*iflag);
-  MAGMA(setmatrix)(Mblock->nrows,Mblock->ncols,(const MAGMA_ST*)M->data+M->stride*jmin+imin,M->stride,
-      (MAGMA_ST*)Mblock->data,Mblock->stride);
+  /*
+  MAGMABLAS(lacpy)(MagmaFull,Mblock->nrows,Mblock->ncols,(const MAGMA_ST*)M->data,M->stride,
+      (MAGMA_ST*)Mblock->data+Mblock->stride*jmin+imin,Mblock->stride);
+  */
+  for(int j = 0; j < Mblock->ncols; j++)
+    for(int i = 0; i < Mblock->nrows; i++)
+      Mblock->data[j*Mblock->stride+i] = M->data[(jmin+j)*M->stride+imin+i];
 }
 
 extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM, 
@@ -233,8 +238,13 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,M,vM,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,Mblock,vMblock,*iflag);
-  MAGMA(setmatrix)(Mblock->nrows,Mblock->ncols,(const MAGMA_ST*)Mblock->data,Mblock->stride,
-      (MAGMA_ST*)M->data+jmin*M->stride+imin,M->stride);
+  /*
+  MAGMABLAS(lacpy)(MagmaFull,Mblock->nrows,Mblock->ncols,(const MAGMA_ST*)Mblock->data+jmin*Mblock->stride+imin,Mblock->stride,
+      (MAGMA_ST*)M->data,M->stride);
+  */
+  for(int j = 0; j < Mblock->ncols; j++)
+    for(int i = 0; i < Mblock->nrows; i++)
+      M->data[(jmin+j)*M->stride+imin+i] = Mblock->data[j*Mblock->stride+i];
 }
 
 extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) A, int* iflag)
@@ -380,21 +390,21 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
 #include "phist_std_typedefs.hpp"
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,B,vB,*iflag);
-  if( beta != st::one() )
-  {
-    PHIST_CHK_IERR(MAGMABLAS(lascl2)(MagmaFull,B->nrows,B->ncols,(const _MT_*)&beta,(MAGMA_ST*)B->data,B->stride,iflag),*iflag);
-    //PHIST_CHK_IERR(MAGMABLAS(lascl2)(MagmaFull,B->nrows,B->ncols,beta,(MAGMA_ST*)B->data,B->stride,iflag),*iflag);
-  }
-
-  MAGMABLAS(geadd)(A->nrows,A->ncols,*(MAGMA_ST*)(&alpha),(const MAGMA_ST*)A->data,A->stride,(MAGMA_ST*)B->data,B->stride);
+  for(int j = 0; j < B->ncols; j++)
+    for(int i = 0; i < B->nrows; i++)
+      B->data[j*B->stride+i] = beta*B->data[j*B->stride+i] + alpha*A->data[j*A->stride+i];
 }
 
-extern "C" void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
-    _ST_ beta,  TYPE(sdMat_ptr)       B, 
+extern "C" void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
+    _ST_ beta,  TYPE(sdMat_ptr)       vB, 
     int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,A,vA,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,B,vB,*iflag);
+  for(int j = 0; j < B->ncols; j++)
+    for(int i = 0; i < B->nrows; i++)
+      B->data[j*B->stride+i] = beta*B->data[j*B->stride+i] + alpha*A->data[i*A->stride+j];
 }
 
 extern "C" void SUBR(sparseMat_times_mvec_communicate)(TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, int* iflag)
@@ -465,28 +475,67 @@ extern "C" void SUBR(mvec_times_sdMat_add_mvec_times_sdMat)(TYPE(const_mvec_ptr)
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
-    TYPE(const_sdMat_ptr) W, 
-    _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
+extern "C" void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA, 
+    TYPE(const_sdMat_ptr) vB, 
+    _ST_ beta, TYPE(sdMat_ptr) vC, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,A,vA,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,B,vB,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,C,vC,*iflag);
+
+  MAGMA(gemm)(MagmaNoTrans,MagmaNoTrans,C->nrows,C->ncols,A->ncols,
+      *(reinterpret_cast<const MAGMA_ST*>(&alpha)),
+      (const MAGMA_ST*)A->data,A->stride,
+      (const MAGMA_ST*)B->data,B->stride,
+      *(reinterpret_cast<const MAGMA_ST*>(&beta)),
+      (MAGMA_ST*)C->data,C->stride);
 }
 
-extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
-    TYPE(const_sdMat_ptr) W, 
-    _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
+extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA, 
+    TYPE(const_sdMat_ptr) vB, 
+    _ST_ beta, TYPE(sdMat_ptr) vC, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,A,vA,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,B,vB,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,C,vC,*iflag);
+
+#ifdef IS_COMPLEX
+  magma_trans_t transA = MagmaConjTrans;
+#else
+  magma_trans_t transA = MagmaTrans;
+#endif
+
+  MAGMA(gemm)(transA,MagmaNoTrans,C->nrows,C->ncols,A->nrows,
+      *(reinterpret_cast<const MAGMA_ST*>(&alpha)),
+      (const MAGMA_ST*)A->data,A->stride,
+      (const MAGMA_ST*)B->data,B->stride,
+      *(reinterpret_cast<const MAGMA_ST*>(&beta)),
+      (MAGMA_ST*)C->data,C->stride);
 }
 
-extern "C" void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
-    TYPE(const_sdMat_ptr) W, 
-    _ST_ beta, TYPE(sdMat_ptr) C, int* iflag)
+extern "C" void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
+    TYPE(const_sdMat_ptr) vB,
+    _ST_ beta, TYPE(sdMat_ptr) vC, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,A,vA,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,B,vB,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,C,vC,*iflag);
+
+#ifdef IS_COMPLEX
+  magma_trans_t transB = MagmaConjTrans;
+#else
+  magma_trans_t transB = MagmaTrans;
+#endif
+
+  MAGMA(gemm)(MagmaNoTrans,transB,C->nrows,C->ncols,A->nrows,
+      *(reinterpret_cast<const MAGMA_ST*>(&alpha)),
+      (const MAGMA_ST*)A->data,A->stride,
+      (const MAGMA_ST*)B->data,B->stride,
+      *(reinterpret_cast<const MAGMA_ST*>(&beta)),
+      (MAGMA_ST*)C->data,C->stride);
 }
 
 extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V, 
