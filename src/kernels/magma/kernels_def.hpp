@@ -716,10 +716,69 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
   *iflag = PHIST_SUCCESS;
 }
 
-extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag)
+extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+#include "phist_std_typedefs.hpp"
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,R,vR,*iflag);
+
+  // allocate required work buffer
+  MAGMA_ST* gpuWork = NULL;
+  MAGMA_ST* cpuWork = NULL;
+  MAGMA(malloc)(&gpuWork,3*V->nvec*V->nvec);
+  MAGMA(malloc_pinned)(&cpuWork,3*V->nvec*V->nvec);
+
+  // check zero rank
+  bool zeroRank = true;
+  for(int j = 0; j < V->nvec; j++)
+  {
+    _MT_ nrm = MAGMAM(nrm2)(V->n,(const MAGMA_ST*)V->gpuData+j*V->stride,1);
+    if( nrm > 1000*mt::eps() )
+      zeroRank = false;
+  }
+
+  // run magmas QR
+  if( zeroRank )
+  {
+    PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,st::zero(),iflag),*iflag);
+  }
+  else
+  {
+    PHIST_CHK_IERR(MAGMA(gegqr_gpu)(3,V->n,V->nvec,(MAGMA_ST*)V->gpuData,V->stride,gpuWork,cpuWork,iflag),*iflag);
+    // resulting R is in cpuWork
+    MAGMA(setmatrix)(R->nrows,R->ncols,cpuWork,R->nrows,(MAGMA_ST*)R->gpuData,R->stride);
+  }
+  //MAGMA(print_gpu)(R->nrows,R->ncols,(const MAGMA_ST*)R->gpuData,R->stride);
+  // get rank
+  int rank = 0;
+  if( !zeroRank )
+  {
+    _MT_ ref = st::abs(*(reinterpret_cast<const _ST_*>(&cpuWork[0])));
+    for(int i = 0; i < V->nvec; i++)
+      if( st::abs(*(reinterpret_cast<const _ST_*>(&cpuWork[i*V->nvec+i]))) > 1000*mt::eps()*ref )
+        rank++;
+  }
+
+  // randomize null space
+  if( rank < V->nvec )
+  {
+    for(int j = rank; j < V->nvec; j++)
+      for(int i = 0; i < V->n; i++)
+        V->cpuData[j*V->stride+i] = st::rand();
+    MAGMA(setmatrix)(V->n,V->nvec-rank,
+        (const MAGMA_ST*)V->cpuData+rank*V->stride,V->stride,
+        (MAGMA_ST*)V->gpuData+rank*V->stride,V->stride);
+
+    PHIST_CHK_IERR(MAGMA(gegqr_gpu)(3,V->n,V->nvec,(MAGMA_ST*)V->gpuData,V->stride,gpuWork,cpuWork,iflag),*iflag);
+  }
+
+  // free work buffer
+  magma_free(gpuWork);
+  magma_free_pinned(cpuWork);
+
+  // return rank
+  *iflag = V->nvec-rank;
 }
 
 extern "C" void SUBR(mvec_gather_mvecs)(TYPE(mvec_ptr) V, TYPE(const_mvec_ptr) W[], int nblocks, int *iflag)

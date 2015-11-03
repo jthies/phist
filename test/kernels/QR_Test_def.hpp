@@ -53,6 +53,8 @@ public:
 #endif
           }
         }
+      SUBR(mvec_to_device)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       }
     }
 
@@ -77,6 +79,10 @@ public:
 //      PrintVector(*cout,"QR_Test V",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
       SUBR(mvec_QR)(vec2_,mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       // doing a QR decomp must not relocate data:
       ASSERT_EQ(true,MTest::pointerUnchanged(mat1_,mat1_vp_,m_lda_));
       ASSERT_EQ(true,VTest::pointerUnchanged(vec2_,vec2_vp_,lda_));
@@ -86,6 +92,8 @@ public:
 
       // check Q*R=V
       SUBR(mvec_times_sdMat)(-st::one(),vec2_,mat1_,st::one(),vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_NEAR(mt::one(), ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero(),vflag_),sqrt(mt::eps()));
       }
@@ -108,6 +116,8 @@ public:
         {
         SUBR(mvec_random)(vec1_,&iflag_);
         ASSERT_EQ(0,iflag_);
+        SUBR(mvec_from_device)(vec1_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         // set last two columns to same vector
         for (int i=0;i<stride_*nloc_;i+=stride_)
           {
@@ -117,7 +127,9 @@ public:
           vec1_vp_[(nvec_-1)*lda_+i] = vec1_vp_[(nvec_-2)*lda_+i];
 #endif
           }
+        SUBR(mvec_to_device)(vec1_,&iflag_);
         }
+      ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -125,6 +137,10 @@ public:
       // check that the rank deficiency was detected
       ASSERT_EQ(1, iflag_);
       iflag_ = 0;
+      SUBR(mvec_from_device)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       // check that we anyway got something orthogonal back
       ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
       // the factor 2 in releps here is because otherwise fails the test by a fraction of releps
@@ -132,6 +148,8 @@ public:
 
       // check Q*R=V
       SUBR(mvec_times_sdMat)(-st::one(),vec2_,mat1_,st::one(),vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_NEAR(mt::one(), ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero(),vflag_),sqrt(mt::eps()));
       }
@@ -155,6 +173,10 @@ public:
       // check that the rank deficiency was detected
       ASSERT_EQ(std::max(nvec_-1,0), iflag_);
       iflag_ = 0;
+      SUBR(mvec_from_device)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       // check that we anyway got something orthogonal back
       ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
       ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
@@ -164,6 +186,8 @@ public:
 #endif
       // check Q*R=V
       SUBR(mvec_times_sdMat)(-st::one(),vec2_,mat1_,st::one(),vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_NEAR(mt::one(), ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero(),vflag_),sqrt(mt::eps()));
     }
