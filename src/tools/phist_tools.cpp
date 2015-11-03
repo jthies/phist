@@ -109,6 +109,8 @@ extern "C" const char* phist_kernel_lib()
   return "epetra";
 #elif defined(PHIST_KERNEL_LIB_TPETRA)
   return "tpetra";
+#elif defined(PHIST_KERNEL_LIB_MAGMA)
+  return "magma";
 #else
 #error "No appropriate PHIST_KERNEL_LIB_... defined!"
 #endif

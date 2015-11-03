@@ -618,6 +618,8 @@ public:
     {
       SUBR(sdMat_identity)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       for(int i = 0; i < nrows_; i++)
       {
         for(int j = 0; j < ncols_; j++)

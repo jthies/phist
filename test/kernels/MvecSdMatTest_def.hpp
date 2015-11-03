@@ -151,7 +151,13 @@ public:
         for (int i=0; i<m_; i++)
           V1_vp_[VIDX(ii,i,ldaV1_)] = st::one()*(_MT_)((i+1)*1.0l/nglob_);
       }
+      SUBR(mvec_to_device)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_to_device)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check result
       MTest::sdMat_parallel_check(M1_,&iflag_);
@@ -177,7 +183,13 @@ public:
         for (int i=0; i<m_; i++)
           V1_vp_[VIDX(ii,i,ldaV1_)] = (_ST_) st::one()*(_MT_)((i+1)*1.0l/(ilower+ii+2));
       }
+      SUBR(mvec_to_device)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_to_device)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check result
       MTest::sdMat_parallel_check(M1_,&iflag_);
@@ -226,7 +238,11 @@ public:
         for (int j=0; j<k_; j++)
           V1_vp_[VIDX(ii,j,ldaV1_)] = -st::one()*(_MT_)(j+1);
       }
+      SUBR(mvec_to_device)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       SUBR(mvecT_times_mvec)(st::one(),V1_,V1_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check result
       MTest::sdMat_parallel_check(M1_,&iflag_);
@@ -278,6 +294,8 @@ public:
       iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       // check result
       MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -302,8 +320,14 @@ public:
         for (int i=0; i<m_; i++)
           V1_vp_[VIDX(ii,i,ldaV1_)] = (_ST_) st::one()*(_MT_)((i+1)*1.0l/(ilower+ii+2));
       }
+      SUBR(mvec_to_device)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_to_device)(V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check result
       MTest::sdMat_parallel_check(M1_,&iflag_);
@@ -352,6 +376,8 @@ public:
       }
       iflag_ = PHIST_ROBUST_REDUCTIONS;
       SUBR(mvecT_times_mvec)(st::one(),V1_,V1_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check result
       MTest::sdMat_parallel_check(M1_,&iflag_);
@@ -764,6 +790,8 @@ public:
     {
       // fill V and M with ones
       SUBR(mvec_put_value)(V1_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(V1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_put_value)(M1_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
