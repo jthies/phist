@@ -35,6 +35,8 @@ void phist_kernels_init(int* argc, char*** argv, int* iflag)
 
   PHIST_CHK_IERR( *iflag = magma_init(), *iflag);
 
+  magma_print_environment();
+
 #ifdef PHIST_HAVE_LIKWID
   LIKWID_MARKER_INIT;
 #pragma omp parallel
@@ -143,16 +145,24 @@ void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* iflag)
 #include "phist_gen_s.h"
 #include "kernels_def.hpp"
 #include "../common/carp_noimpl.c"
+#include "../common/kernels_no_inplace_VC.cpp"
+#include "../common/kernels_no_fused.cpp"
 
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"
 #include "../common/carp_noimpl.c"
+#include "../common/kernels_no_inplace_VC.cpp"
+#include "../common/kernels_no_fused.cpp"
 
 #include "phist_gen_c.h"
 #include "kernels_def.hpp"
 #include "../common/carp_noimpl.c"
+#include "../common/kernels_no_inplace_VC.cpp"
+#include "../common/kernels_no_fused.cpp"
 
 #include "phist_gen_z.h"
 #include "kernels_def.hpp"
 #include "../common/carp_noimpl.c"
+#include "../common/kernels_no_inplace_VC.cpp"
+#include "../common/kernels_no_fused.cpp"
 

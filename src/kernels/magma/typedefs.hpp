@@ -24,7 +24,9 @@ public:
   {
     lidx_t n, nvec, stride;
     bool is_view;
-    ST* data;
+    ST* gpuData;
+    ST* cpuData;
+    const_map_ptr_t map;
   };
 
   //! serial dense matrix
@@ -32,7 +34,8 @@ public:
   {
     lidx_t nrows, ncols, stride;
     bool is_view;
-    ST* data;
+    ST* gpuData;
+    ST* cpuData;
   };
 
   //! CRS matrices
