@@ -322,12 +322,12 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
     return;
   }
 #else
-  if ((result->traits.nrowshalo>lda+1))
+  if ((result->traits.nrowshalopadded>lda+1))
   {
     PHIST_OUT(PHIST_ERROR,"viewing plain data as ghost_densemat_t only works \n"
                           "if the given lda can accomodate the required comm buffer of the vector!\n"
-                          "nrows=%" PRlidx ", nrowshalo=%" PRlidx ", lda=%" PRlidx "\n",
-        result->traits.nrows,result->traits.nrowshalo,lda);
+                          "nrows=%" PRlidx ", nrowshalopadded=%" PRlidx ", lda=%" PRlidx "\n",
+        result->traits.nrows,result->traits.nrowshalopadded,lda);
     *iflag=-1;
     return;
   }
