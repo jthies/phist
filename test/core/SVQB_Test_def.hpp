@@ -23,6 +23,7 @@ public:
     if (typeImplemented_ && !problemTooSmall_)
       {
       SUBR(mvec_random)(vec1_,&iflag_);
+      SUBR(mvec_from_device)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       for (int j=0;j<nvec_;j++)
         {
@@ -35,6 +36,7 @@ public:
 #endif
           }
         }
+      SUBR(mvec_to_device)(vec2_,&iflag_);
       }
     }
 
