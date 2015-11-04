@@ -4,7 +4,8 @@
 #endif
 
 #ifdef PHIST_KERNEL_LIB_GHOST
-#if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
+#include "ghost/config.h"
+#if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)&&(!defined(GHOST_HAVE_CUDA))
 #define HAVE_MVEC_QR
 #endif
 #else
