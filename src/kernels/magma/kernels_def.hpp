@@ -548,6 +548,7 @@ extern "C" void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
     int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,B,vB,*iflag);
 
@@ -555,7 +556,7 @@ extern "C" void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
   PHIST_CHK_IERR(SUBR(sdMat_from_device)(vB,iflag),*iflag);
   for(int j = 0; j < B->ncols; j++)
     for(int i = 0; i < B->nrows; i++)
-      B->cpuData[j*B->stride+i] = beta*B->cpuData[j*B->stride+i] + alpha*A->cpuData[i*A->stride+j];
+      B->cpuData[j*B->stride+i] = beta*B->cpuData[j*B->stride+i] + alpha*st::conj(A->cpuData[i*A->stride+j]);
   PHIST_CHK_IERR(SUBR(sdMat_to_device)(vB,iflag),*iflag);
   *iflag = PHIST_SUCCESS;
 }
