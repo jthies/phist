@@ -96,12 +96,17 @@ for (int i=0;i<m;i++) PHIST_SOUT(PHIST_DEBUG,"%24.16e\n",sqrt(E[i]));
     if (emax<10*mt::eps())
     {
       rank=0;
+      for(int i = 0; i < m; i++)
+      {
+        E[i] = mt::zero();
+        Einv[i] = mt::zero();
+      }
     }
     else
     {
       for(int i=0; i<m; i++)
       {
-        if (mt::abs(E[i]<10*emax*mt::eps()))
+        if ( mt::abs(E[i]) < 10*emax*mt::eps() )
         {
           rank--;
           E[i]=mt::zero();
