@@ -512,6 +512,32 @@ static inline double double_fmsub(double a, double b, double c)
   c = _mm256_add_pd(da4_c,da4_oldC);\
 }
 
+// helper macro for compensated dot products
+#define MM128_4DOTADD(a,b,s,c)\
+{\
+  __m128d da4_oldS = s, da4_oldC = c;\
+  s = _mm_fmadd_pd(a,b,da4_oldS);\
+  __m128d da4_ab_ = _mm_sub_pd(s,da4_oldS);\
+  __m128d da4_s_ = _mm_sub_pd(s,da4_ab_);\
+  __m128d da4_dab = _mm_fmsub_pd(a,b,da4_ab_);\
+  __m128d da4_ds = _mm_sub_pd(da4_oldS,da4_s_);\
+  __m128d da4_c = _mm_add_pd(da4_ds,da4_dab);\
+  c = _mm_add_pd(da4_c,da4_oldC);\
+}
+
+// helper macro for compensated dot products
+#define DOUBLE_4DOTADD(a,b,s,c)\
+{\
+  __m128d a_ = _mm_set_pd(a,a);\
+  __m128d b_ = _mm_set_pd(b,b);\
+  __m128d s_ = _mm_set_pd(s,s);\
+  __m128d c_ = _mm_set_pd(c,c);\
+  MM128_4DOTADD(a_,b_,s_,c_);\
+  _mm_store_sd(&s,s_);\
+  _mm_store_sd(&c,c_);\
+}
+
+
 // helper macro to sum up 4 double-double numbers in MM256 to two double-double numbers in MM128
 #define MM256TO128_4SUM(a,aC,s,t)\
 {\

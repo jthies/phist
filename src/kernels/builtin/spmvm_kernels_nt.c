@@ -14,10 +14,14 @@
 #include <emmintrin.h>
 #include <stdlib.h>
 
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+#include "prec_helpers.h"
+#else
 static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
 {
   return (uintptr_t)pointer % byte_count == 0;
 }
+#endif
 
 // provide possibility to check alignment in fortran
 void mem_is_aligned16_(const void*restrict pointer, int* ret)
@@ -38,6 +42,59 @@ void dspmvm_nt_1_c(int nrows, double alpha, const long *restrict row_ptr, const 
   }
   int nrows2 = nrows/2;
 
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  __m128d shifts_ = _mm_set1_pd(shifts[0]);
+  __m128d alpha_ = _mm_set1_pd(alpha);
+#pragma omp parallel for schedule(static)
+  for(int i = 0; i < nrows2; i++)
+  {
+    // apply shifts
+    __m128d lhs, lhsC;
+    __m128d rhs = _mm_load_pd(rhsv+2*i);
+    MM128_2MULTFMA(shifts_,rhs,lhs,lhsC);
+
+    long j, j1;
+    for(j = row_ptr[2*i]-1, j1 = row_ptr[2*i+1]-1; j < halo_ptr[2*i]-1 && j1 < halo_ptr[2*i+1]-1; j++, j1++)
+    {
+      rhs = _mm_set_pd(rhsv[col_idx[j1]-1],rhsv[col_idx[j]-1]);
+      __m128d val_ = _mm_set_pd(val[j1],val[j]);
+      MM128_4DOTADD(val_,rhs,lhs,lhsC);
+    }
+    for(;j < halo_ptr[2*i]-1; j++)
+    {
+      rhs = _mm_set_pd(0.,rhsv[col_idx[j]-1]);
+      __m128d val_ = _mm_set_pd(0.,val[j]);
+      MM128_4DOTADD(val_,rhs,lhs,lhsC);
+    }
+    for(;j1 < halo_ptr[2*i+1]-1; j1++)
+    {
+      rhs = _mm_set_pd(rhsv[col_idx[j1]-1],0.);
+      __m128d val_ = _mm_set_pd(val[j1],0.);
+      MM128_4DOTADD(val_,rhs,lhs,lhsC);
+    }
+
+    for(j = halo_ptr[2*i]-1, j1 = halo_ptr[2*i+1]-1; j < row_ptr[2*i+1]-1 && j1 < row_ptr[2*i+2]-1; j++, j1++)
+    {
+      rhs = _mm_set_pd(halo[col_idx[j1]-1],halo[col_idx[j]-1]);
+      __m128d val_ = _mm_set_pd(val[j1],val[j]);
+      MM128_4DOTADD(val_,rhs,lhs,lhsC);
+    }
+    for(; j < row_ptr[2*i+1]-1; j++)
+    {
+      rhs = _mm_set_pd(0.,halo[col_idx[j]-1]);
+      __m128d val_ = _mm_set_pd(0.,val[j]);
+      MM128_4DOTADD(val_,rhs,lhs,lhsC);
+    }
+    for(; j1 < row_ptr[2*i+2]-1; j1++)
+    {
+      rhs = _mm_set_pd(halo[col_idx[j1]-1],0.);
+      __m128d val_ = _mm_set_pd(val[j1],0.);
+      MM128_4DOTADD(val_,rhs,lhs,lhsC);
+    }
+
+    _mm_stream_pd(lhsv+2*i,_mm_mul_pd(_mm_add_pd(lhs,lhsC),alpha_));
+  }
+#else
 #pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows2; i++)
   {
@@ -63,8 +120,23 @@ void dspmvm_nt_1_c(int nrows, double alpha, const long *restrict row_ptr, const 
     __m128d lhs_ = _mm_set_pd(lhs2,lhs1);
     _mm_stream_pd(lhsv+2*i, lhs_);
   }
+#endif
 
   // last row
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  if( nrows % 2 != 0 )
+  {
+    double lhs, lhsC;
+    DOUBLE_2MULTFMA(shifts[0],rhsv[nrows-1],lhs,lhsC);
+
+    for(long j = row_ptr[nrows-1]-1; j < halo_ptr[nrows-1]-1; j++)
+      DOUBLE_4DOTADD(val[j],rhsv[(col_idx[j]-1)],lhs,lhsC);
+    for(long j = halo_ptr[nrows-1]-1; j < row_ptr[nrows]-1; j++)
+      DOUBLE_4DOTADD(val[j],halo[(col_idx[j]-1)],lhs,lhsC);
+
+    lhsv[nrows-1] = alpha*(lhs+lhsC);
+  }
+#else
   if( nrows % 2 != 0 )
   {
     lhsv[nrows-1] = shifts[0]*rhsv[nrows-1];
@@ -74,6 +146,7 @@ void dspmvm_nt_1_c(int nrows, double alpha, const long *restrict row_ptr, const 
       lhsv[nrows-1] += val[j]*halo[ (col_idx[j]-1) ];
     lhsv[nrows-1] *= alpha;
   }
+#endif
 }
 
 
@@ -101,7 +174,37 @@ void dspmvm_nt_2_c(int nrows, double alpha, const long *restrict row_ptr, const 
 
 
   __m128d shifts_ = _mm_loadu_pd(shifts);
+  __m128d alpha_ = _mm_set1_pd(alpha);
 
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+#pragma omp parallel for schedule(static)
+  for(int i = 0; i < nrows; i++)
+  {
+    __m128d rhs_, val_, lhs, lhsC;
+    rhs_ = _mm_load_pd(rhsv+2*i);
+    MM128_2MULTFMA(shifts_,rhs_,lhs,lhsC);
+
+    for(long j = row_ptr[i]-1; j < halo_ptr[i]-1; j++)
+    {
+      val_ = _mm_load1_pd(val+j);
+      rhs_ = _mm_load_pd(rhsv+(col_idx[j]-1)*2);
+      MM128_4DOTADD(val_,rhs_,lhs,lhsC);
+    }
+
+    for(long j = halo_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    {
+      val_ = _mm_load1_pd(val+j);
+      rhs_ = _mm_load_pd(halo+(col_idx[j]-1)*2);
+      MM128_4DOTADD(val_,rhs_,lhs,lhsC);
+    }
+
+    // multiply with alpha
+    lhs = _mm_mul_pd(alpha_,_mm_add_pd(lhs,lhsC));
+ 
+    // non-temporal store
+    _mm_stream_pd(lhsv+i*ldl, lhs);
+  }
+#else
 #pragma omp parallel for schedule(static)
   for(int i = 0; i < nrows; i++)
   {
@@ -133,6 +236,7 @@ void dspmvm_nt_2_c(int nrows, double alpha, const long *restrict row_ptr, const 
     // non-temporal store
     _mm_stream_pd(lhsv+i*ldl, lhs_);
   }
+#endif
 }
 
 void dspmvm_nt_4_c(int nrows, double alpha, const long *restrict row_ptr, const long *restrict halo_ptr, const int *restrict col_idx, const double *restrict val,
@@ -156,6 +260,41 @@ void dspmvm_nt_4_c(int nrows, double alpha, const long *restrict row_ptr, const 
     exit(1);
   }
 
+
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+
+  __m256d shifts_ = _mm256_loadu_pd(shifts);
+  __m256d alpha_ = _mm256_set1_pd(alpha);
+
+#pragma omp parallel for schedule(static)
+  for(int i = 0; i < nrows; i++)
+  {
+    __m256d rhs_, val_, lhs, lhsC;
+    rhs_ = _mm256_load_pd(rhsv+4*i);
+    MM256_2MULTFMA(shifts_,rhs_,lhs,lhsC);
+
+    for(long j = row_ptr[i]-1; j < halo_ptr[i]-1; j++)
+    {
+      val_ = _mm256_set1_pd(val[j]);
+      rhs_ = _mm256_load_pd(rhsv+(col_idx[j]-1)*4);
+      MM256_4DOTADD(val_,rhs_,lhs,lhsC);
+    }
+
+    for(long j = halo_ptr[i]-1; j < row_ptr[i+1]-1; j++)
+    {
+      val_ = _mm256_set1_pd(val[j]);
+      rhs_ = _mm256_load_pd(halo+(col_idx[j]-1)*4);
+      MM256_4DOTADD(val_,rhs_,lhs,lhsC);
+    }
+
+    // multiply with alpha
+    lhs = _mm256_mul_pd(alpha_,_mm256_add_pd(lhs,lhsC));
+ 
+    // non-temporal store
+    _mm256_stream_pd(lhsv+i*ldl, lhs);
+  }
+
+#else
 
   __m128d shifts_[2];
   shifts_[0] = _mm_loadu_pd(shifts);
@@ -201,6 +340,8 @@ void dspmvm_nt_4_c(int nrows, double alpha, const long *restrict row_ptr, const 
       _mm_stream_pd(lhsv+i*ldl+2*k, lhs_[k]);
     }
   }
+
+#endif
 }
 
 
