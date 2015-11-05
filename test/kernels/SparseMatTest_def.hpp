@@ -116,7 +116,7 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     SUBR(mvec_vadd_mvec)(alpha_shifts, vec1_, st::one(), vec3_, &iflag_);
     ASSERT_EQ(0, iflag_);
 
-    ASSERT_NEAR(mt::one(), MvecsEqual(vec2_,vec3_),sqrt(mt::eps()));
+    ASSERT_NEAR(mt::one(), MvecsEqual(vec2_,vec3_,mt::one()),1000*mt::eps());
   }
 
 
