@@ -237,15 +237,21 @@ TEST_F(CLASSNAME, simple_blockedGMRES)
 {
   int nrestarts=0;
   int nrhs=1;
+PHIST_TASK_DECLARE(singleTask)
+PHIST_TASK_BEGIN(singleTask)
   doBlockedGMRESTest(nrhs,nrestarts,TOLA,false);
+PHIST_TASK_END(&iflag_)
 }
 
 // test restarted GMRES with tolerance TOL2
 TEST_F(CLASSNAME, restarted_blockedGMRES) 
 {
-  int nrestarts=10;
+  int nrestarts=5;
   int nrhs=1;
+PHIST_TASK_DECLARE(singleTask)
+PHIST_TASK_BEGIN(singleTask)
   doBlockedGMRESTest(nrhs,nrestarts,TOLB,false);
+PHIST_TASK_END(&iflag_)
 }
 
 // test unrestarted GMRES with tolerance TOL1
@@ -253,7 +259,10 @@ TEST_F(CLASSNAME, multiple_simple_blockedGMRES)
 {
   int nrestarts=0;
   int nrhs=4;
+PHIST_TASK_DECLARE(singleTask)
+PHIST_TASK_BEGIN(singleTask)
   doBlockedGMRESTest(nrhs,nrestarts,TOLA,false);
+PHIST_TASK_END(&iflag_)
 }
 
 #ifdef MATSYMMETRIC
@@ -262,7 +271,10 @@ TEST_F(CLASSNAME, simple_blockedminres)
 {
   int nrestarts=0;
   int nrhs=1;
+PHIST_TASK_DECLARE(singleTask)
+PHIST_TASK_BEGIN(singleTask)
   doBlockedGMRESTest(nrhs,nrestarts,TOLA,true);
+PHIST_TASK_END(&iflag_)
 }
 
 // test restarted GMRES with tolerance TOL2
@@ -270,7 +282,10 @@ TEST_F(CLASSNAME, restarted_blockedminres)
 {
   int nrestarts=10;
   int nrhs=1;
+PHIST_TASK_DECLARE(singleTask)
+PHIST_TASK_BEGIN(singleTask)
   doBlockedGMRESTest(nrhs,nrestarts,TOLB,true);
+PHIST_TASK_END(&iflag_)
 }
 
 // test unrestarted GMRES with tolerance TOL1
@@ -278,6 +293,9 @@ TEST_F(CLASSNAME, multiple_simple_blockedminres)
 {
   int nrestarts=0;
   int nrhs=4;
+PHIST_TASK_DECLARE(singleTask)
+PHIST_TASK_BEGIN(singleTask)
   doBlockedGMRESTest(nrhs,nrestarts,TOLA,true);
+PHIST_TASK_END(&iflag_)
 }
 #endif

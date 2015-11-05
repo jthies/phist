@@ -1409,7 +1409,8 @@ _MT_ const_row_sum_test(TYPE(sparseMat_ptr) A)
 #endif
 
 #ifdef FIRST_TIME
-
+namespace
+{
 int PREFIX(idfunc)(ghost_gidx_t row, ghost_lidx_t *len, ghost_gidx_t* cols, void* vval, void *arg)
 {
   *len=1;
@@ -1433,7 +1434,7 @@ int PREFIX(some_rowFunc)(ghost_gidx_t row, ghost_lidx_t *len, ghost_gidx_t* cols
   }
   return 0;
 }
-
+}
 #endif
 
 TEST_F(CLASSNAME,create_A_fromRowFunc)

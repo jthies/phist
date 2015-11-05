@@ -13,8 +13,8 @@
 
 using namespace ::testing;
 
-#define _BASENAME_ SparseMatTest
-#define _USE_VIEWS_ 0
+#define _BASENAME_ SparseMatTestWithAlignedViews
+#define _USE_VIEWS_ 2
 #define CLASSFILE_DEF "SparseMatTest_def.hpp"
 
 // included source code will define row functions,

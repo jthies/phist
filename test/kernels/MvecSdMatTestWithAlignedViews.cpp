@@ -17,11 +17,11 @@
 using namespace testing;
 
 #define _BASESUITE_ kernels
-#define _BASENAME_ MvecSdMatTest
 #define CLASSFILE_DEF "MvecSdMatTest_def.hpp"
-#define _USE_VIEWS_V1_ 0
-#define _USE_VIEWS_V2_ 0
-#define _USE_VIEWS_M_ 0
+#define _BASENAME_ MvecSdMatTestWithAlignedViews
+#define _USE_VIEWS_V1_ 2
+#define _USE_VIEWS_V2_ 2
+#define _USE_VIEWS_M_ 2
 
 
 #define _N_ 10
@@ -115,69 +115,3 @@ using namespace testing;
 #define _M_ 7
 #define _K_ 11
 #include "../phist_typed_test_gen.h"
-
-
-// large high precision tests (too slow in debug mode)
-#if defined(PHIST_HIGH_PRECISION_KERNELS) && !defined(TESTING)
-
-#define _N_ 4000000
-#define _M_ 1
-#define _K_ 1
-#include "../phist_typed_test_gen.h"
-
-#define _N_ 4000000
-#define _M_ 1
-#define _K_ 2
-#include "../phist_typed_test_gen.h"
-
-#define _N_ 4000000
-#define _M_ 1
-#define _K_ 4
-#include "../phist_typed_test_gen.h"
-
-#define _N_ 4000000
-#define _M_ 2
-#define _K_ 1
-#include "../phist_typed_test_gen.h"
-
-#define _N_ 4000000
-#define _M_ 2
-#define _K_ 2
-#include "../phist_typed_test_gen.h"
-
-#define _N_ 4000000
-#define _M_ 2
-#define _K_ 4
-#include "../phist_typed_test_gen.h"
-
-#define _N_ 4000000
-#define _M_ 4
-#define _K_ 1
-#include "../phist_typed_test_gen.h"
-
-#define _N_ 4000000
-#define _M_ 4
-#define _K_ 2
-#include "../phist_typed_test_gen.h"
-
-#define _N_ 4000000
-#define _M_ 4
-#define _K_ 4
-#include "../phist_typed_test_gen.h"
-
-#define _N_ 4000000
-#define _M_ 10
-#define _K_ 1
-#include "../phist_typed_test_gen.h"
-
-#define _N_ 4000000
-#define _M_ 10
-#define _K_ 2
-#include "../phist_typed_test_gen.h"
-
-#define _N_ 4000000
-#define _M_ 10
-#define _K_ 4
-#include "../phist_typed_test_gen.h"
-
-#endif /* PHIST_HIGH_PRECISION_KERNELS */

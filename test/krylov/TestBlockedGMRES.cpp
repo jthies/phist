@@ -112,7 +112,7 @@ using namespace testing;
 #undef TOLB
 //TODO - tune these settings
 #define TOLA 2.5e-2
-#define TOLB 1.0e-4
+#define TOLB 1.0e-3
 
 #ifdef PHIST_HAVE_SP
 

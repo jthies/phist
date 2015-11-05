@@ -11,9 +11,9 @@
 
 using namespace testing;
 
-#define _BASENAME_ SdMatTest
+#define _BASENAME_ SdMatTestWithUnalignedViews
 #define CLASSFILE_DEF "SdMatTest_def.hpp"
-#define _USE_VIEWS_ 0
+#define _USE_VIEWS_ 1
 
 #define _N_ 1
 #define _M_ 1

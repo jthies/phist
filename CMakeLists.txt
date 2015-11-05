@@ -1009,15 +1009,15 @@ endforeach()
 enable_testing()
 
 if (${PHIST_ENABLE_MPI})
-  set(PHIST_MPI_TEST_NPROCS 1 2 3 24)
+  set(PHIST_MPI_TEST_NPROCS 1 2 3 12)
 else()
   set(PHIST_MPI_TEST_NPROCS 1)
 endif()
 
 foreach(np ${PHIST_MPI_TEST_NPROCS})
-  math(EXPR TEST_OMP_NUM_THREADS "24/${np}")
+  math(EXPR TEST_OMP_NUM_THREADS "12/${np}")
   foreach(label ${PHIST_TESTS})
-    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env LSAN_OPTIONS=\"exitcode=0\" env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=guided
+    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env LSAN_OPTIONS=\"exitcode=0\" env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=dynamic,8
     ./${PRODUCT_NAME}-${label}-test --gtest_death_test_style=threadsafe --gtest_output=xml:test_output_np${np}/${label}/xunit.xml)
     add_test(NAME test-${label}_np${np} COMMAND ${TEST_COMMAND})
     set_tests_properties(test-${label}_np${np} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
@@ -1035,7 +1035,7 @@ if(PYTHONINTERP_FOUND)
   foreach(pyh ${PYTHON_HEADERS})
     get_filename_component(pyh_name ${pyh} NAME)
     add_test(NAME test-${pyh_name} COMMAND ${PYTHON_EXECUTABLE} ${pyh})
-    set_tests_properties(test-${pyh_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH} PHIST_NUM_THREADS=12 OMP_NUM_THREADS=12 OMP_SCHEDULE=guided")
+    set_tests_properties(test-${pyh_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH} PHIST_NUM_THREADS=12 OMP_NUM_THREADS=12 OMP_SCHEDULE=dynamic,8")
     if( GCC_SANITIZE )
       # we need to LD_PRELOAD the respective lib<.>san.so library
       string(SUBSTRING ${GCC_SANITIZE} 0 1 GCC_SANITIZE_FIRST_CHAR)

@@ -13,28 +13,37 @@
 
 using namespace ::testing;
 
-#define _BASENAME_ SparseMatTest
+//////////////////////////////////////////
+// symmetric matrix tests               //
+//////////////////////////////////////////
+#define _BASENAME_ SymmMatTest
+#define CLASSFILE_DEF "SymmMatTest_def.hpp"
 #define _USE_VIEWS_ 0
-#define CLASSFILE_DEF "SparseMatTest_def.hpp"
 
-// included source code will define row functions,
-// after we had all data types (S,D,C,Z) we undef it
-#define FIRST_TIME
+#define _N_ 20
+#define _M_ 8
+#include "../phist_typed_test_gen.h"
 
-#define _N_ 25
+#define _N_ 163
 #define _M_ 1
 #include "../phist_typed_test_gen.h"
 
-#undef FIRST_TIME
+#define _N_ 163
+#define _M_ 2
+#include "../phist_typed_test_gen.h"
 
-#define _N_ 25
+#define _N_ 163
+#define _M_ 3
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 163
 #define _M_ 4
 #include "../phist_typed_test_gen.h"
 
-#define _N_ 25
+#define _N_ 163
 #define _M_ 7
 #include "../phist_typed_test_gen.h"
 
-#define _N_ 25
-#define _M_ 12
+#define _N_ 163
+#define _M_ 30
 #include "../phist_typed_test_gen.h"
