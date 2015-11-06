@@ -155,6 +155,8 @@ public:
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nloc_,nloc_V);
       
+      SUBR(mvec_from_device)(V_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp,nloc_,ldaV,stride_,mpi_comm_),tolV);
       ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp,nloc_,ldaV,stride_,mpi_comm_),tolV);
       
@@ -192,6 +194,9 @@ public:
       SUBR(mvec_my_length)(V,&nloc_Q,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nloc_,nloc_Q);
+      
+      SUBR(mvec_from_device)(Q,&iflag_);
+      ASSERT_EQ(0,iflag_);
 
       ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(Q_vp,nloc_,ldaQ,stride_,mpi_comm_),tolW);
       ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(Q_vp,nloc_,ldaQ,stride_,mpi_comm_),tolW);
@@ -210,6 +215,8 @@ public:
         SUBR(mvec_times_sdMat)(st::one(),V,R2,st::one(),W2_,&iflag_);
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_add_mvec)(-st::one(),W,st::one(),W2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_from_device)(W2_,&iflag_);
         ASSERT_EQ(0,iflag_);
         ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero(),vflag_),tolW);
       }

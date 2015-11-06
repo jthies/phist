@@ -68,6 +68,32 @@ public:
 
 };
 
+// this is in fact an MvecTest, but here we have the useful 'ColsAreNormalized' test
+TEST_F(CLASSNAME,mvec_normalize)
+{
+  if (typeImplemented_ && !problemTooSmall_)
+  {
+    SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    _MT_ norms[nvec_];
+    for (int j=0;j<nvec_;j++) norms[j]=mt::one()/(_MT_)(j+1);
+    SUBR(mvec_normalize)(vec1_,norms,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_from_device)(vec1_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(mt::one(),ColsAreNormalized(vec1_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec2_));
+
+    for (int i=0;i<nloc_;i++)
+      for (int j=0;j<nvec_;j++)
+      {
+        vec1_vp_[VIDX(i,j,lda_)]*=norms[j];
+      }
+    SUBR(mvec_to_device)(vec1_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_REAL_EQ(mt::one(), MvecsEqual(vec1_,vec2_));
+  }
+}
+
 #ifdef HAVE_MVEC_QR
   TEST_F(CLASSNAME, with_random_vectors) 
 #else
