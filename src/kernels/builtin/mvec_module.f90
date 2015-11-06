@@ -12,7 +12,8 @@
 !! Actual work is delegated to fast, parallel implementations tuned for LARGE
 !! (e.g. much larger than CPU cache) block vectors
 module mvec_module
-  use map_module, only: Map_t, map_compatible_map
+  use env_module,   only: allocate_aligned, deallocate_aligned
+  use map_module,   only: Map_t, map_compatible_map
   use sdmat_module, only: SDMat_t
   implicit none
   private
@@ -3175,14 +3176,6 @@ contains
 #if defined(TESTING)
     integer(C_INTPTR_T) :: dummy
 #endif
-    interface
-      function posix_memalign(p, align, n) bind(C)
-        use, intrinsic :: iso_c_binding, only: C_PTR, C_SIZE_T, C_INT
-        integer(kind=C_SIZE_T), value :: align, n
-        type(C_PTR), intent(out) :: p
-        integer(kind=C_INT) :: posix_memalign
-      end function posix_memalign
-    end interface
     !--------------------------------------------------------------------------------
 
     if( nvec .le. 0 ) then
@@ -3203,21 +3196,9 @@ contains
     write(*,*) 'creating new mvec with dimensions:', nvec, map%nlocal(map%me), 'address', transfer(c_loc(mvec),dummy)
     flush(6)
 #endif
-    !allocate(mvec%val(nvec,max(1,map%nlocal(map%me))),stat=ierr)
-    ierr = posix_memalign(rawMem, int(64,kind=C_SIZE_T), int(mvec%paddedN*8_8*nvec,kind=C_SIZE_T))
-    call c_f_pointer(rawMem, mvec%val, (/nvec,mvec%paddedN/))
-#if defined(TESTING)
-    if( mod(transfer(c_loc(mvec%val(1,1)), dummy), 32) .ne. 0 ) then
-      write(*,*) 'Wrong memory alignment!'
-      flush(6)
-      ierr=-44
-      return
-    end if
-#endif
-    if (ierr/=0) then
-      ierr=-44
-      return
-    end if
+    ! allocate memory
+    call allocate_aligned( int((/nvec,mvec%paddedN/),kind=C_SIZE_T), mvec%val, ierr)
+    if ( ierr /= 0 ) return
 
     ! that should hopefully help in cases of NUMA
     call dset_1(size(mvec%val), mvec%val, 0._8)
@@ -3238,12 +3219,6 @@ contains
 #ifdef F_DEBUG
     integer(C_INTPTR_T) :: dummy
 #endif
-    interface
-      subroutine free(p) bind(C)
-        use, intrinsic :: iso_c_binding, only: C_PTR
-        type(C_PTR), value :: p
-      end subroutine free
-    end interface
     !--------------------------------------------------------------------------------
 
 #ifdef F_DEBUG
@@ -3253,7 +3228,7 @@ contains
     if( c_associated(mvec_ptr) ) then
       call c_f_pointer(mvec_ptr, mvec)
       if( .not. mvec%is_view) then
-        call free(c_loc(mvec%val(1,1)))
+        call deallocate_aligned(mvec%val)
       end if
       deallocate(mvec)
     end if

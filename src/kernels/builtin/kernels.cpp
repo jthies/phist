@@ -28,6 +28,7 @@
 #include "phist_ScalarTraits.hpp"
 extern "C" {
 #include "bench_kernels.h"
+#include "phist_random.h"
 }
 
 #ifdef PHIST_HAVE_LIKWID
@@ -181,8 +182,6 @@ void (*__malloc_initialize_hook) (void) = my_init_hook;
 */
 
 
-void init_random_seed(void);
-
 // initialize
 void phist_kernels_init(int* argc, char*** argv, int* iflag)
 {
@@ -219,7 +218,7 @@ void phist_kernels_init(int* argc, char*** argv, int* iflag)
     LIKWID_MARKER_START("phist<builtin>");
   }
 #endif
-  init_random_seed();
+  phist_random_init();
 }
 
 // finalize builtin kernels

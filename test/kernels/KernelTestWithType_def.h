@@ -1,4 +1,6 @@
-
+#ifdef PHIST_KERNEL_LIB_BUILTIN
+extern "C" void phist_random_init();
+#endif
 /** 
  */
 template<>
@@ -22,7 +24,7 @@ int iflag;
 SUBR(type_avail)(&iflag);
 typeImplemented_=(iflag==0);
 #ifdef PHIST_KERNEL_LIB_BUILTIN
-init_random_seed();
+phist_random_init();
 #endif
 
 int rank=0;

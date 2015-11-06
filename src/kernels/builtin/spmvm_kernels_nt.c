@@ -23,14 +23,6 @@ static inline _Bool is_aligned(const void *restrict pointer, size_t byte_count)
 }
 #endif
 
-// provide possibility to check alignment in fortran
-void mem_is_aligned16_(const void*restrict pointer, int* ret)
-{
-  if( is_aligned(pointer,16) )
-    *ret = 0;
-  else
-    *ret = 1;
-}
 
 void dspmvm_nt_1_c(int nrows, double alpha, const long *restrict row_ptr, const long *restrict halo_ptr, const int *restrict col_idx, const double *restrict val,
                  const double *restrict shifts, const double *restrict rhsv, const double *restrict halo, double *restrict lhsv)
@@ -153,19 +145,19 @@ void dspmvm_nt_1_c(int nrows, double alpha, const long *restrict row_ptr, const 
 void dspmvm_nt_2_c(int nrows, double alpha, const long *restrict row_ptr, const long *restrict halo_ptr, const int *restrict col_idx, const double *restrict val,
                  const double *restrict shifts, const double *restrict rhsv, const double *restrict halo, double *restrict lhsv, int ldl)
 {
-  if( !is_aligned(lhsv,16) || ldl % 2 != 0 )
+  if( !is_aligned(lhsv,32) || ldl % 2 != 0 )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)lhsv);
     exit(1);
   }
 
-  if( !is_aligned(rhsv,16) )
+  if( !is_aligned(rhsv,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)rhsv);
     exit(1);
   }
 
-  if( !is_aligned(halo,16) )
+  if( !is_aligned(halo,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)halo);
     exit(1);
@@ -242,21 +234,21 @@ void dspmvm_nt_2_c(int nrows, double alpha, const long *restrict row_ptr, const 
 void dspmvm_nt_4_c(int nrows, double alpha, const long *restrict row_ptr, const long *restrict halo_ptr, const int *restrict col_idx, const double *restrict val,
                  const double *restrict shifts, const double *restrict rhsv, const double *restrict halo, double *restrict lhsv, int ldl)
 {
-  if( !is_aligned(lhsv,16) || ldl % 2 != 0 )
+  if( !is_aligned(lhsv,32) || ldl % 4 != 0 )
   {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)lhsv);
+    printf("%s: lhsv not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)lhsv);
     exit(1);
   }
 
-  if( !is_aligned(rhsv,16) )
+  if( !is_aligned(rhsv,32) )
   {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)rhsv);
+    printf("%s: rhsv not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)rhsv);
     exit(1);
   }
 
-  if( !is_aligned(halo,16) )
+  if( !is_aligned(halo,32) )
   {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)halo);
+    printf("%s: halo not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)halo);
     exit(1);
   }
 

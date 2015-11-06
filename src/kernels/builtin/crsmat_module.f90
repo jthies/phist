@@ -18,9 +18,10 @@
 
 !> Implements phist_DsparseMat_* routines for the builtin kernels
 module crsmat_module
-  use, intrinsic :: iso_c_binding
-  use map_module, only: Map_t, map_setup, map_compatible_map
-  use mvec_module, only: MVec_t, mvec_scale
+  use, intrinsic :: iso_c_binding, only: C_INT32_T, C_INT64_T
+  use env_module,   only: allocate_aligned, deallocate_aligned
+  use map_module,   only: Map_t, map_setup, map_compatible_map
+  use mvec_module,  only: MVec_t, mvec_scale
   implicit none
 
   private
@@ -44,7 +45,7 @@ module crsmat_module
 
 ! this macro decides how many mvecs can be communicated at a time
 ! (should be >=1 for spMVM and >=2 for the CARP kernel with complex shifts)
-#define NBLOCKS 2
+#define NBLOCKS 2_8
 
   public :: CrsMat_t
   !public :: phist_DcrsMat_read_mm
@@ -66,8 +67,8 @@ module crsmat_module
     integer,      allocatable :: sendInd(:)           !< index in the send buffer of each proc, has size (nSendProcs+1)
     integer,      allocatable :: recvInd(:)           !< index in the receive buffer of each proc, has size (nRecvProcs+1)
     ! buffers to allow sending several (nb') blocks of nb vectors each. nb' is set by the macro NBLOCKS above
-    real(kind=8), allocatable :: sendData(:,:,:)        !< send buffer, has size (nb,sendBuffInd(nSendProcs+1)-1,nb')
-    real(kind=8), allocatable :: recvData(:,:,:)        !< recv buffer, has size (nb,recvBuffInd(nRecvProcs+1)-1,nb')
+    real(kind=8), pointer, contiguous :: sendData(:,:,:) => null()       !< send buffer, has size (nb,sendBuffInd(nSendProcs+1)-1,nb')
+    real(kind=8), pointer, contiguous :: recvData(:,:,:) => null()       !< recv buffer, has size (nb,recvBuffInd(nRecvProcs+1)-1,nb')
     integer,      allocatable :: sendRowBlkInd(:)     !< local row block index of the data in the sendBuffer, has size (sendBuffInd(nSendProcs+1)-1)
     integer,      allocatable :: sendBuffInd(:,:)     !< sorted Variant of sendRowBlkInd, hast size (size(sendRowBlkInd),2), first entry is the local row block index, second is the index in the send buffer
     integer(kind=8), allocatable :: recvRowBlkInd(:)     !< global row block index of the data in the recvBuffer, has size (recvBuffInd(nRecvProcs+1)-1)
@@ -374,8 +375,8 @@ end do
      call mpi_request_free(B%sendRequests((j-1)*B%nSendProcs+i), ierr)
   end do
   end do
-  deallocate(B%recvData)
-  deallocate(B%sendData)
+  call deallocate_aligned(B%recvData); B%recvData => null()
+  call deallocate_aligned(B%sendData); B%sendData => null()
   
   end subroutine delete_buffers
 
@@ -383,7 +384,7 @@ end do
   !! and setup persistent communication. nvec is nb above,
   !! and nblock is nb' above.
   subroutine alloc_buffers(B,comm,nvec,ierr)
-  USE mpi  
+  use mpi  
   implicit none
   
   TYPE(CrsCommBuff_t) :: B
@@ -398,12 +399,12 @@ end do
 
   ! allocate new receive buffer
   recvBuffSize=MAX(B%recvInd(B%nRecvProcs+1)-1,1)
-  allocate(B%recvData(nvec,recvBuffSize,NBLOCKS),stat=ierr)
+  call allocate_aligned( (/int(nvec,8),recvBuffSize,NBLOCKS/), B%recvData, ierr)
   if (ierr/=0) return
 
   ! allocate new send buffer
   sendBuffSize=MAX(B%sendInd(B%nSendProcs+1)-1,1)
-  allocate(B%sendData(nvec,sendBuffSize,NBLOCKS),stat=ierr)
+  call allocate_aligned( (/int(nvec,8),sendBuffSize,NBLOCKS/), B%sendData, ierr)
   if (ierr/=0) return
 
   ! setup persistent communication for spMVM
@@ -1487,7 +1488,7 @@ end subroutine permute_local_matrix
     !--------------------------------------------------------------------------------
     integer :: nvec, ldx, ldy, recvBuffSize, sendBuffSize
     logical :: strided_x, strided_y, strided
-    logical :: y_is_aligned16, handled
+    logical :: y_is_aligned, x_is_aligned, handled
     integer :: i, k, l
     !--------------------------------------------------------------------------------
 
@@ -1532,14 +1533,21 @@ end subroutine permute_local_matrix
     ldx = size(x%val,1)
     ldy = size(y%val,1)
 
-    if( mod(loc(y%val(y%jmin,1)),16) .eq. 0 .and. (mod(ldy,2) .eq. 0 .or. ldy .eq. 1) ) then
-      y_is_aligned16 = .true.
+    if( mod(loc(x%val(x%jmin,1)),32) .eq. 0 .and. (mod(ldx,4) .eq. 0 .or. ldx .eq. nvec) ) then
+      x_is_aligned = .true.
     else
-      y_is_aligned16 = .false.
+      x_is_aligned = .false.
+    end if
+
+    if( mod(loc(y%val(y%jmin,1)),32) .eq. 0 .and. (mod(ldy,4) .eq. 0 .or. ldy .eq. nvec) ) then
+      y_is_aligned = .true.
+    else
+      y_is_aligned = .false.
     end if
 
 #ifdef F_DEBUG
-    write(*,*) 'spMVM with nvec =',nvec,', ldx =',ldx,', ldy =',ldy,', y_mem_aligned16 =', y_is_aligned16, 'on proc', A%row_map%me
+    write(*,*) 'spMVM with nvec =',nvec,', ldx =',ldx,', ldy =',ldy,&
+      & ', x_mem_aligned =', x_is_aligned, ', y_mem_aligned =', y_is_aligned, 'on proc', A%row_map%me
     flush(6)
 #endif
 
@@ -1550,7 +1558,7 @@ end subroutine permute_local_matrix
     recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
     handled = .false.
     !try to use NT stores if possible
-    if( beta .eq. 0 .and. y_is_aligned16 ) then
+    if( beta .eq. 0 .and. x_is_aligned .and. y_is_aligned ) then
       if( nvec .eq. 1 ) then
         if( .not. strided ) then
           call dspmvm_NT_1(A%nrows, recvBuffSize, A%ncols, A%nEntries, alpha, &
@@ -2192,7 +2200,7 @@ end if
       call c_f_pointer(A_ptr,A)
 
       ! free all mpi requests
-      if( allocated(A%comm_buff%recvData) ) then
+      if( associated(A%comm_buff%recvData) ) then
         call delete_buffers(A%comm_buff)
       end if
 
@@ -2440,7 +2448,7 @@ end if
       ! because we have x_r and x_i (complex x).
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
-      if( allocated(A%comm_buff%recvData) ) then
+      if( associated(A%comm_buff%recvData) ) then
         if( size(A%comm_buff%recvData,1) .ne. nvec ) then
           call delete_buffers(A%comm_buff)
         end if
@@ -2449,7 +2457,7 @@ end if
       sendBuffSize = A%comm_buff%sendInd(A%comm_buff%nSendProcs+1)-1
       recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
 
-      if( .not. allocated(A%comm_buff%recvData) ) then
+      if( .not. associated(A%comm_buff%recvData) ) then
         call alloc_buffers(A%comm_buff, A%row_map%comm, nvec,ierr)
         if (ierr/=0) then
           ierr=-44
@@ -2645,7 +2653,7 @@ end if
       ! because we have x_r and x_i (complex x).
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
-      if( allocated(A%comm_buff%recvData) ) then
+      if( associated(A%comm_buff%recvData) ) then
         if( size(A%comm_buff%recvData,1) .ne. nvec ) then
           call delete_buffers(A%comm_buff)
         end if
@@ -2654,7 +2662,7 @@ end if
       sendBuffSize = A%comm_buff%sendInd(A%comm_buff%nSendProcs+1)-1
       recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
 
-      if( .not. allocated(A%comm_buff%recvData) ) then
+      if( .not. associated(A%comm_buff%recvData) ) then
         call alloc_buffers(A%comm_buff, A%row_map%comm, nvec,ierr)
         if (ierr/=0) then
           ierr=-44
@@ -2832,12 +2840,12 @@ implicit none
 
     ! start buffer irecv
     ! we could also set up persistent communication channels here... and use MPI_Startall later
-    if( allocated(A%comm_buff%recvData) ) then
+    if( associated(A%comm_buff%recvData) ) then
       if( size(A%comm_buff%recvData,1) .ne. nvec ) then
         call delete_buffers(A%comm_buff)
       end if
     end if
-    if( .not. allocated(A%comm_buff%recvData) ) then
+    if( .not. associated(A%comm_buff%recvData) ) then
       call alloc_buffers(A%comm_buff,A%row_map%comm,nvec,ierr)
     end if
 
