@@ -14,12 +14,30 @@ module env_module
   public :: phist_comm_delete
   public :: phist_comm_get_rank
   public :: phist_comm_get_size
+  public :: allocate_aligned
+  public :: deallocate_aligned
   !public :: init_random_seed
+
+  !================================================================================
+  !> helper function to allocate an array of aligned memory
+  interface allocate_aligned
+    module procedure allocate_aligned_1
+    module procedure allocate_aligned_2
+    module procedure allocate_aligned_3
+  end interface allocate_aligned
 
   ! C declarations
   interface
-    subroutine phist_random_init() bind(C)
-    end subroutine
+    function posix_memalign(p, align, n) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_PTR, C_SIZE_T, C_INT
+      integer(kind=C_SIZE_T), value :: align, n
+      type(C_PTR), intent(out) :: p
+      integer(kind=C_INT) :: posix_memalign
+    end function posix_memalign
+    subroutine free(p) bind(C)
+      use, intrinsic :: iso_c_binding, only: C_PTR
+      type(C_PTR), value :: p
+    end subroutine free
   end interface
 contains
 
@@ -112,65 +130,81 @@ contains
 
 
   !================================================================================
-  ! seed fortran "random_number", copied from gcc.gnu.org
-  subroutine init_random_seed() bind(C,name="init_random_seed")
-    use iso_fortran_env, only: int64
-#ifdef __INTEL_COMPILER
-    use ifport, only: getpid
-#endif
-    implicit none
-    integer, allocatable :: seed(:)
-    integer :: i, n, un, istat, dt(8), pid
-    integer(int64) :: t
-  
-    call random_seed(size = n)
-    allocate(seed(n))
-    ! First try if the OS provides a random number generator
-    open(newunit=un, file="/dev/urandom", access="stream", &
-         form="unformatted", action="read", status="old", iostat=istat)
-    if (istat == 0) then
-       read(un) seed
-       close(un)
-    else
-       ! Fallback to XOR:ing the current time and pid. The PID is
-       ! useful in case one launches multiple instances of the same
-       ! program in parallel.
-       call system_clock(t)
-       if (t == 0) then
-          call date_and_time(values=dt)
-          t = (dt(1) - 1970) * 365_int64 * 24 * 60 * 60 * 1000 &
-               + dt(2) * 31_int64 * 24 * 60 * 60 * 1000 &
-               + dt(3) * 24_int64 * 60 * 60 * 1000 &
-               + dt(5) * 60 * 60 * 1000 &
-               + dt(6) * 60 * 1000 + dt(7) * 1000 &
-               + dt(8)
-       end if
-       pid = getpid()
-       t = ieor(t, int(pid, kind(t)))
-       do i = 1, n
-          seed(i) = lcg(t)
-       end do
+  ! helper functions to allocate aligned memory
+  subroutine allocate_aligned_1(n, array, ierr)
+    use, intrinsic :: iso_c_binding
+    !------------------------------------------------------------
+    integer(kind=C_SIZE_T),            intent(in)   :: n(1)
+    real(kind=8), pointer, contiguous, intent(out)  :: array(:)
+    integer,                           intent(out)  :: ierr
+    !------------------------------------------------------------
+    type(C_PTR) :: rawMem = C_NULL_PTR
+    integer(kind=C_SIZE_T), parameter :: alignement = 64
+    integer(kind=C_SIZE_T), parameter :: double = 8
+    !------------------------------------------------------------
+
+    ierr = posix_memalign(rawMem, alignement, product(n)*double)
+    if ( ierr/=0 .or. .not. c_associated(rawMem) ) then
+      write(*,*) 'Error allocating ', n*double/2**20, 'MB array!'
+      ierr = -1
+      return
     end if
-    call random_seed(put=seed)
-    call phist_random_init()
+    call c_f_pointer(rawMem, array, n)
+  end subroutine allocate_aligned_1
 
-  contains
-    ! This simple PRNG might not be good enough for real work, but is
-    ! sufficient for seeding a better PRNG.
-    function lcg(s)
-      integer :: lcg
-      integer(int64) :: s
-      if (s == 0) then
-         s = 104729
-      else
-         s = mod(s, 4294967296_int64)
-      end if
-      s = mod(s * 279470273_int64, 4294967291_int64)
-      lcg = int(mod(s, int(huge(0), int64)), kind(0))
-    end function lcg
-  end subroutine init_random_seed
+  subroutine allocate_aligned_2(n, array, ierr)
+    use, intrinsic :: iso_c_binding
+    !------------------------------------------------------------
+    integer(kind=C_SIZE_T),            intent(in)   :: n(2)
+    real(kind=8), pointer, contiguous, intent(out)  :: array(:,:)
+    integer,                           intent(out)  :: ierr
+    !------------------------------------------------------------
+    type(C_PTR) :: rawMem = C_NULL_PTR
+    integer(kind=C_SIZE_T), parameter :: alignement = 64
+    integer(kind=C_SIZE_T), parameter :: double = 8
+    !------------------------------------------------------------
+
+    ierr = posix_memalign(rawMem, alignement, product(n)*double)
+    if ( ierr/=0 .or. .not. c_associated(rawMem) ) then
+      write(*,*) 'Error allocating ', n*double/2**20, 'MB array!'
+      ierr = -1
+      return
+    end if
+    call c_f_pointer(rawMem, array, n)
+  end subroutine allocate_aligned_2
+
+  subroutine allocate_aligned_3(n, array, ierr)
+    use, intrinsic :: iso_c_binding
+    !------------------------------------------------------------
+    integer(kind=C_SIZE_T),            intent(in)   :: n(3)
+    real(kind=8), pointer, contiguous, intent(out)  :: array(:,:,:)
+    integer,                           intent(out)  :: ierr
+    !------------------------------------------------------------
+    type(C_PTR) :: rawMem = C_NULL_PTR
+    integer(kind=C_SIZE_T), parameter :: alignement = 64
+    integer(kind=C_SIZE_T), parameter :: double = 8
+    !------------------------------------------------------------
+
+    ierr = posix_memalign(rawMem, alignement, product(n)*double)
+    if ( ierr/=0 .or. .not. c_associated(rawMem) ) then
+      write(*,*) 'Error allocating ', n*double/2**20, 'MB array!'
+      ierr = -1
+      return
+    end if
+    call c_f_pointer(rawMem, array, n)
+  end subroutine allocate_aligned_3
 
 
+  !================================================================================
+  ! helper functions to deallocate aligned memory
+  subroutine deallocate_aligned(array)
+    use, intrinsic :: iso_c_binding, only: c_loc
+    real(kind=8), target :: array(*)
+    !--------------------------------------------------------------------------------
+
+    call free(c_loc(array(1)))
+
+  end subroutine deallocate_aligned
 
 
 end module env_module

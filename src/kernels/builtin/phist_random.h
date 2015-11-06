@@ -21,8 +21,8 @@ void phist_random_init();
 void phist_Drandom_number(int n, double*x);
 
 // generate random numbers in parallel for a dense block
-void drandom_1(int nrows, double *restrict y, int64_t pre_skip, int64_t post_skip);
+void drandom_1(int nrows, double *y, int64_t pre_skip, int64_t post_skip);
 
 // generate random numbers in parallel for strided block
-void drandom_general(int nvec, int nrows, double *restrict v, int ldv, int64_t pre_skip, int64_t post_skip);
+void drandom_general(int nvec, int nrows, double *v, int ldv, int64_t pre_skip, int64_t post_skip);
 
