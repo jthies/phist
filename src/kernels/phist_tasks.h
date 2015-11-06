@@ -143,7 +143,7 @@ class WrapLambdaForGhostTask
         (*task)->parent = newParent;
       }
 
-      PHIST_DEB("enqueuing C++11-lambda as GHOST task and waiting for it\n");
+      PHIST_SOUT(PHIST_TRACE,"enqueuing C++11-lambda as GHOST task and waiting for it\n");
       PHIST_CHK_GERR(ghost_task_enqueue(*task), *iflag);
       if( async )
         return;
