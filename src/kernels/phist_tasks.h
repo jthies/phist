@@ -95,9 +95,12 @@ class WrapLambdaForGhostTask
           bool curTaskAsync = (curTask->nThreads == 0);
           if( !curTaskAsync )
           {
-            // simply run the target code
-            context();
-            return;
+            if( !deterministicOneThread || curTask->nThreads == 1 )
+            {
+              // simply run the target code
+              context();
+              return;
+            }
           }
         }
       }
