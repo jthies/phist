@@ -701,7 +701,7 @@ PHIST_TASK_BEGIN(ComputeTask)
 
     maxCurDimV++;
     sharedCurDimV++;
-#ifdef TESTING
+#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_DEBUG)
 // check subspace orthogonality
 {
   for(int i = 0; i < numSys; i++)
