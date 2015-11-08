@@ -147,7 +147,10 @@ class WrapLambdaForGhostTask
       }
 
       PHIST_SOUT(PHIST_TRACE,"enqueuing C++11-lambda as GHOST task and waiting for it\n");
-      PHIST_CHK_GERR(ghost_task_enqueue(*task), *iflag);
+      // prevent possible race condition when iflag is reused inside the task!
+      ghost_error_t task_enqueue_err = ghost_task_enqueue(*task);
+      if( task_enqueue_err != GHOST_SUCCESS )
+        PHIST_CHK_GERR(task_enqueue_err, *iflag);
       if( async )
         return;
 
