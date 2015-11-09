@@ -1002,10 +1002,24 @@ extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* iflag)
   std::cout << "# vectors:    "<<V->traits.ncols<<std::endl;
   std::cout << "# row major:  "<<(V->traits.storage & GHOST_DENSEMAT_ROWMAJOR)<<std::endl;
   std::cout << "# stride:     "<<V->stride<<std::endl;
-  char *str=NULL;
-  V->string(V,&str);
-  std::cout << str <<std::endl;
-  free(str); str = NULL;
+
+  // if this is a GPU process, do not print the vector values.
+  // the vec->string function will download the vector elements,
+  // which allocates memory on the CPU. Also, the download changes
+  // the semantic of the program. If the user wants to print vector
+  // elements, we should add an input flag like PHIST_FORCE.
+  if (V->traits.location == GHOST_LOCATION_HOST) 
+  {
+    char *str=NULL;
+    V->string(V,&str);
+    std::cout << str <<std::endl;
+    free(str); str = NULL;
+  }
+  else
+  {
+    // cuda process
+    std::cout << "(not printing vector entries on GPU nodes)\n";
+  }
 }
 
 extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)

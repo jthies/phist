@@ -6,7 +6,7 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
 # Define some custom variables
 project(phist C CXX Fortran)
 SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
-set(PHIST_VERSION 0.8.2)
+set(PHIST_VERSION 0.9.0)
 set(PRODUCT_NAME phist-${PHIST_VERSION})
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
