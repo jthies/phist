@@ -828,8 +828,8 @@ set(TEST_SOURCES
     test/mainTest.cpp
     test/tools/MatrixIO.cpp)
     
-file(GLOB TestMatricesMM ${CMAKE_SOURCE_DIR}/test/matrices/*.mm)
-file(GLOB TestMatricesBIN ${CMAKE_SOURCE_DIR}/test/matrices/*.bin)
+file(GLOB TestMatricesMM ${CMAKE_CURRENT_SOURCE_DIR}/test/matrices/*.mm)
+file(GLOB TestMatricesBIN ${CMAKE_CURRENT_SOURCE_DIR}/test/matrices/*.bin)
 
 foreach (mat ${TestMatricesMM})
   configure_file(${mat} ${CMAKE_CURRENT_BINARY_DIR}/ COPYONLY)
@@ -852,15 +852,17 @@ target_link_libraries(phist_tools ${external_libs})
 
 # type generic driver routines are compiled from .c or .cpp files
 # which we get from .in files by preprocessing
-file(GLOB TG_C_Drivers ${CMAKE_SOURCE_DIR}/drivers/*.c.in )
-file(GLOB TG_CXX_Drivers ${CMAKE_SOURCE_DIR}/drivers/*.cpp.in )
+file(GLOB TG_C_Drivers ${CMAKE_CURRENT_SOURCE_DIR}/drivers/*.c.in )
+file(GLOB TG_CXX_Drivers ${CMAKE_CURRENT_SOURCE_DIR}/drivers/*.cpp.in )
 
 foreach (infile ${TG_C_Drivers})
   get_filename_component(filebase ${infile} NAME_WE)
   foreach (tc ${TG_Types})
-    STRING(TOLOWER \"phist_gen_${tc}.h\" PHIST_TG_HFILE)
+    string(TOLOWER ${tc} tcl)
+    set(PHIST_TG_HFILE \"phist_gen_${tcl}.h\")
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.c)
     add_executable(phist_${tc}${filebase} ${tc}${filebase}.c)
+    set_property(SOURCE ${tc}${filebase}.c APPEND PROPERTY OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/phist_gen_${tcl}.h)
     target_link_libraries(phist_${tc}${filebase} ${library_list})
     install(TARGETS phist_${tc}${filebase} RUNTIME DESTINATION bin OPTIONAL)
     # added
@@ -871,9 +873,11 @@ endforeach()
 foreach (infile ${TG_CXX_Drivers})
   get_filename_component(filebase ${infile} NAME_WE)
   foreach (tc ${TG_Types})
-    STRING(TOLOWER \"phist_gen_${tc}.h\" PHIST_TG_HFILE)
+    string(TOLOWER ${tc} tcl)
+    set(PHIST_TG_HFILE \"phist_gen_${tcl}.h\")
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.cpp)
     add_executable(phist_${tc}${filebase} ${tc}${filebase}.cpp)
+    set_property(SOURCE ${tc}${filebase}.cpp APPEND PROPERTY OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/phist_gen_${tcl}.h)
     target_link_libraries(phist_${tc}${filebase} ${library_list})
     install(TARGETS phist_${tc}${filebase} RUNTIME DESTINATION bin OPTIONAL)
     LIST(APPEND driver_list phist_${tc}${filebase})
@@ -916,13 +920,13 @@ install(FILES ${PROJECT_BINARY_DIR}/phistConfigVersion.cmake DESTINATION ${LIBRA
 install(FILES ${PROJECT_BINARY_DIR}/phist.pc DESTINATION ${LIBRARY_INSTALL_DIR}/pkgconfig)
 install(FILES ${PROJECT_BINARY_DIR}/phist_config.h DESTINATION ${INCLUDE_INSTALL_DIR})
 
-file(GLOB PHIST_HEADERS ${CMAKE_SOURCE_DIR}/src/*/*.h 
-                        ${CMAKE_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/phist_typedefs.h 
-                        ${CMAKE_SOURCE_DIR}/src/tools/*.hpp
+file(GLOB PHIST_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/*/*.h 
+                        ${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/phist_typedefs.h 
+                        ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/*.hpp
                         )
 install(FILES ${PHIST_HEADERS} DESTINATION ${INCLUDE_INSTALL_DIR})
 
-file(GLOB PYTHON_HEADERS ${CMAKE_SOURCE_DIR}/python/*.py)
+file(GLOB PYTHON_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/python/*.py)
 install(FILES ${PYTHON_HEADERS} DESTINATION ${LIBRARY_INSTALL_DIR}/python)
 
 # test drivers
@@ -944,7 +948,7 @@ endif()
 foreach(label ${PHIST_TESTS})
   string(TOUPPER ${label} label_uc)
 
-  file(GLOB ${label_uc}_TEST_SOURCES ${CMAKE_SOURCE_DIR}/test/${label}/*.cpp)
+  file(GLOB ${label_uc}_TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/test/${label}/*.cpp)
   list(APPEND ${label_uc}_TEST_SOURCES ${TEST_SOURCES})
 
   add_executable(${PRODUCT_NAME}-${label}-test ${${label_uc}_TEST_SOURCES} ${TEST_DEPENDS})
@@ -953,14 +957,23 @@ foreach(label ${PHIST_TESTS})
   set_target_properties(${PRODUCT_NAME}-${label}-test PROPERTIES COMPILE_FLAGS "-O0")
   target_link_libraries(${PRODUCT_NAME}-${label}-test ${library_list})
   target_link_libraries(${PRODUCT_NAME}-${label}-test pthread)
-  target_include_directories(${PRODUCT_NAME}-${label}-test PUBLIC ${CMAKE_SOURCE_DIR}/test/${label})
+  target_include_directories(${PRODUCT_NAME}-${label}-test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/test/${label})
   LIST(APPEND test_list ${PRODUCT_NAME}-${label}-test)
+
+  # add dynmic include dependencies (which cannot be automatically detected by cmake!)
+  foreach(testSrc ${${label_uc}_TEST_SOURCES})
+    string(REGEX REPLACE "(With[UnAa]*lignedViews)*.cpp$" "_def.hpp" testDef ${testSrc})
+    if(EXISTS ${testDef})
+      message(STATUS "Adding dynamic dependency ${testDef} to ${testSrc}")
+      set_property(SOURCE ${testSrc} APPEND PROPERTY OBJECT_DEPENDS ${testDef})
+    endif()
+  endforeach()
 
 endforeach()
 
 # some example drivers which haven't made their way into the drivers/ directory
-file(GLOB C_Examples ${CMAKE_SOURCE_DIR}/examples/*/*.c )
-file(GLOB CXX_Examples ${CMAKE_SOURCE_DIR}/examples/*/*.cpp )
+file(GLOB C_Examples ${CMAKE_CURRENT_SOURCE_DIR}/examples/*/*.c )
+file(GLOB CXX_Examples ${CMAKE_CURRENT_SOURCE_DIR}/examples/*/*.cpp )
 
 foreach (infile ${C_Examples})
   get_filename_component(filebase ${infile} NAME_WE)
@@ -978,15 +991,17 @@ endforeach()
 
 # type generic examples routines are compiled from .c or .cpp files
 # which we get from .in files by preprocessing
-file(GLOB TG_C_Examples ${CMAKE_SOURCE_DIR}/examples/*/*.c.in )
-file(GLOB TG_CXX_Examples ${CMAKE_SOURCE_DIR}/examples/*/*.cpp.in )
+file(GLOB TG_C_Examples ${CMAKE_CURRENT_SOURCE_DIR}/examples/*/*.c.in )
+file(GLOB TG_CXX_Examples ${CMAKE_CURRENT_SOURCE_DIR}/examples/*/*.cpp.in )
 
 foreach (infile ${TG_C_Examples})
   get_filename_component(filebase ${infile} NAME_WE)
   foreach (tc ${TG_Types})
-    STRING(TOLOWER \"phist_gen_${tc}.h\" PHIST_TG_HFILE)
+    string(TOLOWER ${tc} tcl)
+    set(PHIST_TG_HFILE \"phist_gen_${tcl}.h\")
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.c)
     add_executable(${tc}${filebase} ${tc}${filebase}.c)
+    set_property(SOURCE ${tc}${filebase}.c APPEND PROPERTY OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/phist_gen_${tcl}.h)
     target_link_libraries(${tc}${filebase} ${library_list})
     LIST(APPEND test_list ${tc}${filebase})
   endforeach()
@@ -995,9 +1010,11 @@ endforeach()
 foreach (infile ${TG_CXX_Examples})
   get_filename_component(filebase ${infile} NAME_WE)
   foreach (tc ${TG_Types})
-    STRING(TOLOWER \"phist_gen_${tc}.h\" PHIST_TG_HFILE)
+    string(TOLOWER ${tc} tcl)
+    set(PHIST_TG_HFILE \"phist_gen_${tcl}.h\")
     configure_file(${infile} ${CMAKE_CURRENT_BINARY_DIR}/${tc}${filebase}.cpp)
     add_executable(${tc}${filebase} ${tc}${filebase}.cpp)
+    set_property(SOURCE ${tc}${filebase}.cpp APPEND PROPERTY OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/phist_gen_${tcl}.h)
     target_link_libraries(${tc}${filebase} ${library_list})
     LIST(APPEND test_list ${tc}${filebase})
   endforeach()
@@ -1054,13 +1071,13 @@ add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} ${CTEST_OPTIONS})
 # Adding optinal target "doc" to generate Doxygen documentation
 find_package(Doxygen 1.7.0)
 if (DOXYGEN_FOUND)
-    add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/phist.doxyfile WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+    add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/phist.doxyfile WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 
 # Add optional target "coverage" to genereate code coverage report (console / XML)
 if (GCOVR_SCRIPT)
     add_custom_target(coverage ${GCOVR_SCRIPT} ${GCOVR_OPTIONS}
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 
 # Adding optional "cppcheck" target
@@ -1081,14 +1098,14 @@ add_custom_target(audit DEPENDS coverage cppcheck)
 
 # Define the distribution package
 set(CPACK_PACKAGE_VERSION "${PHIST_VERSION}")
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE.txt")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
 set(CPACK_SYSTEM_NAME "${CMAKE_SYSTEM_NAME}-${CMAKE_C_COMPILER_ID}-${CMAKE_C_COMPILER_VERSION}")
 set(CPACK_GENERATOR TGZ)
 
-install(FILES "${CMAKE_SOURCE_DIR}/LICENSE.txt" DESTINATION share/doc/phist)
-install(FILES "${CMAKE_SOURCE_DIR}/README.md"   DESTINATION share/doc/phist)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt" DESTINATION share/doc/phist)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/README.md"   DESTINATION share/doc/phist)
 if (DOXYGEN_FOUND)
-  install(DIRECTORY "${CMAKE_SOURCE_DIR}/doc/html" DESTINATION share/doc/phist OPTIONAL)
+  install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/doc/html" DESTINATION share/doc/phist OPTIONAL)
 endif()
 include(CPack)
 
