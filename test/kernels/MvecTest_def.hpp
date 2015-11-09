@@ -379,6 +379,31 @@ public:
     }
 #endif
 
+  // this test is performed by the BelosMVOPTester and failed
+  // at some point for GHOST, so I added it here.
+  TEST_F(CLASSNAME, random_twice)
+  {
+    if (typeImplemented_ && !problemTooSmall_)
+    {
+      _MT_ norms1[nvec_],norms2[nvec_];
+      SUBR(mvec_random)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_norm2)(vec1_,norms1,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      SUBR(mvec_random)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_norm2)(vec1_,norms2,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      _MT_ same=mt::zero();
+      for (int i=0;i<nvec_;i++)
+      {
+        same+=std::abs(norms1[i]-norms2[i]);
+      }
+      ASSERT_GT(same,100*mt::eps());
+    }
+  }
+
   TEST_F(CLASSNAME, upload_download)
   {
     // just tests that the upload and from_device functions return 0
