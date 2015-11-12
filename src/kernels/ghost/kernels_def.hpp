@@ -1705,19 +1705,25 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
 
   PHIST_DEB("mvec_QR: multi-vector case\n");
 
+#if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
+
 #ifdef GHOST_HAVE_CUDA
-  ghost_type_t ghost_type;
-  PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
-  if (ghost_type == GHOST_TYPE_CUDA)
+  static int any_cuda=-1;
+  if (any_cuda==-1)
+  {
+    ghost_type_t ghost_type;
+    PHIST_CHK_GERR(ghost_type_get(&ghost_type),*iflag);
+    int is_cuda=(ghost_type==GHOST_TYPE_CUDA)?1:0;
+    MPI_Allreduce(&is_cuda,&any_cuda,1,MPI_INT,MPI_SUM,V->context->mpicomm);
+  }
+  if (any_cuda)
   {
     *iflag=PHIST_NOT_IMPLEMENTED;
     return;
   }
 #endif
 
-
-#if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
-    //TSQR for row major storage not available yet
+  //TSQR for row major storage not available yet
   bool transV=(V->traits.storage==GHOST_DENSEMAT_ROWMAJOR);
   bool transR=(R->traits.storage==GHOST_DENSEMAT_ROWMAJOR);
 
