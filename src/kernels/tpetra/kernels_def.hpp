@@ -937,7 +937,7 @@ extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr)
                                         TYPE(const_mvec_ptr) vx, 
                                         _ST_ beta, TYPE(mvec_ptr) vy, 
                                         int* iflag)
-  {
+{
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
@@ -954,17 +954,15 @@ extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr)
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,y,vy,*iflag);
   PHIST_OUT(PHIST_TRACE,"alpha=%g+i%g\n",st::real(alpha),st::imag(alpha));
   PHIST_OUT(PHIST_TRACE,"beta=%g+i%g\n",st::real(beta),st::imag(beta));
-  Traits<_ST_>::crsMVM_t spMVM(Teuchos::rcp(A,false));
-  PHIST_TRY_CATCH(spMVM.apply(*x,*y,Teuchos::NO_TRANS,alpha,beta),*iflag);
-
-  }
+  PHIST_TRY_CATCH(A->apply(*x,*y,Teuchos::NO_TRANS,alpha,beta),*iflag);
+}
 
 //! y=alpha*A*x+beta*y.
 extern "C" void SUBR(sparseMatT_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, 
                                         TYPE(const_mvec_ptr) vx, 
                                         _ST_ beta, TYPE(mvec_ptr) vy, 
                                         int* iflag)
-  {
+{
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
@@ -981,11 +979,10 @@ extern "C" void SUBR(sparseMatT_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,y,vy,*iflag);
   PHIST_OUT(PHIST_TRACE,"alpha=%g+i%g\n",st::real(alpha),st::imag(alpha));
   PHIST_OUT(PHIST_TRACE,"beta=%g+i%g\n",st::real(beta),st::imag(beta));
-  Traits<_ST_>::crsMVM_t spMVM(Teuchos::rcp(A,false));
 #ifdef IS_COMPLEX
-  PHIST_TRY_CATCH(spMVM.apply(*x,*y,Teuchos::CONJ_TRANS,alpha,beta),*iflag);
+  PHIST_TRY_CATCH(A->apply(*x,*y,Teuchos::CONJ_TRANS,alpha,beta),*iflag);
 #else
-  PHIST_TRY_CATCH(spMVM.apply(*x,*y,Teuchos::TRANS,alpha,beta),*iflag);
+  PHIST_TRY_CATCH(A->apply(*x,*y,Teuchos::TRANS,alpha,beta),*iflag);
 #endif
   }
 
