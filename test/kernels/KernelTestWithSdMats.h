@@ -1,7 +1,7 @@
 #ifndef PHIST_KERNEL_TEST_WITH_SDMATS_H
 #define PHIST_KERNEL_TEST_WITH_SDMATS_H
 
-#include "gtest/gtest.h"
+#include "gtest/phist_gtest.h"
 //#include "gmock/gmock.h"
 
 #include "phist_typedefs.h"

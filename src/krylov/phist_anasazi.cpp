@@ -33,9 +33,8 @@
 #  include "Tpetra_MultiVector.hpp"
 #  include "AnasaziTpetraAdapter.hpp"
 # else
-// use general phist/anasazi interface
-#include "phist_MultiVector.hpp"
-#include "phist_AnasaziAdapter.hpp"
+#  warning "Anasazi not supported for this kernel lib"
+#  undef PHIST_HAVE_ANASAZI
 # endif
 #endif
 

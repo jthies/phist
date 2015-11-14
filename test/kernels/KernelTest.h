@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <iomanip>
-#include "gtest/gtest.h"
+#include "gtest/phist_gtest.h"
 
 #include "phist_config.h"
 

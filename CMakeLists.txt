@@ -554,7 +554,6 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_module.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/bench_kernels.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp
-                          ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_BelosAdapter.cpp
                           )
   if(PHIST_KERNEL_LIB_BUILTIN_AVX2_PREC_KERNELS)
     set (PHIST_KERNEL_SOURCE ${PHIST_KERNEL_SOURCE}
