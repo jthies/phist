@@ -4,7 +4,7 @@
 #endif
 
 
-#include "gtest/gtest.h"
+#include "gtest/phist_gtest.h"
 //#include "gmock/gmock.h"
 
 #include "../kernels/KernelTestWithVectors.h"

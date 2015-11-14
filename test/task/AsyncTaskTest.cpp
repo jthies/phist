@@ -3,7 +3,7 @@
 #include <mpi.h>
 #endif
 
-#include "gtest/gtest.h"
+#include "gtest/phist_gtest.h"
 
 #include "phist_kernels.h"
 #include "phist_macros.h"
