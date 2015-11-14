@@ -571,6 +571,10 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
   endif()
 else()
   set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
+                           ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernelsS.cpp
+                           ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernelsC.cpp
+                           ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernelsD.cpp
+                           ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernelsZ.cpp
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_driver_utils.c
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde.f90
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde3d.f90
