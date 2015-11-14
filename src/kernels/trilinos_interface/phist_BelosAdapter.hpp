@@ -22,7 +22,6 @@
 #include <BelosMultiVecTraits.hpp>
 
 #include "phist_MultiVector.hpp"
-#include "phist_TsqrAdaptor.hpp"
 #include "phist_rcp_helpers.hpp"
 
 #ifdef PHIST_HAVE_SP

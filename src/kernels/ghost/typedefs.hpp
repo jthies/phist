@@ -29,12 +29,12 @@
    TSQR only supports TBB and TPI (as of version 11.12.2).
 */
 #ifdef PHIST_HAVE_KOKKOS
-#include "KokkosClassic_config.h"
+#include "TpetraClassic_config.h"
 /*typedef Kokkos::DefaultNode::DefaultNodeType node_t;*/
-# if defined(HAVE_KOKKOSCLASSIC_TBB)
+# if defined(HAVE_TPETRACLASSIC_TBB)
 # include "Kokkos_TBBNode.hpp"
 typedef Kokkos::TBBNode node_t;
-# elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+# elif defined(HAVE_TPETRACLASSIC_THREADPOOL)
 # warning "Using the Kokkos thread pool node may interfere with GHOST threads leading to poor GHOST performance. Use TBB if possible!"
 # include "Kokkos_TPINode.hpp"
 typedef Kokkos::TPINode node_t;
