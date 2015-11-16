@@ -1443,7 +1443,7 @@ extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) vV, TYPE(const_mvec_ptr
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   //ghost_dot(s,V,W);
-  PHIST_CHK_GERR(V->dot(V,s,W),*iflag);
+  PHIST_CHK_GERR(ghost_localdot(s,V,W),*iflag);
 PHIST_TASK_END(iflag);
 
 PHIST_TASK_POST_STEP(iflag);
