@@ -13,6 +13,8 @@ template<>
 Teuchos::RCP<node_t> ghost::TsqrAdaptor< _ST_ >::node_=Teuchos::null;
 #endif
 
+using namespace phist::ghost_internal;
+
 
 // we implement only the double precision real type D
 extern "C" void SUBR(type_avail)(int* iflag)

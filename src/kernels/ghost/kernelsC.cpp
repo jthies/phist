@@ -16,6 +16,8 @@
 #include "typedefs.hpp"
 #include "phist_ScalarTraits.hpp"
 
+#include "phist_ghost_internal.h"
+
 // these are from Trilinos, we need them to interface
 // the TSQR library for orthogonalizing tall skinny matrices.
 #ifdef PHIST_HAVE_BELOS
@@ -56,11 +58,6 @@
 # warning "The interfaces between GHOST and Belos/TSQR cause problems unless you compile GHOST with LONGIDX_GLOBAL but *without* LONGIDX_LOCAL"
 # endif
 #endif
-
-  template<typename idx_t>
-  int check_local_size(idx_t& i);
-extern "C" void phist_totalMatVecCount();
-static void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm);
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_c.h"
