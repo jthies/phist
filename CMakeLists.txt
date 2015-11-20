@@ -552,7 +552,6 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/spmv_buff_cpy_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/kacz_kernels.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_module.f90
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/bench_kernels.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp
                           )
   if(PHIST_KERNEL_LIB_BUILTIN_AVX2_PREC_KERNELS)
@@ -580,7 +579,6 @@ else()
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/tritoeplitz.f90
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/brussolator.f90
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp
-                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/bench_kernels.c
                            ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp)
 endif()
 if (NOT ESSEX-PHYSICS_FOUND)
@@ -590,7 +588,10 @@ if (NOT ESSEX-PHYSICS_FOUND)
 endif()
 
 # sopme `derived' kernel functions, e.g. mvec_my_length is implemented via mvec_get_map/map_get_local_lenth etc.
-LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/common/kernels_common_impl.c)
+# and common things like benchmarks
+LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/common/kernels_common_impl.c
+                                ${PROJECT_SOURCE_DIR}/src/kernels/common/phist_bench_kernels.cpp
+                                ${PROJECT_SOURCE_DIR}/src/kernels/common/stream_bench.c)
 
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.cpp
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_timemonitor.cpp

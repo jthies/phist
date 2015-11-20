@@ -271,19 +271,6 @@ extern "C" void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* 
   *iupper = map->getMaxGlobalIndex();
 }
 
-extern "C" void phist_bench_stream_load(double* bw, int* iflag)
-{
-  *iflag = PHIST_NOT_IMPLEMENTED;
-}
-extern "C" void phist_bench_stream_store(double* bw, int* iflag)
-{
-  *iflag = PHIST_NOT_IMPLEMENTED;
-}
-extern "C" void phist_bench_stream_triad(double* bw, int* iflag)
-{
-  *iflag = PHIST_NOT_IMPLEMENTED;
-}
-
 #ifdef PHIST_TIMEMONITOR
 extern "C" void phist_totalMatVecCount()
 {
