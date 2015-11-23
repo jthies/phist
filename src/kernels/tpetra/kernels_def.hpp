@@ -369,7 +369,7 @@ extern "C" void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
   // get a view of the columns of V first
   Teuchos::RCP<const Traits<_ST_>::mvec_t> Vcols;
   PHIST_TRY_CATCH(Vcols = V->subView(Teuchos::Range1D(jmin,jmax)),*iflag);
-  *Vblock = *Vcols; // copy operation
+  PHIST_TRY_CATCH(Tpetra::deep_copy(*Vblock, *Vcols),*iflag); // copy operation
   }
 
 //! given a multi-vector Vblock, set V(:,jmin:jmax)=Vblock by copying the corresponding
@@ -414,7 +414,7 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
   Teuchos::RCP<Traits<_ST_>::mvec_t> Vcols;
   PHIST_TRY_CATCH(Vcols = V->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*iflag);
   // copy operation
-  PHIST_TRY_CATCH(*Vcols = *Vblock, *iflag);
+  PHIST_TRY_CATCH(Tpetra::deep_copy(*Vcols,*Vblock), *iflag);
   }
 
 //! get a new matrix that is a view of some rows and columns of the original one,
@@ -542,7 +542,7 @@ extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
       PHIST_TRY_CATCH(Mview = Mtmp->subView(Teuchos::Range1D(jmin,jmax)),*iflag);
       }
     }
-  *Mblock = *Mview; // copy operation
+  PHIST_TRY_CATCH(Tpetra::deep_copy(*Mblock,*Mview),*iflag); // copy operation
   }
 
 //! given a serial dense matrix Mblock, set M(imin:imax,jmin:jmax)=Mblock by 
@@ -603,7 +603,7 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
       PHIST_TRY_CATCH(Mview = Mtmp->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*iflag);
       }
     }
-  *Mview = *Mblock; // copy operation
+  PHIST_TRY_CATCH(Tpetra::deep_copy(*Mview,*Mblock),*iflag); // copy operation
   }
 
 
