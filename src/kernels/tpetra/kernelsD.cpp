@@ -37,7 +37,6 @@
 using namespace phist::tpetra;
 
 extern "C" void phist_tpetra_node_create(node_t** node, const_comm_ptr_t vcomm, int* iflag);
-extern "C" void phist_totalMatVecCount();
 
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"

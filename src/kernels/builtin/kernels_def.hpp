@@ -527,12 +527,7 @@ extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
-#ifdef PHIST_TIMEMONITOR
-  int nvec;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x, &nvec, iflag), *iflag);
-  for(int i = 0; i < nvec; i++)
-    phist_totalMatVecCount();
-#endif
+  PHIST_COUNT_MATVECS(x)
 
   void SUBR(crsMat_times_mvec_f)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
       TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag);
@@ -552,12 +547,7 @@ extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_spar
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
-#ifdef PHIST_TIMEMONITOR
-  int nvec;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x, &nvec, iflag), *iflag);
-  for(int i = 0; i < nvec; i++)
-    phist_totalMatVecCount();
-#endif
+  PHIST_COUNT_MATVECS(x);
 
   void SUBR(crsMat_times_mvec_vadd_mvec_f)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, 
       const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag);

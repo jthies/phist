@@ -66,21 +66,7 @@ namespace phist
   namespace ghost_internal
   {
 
-// small helper function to preclude integer overflows (ghost allows 64 bit local indices, 
-// but we don't right now)
-  template<typename idx_t>
-  int check_local_size(idx_t& i)
-  {
-    if (i>std::numeric_limits<lidx_t>::max()) return -1;
-    return 0;
-  }
-
-static void phist_totalMatVecCount()
-{
-  PHIST_ENTER_FCN(__FUNCTION__);
-}
-
-static void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
+void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
 {
   *C = PHIST_SELL_C;
   *sigma = PHIST_SELL_SIGMA;

@@ -265,13 +265,6 @@ void phist_map_get_global_length(const_map_ptr_t vmap, gidx_t* nglob, int* iflag
 void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* iflag);
 void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* iflag);
 
-#ifdef PHIST_TIMEMONITOR
-void phist_totalMatVecCount()
-{
-  PHIST_ENTER_FCN(__FUNCTION__);
-}
-#endif
-
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "../common/kernels_noimpl.c"

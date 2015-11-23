@@ -100,6 +100,8 @@ kernel libs) ?
 #include "Trilinos_version.h"
 #if ((TRILINOS_MAJOR_VERSION>11)||((TRILINOS_MAJOR_VERSION==11)&&(TRILINOS_MINOR_VERSION>1112)))
 #warning "Trilinos version >11.12 is not fully supported by PHIST, yet (cf. issue #124)"
+#else
+#define OLD_TRILINOS
 #endif
 #endif
 #endif

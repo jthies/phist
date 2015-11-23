@@ -238,4 +238,21 @@ if (_PTR_==NULL) {_FLAG_=-88; PHIST_OUT(PHIST_ERROR,"bad cast in file %s, line %
 __FILE__,__LINE__); return;}
 #endif
 
+#ifdef PHIST_TIMEMONITOR
+// this macro is used in the kernel lib adaptors so that the 
+// timemonitor output contains information on the total number
+// fo matrix-vector products (#spMVMs) instead of just #spMMVMs
+#define PHIST_COUNT_MATVECS(vec) \
+{\
+  int nvec;\
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, iflag), *iflag);\
+  for(int i = 0; i < nvec; i++)\
+  {\
+    PHIST_ENTER_FCN("phist_totalMatVecCount");\
+  }\
+}
+#else
+#define PHIST_COUNT_MATVECS(vec)
+#endif
+
 #endif

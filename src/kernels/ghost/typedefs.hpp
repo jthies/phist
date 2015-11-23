@@ -29,7 +29,12 @@
    TSQR only supports TBB and TPI (as of version 11.12.2).
 */
 #ifdef PHIST_HAVE_KOKKOS
-#include "TpetraClassic_config.h"
+# ifdef OLD_TRILINOS
+# include "KokkosClassic_config.h"
+#else
+# include "TpetraClassic_config.h"
+#endif
+
 /*typedef Kokkos::DefaultNode::DefaultNodeType node_t;*/
 # if defined(HAVE_TPETRACLASSIC_TBB)
 # include "Kokkos_TBBNode.hpp"

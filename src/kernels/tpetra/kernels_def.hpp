@@ -942,12 +942,7 @@ extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
 
-#ifdef PHIST_TIMEMONITOR
-  int nvec;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, iflag), *iflag);
-  for(int i = 0; i < nvec; i++)
-    phist_totalMatVecCount();
-#endif
+  PHIST_COUNT_MATVECS(vx);
 
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,x,vx,*iflag);
@@ -966,13 +961,8 @@ extern "C" void SUBR(sparseMatT_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
- 
-#ifdef PHIST_TIMEMONITOR
-  int nvec;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, iflag), *iflag);
-  for(int i = 0; i < nvec; i++)
-    phist_totalMatVecCount();
-#endif
+
+  PHIST_COUNT_MATVECS(vx); 
  
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,x,vx,*iflag);

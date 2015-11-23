@@ -185,14 +185,6 @@ extern "C" void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* 
 #endif
   }
 
-#ifdef PHIST_TIMEMONITOR
-extern "C" void phist_totalMatVecCount()
-{
-  PHIST_ENTER_FCN(__FUNCTION__);
-}
-#endif
-
-
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "../common/kernels_noimpl.c"

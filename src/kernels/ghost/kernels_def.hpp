@@ -38,7 +38,7 @@ const char* filename,int* iflag)
   int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
 #ifdef PHIST_USE_SELL
   int sellC, sellSigma;
-  get_C_sigma(&sellC,&sellSigma,*iflag, *((MPI_Comm*)vcomm));
+  phist::ghost_internal::get_C_sigma(&sellC,&sellSigma,*iflag, *((MPI_Comm*)vcomm));
   PHIST_SOUT(PHIST_INFO, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
 #endif
   *iflag=0;
@@ -1280,12 +1280,7 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* iflag)
   }
   *iflag=0;
 
-#ifdef PHIST_TIMEMONITOR
-  int nvec;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, iflag), *iflag);
-  for(int i = 0; i < nvec; i++)
-    phist_totalMatVecCount();
-#endif
+  PHIST_COUNT_MATVECS(vx);
 
   PHIST_CAST_PTR_FROM_VOID(ghost_sparsemat_t,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,x,vx,*iflag);
@@ -1365,12 +1360,7 @@ extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_spar
   }
   *iflag=0;
 
-#ifdef PHIST_TIMEMONITOR
-  int nvec;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, iflag), *iflag);
-  for(int i = 0; i < nvec; i++)
-    phist_totalMatVecCount();
-#endif
+  PHIST_COUNT_MATVECS(vx);
 
   PHIST_CAST_PTR_FROM_VOID(ghost_sparsemat_t,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,x,vx,*iflag);

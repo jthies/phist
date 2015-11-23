@@ -262,8 +262,8 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -debug")
   set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -debug")
 
-  set (CMAKE_C_FLAGS_DEBUG        "-check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
-  set (CMAKE_CXX_FLAGS_DEBUG      "-check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
+  set (CMAKE_C_FLAGS_DEBUG        "-check-pointers=rw -fstack-protector -w2 -debug -traceback -DTESTING")
+  set (CMAKE_CXX_FLAGS_DEBUG      "-check-pointers=rw -fstack-protector -w2 -debug -traceback -DTESTING")
   set (CMAKE_Fortran_FLAGS_DEBUG  "-check all -debug -traceback -DTESTING")
   if (PHIST_BUILD_MIC)
       set (CMAKE_C_FLAGS_DEBUG        "-mmic -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
@@ -568,11 +568,11 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_fused_sCD_prec.c)
   endif()
 else()
-  set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
-                           ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernelsS.cpp
+  set (PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernelsS.cpp
                            ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernelsC.cpp
                            ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernelsD.cpp
                            ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernelsZ.cpp
+                           ${PROJECT_SOURCE_DIR}/src/kernels/${PHIST_KERNEL_LIB}/kernels.cpp
                            ${PROJECT_SOURCE_DIR}/src/kernels/phist_driver_utils.c
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde.f90
                            ${PROJECT_SOURCE_DIR}/drivers/matfuncs/matpde3d.f90
