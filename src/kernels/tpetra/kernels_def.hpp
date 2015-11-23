@@ -308,9 +308,9 @@ extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
     }
   if (jmin<0 || jmax>=V->getNumVectors())
     {
-    PHIST_OUT(PHIST_ERROR,"input vector to %s is %d x %d, which does not match "
+    PHIST_OUT(PHIST_ERROR,"input vector to %s has %d columns, which does not match "
                           "given range [%d..%d]\n",__FUNCTION__,
-                          V->getLocalLength(), V->getNumVectors(),
+                          (int)V->getNumVectors(),
                           jmin,jmax);
     *iflag=-1; return;
     }
@@ -350,9 +350,9 @@ extern "C" void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
   int nc=jmax-jmin+1;
   if (nc!=Vblock->getNumVectors())
     {
-    PHIST_OUT(PHIST_ERROR,"output block to %s has % cols, which does not match "
+    PHIST_OUT(PHIST_ERROR,"output block to %s has %d cols, which does not match "
                           "given range [%d..%d]\n",__FUNCTION__,
-                          Vblock->getNumVectors(),
+                          (int)Vblock->getNumVectors(),
                           jmin,jmax);
     *iflag=-1; return;
     }
@@ -360,7 +360,7 @@ extern "C" void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
     {
     PHIST_OUT(PHIST_ERROR,"input vector to %s has %d columns, which does not match "
                           "given range [%d..%d]\n",__FUNCTION__,
-                          V->getNumVectors(),
+                          (int)V->getNumVectors(),
                           jmin,jmax);
     *iflag=-1; return;
     }
@@ -395,7 +395,7 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
     {
     PHIST_OUT(PHIST_ERROR,"input block to %s has %d columns, which does not match "
                           "given range [%d..%d]\n",__FUNCTION__,
-                          Vblock->getNumVectors(),
+                          (int)Vblock->getNumVectors(),
                           jmin,jmax);
     *iflag=-1; return;
     }
@@ -403,7 +403,7 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
     {
     PHIST_OUT(PHIST_ERROR,"in/output matrix to %s has %d columns, which does not match "
                           "given range [%d..%d]\n",__FUNCTION__,
-                          V->getNumVectors(),
+                          (int)V->getNumVectors(),
                           jmin,jmax);
     *iflag=-1; return;
     }
@@ -444,7 +444,7 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
     {
     PHIST_OUT(PHIST_ERROR,"input matrix to %s is %d x %d, which does not match "
                           "given range [%d..%d]x[%d..%d]\n",__FUNCTION__,
-                          M->getLocalLength(), M->getNumVectors(),
+                          (int)M->getLocalLength(), (int)M->getNumVectors(),
                           imin,imax,jmin,jmax);
     *iflag=-1; return;
     }
@@ -508,7 +508,7 @@ extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
     {
     PHIST_OUT(PHIST_ERROR,"output block to %s is %d x %d, which does not match "
                           "given range [%d..%d]x[%d..%d]\n",__FUNCTION__,
-                          Mblock->getLocalLength(), Mblock->getNumVectors(),
+                          (int)Mblock->getLocalLength(), (int)Mblock->getNumVectors(),
                           imin,imax,jmin,jmax);
     *iflag=-1; return;
     }
@@ -516,7 +516,7 @@ extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
     {
     PHIST_OUT(PHIST_ERROR,"input matrix to %s is %d x %d, which does not match "
                           "given range [%d..%d]x[%d..%d]\n",__FUNCTION__,
-                          M->getLocalLength(), M->getNumVectors(),
+                          (int)M->getLocalLength(), (int)M->getNumVectors(),
                           imin,imax,jmin,jmax);
     *iflag=-1; return;
     }
@@ -568,7 +568,7 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
     {
     PHIST_OUT(PHIST_ERROR,"input block to %s is %d x %d, which does not match "
                           "given range [%d..%d]x[%d..%d]\n",__FUNCTION__,
-                          Mblock->getLocalLength(), Mblock->getNumVectors(),
+                          (int)Mblock->getLocalLength(), (int)Mblock->getNumVectors(),
                           imin,imax,jmin,jmax);
     *iflag=-1; return;
     }
@@ -576,7 +576,7 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
     {
     PHIST_OUT(PHIST_ERROR,"in/output matrix to %s is %d x %d, which does not match "
                           "given range [%d..%d]x[%d..%d]\n",__FUNCTION__,
-                          M->getLocalLength(), M->getNumVectors(),
+                          (int)M->getLocalLength(), (int)M->getNumVectors(),
                           imin,imax,jmin,jmax);
     *iflag=-1; return;
     }
