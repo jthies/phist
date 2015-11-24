@@ -114,7 +114,7 @@ module crsmat_module
 
   !> interface of function-ptr for crsMat_create_fromRowFunc
   abstract interface
-    function matRowFunc(row, nnz, cols, vals,data_arg) result(ierr)
+    function matRowFunc(row, nnz, cols, vals,data_arg) bind(C) result(ierr)
       use, intrinsic :: iso_c_binding
       integer(G_GIDX_T), value :: row
       integer(G_LIDX_T), intent(inout) :: nnz
