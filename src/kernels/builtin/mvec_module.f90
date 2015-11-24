@@ -991,7 +991,7 @@ module mvec_module
 
   !> interface of function-ptr for mvec_put_func
   abstract interface
-    function mvecElemFunc(row, col, val_ptr) result(ierr)
+    function mvecElemFunc(row, col, val_ptr) bind(C) result(ierr)
       use, intrinsic :: iso_c_binding
       integer(G_GIDX_T), value :: row
       integer(G_LIDX_T), value :: col
