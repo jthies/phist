@@ -17,7 +17,7 @@
 
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_CrsMatrixMultiplyOp.hpp"
+//#include "Tpetra_CrsMatrixMultiplyOp.hpp"
 
 #include "phist_typedefs.h"
 
@@ -49,7 +49,7 @@ class Traits
   typedef Tpetra::CrsMatrix<ST,lidx_t,gidx_t,node_t> sparseMat_t;
 
   //! for performing the MVM
-  typedef Tpetra::CrsMatrixMultiplyOp<ST,ST,lidx_t,gidx_t,node_t> crsMVM_t;
+//  typedef Tpetra::CrsMatrixMultiplyOp<ST,ST,lidx_t,gidx_t,node_t> crsMVM_t;
 
   //! scalar 1
   static inline ST one(){return Teuchos::ScalarTraits<ST>::one();}

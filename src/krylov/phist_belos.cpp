@@ -33,8 +33,8 @@
 #  include "BelosTpetraAdapter.hpp"
 # else
 // use general phist interface to Belos (may not be complete)
-#  include "phist_MultiVector.hpp"
-#  include "phist_BelosAdapter.hpp"
+#  warning "Belos not supported for this kernel lib"
+#  undef PHIST_HAVE_BELOS
 # endif
 
 #include "phist_BelosOperatorTraits.hpp"

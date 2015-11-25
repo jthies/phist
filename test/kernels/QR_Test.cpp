@@ -12,7 +12,7 @@
 #define HAVE_MVEC_QR
 #endif
 
-#include "gtest/gtest.h"
+#include "gtest/phist_gtest.h"
 //#include "gmock/gmock.h"
 
 #include "KernelTestWithVectors.h"

@@ -14,7 +14,7 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #endif
-#ifdef PHIST_HAVE_KOKKOS
+#ifdef PHIST_HAVE_KOKKOS__disabled
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DefaultKernels.hpp"
 

@@ -32,6 +32,7 @@
 #include "AnasaziSVQBOrthoManager.hpp"
 #endif
 
+#include "phist_ghost_internal.h"
 #include "phist_GhostMV.hpp"
 
 #ifdef PHIST_HAVE_LIKWID
@@ -57,65 +58,100 @@
 # endif
 #endif
 
-namespace phist
-  {
+namespace phist 
+{
+
   int GhostMV::countObjects=0;
+
+  namespace ghost_internal
+  {
+
+void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
+{
+  *C = PHIST_SELL_C;
+  *sigma = PHIST_SELL_SIGMA;
+  if( flags & PHIST_SPARSEMAT_OPT_SINGLESPMVM )
+  {
+    *C = 32;
+    *sigma = 256;
+  }
+  if( flags & PHIST_SPARSEMAT_OPT_BLOCKSPMVM )
+  {
+    *C = 8;
+    *sigma = 32;
   }
 
-#ifndef PHIST_HAVE_MPI
-typedef int MPI_Comm;
-const int MPI_COMM_WORLD=0;
+  // override with max(C,32) if anything runs on a CUDA device
+  ghost_type_t gtype;
+  ghost_type_get(&gtype);
+  if (gtype==GHOST_TYPE_CUDA)
+  {
+    *C=std::max(*C,32);
+//    *sigma=std::max(256,*sigma);
+  }
+  MPI_Allreduce(MPI_IN_PLACE,C,1,MPI_INT,MPI_MAX,comm);
+  MPI_Allreduce(MPI_IN_PLACE,sigma,1,MPI_INT,MPI_MAX,comm);
+
+}
+
+ 
+    //! private helper function to create a vtraits object
+    ghost_densemat_traits_t phist_default_vtraits()
+    {
+      ghost_densemat_traits_t vtraits = GHOST_DENSEMAT_TRAITS_INITIALIZER;
+      vtraits.nrows=0; // get from context
+      vtraits.nrowsorig=0; // get from context
+      vtraits.nrowshalo=0; // get from context
+      vtraits.nrowspadded=0; // leave padding to ghost
+      vtraits.ncols=0; // set in mvec_create
+      vtraits.ncolsorig=0; // set in mvec_create
+      vtraits.ncolspadded=0; // leave padding to ghost
+      // ghost should set these correctly depending on GHOST_TYPE if we set HOST and DEVICE to 0
+      int new_flags =   (int)vtraits.flags;
+ //     new_flags|=    (int)GHOST_DENSEMAT_NO_HALO;
+ //     new_flags&=   ~(int)GHOST_DENSEMAT_HOST;
+ //     new_flags&=   ~(int)GHOST_DENSEMAT_DEVICE;
+      vtraits.flags = (ghost_densemat_flags_t)new_flags;
+
+      vtraits.ncols=1;
+#ifdef PHIST_MVECS_ROW_MAJOR
+      vtraits.storage=GHOST_DENSEMAT_ROWMAJOR;
+#else
+      vtraits.storage=GHOST_DENSEMAT_COLMAJOR;
 #endif
-
-//                                                                                        
-// in the petra object model that this abstract kernel interface follows, a map describes 
-// the distribution of data among processors. It is used to e.g. define how vector entries
-// or matrix rows are distributed among MPI processes and required to create a vector.    
-//                                                                                        
-// In ghost this is handled differently, the 'context' is the main object for describing  
-// communication patterns, and it is owned by a sparse matrix. In order to create a vector
-// we need the vtraits_t object, which also knows about number of vectors and             
-// data type. So we define our own struct with a pointer to the context object and a temp-
-// late for cloning the vtraits in mvec_create
-typedef struct ghost_map_t
-  {
-  ghost_context_t* ctx;
-  ghost_densemat_traits_t vtraits_template;
-  ghost_permutation_t *permutation;
-  } ghost_map_t;
-
-
-namespace
-{
-  //! A Garbage collection for maps as they need to be recreated dynamically with GHOST
-  class MapGarbageCollector
-  {
-    public:
-      ghost_map_t* new_map(const void* p)
-      {
+      return vtraits;
+    }  
+    
+    ghost_map_t* MapGarbageCollector::new_map(const void* p)
+    {
         ghost_map_t* m = new ghost_map_t;
         maps_[p].push_back(m);
         return m;
-      }
+    }
 
-      void delete_maps(void* p)
+    void MapGarbageCollector::delete_maps(void* p)
+    {
+      MapCollection::iterator it = maps_.find(p);
+      if( it != maps_.end() )
       {
-        MapCollection::iterator it = maps_.find(p);
-        if( it != maps_.end() )
+        for(int i = 0; i < it->second.size(); i++)
         {
-          for(int i = 0; i < it->second.size(); i++)
-            delete it->second[i];
-          maps_.erase(it);
+          delete it->second[i];
         }
+        maps_.erase(it);
       }
+    }
+    
+  }//namespace ghost_internal
+}//namespace phist
 
-    private:
-      typedef std::map<const void*, std::vector<ghost_map_t*> > MapCollection;
-      MapCollection maps_;
-  };
+using namespace phist::ghost_internal;
 
-  MapGarbageCollector mapGarbageCollector;
-}
+//phist::ghost_internal::MapGarbageCollector phist::ghost_internal::mapGarbageCollector;
+
+////////////////////////////////////////////////////////////
+// public phist kernel interface implementation for ghost //
+////////////////////////////////////////////////////////////
 
 // initialize ghost
 extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
@@ -236,33 +272,6 @@ extern "C" void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* ifla
   ghost_nrank(size,*comm);
   }
 
-//! private helper function to create a vtraits object
-ghost_densemat_traits_t phist_default_vtraits()
-  {
-  ghost_densemat_traits_t vtraits = GHOST_DENSEMAT_TRAITS_INITIALIZER;
-  vtraits.nrows=0; // get from context
-  vtraits.nrowsorig=0; // get from context
-  vtraits.nrowshalo=0; // get from context
-  vtraits.nrowspadded=0; // leave padding to ghost
-  vtraits.ncols=0; // set in mvec_create
-  vtraits.ncolsorig=0; // set in mvec_create
-  vtraits.ncolspadded=0; // leave padding to ghost
-  // ghost should set these correctly depending on GHOST_TYPE if we set HOST and DEVICE to 0
-  int new_flags =   (int)vtraits.flags;
- //     new_flags|=    (int)GHOST_DENSEMAT_NO_HALO;
- //     new_flags&=   ~(int)GHOST_DENSEMAT_HOST;
- //     new_flags&=   ~(int)GHOST_DENSEMAT_DEVICE;
-  vtraits.flags = (ghost_densemat_flags_t)new_flags;
-
-  vtraits.ncols=1;
-#ifdef PHIST_MVECS_ROW_MAJOR
-  vtraits.storage=GHOST_DENSEMAT_ROWMAJOR;
-#else  
-  vtraits.storage=GHOST_DENSEMAT_COLMAJOR;
-#endif
-  return vtraits;
-  }
-
 //! this generates a default map with linear distribution of points among
 //! processes. Vectors based on this map will have halo points so that   
 //! they can be used as either X or Y in Y=A*X operations.
@@ -350,129 +359,4 @@ extern "C" void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* 
   *iupper = map->ctx->lfRow[me]+map->ctx->lnrows[me]-1;
   }
 
-extern "C" {
-#include "../builtin/bench_kernels.h"
-void phist_bench_stream_load(double* max_bw, int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  double *data = NULL;
-  PHIST_SOUT(PHIST_INFO, "Streaming LOAD benchmark: ");
-  PHIST_CHK_IERR(dbench_stream_load_create(&data,iflag),*iflag);
-  *max_bw = 0.;
-  for(int i = 0; i < 10; i++)
-  {
-    double bw = 0.;
-    double res;
-    PHIST_CHK_IERR(dbench_stream_load_run(data,&res,&bw,iflag),*iflag);
-    if( bw > *max_bw ) *max_bw = bw;
-  }
-  PHIST_CHK_IERR(dbench_stream_load_destroy(data,iflag),*iflag);
-  PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s\n", *max_bw/1.e9);
-}
-
-void phist_bench_stream_store(double* max_bw, int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  double *data = NULL;
-  PHIST_SOUT(PHIST_INFO, "Streaming STORE benchmark: ");
-  PHIST_CHK_IERR(dbench_stream_store_create(&data,iflag),*iflag);
-  *max_bw = 0.;
-  for(int i = 0; i < 10; i++)
-  {
-    double bw = 0.;
-    double res = 77.;
-    PHIST_CHK_IERR(dbench_stream_store_run(data,&res,&bw,iflag),*iflag);
-    if( bw > *max_bw ) *max_bw = bw;
-  }
-  PHIST_CHK_IERR(dbench_stream_store_destroy(data,iflag),*iflag);
-  PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s\n", *max_bw/1.e9);
-}
-
-void phist_bench_stream_triad(double* max_bw, int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  double *x = NULL;
-  double *y = NULL;
-  double *z = NULL;
-  PHIST_SOUT(PHIST_INFO, "Streaming TRIAD benchmark: ");
-  PHIST_CHK_IERR(dbench_stream_triad_create(&x,&y,&z,iflag),*iflag);
-  *max_bw = 0.;
-  for(int i = 0; i < 10; i++)
-  {
-    double bw = 0.;
-    double res = -53.;
-    PHIST_CHK_IERR(dbench_stream_triad_run(x,y,z,&res,&bw,iflag),*iflag);
-    if( bw > *max_bw ) *max_bw = bw;
-  }
-  PHIST_CHK_IERR(dbench_stream_triad_destroy(x,y,z,iflag),*iflag);
-  PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s\n", *max_bw/1.e9);
-}
-}
-
-
-// small helper function to preclude integer overflows (ghost allows 64 bit local indices, 
-// but we don't right now)
-  template<typename idx_t>
-  int check_local_size(idx_t& i)
-  {
-    if (i>std::numeric_limits<lidx_t>::max()) return -1;
-    return 0;
-  }
-
-#ifdef PHIST_TIMEMONITOR
-extern "C" void phist_totalMatVecCount()
-{
-  PHIST_ENTER_FCN(__FUNCTION__);
-}
-#endif
-
-static void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
-{
-  *C = PHIST_SELL_C;
-  *sigma = PHIST_SELL_SIGMA;
-  if( flags & PHIST_SPARSEMAT_OPT_SINGLESPMVM )
-  {
-    *C = 32;
-    *sigma = 256;
-  }
-  if( flags & PHIST_SPARSEMAT_OPT_BLOCKSPMVM )
-  {
-    *C = 8;
-    *sigma = 32;
-  }
-
-  // override with max(C,32) if anything runs on a CUDA device
-  ghost_type_t gtype;
-  ghost_type_get(&gtype);
-  if (gtype==GHOST_TYPE_CUDA)
-  {
-    *C=std::max(*C,32);
-//    *sigma=std::max(256,*sigma);
-  }
-  MPI_Allreduce(MPI_IN_PLACE,C,1,MPI_INT,MPI_MAX,comm);
-  MPI_Allreduce(MPI_IN_PLACE,sigma,1,MPI_INT,MPI_MAX,comm);
-
-}
-
-#ifdef PHIST_HAVE_SP
-#include "phist_gen_s.h"
-#include "kernels_def.hpp"
-#include "carp_def.hpp"
-#include "../common/kernels_no_fused.cpp"
-
-#include "phist_gen_c.h"
-#include "kernels_def.hpp"
-#include "carp_def.hpp"
-#include "../common/kernels_no_fused.cpp"
-#endif
-
-#include "phist_gen_d.h"
-#include "kernels_def.hpp"
-#include "carp_def.hpp"
-#include "../common/kernels_no_fused.cpp"
-
-#include "phist_gen_z.h"
-#include "kernels_def.hpp"
-#include "carp_def.hpp"
-#include "../common/kernels_no_fused.cpp"
 

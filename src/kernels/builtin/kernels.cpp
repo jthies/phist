@@ -27,7 +27,6 @@
 #include "typedefs.hpp"
 #include "phist_ScalarTraits.hpp"
 extern "C" {
-#include "bench_kernels.h"
 #include "phist_random.h"
 }
 
@@ -265,83 +264,6 @@ void phist_map_get_local_length(const_map_ptr_t vmap, lidx_t* nloc, int* iflag);
 void phist_map_get_global_length(const_map_ptr_t vmap, gidx_t* nglob, int* iflag);
 void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* iflag);
 void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* iflag);
-
-void phist_bench_stream_load(double* max_bw, int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  double *data = NULL;
-  PHIST_SOUT(PHIST_INFO, "Streaming LOAD benchmark: ");
-  PHIST_CHK_IERR(dbench_stream_load_create(&data,iflag),*iflag);
-  *max_bw = 0.;
-  for(int i = 0; i < 10; i++)
-  {
-    double bw = 0.;
-    double res;
-    PHIST_CHK_IERR(dbench_stream_load_run(data,&res,&bw,iflag),*iflag);
-    if( bw > *max_bw ) *max_bw = bw;
-  }
-  PHIST_CHK_IERR(dbench_stream_load_destroy(data,iflag),*iflag);
-  double total_bw = *max_bw;
-#ifdef PHIST_HAVE_MPI
-  PHIST_CHK_IERR(*iflag = MPI_Reduce(max_bw,&total_bw,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD), *iflag);
-#endif
-  PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s per process, %8.4g Gb/s total\n", *max_bw/1.e9, total_bw/1.e9);
-}
-
-void phist_bench_stream_store(double* max_bw, int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  double *data = NULL;
-  PHIST_SOUT(PHIST_INFO, "Streaming STORE benchmark: ");
-  PHIST_CHK_IERR(dbench_stream_store_create(&data,iflag),*iflag);
-  *max_bw = 0.;
-  for(int i = 0; i < 10; i++)
-  {
-    double bw = 0.;
-    double res = 77.;
-    PHIST_CHK_IERR(dbench_stream_store_run(data,&res,&bw,iflag),*iflag);
-    if( bw > *max_bw ) *max_bw = bw;
-  }
-  PHIST_CHK_IERR(dbench_stream_store_destroy(data,iflag),*iflag);
-  double total_bw = *max_bw;
-#ifdef PHIST_HAVE_MPI
-  PHIST_CHK_IERR(*iflag = MPI_Reduce(max_bw,&total_bw,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD), *iflag);
-#endif
-  PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s per process, %8.4g Gb/s total\n", *max_bw/1.e9, total_bw/1.e9);
-}
-
-void phist_bench_stream_triad(double* max_bw, int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  double *x = NULL;
-  double *y = NULL;
-  double *z = NULL;
-  PHIST_SOUT(PHIST_INFO, "Streaming TRIAD benchmark: ");
-  PHIST_CHK_IERR(dbench_stream_triad_create(&x,&y,&z,iflag),*iflag);
-  *max_bw = 0.;
-  for(int i = 0; i < 10; i++)
-  {
-    double bw = 0.;
-    double res = -53.;
-    PHIST_CHK_IERR(dbench_stream_triad_run(x,y,z,&res,&bw,iflag),*iflag);
-    if( bw > *max_bw ) *max_bw = bw;
-  }
-  PHIST_CHK_IERR(dbench_stream_triad_destroy(x,y,z,iflag),*iflag);
-  double total_bw = *max_bw;
-#ifdef PHIST_HAVE_MPI
-  PHIST_CHK_IERR(*iflag = MPI_Reduce(max_bw,&total_bw,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD), *iflag);
-#endif
-  PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s per process, %8.4g Gb/s total\n", *max_bw/1.e9, total_bw/1.e9);
-}
-
-
-
-#ifdef PHIST_TIMEMONITOR
-void phist_totalMatVecCount()
-{
-  PHIST_ENTER_FCN(__FUNCTION__);
-}
-#endif
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

@@ -308,9 +308,9 @@ extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
     }
   if (jmin<0 || jmax>=V->getNumVectors())
     {
-    PHIST_OUT(PHIST_ERROR,"input vector to %s is %d x %d, which does not match "
+    PHIST_OUT(PHIST_ERROR,"input vector to %s has %d columns, which does not match "
                           "given range [%d..%d]\n",__FUNCTION__,
-                          V->getLocalLength(), V->getNumVectors(),
+                          (int)V->getNumVectors(),
                           jmin,jmax);
     *iflag=-1; return;
     }
@@ -350,9 +350,9 @@ extern "C" void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
   int nc=jmax-jmin+1;
   if (nc!=Vblock->getNumVectors())
     {
-    PHIST_OUT(PHIST_ERROR,"output block to %s has % cols, which does not match "
+    PHIST_OUT(PHIST_ERROR,"output block to %s has %d cols, which does not match "
                           "given range [%d..%d]\n",__FUNCTION__,
-                          Vblock->getNumVectors(),
+                          (int)Vblock->getNumVectors(),
                           jmin,jmax);
     *iflag=-1; return;
     }
@@ -360,7 +360,7 @@ extern "C" void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
     {
     PHIST_OUT(PHIST_ERROR,"input vector to %s has %d columns, which does not match "
                           "given range [%d..%d]\n",__FUNCTION__,
-                          V->getNumVectors(),
+                          (int)V->getNumVectors(),
                           jmin,jmax);
     *iflag=-1; return;
     }
@@ -369,7 +369,7 @@ extern "C" void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
   // get a view of the columns of V first
   Teuchos::RCP<const Traits<_ST_>::mvec_t> Vcols;
   PHIST_TRY_CATCH(Vcols = V->subView(Teuchos::Range1D(jmin,jmax)),*iflag);
-  *Vblock = *Vcols; // copy operation
+  PHIST_TRY_CATCH(Tpetra::deep_copy(*Vblock, *Vcols),*iflag); // copy operation
   }
 
 //! given a multi-vector Vblock, set V(:,jmin:jmax)=Vblock by copying the corresponding
@@ -395,7 +395,7 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
     {
     PHIST_OUT(PHIST_ERROR,"input block to %s has %d columns, which does not match "
                           "given range [%d..%d]\n",__FUNCTION__,
-                          Vblock->getNumVectors(),
+                          (int)Vblock->getNumVectors(),
                           jmin,jmax);
     *iflag=-1; return;
     }
@@ -403,7 +403,7 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
     {
     PHIST_OUT(PHIST_ERROR,"in/output matrix to %s has %d columns, which does not match "
                           "given range [%d..%d]\n",__FUNCTION__,
-                          V->getNumVectors(),
+                          (int)V->getNumVectors(),
                           jmin,jmax);
     *iflag=-1; return;
     }
@@ -414,7 +414,7 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
   Teuchos::RCP<Traits<_ST_>::mvec_t> Vcols;
   PHIST_TRY_CATCH(Vcols = V->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*iflag);
   // copy operation
-  PHIST_TRY_CATCH(*Vcols = *Vblock, *iflag);
+  PHIST_TRY_CATCH(Tpetra::deep_copy(*Vcols,*Vblock), *iflag);
   }
 
 //! get a new matrix that is a view of some rows and columns of the original one,
@@ -444,7 +444,7 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
     {
     PHIST_OUT(PHIST_ERROR,"input matrix to %s is %d x %d, which does not match "
                           "given range [%d..%d]x[%d..%d]\n",__FUNCTION__,
-                          M->getLocalLength(), M->getNumVectors(),
+                          (int)M->getLocalLength(), (int)M->getNumVectors(),
                           imin,imax,jmin,jmax);
     *iflag=-1; return;
     }
@@ -508,7 +508,7 @@ extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
     {
     PHIST_OUT(PHIST_ERROR,"output block to %s is %d x %d, which does not match "
                           "given range [%d..%d]x[%d..%d]\n",__FUNCTION__,
-                          Mblock->getLocalLength(), Mblock->getNumVectors(),
+                          (int)Mblock->getLocalLength(), (int)Mblock->getNumVectors(),
                           imin,imax,jmin,jmax);
     *iflag=-1; return;
     }
@@ -516,7 +516,7 @@ extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
     {
     PHIST_OUT(PHIST_ERROR,"input matrix to %s is %d x %d, which does not match "
                           "given range [%d..%d]x[%d..%d]\n",__FUNCTION__,
-                          M->getLocalLength(), M->getNumVectors(),
+                          (int)M->getLocalLength(), (int)M->getNumVectors(),
                           imin,imax,jmin,jmax);
     *iflag=-1; return;
     }
@@ -542,7 +542,7 @@ extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
       PHIST_TRY_CATCH(Mview = Mtmp->subView(Teuchos::Range1D(jmin,jmax)),*iflag);
       }
     }
-  *Mblock = *Mview; // copy operation
+  PHIST_TRY_CATCH(Tpetra::deep_copy(*Mblock,*Mview),*iflag); // copy operation
   }
 
 //! given a serial dense matrix Mblock, set M(imin:imax,jmin:jmax)=Mblock by 
@@ -568,7 +568,7 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
     {
     PHIST_OUT(PHIST_ERROR,"input block to %s is %d x %d, which does not match "
                           "given range [%d..%d]x[%d..%d]\n",__FUNCTION__,
-                          Mblock->getLocalLength(), Mblock->getNumVectors(),
+                          (int)Mblock->getLocalLength(), (int)Mblock->getNumVectors(),
                           imin,imax,jmin,jmax);
     *iflag=-1; return;
     }
@@ -576,7 +576,7 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
     {
     PHIST_OUT(PHIST_ERROR,"in/output matrix to %s is %d x %d, which does not match "
                           "given range [%d..%d]x[%d..%d]\n",__FUNCTION__,
-                          M->getLocalLength(), M->getNumVectors(),
+                          (int)M->getLocalLength(), (int)M->getNumVectors(),
                           imin,imax,jmin,jmax);
     *iflag=-1; return;
     }
@@ -603,7 +603,7 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
       PHIST_TRY_CATCH(Mview = Mtmp->subViewNonConst(Teuchos::Range1D(jmin,jmax)),*iflag);
       }
     }
-  *Mview = *Mblock; // copy operation
+  PHIST_TRY_CATCH(Tpetra::deep_copy(*Mview,*Mblock),*iflag); // copy operation
   }
 
 
@@ -937,55 +937,42 @@ extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr)
                                         TYPE(const_mvec_ptr) vx, 
                                         _ST_ beta, TYPE(mvec_ptr) vy, 
                                         int* iflag)
-  {
+{
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
 
-#ifdef PHIST_TIMEMONITOR
-  int nvec;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, iflag), *iflag);
-  for(int i = 0; i < nvec; i++)
-    phist_totalMatVecCount();
-#endif
+  PHIST_COUNT_MATVECS(vx);
 
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,x,vx,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,y,vy,*iflag);
   PHIST_OUT(PHIST_TRACE,"alpha=%g+i%g\n",st::real(alpha),st::imag(alpha));
   PHIST_OUT(PHIST_TRACE,"beta=%g+i%g\n",st::real(beta),st::imag(beta));
-  Traits<_ST_>::crsMVM_t spMVM(Teuchos::rcp(A,false));
-  PHIST_TRY_CATCH(spMVM.apply(*x,*y,Teuchos::NO_TRANS,alpha,beta),*iflag);
-
-  }
+  PHIST_TRY_CATCH(A->apply(*x,*y,Teuchos::NO_TRANS,alpha,beta),*iflag);
+}
 
 //! y=alpha*A*x+beta*y.
 extern "C" void SUBR(sparseMatT_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, 
                                         TYPE(const_mvec_ptr) vx, 
                                         _ST_ beta, TYPE(mvec_ptr) vy, 
                                         int* iflag)
-  {
+{
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
- 
-#ifdef PHIST_TIMEMONITOR
-  int nvec;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, iflag), *iflag);
-  for(int i = 0; i < nvec; i++)
-    phist_totalMatVecCount();
-#endif
+
+  PHIST_COUNT_MATVECS(vx); 
  
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,x,vx,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,y,vy,*iflag);
   PHIST_OUT(PHIST_TRACE,"alpha=%g+i%g\n",st::real(alpha),st::imag(alpha));
   PHIST_OUT(PHIST_TRACE,"beta=%g+i%g\n",st::real(beta),st::imag(beta));
-  Traits<_ST_>::crsMVM_t spMVM(Teuchos::rcp(A,false));
 #ifdef IS_COMPLEX
-  PHIST_TRY_CATCH(spMVM.apply(*x,*y,Teuchos::CONJ_TRANS,alpha,beta),*iflag);
+  PHIST_TRY_CATCH(A->apply(*x,*y,Teuchos::CONJ_TRANS,alpha,beta),*iflag);
 #else
-  PHIST_TRY_CATCH(spMVM.apply(*x,*y,Teuchos::TRANS,alpha,beta),*iflag);
+  PHIST_TRY_CATCH(A->apply(*x,*y,Teuchos::TRANS,alpha,beta),*iflag);
 #endif
   }
 

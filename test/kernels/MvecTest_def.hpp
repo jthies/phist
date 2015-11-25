@@ -756,9 +756,9 @@ public:
 
   // copy in and out columns
   TEST_F(CLASSNAME, get_set_block)
-    {
+  {
     if (typeImplemented_ && !problemTooSmall_)
-      {
+    {
       int jmin=std::min(2,nvec_-1);
       int jmax=std::min(5,nvec_-1);
       TYPE(mvec_ptr) v1_copy=NULL;
@@ -790,9 +790,9 @@ for (int j=0;j<nvec_;j++)
       // compare elements one-by-one because our ArraysEqual expects ST rather than MT as 
       // type here.
       for (int j=jmin;j<=jmax;j++)
-        {
+      {
         ASSERT_NEAR(norms_V1[j],norms_V1copy[j-jmin],_N_*10*mt::eps());
-        }
+      }
       // set all the viewed entries to a certain value and check that the original vector is 
       // changed.
       _ST_ val = random_number();
@@ -804,9 +804,9 @@ for (int j=0;j<nvec_;j++)
       ASSERT_EQ(0,iflag_);
 
       for (int j=0;j<nvec_;j++)
-        {
+      {
         ASSERT_NEAR(norms_V1[j],norms_V1copy[j],_N_*10*mt::eps());
-        }
+      }
 
       // compute the new norms
       // check that the norms of v1 are unchanged
@@ -823,14 +823,14 @@ for (int j=0;j<nvec_;j++)
       ASSERT_EQ(0,iflag_);
 
       for (int j=jmin;j<=jmax;j++)
-        {
+      {
         ASSERT_NEAR(norms_V1[j],norms_V1copy[j-jmin], _N_*10*mt::eps());
-        }
+      }
 
       SUBR(mvec_delete)(v1_copy,&iflag_);
       ASSERT_EQ(0,iflag_);
-      }
     }
+  }
 
   TEST_F(CLASSNAME, scale)
   {

@@ -27,9 +27,6 @@
 #include "phist_typedefs.h"
 #include "typedefs.hpp"
 #include "phist_ScalarTraits.hpp"
-extern "C" {
-#include "bench_kernels.h"
-}
 
 #ifdef PHIST_HAVE_LIKWID
 #include <likwid.h>

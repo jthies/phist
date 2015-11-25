@@ -1,8 +1,14 @@
-/*! \file bench_kernels.h
- * header file for bench_kernels.c
+/*! \file stream_bench.h
+ * header file for stream_bench.c
  * \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
  *
 */
+#ifndef PHIST_COMMON_STREAM_BENCH_H
+#define PHIST_COMMON_STREAM_BENCH_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //! allocate memory for bench_stream_load_run
 void dbench_stream_load_create(double** x, int* ierr);
@@ -34,3 +40,8 @@ void dbench_stream_triad_run(const double* x, const double* y, double* z, const 
 //! delete memory for bench_stream_triad_run
 void dbench_stream_triad_destroy(double* x, double* y, double* z, int* ierr);
 
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+#endif

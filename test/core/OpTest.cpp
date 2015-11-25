@@ -4,8 +4,7 @@
 #include <mpi.h>
 #endif
 
-#include "gtest/gtest.h"
-//#include "gmock/gmock.h"
+#include "gtest/phist_gtest.h"
 
 #include "phist_operator.h"
 #include "phist_jadaOp.hpp"

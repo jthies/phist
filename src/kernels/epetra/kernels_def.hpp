@@ -632,12 +632,7 @@ double beta, TYPE(mvec_ptr) vy, int* iflag)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
 
-#ifdef PHIST_TIMEMONITOR
-  int nvec;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, iflag), *iflag);
-  for(int i = 0; i < nvec; i++)
-    phist_totalMatVecCount();
-#endif
+  PHIST_COUNT_MATVECS(vx);
 
   PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,x,vx,*iflag);
@@ -719,12 +714,10 @@ extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_spar
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
 
+  PHIST_COUNT_MATVECS(x);
+
   int nvec;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x, &nvec, iflag), *iflag);
-#ifdef PHIST_TIMEMONITOR
-  for(int i = 0; i < nvec; i++)
-    phist_totalMatVecCount();
-#endif
 
   PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(alpha, A, x, beta, y, iflag), *iflag);
   _ST_ alpha_shifts[nvec];

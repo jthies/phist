@@ -1,4 +1,4 @@
-/*! \file bench_kernels.c
+/*! \file stream_bench.c
  * some simple benchmarking routines to obtain reference performance data
  * \author "Melven Roehrig-Zoellner <Melven.Roehrig-Zoellner@DLR.de>
  *
@@ -14,6 +14,7 @@
 #include <omp.h>
 #include <stdlib.h>
 
+#include "stream_bench.h"
 
 // define our own datatype for aligned doubles
 typedef double aligned_double __attribute__((aligned(64)));
