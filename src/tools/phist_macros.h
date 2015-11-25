@@ -245,7 +245,7 @@ __FILE__,__LINE__); return;}
 #define PHIST_COUNT_MATVECS(vec) \
 {\
   int nvec;\
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vx, &nvec, iflag), *iflag);\
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vec, &nvec, iflag), *iflag);\
   for(int i = 0; i < nvec; i++)\
   {\
     PHIST_ENTER_FCN("phist_totalMatVecCount");\
