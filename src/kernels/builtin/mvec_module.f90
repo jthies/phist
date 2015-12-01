@@ -3611,7 +3611,7 @@ contains
   end subroutine phist_Dmvec_put_value
 
 
-  subroutine phist_Dmvec_put_func(V_ptr, elemFunc_ptr,   ierr) &
+  subroutine phist_Dmvec_put_func(V_ptr, elemFunc_ptr, last_arg, ierr) &
     & bind(C,name='phist_Dmvec_put_func_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
     !--------------------------------------------------------------------------------
