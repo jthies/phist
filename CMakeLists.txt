@@ -26,7 +26,7 @@ option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
 option(PHIST_BUILD_MIC "Build for Intel MIC" OFF)
 
 # reproducible random number generator?
-option(PHIST_USE_BUILTIN_RNG
+option(PHIST_BUILTIN_RNG
         "use random number generator provided by PHIST, which may be solower than the one implemented by the kernel lib. On the other hand, it gives reproducible results across runs, independent of the exact runtime setup."
         ON)
 
@@ -806,7 +806,9 @@ set(GCOVR_EXCLUDES)# -e src/kernels/kernels_noimpl.c -e src/tools/tools.c)
 # Custom properties
 set(INTEGRATION_BUILD Off CACHE BOOL "Indicates an integration build")
 find_program(GCOVR_SCRIPT gcovr)
+mark_as_advanced(GCOVR_SCRIPT)
 find_program(CPPCHECK_EXECUTABLE cppcheck)
+mark_as_advanced(CPPCHECK_EXECUTABLE)
 if (${INTEGRATION_BUILD})
     set(GCOVR_OPTIONS -r src ${GCOVR_EXCLUDES} --xml -o coverage.xml CACHE STRING "String gcovr options")
     set(CPPCHECK_OPTIONS --force --enable=all --suppress=unusedFunction --xml --xml-version=2 -q CACHE_STRING "cppcheck options")
@@ -818,6 +820,11 @@ else()
     set(CPPCHECK_OPTIONS_POST)
     set(CTEST_OPTIONS --force-new-ctest-process --output-on-failure CACHE STRING "ctest options")
 endif()
+
+mark_as_advanced(CPPCHECK_OPTIONS)
+mark_as_advanced(CPPCHECK_OPTIONS_POST)
+mark_as_advanced(GCOVR_OPTIONS)
+mark_as_advanced(CTEST_OPTIONS)
 
 # Define includes
 include_directories(lib/googletest-1.6 src/ src/tools/ src/kernels/)
