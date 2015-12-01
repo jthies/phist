@@ -48,29 +48,24 @@ void SUBR(sparseMat_times_mvec_add_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A
 {
   int nv;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x,&nv,iflag),*iflag);
-  _ST_* shifts=(_ST_*)malloc(nv*sizeof(_ST_));;
+  _ST_* shifts=(_ST_*)malloc(nv*sizeof(_ST_));
   for (int i=0;i<nv;i++) shifts[i]=shift;
   SUBR(sparseMat_times_mvec_vadd_mvec)(alpha,A,shifts,x,beta,y,iflag);
   free(shifts);
 }
 #ifdef PHIST_BUILTIN_RNG
 
-struct dwrap {
-  int lda;
-  double* data;
-};
-
-int SUBR(copyDataFunc)(ghost_gidx_t i, ghost_lidx_t j, void* val,void* vdata)
+int PREFIX(copyDataFunc)(ghost_gidx_t i, ghost_lidx_t j, void* vval,void* vdata)
 {
-  struct dwrap* wrap=(struct dwrap*)vdata;
+  dwrap* wrap=(dwrap*)vdata;
   int lda = wrap->lda;
   double* data = (double*)vdata;
   _MT_* val = (_MT_*)vval;
 #ifdef IS_COMPLEX
   val[0]=data[i*lda+2*j];
-  val[1]=data[i*lda+2*j+1];
+  val[1]=(_MT_)data[i*lda+2*j+1];
 #else
-  val[0]=data[i*lda+2*j];
+  val[0]=(_MT_)data[i*lda+2*j];
 #endif
 }
 
@@ -84,27 +79,37 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,iflag),*iflag);
 
   PHIST_CHK_IERR(SUBR(mvec_get_map)(V,&map,iflag),*iflag);
-  PHIST_CHK_IERR(map_get_local_length(map,&lnrows,iflag),*iflag);
-  PHIST_CHK_IERR(map_get_global_length(map,&gnrows,iflag),*iflag);
-  PHIST_CHK_IERR(map_get_ilower(map,&ilower,iflag),*iflag);
-  PHIST_CHK_IERR(map_get_iupper(map,&iupper,iflag),*iflag);
+  PHIST_CHK_IERR(phist_map_get_local_length(map,&lnrows,iflag),*iflag);
+  PHIST_CHK_IERR(phist_map_get_global_length(map,&gnrows,iflag),*iflag);
+  PHIST_CHK_IERR(phist_map_get_ilower(map,&ilower,iflag),*iflag);
+  PHIST_CHK_IERR(phist_map_get_iupper(map,&iupper,iflag),*iflag);
   
   pre_skip = ilower*nvec;
   post_skip= (gnrows-iupper)*nvec;  
   
 #ifdef IS_COMPLEX
-  int nelem=2;
+  const int nelem=2;
 #else
-  int nelem=1;
+  const int nelem=1;
 #endif  
   
   // we use the most robust way of implementing this, which should work for
   // any situation (row/col major, GPU/CPU etc.): generate row-major clone data
   // and set the vector elements using mvec_put_func.
-  double *randbuf=new double[nvec*lnrows*nelem];
-  lidx_t lda=lnrows;
+  lidx_t lda=lnrows*nelem;
+  double *randbuf;
+  *iflag = posix_memalign(&randbuf, 64, nvec*lda*sizeof(double));
+  if (*iflag!=0)
+  {
+    *iflag=PHIST_MEM_ALLOC_FAILED;
+    return;
+  }
+                      
   drandom_general(nelem*nvec,(int)lnrows, randbuf,(int)lda,(int64_t)pre_skip, (int64_t)post_skip);
-  PHIST_CHK_IERR(SUBR(mvec_put_func)(V,&SUBR(dataCopyFunc),,iflag),*iflag);
-  delete [] 
+  dwrap wrap;
+  wrap.lda=lda;
+  wrap.data=randbuf;
+  PHIST_CHK_IERR(SUBR(mvec_put_func)(V,&PREFIX(copyDataFunc),&wrap,iflag),*iflag);
+  free(randbuf);
 }
 #endif

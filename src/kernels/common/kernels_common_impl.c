@@ -7,6 +7,13 @@
 #include <stdlib.h>
 
 #include "phist_kernels.h"
+#include "phist_random.h"
+
+typedef struct {
+  int lda;
+  double* data;
+} dwrap;
+
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

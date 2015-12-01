@@ -199,11 +199,12 @@ void SUBR(sdMat_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
+#ifndef PHIST_BUILTIN_RNG
 void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
-
+#endif
 void SUBR(mvec_print)(TYPE(const_mvec_ptr) V, int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
