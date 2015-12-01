@@ -26,9 +26,10 @@ option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
 option(PHIST_BUILD_MIC "Build for Intel MIC" OFF)
 
 # reproducible random number generator?
+# TODO - this is not quite working yet, once it is, make it the default
 option(PHIST_BUILTIN_RNG
         "use random number generator provided by PHIST, which may be solower than the one implemented by the kernel lib. On the other hand, it gives reproducible results across runs, independent of the exact runtime setup."
-        ON)
+        OFF)
 
 ########################################################################
 # Lists of libraries, executables, tests
