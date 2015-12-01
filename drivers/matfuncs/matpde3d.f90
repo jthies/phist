@@ -642,11 +642,12 @@ end if
   !! by MATPDE3D_solFunc. The same initialization procedure
   !! as for MATPDE3D_rowFunc is required, i.e. 
   !! first initDimensions and then selectProblem.
-  function MATPDE3D_rhsFunc(row, col, rhsVal) result(the_result) bind(C,name='MATPDE3D_rhsFunc')
+  function MATPDE3D_rhsFunc(row, col, rhsVal,last_arg) result(the_result) bind(C,name='MATPDE3D_rhsFunc')
     use, intrinsic :: iso_c_binding
     integer(G_GIDX_T), value :: row
     integer(G_LIDX_T), value :: col
     real(C_DOUBLE),    intent(inout) :: rhsVal
+    type(C_PTR), value  :: last_arg
     integer(C_INT) :: the_result
 
     !     .. Scalar variables ..
@@ -726,11 +727,12 @@ end if
     
   end function MATPDE3D_rhsFunc
 
-  function MATPDE3D_solFunc(row, col, solVal) result(the_result) bind(C,name='MATPDE3D_solFunc')
+  function MATPDE3D_solFunc(row, col, solVal,last_arg) result(the_result) bind(C,name='MATPDE3D_solFunc')
     use, intrinsic :: iso_c_binding
     integer(G_GIDX_T), value :: row
     integer(G_LIDX_T), value :: col
     real(C_DOUBLE),    intent(inout) :: solVal
+    type(C_PTR), value  :: last_arg
     integer(C_INT) :: the_result
 
     !     .. Scalar variables ..

@@ -114,8 +114,8 @@ int TriToeplitz_rowFunc(gidx_t, lidx_t*, gidx_t*, void*, void*);
 void MATPDE3D_initDimensions(int, int, int, gidx_t*, lidx_t*);
 void MATPDE3D_selectProblem(int which, int* iflag);
 int MATPDE3D_rowFunc(gidx_t, lidx_t*, gidx_t*, void*, void*);
-int MATPDE3D_solFunc(gidx_t, lidx_t, void*);
-int MATPDE3D_rhsFunc(gidx_t, lidx_t, void*);
+int MATPDE3D_solFunc(gidx_t, lidx_t, void*,void*);
+int MATPDE3D_rhsFunc(gidx_t, lidx_t, void*,void*);
 // definitions for Brussolator
 void Brussolator_initDimensions(int, gidx_t*, lidx_t*);
 int Brussolator_rowFunc(gidx_t, lidx_t*, gidx_t*, void*, void*);
@@ -416,9 +416,9 @@ void SUBR(create_sol_and_rhs)(const char* problem, TYPE(const_sparseMat_ptr) A,
   if (str_starts_with(problem,"BENCH3D"))
   {
     // MATPDE3D provides these for us
-    SUBR(mvec_put_func)(sol,&MATPDE3D_solFunc,iflag);
+    SUBR(mvec_put_func)(sol,&MATPDE3D_solFunc,NULL,iflag);
     if (*iflag==0) done=1;
-    SUBR(mvec_put_func)(rhs,&MATPDE3D_rhsFunc,iflag);
+    SUBR(mvec_put_func)(rhs,&MATPDE3D_rhsFunc,NULL,iflag);
     if (*iflag==0) done&=1;
   }
 #endif

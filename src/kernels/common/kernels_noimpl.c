@@ -188,7 +188,7 @@ void SUBR(mvec_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
 }
 
 void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
-        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
+        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*,void*), void* last_arg, int *iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }

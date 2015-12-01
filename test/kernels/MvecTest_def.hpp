@@ -14,7 +14,7 @@
 
 // some function to test mvec_put_func
 #ifdef FIRST_INSTANCE
-int PREFIX(mvecInitializer)(ghost_gidx_t i, ghost_lidx_t j, void* vval)
+int PREFIX(mvecInitializer)(ghost_gidx_t i, ghost_lidx_t j, void* vval,void* last_arg)
 {
 #include "phist_std_typedefs.hpp"
   _ST_* val = (_ST_*)vval;
@@ -900,7 +900,7 @@ TEST_F(CLASSNAME,put_func)
 {
   if (!typeImplemented_ || problemTooSmall_)
     return;
-  SUBR(mvec_put_func)(vec1_,&PREFIX(mvecInitializer),&iflag_);
+  SUBR(mvec_put_func)(vec1_,&PREFIX(mvecInitializer),NULL,&iflag_);
   ASSERT_EQ(0,iflag_);
   
   gidx_t ilower, iupper;
