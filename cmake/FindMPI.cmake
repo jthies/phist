@@ -435,7 +435,6 @@ function (interrogate_mpi_compiler lang try_libs)
     set(MPI_${lang}_INCLUDE_PATH  ${MPI_INCLUDE_PATH_WORK}  CACHE STRING "MPI ${lang} include path"              FORCE)
     set(MPI_${lang}_LINK_FLAGS    ${MPI_LINK_FLAGS_WORK}    CACHE STRING "MPI ${lang} linking flags"             FORCE)
     set(MPI_${lang}_LIBRARIES     ${MPI_LIBRARIES_WORK}     CACHE STRING "MPI ${lang} libraries to link against" FORCE)
-    mark_as_advanced(MPI_${lang}_COMPILE_FLAGS MPI_${lang}_INCLUDE_PATH MPI_${lang}_LINK_FLAGS MPI_${lang}_LIBRARIES)
 
     # clear out our temporary lib/header detectionv variable here.
     set(MPI_LIB         "MPI_LIB-NOTFOUND"         CACHE INTERNAL "Scratch variable for MPI lib detection"    FORCE)
@@ -510,8 +509,6 @@ set(MPIEXEC_NUMPROC_FLAG "-np" CACHE STRING "Flag used by MPI to specify the num
 set(MPIEXEC_PREFLAGS     ""    CACHE STRING "These flags will be directly before the executable that is being run by MPIEXEC.")
 set(MPIEXEC_POSTFLAGS    ""    CACHE STRING "These flags will come after all flags given to MPIEXEC.")
 set(MPIEXEC_MAX_NUMPROCS "2"   CACHE STRING "Maximum number of processors available to run MPI applications.")
-mark_as_advanced(MPIEXEC MPIEXEC_NUMPROC_FLAG MPIEXEC_PREFLAGS MPIEXEC_POSTFLAGS MPIEXEC_MAX_NUMPROCS)
-
 
 #=============================================================================
 # Backward compatibility input hacks.  Propagate the FindMPI hints to C and
@@ -568,7 +565,6 @@ foreach (lang C CXX Fortran)
       NAMES  ${_MPI_${lang}_COMPILER_NAMES}
       PATHS  "${MPI_HOME}/bin" "$ENV{MPI_HOME}/bin" ${_MPI_PREFIX_PATH})
     interrogate_mpi_compiler(${lang} ${try_libs})
-    mark_as_advanced(MPI_${lang}_COMPILER)
 
     set(MPI_${lang}_FIND_QUIETLY ${MPI_FIND_QUIETLY})
     set(MPI_${lang}_FIND_REQUIRED ${MPI_FIND_REQUIRED})
@@ -627,4 +623,9 @@ unset(_MPI_PREFIX_PATH)
 unset(_MPI_BASE_DIR)
 foreach (lang C CXX Fortran)
   unset(_MPI_${lang}_COMPILER_NAMES)
+  mark_as_advanced(MPI_${lang}_COMPILE_FLAGS MPI_${lang}_INCLUDE_PATH MPI_${lang}_LINK_FLAGS MPI_${lang}_LIBRARIES)
+  mark_as_advanced(MPI_${lang}_COMPILER)
 endforeach()
+
+mark_as_advanced(MPI_LIBRARY MPI_EXTRA_LIBRARY)
+mark_as_advanced(MPIEXEC MPIEXEC_NUMPROC_FLAG MPIEXEC_PREFLAGS MPIEXEC_POSTFLAGS MPIEXEC_MAX_NUMPROCS)
