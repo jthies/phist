@@ -69,10 +69,11 @@ int PREFIX(copyDataFunc)(ghost_gidx_t i, ghost_lidx_t j, void* vval,void* vdata)
   }
   
 #ifdef IS_COMPLEX
-  val[0]=data[i*lda+2*j];
+  val[0]=(_MT_)data[i*lda+2*j];
   val[1]=(_MT_)data[ii*lda+2*j+1];
 #else
   val[0]=(_MT_)data[ii*lda+2*j];
+  PHIST_SOUT(PHIST_DEBUG,"copyDataFunc %d %d %8.4e\n",(int)i,(int)j,val[0]);
 #endif
 return 0;
 }
@@ -114,6 +115,17 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
   }
                       
   drandom_general(nelem*nvec,(int)lnrows, randbuf,(int)lda,(int64_t)pre_skip, (int64_t)post_skip);
+ 
+ for (int i=0; i<lnrows; i++)
+ {
+   PHIST_SOUT(PHIST_DEBUG,"%d",i);
+   for (int j=0; j<nvec; j++)
+   {
+     PHIST_SOUT(PHIST_DEBUG,"%8.4e  ",randbuf[i*nvec+j]);
+   }
+ PHIST_SOUT(PHIST_DEBUG,"\n");
+ }
+ 
   dwrap wrap;
   wrap.lda=lda;
   wrap.lnrows=lnrows;
