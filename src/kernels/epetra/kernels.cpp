@@ -41,23 +41,14 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 #ifdef PHIST_HAVE_MPI
   *iflag=MPI_Init(argc,argv); 
 #endif
-#ifdef PHIST_HAVE_LIKWID
-  LIKWID_MARKER_INIT;
-  LIKWID_MARKER_START("phist<epetra>");
-#endif
+  phist_kernels_common_init(argc,argv,iflag);
   }
 
 // finalize kernel library. Should at least call MPI_Finalize if it has not been called
 // but is required.
 extern "C" void phist_kernels_finalize(int* iflag)
   {
-#ifdef PHIST_HAVE_LIKWID
-  LIKWID_MARKER_STOP("phist<epetra>");
-  LIKWID_MARKER_CLOSE;
-#endif
-#if defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE)
-PHIST_CXX_TIMER_SUMMARIZE;
-#endif
+    phist_kernels_common_finalize(iflag);
 #ifdef PHIST_HAVE_MPI
   *iflag=MPI_Finalize();
 #endif  

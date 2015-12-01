@@ -44,6 +44,7 @@ static int myMpiSession=0;
 // but is required.
 extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 {
+  *iflag=0;
 #ifdef PHIST_HAVE_MPI
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
@@ -57,23 +58,15 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   std::ostringstream oss;
   Tpetra::DefaultPlatform::getDefaultPlatform().describe(oss,Teuchos::VERB_MEDIUM);
   PHIST_SOUT(PHIST_INFO,"Tpetra platform:\n%s\n", oss.str().c_str());
-#ifdef PHIST_HAVE_LIKWID
-  LIKWID_MARKER_INIT;
-  LIKWID_MARKER_START("phist<tpetra>");
-#endif
+  PHIST_CHK_IERR(phist_kernels_common_init(argc,argv,iflag),*iflag);
 }
       
   // finalize kernel library. Should at least call MPI_Finalize if it has not been called
   // but is required.
   extern "C" void phist_kernels_finalize(int* iflag)
   {
-#ifdef PHIST_HAVE_LIKWID
-    LIKWID_MARKER_STOP("phist<tpetra>");
-    LIKWID_MARKER_CLOSE;
-#endif
-#if defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE)
-PHIST_CXX_TIMER_SUMMARIZE;
-#endif
+    *iflag=0;
+    PHIST_CHK_IERR(phist_kernels_common_finalize(iflag),*iflag);
 #ifdef PHIST_HAVE_MPI
   if (myMpiSession==1)
   {

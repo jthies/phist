@@ -217,31 +217,17 @@ void phist_kernels_init(int* argc, char*** argv, int* iflag)
     LIKWID_MARKER_START("phist<builtin>");
   }
 #endif
-  phist_random_init();
+  phist_kernels_common_init(argc,argv,iflag);
 }
 
 // finalize builtin kernels
 void phist_kernels_finalize(int* iflag)
 {
-#ifdef PHIST_HAVE_LIKWID
-#pragma omp parallel
-  {
-    LIKWID_MARKER_STOP("phist<builtin>");
-  }
-  LIKWID_MARKER_CLOSE;
-#endif
-#if defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE)
-PHIST_CXX_TIMER_SUMMARIZE;
-#endif
-PHIST_PERFCHECK_SUMMARIZE(PHIST_INFO);
+
   if( !mpiInitializedBefore )
   {
     PHIST_CHK_IERR( *iflag = MPI_Finalize(), *iflag);
   }
-#ifdef PHIST_PERFCHECK
-  // prevent some strange memory errors during deallocation (due to shared lib context?)
-  phist_PerfCheck::benchmarks.clear();
-#endif
   *iflag=0;
 }
 

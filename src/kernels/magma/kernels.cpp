@@ -37,40 +37,16 @@ void phist_kernels_init(int* argc, char*** argv, int* iflag)
 
   magma_print_environment();
 
-#ifdef PHIST_HAVE_LIKWID
-  LIKWID_MARKER_INIT;
-#pragma omp parallel
-  {
-    LIKWID_MARKER_THREADINIT;
-    LIKWID_MARKER_START("phist<magma>");
-  }
-#endif
+  PHIST_CHK_IERR(phist_kernels_common_init(argc,argv,iflag),*iflag);
 }
 
 // finalize magma kernels
 void phist_kernels_finalize(int* iflag)
 {
-#ifdef PHIST_HAVE_LIKWID
-#pragma omp parallel
-  {
-    LIKWID_MARKER_STOP("phist<magma>");
-  }
-  LIKWID_MARKER_CLOSE;
-#endif
-#if defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE)
-PHIST_CXX_TIMER_SUMMARIZE;
-#endif
-PHIST_PERFCHECK_SUMMARIZE(PHIST_INFO);
-  
-
+  *iflag=0;
   PHIST_CHK_IERR( *iflag = magma_finalize(), *iflag);
   PHIST_CHK_IERR( *iflag = MPI_Finalize(), *iflag);
-
-#ifdef PHIST_PERFCHECK
-  // prevent some strange memory errors during deallocation (due to shared lib context?)
-  phist_PerfCheck::benchmarks.clear();
-#endif
-  *iflag=0;
+  PHIST_CHK_IERR(phist_kernels_common_finalize(iflag),*iflag);
 }
 
 void phist_comm_create(comm_ptr_t* vcomm, int* iflag)

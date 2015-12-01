@@ -105,6 +105,12 @@ void phist_bench_stream_triad(double* bw, int* iflag);
 
 //!@}
 
+//! this function should not be called by the user but by each kernel lib in kernels_init()
+void phist_kernels_common_init(int *argc, char*** argv, int* iflag);
+
+//! this function should not be called by the user but by each kernel lib in kernels_finalize()
+void phist_kernels_common_finalize(int* iflag);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
