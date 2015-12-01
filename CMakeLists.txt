@@ -25,6 +25,11 @@ option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
 option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
 option(PHIST_BUILD_MIC "Build for Intel MIC" OFF)
 
+# reproducible random number generator?
+option(PHIST_USE_BUILTIN_RNG
+        "use random number generator provided by PHIST, which may be solower than the one implemented by the kernel lib. On the other hand, it gives reproducible results across runs, independent of the exact runtime setup."
+        ON)
+
 ########################################################################
 # Lists of libraries, executables, tests
 ########################################################################
@@ -529,7 +534,6 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/tritoeplitz.f90
                           ${PROJECT_SOURCE_DIR}/drivers/matfuncs/brussolator.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/phist_mpi_kernels.cpp
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/phist_random.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/env_module.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/map_module.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/mrgrnk.f90
@@ -594,6 +598,7 @@ LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/common/kernels
                                 ${PROJECT_SOURCE_DIR}/src/kernels/common/stream_bench.c)
 
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.cpp
+                        ${PROJECT_SOURCE_DIR}/src/tools/phist_random.c
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_timemonitor.cpp
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_perfcheck.cpp)
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp

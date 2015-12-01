@@ -32,7 +32,7 @@ extern "C" {
   void SUBR(mvec_num_vectors_f)(TYPE(const_mvec_ptr),int*,int*);
   void SUBR(mvec_print_f)(TYPE(const_mvec_ptr),int*);
   void SUBR(mvec_put_value_f)(TYPE(mvec_ptr),_ST_,int*);
-  void SUBR(mvec_put_func_f)(TYPE(mvec_ptr),int(*)(ghost_gidx_t,ghost_lidx_t,void*),int*);
+  void SUBR(mvec_put_func_f)(TYPE(mvec_ptr),int(*)(ghost_gidx_t,ghost_lidx_t,void*,void*),void*,int*);
   void SUBR(mvec_random_f)(TYPE(mvec_ptr),int*);
   void SUBR(mvec_scale_f)(TYPE(mvec_ptr),_ST_,int*);
   void SUBR(mvec_scatter_mvecs_f)(TYPE(const_mvec_ptr),TYPE(mvec_ptr) W[], int, int*);
@@ -349,12 +349,12 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
 }
 
 extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
-        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
+        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*,void*),void* last_arg int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   PHIST_PERFCHECK_VERIFY_MVEC_PUT_VALUE(V,iflag);
-  PHIST_CHK_IERR(SUBR(mvec_put_func_f)(V,funPtr,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_put_func_f)(V,funPtr,last_arg,iflag),*iflag);
 }
 
 extern "C" void SUBR(sdMat_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
@@ -364,6 +364,9 @@ extern "C" void SUBR(sdMat_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
   PHIST_CHK_IERR(SUBR(sdMat_put_value_f)(V,value,iflag),*iflag);
 }
 
+#ifndef PHIST_BUILTIN_RNG
+// actually this uses  the same RNG from tools/phist_random.h, but if the user deactivates
+// the option, the common function won't be compiled (see common/kernels_common_impl_def.hpp).
 extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -371,6 +374,7 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
   PHIST_PERFCHECK_VERIFY_MVEC_PUT_VALUE(V,iflag);
   PHIST_CHK_IERR(SUBR(mvec_random_f)(V,iflag),*iflag);
 }
+#endif
 
 extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) V, int* iflag)
 {

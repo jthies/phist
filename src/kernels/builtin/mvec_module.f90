@@ -991,11 +991,12 @@ module mvec_module
 
   !> interface of function-ptr for mvec_put_func
   abstract interface
-    function mvecElemFunc(row, col, val_ptr) bind(C) result(ierr)
+    function mvecElemFunc(row, col, val_ptr,last_arg) bind(C) result(ierr)
       use, intrinsic :: iso_c_binding
       integer(G_GIDX_T), value :: row
       integer(G_LIDX_T), value :: col
       TYPE(C_PTR), value :: val_ptr
+      TYPE(C_PTR), value :: last_arg
       integer(C_INT) :: ierr
     end function mvecElemFunc
   end interface
@@ -3616,6 +3617,7 @@ contains
     !--------------------------------------------------------------------------------
     type(C_PTR),        value :: V_ptr
     type(C_FUNPTR),     value       :: elemFunc_ptr
+    type(C_PTR),        value       :: last_arg
     integer(C_INT),     intent(out) :: ierr
     !--------------------------------------------------------------------------------
     type(mvec_t), pointer :: V
@@ -3647,7 +3649,7 @@ contains
       ii = V%map%distrib(V%map%me)+i-2
       do j=V%jmin,V%jmax
         jj=j-V%jmin
-        thread_ierr=elemFunc(ii,jj,C_LOC(V%val(j,i)))
+        thread_ierr=elemFunc(ii,jj,C_LOC(V%val(j,i)),last_arg)
         !write(*,*) ii,jj,V%val(j,i)
         if (thread_ierr/=0) then
 !$omp critical

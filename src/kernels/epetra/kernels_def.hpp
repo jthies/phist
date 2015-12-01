@@ -412,7 +412,7 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, double value, int* iflag
 }
 
 extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
-        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
+        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*,void*), void* last_arg, int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
@@ -426,7 +426,7 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
 #else
     gidx_t row=V->Map().GID64(i);
 #endif
-      PHIST_CHK_IERR(*iflag=funPtr(row,j,V->Pointers()[j]+i),*iflag);
+      PHIST_CHK_IERR(*iflag=funPtr(row,j,V->Pointers()[j]+i,last_arg),*iflag);
     }
   }
 }
@@ -440,6 +440,7 @@ extern "C" void SUBR(sdMat_put_value)(TYPE(sdMat_ptr) vV, double value, int* ifl
   PHIST_CHK_IERR(*iflag=V->PutScalar(value),*iflag);
 }
 
+#ifndef PHIST_BUILTIN_RNG
 //! put random numbers into all elements of a multi-vector
 extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* iflag)
 {
@@ -448,6 +449,7 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*iflag);
   PHIST_CHK_IERR(*iflag=V->Random(),*iflag);
 }
+#endif
 
 extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* iflag)
 {

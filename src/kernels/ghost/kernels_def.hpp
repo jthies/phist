@@ -935,7 +935,7 @@ PHIST_TASK_END(iflag);
 }
 
 extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
-        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
+        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*,void*), void* last_arg int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
@@ -944,7 +944,7 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
 PHIST_TASK_DECLARE(ComputeTask)
   PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,V,vV,*iflag);
-  PHIST_CHK_GERR(V->fromFunc(V,funPtr),*iflag);
+  PHIST_CHK_GERR(V->fromFunc(V,funPtr,last_arg),*iflag);
   PHIST_TASK_END(iflag);
 }
 
@@ -981,6 +981,7 @@ extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag)
   PHIST_CHK_IERR(SUBR(sdMat_to_device)(V,iflag),*iflag);
 }
 
+#ifndef PHIST_BUILTIN_RNG
 //! put random numbers into all elements of a multi-vector
 extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* iflag)
 {
@@ -994,6 +995,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   V->fromRand(V);
 PHIST_TASK_END(iflag);
 }
+#endif
 
 extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* iflag)
 {

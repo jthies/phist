@@ -347,13 +347,13 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, _ST_ value, int* iflag)
 }
 
 extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
-        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*), int *iflag)
+        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*,void*),void* last_arg, int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*iflag);
   for(int j = 0; j < V->nvec; j++)
     for(int i = 0; i < V->n; i++)
-      PHIST_CHK_IERR(*iflag=funPtr(i,j,(void*)&(V->cpuData[j*V->stride+i])),*iflag);
+      PHIST_CHK_IERR(*iflag=funPtr(i,j,(void*)&(V->cpuData[j*V->stride+i]),last_arg),*iflag);
 
   MAGMA(setmatrix)(V->n,V->nvec,
       (const MAGMA_ST*)V->cpuData,V->stride,
@@ -373,6 +373,7 @@ extern "C" void SUBR(sdMat_put_value)(TYPE(mvec_ptr) vM, _ST_ value, int* iflag)
   *iflag = PHIST_SUCCESS;
 }
 
+#ifndef PHIST_BUILTIN_RNG
 extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -385,7 +386,7 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* iflag)
   PHIST_CHK_IERR(SUBR(mvec_to_device)(vV,iflag),*iflag);
   *iflag = PHIST_SUCCESS;
 }
-
+#endif
 extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
