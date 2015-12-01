@@ -6,6 +6,8 @@
 
 #include <stdlib.h>
 
+#include "phist_macros.h"
+#include "phist_fcntrace.hpp"
 #include "phist_kernels.h"
 #include "phist_random.h"
 
