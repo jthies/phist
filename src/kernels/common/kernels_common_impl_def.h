@@ -59,19 +59,27 @@ int PREFIX(copyDataFunc)(ghost_gidx_t i, ghost_lidx_t j, void* vval,void* vdata)
 {
   dwrap* wrap=(dwrap*)vdata;
   int lda = wrap->lda;
+  int ii = i - wrap->ilower;
   double* data = (double*)vdata;
   _MT_* val = (_MT_*)vval;
+  
+  if (ii>=wrap->lnrows || j>=wrap->lncols)
+  {
+    return -1; // index out of bounds;
+  }
+  
 #ifdef IS_COMPLEX
   val[0]=data[i*lda+2*j];
-  val[1]=(_MT_)data[i*lda+2*j+1];
+  val[1]=(_MT_)data[ii*lda+2*j+1];
 #else
-  val[0]=(_MT_)data[i*lda+2*j];
+  val[0]=(_MT_)data[ii*lda+2*j];
 #endif
+return 0;
 }
 
 void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
 {
-  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   gidx_t gnrows,ilower,iupper,pre_skip,post_skip;
   const_map_ptr_t map=NULL;
   lidx_t lnrows,nvec;
@@ -108,6 +116,9 @@ void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
   drandom_general(nelem*nvec,(int)lnrows, randbuf,(int)lda,(int64_t)pre_skip, (int64_t)post_skip);
   dwrap wrap;
   wrap.lda=lda;
+  wrap.lnrows=lnrows;
+  wrap.lncols=nvec;
+  wrap.ilower=ilower;
   wrap.data=randbuf;
   PHIST_CHK_IERR(SUBR(mvec_put_func)(V,&PREFIX(copyDataFunc),&wrap,iflag),*iflag);
   free(randbuf);

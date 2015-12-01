@@ -11,6 +11,9 @@
 
 typedef struct {
   int lda;
+  int lnrows;
+  int lncols;
+  gidx_t ilower;
   double* data;
 } dwrap;
 
