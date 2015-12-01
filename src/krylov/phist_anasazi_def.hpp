@@ -10,7 +10,7 @@
 #endif
 // Anasazi: block krylov methods from Trilinos
 void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) Ainv_op, 
-                         TYPE(const_op_ptr) B_op,
+                         TYPE(const_op_ptr) B_op, int variant,
                          TYPE(const_mvec_ptr) v0,  eigSort_t which,
                          _MT_ tol,                 int *nEig,
                          int* nIter,               int blockDim,
@@ -42,8 +42,6 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) Ainv_op,
 
   bool status=true;
   *iflag=0;
-  
-  int variant=0;// only block Krylov-Schur implemented
   
   Teuchos::RCP<AnasaziMV> X = PHIST_rcp((MV*)vX, false);
   Teuchos::RCP<AnasaziMV> X0;
@@ -137,7 +135,7 @@ eigenProblem->setInitVec(X0);
     PHIST_CHK_IERR(*iflag=eigenProblem->setProblem()?0:-1,*iflag);
 
 Teuchos::RCP<Anasazi::SolverManager<ST,AnasaziMV, OP> > anasazi;
-if (variant==0)
+if ((phist_anasaziType)variant==BKS)
   {
   anasazi = Teuchos::rcp(new Anasazi::BlockKrylovSchurSolMgr<ST,AnasaziMV, OP>
         (eigenProblem, *anasaziList));

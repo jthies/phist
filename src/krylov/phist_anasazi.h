@@ -19,6 +19,12 @@
 extern "C" {
 #endif
 
+typedef enum {
+
+  BKS=0, // block Krylov Schur
+  TMD=1  // TraceMin Davidson
+} phist_anasaziType;
+
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_anasazi_decl.h"

@@ -61,7 +61,7 @@ int main(int argc, char** argv)
   int block_size=1;
   int num_blocks=20;
 
-  int variant=0; // only block Krylov-Schur accessible via this driver right now.
+  int variant=(int)BKS; // only block Krylov-Schur accessible via this driver right now.
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
 
@@ -134,8 +134,8 @@ PHIST_MAIN_TASK_BEGIN
   ST eigs[how_many];
   MT resid[how_many];
   int num_iters=max_iters;
-
-  SUBR(anasazi)(A_op,Ainv_op,B_op,NULL,which,tol,&how_many,
+  
+  SUBR(anasazi)(A_op,Ainv_op,B_op,variant,NULL,which,tol,&how_many,
         &num_iters,block_size,num_blocks,
         sym,X,eigs,&iflag);
 
