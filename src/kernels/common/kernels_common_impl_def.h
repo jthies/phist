@@ -106,7 +106,7 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
   // and set the vector elements using mvec_put_func.
   lidx_t lda=lnrows*nelem;
   double *randbuf;
-  *iflag = posix_memalign(&randbuf, 64, nvec*lda*sizeof(double));
+  *iflag = posix_memalign((void**)&randbuf, 64, nvec*lda*sizeof(double));
   if (*iflag!=0)
   {
     *iflag=PHIST_MEM_ALLOC_FAILED;
