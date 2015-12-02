@@ -21,10 +21,14 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "EpetraExt_CrsMatrixIn.h"
 
-#include "BelosEpetraAdapter.hpp"
-#ifdef BELOS_HAVE_TSQR
-#include "BelosTsqrOrthoManager.hpp"
+#ifdef PHIST_HAVE_BELOS
+#include "Belos_config.h"
+# ifdef HAVE_BELOS_TSQR
+# include "BelosEpetraAdapter.hpp"
+# include "BelosTsqrOrthoManager.hpp"
+# endif
 #endif
+
 #include "epetra_helpers.cpp"
 #include "phist_ScalarTraits.hpp"
 

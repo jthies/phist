@@ -866,7 +866,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   Teuchos::RCP<Teuchos_sdMat_t> R_view
         = CreateTeuchosViewNonConst(Teuchos::rcp(R,false),iflag);
   if (*iflag) return;
-#ifdef BELOS_HAVE_TSQR
+#ifdef HAVE_BELOS_TSQR
   Belos::TsqrOrthoManager<double, Epetra_MultiVector> tsqr("phist/epetra");
   Teuchos::RCP<const Teuchos::ParameterList> valid_params = 
         tsqr.getValidParameters();
