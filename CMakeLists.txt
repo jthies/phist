@@ -29,7 +29,7 @@ option(PHIST_BUILD_MIC "Build for Intel MIC" OFF)
 # TODO - this is not quite working yet, once it is, make it the default
 option(PHIST_BUILTIN_RNG
         "use random number generator provided by PHIST, which may be solower than the one implemented by the kernel lib. On the other hand, it gives reproducible results across runs, independent of the exact runtime setup."
-        OFF)
+        ON)
 
 ########################################################################
 # Lists of libraries, executables, tests
