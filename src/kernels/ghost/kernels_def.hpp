@@ -935,7 +935,7 @@ PHIST_TASK_END(iflag);
 }
 
 extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
-        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*,void*), void* last_arg int *iflag)
+        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*,void*), void* last_arg, int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
