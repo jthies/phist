@@ -54,21 +54,18 @@ PHIST_TASK_BEGIN(ComputeTask)
   ghost_sparsemat_t* mat;
   ghost_context_t *ctx;
 
-  ghost_sparsemat_traits_t *mtraits=new ghost_sparsemat_traits_t;
-        *mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
+  ghost_sparsemat_traits_t mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
   ghost_sparsemat_flags_t flags=GHOST_SPARSEMAT_DEFAULT;
 #ifdef PHIST_USE_SELL
-        mtraits->format = GHOST_SPARSEMAT_SELL;
-        ghost_sell_aux_t aux = GHOST_SELL_AUX_INITIALIZER;
-        aux.C = sellC;
-        mtraits->sortScope = sellSigma;
-        mtraits->aux = &aux;
-        if (mtraits->sortScope > 1) {
+        mtraits.C = sellC;
+        mtraits.sortScope = sellSigma;
+        if (mtraits.sortScope > 1) {
             flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
         }
 #else
 #warning "GHOST interface compiled to use the reference CRS format, will probably not yield optimal performance"
-        mtraits->format = GHOST_SPARSEMAT_CRS;
+        mtraits.C = 1;
+        mtraits.sortScope = 1;
 #endif
       if (repart)
       {
@@ -79,13 +76,13 @@ PHIST_TASK_BEGIN(ComputeTask)
           PHIST_SOUT(outlev, "SCOTCH not available, no matrix repartitioning\n");
 #endif
       }
-        mtraits->datatype = st::ghost_dt;
-        mtraits->flags = flags;
+        mtraits.datatype = st::ghost_dt;
+        mtraits.flags = flags;
         char* cfname=const_cast<char*>(filename);
 // TODO - check ghost return codes everywhere like this
   PHIST_CHK_GERR(ghost_context_create(&ctx,0,0,
         GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_MM,*comm,1.0),*iflag);
-  PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,mtraits,1),*iflag);                               
+  PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
   PHIST_CHK_GERR(mat->fromMM(mat,cfname),*iflag);
   char *str;
   ghost_context_string(&str,ctx);
@@ -128,21 +125,18 @@ PHIST_TASK_BEGIN(ComputeTask)
   ghost_sparsemat_t* mat;
   ghost_context_t *ctx;
 
-  ghost_sparsemat_traits_t *mtraits=new ghost_sparsemat_traits_t;
-        *mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
+  ghost_sparsemat_traits_t mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
   ghost_sparsemat_flags_t flags=GHOST_SPARSEMAT_DEFAULT;
 #ifdef PHIST_USE_SELL
-        mtraits->format = GHOST_SPARSEMAT_SELL;
-        ghost_sell_aux_t aux = GHOST_SELL_AUX_INITIALIZER;
-        aux.C = sellC;
-        mtraits->sortScope = sellSigma;
-        mtraits->aux = &aux;
-        if (mtraits->sortScope > 1) {
+        mtraits.C = sellC;
+        mtraits.sortScope = sellSigma;
+        if (mtraits.sortScope > 1) {
             flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
         }
 #else
 #warning "GHOST interface compiled to use the reference CRS format, will probably not yield optimal performance"
-        mtraits->format = GHOST_SPARSEMAT_CRS;
+        mtraits.C = 1;
+        mtraits.sortScope = 1;
 #endif
         if (repart)
         {
@@ -153,13 +147,13 @@ PHIST_TASK_BEGIN(ComputeTask)
           PHIST_SOUT(outlev, "SCOTCH not available, no matrix repartitioning\n");
 #endif
         }
-        mtraits->datatype = st::ghost_dt;
-        mtraits->flags = flags;
+        mtraits.datatype = st::ghost_dt;
+        mtraits.flags = flags;
         char* cfname=const_cast<char*>(filename);
 // TODO - check ghost return codes everywhere like this
   PHIST_CHK_GERR(ghost_context_create(&ctx,0,0,
         GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_FILE,*comm,1.0),*iflag);
-  PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,mtraits,1),*iflag);                               
+  PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
   PHIST_CHK_GERR(mat->fromFile(mat,cfname),*iflag);
 //#if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;
@@ -882,9 +876,7 @@ extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) vA, int* iflag)
 
   mapGarbageCollector.delete_maps(vA);
   ghost_context_t *ctx = A->context;
-  ghost_sparsemat_traits_t *mtraits = A->traits;
   A->destroy(A);
-  delete mtraits;
   ghost_context_destroy(ctx);
 }
 
@@ -1853,21 +1845,18 @@ PHIST_TASK_BEGIN(ComputeTask)
   ghost_context_t *ctx = NULL;
   PHIST_CAST_PTR_FROM_VOID(const MPI_Comm, comm, vcomm, *iflag);
 
-  ghost_sparsemat_traits_t *mtraits=new ghost_sparsemat_traits_t;
-        *mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
+  ghost_sparsemat_traits_t mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
   ghost_sparsemat_flags_t flags=GHOST_SPARSEMAT_DEFAULT;
 #ifdef PHIST_USE_SELL
-        mtraits->format = GHOST_SPARSEMAT_SELL;
-        ghost_sell_aux_t aux = GHOST_SELL_AUX_INITIALIZER;
-        aux.C = sellC;
-        mtraits->sortScope = sellSigma;
-        mtraits->aux = &aux;
-        if (mtraits->sortScope > 1) {
+        mtraits.C = sellC;
+        mtraits.sortScope = sellSigma;
+        if (mtraits.sortScope > 1) {
             flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
         }
 #else
 #warning "GHOST interface compiled to use the reference CRS format, will probably not yield optimal performance"
-        mtraits->format = GHOST_SPARSEMAT_CRS;
+        mtraits.C = 1;
+        mtraits.sortScope = 1;
 #endif
         if (repart)
         {
@@ -1882,11 +1871,11 @@ PHIST_TASK_BEGIN(ComputeTask)
         {
           PHIST_SOUT(outlev, "No matrix repartitioning requested\n");
         }
-        mtraits->datatype = st::ghost_dt;
-        mtraits->flags = flags;
+        mtraits.datatype = st::ghost_dt;
+        mtraits.flags = flags;
   PHIST_CHK_GERR(ghost_context_create(&ctx,nrows,ncols,
         GHOST_CONTEXT_DEFAULT,NULL,GHOST_SPARSEMAT_SRC_FUNC,*comm,1.0),*iflag);
-  PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,mtraits,1),*iflag);                               
+  PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
 
   ghost_sparsemat_src_rowfunc_t src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
   src.func = rowFunPtr;
