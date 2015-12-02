@@ -9,6 +9,7 @@
 #include <stdlib.h>
 
 #include "phist_macros.h"
+#include "phist_tasks.h"
 #include "phist_fcntrace.hpp"
 #include "phist_perfcheck.hpp"
 #include "phist_kernels.h"
@@ -19,12 +20,15 @@ extern "C" void phist_kernels_common_init(int *argc, char*** argv, int* iflag)
 {
   phist_random_init();
 #ifdef PHIST_HAVE_LIKWID
+GHOST_TASK_DECLARE(likwidInitTask)
+GHOST_TASK_BEGIN(likwidInitTask)
   LIKWID_MARKER_INIT;
 #pragma omp parallel
   {
     LIKWID_MARKER_THREADINIT;
     LIKWID_MARKER_START("phist");
   }
+GHOST_TASK_END(likwidInitTask)
 #endif
 }
 
@@ -32,11 +36,14 @@ extern "C" void phist_kernels_common_finalize(int *iflag)
 {
   *iflag=0;
 #ifdef PHIST_HAVE_LIKWID
+GHOST_TASK_DECLARE(LikwidFinalizeTask)
+GHOST_TASK_BEGIN(LikwidFinalizeTask)
 #pragma omp parallel
   {
     LIKWID_MARKER_STOP("phist");
   }
   LIKWID_MARKER_CLOSE;
+GHOST_TASK_END(LikwidFinalizeTask)
 #endif
 #if defined(PHIST_TIMEMONITOR) || defined(PHIST_TIMEMONITOR_PERLINE)
 PHIST_CXX_TIMER_SUMMARIZE;
