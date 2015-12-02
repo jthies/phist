@@ -36,10 +36,10 @@
 #endif
 
 /*typedef Kokkos::DefaultNode::DefaultNodeType node_t;*/
-# if defined(HAVE_TPETRACLASSIC_TBB)
+# if defined(HAVE_TPETRACLASSIC_TBB)||defined(HAVE_KOKKOSCLASSIC_TBB)
 # include "Kokkos_TBBNode.hpp"
 typedef Kokkos::TBBNode node_t;
-# elif defined(HAVE_TPETRACLASSIC_THREADPOOL)
+# elif defined(HAVE_TPETRACLASSIC_THREADPOOL)||defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
 # warning "Using the Kokkos thread pool node may interfere with GHOST threads leading to poor GHOST performance. Use TBB if possible!"
 # include "Kokkos_TPINode.hpp"
 typedef Kokkos::TPINode node_t;
