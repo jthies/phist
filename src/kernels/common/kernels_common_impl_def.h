@@ -60,7 +60,6 @@ int PREFIX(copyDataFunc)(ghost_gidx_t i, ghost_lidx_t j, void* vval,void* vdata)
   dwrap* wrap=(dwrap*)vdata;
   int lda = wrap->lda;
   int ii = i - wrap->ilower;
-  double* data = (double*)vdata;
   _MT_* val = (_MT_*)vval;
   
   if (ii>=wrap->lnrows || j>=wrap->lncols)
@@ -69,11 +68,12 @@ int PREFIX(copyDataFunc)(ghost_gidx_t i, ghost_lidx_t j, void* vval,void* vdata)
   }
   
 #ifdef IS_COMPLEX
-  val[0]=(_MT_)data[i*lda+2*j];
-  val[1]=(_MT_)data[ii*lda+2*j+1];
+  val[0]=(_MT_)wrap->data[i*lda+2*j];
+  val[1]=(_MT_)wrap->data[ii*lda+2*j+1];
 #else
-  val[0]=(_MT_)data[ii*lda+2*j];
-  PHIST_SOUT(PHIST_DEBUG,"copyDataFunc %d %d %8.4e\n",(int)i,(int)j,val[0]);
+  //PHIST_SOUT(PHIST_INFO,"copyDataFunc %d %d",(int)i,(int)j);
+  val[0]=(_MT_)wrap->data[ii*lda+j];
+  //PHIST_SOUT(PHIST_INFO," %8.4e\n", val[0]);
 #endif
 return 0;
 }
@@ -93,38 +93,40 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
   PHIST_CHK_IERR(phist_map_get_ilower(map,&ilower,iflag),*iflag);
   PHIST_CHK_IERR(phist_map_get_iupper(map,&iupper,iflag),*iflag);
   
-  pre_skip = ilower*nvec;
-  post_skip= (gnrows-iupper)*nvec;  
-  
 #ifdef IS_COMPLEX
   const int nelem=2;
 #else
   const int nelem=1;
 #endif  
   
+  pre_skip = ilower*nvec*nelem;
+  post_skip= (gnrows-iupper)*nelem;  
+  
   // we use the most robust way of implementing this, which should work for
   // any situation (row/col major, GPU/CPU etc.): generate row-major clone data
   // and set the vector elements using mvec_put_func.
-  lidx_t lda=lnrows*nelem;
+  lidx_t lda=nvec*nelem;
   double *randbuf;
-  *iflag = posix_memalign((void**)&randbuf, 64, nvec*lda*sizeof(double));
+  *iflag = posix_memalign((void**)&randbuf, 64, lnrows*lda*sizeof(double));
   if (*iflag!=0)
   {
     *iflag=PHIST_MEM_ALLOC_FAILED;
     return;
   }
                       
-  drandom_general(nelem*nvec,(int)lnrows, randbuf,(int)lda,(int64_t)pre_skip, (int64_t)post_skip);
+  drandom_1((int) (lnrows*lda), randbuf, (int64_t)pre_skip, (int64_t)post_skip);
  
+  /*
  for (int i=0; i<lnrows; i++)
  {
-   PHIST_SOUT(PHIST_DEBUG,"%d",i);
-   for (int j=0; j<nvec; j++)
+   PHIST_SOUT(PHIST_INFO,"%d",i);
+   for (int j=0; j<lda; j++)
    {
-     PHIST_SOUT(PHIST_DEBUG,"%8.4e  ",randbuf[i*nvec+j]);
+     PHIST_SOUT(PHIST_INFO,"  %8.4e",randbuf[i*lda+j]);
    }
- PHIST_SOUT(PHIST_DEBUG,"\n");
+ PHIST_SOUT(PHIST_INFO,"\n");
  }
+ */
  
   dwrap wrap;
   wrap.lda=lda;
