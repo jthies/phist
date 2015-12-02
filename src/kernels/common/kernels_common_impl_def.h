@@ -93,28 +93,28 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
   PHIST_CHK_IERR(phist_map_get_ilower(map,&ilower,iflag),*iflag);
   PHIST_CHK_IERR(phist_map_get_iupper(map,&iupper,iflag),*iflag);
   
-  pre_skip = ilower*nvec;
-  post_skip= (gnrows-iupper)*nvec;  
-  
-#ifdef IS_COMPLEX
+  #ifdef IS_COMPLEX
   const int nelem=2;
 #else
   const int nelem=1;
 #endif  
-  
+
+  pre_skip = ilower*nvec*nelem;
+  post_skip= (gnrows-iupper)*nvec*nelem;
+    
   // we use the most robust way of implementing this, which should work for
   // any situation (row/col major, GPU/CPU etc.): generate row-major clone data
   // and set the vector elements using mvec_put_func.
-  lidx_t lda=lnrows*nelem;
   double *randbuf;
-  *iflag = posix_memalign((void**)&randbuf, 64, nvec*lda*sizeof(double));
+  size_t sz=lnrows*nvec*nelem;
+  *iflag = posix_memalign((void**)&randbuf, 64, sz*sizeof(double));
   if (*iflag!=0)
   {
     *iflag=PHIST_MEM_ALLOC_FAILED;
     return;
   }
                       
-  drandom_general(nelem*nvec,(int)lnrows, randbuf,(int)lda,(int64_t)pre_skip, (int64_t)post_skip);
+  drandom_1(sz, randbuf,(int64_t)pre_skip, (int64_t)post_skip);
  
  for (int i=0; i<lnrows; i++)
  {
@@ -127,7 +127,7 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
  }
  
   dwrap wrap;
-  wrap.lda=lda;
+  wrap.lda=nvec*nelem;
   wrap.lnrows=lnrows;
   wrap.lncols=nvec;
   wrap.ilower=ilower;
@@ -159,8 +159,8 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) M, int* iflag)
     *iflag=PHIST_MEM_ALLOC_FAILED;
     return;
   }
-  phist_Drandom_number(nelem*nrows*ncols, randbuf,(int)(nrows*nelem),(int64_t)0, (int64_t)0);
-  _MT_ mM_raw=(_MT_*)M_raw;
+  phist_Drandom_number(nelem*nrows*ncols, randbuf);
+  _MT_ *mM_raw=(_MT_*)M_raw;
   for (int j=0; j<ncols; j++)
   {
     for (int i=0; i<nrows; i++)
