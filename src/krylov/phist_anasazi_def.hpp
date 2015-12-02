@@ -126,7 +126,14 @@ if (B!=Teuchos::null)
 }
 if (Op!=Teuchos::null)
 {
-  eigenProblem->setOperator(Op);
+  if (variant==(int)BKS)
+  {
+    eigenProblem->setOperator(Op);
+  }
+  else if (variant==(int)TMD)
+  {
+    eigenProblem->setPreconditioner(Op);
+  }
 }
 eigenProblem->setHermitian(symmetric);        
 eigenProblem->setNEV(*nEig);
@@ -137,13 +144,21 @@ eigenProblem->setInitVec(X0);
 Teuchos::RCP<Anasazi::SolverManager<ST,AnasaziMV, OP> > anasazi;
 if ((phist_anasaziType)variant==BKS)
   {
-  anasazi = Teuchos::rcp(new Anasazi::BlockKrylovSchurSolMgr<ST,AnasaziMV, OP>
+    anasazi = Teuchos::rcp(new Anasazi::BlockKrylovSchurSolMgr<ST,AnasaziMV, OP>
         (eigenProblem, *anasaziList));
   }
+#ifndef OLD_TRILINOS
+  else if ((phist_anasaziType)variant==TMD)
+  {
+    anasaziList->set("Saddle Solver Type","Projected Krylov");
+    anasazi = Teuchos::rcp(new Anasazi::TraceMinDavidsonSolMgr<ST,AnasaziMV, OP>
+        (eigenProblem, *anasaziList));
+  }
+#endif
 else
   {
-  PHIST_OUT(PHIST_ERROR,"anasazi variant %d is not supported",variant);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+    PHIST_OUT(PHIST_ERROR,"anasazi variant %d is not supported",variant);
+    *iflag=PHIST_NOT_IMPLEMENTED;
   }
 
 ///////////////////////////////////////////////////////////////////////

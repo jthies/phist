@@ -45,6 +45,9 @@
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziSolverManager.hpp"
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
+# ifndef OLD_TRILINOS
+# include "AnasaziTraceMinDavidsonSolMgr.hpp"
+# endif
 #endif
 
 #include "phist_gen_d.h"
