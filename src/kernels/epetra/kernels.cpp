@@ -22,8 +22,9 @@
 #include "EpetraExt_CrsMatrixIn.h"
 
 #include "BelosEpetraAdapter.hpp"
+#ifdef BELOS_HAVE_TSQR
 #include "BelosTsqrOrthoManager.hpp"
-
+#endif
 #include "epetra_helpers.cpp"
 #include "phist_ScalarTraits.hpp"
 

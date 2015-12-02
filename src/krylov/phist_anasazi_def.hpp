@@ -98,7 +98,7 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) Ainv_op,
   anasaziList->set("Block Size",blockDim);
   anasaziList->set("Num Blocks",numBlocks);
   anasaziList->set("Maximum Restarts",(int)(*nIter/numBlocks));
-  anasaziList->set("Orthogonalization","TSQR");
+  anasaziList->set("Orthogonalization","SVQB");
   anasaziList->set("Convergence Tolerance",tol);
   int verb=::Anasazi::Errors+::Anasazi::Warnings;
 #if PHIST_OUTLEV>=PHIST_INFO
@@ -132,7 +132,7 @@ if (Op!=Teuchos::null)
   }
   else if (variant==(int)TMD)
   {
-    eigenProblem->setPreconditioner(Op);
+    eigenProblem->setPrec(Op);
   }
 }
 eigenProblem->setHermitian(symmetric);        
@@ -151,7 +151,7 @@ if ((phist_anasaziType)variant==BKS)
   else if ((phist_anasaziType)variant==TMD)
   {
     anasaziList->set("Saddle Solver Type","Projected Krylov");
-    anasazi = Teuchos::rcp(new Anasazi::TraceMinDavidsonSolMgr<ST,AnasaziMV, OP>
+    anasazi = Teuchos::rcp(new Anasazi::Experimental::TraceMinDavidsonSolMgr<ST,AnasaziMV, OP>
         (eigenProblem, *anasaziList));
   }
 #endif

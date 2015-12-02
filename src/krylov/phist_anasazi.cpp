@@ -23,14 +23,27 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_FancyOStream.hpp"
 
+// we include the Belos adaptors alongside the Anasazi adapters because
+// the TraceMinDavidsonSolMgr requires them.
+
+// some hacks to prevent TSQR orthomanager and some internal saddlepoint vector type
+// to clash in Trilinos 12.2.1
+#include "Belos_config.h"
+#ifdef BELOS_HAVE_TSQR
+#warning "a bug in Trilinos 12.2.1 prevents compiling TraceMinDavidson if TSQR is enabled in Belos"
+#endif
+
 # ifdef PHIST_KERNEL_LIB_GHOST
 #  include "ghost.h"
+#  include "Belos_GhostAdapter.hpp"
 #  include "Anasazi_GhostAdapter.hpp"
 # elif defined(PHIST_KERNEL_LIB_EPETRA)
 #  include "Epetra_MultiVector.h"
+#  include "BelosEpetraAdapter.hpp"
 #  include "AnasaziEpetraAdapter.hpp"
 # elif defined(PHIST_KERNEL_LIB_TPETRA)
 #  include "Tpetra_MultiVector.hpp"
+#  include "BelosTpetraAdapter.hpp"
 #  include "AnasaziTpetraAdapter.hpp"
 # else
 #  warning "Anasazi not supported for this kernel lib"

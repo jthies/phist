@@ -866,7 +866,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   Teuchos::RCP<Teuchos_sdMat_t> R_view
         = CreateTeuchosViewNonConst(Teuchos::rcp(R,false),iflag);
   if (*iflag) return;
-  
+#ifdef BELOS_HAVE_TSQR
   Belos::TsqrOrthoManager<double, Epetra_MultiVector> tsqr("phist/epetra");
   Teuchos::RCP<const Teuchos::ParameterList> valid_params = 
         tsqr.getValidParameters();
@@ -880,6 +880,9 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
 
   PHIST_TRY_CATCH(rank = tsqr.normalize(*V,R_view),*iflag);  
   *iflag = ncols-rank;// return positive number if rank not full.
+#else
+  *iflag=-99;
+#endif
   return;
 }
 

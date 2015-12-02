@@ -4,6 +4,8 @@
 #include <mpi.h>
 #endif
 
+#include <cstring>
+
 #include "phist_macros.h"
 #include "phist_get_arg.hpp"
 #include "phist_kernels.h"
@@ -24,10 +26,10 @@ void SUBR(print_usage)(char* argv[],int pos)
     {
     PHIST_SOUT(PHIST_ERROR,"argument %d had an invalid value (%s)\n",pos,argv[pos]);
     }
-    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A> <symmetric/hermitian> <how many> <which> <tol>\n"
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A> <matrix B> <symmetric/hermitian> <how many> <which> <tol>\n"
                            "          <max iters> <block size> <num blocks>\n"
                            "(all but the first argument get default values if omitted)\n"
-                           "Which may be of the form \"TARGET\" <real value>\n",
+                           "'matrix B' may be set to \"I\" for standard EVPs.\n",
                            argv[0]);
     // print usage message for creating/reading a matrix
     SUBR(create_matrix)(NULL, NULL, "usage",&iflag);
@@ -39,7 +41,7 @@ int main(int argc, char** argv)
   int i, iflag;
 
   comm_ptr_t comm;
-  sparseMat_ptr_t A;
+  sparseMat_ptr_t A,B;
   op_ptr_t A_op, B_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
   op_ptr_t P_op; // wrapper for a preconditioning operator
   
@@ -47,7 +49,7 @@ int main(int argc, char** argv)
                        // the distribution of matrix rows
   mvec_ptr_t X,R;// multivectors for eigenvectors and residuals
 
-  char* matname;
+  char *matname, *matnameB=NULL;
     
   // default input parameters:
   MT tol=1.0e-6;
@@ -75,8 +77,9 @@ PHIST_MAIN_TASK_BEGIN
   }
 
   matname = argv[1];
+  matnameB = argv[2];
   
-  int p=2;
+  int p=3;
   GET_ARG(sym,p++);
   if (sym!=0 && sym!=1)
   {
@@ -99,8 +102,25 @@ PHIST_MAIN_TASK_BEGIN
     num_blocks=(how_many+10)/block_size;
   }
 
-  iflag=PHIST_SPARSEMAT_REPARTITION;
+  bool haveB=(matnameB!=NULL);
+  if (haveB) haveB=(strcmp(matnameB,"I")!=0);
+
+  if (~haveB)
+  {
+    // if B is read/created, it must be partitioned along with A,
+    // which we can't do right now.
+    iflag=PHIST_SPARSEMAT_REPARTITION;
+  }
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&iflag),iflag);
+  if (haveB)
+  {
+    iflag=0;
+    PHIST_ICHK_IERR(SUBR(create_matrix)(&B,comm,matnameB,&iflag),iflag);
+  }
+  else
+  {
+    B=NULL;
+  }
   
   /* we assume domain map = range map here, which is reasonable for something
      you want to put into a linear solver */
@@ -113,8 +133,14 @@ PHIST_MAIN_TASK_BEGIN
   /* create operator wrapper for computing Y=A*X using a CRS matrix */
   A_op = new TYPE(op);
   B_op = NULL;
-  Ainv_op = NULL;
+  P_op = NULL;
   PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(A_op,A,&iflag),iflag);
+  
+  if (B!=NULL)
+  {
+    B_op = new TYPE(op);
+    PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(B_op,B,&iflag),iflag);
+  }
  
   ST eigs[how_many];
   MT resid[how_many];
@@ -122,7 +148,7 @@ PHIST_MAIN_TASK_BEGIN
 
   P_op=NULL; //TODO
 
-  SUBR(anasazi)(A_op,P_op,B_op,NULL,which,tol,&how_many,
+  SUBR(anasazi)(A_op,P_op,B_op,variant,NULL,which,tol,&how_many,
         &num_iters,block_size,num_blocks,
         sym,X,eigs,&iflag);
 
@@ -139,18 +165,6 @@ PHIST_MAIN_TASK_BEGIN
   
   PHIST_ICHK_IERR(SUBR(mvec_norm2)(R,resid,&iflag),iflag);
   
-  if (shift_invert)
-  {
-    for (i=0;i<how_many;i++)
-    {
-      // NOTE: the feastCorrectionSolver that is used
-      //       internally defines the operator to be
-      //       inverted as sI-A, so the eigenvalues 
-      //       returned have the wrong sign.
-      eigs[i]=target_value - st::one()/eigs[i];
-    }
-  }
-
   if (how_many)
   {
     PHIST_SOUT(PHIST_VERBOSE,"Eigenvalue\tresidual\n");
@@ -161,6 +175,10 @@ PHIST_MAIN_TASK_BEGIN
   }
     
   PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
+  if (B!=NULL)
+  {
+    PHIST_ICHK_IERR(SUBR(sparseMat_delete)(B,&iflag),iflag);
+  }
   PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(R,&iflag),iflag);
   delete A_op;
