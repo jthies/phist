@@ -135,4 +135,51 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
   PHIST_CHK_IERR(SUBR(mvec_put_func)(V,&PREFIX(copyDataFunc),&wrap,iflag),*iflag);
   free(randbuf);
 }
+
+extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) M, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  lidx_t nrows,ncols,lda;
+  _ST_* M_raw;
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(M,&nrows,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(M,&ncols,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(M,&M_raw,&lda,iflag),*iflag);
+      
+#ifdef IS_COMPLEX
+  const int nelem=2;
+#else
+  const int nelem=1;
+#endif
+
+  // generate random doubles and copy them by hand, then upload to GPU if applicable.
+  double *randbuf;
+  *iflag = posix_memalign((void**)&randbuf, 64, nrows*ncols*nelem*sizeof(double));
+  if (*iflag!=0)
+  {
+    *iflag=PHIST_MEM_ALLOC_FAILED;
+    return;
+  }
+  phist_Drandom_number(nelem*nrows*ncols, randbuf,(int)(nrows*nelem),(int64_t)0, (int64_t)0);
+  _MT_ mM_raw=(_MT_*)M_raw;
+  for (int j=0; j<ncols; j++)
+  {
+    for (int i=0; i<nrows; i++)
+    {
+#ifdef PHIST_SDMATS_ROW_MAJOR
+      mM_raw[lda*nelem*i+j]=(_MT_)randbuf[j*nelem*nrows+i];
+# ifdef IS_COMPLEX
+      mM_raw[lda*nelem*i+j+1]=(_MT_)randbuf[j*nelem*nrows+i+1];
+# endif
+#else
+      mM_raw[lda*nelem*j+i]=(_MT_)randbuf[j*nelem*nrows+i];
+# ifdef IS_COMPLEX
+      mM_raw[lda*nelem*j+i+1]=(_MT_)randbuf[j*nelem*nrows+i+1];
+# endif
+#endif
+    }
+  }
+ 
+  PHIST_CHK_IERR(SUBR(sdMat_to_device)(M,iflag),*iflag);
+  free(randbuf);
+}
 #endif

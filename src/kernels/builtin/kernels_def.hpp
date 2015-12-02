@@ -388,12 +388,14 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) M, int* iflag)
   PHIST_CHK_IERR(SUBR(sdMat_print_f)(M,iflag),*iflag);
 }
 
+#ifndef PHIST_BUILTIN_RNG
 extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) M, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(sdMat_random_f)(M,iflag),*iflag);
 }
+#endif
 
 extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) M, int* iflag)
 {

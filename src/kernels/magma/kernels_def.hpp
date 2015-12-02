@@ -403,6 +403,7 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
   *iflag = PHIST_SUCCESS;
 }
 
+#ifndef PHIST_BUILTIN_RNG
 extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -415,6 +416,7 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* iflag)
   PHIST_CHK_IERR(SUBR(sdMat_to_device)(vM,iflag),*iflag);
   *iflag = PHIST_SUCCESS;
 }
+#endif
 
 extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) vM, int* iflag)
 {

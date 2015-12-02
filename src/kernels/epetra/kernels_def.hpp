@@ -482,6 +482,7 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
   std::cout << sos.str();
 }
 
+#ifndef PHIST_BUILTIN_RNG
 //! put random numbers into all elements of a serial dense matrix
 extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* iflag)
 {
@@ -490,6 +491,7 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,M,vM,*iflag);
   PHIST_CHK_IERR(*iflag=M->Random(),*iflag);
 }
+#endif
 
 //! put identity matrix into a small dense matrix \ingroup sdmat
 extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag)

@@ -1041,7 +1041,7 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
   free(str); str = NULL;
 }
 
-
+#ifndef PHIST_BUILTIN_RNG
 //! put random numbers into all elements of a serial dense matrix
 extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* iflag)
 {
@@ -1054,6 +1054,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   M->fromRand(M);
 PHIST_TASK_END(iflag);
 }
+#endif
 
 //! put random numbers into all elements of a serial dense matrix
 extern "C" void SUBR(sdMat_sync_values)(TYPE(sdMat_ptr) vM, const_comm_ptr_t vcomm, int* iflag)
