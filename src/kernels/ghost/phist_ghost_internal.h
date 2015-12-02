@@ -11,6 +11,8 @@ const int MPI_COMM_WORLD=0;
 #error "this is a C++ header"
 #endif
 
+#include <map>
+
 namespace phist 
 {
   //! some helper functions and objects that should not be exposed to phist users
