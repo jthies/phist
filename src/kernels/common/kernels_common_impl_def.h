@@ -98,7 +98,6 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
 #else
   const int nelem=1;
 #endif  
-<<<<<<< HEAD
 
   pre_skip = ilower*nvec*nelem;
   post_skip= (gnrows-iupper)*nvec*nelem;
@@ -109,29 +108,14 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
   double *randbuf;
   size_t sz=lnrows*nvec*nelem;
   *iflag = posix_memalign((void**)&randbuf, 64, sz*sizeof(double));
-=======
-  
-  pre_skip = ilower*nvec*nelem;
-  post_skip= (gnrows-iupper)*nelem;  
-  
-  // we use the most robust way of implementing this, which should work for
-  // any situation (row/col major, GPU/CPU etc.): generate row-major clone data
-  // and set the vector elements using mvec_put_func.
-  lidx_t lda=nvec*nelem;
-  double *randbuf;
-  *iflag = posix_memalign((void**)&randbuf, 64, lnrows*lda*sizeof(double));
->>>>>>> fa6e5348a20a15ce89eb0430140a86f1a511f61c
+
   if (*iflag!=0)
   {
     *iflag=PHIST_MEM_ALLOC_FAILED;
     return;
   }
                       
-<<<<<<< HEAD
   drandom_1(sz, randbuf,(int64_t)pre_skip, (int64_t)post_skip);
-=======
-  drandom_1((int) (lnrows*lda), randbuf, (int64_t)pre_skip, (int64_t)post_skip);
->>>>>>> fa6e5348a20a15ce89eb0430140a86f1a511f61c
  
   /*
  for (int i=0; i<lnrows; i++)
