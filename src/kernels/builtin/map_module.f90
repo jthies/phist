@@ -263,8 +263,9 @@ end if
     use, intrinsic :: iso_c_binding
     use mpi
     !------------------------------------------------------------
-    type(C_PTR),    value       :: map_ptr
-    integer(C_INT64_T), intent(out) :: nglob, ierr
+    type(C_PTR),        value       :: map_ptr
+    integer(C_INT64_T), intent(out) :: nglob
+    integer(C_INT),     intent(out) :: ierr
     !------------------------------------------------------------
     type(Map_t), pointer :: map
     !------------------------------------------------------------
