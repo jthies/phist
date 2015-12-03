@@ -68,7 +68,7 @@ int PREFIX(copyDataFunc)(ghost_gidx_t i, ghost_lidx_t j, void* vval,void* vdata)
   }
   
 #ifdef IS_COMPLEX
-  val[0]=(_MT_)wrap->data[i*lda+2*j];
+  val[0]=(_MT_)wrap->data[ii*lda+2*j];
   val[1]=(_MT_)wrap->data[ii*lda+2*j+1];
 #else
   //PHIST_SOUT(PHIST_INFO,"copyDataFunc %d %d",(int)i,(int)j);
