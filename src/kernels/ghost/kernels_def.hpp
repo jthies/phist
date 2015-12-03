@@ -444,10 +444,12 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* l
   {
     if (V->traits.location == GHOST_LOCATION_DEVICE)
     {
-      // need some ghost call here (TODO)
-      PHIST_OUT(PHIST_ERROR,"%s, host side of vector not allocated\n",__FUNCTION__);
-      *iflag=PHIST_NOT_IMPLEMENTED;
-      return;
+      if (V->traits.flags & GHOST_DENSEMAT_NOT_RELOCATE) {      
+        PHIST_OUT(PHIST_ERROR,"%s, host side of vector not allocated\n",__FUNCTION__);
+        *iflag=PHIST_NOT_IMPLEMENTED;
+        return;
+      }
+      V->download(V);
     }
     else
     {
