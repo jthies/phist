@@ -155,7 +155,7 @@ public:
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nloc_,nloc_V);
       
-      SUBR(mvec_from_device)(V_,&iflag_);
+      SUBR(mvec_from_device)(V,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp,nloc_,ldaV,stride_,mpi_comm_),tolV);
       ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp,nloc_,ldaV,stride_,mpi_comm_),tolV);
