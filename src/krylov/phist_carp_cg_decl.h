@@ -48,12 +48,15 @@ typedef struct TYPE(carp_cgState) {
 
   //@}
   
-  //! \name input data set by constructor 
+  //! \name input data set by constructor
   //@{ 
   int rc_variant_; // if !=0, this is real arithmetic but imaginary vectors and shifts may occur
   int nvec_; //! number of RHS vectors for this shift 
   int nproj_; //! number of vectors in Vproj that should be projected out
   struct TYPE(x_sparseMat)* A_;
+
+  TYPE(const_mvec_ptr) Vproj_; //! additional vectors to be projected out
+
   //@}
   //! \name set by reset() function
   //@{
