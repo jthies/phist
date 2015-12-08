@@ -51,6 +51,7 @@ typedef struct TYPE(carp_cgState) {
   bool rc_variant_;
 
   TYPE(const_sparseMat_ptr) A_;
+  TYPE(const_mvec_ptr) Vproj_; //! additional vectors to be projected out
 
   //@}
   //! \name set by reset() function
@@ -89,8 +90,17 @@ typedef TYPE(carp_cgState) const * TYPE(const_cgState_ptr);
 //! Create a CG state object to solve a set of numSys linear systems
 //! (A-sigma[j]I)X=B. For each column in B (=numSys), a shift must be
 //! provided. sigma_i may be NULL if all shifts are real.
+//! Vproj allows specifying additional projection vectors, if it is not NULL,
+//! the linear system is augmented to 
+//!
+//! | A           Vproj | |x|   |b|
+//! | Vproj'        0   | |y| = |0|
+//!
+//! which is equivalent to iterating in a space orthogonal to Vproj. This improves the convergence
+//! of the method if Vproj is an approximation of the null space of A-sigma[j]I.
+//!
 void SUBR(carp_cgState_create)(TYPE(carp_cgState_ptr) *S, 
-        TYPE(const_sparseMat_ptr) A, 
+        TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr) Vproj,
         int numSys, _MT_ sigma_r[], _MT_ sigma_i[],
         int* iflag);
 
