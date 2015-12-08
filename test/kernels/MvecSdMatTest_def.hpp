@@ -258,6 +258,36 @@ public:
       }
     }
   }
+
+  // check V'V gives same as W=V, V'W with random V
+  TEST_F(CLASSNAME, mvecT_times_mvec_self_rand)
+  {
+    if( typeImplemented_ && !problemTooSmall_ && m_ == k_ )
+    {
+      // fill V with random numbers and set W=V
+      SUBR(mvec_random)(V1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_add_mvec)(st::one(),V1_,st::zero(),V2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V1_,st::zero(),M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvecT_times_mvec)(st::one(),V1_,V2_,st::zero(),M2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      MTest::sdMat_parallel_check(M1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      MTest::sdMat_parallel_check(M2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(M1_,M2_));
+      ASSERT_EQ(0,iflag_);
+
+    }
+  }
 #endif
 
   // check ones(n,m)'*ones(n,k)=n*ones(m,k)
@@ -433,7 +463,7 @@ public:
 // melven: Kahan summation here will most probably not work, see remarks below
 // * compiler optimization!
 // * one can also improve the multiplication
-// * high precision examples are in src/kernels/builtin/*prec*
+// * high precision examples are in src/kernels/builtin/\*prec\*
 // -> long double for reference data should be the better way (hoping/checking that long double != double!)
           _ST_PREC_ dot_ij = (_ST_PREC_)0;
           long double dotAbs_ij = (long double)0;
