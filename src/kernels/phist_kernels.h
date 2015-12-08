@@ -137,6 +137,11 @@ void phist_kernels_common_finalize(int* iflag);
 //!@}
 #endif
 
+/* this allows to use only the type-independent part of the header for 
+   interface and doc generation
+ */
+#ifndef DOXYGEN_NO_TG
+
 /*!\name double precision real kernel functions */
 //!@{
 #include "phist_gen_d.h"
@@ -155,4 +160,7 @@ void phist_kernels_common_finalize(int* iflag);
 //!@}
 #include "phist_gen_clean.h"
 #endif
+
+#endif //DOXYGEN_NO_TG
+
 //@}
