@@ -12,14 +12,15 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 //
-void SUBR(private_dotProd)(TYPE(const_mvec_ptr) v, TYPE(const_mvec_ptr) vi,
-                           TYPE(const_mvec_ptr) w, TYPE(const_mvec_ptr) wi,
+void SUBR(private_dotProd)(TYPE(const_mvec_ptr) v, TYPE(const_mvec_ptr) vi, TYPE(const_sdMat_ptr) vp, TYPE(const_sdMat_ptr) vpi,
+                           TYPE(const_mvec_ptr) w, TYPE(const_mvec_ptr) wi, TYPE(const_sdMat_ptr) wp, TYPE(const_sdMat_ptr) wpi,
                            int nvec, _ST_   *dots, _MT_* dotsi, bool rc_variant, int *iflag);
 //
 void SUBR(private_compResid)(TYPE(const_sparseMat_ptr) A, int nvec, _MT_ const sigma_r[], _MT_ const sigma_i[],
-                       TYPE(const_mvec_ptr) B,
-                       TYPE(const_mvec_ptr) x, TYPE(const_mvec_ptr) xi,
-                       TYPE(mvec_ptr) r,        TYPE(mvec_ptr) ri,
+                       TYPE(const_mvec_ptr) Vproj,
+                       TYPE(const_mvec_ptr) Rhs,
+                       TYPE(const_mvec_ptr) x, TYPE(const_mvec_ptr) xi, TYPE(const_sdMat_ptr) xp, TYPE(const_sdMat_ptr) xpi,
+                       TYPE(mvec_ptr) r,        TYPE(mvec_ptr) ri, TYPE(sdMat_ptr) rp, TYPE(sdMat_ptr) rpi,
                        _MT_  *nrms, bool rc_variant, int *iflag);
 
 // pretty-print convergence history. nvec=0: print header. nvec=-1: print footer
@@ -41,7 +42,7 @@ void SUBR(show_vector_elements)(TYPE(mvec_ptr) V, int *iflag) ;
 
 // create new state object
 void SUBR(carp_cgState_create)(TYPE(carp_cgState_ptr) *state,
-        TYPE(const_sparseMat_ptr) A,
+        TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr) Vproj,
         int nvec, _MT_ sigma_r[], _MT_ sigma_i[],
         int* iflag)
 {
@@ -77,6 +78,7 @@ void SUBR(carp_cgState_create)(TYPE(carp_cgState_ptr) *state,
     (*state)->z_=NULL; (*state)->zi_=NULL;
     
     (*state)->A_=A;
+    (*state)->Vproj_=Vproj;
 
     (*state)->conv = new int[nvec];
     (*state)->sigma_r_ = new MT[nvec];
@@ -355,6 +357,17 @@ void SUBR(carp_cgState_iterate)(
     TYPE(mvec_ptr) z =S->z_;
     TYPE(mvec_ptr) zi =S->zi_;
     
+    // for additionally projected CARP-CG
+    TYPE(const_mvec_ptr) Vproj=S->Vproj_;
+    TYPE(sdMat_ptr) rp=S->rp_;
+    TYPE(sdMat_ptr) rpi=S->rpi_;
+
+    TYPE(sdMat_ptr) qp=S->qp_;
+    TYPE(sdMat_ptr) qpi=S->qpi_;
+
+    TYPE(sdMat_ptr) zp=S->zp_;
+    TYPE(sdMat_ptr) zpi=S->zpi_;
+    
     // CG (Lanczos) coefficients
     ST* alpha=S->alpha_;
     MT* alpha_i=S->alpha_i_;
@@ -403,8 +416,16 @@ void SUBR(carp_cgState_iterate)(
     }
 #endif
     // double carp sweep in place, updates r=dkswp(sI-A,omega,r)
-    PHIST_CHK_IERR(SUBR(carp_sweep)(A, sigma_r, sigma_i,b,r,ri,
-          S->aux_,S->omega_,iflag),*iflag);
+    if (Vproj!=NULL)
+    {
+      PHIST_CHK_IERR(SUBR(carp_sweep_aug)(A, sigma_r, sigma_i,Vproj,b,r,ri,
+            rp,rpi,S->aux_,S->omega_,iflag),*iflag);
+    }
+    else
+    {
+      PHIST_CHK_IERR(SUBR(carp_sweep)(A, sigma_r, sigma_i,b,r,ri,
+            S->aux_,S->omega_,iflag),*iflag);
+    }
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-st::one(),x,st::one(),r,iflag),*iflag);
 #ifndef IS_COMPLEX
     if (S->rc_variant_)
@@ -1071,14 +1092,27 @@ void SUBR(carp_cgState_iterate)(
 // compute residual r=b-(A-sI)x and ||r||_2^2 in nrms2. If r and ri are NULL, a temporary
 // vector is used and discarded.
 void SUBR(private_compResid)(TYPE(const_sparseMat_ptr) A, int nvec, _MT_ const sigma_r[], _MT_ const sigma_i[],
-                       TYPE(const_mvec_ptr) B,
-                       TYPE(const_mvec_ptr) x, TYPE(const_mvec_ptr) xi,
-                       TYPE(mvec_ptr) r,        TYPE(mvec_ptr) ri,
+                       TYPE(const_Mvec_ptr) Vproj,
+                       TYPE(const_mvec_ptr) Rhs,
+                       TYPE(const_mvec_ptr) x, TYPE(const_mvec_ptr) xi, TYPE(sdMat_ptr) xp, TYPE(sdMat_ptr) xpi,
+                       TYPE(mvec_ptr) r,        TYPE(mvec_ptr) ri, TYPE(const_sdMat_ptr) rp, TYPE(const_sdMat_ptr) rpi,
                        _MT_  *nrms2, bool rc_variant, int *iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
 
+  if ((xp!=NULL)||(rp!=NULL))
+  {
+    *iflag=-99;
+    return;
+  }
+#ifndef IS_COMPLEX
+  if ((xpi!=NULL)||(rpi!=NULL)&&rc_variant)
+  {
+    *iflag=-99;
+    return;
+  }
+#endif
   ST shifts[nvec];
   for (int i=0;i<nvec;i++)
   {
@@ -1107,7 +1141,7 @@ void SUBR(private_compResid)(TYPE(const_sparseMat_ptr) A, int nvec, _MT_ const s
   //    -i[(A-sr)xi - si*xr]
   
   // r=b
-  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),B,st::zero(),R,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),Rhs,st::zero(),R,iflag),*iflag);
   // r=b-(A-sI)*x
   PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_vadd_mvec)
     (-st::one(),A,shifts,x,st::one(),R,iflag),*iflag);
@@ -1151,8 +1185,8 @@ void SUBR(private_compResid)(TYPE(const_sparseMat_ptr) A, int nvec, _MT_ const s
 // in the complex case (C/Z), vi and wi are ignored, the result dots is complex and
 // dotsi is ignored. In the real case, if vi and wi are NULL, they are assumed
 // to be 0 and dotsi is ignored.
-void SUBR(private_dotProd)(TYPE(const_mvec_ptr) v, TYPE(const_mvec_ptr) vi,
-                           TYPE(const_mvec_ptr) w, TYPE(const_mvec_ptr) wi,
+void SUBR(private_dotProd)(TYPE(const_mvec_ptr) v, TYPE(const_mvec_ptr) vi, TYPE(const_sdMat_ptr) vp, TYPE(const_sdMat_ptr) vpi,
+                           TYPE(const_mvec_ptr) w, TYPE(const_mvec_ptr) wi, TYPE(const_sdMat_ptr) wp, TYPE(const_sdMat_ptr) wpi,
                            int nvec, _ST_ *dots, _MT_ *dotsi, bool rc_variant, int *iflag)
 {
 #include "phist_std_typedefs.hpp"
@@ -1160,7 +1194,12 @@ void SUBR(private_dotProd)(TYPE(const_mvec_ptr) v, TYPE(const_mvec_ptr) vi,
 
   *iflag=0;
   PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v,w,dots,iflag),*iflag);
-  #ifndef IS_COMPLEX
+  if (vp!=NULL || wp!=NULL)
+  {
+    *iflag=-99;
+    return;
+  }
+#ifndef IS_COMPLEX
   if (rc_variant)
   {
     ST tmp[nvec];
@@ -1184,6 +1223,11 @@ void SUBR(private_dotProd)(TYPE(const_mvec_ptr) v, TYPE(const_mvec_ptr) vi,
       {
         dotsi[j]=mt::zero();
       }
+    }
+    if (vpi!=NULL || wpi!=NULL)
+    {
+      *iflag=-99;
+      return;
     }
   }
 #endif
