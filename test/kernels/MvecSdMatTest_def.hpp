@@ -283,7 +283,7 @@ public:
       ASSERT_EQ(0,iflag_);
       MTest::sdMat_parallel_check(M2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(M1_,M2_));
+      ASSERT_NEAR(mt::one(),SdMatsEqual(M1_,M2_),100*mt::eps());
       ASSERT_EQ(0,iflag_);
 
     }
