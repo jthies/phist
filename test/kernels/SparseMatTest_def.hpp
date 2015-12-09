@@ -1518,13 +1518,15 @@ TEST_F(CLASSNAME,create_A_fromRowFunc)
   ASSERT_EQ(0,iflag_);
         
   ASSERT_REAL_EQ(mt::one(),MvecEqual(Adense,st::zero()));
-#endif
 
-  SUBR(sparseMat_delete)(A,&iflag_);
-    ASSERT_EQ(0,iflag_);
   SUBR(mvec_delete)(Adense,&iflag_);
     ASSERT_EQ(0,iflag_);
   SUBR(mvec_delete)(I,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+#endif
+
+  SUBR(sparseMat_delete)(A,&iflag_);
     ASSERT_EQ(0,iflag_);
 }
 

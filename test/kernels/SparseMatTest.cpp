@@ -38,3 +38,21 @@ using namespace ::testing;
 #define _N_ 25
 #define _M_ 12
 #include "../phist_typed_test_gen.h"
+
+// larger tests that also make sense on hybrid CPU/GPU nodes
+
+#define _N_ 388
+#define _M_ 1
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 388
+#define _M_ 4
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 388
+#define _M_ 7
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 388
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
