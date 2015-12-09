@@ -204,7 +204,6 @@ void drandom_general(int nvec, int nrows, double *restrict v, int ldv, int64_t p
       // loop
       for(int i = threadOffset[it]; i < threadOffset[it+1]; i++)
       {
-        printf("row %d on tid %d with nvec %d and ldv %d\n", i, it, nvec, ldv);
         for(int j = 0; j < nvec; j++)
           v[i*ldv+j] = KISSD(&x,&y,&z,&c);
       }
