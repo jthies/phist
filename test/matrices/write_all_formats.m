@@ -2,11 +2,11 @@ function write_all_formats(name,description,A,C)
 
 key='no key';
 
-mmwrite(['s_',name,'.mm'],A,description,'real','general',8);
-mmwrite(['d_',name,'.mm'],A,description,'real','general',16);
+mmwrite(['S',name,'.mm'],A,description,'real','general',8);
+mmwrite(['D',name,'.mm'],A,description,'real','general',16);
 
-mmwrite(['c_',name,'.mm'],C,description,'complex','general',8);
-mmwrite(['z_',name,'.mm'],C,description,'complex','general',16);
+mmwrite(['C',name,'.mm'],C,description,'complex','general',8);
+mmwrite(['Z',name,'.mm'],C,description,'complex','general',16);
 
 if (nnz(A)==0)
   A(1,1)=1.0;
