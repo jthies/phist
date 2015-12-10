@@ -171,7 +171,7 @@ end if
   !================================================================================
   ! some simple wrapper routines
 
-  subroutine phist_map_create(map_ptr, comm_ptr, n_glob, ierr) bind(C)
+  subroutine phist_map_create(map_ptr, comm_ptr, n_glob, ierr) bind(C,name='phist_map_create')
     use, intrinsic :: iso_c_binding
     use mpi
     !------------------------------------------------------------
@@ -197,7 +197,7 @@ end if
   end subroutine phist_map_create
 
 
-  subroutine phist_map_delete(map_ptr, ierr) bind(C)
+  subroutine phist_map_delete(map_ptr, ierr) bind(C,name='phist_map_delete')
     use, intrinsic :: iso_c_binding
     !------------------------------------------------------------
     type(C_PTR),    value       :: map_ptr
@@ -227,7 +227,7 @@ end if
   end subroutine phist_map_delete
 
 
-  subroutine phist_map_get_comm(map_ptr, comm_ptr, ierr) bind(C)
+  subroutine phist_map_get_comm(map_ptr, comm_ptr, ierr) bind(C,name='phist_map_get_comm')
     use, intrinsic :: iso_c_binding
     use mpi
     !------------------------------------------------------------
@@ -244,7 +244,7 @@ end if
   end subroutine phist_map_get_comm
 
 
-  subroutine phist_map_get_local_length(map_ptr, nloc, ierr) bind(C)
+  subroutine phist_map_get_local_length(map_ptr, nloc, ierr) bind(C,name='phist_map_get_local_length')
     use, intrinsic :: iso_c_binding
     use mpi
     !------------------------------------------------------------
@@ -259,7 +259,7 @@ end if
     ierr = 0
   end subroutine phist_map_get_local_length
 
-  subroutine phist_map_get_global_length(map_ptr, nglob, ierr) bind(C)
+  subroutine phist_map_get_global_length(map_ptr, nglob, ierr) bind(C,name='phist_map_get_global_length')
     use, intrinsic :: iso_c_binding
     use mpi
     !------------------------------------------------------------
@@ -276,7 +276,7 @@ end if
   end subroutine phist_map_get_global_length
 
 
-  subroutine phist_map_get_ilower(map_ptr, ilower, ierr) bind(C)
+  subroutine phist_map_get_ilower(map_ptr, ilower, ierr) bind(C,name='phist_map_get_ilower')
     use, intrinsic :: iso_c_binding
     use mpi
     !------------------------------------------------------------
@@ -293,7 +293,7 @@ end if
   end subroutine phist_map_get_ilower
 
 
-  subroutine phist_map_get_iupper(map_ptr, iupper, ierr) bind(C)
+  subroutine phist_map_get_iupper(map_ptr, iupper, ierr) bind(C,name='phist_map_get_iupper')
     use, intrinsic :: iso_c_binding
     use mpi
     !------------------------------------------------------------

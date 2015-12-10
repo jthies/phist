@@ -112,9 +112,15 @@ module crsmat_module
   
   end type sparseArray_t
 
-  !> interface of function-ptr for crsMat_create_fromRowFunc
+
+  ! workaround PGI bug
+#ifdef __PGI
+contains
+#else
   abstract interface
-    function matRowFunc(row, nnz, cols, vals,data_arg) bind(C) result(ierr)
+#endif
+    !> interface of function-ptr for crsMat_create_fromRowFunc
+    function matRowFunc(row, nnz, cols, vals,data_arg) result(ierR) bind(C)
       use, intrinsic :: iso_c_binding
       integer(G_GIDX_T), value :: row
       integer(G_LIDX_T), intent(inout) :: nnz
@@ -122,10 +128,17 @@ module crsmat_module
       real(C_DOUBLE),    intent(inout) :: vals(*)
       TYPE(c_ptr), value :: data_arg
       integer(C_INT) :: ierr
+      write(*,*) 'matRowFunc: row', row
+      nnz = 1
+      cols(1) = row
+      vals(1) = 1.
+      ierr = 0
     end function matRowFunc
+#ifndef __PGI
   end interface
 
 contains
+#endif
 
 
   !==================================================================================
@@ -1957,7 +1970,7 @@ end subroutine permute_local_matrix
     !--------------------------------------------------------------------------------
     logical :: repart, d2clr, d2clr_and_permute
     type(CrsMat_t), pointer :: A
-    procedure(matRowFunc), pointer :: rowFunc
+    procedure(matRowFunc), pointer :: rowFunc => null()
     !--------------------------------------------------------------------------------
     integer(kind=G_GIDX_T), allocatable :: idx(:,:)
     real(kind=8), allocatable :: val(:)
@@ -1990,6 +2003,7 @@ end subroutine permute_local_matrix
     ierr=0
     ! get procedure pointer
     call c_f_procpointer(rowFunc_ptr, rowFunc)
+    rowFunc => matRowFunc
     call c_f_pointer(comm_ptr, comm)
 
     allocate(A)
@@ -2398,7 +2412,7 @@ end if
     integer :: theShape(2)
     integer :: sendBuffSize,recvBuffSize
     logical :: b_is_zero
-    real(kind=8), dimension(0,0), target :: bzero
+    real(kind=8) :: bzero = 0.
 
     ierr=0
     
@@ -2607,7 +2621,7 @@ end if
     integer :: ldx, ldb, nvec
     integer :: sendBuffSize,recvBuffSize
     logical :: b_is_zero
-    real(kind=8), dimension(0,0), target :: bzero
+    real(kind=8) :: bzero = 0.
 
     ierr=0
     

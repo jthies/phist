@@ -130,13 +130,14 @@ namespace phist_TimeMonitor
 #if defined(PHIST_HAVE_OPENMP)
         return true;
 #elif defined(PHIST_HAVE_MPI)
-        int mpi_ini;
+        int mpi_ini, mpi_fini;
         MPI_Initialized(&mpi_ini);
         if( !mpi_ini )
           return false;
-        MPI_Finalized(&mpi_ini);
-        if( mpi_ini )
+        MPI_Finalized(&mpi_fini);
+        if( mpi_fini )
           return false;
+        return true;
 #else
         return false;
 #endif
