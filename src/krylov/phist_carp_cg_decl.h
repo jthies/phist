@@ -20,6 +20,12 @@
 //! object for multiple shifts (no restart mechanism is needed for CG).
 //@{
 
+// forward declarations of private data types
+struct TYPE(my_mvec);
+struct TYPE(my_const_mvec);
+struct TYPE(my_sparseMat);
+struct TYPE(my_const_sparseMat);
+
 //! state object for CARP-CG
 
 //! the usage of carp_cg is very similar to that of blockedGMRES, except that we don't
@@ -43,16 +49,10 @@ typedef struct TYPE(carp_cgState) {
 
   //@}
   
-  //! \name input data set by constructor
-  //@{
-  _MT_ *sigma_r_; //! we're solving (sigma*I-A)x=b in this state object,
-  _MT_ *sigma_i_; //! with sigma = sigma_r + i*sigma_i
-  int nvec_; //! number of RHS vectors for this shift
-  bool rc_variant_;
-
-  TYPE(const_sparseMat_ptr) A_;
-  TYPE(const_mvec_ptr) Vproj_; //! additional vectors to be projected out
-
+  //! \name input data set by constructor 
+  //@{ 
+  int nvec_; //! number of RHS vectors for this shift 
+  TYPE(my_const_sparseMat) A_;
   //@}
   //! \name set by reset() function
   //@{
@@ -67,9 +67,7 @@ typedef struct TYPE(carp_cgState) {
 
   //! \name  internal CG data structures
   //@{
-  TYPE(mvec_ptr) q_, r_, p_, z_; //! CG helper vectors, one column per RHS
-  // imaginary parts, used if real A with complex shift
-  TYPE(mvec_ptr) qi_, ri_, pi_, zi_;
+  TYPE(my_mvec_ptr) q_, r_, p_, z_; //! CG helper vectors, one column per RHS
 
   // scalars forming the Lanczos matrix, one for each RHS
   _ST_ *alpha_;
