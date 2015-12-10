@@ -7,30 +7,217 @@
 //      compared to using proper complex vectors, we should check if the kernel 
 //      lib supports mixed real/complex arithmetic and use it if possible.
 
+// We incorporate the case of a shifted and/or 'augmented' system
+//
+// |A-sigma[j]I Vproj ||x |   |b |
+// | Vproj'       0   ||x'| = |b'|
+//
+// The small additional components x', b' etc. are denoted by a 'p' in the code, e.g. xp, bp,
+// and represented as sdMats.
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// private data structures for wrapping something like this:
+// |A-sigma[j]I  V| |x + i*xi |
+// | V'          0| |x'+ i*xi'|
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+typedef struct TYPE(my_const_sparseMat) {
+  TYPE(const_sparseMat_ptr) A_;
+  _MT_ const *sigma_r_;
+  _MT_ const *sigma_i_;
+  TYPE(const_mvec_ptr)      Vproj_;
+} TYPE(my_const_sparseMat);
+
+//! represent augmented complex vector of the form 
+//! |v + i vi |
+//! |vp+ i vpi|
+typedef struct TYPE(my_mvec) {
+  TYPE(mvec_ptr)      v_;
+  TYPE(mvec_ptr)      vi_;
+  TYPE(sdMat_ptr)     vp_;
+  TYPE(sdMat_ptr)     vpi_;
+} TYPE(my_mvec);
+
+typedef TYPE(my_mvec)* TYPE(my_mvec_ptr);
+typedef TYPE(my_mvec) const* TYPE(my_const_mvec_ptr);
+
+typedef TYPE(my_const_sparseMat)* TYPE(my_const_sparseMat_ptr);
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // private helper functions                                                                      //
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-//
-void SUBR(private_dotProd)(TYPE(const_mvec_ptr) v, TYPE(const_mvec_ptr) vi, TYPE(const_sdMat_ptr) vp, TYPE(const_sdMat_ptr) vpi,
-                           TYPE(const_mvec_ptr) w, TYPE(const_mvec_ptr) wi, TYPE(const_sdMat_ptr) wp, TYPE(const_sdMat_ptr) wpi,
-                           int nvec, _ST_   *dots, _MT_* dotsi, bool rc_variant, int *iflag);
-//
-void SUBR(private_compResid)(TYPE(const_sparseMat_ptr) A, int nvec, _MT_ const sigma_r[], _MT_ const sigma_i[],
-                       TYPE(const_mvec_ptr) Vproj,
+//! return true if both vectors have an allocated imaginary part,
+//! false if none of them has, and throw an exception if only one of them has.
+inline bool rc_variant(TYPE(my_const_mvec_ptr) v1, TYPE(my_const_mvec_ptr) v2)
+{
+#ifdef IS_COMPLEX
+  return false;
+#endif
+  if (v1->vi_==NULL && v2->vi_==NULL) return false;
+  if (v1->vi_!=NULL && v2->vi_!=NULL) return true;
+  throw "either both or none of the vectors must have an imaginary part!"
+#endif
+}
+
+//! return true if both vectors are augmented by additional rows,
+//! false if none of them has, and throw an exception if only one of them has.
+//! We do not check if the number of augmented rows is different, in that case
+//! some later phist call will return an error.
+inline bool aug_variant(TYPE(my_const_mvec_ptr) v1, TYPE(my_const_mvec_ptr) v2)
+{
+  if (v1->vp_ ==NULL && v2->vp_ ==NULL
+    &&v1->vpi_==NULL && v2->vpi_==NULL) return false;
+
+  if (v1->vp_ !=NULL && v2->vp_ !=NULL)
+  {
+    if (rc_variant(v1,v2)
+    {
+      if (v1->vpi_!=NULL && v2->vpi_!=NULL) return true;
+    }
+    return true;
+  }
+  throw "either both or none of the vectors must be augmented!"
+}
+
+//! create an mvec of the form [V; v'] with V N x nvec and v' naug x nvec.
+void SUBR(my_mvec_create)(TYPE(my_mvec_ptr) *V, const_map_ptr_t vmap, int nvec, int naug, int rc_variant, int* iflag)
+{
+  TYPE(my_mvec_ptr) v = new TYPE(my_mvec);
+  *V=v;
+  const_comm_ptr_t comm;
+  PHIST_CHK_IERR(SUBR(map_get_comm(Vmap,&comm,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_create)(&v->v_, Vmap, nvec, iflag),*iflag);
+  if (naug>0)
+  {
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&v->vp_,naug,nvec,comm,iflag),*iflag);
+  }
+  if (rc_variant)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_create)(&v->vi_, Vmap, nvec, iflag),*iflag);
+    if (naug>0)
+    {
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&v->vpi_,naug,nvec,comm,iflag),*iflag);
+    }
+  }
+}
+
+void SUBR(my_mvec_delete)(TYPE(my_mvec_ptr) V, int* iflag)
+{
+  if (V->v_!=NULL) PHIST_CHK_IERR(SUBR(mvec_delete)(V->v_,iflag),*iflag);
+  if (V->vi_!=NULL) PHIST_CHK_IERR(SUBR(mvec_delete)(V->vi_,iflag),*iflag);
+  if (V->vp_!=NULL) PHIST_CHK_IERR(SUBR(sdMat_delete)(V->vp_,iflag),*iflag);
+  if (V->vpi_!=NULL) PHIST_CHK_IERR(SUBR(sdMat_delete)(V->vpi_,iflag),*iflag);
+}
+
+//! missing kernel function, I don't want to introduce it to the interface at this point,
+//! we could move it to kernels/common if it is useful in other places
+//! the _add signifies that dot is *not* initialized in this function but the result is added
+//! to whatever is in there already, this is because of our special application in this file.
+void SUBR(my_sdMat_dot_sdMat_add)(TYPE(const_sdMat_ptr) A, TYPE(const_sdMat_ptr) B, _ST_* dots, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_FCN(__FUNCTION__);
+  ST *a,*b;
+  lidx_t lda,ldb;
+  int nr, nc,nrb,ncb;
+  
+  PHIST_CHK_IERR(SUBR(sdMat_from_device)(A,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_from_device)(B,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(A,&a,&lda,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(B,&b,&ldb,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(A,&nr,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(A,&nc,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(B,&nrb,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(B,&ncb,iflag),*iflag);
+  
+  if (nr!=nrb || nc!=ncb) 
+  {
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
+  for (int j=0; j<nc; j++)
+  {
+    // note: the caller must make sure dots is initialized
+    for (int i=0; i<nr; i++)
+    {
+#ifdef PHIST_SDMATS_ROW_MAJOR
+      dots[j]+=st::conj(a[i*lda+j])*b[i*lda+j];
+#else
+      dots[j]+=st::conj(a[j*lda+i])*b[j*lda+i];
+#endif      
+    }
+  }
+}
+//! dot product of two possibly complex vectors, in the complex case the result is found in dots,
+//! in the case of real arithmetic but complex vectors, dotsi is filled with the imaginary parts.
+void SUBR(my_mvec_dot_mvec)(TYPE(my_mvec_ptr) v, TYPE(my_mvec_ptr) w,
+                            _ST_   *dots, _MT_* dotsi, int *iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_FCN(__FUNCTION__);
+
+  *iflag=0;
+  PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v->v_,w->v_,dots,iflag),*iflag);
+  if (aug_variant(v,w))
+  {
+    PHIST_CHK_IERR(SUBR(sdMat_dot_sdMat_add)(v->vp_,w->vp_,dots,iflag),*iflag);    
+  }
+
+  if (rc_variant(v,w))
+  {
+    ST tmp[nvec];
+    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v->vi_,w->vi_,tmp,iflag),*iflag);
+    if (aug_variant(v,w))
+    {
+      PHIST_CHK_IERR(SUBR(sdMat_dot_sdMat_add)(v->vpi_,w->vpi_,tmp,iflag),*iflag);    
+    }
+    for (int j=0;j<nvec;j++)
+    {
+      dots[j]+=tmp[j];
+    }
+    if ( (v!=w) && dotsi!=NULL)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v->v_,w->vi_,dotsi,iflag),*iflag);      
+      PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v->vi_,w->v_,tmp,iflag),*iflag);      
+      if (aug_variant(v,w))
+      {
+        PHIST_CHK_IERR(SUBR(sdMat_dot_sdMat_add)(v->vp_,w->vpi_,dotsi,iflag),*iflag);    
+        PHIST_CHK_IERR(SUBR(sdMat_dot_sdMat_add)(v->vpi_,w->vp_,tmp,iflag),*iflag);    
+      }
+      for (int j=0;j<nvec;j++)
+      {
+        dotsi[j]-=tmp[j];
+      }
+    }
+    else if (dotsi!=NULL)
+    {
+      for (int j=0;j<nvec;j++)
+      {
+        dotsi[j]=mt::zero();
+      }
+    }
+  }
+  return;
+}
+
+//TODO - continue here
+
+//! compute residual, note that this function only accepts a real right-hand side vector in the RC case
+void SUBR(my_compResid)(TYPE(my_const_sparseMat_ptr) A, 
                        TYPE(const_mvec_ptr) Rhs,
-                       TYPE(const_mvec_ptr) x, TYPE(const_mvec_ptr) xi, TYPE(const_sdMat_ptr) xp, TYPE(const_sdMat_ptr) xpi,
-                       TYPE(mvec_ptr) r,        TYPE(mvec_ptr) ri, TYPE(sdMat_ptr) rp, TYPE(sdMat_ptr) rpi,
-                       _MT_  *nrms, bool rc_variant, int *iflag);
+                       TYPE(my_mvec_ptr) x, 
+                       TYPE(my_mvec_ptr) r,
+                       _MT_  *nrms, int *iflag);
 
 // pretty-print convergence history. nvec=0: print header. nvec=-1: print footer
-void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR, 
+void SUBR(my_printResid)(int it, int nvec, _ST_ const* normR, 
         _MT_ const* normR0, _MT_ const* normB, int const* locked);
 
 // allocate CG vector blocks
-void SUBR(private_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* iflag);
+void SUBR(my_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* iflag);
 // allocate CG vector blocks
-void SUBR(private_carp_cgState_dealloc)(TYPE(carp_cgState_ptr) S, int* iflag);
+void SUBR(my_carp_cgState_dealloc)(TYPE(carp_cgState_ptr) S, int* iflag);
 
 // destroy vector elements to test automatic fault-detection
 void SUBR(destroy_vector_elements_at_random)(TYPE(mvec_ptr) V, double probability, int nloc, int *iflag); 
@@ -54,7 +241,7 @@ void SUBR(carp_cgState_create)(TYPE(carp_cgState_ptr) *state,
     // setup the CARP kernel and get the required data structures:
     void* aux=NULL;
     PHIST_CHK_IERR(SUBR(carp_setup)(A,nvec,sigma_r,sigma_i,
-        &aux, iflag),*iflag);    
+        &aux, iflag),*iflag);
 
   const_map_ptr_t map=NULL;
   PHIST_CHK_IERR(SUBR(sparseMat_get_row_map)(A,&map,iflag),*iflag);
@@ -72,13 +259,30 @@ void SUBR(carp_cgState_create)(TYPE(carp_cgState_ptr) *state,
   }
 #endif
     
-  (*state)->q_=NULL; (*state)->qi_=NULL;
-    (*state)->r_=NULL; (*state)->ri_=NULL;
-    (*state)->p_=NULL; (*state)->pi_=NULL;
-    (*state)->z_=NULL; (*state)->zi_=NULL;
-    
-    (*state)->A_=A;
-    (*state)->Vproj_=Vproj;
+  (*state)->p_=new TYPE(my_mvec); 
+        (*state->p_->v_=NULL;
+        (*state->p_->vi_=NULL;
+        (*state->p_->vp_=NULL;
+        (*state->p_->vpi_=NULL;
+  (*state)->q_=new TYPE(my_mvec);
+        (*state->q_->v_=NULL;
+        (*state->q_->vi_=NULL;
+        (*state->q_->vp_=NULL;
+        (*state->q_->vpi_=NULL;
+  (*state)->r_=new TYPE(my_mvec);
+        (*state->r_->v_=NULL;
+        (*state->r_->vi_=NULL;
+        (*state->r_->vp_=NULL;
+        (*state->r_->vpi_=NULL;
+  (*state)->z_=new TYPE(my_mvec);
+        (*state->z_->v_=NULL;
+        (*state->z_->vi_=NULL;
+        (*state->z_->vp_=NULL;
+        (*state->z_->vpi_=NULL;
+
+    (*state)->A_=new TYPE(my_const_sparseMat);
+    (*state)->A_->A_=A;
+    (*state)->A_->Vproj_=Vproj;
 
     (*state)->conv = new int[nvec];
     (*state)->sigma_r_ = new MT[nvec];
@@ -102,6 +306,30 @@ void SUBR(carp_cgState_create)(TYPE(carp_cgState_ptr) *state,
     }
 
     (*state)->nvec_=nvec;
+    (*state)->nproj_=0;
+    if(Vproj!=NULL)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Vproj,&(*state)->nproj_,iflag),*iflag);
+      int nr=(*state)->nproj_;
+      int nc=(*state)->nvec_;
+      const_map_ptr_t map=NULL;
+      PHIST_CHK_IERR(SUBR(mvec_get_map)(S->b_,&map,iflag),*iflag);
+      const_comm_ptr_t comm=NULL;
+      PHIST_CHK_IERR(SUBR(map_get_comm)(map,&comm,iflag),*iflag);
+      
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&(*state)->qp_,nr,nc,comm,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&(*state)->pp_,nr,nc,comm,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&(*state)->rp_,nr,nc,comm,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&(*state)->zp_,nr,nc,comm,iflag),*iflag);
+
+      if ((*state)->rc_variant_)
+      {
+        PHIST_CHK_IERR(SUBR(sdMat_create)(&(*state)->qpi_,nr,nc,comm,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(sdMat_create)(&(*state)->ppi_,nr,nc,comm,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(sdMat_create)(&(*state)->rpi_,nr,nc,comm,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(sdMat_create)(&(*state)->zpi_,nr,nc,comm,iflag),*iflag);      
+      }
+    }
 
     (*state)->aux_=aux;
                                 // moment just set it to 1, which
@@ -117,7 +345,7 @@ void SUBR(carp_cgState_create)(TYPE(carp_cgState_ptr) *state,
     }
 }
 
-void SUBR(private_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* iflag)
+void SUBR(my_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   
@@ -149,7 +377,7 @@ void SUBR(private_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* iflag)
     }
 }
 
-void SUBR(private_carp_cgState_dealloc)(TYPE(carp_cgState_ptr) S, int* iflag)
+void SUBR(my_carp_cgState_dealloc)(TYPE(carp_cgState_ptr) S, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   
@@ -192,6 +420,15 @@ void SUBR(carp_cgState_delete)(TYPE(carp_cgState_ptr) state, int* iflag)
     delete [] state->beta_;
     delete [] state->alpha_;
     delete [] state->alpha_i_;
+    
+    if (state->pp_!=NULL) PHIST_ICHK_ERR(SUBR(sdMat_delete)(state->pp_,iflag),*iflag);
+    if (state->ppi_!=NULL) PHIST_ICHK_ERR(SUBR(sdMat_delete)(state->ppi_,iflag),*iflag);
+    if (state->qp_!=NULL) PHIST_ICHK_ERR(SUBR(sdMat_delete)(state->qp_,iflag),*iflag);
+    if (state->qpi_!=NULL) PHIST_ICHK_ERR(SUBR(sdMat_delete)(state->qpi_,iflag),*iflag);
+    if (state->rp_!=NULL) PHIST_ICHK_ERR(SUBR(sdMat_delete)(state->rp_,iflag),*iflag);
+    if (state->rpi_!=NULL) PHIST_ICHK_ERR(SUBR(sdMat_delete)(state->rpi_,iflag),*iflag);
+    if (state->zp_!=NULL) PHIST_ICHK_ERR(SUBR(sdMat_delete)(state->zp_,iflag),*iflag);
+    if (state->zpi_!=NULL) PHIST_ICHK_ERR(SUBR(sdMat_delete)(state->zpi_,iflag),*iflag);
 
     delete state;
 }
@@ -343,7 +580,7 @@ void SUBR(carp_cgState_iterate)(
 #endif    
 
     // allocate CG vectors: one per rhs
-    PHIST_CHK_IERR(SUBR(private_carp_cgState_alloc)(S,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(my_carp_cgState_alloc)(S,iflag),*iflag);
 
     TYPE(mvec_ptr) r =S->r_;
     TYPE(mvec_ptr) ri =S->ri_;
@@ -364,6 +601,9 @@ void SUBR(carp_cgState_iterate)(
 
     TYPE(sdMat_ptr) qp=S->qp_;
     TYPE(sdMat_ptr) qpi=S->qpi_;
+
+    TYPE(sdMat_ptr) pp=S->pp_;
+    TYPE(sdMat_ptr) ppi=S->ppi_;
 
     TYPE(sdMat_ptr) zp=S->zp_;
     TYPE(sdMat_ptr) zpi=S->zpi_;
@@ -387,8 +627,8 @@ void SUBR(carp_cgState_iterate)(
     else if (S->iflag==-1)
     {
       // compute initial residual normR0 after reset
-      PHIST_CHK_IERR(SUBR(private_compResid)(A, nvec, sigma_r, sigma_i,
-                       b, x, xi, NULL, NULL, S->normR, S->rc_variant_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(my_compResid)(A, nvec, sigma_r, sigma_i, Vproj,
+                       b, x, xi, xp, xpi, NULL, NULL, NULL, NULL, S->normR, S->rc_variant_,iflag),*iflag);
       for (int j=0;j<nvec;j++)
       {
         S->normR0_[j]=std::sqrt(S->normR[j]);
@@ -446,13 +686,13 @@ void SUBR(carp_cgState_iterate)(
     //r2_new = r'*z. For technical reasons we store (r'z)^2 as complex type if IS_COMPLEX
     ST r2_new[nvec];
     MT r2_old[nvec];
-    PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,r2_new,NULL,S->rc_variant_,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(my_mvec_dot_mvec)(r,ri,z,zi,nvec,r2_new,NULL,S->rc_variant_,iflag),*iflag);
 
     if (itprint>0)
     {
       // print header
-      SUBR(private_printResid)(0,0,NULL,NULL,NULL,NULL);
-      SUBR(private_printResid)(0,nvec,r2_new,S->normR0_,S->normB_,S->conv);
+      SUBR(my_printResid)(0,0,NULL,NULL,NULL,NULL);
+      SUBR(my_printResid)(0,nvec,r2_new,S->normR0_,S->normB_,S->conv);
     }
 
     //getchar();
@@ -551,8 +791,8 @@ void SUBR(carp_cgState_iterate)(
       //alpha = (r'*z)/(p'*q);
       ST denom  [nvec];
       MT denom_i[nvec];
-      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,p,pi,nvec,alpha,alpha_i,S->rc_variant_,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(private_dotProd)(p,pi,q,qi,nvec,denom,denom_i,S->rc_variant_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(my_mvec_dot_mvec)(r,ri,p,pi,nvec,alpha,alpha_i,S->rc_variant_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(my_mvec_dot_mvec)(p,pi,q,qi,nvec,denom,denom_i,S->rc_variant_,iflag),*iflag);
       MT minus_alpha_i[nvec];
 
       // stop updating x if the system is already converged (1-conv[j])
@@ -609,7 +849,7 @@ void SUBR(carp_cgState_iterate)(
         {
           S->normR_old[j] = (S->normR[j]);
         }
-        PHIST_CHK_IERR(SUBR(private_compResid)(A, nvec, sigma_r, sigma_i,
+        PHIST_CHK_IERR(SUBR(my_compResid)(A, nvec, sigma_r, sigma_i,
                          b, x, xi, NULL, NULL, S->normR, S->rc_variant_,iflag),*iflag);
         //std::cout << *(S->normR) <<" " << *(S->normR_old)<< " "<< (*(S->normR)/(*(S->normR_old))) << std::endl;
         // check for convergence. 
@@ -636,7 +876,7 @@ void SUBR(carp_cgState_iterate)(
 #else
           ST* tmp=S->normR;
 #endif          
-          SUBR(private_printResid)(it, nvec, tmp, S->normR0_, S->normB_,S->conv);  
+          SUBR(my_printResid)(it, nvec, tmp, S->normR0_, S->normB_,S->conv);  
                                                                   ///////////////////////////////////////////////////////////////////
           if(std::sqrt(*(S->normR))/std::sqrt(*(S->normR_old)) > cor_tol){
             correction_needed = true;
@@ -648,7 +888,7 @@ void SUBR(carp_cgState_iterate)(
         if (numConverged>=minConv)
         {
           // print footer
-          SUBR(private_printResid)(it,-1,NULL,NULL,NULL,NULL);
+          SUBR(my_printResid)(it,-1,NULL,NULL,NULL,NULL);
             numSolved++; 
             break;
         }
@@ -687,7 +927,7 @@ void SUBR(carp_cgState_iterate)(
       {
         r2_old[j]=std::abs(r2_new[j]);
       }
-      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,r2_new,NULL,S->rc_variant_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(my_mvec_dot_mvec)(r,ri,z,zi,nvec,r2_new,NULL,S->rc_variant_,iflag),*iflag);
       //note: for a precond M!=I I think we need complex
       // arithmetic here because r!=z => above dotProd has imag!=0.
       // Only for symmetric preconditioning would we get a Hermitian
@@ -698,8 +938,8 @@ void SUBR(carp_cgState_iterate)(
       ST lower  [nvec];
       MT lower_i[nvec];
 
-      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,q,qi,nvec,upper,upper_i,S->rc_variant_,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(private_dotProd)(p,pi,q,qi,nvec,lower,lower_i,S->rc_variant_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(my_mvec_dot_mvec)(r,ri,q,qi,nvec,upper,upper_i,S->rc_variant_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(my_mvec_dot_mvec)(p,pi,q,qi,nvec,lower,lower_i,S->rc_variant_,iflag),*iflag);
 
       for (int j=0;j<nvec;j++)
         {
@@ -792,8 +1032,8 @@ void SUBR(carp_cgState_iterate)(
       //alpha = (r'*z)/(p'*q);
       ST denom  [nvec];
       MT denom_i[nvec];
-      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,alpha,alpha_i,S->rc_variant_,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(private_dotProd)(p,pi,q,qi,nvec,denom,denom_i,S->rc_variant_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(my_mvec_dot_mvec)(r,ri,z,zi,nvec,alpha,alpha_i,S->rc_variant_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(my_mvec_dot_mvec)(p,pi,q,qi,nvec,denom,denom_i,S->rc_variant_,iflag),*iflag);
       MT minus_alpha_i[nvec];
 
       // stop updating x if the system is already converged (1-conv[j])
@@ -851,7 +1091,7 @@ void SUBR(carp_cgState_iterate)(
         {
           S->normR_old[j] = S->normR[j];
         }
-        PHIST_CHK_IERR(SUBR(private_compResid)(A, nvec, sigma_r, sigma_i,
+        PHIST_CHK_IERR(SUBR(my_compResid)(A, nvec, sigma_r, sigma_i,
                          b, x, xi, NULL, NULL, S->normR,S->rc_variant_, iflag),*iflag);
         //std::cout << *(S->normR) <<" " << *(S->normR_old)<< " "<< (*(S->normR)/(*(S->normR_old))) << std::endl;
         
@@ -882,7 +1122,7 @@ void SUBR(carp_cgState_iterate)(
 #else
           ST* tmp=S->normR;
 #endif          
-          SUBR(private_printResid)(it, nvec, tmp, S->normR0_, S->normB_,S->conv);
+          SUBR(my_printResid)(it, nvec, tmp, S->normR0_, S->normB_,S->conv);
           //std::cout <<  std::sqrt(*(S->normR)) << " " << std::sqrt((*(S->normR_old))) << " "<< std::sqrt(*(S->normR))/std::sqrt((*(S->normR_old))) <<std::endl;
           if(std::sqrt(*(S->normR))/std::sqrt(*(S->normR_old)) > cor_tol){
             correction_needed = true;
@@ -894,7 +1134,7 @@ void SUBR(carp_cgState_iterate)(
         if (numConverged>=minConv)
         {
           // print footer
-          SUBR(private_printResid)(it,-1,NULL,NULL,NULL,NULL);
+          SUBR(my_printResid)(it,-1,NULL,NULL,NULL,NULL);
             numSolved++; 
             break;
         }
@@ -936,7 +1176,7 @@ void SUBR(carp_cgState_iterate)(
         //std::cout << it << " "<<r2_old[j]<< " "<< std::abs(r2_new[j])<< " "<< std::abs(r2_new[j]/r2_old[j]) << " "<<std::sqrt(std::abs(r2_old[j]))<< " "<<std::sqrt(std::abs(r2_new[j])) << " "<<std::sqrt(std::abs(r2_new[j]))/std::sqrt(std::abs(r2_old[j]))<< std::endl;;
         r2_old[j]=std::abs(r2_new[j]);
       }
-      PHIST_CHK_IERR(SUBR(private_dotProd)(r,ri,z,zi,nvec,r2_new,NULL,S->rc_variant_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(my_mvec_dot_mvec)(r,ri,z,zi,nvec,r2_new,NULL,S->rc_variant_,iflag),*iflag);
       //note: for a precond M!=I I think we need complex
       // arithmetic here because r!=z => above dotProd has imag!=0.
       // Only for symmetric preconditioning would we get a Hermitian
@@ -1082,7 +1322,7 @@ void SUBR(carp_cgState_iterate)(
     }
   
     // to save memory, deallocate CG vector data
-    PHIST_CHK_IERR(SUBR(private_carp_cgState_dealloc)(S,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(my_carp_cgState_dealloc)(S,iflag),*iflag);
 
 //  std::cout << "CSteps: " << cor_count << std::endl;
   *iflag=nvec-numSolved;
@@ -1091,7 +1331,7 @@ void SUBR(carp_cgState_iterate)(
 
 // compute residual r=b-(A-sI)x and ||r||_2^2 in nrms2. If r and ri are NULL, a temporary
 // vector is used and discarded.
-void SUBR(private_compResid)(TYPE(const_sparseMat_ptr) A, int nvec, _MT_ const sigma_r[], _MT_ const sigma_i[],
+void SUBR(my_compResid)(TYPE(const_sparseMat_ptr) A, int nvec, _MT_ const sigma_r[], _MT_ const sigma_i[],
                        TYPE(const_Mvec_ptr) Vproj,
                        TYPE(const_mvec_ptr) Rhs,
                        TYPE(const_mvec_ptr) x, TYPE(const_mvec_ptr) xi, TYPE(sdMat_ptr) xp, TYPE(sdMat_ptr) xpi,
@@ -1163,7 +1403,7 @@ void SUBR(private_compResid)(TYPE(const_sparseMat_ptr) A, int nvec, _MT_ const s
 #else
           ST* tmp=nrms2;
 #endif          
-  PHIST_CHK_IERR(SUBR(private_dotProd)(R, RI, R, RI, nvec, tmp, NULL, rc_variant, iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(my_mvec_dot_mvec)(R, RI, R, RI, nvec, tmp, NULL, rc_variant, iflag),*iflag);
 #ifdef IS_COMPLEX
   for (int j=0;j<nvec;j++)
   {
@@ -1181,62 +1421,9 @@ void SUBR(private_compResid)(TYPE(const_sparseMat_ptr) A, int nvec, _MT_ const s
   return;
 }
 
-// compute v'*w, where v and w may have an imaginary part even in real (S/D) case.
-// in the complex case (C/Z), vi and wi are ignored, the result dots is complex and
-// dotsi is ignored. In the real case, if vi and wi are NULL, they are assumed
-// to be 0 and dotsi is ignored.
-void SUBR(private_dotProd)(TYPE(const_mvec_ptr) v, TYPE(const_mvec_ptr) vi, TYPE(const_sdMat_ptr) vp, TYPE(const_sdMat_ptr) vpi,
-                           TYPE(const_mvec_ptr) w, TYPE(const_mvec_ptr) wi, TYPE(const_sdMat_ptr) wp, TYPE(const_sdMat_ptr) wpi,
-                           int nvec, _ST_ *dots, _MT_ *dotsi, bool rc_variant, int *iflag)
-{
-#include "phist_std_typedefs.hpp"
-  PHIST_ENTER_FCN(__FUNCTION__);
-
-  *iflag=0;
-  PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v,w,dots,iflag),*iflag);
-  if (vp!=NULL || wp!=NULL)
-  {
-    *iflag=-99;
-    return;
-  }
-#ifndef IS_COMPLEX
-  if (rc_variant)
-  {
-    ST tmp[nvec];
-    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(vi,wi,tmp,iflag),*iflag);
-    for (int j=0;j<nvec;j++)
-    {
-      dots[j]+=tmp[j];
-    }
-    if ( (v!=w || vi!=wi) && dotsi!=NULL)
-    {
-      PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v,wi,dotsi,iflag),*iflag);      
-      PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(vi,w,tmp,iflag),*iflag);      
-      for (int j=0;j<nvec;j++)
-      {
-        dotsi[j]-=tmp[j];
-      }
-    }
-    else if (dotsi!=NULL)
-    {
-      for (int j=0;j<nvec;j++)
-      {
-        dotsi[j]=mt::zero();
-      }
-    }
-    if (vpi!=NULL || wpi!=NULL)
-    {
-      *iflag=-99;
-      return;
-    }
-  }
-#endif
-  return;
-}
-
 // print residual info. If we get nvec=0, the input arrays are ignored
 // and a header is printed.
-void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR, 
+void SUBR(my_printResid)(int it, int nvec, _ST_ const* normR, 
         _MT_ const* normR0, _MT_ const* normB, int const* locked)
 {
 #include "phist_std_typedefs.hpp"
@@ -1268,7 +1455,7 @@ void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR,
     nrmB[0]=normB[min_pos]; nrmB[1]=normB[max_pos];
 
     PHIST_SOUT(PHIST_INFO,"min and max residuals:\n");
-    SUBR(private_printResid)(it,2,nrmR,nrmR0,nrmB,(int const*)NULL);
+    SUBR(my_printResid)(it,2,nrmR,nrmR0,nrmB,(int const*)NULL);
   }
   else
   {
@@ -1288,61 +1475,3 @@ void SUBR(private_printResid)(int it, int nvec, _ST_ const* normR,
   }
 }
 
-void SUBR(destroy_vector_elements_at_random)(TYPE(mvec_ptr) V, double probability, int nloc, int *iflag) 
-{
-#include "phist_std_typedefs.hpp"
-//std::cout << "Function used." <<std::endl;
-  ST* V_val;
-  lidx_t lda;
-  int nvec;
-  //ST tmp;
-  double rand_prob;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(mvec_extract_view)(V,&V_val,&lda,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(mvec_from_device)(V,iflag),*iflag);
-  //std::cout << "nloc " << nloc <<std::endl;
-  for (int i=0; i<nloc; i++)
-  {
-    //std::cout << "First loop." <<std::endl;
-    for (int j=0;j<nvec; j++)
-    {
-      rand_prob=std::abs(mt::rand());
-      //std::cout << "rand_prob "<< rand_prob <<std::endl;
-      //std::cout << "Second loop." <<std::endl
-      if (rand_prob>probability){
-        //std::cout << "Element destroyed." <<std::endl;
-       
-        //tmp = V_val[i*lda+j];
-        V_val[i*lda+j] =st::rand();
-        //V_val[i*lda+j] =0;
-        //std::cout << j << std::endl;
-        //std::cout << "Changed Value from " << tmp << " to " << V_val[i*lda+j] << std::endl;
-      }
-    }
-  }
-  PHIST_CHK_IERR(SUBR(mvec_to_device)(V,iflag),*iflag);
-  //std::cout <<" Destruction complete " << std::endl;
-}
-
-void SUBR(show_vector_elements)(TYPE(mvec_ptr) V, int *iflag) 
-{
-  #include "phist_std_typedefs.hpp"
-ST* V_val;
-lidx_t lda;
-int nvec;
-int nloc = 1;
-PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,iflag),*iflag);
-PHIST_CHK_IERR(SUBR(mvec_extract_view)(V,&V_val,&lda,iflag),*iflag);
-PHIST_CHK_IERR(SUBR(mvec_from_device)(V,iflag),*iflag);
-for (int i=0; i<nloc; i++)
-  {
-    for (int j=0;j<nvec; j++)
-    {
-#ifdef PHIST_MVECS_ROW_MAJOR
-        std::cout << "Element is "<< -V_val[i*lda+j] << std::endl;
-#else
-        std::cout << "Element is "<< -V_val[j*lda+i] << std::endl;
-#endif
-    }
-  }
-}
