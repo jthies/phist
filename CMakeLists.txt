@@ -50,7 +50,7 @@ set(PHIST_PKG_CONFIG_CFLAGS)
 # Deal with LAPACK and LAPACKe
 # Specify paths in CMAKE_PREFIX_PATH.
 ########################################################################
-find_path(LAPACKE_INCL NAMES "lapacke.h" "mkl_lapacke.h")
+find_path(LAPACKE_INCL NAMES "lapacke.h" "mkl_lapacke.h" $ENV{MKLROOT}/include)
 if(LAPACKE_INCL STREQUAL "LAPACKE_INCL-NOTFOUND")
   message(FATAL_ERROR "LAPACKe include file not found. Add the proper path to CMAKE_PREFIX_PATH.")
 else()
