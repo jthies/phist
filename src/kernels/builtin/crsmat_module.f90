@@ -112,15 +112,9 @@ module crsmat_module
   
   end type sparseArray_t
 
-
-  ! workaround PGI bug
-#ifdef __PGI
-contains
-#else
+  !> interface of function-ptr for crsMat_create_fromRowFunc
   abstract interface
-#endif
-    !> interface of function-ptr for crsMat_create_fromRowFunc
-    function matRowFunc(row, nnz, cols, vals,data_arg) result(ierR) bind(C)
+    function matRowFunc(row, nnz, cols, vals,data_arg) bind(C) result(ierr)
       use, intrinsic :: iso_c_binding
       integer(G_GIDX_T), value :: row
       integer(G_LIDX_T), intent(inout) :: nnz
@@ -128,17 +122,10 @@ contains
       real(C_DOUBLE),    intent(inout) :: vals(*)
       TYPE(c_ptr), value :: data_arg
       integer(C_INT) :: ierr
-      write(*,*) 'matRowFunc: row', row
-      nnz = 1
-      cols(1) = row
-      vals(1) = 1.
-      ierr = 0
     end function matRowFunc
-#ifndef __PGI
   end interface
 
 contains
-#endif
 
 
   !==================================================================================
@@ -2003,7 +1990,6 @@ end subroutine permute_local_matrix
     ierr=0
     ! get procedure pointer
     call c_f_procpointer(rowFunc_ptr, rowFunc)
-    rowFunc => matRowFunc
     call c_f_pointer(comm_ptr, comm)
 
     allocate(A)
