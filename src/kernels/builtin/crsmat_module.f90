@@ -1957,7 +1957,7 @@ end subroutine permute_local_matrix
     !--------------------------------------------------------------------------------
     logical :: repart, d2clr, d2clr_and_permute
     type(CrsMat_t), pointer :: A
-    procedure(matRowFunc), pointer :: rowFunc
+    procedure(matRowFunc), pointer :: rowFunc => null()
     !--------------------------------------------------------------------------------
     integer(kind=G_GIDX_T), allocatable :: idx(:,:)
     real(kind=8), allocatable :: val(:)
@@ -2398,7 +2398,7 @@ end if
     integer :: theShape(2)
     integer :: sendBuffSize,recvBuffSize
     logical :: b_is_zero
-    real(kind=8), dimension(0,0), target :: bzero
+    real(kind=8) :: bzero = 0.
 
     ierr=0
     
@@ -2607,7 +2607,7 @@ end if
     integer :: ldx, ldb, nvec
     integer :: sendBuffSize,recvBuffSize
     logical :: b_is_zero
-    real(kind=8), dimension(0,0), target :: bzero
+    real(kind=8) :: bzero = 0.
 
     ierr=0
     

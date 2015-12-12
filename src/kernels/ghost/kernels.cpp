@@ -259,7 +259,14 @@ extern "C" void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* ifla
   PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*iflag);
   ghost_nrank(size,*comm);
   }
-
+#ifdef PHIST_HAVE_MPI
+extern "C" void phist_comm_get_mpi_comm(const_comm_ptr_t vcomm, MPI_Comm* mpiComm, int* iflag)
+{
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*iflag);
+  *mpiComm = *comm;
+}
+#endif
 //! this generates a default map with linear distribution of points among
 //! processes. Vectors based on this map will have halo points so that   
 //! they can be used as either X or Y in Y=A*X operations.

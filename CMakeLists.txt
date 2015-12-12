@@ -50,7 +50,7 @@ set(PHIST_PKG_CONFIG_CFLAGS)
 # Deal with LAPACK and LAPACKe
 # Specify paths in CMAKE_PREFIX_PATH.
 ########################################################################
-find_path(LAPACKE_INCL NAMES "lapacke.h" "mkl_lapacke.h")
+find_path(LAPACKE_INCL NAMES "lapacke.h" "mkl_lapacke.h" $ENV{MKLROOT}/include)
 if(LAPACKE_INCL STREQUAL "LAPACKE_INCL-NOTFOUND")
   message(FATAL_ERROR "LAPACKe include file not found. Add the proper path to CMAKE_PREFIX_PATH.")
 else()
@@ -81,7 +81,7 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
 #-----------------------------------------------------------------------
     # interface
     unset(MKL_INTERFACE_LIBS CACHE)
-    find_library(MKL_INTERFACE_LIBS NAMES mkl_intel_lp64 PATHS "$ENV{MKLROOT}/lib/*")
+    find_library(MKL_INTERFACE_LIBS NAMES mkl_intel_lp64 PATHS "$ENV{MKLROOT}/lib/intel64")
     if(MKL_INTERFACE_LIBS STREQUAL "MKL_INTERFACE_LIBS-NOTFOUND")
       message(FATAL_ERROR "Could not find MKL interface library. Is the MKLROOT environment variable set properly?")
     else()
@@ -93,9 +93,9 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
     unset(MKL_THREADING_LIBS CACHE)
     if( PHIST_ENABLE_OPENMP )
       # linking the GNU variant, we shouldn't need libiomp5.
-      find_library(MKL_THREADING_LIBS NAMES mkl_gnu_thread PATHS "$ENV{MKLROOT}/lib/*")
+      find_library(MKL_THREADING_LIBS NAMES mkl_gnu_thread PATHS "$ENV{MKLROOT}/lib/intel64")
     else()
-      find_library(MKL_THREADING_LIBS NAMES mkl_sequential PATHS "$ENV{MKLROOT}/lib/*")
+      find_library(MKL_THREADING_LIBS NAMES mkl_sequential PATHS "$ENV{MKLROOT}/lib/intel64")
     endif()
     if(MKL_THREADING_LIBS STREQUAL "MKL_THREADING_LIBS-NOTFOUND")
       message(FATAL_ERROR "Could not find MKL threading library. Is the MKLROOT environment variable set properly?")
@@ -106,7 +106,7 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "Intel")
 #-----------------------------------------------------------------------
     # core libs
     unset(MKL_COMPUTING_LIBS CACHE)
-    find_library(MKL_COMPUTING_LIBS NAMES mkl_core PATHS "$ENV{MKLROOT}/lib/*")
+    find_library(MKL_COMPUTING_LIBS NAMES mkl_core PATHS "$ENV{MKLROOT}/lib/intel64")
     if(MKL_COMPUTING_LIBS STREQUAL "MKL_COMPUTING_LIBS-NOTFOUND")
       message(FATAL_ERROR "Could not find MKL computing library. Is the MKLROOT environment variable set properly?")
     else()
@@ -287,6 +287,38 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
   #               (and they should be fast and not complex!).
   #               The compiler best shouldn't be able to know about this...
   #set_property(DIRECTORY . PROPERTY INTERPROCEDURAL_OPTIMIZATION 1)
+
+elseif (CMAKE_C_COMPILER_ID STREQUAL "PGI")
+
+  message(STATUS "using PGI compiler flags")
+
+  set (CMAKE_C_FLAGS        "-c99")
+  set (CMAKE_CXX_FLAGS      "-std=c++0x")
+  set (CMAKE_Fortran_FLAGS  "-Mpreprocess")
+  if( PHIST_ENABLE_OPENMP )
+    set(PHIST_HAVE_OPENMP 1)
+    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -mp=align")
+    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -mp=align")
+    set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -mp=align")
+  endif()
+
+  if(PHIST_HAVE_MKL)
+    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -DMKL_LP64")
+    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -DMKL_LP64")
+  endif()
+
+  # -ffast kills high precision stuff!
+  set (CMAKE_C_FLAGS_RELEASE        "-O4 -fast -Mvect=levels:10")
+  set (CMAKE_CXX_FLAGS_RELEASE      "-O2")
+  set (CMAKE_Fortran_FLAGS_RELEASE  "-O4 -fast -Mvect=levels:10")
+
+  set (CMAKE_C_FLAGS_RELWITHDEBINFO       "${CMAKE_C_FLAGS_RELEASE}       -g")
+  set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -g")
+  set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
+
+  set (CMAKE_C_FLAGS_DEBUG       "-O0 -g")#-O0 -g -DTESTING -Mbounds -Mdwarf3")
+  set (CMAKE_CXX_FLAGS_DEBUG     "-O0")#-O0 -g -DTESTING -Mbounds -Mdwarf3")
+  set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g")#-O0 -g -DTESTING -Mbounds -Mdwarf3")
 
 else()
 
