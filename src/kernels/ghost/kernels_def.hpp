@@ -1,8 +1,6 @@
 #include "phist_config.h"
 #include "ghost/config.h"
-#ifdef PHIST_USE_SELL
 #include "ghost/sell.h"
-#endif
 
 #ifdef GHOST_HAVE_SCOTCH
 #define USE_SCOTCH
@@ -36,11 +34,11 @@ const char* filename,int* iflag)
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
   int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
-#ifdef PHIST_USE_SELL
+
   int sellC, sellSigma;
   phist::ghost_internal::get_C_sigma(&sellC,&sellSigma,*iflag, *((MPI_Comm*)vcomm));
   PHIST_SOUT(PHIST_INFO, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
-#endif
+
   *iflag=0;
 
 PHIST_TASK_DECLARE(ComputeTask)
@@ -56,17 +54,12 @@ PHIST_TASK_BEGIN(ComputeTask)
 
   ghost_sparsemat_traits_t mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
   ghost_sparsemat_flags_t flags=GHOST_SPARSEMAT_DEFAULT;
-#ifdef PHIST_USE_SELL
+
         mtraits.C = sellC;
         mtraits.sortScope = sellSigma;
         if (mtraits.sortScope > 1) {
             flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
         }
-#else
-#warning "GHOST interface compiled to use the reference CRS format, will probably not yield optimal performance"
-        mtraits.C = 1;
-        mtraits.sortScope = 1;
-#endif
       if (repart)
       {
 #ifdef USE_SCOTCH
@@ -106,11 +99,11 @@ const char* filename,int* iflag)
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
   int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
-#ifdef PHIST_USE_SELL
+
   int sellC, sellSigma;
   get_C_sigma(&sellC,&sellSigma,*iflag, *((MPI_Comm*)vcomm));
   PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
-#endif
+
   *iflag=0;
 
 PHIST_TASK_DECLARE(ComputeTask)
@@ -127,17 +120,13 @@ PHIST_TASK_BEGIN(ComputeTask)
 
   ghost_sparsemat_traits_t mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
   ghost_sparsemat_flags_t flags=GHOST_SPARSEMAT_DEFAULT;
-#ifdef PHIST_USE_SELL
+
         mtraits.C = sellC;
         mtraits.sortScope = sellSigma;
         if (mtraits.sortScope > 1) {
             flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
         }
-#else
-#warning "GHOST interface compiled to use the reference CRS format, will probably not yield optimal performance"
-        mtraits.C = 1;
-        mtraits.sortScope = 1;
-#endif
+
         if (repart)
         {
 #ifdef USE_SCOTCH
@@ -1834,11 +1823,11 @@ void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, const_comm_ptr_
   bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
   int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
-#ifdef PHIST_USE_SELL
+
   int sellC, sellSigma;
   get_C_sigma(&sellC,&sellSigma,*iflag, *((MPI_Comm*)vcomm));
   PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
-#endif
+
   *iflag=0;
   
 PHIST_TASK_DECLARE(ComputeTask)
@@ -1849,17 +1838,13 @@ PHIST_TASK_BEGIN(ComputeTask)
 
   ghost_sparsemat_traits_t mtraits=(ghost_sparsemat_traits_t)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
   ghost_sparsemat_flags_t flags=GHOST_SPARSEMAT_DEFAULT;
-#ifdef PHIST_USE_SELL
+
         mtraits.C = sellC;
         mtraits.sortScope = sellSigma;
         if (mtraits.sortScope > 1) {
             flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
         }
-#else
-#warning "GHOST interface compiled to use the reference CRS format, will probably not yield optimal performance"
-        mtraits.C = 1;
-        mtraits.sortScope = 1;
-#endif
+
         if (repart)
         {
 #ifdef USE_SCOTCH

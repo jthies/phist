@@ -89,6 +89,10 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
     *C=std::max(*C,32);
 //    *sigma=std::max(256,*sigma);
   }
+  // if the user doesn´t set it in CMake or give a flag, it is -1, override with +1 (CRS)
+  *C=std::max(*C,+1);
+  *sigma=std::max(*sigma,+1);
+  // everyone should have the max value found among MPI processes
   MPI_Allreduce(MPI_IN_PLACE,C,1,MPI_INT,MPI_MAX,comm);
   MPI_Allreduce(MPI_IN_PLACE,sigma,1,MPI_INT,MPI_MAX,comm);
 

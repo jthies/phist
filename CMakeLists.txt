@@ -418,9 +418,8 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   set(PHIST_MVECS_ROW_MAJOR 1 CACHE STRING "wether multi-vectors should be stored in row-major ordering")
   set(PHIST_SDMATS_ROW_MAJOR 0 CACHE STRING "store sdMats in row-major order (not supported by our algorithms..." )
 
-  set(PHIST_USE_SELL ON CACHE BOOL "Use the GHOST SELL-C-sigma sparse matrix format")
-  set(PHIST_SELL_C 1 CACHE INTEGER "chunk size C for the SELL-C-sigma format")
-  set(PHIST_SELL_SIGMA 1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format")
+  set(PHIST_SELL_C -1 CACHE INTEGER "chunk size C for the SELL-C-sigma format (-1: automatic choice)")
+  set(PHIST_SELL_SIGMA -1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format (-1: automatic choice)")
 
 elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
   set(PHIST_KERNEL_LIB_BUILTIN 1)
