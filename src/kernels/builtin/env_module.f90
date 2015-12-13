@@ -73,7 +73,7 @@ contains
   !================================================================================
   ! some simple wrapper routines
 
-  subroutine phist_comm_create(comm_ptr, ierr) bind(C)
+  subroutine phist_comm_create(comm_ptr, ierr) bind(C,name='phist_comm_create')
     use, intrinsic :: iso_c_binding
     use mpi
     !------------------------------------------------------------
@@ -89,7 +89,7 @@ contains
   end subroutine phist_comm_create
 
 
-  subroutine phist_comm_delete(comm_ptr,ierr) bind(C)
+  subroutine phist_comm_delete(comm_ptr,ierr) bind(C,name='phist_comm_delete')
     use, intrinsic :: iso_c_binding
     !------------------------------------------------------------
     type(C_PTR),    value       :: comm_ptr
@@ -102,7 +102,7 @@ contains
     ierr = 0
   end subroutine phist_comm_delete
 
-  subroutine phist_comm_get_rank(comm_ptr, rank, ierr) bind(C)
+  subroutine phist_comm_get_rank(comm_ptr, rank, ierr) bind(C,name='phist_comm_get_rank')
     use, intrinsic :: iso_c_binding
     use mpi
     !------------------------------------------------------------
@@ -115,7 +115,7 @@ contains
     call mpi_comm_rank(comm,rank,ierr)
   end subroutine phist_comm_get_rank
 
-  subroutine phist_comm_get_size(comm_ptr, nprocs, ierr) bind(C)
+  subroutine phist_comm_get_size(comm_ptr, nprocs, ierr) bind(C,name='phist_comm_get_size')
     use, intrinsic :: iso_c_binding
     use mpi
     !------------------------------------------------------------

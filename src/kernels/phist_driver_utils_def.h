@@ -139,6 +139,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   PHIST_ENTER_FCN(__FUNCTION__);
   problem_t mat_type=FROM_FILE; // default: assume that 'which' is a file name
   int outlev = *iflag & PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
+  outlev = PHIST_INFO;
 
   int L; // problem size for Graphene (L x L grid) or the Anderson model (L^3 grid)
 
@@ -356,7 +357,7 @@ PHIST_SOUT(PHIST_ERROR,"BAPPS models (essex-physics/bapps) not\n"
     // uses strsep, which destroys the string.
     char *matstr=(char*)malloc(len+1);
     strncpy(matstr,problem+pos,len+1);
-    PHIST_SOUT(PHIST_DEBUG,"problem '%s', matstr '%s'\n",problem,matstr);
+    PHIST_SOUT(outlev,"problem '%s', matstr '%s'\n",problem,matstr);
     ghost_sparsemat_fromRowFunc_t matfunc;
     bapp_select_model(matstr,&matfunc);
     free(matstr);
