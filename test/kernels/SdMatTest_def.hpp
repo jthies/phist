@@ -1062,13 +1062,15 @@ SUBR(sdMat_print)(mat3_,&iflag_);
         return;
 
       // modify permutation
-      if( nrows_ > 2 )
+#if _NROWS_>2
         std::swap(perm[1],perm[0]);
-      if( nrows_ > 4 )
+#endif
+#if _NROWS_ > 4
         std::swap(perm[3],perm[2]);
-      if( nrows_ > 5 )
+#endif
+#if _NROWS_>5
         std::swap(perm[5],perm[1]);
-
+#endif
       PHIST_SOUT(PHIST_INFO, "Forward-backward substition test with identity rhs and permutation\n");
       doForwardBackwardTestsWithPreparedMat3(rank,perm);
       if( HasFatalFailure() )
