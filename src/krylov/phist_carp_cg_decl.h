@@ -4,27 +4,26 @@
 //! \defgroup carp_cg CARP-CG row projection method for general (shifted) linear systems
 
 //! Blocked CARP-CG solver for general shifted matrices A-sigma[j]I.
+//! Where a different shift is allowed for each RHS (as is required in our
+//! block JDQR method). A special feature of this implementation is that it
+//! can handle complex shifts even if the kernel library doesn't offer complex
+//! kernels. To implement this, we use some wrapper classes defined in phist_carp_cg_kernels_decl.hpp.
+//! Another feature introduced this way is using additional projections to `precondition' the iteration.
+//! The linear system solved is then in fact
+//!
+//!     |A-sigma[j]I    V||x+i*xi  |   |b|
+//!     | V'            0||x'+i*xi'| = |0|
+//!
 //! The algorithm is CGMN (CG on the minimum norm problem AA'x=b with SSOR pre-
 //! conditioning, implemented following the work of Bjoerck and Elfving (1979)).
 //! The parallelization of the Kaczmarz sweeps is left to the kernel library
 //! (functions carp_setup, carp_sweep). 
 //!
-//! In order to be useful for the FEAST eigensolver, we allow the special situation of a real matrix
-//! with complex shifts sigma = sigma_r + i*sigma_i, a real RHS vector and complex
-//! result x_r + i*x_i. A state object may iterate on multiple systems with the
-//! same or different shifts or RHS (nvec>1). 
-//!
-//! In order to be useful in the context of Jacobi-Davidson, we support adding projection vectors Q,
-//! in which case the system solved is [A-sigma[j]I     V; trans(V)     0][x s]=[b 0]
-//! The implementation is a bit simpler than for blocked GMRES because we can use a single state 
-//! object for multiple shifts (no restart mechanism is needed for CG).
 //@{
 
-// forward declarations of private data types
-struct TYPE(my_mvec);
-struct TYPE(my_const_mvec);
-struct TYPE(my_sparseMat);
-struct TYPE(my_const_sparseMat);
+//! forward declarations
+struct TYPE(const_x_sparseMat);
+struct TYPE(x_mvec);
 
 //! state object for CARP-CG
 
@@ -51,8 +50,10 @@ typedef struct TYPE(carp_cgState) {
   
   //! \name input data set by constructor 
   //@{ 
+  int rc_variant_; // if !=0, this is real arithmetic but imaginary vectors and shifts may occur
   int nvec_; //! number of RHS vectors for this shift 
-  TYPE(my_const_sparseMat) A_;
+  int nproj_; //! number of vectors in Vproj that should be projected out
+  struct TYPE(const_x_sparseMat) const* A_;
   //@}
   //! \name set by reset() function
   //@{
@@ -67,7 +68,7 @@ typedef struct TYPE(carp_cgState) {
 
   //! \name  internal CG data structures
   //@{
-  TYPE(my_mvec_ptr) q_, r_, p_, z_; //! CG helper vectors, one column per RHS
+  struct TYPE(my_mvec) *q_, *r_, *p_; //! CG helper vectors, one column per RHS
 
   // scalars forming the Lanczos matrix, one for each RHS
   _ST_ *alpha_;
