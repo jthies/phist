@@ -349,7 +349,7 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
 }
 
 extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
-        phist_mvec_elemFunc* funPtr,void* last_arg, int *iflag)
+        phist_mvec_elemFunc funPtr,void* last_arg, int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
