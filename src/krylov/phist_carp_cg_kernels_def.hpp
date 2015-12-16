@@ -96,7 +96,7 @@ inline bool rc_variant(TYPE(x_mvec) const* v1, TYPE(x_mvec) const* v2)
 }
 
 //! returns true if matrix and vectors are all 'complex in real arithmetic'
-inline bool rc_variant(TYPE(const_x_sparseMat_ptr) A, TYPE(x_mvec) const* v1, TYPE(x_mvec) const* v2)
+inline bool rc_variant(TYPE(x_sparseMat) const* A, TYPE(x_mvec) const* v1, TYPE(x_mvec) const* v2)
 {
   bool rc=rc_variant(v1,v2);
   return rc && (A->sigma_i_!=NULL);
@@ -123,7 +123,7 @@ inline bool aug_variant(TYPE(x_mvec) const* v1, TYPE(x_mvec) const* v2)
 }
 
 // returns true if both vectors and matrix are augmented by additional rows (rows and cols)
-inline bool aug_variant(TYPE(const_x_sparseMat_ptr) A, TYPE(x_mvec) const* v1, TYPE(x_mvec) const* v2)
+inline bool aug_variant(TYPE(x_sparseMat) const* A, TYPE(x_mvec) const* v1, TYPE(x_mvec) const* v2)
 {
   bool rc=rc_variant(v1,v2);
   return rc && A->Vproj_!=NULL;
@@ -294,7 +294,7 @@ void SUBR(x_mvec_dot_mvec)(TYPE(x_mvec_ptr) v, TYPE(x_mvec_ptr) w,
 //! rc matrix is
 //! A-sigma_r[i]          sigma_i[i]
 //!  -sigma_i[i]        A-sigma_r[i]
-void SUBR(x_sparseMat_times_mvec)(_ST_ alpha, TYPE(const_x_sparseMat_ptr) A, TYPE(x_mvec) const* X,
+void SUBR(x_sparseMat_times_mvec)(_ST_ alpha, TYPE(x_sparseMat) const* A, TYPE(x_mvec) const* X,
                        _ST_ beta, TYPE(x_mvec)* Y, int *iflag)
 {
 #include "phist_std_typedefs.hpp"
@@ -348,7 +348,7 @@ void SUBR(x_sparseMat_times_mvec)(_ST_ alpha, TYPE(const_x_sparseMat_ptr) A, TYP
   return;
 }
 
-void SUBR(x_carp_sweep)(TYPE(const_x_sparseMat_ptr) A,TYPE(const_mvec_ptr) b,TYPE(x_mvec)* x,
+void SUBR(x_carp_sweep)(TYPE(x_sparseMat) const* A,TYPE(const_mvec_ptr) b,TYPE(x_mvec)* x,
         void* carp_data, _MT_ const omega[],int *iflag)
 
 {

@@ -23,11 +23,10 @@
 
 
 //! compute residual, note that this function only accepts a real right-hand side vector in the RC case
-void SUBR(my_compResid)(TYPE(const_x_sparseMat_ptr) A, 
+void SUBR(my_compResid)(TYPE(x_sparseMat) const* A, 
                        TYPE(const_mvec_ptr) Rhs,
                        TYPE(x_mvec) const* x, 
                        TYPE(x_mvec)* r,
-                       int nvec, int nproj, bool rc,
                        _MT_  *nrms, int *iflag);
 
 // pretty-print convergence history. nvec=0: print header. nvec=-1: print footer
@@ -76,7 +75,7 @@ void SUBR(carp_cgState_create)(TYPE(carp_cgState_ptr) *state,
   (*state)->q_=new TYPE(x_mvec);
   (*state)->r_=new TYPE(x_mvec);
 
-  (*state)->A_=new TYPE(const_x_sparseMat);
+  (*state)->A_=new TYPE(x_sparseMat);
   (*state)->A_->A_=A;
   (*state)->A_->Vproj_=Vproj;
   (*state)->A_->sigma_r_ = new MT[nvec];
@@ -111,8 +110,8 @@ void SUBR(carp_cgState_create)(TYPE(carp_cgState_ptr) *state,
   
   if (!(*state)->rc_variant_)
   {
-    delete [] (*state)->sigma_i_;
-    (*state)->sigma_i_=NULL;
+    delete [] (*state)->A_->sigma_i_;
+    (*state)->A_->sigma_i_=NULL;
   }
   
   (*state)->nvec_=nvec;
@@ -141,6 +140,8 @@ void SUBR(my_carp_cgState_alloc)(TYPE(carp_cgState_ptr) S, int* iflag)
   int nproj=S->nproj_;
   const void* map=NULL;
   PHIST_CHK_IERR(SUBR(mvec_get_map)(S->b_,&map,iflag),*iflag);
+  
+  bool rc = (S->rc_variant_!=0);
     
   PHIST_CHK_IERR(S->q_->allocate(map,nvec,nproj,rc,iflag),*iflag);
   PHIST_CHK_IERR(S->r_->allocate(map,nvec,nproj,rc,iflag),*iflag);
@@ -151,9 +152,9 @@ void SUBR(my_carp_cgState_dealloc)(TYPE(carp_cgState_ptr) S, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
 
-  PHIST_CHK_IERR(S->q_->deallocate(iflag),*iflag);
-  PHIST_CHK_IERR(S->r_->deallocate(iflag),*iflag);
-  PHIST_CHK_IERR(S->p_->deallocate(iflag),*iflag);  
+  S->p_->deallocate();
+  S->q_->deallocate();
+  S->r_->deallocate();
 }
 
 //! delete cgState object
@@ -173,8 +174,6 @@ void SUBR(carp_cgState_delete)(TYPE(carp_cgState_ptr) state, int* iflag)
     delete [] state->normR;
     delete [] state->normR_old;
 
-    delete [] state->sigma_r_;
-    if (state->sigma_i_!=NULL) delete [] state->sigma_i_;
     delete [] state->omega_;
 
     delete [] state->beta_;
@@ -271,13 +270,11 @@ void SUBR(carp_cgState_iterate)(
                             // are 0 (during CG iteration), for clarity we give it a name
 
   // get some pointers to ease the notation
-  TYPE(const_x_sparseMat_ptr) A=S->A_;
-  const MT* sigma_r = A->sigma_r_;
-  const MT* sigma_i = A->sigma_i_;
+  TYPE(x_sparseMat) *A=S->A_;
   int nvec=S->nvec_;
   TYPE(const_mvec_ptr) b=S->b_;
-  TYPE(x_mvec) x=NULL;
-  PHIST_CHK_IERR(x=new TYPE(x_mvec)(X_r,X_i,naug,false,iflag),*iflag);
+  TYPE(x_mvec)* x=NULL;
+  PHIST_CHK_IERR(x=new TYPE(x_mvec)(X_r,X_i,S->nproj_,false,iflag),*iflag);
     
   // used for premature termination of the loop if requested
   int minConv=abortIfOneConverges? 1: nvec;
@@ -335,7 +332,7 @@ void SUBR(carp_cgState_iterate)(
   else if (S->iflag==-1)
   {
     // compute initial residual normR0 after reset
-    PHIST_CHK_IERR(SUBR(my_compResid)(A, x, NULL, S->normR, S->rc_variant_,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(my_compResid)(A, b, x, NULL, S->normR, iflag),*iflag);
     for (int j=0;j<nvec;j++)
     {
       S->normR0_[j]=std::sqrt(S->normR[j]);
@@ -453,8 +450,7 @@ void SUBR(carp_cgState_iterate)(
       {
         S->normR_old[j] = (S->normR[j]);
       }
-      PHIST_CHK_IERR(SUBR(my_compResid)(A, nvec, sigma_r, sigma_i,
-                       b, x, xi, NULL, NULL, S->normR, S->rc_variant_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(my_compResid)(A,x,b,NULL,S->normR,iflag),*iflag);
       //std::cout << *(S->normR) <<" " << *(S->normR_old)<< " "<< (*(S->normR)/(*(S->normR_old))) << std::endl;
       // check for convergence. 
       // TODO - which convergence criterion should we use?
@@ -640,8 +636,7 @@ void SUBR(carp_cgState_iterate)(
         {
           S->normR_old[j] = S->normR[j];
         }
-        PHIST_CHK_IERR(SUBR(my_compResid)(A, nvec, sigma_r, sigma_i,
-                         b, x, xi, NULL, NULL, S->normR,S->rc_variant_, iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(my_compResid)(A,b,x,NULL,S->normR,iflag),*iflag);
         //std::cout << *(S->normR) <<" " << *(S->normR_old)<< " "<< (*(S->normR)/(*(S->normR_old))) << std::endl;
         
 
@@ -768,17 +763,29 @@ void SUBR(carp_cgState_iterate)(
 
 // compute residual r=b-(A-sI)x and ||r||_2^2 in nrms2. If r and ri are NULL, a temporary
 // vector is used and discarded.
-void SUBR(my_compResid)(TYPE(const_x_sparseMat_ptr) A,
+void SUBR(my_compResid)(TYPE(x_sparseMat) const* A,
                        TYPE(const_mvec_ptr) Rhs,
                        TYPE(x_mvec) const* x,
                        TYPE(x_mvec)* r,
-                       int nvec, int nproj, bool rc,
                        _MT_  *nrms2, int *iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
 
   TYPE(x_mvec) *R=NULL;
+  
+  bool  rc= rc_variant(A,x,x);
+  bool aug=aug_variant(A,x,x);
+  
+  int nvec;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(b,&nvec,iflag),*iflag);
+
+  int nproj=0;
+  if (aug)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(A->Vproj_,&naug,iflag),*iflag);
+  }
+  
   if (r) 
   {
     R=r;
