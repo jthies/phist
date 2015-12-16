@@ -22,7 +22,7 @@
 //@{
 
 //! forward declarations
-struct TYPE(const_x_sparseMat);
+struct TYPE(x_sparseMat);
 struct TYPE(x_mvec);
 
 //! state object for CARP-CG
@@ -53,7 +53,7 @@ typedef struct TYPE(carp_cgState) {
   int rc_variant_; // if !=0, this is real arithmetic but imaginary vectors and shifts may occur
   int nvec_; //! number of RHS vectors for this shift 
   int nproj_; //! number of vectors in Vproj that should be projected out
-  struct TYPE(const_x_sparseMat) const* A_;
+  struct TYPE(x_sparseMat)* A_;
   //@}
   //! \name set by reset() function
   //@{
@@ -68,7 +68,7 @@ typedef struct TYPE(carp_cgState) {
 
   //! \name  internal CG data structures
   //@{
-  struct TYPE(my_mvec) *q_, *r_, *p_; //! CG helper vectors, one column per RHS
+  struct TYPE(x_mvec) *q_, *r_, *p_; //! CG helper vectors, one column per RHS
 
   // scalars forming the Lanczos matrix, one for each RHS
   _ST_ *alpha_;
