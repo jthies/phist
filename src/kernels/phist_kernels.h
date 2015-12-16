@@ -20,6 +20,7 @@ typedef int MPI_Comm;
 
 #ifdef PHIST_HAVE_GHOST
 #include "ghost/types.h"
+#include "ghost/sparsemat.h"
 #else
 typedef lidx_t ghost_lidx_t;
 typedef gidx_t ghost_gidx_t;
@@ -136,6 +137,17 @@ void phist_kernels_common_finalize(int* iflag);
 #include "phist_kernels_carp_decl.h"
 //!@}
 #endif
+
+//! \name functions to fill mvecs and sparseMats
+//!@{
+#ifdef PHIST_HAVE_GHOST
+typedef ghost_sparsemat_fromRowFunc_t phist_sparseMat_rowFunc;
+#else
+typedef int (*phist_sparseMat_rowFunc)(ghost_gidx_t, ghost_lidx_t *,
+        ghost_gidx_t *, void *, void *);
+#endif        
+
+typedef int (*phist_mvec_elemFunc)(ghost_gidx_t, ghost_lidx_t, void *, void *);
 
 /* this allows to use only the type-independent part of the header for 
    interface and doc generation

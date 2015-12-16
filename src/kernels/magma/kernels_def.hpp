@@ -347,7 +347,7 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, _ST_ value, int* iflag)
 }
 
 extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
-        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*,void*),void* last_arg, int *iflag)
+        phist_mvec_elemFunc funPtr,void* last_arg, int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*iflag);
@@ -801,8 +801,8 @@ extern "C" void SUBR(mvec_scatter_mvecs)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) 
 
 // NOTE: see the description of sparseMat_read_mm on how we treat input flags for this function
 extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, const_comm_ptr_t vcomm,
-        gidx_t nrows, gidx_t ncols, lidx_t maxnne, void* last_arg,
-                int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*,void*), 
+        gidx_t nrows, gidx_t ncols, lidx_t maxnne,
+                phist_sparseMat_rowFunc rowFunPtr, void* last_arg,
                 int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);

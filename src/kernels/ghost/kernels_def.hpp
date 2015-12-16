@@ -918,7 +918,7 @@ PHIST_TASK_END(iflag);
 }
 
 extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
-        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*,void*), void* last_arg, int *iflag)
+        phist_mvec_elemFunc funPtr, void* last_arg, int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
@@ -1814,8 +1814,8 @@ extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* 
 #endif
 
 void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, const_comm_ptr_t vcomm,
-        gidx_t nrows, gidx_t ncols, lidx_t maxnne, void* last_arg,
-                int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*,void*), int *iflag)
+        gidx_t nrows, gidx_t ncols, lidx_t maxnne,
+                phist_sparseMat_rowFunc rowFunPtr, void* last_arg, int *iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);

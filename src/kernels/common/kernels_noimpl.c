@@ -30,8 +30,8 @@ void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm,
 }
 
 void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, const_comm_ptr_t comm,
-        gidx_t nrows, gidx_t ncols, lidx_t maxnne,void* last_arg,
-        int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*,void*), int *iflag)
+        gidx_t nrows, gidx_t ncols, lidx_t maxnne,
+        phist_sparseMat_rowFunc rowFunPtr, void* last_arg, int *iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
@@ -188,7 +188,7 @@ void SUBR(mvec_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag)
 }
 
 void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
-        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*,void*), void* last_arg, int *iflag)
+        phist_mvec_elemFunc funPtr, void* last_arg, int *iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }

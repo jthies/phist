@@ -323,7 +323,7 @@ void SUBR(sdMat_random)(TYPE(sdMat_ptr) V, int* iflag);
 
 //! set all mvec elements V(i,j) by calling a function for each element
 void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
-        int (*funPtr)(ghost_gidx_t,ghost_lidx_t,void*,void*), void* last_arg, int *iflag);
+        phist_mvec_elemFunc, void* last_arg, int *iflag);
 
 //! put identity matrix into a small dense matrix \ingroup sdmat
 void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag);
@@ -520,8 +520,8 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) V,
 //! * PHIST_SPARSEMAT_DIST2_COLOR (feature required for CARP-CG)
 //!
 void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, const_comm_ptr_t comm,
-        gidx_t nrows, gidx_t ncols, lidx_t maxnne, void* last_arg,
-        int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*,void*), int *iflag);
+        gidx_t nrows, gidx_t ncols, lidx_t maxnne,
+        phist_sparseMat_rowFunc, void* last_arg, int *iflag);
 
 // These are not used or tested, perhaps useful in the future?
 #ifdef PHIST_KERNEL_LIB_BUILTIN
