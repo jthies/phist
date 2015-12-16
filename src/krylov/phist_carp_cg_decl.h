@@ -55,6 +55,7 @@ typedef struct TYPE(carp_cgState) {
   int nproj_; //! number of vectors in Vproj that should be projected out
   struct TYPE(const_x_sparseMat) const* A_;
   //@}
+  
   //! \name set by reset() function
   //@{
   // rhs vector

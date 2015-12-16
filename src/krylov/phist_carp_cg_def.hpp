@@ -340,17 +340,11 @@ void SUBR(carp_cgState_iterate)(
     {
       S->normR0_[j]=std::sqrt(S->normR[j]);
       S->normR_old[j] = S->normR0_[j];
+      reltol2[j]=tol*tol*S->normR[j];
+      reltol2[j]=std::max(reltol2[j],tol*tol*S->normB_[j]*S->normB_[j]);
     }
   }
-  S->iflag=1; // unumConverged
-  MT reltol2[nvec];
-
-  for (int j=0;j<nvec;j++)
-  {
-    reltol2[j]=tol*tol*S->normR[j];
-    reltol2[j]=std::max(reltol2[j],tol*tol*S->normB_[j]*S->normB_[j]);
-  }
-
+  
   // initial Kaczmarz/CARP sweep. Note that our function carp_sweep operates
   // in place, but we do not want to update x right now, we just want to
   // get a CG direction.
@@ -790,10 +784,6 @@ void SUBR(my_compResid)(TYPE(const_x_sparseMat_ptr) A,
     R=new TYPE(x_mvec);
   PHIST_CHK_IERR(R->allocate(map,nvec,nproj,rc,iflag),*iflag);
   }
-
-  // r = b-(A-sI)x
-  // r = b-(A-sr)xr - si*xi
-  //    -i[(A-sr)xi - si*xr]
   
   // r=-(A-sigma[j]I)x
   PHIST_CHK_IERR(SUBR(x_sparseMat_times_mvec)
