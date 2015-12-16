@@ -12,7 +12,7 @@
 // Declaration of Fortran implemented functions
 extern "C" {
   void SUBR(crsMat_create_fromRowFunc_f)(TYPE(sparseMat_ptr)*,const_comm_ptr_t comm,gidx_t,gidx_t, 
-      lidx_t, phist_sparsemat_rowFunc,void*, int*);
+      lidx_t, phist_sparseMat_rowFunc,void*, int*);
   void SUBR(crsMat_delete_f)(TYPE(sparseMat_ptr) A, int* iflag);
   void SUBR(crsMat_get_map_f)(TYPE(const_sparseMat_ptr),const_map_ptr_t*,int*);
   void SUBR(crsMat_read_mm_f)(void*A,const_comm_ptr_t comm, int fname_len, const char* fname, int* iflag);
