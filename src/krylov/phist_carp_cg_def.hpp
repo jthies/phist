@@ -337,10 +337,18 @@ void SUBR(carp_cgState_iterate)(
     {
       S->normR0_[j]=std::sqrt(S->normR[j]);
       S->normR_old[j] = S->normR0_[j];
-      reltol2[j]=tol*tol*S->normR[j];
-      reltol2[j]=std::max(reltol2[j],tol*tol*S->normB_[j]*S->normB_[j]);
     }
   }
+
+  S->iflag=1; // unconverged
+  MT reltol2[nvec];
+
+  for (int j=0;j<nvec;j++)
+  {
+    reltol2[j]=tol*tol*S->normR[j];
+    reltol2[j]=std::max(reltol2[j],tol*tol*S->normB_[j]*S->normB_[j]);
+  }
+
   
   // initial Kaczmarz/CARP sweep. Note that our function carp_sweep operates
   // in place, but we do not want to update x right now, we just want to
