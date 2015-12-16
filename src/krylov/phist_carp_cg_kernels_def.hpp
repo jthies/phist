@@ -7,11 +7,44 @@
     vp_=NULL;
     vi_=NULL;
     vpi_=NULL;
+    own_mvecs_=true;
+  }
+
+  // constructor that views given mvecs or takes ownership
+  TYPE(x_mvec)::TYPE(x_mvec)(TYPE(mvec_ptr) v, TYPE(mvec_ptr) vi, int naug, bool take_ownership, int* iflag)
+  {
+    v_=v;
+    vp_=NULL;
+    vi_=vi;
+    vpi_=NULL;
+    int nvec;
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v_,&nvec,iflag),*iflag);
+    if (naug>0)
+    {
+      const_map_ptr_t map=NULL;
+      PHIST_CHK_IERR(mvec_get_map)(v_,&map,iflag),*iflag);
+      const_comm_ptr_t comm=NULL;
+      PHIST_CHK_IERR(map_get_comm(map,&comm,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&vp_,naug,nvec,comm,iflag),*iflag);
+      if (rc)
+      {
+        PHIST_CHK_IERR(SUBR(sdMat_create)(&vpi_,naug,nvec,comm,iflag),*iflag);
+      }
+    }
+    own_mvecs_=take_ownership;
   }
   
   // imaginary part is allocated only if rc=true, augmented part only if naug>0.
   TYPE(x_mvec)::allocate(const_map_ptr_t map, int nvec, int naug, bool rc, int* iflag)
   {
+    *iflag=0;
+    if (v_!=NULL) 
+    {
+      // either allocate has already been called, or
+      // the constructor with given mvecs has been used.
+      *iflag=PHIST_INVALID_INPUT;
+      return;
+    }
     PHIST_CHK_IERR(SUBR(mvec_create)(&v_,map,nvec,iflag),*iflag);
     if (rc)
     {
@@ -19,10 +52,12 @@
     }
     if (naug>0)
     {
-      PHIST_CHK_IERR(SUBR(sdMat_create)(&vp_,
+      const_comm_ptr_t comm=NULL;
+      PHIST_CHK_IERR(map_get_comm(map,&comm,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&vp_,naug,nvec,comm,iflag),*iflag);
       if (rc)
       {
-        PHIST_CHK_IERR(SUBR(sdMat_create)(&vpi_,
+        PHIST_CHK_IERR(SUBR(sdMat_create)(&vpi_,naug,nvec,comm,iflag),*iflag);
       }
     }
   }
@@ -36,8 +71,11 @@
 void TYPE(x_mvec)::deallocate()
 {
     int iflag;
-    if (v_) PHIST_CHK_IERR(SUBR(mvec_delete)(v_,&iflag),iflag); v_=NULL;
-    if (vi_) PHIST_CHK_IERR(SUBR(mvec_delete)(vi_,&iflag),iflag); vi_=NULL;
+    if (!own_mvecs_)
+    {
+      if (v_) PHIST_CHK_IERR(SUBR(mvec_delete)(v_,&iflag),iflag); v_=NULL;
+      if (vi_) PHIST_CHK_IERR(SUBR(mvec_delete)(vi_,&iflag),iflag); vi_=NULL;
+    }
     if (vp_) PHIST_CHK_IERR(SUBR(sdMat_delete)(vp_,&iflag),iflag); vp_=NULL;
     if (vpi_) PHIST_CHK_IERR(SUBR(sdMat_delete)(vpi_,&iflag),iflag); vpi=NULL;
 }
