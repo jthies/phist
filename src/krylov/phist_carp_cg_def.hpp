@@ -375,7 +375,9 @@ void SUBR(carp_cgState_iterate)(
       S->normR_old[j] = S->normR0_[j];
     }
   }
-  S->iflag=1; // unumConverged
+
+  S->iflag=1; // unconverged
+
   MT reltol2[nvec];
 
   for (int j=0;j<nvec;j++)
