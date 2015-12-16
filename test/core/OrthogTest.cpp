@@ -3,8 +3,8 @@
 #include <mpi.h>
 #endif
 
-#include "gtest/phist_gtest.h"
-//#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+
 
 #include "phist_orthog.h"
 #include "phist_kernels.h"

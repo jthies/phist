@@ -1,18 +1,18 @@
 #ifndef PHIST_KERNEL_TEST_WITH_SDMATS_H
 #define PHIST_KERNEL_TEST_WITH_SDMATS_H
 
-#include "gtest/phist_gtest.h"
-//#include "gmock/gmock.h"
+#include "phist_config.h"
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
+#include "gtest/gtest.h"
 
 #include "phist_typedefs.h"
 #include "phist_kernels.h"
 // for sync'ing sdMats
 #include "phist_mpi_kernels.h"
 #include "KernelTestWithType.h"
-
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
 
 using namespace testing;
 

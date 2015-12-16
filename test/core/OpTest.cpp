@@ -1,10 +1,9 @@
 #include "phist_config.h"
-
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
 
-#include "gtest/phist_gtest.h"
+#include "gtest/gtest.h"
 
 #include "phist_operator.h"
 #include "phist_jadaOp.hpp"
