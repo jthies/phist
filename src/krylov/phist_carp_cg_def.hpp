@@ -357,18 +357,7 @@ void SUBR(carp_cgState_iterate)(
   //r=carp_sweep(A,sigma,B,b,x,omega)-x;
   PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(st::one(),x,st::zero(),r,iflag),*iflag);
 
-  // double carp sweep in place, updates r=dkswp(sI-A,omega,r)
-  if (Vproj!=NULL)
-  {
-    PHIST_CHK_IERR(SUBR(carp_sweep_aug)(A, sigma_r, sigma_i,Vproj,b,r->v_,r->vi_,
-          r->vp_,r->vpi_,S->aux_,S->omega_,iflag),*iflag);
-  }
-  else
-  {
-    PHIST_CHK_IERR(SUBR(carp_sweep)(A, sigma_r, sigma_i,b,r->v_,r->vi_,
-          S->aux_,S->omega_,iflag),*iflag);
-  }
-  PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(-st::one(),x,st::one(),r,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(x_carp_sweep)(A,b,r,S->aux_,S->omega_,iflag),*iflag);
   //p=r
   PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(st::one(),r,st::zero(),p,iflag),*iflag);
   //r2_new = ||r||_2^2. For technical reasons we store it as complex type if IS_COMPLEX
@@ -580,9 +569,9 @@ void SUBR(carp_cgState_iterate)(
       }
 #endif
       
-      }
-      else
-      {
+    }
+    else
+    {
       correction_needed = false;  
       //PHIST_SOUT(PHIST_INFO,"DIESE ZEILE MUESSTE JEDE ITERATION ERSCHEINEN, WAS SIE AUCH TUT.\n");                                                            ///////////////////////////////////////////////////////////////////
       // apply operator, I-carp_sweep(...) to p. Note that our function carp_sweep operates
@@ -590,23 +579,11 @@ void SUBR(carp_cgState_iterate)(
       // kernel lib should understand if we pass in NULL.
 
       //q=p-carp_sweep(A,sigma,B,bnul,p,omega);
-      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),p,st::zero(),q,iflag),*iflag);
-#ifndef IS_COMPLEX
-      if (S->rc_variant_)
-      {
-        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),pi,st::zero(),qi,iflag),*iflag);
-      }
-#endif
+      PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(st::one(),p,st::zero(),q,iflag),*iflag);
+
       // double carp sweep in place, updates q to carp_sweep(p)
-      PHIST_CHK_IERR(SUBR(carp_sweep)(A, sigma_r, sigma_i,bnul,q,qi,
-          S->aux_,S->omega_,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),p,-st::one(),q,iflag),*iflag);
-#ifndef IS_COMPLEX
-      if (S->rc_variant_)
-      {
-        PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),pi,-st::one(),qi,iflag),*iflag);
-      }
-#endif
+      PHIST_CHK_IERR(SUBR(x_carp_sweep)(A,bnul,q,S->aux_,S->omega_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(st::one(),p,-st::one(),q,iflag),*iflag);
       
       ////////////////////////////
       // update solution x      //

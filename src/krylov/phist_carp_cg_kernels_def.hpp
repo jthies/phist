@@ -147,6 +147,48 @@ void SUBR(x_mvec_add_mvec)(_ST_ alpha, TYPE(x_mvec) const* V,
   return;
 }
 
+//! missing kernel function, B(:,i)=alpha[i]*A(:,i)+beta*B(:,i)
+void SUBR(sdMat_vadd_sdMat)(_ST_ const alpha[], TYPE(const_sdMat_ptr) A,
+                            _ST_       beta,    TYPE(sdMat_ptr)       B, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  ENTER_FCN(__FUNCTION__);
+  
+  ST *a,*b;
+  lidx_t lda,ldb;
+  int nr, nc,nrb,ncb;
+
+  // if this has a significant latency we could do it asynchronously while
+  // computing the dot products for the actual vectors in x_mvec_dot_mvec
+  PHIST_CHK_IERR(SUBR(sdMat_from_device)(A,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_from_device)(B,iflag),*iflag);
+
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(A,&a,&lda,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(B,&b,&ldb,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(A,&nr,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(A,&nc,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(B,&nrb,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(B,&ncb,iflag),*iflag);
+
+  if (nr!=nrb || nc!=ncb)
+  {
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
+  for (int j=0; j<nc; j++)
+  {
+    for (int i=0; i<nr; i++)
+    {
+#ifdef PHIST_SDMATS_ROW_MAJOR
+      b[i*lda+j]=alpha[j]*a[i*lda+j] + beta*b[i*lda+j];
+#else
+      b[j*lda+i]=alpha[j]*a[j*lda+i] + beta*b[j*lda+i];
+#endif
+    }
+  }
+  PHIST_CHK_IERR(SUBR(sdMat_to_device)(B,iflag),*iflag);
+}
+
 //! missing kernel function, I don't want to introduce it to the interface at this point,
 //! we could move it to kernels/common if it is useful in other places
 //! the _add signifies that dot is *not* initialized in this function but the result is added
@@ -301,6 +343,61 @@ void SUBR(x_sparseMat_times_mvec)(_ST_ alpha, TYPE(const_x_sparseMat_ptr) A, TYP
       //ypi=V'xi+beta*ypi
       PHIST_CHK_IERR(SUBR(mvecT_times_mvec)
         (alpha,A->Vproj,X->vi_,beta,Y->vpi_,iflag),*iflag);
+    }
+  }
+  return;
+}
+
+void SUBR(x_carp_sweep)(TYPE(const_x_sparseMat_ptr) A,TYPE(const_mvec_ptr) b,TYPE(x_mvec)* x,
+        void* carp_data, _MT_ const omega[],int *iflag)
+
+{
+  // double carp sweep in place, updates r=dkswp(sI-A,omega,r)
+  if (aug_variant(A,x,x))
+  {
+    PHIST_CHK_IERR(SUBR(carp_sweep_aug)(A->A_, A->sigma_r_, A->sigma_i_,A->Vproj_,b,x->v_,x->vi_,
+          x->vp_,x->vpi_,carp_data,omega,iflag),*iflag);
+  }
+  else
+  {
+    PHIST_CHK_IERR(SUBR(carp_sweep)(A->A_, A->sigma_r_, A->sigma_i_,b,x->v_,x->vi_,
+          carp_data, omega, iflag),*iflag);
+  }
+}
+
+
+//! Y = alpha X + beta Y
+//!
+//! yr = alpha_r xr + beta_r yr 
+//!    - alpha_i xi 
+//! yi = alpha_r xi + beta_r xi 
+//!    + alpha_i xr 
+void SUBR(x_mvec_vadd_mvec)(_ST_ const alphas[], _MT_ const alphas_i, TYPE(x_mvec) const* X, _ST_ beta, TYPE(x_mvec)* Y, int* iflag)
+
+{
+  bool rc = rc_variant(X,Y);
+  bool aug=aug_variant(X,Y);
+  SUBR(mvec_vadd_mvec)(alphas,X->v_,beta,Y->v_,iflag),*iflag);
+  if (aug)
+  {
+    SUBR(sdMat_vadd_sdMat)(alphas,X->vp_,beta,Y->vp_,iflag),*iflag);
+  }
+  if (rc)
+  {  
+    int nvec;
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X->vi_,&nvec,iflag),*iflag);
+    _ST_ minus_alphas_i[nvec];
+    for (int i=0; i<nvec; i++) minus_alpha_i[i]=-(_ST_)alpha_i[i];
+    
+    SUBR(mvec_vadd_mvec)(minus_alpha_i,X->vi_,st::one(),Y->v_,iflag),*iflag);
+    SUBR(mvec_vadd_mvec)(alphas,X->vi_,beta,Y->vi_,iflag),*iflag);
+    SUBR(mvec_vadd_mvec)(alphas_i,X->v_,st::one(),Y->vi_,iflag),*iflag);
+    
+    if (aug)
+    {
+      SUBR(sdMat_vadd_sdMat)(minus_alpha_i,X->vpi_,st::one(),Y->vp_,iflag),*iflag);
+      SUBR(sdMat_vadd_sdMat)(alphas,X->vpi_,beta,Y->vpi_,iflag),*iflag);
+      SUBR(sdMat_vadd_sdMat)(alphas_i,X->vp_,st::one(),Y->vpi_,iflag),*iflag);
     }
   }
   return;
