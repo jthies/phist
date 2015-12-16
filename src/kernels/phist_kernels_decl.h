@@ -323,7 +323,7 @@ void SUBR(sdMat_random)(TYPE(sdMat_ptr) V, int* iflag);
 
 //! set all mvec elements V(i,j) by calling a function for each element
 void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
-        phist_mvec_elemFunc, void* last_arg, int *iflag);
+        phist_mvec_elemFunc elemFunPtr, void* last_arg, int *iflag);
 
 //! put identity matrix into a small dense matrix \ingroup sdmat
 void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag);
@@ -521,7 +521,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) V,
 //!
 void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, const_comm_ptr_t comm,
         gidx_t nrows, gidx_t ncols, lidx_t maxnne,
-        phist_sparseMat_rowFunc, void* last_arg, int *iflag);
+        phist_sparseMat_rowFunc rowFunPtr, void* last_arg, int *iflag);
 
 // These are not used or tested, perhaps useful in the future?
 #ifdef PHIST_KERNEL_LIB_BUILTIN
