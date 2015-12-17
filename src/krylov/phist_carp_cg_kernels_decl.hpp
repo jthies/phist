@@ -46,3 +46,29 @@ class TYPE(x_mvec)
 };
 
 //@}
+
+//! \name some kernel functions for the special-purpose data types x_sparseMat and x_mvec
+//@{
+
+//!
+void SUBR(x_mvec_add_mvec)(_ST_ alpha, TYPE(x_mvec) const* V,
+        _ST_ beta, TYPE(x_mvec)* W, int* iflag);
+                            
+//! dot product of two possibly complex vectors, in the complex case the result is found in dots,
+//! in the case of real arithmetic but complex vectors, dotsi is filled with the imaginary parts.
+//! If the imaginary parts are not wanted dotsi may be NULL.
+void SUBR(x_mvec_dot_mvec)(TYPE(x_mvec)* v, TYPE(x_mvec)* w,
+                            _ST_   *dots, _MT_* dotsi, int *iflag);
+
+//! Y = alpha X + beta Y
+//!
+//! yr = alpha_r xr + beta_r yr 
+//!    - alpha_i xi 
+//! yi = alpha_r xi + beta_r xi 
+//!    + alpha_i xr 
+void SUBR(x_mvec_vadd_mvec)(_ST_ const alphas[], _MT_ const alphas_i[], TYPE(x_mvec) const* X, _ST_ beta, TYPE(x_mvec)* Y, int* iflag);
+
+//! there are two separate kernel functions, with and without augmented rows/cols, this wrapper calls the appropriate one for us.
+void SUBR(x_carp_sweep)(TYPE(x_sparseMat) const* A,TYPE(const_mvec_ptr) b,TYPE(x_mvec)* x, void* carp_data, _MT_ const omega[],int *iflag);
+
+//@}
