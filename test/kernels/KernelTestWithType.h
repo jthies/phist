@@ -6,11 +6,11 @@
 #include <mpi.h>
 #endif
 
+#include "gtest/gtest.h"
 #include "KernelTest.h"
 #include "phist_ScalarTraits.hpp"
 #include <cstdlib>
 #include <limits>
-#include "gtest/phist_gtest.h"
 
 #ifdef PHIST_KERNEL_LIB_BUILTIN
 extern "C" void init_random_seed(void);

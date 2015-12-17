@@ -859,7 +859,7 @@ mark_as_advanced(GCOVR_OPTIONS)
 mark_as_advanced(CTEST_OPTIONS)
 
 # Define includes
-include_directories(lib/googletest-1.6 src/ src/tools/ src/kernels/)
+include_directories(lib/googletest-master-12-2015 src/ src/tools/ src/kernels/)
 
 # Define sources
 set(SOURCES 
@@ -872,7 +872,7 @@ set(SOURCES
 )
 
 set(TEST_SOURCES
-    lib/googletest-1.6/gmock-gtest-all.cc
+    lib/googletest-master-12-2015/gtest/gtest-all.cc
     test/mainTest.cpp
     test/tools/MatrixIO.cpp)
     
@@ -1000,7 +1000,7 @@ foreach(label ${PHIST_TESTS})
   list(APPEND ${label_uc}_TEST_SOURCES ${TEST_SOURCES})
 
   add_executable(${PRODUCT_NAME}-${label}-test ${${label_uc}_TEST_SOURCES} ${TEST_DEPENDS})
-  set_target_properties(${PRODUCT_NAME}-${label}-test PROPERTIES COMPILE_DEFINITIONS "PHIST_TESTSUITE=\"${label}\"")
+  set_target_properties(${PRODUCT_NAME}-${label}-test PROPERTIES COMPILE_DEFINITIONS "GTEST_HAS_MPI=1;GTEST_HAS_PTHREADS=1;GTEST_HAS_EXCEPTIONS=1")
   # compile tests without optimization
   set_target_properties(${PRODUCT_NAME}-${label}-test PROPERTIES COMPILE_FLAGS "-O0")
   target_link_libraries(${PRODUCT_NAME}-${label}-test ${library_list})

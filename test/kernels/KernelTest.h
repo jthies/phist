@@ -1,20 +1,20 @@
 #ifndef PHIST_KERNEL_TEST_H
 #define PHIST_KERNEL_TEST_H
 
-#include <iostream>
-#include <iomanip>
-#include "gtest/phist_gtest.h"
-
 #include "phist_config.h"
-
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #else
 typedef int MPI_Comm;
 #endif
 
+#include "gtest/gtest.h"
+
 #include "phist_typedefs.h"
 #include "phist_kernels.h"
+#include <iostream>
+#include <iomanip>
+
 
 #ifdef PHIST_HAVE_GHOST
 #include "ghost/taskq.h"
