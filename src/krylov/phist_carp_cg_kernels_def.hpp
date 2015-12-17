@@ -350,7 +350,6 @@ void SUBR(x_sparseMat_times_mvec)(_ST_ alpha, TYPE(x_sparseMat) const* A, TYPE(x
 
 void SUBR(x_carp_sweep)(TYPE(x_sparseMat) const* A,TYPE(const_mvec_ptr) b,TYPE(x_mvec)* x,
         void* carp_data, _MT_ const omega[],int *iflag)
-
 {
   // double carp sweep in place, updates r=dkswp(sI-A,omega,r)
   if (aug_variant(A,x,x))
@@ -372,7 +371,7 @@ void SUBR(x_carp_sweep)(TYPE(x_sparseMat) const* A,TYPE(const_mvec_ptr) b,TYPE(x
 //!    - alpha_i xi 
 //! yi = alpha_r xi + beta_r xi 
 //!    + alpha_i xr 
-void SUBR(x_mvec_vadd_mvec)(_ST_ const alphas[], _MT_ const alphas_i, TYPE(x_mvec) const* X, _ST_ beta, TYPE(x_mvec)* Y, int* iflag)
+void SUBR(x_mvec_vadd_mvec)(_ST_ const alphas[], _MT_ const alphas_i[], TYPE(x_mvec) const* X, _ST_ beta, TYPE(x_mvec)* Y, int* iflag)
 
 {
   bool rc = rc_variant(X,Y);
