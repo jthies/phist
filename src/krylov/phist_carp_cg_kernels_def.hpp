@@ -80,55 +80,6 @@ void TYPE(x_mvec)::deallocate()
     if (vpi_) PHIST_CHK_IERR(SUBR(sdMat_delete)(vpi_,&iflag),iflag); vpi=NULL;
 }
   
-
-
-//! return true if both vectors have an allocated imaginary part,
-//! false if none of them has, and throw an exception if only one of them has.
-inline bool rc_variant(TYPE(x_mvec) const* v1, TYPE(x_mvec) const* v2)
-{
-#ifdef IS_COMPLEX
-  return false;
-#endif
-  if (v1->vi_==NULL && v2->vi_==NULL) return false;
-  if (v1->vi_!=NULL && v2->vi_!=NULL) return true;
-  throw "either both or none of the vectors must have an imaginary part!"
-#endif
-}
-
-//! returns true if matrix and vectors are all 'complex in real arithmetic'
-inline bool rc_variant(TYPE(x_sparseMat) const* A, TYPE(x_mvec) const* v1, TYPE(x_mvec) const* v2)
-{
-  bool rc=rc_variant(v1,v2);
-  return rc && (A->sigma_i_!=NULL);
-}
-
-//! return true if both vectors are augmented by additional rows,
-//! false if none of them has, and throw an exception if only one of them has.
-//! We do not check if the number of augmented rows is different, in that case
-//! some later phist call will return an error.
-inline bool aug_variant(TYPE(x_mvec) const* v1, TYPE(x_mvec) const* v2)
-{
-  if (v1->vp_ ==NULL && v2->vp_ ==NULL
-    &&v1->vpi_==NULL && v2->vpi_==NULL) return false;
-
-  if (v1->vp_ !=NULL && v2->vp_ !=NULL)
-  {
-    if (rc_variant(v1,v2)
-    {
-      if (v1->vpi_!=NULL && v2->vpi_!=NULL) return true;
-    }
-    return true;
-  }
-  throw "either both or none of the vectors must be augmented!"
-}
-
-// returns true if both vectors and matrix are augmented by additional rows (rows and cols)
-inline bool aug_variant(TYPE(x_sparseMat) const* A, TYPE(x_mvec) const* v1, TYPE(x_mvec) const* v2)
-{
-  bool rc=rc_variant(v1,v2);
-  return rc && A->Vproj_!=NULL;
-}
-
 //!
 void SUBR(x_mvec_add_mvec)(_ST_ alpha, TYPE(x_mvec) const* V,
                             _ST_ beta, TYPE(x_mvec)* W, int* iflag)

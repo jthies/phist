@@ -278,7 +278,7 @@ void SUBR(carp_cgState_iterate)(
   int numSolved=0;
 
   // used for premature termination of the loop if requested
-  int minConv=abortIfOneConverges? 1: nvec;  
+  int minConv=abortIfOneConverges? 1: S->nvec_;  
 
   int numConverged=0;
   
@@ -427,7 +427,7 @@ void SUBR(carp_cgState_iterate)(
       PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(st::one(),x,st::zero(),r,iflag),*iflag);
 
       // double carp sweep in place, updates r=dkswp(A-sI,omega,r)
-      PHIST_CHK_IERR(SUBR(carp_sweep)(A->A_, b,r,S->aux_,S->omega_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(x_carp_sweep)(A, b,r,S->aux_,S->omega_,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-st::one(),x,st::one(),r,iflag),*iflag);
     }//ss-CG: end if
     
@@ -474,7 +474,7 @@ void SUBR(carp_cgState_iterate)(
       {
         S->normR_old[j] = (S->normR[j]);
       }
-      PHIST_CHK_IERR(SUBR(my_compResid)(A,x,b,NULL,S->normR,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(my_compResid)(A,b,x,NULL,S->normR,iflag),*iflag);
       //std::cout << *(S->normR) <<" " << *(S->normR_old)<< " "<< (*(S->normR)/(*(S->normR_old))) << std::endl;
       // check for convergence. 
       // TODO - which convergence criterion should we use?
@@ -526,12 +526,15 @@ void SUBR(carp_cgState_iterate)(
     if (!correction_step)
     {
       //std-CG: r=r-alpha*q;
-      ST minus_alpha[nvec];
+      ST min_alpha[nvec];
+      MT min_alpha_i[nvec];
       for (int j=0;j<nvec;j++)
       {
-        minus_alpha[j]=-alpha[j];
+        min_alpha[j]=-alpha[j];
+        min_alpha_i[j]=-alpha_i[j];
       }
-      PH  IST_CHK_IERR(SUBR(x_mvec_vadd_mvec)(minus_alpha,q,st::one(),r,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(x_mvec_vadd_mvec)(min_alpha,min_alpha_i,
+                q,st::one(),r,iflag),*iflag);
     }
       
     if (correction_step)
@@ -542,8 +545,8 @@ void SUBR(carp_cgState_iterate)(
       ST pq  [nvec];
       MT pq_i[nvec];
 
-      PHIST_CHK_IERR(SUBR(x_mvec_dot_mvec)(r,q,nvec,rq,rq_i,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(x_mvec_dot_mvec)(p,q,nvec,pq,pq_i,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(x_mvec_dot_mvec)(r,q,rq,rq_i,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(x_mvec_dot_mvec)(p,q,pq,pq_i,iflag),*iflag);
 
       for (int j=0;j<nvec;j++)
       {
@@ -612,9 +615,9 @@ void SUBR(my_compResid)(TYPE(x_sparseMat) const* A,
   bool aug=aug_variant(A,x,x);
   
   int nvec;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(b,&nvec,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Rhs,&nvec,iflag),*iflag);
 
-  int nproj=0;
+  int naug=0;
   if (aug)
   {
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(A->Vproj_,&naug,iflag),*iflag);
@@ -627,9 +630,9 @@ void SUBR(my_compResid)(TYPE(x_sparseMat) const* A,
   else
   {
     const_map_ptr_t map;
-    PHIST_CHK_IERR(SUBR(mvec_get_map)(X,&map,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_get_map)(x,&map,iflag),*iflag);
     R=new TYPE(x_mvec);
-  PHIST_CHK_IERR(R->allocate(map,nvec,nproj,rc,iflag),*iflag);
+  PHIST_CHK_IERR(R->allocate(map,nvec,naug,rc,iflag),*iflag);
   }
 
   // r = b-(A-sI)x
