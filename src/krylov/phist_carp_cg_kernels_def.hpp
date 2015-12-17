@@ -189,6 +189,38 @@ void SUBR(sdMat_vadd_sdMat)(_ST_ const alpha[], TYPE(const_sdMat_ptr) A,
   PHIST_CHK_IERR(SUBR(sdMat_to_device)(B,iflag),*iflag);
 }
 
+//! missing kernel function, A(:,i)*=alpha[i]
+void SUBR(sdMat_vscale)(TYPE(sdMat_ptr) A, _ST_ const alpha[], int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  ENTER_FCN(__FUNCTION__);
+  
+  ST *a;
+  lidx_t lda;
+  int nr, nc;
+
+  // if this has a significant latency we could do it asynchronously while
+  // computing the dot products for the actual vectors in x_mvec_dot_mvec
+  PHIST_CHK_IERR(SUBR(sdMat_from_device)(A,iflag),*iflag);
+
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(A,&a,&lda,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(A,&nr,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(A,&nc,iflag),*iflag);
+
+  for (int j=0; j<nc; j++)
+  {
+    for (int i=0; i<nr; i++)
+    {
+#ifdef PHIST_SDMATS_ROW_MAJOR
+      a[i*lda+j]*=alpha[j];
+#else
+      a[j*lda+i]*=alpha[j];
+#endif
+    }
+  }
+  PHIST_CHK_IERR(SUBR(sdMat_to_device)(A,iflag),*iflag);
+}
+
 //! missing kernel function, I don't want to introduce it to the interface at this point,
 //! we could move it to kernels/common if it is useful in other places
 //! the _add signifies that dot is *not* initialized in this function but the result is added
@@ -374,6 +406,7 @@ void SUBR(x_carp_sweep)(TYPE(x_sparseMat) const* A,TYPE(const_mvec_ptr) b,TYPE(x
 void SUBR(x_mvec_vadd_mvec)(_ST_ const alphas[], _MT_ const alphas_i[], TYPE(x_mvec) const* X, _ST_ beta, TYPE(x_mvec)* Y, int* iflag)
 
 {
+  *iflag=0;
   bool rc = rc_variant(X,Y);
   bool aug=aug_variant(X,Y);
   SUBR(mvec_vadd_mvec)(alphas,X->v_,beta,Y->v_,iflag),*iflag);
@@ -388,16 +421,50 @@ void SUBR(x_mvec_vadd_mvec)(_ST_ const alphas[], _MT_ const alphas_i[], TYPE(x_m
     _ST_ minus_alphas_i[nvec];
     for (int i=0; i<nvec; i++) minus_alpha_i[i]=-(_ST_)alpha_i[i];
     
-    SUBR(mvec_vadd_mvec)(minus_alpha_i,X->vi_,st::one(),Y->v_,iflag),*iflag);
-    SUBR(mvec_vadd_mvec)(alphas,X->vi_,beta,Y->vi_,iflag),*iflag);
-    SUBR(mvec_vadd_mvec)(alphas_i,X->v_,st::one(),Y->vi_,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(minus_alpha_i,X->vi_,st::one(),Y->v_,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alphas,X->vi_,beta,Y->vi_,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(alphas_i,X->v_,st::one(),Y->vi_,iflag),*iflag);
     
     if (aug)
     {
-      SUBR(sdMat_vadd_sdMat)(minus_alpha_i,X->vpi_,st::one(),Y->vp_,iflag),*iflag);
-      SUBR(sdMat_vadd_sdMat)(alphas,X->vpi_,beta,Y->vpi_,iflag),*iflag);
-      SUBR(sdMat_vadd_sdMat)(alphas_i,X->vp_,st::one(),Y->vpi_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_vadd_sdMat)(minus_alpha_i,X->vpi_,st::one(),Y->vp_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_vadd_sdMat)(alphas,X->vpi_,beta,Y->vpi_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_vadd_sdMat)(alphas_i,X->vp_,st::one(),Y->vpi_,iflag),*iflag);
     }
   }
   return;
+}
+
+//! scale columns i of v by real scalar alpha[i]
+void SUBR(x_mvec_vscale)(TYPE(x_mvec)* v, _ST_ const alpha[], int* iflag);
+{
+  *iflag=0;
+  int aug=aug_variant(v,v);
+#ifdef IS_COMPLEX
+  int nvec;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v->v_,&nvec,iflag),*iflag);
+  _ST_ c_alpha[nvec];
+  for (int i=0;i<nvec; i++) c_alpha[i]=(_ST_)alpha[i];
+  PHIST_CHK_IERR(SUBR(mvec_vscale)(v->v_,c_alpha,iflag),*iflag);
+  if (aug)
+  {
+    PHIST_CHK_IERR(SUBR(sdMat_vscale)(v->vp_,c_alpha,iflag),*iflag);    
+  }
+#else
+  int rc=rc_variant(v,v);
+  PHIST_CHK_IERR(SUBR(mvec_vscale)(v->v_,alpha,iflag),*iflag);
+  if (rc)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_vscale)(v->vi_,alpha,iflag),*iflag);
+  }
+  if (aug)
+  {
+    PHIST_CHK_IERR(SUBR(sdMat_vscale)(v->vp_,alpha,iflag),*iflag);    
+    if (rc)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_vscale)(v->vpi_,alpha,iflag),*iflag);
+    }
+  }
+
+#endif
 }
