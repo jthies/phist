@@ -80,9 +80,6 @@ void SUBR(x_carp_sweep)(TYPE(x_sparseMat) const* A,TYPE(const_mvec_ptr) b,TYPE(x
 
 //@}
 
-#ifndef PHIST_CARP_CG_KERNEL_HELPERS
-#define PHIST_CARP_CG_KERNEL_HELPERS
-
 //! return true if both vectors have an allocated imaginary part,
 //! false if none of them has, and throw an exception if only one of them has.
 inline bool rc_variant(TYPE(x_mvec) const* v1, TYPE(x_mvec) const* v2)
@@ -129,5 +126,3 @@ inline bool aug_variant(TYPE(x_sparseMat) const* A, TYPE(x_mvec) const* v1, TYPE
   bool rc=rc_variant(v1,v2);
   return rc && A->Vproj_!=NULL;
 }
-
-#endif // PHIST_CARP_CG_KERNEL_HELPERS
