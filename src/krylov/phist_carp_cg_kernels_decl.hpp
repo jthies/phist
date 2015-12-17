@@ -68,6 +68,9 @@ void SUBR(x_mvec_dot_mvec)(TYPE(x_mvec)* v, TYPE(x_mvec)* w,
 //!    + alpha_i xr 
 void SUBR(x_mvec_vadd_mvec)(_ST_ const alphas[], _MT_ const alphas_i[], TYPE(x_mvec) const* X, _ST_ beta, TYPE(x_mvec)* Y, int* iflag);
 
+//! scale columns i of v by real scalar alpha[i]
+void SUBR(x_mvec_vscale)(TYPE(x_mvec)* v, _ST_ const alpha[], int* iflag);
+
 //! there are two separate kernel functions, with and without augmented rows/cols, this wrapper calls the appropriate one for us.
 void SUBR(x_carp_sweep)(TYPE(x_sparseMat) const* A,TYPE(const_mvec_ptr) b,TYPE(x_mvec)* x, void* carp_data, _MT_ const omega[],int *iflag);
 
