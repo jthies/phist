@@ -116,6 +116,24 @@ void phist_kernels_common_finalize(int* iflag);
 } // extern "C"
 #endif
 
+//! \name functions to fill mvecs and sparseMats
+//!@{
+#ifdef PHIST_HAVE_GHOST
+typedef ghost_sparsemat_fromRowFunc_t phist_sparseMat_rowFunc;
+#else
+typedef int (*phist_sparseMat_rowFunc)(ghost_gidx_t, ghost_lidx_t *,
+        ghost_gidx_t *, void *, void *);
+#endif        
+
+typedef int (*phist_mvec_elemFunc)(ghost_gidx_t, ghost_lidx_t, void *, void *);
+
+//@}
+
+/* this allows to use only the type-independent part of the header for 
+   interface and doc generation
+ */
+#ifndef DOXYGEN_NO_TG
+
 
 //! include file for the basic operations (kernels)
 //! in single/double, real/complex.
@@ -136,23 +154,7 @@ void phist_kernels_common_finalize(int* iflag);
 #include "phist_kernels_prec_decl.h"
 #include "phist_kernels_carp_decl.h"
 //!@}
-#endif
-
-//! \name functions to fill mvecs and sparseMats
-//!@{
-#ifdef PHIST_HAVE_GHOST
-typedef ghost_sparsemat_fromRowFunc_t phist_sparseMat_rowFunc;
-#else
-typedef int (*phist_sparseMat_rowFunc)(ghost_gidx_t, ghost_lidx_t *,
-        ghost_gidx_t *, void *, void *);
-#endif        
-
-typedef int (*phist_mvec_elemFunc)(ghost_gidx_t, ghost_lidx_t, void *, void *);
-
-/* this allows to use only the type-independent part of the header for 
-   interface and doc generation
- */
-#ifndef DOXYGEN_NO_TG
+#endif /* PHIST_HAVE_SP
 
 /*!\name double precision real kernel functions */
 //!@{
@@ -171,8 +173,9 @@ typedef int (*phist_mvec_elemFunc)(ghost_gidx_t, ghost_lidx_t, void *, void *);
 #include "phist_kernels_carp_decl.h"
 //!@}
 #include "phist_gen_clean.h"
-#endif
-
-#endif //DOXYGEN_NO_TG
+#endif /* DOXYGEN_NO_TG */
 
 //@}
+
+#endif 
+

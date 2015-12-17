@@ -1941,7 +1941,7 @@ end subroutine permute_local_matrix
 
   !==================================================================================
   !> read MatrixMarket file
-  subroutine phist_DcrsMat_create_fromRowFunc(A_ptr, comm_ptr,nrows, ncols, maxnne_per_row, data_arg, rowFunc_ptr, ierr) &
+  subroutine phist_DcrsMat_create_fromRowFunc(A_ptr, comm_ptr,nrows, ncols, maxnne_per_row, rowFunc_ptr, data_arg, ierr) &
     & bind(C,name='phist_DcrsMat_create_fromRowFunc_f') ! circumvent bug in opari (openmp instrumentalization)
     use, intrinsic :: iso_c_binding
     use env_module, only: newunit
