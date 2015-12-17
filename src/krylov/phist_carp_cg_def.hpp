@@ -447,6 +447,7 @@ void SUBR(carp_cgState_iterate)(
       {
         alpha[j]=(ST)(1-conv[j])*(alpha[j]/denom[j]);
       }
+#ifndef IS_COMPLEX
       else
       {
         CT tmp1(alpha[j],alpha_i[j]);
@@ -456,6 +457,7 @@ void SUBR(carp_cgState_iterate)(
         alpha[j]=ct::real(tmp3);
         alpha_i[j]    = ct::imag(tmp3);
       }
+#endif
     }
     
     //CG: update x <- x + alpha*p
@@ -650,7 +652,7 @@ void SUBR(my_compResid)(TYPE(x_sparseMat) const* A,
 #else
           ST* tmp=nrms2;
 #endif          
-  PHIST_CHK_IERR(SUBR(x_mvec_dot_mvec)(R, R, tmp, iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(x_mvec_dot_mvec)(R, R, tmp, NULL,iflag),*iflag);
 #ifdef IS_COMPLEX
   for (int j=0;j<nvec;j++)
   {

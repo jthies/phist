@@ -387,7 +387,7 @@ void SUBR(x_mvec_vadd_mvec)(_ST_ const alphas[], _MT_ const alphas_i[], TYPE(x_m
 }
 
 //! scale columns i of v by real scalar alpha[i]
-void SUBR(x_mvec_vscale)(TYPE(x_mvec)* v, _ST_ const alpha[], int* iflag);
+void SUBR(x_mvec_vscale)(TYPE(x_mvec)* v, _MT_ const alpha[], int* iflag);
 {
   *iflag=0;
   int aug=aug_variant(v,v);
