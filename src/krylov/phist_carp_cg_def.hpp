@@ -722,3 +722,5 @@ void SUBR(my_printResid)(int it, int nvec, _ST_ const* normR,
   }
 }
 
+// kernel implementation for this data type
+#include "phist_carp_cg_kernels_def.hpp"
