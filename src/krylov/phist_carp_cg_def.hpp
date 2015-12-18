@@ -383,11 +383,11 @@ void SUBR(carp_cgState_iterate)(
   // in place, but we do not want to update x right now, we just want to
   // get a CG direction.
 
-  //CG: r_0=b-OP*x_0
+  //ALG r=b-OP*x
   PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(st::one(),x,st::zero(),r,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(x_carp_sweep)(A,b,r,S->aux_,S->omega_,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(-st::one(),x,st::one(),r,iflag),*iflag);
-  //CG: p_0=r_0
+  //ALG p=r
   PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(st::one(),r,st::zero(),p,iflag),*iflag);
   //r2_new = ||r||_2^2. For technical reasons we store it as complex type if IS_COMPLEX
   ST r2_new[nvec];
@@ -402,26 +402,29 @@ void SUBR(carp_cgState_iterate)(
     SUBR(my_printResid)(0,nvec,r2_new,S->normR0_,S->normB_,S->conv);
   }
 
+  //ALG for (it=1..maxIter
   for (int it=1;it<maxIter; it++)
-  { //CG: for (it=1..maxIter
-      correction_needed=false;
-      
-      //CG: q = OP*p
+  {
+    //ALG correction_needed=false
+    correction_needed=false;
 
-      //q=p-carp_sweep(A,sigma,B,bnul,p,omega);
-      PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(st::one(),p,st::zero(),q,iflag),*iflag);
-      // double carp sweep in place, updates q to carp_sweep(p)
-      PHIST_CHK_IERR(SUBR(x_carp_sweep)(A,bnul,q, S->aux_,S->omega_,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(st::one(),p,-st::one(),q,iflag),*iflag);
+    //ALG q = OP*p
+
+    //q=p-carp_sweep(A,sigma,B,bnul,p,omega);
+    PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(st::one(),p,st::zero(),q,iflag),*iflag);
+    // double carp sweep in place, updates q to carp_sweep(p)
+    PHIST_CHK_IERR(SUBR(x_carp_sweep)(A,bnul,q, S->aux_,S->omega_,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(st::one(),p,-st::one(),q,iflag),*iflag);
 
     // explicit computation of residual (helps to overcome soft errors, see 
     // `self-stabilizing CG' described in Sao & Vuduc, ScalA'14 proceedings. 
+    //ALG if (correction_step)
     if (correction_step)
-    {//ss-CG: if (correction_step)
+    {
       PHIST_SOUT(PHIST_INFO,"CARP_CG - correction step\n");
       cor_count++;
 
-      //ss-CG: r=b-OP*x
+      //ALG r=b-OP*x
       
       //r=(dkswp(A,0,x)-I)x
       PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(st::one(),x,st::zero(),r,iflag),*iflag);
@@ -429,13 +432,14 @@ void SUBR(carp_cgState_iterate)(
       // double carp sweep in place, updates r=dkswp(A-sI,omega,r)
       PHIST_CHK_IERR(SUBR(x_carp_sweep)(A, b,r,S->aux_,S->omega_,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-st::one(),x,st::one(),r,iflag),*iflag);
-    }//ss-CG: end if
+    }
+    //ALG end if
     
     ////////////////////////////
     // update solution x      //
     ////////////////////////////
     
-    //CG: alpha = (r'*r)/(p'*q);
+    //ALG alpha = (r'*r)/(p'*q);
     ST denom  [nvec];
     MT denom_i[nvec];
     PHIST_CHK_IERR(SUBR(x_mvec_dot_mvec)(r,p,alpha,alpha_i,iflag),*iflag);
@@ -462,7 +466,7 @@ void SUBR(carp_cgState_iterate)(
 #endif
     }
     
-    //CG: update x <- x + alpha*p
+    //ALG x = x + alpha*p
     PHIST_CHK_IERR(SUBR(x_mvec_vadd_mvec)(alpha,alpha_i,p,st::one(),x,iflag),*iflag);
     
     // once in a while we check the actual residual of the linear system, b-Ax
@@ -470,12 +474,14 @@ void SUBR(carp_cgState_iterate)(
     // TODO - the check for correction steps is quite rare (every 10 iterations),
     //        but I suspect that Florian (who implemented it) did it this way because
     //        checking with the norm of r during CGMN was not working.
+    //ALG if (mod(it,itcheck)==0)
     if ( it%itcheck == 0)
     {
       for (int j=0;j<nvec;j++)
       {
         S->normR_old[j] = (S->normR[j]);
       }
+      //ALG ||r||_2 = ||b-Ax||_2
       PHIST_CHK_IERR(SUBR(my_compResid)(A,b,x,NULL,S->normR,iflag),*iflag);
       //std::cout << *(S->normR) <<" " << *(S->normR_old)<< " "<< (*(S->normR)/(*(S->normR_old))) << std::endl;
       // check for convergence. 
@@ -506,28 +512,35 @@ void SUBR(carp_cgState_iterate)(
       }
       
       // check if sufficient systems have converged and exit the loop if so
+      //ALG if ||r||_2/||r_0||_2<tol
       if (numConverged>=minConv)
       {
         // print footer
         SUBR(my_printResid)(it,-1,NULL,NULL,NULL,NULL);
         numSolved++; 
+        //ALG break
         break;
       }
+      //ALG end if
 
       // check if the next step should be a correction step
+      //ALG if ||r||_2/||r_old||_2 > 0.99
       for (int i=0;i<nvec;i++)
       {
+        //ALG correction_needed=true
         if (std::sqrt(*(S->normR))/std::sqrt(*(S->normR_old)) > cor_tol)
         {
           correction_needed = true;
         }
       }
-    }//itcheck
+      //ALG end if
+    }
+    //ALG end if
     
     // regular CG step?
     if (!correction_step)
     {
-      //std-CG: r=r-alpha*q;
+      //ALG r=r-alpha*q;
       ST min_alpha[nvec];
       MT min_alpha_i[nvec];
       for (int j=0;j<nvec;j++)
@@ -539,9 +552,10 @@ void SUBR(carp_cgState_iterate)(
                 q,st::one(),r,iflag),*iflag);
     }
       
+    //ALG if (correction_step)
     if (correction_step)
-    {//CG: if (correction_step)
-      //ss-CG: beta= r'q/p'q
+    {
+      //ALG beta= r'q/p'q
       ST rq  [nvec];
       MT rq_i[nvec];
       ST pq  [nvec];
@@ -561,10 +575,10 @@ void SUBR(carp_cgState_iterate)(
         beta[j]=ct::real(rq[j]/pq[j]);
 #endif       
       }
-    }
+    }//ALG else
     else
-    {//CG: else
-      //std-CG: beta = r'r/r_old'r_old
+    {
+      //ALG beta = r'r/r_old'r_old
       for (int j=0;j<nvec;j++)
       {
         r2_old[j]=std::abs(r2_new[j]);
@@ -574,14 +588,17 @@ void SUBR(carp_cgState_iterate)(
       {
         beta[j]=std::abs(r2_new[j])/r2_old[j];
       }
-    }
+    }//ALG end if
 
-    //CG: p=r+beta*p
+    //ALG p=r+beta*p
     //TODO - add kernel function to do this, mvec_vadd_mvec only allows multiple scalars for the added vector
     PHIST_CHK_IERR(SUBR(x_mvec_vscale)(p,beta,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(st::one(),r,st::one(),p,iflag),*iflag);
 
-  }//CG: end for
+    //ALG correction_step=correction_needed
+    correction_step=correction_needed
+  }
+  //ALG end for
 
     
   // take square root so that normR is indeed the norm, not the
