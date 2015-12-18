@@ -34,6 +34,9 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
     static const int n_=_N_;
     static const int m_=_M_;
     
+    //! (optional) additional projection vectors
+    TYPE(mvec_ptr) Vproj_;
+    
     //! shifts
     static const int numShifts_=_M_;
     static MT shift_r_[numShifts_], shift_i_[numShifts_];
@@ -60,7 +63,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
         ASSERT_EQ(0,iflag_);
         ASSERT_TRUE(A_ != NULL);
 
-        SUBR(carp_cgState_create)(&state_,A_,numShifts_,shift_r_,shift_i_, &iflag_);
+        SUBR(carp_cgState_create)(&state_,A_,Vproj_,numShifts_,shift_r_,shift_i_, &iflag_);
         
         ASSERT_EQ(0,iflag_);
         xex_=vec1_;
@@ -79,6 +82,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_norm2)(rhs_,bNorm_,&iflag_);
         ASSERT_EQ(0,iflag_);
+        Vproj_=NULL;
       }
     }
 
