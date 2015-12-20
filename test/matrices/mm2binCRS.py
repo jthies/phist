@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# Moritz Kreutzer 2013, <moritz.kreutzer@fau.de>
 
 import sys
 import numpy
@@ -33,7 +34,7 @@ elif info[5] == 'symmetric':
 	symm = 2
 elif info[5] == 'skew-symmetric':
 	symm = 4
-elif info[6] == 'hermitian':
+elif info[5] == 'hermitian':
 	symm = 8
 
 symm = 1
