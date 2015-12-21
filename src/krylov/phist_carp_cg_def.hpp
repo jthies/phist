@@ -594,7 +594,7 @@ void SUBR(carp_cgState_iterate)(
     PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(st::one(),r,st::one(),p,iflag),*iflag);
 
     //ALG correction_step=correction_needed
-    correction_step=correction_needed
+    correction_step=correction_needed;
   }
   //ALG end for
 
@@ -647,7 +647,7 @@ void SUBR(my_compResid)(TYPE(x_sparseMat) const* A,
   else
   {
     const_map_ptr_t map;
-    PHIST_CHK_IERR(SUBR(mvec_get_map)(x,&map,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_get_map)(x->v_,&map,iflag),*iflag);
     R=new TYPE(x_mvec);
   PHIST_CHK_IERR(R->allocate(map,nvec,naug,rc,iflag),*iflag);
   }
