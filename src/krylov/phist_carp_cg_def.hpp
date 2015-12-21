@@ -295,7 +295,14 @@ void SUBR(carp_cgState_iterate)(
   TYPE(const_mvec_ptr) b=S->b_;
   // wrap input vectors in our internal x_mvec type
   TYPE(x_mvec)* x=NULL;
-  PHIST_CHK_IERR(x=new TYPE(x_mvec)(X_r,X_i,S->nproj_,false,iflag),*iflag);
+  if (A->sigma_i_!=NULL)
+  {
+    PHIST_CHK_IERR(x=new TYPE(x_mvec)(X_r,X_i,S->nproj_,false,iflag),*iflag);
+  }
+  else
+  {
+    PHIST_CHK_IERR(x=new TYPE(x_mvec)(X_r,NULL,S->nproj_,false,iflag),*iflag);
+  }
 
   TYPE(x_mvec)* r =S->r_;
   TYPE(x_mvec)* q =S->q_;
