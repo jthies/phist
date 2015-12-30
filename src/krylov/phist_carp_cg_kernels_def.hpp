@@ -71,7 +71,7 @@
 void TYPE(x_mvec)::deallocate()
 {
     int iflag;
-    if (!own_mvecs_)
+    if (own_mvecs_)
     {
       if (v_) PHIST_CHK_IERR(SUBR(mvec_delete)(v_,&iflag),iflag); v_=NULL;
       if (vi_) PHIST_CHK_IERR(SUBR(mvec_delete)(vi_,&iflag),iflag); vi_=NULL;
