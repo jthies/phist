@@ -43,10 +43,14 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 #endif
 
   eigExtr_t how=opts.how;
-  if (how!=STANDARD)
+  if (how==STANDARD)
   {
-    PHIST_SOUT(PHIST_ERROR,"only Ritz extraction is implemented (jadaOpts.how=%s), found %s\n",
-        eigExtr2str(STANDARD),eigExtr2str(how));
+    PHIST_SOUT(PHIST_ERROR,"if you want to use standard Ritz values, please use the subspacejada routine instead\n");
+  }
+  if (how!=HARMONIC)
+  {
+    PHIST_SOUT(PHIST_ERROR,"only Harmonic Ritz extraction is implemented (jadaOpts.how=%s), found %s\n",
+        eigExtr2str(HARMONIC),eigExtr2str(how));
     *iflag=PHIST_NOT_IMPLEMENTED;
     return;
   }
@@ -112,7 +116,7 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   // create mvecs and sdMats
   mvec_ptr_t  V_      = NULL;    //< space for V (current search space)
   mvec_ptr_t  Vtmp_   = NULL;    //< temporary space for V
-  mvec_ptr_t  AV_     = NULL;    //< space for AV. If harmonic Ritz values are used, AV is orthogonalized, A*V=AV*E
+  mvec_ptr_t  W_     = NULL;    //< space for the orthogonal basis of AV
   mvec_ptr_t  BV_     = NULL;    //< space for BV
   mvec_ptr_t  Q_      = NULL;    //< Q, enlarged dynamically (converged eigenspace)
   mvec_ptr_t  BQ_     = NULL;    //< B*Q, enlarged dynamically
@@ -120,19 +124,15 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   mvec_ptr_t  At_     = NULL;    //< space for A*t
   mvec_ptr_t  res     = NULL;    //< residuum A*Q-Q*R
 
-  // For standard Ritz values (approximating extreme eigenvalues), we have
-  // V'V=I, V'Q=0, H=V'AV, H=Q_H R_H
-  //
   // For harmonic Ritz values (approximating interior eigenvalues) we have
-  // V'V=I, AV'AV=I, A*V=AV*H_A, V'Q=AV'Q=0 and the (generalized) Schur decomposition
-  // H=AV'V, H_A S_R = S_L T_A, H S_R = S_L T
+  // V'V=I, W'W=I, A*V=W*H_A, V'Q=W'Q=0 and the (generalized) Schur decomposition
+  // H=W'V, H_A S_R = S_L T_A, H S_R = S_L T
 
-  sdMat_ptr_t H_      = NULL;    //< space for H (=V'AV)
-  sdMat_ptr_t Htmp_   = NULL;    //< temporary space for H
-  sdMat_ptr_t H_A_    = NULL;    //< space for H_A s.t. A*V=AV*H_A makes AV orthogonal (only used in case of harmonic Ritz extraction)
-  sdMat_ptr_t Q_H_    = NULL;    //< space for Q_H, H=Q_H R_H, Q_H'Q_H=I)
-  sdMat_ptr_t R_H_    = NULL;    //< space for R_H, which has the Ritz values on the diagonal
+  sdMat_ptr_t H_      = NULL;    //< H=W'V
+  sdMat_ptr_t Htmp_      = NULL; //< temporary space used only for checking invariants
+  sdMat_ptr_t H_A_    = NULL;    //< identity matrix
   sdMat_ptr_t sdMI_   = NULL;    //< identity matrix
+  // QZ decomposition
   sdMat_ptr_t S_L_    = NULL;
   sdMat_ptr_t S_R_    = NULL;
   sdMat_ptr_t T_      = NULL;

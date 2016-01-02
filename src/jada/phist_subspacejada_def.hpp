@@ -54,7 +54,8 @@ void SUBR(sdMat_check_symmetrie)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
   }
 }
 
-
+//! subspacejada for exterior eigenvalues, using standard Ritz values
+//!
 //! Tries to compute a partial schur form $(Q,R)$ of dimension opts.numEigs
 //! of the stencil $A*x-\lambda*B*x$ with a general linear operator $A$ and a
 //! hermitian positive definite (hpd.) linear operator $B$ using a
@@ -99,9 +100,13 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 #endif
 
   eigExtr_t how=opts.how;
+  if (how==HARMONIC)
+  {
+    PHIST_SOUT(PHIST_ERROR,"if you want to use harmonic Ritz values, please use the harmonicjada routine instead\n");
+  }
   if (how!=STANDARD)
   {
-    PHIST_SOUT(PHIST_ERROR,"only Ritz extraction is implemented (jadaOpts.how=%s), found %s\n",
+    PHIST_SOUT(PHIST_ERROR,"only standard Ritz extraction is implemented (jadaOpts.how=%s), found %s\n",
         eigExtr2str(STANDARD),eigExtr2str(how));
     *iflag=PHIST_NOT_IMPLEMENTED;
     return;
@@ -167,7 +172,7 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 
   // create mvecs and sdMats
   mvec_ptr_t  V_      = NULL;    //< space for V
-  mvec_ptr_t  Vtmp_   = NULL;    //< temporary space for V
+  mvec_ptr_t  Vtmp_   = NULL;    //< temporary space for V only used for checking invariants in TESTING mode
   mvec_ptr_t  AV_     = NULL;    //< space for AV
   mvec_ptr_t  BV_     = NULL;    //< space for BV
   mvec_ptr_t  Q_      = NULL;    //< Q, enlarged dynamically
@@ -176,8 +181,11 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   mvec_ptr_t  At_     = NULL;    //< space for A*t
   mvec_ptr_t  res     = NULL;    //< residuum A*Q-Q*R
 
+  // For standard Ritz values (approximating extreme eigenvalues), we have
+  // V'V=I, V'Q=0, H=V'AV, and the Schur decomposition H=Q_H R_H    
+
   sdMat_ptr_t H_      = NULL;    //< space for H
-  sdMat_ptr_t Htmp_   = NULL;    //< temporary space for H
+  sdMat_ptr_t Htmp_   = NULL;    //< temporary space for H used only for checking invariants
   sdMat_ptr_t Q_H_    = NULL;    //< space for Q_H
   sdMat_ptr_t R_H_    = NULL;    //< space for R_H
   sdMat_ptr_t sdMI_   = NULL;    //< identity matrix
