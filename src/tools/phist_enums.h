@@ -1,6 +1,10 @@
 #ifndef PHIST_ENUMS_H
 #define PHIST_ENUMS_H
 
+//! defines which eigenvalues are sought resp. how they should be sorted
+//! for computing eigenvalues near (far away from) a specific target, 
+//! pass a shifted operator and "SM" ("LM") to the eigensolver and shift the
+//! resulting eigenvalues back (eigenvectors are invariant under shifting).
 typedef enum eigSort_t 
 {
   NONE=0,
@@ -8,7 +12,6 @@ typedef enum eigSort_t
   SM=2,   // smallest magnitude
   LR=3,   // largest real part
   SR=4,   // smallest real part
-  TARGET=5, // sort according to distance from target (for interior eigenvalues)
   INVALID_EIGSORT_T=99 // returned if str2eigSort gets an invalid string
 } eigSort_t;
 

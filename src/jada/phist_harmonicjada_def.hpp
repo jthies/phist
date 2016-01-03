@@ -2,7 +2,7 @@
 //! Tries to compute a partial schur form $(Q,R)$ of dimension opts.numEigs
 //! of the stencil $A*x-\lambda*B*x$ with a general linear operator $A$ and a
 //! hermitian positive definite (hpd.) linear operator $B$ using a
-//! block-Jacobi-Davidson QR method. <br>
+//! block-Jacobi-Davidson QR method based on harmonic Ritz values. <br>
 //! The generalized eigenvalues $\lambda_i$ are the diagonal entries of the
 //! partial schur form $A*Q = B*Q*R$ returned. <br>
 //!
@@ -115,9 +115,10 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 
   // create mvecs and sdMats
   mvec_ptr_t  V_      = NULL;    //< space for V (current search space)
-  mvec_ptr_t  Vtmp_   = NULL;    //< temporary space for V
+  mvec_ptr_t  Vtmp_   = NULL;    //< temporary space for V, only used for checking invariants
   mvec_ptr_t  W_     = NULL;    //< space for the orthogonal basis of AV
   mvec_ptr_t  BV_     = NULL;    //< space for BV
+  mvec_ptr_t  BW_     = NULL;    //< space for BW
   mvec_ptr_t  Q_      = NULL;    //< Q, enlarged dynamically (converged eigenspace)
   mvec_ptr_t  BQ_     = NULL;    //< B*Q, enlarged dynamically
   mvec_ptr_t  t_      = NULL;    //< space for t (new correction vector(s))
@@ -126,12 +127,13 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 
   // For harmonic Ritz values (approximating interior eigenvalues) we have
   // V'V=I, W'W=I, A*V=W*H_A, V'Q=W'Q=0 and the (generalized) Schur decomposition
-  // H=W'V, H_A S_R = S_L T_A, H S_R = S_L T
+  // H=W'V, H_A = S_L T_A S_R', H = S_L T S_R'. Since H_A is upper triangular
+  // by construction, this simplifies to S_L=I, H=T*S_R' and T_A=H_A*S_R'
 
-  sdMat_ptr_t H_      = NULL;    //< H=W'V
-  sdMat_ptr_t Htmp_      = NULL; //< temporary space used only for checking invariants
-  sdMat_ptr_t H_A_    = NULL;    //< identity matrix
-  sdMat_ptr_t sdMI_   = NULL;    //< identity matrix
+  sdMat_ptr_t H_      = NULL; //< H=W'V
+  sdMat_ptr_t Htmp_   = NULL; //< temporary space used only for checking invariants
+  sdMat_ptr_t H_A_    = NULL; //< identity matrix
+  sdMat_ptr_t sdMI_   = NULL; //< identity matrix
   // QZ decomposition
   sdMat_ptr_t S_L_    = NULL;
   sdMat_ptr_t S_R_    = NULL;
@@ -140,34 +142,31 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 
   _ST_ sigma[nEig_];             //< JaDa correction shifts
 
-  _ST_ *Q_H_raw       = NULL;
-  _ST_ *R_H_raw       = NULL;
+  _ST_ *H_raw       = NULL;
   _ST_ *Htmp_raw      = NULL;
   _ST_ *H_A_raw       = NULL;
   _ST_ *S_L_raw       = NULL;
   _ST_ *S_R_raw       = NULL;
   _ST_ *T_raw       = NULL;
   _ST_ *T_A_raw       = NULL;
-  lidx_t ldaQ_H, ldaR_H, ldaHtmp, ldaH_A, ldaS_L, ldaS_R, ldaT, ldaT_A;
+  lidx_t ldaH, ldaH_A, ldaHtmp, ldaS_L, ldaS_R, ldaT, ldaT_A;
 
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&V_,     A_op->domain_map, maxBase,        iflag), *iflag);
   // TODO: remove Vtmp
 #ifdef TESTING
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&Vtmp_,  A_op->domain_map, maxBase,                iflag), *iflag);
 #endif
-  PHIST_CHK_IERR(SUBR( mvec_create  ) (&AV_,    A_op->range_map,  maxBase,                iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( mvec_create  ) (&W_,    A_op->range_map,  maxBase,                iflag), *iflag);
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&t_,     A_op->domain_map, blockDim,               iflag), *iflag);
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&At_,    A_op->range_map,  blockDim,               iflag), *iflag);
   int resDim = std::min(2*blockDim, nEig+blockDim-1);
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&res,    A_op->range_map,  resDim,                 iflag), *iflag);
 
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&H_,     maxBase,          maxBase,  range_comm,   iflag), *iflag);
-  PHIST_CHK_IERR(SUBR( sdMat_create ) (&Htmp_,  maxBase,          maxBase,  range_comm,   iflag), *iflag);
-  PHIST_CHK_IERR(SUBR( sdMat_create ) (&Q_H_,   maxBase,          maxBase,  range_comm,   iflag), *iflag);
-  PHIST_CHK_IERR(SUBR( sdMat_create ) (&R_H_,   maxBase,          maxBase,  range_comm,   iflag), *iflag);
-  PHIST_CHK_IERR(SUBR( sdMat_create ) (&sdMI_,  maxBase,          maxBase,  range_comm,   iflag), *iflag);
-  // for harmonic Ritz case:
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&H_A_,     maxBase,          maxBase,  range_comm,   iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( sdMat_create ) (&Htmp_,  maxBase,          maxBase,  range_comm,   iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( sdMat_create ) (&sdMI_,  maxBase,          maxBase,  range_comm,   iflag), *iflag);
+
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&S_L_,   maxBase,          maxBase,  range_comm,   iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&S_R_,   maxBase,          maxBase,  range_comm,   iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&T_,   maxBase,          maxBase,  range_comm,   iflag), *iflag);
@@ -175,10 +174,9 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   // construct identity matrix
   PHIST_CHK_IERR(SUBR( sdMat_identity ) (sdMI_, iflag), *iflag);
 
-  PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (Q_H_,    &Q_H_raw,   &ldaQ_H,   iflag), *iflag);
-  PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (R_H_,    &R_H_raw,   &ldaR_H,   iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (Htmp_,   &Htmp_raw,  &ldaHtmp,  iflag), *iflag);
 
+  PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (H_,   &Htmp_raw,  &ldaH,  iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (H_A_,   &H_A_raw,  &ldaHtmp,  iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (S_L_,    &T_raw,   &ldaT,   iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (S_L_,    &T_A_raw,   &ldaT_A,   iflag), *iflag);
@@ -188,10 +186,12 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   if( B_op != NULL )
   {
     PHIST_CHK_IERR(SUBR( mvec_create )(&BV_,    B_op->range_map,  maxBase,                iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_create )(&BW_,    B_op->range_map,  maxBase,                iflag), *iflag);
   }
   else
   {
     BV_ = V_;
+    BW_ = W_;
   }
   // array for the (possibly complex) eigenvalues for SchurDecomp
   CT* ev_H = new CT[maxBase];
@@ -200,12 +200,12 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   int nV  = minBase;          //< current subspace dimension
 
   mvec_ptr_t  V   = NULL;     //< B-orthogonal basis of the search space
-  mvec_ptr_t  Vful= NULL;     //< B-orthogonal basis of the search space + already locked Schur vectors
+  mvec_ptr_t  Vful= NULL;     //< B-orthogonal basis of the search space + already locked Schur vectors Q
   mvec_ptr_t  Vtmp= NULL;     //< temporary V
   mvec_ptr_t  Vv  = NULL;     //< next columns in V_
-  mvec_ptr_t  AV  = NULL;     //< A*V
-  mvec_ptr_t  AVful= NULL;     //< A*Vful
-  mvec_ptr_t  AVv = NULL;     //< next columns in AV_
+  mvec_ptr_t  W  = NULL;     //< B-orthogonal basis of A*V
+  mvec_ptr_t  Wful= NULL;     //< W plus orth basis of A*Q
+  mvec_ptr_t  Wv = NULL;     //< next columns in W_
   mvec_ptr_t  BV  = NULL;     //< B*V
   mvec_ptr_t  BVful  = NULL;     //< B*Vful
   mvec_ptr_t  BVv = NULL;     //< next columns in BV_
@@ -215,27 +215,33 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   mvec_ptr_t BQtil= NULL;     //< B*Qtil
   mvec_ptr_t Q = NULL, BQ = NULL, R = NULL;
 
-  sdMat_ptr_t H   = NULL;     //< projection of A onto H, V'*AV
-  sdMat_ptr_t Hful= NULL;     //< projection of A onto H, Vful'*A*Vful
-  sdMat_ptr_t Hh  = NULL;     //< inside view for H
-  sdMat_ptr_t Htmp= NULL;     //< temporary space for H
+  sdMat_ptr_t H   = NULL;     //< projection of A onto V, H=W'*V
+  sdMat_ptr_t Hful= NULL;     //< Hful=Wful'*Vful
+  sdMat_ptr_t H_Aful= NULL;     //< A*Vful=Wful*H_Aful
+  sdMat_ptr_t Htmp= NULL;     //< temporary space for checking invariants
+
+  sdMat_ptr_t S_L = NULL;     //< current left schur vectors of (H,H_A)
+  sdMat_ptr_t S_R = NULL;     //< current right schur vectors of (H,H_A)
+  sdMat_ptr_t T = NULL;       //< current Schur matrix
+  sdMat_ptr_t T_A = NULL;     //< upper triangular matrix of current generalized Schur form
+
+//TODO - adjust sdMats for harmonic extraction
+
+  sdMat_ptr_t Hh  = NULL;     //< inside view for H TODO which views do we need
   sdMat_ptr_t HVv = NULL;     //< next rows in H_
   sdMat_ptr_t HvV = NULL;     //< next columns in H_
   sdMat_ptr_t Hvv = NULL;     //< next block on the diagonal of H_
-  //sdMat_ptr_t Rr  = NULL;     //< [R a; 0 r]
-  sdMat_ptr_t Q_H = NULL;     //< schur vectors of H
-  sdMat_ptr_t Qq_H = NULL;
-  mvec_ptr_t  Qq  = NULL;
-  mvec_ptr_t BQq = NULL;
-  sdMat_ptr_t R_H = NULL;     //< schur matrix of H
+
+  sdMat_ptr_t Qq_H = NULL;    //TODO
+  mvec_ptr_t  Qq  = NULL;     //TODO
+  mvec_ptr_t BQq = NULL;      //TODO
   sdMat_ptr_t Rr_H = NULL;
   sdMat_ptr_t sdMI = NULL;
 
 
-
   //------------------------------- initialize correction equation solver solver ------------------------
   TYPE(jadaCorrectionSolver_ptr) innerSolv = NULL;
-  linSolv_t method = symmetric? MINRES: GMRES;
+  linSolv_t method = opts.innerSolvType;
   PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, opts, A_op->domain_map, iflag), *iflag);
   std::vector<_MT_> innerTol(nEig_,0.1);
   std::vector<_MT_> lastOuterRes(nEig_,mt::zero());
@@ -261,7 +267,7 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 */
   {
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                       0,     nV,        iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                      0,     nV,        iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (W_,     &W,                      0,     nV,        iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                      0,     nV,        iflag), *iflag);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     0,      minBase,  0,     nV-1,      iflag), *iflag);
 
@@ -272,19 +278,23 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   int nConvEig = 0;
 #define UPDATE_SUBSPACE_VIEWS \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                         nConvEig, nV-1,      iflag), *iflag); \
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                        nConvEig, nV-1,      iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (W_,     &W,                        nConvEig, nV-1,      iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                        nConvEig, nV-1,      iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     nConvEig, nV-1,     nConvEig, nV-1,      iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_A_,      &H_A,     nConvEig, nV-1,     nConvEig, nV-1,      iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &Vful,                      0,        nV-1,      iflag), *iflag); \
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AVful,                     0,        nV-1,      iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (W_,     &Wful,                     0,        nV-1,      iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BVful,                     0,        nV-1,      iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &Hful,  0,        nV-1,     0,        nV-1,      iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_A_,      &H_Aful,  0,        nV-1,     0,        nV-1,      iflag), *iflag);
 
   UPDATE_SUBSPACE_VIEWS;
 
 
 
 #ifdef TESTING
+// V'V=I, W'W=I, A*V=W*H_A, V'Q=W'Q=0 
+// H=W'V, H_A S_R = S_L T_A, H S_R = S_L T
 #define TESTING_CHECK_SUBSPACE_INVARIANTS \
 { \
   /* check orthogonality of V, BV, Q */ \
@@ -296,28 +306,36 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
       orthEps = mt::max(orthEps, st::abs(Htmp_raw[i*ldaHtmp+j] - ((i==j) ? st::one() : st::zero()))); \
   PHIST_OUT(PHIST_INFO, "Line %d: B-orthogonality of V: %e\n", __LINE__, orthEps); \
  \
-  /* check AV = A*V */ \
+  /* check orthogonality of W, BW, Q */ \
+  PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Wful, BWful, st::zero(), Htmp, iflag), *iflag); \
+  _MT_ orthEps = st::abs(Htmp_raw[0] - st::one()); \
+  for(int i = 0; i < nV; i++) \
+    for(int j = 0; j < nV; j++) \
+      orthEps = mt::max(orthEps, st::abs(Htmp_raw[i*ldaHtmp+j] - ((i==j) ? st::one() : st::zero()))); \
+  PHIST_OUT(PHIST_INFO, "Line %d: B-orthogonality of W: %e\n", __LINE__, orthEps); \
+ \
+  /* check A*V = W*H_A */ \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp,                  0,       nV-1,          iflag), *iflag); \
-  PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vful, st::zero(), Vtmp, iflag), *iflag); \
-  PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (-st::one(), AVful, st::one(), Vtmp, iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Wful,H_Aful,st::zero(),iflag),*iflag);
+  PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vful, -st::one(), Vtmp, iflag), *iflag); \
   _MT_ normVtmp[nV]; \
   PHIST_CHK_IERR(SUBR( mvec_norm2 ) (Vtmp, normVtmp, iflag), *iflag); \
   _MT_ equalEps = normVtmp[0]; \
   for(int i = 0; i < nV; i++) \
     equalEps = mt::max(equalEps, normVtmp[i]); \
-  PHIST_OUT(PHIST_INFO, "Line %d: AV - A*V: %e\n", __LINE__, equalEps); \
-  /* check H = V'*A*V */ \
+  PHIST_OUT(PHIST_INFO, "Line %d: A*V - W*H_A: %e\n", __LINE__, equalEps); \
+  /* check H = W'*V */ \
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      iflag), *iflag); \
-  PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vful, AVful, st::zero(), Htmp, iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Wful, Vful, st::zero(), Htmp, iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( sdMat_add_sdMat ) (-st::one(), Hful, st::one(), Htmp, iflag), *iflag); \
   equalEps = st::abs(Htmp_raw[0]); \
   for(int i = 0; i < nV; i++) \
     for(int j = 0; j < nV; j++) \
       equalEps = mt::max(equalEps, st::abs(Htmp_raw[i*ldaHtmp+j])); \
-  PHIST_OUT(PHIST_INFO, "Line %d: H - V'*AV: %e\n", __LINE__, equalEps); \
+  PHIST_OUT(PHIST_INFO, "Line %d: H - W'*V: %e\n", __LINE__, equalEps); \
   /* PHIST_SOUT(PHIST_INFO, "H:\n"); */ \
   /* PHIST_CHK_IERR(SUBR( sdMat_print )(H, iflag), *iflag); */ \
-  /* PHIST_SOUT(PHIST_INFO, "H - V'*AV:\n"); */ \
+  /* PHIST_SOUT(PHIST_INFO, "H - W'*V:\n"); */ \
   /* PHIST_CHK_IERR(SUBR( sdMat_print )(Htmp, iflag), *iflag); */ \
 }
 #else
@@ -380,20 +398,34 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
       PHIST_CHK_NEG_IERR(SUBR(sdMat_check_symmetrie)(Hful, tol, iflag), *iflag);
     }
 
-    // calculate sorted Schur form of H in (Q_H,R_H)
-    // we only update part of Q_H,R_H, so first set Q_H, R_H to zero
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0,     nV-1,      0,     nV-1,      iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,     nV-1,      iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( sdMat_put_value  ) (Q_H, st::zero(), iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( sdMat_put_value  ) (R_H, st::zero(), iflag), *iflag);
-    // then copy the new block of H
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, nConvEig, nV-1, nConvEig, nV-1, iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( sdMat_get_block  ) (H_,   R_H,  nConvEig, nV-1, nConvEig, nV-1, iflag), *iflag);
+    // calculate sorted (generalized) Schur form of (H,H_A) in (S_L,S_R,T,T_A)
+    // to get (H,H_A) = (S_L T S_R', S_L T_A S_R')
+    //
+    // Since we have Vful = [Q V], Wful*H_Aful=A*Vful
+    //... TODO ...
+    //
+    
+    // we only update part of S/T, so first set them to zero
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (S_L_,&S_L, 0,     nV-1,      0,     nV-1,      iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (S_R_,&S_R, 0,     nV-1,      0,     nV-1,      iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (T_,&T, 0,     nV-1,      0,     nV-1,      iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (T_A_,&T_A, 0,     nV-1,      0,     nV-1,      iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_put_value  ) (S_L, st::zero(), iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_put_value  ) (S_R, st::zero(), iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_put_value  ) (T, st::zero(), iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_put_value  ) (T_A, st::zero(), iflag), *iflag);
+    // then copy the new block of H, H_A
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (T_,&T, nConvEig, nV-1, nConvEig, nV-1, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (T_A_,&T_A, nConvEig, nV-1, nConvEig, nV-1, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_get_block  ) (H_,   T,  nConvEig, nV-1, nConvEig, nV-1, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_get_block  ) (H_A_,   T_A,  nConvEig, nV-1, nConvEig, nV-1, iflag), *iflag);
     int nSort = minBase-nConvEig; //nEig_-nConvEig;
     int nSelect = nSort;
     lidx_t offR_H = ldaR_H*nConvEig+nConvEig;
     lidx_t offQ_H = ldaQ_H*nConvEig+nConvEig;
-    PHIST_CHK_IERR(SUBR( SchurDecomp ) (R_H_raw+offR_H, ldaR_H, Q_H_raw+offQ_H, ldaQ_H, nV-nConvEig, nSelect, nSort, which, tol, ev_H+nConvEig, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( GenSchurDecomp ) (T_raw+offT, ldaT, T_A_raw+offT_A, ldaT_A, 
+                                           S_L_raw+offS, ldaS_L, S_R_raw+offS, ldaS_R,
+                                           nV-nConvEig, nSelect, nSort, which, tol, ev_H+nConvEig, iflag), *iflag);
     // we still need to add the missing parts of R_H, Q_H
     if( nConvEig > 0 )
     {
