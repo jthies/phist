@@ -309,15 +309,8 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
     return;
   }
   
-  // sorting of QZ factorization not implemented
-  
-  *iflag=PHIST_NOT_IMPLEMENTED;
-  return;
 
-//[
-#if 0
-
-//TODO - the function to sort a generalized Schur form in lapack is called XTGSEN
+  //The function to sort a generalized Schur form in lapack is called XTGSEN
 
   // find indices for the first howMany eigenvalues. A pair of complex conjugate
   // eigs is counted as a single one because we will skip solving the update equation
@@ -368,13 +361,19 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
 
         for (int i=0;i<m;i++)
         {
-          ev[i]=std::complex<MT>(alpha[i],alphai[i])/beta[i];
+          if (beta[i]!=st::zero())
+          {
+            ev[i]=std::complex<MT>(alpha[i],alphai[i])/beta[i];
+          }
+          else
+          {
+            ev[i]=st::zero();
+          }
         }
-#endif   
+#endif
       }
     }
     PHIST_CHK_IERR(;,*iflag);
-    // TROET - continue here
     // TODO  - what about nsorted?
     PHIST_DEB("nsorted=%d\n",nsorted);
     // *POSSIBLE PROBLEM*
@@ -413,14 +412,27 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
         // we pass in ev+i
         int nsorted_before=nsorted;
 #ifdef IS_COMPLEX
-        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,
-              (blas_cmplx_t*)ev,&nsorted,&S_cond, &sep, (blas_cmplx_t*)work, &lwork, iflag);
+        PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
+                (blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)T,&ldT,alpha,beta,
+                (blas_cmplx_t*)VS,&ldVS,(blas_cmplx_t*)WS,ldWS,&m,
+                &pl,&pr,dif,rwork,lwork,iwork,liwork,iflag);
 #else
-        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
-              &S_cond, &sep, work, &lwork, iwork, &liwork, iflag);
-        for (int j=0;j<m;j++)
+        PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
+                (blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)T,&ldT,alpha,alphai,beta,
+                (blas_cmplx_t*)VS,&ldVS,(blas_cmplx_t*)WS,ldWS,&m,
+                &pl,&pr,dif,rwork,lwork,iwork,liwork,iflag);
+
+
+        for (int i=0;i<m;i++)
         {
-          ev[j]=std::complex<MT>(ev_r[j],ev_i[j]);
+          if (beta[i]!=st::zero())
+          {
+            ev[i]=std::complex<MT>(alpha[i],alphai[i])/beta[i];
+          }
+          else
+          {
+            ev[i]=st::zero();
+          }
         }
 #endif
         if( *iflag != 0 )
@@ -436,11 +448,9 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
 #endif
     }
   }
-#endif
-//]
 }
 
-// reorder multiple eigenvalues in a given (partial) schur decomposition by the smallest residual norm of the unprojected problem
+// reorder multiple eigenvalues in a given (partial) Schur decomposition by the smallest residual norm of the unprojected problem
 void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
       int m, int nselected, eigSort_t which, _MT_ tol, _MT_* resNorm, void* v_ev, int* permutation, int *iflag)
 {

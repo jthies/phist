@@ -64,7 +64,7 @@ typedef char blas_char_t;
 #define DTRSEN LAPACK_SUBR(DTRSEN,dtrsen)
 #define CTRSEN LAPACK_SUBR(CTRSEN,ctrsen)
 #define ZTRSEN LAPACK_SUBR(ZTRSEN,ztrsen)
-/* TRSEN - sort generalized Schur form */
+/* TGSEN - sort generalized Schur form */
 #define STGSEN LAPACK_SUBR(STGSEN,stgsen)
 #define DTGSEN LAPACK_SUBR(DTGSEN,dtgsen)
 #define CTGSEN LAPACK_SUBR(CTGSEN,ctgsen)
@@ -74,6 +74,11 @@ typedef char blas_char_t;
 #define DTREXC LAPACK_SUBR(DTREXC,dtrexc)
 #define CTREXC LAPACK_SUBR(CTREXC,ctrexc)
 #define ZTREXC LAPACK_SUBR(ZTREXC,ztrexc)
+/* TGEXC - swap rows in generalized Schur form */
+#define STGEXC LAPACK_SUBR(STGEXC,stgexc)
+#define DTGEXC LAPACK_SUBR(DTGEXC,dtgexc)
+#define CTGEXC LAPACK_SUBR(CTGEXC,ctgexc)
+#define ZTGEXC LAPACK_SUBR(ZTGEXC,ztgexc)
 /* TREVC - compute eigenvectors */
 #define STREVC LAPACK_SUBR(STREVC,strevc)
 #define DTREVC LAPACK_SUBR(DTREVC,dtrevc)
