@@ -129,7 +129,8 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   // V'V=I, W'W=I, A*V=W*H_A, V'Q=W'Q=0 and the (generalized) Schur decomposition
   // H=W'V, H_A = S_L T_A S_R', H = S_L T S_R'. Since H_A is upper triangular
   // by construction, this simplifies to S_L=I, H=T*S_R' and T_A=H_A*S_R'
-
+  // In order to be consistent with subspacejada, we call S_R'=:Q_H
+TROET
   sdMat_ptr_t H_      = NULL; //< H=W'V
   sdMat_ptr_t Htmp_   = NULL; //< temporary space used only for checking invariants
   sdMat_ptr_t H_A_    = NULL; //< identity matrix
@@ -227,7 +228,10 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 
 //TODO - adjust sdMats for harmonic extraction
 
-  sdMat_ptr_t Hh  = NULL;     //< inside view for H TODO which views do we need
+  sdMat_ptr_t Hq  = NULL;     //< inside view for H
+  sdMat_ptr_t H_Aq  = NULL;   //< inside view for H_A
+#if 0
+  //TODO - are we using these anywhere?
   sdMat_ptr_t HVv = NULL;     //< next rows in H_
   sdMat_ptr_t HvV = NULL;     //< next columns in H_
   sdMat_ptr_t Hvv = NULL;     //< next block on the diagonal of H_
@@ -237,7 +241,7 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   mvec_ptr_t BQq = NULL;      //TODO
   sdMat_ptr_t Rr_H = NULL;
   sdMat_ptr_t sdMI = NULL;
-
+#endif
 
   //------------------------------- initialize correction equation solver solver ------------------------
   TYPE(jadaCorrectionSolver_ptr) innerSolv = NULL;
@@ -401,9 +405,22 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
     // calculate sorted (generalized) Schur form of (H,H_A) in (S_L,S_R,T,T_A)
     // to get (H,H_A) = (S_L T S_R', S_L T_A S_R')
     //
-    // Since we have Vful = [Q V], Wful*H_Aful=A*Vful
-    //... TODO ...
+    // We have  Vful    = [Q V]
+    //          Wful    = [Q W]                  (because AQ=QR)
+    //          H_Aful  = [R H_Aq; 0 H_A]        (where the coefficients H_Aq and H_A come from
+    //                                            orthogonalizing AV against Q and itself, resp.)
+    //          Hful    = Wful'Vful=[I Hq; 0 H]  (where Hq, H come from orthogonalizing V against
+    //                                            Q and itself, respectively).
     //
+    // So we get the complete decomposition
+    //
+    // |I Hq|   |I  0 ||I Tq||I 0   |
+    // |0 H | = |0 S_L||0 T ||0 S_R'|
+    //
+    // |R H_Aq|   |I  0 ||R T_Aq||I 0   |
+    // |0 H_A | = |0 S_L||0 T_A ||0 S_R'|
+    //
+    // and hence T_Aq H_Aq*S_R, Tq=Hq*S_R
     
     // we only update part of S/T, so first set them to zero
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (S_L_,&S_L, 0,     nV-1,      0,     nV-1,      iflag), *iflag);
@@ -421,31 +438,39 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
     PHIST_CHK_IERR(SUBR( sdMat_get_block  ) (H_A_,   T_A,  nConvEig, nV-1, nConvEig, nV-1, iflag), *iflag);
     int nSort = minBase-nConvEig; //nEig_-nConvEig;
     int nSelect = nSort;
-    lidx_t offR_H = ldaR_H*nConvEig+nConvEig;
-    lidx_t offQ_H = ldaQ_H*nConvEig+nConvEig;
+    lidx_t offT = ldaT*nConvEig+nConvEig;
+    lidx_t offT_A = ldaT_A*nConvEig+nConvEig;
+    lidx_t offS_L = ldaS_L*nConvEig+nConvEig;
+    lidx_t offS_R = ldaS_R*nConvEig+nConvEig;
     PHIST_CHK_IERR(SUBR( GenSchurDecomp ) (T_raw+offT, ldaT, T_A_raw+offT_A, ldaT_A, 
-                                           S_L_raw+offS, ldaS_L, S_R_raw+offS, ldaS_R,
+                                           S_L_raw+offS_L, ldaS_L, S_R_raw+offS_R, ldaS_R,
                                            nV-nConvEig, nSelect, nSort, which, tol, ev_H+nConvEig, iflag), *iflag);
-    // we still need to add the missing parts of R_H, Q_H
+    // we still need to add the missing parts of T, T_A, S_L, S_R
     if( nConvEig > 0 )
     {
-      // upper left part of Q_H
+      // upper left part of S_L, S_R, T (identity matrices)
       for(int i = 0; i < nConvEig; i++)
-        Q_H_raw[ldaQ_H*i+i] = st::one();
+      {
+        S_L_raw[ldaS_L*i+i] = st::one();
+        S_R_raw[ldaS_R*i+i] = st::one();
+        T_raw[ldaT*i+i] = st::one();
+      }
 
-      // left part of R_H
-      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_, &R_H, 0, nConvEig-1, 0, nConvEig-1, iflag), *iflag);
-      PHIST_CHK_IERR(SUBR( sdMat_get_block  ) (R,    R_H,  0, nConvEig-1, 0, nConvEig-1, iflag), *iflag);
+      // upper left part of T_A = R
+      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (T_A_, &T_A, 0, nConvEig-1, 0, nConvEig-1, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR( sdMat_get_block  ) (R,    T_A,  0, nConvEig-1, 0, nConvEig-1, iflag), *iflag);
 
-      // upper right part of R_H
-      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (Q_H_, &Qq_H, nConvEig, nV-1,            nConvEig, nEig_-1, iflag), *iflag);
-      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (R_H_, &Rr_H, 0,             nConvEig-1, nConvEig, nEig_-1, iflag), *iflag);
-      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (H_  , &Hh,   0,             nConvEig-1, nConvEig, nV-1,    iflag), *iflag);
+      // upper right part of T_A and T
+      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (S_L_, &S_L, nConvEig, nV-1,            nConvEig, nEig_-1, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (S_R_, &S_R, nConvEig, nV-1,            nConvEig, nEig_-1, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (T_, &Tq, 0,             nConvEig-1, nConvEig, nEig_-1, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (T_A_  , &T_Aq,   0,             nConvEig-1, nConvEig, nV-1,    iflag), *iflag);
 
-      PHIST_CHK_IERR(SUBR( sdMat_times_sdMat ) (st::one(), Hh, Qq_H, st::zero(), Rr_H, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR( sdMat_times_sdMat ) (st::one(), Hq, S_R, st::zero(), Tq, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR( sdMat_times_sdMat ) (st::one(), H_Aq, S_R, st::zero(), T_Aq, iflag), *iflag);
     }
 #ifdef TESTING
-{
+{//TODO
   // check that H Q_H = Q_H R_H
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0, nV-1,    0, nEig_-1, iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0, nEig_-1, 0, nEig_-1, iflag), *iflag);
