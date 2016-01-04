@@ -346,6 +346,7 @@ CHECK_CXX_SOURCE_COMPILES("
   }
 " PHIST_HAVE_CXX11_THREADLOCAL)
 CHECK_CXX_SOURCE_COMPILES("
+  template<typename T>
   class C {
   public:
   C(){}
@@ -353,7 +354,7 @@ CHECK_CXX_SOURCE_COMPILES("
   };
   int main(int argc, char** argv)
   {
-    C c;
+    C<int> c;
   }
 " PHIST_HAVE_CXX11_MOVEDEFAULT)
 if(PHIST_HAVE_CXX11_LAMBDAS OR PHIST_HAVE_CXX11_THREADLOCAL)
