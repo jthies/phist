@@ -462,7 +462,9 @@ void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
 
   // set permutation to identity
   for(int i = 0; i < nselected; i++)
+  {
     permutation[i] = i;
+  }
 
 #ifndef IS_COMPLEX
   // check for complex-conjugate eigenpairs
@@ -561,6 +563,138 @@ void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
 #else
         PREFIX(TREXC) ((blas_char_t*)compq, &m, T, &ldT, S, &ldS, 
             &ifst, &ilst, work, iflag);
+#endif
+        if( *iflag != 0 )
+          break;
+        PHIST_DEB("ifst = %d,\t ilst = %d\n", ifst-1, ilst-1);
+
+        if( pos > 1 )
+          pos--;
+      }
+    }
+  }
+}
+
+
+ //! reorder multiple eigenvalues in a given (partial) generalized Schur decomposition by the smallest
+ //! residual norm of the unprojected problem must be sorted up to nselected to work correctly!
+ void SUBR(ReorderPartialGenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT, _ST_* VS, int ldVS, _ST_* WS, int ldWS,
+           int m, int nselected, eigSort_t which, _MT_ tol, _MT_* resNorm, void* v_ev, int* permutation, int *iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  *iflag = 0;
+
+  CT* ev = (CT*) v_ev;
+
+  // set permutation to identity
+  for(int i = 0; i < nselected; i++)
+  {
+    permutation[i] = i;
+  }
+
+#ifndef IS_COMPLEX
+  // check for complex-conjugate eigenpairs
+  for(int i = 0; i < nselected; i++)
+  {
+    if( mt::abs(ct::imag(ev[i])) > mt::eps() )
+    {
+      PHIST_SOUT(PHIST_ERROR,"reordering does not work for complex-conjugate eigenpairs in the real case!");
+      PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+    }
+  }
+#endif
+
+  // work array for lapack
+#ifndef IS_COMPLEX
+  int lwork=4*n+16;
+  _ST_ work[lwork];
+#endif
+
+
+// prohibit parallel execution to assure identical results on different procs
+#pragma omp parallel
+  {
+#pragma omp master
+    {
+
+      // go through all eigenvalues and check if we need to do something
+      // using gnome sort
+      int pos = 1;
+      while( pos < nselected )
+      {
+/*
+#ifndef IS_COMPLEX
+        // we cannot reorder conjugate complex eigenpairs currently
+        if( ct::imag(ev[pos]) != 0 || ct::imag(ev[pos-1]) != 0 )
+        {
+          pos++;
+          continue;
+        }
+#endif
+*/
+        // check if the next eigenvalue has same "magnitude"
+        if( which == LM && ct::abs(ev[pos]) < ct::abs(ev[pos-1])-tol )
+        {
+          pos++;
+          continue;
+        }
+        if( which == SM && ct::abs(ev[pos]) > ct::abs(ev[pos-1])+tol )
+        {
+          pos++;
+          continue;
+        }
+        if( which == LR && ct::real(ev[pos]) < ct::real(ev[pos-1])-tol )
+        {
+          pos++;
+          continue;
+        }
+        if( which == SR && ct::real(ev[pos]) > ct::real(ev[pos-1])+tol )
+        {
+          pos++;
+          continue;
+        }
+
+        // we have two ev with the same "magnitude", check residuum
+        if( which == LM || which == SM )
+        {
+          if( mt::abs(ct::abs(ev[pos])-ct::abs(ev[pos-1])) <= tol &&
+              resNorm[pos] >= resNorm[pos-1] )
+          {
+            pos++;
+            continue;
+          }
+        }
+        if( which == LR || which == SR )
+        {
+          if( mt::abs(ct::real(ev[pos])-ct::real(ev[pos-1])) <= tol &&
+              resNorm[pos] >= resNorm[pos-1] )
+          {
+            pos++;
+            continue;
+          }
+        }
+
+
+        // swap elements pos and pos-1
+        std::swap(resNorm[pos],resNorm[pos-1]);
+        std::swap(permutation[pos],permutation[pos-1]);
+        std::swap(ev[pos],ev[pos-1]);
+
+        const char* compq = "V";
+        const char* compz = "V";
+        int ifst = pos;
+        int ilst = pos+1;
+        PHIST_SOUT(PHIST_DEBUG,"swapping %d %d in unconverged eigenvalues\n",ifst-1,ilst-1);
+#ifdef IS_COMPLEX TROET
+        PREFIX(TGEXC) (wantq, wantz, &m, 
+                (blas_cmplx_t*) S, &ldS, (blas_cmplx_t*) T, &ldT,
+                (blas_cmplx_t*) VS, &ldVS, (blas_cmplx_t*) WS, &ldWS, 
+                &ifst, &ilst, iflag);
+#else
+        PREFIX(TREXC) (wantq, wantz, &m, 
+                S, &ldS, T, &ldT, VS, ldVS, WS, ldWS,
+                &ifst, &ilst, work, lwork, iflag);
 #endif
         if( *iflag != 0 )
           break;
