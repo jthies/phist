@@ -31,6 +31,16 @@ option(PHIST_BUILTIN_RNG
         "use random number generator provided by PHIST, which may be solower than the one implemented by the kernel lib. On the other hand, it gives reproducible results across runs, independent of the exact runtime setup."
         ON)
 
+# use GHOST if found (must be ON if ghost is the kernel lib)
+option(PHIST_USE_GHOST
+        "try to find the GHOST library even if it is not the kernel lib" 
+        ON)
+
+# try to find MPACK for high precision lapack routines
+option(PHIST_USE_MPACK
+        "try to find the MPACK library" 
+        ON)
+
 ########################################################################
 # Lists of libraries, executables, tests
 ########################################################################
@@ -416,6 +426,7 @@ elseif  (PHIST_KERNEL_LIB STREQUAL "tpetra")
 elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   # we already link with ghost because of the queuing system  
   set(PHIST_KERNEL_LIB_GHOST 1)
+  set(PHIST_USE_GHOST ON)
   set(PHIST_MVECS_ROW_MAJOR 1 CACHE STRING "wether multi-vectors should be stored in row-major ordering")
   set(PHIST_SDMATS_ROW_MAJOR 0 CACHE STRING "store sdMats in row-major order (not supported by our algorithms..." )
 
@@ -698,7 +709,7 @@ endif()
 
 if(PHIST_KERNEL_LIB STREQUAL "ghost")
   find_package(GHOST REQUIRED CONFIG)
-else()
+elif(PHIST_USE_GHOST)
   find_package(GHOST CONFIG QUIET)
 endif()
 if (GHOST_FOUND)
@@ -716,15 +727,18 @@ endif()
 
 #message(STATUS "GHOST libs: ${GHOST_LIBRARIES}")
 
-find_package (MPACK)
-if (MPACK_FOUND)
-  include_directories(${MPACK_INCLUDE_DIRS})
-  link_directories(${MPACK_LIBRARY_DIRS})
-  message(STATUS "mpack found, enabled high precision lapack!")
-  if (MPACK_QD_FOUND)
-    set(PHIST_HAVE_MPACK_QD 1)
-  else()
-    message(WARNING "found MPACK, but not MPACK_QD, which is the only supported implementation right now")
+if (PHIST_USE_MPACK)
+  find_package (MPACK)
+  if (MPACK_FOUND)
+    include_directories(${MPACK_INCLUDE_DIRS})
+    link_directories(${MPACK_LIBRARY_DIRS})
+    message(STATUS "mpack found, enabled high precision lapack!")
+    if (MPACK_QD_FOUND)
+      set(PHIST_HAVE_MPACK_QD 1)
+    else()
+      message(WARNING "found MPACK, but not MPACK_QD, which is the only 
+       supported implementation right now")
+    endif()
   endif()
 endif()
 
