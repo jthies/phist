@@ -459,13 +459,11 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
 
     // update approximate Schur form of A (keeping the already computed part locked)
     PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), V,    Qq_H, st::zero(), Qq,  iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( mvec_set_block ) (Q, Qq, nConvEig, nEig_-1, iflag), *iflag);
     PHIST_CHK_IERR(SUBR( sdMat_set_block  ) (R, Rr_H, 0, nEig_-1, nConvEig, nEig_-1, iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), AV,   Qq_H, st::zero(), t_res, iflag), *iflag);
     if( B_op != NULL )
     {
       PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BV,   Qq_H, st::zero(), BQq,  iflag), *iflag);
-      PHIST_CHK_IERR(SUBR( mvec_set_block ) (BQ, BQq, nConvEig, nEig_-1, iflag), *iflag);
     }
     // overwrite res with the residual: -res = -(Aq - Bqr) = + BQq*r - res
     PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BQ,   Rr_H,    -st::one(), t_res, iflag), *iflag);
