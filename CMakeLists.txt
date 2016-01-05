@@ -709,7 +709,7 @@ endif()
 
 if(PHIST_KERNEL_LIB STREQUAL "ghost")
   find_package(GHOST REQUIRED CONFIG)
-elif(PHIST_USE_GHOST)
+elseif(PHIST_USE_GHOST)
   find_package(GHOST CONFIG QUIET)
 endif()
 if (GHOST_FOUND)
