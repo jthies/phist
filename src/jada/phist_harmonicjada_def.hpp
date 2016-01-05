@@ -130,27 +130,28 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   // H=W'V, H_A = S_L T_A S_R', H = S_L T S_R'. Since H_A is upper triangular
   // by construction, this simplifies to S_L=I, H=T*S_R' and T_A=H_A*S_R'
   // In order to be consistent with subspacejada, we call S_R'=:Q_H
-TROET
   sdMat_ptr_t H_      = NULL; //< H=W'V
   sdMat_ptr_t Htmp_   = NULL; //< temporary space used only for checking invariants
   sdMat_ptr_t H_A_    = NULL; //< identity matrix
+  sdMat_ptr_t H_Atmp_ = NULL; //< temporary space used only for checking invariants
   sdMat_ptr_t sdMI_   = NULL; //< identity matrix
   // QZ decomposition
   sdMat_ptr_t S_L_    = NULL;
   sdMat_ptr_t S_R_    = NULL;
   sdMat_ptr_t T_      = NULL;
-  sdMat_ptr_t T_A_    = NULL;
+  sdMat_ptr_t T_A_    = NULL;  
 
   _ST_ sigma[nEig_];             //< JaDa correction shifts
 
   _ST_ *H_raw       = NULL;
   _ST_ *Htmp_raw      = NULL;
   _ST_ *H_A_raw       = NULL;
+  _ST_ *H_Atmp_raw    = NULL;
   _ST_ *S_L_raw       = NULL;
   _ST_ *S_R_raw       = NULL;
   _ST_ *T_raw       = NULL;
   _ST_ *T_A_raw       = NULL;
-  lidx_t ldaH, ldaH_A, ldaHtmp, ldaS_L, ldaS_R, ldaT, ldaT_A;
+  lidx_t ldaH, ldaH_A, ldaHtmp, ldaH_Atmp,ldaS_L, ldaS_R, ldaT, ldaT_A;
 
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&V_,     A_op->domain_map, maxBase,        iflag), *iflag);
   // TODO: remove Vtmp
@@ -163,10 +164,11 @@ TROET
   int resDim = std::min(2*blockDim, nEig+blockDim-1);
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&res,    A_op->range_map,  resDim,                 iflag), *iflag);
 
-  PHIST_CHK_IERR(SUBR( sdMat_create ) (&H_,     maxBase,          maxBase,  range_comm,   iflag), *iflag);
-  PHIST_CHK_IERR(SUBR( sdMat_create ) (&H_A_,     maxBase,          maxBase,  range_comm,   iflag), *iflag);
-  PHIST_CHK_IERR(SUBR( sdMat_create ) (&Htmp_,  maxBase,          maxBase,  range_comm,   iflag), *iflag);
-  PHIST_CHK_IERR(SUBR( sdMat_create ) (&sdMI_,  maxBase,          maxBase,  range_comm,   iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( sdMat_create ) (&H_,      maxBase,          maxBase,  range_comm,   iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( sdMat_create ) (&H_A_,    maxBase,          maxBase,  range_comm,   iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( sdMat_create ) (&Htmp_,   maxBase,          maxBase,  range_comm,   iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( sdMat_create ) (&H_Atmp_, maxBase,          maxBase,  range_comm,   iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( sdMat_create ) (&sdMI_,   maxBase,          maxBase,  range_comm,   iflag), *iflag);
 
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&S_L_,   maxBase,          maxBase,  range_comm,   iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&S_R_,   maxBase,          maxBase,  range_comm,   iflag), *iflag);
@@ -175,9 +177,10 @@ TROET
   // construct identity matrix
   PHIST_CHK_IERR(SUBR( sdMat_identity ) (sdMI_, iflag), *iflag);
 
-  PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (Htmp_,   &Htmp_raw,  &ldaHtmp,  iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (Htmp_,   &Htmp_raw,   &ldaHtmp,    iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (H_Atmp_, &H_Atmp_raw, &ldaH_Atmp,  iflag), *iflag);
 
-  PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (H_,   &Htmp_raw,  &ldaH,  iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (H_,     &H_raw,  &ldaH,  iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (H_A_,   &H_A_raw,  &ldaHtmp,  iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (S_L_,    &T_raw,   &ldaT,   iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (S_L_,    &T_A_raw,   &ldaT_A,   iflag), *iflag);
@@ -226,10 +229,14 @@ TROET
   sdMat_ptr_t T = NULL;       //< current Schur matrix
   sdMat_ptr_t T_A = NULL;     //< upper triangular matrix of current generalized Schur form
 
-//TODO - adjust sdMats for harmonic extraction
+//views of parts of sdMats
 
-  sdMat_ptr_t Hq  = NULL;     //< inside view for H
-  sdMat_ptr_t H_Aq  = NULL;   //< inside view for H_A
+  sdMat_ptr_t Hq  = NULL;     //< inside view for H(iq,jv), with iq=0:nconv-1, jv=nconv:nV-1
+  sdMat_ptr_t H_Aq  = NULL;   //< inside view for H_A(iq,jv)
+  sdMat_ptr_t Tq  = NULL;     //< inside view for T(iq,jq), jq=nconv:nEig_-1
+                              //< nEig_<=nEig is used to consider only the next few sought eigenvalues
+                              //< at a time.
+  sdMat_ptr_t T_Aq  = NULL;   //< inside view for T_A(iq,jq)
 #if 0
   //TODO - are we using these anywhere?
   sdMat_ptr_t HVv = NULL;     //< next rows in H_
@@ -461,35 +468,51 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
       PHIST_CHK_IERR(SUBR( sdMat_get_block  ) (R,    T_A,  0, nConvEig-1, 0, nConvEig-1, iflag), *iflag);
 
       // upper right part of T_A and T
-      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (S_L_, &S_L, nConvEig, nV-1,            nConvEig, nEig_-1, iflag), *iflag);
-      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (S_R_, &S_R, nConvEig, nV-1,            nConvEig, nEig_-1, iflag), *iflag);
-      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (T_, &Tq, 0,             nConvEig-1, nConvEig, nEig_-1, iflag), *iflag);
-      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (T_A_  , &T_Aq,   0,             nConvEig-1, nConvEig, nV-1,    iflag), *iflag);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (S_R_, &S_R,  nConvEig, nV-1,       nConvEig, nEig_-1, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (H_,   &Hq,   0,        nConvEig-1, nConvEig, nEig_-1, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (T_,   &Tq,   0,        nConvEig-1, nConvEig, nEig_-1, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (H_A_, &H_Aq, 0,        nConvEig-1, nConvEig, nEig_-1,    iflag), *iflag);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (T_A_, &T_Aq, 0,        nConvEig-1, nConvEig, nEig_-1,    iflag), *iflag);
 
       PHIST_CHK_IERR(SUBR( sdMat_times_sdMat ) (st::one(), Hq, S_R, st::zero(), Tq, iflag), *iflag);
       PHIST_CHK_IERR(SUBR( sdMat_times_sdMat ) (st::one(), H_Aq, S_R, st::zero(), T_Aq, iflag), *iflag);
     }
 #ifdef TESTING
-{//TODO
-  // check that H Q_H = Q_H R_H
-  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0, nV-1,    0, nEig_-1, iflag), *iflag);
-  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0, nEig_-1, 0, nEig_-1, iflag), *iflag);
+{
+  // check that H S_R = S_L T
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (S_L_,&S_L, 0, nV-1,    0, nEig_-1, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (S_R_,&S_R, 0, nV-1,    0, nEig_-1, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (T_,&T, 0, nEig_-1, 0, nEig_-1, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(Htmp_, &Htmp, 0, nV-1,    0, nEig_-1, iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(), Hful, Q_H, st::zero(), Htmp, iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(-st::one(), Q_H, R_H, st::one(), Htmp, iflag), *iflag);
-  // get max norm
-  _MT_ absErr = mt::zero();
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (T_A_,&T_A, 0, nEig_-1, 0, nEig_-1, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)(H_Atmp_, &H_Atmp, 0, nV-1,    0, nEig_-1, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(), Hful, S_R, st::zero(), Htmp, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(-st::one(), S_L, T, st::one(), Htmp, iflag), *iflag);
+
+  // check that H S_R = S_L T
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (T_A_,&T_A, 0, nEig_-1, 0, nEig_-1, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)(H_Atmp_, &H_Atmp, 0, nV-1,    0, nEig_-1, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(), H_Aful, S_R, st::zero(), H_Atmp, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(-st::one(), S_L, T_A, st::one(), H_Atmp, iflag), *iflag);
+
+  // get max norms
+  _MT_ absErrT = mt::zero(), absErrT_A=mt::zero();
   for(int i = 0; i < nEig_; i++)
     for(int j = 0; j < nV; j++)
-      absErr = mt::max(absErr, st::abs(Htmp_raw[i*ldaHtmp+j]));
-  PHIST_SOUT(PHIST_INFO, "H*Q_H - Q_H*R_H: %8.4e\n", absErr);
+    {
+      absErrT   = mt::max(absErrT,   st::abs(Htmp_raw[i*ldaHtmp+j]));
+      absErrT_A = mt::max(absErrT_A, st::abs(H_Atmp_raw[i*ldaH_Atmp+j]));
+    }
+  PHIST_SOUT(PHIST_INFO, "H*S_R   - S_L*T  : %8.4e\n"
+                         "H_A*S_R - S_L*T_A: %8.4e\n", absErrT,absErrT_A);
   //PHIST_CHK_IERR(SUBR(sdMat_print)(H, iflag), *iflag);
   //PHIST_CHK_IERR(SUBR(sdMat_print)(Q_H, iflag), *iflag);
   //PHIST_CHK_IERR(SUBR(sdMat_print)(R_H, iflag), *iflag);
   //PHIST_CHK_IERR(SUBR(sdMat_print)(Htmp, iflag), *iflag);
+
 }
 #endif
-
+#error "TODO continue here"
     // update views
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0,     nV-1,      0,             nV-1,      iflag), *iflag);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,             nV-1,      iflag), *iflag);
