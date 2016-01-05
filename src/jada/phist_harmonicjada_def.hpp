@@ -126,10 +126,9 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   mvec_ptr_t  res     = NULL;    //< residuum A*Q-Q*R
 
   // For harmonic Ritz values (approximating interior eigenvalues) we have
-  // V'V=I, W'W=I, A*V=W*H_A, V'Q=W'Q=0 and the (generalized) Schur decomposition
-  // H=W'V, H_A = S_L T_A S_R', H = S_L T S_R'. Since H_A is upper triangular
-  // by construction, this simplifies to S_L=I, H=T*S_R' and T_A=H_A*S_R'
-  // In order to be consistent with subspacejada, we call S_R'=:Q_H
+  // V'V=I, W'W=I, H=W'V, H_A=W'AV, V'Q=W'Q=0 and the (generalized) Schur decomposition
+  // H_A = S_L T_A S_R', H = S_L T S_R'.
+  
   sdMat_ptr_t H_      = NULL; //< H=W'V
   sdMat_ptr_t Htmp_   = NULL; //< temporary space used only for checking invariants
   sdMat_ptr_t H_A_    = NULL; //< identity matrix
@@ -219,6 +218,9 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   mvec_ptr_t BQtil= NULL;     //< B*Qtil
   mvec_ptr_t Q = NULL, BQ = NULL, R = NULL;
 
+  mvec_ptr_t  Qq  = NULL;     // view of the 'locked' part of Q, the next few eigenvectors to converge
+  mvec_ptr_t BQq = NULL;      // view of B*Qq
+
   sdMat_ptr_t H   = NULL;     //< projection of A onto V, H=W'*V
   sdMat_ptr_t Hful= NULL;     //< Hful=Wful'*Vful
   sdMat_ptr_t H_Aful= NULL;     //< A*Vful=Wful*H_Aful
@@ -237,18 +239,6 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
                               //< nEig_<=nEig is used to consider only the next few sought eigenvalues
                               //< at a time.
   sdMat_ptr_t T_Aq  = NULL;   //< inside view for T_A(iq,jq)
-#if 0
-  //TODO - are we using these anywhere?
-  sdMat_ptr_t HVv = NULL;     //< next rows in H_
-  sdMat_ptr_t HvV = NULL;     //< next columns in H_
-  sdMat_ptr_t Hvv = NULL;     //< next block on the diagonal of H_
-
-  sdMat_ptr_t Qq_H = NULL;    //TODO
-  mvec_ptr_t  Qq  = NULL;     //TODO
-  mvec_ptr_t BQq = NULL;      //TODO
-  sdMat_ptr_t Rr_H = NULL;
-  sdMat_ptr_t sdMI = NULL;
-#endif
 
   //------------------------------- initialize correction equation solver solver ------------------------
   TYPE(jadaCorrectionSolver_ptr) innerSolv = NULL;
@@ -257,6 +247,7 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   std::vector<_MT_> innerTol(nEig_,0.1);
   std::vector<_MT_> lastOuterRes(nEig_,mt::zero());
 
+#if 0
   //------------------------------- initialize subspace etc ------------------------
   // run arnoldi
   nV = minBase;
@@ -284,7 +275,12 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 
     PHIST_CHK_IERR(SUBR( simple_arnoldi ) (A_op, B_op, v0, V, AV, BV, H, nV, iflag), *iflag);
   }
-
+#else
+  // This driver is intended for computing inner eigenvalues near 0, so
+  // an Arnoldi process is not the best idea. Instead, we will lock the shifts
+  // to 0 until nV=minBase has been reached.
+  nV=0;
+#endif
   // set views
   int nConvEig = 0;
 #define UPDATE_SUBSPACE_VIEWS \
@@ -512,30 +508,41 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
 
 }
 #endif
-#error "TODO continue here"
-    // update views
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0,     nV-1,      0,             nV-1,      iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&R_H, 0,     nV-1,      0,             nV-1,      iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Qq_H,nConvEig,nV-1,      nConvEig, nEig_-1,   iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_,&Rr_H,0,     nEig_-1,   nConvEig, nEig_-1,   iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,   &Qq,                   nConvEig, nEig_-1,   iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ_,  &BQq,                  nConvEig, nEig_-1,   iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res, &t_res,                 0, nEig_-nConvEig-1,   iflag), *iflag);
 
     // update approximate Schur form of A (keeping the already computed part locked)
-    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), V,    Qq_H, st::zero(), Qq,  iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( mvec_set_block ) (Q, Qq, nConvEig, nEig_-1, iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( sdMat_set_block  ) (R, Rr_H, 0, nEig_-1, nConvEig, nEig_-1, iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), AV,   Qq_H, st::zero(), t_res, iflag), *iflag);
+    // additional vectors q are locked in Q (a total of nEig_)
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,   &Qq,                   nConvEig, nEig_-1,   iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ_,  &BQq,                  nConvEig, nEig_-1,   iflag), *iflag);
+
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (S_R_,&S_R,nConvEig,nV-1,      nConvEig, nEig_-1,   iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), V,    S_R, st::zero(), Qq,  iflag), *iflag);
+
     if( B_op != NULL )
     {
-      PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BV,   Qq_H, st::zero(), BQq,  iflag), *iflag);
-      PHIST_CHK_IERR(SUBR( mvec_set_block ) (BQ, BQq, nConvEig, nEig_-1, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BV,   S_R, st::zero(), BQq,  iflag), *iflag);
     }
-    // overwrite res with the residual: -res = -(Aq - Bqr) = + BQq*r - res
-    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BQ,   Rr_H,    -st::one(), t_res, iflag), *iflag);
+
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (T_A_,&T_Aq, 0, nEig_-1, nConvEig, nEig_-1, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_set_block  ) (R,    T_Aq, 0, nEig_-1, nConvEig, nEig_-1, iflag), *iflag);
+
+    //////////////////////////
+    // compute the residual //
+    //////////////////////////
+    
+    // temporarily set t_res = Aq
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res, &t_res, 0, nEig_-nConvEig-1,   iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), AV,   S_R, st::zero(), t_res, iflag), *iflag);
+    // overwrite t_res with the residual: -res = -(Aq - Bqr) = + BQq*r - res
+    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BQ,   T_Aq, -st::one(), t_res, iflag), *iflag);
     // calculate norm of the residual
     PHIST_CHK_IERR(SUBR( mvec_norm2 ) (t_res, resNorm+nConvEig, iflag), *iflag);
+
+    // reset views
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (S_L_, &S_L, 0,     nV-1,      0,             nV-1,      iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (S_R_, &S_R, 0,     nV-1,      0,             nV-1,      iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (T_  , &T,   0,     nV-1,      0,             nV-1,      iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (T_A_, &T_A, 0,     nV-1,      0,             nV-1,      iflag), *iflag);
+    
 #ifdef TESTING
 {
   // check that the residual is orthogonal to Q (should be by construction!)
@@ -564,49 +571,15 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
 #endif
 
 
-    // reorder multiple eigenvalues in schur form by residual norm
-    // only possible/implemented for the symmetric case
+    // TODO - subspacejada has a (currently disabled) feature to
+    // reorder multiple eigenvalues in the Schur form by residual norm,
+    // this is not implemented here, yet, until we fix the implementation
+    // there. The function ReorderPartialGenSchurDecomp is already available,
+    // but not tested, in phist_schur_decomp.h
     std::vector<int> resPermutation(nEig_);
     for(int i = 0; i < nEig_; i++)
       resPermutation[i] = i;
-    if( false ) // symmetric ) // doesn't work always?
-    {
-      PHIST_CHK_IERR( SUBR(ReorderPartialSchurDecomp)(R_H_raw+offR_H, ldaR_H, Q_H_raw+offQ_H, ldaQ_H, nV-nConvEig, nEig_-nConvEig, which, sqrt(tol), resNorm+nConvEig, ev_H+nConvEig, &resPermutation[nConvEig], iflag), *iflag);
-      for(int i = nConvEig; i < nEig_; i++)
-        resPermutation[i] += nConvEig;
-#ifdef TESTING
-PHIST_SOUT(PHIST_INFO,"resPermutation: ");
-for(int i = 0; i < nEig_; i++)
-  PHIST_SOUT(PHIST_INFO,"\t%d", resPermutation[i]);
-PHIST_SOUT(PHIST_INFO,"\n");
-#endif
-    }
-    // check if we need to adapt Q to the new ordering (e.g. there were duplicate eigenvalues not sorted by their residual norm)
-    // res is handled implicitly later
-    for(int i = 0; i < nEig_; i++)
-    {
-      if( resPermutation[i] != i )
-      {
-        // setup permutation matrix
-        //PHIST_CHK_IERR(SUBR(sdMat_view_block)(Htmp_, &Htmp, i, nEig_-1, i, nEig_-1, iflag), *iflag);
-        //PHIST_CHK_IERR(SUBR(sdMat_put_value)(Htmp, st::zero(), iflag), *iflag);
-        //for(int j = i; j < nEig_; j++)
-        //{
-          //int j_ = resPermutation[j];
-          //Htmp_raw[j_+j*ldaHtmp] = st::one();
-        //}
-        //PHIST_CHK_IERR(SUBR(mvec_view_block)(Q_, &Qq, i, nEig_-1, iflag), *iflag);
-        //PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(Qq, Htmp, iflag), *iflag);
-        //if( B_op != NULL )
-        //{
-          //PHIST_CHK_IERR(SUBR(mvec_view_block)(BQ_, &BQq, i, nEig_-1, iflag), *iflag);
-          //PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(BQq, Htmp, iflag), *iflag);
-        //}
-        PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), V,    Qq_H, st::zero(), Qq,  iflag), *iflag);
-        PHIST_CHK_IERR(SUBR( sdMat_set_block  ) (R, Rr_H, 0, nEig_-1, nConvEig, nEig_-1, iflag), *iflag);
-        break;
-      }
-    }
+
 #ifdef TESTING
 {
   // check that Q is in correct order
@@ -694,39 +667,43 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
     if( nNewConvEig > 0 )
     {
+      // determine which part of S_R we need to apply
+      int imin, imax, jmin, jmax;
+      if (symmetric)
+      {
+        imin=nConvEig;
+        jmin=nConvEig;
+      }
+      else
+      {
+        imin=0;
+        jmin=0;
+      }
+
       // to avoid unnecessary subspace transformations, shrink the searchspace one iteration earlier...
       if( nV + 2*blockDim > maxBase )
       {
         PHIST_SOUT(PHIST_INFO,"Shrinking search space (one iteration earlier) from %d to %d\n", nV, minBase);
-        if( symmetric )
-        {
-          PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  nConvEig, nV-1,          nConvEig, minBase-1,    iflag), *iflag);
-        }
-        else
-        {
-          PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  0, nV-1,          0, minBase-1,    iflag), *iflag);
-        }
+        imax=nV-1;
+        jmax=minBase-1;
       }
       else
       {
-        if( symmetric )
-        {
-          PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  nConvEig, nV-1,          nConvEig, nV-1,    iflag), *iflag);
-        }
-        else
-        {
-          PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  0, nV-1,          0, nV-1,    iflag), *iflag);
-        }
+          imax=nV-1;
+        jmax=nV-1;
       }
+
+      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (S_L_,  &S_L,  imin, imax, jmin, jmax,    iflag), *iflag);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (S_R_,  &S_R,  imin, imax, jmin, jmax,    iflag), *iflag);
 
       // reorder V and H
       if( symmetric )
       {
-        PHIST_CHK_IERR(SUBR( transform_searchSpace ) (V, AV, BV, H, Q_H, B_op != NULL, iflag), *iflag);
+        PHIST_CHK_IERR(SUBR( transform_searchSpaceH ) (V, W, BV, H, H_A, S_L, S_R, B_op != NULL, iflag), *iflag);
       }
       else
       {
-        PHIST_CHK_IERR(SUBR( transform_searchSpace ) (Vful, AVful, BVful, Hful, Q_H, B_op != NULL, iflag), *iflag);
+        PHIST_CHK_IERR(SUBR( transform_searchSpaceH ) (Vful, Wful, BVful, Hful, H_Aful, S_L, S_R, B_op != NULL, iflag), *iflag);
       }
 
       nConvEig = nConvEig+nNewConvEig;
@@ -741,7 +718,6 @@ PHIST_SOUT(PHIST_INFO,"\n");
       }
 TESTING_CHECK_SUBSPACE_INVARIANTS;
     }
-
 
 
     // setup matrix of shifts and residuals for the correction equation
@@ -792,17 +768,23 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
       // nothing to do if converged eigenvalues this iteration
       if( nNewConvEig == 0 )
       {
+        int imin=0, imax=nV-1, jmin=0, jmax=minBase-1;
         if( symmetric )
         {
-          PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  nConvEig, nV-1,          nConvEig, minBase-1,    iflag), *iflag);
-
-          PHIST_CHK_IERR(SUBR( transform_searchSpace ) (V, AV, BV, H, Q_H, B_op != NULL, iflag), *iflag);
+          imin=nConvEig;
+          jmin=nConvEig;
+        }
+        
+        PHIST_CHK_IERR(SUBR( sdMat_view_block ) (S_L_,  &S_L,  imin, imax, jmin, jmax, iflag), *iflag);
+        PHIST_CHK_IERR(SUBR( sdMat_view_block ) (S_R_,  &S_R,  imin, imax, jmin, jmax, iflag), *iflag);
+        
+        if (symmetric)
+        {
+          PHIST_CHK_IERR(SUBR( transform_searchSpaceH ) (V, W, BV, H, H_A, S_L, S_R, B_op != NULL, iflag), *iflag);
         }
         else
         {
-          PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,  &Q_H,  0, nV-1,          0, minBase-1,    iflag), *iflag);
-
-          PHIST_CHK_IERR(SUBR( transform_searchSpace ) (Vful, AVful, BVful, Hful, Q_H, B_op != NULL, iflag), *iflag);
+          PHIST_CHK_IERR(SUBR( transform_searchSpaceH ) (Vful, Wful, BVful, Hful, H_Aful, S_L, S_R, B_op != NULL, iflag), *iflag);
         }
       }
 
@@ -811,7 +793,7 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
       UPDATE_SUBSPACE_VIEWS;
 TESTING_CHECK_SUBSPACE_INVARIANTS;
     }
-
+//TODO - continue here
     if( k > 0 ) 
     {
       // calculate corrections
