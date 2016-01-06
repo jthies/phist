@@ -222,8 +222,11 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 
   sdMat_ptr_t H   = NULL;     //< projection of A onto V, H=W'*V
   sdMat_ptr_t Hful= NULL;     //< Hful=Wful'*Vful
+  sdMat_ptr_t H_A = NULL;     //< A*V=W*H_A
   sdMat_ptr_t H_Aful= NULL;     //< A*Vful=Wful*H_Aful
+
   sdMat_ptr_t Htmp= NULL;     //< temporary space for checking invariants
+  sdMat_ptr_t H_Atmp= NULL;     //< temporary space for checking invariants
 
   sdMat_ptr_t S_L = NULL;     //< current left schur vectors of (H,H_A)
   sdMat_ptr_t S_R = NULL;     //< current right schur vectors of (H,H_A)
@@ -258,6 +261,9 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 
   // set views
   int nConvEig = 0;
+#ifdef UPDATE_SUBSPACE_VIEWS
+#undef UPDATE_SUBSPACE_VIEWS
+#endif
 #define UPDATE_SUBSPACE_VIEWS \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                         nConvEig, nV-1,      iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (W_,     &W,                        nConvEig, nV-1,      iflag), *iflag); \
@@ -273,7 +279,9 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   UPDATE_SUBSPACE_VIEWS;
 
 
-
+#ifdef TESTING_CHECK_SUBSPACE_INVARIANTS
+#undef TESTING_CHECK_SUBSPACE_INVARIANTS
+#endif
 #ifdef TESTING
 // V'V=I, W'W=I, A*V=W*H_A, V'Q=W'Q=0 
 // H=W'V, H_A S_R = S_L T_A, H S_R = S_L T
@@ -506,9 +514,12 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
     // compute the residual //
     //////////////////////////
     
-    // temporarily set t_res = Aq
+    // temporarily set t_res = Aq = AV S_R = W H_A S_R
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res, &t_res, 0, nEig_-nConvEig-1,   iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), AV,   S_R, st::zero(), t_res, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp, 0, nEig_-nConvEig-1, 0, nEig_-nConvEig-1, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_A_,&H_A,   nConvEig, nV-1, nConvEig, nV-1, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_times_sdMat) (st::one(), H_A, S_R, st::zero(), Htmp, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), W,   Htmp, st::zero(), t_res, iflag), *iflag);
     // overwrite t_res with the residual: -res = -(Aq - Bqr) = + BQq*r - res
     PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BQ,   T_Aq, -st::one(), t_res, iflag), *iflag);
     // calculate norm of the residual
