@@ -406,9 +406,10 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
 
     if( symmetric)
     {
-      // TODO - can we check some invariants to assure symmetry? H=V'W is not symmetric, neither H_A=W'AV.
-      //        
-//      PHIST_CHK_NEG_IERR(SUBR(sdMat_check_symmetrie)(Hful, tol, iflag), *iflag);
+      // we have V'AV=V'WH_A=H'H_A symmetric, check this:
+      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      iflag), *iflag); \
+      PHIST_CHK_IERR(SUBR( sdMatT_times_sdMat) (st::one(), Hful, H_Aful, st::zero(), Htmp, iflag),*iflag);
+      PHIST_CHK_NEG_IERR(SUBR(sdMat_check_symmetry)(Htmp, tol, iflag), *iflag);
     }
 
     // calculate sorted (generalized) Schur form of (H,H_A) in (S_L,S_R,T,T_A)

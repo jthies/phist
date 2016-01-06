@@ -1,5 +1,5 @@
 //! small helper function that checks if an sdMat is symmetric
-void SUBR(sdMat_check_symmetrie)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
+void SUBR(sdMat_check_symmetry)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
@@ -407,10 +407,10 @@ PHIST_CHK_IERR(SUBR( mvec_view_block ) (Q_,  &Q,  0, nEig_-1, iflag), *iflag);
 PHIST_CHK_IERR(SUBR( mvec_view_block ) (BQ_, &BQ, 0, nEig_-1, iflag), *iflag);
 PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag), *iflag);
 
-    // for convenience check symmetrie of H (shouldn't much hurt the performance)
+    // for convenience check symmetry of H (shouldn't much hurt the performance)
     if( symmetric )
     {
-      PHIST_CHK_NEG_IERR(SUBR(sdMat_check_symmetrie)(Hful, tol, iflag), *iflag);
+      PHIST_CHK_NEG_IERR(SUBR(sdMat_check_symmetry)(Hful, tol, iflag), *iflag);
     }
 
     // calculate sorted Schur form of H in (Q_H,R_H)
