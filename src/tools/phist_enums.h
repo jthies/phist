@@ -12,6 +12,7 @@ typedef enum eigSort_t
   SM=2,   // smallest magnitude
   LR=3,   // largest real part
   SR=4,   // smallest real part
+  TARGET=5, // seek eigenvalues near a specific target
   INVALID_EIGSORT_T=99 // returned if str2eigSort gets an invalid string
 } eigSort_t;
 
