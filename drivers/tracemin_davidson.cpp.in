@@ -80,22 +80,17 @@ PHIST_MAIN_TASK_BEGIN
   matnameB = argv[2];
   
   int p=3;
-  GET_ARG(sym,p++);
-  if (sym!=0 && sym!=1)
-  {
-  SUBR(print_usage)(argv,p-1);
-  return PHIST_INVALID_INPUT;
-  }
-  GET_ARG(how_many,p++);
-  GET_ARG(which,p++);
+  GET_ARG(sym,p++,sym==0||sym==1);
+  GET_ARG(how_many,p++,how_many>0);
+  GET_ARG(which,p++,);
   if (which==TARGET)
   {
-    GET_ARG(target_value,p++);
+    GET_ARG(target_value,p++,);
   }
-  GET_ARG(tol,p++);
-  GET_ARG(max_iters,p++);
-  GET_ARG(block_size,p++);
-  GET_ARG(num_blocks,p++);
+  GET_ARG(tol,p++,tol>mt::eps());
+  GET_ARG(max_iters,p++,max_iters>0);
+  GET_ARG(block_size,p++,block_size>0);
+  GET_ARG(num_blocks,p++,num_blocks>0);
   
   if (num_blocks*block_size<how_many+10)
   {
