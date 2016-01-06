@@ -47,9 +47,11 @@ void SUBR(transform_searchSpace)(TYPE(mvec_ptr) V, TYPE(mvec_ptr) AV, TYPE(mvec_
 //! apply transformation matrices MV and MW to given search spaces V and W, resp.
 //! Update BV and the projections H=W'V, H_A=W'AV
 void SUBR(transform_searchSpaceHarmonic)(TYPE(mvec_ptr) V, TYPE(mvec_ptr) W,
-        TYPE(sdMat_ptr) H, TYPE(sdMat_ptr) H_A, TYPE(sdMat_ptr) MV, TYPE(sdMat_ptr) MW, bool generalizedEigenproblem, int* iflag);
+        TYPE(sdMat_ptr) H, TYPE(sdMat_ptr) H_A, TYPE(sdMat_ptr) MV, TYPE(sdMat_ptr) MW, bool generalizedEigenproblem, int* iflag)
 {
-  //TODO
-  *iflag=-99;
+  //TODO - can't we just set H(1:mmin,1:mmin)=T(1:mmin,1:mmin), H_A=T_A(1:mmin,1:mmin)?
+  *iflag=0;
+  PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(V,MV,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(W,MW,iflag),*iflag);
   return;
 }

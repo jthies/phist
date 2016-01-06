@@ -46,8 +46,8 @@ void SUBR(print_usage)(const char* progname)
     "      <initial shift> fix shift for                                                                \n"
     "      <initial shift iters> iterations rather than running an Arnoldi process.                     \n"
     "      <inner solver robust> 0 or 1, 1 is recommended for 'hard' problems, e.g. nonsymmetric ones   \n"
-    "      <inner solver abort when first converged> 0/1, 1 is typically a good choice                  \n"
-    argv[0], mt::eps(), );
+    "      <inner solver abort when first converged> 0/1, 1 is typically a good choice                  \n",
+    progname, mt::eps() );
     // print usage message for creating/reading a matrix
     SUBR(create_matrix)(NULL, NULL, "usage",&iflag);
 }
@@ -74,7 +74,7 @@ int main(int argc, char** argv)
   
   // symmetry of A
   bool symmetric=false;
-  GET_ARG(symmetric,p++);
+  GET_ARG(symmetric,p++,true);
               
   // number of eigenvalues to compute
   int nEig = 8;
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
 
   // maximum number of iterations
   int nIter = 250;
-  GET_ARG(maxIter,p++,maxIter>0);
+  GET_ARG(nIter,p++,nIter>0);
 
   // block size
   int blockDim = 4;
@@ -128,7 +128,7 @@ int main(int argc, char** argv)
 
   // initial shift
   _CT_ initialShift = ct::zero();
-  GET_ARG(initialShift,p++,);
+  GET_ARG(initialShift,p++,true);
 
   // number of initial iterations with fixed initial shift
   int initialShiftIters = 0;
@@ -136,11 +136,11 @@ int main(int argc, char** argv)
 
   // in the inner GMRES: use a iterated modified gram schmidt (more accurate, but quite costly!)
   bool innerIMGS = true;
-  GET_ARG(innerIMGS,p++,);
+  GET_ARG(innerIMGS,p++,true);
 
   // in the inner GMRES: abort solving a block when first system converged (effectively disables pipelining, but only "blocking" may be faster for now)
   bool innerGMRESabortAfterFirstConverged = false;
-  GET_ARG(innerGMRESabortAfterFirstConverged,p++,);
+  GET_ARG(innerGMRESabortAfterFirstConverged,p++,true);
 
 
   comm_ptr_t comm = NULL;

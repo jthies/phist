@@ -82,10 +82,10 @@ PHIST_MAIN_TASK_BEGIN
   int p=3;
   GET_ARG(sym,p++,sym==0||sym==1);
   GET_ARG(how_many,p++,how_many>0);
-  GET_ARG(which,p++,);
+  GET_ARG(which,p++,true);
   if (which==TARGET)
   {
-    GET_ARG(target_value,p++,);
+    GET_ARG(target_value,p++,true);
   }
   GET_ARG(tol,p++,tol>mt::eps());
   GET_ARG(max_iters,p++,max_iters>0);
