@@ -133,7 +133,6 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   sdMat_ptr_t Htmp_   = NULL; //< temporary space used only for checking invariants
   sdMat_ptr_t H_A_    = NULL; //< identity matrix
   sdMat_ptr_t H_Atmp_ = NULL; //< temporary space used only for checking invariants
-  sdMat_ptr_t sdMI_   = NULL; //< identity matrix
   // QZ decomposition
   sdMat_ptr_t S_L_    = NULL;
   sdMat_ptr_t S_R_    = NULL;
@@ -166,14 +165,11 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&H_A_,    maxBase,          maxBase,  range_comm,   iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&Htmp_,   maxBase,          maxBase,  range_comm,   iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&H_Atmp_, maxBase,          maxBase,  range_comm,   iflag), *iflag);
-  PHIST_CHK_IERR(SUBR( sdMat_create ) (&sdMI_,   maxBase,          maxBase,  range_comm,   iflag), *iflag);
 
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&S_L_,   maxBase,          maxBase,  range_comm,   iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&S_R_,   maxBase,          maxBase,  range_comm,   iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&T_,   maxBase,          maxBase,  range_comm,   iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_create ) (&T_A_,   maxBase,          maxBase,  range_comm,   iflag), *iflag);
-  // construct identity matrix
-  PHIST_CHK_IERR(SUBR( sdMat_identity ) (sdMI_, iflag), *iflag);
 
   PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (Htmp_,   &Htmp_raw,   &ldaHtmp,    iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_extract_view ) (H_Atmp_, &H_Atmp_raw, &ldaH_Atmp,  iflag), *iflag);
@@ -691,11 +687,11 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
       // reorder V and H TODO: can we exploit symmetry?
       if( symmetric && false)
       {
-        PHIST_CHK_IERR(SUBR( transform_searchSpaceHarmonic ) (V, W, BV, H, H_A, S_L, S_R, B_op != NULL, iflag), *iflag);
+        PHIST_CHK_IERR(SUBR( transform_searchSpaceHarmonic ) (V, W, H, H_A, S_L, S_R, B_op != NULL, iflag), *iflag);
       }
       else
       {
-        PHIST_CHK_IERR(SUBR( transform_searchSpaceHarmonic ) (Vful, Wful, BVful, Hful, H_Aful, S_L, S_R, B_op != NULL, iflag), *iflag);
+        PHIST_CHK_IERR(SUBR( transform_searchSpaceHarmonic ) (Vful, Wful, Hful, H_Aful, S_L, S_R, B_op != NULL, iflag), *iflag);
       }
 
       nConvEig = nConvEig+nNewConvEig;
@@ -770,13 +766,13 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
         PHIST_CHK_IERR(SUBR( sdMat_view_block ) (S_L_,  &S_L,  imin, imax, jmin, jmax, iflag), *iflag);
         PHIST_CHK_IERR(SUBR( sdMat_view_block ) (S_R_,  &S_R,  imin, imax, jmin, jmax, iflag), *iflag);
         
-        if (symmetric)
+        if (symmetric && false)
         {
-          PHIST_CHK_IERR(SUBR( transform_searchSpaceH ) (V, W, BV, H, H_A, S_L, S_R, B_op != NULL, iflag), *iflag);
+          PHIST_CHK_IERR(SUBR( transform_searchSpaceHarmonic ) (V, W, H, H_A, S_L, S_R, B_op != NULL, iflag), *iflag);
         }
         else
         {
-          PHIST_CHK_IERR(SUBR( transform_searchSpaceH ) (Vful, Wful, BVful, Hful, H_Aful, S_L, S_R, B_op != NULL, iflag), *iflag);
+          PHIST_CHK_IERR(SUBR( transform_searchSpaceHarmonic ) (Vful, Wful, Hful, H_Aful, S_L, S_R, B_op != NULL, iflag), *iflag);
         }
       }
 
@@ -890,7 +886,6 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (Hful,iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (H_Aful,iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (Htmp,iflag), *iflag);
-  PHIST_CHK_IERR(SUBR( sdMat_delete ) (sdMI,iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (R,   iflag), *iflag);
 
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (Qq,  iflag), *iflag);
@@ -922,7 +917,6 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (H_,  iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (H_A_,  iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (Htmp_,iflag), *iflag);
-  PHIST_CHK_IERR(SUBR( sdMat_delete ) (sdMI_,iflag), *iflag);
   if( B_op != NULL )
   {
     PHIST_CHK_IERR(SUBR( mvec_delete )(BV_, iflag), *iflag);
