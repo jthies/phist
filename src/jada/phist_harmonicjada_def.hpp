@@ -117,8 +117,8 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   mvec_ptr_t  V_      = NULL;    //< space for V (current search space)
   mvec_ptr_t  Vtmp_   = NULL;    //< temporary space for V, only used for checking invariants
   mvec_ptr_t  W_     = NULL;    //< space for the orthogonal basis of AV
-  mvec_ptr_t  BV_     = NULL;    //< space for BV
-  mvec_ptr_t  BW_     = NULL;    //< space for BW TODO - not used yet, do we need it?
+  mvec_ptr_t  BV_     = NULL;    //< space for BV TODO - B-orthogonalization not fully implemented
+  mvec_ptr_t  BW_     = NULL;    //< space for BW TODO - not sure we need BV and BW at all
   mvec_ptr_t  Q_      = NULL;    //< Q, enlarged dynamically (converged eigenspace)
   mvec_ptr_t  BQ_     = NULL;    //< B*Q, enlarged dynamically
   mvec_ptr_t  t_      = NULL;    //< space for t (new correction vector(s))
@@ -153,7 +153,6 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   lidx_t ldaH, ldaH_A, ldaHtmp, ldaH_Atmp,ldaS_L, ldaS_R, ldaT, ldaT_A;
 
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&V_,     A_op->domain_map, maxBase,        iflag), *iflag);
-  // TODO: remove Vtmp
 #ifdef TESTING
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&Vtmp_,  A_op->domain_map, maxBase,                iflag), *iflag);
 #endif
@@ -250,42 +249,13 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   std::vector<_MT_> innerTol(nEig_,0.1);
   std::vector<_MT_> lastOuterRes(nEig_,mt::zero());
 
-#if 0
-  //------------------------------- initialize subspace etc ------------------------
-  // run arnoldi
-  nV = minBase;
-  //TODO B_op in arnoldi
-  // calculates A*V(:,1:m) = V(:,1:m+1)*H(1:m+1,1:m)
-  // also outputs A*V (DON'T recalculate it from V*H, because this may not be accurate enough!)
-/* // seems numerically less useful than unblocked arnoldi!
-  if( blockDim > 0 && nV % innerBlockDim == 0 )
-  {
-    int bs = innerBlockDim;
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                       0,     nV+bs-1,   iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                      0,     nV+bs-1,   iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                      0,     nV+bs-1,   iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     0,      nV+bs-1,  0,     nV-1,      iflag), *iflag);
-
-    PHIST_CHK_IERR(SUBR( simple_blockArnoldi ) (A_op, B_op, V, AV, BV, H, nV, innerBlockDim, iflag), *iflag);
-  }
-  else
-*/
-  {
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                       0,     nV,        iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (W_,     &W,                      0,     nV,        iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                      0,     nV,        iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     0,      minBase,  0,     nV-1,      iflag), *iflag);
-
-    PHIST_CHK_IERR(SUBR( simple_arnoldi ) (A_op, B_op, v0, V, AV, BV, H, nV, iflag), *iflag);
-  }
-#else
   // This driver is intended for computing inner eigenvalues near 0, so
   // an Arnoldi process is not the best idea. Instead, we will lock the shifts
   // to 0 until nV=minBase has been reached.
   nV=0;
   initialShiftIter=std::min(minBase,initialShiftIter);
   PHIST_SOUT(PHIST_VERBOSE,"starting with %d iterations with fixed shift 0\n",initialShiftIter);
-#endif
+
   // set views
   int nConvEig = 0;
 #define UPDATE_SUBSPACE_VIEWS \
@@ -864,18 +834,13 @@ PHIST_SOUT(PHIST_INFO,"\n");
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  &HVv, 0,     nV-1,      nV,    nV+k-1,    iflag), *iflag);
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  &HvV, nV,    nV+k-1,    0,     nV-1,      iflag), *iflag);
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,  &Hvv, nV,    nV+k-1,    nV,    nV+k-1,    iflag), *iflag);
-      PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Wful,  Vv, st::zero(), HVv, iflag), *iflag);
-      //TODO - can we exploit symmetry?
-      if( !symmetric || true)
-      {
-        PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Wv, Vful,  st::zero(), HvV, iflag), *iflag);
-      }
-      else
-      {
-        PHIST_CHK_IERR(SUBR(sdMat_view_block) (sdMI_, &sdMI, 0, nV-1, 0, nV-1, iflag), *iflag);
-        PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat)(st::one(), HVv, sdMI, st::zero(), HvV, iflag), *iflag);
-      }
+
+      // For A=A', H=W'V is not symmetric here, in contrast to subspacejada. H'H_A is, but I'm not sure
+      // if we can exploit that here to save a reduction
+      PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Wful,  Vv, st::zero(), HVv, iflag), *iflag);      
+      PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Wv, Vful,  st::zero(), HvV, iflag), *iflag);
       PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Wv, Vv, st::zero(), Hvv, iflag), *iflag);
+      
       // use set block to put Vv and Wv really into V and W
       PHIST_CHK_IERR(SUBR( mvec_set_block ) (V_, Vv,  nV, nV+k-1, iflag), *iflag);
       PHIST_CHK_IERR(SUBR( mvec_set_block ) (W_, Wv, nV, nV+k-1, iflag), *iflag);
