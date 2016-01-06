@@ -11,7 +11,9 @@ const int MPI_COMM_WORLD=0;
 #error "this is a C++ header"
 #endif
 
+#ifndef DOXYGEN
 #include <map>
+#endif
 
 namespace phist 
 {

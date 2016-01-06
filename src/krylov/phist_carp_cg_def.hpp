@@ -660,10 +660,6 @@ void SUBR(my_compResid)(TYPE(x_sparseMat) const* A,
     R=new TYPE(x_mvec);
   PHIST_CHK_IERR(R->allocate(map,nvec,naug,rc,iflag),*iflag);
   }
-
-  // r = b-(A-sI)x
-  // r = b-(A-sr)xr - si*xi
-  //    -i[(A-sr)xi - si*xr]
   
   // r=-(A-sigma[j]I)x
   PHIST_CHK_IERR(SUBR(x_sparseMat_times_mvec)
