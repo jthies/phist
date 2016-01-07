@@ -22,7 +22,7 @@ void SUBR(harmonicjada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
   // copy options
   TYPE(const_mvec_ptr) v0=opts.v0;
   eigSort_t which=opts.which;
-  _MT_ tol=opts.convTol;
+  _MT_ tol=opts.convTol;  
   int nEig=opts.numEigs;
   int blockDim=opts.blockSize;
   int maxIter =opts.maxIters;
@@ -198,7 +198,7 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   CT* rq_H = new CT[maxBase];
 
   // create views on mvecs and sdMats with current dimensions
-  int nV  = minBase;          //< current subspace dimension
+  int nV;                     //< current subspace dimension
 
   mvec_ptr_t  V   = NULL;     //< B-orthogonal basis of the search space
   mvec_ptr_t  Vful= NULL;     //< B-orthogonal basis of the search space + already locked Schur vectors Q
@@ -254,8 +254,25 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   // This driver is intended for computing inner eigenvalues near 0, so
   // an Arnoldi process is not the best idea. Instead, we will lock the shifts
   // to 0 until nV=minBase has been reached.
-  nV=0;
-  initialShiftIter=std::min(minBase,initialShiftIter);
+  PHIST_CHK_IERR(SUBR(mvec_put_value)(V_,st::zero(),iflag),*iflag);
+  if (v0!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v0,&nV,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(V_,v0,0,nV-1,iflag),*iflag);
+  }
+  else
+  {
+    nV=1;
+  }
+
+  // orthogonalize the initial vector block, this generates random orthogonal block if no v0 was given
+  PHIST_CHK_IERR(SUBR(mvec_view_block)(V_,&Vv,0,nV-1,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)(Htmp_,  &Htmp,0,  nV-1,0,nV-1,iflag),*iflag);
+  int rank_v0;
+  *iflag=PHIST_ROBUST_REDUCTIONS;
+  PHIST_CHK_IERR(SUBR(orthog)(NULL,Vv,B_op,Htmp,NULL,2,&rank_v0,iflag),*iflag);
+  
+  initialShiftIter=std::max(minBase-nV,initialShiftIter);
   PHIST_SOUT(PHIST_VERBOSE,"starting with %d iterations with fixed shift 0\n",initialShiftIter);
 
   // set views
@@ -832,10 +849,18 @@ PHIST_SOUT(PHIST_INFO,"\n");
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (t_, &Vv,  0, k-1, iflag), *iflag);
       PHIST_CHK_IERR(SUBR( mvec_view_block  ) (At_,&Wv, 0, k-1, iflag), *iflag);
 
+      // orthogonalize t against [Q V]
+      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,  &HVv, 0,     nV-1,      nV,    nV+k-1,    iflag), *iflag);
+      PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,  &Hvv, nV,    nV+k-1,    nV,    nV+k-1,    iflag), *iflag);
+      int rankV;
+      *iflag=PHIST_ROBUST_REDUCTIONS;
+      PHIST_CHK_NEG_IERR(SUBR( orthog ) (Vful, Vv, B_op, HVv, Hvv, 5, &rankV, iflag), *iflag);
+
       // calculate AVv, BVv
       PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vv, st::zero(), Wv, iflag), *iflag);
       if( B_op != NULL )
       {
+        //TODO: make orthog use and update BVv
         PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_, &BVv,                   nV,    nV+k-1,    iflag), *iflag);
         PHIST_CHK_IERR( B_op->apply(st::one(), B_op->A, Vv, st::zero(), BVv, iflag), *iflag);
       }
@@ -845,11 +870,12 @@ PHIST_SOUT(PHIST_INFO,"\n");
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_A_,  &HVv, 0,     nV-1,      nV,    nV+k-1,    iflag), *iflag);
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_A_,  &HvV, nV,    nV+k-1,    0,     nV-1,      iflag), *iflag);
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_A_,  &Hvv, nV,    nV+k-1,    nV,    nV+k-1,    iflag), *iflag);
-      // orthogonalize At against [Q W], (At in Wv)
+      // orthogonalize At against [Q W] to get Wv and fill new column of H_A
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_A_,&H_Aq, 0,     nV-1,    nV,    nV+k-1,    iflag), *iflag);
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_A_,&H_A, nV,   nV+k-1,    nV,    nV+k-1,    iflag), *iflag);
-      int rankAV;
-      PHIST_CHK_NEG_IERR(SUBR( orthog ) (Wful, Wv, NULL, H_Aq, H_A, 5, &rankAV, iflag), *iflag);
+      int rankW;
+      *iflag=PHIST_ROBUST_REDUCTIONS;
+      PHIST_CHK_NEG_IERR(SUBR( orthog ) (Wful, Wv, B_op, H_Aq, H_A, 5, &rankW, iflag), *iflag);
       // TODO: only take non-random vector if *iflag > 0
 
       // update H=W'V
