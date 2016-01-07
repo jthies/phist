@@ -188,8 +188,14 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   {
     BV_ = V_;
   }
-  // array for the (possibly complex) eigenvalues for SchurDecomp
+  // array for the (possibly complex) harmonic Ritz values (retruned by GenSchurDecomp)
   CT* ev_H = new CT[maxBase];
+  
+  // As discussed in the eigentemplates book (Alg. 7.19, step 16, p. 226/227)
+  // we take as shifts the Rayleigh quotients associated with the first few  
+  // harmonic Ritz vectors instead of the harmonic Ritz values. We get them  
+  // from the requirement (Au-theta*U) orth u, which gives theta_j = conj(T_jj)*T_A_jj
+  CT* rq_H = new CT[maxBase];
 
   // create views on mvecs and sdMats with current dimensions
   int nV  = minBase;          //< current subspace dimension
@@ -431,6 +437,13 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
     PHIST_CHK_IERR(SUBR( GenSchurDecomp ) (T_raw+offT, ldaT, T_A_raw+offT_A, ldaT_A, 
                                            S_L_raw+offS_L, ldaS_L, S_R_raw+offS_R, ldaS_R,
                                            nV-nConvEig, nSelect, nSort, which, tol, ev_H+nConvEig, iflag), *iflag);
+
+    // compute Rayleigh quotients w.r.t. the harmonic Ritz values
+    for (int i=nConvEig; i<nV; i++)
+    {
+      rq_H[i] = st::conj(T_raw[i*ldaT+i])*T_A_raw[i*ldaT_A+i];
+    }
+
     // we still need to add the missing parts of T, T_A, S_L, S_R
     if( nConvEig > 0 )
     {
@@ -689,11 +702,11 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
       // reorder V and H TODO: can we exploit symmetry?
       if( symmetric && false)
       {
-        PHIST_CHK_IERR(SUBR( transform_searchSpaceHarmonic ) (V, W, H, H_A, S_L, S_R, B_op != NULL, iflag), *iflag);
+        PHIST_CHK_IERR(SUBR( transform_searchSpaceHarmonic ) (V, W, BV, H, H_A, S_L, S_R, B_op != NULL, iflag), *iflag);
       }
       else
       {
-        PHIST_CHK_IERR(SUBR( transform_searchSpaceHarmonic ) (Vful, Wful, Hful, H_Aful, S_L, S_R, B_op != NULL, iflag), *iflag);
+        PHIST_CHK_IERR(SUBR( transform_searchSpaceHarmonic ) (Vful, Wful, BVful, Hful, H_Aful, S_L, S_R, B_op != NULL, iflag), *iflag);
       }
 
       nConvEig = nConvEig+nNewConvEig;
@@ -734,9 +747,9 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
         else
         {
 #ifndef IS_COMPLEX
-          sigma[k] = ct::real(ev_H[i]);
+          sigma[k] = ct::real(rq_H[i]);
 #else
-          sigma[k] = ev_H[i];
+          sigma[k] = rq_H[i];
 #endif
         }
 
@@ -770,11 +783,11 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
         
         if (symmetric && false)
         {
-          PHIST_CHK_IERR(SUBR( transform_searchSpaceHarmonic ) (V, W, H, H_A, S_L, S_R, B_op != NULL, iflag), *iflag);
+          PHIST_CHK_IERR(SUBR( transform_searchSpaceHarmonic ) (V, W, BV, H, H_A, S_L, S_R, B_op != NULL, iflag), *iflag);
         }
         else
         {
-          PHIST_CHK_IERR(SUBR( transform_searchSpaceHarmonic ) (Vful, Wful, Hful, H_Aful, S_L, S_R, B_op != NULL, iflag), *iflag);
+          PHIST_CHK_IERR(SUBR( transform_searchSpaceHarmonic ) (Vful, Wful, BVful, Hful, H_Aful, S_L, S_R, B_op != NULL, iflag), *iflag);
         }
       }
 
@@ -910,6 +923,7 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (BQ,  iflag), *iflag);
 
   delete[] ev_H;
+  delete[] rq_H;
 
   // delete mvecs and sdMats
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (S_L_,iflag), *iflag);
