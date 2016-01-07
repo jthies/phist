@@ -118,7 +118,6 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   mvec_ptr_t  Vtmp_   = NULL;    //< temporary space for V, only used for checking invariants
   mvec_ptr_t  W_     = NULL;    //< space for the orthogonal basis of AV
   mvec_ptr_t  BV_     = NULL;    //< space for BV TODO - B-orthogonalization not fully implemented
-  mvec_ptr_t  BW_     = NULL;    //< space for BW TODO - not sure we need BV and BW at all
   mvec_ptr_t  Q_      = NULL;    //< Q, enlarged dynamically (converged eigenspace)
   mvec_ptr_t  BQ_     = NULL;    //< B*Q, enlarged dynamically
   mvec_ptr_t  t_      = NULL;    //< space for t (new correction vector(s))
@@ -184,12 +183,10 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   if( B_op != NULL )
   {
     PHIST_CHK_IERR(SUBR( mvec_create )(&BV_,    B_op->range_map,  maxBase,                iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( mvec_create )(&BW_,    B_op->range_map,  maxBase,                iflag), *iflag);
   }
   else
   {
     BV_ = V_;
-    BW_ = W_;
   }
   // array for the (possibly complex) eigenvalues for SchurDecomp
   CT* ev_H = new CT[maxBase];
@@ -257,20 +254,21 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 
   // set views
   int nConvEig = 0;
+
 #ifdef UPDATE_SUBSPACE_VIEWS
 #undef UPDATE_SUBSPACE_VIEWS
 #endif
 #define UPDATE_SUBSPACE_VIEWS \
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                         nConvEig, nV-1,      iflag), *iflag); \
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (W_,     &W,                        nConvEig, nV-1,      iflag), *iflag); \
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                        nConvEig, nV-1,      iflag), *iflag); \
-  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     nConvEig, nV-1,     nConvEig, nV-1,      iflag), *iflag); \
-  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_A_,      &H_A,     nConvEig, nV-1,     nConvEig, nV-1,      iflag), *iflag); \
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &Vful,                      0,        nV-1,      iflag), *iflag); \
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (W_,     &Wful,                     0,        nV-1,      iflag), *iflag); \
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BVful,                     0,        nV-1,      iflag), *iflag); \
-  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &Hful,  0,        nV-1,     0,        nV-1,      iflag), *iflag);
-  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_A_,      &H_Aful,  0,        nV-1,     0,        nV-1,      iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,   &V,      nConvEig, nV-1,                 iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (W_,   &W,      nConvEig, nV-1,                 iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,  &BV,     nConvEig, nV-1,                 iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,   &H,      nConvEig, nV-1, nConvEig, nV-1, iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_A_, &H_A,    nConvEig, nV-1, nConvEig, nV-1, iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,   &Vful,   0,        nV-1,                 iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (W_,   &Wful,   0,        nV-1,                 iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,  &BVful,  0,        nV-1,                 iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,   &Hful,   0,        nV-1, 0,        nV-1, iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_A_, &H_Aful, 0,        nV-1, 0,        nV-1, iflag), *iflag);
 
   UPDATE_SUBSPACE_VIEWS;
 
@@ -283,8 +281,9 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 // H=W'V, H_A S_R = S_L T_A, H S_R = S_L T
 #define TESTING_CHECK_SUBSPACE_INVARIANTS \
 { \
-  /* check orthogonality of V, BV, Q */ \
-  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp, 0, nV-1,          iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_, &Htmp, 0, nV-1, 0, nV-1, iflag), *iflag); \
+  /* check (B-)orthogonality of V, Q */ \
   PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vful, BVful, st::zero(), Htmp, iflag), *iflag); \
   _MT_ orthEps = st::abs(Htmp_raw[0] - st::one()); \
   for(int i = 0; i < nV; i++) \
@@ -292,17 +291,21 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
       orthEps = mt::max(orthEps, st::abs(Htmp_raw[i*ldaHtmp+j] - ((i==j) ? st::one() : st::zero()))); \
   PHIST_OUT(PHIST_INFO, "Line %d: B-orthogonality of V: %e\n", __LINE__, orthEps); \
  \
-  /* check orthogonality of W, BW, Q */ \
-  PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Wful, BWful, st::zero(), Htmp, iflag), *iflag); \
-  _MT_ orthEps = st::abs(Htmp_raw[0] - st::one()); \
+  /* check (B-)orthogonality of W, Q */ \
+  if (B_op==NULL) {\
+    PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Wful, Wful, st::zero(), Htmp, iflag), *iflag); \
+  } else { \
+    PHIST_CHK_IERR(B_op->apply(st::one(),B_op->A,Wful,st::zero(),Vtmp,iflag),*iflag); \
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec) (st::one(), Wful, Vtmp, st::zero(), Htmp, iflag), *iflag); \
+  } \
+  orthEps = st::abs(Htmp_raw[0] - st::one()); \
   for(int i = 0; i < nV; i++) \
     for(int j = 0; j < nV; j++) \
       orthEps = mt::max(orthEps, st::abs(Htmp_raw[i*ldaHtmp+j] - ((i==j) ? st::one() : st::zero()))); \
   PHIST_OUT(PHIST_INFO, "Line %d: B-orthogonality of W: %e\n", __LINE__, orthEps); \
  \
   /* check A*V = W*H_A */ \
-  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp,                  0,       nV-1,          iflag), *iflag); \
-  PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Wful,H_Aful,st::zero(),iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Wful,H_Aful,st::zero(),Vtmp,iflag),*iflag); \
   PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vful, -st::one(), Vtmp, iflag), *iflag); \
   _MT_ normVtmp[nV]; \
   PHIST_CHK_IERR(SUBR( mvec_norm2 ) (Vtmp, normVtmp, iflag), *iflag); \
@@ -311,7 +314,6 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
     equalEps = mt::max(equalEps, normVtmp[i]); \
   PHIST_OUT(PHIST_INFO, "Line %d: A*V - W*H_A: %e\n", __LINE__, equalEps); \
   /* check H = W'*V */ \
-  PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Wful, Vful, st::zero(), Htmp, iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( sdMat_add_sdMat ) (-st::one(), Hful, st::one(), Htmp, iflag), *iflag); \
   equalEps = st::abs(Htmp_raw[0]); \
