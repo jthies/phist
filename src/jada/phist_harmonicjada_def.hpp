@@ -270,7 +270,21 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(Htmp_,  &Htmp,0,  nV-1,0,nV-1,iflag),*iflag);
   int rank_v0;
   *iflag=PHIST_ROBUST_REDUCTIONS;
-  PHIST_CHK_IERR(SUBR(orthog)(NULL,Vv,B_op,Htmp,NULL,2,&rank_v0,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(orthog)(NULL,Vv,B_op,Htmp,NULL,3,&rank_v0,iflag),*iflag);
+
+  // compute an orthogonal w0 s.t. A*v0 = w0*H_A
+  PHIST_CHK_IERR(SUBR(mvec_view_block)(W_,&Wv,0,nV-1,iflag),*iflag);
+  PHIST_CHK_IERR(A_op->apply(st::one(),A_op->A,Vv,st::zero(),Wv,iflag),*iflag);
+  
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)(H_A_,  &H_A,0,  nV-1,0,nV-1,iflag),*iflag);
+
+  int rank_w0;
+  *iflag=PHIST_ROBUST_REDUCTIONS;
+  PHIST_CHK_IERR(SUBR(orthog)(NULL,Wv,B_op,H_A,NULL,3,&rank_v0,iflag),*iflag);
+  // initial H=W'V
+  PHIST_CHK_IERR(SUBR(sdMat_view_block)(H_,  &H,0,  nV-1,0,nV-1,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),W,V,st::zero(),H,iflag),*iflag);
+
   
   initialShiftIter=std::max(minBase-nV,initialShiftIter);
   PHIST_SOUT(PHIST_VERBOSE,"starting with %d iterations with fixed shift 0\n",initialShiftIter);
