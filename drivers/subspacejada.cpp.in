@@ -235,6 +235,7 @@ int main(int argc, char** argv)
   //------------------------------- run block JaDa algorithm ----------------------- 
   if (which==TARGET || which==SM)
   {
+    opts.how=HARMONIC;
     PHIST_SOUT(PHIST_INFO,"Jacobi-Davidson for interior eigenvalues\n");
     PHIST_ICHK_IERR(SUBR(harmonicjada)(opA, NULL, opts,
           Q, R, ev, resNorm, &nEig, &nIter, &iflag), iflag);
