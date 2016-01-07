@@ -523,7 +523,7 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
 #endif
 
     // update approximate Schur form of A (keeping the already computed part locked)
-    // additional vectors q are locked in Q (a total of nEig_)
+    // additional vectors q are present in Q (a total of nEig_)
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,   &Qq,                   nConvEig, nEig_-1,   iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ_,  &BQq,                  nConvEig, nEig_-1,   iflag), *iflag);
 
@@ -543,8 +543,10 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
     //////////////////////////
     
     // temporarily set t_res = Aq = AV S_R = W H_A S_R
-    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res, &t_res, 0, nEig_-nConvEig-1,   iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp, 0, nEig_-nConvEig-1, 0, nEig_-nConvEig-1, iflag), *iflag);
+    int ncolsR=nEig_-nConvEig;
+    int nqv=nV-nConvEig;
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res, &t_res, 0, ncolsR-1,   iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp, 0, nqv-1, 0, ncolsR-1, iflag), *iflag);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_A_,&H_A,   nConvEig, nV-1, nConvEig, nV-1, iflag), *iflag);
     PHIST_CHK_IERR(SUBR( sdMat_times_sdMat) (st::one(), H_A, S_R, st::zero(), Htmp, iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), W,   Htmp, st::zero(), t_res, iflag), *iflag);
