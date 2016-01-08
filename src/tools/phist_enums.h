@@ -43,6 +43,7 @@ typedef enum matSym_t {
 } matSym_t;
 
 #ifdef __cplusplus
+#include <iostream>
 extern "C" {
 #endif
 // defined in phist_tools.c

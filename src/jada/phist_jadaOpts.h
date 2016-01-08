@@ -89,6 +89,21 @@ int innerSolvStopAfterFirstConverged;
 
 } phist_jadaOpts_t;
 
+//! get jada options from a simple ASCII file and place them in the struct passed to the solvers.
+
+//! overwrite the struct members from a file containing lines like this:
+//!
+//! numEigs 8
+//! which LM
+//! how STANDARD
+//! convTol 1.0e-8
+//!
+//! The function is not at all fancy, it won't warn about invalid entries, doesn't
+//! care about invalid lines like BLABLA_numEigs -99 and may throw exceptions, especially
+//! if the file can't be opened. Every MPI process opens the file separately.
+void phist_jadaOpts_fromFile(phist_jadaOpts_t *opts, const char* filename, int* iflag);
+
+//! set default values in a jadaOpts struct
 void phist_jadaOpts_setDefaults(phist_jadaOpts_t *opts);
 
 #ifdef __cplusplus

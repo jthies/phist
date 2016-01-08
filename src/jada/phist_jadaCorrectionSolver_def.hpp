@@ -31,7 +31,7 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
   }
   else
   {
-    PHIST_SOUT(PHIST_ERROR, "method %d (%s) not implemented",(int)(*me)->method_, linSolv2str((*me)->method_));
+    PHIST_SOUT(PHIST_ERROR, "method %d (%s) not implemented\n",(int)(*me)->method_, linSolv2str((*me)->method_));
     *iflag=PHIST_NOT_IMPLEMENTED;
   }
 }

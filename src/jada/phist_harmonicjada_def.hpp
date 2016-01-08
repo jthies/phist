@@ -283,7 +283,7 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   PHIST_CHK_IERR(SUBR(orthog)(NULL,Wv,B_op,H_A,NULL,3,&rank_v0,iflag),*iflag);
   // initial H=W'V
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(H_,  &H,0,  nV-1,0,nV-1,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),W,V,st::zero(),H,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Wv,Vv,st::zero(),H,iflag),*iflag);
 
   
   initialShiftIter=std::max(minBase-nV,initialShiftIter);
