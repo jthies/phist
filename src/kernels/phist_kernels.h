@@ -154,7 +154,7 @@ typedef int (*phist_mvec_elemFunc)(ghost_gidx_t, ghost_lidx_t, void *, void *);
 #include "phist_kernels_prec_decl.h"
 #include "phist_kernels_carp_decl.h"
 //!@}
-#endif /* PHIST_HAVE_SP
+#endif /* PHIST_HAVE_SP */
 
 /*!\name double precision real kernel functions */
 //!@{
