@@ -13,6 +13,7 @@
 
 
 // some function to test mvec_put_func
+int PREFIX(mvecInitializer)(ghost_gidx_t i, ghost_lidx_t j, void* vval,void* last_arg);
 #ifdef FIRST_INSTANCE
 int PREFIX(mvecInitializer)(ghost_gidx_t i, ghost_lidx_t j, void* vval,void* last_arg)
 {

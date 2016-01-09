@@ -27,9 +27,6 @@ public:
 bool typeImplemented_;
 
 
-/** Set up method.
- * Fills internal data vector with values 1.0, 2.0 and 3.0.
- */
 virtual void SetUp() {
 typeImplemented_=false;
 }

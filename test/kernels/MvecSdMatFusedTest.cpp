@@ -14,14 +14,15 @@
 #include "../kernels/KernelTestWithSdMats.h"
 
 
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-
 using namespace testing;
 
-// Tests with V NxM, W NxK, C MxK, D KxK
 #define _BASENAME_ MvecSdMatFusedTest
+#define CLASSFILE_DEF "MvecSdMatFusedTest_def.hpp"
+#define _USE_VIEWS_V_ 0
+#define _USE_VIEWS_W_ 0
+#define _USE_VIEWS_M_ 0
+#define _USE_VIEWS_N_ 0
+
 
 #define _N_ 10
 #define _M_ 1

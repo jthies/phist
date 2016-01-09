@@ -16,7 +16,6 @@
 
 using namespace testing;
 
-#define _BASESUITE_ kernels
 #define _BASENAME_ MvecSdMatTest
 #define CLASSFILE_DEF "MvecSdMatTest_def.hpp"
 #define _USE_VIEWS_V1_ 0

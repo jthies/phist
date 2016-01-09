@@ -12,8 +12,6 @@ typedef int MPI_Comm;
 
 #include "phist_typedefs.h"
 #include "phist_kernels.h"
-#include <iostream>
-#include <iomanip>
 
 
 #ifdef PHIST_HAVE_GHOST
@@ -56,13 +54,6 @@ public:
  static const bool mflag_=false;
  #endif
  
- //! we store a pointer to the original stream buffer of std::cout,
- //! set it to NULL on rank!=0 at SetUp() and reset it at TearDown().
- std::streambuf *rdbuf_bak,*e_rdbuf_bak;
- 
- std::ostream *cout;//! std::cout for everyone (std::cout is muted if rank!=0)
- std::ostream *cerr;//! std::cerr for everyone
- 
 	/** Set up method.
 	 */
 	virtual void SetUp() 
@@ -91,20 +82,7 @@ public:
 #endif
       phist_Dtype_avail(&iflag_); haveD_=(iflag_==0);
       phist_Ztype_avail(&iflag_); haveZ_=(iflag_==0);
-#if 0	
-      rdbuf_bak = std::cout.rdbuf();
-      e_rdbuf_bak = std::cerr.rdbuf();
-      cout=new std::ostream(rdbuf_bak);
-      cerr=new std::ostream(e_rdbuf_bak);
-      if (mpi_rank_!=0) // this doesn't really seem to work as expected
-      {
-        std::cout.rdbuf(NULL);
-        std::cerr.rdbuf(NULL);
-      }
-#else
-      cout = &std::cout;
-      cerr = &std::cerr;
-#endif	
+
       // initialize random number sequence in a reproducible way (yet
       // with a different seed on each MPI process)
       rseed_ = (unsigned int)(mpi_rank_*77+42);
@@ -114,9 +92,6 @@ public:
 
 virtual void TearDown()
   {
-  //if (false) // we do not delete the comm because it may be shared between
-  //           // base classes of a derived class, so it is not clear when to
-  //           // delete it without a smart pointer concept.
   // should work if we count correctly
   if( --kernelTestSetupCounter_ == 0 )
     {
@@ -124,12 +99,6 @@ virtual void TearDown()
     ASSERT_EQ(0,iflag_);
     comm_=NULL;
     }
-#if 0
-	std::cout.rdbuf(rdbuf_bak);
-	std::cerr.rdbuf(e_rdbuf_bak);
-	delete cout;
-	delete cerr;
-#endif
 #ifdef PHIST_HAVE_GHOST
     ghost_taskq_waitall();
 #endif  
