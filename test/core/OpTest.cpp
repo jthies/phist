@@ -12,7 +12,7 @@
 
 #include "../kernels/KernelTest.h"
 #include "../kernels/KernelTestWithMap.h"
-#include "../kernels/KernelTestWithType.h"
+#include "../kernels/TestWithType.h"
 #include "../kernels/KernelTestWithVectors.h"
 
 #ifdef PHIST_KERNEL_LIB_TPETRA

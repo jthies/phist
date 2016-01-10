@@ -9,7 +9,7 @@
 #include "phist_kernels.h"
 #include "../kernels/KernelTest.h"
 #include "../kernels/KernelTestWithMap.h"
-#include "../kernels/KernelTestWithType.h"
+#include "../kernels/TestWithType.h"
 #include "../kernels/KernelTestWithVectors.h"
 #include "../kernels/KernelTestWithSdMats.h"
 

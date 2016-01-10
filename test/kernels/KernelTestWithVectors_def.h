@@ -1,8 +1,8 @@
 #include "../tools/TestHelpers.h"
 /*! Test fixture. */
-template<gidx_t _Nglob, int _Nvec, int _useViews>
-class KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews> : 
-        public virtual KernelTestWithType< _ST_ >,
+template<gidx_t _Nglob, int _Nvec, int _useViews, int _multipleDefinitionCounter>
+class KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _multipleDefinitionCounter> : 
+        public virtual TestWithType< _ST_ >,
         public virtual KernelTestWithMap<_Nglob> 
   {
 
@@ -163,12 +163,17 @@ void deleteVecs()
 
 public:
 
+static void SetUpTestCase()
+{
+  KernelTestWithMap<_Nglob>::SetUpTestCase();
+  TestWithType<_ST_>::SetUpTestCase();
+}
+
   /*! Set up routine.
    */
 virtual void SetUp()
   {
   KernelTestWithMap<_Nglob>::SetUp();
-  KernelTestWithType< ST >::SetUp();
   mem1_=NULL; mem2_=NULL; mem3_=NULL;
   // GCC 4.9 doesn't compile this without this->, compiler bug?
   if (this->typeImplemented_ && !this->problemTooSmall_)
@@ -188,9 +193,13 @@ virtual void TearDown()
     {
     deleteVecs();
     }
-  KernelTestWithType< ST >::TearDown();
   KernelTestWithMap<_Nglob>::TearDown();
   }
+
+static void TearDownTestCase()
+{
+  KernelTestWithMap<_Nglob>::TearDownTestCase();
+}
 
   /*! Replace the map and rebuild vectors
    */
@@ -387,10 +396,9 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
   lidx_t lda_, stride_;
   };
 
-template<gidx_t n, int nvec, int useViews>
-const int KernelTestWithVectors<_ST_,n,nvec,useViews>::nvec_;
+template<gidx_t _Nglob, int _Nvec, int _useViews, int _multipleDefinitionCounter>
+const int KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _multipleDefinitionCounter>::nvec_;
 
-template<gidx_t n, int nvec, int useViews>
-const int KernelTestWithVectors<_ST_,n,nvec,useViews>::useViews_;
-
+template<gidx_t _Nglob, int _Nvec, int _useViews, int _multipleDefinitionCounter>
+const int KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _multipleDefinitionCounter>::useViews_;
 

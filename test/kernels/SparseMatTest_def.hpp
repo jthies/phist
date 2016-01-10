@@ -21,7 +21,13 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_>
   
   typedef KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_> VTest;
   typedef KernelTestWithSdMats<_ST_,_NV_,_NV_,_USE_VIEWS_> MTest;
-  typedef KernelTestWithType< _MT_ > MT_Test;
+  typedef TestWithType< _MT_ > MT_Test;
+
+  static void SetUpTestCase()
+  {
+    VTest::SetUpTestCase();
+    MTest::SetUpTestCase();
+  }
 
   /*! Set up routine.
    */
@@ -75,6 +81,12 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_>
       ASSERT_EQ(0,delete_mat(A4_));
 #endif
     }
+  }
+
+  static void TearDownTestCase()
+  {
+    MTest::TearDownTestCase();
+    VTest::TearDownTestCase();
   }
 
 // the matrices may have individual maps, so we need to recreate all vectors with the specific map of the matrix!

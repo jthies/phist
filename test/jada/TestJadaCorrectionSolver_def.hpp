@@ -13,6 +13,11 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     typedef KernelTestWithVectors<_ST_,_N_,_NV_> VTest;
     typedef KernelTestWithSdMats<_ST_,_NVP_,_NV_> MTest;
 
+    static void SetUpTestCase()
+    {
+      VTest::SetUpTestCase();
+      MTest::SetUpTestCase();
+    }
 
     /*! Set up routine.
     */
@@ -119,6 +124,12 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         if( negSigma_ != NULL )
           delete[] negSigma_;
       }
+    }
+
+    static void TearDownTestCase()
+    {
+      MTest::TearDownTestCase();
+      VTest::TearDownTestCase();
     }
 
     void checkResiduals(_MT_ tol[_NV_])

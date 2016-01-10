@@ -1,19 +1,24 @@
 
 /*! Test fixture. */
-template<int _Nrows, int _Ncols, int _useViews>
-class KernelTestWithSdMats<_ST_,_Nrows,_Ncols, _useViews> : 
-        public virtual KernelTestWithType< _ST_ >,
+template<int _Nrows, int _Ncols, int _useViews, int _multipleDefinitionCounter>
+class KernelTestWithSdMats<_ST_,_Nrows,_Ncols, _useViews, _multipleDefinitionCounter> : 
+        public virtual TestWithType< _ST_ >,
         public virtual KernelTest
   {
 
 public:
+
+static void SetUpTestCase()
+{
+  KernelTest::SetUpTestCase();
+  TestWithType::SetUpTestCase();
+}
 
   /*! Set up routine.
    */
 virtual void SetUp()
 {
   KernelTest::SetUp();
-  KernelTestWithType< _ST_ >::SetUp();
   if (typeImplemented_)
   {
     bool align_p2=(useViews_==2);
@@ -194,8 +199,12 @@ virtual void TearDown()
     SUBR(sdMat_delete)(mem2_,&this->iflag_);
     SUBR(sdMat_delete)(mem1_,&this->iflag_);
   }
-  KernelTestWithType< _ST_ >::TearDown();
   KernelTest::TearDown();
+}
+
+static void TearDownTestCase()
+{
+  KernelTest::TearDownTestCase();
 }
 
 static void PrintSdMat(std::ostream& os, std::string label, 
@@ -328,12 +337,12 @@ static void PrintSdMat(std::ostream& os, std::string label,
 };
 
 
-template<int _Nrows, int _Ncols, int _useViews>
-const int KernelTestWithSdMats<_ST_,_Nrows,_Ncols,_useViews>::nrows_;
+template<int _Nrows, int _Ncols, int _useViews, int _multipleDefinitionCounter>
+const int KernelTestWithSdMats<_ST_,_Nrows,_Ncols,_useViews,_multipleDefinitionCounter>::nrows_;
 
-template<int _Nrows, int _Ncols, int _useViews>
-const int KernelTestWithSdMats<_ST_,_Nrows,_Ncols,_useViews>::ncols_;
+template<int _Nrows, int _Ncols, int _useViews,int _multipleDefinitionCounter>
+const int KernelTestWithSdMats<_ST_,_Nrows,_Ncols,_useViews,_multipleDefinitionCounter>::ncols_;
 
-template<int _Nrows, int _Ncols, int _useViews>
-const int KernelTestWithSdMats<_ST_,_Nrows,_Ncols,_useViews>::useViews_;
+template<int _Nrows, int _Ncols, int _useViews, int _multipleDefinitionCounter>
+const int KernelTestWithSdMats<_ST_,_Nrows,_Ncols,_useViews,_multipleDefinitionCounter>::useViews_;
 

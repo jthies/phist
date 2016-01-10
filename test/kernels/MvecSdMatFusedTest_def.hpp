@@ -13,22 +13,22 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public virtual KernelTestWithType< _ST_ >,
+class CLASSNAME: public virtual TestWithType< _ST_ >,
                  public virtual KernelTestWithMap<_N_>
 {
 
 public:
 
-  class VTest : public KernelTestWithVectors<_ST_,_N_,_M_,_USE_VIEWS_V_> {
+  class VTest : public KernelTestWithVectors<_ST_,_N_,_M_,_USE_VIEWS_V_,1> {
     public: virtual void TestBody(){}
   };
-  class WTest : public KernelTestWithVectors<_ST_,_N_,_K_,_USE_VIEWS_W_> {
+  class WTest : public KernelTestWithVectors<_ST_,_N_,_K_,_USE_VIEWS_W_,2> {
     public: virtual void TestBody(){}
   };
-  class MTest : public KernelTestWithSdMats<_ST_,_M_,_K_,_USE_VIEWS_M_> {
+  class MTest : public KernelTestWithSdMats<_ST_,_M_,_K_,_USE_VIEWS_M_,1> {
     public: virtual void TestBody(){}
   };
-  class NTest : public KernelTestWithSdMats<_ST_,_K_,_K_,_USE_VIEWS_N_> {
+  class NTest : public KernelTestWithSdMats<_ST_,_K_,_K_,_USE_VIEWS_N_,2> {
     public: virtual void TestBody(){}
   };
 
@@ -61,12 +61,19 @@ public:
   WTest wtest_;
   MTest mtest_;
   NTest ntest_;
+
+  static void SetUpTestCase()
+  {
+    VTest::SetUpTestCase();
+    WTest::SetUpTestCase();
+    MTest::SetUpTestCase();
+    NTest::SetUpTestCase();
+  }
   
   /*! Set up routine.
    */
   virtual void SetUp()
   {
-    KernelTestWithType< _ST_ >::SetUp();
     KernelTestWithMap<_N_>::SetUp();
     if (typeImplemented_ && !problemTooSmall_)
     {
@@ -149,9 +156,16 @@ public:
       vtest_.TearDown();
     }
     KernelTestWithMap<_N_>::TearDown();
-    KernelTestWithType<_ST_>::TearDown();
   }
 
+  static void TearDownTestCase()
+  {
+    NTest::TearDownTestCase();
+    MTest::TearDownTestCase();
+    WTest::TearDownTestCase();
+    VTest::TearDownTestCase();
+  }
+  
 };
 
   // check augmented kernel with random data

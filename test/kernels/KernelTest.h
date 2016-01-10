@@ -31,15 +31,15 @@ typedef int MPI_Comm;
 It calls the init and finalize routines of the kernel lib
 and provides basic MPI support
  */
-class KernelTest: public testing::Test {
+class KernelTest: public virtual testing::Test {
 
 public:
 
- comm_ptr_t comm_;
- bool haveS_, haveD_, haveC_, haveZ_;
- MPI_Comm mpi_comm_;
- unsigned int rseed_;//random number seed
- int iflag_, mpi_rank_, mpi_size_;
+ static comm_ptr_t comm_;
+ static bool haveS_, haveD_, haveC_, haveZ_;
+ static MPI_Comm mpi_comm_;
+ static unsigned int rseed_;//random number seed
+ static int iflag_, mpi_rank_, mpi_size_;
  KernelTest() : kernelTestSetupCounter_(0) {}
 
  //! these flags determine how to traverse arrays
@@ -54,11 +54,11 @@ public:
  static const bool mflag_=false;
  #endif
  
-	/** Set up method.
+	/** static setup method for the complete test case
 	 */
-	virtual void SetUp() 
+	static void SetUpTestCase() 
 	{
-    if( kernelTestSetupCounter_++ == 0 )
+    if( staticKernelTestSetupCounter_++ == 0 )
     {
 #ifdef PHIST_HAVE_MPI	
       mpi_comm_=MPI_COMM_WORLD;
@@ -90,18 +90,36 @@ public:
     }
 	}
 
-virtual void TearDown()
+  /** dynamic setup method for every single test
+   */
+  virtual void SetUp()
+  {
+    kernelTestSetupCounter_++;
+  }
+
+  /** dynamic teardown method for every single test
+   */
+  virtual void TearDown()
+  {
+    if( --kernelTestSetupCounter_ == 0 )
+    {
+#ifdef PHIST_HAVE_GHOST
+      ghost_taskq_waitall();
+#endif  
+    }
+  }
+
+  /** static teardown method for the complete test case
+   */
+  static void TearDownTestCase()
   {
   // should work if we count correctly
-  if( --kernelTestSetupCounter_ == 0 )
+  if( --staticKernelTestSetupCounter_ == 0 )
     {
     phist_comm_delete(comm_,&iflag_);
     ASSERT_EQ(0,iflag_);
     comm_=NULL;
     }
-#ifdef PHIST_HAVE_GHOST
-    ghost_taskq_waitall();
-#endif  
   }
   
 ::testing::AssertionResult AssertNotNull(void* ptr)
@@ -111,7 +129,8 @@ virtual void TearDown()
   }
 
 private:
- int kernelTestSetupCounter_;
+  int kernelTestSetupCounter_;
+  static int staticKernelTestSetupCounter_;
 };
 
 #endif

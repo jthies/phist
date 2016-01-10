@@ -10,6 +10,11 @@ class KernelTestWithMap: public virtual KernelTest
 {
 public:
 
+static void SetUpTestCase()
+{
+  KernelTest::SetUpTestCase();
+}
+
 /** Set up method.
  */
 virtual void SetUp()
@@ -35,6 +40,11 @@ virtual void TearDown()
     ASSERT_EQ(0,iflag_);
   }
   KernelTest::TearDown();
+}
+
+static void TearDownTestCase()
+{
+  KernelTest::TearDownTestCase();
 }
 
 /** replace the map, e.g. when we need to use the map of a sparseMat */

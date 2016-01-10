@@ -25,6 +25,12 @@ class CLASSNAME: public virtual KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
     static const int n_=_N_;
     static const int m_=_M_;
 
+    static void SetUpTestCase()
+    {
+      MTest::SetUpTestCase();
+      VTest::SetUpTestCase();
+    }
+
     //! Set up routine.
     virtual void SetUp()
     {
@@ -194,6 +200,11 @@ class CLASSNAME: public virtual KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
       MTest::TearDown();
     }
 
+    static void TearDownTestCase()
+    {
+      VTest::TearDownTestCase();
+      MTest::TearDownTestCase();
+    }
     TYPE(op_ptr) opAeye_;
     TYPE(op_ptr) opAzero_;
     TYPE(op_ptr) opArand_;

@@ -11,7 +11,7 @@
 #include "phist_typedefs.h"
 #include "phist_kernels.h"
 #include "KernelTestWithMap.h"
-#include "KernelTestWithType.h"
+#include "TestWithType.h"
 
 using namespace testing;
 
@@ -20,20 +20,16 @@ using namespace testing;
  * the global number of rows (_Nglob),
  * the number of colums (_Nvec),
  * _useViews (default false): setup the owned mvecs as views of larger
+ * _multipleDefinitionCounter: used to enforce multiple template instantiations of static class variables where needed
    mvec blocks.
  */
-template<typename T, gidx_t _Nglob, int _Nvec, int _useViews=0>
+template<typename T, gidx_t _Nglob, int _Nvec, int _useViews=0, int _multipleDefinitionCounter=0>
 class KernelTestWithVectors:
         public virtual KernelTestWithMap<_Nglob>,
-        public virtual KernelTestWithType<T>
+        public virtual TestWithType<T>
   {
 
 public:
-  virtual void SetUp(){}
-  virtual void TearDown(){}
-  int nvec_;
-  int useViews_;
-  lidx_t lda_, stride_;
 
   };
 

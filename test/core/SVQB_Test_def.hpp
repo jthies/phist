@@ -14,6 +14,12 @@ public:
   typedef KernelTestWithVectors<_ST_,_N_,1> VTest_1;
   typedef KernelTestWithSdMats<_ST_,_NV_,_NV_> MTest;
 
+  static void SetUpTestCase()
+  {
+    VTest::SetUpTestCase();
+    MTest::SetUpTestCase();
+  }
+
   /*! Set up routine.
    */
   virtual void SetUp()
@@ -47,6 +53,14 @@ public:
     VTest::TearDown();
     MTest::TearDown();
     }
+
+  static void TearDownTestCase()
+  {
+    MTest::TearDownTestCase();
+    VTest::TearDownTestCase();
+  }
+
+
 
   _MT_ nrms_[_NV_];
 };

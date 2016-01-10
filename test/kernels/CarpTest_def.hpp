@@ -38,7 +38,7 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
 
   public:
 
-  typedef KernelTestWithType<MT> MT_Test;
+  typedef TestWithType<MT> MT_Test;
 
   /*! Set up routine.
    */

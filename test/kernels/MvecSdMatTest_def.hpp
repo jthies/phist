@@ -13,19 +13,19 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public virtual KernelTestWithType< _ST_ >,
+class CLASSNAME: public virtual TestWithType< _ST_ >,
                  public virtual KernelTestWithMap<_N_>
 {
 
 public:
 
-  class V1Test : public KernelTestWithVectors<_ST_,_N_,_M_,_USE_VIEWS_V1_> {
+  class V1Test : public KernelTestWithVectors<_ST_,_N_,_M_,_USE_VIEWS_V1_,1> {
     public: virtual void TestBody(){}
   };
-  class V2Test : public KernelTestWithVectors<_ST_,_N_,_K_,_USE_VIEWS_V2_> {
+  class V2Test : public KernelTestWithVectors<_ST_,_N_,_K_,_USE_VIEWS_V2_,2> {
     public: virtual void TestBody(){}
   };
-  class MTest : public KernelTestWithSdMats<_ST_,_M_,_K_,_USE_VIEWS_M_> {
+  class MTest : public KernelTestWithSdMats<_ST_,_M_,_K_,_USE_VIEWS_M_,1> {
     public: virtual void TestBody(){}
   };
 
@@ -52,12 +52,18 @@ public:
   V1Test v1test_;
   V2Test v2test_;
   MTest mtest_;
+
+  static void SetUpTestCase()
+  {
+    V1Test::SetUpTestCase();
+    V2Test::SetUpTestCase();
+    MTest::SetUpTestCase();
+  }
   
   /*! Set up routine.
    */
   virtual void SetUp()
   {
-    KernelTestWithType< _ST_ >::SetUp();
     KernelTestWithMap<_N_>::SetUp();
     if (typeImplemented_ && !problemTooSmall_)
     {
@@ -109,9 +115,14 @@ public:
       v1test_.TearDown();
     }
     KernelTestWithMap<_N_>::TearDown();
-    KernelTestWithType<_ST_>::TearDown();
   }
 
+  static void TearDownTestCase()
+  {
+    MTest::TearDownTestCase();
+    V2Test::TearDownTestCase();
+    V1Test::TearDownTestCase();
+  }
 };
 
   // check ones(n,m)'*ones(n,k)=n*ones(m,k), and columns with 1, 2, 3...

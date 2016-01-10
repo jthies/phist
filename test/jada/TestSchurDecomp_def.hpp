@@ -77,7 +77,6 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
     virtual void TearDown()
     {
       MTest::TearDown();
-      KernelTestWithType<_ST_>::TearDown();
     }
 
     void DoSchurDecompTest(eigSort_t which, _MT_ tol, bool onlyDoReorderTest)
