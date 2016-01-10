@@ -392,7 +392,7 @@ subroutine dgemm_sB_augmented_generic(m,n,k,alpha,A,lda,B,beta,C,ldc, D)
         C(j,i) = alpha*sum(B(:,j)*A(1:k,i))
       end do
       do j = 1, n, 1
-        Dtmp(j:,j) = Dtmp(j:,j) + C(j,i)*C(j:,i)
+        Dtmp(j:,j) = Dtmp(j:,j) + C(j,i)*C(j:n,i)
       end do
     end do
   else
@@ -403,7 +403,7 @@ subroutine dgemm_sB_augmented_generic(m,n,k,alpha,A,lda,B,beta,C,ldc, D)
         C(j,i) = beta*C(j,i) + alpha*sum(B(:,j)*A(1:k,i))
       end do
       do j = 1, n, 1
-        Dtmp(j:,j) = Dtmp(j:,j) + C(j,i)*C(j:,i)
+        Dtmp(j:,j) = Dtmp(j:,j) + C(j,i)*C(j:n,i)
       end do
     end do
   end if
