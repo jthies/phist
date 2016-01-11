@@ -952,7 +952,7 @@ protected:
   }
 #endif
 
-
+#if MATNAME == MATNAME_sprandn
   TEST_F(CLASSNAME, sparseMat_times_mvec_vadd_mvec_only_scale)
   {
     _ST_ shifts[_NV_];
@@ -963,6 +963,7 @@ protected:
 
     test_sparseMat_times_mvec_vadd_mvec(alpha, A_, shifts, beta);
   }
+#endif
 
 #if MATNAME == MATNAME_spzero
   TEST_F(CLASSNAME, sparseMat_times_mvec_vadd_mvec_only_vadd)
