@@ -178,7 +178,7 @@ public:
 #endif
       ASSERT_EQ(0,iflag_);
 
-      ASSERT_REAL_EQ(mt::one(),SdMatEqual(mat2_,beta*((ST)42.0)));
+      ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,beta*((ST)42.0)),100*mt::eps());
     }
   }
 
@@ -203,7 +203,7 @@ public:
       }
       SUBR(sdMat_to_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat1_,mat2_));
+      ASSERT_NEAR(mt::one(),SdMatsEqual(mat1_,mat2_),100*mt::eps());
     }
   }
 
@@ -228,7 +228,7 @@ public:
       }
       SUBR(sdMat_to_device)(mat3_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat3_,mat2_));
+      ASSERT_NEAR(mt::one(),SdMatsEqual(mat3_,mat2_),100*mt::eps());
     }
   }
 

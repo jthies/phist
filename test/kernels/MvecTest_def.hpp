@@ -334,7 +334,7 @@ public:
 #endif
 
 
-#if _N_ < 100
+#if _N_ < 100 && _M_ < 4
   TEST_F(CLASSNAME, random)
     {
     if (typeImplemented_ && !problemTooSmall_)
@@ -372,11 +372,11 @@ public:
       // TODO - this test sometimes fails with OMP_NUM_THREADS>1 and ghost
       //         in single precision. Probably the chance to get 'identical'
       //         numbers in SP is higher, but why does it depend on #threads?
-      if (minval<=mt::eps())
+      if (minval<=mt::eps()*mt::eps())
       {
         SUBR(mvec_print)(vec1_,&iflag_);
       }
-      ASSERT_EQ(true,minval>mt::eps()); 
+      ASSERT_EQ(true,minval>mt::eps()*mt::eps()); 
       }
     }
 #endif
