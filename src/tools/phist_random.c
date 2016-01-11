@@ -10,6 +10,13 @@
 
 #ifdef PHIST_HAVE_OPENMP
 #include <omp.h>
+
+// disable OpenMP with GHOST here, may interfere with ghost!
+#ifndef PHIST_KERNEL_LIB_GHOST
+#define USE_OPENMP 1
+#else
+#define USE_OPENMP 0
+#endif
 #endif
 
 #include <stdio.h>
@@ -92,11 +99,13 @@ void drandom_1(int nrows, double *restrict v, int64_t pre_skip, int64_t post_ski
     exit(1);
   }
 
-#ifdef PHIST_HAVE_OPENMP
+
+#if USE_OPENMP
   int nt = omp_get_max_threads();
 #else
   int nt = 1;
 #endif
+
 
 #pragma omp critical (phist_random)
   {
@@ -115,12 +124,12 @@ void drandom_1(int nrows, double *restrict v, int64_t pre_skip, int64_t post_ski
     uint64_t y = random_state.y;
     uint64_t z = random_state.z;
     uint64_t c = random_state.c;
-#pragma omp parallel firstprivate(x,y,z,c)
+#pragma omp parallel firstprivate(x,y,z,c) if( USE_OPENMP )
     {
-#ifdef PHIST_HAVE_OPENMP
+#if USE_OPENMP
       int it = omp_get_thread_num();
 #else
-      int it = 1;
+      int it = 0;
 #endif
 
       // jump to first index of this thread
@@ -168,7 +177,7 @@ void drandom_1(int nrows, double *restrict v, int64_t pre_skip, int64_t post_ski
 // TODO: 4-way unrolling of KISS state using leapfrogging for performance
 void drandom_general(int nvec, int nrows, double *restrict v, int ldv, int64_t pre_skip, int64_t post_skip)
 {
-#ifdef PHIST_HAVE_OPENMP
+#if USE_OPENMP
   int nt = omp_get_max_threads();
 #else
   int nt = 1;
@@ -190,12 +199,12 @@ void drandom_general(int nvec, int nrows, double *restrict v, int ldv, int64_t p
     uint64_t y = random_state.y;
     uint64_t z = random_state.z;
     uint64_t c = random_state.c;
-#pragma omp parallel firstprivate(x,y,z,c)
+#pragma omp parallel firstprivate(x,y,z,c) if( USE_OPENMP )
     {
-#ifdef PHIST_HAVE_OPENMP
+#if USE_OPENMP
       int it = omp_get_thread_num();
 #else
-      int it = 1;
+      int it = 0;
 #endif
 
       // jump to first index of this thread
@@ -463,13 +472,7 @@ static inline void XSH_SKIP(uint64_t n, uint64_t *restrict y)
 {
   // idea: represent shift as a 64x64bit matrix and calculate matrix power
   // calculate XSH_matrix ^ n
-  // quite costly, so simply apply XSH for small values of n...
-  if( n < 1024 )
-  {
-    for(int i = 0; i < n; i++)
-      XSH(y);
-    return;
-  }
+
   uint64_t M[64];
   int i = 0;
   for(; i < 64; i++)
@@ -561,6 +564,19 @@ static inline double KISSD(uint64_t *restrict x, uint64_t *restrict y, uint64_t 
 // skip a list of random numbers (state jump ahead)
 static inline void KISS_SKIP(uint64_t n, uint64_t *restrict x, uint64_t *restrict y, uint64_t *restrict z, uint64_t *restrict c)
 {
+  // for small n just looping is way faster
+  if( n < 10000 )
+  {
+    for(int i = 0; i < n; i++)
+    {
+      MWC(x,c);
+      XSH(y);
+      CNG(z);
+    }
+
+    return;
+  }
+
   MWC_SKIP(n,x,c);
   XSH_SKIP(n,y);
   CNG_SKIP(n,z);
