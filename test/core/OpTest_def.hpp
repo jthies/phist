@@ -26,20 +26,8 @@ public:
     SparseMatTest::SetUp();
     VTest::SetUp();
 
-    createOrthogQ();
-    
     if (typeImplemented_ && !problemTooSmall_)
       {
-      sigma = new _ST_[nq_];
-      }
-
-    haveMat_ = (A_ != NULL);
-    }
-
-  void createOrthogQ()
-  {
-    if (typeImplemented_ && !problemTooSmall_)
-    {
       nq_ = std::min(3*nvec_+1,(int)nglob_-4);
 #ifdef HAVE_MPI
       // note: TSQR does not work if nvec>nloc (that wouldn't really be a 'tall skinny 
@@ -63,8 +51,12 @@ public:
       ASSERT_GE(iflag_,0);
       SUBR(sdMat_delete)(Rtmp,&iflag_);
       ASSERT_EQ(0,iflag_);
+
+      sigma = new _ST_[nq_];
+      }
+
+    haveMat_ = (A_ != NULL);
     }
-  }
 
   /*! Clean up.
    */
