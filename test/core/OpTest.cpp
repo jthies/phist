@@ -8,11 +8,8 @@
 #include "phist_operator.h"
 #include "phist_jadaOp.hpp"
 #include "phist_orthog.h"
-#include "../tools/MatrixIO.h"
 
-#include "../kernels/KernelTest.h"
-#include "../kernels/KernelTestWithMap.h"
-#include "../kernels/TestWithType.h"
+#include "../kernels/KernelTestWithSparseMat.h"
 #include "../kernels/KernelTestWithVectors.h"
 
 #ifdef PHIST_KERNEL_LIB_TPETRA
@@ -35,9 +32,31 @@
 
 using namespace testing;
 
-#define _BASENAME_ OpTest
+#define CLASSFILE_DEF "OpTest_def.hpp"
+
+#define _BASENAME_ OpTest_sprandn
+#define MATNAME MATNAME_sprandn
 
 #define _N_ 25
 #define _M_ 8
 #include "../phist_typed_test_gen.h"
 
+#undef _BASENAME_
+#undef MATNAME
+
+
+#define _BASENAME_ OpTest_sprandn_nodiag
+#ifdef PHIST_KERNEL_LIB_GHOST
+#define DISABLE_TESTCASE
+#endif
+#define MATNAME MATNAME_sprandn_nodiag
+
+#define _N_ 25
+#define _M_ 8
+#include "../phist_typed_test_gen.h"
+
+#ifdef DISABLE_TESTCASE
+#undef DISABLE_TESTCASE
+#endif
+#undef _BASENAME_
+#undef MATNAME

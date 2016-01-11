@@ -159,6 +159,9 @@ void deleteVecs()
     SUBR(mvec_delete)(this->mem3_,&this->iflag_);
     ASSERT_EQ(0,this->iflag_);
   }
+
+  vec1_ = vec2_ = vec3_ = NULL;
+  mem1_ = mem2_ = mem3_ = NULL;
 }
 
 public:
@@ -200,21 +203,6 @@ static void TearDownTestCase()
 {
   KernelTestWithMap<_Nglob>::TearDownTestCase();
 }
-
-  /*! Replace the map and rebuild vectors
-   */
-virtual void replaceMap(const_map_ptr_t map)
-  {
-  // GCC 4.9 doesn't compile this without this->, compiler bug?
-    if (this->typeImplemented_ && !this->problemTooSmall_)
-      {
-      deleteVecs();
-
-      KernelTestWithMap<_Nglob>::replaceMap(map);
-
-      createVecs();
-      }
-  }
 
 // tolerance for tests depending on the vector length
 inline static MT releps(TYPE(const_mvec_ptr) V=NULL)
@@ -385,11 +373,11 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
 
   //! if _useViews=true, these are larger memory blocks
   //! holding vecX_ as an inner view. Otherwise they are NULL.
-  TYPE(mvec_ptr) mem1_, mem2_, mem3_;
-  ST *mem1_vp_, *mem2_vp_, *mem3_vp_;
+  TYPE(mvec_ptr) mem1_ = NULL, mem2_ = NULL, mem3_ = NULL;
+  ST *mem1_vp_ = NULL, *mem2_vp_ = NULL, *mem3_vp_ = NULL;
 
-  TYPE(mvec_ptr) vec1_, vec2_, vec3_;
-  ST *vec1_vp_, *vec2_vp_, *vec3_vp_;
+  TYPE(mvec_ptr) vec1_ = NULL, vec2_ = NULL, vec3_ = NULL;
+  ST *vec1_vp_ = NULL, *vec2_vp_ = NULL, *vec3_vp_ = NULL;
   static const int nvec_=_Nvec;
   int nvecPadded_, pad_pre_, pad_post_;
   static const int useViews_=_useViews;

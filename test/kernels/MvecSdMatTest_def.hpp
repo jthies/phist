@@ -55,6 +55,9 @@ public:
 
   static void SetUpTestCase()
   {
+    TestWithType<_ST_>::SetUpTestCase();
+    KernelTestWithMap<_N_>::SetUpTestCase();
+
     V1Test::SetUpTestCase();
     V2Test::SetUpTestCase();
     MTest::SetUpTestCase();
@@ -68,9 +71,7 @@ public:
     if (typeImplemented_ && !problemTooSmall_)
     {
       v1test_.SetUp();
-      v1test_.replaceMap(map_);
       v2test_.SetUp();
-      v2test_.replaceMap(map_);
       // these probably have a different communicator, but this shouldn't matter here...
       mtest_.SetUp();
 
@@ -122,6 +123,8 @@ public:
     MTest::TearDownTestCase();
     V2Test::TearDownTestCase();
     V1Test::TearDownTestCase();
+
+    KernelTestWithMap<_N_>::TearDownTestCase();
   }
 };
 

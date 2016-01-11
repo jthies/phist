@@ -13,13 +13,9 @@
 #include "phist_jadaOp.hpp"
 #include "phist_ScalarTraits.hpp"
 #include "phist_orthog.h"
-#include "../kernels/KernelTest.h"
-#include "../kernels/KernelTestWithMap.h"
-#include "../kernels/TestWithType.h"
+#include "../kernels/KernelTestWithSparseMat.h"
 #include "../kernels/KernelTestWithSdMats.h"
 #include "../kernels/KernelTestWithVectors.h"
-
-#include "../tools/MatrixIO.h"
 
 using namespace testing;
 
@@ -31,7 +27,7 @@ using namespace testing;
 #undef MATNAME
 #endif
 
-#define MATNAME "sprandn"
+#define MATNAME MATNAME_sprandn
 
 #define _N_ 25
 #define _NV_ 1
@@ -64,7 +60,7 @@ using namespace testing;
 
 
 #undef MATNAME
-#define MATNAME "jadaTestMat"
+#define MATNAME MATNAME_jadaTestMat
 
 #undef _N_
 #undef _NV_

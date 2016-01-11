@@ -4,16 +4,19 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
+class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
+                 public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
                  public virtual KernelTestWithSdMats<_ST_,_NVP_,_NV_>
 {
 
   public:
+    typedef KernelTestWithSparseMat<_ST_,_N_,MATNAME> SparseMatTest;
     typedef KernelTestWithVectors<_ST_,_N_,_NV_> VTest;
     typedef KernelTestWithSdMats<_ST_,_NVP_,_NV_> MTest;
 
     static void SetUpTestCase()
     {
+      SparseMatTest::SetUpTestCase();
       MTest::SetUpTestCase();
       VTest::SetUpTestCase();
     }
@@ -22,6 +25,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     */
     virtual void SetUp()
     {
+      SparseMatTest::SetUp();
       VTest::SetUp();
       MTest::SetUp();
 
@@ -41,17 +45,9 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
       if (typeImplemented_ && !problemTooSmall_)
       {
-        SUBR(read_mat)(MATNAME,comm_,nglob_,&A_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        ASSERT_TRUE(A_ != NULL);
         opA_ = new TYPE(op);
         SUBR(op_wrap_sparseMat)(opA_, A_, &iflag_);
         ASSERT_EQ(0,iflag_);
-
-        const_map_ptr_t map = NULL;
-        SUBR(sparseMat_get_domain_map)(A_,&map,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        VTest::replaceMap(map);
 
         PHISTTEST_MVEC_CREATE(&q_,map_,_NVP_,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -92,8 +88,6 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     */
     virtual void TearDown() 
     {
-      MTest::TearDown();
-      VTest::TearDown();
       if (typeImplemented_ && !problemTooSmall_)
       {
         SUBR(jadaOp_delete)(jdOp_,&iflag_);
@@ -102,23 +96,24 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
           delete jdOp_;
         if( opA_ != NULL )
           delete opA_;
-        SUBR(sparseMat_delete)(A_,&iflag_);
-        ASSERT_EQ(0,iflag_);
         SUBR(mvec_delete)(q_,&iflag_);
         ASSERT_EQ(0,iflag_);
         if( sigma_ != NULL )
           delete[] sigma_;
       }
+      MTest::TearDown();
+      VTest::TearDown();
+      SparseMatTest::TearDown();
     }
 
     static void TearDownTestCase()
     {
       MTest::TearDownTestCase();
       VTest::TearDownTestCase();
+      SparseMatTest::TearDownTestCase();
     }
 
 
-    TYPE(sparseMat_ptr) A_ = NULL;
     TYPE(op_ptr) opA_ = NULL;
     TYPE(op_ptr) jdOp_ = NULL;
     TYPE(mvec_ptr) q_ = NULL;

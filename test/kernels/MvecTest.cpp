@@ -8,7 +8,6 @@
 
 
 #include "phist_kernels.h"
-#include "KernelTestWithMap.h"
 #include "KernelTestWithVectors.h"
 
 using namespace testing;

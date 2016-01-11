@@ -4,15 +4,6 @@
 #error "file not included correctly."
 #endif
 
-extern "C" {
-
-// prototype for a useful function from the driver_utils, we can't include
-// the header here because it can only be included once after a phist_gen_X header.
-void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
-        const char* problem, int* iflag);
-
-} //extern "C"
-
 /*! Test fixure. 
   
   basic tests for CARP kernel, creates a test matrix defined by
@@ -33,18 +24,31 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   ... TODO: add tests ...
   
 */
-class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_> 
+class CLASSNAME: public KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
+                 public KernelTestWithVectors<_ST_,_N_,_NV_> 
 {
 
-  public:
+public:
+  typedef KernelTestWithSparseMat<_ST_,_N_,MATNAME> SparseMatTest;
+  typedef KernelTestWithVectors<_ST_,_N_,_NV_>  VTest;
 
   typedef TestWithType<MT> MT_Test;
+
+  static void SetUpTestCase()
+  {
+    SparseMatTest::SetUpTestCase();
+    VTest::SetUpTestCase();
+
+    MT_Test::SetUpTestCase();
+  }
 
   /*! Set up routine.
    */
   virtual void SetUp()
   {
-    KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
+    SparseMatTest::SetUp();
+    VTest::SetUp();
+
     // created in rebuildVectors
     vec1b_=NULL;
     vec2b_=NULL; 
@@ -54,8 +58,6 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
     if (typeImplemented_ && !problemTooSmall_)
     {
       iflag_=PHIST_SPARSEMAT_OPT_CARP;
-      SUBR(create_matrix)(&A_,comm_,_MATNAME_,&iflag_);
-      ASSERT_EQ(0,iflag_);
       iflag_=PHIST_SPARSEMAT_OPT_CARP | PHIST_SPARSEMAT_QUIET;
       SUBR(sparseMat_create_fromRowFunc)(&I_,comm_,_N_,_N_,1,&SUBR(idfunc),NULL,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -88,7 +90,6 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
    */
   virtual void TearDown()
   {
-    KernelTestWithVectors<_ST_,_N_,_NV_>::TearDown();
     if (typeImplemented_ && !problemTooSmall_)
     {
       if (vec1b_!=NULL)
@@ -106,9 +107,17 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_>
         SUBR(mvec_delete)(vec3b_,&iflag_);
         ASSERT_EQ(0,iflag_);
       }
-      ASSERT_EQ(0,delete_mat(A_));
       ASSERT_EQ(0,delete_mat(I_));
     }
+    
+    VTest::TearDown();
+    SparseMatTest::TearDown();
+  }
+
+  static void TearDownTestCase()
+  {
+    VTest::TearDownTestCase();
+    SparseMatTest::TearDownTestCase();
   }
 
 // the matrices may have individual maps, so we need to recreate all vectors with the specific map of the matrix!
@@ -249,7 +258,7 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
     ASSERT_NEAR(mt::one(),max_err+mt::one(),tol);
   }
 
-  TYPE(sparseMat_ptr) A_, I_;
+  TYPE(sparseMat_ptr) I_;
   TYPE(mvec_ptr) vec1b_,vec2b_,vec3b_;
   // mere pointers to allow e.g. passing in b=NULL
   TYPE(mvec_ptr) x_r, x_i, x_r_bak, x_i_bak, b;
@@ -365,7 +374,6 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
   {
     if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
     {
-      // matrices may have different maps
       rebuildVectors(I_);
       
       SUBR(mvec_random)(x_r,&iflag_);

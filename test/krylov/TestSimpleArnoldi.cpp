@@ -10,176 +10,257 @@
 #include "phist_kernels.h"
 #include "phist_enums.h"
 #include "phist_simple_arnoldi.h"
-#include "../kernels/KernelTest.h"
-#include "../kernels/KernelTestWithMap.h"
-#include "../kernels/TestWithType.h"
+#include "../kernels/KernelTestWithSparseMat.h"
 #include "../kernels/KernelTestWithSdMats.h"
 #include "../kernels/KernelTestWithVectors.h"
 
 using namespace testing;
 
+#define CLASSFILE_DEF "TestSimpleArnoldi_def.hpp"
+
+// ==================== spzero matrix ====================
 #ifdef PHIST_KERNEL_LIB_GHOST
-// we can't easily store an all-zero matrix in ghost binCRS, so skip these tests
-#define SKIP_ZERO_MAT
-/* mvec_QR is not (yet) implemented in GHOST unless TSQR is available */
-#if !defined(PHIST_HAVE_KOKKOS)||!defined(PHIST_HAVE_BELOS)
-# define SKIP_BLOCK_ARNOLDI
-#endif
+#define DISABLE_TESTCASE
 #endif
 
-#ifdef CLASSNAME
-#undef CLASSNAME
-#endif
+#define MATNAME MATNAME_spzero
+#define BLOCK_SIZE 0
+#define _BASENAME_ TestSimpleArnoldi_spzero
 
 #define _N_ 25
 #define _M_ 12
-#define BLOCK_SIZE 0
-
-#ifdef PHIST_HAVE_SP
-
-#define CLASSNAME STestSimpleArnoldi_25_12
-#include "phist_gen_s.h"
-#include "../tools/MatrixIO_def.hpp"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
-
-#define CLASSNAME CTestSimpleArnoldi_25_12
-#include "phist_gen_c.h"
-#include "../tools/MatrixIO_def.hpp"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
-
-#endif
-
-#define CLASSNAME DTestSimpleArnoldi_25_12
-#include "phist_gen_d.h"
-#include "../tools/MatrixIO_def.hpp"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
-
-#define CLASSNAME ZTestSimpleArnoldi_25_12
-#include "phist_gen_z.h"
-#include "../tools/MatrixIO_def.hpp"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
+#include "../phist_typed_test_gen.h"
 
 
+#undef _BASENAME_
 #undef BLOCK_SIZE
 #define BLOCK_SIZE 1
+#define _BASENAME_ TestSimpleBlock1Arnoldi_spzero
 
-#ifdef PHIST_HAVE_SP
-
-#define CLASSNAME STestSimpleBlock1Arnoldi_25_12
-#include "phist_gen_s.h"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
-
-#define CLASSNAME CTestSimpleBlock1Arnoldi_25_12
-#include "phist_gen_c.h"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
-
-#endif
-
-#define CLASSNAME DTestSimpleBlock1Arnoldi_25_12
-#include "phist_gen_d.h"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
-
-#define CLASSNAME ZTestSimpleBlock1Arnoldi_25_12
-#include "phist_gen_z.h"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
 
 
+#undef _BASENAME_
 #undef BLOCK_SIZE
 #define BLOCK_SIZE 2
-
-/* the tests below do not work unless mvec_QR is implemented! */
-#ifdef SKIP_BLOCK_ARNOLDI
-#define BLOCK_PREFIX(_T,_NAME,_BS) DISABLED_ ## _T ## Block ## _BS ## _NAME
-#else
-#define BLOCK_PREFIX(_T,_NAME,_BS) _T ## Block ## _BS ## _NAME
+#ifdef PHIST_KERNEL_LIB_GHOST
+#define DISABLE_TESTCASE
 #endif
+#define _BASENAME_ TestSimpleBlock2Arnoldi_spzero
 
-#ifdef PHIST_HAVE_SP
-
-#define CLASSNAME BLOCK_PREFIX(S,Arnoldi_25_12,2)
-#include "phist_gen_s.h"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
-
-#define CLASSNAME BLOCK_PREFIX(C,Arnoldi_25_12,2)
-#include "phist_gen_c.h"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
-
-#endif
-
-#define CLASSNAME BLOCK_PREFIX(D,Arnoldi_25_12,2)
-#include "phist_gen_d.h"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
-
-#define CLASSNAME BLOCK_PREFIX(Z,Arnoldi_25_12,2)
-#include "phist_gen_z.h"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
 
 
+#undef _BASENAME_
 #undef BLOCK_SIZE
 #define BLOCK_SIZE 3
+#define _BASENAME_ TestSimpleBlock3Arnoldi_spzero
 
-#ifdef PHIST_HAVE_SP
-
-#define CLASSNAME BLOCK_PREFIX(S,Arnoldi_25_12,3)
-#include "phist_gen_s.h"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
-
-#define CLASSNAME BLOCK_PREFIX(C,Arnoldi_25_12,3)
-#include "phist_gen_c.h"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
-
-#endif
-
-#define CLASSNAME BLOCK_PREFIX(D,Arnoldi_25_12,3)
-#include "phist_gen_d.h"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
-
-#define CLASSNAME BLOCK_PREFIX(Z,Arnoldi_25_12,3)
-#include "phist_gen_z.h"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
 
 
+#undef _BASENAME_
 #undef BLOCK_SIZE
 #define BLOCK_SIZE 4
+#define _BASENAME_ TestSimpleBlock4Arnoldi_spzero
 
-#ifdef PHIST_HAVE_SP
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
 
-#define CLASSNAME BLOCK_PREFIX(S,Arnoldi_25_12,4)
-#include "phist_gen_s.h"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
-
-#define CLASSNAME BLOCK_PREFIX(C,Arnoldi_25_12,4)
-#include "phist_gen_c.h"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
-
+#undef _BASENAME_
+#undef BLOCK_SIZE
+#undef MATNAME
+#ifdef DISABLE_TESTCASE
+#undef DISABLE_TESTCASE
 #endif
 
-#define CLASSNAME BLOCK_PREFIX(D,Arnoldi_25_12,4)
-#include "phist_gen_d.h"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
 
-#define CLASSNAME BLOCK_PREFIX(Z,Arnoldi_25_12,4)
-#include "phist_gen_z.h"
-#include "TestSimpleArnoldi_def.hpp"
-#undef CLASSNAME
+// ==================== speye matrix ====================
+#define MATNAME MATNAME_speye
+#define BLOCK_SIZE 0
+#define _BASENAME_ TestSimpleArnoldi_speye
 
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
+
+
+#undef _BASENAME_
+#undef BLOCK_SIZE
+#define BLOCK_SIZE 1
+#define _BASENAME_ TestSimpleBlock1Arnoldi_speye
+
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
+
+
+#undef _BASENAME_
+#undef BLOCK_SIZE
+#define BLOCK_SIZE 2
+#ifdef PHIST_KERNEL_LIB_GHOST
+#define DISABLE_TESTCASE
+#endif
+#define _BASENAME_ TestSimpleBlock2Arnoldi_speye
+
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
+
+
+#undef _BASENAME_
+#undef BLOCK_SIZE
+#define BLOCK_SIZE 3
+#define _BASENAME_ TestSimpleBlock3Arnoldi_speye
+
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
+
+
+#undef _BASENAME_
+#undef BLOCK_SIZE
+#define BLOCK_SIZE 4
+#define _BASENAME_ TestSimpleBlock4Arnoldi_speye
+
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
+
+#undef _BASENAME_
+#undef BLOCK_SIZE
+#undef MATNAME
+#ifdef DISABLE_TESTCASE
+#undef DISABLE_TESTCASE
+#endif
+
+// ==================== sprandn matrix ====================
+#define MATNAME MATNAME_sprandn
+#define BLOCK_SIZE 0
+#define _BASENAME_ TestSimpleArnoldi_sprandn
+
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
+
+
+#undef _BASENAME_
+#undef BLOCK_SIZE
+#define BLOCK_SIZE 1
+#define _BASENAME_ TestSimpleBlock1Arnoldi_sprandn
+
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
+
+
+#undef _BASENAME_
+#undef BLOCK_SIZE
+#define BLOCK_SIZE 2
+#ifdef PHIST_KERNEL_LIB_GHOST
+#define DISABLE_TESTCASE
+#endif
+#define _BASENAME_ TestSimpleBlock2Arnoldi_sprandn
+
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
+
+
+#undef _BASENAME_
+#undef BLOCK_SIZE
+#define BLOCK_SIZE 3
+#define _BASENAME_ TestSimpleBlock3Arnoldi_sprandn
+
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
+
+
+#undef _BASENAME_
+#undef BLOCK_SIZE
+#define BLOCK_SIZE 4
+#define _BASENAME_ TestSimpleBlock4Arnoldi_sprandn
+
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
+
+#undef _BASENAME_
+#undef BLOCK_SIZE
+#undef MATNAME
+#ifdef DISABLE_TESTCASE
+#undef DISABLE_TESTCASE
+#endif
+
+// ==================== sprandn_nodiag matrix ====================
+#ifdef PHIST_KERNEL_LIB_GHOST
+#define DISABLE_TESTCASE
+#endif
+
+#define MATNAME MATNAME_sprandn_nodiag
+#define BLOCK_SIZE 0
+#define _BASENAME_ TestSimpleArnoldi_sprandn_nodiag
+
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
+
+
+#undef _BASENAME_
+#undef BLOCK_SIZE
+#define BLOCK_SIZE 1
+#define _BASENAME_ TestSimpleBlock1Arnoldi_sprandn_nodiag
+
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
+
+
+#undef _BASENAME_
+#undef BLOCK_SIZE
+#define BLOCK_SIZE 2
+#ifdef PHIST_KERNEL_LIB_GHOST
+#define DISABLE_TESTCASE
+#endif
+#define _BASENAME_ TestSimpleBlock2Arnoldi_sprandn_nodiag
+
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
+
+
+#undef _BASENAME_
+#undef BLOCK_SIZE
+#define BLOCK_SIZE 3
+#define _BASENAME_ TestSimpleBlock3Arnoldi_sprandn_nodiag
+
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
+
+
+#undef _BASENAME_
+#undef BLOCK_SIZE
+#define BLOCK_SIZE 4
+#define _BASENAME_ TestSimpleBlock4Arnoldi_sprandn_nodiag
+
+#define _N_ 25
+#define _M_ 12
+#include "../phist_typed_test_gen.h"
+
+
+#undef _BASENAME_
+#undef BLOCK_SIZE
+#undef MATNAME
+#ifdef DISABLE_TESTCASE
+#undef DISABLE_TESTCASE
+#endif
 

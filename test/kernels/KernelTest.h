@@ -117,7 +117,7 @@ public:
   if( --staticKernelTestSetupCounter_ == 0 )
     {
     phist_comm_delete(comm_,&iflag_);
-    ASSERT_EQ(0,iflag_);
+    EXPECT_EQ(0,iflag_);
     comm_=NULL;
     }
   }
