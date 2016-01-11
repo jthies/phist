@@ -25,12 +25,12 @@
   
 */
 class CLASSNAME: public KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
-                 public KernelTestWithVectors<_ST_,_N_,_NV_> 
+                 public KernelTestWithVectors<_ST_,_N_,_NV_,0,3> 
 {
 
 public:
   typedef KernelTestWithSparseMat<_ST_,_N_,MATNAME> SparseMatTest;
-  typedef KernelTestWithVectors<_ST_,_N_,_NV_>  VTest;
+  typedef KernelTestWithVectors<_ST_,_N_,_NV_,0,3>  VTest;
 
   typedef TestWithType<MT> MT_Test;
 

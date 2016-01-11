@@ -7,13 +7,13 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_,MVECS_VIEWED>,
+class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_,MVECS_VIEWED,2>,
                  public virtual KernelTestWithSdMats<_ST_,_NV_,_NV_,SDMATS_VIEWED> 
   {
 
 public:
 
-  typedef KernelTestWithVectors<_ST_,_N_,_NV_,MVECS_VIEWED> VTest;
+  typedef KernelTestWithVectors<_ST_,_N_,_NV_,MVECS_VIEWED,2> VTest;
   typedef KernelTestWithSdMats<_ST_,_NV_,_NV_,SDMATS_VIEWED> MTest;
 
   static void SetUpTestCase()

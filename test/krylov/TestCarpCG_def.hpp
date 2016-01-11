@@ -24,13 +24,13 @@
 
 /*! Test fixure. */
 class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
-                 public virtual KernelTestWithVectors<_ST_,_N_,_M_>
+                 public virtual KernelTestWithVectors<_ST_,_N_,_M_,0,3>
 {
 
   public:
 
     typedef KernelTestWithSparseMat<_ST_,_N_,MATNAME> SparseMatTest;
-    typedef KernelTestWithVectors<_ST_,_N_,_M_> VTest;
+    typedef KernelTestWithVectors<_ST_,_N_,_M_,0,3> VTest;
 
     //! mvec/sdMat sizes
     static const int n_=_N_;

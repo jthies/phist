@@ -19,10 +19,10 @@ class CLASSNAME: public virtual TestWithType< _ST_ >,
 
 public:
 
-  class VTest : public KernelTestWithVectors<_ST_,_N_,_M_,_USE_VIEWS_V_,1> {
+  class VTest : public KernelTestWithVectors<_ST_,_N_,_M_,_USE_VIEWS_V_,2,1> {
     public: virtual void TestBody(){}
   };
-  class WTest : public KernelTestWithVectors<_ST_,_N_,_K_,_USE_VIEWS_W_,2> {
+  class WTest : public KernelTestWithVectors<_ST_,_N_,_K_,_USE_VIEWS_W_,2,2> {
     public: virtual void TestBody(){}
   };
   class MTest : public KernelTestWithSdMats<_ST_,_M_,_K_,_USE_VIEWS_M_,1> {

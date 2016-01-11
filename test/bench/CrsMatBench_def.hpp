@@ -3,17 +3,18 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_> 
+class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_,0,2> 
   {
 
 public:
+  typedef KernelTestWithVectors<_ST_,_N_,_NV_,0,2>::VTest;
 
 
   /*! Set up routine.
    */
   virtual void SetUp()
     {
-    KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
+    VTest::SetUp();
     
     if (typeImplemented_ && !problemTooSmall_)
       {
@@ -25,7 +26,7 @@ public:
    */
   virtual void TearDown() 
     {
-    KernelTestWithVectors<_ST_,_N_,_NV_>::TearDown();
+    VTest::TearDown();
     if (typeImplemented_ && !problemTooSmall_)
       {
       ASSERT_EQ(0,delete_mat(A_));

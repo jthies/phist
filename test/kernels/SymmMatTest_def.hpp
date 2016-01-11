@@ -5,12 +5,12 @@
 
 /*! Test fixure. */
 class CLASSNAME: public KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
-                 public KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_> 
+                 public KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,2> 
 {
 
 public:
   typedef KernelTestWithSparseMat<_ST_,_N_,MATNAME> SparseMatTest;
-  typedef KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_> VTest;
+  typedef KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,2> VTest;
 
   static void SetUpTestCase()
   {
