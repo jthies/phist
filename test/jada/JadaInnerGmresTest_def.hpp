@@ -180,6 +180,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       // now check the result: vec3 = jdOp_(vec2)
       jdOp_->apply(-st::one(),jdOp_->A,vec2_,st::one(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      
+      PHIST_CHK_IERR(SUBR(mvec_from_device)(vec3_,&iflag_),iflag_);
 #ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
 #else
@@ -234,6 +236,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       // now check the result: vec3 = jdOp_(vec2)
       jdOp_->apply(-st::one(),jdOp_->A,vec2_,st::one(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      
+      PHIST_CHK_IERR(SUBR(mvec_from_device)(vec3_,&iflag_),iflag_);
 #ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
 #else
@@ -304,6 +308,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       // now check the result: vec3 = jdOp_(vec2)
       jdOp_->apply(-st::one(),jdOp_->A,vec2_,st::one(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      
+      PHIST_CHK_IERR(SUBR(mvec_from_device)(vec3_,&iflag_),iflag_);
 #ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
 #else
@@ -384,6 +390,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       // now check the result: vec3[exactGuessAt] = jdOp_(vec2)[exactGuessAt]
       jdOp_->apply(-st::one(),jdOp_->A,vec2_,st::one(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      
+      PHIST_CHK_IERR(SUBR(mvec_from_device)(vec3_,&iflag_),iflag_);
 #ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_NEAR(mt::one(),ArrayEqual(&vec3_vp_[exactGuessAt],1,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
 #else
