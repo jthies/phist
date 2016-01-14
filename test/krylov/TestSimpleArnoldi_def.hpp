@@ -158,6 +158,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
           SUBR(simple_arnoldi)(opA,NULL,v0_,V_,NULL,NULL,H_,m_,&iflag_);
           ASSERT_EQ(0,iflag_);
         }
+        PHIST_CHK_IERR(SUBR(mvec_from_device)(V_,&iflag_),iflag_);
 
         // check orthogonality of V_
         ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)200.*releps(V_));
