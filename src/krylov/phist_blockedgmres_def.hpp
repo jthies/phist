@@ -639,7 +639,6 @@ PHIST_TASK_BEGIN(ComputeTask)
           // store in H (and do MGS steps for single systems)
           for(int i = 0; i < numSys; i++)
           {
-            PHIST_CHK_IERR(SUBR(sdMat_to_device)(S[i]->H_,iflag),*iflag);
             int j_ = j - (maxCurDimV-S[i]->curDimV_);
             if( j_ >= 0 )
             {
