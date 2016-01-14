@@ -238,8 +238,8 @@ public:
         // cond. number of the summation
         _MT_ cond = (_MT_)(dotsAbs[j] / std::abs(dots[j]));
         PHIST_SOUT(PHIST_INFO, "error: %e (cond. number: %e, eps: %e)\n", st::abs((_ST_)dots[j]-dots_ref[j]),cond,mt::eps());
-        EXPECT_NEAR(mt::zero(), st::real((_ST_)dots[j]-dots_ref[j]), 2*cond*mt::eps());
-        EXPECT_NEAR(mt::zero(), st::imag((_ST_)dots[j]-dots_ref[j]), 2*cond*mt::eps());
+        EXPECT_NEAR(mt::zero(), st::real((_ST_)dots[j]-dots_ref[j]), 4*cond*mt::eps());
+        EXPECT_NEAR(mt::zero(), st::imag((_ST_)dots[j]-dots_ref[j]), 4*cond*mt::eps());
       }
     }
 #undef _ST_PREC_
