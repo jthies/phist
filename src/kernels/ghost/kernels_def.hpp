@@ -1248,6 +1248,29 @@ extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr)
 _ST_ beta, TYPE(mvec_ptr) vy, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_fused_dot_norm2)(alpha,vA,vx,beta,vy,NULL,NULL,iflag),*iflag);
+}
+
+//! y=alpha*A*x+beta*y, ||y||
+extern "C" void SUBR(sparseMat_times_mvec_fused_norm2)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
+_ST_ beta, TYPE(mvec_ptr) vy, _MT_* ynrm, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_fused_dot_norm2)(alpha,vA,vx,beta,vy,NULL,ynrm,iflag),*iflag);
+}
+
+//! y=alpha*A*x+beta*y, y'x
+extern "C" void SUBR(sparseMat_times_mvec_fused_dot)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
+_ST_ beta, TYPE(mvec_ptr) vy, _ST_* yx, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_fused_dot_norm2)(alpha,vA,vx,beta,vy,yx,NULL,iflag),*iflag);
+}
+
+extern "C" void SUBR(sparseMat_times_mvec_fused_dot_norm2)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
+_ST_ beta, TYPE(mvec_ptr) vy, _ST_* ydotx, _MT_* ynrm, int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   ghost_spmv_flags_t spMVM_opts=GHOST_SPMV_DEFAULT;
   // ghost spmvm mode
@@ -1271,26 +1294,54 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(ghost_sparsemat_t,A,vA,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,x,vx,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat_t,y,vy,*iflag);
+
+  int nvec = 0;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vy,&nvec,iflag),*iflag);
+
   if (alpha==st::zero())
   {
     // no MVM needed
     if (beta==st::zero())
     {
       PHIST_CHK_IERR(SUBR(mvec_put_value)(vy,beta,iflag),*iflag);
+      if( ydotx != NULL )
+        for(int i = 0; i < nvec; i++)
+          ydotx[i] = st::zero();
+      if( ynrm != NULL )
+        for(int i = 0; i < nvec; i++)
+          ynrm[i] = mt::zero();
     }
-    else if (beta!=st::one())
+    else
     {
-    PHIST_TASK_DECLARE(ComputeTask)
-PHIST_TASK_BEGIN(ComputeTask)
-      y->scale(y,(void*)&beta);
-PHIST_TASK_END(iflag);
+      if (beta!=st::one())
+      {
+        PHIST_CHK_IERR(SUBR(mvec_scale)(vy,beta,iflag),*iflag);
+      }
+      if( ydotx != NULL )
+      {
+        PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(vy,vx,ydotx,iflag),*iflag);
+      }
+      if( ynrm != NULL )
+      {
+        PHIST_CHK_IERR(SUBR(mvec_norm2)(vy,ynrm,iflag),*iflag);
+      }
     }
   }
   else
   {
   PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
-    //void* old_scale = A->traits->scale;
+
+    // gather args
+    int narg = 0;
+    void* args[4] = {NULL,NULL,NULL,NULL};
+
+    if (alpha!=st::one())
+    {
+      spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_SCALE);
+      args[narg++] = &alpha;
+    }
+
     if (beta==st::one())
     {
       spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_AXPY);
@@ -1298,17 +1349,37 @@ PHIST_TASK_BEGIN(ComputeTask)
     else if (beta!=st::zero())
     {
       spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_AXPBY);
+      args[narg++] = &beta;
     }
-    if (alpha!=st::one())
-    {
-      spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_SCALE);
-      PHIST_CHK_GERR(ghost_spmv(y,A,x,&spMVM_opts,&alpha,&beta),*iflag);
-    }
-    else
-    {
-      PHIST_CHK_GERR(ghost_spmv(y,A,x,&spMVM_opts,&beta),*iflag);
 
+    if( ydotx != NULL )
+    {
+      spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_DOT_XY);
     }
+    if( ynrm != NULL )
+    {
+      spMVM_opts = (ghost_spmv_flags_t)((int)spMVM_opts | (int)GHOST_SPMV_DOT_YY);
+    }
+
+    std::vector<_ST_> dotBuff;
+    if( ydotx != NULL || ynrm != NULL )
+    {
+      dotBuff.resize(3*nvec);
+      args[narg++] = &dotBuff[0];
+    }
+
+
+    // call ghosts spMV
+    PHIST_CHK_GERR(ghost_spmv(y,A,x,&spMVM_opts,args[0],args[1],args[2],args[3]),*iflag);
+
+    if( ynrm != NULL )
+      for(int i = 0; i < nvec; i++)
+        ynrm[i] = mt::sqrt(st::real(dotBuff[i]));
+
+    if( ydotx != NULL )
+      for(int i = 0; i < nvec; i++)
+        ydotx[i] = st::conj(dotBuff[nvec+i]);
+    
 PHIST_TASK_END(iflag);
   }
 }
