@@ -205,7 +205,7 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_mvecT_times_mvec_self)
     ASSERT_EQ(0,iflag_);
     SUBR(sdMat_from_device)(mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), ArraysEqual(mat1_vp_,mat2_vp_,nvec_,nvec_,m_lda_,stride,mflag_), 100*VTest::releps(vec3_));
+    ASSERT_NEAR(mt::one(), ArraysEqual(mat1_vp_,mat2_vp_,nvec_,nvec_,m_lda_,stride,mflag_), 100*mt::sqrt(VTest::releps(vec3_)));
 }
 
 
@@ -286,6 +286,6 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_mvecT_times_mvec_both)
     ASSERT_EQ(0,iflag_);
     SUBR(sdMat_from_device)(mat3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), ArraysEqual(mat2_vp_,mat3_vp_,nvec_,nvec_,m_lda_,stride,mflag_), 100*VTest::releps(vec3_));
+    ASSERT_NEAR(mt::one(), ArraysEqual(mat2_vp_,mat3_vp_,nvec_,nvec_,m_lda_,stride,mflag_), 100*mt::sqrt(VTest::releps(vec3_)));
 }
 
