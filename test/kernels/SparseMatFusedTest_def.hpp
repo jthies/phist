@@ -64,8 +64,8 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_norm2)
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    _ST_ alpha = st::rand();
-    _ST_ beta = st::rand();
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
     std::vector<_MT_> v2nrm(nvec_);
     std::vector<_MT_> v3nrm(nvec_);
 
@@ -99,8 +99,8 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_dot)
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    _ST_ alpha = st::rand();
-    _ST_ beta = st::rand();
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
     std::vector<_ST_> v12dot(nvec_);
     std::vector<_ST_> v13dot(nvec_);
 
@@ -135,8 +135,8 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_dot_norm2)
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    _ST_ alpha = st::rand();
-    _ST_ beta = st::rand();
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
     std::vector<_ST_> v12dot(nvec_);
     std::vector<_ST_> v13dot(nvec_);
     std::vector<_MT_> v2nrm(nvec_);
@@ -182,8 +182,8 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_mvecT_times_mvec_self)
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    _ST_ alpha = st::rand();
-    _ST_ beta = st::rand();
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
 
     // actually do y=Ax with yTy
     SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_self)(alpha,A_,vec1_,beta,vec2_,mat1_,&iflag_);
@@ -218,8 +218,8 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_mvecT_times_mvec_other)
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    _ST_ alpha = st::rand();
-    _ST_ beta = st::rand();
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
 
     // actually do y=Ax with yTx
     SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_other)(alpha,A_,vec1_,beta,vec2_,mat1_,&iflag_);
@@ -254,8 +254,8 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_mvecT_times_mvec_both)
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    _ST_ alpha = st::rand();
-    _ST_ beta = st::rand();
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
 
     // actually do y=Ax with yTx and yTy
     SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_both)(alpha,A_,vec1_,beta,vec2_,mat1_,mat2_,&iflag_);
