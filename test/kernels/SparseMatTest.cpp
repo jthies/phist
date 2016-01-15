@@ -10,7 +10,6 @@
 #include "KernelTestWithSparseMat.h"
 #include "KernelTestWithVectors.h"
 #include "KernelTestWithSdMats.h"
-#include "../tools/MatrixIO.h"
 
 using namespace ::testing;
 

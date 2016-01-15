@@ -493,6 +493,41 @@ void SUBR(sparseMat_times_mvec_add_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A
 void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
         const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag);
 
+//! W=alpha*A*V + beta*W, Wnrm[i] = ||W[i]||_2
+void SUBR(sparseMat_times_mvec_fused_norm2)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
+                                            _ST_ beta,                               TYPE(mvec_ptr)        W,
+                                                                                     _MT_*                 Wnrm,
+                                            int* iflag);
+
+//! W=alpha*A*V + beta*W, WdotV[i] = W[i]'V[i]
+void SUBR(sparseMat_times_mvec_fused_dot)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
+                                          _ST_ beta,                               TYPE(mvec_ptr)        W,
+                                                                                   _ST_*                 WdotV,
+                                          int* iflag);
+
+//! W=alpha*A*V + beta*W, WdotV[i] = W[i]'V[i], Wnrm[i] = ||W[i]||_2
+void SUBR(sparseMat_times_mvec_fused_dot_norm2)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
+                                                _ST_ beta,                               TYPE(mvec_ptr)        W,
+                                                            _ST_*                 WdotV, _MT_*                 Wnrm,
+                                                int* iflag);
+
+//! W=alpha*A*V + beta*W, D = W'W
+void SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_self)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
+                                                            _ST_ beta,                               TYPE(mvec_ptr)        W,
+                                                                                                     TYPE(sdMat_ptr)       D,
+                                                            int* iflag);
+
+//! W=alpha*A*V + beta*W, C = W'V
+void SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_other)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr) V,
+                                                            _ST_ beta,                                TYPE(mvec_ptr)        W,
+                                                                                                      TYPE(sdMat_ptr)       C,
+                                                            int* iflag);
+
+//! W=alpha*A*V + beta*W, C = W'V, D = W'W
+void SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_both)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
+                                                            _ST_ beta,                               TYPE(mvec_ptr)        W,
+                                                                        TYPE(sdMat_ptr)           C, TYPE(sdMat_ptr)       D,
+                                                            int* iflag);
 //@}
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular. \ingroup mvec
