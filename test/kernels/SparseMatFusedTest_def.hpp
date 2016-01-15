@@ -80,13 +80,13 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_norm2)
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_from_device)(vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride,vflag_), 100*mt::eps());
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride,vflag_), 100*VTest::releps(vec3_));
 
     // check vnorm = ||y||
     SUBR(mvec_norm2)(vec3_,&v3nrm[0],&iflag_);
     for(int i = 0; i < nvec_; i++)
     {
-      ASSERT_NEAR(v2nrm[i], v3nrm[i], 100*mt::eps());
+      ASSERT_NEAR(v2nrm[i], v3nrm[i], 100*VTest::releps(vec3_));
     }
 }
 
@@ -115,14 +115,14 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_dot)
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_from_device)(vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride,vflag_), 100*mt::eps());
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride,vflag_), 100*VTest::releps(vec3_));
 
     // check vdot = y[i]' x[i]
     SUBR(mvec_dot_mvec)(vec3_,vec1_,&v13dot[0],&iflag_);
     for(int i = 0; i < nvec_; i++)
     {
-      ASSERT_NEAR(st::real(v12dot[i]), st::real(v13dot[i]), 100*mt::eps());
-      ASSERT_NEAR(st::imag(v12dot[i]), st::imag(v13dot[i]), 100*mt::eps());
+      ASSERT_NEAR(st::real(v12dot[i]), st::real(v13dot[i]), 100*VTest::releps(vec3_));
+      ASSERT_NEAR(st::imag(v12dot[i]), st::imag(v13dot[i]), 100*VTest::releps(vec3_));
     }
 }
 
@@ -153,21 +153,21 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_dot_norm2)
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_from_device)(vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride,vflag_), 100*mt::eps());
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride,vflag_), 100*VTest::releps(vec3_));
 
     // check vdot = y[i]' x[i]
     SUBR(mvec_dot_mvec)(vec3_,vec1_,&v13dot[0],&iflag_);
     for(int i = 0; i < nvec_; i++)
     {
-      ASSERT_NEAR(st::real(v12dot[i]), st::real(v13dot[i]), 100*mt::eps());
-      ASSERT_NEAR(st::imag(v12dot[i]), st::imag(v13dot[i]), 100*mt::eps());
+      ASSERT_NEAR(st::real(v12dot[i]), st::real(v13dot[i]), 100*VTest::releps(vec3_));
+      ASSERT_NEAR(st::imag(v12dot[i]), st::imag(v13dot[i]), 100*VTest::releps(vec3_));
     }
 
     // check vnorm = ||y||
     SUBR(mvec_norm2)(vec3_,&v3nrm[0],&iflag_);
     for(int i = 0; i < _NV_; i++)
     {
-      ASSERT_NEAR(v2nrm[i], v3nrm[i], 100*mt::eps());
+      ASSERT_NEAR(v2nrm[i], v3nrm[i], 100*VTest::releps(vec3_));
     }
 }
 
@@ -196,7 +196,7 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_mvecT_times_mvec_self)
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_from_device)(vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride,vflag_), 100*mt::eps());
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride,vflag_), 100*VTest::releps(vec3_));
 
     // check yTy == y^T * y
     SUBR(mvecT_times_mvec)(st::one(),vec3_,vec3_,st::zero(),mat2_,&iflag_);
@@ -205,7 +205,7 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_mvecT_times_mvec_self)
     ASSERT_EQ(0,iflag_);
     SUBR(sdMat_from_device)(mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), ArraysEqual(mat1_vp_,mat2_vp_,nvec_,nvec_,m_lda_,stride,mflag_), 100*mt::eps());
+    ASSERT_NEAR(mt::one(), ArraysEqual(mat1_vp_,mat2_vp_,nvec_,nvec_,m_lda_,stride,mflag_), 100*VTest::releps(vec3_));
 }
 
 
@@ -232,7 +232,7 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_mvecT_times_mvec_other)
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_from_device)(vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride,vflag_), 100*mt::eps());
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride,vflag_), 100*VTest::releps(vec3_));
 
     // check yTx == y^T * x
     SUBR(mvecT_times_mvec)(st::one(),vec3_,vec1_,st::zero(),mat2_,&iflag_);
@@ -241,7 +241,7 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_mvecT_times_mvec_other)
     ASSERT_EQ(0,iflag_);
     SUBR(sdMat_from_device)(mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), ArraysEqual(mat1_vp_,mat2_vp_,nvec_,nvec_,m_lda_,stride,mflag_), 100*mt::eps());
+    ASSERT_NEAR(mt::one(), ArraysEqual(mat1_vp_,mat2_vp_,nvec_,nvec_,m_lda_,stride,mflag_), 100*VTest::releps(vec3_));
 }
 
 
@@ -268,7 +268,7 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_mvecT_times_mvec_both)
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_from_device)(vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride,vflag_), 100*mt::eps());
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_,vec3_vp_,nloc_,nvec_,lda_,stride,vflag_), 100*VTest::releps(vec3_));
 
     // check yTx == y^T * x
     SUBR(mvecT_times_mvec)(st::one(),vec3_,vec1_,st::zero(),mat3_,&iflag_);
@@ -277,7 +277,7 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_mvecT_times_mvec_both)
     ASSERT_EQ(0,iflag_);
     SUBR(sdMat_from_device)(mat3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), ArraysEqual(mat1_vp_,mat3_vp_,nvec_,nvec_,m_lda_,stride,mflag_), 100*mt::eps());
+    ASSERT_NEAR(mt::one(), ArraysEqual(mat1_vp_,mat3_vp_,nvec_,nvec_,m_lda_,stride,mflag_), 100*VTest::releps(vec3_));
 
     // check yTy == y^T * y
     SUBR(mvecT_times_mvec)(st::one(),vec3_,vec3_,st::zero(),mat3_,&iflag_);
@@ -286,6 +286,6 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_mvecT_times_mvec_both)
     ASSERT_EQ(0,iflag_);
     SUBR(sdMat_from_device)(mat3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), ArraysEqual(mat2_vp_,mat3_vp_,nvec_,nvec_,m_lda_,stride,mflag_), 100*mt::eps());
+    ASSERT_NEAR(mt::one(), ArraysEqual(mat2_vp_,mat3_vp_,nvec_,nvec_,m_lda_,stride,mflag_), 100*VTest::releps(vec3_));
 }
 
