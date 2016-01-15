@@ -121,8 +121,8 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_dot)
     SUBR(mvec_dot_mvec)(vec3_,vec1_,&v13dot[0],&iflag_);
     for(int i = 0; i < nvec_; i++)
     {
-      ASSERT_NEAR(st::real(v12dot[i]), st::real(v13dot[i]), 100*VTest::releps(vec3_));
-      ASSERT_NEAR(st::imag(v12dot[i]), st::imag(v13dot[i]), 100*VTest::releps(vec3_));
+      ASSERT_NEAR(st::real(v12dot[i]), st::real(v13dot[i]), 100*mt::sqrt(VTest::releps(vec3_)));
+      ASSERT_NEAR(st::imag(v12dot[i]), st::imag(v13dot[i]), 100*mt::sqrt(VTest::releps(vec3_)));
     }
 }
 
@@ -159,8 +159,8 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_dot_norm2)
     SUBR(mvec_dot_mvec)(vec3_,vec1_,&v13dot[0],&iflag_);
     for(int i = 0; i < nvec_; i++)
     {
-      ASSERT_NEAR(st::real(v12dot[i]), st::real(v13dot[i]), 100*VTest::releps(vec3_));
-      ASSERT_NEAR(st::imag(v12dot[i]), st::imag(v13dot[i]), 100*VTest::releps(vec3_));
+      ASSERT_NEAR(st::real(v12dot[i]), st::real(v13dot[i]), 100*mt::sqrt(VTest::releps(vec3_)));
+      ASSERT_NEAR(st::imag(v12dot[i]), st::imag(v13dot[i]), 100*mt::sqrt(VTest::releps(vec3_)));
     }
 
     // check vnorm = ||y||
@@ -241,7 +241,7 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_mvecT_times_mvec_other)
     ASSERT_EQ(0,iflag_);
     SUBR(sdMat_from_device)(mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), ArraysEqual(mat1_vp_,mat2_vp_,nvec_,nvec_,m_lda_,stride,mflag_), 100*VTest::releps(vec3_));
+    ASSERT_NEAR(mt::one(), ArraysEqual(mat1_vp_,mat2_vp_,nvec_,nvec_,m_lda_,stride,mflag_), 100*mt::sqrt(VTest::releps(vec3_)));
 }
 
 
@@ -277,7 +277,7 @@ TEST_F(CLASSNAME,sparseMat_times_mvec_fused_mvecT_times_mvec_both)
     ASSERT_EQ(0,iflag_);
     SUBR(sdMat_from_device)(mat3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), ArraysEqual(mat1_vp_,mat3_vp_,nvec_,nvec_,m_lda_,stride,mflag_), 100*VTest::releps(vec3_));
+    ASSERT_NEAR(mt::one(), ArraysEqual(mat1_vp_,mat3_vp_,nvec_,nvec_,m_lda_,stride,mflag_), 100*mt::sqrt(VTest::releps(vec3_)));
 
     // check yTy == y^T * y
     SUBR(mvecT_times_mvec)(st::one(),vec3_,vec3_,st::zero(),mat3_,&iflag_);
