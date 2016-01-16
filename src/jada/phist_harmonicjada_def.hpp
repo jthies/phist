@@ -31,6 +31,8 @@ int minBase=opts.minBas;
 int maxBase=opts.maxBas;
 int innerBlockDim=opts.innerSolvBlockSize;        
 int innerMaxBase=opts.innerSolvMaxBas;
+
+int arno=opts.arno;
 int initialShiftIter=opts.initialShiftIters;   
 _ST_ initialShift   =(_ST_)opts.initialShift_r;
                     +(_ST_)opts.initialShift_i*st::cmplx_I();
@@ -251,43 +253,65 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   std::vector<_MT_> innerTol(nEig_,0.1);
   std::vector<_MT_> lastOuterRes(nEig_,mt::zero());
 
-  // This driver is intended for computing inner eigenvalues near 0, so
-  // an Arnoldi process is not the best idea. Instead, we will lock the shifts
-  // to 0 until nV=minBase has been reached.
-  PHIST_CHK_IERR(SUBR(mvec_put_value)(V_,st::zero(),iflag),*iflag);
-  if (v0!=NULL)
+  if (!arno && false)
   {
-    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v0,&nV,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(V_,v0,0,nV-1,iflag),*iflag);
+    // This driver is intended for computing inner eigenvalues near 0, so
+    // an Arnoldi process is not the best idea. Instead, we will lock the shifts
+    // to 0 until nV=minBase has been reached.
+    PHIST_CHK_IERR(SUBR(mvec_put_value)(V_,st::zero(),iflag),*iflag);
+    nV=0;
+    if (v0!=NULL)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v0,&nV,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_set_block)(V_,v0,0,nV-1,iflag),*iflag);
+    }
+
+    // we need at least min(2*blockDim,nEig+blockDim) vectors because this is the initial size of Q
+    // (some unconverged vectors are deflated along with the converged ones in this algorithm).
+    // The missing vectors (all of them if v0==NULL) are generated automatically by the orthog
+    // routine, which always creates some orthogonal full rank matrix Q.
+    nV=std::max(nV, std::min(2*blockDim,nEig+blockDim));
+
+    // orthogonalize the initial vector block
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(V_,&Vv,0,nV-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(Htmp_,  &Htmp,0,  nV-1,0,nV-1,iflag),*iflag);
+    int rank_v0;
+    *iflag=PHIST_ROBUST_REDUCTIONS;
+    // note: ignore positive iflag, it just means the input was rank deficient and the
+    // corresponding columns were randomized.
+    PHIST_CHK_NEG_IERR(SUBR(orthog)(NULL,Vv,B_op,Htmp,NULL,3,&rank_v0,iflag),*iflag);
+
+    // W=AV
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(V_,&Vv,0,nV-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(W_,&Wv,0,nV-1,iflag),*iflag);
+    PHIST_CHK_IERR(A_op->apply(st::one(),A_op->A,Vv,st::zero(),Wv,iflag),*iflag);
   }
   else
   {
-    nV=1;
+    nV=minBase;
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                       0,     nV,        iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (W_,     &W,                      0,     nV,        iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BV_,     &BV,                      0,     nV,        iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_,      &H,     0,      minBase,  0,     nV-1,      iflag), *iflag);
+
+    PHIST_CHK_IERR(SUBR( simple_arnoldi ) (A_op, B_op, v0, V, W, BV, H, nV, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (W_, &Wv, 0,     nV-1, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_, &Vv, 0,     nV-1, iflag), *iflag);
   }
+    
+    // we now have V n x nV: V'BV=I, and W=AV
 
-  // orthogonalize the initial vector block, this generates random orthogonal block if no v0 was given
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(V_,&Vv,0,nV-1,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_view_block)(Htmp_,  &Htmp,0,  nV-1,0,nV-1,iflag),*iflag);
-  int rank_v0;
-  *iflag=PHIST_ROBUST_REDUCTIONS;
-  PHIST_CHK_IERR(SUBR(orthog)(NULL,Vv,B_op,Htmp,NULL,3,&rank_v0,iflag),*iflag);
-
-  // compute an orthogonal w0 s.t. A*v0 = w0*H_A
-  PHIST_CHK_IERR(SUBR(mvec_view_block)(W_,&Wv,0,nV-1,iflag),*iflag);
-  PHIST_CHK_IERR(A_op->apply(st::one(),A_op->A,Vv,st::zero(),Wv,iflag),*iflag);
-  
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(H_A_,  &H_A,0,  nV-1,0,nV-1,iflag),*iflag);
 
   int rank_w0;
   *iflag=PHIST_ROBUST_REDUCTIONS;
-  PHIST_CHK_IERR(SUBR(orthog)(NULL,Wv,B_op,H_A,NULL,3,&rank_v0,iflag),*iflag);
+  PHIST_CHK_NEG_IERR(SUBR(orthog)(NULL,Wv,B_op,H_A,NULL,3,&rank_w0,iflag),*iflag);
   // initial H=W'V
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(H_,  &H,0,  nV-1,0,nV-1,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Wv,Vv,st::zero(),H,iflag),*iflag);
-
   
   initialShiftIter=std::max(minBase-nV,initialShiftIter);
-  PHIST_SOUT(PHIST_VERBOSE,"starting with %d iterations with fixed shift 0\n",initialShiftIter);
+  if (initialShiftIter>0) PHIST_SOUT(PHIST_VERBOSE,"perform %d iterations with fixed shift 0\n",initialShiftIter);
 
   // set views
   int nConvEig = 0;
@@ -468,7 +492,6 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
     PHIST_CHK_IERR(SUBR( GenSchurDecomp ) (T_raw+offT, ldaT, T_A_raw+offT_A, ldaT_A, 
                                            S_L_raw+offS_L, ldaS_L, S_R_raw+offS_R, ldaS_R,
                                            nV-nConvEig, nSelect, nSort, which, tol, ev_H+nConvEig, iflag), *iflag);
-
     // compute Rayleigh quotients w.r.t. the harmonic Ritz values
     for (int i=nConvEig; i<nV; i++)
     {
@@ -500,6 +523,7 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
       PHIST_CHK_IERR(SUBR( sdMat_times_sdMat ) (st::one(), Hq, S_R, st::zero(), Tq, iflag), *iflag);
       PHIST_CHK_IERR(SUBR( sdMat_times_sdMat ) (st::one(), H_Aq, S_R, st::zero(), T_Aq, iflag), *iflag);
     }
+    
 #ifdef TESTING
 {
   // check that H S_R = S_L T
@@ -537,7 +561,9 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
 #endif
 
     // update approximate Schur form of A (keeping the already computed part locked)
-    // additional vectors q are present in Q (a total of nEig_)
+    // additional vectors q are present in Q so that Q has a total of nEig_ columns,
+    // of which the first nConvEig are `hard locked', i.e. we do not rebuild them   
+    // anymore.
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Q_,   &Qq,                   nConvEig, nEig_-1,   iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (BQ_,  &BQq,                  nConvEig, nEig_-1,   iflag), *iflag);
 
@@ -552,11 +578,12 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (T_A_,&T_Aq, 0, nEig_-1, nConvEig, nEig_-1, iflag), *iflag);
     PHIST_CHK_IERR(SUBR( sdMat_set_block  ) (R,    T_Aq, 0, nEig_-1, nConvEig, nEig_-1, iflag), *iflag);
 
-    //////////////////////////
-    // compute the residual //
-    //////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////
+    // compute the residual for all the unconverged part q,r of the QR decomposition: //
+    //, -res = -(Aq - B*q*r) = Bqr-Aq
+    ////////////////////////////////////////////////////////////////////////////
     
-    // temporarily set t_res = Aq = AV S_R = W H_A S_R
+    // first set t_res = Aq = AV S_R = W H_A S_R
     int ncolsR=nEig_-nConvEig;
     int nqv=nV-nConvEig;
     PHIST_CHK_IERR(SUBR( mvec_view_block  ) (res, &t_res, 0, ncolsR-1,   iflag), *iflag);
@@ -574,17 +601,42 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (S_R_, &S_R, 0,     nV-1,      0,             nV-1,      iflag), *iflag);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (T_  , &T,   0,     nV-1,      0,             nV-1,      iflag), *iflag);
     PHIST_CHK_IERR(SUBR( sdMat_view_block ) (T_A_, &T_A, 0,     nV-1,      0,             nV-1,      iflag), *iflag);
+
+#if PHIST_OUTLEV>=PHIST_DEBUG
+  PHIST_SOUT(PHIST_DEBUG,"nV=%d; nConvEig=%d, nEig_=%d\n",nV,nConvEig,nEig_);
+  PHIST_SOUT(PHIST_DEBUG,"H=\n");
+  PHIST_CHK_IERR(SUBR(sdMat_print)(H,iflag),*iflag);
+  PHIST_SOUT(PHIST_DEBUG,"H_A=\n");
+  PHIST_CHK_IERR(SUBR(sdMat_print)(H_A,iflag),*iflag);
+  PHIST_SOUT(PHIST_DEBUG,"S_L=\n");
+  PHIST_CHK_IERR(SUBR(sdMat_print)(S_L,iflag),*iflag);
+  PHIST_SOUT(PHIST_DEBUG,"S_R=\n");
+  PHIST_CHK_IERR(SUBR(sdMat_print)(S_R,iflag),*iflag);
+  PHIST_SOUT(PHIST_DEBUG,"T=\n");
+  PHIST_CHK_IERR(SUBR(sdMat_print)(T,iflag),*iflag);
+  PHIST_SOUT(PHIST_DEBUG,"T_A=\n");
+  PHIST_CHK_IERR(SUBR(sdMat_print)(T_A,iflag),*iflag);
+  PHIST_SOUT(PHIST_DEBUG,"Vful=\n");
+  PHIST_CHK_IERR(SUBR(mvec_print)(Vful,iflag),*iflag);
+  PHIST_SOUT(PHIST_DEBUG,"Wful=\n");
+  PHIST_CHK_IERR(SUBR(mvec_print)(Wful,iflag),*iflag);
+  PHIST_SOUT(PHIST_DEBUG,"Q_=\n");
+  PHIST_CHK_IERR(SUBR(mvec_print)(Q_,iflag),*iflag);
+#endif                                           
+
     
 #ifdef TESTING
 {
   // check that the residual is orthogonal to Q (should be by construction!)
   PHIST_CHK_IERR( SUBR( sdMat_view_block ) (Htmp_, &Htmp, 0, nEig_-1, nConvEig, nEig_-1, iflag), *iflag);
   PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (st::one(), Q, t_res, st::zero(), Htmp, iflag), *iflag);
+  int nQ;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Q,&nQ,iflag),*iflag);
   _MT_ equalEps = st::abs(Htmp_raw[0]);
   for(int i = 0; i < nEig_; i++)
     for(int j = nConvEig; j < nEig_; j++)
       equalEps = mt::max(equalEps, st::abs(Htmp_raw[i*ldaHtmp+j]));
-  PHIST_OUT(PHIST_INFO, "Res orthogonality wrt. Q: %e\n", equalEps);
+  PHIST_OUT(PHIST_INFO, "Res orthogonality wrt. Q: %e (nQ=%d)\n", equalEps,nQ);
   // calculate explicit residual
   // AQ - BQR
   PHIST_CHK_IERR( SUBR( mvec_view_block ) (Vtmp_, &Vtmp, 0, nEig_-1, iflag), *iflag);
@@ -870,7 +922,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,  &Hvv, nV,    nV+k-1,    nV,    nV+k-1,    iflag), *iflag);
       int rankV;
       *iflag=PHIST_ROBUST_REDUCTIONS;
-      PHIST_CHK_NEG_IERR(SUBR( orthog ) (Vful, Vv, B_op, HVv, Hvv, 5, &rankV, iflag), *iflag);
+      PHIST_CHK_NEG_IERR(SUBR( orthog ) (Vful, Vv, B_op, Hvv, HVv, 5, &rankV, iflag), *iflag);
 
       // calculate AVv, BVv
       PHIST_CHK_IERR( A_op->apply(st::one(), A_op->A, Vv, st::zero(), Wv, iflag), *iflag);
@@ -891,7 +943,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_A_,&H_A, nV,   nV+k-1,    nV,    nV+k-1,    iflag), *iflag);
       int rankW;
       *iflag=PHIST_ROBUST_REDUCTIONS;
-      PHIST_CHK_NEG_IERR(SUBR( orthog ) (Wful, Wv, B_op, H_Aq, H_A, 5, &rankW, iflag), *iflag);
+      PHIST_CHK_NEG_IERR(SUBR( orthog ) (Wful, Wv, B_op, H_A, H_Aq, 5, &rankW, iflag), *iflag);
       // TODO: only take non-random vector if *iflag > 0
 
       // update H=W'V
