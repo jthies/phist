@@ -203,6 +203,11 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
           SUBR(simple_arnoldi)(opA,NULL,v0_,V_,AVm_,NULL,H_,m_,&iflag_);
           ASSERT_EQ(0,iflag_);
         }
+  
+  SUBR(mvec_from_device)(V_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+//  VTest::PrintVector(std::cout, "V after Arnoldi",
+//          vec1_vp_, nloc_, lda_, stride_,mpi_comm_);
 
         // check orthogonality of V_
         ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp_,nloc_,ldaV_,stride_,mpi_comm_),(MT)200.*releps(V_));
