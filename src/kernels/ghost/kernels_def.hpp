@@ -37,7 +37,7 @@ const char* filename,int* iflag)
 
   int sellC, sellSigma;
   phist::ghost_internal::get_C_sigma(&sellC,&sellSigma,*iflag, *((MPI_Comm*)vcomm));
-  PHIST_SOUT(PHIST_INFO, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
+  PHIST_SOUT(PHIST_VERBOSE, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
 
   *iflag=0;
 
@@ -1136,26 +1136,25 @@ PHIST_TASK_BEGIN(ComputeTask)
   ST a=alpha, b=beta;
   if (alpha==st::one() && beta==st::zero())
   {
-    // copy operation
-      PHIST_DEB("copy Y=X");
+      PHIST_DEB("copy Y=X\n");
     PHIST_CHK_GERR(Y->fromVec(Y,X,0,0),*iflag);
   }
   else if (alpha==st::zero())
   {
     if (beta!=st::one())
     {
-      PHIST_DEB("scale output Y=beta*Y");
+      PHIST_DEB("scale output Y=beta*Y\n");
       PHIST_CHK_GERR(Y->scale(Y,(void*)&b),*iflag);
     }
   }
   else if (beta==st::one())
   {
-    PHIST_DEB("axpy operation: Y=alpha*X+Y");
+    PHIST_DEB("axpy operation: Y=alpha*X+Y\n");
     PHIST_CHK_GERR(Y->axpy(Y,X,(void*)&a),*iflag);
   }
   else
   {
-    PHIST_DEB("general case: Y=alpha*X+beta*Y");
+    PHIST_DEB("general case: Y=alpha*X+beta*Y\n");
     PHIST_CHK_GERR(Y->axpby(Y,X,(void*)&a,(void*)&b),*iflag);
   }
 PHIST_TASK_END(iflag);
