@@ -146,6 +146,10 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
           SUBR(ReorderPartialSchurDecomp)(mat1_vp_,m_lda_,mat2_vp_,m_lda_,n_,nsort,which,tol,
               &resNorm[0],ev_,&permutation[0],&iflag_);
           ASSERT_EQ(0,iflag_);
+          SUBR(sdMat_to_device)(mat1_,&iflag_);
+          ASSERT_EQ(0,iflag_);
+          SUBR(sdMat_to_device)(mat2_,&iflag_);
+          ASSERT_EQ(0,iflag_);
           PHIST_DEB("resulting T:\n");
 #if PHIST_OUTLEV>=PHIST_DEBUG
           SUBR(sdMat_print)(mat1_,&iflag_);
@@ -217,6 +221,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
 
       // check that the eigenvalues on the diagonal of T have the same ordering as those in 
       // ev_
+      PHIST_CHK_IERR(SUBR(sdMat_from_device)(mat1_,&iflag_),iflag_);
       for (int i=0;i<n_;i++)
       {
         ASSERT_REAL_EQ(ct::real(ev_[i]), st::real(mat1_vp_[i*m_lda_+i]));

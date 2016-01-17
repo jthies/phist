@@ -93,6 +93,10 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_sync_values)(mat1_,comm_,&iflag_);
       ASSERT_EQ(0,iflag_);
+
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
       // make sure everyone has the values set by rank 0
       ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat1_,mat2_));
     }
