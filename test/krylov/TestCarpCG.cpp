@@ -11,10 +11,7 @@
 #include "phist_enums.h"
 #include "phist_carp_cg.h"
 #include "phist_ScalarTraits.hpp"
-#include "../kernels/KernelTest.h"
-#include "../kernels/KernelTestWithMap.h"
-#include "../kernels/KernelTestWithType.h"
-#include "../kernels/KernelTestWithSdMats.h"
+#include "../kernels/KernelTestWithSparseMat.h"
 #include "../kernels/KernelTestWithVectors.h"
 
 #include "../tools/MatrixIO.h"
@@ -25,11 +22,7 @@ using namespace testing;
 #undef CLASSNAME
 #endif
 
-#ifdef MATNAME
-#undef MATNAME
-#endif
-
-#define MATNAME "jadaTestMat"
+#define MATNAME MATNAME_jadaTestMat
 
 #define _N_ 512
 #define _M_ 6
@@ -82,7 +75,7 @@ using namespace testing;
 
 
 #undef CLASSNAME
-#define MATNAME "symmMat"
+#define MATNAME MATNAME_symmMat
 #define MATSYMMETRIC
 #define _N_ 20
 #define _M_ 5

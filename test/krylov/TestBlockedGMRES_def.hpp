@@ -1,56 +1,35 @@
 #ifndef CLASSNAME
 #error "file not included correctly"
 #endif
-#ifndef MATNAME
-// matrix base filename (eg. xyz => xyz'_N_'.'ext'
-#error "file not included correctly"
-#endif
-#ifndef _N_
-// global size of matrix
-#error "file not included correctly"
-#endif
-#ifndef _M_
-// number of systems solved simultaneously
-#error "file not included correctly"
-#endif
-#ifndef MAXBAS
-// maximum number of vectors in Krylov space
-#error "file not included correctly"
-#endif
-#ifndef TOLA
-// tolerance to be achieved in MAXBAS iterations (no restart)
-#error "file not included correctly"
-#endif
-#ifndef TOLB
-// tolerance to be achieved in 5*MAXBAS iterations (4 restarts)
-#error "file not included correctly"
-#endif
 
 /*! Test fixure. */
-class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
+class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
+                 public virtual KernelTestWithVectors<_ST_,_N_,_M_,0,3>
 {
 
   public:
-
-    typedef KernelTestWithVectors<_ST_,_N_,_M_> VTest;
+    typedef KernelTestWithSparseMat<_ST_,_N_,MATNAME> SparseMatTest;
+    typedef KernelTestWithVectors<_ST_,_N_,_M_,0,3> VTest;
 
     //! mvec/sdMat sizes
     static const int n_=_N_;
     static const int m_=_M_;
     static const int maxBas_=MAXBAS;
 
+    static void SetUpTestCase()
+    {
+      SparseMatTest::SetUpTestCase();
+      VTest::SetUpTestCase();
+    }
+
     //! Set up routine.
     virtual void SetUp()
     {
+      SparseMatTest::SetUp();
       VTest::SetUp();
 
       if( typeImplemented_ && !problemTooSmall_ )
       {
-        // read matrices
-        SUBR(read_mat)(MATNAME,comm_,n_,&A_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        ASSERT_TRUE(A_ != NULL);
-
         // wrap matrices in operators
         opA_ = new TYPE(op);
         ASSERT_TRUE(opA_ != NULL);
@@ -58,14 +37,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
         SUBR(op_wrap_sparseMat)(opA_,A_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
-        const_map_ptr_t map = NULL;
-        SUBR(sparseMat_get_domain_map)(A_, &map, &iflag_);
-        ASSERT_EQ(0,iflag_);
-        replaceMap(map);
-        ASSERT_EQ(0,iflag_);
-
         state_=new TYPE(blockedGMRESstate_ptr)[m_];
-        SUBR(blockedGMRESstates_create)(state_,m_,map,maxBas_,&iflag_);
+        SUBR(blockedGMRESstates_create)(state_,m_,map_,maxBas_,&iflag_);
         
         ASSERT_EQ(0,iflag_);
         xex_=vec1_;
@@ -90,21 +63,24 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
     //! Clean up.
     virtual void TearDown()
     {
-      int iflag;
       if( typeImplemented_ && !problemTooSmall_ )
       {
-        PHIST_ENTER_FCN(__FUNCTION__);
-        delete opA_;
-
-        SUBR(sparseMat_delete)(A_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        SUBR(blockedGMRESstates_delete)(state_,m_,&iflag);
+        SUBR(blockedGMRESstates_delete)(state_,m_,&iflag_);
         ASSERT_EQ(0,iflag_);
         delete [] state_;
+        state_ = NULL;
+
+        delete opA_;
+        opA_ = NULL;
       }
-      //TODO - causes segfault when deleting the map (in KernelTestWithMap::TearDown())
-      //melven: why/where?
       VTest::TearDown();
+      SparseMatTest::TearDown();
+    }
+
+    static void TearDownTestCase()
+    {
+      VTest::TearDownTestCase();
+      SparseMatTest::TearDownTestCase();
     }
 
     TYPE(op_ptr) opA_;
@@ -112,7 +88,6 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
 
   protected:
   
-    TYPE(sparseMat_ptr) A_;
     TYPE(mvec_ptr) xex_,sol_,rhs_;
     ST *xex_vp_,*rhs_vp_,*sol_vp_;
     MT bNorm_[_M_],xNorm_[_M_];

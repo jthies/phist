@@ -7,16 +7,12 @@
 
 
 #include "phist_kernels.h"
-#include "../kernels/KernelTest.h"
-#include "../kernels/KernelTestWithMap.h"
-#include "../kernels/KernelTestWithType.h"
 #include "../kernels/KernelTestWithVectors.h"
 #include "../kernels/KernelTestWithSdMats.h"
 
 
 using namespace testing;
 
-#define _BASESUITE_ kernels
 #define _BASENAME_ MvecSdMatTest
 #define CLASSFILE_DEF "MvecSdMatTest_def.hpp"
 #define _USE_VIEWS_V1_ 0

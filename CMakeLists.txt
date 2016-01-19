@@ -709,7 +709,7 @@ endif()
 
 if(PHIST_KERNEL_LIB STREQUAL "ghost")
   find_package(GHOST REQUIRED CONFIG)
-elif(PHIST_USE_GHOST)
+elseif(PHIST_USE_GHOST)
   find_package(GHOST CONFIG QUIET)
 endif()
 if (GHOST_FOUND)
@@ -889,7 +889,10 @@ set(SOURCES
 set(TEST_SOURCES
     lib/googletest-master-12-2015/gtest/gtest-all.cc
     test/mainTest.cpp
-    test/tools/MatrixIO.cpp)
+    test/tools/MatrixIO.cpp
+    test/kernels/TestWithType
+    test/kernels/KernelTest.cpp
+    test/kernels/KernelTestWithSparseMat.cpp)
     
 file(GLOB TestMatricesMM ${CMAKE_CURRENT_SOURCE_DIR}/test/matrices/*.mm)
 file(GLOB TestMatricesBIN ${CMAKE_CURRENT_SOURCE_DIR}/test/matrices/*.bin)

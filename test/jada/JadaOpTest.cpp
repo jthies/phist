@@ -8,49 +8,30 @@
 
 #include "phist_jadaOp.hpp"
 #include "phist_orthog.h"
-#include "../tools/MatrixIO.h"
 
-#include "../kernels/KernelTest.h"
-#include "../kernels/KernelTestWithMap.h"
-#include "../kernels/KernelTestWithType.h"
+#include "../kernels/KernelTestWithSparseMat.h"
 #include "../kernels/KernelTestWithVectors.h"
 #include "../kernels/KernelTestWithSdMats.h"
 
 using namespace testing;
 
-#ifdef CLASSNAME
-#undef CLASSNAME
-#endif
+#define CLASSFILE_DEF "JadaOpTest_def.hpp"
+
+#define _BASENAME_ JadaOpTest_speye
+#define MATNAME MATNAME_speye
 
 #define _N_ 25
-#define _NV_ 4
-#define _NVP_ 10
+#define _M_ 4
+#define _K_ 10
+#include "../phist_typed_test_gen.h"
 
-#ifdef PHIST_HAVE_SP
+#undef _BASENAME_
+#undef MATNAME
 
-#define CLASSNAME SJadaOpTest_25_4_10
-#include "phist_gen_s.h"
-#include "JadaOpTest_def.hpp"
+#define _BASENAME_ JadaOpTest_sprandn
+#define MATNAME MATNAME_sprandn
 
-#undef CLASSNAME
-#define CLASSNAME CJadaOpTest_25_4_10
-
-#include "phist_gen_c.h"
-#include "JadaOpTest_def.hpp"
-
-#endif
-
-#undef CLASSNAME
-#define CLASSNAME DJadaOpTest_25_4_10
-
-#include "phist_gen_d.h"
-#include "JadaOpTest_def.hpp"
-
-
-#undef CLASSNAME
-#define CLASSNAME ZJadaOpTest_25_4_10
-
-#include "phist_gen_d.h"
-#include "JadaOpTest_def.hpp"
-
-
+#define _N_ 25
+#define _M_ 4
+#define _K_ 10
+#include "../phist_typed_test_gen.h"

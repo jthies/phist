@@ -13,7 +13,7 @@
 #include "phist_enums.h"
 #include "phist_schur_decomp.h"
 #include "../kernels/KernelTest.h"
-#include "../kernels/KernelTestWithType.h"
+#include "../kernels/TestWithType.h"
 #include "../kernels/KernelTestWithSdMats.h"
 
 using namespace testing;

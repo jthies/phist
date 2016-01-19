@@ -3,16 +3,34 @@
 #error "file not included correctly"
 #endif
 
+#ifdef USE_VIEWS
+#undef USE_VIEWS
+#endif
+#if _USE_VIEWS_V_ || _USE_VIEWS_W_ || _USE_VIEWS_M_ || _USE_VIEWS_N_
+#define USE_VIEWS 1
+#else
+#define USE_VIEWS 0
+#endif
+
 /*! Test fixure. */
-class CLASSNAME: public virtual KernelTestWithType< _ST_ >,
+class CLASSNAME: public virtual TestWithType< _ST_ >,
                  public virtual KernelTestWithMap<_N_>
 {
 
 public:
 
-  typedef KernelTestWithVectors<_ST_,_N_,_M_> V1Test;
-  typedef KernelTestWithVectors<_ST_,_N_,_K_> V2Test;
-  typedef KernelTestWithSdMats<_ST_,_M_,_K_> MTest;
+  class VTest : public KernelTestWithVectors<_ST_,_N_,_M_,_USE_VIEWS_V_,2,1> {
+    public: virtual void TestBody(){}
+  };
+  class WTest : public KernelTestWithVectors<_ST_,_N_,_K_,_USE_VIEWS_W_,2,2> {
+    public: virtual void TestBody(){}
+  };
+  class MTest : public KernelTestWithSdMats<_ST_,_M_,_K_,_USE_VIEWS_M_,1> {
+    public: virtual void TestBody(){}
+  };
+  class NTest : public KernelTestWithSdMats<_ST_,_K_,_K_,_USE_VIEWS_N_,2> {
+    public: virtual void TestBody(){}
+  };
 
   //! mvec/sdMat sizes
   static const int n_=_N_;
@@ -20,16 +38,16 @@ public:
   static const int k_=_K_;
   
   //! V is n x m
-  TYPE(mvec_ptr) V1_,V2_;
+  TYPE(mvec_ptr) V1_ = NULL, V2_ = NULL;
 
   //! W is n x k
-  TYPE(mvec_ptr) W1_,W2_;
+  TYPE(mvec_ptr) W1_ = NULL, W2_ = NULL;
 
   //! M is m x k
-  TYPE(sdMat_ptr) M1_,M2_;
+  TYPE(sdMat_ptr) M1_ = NULL, M2_ = NULL;
 
   //! N is k x k
-  TYPE(sdMat_ptr) N1_,N2_;
+  TYPE(sdMat_ptr) N1_ = NULL, N2_ = NULL;
   
   _ST_ *V1_vp_,*V2_vp_,*W1_vp_,*W2_vp_,*M1_vp_,*M2_vp_,*N1_vp_,*N2_vp_;
   
@@ -38,64 +56,90 @@ public:
   // are at memory locations (i-1)*lda+stride*j
   // and (i-1)*lda+stride*(j+1), respectively.
   lidx_t ldaV1_,ldaV2_,ldaW1_,ldaW2_,ldaM1_,ldaM2_,ldaN1_,ldaN2_,stride_;
+
+  VTest vtest_;
+  WTest wtest_;
+  MTest mtest_;
+  NTest ntest_;
+
+  static void SetUpTestCase()
+  {
+    TestWithType<_ST_>::SetUpTestCase();
+    KernelTestWithMap<_N_>::SetUpTestCase();
+    VTest::SetUpTestCase();
+    WTest::SetUpTestCase();
+    MTest::SetUpTestCase();
+    NTest::SetUpTestCase();
+  }
   
   /*! Set up routine.
    */
   virtual void SetUp()
   {
-    KernelTestWithType< _ST_ >::SetUp();
     KernelTestWithMap<_N_>::SetUp();
     if (typeImplemented_ && !problemTooSmall_)
     {
-      // create vectors V1 and V2, and vector views for setting/checking entries
-      PHISTTEST_MVEC_CREATE(&V1_,this->map_,this->m_,&this->iflag_);
-      ASSERT_EQ(0,this->iflag_);
-      //SUBR(mvec_put_value)(V1_,st::zero(),&iflag_);
-      //ASSERT_EQ(0,iflag_);
-      SUBR(mvec_extract_view)(V1_,&V1_vp_,&ldaV1_,&this->iflag_);
-      ASSERT_EQ(0,this->iflag_);
-      PHISTTEST_MVEC_CREATE(&V2_,this->map_,this->m_,&this->iflag_);
-      ASSERT_EQ(0,this->iflag_);
-      //SUBR(mvec_put_value)(V2_,st::zero(),&iflag_);
-      //ASSERT_EQ(0,iflag_);
-      SUBR(mvec_extract_view)(V2_,&V2_vp_,&ldaV2_,&this->iflag_);
-      ASSERT_EQ(0,this->iflag_);
-      // create vectors W1 and W2, and vector views for setting/checking entries
-      PHISTTEST_MVEC_CREATE(&W1_,this->map_,this->k_,&this->iflag_);
-      ASSERT_EQ(0,this->iflag_);
-      //SUBR(mvec_put_value)(W1_,st::zero(),&iflag_);
-      //ASSERT_EQ(0,iflag_);
-      SUBR(mvec_extract_view)(W1_,&W1_vp_,&ldaW1_,&this->iflag_);
-      ASSERT_EQ(0,this->iflag_);
-      PHISTTEST_MVEC_CREATE(&W2_,this->map_,this->k_,&this->iflag_);
-      ASSERT_EQ(0,this->iflag_);
-      //SUBR(mvec_put_value)(W2_,st::zero(),&iflag_);
-      //ASSERT_EQ(0,iflag_);
-      SUBR(mvec_extract_view)(W2_,&W2_vp_,&ldaW2_,&this->iflag_);
-      ASSERT_EQ(0,this->iflag_);
-      // create matrices M1, M2 and views.
-      SUBR(sdMat_create)(&M1_,this->m_,this->k_,this->comm_,&this->iflag_);
-      ASSERT_EQ(0,this->iflag_);
-      SUBR(sdMat_put_value)(M1_,st::zero(),&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_extract_view)(M1_,&M1_vp_,&this->ldaM1_,&this->iflag_);
-      SUBR(sdMat_create)(&M2_,this->m_,this->k_,this->comm_,&this->iflag_);
-      ASSERT_EQ(0,this->iflag_);
-      SUBR(sdMat_put_value)(M2_,st::zero(),&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_extract_view)(M2_,&M2_vp_,&this->ldaM2_,&this->iflag_);
-      // create matrices N1, N2 and views.
-      SUBR(sdMat_create)(&N1_,this->k_,this->k_,this->comm_,&this->iflag_);
-      ASSERT_EQ(0,this->iflag_);
-      SUBR(sdMat_put_value)(N1_,st::zero(),&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_extract_view)(N1_,&N1_vp_,&this->ldaN1_,&this->iflag_);
-      SUBR(sdMat_create)(&N2_,this->k_,this->k_,this->comm_,&this->iflag_);
-      ASSERT_EQ(0,this->iflag_);
-      SUBR(sdMat_put_value)(N2_,st::zero(),&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_extract_view)(N2_,&N2_vp_,&this->ldaN2_,&this->iflag_);
+      vtest_.SetUp();
+      wtest_.SetUp();
+      // these probably have a different communicator, but this shouldn't matter here...
+      mtest_.SetUp();
+      ntest_.SetUp();
 
+
+      V1_    = vtest_.vec1_;
+      V1_vp_ = vtest_.vec1_vp_;
+      ldaV1_ = vtest_.lda_;
+
+      V2_    = vtest_.vec2_;
+      V2_vp_ = vtest_.vec2_vp_;
+      ldaV2_ = vtest_.lda_;
+
+
+      W1_    = wtest_.vec1_;
+      W1_vp_ = wtest_.vec1_vp_;
+      ldaW1_ = wtest_.lda_;
+
+      W2_    = wtest_.vec2_;
+      W2_vp_ = wtest_.vec2_vp_;
+      ldaW2_ = wtest_.lda_;
+
+
+      M1_    = mtest_.mat1_;
+      M1_vp_ = mtest_.mat1_vp_;
+      ldaM1_ = mtest_.m_lda_;
+
+      M2_    = mtest_.mat2_;
+      M2_vp_ = mtest_.mat2_vp_;
+      ldaM2_ = mtest_.m_lda_;
+
+
+      N1_    = ntest_.mat1_;
+      N1_vp_ = ntest_.mat1_vp_;
+      ldaN1_ = ntest_.m_lda_;
+
+      N2_    = ntest_.mat2_;
+      N2_vp_ = ntest_.mat2_vp_;
+      ldaN2_ = ntest_.m_lda_;
+
+    }
+    else
+    {
+      V1_ = NULL;
+      V1_vp_ = NULL;
+      V2_ = NULL;
+      V2_vp_ = NULL;
+      W1_ = NULL;
+      W1_vp_ = NULL;
+      W2_ = NULL;
+      W2_vp_ = NULL;
+      M1_ = NULL;
+      M1_vp_ = NULL;
+      M2_ = NULL;
+      M2_vp_ = NULL;
+      N1_ = NULL;
+      N1_vp_ = NULL;
+      N2_ = NULL;
+      N2_vp_ = NULL;
     }
     stride_=1;
   }
@@ -106,19 +150,23 @@ public:
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
-      SUBR(mvec_delete)(V1_,&iflag_);
-      SUBR(mvec_delete)(V2_,&iflag_);
-      SUBR(mvec_delete)(W1_,&iflag_);
-      SUBR(mvec_delete)(W2_,&iflag_);
-      SUBR(sdMat_delete)(M1_,&iflag_);
-      SUBR(sdMat_delete)(M2_,&iflag_);
-      SUBR(sdMat_delete)(N1_,&iflag_);
-      SUBR(sdMat_delete)(N2_,&iflag_);
+      ntest_.TearDown();
+      mtest_.TearDown();
+      wtest_.TearDown();
+      vtest_.TearDown();
     }
     KernelTestWithMap<_N_>::TearDown();
-    KernelTestWithType<_ST_>::TearDown();
   }
 
+  static void TearDownTestCase()
+  {
+    NTest::TearDownTestCase();
+    MTest::TearDownTestCase();
+    WTest::TearDownTestCase();
+    VTest::TearDownTestCase();
+    KernelTestWithMap<_N_>::TearDownTestCase();
+  }
+  
 };
 
   // check augmented kernel with random data
@@ -342,7 +390,7 @@ public:
   }
 
 
-#if( _K_ == 1 || _K_ == 2 || _K_ == 4 )
+#if( ( _K_ == 1 || _K_ == 2 || _K_ == 4 ) && !USE_VIEWS )
   // check augmented kernel with random data
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvecT_times_mvec_times_sdMat_inplace_prec)
@@ -396,7 +444,7 @@ public:
 #endif
 
 
-#if( ( _K_ == 1 || _K_ == 2 || _K_ == 4 ) && _K_ == _M_ )
+#if( ( _K_ == 1 || _K_ == 2 || _K_ == 4 ) && _K_ == _M_ && !USE_VIEWS )
   // check augmented kernel with random data
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvecT_times_mvec_times_sdMat_inplace_prec_self)
@@ -445,7 +493,7 @@ public:
 #endif
 
 
-#if( _K_ == 1 || _K_ == 2 || _K_ == 4 )
+#if( ( _K_ == 1 || _K_ == 2 || _K_ == 4 ) && !USE_VIEWS )
   // check augmented kernel with random data
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvec_times_sdMat_augmented_prec)
@@ -499,7 +547,7 @@ public:
 #endif
 
 
-#if( _K_ == 1 || _K_ == 2 || _K_ == 4 )
+#if( ( _K_ == 1 || _K_ == 2 || _K_ == 4 ) && !USE_VIEWS )
   // check augmented kernel with random data
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvec_times_sdMat_add_mvec_times_sdMat_prec)
@@ -551,7 +599,7 @@ public:
   }
 #endif
 
-#if( _K_ == 1 || _K_ == 2 || _K_ == 4 )
+#if( ( _K_ == 1 || _K_ == 2 || _K_ == 4 ) && !USE_VIEWS )
   // check augmented kernel with random data
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvec_times_sdMat_add_mvec_times_sdMat_prec_N0)
@@ -604,7 +652,7 @@ public:
 #endif
 
 
-#if( _K_ == 1 || _K_ == 2 || _K_ == 4 )
+#if( ( _K_ == 1 || _K_ == 2 || _K_ == 4 ) && !USE_VIEWS )
   // check augmented kernel with random data
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, mvec_times_sdMat_add_mvec_times_sdMat_prec_M0)

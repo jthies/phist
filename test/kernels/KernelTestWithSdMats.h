@@ -12,14 +12,17 @@
 #include "phist_kernels.h"
 // for sync'ing sdMats
 #include "phist_mpi_kernels.h"
-#include "KernelTestWithType.h"
+#include "TestWithType.h"
 
 using namespace testing;
 
-/*! Test fixure. */
-template<typename T, int _Nrows, int _Ncols, int _useViews=0>
+/*! Test fixure. 
+ *  _multipleDefinitionCounter is used to enforce multiple definitions of static class variables
+ *  if the data is required multiple times!
+ */
+template<typename T, int _Nrows, int _Ncols, int _useViews=0, int _multipleDefinitionCounter=0>
 class KernelTestWithSdMats:
-        public virtual KernelTestWithType<T>,
+        public virtual TestWithType<T>,
         public virtual KernelTest
   {
 

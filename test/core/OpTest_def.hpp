@@ -4,43 +4,30 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_> 
+class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
+                 public virtual KernelTestWithVectors<_ST_,_N_,_NV_,0,1> 
   {
 
 public:
 
+  typedef KernelTestWithSparseMat<_ST_,_N_,MATNAME> SparseMatTest;
+  typedef KernelTestWithVectors<_ST_,_N_,_NV_,0,1> VTest;
+
+  static void SetUpTestCase()
+  {
+    SparseMatTest::SetUpTestCase();
+    VTest::SetUpTestCase();
+  }
 
   /*! Set up routine.
    */
   virtual void SetUp()
     {
-    KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
-    createOrthogQ();
-    
+    SparseMatTest::SetUp();
+    VTest::SetUp();
+
     if (typeImplemented_ && !problemTooSmall_)
       {
-      sigma = new _ST_[nq_];
-
-      SUBR(read_mat)("sprandn",comm_,nglob_,&A1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      SUBR(read_mat)("sprandn_nodiag",comm_,nglob_,&A2_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      
-      if (A1_==NULL || A2_==NULL)
-        {
-        haveMats_=false;
-        }
-      else
-        {
-        haveMats_=true;
-        }
-      }
-    }
-
-  void createOrthogQ()
-  {
-    if (typeImplemented_ && !problemTooSmall_)
-    {
       nq_ = std::min(3*nvec_+1,(int)nglob_-4);
 #ifdef HAVE_MPI
       // note: TSQR does not work if nvec>nloc (that wouldn't really be a 'tall skinny 
@@ -64,22 +51,25 @@ public:
       ASSERT_GE(iflag_,0);
       SUBR(sdMat_delete)(Rtmp,&iflag_);
       ASSERT_EQ(0,iflag_);
+
+      sigma = new _ST_[nq_];
+      }
+
+    haveMat_ = (A_ != NULL);
     }
-  }
 
   /*! Clean up.
    */
   virtual void TearDown() 
     {
-    KernelTestWithVectors<_ST_,_N_,_NV_>::TearDown();
     deleteOrthogQ();
-    if (typeImplemented_ && !problemTooSmall_)
-      {
-      if( sigma != NULL)
-        delete[] sigma;
-      ASSERT_EQ(0,delete_mat(A1_));
-      ASSERT_EQ(0,delete_mat(A2_));
-      }
+
+    if( sigma != NULL)
+      delete[] sigma;
+    sigma = NULL;
+
+    VTest::TearDown();
+    SparseMatTest::TearDown();
     }
 
   void deleteOrthogQ()
@@ -91,22 +81,11 @@ public:
     }
   }
 
-  /*! Replace the map and rebuild vectors
-   */
-  virtual void replaceMap(const_map_ptr_t map)
-    {
-      if (typeImplemented_ && !problemTooSmall_)
-        {
-        deleteOrthogQ();
-
-        KernelTestWithVectors<_ST_,_N_,_NV_>::SetUp();
-
-        createOrthogQ();
-        }
-    }
-
-  TYPE(sparseMat_ptr) A1_ = NULL;
-  TYPE(sparseMat_ptr) A2_ = NULL;
+  static void TearDownTestCase()
+  {
+    VTest::TearDownTestCase();
+    SparseMatTest::TearDownTestCase();
+  }
 
   // for testing the jada operator
   int nq_ = 0;
@@ -127,12 +106,8 @@ public:
 #ifdef PHIST_HAVE_BELOS
   int doBelosTests(TYPE(sparseMat_ptr) A)
     {
-    if (typeImplemented_ && !problemTooSmall_ && haveMats_)
+    if (typeImplemented_ && !problemTooSmall_ && haveMat_)
       {
-      const_map_ptr_t newMap = NULL;
-      PHIST_ICHK_IERR(SUBR(sparseMat_get_range_map)(A,&newMap,&iflag_),iflag_);
-      // set new map (recreates required vectors in the background!)
-      replaceMap(newMap);
       Teuchos::RCP<Belos::OutputManager<ST> > MyOM
         = Teuchos::rcp( new Belos::OutputManager<ST>() );
       MyOM->setVerbosity( Belos::Warnings|Belos::Debug);
@@ -168,15 +143,14 @@ public:
     }
 #endif
 
-  bool haveMats_;
+  bool haveMat_;
   };
 
   TEST_F(CLASSNAME, read_matrices) 
     {
     if (typeImplemented_ && !problemTooSmall_)
       {
-      ASSERT_TRUE(AssertNotNull(A1_));
-      ASSERT_TRUE(AssertNotNull(A2_));
+      ASSERT_TRUE(AssertNotNull(A_));
       }
     }
 
@@ -190,8 +164,7 @@ public:
     {
     if (typeImplemented_ && !problemTooSmall_)
       {
-      ASSERT_EQ(0,doBelosTests(A1_));
-      ASSERT_EQ(0,doBelosTests(A2_));
+      ASSERT_EQ(0,doBelosTests(A_));
       }
     }
 #endif

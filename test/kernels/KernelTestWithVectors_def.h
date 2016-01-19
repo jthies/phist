@@ -1,211 +1,318 @@
 #include "../tools/TestHelpers.h"
 /*! Test fixture. */
-template<gidx_t _Nglob, int _Nvec, int _useViews>
-class KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews> : 
-        public virtual KernelTestWithType< _ST_ >,
-        public virtual KernelTestWithMap<_Nglob> 
+template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+class KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter> : 
+        public virtual KernelTestWithMap<_Nglob> ,
+        public virtual TestWithType< _ST_ >
   {
-
-private:
-
-void createVecs()
-{
-  bool align_p2=(useViews_==2);
-  pad_pre_=0, pad_post_=0;
-  nvecPadded_=nvec_;
-  if (useViews_)
-  {
-    pad_pre_=align_p2?8:3;
-    pad_post_=7;
-    // padding to power of 2
-    int pow_p2=(int)ceil(log((double)(nvec_+pad_pre_+pad_post_))/log(2.0))+1;
-    nvecPadded_=align_p2?(int)pow(2.0,(double)pow_p2): nvec_+pad_pre_+pad_post_;
-    pad_post_ = nvecPadded_-pad_pre_-nvec_;
-  }
-  PHISTTEST_MVEC_CREATE(&mem1_,this->map_,nvecPadded_,&this->iflag_);
-  ASSERT_EQ(0,this->iflag_);
-
-  PHISTTEST_MVEC_CREATE(&mem2_,this->map_,nvecPadded_,&this->iflag_);
-  ASSERT_EQ(0,this->iflag_);
-
-  PHISTTEST_MVEC_CREATE(&mem3_,this->map_,nvecPadded_,&this->iflag_);
-  ASSERT_EQ(0,this->iflag_);
-  
-  // if requested, set vecX to views of memX
-  if (useViews_)
-  {
-    vec1_=NULL; vec2_=NULL; vec3_=NULL;
-    SUBR(mvec_view_block)(mem1_,&vec1_,pad_pre_,pad_pre_+nvec_-1,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-    SUBR(mvec_view_block)(mem2_,&vec2_,pad_pre_,pad_pre_+nvec_-1,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-    SUBR(mvec_view_block)(mem3_,&vec3_,pad_pre_,pad_pre_+nvec_-1,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-
-    SUBR(mvec_put_value)(mem1_,(_ST_)-101.,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-    SUBR(mvec_put_value)(mem2_,(_ST_)-102.,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-    SUBR(mvec_put_value)(mem3_,(_ST_)-103.,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-
-    SUBR(mvec_put_value)(vec1_,st::zero(),&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-    SUBR(mvec_put_value)(vec2_,st::zero(),&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-    SUBR(mvec_put_value)(vec3_,st::zero(),&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-  }
-  else
-  {
-    vec1_=mem1_;
-    vec2_=mem2_;
-    vec3_=mem3_;
-  }
-
-  // vectors created with the same function should get the same stride (lda)
-  lidx_t lda;
-
-  // extract raw data of complete memory block
-  SUBR(mvec_extract_view)(mem1_,&mem1_vp_,&lda,&this->iflag_);
-  ASSERT_EQ(0,this->iflag_);
-  lda_=lda;
-  
-  SUBR(mvec_extract_view)(mem2_,&mem2_vp_,&lda,&this->iflag_);
-  ASSERT_EQ(0,this->iflag_);
-  ASSERT_EQ(lda_,lda);
-  
-  SUBR(mvec_extract_view)(mem3_,&mem3_vp_,&lda,&this->iflag_);
-  ASSERT_EQ(0,this->iflag_);
-  ASSERT_EQ(lda_,lda);
-
-
-  // extract raw data of viewed block
-  lidx_t lda2;
-  SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda2,&this->iflag_);
-  ASSERT_EQ(0,this->iflag_);
-  lda = lda2;
-  
-  SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&lda2,&this->iflag_);
-  ASSERT_EQ(0,this->iflag_);
-  ASSERT_EQ(lda,lda2);
-  
-  SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&lda2,&this->iflag_);
-  ASSERT_EQ(0,this->iflag_);
-  ASSERT_EQ(lda,lda2);
-
-  // lda might be irrelevant for small views and not set by the kernel library
-#ifdef PHIST_MVECS_ROW_MAJOR
-  if( this->nloc_ > 1 ) {
-#else
-  if( nvec_ > 1 ) {
-#endif
-    ASSERT_EQ(lda_,lda2);
-  } else {
-    ASSERT_EQ(lda_,lda_);
-  }
-
-
-
-  stride_=1;
-  if (useViews_)
-  {
-    PHIST_SOUT(PHIST_DEBUG,"Setting up the views with pad_pre %d and pad_post %d (complete padding %d, lda %d)\n", 
-        pad_pre_, pad_post_, nvecPadded_, lda_);
-  }
-}
-
-void deleteVecs()
-{
-  // verify nobody touched the unviewed parts!
-  if (useViews_)
-  {
-    // download memory from device 
-    SUBR(mvec_from_device)((void*)mem1_,&this->iflag_);
-    SUBR(mvec_from_device)((void*)mem2_,&this->iflag_);
-    SUBR(mvec_from_device)((void*)mem3_,&this->iflag_);
-   
-    // check pre padding is still the same
-    ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem1_vp_,this->nloc_,pad_pre_,lda_,stride_,(_ST_)-101.,this->vflag_));
-    ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem2_vp_,this->nloc_,pad_pre_,lda_,stride_,(_ST_)-102.,this->vflag_));
-    ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem3_vp_,this->nloc_,pad_pre_,lda_,stride_,(_ST_)-103.,this->vflag_));
-
-    // check post padding is still the same
-#ifdef PHIST_MVECS_ROW_MAJOR
-    ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem1_vp_+pad_pre_+nvec_,this->nloc_,pad_post_,lda_,stride_,(_ST_)-101.,this->vflag_));
-    ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem2_vp_+pad_pre_+nvec_,this->nloc_,pad_post_,lda_,stride_,(_ST_)-102.,this->vflag_));
-    ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem3_vp_+pad_pre_+nvec_,this->nloc_,pad_post_,lda_,stride_,(_ST_)-103.,this->vflag_));
-#else
-    ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem1_vp_+(pad_pre_+nvec_)*lda_,this->nloc_,pad_post_,lda_,stride_,(_ST_)-101.,this->vflag_));
-    ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem2_vp_+(pad_pre_+nvec_)*lda_,this->nloc_,pad_post_,lda_,stride_,(_ST_)-102.,this->vflag_));
-    ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem3_vp_+(pad_pre_+nvec_)*lda_,this->nloc_,pad_post_,lda_,stride_,(_ST_)-103.,this->vflag_));
-#endif
-  }
-
-  SUBR(mvec_delete)(this->vec1_,&this->iflag_);
-  ASSERT_EQ(0,this->iflag_);
-  SUBR(mvec_delete)(this->vec2_,&this->iflag_);
-  ASSERT_EQ(0,this->iflag_);
-  SUBR(mvec_delete)(this->vec3_,&this->iflag_);
-  ASSERT_EQ(0,this->iflag_);
-
-  // delete memory blocks if vecX are views
-  if (useViews_)
-  {
-    SUBR(mvec_delete)(this->mem1_,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-    SUBR(mvec_delete)(this->mem2_,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-    SUBR(mvec_delete)(this->mem3_,&this->iflag_);
-    ASSERT_EQ(0,this->iflag_);
-  }
-}
 
 public:
+  // make some stuff known to the compiler to prevent errors about undeclared specifiers
+  using TestWithType<_ST_>::typeImplemented_;
+  using KernelTestWithMap<_Nglob>::map_;
+  using KernelTestWithMap<_Nglob>::nloc_;
+  using KernelTestWithMap<_Nglob>::problemTooSmall_;
+  using KernelTestWithMap<_Nglob>::iflag_;
+  using KernelTestWithMap<_Nglob>::vflag_;
+
+static void SetUpTestCase()
+{
+  KernelTestWithMap<_Nglob>::SetUpTestCase();
+  TestWithType<_ST_>::SetUpTestCase();
+
+
+  if (typeImplemented_ && !problemTooSmall_)
+  {
+    bool align_p2=(useViews_==2);
+    pad_pre_=0, pad_post_=0;
+    nvecPadded_=nvec_;
+    if (useViews_)
+    {
+      pad_pre_=align_p2?8:3;
+      pad_post_=7;
+      // padding to power of 2
+      int pow_p2=(int)ceil(log((double)(nvec_+pad_pre_+pad_post_))/log(2.0))+1;
+      nvecPadded_=align_p2?(int)pow(2.0,(double)pow_p2): nvec_+pad_pre_+pad_post_;
+      pad_post_ = nvecPadded_-pad_pre_-nvec_;
+    }
+    if( _numberOfVectorsInitialized >= 1 )
+    {
+      PHISTTEST_MVEC_CREATE(&mem1_,map_,nvecPadded_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+
+    if( _numberOfVectorsInitialized >= 2 )
+    {
+      PHISTTEST_MVEC_CREATE(&mem2_,map_,nvecPadded_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+
+    if( _numberOfVectorsInitialized >= 3 )
+    {
+      PHISTTEST_MVEC_CREATE(&mem3_,map_,nvecPadded_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+
+    // if requested, set vecX to views of memX
+    if (useViews_)
+    {
+      vec1_=NULL; vec2_=NULL; vec3_=NULL;
+      if( _numberOfVectorsInitialized >= 1 )
+      {
+        SUBR(mvec_view_block)(mem1_,&vec1_,pad_pre_,pad_pre_+nvec_-1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      }
+      if( _numberOfVectorsInitialized >= 2 )
+      {
+        SUBR(mvec_view_block)(mem2_,&vec2_,pad_pre_,pad_pre_+nvec_-1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      }
+      if( _numberOfVectorsInitialized >= 3 )
+      {
+        SUBR(mvec_view_block)(mem3_,&vec3_,pad_pre_,pad_pre_+nvec_-1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      }
+    }
+    else
+    {
+      vec1_=mem1_;
+      vec2_=mem2_;
+      vec3_=mem3_;
+    }
+  }
+}
+
 
   /*! Set up routine.
    */
 virtual void SetUp()
-  {
+{
   KernelTestWithMap<_Nglob>::SetUp();
-  KernelTestWithType< ST >::SetUp();
-  mem1_=NULL; mem2_=NULL; mem3_=NULL;
-  // GCC 4.9 doesn't compile this without this->, compiler bug?
-  if (this->typeImplemented_ && !this->problemTooSmall_)
+
+  if (typeImplemented_ && !problemTooSmall_)
+  {
+    if( useViews_ )
     {
-    lidx_t lda;
+      if( _numberOfVectorsInitialized >= 1 )
+      {
+        SUBR(mvec_put_value)(mem1_,(_ST_)-101.,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      }
+      if( _numberOfVectorsInitialized >= 2 )
+      {
+        SUBR(mvec_put_value)(mem2_,(_ST_)-102.,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      }
+      if( _numberOfVectorsInitialized >= 3 )
+      {
+        SUBR(mvec_put_value)(mem3_,(_ST_)-103.,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      }
+    }
+
+    if( _numberOfVectorsInitialized >= 1 )
+    {
+      SUBR(mvec_put_value)(vec1_,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+    if( _numberOfVectorsInitialized >= 2 )
+    {
+      SUBR(mvec_put_value)(vec2_,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+    if( _numberOfVectorsInitialized >= 3 )
+    {
+      SUBR(mvec_put_value)(vec3_,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+
     // vectors created with the same function should get the same stride (lda)
-    createVecs();
+    lidx_t lda;
+
+    // extract raw data of complete memory block
+    if( _numberOfVectorsInitialized >= 1 )
+    {
+      SUBR(mvec_extract_view)(mem1_,&mem1_vp_,&lda,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      lda_=lda;
+    }
+    if( _numberOfVectorsInitialized >= 2 )
+    {
+      SUBR(mvec_extract_view)(mem2_,&mem2_vp_,&lda,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(lda_,lda);
+    }
+    if( _numberOfVectorsInitialized >= 3 )
+    {
+      SUBR(mvec_extract_view)(mem3_,&mem3_vp_,&lda,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(lda_,lda);
+    }
+
+
+    // extract raw data of viewed block
+    lidx_t lda2;
+    if( _numberOfVectorsInitialized >= 1 )
+    {
+      SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda2,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      lda = lda2;
+    }
+    if( _numberOfVectorsInitialized >= 2 )
+    {
+      SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&lda2,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(lda,lda2);
+    }
+    if( _numberOfVectorsInitialized >= 3 )
+    {
+      SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&lda2,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(lda,lda2);
+    }
+
+    // lda might be irrelevant for small views and not set by the kernel library
+#ifdef PHIST_MVECS_ROW_MAJOR
+    if( nloc_ > 1 ) {
+      ASSERT_EQ(lda_,lda2);
+    } else {
+      ASSERT_EQ(lda_,lda_);
+    }
+#else
+    if( nvec_ > 1 ) {
+      ASSERT_EQ(lda_,lda2);
+    } else {
+      ASSERT_EQ(lda_,lda_);
+    }
+#endif
+
+    stride_=1;
+    if (useViews_)
+    {
+      PHIST_SOUT(PHIST_DEBUG,"Setting up the views with pad_pre %d and pad_post %d (complete padding %d, lda %d)\n", 
+          pad_pre_, pad_post_, nvecPadded_, lda_);
     }
   }
+}
+
 
   /*! Clean up.
    */
 virtual void TearDown() 
+{
+  if (typeImplemented_ && !problemTooSmall_)
   {
-  // GCC 4.9 doesn't compile this without this->, compiler bug?
-  if (this->typeImplemented_ && !this->problemTooSmall_)
+    // verify nobody touched the unviewed parts!
+    if (useViews_)
     {
-    deleteVecs();
-    }
-  KernelTestWithType< ST >::TearDown();
-  KernelTestWithMap<_Nglob>::TearDown();
-  }
-
-  /*! Replace the map and rebuild vectors
-   */
-virtual void replaceMap(const_map_ptr_t map)
-  {
-  // GCC 4.9 doesn't compile this without this->, compiler bug?
-    if (this->typeImplemented_ && !this->problemTooSmall_)
+      // download memory from device 
+      if( _numberOfVectorsInitialized >= 1 )
       {
-      deleteVecs();
-
-      KernelTestWithMap<_Nglob>::replaceMap(map);
-
-      createVecs();
+        SUBR(mvec_from_device)((void*)mem1_,&iflag_);
       }
+      if( _numberOfVectorsInitialized >= 2 )
+      {
+        SUBR(mvec_from_device)((void*)mem2_,&iflag_);
+      }
+      if( _numberOfVectorsInitialized >= 3 )
+      {
+        SUBR(mvec_from_device)((void*)mem3_,&iflag_);
+      }
+
+      // check pre padding is still the same
+      if( _numberOfVectorsInitialized >= 1 )
+      {
+        ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem1_vp_,nloc_,pad_pre_,lda_,stride_,(_ST_)-101.,vflag_));
+      }
+      if( _numberOfVectorsInitialized >= 2 )
+      {
+        ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem2_vp_,nloc_,pad_pre_,lda_,stride_,(_ST_)-102.,vflag_));
+      }
+      if( _numberOfVectorsInitialized >= 3 )
+      {
+        ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem3_vp_,nloc_,pad_pre_,lda_,stride_,(_ST_)-103.,vflag_));
+      }
+
+      // check post padding is still the same
+#ifdef PHIST_MVECS_ROW_MAJOR
+      if( _numberOfVectorsInitialized >= 1 )
+      {
+        ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem1_vp_+pad_pre_+nvec_,nloc_,pad_post_,lda_,stride_,(_ST_)-101.,vflag_));
+      }
+      if( _numberOfVectorsInitialized >= 2 )
+      {
+        ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem2_vp_+pad_pre_+nvec_,nloc_,pad_post_,lda_,stride_,(_ST_)-102.,vflag_));
+      }
+      if( _numberOfVectorsInitialized >= 3 )
+      {
+        ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem3_vp_+pad_pre_+nvec_,nloc_,pad_post_,lda_,stride_,(_ST_)-103.,vflag_));
+      }
+#else
+      if( _numberOfVectorsInitialized >= 1 )
+      {
+        ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem1_vp_+(pad_pre_+nvec_)*lda_,nloc_,pad_post_,lda_,stride_,(_ST_)-101.,vflag_));
+      }
+      if( _numberOfVectorsInitialized >= 2 )
+      {
+        ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem2_vp_+(pad_pre_+nvec_)*lda_,nloc_,pad_post_,lda_,stride_,(_ST_)-102.,vflag_));
+      }
+      if( _numberOfVectorsInitialized >= 3 )
+      {
+        ASSERT_REAL_EQ(mt::one(), ArrayEqual(mem3_vp_+(pad_pre_+nvec_)*lda_,nloc_,pad_post_,lda_,stride_,(_ST_)-103.,vflag_));
+      }
+#endif
+    }
   }
+  KernelTestWithMap<_Nglob>::TearDown();
+}
+
+static void TearDownTestCase()
+{
+  if (typeImplemented_)
+  {
+    if( _numberOfVectorsInitialized >= 1 )
+    {
+      SUBR(mvec_delete)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+    if( _numberOfVectorsInitialized >= 2 )
+    {
+      SUBR(mvec_delete)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+    if( _numberOfVectorsInitialized >= 3 )
+    {
+      SUBR(mvec_delete)(vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+
+    // delete memory blocks if vecX are views
+    if (useViews_)
+    {
+      if( _numberOfVectorsInitialized >= 1 )
+      {
+        SUBR(mvec_delete)(mem1_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      }
+      if( _numberOfVectorsInitialized >= 2 )
+      {
+        SUBR(mvec_delete)(mem2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      }
+      if( _numberOfVectorsInitialized >= 3 )
+      {
+        SUBR(mvec_delete)(mem3_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      }
+    }
+
+    vec1_ = vec2_ = vec3_ = NULL;
+    mem1_ = mem2_ = mem3_ = NULL;
+  }
+
+  KernelTestWithMap<_Nglob>::TearDownTestCase();
+}
+
 
 // tolerance for tests depending on the vector length
 inline static MT releps(TYPE(const_mvec_ptr) V=NULL)
@@ -376,21 +483,53 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
 
   //! if _useViews=true, these are larger memory blocks
   //! holding vecX_ as an inner view. Otherwise they are NULL.
-  TYPE(mvec_ptr) mem1_, mem2_, mem3_;
-  ST *mem1_vp_, *mem2_vp_, *mem3_vp_;
+private:
+  static TYPE(mvec_ptr) mem1_, mem2_, mem3_;
+  ST *mem1_vp_ = NULL, *mem2_vp_ = NULL, *mem3_vp_ = NULL;
+  static int nvecPadded_, pad_pre_, pad_post_;
 
-  TYPE(mvec_ptr) vec1_, vec2_, vec3_;
-  ST *vec1_vp_, *vec2_vp_, *vec3_vp_;
+public:
+
+  static TYPE(mvec_ptr) vec1_, vec2_, vec3_;
+  ST *vec1_vp_ = NULL, *vec2_vp_ = NULL, *vec3_vp_ = NULL;
   static const int nvec_=_Nvec;
-  int nvecPadded_, pad_pre_, pad_post_;
   static const int useViews_=_useViews;
   lidx_t lda_, stride_;
-  };
+};
 
-template<gidx_t n, int nvec, int useViews>
-const int KernelTestWithVectors<_ST_,n,nvec,useViews>::nvec_;
+template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+TYPE(mvec_ptr) KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::mem1_ = NULL;
 
-template<gidx_t n, int nvec, int useViews>
-const int KernelTestWithVectors<_ST_,n,nvec,useViews>::useViews_;
+template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+TYPE(mvec_ptr) KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::mem2_ = NULL;
 
+template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+TYPE(mvec_ptr) KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::mem3_ = NULL;
+
+
+template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+int KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::nvecPadded_;
+
+template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+int KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::pad_pre_;
+
+template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+int KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::pad_post_;
+
+
+template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+TYPE(mvec_ptr) KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::vec1_ = NULL;
+
+template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+TYPE(mvec_ptr) KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::vec2_ = NULL;
+
+template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+TYPE(mvec_ptr) KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::vec3_ = NULL;
+
+
+template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+const int KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::nvec_;
+
+template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+const int KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::useViews_;
 

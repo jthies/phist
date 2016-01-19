@@ -34,6 +34,9 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
 {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
+  *iflag = 0;
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   // this is for XGEES (computing the Schur form)
   int lwork = std::max(20*m,2*nselect*(m-nselect));
                           // min required workspace is 3*m 
@@ -216,6 +219,7 @@ void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
 #endif
     }
   }
+PHIST_TASK_END(iflag)
 }
 
 
@@ -226,6 +230,8 @@ void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *iflag = 0;
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 
   CT* ev = (CT*) v_ev;
 
@@ -340,5 +346,6 @@ void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
       }
     }
   }
+PHIST_TASK_END(iflag)
 }
 

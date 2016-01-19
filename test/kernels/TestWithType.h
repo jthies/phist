@@ -9,6 +9,7 @@
 #include "gtest/gtest.h"
 #include "KernelTest.h"
 #include "phist_ScalarTraits.hpp"
+#include "phist_random.h"
 #include <cstdlib>
 #include <limits>
 
@@ -19,22 +20,15 @@ extern "C" void init_random_seed(void);
 /** 
  */
 template<typename _ST>
-class KernelTestWithType
+class TestWithType : public virtual testing::Test
 {
 public:
 
 //! set to true if the kernel lib supports the type (S/D/C/Z), false otherwise
-bool typeImplemented_;
+static bool typeImplemented_;
 
-
-/** Set up method.
- * Fills internal data vector with values 1.0, 2.0 and 3.0.
- */
-virtual void SetUp() {
+void SetUpTestCase() {
 typeImplemented_=false;
-}
-
-virtual void TearDown() {
 }
 
 };
@@ -44,17 +38,17 @@ virtual void TearDown() {
 #ifdef PHIST_HAVE_SP
 
 # include "phist_gen_s.h"
-# include "KernelTestWithType_def.h"
+# include "TestWithType_def.h"
 
 # include "phist_gen_c.h"
-# include "KernelTestWithType_def.h"
+# include "TestWithType_def.h"
 
 #endif
 
 #include "phist_gen_d.h"
-#include "KernelTestWithType_def.h"
+#include "TestWithType_def.h"
 
 #include "phist_gen_z.h"
-#include "KernelTestWithType_def.h"
+#include "TestWithType_def.h"
 
 #endif

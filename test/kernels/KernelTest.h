@@ -12,8 +12,6 @@ typedef int MPI_Comm;
 
 #include "phist_typedefs.h"
 #include "phist_kernels.h"
-#include <iostream>
-#include <iomanip>
 
 
 #ifdef PHIST_HAVE_GHOST
@@ -33,15 +31,15 @@ typedef int MPI_Comm;
 It calls the init and finalize routines of the kernel lib
 and provides basic MPI support
  */
-class KernelTest: public testing::Test {
+class KernelTest: public virtual testing::Test {
 
 public:
 
- comm_ptr_t comm_;
- bool haveS_, haveD_, haveC_, haveZ_;
- MPI_Comm mpi_comm_;
- unsigned int rseed_;//random number seed
- int iflag_, mpi_rank_, mpi_size_;
+ static comm_ptr_t comm_;
+ static bool haveS_, haveD_, haveC_, haveZ_;
+ static MPI_Comm mpi_comm_;
+ static unsigned int rseed_;//random number seed
+ static int iflag_, mpi_rank_, mpi_size_;
  KernelTest() : kernelTestSetupCounter_(0) {}
 
  //! these flags determine how to traverse arrays
@@ -56,18 +54,11 @@ public:
  static const bool mflag_=false;
  #endif
  
- //! we store a pointer to the original stream buffer of std::cout,
- //! set it to NULL on rank!=0 at SetUp() and reset it at TearDown().
- std::streambuf *rdbuf_bak,*e_rdbuf_bak;
- 
- std::ostream *cout;//! std::cout for everyone (std::cout is muted if rank!=0)
- std::ostream *cerr;//! std::cerr for everyone
- 
-	/** Set up method.
+	/** static setup method for the complete test case
 	 */
-	virtual void SetUp() 
+	static void SetUpTestCase() 
 	{
-    if( kernelTestSetupCounter_++ == 0 )
+    if( staticKernelTestSetupCounter_++ == 0 )
     {
 #ifdef PHIST_HAVE_MPI	
       mpi_comm_=MPI_COMM_WORLD;
@@ -91,20 +82,7 @@ public:
 #endif
       phist_Dtype_avail(&iflag_); haveD_=(iflag_==0);
       phist_Ztype_avail(&iflag_); haveZ_=(iflag_==0);
-#if 0	
-      rdbuf_bak = std::cout.rdbuf();
-      e_rdbuf_bak = std::cerr.rdbuf();
-      cout=new std::ostream(rdbuf_bak);
-      cerr=new std::ostream(e_rdbuf_bak);
-      if (mpi_rank_!=0) // this doesn't really seem to work as expected
-      {
-        std::cout.rdbuf(NULL);
-        std::cerr.rdbuf(NULL);
-      }
-#else
-      cout = &std::cout;
-      cerr = &std::cerr;
-#endif	
+
       // initialize random number sequence in a reproducible way (yet
       // with a different seed on each MPI process)
       rseed_ = (unsigned int)(mpi_rank_*77+42);
@@ -112,27 +90,36 @@ public:
     }
 	}
 
-virtual void TearDown()
+  /** dynamic setup method for every single test
+   */
+  virtual void SetUp()
   {
-  //if (false) // we do not delete the comm because it may be shared between
-  //           // base classes of a derived class, so it is not clear when to
-  //           // delete it without a smart pointer concept.
+    kernelTestSetupCounter_++;
+  }
+
+  /** dynamic teardown method for every single test
+   */
+  virtual void TearDown()
+  {
+    if( --kernelTestSetupCounter_ == 0 )
+    {
+#ifdef PHIST_HAVE_GHOST
+      ghost_taskq_waitall();
+#endif  
+    }
+  }
+
+  /** static teardown method for the complete test case
+   */
+  static void TearDownTestCase()
+  {
   // should work if we count correctly
-  if( --kernelTestSetupCounter_ == 0 )
+  if( --staticKernelTestSetupCounter_ == 0 )
     {
     phist_comm_delete(comm_,&iflag_);
-    ASSERT_EQ(0,iflag_);
+    EXPECT_EQ(0,iflag_);
     comm_=NULL;
     }
-#if 0
-	std::cout.rdbuf(rdbuf_bak);
-	std::cerr.rdbuf(e_rdbuf_bak);
-	delete cout;
-	delete cerr;
-#endif
-#ifdef PHIST_HAVE_GHOST
-    ghost_taskq_waitall();
-#endif  
   }
   
 ::testing::AssertionResult AssertNotNull(void* ptr)
@@ -142,7 +129,8 @@ virtual void TearDown()
   }
 
 private:
- int kernelTestSetupCounter_;
+  int kernelTestSetupCounter_;
+  static int staticKernelTestSetupCounter_;
 };
 
 #endif

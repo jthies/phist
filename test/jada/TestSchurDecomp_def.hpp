@@ -44,6 +44,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
 
         // create a diagonal matrix with some interesting features for the diag_* tests
         SUBR(sdMat_put_value)(mat3_,st::zero(),&iflag_);
+        PHIST_CHK_IERR(SUBR(sdMat_from_device)(mat3_,&iflag_),iflag_);
         ASSERT_EQ(0,iflag_);
         ST *diag = new ST[nrows_];
         for (int i=0;i<nrows_;i++)
@@ -68,6 +69,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
         {
           mat3_vp_[i*m_lda_+i]=diag[i];
         }
+        PHIST_CHK_IERR(SUBR(sdMat_to_device)(mat3_,&iflag_),iflag_);
         delete [] diag;
       }
     }
@@ -77,7 +79,6 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
     virtual void TearDown()
     {
       MTest::TearDown();
-      KernelTestWithType<_ST_>::TearDown();
     }
 
     void DoSchurDecompTest(eigSort_t which, _MT_ tol, bool onlyDoReorderTest)
@@ -116,7 +117,12 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
         PHIST_DEB("input matrix to Schur-decomp:\n");
         SUBR(sdMat_print)(mat1_,&iflag_);
 #endif
+
+        PHIST_CHK_IERR(SUBR(sdMat_from_device)(mat1_,&iflag_),iflag_);
         SUBR(SchurDecomp)(mat1_vp_,m_lda_,mat2_vp_,m_lda_,n_,nselect,nsort,which,tol,ev_,&this->iflag_);
+        PHIST_CHK_IERR(SUBR(sdMat_to_device)(mat1_,&iflag_),iflag_);
+        PHIST_CHK_IERR(SUBR(sdMat_to_device)(mat2_,&iflag_),iflag_);
+
         PHIST_DEB("resulting T:\n");
 #if PHIST_OUTLEV>=PHIST_DEBUG
         SUBR(sdMat_print)(mat1_,&iflag_);
@@ -139,6 +145,10 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
             resNormOrig[i] = resNorm[i] = exp(mt::prand());
           SUBR(ReorderPartialSchurDecomp)(mat1_vp_,m_lda_,mat2_vp_,m_lda_,n_,nsort,which,tol,
               &resNorm[0],ev_,&permutation[0],&iflag_);
+          ASSERT_EQ(0,iflag_);
+          SUBR(sdMat_to_device)(mat1_,&iflag_);
+          ASSERT_EQ(0,iflag_);
+          SUBR(sdMat_to_device)(mat2_,&iflag_);
           ASSERT_EQ(0,iflag_);
           PHIST_DEB("resulting T:\n");
 #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -195,6 +205,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
       //SUBR(sdMat_print)(mat4_,&iflag_);
       //ASSERT_EQ(0,iflag_);
 #endif
+      PHIST_CHK_IERR(SUBR(sdMat_from_device)(mat4_,&iflag_),iflag_);
       ASSERT_NEAR(mt::one(),ArrayEqual(mat4_vp_,nrows_,ncols_,m_lda_,1,st::zero()),1000*mt::eps());
 
       PHIST_SOUT(PHIST_DEBUG,"eigenvalue array:\n");
@@ -210,6 +221,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
 
       // check that the eigenvalues on the diagonal of T have the same ordering as those in 
       // ev_
+      PHIST_CHK_IERR(SUBR(sdMat_from_device)(mat1_,&iflag_),iflag_);
       for (int i=0;i<n_;i++)
       {
         ASSERT_REAL_EQ(ct::real(ev_[i]), st::real(mat1_vp_[i*m_lda_+i]));

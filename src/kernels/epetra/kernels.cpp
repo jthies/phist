@@ -202,5 +202,7 @@ extern "C" void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* 
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
-#include "../common/kernels_no_fused.cpp"
+#include "../common/kernels_nofused_mvec.cpp"
+#include "../common/kernels_nofused_spmv_gemm.cpp"
+#include "../common/kernels_nofused_spmv_dot.cpp"
 

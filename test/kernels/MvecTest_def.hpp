@@ -13,6 +13,7 @@
 
 
 // some function to test mvec_put_func
+int PREFIX(mvecInitializer)(ghost_gidx_t i, ghost_lidx_t j, void* vval,void* last_arg);
 #ifdef FIRST_INSTANCE
 int PREFIX(mvecInitializer)(ghost_gidx_t i, ghost_lidx_t j, void* vval,void* last_arg)
 {
@@ -24,17 +25,18 @@ int PREFIX(mvecInitializer)(ghost_gidx_t i, ghost_lidx_t j, void* vval,void* las
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_> 
+class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,2> 
   {
 
 public:
+  typedef KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,2> VTest;
 
 
   /*! Set up routine.
    */
   virtual void SetUp()
     {
-    KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_>::SetUp();
+    VTest::SetUp();
     if (typeImplemented_ && !problemTooSmall_)
       {
 
@@ -62,7 +64,7 @@ public:
    */
   virtual void TearDown() 
     {
-    KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_>::TearDown();
+      VTest::TearDown();
     }
 
 };
@@ -236,8 +238,8 @@ public:
         // cond. number of the summation
         _MT_ cond = (_MT_)(dotsAbs[j] / std::abs(dots[j]));
         PHIST_SOUT(PHIST_INFO, "error: %e (cond. number: %e, eps: %e)\n", st::abs((_ST_)dots[j]-dots_ref[j]),cond,mt::eps());
-        EXPECT_NEAR(mt::zero(), st::real((_ST_)dots[j]-dots_ref[j]), 2*cond*mt::eps());
-        EXPECT_NEAR(mt::zero(), st::imag((_ST_)dots[j]-dots_ref[j]), 2*cond*mt::eps());
+        EXPECT_NEAR(mt::zero(), st::real((_ST_)dots[j]-dots_ref[j]), 4*cond*mt::eps());
+        EXPECT_NEAR(mt::zero(), st::imag((_ST_)dots[j]-dots_ref[j]), 4*cond*mt::eps());
       }
     }
 #undef _ST_PREC_
@@ -332,7 +334,7 @@ public:
 #endif
 
 
-#if _N_ < 100
+#if _N_ < 100 && _M_ < 4
   TEST_F(CLASSNAME, random)
     {
     if (typeImplemented_ && !problemTooSmall_)
@@ -370,11 +372,11 @@ public:
       // TODO - this test sometimes fails with OMP_NUM_THREADS>1 and ghost
       //         in single precision. Probably the chance to get 'identical'
       //         numbers in SP is higher, but why does it depend on #threads?
-      if (minval<=mt::eps())
+      if (minval<=mt::eps()*mt::eps())
       {
         SUBR(mvec_print)(vec1_,&iflag_);
       }
-      ASSERT_EQ(true,minval>mt::eps()); 
+      ASSERT_EQ(true,minval>mt::eps()*mt::eps()); 
       }
     }
 #endif

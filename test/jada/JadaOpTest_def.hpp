@@ -4,20 +4,28 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
+class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
+                 public virtual KernelTestWithVectors<_ST_,_N_,_NV_,0,3>,
                  public virtual KernelTestWithSdMats<_ST_,_NVP_,_NV_>
 {
 
   public:
-    typedef KernelTestWithVectors<_ST_,_N_,_NV_> VTest;
-    typedef KernelTestWithVectors<_ST_,_N_,_NVP_> VProjTest;
+    typedef KernelTestWithSparseMat<_ST_,_N_,MATNAME> SparseMatTest;
+    typedef KernelTestWithVectors<_ST_,_N_,_NV_,0,3> VTest;
     typedef KernelTestWithSdMats<_ST_,_NVP_,_NV_> MTest;
 
+    static void SetUpTestCase()
+    {
+      SparseMatTest::SetUpTestCase();
+      VTest::SetUpTestCase();
+      MTest::SetUpTestCase();
+    }
 
     /*! Set up routine.
     */
     virtual void SetUp()
     {
+      SparseMatTest::SetUp();
       VTest::SetUp();
       MTest::SetUp();
 
@@ -56,51 +64,9 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
         SUBR(sdMat_delete)(Rtmp,&iflag_);
         ASSERT_EQ(0,iflag_);
 
-        SUBR(read_mat)("sprandn",comm_,nglob_,&A1_,&iflag_);
+        opA_ = new TYPE(op);
+        SUBR(op_wrap_sparseMat)(opA_, A_, &iflag_);
         ASSERT_EQ(0,iflag_);
-        opA1_ = new TYPE(op);
-        SUBR(op_wrap_sparseMat)(opA1_, A1_, &iflag_);
-        ASSERT_EQ(0,iflag_);
-        SUBR(read_mat)("speye",comm_,nglob_,&I_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        opI_ = new TYPE(op);
-        SUBR(op_wrap_sparseMat)(opI_, I_, &iflag_);
-        ASSERT_EQ(0,iflag_);
-      }
-    }
-
-    virtual void replaceMap(const_map_ptr_t map)
-    {
-      if (typeImplemented_ && !problemTooSmall_)
-      {
-        // delete old vecs
-        SUBR(mvec_delete)(q_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-
-        VTest::replaceMap(map);
-
-        // create new vecs
-
-        PHISTTEST_MVEC_CREATE(&q_,map_,_NVP_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        if( sigma_ )
-          delete[] sigma_;
-        sigma_ = new _ST_[_NV_];
-        for(int i = 0; i < _NV_; i++)
-          sigma_[i] = st::prand();
-
-        // create random orthogonal Q
-        SUBR(mvec_random)(q_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        TYPE(sdMat_ptr) Rtmp;
-        SUBR(sdMat_create)(&Rtmp,_NVP_,_NVP_,comm_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        int rankQ=0;
-        SUBR(orthog)(NULL,q_,NULL,Rtmp,NULL,4,&rankQ,&iflag_);
-        ASSERT_GE(iflag_,0);
-        SUBR(sdMat_delete)(Rtmp,&iflag_);
-        ASSERT_EQ(0,iflag_);
-
       }
     }
 
@@ -110,28 +76,29 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     {
       if (typeImplemented_ && !problemTooSmall_)
       {
-        if( opI_ != NULL )
-          delete opI_;
-        SUBR(sparseMat_delete)(A1_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        if( opA1_ != NULL )
-          delete opA1_;
-        SUBR(sparseMat_delete)(I_,&iflag_);
-        ASSERT_EQ(0,iflag_);
+        if( opA_ != NULL )
+          delete opA_;
+        opA_ = NULL;
         SUBR(mvec_delete)(q_,&iflag_);
         ASSERT_EQ(0,iflag_);
         if( sigma_ != NULL)
           delete[] sigma_;
+        sigma_ = NULL;
       }
 
       MTest::TearDown();
       VTest::TearDown();
+      SparseMatTest::TearDown();
     }
 
-    TYPE(sparseMat_ptr) A1_ = NULL;
-    TYPE(op_ptr) opA1_ = NULL;
-    TYPE(sparseMat_ptr) I_ = NULL;
-    TYPE(op_ptr) opI_ = NULL;
+    static void TearDownTestCase()
+    {
+      MTest::TearDownTestCase();
+      VTest::TearDownTestCase();
+      SparseMatTest::TearDownTestCase();
+    }
+
+    TYPE(op_ptr) opA_ = NULL;
     TYPE(mvec_ptr) q_ = NULL;
     _ST_* sigma_ = NULL;
 };
@@ -141,15 +108,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      // replace map to by the map of the current matrix
-      const_map_ptr_t map = NULL;
-      SUBR(sparseMat_get_domain_map)(A1_,&map,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      replaceMap(map);
-      ASSERT_EQ(0,iflag_);
-
       TYPE(op) jdOp;
-      SUBR(jadaOp_create)(opA1_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
+      SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
@@ -157,7 +117,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
     }
   }
 
-
+/*
   TEST_F(CLASSNAME, DISABLE_create_and_delete_generalized)
   {
     if( typeImplemented_ && !problemTooSmall_ )
@@ -165,28 +125,23 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       // we need fitting maps??
 
       TYPE(op) jdOp;
-      SUBR(jadaOp_create)(opA1_,opI_,q_,q_,sigma_,_NV_,&jdOp,&iflag_);
+      SUBR(jadaOp_create)(opA_,opI_,q_,q_,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }
+*/
 
 
+#if MATNAME == MATNAME_speye
   TEST_F(CLASSNAME, apply_only_projection)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      // replace map to by the map of the current matrix
-      const_map_ptr_t map = NULL;
-      SUBR(sparseMat_get_domain_map)(I_,&map,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      replaceMap(map);
-      ASSERT_EQ(0,iflag_);
-
       TYPE(op) jdOp;
-      SUBR(jadaOp_create)(opI_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
+      SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       SUBR(mvec_random)(vec2_,&iflag_);
@@ -206,6 +161,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_times_sdMat)(st::one(),q_,mat2_,st::one(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      PHIST_CHK_IERR(SUBR(mvec_from_device)(vec3_,&iflag_),iflag_);
 #ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()));
 #else
@@ -222,15 +178,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      // replace map to by the map of the current matrix
-      const_map_ptr_t map = NULL;
-      SUBR(sparseMat_get_domain_map)(I_,&map,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      replaceMap(map);
-      ASSERT_EQ(0,iflag_);
-
       TYPE(op) jdOp;
-      SUBR(jadaOp_create)(opI_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
+      SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       SUBR(mvec_random)(vec2_,&iflag_);
@@ -258,21 +207,15 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0,iflag_);
     }
   }
+#endif
 
 
   TEST_F(CLASSNAME, apply_check_result)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      // replace map to by the map of the current matrix
-      const_map_ptr_t map = NULL;
-      SUBR(sparseMat_get_domain_map)(A1_,&map,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      replaceMap(map);
-      ASSERT_EQ(0,iflag_);
-
       TYPE(op) jdOp;
-      SUBR(jadaOp_create)(opA1_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
+      SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       SUBR(mvec_random)(vec2_,&iflag_);
@@ -284,7 +227,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
 
 
       // vec3_ = (I-q_*q_') (vec1+sigma_i*I)vec2_ ?
-      opA1_->apply(st::one(), opA1_->A, vec2_, st::zero(), vec1_, &iflag_);
+      opA_->apply(st::one(), opA_->A, vec2_, st::zero(), vec1_, &iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_vadd_mvec)(sigma_,vec2_,st::one(),vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -294,6 +237,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_times_sdMat)(st::one(),q_,mat2_,st::one(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
+
+      PHIST_CHK_IERR(SUBR(mvec_from_device)(vec3_,&iflag_),iflag_);
 #ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
 #else
@@ -310,15 +255,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      // replace map to by the map of the current matrix
-      const_map_ptr_t map = NULL;
-      SUBR(sparseMat_get_domain_map)(A1_,&map,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      replaceMap(map);
-      ASSERT_EQ(0,iflag_);
-
       TYPE(op) jdOp;
-      SUBR(jadaOp_create)(opA1_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
+      SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       TYPE(mvec_ptr) vec4;
@@ -342,6 +280,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       SUBR(mvec_add_mvec)(-st::one(),vec5,alpha,vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
+      PHIST_CHK_IERR(SUBR(mvec_from_device)(vec3_,&iflag_),iflag_);
 #ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
 #else
@@ -363,15 +302,8 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      // replace map to by the map of the current matrix
-      const_map_ptr_t map = NULL;
-      SUBR(sparseMat_get_domain_map)(A1_,&map,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      replaceMap(map);
-      ASSERT_EQ(0,iflag_);
-
       TYPE(op) jdOp;
-      SUBR(jadaOp_create)(opA1_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
+      SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       TYPE(mvec_ptr) vec4;
@@ -404,6 +336,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
       SUBR(mvec_add_mvec)(st::one(),vec5,-st::one(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
+      PHIST_CHK_IERR(SUBR(mvec_from_device)(vec3_,&iflag_),iflag_);
 #ifdef PHIST_MVECS_ROW_MAJOR
       ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
 #else

@@ -1,10 +1,7 @@
-#ifdef PHIST_KERNEL_LIB_BUILTIN
-extern "C" void phist_random_init();
-#endif
-/** 
+/** specialization of TestWithType for known types
  */
 template<>
-class KernelTestWithType< _ST_ >
+class TestWithType< _ST_ > : public virtual testing::Test
 {
 public:
 
@@ -12,45 +9,15 @@ public:
 // things like st::sqrt in derived classes
 #include "phist_std_typedefs.hpp"
 
-bool typeImplemented_;
-bool verbose_;
+static bool typeImplemented_;
 
-/** Set up method.
- * Fills internal data vector with values 1.0, 2.0 and 3.0.
- */
-virtual void SetUp() {
-
-int iflag;
-SUBR(type_avail)(&iflag);
-typeImplemented_=(iflag==0);
-#ifdef PHIST_KERNEL_LIB_BUILTIN
-phist_random_init();
-#endif
-
-int rank=0;
-#ifdef PHIST_HAVE_MPI
-MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-#endif
-verbose_=rank==0;
-
-if (verbose_ && false)
-  {
-  std::cout << "data type: ";
-#ifdef IS_COMPLEX
-  std::cout << " complex ";
-#else
-  std::cout << " real ";
-#endif
-#ifdef _IS_DOUBLE_
-  std::cout << "double" << std::endl;
-#else
-  std::cout << "float" << std::endl;
-#endif
-  }
-}
-
-virtual void TearDown() 
+static void SetUpTestCase()
 {
+  int iflag=-1;
+  SUBR(type_avail)(&iflag);
+  typeImplemented_=(iflag==0);
+
+  phist_random_init();
 }
 
 static _MT_ MvecEqual(TYPE(mvec_ptr) V, _ST_ value)
@@ -81,7 +48,7 @@ static _MT_ MvecEqual(TYPE(mvec_ptr) V, _ST_ value)
   }
 #endif
   return return_value;
-  }
+}
 
 static _MT_ MvecsEqual(TYPE(mvec_ptr) V1, TYPE(mvec_ptr) V2, _MT_ relTo = mt::zero())
 {

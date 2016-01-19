@@ -3,16 +3,22 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_>,
+class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_,0,2>,
                  public virtual KernelTestWithSdMats<_ST_,_NV_,_NV_> 
   {
 
 public:
 
-  typedef KernelTestWithVectors<_ST_,_N_,_NV_> VTest;
+  typedef KernelTestWithVectors<_ST_,_N_,_NV_,0,2> VTest;
   typedef KernelTestWithVectors<_ST_,_N_,_NV_-1> VTest_m_minus_1;
   typedef KernelTestWithVectors<_ST_,_N_,1> VTest_1;
   typedef KernelTestWithSdMats<_ST_,_NV_,_NV_> MTest;
+
+  static void SetUpTestCase()
+  {
+    VTest::SetUpTestCase();
+    MTest::SetUpTestCase();
+  }
 
   /*! Set up routine.
    */
@@ -47,6 +53,14 @@ public:
     VTest::TearDown();
     MTest::TearDown();
     }
+
+  static void TearDownTestCase()
+  {
+    MTest::TearDownTestCase();
+    VTest::TearDownTestCase();
+  }
+
+
 
   _MT_ nrms_[_NV_];
 };
