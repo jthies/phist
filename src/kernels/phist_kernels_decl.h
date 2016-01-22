@@ -391,6 +391,8 @@ void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
 //! augmented kernel with two multi-vectors. \ingroup mvec
 
 //! D=alpha*V'*W*C + beta*D, W=W*C inplace
+//! Kernel libraries that do not offer this can include 
+//! common/kernels_no_fused.cpp for a fallback variant
 void SUBR(mvecT_times_mvec_times_sdMat_inplace)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
                                                             TYPE(mvec_ptr)        W,
                                                             TYPE(const_sdMat_ptr) C,
@@ -492,6 +494,21 @@ void SUBR(sparseMat_times_mvec_add_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A
 //! y[i]=alpha*(A*x[i]+shifts[i]*x[i]) + beta*y[i]
 void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
         const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag);
+
+//! augmented spMVM kernel available in GHOST
+
+//! like sparseMat_times_mvec_add_mvec, followed by z=a*y+b*z. if z!=NULL.
+//! if dot_xx!=NULL, it will contain mvec_dot_mvec(x,x) on output
+//! and similarly for dot_xy and dot_yy (final y being used)
+//!
+//! Kernel libraries that do not offer this can include 
+//! common/kernels_no_fused.cpp for a fallback variant
+void SUBR(sparseMat_times_mvec_aug)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
+        _ST_ shift, TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, 
+        _ST_ a, _ST_ b, TYPE(mvec_ptr) z,
+        _ST_* dot_xx, _ST_* dotxy, _ST_* dotyy, 
+        int* iflag);
+
 
 //@}
 
