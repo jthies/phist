@@ -804,14 +804,14 @@ extern "C" void SUBR(mvecT_times_mvec_times_sdMat_inplace)(_ST_ alpha, TYPE(cons
 // all the other kernels in reasonably optimized versions, we will issue
 // a warning message if it is used. The code is taken from the default
 // implementation in common/kernels_no_fused.cpp for now.
-void SUBR(sparseMat_times_mvec_aug)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
-        _ST_ shift, TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, 
+void SUBR(sparseMat_times_mvec_vaug)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
+        _ST_ const shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, 
         _ST_ a, _ST_ b, TYPE(mvec_ptr) z,
         _ST_* dot_xx, _ST_* dotxy, _ST_* dotyy, 
         int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_add_mvec)(alpha,A,shift,x,beta,y,iflag);
+  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_vadd_mvec)(alpha,A,shifts,x,beta,y,iflag);
   static bool firstCall=true;
   if (firstCall)
   {

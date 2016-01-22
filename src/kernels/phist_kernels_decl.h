@@ -503,8 +503,20 @@ void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) 
 //!
 //! Kernel libraries that do not offer this can include 
 //! common/kernels_no_fused.cpp for a fallback variant
-void SUBR(sparseMat_times_mvec_aug)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
+//!
+//! This is implemented in common_impl_def by calling the 'vaug' variant, so the kernel libraries
+//! do not need to implement it separately.
+void SUBR(sparseMat_times_mvec_vaug)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
         _ST_ shift, TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, 
+        _ST_ a, _ST_ b, TYPE(mvec_ptr) z,
+        _ST_* dot_xx, _ST_* dotxy, _ST_* dotyy, 
+        int* iflag);
+
+//! augmented spMVM kernel with different shift for each column
+
+//! like sparseMat_times_mvec_vadd_mvec with optionally additional dot products and mvec_add_mvec
+void SUBR(sparseMat_times_mvec_vaug)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
+        const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, 
         _ST_ a, _ST_ b, TYPE(mvec_ptr) z,
         _ST_* dot_xx, _ST_* dotxy, _ST_* dotyy, 
         int* iflag);
