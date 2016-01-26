@@ -17,6 +17,8 @@ ADD_CMAKE_FLAGS="" #optional CMake flags
 VECT_EXT="native"
 # list of modules to load
 MODULES_BASIC="cmake ccache cppcheck lapack gcovr doxygen"
+# GCC_SANITIZE flag for debug mode, disabled for CUDA
+SANITIZER="address"
 
 declare -A MODULES_KERNELS
 MODULES_KERNELS=( 
@@ -81,6 +83,7 @@ if [[ "$FLAGS" =~ *optional-libs* ]]; then
 fi
 if [ "${VECT_EXT}" = "CUDA" ]; then
   module load cuda
+  SANITIZER=""
 fi
 module list
 
@@ -153,7 +156,7 @@ mkdir build_${KERNELS}_${PRGENV}_Debug_${FLAGS// /_}; cd $_
 cmake -DCMAKE_BUILD_TYPE=Debug    \
       -DPHIST_KERNEL_LIB=$KERNELS \
       -DINTEGRATION_BUILD=On      \
-      -DGCC_SANITIZE=address      \
+      -DGCC_SANITIZE=$SANITIZER   \
       ${ADD_CMAKE_FLAGS} \
       ..                                || error=1
 make -j 24 || make                      || error=1
