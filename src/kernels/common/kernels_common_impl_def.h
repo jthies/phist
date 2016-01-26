@@ -62,7 +62,7 @@ extern "C" void SUBR(sparseMat_times_mvec_aug)(_ST_ alpha, TYPE(const_sparseMat_
 {
   int nv;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x,&nv,iflag),*iflag);
-  _ST_* shifts=(_ST_*)malloc(nv*sizeof(_ST_));
+  _ST_ *shifts=(_ST_*)malloc(nv*sizeof(_ST_));
   for (int i=0;i<nv;i++) shifts[i]=shift;
   SUBR(sparseMat_times_mvec_vaug)(alpha,A,shifts,x,beta,y,
         a,b,z,dots_xx,dots_xy,dots_yy,iflag);

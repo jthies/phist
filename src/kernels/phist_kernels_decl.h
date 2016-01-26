@@ -410,7 +410,7 @@ void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, i
 
 //! augmented kernel with two multi-vectors. \ingroup mvec
 //! W=alpha*V*C + beta*W, D=W^TW
-void SUBR(mvec_times_sdMat_augmented)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
+void SUBR(mvec_times_sdMat_aug)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
                                                   TYPE(const_sdMat_ptr) C,
                                       _ST_ beta,  TYPE(mvec_ptr)        W,
                                                   TYPE(sdMat_ptr)       D,
@@ -506,7 +506,7 @@ void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) 
 //!
 //! This is implemented in common_impl_def by calling the 'vaug' variant, so the kernel libraries
 //! do not need to implement it separately.
-void SUBR(sparseMat_times_mvec_vaug)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
+void SUBR(sparseMat_times_mvec_aug)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
         _ST_ shift, TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, 
         _ST_ a, _ST_ b, TYPE(mvec_ptr) z,
         _ST_* dot_xx, _ST_* dotxy, _ST_* dotyy, 

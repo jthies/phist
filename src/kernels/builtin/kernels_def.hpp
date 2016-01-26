@@ -669,7 +669,7 @@ extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
   }
 }
 
-extern "C" void SUBR(mvec_times_sdMat_augmented)(_ST_ alpha,  TYPE(const_mvec_ptr)  V, 
+extern "C" void SUBR(mvec_times_sdMat_aug)(_ST_ alpha,  TYPE(const_mvec_ptr)  V, 
                                                               TYPE(const_sdMat_ptr) C, 
                                                  _ST_ beta,   TYPE(mvec_ptr)        W,
                                                               TYPE(sdMat_ptr)       D,
