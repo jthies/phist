@@ -34,6 +34,14 @@ kernel libs) ?
 */
 #cmakedefine PHIST_HAVE_CMPLX
 
+/* one can enable/disable the use of certain SIMD intrinsics (manually) using ccmake,
+ * this mostly affects the builtin kernels, if you e.g. use GHOST as kernel lib, it
+ * will use whatever it was configured to use when installed.
+ */
+#cmakedefine PHIST_HAVE_SSE
+#cmakedefine PHIST_HAVE_AVX
+#cmakedefine PHIST_HAVE_AVX2
+
 /* do we have support for higher precision kernel routines (Kahan-style reductions etc.)?
 */
 #cmakedefine PHIST_HIGH_PRECISION_KERNELS

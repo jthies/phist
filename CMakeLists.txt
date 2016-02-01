@@ -25,6 +25,10 @@ option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
 option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
 option(PHIST_BUILD_MIC "Build for Intel MIC" OFF)
 
+option(PHIST_HAVE_SSE  "enable SSE SIMD intrinsics in PHIST code" ON)
+option(PHIST_HAVE_AVX  "enable AVX SIMD intrinsics in PHIST code" OFF)
+option(PHIST_HAVE_AVX2 "enable AVX2 SIMD intrinsics in PHIST code" OFF)
+
 # reproducible random number generator?
 # TODO - this is not quite working yet, once it is, make it the default
 option(PHIST_BUILTIN_RNG
@@ -437,8 +441,7 @@ elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
   set(PHIST_KERNEL_LIB_BUILTIN 1)
   set(PHIST_MVECS_ROW_MAJOR 1)
   option(PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS "Try to pin the threads to cores using sched_setaffinity (based on simple heuristics; for Intel use env KMP_AFFINITY=\"granularity=fine,compact,1,0\"" On)
-  option(PHIST_KERNEL_LIB_BUILTIN_AVX2_PREC_KERNELS "Add support for high-precision kernel operations triggered with PHIST_ROBUST_REDUCTIONS, requires AVX2,FMA (e.g. Intel Haswell)" Off)
-  if(PHIST_KERNEL_LIB_BUILTIN_AVX2_PREC_KERNELS)
+  if(PHIST_USE_AVX2)
     message(STATUS "Activated experimental high-precision builtin kernel routines!")
     set(PHIST_HIGH_PRECISION_KERNELS 1)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx -mavx2 -mfma")
