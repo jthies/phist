@@ -34,7 +34,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         opA_ = new TYPE(linearOp);
         ASSERT_TRUE(opA_ != NULL);
 
-        SUBR(op_wrap_sparseMat)(opA_,A_,&iflag_);
+        SUBR(linearOp_wrap_sparseMat)(opA_,A_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
         state_=new TYPE(blockedGMRESstate_ptr)[m_];

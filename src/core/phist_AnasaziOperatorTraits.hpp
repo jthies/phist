@@ -24,8 +24,8 @@ namespace Anasazi
 //! the traits from Belos (block iterative linear solver package),
 //! as they are essentially the same.
 template <class Scalar, class MV>
-class OperatorTraits <Scalar, MV, typename phist::ScalarTraits<Scalar>::op_t >
-  : public ::Belos::OperatorTraits<Scalar, MV, typename phist::ScalarTraits<Scalar>::op_t >
+class OperatorTraits <Scalar, MV, typename phist::ScalarTraits<Scalar>::linearOp_t >
+  : public ::Belos::OperatorTraits<Scalar, MV, typename phist::ScalarTraits<Scalar>::linearOp_t >
 {
 };
 

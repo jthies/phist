@@ -113,7 +113,7 @@ public:
       MyOM->setVerbosity( Belos::Warnings|Belos::Debug);
       TYPE(linearOp) *op=new TYPE(linearOp);
       Teuchos::RCP<const TYPE(linearOp)> op_ptr = Teuchos::rcp(op,true);
-      PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(op,A,&iflag_),iflag_);
+      PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(op,A,&iflag_),iflag_);
       TYPE(linearOp) jdOp;
       // TODO setup necessary arguments for jadaOp: AX, work
       PHIST_ICHK_IERR(SUBR(jadaOp_create)(op,NULL,Q_,NULL,sigma,nq_,&jdOp,&iflag_),iflag_);

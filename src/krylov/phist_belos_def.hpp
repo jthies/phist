@@ -32,7 +32,7 @@ extern "C" void SUBR(belos)(TYPE(const_linearOp_ptr) Op,
 typedef st::mvec_t MV;
 typedef phist::MultiVector< _ST_ > BelosMV;
 #endif
-  typedef st::op_t OP; // gives Sop_t, Dop_t etc.
+  typedef st::linearOp_t OP; // gives Sop_t, Dop_t etc.
 
   bool status=true;
   PHIST_ENTER_FCN(__FUNCTION__);

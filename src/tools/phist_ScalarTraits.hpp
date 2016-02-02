@@ -47,14 +47,14 @@ class ScalarTraits< float >
   static const ghost_datatype_t ghost_dt = (ghost_datatype_t)((int)GHOST_DT_FLOAT|(int)GHOST_DT_REAL);
   static const ghost_datatype_t c_ghost_dt = (ghost_datatype_t)((int)GHOST_DT_FLOAT|(int)GHOST_DT_COMPLEX);
 #endif  
-  typedef Sop_t op_t;
+  typedef SlinearOp_t linearOp_t;
   typedef Smvec_t mvec_t;
   typedef SsdMat_t sdMat_t;
   typedef SsparseMat_t sparseMat_t;
   typedef Sblas_cmplx_t blas_cmplx_t;
   typedef float blas_scalar_t;
   
-  typedef Cop_t c_op_t; // this is just to allow a simpler implementation of the complex traits class
+  typedef ClinearOp_t c_linearOp_t; // this is just to allow a simpler implementation of the complex traits class
   typedef Cmvec_t c_mvec_t; 
   typedef CsparseMat_t c_sparseMat_t; 
   typedef CsdMat_t c_sdMat_t; 
@@ -190,14 +190,14 @@ class ScalarTraits< double >
   static const ghost_datatype_t ghost_dt = (ghost_datatype_t)((int)GHOST_DT_DOUBLE|(int)GHOST_DT_REAL);
   static const ghost_datatype_t c_ghost_dt = (ghost_datatype_t)((int)GHOST_DT_DOUBLE|(int)GHOST_DT_COMPLEX);
 #endif  
-  typedef Dop_t op_t; 
+  typedef DlinearOp_t linearOp_t; 
   typedef Dmvec_t mvec_t; 
   typedef DsparseMat_t sparseMat_t; 
   typedef DsdMat_t sdMat_t; 
   typedef Dblas_cmplx_t blas_cmplx_t;
   typedef double blas_scalar_t;
 
-  typedef Zop_t c_op_t; // this is just to allow a simpler implementation of the complex traits class
+  typedef ZlinearOp_t c_linearOp_t; // this is just to allow a simpler implementation of the complex traits class
   typedef Zmvec_t c_mvec_t;
   typedef ZsparseMat_t c_sparseMat_t;
   typedef ZsdMat_t c_sdMat_t;
@@ -338,7 +338,7 @@ class ScalarTraits< std::complex<MT> >
 #ifdef PHIST_HAVE_GHOST
   static const ghost_datatype_t ghost_dt = ScalarTraits<MT>::c_ghost_dt;
 #endif
-  typedef typename ScalarTraits<MT>::c_op_t op_t; 
+  typedef typename ScalarTraits<MT>::c_linearOp_t linearOp_t; 
   typedef typename ScalarTraits<MT>::c_mvec_t mvec_t; 
   typedef typename ScalarTraits<MT>::c_sparseMat_t sparseMat_t; 
   typedef typename ScalarTraits<MT>::c_sdMat_t sdMat_t; 

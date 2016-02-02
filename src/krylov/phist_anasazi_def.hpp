@@ -37,7 +37,7 @@ void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr)
   typedef st::mvec_t MV;
   typedef phist::MultiVector< _ST_ > AnasaziMV;
 #endif
-  typedef st::op_t OP; // gives Sop_t, Dop_t etc.
+  typedef st::linearOp_t OP; // gives Sop_t, Dop_t etc.
   typedef Anasazi::MultiVecTraits<ST,AnasaziMV> MVT;
 
   bool status=true;

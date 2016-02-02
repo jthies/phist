@@ -51,7 +51,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       if (typeImplemented_ && !problemTooSmall_)
       {
         opA_ = new TYPE(linearOp);
-        SUBR(op_wrap_sparseMat)(opA_, A_, &iflag_);
+        SUBR(linearOp_wrap_sparseMat)(opA_, A_, &iflag_);
         ASSERT_EQ(0,iflag_);
 
         PHISTTEST_MVEC_CREATE(&q_,map_,_NVP_,&iflag_);

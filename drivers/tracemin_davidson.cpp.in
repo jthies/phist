@@ -42,8 +42,8 @@ int main(int argc, char** argv)
 
   comm_ptr_t comm;
   sparseMat_ptr_t A,B;
-  op_ptr_t A_op, B_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
-  op_ptr_t P_op; // wrapper for a preconditioning operator
+  linearOp_ptr_t A_op, B_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  linearOp_ptr_t P_op; // wrapper for a preconditioning operator
   
   const_map_ptr_t map; // map (element distribution) of vectors according to 
                        // the distribution of matrix rows
@@ -134,12 +134,12 @@ PHIST_MAIN_TASK_BEGIN
   A_op = new TYPE(linearOp);
   B_op = NULL;
   P_op = NULL;
-  PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(A_op,A,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(A_op,A,&iflag),iflag);
   
   if (B!=NULL)
   {
     B_op = new TYPE(linearOp);
-    PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(B_op,B,&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(B_op,B,&iflag),iflag);
   }
  
   ST eigs[how_many];
