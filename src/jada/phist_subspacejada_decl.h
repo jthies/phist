@@ -31,7 +31,7 @@
 //! resNorm:  norm of the residua of the schur form $A*q_i-Q*r_i, i=1,nEig$
 //! iflag:     return code of the solver (0 on success, negative on error, positive on warning)
 //!
-void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
+void SUBR(subspacejada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr) B_op,
                          phist_jadaOpts_t opts,
                          TYPE(mvec_ptr) Q,         TYPE(sdMat_ptr) R,
                          _CT_* ev,                 _MT_* resNorm,

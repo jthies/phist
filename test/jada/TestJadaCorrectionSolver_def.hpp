@@ -50,7 +50,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
 
       if (typeImplemented_ && !problemTooSmall_)
       {
-        opA_ = new TYPE(op);
+        opA_ = new TYPE(linearOp);
         SUBR(op_wrap_sparseMat)(opA_, A_, &iflag_);
         ASSERT_EQ(0,iflag_);
 
@@ -77,7 +77,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         SUBR(sdMat_delete)(Rtmp,&iflag_);
         ASSERT_EQ(0,iflag_);
 
-        jdOp_ = new TYPE(op);
+        jdOp_ = new TYPE(linearOp);
         SUBR(jadaOp_create)(opA_,NULL,q_,NULL,negSigma_,_NV_,jdOp_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
@@ -181,8 +181,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       }
     }
 
-    TYPE(op_ptr) opA_ = NULL;
-    TYPE(op_ptr) jdOp_ = NULL;
+    TYPE(linearOp_ptr) opA_ = NULL;
+    TYPE(linearOp_ptr) jdOp_ = NULL;
     TYPE(mvec_ptr) q_ = NULL;
     _ST_* sigma_ = NULL;
     _ST_* negSigma_ = NULL;

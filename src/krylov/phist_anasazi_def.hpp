@@ -9,8 +9,8 @@
 #define PHIST_rcp phist::rcp
 #endif
 // Anasazi: block krylov methods from Trilinos
-void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) Ainv_op, 
-                         TYPE(const_op_ptr) B_op, int variant,
+void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) Ainv_op, 
+                         TYPE(const_linearOp_ptr) B_op, int variant,
                          TYPE(const_mvec_ptr) v0,  eigSort_t which,
                          _MT_ tol,                 int *nEig,
                          int* nIter,               int blockDim,

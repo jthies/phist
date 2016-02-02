@@ -111,13 +111,13 @@ public:
       Teuchos::RCP<Belos::OutputManager<ST> > MyOM
         = Teuchos::rcp( new Belos::OutputManager<ST>() );
       MyOM->setVerbosity( Belos::Warnings|Belos::Debug);
-      TYPE(op) *op=new TYPE(op);
-      Teuchos::RCP<const TYPE(op)> op_ptr = Teuchos::rcp(op,true);
+      TYPE(linearOp) *op=new TYPE(linearOp);
+      Teuchos::RCP<const TYPE(linearOp)> op_ptr = Teuchos::rcp(op,true);
       PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(op,A,&iflag_),iflag_);
-      TYPE(op) jdOp;
+      TYPE(linearOp) jdOp;
       // TODO setup necessary arguments for jadaOp: AX, work
       PHIST_ICHK_IERR(SUBR(jadaOp_create)(op,NULL,Q_,NULL,sigma,nq_,&jdOp,&iflag_),iflag_);
-      Teuchos::RCP<const TYPE(op)> jdOp_ptr=Teuchos::rcp(&jdOp,false);
+      Teuchos::RCP<const TYPE(linearOp)> jdOp_ptr=Teuchos::rcp(&jdOp,false);
 #ifdef PHIST_KERNEL_LIB_GHOST
       ghost_densemat_t* v = (ghost_densemat_t*)vec1_;
       Teuchos::RCP<const phist::GhostMV> V = phist::rcp(v,false);

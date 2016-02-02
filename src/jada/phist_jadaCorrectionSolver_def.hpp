@@ -75,7 +75,7 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) me, int *i
 //! t               returns approximate solution vectors
 //! iflag            a value > 0 indicates the number of systems that have not converged to the desired tolerance
 void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
-                                    TYPE(const_op_ptr)    A_op,     TYPE(const_op_ptr)    B_op, 
+                                    TYPE(const_linearOp_ptr)    A_op,     TYPE(const_linearOp_ptr)    B_op, 
                                     TYPE(const_mvec_ptr)  Qtil,     TYPE(const_mvec_ptr)  BQtil,
                                     const _ST_            sigma[],  TYPE(const_mvec_ptr)  res,      const int resIndex[], 
                                     const _MT_            tol[],    int                   maxIter,
@@ -143,7 +143,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   std::vector<_ST_> currShifts(max_k, st::zero());
 
   // we need a jadaOp
-  TYPE(op) jadaOp;
+  TYPE(linearOp) jadaOp;
   PHIST_CHK_IERR(SUBR(jadaOp_create)(A_op, B_op, Qtil, BQtil, &currShifts[0], k, &jadaOp, iflag), *iflag);
 
   // the next system to consider if one converged/failed

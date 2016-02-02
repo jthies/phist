@@ -31,7 +31,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       if( typeImplemented_ && !problemTooSmall_ )
       {
         // wrap matrices in operators
-        opA_ = new TYPE(op);
+        opA_ = new TYPE(linearOp);
         ASSERT_TRUE(opA_ != NULL);
 
         SUBR(op_wrap_sparseMat)(opA_,A_,&iflag_);
@@ -83,7 +83,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       SparseMatTest::TearDownTestCase();
     }
 
-    TYPE(op_ptr) opA_;
+    TYPE(linearOp_ptr) opA_;
     TYPE(blockedGMRESstate_ptr) *state_;
 
   protected:

@@ -58,7 +58,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       if( typeImplemented_ && !problemTooSmall_ )
       {
         // wrap matrices in operators
-        opA_ = new TYPE(op);
+        opA_ = new TYPE(linearOp);
         ASSERT_TRUE(opA_ != NULL);
 
         SUBR(op_wrap_sparseMat)(opA_,A_,&iflag_);
@@ -128,7 +128,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       SparseMatTest::TearDownTestCase();
     }
 
-    TYPE(op_ptr) opA_;
+    TYPE(linearOp_ptr) opA_;
 
   protected:
     TYPE(mvec_ptr) v0_;
@@ -143,7 +143,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
 
 
     // ========================= the actual arnoldi test =========================
-    void doArnoldiTest(TYPE(const_op_ptr) opA, int blockSize = 0)
+    void doArnoldiTest(TYPE(const_linearOp_ptr) opA, int blockSize = 0)
     {
       if( typeImplemented_ && !problemTooSmall_ )
       {
@@ -188,7 +188,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
 
     // ========================= extended arnoldi test =========================
     // when one is interested in AV as well
-    void doExtendedArnoldiTest(TYPE(const_op_ptr) opA, int blockSize = 0)
+    void doExtendedArnoldiTest(TYPE(const_linearOp_ptr) opA, int blockSize = 0)
     {
       if( typeImplemented_ && !problemTooSmall_ )
       {

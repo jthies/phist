@@ -2,8 +2,8 @@ extern "C" {
 
 // this function can be used to create an operator which encapsulates a CRS matrix.
 // It does not allocate memory for the op struct, the caller has to do that beforehand.
-void SUBR(op_wrap_sparseMat)(TYPE(op_ptr) op, TYPE(const_sparseMat_ptr) A, int* iflag)
-  {
+void SUBR(linearOp_wrap_sparseMat)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_ptr) A, int* iflag)
+{
   *iflag=0;
   op->A = A;
   PHIST_CHK_IERR(SUBR(sparseMat_get_range_map)(A,&op->range_map,iflag),*iflag);
@@ -12,7 +12,7 @@ void SUBR(op_wrap_sparseMat)(TYPE(op_ptr) op, TYPE(const_sparseMat_ptr) A, int* 
   op->applyT = &SUBR(sparseMatT_times_mvec);
   op->apply_shifted = &SUBR(sparseMat_times_mvec_vadd_mvec);
   return;
-  }
+}
 
 
 //
@@ -38,7 +38,7 @@ void SUBR(private_idOp_apply_shifted)(_ST_ alpha, const void* A, _ST_ const *sig
 }
 
 // setup identity operator that returns Y=alpha*X + beta*Y
-void SUBR(op_identity)(TYPE(op_ptr) op, int* iflag)
+void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op, int* iflag)
 {
   *iflag=0;
   op->A=NULL;

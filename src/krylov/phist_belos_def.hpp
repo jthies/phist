@@ -7,7 +7,7 @@
 #endif
 
 // Belos: block krylov methods from Trilinos
-extern "C" void SUBR(belos)(TYPE(const_op_ptr) Op, 
+extern "C" void SUBR(belos)(TYPE(const_linearOp_ptr) Op, 
         TYPE(mvec_ptr) vX,
         TYPE(const_mvec_ptr) vB, 
         _MT_ tol,int *num_iters, int max_blocks,

@@ -37,7 +37,7 @@
 //! In the complex case is_cmplx is not referenced.
 //! iflag: return code of the solver (0 on success, negative on error, positive on warning)
 //!
-void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
+void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) B_op,
   TYPE(mvec_ptr) X, TYPE(mvec_ptr) Q, TYPE(sdMat_ptr) R,
   _ST_* evals, _MT_* resid, int* is_cmplx,
         phist_jadaOpts_t options, int* num_eigs, int* num_iters,

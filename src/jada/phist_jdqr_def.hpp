@@ -33,14 +33,14 @@
 //!
 
 // First a forward decleration of a helper function to compute the residual
-void SUBR(computeResidual)(TYPE(const_op_ptr) B_op, TYPE(mvec_ptr) r_ptr,
+void SUBR(computeResidual)(TYPE(const_linearOp_ptr) B_op, TYPE(mvec_ptr) r_ptr,
         TYPE(mvec_ptr) Au_ptr, TYPE(mvec_ptr) u_ptr, TYPE(mvec_ptr) rtil_ptr,
         TYPE(mvec_ptr) Qv, TYPE(mvec_ptr) tmp, TYPE(sdMat_ptr) Theta,
         TYPE(sdMat_ptr) atil, TYPE(sdMat_ptr) *atilv, _MT_ *resid,
         int nv, int nconv, int* iflag);
 
 // Now the actual main function
-void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
+void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) B_op,
                 TYPE(mvec_ptr) X, TYPE(mvec_ptr) Qout, TYPE(sdMat_ptr) Rout,
                 _ST_* evals, _MT_* resid, int* is_cmplx,
         phist_jadaOpts_t opts, int* num_eigs, int* num_iters,
@@ -810,7 +810,7 @@ void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
   return;
   }
 
-void SUBR(computeResidual)(TYPE(const_op_ptr) B_op, TYPE(mvec_ptr) r_ptr,
+void SUBR(computeResidual)(TYPE(const_linearOp_ptr) B_op, TYPE(mvec_ptr) r_ptr,
         TYPE(mvec_ptr) Au_ptr, TYPE(mvec_ptr) u_ptr, TYPE(mvec_ptr) rtil_ptr,
         TYPE(mvec_ptr) Qv, TYPE(mvec_ptr) tmp, TYPE(sdMat_ptr) Theta,
         TYPE(sdMat_ptr) atil, TYPE(sdMat_ptr) *atilv, _MT_ *resid,

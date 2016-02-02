@@ -19,7 +19,7 @@ void SUBR(mvec_QB)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* nrmsV, int *iflag)
 //! orthogonalize an mvec against an already orthogonal one.
 void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      TYPE(mvec_ptr) W,
-                     TYPE(const_op_ptr) B,
+                     TYPE(const_linearOp_ptr) B,
                      TYPE(sdMat_ptr) R1,
                      TYPE(sdMat_ptr) R2,
                      int numSweeps,

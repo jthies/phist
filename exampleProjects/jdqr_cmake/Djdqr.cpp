@@ -195,8 +195,8 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(mvec_view_block)(X,&opts.v0,0,0,&iflag),iflag);
   
   // create operator wrapper for computing Y=A*X using a CRS matrix
-  A_op = (op_ptr_t)malloc(sizeof(TYPE(op)));
-  PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(A_op,A,&iflag),iflag);
+  A_op = (linearOp_ptr_t)malloc(sizeof(TYPE(linearOp)));
+  PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(A_op,A,&iflag),iflag);
 
   
   

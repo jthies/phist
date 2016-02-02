@@ -188,7 +188,7 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,problem,&iflag), iflag);
   
   // create an operator from A
-  op_ptr_t opA = new TYPE(op);
+  op_ptr_t opA = new TYPE(linearOp);
   PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(opA,A,&iflag),iflag);
 
   // we need the domain map of the matrix

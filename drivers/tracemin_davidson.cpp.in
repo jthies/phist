@@ -131,14 +131,14 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(SUBR(mvec_create)(&R,map,how_many,&iflag),iflag);
   
   /* create operator wrapper for computing Y=A*X using a CRS matrix */
-  A_op = new TYPE(op);
+  A_op = new TYPE(linearOp);
   B_op = NULL;
   P_op = NULL;
   PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(A_op,A,&iflag),iflag);
   
   if (B!=NULL)
   {
-    B_op = new TYPE(op);
+    B_op = new TYPE(linearOp);
     PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(B_op,B,&iflag),iflag);
   }
  

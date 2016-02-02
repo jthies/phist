@@ -64,7 +64,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         SUBR(sdMat_delete)(Rtmp,&iflag_);
         ASSERT_EQ(0,iflag_);
 
-        opA_ = new TYPE(op);
+        opA_ = new TYPE(linearOp);
         SUBR(op_wrap_sparseMat)(opA_, A_, &iflag_);
         ASSERT_EQ(0,iflag_);
       }
@@ -98,7 +98,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       SparseMatTest::TearDownTestCase();
     }
 
-    TYPE(op_ptr) opA_ = NULL;
+    TYPE(linearOp_ptr) opA_ = NULL;
     TYPE(mvec_ptr) q_ = NULL;
     _ST_* sigma_ = NULL;
 };
@@ -108,7 +108,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      TYPE(op) jdOp;
+      TYPE(linearOp) jdOp;
       SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -124,7 +124,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     {
       // we need fitting maps??
 
-      TYPE(op) jdOp;
+      TYPE(linearOp) jdOp;
       SUBR(jadaOp_create)(opA_,opI_,q_,q_,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -140,7 +140,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      TYPE(op) jdOp;
+      TYPE(linearOp) jdOp;
       SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -178,7 +178,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      TYPE(op) jdOp;
+      TYPE(linearOp) jdOp;
       SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -214,7 +214,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      TYPE(op) jdOp;
+      TYPE(linearOp) jdOp;
       SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -255,7 +255,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      TYPE(op) jdOp;
+      TYPE(linearOp) jdOp;
       SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -302,7 +302,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      TYPE(op) jdOp;
+      TYPE(linearOp) jdOp;
       SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 

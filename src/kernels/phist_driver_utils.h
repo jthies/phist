@@ -28,8 +28,8 @@ typedef TYPE(sparseMat_ptr) sparseMat_ptr_t;
 typedef TYPE(const_sparseMat_ptr) const_sparseMat_ptr_t;
 
 #ifdef PHIST_OPERATOR_H
-typedef TYPE(op_ptr) op_ptr_t;
-typedef TYPE(const_op_ptr) const_op_ptr_t;
+typedef TYPE(linearOp_ptr) op_ptr_t;
+typedef TYPE(const_linearOp_ptr) const_op_ptr_t;
 #endif
 
 #ifdef __cplusplus

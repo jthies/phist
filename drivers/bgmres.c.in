@@ -122,7 +122,7 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(ONE,A,XEX,ZERO,B,&iflag),iflag);
   
   /* create operator wrapper for computing Y=A*X using a CRS matrix */
-  A_op = (op_ptr_t)malloc(sizeof(TYPE(op)));
+  A_op = (op_ptr_t)malloc(sizeof(TYPE(linearOp)));
   PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(A_op,A,&iflag),iflag);
   
   num_iters=max_iters;

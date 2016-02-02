@@ -112,7 +112,7 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(SUBR(mvec_create)(&R,map,how_many,&iflag),iflag);
   
   /* create operator wrapper for computing Y=A*X using a CRS matrix */
-  A_op = new TYPE(op);
+  A_op = new TYPE(linearOp);
   B_op = NULL;
   Ainv_op = NULL;
   PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(A_op,A,&iflag),iflag);
@@ -123,7 +123,7 @@ PHIST_MAIN_TASK_BEGIN
     shift_invert=true;
     ST shift=-target_value;
     which=LM;
-    Ainv_op = new TYPE(op);
+    Ainv_op = new TYPE(linearOp);
     MT linTol=std::max(tol/10,2*mt::eps());
     int linIter=1000;
     linSolv_t method=CARP_CG;

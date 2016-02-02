@@ -37,7 +37,7 @@
 
 void SUBR(trili_orthog)(TYPE(const_mvec_ptr) V,
                      TYPE(mvec_ptr) W,
-                     TYPE(const_op_ptr) B,
+                     TYPE(const_linearOp_ptr) B,
                      TYPE(sdMat_ptr) R1,
                      TYPE(sdMat_ptr) R2,
                      int numSweeps,
@@ -173,7 +173,7 @@ ortho = tsqr;
 
 #elif defined(TRY_IMGS)
 
-typedef Belos::IMGSOrthoManager<ST,MV,TYPE(op)> orthoMan_t;
+typedef Belos::IMGSOrthoManager<ST,MV,TYPE(linearOp)> orthoMan_t;
 Teuchos::RCP<orthoMan_t> imgs = Teuchos::rcp(new orthoMan_t("hist/orthog/imgs"));
 if (B != NULL) {
   imgs = Teuchos::rcp(new orthoMan_t("hist/orthog/imgs", Teuchos::rcp(B, false)));
