@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.10)
 
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
-list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
+#list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
 
 # Define some custom variables
 project(phist C CXX Fortran)
@@ -418,14 +418,31 @@ endif()
 set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma)")
 message(STATUS "kernel lib " ${PHIST_KERNEL_LIB} " ...")
 
-set(LOAD_TRILI_PKG,"")
+set(REQUIRE_TRILI_PKG,"")
+set(OPTIONAL_TRILI_PKG,"")
+
 if  (PHIST_KERNEL_LIB STREQUAL "epetra")
-  list(APPEND LOAD_TRILI_PKG "EpetraExt")
+  list(APPEND REQUIRE_TRILI_PKG "EpetraExt")
   set(PHIST_KERNEL_LIB_EPETRA 1)
 
+  list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
+  list(APPEND OPTIONAL_TRILI_PKG "Belos")
+
+  list(APPEND OPTIONAL_TRILI_PKG "Ifpack")
+  list(APPEND OPTIONAL_TRILI_PKG "Amesos")
+  list(APPEND OPTIONAL_TRILI_PKG "ML")
+  list(APPEND OPTIONAL_TRILI_PKG "MueLU")
+
 elseif  (PHIST_KERNEL_LIB STREQUAL "tpetra")
-  list(APPEND LOAD_TRILI_PKG "Tpetra")
+  list(APPEND REQUIRE_TRILI_PKG "Tpetra")
   set(PHIST_KERNEL_LIB_TPETRA 1)
+
+  list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
+  list(APPEND OPTIONAL_TRILI_PKG "Belos")
+
+  list(APPEND OPTIONAL_TRILI_PKG "Ifpack2")
+  list(APPEND OPTIONAL_TRILI_PKG "Amesos2")
+  list(APPEND OPTIONAL_TRILI_PKG "MueLU")
 
 elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   # we already link with ghost because of the queuing system  
@@ -436,6 +453,9 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
 
   set(PHIST_SELL_C -1 CACHE INTEGER "chunk size C for the SELL-C-sigma format (-1: automatic choice)")
   set(PHIST_SELL_SIGMA -1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format (-1: automatic choice)")
+
+  list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
+  list(APPEND OPTIONAL_TRILI_PKG "Belos")
 
 elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
   set(PHIST_KERNEL_LIB_BUILTIN 1)
@@ -467,56 +487,7 @@ else ()
 endif ()
 set(PHIST_BENCH_LARGE_N 64000000 CACHE STRING "Dimension for benchmarking tests (e.g. large enough to make micro benchmarks memory-bound)")
 
-# test for Belos (Trilinos library of iterative solvers).
-# We recommend linking with Belos because we use its Tsqr
-# interface. If Belos is not found, important functionality
-# may not work, in particular the mvec_QR function is currently
-# implemented via Belos by all kernel libs except "builtin"
-
-find_package(Teuchos)
-
-if (${Teuchos_FOUND})
-  list(APPEND LOAD_TRILI_PKG "Teuchos")
-  set(PHIST_HAVE_TEUCHOS 1)
-  option(PHIST_USE_TEUCHOS_TIMEMONITOR "Use TimeMonitor from Trilinos package Teuchos instead of builtin one." OFF)
-  list(APPEND library_list ${Teuchos_LIBRARIES})
-  message(STATUS "Found Teuchos")
-else()
-  message(STATUS "Teuchos not found.")
-endif()
 option(PHIST_TIMINGS_FULL_TRACE "Try to print full call trace in the TimeMonitor/performance measurements (Warning: may generate *a lot* of output)." Off)
-
-find_package(Kokkos)
-
-if (${Kokkos_FOUND})
-  list(APPEND LOAD_TRILI_PKG "Kokkos")
-  set(PHIST_HAVE_KOKKOS 1)
-  message(STATUS "Found Kokkos")
-else()
-  message(STATUS "Kokkos not found.")
-endif()
-
-find_package(Belos)
-
-if (${Belos_FOUND})
-  list(APPEND LOAD_TRILI_PKG "Belos")
-  set(PHIST_HAVE_BELOS 1)
-  message(STATUS "Found Belos")
-else()
-  message(STATUS "Belos not found.")
-endif()
-
-# if Anasazi is found we provide a simple interface to their
-# block algorithms (e.g. Block Lanczos/Arnoldi)
-find_package(Anasazi)
-
-if (${Anasazi_FOUND})
-  list(APPEND LOAD_TRILI_PKG "Anasazi")
-  set(PHIST_HAVE_ANASAZI 1)
-  message(STATUS "Found Anasazi")
-else()
-  message(STATUS "Anasazi not found.")
-endif()
 
 # even without the essex-physics libs we include certain matfuncs for the
 # test cases SpinSZ and Graphene for testing purposes.
@@ -670,6 +641,14 @@ set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejada.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaCorrectionSolver.cpp)
+set(PHIST_PRECON_TPL_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_Ifpack.cpp
+                            ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_Ifpack2.cpp
+                            ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_Amesos.cpp
+                            ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_Amesos2.cpp
+                            ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_ML.cpp
+                            ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_MueLU.cpp)
+set(PHIST_PRECON_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/phist_ilu.cpp)
+                            
 set (PHIST_SUPPORT_SOURCE  ${PROJECT_SOURCE_DIR}/src/support/phist_feastCorrectionSolver.cpp
                            ${PROJECT_SOURCE_DIR}/src/support/phist_iter_op.cpp)
 
@@ -682,6 +661,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src/tools)
 include_directories(${PROJECT_SOURCE_DIR}/src/core)
 include_directories(${PROJECT_SOURCE_DIR}/src/krylov)
 include_directories(${PROJECT_SOURCE_DIR}/src/jada)
+include_directories(${PROJECT_SOURCE_DIR}/src/precon)
 include_directories(${PROJECT_SOURCE_DIR}/src/support)
 include_directories(${PROJECT_SOURCE_DIR}/drivers)
 
@@ -690,6 +670,8 @@ add_library(phist_core ${PHIST_CORE_SOURCE})
 add_library(phist_kernels_${PHIST_KERNEL_LIB} ${PHIST_KERNEL_SOURCE})
 add_library(phist_solvers ${PHIST_KRYLOV_SOURCE} 
                           ${PHIST_JADA_SOURCE})
+add_library(phist_precon ${PHIST_PRECON_TPL_SOURCE} 
+                         ${PHIST_PRECON_SOURCE})
 add_library(phist_support ${PHIST_SUPPORT_SOURCE})
 
 LIST(APPEND library_list phist_tools)
@@ -796,6 +778,49 @@ else()
   message(STATUS "continuing without Likwid, you can set the environment variable LIKWID_HOME to help CMake find it")
 endif()
 
+###########################################################################################
+# check for required Trilinos libraries, note that you have to add the Trilinos lib/cmake #
+# dir to your CMAKE_PREFIX_PATH so that CMake finds them automatically.                   #
+###########################################################################################
+
+foreach(PKG ${REQUIRE_TRILI_PKG})
+  string(TOUPPER ${PKG} PKG_CAPS)
+  find_package(${PKG} REQUIRED)
+  if (${${PKG}_FOUND})
+    include_directories(${${PKG}_INCLUDE_DIRS})
+    include_directories(${${PKG}_TPL_INCLUDE_DIRS})
+    link_directories(${${PKG}_LIBRARY_DIRS})
+    link_directories(${${PKG}_TPL_LIBRARY_DIRS})
+    target_link_libraries(phist_tools ${${PKG}_LIBRARIES})
+    target_link_libraries(phist_tools ${${PKG}_TPL_LIBRARIES})
+    set(PHIST_HAVE_${PKG_CAPS} "Enable required Trilinos package ${PKG}" ON)
+  else()
+    message(FATAL_ERROR ${PKG} " was not found")
+  endif()
+
+endforeach()
+
+#########################################################################################
+# check for and enable optional libs from Trilinos (preconditioners, Belos/Anasazi)     #
+#########################################################################################
+
+foreach(PKG ${OPTIONAL_TRILI_PKG})
+  string(TOUPPER ${PKG} PKG_CAPS)
+  find_package(${PKG} QUIET)
+  if (${${PKG}_FOUND})
+    include_directories(${${PKG}_INCLUDE_DIRS})
+    include_directories(${${PKG}_TPL_INCLUDE_DIRS})
+    link_directories(${${PKG}_LIBRARY_DIRS})
+    link_directories(${${PKG}_TPL_LIBRARY_DIRS})
+    target_link_libraries(phist_tools ${${PKG}_LIBRARIES})
+    target_link_libraries(phist_tools ${${PKG}_TPL_LIBRARIES})
+    set(PHIST_HAVE_${PKG_CAPS} "Enable optional Trilinos package ${PKG}" ON)
+  endif()
+
+endforeach()
+
+
+
 option(PHIST_TIMEMONITOR "Gather detailed function-level timings" On)
 if( PHIST_TIMEMONITOR )
   message(STATUS "activated TimeMonitor timing monitoring")
@@ -823,6 +848,7 @@ endforeach()
 
 configure_file ("${PROJECT_SOURCE_DIR}/phist.pc.in" "${PROJECT_BINARY_DIR}/phist.pc" @ONLY)
 configure_file ("${PROJECT_SOURCE_DIR}/src/phist_config.h.in" "${PROJECT_BINARY_DIR}/phist_config.h")
+configure_file ("${PROJECT_SOURCE_DIR}/src/precon/phist_precon_config.h.in" "${PROJECT_BINARY_DIR}/phist_precon_config.h")
 configure_file ("${PROJECT_SOURCE_DIR}/doc/phist.doxyfile.in" "${PROJECT_BINARY_DIR}/phist.doxyfile")
 include(CMakePackageConfigHelpers)
 set(INCLUDE_INSTALL_DIR include)
@@ -831,20 +857,6 @@ configure_package_config_file("${PROJECT_SOURCE_DIR}/phistConfig.cmake.in" "${PR
   PATH_VARS INCLUDE_INSTALL_DIR)# LIBRARY_INSTALL_DIR)
 write_basic_package_version_file("${PROJECT_BINARY_DIR}/phistConfigVersion.cmake" VERSION ${PHIST_VERSION} COMPATIBILITY SameMajorVersion)
 
-foreach(PKG ${LOAD_TRILI_PKG})
-  find_package(${PKG} REQUIRED)
-  if (${${PKG}_FOUND})
-    include_directories(${${PKG}_INCLUDE_DIRS})
-    include_directories(${${PKG}_TPL_INCLUDE_DIRS})
-    link_directories(${${PKG}_LIBRARY_DIRS})
-    link_directories(${${PKG}_TPL_LIBRARY_DIRS})
-    target_link_libraries(phist_tools ${${PKG}_LIBRARIES})
-    target_link_libraries(phist_tools ${${PKG}_TPL_LIBRARIES})
-  else()
-    message(FATAL_ERROR ${PKG} " was not found")
-  endif()
-
-endforeach()
 
 if(NOT GHOST_FOUND) #use MPI libs as found by GHOST in this case. otherwise, a clash between thread-safe and normal MPI will occur
   target_link_libraries(phist_tools ${MPI_CXX_LIBRARIES} ${MPI_C_LIBRARIES} ${MPI_Fortran_LIBRARIES})
@@ -1182,3 +1194,4 @@ include(CPack)
 add_custom_target(libs DEPENDS ${library_list})
 add_custom_target(drivers DEPENDS ${driver_list})
 add_custom_target(tests DEPENDS ${test_list})
+

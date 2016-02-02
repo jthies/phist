@@ -1,0 +1,25 @@
+#ifndef PHIST_PRECON_CONFIG_H
+#define PHIST_PRECON_CONFIG_H
+
+/* support for various preconditioners in Ifpack */
+#cmakedefine PHIST_HAVE_IFPACK
+
+/* support for AMG library ML */
+#cmakedefine PHIST_HAVE_ML
+
+/* support for direct solvers via Amesos */
+#cmakedefine PHIST_HAVE_AMESOS
+
+/* support for various preconditioners in Ifpack2 */
+#cmakedefine PHIST_HAVE_IFPACK2
+
+/* support for Epetra AMG library MueLU */
+#cmakedefine PHIST_HAVE_MUELU
+
+/* support for direct solvers via Amesos2 */
+#cmakedefine PHIST_HAVE_AMESOS2
+
+/* support preconditioners from the ppOpenHPC framework */
+#cmakedefine PHIST_HAVE_PPOPENHPC
+
+#endif
