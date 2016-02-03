@@ -695,6 +695,9 @@ using ::phist::GhostMV;
 
 
 #ifdef HAVE_BELOS_TSQR
+#ifndef PHIST_HAVE_KOKKOS
+# error "If you use GHOST with Belos, and Belos wants to use TSQR, you should also enable Kokkos."
+#endif
     /// \typedef tsqr_adaptor_type
     /// \brief TsqrAdaptor specialization for ghost_densemat_t
     ///
