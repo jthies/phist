@@ -54,8 +54,8 @@ int main(int argc, char** argv)
 
   comm_ptr_t comm;
   sparseMat_ptr_t A;
-  op_ptr_t A_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
-  op_ptr_t B_op=NULL; // no mass matrix up to now
+  linearOp_ptr_t A_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  linearOp_ptr_t B_op=NULL; // no mass matrix up to now
   
   const_map_ptr_t map; // map (element distribution) of vectors according to 
                        // the distribution of matrix rows
