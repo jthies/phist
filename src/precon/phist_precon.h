@@ -15,6 +15,23 @@
 
 #endif //DOXYGEN
 
+typedef enum {
+  NONE,
+#ifdef PHIST_HAVE_IFPACK
+  IFPACK,
+#endif
+#ifdef PHIST_HAVE_ML
+  ML,
+#endif
+#ifdef PHIST_HAVE_IFPACK2
+  IFPACK2,
+#endif
+#ifdef PHIST_HAVE_MUELU
+  MUELU,
+#endif
+  INVALID_PRECON_TYPE
+} precon_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif

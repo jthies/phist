@@ -7,9 +7,6 @@
 /* support for AMG library ML */
 #cmakedefine PHIST_HAVE_ML
 
-/* support for direct solvers via Amesos */
-#cmakedefine PHIST_HAVE_AMESOS
-
 /* support for various preconditioners in Ifpack2 */
 #cmakedefine PHIST_HAVE_IFPACK2
 
