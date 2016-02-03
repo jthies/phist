@@ -246,7 +246,7 @@ using ::phist::GhostMV;
     //        view is to make it a 'scattered' view.
     if (constStride==false || stride!=1)
     {
-#ifdef GHOST_HAVE_LONGIDX_LOCAL
+#ifdef GHOST_IDX64_LOCAL
       // ghost expects long ints here, while we get ints. So we copy them over:
       std::vector<ghost_lidx_t> clone_index(index.size());
       for (int i=0;i<index.size();i++)

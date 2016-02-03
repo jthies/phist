@@ -26,7 +26,7 @@ extern "C" const char* phist_retcode2str(int code)
 }
 
 #ifdef PHIST_HAVE_GHOST
-extern "C" const char* phist_ghost_error2str(ghost_error_t code)
+extern "C" const char* phist_ghost_error2str(ghost_error code)
 {
       return ghost_error_string(code);
 }

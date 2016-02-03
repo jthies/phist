@@ -22,8 +22,8 @@ typedef int MPI_Comm;
 #include "ghost/types.h"
 #include "ghost/sparsemat.h"
 #else
-typedef lidx_t ghost_lidx_t;
-typedef gidx_t ghost_gidx_t;
+typedef lidx_t ghost_lidx;
+typedef gidx_t ghost_gidx;
 #endif
 
 #endif
@@ -121,11 +121,11 @@ void phist_kernels_common_finalize(int* iflag);
 #ifdef PHIST_HAVE_GHOST
 typedef ghost_sparsemat_fromRowFunc_t phist_sparseMat_rowFunc;
 #else
-typedef int (*phist_sparseMat_rowFunc)(ghost_gidx_t, ghost_lidx_t *,
-        ghost_gidx_t *, void *, void *);
+typedef int (*phist_sparseMat_rowFunc)(ghost_gidx, ghost_lidx *,
+        ghost_gidx *, void *, void *);
 #endif        
 
-typedef int (*phist_mvec_elemFunc)(ghost_gidx_t, ghost_lidx_t, void *, void *);
+typedef int (*phist_mvec_elemFunc)(ghost_gidx, ghost_lidx, void *, void *);
 
 //@}
 

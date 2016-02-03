@@ -35,9 +35,9 @@ namespace phist
 //! late for cloning the vtraits in mvec_create
 typedef struct ghost_map_t
   {
-  ghost_context_t* ctx;
-  ghost_densemat_traits_t vtraits_template;
-  ghost_permutation_t *permutation;
+  ghost_context* ctx;
+  ghost_densemat_traits vtraits_template;
+  ghost_permutation *permutation;
   } ghost_map_t;
 
 
@@ -58,7 +58,7 @@ typedef struct ghost_map_t
     void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm);
 
     //! private helper function to create a vtraits object
-    ghost_densemat_traits_t phist_default_vtraits();
+    ghost_densemat_traits phist_default_vtraits();
     
     //! A Garbage collection for maps as they need to be recreated dynamically with GHOST
     class MapGarbageCollector

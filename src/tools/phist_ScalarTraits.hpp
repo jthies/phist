@@ -44,8 +44,8 @@ class ScalarTraits< float >
   //! alternative typename for ST
   typedef float scalar_t;
 #ifdef PHIST_HAVE_GHOST
-  static const ghost_datatype_t ghost_dt = (ghost_datatype_t)((int)GHOST_DT_FLOAT|(int)GHOST_DT_REAL);
-  static const ghost_datatype_t c_ghost_dt = (ghost_datatype_t)((int)GHOST_DT_FLOAT|(int)GHOST_DT_COMPLEX);
+  static const ghost_datatype ghost_dt = (ghost_datatype)((int)GHOST_DT_FLOAT|(int)GHOST_DT_REAL);
+  static const ghost_datatype c_ghost_dt = (ghost_datatype)((int)GHOST_DT_FLOAT|(int)GHOST_DT_COMPLEX);
 #endif  
   typedef SlinearOp_t linearOp_t;
   typedef Smvec_t mvec_t;
@@ -187,8 +187,8 @@ class ScalarTraits< double >
   //! alternative typename for ST
   typedef double scalar_t;
 #ifdef PHIST_HAVE_GHOST
-  static const ghost_datatype_t ghost_dt = (ghost_datatype_t)((int)GHOST_DT_DOUBLE|(int)GHOST_DT_REAL);
-  static const ghost_datatype_t c_ghost_dt = (ghost_datatype_t)((int)GHOST_DT_DOUBLE|(int)GHOST_DT_COMPLEX);
+  static const ghost_datatype ghost_dt = (ghost_datatype)((int)GHOST_DT_DOUBLE|(int)GHOST_DT_REAL);
+  static const ghost_datatype c_ghost_dt = (ghost_datatype)((int)GHOST_DT_DOUBLE|(int)GHOST_DT_COMPLEX);
 #endif  
   typedef DlinearOp_t linearOp_t; 
   typedef Dmvec_t mvec_t; 
@@ -336,7 +336,7 @@ class ScalarTraits< std::complex<MT> >
   //! alternative typename for ST
   typedef typename std::complex<MT> scalar_t;
 #ifdef PHIST_HAVE_GHOST
-  static const ghost_datatype_t ghost_dt = ScalarTraits<MT>::c_ghost_dt;
+  static const ghost_datatype ghost_dt = ScalarTraits<MT>::c_ghost_dt;
 #endif
   typedef typename ScalarTraits<MT>::c_linearOp_t linearOp_t; 
   typedef typename ScalarTraits<MT>::c_mvec_t mvec_t; 

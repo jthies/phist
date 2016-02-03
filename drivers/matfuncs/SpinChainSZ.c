@@ -1,6 +1,6 @@
 #include "matfuncs.h"
 
-#if defined(GHOST_HAVE_LONGIDX)||defined(GHOST_HAVE_LONGIDX_GLOBAL)
+#if defined(GHOST_HAVE_LONGIDX)||defined(GHOST_IDX64_GLOBAL)
   #define idx_t int64_t
 #else
   #define idx_t int32_t

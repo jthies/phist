@@ -110,8 +110,8 @@ namespace ghost {
     // note: ghost in principle allows more than 2M rows/core, but TSQR doesn't.
     // This should not be a problem, however, as we only deal with dense matrices
     // here and no indices typically appear in the interface.
-#ifdef GHOST_HAVE_LONGIDX_LOCAL
-# warning "the TSQR interface may be buggy with 64-bit local indices, you should recompile ghost without GHOST_HAVE_LONGIDX_LOCAL"    
+#ifdef GHOST_IDX64_LOCAL
+# warning "the TSQR interface may be buggy with 64-bit local indices, you should recompile ghost without GHOST_IDX64_LOCAL"    
 #endif
     typedef lidx_t ordinal_type;
     // integer type for Teuchos::SerialDenseMatrix objects

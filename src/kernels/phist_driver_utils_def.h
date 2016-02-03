@@ -243,7 +243,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     }
     PHIST_SOUT(outlev,"problem type: Graphene %d x %d\n",L1,L2);
     double gamma=0.2;
-    ghost_lidx_t WL[2];
+    ghost_lidx WL[2];
     WL[0] = L1;
     WL[1] = L2;
   
@@ -263,7 +263,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   {
     PHIST_SOUT(outlev,"problem type: spinSZ[%d]\n",L);
 
-    ghost_lidx_t conf_spinZ[3] = {L,L/2,0};
+    ghost_lidx conf_spinZ[3] = {L,L/2,0};
     SpinChainSZ( -2, conf_spinZ, &DIM, NULL, NULL);
 
     matfuncs_info_t info;

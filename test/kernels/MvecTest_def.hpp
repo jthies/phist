@@ -13,9 +13,9 @@
 
 
 // some function to test mvec_put_func
-int PREFIX(mvecInitializer)(ghost_gidx_t i, ghost_lidx_t j, void* vval,void* last_arg);
+int PREFIX(mvecInitializer)(ghost_gidx i, ghost_lidx j, void* vval,void* last_arg);
 #ifdef FIRST_INSTANCE
-int PREFIX(mvecInitializer)(ghost_gidx_t i, ghost_lidx_t j, void* vval,void* last_arg)
+int PREFIX(mvecInitializer)(ghost_gidx i, ghost_lidx j, void* vval,void* last_arg)
 {
 #include "phist_std_typedefs.hpp"
   _ST_* val = (_ST_*)vval;

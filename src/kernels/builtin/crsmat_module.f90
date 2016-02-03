@@ -31,12 +31,12 @@ module crsmat_module
 #define G_LIDX_T C_INT32_T
 #define G_GIDX_T C_INT64_T
 #else
-#ifdef GHOST_HAVE_LONGIDX_LOCAL
+#ifdef GHOST_IDX64_LOCAL
 #define G_LIDX_T C_INT64_T
 #else
 #define G_LIDX_T C_INT32_T
 #endif
-#ifdef GHOST_HAVE_LONGIDX_GLOBAL
+#ifdef GHOST_IDX64_GLOBAL
 #define G_GIDX_T C_INT64_T
 #else
 #define G_GIDX_T C_INT32_T

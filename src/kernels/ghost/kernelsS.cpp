@@ -54,7 +54,7 @@
 #include <map>
 
 #if defined(PHIST_HAVE_BELOS)||defined(PHIST_HAVE_KOKKOS)
-# if defined(GHOST_HAVE_LONGIDX_LOCAL)
+# if defined(GHOST_IDX64_LOCAL)
 # warning "The interfaces between GHOST and Belos/TSQR cause problems unless you compile GHOST with LONGIDX_GLOBAL but *without* LONGIDX_LOCAL"
 # endif
 #endif
