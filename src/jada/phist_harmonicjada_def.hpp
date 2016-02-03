@@ -8,7 +8,7 @@
 //!
 //! see header file for further documentation of the parameters
 //!
-void SUBR(harmonicjada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
+void SUBR(harmonicjada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr) B_op,
                          phist_jadaOpts_t opts,
                          TYPE(mvec_ptr) Q__,       TYPE(sdMat_ptr) R_,
                          _CT_* ev,                 _MT_* resNorm,

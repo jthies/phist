@@ -48,7 +48,7 @@ void SUBR(subspacejada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr
 //! target until the minimum basis size is reached. The scheme computes V and W 
 //! such that V'V=W'W=I, and W is an orthogonal basis of A*V (A*V=W*H_A). Eigen-
 //! values are approximated using harmonic Ritz values
-void SUBR(harmonicjada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
+void SUBR(harmonicjada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr) B_op,
                          phist_jadaOpts_t opts,
                          TYPE(mvec_ptr) Q,         TYPE(sdMat_ptr) R,
                          _CT_* ev,                 _MT_* resNorm,
