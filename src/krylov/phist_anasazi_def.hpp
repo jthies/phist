@@ -1,3 +1,11 @@
+/* there is a problem with complex Anasazi+Tsqr,
+   which has to be fixed if we want to use TSQR here
+#ifdef IS_COMPLEX
+# ifdef PHIST_HAVE_ANASAZI
+#  undef PHIST_HAVE_ANASAZI
+# endif
+#endif
+*/
 #ifdef PHIST_KERNEL_LIB_BUILTIN
 // this should be done for wrapping the actual phist void-pointers
 // as typed multivectors, this macro will expand to S/D/C/Zrcp because
@@ -190,7 +198,6 @@ try {
   
   const Anasazi::Eigensolution<ST,AnasaziMV>& soln=eigenProblem->getSolution();
   *nEig=soln.numVecs;
-  std::cout << "nEig="<<*nEig<<std::endl;//TROET
 #ifndef IS_COMPLEX
   if (!symmetric)
   {

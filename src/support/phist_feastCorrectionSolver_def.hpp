@@ -17,8 +17,12 @@ void SUBR(private_rebuild_carp_cgStates)(TYPE(feastCorrectionSolver_ptr) me, int
             PHIST_CHK_IERR(SUBR(carp_cgState_delete)
               (me->carp_cgStates_[i],iflag),*iflag);
           }
+          TYPE(mvec_ptr) Vproj=NULL; // it is in principle possible to "precondition" the
+                                     // CARP-CG solver by adding the near null space as a
+                                     // border to the matrix (augmenting the matrix), but
+                                     // so far we don't do that in BEAST.
           PHIST_CHK_IERR(SUBR(carp_cgState_create)
-            (&me->carp_cgStates_[i],me->A_,bs,sig_r,sig_i,
+            (&me->carp_cgStates_[i],me->A_,Vproj,bs,sig_r,sig_i,
             iflag),*iflag);
         }
 }

@@ -5,6 +5,8 @@
 //@{
 
 
+//! Subspace Jacobi-Davidson for extreme eigenvalues
+
 //! Tries to compute a partial schur form $(Q,R)$ of dimension opts.nEigs
 //! of the stencil $A*x-\lambda*B*x$ with a general linear operator $A$ and a
 //! hermitian positive definite (hpd.) linear operator $B$ using a
@@ -37,6 +39,23 @@ void SUBR(subspacejada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr
                          _CT_* ev,                 _MT_* resNorm,
                          int *nConv,                int *nIter,
                         int* iflag);
+
+//! Subspace Jacobi-Davidson for interior eigenvalues
+
+//! This algorithm is very similar to subspacejada, the main differences are    
+//! that eigenvalues near a specified target inside the spectrum are sought.    
+//! Instead of starting with some Arnoldi steps, we keep the shift fixed to the 
+//! target until the minimum basis size is reached. The scheme computes V and W 
+//! such that V'V=W'W=I, and W is an orthogonal basis of A*V (A*V=W*H_A). Eigen-
+//! values are approximated using harmonic Ritz values
+void SUBR(harmonicjada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
+                         phist_jadaOpts_t opts,
+                         TYPE(mvec_ptr) Q,         TYPE(sdMat_ptr) R,
+                         _CT_* ev,                 _MT_* resNorm,
+                         int *nConv,                int *nIter,
+                        int* iflag);
+
+
 
 //@}
 
