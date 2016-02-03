@@ -25,7 +25,9 @@
 void SUBR(print_usage)(const char* progname)
 {
     int iflag;
-    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A> [<hermitian>] [<invariant subspace dim>] [<which>] [<tol>] [<max iters> "
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A> <jadaOpts file>\n",progname);
+    
+    PHIST_SOUT(PHIST_ERROR,"Alternative (deprecated) Usage: %s <matrix A> [<hermitian>] [<invariant subspace dim>] [<which>] [<tol>] [<max iters> "
     "<JD block size> <min basis> <max basis> <inner block size> <inner iters> <initial shift> <initial shift iters> "
     "<inner solver robust> <inner solver abort when first converged>]\n"
     "\n"
@@ -46,8 +48,8 @@ void SUBR(print_usage)(const char* progname)
     "      <initial shift> fix shift for                                                                \n"
     "      <initial shift iters> iterations rather than running an Arnoldi process.                     \n"
     "      <inner solver robust> 0 or 1, 1 is recommended for 'hard' problems, e.g. nonsymmetric ones   \n"
-    "      <inner solver abort when first converged> 0/1, 1 is typically a good choice                  \n"
-    argv[0], mt::eps(), );
+    "      <inner solver abort when first converged> 0/1, 1 is typically a good choice                  \n",
+    progname, mt::eps() );
     // print usage message for creating/reading a matrix
     SUBR(create_matrix)(NULL, NULL, "usage",&iflag);
 }
@@ -69,24 +71,38 @@ int main(int argc, char** argv)
   }
   const char* problem=argv[1];
 
+  // fill the jadaOpts struct to pass settings to the solver
+  phist_jadaOpts_t opts;
+
+if (argc==3 && argv[2][0]!='0'&&argv[2][0]!='1')
+{
+  const char* parameter_file=argv[2];
+  PHIST_SOUT(PHIST_VERBOSE,"get options from file '%s'\n",parameter_file);
+  PHIST_ICHK_IERR(phist_jadaOpts_fromFile(&opts,parameter_file,&iflag),iflag);
+}
+else
+{
+
+  PHIST_SOUT(PHIST_VERBOSE,"get options from command line (if any)'\n");
+  phist_jadaOpts_setDefaults(&opts);
   // parse command line
   int p=2;
   
   // symmetry of A
   bool symmetric=false;
-  GET_ARG(symmetric,p++);
+  GET_ARG(symmetric,p++,true);
+  opts.symmetry=symmetric?HERMITIAN:GENERAL;
               
   // number of eigenvalues to compute
-  int nEig = 8;
-  GET_ARG(nEig,p++,nEig>0);
+  GET_ARG(opts.numEigs,p++,opts.numEigs>0);
 
   // which eigenvalues to compute
-  eigSort_t which=LM;
-  GET_ARG(which,p++,which!=INVALID_EIGSORT_T&&which!=NONE);
+  GET_ARG(opts.which,p++,opts.which!=INVALID_EIGSORT_T&&opts.which!=NONE);
 
   _ST_ target=st::zero();
-  if (which==TARGET)
+  if (opts.which==TARGET)
   {
+    opts.which=SM; // use target=0 and harmonic Ritz extraction
     GET_ARG(target,p++,true);
     if (target!=st::zero())
     {
@@ -99,49 +115,49 @@ int main(int argc, char** argv)
   }
 
   // desired accuracy: residuum tolerance
-  _MT_ tol = mt::eps()*10000;
-  GET_ARG(tol,p++,tol>mt::eps());
+  GET_ARG(opts.convTol,p++,opts.convTol>mt::eps());
 
   // maximum number of iterations
-  int nIter = 250;
-  GET_ARG(maxIter,p++,maxIter>0);
+  GET_ARG(opts.maxIters,p++,opts.maxIters>0);
 
   // block size
-  int blockDim = 4;
-  GET_ARG(blockDim,p++,blockDim>0);
+  GET_ARG(opts.blockSize,p++,opts.blockSize>0);
 
   // min basis size
-  int minBase = std::min(20,nEig+blockDim);
-  GET_ARG(minBase,p++,minBase>=nEig+blockDim);
+  GET_ARG(opts.minBas,p++,opts.minBas>=opts.numEigs+opts.blockSize);
 
   // max basis size
-  int maxBase = std::max(80, minBase+5*blockDim);
-  GET_ARG(maxBase,p++,maxBase>minBase+blockDim&&((maxBase-minBase)%blockDim==0));
+  GET_ARG(opts.maxBas,p++,opts.maxBas>opts.minBas+opts.blockSize&&((opts.maxBas-opts.minBas)%opts.blockSize==0));
 
+  /// we don't allow setting this via the command line, but if you use a parameter file it's no problem
+  opts.innerSolvType=symmetric?MINRES:GMRES;
+  
   // inner linear solver block size
-  int innerBlockDim = std::min(2, blockDim);
-  GET_ARG(innerBlockDim,p++,innerBlockDim>0&&innerBlockDim<=blockDim);
+  GET_ARG(opts.innerSolvBlockSize,p++,opts.innerSolvBlockSize>0&&opts.innerSolvBlockSize<=opts.blockSize);
 
   // inner GMRES subspace dimension
-  int innerMaxBase = 25;
-  GET_ARG(innerMaxBase,p++,innerMaxBase>0);
+  GET_ARG(opts.innerSolvMaxBas,p++,opts.innerSolvMaxBas>0);
+  opts.innerSolvMaxIters=opts.innerSolvMaxBas;
 
   // initial shift
   _CT_ initialShift = ct::zero();
-  GET_ARG(initialShift,p++,);
+  GET_ARG(initialShift,p++,true);
+  opts.initialShift_r=ct::real(initialShift);
+  opts.initialShift_i=ct::imag(initialShift);
 
   // number of initial iterations with fixed initial shift
-  int initialShiftIters = 0;
-  GET_ARG(initialShiftIters,p++,initialShiftIters>=0);
+  GET_ARG(opts.initialShiftIters,p++,opts.initialShiftIters>=0);
 
   // in the inner GMRES: use a iterated modified gram schmidt (more accurate, but quite costly!)
-  bool innerIMGS = true;
-  GET_ARG(innerIMGS,p++,);
+  GET_ARG(opts.innerSolvRobust,p++,true);
 
   // in the inner GMRES: abort solving a block when first system converged (effectively disables pipelining, but only "blocking" may be faster for now)
-  bool innerGMRESabortAfterFirstConverged = false;
-  GET_ARG(innerGMRESabortAfterFirstConverged,p++,);
+  GET_ARG(opts.innerSolvStopAfterFirstConverged,p++,true);
 
+}
+
+  int blockDim=opts.blockSize;
+  int nEig=opts.numEigs;
 
   comm_ptr_t comm = NULL;
   // wrap MPI_COMM_WORLD
@@ -155,7 +171,7 @@ int main(int argc, char** argv)
   // favorite test cases spinSZ<N>, graphene<N> etc.
   sparseMat_ptr_t A = NULL;
   iflag=PHIST_SPARSEMAT_REPARTITION;
-  if( innerBlockDim == 1 )
+  if( opts.innerSolvBlockSize == 1 )
     iflag = iflag | PHIST_SPARSEMAT_OPT_SINGLESPMVM;
   else
     iflag = iflag | PHIST_SPARSEMAT_OPT_BLOCKSPMVM;
@@ -171,7 +187,7 @@ int main(int argc, char** argv)
 
   // setup necessary vectors and matrices for the schur form
   mvec_ptr_t Q = NULL;
-  PHIST_ICHK_IERR(SUBR(mvec_create)(&Q,map,nEig+blockDim-1,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&Q,map,nEig+opts.blockSize-1,&iflag),iflag);
   sdMat_ptr_t R = NULL;
   PHIST_ICHK_IERR(SUBR(sdMat_create)(&R,nEig+blockDim-1,nEig+blockDim-1,comm,&iflag),iflag);
   _MT_ *resNorm = new _MT_[nEig+blockDim-1];
@@ -205,35 +221,12 @@ int main(int argc, char** argv)
   mvec_ptr_t res;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&res,map,nEig+blockDim-1,&iflag),iflag);
 
-  // fill the jadaOpts struct to pass settings to the solver
-  phist_jadaOpts_t opts;
-  phist_jadaOpts_setDefaults(&opts);
-
-
-  // TODO: nicer way reading jada parameters from command line or
-  // input file
-  opts.which=which;
-  if (which==TARGET) opts.which=SM; // use target=0 and harmonic Ritz extraction
-  opts.convTol=tol;
-  opts.numEigs=nEig;
-  opts.maxIters=nIter;
-  opts.blockSize=blockDim;
-  opts.minBas=minBase;
-  opts.maxBas=maxBase;
-  opts.symmetry=symmetric?HERMITIAN:GENERAL;
-  opts.initialShiftIters=initialShiftIters;
-  opts.initialShift_r=ct::real(initialShift);
-  opts.initialShift_i=ct::imag(initialShift);
-
-  opts.innerSolvType=symmetric?MINRES:GMRES;
-  opts.innerSolvBlockSize=innerBlockDim;
-  opts.innerSolvMaxBas=innerMaxBase;
-  opts.innerSolvRobust=innerIMGS;
-  opts.innerSolvStopAfterFirstConverged=innerGMRESabortAfterFirstConverged; 
   opts.v0=v0;
+  
+  int nIter=opts.maxIters;
 
   //------------------------------- run block JaDa algorithm ----------------------- 
-  if (which==TARGET || which==SM)
+  if (opts.how==HARMONIC)
   {
     PHIST_SOUT(PHIST_INFO,"Jacobi-Davidson for interior eigenvalues\n");
     PHIST_ICHK_IERR(SUBR(harmonicjada)(opA, NULL, opts,
@@ -252,12 +245,13 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(mvec_norm2)(res,resNormExp,&iflag),iflag);
   int nConvergedEig = 0;
   for(int i = 0; i < nEig; i++)
-    if(resNorm[i] <= tol)
+    if(resNorm[i] <= opts.convTol)
       nConvergedEig++;
 
   PHIST_SOUT(PHIST_INFO, "subspacejada terminated after %d iterations and calculated %d eigenvalues.", nIter, nConvergedEig);
   PHIST_SOUT(PHIST_INFO, "\n eigenvalues:              ");
-  if( symmetric )
+
+  if( opts.symmetry==HERMITIAN )
   {
     for(int i = 0; i < nEig; i++)
       PHIST_SOUT(PHIST_INFO, "\t%8.4e", ct::real(ev[i]));

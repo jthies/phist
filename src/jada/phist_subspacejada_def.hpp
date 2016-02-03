@@ -304,6 +304,9 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 
   // set views
   int nConvEig = 0;
+#ifdef UPDATE_SUBSPACE_VIEWS
+#undef UPDATE_SUBSPACE_VIEWS
+#endif
 #define UPDATE_SUBSPACE_VIEWS \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                         nConvEig, nV-1,      iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                        nConvEig, nV-1,      iflag), *iflag); \
@@ -318,6 +321,9 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 
 
 
+#ifdef TESTING_CHECK_SUBSPACE_INVARIANTS
+#undef TESTING_CHECK_SUBSPACE_INVARIANTS
+#endif
 #ifdef TESTING
 #define TESTING_CHECK_SUBSPACE_INVARIANTS \
 { \

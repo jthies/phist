@@ -318,7 +318,7 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
   double* val;
   lidx_t lda;
   PHIST_CHK_IERR(*iflag=M->ExtractView(&val,&lda),*iflag);
-  PHIST_DEB("in view (%d:%d,%d:%d), lda=%d\n",imin,imax,jmin,jmax,lda);
+  //PHIST_DEB("in view (%d:%d,%d:%d), lda=%d\n",imin,imax,jmin,jmax,lda);
   Epetra_LocalMap localMap(imax-imin+1,M->Map().IndexBase(),M->Map().Comm());
   Mblock = new Epetra_MultiVector(View, localMap, val+imin+jmin*lda, lda, jmax-jmin+1);
   *vMblock = (TYPE(sdMat_ptr))Mblock;

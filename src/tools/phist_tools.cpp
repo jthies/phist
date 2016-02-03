@@ -99,6 +99,7 @@ std::istream& operator>>(std::istream& is, eigSort_t& s)
 {
   std::string tmp;
   is>>tmp;
+  PHIST_SOUT(PHIST_DEBUG,"try to parse eigSort_t '%s'\n",tmp.c_str());
   s=str2eigSort(tmp.c_str());
   return is;
 }
@@ -107,6 +108,7 @@ std::istream& operator>>(std::istream& is, eigExtr_t& s)
 {
   std::string tmp;
   is>>tmp;
+  PHIST_SOUT(PHIST_DEBUG,"try to pass eigExtr_t '%s'\n",tmp.c_str());
   s=str2eigExtr(tmp.c_str());
   return is;
 }
@@ -115,6 +117,7 @@ std::istream& operator>>(std::istream& is, linSolv_t& s)
 {
   std::string tmp;
   is>>tmp;
+  PHIST_SOUT(PHIST_DEBUG,"try to pass linSolv_t '%s'\n",tmp.c_str());
   s=str2linSolv(tmp.c_str());
   return is;
 }

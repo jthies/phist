@@ -643,7 +643,7 @@ set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.c
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp
                          )
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.c
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_schur_decomp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejada.cpp

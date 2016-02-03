@@ -332,7 +332,7 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
   // call lapack routine to reorder Schur form
   MT pl, pr;// not used
   MT dif[2];
-  bool wantq=true,wantz=true;
+  int wantq=1,wantz=1;
 
   int liwork=m+6;
   int iwork[liwork];
@@ -351,15 +351,16 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
       {
         int ijob=0; // do not retrieve info on conditioning or deflating subspaces, maybe we could use it somehow?
 #ifdef IS_COMPLEX
+        int clwork=1;
         PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
-                (blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)T,&ldT,alpha,beta,
-                (blas_cmplx_t*)VS,&ldVS,(blas_cmplx_t*)WS,ldWS,&m,
-                &pl,&pr,dif,rwork,lwork,iwork,liwork,iflag);
+                (blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)alpha,(blas_cmplx_t*)beta,
+                (blas_cmplx_t*)VS,&ldVS,(blas_cmplx_t*)WS,&ldWS,&m,
+                &pl,&pr,dif,(blas_cmplx_t*)rwork,&clwork,iwork,&liwork,iflag);
 #else
         PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
-                (blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)T,&ldT,alpha,alphai,beta,
-                (blas_cmplx_t*)VS,&ldVS,(blas_cmplx_t*)WS,ldWS,&m,
-                &pl,&pr,dif,rwork,lwork,iwork,liwork,iflag);
+                S,&ldS,T,&ldT,alpha,alphai,beta,
+                VS,&ldVS,WS,&ldWS,&m,
+                &pl,&pr,dif,rwork,&lwork,iwork,&liwork,iflag);
 
 
         for (int i=0;i<m;i++)
@@ -415,26 +416,29 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
         // SortEig misses an offset i because
         // we pass in ev+i
         int nsorted_before=nsorted;
+        int ijob=0; // this subroutine can do more, i.e. compute conditioning and
+                    // deflating subspaces
 #ifdef IS_COMPLEX
+        int clwork=1;
         PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
-                (blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)T,&ldT,alpha,beta,
-                (blas_cmplx_t*)VS,&ldVS,(blas_cmplx_t*)WS,ldWS,&m,
-                &pl,&pr,dif,rwork,lwork,iwork,liwork,iflag);
+                (blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)alpha,(blas_cmplx_t*)beta,
+                (blas_cmplx_t*)VS,&ldVS,(blas_cmplx_t*)WS,&ldWS,&m,
+                &pl,&pr,dif,(blas_cmplx_t*)rwork,&clwork,iwork,&liwork,iflag);
 #else
         PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
-                (blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)T,&ldT,alpha,alphai,beta,
-                (blas_cmplx_t*)VS,&ldVS,(blas_cmplx_t*)WS,ldWS,&m,
-                &pl,&pr,dif,rwork,lwork,iwork,liwork,iflag);
+                S,&ldS,T,&ldT,alpha,alphai,beta,
+                VS,&ldVS,WS,&ldWS,&m,
+                &pl,&pr,dif,rwork,&lwork,iwork,&liwork,iflag);
 
-        for (int i=0;i<m;i++)
+        for (int j=0;j<m;j++)
         {
-          if (beta[i]!=st::zero())
+          if (beta[j]!=st::zero())
           {
-            ev[i]=std::complex<MT>(alpha[i],alphai[i])/beta[i];
+            ev[j]=std::complex<MT>(alpha[j],alphai[j])/beta[j];
           }
           else
           {
-            ev[i]=st::zero();
+            ev[j]=st::zero();
           }
         }
 #endif
@@ -613,7 +617,7 @@ PHIST_TASK_END(iflag)
 
   // work array for lapack
 #ifndef IS_COMPLEX
-  int lwork=4*n+16;
+  int lwork=4*m+16;
   _ST_ work[lwork];
 #endif
 
@@ -687,20 +691,19 @@ PHIST_TASK_END(iflag)
         std::swap(permutation[pos],permutation[pos-1]);
         std::swap(ev[pos],ev[pos-1]);
 
-        const char* compq = "V";
-        const char* compz = "V";
+        int wantq=1, wantz=1;
         int ifst = pos;
         int ilst = pos+1;
         PHIST_SOUT(PHIST_DEBUG,"swapping %d %d in unconverged eigenvalues\n",ifst-1,ilst-1);
-#ifdef IS_COMPLEX TROET
-        PREFIX(TGEXC) (wantq, wantz, &m, 
+#ifdef IS_COMPLEX
+        PREFIX(TGEXC) (&wantq, &wantz, &m, 
                 (blas_cmplx_t*) S, &ldS, (blas_cmplx_t*) T, &ldT,
                 (blas_cmplx_t*) VS, &ldVS, (blas_cmplx_t*) WS, &ldWS, 
                 &ifst, &ilst, iflag);
 #else
-        PREFIX(TREXC) (wantq, wantz, &m, 
-                S, &ldS, T, &ldT, VS, ldVS, WS, ldWS,
-                &ifst, &ilst, work, lwork, iflag);
+        PREFIX(TGEXC) (&wantq, &wantz, &m, 
+                S, &ldS, T, &ldT, VS, &ldVS, WS, &ldWS,
+                &ifst, &ilst, work, &lwork, iflag);
 #endif
         if( *iflag != 0 )
           break;
