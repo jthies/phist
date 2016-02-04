@@ -157,16 +157,16 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _sdMat_ptr = getattr(_phist_kernels, _varT+'sdMat_ptr')
 
     # use types from core
-    _op_ptr = getattr(_phist_kernels, _varT+'op_ptr')
+    _linearOp_ptr = getattr(_phist_kernels, _varT+'linearOp_ptr')
 
     # from phist_subspacejada_decl.h
-    #void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
+    #void SUBR(subspacejada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr) B_op,
     #                         phist_jadaOpts_t opts,
     #                         TYPE(mvec_ptr) Q,         TYPE(sdMat_ptr) R,
     #                         _CT_* ev,                 _MT_* resNorm,
     #                         int *nConv,                int *nIter,
     #                         int* iflag);
-    _declare(None, _prefix+'subspacejada', (_op_ptr, _op_ptr,
+    _declare(None, _prefix+'subspacejada', (_linearOp_ptr, _linearOp_ptr,
                                             phist_jadaOpts_t,
                                             _mvec_ptr, _sdMat_ptr,
                                             _CT_p, _MT_p, 
@@ -174,12 +174,12 @@ for _varT in ('S', 'D', 'C', 'Z'):
                                             c_int_p), skip_if_missing=True)
 
     # from phist_jdqr_decl.h
-    #void SUBR(jdqr)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
+    #void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) B_op,
     #                TYPE(mvec_ptr) X, TYPE(mvec_ptr) Q, TYPE(sdMat_ptr) R,
     #                _ST_* evals, _MT_* resid, int* is_cmplx,
     #                phist_jadaOpts_t options, int* num_eigs, int* num_iters,
     #                int* iflag);
-    _declare(None, _prefix+'jdqr', (_op_ptr, _op_ptr,
+    _declare(None, _prefix+'jdqr', (_linearOp_ptr, _linearOp_ptr,
                                     _mvec_ptr, _mvec_ptr, _sdMat_ptr,
                                     _ST_p, _MT_p, c_int_p,
                                     phist_jadaOpts_t, c_int_p, c_int_p,
@@ -211,7 +211,7 @@ if __name__ == '__main__':
 
     # wrap A in operator
     opA = Dop()
-    opB = Dop_ptr()
+    opB = DlinearOp_ptr()
     PYST_CHK_IERR(phist_Dop_wrap_sparseMat, opA, A)
 
     # create two mvecs
