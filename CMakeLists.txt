@@ -655,7 +655,6 @@ set(PHIST_PRECON_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/phist_precon.cpp
                         )
 set(PHIST_PRECON_TPL_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_Ifpack.cpp
                             ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_Ifpack2.cpp
-                            ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_Amesos.cpp
                             ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_Amesos2.cpp
                             ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_ML.cpp
                             ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_MueLU.cpp
