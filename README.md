@@ -32,7 +32,7 @@ Ghysels et al).
 assumed and 'X' may be any additional accelerator, CPU or core level programming scheme. The 'X' depends on the 
 underlying kernel library used, for instance, [ ghost ](https://bitbucket.org/essex/ghost) uses OpenMP, SIMD intrinsics 
 and CUDA, whereas Epetra implements no additional parallelism beyond MPI 
-(see [ this wiki page ](https://bitbucket.org/essex/phist/wiki/phist_kernel_libs.wiki) for details on the supported kernel 
+(see [ this wiki page ](https://bitbucket.org/essex/phist/wiki/User_Guide/Kernel Libraries.wiki) for details on the supported kernel 
 libraries).
 
 More information can be found in the [ wiki ](https://bitbucket.org/essex/phist/wiki/Home.wiki)
