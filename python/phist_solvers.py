@@ -210,9 +210,9 @@ if __name__ == '__main__':
     PYST_CHK_IERR(phist_DsparseMat_get_domain_map, A, myMap)
 
     # wrap A in operator
-    opA = Dop()
+    opA = DlinearOp()
     opB = DlinearOp_ptr()
-    PYST_CHK_IERR(phist_Dop_wrap_sparseMat, opA, A)
+    PYST_CHK_IERR(phist_DlinearOp_wrap_sparseMat, opA, A)
 
     # create two mvecs
     v0 = Dmvec_ptr()
