@@ -53,7 +53,7 @@ class GhostMV
   {
   public:
   //!
-  GhostMV(ghost_densemat_t* v_in, bool ownMem)
+  GhostMV(ghost_densemat* v_in, bool ownMem)
     {
     v_=v_in;
     ownMem_=ownMem;
@@ -81,29 +81,29 @@ class GhostMV
 #endif
     if (ownMem_)
       {
-      this->get()->destroy(this->get());
+      ghost_densemat_destroy(this->get());
       this->v_=NULL;
       }
     }
 
   //!
-  ghost_densemat_t* get()
+  ghost_densemat* get()
     {
     if (v_!=NULL) 
       {
       return v_;
       }
-    throw "invalid wrapper object for ghost_densemat_t";
+    throw "invalid wrapper object for ghost_densemat";
     }
 
   //!
-  const ghost_densemat_t* get() const
+  const ghost_densemat* get() const
     {
     if (v_!=NULL) 
       {
       return v_;
       }
-    throw "invalid wrapper object for ghost_densemat_t";
+    throw "invalid wrapper object for ghost_densemat";
     }
   
 protected:
@@ -119,7 +119,7 @@ protected:
   
   
   //! the wrapped object
-  ghost_densemat_t* v_;
+  ghost_densemat* v_;
 
   //! are we allowed to delete the vector?
   bool ownMem_;

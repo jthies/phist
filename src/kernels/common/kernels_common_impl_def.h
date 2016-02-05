@@ -55,7 +55,7 @@ extern "C" void SUBR(sparseMat_times_mvec_add_mvec)(_ST_ alpha, TYPE(const_spars
 }
 #ifdef PHIST_BUILTIN_RNG
 
-int PREFIX(copyDataFunc)(ghost_gidx_t i, ghost_lidx_t j, void* vval,void* vdata)
+int PREFIX(copyDataFunc)(ghost_gidx i, ghost_lidx j, void* vval,void* vdata)
 {
   dwrap* wrap=(dwrap*)vdata;
   int lda = wrap->lda;

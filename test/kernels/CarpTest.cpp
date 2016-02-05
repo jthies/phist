@@ -17,28 +17,28 @@ using namespace ::testing;
 
 extern "C" {
 
-int phist_Sidfunc(ghost_gidx_t row, ghost_lidx_t* len, ghost_gidx_t* cols, void* vals, void *arg)
+int phist_Sidfunc(ghost_gidx row, ghost_lidx* len, ghost_gidx* cols, void* vals, void *arg)
 {
   *len=1;
   cols[0]=row;
   ((float*)vals)[0]=1.0f;
   return 0;
 }
-int phist_Didfunc(ghost_gidx_t row, ghost_lidx_t* len, ghost_gidx_t* cols, void* vals, void *arg)
+int phist_Didfunc(ghost_gidx row, ghost_lidx* len, ghost_gidx* cols, void* vals, void *arg)
 {
   *len=1;
   cols[0]=row;
   ((double*)vals)[0]=1.0;
   return 0;
 }
-int phist_Cidfunc(ghost_gidx_t row, ghost_lidx_t* len, ghost_gidx_t* cols, void* vals, void *arg)
+int phist_Cidfunc(ghost_gidx row, ghost_lidx* len, ghost_gidx* cols, void* vals, void *arg)
 {
   *len=1;
   cols[0]=row;
   ((std::complex<float>*)vals)[0]=(std::complex<float>)1.0f;
   return 0;
 }
-int phist_Zidfunc(ghost_gidx_t row, ghost_lidx_t* len, ghost_gidx_t* cols, void* vals, void *arg)
+int phist_Zidfunc(ghost_gidx row, ghost_lidx* len, ghost_gidx* cols, void* vals, void *arg)
 {
   *len=1;
   cols[0]=row;

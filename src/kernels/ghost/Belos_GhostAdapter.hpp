@@ -118,8 +118,8 @@ using ::phist::GhostMV;
       TEUCHOS_TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= GetNumberVecs(mv), std::runtime_error,
           "Belos::MultiVecTraits<Scalar,GhostMV>::CloneCopy(mv,index): indices must be < mv.traits.ncols.");
 
-      ghost_lidx_t imin=0;
-      ghost_lidx_t ilen=_mv->traits.nrows;
+      ghost_lidx imin=0;
+      ghost_lidx ilen=_mv->traits.nrows;
 
       bool contig=true;
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
@@ -133,8 +133,8 @@ using ::phist::GhostMV;
       if (contig)
       {
         ghost_densemat_t *result = NULL;
-        ghost_lidx_t ilen=_mv->traits.nrows;
-        ghost_lidx_t imin=0;
+        ghost_lidx ilen=_mv->traits.nrows;
+        ghost_lidx imin=0;
         _mv->clone(_mv,&result,ilen,imin,index.size(),index[0]);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
@@ -246,17 +246,17 @@ using ::phist::GhostMV;
     //        view is to make it a 'scattered' view.
     if (constStride==false || stride!=1)
     {
-#ifdef GHOST_HAVE_LONGIDX_LOCAL
+#ifdef GHOST_IDX64_LOCAL
       // ghost expects long ints here, while we get ints. So we copy them over:
-      std::vector<ghost_lidx_t> clone_index(index.size());
+      std::vector<ghost_lidx> clone_index(index.size());
       for (int i=0;i<index.size();i++)
       {
-        clone_index[i]=(ghost_lidx_t)index[i];
+        clone_index[i]=(ghost_lidx)index[i];
       }
 #else
-      const std::vector<ghost_lidx_t>& clone_index=index;
+      const std::vector<ghost_lidx>& clone_index=index;
 #endif
-      _mv->viewScatteredCols(_mv,&result,(ghost_lidx_t)index.size(),(ghost_lidx_t*)&clone_index[0]);
+      _mv->viewScatteredCols(_mv,&result,(ghost_lidx)index.size(),(ghost_lidx*)&clone_index[0]);
     }
     else
     {
@@ -301,8 +301,8 @@ using ::phist::GhostMV;
       }
       
       ghost_densemat_t* result=NULL;
-      ghost_lidx_t offs=index.lbound();
-      ghost_lidx_t nc=(ghost_lidx_t)(index.ubound()-index.lbound()+1);
+      ghost_lidx offs=index.lbound();
+      ghost_lidx nc=(ghost_lidx)(index.ubound()-index.lbound()+1);
       CHK_GERR(_mv->viewCols(_mv,&result,nc,offs),Teuchos::null);
 
 

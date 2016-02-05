@@ -27,11 +27,11 @@
 #define D_AC  (1.5*graphene_a_unit)
 #endif
 
-int crsGraphene( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals, void* data){
+int crsGraphene( ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, void* data){
 
-	static ghost_gidx_t L = 4 ;
-	static ghost_gidx_t W = 4 ;
-	ghost_gidx_t N = L*W;
+	static ghost_gidx L = 4 ;
+	static ghost_gidx W = 4 ;
+	ghost_gidx N = L*W;
 
 	static int32_t zigzag_first         = 1;
 	static int32_t long_range_hopping   = 1;
@@ -51,19 +51,19 @@ int crsGraphene( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 	static double t2 = -0.1/2.78;;
 	static double t3 = -0.095/2.78;
 
-	ghost_gidx_t           max_row_nnz  = 4 ;
+	ghost_gidx           max_row_nnz  = 4 ;
 	if(long_range_hopping) max_row_nnz += 9 ;
 
 
 	if ((row >-1 ) && (row <N)){       //  defined output -- write entries of #row in *cols and *vals
 	                                   //                    return number of entries
 		double * dvals = vals;
-		ghost_gidx_t i = 0 ;
+		ghost_gidx i = 0 ;
 		row = IPERM(row);
 
 
-		ghost_gidx_t w = row%W;
-		ghost_gidx_t l = row/W;
+		ghost_gidx w = row%W;
+		ghost_gidx l = row/W;
 
 		int32_t   uplink = (int32_t)( (l+w+basis_place  )& 1  );
 		
@@ -190,14 +190,14 @@ int crsGraphene( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 		//else{
 			// todo  !zigzag_first    }
 
-		ghost_gidx_t j;
+		ghost_gidx j;
 		if( i>max_row_nnz )
       printf("corrupt max_row_nnz for row %" PRGIDX "   nnz = %" PRGIDX " \n",row, i);
 		for( j=0;j<i;j++ )
       if( (cols[j]<0) || (cols[j]>=N) )
         printf("corrupt col_idx in row %" PRGIDX "    (w,l) =(%" PRGIDX ",%" PRGIDX ") : col[%" PRGIDX "] = %" PRGIDX "\n", row, w,l, j, cols[j]);
 
-		*nnz = (ghost_lidx_t)i;
+		*nnz = (ghost_lidx)i;
 #ifdef WRITE_MATRIX
 	int rank;
 	MPI_Comm_rank(MPI_COMM_WORLD,&rank);
@@ -243,8 +243,8 @@ int crsGraphene( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 		return 0;
 	}else if ( row == -3) {
 		double * dvals = vals;
-		W     = (ghost_gidx_t)(dvals[0]/D_ZZ);
-		L     = (ghost_gidx_t)(dvals[1]/D_AC);
+		W     = (ghost_gidx)(dvals[0]/D_ZZ);
+		L     = (ghost_gidx)(dvals[1]/D_AC);
 		L += L&1;
 		W += W&1;
 		

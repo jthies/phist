@@ -1267,7 +1267,7 @@ protected:
 #ifdef FIRST_TIME
 namespace
 {
-int PREFIX(idfunc)(ghost_gidx_t row, ghost_lidx_t *len, ghost_gidx_t* cols, void* vval, void *arg)
+int PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
 {
   *len=1;
   _ST_* val = (_ST_*)vval;
@@ -1276,7 +1276,7 @@ int PREFIX(idfunc)(ghost_gidx_t row, ghost_lidx_t *len, ghost_gidx_t* cols, void
   return 0;
 }
 
-int PREFIX(some_rowFunc)(ghost_gidx_t row, ghost_lidx_t *len, ghost_gidx_t* cols, void* vval, void *arg)
+int PREFIX(some_rowFunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
 {
 #include "phist_std_typedefs.hpp"
   _ST_* val = (_ST_*)vval;
@@ -1284,7 +1284,7 @@ int PREFIX(some_rowFunc)(ghost_gidx_t row, ghost_lidx_t *len, ghost_gidx_t* cols
   *len=5;
   for (int i=0; i<*len; i++)
   {
-    cols[i]=(ghost_gidx_t)(((row+i-2)*3)%_N_);
+    cols[i]=(ghost_gidx)(((row+i-2)*3)%_N_);
     if (cols[i]<0) cols[i]+=_N_;
     val[i]=(ST)(i+1)/(ST)(row+1) + st::cmplx_I()*(ST)(row-cols[i]);
   }
@@ -1302,7 +1302,7 @@ TEST_F(CLASSNAME,create_A_fromRowFunc)
     return;
 
   TYPE(sparseMat_ptr) A=NULL;
-  ghost_lidx_t nnzr = 5;
+  ghost_lidx nnzr = 5;
   iflag_=0; // do not ask for reordering etc.
   SUBR(sparseMat_create_fromRowFunc)(&A,comm_, _N_,_N_,nnzr,
                 &PREFIX(some_rowFunc),NULL,&iflag_);
@@ -1398,7 +1398,7 @@ TEST_F(CLASSNAME,create_I_fromRowFunc)
     return;
 
   TYPE(sparseMat_ptr) A=NULL;
-  ghost_gidx_t nnzr = 1;
+  ghost_gidx nnzr = 1;
   iflag_=0; // do not ask for reordering etc.
   SUBR(sparseMat_create_fromRowFunc)(&A,comm_, _N_,_N_,nnzr,
                 &PREFIX(idfunc),NULL,&iflag_);

@@ -81,11 +81,11 @@ class WrapLambdaForGhostTask
 {
   public:
     // constructor
-    WrapLambdaForGhostTask(ghost_task_t **task, bool deterministicOneThread, const LFunc &context, int* iflag, bool async)
+    WrapLambdaForGhostTask(ghost_task **task, bool deterministicOneThread, const LFunc &context, int* iflag, bool async)
     {
       // check that the task is not already allocated/in use
       PHIST_CHK_IERR(*iflag = (*task != NULL) ? -1 : 0, *iflag);
-      ghost_task_t* curTask = NULL;
+      ghost_task* curTask = NULL;
       ghost_task_cur(&curTask);
       if( !async )
       {
@@ -111,7 +111,7 @@ class WrapLambdaForGhostTask
         int nThreads = async ? 0 : GHOST_TASK_FILL_ALL;
         if( deterministicOneThread )
           nThreads = 1;
-        ghost_task_flags_t flags = GHOST_TASK_DEFAULT;
+        ghost_task_flags flags = GHOST_TASK_DEFAULT;
         PHIST_CHK_GERR(ghost_task_create(task, nThreads, 0, void_lambda_caller, (void*) new LFunc(context), flags, NULL, 0), *iflag);
       }
 
@@ -119,7 +119,7 @@ class WrapLambdaForGhostTask
       // If the parent has none, try to be adopted by the grand-parent, etc
       if( !async )
       {
-        ghost_task_t *newParent = curTask;
+        ghost_task *newParent = curTask;
         if( newParent )
         {
           while( newParent->nThreads == 0 )
@@ -137,7 +137,7 @@ class WrapLambdaForGhostTask
       // so all async tasks need to be children of the main task
       if( async )
       {
-        ghost_task_t *newParent = curTask;
+        ghost_task *newParent = curTask;
         if( newParent )
         {
           while( newParent->parent )
@@ -148,14 +148,14 @@ class WrapLambdaForGhostTask
 
       PHIST_SOUT(PHIST_TRACE,"enqueuing C++11-lambda as GHOST task and waiting for it\n");
       // prevent possible race condition when iflag is reused inside the task!
-      ghost_error_t task_enqueue_err = ghost_task_enqueue(*task);
+      ghost_error task_enqueue_err = ghost_task_enqueue(*task);
       if( task_enqueue_err != GHOST_SUCCESS )
         PHIST_CHK_GERR(task_enqueue_err, *iflag);
       if( async )
         return;
 
       // the user might reuse the iflag in the task for convenience, so do not overwrite it!
-      ghost_error_t task_wait_err = ghost_task_wait(*task);
+      ghost_error task_wait_err = ghost_task_wait(*task);
       PHIST_CHK_IERR(/* inside task */,*iflag);
       PHIST_CHK_GERR(task_wait_err/* = ghost_task_wait(*task)*/,*iflag);
       ghost_task_destroy(*task);
@@ -186,18 +186,18 @@ class WrapLambdaForGhostTask
 
 // actually wrap a lambda for ghost and run it (creates an instance of WrapLambdaForGhostTask)
 template<typename LFunc>
-static inline WrapLambdaForGhostTask<LFunc> phist_execute_lambda_as_ghost_task(ghost_task_t **task, bool deterministicOneThread, const LFunc &context, int* iflag, bool async)
+static inline WrapLambdaForGhostTask<LFunc> phist_execute_lambda_as_ghost_task(ghost_task **task, bool deterministicOneThread, const LFunc &context, int* iflag, bool async)
 {
   return WrapLambdaForGhostTask<LFunc>(task,deterministicOneThread,context,iflag,async);
 }
 
 // wait till a task is finished
-static inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
+static inline void phist_wait_ghost_task(ghost_task** task, int* iflag)
 {
   PHIST_CHK_IERR(*iflag = (*task != NULL) ? PHIST_SUCCESS : PHIST_WARNING, *iflag);
 
   // warn if we wait for a blocking task from within another blocking task -> deadlock
-  ghost_task_t* curTask = NULL;
+  ghost_task* curTask = NULL;
   ghost_task_cur(&curTask);
   if( curTask != NULL )
   {
@@ -214,7 +214,7 @@ static inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
 // some helpful macros
 
 #define PHIST_TASK_DECLARE(taskName) \
-  ghost_task_t* taskName = NULL;
+  ghost_task* taskName = NULL;
 
 #define PHIST_TASK_BEGIN(taskName) \
   phist_execute_lambda_as_ghost_task(&taskName, false, ([&]() -> void {
@@ -235,7 +235,7 @@ static inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
 
 
 #define PHIST_TASK_POST_STEP(task_ierr) {\
-  ghost_task_t* t = NULL;\
+  ghost_task* t = NULL;\
   ghost_task_cur(&t);\
   if( t != NULL )\
     sem_post(t->progressSem);}
@@ -249,7 +249,7 @@ static inline void phist_wait_ghost_task(ghost_task_t** task, int* iflag)
 //#define PHIST_MAIN_TASK_END
 #define PHIST_MAIN_TASK_BEGIN {\
   int mainTask_ierr = 0;\
-  ghost_task_t* mainTask = NULL;\
+  ghost_task* mainTask = NULL;\
   phist_execute_lambda_as_ghost_task(&mainTask, false, [&]()->int {
 
 #define PHIST_MAIN_TASK_END \

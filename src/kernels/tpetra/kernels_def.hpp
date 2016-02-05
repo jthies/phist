@@ -98,8 +98,8 @@ A=new Traits<_ST_>::sparseMat_t(map_ptr,(int)maxnne);
   //TODO: this can't be the way, what about the Kokkos node?
   for (lidx_t i=0; i<A->getNodeNumRows(); i++)
   {
-    ghost_gidx_t row = tpetra_map->getGlobalElement(i);
-    ghost_lidx_t row_nnz;
+    ghost_gidx row = tpetra_map->getGlobalElement(i);
+    ghost_lidx row_nnz;
 
     PHIST_CHK_IERR(*iflag=rowFunPtr(row,&row_nnz,cols,vals,last_arg),*iflag);
 
