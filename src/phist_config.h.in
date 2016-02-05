@@ -73,6 +73,11 @@ kernel libs) ?
 #cmakedefine PHIST_HAVE_KOKKOS
 #cmakedefine PHIST_HAVE_ANASAZI
 #cmakedefine PHIST_HAVE_BELOS
+#cmakedefine PHIST_HAVE_IFPACK
+#cmakedefine PHIST_HAVE_ML
+#cmakedefine PHIST_HAVE_IFPACK2
+#cmakedefine PHIST_HAVE_MUELU
+#cmakedefine PHIST_HAVE_AMESOS2
 
 /* other TPLs */
 #cmakedefine PHIST_HAVE_MKL
@@ -109,12 +114,12 @@ kernel libs) ?
 /* disallow Trilinos versions newer than 11.12.x because they have a
    new interface to Tpetra/Kokkos/TSQR (cf. #124)
 */
-#ifdef PHIST_HAVE_KOKKOS
-#include "Trilinos_version.h"
-#if ((TRILINOS_MAJOR_VERSION>11)||((TRILINOS_MAJOR_VERSION==11)&&(TRILINOS_MINOR_VERSION>1112)))
-#warning "Trilinos version >11.12 is not fully supported by PHIST, yet (cf. issue #124)"
-#else
-#define OLD_TRILINOS
-#endif
-#endif
+# ifdef PHIST_HAVE_KOKKOS
+# include "Trilinos_version.h"
+#  if ((TRILINOS_MAJOR_VERSION>11)||((TRILINOS_MAJOR_VERSION==11)&&(TRILINOS_MINOR_VERSION>1112)))
+#  warning "Trilinos version >11.12 is not fully supported by PHIST, yet (cf. issue #124)"
+#  else
+#  define OLD_TRILINOS
+#  endif
+# endif
 #endif

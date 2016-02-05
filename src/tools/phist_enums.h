@@ -1,6 +1,8 @@
 #ifndef PHIST_ENUMS_H
 #define PHIST_ENUMS_H
 
+#include "phist_config.h"
+
 //! defines which eigenvalues are sought resp. how they should be sorted
 //! for computing eigenvalues near (far away from) a specific target, 
 //! pass a shifted operator and "SM" ("LM") to the eigensolver and shift the
@@ -26,7 +28,7 @@ typedef enum eigExtr_t {
 //! how to approximately solve linear systems AX=B
 typedef enum linSolv_t 
 {
-  DO_NOTHING=0, // do nothing: X=B
+  NONE=0, // do nothing: X=B
   GMRES=1, // unpreconditioned GMRES
   MINRES=2, // unpreconditioned MINRES
   CARP_CG=3, // CG on the normal equations, preconditioned by CARP (parallel SSOR)
@@ -41,6 +43,25 @@ typedef enum matSym_t {
   PATTERN_SYMMETRIC=3, /*! G=G^T with G_ij=1 if A_ij!=0, G_ij=0 otherwise */ 
   INVALID_MATSYM_T=99
 } matSym_t;
+
+typedef enum {
+  NONE,
+#ifdef PHIST_HAVE_IFPACK
+  IFPACK,
+#endif
+#ifdef PHIST_HAVE_ML
+  ML,
+#endif
+#ifdef PHIST_HAVE_IFPACK2
+  IFPACK2,
+#endif
+#ifdef PHIST_HAVE_MUELU
+  MUELU,
+#endif
+  INVALID_PRECON_TYPE
+} precon_t;
+
+
 
 #ifdef __cplusplus
 #include <iostream>

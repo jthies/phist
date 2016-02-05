@@ -859,7 +859,6 @@ endforeach()
 
 configure_file ("${PROJECT_SOURCE_DIR}/phist.pc.in" "${PROJECT_BINARY_DIR}/phist.pc" @ONLY)
 configure_file ("${PROJECT_SOURCE_DIR}/src/phist_config.h.in" "${PROJECT_BINARY_DIR}/phist_config.h")
-configure_file ("${PROJECT_SOURCE_DIR}/src/precon/phist_precon_config.h.in" "${PROJECT_BINARY_DIR}/phist_precon_config.h")
 configure_file ("${PROJECT_SOURCE_DIR}/doc/phist.doxyfile.in" "${PROJECT_BINARY_DIR}/phist.doxyfile")
 include(CMakePackageConfigHelpers)
 set(INCLUDE_INSTALL_DIR include)
