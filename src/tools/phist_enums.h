@@ -58,7 +58,7 @@ typedef enum {
 #ifdef PHIST_HAVE_MUELU
   MUELU,
 #endif
-  INVALID_PRECON_TYPE
+  INVALID_PRECON_T=99
 } precon_t;
 
 
@@ -71,9 +71,12 @@ extern "C" {
 const char* eigSort2str(eigSort_t s);
 const char* linSolv2str(linSolv_t s);
 const char* eigExtr2str(eigExtr_t s);
+const char* precon2str(precon_t s);
+
 eigSort_t str2eigSort(const char* str);
 linSolv_t str2linSolv(const char* str);
 eigExtr_t str2eigExtr(const char* str);
+precon_t str2precon(const char* str);
 #ifdef __cplusplus
 }
 
@@ -85,6 +88,9 @@ std::istream& operator>>(std::istream& is, linSolv_t& s);
 
 //! read enum type from file stream
 std::istream& operator>>(std::istream& is, eigExtr_t& s);
+
+//! read enum type from file stream
+std::istream& operator>>(std::istream& is, precon_t& s);
 
 #endif
 #endif
