@@ -50,7 +50,7 @@ extern "C" const char* eigSort2str(eigSort_t s)
          s==SM?"SM":
          s==LR?"LR":
          s==SR?"SR":
-         s==NONE?"NONE":
+         s==NO_EIGSORT?"NONE":
          s==TARGET?"TARGET":
                    "INVALID";
 }
@@ -67,14 +67,14 @@ extern "C" const char* linSolv2str(linSolv_t s)
   return   s==GMRES?"GMRES":
            s==MINRES?"MINRES":
            s==CARP_CG?"CARP_CG":
-           s==NONE?"NONE":
+           s==NO_LINSOLV?"NONE":
            s==USER_DEFINED?"USER_DEFINED":
                          "INVALID";
 }
 
 extern "C" const char* precon2str(precon_t s)
 {
-  return   s==NONE?"NONE":
+  return   s==NO_PRECON?"NONE":
 #ifdef PHIST_HAVE_IFPACK
            s==IFPACK?"IFPACK":
 #endif
@@ -102,7 +102,7 @@ extern "C" eigSort_t str2eigSort(const char* c_str)
   else if (str=="SM") s=SM;
   else if (str=="LR") s=LR;
   else if (str=="SR") s=SR;
-  else if (str=="NONE") s=NONE;
+  else if (str=="NONE") s=NO_EIGSORT;
   else if (str=="TARGET") s=TARGET;
   return s;
 }
@@ -126,7 +126,7 @@ extern "C" linSolv_t str2linSolv(const char* c_str)
   if (str=="GMRES") s=GMRES;
   else if (str=="MINRES") s=MINRES;
   else if (str=="CARP_CG") s=CARP_CG;
-  else if (str=="NONE") s=NONE;
+  else if (str=="NONE") s=NO_LINSOLV;
   else if (str=="user_defined"||str=="USER_DEFINED") s=USER_DEFINED;
   return s;
 }
@@ -136,7 +136,7 @@ extern "C" precon_t str2precon(const char* c_str)
   std::string str(c_str);
   str=phist_str2upper(str);
   precon_t s=INVALID_PRECON_T;
-  if (str=="NONE") s=NONE;
+  if (str=="NONE") s=NO_PRECON;
 #ifdef PHIST_HAVE_IFPACK
   else if (str=="IFPACK") s=IFPACK;
 #endif

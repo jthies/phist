@@ -9,7 +9,7 @@
 //! resulting eigenvalues back (eigenvectors are invariant under shifting).
 typedef enum eigSort_t 
 {
-  NONE=0,
+  NO_EIGSORT=0,
   LM=1,   // largest magnitude
   SM=2,   // smallest magnitude
   LR=3,   // largest real part
@@ -28,7 +28,7 @@ typedef enum eigExtr_t {
 //! how to approximately solve linear systems AX=B
 typedef enum linSolv_t 
 {
-  NONE=0, // do nothing: X=B
+  NO_LINSOLV=0, // do nothing: X=B
   GMRES=1, // unpreconditioned GMRES
   MINRES=2, // unpreconditioned MINRES
   CARP_CG=3, // CG on the normal equations, preconditioned by CARP (parallel SSOR)
@@ -45,7 +45,7 @@ typedef enum matSym_t {
 } matSym_t;
 
 typedef enum {
-  NONE,
+  NO_PRECON,
 #ifdef PHIST_HAVE_IFPACK
   IFPACK,
 #endif
