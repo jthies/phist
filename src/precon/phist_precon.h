@@ -20,6 +20,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//! data structure used internally for storing preconditioner
+//! data (this will be the A_ field in the linearOp_t, but the
+//! user should only work with linearOp instead of this one directly)
+typedef struct {
+  //! identifies the preconditioner type (e.g. IFPACK), this is used to
+  //! internally call the correct create/delete/apply etc functions
+  precon_t type_;
+  void* P_;
+} phist_internal_precon_t;
+
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_precon_decl.h"

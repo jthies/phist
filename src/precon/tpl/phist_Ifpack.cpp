@@ -1,10 +1,10 @@
 #include "phist_config.h"
-#include "phist_precon_config.h"
+#include "phist_PreconTraits.hpp"
 
 #ifdef PHIST_HAVE_IFPACK
 
 #ifndef PHIST_KERNEL_LIB_EPETRA
-# error "Ifpack only supported with Epetra kernel library!"
+# error "Ifpack only works with Epetra kernel library!"
 #endif
 
 #include "phist_macros.h"

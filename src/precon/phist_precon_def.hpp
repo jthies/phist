@@ -1,3 +1,53 @@
+// this file maps stuff implemented in a C++ traits class (e.g. PreconTraits<ST,IFPACK>::Apply) to plain C 
+// (e.g. void (*apply)(...) in a linearOp_t struct. It therefore instantiates all the supported PreconTraits
+// templates and selects them with the following macro
+#ifdef SELECT_PT_MEMBER
+#undef SELECT_PT_MEMBER
+#endif
+
+#ifdef CALL_PT_MEMBER
+#undef CALL_PT_MEMBER
+#endif
+
+
+#define SELECT_PT_MEMBER(PRECON_TYPE,MEMBER) \
+        PRECON_TYPE==NONE? phist::PreconTraits<_ST_,NONE>:: ## MEMBER: \
+#ifdef PHIST_HAVE_IFPACK
+        PRECON_TYPE==IFPACK? phist::PreconTraits<_ST_,IFPACK>:: ## MEMBER: \
+#endif
+#ifdef PHIST_HAVE_ML
+        PRECON_TYPE==ML? phist::PreconTraits<_ST_,ML>:: ## MEMBER: \
+#endif
+#ifdef PHIST_HAVE_IFPACK2
+        PRECON_TYPE==IFPACK2? phist::PreconTraits<_ST_,IFPACK2>:: ## MEMBER: \
+#endif
+#ifdef PHIST_HAVE_MUELU
+        PRECON_TYPE==MUELU? phist::PreconTraits<_ST_,MUELU>:: ## MEMBER: \
+#endif
+#ifdef PHIST_HAVE_AMESOS2
+        PRECON_TYPE==AMESOS2? phist::PreconTraits<_ST_,AMESOS2>:: ## MEMBER: \
+#endif
+        NULL;
+
+#define CALL_PT_MEMBER(PRECON_TYPE,MEMBER,...) \
+        PRECON_TYPE==NONE? phist::PreconTraits<_ST_,NONE>:: ## MEMBER(__VA_ARGS__): \
+#ifdef PHIST_HAVE_IFPACK
+        PRECON_TYPE==IFPACK? phist::PreconTraits<_ST_,IFPACK>:: ## MEMBER(__VA_ARGS__): \
+#endif
+#ifdef PHIST_HAVE_ML
+        PRECON_TYPE==ML? phist::PreconTraits<_ST_,ML>:: ## MEMBER(__VA_ARGS__): \
+#endif
+#ifdef PHIST_HAVE_IFPACK2
+        PRECON_TYPE==IFPACK2? phist::PreconTraits<_ST_,IFPACK2>:: ## MEMBER(__VA_ARGS__): \
+#endif
+#ifdef PHIST_HAVE_MUELU
+        PRECON_TYPE==MUELU? phist::PreconTraits<_ST_,MUELU>:: ## MEMBER(__VA_ARGS__): \
+#endif
+#ifdef PHIST_HAVE_AMESOS2
+        PRECON_TYPE==AMESOS2? phist::PreconTraits<_ST_,AMESOS2>:: ## MEMBER(__VA_ARGS__): \
+#endif
+        NULL;
+
 // create a preconditioner for an iterative linear solver
 
 // this function can be used to create an operator that can be used to precondition linear systems     
@@ -36,15 +86,57 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
                          TYPE(const_mvec_ptr) Vkern, TYPE(const_mvec_ptr) BVkern,
                          const char* method, const char* options, int* iflag)
 {
+#include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  *iflag=0;
+  
+  if (!strcasecmp(method,"usage"))
+  {
+    PHIST_SOUT(PHIST_ERROR,"Your PHIST installation supports the following preconditioners:\n");
+    for (int i=0; i!=(int)INVALID_PRECON_T; i++)
+    {
+      const char* p=precon2str((precon_t)i);
+      if (strcmp(p,"INVALID")!=0)
+      {
+        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",p);
+      }
+    }
+    *iflag=0;
+    return;
+  }
+  
+  phist_internal_precon_t* pt = new phist_internal_precon_t;
+  
+  precon_t precType=str2precon(method);
+  pt->type_ = precType;
+  
+  if (precType==INVALID_PRECON_T)
+  {
+    PHIST_SOUT(PHIST_ERROR,"your given precon type '%s' was not recognized,\n"
+                           "please check the spelling and if the required TPLs are\n"
+                           "available in PHIST (cf. phist_config.h)\n",method);
+    SUBR(precon_create)(NULL,NULL,sigma,NULL,NULL,NULL,"usage",NULL,iflag);
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
+  
+  PHIST_CHK_IERR( CALL_PT_MEMBER(precType, Create,&pt->P_,A,sigma,B,Vkern,BVkern,options,iflag), *iflag);
+
+  op->A_=pt;
+  op->apply = SELECT_PT_MEMBER(precType,Apply);
+  op->applyT = SELECT_PT_MEMBER(precType,ApplyT);
+  op->apply_shifted = SELECT_PT_MEMBER(precType,ApplyShifted);
+
 }
 
 // destroy preconditioner
 extern "C" void SUBR(precon_delete)(TYPE(linearOp_ptr) op, int* iflag)
 {
+#include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  CAST_PTR_FROM_VOID(phist_internal_precon_t, pt, op->A_,*iflag);
+  precon_t precType=pt->type_;
+  PHIST_CHK_IERR( CALL_PT_MEMBER(precType,Delete,pt,iflag), *iflag);
 }
 
 //@}

@@ -58,7 +58,7 @@ typedef enum {
 #ifdef PHIST_HAVE_MUELU
   MUELU,
 #endif
-  INVALID_PRECON_T=99
+  INVALID_PRECON_T
 } precon_t;
 
 
