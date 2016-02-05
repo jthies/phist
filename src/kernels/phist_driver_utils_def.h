@@ -358,7 +358,7 @@ PHIST_SOUT(PHIST_ERROR,"BAPPS models (essex-physics/bapps) not\n"
     char *matstr=(char*)malloc(len+1);
     strncpy(matstr,problem+pos,len+1);
     PHIST_SOUT(outlev,"problem '%s', matstr '%s'\n",problem,matstr);
-    ghost_sparsemat_fromRowFunc_t matfunc;
+    ghost_sparsemat_rowfunc matfunc;
     bapp_select_model(matstr,&matfunc);
     free(matstr);
     

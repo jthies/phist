@@ -80,7 +80,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   ghost_context_string(&str,ctx);
   PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
-  ghost_sparsemat_string(&str,mat);
+  ghost_sparsemat_info_string(&str,mat);
   PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
 //#endif
@@ -148,7 +148,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   ghost_context_string(&str,ctx);
   PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
-  ghost_sparsemat_string(&str,mat);
+  ghost_sparsemat_info_string(&str,mat);
   PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
 //#endif
@@ -601,7 +601,7 @@ extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   */
 
     mapGarbageCollector.delete_maps(Vblock);
-    Vblock->destroy(Vblock);
+    ghost_densemat_destroy(Vblock);
     Vblock=NULL;
   }
   PHIST_CHK_GERR(V->viewCols(V, &Vblock, jmax-jmin+1, jmin),*iflag);
@@ -735,7 +735,7 @@ PHIST_CHK_IERR(SUBR(mvec_my_length)(Vblock,&nr_vb,iflag),*iflag);
   // copy the data
   PHIST_CHK_GERR(Vcols->fromVec(Vcols,Vblock,0,0),*iflag);
   // delete the view
-  Vcols->destroy(Vcols);
+  ghost_densemat_destroy(Vcols);
 PHIST_TASK_END(iflag);
 }
 
@@ -770,7 +770,7 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMbloc
   {
     //PHIST_DEB("deleting previous object in %s\n",__FUNCTION__);
     PHIST_CAST_PTR_FROM_VOID(ghost_densemat,tmp,*vMblock,*iflag);
-    tmp->destroy(tmp);
+    ghost_densemat_destroy(tmp);
   }
   PHIST_CHK_IERR(*iflag=((Mblock->traits.flags&GHOST_DENSEMAT_VIEW)-GHOST_DENSEMAT_VIEW),*iflag);
   *vMblock = (TYPE(sdMat_ptr))Mblock;
@@ -848,7 +848,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   ghost_densemat* Mb_view=NULL;
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(vM,(TYPE(sdMat_ptr)*)&Mb_view,imin,imax,jmin,jmax,iflag),*iflag);
   PHIST_CHK_GERR(Mb_view->fromVec(Mb_view,Mblock,0,0),*iflag);
-  Mb_view->destroy(Mb_view);
+  ghost_densemat_destroy(Mb_view);
 PHIST_TASK_END(iflag);
 }
 
@@ -866,7 +866,7 @@ extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) vA, int* iflag)
 
   mapGarbageCollector.delete_maps(vA);
   ghost_context *ctx = A->context;
-  A->destroy(A);
+  ghost_sparsemat_destroy(A);
   ghost_context_destroy(ctx);
 }
 
@@ -879,7 +879,7 @@ extern "C" void SUBR(mvec_delete)(TYPE(mvec_ptr) vV, int* iflag)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
 
   mapGarbageCollector.delete_maps(vV);
-  V->destroy(V);
+  ghost_densemat_destroy(V);
 }
 
 //!
@@ -892,7 +892,7 @@ extern "C" void SUBR(sdMat_delete)(TYPE(sdMat_ptr) vM, int* iflag)
   ghost_context *ctx = NULL;
   if( !(M->traits.flags & GHOST_DENSEMAT_VIEW) )
     ctx = M->context;
-  M->destroy(M);
+  ghost_densemat_destroy(M);
   if( ctx != NULL )
     ghost_context_destroy(ctx);
 }
@@ -1270,7 +1270,7 @@ _ST_ beta, TYPE(mvec_ptr) vy, _ST_* ydotx, _MT_* ynrm, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
-  ghost_spmv_traits spMVM_opts=GHOST_SPMV_TRAITS_INITIALIZER;
+  ghost_spmv_opts spMVM_opts=GHOST_SPMV_OPTS_INITIALIZER;
   // ghost spmvm mode
   if( *iflag & PHIST_SPMVM_ONLY_LOCAL )
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_MODE_NOCOMM);
@@ -1394,7 +1394,7 @@ extern "C" void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_spar
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
-  ghost_spmv_traits spMVM_opts=GHOST_SPMV_TRAITS_INITIALIZER;
+  ghost_spmv_opts spMVM_opts=GHOST_SPMV_OPTS_INITIALIZER;
   // ghost spmvm mode
   if( *iflag & PHIST_SPMVM_ONLY_LOCAL )
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_MODE_NOCOMM);
@@ -1530,7 +1530,7 @@ PHIST_TASK_BEGIN(ComputeTask)
 
     // memtranspose data
     PHIST_CHK_GERR(C->fromVec(C,Ccopy,0,0),*iflag);
-    Ccopy->destroy(Ccopy);
+    ghost_densemat_destroy(Ccopy);
   }
   PHIST_CHK_GERR(gemm_err,*iflag);
 PHIST_TASK_END(iflag);
@@ -1911,7 +1911,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   ghost_context_string(&str,ctx);
   PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
-  ghost_sparsemat_string(&str,mat);
+  ghost_sparsemat_info_string(&str,mat);
   PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
 //#endif

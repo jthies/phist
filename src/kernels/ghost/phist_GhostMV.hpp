@@ -81,7 +81,7 @@ class GhostMV
 #endif
     if (ownMem_)
       {
-      this->get()->destroy(this->get());
+      ghost_densemat_destroy(this->get());
       this->v_=NULL;
       }
     }

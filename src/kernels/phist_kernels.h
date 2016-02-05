@@ -119,7 +119,7 @@ void phist_kernels_common_finalize(int* iflag);
 //! \name functions to fill mvecs and sparseMats
 //!@{
 #ifdef PHIST_HAVE_GHOST
-typedef ghost_sparsemat_fromRowFunc_t phist_sparseMat_rowFunc;
+typedef ghost_sparsemat_rowfunc phist_sparseMat_rowFunc;
 #else
 typedef int (*phist_sparseMat_rowFunc)(ghost_gidx, ghost_lidx *,
         ghost_gidx *, void *, void *);
