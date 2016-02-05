@@ -8,15 +8,15 @@
 
 
 int cols_compar(  const void *a, const void *b ){ 
-	return (int)(*(ghost_gidx_t *)a - *(ghost_gidx_t *)b );
+	return (int)(*(ghost_gidx *)a - *(ghost_gidx *)b );
 	}
 
-void cols_qsort(ghost_gidx_t *cols, char * vals ,  size_t size_v ,  ghost_gidx_t n ){
+void cols_qsort(ghost_gidx *cols, char * vals ,  size_t size_v ,  ghost_gidx n ){
 	
-	size_t size_i = sizeof(ghost_gidx_t);
+	size_t size_i = sizeof(ghost_gidx);
 	size_t size   = size_v + size_i;
 	char * base   = malloc( n*size );
-	ghost_gidx_t i;
+	ghost_gidx i;
 	for(i=0;i<n;i++) {
 		memcpy( base + i*size,          cols + i       , size_i);
 		memcpy( base + i*size + size_i, vals + i*size_v, size_v);}
@@ -30,9 +30,9 @@ void cols_qsort(ghost_gidx_t *cols, char * vals ,  size_t size_v ,  ghost_gidx_t
 	free(base);
 }
 
-int cols_error_check(ghost_gidx_t dim, ghost_gidx_t row, ghost_gidx_t nnz,  ghost_gidx_t * cols ){
+int cols_error_check(ghost_gidx dim, ghost_gidx row, ghost_gidx nnz,  ghost_gidx * cols ){
 	
-	ghost_gidx_t i;
+	ghost_gidx i;
 	for(i=0; i<nnz; i++) if( (cols[i] >= dim) || (cols[i] < 0) ) {printf("error: row %ld: col[%ld] = %ld >= %ld \n", row, i, cols[i], dim); exit(0);}
 	
 	return 0;
@@ -95,10 +95,10 @@ idx_t bitnot( idx_t a ){
 
 
 idx_t bitshift_l( idx_t z,  int32_t n ){
-	ghost_gidx_t i;
+	ghost_gidx i;
 	
 #ifdef GHOST_HAVE_LONGIDX_
-	ghost_gidx_t r=0;
+	ghost_gidx r=0;
 	uint32_t tmp;
 	uint32_t * t0 = (uint32_t *)( &z);
 	uint32_t * t1 = (uint32_t *)( &r);
@@ -162,12 +162,12 @@ idx_t ishftc( idx_t i, idx_t s, idx_t L ){
 }
 
 idx_t power_of_2( idx_t n){
-	//return (ghost_gidx_t)(1) << n;
+	//return (ghost_gidx)(1) << n;
 	return bitshift_l( 1 , n );
 	}
 
 
-idx_t Binomial(idx_t N, ghost_gidx_t k){
+idx_t Binomial(idx_t N, ghost_gidx k){
 	
 	if((k> N)||(k< 0)) return 0;
 	if((k==N)||(k==0)) return 1;
@@ -194,17 +194,17 @@ idx_t bitcount(idx_t i){
 	}
 
 
-int SpinChainSZ( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals, void* data){
+int SpinChainSZ( ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, void* data){
 
-	static ghost_gidx_t L   = 0;
-	static ghost_gidx_t NUp = 0;
+	static ghost_gidx L   = 0;
+	static ghost_gidx NUp = 0;
 	static double Jz  = 1.;
 	static double Jxy = 1.;
-	static ghost_gidx_t useOBC = 0;
+	static ghost_gidx useOBC = 0;
 	useOBC &= 1;
 	
 	
-	ghost_gidx_t Ns = Binomial( L, NUp);
+	ghost_gidx Ns = Binomial( L, NUp);
 	static idx_t * lutlead;
 	static idx_t * luttrail;
 	static idx_t * cnt;
@@ -212,7 +212,7 @@ int SpinChainSZ( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 	static idx_t * revcnt;
 	//static idx_t * imask;
 	
-	ghost_gidx_t max_row_nnz = 2*L+1;
+	ghost_gidx max_row_nnz = 2*L+1;
 
 	if ((row >-1) && (row <Ns)){
 		
@@ -220,10 +220,10 @@ int SpinChainSZ( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 		*nnz = 0;
 		
 		// binary search
-		ghost_gidx_t min_il = 0;
-		ghost_gidx_t max_il = power_of_2(L/2);
-		ghost_gidx_t il = 0;
-		ghost_gidx_t i;
+		ghost_gidx min_il = 0;
+		ghost_gidx max_il = power_of_2(L/2);
+		ghost_gidx il = 0;
+		ghost_gidx i;
 		for(i = 0; i < L+1; i++)
 		{
 			il = (min_il + max_il)/2;
@@ -236,7 +236,7 @@ int SpinChainSZ( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 		}
 
 		// bad linear search, makes matrix building VERY expensive!
-		//  ghost_gidx_t il = 0;
+		//  ghost_gidx il = 0;
 		//  while ( row >= lutlead[il+1] ) il++;
 		
 		
@@ -246,7 +246,7 @@ int SpinChainSZ( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 		if ( bitcount(bp) != NUp) {  printf("error 1\n"); exit(0);} 
 		
 		
-		ghost_gidx_t hp = 0;
+		ghost_gidx hp = 0;
 		
 		idx_t l;
 		
@@ -284,7 +284,7 @@ int SpinChainSZ( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 					//int32_t bp2 =  bp ^ imask[l];
 					idx_t bp2 =  bitxor(bp , ishftc( 1|2 , l , L));
 					
-					//ghost_gidx_t lbp = bp2 >> (L/2);
+					//ghost_gidx lbp = bp2 >> (L/2);
 					idx_t lbp = bitshift_r( bp2,  L/2 );
 					idx_t tbp = bitand(bp2 , (power_of_2(L/2)-1));
 					
@@ -331,7 +331,7 @@ int SpinChainSZ( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 		lutrev   = malloc( sizeof(idx_t)* (power_of_2(L/2)+1));
 		   cnt   = malloc( sizeof(idx_t)* (L+1) );
 		revcnt   = malloc( sizeof(idx_t)* (L+1) );
-		//imask    = malloc( sizeof(ghost_gidx_t)*  L    );
+		//imask    = malloc( sizeof(ghost_gidx)*  L    );
 		
 		*cols = Binomial( L, NUp);
 		
@@ -413,9 +413,9 @@ int SpinChainSZ( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *
 
 
 
-int crsSpinChain( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals, void* data ){
+int crsSpinChain( ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, void* data ){
 
-	static ghost_gidx_t L   = 1;
+	static ghost_gidx L   = 1;
 	static double Jx = 1.;
 	static double Jy = 1.;
 	static double Jz = 1.;
@@ -424,20 +424,20 @@ int crsSpinChain( ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void 
 	static int32_t useOBC = 0;
 	useOBC &= 1;
 	
-	ghost_gidx_t  Ns = power_of_2( L );
+	ghost_gidx  Ns = power_of_2( L );
 	
 	
-	ghost_gidx_t max_row_nnz = 2*L+1;
+	ghost_gidx max_row_nnz = 2*L+1;
 
 	if ((row >-1) && (row <Ns)){
 		
 		double * dvals = vals;
 		*nnz = 0;
-		ghost_gidx_t il = row;
+		ghost_gidx il = row;
 		
 		
-		ghost_gidx_t hp_Bz = 0;
-		ghost_gidx_t hp_Jz = 0;
+		ghost_gidx hp_Bz = 0;
+		ghost_gidx hp_Jz = 0;
 		
 		int32_t l;
 		 if( Bz != 0. ) for(l=0;l<L;l++)if ( (1 << l) &  il ) hp_Bz += 1;

@@ -33,9 +33,9 @@ typedef struct {
 	int32_t base;
 	int32_t symmetry;
 	int32_t datatype;
-	ghost_gidx_t nrows;
-	ghost_gidx_t ncols;
-	ghost_lidx_t row_nnz;
+	ghost_gidx nrows;
+	ghost_gidx ncols;
+	ghost_lidx row_nnz;
 
 	int32_t      hermit;
 	int32_t      eig_info;
@@ -49,8 +49,8 @@ typedef struct {
 extern "C" {
 #endif
 
-int SpinChainSZ(   ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals, void* data);
-int crsGraphene(   ghost_gidx_t row, ghost_lidx_t *nnz, ghost_gidx_t *cols, void *vals, void* data);
+int SpinChainSZ(   ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, void* data);
+int crsGraphene(   ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, void* data);
 #ifdef __cplusplus
 }
 #endif
