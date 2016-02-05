@@ -131,7 +131,7 @@ void SortEig(std::complex<MT>* ev,int n,int* idx,eigSort_t which, _MT_ tol, int*
     std::stable_sort(v.begin(),v.end(),SelectLR<ST>(tol));
   else if (which==SR)
     std::stable_sort(v.begin(),v.end(),SelectSR<ST>(tol));
-  else if (which!=NONE)
+  else if (which!=NO_EIGSORT)
   {
     // sort type not implemented
     *iflag=PHIST_NOT_IMPLEMENTED;

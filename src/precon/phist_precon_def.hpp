@@ -12,41 +12,21 @@
 
 #define SELECT_PT_MEMBER(PRECON_TYPE,MEMBER) \
         PRECON_TYPE==NONE? phist::PreconTraits<_ST_,NONE>:: ## MEMBER: \
-#ifdef PHIST_HAVE_IFPACK
         PRECON_TYPE==IFPACK? phist::PreconTraits<_ST_,IFPACK>:: ## MEMBER: \
-#endif
-#ifdef PHIST_HAVE_ML
         PRECON_TYPE==ML? phist::PreconTraits<_ST_,ML>:: ## MEMBER: \
-#endif
-#ifdef PHIST_HAVE_IFPACK2
         PRECON_TYPE==IFPACK2? phist::PreconTraits<_ST_,IFPACK2>:: ## MEMBER: \
-#endif
-#ifdef PHIST_HAVE_MUELU
         PRECON_TYPE==MUELU? phist::PreconTraits<_ST_,MUELU>:: ## MEMBER: \
-#endif
-#ifdef PHIST_HAVE_AMESOS2
         PRECON_TYPE==AMESOS2? phist::PreconTraits<_ST_,AMESOS2>:: ## MEMBER: \
-#endif
         NULL;
 
 #define CALL_PT_MEMBER(PRECON_TYPE,MEMBER,...) \
-        PRECON_TYPE==NONE? phist::PreconTraits<_ST_,NONE>:: ## MEMBER(__VA_ARGS__): \
-#ifdef PHIST_HAVE_IFPACK
-        PRECON_TYPE==IFPACK? phist::PreconTraits<_ST_,IFPACK>:: ## MEMBER(__VA_ARGS__): \
-#endif
-#ifdef PHIST_HAVE_ML
-        PRECON_TYPE==ML? phist::PreconTraits<_ST_,ML>:: ## MEMBER(__VA_ARGS__): \
-#endif
-#ifdef PHIST_HAVE_IFPACK2
-        PRECON_TYPE==IFPACK2? phist::PreconTraits<_ST_,IFPACK2>:: ## MEMBER(__VA_ARGS__): \
-#endif
-#ifdef PHIST_HAVE_MUELU
-        PRECON_TYPE==MUELU? phist::PreconTraits<_ST_,MUELU>:: ## MEMBER(__VA_ARGS__): \
-#endif
-#ifdef PHIST_HAVE_AMESOS2
-        PRECON_TYPE==AMESOS2? phist::PreconTraits<_ST_,AMESOS2>:: ## MEMBER(__VA_ARGS__): \
-#endif
-        NULL;
+        if (PRECON_TYPE==NONE) PHIST_CHK_IERR(phist::PreconTraits<_ST_,NONE>:: ## MEMBER(__VA_ARGS__),*iflag); \
+        else if (PRECON_TYPE==IFPACK) PHIST_CHK_IERR(phist::PreconTraits<_ST_,IFPACK>:: ## MEMBER(__VA_ARGS__),*iflag): \
+        else if (PRECON_TYPE==ML) PHIST_CHK_IERR(phist::PreconTraits<_ST_,ML>:: ## MEMBER(__VA_ARGS__),*iflag): \
+        else if (PRECON_TYPE==IFPACK2) PHIST_CHK_IERR(phist::PreconTraits<_ST_,IFPACK2>:: ## MEMBER(__VA_ARGS__),*iflag): \
+        else if (PRECON_TYPE==MUELU) PHIST_CHK_IERR(phist::PreconTraits<_ST_,MUELU>:: ## MEMBER(__VA_ARGS__),*iflag): \
+        else if(PRECON_TYPE==AMESOS2) PHIST_CHK_IERR(phist::PreconTraits<_ST_,AMESOS2>:: ## MEMBER(__VA_ARGS__),*iflag): \
+        else PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
 
 // create a preconditioner for an iterative linear solver
 
@@ -93,12 +73,29 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
   if (!strcasecmp(method,"usage"))
   {
     PHIST_SOUT(PHIST_ERROR,"Your PHIST installation supports the following preconditioners:\n");
-    for (int i=0; i!=(int)INVALID_PRECON_T; i++)
-    {
-      const char* p=precon2str((precon_t)i);
-      if (strcmp(p,"INVALID")!=0)
-      {
+#ifdef PHIST_KERNEL_LIB_EPETRA
+# ifdef PHIST_HAVE_IFPACK
+        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(IFPACK));
+# endif
+# ifdef PHIST_HAVE_ML
+        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(ML));
+# endif
+# ifdef PHIST_HAVE_MUELU
+        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(MUELU));
+# endif
+#elif defined(PHIST_KERNEL_LIB_TPETRA
+# ifdef PHIST_HAVE_IFPACK2
+        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(IFPACK2));
+# endif
+# ifdef PHIST_HAVE_MUELU
+        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(MUELU));
+# endif
+# ifdef PHIST_HAVE_AMESOS2
+        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(AMESOS2));
+# endif
+#else
         PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",p);
+#endif
       }
     }
     *iflag=0;

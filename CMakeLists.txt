@@ -652,6 +652,7 @@ set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          )
 set(PHIST_PRECON_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/phist_precon.cpp
                         ${PROJECT_SOURCE_DIR}/src/precon/phist_ilu.cpp
+                        ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_Ifpack.cpp
                         )
 set(PHIST_PRECON_TPL_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_Ifpack.cpp
                             ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_Ifpack2.cpp
