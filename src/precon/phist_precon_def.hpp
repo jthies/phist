@@ -31,7 +31,7 @@
 // which will read the preconditioner settings from an XML file compatible with the Teuchos            
 // ParameterList.                                                                                      
 //                                                                                                     
-void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_ptr) A, 
+extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_ptr) A, 
                          _ST_ sigma, TYPE(const_sparseMat_ptr) B,
                          TYPE(const_mvec_ptr) Vkern, TYPE(const_mvec_ptr) BVkern,
                          const char* method, const char* options, int* iflag)
@@ -41,7 +41,7 @@ void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_ptr) A,
 }
 
 // destroy preconditioner
-void SUBR(precon_delete)(TYPE(linearOp_ptr) op, int* iflag)
+extern "C" void SUBR(precon_delete)(TYPE(linearOp_ptr) op, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=PHIST_NOT_IMPLEMENTED;

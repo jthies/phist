@@ -23,7 +23,8 @@
 //! before returning from this function. If nConv==NULL, nConv=k is assumed.
 void SUBR(belos)(TYPE(const_linearOp_ptr) Op, 
         TYPE(mvec_ptr) X,
-        TYPE(const_mvec_ptr) B, 
+        TYPE(const_mvec_ptr) B,
+        TYPE(const_linearOp_ptr) Prec, 
         _MT_ tol,int* num_iters, int max_blocks,
         int variant, int *nConv,
         int* iflag);

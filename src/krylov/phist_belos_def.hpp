@@ -9,7 +9,8 @@
 // Belos: block krylov methods from Trilinos
 extern "C" void SUBR(belos)(TYPE(const_linearOp_ptr) Op, 
         TYPE(mvec_ptr) vX,
-        TYPE(const_mvec_ptr) vB, 
+        TYPE(const_mvec_ptr) vB,
+        TYPE(const_linearOp_ptr) Prec, 
         _MT_ tol,int *num_iters, int max_blocks,
         int variant, int* nConv,
         int* iflag)
@@ -114,6 +115,15 @@ typedef phist::MultiVector< _ST_ > BelosMV;
 // create Belos problem interface
 Teuchos::RCP<Belos::LinearProblem<ST,BelosMV,OP> > linearSystem
         = Teuchos::rcp(new Belos::LinearProblem<ST,BelosMV,OP>(A,X,B));
+
+if (Prec!=NULL)
+{
+  Teuchos::RCP<const OP> Prec_ptr = Teuchos::rcp(Prec,false);
+  try {
+    linearSystem->setLeftPrec(Prec_ptr);
+  } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,status);
+  if (!status){*iflag=PHIST_CAUGHT_EXCEPTION; return;} 
+}
 
 Teuchos::RCP<Belos::SolverManager<ST,BelosMV, OP> > belos;
 if (variant==0)
