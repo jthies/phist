@@ -52,6 +52,19 @@ eigSort2str = _phist_tools.eigSort2str
 _phist_tools.str2eigSort.argtypes = (_ct.c_char_p,)
 _phist_tools.str2eigSort.resType = eigSort_t
 str2eigSort = _phist_tools.str2eigSort
+
+# eigExtr
+eigExtr_t = _ct.c_uint
+eigExtr_STANDARD = _ct.c_uint(0)
+eigSort_HARMONIC = _ct.c_uint(1)
+eigSort_INVALID_EIGEXTR_T = _ct.c_uint(99)
+_phist_tools.eigExtr2str.argtypes = (eigExtr_t,)
+_phist_tools.eigExtr2str.resType = _ct.c_char_p
+eigExtr2str = _phist_tools.eigExtr2str
+_phist_tools.str2eigExtr.argtypes = (_ct.c_char_p,)
+_phist_tools.str2eigExtr.resType = eigExtr_t
+str2eigExtr = _phist_tools.str2eigExtr
+
 # linSolv
 linSolv_t = _ct.c_uint
 linSolv_DO_NOTHING   = _ct.c_uint(0)

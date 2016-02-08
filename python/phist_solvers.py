@@ -44,6 +44,8 @@ class phist_jadaOpts_t(_ct.Structure):
        eigSort_t which; //! LM, SM, LR, SR, or TARGET
        double convTol; //! convergence tolerance for eigenvalues
        matSym_t symmetry; //! Symmetry properties of the matrix
+       eigExtr_t how; //! use standaard or harmonic Ritz values, etc.
+
        // JaDa configuration
        int maxIters; //! maximum iterations allowed
        int blockSize; //! only for block methods (subspacejada)
