@@ -652,14 +652,7 @@ set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          )
 set(PHIST_PRECON_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/phist_precon.cpp
                         ${PROJECT_SOURCE_DIR}/src/precon/phist_ilu.cpp
-                        ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_Ifpack.cpp
                         )
-set(PHIST_PRECON_TPL_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_Ifpack.cpp
-                            ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_Ifpack2.cpp
-                            ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_Amesos2.cpp
-                            ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_ML.cpp
-                            ${PROJECT_SOURCE_DIR}/src/precon/tpl/phist_MueLU.cpp
-                            )                            
 set (PHIST_SUPPORT_SOURCE  ${PROJECT_SOURCE_DIR}/src/support/phist_feastCorrectionSolver.cpp
                            ${PROJECT_SOURCE_DIR}/src/support/phist_iter_op.cpp
                            )
@@ -682,8 +675,7 @@ add_library(phist_core ${PHIST_CORE_SOURCE})
 add_library(phist_kernels_${PHIST_KERNEL_LIB} ${PHIST_KERNEL_SOURCE})
 add_library(phist_solvers ${PHIST_KRYLOV_SOURCE} 
                           ${PHIST_JADA_SOURCE})
-add_library(phist_precon ${PHIST_PRECON_SOURCE} 
-                         ${PHIST_PRECON_TPL_SOURCE})
+add_library(phist_precon ${PHIST_PRECON_SOURCE})
 add_library(phist_support ${PHIST_SUPPORT_SOURCE})
 
 LIST(APPEND library_list phist_tools)

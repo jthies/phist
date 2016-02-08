@@ -42,7 +42,7 @@ class PreconTraits<double,IFPACK>
     
     Teuchos::RCP<Teuchos::ParameterList> ifpack_list=Teuchos::rcp(new Teuchos::ParameterList());
     
-    Teuchos::Comm<int> comm...;
+    Teuchos::Comm<int> comm=TODO;
     TRY_CATCH(updateParametersFromXmlFileAndBroadcast(options,*ifpack_list.ptr(),comm),*iflag);
     
     Ifpack Factory;
@@ -52,13 +52,15 @@ class PreconTraits<double,IFPACK>
     int OverlapLevel = ifpack_list->get("Overlap",0);
     ifpack_list->remove("Overlap");
 
-    Teuchos::RCP<Ifpack_Preconditioner> Prec = Teuchos::rcp(Factory.Create(PrecType, A, OverlapLevel));
+    // computing A-sigma*B is possible in Epetra but not implemented here
+    PHIST_CHK_IERR(*iflag= (sigma!=0.0)? -99:0,*iflag);
+
+    Ifpack_Preconditioner* Prec = Factory.Create(PrecType, A, OverlapLevel);
     PHIST_CHK_IERR(iflag=Prec!=Teuchos::null?0:PHIST_BAD_CAST,*iflag);
 
     IFPACK_CHK_ERR(Prec->SetParameters(*ifpack_list));
     IFPACK_CHK_ERR(Prec->Initialize());
-    IFPACK_CHK_ERR(Prec->Compute());
-    
+    IFPACK_CHK_ERR(Prec->Compute());    
     
     return iflag;
   }

@@ -9,6 +9,8 @@
 #include "phist_ScalarTraits.hpp"
 #include <stdlib.h>
 
+#include "phist_PreconFactory.hpp"
+
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_precon_def.hpp"
@@ -16,6 +18,11 @@
 #include "phist_precon_def.hpp"
 #endif
 #include "phist_gen_d.h"
+#ifdef PHIST_KERNEL_LIB_EPETRA
+# ifdef PHIST_HAVE_IFPACK
+# include "tpl/phist_Ifpack_def.hpp"
+# endif
+#endif
 #include "phist_precon_def.hpp"
 #include "phist_gen_z.h"
 #include "phist_precon_def.hpp"
