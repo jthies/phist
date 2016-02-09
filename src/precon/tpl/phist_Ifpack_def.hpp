@@ -64,9 +64,9 @@ class PreconTraits<double,IFPACK>
     Ifpack_Preconditioner* Prec = Factory.Create(PrecType, (Epetra_CrsMatrix*)A, OverlapLevel);
     PHIST_CHK_IERR(*iflag=Prec!=NULL?0:PHIST_BAD_CAST,*iflag);
 
-    PHIST_CHK_IERR(*iflag=!Prec->SetParameters(*ifpack_list),*iflag);
-    PHIST_CHK_IERR(*iflag=!Prec->Initialize(),*iflag);
-    PHIST_CHK_IERR(*iflag=!Prec->Compute(),*iflag);
+    PHIST_CHK_IERR(*iflag=Prec->SetParameters(*ifpack_list),*iflag);
+    PHIST_CHK_IERR(*iflag=Prec->Initialize(),*iflag);
+    PHIST_CHK_IERR(*iflag=Prec->Compute(),*iflag);
     
     // return created object as void pointer
     *P=(void*)Prec;
