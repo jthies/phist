@@ -97,7 +97,7 @@ else
   GET_ARG(opts.numEigs,p++,opts.numEigs>0);
 
   // which eigenvalues to compute
-  GET_ARG(opts.which,p++,opts.which!=INVALID_EIGSORT_T&&opts.which!=NONE);
+  GET_ARG(opts.which,p++,opts.which!=INVALID_EIGSORT_T&&opts.which!=NO_EIGSORT);
 
   _ST_ target=st::zero();
   if (opts.which==TARGET)

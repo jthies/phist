@@ -40,7 +40,7 @@ phist_kernel_lib = _phist_tools.phist_kernel_lib
 # from phist_enums.h
 # eigSort
 eigSort_t = _ct.c_uint
-eigSort_NONE    = _ct.c_uint(0)
+eigSort_NO_EIGSORT    = _ct.c_uint(0)
 eigSort_LM      = _ct.c_uint(1)
 eigSort_SM      = _ct.c_uint(2)
 eigSort_LR      = _ct.c_uint(3)
