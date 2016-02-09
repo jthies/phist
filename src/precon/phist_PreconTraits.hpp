@@ -16,8 +16,20 @@ namespace phist {
 template<typename ST,precon_t PT>
 class PreconTraits
 {
+
   typedef ScalarTraits<ST> st;
   typedef void mvec_t;
+
+public:
+
+
+  static void Usage()
+  {
+    PHIST_SOUT(PHIST_ERROR,"In order to use a certain preconditioner, you first have to implement class PreconTraits for it.\n"
+                           "This is currently only possible from within PHIST as the preconditioner has to exist as an enum precon_t\n"
+                           "entry. However, you can also construct any preconditioning object your self and pass it to the solvers as\n"
+                           "TYPE(linearOp), in which case you have complete freedom of implementation even if PHIST is pre-installed.\n");
+  }
 
   static void NotImplemented(int* iflag)
   {
@@ -27,7 +39,9 @@ class PreconTraits
   }
 
   static void Create(void** P, 
-        const void* A, ST sigma, const void* B, const char* options, int* iflag)
+        const void* A, ST sigma, const void* B, 
+        const void* Vkern, const void* BVkern,
+        const char* options, int* iflag)
   {
     NotImplemented(iflag);
     return;

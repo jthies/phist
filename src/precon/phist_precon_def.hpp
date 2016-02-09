@@ -11,21 +11,21 @@
 
 
 #define SELECT_PT_MEMBER(PRECON_TYPE,MEMBER) \
-        PRECON_TYPE==NONE? phist::PreconTraits<_ST_,NONE>:: ## MEMBER: \
-        PRECON_TYPE==IFPACK? phist::PreconTraits<_ST_,IFPACK>:: ## MEMBER: \
-        PRECON_TYPE==ML? phist::PreconTraits<_ST_,ML>:: ## MEMBER: \
-        PRECON_TYPE==IFPACK2? phist::PreconTraits<_ST_,IFPACK2>:: ## MEMBER: \
-        PRECON_TYPE==MUELU? phist::PreconTraits<_ST_,MUELU>:: ## MEMBER: \
-        PRECON_TYPE==AMESOS2? phist::PreconTraits<_ST_,AMESOS2>:: ## MEMBER: \
+        PRECON_TYPE==NO_PRECON? phist::PreconTraits<_ST_,NO_PRECON>::MEMBER: \
+        PRECON_TYPE==IFPACK? phist::PreconTraits<_ST_,IFPACK>::MEMBER: \
+        PRECON_TYPE==ML? phist::PreconTraits<_ST_,ML>::MEMBER: \
+        PRECON_TYPE==IFPACK2? phist::PreconTraits<_ST_,IFPACK2>::MEMBER: \
+        PRECON_TYPE==MUELU? phist::PreconTraits<_ST_,MUELU>::MEMBER: \
+        PRECON_TYPE==AMESOS2? phist::PreconTraits<_ST_,AMESOS2>::MEMBER: \
         NULL;
 
 #define CALL_PT_MEMBER(PRECON_TYPE,MEMBER,...) \
-        if (PRECON_TYPE==NONE) PHIST_CHK_IERR(phist::PreconTraits<_ST_,NONE>:: ## MEMBER(__VA_ARGS__),*iflag); \
-        else if (PRECON_TYPE==IFPACK) PHIST_CHK_IERR(phist::PreconTraits<_ST_,IFPACK>:: ## MEMBER(__VA_ARGS__),*iflag): \
-        else if (PRECON_TYPE==ML) PHIST_CHK_IERR(phist::PreconTraits<_ST_,ML>:: ## MEMBER(__VA_ARGS__),*iflag): \
-        else if (PRECON_TYPE==IFPACK2) PHIST_CHK_IERR(phist::PreconTraits<_ST_,IFPACK2>:: ## MEMBER(__VA_ARGS__),*iflag): \
-        else if (PRECON_TYPE==MUELU) PHIST_CHK_IERR(phist::PreconTraits<_ST_,MUELU>:: ## MEMBER(__VA_ARGS__),*iflag): \
-        else if(PRECON_TYPE==AMESOS2) PHIST_CHK_IERR(phist::PreconTraits<_ST_,AMESOS2>:: ## MEMBER(__VA_ARGS__),*iflag): \
+        if (PRECON_TYPE==NO_PRECON) PHIST_CHK_IERR((phist::PreconTraits<_ST_,NO_PRECON>::MEMBER)(__VA_ARGS__),*iflag) \
+        else if (PRECON_TYPE==IFPACK) PHIST_CHK_IERR((phist::PreconTraits<_ST_,IFPACK>::MEMBER)(__VA_ARGS__),*iflag) \
+        else if (PRECON_TYPE==ML) PHIST_CHK_IERR((phist::PreconTraits<_ST_,ML>::MEMBER)(__VA_ARGS__),*iflag) \
+        else if (PRECON_TYPE==IFPACK2) PHIST_CHK_IERR((phist::PreconTraits<_ST_,IFPACK2>::MEMBER)(__VA_ARGS__),*iflag) \
+        else if (PRECON_TYPE==MUELU) PHIST_CHK_IERR((phist::PreconTraits<_ST_,MUELU>::MEMBER)(__VA_ARGS__),*iflag) \
+        else if(PRECON_TYPE==AMESOS2) PHIST_CHK_IERR((phist::PreconTraits<_ST_,AMESOS2>::MEMBER)(__VA_ARGS__),*iflag) \
         else PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
 
 // create a preconditioner for an iterative linear solver
@@ -66,7 +66,6 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
                          TYPE(const_mvec_ptr) Vkern, TYPE(const_mvec_ptr) BVkern,
                          const char* method, const char* options, int* iflag)
 {
-#include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
   
@@ -100,9 +99,16 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
     return;
   }
   
+  precon_t precType=str2precon(method);
+
+  if (!strcasecmp(options,"usage"))
+  {
+    CALL_PT_MEMBER(precType,Usage);
+    return;
+  }
+
   phist_internal_precon_t* pt = new phist_internal_precon_t;
   
-  precon_t precType=str2precon(method);
   pt->type_ = precType;
   
   if (precType==INVALID_PRECON_T)
@@ -115,7 +121,7 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
     return;
   }
   
-  PHIST_CHK_IERR( CALL_PT_MEMBER(precType, Create,&pt->P_,A,sigma,B,Vkern,BVkern,options,iflag), *iflag);
+  CALL_PT_MEMBER(precType,Create,&pt->P_,A,sigma,B,Vkern,BVkern,options,iflag);
 
   op->A_=pt;
   op->apply = SELECT_PT_MEMBER(precType,Apply);
@@ -127,11 +133,10 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
 // destroy preconditioner
 extern "C" void SUBR(precon_delete)(TYPE(linearOp_ptr) op, int* iflag)
 {
-#include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
   CAST_PTR_FROM_VOID(phist_internal_precon_t, pt, op->A_,*iflag);
   precon_t precType=pt->type_;
-  PHIST_CHK_IERR( CALL_PT_MEMBER(precType,Delete,pt,iflag), *iflag);
+  CALL_PT_MEMBER(precType,Delete,pt,iflag);
 }
 
 //@}

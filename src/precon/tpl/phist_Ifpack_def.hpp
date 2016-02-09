@@ -22,6 +22,8 @@ namespace phist {
 class PreconTraits<double,IFPACK>
 {
 
+  public:
+
   static void Usage()
   {
     PHIST_SOUT(PHIST_INFO,"Ifpack: accepts name of an XML parameter file as 'options' string.\n"
@@ -32,7 +34,9 @@ class PreconTraits<double,IFPACK>
   }
 
   static void Create(void** P, 
-        const void* vA, double sigma, const void* vB, std::string options, int* iflag)
+        const void* vA, double sigma, const void* vB, 
+        Dconst_mvec_ptr_t Vkern, Dconst_mvec_ptr_t BVkern,
+        std::string options, int* iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;
