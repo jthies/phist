@@ -6,12 +6,18 @@
 # error "Ifpack only works with Epetra kernel library!"
 #endif
 
+#include "phist_void_aliases.h"
+#include "phist_trilinos_macros.h"
+#include "phist_macros.h"
+
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Ifpack.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+
+namespace phist {
 
 class PreconTraits<double,IFPACK>
 {
@@ -23,7 +29,6 @@ class PreconTraits<double,IFPACK>
                           "        \"Method\" (passed as PrecType ot the Ifpack factory)\n"
                           "        \"Overlap\" (set to >0 to use overlapping Additive Schwarz)\n"
                           "The remaining parameter list is passed to the factory unchanged.\n");
-);
   }
 
   static void Create(void** P, 
@@ -31,12 +36,12 @@ class PreconTraits<double,IFPACK>
   {
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;
-    CAST_PTR_FROM_VOID(const Epetra_CrsMatrix, A, vA,iflag);
+    PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix, A, vA,*iflag);
     const Epetra_CrsMatrix* B = (const Epetra_CrsMatrix*)vB;
     
     Teuchos::RCP<Teuchos::ParameterList> ifpack_list=Teuchos::rcp(new Teuchos::ParameterList());
     
-    TRY_CATCH(updateParametersFromXmlFile(options,*ifpack_list.ptr()),*iflag);
+    PHIST_TRY_CATCH(updateParametersFromXmlFile(options,ifpack_list.ptr()),*iflag);
     
     Ifpack Factory;
 
@@ -47,13 +52,17 @@ class PreconTraits<double,IFPACK>
 
     // computing A-sigma*B is possible in Epetra but not implemented here
     PHIST_CHK_IERR(*iflag= (sigma!=0.0)? -99:0,*iflag);
+    
+    // note: the Ifpack class requires a non-const Epetra_RowMatrix*, so technically at this point we're
+    // forced to copy the matrix anyway. Just for testing things out we avoid this right now, we'd have
+    // to decide who's responsible for deleting the copied matrix and when (TODO).
 
-    Ifpack_Preconditioner* Prec = Factory.Create(PrecType, A, OverlapLevel);
-    PHIST_CHK_IERR(iflag=Prec!=Teuchos::null?0:PHIST_BAD_CAST,*iflag);
+    Ifpack_Preconditioner* Prec = Factory.Create(PrecType, (Epetra_CrsMatrix*)A, OverlapLevel);
+    PHIST_CHK_IERR(*iflag=Prec!=NULL?0:PHIST_BAD_CAST,*iflag);
 
-    IFPACK_CHK_ERR(Prec->SetParameters(*ifpack_list));
-    IFPACK_CHK_ERR(Prec->Initialize());
-    IFPACK_CHK_ERR(Prec->Compute());
+    PHIST_CHK_IERR(*iflag=!Prec->SetParameters(*ifpack_list),*iflag);
+    PHIST_CHK_IERR(*iflag=!Prec->Initialize(),*iflag);
+    PHIST_CHK_IERR(*iflag=!Prec->Compute(),*iflag);
     
     // return created object as void pointer
     *P=(void*)Prec;
@@ -65,27 +74,27 @@ class PreconTraits<double,IFPACK>
   {
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;
-    CAST_PTR_FROM_VOID(Ifpack_Preconditioner, P, vP,iflag);
+    PHIST_CAST_PTR_FROM_VOID(Ifpack_Preconditioner, P, vP,*iflag);
     delete [] P;
   }
   
-  static void Apply(ST alpha, void const* vP, st::mvec_t const* vX, ST beta, st:mvec_t* vY)
+  static void Apply(double alpha, void const* vP, Dconst_mvec_ptr_t vX, double beta, Dmvec_ptr_t vY, int* iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;
-    CAST_PTR_FROM_VOID(const Ifpack_Preconditioner, P, vP,iflag);
-    CAST_PTR_FROM_VOID(const Epetra_MultiVector, X, vX,iflag);
-    CAST_PTR_FROM_VOID(      Epetra_MultiVector, Y, vY,iflag);
+    PHIST_CAST_PTR_FROM_VOID(const Ifpack_Preconditioner, P, vP,*iflag);
+    PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector, X, vX,*iflag);
+    PHIST_CAST_PTR_FROM_VOID(      Epetra_MultiVector, Y, vY,*iflag);
     if (alpha!=1.0||beta!=0.0)
     {
       PHIST_SOUT(PHIST_ERROR,"Ifpack preconditioner can only be applied as Y=inv(P)X up to now\n");
       *iflag=PHIST_NOT_IMPLEMENTED;
       return;
     }
-    PHIST_CHK_IERR(*iflag=P->ApplyInverse(X,Y),*iflag);
+    PHIST_CHK_IERR(*iflag=P->ApplyInverse(*X,*Y),*iflag);
   }
   
-  static void ApplyT(ST alpha, void const* P, st::mvec_t* X, ST beta, st:mvec_t const* b)
+  static void ApplyT(double alpha, void const* P, Dconst_mvec_ptr_t X, double beta, Dmvec_ptr_t Y, int* iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
     // we currently don't need to apply the transpose of a preconditioner, and in Ifpack
@@ -95,8 +104,9 @@ class PreconTraits<double,IFPACK>
     *iflag=PHIST_NOT_IMPLEMENTED;
     return;
   }
-  static void ApplyShifted((ST alpha, const void* vP, ST const * sigma,
-          st::mvec_t const* vX, ST beta,  st::mvec_t* vY, int* iflag);
+  
+  static void ApplyShifted(double alpha, const void* vP, double const * sigma,
+          Dconst_mvec_ptr_t vX, double beta,  Dmvec_ptr_t vY, int* iflag)
   {
     // As we are talking about preconditioning here, we have the freedom to simply apply the same operator
     // to each column (ignoring the shift altogether or using a single shift). We could decide what to do 
@@ -108,4 +118,5 @@ class PreconTraits<double,IFPACK>
 
 };
 
+} // namespace phist
 #endif

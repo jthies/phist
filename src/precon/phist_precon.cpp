@@ -1,4 +1,5 @@
 #include "phist_config.h"
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -18,11 +19,6 @@
 #include "phist_precon_def.hpp"
 #endif
 #include "phist_gen_d.h"
-#ifdef PHIST_KERNEL_LIB_EPETRA
-# ifdef PHIST_HAVE_IFPACK
-# include "tpl/phist_Ifpack_def.hpp"
-# endif
-#endif
 #include "phist_precon_def.hpp"
 #include "phist_gen_z.h"
 #include "phist_precon_def.hpp"

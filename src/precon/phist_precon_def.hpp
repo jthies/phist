@@ -96,8 +96,6 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
 #else
         PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",p);
 #endif
-      }
-    }
     *iflag=0;
     return;
   }
