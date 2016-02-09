@@ -38,7 +38,7 @@ int main(int argc, char** argv)
   MT *xnorm2, *bnorm2; /* for scaling, norm of exact solution and rhs */
   char* matname;
   
-  int num_iters;
+  int num_iters, nconv;
   int max_iters,max_blocks,num_rhs;
   int variant=0; // only proper block GMRES accessible via this driver right now.
   const char *prec_type,*prec_opts;
@@ -121,7 +121,7 @@ int main(int argc, char** argv)
     PHIST_OUT(PHIST_INFO,"matrix: %s\n",matname);
     PHIST_OUT(PHIST_INFO,"number of rhs: %d\n",num_rhs);
     PHIST_OUT(PHIST_INFO,"preconditioner: %s\n",prec_type);
-    PHIST_OUT)(PHIST_INFO,"prec options: %s\n",prec_opts);
+    PHIST_OUT(PHIST_INFO,"prec options: %s\n",prec_opts);
   }
 
   iflag=PHIST_SPARSEMAT_REPARTITION;
@@ -151,11 +151,11 @@ int main(int argc, char** argv)
   
   /* create the preconditioner */
   P_op = (linearOp_ptr_t)malloc(sizeof(TYPE(linearOp)));
-  PHIST_ICHK_IERR(SUBR(precon_create)(P_op,A,ZERO,NULL,NULL,NULL,prec_type,prec_opts,iflag),*iflag);
+  PHIST_ICHK_IERR(SUBR(precon_create)(P_op,A,ZERO,NULL,NULL,NULL,prec_type,prec_opts,&iflag),iflag);
    
   num_iters=max_iters;
   
-  SUBR(belos)(A_op,X,B,P_op,tol,&num_iters,max_blocks,variant,&iflag);
+  SUBR(belos)(A_op,X,B,P_op,tol,&num_iters,max_blocks,variant,&nconv,&iflag);
 
   if (iflag!=0)
     {

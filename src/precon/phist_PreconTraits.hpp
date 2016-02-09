@@ -1,10 +1,16 @@
-#include "phist_config.h"
+#ifndef PHIST_PRECON_TRAITS_HPP
+#define PHIST_PRECON_TRAITS_HPP
 
-#include "phist_precon.h"
+#include "phist_config.h"
 
 namespace phist {
 
-//
+//! traits class for making preconditioners usable in phist programs. The user
+//! should not use this class directly but the C wrapper defined in phist_precon.h
+
+//! default implementation of the traits class that allows us to interface
+//! with our own and third-party preconditioners. The default implementation
+//! just gives error messages about missing template specialization.
 template<typename ST,precon_t PT>
 class PreconTraits
 {
@@ -17,18 +23,23 @@ class PreconTraits
     *iflag=PHIST_NOT_IMPLEMENTED;
   }
 
-  static void Create(st::linearOp_t* P, 
-        const void* A, ST sigma, const void* B, std::string options, int* iflag)
+  static void Create(void** P, 
+        const void* A, ST sigma, const void* B, const char* options, int* iflag)
   {
     NotImplemented(iflag);
     return;
   }
-  static void Apply(ST alpha, void const* P, st::mvec_t* X, ST beta, st:mvec_t const* b)
+  static void Delete(void* P, int* iflag)
   {
     NotImplemented(iflag);
     return;
   }
-  static void ApplyT(ST alpha, void const* P, st::mvec_t* X, ST beta, st:mvec_t const* b)
+  static void Apply(ST alpha, void const* P, st::mvec_t const* X, ST beta, st:mvec_t* Y)
+  {
+    NotImplemented(iflag);
+    return;
+  }
+  static void ApplyT(ST alpha, void const* P, st::mvec_t const* X, ST beta, st:mvec_t* Y)
   {
     NotImplemented(iflag);
     return;
@@ -42,3 +53,16 @@ class PreconTraits
 };
 
 }
+
+// depending on the installation, include source files with template specializations
+# if defined(PHIST_KERNEL_LIB_EPETRA)
+# include "tpl/phist_Ifpack_def.hpp"
+# include "tpl/phist_ML_def.hpp"
+# include "tpl/phist_MUELU_def.hpp"
+# elif defined(PHIST_KERNEL_LIB_TPETRA
+# include "tpl/phist_Ifpack2_def.hpp"
+# include "tpl/phist_Amesos2_def.hpp"
+# include "tpl/phist_MUELU_def.hpp"
+# endif
+
+#endif

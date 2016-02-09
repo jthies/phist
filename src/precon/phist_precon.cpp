@@ -9,7 +9,7 @@
 #include "phist_ScalarTraits.hpp"
 #include <stdlib.h>
 
-#include "phist_PreconFactory.hpp"
+#include "phist_PreconTraits.hpp"
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
