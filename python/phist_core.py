@@ -49,10 +49,10 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _sdMat_ptr = getattr(_phist_kernels, _varT+'sdMat_ptr')
     _sdMat_ptr_p = getattr(_phist_kernels, _varT+'sdMat_ptr_p')
 
-    # op
-    class _op(_ct.Structure):
+    # linearOp
+    class _linearOp(_ct.Structure):
         pass
-    _op._fields_ = [('A', _ct.c_void_p),
+    _linearOp._fields_ = [('A', _ct.c_void_p),
                     ('range_map', _map_ptr),
                     ('domain_map', _map_ptr),
                     ('aux',   _ct.c_void_p),
@@ -60,17 +60,17 @@ for _varT in ('S', 'D', 'C', 'Z'):
                     ('applyT', _ct.c_void_p),
                     ('apply_shifted', _ct.c_void_p)]
 
-    _set(_varT+'op', _op)
-    _linearOp_ptr = _ct.POINTER(_op)
+    _set(_varT+'linearOp', _linearOp)
+    _linearOp_ptr = _ct.POINTER(_linearOp)
     _set(_varT+'linearOp_ptr', _linearOp_ptr)
     _linearOp_ptr_p = _ct.POINTER(_linearOp_ptr)
     _set(_varT+'linearOp_ptr_p', _linearOp_ptr_p)
 
     # from phist_driver_operator_decl.h
-    #void SUBR(op_wrap_sparseMat)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_ptr) A, int* ierr);
-    #void SUBR(op_identity)(TYPE(linearOp_ptr) op, int* ierr);
-    _declare(None, _prefix+'op_wrap_sparseMat', (_linearOp_ptr, _sparseMat_ptr, c_int_p), skip_if_missing=True)
-    _declare(None, _prefix+'op_identity', (_linearOp_ptr, c_int_p), skip_if_missing=True)
+    #void SUBR(linearOp_wrap_sparseMat)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_ptr) A, int* ierr);
+    #void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op, int* ierr);
+    _declare(None, _prefix+'linearOp_wrap_sparseMat', (_linearOp_ptr, _sparseMat_ptr, c_int_p), skip_if_missing=True)
+    _declare(None, _prefix+'linearOp_identity', (_linearOp_ptr, c_int_p), skip_if_missing=True)
 
     # from phist_orthog_decl.h
     #void SUBR(orthog)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W, TYPE(const_linearOp_ptr) B, TYPE(sdMat_ptr) R1, TYPE(sdMat_ptr) R2, int numSweeps, int* rankVW, int* iflag);
