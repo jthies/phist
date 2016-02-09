@@ -107,6 +107,7 @@ class phist_jadaOpts_t(_ct.Structure):
                 ("which",               _phist_tools.eigSort_t),
                 ("convTol",             c_double),
                 ("symmetry",            _phist_tools.matSym_t),
+                ("how",                 _phist_tools.eigExtr_t),
                 ("maxIters",            c_int),
                 ("blockSize",           c_int),
                 ("minBas",              c_int),
