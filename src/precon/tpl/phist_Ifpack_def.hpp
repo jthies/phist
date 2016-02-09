@@ -79,7 +79,7 @@ class PreconTraits<double,IFPACK>
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;
     PHIST_CAST_PTR_FROM_VOID(Ifpack_Preconditioner, P, vP,*iflag);
-    delete [] P;
+    delete P;
   }
   
   static void Apply(double alpha, void const* vP, Dconst_mvec_ptr_t vX, double beta, Dmvec_ptr_t vY, int* iflag)

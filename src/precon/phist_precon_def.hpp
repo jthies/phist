@@ -72,6 +72,7 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
   if (!strcasecmp(method,"usage"))
   {
     PHIST_SOUT(PHIST_ERROR,"Your PHIST installation supports the following preconditioners:\n");
+    PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(NO_PRECON));
 #ifdef PHIST_KERNEL_LIB_EPETRA
 # ifdef PHIST_HAVE_IFPACK
         PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(IFPACK));
@@ -136,7 +137,7 @@ extern "C" void SUBR(precon_delete)(TYPE(linearOp_ptr) op, int* iflag)
   PHIST_ENTER_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(phist_internal_precon_t, pt, op->A,*iflag);
   precon_t precType=pt->type_;
-  CALL_PT_MEMBER(precType,Delete,pt,iflag);
+  CALL_PT_MEMBER(precType,Delete,pt->P_,iflag);
 }
 
 // apply preconditioner
