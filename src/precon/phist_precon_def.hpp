@@ -123,10 +123,10 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
   
   CALL_PT_MEMBER(precType,Create,&pt->P_,A,sigma,B,Vkern,BVkern,options,iflag);
 
-  op->A_=pt;
-  op->apply = SELECT_PT_MEMBER(precType,Apply);
-  op->applyT = SELECT_PT_MEMBER(precType,ApplyT);
-  op->apply_shifted = SELECT_PT_MEMBER(precType,ApplyShifted);
+  op->A=pt;
+  op->apply = SUBR(precon_apply);
+  op->applyT = SUBR(precon_applyT);
+  op->apply_shifted = SUBR(precon_apply_shifted);
 
 }
 
@@ -134,9 +134,39 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
 extern "C" void SUBR(precon_delete)(TYPE(linearOp_ptr) op, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  CAST_PTR_FROM_VOID(phist_internal_precon_t, pt, op->A_,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(phist_internal_precon_t, pt, op->A,*iflag);
   precon_t precType=pt->type_;
   CALL_PT_MEMBER(precType,Delete,pt,iflag);
+}
+
+// apply preconditioner
+extern "C" void SUBR(precon_apply)(_ST_ alpha, void const* vP, TYPE(const_mvec_ptr) X, 
+                                   _ST_ beta,  TYPE(mvec_ptr) Y,int* iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(phist_internal_precon_t, pt, vP,*iflag);
+  precon_t precType=pt->type_;
+  CALL_PT_MEMBER(precType,Apply,alpha,pt->P_,X,beta,Y,iflag);
+}
+
+// apply preconditioner
+extern "C" void SUBR(precon_applyT)(_ST_ alpha, void const* vP, TYPE(const_mvec_ptr) X, 
+                                   _ST_ beta,  TYPE(mvec_ptr) Y,int* iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(phist_internal_precon_t, pt, vP,*iflag);
+  precon_t precType=pt->type_;
+  CALL_PT_MEMBER(precType,ApplyT,alpha,pt->P_,X,beta,Y,iflag);
+}
+
+// apply preconditioner
+extern "C" void SUBR(precon_apply_shifted)(_ST_ alpha, void const* vP, _ST_ const* sigma, TYPE(const_mvec_ptr) X, 
+                                   _ST_ beta,  TYPE(mvec_ptr) Y,int* iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(phist_internal_precon_t, pt, vP,*iflag);
+  precon_t precType=pt->type_;
+  CALL_PT_MEMBER(precType,ApplyShifted,alpha,pt->P_,sigma,X,beta,Y,iflag);
 }
 
 //@}

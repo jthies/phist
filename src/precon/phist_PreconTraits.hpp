@@ -51,12 +51,12 @@ public:
     NotImplemented(iflag);
     return;
   }
-  static void Apply(ST alpha, void const* P, mvec_t const* X, ST beta, mvec_t* Y)
+  static void Apply(ST alpha, void const* P, mvec_t const* X, ST beta, mvec_t* Y, int* iflag)
   {
     NotImplemented(iflag);
     return;
   }
-  static void ApplyT(ST alpha, void const* P, mvec_t const* X, ST beta, mvec_t* Y)
+  static void ApplyT(ST alpha, void const* P, mvec_t const* X, ST beta, mvec_t* Y, int* iflag)
   {
     NotImplemented(iflag);
     return;

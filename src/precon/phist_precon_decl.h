@@ -44,6 +44,25 @@ void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_ptr) A,
 //! destroy preconditioner
 void SUBR(precon_delete)(TYPE(linearOp_ptr) op, int* iflag);
 
+//! apply preconditioner to an mvec
+
+//! This should be done via the member of the linearOp, not by calling this subroutine directly.
+void SUBR(precon_apply)(_ST_ alpha, void const* P, TYPE(const_mvec_ptr) X, _ST_ beta, TYPE(mvec_ptr) Y, int* iflag);
+
+//! apply transposed preconditioner to an mvec
+
+//! This should be done via the member of the linearOp, not by calling this subroutine directly.
+void SUBR(precon_applyT)(_ST_ alpha, void const* P, TYPE(const_mvec_ptr) X, _ST_ beta, TYPE(mvec_ptr) Y, int* iflag);
+
+//! apply preconditioner to an mvec.
+
+//! The shifts indicate that the operator preconditioned is A-sigma[j]B for column j of the mvec. It
+//! is up to the preconditioner wether he exploits this info somehow.
+//! This should be done via the member of the linearOp, not by calling this subroutine directly.
+void SUBR(precon_apply_shifted)(_ST_ alpha, void const* P, _ST_ const* sigma,
+        TYPE(const_mvec_ptr) X, 
+        _ST_ beta, TYPE(mvec_ptr) Y, int* iflag);
+
 //@}
 
 
