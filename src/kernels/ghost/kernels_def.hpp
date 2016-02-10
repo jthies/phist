@@ -52,18 +52,18 @@ PHIST_TASK_BEGIN(ComputeTask)
   ghost_context *ctx;
 
   ghost_sparsemat_traits mtraits=(ghost_sparsemat_traits)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
-  ghost_sparsemat_flags_t flags=GHOST_SPARSEMAT_DEFAULT;
+  ghost_sparsemat_flags flags=GHOST_SPARSEMAT_DEFAULT;
 
         mtraits.C = sellC;
         mtraits.sortScope = sellSigma;
         if (mtraits.sortScope > 1) {
-            flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
+            flags=(ghost_sparsemat_flags)(flags|GHOST_SPARSEMAT_PERMUTE);
         }
       if (repart)
       {
 #ifdef USE_SCOTCH
           PHIST_SOUT(outlev, "Trying to repartition the matrix with SCOTCH\n");
-          flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
+          flags = (ghost_sparsemat_flags)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
 #else
           PHIST_SOUT(outlev, "SCOTCH not available, no matrix repartitioning\n");
 #endif
@@ -118,19 +118,19 @@ PHIST_TASK_BEGIN(ComputeTask)
   ghost_context *ctx;
 
   ghost_sparsemat_traits mtraits=(ghost_sparsemat_traits)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
-  ghost_sparsemat_flags_t flags=GHOST_SPARSEMAT_DEFAULT;
+  ghost_sparsemat_flags flags=GHOST_SPARSEMAT_DEFAULT;
 
         mtraits.C = sellC;
         mtraits.sortScope = sellSigma;
         if (mtraits.sortScope > 1) {
-            flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
+            flags=(ghost_sparsemat_flags)(flags|GHOST_SPARSEMAT_PERMUTE);
         }
 
         if (repart)
         {
 #ifdef USE_SCOTCH
           PHIST_SOUT(outlev, "Trying to repartition the matrix with SCOTCH\n");
-          flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
+          flags = (ghost_sparsemat_flags)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
 #else
           PHIST_SOUT(outlev, "SCOTCH not available, no matrix repartitioning\n");
 #endif
@@ -1874,19 +1874,19 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(const MPI_Comm, comm, vcomm, *iflag);
 
   ghost_sparsemat_traits mtraits=(ghost_sparsemat_traits)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
-  ghost_sparsemat_flags_t flags=GHOST_SPARSEMAT_DEFAULT;
+  ghost_sparsemat_flags flags=GHOST_SPARSEMAT_DEFAULT;
 
         mtraits.C = sellC;
         mtraits.sortScope = sellSigma;
         if (mtraits.sortScope > 1) {
-            flags=(ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_PERMUTE);
+            flags=(ghost_sparsemat_flags)(flags|GHOST_SPARSEMAT_PERMUTE);
         }
 
         if (repart)
         {
 #ifdef USE_SCOTCH
           PHIST_SOUT(outlev, "Trying to repartition the matrix with SCOTCH\n");
-          flags = (ghost_sparsemat_flags_t)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
+          flags = (ghost_sparsemat_flags)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
 #else
           PHIST_SOUT(outlev, "SCOTCH not available, no matrix repartitioning\n");
 #endif
