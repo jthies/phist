@@ -19,6 +19,7 @@
 
 namespace phist {
 
+template<>
 class PreconTraits<double,IFPACK>
 {
 
