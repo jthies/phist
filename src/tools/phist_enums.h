@@ -48,7 +48,6 @@ typedef enum {
   NO_PRECON=0,
   IFPACK,
   ML,
-  IFPACK2,
   MUELU,
   AMESOS2,
   INVALID_PRECON_T

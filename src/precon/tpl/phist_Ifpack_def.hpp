@@ -29,7 +29,7 @@ class PreconTraits<double,IFPACK>
     PHIST_SOUT(PHIST_INFO,"Ifpack: accepts name of an XML parameter file as 'options' string.\n"
                           "        The parameter list may contain two entries, \n"
                           "        \"Method\" (passed as PrecType ot the Ifpack factory)\n"
-                          "        \"Overlap\" (set to >0 to use overlapping Additive Schwarz)\n"
+                          "        \"schwarz: overlap level\" (set to >0 to use overlapping Additive Schwarz)\n"
                           "The remaining parameter list is passed to the factory unchanged.\n");
   }
 
@@ -51,8 +51,17 @@ class PreconTraits<double,IFPACK>
 
     std::string PrecType = ifpack_list->get("Method","ILU");
     ifpack_list->remove("Method");
-    int OverlapLevel = ifpack_list->get("Overlap",0);
-    ifpack_list->remove("Overlap");
+    int OverlapLevel = ifpack_list->get("schwarz: overlap level",0);
+    ifpack_list->remove("schwarz: overlap level");
+    
+    // this parameter is (correctly) int in Ifpack2 but double in Ifpack, we want to
+    // be more compatible so we convert it to double if it is found as an int
+    if (ifpack_list->isType<int>("fact: ilut level-of-fill"))
+    {
+      int lof=ifpack_list->get<int>("fact: ilut level-of-fill");
+      ifpack_list->remove("fact: ilut level-of-fill");
+      ifpack_list->set("fact: ilut level-of-fill",(double)lof);
+    }
 
     // computing A-sigma*B is possible in Epetra but not implemented here
     PHIST_CHK_IERR(*iflag= (sigma!=0.0)? -99:0,*iflag);
