@@ -83,7 +83,7 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
 # ifdef PHIST_HAVE_MUELU
         PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(MUELU));
 # endif
-#elif defined(PHIST_KERNEL_LIB_TPETRA
+#elif defined(PHIST_KERNEL_LIB_TPETRA)
 # ifdef PHIST_HAVE_IFPACK2
         PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(IFPACK2));
 # endif

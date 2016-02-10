@@ -131,7 +131,7 @@ public:
 # include "tpl/phist_Ifpack_def.hpp"
 # include "tpl/phist_ML_def.hpp"
 # include "tpl/phist_MueLU_def.hpp"
-# elif defined(PHIST_KERNEL_LIB_TPETRA
+# elif defined(PHIST_KERNEL_LIB_TPETRA)
 # include "tpl/phist_Ifpack2_def.hpp"
 # include "tpl/phist_Amesos2_def.hpp"
 # include "tpl/phist_MueLU_def.hpp"
