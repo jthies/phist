@@ -10,3 +10,4 @@ This table gives an overview:
 kernel lib      TPL found       precon    prec_opt
 
 epetra          Ifpack          ifpack    ifpack_options.xml
+tpetra          Ifpack2         ifpack    ifpack_options.xml

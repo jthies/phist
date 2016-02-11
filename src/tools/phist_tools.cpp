@@ -77,8 +77,7 @@ extern "C" const char* precon2str(precon_t s)
   return   s==NO_PRECON?"NONE":
 #ifdef PHIST_HAVE_IFPACK
            s==IFPACK?"IFPACK":
-#endif
-#ifdef PHIST_HAVE_IFPACK2
+#elif defined(PHIST_HAVE_IFPACK2)
            s==IFPACK?"IFPACK2":
 #endif
 #ifdef PHIST_HAVE_ML
@@ -141,7 +140,7 @@ extern "C" precon_t str2precon(const char* c_str)
   else if (str=="IFPACK") s=IFPACK;
 #endif
 #ifdef PHIST_HAVE_IFPACK2
-  else if (str=="IFPACK2") s=IFPACK2;
+  else if (str=="IFPACK"||str=="IFPACK2") s=IFPACK;
 #endif
 #ifdef PHIST_HAVE_ML
   else if (str=="ML") s=ML;

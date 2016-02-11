@@ -14,7 +14,6 @@
         PRECON_TYPE==NO_PRECON? phist::PreconTraits<_ST_,NO_PRECON>::MEMBER: \
         PRECON_TYPE==IFPACK? phist::PreconTraits<_ST_,IFPACK>::MEMBER: \
         PRECON_TYPE==ML? phist::PreconTraits<_ST_,ML>::MEMBER: \
-        PRECON_TYPE==IFPACK2? phist::PreconTraits<_ST_,IFPACK2>::MEMBER: \
         PRECON_TYPE==MUELU? phist::PreconTraits<_ST_,MUELU>::MEMBER: \
         PRECON_TYPE==AMESOS2? phist::PreconTraits<_ST_,AMESOS2>::MEMBER: \
         NULL;
@@ -23,7 +22,6 @@
         if (PRECON_TYPE==NO_PRECON) PHIST_CHK_IERR((phist::PreconTraits<_ST_,NO_PRECON>::MEMBER)(__VA_ARGS__),*iflag) \
         else if (PRECON_TYPE==IFPACK) PHIST_CHK_IERR((phist::PreconTraits<_ST_,IFPACK>::MEMBER)(__VA_ARGS__),*iflag) \
         else if (PRECON_TYPE==ML) PHIST_CHK_IERR((phist::PreconTraits<_ST_,ML>::MEMBER)(__VA_ARGS__),*iflag) \
-        else if (PRECON_TYPE==IFPACK2) PHIST_CHK_IERR((phist::PreconTraits<_ST_,IFPACK2>::MEMBER)(__VA_ARGS__),*iflag) \
         else if (PRECON_TYPE==MUELU) PHIST_CHK_IERR((phist::PreconTraits<_ST_,MUELU>::MEMBER)(__VA_ARGS__),*iflag) \
         else if(PRECON_TYPE==AMESOS2) PHIST_CHK_IERR((phist::PreconTraits<_ST_,AMESOS2>::MEMBER)(__VA_ARGS__),*iflag) \
         else PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
@@ -85,7 +83,7 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
 # endif
 #elif defined(PHIST_KERNEL_LIB_TPETRA)
 # ifdef PHIST_HAVE_IFPACK2
-        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(IFPACK2));
+        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(IFPACK));
 # endif
 # ifdef PHIST_HAVE_MUELU
         PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(MUELU));
