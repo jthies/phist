@@ -91,18 +91,18 @@ else
   // symmetry of A
   bool symmetric=false;
   GET_ARG(symmetric,p++,true);
-  opts.symmetry=symmetric?HERMITIAN:GENERAL;
+  opts.symmetry=symmetric?phist_HERMITIAN:phist_GENERAL;
               
   // number of eigenvalues to compute
   GET_ARG(opts.numEigs,p++,opts.numEigs>0);
 
   // which eigenvalues to compute
-  GET_ARG(opts.which,p++,opts.which!=INVALID_EIGSORT_T&&opts.which!=NO_EIGSORT);
+  GET_ARG(opts.which,p++,opts.which!=phist_INVALID_EIGSORT_T&&opts.which!=phist_NO_EIGSORT);
 
   _ST_ target=st::zero();
-  if (opts.which==TARGET)
+  if (opts.which==phist_TARGET)
   {
-    opts.which=SM; // use target=0 and harmonic Ritz extraction
+    opts.which=phist_SM; // use target=0 and harmonic Ritz extraction
     GET_ARG(target,p++,true);
     if (target!=st::zero())
     {
@@ -130,7 +130,7 @@ else
   GET_ARG(opts.maxBas,p++,opts.maxBas>opts.minBas+opts.blockSize&&((opts.maxBas-opts.minBas)%opts.blockSize==0));
 
   /// we don't allow setting this via the command line, but if you use a parameter file it's no problem
-  opts.innerSolvType=symmetric?MINRES:GMRES;
+  opts.innerSolvType=symmetric?phist_MINRES:phist_GMRES;
   
   // inner linear solver block size
   GET_ARG(opts.innerSolvBlockSize,p++,opts.innerSolvBlockSize>0&&opts.innerSolvBlockSize<=opts.blockSize);
@@ -226,7 +226,7 @@ else
   int nIter=opts.maxIters;
 
   //------------------------------- run block JaDa algorithm ----------------------- 
-  if (opts.how==HARMONIC)
+  if (opts.how==phist_HARMONIC)
   {
     PHIST_SOUT(PHIST_INFO,"Jacobi-Davidson for interior eigenvalues\n");
     PHIST_ICHK_IERR(SUBR(harmonicjada)(opA, NULL, opts,
@@ -251,7 +251,7 @@ else
   PHIST_SOUT(PHIST_INFO, "subspacejada terminated after %d iterations and calculated %d eigenvalues.", nIter, nConvergedEig);
   PHIST_SOUT(PHIST_INFO, "\n eigenvalues:              ");
 
-  if( opts.symmetry==HERMITIAN )
+  if( opts.symmetry==phist_HERMITIAN )
   {
     for(int i = 0; i < nEig; i++)
       PHIST_SOUT(PHIST_INFO, "\t%8.4e", ct::real(ev[i]));

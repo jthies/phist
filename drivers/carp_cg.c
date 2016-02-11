@@ -284,7 +284,7 @@ PHIST_ICHK_IERR(SUBR(sdMat_delete)(Rtmp,&iflag),iflag);
 ///////////////////////////////////////////////////////////////////
   TYPE(feastCorrectionSolver_ptr) fCorrSolver;
   PHIST_ICHK_IERR(SUBR(feastCorrectionSolver_create)
-        (&fCorrSolver, mat, CARP_CG, blockSize, nshifts,sigma_r, sigma_i, &iflag),iflag);
+        (&fCorrSolver, mat, phist_CARP_CG, blockSize, nshifts,sigma_r, sigma_i, &iflag),iflag);
         
   // this is not very elegant, but since this driver was meant to test the feast correction 
   // solver in the first place, we stick with it and set parameters manually.

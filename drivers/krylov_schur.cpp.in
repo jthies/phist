@@ -52,7 +52,7 @@ int main(int argc, char** argv)
     
   // default input parameters:
   MT tol=1.0e-6;
-  eigSort_t which=LM;
+  eigSort_t which=phist_LM;
   ST target_value;
   
   int sym=0;
@@ -81,7 +81,7 @@ PHIST_MAIN_TASK_BEGIN
   GET_ARG(sym,p++,sym==0||sym==1);
   GET_ARG(how_many,p++,how_many>0);
   GET_ARG(which,p++,true);
-  if (which==TARGET)
+  if (which==phist_TARGET)
   {
     GET_ARG(target_value,p++,true);
   }
@@ -113,15 +113,15 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(A_op,A,&iflag),iflag);
  
   bool shift_invert=false; 
-  if (which==TARGET)
+  if (which==phist_TARGET)
   {
     shift_invert=true;
     ST shift=-target_value;
-    which=LM;
+    which=phist_LM;
     Ainv_op = new TYPE(linearOp);
     MT linTol=std::max(tol/10,2*mt::eps());
     int linIter=1000;
-    linSolv_t method=CARP_CG;
+    linSolv_t method=phist_CARP_CG;
     PHIST_ICHK_IERR(SUBR(linearOp_wrap_solver)(Ainv_op,A,shift,
         method,block_size,linTol,linIter,&iflag),iflag);
   }

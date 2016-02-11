@@ -39,20 +39,20 @@ _ST_ initialShift   =(_ST_)opts.initialShift_r;
                          
 bool innerIMGS=(opts.innerSolvRobust!=0);
 bool innerGMRESabortAfterFirstConverged=opts.innerSolvStopAfterFirstConverged;
-bool symmetric=opts.symmetry==HERMITIAN;
+bool symmetric=opts.symmetry==phist_HERMITIAN;
 #ifndef IS_COMPLEX
-symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
+symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
 #endif
 
   eigExtr_t how=opts.how;
-  if (how==STANDARD)
+  if (how==phist_STANDARD)
   {
     PHIST_SOUT(PHIST_ERROR,"if you want to use standard Ritz values, please use the subspacejada routine instead\n");
   }
-  if (how!=HARMONIC)
+  if (how!=phist_HARMONIC)
   {
     PHIST_SOUT(PHIST_ERROR,"only Harmonic Ritz extraction is implemented (jadaOpts.how=%s), found %s\n",
-        eigExtr2str(HARMONIC),eigExtr2str(how));
+        eigExtr2str(phist_HARMONIC),eigExtr2str(how));
     *iflag=PHIST_NOT_IMPLEMENTED;
     return;
   }

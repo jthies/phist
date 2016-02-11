@@ -1,4 +1,4 @@
-// this file maps stuff implemented in a C++ traits class (e.g. PreconTraits<ST,IFPACK>::Apply) to plain C 
+// this file maps stuff implemented in a C++ traits class (e.g. PreconTraits<ST,phist_IFPACK>::Apply) to plain C 
 // (e.g. void (*apply)(...) in a linearOp_t struct. It therefore instantiates all the supported PreconTraits
 // templates and selects them with the following macro
 #ifdef SELECT_PT_MEMBER
@@ -11,19 +11,19 @@
 
 
 #define SELECT_PT_MEMBER(PRECON_TYPE,MEMBER) \
-        PRECON_TYPE==NO_PRECON? phist::PreconTraits<_ST_,NO_PRECON>::MEMBER: \
-        PRECON_TYPE==IFPACK? phist::PreconTraits<_ST_,IFPACK>::MEMBER: \
-        PRECON_TYPE==ML? phist::PreconTraits<_ST_,ML>::MEMBER: \
-        PRECON_TYPE==MUELU? phist::PreconTraits<_ST_,MUELU>::MEMBER: \
-        PRECON_TYPE==AMESOS2? phist::PreconTraits<_ST_,AMESOS2>::MEMBER: \
+        PRECON_TYPE==phist_NO_PRECON? phist::PreconTraits<_ST_,phist_NO_PRECON>::MEMBER: \
+        PRECON_TYPE==phist_IFPACK? phist::PreconTraits<_ST_,phist_IFPACK>::MEMBER: \
+        PRECON_TYPE==phist_ML? phist::PreconTraits<_ST_,phist_ML>::MEMBER: \
+        PRECON_TYPE==phist_MUELU? phist::PreconTraits<_ST_,phist_MUELU>::MEMBER: \
+        PRECON_TYPE==phist_AMESOS2? phist::PreconTraits<_ST_,phist_AMESOS2>::MEMBER: \
         NULL;
 
 #define CALL_PT_MEMBER(PRECON_TYPE,MEMBER,...) \
-        if (PRECON_TYPE==NO_PRECON) PHIST_CHK_IERR((phist::PreconTraits<_ST_,NO_PRECON>::MEMBER)(__VA_ARGS__),*iflag) \
-        else if (PRECON_TYPE==IFPACK) PHIST_CHK_IERR((phist::PreconTraits<_ST_,IFPACK>::MEMBER)(__VA_ARGS__),*iflag) \
-        else if (PRECON_TYPE==ML) PHIST_CHK_IERR((phist::PreconTraits<_ST_,ML>::MEMBER)(__VA_ARGS__),*iflag) \
-        else if (PRECON_TYPE==MUELU) PHIST_CHK_IERR((phist::PreconTraits<_ST_,MUELU>::MEMBER)(__VA_ARGS__),*iflag) \
-        else if(PRECON_TYPE==AMESOS2) PHIST_CHK_IERR((phist::PreconTraits<_ST_,AMESOS2>::MEMBER)(__VA_ARGS__),*iflag) \
+        if (PRECON_TYPE==phist_NO_PRECON) PHIST_CHK_IERR((phist::PreconTraits<_ST_,phist_NO_PRECON>::MEMBER)(__VA_ARGS__),*iflag) \
+        else if (PRECON_TYPE==phist_IFPACK) PHIST_CHK_IERR((phist::PreconTraits<_ST_,phist_IFPACK>::MEMBER)(__VA_ARGS__),*iflag) \
+        else if (PRECON_TYPE==phist_ML) PHIST_CHK_IERR((phist::PreconTraits<_ST_,phist_ML>::MEMBER)(__VA_ARGS__),*iflag) \
+        else if (PRECON_TYPE==phist_MUELU) PHIST_CHK_IERR((phist::PreconTraits<_ST_,phist_MUELU>::MEMBER)(__VA_ARGS__),*iflag) \
+        else if(PRECON_TYPE==phist_AMESOS2) PHIST_CHK_IERR((phist::PreconTraits<_ST_,phist_AMESOS2>::MEMBER)(__VA_ARGS__),*iflag) \
         else PHIST_CHK_IERR(*iflag=PHIST_INVALID_INPUT,*iflag);
 
 // create a preconditioner for an iterative linear solver
@@ -70,26 +70,26 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
   if (!strcasecmp(method,"usage"))
   {
     PHIST_SOUT(PHIST_ERROR,"Your PHIST installation supports the following preconditioners:\n");
-    PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(NO_PRECON));
+    PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(phist_NO_PRECON));
 #ifdef PHIST_KERNEL_LIB_EPETRA
 # ifdef PHIST_HAVE_IFPACK
-        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(IFPACK));
+        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(phist_IFPACK));
 # endif
 # ifdef PHIST_HAVE_ML
-        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(ML));
+        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(phist_ML));
 # endif
 # ifdef PHIST_HAVE_MUELU
-        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(MUELU));
+        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(phist_MUELU));
 # endif
 #elif defined(PHIST_KERNEL_LIB_TPETRA)
 # ifdef PHIST_HAVE_IFPACK2
-        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(IFPACK));
+        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(phist_IFPACK));
 # endif
 # ifdef PHIST_HAVE_MUELU
-        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(MUELU));
+        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(phist_MUELU));
 # endif
 # ifdef PHIST_HAVE_AMESOS2
-        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(AMESOS2));
+        PHIST_SOUT(PHIST_ERROR,"\t'%s'\n",precon2str(phist_AMESOS2));
 # endif
 // TODO
 //#else
@@ -111,7 +111,7 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
   
   pt->type_ = precType;
   
-  if (precType==INVALID_PRECON_T)
+  if (precType==phist_INVALID_PRECON_T)
   {
     PHIST_SOUT(PHIST_ERROR,"your given precon type '%s' was not recognized,\n"
                            "please check the spelling and if the required TPLs are\n"

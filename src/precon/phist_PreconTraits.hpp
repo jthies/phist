@@ -71,7 +71,7 @@ public:
 
 
 template<typename ST>
-class PreconTraits<ST,NO_PRECON>
+class PreconTraits<ST,phist_NO_PRECON>
 {
 
   typedef ScalarTraits<ST> st;

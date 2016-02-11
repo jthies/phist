@@ -22,7 +22,7 @@
 namespace phist {
 
 template<typename ST>
-class PreconTraits<ST,IFPACK>
+class PreconTraits<ST,phist_IFPACK>
 {
 
   typedef Tpetra::MultiVector<ST,lidx_t,gidx_t,node_t> mvec_t;

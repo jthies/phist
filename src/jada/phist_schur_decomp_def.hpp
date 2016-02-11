@@ -515,29 +515,29 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 #endif
 */
         // check if the next eigenvalue has same "magnitude"
-        if( which == LM && ct::abs(ev[pos]) < ct::abs(ev[pos-1])-tol )
+        if( which == phist_LM && ct::abs(ev[pos]) < ct::abs(ev[pos-1])-tol )
         {
           pos++;
           continue;
         }
-        if( which == SM && ct::abs(ev[pos]) > ct::abs(ev[pos-1])+tol )
+        if( which == phist_SM && ct::abs(ev[pos]) > ct::abs(ev[pos-1])+tol )
         {
           pos++;
           continue;
         }
-        if( which == LR && ct::real(ev[pos]) < ct::real(ev[pos-1])-tol )
+        if( which == phist_LR && ct::real(ev[pos]) < ct::real(ev[pos-1])-tol )
         {
           pos++;
           continue;
         }
-        if( which == SR && ct::real(ev[pos]) > ct::real(ev[pos-1])+tol )
+        if( which == phist_SR && ct::real(ev[pos]) > ct::real(ev[pos-1])+tol )
         {
           pos++;
           continue;
         }
 
         // we have two ev with the same "magnitude", check residuum
-        if( which == LM || which == SM )
+        if( which == phist_LM || which == phist_SM )
         {
           if( mt::abs(ct::abs(ev[pos])-ct::abs(ev[pos-1])) <= tol &&
               resNorm[pos] >= resNorm[pos-1] )
@@ -546,7 +546,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
             continue;
           }
         }
-        if( which == LR || which == SR )
+        if( which == phist_LR || which == phist_SR )
         {
           if( mt::abs(ct::real(ev[pos])-ct::real(ev[pos-1])) <= tol &&
               resNorm[pos] >= resNorm[pos-1] )
@@ -644,29 +644,29 @@ PHIST_TASK_END(iflag)
 #endif
 */
         // check if the next eigenvalue has same "magnitude"
-        if( which == LM && ct::abs(ev[pos]) < ct::abs(ev[pos-1])-tol )
+        if( which == phist_LM && ct::abs(ev[pos]) < ct::abs(ev[pos-1])-tol )
         {
           pos++;
           continue;
         }
-        if( which == SM && ct::abs(ev[pos]) > ct::abs(ev[pos-1])+tol )
+        if( which == phist_SM && ct::abs(ev[pos]) > ct::abs(ev[pos-1])+tol )
         {
           pos++;
           continue;
         }
-        if( which == LR && ct::real(ev[pos]) < ct::real(ev[pos-1])-tol )
+        if( which == phist_LR && ct::real(ev[pos]) < ct::real(ev[pos-1])-tol )
         {
           pos++;
           continue;
         }
-        if( which == SR && ct::real(ev[pos]) > ct::real(ev[pos-1])+tol )
+        if( which == phist_SR && ct::real(ev[pos]) > ct::real(ev[pos-1])+tol )
         {
           pos++;
           continue;
         }
 
         // we have two ev with the same "magnitude", check residuum
-        if( which == LM || which == SM )
+        if( which == phist_LM || which == phist_SM )
         {
           if( mt::abs(ct::abs(ev[pos])-ct::abs(ev[pos-1])) <= tol &&
               resNorm[pos] >= resNorm[pos-1] )
@@ -675,7 +675,7 @@ PHIST_TASK_END(iflag)
             continue;
           }
         }
-        if( which == LR || which == SR )
+        if( which == phist_LR || which == phist_SR )
         {
           if( mt::abs(ct::real(ev[pos])-ct::real(ev[pos-1])) <= tol &&
               resNorm[pos] >= resNorm[pos-1] )

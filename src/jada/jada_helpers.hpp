@@ -123,15 +123,15 @@ void SortEig(std::complex<MT>* ev,int n,int* idx,eigSort_t which, _MT_ tol, int*
   // and thats problably not what we want!
   tol = tol/n;
 
-  if (which==LM)
+  if (which==phist_LM)
     std::stable_sort(v.begin(),v.end(),SelectLM<ST>(tol));
-  else if (which==SM)
+  else if (which==phist_SM)
     std::stable_sort(v.begin(),v.end(),SelectSM<ST>(tol));
-  else if (which==LR)
+  else if (which==phist_LR)
     std::stable_sort(v.begin(),v.end(),SelectLR<ST>(tol));
-  else if (which==SR)
+  else if (which==phist_SR)
     std::stable_sort(v.begin(),v.end(),SelectSR<ST>(tol));
-  else if (which!=NO_EIGSORT)
+  else if (which!=phist_NO_EIGSORT)
   {
     // sort type not implemented
     *iflag=PHIST_NOT_IMPLEMENTED;

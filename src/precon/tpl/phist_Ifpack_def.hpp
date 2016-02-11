@@ -20,7 +20,7 @@
 namespace phist {
 
 template<>
-class PreconTraits<double,IFPACK>
+class PreconTraits<double,phist_IFPACK>
 {
 
   public:

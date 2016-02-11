@@ -31,7 +31,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       MTest::SetUp();
       JadaTestWithOpts::SetUp();
 
-      jadaOpts_.innerSolvType=GMRES;
+      jadaOpts_.innerSolvType=phist_GMRES;
       jadaOpts_.maxBas=_MAXBAS_;
 
       if( typeImplemented_ && !problemTooSmall_ )

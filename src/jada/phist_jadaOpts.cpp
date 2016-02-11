@@ -12,8 +12,8 @@
 extern "C" void phist_jadaOpts_setDefaults(phist_jadaOpts_t *opts)
 {
   opts->numEigs=6; 
-  opts->which=LM; 
-  opts->how=STANDARD;
+  opts->which=phist_LM; 
+  opts->how=phist_STANDARD;
 
   opts->maxIters=300;
   opts->blockSize=1;
@@ -27,7 +27,7 @@ extern "C" void phist_jadaOpts_setDefaults(phist_jadaOpts_t *opts)
   opts->initialShift_i=0.0;
   opts->initialShiftIters=0;
 
-  opts->innerSolvType=GMRES;
+  opts->innerSolvType=phist_GMRES;
   opts->innerSolvMaxBas=20;
   opts->innerSolvMaxIters=20;
   opts->innerSolvBlockSize=1;

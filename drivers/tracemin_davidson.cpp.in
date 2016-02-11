@@ -53,7 +53,7 @@ int main(int argc, char** argv)
     
   // default input parameters:
   MT tol=1.0e-6;
-  eigSort_t which=LM;
+  eigSort_t which=phist_LM;
   ST target_value;
   
   int sym=0;
@@ -83,7 +83,7 @@ PHIST_MAIN_TASK_BEGIN
   GET_ARG(sym,p++,sym==0||sym==1);
   GET_ARG(how_many,p++,how_many>0);
   GET_ARG(which,p++,true);
-  if (which==TARGET)
+  if (which==phist_TARGET)
   {
     GET_ARG(target_value,p++,true);
   }
