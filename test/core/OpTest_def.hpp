@@ -119,7 +119,7 @@ public:
       PHIST_ICHK_IERR(SUBR(jadaOp_create)(op,NULL,Q_,NULL,sigma,nq_,&jdOp,&iflag_),iflag_);
       Teuchos::RCP<const TYPE(linearOp)> jdOp_ptr=Teuchos::rcp(&jdOp,false);
 #ifdef PHIST_KERNEL_LIB_GHOST
-      ghost_densemat_t* v = (ghost_densemat_t*)vec1_;
+      ghost_densemat* v = (ghost_densemat*)vec1_;
       Teuchos::RCP<const phist::GhostMV> V = phist::rcp(v,false);
       if (Belos::TestOperatorTraits(MyOM,V,op_ptr)==false) {iflag_=-1; return iflag_;}
 #elif defined(PHIST_KERNEL_LIB_EPETRA)

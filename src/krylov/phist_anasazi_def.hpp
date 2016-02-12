@@ -33,7 +33,7 @@ void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr)
 #else
 #include "phist_std_typedefs.hpp"  
 #ifdef PHIST_KERNEL_LIB_GHOST
-  typedef ghost_densemat_t MV;
+  typedef ghost_densemat MV;
   typedef phist::GhostMV AnasaziMV;
 #elif defined(PHIST_KERNEL_LIB_TPETRA)
   typedef Tpetra::MultiVector<ST,lidx_t,gidx_t,node_t> MV;

@@ -938,7 +938,7 @@ TEST_F(CLASSNAME,put_func)
         = Teuchos::rcp( new Belos::OutputManager<ST>() );
       MyOM->setVerbosity( Belos::Warnings|Belos::Debug);
 
-      ghost_densemat_t* v = (ghost_densemat_t*)vec1_;
+      ghost_densemat* v = (ghost_densemat*)vec1_;
       Teuchos::RCP<phist::GhostMV> ivec = phist::rcp(v,false);
 
       // test the multivector and its adapter

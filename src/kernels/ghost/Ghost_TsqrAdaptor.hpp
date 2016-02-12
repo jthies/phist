@@ -386,7 +386,7 @@ namespace ghost {
     static Kokkos::MultiVector<scalar_type,node_type>
     getNonConstView (MV& A)
     {
-    ghost_densemat_t* _A=A.get();
+    ghost_densemat* _A=A.get();
     lidx_t A_len = _A->stride*_A->traits.ncols;
 
     TEUCHOS_TEST_FOR_EXCEPTION(_A->traits.flags & GHOST_DENSEMAT_SCATTERED,    
@@ -413,16 +413,16 @@ namespace ghost {
  static int get_num_threads()
  {
     int nthreads;
-    ghost_task_t *curtask = NULL; \
+    ghost_task *curtask = NULL; \
     ghost_task_cur(&curtask);
     if (curtask == NULL) 
     {
       PHIST_SOUT(PHIST_VERBOSE, "Called %s outside a ghost task!\n", __FUNCTION__);
-      ghost_thpool_t *thpool;
+      ghost_thpool *thpool;
       ghost_thpool_get(&thpool);
       // -1: ghost has one extra worker thread (or is it the operating system?)
       // /2: ad-hoc way to not use hyperthreads.
-      nthreads=std::max((thpool->nThreads-1)/2,1);
+      nthreads=std::max((int)((thpool->nThreads-1)/2),1);
     }
     else
     {

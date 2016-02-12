@@ -1822,8 +1822,8 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
     // copy (and memTranspose back if necessary)
     PHIST_CHK_GERR(V->fromVec(V,Qcopy,0,0),*iflag);
   }
-  Vcopy->destroy(Vcopy);
-  Qcopy->destroy(Qcopy);
+  ghost_densemat_destroy(Vcopy);
+  ghost_densemat_destroy(Qcopy);
   *iflag = ncols-rank;// return positive number if rank not full.
 #else
   *iflag=PHIST_NOT_IMPLEMENTED; // no Trilinos, no TSQR, no mvec_QR (right now)
