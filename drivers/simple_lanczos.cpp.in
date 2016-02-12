@@ -1,0 +1,82 @@
+#include "phist_config.h"
+
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+
+#include "phist_macros.h"
+#include "phist_enums.h"
+#include "phist_kernels.h"
+#include "phist_operator.h"
+#include "phist_simple_lanczos.h"
+
+#include ${PHIST_TG_HFILE}
+#include "phist_driver_utils.h"
+#include "phist_ScalarTraits.hpp"
+#include "phist_std_typedefs.hpp"
+
+// Computes the largest and smallest eigenvalue of a Hermitian matrix using the Lanczos
+// method. This driver is intended for testing fault tolarance concepts in PHIST.
+int main(int argc, char** argv)
+{
+  int iflag=0;
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
+
+  // this macro will take care of fault tolerance
+  PHIST_MAIN_TASK_BEGIN
+  
+  
+  comm_ptr_t comm;
+  sparseMat_ptr_t A;
+  
+  MT lambda_min,lambda_max;
+  
+  char* matname;
+  
+  int num_iters;
+  
+  PHIST_ICHK_IERR(phist_comm_create(&comm,&iflag),iflag);
+
+  if (argc<2)
+  {
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix>\n",argv[0]);
+    
+        SUBR(create_matrix)(NULL,NULL,"usage",&iflag);
+
+    return 1;
+  }
+
+  matname = argv[1];
+ 
+  iflag = PHIST_SPARSEMAT_REPARTITION;
+  PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&iflag),iflag);
+  
+  // create operator wrapper for computing Y=A*X using a CRS matrix
+  TYPE(linearOp) A_op;
+  PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(&A_op,A,&iflag),iflag);
+
+  
+  // call Lanczos iteration routine
+  num_iters=10000;
+  SUBR(simple_lanczos)(&A_op,&lambda_min,&lambda_max,&num_iters,&iflag);
+
+  if (iflag!=0)
+  {
+    PHIST_SOUT(PHIST_WARNING,"code %d returned from jdqr\n",iflag);
+  }
+
+  PHIST_SOUT(PHIST_INFO,"simple_lanczos ran for %d iterations and found lambda_min=%8.4e, lambda_max=%8.4e\n",
+  num_iters,lambda_min,lambda_max);
+  
+  PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
+
+  PHIST_MAIN_TASK_END
+
+  PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
+  return iflag;
+}

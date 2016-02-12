@@ -636,6 +636,7 @@ set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/kernels/builtin/prec_kernels.cpp
                        )
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedgmres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedminres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_belos.cpp
