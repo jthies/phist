@@ -28,6 +28,7 @@ class PreconTraits<ST,phist_IFPACK>
   typedef Tpetra::MultiVector<ST,lidx_t,gidx_t,node_t> mvec_t;
   typedef Tpetra::CrsMatrix<ST,lidx_t,gidx_t,node_t> sparseMat_t;
   typedef Ifpack2::Preconditioner<ST,lidx_t,gidx_t,node_t> prec_type;
+  typedef phist::ScalarTraits<ST> st;
 
   public:
 
@@ -59,7 +60,7 @@ class PreconTraits<ST,phist_IFPACK>
     ifpack_list->remove("Method");
 
     // computing A-sigma*B is possible in Epetra but not implemented here
-    PHIST_CHK_IERR(*iflag= (sigma!=0.0)? -99:0,*iflag);
+    PHIST_CHK_IERR(*iflag= (sigma!=st::zero())? -99:0,*iflag);
     
     Teuchos::RCP<const sparseMat_t> A_ptr = Teuchos::rcp(A,false);
 
@@ -91,7 +92,7 @@ class PreconTraits<ST,phist_IFPACK>
     PHIST_CAST_PTR_FROM_VOID(const prec_type, P, vP,*iflag);
     PHIST_CAST_PTR_FROM_VOID(const mvec_t, X, vX,*iflag);
     PHIST_CAST_PTR_FROM_VOID(      mvec_t, Y, vY,*iflag);
-    if (alpha!=1.0||beta!=0.0)
+    if (alpha!=st::one()||beta!=st::zero())
     {
       PHIST_SOUT(PHIST_ERROR,"Ifpack preconditioner can only be applied as Y=inv(P)X up to now\n");
       *iflag=PHIST_NOT_IMPLEMENTED;
