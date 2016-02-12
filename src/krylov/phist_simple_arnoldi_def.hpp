@@ -7,7 +7,7 @@
 //! We do not check for converged Ritz values in these first few steps.
 //! If a breakdown is encountered, the basis is extended with a random 
 //! vector and the process is continued.
-void SUBR(simple_arnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op, TYPE(const_mvec_ptr) v0,
+void SUBR(simple_arnoldi)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) B_op, TYPE(const_mvec_ptr) v0,
         TYPE(mvec_ptr) V, TYPE(mvec_ptr) AV, TYPE(mvec_ptr) BV, TYPE(sdMat_ptr) H, int m, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -118,7 +118,7 @@ PHIST_TASK_END(iflag)
 
 
 //! starts with random blockvector
-void SUBR(simple_blockArnoldi)(TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) B_op,
+void SUBR(simple_blockArnoldi)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) B_op,
                                TYPE(mvec_ptr) V, TYPE(mvec_ptr) AV, TYPE(mvec_ptr) BV,
                                TYPE(sdMat_ptr) H, int m, int bs, int* iflag)
 {

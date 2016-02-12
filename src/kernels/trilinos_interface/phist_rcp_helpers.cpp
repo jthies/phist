@@ -11,8 +11,8 @@ namespace phist
 #ifdef PHIST_HAVE_TEUCHOS
 
 #ifdef PHIST_KERNEL_LIB_GHOST
-  // rcp for ghost_densemat_t, includes creating the GhostMV wrapper
-  Teuchos::RCP<GhostMV> rcp(ghost_densemat_t* rawPtr, bool ownMem)
+  // rcp for ghost_densemat, includes creating the GhostMV wrapper
+  Teuchos::RCP<GhostMV> rcp(ghost_densemat* rawPtr, bool ownMem)
     {
     // if the RCP should own the memory of the vector, it owns the wrapper as well.
     // If it does not own the memory of the vector, it may still destroy the wrapper
@@ -20,20 +20,20 @@ namespace phist
     return Teuchos::rcp(new GhostMV(rawPtr,ownMem),true);
     }
 
-  // specialization for const ghost_densemat_t
-  Teuchos::RCP<const GhostMV> rcp(const ghost_densemat_t* rawPtr, bool ownMem)
+  // specialization for const ghost_densemat
+  Teuchos::RCP<const GhostMV> rcp(const ghost_densemat* rawPtr, bool ownMem)
     {
     // if the RCP should own the memory of the vector, it owns the wrapper as well.
     // If it does not own the memory of the vector, it may still destroy the wrapper
     // if it is no longer needed.
-    return Teuchos::rcp(new GhostMV(const_cast<ghost_densemat_t*>(rawPtr),ownMem),true);
+    return Teuchos::rcp(new GhostMV(const_cast<ghost_densemat*>(rawPtr),ownMem),true);
     }
 
-  //!\name ref2ptr specialization for Ghost: input GhostMV, output ghost_densemat_t*
+  //!\name ref2ptr specialization for Ghost: input GhostMV, output ghost_densemat*
   //@{
 
   // get mvec pointer from reference (implementation for GhostMV that returns
-  // ghost_densemat_t*)
+  // ghost_densemat*)
   template<>
   void* ref2ptr(GhostMV& V)
     {
@@ -80,7 +80,7 @@ namespace phist
     return Teuchos::rcp(new MultiVector<s_complex_t>(rawPtr,ownMem),true);
   }
 
-  // specialization for const ghost_densemat_t
+  // specialization for const ghost_densemat
   Teuchos::RCP<const MultiVector<s_complex_t> > Crcp(Cconst_mvec_ptr_t rawPtr, bool ownMem)
   {
     return Teuchos::rcp(new MultiVector<s_complex_t>(const_cast<Cmvec_ptr_t>(rawPtr),ownMem),true);
@@ -113,7 +113,7 @@ namespace phist
     return Teuchos::rcp(new MultiVector<d_complex_t>(rawPtr,ownMem),true);
   }
 
-  // specialization for const ghost_densemat_t
+  // specialization for const ghost_densemat
   Teuchos::RCP<const MultiVector<d_complex_t> > Zrcp(Zconst_mvec_ptr_t rawPtr, bool ownMem)
   {
     return Teuchos::rcp(new MultiVector<d_complex_t>(const_cast<Zmvec_ptr_t>(rawPtr),ownMem),true);

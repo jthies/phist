@@ -4,7 +4,7 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public virtual KernelTestWithType< _ST_ >,
+class CLASSNAME: public virtual TestWithType< _ST_ >,
                  public virtual KernelTestWithMap<_N_>
   {
 
@@ -31,6 +31,12 @@ public:
   // and (i-1)*lda+stride*(j+1), respectively.
   lidx_t ldaV_,ldaW_,ldaW2_,ldaQ_,ldaR0_,ldaR1_,ldaR2_,stride_;
 
+
+  static void SetUpTestCase()
+  {
+    KernelTestWithMap<_N_>::SetUpTestCase();
+    TestWithType<_ST_>::SetUpTestCase();
+  }
   
   //NOTE: we assume stride_=1 here to make the loops simpler,
   //      it seems reasonable to me to do that because mvecs 
@@ -40,7 +46,7 @@ public:
    */
   virtual void SetUp()
     {
-    KernelTestWithType<_ST_>::SetUp();
+    TestWithType<_ST_>::SetUp();
     KernelTestWithMap<_N_>::SetUp();
 
       if(typeImplemented_ && !problemTooSmall_)
@@ -109,7 +115,7 @@ public:
       SUBR(sdMat_delete)(R2_,&iflag_);
       }
     KernelTestWithMap<_N_>::TearDown();
-    KernelTestWithType<_ST_>::TearDown();
+    TestWithType<_ST_>::TearDown();
     }
 
   void doOrthogTests(TYPE(mvec_ptr) V, 

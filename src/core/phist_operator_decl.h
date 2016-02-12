@@ -6,7 +6,7 @@
 //@{
 
 //!
-typedef struct TYPE(op) {
+typedef struct TYPE(linearOp) {
  const void* A; //! data structure needed for representing A
  const_map_ptr_t range_map; //! map for vectors Y in Y=A*X
  const_map_ptr_t domain_map; //! map for vectors X in Y=A*X
@@ -27,17 +27,17 @@ typedef struct TYPE(op) {
  //! pointer to function for computing Y=(A-sigma[j]B)*X[j]+beta*Y[j]
  void (*apply_shifted)(_ST_ alpha, const void* A, _ST_ const * sigma,
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag);
-} TYPE(op);
+} TYPE(linearOp);
 
-typedef TYPE(op)* TYPE(op_ptr);
-typedef const TYPE(op)* TYPE(const_op_ptr);
+typedef TYPE(linearOp)* TYPE(linearOp_ptr);
+typedef const TYPE(linearOp)* TYPE(const_linearOp_ptr);
 
 //! this function can be used to create an operator which encapsulates a CRS matrix.
 //! It does not allocate memory for the op struct, the caller has to do that beforehand.
-void SUBR(op_wrap_sparseMat)(TYPE(op_ptr) op, TYPE(const_sparseMat_ptr) A, int* iflag);
+void SUBR(linearOp_wrap_sparseMat)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_ptr) A, int* iflag);
 
 //! create the identity operator that returns Y=alpha*X+beta*Y
-void SUBR(op_identity)(TYPE(op_ptr) op, int* iflag);
+void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op, int* iflag);
 
 //@}
 

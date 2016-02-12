@@ -44,6 +44,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
 
         // create a diagonal matrix with some interesting features for the diag_* tests
         SUBR(sdMat_put_value)(mat3_,st::zero(),&iflag_);
+        PHIST_CHK_IERR(SUBR(sdMat_from_device)(mat3_,&iflag_),iflag_);
         ASSERT_EQ(0,iflag_);
         ST *diag = new ST[nrows_];
         for (int i=0;i<nrows_;i++)
@@ -68,6 +69,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
         {
           mat3_vp_[i*m_lda_+i]=diag[i];
         }
+        PHIST_CHK_IERR(SUBR(sdMat_to_device)(mat3_,&iflag_),iflag_);
         delete [] diag;
       }
     }
@@ -77,7 +79,6 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
     virtual void TearDown()
     {
       MTest::TearDown();
-      KernelTestWithType<_ST_>::TearDown();
     }
 
     void DoSchurDecompTest(eigSort_t which, _MT_ tol, bool onlyDoReorderTest)
@@ -92,14 +93,14 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
         if( onlyDoReorderTest && nsort == 0 )
           continue;
         PHIST_SOUT(PHIST_INFO,"==================================================\n");
-        if( which == LM ) {
-          PHIST_SOUT(PHIST_INFO,"CASE LM nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
-        } else if( which == SM ) {
-          PHIST_SOUT(PHIST_INFO,"CASE SM nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
-        } else if( which == LR ) {
-          PHIST_SOUT(PHIST_INFO,"CASE LR nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
-        } else if( which == SR ) {
-          PHIST_SOUT(PHIST_INFO,"CASE SR nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
+        if( which == phist_LM ) {
+          PHIST_SOUT(PHIST_INFO,"CASE phist_LM nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
+        } else if( which == phist_SM ) {
+          PHIST_SOUT(PHIST_INFO,"CASE phist_SM nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
+        } else if( which == phist_LR ) {
+          PHIST_SOUT(PHIST_INFO,"CASE phist_LR nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
+        } else if( which == phist_SR ) {
+          PHIST_SOUT(PHIST_INFO,"CASE phist_SR nselect %d, nsort %d, tol %e\n",nselect,nsort, tol);
         }
         PHIST_SOUT(PHIST_INFO,"==================================================\n");
 
@@ -116,7 +117,12 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
         PHIST_DEB("input matrix to Schur-decomp:\n");
         SUBR(sdMat_print)(mat1_,&iflag_);
 #endif
+
+        PHIST_CHK_IERR(SUBR(sdMat_from_device)(mat1_,&iflag_),iflag_);
         SUBR(SchurDecomp)(mat1_vp_,m_lda_,mat2_vp_,m_lda_,n_,nselect,nsort,which,tol,ev_,&this->iflag_);
+        PHIST_CHK_IERR(SUBR(sdMat_to_device)(mat1_,&iflag_),iflag_);
+        PHIST_CHK_IERR(SUBR(sdMat_to_device)(mat2_,&iflag_),iflag_);
+
         PHIST_DEB("resulting T:\n");
 #if PHIST_OUTLEV>=PHIST_DEBUG
         SUBR(sdMat_print)(mat1_,&iflag_);
@@ -140,6 +146,10 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
           SUBR(ReorderPartialSchurDecomp)(mat1_vp_,m_lda_,mat2_vp_,m_lda_,n_,nsort,which,tol,
               &resNorm[0],ev_,&permutation[0],&iflag_);
           ASSERT_EQ(0,iflag_);
+          SUBR(sdMat_to_device)(mat1_,&iflag_);
+          ASSERT_EQ(0,iflag_);
+          SUBR(sdMat_to_device)(mat2_,&iflag_);
+          ASSERT_EQ(0,iflag_);
           PHIST_DEB("resulting T:\n");
 #if PHIST_OUTLEV>=PHIST_DEBUG
           SUBR(sdMat_print)(mat1_,&iflag_);
@@ -162,12 +172,12 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
           // test if the reordering itself was successful
           for(int i = 1; i < nsort; i++)
           {
-            if (which==LM || which==SM)
+            if (which==phist_LM || which==phist_SM)
             {
               if( mt::abs(ct::abs(ev_[i])-ct::abs(ev_[i-1])) > tol )
                 continue;
             }
-            else if( which==LR || which==SR )
+            else if( which==phist_LR || which==phist_SR )
             {
               if( mt::abs(ct::real(ev_[i])-ct::real(ev_[i-1])) > tol )
                 continue;
@@ -195,6 +205,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
       //SUBR(sdMat_print)(mat4_,&iflag_);
       //ASSERT_EQ(0,iflag_);
 #endif
+      PHIST_CHK_IERR(SUBR(sdMat_from_device)(mat4_,&iflag_),iflag_);
       ASSERT_NEAR(mt::one(),ArrayEqual(mat4_vp_,nrows_,ncols_,m_lda_,1,st::zero()),1000*mt::eps());
 
       PHIST_SOUT(PHIST_DEBUG,"eigenvalue array:\n");
@@ -210,6 +221,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
 
       // check that the eigenvalues on the diagonal of T have the same ordering as those in 
       // ev_
+      PHIST_CHK_IERR(SUBR(sdMat_from_device)(mat1_,&iflag_),iflag_);
       for (int i=0;i<n_;i++)
       {
         ASSERT_REAL_EQ(ct::real(ev_[i]), st::real(mat1_vp_[i*m_lda_+i]));
@@ -220,19 +232,19 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
       // check that the first nsort eigenvalues are sorted correctly
       for (int i=1;i<nsort;i++)
       {
-        if (which==LM)
+        if (which==phist_LM)
         {
           ASSERT_LE(ct::abs(ev_[i]), ct::abs(ev_[i-1])+tol);
         }
-        else if (which==SM)
+        else if (which==phist_SM)
         {
           ASSERT_GE(ct::abs(ev_[i]), ct::abs(ev_[i-1])-tol);
         }      
-        else if (which==LR)
+        else if (which==phist_LR)
         {
           ASSERT_LE(ct::real(ev_[i]), ct::real(ev_[i-1])+tol);
         }
-        else if (which==SR)
+        else if (which==phist_SR)
         {
           ASSERT_GE(ct::real(ev_[i]), ct::real(ev_[i-1])-tol);
         }
@@ -241,42 +253,42 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
       if( nselect > 0 )
       {
         MT val;
-        if (which==LM||which==SM) val=ct::abs(ev_[0]);
-        else if (which==LR||which==SR) val=ct::real(ev_[0]);
+        if (which==phist_LM||which==phist_SM) val=ct::abs(ev_[0]);
+        else if (which==phist_LR||which==phist_SR) val=ct::real(ev_[0]);
         for (int i=1;i<nselect;i++)
         {
-          if (which==LM)
+          if (which==phist_LM)
           {
             val=std::min(ct::abs(ev_[i]),val);
           }
-          else if (which==SM)
+          else if (which==phist_SM)
           {
             val=std::max(ct::abs(ev_[i]),val);
           }      
-          else if (which==LR)
+          else if (which==phist_LR)
           {
             val=std::min(ct::real(ev_[i]),val);
           }
-          else if (which==SR)
+          else if (which==phist_SR)
           {
             val=std::max(ct::real(ev_[i]),val);
           }
         }
         for (int i=nselect;i<n_;i++)
         {
-          if (which==LM)
+          if (which==phist_LM)
           {
             ASSERT_LE(ct::abs(ev_[i]), val+tol);
           }
-          else if (which==SM)
+          else if (which==phist_SM)
           {
             ASSERT_GE(ct::abs(ev_[i]), val-tol);
           }
-          if (which==LR)
+          if (which==phist_LR)
           {
             ASSERT_LE(ct::real(ev_[i]), val+tol);
           }
-          else if (which==SR)
+          else if (which==phist_SR)
           {
             ASSERT_GE(ct::real(ev_[i]), val-tol);
           }
@@ -326,7 +338,7 @@ TEST_F(CLASSNAME, rand_LM)
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
     SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
-    DoSchurDecompTest(LM,mt::zero(),false);
+    DoSchurDecompTest(phist_LM,mt::zero(),false);
   }
 }
 
@@ -336,7 +348,7 @@ TEST_F(CLASSNAME, rand_SM)
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
     SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
-    DoSchurDecompTest(SM,mt::zero(),false);
+    DoSchurDecompTest(phist_SM,mt::zero(),false);
   }
 }
 
@@ -346,7 +358,7 @@ TEST_F(CLASSNAME, rand_LR)
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
     SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
-    DoSchurDecompTest(LR,mt::zero(),false);
+    DoSchurDecompTest(phist_LR,mt::zero(),false);
   }
 }
 
@@ -356,28 +368,28 @@ TEST_F(CLASSNAME, rand_SR)
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
     SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
-    DoSchurDecompTest(SR,mt::zero(),false);
+    DoSchurDecompTest(phist_SR,mt::zero(),false);
   }
 }
 
 TEST_F(CLASSNAME, diag_LM) 
 {
-  DoSchurDecompTest(LM,mt::zero(),false);
+  DoSchurDecompTest(phist_LM,mt::zero(),false);
 }
 
 TEST_F(CLASSNAME, diag_SM) 
 {
-  DoSchurDecompTest(SM,mt::zero(),false);
+  DoSchurDecompTest(phist_SM,mt::zero(),false);
 }
 
 TEST_F(CLASSNAME, diag_LR) 
 {
-  DoSchurDecompTest(LR,mt::zero(),false);
+  DoSchurDecompTest(phist_LR,mt::zero(),false);
 }
 
 TEST_F(CLASSNAME, diag_SR) 
 {
-  DoSchurDecompTest(SR,mt::zero(),false);
+  DoSchurDecompTest(phist_SR,mt::zero(),false);
 }
 
 
@@ -387,7 +399,7 @@ TEST_F(CLASSNAME, rand_LM_tol)
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
     SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
-    DoSchurDecompTest(LM,(_MT_)0.3,false);
+    DoSchurDecompTest(phist_LM,(_MT_)0.3,false);
   }
 }
 
@@ -397,7 +409,7 @@ TEST_F(CLASSNAME, rand_SM_tol)
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
     SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
-    DoSchurDecompTest(SM,(_MT_)0.7,false);
+    DoSchurDecompTest(phist_SM,(_MT_)0.7,false);
   }
 }
 
@@ -407,7 +419,7 @@ TEST_F(CLASSNAME, rand_LR_tol)
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
     SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
-    DoSchurDecompTest(LR,(_MT_)0.2,false);
+    DoSchurDecompTest(phist_LR,(_MT_)0.2,false);
   }
 }
 
@@ -417,28 +429,28 @@ TEST_F(CLASSNAME, rand_SR_tol)
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
     SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
-    DoSchurDecompTest(SR,(_MT_)0.5,false);
+    DoSchurDecompTest(phist_SR,(_MT_)0.5,false);
   }
 }
 
 TEST_F(CLASSNAME, diag_LM_tol)
 {
-  DoSchurDecompTest(LM,(_MT_)0.3,false);
+  DoSchurDecompTest(phist_LM,(_MT_)0.3,false);
 }
 
 TEST_F(CLASSNAME, diag_SM_tol)
 {
-  DoSchurDecompTest(SM,(_MT_)0.2,false);
+  DoSchurDecompTest(phist_SM,(_MT_)0.2,false);
 }
 
 TEST_F(CLASSNAME, diag_LR_tol)
 {
-  DoSchurDecompTest(LR,(_MT_)0.1,false);
+  DoSchurDecompTest(phist_LR,(_MT_)0.1,false);
 }
 
 TEST_F(CLASSNAME, diag_SR_tol)
 {
-  DoSchurDecompTest(SR,(_MT_)0.03,false);
+  DoSchurDecompTest(phist_SR,(_MT_)0.03,false);
 }
 
 
@@ -452,7 +464,7 @@ TEST_F(CLASSNAME, DISABLED_rand_LM_tol_reorder)
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
     SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
-    DoSchurDecompTest(LM,(_MT_)0.3,true);
+    DoSchurDecompTest(phist_LM,(_MT_)0.3,true);
   }
 }
 
@@ -466,7 +478,7 @@ TEST_F(CLASSNAME, DISABLED_rand_SM_tol_reorder)
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
     SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
-    DoSchurDecompTest(SM,(_MT_)0.7,true);
+    DoSchurDecompTest(phist_SM,(_MT_)0.7,true);
   }
 }
 
@@ -480,7 +492,7 @@ TEST_F(CLASSNAME, DISABLED_rand_LR_tol_reorder)
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
     SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
-    DoSchurDecompTest(LR,(_MT_)0.2,true);
+    DoSchurDecompTest(phist_LR,(_MT_)0.2,true);
   }
 }
 
@@ -494,27 +506,27 @@ TEST_F(CLASSNAME, DISABLED_rand_SR_tol_reorder)
   {
     SUBR(sdMat_random)(mat3_,&this->iflag_);
     SUBR(sdMat_sync_values)(mat3_, comm_, &iflag_);
-    DoSchurDecompTest(SR,(_MT_)0.5, true);
+    DoSchurDecompTest(phist_SR,(_MT_)0.5, true);
   }
 }
 
 TEST_F(CLASSNAME, diag_LM_tol_reorder)
 {
-  DoSchurDecompTest(LM,(_MT_)0.3,true);
+  DoSchurDecompTest(phist_LM,(_MT_)0.3,true);
 }
 
 TEST_F(CLASSNAME, diag_SM_tol_reorder)
 {
-  DoSchurDecompTest(SM,(_MT_)0.2,true);
+  DoSchurDecompTest(phist_SM,(_MT_)0.2,true);
 }
 
 TEST_F(CLASSNAME, diag_LR_tol_reorder)
 {
-  DoSchurDecompTest(LR,(_MT_)0.1,true);
+  DoSchurDecompTest(phist_LR,(_MT_)0.1,true);
 }
 
 TEST_F(CLASSNAME, diag_SR_tol_reorder)
 {
-  DoSchurDecompTest(SR,(_MT_)0.03,true);
+  DoSchurDecompTest(phist_SR,(_MT_)0.03,true);
 }
 

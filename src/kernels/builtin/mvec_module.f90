@@ -23,12 +23,12 @@ module mvec_module
 #define G_LIDX_T C_INT32_T
 #define G_GIDX_T C_INT64_T
 #else
-#ifdef GHOST_HAVE_LONGIDX_LOCAL
+#ifdef GHOST_IDX64_LOCAL
 #define G_LIDX_T C_INT64_T
 #else
 #define G_LIDX_T C_INT32_T
 #endif
-#ifdef GHOST_HAVE_LONGIDX_GLOBAL
+#ifdef GHOST_IDX64_GLOBAL
 #define G_GIDX_T C_INT64_T
 #else
 #define G_GIDX_T C_INT32_T
@@ -83,12 +83,12 @@ module mvec_module
 #define G_LIDX_T C_INT32_T
 #define G_GIDX_T C_INT64_T
 #else
-#ifdef GHOST_HAVE_LONGIDX_LOCAL
+#ifdef GHOST_IDX64_LOCAL
 #define G_LIDX_T C_INT64_T
 #else
 #define G_LIDX_T C_INT32_T
 #endif
-#ifdef GHOST_HAVE_LONGIDX_GLOBAL
+#ifdef GHOST_IDX64_GLOBAL
 #define G_GIDX_T C_INT64_T
 #else
 #define G_GIDX_T C_INT32_T
@@ -1465,7 +1465,7 @@ contains
       return
     end if
 
-
+#ifdef PHIST_HAVE_SSE
     if( beta .eq. 0 ) then
       if( nvec .eq. 2 .and. y_aligned ) then
         if( strided ) then
@@ -1490,7 +1490,7 @@ contains
         return
       end if
     end if
-
+#endif
     if( nvec .eq. 1 ) then
       if( strided ) then
         call daxpby_strided_1(nrows, alpha(1), x%val(x%jmin,1), ldx, beta, y%val(y%jmin,1), ldy)

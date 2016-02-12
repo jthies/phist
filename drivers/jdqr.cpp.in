@@ -54,8 +54,8 @@ int main(int argc, char** argv)
 
   comm_ptr_t comm;
   sparseMat_ptr_t A;
-  op_ptr_t A_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
-  op_ptr_t B_op=NULL; // no mass matrix up to now
+  linearOp_ptr_t A_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  linearOp_ptr_t B_op=NULL; // no mass matrix up to now
   
   const_map_ptr_t map; // map (element distribution) of vectors according to 
                        // the distribution of matrix rows
@@ -104,11 +104,11 @@ int main(int argc, char** argv)
 
   if (argc>=4)
   {
-    if (!strcmp(argv[3],"LM")) opts.which=LM;
-    else if (!strcmp(argv[3],"SM")) opts.which=SM;
-    else if (!strcmp(argv[3],"LR")) opts.which=LR;
-    else if (!strcmp(argv[3],"SR")) opts.which=SR;
-    else if (!strcmp(argv[3],"TARGET")) opts.which=TARGET;
+    if (!strcmp(argv[3],"LM")) opts.which=phist_LM;
+    else if (!strcmp(argv[3],"SM")) opts.which=phist_SM;
+    else if (!strcmp(argv[3],"LR")) opts.which=phist_LR;
+    else if (!strcmp(argv[3],"SR")) opts.which=phist_SR;
+    else if (!strcmp(argv[3],"TARGET")) opts.which=phist_TARGET;
     else
     {
       if (verbose) 
@@ -157,8 +157,8 @@ int main(int argc, char** argv)
   
   if (argc>=11)
   {
-    if (!strcmp(argv[10],"GMRES")) opts.innerSolvType=GMRES;
-    else if (!strcmp(argv[10],"CARP_CG")) opts.innerSolvType=CARP_CG;
+    if (!strcmp(argv[10],"GMRES")) opts.innerSolvType=phist_GMRES;
+    else if (!strcmp(argv[10],"CARP_CG")) opts.innerSolvType=phist_CARP_CG;
     else
     {
       if (verbose) 
@@ -171,13 +171,13 @@ int main(int argc, char** argv)
   }
   else
   {
-    if (opts.which==TARGET) 
+    if (opts.which==phist_TARGET) 
     {
-      opts.innerSolvType=CARP_CG;
+      opts.innerSolvType=phist_CARP_CG;
     }
     else
     {
-      opts.innerSolvType=GMRES;
+      opts.innerSolvType=phist_GMRES;
     }
   }
 
@@ -196,8 +196,8 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(mvec_view_block)(X,&opts.v0,0,0,&iflag),iflag);
   
   // create operator wrapper for computing Y=A*X using a CRS matrix
-  A_op = (op_ptr_t)malloc(sizeof(TYPE(op)));
-  PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(A_op,A,&iflag),iflag);
+  A_op = (linearOp_ptr_t)malloc(sizeof(TYPE(linearOp)));
+  PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(A_op,A,&iflag),iflag);
 
   
   

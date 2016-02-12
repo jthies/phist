@@ -19,8 +19,8 @@
 //! 100x200 on 2 procs, 200x200 on 4 procs etc. Will attempt to
 //! find such a partitioning on the init call, otherwise turn off
 //! partitioning alltogether with a warning.
-ghost_gidx_t perm2d( ghost_gidx_t row, gidx_t arg2 );
+ghost_gidx perm2d( ghost_gidx row, gidx_t arg2 );
 
 //! same as the above for 3D problems like Anderson model problem.
-ghost_gidx_t perm3d( ghost_gidx_t row, gidx_t arg2, gidx_t arg3 );
+ghost_gidx perm3d( ghost_gidx row, gidx_t arg2, gidx_t arg3 );
 

@@ -44,8 +44,8 @@
 // private struct to keep all the pointers we need in order to apply the operator.
 typedef struct TYPE(jadaOp_data)
 {
-  TYPE(const_op_ptr)    A_op;   // operator of the general matrix A
-  TYPE(const_op_ptr)    B_op;   // operator of the hpd. matrix B, assumed I when NULL
+  TYPE(const_linearOp_ptr)    A_op;   // operator of the general matrix A
+  TYPE(const_linearOp_ptr)    B_op;   // operator of the hpd. matrix B, assumed I when NULL
   TYPE(const_mvec_ptr)  V;      // B-orthonormal basis
   TYPE(const_mvec_ptr)  BV;     // B*V
   const _ST_*           sigma;  // array of NEGATIVE shifts, assumed to have correct size; TODO: what about 'complex' shifts for real JDQR?
@@ -134,10 +134,10 @@ PHIST_ENTER_FCN("phist_jadaOp_mvec_times_sdMat");
 
 
 // allocate and initialize the jadaOp struct
-void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,    TYPE(const_op_ptr)    B_op,
+void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    A_op,    TYPE(const_linearOp_ptr)    B_op,
                          TYPE(const_mvec_ptr)  V,       TYPE(const_mvec_ptr)  BV,
                          const _ST_            sigma[], int                   nvec,
-                         TYPE(op_ptr)          jdOp,    int*                  iflag)
+                         TYPE(linearOp_ptr)          jdOp,    int*                  iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -188,7 +188,7 @@ void SUBR(jadaOp_create)(TYPE(const_op_ptr)    A_op,    TYPE(const_op_ptr)    B_
 
 
 // deallocate jadaOp struct
-void SUBR(jadaOp_delete)(TYPE(op_ptr) jdOp, int *iflag)
+void SUBR(jadaOp_delete)(TYPE(linearOp_ptr) jdOp, int *iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag = 0;

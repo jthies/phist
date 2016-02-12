@@ -7,9 +7,9 @@
 
 
 #include "kernels/phist_kernels.h"
+#include "KernelTestWithSparseMat.h"
 #include "KernelTestWithVectors.h"
 #include "KernelTestWithSdMats.h"
-#include "../tools/MatrixIO.h"
 
 using namespace ::testing;
 
@@ -20,9 +20,14 @@ using namespace ::testing;
 #define CLASSFILE_DEF "SymmMatTest_def.hpp"
 #define _USE_VIEWS_ 0
 
+#define MATNAME MATNAME_symmMat
+
 #define _N_ 20
 #define _M_ 8
 #include "../phist_typed_test_gen.h"
+
+#undef MATNAME
+#define MATNAME MATNAME_sprandsym
 
 #define _N_ 163
 #define _M_ 1

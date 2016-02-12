@@ -33,7 +33,7 @@ class MainTaskTest: public testing::Test
 
   protected:
 #ifdef PHIST_KERNEL_LIB_GHOST
-    ghost_task_t* curTask_;
+    ghost_task* curTask_;
 #else
     void* curTask_;
 #endif

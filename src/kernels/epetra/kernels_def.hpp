@@ -69,11 +69,11 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, cons
   for (lidx_t i=0; i<A->NumMyRows(); i++)
   {
 #ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
-    ghost_gidx_t row = (ghost_gidx_t)map->GID(i);
+    ghost_gidx row = (ghost_gidx)map->GID(i);
 #else
-    ghost_gidx_t row = (ghost_gidx_t)map->GID64(i);
+    ghost_gidx row = (ghost_gidx)map->GID64(i);
 #endif
-    ghost_lidx_t row_nnz;
+    ghost_lidx row_nnz;
     
     PHIST_CHK_IERR(*iflag=rowFunPtr(row,&row_nnz,cols,vals,last_arg),*iflag);
     PHIST_TRY_CATCH(A->InsertGlobalValues(row,row_nnz,vals,cols),*iflag);
@@ -318,7 +318,7 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
   double* val;
   lidx_t lda;
   PHIST_CHK_IERR(*iflag=M->ExtractView(&val,&lda),*iflag);
-  PHIST_DEB("in view (%d:%d,%d:%d), lda=%d\n",imin,imax,jmin,jmax,lda);
+  //PHIST_DEB("in view (%d:%d,%d:%d), lda=%d\n",imin,imax,jmin,jmax,lda);
   Epetra_LocalMap localMap(imax-imin+1,M->Map().IndexBase(),M->Map().Comm());
   Mblock = new Epetra_MultiVector(View, localMap, val+imin+jmin*lda, lda, jmax-jmin+1);
   *vMblock = (TYPE(sdMat_ptr))Mblock;

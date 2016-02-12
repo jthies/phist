@@ -7,7 +7,7 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
   *iflag = 0;
   *me = new TYPE(jadaCorrectionSolver);
   (*me)->method_ = opts.innerSolvType;
-  if ((*me)->method_==GMRES||(*me)->method_==MINRES)
+  if ((*me)->method_==phist_GMRES||(*me)->method_==phist_MINRES)
   {
     PHIST_CHK_IERR( *iflag = (opts.innerSolvBlockSize <= 0) ? -1 : 0, *iflag);
 
@@ -15,11 +15,11 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
     (*me)->blockedGMRESstates_  = new TYPE(blockedGMRESstate_ptr)[(*me)->gmresBlockDim_];
     PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)((*me)->blockedGMRESstates_, opts.innerSolvBlockSize, map, opts.innerSolvMaxBas, iflag), *iflag);
   }
-  else if ((*me)->method_==CARP_CG)
+  else if ((*me)->method_==phist_CARP_CG)
   {
     *iflag=PHIST_NOT_IMPLEMENTED;
   }
-  else if ((*me)->method_==USER_DEFINED)
+  else if ((*me)->method_==phist_USER_DEFINED)
   {
     if (opts.customSolver_run==NULL && opts.customSolver_run1==NULL)
     {
@@ -31,7 +31,7 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
   }
   else
   {
-    PHIST_SOUT(PHIST_ERROR, "method %d (%s) not implemented",(int)(*me)->method_, linSolv2str((*me)->method_));
+    PHIST_SOUT(PHIST_ERROR, "method %d (%s) not implemented\n",(int)(*me)->method_, linSolv2str((*me)->method_));
     *iflag=PHIST_NOT_IMPLEMENTED;
   }
 }
@@ -43,16 +43,16 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) me, int *i
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag = 0;
 
-  if (me->method_==GMRES || me->method_==MINRES)
+  if (me->method_==phist_GMRES || me->method_==phist_MINRES)
   {
     PHIST_CHK_IERR(SUBR(blockedGMRESstates_delete)(me->blockedGMRESstates_, me->gmresBlockDim_, iflag), *iflag);
     delete[] me->blockedGMRESstates_;
   }
-  else if (me->method_==CARP_CG)
+  else if (me->method_==phist_CARP_CG)
   {
     *iflag=PHIST_NOT_IMPLEMENTED;
   }
-  else if (me->method_==USER_DEFINED)
+  else if (me->method_==phist_USER_DEFINED)
   {
   }
   delete me;
@@ -75,7 +75,7 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) me, int *i
 //! t               returns approximate solution vectors
 //! iflag            a value > 0 indicates the number of systems that have not converged to the desired tolerance
 void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
-                                    TYPE(const_op_ptr)    A_op,     TYPE(const_op_ptr)    B_op, 
+                                    TYPE(const_linearOp_ptr)    A_op,     TYPE(const_linearOp_ptr)    B_op, 
                                     TYPE(const_mvec_ptr)  Qtil,     TYPE(const_mvec_ptr)  BQtil,
                                     const _ST_            sigma[],  TYPE(const_mvec_ptr)  res,      const int resIndex[], 
                                     const _MT_            tol[],    int                   maxIter,
@@ -87,7 +87,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag = 0;
 
-  if (me->method_==USER_DEFINED)
+  if (me->method_==phist_USER_DEFINED)
   {
     int numSys;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(t,&numSys,iflag),*iflag);
@@ -143,7 +143,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   std::vector<_ST_> currShifts(max_k, st::zero());
 
   // we need a jadaOp
-  TYPE(op) jadaOp;
+  TYPE(linearOp) jadaOp;
   PHIST_CHK_IERR(SUBR(jadaOp_create)(A_op, B_op, Qtil, BQtil, &currShifts[0], k, &jadaOp, iflag), *iflag);
 
   // the next system to consider if one converged/failed
@@ -221,11 +221,11 @@ PHIST_TASK_BEGIN(ComputeTask)
     }
 
     // actually iterate
-    if( me->method_==MINRES )
+    if( me->method_==phist_MINRES )
     {
       PHIST_CHK_NEG_IERR(SUBR(blockedMINRESstates_iterate)(&jadaOp, &activeStates[0], k, &nTotalIter, iflag), *iflag);
     }
-    else if (me->method_==CARP_CG)
+    else if (me->method_==phist_CARP_CG)
     {
       *iflag=PHIST_NOT_IMPLEMENTED;
     }

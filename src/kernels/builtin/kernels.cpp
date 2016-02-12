@@ -217,12 +217,14 @@ void phist_kernels_init(int* argc, char*** argv, int* iflag)
     LIKWID_MARKER_START("phist<builtin>");
   }
 #endif
-  phist_kernels_common_init(argc,argv,iflag);
+
+  PHIST_CHK_IERR(phist_kernels_common_init(argc,argv,iflag),*iflag);
 }
 
 // finalize builtin kernels
 void phist_kernels_finalize(int* iflag)
 {
+  PHIST_CHK_IERR(phist_kernels_common_finalize(iflag),*iflag);
 
   if( !mpiInitializedBefore )
   {
@@ -273,4 +275,6 @@ void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* iflag);
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
+#include "../common/kernels_nofused_spmv_gemm.cpp"
+#include "../common/kernels_nofused_spmv_dot.cpp"
 

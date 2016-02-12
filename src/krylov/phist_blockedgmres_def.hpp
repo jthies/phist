@@ -385,7 +385,7 @@ PHIST_TASK_END(iflag)
 
 
 // implementation of gmres on several systems simultaneously
-void SUBR(blockedGMRESstates_iterate)(TYPE(const_op_ptr) Aop, TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, bool useIMGS, int* iflag)
+void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, bool useIMGS, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -639,7 +639,6 @@ PHIST_TASK_BEGIN(ComputeTask)
           // store in H (and do MGS steps for single systems)
           for(int i = 0; i < numSys; i++)
           {
-            PHIST_CHK_IERR(SUBR(sdMat_from_device)(S[i]->H_,iflag),*iflag);
             int j_ = j - (maxCurDimV-S[i]->curDimV_);
             if( j_ >= 0 )
             {

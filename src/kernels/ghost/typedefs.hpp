@@ -64,13 +64,13 @@ public:
 #endif
 
   //! multi vectors
-  typedef ghost_densemat_t mvec_t;
+  typedef ghost_densemat mvec_t;
 
   //! serial dense matrix - just a multivector with a serial map.
-  typedef ghost_densemat_t sdMat_t;
+  typedef ghost_densemat sdMat_t;
 
   //! CRS matrices
-  typedef ghost_sparsemat_t sparseMat_t;
+  typedef ghost_sparsemat sparseMat_t;
 
 #ifdef PHIST_HAVE_TEUCHOS
   //! create a Teuchos' view of a local mvec/sdMat

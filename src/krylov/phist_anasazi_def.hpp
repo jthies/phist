@@ -1,3 +1,11 @@
+/* there is a problem with complex Anasazi+Tsqr,
+   which has to be fixed if we want to use TSQR here
+#ifdef IS_COMPLEX
+# ifdef PHIST_HAVE_ANASAZI
+#  undef PHIST_HAVE_ANASAZI
+# endif
+#endif
+*/
 #ifdef PHIST_KERNEL_LIB_BUILTIN
 // this should be done for wrapping the actual phist void-pointers
 // as typed multivectors, this macro will expand to S/D/C/Zrcp because
@@ -9,8 +17,8 @@
 #define PHIST_rcp phist::rcp
 #endif
 // Anasazi: block krylov methods from Trilinos
-void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) Ainv_op, 
-                         TYPE(const_op_ptr) B_op, int variant,
+void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) Ainv_op, 
+                         TYPE(const_linearOp_ptr) B_op, int variant,
                          TYPE(const_mvec_ptr) v0,  eigSort_t which,
                          _MT_ tol,                 int *nEig,
                          int* nIter,               int blockDim,
@@ -25,7 +33,7 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) Ainv_op,
 #else
 #include "phist_std_typedefs.hpp"  
 #ifdef PHIST_KERNEL_LIB_GHOST
-  typedef ghost_densemat_t MV;
+  typedef ghost_densemat MV;
   typedef phist::GhostMV AnasaziMV;
 #elif defined(PHIST_KERNEL_LIB_TPETRA)
   typedef Tpetra::MultiVector<ST,lidx_t,gidx_t,node_t> MV;
@@ -37,7 +45,7 @@ void SUBR(anasazi)(      TYPE(const_op_ptr) A_op, TYPE(const_op_ptr) Ainv_op,
   typedef st::mvec_t MV;
   typedef phist::MultiVector< _ST_ > AnasaziMV;
 #endif
-  typedef st::op_t OP; // gives Sop_t, Dop_t etc.
+  typedef st::linearOp_t OP; // gives Sop_t, Dop_t etc.
   typedef Anasazi::MultiVecTraits<ST,AnasaziMV> MVT;
 
   bool status=true;
@@ -190,7 +198,6 @@ try {
   
   const Anasazi::Eigensolution<ST,AnasaziMV>& soln=eigenProblem->getSolution();
   *nEig=soln.numVecs;
-  std::cout << "nEig="<<*nEig<<std::endl;//TROET
 #ifndef IS_COMPLEX
   if (!symmetric)
   {

@@ -13,19 +13,19 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public virtual KernelTestWithType< _ST_ >,
+class CLASSNAME: public virtual TestWithType< _ST_ >,
                  public virtual KernelTestWithMap<_N_>
 {
 
 public:
 
-  class V1Test : public KernelTestWithVectors<_ST_,_N_,_M_,_USE_VIEWS_V1_> {
+  class V1Test : public KernelTestWithVectors<_ST_,_N_,_M_,_USE_VIEWS_V1_,1,1> {
     public: virtual void TestBody(){}
   };
-  class V2Test : public KernelTestWithVectors<_ST_,_N_,_K_,_USE_VIEWS_V2_> {
+  class V2Test : public KernelTestWithVectors<_ST_,_N_,_K_,_USE_VIEWS_V2_,1,2> {
     public: virtual void TestBody(){}
   };
-  class MTest : public KernelTestWithSdMats<_ST_,_M_,_K_,_USE_VIEWS_M_> {
+  class MTest : public KernelTestWithSdMats<_ST_,_M_,_K_,_USE_VIEWS_M_,1> {
     public: virtual void TestBody(){}
   };
 
@@ -52,19 +52,26 @@ public:
   V1Test v1test_;
   V2Test v2test_;
   MTest mtest_;
+
+  static void SetUpTestCase()
+  {
+    TestWithType<_ST_>::SetUpTestCase();
+    KernelTestWithMap<_N_>::SetUpTestCase();
+
+    V1Test::SetUpTestCase();
+    V2Test::SetUpTestCase();
+    MTest::SetUpTestCase();
+  }
   
   /*! Set up routine.
    */
   virtual void SetUp()
   {
-    KernelTestWithType< _ST_ >::SetUp();
     KernelTestWithMap<_N_>::SetUp();
     if (typeImplemented_ && !problemTooSmall_)
     {
       v1test_.SetUp();
-      v1test_.replaceMap(map_);
       v2test_.SetUp();
-      v2test_.replaceMap(map_);
       // these probably have a different communicator, but this shouldn't matter here...
       mtest_.SetUp();
 
@@ -109,9 +116,16 @@ public:
       v1test_.TearDown();
     }
     KernelTestWithMap<_N_>::TearDown();
-    KernelTestWithType<_ST_>::TearDown();
   }
 
+  static void TearDownTestCase()
+  {
+    MTest::TearDownTestCase();
+    V2Test::TearDownTestCase();
+    V1Test::TearDownTestCase();
+
+    KernelTestWithMap<_N_>::TearDownTestCase();
+  }
 };
 
   // check ones(n,m)'*ones(n,k)=n*ones(m,k), and columns with 1, 2, 3...
@@ -134,9 +148,9 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      V1Test::PrintVector(*cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
-      V2Test::PrintVector(*cout,"ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
-      MTest::PrintSdMat(*cout,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
+      V1Test::PrintVector(std::cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      V2Test::PrintVector(std::cout,"ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+      MTest::PrintSdMat(std::cout,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
       MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -225,8 +239,8 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      V1Test::PrintVector(*cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
-      MTest::PrintSdMat(*cout,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
+      V1Test::PrintVector(std::cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      MTest::PrintSdMat(std::cout,"ones'*ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
       MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_REAL_EQ(mt::one(),SdMatEqual(M1_,(ST)nglob_));
@@ -585,9 +599,9 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      V1Test::PrintVector(*cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
-      MTest::PrintSdMat(*cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
-      V2Test::PrintVector(*cout,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+      V1Test::PrintVector(std::cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      MTest::PrintSdMat(std::cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
+      V2Test::PrintVector(std::cout,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
       ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,(ST)m_));
       MTest::sdMat_parallel_check(M1_,&iflag_);
@@ -637,9 +651,9 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      V1Test::PrintVector(*cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
-      MTest::PrintSdMat(*cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
-      V2Test::PrintVector(*cout,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+      V1Test::PrintVector(std::cout,"ones",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      MTest::PrintSdMat(std::cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
+      V2Test::PrintVector(std::cout,"ones*ones",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
       ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,(ST)m_));
       MTest::sdMat_parallel_check(M1_,&iflag_);
@@ -682,8 +696,8 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      MTest::PrintSdMat(*cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
-      V1Test::PrintVector(*cout,"ones*ones",V1_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+      MTest::PrintSdMat(std::cout,"ones",M1_vp_,ldaM1_,stride_,mpi_comm_);
+      V1Test::PrintVector(std::cout,"ones*ones",V1_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
       TYPE(mvec_ptr) V_cols=NULL;
       SUBR(mvec_view_block)(V1_,&V_cols,0,k_-1,&iflag_);
@@ -727,8 +741,8 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      V1Test::PrintVector(*cout,"result_inplace",V1_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
-      V2Test::PrintVector(*cout,"result_out_of_place",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+      V1Test::PrintVector(std::cout,"result_inplace",V1_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+      V2Test::PrintVector(std::cout,"result_out_of_place",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
 #endif
   
       TYPE(mvec_ptr) V_cols=NULL;
@@ -865,8 +879,8 @@ public:
       SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       PHIST_SOUT(PHIST_DEBUG,"range of zero M-block: (%d:%d,%d:%d)",imin,imax,jmin,jmax);
-      V1Test::PrintVector(*cout,"1-vec",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
-      MTest::PrintSdMat(*cout,"1-mat with hole",M1_vp_,ldaM1_,stride_,mpi_comm_);
+      V1Test::PrintVector(std::cout,"1-vec",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      MTest::PrintSdMat(std::cout,"1-mat with hole",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
 
       ASSERT_REAL_EQ(mt::one(),MvecEqual(V,st::one()));
@@ -882,8 +896,8 @@ public:
       SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       PHIST_SOUT(PHIST_DEBUG,"range of zero M-block: (%d:%d,%d:%d)",imin,imax,jmin,jmax);
-      V1Test::PrintVector(*cout,"1-vec with hole",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
-      MTest::PrintSdMat(*cout,"1-mat with hole",M1_vp_,ldaM1_,stride_,mpi_comm_);
+      V1Test::PrintVector(std::cout,"1-vec with hole",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      MTest::PrintSdMat(std::cout,"1-mat with hole",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
             
       SUBR(mvec_from_device)(V, &iflag_);
@@ -929,9 +943,9 @@ public:
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_from_device)(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      V1Test::PrintVector(*cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
-      V2Test::PrintVector(*cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
-      MTest::PrintSdMat(*cout,"random'*random",M1_vp_,ldaM1_,stride_,mpi_comm_);
+      V1Test::PrintVector(std::cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+      V2Test::PrintVector(std::cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+      MTest::PrintSdMat(std::cout,"random'*random",M1_vp_,ldaM1_,stride_,mpi_comm_);
 #endif
       MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -1111,10 +1125,10 @@ public:
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_from_device)(V2_,&iflag_);
         ASSERT_EQ(0,iflag_);
-        V1Test::PrintVector(*cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
-        V2Test::PrintVector(*cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
+        V1Test::PrintVector(std::cout,"random",V1_vp_,nloc_,ldaV1_,stride_,mpi_comm_);
+        V2Test::PrintVector(std::cout,"random",V2_vp_,nloc_,ldaV2_,stride_,mpi_comm_);
         
-                MTest::PrintSdMat(*cout,"random'*random without views",M2_vp_,ldaM2_,stride_,mpi_comm_);
+                MTest::PrintSdMat(std::cout,"random'*random without views",M2_vp_,ldaM2_,stride_,mpi_comm_);
         PHIST_SOUT(PHIST_DEBUG,"viewed block in result");
         SUBR(sdMat_print)(M2,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -1126,7 +1140,7 @@ public:
         std::ostringstream ss;
         ss<<"rnd'*rnd in location ("<<off1_M[i]<<":"<<off1_M[i]+m1[i]-1<<","
                                          <<off2_M[i]<<":"<<off2_M[i]+m2[i]-1<<")";
-        MTest::PrintSdMat(*cout,ss.str().c_str(), M1_vp_,ldaM1_,stride_,mpi_comm_);
+        MTest::PrintSdMat(std::cout,ss.str().c_str(), M1_vp_,ldaM1_,stride_,mpi_comm_);
         PHIST_SOUT(PHIST_DEBUG,"viewed block in result");
         SUBR(sdMat_print)(M1,&iflag_);
         ASSERT_EQ(0,iflag_);

@@ -4,38 +4,31 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_> 
+class CLASSNAME: public KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
+                 public KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,2> 
 {
 
-  public:
-    typedef KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_> VTest;
+public:
+  typedef KernelTestWithSparseMat<_ST_,_N_,MATNAME> SparseMatTest;
+  typedef KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,2> VTest;
+
+  static void SetUpTestCase()
+  {
+    SparseMatTest::SetUpTestCase();
+    VTest::SetUpTestCase();
+  }
 
   /*! Set up routine.
    */
   virtual void SetUp()
   {
+    SparseMatTest::SetUp();
     VTest::SetUp();
 
-    haveMats_ = false;
+    haveMat_ = false;
     if (typeImplemented_ && !problemTooSmall_)
     {
-      if( nglob_ == 20 )
-      {
-        SUBR(read_mat)("symmMat",comm_,nglob_,&A1_,&iflag_);
-      }
-      else
-      {
-        SUBR(read_mat)("sprandsym",comm_,nglob_,&A1_,&iflag_);
-      }
-      ASSERT_EQ(0,iflag_);
-      if( A1_ != NULL )
-      {
-        haveMats_ = true;
-
-        const_map_ptr_t range_map;
-        SUBR(sparseMat_get_range_map)(A1_,&range_map,&iflag_);
-        replaceMap(range_map);
-      }
+      haveMat_ = (A_ != NULL);
     }
   }
 
@@ -44,44 +37,35 @@ class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_>
   virtual void TearDown()
   {
     VTest::TearDown();
-    if (typeImplemented_ && !problemTooSmall_)
-    {
-      ASSERT_EQ(0,delete_mat(A1_));
-    }
+    SparseMatTest::TearDown();
   }
 
-
-TYPE(sparseMat_ptr) A1_; // some random symmetric matrix
+  static void TearDownTestCase()
+  {
+    VTest::TearDownTestCase();
+    SparseMatTest::TearDownTestCase();
+  }
 
 protected:
 
-int delete_mat(TYPE(sparseMat_ptr) A)
-{
-  if (A!=NULL)
-  {
-    SUBR(sparseMat_delete)(A,&iflag_);
-  }
-  return iflag_;
-}
-
-  bool haveMats_;
+  bool haveMat_;
 };
 
   TEST_F(CLASSNAME, read_matrices) 
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
-      ASSERT_TRUE(AssertNotNull(A1_));
+      ASSERT_TRUE(AssertNotNull(A_));
     }
   }
 
   TEST_F(CLASSNAME, A1_probe_symmetry)
   {
-    if (typeImplemented_ && !problemTooSmall_ && haveMats_)
+    if (typeImplemented_ && !problemTooSmall_ && haveMat_)
     {
       SUBR(mvec_random)(vec1_,&iflag_);
       SUBR(mvec_random)(vec2_,&iflag_);
-      SUBR(sparseMat_times_mvec)(st::one(),A1_,vec1_,st::zero(),vec2_,&iflag_);
+      SUBR(sparseMat_times_mvec)(st::one(),A_,vec1_,st::zero(),vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
     
       TYPE(sdMat_ptr) VtAV=NULL;

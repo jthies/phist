@@ -70,7 +70,7 @@ extern "C" void SUBR(sparseMat_times_mvec_aug)(_ST_ alpha, TYPE(const_sparseMat_
 }
 #ifdef PHIST_BUILTIN_RNG
 
-int PREFIX(copyDataFunc)(ghost_gidx_t i, ghost_lidx_t j, void* vval,void* vdata)
+int PREFIX(copyDataFunc)(ghost_gidx i, ghost_lidx j, void* vval,void* vdata)
 {
   dwrap* wrap=(dwrap*)vdata;
   int lda = wrap->lda;
@@ -156,9 +156,10 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
 
 extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) M, int* iflag)
 {
+#include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   lidx_t nrows,ncols,lda;
-  _ST_* M_raw;
+  _ST_* M_raw = NULL;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(M,&nrows,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(M,&ncols,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(M,&M_raw,&lda,iflag),*iflag);
@@ -170,7 +171,7 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) M, int* iflag)
 #endif
 
   // generate random doubles and copy them by hand, then upload to GPU if applicable.
-  double *randbuf;
+  double *randbuf = NULL;
   *iflag = posix_memalign((void**)&randbuf, 64, nrows*ncols*nelem*sizeof(double));
   if (*iflag!=0)
   {
@@ -178,20 +179,22 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) M, int* iflag)
     return;
   }
   phist_Drandom_number(nelem*nrows*ncols, randbuf);
-  _MT_ *mM_raw=(_MT_*)M_raw;
+
   for (int j=0; j<ncols; j++)
   {
     for (int i=0; i<nrows; i++)
     {
 #ifdef PHIST_SDMATS_ROW_MAJOR
-      mM_raw[lda*nelem*i+j]=(_MT_)randbuf[j*nelem*nrows+i];
 # ifdef IS_COMPLEX
-      mM_raw[lda*nelem*i+j+1]=(_MT_)randbuf[j*nelem*nrows+i+1];
+      M_raw[lda*i+j] = (_MT_)randbuf[nelem*(j*nrows+i)] + st::cmplx_I()*(_MT_)randbuf[nelem*(j*nrows+i)+1];
+# else
+      M_raw[lda*i+j] = (_MT_)randbuf[nelem*(j*nrows+i)];
 # endif
 #else
-      mM_raw[lda*nelem*j+i]=(_MT_)randbuf[j*nelem*nrows+i];
 # ifdef IS_COMPLEX
-      mM_raw[lda*nelem*j+i+1]=(_MT_)randbuf[j*nelem*nrows+i+1];
+      M_raw[lda*j+i] = (_MT_)randbuf[nelem*(j*nrows+i)] + st::cmplx_I()*(_MT_)randbuf[nelem*(j*nrows+i)+1];
+# else
+      M_raw[lda*j+i] = (_MT_)randbuf[nelem*(j*nrows+i)];
 # endif
 #endif
     }

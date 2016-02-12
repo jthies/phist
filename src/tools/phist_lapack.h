@@ -41,41 +41,65 @@ typedef char blas_char_t;
 
 #define BLAS_SUBR(NAME,name) name ## _
 
-/* GEMM */
+/* GEMM - matrix-matrix multiplication */
 #define SGEMM BLAS_SUBR(SGEMM,sgemm)
 #define DGEMM BLAS_SUBR(DGEMM,dgemm)
 #define CGEMM BLAS_SUBR(CGEMM,cgemm)
 #define ZGEMM BLAS_SUBR(ZGEMM,zgemm)
+/* STEQR */
 #define SSTEQR LAPACK_SUBR(SSTEQR,ssteqr)
 #define DSTEQR LAPACK_SUBR(DSTEQR,dsteqr)
+/* GEES - compute Schur form and eigenvalues A */
 #define SGEES LAPACK_SUBR(SGEES,sgees)
 #define DGEES LAPACK_SUBR(DGEES,dgees)
 #define CGEES LAPACK_SUBR(CGEES,cgees)
 #define ZGEES LAPACK_SUBR(ZGEES,zgees)
+/* GGES - compute generalized Schur form and eigenvalues of (A,B) */
+#define SGGES LAPACK_SUBR(SGGES,sgges)
+#define DGGES LAPACK_SUBR(DGGES,dgges)
+#define CGGES LAPACK_SUBR(CGGES,cgges)
+#define ZGGES LAPACK_SUBR(ZGGES,zgges)
+/* TRSEN - sort Schur form */
 #define STRSEN LAPACK_SUBR(STRSEN,strsen)
 #define DTRSEN LAPACK_SUBR(DTRSEN,dtrsen)
 #define CTRSEN LAPACK_SUBR(CTRSEN,ctrsen)
 #define ZTRSEN LAPACK_SUBR(ZTRSEN,ztrsen)
+/* TGSEN - sort generalized Schur form */
+#define STGSEN LAPACK_SUBR(STGSEN,stgsen)
+#define DTGSEN LAPACK_SUBR(DTGSEN,dtgsen)
+#define CTGSEN LAPACK_SUBR(CTGSEN,ctgsen)
+#define ZTGSEN LAPACK_SUBR(ZTGSEN,ztgsen)
+/* TREXC - swap rows in Schur form */
 #define STREXC LAPACK_SUBR(STREXC,strexc)
 #define DTREXC LAPACK_SUBR(DTREXC,dtrexc)
 #define CTREXC LAPACK_SUBR(CTREXC,ctrexc)
 #define ZTREXC LAPACK_SUBR(ZTREXC,ztrexc)
+/* TGEXC - swap rows in generalized Schur form */
+#define STGEXC LAPACK_SUBR(STGEXC,stgexc)
+#define DTGEXC LAPACK_SUBR(DTGEXC,dtgexc)
+#define CTGEXC LAPACK_SUBR(CTGEXC,ctgexc)
+#define ZTGEXC LAPACK_SUBR(ZTGEXC,ztgexc)
+/* TREVC - compute eigenvectors */
 #define STREVC LAPACK_SUBR(STREVC,strevc)
 #define DTREVC LAPACK_SUBR(DTREVC,dtrevc)
 #define CTREVC LAPACK_SUBR(CTREVC,ctrevc)
 #define ZTREVC LAPACK_SUBR(ZTREVC,ztrevc)
+/* TRTRS - triangular solve */
 #define STRTRS LAPACK_SUBR(STRTRS,strtrs)
 #define DTRTRS LAPACK_SUBR(DTRTRS,dtrtrs)
 #define CTRTRS LAPACK_SUBR(CTRTRS,ctrtrs)
 #define ZTRTRS LAPACK_SUBR(ZTRTRS,ztrtrs)
+/* TRSV */
 #define STRSV BLAS_SUBR(STRSV,strsv)
 #define DTRSV BLAS_SUBR(DTRSV,dtrsv)
 #define CTRSV BLAS_SUBR(CTRSV,ctrsv)
 #define ZTRSV BLAS_SUBR(ZTRSV,ztrsv)
+/* TRSM */
 #define STRSM BLAS_SUBR(STRSM,strsm)
-#define DTRSM BLAS_SUBR(DTRSV,dtrsm)
-#define CTRSM BLAS_SUBR(CTRSV,ctrsm)
-#define ZTRSM BLAS_SUBR(ZTRSV,ztrsm)
+#define DTRSM BLAS_SUBR(DTRSM,dtrsm)
+#define CTRSM BLAS_SUBR(CTRSM,ctrsm)
+#define ZTRSM BLAS_SUBR(ZTRSM,ztrsm)
+/* LARTG */
 #define SLARTG LAPACK_SUBR(SLARTG,slartg)
 #define DLARTG LAPACK_SUBR(DLARTG,dlartg)
 #define CLARTG LAPACK_SUBR(CLARTG,clartg)

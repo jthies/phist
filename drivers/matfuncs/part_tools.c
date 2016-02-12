@@ -1,12 +1,12 @@
 #include "matfuncs.h"
 
-ghost_gidx_t perm2d( ghost_gidx_t row, gidx_t arg2 )
+ghost_gidx perm2d( ghost_gidx row, gidx_t arg2 )
 {
   static int n1=-1, n2;
   static int np, np1, np2, pid, pid1, pid2;
   static int n1_loc, n2_loc;
   static int off1, off2;
-  static ghost_gidx_t global_offset;
+  static ghost_gidx global_offset;
   
   // first call: initialize
   if (n1==-1)
@@ -57,7 +57,7 @@ ghost_gidx_t perm2d( ghost_gidx_t row, gidx_t arg2 )
     int lrow=(int)(row-global_offset);
     int i1 = lrow%n1_loc;
     int i2 = (lrow-i1)/n1_loc;
-    return (ghost_gidx_t)(off2 + i2)*n1+off1+i1;
+    return (ghost_gidx)(off2 + i2)*n1+off1+i1;
   }
   else if (arg2==+1)
   {
@@ -70,7 +70,7 @@ ghost_gidx_t perm2d( ghost_gidx_t row, gidx_t arg2 )
     int p1 = i1/n1_loc;
     int p2 = i2/n2_loc;
     int p  = p2*np1+p1;
-    ghost_gidx_t offset = p*(ghost_gidx_t)(n1_loc*n2_loc);
+    ghost_gidx offset = p*(ghost_gidx)(n1_loc*n2_loc);
 
     // local indices (j1,j2) in new partitioning
     int j1=i1%n1_loc;
@@ -81,13 +81,13 @@ ghost_gidx_t perm2d( ghost_gidx_t row, gidx_t arg2 )
 }
 
 
-ghost_gidx_t perm3d( ghost_gidx_t row, gidx_t arg2, gidx_t arg3 )
+ghost_gidx perm3d( ghost_gidx row, gidx_t arg2, gidx_t arg3 )
 {
   static int n1=-1, n2, n3;
   static int np, np1, np2, np3, pid, pid1, pid2, pid3;
   static int n1_loc, n2_loc, n3_loc;
   static int off1, off2, off3;
-  static ghost_gidx_t global_offset;
+  static ghost_gidx global_offset;
   
   // first call: initialize
   if (n1==-1)
@@ -158,7 +158,7 @@ ghost_gidx_t perm3d( ghost_gidx_t row, gidx_t arg2, gidx_t arg3 )
   else if (arg2==-1)
   {
     // iperm: convert new GID to original one
-    ghost_gidx_t rem=row-global_offset;
+    ghost_gidx rem=row-global_offset;
     int i1=rem%n1_loc;
     rem=(rem-i1)/n1_loc;
     int i2=rem%n2_loc;
@@ -171,7 +171,7 @@ ghost_gidx_t perm3d( ghost_gidx_t row, gidx_t arg2, gidx_t arg3 )
   else if (arg2==+1)
   {
     // perm: convert old GID to new one
-    ghost_gidx_t rem=row;
+    ghost_gidx rem=row;
     // global indices (i1,i2,i3)
     int i1=rem%n1;
     rem=(rem-i1)/n1;
@@ -186,7 +186,7 @@ ghost_gidx_t perm3d( ghost_gidx_t row, gidx_t arg2, gidx_t arg3 )
     int p2=i2/n2_loc;
     int p3=i3/n3_loc;
     int p = (p3*np2+p2)*np1+p1;
-    ghost_gidx_t offset = p*(ghost_gidx_t)(n1_loc*n2_loc*n3_loc); 
+    ghost_gidx offset = p*(ghost_gidx)(n1_loc*n2_loc*n3_loc); 
 //        PHIST_OUT(PHIST_VERBOSE,"       COL %ld => %ld\n",row,
 //    offset + ((j3*n2_loc)+j2)*n1_loc+j1 );
     return offset + ((j3*n2_loc)+j2)*n1_loc+j1;

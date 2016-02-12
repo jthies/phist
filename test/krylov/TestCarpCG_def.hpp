@@ -23,24 +23,36 @@
 #endif
 
 /*! Test fixure. */
-class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
+class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
+                 public virtual KernelTestWithVectors<_ST_,_N_,_M_,0,3>
 {
 
   public:
 
-    typedef KernelTestWithVectors<_ST_,_N_,_M_> VTest;
+    typedef KernelTestWithSparseMat<_ST_,_N_,MATNAME> SparseMatTest;
+    typedef KernelTestWithVectors<_ST_,_N_,_M_,0,3> VTest;
 
     //! mvec/sdMat sizes
     static const int n_=_N_;
     static const int m_=_M_;
     
+    //! (optional) additional projection vectors
+    TYPE(mvec_ptr) Vproj_;
+    
     //! shifts
     static const int numShifts_=_M_;
     static MT shift_r_[numShifts_], shift_i_[numShifts_];
 
+    static void SetUpTestCase()
+    {
+      SparseMatTest::SetUpTestCase();
+      VTest::SetUpTestCase();
+    }
+
     //! Set up routine.
     virtual void SetUp()
     {
+      SparseMatTest::SetUp();
       VTest::SetUp();
 
       if( typeImplemented_ && !problemTooSmall_ )
@@ -55,12 +67,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
           shift_i_[i]=shifts_i[i];
         }
       
-        // read matrices
-        SUBR(read_mat)(MATNAME,comm_,n_,&A_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        ASSERT_TRUE(A_ != NULL);
-
-        SUBR(carp_cgState_create)(&state_,A_,numShifts_,shift_r_,shift_i_, &iflag_);
+        SUBR(carp_cgState_create)(&state_,A_,Vproj_,numShifts_,shift_r_,shift_i_, &iflag_);
         
         ASSERT_EQ(0,iflag_);
         xex_=vec1_;
@@ -79,6 +86,7 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_norm2)(rhs_,bNorm_,&iflag_);
         ASSERT_EQ(0,iflag_);
+        Vproj_=NULL;
       }
     }
 
@@ -88,19 +96,20 @@ class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_M_>
       int iflag;
       if( typeImplemented_ && !problemTooSmall_ )
       {
-        PHIST_ENTER_FCN(__FUNCTION__);
-        delete opA_;
-
-        SUBR(sparseMat_delete)(A_,&iflag_);
-        ASSERT_EQ(0,iflag_);
         SUBR(carp_cgState_delete)(state_,&iflag);
         ASSERT_EQ(0,iflag_);
       }
-      //TODO - causes segfault when deleting the map (in KernelTestWithMap::TearDown())
-//      VTest::TearDown();
+
+      VTest::TearDown();
+      SparseMatTest::TearDown();
     }
 
-    TYPE(op_ptr) opA_;
+    static void TearDownTestCase()
+    {
+      VTest::TearDownTestCase();
+      SparseMatTest::TearDownTestCase();
+    }
+
     TYPE(carp_cgState_ptr) state_;
 
   protected:

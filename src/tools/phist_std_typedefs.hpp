@@ -31,7 +31,7 @@ typedef st::sparseMat_t* sparseMat_ptr_t;
 typedef const st::sparseMat_t* const_sparseMat_ptr_t;
 typedef st::sdMat_t* sdMat_ptr_t;
 typedef const st::sdMat_t* const_sdMat_ptr_t;
-typedef st::op_t* op_ptr_t;
-typedef const st::op_t* const_op_ptr_t;
+typedef st::linearOp_t* linearOp_ptr_t;
+typedef const st::linearOp_t* const_linearOp_ptr_t;
 
 typedef mt::blas_cmplx_t blas_cmplx_t;

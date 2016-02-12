@@ -40,8 +40,8 @@ int main(int argc, char** argv)
 
   comm_ptr_t comm;
   sparseMat_ptr_t A;
-  op_ptr_t A_op, B_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
-  op_ptr_t Ainv_op; // wrapper for an iterative linear solver for computing interior 
+  linearOp_ptr_t A_op, B_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  linearOp_ptr_t Ainv_op; // wrapper for an iterative linear solver for computing interior 
                     // eigenvalues (used if which=TARGET)
   
   const_map_ptr_t map; // map (element distribution) of vectors according to 
@@ -52,7 +52,7 @@ int main(int argc, char** argv)
     
   // default input parameters:
   MT tol=1.0e-6;
-  eigSort_t which=LM;
+  eigSort_t which=phist_LM;
   ST target_value;
   
   int sym=0;
@@ -78,22 +78,17 @@ PHIST_MAIN_TASK_BEGIN
   matname = argv[1];
   
   int p=2;
-  GET_ARG(sym,p++);
-  if (sym!=0 && sym!=1)
+  GET_ARG(sym,p++,sym==0||sym==1);
+  GET_ARG(how_many,p++,how_many>0);
+  GET_ARG(which,p++,true);
+  if (which==phist_TARGET)
   {
-  SUBR(print_usage)(argv,p-1);
-  return PHIST_INVALID_INPUT;
+    GET_ARG(target_value,p++,true);
   }
-  GET_ARG(how_many,p++);
-  GET_ARG(which,p++);
-  if (which==TARGET)
-  {
-    GET_ARG(target_value,p++);
-  }
-  GET_ARG(tol,p++);
-  GET_ARG(max_iters,p++);
-  GET_ARG(block_size,p++);
-  GET_ARG(num_blocks,p++);
+  GET_ARG(tol,p++,tol>mt::eps());
+  GET_ARG(max_iters,p++,max_iters>0);
+  GET_ARG(block_size,p++,block_size>0);
+  GET_ARG(num_blocks,p++,num_blocks>0);
   
   if (num_blocks*block_size<how_many+10)
   {
@@ -112,22 +107,22 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(SUBR(mvec_create)(&R,map,how_many,&iflag),iflag);
   
   /* create operator wrapper for computing Y=A*X using a CRS matrix */
-  A_op = new TYPE(op);
+  A_op = new TYPE(linearOp);
   B_op = NULL;
   Ainv_op = NULL;
-  PHIST_ICHK_IERR(SUBR(op_wrap_sparseMat)(A_op,A,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(A_op,A,&iflag),iflag);
  
   bool shift_invert=false; 
-  if (which==TARGET)
+  if (which==phist_TARGET)
   {
     shift_invert=true;
     ST shift=-target_value;
-    which=LM;
-    Ainv_op = new TYPE(op);
+    which=phist_LM;
+    Ainv_op = new TYPE(linearOp);
     MT linTol=std::max(tol/10,2*mt::eps());
     int linIter=1000;
-    linSolv_t method=CARP_CG;
-    PHIST_ICHK_IERR(SUBR(op_wrap_solver)(Ainv_op,A,shift,
+    linSolv_t method=phist_CARP_CG;
+    PHIST_ICHK_IERR(SUBR(linearOp_wrap_solver)(Ainv_op,A,shift,
         method,block_size,linTol,linIter,&iflag),iflag);
   }
 

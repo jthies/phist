@@ -59,7 +59,7 @@ void myMain(int argc, char** argv, int &iflag)
   sparseMat_ptr_t A = NULL;
   sparseMat_ptr_t H = NULL;
   
-  TYPE(op) opA;
+  TYPE(linearOp) opA;
   _ST_* sigma = NULL;
   _ST_* alpha = NULL;
   _ST_* beta_new = NULL;
@@ -77,7 +77,7 @@ void myMain(int argc, char** argv, int &iflag)
   _ST_* residue = NULL;
   
 
-  TYPE(op) jadaOp;
+  TYPE(linearOp) jadaOp;
   const_map_ptr_t map = NULL;
   mvec_ptr_t x = NULL;
   mvec_ptr_t y = NULL;
@@ -139,7 +139,7 @@ PHIST_SOUT(PHIST_INFO, "create_matrix iflag %d\n", iflag);
   
   PHIST_CHK_IERR(SUBR(mvec_create)(&b,map,nvecs,&iflag),iflag);
   PHIST_CHK_IERR(SUBR(mvec_create)(&solution,map,nvecs,&iflag),iflag);
-  PHIST_CHK_IERR(SUBR(op_wrap_sparseMat)(&opA,A,&iflag),iflag);
+  PHIST_CHK_IERR(SUBR(linearOp_wrap_sparseMat)(&opA,A,&iflag),iflag);
   sigma = new _ST_[nvecs];
   for(int i = 0; i < nvecs; i++)
     sigma[i] = st::zero();

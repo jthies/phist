@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.10)
 
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
-list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
+#list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
 
 # Define some custom variables
 project(phist C CXX Fortran)
@@ -25,10 +25,24 @@ option(PHIST_ENABLE_MPI "Enable MPI within PHIST" ON)
 option(PHIST_ENABLE_OPENMP "Enable OpenMP within PHIST" ON)
 option(PHIST_BUILD_MIC "Build for Intel MIC" OFF)
 
+option(PHIST_HAVE_SSE  "enable SSE SIMD intrinsics in PHIST code" ON)
+option(PHIST_HAVE_AVX  "enable AVX SIMD intrinsics in PHIST code" OFF)
+option(PHIST_HAVE_AVX2 "enable AVX2 SIMD intrinsics in PHIST code" OFF)
+
 # reproducible random number generator?
 # TODO - this is not quite working yet, once it is, make it the default
 option(PHIST_BUILTIN_RNG
         "use random number generator provided by PHIST, which may be solower than the one implemented by the kernel lib. On the other hand, it gives reproducible results across runs, independent of the exact runtime setup."
+        ON)
+
+# use GHOST if found (must be ON if ghost is the kernel lib)
+option(PHIST_USE_GHOST
+        "try to find the GHOST library even if it is not the kernel lib" 
+        ON)
+
+# try to find MPACK for high precision lapack routines
+option(PHIST_USE_MPACK
+        "try to find the MPACK library" 
         ON)
 
 ########################################################################
@@ -346,6 +360,7 @@ CHECK_CXX_SOURCE_COMPILES("
   }
 " PHIST_HAVE_CXX11_THREADLOCAL)
 CHECK_CXX_SOURCE_COMPILES("
+  template<typename T>
   class C {
   public:
   C(){}
@@ -353,7 +368,7 @@ CHECK_CXX_SOURCE_COMPILES("
   };
   int main(int argc, char** argv)
   {
-    C c;
+    C<int> c;
   }
 " PHIST_HAVE_CXX11_MOVEDEFAULT)
 if(PHIST_HAVE_CXX11_LAMBDAS OR PHIST_HAVE_CXX11_THREADLOCAL)
@@ -403,30 +418,56 @@ endif()
 set(PHIST_KERNEL_LIB "builtin" CACHE STRING "Select underlying kernel libraries for phist (builtin|ghost|epetra|tpetra|magma)")
 message(STATUS "kernel lib " ${PHIST_KERNEL_LIB} " ...")
 
-set(LOAD_TRILI_PKG,"")
+set(REQUIRE_TRILI_PKG,"")
+set(OPTIONAL_TRILI_PKG,"")
+
 if  (PHIST_KERNEL_LIB STREQUAL "epetra")
-  list(APPEND LOAD_TRILI_PKG "EpetraExt")
+  list(APPEND REQUIRE_TRILI_PKG "Epetra")
+  list(APPEND REQUIRE_TRILI_PKG "EpetraExt")
+  list(APPEND REQUIRE_TRILI_PKG "Teuchos")
   set(PHIST_KERNEL_LIB_EPETRA 1)
 
+  list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
+  list(APPEND OPTIONAL_TRILI_PKG "Belos")
+  list(APPEND OPTIONAL_TRILI_PKG "Kokkos")
+
+  list(APPEND OPTIONAL_TRILI_PKG "Ifpack")
+  list(APPEND OPTIONAL_TRILI_PKG "ML")
+  list(APPEND OPTIONAL_TRILI_PKG "MueLU")
+
 elseif  (PHIST_KERNEL_LIB STREQUAL "tpetra")
-  list(APPEND LOAD_TRILI_PKG "Tpetra")
+  list(APPEND REQUIRE_TRILI_PKG "Tpetra")
+  list(APPEND REQUIRE_TRILI_PKG "Kokkos")
+  list(APPEND REQUIRE_TRILI_PKG "Teuchos")
   set(PHIST_KERNEL_LIB_TPETRA 1)
+
+  list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
+  list(APPEND OPTIONAL_TRILI_PKG "Belos")
+
+  list(APPEND OPTIONAL_TRILI_PKG "Ifpack2")
+  list(APPEND OPTIONAL_TRILI_PKG "Amesos2")
+  list(APPEND OPTIONAL_TRILI_PKG "MueLU")
 
 elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   # we already link with ghost because of the queuing system  
   set(PHIST_KERNEL_LIB_GHOST 1)
+  set(PHIST_USE_GHOST ON)
   set(PHIST_MVECS_ROW_MAJOR 1 CACHE STRING "wether multi-vectors should be stored in row-major ordering")
   set(PHIST_SDMATS_ROW_MAJOR 0 CACHE STRING "store sdMats in row-major order (not supported by our algorithms..." )
 
   set(PHIST_SELL_C -1 CACHE INTEGER "chunk size C for the SELL-C-sigma format (-1: automatic choice)")
   set(PHIST_SELL_SIGMA -1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format (-1: automatic choice)")
 
+  list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
+  list(APPEND OPTIONAL_TRILI_PKG "Belos")
+  list(APPEND OPTIONAL_TRILI_PKG "Kokkos")
+  list(APPEND OPTIONAL_TRILI_PKG "Teuchos")
+
 elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
   set(PHIST_KERNEL_LIB_BUILTIN 1)
   set(PHIST_MVECS_ROW_MAJOR 1)
   option(PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS "Try to pin the threads to cores using sched_setaffinity (based on simple heuristics; for Intel use env KMP_AFFINITY=\"granularity=fine,compact,1,0\"" On)
-  option(PHIST_KERNEL_LIB_BUILTIN_AVX2_PREC_KERNELS "Add support for high-precision kernel operations triggered with PHIST_ROBUST_REDUCTIONS, requires AVX2,FMA (e.g. Intel Haswell)" Off)
-  if(PHIST_KERNEL_LIB_BUILTIN_AVX2_PREC_KERNELS)
+  if(PHIST_USE_AVX2)
     message(STATUS "Activated experimental high-precision builtin kernel routines!")
     set(PHIST_HIGH_PRECISION_KERNELS 1)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx -mavx2 -mfma")
@@ -452,56 +493,7 @@ else ()
 endif ()
 set(PHIST_BENCH_LARGE_N 64000000 CACHE STRING "Dimension for benchmarking tests (e.g. large enough to make micro benchmarks memory-bound)")
 
-# test for Belos (Trilinos library of iterative solvers).
-# We recommend linking with Belos because we use its Tsqr
-# interface. If Belos is not found, important functionality
-# may not work, in particular the mvec_QR function is currently
-# implemented via Belos by all kernel libs except "builtin"
-
-find_package(Teuchos)
-
-if (${Teuchos_FOUND})
-  list(APPEND LOAD_TRILI_PKG "Teuchos")
-  set(PHIST_HAVE_TEUCHOS 1)
-  option(PHIST_USE_TEUCHOS_TIMEMONITOR "Use TimeMonitor from Trilinos package Teuchos instead of builtin one." OFF)
-  list(APPEND library_list ${Teuchos_LIBRARIES})
-  message(STATUS "Found Teuchos")
-else()
-  message(STATUS "Teuchos not found.")
-endif()
 option(PHIST_TIMINGS_FULL_TRACE "Try to print full call trace in the TimeMonitor/performance measurements (Warning: may generate *a lot* of output)." Off)
-
-find_package(Kokkos)
-
-if (${Kokkos_FOUND})
-  list(APPEND LOAD_TRILI_PKG "Kokkos")
-  set(PHIST_HAVE_KOKKOS 1)
-  message(STATUS "Found Kokkos")
-else()
-  message(STATUS "Kokkos not found.")
-endif()
-
-find_package(Belos)
-
-if (${Belos_FOUND})
-  list(APPEND LOAD_TRILI_PKG "Belos")
-  set(PHIST_HAVE_BELOS 1)
-  message(STATUS "Found Belos")
-else()
-  message(STATUS "Belos not found.")
-endif()
-
-# if Anasazi is found we provide a simple interface to their
-# block algorithms (e.g. Block Lanczos/Arnoldi)
-find_package(Anasazi)
-
-if (${Anasazi_FOUND})
-  list(APPEND LOAD_TRILI_PKG "Anasazi")
-  set(PHIST_HAVE_ANASAZI 1)
-  message(STATUS "Found Anasazi")
-else()
-  message(STATUS "Anasazi not found.")
-endif()
 
 # even without the essex-physics libs we include certain matfuncs for the
 # test cases SpinSZ and Graphene for testing purposes.
@@ -632,7 +624,8 @@ LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/common/kernels
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.cpp
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_random.c
                         ${PROJECT_SOURCE_DIR}/src/tools/phist_timemonitor.cpp
-                        ${PROJECT_SOURCE_DIR}/src/tools/phist_perfcheck.cpp)
+                        ${PROJECT_SOURCE_DIR}/src/tools/phist_perfcheck.cpp
+                        )
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_normF.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp
@@ -641,22 +634,30 @@ set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthogrrfused.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_svrr.cpp
                        ${PROJECT_SOURCE_DIR}/src/kernels/builtin/prec_kernels.cpp
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_kpm.cpp
                        )
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedgmres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedminres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_belos.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasazi.cpp
-                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp)
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp
+                         )
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.c
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_schur_decomp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejada.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp
-                         ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaCorrectionSolver.cpp)
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaCorrectionSolver.cpp
+                         )
+set(PHIST_PRECON_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/phist_precon.cpp
+                        ${PROJECT_SOURCE_DIR}/src/precon/phist_ilu.cpp
+                        )
 set (PHIST_SUPPORT_SOURCE  ${PROJECT_SOURCE_DIR}/src/support/phist_feastCorrectionSolver.cpp
-                           ${PROJECT_SOURCE_DIR}/src/support/phist_iter_op.cpp)
+                           ${PROJECT_SOURCE_DIR}/src/support/phist_iter_op.cpp
+                           )
 
 
 include_directories(${PROJECT_BINARY_DIR})
@@ -667,6 +668,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src/tools)
 include_directories(${PROJECT_SOURCE_DIR}/src/core)
 include_directories(${PROJECT_SOURCE_DIR}/src/krylov)
 include_directories(${PROJECT_SOURCE_DIR}/src/jada)
+include_directories(${PROJECT_SOURCE_DIR}/src/precon)
 include_directories(${PROJECT_SOURCE_DIR}/src/support)
 include_directories(${PROJECT_SOURCE_DIR}/drivers)
 
@@ -675,18 +677,21 @@ add_library(phist_core ${PHIST_CORE_SOURCE})
 add_library(phist_kernels_${PHIST_KERNEL_LIB} ${PHIST_KERNEL_SOURCE})
 add_library(phist_solvers ${PHIST_KRYLOV_SOURCE} 
                           ${PHIST_JADA_SOURCE})
+add_library(phist_precon ${PHIST_PRECON_SOURCE})
 add_library(phist_support ${PHIST_SUPPORT_SOURCE})
 
 LIST(APPEND library_list phist_tools)
 LIST(APPEND library_list phist_core)
 LIST(APPEND library_list phist_kernels_${PHIST_KERNEL_LIB})
 LIST(APPEND library_list phist_solvers)
+LIST(APPEND library_list phist_precon)
 LIST(APPEND library_list phist_support)
 
-target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB}                                        phist_tools)
-target_link_libraries(phist_core                             phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
-target_link_libraries(phist_solvers               phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
-target_link_libraries(phist_support phist_solvers phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
+target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB}                                                     phist_tools)
+target_link_libraries(phist_core                                          phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
+target_link_libraries(phist_precon                             phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
+target_link_libraries(phist_solvers               phist_precon phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
+target_link_libraries(phist_support phist_solvers phist_precon phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 
 if (MPACK_FOUND)
       target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} ${MPACK_LIBRARIES})
@@ -697,7 +702,7 @@ endif()
 
 if(PHIST_KERNEL_LIB STREQUAL "ghost")
   find_package(GHOST REQUIRED CONFIG)
-else()
+elseif(PHIST_USE_GHOST)
   find_package(GHOST CONFIG QUIET)
 endif()
 if (GHOST_FOUND)
@@ -715,15 +720,18 @@ endif()
 
 #message(STATUS "GHOST libs: ${GHOST_LIBRARIES}")
 
-find_package (MPACK)
-if (MPACK_FOUND)
-  include_directories(${MPACK_INCLUDE_DIRS})
-  link_directories(${MPACK_LIBRARY_DIRS})
-  message(STATUS "mpack found, enabled high precision lapack!")
-  if (MPACK_QD_FOUND)
-    set(PHIST_HAVE_MPACK_QD 1)
-  else()
-    message(WARNING "found MPACK, but not MPACK_QD, which is the only supported implementation right now")
+if (PHIST_USE_MPACK)
+  find_package (MPACK)
+  if (MPACK_FOUND)
+    include_directories(${MPACK_INCLUDE_DIRS})
+    link_directories(${MPACK_LIBRARY_DIRS})
+    message(STATUS "mpack found, enabled high precision lapack!")
+    if (MPACK_QD_FOUND)
+      set(PHIST_HAVE_MPACK_QD 1)
+    else()
+      message(WARNING "found MPACK, but not MPACK_QD, which is the only 
+       supported implementation right now")
+    endif()
   endif()
 endif()
 
@@ -778,6 +786,49 @@ else()
   message(STATUS "continuing without Likwid, you can set the environment variable LIKWID_HOME to help CMake find it")
 endif()
 
+###########################################################################################
+# check for required Trilinos libraries, note that you have to add the Trilinos lib/cmake #
+# dir to your CMAKE_PREFIX_PATH so that CMake finds them automatically.                   #
+###########################################################################################
+
+foreach(PKG ${REQUIRE_TRILI_PKG})
+  string(TOUPPER ${PKG} PKG_CAPS)
+  find_package(${PKG} REQUIRED)
+  if (${${PKG}_FOUND})
+    include_directories(${${PKG}_INCLUDE_DIRS})
+    include_directories(${${PKG}_TPL_INCLUDE_DIRS})
+    link_directories(${${PKG}_LIBRARY_DIRS})
+    link_directories(${${PKG}_TPL_LIBRARY_DIRS})
+    target_link_libraries(phist_tools ${${PKG}_LIBRARIES})
+    target_link_libraries(phist_tools ${${PKG}_TPL_LIBRARIES})
+    set(PHIST_HAVE_${PKG_CAPS} "Enable required Trilinos package ${PKG}" ON)
+  else()
+    message(FATAL_ERROR ${PKG} " was not found")
+  endif()
+
+endforeach()
+
+#########################################################################################
+# check for and enable optional libs from Trilinos (preconditioners, Belos/Anasazi)     #
+#########################################################################################
+
+foreach(PKG ${OPTIONAL_TRILI_PKG})
+  string(TOUPPER ${PKG} PKG_CAPS)
+  find_package(${PKG} QUIET)
+  if (${${PKG}_FOUND})
+    include_directories(${${PKG}_INCLUDE_DIRS})
+    include_directories(${${PKG}_TPL_INCLUDE_DIRS})
+    link_directories(${${PKG}_LIBRARY_DIRS})
+    link_directories(${${PKG}_TPL_LIBRARY_DIRS})
+    target_link_libraries(phist_tools ${${PKG}_LIBRARIES})
+    target_link_libraries(phist_tools ${${PKG}_TPL_LIBRARIES})
+    set(PHIST_HAVE_${PKG_CAPS} "Enable optional Trilinos package ${PKG}" ON)
+  endif()
+
+endforeach()
+
+
+
 option(PHIST_TIMEMONITOR "Gather detailed function-level timings" On)
 if( PHIST_TIMEMONITOR )
   message(STATUS "activated TimeMonitor timing monitoring")
@@ -813,20 +864,6 @@ configure_package_config_file("${PROJECT_SOURCE_DIR}/phistConfig.cmake.in" "${PR
   PATH_VARS INCLUDE_INSTALL_DIR)# LIBRARY_INSTALL_DIR)
 write_basic_package_version_file("${PROJECT_BINARY_DIR}/phistConfigVersion.cmake" VERSION ${PHIST_VERSION} COMPATIBILITY SameMajorVersion)
 
-foreach(PKG ${LOAD_TRILI_PKG})
-  find_package(${PKG} REQUIRED)
-  if (${${PKG}_FOUND})
-    include_directories(${${PKG}_INCLUDE_DIRS})
-    include_directories(${${PKG}_TPL_INCLUDE_DIRS})
-    link_directories(${${PKG}_LIBRARY_DIRS})
-    link_directories(${${PKG}_TPL_LIBRARY_DIRS})
-    target_link_libraries(phist_tools ${${PKG}_LIBRARIES})
-    target_link_libraries(phist_tools ${${PKG}_TPL_LIBRARIES})
-  else()
-    message(FATAL_ERROR ${PKG} " was not found")
-  endif()
-
-endforeach()
 
 if(NOT GHOST_FOUND) #use MPI libs as found by GHOST in this case. otherwise, a clash between thread-safe and normal MPI will occur
   target_link_libraries(phist_tools ${MPI_CXX_LIBRARIES} ${MPI_C_LIBRARIES} ${MPI_Fortran_LIBRARIES})
@@ -874,7 +911,10 @@ set(SOURCES
 set(TEST_SOURCES
     lib/googletest-master-12-2015/gtest/gtest-all.cc
     test/mainTest.cpp
-    test/tools/MatrixIO.cpp)
+    test/tools/MatrixIO.cpp
+    test/kernels/TestWithType
+    test/kernels/KernelTest.cpp
+    test/kernels/KernelTestWithSparseMat.cpp)
     
 file(GLOB TestMatricesMM ${CMAKE_CURRENT_SOURCE_DIR}/test/matrices/*.mm)
 file(GLOB TestMatricesBIN ${CMAKE_CURRENT_SOURCE_DIR}/test/matrices/*.bin)
@@ -952,12 +992,14 @@ if (${BUILD_SHARED_LIBS})
   install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_tools EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_core EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
+  install(TARGETS phist_precon EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_solvers EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_support EXPORT phistLibraries LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR})
 else()
   install(TARGETS phist_kernels_${PHIST_KERNEL_LIB} EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_tools EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_core EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
+  install(TARGETS phist_precon EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_solvers EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
   install(TARGETS phist_support EXPORT phistLibraries ARCHIVE DESTINATION ${LIBRARY_INSTALL_DIR})
 endif()
@@ -976,6 +1018,17 @@ install(FILES ${PHIST_HEADERS} DESTINATION ${INCLUDE_INSTALL_DIR})
 
 file(GLOB PYTHON_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/python/*.py)
 install(FILES ${PYTHON_HEADERS} DESTINATION ${LIBRARY_INSTALL_DIR}/python)
+
+####################
+# uninstall target #
+####################
+
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake"
+    IMMEDIATE @ONLY)
+add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake") 
+
 
 # test drivers
 if( "${CMAKE_BUILD_TYPE}" MATCHES "Release" )
@@ -1161,3 +1214,4 @@ include(CPack)
 add_custom_target(libs DEPENDS ${library_list})
 add_custom_target(drivers DEPENDS ${driver_list})
 add_custom_target(tests DEPENDS ${test_list})
+

@@ -60,4 +60,7 @@
 /* accuracy vs. speed */
 #define PHIST_ROBUST_REDUCTIONS 1
 
+/* for KPM */
+#define PHIST_KPM_SINGLEVEC 1
+
 #endif

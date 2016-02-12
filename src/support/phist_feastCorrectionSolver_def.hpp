@@ -17,8 +17,12 @@ void SUBR(private_rebuild_carp_cgStates)(TYPE(feastCorrectionSolver_ptr) me, int
             PHIST_CHK_IERR(SUBR(carp_cgState_delete)
               (me->carp_cgStates_[i],iflag),*iflag);
           }
+          TYPE(mvec_ptr) Vproj=NULL; // it is in principle possible to "precondition" the
+                                     // CARP-CG solver by adding the near null space as a
+                                     // border to the matrix (augmenting the matrix), but
+                                     // so far we don't do that in BEAST.
           PHIST_CHK_IERR(SUBR(carp_cgState_create)
-            (&me->carp_cgStates_[i],me->A_,bs,sig_r,sig_i,
+            (&me->carp_cgStates_[i],me->A_,Vproj,bs,sig_r,sig_i,
             iflag),*iflag);
         }
 }
@@ -53,7 +57,7 @@ void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me,
     (*me)->sigma_i_[i]=sigma_i[i];
   }
   
-  if (method==CARP_CG)
+  if (method==phist_CARP_CG)
   {
     // create one CARP-CG object per shift.
     (*me)->carp_cgStates_ = new TYPE(carp_cgState_ptr)[numShifts];
@@ -83,7 +87,7 @@ void SUBR(feastCorrectionSolver_delete)(TYPE(feastCorrectionSolver_ptr) me, int 
   delete [] me->sigma_r_;
   delete [] me->sigma_i_;
   me->rhs_=NULL;
-  if (me->method_==CARP_CG)
+  if (me->method_==phist_CARP_CG)
   {
     for (int i=0; i<me->numShifts_;i++)
     {
@@ -138,7 +142,7 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
     int c1=std::min(c0+blockSize,nrhs)-1;
     int bs=c1-c0+1;
     PHIST_SOUT(PHIST_VERBOSE,"SOLVE SYSTEMS (%d:%d)\n",c0,c1);
-    if (me->method_==CARP_CG)
+    if (me->method_==phist_CARP_CG)
     {
       TYPE(mvec_ptr) b,*x_r,*x_i;
       b=(TYPE(mvec_ptr))rhs;

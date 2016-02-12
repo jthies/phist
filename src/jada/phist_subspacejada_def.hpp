@@ -1,5 +1,5 @@
 //! small helper function that checks if an sdMat is symmetric
-void SUBR(sdMat_check_symmetrie)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
+void SUBR(sdMat_check_symmetry)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
@@ -54,7 +54,8 @@ void SUBR(sdMat_check_symmetrie)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
   }
 }
 
-
+//! subspacejada for exterior eigenvalues, using standard Ritz values
+//!
 //! Tries to compute a partial schur form $(Q,R)$ of dimension opts.numEigs
 //! of the stencil $A*x-\lambda*B*x$ with a general linear operator $A$ and a
 //! hermitian positive definite (hpd.) linear operator $B$ using a
@@ -64,7 +65,7 @@ void SUBR(sdMat_check_symmetrie)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
 //!
 //! see header file for further documentation of the parameters
 //!
-void SUBR(subspacejada)( TYPE(const_op_ptr) A_op,  TYPE(const_op_ptr) B_op,
+void SUBR(subspacejada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr) B_op,
                          phist_jadaOpts_t opts,
                          TYPE(mvec_ptr) Q__,       TYPE(sdMat_ptr) R_,
                          _CT_* ev,                 _MT_* resNorm,
@@ -93,10 +94,25 @@ _ST_ initialShift   =(_ST_)opts.initialShift_r;
                          
 bool innerIMGS=(opts.innerSolvRobust!=0);
 bool innerGMRESabortAfterFirstConverged=opts.innerSolvStopAfterFirstConverged;
-bool symmetric=opts.symmetry==HERMITIAN;
+bool symmetric=opts.symmetry==phist_HERMITIAN;
 #ifndef IS_COMPLEX
-symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
+symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
 #endif
+
+  eigExtr_t how=opts.how;
+  
+  if (how==phist_HARMONIC)
+  {
+    PHIST_SOUT(PHIST_ERROR,"if you want to use harmonic Ritz values, please use the harmonicjada routine instead\n");
+  }
+  if (how!=phist_STANDARD)
+  {
+    PHIST_SOUT(PHIST_ERROR,"only standard Ritz extraction is implemented (jadaOpts.how=%s), found %s\n",
+        eigExtr2str(phist_STANDARD),eigExtr2str(how));
+    *iflag=PHIST_NOT_IMPLEMENTED;
+    return;
+  }
+
 
   // extended number of searched eigenvalues in order to respect the block dimension,
   // this way we always have a fixed blockDim AND it should make the calculation
@@ -157,7 +173,7 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 
   // create mvecs and sdMats
   mvec_ptr_t  V_      = NULL;    //< space for V
-  mvec_ptr_t  Vtmp_   = NULL;    //< temporary space for V
+  mvec_ptr_t  Vtmp_   = NULL;    //< temporary space for V only used for checking invariants in TESTING mode
   mvec_ptr_t  AV_     = NULL;    //< space for AV
   mvec_ptr_t  BV_     = NULL;    //< space for BV
   mvec_ptr_t  Q_      = NULL;    //< Q, enlarged dynamically
@@ -166,8 +182,11 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
   mvec_ptr_t  At_     = NULL;    //< space for A*t
   mvec_ptr_t  res     = NULL;    //< residuum A*Q-Q*R
 
+  // For standard Ritz values (approximating extreme eigenvalues), we have
+  // V'V=I, V'Q=0, H=V'AV, and the Schur decomposition H=Q_H R_H    
+
   sdMat_ptr_t H_      = NULL;    //< space for H
-  sdMat_ptr_t Htmp_   = NULL;    //< temporary space for H
+  sdMat_ptr_t Htmp_   = NULL;    //< temporary space for H used only for checking invariants
   sdMat_ptr_t Q_H_    = NULL;    //< space for Q_H
   sdMat_ptr_t R_H_    = NULL;    //< space for R_H
   sdMat_ptr_t sdMI_   = NULL;    //< identity matrix
@@ -250,7 +269,7 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 
   //------------------------------- initialize correction equation solver solver ------------------------
   TYPE(jadaCorrectionSolver_ptr) innerSolv = NULL;
-  linSolv_t method = symmetric? MINRES: GMRES;
+  linSolv_t method = symmetric? phist_MINRES: phist_GMRES;
   PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_create)(&innerSolv, opts, A_op->domain_map, iflag), *iflag);
   std::vector<_MT_> innerTol(nEig_,0.1);
   std::vector<_MT_> lastOuterRes(nEig_,mt::zero());
@@ -285,6 +304,9 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 
   // set views
   int nConvEig = 0;
+#ifdef UPDATE_SUBSPACE_VIEWS
+#undef UPDATE_SUBSPACE_VIEWS
+#endif
 #define UPDATE_SUBSPACE_VIEWS \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (V_,      &V,                         nConvEig, nV-1,      iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (AV_,     &AV,                        nConvEig, nV-1,      iflag), *iflag); \
@@ -299,6 +321,9 @@ symmetric=symmetric||(opts.symmetry==COMPLEX_SYMMETRIC);
 
 
 
+#ifdef TESTING_CHECK_SUBSPACE_INVARIANTS
+#undef TESTING_CHECK_SUBSPACE_INVARIANTS
+#endif
 #ifdef TESTING
 #define TESTING_CHECK_SUBSPACE_INVARIANTS \
 { \
@@ -389,10 +414,10 @@ PHIST_CHK_IERR(SUBR( mvec_view_block ) (Q_,  &Q,  0, nEig_-1, iflag), *iflag);
 PHIST_CHK_IERR(SUBR( mvec_view_block ) (BQ_, &BQ, 0, nEig_-1, iflag), *iflag);
 PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag), *iflag);
 
-    // for convenience check symmetrie of H (shouldn't much hurt the performance)
+    // for convenience check symmetry of H (shouldn't much hurt the performance)
     if( symmetric )
     {
-      PHIST_CHK_NEG_IERR(SUBR(sdMat_check_symmetrie)(Hful, tol, iflag), *iflag);
+      PHIST_CHK_NEG_IERR(SUBR(sdMat_check_symmetry)(Hful, tol, iflag), *iflag);
     }
 
     // calculate sorted Schur form of H in (Q_H,R_H)
@@ -408,13 +433,19 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
     int nSelect = nSort;
     lidx_t offR_H = ldaR_H*nConvEig+nConvEig;
     lidx_t offQ_H = ldaQ_H*nConvEig+nConvEig;
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)(R_H_,iflag),*iflag); // TODO download only viewed part
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)(Q_H_,iflag),*iflag);
     PHIST_CHK_IERR(SUBR( SchurDecomp ) (R_H_raw+offR_H, ldaR_H, Q_H_raw+offQ_H, ldaQ_H, nV-nConvEig, nSelect, nSort, which, tol, ev_H+nConvEig, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(R_H_,iflag),*iflag);
     // we still need to add the missing parts of R_H, Q_H
     if( nConvEig > 0 )
     {
       // upper left part of Q_H
       for(int i = 0; i < nConvEig; i++)
         Q_H_raw[ldaQ_H*i+i] = st::one();
+
+      PHIST_CHK_IERR(SUBR(sdMat_to_device)(Q_H_,iflag),*iflag);
+
 
       // left part of R_H
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_H_, &R_H, 0, nConvEig-1, 0, nConvEig-1, iflag), *iflag);
@@ -426,6 +457,10 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
       PHIST_CHK_IERR(SUBR( sdMat_view_block  ) (H_  , &Hh,   0,             nConvEig-1, nConvEig, nV-1,    iflag), *iflag);
 
       PHIST_CHK_IERR(SUBR( sdMat_times_sdMat ) (st::one(), Hh, Qq_H, st::zero(), Rr_H, iflag), *iflag);
+    } 
+    else
+    {
+      PHIST_CHK_IERR(SUBR(sdMat_to_device)(Q_H_,iflag),*iflag);
     }
 #ifdef TESTING
 {
@@ -436,6 +471,7 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
   PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(), Hful, Q_H, st::zero(), Htmp, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(-st::one(), Q_H, R_H, st::one(), Htmp, iflag), *iflag);
   // get max norm
+  PHIST_CHK_IERR(SUBR(sdMat_from_device)(Htmp_,iflag),*iflag);
   _MT_ absErr = mt::zero();
   for(int i = 0; i < nEig_; i++)
     for(int j = 0; j < nV; j++)
@@ -459,13 +495,11 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
 
     // update approximate Schur form of A (keeping the already computed part locked)
     PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), V,    Qq_H, st::zero(), Qq,  iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( mvec_set_block ) (Q, Qq, nConvEig, nEig_-1, iflag), *iflag);
     PHIST_CHK_IERR(SUBR( sdMat_set_block  ) (R, Rr_H, 0, nEig_-1, nConvEig, nEig_-1, iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), AV,   Qq_H, st::zero(), t_res, iflag), *iflag);
     if( B_op != NULL )
     {
       PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BV,   Qq_H, st::zero(), BQq,  iflag), *iflag);
-      PHIST_CHK_IERR(SUBR( mvec_set_block ) (BQ, BQq, nConvEig, nEig_-1, iflag), *iflag);
     }
     // overwrite res with the residual: -res = -(Aq - Bqr) = + BQq*r - res
     PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BQ,   Rr_H,    -st::one(), t_res, iflag), *iflag);
@@ -476,6 +510,7 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
   // check that the residual is orthogonal to Q (should be by construction!)
   PHIST_CHK_IERR( SUBR( sdMat_view_block ) (Htmp_, &Htmp, 0, nEig_-1, nConvEig, nEig_-1, iflag), *iflag);
   PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (st::one(), Q, t_res, st::zero(), Htmp, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_from_device)(Htmp_,iflag),*iflag);
   _MT_ equalEps = st::abs(Htmp_raw[0]);
   for(int i = 0; i < nEig_; i++)
     for(int j = nConvEig; j < nEig_; j++)

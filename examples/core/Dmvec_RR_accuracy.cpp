@@ -63,7 +63,7 @@ static int run_tests1(Dmvec_ptr_t X, bool high_prec);
 extern "C" {
 
 // Hilbert matrix generating function
-int hilbert(ghost_gidx_t i, ghost_lidx_t j, void* val)
+int hilbert(ghost_gidx i, ghost_lidx j, void* val)
 {
   ST* dval=(ST*)val;
   *dval = st::one()/((ST)i+(ST)j+st::one());
@@ -72,7 +72,7 @@ int hilbert(ghost_gidx_t i, ghost_lidx_t j, void* val)
 }
 
 // synthetic matrix from Yamasaki et al
-int synth1(ghost_gidx_t i, ghost_lidx_t j, void* val)
+int synth1(ghost_gidx i, ghost_lidx j, void* val)
 {
   ST* dval=(ST*)val;
   if (i==0)

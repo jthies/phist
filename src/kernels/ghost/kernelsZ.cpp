@@ -54,7 +54,7 @@
 #include <map>
 
 #if defined(PHIST_HAVE_BELOS)||defined(PHIST_HAVE_KOKKOS)
-# if defined(GHOST_HAVE_LONGIDX_LOCAL)
+# if defined(GHOST_IDX64_LOCAL)
 # warning "The interfaces between GHOST and Belos/TSQR cause problems unless you compile GHOST with LONGIDX_GLOBAL but *without* LONGIDX_LOCAL"
 # endif
 #endif
@@ -62,5 +62,6 @@
 #include "phist_gen_z.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
-#include "../common/kernels_no_fused.cpp"
+#include "../common/kernels_nofused_mvec.cpp"
+#include "../common/kernels_nofused_spmv_gemm.cpp"
 

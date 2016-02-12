@@ -72,7 +72,7 @@ void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolv
 //! t               returns approximate solution vectors
 //! iflag            a value > 0 indicates the number of systems that have not converged to the desired tolerance
 void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver,
-                                    TYPE(const_op_ptr)    A_op,     TYPE(const_op_ptr)    B_op, 
+                                    TYPE(const_linearOp_ptr)    A_op,     TYPE(const_linearOp_ptr)    B_op, 
                                     TYPE(const_mvec_ptr)  Qtil,     TYPE(const_mvec_ptr)  BQtil,
                                     const _ST_            sigma[],  TYPE(const_mvec_ptr)  res,      const int resIndex[], 
                                     const _MT_            tol[],    int                   maxIter,

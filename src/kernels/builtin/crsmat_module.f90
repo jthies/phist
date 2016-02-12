@@ -31,12 +31,12 @@ module crsmat_module
 #define G_LIDX_T C_INT32_T
 #define G_GIDX_T C_INT64_T
 #else
-#ifdef GHOST_HAVE_LONGIDX_LOCAL
+#ifdef GHOST_IDX64_LOCAL
 #define G_LIDX_T C_INT64_T
 #else
 #define G_LIDX_T C_INT32_T
 #endif
-#ifdef GHOST_HAVE_LONGIDX_GLOBAL
+#ifdef GHOST_IDX64_GLOBAL
 #define G_GIDX_T C_INT64_T
 #else
 #define G_GIDX_T C_INT32_T
@@ -1557,6 +1557,7 @@ end subroutine permute_local_matrix
 
     recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
     handled = .false.
+#ifdef PHIST_HAVE_SSE
     !try to use NT stores if possible
     if( beta .eq. 0 .and. x_is_aligned .and. y_is_aligned ) then
       if( nvec .eq. 1 ) then
@@ -1601,7 +1602,7 @@ end subroutine permute_local_matrix
         handled = .true.
       end if
     end if
-
+#endif
     if( .not. handled ) then
       if( nvec .eq. 1 ) then
         if( strided ) then

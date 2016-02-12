@@ -312,7 +312,7 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _declare(None, _prefix+'mvec_QR', (_mvec_ptr, _sdMat_ptr, c_int_p), skip_if_missing=True)
 
     # NOT IMPLEMENTED
-    #void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, const_comm_ptr_t comm, gidx_t nrows, gidx_t ncols, lidx_t maxnne, int (*rowFunPtr)(ghost_gidx_t,ghost_lidx_t*,ghost_gidx_t*,void*), int *ierr);
+    #void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, const_comm_ptr_t comm, gidx_t nrows, gidx_t ncols, lidx_t maxnne, int (*rowFunPtr)(ghost_gidx,ghost_lidx*,ghost_gidx*,void*), int *ierr);
 
 #void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Dmvec_t* reV, Dmvec_t* imV, int *ierr);
 #void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* imV, int *ierr);

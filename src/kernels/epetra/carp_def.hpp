@@ -6,14 +6,27 @@ Teuchos::RCP<Epetra_MultiVector> xLoc_;
 Teuchos::RCP<Epetra_MultiVector> xLoc_i_;
 } carpWork_t;
 
+// local KACZ sweep on (A-sigma*I)x=b, b may be NULL
 void private_kacz_sweep(const Epetra_CrsMatrix* A, 
                         const double sigma_r[],
                               Epetra_MultiVector* xLoc, 
                         const Epetra_MultiVector* rhs,
                         double const omega[],
-                        int imin, int iend, int istep,
+                        int istart, int iend, int istep,
                         int *iflag);
 
+// local KACZ sweep on [A-sigma*I, Q; Q' 0][xLoc; q]=[b; 0], b may be NULL
+void private_kacz_sweep_aug(const Epetra_CrsMatrix* A, 
+                        const double sigma_r[],
+                        const Epetra_MultiVector* Q,
+                              Epetra_MultiVector* xLoc, 
+                              Epetra_MultiVector* q,
+                        const Epetra_MultiVector* rhs,
+                        double const omega[],
+                        int istart, int iend, int istep,
+                        int *iflag);
+
+// local KACZ sweep on (A-(sigma_r+i*sigma_i)I) (x_r+i*x_i)=b, where b is real and may be NULL
 void private_kacz_sweep_rc(const Epetra_CrsMatrix* A, 
                         const double sigma_r[],
                         const double sigma_i[],
@@ -21,7 +34,21 @@ void private_kacz_sweep_rc(const Epetra_CrsMatrix* A,
                               Epetra_MultiVector* xLoc_i, 
                         const Epetra_MultiVector* rhs,
                         double const omega[],
-                        int imin, int iend, int istep,
+                        int istart, int iend, int istep,
+                        int *iflag);
+
+// local KACZ sweep on [(A-(sigma_r+i*sigma_i)I), Q; Q' 0] [(x_r+i*x_i); q_r+i*q_i]=[b; 0], where b is real and may be NULL
+void private_kacz_sweep_aug_rc(const Epetra_CrsMatrix* A, 
+                        const double sigma_r[],
+                        const double sigma_i[],
+                        const Epetra_MultiVector* Q,
+                              Epetra_MultiVector* xLoc_r, 
+                              Epetra_MultiVector* xLoc_i, 
+                              Epetra_MultiVector* q_r, 
+                              Epetra_MultiVector* q_i, 
+                        const Epetra_MultiVector* rhs,
+                        double const omega[],
+                        int istart, int iend, int istep,
                         int *iflag);
 
 //! create data structures needed for subsequent calls to carp_sweep: 
@@ -116,8 +143,27 @@ extern "C" void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) vA,
         _MT_ const * omega, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
+  // implementation is in one place in the aug variant, which will call
+  // the appropriate KACZ kernel and take care of the averaging (CARP part)
+  PHIST_CHK_IERR(SUBR(carp_sweep_aug)(vA, sigma_r, sigma_i, NULL, vrhs, X_r, X_i,
+                NULL, NULL, work, omega, iflag), *iflag);
+}
+
+void SUBR(carp_sweep_aug)(TYPE(const_sparseMat_ptr) vA,
+        _MT_ const sigma_r[], _MT_ const sigma_i[],
+        TYPE(const_mvec_ptr) vQ,
+        TYPE(const_mvec_ptr) vrhs,
+        TYPE(mvec_ptr) X_r, TYPE(mvec_ptr) X_i,
+        TYPE(sdMat_ptr) vq_r, TYPE(sdMat_ptr) vq_i,
+        void* const work,
+        _MT_ const * omega, int* iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix, A, vA, *iflag);
   const Epetra_MultiVector* rhs=(const Epetra_MultiVector*)vrhs;
+  const Epetra_MultiVector* Q=(const Epetra_MultiVector*)vQ;
+        Epetra_MultiVector* q_r=(Epetra_MultiVector*)vq_r;
+        Epetra_MultiVector* q_i=(Epetra_MultiVector*)vq_i;
   
     carpWork_t* dat=(carpWork_t*)work;
 
@@ -125,7 +171,25 @@ extern "C" void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) vA,
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X_r,&nvec,iflag),*iflag);
 
   bool rc_variant=(X_i!=NULL); // variant with real A and rhs but complex diagonal shift sigma
-      
+  bool aug_variant=(Q!=NULL);
+  
+  if (aug_variant)
+  {
+    if (q_r==NULL || (q_i==NULL&&rc_variant))
+    {
+      PHIST_SOUT(PHIST_ERROR,"augmented CARP variant requires q_r (and q_i if X_i is given)");
+      *iflag=PHIST_INVALID_INPUT;
+      return;
+    }
+#ifdef TESTING
+    double norms[Q->NumVectors()];
+    PHIST_CHK_IERR(*iflag=Q->Norm2(norms),*iflag);
+    double norm_err=0.0;
+    for (int i=0; i<Q->NumVectors(); i++) norm_err=std::max(std::abs(1.0-norms[i]),norm_err);
+    if (norm_err>1.0e-14) PHIST_SOUT(PHIST_WARNING,"augmented CARP kernel assumes Q is normalized, found max_j(abs(||Q(:,j)||_2-1.0))=%e\n",norm_err);
+#endif
+  }
+  
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector, sol, X_r, *iflag);
   Epetra_MultiVector* sol_i=NULL;
   if (rc_variant)
@@ -194,15 +258,33 @@ extern "C" void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) vA,
 
     if (rc_variant)
     {
-      PHIST_CHK_IERR(private_kacz_sweep_rc(A, sigma_r,sigma_i,
-                dat->xLoc_.get(), dat->xLoc_i_.get(),
-                rhs,omega,0,A->NumMyRows(),+1,iflag),*iflag);
+      if (aug_variant)
+      {
+        PHIST_CHK_IERR(private_kacz_sweep_aug_rc(A, sigma_r,sigma_i,Q,
+                  dat->xLoc_.get(), dat->xLoc_i_.get(), q_r, q_i,
+                  rhs,omega,0,A->NumMyRows(),+1,iflag),*iflag);
+      }
+      else
+      {
+        PHIST_CHK_IERR(private_kacz_sweep_rc(A, sigma_r,sigma_i,
+                  dat->xLoc_.get(), dat->xLoc_i_.get(),
+                  rhs,omega,0,A->NumMyRows(),+1,iflag),*iflag);
+      }
     }
     else
     {
-      PHIST_CHK_IERR(private_kacz_sweep(A, sigma_r,
-                dat->xLoc_.get(),rhs,omega,
-                0,A->NumMyRows(),+1,iflag),*iflag);
+      if (aug_variant)
+      {
+        PHIST_CHK_IERR(private_kacz_sweep_aug(A, sigma_r, Q,
+                  dat->xLoc_.get(), q_r, rhs,omega,
+                  0,A->NumMyRows(),+1,iflag),*iflag);
+      }
+      else
+      {
+        PHIST_CHK_IERR(private_kacz_sweep(A, sigma_r,
+                  dat->xLoc_.get(),rhs,omega,
+                  0,A->NumMyRows(),+1,iflag),*iflag);
+      }
     }
     ///////////////////////////////////////////////////////////
     // component averaging                                   //
@@ -238,15 +320,34 @@ extern "C" void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) vA,
     ///////////////////////////////////////////////////////////
     if (rc_variant)
     {
-      PHIST_CHK_IERR(private_kacz_sweep_rc(A,sigma_r,sigma_i,
-                dat->xLoc_.get(),dat->xLoc_i_.get(),
-                rhs,omega,A->NumMyRows()-1,-1,-1,iflag),*iflag);
+      if (aug_variant)
+      {
+        PHIST_CHK_IERR(private_kacz_sweep_aug_rc(A,sigma_r,sigma_i,Q,
+                  dat->xLoc_.get(),dat->xLoc_i_.get(),
+                  q_r, q_i,
+                  rhs,omega,A->NumMyRows()-1,-1,-1,iflag),*iflag);
+      }
+      else
+      {
+        PHIST_CHK_IERR(private_kacz_sweep_rc(A,sigma_r,sigma_i,
+                  dat->xLoc_.get(),dat->xLoc_i_.get(),
+                  rhs,omega,A->NumMyRows()-1,-1,-1,iflag),*iflag);
+      }
     }
     else
     {
-      PHIST_CHK_IERR(private_kacz_sweep(A,sigma_r,
-                dat->xLoc_.get(),
-                rhs,omega,A->NumMyRows()-1,-1,-1,iflag),*iflag);
+      if (aug_variant)
+      {
+        PHIST_CHK_IERR(private_kacz_sweep_aug(A,sigma_r,Q,
+                  dat->xLoc_.get(), q_r,
+                  rhs,omega,A->NumMyRows()-1,-1,-1,iflag),*iflag);
+      }
+      else
+      {
+        PHIST_CHK_IERR(private_kacz_sweep(A,sigma_r,
+                  dat->xLoc_.get(),
+                  rhs,omega,A->NumMyRows()-1,-1,-1,iflag),*iflag);
+      }
     }
 
     if (dat->xLoc_.get()!=sol)
@@ -269,6 +370,7 @@ extern "C" void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) vA,
       PHIST_CHK_IERR(*iflag=sol_i->Export(*dat->xLoc_i_, *(A->Importer()), Average),*iflag);
     }
 }
+
 
 //! clean up data structures created by carp_setup
 extern "C" void SUBR(carp_destroy)(TYPE(const_sparseMat_ptr) A,
@@ -345,6 +447,132 @@ void private_kacz_sweep(const Epetra_CrsMatrix* A,
   }// i
 }
 
+// local KACZ sweep on [A-sigma*I, Q; Q' 0][xLoc; q]=[b; 0], b may be NULL
+void private_kacz_sweep_aug(const Epetra_CrsMatrix* A, 
+                        const double sigma_r[],
+                        const Epetra_MultiVector* Q,
+                              Epetra_MultiVector* xLoc, 
+                              Epetra_MultiVector* q,
+                        const Epetra_MultiVector* rhs,
+                        double const omega[],
+                        int istart, int iend, int istep,
+                        int *iflag)
+{
+  *iflag=0;
+  int* col;
+  int len;
+  double* val;
+  
+  int nvec=xLoc->NumVectors();
+  int nvecQ=Q->NumVectors();
+
+  if (istep>0)
+  {
+    // forward sweep, orthogonalize against Q first.    
+    // Note that xLoc has a different map than Q, so we 
+    // have to import it first (at most a local permutation)
+    Teuchos::RCP<Epetra_MultiVector> x=Teuchos::rcp(xLoc, false);
+    if (A->Importer()!=NULL)
+    {
+      x=Teuchos::rcp(new Epetra_MultiVector(Q->Map(),xLoc->NumVectors()));
+      PHIST_CHK_IERR(*iflag=x->Import(*xLoc,*(A->Importer()),Insert),*iflag);
+    }
+    Epetra_MultiVector qx=*q;
+    // q_tmp = Q'x
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(1.0, Q, x.get(), 0.0, &qx, iflag), *iflag);
+    // scale col k by omega[k]
+    for (int k=0; k<qx.NumVectors(); k++)
+    {
+      qx(k)->Scale(omega[k]);
+    }
+    // x = x - Q*qx
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-1.0,Q,&qx,1.0,x.get(),iflag),*iflag);
+  }
+
+  for (int i=istart; i!=iend;i+=istep)
+  {
+    PHIST_CHK_IERR(*iflag=A->ExtractMyRowView(i,len,val,col),*iflag);
+
+    // row 2-norm
+    double nrm_ai2[nvec];
+    double tmp_r[nvec];
+    double d=0.0,tmp=0.0;
+    int col_i=A->LCID(A->GRID64(i));
+    
+    for (int j=0;j<len;j++)
+    {
+      tmp+=val[j]*val[j];
+      if (col[j]==col_i)
+      {
+        d=val[j]; // diagonal element
+      }
+    }
+    // adjust for augmentation mvec Q
+    for (int j=0; j<nvecQ; j++)
+    {
+      double qij=(*Q)[j][i];
+      tmp+=qij*qij;
+    }
+    for (int k=0;k<nvec;k++)
+    {
+      // adjust for diagonal shift
+      nrm_ai2[k]=tmp-2*d*sigma_r[k]+sigma_r[k]*sigma_r[k];
+    }
+    
+    // first compute scaling factors. 
+    for (int k=0;k<nvec;k++)
+    {
+      tmp_r[k] = -sigma_r[k]*(*xLoc)[k][col_i];
+      for (int j=0;j<len;j++)
+      {
+        // note: xLoc lives in the column map of A, so we do not need to convert the col index
+        tmp_r[k] += val[j]*(*xLoc)[k][col[j]];
+      }//j
+      for (int j=0; j<nvecQ; j++)
+      {
+        tmp_r[k] += (*Q)[j][i]*(*q)[k][j];
+      }
+      if (rhs!=NULL) tmp_r[k]-=(*rhs)[k][i];
+      tmp_r[k] *= omega[k]/nrm_ai2[k];
+    }//k
+
+    // Projection step:
+    for (int k=0;k<nvec;k++)
+    {
+      for (int j=0;j<len;j++)
+      {
+        (*xLoc)[k][col[j]] -= tmp_r[k]*val[j];
+      }//j
+      (*xLoc)[k][col_i]+=tmp_r[k]*sigma_r[k];
+      for (int j=0; j<nvecQ; j++)
+      {
+        (*q)[k][j]+=tmp_r[k]*(*Q)[j][i];
+      }
+    }//k
+  }// i
+
+  if (istep<0)
+  {
+    // backward sweep, orthogonalize against Q last.
+    Teuchos::RCP<Epetra_MultiVector> x=Teuchos::rcp(xLoc, false);
+    if (A->Importer()!=NULL)
+    {
+      x=Teuchos::rcp(new Epetra_MultiVector(Q->Map(),xLoc->NumVectors()));
+      PHIST_CHK_IERR(*iflag=x->Import(*xLoc,*(A->Importer()),Insert),*iflag);
+    }
+    Epetra_MultiVector qx=*q;
+    // q_tmp = Q'x
+    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(1.0, Q, x.get(), 0.0, &qx, iflag), *iflag);
+    // scale col k by omega[k]
+    for (int k=0; k<qx.NumVectors(); k++)
+    {
+      qx(k)->Scale(omega[k]);
+    }
+    // x = x - Q*qx
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-1.0,Q,&qx,1.0,x.get(),iflag),*iflag);
+  }
+}
+
 void private_kacz_sweep_rc(const Epetra_CrsMatrix* A,
                         double const sigma_r[],
                         double const sigma_i[],
@@ -416,4 +644,23 @@ void private_kacz_sweep_rc(const Epetra_CrsMatrix* A,
       (*xLoc_i)[k][col_i]+=tmp_i[k]*sigma_r[k]-tmp_r[k]*sigma_i[k];
     }//k
   }// i
+}
+
+// local KACZ sweep on [(A-(sigma_r+i*sigma_i)I), Q; Q' 0] [(x_r+i*x_i); q_r+i*q_i]=[b; 0], where b is real and may be NULL
+void private_kacz_sweep_aug_rc(const Epetra_CrsMatrix* A, 
+                        const double sigma_r[],
+                        const double sigma_i[],
+                        const Epetra_MultiVector* Q,
+                              Epetra_MultiVector* xLoc_r, 
+                              Epetra_MultiVector* xLoc_i, 
+                              Epetra_MultiVector* q_r, 
+                              Epetra_MultiVector* q_i, 
+                        const Epetra_MultiVector* rhs,
+                        double const omega[],
+                        int istart, int iend, int istep,
+                        int *iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+  *iflag=-99;
+  return;
 }

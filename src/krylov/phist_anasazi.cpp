@@ -37,6 +37,7 @@
 #  include "ghost.h"
 #  include "Belos_GhostAdapter.hpp"
 #  include "Anasazi_GhostAdapter.hpp"
+//#  include "Ghost_TsqrAdapter.hpp"
 # elif defined(PHIST_KERNEL_LIB_EPETRA)
 #  include "Epetra_MultiVector.h"
 #  include "BelosEpetraAdapter.hpp"
@@ -55,8 +56,13 @@
 #ifdef PHIST_HAVE_ANASAZI
 // adaptation of a basic ortho class from Trili 11.12 to avoid 
 // col-wise norm calculations
+//#include "phist_AnasaziMatOrthoManager.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziSolverManager.hpp"
+/* use our own adaptation of this file from Trilinos 11.12.1 because 
+ * the original did not support TSQR
+ */
+/*#include "phist_AnasaziBlockKrylovSchurSolMgr.hpp"*/
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
 # ifndef OLD_TRILINOS
 # include "AnasaziTraceMinDavidsonSolMgr.hpp"

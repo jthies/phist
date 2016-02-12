@@ -5,6 +5,7 @@
 // expects the following defined variables:
 // class base name _BASENAME_
 // dimensions _N_, _M_ and possible _K_
+// and possible DISABLE_TESTCASE to prepend DISABLED_
 
 // construct CLASSNAME from basename, type and dimensions
 #ifdef _K_
@@ -25,6 +26,9 @@
 #define _NV_ _M_
 #define _NROWS_ _N_
 #define _NCOLS_ _M_
+#ifdef _K_
+#define _NVP_ _K_
+#endif
 
 // construct test def file name. The user may overrule this by pre-defining CLASSFILE_DEF
 #ifndef CLASSFILE_DEF
@@ -38,26 +42,42 @@
 
 // different types
 #ifdef PHIST_HAVE_SP
+#ifdef DISABLE_TESTCASE
+#define CLASSNAME CLASSNAME_FROM_TYPE(DISABLED_S)
+#else
 #define CLASSNAME CLASSNAME_FROM_TYPE(S)
+#endif
 #include "phist_gen_s.h"
 #include CLASSFILE_DEF
 #undef CLASSNAME
 
 #ifdef PHIST_HAVE_CMPLX
+#ifdef DISABLE_TESTCASE
+#define CLASSNAME CLASSNAME_FROM_TYPE(DISABLED_C)
+#else
 #define CLASSNAME CLASSNAME_FROM_TYPE(C)
+#endif
 #include "phist_gen_c.h"
 #include CLASSFILE_DEF
 #undef CLASSNAME
 #endif
 #endif
 
+#ifdef DISABLE_TESTCASE
+#define CLASSNAME CLASSNAME_FROM_TYPE(DISABLED_D)
+#else
 #define CLASSNAME CLASSNAME_FROM_TYPE(D)
+#endif
 #include "phist_gen_d.h"
 #include CLASSFILE_DEF
 #undef CLASSNAME
 
 #ifdef PHIST_HAVE_CMPLX
+#ifdef DISABLE_TESTCASE
+#define CLASSNAME CLASSNAME_FROM_TYPE(DISABLED_Z)
+#else
 #define CLASSNAME CLASSNAME_FROM_TYPE(Z)
+#endif
 #include "phist_gen_z.h"
 #include CLASSFILE_DEF
 #undef CLASSNAME
@@ -86,4 +106,5 @@
 #undef _NCOLS_
 #ifdef _K_
 #undef _K_
+#undef _NVP_
 #endif

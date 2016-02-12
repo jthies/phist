@@ -1,5 +1,5 @@
-#ifndef PHIST_PCG_H
-#define PHIST_PCG_H
+#ifndef PHIST_CARP_CG_H
+#define PHIST_CARP_CG_H
 
 #include "phist_config.h"
 

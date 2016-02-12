@@ -1,0 +1,6 @@
+<ParameterList name="Ifpack">
+  <Parameter name="Method" type="string" value="ILUT"/>
+  <Parameter name="schwarz: overlap level" type="int" value="1"/>
+  <Parameter name="fact: drop tolerance" type="double" value="0.0"/>
+  <Parameter name="fact: ilut level-of-fill" type="int" value="1"/>
+</ParameterList>

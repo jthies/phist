@@ -30,30 +30,30 @@ namespace Belos {
 
   ////////////////////////////////////////////////////////////////////
   //
-  // Implementation of the Belos::OperatorTraits for phist_op_t.
+  // Implementation of the Belos::OperatorTraits for phist_linearOp_t.
   //
   ////////////////////////////////////////////////////////////////////
 
-  /// \brief Partial specialization of OperatorTraits for phist_op_t.
+  /// \brief Partial specialization of OperatorTraits for phist_linearOp_t.
   /// Note: this is only going to work if MV is the class used by the kernel
   /// library, for instance, you can't compile phist with PHIST_KERNEL_LIB=
   /// tpetra and then use ghost vectors in Belos.
   template <class Scalar, class MV> 
-  class OperatorTraits <Scalar, MV, typename phist::ScalarTraits<Scalar>::op_t >
+  class OperatorTraits <Scalar, MV, typename phist::ScalarTraits<Scalar>::linearOp_t >
   {
   public:
 
-    typedef typename phist::ScalarTraits<Scalar>::op_t phist_op_t;
+    typedef typename phist::ScalarTraits<Scalar>::linearOp_t phist_linearOp_t;
     typedef typename phist::ScalarTraits<Scalar>::mvec_t phist_mvec_t;
 
     static void 
-    Apply (const phist_op_t& Op, 
+    Apply (const phist_linearOp_t& Op, 
      const MV& X,
      MV& Y,
      ETrans trans=NOTRANS)
     {
     TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS,std::invalid_argument,
-          "Belos::OperatorTraits<Scalar,MV,phist_op_t>:: Apply: only implemented for trans=NOTRANS up to now.");
+          "Belos::OperatorTraits<Scalar,MV,phist_linearOp_t>:: Apply: only implemented for trans=NOTRANS up to now.");
     int iflag;
     Scalar alpha = phist::ScalarTraits<Scalar>::one();
     Scalar beta = phist::ScalarTraits<Scalar>::zero();
@@ -61,7 +61,7 @@ namespace Belos {
     }
 
     static bool
-    HasApplyTranspose (const phist_op_t& Op)
+    HasApplyTranspose (const phist_linearOp_t& Op)
     {
       return false;
     }

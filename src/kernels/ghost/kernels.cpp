@@ -53,7 +53,7 @@
 #include <map>
 
 #if defined(PHIST_HAVE_BELOS)||defined(PHIST_HAVE_KOKKOS)
-# if defined(GHOST_HAVE_LONGIDX_LOCAL)
+# if defined(GHOST_IDX64_LOCAL)
 # warning "The interfaces between GHOST and Belos/TSQR cause problems unless you compile GHOST with LONGIDX_GLOBAL but *without* LONGIDX_LOCAL"
 # endif
 #endif
@@ -82,11 +82,11 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
   }
 
   // override with max(C,32) if anything runs on a CUDA device
-  ghost_type_t gtype;
+  ghost_type gtype;
   ghost_type_get(&gtype);
   if (gtype==GHOST_TYPE_CUDA)
   {
-    *C=std::max(*C,32);
+//    *C=std::max(*C,32);
 //    *sigma=std::max(256,*sigma);
   }
   // if the user doesn´t set it in CMake or give a flag, it is -1, override with +1 (CRS)
@@ -100,9 +100,9 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
 
  
     //! private helper function to create a vtraits object
-    ghost_densemat_traits_t phist_default_vtraits()
+    ghost_densemat_traits phist_default_vtraits()
     {
-      ghost_densemat_traits_t vtraits = GHOST_DENSEMAT_TRAITS_INITIALIZER;
+      ghost_densemat_traits vtraits = GHOST_DENSEMAT_TRAITS_INITIALIZER;
       vtraits.nrows=0; // get from context
       vtraits.nrowsorig=0; // get from context
       vtraits.nrowshalo=0; // get from context
@@ -115,7 +115,7 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
  //     new_flags|=    (int)GHOST_DENSEMAT_NO_HALO;
  //     new_flags&=   ~(int)GHOST_DENSEMAT_HOST;
  //     new_flags&=   ~(int)GHOST_DENSEMAT_DEVICE;
-      vtraits.flags = (ghost_densemat_flags_t)new_flags;
+      vtraits.flags = (ghost_densemat_flags)new_flags;
 
       vtraits.ncols=1;
 #ifdef PHIST_MVECS_ROW_MAJOR
@@ -162,7 +162,7 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
 {
   *iflag=0;
   // disable using Hyperthreads
-  ghost_hwconfig_t hwconfig = GHOST_HWCONFIG_INITIALIZER; 
+  ghost_hwconfig hwconfig = GHOST_HWCONFIG_INITIALIZER; 
   const char* PHIST_NUM_THREADS=getenv("PHIST_NUM_THREADS");
   int num_threads= (PHIST_NUM_THREADS==NULL)? -1:atoi(PHIST_NUM_THREADS);
 
@@ -195,7 +195,7 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   PHIST_SOUT(PHIST_INFO,"%s\n",str);
   free(str); str = NULL;
 
-  ghost_thpool_t *thpool;
+  ghost_thpool *thpool;
   int nnuma = 0;
   int npu = 0;
 
@@ -293,7 +293,7 @@ extern "C" void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t
   // be used as LHS, however.
   int new_flags=(int)map->vtraits_template.flags;
   new_flags |= (int)GHOST_DENSEMAT_NO_HALO;
-  map->vtraits_template.flags=(ghost_densemat_flags_t)new_flags;
+  map->vtraits_template.flags=(ghost_densemat_flags)new_flags;
   // ghost should set these correctly depending on GHOST_TYPE if we set HOST and DEVICE to 0
 
   map->permutation=NULL; //permutation is defined by a matrix object.

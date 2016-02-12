@@ -110,8 +110,8 @@ namespace ghost {
     // note: ghost in principle allows more than 2M rows/core, but TSQR doesn't.
     // This should not be a problem, however, as we only deal with dense matrices
     // here and no indices typically appear in the interface.
-#ifdef GHOST_HAVE_LONGIDX_LOCAL
-# warning "the TSQR interface may be buggy with 64-bit local indices, you should recompile ghost without GHOST_HAVE_LONGIDX_LOCAL"    
+#ifdef GHOST_IDX64_LOCAL
+# warning "the TSQR interface may be buggy with 64-bit local indices, you should recompile ghost without GHOST_IDX64_LOCAL"    
 #endif
     typedef lidx_t ordinal_type;
     // integer type for Teuchos::SerialDenseMatrix objects
@@ -386,7 +386,7 @@ namespace ghost {
     static Kokkos::MultiVector<scalar_type,node_type>
     getNonConstView (MV& A)
     {
-    ghost_densemat_t* _A=A.get();
+    ghost_densemat* _A=A.get();
     lidx_t A_len = _A->stride*_A->traits.ncols;
 
     TEUCHOS_TEST_FOR_EXCEPTION(_A->traits.flags & GHOST_DENSEMAT_SCATTERED,    
@@ -413,16 +413,16 @@ namespace ghost {
  static int get_num_threads()
  {
     int nthreads;
-    ghost_task_t *curtask = NULL; \
+    ghost_task *curtask = NULL; \
     ghost_task_cur(&curtask);
     if (curtask == NULL) 
     {
       PHIST_SOUT(PHIST_VERBOSE, "Called %s outside a ghost task!\n", __FUNCTION__);
-      ghost_thpool_t *thpool;
+      ghost_thpool *thpool;
       ghost_thpool_get(&thpool);
       // -1: ghost has one extra worker thread (or is it the operating system?)
       // /2: ad-hoc way to not use hyperthreads.
-      nthreads=std::max((thpool->nThreads-1)/2,1);
+      nthreads=std::max((int)((thpool->nThreads-1)/2),1);
     }
     else
     {

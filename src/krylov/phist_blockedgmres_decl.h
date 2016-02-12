@@ -84,7 +84,7 @@ typedef TYPE(blockedGMRESstate) const * TYPE(const_blockedGMRESstate_ptr);
 //! someone reached max iters")
 //! \warning you cannot mix together states from different calls to blockedGMRESstates_create!
 //!
-void SUBR( blockedGMRESstates_iterate ) (TYPE(const_op_ptr) Op, TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int* nIter, bool useIMGS, int* iflag);
+void SUBR( blockedGMRESstates_iterate ) (TYPE(const_linearOp_ptr) Op, TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int* nIter, bool useIMGS, int* iflag);
 
 //!
 //! create an array of gmresState objects. The method's input parameters

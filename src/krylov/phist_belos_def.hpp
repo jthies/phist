@@ -7,9 +7,10 @@
 #endif
 
 // Belos: block krylov methods from Trilinos
-extern "C" void SUBR(belos)(TYPE(const_op_ptr) Op, 
+extern "C" void SUBR(belos)(TYPE(const_linearOp_ptr) Op, 
         TYPE(mvec_ptr) vX,
-        TYPE(const_mvec_ptr) vB, 
+        TYPE(const_mvec_ptr) vB,
+        TYPE(const_linearOp_ptr) Prec, 
         _MT_ tol,int *num_iters, int max_blocks,
         int variant, int* nConv,
         int* iflag)
@@ -20,7 +21,7 @@ extern "C" void SUBR(belos)(TYPE(const_op_ptr) Op,
 #else
 #include "phist_std_typedefs.hpp"  
 #ifdef PHIST_KERNEL_LIB_GHOST
-  typedef ghost_densemat_t MV;
+  typedef ghost_densemat MV;
   typedef phist::GhostMV BelosMV;
 #elif defined(PHIST_KERNEL_LIB_TPETRA)
   typedef Tpetra::MultiVector<ST,lidx_t,gidx_t,node_t> MV;
@@ -32,7 +33,7 @@ extern "C" void SUBR(belos)(TYPE(const_op_ptr) Op,
 typedef st::mvec_t MV;
 typedef phist::MultiVector< _ST_ > BelosMV;
 #endif
-  typedef st::op_t OP; // gives Sop_t, Dop_t etc.
+  typedef st::linearOp_t OP; // gives Sop_t, Dop_t etc.
 
   bool status=true;
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -114,6 +115,15 @@ typedef phist::MultiVector< _ST_ > BelosMV;
 // create Belos problem interface
 Teuchos::RCP<Belos::LinearProblem<ST,BelosMV,OP> > linearSystem
         = Teuchos::rcp(new Belos::LinearProblem<ST,BelosMV,OP>(A,X,B));
+
+if (Prec!=NULL)
+{
+  Teuchos::RCP<const OP> Prec_ptr = Teuchos::rcp(Prec,false);
+  try {
+    linearSystem->setLeftPrec(Prec_ptr);
+  } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,status);
+  if (!status){*iflag=PHIST_CAUGHT_EXCEPTION; return;} 
+}
 
 Teuchos::RCP<Belos::SolverManager<ST,BelosMV, OP> > belos;
 if (variant==0)

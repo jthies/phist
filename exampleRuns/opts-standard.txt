@@ -1,0 +1,14 @@
+symmetry        HERMITIAN
+
+numEigs         20
+which           SR
+convTol         1.0e-8
+
+blockSize       4
+maxIters        300
+minBas          28
+maxBas          60
+
+innerSolvType           MINRES
+innerSolvMaxIters       10
+innerSolvRobust         1

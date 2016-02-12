@@ -8,7 +8,6 @@
 
 
 #include "phist_kernels.h"
-#include "KernelTestWithMap.h"
 #include "KernelTestWithVectors.h"
 
 using namespace testing;
@@ -125,38 +124,3 @@ using namespace testing;
 #define _N_ 237
 #define _M_ 4
 #include "../phist_typed_test_gen.h"
-
-// some tests on views of mvecs
-
-#undef _BASENAME_
-#define _BASENAME_ MvecTestWithUnalignedViews
-#undef _USE_VIEWS_
-#define _USE_VIEWS_ 1
-
-#define _N_ 237
-#define _M_ 4
-#include "../phist_typed_test_gen.h"
-
-#ifdef DO_BELOS_TESTS
-#undef DO_BELOS_TESTS
-#endif
-
-#define _N_ 237
-#define _M_ 9
-#include "../phist_typed_test_gen.h"
-
-#undef _BASENAME_
-#define _BASENAME_ MvecTestWithAlignedViews
-
-#undef _USE_VIEWS_
-#define _USE_VIEWS_ 2
-
-#define _N_ 237
-#define _M_ 4
-#include "../phist_typed_test_gen.h"
-
-#define _N_ 237
-#define _M_ 9
-#include "../phist_typed_test_gen.h"
-
-
