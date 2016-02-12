@@ -104,11 +104,11 @@ int main(int argc, char** argv)
 
   if (argc>=4)
   {
-    if (!strcmp(argv[3],"LM")) opts.which=LM;
-    else if (!strcmp(argv[3],"SM")) opts.which=SM;
-    else if (!strcmp(argv[3],"LR")) opts.which=LR;
-    else if (!strcmp(argv[3],"SR")) opts.which=SR;
-    else if (!strcmp(argv[3],"TARGET")) opts.which=TARGET;
+    if (!strcmp(argv[3],"LM")) opts.which=phist_LM;
+    else if (!strcmp(argv[3],"SM")) opts.which=phist_SM;
+    else if (!strcmp(argv[3],"LR")) opts.which=phist_LR;
+    else if (!strcmp(argv[3],"SR")) opts.which=phist_SR;
+    else if (!strcmp(argv[3],"TARGET")) opts.which=phist_TARGET;
     else
     {
       if (verbose) 
@@ -152,12 +152,13 @@ int main(int argc, char** argv)
   if (argc>=10)
   {
     opts.initialShift_r=atof(argv[9]);
+    opts.initialShift_i=(_MT_)0.0;
   }
   
   if (argc>=11)
   {
-    if (!strcmp(argv[10],"GMRES")) opts.innerSolvType=GMRES;
-    else if (!strcmp(argv[10],"CARP_CG")) opts.innerSolvType=CARP_CG;
+    if (!strcmp(argv[10],"GMRES")) opts.innerSolvType=phist_GMRES;
+    else if (!strcmp(argv[10],"CARP_CG")) opts.innerSolvType=phist_CARP_CG;
     else
     {
       if (verbose) 
@@ -170,13 +171,13 @@ int main(int argc, char** argv)
   }
   else
   {
-    if (opts.which==TARGET) 
+    if (opts.which==phist_TARGET) 
     {
-      opts.innerSolvType=CARP_CG;
+      opts.innerSolvType=phist_CARP_CG;
     }
     else
     {
-      opts.innerSolvType=GMRES;
+      opts.innerSolvType=phist_GMRES;
     }
   }
 
@@ -231,7 +232,7 @@ int main(int argc, char** argv)
     fprintf(stdout,"Found %d eigenpairs after %d iterations\n",num_eigs,num_iters);
     }
 
-  MT expRes[MIN(num_eigs,1)];
+  MT expRes[MAX(num_eigs,1)];
 
   if (num_eigs>0)
     {
