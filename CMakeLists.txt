@@ -634,6 +634,7 @@ set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthogrrfused.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_svrr.cpp
                        ${PROJECT_SOURCE_DIR}/src/kernels/builtin/prec_kernels.cpp
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_kpm.cpp
                        )
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos.cpp
