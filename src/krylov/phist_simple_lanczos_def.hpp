@@ -4,7 +4,7 @@ static int SUBR(converged)(_MT_ evmin)
 #include "phist_std_typedefs.hpp"
     static _MT_ oldevmin = -1e9;
 
-    int converged = mt::abs(evmin-oldevmin) < mt::eps()*100;
+    int converged = mt::abs(evmin-oldevmin) < mt::sqrt(mt::eps())*0.1;
     oldevmin = evmin;
 
     return converged;
@@ -54,7 +54,7 @@ void SUBR(simple_lanczos)(TYPE(const_linearOp_ptr) A_op,
   int maxIter=*numIter;
   
   // create the vectors and arrays
-  _ST_ alphas[maxIter], falphas[maxIter];
+  _MT_ alphas[maxIter],falphas[maxIter];
   _MT_ betas[maxIter],fbetas[maxIter];
   
   _ST_ alpha=st::zero();
@@ -83,7 +83,7 @@ PHIST_TASK_BEGIN(ComputeTask)
         PHIST_CHK_IERR(SUBR(lanczosStep)(A_op,vnew,vold,&alpha,&beta,iflag),*iflag);
         std::swap(vold,vnew);
 
-        alphas[i] = alpha;
+        alphas[i] = st::real(alpha);
         betas[i] = beta;
         for (int j=0;j<n;j++)
         {
@@ -98,13 +98,9 @@ PHIST_TASK_BEGIN(ComputeTask)
     {
 #pragma omp master
       {
-#ifndef IS_COMPLEX
-        _ST_ z;
+        st::blas_scalar_t z;
         int ldz=1;
-        PREFIX(STEQR)((blas_char_t*)"N", &n, fbetas, falphas, &z, &ldz, NULL, iflag );
-#else
-        *iflag=-99;
-#endif
+        PREFIX(STEQR)((blas_char_t*)"N", &n, falphas, fbetas, &z, &ldz, NULL, iflag );
       }
     }
         if (*iflag)
@@ -112,9 +108,17 @@ PHIST_TASK_BEGIN(ComputeTask)
           PHIST_OUT(PHIST_ERROR,"Error %d returned from lapack call XSTEQR!\n",*iflag);
           return;
         }
-        *evmin=fbetas[0];
-        *evmax=fbetas[n-1];
+        *evmin=falphas[0];
+        *evmax=falphas[n-1];
         PHIST_SOUT(PHIST_INFO,"LANCZOS step %d\tmin/max eigenvalue: %f/%f\n", i,*evmin,*evmax);
+#if 0
+         PHIST_SOUT(PHIST_INFO,"D=[ ");
+        for (int j=0;j<n;j++) PHIST_SOUT(PHIST_INFO,"%25.16e ",betas[j]);
+        PHIST_SOUT(PHIST_INFO,"];\nE=[ ");
+        for (int j=0;j<n;j++) PHIST_SOUT(PHIST_INFO,"%25.16e ",alphas[j]);
+        PHIST_SOUT(PHIST_INFO,"];\n");
+        PHIST_SOUT(PHIST_INFO,"A=spdiags([E',D',[0,E(1:end-1)]'],-1:1,%d,%d)\n",n,n);
+#endif       
           
         *numIter=i;
         if (SUBR(converged)(*evmin)) break;
