@@ -391,6 +391,8 @@ void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
 //! augmented kernel with two multi-vectors. \ingroup mvec
 
 //! D=alpha*V'*W*C + beta*D, W=W*C inplace
+//! Kernel libraries that do not offer this can include 
+//! common/kernels_no_fused.cpp for a fallback variant
 void SUBR(mvecT_times_mvec_times_sdMat_inplace)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
                                                             TYPE(mvec_ptr)        W,
                                                             TYPE(const_sdMat_ptr) C,
@@ -408,7 +410,7 @@ void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, i
 
 //! augmented kernel with two multi-vectors. \ingroup mvec
 //! W=alpha*V*C + beta*W, D=W^TW
-void SUBR(mvec_times_sdMat_augmented)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
+void SUBR(mvec_times_sdMat_aug)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
                                                   TYPE(const_sdMat_ptr) C,
                                       _ST_ beta,  TYPE(mvec_ptr)        W,
                                                   TYPE(sdMat_ptr)       D,

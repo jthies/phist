@@ -53,6 +53,21 @@ extern "C" void SUBR(sparseMat_times_mvec_add_mvec)(_ST_ alpha, TYPE(const_spars
   SUBR(sparseMat_times_mvec_vadd_mvec)(alpha,A,shifts,x,beta,y,iflag);
   free(shifts);
 }
+
+// augmented spMVM with single shift
+extern "C" void SUBR(sparseMat_times_mvec_aug)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
+        _ST_ shift, TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, 
+        _ST_ a, _ST_ b, TYPE(mvec_ptr) z,
+        _ST_* dot_xx, _ST_* dot_xy, _ST_* dot_yy, int* iflag)
+{
+  int nv;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x,&nv,iflag),*iflag);
+  _ST_ *shifts=(_ST_*)malloc(nv*sizeof(_ST_));
+  for (int i=0;i<nv;i++) shifts[i]=shift;
+  SUBR(sparseMat_times_mvec_vaug)(alpha,A,shifts,x,beta,y,
+        a,b,z,dots_xx,dots_xy,dots_yy,iflag);
+  free(shifts);
+}
 #ifdef PHIST_BUILTIN_RNG
 
 int PHIST_TG_PREFIX(copyDataFunc)(ghost_gidx i, ghost_lidx j, void* vval,void* vdata)

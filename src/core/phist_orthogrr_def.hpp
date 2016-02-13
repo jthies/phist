@@ -166,7 +166,7 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
       // V <- V - W*WtV, updating VtV
       if( robust )
         *iflag = PHIST_ROBUST_REDUCTIONS;
-      PHIST_CHK_IERR(SUBR(mvec_times_sdMat_augmented)(-st::one(),W,WtV,st::one(),V,VtV,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_times_sdMat_aug)(-st::one(),W,WtV,st::one(),V,VtV,iflag),*iflag);
 
       // calculate new R factor
       int WVrank = 0;
