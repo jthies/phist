@@ -72,11 +72,11 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
     {
 #ifdef IS_COMPLEX
       PHIST_DEB("call complex %cGEES\n",st::type_char());
-      PREFIX(GEES)((blas_char_t*)jobvs,(blas_char_t*)sort,NULL,&m,(blas_cmplx_t*)T,&ldT,
+      PHIST_TG_PREFIX(GEES)((blas_char_t*)jobvs,(blas_char_t*)sort,NULL,&m,(blas_cmplx_t*)T,&ldT,
              &sdim,(blas_cmplx_t*)ev,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)work,&lwork,ev_r,NULL,iflag);
 #else
       PHIST_DEB("call real %cGEES\n",st::type_char());
-      PREFIX(GEES)((blas_char_t*)jobvs,(blas_char_t*)sort,NULL,&m,T,&ldT,
+      PHIST_TG_PREFIX(GEES)((blas_char_t*)jobvs,(blas_char_t*)sort,NULL,&m,T,&ldT,
             &sdim,ev_r,ev_i,S,&ldS,work,&lwork,NULL,iflag);
       for (int i=0;i<m;i++)
       {
@@ -146,10 +146,10 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 #pragma omp master
       {
 #ifdef IS_COMPLEX
-        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)ev,&nsorted,
+        PHIST_TG_PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)ev,&nsorted,
               &S_cond, &sep, (blas_cmplx_t*)work, &lwork, iflag);
 #else
-        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
+        PHIST_TG_PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
               &S_cond, &sep, work, &lwork, iwork, &liwork, iflag);
         for (int i=0;i<m;i++)
         {
@@ -196,10 +196,10 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
         // we pass in ev+i
         int nsorted_before=nsorted;
 #ifdef IS_COMPLEX
-        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,
+        PHIST_TG_PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,
               (blas_cmplx_t*)ev,&nsorted,&S_cond, &sep, (blas_cmplx_t*)work, &lwork, iflag);
 #else
-        PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
+        PHIST_TG_PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
               &S_cond, &sep, work, &lwork, iwork, &liwork, iflag);
         for (int j=0;j<m;j++)
         {
@@ -265,12 +265,12 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
     {
 #ifdef IS_COMPLEX
       PHIST_DEB("call complex %cGGES\n",st::type_char());
-      PREFIX(GGES)((blas_char_t*)jobvsl,(blas_char_t*)jobvsr,(blas_char_t*)sort,NULL,&m,(blas_cmplx_t*)S,&ldS,
+      PHIST_TG_PREFIX(GGES)((blas_char_t*)jobvsl,(blas_char_t*)jobvsr,(blas_char_t*)sort,NULL,&m,(blas_cmplx_t*)S,&ldS,
              (blas_cmplx_t*)T, &ldT, &sdim,(blas_cmplx_t*)alpha, (blas_cmplx_t*)beta,
              (blas_cmplx_t*)VS,&ldVS, (blas_cmplx_t*)WS, &ldWS, (blas_cmplx_t*)alphai, &clwork, rwork, NULL, iflag);
 #else
       PHIST_DEB("call real %cGGES\n",st::type_char());
-      PREFIX(GGES)((blas_char_t*)jobvsl,(blas_char_t*)jobvsr,(blas_char_t*)sort,NULL,&m,S,&ldS,
+      PHIST_TG_PREFIX(GGES)((blas_char_t*)jobvsl,(blas_char_t*)jobvsr,(blas_char_t*)sort,NULL,&m,S,&ldS,
              T, &ldT, &sdim, alpha, alphai, beta,
              VS,&ldVS, WS, &ldWS, rwork, &lwork, NULL, iflag);
       
@@ -352,12 +352,12 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
         int ijob=0; // do not retrieve info on conditioning or deflating subspaces, maybe we could use it somehow?
 #ifdef IS_COMPLEX
         int clwork=1;
-        PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
+        PHIST_TG_PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
                 (blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)alpha,(blas_cmplx_t*)beta,
                 (blas_cmplx_t*)VS,&ldVS,(blas_cmplx_t*)WS,&ldWS,&m,
                 &pl,&pr,dif,(blas_cmplx_t*)rwork,&clwork,iwork,&liwork,iflag);
 #else
-        PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
+        PHIST_TG_PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
                 S,&ldS,T,&ldT,alpha,alphai,beta,
                 VS,&ldVS,WS,&ldWS,&m,
                 &pl,&pr,dif,rwork,&lwork,iwork,&liwork,iflag);
@@ -420,12 +420,12 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
                     // deflating subspaces
 #ifdef IS_COMPLEX
         int clwork=1;
-        PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
+        PHIST_TG_PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
                 (blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)alpha,(blas_cmplx_t*)beta,
                 (blas_cmplx_t*)VS,&ldVS,(blas_cmplx_t*)WS,&ldWS,&m,
                 &pl,&pr,dif,(blas_cmplx_t*)rwork,&clwork,iwork,&liwork,iflag);
 #else
-        PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
+        PHIST_TG_PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
                 S,&ldS,T,&ldT,alpha,alphai,beta,
                 VS,&ldVS,WS,&ldWS,&m,
                 &pl,&pr,dif,rwork,&lwork,iwork,&liwork,iflag);
@@ -567,10 +567,10 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
         int ilst = pos+1;
         PHIST_SOUT(PHIST_DEBUG,"swapping %d %d in unconverged eigenvalues\n",ifst-1,ilst-1);
 #ifdef IS_COMPLEX
-        PREFIX(TREXC) ((blas_char_t*)compq, &m, (blas_cmplx_t*) T, 
+        PHIST_TG_PREFIX(TREXC) ((blas_char_t*)compq, &m, (blas_cmplx_t*) T, 
             &ldT, (blas_cmplx_t*) S, &ldS, &ifst, &ilst, iflag);
 #else
-        PREFIX(TREXC) ((blas_char_t*)compq, &m, T, &ldT, S, &ldS, 
+        PHIST_TG_PREFIX(TREXC) ((blas_char_t*)compq, &m, T, &ldT, S, &ldS, 
             &ifst, &ilst, work, iflag);
 #endif
         if( *iflag != 0 )
@@ -696,12 +696,12 @@ PHIST_TASK_END(iflag)
         int ilst = pos+1;
         PHIST_SOUT(PHIST_DEBUG,"swapping %d %d in unconverged eigenvalues\n",ifst-1,ilst-1);
 #ifdef IS_COMPLEX
-        PREFIX(TGEXC) (&wantq, &wantz, &m, 
+        PHIST_TG_PREFIX(TGEXC) (&wantq, &wantz, &m, 
                 (blas_cmplx_t*) S, &ldS, (blas_cmplx_t*) T, &ldT,
                 (blas_cmplx_t*) VS, &ldVS, (blas_cmplx_t*) WS, &ldWS, 
                 &ifst, &ilst, iflag);
 #else
-        PREFIX(TGEXC) (&wantq, &wantz, &m, 
+        PHIST_TG_PREFIX(TGEXC) (&wantq, &wantz, &m, 
                 S, &ldS, T, &ldT, VS, &ldVS, WS, &ldWS,
                 &ifst, &ilst, work, &lwork, iflag);
 #endif

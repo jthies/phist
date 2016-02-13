@@ -760,12 +760,12 @@ void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) B_op,
     }
 #ifdef IS_COMPLEX
     MT* rwork = work+4*nconv;
-    PHIST_CHK_IERR(PREFIX(TREVC)((blas_char_t*)side, (blas_char_t*)howmny, NULL, 
+    PHIST_CHK_IERR(PHIST_TG_PREFIX(TREVC)((blas_char_t*)side, (blas_char_t*)howmny, NULL, 
     &nconv, (mt::blas_cmplx_t*)R_raw, &ildR, NULL, &ildS, 
     (mt::blas_cmplx_t*)S_raw, &ildS, &nconv, &m_out, (mt::blas_cmplx_t*)work, 
     rwork, iflag),*iflag);
 #else
-    PHIST_CHK_IERR(PREFIX(TREVC)((blas_char_t*)side, (blas_char_t*)howmny, NULL, 
+    PHIST_CHK_IERR(PHIST_TG_PREFIX(TREVC)((blas_char_t*)side, (blas_char_t*)howmny, NULL, 
     &nconv,R_raw, &ildR, NULL, &ildS, S_raw, &ildS, &nconv, &m_out, work, 
     iflag),*iflag);
 #endif  

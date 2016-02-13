@@ -69,12 +69,12 @@
 #undef ONE
 #endif
 
-#ifdef PREFIX
-#undef PREFIX
+#ifdef PHIST_TG_PREFIX
+#undef PHIST_TG_PREFIX
 #endif
 
-#ifdef SPREFIX
-#undef SPREFIX
+#ifdef SPHIST_TG_PREFIX
+#undef SPHIST_TG_PREFIX
 #endif
 
 #ifdef SUBR

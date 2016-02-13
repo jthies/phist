@@ -11,8 +11,8 @@
 #undef MAGMA_HELPER
 #undef MAGMA_HELPER2
 #endif
-#define MAGMABLAS(s) MAGMA_HELPER2(magmablas_,SPREFIX(s))
-#define MAGMA(s) MAGMA_HELPER2(magma_,SPREFIX(s))
+#define MAGMABLAS(s) MAGMA_HELPER2(magmablas_,SPHIST_TG_PREFIX(s))
+#define MAGMA(s) MAGMA_HELPER2(magma_,SPHIST_TG_PREFIX(s))
 #define MAGMA_HELPER2(p,s) MAGMA_HELPER(p,s)
 #define MAGMA_HELPER(p,s) p ## s
 

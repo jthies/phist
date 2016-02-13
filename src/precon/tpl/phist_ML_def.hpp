@@ -13,16 +13,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
 
-// ML includes some Aztec header that defines PREFIX, to avoid compiler warnings, get rid of it
-#ifdef PREFIX
-#undef PREFIX
-#endif
-
 #include "ml_MultiLevelPreconditioner.h"
-
-#ifdef PREFIX
-#undef PREFIX
-#endif
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"

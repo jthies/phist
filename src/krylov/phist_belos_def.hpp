@@ -1,7 +1,7 @@
 #if defined PHIST_KERNEL_LIB_BUILTIN
 // use the correct rcp function, this is a bit adhoc
 // and should be implemented nicer
-#define PHIST_rcp phist::PREFIX(rcp)
+#define PHIST_rcp phist::PHIST_TG_PREFIX(rcp)
 #else
 #define PHIST_rcp phist::rcp
 #endif

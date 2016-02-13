@@ -10,7 +10,7 @@
 // this should be done for wrapping the actual phist void-pointers
 // as typed multivectors, this macro will expand to S/D/C/Zrcp because
 // overloading is not possible on return type only.
-#define PHIST_rcp phist::PREFIX(rcp)
+#define PHIST_rcp phist::PHIST_TG_PREFIX(rcp)
 #else
 // For C++ objects (E/Tpetra libs) this results in Teuchos::rcp,
 // for GHOST we have our own implementation of the function

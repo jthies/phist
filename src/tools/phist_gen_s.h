@@ -3,8 +3,8 @@
 // scalar type
 #define _ST_ float
 
-#define PREFIX(name) S ## name
-#define SPREFIX(name) s ## name
+#define PHIST_TG_PREFIX(name) S ## name
+#define SPHIST_TG_PREFIX(name) s ## name
 #define SUBR(name) phist_S ## name
 #define TYPE(name) S ## name ## _t
 

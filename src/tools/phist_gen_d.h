@@ -24,11 +24,11 @@
 
 #endif
 
-// adds type prefix to a specifier, e.g. PREFIX(gemm) -> Dgemm
-#define PREFIX(name) D ## name
+// adds type prefix to a specifier, e.g. PHIST_TG_PREFIX(gemm) -> Dgemm
+#define PHIST_TG_PREFIX(name) D ## name
 
-// adds lower case type prefix to a specifier, e.g. SPREFIX(gemm) -> dgemm
-#define SPREFIX(name) d ## name
+// adds lower case type prefix to a specifier, e.g. SPHIST_TG_PREFIX(gemm) -> dgemm
+#define SPHIST_TG_PREFIX(name) d ## name
 
 // how to build up the name of a subroutine (void function)
 #define SUBR(name) phist_D ## name

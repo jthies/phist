@@ -1267,7 +1267,7 @@ protected:
 #ifdef FIRST_TIME
 namespace
 {
-int PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+int PHIST_TG_PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
 {
   *len=1;
   _ST_* val = (_ST_*)vval;
@@ -1276,7 +1276,7 @@ int PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval
   return 0;
 }
 
-int PREFIX(some_rowFunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
+int PHIST_TG_PREFIX(some_rowFunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
 {
 #include "phist_std_typedefs.hpp"
   _ST_* val = (_ST_*)vval;
@@ -1305,7 +1305,7 @@ TEST_F(CLASSNAME,create_A_fromRowFunc)
   ghost_lidx nnzr = 5;
   iflag_=0; // do not ask for reordering etc.
   SUBR(sparseMat_create_fromRowFunc)(&A,comm_, _N_,_N_,nnzr,
-                &PREFIX(some_rowFunc),NULL,&iflag_);
+                &PHIST_TG_PREFIX(some_rowFunc),NULL,&iflag_);
   ASSERT_EQ(0,iflag_);
   rebuildVectors(A);
   
@@ -1362,7 +1362,7 @@ TEST_F(CLASSNAME,create_A_fromRowFunc)
   
     // put A into the dense mvec structure
     int len;
-    iflag_=PREFIX(some_rowFunc)(row,&len,col,(void*)val,NULL);
+    iflag_=PHIST_TG_PREFIX(some_rowFunc)(row,&len,col,(void*)val,NULL);
     for (int j=0; j<len;j++)
     {
       Aval[VIDX(i,col[j],ldA)]=val[j];
@@ -1401,7 +1401,7 @@ TEST_F(CLASSNAME,create_I_fromRowFunc)
   ghost_gidx nnzr = 1;
   iflag_=0; // do not ask for reordering etc.
   SUBR(sparseMat_create_fromRowFunc)(&A,comm_, _N_,_N_,nnzr,
-                &PREFIX(idfunc),NULL,&iflag_);
+                &PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
   ASSERT_EQ(0,iflag_);
   rebuildVectors(A);
   

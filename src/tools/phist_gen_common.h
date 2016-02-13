@@ -14,12 +14,12 @@
 #error "macro _ST_ not defined"
 #endif
 
-#ifndef PREFIX
-#error "macro PREFIX not defined"
+#ifndef PHIST_TG_PREFIX
+#error "macro PHIST_TG_PREFIX not defined"
 #endif
 
-#ifndef SPREFIX
-#error "macro SPREFIX not defined"
+#ifndef SPHIST_TG_PREFIX
+#error "macro SPHIST_TG_PREFIX not defined"
 #endif
 
 #ifndef PHIST_LAPACKE
