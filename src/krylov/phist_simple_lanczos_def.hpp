@@ -16,7 +16,8 @@ static void SUBR(lanczosStep)(TYPE(const_linearOp_ptr) A_op, TYPE(mvec_ptr) vnew
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
 // vnew = A*vold-beta*vnew
-PHIST_CHK_IERR(A_op->apply(st::one(),A_op->A, vold,-(_ST_)*beta,vnew,iflag),*iflag);
+_ST_ minusbeta=-(_ST_)*beta;
+PHIST_CHK_IERR(A_op->apply(st::one(),A_op->A, vold,minusbeta,vnew,iflag),*iflag);
 //alpha=vnew'*vold
   PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(vnew,vold,alpha,iflag),*iflag);
   // vnew = vnew - alpha*vold

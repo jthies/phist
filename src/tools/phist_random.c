@@ -19,6 +19,10 @@
 #endif
 #endif
 
+#ifdef TESTING
+#define TEST_RNG
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <emmintrin.h>
@@ -614,7 +618,7 @@ static void init_lookup_tables()
     CNG_powr[i] = CNG_powr[i-1]*CNG_powr[i-1];
 
 
-#ifdef TESTING
+#ifdef TEST_RNG
   // veryify MWC_lcg_a*2^64 = 1 mod MWC_lcg_m
   uint64_t t[2] = {MWC_lcg_a[0], MWC_lcg_a[1]};
   uint64_t b[2] = {1ULL,0ULL};
@@ -636,7 +640,7 @@ static void init_lookup_tables()
   }
 
 
-#ifdef TESTING
+#ifdef TEST_RNG
   // check result
   uint64_t x = random_state.x;
   uint64_t y = random_state.y;
