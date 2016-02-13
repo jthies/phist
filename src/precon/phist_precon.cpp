@@ -8,7 +8,8 @@
 #include "phist_precon.h"
 #include "phist_macros.h"
 #include "phist_ScalarTraits.hpp"
-#include <stdlib.h>
+#include <cstdlib>
+#include <strings.h>
 
 #include "phist_PreconTraits.hpp"
 
