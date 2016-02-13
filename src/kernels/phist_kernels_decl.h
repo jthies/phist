@@ -309,6 +309,9 @@ void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) M,
 
 //@}
 
+//! \name initialize/fill mvecs and sdMats
+//@{
+
 //! put scalar value into all elements of a multi-vector \ingroup mvec
 void SUBR(mvec_put_value)(TYPE(mvec_ptr) V, _ST_ value, int* iflag);
 
@@ -327,6 +330,8 @@ void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
 
 //! put identity matrix into a small dense matrix \ingroup sdmat
 void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag);
+
+//@}
 
 //! print a vector to the screen (for debugging) \ingroup mvec
 void SUBR(mvec_print)(TYPE(const_mvec_ptr) V, int* iflag);
@@ -388,41 +393,18 @@ void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
                                        TYPE(const_mvec_ptr) W, 
                                        _ST_ beta, TYPE(sdMat_ptr) C, int* iflag);
 
-//! augmented kernel with two multi-vectors. \ingroup mvec
-
-//! D=alpha*V'*W*C + beta*D, W=W*C inplace
-void SUBR(mvecT_times_mvec_times_sdMat_inplace)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
-                                                            TYPE(mvec_ptr)        W,
-                                                            TYPE(const_sdMat_ptr) C,
-                                                _ST_ beta,  TYPE(sdMat_ptr)       D,
-                                                int* iflag);
-
 //! n x m multi-vector times m x k dense matrix gives n x k multi-vector, \ingroup mvec
 //! W=alpha*V*C + beta*W
 void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V, 
                                        TYPE(const_sdMat_ptr) C,
                            _ST_ beta,  TYPE(mvec_ptr) W, 
                                        int* iflag);
+
 //! M <- V*M \ingroup mvec
+
+//! a naive default implementation for this rather uncommon kernel is available in common/kernels_no_inplace_VC.cpp
+//! so that we can easily support kernel libraries that don't have it.
 void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int *iflag);
-
-//! augmented kernel with two multi-vectors. \ingroup mvec
-//! W=alpha*V*C + beta*W, D=W^TW
-void SUBR(mvec_times_sdMat_aug)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
-                                                  TYPE(const_sdMat_ptr) C,
-                                      _ST_ beta,  TYPE(mvec_ptr)        W,
-                                                  TYPE(sdMat_ptr)       D,
-                                                  int* iflag);
-
-//! augmented kernel with two multi-vectors. \ingroup mvec
-//! W <- = V*C + W*D
-void SUBR(mvec_times_sdMat_add_mvec_times_sdMat)(TYPE(const_mvec_ptr) V, 
-                                                 TYPE(const_sdMat_ptr) C,
-                                                 TYPE(mvec_ptr) W, 
-                                                 TYPE(const_sdMat_ptr) D,
-                                                 int* iflag);
-
-
 
 //! B=alpha*A+beta*B. \ingroup sdmat
 void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,
@@ -492,43 +474,6 @@ void SUBR(sparseMat_times_mvec_add_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A
 //! y[i]=alpha*(A*x[i]+shifts[i]*x[i]) + beta*y[i]
 void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
         const _ST_ shifts[], TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, int* iflag);
-
-//! W=alpha*A*V + beta*W, Wnrm[i] = ||W[i]||_2
-void SUBR(sparseMat_times_mvec_fused_norm2)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
-                                            _ST_ beta,                               TYPE(mvec_ptr)        W,
-                                                                                     _MT_*                 Wnrm,
-                                            int* iflag);
-
-//! W=alpha*A*V + beta*W, WdotV[i] = W[i]'V[i]
-void SUBR(sparseMat_times_mvec_fused_dot)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
-                                          _ST_ beta,                               TYPE(mvec_ptr)        W,
-                                                                                   _ST_*                 WdotV,
-                                          int* iflag);
-
-//! W=alpha*A*V + beta*W, WdotV[i] = W[i]'V[i], Wnrm[i] = ||W[i]||_2
-void SUBR(sparseMat_times_mvec_fused_dot_norm2)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
-                                                _ST_ beta,                               TYPE(mvec_ptr)        W,
-                                                            _ST_*                 WdotV, _MT_*                 Wnrm,
-                                                int* iflag);
-
-//! W=alpha*A*V + beta*W, D = W'W
-void SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_self)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
-                                                            _ST_ beta,                               TYPE(mvec_ptr)        W,
-                                                                                                     TYPE(sdMat_ptr)       D,
-                                                            int* iflag);
-
-//! W=alpha*A*V + beta*W, C = W'V
-void SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_other)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr) V,
-                                                            _ST_ beta,                                TYPE(mvec_ptr)        W,
-                                                                                                      TYPE(sdMat_ptr)       C,
-                                                            int* iflag);
-
-//! W=alpha*A*V + beta*W, C = W'V, D = W'W
-void SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_both)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
-                                                            _ST_ beta,                               TYPE(mvec_ptr)        W,
-                                                                        TYPE(sdMat_ptr)           C, TYPE(sdMat_ptr)       D,
-                                                            int* iflag);
-//@}
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular. \ingroup mvec
 
