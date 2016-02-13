@@ -3,6 +3,11 @@
 //! the suboptimal default implementations in common/kernels_no_fused*.cpp
 //! We decided to add these operations because they appear in particular algorithms, not because they are of general use.
 //! Optimized implementations of these kernels may achieve higher performance by data reuse.
+//!@{
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //! \name fused spmv kernels (sparseMat_times_mvec *and* something else involving x and/or y) \addtogroup crsmat
 //@{
@@ -70,5 +75,11 @@ void SUBR(mvec_times_sdMat_add_mvec_times_sdMat)(TYPE(const_mvec_ptr) V,
                                                  TYPE(const_sdMat_ptr) D,
                                                  int* iflag);
 
+
+//@}
+
+#ifdef __cplusplus
+} //extern "C"
+#endif
 
 //@}
