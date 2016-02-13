@@ -86,7 +86,7 @@ PHIST_MAIN_TASK_BEGIN
   {
     if( high_prec )
       ierr = PHIST_ROBUST_REDUCTIONS;
-    PHIST_ICHK_IERR(SUBR(mvec_times_sdMat_augmented)(-st::one(),X,M,st::one(),Y,N,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(mvec_times_sdMat_aug)(-st::one(),X,M,st::one(),Y,N,&ierr),ierr);
   }
   PHIST_ICHK_IERR(SUBR(sdMat_delete)(M,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(sdMat_delete)(N,&ierr),ierr);

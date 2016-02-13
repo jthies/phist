@@ -255,26 +255,20 @@ void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* iflag);
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
-#include "../common/kernels_noimpl.c"
-#include "../common/carp_noimpl.c"
-#include "../common/kernels_nogpu.c"
+#include "../common/kernels_no_impl.cpp"
 
 #include "phist_gen_c.h"
-#include "../common/kernels_noimpl.c"
-#include "../common/carp_noimpl.c"
-#include "../common/kernels_nogpu.c"
+#include "../common/kernels_no_impl.cpp"
 #endif
 
 #include "phist_gen_z.h"
-#include "../common/kernels_noimpl.c"
-#include "../common/carp_noimpl.c"
-#include "../common/kernels_nogpu.c"
+#include "../common/kernels_no_impl.cpp"
 
 } //extern "C"
 
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
-#include "../common/kernels_nofused_spmv_gemm.cpp"
-#include "../common/kernels_nofused_spmv_dot.cpp"
+#include "../common/kernels_no_gpu.cpp"
+#include "../common/kernels_no_fused_spmv.cpp"
 

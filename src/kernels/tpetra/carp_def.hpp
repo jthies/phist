@@ -1,3 +1,1 @@
-extern "C" {
-#include "../common/carp_noimpl.c"
-} // extern "C"
+#include "../common/kernels_no_carp.cpp"

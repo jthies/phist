@@ -888,7 +888,3 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
 
 //!@}
 
-extern "C" {
-#include "../common/kernels_nogpu.c"
-}
-#include "../common/kernels_no_inplace_VC.cpp"

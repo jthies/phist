@@ -35,18 +35,16 @@
 #include <cstring>
 #include <sys/resource.h>
 
-extern "C" {
-
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
-#include "../common/kernels_noprec.c"
+#include "../common/kernels_no_prec.cpp"
 
 #include "phist_gen_c.h"
-#include "../common/kernels_noprec.c"
+#include "../common/kernels_no_prec.cpp"
 #endif
 
 #include "phist_gen_z.h"
-#include "../common/kernels_noprec.c"
+#include "../common/kernels_no_prec.cpp"
 
 #ifdef PHIST_HIGH_PRECISION_KERNELS
 #include "prec_kernels_d.h"
@@ -55,9 +53,7 @@ extern "C" {
 
 #include "phist_gen_d.h"
 #ifdef PHIST_HIGH_PRECISION_KERNELS
-} //extern "C"
 #include "prec_kernels_def.hpp"
 #else
-#include "../common/kernels_noprec.c"
-} //extern "C"
+#include "../common/kernels_no_prec.cpp"
 #endif

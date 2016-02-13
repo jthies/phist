@@ -1,4 +1,4 @@
-void SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_self)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
+extern "C" void SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_self)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
                                                             _ST_ beta,                         TYPE(mvec_ptr)        W,
                                                                                                TYPE(sdMat_ptr)       D,
                                                             int* iflag)
@@ -16,7 +16,7 @@ void SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_self)(_ST_ alpha, TYPE(con
 }
 
 
-void SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_other)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
+extern "C" void SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_other)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
                                                             _ST_ beta,                         TYPE(mvec_ptr)        W,
                                                                                                TYPE(sdMat_ptr)       D,
                                                             int* iflag)
@@ -34,7 +34,7 @@ void SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_other)(_ST_ alpha, TYPE(co
 }
 
 
-void SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_both)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
+extern "C" void SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_both)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
                                                             _ST_ beta,                         TYPE(mvec_ptr)        W,
                                                                         TYPE(sdMat_ptr)     C, TYPE(sdMat_ptr)       D,
                                                             int* iflag)

@@ -42,7 +42,7 @@ extern "C" void phist_tpetra_node_create(node_t** node, const_comm_ptr_t vcomm, 
 #include "phist_gen_c.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
-#include "../common/kernels_nofused_mvec.cpp"
-#include "../common/kernels_nofused_spmv_gemm.cpp"
-#include "../common/kernels_nofused_spmv_dot.cpp"
+#include "../common/kernels_no_inplace_VC.cpp"
+#include "../common/kernels_no_fused.cpp"
+#include "../common/kernels_no_gpu.cpp"
 #endif

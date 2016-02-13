@@ -63,7 +63,7 @@
 #include "phist_gen_c.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
-#include "../common/kernels_nofused_mvec.cpp"
-#include "../common/kernels_nofused_spmv_gemm.cpp"
+#include "../common/kernels_no_fused_mvec.cpp"
+#include "../common/kernels_no_fused_spmv_gemm.cpp"
 #endif
 
