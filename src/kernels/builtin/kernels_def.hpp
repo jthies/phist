@@ -791,51 +791,6 @@ extern "C" void SUBR(mvecT_times_mvec_times_sdMat_inplace)(_ST_ alpha, TYPE(cons
   PHIST_CHK_IERR(SUBR(mvecT_times_mvec_times_sdMat_inplace_f)(alpha,V,W,C,beta,D,iflag),*iflag);
 }
 
-// augmented spMVM kernel available in GHOST
-
-// like sparseMat_times_mvec_add_mvec, followed by z=a*y+b*z. if z!=NULL.
-// if dot_xx!=NULL, it will contain mvec_dot_mvec(x,x) on output
-// and similarly for dot_xy and dot_yy (final y being used)
-//
-// Kernel libraries that do not offer this can include 
-// common/kernels_no_fused.cpp for a fallback variant
-//
-// We DON'T have this operation in the builtin kernel library, as we have
-// all the other kernels in reasonably optimized versions, we will issue
-// a warning message if it is used. The code is taken from the default
-// implementation in common/kernels_no_fused.cpp for now.
-void SUBR(sparseMat_times_mvec_aug)(_ST_ alpha, TYPE(const_sparseMat_ptr) A,
-        _ST_ shift, TYPE(const_mvec_ptr) x, _ST_ beta, TYPE(mvec_ptr) y, 
-        _ST_ a, _ST_ b, TYPE(mvec_ptr) z,
-        _ST_* dot_xx, _ST_* dotxy, _ST_* dotyy, 
-        int* iflag)
-{
-  PHIST_ENTER_FCN(__FUNCTION__);
-  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_add_mvec)(alpha,A,shift,x,beta,y,iflag);
-  static bool firstCall=true;
-  if (firstCall)
-  {
-    PHIST_SOUT(PHIST_WARNING,"function %s is not implemented in the builtin kernels, using slow fallback implementation!\n",__FUNCTION__);
-    firstCall=false;
-  }
-  if (z!=NULL)
-  {
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(a,y,b,z,iflag),*iflag);
-  }
-  if (dot_xx)
-  {
-    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(x,x,dot_xx,iflag);
-  }
-  if (dot_xy)
-  {
-    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(x,y,dot_xy,iflag);
-  }
-  if (dot_yy)
-  {
-    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(x,x,dot_yy,iflag);
-  }
-}
-
 
 extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag)
 {
