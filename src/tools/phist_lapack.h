@@ -49,6 +49,8 @@ typedef char blas_char_t;
 /* STEQR */
 #define SSTEQR LAPACK_SUBR(SSTEQR,ssteqr)
 #define DSTEQR LAPACK_SUBR(DSTEQR,dsteqr)
+#define CSTEQR LAPACK_SUBR(CSTEQR,csteqr)
+#define ZSTEQR LAPACK_SUBR(ZSTEQR,zsteqr)
 /* GEES - compute Schur form and eigenvalues A */
 #define SGEES LAPACK_SUBR(SGEES,sgees)
 #define DGEES LAPACK_SUBR(DGEES,dgees)
