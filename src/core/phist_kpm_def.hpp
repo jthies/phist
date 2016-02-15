@@ -7,43 +7,29 @@ void SUBR(kpm)(TYPE(mvec_ptr) x, TYPE(sparseMat_ptr) A, _MT_ scale, _MT_ shift, 
 	*iflag = 0;
 	 
 	TYPE(mvec_ptr) y[2];
-	TYPE(mvec_ptr) tmp_vec;
 
 	int n_vecs;
 	PHIST_CHK_IERR(SUBR(mvec_num_vectors)(x, &n_vecs, iflag), *iflag);
 
 	_ST_* mu_tmp = new _ST_[2 * M * n_vecs]();
-	_ST_* dot_tmp = new _ST_[3 * n_vecs]();
-
-	_ST_ beta = -0.5;
-	_ST_ vshift = shift;
-	_ST_ mshift = -shift;
-	_ST_ vscale = scale;
 
 	y[0] = x;
 
 	const_map_ptr_t vector_map;
 	PHIST_CHK_IERR(SUBR(sparseMat_get_range_map)(A, &vector_map, iflag), *iflag);
 	PHIST_CHK_IERR(SUBR(mvec_create)(&y[1], vector_map, n_vecs, iflag), *iflag);
-	PHIST_CHK_IERR(SUBR(mvec_put_value)(y[1], beta, iflag), *iflag);
 
 //----------------------------------------------------------------------
-	beta = 0.0;
-	// y[1] = vscale * (A-vshift*I) * y[0] + beta * y[1];
-	PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_add_mvec)(vscale, A, mshift, y[0], beta, y[1], iflag), *iflag);
+	// y[1] = scale * (A-shift*I) * y[0];
+	PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_add_mvec)(scale, A, -shift, y[0], 0, y[1], iflag), *iflag);
 
 	PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(y[0], y[0], mu_tmp         , iflag), *iflag);
 	PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(y[1], y[0], mu_tmp + n_vecs, iflag), *iflag);
 //----------------------------------------------------------------------
 
-	vscale = 2 * scale;
-	beta = -1;
-
 	for(int m = 1; m < M; m++){
-		std::fill_n(dot_tmp, 3 * n_vecs, st::zero());
-
 //----------------------------------------------------------------------
-		PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_add_mvec)(vscale, A, mshift, y[m&1], beta, y[(m-1)&1], iflag), *iflag);
+		PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_add_mvec)(2 * scale, A, -shift, y[m&1], -1, y[(m-1)&1], iflag), *iflag);
 
 		PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(y[ m   &1], y[m&1], mu_tmp + (2*m  )*n_vecs, iflag), *iflag);
 		PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(y[(m-1)&1], y[m&1], mu_tmp + (2*m+1)*n_vecs, iflag), *iflag);
@@ -69,7 +55,6 @@ void SUBR(kpm)(TYPE(mvec_ptr) x, TYPE(sparseMat_ptr) A, _MT_ scale, _MT_ shift, 
 	PHIST_CHK_IERR(SUBR(mvec_delete)(y[1], iflag), *iflag);
 
 	delete[] mu_tmp;
-	delete[] dot_tmp;
 }
 //======================================================================
 void SUBR(dos)(TYPE(sparseMat_ptr) A, _MT_ scale, _MT_ shift, int M, int R, _MT_* mu, int* iflag)
