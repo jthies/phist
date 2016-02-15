@@ -5,8 +5,10 @@
 // we just use Trilinos as a fallback for B-orthogonalization
 // with HYMLS right now and will eventually provide our own
 // kernels for it
-#if defined(PHIST_KERNEL_LIB_TPETRA)||(defined(PHIST_KERNEL_LIB_EPETRA)&&defined(IS_DOUBLE)&&!defined(IS_COMPLEX))
-#define HAVE_TRILINOS_ORTHO_MANAGER
+#if defined(PHIST_KERNEL_LIB_TPETRA)||(defined(PHIST_KERNEL_LIB_EPETRA)
+# if defined(PHIST_HAVE_BELOS)&&defined(IS_DOUBLE)&&!defined(IS_COMPLEX))
+#  define HAVE_TRILINOS_ORTHO_MANAGER
+# endif
 #endif
 
 // provide trili_orthog as fallback if B!=NULL
