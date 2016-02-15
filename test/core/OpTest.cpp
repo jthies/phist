@@ -12,16 +12,16 @@
 #include "../kernels/KernelTestWithSparseMat.h"
 #include "../kernels/KernelTestWithVectors.h"
 
-#ifdef PHIST_KERNEL_LIB_TPETRA
-#include "phist_tpetra_typedefs.hpp"
-#include "BelosTpetraAdapter.hpp"
-#elif defined(PHIST_KERNEL_LIB_EPETRA)
-#include "Epetra_MultiVector.h"
-#include "BelosEpetraAdapter.hpp"
-#elif defined(PHIST_KERNEL_LIB_GHOST)
 #ifdef PHIST_HAVE_BELOS
-#include "Belos_GhostAdapter.hpp"
-#endif
+# ifdef PHIST_KERNEL_LIB_TPETRA
+# include "phist_tpetra_typedefs.hpp"
+# include "BelosTpetraAdapter.hpp"
+# elif defined(PHIST_KERNEL_LIB_EPETRA)
+# include "Epetra_MultiVector.h"
+# include "BelosEpetraAdapter.hpp"
+# elif defined(PHIST_KERNEL_LIB_GHOST)
+# include "Belos_GhostAdapter.hpp"
+# endif
 #endif
 
 #ifdef PHIST_HAVE_BELOS

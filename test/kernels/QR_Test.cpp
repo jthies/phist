@@ -5,13 +5,17 @@
 
 #include "gtest/gtest.h"
 
+#define HAVE_MVEC_QR
+
 #ifdef PHIST_KERNEL_LIB_GHOST
 #include "ghost/config.h"
-#if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)&&(!defined(GHOST_HAVE_CUDA))
-#define HAVE_MVEC_QR
-#endif
-#else
-#define HAVE_MVEC_QR
+# if !(defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)&&defined(PHIST_HAVE_BELOS))||defined(GHOST_HAVE_CUDA)
+# undef HAVE_MVEC_QR
+# endif
+#elif defined(PHIST_KERNEL_LIB_EPETRA)||defined(PHIST_HAVE_KERNEL_LIB_TPETRA)
+# if !(defined(PHIST_HAVE_KOKKOS)&&defined(PHIST_HAVE_BELOS))
+# undef HAVE_MVEC_QR
+# endif
 #endif
 
 #include "KernelTestWithVectors.h"
