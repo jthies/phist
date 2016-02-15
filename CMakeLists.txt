@@ -57,6 +57,13 @@ option(PHIST_USE_MPACK
         "try to find the MPACK library" 
         ON)
 
+# try to find third-party solver packages (depending on kernel lib),
+# for instance for epetra/tpetra and GHOST we have an interface to
+# Anasazi and Belos.
+option(PHIST_USE_SOLVER_TPLS
+        "try to find supported third-party libraries that implement iterative methods for the kernel library used."
+        ON)
+
 # try to find third-party preconditioning packages (depending on kernel lib),
 # for instance if the kernel lib is epetra, look for Ifpack and ML.
 option(PHIST_USE_PRECON_TPLS
@@ -447,9 +454,12 @@ if  (PHIST_KERNEL_LIB STREQUAL "epetra")
   list(APPEND REQUIRE_TRILI_PKG "Teuchos")
   set(PHIST_KERNEL_LIB_EPETRA 1)
 
-  list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
-  list(APPEND OPTIONAL_TRILI_PKG "Belos")
   list(APPEND OPTIONAL_TRILI_PKG "Kokkos")
+
+  if (PHIST_USE_SOLVER_TPLS)
+    list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
+    list(APPEND OPTIONAL_TRILI_PKG "Belos")
+  endif()
 
   if (PHIST_USE_PRECON_TPLS)
     list(APPEND OPTIONAL_TRILI_PKG "Ifpack")
@@ -462,9 +472,10 @@ elseif  (PHIST_KERNEL_LIB STREQUAL "tpetra")
   list(APPEND REQUIRE_TRILI_PKG "Teuchos")
   set(PHIST_KERNEL_LIB_TPETRA 1)
 
-  list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
-  list(APPEND OPTIONAL_TRILI_PKG "Belos")
-
+  if (PHIST_USE_SOLVER_TPLS)
+    list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
+    list(APPEND OPTIONAL_TRILI_PKG "Belos")
+  endif()
   if (PHIST_USE_PRECON_TPLS)
     list(APPEND OPTIONAL_TRILI_PKG "Ifpack2")
     list(APPEND OPTIONAL_TRILI_PKG "Amesos2")
@@ -480,8 +491,10 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   set(PHIST_SELL_C -1 CACHE INTEGER "chunk size C for the SELL-C-sigma format (-1: automatic choice)")
   set(PHIST_SELL_SIGMA -1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format (-1: automatic choice)")
 
-  list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
-  list(APPEND OPTIONAL_TRILI_PKG "Belos")
+  if (PHIST_USE_SOLVER_TPLS)
+    list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
+    list(APPEND OPTIONAL_TRILI_PKG "Belos")
+  endif()
   list(APPEND OPTIONAL_TRILI_PKG "Kokkos")
   list(APPEND OPTIONAL_TRILI_PKG "Teuchos")
 

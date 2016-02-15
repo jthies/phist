@@ -81,8 +81,10 @@ for m in ${MODULES_KERNELS["$KERNELS"]}; do module load $m; done
 if [[ "$FLAGS" = *optional-libs* ]]; then
   for m in ${MODULES_KERNELS_OPTIONAL["$KERNELS"]}; do module load $m; done
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_PRECON_TPLS:BOOL=ON"
+  ADD_CMAKE_FLAGS+=" -DPHIST_USE_SOLVER_TPLS:BOOL=ON"
 else
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_PRECON_TPLS:BOOL=OFF"
+  ADD_CMAKE_FLAGS+=" -DPHIST_USE_SOLVER_TPLS:BOOL=OFF"
 fi
 if [ "${VECT_EXT}" = "CUDA" ]; then
   module load cuda
