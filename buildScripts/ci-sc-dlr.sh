@@ -78,8 +78,11 @@ module() { eval `/usr/bin/modulecmd bash $*`; }
 module load "PrgEnv/$PRGENV"
 for m in $MODULES_BASIC; do module load $m; done
 for m in ${MODULES_KERNELS["$KERNELS"]}; do module load $m; done
-if [[ "$FLAGS" =~ *optional-libs* ]]; then
+if [[ "$FLAGS" = *optional-libs* ]]; then
   for m in ${MODULES_KERNELS_OPTIONAL["$KERNELS"]}; do module load $m; done
+  ADD_CMAKE_FLAGS+=" -DPHIST_USE_PRECON_TPLS:BOOL=ON"
+else
+  ADD_CMAKE_FLAGS+=" -DPHIST_USE_PRECON_TPLS:BOOL=OFF"
 fi
 if [ "${VECT_EXT}" = "CUDA" ]; then
   module load cuda

@@ -1,5 +1,17 @@
 cmake_minimum_required(VERSION 2.8.10)
 
+# some guidelines for extending/modifying the PHIST CMakeLists.txt file. 
+# Things may not be handled this way everywhere yet, but you should keep these
+# points in mind.
+#
+# - anything prefixed by PHIST_ENABLE or PHIST_USE will enter the CMake Cache but not the config file,
+#   so it won't be directly visible in the source code
+# - anything prefixed by PHIST_HAVE can be seen int he phist_config.h file
+# - other things should *not* go into the cache unless they come from another library via find_package.
+#
+# - try to mark things that are very detailed (like details on the timing behavior etc.) as ADVANCED so that
+#   the CMake cache seen when first using ccmake stays reasonable
+
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 #list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Trilinos")
 
@@ -44,6 +56,14 @@ option(PHIST_USE_GHOST
 option(PHIST_USE_MPACK
         "try to find the MPACK library" 
         ON)
+
+# try to find third-party preconditioning packages (depending on kernel lib),
+# for instance if the kernel lib is epetra, look for Ifpack and ML.
+option(PHIST_USE_PRECON_TPLS
+        "try to find supported third-party libraries that implement preconditioners for the kernel library used."
+        ON)
+
+
 
 ########################################################################
 # Lists of libraries, executables, tests
@@ -431,10 +451,11 @@ if  (PHIST_KERNEL_LIB STREQUAL "epetra")
   list(APPEND OPTIONAL_TRILI_PKG "Belos")
   list(APPEND OPTIONAL_TRILI_PKG "Kokkos")
 
-  list(APPEND OPTIONAL_TRILI_PKG "Ifpack")
-  list(APPEND OPTIONAL_TRILI_PKG "ML")
-  list(APPEND OPTIONAL_TRILI_PKG "MueLU")
-
+  if (PHIST_USE_PRECON_TPLS)
+    list(APPEND OPTIONAL_TRILI_PKG "Ifpack")
+    list(APPEND OPTIONAL_TRILI_PKG "ML")
+    list(APPEND OPTIONAL_TRILI_PKG "MueLU")
+  endif()
 elseif  (PHIST_KERNEL_LIB STREQUAL "tpetra")
   list(APPEND REQUIRE_TRILI_PKG "Tpetra")
   list(APPEND REQUIRE_TRILI_PKG "Kokkos")
@@ -444,10 +465,11 @@ elseif  (PHIST_KERNEL_LIB STREQUAL "tpetra")
   list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
   list(APPEND OPTIONAL_TRILI_PKG "Belos")
 
-  list(APPEND OPTIONAL_TRILI_PKG "Ifpack2")
-  list(APPEND OPTIONAL_TRILI_PKG "Amesos2")
-  list(APPEND OPTIONAL_TRILI_PKG "MueLU")
-
+  if (PHIST_USE_PRECON_TPLS)
+    list(APPEND OPTIONAL_TRILI_PKG "Ifpack2")
+    list(APPEND OPTIONAL_TRILI_PKG "Amesos2")
+    list(APPEND OPTIONAL_TRILI_PKG "MueLU")
+  endif()
 elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   # we already link with ghost because of the queuing system  
   set(PHIST_KERNEL_LIB_GHOST 1)
