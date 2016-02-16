@@ -435,7 +435,11 @@ void SUBR(mvec_QB)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* nrmsV, int *iflag)
         nrmsV_ptr=dummy;
         dim0=*iflag;
         if (i==0) return_value=dim0;
-        else if (dim0==0) break;
+        if (dim0==0)
+        {
+          if (i==0)     continue;
+          else          break;
+        }
         TYPE(mvec_ptr) V0=NULL;
         PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&V0,0,dim0-1,iflag),*iflag);
         PHIST_CHK_IERR(SUBR(mvec_random)(V0,iflag),*iflag);
