@@ -37,23 +37,26 @@
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
-#include "../common/kernels_no_prec.cpp"
+#include "phist_sdFact_kernels_def.hpp"
+#include "phist_sdFact_def.cpp"
 
 #include "phist_gen_c.h"
-#include "../common/kernels_no_prec.cpp"
+#include "phist_sdFact_kernels_def.hpp"
+#include "phist_sdFact_def.cpp"
 #endif
 
 #include "phist_gen_z.h"
-#include "../common/kernels_no_prec.cpp"
-
-#ifdef PHIST_HIGH_PRECISION_KERNELS
-#include "prec_kernels_d.h"
-#endif
-
+#include "phist_sdFact_kernels_def.hpp"
+#include "phist_sdFact_def.cpp"
 
 #include "phist_gen_d.h"
+#include "phist_sdFact_kernels_def.hpp"
 #ifdef PHIST_HIGH_PRECISION_KERNELS
-#include "prec_kernels_def.hpp"
-#else
-#include "../common/kernels_no_prec.cpp"
+extern "C" {
+// high precision variants only available in "D" case up to now
+#include "phist_DsdFact_prec_kernels.h"
+}
 #endif
+#include "phist_sdFact_def.cpp"
+
+
