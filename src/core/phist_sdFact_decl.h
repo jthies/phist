@@ -1,5 +1,6 @@
-//! \defgroup prec mixed-precision kernels implemented directly in PHIST.
-//! these kernels are highly accurate but not necessarily efficient, they
+//! \defgroup sdfact sdMat kernels for factoring small dense matrices.
+//!
+//! These kernels are highly accurate but not necessarily efficient, they
 //! are intended for use with sdMats, that is the matrix should be small 
 //! enough s.t. serial execution won't hurt even on a supercomputer.
 //! 

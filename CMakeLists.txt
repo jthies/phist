@@ -663,6 +663,7 @@ set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.cpp
                         )
 set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_normF.cpp
+                       ${PROJECT_SOURCE_DIR}/src/core/phist_sdFact.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthog.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_svqb.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthogrr.cpp
