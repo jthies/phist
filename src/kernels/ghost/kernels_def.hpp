@@ -1346,7 +1346,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     }
     if( vz != NULL )
     {
-      spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_CHAINED_AXPBY);
+      spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_CHAIN_AXPBY);
     }
 
     std::vector<_ST_> dotBuff;
@@ -1361,7 +1361,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     
     spMVM_opts.delta=&gamma;
     spMVM_opts.eta=&delta;
-    spMVM_opts.z=(ghost_densemat_t*)vz;
+    spMVM_opts.z=(ghost_densemat*)vz;
 
     // call ghosts spMV
     PHIST_CHK_GERR(ghost_spmv(y,A,x,spMVM_opts),*iflag);
