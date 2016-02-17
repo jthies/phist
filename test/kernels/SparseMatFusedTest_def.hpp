@@ -78,7 +78,7 @@ TEST_F(CLASSNAME,fused_spmv_mvdot)
     SUBR(sparseMat_times_mvec)(alpha,A_,vec1_,beta,vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
 
-    SUBR(mvec_dot_mvec)(vec3_,vec1_,&dot_xy_ref[0],&iflag_);
+    SUBR(mvec_dot_mvec)(vec1_,vec3_,&dot_xy_ref[0],&iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_dot_mvec)(vec3_,vec3_,&dot_yy_ref[0],&iflag_);
     ASSERT_EQ(0,iflag_);
