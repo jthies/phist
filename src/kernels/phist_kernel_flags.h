@@ -57,8 +57,11 @@
 #define PHIST_SPMVM_OVERLAP 8
 #define PHIST_SPMVM_TASK 16
 
-/* accuracy vs. speed */
+/* use more accurate reducitons or other floating point operations if available */
 #define PHIST_ROBUST_REDUCTIONS 1
+
+/* do not perform global MPI reduction on inner products */
+#define PHIST_NO_GLOBAL_REDUCTION 2
 
 /* for KPM */
 #define PHIST_KPM_SINGLEVEC 1

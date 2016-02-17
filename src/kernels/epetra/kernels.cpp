@@ -199,3 +199,4 @@ extern "C" void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* 
 #include "../common/kernels_no_gpu.cpp"
 #include "../common/kernels_no_fused.cpp"
 #include "../common/kernels_no_inplace_VC.cpp"
+#include "../common/kernels_no_VC_add_WD.cpp"

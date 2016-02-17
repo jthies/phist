@@ -82,7 +82,7 @@ PHIST_MAIN_TASK_BEGIN
       ierr = PHIST_ROBUST_REDUCTIONS;
     else
       ierr = 0;
-    PHIST_ICHK_IERR(SUBR(mvecT_times_mvec_times_sdMat_inplace)(st::one(),X,X,N,st::zero(),M,&ierr),ierr);
+    PHIST_ICHK_IERR(SUBR(fused_mvsdi_mvTmv)(st::one(),X,X,N,st::zero(),M,&ierr),ierr);
   }
   PHIST_ICHK_IERR(SUBR(sdMat_delete)(N,&ierr),ierr);
   PHIST_ICHK_IERR(SUBR(sdMat_delete)(M,&ierr),ierr);

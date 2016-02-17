@@ -67,7 +67,7 @@ void SUBR(orthogrrfused)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_pt
     // calculate WtV, orthog V
     if( robust )
       *iflag = PHIST_ROBUST_REDUCTIONS;
-    PHIST_CHK_IERR(SUBR(mvecT_times_mvec_times_sdMat_inplace)(st::one(),W,V,R_1,st::zero(),WtV,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(fused_mvsdi_mvTmv)(st::one(),W,V,R_1,st::zero(),WtV,iflag),*iflag);
 
     // calculate R2 = W'*V = WtV*R
     PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),WtV,R,st::zero(),R2,iflag),*iflag);

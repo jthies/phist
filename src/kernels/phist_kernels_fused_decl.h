@@ -1,85 +1,79 @@
-//! \defgroup 'fused' kernels computing two or more quantities.
-//! note: these kernels are very uncommon, kernel libraries that do not have support for some or any of them may include
-//! the suboptimal default implementations in common/kernels_no_fused*.cpp
-//! We decided to add these operations because they appear in particular algorithms, not because they are of general use.
-//! Optimized implementations of these kernels may achieve higher performance by data reuse.
-//!@{
+//! \defgroup fused fused 
+//!
+//! advanced fused kernels for which default implementations         
+//! are available but which may benefit from special attention int he kernel library.   
+//!                                                                                     
+//! Fused kernels compute two or more quantities in one kernel to allow e.g. for        
+//! temporal cache locality. The output may include intermediate steps in a sequence    
+//! of operations or independent quantities whose computation requires the same data.   
+//! This is one of the forms of pipelining used in PHIST to achieve high node-level     
+//! performance in memory-bounded situations.
+//!
+//! In order to avoid longish subroutine names, we have adopted a slightly
+//! different nameing scheme for these operations:
+//!
+//!-------------------------------------------------------------------------
+//! kernel                 becomes short       mathematical formula
+//!-------------------------------------------------------------------------
+//! sparseMat_times_mvec        => spmv       W=alpha*A*V+beta*W
+//! mvec_times_sdMat            => mvsd       W=V*S
+//! mvec_times_sdMat_inplace    => mvsdi      V=V*S
+//! mvecT_times_mvec            => mvTmv      S=V'W
+//! mvec_dot_mvec               => mvdot      s[j]=V(:,j)'W(:,j)
+//! mvec_add_mvec               => mvadd      W=alpha*V+beta*W
+//@{
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-//! \name fused spmv kernels (sparseMat_times_mvec *and* something else involving x and/or y) \addtogroup crsmat
-//@{
+//! W=alpha*A*V + beta*W, WdotW[i] = W(:,i)'W(:,i), VdotW[i]=V(:,i)'W(:,i)
+//! understands *iflag=PHIST_NO_GLOBAL_REDUCTION, in which case the dot products
+//! are only carried out per MPI process.
+//! The arrays VdotW and/or WdotW may be NULL, in which case the corresponding 
+//! operation is not performed.
+void SUBR(fused_spmv_mvdot)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
+                            _ST_ beta,                                     TYPE(mvec_ptr)  W,
+                            _ST_* WdotW, _ST_* VdotW,
+                            int* iflag);
 
-//! W=alpha*A*V + beta*W, Wnrm[i] = ||W[i]||_2
-void SUBR(sparseMat_times_mvec_fused_norm2)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
-                                            _ST_ beta,                               TYPE(mvec_ptr)        W,
-                                                                                     _MT_*                 Wnrm,
-                                            int* iflag);
+//! W=alpha*A*V + beta*W, WtW = W'W, VtW = V'W
+//! understands *iflag=PHIST_NO_GLOBAL_REDUCTION, in which case the inner products
+//! are only carried out per MPI process.
+//! The arrays VtW and/or WtW may be NULL, in which case the corresponding 
+//! operation is not performed.
+void SUBR(fused_spmv_mvTmv)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
+                             _ST_ beta,                               TYPE(mvec_ptr)        W,
+                             TYPE(sdMat_ptr) WtW, TYPE(sdMat_ptr) VtW,
+                             int* iflag);
 
-//! W=alpha*A*V + beta*W, WdotV[i] = W[i]'V[i]
-void SUBR(sparseMat_times_mvec_fused_dot)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
-                                          _ST_ beta,                               TYPE(mvec_ptr)        W,
-                                                                                   _ST_*                 WdotV,
-                                          int* iflag);
 
-//! W=alpha*A*V + beta*W, WdotV[i] = W[i]'V[i], Wnrm[i] = ||W[i]||_2
-void SUBR(sparseMat_times_mvec_fused_dot_norm2)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
-                                                _ST_ beta,                               TYPE(mvec_ptr)        W,
-                                                            _ST_*                 WdotV, _MT_*                 Wnrm,
-                                                int* iflag);
-
-//! W=alpha*A*V + beta*W, D = W'W
-void SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_self)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
-                                                            _ST_ beta,                               TYPE(mvec_ptr)        W,
-                                                                                                     TYPE(sdMat_ptr)       D,
-                                                            int* iflag);
-
-//! W=alpha*A*V + beta*W, C = W'V
-void SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_other)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr) V,
-                                                            _ST_ beta,                                TYPE(mvec_ptr)        W,
-                                                                                                      TYPE(sdMat_ptr)       C,
-                                                            int* iflag);
-
-//! W=alpha*A*V + beta*W, C = W'V, D = W'W
-void SUBR(sparseMat_times_mvec_fused_mvecT_times_mvec_both)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
-                                                            _ST_ beta,                               TYPE(mvec_ptr)        W,
-                                                                        TYPE(sdMat_ptr)           C, TYPE(sdMat_ptr)       D,
-                                                            int* iflag);
-//@}
-
-//! \name augmented kernels with two multi-vectors. \addtogroup mvec
-//@{
+//! like fused_spmv_mvdot, and compute U=gamma*W+delta*U
+//! Any of U, WdotW, VdotW may be NULL and will not be touched in that case.
+void SUBR(fused_spmv_mvdot_mvadd)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
+                                  _ST_ beta,                               TYPE(mvec_ptr)  W,
+                                  _ST_ gamma, _ST_ delta,                  TYPE(mvec_ptr)  U,
+                            _ST_* lWdotW, _ST_* lVdotW,
+                            int* iflag);
 
 //! D=alpha*V'*(W*C) + beta*D, W=W*C inplace
-void SUBR(mvecT_times_mvec_times_sdMat_inplace)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
+void SUBR(fused_mvsdi_mvTmv)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
                                                             TYPE(mvec_ptr)        W,
                                                             TYPE(const_sdMat_ptr) C,
                                                 _ST_ beta,  TYPE(sdMat_ptr)       D,
                                                 int* iflag);
 
 
-//! W=alpha*V*C + beta*W, D=W'W
-void SUBR(mvec_times_sdMat_aug)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
+//! W=alpha*V*C + beta*W, WtW=W'W
+void SUBR(fused_mvsd_mvTmv)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
                                                   TYPE(const_sdMat_ptr) C,
                                       _ST_ beta,  TYPE(mvec_ptr)        W,
-                                                  TYPE(sdMat_ptr)       D,
+                                                  TYPE(sdMat_ptr)       WtW,
                                                   int* iflag);
 
-//! augmented kernel with two multi-vectors and two sdMats.
-//! W <- = V*C + W*D
-void SUBR(mvec_times_sdMat_add_mvec_times_sdMat)(TYPE(const_mvec_ptr) V, 
-                                                 TYPE(const_sdMat_ptr) C,
-                                                 TYPE(mvec_ptr) W, 
-                                                 TYPE(const_sdMat_ptr) D,
-                                                 int* iflag);
-
-
-//@}
 
 #ifdef __cplusplus
-} //extern "C"
+} // extern "C"
 #endif
 
 //@}

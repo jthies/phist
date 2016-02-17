@@ -121,7 +121,7 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
       // V <- V*R_1 and WtV <- W'*V
       if( robust )
         *iflag = PHIST_ROBUST_REDUCTIONS;
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec_times_sdMat_inplace)(st::one(),W,V,R_1,st::zero(),WtV,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(fused_mvsdi_mvTmv)(st::one(),W,V,R_1,st::zero(),WtV,iflag),*iflag);
       if( WtW_I )
       {
         // correct WtV by error of WtW from
@@ -166,7 +166,7 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
       // V <- V - W*WtV, updating VtV
       if( robust )
         *iflag = PHIST_ROBUST_REDUCTIONS;
-      PHIST_CHK_IERR(SUBR(mvec_times_sdMat_aug)(-st::one(),W,WtV,st::one(),V,VtV,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(fused_mvsd_mvTmv)(-st::one(),W,WtV,st::one(),V,VtV,iflag),*iflag);
 
       // calculate new R factor
       int WVrank = 0;
@@ -213,7 +213,7 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
         // V <- V*R_1, VtV <- V'*V
         if( robust )
           *iflag = PHIST_ROBUST_REDUCTIONS;
-        PHIST_CHK_IERR(SUBR(mvecT_times_mvec_times_sdMat_inplace)(st::one(),V,V,R_1,st::zero(),VtV,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(fused_mvsdi_mvTmv)(st::one(),V,V,R_1,st::zero(),VtV,iflag),*iflag);
 
         // update R1 <- R * R1
         if( R1 != NULL )

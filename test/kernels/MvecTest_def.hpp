@@ -890,9 +890,6 @@ for (int j=0;j<nvec_;j++)
         }
       SUBR(mvec_to_device)(vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      //TROET
-      //SUBR(mvec_print)(vec1_,&iflag_);
-      //SUBR(mvec_print)(vec2_,&iflag_);
       ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
     }
   }

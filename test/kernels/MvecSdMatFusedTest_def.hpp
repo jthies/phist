@@ -170,7 +170,7 @@ public:
 };
 
   // check augmented kernel with random data
-  TEST_F(CLASSNAME, mvecT_times_mvec_times_sdMat_inplace) 
+  TEST_F(CLASSNAME, fused_mvsdi_mvTmv) 
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
@@ -196,7 +196,7 @@ public:
       ASSERT_EQ(0,iflag_);
 
       // actually call augmented kernel
-      SUBR(mvecT_times_mvec_times_sdMat_inplace)(alpha,V1_,W1_,N1_,beta,M1_,&iflag_);
+      SUBR(fused_mvsdi_mvTmv)(alpha,V1_,W1_,N1_,beta,M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // do the same calculation by hand
@@ -216,7 +216,7 @@ public:
 
 #if( _K_ == _M_ )
   // check augmented kernel with random data
-  TEST_F(CLASSNAME, mvecT_times_mvec_times_sdMat_inplace_self) 
+  TEST_F(CLASSNAME, fused_mvsdi_mvTmv_self) 
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
@@ -238,7 +238,7 @@ public:
       ASSERT_EQ(0,iflag_);
 
       // actually call augmented kernel
-      SUBR(mvecT_times_mvec_times_sdMat_inplace)(alpha,V1_,V1_,N1_,beta,M1_,&iflag_);
+      SUBR(fused_mvsdi_mvTmv)(alpha,V1_,V1_,N1_,beta,M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // do the same calculation by hand
@@ -257,7 +257,7 @@ public:
 
 
   // check augmented kernel with random data
-  TEST_F(CLASSNAME, mvec_times_sdMat_aug) 
+  TEST_F(CLASSNAME, fused_mvsd_mvTmv) 
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
@@ -283,7 +283,7 @@ public:
       ASSERT_EQ(0,iflag_);
 
       // actually call augmented kernel
-      SUBR(mvec_times_sdMat_aug)(alpha,V1_,M1_,beta,W1_,N1_,&iflag_);
+      SUBR(fused_mvsd_mvTmv)(alpha,V1_,M1_,beta,W1_,N1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // do the same calculation by hand
@@ -302,7 +302,7 @@ public:
 
 
   // check augmented kernel with random data
-  TEST_F(CLASSNAME, mvec_times_sdMat_aug_nt) 
+  TEST_F(CLASSNAME, fused_mvsd_mvTmv_nt) 
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
@@ -328,7 +328,7 @@ public:
       ASSERT_EQ(0,iflag_);
 
       // actually call augmented kernel
-      SUBR(mvec_times_sdMat_aug)(alpha,V1_,M1_,beta,W1_,N1_,&iflag_);
+      SUBR(fused_mvsd_mvTmv)(alpha,V1_,M1_,beta,W1_,N1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // do the same calculation by hand
@@ -393,9 +393,9 @@ public:
 #if( ( _K_ == 1 || _K_ == 2 || _K_ == 4 ) && !USE_VIEWS )
   // check augmented kernel with random data
 #ifdef PHIST_HIGH_PRECISION_KERNELS
-  TEST_F(CLASSNAME, mvecT_times_mvec_times_sdMat_inplace_prec)
+  TEST_F(CLASSNAME, fused_mvsdi_mvTmv_prec)
 #else
-  TEST_F(CLASSNAME, DISABLED_mvecT_times_mvec_times_sdMat_inplace_prec)
+  TEST_F(CLASSNAME, DISABLED_fused_mvsdi_mvTmv_prec)
 #endif
   {
     if (typeImplemented_ && !problemTooSmall_)
@@ -423,7 +423,7 @@ public:
 
       // actually call augmented kernel
       iflag_ = PHIST_ROBUST_REDUCTIONS;
-      SUBR(mvecT_times_mvec_times_sdMat_inplace)(alpha,V1_,W1_,N1_,beta,M1_,&iflag_);
+      SUBR(fused_mvsdi_mvTmv)(alpha,V1_,W1_,N1_,beta,M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // do the same calculation by hand
@@ -447,9 +447,9 @@ public:
 #if( ( _K_ == 1 || _K_ == 2 || _K_ == 4 ) && _K_ == _M_ && !USE_VIEWS )
   // check augmented kernel with random data
 #ifdef PHIST_HIGH_PRECISION_KERNELS
-  TEST_F(CLASSNAME, mvecT_times_mvec_times_sdMat_inplace_prec_self)
+  TEST_F(CLASSNAME, fused_mvsdi_mvTmv_prec_self)
 #else
-  TEST_F(CLASSNAME, DISABLED_mvecT_times_mvec_times_sdMat_inplace_prec_self)
+  TEST_F(CLASSNAME, DISABLED_fused_mvsdi_mvTmv_prec_self)
 #endif
   {
     if (typeImplemented_ && !problemTooSmall_)
@@ -473,7 +473,7 @@ public:
 
       // actually call augmented kernel
       iflag_ = PHIST_ROBUST_REDUCTIONS;
-      SUBR(mvecT_times_mvec_times_sdMat_inplace)(alpha,V1_,V1_,N1_,beta,M1_,&iflag_);
+      SUBR(fused_mvsdi_mvTmv)(alpha,V1_,V1_,N1_,beta,M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // do the same calculation by hand
@@ -496,9 +496,9 @@ public:
 #if( ( _K_ == 1 || _K_ == 2 || _K_ == 4 ) && !USE_VIEWS )
   // check augmented kernel with random data
 #ifdef PHIST_HIGH_PRECISION_KERNELS
-  TEST_F(CLASSNAME, mvec_times_sdMat_aug_prec)
+  TEST_F(CLASSNAME, fused_mvsd_mvTmv_prec)
 #else
-  TEST_F(CLASSNAME, DISABLED_mvec_times_sdMat_aug_prec)
+  TEST_F(CLASSNAME, DISABLED_fused_mvsd_mvTmv_prec)
 #endif
   {
     if (typeImplemented_ && !problemTooSmall_)
@@ -526,7 +526,7 @@ public:
 
       // actually call augmented kernel
       iflag_ = PHIST_ROBUST_REDUCTIONS;
-      SUBR(mvec_times_sdMat_aug)(alpha,V1_,M1_,beta,W1_,N1_,&iflag_);
+      SUBR(fused_mvsd_mvTmv)(alpha,V1_,M1_,beta,W1_,N1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // do the same calculation by hand

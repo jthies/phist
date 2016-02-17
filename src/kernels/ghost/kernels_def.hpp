@@ -1245,28 +1245,23 @@ PHIST_TASK_POST_STEP(iflag)
 extern "C" void SUBR(sparseMat_times_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
 _ST_ beta, TYPE(mvec_ptr) vy, int* iflag)
 {
+#include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_fused_dot_norm2)(alpha,vA,vx,beta,vy,NULL,NULL,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(fused_spmv_mvdot_mvadd)(alpha,vA,vx,beta,vy,st::zero(),st::zero(),NULL,NULL,NULL,iflag),*iflag);
 }
 
-//! y=alpha*A*x+beta*y, ||y||
-extern "C" void SUBR(sparseMat_times_mvec_fused_norm2)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
-_ST_ beta, TYPE(mvec_ptr) vy, _MT_* ynrm, int* iflag)
+extern "C" void SUBR(fused_spmv_mvdot)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
+_ST_ beta, TYPE(mvec_ptr) vy, _ST_* xdoty, _ST_* ydoty, int* iflag)
 {
+#include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_fused_dot_norm2)(alpha,vA,vx,beta,vy,NULL,ynrm,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(fused_spmv_mvdot_mvadd)(alpha,vA,vx,beta,vy,st::zero(),st::zero(),NULL,xdoty,ydoty,iflag),*iflag);
 }
 
-//! y=alpha*A*x+beta*y, y'x
-extern "C" void SUBR(sparseMat_times_mvec_fused_dot)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
-_ST_ beta, TYPE(mvec_ptr) vy, _ST_* yx, int* iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_fused_dot_norm2)(alpha,vA,vx,beta,vy,yx,NULL,iflag),*iflag);
-}
-
-extern "C" void SUBR(sparseMat_times_mvec_fused_dot_norm2)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
-_ST_ beta, TYPE(mvec_ptr) vy, _ST_* ydotx, _MT_* ynrm, int* iflag)
+extern "C" void SUBR(fused_spmv_mvdot_mvadd)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
+_ST_ beta, TYPE(mvec_ptr) vy, 
+_ST_ gamma, _ST_ delta, TYPE(mvec_ptr) vz,
+_ST_* xdoty, _ST_* ydoty, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
@@ -1278,6 +1273,9 @@ _ST_ beta, TYPE(mvec_ptr) vy, _ST_* ydotx, _MT_* ynrm, int* iflag)
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_MODE_OVERLAP);
   else if( *iflag & PHIST_SPMVM_TASK )
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_MODE_TASK);
+  if (*iflag & PHIST_NO_GLOBAL_REDUCTION )
+    spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_NOT_REDUCE);
+    
   *iflag=0;
 
   PHIST_COUNT_MATVECS(vx);
@@ -1295,12 +1293,12 @@ _ST_ beta, TYPE(mvec_ptr) vy, _ST_* ydotx, _MT_* ynrm, int* iflag)
     if (beta==st::zero())
     {
       PHIST_CHK_IERR(SUBR(mvec_put_value)(vy,beta,iflag),*iflag);
-      if( ydotx != NULL )
+      if( xdoty != NULL )
         for(int i = 0; i < nvec; i++)
-          ydotx[i] = st::zero();
-      if( ynrm != NULL )
+          xdoty[i] = st::zero();
+      if( ydoty != NULL )
         for(int i = 0; i < nvec; i++)
-          ynrm[i] = mt::zero();
+          ydoty[i] = st::zero();
     }
     else
     {
@@ -1308,13 +1306,13 @@ _ST_ beta, TYPE(mvec_ptr) vy, _ST_* ydotx, _MT_* ynrm, int* iflag)
       {
         PHIST_CHK_IERR(SUBR(mvec_scale)(vy,beta,iflag),*iflag);
       }
-      if( ydotx != NULL )
+      if( xdoty != NULL )
       {
-        PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(vy,vx,ydotx,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(vx,vy,xdoty,iflag),*iflag);
       }
-      if( ynrm != NULL )
+      if( ydoty != NULL )
       {
-        PHIST_CHK_IERR(SUBR(mvec_norm2)(vy,ynrm,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(vy,vy,ydoty,iflag),*iflag);
       }
     }
   }
@@ -1323,14 +1321,10 @@ _ST_ beta, TYPE(mvec_ptr) vy, _ST_* ydotx, _MT_* ynrm, int* iflag)
   PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
 
-    // gather args
-    int narg = 0;
-    void* args[4] = {NULL,NULL,NULL,NULL};
 
     if (alpha!=st::one())
     {
       spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_SCALE);
-      args[narg++] = &alpha;
     }
 
     if (beta==st::one())
@@ -1340,39 +1334,37 @@ PHIST_TASK_BEGIN(ComputeTask)
     else if (beta!=st::zero())
     {
       spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_AXPBY);
-      args[narg++] = &beta;
     }
 
-    if( ydotx != NULL )
+    if( xdoty != NULL )
     {
       spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_DOT_XY);
     }
-    if( ynrm != NULL )
+    if( ydoty != NULL )
     {
       spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_DOT_YY);
     }
+    if( vz != NULL )
+    {
+      spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_CHAINED_AXPBY);
+    }
 
     std::vector<_ST_> dotBuff;
-    if( ydotx != NULL || ynrm != NULL )
+    if( xdoty != NULL || ydoty != NULL )
     {
       dotBuff.resize(3*nvec);
-      args[narg++] = &dotBuff[0];
     }
 
     spMVM_opts.alpha = &alpha;
     spMVM_opts.beta = &beta;
     spMVM_opts.dot = &dotBuff[0];
+    
+    spMVM_opts.delta=&gamma;
+    spMVM_opts.eta=&delta;
+    spMVM_opts.z=(ghost_densemat_t*)vz;
 
     // call ghosts spMV
     PHIST_CHK_GERR(ghost_spmv(y,A,x,spMVM_opts),*iflag);
-
-    if( ynrm != NULL )
-      for(int i = 0; i < nvec; i++)
-        ynrm[i] = mt::sqrt(st::real(dotBuff[i]));
-
-    if( ydotx != NULL )
-      for(int i = 0; i < nvec; i++)
-        ydotx[i] = st::conj(dotBuff[nvec+i]);
     
 PHIST_TASK_END(iflag);
   }

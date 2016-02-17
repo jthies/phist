@@ -2,5 +2,5 @@
 // the rather uncommon 'fused kernels', which compute several independent
 // operations at once to exploit memory locality.
 #include "kernels_no_fused_mvec.cpp"
-#include "kernels_no_fused_spmv_dot.cpp"
-#include "kernels_no_fused_spmv_gemm.cpp"
+#include "kernels_no_fused_spmv_mvdot.cpp"
+#include "kernels_no_fused_spmv_mvTmv.cpp"

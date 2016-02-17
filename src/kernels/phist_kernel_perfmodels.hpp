@@ -364,7 +364,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 
 
 //! \def PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC_TIMES_SDMAT(V,W,iflag)
-//! checks performance of mvecT_times_mvec_times_sdMat_inplace
+//! checks performance of fused_mvsdi_mvTmv
 #if !defined(PHIST_PERFCHECK_REALISTIC) || !defined(PHIST_MVECS_ROW_MAJOR)
 
 // ideal model

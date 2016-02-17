@@ -393,18 +393,34 @@ void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
                                        TYPE(const_mvec_ptr) W, 
                                        _ST_ beta, TYPE(sdMat_ptr) C, int* iflag);
 
-//! n x m multi-vector times m x k dense matrix gives n x k multi-vector, \ingroup mvec
-//! W=alpha*V*C + beta*W
+//! W=alpha*V*C + beta*W \ingroup mvec
+
+//! n x m multi-vector times m x k dense matrix gives n x k multi-vector
 void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V, 
                                        TYPE(const_sdMat_ptr) C,
                            _ST_ beta,  TYPE(mvec_ptr) W, 
                                        int* iflag);
 
-//! M <- V*M \ingroup mvec
 
-//! a naive default implementation for this rather uncommon kernel is available in common/kernels_no_inplace_VC.cpp
+//! V <- V*M \ingroup mvec
+
+//! Note that M may be rectangular with ncols<nrows, in which case only the first
+//! ncols columns of V are overwritten.
+//! A naive default implementation for this rather uncommon kernel is available in common/kernels_no_inplace_VC.cpp
 //! so that we can easily support kernel libraries that don't have it.
 void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMat_ptr) M, int *iflag);
+
+//! W <- = V*C + W*D \ingroup mvec
+
+//! augmented kernel with two multi-vectors and two sdMats.
+//! A naive default implementation for this rather uncommon kernel is available in common/kernels_no_inplace_VC.cpp
+//! so that we can easily support kernel libraries that don't have it.
+void SUBR(mvec_times_sdMat_add_mvec_times_sdMat)(TYPE(const_mvec_ptr) V,
+                                                 TYPE(const_sdMat_ptr) C,
+                                                 TYPE(mvec_ptr) W,
+                                                 TYPE(const_sdMat_ptr) D,
+                                                 int* iflag);
+
 
 //! B=alpha*A+beta*B. \ingroup sdmat
 void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) A,

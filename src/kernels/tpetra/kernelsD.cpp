@@ -42,6 +42,7 @@ extern "C" void phist_tpetra_node_create(node_t** node, const_comm_ptr_t vcomm, 
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
 #include "../common/kernels_no_inplace_VC.cpp"
+#include "../common/kernels_no_VC_add_WD.cpp"
 #include "../common/kernels_no_fused.cpp"
 #include "../common/kernels_no_gpu.cpp"
 
