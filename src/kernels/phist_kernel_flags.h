@@ -52,10 +52,12 @@
    and should not be used in the code anywhere because they are subject to
    to change. The purpose of these flags is benchmarking only.
    */
-#define PHIST_SPMVM_ONLY_LOCAL 2
-#define PHIST_SPMVM_VECTOR 4
-#define PHIST_SPMVM_OVERLAP 8
-#define PHIST_SPMVM_TASK 16
+// these can be used to select variants in GHOST, currently no other kernel lib
+// will respect them, though.
+#define PHIST_SPMVM_ONLY_LOCAL 1024
+#define PHIST_SPMVM_VECTOR 2048
+#define PHIST_SPMVM_OVERLAP 4096
+#define PHIST_SPMVM_TASK 8192
 
 /* use more accurate reducitons or other floating point operations if available */
 #define PHIST_ROBUST_REDUCTIONS 1
