@@ -48,12 +48,10 @@
    */
 #define PHIST_MVEC_REPLICATE_DEVICE_MEM 1
 
-/* sparseMat_times_mvec* flags, these are GHOST-sepcific up to now
-   and should not be used in the code anywhere because they are subject to
+/* sparseMat_times_mvec* flags, these are GHOST-specific up to now
+   and should not be used in the code anywhere because they are subject
    to change. The purpose of these flags is benchmarking only.
-   */
-// these can be used to select variants in GHOST, currently no other kernel lib
-// will respect them, though.
+*/
 #define PHIST_SPMVM_ONLY_LOCAL 1024
 #define PHIST_SPMVM_VECTOR 2048
 #define PHIST_SPMVM_OVERLAP 4096
