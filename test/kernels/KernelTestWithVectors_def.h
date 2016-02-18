@@ -317,7 +317,7 @@ static void TearDownTestCase()
 // tolerance for tests depending on the vector length
 inline static MT releps(TYPE(const_mvec_ptr) V=NULL)
   {
-  if (V==NULL) return std::sqrt((MT)_Nglob*mt::eps());
+  if (V==NULL) return std::sqrt((MT)_Nglob)*mt::eps();
   int nvec,iflag;
   SUBR(mvec_num_vectors)(V,&nvec,&iflag);
   MT *nrms = new MT[nvec];
