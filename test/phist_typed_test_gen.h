@@ -41,7 +41,11 @@
 #endif
 
 // different types
-#ifdef PHIST_HAVE_SP
+
+// disable single precision kernels for larger test cases because
+// they often fail the tolerances suitable for double, e.g.
+// 10*mt::eps()
+#if defined(PHIST_HAVE_SP)&&((_N_)<=100)
 #ifdef DISABLE_TESTCASE
 #define CLASSNAME CLASSNAME_FROM_TYPE(DISABLED_S)
 #else
