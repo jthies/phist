@@ -87,14 +87,14 @@ TEST_F(CLASSNAME,fused_spmv_mvdot)
     SUBR(fused_spmv_mvdot)(alpha,A_,vec1_,beta,vec2_,&dot_yy[0],&dot_xy[0],&iflag_);    
     ASSERT_EQ(0,iflag_);
 
-    ASSERT_NEAR(mt::one(), MvecsEqual(vec2_,vec3_), 100*VTest::releps());
+    ASSERT_NEAR(mt::one(), MvecsEqual(vec2_,vec3_), std::sqrt(VTest::releps()));
 
     for (int i=0;i<nvec_;i++)
     {
-      ASSERT_NEAR(st::real(dot_xy[i]), st::real(dot_xy_ref[i]), 100*VTest::releps());
-      ASSERT_NEAR(st::imag(dot_xy[i]), st::imag(dot_xy_ref[i]), 100*VTest::releps());
-      ASSERT_NEAR(st::real(dot_yy[i]), st::real(dot_yy_ref[i]), 1000*VTest::releps());
-      ASSERT_NEAR(st::imag(dot_yy[i]), st::imag(dot_yy_ref[i]), 100*VTest::releps());
+      ASSERT_NEAR(st::real(dot_xy[i]), st::real(dot_xy_ref[i]), std::sqrt(VTest::releps()));
+      ASSERT_NEAR(st::imag(dot_xy[i]), st::imag(dot_xy_ref[i]), std::sqrt(VTest::releps()));
+      ASSERT_NEAR(st::real(dot_yy[i]), st::real(dot_yy_ref[i]), std::sqrt(VTest::releps()));
+      ASSERT_NEAR(st::imag(dot_yy[i]), st::imag(dot_yy_ref[i]), std::sqrt(VTest::releps()));
     }
 }
 
@@ -117,7 +117,7 @@ TEST_F(CLASSNAME,fused_spmv_mvTmv)
     // check y = A * x
     SUBR(sparseMat_times_mvec)(alpha,A_,vec1_,beta,vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), MvecsEqual(vec2_,vec3_), 100*VTest::releps());
+    ASSERT_NEAR(mt::one(), MvecsEqual(vec2_,vec3_), std::sqrt(VTest::releps()));
 
     // check xTy == x^T * y
     SUBR(mvecT_times_mvec)(st::one(),vec1_,vec3_,st::zero(),mat3_,&iflag_);
@@ -127,7 +127,7 @@ TEST_F(CLASSNAME,fused_spmv_mvTmv)
     // check yTy == y^T * y
     SUBR(mvecT_times_mvec)(st::one(),vec3_,vec3_,st::zero(),mat3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), SdMatsEqual(mat1_,mat3_), 100*VTest::releps());
+    ASSERT_NEAR(mt::one(), SdMatsEqual(mat1_,mat3_), std::sqrt(VTest::releps()));
 }
 
 TEST_F(CLASSNAME,fused_spmv_mvdot_mvadd)
@@ -152,7 +152,7 @@ TEST_F(CLASSNAME,fused_spmv_mvdot_mvadd)
         st::one(), -st::one(), vec3_, NULL,NULL,&iflag_);    
     ASSERT_EQ(0,iflag_);
 
-    ASSERT_NEAR(mt::one(), MvecEqual(vec3_,st::zero()), 100*VTest::releps());
+    ASSERT_NEAR(mt::one(), MvecEqual(vec3_,st::zero()), std::sqrt(VTest::releps()));
 
 }
 
