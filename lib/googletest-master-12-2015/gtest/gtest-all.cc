@@ -488,6 +488,10 @@ GTEST_DECLARE_bool_(death_test_use_fork);
 
 namespace internal {
 
+#ifdef GTEST_HAS_MPI
+MPI_Comm GTEST_MPI_COMM_WORLD = MPI_COMM_WORLD;
+#endif
+
 // The value of GetTestTypeId() as seen from within the Google Test
 // library.  This is solely for testing GetTestTypeId().
 GTEST_API_ extern const TypeId kTestTypeIdInGoogleTest;
@@ -544,13 +548,26 @@ inline int GetRandomSeedFromFlag(Int32 random_seed_flag) {
   const unsigned int raw_seed = (random_seed_flag == 0) ?
       static_cast<unsigned int>(GetTimeInMillis()) :
       static_cast<unsigned int>(random_seed_flag);
-
+      
   // Normalizes the actual seed to range [1, kMaxRandomSeed] such that
   // it's easy to type.
   const int normalized_seed =
       static_cast<int>((raw_seed - 1U) %
                        static_cast<unsigned int>(kMaxRandomSeed)) + 1;
-  return normalized_seed;
+  // make sure every MPI process has the same seed, otherwise they will try to
+  // run different tests and hang
+  int synchronized_seed=normalized_seed;
+#ifdef GTEST_HAS_MPI
+  bool mpiErr = (MPI_Bcast(&synchronized_seed, 1, MPI_INT, 0, internal::GTEST_MPI_COMM_WORLD)!=MPI_SUCCESS);
+  if( mpiErr )
+  {
+      GTEST_LOG_(ERROR)
+        << "Error in MPI_Bcast (should return MPI_SUCCESS)! Using fixed random seed 42 instead.";
+      synchronized_seed=42;
+  }
+#endif
+
+  return synchronized_seed;
 }
 
 // Returns the first valid random seed after 'seed'.  The behavior is
@@ -1776,10 +1793,6 @@ UInt32 Random::Generate(UInt32 range) {
 // Google Test.  Useful for catching the user mistake of not initializing
 // Google Test before calling RUN_ALL_TESTS().
 static bool GTestIsInitialized() { return GetArgvs().size() > 0; }
-
-#ifdef GTEST_HAS_MPI
-MPI_Comm GTEST_MPI_COMM_WORLD = MPI_COMM_WORLD;
-#endif
 
 // Iterates over a vector of TestCases, keeping a running sum of the
 // results of calling a given int-returning method on each.
