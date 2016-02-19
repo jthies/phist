@@ -48,7 +48,7 @@ void SUBR(fused_spmv_mvTmv)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_
                              int* iflag);
 
 
-//! like fused_spmv_mvdot, and compute U=gamma*W+delta*U
+//! like fused_spmv_mvdot, and compute U=gamma*W+delta*U *after updating W*
 //! Any of U, WdotW, VdotW may be NULL and will not be touched in that case.
 void SUBR(fused_spmv_mvdot_mvadd)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
                                   _ST_ beta,                               TYPE(mvec_ptr)  W,

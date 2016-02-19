@@ -1359,12 +1359,22 @@ PHIST_TASK_BEGIN(ComputeTask)
     spMVM_opts.beta = &beta;
     spMVM_opts.dot = &dotBuff[0];
     
-    spMVM_opts.delta=&gamma;
-    spMVM_opts.eta=&delta;
+    spMVM_opts.delta=&delta;
+    spMVM_opts.eta=&gamma;
     spMVM_opts.z=(ghost_densemat*)vz;
 
     // call ghosts spMV
     PHIST_CHK_GERR(ghost_spmv(y,A,x,spMVM_opts),*iflag);
+    
+    // copy the dot results if necessary
+    if (ydoty!=NULL)
+    {
+      for (int i=0;i<nvec;i++) ydoty[i]=dotBuff[i];
+    }
+    if (xdoty!=NULL)
+    {
+      for (int i=0;i<nvec;i++) xdoty[i]=dotBuff[nvec+i];
+    }
     
 PHIST_TASK_END(iflag);
   }

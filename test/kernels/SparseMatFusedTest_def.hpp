@@ -82,6 +82,12 @@ TEST_F(CLASSNAME,fused_spmv_mvdot)
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_dot_mvec)(vec3_,vec3_,&dot_yy_ref[0],&iflag_);
     ASSERT_EQ(0,iflag_);
+    
+    for (int i=0; i<nvec_;i++) 
+    {
+      dot_xy[i]=(_ST_)(-9.87654+1.23456*st::cmplx_I());
+      dot_yy[i]=(_ST_)(-42.9+3.0*st::cmplx_I());
+    }
 
     // actually do y=Ax with y'y and x'y
     SUBR(fused_spmv_mvdot)(alpha,A_,vec1_,beta,vec2_,&dot_yy[0],&dot_xy[0],&iflag_);    
@@ -91,6 +97,18 @@ TEST_F(CLASSNAME,fused_spmv_mvdot)
 
     for (int i=0;i<nvec_;i++)
     {
+      PHIST_SOUT(PHIST_DEBUG,"DOT_XY[%d]=%8.4e%+8.4e, ref=%8.4e%+8.4e\n", i,
+        st::real(dot_xy[i]),
+        st::imag(dot_xy[i]),
+        st::real(dot_xy_ref[i]),
+        st::imag(dot_xy_ref[i]));
+
+      PHIST_SOUT(PHIST_DEBUG,"DOT_YY[%d]=%8.4e%+8.4e, ref=%8.4e%+8.4e\n", i,
+        st::real(dot_yy[i]),
+        st::imag(dot_yy[i]),
+        st::real(dot_yy_ref[i]),
+        st::imag(dot_yy_ref[i]));
+        
       ASSERT_NEAR(st::real(dot_xy[i]), st::real(dot_xy_ref[i]), std::sqrt(VTest::releps()));
       ASSERT_NEAR(st::imag(dot_xy[i]), st::imag(dot_xy_ref[i]), std::sqrt(VTest::releps()));
       ASSERT_NEAR(st::real(dot_yy[i]), st::real(dot_yy_ref[i]), std::sqrt(VTest::releps()));
