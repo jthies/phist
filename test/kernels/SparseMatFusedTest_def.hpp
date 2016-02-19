@@ -109,10 +109,10 @@ TEST_F(CLASSNAME,fused_spmv_mvdot)
         st::real(dot_yy_ref[i]),
         st::imag(dot_yy_ref[i]));
         
-      ASSERT_NEAR(st::real(dot_xy[i]), st::real(dot_xy_ref[i]), 100*VTest::releps());
-      ASSERT_NEAR(st::imag(dot_xy[i]), st::imag(dot_xy_ref[i]), 100*VTest::releps());
-      ASSERT_NEAR(st::real(dot_yy[i]), st::real(dot_yy_ref[i]), 1000*VTest::releps());
-      ASSERT_NEAR(st::imag(dot_yy[i]), st::imag(dot_yy_ref[i]), 100*VTest::releps());
+      ASSERT_NEAR(st::real(dot_xy[i]), st::real(dot_xy_ref[i]), std::sqrt(VTest::releps()));
+      ASSERT_NEAR(st::imag(dot_xy[i]), st::imag(dot_xy_ref[i]), std::sqrt(VTest::releps()));
+      ASSERT_NEAR(st::real(dot_yy[i]), st::real(dot_yy_ref[i]), std::sqrt(VTest::releps()));
+      ASSERT_NEAR(st::imag(dot_yy[i]), st::imag(dot_yy_ref[i]), std::sqrt(VTest::releps()));
     }
 }
 
