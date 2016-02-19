@@ -1367,13 +1367,13 @@ PHIST_TASK_BEGIN(ComputeTask)
     PHIST_CHK_GERR(ghost_spmv(y,A,x,spMVM_opts),*iflag);
     
     // copy the dot results if necessary
-    if (xdoty!=NULL)
-    {
-      for (int i=0;i<nvec;i++) xdoty[i]=dotBuff[i];
-    }
     if (ydoty!=NULL)
     {
-      for (int i=0;i<nvec;i++) ydoty[i]=dotBuff[nvec+i];
+      for (int i=0;i<nvec;i++) ydoty[i]=dotBuff[i];
+    }
+    if (xdoty!=NULL)
+    {
+      for (int i=0;i<nvec;i++) xdoty[i]=dotBuff[nvec+i];
     }
     
 PHIST_TASK_END(iflag);
