@@ -1251,17 +1251,17 @@ _ST_ beta, TYPE(mvec_ptr) vy, int* iflag)
 }
 
 extern "C" void SUBR(fused_spmv_mvdot)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
-_ST_ beta, TYPE(mvec_ptr) vy, _ST_* xdoty, _ST_* ydoty, int* iflag)
+_ST_ beta, TYPE(mvec_ptr) vy, _ST_* ydoty, _ST_* xdoty, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  PHIST_CHK_IERR(SUBR(fused_spmv_mvdot_mvadd)(alpha,vA,vx,beta,vy,st::zero(),st::zero(),NULL,xdoty,ydoty,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(fused_spmv_mvdot_mvadd)(alpha,vA,vx,beta,vy,st::zero(),st::zero(),NULL,ydoty,xdoty,iflag),*iflag);
 }
 
 extern "C" void SUBR(fused_spmv_mvdot_mvadd)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
 _ST_ beta, TYPE(mvec_ptr) vy, 
 _ST_ gamma, _ST_ delta, TYPE(mvec_ptr) vz,
-_ST_* xdoty, _ST_* ydoty, int* iflag)
+_ST_* ydoty, _ST_* xdoty, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
