@@ -13,10 +13,6 @@
 #include <cstdlib>
 #include <limits>
 
-#ifdef PHIST_KERNEL_LIB_BUILTIN
-extern "C" void init_random_seed(void);
-#endif
-
 /** 
  */
 template<typename _ST>
