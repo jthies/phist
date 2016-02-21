@@ -139,7 +139,7 @@ make doc &> doxygen.log                 || error=1
 make -j 24 || make                      || error=1
 echo "Running tests. Output is compressed and written to test.log.gz"
 make check 2>&1 | gzip -c > test.log.gz || error=1
-
+echo "Install..."
 make install &> install.log             || error=1
 echo "Check installation with pkg-config project"
 mkdir jdqr_pkg_config; cd $_
