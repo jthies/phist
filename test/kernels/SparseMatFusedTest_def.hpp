@@ -85,8 +85,8 @@ TEST_F(CLASSNAME,fused_spmv_mvdot)
     
     for (int i=0; i<nvec_;i++) 
     {
-      dot_xy[i]=(_ST_)(-9.87654+1.23456*st::cmplx_I());
-      dot_yy[i]=(_ST_)(-42.9+3.0*st::cmplx_I());
+      dot_xy[i]=(_ST_)-9.87654+(_ST_)1.23456*st::cmplx_I();
+      dot_yy[i]=(_ST_)-42.9+(_ST_)3.0*st::cmplx_I();
     }
 
     // actually do y=Ax with y'y and x'y
