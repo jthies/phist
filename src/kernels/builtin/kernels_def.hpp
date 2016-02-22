@@ -412,7 +412,11 @@ extern "C" void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) V,
   PHIST_PERFCHECK_VERIFY_MVEC_DOT_MVEC(V,V,iflag);
   int iflag0=*iflag;
   SUBR(mvec_norm2_f)(V,vnrm,iflag);
-  if (*iflag==PHIST_NOT_IMPLEMENTED)
+  if (*iflag!=PHIST_NOT_IMPLEMENTED)
+  {
+    PHIST_CHK_IERR(void(),*iflag);
+  }
+  else // *iflag==PHIST_NOT_IMPLEMENTED
   {
     PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__);
     Dmvec_ptr_t vtmp=NULL;
@@ -456,7 +460,7 @@ extern "C" void SUBR(mvec_normalize)(TYPE(mvec_ptr) V,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"  
-  PHIST_CHK_IERR(SUBR(mvec_norm2_f)(V,vnrm,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_norm2)(V,vnrm,iflag),*iflag);
   int nvec;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,iflag),*iflag);
   _ST_*scale = new _ST_[nvec];
@@ -621,7 +625,11 @@ extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
   PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT(alpha,V,beta,W,iflag);
   int iflag0=*iflag;
   SUBR(mvec_times_sdMat_f)(alpha,V,C,beta,W,iflag);
-  if (*iflag==PHIST_NOT_IMPLEMENTED)
+  if (*iflag!=PHIST_NOT_IMPLEMENTED)
+  {
+    PHIST_CHK_IERR(void(),*iflag);
+  }
+  else // *iflag==PHIST_NOT_IMPLEMENTED
   {
     PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__);
     const_comm_ptr_t comm=NULL;
@@ -656,6 +664,7 @@ extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
       }
       PHIST_CHK_IERR(SUBR(mvec_get_block)(W,wtmp,i,i+istep-1,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_get_block)(C,ctmp,0,nvecv-1,i,i+istep-1,iflag),*iflag);
+      PHIST_SOUT(PHIST_DEBUG,"compute from C(%d:%d,%d:%d)\n",0,nvecv-1,i,i+istep-1);
       *iflag=iflag0;
       PHIST_CHK_IERR(SUBR(mvec_times_sdMat_f)(alpha,V,ctmp,beta,wtmp,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(mvec_set_block)(W,wtmp,i,i+istep-1,iflag),*iflag);
@@ -678,7 +687,25 @@ extern "C" void SUBR(fused_mvsd_mvTmv)(_ST_ alpha,  TYPE(const_mvec_ptr)  V,
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT(alpha,V,beta,W,iflag);
+#ifndef PHIST_HIGH_PRECISION_KERNELS
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat_augmented_f)(alpha,V,C,beta,W,D,iflag),*iflag);
+#else
+  int iflag_ = *iflag;
+  SUBR(mvec_times_sdMat_augmented_f)(alpha,V,C,beta,W,D,iflag);
+  if( *iflag == PHIST_NOT_IMPLEMENTED )
+  {
+    int iflag1 = iflag_;
+    SUBR(mvec_times_sdMat)(alpha,V,C,beta,W,&iflag1);
+    int iflag2 = iflag_;
+    SUBR(mvecT_times_mvec)(st::one(),W,W,st::zero(),D,&iflag2);
+    PHIST_CHK_IERR(*iflag = iflag1,*iflag);
+    PHIST_CHK_IERR(*iflag = iflag2,*iflag);
+  }
+  else
+  {
+    PHIST_CHK_IERR(void(),*iflag);
+  }
+#endif
 }
 
 extern "C" void SUBR(mvec_times_sdMat_add_mvec_times_sdMat)(TYPE(const_mvec_ptr) V, 
@@ -690,7 +717,22 @@ extern "C" void SUBR(mvec_times_sdMat_add_mvec_times_sdMat)(TYPE(const_mvec_ptr)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT(st::one(),V,st::one(),W,iflag);
+#ifndef PHIST_HIGH_PRECISION_KERNELS
   PHIST_CHK_IERR(SUBR(mvec_times_sdMat_add_mvec_times_sdMat_f)(V,C,W,D,iflag),*iflag);
+#else
+  int flags = *iflag;
+  SUBR(mvec_times_sdMat_add_mvec_times_sdMat_f)(V,C,W,D,iflag);
+  if( *iflag == PHIST_NOT_IMPLEMENTED )
+  {
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(W,D,iflag),*iflag);
+    *iflag = flags;
+    PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),V,C,st::one(),W,iflag),*iflag);
+  }
+  else
+  {
+    PHIST_CHK_IERR(void(),*iflag);
+  }
+#endif
 }
 
 extern "C" void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) V, 
@@ -729,12 +771,16 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
   PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC(V,W,iflag);
   int iflag0=*iflag;
   SUBR(mvecT_times_mvec_f)(alpha,V,W,beta,C,iflag);
-  if (*iflag==PHIST_NOT_IMPLEMENTED)
+  if (*iflag!=PHIST_NOT_IMPLEMENTED)
+  {
+    PHIST_CHK_IERR(void(),*iflag);
+  }
+  else // *iflag==PHIST_NOT_IMPLEMENTED
   {
     PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__);
     const_comm_ptr_t comm=NULL;
     const_map_ptr_t map=NULL;
-    Dmvec_ptr_t vtmp=NULL;
+    Dmvec_ptr_t vtmp=NULL, wtmp=NULL;
     DsdMat_ptr_t ctmp=NULL;
     *iflag=0;
     int nvecv,nvecw;
@@ -747,32 +793,42 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
     while (i<nvecv)
     {
       while (i+istep>nvecv)
-      {
         istep/=2;
-        if (!realloc)
-        {
-          PHIST_CHK_IERR(SUBR(mvec_delete)(vtmp,iflag),*iflag);
-          PHIST_CHK_IERR(SUBR(sdMat_delete)(ctmp,iflag),*iflag);
-        }
-        realloc=true;
-      }
-      if (realloc)
+      int j=0, jstep=4;
+      realloc=true;
+      while (j<nvecw)
       {
-        PHIST_CHK_IERR(SUBR(mvec_create)(&vtmp,map,istep,iflag),*iflag);
-        PHIST_CHK_IERR(SUBR(sdMat_create)(&ctmp,istep,nvecw,comm,iflag),*iflag);
-        realloc=false;
+        while (j+jstep>nvecw)
+        {
+          jstep/=2;
+          realloc=true;
+        }
+        if (realloc)
+        {
+          PHIST_CHK_IERR(SUBR(mvec_delete)(vtmp,iflag),*iflag); vtmp = NULL;
+          PHIST_CHK_IERR(SUBR(mvec_delete)(wtmp,iflag),*iflag); vtmp = NULL;
+          PHIST_CHK_IERR(SUBR(sdMat_delete)(ctmp,iflag),*iflag); ctmp = NULL;
+
+          PHIST_CHK_IERR(SUBR(mvec_create)(&vtmp,map,istep,iflag),*iflag);
+          PHIST_CHK_IERR(SUBR(mvec_create)(&wtmp,map,jstep,iflag),*iflag);
+          PHIST_CHK_IERR(SUBR(sdMat_create)(&ctmp,istep,jstep,comm,iflag),*iflag);
+          realloc=false;
+        }
+        PHIST_CHK_IERR(SUBR(mvec_get_block)(V,vtmp,i,i+istep-1,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_get_block)(W,wtmp,j,j+jstep-1,iflag),*iflag);
+        PHIST_SOUT(PHIST_DEBUG,"compute C(%d:%d,%d:%d)\n",i,i+istep-1,j,j+jstep-1);
+        PHIST_CHK_IERR(SUBR(sdMat_get_block)(C,ctmp,i,i+istep-1,j,j+jstep-1,iflag),*iflag);
+        *iflag=iflag0;
+        PHIST_CHK_IERR(SUBR(mvecT_times_mvec_f)(alpha,vtmp,wtmp,beta,ctmp,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(sdMat_set_block)(C,ctmp,i,i+istep-1,j,j+jstep-1,iflag),*iflag);
+        j+=jstep;
       }
-      PHIST_CHK_IERR(SUBR(mvec_get_block)(V,vtmp,i,i+istep-1,iflag),*iflag);
-      PHIST_SOUT(PHIST_DEBUG,"compute C(%d:%d,%d:%d)\n",i,i+istep-1,0,nvecw-1);
-      PHIST_CHK_IERR(SUBR(sdMat_get_block)(C,ctmp,i,i+istep-1,0,nvecw-1,iflag),*iflag);
-      *iflag=iflag0;
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec_f)(alpha,vtmp,W,beta,ctmp,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(sdMat_set_block)(C,ctmp,i,i+istep-1,0,nvecw-1,iflag),*iflag);
       i+=istep;
     }//while
     if (!realloc)
     {
       PHIST_CHK_IERR(SUBR(mvec_delete)(vtmp,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_delete)(wtmp,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_delete)(ctmp,iflag),*iflag);
     }
   }
@@ -788,7 +844,25 @@ extern "C" void SUBR(fused_mvsdi_mvTmv)(_ST_ alpha, TYPE(const_mvec_ptr)  V,
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC_TIMES_SDMAT(V,W,iflag);
+#ifndef PHIST_HIGH_PRECISION_KERNELS
   PHIST_CHK_IERR(SUBR(mvecT_times_mvec_times_sdMat_inplace_f)(alpha,V,W,C,beta,D,iflag),*iflag);
+#else
+  int iflag_ = *iflag;
+  SUBR(mvecT_times_mvec_times_sdMat_inplace_f)(alpha,V,W,C,beta,D,iflag);
+  if( *iflag == PHIST_NOT_IMPLEMENTED )
+  {
+    int iflag1 = iflag_;
+    SUBR(mvec_times_sdMat_inplace)(W,C,&iflag1);
+    int iflag2 = iflag_;
+    SUBR(mvecT_times_mvec)(alpha,V,W,beta,D,&iflag2);
+    PHIST_CHK_IERR(*iflag = iflag1,*iflag);
+    PHIST_CHK_IERR(*iflag = iflag2,*iflag);
+  }
+  else
+  {
+    PHIST_CHK_IERR(void(),*iflag);
+  }
+#endif
 }
 
 
@@ -798,16 +872,23 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   // trilinos tsqr would be better but seems to expect column-major mvecs
 #ifdef PHIST_HIGH_PRECISION_KERNELS
+#ifdef PHIST_HIGH_PRECISION_KERNELS_FORCE
+  int robust = true;
+#else
   int robust=(*iflag&PHIST_ROBUST_REDUCTIONS);
-  if (robust&&false)
+#endif
+  int m = 0;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
+  if (robust)
   {
-    // use Cholesky-QR
-    int m,rank;
-    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
+    // use Cholesky-QR instead
+    int rank = 0;
     *iflag=PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),R,iflag),*iflag);
     int perm[m];
+PHIST_CHK_IERR(SUBR(sdMat_print)(R,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_cholesky)(R,perm,&rank,iflag),*iflag);
+PHIST_CHK_IERR(SUBR(sdMat_print)(R,iflag),*iflag);
     
     // construct inv(R)
     TYPE(sdMat_ptr) R_1=NULL;
@@ -818,6 +899,25 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag)
     PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(R,perm,rank,R_1,iflag),*iflag);
     *iflag=PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(V,R_1,iflag),*iflag);
+    int newRank = rank;
+    int nIter = 0;
+    while(newRank < m && nIter++ < 2)
+    {
+      TYPE(mvec_ptr) V_=NULL;
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&V_,newRank,m-1,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_random)(V_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_delete)(V_,iflag),*iflag);
+      TYPE(sdMat_ptr) R_=NULL;
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&R_,m,m,comm,iflag),*iflag);
+      *iflag=PHIST_ROBUST_REDUCTIONS;
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),R_,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_cholesky)(R_,perm,&newRank,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_identity)(R_1,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(R_,perm,newRank,R_1,iflag),*iflag);
+      *iflag=PHIST_ROBUST_REDUCTIONS;
+      PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(V,R_1,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_delete)(R_,iflag),*iflag);
+    }
     PHIST_CHK_IERR(SUBR(sdMat_delete)(R_1,iflag),*iflag);
     *iflag=m-rank;
     return;

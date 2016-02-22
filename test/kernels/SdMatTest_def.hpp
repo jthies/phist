@@ -1,6 +1,9 @@
 #ifndef CLASSNAME
 #error "file not included correctly"
 #endif
+#if !defined(PHIST_HIGH_PRECISION_KERNELS) && defined(PHIST_HIGH_PRECISION_KERNELS)
+#define PHIST_HIGH_PRECISION_KERNELS
+#endif
 
 /*! Test fixure. */
 class CLASSNAME: public KernelTestWithSdMats<_ST_,_NROWS_,_NCOLS_,_USE_VIEWS_> 
@@ -912,6 +915,7 @@ public:
       ASSERT_EQ(0,iflag_);
 
       // cholesky
+      rank = 0;
       SUBR(sdMat_cholesky)(mat1_,perm,&rank,&iflag_);
       ASSERT_EQ(0,iflag_);
 //SUBR(sdMat_print)(mat1_,&iflag_);
@@ -961,6 +965,7 @@ SUBR(sdMat_print)(mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // cholesky
+      rank = 0;
       SUBR(sdMat_cholesky)(mat1_,perm,&rank,&iflag_);
       ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"L^T:\n");
@@ -1014,6 +1019,7 @@ SUBR(sdMat_print)(mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // cholesky
+      rank = 0;
       SUBR(sdMat_cholesky)(mat1_,perm,&rank,&iflag_);
       ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"L^T:\n");

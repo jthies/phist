@@ -53,6 +53,8 @@ void phist_Dprec_cholesky(double *__restrict__ a, double *__restrict__ aC, lidx_
     diagNorm = 1.e-32;
   }
 
+  // keep order of upper left part locked, if requested
+  int lock = *rank;
   *rank = 0;
   while(*rank < n)
   {
@@ -69,9 +71,12 @@ void phist_Dprec_cholesky(double *__restrict__ a, double *__restrict__ aC, lidx_
     // find next pivot
     {
       int i = m;
-      for(int j = m+1; j < n; j++)
-        if( d[p[j]] > d[p[i]] )
-          i = j;
+      if( i >= lock )
+      {
+        for(int j = m+1; j < n; j++)
+          if( d[p[j]] > d[p[i]] )
+            i = j;
+      }
       // swap p[i] p[m]
       int tmp = p[i];
       p[i] = p[m];
@@ -149,14 +154,14 @@ void phist_Dprec_backwardSubst(const double *__restrict__ r, const double *__res
 
   for(int l = 0; l < k; l++)
   {
-    double newXl[n], newXCl[n];
+    double newXl[rank], newXCl[rank];
     for(int i = rank-1; i >= 0; i--)
     {
       // for j = i+1..n
       // x_i,l <- x_i,l - r_i,p[j]*x_p[j],l
       double s =  -x[l*ldx+i], t = -xC[l*ldx+i];
 //printf("x_p[i=%d],l=%d: %e\n", i, l, -s);
-      for(int j = i+1; j < n; j++)
+      for(int j = i+1; j < rank; j++)
       {
         double rx, rxC;
         DOUBLE_4MULTFMA(r[p[j]*ldr+i],rC[p[j]*ldr+i],newXl[j],newXCl[j],rx,rxC);
@@ -176,10 +181,15 @@ void phist_Dprec_backwardSubst(const double *__restrict__ r, const double *__res
 //printf("new x_p[i=%d],l=%d: %e\n", i, l, -s);
     }
 
-    for(int i = 0; i < n; i++)
+    for(int i = 0; i < rank; i++)
     {
       x[l*ldx+p[i]] = newXl[i];
       xC[l*ldx+p[i]] = newXCl[i];
+    }
+    for(int i = rank; i < n; i++)
+    {
+      x[l*ldx+p[i]] = 0;
+      xC[l*ldx+p[i]] = 0;
     }
   }
 }
@@ -194,7 +204,7 @@ void phist_Dprec_forwardSubst(const double *__restrict__ r, const double *__rest
 
   for(int l = 0; l < k; l++)
   {
-    double newXl[n], newXCl[n];
+    double newXl[rank], newXCl[rank];
     for(int i = 0; i < rank; i++)
     {
       // for j = i+1..n
@@ -222,10 +232,15 @@ void phist_Dprec_forwardSubst(const double *__restrict__ r, const double *__rest
     }
 
     // unpermute result
-    for(int i = 0; i < n; i++)
+    for(int i = 0; i < rank; i++)
     {
       x[l*ldx+i] = newXl[i];
       xC[l*ldx+i] = newXCl[i];
+    }
+    for(int i = rank; i < n; i++)
+    {
+      x[l*ldx+p[i]] = 0;
+      xC[l*ldx+p[i]] = 0;
     }
   }
 }

@@ -565,12 +565,6 @@ void dgemm_sb_prec_k_strided_2(int nrows, int k, double alpha, const double *res
 #if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
-  if( !is_aligned(x,32) )
-  {
-    printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)x);
-    exit(1);
-    return;
-  }
   if( !is_aligned(y,32) )
   {
     printf("%s: not aligned %lx\n", __FUNCTION__, (uintptr_t)(void*)y);
@@ -750,8 +744,8 @@ void dgemm_sb_prec_k_strided_2_nt(int nrows, int k, double alpha, const double *
   {
     __m256d s, t;
     // j = 0
-    __m128d xil = _mm_load1_pd(&x[k*i+0]);
-    __m128d xih = _mm_load1_pd(&x[k*(i+1)+0]);
+    __m128d xil = _mm_load1_pd(&x[ldx*i+0]);
+    __m128d xih = _mm_load1_pd(&x[ldx*(i+1)+0]);
     __m256d xi  = _mm256_set_m128d(xih,xil);
     __m256d pi;
     MM256_2MULTFMA(xi,r_[0],s,pi);

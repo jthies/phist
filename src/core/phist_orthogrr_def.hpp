@@ -83,6 +83,7 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
       PHIST_CHK_IERR(SUBR(sdMat_identity)(WtW_inv,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),WtW_I,st::one(),WtW_inv,iflag),*iflag);
       permWtW = new int[k];
+      rankWtW = 0;
       PHIST_CHK_IERR(SUBR(sdMat_cholesky)(WtW_inv,permWtW,&rankWtW,iflag),*iflag);
     }
 

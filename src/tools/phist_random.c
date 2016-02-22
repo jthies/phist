@@ -313,7 +313,7 @@ static void bitmatrix_apply_mat(uint64_t M[64], const uint64_t N[64])
 // MWC_SKIP helper function for shifting unsigned 128bit integer (by at most 64)
 static inline void lshift(uint64_t x[2], const uint_fast8_t s)
 {
-  uint64_t t = x[0] >> (64-s);
+  uint64_t t = s > 0 ? x[0] >> (64-s) : 0;
   x[1] <<= s;
   x[1] ^= t;
   x[0] <<= s;
@@ -322,7 +322,7 @@ static inline void lshift(uint64_t x[2], const uint_fast8_t s)
 // MWC_SKIP helper function for shifting unsigned 128bit integer (by at most 64)
 static inline void rshift(uint64_t x[2], const uint_fast8_t s)
 {
-  uint64_t t = x[1] << (64-s);
+  uint64_t t = s > 0 ? x[1] << (64-s) : 0;
   x[0] >>= s;
   x[0] ^= t;
   x[1] >>= s;

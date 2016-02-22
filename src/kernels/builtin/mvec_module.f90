@@ -35,6 +35,11 @@ module mvec_module
 #endif
 #endif
 
+#if PHIST_HIGH_PRECISION_KERNELS_FORCE
+#define FORCE_HIGH_PRECISION .true.
+#else
+#define FORCE_HIGH_PRECISION .false.
+#endif
 
   public :: MVec_t
   !public :: phist_Dmvec_create
@@ -1203,7 +1208,7 @@ contains
 
 
     ! check if we need higher precision
-    if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
+    if(  FORCE_HIGH_PRECISION .or. iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
 #ifndef PHIST_HIGH_PRECISION_KERNELS
       iflag = PHIST_NOT_IMPLEMENTED
       return
@@ -1568,7 +1573,7 @@ contains
     ldy = size(y%val,1)
 
     ! check if we need higher precision
-    if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
+    if(  FORCE_HIGH_PRECISION .or.iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
 #ifndef PHIST_HIGH_PRECISION_KERNELS
       iflag = PHIST_NOT_IMPLEMENTED
       return
@@ -1695,7 +1700,7 @@ contains
     end if
 
 
-    if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
+    if(  FORCE_HIGH_PRECISION .or.iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
 #ifndef PHIST_HIGH_PRECISION_KERNELS
       iflag = PHIST_NOT_IMPLEMENTED
       return
@@ -1879,7 +1884,7 @@ contains
     end if
 
 
-    if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
+    if(  FORCE_HIGH_PRECISION .or.iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
 #ifndef PHIST_HIGH_PRECISION_KERNELS
       iflag = PHIST_NOT_IMPLEMENTED
       return
@@ -2125,7 +2130,7 @@ contains
     end if
 
 
-    if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
+    if(  FORCE_HIGH_PRECISION .or.iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
 #ifndef PHIST_HIGH_PRECISION_KERNELS
       iflag = PHIST_NOT_IMPLEMENTED
       return
@@ -2280,7 +2285,7 @@ contains
     MC_ = M%err(M%imin:M%imax,M%jmin:M%jmax)
 #endif
 
-    if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
+    if(  FORCE_HIGH_PRECISION .or.iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
 #ifndef PHIST_HIGH_PRECISION_KERNELS
       iflag = PHIST_NOT_IMPLEMENTED
       return
@@ -2399,7 +2404,7 @@ contains
     tmp_transposed = .false.
 
     ! check if we need higher precision
-    if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
+    if(  FORCE_HIGH_PRECISION .or.iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
 #ifndef PHIST_HIGH_PRECISION_KERNELS
       iflag = PHIST_NOT_IMPLEMENTED
       return
@@ -2735,7 +2740,7 @@ contains
 #endif
 
     ! check if we need higher precision
-    if( iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
+    if(  FORCE_HIGH_PRECISION .or.iand(iflag,PHIST_ROBUST_REDUCTIONS) .gt. 0 ) then
 #ifndef PHIST_HIGH_PRECISION_KERNELS
       iflag = PHIST_NOT_IMPLEMENTED
       return
@@ -3476,6 +3481,7 @@ contains
     view%jmin = mvec%jmin+jmin
     view%jmax = mvec%jmin+jmax
     view%val=>mvec%val
+    view%paddedN = mvec%paddedN
     call mvec_add_mvec(1._8,block,0._8,view)
 
     ierr = 0
@@ -3522,6 +3528,7 @@ contains
       block_list(i)%is_view = .true.
       block_list(i)%map = tmp%map
       block_list(i)%val => tmp%val
+      block_list(i)%paddedN = tmp%paddedN
     end do
 
     call mvec_gather_mvecs(mvec,block_list)
@@ -3570,6 +3577,7 @@ contains
       block_list(i)%is_view = .true.
       block_list(i)%map = tmp%map
       block_list(i)%val => tmp%val
+      block_list(i)%paddedN = tmp%paddedN
     end do
 
     call mvec_scatter_mvecs(mvec,block_list)

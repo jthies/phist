@@ -4,6 +4,9 @@
 #ifndef CLASSNAME
 #error "file not included correctly"
 #endif
+#if !defined(PHIST_HIGH_PRECISION_KERNELS) && defined(PHIST_HIGH_PRECISION_KERNELS)
+#define PHIST_HIGH_PRECISION_KERNELS
+#endif
 
 #ifdef F_INIT
 #undef F_INIT

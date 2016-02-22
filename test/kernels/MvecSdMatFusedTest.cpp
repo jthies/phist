@@ -2,6 +2,9 @@
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
+#if !defined(PHIST_HIGH_PRECISION_KERNELS) && defined(PHIST_HIGH_PRECISION_KERNELS)
+#define PHIST_HIGH_PRECISION_KERNELS
+#endif
 
 #include "gtest/gtest.h"
 
