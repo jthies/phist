@@ -502,7 +502,7 @@ elseif (PHIST_KERNEL_LIB STREQUAL "builtin")
   set(PHIST_KERNEL_LIB_BUILTIN 1)
   set(PHIST_MVECS_ROW_MAJOR 1)
   option(PHIST_KERNEL_LIB_BUILTIN_PIN_THREADS "Try to pin the threads to cores using sched_setaffinity (based on simple heuristics; for Intel use env KMP_AFFINITY=\"granularity=fine,compact,1,0\"" On)
-  if(PHIST_USE_AVX2)
+  if(PHIST_HAVE_AVX2)
     message(STATUS "Activated experimental high-precision builtin kernel routines!")
     set(PHIST_HIGH_PRECISION_KERNELS 1)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx -mavx2 -mfma")
@@ -617,7 +617,7 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_module.f90
                           ${PROJECT_SOURCE_DIR}/src/kernels/trilinos_interface/phist_rcp_helpers.cpp
                           )
-  if(PHIST_KERNEL_LIB_BUILTIN_AVX2_PREC_KERNELS)
+  if(PHIST_HIGH_PRECISION_KERNELS)
     set (PHIST_KERNEL_SOURCE ${PHIST_KERNEL_SOURCE}
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/prec_helpers.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/prec_kernels_d.c
