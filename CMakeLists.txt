@@ -715,12 +715,12 @@ add_library(phist_solvers ${PHIST_KRYLOV_SOURCE}
 add_library(phist_precon ${PHIST_PRECON_SOURCE})
 add_library(phist_support ${PHIST_SUPPORT_SOURCE})
 
-LIST(APPEND library_list phist_tools)
-LIST(APPEND library_list phist_core)
-LIST(APPEND library_list phist_kernels_${PHIST_KERNEL_LIB})
+LIST(APPEND library_list phist_support)
 LIST(APPEND library_list phist_solvers)
 LIST(APPEND library_list phist_precon)
-LIST(APPEND library_list phist_support)
+LIST(APPEND library_list phist_core)
+LIST(APPEND library_list phist_kernels_${PHIST_KERNEL_LIB})
+LIST(APPEND library_list phist_tools)
 
 target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB}                                                     phist_tools)
 target_link_libraries(phist_core                                          phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
