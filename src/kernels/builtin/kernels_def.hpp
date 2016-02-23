@@ -886,9 +886,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag)
     *iflag=PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),R,iflag),*iflag);
     int perm[m];
-PHIST_CHK_IERR(SUBR(sdMat_print)(R,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_cholesky)(R,perm,&rank,iflag),*iflag);
-PHIST_CHK_IERR(SUBR(sdMat_print)(R,iflag),*iflag);
     
     // construct inv(R)
     TYPE(sdMat_ptr) R_1=NULL;
