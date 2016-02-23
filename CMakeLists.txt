@@ -968,7 +968,7 @@ endforeach()
 #######################
 
 # Directly link all external libraries into tools as all other
-# phist libraries may depend on it and the *user* cannot now
+# phist libraries may depend on it and the *user* cannot know
 # what libraries to link. (melven)
 # Additionally, this is required to make the python interface work...
 target_link_libraries(phist_tools ${external_libs})
