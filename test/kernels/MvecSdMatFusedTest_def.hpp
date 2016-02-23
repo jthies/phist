@@ -2,6 +2,9 @@
 #ifndef CLASSNAME
 #error "file not included correctly"
 #endif
+#if !defined(PHIST_HIGH_PRECISION_KERNELS) && defined(PHIST_HIGH_PRECISION_KERNELS_FORCE)
+#define PHIST_HIGH_PRECISION_KERNELS
+#endif
 
 #ifdef USE_VIEWS
 #undef USE_VIEWS
