@@ -1359,8 +1359,10 @@ PHIST_TASK_BEGIN(ComputeTask)
     spMVM_opts.beta = &beta;
     spMVM_opts.dot = &dotBuff[0];
     
-    spMVM_opts.delta=&delta;
-    spMVM_opts.eta=&gamma;
+    // ghost computes z = delta*z + eta*(spmv result),
+    // so our delta is their eta and our gamma is their delta
+    spMVM_opts.eta=&delta;
+    spMVM_opts.delta=&gamma;
     spMVM_opts.z=(ghost_densemat*)vz;
 
     // call ghosts spMV
