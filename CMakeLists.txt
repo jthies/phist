@@ -1086,15 +1086,15 @@ foreach(label ${PHIST_TESTS})
 
   file(GLOB ${label_uc}_TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/test/${label}/*.cpp)
   list(APPEND ${label_uc}_TEST_SOURCES ${TEST_SOURCES})
-
-  add_executable(${PRODUCT_NAME}-${label}-test ${${label_uc}_TEST_SOURCES} ${TEST_DEPENDS})
-  set_target_properties(${PRODUCT_NAME}-${label}-test PROPERTIES COMPILE_DEFINITIONS "GTEST_HAS_MPI=1;GTEST_HAS_PTHREADS=1;GTEST_HAS_EXCEPTIONS=1")
+  set(TEST_EXE ${PRODUCT_NAME}-${label}-test-${CMAKE_BUILD_TYPE})
+  add_executable(${TEST_EXE} ${${label_uc}_TEST_SOURCES} ${TEST_DEPENDS})
+  set_target_properties(${TEST_EXE} PROPERTIES COMPILE_DEFINITIONS "GTEST_HAS_MPI=1;GTEST_HAS_PTHREADS=1;GTEST_HAS_EXCEPTIONS=1")
   # compile tests without optimization
-  set_target_properties(${PRODUCT_NAME}-${label}-test PROPERTIES COMPILE_FLAGS "-O0")
-  target_link_libraries(${PRODUCT_NAME}-${label}-test ${library_list})
-  target_link_libraries(${PRODUCT_NAME}-${label}-test pthread)
-  target_include_directories(${PRODUCT_NAME}-${label}-test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/test/${label})
-  LIST(APPEND test_list ${PRODUCT_NAME}-${label}-test)
+  set_target_properties(${TEST_EXE} PROPERTIES COMPILE_FLAGS "-O0")
+  target_link_libraries(${TEST_EXE} ${library_list})
+  target_link_libraries(${TEST_EXE} pthread)
+  target_include_directories(${TEST_EXE} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/test/${label})
+  LIST(APPEND test_list ${TEST_EXE})
 
   # add dynmic include dependencies (which cannot be automatically detected by cmake!)
   foreach(testSrc ${${label_uc}_TEST_SOURCES})
@@ -1171,17 +1171,17 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
   math(EXPR TEST_OMP_NUM_THREADS "12/${np}")
   foreach(label ${PHIST_TESTS})
     set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env LSAN_OPTIONS=\"exitcode=0\" env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=dynamic,8
-    ./${PRODUCT_NAME}-${label}-test --gtest_death_test_style=threadsafe --gtest_output=xml:test_output_np${np}/${label}/xunit.xml)
-    add_test(NAME test-${label}_np${np}-${CMAKE_BUILD_TYPE} COMMAND ${TEST_COMMAND})
-    set_tests_properties(test-${label}_np${np}-${CMAKE_BUILD_TYPE} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
-    set_tests_properties(test-${label}_np${np}-${CMAKE_BUILD_TYPE} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
-    set_tests_properties(test-${label}_np${np}-${CMAKE_BUILD_TYPE} PROPERTIES TIMEOUT 500)
-    set_tests_properties(test-${label}_np${np}-${CMAKE_BUILD_TYPE} PROPERTIES ENVIRONMENT ${MPIEXEC_ENVIRONMENT})
+    ./${PRODUCT_NAME}-${label}-test-${CMAKE_BUILD_TYPE} --gtest_death_test_style=threadsafe --gtest_output=xml:test_output_np${np}/${label}/xunit.xml)
+    add_test(NAME test-${label}_np${np} COMMAND ${TEST_COMMAND})
+    set_tests_properties(test-${label}_np${np} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
+    set_tests_properties(test-${label}_np${np} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
+    set_tests_properties(test-${label}_np${np} PROPERTIES TIMEOUT 500)
+    set_tests_properties(test-${label}_np${np} PROPERTIES ENVIRONMENT ${MPIEXEC_ENVIRONMENT})
   endforeach()
   # the task tests should be very fast (no heavy computation) - but may deadlock in case of errors!
   # JT increasing timeout because 10s is sometimes too little in debug mode (starting the executable with all the
   # dynamic libs already takes quite long, and then there's e.g. the RNG self test)
-  set_tests_properties(test-task_np${np}-${CMAKE_BUILD_TYPE} PROPERTIES TIMEOUT 30)
+  set_tests_properties(test-task_np${np} PROPERTIES TIMEOUT 30)
 endforeach()
 
 # Test python interface if python is available
