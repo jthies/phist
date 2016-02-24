@@ -1179,7 +1179,9 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
     set_tests_properties(test-${label}_np${np} PROPERTIES ENVIRONMENT ${MPIEXEC_ENVIRONMENT})
   endforeach()
   # the task tests should be very fast (no heavy computation) - but may deadlock in case of errors!
-  set_tests_properties(test-task_np${np} PROPERTIES TIMEOUT 10)
+  # JT increasing timeout because 10s is sometimes too little in debug mode (starting the executable with all the
+  # dynamic libs already takes quite long, and then there's e.g. the RNG self test)
+  set_tests_properties(test-task_np${np} PROPERTIES TIMEOUT 30)
 endforeach()
 
 # Test python interface if python is available
