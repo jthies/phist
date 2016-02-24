@@ -1172,16 +1172,16 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
   foreach(label ${PHIST_TESTS})
     set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env LSAN_OPTIONS=\"exitcode=0\" env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=dynamic,8
     ./${PRODUCT_NAME}-${label}-test --gtest_death_test_style=threadsafe --gtest_output=xml:test_output_np${np}/${label}/xunit.xml)
-    add_test(NAME test-${label}_np${np} COMMAND ${TEST_COMMAND})
-    set_tests_properties(test-${label}_np${np} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
-    set_tests_properties(test-${label}_np${np} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
-    set_tests_properties(test-${label}_np${np} PROPERTIES TIMEOUT 500)
-    set_tests_properties(test-${label}_np${np} PROPERTIES ENVIRONMENT ${MPIEXEC_ENVIRONMENT})
+    add_test(NAME test-${label}_np${np}-${CMAKE_BUILD_TYPE} COMMAND ${TEST_COMMAND})
+    set_tests_properties(test-${label}_np${np}-${CMAKE_BUILD_TYPE} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
+    set_tests_properties(test-${label}_np${np}-${CMAKE_BUILD_TYPE} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
+    set_tests_properties(test-${label}_np${np}-${CMAKE_BUILD_TYPE} PROPERTIES TIMEOUT 500)
+    set_tests_properties(test-${label}_np${np}-${CMAKE_BUILD_TYPE} PROPERTIES ENVIRONMENT ${MPIEXEC_ENVIRONMENT})
   endforeach()
   # the task tests should be very fast (no heavy computation) - but may deadlock in case of errors!
   # JT increasing timeout because 10s is sometimes too little in debug mode (starting the executable with all the
   # dynamic libs already takes quite long, and then there's e.g. the RNG self test)
-  set_tests_properties(test-task_np${np} PROPERTIES TIMEOUT 30)
+  set_tests_properties(test-task_np${np}-${CMAKE_BUILD_TYPE} PROPERTIES TIMEOUT 30)
 endforeach()
 
 # Test python interface if python is available
