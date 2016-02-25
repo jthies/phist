@@ -16,13 +16,13 @@ FLAGS="default" # optional-libs
 ADD_CMAKE_FLAGS="" #optional CMake flags
 VECT_EXT="native"
 # list of modules to load
-MODULES_BASIC="cmake ccache cppcheck lapack gcovr doxygen anaconda"
+MODULES_BASIC="cmake ccache cppcheck lapack gcovr doxygen"
 # GCC_SANITIZE flag for debug mode, disabled for CUDA
 SANITIZER="address"
 
 declare -A MODULES_KERNELS
 MODULES_KERNELS=( 
-  ["builtin"]=""
+  ["builtin"]="anaconda"
   ["ghost"]="gsl"
   ["epetra"]="trilinos"
   ["tpetra"]="trilinos" )
