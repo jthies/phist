@@ -40,12 +40,12 @@ void SUBR(computeResidual)(TYPE(const_linearOp_ptr) B_op, TYPE(mvec_ptr) r_ptr,
         int nv, int nconv, int* iflag);
 
 // Now the actual main function
-void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) B_op,
+extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) B_op,
                 TYPE(mvec_ptr) X, TYPE(mvec_ptr) Qout, TYPE(sdMat_ptr) Rout,
                 _ST_* evals, _MT_* resid, int* is_cmplx,
         phist_jadaOpts_t opts, int* num_eigs, int* num_iters,
         int* iflag)
-  {
+{
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
 
@@ -707,7 +707,7 @@ void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) B_op,
   nconv = std::min(numEigs+1,nconv);
   
   if (nconv>0)
-    {
+  {
     // copy at most num_eigs+1 converged eigenvalues into the user
     // provided array
     ST* R_raw=NULL;
@@ -783,7 +783,7 @@ void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) B_op,
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),Qv,st::zero(),Qcopy,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Qcopy,Sv,st::zero(),Qv,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_delete)(Qcopy,iflag),*iflag);
-    }// any eigenpairs converged?
+  }// any eigenpairs converged?
 
   PHIST_CHK_IERR(SUBR(mvec_delete)(V,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(AV,iflag),*iflag);
@@ -799,7 +799,7 @@ void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) B_op,
   PHIST_CHK_IERR(SUBR(sdMat_delete)(T,iflag),*iflag);
   if (Rout == NULL)
   {
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(R,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_delete)(R,iflag),*iflag);
   }
   
   // we also call delete for the views to avoid small memory leaks
@@ -823,12 +823,12 @@ void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) B_op,
   PHIST_CHK_IERR(SUBR(sdMat_delete)(Theta, iflag),*iflag);
   // these may still be NULL if nothing converged
   if (nconv>0)
-    {
+  {
     PHIST_CHK_IERR(SUBR(mvec_delete)(Qv, iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_delete)(atilv, iflag),*iflag);
-    }
-  return;
   }
+  return;
+}
 
 void SUBR(computeResidual)(TYPE(const_linearOp_ptr) B_op, TYPE(mvec_ptr) r_ptr,
         TYPE(mvec_ptr) Au_ptr, TYPE(mvec_ptr) u_ptr, TYPE(mvec_ptr) rtil_ptr,

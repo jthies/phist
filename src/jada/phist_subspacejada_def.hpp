@@ -65,7 +65,7 @@ void SUBR(sdMat_check_symmetry)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
 //!
 //! see header file for further documentation of the parameters
 //!
-void SUBR(subspacejada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr) B_op,
+extern "C" void SUBR(subspacejada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr) B_op,
                          phist_jadaOpts_t opts,
                          TYPE(mvec_ptr) Q__,       TYPE(sdMat_ptr) R_,
                          _CT_* ev,                 _MT_* resNorm,

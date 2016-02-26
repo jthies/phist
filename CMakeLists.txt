@@ -1051,7 +1051,7 @@ file(GLOB PHIST_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/*/*.h
                         )
 install(FILES ${PHIST_HEADERS} DESTINATION ${INCLUDE_INSTALL_DIR})
 
-file(GLOB PYTHON_TESTS ${CMAKE_CURRENT_SOURCE_DIR}/python/test/*.py)
+file(GLOB PYTHON_TESTS ${PROJECT_SOURCE_DIR}/python/test/*.py)
 file(GLOB PYTHON_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/python/*.py)
 install(FILES ${PYTHON_HEADERS} DESTINATION ${LIBRARY_INSTALL_DIR}/python)
 
@@ -1185,25 +1185,26 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
   set_tests_properties(test-task_np${np} PROPERTIES TIMEOUT 30)
 endforeach()
 
-# Test python interface if python is available
+# Test python interface if python is available *and* this is an integration build.
+# The reason why this test is only included in integration builds is that it requires
+# py.test, which is included in phist but currently with a hard-coded interpreter from
+# the module system (anaconda module).
 find_package(PythonInterp)
-if(PYTHONINTERP_FOUND)
-  foreach(pyh ${PYTHON_TESTS})
-    get_filename_component(pyh_name ${pyh} NAME)
-    set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np1/${pyh_name})
-    file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
-    set(TEST_COMMAND ${PYTEST} --junitxml ${TEST_OUTPUT_DIR}/xunit.xml ${pyh_name})
-    add_test(NAME ${pyh_name} COMMAND ${TEST_COMMAND})
-    set_tests_properties(${pyh_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH} PHIST_NUM_THREADS=12 OMP_NUM_THREADS=12 OMP_SCHEDULE=dynamic,8 PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/python:${CMAKE_CURRENT_SOURCE_DIR}/python/test:$ENV{PYTHONPATH}")
-    if( GCC_SANITIZE )
+if(PYTHONINTERP_FOUND AND INTEGRATION_BUILD)
+  set(PYSTDIR ${PROJECT_SOURCE_DIR}/python)
+  set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np1/python)
+  file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
+  set(TEST_COMMAND ${PYSTDIR}/py.test --junitxml ${TEST_OUTPUT_DIR}/xunit.xml ${PYTHON_TESTS})
+  add_test(NAME test-python-np1 COMMAND ${TEST_COMMAND})
+  set_tests_properties(test-python-np1 PROPERTIES ENVIRONMENT   "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH} PHIST_NUM_THREADS=12 OMP_NUM_THREADS=12 OMP_SCHEDULE=dynamic,8 PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/python:${CMAKE_CURRENT_SOURCE_DIR}/python/test:$ENV{PYTHONPATH}")
+  if( GCC_SANITIZE )
       # we need to LD_PRELOAD the respective lib<.>san.so library
       string(SUBSTRING ${GCC_SANITIZE} 0 1 GCC_SANITIZE_FIRST_CHAR)
       set(GCC_SANITIZE_LIB "lib${GCC_SANITIZE_FIRST_CHAR}san.so")
       # work around cmake bug (specifying multiple set_tests_properties(...ENVIRONMENT...)
-      set_property(TEST ${pyh_name} APPEND PROPERTY ENVIRONMENT "LD_PRELOAD=${GCC_SANITIZE_LIB}:$ENV{LD_PRELOAD}")
-      set_property(TEST ${pyh_name} APPEND PROPERTY ENVIRONMENT "LSAN_OPTIONS=\"exitcode=0\"")
-    endif()
-  endforeach()
+      set_property(TEST test-python-np1 APPEND PROPERTY ENVIRONMENT "LD_PRELOAD=${GCC_SANITIZE_LIB}:$ENV{LD_PRELOAD}")
+      set_property(TEST test-python-np1 APPEND PROPERTY ENVIRONMENT "LSAN_OPTIONS=\"exitcode=0\"")
+  endif()
 endif()
 
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
