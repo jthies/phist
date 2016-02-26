@@ -12,6 +12,7 @@
 #include "phist_schur_decomp.h"
 
 #include "phist_ScalarTraits.hpp"
+#include "phist_sdFact.h"
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

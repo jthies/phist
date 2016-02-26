@@ -27,7 +27,7 @@ extern "C" {
 #include "phist_gen_z.h"
 #include "phist_sdFact_decl.h"
 #ifdef __cplusplus
-}
+} // extern "C"
 #endif
 
 #endif

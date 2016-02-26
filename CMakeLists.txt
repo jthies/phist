@@ -620,8 +620,8 @@ if (PHIST_KERNEL_LIB STREQUAL "builtin")
   if(PHIST_HIGH_PRECISION_KERNELS)
     set (PHIST_KERNEL_SOURCE ${PHIST_KERNEL_SOURCE}
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/prec_helpers.c
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/prec_kernels_d.c
-                          ${PROJECT_SOURCE_DIR}/src/kernels/builtin/mlapack_wrapper.cpp
+                          ${PROJECT_SOURCE_DIR}/src/core/DsdFact_prec_kernels.c
+                          ${PROJECT_SOURCE_DIR}/src/core/mlapack_wrapper.cpp
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/sdmat_kernels_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/dot_kernels_prec.c
                           ${PROJECT_SOURCE_DIR}/src/kernels/builtin/gemm_kernels_sB_prec.c
@@ -669,7 +669,6 @@ set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthogrr.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_orthogrrfused.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_svrr.cpp
-                       ${PROJECT_SOURCE_DIR}/src/kernels/builtin/prec_kernels.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_kpm.cpp
                        )
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp

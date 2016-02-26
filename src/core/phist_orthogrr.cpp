@@ -11,6 +11,7 @@
 #include "phist_normF.h"
 
 #include "phist_ScalarTraits.hpp"
+#include "phist_sdFact.h"
 
 #ifdef PHIST_HAVE_MPACK_QD
 #define ORTHOGRR_USE_SVQB

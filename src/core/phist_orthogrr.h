@@ -10,6 +10,7 @@
 #include <mpi.h>
 #endif
 #include "phist_kernels.h"
+#include "phist_sdFact.h"
 
 #endif //DOXYGEN
 

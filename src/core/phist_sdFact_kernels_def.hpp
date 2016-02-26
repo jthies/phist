@@ -18,7 +18,7 @@
 
 // calculates a possibly low rank approximation of a lower cholesky factor of an spd matrix
 // higher-precision + pivoting + stable low rank approximation
-void SUBR(cholesky)(_ST_ *__restrict__ a, lidx_t n, lidx_t lda, lidx_t *perm, int *rank, int* iflag)
+extern "C" void SUBR(cholesky)(_ST_ *__restrict__ a, lidx_t n, lidx_t lda, lidx_t *perm, int *rank, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -43,7 +43,7 @@ void SUBR(cholesky)(_ST_ *__restrict__ a, lidx_t n, lidx_t lda, lidx_t *perm, in
   }
   if( diagNorm == mt::zero() )
   {
-    PHIST_OUT(PHIST_OUT,"zero diagonal in %s\n", __FUNCTION__);
+    PHIST_OUT(PHIST_WARNING,"zero diagonal in %s\n", __FUNCTION__);
     diagNorm = mt::eps();
   }
 
@@ -51,9 +51,9 @@ void SUBR(cholesky)(_ST_ *__restrict__ a, lidx_t n, lidx_t lda, lidx_t *perm, in
   while(*rank < n)
   {
     // check rank
-    _ST_ err = 0;
+    _MT_ err = 0;
     for(int i = *rank; i < n; i++)
-      err = err + d[p[i]];
+      err = err + st::abs(d[p[i]]);
 //printf("step %d, err %e\n", *rank, err);
     if( err < SINGTOL*diagNorm )
       break;
@@ -64,7 +64,7 @@ void SUBR(cholesky)(_ST_ *__restrict__ a, lidx_t n, lidx_t lda, lidx_t *perm, in
     {
       int i = m;
       for(int j = m+1; j < n; j++)
-        if( d[p[j]] > d[p[i]] )
+        if( st::abs(d[p[j]]) > st::abs(d[p[i]]) )
           i = j;
       // swap p[i] p[m]
       int tmp = p[i];
@@ -116,11 +116,12 @@ void SUBR(cholesky)(_ST_ *__restrict__ a, lidx_t n, lidx_t lda, lidx_t *perm, in
 
 
 // apply backward substitution with permuted upper triangular matrix to k vectors in col-major storage
-void SUBR(backwardSubst)(const _ST_ *__restrict__ r, lidx_t n, lidx_t ldr, lidx_t *p, int rank,
+extern "C" void SUBR(backwardSubst)(const _ST_ *__restrict__ r, lidx_t n, lidx_t ldr, lidx_t *p, int rank,
         _ST_ *__restrict__ x, lidx_t k, lidx_t ldx, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
+  *iflag=0;
 
   for(int l = 0; l < k; l++)
   {
@@ -137,7 +138,7 @@ void SUBR(backwardSubst)(const _ST_ *__restrict__ r, lidx_t n, lidx_t ldr, lidx_
 //printf("x_p[i=%d],l=%d-sum...: %e\n", i, l, -s);
 
       // x_p[i] = x_p[i]/r_i,p[i]
-      newXl[i] *=rii_inv;
+      newXl[i] =x[l*ldx+i]*rii_inv;
 //printf("new x_p[i=%d],l=%d: %e\n", i, l, -s);
     }
 
@@ -149,31 +150,28 @@ void SUBR(backwardSubst)(const _ST_ *__restrict__ r, lidx_t n, lidx_t ldr, lidx_
 }
 
 // apply forward substitution with permuted transposed upper triangular matrix
-void phist_Dprec_forwardSubst(const _ST_ *__restrict__ r, lidx_t n, lidx_t ldr, lidx_t *p, int rank,
+extern "C" void SUBR(forwardSubst)(const _ST_ *__restrict__ r, lidx_t n, lidx_t ldr, lidx_t *p, int rank,
         _ST_ *__restrict__ x, lidx_t k, lidx_t ldx, int* iflag)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
-  printf("Entering %s\n", __FUNCTION__);
-#endif
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_FCN(__FUNCTION__);
+  *iflag=0;
 
   for(int l = 0; l < k; l++)
   {
-    _ST_ newXl[n], newXCl[n];
+    _ST_ newXl[n];
     for(int i = 0; i < rank; i++)
     {
       _ST_ rii_inv=st::one()/r[p[i]*ldr+i];
       // for j = 1,i-1
       // x_p[i],l <- x_p[i],l - r_j,p[i]*x_p[j],l
-      _ST_ s =  x[l*ldx+p[i]];
       for(int j = 0; j < i; j++)
       {
+        x[l*ldx+i] -= r[p[j]*ldr+i]*newXl[j];
       }
 
       // x_p[i] = x_p[i]/r_i,p[i]
-      DOUBLE_4MULTFMA(oldS,oldT,div_ri,div_riC,s,t);
-      newXl[i] = -s;
-      /r[p[i]*ldr+i];
-//printf("new x_p[i=%d],l=%d: %e\n", i, l, -s);
+      newXl[i] =x[l*ldx+i]*rii_inv;
     }
 
     // unpermute result
@@ -182,5 +180,12 @@ void phist_Dprec_forwardSubst(const _ST_ *__restrict__ r, lidx_t n, lidx_t ldr, 
       x[l*ldx+i] = newXl[i];
     }
   }
+}
+
+extern "C" void SUBR(qb)(_ST_ *__restrict__ a,
+                    _ST_ *__restrict__ bi,
+                    lidx_t n, lidx_t lda, int *rank, int* iflag)
+{
+  *iflag=-99;
 }
 

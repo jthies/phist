@@ -12,10 +12,6 @@
 //! these functions. They all assume that the data obtained from sdMat_extract_view/error is
 //! up-to-date with the device, and do not call to_device afterwards.
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 //! cholesky decomposition. \ingroup prec
 
 //! stable cholesky factorization with pivoting and rank-recognition for hpd. matrix
@@ -39,6 +35,3 @@ void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* perm, int rank
 //! will be zero.
 void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B, TYPE(sdMat_ptr) B_1,int* rank, int* iflag);
 
-#ifdef __cplusplus
-} // extern "C"
-#endif

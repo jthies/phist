@@ -9,8 +9,6 @@
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
-#else
-#error "builtin kernels only work with MPI"
 #endif
 
 #include <cstdlib>
@@ -38,25 +36,28 @@
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_sdFact_kernels_def.hpp"
-#include "phist_sdFact_def.cpp"
+#include "phist_sdFact_prec_kernels_def.hpp"
+#include "phist_sdFact_def.hpp"
 
 #include "phist_gen_c.h"
 #include "phist_sdFact_kernels_def.hpp"
-#include "phist_sdFact_def.cpp"
+#include "phist_sdFact_prec_kernels_def.hpp"
+#include "phist_sdFact_def.hpp"
 #endif
 
 #include "phist_gen_z.h"
 #include "phist_sdFact_kernels_def.hpp"
-#include "phist_sdFact_def.cpp"
+#include "phist_sdFact_prec_kernels_def.hpp"
+#include "phist_sdFact_def.hpp"
 
 #include "phist_gen_d.h"
 #include "phist_sdFact_kernels_def.hpp"
 #ifdef PHIST_HIGH_PRECISION_KERNELS
 extern "C" {
 // high precision variants only available in "D" case up to now
-#include "phist_DsdFact_prec_kernels.h"
+#include "DsdFact_prec_kernels.c"
 }
 #endif
-#include "phist_sdFact_def.cpp"
+#include "phist_sdFact_def.hpp"
 
 
