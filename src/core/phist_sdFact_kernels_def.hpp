@@ -14,7 +14,10 @@
 #endif
 
 // threshold at which to call a matrix rank deficient
-#define SINGTOL mt::eps()
+#ifdef SINGTOL
+#undef SINGTOL
+#endif
+#define SINGTOL 10*mt::eps()
 
 // calculates a possibly low rank approximation of a lower cholesky factor of an spd matrix
 // higher-precision + pivoting + stable low rank approximation

@@ -57,7 +57,7 @@ extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* pe
   SUBR(sdMat_extract_error)(R,&Rerr,iflag);
   SUBR(sdMat_extract_error)(X,&Xerr,iflag);
 
-  if (robust&&(Merr!=NULL))
+  if (robust&&(Rerr!=NULL)&&(Xerr!=NULL))
   {
     PHIST_CHK_IERR(SUBR(prec_backwardSubst)(Rval,Rerr,n,ldR,perm,rank,Xval,Xerr,k,ldX,iflag),*iflag);
   }
@@ -93,7 +93,7 @@ extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* per
   SUBR(sdMat_extract_error)(R,&Rerr,iflag);
   SUBR(sdMat_extract_error)(X,&Xerr,iflag);
 
-  if (robust&&(Merr!=NULL))
+  if (robust&&(Rerr!=NULL)&&(Xerr!=NULL))
   {
     PHIST_CHK_IERR(SUBR(prec_forwardSubst)(Rval,Rerr,n,ldR,perm,rank,Xval,Xerr,k,ldX,iflag),*iflag);
   }

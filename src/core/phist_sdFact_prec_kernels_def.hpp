@@ -13,7 +13,7 @@ extern "C" void SUBR(prec_backwardSubst)(const _ST_ *__restrict__ r, const _ST_ 
 }
 
 // apply forward substitution with permuted transposed upper triangular matrix
-extern "C" void phist_Dprec_forwardSubst(const _ST_ *__restrict__ r, const _ST_ *__restrict__ rC, lidx_t n, lidx_t ldr, lidx_t *p, int rank,
+extern "C" void SUBR(prec_forwardSubst)(const _ST_ *__restrict__ r, const _ST_ *__restrict__ rC, lidx_t n, lidx_t ldr, lidx_t *p, int rank,
         _ST_ *__restrict__ x, _ST_ *__restrict__ xC, lidx_t k, lidx_t ldx, int* iflag)
 {
   *iflag=-99;
@@ -22,7 +22,7 @@ extern "C" void phist_Dprec_forwardSubst(const _ST_ *__restrict__ r, const _ST_ 
 // given symmetric A=V'V, compute B s.t. Q=V*B is orthonormal. B is computed in-place,
 // if A is found to be numerically rank deficient, the last n-*rank columns of B will be zeroed out
 // s.t. Q has exactly rank *rank. In bi, biC we return the inverse of B.
-extern "C" void phist_Dprec_qb(_ST_ *__restrict__ a,  _ST_ *__restrict__ aC, 
+extern "C" void SUBR(prec_qb)(_ST_ *__restrict__ a,  _ST_ *__restrict__ aC, 
                     _ST_ *__restrict__ bi, _ST_ *__restrict__ biC, 
                     lidx_t n, lidx_t lda, int *rank, int* iflag)
 {
