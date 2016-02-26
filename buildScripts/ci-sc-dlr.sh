@@ -22,7 +22,7 @@ SANITIZER="address"
 
 declare -A MODULES_KERNELS
 MODULES_KERNELS=( 
-  ["builtin"]="anaconda"
+  ["builtin"]=""
   ["ghost"]="gsl"
   ["epetra"]="trilinos"
   ["tpetra"]="trilinos" )

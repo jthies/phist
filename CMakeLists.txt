@@ -1186,8 +1186,8 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
 endforeach()
 
 # Test python interface if python is available
-find_program(PYTEST py.test PYTEST_FOUND)
-if(NOT ${PYTEST} STREQUAL "PYTEST-NOTFOUND")
+find_package(PythonInterp)
+if(PYTHONINTERP_FOUND)
   foreach(pyh ${PYTHON_TESTS})
     get_filename_component(pyh_name ${pyh} NAME)
     set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np1/${pyh_name})
