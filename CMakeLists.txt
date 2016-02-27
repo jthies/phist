@@ -1185,18 +1185,21 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
   set_tests_properties(test-task_np${np} PROPERTIES TIMEOUT 30)
 endforeach()
 
-# Test python interface if python is available *and* this is an integration build.
+# Test python interface if this is an integration build.
 # The reason why this test is only included in integration builds is that it requires
 # py.test, which is included in phist but currently with a hard-coded interpreter from
 # the module system (anaconda module).
-find_package(PythonInterp)
-if(PYTHONINTERP_FOUND AND INTEGRATION_BUILD)
+if(INTEGRATION_BUILD)
+  configure_file(${PROJECT_SOURCE_DIR}/python/py.test ${CMAKE_CURRENT_BINARY_DIR}/ COPYONLY)
+  # note: we can do system-specific stuff like chmod here because we know that it's an integration build
+  # and no one should run it except for ourselves
+  execute_process(COMMAND "chmod" "u+x" "${CMAKE_CURRENT_BINARY_DIR}/py.test")
   set(PYSTDIR ${PROJECT_SOURCE_DIR}/python)
   set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np1/python)
   file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
-  set(TEST_COMMAND ${PYSTDIR}/py.test --junitxml ${TEST_OUTPUT_DIR}/xunit.xml ${PYTHON_TESTS})
+  set(TEST_COMMAND ${CMAKE_CURRENT_BINARY_DIR}/py.test --junitxml ${TEST_OUTPUT_DIR}/xunit.xml ${PYTHON_TESTS})
   add_test(NAME test-python-np1 COMMAND ${TEST_COMMAND})
-  set_tests_properties(test-python-np1 PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH} PHIST_NUM_THREADS=12 OMP_NUM_THREADS=12 OMP_SCHEDULE=dynamic,8")
+  set_tests_properties(test-python-np1 PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH} PYTHONPATH=${PYSTDIR}:$ENV{PYTHONPATH} PHIST_NUM_THREADS=12 OMP_NUM_THREADS=12 OMP_SCHEDULE=dynamic,8")
   
   if( GCC_SANITIZE )
       # we need to LD_PRELOAD the respective lib<.>san.so library
