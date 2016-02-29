@@ -6,9 +6,18 @@
 #error "file not included correctly"
 #endif
 
+#ifdef TEST_MVEC_QR
+#define MVEC_QR SUBR(mvec_QR)
+#elif defined(TEST_CHOL_QR)
+#define MVEC_QR SUBR(chol_QR)
+#endif
+
 /*! Test the kernel function mvec_QR. As this is an 'optional' kernel, all tests pass if they encounter
     a return value of PHIST_NOT_IMPLEMENTED in mvec_QR. The orthog routine (core lib) still works if 
     mvec_QR is not available by using our own implementation of CholQR. 
+ 
+ The same source file is used to generate the tests for chol_QR, which has the same signature and 
+ semantics as mvec_QR.
  */
 class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_,MVECS_VIEWED,2>,
                  public virtual KernelTestWithSdMats<_ST_,_NV_,_NV_,SDMATS_VIEWED> 
@@ -114,7 +123,7 @@ TEST_F(CLASSNAME,mvec_normalize)
     if (typeImplemented_ && !problemTooSmall_)
     {
 //      PrintVector(*cout,"QR_Test V",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
-      SUBR(mvec_QR)(vec2_,mat1_,&iflag_);
+      MVEC_QR(vec2_,mat1_,&iflag_);
       if (iflag_==PHIST_NOT_IMPLEMENTED) return;
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_from_device)(vec2_,&iflag_);
@@ -167,7 +176,7 @@ TEST_F(CLASSNAME,mvec_normalize)
       SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(mvec_QR)(vec2_,mat1_,&iflag_);
+      MVEC_QR(vec2_,mat1_,&iflag_);
       if (iflag_==PHIST_NOT_IMPLEMENTED) return;
       // check that the rank deficiency was detected
       ASSERT_EQ(1, iflag_);
@@ -200,7 +209,7 @@ TEST_F(CLASSNAME,mvec_normalize)
       SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(mvec_QR)(vec2_,mat1_,&iflag_);
+      MVEC_QR(vec2_,mat1_,&iflag_);
       if (iflag_==PHIST_NOT_IMPLEMENTED) return;
       // check that the rank deficiency was detected
       ASSERT_EQ(std::max(nvec_-1,0), iflag_);

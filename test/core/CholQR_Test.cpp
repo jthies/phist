@@ -13,12 +13,12 @@
 
 using namespace testing;
 
-// the _def file can also be used for testing chol_QR,
-// but in the kernel tests we want to test the kernel 
-// function mvec_QR (if implemented)
-#define TEST_MVEC_QR
+// we use the same _def file as the QR_Test for the kernel
+// function mvec_QR to test the core function chol_QR
+#define TEST_CHOL_QR
+#define CLASSFILE_DEF "../kernels/QR_Test_def.hpp"
 
-#define _BASENAME_ QR_Test
+#define _BASENAME_ CholQR_Test
 
 #define MVECS_VIEWED 0
 #define SDMATS_VIEWED 0
