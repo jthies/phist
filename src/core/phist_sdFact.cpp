@@ -17,21 +17,14 @@
 
 #include "phist_macros.h"
 #include "phist_kernel_perfmodels.hpp"
-#ifdef PHIST_HAVE_TEUCHOS
-#include "phist_trilinos_macros.h"
-#endif
-#include "../phist_kernels.h"
+//#ifdef PHIST_HAVE_TEUCHOS
+//#include "phist_trilinos_macros.h"
+//#endif
+#include "phist_kernels.h"
 
 #include "phist_typedefs.h"
-#include "typedefs.hpp"
 #include "phist_ScalarTraits.hpp"
-
-#ifdef PHIST_HAVE_LIKWID
-#include <likwid.h>
-#endif
-
-#include <cstring>
-#include <sys/resource.h>
+#include "phist_sdFact.h"
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

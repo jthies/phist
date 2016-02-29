@@ -10,5 +10,9 @@
 //! Accepts the input argument *iflag=PHIST_ROBUST_REDUCTIONS, in
 //! which case double-double arithmetic is used if the kernel lib
 //! supports it.
-//
+//!
+//! \deprecated in contrast to our common practice, this function does
+//! not randomize the nullspace (if any). The function chol_QR
+//! implements the semantics of the optional kernel function mvec_QR and
+//! should therefore be preferred.
 void SUBR(svrr)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, int* iflag);

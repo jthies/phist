@@ -5,11 +5,10 @@
 #endif
 #include "phist_orthog.h"
 #include "phist_kernels.h"
-/* this is the fallback block orthogonalization kernel
-   which is used if the kernel lib does not provide mvec_QR 
-   (i.e. if mvec_QR returns -99)
-*/
-#include "phist_svqb.h"
+
+// fallback routine: if the kernel library does not implement mvec_QR,
+// we simply switch to our own implementation of Cholesky-QR.
+#include "phist_chol_QR.h"
 
 #include "phist_ScalarTraits.hpp"
 
