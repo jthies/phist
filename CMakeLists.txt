@@ -1185,11 +1185,17 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
   set_tests_properties(test-task_np${np} PROPERTIES TIMEOUT 30)
 endforeach()
 
+# disable the following python tests if the GCC sanitizer is used and the kernel lib is Tpetra
+# because that does not work (cf. #165)
+if (PHIST_KERNEL_LIB_TPETRA AND GCC_SANITIZE )
+  message(WARNING "Disabling Python tests with Tpetra+GCC sanitizer, cf. issue #165")
+  set(DISABLE_PYTHON_TESTS 1)
+endif()
 # Test python interface if this is an integration build.
 # The reason why this test is only included in integration builds is that it requires
 # py.test, which is included in phist but currently with a hard-coded interpreter from
 # the module system (anaconda module).
-if(INTEGRATION_BUILD)
+if(INTEGRATION_BUILD AND NOT DISABLE_PYTHON)
   configure_file(${PROJECT_SOURCE_DIR}/python/py.test ${CMAKE_CURRENT_BINARY_DIR}/ COPYONLY)
   # note: we can do system-specific stuff like chmod here because we know that it's an integration build
   # and no one should run it except for ourselves
