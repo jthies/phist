@@ -13,14 +13,28 @@ import phist_kernels as _phist_kernels
 # load library
 _phist_core = _ct.CDLL(name='libphist_core.so', mode=_ct.RTLD_GLOBAL)
 
-
 #--------------------------------------------------------------------------------
 # helper functions
-from phist_kernels import _DeclareHelper
+class _DeclareHelper:
+    '''a helper class to set appropriate restype and argtypes and make the function available in the current scope'''
+
+    def __init__(self, lib):
+        self.lib = lib
+
+    def __call__(self, restype, fcn_name, argtypes, skip_if_missing=False):
+        '''actually sets restype and argtypes...'''
+        if skip_if_missing and not hasattr(self.lib, fcn_name):
+            return
+        getattr(self.lib, fcn_name).restype = restype
+        getattr(self.lib, fcn_name).argtypes = argtypes
+        globals()[fcn_name] = getattr(self.lib, fcn_name)
+
+# declare a function for all four data types, analogous to SUBR(func)
 _declare = _DeclareHelper(lib=_phist_core)
 
-from phist_kernels import _set
-
+# declare a global name
+def _set(varName, value):
+    globals()[varName] = value
 
 #--------------------------------------------------------------------------------
 # some helper data types

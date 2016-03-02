@@ -22,7 +22,7 @@ except ImportError:
 
 class PhistSolversTest(unittest.TestCase):
     
-    @unittest.skip("this test is not running because of missing symbols like DlinearOp")
+#    @unittest.skip("this test is not running because of missing symbols like DlinearOp")
     def test_subspacejada_on_spinSZ(self):
 
         # initialize

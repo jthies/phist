@@ -17,11 +17,24 @@ _phist_solvers = _ct.CDLL(name='libphist_solvers.so', mode=_ct.RTLD_GLOBAL)
 
 #--------------------------------------------------------------------------------
 # helper functions
-from phist_kernels import _DeclareHelper
+class _DeclareHelper:
+    '''a helper class to set appropriate restype and argtypes and make the function available in the current scope'''
+
+    def __init__(self, lib):
+        self.lib = lib
+
+    def __call__(self, restype, fcn_name, argtypes, skip_if_missing=False):
+        '''actually sets restype and argtypes...'''
+        if skip_if_missing and not hasattr(self.lib, fcn_name):
+            return
+        getattr(self.lib, fcn_name).restype = restype
+        getattr(self.lib, fcn_name).argtypes = argtypes
+        globals()[fcn_name] = getattr(self.lib, fcn_name)
+
 _declare = _DeclareHelper(lib=_phist_solvers)
 
-from phist_kernels import _set
-
+def _set(varName, value):
+    globals()[varName] = value
 
 #--------------------------------------------------------------------------------
 # some helper data types
@@ -160,7 +173,7 @@ for _varT in ('S', 'D', 'C', 'Z'):
     _sdMat_ptr = getattr(_phist_kernels, _varT+'sdMat_ptr')
 
     # use types from core
-    _linearOp_ptr = getattr(_phist_kernels, _varT+'linearOp_ptr')
+    _linearOp_ptr = getattr(_phist_core, _varT+'linearOp_ptr')
 
     # from phist_subspacejada_decl.h
     #void SUBR(subspacejada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr) B_op,
