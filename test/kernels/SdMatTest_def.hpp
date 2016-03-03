@@ -1232,7 +1232,7 @@ ASSERT_EQ(0,iflag_);
 #ifdef PHIST_HIGH_PRECISION_KERNELS
     ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),100*mt::eps()*mt::eps());
 #else
-    ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),10*mt::eps());
+    ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),100*mt::eps());
 #endif
   }
 

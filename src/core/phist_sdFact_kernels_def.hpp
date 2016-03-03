@@ -151,9 +151,13 @@ extern "C" void SUBR(backwardSubst)(const _ST_ *__restrict__ r, lidx_t n, lidx_t
 //printf("new x_p[i=%d],l=%d: %e\n", i, l, -s);
     }
 
-    for(int i = 0; i < n; i++)
+    for(int i = 0; i < rank; i++)
     {
       x[l*ldx+p[i]] = newXl[i];
+    }
+    for (int i=rank; i<n; i++)
+    {
+      x[ldx+p[i]] = st::zero();
     }
   }
 }
@@ -171,22 +175,26 @@ extern "C" void SUBR(forwardSubst)(const _ST_ *__restrict__ r, lidx_t n, lidx_t 
     _ST_ newXl[n];
     for(int i = 0; i < rank; i++)
     {
-      _ST_ rii_inv=st::one()/r[p[i]*ldr+i];
+      _ST_ s=x[l*ldx+p[i]];
       // for j = 1,i-1
       // x_p[i],l <- x_p[i],l - r_j,p[i]*x_p[j],l
       for(int j = 0; j < i; j++)
       {
-        x[l*ldx+i] -= r[p[j]*ldr+i]*newXl[j];
+        s -= r[p[i]*ldr+j]*newXl[j];
       }
 
       // x_p[i] = x_p[i]/r_i,p[i]
-      newXl[i] =x[l*ldx+i]*rii_inv;
+      newXl[i] =s/r[p[i]*ldr+i];
     }
 
     // unpermute result
     for(int i = 0; i < n; i++)
     {
       x[l*ldx+i] = newXl[i];
+    }
+    for(int i = rank; i < n; i++)
+    {
+      x[l*ldx+p[i]] = st::zero();
     }
   }
 }
