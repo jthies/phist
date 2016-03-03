@@ -866,11 +866,7 @@ public:
 
 
   // check rank revealing cholesky decomposition
-#ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, cholesky)
-#else
-  TEST_F(CLASSNAME, DISABLED_cholesky)
-#endif
   {
     if( typeImplemented_ && nrows_ == ncols_ )
     {
@@ -886,10 +882,17 @@ public:
       // cholesky
       int rank = 0;
       int perm[nrows_];
+      int iflag_in=0;
+#ifdef HIGH_PRECISION_KERNELS
+      iflag_in=PHIST_ROBUST_REDUCTIONS;
+#endif
+      iflag_=iflag_in;
       SUBR(sdMat_cholesky)(mat1_,perm,&rank,&iflag_);
       ASSERT_EQ(0,iflag_);
-//SUBR(sdMat_print)(mat1_,&iflag_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
+//SUBR(sdMat_print)(mat1_,&iflag_);
+//      ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nrows_,rank);
       // assure that mat1_ is now permuted upper triangular
       for(int i = 0; i < nrows_; i++)
@@ -904,10 +907,14 @@ public:
       }
 
       // check result
+      iflag_=iflag_in;
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat3_, &iflag_);
       ASSERT_EQ(0,iflag_);
+#ifdef PHIST_HIGH_PRECISION_KERNELS
       ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat3_,mat2_));
-
+#else
+      ASSERT_NEAR(mt::one(),SdMatsEqual(mat3_,mat2_),10*mt::eps());
+#endif
 
       // -- check rank deficiency of last row/col --
       mat2_vp_[MIDX(nrows_-1,ncols_-1,m_lda_)] = st::zero();
@@ -916,11 +923,14 @@ public:
 
       // cholesky
       rank = 0;
+      iflag_=iflag_in;
       SUBR(sdMat_cholesky)(mat1_,perm,&rank,&iflag_);
       ASSERT_EQ(0,iflag_);
 //SUBR(sdMat_print)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nrows_-1,rank);
+    SUBR(sdMat_from_device)(mat1_,&iflag_);
+    ASSERT_EQ(0,iflag_);
       // assure that mat1_ is now permuted upper triangular
       for(int i = 0; i < nrows_; i++)
       {
@@ -934,10 +944,14 @@ public:
       }
 
       // check result
+      iflag_=iflag_in;
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat3_, &iflag_);
       ASSERT_EQ(0,iflag_);
+#ifdef PHIST_HIGH_PRECISION_KERNELS
       ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat3_,mat2_));
-
+#else
+      ASSERT_NEAR(mt::one(),SdMatsEqual(mat3_,mat2_),10*mt::eps());
+#endif
 
       // -- create explicit hpd matrix from upper triangular part --
       SUBR(sdMat_put_value)(mat1_,st::zero(),&iflag_);
@@ -955,23 +969,34 @@ public:
             mat1_vp_[MIDX(i,j,m_lda_)] = st::zero();
         }
       }
+
+      SUBR(sdMat_to_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
 PHIST_SOUT(PHIST_INFO,"Predefined L^T:\n");
 SUBR(sdMat_print)(mat1_,&iflag_);
+      iflag_=iflag_in;
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"M:\n");
 SUBR(sdMat_print)(mat2_,&iflag_);
+      iflag_=iflag_in;
       SUBR(sdMat_add_sdMat)(st::one(), mat2_, st::zero(), mat1_, &iflag_);
       ASSERT_EQ(0,iflag_);
 
       // cholesky
       rank = 0;
+      iflag_=iflag_in;
       SUBR(sdMat_cholesky)(mat1_,perm,&rank,&iflag_);
       ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"L^T:\n");
 SUBR(sdMat_print)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nrows_,rank);
+
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
       // assure that mat1_ is now permuted upper triangular
       for(int i = 0; i < nrows_; i++)
       {
@@ -985,13 +1010,18 @@ SUBR(sdMat_print)(mat1_,&iflag_);
       }
 
       // check result
+      iflag_=iflag_in;
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat3_, &iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"LL^T:\n");
 SUBR(sdMat_print)(mat3_,&iflag_);
       ASSERT_EQ(0,iflag_);
+#ifdef PHIST_HIGH_PRECISION_KERNELS
       ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat3_,mat2_));
+#else
+      ASSERT_NEAR(mt::one(),SdMatsEqual(mat3_,mat2_),10*mt::eps());
+#endif
 
 
       // -- create explicit hermitian semi-positive definite matrix from upper triangular part --
@@ -1009,22 +1039,33 @@ SUBR(sdMat_print)(mat3_,&iflag_);
             mat1_vp_[MIDX(i,j,m_lda_)] = st::zero();
         }
       }
+
+      SUBR(sdMat_to_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
 PHIST_SOUT(PHIST_INFO,"Predefined L^T:\n");
 SUBR(sdMat_print)(mat1_,&iflag_);
+      iflag_=iflag_in;
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"M:\n");
 SUBR(sdMat_print)(mat2_,&iflag_);
+      iflag_=iflag_in;
       SUBR(sdMat_add_sdMat)(st::one(), mat2_, st::zero(), mat1_, &iflag_);
       ASSERT_EQ(0,iflag_);
 
       // cholesky
       rank = 0;
+      iflag_=iflag_in;
       SUBR(sdMat_cholesky)(mat1_,perm,&rank,&iflag_);
       ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"L^T:\n");
 SUBR(sdMat_print)(mat1_,&iflag_);
       ASSERT_EQ(nrows_-1,rank);
+
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
       // assure that mat1_ is now permuted upper triangular
       for(int i = 0; i < nrows_; i++)
       {
@@ -1038,22 +1079,23 @@ SUBR(sdMat_print)(mat1_,&iflag_);
       }
 
       // check result
+      iflag_=iflag_in;
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat3_, &iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"LL^T:\n");
 SUBR(sdMat_print)(mat3_,&iflag_);
       ASSERT_EQ(0,iflag_);
+#ifdef PHIST_HIGH_PRECISION_KERNELS
       ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat3_,mat2_));
+#else
+      ASSERT_NEAR(mt::one(),SdMatsEqual(mat3_,mat2_),10*mt::eps());
+#endif
     }
   }
 
   // forward-backward substition
-#ifdef PHIST_HIGH_PRECISION_KERNELS
   TEST_F(CLASSNAME, forward_backward_subst)
-#else
-  TEST_F(CLASSNAME, DISABLED_forward_backward_subst)
-#endif
   {
     if( typeImplemented_ && nrows_ == ncols_ )
     {
@@ -1116,6 +1158,10 @@ SUBR(sdMat_print)(mat3_,&iflag_);
 
   void CLASSNAME::doForwardBackwardTestsWithPreparedMat3(int rank, int* perm)
   {
+    int iflag_in=0;
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+    iflag_in=PHIST_ROBUST_REDUCTIONS;
+#endif
     // generate upper triangular factor ourselves
     SUBR(sdMat_put_value)(mat1_,st::zero(),&iflag_);
     ASSERT_EQ(0,iflag_);
@@ -1130,11 +1176,15 @@ SUBR(sdMat_print)(mat3_,&iflag_);
           mat1_vp_[MIDX(i,perm[j],m_lda_)] = st::zero();
       }
     }
+    
+    SUBR(sdMat_to_device)(mat1_,&iflag_);
+    ASSERT_EQ(0,iflag_);
 
     // multiply mat1_ with identity matrix with
 PHIST_SOUT(PHIST_INFO,"X:\n");
 SUBR(sdMat_print)(mat3_,&iflag_);
 ASSERT_EQ(0,iflag_);
+iflag_=iflag_in;
     SUBR(sdMat_times_sdMat)(st::one(),mat1_,mat3_,st::zero(),mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"R*X:\n");
@@ -1142,20 +1192,26 @@ SUBR(sdMat_print)(mat2_,&iflag_);
 ASSERT_EQ(0,iflag_);
 
     // backward substitute
+    iflag_=iflag_in;
     SUBR(sdMat_backwardSubst_sdMat)(mat1_,perm,rank,mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"reconstructed X:\n");
 SUBR(sdMat_print)(mat2_,&iflag_);
 ASSERT_EQ(0,iflag_);
     // this should have reconstructed mat3_
+iflag_=iflag_in;
     SUBR(sdMat_add_sdMat)(-st::one(),mat3_,st::one(),mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"Difference:\n");
 SUBR(sdMat_print)(mat2_,&iflag_);
 ASSERT_EQ(0,iflag_);
+#ifdef PHIST_HIGH_PRECISION_KERNELS
     ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),100*mt::eps()*mt::eps());
-
+#else
+    ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),10*mt::eps());
+#endif
     // multiply mat1_^T with identity matrix with
+    iflag_=iflag_in;
     SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat3_,st::zero(),mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"R^T*X:\n");
@@ -1163,15 +1219,21 @@ SUBR(sdMat_print)(mat2_,&iflag_);
 ASSERT_EQ(0,iflag_);
 
     // forward substitute
+    iflag_=iflag_in;
     SUBR(sdMat_forwardSubst_sdMat)(mat1_,perm,rank,mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"reconstructed X:\n");
 SUBR(sdMat_print)(mat2_,&iflag_);
 ASSERT_EQ(0,iflag_);
     // this should have reconstructed mat3_
+    iflag_=iflag_in;
     SUBR(sdMat_add_sdMat)(-st::one(),mat3_,st::one(),mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
+#ifdef PHIST_HIGH_PRECISION_KERNELS
     ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),100*mt::eps()*mt::eps());
+#else
+    ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),10*mt::eps());
+#endif
   }
 
   TEST_F(CLASSNAME, print_from_single_MPI_rank)

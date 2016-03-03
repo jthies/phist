@@ -44,6 +44,7 @@ extern "C" void SUBR(cholesky)(_ST_ *__restrict__ a, lidx_t n, lidx_t lda, lidx_
     d[i]=a[i*lda+i];
     diagNorm += st::real(st::conj(d[i])*d[i]);
   }
+  diagNorm=mt::sqrt(diagNorm);
   if( diagNorm == mt::zero() )
   {
     PHIST_OUT(PHIST_WARNING,"zero diagonal in %s\n", __FUNCTION__);
@@ -54,12 +55,13 @@ extern "C" void SUBR(cholesky)(_ST_ *__restrict__ a, lidx_t n, lidx_t lda, lidx_
   while(*rank < n)
   {
     // check rank
-    _MT_ err = 0;
+    _MT_ err = mt::zero();
     for(int i = *rank; i < n; i++)
+    {
       err = err + st::abs(d[p[i]]);
+    }
 //printf("step %d, err %e\n", *rank, err);
-    if( err < SINGTOL*diagNorm )
-      break;
+    if( err < SINGTOL*diagNorm ) break;
 
     int m = *rank;
     *rank = *rank + 1;
@@ -67,8 +69,12 @@ extern "C" void SUBR(cholesky)(_ST_ *__restrict__ a, lidx_t n, lidx_t lda, lidx_
     {
       int i = m;
       for(int j = m+1; j < n; j++)
+      {
         if( st::abs(d[p[j]]) > st::abs(d[p[i]]) )
+        {
           i = j;
+        }
+      }
       // swap p[i] p[m]
       int tmp = p[i];
       p[i] = p[m];
