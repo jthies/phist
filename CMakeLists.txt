@@ -828,6 +828,7 @@ endif()
 
 foreach(PKG ${REQUIRE_TRILI_PKG})
   string(TOUPPER ${PKG} PKG_CAPS)
+  message(STATUS "look for ${PKG} (required)")
   find_package(${PKG} REQUIRED)
   if (${${PKG}_FOUND})
     include_directories(${${PKG}_INCLUDE_DIRS})
@@ -849,6 +850,7 @@ endforeach()
 
 foreach(PKG ${OPTIONAL_TRILI_PKG})
   string(TOUPPER ${PKG} PKG_CAPS)
+  message(STATUS "look for ${PKG} (optional)")
   find_package(${PKG} QUIET)
   if (${${PKG}_FOUND})
     include_directories(${${PKG}_INCLUDE_DIRS})
@@ -861,7 +863,6 @@ foreach(PKG ${OPTIONAL_TRILI_PKG})
   endif()
 
 endforeach()
-
 
 
 option(PHIST_TIMEMONITOR "Gather detailed function-level timings" On)
@@ -888,6 +889,15 @@ set(PHIST_PKG_CONFIG_LIBRARIES "")
 foreach(lib ${library_list})
   set(PHIST_PKG_CONFIG_LIBRARIES "${PHIST_PKG_CONFIG_LIBRARIES} -l${lib}")
 endforeach()
+
+###########################################################################################
+# workaround for tpetra and pkg-config (probably anyone using tpetra will use CMake       
+# directly, but it should still work with pkg-config anyway)                              
+if (PHIST_KERNEL_LIB_TPETRA)
+  set(PHIST_PKG_CONFIG_LIBRARIES "${PHIST_PKG_CONFIG_LIBRARIES} -lteuchoscore")
+endif()
+
+
 
 configure_file ("${PROJECT_SOURCE_DIR}/phist.pc.in" "${PROJECT_BINARY_DIR}/phist.pc" @ONLY)
 configure_file ("${PROJECT_SOURCE_DIR}/src/phist_config.h.in" "${PROJECT_BINARY_DIR}/phist_config.h")
@@ -1187,15 +1197,15 @@ endforeach()
 
 # disable the following python tests if the GCC sanitizer is used and the kernel lib is Tpetra
 # because that does not work (cf. #165)
-if (PHIST_KERNEL_LIB_TPETRA AND GCC_SANITIZE )
-  message(WARNING "Disabling Python tests with Tpetra+GCC sanitizer, cf. issue #165")
-  set(DISABLE_PYTHON_TESTS 1)
-endif()
+#if (PHIST_KERNEL_LIB_TPETRA AND GCC_SANITIZE )
+#  message(WARNING "Disabling Python tests with Tpetra+GCC sanitizer, cf. issue #165")
+#  set(DISABLE_PYTHON_TESTS 1)
+#endif()
 # Test python interface if this is an integration build.
 # The reason why this test is only included in integration builds is that it requires
 # py.test, which is included in phist but currently with a hard-coded interpreter from
 # the module system (anaconda module).
-if(INTEGRATION_BUILD AND NOT DISABLE_PYTHON)
+if(INTEGRATION_BUILD)
   configure_file(${PROJECT_SOURCE_DIR}/python/py.test ${CMAKE_CURRENT_BINARY_DIR}/ COPYONLY)
   # note: we can do system-specific stuff like chmod here because we know that it's an integration build
   # and no one should run it except for ourselves
