@@ -124,7 +124,9 @@ TEST_F(CLASSNAME,mvec_normalize)
     {
 //      PrintVector(*cout,"QR_Test V",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
       MVEC_QR(vec2_,mat1_,&iflag_);
+#ifdef TEST_MVEC_QR
       if (iflag_==PHIST_NOT_IMPLEMENTED) return;
+#endif
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_from_device)(vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -177,7 +179,9 @@ TEST_F(CLASSNAME,mvec_normalize)
       ASSERT_EQ(0,iflag_);
 
       MVEC_QR(vec2_,mat1_,&iflag_);
+#ifdef TEST_MVEC_QR
       if (iflag_==PHIST_NOT_IMPLEMENTED) return;
+#endif
       // check that the rank deficiency was detected
       ASSERT_EQ(1, iflag_);
       iflag_ = 0;
@@ -190,11 +194,28 @@ TEST_F(CLASSNAME,mvec_normalize)
       // the factor 2 in releps here is because otherwise fails the test by a fraction of releps
       ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.0*releps(vec1_));
 
+#if PHIST_OUTLEV>=PHIST_DEBUG
+# if _N_<100
+        PHIST_SOUT(PHIST_DEBUG,"original V:\n");
+        SUBR(mvec_print)(vec1_,&iflag_);
+        PHIST_SOUT(PHIST_DEBUG,"computed Q:\n");
+        SUBR(mvec_print)(vec2_,&iflag_);
+        PHIST_SOUT(PHIST_DEBUG,"computed R:\n");
+        SUBR(sdMat_print)(mat1_,&iflag_);
+# endif
+#endif
       // check Q*R=V
       SUBR(mvec_times_sdMat)(-st::one(),vec2_,mat1_,st::one(),vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_from_device)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
+
+#if PHIST_OUTLEV>=PHIST_DEBUG
+# if _N_<100
+        PHIST_SOUT(PHIST_DEBUG,"explicit Q*R:\n");
+        SUBR(mvec_print)(vec1_,&iflag_);
+# endif
+#endif
       ASSERT_NEAR(mt::one(), ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero(),vflag_),sqrt(mt::eps()));
     }
 
@@ -210,7 +231,9 @@ TEST_F(CLASSNAME,mvec_normalize)
       ASSERT_EQ(0,iflag_);
 
       MVEC_QR(vec2_,mat1_,&iflag_);
+#ifdef TEST_MVEC_QR
       if (iflag_==PHIST_NOT_IMPLEMENTED) return;
+#endif
       // check that the rank deficiency was detected
       ASSERT_EQ(std::max(nvec_-1,0), iflag_);
       iflag_ = 0;
