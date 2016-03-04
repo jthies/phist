@@ -416,13 +416,3 @@ ASSERT_EQ(0,iflag_);
 #endif
   }
 
-  TEST_F(CLASSNAME, print_from_single_MPI_rank)
-  {
-    if (!typeImplemented_) return;
-    iflag_=0;
-    if (mpi_rank_==0)
-    {
-      SUBR(sdMat_print)(mat1_,&iflag_);
-    }
-    ASSERT_EQ(0,iflag_);
-  }
