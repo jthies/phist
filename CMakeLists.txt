@@ -1206,27 +1206,32 @@ endforeach()
 # Test python interface if this is an integration build.
 # The reason why this test is only included in integration builds is that it requires
 # py.test, which is included in phist but currently with a hard-coded interpreter from
-# the module system (anaconda module).
+# the module system (anaconda module). We can't just load the module because it brings its own
+# MPI installation which breaks the rest of PHIST.
 if(INTEGRATION_BUILD)
   configure_file(${PROJECT_SOURCE_DIR}/python/py.test ${CMAKE_CURRENT_BINARY_DIR}/ COPYONLY)
   # note: we can do system-specific stuff like chmod here because we know that it's an integration build
   # and no one should run it except for ourselves
   execute_process(COMMAND "chmod" "u+x" "${CMAKE_CURRENT_BINARY_DIR}/py.test")
-  set(PYSTDIR ${PROJECT_SOURCE_DIR}/python)
-  set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np1/python)
-  file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
-  set(TEST_COMMAND ${CMAKE_CURRENT_BINARY_DIR}/py.test --junitxml ${TEST_OUTPUT_DIR}/xunit.xml ${PYTHON_TESTS})
-  add_test(NAME test-python-np1 COMMAND ${TEST_COMMAND})
-  set_tests_properties(test-python-np1 PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH} PYTHONPATH=${PYSTDIR}:$ENV{PYTHONPATH} PHIST_NUM_THREADS=12 OMP_NUM_THREADS=12 OMP_SCHEDULE=dynamic,8")
+  foreach(pyt ${PYTHON_TESTS})
+    get_filename_component(pyt_name ${pyt} NAME_WE)
+    set(pyt_name "${pyt_name}_py")
+    message(STATUS "add python test '${pyt_name}'")
+    set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np1/${pyt_name})
+    file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
+    set(TEST_COMMAND ${CMAKE_CURRENT_BINARY_DIR}/py.test --junitxml ${TEST_OUTPUT_DIR}/xunit.xml ${pyt})
+    add_test(NAME ${pyt_name} COMMAND ${TEST_COMMAND})
+    set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH} PYTHONPATH=${PYSTDIR}:$ENV{PYTHONPATH} PHIST_NUM_THREADS=12 OMP_NUM_THREADS=12 OMP_SCHEDULE=dynamic,8")
   
-  if( GCC_SANITIZE )
+    if( GCC_SANITIZE )
       # we need to LD_PRELOAD the respective lib<.>san.so library
       string(SUBSTRING ${GCC_SANITIZE} 0 1 GCC_SANITIZE_FIRST_CHAR)
       set(GCC_SANITIZE_LIB "lib${GCC_SANITIZE_FIRST_CHAR}san.so")
       # work around cmake bug (specifying multiple set_tests_properties(...ENVIRONMENT...)
-      set_property(TEST test-python-np1 APPEND PROPERTY ENVIRONMENT "LD_PRELOAD=${GCC_SANITIZE_LIB}:$ENV{LD_PRELOAD}")
-      set_property(TEST test-python-np1 APPEND PROPERTY ENVIRONMENT "LSAN_OPTIONS=\"exitcode=0\"")
-  endif()
+      set_property(TEST ${pyt_name} APPEND PROPERTY ENVIRONMENT "LD_PRELOAD=${GCC_SANITIZE_LIB}:$ENV{LD_PRELOAD}")
+      set_property(TEST ${pyt_name} APPEND PROPERTY ENVIRONMENT "LSAN_OPTIONS=\"exitcode=0\"")
+    endif()
+  endforeach()
 endif()
 
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
