@@ -157,7 +157,7 @@ extern "C" void SUBR(backwardSubst)(const _ST_ *__restrict__ r, lidx_t n, lidx_t
     }
     for (int i=rank; i<n; i++)
     {
-      x[ldx+p[i]] = st::zero();
+      x[l*ldx+p[i]] = st::zero();
     }
   }
 }
