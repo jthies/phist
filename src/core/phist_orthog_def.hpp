@@ -29,7 +29,7 @@ void SUBR(my_mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag)
 #include "trili_orthog_def.hpp"
 
 //! orthogonalize an mvec against an already orthogonal one.
-void SUBR(orthog)(TYPE(const_mvec_ptr) V,
+extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      TYPE(mvec_ptr) W,
                      TYPE(const_linearOp_ptr) B,
                      TYPE(sdMat_ptr) R1,
