@@ -98,14 +98,14 @@ extern "C" void SUBR(cholesky)(_ST_ *__restrict__ a, lidx_t n, lidx_t lda, lidx_
         for(int j = 0; j < m; j++)
         {
           _ST_ lj;
-          s-=l[p[m]*n+j]*l[p[i]*n+j];
+          s-=st::conj(l[p[m]*n+j])*l[p[i]*n+j];
         }
         s*=div_lmm;
         l[p[i]*n+m] = s;
       }
       // d_p[i] = d_p[i]-l_m,p[i]^2
       {
-        d[p[i]] -= l[p[i]*n+m] * l[p[i]*n+m];
+        d[p[i]] -= st::conj(l[p[i]*n+m]) * l[p[i]*n+m];
 //printf("d[p[i=%d]] <- %e\n", i,-s);
       }
     }
@@ -135,6 +135,10 @@ extern "C" void SUBR(backwardSubst)(const _ST_ *__restrict__ r, lidx_t n, lidx_t
   for(int l = 0; l < k; l++)
   {
     _ST_ newXl[n];
+    for (int i= n-1; i>=rank; i--)
+    {
+      newXl[i]=st::zero();
+    }
     for(int i = rank-1; i >= 0; i--)
     {
       _ST_ rii_inv=st::one()/r[p[i]*ldr+i];
