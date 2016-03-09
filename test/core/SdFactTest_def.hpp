@@ -53,7 +53,7 @@ public:
       // -- check identity * 42 --
       SUBR(sdMat_identity)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_add_sdMat)((ST)42, mat1_, st::zero(), mat2_, &iflag_);
+      SUBR(sdMat_add_sdMat)((ST)42+(ST)23*st::cmplx_I(), mat1_, st::zero(), mat2_, &iflag_);
       ASSERT_EQ(0,iflag_);
       // copy to mat1_
       SUBR(sdMat_add_sdMat)(st::one(), mat2_, st::zero(), mat1_, &iflag_);
@@ -214,7 +214,7 @@ SUBR(sdMat_print)(mat3_,&iflag_);
         for(int j = 1; j < ncols_; j++)
         {
           if( i <= j )
-            mat1_vp_[MIDX(i,j,m_lda_)] = ST(k--);
+            mat1_vp_[MIDX(i,j,m_lda_)] = ST(k--)+(ST)0.1*(ST)(j-i)*(ST)(mt::prand()-0.5)*st::cmplx_I();
           else
             mat1_vp_[MIDX(i,j,m_lda_)] = st::zero();
         }
