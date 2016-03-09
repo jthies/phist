@@ -53,7 +53,7 @@ public:
       // -- check identity * 42 --
       SUBR(sdMat_identity)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_add_sdMat)((ST)42+(ST)23*st::cmplx_I(), mat1_, st::zero(), mat2_, &iflag_);
+      SUBR(sdMat_add_sdMat)((ST)42, mat1_, st::zero(), mat2_, &iflag_);
       ASSERT_EQ(0,iflag_);
       // copy to mat1_
       SUBR(sdMat_add_sdMat)(st::one(), mat2_, st::zero(), mat1_, &iflag_);
