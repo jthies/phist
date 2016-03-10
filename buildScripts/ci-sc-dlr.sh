@@ -84,12 +84,9 @@ if [[ "$FLAGS" = *optional-libs* ]]; then
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_SOLVER_TPLS:BOOL=ON"
 else
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_PRECON_TPLS:BOOL=OFF"
-# note: presently epetra and tpetra require Belos for the interface to TDQR.
-# In principle PHIST can do without mvec_QR, but there are some tests that can't,
-# namely the SimpleBlockArnoldi ones who depend on orthog returning a triangular
-# matrix R1. In the future we will have a default implementation of CholQR replacing
-# mvec_QR if TSQR is not available (cf. issue #129)
-  ADD_CMAKE_FLAGS+=" -DPHIST_USE_SOLVER_TPLS:BOOL=ON"
+# note: presently epetra and tpetra require Belos for the interface to TSQR.
+# PHIST can do without mvec_QR, so without optional-libs this is tested.
+  ADD_CMAKE_FLAGS+=" -DPHIST_USE_SOLVER_TPLS:BOOL=OFF"
 fi
 if [ "${VECT_EXT}" = "CUDA" ]; then
   module load cuda
