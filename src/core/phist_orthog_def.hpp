@@ -372,3 +372,6 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   return;
 }
 
+#ifdef HAVE_TRILINOS_ORTHO_MANAGER
+#undef HAVE_TRILINOS_ORTHO_MANAGER
+#endif
