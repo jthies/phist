@@ -44,7 +44,7 @@ int nrows;
 PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&nrows,iflag),*iflag);
 if (nrows<=100)
 {
-PHIST_SOUT(PHIST_INFO,"\%CHOLQR\nV=[...\n");
+PHIST_SOUT(PHIST_INFO,"%%CHOLQR\nV=[...\n");
 SUBR(mvec_print)(V,iflag);
 PHIST_SOUT(PHIST_INFO,"];\n");
 }
@@ -57,7 +57,7 @@ PHIST_SOUT(PHIST_INFO,"];\n");
     if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(sdMat_cholesky)(R,perm,&rank,iflag),*iflag);
 #if PHIST_OUTLEV>=PHIST_DEBUG
-PHIST_SOUT(PHIST_INFO,"\%CHOLQR: cholesky(V'V) has rank %d\nR=[",rank);
+PHIST_SOUT(PHIST_INFO,"%%CHOLQR: cholesky(V'V) has rank %d\nR=[",rank);
 SUBR(sdMat_print)(R,iflag);
 PHIST_SOUT(PHIST_INFO,"];\n");
 #endif
@@ -66,7 +66,7 @@ PHIST_SOUT(PHIST_INFO,"];\n");
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(R,perm,rank,R_1,iflag),*iflag);
 #if PHIST_OUTLEV>=PHIST_DEBUG
-PHIST_SOUT(PHIST_INFO,"\%CHOLQR: inv(R)=\nR_1=[");
+PHIST_SOUT(PHIST_INFO,"%%CHOLQR: inv(R)=\nR_1=[");
 SUBR(sdMat_print)(R_1,iflag);
 PHIST_SOUT(PHIST_INFO,"];\n");
 #endif
