@@ -22,9 +22,14 @@
 #include "Tpetra_MatrixIO.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 
-#include "./Tpetra_TsqrAdaptor.hpp"
-#include "./BelosTpetraAdapter.hpp"
-#include "BelosTsqrOrthoManager.hpp"
+#ifdef PHIST_HAVE_BELOS
+#include "Belos_config.h"
+# ifdef HAVE_BELOS_TSQR
+# include "Tpetra_TsqrAdaptor.hpp"
+# include "BelosTpetraAdapter.hpp"
+# include "BelosTsqrOrthoManager.hpp"
+# endif
+#endif
 
 #ifdef PHIST_HAVE_LIKWID
 #include <likwid.h>

@@ -3,12 +3,18 @@
 // to override our choice of Cholesky QR by e.g. TSQR.
 void SUBR(my_mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag)
 {
+  static bool first_call=true;
   int iflag_in=*iflag;
   SUBR(mvec_QR)(V,R,iflag);
   if (*iflag==PHIST_NOT_IMPLEMENTED)
   {
     *iflag=iflag_in;
     SUBR(chol_QR)(V,R,iflag);
+    if (first_call)
+    {
+      first_call=false; 
+      PHIST_SOUT(PHIST_VERBOSE,"orthog: using fallback chol_QR\n");
+    }
   }
 }
 

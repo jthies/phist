@@ -1124,14 +1124,14 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
     rank=1;
     *Rval=(ST)nrm;
     if (nrm<rankTol)
-      {
+    {
       PHIST_DEB("zero vector detected\n");
       // randomize the vector
       PHIST_CHK_IERR(SUBR(mvec_random)(vV,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(mvec_normalize)(vV,&nrm,iflag),*iflag);
       rank=0;// dimension of null space
       *Rval=st::zero();
-      }
+    }
     *iflag=1-rank;
     return;
   }
@@ -1160,7 +1160,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
     return;
   }
   
-#ifdef HAVE_BELOS_TSQR  
+#ifdef HAVE_BELOS_TSQR
   Belos::TsqrOrthoManager< _ST_ , Traits< _ST_ >::mvec_t> tsqr("phist");
   Teuchos::RCP<const Teuchos::ParameterList> valid_params = 
         tsqr.getValidParameters();
@@ -1182,7 +1182,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   *iflag = ncols-rank;// return positive number if rank not full.
   PHIST_DEB("mvec_QR: ncols=%d, rank=%d, returning %d\n",ncols,rank,*iflag);
 #else
-  *iflag=-99;
+  *iflag=PHIST_NOT_IMPLEMENTED;
 #endif
   return;
 }
