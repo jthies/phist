@@ -1,12 +1,10 @@
 //! \defgroup sdfact sdMat kernels for factoring small dense matrices.
 //!
-//! These kernels are highly accurate but not necessarily efficient, they
-//! are intended for use with sdMats, that is the matrix should be small 
-//! enough s.t. serial execution won't hurt even on a supercomputer.
+//! These kernels are highly accurate but not necessarily efficient, If the
+//! kernel lib supports PHIST_HIGH_PRECISION_KERNELS (e.g. the builtin kernels
+//! with AVX2), the input *iflag=PHIST_ROBUST_REDUCTIONS enables the high precision
+//! variants. Otherwise, standard precision is used.
 //! 
-//! The way to use these kernels is by
-//! compiling with a kernel lib that allows you to enable PHIST_HIGH_RECISION_KERNELS
-//! (e.g. the builtin kernels on Haswell)
 //! Note: you should always make sure that on hybrid CPU/GPU systems the sdMat values on the
 //! host and device are synchronized by calling sdMat_from(to)_device before (after) using 
 //! these functions. They all assume that the data obtained from sdMat_extract_view/error is

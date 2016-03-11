@@ -1,20 +1,37 @@
 // simple wrapper, try to call mvec_QR and if it is not implemented,
 // use our own Cholesky-QR instead. This way we allow the kernel library
-// to override our choice of Cholesky QR by e.g. TSQR.
-void SUBR(my_mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag)
+// to override our choice of Cholesky QR by e.g. TSQR. normsV on exit contains
+// the norm of each column of V before the normalization.
+void SUBR(my_mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, _MT_* normsV, int* iflag)
 {
+#include "phist_std_typedefs.hpp"
   static bool first_call=true;
+  _ST_* R_raw=NULL;
+  lidx_t ldR;
   int iflag_in=*iflag;
+  int m;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
+  int perm[m];
+  for (int i=0;i<m;i++) perm[i]=i;
+
   SUBR(mvec_QR)(V,R,iflag);
+  
   if (*iflag==PHIST_NOT_IMPLEMENTED)
   {
     *iflag=iflag_in;
-    SUBR(chol_QR)(V,R,iflag);
+    SUBR(chol_QRp)(V,R,perm,iflag);
     if (first_call)
     {
       first_call=false; 
       PHIST_SOUT(PHIST_VERBOSE,"orthog: using fallback chol_QR\n");
     }
+  }
+  // norms(V) = diag(R)
+  // note: R is already up-to-date on the host after chol_QR and mvec_QR
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&R_raw,&ldR,iflag),*iflag);
+  for (int i=0; i<m; i++)
+  {
+    normsV[i]=st::abs(R_raw[ldR*perm[i]+i]);
   }
 }
 
@@ -110,10 +127,11 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 
   MT normW0[k];
   MT normW1[k];
+  MT normWtmp[k];
 
   if (m==0)
   {
-    PHIST_CHK_NEG_IERR(SUBR(my_mvec_QR)(W,R1,iflag),*iflag);
+    PHIST_CHK_NEG_IERR(SUBR(my_mvec_QR)(W,R1,normW0,iflag),*iflag);
     *rankVW=k-*iflag;
     *iflag=std::min(*iflag,+1); // iflag=+1 means: [V,W] is rank deficient
     return;
@@ -222,16 +240,12 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   // V, which we do next. The projection coefficients for this part   
   // are thrown away as the randomized vectors are not really related 
   //to W anyway.
-  PHIST_CHK_NEG_IERR(SUBR(my_mvec_QR)(W,R1,iflag),*iflag);
+  PHIST_CHK_NEG_IERR(SUBR(my_mvec_QR)(W,R1,normWtmp,iflag),*iflag);
   rankW=k-*iflag;
   // set normW1 to diag(R1)
-  _ST_ *R1_raw = NULL;
-  lidx_t ldaR1;
-  PHIST_CHK_IERR(SUBR(sdMat_from_device)(R1,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R1,&R1_raw,&ldaR1,iflag),*iflag);
   for(int i = 0; i < k; i++)
   {
-      normW1[i] = std::min(normW1[i],st::abs(R1_raw[i+ldaR1*i]));
+      normW1[i] = std::min(normW1[i],normWtmp[i]);
   }
   *iflag = 0;
 
@@ -258,7 +272,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
       // throw away projection coefficients.
       PHIST_CHK_IERR(SUBR(sdMat_delete)(Rrnd,iflag),*iflag);
 
-      PHIST_CHK_NEG_IERR(SUBR(my_mvec_QR)(W,R1,iflag),*iflag);
+      PHIST_CHK_NEG_IERR(SUBR(my_mvec_QR)(W,R1,normWtmp,iflag),*iflag);
 
     } while (*iflag > 0);
 
@@ -313,7 +327,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     // again, the norm can be computed from the coefficients in R2p (TODO)
     PHIST_CHK_IERR(SUBR(mvec_norm2)(W,normW1,iflag),*iflag);    
 
-    PHIST_CHK_NEG_IERR(SUBR(my_mvec_QR)(W,R1p,iflag),*iflag);
+    PHIST_CHK_NEG_IERR(SUBR(my_mvec_QR)(W,R1p,normWtmp,iflag),*iflag);
 
     if (*iflag>0)
     {
@@ -323,12 +337,10 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
       return;
     }
 
-    _ST_ *R1p_raw = NULL;
-    lidx_t ldaR1p;
-    PHIST_CHK_IERR(SUBR(sdMat_from_device)(R1p,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R1p,&R1p_raw,&ldaR1p,iflag),*iflag);
     for(int i = 0; i < k; i++)
-      normW1[i] = std::min(normW1[i],st::abs(R1p_raw[i+ldaR1p*i]));
+    {
+      normW1[i] = std::min(normW1[i],normWtmp[i]);
+    }
 
     //R1pp=R1
     PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R1,st::zero(),R1pp,iflag),*iflag);
@@ -357,7 +369,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   // if in the last CGS sweep a column decreased too much in norm, 
   // return an error (we could return a warning, but since we used 
   // all positive numbers for the case of rank deficient W already,
-  // the caller will have to deal with the -5 case specially.      
+  // the caller will have to deal with the -9 case specially.      
   if (stopGS==false)
   {
     // we need to check again, for instance, the 2nd pass may have given

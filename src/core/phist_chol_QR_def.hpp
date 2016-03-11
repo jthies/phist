@@ -3,11 +3,11 @@
 // If the input vector has m columns and rank r, iflag=m-r is
 // returned. The nullspace of V is randomized and orthogonalized
 // against the other columns. If the output matrix is denoted
-// by Q, Q and V are related by Q*R=V.
+// by Q, Q and V are related by Q*R=V. R(:,perm) is upper triangular.
 //
 // This routine is the fallback kernel used by orthog if the kernel
 // library doesn't provide mvec_QR.
-extern "C" void SUBR(chol_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag)
+extern "C" void SUBR(chol_QRp)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int perm[], int* iflag)
 {
 #include "phist_std_typedefs.hpp"
     PHIST_ENTER_FCN(__FUNCTION__);
@@ -16,6 +16,8 @@ extern "C" void SUBR(chol_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag)
     *iflag=0;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
     const_comm_ptr_t comm;
+    
+    for (int i=0; i<m; i++) perm[i]=i;
     
     if (m==1)
     {
@@ -52,10 +54,10 @@ PHIST_SOUT(PHIST_INFO,"];\n");
     // S=V'V
     if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),R,iflag),*iflag);
-    int perm[m];
     int rank;
     if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(sdMat_cholesky)(R,perm,&rank,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(R,iflag),*iflag);
 #if PHIST_OUTLEV>=PHIST_DEBUG
 PHIST_SOUT(PHIST_INFO,"%%CHOLQR: cholesky(V'V) has rank %d\nR=[",rank);
 SUBR(sdMat_print)(R,iflag);
@@ -65,6 +67,7 @@ PHIST_SOUT(PHIST_INFO,"];\n");
     PHIST_CHK_IERR(SUBR(sdMat_identity)(R_1,iflag),*iflag);
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(R,perm,rank,R_1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(R_1,iflag),*iflag);
 #if PHIST_OUTLEV>=PHIST_DEBUG
 PHIST_SOUT(PHIST_INFO,"%%CHOLQR: inv(R)=\nR_1=[");
 SUBR(sdMat_print)(R_1,iflag);
@@ -119,4 +122,16 @@ PHIST_SOUT(PHIST_INFO,"];\n");
     PHIST_CHK_IERR(SUBR(sdMat_delete)(R_1,iflag),*iflag);
     *iflag=m-rank;
     return;
+}
+
+//! this variant of chol_QR discards the perm array. It has the same interface
+//! as mvec_QR but returns a column-permuted upper triangular matrix R.
+void SUBR(chol_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag)
+{
+  int m;
+  int iflag_in=*iflag;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
+  int perm[m];
+  *iflag=iflag_in;
+  PHIST_CHK_IERR(SUBR(chol_QRp)(V,R,perm,iflag),*iflag);
 }

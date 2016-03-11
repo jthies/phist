@@ -493,8 +493,8 @@ void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) 
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular. \ingroup mvec
 
-//! Q is computed in place of V. If V does not have full rank, iflag>0   
-//! indicates the dimension of the null-space of V. The first m-iflag    
+//! Q is computed in place of V. If V does not have full rank, iflag>0  
+//! indicates the dimension of the null-space of V. The first m-iflag   
 //! columns of Q are an orthogonal basis of the column space of V, the  
 //! remaining columns form a basis for the null space.                  
 //!                                                                     
@@ -502,7 +502,10 @@ void SUBR(sparseMat_times_mvec_vadd_mvec)(_ST_ alpha, TYPE(const_sparseMat_ptr) 
 //! revealing QR, it is not strictly necessary to provide this function.
 //! The orthog routine (in core/phist_orthog.h) for instance checks for 
 //! a return value of -99 (not implemented) and uses a PHIST-based      
-//! implementation of SVQB instead, which only requires mvec/sdMat ops. 
+//! implementation of CholQR instead, which only requires simpler       
+//! kernels.                                                            
+//! For kernel libs supporting accelerators, we assume that R is sync'd 
+//! after the call, that is, no sdMat_to/from_device needs to be called.
 void SUBR(mvec_QR)(TYPE(mvec_ptr) V, 
                      TYPE(sdMat_ptr) R, int* iflag);
 
