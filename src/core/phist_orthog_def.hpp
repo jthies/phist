@@ -9,6 +9,7 @@ void SUBR(my_mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, _MT_* normsV, int* if
   _ST_* R_raw=NULL;
   lidx_t ldR;
   int iflag_in=*iflag;
+  int iflag_out=0;
   int m;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
   int perm[m];
@@ -26,6 +27,9 @@ void SUBR(my_mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, _MT_* normsV, int* if
       PHIST_SOUT(PHIST_VERBOSE,"orthog: using fallback chol_QR\n");
     }
   }
+  
+  iflag_out=*iflag;
+  
   // norms(V) = diag(R)
   // note: R is already up-to-date on the host after chol_QR and mvec_QR
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&R_raw,&ldR,iflag),*iflag);
@@ -33,6 +37,7 @@ void SUBR(my_mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, _MT_* normsV, int* if
   {
     normsV[i]=st::abs(R_raw[ldR*perm[i]+i]);
   }
+  *iflag=iflag_out;
 }
 
 // allow using orthog routines from Trilinos because we don't have
