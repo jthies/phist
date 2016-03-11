@@ -79,24 +79,28 @@ PHIST_SOUT(PHIST_INFO,"];\n");
 #if PHIST_OUTLEV>=PHIST_DEBUG
 if (nrows<=100)
 {
-PHIST_SOUT(PHIST_INFO,"CHOLQR: Q=V*R_I (before randomizing null space)\nQ0=[...");
+PHIST_SOUT(PHIST_INFO,"CHOLQR: Q=V*R_I (%s)\nQ0=[...",rank==m?"(full rank)":"(before randomizing null space)");
 SUBR(mvec_print)(V,iflag);
 PHIST_SOUT(PHIST_INFO,"];\n");
 }
 #endif
-    int newRank = rank;
-    int nIter = 0;
-    while(newRank < m && nIter++ < 2)
+    if (rank < m)
     {
       // randomize the null space
       TYPE(mvec_ptr) Vorth=NULL,V_=NULL;
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vorth,0,newRank-1,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&V_,newRank,m-1,iflag),*iflag);
+      if (rank)
+      {
+        PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vorth,0,rank-1,iflag),*iflag);
+      }
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&V_,rank,m-1,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(mvec_random)(V_,iflag),*iflag);
       // orthogonalize it by recursively calling this function
       TYPE(sdMat_ptr) R1=NULL, R2=NULL;
-      PHIST_CHK_IERR(SUBR(sdMat_create)(&R1,m-newRank,m-newRank,comm,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(sdMat_create)(&R2,newRank,m-newRank,comm,iflag),*iflag);
+      if (rank)
+      {
+        PHIST_CHK_IERR(SUBR(sdMat_create)(&R2,rank,m-rank,comm,iflag),*iflag);
+      }
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&R1,m-rank,m-rank,comm,iflag),*iflag);
 
       // normalize the new random vectors and project out the existing orthogonal columns.
       // We just do two classical Gram-Schmidt+CholQR steps here, assuming that this is a fallback kernel
@@ -108,16 +112,29 @@ PHIST_SOUT(PHIST_INFO,"];\n");
         // not linearly independent. We assume that this will not happen in
         // practice
         if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-        PHIST_CHK_IERR(SUBR(chol_QR)(V_,R1,iflag),*iflag);
-        if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-        PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vorth,V_,st::zero(),R2,iflag),*iflag);
-        if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-        PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Vorth,R2,st::one(),V_,iflag),*iflag);
+        SUBR(chol_QR)(V_,R1,iflag);
+        if (*iflag)
+        {
+          PHIST_SOUT(PHIST_ERROR,"catastrophic breakdown in chol_QR, returning -1\n");
+          *iflag=-1;
+          return;
+        }
+        if (rank>0)
+        {
+          if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
+          PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vorth,V_,st::zero(),R2,iflag),*iflag);
+          if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
+          PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Vorth,R2,st::one(),V_,iflag),*iflag);
+        }
       }
       // The orthogonalization coefficients are simply thrown away because these columns 
       // do not contribute to recovering V by V=Q*R
       PHIST_CHK_IERR(SUBR(sdMat_delete)(R1,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(sdMat_delete)(R2,iflag),*iflag);
+      if (rank>0)
+      {
+        PHIST_CHK_IERR(SUBR(sdMat_delete)(R2,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvec_delete)(Vorth,iflag),*iflag);
+      }
     }
     PHIST_CHK_IERR(SUBR(sdMat_delete)(R_1,iflag),*iflag);
     *iflag=m-rank;
