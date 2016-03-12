@@ -730,7 +730,7 @@ target_link_libraries(phist_solvers               phist_precon phist_core phist_
 target_link_libraries(phist_support phist_solvers phist_precon phist_core phist_kernels_${PHIST_KERNEL_LIB} phist_tools)
 
 if (MPACK_FOUND)
-      target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} ${MPACK_LIBRARIES})
+      target_link_libraries(phist_core ${MPACK_LIBRARIES})
 endif()
 if (ESSEX-PHYSICS_FOUND)
   target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} ${ESSEX-PHYSICS_LIBRARIES})
