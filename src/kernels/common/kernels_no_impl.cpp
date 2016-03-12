@@ -391,4 +391,3 @@ extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* 
 #include "kernels_no_carp.cpp"
 #include "kernels_no_gpu.cpp"
 #include "kernels_no_fused.cpp"
-#include "kernels_no_prec.cpp"

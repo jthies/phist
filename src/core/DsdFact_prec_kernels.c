@@ -19,6 +19,9 @@
 #endif
 
 // threshold at which to call a matrix rank deficient
+#ifdef SINGTOL
+#undef SINGTOL
+#endif
 #define SINGTOL 1.0e-25
 
 // calculates a possibly low rank approximation of a lower cholesky factor of an spd matrix

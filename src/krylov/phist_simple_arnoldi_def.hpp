@@ -165,7 +165,8 @@ void SUBR(simple_blockArnoldi)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearO
   // create random orthogonal block vector
   PHIST_CHK_IERR(SUBR(mvec_random) (v, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R1,0,bs-1,0,bs-1,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(mvec_QR)(v, R1, iflag), *iflag);
+  int tmp; // rank of random input matrix to orthog, not interesting here
+  PHIST_CHK_IERR(SUBR(orthog)(NULL,v, B_op,R1,NULL,2,&tmp,iflag), *iflag);
   // copy to V
   PHIST_CHK_IERR(SUBR(mvec_set_block)(V, v, 0, bs-1, iflag), *iflag);
 

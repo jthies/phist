@@ -169,20 +169,9 @@ public:
       int nsteps=2;
 
       // now orthogonalize W against V. The result should be such that Q*R1=W-V*R2, Q'*Q=I,V'*Q=0
-      bool usedSVQB=false;
       rankVW=-42;
       SUBR(orthog)(V,Q,NULL,R1,R2,nsteps,&rankVW,&iflag_);
-      if (iflag_!=+2)
-      {
-        ASSERT_EQ(expect_iflagVW,iflag_);
-      } 
-      else
-      {
-        // +2 means mvec_QR returned -99 (not implemented), and SVQB was used instead
-        // so that the matrix R1 is not an upper triangular matrix but W is still made
-        // orthogonal to V
-        usedSVQB=true;
-      }
+      ASSERT_EQ(expect_iflagVW,iflag_);
       ASSERT_EQ(expectedRankVW,rankVW);
       
       // check orthonormality of Q
@@ -207,25 +196,16 @@ public:
       ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(Q_vp,nloc_,ldaQ,stride_,mpi_comm_),tolW);
       ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(Q_vp,nloc_,ldaQ,stride_,mpi_comm_),tolW);
 
-      if (usedSVQB)
-      {
-        //TODO - probably in this case we could ensure that the relation
-        //       Q=(W-V*R2)*B [with R1=B] holds, but currently orthog does
-        //       not promise this so we don't check for it.
-      }
-      else
-      {
-        // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
-        SUBR(mvec_times_sdMat)(st::one(),Q,R1,st::zero(),W2_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        SUBR(mvec_times_sdMat)(st::one(),V,R2,st::one(),W2_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        SUBR(mvec_add_mvec)(-st::one(),W,st::one(),W2_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        SUBR(mvec_from_device)(W2_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero(),vflag_),tolW);
-      }
+      // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
+      SUBR(mvec_times_sdMat)(st::one(),Q,R1,st::zero(),W2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_times_sdMat)(st::one(),V,R2,st::one(),W2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_add_mvec)(-st::one(),W,st::one(),W2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(W2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_NEAR(mt::one(),ArrayEqual(W2_vp_,nloc_,k_,ldaW2_,stride_,st::zero(),vflag_),tolW);
   }
 
 };

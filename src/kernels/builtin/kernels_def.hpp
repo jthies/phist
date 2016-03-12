@@ -870,58 +870,10 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  // trilinos tsqr would be better but seems to expect column-major mvecs
-#ifdef PHIST_HIGH_PRECISION_KERNELS
-#ifdef PHIST_HIGH_PRECISION_KERNELS_FORCE
-  int robust = true;
-#else
-  int robust=(*iflag&PHIST_ROBUST_REDUCTIONS);
-#endif
-  int m = 0;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
-  if (robust)
-  {
-    // use Cholesky-QR instead
-    int rank = 0;
-    *iflag=PHIST_ROBUST_REDUCTIONS;
-    PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),R,iflag),*iflag);
-    int perm[m];
-    PHIST_CHK_IERR(SUBR(sdMat_cholesky)(R,perm,&rank,iflag),*iflag);
-    
-    // construct inv(R)
-    TYPE(sdMat_ptr) R_1=NULL;
-    const_comm_ptr_t comm;
-    PHIST_CHK_IERR(SUBR(mvec_get_comm)(V,&comm,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(sdMat_create)(&R_1,m,m,comm,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(sdMat_identity)(R_1,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(R,perm,rank,R_1,iflag),*iflag);
-    *iflag=PHIST_ROBUST_REDUCTIONS;
-    PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(V,R_1,iflag),*iflag);
-    int newRank = rank;
-    int nIter = 0;
-    while(newRank < m && nIter++ < 2)
-    {
-      TYPE(mvec_ptr) V_=NULL;
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&V_,newRank,m-1,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(mvec_random)(V_,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(mvec_delete)(V_,iflag),*iflag);
-      TYPE(sdMat_ptr) R_=NULL;
-      PHIST_CHK_IERR(SUBR(sdMat_create)(&R_,m,m,comm,iflag),*iflag);
-      *iflag=PHIST_ROBUST_REDUCTIONS;
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),R_,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(sdMat_cholesky)(R_,perm,&newRank,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(sdMat_identity)(R_1,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(R_,perm,newRank,R_1,iflag),*iflag);
-      *iflag=PHIST_ROBUST_REDUCTIONS;
-      PHIST_CHK_IERR(SUBR(mvec_times_sdMat_inplace)(V,R_1,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(sdMat_delete)(R_,iflag),*iflag);
-    }
-    PHIST_CHK_IERR(SUBR(sdMat_delete)(R_1,iflag),*iflag);
-    *iflag=m-rank;
-    return;
-  }
-#endif
-  PHIST_CHK_NEG_IERR(SUBR(mvec_QR_f)(V,R,iflag),*iflag);
+  // the builtin mvec_QR based on iterated MGS is not too nice from a performance point of view,
+  // if orthog finds NOT_IMPLEMENTED it will use CholQR instead
+  *iflag=PHIST_NOT_IMPLEMENTED;
+//  PHIST_CHK_NEG_IERR(SUBR(mvec_QR_f)(V,R,iflag),*iflag);
 }
 
 extern "C" void SUBR(mvec_gather_mvecs)(TYPE(mvec_ptr) V, TYPE(const_mvec_ptr) W[], int nblocks, int *iflag)

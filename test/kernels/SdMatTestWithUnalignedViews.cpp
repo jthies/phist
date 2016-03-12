@@ -7,6 +7,7 @@
 
 
 #include "kernels/phist_kernels.h"
+#include "core/phist_sdFact.h"
 #include "KernelTestWithSdMats.h"
 
 using namespace testing;

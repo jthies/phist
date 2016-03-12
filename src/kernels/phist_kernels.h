@@ -144,7 +144,6 @@ typedef int (*phist_mvec_elemFunc)(ghost_gidx, ghost_lidx, void *, void *);
 #include "phist_kernels_decl.h"
 #include "phist_kernels_common_decl.h"
 #include "phist_kernels_fused_decl.h"
-#include "phist_kernels_prec_decl.h"
 #include "phist_kernels_carp_decl.h"
 //!@}
 /*!\name single precision complex kernel functions */
@@ -153,7 +152,6 @@ typedef int (*phist_mvec_elemFunc)(ghost_gidx, ghost_lidx, void *, void *);
 #include "phist_kernels_decl.h"
 #include "phist_kernels_common_decl.h"
 #include "phist_kernels_fused_decl.h"
-#include "phist_kernels_prec_decl.h"
 #include "phist_kernels_carp_decl.h"
 //!@}
 #endif /* PHIST_HAVE_SP */
@@ -164,7 +162,6 @@ typedef int (*phist_mvec_elemFunc)(ghost_gidx, ghost_lidx, void *, void *);
 #include "phist_kernels_decl.h"
 #include "phist_kernels_common_decl.h"
 #include "phist_kernels_fused_decl.h"
-#include "phist_kernels_prec_decl.h"
 #include "phist_kernels_carp_decl.h"
 //!@}
 /*!\name double precision complex kernel functions */
@@ -173,7 +170,6 @@ typedef int (*phist_mvec_elemFunc)(ghost_gidx, ghost_lidx, void *, void *);
 #include "phist_kernels_decl.h"
 #include "phist_kernels_common_decl.h"
 #include "phist_kernels_fused_decl.h"
-#include "phist_kernels_prec_decl.h"
 #include "phist_kernels_carp_decl.h"
 //!@}
 #include "phist_gen_clean.h"

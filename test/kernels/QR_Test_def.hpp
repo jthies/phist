@@ -6,10 +6,22 @@
 #error "file not included correctly"
 #endif
 
-/*! Test fixure. */
+#ifdef TEST_MVEC_QR
+#define MVEC_QR SUBR(mvec_QR)
+#elif defined(TEST_CHOL_QR)
+#define MVEC_QR SUBR(chol_QR)
+#endif
+
+/*! Test the kernel function mvec_QR. As this is an 'optional' kernel, all tests pass if they encounter
+    a return value of PHIST_NOT_IMPLEMENTED in mvec_QR. The orthog routine (core lib) still works if 
+    mvec_QR is not available by using our own implementation of CholQR. 
+ 
+ The same source file is used to generate the tests for chol_QR, which has the same signature and 
+ semantics as mvec_QR.
+ */
 class CLASSNAME: public virtual KernelTestWithVectors<_ST_,_N_,_NV_,MVECS_VIEWED,2>,
                  public virtual KernelTestWithSdMats<_ST_,_NV_,_NV_,SDMATS_VIEWED> 
-  {
+{
 
 public:
 
@@ -106,16 +118,15 @@ TEST_F(CLASSNAME,mvec_normalize)
   }
 }
 
-#ifdef HAVE_MVEC_QR
   TEST_F(CLASSNAME, with_random_vectors) 
-#else
-  TEST_F(CLASSNAME, DISABLED_with_random_vectors)
-#endif
-    {
+  {
     if (typeImplemented_ && !problemTooSmall_)
-      {
+    {
 //      PrintVector(*cout,"QR_Test V",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
-      SUBR(mvec_QR)(vec2_,mat1_,&iflag_);
+      MVEC_QR(vec2_,mat1_,&iflag_);
+#ifdef TEST_MVEC_QR
+      if (iflag_==PHIST_NOT_IMPLEMENTED) return;
+#endif
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_from_device)(vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -134,44 +145,43 @@ TEST_F(CLASSNAME,mvec_normalize)
       SUBR(mvec_from_device)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_NEAR(mt::one(), ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero(),vflag_),sqrt(mt::eps()));
-      }
     }
+  }
 
-#ifdef HAVE_MVEC_QR
   TEST_F(CLASSNAME, with_rank_deficiency) 
-#else
-  TEST_F(CLASSNAME, DISABLED_with_rank_deficiency) 
-#endif
-    {
+  {
     if (typeImplemented_ && !problemTooSmall_)
-      {
+    {
       if (nvec_==1)
-        {
+      {
         SUBR(mvec_put_value)(vec1_,st::zero(),&iflag_);
         ASSERT_EQ(0,iflag_);
-        }
+      }
       else
-        {
+      {
         SUBR(mvec_random)(vec1_,&iflag_);
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_from_device)(vec1_,&iflag_);
         ASSERT_EQ(0,iflag_);
         // set last two columns to same vector
         for (int i=0;i<stride_*nloc_;i+=stride_)
-          {
+        {
 #ifdef PHIST_MVECS_ROW_MAJOR
           vec1_vp_[(nvec_-1)+i*lda_] = vec1_vp_[(nvec_-2)+i*lda_];
 #else
           vec1_vp_[(nvec_-1)*lda_+i] = vec1_vp_[(nvec_-2)*lda_+i];
 #endif
-          }
-        SUBR(mvec_to_device)(vec1_,&iflag_);
         }
+        SUBR(mvec_to_device)(vec1_,&iflag_);
+      }
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(mvec_QR)(vec2_,mat1_,&iflag_);
+      MVEC_QR(vec2_,mat1_,&iflag_);
+#ifdef TEST_MVEC_QR
+      if (iflag_==PHIST_NOT_IMPLEMENTED) return;
+#endif
       // check that the rank deficiency was detected
       ASSERT_EQ(1, iflag_);
       iflag_ = 0;
@@ -184,21 +194,34 @@ TEST_F(CLASSNAME,mvec_normalize)
       // the factor 2 in releps here is because otherwise fails the test by a fraction of releps
       ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.0*releps(vec1_));
 
+#if PHIST_OUTLEV>=PHIST_DEBUG
+# if _N_<100
+        PHIST_SOUT(PHIST_DEBUG,"original V:\n");
+        SUBR(mvec_print)(vec1_,&iflag_);
+        PHIST_SOUT(PHIST_DEBUG,"computed Q:\n");
+        SUBR(mvec_print)(vec2_,&iflag_);
+        PHIST_SOUT(PHIST_DEBUG,"computed R:\n");
+        SUBR(sdMat_print)(mat1_,&iflag_);
+# endif
+#endif
       // check Q*R=V
       SUBR(mvec_times_sdMat)(-st::one(),vec2_,mat1_,st::one(),vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_from_device)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_NEAR(mt::one(), ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero(),vflag_),sqrt(mt::eps()));
-      }
 
+#if PHIST_OUTLEV>=PHIST_DEBUG
+# if _N_<100
+        PHIST_SOUT(PHIST_DEBUG,"explicit Q*R:\n");
+        SUBR(mvec_print)(vec1_,&iflag_);
+# endif
+#endif
+      ASSERT_NEAR(mt::one(), ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero(),vflag_),sqrt(mt::eps()));
     }
 
-#ifdef HAVE_MVEC_QR
+  }
+
   TEST_F(CLASSNAME, with_one_vectors) 
-#else
-  TEST_F(CLASSNAME, DISABLED_with_one_vectors) 
-#endif
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
@@ -207,7 +230,10 @@ TEST_F(CLASSNAME,mvec_normalize)
       SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(mvec_QR)(vec2_,mat1_,&iflag_);
+      MVEC_QR(vec2_,mat1_,&iflag_);
+#ifdef TEST_MVEC_QR
+      if (iflag_==PHIST_NOT_IMPLEMENTED) return;
+#endif
       // check that the rank deficiency was detected
       ASSERT_EQ(std::max(nvec_-1,0), iflag_);
       iflag_ = 0;
