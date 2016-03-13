@@ -27,12 +27,12 @@ typedef phist::ScalarTraits<ST> st;
 typedef phist::ScalarTraits<MT> mt;
 
 // workaround for #131 (put_func fails with Intel 15.0up02)
-void SUBR(mvec_put_func_substitute)(TYPE(mvec_ptr) V, int (*func)(gidx_t,lidx_t,void*),int* ierr)
+void SUBR(mvec_put_func_substitute)(TYPE(mvec_ptr) V, int (*func)(phist_gidx,phist_lidx,void*),int* ierr)
 {
   _ST_ *val;
-  lidx_t nloc, lda, ncols;
-  gidx_t ilower, iupper;
-  const_map_ptr_t map;
+  phist_lidx nloc, lda, ncols;
+  phist_gidx ilower, iupper;
+  phist_const_map_ptr map;
   PHIST_CHK_IERR(SUBR(mvec_get_map)(V,&map,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&ncols,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&nloc,ierr),*ierr);
@@ -40,10 +40,10 @@ void SUBR(mvec_put_func_substitute)(TYPE(mvec_ptr) V, int (*func)(gidx_t,lidx_t,
   PHIST_CHK_IERR(phist_map_get_iupper(map,&iupper,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_from_device)(V,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(mvec_extract_view)(V,&val,&lda,ierr),*ierr);
-  for (lidx_t i=0; i<nloc; i++)
+  for (phist_lidx i=0; i<nloc; i++)
   {
-    gidx_t ii=i+ilower;
-    for (lidx_t jj=0; jj<ncols; jj++)
+    phist_gidx ii=i+ilower;
+    for (phist_lidx jj=0; jj<ncols; jj++)
     {
 #ifdef PHIST_MVECS_ROW_MAJOR
       func(ii,jj,&val[i*lda+jj]);
@@ -58,7 +58,7 @@ void SUBR(mvec_put_func_substitute)(TYPE(mvec_ptr) V, int (*func)(gidx_t,lidx_t,
 // prototypes and mvec initialization functions
 
 // function that performs numerical tests
-static int run_tests1(Dmvec_ptr_t X, bool high_prec);
+static int run_tests1(phist_Dmvec_ptr X, bool high_prec);
 
 extern "C" {
 
@@ -79,7 +79,7 @@ int synth1(ghost_gidx i, ghost_lidx j, void* val)
   {
     *dval = st::one();
   }
-  else if (i==(gidx_t)(j+1))
+  else if (i==(phist_gidx)(j+1))
   {
     ST e=st::eps();
     *dval = st::rand()*e*e*e;
@@ -100,17 +100,17 @@ int main(int argc, char** argv)
 {
   int ierr;
 
-  comm_ptr_t comm = NULL;
-  const_map_ptr_t cmap = NULL;
-  map_ptr_t map = NULL;
-  mvec_ptr_t X = NULL, Q=NULL;
-  sparseMat_ptr_t A = NULL;
+  phist_comm_ptr comm = NULL;
+  phist_const_map_ptr cmap = NULL;
+  map_ptr map = NULL;
+  mvec_ptr X = NULL, Q=NULL;
+  sparseMat_ptr A = NULL;
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
 
 PHIST_MAIN_TASK_BEGIN
 
-  gidx_t n;
+  phist_gidx n;
   int m;
   
   PHIST_ICHK_IERR(phist_comm_create(&comm,&ierr),ierr);
@@ -184,7 +184,7 @@ PHIST_MAIN_TASK_END
 
 
 
-int run_tests1(Dmvec_ptr_t X, bool high_prec)
+int run_tests1(phist_Dmvec_ptr X, bool high_prec)
 {
 #ifndef PHIST_HIGH_PRECISION_KERNELS
   if (high_prec) 
@@ -194,12 +194,12 @@ int run_tests1(Dmvec_ptr_t X, bool high_prec)
   }
 #endif
   int ierr=0;
-  const_comm_ptr_t comm=NULL;
-  const_map_ptr_t map=NULL;
-  mvec_ptr_t Q=NULL;
-  sdMat_ptr_t R = NULL, QtQ=NULL;
+  phist_const_comm_ptr comm=NULL;
+  phist_const_map_ptr map=NULL;
+  mvec_ptr Q=NULL;
+  sdMat_ptr R = NULL, QtQ=NULL;
   
-  lidx_t n;
+  phist_lidx n;
   int m;
 
   PHIST_ICHK_IERR(SUBR(mvec_get_map)(X,&map,&ierr),ierr);
@@ -236,7 +236,7 @@ int run_tests1(Dmvec_ptr_t X, bool high_prec)
     PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Q,Q,st::zero(),QtQ,&ierr),ierr);
     PHIST_ICHK_IERR(SUBR(sdMat_from_device)(QtQ,&ierr),ierr);
     ST* q=NULL;
-    lidx_t ldq;
+    phist_lidx ldq;
     PHIST_ICHK_IERR(SUBR(sdMat_extract_view)(QtQ,&q,&ldq,&ierr),ierr);
     MT err=mt::zero();
     for (int i=0;i<m;i++)

@@ -9,7 +9,7 @@
 //! enum phist_anasaziType
 void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr) Ainv_op,
                          TYPE(const_linearOp_ptr) B_op,  int variant,
-                         TYPE(const_mvec_ptr) v0,  eigSort_t which,
+                         TYPE(const_mvec_ptr) v0,  phist_EeigSort which,
                          _MT_ tol,                 int *nEig,
                          int* nIter,               int blockDim,
                          int numBlocks,

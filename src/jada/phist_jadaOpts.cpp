@@ -9,7 +9,7 @@
 #include <fstream>
 #include <sstream>
 
-extern "C" void phist_jadaOpts_setDefaults(phist_jadaOpts_t *opts)
+extern "C" void phist_jadaOpts_setDefaults(phist_jadaOpts *opts)
 {
   opts->numEigs=6; 
   opts->which=phist_LM; 
@@ -62,7 +62,7 @@ void set_value(std::string key, entryType& entry, std::string file)
   }
 }
 
-extern "C" void phist_jadaOpts_fromFile(phist_jadaOpts_t* opts, const char* filename, int* iflag)
+extern "C" void phist_jadaOpts_fromFile(phist_jadaOpts* opts, const char* filename, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   phist_jadaOpts_setDefaults(opts);

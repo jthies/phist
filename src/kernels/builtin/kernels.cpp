@@ -233,25 +233,25 @@ void phist_kernels_finalize(int* iflag)
   *iflag=0;
 }
 
-void phist_comm_create(comm_ptr_t* vcomm, int* iflag);
-void phist_comm_delete(comm_ptr_t vcomm, int* iflag);
-void phist_comm_get_rank(const_comm_ptr_t vcomm, int* rank, int* iflag);
-void phist_comm_get_size(const_comm_ptr_t vcomm, int* size, int* iflag);
+void phist_comm_create(phist_comm_ptr* vcomm, int* iflag);
+void phist_comm_delete(phist_comm_ptr vcomm, int* iflag);
+void phist_comm_get_rank(phist_const_comm_ptr vcomm, int* rank, int* iflag);
+void phist_comm_get_size(phist_const_comm_ptr vcomm, int* size, int* iflag);
 #ifdef PHIST_HAVE_MPI
-void phist_comm_get_mpi_comm(const_comm_ptr_t comm, MPI_Comm* mpiComm, int* iflag)
+void phist_comm_get_mpi_comm(phist_const_comm_ptr comm, MPI_Comm* mpiComm, int* iflag)
 {
   *iflag=0;
   MPI_Fint fcomm = *((MPI_Fint*)comm);
   *mpiComm = MPI_Comm_f2c(fcomm);
 }
 #endif
-void phist_map_create(map_ptr_t* vmap, const_comm_ptr_t vcomm, gidx_t nglob, int *iflag);
-void phist_map_delete(map_ptr_t vmap, int *iflag);
-void phist_map_get_comm(const_map_ptr_t vmap, const_comm_ptr_t* vcomm, int* iflag);
-void phist_map_get_local_length(const_map_ptr_t vmap, lidx_t* nloc, int* iflag);
-void phist_map_get_global_length(const_map_ptr_t vmap, gidx_t* nglob, int* iflag);
-void phist_map_get_ilower(const_map_ptr_t vmap, gidx_t* ilower, int* iflag);
-void phist_map_get_iupper(const_map_ptr_t vmap, gidx_t* iupper, int* iflag);
+void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm, phist_gidx nglob, int *iflag);
+void phist_map_delete(phist_map_ptr vmap, int *iflag);
+void phist_map_get_comm(phist_const_map_ptr vmap, phist_const_comm_ptr* vcomm, int* iflag);
+void phist_map_get_local_length(phist_const_map_ptr vmap, phist_lidx* nloc, int* iflag);
+void phist_map_get_global_length(phist_const_map_ptr vmap, phist_gidx* nglob, int* iflag);
+void phist_map_get_ilower(phist_const_map_ptr vmap, phist_gidx* ilower, int* iflag);
+void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iupper, int* iflag);
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

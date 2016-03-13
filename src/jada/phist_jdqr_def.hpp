@@ -43,7 +43,7 @@ void SUBR(computeResidual)(TYPE(const_linearOp_ptr) B_op, TYPE(mvec_ptr) r_ptr,
 extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) B_op,
                 TYPE(mvec_ptr) X, TYPE(mvec_ptr) Qout, TYPE(sdMat_ptr) Rout,
                 _ST_* evals, _MT_* resid, int* is_cmplx,
-        phist_jadaOpts_t opts, int* num_eigs, int* num_iters,
+        phist_jadaOpts opts, int* num_eigs, int* num_iters,
         int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -52,63 +52,63 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
   int nconv=0; // number of converged eigenpairs
 
   // partial QR decomposition (converged eigenvectors form Q)
-  mvec_ptr_t Qv=NULL;  // will be created as a view of the converged eigenvectors
-  mvec_ptr_t Qtil=NULL; // for representing [Q u] with u the current approximation
-  sdMat_ptr_t R=NULL;      // store R part of QR decomp
-  sdMat_ptr_t Rv=NULL; // to view the first nconv x nconv block of R
+  mvec_ptr Qv=NULL;  // will be created as a view of the converged eigenvectors
+  mvec_ptr Qtil=NULL; // for representing [Q u] with u the current approximation
+  sdMat_ptr R=NULL;      // store R part of QR decomp
+  sdMat_ptr Rv=NULL; // to view the first nconv x nconv block of R
   
   // current basis 
-  mvec_ptr_t V=NULL, AV=NULL;
+  mvec_ptr V=NULL, AV=NULL;
   // temporary storage
-  mvec_ptr_t Vtmp=NULL;
+  mvec_ptr Vtmp=NULL;
   // current update
-  mvec_ptr_t t=NULL;
+  mvec_ptr t=NULL;
   // some more (single) vectors we need:
-  mvec_ptr_t u=NULL, Au=NULL, r=NULL, rtil=NULL;
+  mvec_ptr u=NULL, Au=NULL, r=NULL, rtil=NULL;
 #ifndef IS_COMPLEX
   // the above vectors may be complex even for a real   
   // matrix. These are the first columns to be used for 
   // real eigenvectors                                  
   // (in the complex case x_r aliases x and x_i==NULL). 
-  mvec_ptr_t    u_r=NULL, Au_r=NULL, r_r=NULL, rtil_r=NULL, t_r=NULL;
+  mvec_ptr    u_r=NULL, Au_r=NULL, r_r=NULL, rtil_r=NULL, t_r=NULL;
 #endif
   // these point either to u or u_r etc. to make live simpler further down
-  mvec_ptr_t u_ptr=NULL, Au_ptr=NULL, r_ptr=NULL, rtil_ptr=NULL, t_ptr=NULL;
+  mvec_ptr u_ptr=NULL, Au_ptr=NULL, r_ptr=NULL, rtil_ptr=NULL, t_ptr=NULL;
   // Q*s (temporary vector)
-  sdMat_ptr_t atil=NULL, atilv=NULL;
+  sdMat_ptr atil=NULL, atilv=NULL;
   // matrix <V,AV>
-  sdMat_ptr_t M=NULL;
-  sdMat_ptr_t Mv=NULL; // to create views of parts of M
+  sdMat_ptr M=NULL;
+  sdMat_ptr Mv=NULL; // to create views of parts of M
   // Schur-decomposition of M
-  sdMat_ptr_t T=NULL, S=NULL;
-  sdMat_ptr_t Tv=NULL,Sv=NULL; // to create views of parts of T and S
+  sdMat_ptr T=NULL, S=NULL;
+  sdMat_ptr Tv=NULL,Sv=NULL; // to create views of parts of T and S
 
   // for extracting views of M, T and S (to call lapack etc.)
-  lidx_t ldM,ldS,ldT;
+  phist_lidx ldM,ldS,ldT;
   ST *M_raw, *S_raw, *T_raw;
   
   //! view of certain columns of V
-  mvec_ptr_t Vv=NULL, Vm=NULL;
+  mvec_ptr Vv=NULL, Vm=NULL;
   //! view of certain columns of AV
-  mvec_ptr_t AVv=NULL, AVm=NULL;
+  mvec_ptr AVv=NULL, AVm=NULL;
 
   //! Hessenberg matrix from the initial Arnoldi iteration
-  sdMat_ptr_t H0=NULL;
+  sdMat_ptr H0=NULL;
   
   int expand=1;
   int solve=1;
   std::complex<MT> theta; // next eigenvalue to go for
   // theta as a sdMat_t (either 1x1 or 2x2 in real case)
-  sdMat_ptr_t Theta=NULL;
+  sdMat_ptr Theta=NULL;
   
   int numEigs=opts.numEigs;
   MT tol = opts.convTol;
   int maxIter=opts.maxIters;
-  eigSort_t which=opts.which;
-  eigExtr_t how=opts.how;
+  phist_EeigSort which=opts.which;
+  phist_EeigExtr how=opts.how;
   int minBas = opts.minBas;
   int maxBas = opts.maxBas;
-  linSolv_t innerSolvType = opts.innerSolvType;
+  phist_ElinSolv innerSolvType = opts.innerSolvType;
   int innerSolvMaxBas = opts.innerSolvMaxBas;
   int innerSolvBlockSize = opts.innerSolvBlockSize;
   bool arno=(bool)opts.arno;
@@ -135,7 +135,7 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
   *num_iters=0;
   *num_eigs=0;
   res_nrm=1.0e20;// some random large value 
-  const_comm_ptr_t comm;
+  phist_const_comm_ptr comm;
   PHIST_CHK_IERR(phist_map_get_comm(A_op->range_map,&comm,iflag),*iflag);
 
 #ifdef IS_COMPLEX
@@ -216,7 +216,7 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
   }
   PHIST_SOUT(PHIST_VERBOSE,"====================\n");
 
-  mvec_ptr_t v0=(mvec_ptr_t)opts.v0;
+  mvec_ptr v0=(mvec_ptr)opts.v0;
   //TODO - we promised to use the user-provided subspace v0, but here we
   //       use only the first vector as start vec when Arnoldi is used.
   if (v0==NULL)
@@ -233,7 +233,7 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v0,&nv0,iflag),*iflag);
     if (nv0>1)
     {
-      mvec_ptr_t V0=v0;
+      mvec_ptr V0=v0;
       PHIST_CHK_IERR(SUBR(mvec_view_block)(V0,&v0,0,0,iflag),*iflag);
     }
   }
@@ -349,9 +349,9 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
       PHIST_DEB("basis size is now m=%d\n",m);
 #ifdef TESTING
       // check orthogonality of [V Q]
-      sdMat_ptr_t tmp1=NULL,tmp2=NULL;
+      sdMat_ptr tmp1=NULL,tmp2=NULL;
       ST *tmp1_raw, *tmp2_raw;
-      lidx_t ld1,ld2;
+      phist_lidx ld1,ld2;
       PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp1,m,m,comm,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_extract_view)(tmp1,&tmp1_raw,&ld1,iflag),*iflag);
         int ncV;
@@ -527,7 +527,7 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
       m=m-nv;
       //V=V*S;
       // It is not allowed to alias V in mvec_times_sdMat, so we use a temporary vector
-      mvec_ptr_t v_tmp=NULL;
+      mvec_ptr v_tmp=NULL;
       PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v_tmp,0,m-1,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),v_tmp,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(mvec_set_block)(V,v_tmp,0,m-1,iflag),*iflag);
@@ -613,7 +613,7 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
       PHIST_CHK_IERR(SUBR(sdMat_view_block)(M,&Mv,0,m-1,0,m-1,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_get_block)(T,Mv,0,m-1,0,m-1,iflag),*iflag);
       //V=V*S;
-      mvec_ptr_t v_tmp=NULL;
+      mvec_ptr v_tmp=NULL;
       PHIST_CHK_IERR(SUBR(mvec_view_block)(Vtmp,&v_tmp,0,m-1,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Vv,Sv,st::zero(),v_tmp,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(mvec_set_block)(V,v_tmp,0,m-1,iflag),*iflag);
@@ -711,7 +711,7 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
     // copy at most num_eigs+1 converged eigenvalues into the user
     // provided array
     ST* R_raw=NULL;
-    lidx_t ldR;
+    phist_lidx ldR;
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&R_raw,&ldR,iflag),*iflag);
     i=0;
     while (i<nconv)
@@ -751,8 +751,8 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
     const char* howmny="A";
     int m_out;
     MT* work=new MT[5*nconv];
-    blas_idx_t ildS=static_cast<blas_idx_t>(ldS);
-    blas_idx_t ildR=static_cast<blas_idx_t>(ldR);
+    phist_blas_idx ildS=static_cast<phist_blas_idx>(ldS);
+    phist_blas_idx ildR=static_cast<phist_blas_idx>(ldR);
     if (ildS<0 || ildR<0)
     {
     *iflag=PHIST_INTEGER_OVERFLOW;
@@ -760,12 +760,12 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
     }
 #ifdef IS_COMPLEX
     MT* rwork = work+4*nconv;
-    PHIST_CHK_IERR(PHIST_TG_PREFIX(TREVC)((blas_char_t*)side, (blas_char_t*)howmny, NULL, 
+    PHIST_CHK_IERR(PHIST_TG_PREFIX(TREVC)((phist_blas_char*)side, (phist_blas_char*)howmny, NULL, 
     &nconv, (mt::blas_cmplx_t*)R_raw, &ildR, NULL, &ildS, 
     (mt::blas_cmplx_t*)S_raw, &ildS, &nconv, &m_out, (mt::blas_cmplx_t*)work, 
     rwork, iflag),*iflag);
 #else
-    PHIST_CHK_IERR(PHIST_TG_PREFIX(TREVC)((blas_char_t*)side, (blas_char_t*)howmny, NULL, 
+    PHIST_CHK_IERR(PHIST_TG_PREFIX(TREVC)((phist_blas_char*)side, (phist_blas_char*)howmny, NULL, 
     &nconv,R_raw, &ildR, NULL, &ildS, S_raw, &ildS, &nconv, &m_out, work, 
     iflag),*iflag);
 #endif  
@@ -844,7 +844,7 @@ void SUBR(computeResidual)(TYPE(const_linearOp_ptr) B_op, TYPE(mvec_ptr) r_ptr,
   MT nrm[2];
 
   // pointer to temporary storage for B*Q*atil if B is defined
-  mvec_ptr_t tmp_ptr=NULL;
+  mvec_ptr tmp_ptr=NULL;
 
   // first: r=Au
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),Au_ptr,st::zero(),r_ptr,iflag),*iflag);

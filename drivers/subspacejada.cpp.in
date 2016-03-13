@@ -72,7 +72,7 @@ int main(int argc, char** argv)
   const char* problem=argv[1];
 
   // fill the jadaOpts struct to pass settings to the solver
-  phist_jadaOpts_t opts;
+  phist_jadaOpts opts;
 
 if (argc==3 && argv[2][0]!='0'&&argv[2][0]!='1')
 {
@@ -159,7 +159,7 @@ else
   int blockDim=opts.blockSize;
   int nEig=opts.numEigs;
 
-  comm_ptr_t comm = NULL;
+  comm_ptr comm = NULL;
   // wrap MPI_COMM_WORLD
   PHIST_ICHK_IERR(phist_comm_create(&comm,&iflag),iflag);
 
@@ -169,7 +169,7 @@ else
   // read or create matrix A using our helper function from driver_utils,
   // which can handle matrix files like name.mm, name.bin etc. but also our
   // favorite test cases spinSZ<N>, graphene<N> etc.
-  sparseMat_ptr_t A = NULL;
+  sparseMat_ptr A = NULL;
   iflag=PHIST_SPARSEMAT_REPARTITION;
   if( opts.innerSolvBlockSize == 1 )
     iflag = iflag | PHIST_SPARSEMAT_OPT_SINGLESPMVM;
@@ -178,24 +178,24 @@ else
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,problem,&iflag), iflag);
   
   // create an operator from A
-  linearOp_ptr_t opA = new TYPE(linearOp);
+  linearOp_ptr opA = new TYPE(linearOp);
   PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(opA,A,&iflag),iflag);
 
   // we need the domain map of the matrix
-  const_map_ptr_t map = NULL;
+  const_map_ptr map = NULL;
   PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A,&map,&iflag),iflag);
 
   // setup necessary vectors and matrices for the schur form
-  mvec_ptr_t Q = NULL;
+  mvec_ptr Q = NULL;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&Q,map,nEig+opts.blockSize-1,&iflag),iflag);
-  sdMat_ptr_t R = NULL;
+  sdMat_ptr R = NULL;
   PHIST_ICHK_IERR(SUBR(sdMat_create)(&R,nEig+blockDim-1,nEig+blockDim-1,comm,&iflag),iflag);
   _MT_ *resNorm = new _MT_[nEig+blockDim-1];
   _MT_ *resNormExp = new _MT_[nEig+blockDim-1];
   CT *ev = new CT[nEig+blockDim-1];
 
   // setup start vector (currently to (1 0 1 0 .. ) )
-  mvec_ptr_t v0 = NULL;
+  mvec_ptr v0 = NULL;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&v0,map,1,&iflag),iflag);
 //  PHIST_ICHK_IERR(SUBR(mvec_random)(v0,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::one(),&iflag),iflag);
@@ -207,7 +207,7 @@ else
   //std::srand(ilower);
   //PHIST_ICHK_IERR(SUBR(mvec_put_value)(v0,st::zero(),&iflag),iflag);
   _ST_* v0_raw;
-  lidx_t v0_lda;
+  phist_lidx v0_lda;
   PHIST_ICHK_IERR(SUBR(mvec_extract_view)(v0,&v0_raw,&v0_lda,&iflag),iflag);
   for(int i = ilower; i <= iupper; i++)
   {
@@ -218,7 +218,7 @@ else
 
 
   // used to calculate explicit residuals
-  mvec_ptr_t res;
+  mvec_ptr res;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&res,map,nEig+blockDim-1,&iflag),iflag);
 
   opts.v0=v0;

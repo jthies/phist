@@ -58,9 +58,9 @@ void SUBR(carp_cgState_create)(TYPE(carp_cgState_ptr) *state,
   PHIST_CHK_IERR(SUBR(carp_setup)(A,nvec,sigma_r,sigma_i,
       &aux, iflag),*iflag);
 
-  const_map_ptr_t map=NULL;
+  phist_const_map_ptr map=NULL;
   PHIST_CHK_IERR(SUBR(sparseMat_get_row_map)(A,&map,iflag),*iflag);
-  lidx_t nloc;
+  phist_lidx nloc;
   PHIST_CHK_IERR(phist_map_get_local_length(map,&nloc,iflag),*iflag);
   
   *state = new TYPE(carp_cgState);
@@ -655,7 +655,7 @@ void SUBR(my_compResid)(TYPE(x_sparseMat) const* A,
   }
   else
   {
-    const_map_ptr_t map;
+    phist_const_map_ptr map;
     PHIST_CHK_IERR(SUBR(mvec_get_map)(x->v_,&map,iflag),*iflag);
     R=new TYPE(x_mvec);
   PHIST_CHK_IERR(R->allocate(map,nvec,naug,rc,iflag),*iflag);

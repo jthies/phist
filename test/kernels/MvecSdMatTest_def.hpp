@@ -50,7 +50,7 @@ public:
   // i starts at (i-1)*lda. Entries j and j+1
   // are at memory locations (i-1)*lda+stride*j
   // and (i-1)*lda+stride*(j+1), respectively.
-  lidx_t ldaV1_,ldaV2_,ldaM1_,ldaM2_,stride_;
+  phist_lidx ldaV1_,ldaV2_,ldaM1_,ldaM2_,stride_;
 
   V1Test v1test_;
   V2Test v2test_;
@@ -191,7 +191,7 @@ public:
 
       // fill columns with row/i and row/(i+1)
       // exploits sum_(k=1)^n 1/(k*(k+1)) = 1 - 1/(n+1)
-      gidx_t ilower;     
+      phist_gidx ilower;     
       phist_map_get_ilower(map_,&ilower,&iflag_);
       for (int ii=0; ii< nloc_; ii++)
       {
@@ -358,7 +358,7 @@ public:
 
       // fill columns with row/i and row/(i+1)
       // exploits sum_(k=1)^n 1/(k*(k+1)) = 1 - 1/(n+1)
-      gidx_t ilower;     
+      phist_gidx ilower;     
       phist_map_get_ilower(map_,&ilower,&iflag_);
       for (int ii=0; ii< nloc_; ii++)
       {
@@ -865,11 +865,11 @@ public:
       
       ASSERT_EQ(jmax-jmin,imax-imin);
 
-      mvec_ptr_t V=NULL;
+      mvec_ptr V=NULL;
       SUBR(mvec_view_block)(V1_,&V, jmin,jmax,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      sdMat_ptr_t M=NULL;
+      sdMat_ptr M=NULL;
       SUBR(sdMat_view_block)(M1_,&M, imin,imax,jmin,jmax,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -1058,23 +1058,23 @@ public:
         PHIST_SOUT(PHIST_DEBUG, "Test offsets: off1: %d, off2: %d, m1: %d, m2: %d, off1_M: %d, off2_M: %d\n", off1[i], off2[i], m1[i], m2[i], off1_M[i], off2_M[i]);
 
         // create views to parts of mvecs and sdmats
-        mvec_ptr_t V1 = NULL;
+        mvec_ptr V1 = NULL;
         SUBR(mvec_view_block)(V1_,&V1,off1[i],off1[i]+m1[i]-1,&iflag_);
         ASSERT_EQ(0,iflag_);
-        mvec_ptr_t V2 = NULL;
+        mvec_ptr V2 = NULL;
         SUBR(mvec_view_block)(V2_,&V2,off2[i],off2[i]+m2[i]-1,&iflag_);
         ASSERT_EQ(0,iflag_);
-        sdMat_ptr_t M1 = NULL;
+        sdMat_ptr M1 = NULL;
         SUBR(sdMat_view_block)(M1_,&M1,off1_M[i],off1_M[i]+m1[i]-1,off2_M[i],off2_M[i]+m2[i]-1,&iflag_);
         ASSERT_EQ(0,iflag_);
-        sdMat_ptr_t M2 = NULL;
+        sdMat_ptr M2 = NULL;
         SUBR(sdMat_view_block)(M2_,&M2,off1[i],off1[i]+m1[i]-1,off2[i],off2[i]+m2[i]-1,&iflag_);
         ASSERT_EQ(0,iflag_);
-        sdMat_ptr_t M3=NULL;
+        sdMat_ptr M3=NULL;
         SUBR(sdMat_create)(&M3, m1[i], m2[i], comm_, &iflag_);
         ASSERT_EQ(0,iflag_);
         _ST_* M3_vp;
-        lidx_t lda_M3;
+        phist_lidx lda_M3;
         SUBR(sdMat_extract_view)(M3,&M3_vp,&lda_M3, &iflag_);
         ASSERT_EQ(0,iflag_);
 

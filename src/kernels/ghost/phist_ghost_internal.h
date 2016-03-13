@@ -46,7 +46,7 @@ typedef struct ghost_map_t
     template<typename idx_t>
     int check_local_size(idx_t& i)
     {
-      if (i>std::numeric_limits<lidx_t>::max())
+      if (i>std::numeric_limits<phist_lidx>::max())
       {
         return -1;
       }

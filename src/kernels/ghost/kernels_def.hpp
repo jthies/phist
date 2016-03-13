@@ -7,7 +7,7 @@
 
 #if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
 template<>
-Teuchos::RCP<node_t> ghost::TsqrAdaptor< _ST_ >::node_=Teuchos::null;
+Teuchos::RCP<node_type> ghost::TsqrAdaptor< _ST_ >::node_=Teuchos::null;
 #endif
 
 using namespace phist::ghost_internal;
@@ -24,7 +24,7 @@ extern "C" void SUBR(type_avail)(int* iflag)
 
 
 //! read a matrix from a MatrixMarket (ASCII) file
-extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, phist_const_comm_ptr vcomm,
 const char* filename,int* iflag)
 {
 #include "phist_std_typedefs.hpp"
@@ -89,7 +89,7 @@ PHIST_TASK_END(iflag);
 }
 
 //! read a matrix from a Ghost CRS (binary) file.
-extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* vA, phist_const_comm_ptr vcomm,
 const char* filename,int* iflag)
 {
 #include "phist_std_typedefs.hpp"
@@ -157,7 +157,7 @@ PHIST_TASK_END(iflag);
 }
 
 //! read a matrix from a Harwell-Boeing (HB) file
-extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* vA, phist_const_comm_ptr vcomm,
 const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -173,7 +173,7 @@ const char* filename,int* iflag)
 
 //!@{
 //! get the row distribution of the matrix
-extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* vmap, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
@@ -182,14 +182,14 @@ extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, const_
   ghost_map_t* map = mapGarbageCollector.new_map(vA);
   map->ctx = A->context;
   map->vtraits_template=phist_default_vtraits();
-  *vmap = (const_map_ptr_t)map;
+  *vmap = (phist_const_map_ptr)map;
 }
 
 //! get column distribution of a matrix
 //! we currently treat all maps as the same as we don't allow any fancy
 //! operations using them anyway and ghost can handle both halo'd (colmap)
 //! and standard (rowmap) vectors in the mvm.
-extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* vmap, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
@@ -198,14 +198,14 @@ extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, const_
   ghost_map_t* map = mapGarbageCollector.new_map(vA);
   map->ctx = A->context;
   map->vtraits_template=phist_default_vtraits();
-  *vmap = (const_map_ptr_t)map;
+  *vmap = (phist_const_map_ptr)map;
 }
 
 //! get the map for vectors x in y=A*x
 //! we currently treat all maps as the same as we don't allow any fancy
 //! operations using them anyway and ghost can handle both halo'd (colmap)
 //! and standard (rowmap) vectors in the mvm.
-extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* vmap, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   SUBR(sparseMat_get_col_map)(vA,vmap,iflag);
@@ -215,7 +215,7 @@ extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) vA, con
 //! we currently treat all maps as the same as we don't allow any fancy
 //! operations using them anyway and ghost can handle both halo'd (colmap)
 //! and standard (rowmap) vectors in the mvm.
-extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* vmap, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   SUBR(sparseMat_get_row_map)(vA,vmap,iflag);
@@ -228,7 +228,7 @@ extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) vA, cons
 //! create a block-vector. The entries are stored contiguously
 //! at val in column major ordering.
 extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vV, 
-        const_map_ptr_t vmap, int nvec, int* iflag)
+        phist_const_map_ptr vmap, int nvec, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
@@ -281,8 +281,8 @@ PHIST_TASK_END(iflag);
 //! dimension of the 2D array values). CAVEAT: This function only works
 //! if nrowshalo==nrowspadded in the map, which is in general only the case for
 //! if there is only 1 MPI process or the matrix is trivially parallel.
-extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap, 
-        _ST_* values, lidx_t lda, int nvec,
+extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, phist_const_map_ptr vmap, 
+        _ST_* values, phist_lidx lda, int nvec,
         int* iflag)
 {
 #include "phist_std_typedefs.hpp"
@@ -325,7 +325,7 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
 extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols, 
-        const_comm_ptr_t vcomm, int* iflag)
+        phist_const_comm_ptr vcomm, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
@@ -363,8 +363,8 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 PHIST_TASK_END(iflag);
 }
 
-void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
-        _ST_* values, lidx_t lda, int nrows, int ncols,
+void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, phist_const_comm_ptr comm,
+        _ST_* values, phist_lidx lda, int nrows, int ncols,
         int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
@@ -373,7 +373,7 @@ void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
 //@}
 
 //! retrieve the map of the vectors in V
-extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, phist_const_map_ptr* vmap, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
@@ -382,7 +382,7 @@ extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, const_map_ptr_t* vma
   ghost_map_t* map = mapGarbageCollector.new_map(vV);
   map->ctx=V->context; 
   map->vtraits_template=V->traits;
-  *vmap=(const_map_ptr_t)map;
+  *vmap=(phist_const_map_ptr)map;
 }
 
 //! retrieve number of vectors/columns in V
@@ -415,7 +415,7 @@ extern "C" void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) vM, int* ncols, int*
 }
 
 
-extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* iflag)
+extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, phist_lidx* lda, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
@@ -452,7 +452,7 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* l
   *lda = V->stride;
 }
 
-extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* iflag)
+extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, phist_lidx* lda, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M, vM, *iflag);
@@ -662,7 +662,7 @@ PHIST_TASK_BEGIN(ComputeTask)
 
 #ifdef TESTING
 int nv_v,nv_vb;
-lidx_t nr_v,nr_vb;
+phist_lidx nr_v,nr_vb;
 PHIST_CHK_IERR(*iflag=V->elSize-Vblock->elSize,*iflag);
 PHIST_CHK_IERR(*iflag=V->elSize-sizeof(_ST_),*iflag);
 PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nv_v,iflag),*iflag);
@@ -685,7 +685,7 @@ PHIST_CHK_IERR(SUBR(mvec_my_length)(Vblock,&nr_vb,iflag),*iflag);
   // view the same data (this may happen in subspacejada as it is
   // implemented right now)
   _ST_ *v_ptr=NULL,*vb_ptr=NULL;
-  lidx_t ldv,ldvb;
+  phist_lidx ldv,ldvb;
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))vV,&v_ptr,&ldv,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))vVblock,&vb_ptr,&ldvb,iflag),*iflag);
   
@@ -723,7 +723,7 @@ PHIST_CHK_IERR(SUBR(mvec_my_length)(Vblock,&nr_vb,iflag),*iflag);
   V->viewCols(V,&Vcols,(ghost_lidx)(jmax-jmin+1),(ghost_lidx)jmin);
 #ifdef TESTING
   _ST_* vc_ptr=NULL;
-  lidx_t ldvc;
+  phist_lidx ldvc;
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))Vcols,&vc_ptr,&ldvc,iflag),*iflag);
   PHIST_CHK_IERR(*iflag=ldvc-ldv,*iflag);
   if (vc_ptr!=v_ptr+jmin*cs)
@@ -814,7 +814,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   }
 #endif 
   _ST_ *m_ptr, *mb_ptr;
-  lidx_t ldm, ldmb;
+  phist_lidx ldm, ldmb;
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)((void*)M,&m_ptr,&ldm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)((void*)Mblock,&mb_ptr,&ldmb,iflag),*iflag);
 #ifdef PHIST_SDMATS_ROW_MAJOR
@@ -952,7 +952,7 @@ extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag)
   PHIST_PERFCHECK_VERIFY_SMALL;
 
   _ST_ *V_raw = NULL;
-  lidx_t lda;
+  phist_lidx lda;
   int m, n;
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(V, &V_raw, &lda, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(V, &m, iflag), *iflag);
@@ -1039,7 +1039,7 @@ PHIST_TASK_END(iflag);
 #endif
 
 //! put random numbers into all elements of a serial dense matrix
-extern "C" void SUBR(sdMat_sync_values)(TYPE(sdMat_ptr) vM, const_comm_ptr_t vcomm, int* iflag)
+extern "C" void SUBR(sdMat_sync_values)(TYPE(sdMat_ptr) vM, phist_const_comm_ptr vcomm, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
@@ -1500,7 +1500,7 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE
   if( rank == 0 )
     mybeta = beta;
 
-    lidx_t ncC = C->traits.ncols;
+    phist_lidx ncC = C->traits.ncols;
 
   PHIST_DEB("VtV=C, V %" PRlidx "x%" PRlidx ", \n"
             "       W %" PRlidx "x%" PRlidx ", \n"
@@ -1562,7 +1562,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     PHIST_CAST_PTR_FROM_VOID(ghost_densemat,C,vC,*iflag);
     PHIST_CAST_PTR_FROM_VOID(ghost_densemat,W,vW,*iflag);
 
-    lidx_t nrV,nrW;
+    phist_lidx nrV,nrW;
     int ncV, ncW, nrC, ncC;
     nrV=V->traits.nrows;  ncV=V->traits.ncols;
     nrW=W->traits.nrows;  ncW=V->traits.ncols;
@@ -1842,20 +1842,20 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
 //! if either reV or imV are NULL, it is not touched.
 #ifdef IS_COMPLEX
 # ifdef IS_DOUBLE
-extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Dmvec_t* reV, Dmvec_t* imV, int *iflag)
+extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Dmvec* reV, phist_Dmvec* imV, int *iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 # else
-extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* imV, int *iflag)
+extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Smvec_ptr reV, phist_Smvec_ptr imV, int *iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 # endif
 #endif
 
-void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, const_comm_ptr_t vcomm,
-        gidx_t nrows, gidx_t ncols, lidx_t maxnne,
+void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
+        phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
                 phist_sparseMat_rowFunc rowFunPtr, void* last_arg, int *iflag)
 {
 #include "phist_std_typedefs.hpp"

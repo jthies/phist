@@ -1,11 +1,11 @@
 // some common macros for all types:
 #ifdef IS_DOUBLE
 #define _MT_ double
-#define _CT_ d_complex_t
+#define _CT_ phist_d_complex
 #define ASSERT_REAL_EQ(expected,actual) ASSERT_DOUBLE_EQ(expected,actual)
 #else
 #define _MT_ float
-#define _CT_ s_complex_t
+#define _CT_ phist_s_complex
 #define ASSERT_REAL_EQ(expected,actual) ASSERT_FLOAT_EQ(expected,actual)
 #endif
 

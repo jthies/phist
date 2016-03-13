@@ -24,7 +24,7 @@ static _MT_ MvecEqual(TYPE(mvec_ptr) V, _ST_ value)
 {
   int iflag;
   _ST_* val;
-  lidx_t lda,n;
+  phist_lidx lda,n;
   int m;
   
   SUBR(mvec_from_device)(V,&iflag);
@@ -54,7 +54,7 @@ static _MT_ MvecsEqual(TYPE(mvec_ptr) V1, TYPE(mvec_ptr) V2, _MT_ relTo = mt::ze
 {
   int iflag;
   _ST_ *val,*val2;
-  lidx_t lda,n,lda2,n2;
+  phist_lidx lda,n,lda2,n2;
   int m,m2;
   
   SUBR(mvec_from_device)(V1,&iflag);
@@ -107,7 +107,7 @@ static _MT_ SdMatEqual(TYPE(sdMat_ptr) M, _ST_ value)
 {
   int iflag;
   _ST_* val;
-  lidx_t lda;
+  phist_lidx lda;
   int n,m;
   
   SUBR(sdMat_from_device)(M,&iflag);
@@ -134,7 +134,7 @@ static _MT_ SdMatsEqual(TYPE(sdMat_ptr) M1, TYPE(sdMat_ptr) M2, _MT_ relTo = mt:
 {
   int iflag;
   _ST_ *val, *val2;
-  lidx_t lda,lda2;
+  phist_lidx lda,lda2;
   int n,m,n2,m2;
   
   SUBR(sdMat_from_device)(M1,&iflag);
@@ -174,7 +174,7 @@ static _MT_ SdMatsEqual(TYPE(sdMat_ptr) M1, TYPE(sdMat_ptr) M2, _MT_ relTo = mt:
   return return_value;
 }
 
-static _MT_ ArrayEqual(const _ST_* array, int n, int m, lidx_t lda, lidx_t stride, _ST_ value, bool swap_nm=false)
+static _MT_ ArrayEqual(const _ST_* array, int n, int m, phist_lidx lda, phist_lidx stride, _ST_ value, bool swap_nm=false)
 {
   MT maxval=mt::zero();
   MT scal= st::abs(value);
@@ -191,7 +191,7 @@ static _MT_ ArrayEqual(const _ST_* array, int n, int m, lidx_t lda, lidx_t strid
   return (MT)1.0+maxval;
 }
 
-static _MT_ ArrayParallelReplicated(const _ST_* array, int n, int m, lidx_t lda, lidx_t stride, bool swap_nm=false)
+static _MT_ ArrayParallelReplicated(const _ST_* array, int n, int m, phist_lidx lda, phist_lidx stride, bool swap_nm=false)
 {
   _ST_ buff[n*m];
   MT maxval=mt::zero();
@@ -232,13 +232,13 @@ static _MT_ ArrayParallelReplicated(const _ST_* array, int n, int m, lidx_t lda,
   return (MT)1.0+maxval;
 }
 
-static _MT_ ArraysEqual(const _ST_* arr1,const _ST_* arr2, int n, int m, lidx_t lda, lidx_t stride, bool swap_n_m=false, _MT_ relTo=mt::zero())
+static _MT_ ArraysEqual(const _ST_* arr1,const _ST_* arr2, int n, int m, phist_lidx lda, phist_lidx stride, bool swap_n_m=false, _MT_ relTo=mt::zero())
 {
     return ArraysEqualWithDifferentLDA(arr1,arr2,n,m,lda,lda,stride,swap_n_m,relTo);
 }
   
 static _MT_ ArraysEqualWithDifferentLDA(const _ST_* arr1,const _ST_* arr2, int n, int m, 
-lidx_t lda1, lidx_t lda2, lidx_t stride, bool swap_n_m=false, _MT_ relTo = mt::zero())
+phist_lidx lda1, phist_lidx lda2, phist_lidx stride, bool swap_n_m=false, _MT_ relTo = mt::zero())
 {
   int N = swap_n_m? m: n;
   int M = swap_n_m? n: m;

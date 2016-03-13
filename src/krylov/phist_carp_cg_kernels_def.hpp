@@ -21,9 +21,9 @@
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v_,&nvec,iflag),*iflag);
     if (naug>0)
     {
-      const_map_ptr_t map=NULL;
+      phist_const_map_ptr map=NULL;
       PHIST_CHK_IERR(SUBR(mvec_get_map)(v_,&map,iflag),*iflag);
-      const_comm_ptr_t comm=NULL;
+      phist_const_comm_ptr comm=NULL;
       PHIST_CHK_IERR(phist_map_get_comm(map,&comm,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_create)(&vp_,naug,nvec,comm,iflag),*iflag);
       if (vi!=NULL)
@@ -35,7 +35,7 @@
   }
   
   // imaginary part is allocated only if rc=true, augmented part only if naug>0.
-  void TYPE(x_mvec)::allocate(const_map_ptr_t map, int nvec, int naug, bool rc, int* iflag)
+  void TYPE(x_mvec)::allocate(phist_const_map_ptr map, int nvec, int naug, bool rc, int* iflag)
   {
     *iflag=0;
     if (v_!=NULL) 
@@ -52,7 +52,7 @@
     }
     if (naug>0)
     {
-      const_comm_ptr_t comm=NULL;
+      phist_const_comm_ptr comm=NULL;
       PHIST_CHK_IERR(phist_map_get_comm(map,&comm,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_create)(&vp_,naug,nvec,comm,iflag),*iflag);
       if (rc)
@@ -108,7 +108,7 @@ void SUBR(sdMat_vadd_sdMat)(_ST_ const alpha[], TYPE(sdMat_ptr) A,
   PHIST_ENTER_FCN(__FUNCTION__);
   
   ST *a,*b;
-  lidx_t lda,ldb;
+  phist_lidx lda,ldb;
   int nr, nc,nrb,ncb;
 
   // if this has a significant latency we could do it asynchronously while
@@ -149,7 +149,7 @@ void SUBR(sdMat_vscale)(TYPE(sdMat_ptr) A, _ST_ const alpha[], int* iflag)
   PHIST_ENTER_FCN(__FUNCTION__);
   
   ST *a;
-  lidx_t lda;
+  phist_lidx lda;
   int nr, nc;
 
   // if this has a significant latency we could do it asynchronously while
@@ -183,7 +183,7 @@ void SUBR(sdMat_dot_sdMat_add)(TYPE(sdMat_ptr) A, TYPE(sdMat_ptr) B, _ST_* dots,
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
   ST *a,*b;
-  lidx_t lda,ldb;
+  phist_lidx lda,ldb;
   int nr, nc,nrb,ncb;
 
   // if this has a significant latency we could do it asynchronously while

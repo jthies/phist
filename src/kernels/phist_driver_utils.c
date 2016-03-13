@@ -9,12 +9,12 @@
 
 int phist_sizeof_lidx()
 {
-  return sizeof(lidx_t);
+  return sizeof(phist_lidx);
 }
 
 int phist_sizeof_gidx()
 {
-  return sizeof(gidx_t);
+  return sizeof(phist_gidx);
 }
 
 #ifdef PHIST_HAVE_SP

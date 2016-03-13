@@ -133,7 +133,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
   protected:
     TYPE(mvec_ptr) v0_;
     TYPE(mvec_ptr) V_;
-    _ST_ *V_vp_; lidx_t ldaV_, stride_;
+    _ST_ *V_vp_; phist_lidx ldaV_, stride_;
     TYPE(mvec_ptr) Vm_;
     TYPE(mvec_ptr) AV_;
     TYPE(mvec_ptr) AVm_;

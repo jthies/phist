@@ -11,23 +11,23 @@
 
 // Declaration of Fortran implemented functions
 extern "C" {
-  void SUBR(crsMat_create_fromRowFunc_f)(TYPE(sparseMat_ptr)*,const_comm_ptr_t comm,gidx_t,gidx_t, 
-      lidx_t, phist_sparseMat_rowFunc,void*, int*);
+  void SUBR(crsMat_create_fromRowFunc_f)(TYPE(sparseMat_ptr)*,phist_const_comm_ptr comm,phist_gidx,phist_gidx, 
+      phist_lidx, phist_sparseMat_rowFunc,void*, int*);
   void SUBR(crsMat_delete_f)(TYPE(sparseMat_ptr) A, int* iflag);
-  void SUBR(crsMat_get_map_f)(TYPE(const_sparseMat_ptr),const_map_ptr_t*,int*);
-  void SUBR(crsMat_read_mm_f)(void*A,const_comm_ptr_t comm, int fname_len, const char* fname, int* iflag);
+  void SUBR(crsMat_get_map_f)(TYPE(const_sparseMat_ptr),phist_const_map_ptr*,int*);
+  void SUBR(crsMat_read_mm_f)(void*A,phist_const_comm_ptr comm, int fname_len, const char* fname, int* iflag);
   void SUBR(mvecT_times_mvec_f)(_ST_,TYPE(const_mvec_ptr),TYPE(const_mvec_ptr),_ST_,TYPE(sdMat_ptr),int*);
   void SUBR(mvecT_times_mvec_times_sdMat_inplace_f)(_ST_,TYPE(const_mvec_ptr),TYPE(const_mvec_ptr),TYPE(const_sdMat_ptr),_ST_,TYPE(sdMat_ptr),int*);
   void SUBR(mvec_QR_f)(TYPE(mvec_ptr),TYPE(sdMat_ptr),int*);
   void SUBR(mvec_add_mvec_f)(_ST_,TYPE(const_mvec_ptr),_ST_,TYPE(mvec_ptr),int*);
-  void SUBR(mvec_create_f)(TYPE(mvec_ptr)*,const_map_ptr_t,lidx_t,int*);
+  void SUBR(mvec_create_f)(TYPE(mvec_ptr)*,phist_const_map_ptr,phist_lidx,int*);
   void SUBR(mvec_delete_f)(TYPE(mvec_ptr),int*);
   void SUBR(mvec_dot_mvec_f)(TYPE(const_mvec_ptr),TYPE(const_mvec_ptr),_ST_*,int*);
-  void SUBR(mvec_extract_view_f)(TYPE(mvec_ptr),_ST_**,lidx_t*,int*);
+  void SUBR(mvec_extract_view_f)(TYPE(mvec_ptr),_ST_**,phist_lidx*,int*);
   void SUBR(mvec_gather_mvecs_f)(TYPE(mvec_ptr),TYPE(const_mvec_ptr) W[], int, int*);
   void SUBR(mvec_get_block_f)(TYPE(const_mvec_ptr),TYPE(mvec_ptr),int,int,int*);
-  void SUBR(mvec_get_map_f)(TYPE(const_mvec_ptr),const_map_ptr_t*,int*);
-//  void SUBR(mvec_my_length_f)(TYPE(const_mvec_ptr),lidx_t*,int*);
+  void SUBR(mvec_get_map_f)(TYPE(const_mvec_ptr),phist_const_map_ptr*,int*);
+//  void SUBR(mvec_my_length_f)(TYPE(const_mvec_ptr),phist_lidx*,int*);
   void SUBR(mvec_norm2_f)(TYPE(const_mvec_ptr),_MT_*,int*);
   void SUBR(mvec_num_vectors_f)(TYPE(const_mvec_ptr),int*,int*);
   void SUBR(mvec_print_f)(TYPE(const_mvec_ptr),int*);
@@ -49,10 +49,10 @@ extern "C" {
   void SUBR(sdMat_times_sdMatT_f)(_ST_,TYPE(const_sdMat_ptr),TYPE(const_sdMat_ptr),_ST_,TYPE(sdMat_ptr),int*);
   void SUBR(sdMat_add_sdMat_f)(_ST_,TYPE(const_sdMat_ptr),_ST_,TYPE(sdMat_ptr),int*);
   void SUBR(sdMatT_add_sdMat_f)(_ST_,TYPE(const_sdMat_ptr),_ST_,TYPE(sdMat_ptr),int*);
-  void SUBR(sdMat_create_f)(TYPE(sdMat_ptr)*,int,int,const_comm_ptr_t,int*);
-  void SUBR(sdMat_create_view_f)(TYPE(sdMat_ptr)*,const_comm_ptr_t,void*, lidx_t, int,int,int*);
+  void SUBR(sdMat_create_f)(TYPE(sdMat_ptr)*,int,int,phist_const_comm_ptr,int*);
+  void SUBR(sdMat_create_view_f)(TYPE(sdMat_ptr)*,phist_const_comm_ptr,void*, phist_lidx, int,int,int*);
   void SUBR(sdMat_delete_f)(TYPE(sdMat_ptr),int*);
-  void SUBR(sdMat_extract_view_f)(TYPE(sdMat_ptr),_ST_**,lidx_t*,int*);
+  void SUBR(sdMat_extract_view_f)(TYPE(sdMat_ptr),_ST_**,phist_lidx*,int*);
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   void SUBR(sdMat_extract_error_f)(TYPE(sdMat_ptr),_ST_**,int*);
 #endif
@@ -94,7 +94,7 @@ extern "C" void SUBR(type_avail)(int *iflag)
 //                         one OpenMP thread
 //      
 //      note that specifying OPT_CARP has no performance impact on the spMVM at all.
-extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr vcomm,
         const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -137,46 +137,46 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t
   PHIST_CHK_IERR(SUBR(crsMat_read_mm_f)(A,vcomm,strlen(filename),filename,iflag),*iflag);
 }
 
-extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr vcomm,
 const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr vcomm,
 const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
-extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, const_map_ptr_t* map, int* iflag)
+extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, phist_const_map_ptr* map, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CHK_IERR( SUBR(crsMat_get_map_f) (A,map,iflag), *iflag);
 }
 
-extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) A, const_map_ptr_t* map, int* iflag)
+extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) A, phist_const_map_ptr* map, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CHK_IERR( SUBR(sparseMat_get_row_map) (A,map,iflag), *iflag);
 }
 
-extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) A, const_map_ptr_t* map, int* iflag)
+extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) A, phist_const_map_ptr* map, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CHK_IERR( SUBR(sparseMat_get_row_map) (A,map,iflag), *iflag);
 }
 
-extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) A, const_map_ptr_t* map, int* iflag)
+extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) A, phist_const_map_ptr* map, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CHK_IERR( SUBR(sparseMat_get_row_map) (A,map,iflag), *iflag);
 }
 
 extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* V, 
-    const_map_ptr_t map, lidx_t nvec, int* iflag)
+    phist_const_map_ptr map, phist_lidx nvec, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
@@ -184,8 +184,8 @@ extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* V,
   PHIST_CHK_IERR( SUBR(mvec_create_f) (V,map,nvec,iflag), *iflag);
 }
 
-extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, const_map_ptr_t map, 
-    _ST_* values, lidx_t lda, int nvec,
+extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, phist_const_map_ptr map, 
+    _ST_* values, phist_lidx lda, int nvec,
     int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -193,15 +193,15 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, const_map_ptr_t map,
 }
 
 extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M, 
-    int nrows, int ncols, const_comm_ptr_t comm, int* iflag)
+    int nrows, int ncols, phist_const_comm_ptr comm, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
   PHIST_CHK_IERR(SUBR(sdMat_create_f)(M,nrows,ncols,comm,iflag),*iflag);
 }
 
-extern "C" void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
-        _ST_* values, lidx_t lda, int nrows, int ncols,
+extern "C" void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, phist_const_comm_ptr comm,
+        _ST_* values, phist_lidx lda, int nrows, int ncols,
         int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -209,7 +209,7 @@ extern "C" void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t com
 }
                   
 
-extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) V, const_map_ptr_t* map, int* iflag)
+extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) V, phist_const_map_ptr* map, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CHK_IERR(SUBR(mvec_get_map_f)(V,map,iflag),*iflag);
@@ -233,13 +233,13 @@ extern "C" void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* 
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols_f)(M,ncols,iflag),*iflag);
 }
 
-extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val, lidx_t* lda, int* iflag)
+extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** val, phist_lidx* lda, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CHK_IERR(SUBR(mvec_extract_view_f)(V,val,lda,iflag),*iflag);
 }
 
-extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) V, _ST_** val, lidx_t* lda, int* iflag)
+extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) V, _ST_** val, phist_lidx* lda, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CHK_IERR(SUBR(sdMat_extract_view_f)(V,val,lda,iflag),*iflag);
@@ -419,10 +419,10 @@ extern "C" void SUBR(mvec_norm2)(TYPE(const_mvec_ptr) V,
   else // *iflag==PHIST_NOT_IMPLEMENTED
   {
     PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__);
-    Dmvec_ptr_t vtmp=NULL;
+    phist_Dmvec_ptr vtmp=NULL;
     *iflag=0;
     int nvec;
-    const_map_ptr_t map=NULL;
+    phist_const_map_ptr map=NULL;
     PHIST_CHK_IERR(SUBR(mvec_get_map)(V,&map,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,iflag),*iflag);
     int i=0, istep=4;
@@ -576,10 +576,10 @@ extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) v,
   if (*iflag==PHIST_NOT_IMPLEMENTED)
   {
     PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__);
-    Dmvec_ptr_t vtmp=NULL,wtmp=NULL;
+    phist_Dmvec_ptr vtmp=NULL,wtmp=NULL;
     *iflag=0;
     int nvec;
-    const_map_ptr_t map=NULL;
+    phist_const_map_ptr map=NULL;
     PHIST_CHK_IERR(SUBR(mvec_get_map)(v,&map,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v,&nvec,iflag),*iflag);
     int i=0, istep=4;
@@ -632,10 +632,10 @@ extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) V,
   else // *iflag==PHIST_NOT_IMPLEMENTED
   {
     PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__);
-    const_comm_ptr_t comm=NULL;
-    const_map_ptr_t map=NULL;
-    Dmvec_ptr_t wtmp=NULL;
-    DsdMat_ptr_t ctmp=NULL;
+    phist_const_comm_ptr comm=NULL;
+    phist_const_map_ptr map=NULL;
+    phist_Dmvec_ptr wtmp=NULL;
+    phist_DsdMat_ptr ctmp=NULL;
     *iflag=0;
     int nvecv,nvecw;
     PHIST_CHK_IERR(SUBR(mvec_get_map)(W,&map,iflag),*iflag);
@@ -778,10 +778,10 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) V,
   else // *iflag==PHIST_NOT_IMPLEMENTED
   {
     PHIST_SOUT(PHIST_WARNING,"WARNING: try to use slow fallback version of %s\n",__FUNCTION__);
-    const_comm_ptr_t comm=NULL;
-    const_map_ptr_t map=NULL;
-    Dmvec_ptr_t vtmp=NULL, wtmp=NULL;
-    DsdMat_ptr_t ctmp=NULL;
+    phist_const_comm_ptr comm=NULL;
+    phist_const_map_ptr map=NULL;
+    phist_Dmvec_ptr vtmp=NULL, wtmp=NULL;
+    phist_DsdMat_ptr ctmp=NULL;
     *iflag=0;
     int nvecv,nvecw;
     PHIST_CHK_IERR(SUBR(mvec_get_map)(W,&map,iflag),*iflag);
@@ -901,7 +901,7 @@ extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMa
   {
     PHIST_SOUT(PHIST_WARNING,"kernel not found, try to use out-of-place variant instead (performance hazard!)\n");
     TYPE(mvec_ptr) Vtmp=NULL;
-    const_map_ptr_t map=NULL;
+    phist_const_map_ptr map=NULL;
     PHIST_CHK_IERR(SUBR(mvec_get_map)(V,&map,iflag),*iflag);
     int nvecw;
     PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(M,&nvecw,iflag),*iflag);
@@ -914,8 +914,8 @@ extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMa
 }
 
 // NOTE: see the description of sparseMat_read_mm on how we treat input flags for this function
-extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, const_comm_ptr_t vcomm,
-        gidx_t nrows, gidx_t ncols, lidx_t maxnne,
+extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist_const_comm_ptr vcomm,
+        phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
                 phist_sparseMat_rowFunc rowFunPtr, void* last_arg,
                 int *iflag)
 {

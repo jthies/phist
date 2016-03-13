@@ -7,7 +7,7 @@ void SUBR(my_mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, _MT_* normsV, int* if
 #include "phist_std_typedefs.hpp"
   static bool first_call=true;
   _ST_* R_raw=NULL;
-  lidx_t ldR;
+  phist_lidx ldR;
   int iflag_in=*iflag;
   int iflag_out=0;
   int m;
@@ -77,7 +77,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   // auxiliary matrices
   st::sdMat_t *R1p,*R2p,*R1pp;
 
-  const_comm_ptr_t comm=NULL;
+  phist_const_comm_ptr comm=NULL;
 
   if (B!=NULL)
   {
@@ -160,7 +160,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   PHIST_CHK_IERR(*iflag=(int)(V==NULL || W==NULL || R1==NULL || R2==NULL),*iflag);
 
   int nrR1,ncR1,nrR2,ncR2;
-  lidx_t n, tmp;
+  phist_lidx n, tmp;
 
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(mvec_my_length)(W,&tmp,iflag),*iflag);

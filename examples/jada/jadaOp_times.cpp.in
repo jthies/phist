@@ -27,15 +27,15 @@ int main(int argc, char** argv)
   int rank, num_proc;
   int iflag;
 
-  comm_ptr_t comm = NULL;
-  sparseMat_ptr_t A = NULL;
+  phist_comm_ptr comm = NULL;
+  sparseMat_ptr A = NULL;
   TYPE(linearOp) opA;
   _ST_* sigma = NULL;
   TYPE(linearOp) jadaOp;
-  const_map_ptr_t map = NULL;
-  mvec_ptr_t x = NULL;
-  mvec_ptr_t y = NULL;
-  mvec_ptr_t q = NULL;
+  phist_const_map_ptr map = NULL;
+  mvec_ptr x = NULL;
+  mvec_ptr y = NULL;
+  mvec_ptr q = NULL;
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
 PHIST_MAIN_TASK_BEGIN
@@ -82,7 +82,7 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(q,st::zero(),&iflag),iflag);
   // set q vectors to unit vectors
   {
-    lidx_t ldq;
+    phist_lidx ldq;
     _ST_* q_raw;
     PHIST_ICHK_IERR(SUBR(mvec_extract_view)(q,&q_raw,&ldq,&iflag),iflag);
     for(int i = 0; i < nproj; i++)

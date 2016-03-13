@@ -34,7 +34,7 @@
 //! iflag:     return code of the solver (0 on success, negative on error, positive on warning)
 //!
 void SUBR(subspacejada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr) B_op,
-                         phist_jadaOpts_t opts,
+                         phist_jadaOpts opts,
                          TYPE(mvec_ptr) Q,         TYPE(sdMat_ptr) R,
                          _CT_* ev,                 _MT_* resNorm,
                          int *nConv,                int *nIter,
@@ -49,7 +49,7 @@ void SUBR(subspacejada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr
 //! such that V'V=W'W=I, and W is an orthogonal basis of A*V (A*V=W*H_A). Eigen-
 //! values are approximated using harmonic Ritz values
 void SUBR(harmonicjada)( TYPE(const_linearOp_ptr) A_op,  TYPE(const_linearOp_ptr) B_op,
-                         phist_jadaOpts_t opts,
+                         phist_jadaOpts opts,
                          TYPE(mvec_ptr) Q,         TYPE(sdMat_ptr) R,
                          _CT_* ev,                 _MT_* resNorm,
                          int *nConv,                int *nIter,

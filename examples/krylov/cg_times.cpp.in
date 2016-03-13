@@ -26,10 +26,10 @@ int main(int argc, char** argv)
 #include "phist_std_typedefs.hpp"
   int iflag = 0;
 
-  comm_ptr_t comm = NULL;
-  sparseMat_ptr_t A = NULL;
-  const_map_ptr_t map = NULL;
-  mvec_ptr_t x = NULL, r = NULL, p = NULL, q = NULL, xExact = NULL, b = NULL;
+  phist_comm_ptr comm = NULL;
+  sparseMat_ptr A = NULL;
+  phist_const_map_ptr map = NULL;
+  mvec_ptr x = NULL, r = NULL, p = NULL, q = NULL, xExact = NULL, b = NULL;
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
 PHIST_MAIN_TASK_BEGIN
@@ -71,14 +71,14 @@ PHIST_MAIN_TASK_BEGIN
 
   // setup RHS
   {
-    gidx_t ilower;
+    phist_gidx ilower;
     PHIST_ICHK_IERR(phist_map_get_ilower(map,&ilower,&iflag),iflag);
-    lidx_t nlocal;
+    phist_lidx nlocal;
     PHIST_ICHK_IERR(SUBR(mvec_my_length)(xExact,&nlocal,&iflag),iflag);
-    lidx_t ldx;
+    phist_lidx ldx;
     ST* x_raw;
     PHIST_ICHK_IERR(SUBR(mvec_extract_view)(xExact,&x_raw,&ldx,&iflag),iflag);
-    for(lidx_t i = 0; i < nlocal; i++)
+    for(phist_lidx i = 0; i < nlocal; i++)
     {
       for(int j = 0; j < nvecs; j++)
       {

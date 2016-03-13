@@ -3,41 +3,41 @@
 // things.
 
 //! get global sparseMat size (number of rows) \ingroup crsmat
-extern "C" void SUBR(sparseMat_global_nrows)(TYPE(sparseMat_ptr) A, gidx_t* s, int* iflag)
+extern "C" void SUBR(sparseMat_global_nrows)(TYPE(sparseMat_ptr) A, phist_gidx* s, int* iflag)
 {
-  const_map_ptr_t map=NULL;
+  phist_const_map_ptr map=NULL;
   PHIST_CHK_IERR(SUBR(sparseMat_get_range_map)(A,&map,iflag),*iflag);
   PHIST_CHK_IERR(phist_map_get_global_length(map,s,iflag),*iflag);
 }
 
 //! get global sparseMat size (number of columns) \ingroup crsmat
-extern "C" void SUBR(sparseMat_global_ncols)(TYPE(sparseMat_ptr) A, gidx_t* s, int* iflag)
+extern "C" void SUBR(sparseMat_global_ncols)(TYPE(sparseMat_ptr) A, phist_gidx* s, int* iflag)
 {
-  const_map_ptr_t map=NULL;
+  phist_const_map_ptr map=NULL;
   PHIST_CHK_IERR(SUBR(sparseMat_get_domain_map)(A,&map,iflag),*iflag);
   PHIST_CHK_IERR(phist_map_get_global_length(map,s,iflag),*iflag);
 }
 
 //! retrieve local length of the vectors in V \ingroup mvec
-extern "C" void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) V, lidx_t* len, int* iflag)
+extern "C" void SUBR(mvec_my_length)(TYPE(const_mvec_ptr) V, phist_lidx* len, int* iflag)
 {
-  const_map_ptr_t map=NULL;
+  phist_const_map_ptr map=NULL;
   PHIST_CHK_IERR(SUBR(mvec_get_map)(V,&map,iflag),*iflag);
   PHIST_CHK_IERR(phist_map_get_local_length(map,len,iflag),*iflag);
 }
 
 //! retrieve global length of the vectors in V \ingroup mvec
-extern "C" void SUBR(mvec_global_length)(TYPE(const_mvec_ptr) V, gidx_t* len, int* iflag)
+extern "C" void SUBR(mvec_global_length)(TYPE(const_mvec_ptr) V, phist_gidx* len, int* iflag)
 {
-  const_map_ptr_t map=NULL;
+  phist_const_map_ptr map=NULL;
   PHIST_CHK_IERR(SUBR(mvec_get_map)(V,&map,iflag),*iflag);
   PHIST_CHK_IERR(phist_map_get_global_length(map,len,iflag),*iflag);
 }
 
 //! retrieve the comm used for MPI communication in V \ingroup mvec
-extern "C" void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) V, const_comm_ptr_t* comm, int* iflag)
+extern "C" void SUBR(mvec_get_comm)(TYPE(const_mvec_ptr) V, phist_const_comm_ptr* comm, int* iflag)
 {
-  const_map_ptr_t map=NULL;
+  phist_const_map_ptr map=NULL;
   PHIST_CHK_IERR(SUBR(mvec_get_map)(V,&map,iflag),*iflag);
   PHIST_CHK_IERR(phist_map_get_comm(map,comm,iflag),*iflag);
 }
@@ -82,9 +82,9 @@ return 0;
 extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  gidx_t gnrows,ilower,iupper,pre_skip,post_skip;
-  const_map_ptr_t map=NULL;
-  lidx_t lnrows,nvec;
+  phist_gidx gnrows,ilower,iupper,pre_skip,post_skip;
+  phist_const_map_ptr map=NULL;
+  phist_lidx lnrows,nvec;
   
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,iflag),*iflag);
 
@@ -144,7 +144,7 @@ extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) M, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  lidx_t nrows,ncols,lda;
+  phist_lidx nrows,ncols,lda;
   _ST_* M_raw = NULL;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(M,&nrows,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(M,&ncols,iflag),*iflag);

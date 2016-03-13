@@ -4,13 +4,13 @@ extern "C" {
 
 // prototype for a useful function from the driver_utils, we can't include
 // the header here because it can only be included once after a phist_gen_X header.
-void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
+void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
         const char* problem, int* iflag);
 
 } //extern "C"
 
 /*! Test fixture. */
-template<gidx_t _Nglob, MATNAME_ENUM _MatName, int _multipleDefinitionCounter>
+template<phist_gidx _Nglob, MATNAME_ENUM _MatName, int _multipleDefinitionCounter>
 class KernelTestWithSparseMat<_ST_, _Nglob, _MatName, _multipleDefinitionCounter> : public virtual TestWithType< _ST_ >,
                                                                                     public virtual KernelTest,
                                                                                     public virtual KernelTestWithMap<_Nglob> 
@@ -37,12 +37,12 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _MatName, _multipleDefinitionCounter
         ASSERT_EQ(0,iflag_);
         ASSERT_TRUE(A_ != NULL);
 
-        const_map_ptr_t map = NULL;
+        phist_const_map_ptr map = NULL;
         SUBR(sparseMat_get_domain_map)(A_,&map,&iflag_);
         ASSERT_EQ(0,iflag_);
 
         // check the size of the map
-        gidx_t map_nglob = 0;
+        phist_gidx map_nglob = 0;
         phist_map_get_global_length(map,&map_nglob,&iflag_);
         ASSERT_EQ(0,iflag_);
         ASSERT_EQ(_Nglob,map_nglob);
@@ -61,7 +61,7 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _MatName, _multipleDefinitionCounter
 #ifndef PHIST_KERNEL_LIB_GHOST
       if( this->typeImplemented_ && !this->problemTooSmall_ )
       {
-        const_map_ptr_t map = NULL;
+        phist_const_map_ptr map = NULL;
         SUBR(sparseMat_get_domain_map)(A_,&map,&this->iflag_);
         ASSERT_EQ(0,this->iflag_);
         ASSERT_EQ(map, this->map_);
@@ -94,5 +94,5 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _MatName, _multipleDefinitionCounter
 };
 
 
-template<gidx_t _Nglob, MATNAME_ENUM _MatName, int _multipleDefinitionCounter>
+template<phist_gidx _Nglob, MATNAME_ENUM _MatName, int _multipleDefinitionCounter>
 TYPE(sparseMat_ptr) KernelTestWithSparseMat<_ST_, _Nglob, _MatName, _multipleDefinitionCounter> :: A_;

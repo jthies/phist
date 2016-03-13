@@ -16,23 +16,23 @@
 //! C++ template, but I'm not sure they are usable
 //! with Belos and TSQR. The data layout should
 //! be the same, however.
-typedef std::complex<float> s_complex_t;
-typedef std::complex<double> d_complex_t;
+typedef std::complex<float> phist_s_complex;
+typedef std::complex<double> phist_d_complex;
 #else
 //#include <inttypes.h>
 #include <complex.h>
-typedef  complex float s_complex_t;
-typedef  complex double d_complex_t;
+typedef  complex float phist_s_complex;
+typedef  complex double phist_d_complex;
 #endif
 
 #include "ghost/config.h"
 #include "ghost/types.h"
 
 //! type of node-local indices. 
-typedef ghost_lidx lidx_t;
+typedef ghost_lidx phist_lidx;
 
 //! type of global indices
-typedef ghost_gidx gidx_t;
+typedef ghost_gidx phist_gidx;
 
 #ifdef GHOST_IDX64_LOCAL
 #define PRlidx "lld"

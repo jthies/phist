@@ -111,7 +111,7 @@ class SelectSR
 
 
 template<typename MT>
-void SortEig(std::complex<MT>* ev,int n,int* idx,eigSort_t which, _MT_ tol, int* iflag)
+void SortEig(std::complex<MT>* ev,int n,int* idx,phist_EeigSort which, _MT_ tol, int* iflag)
 {
   typedef std::complex<MT> ST;
   typedef std::pair<ST,int> PT;

@@ -31,10 +31,10 @@ int main(int argc, char** argv)
   int iflag;
   int verbose;
 
-  comm_ptr_t comm = NULL;
-  sparseMat_ptr_t A = NULL;
-  const_map_ptr_t map = NULL;
-  mvec_ptr_t xr = NULL,xi=NULL,rhs=NULL;
+  phist_comm_ptr comm = NULL;
+  sparseMat_ptr A = NULL;
+  phist_const_map_ptr map = NULL;
+  mvec_ptr xr = NULL,xi=NULL,rhs=NULL;
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
 PHIST_MAIN_TASK_BEGIN

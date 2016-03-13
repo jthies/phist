@@ -11,7 +11,7 @@ typedef struct TYPE(jadaCorrectionSolver)
   int                   gmresBlockDim_;     //! number of blockedGMRES states iterated at once
   TYPE(blockedGMRESstate_ptr) *blockedGMRESstates_;     //! blockedGMRES states
   TYPE(carp_cgState_ptr) *carp_cgStates_; //! can use CARP-CG alternatively
-  linSolv_t     method_;    //! supported values are GMRES, MINRES, CARP_CG and CUSTOM.
+  phist_ElinSolv     method_;    //! supported values are GMRES, MINRES, CARP_CG and CUSTOM.
 
 
   //! pointer to solver object if innerSolvType==USER_DEFINED
@@ -49,8 +49,8 @@ typedef TYPE(jadaCorrectionSolver) const * TYPE(const_jadaCorrectionSolver_ptr);
 
 
 //! create a jadaCorrectionSolver object
-void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist_jadaOpts_t opts,
-        const_map_ptr_t map, int *iflag);
+void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist_jadaOpts opts,
+        phist_const_map_ptr map, int *iflag);
         
 //! delete a jadaCorrectionSolver object
 void SUBR(jadaCorrectionSolver_delete)(TYPE(jadaCorrectionSolver_ptr) jdCorrSolver, int *iflag);

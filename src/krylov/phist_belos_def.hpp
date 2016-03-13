@@ -24,7 +24,7 @@ extern "C" void SUBR(belos)(TYPE(const_linearOp_ptr) Op,
   typedef ghost_densemat MV;
   typedef phist::GhostMV BelosMV;
 #elif defined(PHIST_KERNEL_LIB_TPETRA)
-  typedef Tpetra::MultiVector<ST,lidx_t,gidx_t,node_t> MV;
+  typedef Tpetra::MultiVector<ST,phist_lidx,phist_gidx,node_type> MV;
   typedef MV BelosMV;
 #elif defined(PHIST_KERNEL_LIB_EPETRA)
   typedef Epetra_MultiVector MV; 

@@ -57,7 +57,7 @@ namespace phist
 // our pointers are void
 #ifdef HAVE_SP
   //
-  Teuchos::RCP<MultiVector<float> > Srcp(Smvec_ptr_t rawPtr, bool ownMem)
+  Teuchos::RCP<MultiVector<float> > Srcp(Smvec_ptr rawPtr, bool ownMem)
     {
     // if the RCP should own the memory of the vector, it owns the wrapper as well.
     // If it does not own the memory of the vector, it may still destroy the wrapper
@@ -66,31 +66,31 @@ namespace phist
     }
 
   //
-  Teuchos::RCP<const MultiVector<float> > Srcp(Sconst_mvec_ptr_t rawPtr, bool ownMem)
+  Teuchos::RCP<const MultiVector<float> > Srcp(Sconst_mvec_ptr rawPtr, bool ownMem)
     {
-    return Teuchos::rcp(new MultiVector<float>(const_cast<Smvec_ptr_t>(rawPtr),ownMem),true);
+    return Teuchos::rcp(new MultiVector<float>(const_cast<Smvec_ptr>(rawPtr),ownMem),true);
     }
 
   //
-  Teuchos::RCP<MultiVector<s_complex_t> > Crcp(Cmvec_ptr_t rawPtr, bool ownMem)
+  Teuchos::RCP<MultiVector<phist_s_complex> > Crcp(Cmvec_ptr rawPtr, bool ownMem)
   {
     // if the RCP should own the memory of the vector, it owns the wrapper as well.
     // If it does not own the memory of the vector, it may still destroy the wrapper
     // if it is no longer needed.
-    return Teuchos::rcp(new MultiVector<s_complex_t>(rawPtr,ownMem),true);
+    return Teuchos::rcp(new MultiVector<phist_s_complex>(rawPtr,ownMem),true);
   }
 
   // specialization for const ghost_densemat
-  Teuchos::RCP<const MultiVector<s_complex_t> > Crcp(Cconst_mvec_ptr_t rawPtr, bool ownMem)
+  Teuchos::RCP<const MultiVector<phist_s_complex> > Crcp(Cconst_mvec_ptr rawPtr, bool ownMem)
   {
-    return Teuchos::rcp(new MultiVector<s_complex_t>(const_cast<Cmvec_ptr_t>(rawPtr),ownMem),true);
+    return Teuchos::rcp(new MultiVector<phist_s_complex>(const_cast<Cmvec_ptr>(rawPtr),ownMem),true);
   }
 
 #endif
 
 
   //
-  Teuchos::RCP<MultiVector<double> > Drcp(Dmvec_ptr_t rawPtr, bool ownMem)
+  Teuchos::RCP<MultiVector<double> > Drcp(Dmvec_ptr rawPtr, bool ownMem)
   {
     // if the RCP should own the memory of the vector, it owns the wrapper as well.
     // If it does not own the memory of the vector, it may still destroy the wrapper
@@ -99,24 +99,24 @@ namespace phist
   }
 
   //
-  Teuchos::RCP<const MultiVector<double> > Drcp(Dconst_mvec_ptr_t rawPtr, bool ownMem)
+  Teuchos::RCP<const MultiVector<double> > Drcp(Dconst_mvec_ptr rawPtr, bool ownMem)
   {
-    return Teuchos::rcp(new MultiVector<double>(const_cast<Dmvec_ptr_t>(rawPtr),ownMem),true);
+    return Teuchos::rcp(new MultiVector<double>(const_cast<Dmvec_ptr>(rawPtr),ownMem),true);
   }
 
   //
-  Teuchos::RCP<MultiVector<d_complex_t> > Zrcp(Zmvec_ptr_t rawPtr, bool ownMem)
+  Teuchos::RCP<MultiVector<phist_d_complex> > Zrcp(Zmvec_ptr rawPtr, bool ownMem)
   {
     // if the RCP should own the memory of the vector, it owns the wrapper as well.
     // If it does not own the memory of the vector, it may still destroy the wrapper
     // if it is no longer needed.
-    return Teuchos::rcp(new MultiVector<d_complex_t>(rawPtr,ownMem),true);
+    return Teuchos::rcp(new MultiVector<phist_d_complex>(rawPtr,ownMem),true);
   }
 
   // specialization for const ghost_densemat
-  Teuchos::RCP<const MultiVector<d_complex_t> > Zrcp(Zconst_mvec_ptr_t rawPtr, bool ownMem)
+  Teuchos::RCP<const MultiVector<phist_d_complex> > Zrcp(Zconst_mvec_ptr rawPtr, bool ownMem)
   {
-    return Teuchos::rcp(new MultiVector<d_complex_t>(const_cast<Zmvec_ptr_t>(rawPtr),ownMem),true);
+    return Teuchos::rcp(new MultiVector<phist_d_complex>(const_cast<Zmvec_ptr>(rawPtr),ownMem),true);
   }
 
 #endif

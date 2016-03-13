@@ -104,7 +104,7 @@ virtual void SetUp()
     ASSERT_EQ(0,iflag_);
 
     // get pointers to the whole memory block
-    lidx_t lda;
+    phist_lidx lda;
     SUBR(sdMat_extract_view)(mem1_,&mem1_vp_,&lda,&iflag_);
     ASSERT_EQ(0,iflag_);
     this->m_lda_ = lda;
@@ -119,7 +119,7 @@ virtual void SetUp()
     ASSERT_EQ(this->m_lda_,lda);
 
     // get raw access to the matrix storage
-    lidx_t lda2;
+    phist_lidx lda2;
     SUBR(sdMat_extract_view)(mat1_,&mat1_vp_,&lda,&iflag_);
     ASSERT_EQ(0,iflag_);
     lda2 = lda;
@@ -243,7 +243,7 @@ static void TearDownTestCase()
 }
 
 static void PrintSdMat(std::ostream& os, std::string label, 
-        ST* mat_vp, lidx_t lda, lidx_t stride,MPI_Comm mpi_comm)
+        ST* mat_vp, phist_lidx lda, phist_lidx stride,MPI_Comm mpi_comm)
 {
     int rank=0, np=1;
 #ifdef PHIST_HAVE_MPI
@@ -293,13 +293,13 @@ static void PrintSdMat(std::ostream& os, std::string label,
   static bool pointerUnchanged(TYPE(sdMat_ptr) V, ST* expected_location, int expected_lda)
   {
     int iflag = 0;
-    lidx_t lda = 0;
+    phist_lidx lda = 0;
     ST* ptr = NULL;
     SUBR(sdMat_extract_view)(V,&ptr,&lda,&iflag);
     if( iflag!= PHIST_SUCCESS )
       return false;
 
-    lidx_t n = 0;
+    phist_lidx n = 0;
 #ifdef PHIST_SDMATS_ROW_MAJOR
     SUBR(sdMat_get_nrows)(V,&n,&iflag);
 #else
@@ -330,7 +330,7 @@ static void PrintSdMat(std::ostream& os, std::string label,
     PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(mat, &n, iflag),*iflag);
     _ST_* buff = new _ST_[m*n];
     _ST_* mat_raw;
-    lidx_t lda;
+    phist_lidx lda;
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)((TYPE(sdMat_ptr))mat, &mat_raw, &lda, iflag),*iflag);
     // copy data to buffer
     for(int j = 0; j < n; j++)
@@ -368,7 +368,7 @@ static void PrintSdMat(std::ostream& os, std::string label,
   static const int useViews_=_useViews;
   static int pad_nr_pre_, pad_nc_pre_, pad_nr_post_, pad_nc_post_;
   static int nr_padded_, nc_padded_;
-  lidx_t m_lda_;
+  phist_lidx m_lda_;
 };
 
 

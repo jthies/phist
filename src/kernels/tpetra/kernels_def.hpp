@@ -9,7 +9,7 @@ extern "C" void SUBR(type_avail)(int* iflag)
 //@{
 
 //! read a matrix from a MatrixMarket (ASCII) file
-extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, phist_const_comm_ptr vcomm,
         const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -23,20 +23,20 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_
   std::string fstring(filename);
 
   Teuchos::RCP<Traits<_ST_>::sparseMat_t> A;
-  PHIST_CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*iflag);
-  Teuchos::RCP<const comm_t> comm_ptr = Teuchos::rcp(comm,false);
+  PHIST_CAST_PTR_FROM_VOID(const comm_type,comm,vcomm,*iflag);
+  Teuchos::RCP<const comm_type> phist_comm_ptr = Teuchos::rcp(comm,false);
 
-  node_t* node;
-  PHIST_CHK_IERR(phist_tpetra_node_create(&node,(const_comm_ptr_t)comm_ptr.get(),iflag),*iflag);
-  Teuchos::RCP<node_t> node_ptr = Teuchos::rcp(node,true);
+  node_type* node;
+  PHIST_CHK_IERR(phist_tpetra_node_create(&node,(phist_const_comm_ptr)phist_comm_ptr.get(),iflag),*iflag);
+  Teuchos::RCP<node_type> node_ptr = Teuchos::rcp(node,true);
   
-  PHIST_TRY_CATCH(A=reader.readSparseFile(fstring,comm_ptr,node_ptr),*iflag);
+  PHIST_TRY_CATCH(A=reader.readSparseFile(fstring,phist_comm_ptr,node_ptr),*iflag);
   Teuchos::Ptr<Traits<_ST_>::sparseMat_t> Aptr = A.release();
   *vA = (TYPE(sparseMat_ptr))(Aptr.get());
 }
 
 //! read a matrix from a Ghost CRS (binary) file.
-extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* vA, phist_const_comm_ptr vcomm,
         const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -47,7 +47,7 @@ extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* vA, const_comm_ptr
 }
 
 //! read a matrix from a Harwell-Boeing (HB) file
-extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* vA, phist_const_comm_ptr vcomm,
 const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -59,14 +59,14 @@ const char* filename,int* iflag)
   }
 
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const comm_t,_comm,vcomm,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const comm_type,_comm,vcomm,*iflag);
   std::string fname(filename);
-  Teuchos::RCP<const comm_t> comm = Teuchos::rcp(_comm,false);
+  Teuchos::RCP<const comm_type> comm = Teuchos::rcp(_comm,false);
   Teuchos::ParameterList nodeParams;
   
   Teuchos::RCP<Traits<_ST_>::sparseMat_t> A;
-  Teuchos::RCP<node_t> node = Teuchos::rcp(new node_t(nodeParams));
-  Teuchos::RCP<map_t> rowMap=Teuchos::null; // assume linear distribution for now
+  Teuchos::RCP<node_type> node = Teuchos::rcp(new node_type(nodeParams));
+  Teuchos::RCP<map_type> rowMap=Teuchos::null; // assume linear distribution for now
   Teuchos::RCP<Teuchos::ParameterList> params=Teuchos::null;
   //PHIST_TRY_CATCH(Tpetra::Utils::readHBMatrix(fname,comm,node,A,rowMap, params),*iflag);
   PHIST_TRY_CATCH(Tpetra::Utils::readHBMatrix(fname,comm,node,A),*iflag);
@@ -75,35 +75,35 @@ const char* filename,int* iflag)
 }
 //!@}
 
-extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, const_comm_ptr_t vcomm,
-        gidx_t nrows, gidx_t ncols, lidx_t maxnne,
+extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
+        phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
                 phist_sparseMat_rowFunc rowFunPtr, void* last_arg,
                 int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
-  PHIST_CAST_PTR_FROM_VOID(const comm_t,comm,vcomm,*iflag);
-  Teuchos::RCP<const comm_t> comm_ptr = Teuchos::rcp(comm,false);
+  PHIST_CAST_PTR_FROM_VOID(const comm_type,comm,vcomm,*iflag);
+  Teuchos::RCP<const comm_type> phist_comm_ptr = Teuchos::rcp(comm,false);
   Traits<_ST_>::sparseMat_t* A=NULL;
 
-  map_ptr_t map=NULL;
+  phist_map_ptr map=NULL;
   PHIST_CHK_IERR(phist_map_create(&map,vcomm,nrows,iflag),*iflag);
-  const phist::tpetra::map_t* tpetra_map=(const phist::tpetra::map_t*)map;
-Teuchos::RCP<const phist::tpetra::map_t> map_ptr=Teuchos::rcp(tpetra_map,true);
+  const phist::tpetra::map_type* tpetra_map=(const phist::tpetra::map_type*)map;
+Teuchos::RCP<const phist::tpetra::map_type> map_ptr=Teuchos::rcp(tpetra_map,true);
 A=new Traits<_ST_>::sparseMat_t(map_ptr,(int)maxnne);
 
-  gidx_t cols[maxnne];
+  phist_gidx cols[maxnne];
   _ST_ vals[maxnne];
 
   //TODO: this can't be the way, what about the Kokkos node?
-  for (lidx_t i=0; i<A->getNodeNumRows(); i++)
+  for (phist_lidx i=0; i<A->getNodeNumRows(); i++)
   {
     ghost_gidx row = tpetra_map->getGlobalElement(i);
     ghost_lidx row_nnz;
 
     PHIST_CHK_IERR(*iflag=rowFunPtr(row,&row_nnz,cols,vals,last_arg),*iflag);
 
-    Teuchos::ArrayView<gidx_t> cols_v(cols,row_nnz);
+    Teuchos::ArrayView<phist_gidx> cols_v(cols,row_nnz);
     Teuchos::ArrayView<_ST_> vals_v(vals,row_nnz);
     
     PHIST_TRY_CATCH(A->insertGlobalValues (row,cols_v,vals_v),*iflag);
@@ -119,38 +119,38 @@ A=new Traits<_ST_>::sparseMat_t(map_ptr,(int)maxnne);
 
 //!@{
 //! get the row distribution of the matrix
-extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* vmap, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, A, vA, *iflag);
-  *vmap = (const_map_ptr_t)(A->getRowMap().get());
+  *vmap = (phist_const_map_ptr)(A->getRowMap().get());
 }
 
 //! get column distribution of a matrix
-extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* vmap, int* iflag)
 {
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, A, vA, *iflag);
-  *vmap = (const_map_ptr_t)(A->getColMap().get());
+  *vmap = (phist_const_map_ptr)(A->getColMap().get());
 }
 
 //! get the map for vectors x in y=A*x
-extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* vmap, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, A, vA, *iflag);
-  *vmap = (const_map_ptr_t)(A->getDomainMap().get());
+  *vmap = (phist_const_map_ptr)(A->getDomainMap().get());
 }
 
 //! get the map for vectors y in y=A*x
-extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* vmap, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sparseMat_t, A, vA, *iflag);
-  *vmap = (const_map_ptr_t)(A->getRangeMap().get());
+  *vmap = (phist_const_map_ptr)(A->getRangeMap().get());
 }
 //@}
 
@@ -159,12 +159,12 @@ extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) vA, cons
 //@{
 //! create a block-vector. The entries are stored contiguously
 //! at val in column major ordering.
-extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap, int nvec, int* iflag)
+extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vV, phist_const_map_ptr vmap, int nvec, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const map_t, map, vmap, *iflag);
-  Teuchos::RCP<const map_t> map_ptr = Teuchos::rcp(map,false);
+  PHIST_CAST_PTR_FROM_VOID(const map_type, map, vmap, *iflag);
+  Teuchos::RCP<const map_type> map_ptr = Teuchos::rcp(map,false);
   Traits<_ST_>::mvec_t* V = new Traits<_ST_>::mvec_t(map_ptr,nvec);
   *vV=(TYPE(mvec_ptr))(V);
 }
@@ -172,13 +172,13 @@ extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap, int 
 //! create a block-vector as view of raw data. The map tells the object
 //! how many rows it should 'see' in the data (at most lda, the leading
 //! dimension of the 2D array values).
-extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap, 
-        _ST_* values, lidx_t lda, int nvec,
+extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, phist_const_map_ptr vmap, 
+        _ST_* values, phist_lidx lda, int nvec,
         int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  PHIST_CAST_PTR_FROM_VOID(const map_t, map, vmap, *iflag);
-  Teuchos::RCP<const map_t> map_ptr = Teuchos::rcp(map,false);
+  PHIST_CAST_PTR_FROM_VOID(const map_type, map, vmap, *iflag);
+  Teuchos::RCP<const map_type> map_ptr = Teuchos::rcp(map,false);
   Teuchos::ArrayView<_ST_> val_ptr(values,lda*nvec);
   Traits<_ST_>::mvec_t* V = new Traits<_ST_>::mvec_t(map_ptr,val_ptr,lda,nvec);
   *vV=(TYPE(mvec_ptr))(V);  
@@ -187,33 +187,33 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
 extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols, 
-        const_comm_ptr_t vcomm, int* iflag)
+        phist_const_comm_ptr vcomm, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
-  const comm_t* comm = (const comm_t*)vcomm;
+  const comm_type* comm = (const comm_type*)vcomm;
 
-  Teuchos::RCP<const comm_t> comm_ptr;
+  Teuchos::RCP<const comm_type> phist_comm_ptr;
 
   //TODO - add node arg. Is there any reason to have a comm object here??
   if (comm==NULL)
   {
-    comm_ptr=Teuchos::DefaultComm<int>::getDefaultSerialComm(Teuchos::null);
+    phist_comm_ptr=Teuchos::DefaultComm<int>::getDefaultSerialComm(Teuchos::null);
   }
   else
   {
-    comm_ptr = Teuchos::rcp(comm,false);
+    phist_comm_ptr = Teuchos::rcp(comm,false);
   }
 
   // create local map
-  Teuchos::RCP<map_t> localMap =
-        Teuchos::rcp(new map_t(nrows, 0, comm_ptr, Tpetra::LocallyReplicated));
+  Teuchos::RCP<map_type> localMap =
+        Teuchos::rcp(new map_type(nrows, 0, phist_comm_ptr, Tpetra::LocallyReplicated));
   Traits<_ST_>::sdMat_t* M = new Traits<_ST_>::mvec_t(localMap,ncols);
   *vM=(TYPE(sdMat_ptr))(M);
 }
 
-void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
-        _ST_* values, lidx_t lda, int nrows, int ncols,
+void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, phist_const_comm_ptr comm,
+        _ST_* values, phist_lidx lda, int nrows, int ncols,
         int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
@@ -223,11 +223,11 @@ void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
 //@}
 
 //! retrieve the map of the vectors in V
-extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, phist_const_map_ptr* vmap, int* iflag)
 {
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*iflag);
-  *vmap=(const_map_ptr_t)(V->getMap().get());
+  *vmap=(phist_const_map_ptr)(V->getMap().get());
 }
 
 //! retrieve number of vectors/columns in V
@@ -256,7 +256,7 @@ extern "C" void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) vM, int* ncols, int*
 
 
 //! extract view from multi-vector
-extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* lda, int* iflag)
+extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, phist_lidx* lda, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
@@ -267,7 +267,7 @@ extern "C" void SUBR(mvec_extract_view)(TYPE(mvec_ptr) vV, _ST_** val, lidx_t* l
 }
 
 //! extract view from serial dense matrix
-extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, lidx_t* lda, int* iflag)
+extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, phist_lidx* lda, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,M,vM,*iflag);
@@ -281,7 +281,7 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   // TODO: create importer, v_out->Import(v_in)
-  // TODO: possibly create a wrapper phist_map_t which keeps the importer as well.
+  // TODO: possibly create a wrapper phist_map_type which keeps the importer as well.
   *iflag=PHIST_NOT_IMPLEMENTED;
   return;
 }
@@ -461,7 +461,7 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
   }
   else
   {
-    Teuchos::RCP<map_t> smap = Teuchos::rcp(new map_t
+    Teuchos::RCP<map_type> smap = Teuchos::rcp(new map_type
         (nrows, 0, M->getMap()->getComm(),Tpetra::LocallyReplicated));
     if (ncols==M->getNumVectors())
     {
@@ -530,7 +530,7 @@ extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
   else
   {
     int nrows=imax-imin+1;
-    Teuchos::RCP<map_t> smap = Teuchos::rcp(new map_t
+    Teuchos::RCP<map_type> smap = Teuchos::rcp(new map_type
         (nrows, 0, M->getMap()->getComm(),Tpetra::LocallyReplicated));
     if (imin==0 && imax==M->getNumVectors())
     {
@@ -591,7 +591,7 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
   else
   {
     int nrows=imax-imin+1;
-    Teuchos::RCP<map_t> smap = Teuchos::rcp(new map_t
+    Teuchos::RCP<map_type> smap = Teuchos::rcp(new map_type
         (nrows, 0, M->getMap()->getComm(),Tpetra::LocallyReplicated));
     if (imin==0 && imax==M->getNumVectors())
     {
@@ -663,13 +663,13 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*iflag);
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<_ST_> > V_data = V->get2dViewNonConst ();
 
-  lidx_t nloc = V->getLocalLength();
-  lidx_t nvec = V->getNumVectors();
-  for (lidx_t j=0; j<nvec; j++) 
+  phist_lidx nloc = V->getLocalLength();
+  phist_lidx nvec = V->getNumVectors();
+  for (phist_lidx j=0; j<nvec; j++) 
   {
-    for (lidx_t i=0; i<nloc; i++)
+    for (phist_lidx i=0; i<nloc; i++)
     {
-      gidx_t gid = V->getMap()->getGlobalElement(i);
+      phist_gidx gid = V->getMap()->getGlobalElement(i);
       PHIST_CHK_IERR(*iflag=funPtr(gid,j,(void*)(&(V_data[j][i])),last_arg),*iflag); 
     }
   }
@@ -694,12 +694,12 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* iflag)
 #ifdef TESTING
   PHIST_SOUT(PHIST_DEBUG,"gathering global vector (only in TESTING mode)\n");
   // make results reproducible by doing a sequential randomization and then a 'scatter'
-  Teuchos::RCP<const map_t> map = V->getMap();
-  gidx_t nglob=map->getGlobalNumElements();
-  gidx_t nloc=nglob;
+  Teuchos::RCP<const map_type> map = V->getMap();
+  phist_gidx nglob=map->getGlobalNumElements();
+  phist_gidx nloc=nglob;
   if (map->getComm()->getRank()!=0) nloc=0;
-  Teuchos::RCP<map_t> gmap = Teuchos::rcp(new 
-  map_t(nglob,nloc,0,map->getComm(),map->getNode()));
+  Teuchos::RCP<map_type> gmap = Teuchos::rcp(new 
+  map_type(nglob,nloc,0,map->getComm(),map->getNode()));
   Teuchos::RCP<import_t> import = Teuchos::rcp(new import_t(gmap,map));
   Teuchos::RCP<Traits< _ST_ >::mvec_t> gvec = Teuchos::rcp
         (new Traits< _ST_ >::mvec_t(gmap,V->getNumVectors()));
@@ -734,7 +734,7 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
   int nrows,ncols;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(vM,&nrows,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(vM,&ncols,iflag),*iflag);
-  KokkosClassic::MultiVector<_ST_,node_t> KMV=M->getLocalMV();
+  KokkosClassic::MultiVector<_ST_,node_type> KMV=M->getLocalMV();
 
   std::ostringstream sos;
 
@@ -789,7 +789,7 @@ extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag)
   *iflag = 0;
 
   _ST_ *V_raw = NULL;
-  lidx_t lda;
+  phist_lidx lda;
   int m, n;
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(V, &V_raw, &lda, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(V, &m, iflag), *iflag);
@@ -1193,12 +1193,12 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
 //! if either reV or imV are NULL, it is not touched.
 #ifdef IS_COMPLEX
 # ifdef IS_DOUBLE
-extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Dmvec_t* reV, Dmvec_t* imV, int *iflag)
+extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Dmvec* reV, phist_Dmvec* imV, int *iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 # else
-extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* imV, int *iflag)
+extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Smvec* reV, phist_Smvec* imV, int *iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }

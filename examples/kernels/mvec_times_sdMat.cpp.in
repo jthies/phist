@@ -31,10 +31,10 @@ int main(int argc, char** argv)
 {
   int ierr;
 
-  comm_ptr_t comm = NULL;
-  map_ptr_t map = NULL;
-  mvec_ptr_t X = NULL, Y = NULL;
-  sdMat_ptr_t M = NULL;
+  phist_comm_ptr comm = NULL;
+  phist_map_ptr map = NULL;
+  mvec_ptr X = NULL, Y = NULL;
+  sdMat_ptr M = NULL;
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
 
@@ -51,9 +51,9 @@ PHIST_MAIN_TASK_BEGIN
     return 1;
   }
 
-  gidx_t n;
+  phist_gidx n;
   int m,k,l;
-  if (sizeof(gidx_t)==4)
+  if (sizeof(phist_gidx)==4)
   {
     n=atoi(argv[1]);
   }

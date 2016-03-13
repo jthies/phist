@@ -1,6 +1,6 @@
 #include "../tools/TestHelpers.h"
 /*! Test fixture. */
-template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+template<phist_gidx _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
 class KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter> : 
         public virtual KernelTestWithMap<_Nglob> ,
         public virtual TestWithType< _ST_ >
@@ -127,7 +127,7 @@ virtual void SetUp()
     }
 
     // vectors created with the same function should get the same stride (lda)
-    lidx_t lda;
+    phist_lidx lda;
 
     // extract raw data of complete memory block
     if( _numberOfVectorsInitialized >= 1 )
@@ -151,7 +151,7 @@ virtual void SetUp()
 
 
     // extract raw data of viewed block
-    lidx_t lda2;
+    phist_lidx lda2;
     if( _numberOfVectorsInitialized >= 1 )
     {
       SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda2,&iflag_);
@@ -362,7 +362,7 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
   }
 
   //! tests if each column of an mv is normalized in the 2-norm
-  static MT ColsAreNormalized(const ST* vec_vp, lidx_t nloc, lidx_t lda, lidx_t stride,
+  static MT ColsAreNormalized(const ST* vec_vp, phist_lidx nloc, phist_lidx lda, phist_lidx stride,
         MPI_Comm mpi_comm)
     {
     MT res=1.0;
@@ -386,7 +386,7 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
     }
 
   // check if vectors are mutually orthogonal after QR factorization
-  static MT ColsAreOrthogonal(ST* vec_vp, lidx_t nloc, lidx_t lda, lidx_t stride,MPI_Comm mpi_comm) 
+  static MT ColsAreOrthogonal(ST* vec_vp, phist_lidx nloc, phist_lidx lda, phist_lidx stride,MPI_Comm mpi_comm) 
   {
     MT res=mt::one();
     int nsums=(nvec_*nvec_-nvec_)/2;
@@ -416,7 +416,7 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
 
   // check if vectors are mutually orthogonal after QR factorization
   static void PrintVector(std::ostream& os, std::string label, 
-        ST* vec_vp, lidx_t nloc, lidx_t lda, lidx_t stride,MPI_Comm mpi_comm) 
+        ST* vec_vp, phist_lidx nloc, phist_lidx lda, phist_lidx stride,MPI_Comm mpi_comm) 
     {
     int rank=0, np=1;
 #ifdef PHIST_HAVE_MPI
@@ -475,7 +475,7 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
   static bool pointerUnchanged(TYPE(mvec_ptr) V, ST* expected_location, int expected_lda)
   { 
     int iflag;
-    lidx_t lda;
+    phist_lidx lda;
     ST* ptr;
     SUBR(mvec_extract_view)(V,&ptr,&lda,&iflag);
     return ( (iflag==0)&&(lda==expected_lda)&&(ptr==expected_location) );
@@ -494,42 +494,42 @@ public:
   ST *vec1_vp_ = NULL, *vec2_vp_ = NULL, *vec3_vp_ = NULL;
   static const int nvec_=_Nvec;
   static const int useViews_=_useViews;
-  lidx_t lda_, stride_;
+  phist_lidx lda_, stride_;
 };
 
-template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+template<phist_gidx _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
 TYPE(mvec_ptr) KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::mem1_ = NULL;
 
-template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+template<phist_gidx _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
 TYPE(mvec_ptr) KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::mem2_ = NULL;
 
-template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+template<phist_gidx _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
 TYPE(mvec_ptr) KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::mem3_ = NULL;
 
 
-template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+template<phist_gidx _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
 int KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::nvecPadded_;
 
-template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+template<phist_gidx _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
 int KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::pad_pre_;
 
-template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+template<phist_gidx _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
 int KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::pad_post_;
 
 
-template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+template<phist_gidx _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
 TYPE(mvec_ptr) KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::vec1_ = NULL;
 
-template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+template<phist_gidx _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
 TYPE(mvec_ptr) KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::vec2_ = NULL;
 
-template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+template<phist_gidx _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
 TYPE(mvec_ptr) KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::vec3_ = NULL;
 
 
-template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+template<phist_gidx _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
 const int KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::nvec_;
 
-template<gidx_t _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
+template<phist_gidx _Nglob, int _Nvec, int _useViews, int _numberOfVectorsInitialized, int _multipleDefinitionCounter>
 const int KernelTestWithVectors<_ST_,_Nglob,_Nvec, _useViews, _numberOfVectorsInitialized, _multipleDefinitionCounter>::useViews_;
 

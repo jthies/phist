@@ -240,7 +240,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     if( !typeImplemented_ || problemTooSmall_ )
       return;
       
-    const_map_ptr_t map1,map2;
+    phist_const_map_ptr map1,map2;
     SUBR(sparseMat_get_domain_map)(A,&map1,&iflag_);
     SUBR(sparseMat_get_range_map)(A,&map2,&iflag_);
     ASSERT_EQ(0,iflag_);
@@ -429,7 +429,7 @@ protected:
       ASSERT_TRUE(AssertNotNull(A_));
     
       // test that the global number of rows/cols is correct in the objects
-      gidx_t gnrows, gncols;
+      phist_gidx gnrows, gncols;
       SUBR(sparseMat_global_nrows)(A_,&gnrows,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(gnrows,nglob_);
@@ -584,8 +584,8 @@ protected:
       SUBR(mvec_random)(vec2_,&iflag_);
       
       TYPE(mvec_ptr) v_in=NULL, v_out=NULL;
-      lidx_t nv =  _NV_/2;
-      lidx_t offs = _NV_%2;
+      phist_lidx nv =  _NV_/2;
+      phist_lidx offs = _NV_%2;
       SUBR(mvec_view_block)(vec1_,&v_in,offs,offs+nv-1,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_view_block)(vec1_,&v_out,offs+nv,offs+2*nv-1,&iflag_);
@@ -650,13 +650,13 @@ protected:
       _ST_ beta = st::zero();
 
       // create new map (which has correct order!)
-      map_ptr_t map;
+      phist_map_ptr map;
       phist_map_create(&map, comm_, nglob_, &iflag_);
       ASSERT_EQ(0,iflag_);
-      lidx_t nloc = 0;
+      phist_lidx nloc = 0;
       phist_map_get_local_length(map,&nloc,&iflag_);
       ASSERT_EQ(0,iflag_);
-      gidx_t ilower = 0;
+      phist_gidx ilower = 0;
       phist_map_get_ilower(map,&ilower,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -665,7 +665,7 @@ protected:
       PHISTTEST_MVEC_CREATE(&orderedVec, map, nvec_, &iflag_);
       ASSERT_EQ(0,iflag_);
       _ST_ *orderedVec_vp = NULL;
-      lidx_t lda = 0;
+      phist_lidx lda = 0;
       SUBR(mvec_extract_view)(orderedVec, &orderedVec_vp, &lda, &iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -748,13 +748,13 @@ protected:
       _ST_ beta = st::zero();
 
       // create new map (which has correct order!)
-      map_ptr_t map;
+      phist_map_ptr map;
       phist_map_create(&map, comm_, nglob_, &iflag_);
       ASSERT_EQ(0,iflag_);
-      lidx_t nloc = 0;
+      phist_lidx nloc = 0;
       phist_map_get_local_length(map,&nloc,&iflag_);
       ASSERT_EQ(0,iflag_);
-      gidx_t ilower = 0;
+      phist_gidx ilower = 0;
       phist_map_get_ilower(map,&ilower,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -763,7 +763,7 @@ protected:
       PHISTTEST_MVEC_CREATE(&orderedVec, map, nvec_, &iflag_);
       ASSERT_EQ(0,iflag_);
       _ST_ *orderedVec_vp = NULL;
-      lidx_t lda = 0;
+      phist_lidx lda = 0;
       SUBR(mvec_extract_view)(orderedVec, &orderedVec_vp, &lda, &iflag_);
       ASSERT_EQ(0,iflag_);
       
@@ -1321,9 +1321,9 @@ TEST_F(CLASSNAME,create_A_fromRowFunc)
 #if _N_<=100
   // test if the resulting matrix is correct by applying it ot the identity matrix
   // and checking all its entries
-  const_map_ptr_t rowMap=NULL;
-  gidx_t ilower, iupper;
-  lidx_t nloc;
+  phist_const_map_ptr rowMap=NULL;
+  phist_gidx ilower, iupper;
+  phist_lidx nloc;
   SUBR(sparseMat_get_row_map)(A,&rowMap,&iflag_);
   ASSERT_EQ(0,iflag_);
   // these functions should return iflag!=0 if the map is not 'linear', i.e. has 
@@ -1342,18 +1342,18 @@ TEST_F(CLASSNAME,create_A_fromRowFunc)
   ASSERT_EQ(0,iflag_);
   
   _ST_ *Ival=NULL,*Aval=NULL;
-  lidx_t ldI,ldA;
+  phist_lidx ldI,ldA;
   SUBR(mvec_extract_view)(I,&Ival,&ldI,&iflag_);
   ASSERT_EQ(0,iflag_);
   SUBR(mvec_extract_view)(Adense,&Aval,&ldA,&iflag_);
   ASSERT_EQ(0,iflag_);
   int len;
   _ST_ val[nnzr];
-  gidx_t col[nnzr];
-  for (lidx_t i=0; i<nloc; i++)
+  phist_gidx col[nnzr];
+  for (phist_lidx i=0; i<nloc; i++)
   {
-    gidx_t row = ilower+i;
-    for (gidx_t j=0; j<_N_; j++)
+    phist_gidx row = ilower+i;
+    for (phist_gidx j=0; j<_N_; j++)
     {
       Ival[VIDX(i,j,ldI)]=st::zero();
       Aval[VIDX(i,j,ldI)]=st::zero();
@@ -1438,7 +1438,7 @@ TEST_F(CLASSNAME,mvecT_times_mvec_after_spmvm)
 
   // fill columns with row/i and row/(i+1)
   // exploits sum_(k=1)^n 1/(k*(k+1)) = 1 - 1/(n+1)
-  gidx_t ilower;     
+  phist_gidx ilower;     
   phist_map_get_ilower(map_,&ilower,&iflag_);
   for (int ii=0; ii< nloc_; ii++)
   {

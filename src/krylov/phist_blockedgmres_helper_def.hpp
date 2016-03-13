@@ -6,7 +6,7 @@ class TYPE(MvecRingBuffer)
     TYPE(MvecRingBuffer)(int size) : mvecs_(size,NULL), mvecs_used_(size,0), lastIndex_(0) {}
 
     // we can handle failures probably more cleanly if not done in the constructor
-    void create_mvecs(const_map_ptr_t map, int nvecs, int* iflag)
+    void create_mvecs(phist_const_map_ptr map, int nvecs, int* iflag)
     {
       for(int i = 0; i < mvecs_.size(); i++)
       {

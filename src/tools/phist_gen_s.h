@@ -6,7 +6,7 @@
 #define PHIST_TG_PREFIX(name) S ## name
 #define SPHIST_TG_PREFIX(name) s ## name
 #define SUBR(name) phist_S ## name
-#define TYPE(name) S ## name ## _t
+#define TYPE(name) phist_S ## name
 
 // how to call a lapack routine via the C interface, e.g. PHIST_LAPACKE(getrf)
 #define PHIST_LAPACKE(name) LAPACKE_s ## name

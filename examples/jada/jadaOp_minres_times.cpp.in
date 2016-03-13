@@ -51,13 +51,13 @@ void myMain(int argc, char** argv, int &iflag)
   std::vector< std::vector<_ST_> > r_k;
   std::vector< std::vector<_ST_> > b_k;
   std::vector< std::vector<_ST_> > Y;
-  std::vector< mvec_ptr_t > V(maxit+2);
+  std::vector< mvec_ptr > V(maxit+2);
   
   
 
-  comm_ptr_t comm = NULL;
-  sparseMat_ptr_t A = NULL;
-  sparseMat_ptr_t H = NULL;
+  phist_comm_ptr comm = NULL;
+  sparseMat_ptr A = NULL;
+  sparseMat_ptr H = NULL;
   
   TYPE(linearOp) opA;
   _ST_* sigma = NULL;
@@ -78,14 +78,14 @@ void myMain(int argc, char** argv, int &iflag)
   
 
   TYPE(linearOp) jadaOp;
-  const_map_ptr_t map = NULL;
-  mvec_ptr_t x = NULL;
-  mvec_ptr_t y = NULL;
-  mvec_ptr_t z = NULL;
-  mvec_ptr_t b = NULL;
-  mvec_ptr_t solution = NULL;
-  mvec_ptr_t q = NULL;
-  sdMat_ptr_t R = NULL;
+  phist_const_map_ptr map = NULL;
+  mvec_ptr x = NULL;
+  mvec_ptr y = NULL;
+  mvec_ptr z = NULL;
+  mvec_ptr b = NULL;
+  mvec_ptr solution = NULL;
+  mvec_ptr q = NULL;
+  sdMat_ptr R = NULL;
   
   
 
@@ -172,10 +172,10 @@ PHIST_SOUT(PHIST_INFO, "create_matrix iflag %d\n", iflag);
   //PHIST_CHK_IERR(SUBR(mvec_QR)(V,R,&iflag), iflag);
   // set q vectors to unit vectors
   {
-    lidx_t ldq;
+    phist_lidx ldq;
     _ST_* q_raw;
     PHIST_CHK_IERR(SUBR(mvec_extract_view)(q,&q_raw,&ldq,&iflag),iflag);
-    gidx_t ilower;
+    phist_gidx ilower;
     PHIST_CHK_IERR(phist_map_get_ilower(map,&ilower,&iflag),iflag);
     if(ilower == 0)
     {
@@ -233,7 +233,7 @@ PHIST_SOUT(PHIST_INFO, "create_matrix iflag %d\n", iflag);
 
   for (int i = 0; i < maxit; i++)
   {
-    //V.push_back (std::vector<mvec_ptr_t>() );
+    //V.push_back (std::vector<mvec_ptr>() );
   }
 
   for (int i = 0; i < nvecs; i++)

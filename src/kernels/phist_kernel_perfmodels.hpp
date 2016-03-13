@@ -32,7 +32,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 //! checks performance of mvec_create
 #define PHIST_PERFCHECK_VERIFY_MVEC_CREATE(map,nvec,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV = nvec; \
   PHIST_CHK_IERR(phist_map_get_local_length(map,&n,iflag),*iflag); \
   *iflag = tmp_iflag; \
@@ -42,7 +42,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 //! checks performance of mvec_from_device
 #define PHIST_PERFCHECK_VERIFY_MVEC_FROM_DEVICE(V,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
@@ -53,7 +53,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 //! checks performance of mvec_to_device
 #define PHIST_PERFCHECK_VERIFY_MVEC_TO_DEVICE(V,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
@@ -68,7 +68,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVEC_GET_BLOCK(V,Vblock,jmin,jmax,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV = jmax-jmin+1; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   *iflag = tmp_iflag; \
@@ -79,14 +79,14 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVEC_GET_BLOCK(V,Vblock,jmin,jmax,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV = jmax-jmin+1; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   _ST_ *V_raw, *Vb_raw; \
-  lidx_t ldV, ldVb; \
+  phist_lidx ldV, ldVb; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))Vblock,&Vb_raw,&ldVb,iflag),*iflag); \
-  lidx_t cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = 64/sizeof(_ST_); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   int nVb_ = std::min(ldVb,((nV-1)/cl_size+1)*cl_size); \
@@ -110,14 +110,14 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVEC_SET_BLOCK(V,Vblock,jmin,jmax,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV = jmax-jmin+1; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   _ST_ *V_raw, *Vb_raw; \
-  lidx_t ldV, ldVb; \
+  phist_lidx ldV, ldVb; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))Vblock,&Vb_raw,&ldVb,iflag),*iflag); \
-  lidx_t cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = 64/sizeof(_ST_); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   int nVb_ = std::min(ldVb,((nV-1)/cl_size+1)*cl_size); \
@@ -135,7 +135,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVEC_PUT_VALUE(V,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
@@ -147,14 +147,14 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVEC_PUT_VALUE(V,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   _ST_ *V_raw; \
-  lidx_t ldV; \
+  phist_lidx ldV; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
-  lidx_t cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = 64/sizeof(_ST_); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   *iflag = tmp_iflag; \
@@ -170,7 +170,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVEC_DOT_MVEC(V,W,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
@@ -182,15 +182,15 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVEC_DOT_MVEC(V,W,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   _ST_ *V_raw, *W_raw; \
-  lidx_t ldV, ldW; \
+  phist_lidx ldV, ldW; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))W,&W_raw,&ldW,iflag),*iflag); \
-  lidx_t cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = 64/sizeof(_ST_); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   int nW_ = std::min(ldW,((nV-1)/cl_size+1)*cl_size); \
@@ -208,7 +208,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVEC_NORMALIZE(V,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
@@ -220,14 +220,14 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVEC_NORMALIZE(V,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   _ST_ *V_raw; \
-  lidx_t ldV; \
+  phist_lidx ldV; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
-  lidx_t cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = 64/sizeof(_ST_); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   *iflag = tmp_iflag; \
@@ -243,7 +243,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVEC_SCALE(V,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
@@ -255,14 +255,14 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVEC_SCALE(V,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   _ST_ *V_raw; \
-  lidx_t ldV; \
+  phist_lidx ldV; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
-  lidx_t cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = 64/sizeof(_ST_); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   *iflag = tmp_iflag; \
@@ -278,7 +278,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVEC_ADD_MVEC(a,X,b,Y,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(X,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nV,iflag),*iflag); \
@@ -290,15 +290,15 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVEC_ADD_MVEC(a,X,b,Y,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(X,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X,&nV,iflag),*iflag); \
   _ST_ *X_raw, *Y_raw; \
-  lidx_t ldX, ldY; \
+  phist_lidx ldX, ldY; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))X,&X_raw,&ldX,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))Y,&Y_raw,&ldY,iflag),*iflag); \
-  lidx_t cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = 64/sizeof(_ST_); \
   int nX_ = std::min(ldX,((nV-1)/cl_size+1)*cl_size); \
   if( nX_+cl_size > ldX ) nX_ = ldX; \
   int nY_ = std::min(ldY,((nV-1)/cl_size+1)*cl_size); \
@@ -330,7 +330,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC(V,W,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV, nW; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
@@ -343,16 +343,16 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC(V,W,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV, nW; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&nW,iflag),*iflag); \
   _ST_ *V_raw, *W_raw; \
-  lidx_t ldV, ldW; \
+  phist_lidx ldV, ldW; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))W,&W_raw,&ldW,iflag),*iflag); \
-  lidx_t cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = 64/sizeof(_ST_); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   int nW_ = std::min(ldW,((nW-1)/cl_size+1)*cl_size); \
@@ -370,7 +370,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC_TIMES_SDMAT(V,W,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV, nW; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
@@ -383,16 +383,16 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC_TIMES_SDMAT(V,W,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV, nW; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&nW,iflag),*iflag); \
   _ST_ *V_raw, *W_raw; \
-  lidx_t ldV, ldW; \
+  phist_lidx ldV, ldW; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))W,&W_raw,&ldW,iflag),*iflag); \
-  lidx_t cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = 64/sizeof(_ST_); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   int nW_ = std::min(ldW,((nW-1)/cl_size+1)*cl_size); \
@@ -411,7 +411,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT(a,V,b,W,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV, nW; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
@@ -424,16 +424,16 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT(a,V,b,W,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV, nW; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&nW,iflag),*iflag); \
   _ST_ *V_raw, *W_raw; \
-  lidx_t ldV, ldW; \
+  phist_lidx ldV, ldW; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))W,&W_raw,&ldW,iflag),*iflag); \
-  lidx_t cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = 64/sizeof(_ST_); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   int nW_ = std::min(ldW,((nW-1)/cl_size+1)*cl_size); \
@@ -451,7 +451,7 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // ideal model
 #define PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT_INPLACE(V,M,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV, nW; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
@@ -464,15 +464,15 @@ PHIST_PERFCHECK_BENCHMARK(STREAM_STORE, phist_bench_stream_store);
 // realistic model which respects cache line length
 #define PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT_INPLACE(V,M,iflag) \
   int tmp_iflag = *iflag; \
-  lidx_t n; \
+  phist_lidx n; \
   int nV, nW; \
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&n,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nV,iflag),*iflag); \
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(M,&nW,iflag),*iflag); \
   _ST_ *V_raw; \
-  lidx_t ldV; \
+  phist_lidx ldV; \
   PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))V,&V_raw,&ldV,iflag),*iflag); \
-  lidx_t cl_size = 64/sizeof(_ST_); \
+  phist_lidx cl_size = 64/sizeof(_ST_); \
   int nV_ = std::min(ldV,((nV-1)/cl_size+1)*cl_size); \
   if( nV_+cl_size > ldV ) nV_ = ldV; \
   int nW_ = std::min(ldV,((nW-1)/cl_size+1)*cl_size); \

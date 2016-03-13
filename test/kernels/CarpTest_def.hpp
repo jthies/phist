@@ -126,7 +126,7 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
   if (typeImplemented_ && !problemTooSmall_)
   {
     // set vec1 to be a valid X, vec2 and vec3 a valid Y in Y=AX
-    const_map_ptr_t range_map, domain_map;
+    phist_const_map_ptr range_map, domain_map;
     SUBR(sparseMat_get_range_map)(A,&range_map,&iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(sparseMat_get_domain_map)(A,&domain_map,&iflag_);
@@ -139,7 +139,7 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     SUBR(mvec_delete)(vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
 
-    lidx_t lda;
+    phist_lidx lda;
     PHISTTEST_MVEC_CREATE(&vec1_,domain_map,nvec_,&iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda,&iflag_);
@@ -242,7 +242,7 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_from_device)(M,&iflag_);
       ASSERT_EQ(0,iflag_);
-      lidx_t ldm;
+      phist_lidx ldm;
       _ST_* M_raw=NULL;
       SUBR(sdMat_extract_view)(M,&M_raw,&ldm,&iflag_);
       for (int i=0; i<_NV_; i++)

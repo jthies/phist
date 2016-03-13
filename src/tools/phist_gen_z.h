@@ -2,7 +2,7 @@
 
 // type specifier
 #define _TP_ 'Z'
-#define _ST_ d_complex_t
+#define _ST_ phist_d_complex
 
 #define IS_DOUBLE
 #define IS_COMPLEX
@@ -32,7 +32,7 @@
 #define SUBR(name) phist_Z ## name
 
 // how to build up the name of a type
-#define TYPE(name) Z ## name ## _t
+#define TYPE(name) phist_Z ## name
 
 // how to call a lapack routine via the C interface, e.g. PHIST_LAPACKE(getrf)
 #define PHIST_LAPACKE(name) LAPACKE_z ## name

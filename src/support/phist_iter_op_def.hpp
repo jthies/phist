@@ -34,7 +34,7 @@ extern "C" void SUBR(private_iter_op_apply)
 //! approximate Y=(A-sigma*I)\X. alpha and beta are
 //! not used, resp. must be alpha=1, beta=0. 
 void SUBR(linearOp_wrap_solver)(TYPE(linearOp_ptr) Ainv_op,TYPE(const_sparseMat_ptr) A, _ST_ shift,
-        linSolv_t method,int block_size, _MT_ tol,int maxIter,int* iflag)
+        phist_ElinSolv method,int block_size, _MT_ tol,int maxIter,int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);

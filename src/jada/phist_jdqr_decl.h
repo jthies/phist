@@ -40,7 +40,7 @@
 void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) B_op,
   TYPE(mvec_ptr) X, TYPE(mvec_ptr) Q, TYPE(sdMat_ptr) R,
   _ST_* evals, _MT_* resid, int* is_cmplx,
-        phist_jadaOpts_t options, int* num_eigs, int* num_iters,
+        phist_jadaOpts options, int* num_eigs, int* num_iters,
         int* iflag);
          
 //@}

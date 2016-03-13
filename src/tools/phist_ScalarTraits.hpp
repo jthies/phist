@@ -47,17 +47,17 @@ class ScalarTraits< float >
   static const ghost_datatype ghost_dt = (ghost_datatype)((int)GHOST_DT_FLOAT|(int)GHOST_DT_REAL);
   static const ghost_datatype c_ghost_dt = (ghost_datatype)((int)GHOST_DT_FLOAT|(int)GHOST_DT_COMPLEX);
 #endif  
-  typedef SlinearOp_t linearOp_t;
-  typedef Smvec_t mvec_t;
-  typedef SsdMat_t sdMat_t;
-  typedef SsparseMat_t sparseMat_t;
-  typedef Sblas_cmplx_t blas_cmplx_t;
+  typedef phist_SlinearOp linearOp_t;
+  typedef phist_Smvec mvec_t;
+  typedef phist_SsdMat sdMat_t;
+  typedef phist_SsparseMat sparseMat_t;
+  typedef phist_Sblas_cmplx blas_cmplx_t;
   typedef float blas_scalar_t;
   
-  typedef ClinearOp_t c_linearOp_t; // this is just to allow a simpler implementation of the complex traits class
-  typedef Cmvec_t c_mvec_t; 
-  typedef CsparseMat_t c_sparseMat_t; 
-  typedef CsdMat_t c_sdMat_t; 
+  typedef phist_ClinearOp c_linearOp_t; // this is just to allow a simpler implementation of the complex traits class
+  typedef phist_Cmvec c_mvec_t; 
+  typedef phist_CsparseMat c_sparseMat_t; 
+  typedef phist_CsdMat c_sdMat_t; 
   
   //! for complex types, data type of real and imag part.
   //! for real types, magn_t=scalar_t
@@ -190,17 +190,17 @@ class ScalarTraits< double >
   static const ghost_datatype ghost_dt = (ghost_datatype)((int)GHOST_DT_DOUBLE|(int)GHOST_DT_REAL);
   static const ghost_datatype c_ghost_dt = (ghost_datatype)((int)GHOST_DT_DOUBLE|(int)GHOST_DT_COMPLEX);
 #endif  
-  typedef DlinearOp_t linearOp_t; 
-  typedef Dmvec_t mvec_t; 
-  typedef DsparseMat_t sparseMat_t; 
-  typedef DsdMat_t sdMat_t; 
-  typedef Dblas_cmplx_t blas_cmplx_t;
+  typedef phist_DlinearOp linearOp_t; 
+  typedef phist_Dmvec mvec_t; 
+  typedef phist_DsparseMat sparseMat_t; 
+  typedef phist_DsdMat sdMat_t; 
+  typedef phist_Dblas_cmplx blas_cmplx_t;
   typedef double blas_scalar_t;
 
-  typedef ZlinearOp_t c_linearOp_t; // this is just to allow a simpler implementation of the complex traits class
-  typedef Zmvec_t c_mvec_t;
-  typedef ZsparseMat_t c_sparseMat_t;
-  typedef ZsdMat_t c_sdMat_t;
+  typedef phist_ZlinearOp c_linearOp_t; // this is just to allow a simpler implementation of the complex traits class
+  typedef phist_Zmvec c_mvec_t;
+  typedef phist_ZsparseMat c_sparseMat_t;
+  typedef phist_ZsdMat c_sdMat_t;
   
   //! for complex types, data type of real and imag part.
   //! for real types, magn_t=scalar_t

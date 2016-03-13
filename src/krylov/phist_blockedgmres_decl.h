@@ -95,7 +95,7 @@ void SUBR( blockedGMRESstates_iterate ) (TYPE(const_linearOp_ptr) Op, TYPE(block
 //! The array of pointers must be allocated beforehand, but the individual structs 
 //! are allocated by this method.
 //!
-void SUBR( blockedGMRESstates_create ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys, const_map_ptr_t map, int maxBas, int* iflag);
+void SUBR( blockedGMRESstates_create ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys, phist_const_map_ptr map, int maxBas, int* iflag);
 
 //!
 //! delete an set of gmresState objects. Only the individual structs are destroyed,

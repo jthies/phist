@@ -22,17 +22,17 @@ public:
   //! multi vectors
   struct mvec_t
   {
-    lidx_t n, nvec, stride;
+    phist_lidx n, nvec, stride;
     bool is_view;
     ST* gpuData;
     ST* cpuData;
-    const_map_ptr_t map;
+    phist_const_map_ptr map;
   };
 
   //! serial dense matrix
   struct sdMat_t
   {
-    lidx_t nrows, ncols, stride;
+    phist_lidx nrows, ncols, stride;
     bool is_view;
     ST* gpuData;
     ST* cpuData;

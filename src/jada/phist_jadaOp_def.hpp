@@ -74,7 +74,7 @@ void SUBR(jadaOp_apply)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
     int nvec, nvecp;
     PHIST_CHK_IERR( SUBR( mvec_num_vectors ) (X,          &nvec,  iflag), *iflag);
     PHIST_CHK_IERR( SUBR( mvec_num_vectors ) (jadaOp->V,  &nvecp, iflag), *iflag);
-    const_comm_ptr_t comm;
+    phist_const_comm_ptr comm;
     PHIST_CHK_IERR( SUBR( mvec_get_comm ) (X, &comm, iflag), *iflag);
     TYPE(sdMat_ptr) tmp;
     PHIST_CHK_IERR( SUBR( sdMat_create ) (&tmp, nvecp, nvec, comm, iflag), *iflag);
@@ -163,7 +163,7 @@ void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    A_op,    TYPE(const_linearO
   myOp->sigma  = sigma;
   // allocate necessary temporary arrays
   int nvecp;
-  const_comm_ptr_t comm;
+  phist_const_comm_ptr comm;
   PHIST_CHK_IERR(phist_map_get_comm(A_op->domain_map, &comm, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V, &nvecp, iflag), *iflag);
   if( B_op != NULL )

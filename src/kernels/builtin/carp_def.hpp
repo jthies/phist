@@ -11,7 +11,7 @@ void SUBR(carp_setup)(TYPE(const_sparseMat_ptr) A, int numShifts,
 
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
-  const_map_ptr_t map;
+  phist_const_map_ptr map;
   int nlocal;
   PHIST_CHK_IERR(SUBR(sparseMat_get_range_map)(A,&map,iflag),*iflag);
   PHIST_CHK_IERR(phist_map_get_local_length(map,&nlocal,iflag),*iflag);

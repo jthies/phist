@@ -19,7 +19,7 @@
 // Anasazi: block krylov methods from Trilinos
 void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) Ainv_op, 
                          TYPE(const_linearOp_ptr) B_op, int variant,
-                         TYPE(const_mvec_ptr) v0,  eigSort_t which,
+                         TYPE(const_mvec_ptr) v0,  phist_EeigSort which,
                          _MT_ tol,                 int *nEig,
                          int* nIter,               int blockDim,
                          int numBlocks,
@@ -36,7 +36,7 @@ void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr)
   typedef ghost_densemat MV;
   typedef phist::GhostMV AnasaziMV;
 #elif defined(PHIST_KERNEL_LIB_TPETRA)
-  typedef Tpetra::MultiVector<ST,lidx_t,gidx_t,node_t> MV;
+  typedef Tpetra::MultiVector<ST,phist_lidx,phist_gidx,node_type> MV;
   typedef MV AnasaziMV;
 #elif defined(PHIST_KERNEL_LIB_EPETRA)
   typedef Epetra_MultiVector MV; 

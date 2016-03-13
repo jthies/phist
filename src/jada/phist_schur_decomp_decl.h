@@ -32,7 +32,7 @@
  //! we want to be able to call the function from C and C++ alike.                               
  //!                                                                                             
  void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
-         int m, int nselect, int nsort, eigSort_t which, _MT_ tol,
+         int m, int nselect, int nsort, phist_EeigSort which, _MT_ tol,
          void* ev, int *iflag);
          
  //! generalized Schur Decomposition, (S,T)->(~S,~T,VS,WS) such that                            
@@ -41,17 +41,17 @@
  //! ev=alpha/beta, beta may be found to be 0. In this case, we set *iflag=1 and ev[i]=0.
  void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT, 
                            _ST_* VS, int ldVS, _ST_* WS, int ldWS,
-                           int m, int nselect, int nsort, eigSort_t which, _MT_ tol,
+                           int m, int nselect, int nsort, phist_EeigSort which, _MT_ tol,
                            void* ev, int* iflag);
 
  //! reorder multiple eigenvalues in a given (partial) Schur decomposition by the smallest 
  //! residual norm of the unprojected problem must be sorted up to nselected to work correctly!
  void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
-        int m, int nselected, eigSort_t which, _MT_ tol, _MT_* resNorm, void* ev, int* permutation, int *iflag);
+        int m, int nselected, phist_EeigSort which, _MT_ tol, _MT_* resNorm, void* ev, int* permutation, int *iflag);
 
 
  //! reorder multiple eigenvalues in a given (partial) generalized Schur decomposition by the smallest 
  //! residual norm of the unprojected problem must be sorted up to nselected to work correctly!
  void SUBR(ReorderPartialGenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT, _ST_* VS, int ldVS, _ST_* WS, int ldWS,
-        int m, int nselected, eigSort_t which, _MT_ tol, _MT_* resNorm, void* ev, int* permutation, int *iflag);
+        int m, int nselected, phist_EeigSort which, _MT_ tol, _MT_* resNorm, void* ev, int* permutation, int *iflag);
 

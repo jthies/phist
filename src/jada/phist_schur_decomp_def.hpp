@@ -29,7 +29,7 @@
  // and that the 3 largest ones appear first in any order.                                      
  //                                                                                             
 void SUBR(SchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
-         int m, int nselect, int nsort, eigSort_t which, _MT_ tol, 
+         int m, int nselect, int nsort, phist_EeigSort which, _MT_ tol, 
          void* v_ev, int *iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -72,11 +72,11 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
     {
 #ifdef IS_COMPLEX
       PHIST_DEB("call complex %cGEES\n",st::type_char());
-      PHIST_TG_PREFIX(GEES)((blas_char_t*)jobvs,(blas_char_t*)sort,NULL,&m,(blas_cmplx_t*)T,&ldT,
-             &sdim,(blas_cmplx_t*)ev,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)work,&lwork,ev_r,NULL,iflag);
+      PHIST_TG_PREFIX(GEES)((phist_blas_char*)jobvs,(phist_blas_char*)sort,NULL,&m,(blas_cmplx*)T,&ldT,
+             &sdim,(blas_cmplx*)ev,(blas_cmplx*)S,&ldS,(blas_cmplx*)work,&lwork,ev_r,NULL,iflag);
 #else
       PHIST_DEB("call real %cGEES\n",st::type_char());
-      PHIST_TG_PREFIX(GEES)((blas_char_t*)jobvs,(blas_char_t*)sort,NULL,&m,T,&ldT,
+      PHIST_TG_PREFIX(GEES)((phist_blas_char*)jobvs,(phist_blas_char*)sort,NULL,&m,T,&ldT,
             &sdim,ev_r,ev_i,S,&ldS,work,&lwork,NULL,iflag);
       for (int i=0;i<m;i++)
       {
@@ -146,10 +146,10 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 #pragma omp master
       {
 #ifdef IS_COMPLEX
-        PHIST_TG_PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)ev,&nsorted,
-              &S_cond, &sep, (blas_cmplx_t*)work, &lwork, iflag);
+        PHIST_TG_PREFIX(TRSEN)((phist_blas_char*)job,(phist_blas_char*)compq,select,&m,(blas_cmplx*)T,&ldT,(blas_cmplx*)S,&ldS,(blas_cmplx*)ev,&nsorted,
+              &S_cond, &sep, (blas_cmplx*)work, &lwork, iflag);
 #else
-        PHIST_TG_PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
+        PHIST_TG_PREFIX(TRSEN)((phist_blas_char*)job,(phist_blas_char*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
               &S_cond, &sep, work, &lwork, iwork, &liwork, iflag);
         for (int i=0;i<m;i++)
         {
@@ -196,10 +196,10 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
         // we pass in ev+i
         int nsorted_before=nsorted;
 #ifdef IS_COMPLEX
-        PHIST_TG_PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)S,&ldS,
-              (blas_cmplx_t*)ev,&nsorted,&S_cond, &sep, (blas_cmplx_t*)work, &lwork, iflag);
+        PHIST_TG_PREFIX(TRSEN)((phist_blas_char*)job,(phist_blas_char*)compq,select,&m,(blas_cmplx*)T,&ldT,(blas_cmplx*)S,&ldS,
+              (blas_cmplx*)ev,&nsorted,&S_cond, &sep, (blas_cmplx*)work, &lwork, iflag);
 #else
-        PHIST_TG_PREFIX(TRSEN)((blas_char_t*)job,(blas_char_t*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
+        PHIST_TG_PREFIX(TRSEN)((phist_blas_char*)job,(phist_blas_char*)compq,select,&m,T,&ldT,S,&ldS,ev_r,ev_i,&nsorted,
               &S_cond, &sep, work, &lwork, iwork, &liwork, iflag);
         for (int j=0;j<m;j++)
         {
@@ -228,7 +228,7 @@ PHIST_TASK_END(iflag)
 // ev=alpha/beta, beta may be found to be 0. In this case, we set *iflag=1 and ev[i]=0.
 void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
                           _ST_* VS, int ldVS, _ST_* WS, int ldWS,
-                          int m, int nselect, int nsort, eigSort_t which, _MT_ tol,
+                          int m, int nselect, int nsort, phist_EeigSort which, _MT_ tol,
                           void* v_ev, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -265,12 +265,12 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
     {
 #ifdef IS_COMPLEX
       PHIST_DEB("call complex %cGGES\n",st::type_char());
-      PHIST_TG_PREFIX(GGES)((blas_char_t*)jobvsl,(blas_char_t*)jobvsr,(blas_char_t*)sort,NULL,&m,(blas_cmplx_t*)S,&ldS,
-             (blas_cmplx_t*)T, &ldT, &sdim,(blas_cmplx_t*)alpha, (blas_cmplx_t*)beta,
-             (blas_cmplx_t*)VS,&ldVS, (blas_cmplx_t*)WS, &ldWS, (blas_cmplx_t*)alphai, &clwork, rwork, NULL, iflag);
+      PHIST_TG_PREFIX(GGES)((phist_blas_char*)jobvsl,(phist_blas_char*)jobvsr,(phist_blas_char*)sort,NULL,&m,(blas_cmplx*)S,&ldS,
+             (blas_cmplx*)T, &ldT, &sdim,(blas_cmplx*)alpha, (blas_cmplx*)beta,
+             (blas_cmplx*)VS,&ldVS, (blas_cmplx*)WS, &ldWS, (blas_cmplx*)alphai, &clwork, rwork, NULL, iflag);
 #else
       PHIST_DEB("call real %cGGES\n",st::type_char());
-      PHIST_TG_PREFIX(GGES)((blas_char_t*)jobvsl,(blas_char_t*)jobvsr,(blas_char_t*)sort,NULL,&m,S,&ldS,
+      PHIST_TG_PREFIX(GGES)((phist_blas_char*)jobvsl,(phist_blas_char*)jobvsr,(phist_blas_char*)sort,NULL,&m,S,&ldS,
              T, &ldT, &sdim, alpha, alphai, beta,
              VS,&ldVS, WS, &ldWS, rwork, &lwork, NULL, iflag);
       
@@ -353,9 +353,9 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
 #ifdef IS_COMPLEX
         int clwork=1;
         PHIST_TG_PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
-                (blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)alpha,(blas_cmplx_t*)beta,
-                (blas_cmplx_t*)VS,&ldVS,(blas_cmplx_t*)WS,&ldWS,&m,
-                &pl,&pr,dif,(blas_cmplx_t*)rwork,&clwork,iwork,&liwork,iflag);
+                (blas_cmplx*)S,&ldS,(blas_cmplx*)T,&ldT,(blas_cmplx*)alpha,(blas_cmplx*)beta,
+                (blas_cmplx*)VS,&ldVS,(blas_cmplx*)WS,&ldWS,&m,
+                &pl,&pr,dif,(blas_cmplx*)rwork,&clwork,iwork,&liwork,iflag);
 #else
         PHIST_TG_PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
                 S,&ldS,T,&ldT,alpha,alphai,beta,
@@ -421,9 +421,9 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
 #ifdef IS_COMPLEX
         int clwork=1;
         PHIST_TG_PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
-                (blas_cmplx_t*)S,&ldS,(blas_cmplx_t*)T,&ldT,(blas_cmplx_t*)alpha,(blas_cmplx_t*)beta,
-                (blas_cmplx_t*)VS,&ldVS,(blas_cmplx_t*)WS,&ldWS,&m,
-                &pl,&pr,dif,(blas_cmplx_t*)rwork,&clwork,iwork,&liwork,iflag);
+                (blas_cmplx*)S,&ldS,(blas_cmplx*)T,&ldT,(blas_cmplx*)alpha,(blas_cmplx*)beta,
+                (blas_cmplx*)VS,&ldVS,(blas_cmplx*)WS,&ldWS,&m,
+                &pl,&pr,dif,(blas_cmplx*)rwork,&clwork,iwork,&liwork,iflag);
 #else
         PHIST_TG_PREFIX(TGSEN)(&ijob, &wantq, &wantz, select, &m, 
                 S,&ldS,T,&ldT,alpha,alphai,beta,
@@ -459,7 +459,7 @@ void SUBR(GenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT,
 
 // reorder multiple eigenvalues in a given (partial) Schur decomposition by the smallest residual norm of the unprojected problem
 void SUBR(ReorderPartialSchurDecomp)(_ST_* T, int ldT, _ST_* S, int ldS,
-      int m, int nselected, eigSort_t which, _MT_ tol, _MT_* resNorm, void* v_ev, int* permutation, int *iflag)
+      int m, int nselected, phist_EeigSort which, _MT_ tol, _MT_* resNorm, void* v_ev, int* permutation, int *iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
@@ -567,10 +567,10 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
         int ilst = pos+1;
         PHIST_SOUT(PHIST_DEBUG,"swapping %d %d in unconverged eigenvalues\n",ifst-1,ilst-1);
 #ifdef IS_COMPLEX
-        PHIST_TG_PREFIX(TREXC) ((blas_char_t*)compq, &m, (blas_cmplx_t*) T, 
-            &ldT, (blas_cmplx_t*) S, &ldS, &ifst, &ilst, iflag);
+        PHIST_TG_PREFIX(TREXC) ((phist_blas_char*)compq, &m, (blas_cmplx*) T, 
+            &ldT, (blas_cmplx*) S, &ldS, &ifst, &ilst, iflag);
 #else
-        PHIST_TG_PREFIX(TREXC) ((blas_char_t*)compq, &m, T, &ldT, S, &ldS, 
+        PHIST_TG_PREFIX(TREXC) ((phist_blas_char*)compq, &m, T, &ldT, S, &ldS, 
             &ifst, &ilst, work, iflag);
 #endif
         if( *iflag != 0 )
@@ -589,7 +589,7 @@ PHIST_TASK_END(iflag)
  //! reorder multiple eigenvalues in a given (partial) generalized Schur decomposition by the smallest
  //! residual norm of the unprojected problem must be sorted up to nselected to work correctly!
  void SUBR(ReorderPartialGenSchurDecomp)(_ST_* S, int ldS, _ST_* T, int ldT, _ST_* VS, int ldVS, _ST_* WS, int ldWS,
-           int m, int nselected, eigSort_t which, _MT_ tol, _MT_* resNorm, void* v_ev, int* permutation, int *iflag)
+           int m, int nselected, phist_EeigSort which, _MT_ tol, _MT_* resNorm, void* v_ev, int* permutation, int *iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
@@ -697,8 +697,8 @@ PHIST_TASK_END(iflag)
         PHIST_SOUT(PHIST_DEBUG,"swapping %d %d in unconverged eigenvalues\n",ifst-1,ilst-1);
 #ifdef IS_COMPLEX
         PHIST_TG_PREFIX(TGEXC) (&wantq, &wantz, &m, 
-                (blas_cmplx_t*) S, &ldS, (blas_cmplx_t*) T, &ldT,
-                (blas_cmplx_t*) VS, &ldVS, (blas_cmplx_t*) WS, &ldWS, 
+                (blas_cmplx*) S, &ldS, (blas_cmplx*) T, &ldT,
+                (blas_cmplx*) VS, &ldVS, (blas_cmplx*) WS, &ldWS, 
                 &ifst, &ilst, iflag);
 #else
         PHIST_TG_PREFIX(TGEXC) (&wantq, &wantz, &m, 

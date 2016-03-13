@@ -40,20 +40,20 @@ int main(int argc, char** argv)
 #include "phist_std_typedefs.hpp"
   int i, iflag;
 
-  comm_ptr_t comm;
-  sparseMat_ptr_t A,B;
-  linearOp_ptr_t A_op, B_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
-  linearOp_ptr_t P_op; // wrapper for a preconditioning operator
+  comm_ptr comm;
+  sparseMat_ptr A,B;
+  linearOp_ptr A_op, B_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  linearOp_ptr P_op; // wrapper for a preconditioning operator
   
-  const_map_ptr_t map; // map (element distribution) of vectors according to 
+  const_map_ptr map; // map (element distribution) of vectors according to 
                        // the distribution of matrix rows
-  mvec_ptr_t X,R;// multivectors for eigenvectors and residuals
+  mvec_ptr X,R;// multivectors for eigenvectors and residuals
 
   char *matname, *matnameB=NULL;
     
   // default input parameters:
   MT tol=1.0e-6;
-  eigSort_t which=phist_LM;
+  phist_EeigSort which=phist_LM;
   ST target_value;
   
   int sym=0;

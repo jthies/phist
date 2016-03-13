@@ -63,7 +63,7 @@ typedef struct {
   int lda;
   int lnrows;
   int lncols;
-  gidx_t ilower;
+  phist_gidx ilower;
   double* data;
 } dwrap;
 

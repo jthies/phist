@@ -9,7 +9,7 @@ extern "C" void SUBR(type_avail)(int* iflag)
 }
 
 //! read a matrix from a MatrixMarket (ASCII) file
-extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, phist_const_comm_ptr vcomm,
         const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -35,7 +35,7 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_
 }
 
 //! read a matrix from a Ghost CRS (binary) file.
-extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* vA, phist_const_comm_ptr vcomm,
 const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -44,7 +44,7 @@ const char* filename,int* iflag)
 }
 
 //! read a matrix from a Harwell-Boeing (HB) file
-extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* vA, const_comm_ptr_t vcomm,
+extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* vA, phist_const_comm_ptr vcomm,
 const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -52,21 +52,21 @@ const char* filename,int* iflag)
 }
 //!@}
 
-extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, const_comm_ptr_t vcomm,
-        gidx_t nrows, gidx_t ncols, lidx_t maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
+extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
+        phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
                 int *iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*iflag);
-  gidx_t cols[maxnne];
+  phist_gidx cols[maxnne];
   double vals[maxnne];
 
   Epetra_CrsMatrix* A=NULL;
   Epetra_Map* map=NULL;
   PHIST_TRY_CATCH(map = new Epetra_Map(nrows,0,*comm),*iflag);
   PHIST_TRY_CATCH(A   = new Epetra_CrsMatrix(Copy,*map,maxnne),*iflag);
-  for (lidx_t i=0; i<A->NumMyRows(); i++)
+  for (phist_lidx i=0; i<A->NumMyRows(); i++)
   {
 #ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
     ghost_gidx row = (ghost_gidx)map->GID(i);
@@ -90,39 +90,39 @@ return;
 
 //!@{
 //! get the row distribution of the matrix
-extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* vmap, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix,A,vA,*iflag);
-  *vmap = (const_map_ptr_t)(&(A->RowMap()));
+  *vmap = (phist_const_map_ptr)(&(A->RowMap()));
 }
 
 //! get column distribution of a matrix
-extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* vmap, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix,A,vA,*iflag);
-  *vmap = (const_map_ptr_t)(&(A->ColMap()));
+  *vmap = (phist_const_map_ptr)(&(A->ColMap()));
 }
 
 //! get the map for vectors x in y=A*x
-extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* vmap, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix,A,vA,*iflag);
-  *vmap = (const_map_ptr_t)(&(A->DomainMap()));
+  *vmap = (phist_const_map_ptr)(&(A->DomainMap()));
 }
 
 //! get the map for vectors y in y=A*x
-extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) vA, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) vA, phist_const_map_ptr* vmap, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_CrsMatrix,A,vA,*iflag);
-  *vmap = (const_map_ptr_t)(&(A->RangeMap()));
+  *vmap = (phist_const_map_ptr)(&(A->RangeMap()));
 }
 //@}
 
@@ -132,7 +132,7 @@ extern "C" void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) vA, cons
 //! create a block-vector. The entries are stored contiguously
 //! at val in column major ordering.
 extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vV, 
-const_map_ptr_t vmap, int nvec, int* iflag)
+phist_const_map_ptr vmap, int nvec, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
@@ -146,8 +146,8 @@ const_map_ptr_t vmap, int nvec, int* iflag)
 //! create a block-vector as view of raw data. The map tells the object
 //! how many rows it should 'see' in the data (at most lda, the leading
 //! dimension of the 2D array values).
-extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap, 
-        _ST_* values, lidx_t lda, int nvec,
+extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, phist_const_map_ptr vmap, 
+        _ST_* values, phist_lidx lda, int nvec,
         int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -161,7 +161,7 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, const_map_ptr_t vmap,
 //! create a serial dense n x m matrix on all procs, with column major
 //! ordering.
 extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols, 
-        const_comm_ptr_t vcomm, int* iflag)
+        phist_const_comm_ptr vcomm, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
@@ -177,8 +177,8 @@ extern "C" void SUBR(sdMat_create)(TYPE(sdMat_ptr)* vM, int nrows, int ncols,
   *vM=(TYPE(sdMat_ptr))mv;
 }
 
-void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
-        _ST_* values, lidx_t lda, int nrows, int ncols,
+void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, phist_const_comm_ptr comm,
+        _ST_* values, phist_lidx lda, int nrows, int ncols,
         int* iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
@@ -188,12 +188,12 @@ void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm,
 //@}
 
 //! retrieve the map of the vectors in V
-extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, const_map_ptr_t* vmap, int* iflag)
+extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, phist_const_map_ptr* vmap, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,V,vV,*iflag);
-  *vmap=(const_map_ptr_t)&V->Map();
+  *vmap=(phist_const_map_ptr)&V->Map();
 }
 
 //! retrieve number of vectors/columns in V
@@ -224,14 +224,14 @@ extern "C" void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) vM, int* ncols, int*
 }
 
 
-extern "C" void SUBR(mvec_extract_view)(Dmvec_ptr_t vV, double** val, lidx_t* lda, int* iflag)
+extern "C" void SUBR(mvec_extract_view)(phist_Dmvec_ptr vV, double** val, phist_lidx* lda, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,V, vV, *iflag);
   PHIST_CHK_IERR(*iflag=V->ExtractView(val,lda),*iflag);
 }
 
-extern "C" void SUBR(sdMat_extract_view)(DsdMat_ptr_t vM, double** val, lidx_t* lda, int* iflag)
+extern "C" void SUBR(sdMat_extract_view)(phist_DsdMat_ptr vM, double** val, phist_lidx* lda, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,M, vM, *iflag);
@@ -316,7 +316,7 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
     delete tmp;
     }
   double* val;
-  lidx_t lda;
+  phist_lidx lda;
   PHIST_CHK_IERR(*iflag=M->ExtractView(&val,&lda),*iflag);
   //PHIST_DEB("in view (%d:%d,%d:%d), lda=%d\n",imin,imax,jmin,jmax,lda);
   Epetra_LocalMap localMap(imax-imin+1,M->Map().IndexBase(),M->Map().Comm());
@@ -412,14 +412,14 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(Epetra_MultiVector,V,vV,*iflag);
-  for (lidx_t i=0;i<V->MyLength();i++)
+  for (phist_lidx i=0;i<V->MyLength();i++)
   {
     for (int j=0; j<V->NumVectors(); j++)
     {
 #ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
-    gidx_t row=V->Map().GID(i);
+    phist_gidx row=V->Map().GID(i);
 #else
-    gidx_t row=V->Map().GID64(i);
+    phist_gidx row=V->Map().GID64(i);
 #endif
       PHIST_CHK_IERR(*iflag=funPtr(row,j,V->Pointers()[j]+i,last_arg),*iflag);
     }
@@ -496,7 +496,7 @@ extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag)
   *iflag = 0;
 
   _ST_ *V_raw = NULL;
-  lidx_t lda;
+  phist_lidx lda;
   int m, n;
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(V, &V_raw, &lda, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(V, &m, iflag), *iflag);

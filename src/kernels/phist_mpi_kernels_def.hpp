@@ -28,7 +28,7 @@ void SUBR(mvec_transfer)(TYPE(const_mvec_ptr) V, int dest, int tag,
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   ST* val;
-  lidx_t lda, nloc;
+  phist_lidx lda, nloc;
   int nvec;
 
   PHIST_CHK_IERR(SUBR(mvec_my_length)(V,&nloc,iflag),*iflag);
@@ -113,7 +113,7 @@ void SUBR(mvec_transfer)(TYPE(const_mvec_ptr) V, int dest, int tag,
 // synchronize values  of a small dense matrixamong all processes of a given communicator 
 // This function is not performace-critical, it is only used for testing purposes (at least
 // it should be!)
-extern "C" void SUBR(sdMat_sync_values)(TYPE(sdMat_ptr) V, const_comm_ptr_t comm, int* iflag)
+extern "C" void SUBR(sdMat_sync_values)(TYPE(sdMat_ptr) V, phist_const_comm_ptr comm, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
@@ -125,7 +125,7 @@ extern "C" void SUBR(sdMat_sync_values)(TYPE(sdMat_ptr) V, const_comm_ptr_t comm
   PHIST_CHK_IERR(phist_comm_get_mpi_comm(comm,&mpi_comm,iflag),*iflag);
 #endif
   PHIST_CHK_IERR(SUBR(sdMat_from_device)(V,iflag),*iflag);
-  lidx_t lda;
+  phist_lidx lda;
   int nrows, ncols;
   ST* val;
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(V,&val,&lda,iflag),*iflag);

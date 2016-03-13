@@ -11,19 +11,19 @@
 //! complex data types
 #ifdef __cplusplus
 #include <complex>
-typedef std::complex<float> s_complex_t;
-typedef std::complex<double> d_complex_t;
+typedef std::complex<float> phist_s_complex;
+typedef std::complex<double> phist_d_complex;
 #else
 #include <complex.h>
-typedef  complex float s_complex_t;
-typedef  complex double d_complex_t;
+typedef  complex float phist_s_complex;
+typedef  complex double phist_d_complex;
 #endif
 
 //! type of node-local indices
-typedef int32_t lidx_t;
+typedef int32_t phist_lidx;
 
 //! type of global indices
-typedef int64_t gidx_t;
+typedef int64_t phist_gidx;
 
 #define PRlidx "d"
 #define PRgidx "ld"

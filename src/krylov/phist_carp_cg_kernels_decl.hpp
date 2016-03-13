@@ -31,7 +31,7 @@ class TYPE(x_mvec)
   TYPE(x_mvec)(TYPE(mvec_ptr) v, TYPE(mvec_ptr) vi, int naug, bool take_ownership, int* iflag);
 
   //! imaginary part is allocated only if rc=true, augmented part only if naug>0.
-  void allocate(const_map_ptr_t map, int nvec, int naug, bool rc, int* iflag);
+  void allocate(phist_const_map_ptr map, int nvec, int naug, bool rc, int* iflag);
 
   //! destructor
   ~TYPE(x_mvec)();

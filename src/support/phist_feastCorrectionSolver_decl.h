@@ -19,7 +19,7 @@ typedef struct TYPE(feastCorrectionSolver)
   _MT_ *sigma_i_;
   int blockSize_;       // number of vectors in each system (#cols of rhs)
   TYPE(const_mvec_ptr) rhs_; // common right-hand side for all shifts sigma[j]
-  linSolv_t method_;
+  phist_ElinSolv method_;
   // we currently create one state object per shift
   TYPE(carp_cgState_ptr) *carp_cgStates_;
   
@@ -34,7 +34,7 @@ typedef TYPE(feastCorrectionSolver) const * TYPE(const_feastCorrectionSolver_ptr
 //! per shift to be treated simultaneously (blockSize), the number of shifts 
 //! (numShifts), and the complex shifts
 void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *fCorrSolver, 
-        TYPE(const_sparseMat_ptr) A, linSolv_t method,
+        TYPE(const_sparseMat_ptr) A, phist_ElinSolv method,
         int blockSize, int numShifts,
         _MT_ shifts_r[], _MT_ shifts_i[],
         int *iflag);

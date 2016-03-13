@@ -15,7 +15,7 @@ void SUBR(kpm)(TYPE(mvec_ptr) x, TYPE(sparseMat_ptr) A, _MT_ scale, _MT_ shift, 
 
 	y[0] = x;
 
-	const_map_ptr_t vector_map;
+	phist_const_map_ptr vector_map;
 	PHIST_CHK_IERR(SUBR(sparseMat_get_range_map)(A, &vector_map, iflag), *iflag);
 	PHIST_CHK_IERR(SUBR(mvec_create)(&y[1], vector_map, n_vecs, iflag), *iflag);
 
@@ -70,7 +70,7 @@ void SUBR(dos)(TYPE(sparseMat_ptr) A, _MT_ scale, _MT_ shift, int M, int R, _MT_
 	if(singlevec){ n_iter = R; n_vecs = 1; }
 
 	TYPE(mvec_ptr) x;
-	const_map_ptr_t vector_map;
+	phist_const_map_ptr vector_map;
 	PHIST_CHK_IERR(SUBR(sparseMat_get_range_map)(A, &vector_map, iflag), *iflag);
 	PHIST_CHK_IERR(SUBR(mvec_create)(&x, vector_map, n_vecs, iflag), *iflag);
 

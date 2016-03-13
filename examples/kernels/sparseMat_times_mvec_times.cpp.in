@@ -49,12 +49,12 @@ int main(int argc, char** argv)
   int iflag;
   int verbose, sparseMat_flag, spmv_flag;
 
-  comm_ptr_t comm = NULL;
-  sparseMat_ptr_t A = NULL;
-  const_map_ptr_t map = NULL;
-  mvec_ptr_t x = NULL,xv=NULL;
-  mvec_ptr_t y = NULL,yv=NULL;
-  sdMat_ptr_t XH = NULL;
+  phist_comm_ptr comm = NULL;
+  sparseMat_ptr A = NULL;
+  phist_const_map_ptr map = NULL;
+  mvec_ptr x = NULL,xv=NULL;
+  mvec_ptr y = NULL,yv=NULL;
+  sdMat_ptr XH = NULL;
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
 PHIST_MAIN_TASK_BEGIN

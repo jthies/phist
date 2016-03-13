@@ -14,22 +14,22 @@
 #ifdef __cplusplus
 #include <magma_operators.h>
 #include <complex>
-typedef std::complex<float> s_complex_t;
-typedef std::complex<double> d_complex_t;
+typedef std::complex<float> phist_s_complex;
+typedef std::complex<double> phist_d_complex;
 #else
 #include <complex.h>
-typedef  complex float s_complex_t;
-typedef  complex double d_complex_t;
-//typedef magmaFloatComplex s_complex_t;
-//typedef magmaDoubleComplex d_complex_t;
+typedef  complex float phist_s_complex;
+typedef  complex double phist_d_complex;
+//typedef magmaFloatComplex phist_s_complex;
+//typedef magmaDoubleComplex phist_d_complex;
 #endif
 
 
 //! type of node-local indices. 
-typedef magma_int_t lidx_t;
+typedef magma_int_t phist_lidx;
 
 //! type of global indices
-typedef magma_int_t gidx_t;
+typedef magma_int_t phist_gidx;
 
 #define PRlidx "d"
 #define PRgidx "d"

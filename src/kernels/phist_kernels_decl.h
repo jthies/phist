@@ -72,15 +72,15 @@ void SUBR(type_avail)(int* iflag);
 ///@{
 
 //! read a matrix from a MatrixMarket (ASCII) file \ingroup(crsmat)
-void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm,
+void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
         const char* filename,int* iflag);
 
 //! read a matrix from a Harwell-Boeing file
-void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm,
+void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
         const char* filename,int* iflag);
 
 //! read a matrix from a Ghost CRS (binary) file.
-void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm,
+void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
 const char* filename,int* iflag);
 
 ///@}
@@ -90,19 +90,19 @@ const char* filename,int* iflag);
 
 //! get the row distribution of the matrix
 void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) A, 
-        const_map_ptr_t* map, int* iflag);
+        phist_const_map_ptr* map, int* iflag);
 
 //! get column distribution of a matrix
 void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) A, 
-        const_map_ptr_t* map, int* iflag);
+        phist_const_map_ptr* map, int* iflag);
 
 //! get the map for vectors x in y=A*x
 void SUBR(sparseMat_get_domain_map)(TYPE(const_sparseMat_ptr) A, 
-        const_map_ptr_t* map, int* iflag);
+        phist_const_map_ptr* map, int* iflag);
 
 //! get the map for vectors y in y=A*x
 void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) A,
-        const_map_ptr_t* map, int* iflag);
+        phist_const_map_ptr* map, int* iflag);
 ///@}
 //@}
 
@@ -110,15 +110,15 @@ void SUBR(sparseMat_get_range_map)(TYPE(const_sparseMat_ptr) A,
 //@{
 
 //! create a block-vector. \ingroup mvec
-void SUBR(mvec_create)(TYPE(mvec_ptr)* V, const_map_ptr_t map, int nvec, 
+void SUBR(mvec_create)(TYPE(mvec_ptr)* V, phist_const_map_ptr map, int nvec, 
         int* iflag);
 
 //! create a block-vector as view of raw data. \ingroup mvec
 
 //! The map tells the object how many rows it should 'see' in the 
 //! data (at most lda, the leading dimension of the 2D array values).
-void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, const_map_ptr_t map, 
-        _ST_* values, lidx_t lda, int nvec, 
+void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, phist_const_map_ptr map, 
+        _ST_* values, phist_lidx lda, int nvec, 
         int* iflag);
 
 //! construct small dense matrix \ingroup sdmat
@@ -130,14 +130,14 @@ void SUBR(mvec_create_view)(TYPE(mvec_ptr)* V, const_map_ptr_t map,
 //! map of the mvecs uses the same comm. Otherwise, it is a lo-
 //! cal object (MPI_COMM_SELF is assumed).
 void SUBR(sdMat_create)(TYPE(sdMat_ptr)* M, 
-        int nrows, int ncols, const_comm_ptr_t comm, int* iflag);
+        int nrows, int ncols, phist_const_comm_ptr comm, int* iflag);
 
 //! create a small dense matrix as view of raw data. \ingroup sdmat
 
 //! obviously it depends on the data viewed wether the matrix is actually
 //! "replicated" on all nodes.
-void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, const_comm_ptr_t comm, 
-        _ST_* values, lidx_t lda, int nrows, int ncols,
+void SUBR(sdMat_create_view)(TYPE(sdMat_ptr)* M, phist_const_comm_ptr comm, 
+        _ST_* values, phist_lidx lda, int nrows, int ncols,
         int* iflag);
 
 //@}
@@ -160,7 +160,7 @@ void SUBR(sdMat_delete)(TYPE(sdMat_ptr) M, int* iflag);
 //@{
 
 //! retrieve the map of the vectors in V \ingroup mvec
-void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) V, const_map_ptr_t* map, int* iflag);
+void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) V, phist_const_map_ptr* map, int* iflag);
 
 //! retrieve number of vectors/columns in V \ingroup mvec
 void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) V, int* nvec, int* iflag);
@@ -182,7 +182,7 @@ void SUBR(mvec_num_vectors)(TYPE(const_mvec_ptr) V, int* nvec, int* iflag);
 //!     know which copy is up-to-date at what point.
 //!
 void SUBR(mvec_extract_view)(TYPE(mvec_ptr) V, _ST_** V_raw,
-        lidx_t* lda, int* iflag);
+        phist_lidx* lda, int* iflag);
 
 //! get number of cols in local dense matrix \ingroup sdmat
 void SUBR(sdMat_get_nrows)(TYPE(const_sdMat_ptr) M, int* nrows, int* iflag);
@@ -195,7 +195,7 @@ void SUBR(sdMat_get_ncols)(TYPE(const_sdMat_ptr) M, int* ncols, int* iflag);
 //! See comment for mvec_extract_view for details,
 //! the macro indicating row-major storage layout is PHIST_SDMATS_ROW_MAJOR.
 void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) M, _ST_** M_raw,
-        lidx_t* lda, int* iflag);
+        phist_lidx* lda, int* iflag);
 
 #ifdef PHIST_HIGH_PRECISION_KERNELS
 //! extract pointer to least significant bits of double-double matrix elements,
@@ -254,7 +254,7 @@ void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* if
 //! then again, the order of deletion has to be observed by the user. For instance,
 //! this code may run into trouble:
 //!
-//!     Dmvec_ptr_t A, Av, Avv;
+//!     Dmvec_ptr A, Av, Avv;
 //!     phist_Dmvec_create(&A,...);
 //!     phist_Dmvec_view_block(A,&Av,...);
 //!     phist_Dmvec_view_block(Av,&Avv,...);
@@ -518,8 +518,8 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) V,
 //! * PHIST_SPARSEMAT_REPARTITION
 //! * PHIST_SPARSEMAT_DIST2_COLOR (feature required for CARP-CG)
 //!
-void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, const_comm_ptr_t comm,
-        gidx_t nrows, gidx_t ncols, lidx_t maxnne,
+void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist_const_comm_ptr comm,
+        phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
         phist_sparseMat_rowFunc rowFunPtr, void* last_arg, int *iflag);
 
 // These are not used or tested, perhaps useful in the future?
@@ -534,9 +534,9 @@ void SUBR(mvec_scatter_mvecs)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W[], int nb
 //! if either reV or imV are NULL, it is not touched.
 #ifdef IS_COMPLEX
 # ifdef IS_DOUBLE
-void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Dmvec_t* reV, Dmvec_t* imV, int *iflag);
+void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Dmvec* reV, phist_Dmvec* imV, int *iflag);
 # else
-void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, Smvec_t* reV, Smvec_t* imV, int *iflag);
+void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Smvec* reV, phist_Smvec* imV, int *iflag);
 # endif
 #endif
 

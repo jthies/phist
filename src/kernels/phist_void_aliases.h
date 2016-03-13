@@ -2,15 +2,15 @@
 #define PHIST_VOID_ALIASES_H
 
 //! wrapper for the MPI communicator
-typedef void* comm_ptr_t;
+typedef void* phist_comm_ptr;
 //! pointer to const MPI communicator
-typedef const void* const_comm_ptr_t;
+typedef const void* phist_const_comm_ptr;
 
 //! a map is an object defining the distribution of points over compute nodes
-typedef void* map_ptr_t;
+typedef void* phist_map_ptr;
 
 //! pointer to const map
-typedef const void* const_map_ptr_t;
+typedef const void* phist_const_map_ptr;
 
 #include "phist_gen_s.h"
 #include "phist_void_aliases_decl.h"

@@ -58,7 +58,7 @@ public:
   // i starts at (i-1)*lda. Entries j and j+1
   // are at memory locations (i-1)*lda+stride*j
   // and (i-1)*lda+stride*(j+1), respectively.
-  lidx_t ldaV1_,ldaV2_,ldaW1_,ldaW2_,ldaM1_,ldaM2_,ldaN1_,ldaN2_,stride_;
+  phist_lidx ldaV1_,ldaV2_,ldaW1_,ldaW2_,ldaM1_,ldaM2_,ldaN1_,ldaN2_,stride_;
 
   VTest vtest_;
   WTest wtest_;

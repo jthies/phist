@@ -1,7 +1,7 @@
 #include "phist_blockedgmres_helper_def.hpp"
 
 // create new state objects. We just get an array of (NULL-)pointers
-void SUBR(blockedGMRESstates_create)(TYPE(blockedGMRESstate_ptr) state[], int numSys, const_map_ptr_t map, int maxBas,int* iflag)
+void SUBR(blockedGMRESstates_create)(TYPE(blockedGMRESstate_ptr) state[], int numSys, phist_const_map_ptr map, int maxBas,int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -10,7 +10,7 @@ void SUBR(blockedGMRESstates_create)(TYPE(blockedGMRESstate_ptr) state[], int nu
   if (numSys <= 0)
     return;
 
-  const_comm_ptr_t comm;
+  phist_const_comm_ptr comm;
   PHIST_CHK_IERR(phist_map_get_comm(map,&comm,iflag),*iflag);
 
   // setup buffer of mvecs to be used later
@@ -237,7 +237,7 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
   _ST_ *yglob = new _ST_[(maxId+1)*(maxCurDimV-1)];
   for(int i = 0; i < (maxId+1)*(maxCurDimV-1); i++)
     yglob[i] = st::zero();
-  lidx_t ldy = (maxId+1);
+  phist_lidx ldy = (maxId+1);
 
   // calculate y by solving the triangular systems
   for(int i = 0; i < numSys; i++)
@@ -249,7 +249,7 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
     // helpful variables
     int m = S[i]->curDimV_-1;
     ST *H_raw=NULL;
-    lidx_t ldH;
+    phist_lidx ldH;
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&H_raw,&ldH,iflag),*iflag);
     _ST_ *y = &yglob[S[i]->id+ldy*(maxCurDimV-S[i]->curDimV_)];
 
@@ -307,8 +307,8 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
 
 
     // solve triangular system
-    blas_idx_t ildH=static_cast<blas_idx_t>(ldH);
-    blas_idx_t ildy=static_cast<blas_idx_t>(ldy);
+    phist_blas_idx ildH=static_cast<phist_blas_idx>(ldH);
+    phist_blas_idx ildy=static_cast<phist_blas_idx>(ldy);
     if (ildH<0 || ildy<0)
     {
       *iflag=PHIST_INTEGER_OVERFLOW;
@@ -655,7 +655,7 @@ PHIST_TASK_BEGIN(ComputeTask)
 
               // store in H
               ST *Hj=NULL;
-              lidx_t ldH;
+              phist_lidx ldH;
               PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
               Hj += (S[i]->curDimV_-1)*ldH;
               Hj[j_] += -tmp[S[i]->id-minId];
@@ -686,7 +686,7 @@ PHIST_TASK_BEGIN(ComputeTask)
         {
           // raw view of H
           ST *Hj=NULL;
-          lidx_t ldH;
+          phist_lidx ldH;
           PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
           Hj += (S[i]->curDimV_-1)*ldH;
           Hj[j] = ynorm[S[i]->id-minId];
@@ -732,7 +732,7 @@ PHIST_TASK_BEGIN(ComputeTask)
 // check arnoldi/krylov property for last (untransformed row of H): AV_k = V_(k+1) * H_(k+1,k)
 {
   TYPE(mvec_ptr) tmpVec = NULL, tmpVec_ = NULL;
-  const_map_ptr_t map;
+  phist_const_map_ptr map;
   PHIST_CHK_IERR(SUBR(mvec_get_map)(work_y, &map, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_create)(&tmpVec_, map, maxId+1, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, minId, maxId, iflag), *iflag);
@@ -741,7 +741,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   {
     PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, S[i]->id, S[i]->id, iflag), *iflag);
     ST *Hj=NULL;
-    lidx_t ldH; 
+    phist_lidx ldH; 
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
     Hj += (S[i]->curDimV_-1)*ldH;
     _MT_ maxHerr = mt::zero();
@@ -772,7 +772,7 @@ PHIST_TASK_BEGIN(ComputeTask)
 
       // raw view of H
       ST *Hj=NULL;
-      lidx_t ldH; 
+      phist_lidx ldH; 
       PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
       Hj += (j-1)*ldH;
       // apply previous Gives rotations to column j
@@ -786,7 +786,7 @@ PHIST_TASK_BEGIN(ComputeTask)
       // new Givens rotation to eliminate H(j+1,j)
 #ifdef IS_COMPLEX
       _MT_ cs;
-      PHIST_TG_PREFIX(LARTG)((blas_cmplx_t*)&Hj[j-1],(blas_cmplx_t*)&Hj[j],&cs,(blas_cmplx_t*)&S[i]->sn_[j-1],(blas_cmplx_t*)&tmp);
+      PHIST_TG_PREFIX(LARTG)((blas_cmplx*)&Hj[j-1],(blas_cmplx*)&Hj[j],&cs,(blas_cmplx*)&S[i]->sn_[j-1],(blas_cmplx*)&tmp);
       S[i]->cs_[j-1] = (_ST_) cs;
       S[i]->sn_[j-1] = st::conj(S[i]->sn_[j-1]);
 #else

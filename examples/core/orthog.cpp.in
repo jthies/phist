@@ -26,14 +26,14 @@ typedef phist::ScalarTraits<ST> st;
 typedef phist::ScalarTraits<MT> mt;
 
 // small helper function
-void sdMat_orthoError(const_sdMat_ptr_t M, ST d, int rank, MT *err, int *ierr)
+void sdMat_orthoError(const_sdMat_ptr M, ST d, int rank, MT *err, int *ierr)
 {
   ST* q=NULL;
-  lidx_t ldq;
+  phist_lidx ldq;
   int n, m;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(M,&n,ierr),*ierr);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(M,&m,ierr),*ierr);
-  PHIST_CHK_IERR(SUBR(sdMat_extract_view)((sdMat_ptr_t)M,&q,&ldq,ierr),*ierr);
+  PHIST_CHK_IERR(SUBR(sdMat_extract_view)((sdMat_ptr)M,&q,&ldq,ierr),*ierr);
   *err=mt::zero();
   for (int i=0;i<m;i++)
     for (int j=0;j<n;j++)
@@ -50,10 +50,10 @@ int main(int argc, char** argv)
 {
   int ierr;
 
-  comm_ptr_t comm = NULL;
-  map_ptr_t map = NULL;
-  mvec_ptr_t X = NULL, Q=NULL, V=NULL;
-  sdMat_ptr_t QtQ=NULL, VtV_I=NULL, VtQ=NULL, VtX=NULL, QtX=NULL;
+  phist_comm_ptr comm = NULL;
+  phist_map_ptr map = NULL;
+  mvec_ptr X = NULL, Q=NULL, V=NULL;
+  sdMat_ptr QtQ=NULL, VtV_I=NULL, VtQ=NULL, VtX=NULL, QtX=NULL;
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
 
@@ -79,9 +79,9 @@ PHIST_MAIN_TASK_BEGIN
     return 1;
   }
 
-  gidx_t n;
+  phist_gidx n;
   int m,k,l;
-  if (sizeof(gidx_t)==4)
+  if (sizeof(phist_gidx)==4)
   {
     n=atoi(argv[1]);
   }

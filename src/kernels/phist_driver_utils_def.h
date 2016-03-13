@@ -1,5 +1,5 @@
 // auto-detects the file type by looking at the file extension
-void SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm,
+void SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
         char* filename, int* iflag)
 {
   char *c=filename+strlen(filename)-1;
@@ -105,20 +105,20 @@ BRUSSOLATOR
 } problem_t;
 
 // definitions for MATPDE
-void MATPDE_initDimensions(int, int, gidx_t*, lidx_t*);
-int MATPDE_rowFunc(gidx_t, lidx_t*, gidx_t*, void*, void*);
+void MATPDE_initDimensions(int, int, phist_gidx*, phist_lidx*);
+int MATPDE_rowFunc(phist_gidx, phist_lidx*, phist_gidx*, void*, void*);
 // definitions for TriToeplitz
-void TriToeplitz_initDimensions(int, gidx_t*, lidx_t*);
-int TriToeplitz_rowFunc(gidx_t, lidx_t*, gidx_t*, void*, void*);
+void TriToeplitz_initDimensions(int, phist_gidx*, phist_lidx*);
+int TriToeplitz_rowFunc(phist_gidx, phist_lidx*, phist_gidx*, void*, void*);
 // definitions for MATPDE3D
-void MATPDE3D_initDimensions(int, int, int, gidx_t*, lidx_t*);
+void MATPDE3D_initDimensions(int, int, int, phist_gidx*, phist_lidx*);
 void MATPDE3D_selectProblem(int which, int* iflag);
-int MATPDE3D_rowFunc(gidx_t, lidx_t*, gidx_t*, void*, void*);
-int MATPDE3D_solFunc(gidx_t, lidx_t, void*,void*);
-int MATPDE3D_rhsFunc(gidx_t, lidx_t, void*,void*);
+int MATPDE3D_rowFunc(phist_gidx, phist_lidx*, phist_gidx*, void*, void*);
+int MATPDE3D_solFunc(phist_gidx, phist_lidx, void*,void*);
+int MATPDE3D_rhsFunc(phist_gidx, phist_lidx, void*,void*);
 // definitions for Brussolator
-void Brussolator_initDimensions(int, gidx_t*, lidx_t*);
-int Brussolator_rowFunc(gidx_t, lidx_t*, gidx_t*, void*, void*);
+void Brussolator_initDimensions(int, phist_gidx*, phist_lidx*);
+int Brussolator_rowFunc(phist_gidx, phist_lidx*, phist_gidx*, void*, void*);
 
 int str_starts_with(const char *s1, const char *s2)
 {
@@ -133,7 +133,7 @@ int str_starts_with(const char *s1, const char *s2)
 }
 
 // TODO: we should do this in C++ with a map where you can easily add new function pointers... (melven)
-void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
+void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
         const char* problem, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -197,7 +197,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   }
 
 
-  gidx_t DIM;
+  phist_gidx DIM;
 
   // if not from file and not from bapps, it is one
   // of the matfuncs cases. Check that the string is
@@ -256,7 +256,7 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     crsGraphene( -1, NULL, NULL, &info, NULL);
 
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat,comm,
-        (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,
+        (phist_gidx)info.nrows, (phist_gidx)info.ncols, (phist_lidx)info.row_nnz,
         &crsGraphene, NULL, iflag), *iflag);
   }
   else if (mat_type==SPINSZ)
@@ -270,17 +270,17 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
     SpinChainSZ( -1, NULL, NULL, &info, NULL);
 
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat,comm,
-        (gidx_t)info.nrows, (gidx_t)info.ncols, (lidx_t)info.row_nnz,
+        (phist_gidx)info.nrows, (phist_gidx)info.ncols, (phist_lidx)info.row_nnz,
         &SpinChainSZ, NULL, iflag), *iflag);
   }
   else if (mat_type==MATPDE)
   {
     PHIST_SOUT(outlev,"problem type: MATPDE %d x %d\n", L, L);
 
-    gidx_t nrows = -1;
-    lidx_t row_nnz = -1;
+    phist_gidx nrows = -1;
+    phist_lidx row_nnz = -1;
     MATPDE_initDimensions(L, L, &nrows, &row_nnz);
-    gidx_t ncols = nrows;
+    phist_gidx ncols = nrows;
     if( *iflag & PHIST_SPARSEMAT_REPARTITION )
     {
       PHIST_SOUT(outlev,"Disabling PHIST_SPARSEMAT_REPARTITION; MATPDE features a predefined partitioning!\n");
@@ -292,10 +292,10 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   else if(mat_type==TRITOEPLITZ)
   {
     PHIST_SOUT(outlev,"problem type: TriToeplitz 2^%d\n", L);
-    gidx_t nrows = -1;
-    lidx_t row_nnz = -1;
+    phist_gidx nrows = -1;
+    phist_lidx row_nnz = -1;
     TriToeplitz_initDimensions(L, &nrows, &row_nnz);
-    gidx_t ncols = nrows;
+    phist_gidx ncols = nrows;
     if( *iflag & PHIST_SPARSEMAT_REPARTITION )
     {
       PHIST_SOUT(outlev,"Disabling PHIST_SPARSEMAT_REPARTITION; TriToeplitz is already tridiagonal!\n");
@@ -307,10 +307,10 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
   else if(mat_type==BRUSSOLATOR)
   {
     PHIST_SOUT(outlev,"problem type: Brussolator wave model %d^1\n", L);
-    gidx_t nrows = -1;
-    lidx_t row_nnz = -1;
+    phist_gidx nrows = -1;
+    phist_lidx row_nnz = -1;
     Brussolator_initDimensions(L, &nrows, &row_nnz);
-    gidx_t ncols = nrows;
+    phist_gidx ncols = nrows;
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
           nrows, ncols, row_nnz, &Brussolator_rowFunc, NULL, iflag), *iflag);
   }
@@ -329,10 +329,10 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
 
     PHIST_SOUT(outlev,"problem type: BENCH3D %x %dx%dx%d\n", (uint32_t)which,L, L, L);
 
-    gidx_t nrows = -1;
-    lidx_t row_nnz = -1;
+    phist_gidx nrows = -1;
+    phist_lidx row_nnz = -1;
     MATPDE3D_initDimensions(L, L, L, &nrows, &row_nnz);
-    gidx_t ncols = nrows;
+    phist_gidx ncols = nrows;
     if( *iflag & PHIST_SPARSEMAT_REPARTITION )
     {
       PHIST_SOUT(outlev,"Disabling PHIST_SPARSEMAT_REPARTITION; MATPDE3D features a predefined partitioning!\n");
@@ -380,7 +380,7 @@ PHIST_SOUT(PHIST_ERROR,"BAPPS models (essex-physics/bapps) not\n"
   return;
 }
 #else
-void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
+void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
         const char* problem, int* iflag)
 {
   if (strcmp(problem,"usage")==0)

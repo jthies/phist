@@ -16,20 +16,29 @@
 #endif
 #define MIN(a,b) ((b)<(a)?(b):(a))
 
+// this is a bit like "using namespace phist/phist_D" when compiling the double real version
+// of a driver routine. This file should *not* be included in non-driver source files, and  
+// even less in headers! In C++ functions, you should use tools/phist_std_typedefs.hpp instead.
+
+typedef phist_comm_ptr comm_ptr;
+typedef phist_const_comm_ptr const_comm_ptr;
+typedef phist_map_ptr map_ptr;
+typedef phist_const_map_ptr const_map_ptr;
+
 typedef _ST_ ST;
 typedef _MT_ MT;
-typedef TYPE(mvec_ptr) mvec_ptr_t;
-typedef TYPE(const_mvec_ptr) const_mvec_ptr_t;
+typedef TYPE(mvec_ptr) mvec_ptr;
+typedef TYPE(const_mvec_ptr) const_mvec_ptr;
 
-typedef TYPE(sdMat_ptr) sdMat_ptr_t;
-typedef TYPE(const_sdMat_ptr) const_sdMat_ptr_t;
+typedef TYPE(sdMat_ptr) sdMat_ptr;
+typedef TYPE(const_sdMat_ptr) const_sdMat_ptr;
 
-typedef TYPE(sparseMat_ptr) sparseMat_ptr_t;
-typedef TYPE(const_sparseMat_ptr) const_sparseMat_ptr_t;
+typedef TYPE(sparseMat_ptr) sparseMat_ptr;
+typedef TYPE(const_sparseMat_ptr) const_sparseMat_ptr;
 
 #ifdef PHIST_OPERATOR_H
-typedef TYPE(linearOp_ptr) linearOp_ptr_t;
-typedef TYPE(const_linearOp_ptr) const_linearOp_ptr_t;
+typedef TYPE(linearOp_ptr) linearOp_ptr;
+typedef TYPE(const_linearOp_ptr) const_linearOp_ptr;
 #endif
 
 #ifdef __cplusplus
@@ -40,7 +49,7 @@ extern "C" {
 
 //! auto-detects the file type by looking at the file extension
 //! and calls the appropriate kernel routine to read the matrix
-void SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm, 
+void SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm, 
         char* filename, int* iflag);
 
 //! quick matrix generation/input routine
@@ -62,7 +71,7 @@ void SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, const_comm_ptr_t comm,
 //! model problem on a 42^3 grid, whereas the string "anderson42.mm" will be interpreted
 //! as a filename. The special string "usage" causes a usage message to be printed, which
 //! contains the supported matrix file formats and the problems implemented at the moment.
-void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, const_comm_ptr_t comm,
+void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
         const char* problem, int* iflag);
 
 //! For testing linear solvers, generates an 'exact solution' sol and right-hand side rhs

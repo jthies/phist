@@ -7,18 +7,18 @@
 #ifdef PHIST_HAVE_MKL
 # include "mkl_lapack.h"
 # include "mkl_lapacke.h"
-typedef const char blas_char_t;
-typedef MKL_Complex8 Sblas_cmplx_t;
-typedef MKL_Complex16 Dblas_cmplx_t;
-typedef MKL_INT blas_idx_t;
+typedef const char phist_blas_char;
+typedef MKL_Complex8 phist_Sblas_cmplx;
+typedef MKL_Complex16 phist_Dblas_cmplx;
+typedef MKL_INT phist_blas_idx;
 #else
-# define lapack_complex_float s_complex_t
-# define lapack_complex_double d_complex_t
+# define lapack_complex_float phist_s_complex
+# define lapack_complex_double phist_d_complex
 # include "lapacke.h"
-typedef lapack_complex_float Sblas_cmplx_t;
-typedef lapack_complex_double Dblas_cmplx_t;
-typedef int blas_idx_t;
-typedef char blas_char_t;
+typedef lapack_complex_float phist_Sblas_cmplx;
+typedef lapack_complex_double phist_Dblas_cmplx;
+typedef int phist_blas_idx;
+typedef char phist_blas_char;
 #endif
 
 #ifdef PHIST_SDMATS_ROW_MAJOR
@@ -126,17 +126,17 @@ extern "C" {
 ///////////////////////////////////////////////////////////////////////////////////////////
 //      XTRTRV - solve triangular linear system with single vector                       //
 ///////////////////////////////////////////////////////////////////////////////////////////
-void STRSV(const char* uplo, const char* trans, const char* diag, const blas_idx_t* n,
-const float* a, const blas_idx_t* lda, float* b, const blas_idx_t* incb);
+void STRSV(const char* uplo, const char* trans, const char* diag, const phist_blas_idx* n,
+const float* a, const phist_blas_idx* lda, float* b, const phist_blas_idx* incb);
 
-void DTRSV(const char* uplo, const char* trans, const char* diag, const blas_idx_t* n,
-const double* a, const blas_idx_t* lda, double* b, const blas_idx_t* incb);
+void DTRSV(const char* uplo, const char* trans, const char* diag, const phist_blas_idx* n,
+const double* a, const phist_blas_idx* lda, double* b, const phist_blas_idx* incb);
 
-void CTRSV(const char* uplo, const char* trans, const char* diag, const blas_idx_t* n,
-const Sblas_cmplx_t* a, const blas_idx_t* lda, Sblas_cmplx_t* b, const blas_idx_t* incb);
+void CTRSV(const char* uplo, const char* trans, const char* diag, const phist_blas_idx* n,
+const phist_Sblas_cmplx* a, const phist_blas_idx* lda, phist_Sblas_cmplx* b, const phist_blas_idx* incb);
 
-void ZTRSV(const char* uplo, const char* trans, const char* diag, const blas_idx_t* n,
-const Dblas_cmplx_t* a, const blas_idx_t* lda, Dblas_cmplx_t* b, const blas_idx_t* incb);
+void ZTRSV(const char* uplo, const char* trans, const char* diag, const phist_blas_idx* n,
+const phist_Dblas_cmplx* a, const phist_blas_idx* lda, phist_Dblas_cmplx* b, const phist_blas_idx* incb);
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //      XLARTG - compute givens rotation
@@ -146,11 +146,11 @@ void SLARTG(const float *f, const float *g, float* cs, float* sn, float* r);
 void DLARTG(const double *f, const double *g, double* cs, double* sn, double* 
 r);
 
-void CLARTG(const Sblas_cmplx_t *f, const Sblas_cmplx_t *g, float* cs, 
-Sblas_cmplx_t* sn, Sblas_cmplx_t* r);
+void CLARTG(const phist_Sblas_cmplx *f, const phist_Sblas_cmplx *g, float* cs, 
+phist_Sblas_cmplx* sn, phist_Sblas_cmplx* r);
 
-void ZLARTG(const Dblas_cmplx_t *f, const Dblas_cmplx_t *g, double* cs, 
-Dblas_cmplx_t* sn, Dblas_cmplx_t* r);
+void ZLARTG(const phist_Dblas_cmplx *f, const phist_Dblas_cmplx *g, double* cs, 
+phist_Dblas_cmplx* sn, phist_Dblas_cmplx* r);
 
 
 

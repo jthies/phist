@@ -45,7 +45,7 @@ class MultiVector< _ST_ >
   public:
 
   //!
-  MultiVector(mvec_ptr_t v_in, bool ownMem)
+  MultiVector(mvec_ptr v_in, bool ownMem)
     {
     v_=v_in;
     ownMem_=ownMem;
@@ -77,7 +77,7 @@ class MultiVector< _ST_ >
     }
 
   //!
-  mvec_ptr_t get()
+  mvec_ptr get()
     {
     if (v_!=NULL) 
       {
@@ -87,7 +87,7 @@ class MultiVector< _ST_ >
     }
 
   //!
-  const_mvec_ptr_t get() const
+  const_mvec_ptr get() const
     {
     if (v_!=NULL) 
       {
@@ -120,7 +120,7 @@ protected:
   
   
   //! the wrapped object
-  mvec_ptr_t v_;
+  mvec_ptr v_;
 
   //! are we allowed to delete the vector?
   bool ownMem_;

@@ -15,7 +15,7 @@ extern "C" void SUBR(chol_QRp)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int perm[], 
     bool robust = *iflag & PHIST_ROBUST_REDUCTIONS;
     *iflag=0;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
-    const_comm_ptr_t comm;
+    phist_const_comm_ptr comm;
     
     for (int i=0; i<m; i++) perm[i]=i;
     

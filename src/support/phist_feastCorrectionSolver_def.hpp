@@ -30,7 +30,7 @@ void SUBR(private_rebuild_carp_cgStates)(TYPE(feastCorrectionSolver_ptr) me, int
 //! create a feastCorrectionSolver object
 void SUBR(feastCorrectionSolver_create)(TYPE(feastCorrectionSolver_ptr) *me, 
         TYPE(const_sparseMat_ptr) A,
-        linSolv_t method,
+        phist_ElinSolv method,
         int blockSize,
         int numShifts, _MT_ sigma_r[], _MT_ sigma_i[],
         int *iflag)
@@ -152,7 +152,7 @@ void SUBR(feastCorrectionSolver_run)(TYPE(feastCorrectionSolver_ptr) me,
       if (copy_input_vecs)
       {
         PHIST_SOUT(PHIST_DEBUG,"create tmp vectors\n");
-        const_map_ptr_t map;
+        phist_const_map_ptr map;
         PHIST_CHK_IERR(SUBR(mvec_get_map)(b,&map,iflag),*iflag);
 
         x_r=new TYPE(mvec_ptr)[me->numShifts_];

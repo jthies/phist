@@ -23,11 +23,11 @@ PHIST_TASK_END(iflag)
 void asyncPrintHello(int* iflag)
 {
   int *iflag_t2 = new int;
-  map_ptr_t map = NULL;
-  comm_ptr_t comm = NULL;
-  Dmvec_ptr_t mvec = NULL;
+  phist_map_ptr map = NULL;
+  phist_comm_ptr comm = NULL;
+  phist_Dmvec_ptr mvec = NULL;
   PHIST_CHK_IERR(phist_comm_create(&comm,iflag),*iflag);
-  PHIST_CHK_IERR(phist_map_create(&map,comm,(gidx_t)1000,iflag),*iflag);
+  PHIST_CHK_IERR(phist_map_create(&map,comm,(phist_gidx)1000,iflag),*iflag);
   PHIST_CHK_IERR(phist_Dmvec_create(&mvec,map,1,iflag),*iflag);
 
 PHIST_TASK_DECLARE(Task1)

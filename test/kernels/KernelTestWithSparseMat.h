@@ -38,7 +38,7 @@ const char* MatNameEnumToStr(MATNAME_ENUM);
  * _multipleDefinitionCounter: used to enforce multiple template instantiations of static class variables where needed
    mvec blocks.
  */
-template<typename T, gidx_t _Nglob, MATNAME_ENUM _MatName, int _multipleDefinitionCounter=0>
+template<typename T, phist_gidx _Nglob, MATNAME_ENUM _MatName, int _multipleDefinitionCounter=0>
 class KernelTestWithSparseMat:
         public virtual KernelTestWithMap<_Nglob>,
         public virtual TestWithType<T>

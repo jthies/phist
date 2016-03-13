@@ -14,7 +14,7 @@ void SUBR(svqb)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) B, _MT_* D, int* iflag)
     bool robust = *iflag & PHIST_ROBUST_REDUCTIONS;
     *iflag=0;
     int m, rank;
-    lidx_t ldb;
+    phist_lidx ldb;
     _ST_*  B_raw;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
 

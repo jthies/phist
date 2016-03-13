@@ -27,9 +27,9 @@ extern "C" {
 typedef struct {
   //! identifies the preconditioner type (e.g. IFPACK), this is used to
   //! internally call the correct create/delete/apply etc functions
-  precon_t type_;
+  phist_Eprecon type_;
   void* P_;
-} phist_internal_precon_t;
+} phist_internal_phist_Eprecon;
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

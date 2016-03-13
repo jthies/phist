@@ -10,14 +10,14 @@ extern "C" {
 /*! This struct can be used to consistently pass 
     parameters to our various Jacobi-Davidson methods.
 */
-typedef struct phist_jadaOpts_t {
+typedef struct phist_jadaOpts {
 
 // what do you want to compute?
 int numEigs; //! howmany eigenpairs are sought?
-eigSort_t which; //! LM, SM, LR, SR, or TARGET
+phist_EeigSort which; //! LM, SM, LR, SR, or TARGET
 double convTol; //! convergence tolerance for eigenvalues
-matSym_t symmetry; //! Symmetry properties of the matrix
-eigExtr_t how; //! use standaard or harmonic Ritz values, etc.
+phist_EmatSym symmetry; //! Symmetry properties of the matrix
+phist_EeigExtr how; //! use standaard or harmonic Ritz values, etc.
                //! Generally, one should use STANDARD for extreme
                //! eigenvalues (at the border of the spectrum), and
                //! HARMONIC for inner ones. Other methods may be
@@ -46,7 +46,7 @@ int initialShiftIters; // perform given number of iterations with a fixed shift
  * inner solver configuration     *
  **********************************/
 
-linSolv_t innerSolvType; /*! GMRES, MINRES, CARP_CG, USER_DEFINED currently supported.
+phist_ElinSolv innerSolvType; /*! GMRES, MINRES, CARP_CG, USER_DEFINED currently supported.
                           * If set to USER_DEFINED, you have to provide the customSolver*
                           * interface below.
                           */
@@ -87,7 +87,7 @@ int innerSolvStopAfterFirstConverged;
                                     int robust,
                                     int * iflag);
 
-} phist_jadaOpts_t;
+} phist_jadaOpts;
 
 //! get jada options from a simple ASCII file and place them in the struct passed to the solvers.
 
@@ -101,10 +101,10 @@ int innerSolvStopAfterFirstConverged;
 //! The function is not at all fancy, it won't warn about invalid entries, doesn't
 //! care about invalid lines like BLABLA_numEigs -99 and may throw exceptions, especially
 //! if the file can't be opened. Every MPI process opens the file separately.
-void phist_jadaOpts_fromFile(phist_jadaOpts_t *opts, const char* filename, int* iflag);
+void phist_jadaOpts_fromFile(phist_jadaOpts *opts, const char* filename, int* iflag);
 
 //! set default values in a jadaOpts struct
-void phist_jadaOpts_setDefaults(phist_jadaOpts_t *opts);
+void phist_jadaOpts_setDefaults(phist_jadaOpts *opts);
 
 #ifdef __cplusplus
 } //extern "C"

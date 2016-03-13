@@ -99,7 +99,7 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
     return;
   }
   
-  precon_t precType=str2precon(method);
+  phist_Eprecon precType=str2precon(method);
 
   if (!strcasecmp(options,"usage"))
   {
@@ -107,7 +107,7 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
     return;
   }
 
-  phist_internal_precon_t* pt = new phist_internal_precon_t;
+  phist_internal_phist_Eprecon* pt = new phist_internal_phist_Eprecon;
   
   pt->type_ = precType;
   
@@ -134,8 +134,8 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
 extern "C" void SUBR(precon_delete)(TYPE(linearOp_ptr) op, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  PHIST_CAST_PTR_FROM_VOID(phist_internal_precon_t, pt, op->A,*iflag);
-  precon_t precType=pt->type_;
+  PHIST_CAST_PTR_FROM_VOID(phist_internal_phist_Eprecon, pt, op->A,*iflag);
+  phist_Eprecon precType=pt->type_;
   CALL_PT_MEMBER(precType,Delete,pt->P_,iflag);
 }
 
@@ -144,8 +144,8 @@ extern "C" void SUBR(precon_apply)(_ST_ alpha, void const* vP, TYPE(const_mvec_p
                                    _ST_ beta,  TYPE(mvec_ptr) Y,int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  PHIST_CAST_PTR_FROM_VOID(phist_internal_precon_t, pt, vP,*iflag);
-  precon_t precType=pt->type_;
+  PHIST_CAST_PTR_FROM_VOID(phist_internal_phist_Eprecon, pt, vP,*iflag);
+  phist_Eprecon precType=pt->type_;
   CALL_PT_MEMBER(precType,Apply,alpha,pt->P_,X,beta,Y,iflag);
 }
 
@@ -154,8 +154,8 @@ extern "C" void SUBR(precon_applyT)(_ST_ alpha, void const* vP, TYPE(const_mvec_
                                    _ST_ beta,  TYPE(mvec_ptr) Y,int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  PHIST_CAST_PTR_FROM_VOID(phist_internal_precon_t, pt, vP,*iflag);
-  precon_t precType=pt->type_;
+  PHIST_CAST_PTR_FROM_VOID(phist_internal_phist_Eprecon, pt, vP,*iflag);
+  phist_Eprecon precType=pt->type_;
   CALL_PT_MEMBER(precType,ApplyT,alpha,pt->P_,X,beta,Y,iflag);
 }
 
@@ -164,8 +164,8 @@ extern "C" void SUBR(precon_apply_shifted)(_ST_ alpha, void const* vP, _ST_ cons
                                    _ST_ beta,  TYPE(mvec_ptr) Y,int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  PHIST_CAST_PTR_FROM_VOID(phist_internal_precon_t, pt, vP,*iflag);
-  precon_t precType=pt->type_;
+  PHIST_CAST_PTR_FROM_VOID(phist_internal_phist_Eprecon, pt, vP,*iflag);
+  phist_Eprecon precType=pt->type_;
   CALL_PT_MEMBER(precType,ApplyShifted,alpha,pt->P_,sigma,X,beta,Y,iflag);
 }
 

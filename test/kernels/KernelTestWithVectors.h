@@ -24,7 +24,7 @@ using namespace testing;
  * _multipleDefinitionCounter: used to enforce multiple template instantiations of static class variables where needed
    mvec blocks.
  */
-template<typename T, gidx_t _Nglob, int _Nvec, int _useViews=0, int _numberOfVectorsInitialized = 1,int _multipleDefinitionCounter=0>
+template<typename T, phist_gidx _Nglob, int _Nvec, int _useViews=0, int _numberOfVectorsInitialized = 1,int _multipleDefinitionCounter=0>
 class KernelTestWithVectors:
         public virtual KernelTestWithMap<_Nglob>,
         public virtual TestWithType<T>

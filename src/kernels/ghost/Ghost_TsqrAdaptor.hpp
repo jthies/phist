@@ -11,7 +11,7 @@
 #include <mpi.h>
 #endif
 #include "phist_typedefs.h"
-// in this local include file we currently hard-code the Kokkos node type (node_t) (TODO)
+// in this local include file we currently hard-code the Kokkos node type (node_type) (TODO)
 #include "typedefs.hpp"
 #include "ghost.h"
 #include "ghost/omp.h"
@@ -113,17 +113,17 @@ namespace ghost {
 #ifdef GHOST_IDX64_LOCAL
 # warning "the TSQR interface may be buggy with 64-bit local indices, you should recompile ghost without GHOST_IDX64_LOCAL"    
 #endif
-    typedef lidx_t ordinal_type;
+    typedef phist_lidx ordinal_type;
     // integer type for Teuchos::SerialDenseMatrix objects
-    typedef int blas_idx_type;
-    typedef node_t node_type;
-    typedef Teuchos::SerialDenseMatrix<blas_idx_type, scalar_type> dense_matrix_type;
+    typedef int phist_blas_idx_type;
+//    typedef node_type node_type;
+    typedef Teuchos::SerialDenseMatrix<phist_blas_idx_type, scalar_type> dense_matrix_type;
     typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
   private:
     typedef TSQR::MatView<ordinal_type, scalar_type> matview_type;
-    typedef TSQR::NodeTsqrFactory<node_type, scalar_type, ordinal_type> node_tsqr_factory_type;
-    typedef typename node_tsqr_factory_type::node_tsqr_type node_tsqr_type;
+    typedef TSQR::NodeTsqrFactory<node_type, scalar_type, ordinal_type> node_typesqr_factory_type;
+    typedef typename node_typesqr_factory_type::node_tsqr_type node_tsqr_type;
     typedef TSQR::DistTsqr<ordinal_type, scalar_type> dist_tsqr_type;
     typedef TSQR::Tsqr<ordinal_type, scalar_type, node_tsqr_type> tsqr_type;
 
@@ -346,7 +346,7 @@ namespace ghost {
     {
       PHIST_TOUCH(mv);
       createNode();
-      node_tsqr_factory_type::prepareNodeTsqr (nodeTsqr_, 
+      node_typesqr_factory_type::prepareNodeTsqr (nodeTsqr_, 
                 node_);
     }
 
@@ -387,7 +387,7 @@ namespace ghost {
     getNonConstView (MV& A)
     {
     ghost_densemat* _A=A.get();
-    lidx_t A_len = _A->stride*_A->traits.ncols;
+    phist_lidx A_len = _A->stride*_A->traits.ncols;
 
     TEUCHOS_TEST_FOR_EXCEPTION(_A->traits.flags & GHOST_DENSEMAT_SCATTERED,    
                 std::invalid_argument,

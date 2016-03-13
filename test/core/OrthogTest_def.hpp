@@ -29,7 +29,7 @@ public:
   // i starts at (i-1)*lda. Entries j and j+1
   // are at memory locations (i-1)*lda+stride*j
   // and (i-1)*lda+stride*(j+1), respectively.
-  lidx_t ldaV_,ldaW_,ldaW2_,ldaQ_,ldaR0_,ldaR1_,ldaR2_,stride_;
+  phist_lidx ldaV_,ldaW_,ldaW2_,ldaQ_,ldaR0_,ldaR1_,ldaR2_,stride_;
 
 
   static void SetUpTestCase()
@@ -146,7 +146,7 @@ public:
       }
       ASSERT_EQ(expectedRankV,rankVW);
       // check wether this worked out
-      lidx_t ldaV;
+      phist_lidx ldaV;
       ST* V_vp=NULL;
       SUBR(mvec_extract_view)(V,&V_vp,&ldaV,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -156,7 +156,7 @@ public:
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(VTest::nvec_,nvec_V);
 
-      lidx_t nloc_V;
+      phist_lidx nloc_V;
       SUBR(mvec_my_length)(V,&nloc_V,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nloc_,nloc_V);
@@ -175,7 +175,7 @@ public:
       ASSERT_EQ(expectedRankVW,rankVW);
       
       // check orthonormality of Q
-      lidx_t ldaQ;
+      phist_lidx ldaQ;
       ST* Q_vp=NULL;
       SUBR(mvec_extract_view)(Q,&Q_vp,&ldaQ,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -185,7 +185,7 @@ public:
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(WTest::nvec_,nvec_Q);
 
-      lidx_t nloc_Q;
+      phist_lidx nloc_Q;
       SUBR(mvec_my_length)(V,&nloc_Q,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nloc_,nloc_Q);
@@ -259,7 +259,7 @@ public:
       SUBR(mvec_random)(W_,&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      lidx_t nR=_M_+_K_;
+      phist_lidx nR=_M_+_K_;
       TYPE(sdMat_ptr) R=NULL;
       SUBR(sdMat_create)(&R,nR,nR,comm_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -295,7 +295,7 @@ public:
 
       // check the location of the resulting R parts
       _ST_ *R_vp;
-      lidx_t ldaR;
+      phist_lidx ldaR;
 
       SUBR(sdMat_extract_view)(R,&R_vp,&ldaR,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
@@ -306,11 +306,11 @@ return;
 #endif
 
         _MT_ errR2=mt::one();
-        for (lidx_t i=0; i<m_; i++)
+        for (phist_lidx i=0; i<m_; i++)
         {
-          for (lidx_t j=0; j<k_; j++)
+          for (phist_lidx j=0; j<k_; j++)
           {
-            lidx_t jj = m_+j;
+            phist_lidx jj = m_+j;
             _ST_ a = R_vp[jj*ldaR+i];
             _ST_ b = R2_vp_[j*ldaR2_+i];
             _MT_ denom=st::abs(a+b);
@@ -319,12 +319,12 @@ return;
           }
         }
         _MT_ errR1=mt::one();
-        for (lidx_t i=0; i<k_; i++)
+        for (phist_lidx i=0; i<k_; i++)
         {
-          for (lidx_t j=0; j<k_; j++)
+          for (phist_lidx j=0; j<k_; j++)
           {
-            lidx_t ii = m_+i;
-            lidx_t jj = m_+j;
+            phist_lidx ii = m_+i;
+            phist_lidx jj = m_+j;
             _ST_ a = R_vp[jj*ldaR+ii];
             _ST_ b = R1_vp_[j*ldaR1_+i];
             _MT_ denom=st::abs(a+b);
@@ -366,7 +366,7 @@ return;
       SUBR(mvec_put_value)(W_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
       
-      lidx_t nR=_M_+_K_;
+      phist_lidx nR=_M_+_K_;
       TYPE(sdMat_ptr) R=NULL;
       SUBR(sdMat_create)(&R,nR,nR,comm_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -402,7 +402,7 @@ return;
       
       // check the location of the resulting R parts
       _ST_ *R_vp;
-      lidx_t ldaR;
+      phist_lidx ldaR;
 
       SUBR(sdMat_extract_view)(R,&R_vp,&ldaR,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
@@ -413,11 +413,11 @@ return;
 #endif
 
         _MT_ errR2=mt::one();
-        for (lidx_t i=0; i<m_; i++)
+        for (phist_lidx i=0; i<m_; i++)
         {
-          for (lidx_t j=0; j<k_; j++)
+          for (phist_lidx j=0; j<k_; j++)
           {
-            lidx_t jj = m_+j;
+            phist_lidx jj = m_+j;
             _ST_ a = R_vp[jj*ldaR+i];
             _ST_ b = R2_vp_[j*ldaR2_+i];
             _MT_ denom=st::abs(a+b);
@@ -426,12 +426,12 @@ return;
           }
         }
         _MT_ errR1=mt::one();
-        for (lidx_t i=0; i<k_; i++)
+        for (phist_lidx i=0; i<k_; i++)
         {
-          for (lidx_t j=0; j<k_; j++)
+          for (phist_lidx j=0; j<k_; j++)
           {
-            lidx_t ii = m_+i;
-            lidx_t jj = m_+j;
+            phist_lidx ii = m_+i;
+            phist_lidx jj = m_+j;
             _ST_ a = R_vp[jj*ldaR+ii];
             _ST_ b = R1_vp_[j*ldaR1_+i];
             _MT_ denom=st::abs(a+b);

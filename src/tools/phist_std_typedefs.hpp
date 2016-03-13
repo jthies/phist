@@ -25,13 +25,13 @@ typedef ::phist::ScalarTraits<MT> mt;
 typedef std::complex<MT> CT;
 typedef ::phist::ScalarTraits<CT> ct;
 
-typedef st::mvec_t* mvec_ptr_t;
-typedef const st::mvec_t* const_mvec_ptr_t;
-typedef st::sparseMat_t* sparseMat_ptr_t;
-typedef const st::sparseMat_t* const_sparseMat_ptr_t;
-typedef st::sdMat_t* sdMat_ptr_t;
-typedef const st::sdMat_t* const_sdMat_ptr_t;
-typedef st::linearOp_t* linearOp_ptr_t;
-typedef const st::linearOp_t* const_linearOp_ptr_t;
+typedef st::mvec_t* mvec_ptr;
+typedef const st::mvec_t* const_mvec_ptr;
+typedef st::sparseMat_t* sparseMat_ptr;
+typedef const st::sparseMat_t* const_sparseMat_ptr;
+typedef st::sdMat_t* sdMat_ptr;
+typedef const st::sdMat_t* const_sdMat_ptr;
+typedef st::linearOp_t* linearOp_ptr;
+typedef const st::linearOp_t* const_linearOp_ptr;
 
-typedef mt::blas_cmplx_t blas_cmplx_t;
+typedef mt::blas_cmplx_t blas_cmplx;

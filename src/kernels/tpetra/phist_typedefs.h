@@ -23,17 +23,17 @@
 #ifdef __cplusplus
 //! TODO - do we want that here or do we want to give
 //!        the user a choice?
-typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
+typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
 //! single precision complex type
-typedef std::complex<float> s_complex_t;
-typedef std::complex<double> d_complex_t;
+typedef std::complex<float> phist_s_complex;
+typedef std::complex<double> phist_d_complex;
 //! type of global indices
-typedef std::ptrdiff_t gidx_t;
+typedef std::ptrdiff_t phist_gidx;
 #else
-typedef float complex s_complex_t;
-typedef double complex d_complex_t;
+typedef float complex phist_s_complex;
+typedef double complex phist_d_complex;
 //! type of global indices
-typedef ptrdiff_t gidx_t;
+typedef ptrdiff_t phist_gidx;
 #endif
 
 // we want ptrdiff_t (aka long long int on 64 bit systems) as local index,
@@ -41,7 +41,7 @@ typedef ptrdiff_t gidx_t;
 // we use int as local index type
 
 //! type of node-local indices
-typedef int lidx_t;
+typedef int phist_lidx;
 
 #define PRlidx "d"
 #define PRgidx "ld"

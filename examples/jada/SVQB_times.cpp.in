@@ -31,10 +31,10 @@ int main(int argc, char** argv)
 {
   int ierr;
 
-  comm_ptr_t comm = NULL;
-  map_ptr_t map = NULL;
-  mvec_ptr_t X = NULL, Q=NULL;
-  sdMat_ptr_t B = NULL, QtQ=NULL;
+  phist_comm_ptr comm = NULL;
+  phist_map_ptr map = NULL;
+  mvec_ptr X = NULL, Q=NULL;
+  sdMat_ptr B = NULL, QtQ=NULL;
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&ierr),ierr);
 
@@ -53,9 +53,9 @@ PHIST_MAIN_TASK_BEGIN
     return 1;
   }
 
-  gidx_t n;
+  phist_gidx n;
   int m,k;
-  if (sizeof(gidx_t)==4)
+  if (sizeof(phist_gidx)==4)
   {
     n=atoi(argv[1]);
   }
@@ -94,7 +94,7 @@ PHIST_MAIN_TASK_BEGIN
     // check orthonormality of the result
     PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Q,Q,st::zero(),QtQ,&ierr),ierr);
     ST* q=NULL;
-    lidx_t ldq;
+    phist_lidx ldq;
     PHIST_ICHK_IERR(SUBR(sdMat_extract_view)(QtQ,&q,&ldq,&ierr),ierr);
     MT err=mt::zero();
     for (int i=0;i<m;i++)

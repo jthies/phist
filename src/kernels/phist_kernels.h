@@ -22,8 +22,8 @@ typedef int MPI_Comm;
 #include "ghost/types.h"
 #include "ghost/sparsemat.h"
 #else
-typedef lidx_t ghost_lidx;
-typedef gidx_t ghost_gidx;
+typedef phist_lidx ghost_lidx;
+typedef phist_gidx ghost_gidx;
 #endif
 
 #endif
@@ -67,35 +67,35 @@ void phist_kernels_init(int *argc, char*** argv, int* iflag);
 void phist_kernels_finalize(int* iflag);
 
 //! creates a global comm object
-void phist_comm_create(comm_ptr_t* comm, int* iflag);
+void phist_comm_create(phist_comm_ptr* comm, int* iflag);
 //! delete a comm object. Only do this for comms obtained by phist_comm_create.
-void phist_comm_delete(comm_ptr_t comm, int* iflag);
+void phist_comm_delete(phist_comm_ptr comm, int* iflag);
 //! get the rank of the calling node
-void phist_comm_get_rank(const_comm_ptr_t comm, int* rank, int* iflag);
+void phist_comm_get_rank(phist_const_comm_ptr comm, int* rank, int* iflag);
 //! get the number of MPI asks
-void phist_comm_get_size(const_comm_ptr_t comm, int* size, int* iflag);
+void phist_comm_get_size(phist_const_comm_ptr comm, int* size, int* iflag);
 //! get MPI comm. If the kernel lib does not use MPI, NULL is returned.
-void phist_comm_get_mpi_comm(const_comm_ptr_t comm, MPI_Comm* mpiComm,int* iflag);
+void phist_comm_get_mpi_comm(phist_const_comm_ptr comm, MPI_Comm* mpiComm,int* iflag);
 
 //! creates a map with default distribution of points
-void phist_map_create(map_ptr_t* map, const_comm_ptr_t comm, gidx_t nglob, int *iflag);
+void phist_map_create(phist_map_ptr* map, phist_const_comm_ptr comm, phist_gidx nglob, int *iflag);
 //! delete a map object. Note that you should not do this if you got the map from
 //! anything else than phist_map_create.
-void phist_map_delete(map_ptr_t map, int *iflag);
+void phist_map_delete(phist_map_ptr map, int *iflag);
 //! returns the comm object used by a map
-void phist_map_get_comm(const_map_ptr_t map, const_comm_ptr_t* comm, int* iflag);
+void phist_map_get_comm(phist_const_map_ptr map, phist_const_comm_ptr* comm, int* iflag);
 //! returns the local number of elements in the map
-void phist_map_get_local_length(const_map_ptr_t map, lidx_t* nloc, int* iflag);
+void phist_map_get_local_length(phist_const_map_ptr map, phist_lidx* nloc, int* iflag);
 //! returns the global number of elements in the map.
-void phist_map_get_global_length(const_map_ptr_t map, gidx_t* nglob, int* iflag);
+void phist_map_get_global_length(phist_const_map_ptr map, phist_gidx* nglob, int* iflag);
 //! returns the smallest global index in the map appearing on my partition. iflag is set to 1
 //! in case the map is not contiguous, because in that case it may be that the
 //! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
-void phist_map_get_ilower(const_map_ptr_t map, gidx_t* ilower, int* iflag);
+void phist_map_get_ilower(phist_const_map_ptr map, phist_gidx* ilower, int* iflag);
 //! returns the largest global index in the map appearing on my partition. iflag is set to 1
 //! in case the map is not contiguous, because in that case it may be that the
 //! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
-void phist_map_get_iupper(const_map_ptr_t map, gidx_t* iupper, int* iflag);
+void phist_map_get_iupper(phist_const_map_ptr map, phist_gidx* iupper, int* iflag);
 
 //! simple load dominated streaming benchmark
 void phist_bench_stream_load(double* bw, int* iflag);

@@ -1,20 +1,20 @@
 // calculates a possibly low rank approximation of a lower cholesky factor of an spd matrix
 // higher-precision + pivoting + stable low rank approximation
-extern "C" void SUBR(prec_cholesky)(_ST_ *__restrict__ a, _ST_ *__restrict__ aC, lidx_t n, lidx_t lda, lidx_t *perm, int *rank, int* iflag)
+extern "C" void SUBR(prec_cholesky)(_ST_ *__restrict__ a, _ST_ *__restrict__ aC, phist_lidx n, phist_lidx lda, phist_lidx *perm, int *rank, int* iflag)
 {
   *iflag=-99;
 }
 
 // apply backward substitution with permuted upper triangular matrix to k vectors in col-major storage
-extern "C" void SUBR(prec_backwardSubst)(const _ST_ *__restrict__ r, const _ST_ *__restrict__ rC, lidx_t n, lidx_t ldr, lidx_t *p, int rank,
-        _ST_ *__restrict__ x, _ST_ *__restrict__ xC, lidx_t k, lidx_t ldx, int* iflag)
+extern "C" void SUBR(prec_backwardSubst)(const _ST_ *__restrict__ r, const _ST_ *__restrict__ rC, phist_lidx n, phist_lidx ldr, phist_lidx *p, int rank,
+        _ST_ *__restrict__ x, _ST_ *__restrict__ xC, phist_lidx k, phist_lidx ldx, int* iflag)
 {
   *iflag=-99;
 }
 
 // apply forward substitution with permuted transposed upper triangular matrix
-extern "C" void SUBR(prec_forwardSubst)(const _ST_ *__restrict__ r, const _ST_ *__restrict__ rC, lidx_t n, lidx_t ldr, lidx_t *p, int rank,
-        _ST_ *__restrict__ x, _ST_ *__restrict__ xC, lidx_t k, lidx_t ldx, int* iflag)
+extern "C" void SUBR(prec_forwardSubst)(const _ST_ *__restrict__ r, const _ST_ *__restrict__ rC, phist_lidx n, phist_lidx ldr, phist_lidx *p, int rank,
+        _ST_ *__restrict__ x, _ST_ *__restrict__ xC, phist_lidx k, phist_lidx ldx, int* iflag)
 {
   *iflag=-99;
 }
@@ -24,7 +24,7 @@ extern "C" void SUBR(prec_forwardSubst)(const _ST_ *__restrict__ r, const _ST_ *
 // s.t. Q has exactly rank *rank. In bi, biC we return the inverse of B.
 extern "C" void SUBR(prec_qb)(_ST_ *__restrict__ a,  _ST_ *__restrict__ aC, 
                     _ST_ *__restrict__ bi, _ST_ *__restrict__ biC, 
-                    lidx_t n, lidx_t lda, int *rank, int* iflag)
+                    phist_lidx n, phist_lidx lda, int *rank, int* iflag)
 {
   *iflag=-99;
 }

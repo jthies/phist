@@ -11,7 +11,7 @@ class JadaTestWithOpts
 
   public:
   
-  phist_jadaOpts_t jadaOpts_;
+  phist_jadaOpts jadaOpts_;
   
   virtual void SetUp()
   {

@@ -28,10 +28,10 @@ for the Epetra kernel lib, which as a simple mechanism for doing that
 int main(int argc, char** argv)
 {
   int iflag;
-  comm_ptr_t comm_world = NULL;
-  DsparseMat_ptr_t A;
-  Dmvec_ptr_t X=NULL, B=NULL;
-  const_map_ptr_t map=NULL;
+  phist_comm_ptr comm_world = NULL;
+  phist_DsparseMat_ptr A;
+  phist_Dmvec_ptr X=NULL, B=NULL;
+  phist_const_map_ptr map=NULL;
 
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
 

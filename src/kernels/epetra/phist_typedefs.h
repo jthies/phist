@@ -15,8 +15,8 @@
 //#include <cinttypes>
 #include <complex>
 //! single precision complex type
-typedef std::complex<float> s_complex_t;
-typedef std::complex<double> d_complex_t;
+typedef std::complex<float> phist_s_complex;
+typedef std::complex<double> phist_d_complex;
 #endif
 
 #else
@@ -24,8 +24,8 @@ typedef std::complex<double> d_complex_t;
 #ifndef DOXYGEN
 //#include <inttypes.h>
 #include <complex.h>
-typedef float complex s_complex_t;
-typedef double complex d_complex_t;
+typedef float complex phist_s_complex;
+typedef double complex phist_d_complex;
 #endif
 
 #endif
@@ -33,13 +33,13 @@ typedef double complex d_complex_t;
 #include "Epetra_config.h"
 
 //! type of node-local indices
-typedef int lidx_t;
+typedef int phist_lidx;
 
 //! type of global indices
 #ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
-typedef int gidx_t;
+typedef int phist_gidx;
 #else
-typedef long long int gidx_t;
+typedef long long int phist_gidx;
 #endif
 
 #define PRlidx "d"

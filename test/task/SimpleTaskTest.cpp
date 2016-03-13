@@ -102,9 +102,9 @@ TEST_F(SimpleTaskTest, execute_kernelfcn_in_task)
 PHIST_TASK_DECLARE(Task1);
 PHIST_TASK_DECLARE(Task2);
 
-  comm_ptr_t comm;
-  map_ptr_t map = NULL;
-  Dmvec_ptr_t mvec = NULL;
+  phist_comm_ptr comm;
+  phist_map_ptr map = NULL;
+  phist_Dmvec_ptr mvec = NULL;
   const int nv = 10;
   const int n = 100;
   int tflag = 0;

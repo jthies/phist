@@ -5,12 +5,12 @@
 
 /** 
  */
-template<gidx_t _Nglob>
+template<phist_gidx _Nglob>
 class KernelTestWithMap: public virtual KernelTest
 {
 public:
 
-static void SetUpTestCaseWithMap(const_map_ptr_t map)
+static void SetUpTestCaseWithMap(phist_const_map_ptr map)
 {
   EXPECT_TRUE(map != NULL);
   // prevent getting called multiple times
@@ -35,7 +35,7 @@ static void SetUpTestCase()
 
     KernelTest::SetUpTestCase();
 
-    map_ptr_t map;
+    phist_map_ptr map;
     problemTooSmall_ = mpi_size_ > nglob_;
     iflag_=PHIST_SPARSEMAT_QUIET;
     phist_map_create(&map,comm_,nglob_,&iflag_);
@@ -52,7 +52,7 @@ static void TearDownTestCase()
   if( staticDeleteMap_ )
   {
     EXPECT_TRUE(map_ != NULL);
-    phist_map_delete((map_ptr_t)map_,&iflag_);
+    phist_map_delete((phist_map_ptr)map_,&iflag_);
     EXPECT_EQ(0,iflag_);
 
   }
@@ -60,26 +60,26 @@ static void TearDownTestCase()
   map_ = NULL;
 }
 
-static const gidx_t nglob_=_Nglob;
-static lidx_t nloc_;
-static const_map_ptr_t map_;
+static const phist_gidx nglob_=_Nglob;
+static phist_lidx nloc_;
+static phist_const_map_ptr map_;
 static bool staticDeleteMap_;
 static bool problemTooSmall_;
 };
 
-template<gidx_t _Nglob>
-const gidx_t KernelTestWithMap<_Nglob>::nglob_;
+template<phist_gidx _Nglob>
+const phist_gidx KernelTestWithMap<_Nglob>::nglob_;
 
-template<gidx_t _Nglob>
-lidx_t KernelTestWithMap<_Nglob>::nloc_ = 0;
+template<phist_gidx _Nglob>
+phist_lidx KernelTestWithMap<_Nglob>::nloc_ = 0;
 
-template<gidx_t _Nglob>
-const_map_ptr_t KernelTestWithMap<_Nglob>::map_ = NULL;
+template<phist_gidx _Nglob>
+phist_const_map_ptr KernelTestWithMap<_Nglob>::map_ = NULL;
 
-template<gidx_t _Nglob>
+template<phist_gidx _Nglob>
 bool KernelTestWithMap<_Nglob>::staticDeleteMap_ = false;
 
-template<gidx_t _Nglob>
+template<phist_gidx _Nglob>
 bool KernelTestWithMap<_Nglob>::problemTooSmall_ = false;
 
 #endif

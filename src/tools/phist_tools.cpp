@@ -44,7 +44,7 @@ extern "C" const char* phist_ghost_error2str(ghost_error code)
 }
 #endif
 
-extern "C" const char* eigSort2str(eigSort_t s)
+extern "C" const char* eigSort2str(phist_EeigSort s)
 {
   return s==phist_LM?"LM":
          s==phist_SM?"SM":
@@ -55,14 +55,14 @@ extern "C" const char* eigSort2str(eigSort_t s)
                    "INVALID";
 }
 
-extern "C" const char* eigExtr2str(eigExtr_t s)
+extern "C" const char* eigExtr2str(phist_EeigExtr s)
 {
   return s==phist_STANDARD?"STANDARD":
          s==phist_HARMONIC?"HARMONIC":
                    "INVALID";
 }
 
-extern "C" const char* linSolv2str(linSolv_t s)
+extern "C" const char* linSolv2str(phist_ElinSolv s)
 {
   return   s==phist_GMRES?"GMRES":
            s==phist_MINRES?"MINRES":
@@ -72,7 +72,7 @@ extern "C" const char* linSolv2str(linSolv_t s)
                          "INVALID";
 }
 
-extern "C" const char* precon2str(precon_t s)
+extern "C" const char* precon2str(phist_Eprecon s)
 {
   return   s==phist_NO_PRECON?"NONE":
 #ifdef PHIST_HAVE_IFPACK
@@ -92,11 +92,11 @@ extern "C" const char* precon2str(precon_t s)
                 "INVALID";
 }
 
-extern "C" eigSort_t str2eigSort(const char* c_str)
+extern "C" phist_EeigSort str2eigSort(const char* c_str)
 {
   std::string str(c_str);
   str=phist_str2upper(str);
-  eigSort_t s=phist_INVALID_EIGSORT_T;
+  phist_EeigSort s=phist_INVALID_EIGSORT_T;
   if (str=="LM") s=phist_LM;
   else if (str=="SM") s=phist_SM;
   else if (str=="LR") s=phist_LR;
@@ -106,22 +106,22 @@ extern "C" eigSort_t str2eigSort(const char* c_str)
   return s;
 }
 
-extern "C" eigExtr_t str2eigExtr(const char* c_str)
+extern "C" phist_EeigExtr str2eigExtr(const char* c_str)
 {
   std::string str(c_str);
   str=phist_str2upper(str);
-  eigExtr_t s=phist_INVALID_EIGEXTR_T;
+  phist_EeigExtr s=phist_INVALID_EIGEXTR_T;
   if (str=="STANDARD") s=phist_STANDARD;
   else if (str=="HARMONIC") s=phist_HARMONIC;
   return s;
 }
       
 
-extern "C" linSolv_t str2linSolv(const char* c_str)
+extern "C" phist_ElinSolv str2linSolv(const char* c_str)
 {
   std::string str(c_str);
   str=phist_str2upper(str);
-  linSolv_t s=phist_INVALID_LINSOLV_T;
+  phist_ElinSolv s=phist_INVALID_LINSOLV_T;
   if (str=="GMRES") s=phist_GMRES;
   else if (str=="MINRES") s=phist_MINRES;
   else if (str=="CARP_CG") s=phist_CARP_CG;
@@ -130,11 +130,11 @@ extern "C" linSolv_t str2linSolv(const char* c_str)
   return s;
 }
 
-extern "C" precon_t str2precon(const char* c_str)
+extern "C" phist_Eprecon str2precon(const char* c_str)
 {
   std::string str(c_str);
   str=phist_str2upper(str);
-  precon_t s=phist_INVALID_PRECON_T;
+  phist_Eprecon s=phist_INVALID_PRECON_T;
   if (str=="NONE") s=phist_NO_PRECON;
 #ifdef PHIST_HAVE_IFPACK
   else if (str=="IFPACK") s=phist_IFPACK;
@@ -154,38 +154,38 @@ extern "C" precon_t str2precon(const char* c_str)
   return s;
 }
 
-std::istream& operator>>(std::istream& is, eigSort_t& s)
+std::istream& operator>>(std::istream& is, phist_EeigSort& s)
 {
   std::string tmp;
   is>>tmp;
-  PHIST_SOUT(PHIST_DEBUG,"try to parse eigSort_t '%s'\n",tmp.c_str());
+  PHIST_SOUT(PHIST_DEBUG,"try to parse phist_EeigSort '%s'\n",tmp.c_str());
   s=str2eigSort(tmp.c_str());
   return is;
 }
 
-std::istream& operator>>(std::istream& is, eigExtr_t& s)
+std::istream& operator>>(std::istream& is, phist_EeigExtr& s)
 {
   std::string tmp;
   is>>tmp;
-  PHIST_SOUT(PHIST_DEBUG,"try to parse eigExtr_t '%s'\n",tmp.c_str());
+  PHIST_SOUT(PHIST_DEBUG,"try to parse phist_EeigExtr '%s'\n",tmp.c_str());
   s=str2eigExtr(tmp.c_str());
   return is;
 }
 
-std::istream& operator>>(std::istream& is, linSolv_t& s)
+std::istream& operator>>(std::istream& is, phist_ElinSolv& s)
 {
   std::string tmp;
   is>>tmp;
-  PHIST_SOUT(PHIST_DEBUG,"try to parse linSolv_t '%s'\n",tmp.c_str());
+  PHIST_SOUT(PHIST_DEBUG,"try to parse phist_ElinSolv '%s'\n",tmp.c_str());
   s=str2linSolv(tmp.c_str());
   return is;
 }
 
-std::istream& operator>>(std::istream& is, precon_t& s)
+std::istream& operator>>(std::istream& is, phist_Eprecon& s)
 {
   std::string tmp;
   is>>tmp;
-  PHIST_SOUT(PHIST_DEBUG,"try to parse precon_t '%s'\n",tmp.c_str());
+  PHIST_SOUT(PHIST_DEBUG,"try to parse phist_Eprecon '%s'\n",tmp.c_str());
   s=str2precon(tmp.c_str());
   return is;
 }

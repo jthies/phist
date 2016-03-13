@@ -1,4 +1,4 @@
-void SUBR(read_mat)(const char* filebase,const_comm_ptr_t comm, int nglob,TYPE(sparseMat_ptr) *ptr, int* iflag)
+void SUBR(read_mat)(const char* filebase,phist_const_comm_ptr comm, int nglob,TYPE(sparseMat_ptr) *ptr, int* iflag)
 {
   *ptr = NULL;
   char tpc = ::phist::ScalarTraits< _ST_ >::type_char();

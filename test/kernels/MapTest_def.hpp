@@ -25,7 +25,7 @@ public:
 
   /*! Test the comm_get_rank function. */
   TEST_F(CLASSNAME, get_comm) {
-        const_comm_ptr_t comm;
+        phist_const_comm_ptr comm;
         phist_map_get_comm(map_,&comm,&iflag_);
 	ASSERT_EQ(0,iflag_);
 }

@@ -7,7 +7,7 @@ void SUBR(transform_searchSpace)(TYPE(mvec_ptr) V, TYPE(mvec_ptr) AV, TYPE(mvec_
 
   // get dimensions to create temporary storage
   int nV, minBase;
-  const_comm_ptr_t comm;
+  phist_const_comm_ptr comm;
   PHIST_CHK_IERR(SUBR( sdMat_get_nrows ) (M, &nV, iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_get_ncols ) (M, &minBase, iflag), *iflag);
 
@@ -33,7 +33,7 @@ void SUBR(transform_searchSpace)(TYPE(mvec_ptr) V, TYPE(mvec_ptr) AV, TYPE(mvec_
 /*
   // set M <- I
   _ST_ *Mraw = NULL;
-  lidx_t ldaM;
+  phist_lidx ldaM;
   PHIST_CHK_IERR(SUBR( sdMat_extract_view )(M, &Mraw, &ldaM, iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_put_value )(M, st::zero(), iflag), *iflag);
   for(int i = 0; i < minBase; i++)
@@ -60,7 +60,7 @@ void SUBR(transform_searchSpaceHarmonic)(TYPE(mvec_ptr) V, TYPE(mvec_ptr) W, TYP
   }
 
   // we need some communicator for ghost...
-  const_comm_ptr_t comm;
+  phist_const_comm_ptr comm;
   PHIST_CHK_IERR(SUBR( mvec_get_comm ) (V, &comm, iflag), *iflag);
 
   int nV, minBase;

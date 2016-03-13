@@ -57,7 +57,7 @@ void SUBR(orthogrr)(TYPE(const_mvec_ptr) W, TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R2
     int m, k = 0;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
     if( W != NULL ) {PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&k,iflag),*iflag);}
-    const_comm_ptr_t comm;
+    phist_const_comm_ptr comm;
     PHIST_CHK_IERR(SUBR(mvec_get_comm)(V,&comm,iflag),*iflag);
     // create matrices
     TYPE(sdMat_ptr) R = NULL;

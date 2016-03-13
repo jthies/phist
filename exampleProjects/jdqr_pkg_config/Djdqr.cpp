@@ -52,14 +52,14 @@ int main(int argc, char** argv)
   int rank, num_proc;
   int verbose;
 
-  comm_ptr_t comm;
-  sparseMat_ptr_t A;
-  linearOp_ptr_t A_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
-  linearOp_ptr_t B_op=NULL; // no mass matrix up to now
+  phist_comm_ptr comm;
+  sparseMat_ptr A;
+  linearOp_ptr A_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  linearOp_ptr B_op=NULL; // no mass matrix up to now
   
-  const_map_ptr_t map; // map (element distribution) of vectors according to 
+  phist_const_map_ptr map; // map (element distribution) of vectors according to 
                        // the distribution of matrix rows
-  mvec_ptr_t X; // multivector for getting the eigenvectors
+  mvec_ptr X; // multivector for getting the eigenvectors
   
   ST* evals; // for real non-symmetric matrices we can get complex pairs,
              // so we need twice the amount of memory to store the eigenvalues 
@@ -67,7 +67,7 @@ int main(int argc, char** argv)
   
   int* is_cmplx=NULL; // only required for the real case for indicating complex EV
 
-  phist_jadaOpts_t opts;
+  phist_jadaOpts opts;
 
   char* filename;
   
@@ -196,7 +196,7 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(mvec_view_block)(X,&opts.v0,0,0,&iflag),iflag);
   
   // create operator wrapper for computing Y=A*X using a CRS matrix
-  A_op = (linearOp_ptr_t)malloc(sizeof(TYPE(linearOp)));
+  A_op = (linearOp_ptr)malloc(sizeof(TYPE(linearOp)));
   PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(A_op,A,&iflag),iflag);
 
   
@@ -210,7 +210,7 @@ int main(int argc, char** argv)
 
   // first column in X is currently used as starting vector of Arnoldi in jdqr. The first 
   // jmin vectors are constructed by an Arnoldi process for stability reasons.
-  lidx_t nloc,lda; 
+  phist_lidx nloc,lda; 
   ST* valX0;
   MT nrmX0[num_eigs+1];
   PHIST_ICHK_IERR(SUBR(mvec_my_length)(X,&nloc,&iflag),iflag);
@@ -252,7 +252,7 @@ int main(int argc, char** argv)
     PHIST_ICHK_IERR(SUBR(sdMat_create)(&D,num_eigs,num_eigs,comm,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(sdMat_put_value)(D,st::zero(),&iflag),iflag);
     ST *D_raw=NULL;
-    lidx_t ldD;
+    phist_lidx ldD;
     PHIST_ICHK_IERR(SUBR(sdMat_extract_view)(D,&D_raw,&ldD,&iflag),iflag);
     i=0;
     while (i<num_eigs)

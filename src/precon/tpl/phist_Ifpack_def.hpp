@@ -36,7 +36,7 @@ class PreconTraits<double,phist_IFPACK>
 
   static void Create(void** P, 
         const void* vA, double sigma, const void* vB, 
-        Dconst_mvec_ptr_t Vkern, Dconst_mvec_ptr_t BVkern,
+        phist_Dconst_mvec_ptr Vkern, phist_Dconst_mvec_ptr BVkern,
         std::string options, int* iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
@@ -92,7 +92,7 @@ class PreconTraits<double,phist_IFPACK>
     delete P;
   }
   
-  static void Apply(double alpha, void const* vP, Dconst_mvec_ptr_t vX, double beta, Dmvec_ptr_t vY, int* iflag)
+  static void Apply(double alpha, void const* vP, phist_Dconst_mvec_ptr vX, double beta, phist_Dmvec_ptr vY, int* iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;
@@ -108,7 +108,7 @@ class PreconTraits<double,phist_IFPACK>
     PHIST_CHK_IERR(*iflag=P->ApplyInverse(*X,*Y),*iflag);
   }
   
-  static void ApplyT(double alpha, void const* P, Dconst_mvec_ptr_t X, double beta, Dmvec_ptr_t Y, int* iflag)
+  static void ApplyT(double alpha, void const* P, phist_Dconst_mvec_ptr X, double beta, phist_Dmvec_ptr Y, int* iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
     // we currently don't need to apply the transpose of a preconditioner, and in Ifpack
@@ -120,7 +120,7 @@ class PreconTraits<double,phist_IFPACK>
   }
   
   static void ApplyShifted(double alpha, const void* vP, double const * sigma,
-          Dconst_mvec_ptr_t vX, double beta,  Dmvec_ptr_t vY, int* iflag)
+          phist_Dconst_mvec_ptr vX, double beta,  phist_Dmvec_ptr vY, int* iflag)
   {
     // As we are talking about preconditioning here, we have the freedom to simply apply the same operator
     // to each column (ignoring the shift altogether or using a single shift). We could decide what to do 

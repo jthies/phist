@@ -259,7 +259,7 @@ public:
       ASSERT_EQ(0,iflag_);
       
       _ST_* val_ptr;
-      lidx_t lda;
+      phist_lidx lda;
       SUBR(sdMat_extract_view)(m1_view,&val_ptr,&lda,&iflag_);
       ASSERT_EQ(0,iflag_);
 #if PHIST_SDMAT_ROW_MAJOR
@@ -439,7 +439,7 @@ public:
       SUBR(sdMat_print)(m1_copy,&iflag_);
 #endif      
       _ST_* val_ptr;
-      lidx_t lda;
+      phist_lidx lda;
       SUBR(sdMat_extract_view)(m1_copy,&val_ptr,&lda,&iflag_);
       ASSERT_EQ(0,iflag_);
       

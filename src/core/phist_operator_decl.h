@@ -8,8 +8,8 @@
 //!
 typedef struct TYPE(linearOp) {
  const void* A; //! data structure needed for representing A
- const_map_ptr_t range_map; //! map for vectors Y in Y=A*X
- const_map_ptr_t domain_map; //! map for vectors X in Y=A*X
+ phist_const_map_ptr range_map; //! map for vectors Y in Y=A*X
+ phist_const_map_ptr domain_map; //! map for vectors X in Y=A*X
  void const* aux; //! This field can be used to carry along
                   //! additional info like a space which
                   //! is projected out of the operator etc.,

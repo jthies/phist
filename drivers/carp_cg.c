@@ -61,10 +61,10 @@ int main(int argc, char** argv)
   int rank, num_proc;
   int i;
 
-  comm_ptr_t comm;  
-  const_map_ptr_t map; // map (element distribution) of vectors according to 
+  phist_comm_ptr comm;  
+  phist_const_map_ptr map; // map (element distribution) of vectors according to 
                        // the distribution of matrix rows
-  mvec_ptr_t B, *X_r, *X_i; // multivectors that will hold the RHS and the 
+  mvec_ptr B, *X_r, *X_i; // multivectors that will hold the RHS and the 
                             //complex solutions
   TYPE(mvec_ptr) X_r_ex0, X_i_ex0;// we construct B such that (sigma[0]*I-A)X_ex0=B,
                                   // so that we can check the error for at least one
@@ -360,7 +360,7 @@ if (num_complex==0)
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
   ST *x_val=NULL, *xex_val=NULL,*r_val=NULL,*rex_val=NULL;
-  lidx_t ldx, ldxex, ldr, ldrex,nloc;
+  phist_lidx ldx, ldxex, ldr, ldrex,nloc;
   PHIST_ICHK_IERR(SUBR(mvec_extract_view)(X_r_ex0,&xex_val,&ldxex,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_extract_view)(X_r[0],&x_val,&ldx,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_extract_view)(err_r,&rex_val,&ldrex,&iflag),iflag);

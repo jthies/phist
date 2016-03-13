@@ -76,7 +76,7 @@ public:
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
-      lidx_t nloc;
+      phist_lidx nloc;
       SUBR(mvec_my_length)(vec1_,&nloc,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nloc_, nloc); 
@@ -87,7 +87,7 @@ public:
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
-      gidx_t nglob;
+      phist_gidx nglob;
       SUBR(mvec_global_length)(vec1_,&nglob,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nglob_, nglob); 
@@ -117,7 +117,7 @@ public:
 
       // check that the put_value function does not change the pointer
       ST* ptr;
-      lidx_t lda_new;
+      phist_lidx lda_new;
       SUBR(mvec_extract_view)(vec1_,&ptr,&lda_new,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(lda_,lda_new);
@@ -260,7 +260,7 @@ public:
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
-      gidx_t ilower;     
+      phist_gidx ilower;     
       phist_map_get_ilower(map_,&ilower,&iflag_);
       SUBR(mvec_from_device)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -300,7 +300,7 @@ public:
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
-      gidx_t ilower;     
+      phist_gidx ilower;     
       phist_map_get_ilower(map_,&ilower,&iflag_);
       SUBR(mvec_from_device)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -350,7 +350,7 @@ public:
       
       // check that the random function does not change the pointer
       ST* ptr;
-      lidx_t lda_new;
+      phist_lidx lda_new;
       SUBR(mvec_extract_view)(vec1_,&ptr,&lda_new,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(lda_,lda_new);
@@ -427,7 +427,7 @@ public:
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
-      gidx_t ilower;     
+      phist_gidx ilower;     
       phist_map_get_ilower(map_,&ilower,&iflag_);
       ASSERT_EQ(0,iflag_);
       for (int j=0;j<nvec_;j++)
@@ -462,7 +462,7 @@ public:
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
-      gidx_t ilower;     
+      phist_gidx ilower;     
       phist_map_get_ilower(map_,&ilower,&iflag_);
       ASSERT_EQ(0,iflag_);
       for (int j=0;j<nvec_;j++)
@@ -905,7 +905,7 @@ TEST_F(CLASSNAME,put_func)
   SUBR(mvec_put_func)(vec1_,&PHIST_TG_PREFIX(mvecInitializer),NULL,&iflag_);
   ASSERT_EQ(0,iflag_);
   
-  gidx_t ilower, iupper;
+  phist_gidx ilower, iupper;
   phist_map_get_ilower(map_,&ilower,&iflag_);
   ASSERT_EQ(0,iflag_);
   phist_map_get_iupper(map_,&iupper,&iflag_);
@@ -913,10 +913,10 @@ TEST_F(CLASSNAME,put_func)
   
   ASSERT_EQ(nloc_,iupper-ilower+1);
   
-  for (lidx_t i=0;i<nloc_; i++)
+  for (phist_lidx i=0;i<nloc_; i++)
   {
-    gidx_t ii = (gidx_t)i + ilower;
-    for (lidx_t j=0; j<nvec_; j++)
+    phist_gidx ii = (phist_gidx)i + ilower;
+    for (phist_lidx j=0; j<nvec_; j++)
     {
       vec2_vp_[VIDX(i,j,lda_)]=F_INIT(ii,j);
     }

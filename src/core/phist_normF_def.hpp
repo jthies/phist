@@ -5,7 +5,7 @@ void SUBR(sdMat_normF)(TYPE(const_sdMat_ptr) M, _MT_ *f, int* iflag)
   int n = 0;
   TYPE(sdMat_ptr) tmp = NULL;
   _ST_ *raw_tmp = NULL;
-  lidx_t lda_tmp = 0;
+  phist_lidx lda_tmp = 0;
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(M,&n,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp,n,n,NULL,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat)(st::one(),M,M,st::zero(),tmp,iflag),*iflag);
@@ -25,7 +25,7 @@ void SUBR(mvec_normF)(TYPE(const_mvec_ptr) V, _MT_ *f, int* iflag)
   int flags = *iflag;
   TYPE(sdMat_ptr) tmp = NULL;
   _ST_ *raw_tmp = NULL;
-  lidx_t lda_tmp = 0;
+  phist_lidx lda_tmp = 0;
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&n,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp,n,n,NULL,iflag),*iflag);
   *iflag = flags;

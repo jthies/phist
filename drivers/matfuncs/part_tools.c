@@ -1,6 +1,6 @@
 #include "matfuncs.h"
 
-ghost_gidx perm2d( ghost_gidx row, gidx_t arg2 )
+ghost_gidx perm2d( ghost_gidx row, phist_gidx arg2 )
 {
   static int n1=-1, n2;
   static int np, np1, np2, pid, pid1, pid2;
@@ -81,7 +81,7 @@ ghost_gidx perm2d( ghost_gidx row, gidx_t arg2 )
 }
 
 
-ghost_gidx perm3d( ghost_gidx row, gidx_t arg2, gidx_t arg3 )
+ghost_gidx perm3d( ghost_gidx row, phist_gidx arg2, phist_gidx arg3 )
 {
   static int n1=-1, n2, n3;
   static int np, np1, np2, np3, pid, pid1, pid2, pid3;

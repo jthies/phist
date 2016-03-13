@@ -18,5 +18,5 @@ void SUBR(mvec_Irecv)(TYPE(const_mvec_ptr) V, int dest, int tag,
  performance-relevant situations. Kernel libs not based on MPI *must* provide their
  own implementation (as done by GHOST).
  */
-void SUBR(sdMat_sync_values)(TYPE(sdMat_ptr) V, const_comm_ptr_t comm, int* iflag);
+void SUBR(sdMat_sync_values)(TYPE(sdMat_ptr) V, phist_const_comm_ptr comm, int* iflag);
 

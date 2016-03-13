@@ -31,8 +31,8 @@ int main(int argc, char** argv)
   PHIST_MAIN_TASK_BEGIN
   
   
-  comm_ptr_t comm;
-  sparseMat_ptr_t A;
+  comm_ptr comm;
+  sparseMat_ptr A;
   
   MT lambda_min,lambda_max;
   

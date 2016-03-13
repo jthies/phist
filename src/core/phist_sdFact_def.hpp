@@ -16,7 +16,7 @@ extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, in
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
-  lidx_t ldM, n,m;
+  phist_lidx ldM, n,m;
   _ST_ *Mval, *Merr=NULL;
   bool robust=(*iflag&PHIST_ROBUST_REDUCTIONS);
   *iflag=0;
@@ -41,7 +41,7 @@ extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* pe
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
-  lidx_t ldR, n, m, ldX, k;
+  phist_lidx ldR, n, m, ldX, k;
   _ST_ *Rval, *Rerr=NULL, *Xval, *Xerr=NULL;
   bool robust=(*iflag&PHIST_ROBUST_REDUCTIONS);
   *iflag=0;
@@ -75,7 +75,7 @@ extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* per
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
-  lidx_t ldR, n, m, ldX, k;
+  phist_lidx ldR, n, m, ldX, k;
   _ST_ *Rval, *Rerr=NULL, *Xval, *Xerr=NULL;
   bool robust=(*iflag&PHIST_ROBUST_REDUCTIONS);
   *iflag=0;
@@ -111,7 +111,7 @@ extern "C" void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B,
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_PERFCHECK_VERIFY_SMALL;
-  lidx_t ldB, ldB_1, n, m;
+  phist_lidx ldB, ldB_1, n, m;
   _ST_ *Bval, *B_1val, *Berr=NULL, *B_1err=NULL;
   bool robust=(*iflag&PHIST_ROBUST_REDUCTIONS);
   *iflag=0;

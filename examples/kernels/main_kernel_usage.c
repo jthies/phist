@@ -44,27 +44,27 @@ int main(int argc, char** argv)
   
   // a wrapper for the MPI comm (may actually be something completely different if the 
   // kernel lib does not use MPI for communication)
-  const_comm_ptr_t comm = NULL;
+  phist_const_comm_ptr comm = NULL;
   // sparse matrix
-  DsparseMat_ptr_t A;
+  phist_DsparseMat_ptr A;
   // defines the distribution of matrix/vector rows and columns
-  const_map_ptr_t row_map,range_map,domain_map;
+  phist_const_map_ptr row_map,range_map,domain_map;
   // block vectors
-  Dmvec_ptr_t x,y;
+  phist_Dmvec_ptr x,y;
   // views of certain columns of x and y. These objects
   // can be used exactly like standard mvecs.
-  Dmvec_ptr_t x_view, y_view;
+  phist_Dmvec_ptr x_view, y_view;
 
   // we can "view" the raw data of vectors and manipulate it, but have to
   // be *very* careful to up- and download it to/from an accelerator if necessary
   double *x_val, *y_val;
-  lidx_t nloc_x, nloc_y;
+  phist_lidx nloc_x, nloc_y;
   int nvec_x,nvec_y;
-  lidx_t lda_x, lda_y;
+  phist_lidx lda_x, lda_y;
 
   int i,j;
   
-  comm_ptr_t comm_world = NULL;
+  phist_comm_ptr comm_world = NULL;
   double norms[4];
 
   // the PHIST_ICHK_IERR (PHIST_CHK_IERR in void functions) macros provide

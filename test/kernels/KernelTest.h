@@ -35,7 +35,7 @@ class KernelTest: public virtual testing::Test {
 
 public:
 
- static comm_ptr_t comm_;
+ static phist_comm_ptr comm_;
  static bool haveS_, haveD_, haveC_, haveZ_;
  static MPI_Comm mpi_comm_;
  static unsigned int rseed_;//random number seed

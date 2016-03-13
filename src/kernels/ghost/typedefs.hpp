@@ -35,18 +35,18 @@
 # include "TpetraClassic_config.h"
 #endif
 
-/*typedef Kokkos::DefaultNode::DefaultNodeType node_t;*/
+/*typedef Kokkos::DefaultNode::DefaultNodeType node_type;*/
 # if defined(HAVE_TPETRACLASSIC_TBB)||defined(HAVE_KOKKOSCLASSIC_TBB)
 # include "Kokkos_TBBNode.hpp"
-typedef Kokkos::TBBNode node_t;
+typedef Kokkos::TBBNode node_type;
 # elif defined(HAVE_TPETRACLASSIC_THREADPOOL)||defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
 # warning "Using the Kokkos thread pool node may interfere with GHOST threads leading to poor GHOST performance. Use TBB if possible!"
 # include "Kokkos_TPINode.hpp"
-typedef Kokkos::TPINode node_t;
+typedef Kokkos::TPINode node_type;
 # else
 # warning "Your Trilinos installation does not support ThreadPool or Intel TBB, so we use the serial node for the TSQR interface!"
 # include "Kokkos_SerialNode.hpp"
-typedef Kokkos::SerialNode node_t;
+typedef Kokkos::SerialNode node_type;
 # endif
 #endif
 template <typename ST>
@@ -77,9 +77,9 @@ public:
   static Teuchos::RCP<const Teuchos_sdMat_t> CreateTeuchosView(Teuchos::RCP<const sdMat_t> M, int* iflag)
     {
     *iflag=0;
-    lidx_t stride = M->stride;
-    lidx_t nrows = M->traits.nrows;
-    lidx_t ncols = M->traits.ncols;
+    phist_lidx stride = M->stride;
+    phist_lidx nrows = M->traits.nrows;
+    phist_lidx ncols = M->traits.ncols;
 
     if (M->traits.datatype != phist::ScalarTraits<ST>::ghost_dt)
       {

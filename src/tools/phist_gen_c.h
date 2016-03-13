@@ -1,7 +1,7 @@
 #include "phist_gen_clean.h"
 
 #define IS_COMPLEX
-#define _ST_ s_complex_t
+#define _ST_ phist_s_complex
 
 // C++ users should use the class phist::ScalarTraits and
 // phist_std_typedefs.hpp for all of this:
@@ -33,7 +33,7 @@
 #define SUBR(name) phist_C ## name
 
 // how to build up the name of a type
-#define TYPE(name) C ## name ## _t
+#define TYPE(name) phist_C ## name
 
 // how to call a lapack routine via the C interface, e.g. PHIST_LAPACKE(getrf)
 #define PHIST_LAPACKE(name) LAPACKE_c ## name

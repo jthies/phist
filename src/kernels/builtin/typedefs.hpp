@@ -18,7 +18,7 @@
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DefaultKernels.hpp"
 
-typedef Kokkos::DefaultNode::DefaultNodeType node_t;
+typedef Kokkos::DefaultNode::DefaultNodeType node_type;
 #endif
 
 #include "phist_typedefs.h"
@@ -39,7 +39,7 @@ public:
 
 #ifdef PHIST_HAVE_TEUCHOS
   //! serial dense matrix from Teuchos, we need this for e.g. the BLAS interface.
-  typedef Teuchos::SerialDenseMatrix<lidx_t,ST> Teuchos_sdMat_t;
+  typedef Teuchos::SerialDenseMatrix<phist_lidx,ST> Teuchos_sdMat_t;
 #endif
 
   //! CRS matrices
@@ -51,7 +51,7 @@ public:
     //*iflag=0;
 
     //const ST *M_val = NULL;
-    //lidx_t lda;
+    //phist_lidx lda;
     //int nrows, ncols;
     //PHIST_CHK_IERR(SUBR(sdMat_extract_view)(*M,&M_val,lda,iflag),*iflag);
     //PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(*M,&nrows,iflag),*iflag);
@@ -68,7 +68,7 @@ public:
     //*iflag=0;
 
     //ST *M_val = NULL;
-    //lidx_t lda;
+    //phist_lidx lda;
     //int nrows, ncols;
     //PHIST_CHK_IERR(SUBR(sdMat_extract_view)(*M,&M_val,lda,iflag),*iflag);
     //PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(*M,&nrows,iflag),*iflag);

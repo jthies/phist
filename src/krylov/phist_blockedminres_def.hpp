@@ -254,7 +254,7 @@ PHIST_TASK_BEGIN(ComputeTask)
         {
           // store in H
           ST *Hj=NULL;
-          lidx_t ldH;
+          phist_lidx ldH;
           PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag);
           Hj += (S[i]->curDimV_-1)*ldH;
           Hj[j] = -alpha[S[i]->id-minId];
@@ -281,7 +281,7 @@ PHIST_TASK_BEGIN(ComputeTask)
         {
           // raw view of H
           ST *Hj=NULL;
-          lidx_t ldH; 
+          phist_lidx ldH; 
           PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
           Hj += (S[i]->curDimV_-1)*ldH;
           Hj[j+1] = beta[S[i]->id-minId];
@@ -326,7 +326,7 @@ PHIST_TASK_BEGIN(ComputeTask)
 // check arnoldi/krylov property for last (untransformed row of H): AV_k = V_(k+1) * H_(k+1,k)
 {
   TYPE(mvec_ptr) tmpVec = NULL, tmpVec_ = NULL;
-  const_map_ptr_t map;
+  phist_const_map_ptr map;
   PHIST_CHK_IERR(SUBR(mvec_get_map)(work_y, &map, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_create)(&tmpVec_, map, maxId+1, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, minId, maxId, iflag), *iflag);
@@ -335,7 +335,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   {
     PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, S[i]->id, S[i]->id, iflag), *iflag);
     ST *Hj=NULL;
-    lidx_t ldH; 
+    phist_lidx ldH; 
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
     Hj += (S[i]->curDimV_-1)*ldH;
     _MT_ maxHerr = mt::zero();
@@ -366,7 +366,7 @@ PHIST_TASK_BEGIN(ComputeTask)
 
       // raw view of H
       ST *Hj=NULL;
-      lidx_t ldH; 
+      phist_lidx ldH; 
       PHIST_CHK_IERR(SUBR(sdMat_extract_view)(S[i]->H_,&Hj,&ldH,iflag),*iflag); 
       Hj += (j-1)*ldH;
       // apply previous Gives rotations to column j
@@ -380,7 +380,7 @@ PHIST_TASK_BEGIN(ComputeTask)
       // new Givens rotation to eliminate H(j+1,j)
 #ifdef IS_COMPLEX
       _MT_ cs;
-      PHIST_TG_PREFIX(LARTG)((blas_cmplx_t*)&Hj[j-1],(blas_cmplx_t*)&Hj[j],&cs,(blas_cmplx_t*)&S[i]->sn_[j-1],(blas_cmplx_t*)&tmp);
+      PHIST_TG_PREFIX(LARTG)((blas_cmplx*)&Hj[j-1],(blas_cmplx*)&Hj[j],&cs,(blas_cmplx*)&S[i]->sn_[j-1],(blas_cmplx*)&tmp);
       S[i]->cs_[j-1] = (_ST_) cs;
       S[i]->sn_[j-1] = st::conj(S[i]->sn_[j-1]);
 #else

@@ -41,7 +41,7 @@
 
 using namespace phist::tpetra;
 
-extern "C" void phist_tpetra_node_create(node_t** node, const_comm_ptr_t vcomm, int* iflag);
+extern "C" void phist_tpetra_node_create(node_type** node, phist_const_comm_ptr vcomm, int* iflag);
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_c.h"

@@ -25,9 +25,9 @@ template<typename ST>
 class PreconTraits<ST,phist_IFPACK>
 {
 
-  typedef Tpetra::MultiVector<ST,lidx_t,gidx_t,node_t> mvec_t;
-  typedef Tpetra::CrsMatrix<ST,lidx_t,gidx_t,node_t> sparseMat_t;
-  typedef Ifpack2::Preconditioner<ST,lidx_t,gidx_t,node_t> prec_type;
+  typedef Tpetra::MultiVector<ST,phist_lidx,phist_gidx,node_type> mvec_t;
+  typedef Tpetra::CrsMatrix<ST,phist_lidx,phist_gidx,node_type> sparseMat_t;
+  typedef Ifpack2::Preconditioner<ST,phist_lidx,phist_gidx,node_type> prec_type;
   typedef phist::ScalarTraits<ST> st;
 
   public:
@@ -85,7 +85,7 @@ class PreconTraits<ST,phist_IFPACK>
     delete P;
   }
   
-  static void Apply(ST alpha, void const* vP, Dconst_mvec_ptr_t vX, ST beta, Dmvec_ptr_t vY, int* iflag)
+  static void Apply(ST alpha, void const* vP, TYPE(const_mvec_ptr) vX, ST beta, TYPE(mvec_ptr) vY, int* iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
     *iflag=0;
@@ -101,7 +101,7 @@ class PreconTraits<ST,phist_IFPACK>
     PHIST_CHK_IERR(P->apply(*X,*Y),*iflag);
   }
   
-  static void ApplyT(ST alpha, void const* P, Dconst_mvec_ptr_t X, ST beta, Dmvec_ptr_t Y, int* iflag)
+  static void ApplyT(ST alpha, void const* P, TYPE(const_mvec_ptr) X, ST beta, TYPE(mvec_ptr) Y, int* iflag)
   {
     PHIST_ENTER_FCN(__FUNCTION__);
     // we currently don't need to apply the transpose of a preconditioner, and in Ifpack
@@ -113,7 +113,7 @@ class PreconTraits<ST,phist_IFPACK>
   }
   
   static void ApplyShifted(ST alpha, const void* vP, ST const * sigma,
-          Dconst_mvec_ptr_t vX, ST beta,  Dmvec_ptr_t vY, int* iflag)
+          TYPE(const_mvec_ptr) vX, ST beta,  TYPE(mvec_ptr) vY, int* iflag)
   {
     // As we are talking about preconditioning here, we have the freedom to simply apply the same operator
     // to each column (ignoring the shift altogether or using a single shift). We could decide what to do 

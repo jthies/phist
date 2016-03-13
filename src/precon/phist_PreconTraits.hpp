@@ -13,7 +13,7 @@ namespace phist {
 //! default implementation of the traits class that allows us to interface
 //! with our own and third-party preconditioners. The default implementation
 //! just gives error messages about missing template specialization.
-template<typename ST,precon_t PT>
+template<typename ST,phist_Eprecon PT>
 class PreconTraits
 {
 
@@ -26,7 +26,7 @@ public:
   static void Usage()
   {
     PHIST_SOUT(PHIST_ERROR,"In order to use a certain preconditioner, you first have to implement class PreconTraits for it.\n"
-                           "This is currently only possible from within PHIST as the preconditioner has to exist as an enum precon_t\n"
+                           "This is currently only possible from within PHIST as the preconditioner has to exist as an enum phist_Eprecon\n"
                            "entry. However, you can also construct any preconditioning object your self and pass it to the solvers as\n"
                            "TYPE(linearOp), in which case you have complete freedom of implementation even if PHIST is pre-installed.\n");
   }

@@ -24,14 +24,14 @@ int main(int argc, char** argv)
   int i, iflag;
   bool verbose;
 
-  comm_ptr_t comm;
-  sparseMat_ptr_t A;
-  linearOp_ptr_t A_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
-  linearOp_ptr_t P_op; // preconditioner
+  phist_comm_ptr comm;
+  sparseMat_ptr A;
+  linearOp_ptr A_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  linearOp_ptr P_op; // preconditioner
   
-  const_map_ptr_t map; // map (element distribution) of vectors according to 
+  phist_const_map_ptr map; // map (element distribution) of vectors according to 
                        // the distribution of matrix rows
-  mvec_ptr_t X,XEX,B,R;// multivectors for solution and rhs (XEX exact solution to compare)
+  mvec_ptr X,XEX,B,R;// multivectors for solution and rhs (XEX exact solution to compare)
   
   MT tol;
   MT *rnorm2; /* for computing the residual norm axplicitly */
@@ -147,13 +147,13 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(ONE,A,XEX,ZERO,B,&iflag),iflag);
   
   /* create operator wrapper for computing Y=A*X using a CRS matrix */
-  A_op = (linearOp_ptr_t)malloc(sizeof(TYPE(linearOp)));
+  A_op = (linearOp_ptr)malloc(sizeof(TYPE(linearOp)));
   PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(A_op,A,&iflag),iflag);
   
   /* create the preconditioner */
   if (strcasecmp(prec_type,"None")!=0)
   {
-    P_op = (linearOp_ptr_t)malloc(sizeof(TYPE(linearOp)));
+    P_op = (linearOp_ptr)malloc(sizeof(TYPE(linearOp)));
     PHIST_ICHK_IERR(SUBR(precon_create)(P_op,A,ZERO,NULL,NULL,NULL,prec_type,prec_opts,&iflag),iflag);
   }
   num_iters=max_iters;

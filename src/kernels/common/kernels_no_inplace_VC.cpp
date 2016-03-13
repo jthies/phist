@@ -8,10 +8,10 @@ TYPE(const_sdMat_ptr) M_, int* iflag)
 #include "phist_std_typedefs.hpp"
   *iflag = 0;
 
-  lidx_t chunkSize = 64;
+  phist_lidx chunkSize = 64;
 
   // get dimensions
-  lidx_t nV;
+  phist_lidx nV;
   int nvec, nM, mM;
   PHIST_CHK_IERR( SUBR( mvec_my_length     ) (V_, &nV,        iflag), *iflag);
   PHIST_CHK_IERR( SUBR( mvec_num_vectors   ) (V_, &nvec,      iflag), *iflag);
@@ -23,7 +23,7 @@ TYPE(const_sdMat_ptr) M_, int* iflag)
   PHIST_CHK_IERR(*iflag = (nvec >= mM ? 0 : -1), *iflag);
 
   // get map
-  const_map_ptr_t map = NULL;
+  phist_const_map_ptr map = NULL;
   PHIST_CHK_IERR(SUBR(mvec_get_map)(V_, &map, iflag), *iflag);
 
   // create temporary mvec

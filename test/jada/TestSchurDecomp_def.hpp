@@ -81,7 +81,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
       MTest::TearDown();
     }
 
-    void DoSchurDecompTest(eigSort_t which, _MT_ tol, bool onlyDoReorderTest)
+    void DoSchurDecompTest(phist_EeigSort which, _MT_ tol, bool onlyDoReorderTest)
     {
       if( !typeImplemented_ )
         return;
@@ -190,7 +190,7 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
     }//DoSchurDecompTest
 
 
-    void CheckSchurDecomp(eigSort_t which, int nselect, int nsort, _MT_ tol)
+    void CheckSchurDecomp(phist_EeigSort which, int nselect, int nsort, _MT_ tol)
     {
       PHIST_DEB("check AS=ST\n");
       SUBR(sdMat_times_sdMat)(st::one(),mat3_,mat2_,st::zero(),mat4_,&iflag_);

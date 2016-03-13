@@ -25,31 +25,31 @@ namespace phist {
 namespace tpetra {
 
 // currently typedef'd in phist_typedefs.hpp (TODO)
-//typedef Kokkos::DefaultNode::DefaultNodeType node_t; // from the Kokkos node API
-typedef Tpetra::Map<lidx_t,gidx_t,node_t> map_t;
-typedef Tpetra::Import<lidx_t,gidx_t,node_t> import_t;
-typedef Tpetra::Export<lidx_t,gidx_t,node_t> export_t;
-typedef Teuchos::Comm<int> comm_t;
+//typedef Kokkos::DefaultNode::DefaultNodeType node_type; // from the Kokkos node API
+typedef Tpetra::Map<phist_lidx,phist_gidx,node_type> map_type;
+typedef Tpetra::Import<phist_lidx,phist_gidx,node_type> import_type;
+typedef Tpetra::Export<phist_lidx,phist_gidx,node_type> export_type;
+typedef Teuchos::Comm<int> comm_type;
 
 template<typename ST>
 class Traits
-  {
+{
   public:
   
   //! multi vectors
-  typedef Tpetra::MultiVector<ST,lidx_t,gidx_t,node_t> mvec_t;
+  typedef Tpetra::MultiVector<ST,phist_lidx,phist_gidx,node_type> mvec_t;
 
   //! serial dense matrix - just a multivector with a serial map.
-  typedef Tpetra::MultiVector<ST,lidx_t,gidx_t,node_t> sdMat_t;
+  typedef Tpetra::MultiVector<ST,phist_lidx,phist_gidx,node_type> sdMat_t;
 
   //! serial dense matrix from Teuchos, we need this for e.g. the BLAS interface.
-  typedef Teuchos::SerialDenseMatrix<lidx_t,ST> Teuchos_sdMat_t;
+  typedef Teuchos::SerialDenseMatrix<phist_lidx,ST> Teuchos_sdMat_t;
 
   //! CRS matrices
-  typedef Tpetra::CrsMatrix<ST,lidx_t,gidx_t,node_t> sparseMat_t;
+  typedef Tpetra::CrsMatrix<ST,phist_lidx,phist_gidx,node_type> sparseMat_t;
 
   //! for performing the MVM
-//  typedef Tpetra::CrsMatrixMultiplyOp<ST,ST,lidx_t,gidx_t,node_t> crsMVM_t;
+//  typedef Tpetra::CrsMatrixMultiplyOp<ST,ST,phist_lidx,phist_gidx,node_type> crsMVM_t;
 
   //! scalar 1
   static inline ST one(){return Teuchos::ScalarTraits<ST>::one();}
@@ -59,11 +59,11 @@ class Traits
 
   //! create a Teuchos' view of a local mvec/sdMat
   static Teuchos::RCP<const Teuchos_sdMat_t> CreateTeuchosView(Teuchos::RCP<const sdMat_t> M, int* iflag)
-    {
+  {
     *iflag=0;
-    lidx_t stride = M->getStride();
-    lidx_t nrows = M->getLocalLength();
-    lidx_t ncols = M->getNumVectors();
+    phist_lidx stride = M->getStride();
+    phist_lidx nrows = M->getLocalLength();
+    phist_lidx ncols = M->getNumVectors();
     
     Teuchos::ArrayRCP<const ST> M_tmp;
     bool status=true;
@@ -75,11 +75,11 @@ class Traits
     Teuchos::RCP<const Teuchos_sdMat_t> M_view
                   = Teuchos::rcp(new Teuchos_sdMat_t(Teuchos::View,M_val,stride,nrows,ncols));
     return M_view;     
-    }
+  }
 
   //! create a non-const Teuchos' view of a local mvec/sdMat
   static Teuchos::RCP<Teuchos_sdMat_t> CreateTeuchosViewNonConst(Teuchos::RCP<sdMat_t> M, int* iflag)
-    {
+  {
     *iflag=0;
     int stride = M->getStride();
     int nrows = M->getLocalLength();
@@ -94,10 +94,10 @@ class Traits
     Teuchos::RCP<Teuchos_sdMat_t> M_view
                   = Teuchos::rcp(new Teuchos_sdMat_t(Teuchos::View,M_val,stride,nrows,ncols));
     return M_view;                  
-    }
+  }
 
   
-  };
+};
 
 }//namespace tpetra
 }//namespace phist

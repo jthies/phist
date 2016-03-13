@@ -38,21 +38,21 @@ int main(int argc, char** argv)
 #include "phist_std_typedefs.hpp"
   int i, iflag;
 
-  comm_ptr_t comm;
-  sparseMat_ptr_t A;
-  linearOp_ptr_t A_op, B_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
-  linearOp_ptr_t Ainv_op; // wrapper for an iterative linear solver for computing interior 
+  comm_ptr comm;
+  sparseMat_ptr A;
+  linearOp_ptr A_op, B_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  linearOp_ptr Ainv_op; // wrapper for an iterative linear solver for computing interior 
                     // eigenvalues (used if which=TARGET)
   
-  const_map_ptr_t map; // map (element distribution) of vectors according to 
+  const_map_ptr map; // map (element distribution) of vectors according to 
                        // the distribution of matrix rows
-  mvec_ptr_t X,R;// multivectors for eigenvectors and residuals
+  mvec_ptr X,R;// multivectors for eigenvectors and residuals
 
   char* matname;
     
   // default input parameters:
   MT tol=1.0e-6;
-  eigSort_t which=phist_LM;
+  phist_EeigSort which=phist_LM;
   ST target_value;
   
   int sym=0;
@@ -121,7 +121,7 @@ PHIST_MAIN_TASK_BEGIN
     Ainv_op = new TYPE(linearOp);
     MT linTol=std::max(tol/10,2*mt::eps());
     int linIter=1000;
-    linSolv_t method=phist_CARP_CG;
+    phist_ElinSolv method=phist_CARP_CG;
     PHIST_ICHK_IERR(SUBR(linearOp_wrap_solver)(Ainv_op,A,shift,
         method,block_size,linTol,linIter,&iflag),iflag);
   }
