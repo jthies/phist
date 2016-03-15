@@ -477,9 +477,18 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
     PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(st::one(),AVv,Sv,st::zero(),Au_ptr,iflag),*iflag);
 
     prev_nrm=res_nrm;
-
-    PHIST_CHK_IERR(SUBR(computeResidual)(B_op, r_ptr, Au_ptr, u_ptr,
-        rtil_ptr, Qv, Vtmp, Theta, atil, &atilv, &res_nrm, nv, nconv, iflag),*iflag);
+#if defined(IS_DOUBLE)&&!defined(IS_COMPLEX)
+    if (opts.custom_computeResidual!=NULL)
+    {
+      PHIST_CHK_IERR(opts.custom_computeResidual(opts.customSolver,B_op, r_ptr, Au_ptr, u_ptr,
+          rtil_ptr, Qv, Vtmp, Theta, atil, &atilv, &res_nrm, nv, nconv, iflag),*iflag);
+    }
+    else
+#endif
+    {
+      PHIST_CHK_IERR(SUBR(computeResidual)(B_op, r_ptr, Au_ptr, u_ptr,
+          rtil_ptr, Qv, Vtmp, Theta, atil, &atilv, &res_nrm, nv, nconv, iflag),*iflag);
+    }
 
     PHIST_SOUT(PHIST_INFO,"JDQR Iter %d\tdim(V)=%d\ttheta=%8.4g%+8.4gi\t\tr_est=%8.4e\n",it,m,ct::real(theta),ct::imag(theta),res_nrm);
     // deflate converged eigenpairs
@@ -575,9 +584,18 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
       // get the diagonal block (1x1 or 2x2) corresponding to theta
       PHIST_CHK_IERR(SUBR(sdMat_view_block)(T,&Theta,ev_pos,ev_pos+nv-1,ev_pos,ev_pos+nv-1,iflag),*iflag);
 
-      PHIST_CHK_IERR(SUBR(computeResidual)(B_op, r_ptr, Au_ptr, u_ptr,
-          rtil_ptr, Qv, Vtmp, Theta, atil, &atilv, &res_nrm, nv, nconv, iflag),*iflag);
-
+#if defined(IS_DOUBLE)&&!defined(IS_COMPLEX)
+      if (opts.custom_computeResidual!=NULL)
+      {
+        PHIST_CHK_IERR(opts.custom_computeResidual(opts.customSolver, B_op, r_ptr, Au_ptr, u_ptr,
+            rtil_ptr, Qv, Vtmp, Theta, atil, &atilv, &res_nrm, nv, nconv, iflag),*iflag);
+      }
+      else
+#endif
+      {
+        PHIST_CHK_IERR(SUBR(computeResidual)(B_op, r_ptr, Au_ptr, u_ptr,
+            rtil_ptr, Qv, Vtmp, Theta, atil, &atilv, &res_nrm, nv, nconv, iflag),*iflag);
+      }
       // again, sort the largest Ritz value to the top
 //    nselect = m==maxBas-1? minBas: 1;
 //    nsort = 1;
