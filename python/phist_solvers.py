@@ -114,6 +114,8 @@ class phist_jadaOpts_t(_ct.Structure):
                                            int maxIter,          void* t,
                                            int robust,
                                            int * iflag);
+         //! (for internal use only)
+         void (*custom_computeResidual)(...); 
     '''
 
     _fields_ = [("numEigs",             c_int),
@@ -138,7 +140,8 @@ class phist_jadaOpts_t(_ct.Structure):
                 ("innerSolvStopAfterFirstConverged", c_int),
                 ("customSolver",        c_void_p),
                 ("customSolver_run",    c_void_p),
-                ("customSolver_run1",  c_void_p),]
+                ("customSolver_run1",  c_void_p),
+                ("custom_computeResidual", c_void_p)]
 
     def __init__(self):
         super(_ct.Structure,self).__init__()
