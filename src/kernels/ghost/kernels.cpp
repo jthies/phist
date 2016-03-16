@@ -296,8 +296,11 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
   ghost_map_t* map = new ghost_map_t;
   
   map->ctx=NULL;
-//TODO: check ghost_err_t return codes everywhere like this:
-  PHIST_CHK_GERR(ghost_context_create(&map->ctx,nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,GHOST_SPARSEMAT_SRC_NONE, *comm,1.0),*iflag);
+  // passing in 0.0 here will lead to automatic load-balancing depending on the STREAM benchmark performance on each MPI 
+  // rank. We certainly want to expose this cool feature to the user, the question is wether it should be the default.
+  double proc_weight=0.0;
+  PHIST_CHK_GERR(ghost_context_create(&map->ctx,nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,
+        GHOST_SPARSEMAT_SRC_NONE, *comm,proc_weight),*iflag);
   map->vtraits_template=phist_default_vtraits();
   // in ghost terminology, we look at LHS=A*RHS, the LHS is based on the
   // row distribution of A, the RHS has halo elements to allow importing from
