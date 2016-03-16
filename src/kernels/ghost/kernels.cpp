@@ -98,6 +98,20 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
 
 }
 
+int get_perm_flag(int outlev)
+{
+#ifdef USE_ZOLTAN
+          PHIST_SOUT(outlev, "Trying to repartition the matrix with Zoltan\n");
+          return GHOST_SPARSEMAT_ZOLTAN;
+#elif defined(USE_SCOTCH)
+          PHIST_SOUT(outlev, "Trying to repartition the matrix with SCOTCH\n");
+          return GHOST_SPARSEMAT_SCOTCHIFY;
+#else
+          PHIST_SOUT(outlev, "SCOTCH not available, no matrix repartitioning\n");
+          return 0;
+#endif
+}
+
  
     //! private helper function to create a vtraits object
     ghost_densemat_traits phist_default_vtraits()
@@ -357,6 +371,20 @@ extern "C" void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iuppe
   ghost_rank(&me,map->ctx->mpicomm);
   *iupper = map->ctx->lfRow[me]+map->ctx->lnrows[me]-1;
   }
+
+/* helper function that tells the matrix generation routines which 
+   repartitioning flags they should pass to GHOST (depending on how
+   GHOST was compiled/installed different options may be available)
+   
+   The order we try is Zoltan/Scotch/nothing
+   
+ */
+   
+#ifdef GHOST_HAVE_ZOLTAN
+#define USE_ZOLTAN
+#elif defined(GHOST_HAVE_SCOTCH)
+#define USE_SCOTCH
+#endif
 
 
 /* use GHOST stream benchmarks instead of those in common/ */

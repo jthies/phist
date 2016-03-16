@@ -1,17 +1,12 @@
 #include "phist_config.h"
 #include "ghost/config.h"
 
-#ifdef GHOST_HAVE_SCOTCH
-#define USE_SCOTCH
-#endif
-
 #if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
 template<>
 Teuchos::RCP<node_type> ghost::TsqrAdaptor< _ST_ >::node_=Teuchos::null;
 #endif
 
 using namespace phist::ghost_internal;
-
 
 // we implement only the double precision real type D
 extern "C" void SUBR(type_avail)(int* iflag)
@@ -56,18 +51,14 @@ PHIST_TASK_BEGIN(ComputeTask)
 
         mtraits.C = sellC;
         mtraits.sortScope = sellSigma;
-        if (mtraits.sortScope > 1) {
+        if (mtraits.sortScope > 1) 
+        {
             flags=(ghost_sparsemat_flags)(flags|GHOST_SPARSEMAT_PERMUTE);
         }
-      if (repart)
-      {
-#ifdef USE_SCOTCH
-          PHIST_SOUT(outlev, "Trying to repartition the matrix with SCOTCH\n");
-          flags = (ghost_sparsemat_flags)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
-#else
-          PHIST_SOUT(outlev, "SCOTCH not available, no matrix repartitioning\n");
-#endif
-      }
+        if (repart)
+        {
+          flags = (ghost_sparsemat_flags)(flags|get_perm_flag(outlev));
+        }
         mtraits.datatype = st::ghost_dt;
         mtraits.flags = flags;
         char* cfname=const_cast<char*>(filename);
@@ -128,12 +119,7 @@ PHIST_TASK_BEGIN(ComputeTask)
 
         if (repart)
         {
-#ifdef USE_SCOTCH
-          PHIST_SOUT(outlev, "Trying to repartition the matrix with SCOTCH\n");
-          flags = (ghost_sparsemat_flags)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
-#else
-          PHIST_SOUT(outlev, "SCOTCH not available, no matrix repartitioning\n");
-#endif
+          flags = (ghost_sparsemat_flags)(flags|get_perm_flag(outlev));
         }
         mtraits.datatype = st::ghost_dt;
         mtraits.flags = flags;
@@ -1888,16 +1874,7 @@ PHIST_TASK_BEGIN(ComputeTask)
 
         if (repart)
         {
-#ifdef USE_SCOTCH
-          PHIST_SOUT(outlev, "Trying to repartition the matrix with SCOTCH\n");
-          flags = (ghost_sparsemat_flags)(flags|GHOST_SPARSEMAT_SCOTCHIFY);
-#else
-          PHIST_SOUT(outlev, "SCOTCH not available, no matrix repartitioning\n");
-#endif
-        }
-        else
-        {
-          PHIST_SOUT(outlev, "No matrix repartitioning requested\n");
+          flags = (ghost_sparsemat_flags)(flags|get_perm_flag(outlev));
         }
         mtraits.datatype = st::ghost_dt;
         mtraits.flags = flags;

@@ -27,6 +27,7 @@ extern "C" void phist_bench_stream_load(double* max_bw, int* iflag)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_SOUT(PHIST_VERBOSE, "Streaming LOAD benchmark: ");
   PHIST_CHK_GERR(ghost_bench_stream(GHOST_BENCH_STREAM_LOAD, max_bw),*iflag);
+  *max_bw*=1.0e9; // GHOST returns GB/s, the PHIST equivalent B/s
   PHIST_SOUT(PHIST_VERBOSE, "measured %8.4g Gb/s\n", *max_bw/1.e9);
 }
 
@@ -35,6 +36,7 @@ extern "C" void phist_bench_stream_store(double* max_bw, int* iflag)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_SOUT(PHIST_VERBOSE, "Streaming STORE benchmark: ");
   PHIST_CHK_GERR(ghost_bench_stream(GHOST_BENCH_STREAM_STORE, max_bw),*iflag);
+  *max_bw*=1.0e9; // GHOST returns GB/s, the PHIST equivalent B/s
   PHIST_SOUT(PHIST_VERBOSE, "measured %8.4g Gb/s\n", *max_bw/1.e9);
 }
 
@@ -43,6 +45,7 @@ extern "C" void phist_bench_stream_triad(double* max_bw, int* iflag)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_SOUT(PHIST_VERBOSE, "Streaming TRIAD benchmark: ");
   PHIST_CHK_GERR(ghost_bench_stream(GHOST_BENCH_STREAM_TRIAD, max_bw),*iflag);
+  *max_bw*=1.0e9; // GHOST returns GB/s, the PHIST equivalent B/s
   PHIST_SOUT(PHIST_VERBOSE, "measured %8.4g Gb/s\n", *max_bw/1.e9);
 }
 

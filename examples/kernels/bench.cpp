@@ -9,7 +9,7 @@
 // macro to do several barriers to make sure output is finished on a rank
 #define IO_BARRIER \
 for (int _io_barrier_i=0; _io_barrier_i<20; _io_barrier_i++) \
-{fflush(stdout); MPI_Barrier(MPI_COMM_WORLD);
+{fflush(stdout); MPI_Barrier(MPI_COMM_WORLD);}
 
 int main(int argc, char** argv)
 {
@@ -69,6 +69,7 @@ for (int i=0; i<size; i++)
   if (rank==i) fprintf(stdout," %5.3g |",bw_store);
   IO_BARRIER;
 }
+
 PHIST_SOUT(PHIST_INFO,"\n|  triad    |");
 for (int i=0; i<size; i++)
 { 
@@ -76,7 +77,7 @@ for (int i=0; i<size; i++)
   IO_BARRIER;
 }
 
-PHIST_SOUT(PHIST_INFO,"=============");
+PHIST_SOUT(PHIST_INFO,"\n=============");
 for (int i=0; i<size; i++) PHIST_SOUT(PHIST_INFO,"========");
 
 // deduce process weights from the results
