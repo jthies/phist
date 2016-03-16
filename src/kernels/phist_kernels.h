@@ -97,13 +97,18 @@ void phist_map_get_ilower(phist_const_map_ptr map, phist_gidx* ilower, int* ifla
 //! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
 void phist_map_get_iupper(phist_const_map_ptr map, phist_gidx* iupper, int* iflag);
 
+//!@}
+
+//! \name STREAM benchmarks for measuring main memory bandwidth. These are implemented in the common/
+//! subdirectory for those kernel libraries that use only MPI+threads
+//!@{
+
 //! simple load dominated streaming benchmark
 void phist_bench_stream_load(double* bw, int* iflag);
 //! simple store dominated streaming benchmark
 void phist_bench_stream_store(double* bw, int* iflag);
 //! simple stream triad benchmark
 void phist_bench_stream_triad(double* bw, int* iflag);
-
 //!@}
 
 //! this function should not be called by the user but by each kernel lib in kernels_init()

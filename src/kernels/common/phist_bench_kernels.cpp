@@ -18,8 +18,7 @@
 #include "phist_bench_kernels.h"
 #include "stream_bench.h"
 
-extern "C" {
-void phist_bench_stream_load(double* max_bw, int* iflag)
+extern "C" void phist_bench_stream_load(double* max_bw, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   double *data = NULL;
@@ -37,7 +36,7 @@ void phist_bench_stream_load(double* max_bw, int* iflag)
   PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s\n", *max_bw/1.e9);
 }
 
-void phist_bench_stream_store(double* max_bw, int* iflag)
+extern "C" void phist_bench_stream_store(double* max_bw, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   double *data = NULL;
@@ -55,7 +54,7 @@ void phist_bench_stream_store(double* max_bw, int* iflag)
   PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s\n", *max_bw/1.e9);
 }
 
-void phist_bench_stream_triad(double* max_bw, int* iflag)
+extern "C" void phist_bench_stream_triad(double* max_bw, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   double *x = NULL;
@@ -73,7 +72,6 @@ void phist_bench_stream_triad(double* max_bw, int* iflag)
   }
   PHIST_CHK_IERR(dbench_stream_triad_destroy(x,y,z,iflag),*iflag);
   PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s\n", *max_bw/1.e9);
-}
 }
 
 

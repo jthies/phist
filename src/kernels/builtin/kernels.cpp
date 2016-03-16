@@ -253,6 +253,8 @@ void phist_map_get_global_length(phist_const_map_ptr vmap, phist_gidx* nglob, in
 void phist_map_get_ilower(phist_const_map_ptr vmap, phist_gidx* ilower, int* iflag);
 void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iupper, int* iflag);
 
+#include "../common/phist_bench_kernels.cpp"
+
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "../common/kernels_no_impl.cpp"

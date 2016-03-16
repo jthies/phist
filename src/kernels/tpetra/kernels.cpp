@@ -261,3 +261,4 @@ extern "C" void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iuppe
 }
 
 
+#include "../common/phist_bench_kernels.cpp"

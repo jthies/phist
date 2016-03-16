@@ -118,6 +118,8 @@ void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iupper, int* ifl
 
 } //extern "C"
 
+#include "../common/phist_bench_kernels.cpp"
+
 #include "phist_gen_s.h"
 #include "kernels_def.hpp"
 #include "kernels_no_carp.cpp"

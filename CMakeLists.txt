@@ -653,7 +653,6 @@ endif()
 # sopme `derived' kernel functions, e.g. mvec_my_length is implemented via mvec_get_map/map_get_local_lenth etc.
 # and common things like benchmarks
 LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/common/kernels_common_impl.cpp
-                                ${PROJECT_SOURCE_DIR}/src/kernels/common/phist_bench_kernels.cpp
                                 ${PROJECT_SOURCE_DIR}/src/kernels/common/stream_bench.c)
 
 set (PHIST_TOOLS_SOURCE ${PROJECT_SOURCE_DIR}/src/tools/phist_tools.cpp
