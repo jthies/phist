@@ -218,10 +218,8 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   ghost_machine_npu(&npu,GHOST_NUMANODE_ANY);
 
   ghost_pumap_string(&str);
-  PHIST_SOUT(PHIST_VERBOSE,"%s\n",str);
+  if (PHIST_OUTLEV>=PHIST_VERBOSE) fprintf(stdout,"%s\n",str);
   free(str); str = NULL;
-
-  PHIST_SOUT(PHIST_INFO,"The thread pool consists of %d threads\n",thpool->nThreads);
 
 #if defined(PHIST_HAVE_KOKKOS)&&defined(PHIST_HAVE_BELOS)
    PHIST_SOUT(PHIST_INFO,"TSQR using node-type %s\n",node_type::name().c_str());
