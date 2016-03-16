@@ -11,6 +11,9 @@
 for (int _io_barrier_i=0; _io_barrier_i<20; _io_barrier_i++) \
 {fflush(stdout); MPI_Barrier(MPI_COMM_WORLD);}
 
+/* This driver just runs three STREAM benchmarks to measure the memory bandwidth
+   achieved by each MPI Process. The benchmarks are LOAD, STORE and TRIAD.
+   */
 int main(int argc, char** argv)
 {
   int iflag = 0;
@@ -43,44 +46,7 @@ MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 MPI_Comm_size(MPI_COMM_WORLD,&comm_size);
 size=comm_size;
 
-if (size>8)
-{
-  PHIST_SOUT(PHIST_WARNING,"showing results of first 10 MPI ranks only\n");
-  size=10;
-}
-
-PHIST_SOUT(PHIST_INFO,"\nSTREAM BENCHMARK RESULTS (GB/s) per MPI rank\n");
-PHIST_SOUT(PHIST_INFO,"=============");
-for (int i=0; i<size; i++) PHIST_SOUT(PHIST_INFO,"========");
-PHIST_SOUT(PHIST_INFO,"\n| benchmark |");
-for (int i=0; i<size; i++) PHIST_SOUT(PHIST_INFO,"  P%d   |",i);
-PHIST_SOUT(PHIST_INFO,"\n-------------");
-for (int i=0; i<size; i++) PHIST_SOUT(PHIST_INFO,"--------");
-
-PHIST_SOUT(PHIST_INFO,"\n|  load     |");
-for (int i=0; i<size; i++)
-{ 
-  if (rank==i) fprintf(stdout," %5.3g |",bw_load);
-  IO_BARRIER;
-}
-PHIST_SOUT(PHIST_INFO,"\n|  store    |");
-for (int i=0; i<size; i++)
-{ 
-  if (rank==i) fprintf(stdout," %5.3g |",bw_store);
-  IO_BARRIER;
-}
-
-PHIST_SOUT(PHIST_INFO,"\n|  triad    |");
-for (int i=0; i<size; i++)
-{ 
-  if (rank==i) fprintf(stdout," %5.3g |",bw_triad);
-  IO_BARRIER;
-}
-
-PHIST_SOUT(PHIST_INFO,"\n=============");
-for (int i=0; i<size; i++) PHIST_SOUT(PHIST_INFO,"========");
-
-// deduce process weights from the results
+// collect the results for printing them
 double all_store[comm_size], all_load[comm_size], all_triad[comm_size];
 
 MPI_Gather(&bw_load,1,MPI_DOUBLE,
@@ -92,8 +58,45 @@ MPI_Gather(&bw_store,1,MPI_DOUBLE,
 MPI_Gather(&bw_triad,1,MPI_DOUBLE,
            all_triad,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
+
+if (size>10)
+{
+  PHIST_SOUT(PHIST_WARNING,"showing results of first 10 MPI ranks only\n");
+  size=10;
+}
+
 if (rank==0)
 {
+  PHIST_SOUT(PHIST_INFO,"\nSTREAM BENCHMARK RESULTS (GB/s) per MPI rank\n");
+  PHIST_SOUT(PHIST_INFO,"=============");
+  for (int i=0; i<size; i++) PHIST_SOUT(PHIST_INFO,"========");
+  PHIST_SOUT(PHIST_INFO,"\n| benchmark |");
+  for (int i=0; i<size; i++) PHIST_SOUT(PHIST_INFO,"  P%d   |",i);
+  PHIST_SOUT(PHIST_INFO,"\n-------------");
+  for (int i=0; i<size; i++) PHIST_SOUT(PHIST_INFO,"--------");
+
+  PHIST_SOUT(PHIST_INFO,"\n|  load     |");
+  for (int i=0; i<size; i++)
+  { 
+    fprintf(stdout," %5.3g |",all_load[i]);
+  }
+  PHIST_SOUT(PHIST_INFO,"\n|  store    |");
+  for (int i=0; i<size; i++)
+  {
+    fprintf(stdout," %5.3g |",all_store[i]);
+  }
+
+  PHIST_SOUT(PHIST_INFO,"\n|  triad    |");
+  for (int i=0; i<size; i++)
+{   
+    fprintf(stdout," %5.3g |",all_triad[i]);
+  }
+
+  PHIST_SOUT(PHIST_INFO,"\n=============");
+  for (int i=0; i<size; i++) PHIST_SOUT(PHIST_INFO,"========");
+
+  // deduce process weights from the results
+
   double bw_triad_total=0.0;
   for (int i=0; i<comm_size; i++) bw_triad_total+=all_triad[i];
   PHIST_SOUT(PHIST_INFO,"\n\nsuggested weights based on stream triad benchmark:\n");
