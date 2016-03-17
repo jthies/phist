@@ -22,7 +22,17 @@ const char* phist_retcode2str(int code);
 const char* phist_ghost_error2str(ghost_error code);
 #endif
 const char* phist_kernel_lib();
+
+# ifdef PHIST_HAVE_MPI
+
+//! pretty-print process-local strings in order. This function should
+//! not be used directly but via the wrapper macro PHIST_ORDERED_OUT(...)
+int phist_ordered_fprintf(FILE* stream, MPI_Comm comm, const char* fmt, ...);
+
+# endif
+
 #ifdef __cplusplus
 }
 #endif
+
 #endif

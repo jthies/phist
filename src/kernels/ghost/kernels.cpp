@@ -218,7 +218,7 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   ghost_machine_npu(&npu,GHOST_NUMANODE_ANY);
 
   ghost_pumap_string(&str);
-  if (PHIST_OUTLEV>=PHIST_VERBOSE) fprintf(stdout,"%s\n",str);
+  PHIST_ORDERED_OUT(PHIST_VERBOSE,"%s\n",str);
   free(str); str = NULL;
 
 #if defined(PHIST_HAVE_KOKKOS)&&defined(PHIST_HAVE_BELOS)

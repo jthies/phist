@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <string>
 
+#include <cstring>
+
 // little helper utiliity so that we can recognize strings regardless of case,
 // e.g. carp_cg, CARP_CG, carp_CG => CARP_CG. Note that "carp-cg" won't work
 // because the dash is not transformed, though.
@@ -215,4 +217,67 @@ extern "C" const char* phist_kernel_lib()
 thread_local bool phist_CheckKernelFcnNesting::nestedKernelCall_ = false;
 #else
 bool phist_CheckKernelFcnNesting::nestedKernelCall_ = false;
+#endif
+
+#ifdef PHIST_HAVE_MPI
+//! pretty-print process-local strings in order. This function should
+//! not be used directly but via the wrapper macro PHIST_ORDERED_OUT(...)
+//! the return value is the number of characters contributed by this process.
+extern "C" int phist_ordered_fprintf(FILE* stream, MPI_Comm comm, const char* fmt, ...)
+{
+  int rank, size;
+  char *local_string=NULL;
+  int local_length, global_length;
+  int *char_counts=NULL, *char_disps=NULL;
+  char* global_string=NULL;
+  va_list args;
+  va_start(args, fmt);
+  local_length=vasprintf(&local_string,fmt,args);
+  
+  // use MPI to gather the global string
+  MPI_Comm_rank(comm,&rank);
+  MPI_Comm_size(comm,&size);
+  if (rank==0)
+  {
+    char_counts=new int[size];    
+    char_disps=new int[size+1];
+  }
+  // gather remote string lengths
+  MPI_Gather(&local_length,1,MPI_INT,
+              char_counts, 1,MPI_INT,
+              0, comm);
+  
+  if (rank==0)
+  {
+    char_disps[0]=0;
+    for (int i=0; i<size;i++) char_disps[i+1]=char_disps[i]+char_counts[i];
+    global_length=char_disps[size];
+    if (global_length>1e8)
+    {
+      fprintf(stderr,"WARNING: you're gathering a very large string, PHIST_ORDERED_OUT is intended for short messages\n");
+    }
+    global_string=new char[global_length];
+  }
+  MPI_Gatherv(local_string,local_length,MPI_CHAR,
+              global_string,char_counts,char_disps,MPI_CHAR,
+              0, comm);
+  
+  // print the global string
+  if (rank==0)
+  {
+    fprintf(stream,global_string);
+  }
+  
+  // clean up the mess
+  delete [] local_string;
+  if (rank==0)
+  {
+    delete [] char_counts;
+    delete [] char_disps;
+    delete [] global_string;
+  }
+  // return the number of characters contributed by this process
+  return local_length;
+}
+
 #endif
