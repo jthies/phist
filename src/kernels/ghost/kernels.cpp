@@ -145,11 +145,11 @@ int get_perm_flag(int outlev)
       return vtraits;
     }  
     
-    ghost_map_t* MapGarbageCollector::new_map(const void* p)
+    ghost_map* MapGarbageCollector::new_map(const void* p)
     {
-        ghost_map_t* m = new ghost_map_t;
-        maps_[p].push_back(m);
-        return m;
+      ghost_map* m = new ghost_map;
+      maps_[p].push_back(m);
+      return m;
     }
 
     void MapGarbageCollector::delete_maps(void* p)
@@ -292,11 +292,11 @@ extern "C" void phist_comm_get_mpi_comm(phist_const_comm_ptr vcomm, MPI_Comm* mp
 //! processes. Vectors based on this map will have halo points so that   
 //! they can be used as either X or Y in Y=A*X operations.
 extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm, phist_gidx nglob, int *iflag)
-  {
+{
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*iflag);
 
-  ghost_map_t* map = new ghost_map_t;
+  ghost_map* map = new ghost_map;
   
   map->ctx=NULL;
   // passing in 0.0 here will lead to automatic load-balancing depending on the STREAM benchmark performance on each MPI 
@@ -320,64 +320,64 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
   map->permutation=NULL; //permutation is defined by a matrix object.
 
   *vmap=(phist_map_ptr)(map);
-  }
+}
 
 //!
 extern "C" void phist_map_delete(phist_map_ptr vmap, int *iflag)
-  {
+{
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(ghost_map_t,map,vmap,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_map,map,vmap,*iflag);
   // should be safe if calling order is respected? (e.g. create map, create stuff with map, destroy stuff, destroy map)
   ghost_context_destroy(map->ctx);
   delete map;
   vmap=NULL;
-  }
+}
   
 //!
 extern "C" void phist_map_get_comm(phist_const_map_ptr vmap, phist_const_comm_ptr* vcomm, int* iflag)
-  {
+{
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
   *vcomm = (phist_const_comm_ptr)(&map->ctx->mpicomm);
-  }
+}
 
 //!
 extern "C" void phist_map_get_local_length(phist_const_map_ptr vmap, phist_lidx* nloc, int* iflag)
-  {
+{
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
   int me;
   ghost_rank(&me,map->ctx->mpicomm);
   *nloc=map->ctx->lnrows[me];
-  }
+}
 
 //!
 extern "C" void phist_map_get_global_length(phist_const_map_ptr vmap, phist_gidx* nglob, int* iflag)
-  {
+{
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
   int me;
   *nglob=map->ctx->gnrows;
-  }
+}
 
 //! returns the smallest global index in the map appearing on my partition.
 extern "C" void phist_map_get_ilower(phist_const_map_ptr vmap, phist_gidx* ilower, int* iflag)
-  {
+{
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
   int me;
   ghost_rank(&me,map->ctx->mpicomm);
   *ilower = map->ctx->lfRow[me];
-  }
+}
 //! returns the largest global index in the map appearing on my partition.
 extern "C" void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iupper, int* iflag)
-  {
+{
   *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const ghost_map_t,map,vmap,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
   int me;
   ghost_rank(&me,map->ctx->mpicomm);
   *iupper = map->ctx->lfRow[me]+map->ctx->lnrows[me]-1;
-  }
+}
 
 /* helper function that tells the matrix generation routines which 
    repartitioning flags they should pass to GHOST (depending on how

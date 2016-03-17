@@ -165,9 +165,13 @@ extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, phist_
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_sparsemat,A,vA,*iflag);
   //!@TODO: cache this as it never gets deleted otherwise!
-  ghost_map_t* map = mapGarbageCollector.new_map(vA);
+  ghost_map* map = mapGarbageCollector.new_map(vA);
   map->ctx = A->context;
   map->vtraits_template=phist_default_vtraits();
+  // right now we don't allow 'undoing' a global permutation,
+  // but by using mvec_to_mvec we can undo a local permutation
+  // that comes e.g. from a sorting scope sigma>1
+  map->permutation=A->context->perm_local;
   *vmap = (phist_const_map_ptr)map;
 }
 
@@ -181,7 +185,7 @@ extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, phist_
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_sparsemat,A,vA,*iflag);
   //!@TODO: cache this as it never gets deleted otherwise!
-  ghost_map_t* map = mapGarbageCollector.new_map(vA);
+  ghost_map* map = mapGarbageCollector.new_map(vA);
   map->ctx = A->context;
   map->vtraits_template=phist_default_vtraits();
   *vmap = (phist_const_map_ptr)map;
@@ -223,7 +227,7 @@ extern "C" void SUBR(mvec_create)(TYPE(mvec_ptr)* vV,
   PHIST_PERFCHECK_VERIFY_MVEC_CREATE(vmap,nvec,iflag);
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
-  PHIST_CAST_PTR_FROM_VOID(const ghost_map_t, map,vmap,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map, map,vmap,*iflag);
   ghost_densemat* result;
   ghost_densemat_traits vtraits = map->vtraits_template;/*ghost_cloneVtraits(map->vtraits_template);*/
         vtraits.ncols=nvec;
@@ -274,7 +278,7 @@ extern "C" void SUBR(mvec_create_view)(TYPE(mvec_ptr)* vV, phist_const_map_ptr v
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
-  PHIST_CAST_PTR_FROM_VOID(const ghost_map_t, map,vmap,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map, map,vmap,*iflag);
   ghost_densemat* result;
   ghost_densemat_traits vtraits = map->vtraits_template;/*ghost_cloneVtraits(map->vtraits_template);*/
         vtraits.flags|=GHOST_DENSEMAT_VIEW;
@@ -365,7 +369,7 @@ extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, phist_const_map_ptr*
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_densemat,V,vV,*iflag);
   //!@TODO: cache this as it never gets deleted otherwise!
-  ghost_map_t* map = mapGarbageCollector.new_map(vV);
+  ghost_map* map = mapGarbageCollector.new_map(vV);
   map->ctx=V->context; 
   map->vtraits_template=V->traits;
   *vmap=(phist_const_map_ptr)map;
@@ -525,29 +529,72 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V_in,v_in,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V_out,v_out,*iflag);
   
-  if (V_in->context!=V_out->context)
+  ghost_map const *map_in=NULL, *map_out=NULL;
+  PHIST_CHK_IERR(SUBR(mvec_get_map)(v_in, (void const**)&map_in,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_get_map)(v_out,(void const**)&map_out,iflag),*iflag);
+
+  bool outputPermuted=(map_out->permutation!=NULL);
+  bool inputPermuted=(map_in->permutation!=NULL);
+  
+  bool can_do_it=false;
+  bool same_context=(map_in->ctx==map_out->ctx);
+
+  int me,nrank;
+  ghost_rank(&me, map_in->ctx->mpicomm);
+  ghost_nrank(&nrank,map_in->ctx->mpicomm);
+  
+  // check compatibility of the two maps. We can currently only
+  // do local permutations with this function.
+  // Also decide wether to "permute or unpermute"
+  if (map_in->permutation==map_out->permutation&&inputPermuted)
   {
-    PHIST_SOUT(PHIST_WARNING,"function %s only implemented for simple permutation operations\n"
-                             "where the result and input vectors have the same context and  \n"
-                             "one of them may be permuted\n",__FUNCTION__);
-    *iflag=PHIST_NOT_IMPLEMENTED;
-    return;
+    // if both have the same permutation we can simply copy
+    // the data and are done.
+    can_do_it=true;
   }
-  
-  bool resultPermuted=V_out->traits.flags && IS_PERMUTED;
-  bool inputPermuted=V_out->traits.flags && IS_PERMUTED;
-  
-  // first copy the data
-  PHIST_CHK_GERR(V_out->fromVec(V_out,V_in,0,0),*iflag);
-  // check permutation state
-  if (resultPermuted==inputPermuted) return;
-  if (resultPermuted)
+  else if (same_context)
   {
-    PHIST_CHK_GERR(V_out->permute(V_out,GHOST_PERMUTATION_ORIG2PERM),*iflag);
+    // good situation: both maps are local permutations of the same thing
+    can_do_it=true;
   }
   else
   {
+    // the contexts are different, so we have to check if the number of local rows is identical
+    // on all processes. The permutations are not the same or not present, so they tell us nothing
+    // about compatibility of the maps.
+    can_do_it=(map_in->ctx->mpicomm==map_out->ctx->mpicomm);
+    if (can_do_it)
+    {
+      for (int p=0; p<nrank; p++) can_do_it&=(map_in->ctx->lnrows[p]==map_out->ctx->lnrows[p]);
+    }
+  }
+    
+  if (!can_do_it)
+  {
+    PHIST_SOUT(PHIST_WARNING,"function %s only implemented for simple permutation operations\n"
+                             "where the result and input vectors have the same context or number of rows \n"
+                             "either of them may be permuted\n",__FUNCTION__);
+    *iflag=PHIST_NOT_IMPLEMENTED;
+    return;
+  }
+
+  
+  
+  // first copy the data. If the contexts are different but
+  // match in terms of MPI distribution, cheat ghost into copying
+  // the data anyway
+  V_out->context=map_in->ctx;
+  PHIST_CHK_GERR(V_out->fromVec(V_out,V_in,0,0),*iflag);
+  // apply permutation of input vector
+  if (inputPermuted)
+  {
     PHIST_CHK_GERR(V_out->permute(V_out,GHOST_PERMUTATION_PERM2ORIG),*iflag);
+  }
+  // reset the original context
+  V_out->context=map_out->ctx;
+  if (outputPermuted)
+  {
+    PHIST_CHK_GERR(V_out->permute(V_out,GHOST_PERMUTATION_ORIG2PERM),*iflag);
   }
   return;
 }

@@ -32,13 +32,27 @@ namespace phist
 //! communication patterns, and it is owned by a sparse matrix. In order to create a vector
 //! we need the vtraits_t object, which also knows about number of vectors and             
 //! data type. So we define our own struct with a pointer to the context object and a temp-
-//! late for cloning the vtraits in mvec_create
-typedef struct ghost_map_t
+//! late for cloning the vtraits in mvec_create.
+//!
+//! A map can be obtained in two ways in phist: by map_create or by asking a matrix for its
+//! row/range/col/domain map. In the former case we will return a uniformly distributed map
+//! with a newly created context. Vectors (mvecs) based on such an object can not be multi-
+//! plied by a matrix. The maps obtained from a sparseMat are presently identical (row/range/
+//! col/domain). This is because ghost keeps the communication buffer for spmv in the vector,
+//! not the matrix. So any object that can be multiplied by a matrix requires the "column map",
+//! and it is not possible to include a vector permutation or redistribution in the spmv, as
+//! is allowed by the Petra object model.
+//!
+//! The only way to convert an mvec from one map into another is by calling the function
+//! mvec_to_mvec. This, however, currently only works if both maps have the same nubmer of
+//! local elements on each process, and at most one of them has a permutation object. In this
+//! case mvec_to_mvec is either a copy or local permutation operation.
+typedef struct ghost_map
   {
   ghost_context* ctx;
   ghost_densemat_traits vtraits_template;
   ghost_permutation *permutation;
-  } ghost_map_t;
+  } ghost_map;
 
 
     //! small helper function to preclude integer overflows (ghost allows 64 bit local indices, 
@@ -70,13 +84,13 @@ typedef struct ghost_map_t
       public:
       
         //!
-        ghost_map_t* new_map(const void* p);
+        ghost_map* new_map(const void* p);
         //!
         void delete_maps(void* p);
 
       private:
         //!
-        typedef std::map<const void*, std::vector<ghost_map_t*> > MapCollection;
+        typedef std::map<const void*, std::vector<ghost_map*> > MapCollection;
         //!
         MapCollection maps_;
     };

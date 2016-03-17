@@ -736,11 +736,7 @@ protected:
 
 
 #if MATNAME == MATNAME_sprandn
-#ifdef PHIST_KERNEL_LIB_GHOST
-  TEST_F(CLASSNAME, DISABLED_A2_precalc_result)
-#else
   TEST_F(CLASSNAME, A2_precalc_result)
-#endif
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
@@ -748,6 +744,13 @@ protected:
       _ST_ beta = st::zero();
 
       // create new map (which has correct order!)
+      // The test below relies on the function mvec_to_mvec
+      // to translate the vectors back and forth between
+      // this map and the matrix' domain map. This is the
+      // case with GHOST if the matrix is not repartitioned
+      // right now (that is, the difference between the map
+      // is a local permutation induced e.g. by sigma>1 in
+      // the SELL-C-sigma format).
       phist_map_ptr map;
       phist_map_create(&map, comm_, nglob_, &iflag_);
       ASSERT_EQ(0,iflag_);
