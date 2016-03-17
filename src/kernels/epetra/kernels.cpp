@@ -14,6 +14,7 @@
 #include "Epetra_SerialComm.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_LocalMap.h"
+#include "Epetra_Import.h"
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_CrsMatrix.h"

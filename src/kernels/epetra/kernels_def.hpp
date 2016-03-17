@@ -241,9 +241,11 @@ extern "C" void SUBR(sdMat_extract_view)(phist_DsdMat_ptr vM, double** val, phis
 extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  //TODO: create importer, v_out->Import(v_in)
-  //TODO: possibly crate a wrapper phist_map_t which keeps the importer as well
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector,in, v_in, *iflag);
+  PHIST_CAST_PTR_FROM_VOID(      Epetra_MultiVector,out, v_out, *iflag);
+
+  Teuchos::RCP<Epetra_Import> import = Teuchos::rcp(new Epetra_Import(out->Map(),in->Map()));
+  *iflag=out->Import(*in,*import,Insert);
   return;
 }
 

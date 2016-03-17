@@ -280,9 +280,10 @@ extern "C" void SUBR(sdMat_extract_view)(TYPE(sdMat_ptr) vM, _ST_** val, phist_l
 extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  // TODO: create importer, v_out->Import(v_in)
-  // TODO: possibly create a wrapper phist_map_type which keeps the importer as well.
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,in,v_in,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(      Traits<_ST_>::mvec_t,out,v_out,*iflag);
+  Teuchos::RCP<import_type> import = Teuchos::rcp(new import_type(out->getMap(),in->getMap())); 
+  PHIST_TRY_CATCH(out->doImport(*in,*import,Tpetra::INSERT),*iflag);
   return;
 }
 

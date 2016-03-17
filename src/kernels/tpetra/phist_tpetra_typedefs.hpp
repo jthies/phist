@@ -15,6 +15,8 @@
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DefaultKernels.hpp"
 
+#include "Tpetra_Map.hpp"
+#include "Tpetra_Import.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 //#include "Tpetra_CrsMatrixMultiplyOp.hpp"
