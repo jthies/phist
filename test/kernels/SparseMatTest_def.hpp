@@ -519,10 +519,6 @@ protected:
 #endif
       //v3=v1+beta*v2
       SUBR(mvec_to_mvec)(vec1_,vec3_,&iflag_);
-      if( iflag_ == PHIST_NOT_IMPLEMENTED )
-      {
-        SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec3_,&iflag_);
-      }
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_scale)(vec3_, alpha, &iflag_);
       ASSERT_EQ(0,iflag_);
@@ -553,10 +549,6 @@ protected:
 #endif
        // v3=alpha*v1+beta*v2
       SUBR(mvec_to_mvec)(vec1_,vec3_,&iflag_);
-      if( iflag_ == PHIST_NOT_IMPLEMENTED )
-      {
-        SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec3_,&iflag_);
-      }
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_scale)(vec3_, alpha, &iflag_);
       ASSERT_EQ(0,iflag_);
@@ -679,10 +671,6 @@ protected:
       }
       // copy to vec1_
       SUBR(mvec_to_mvec)(orderedVec, vec1_, &iflag_);
-      if( iflag_ == PHIST_NOT_IMPLEMENTED )
-      {
-        SUBR(mvec_add_mvec)(st::one(),orderedVec,st::zero(),vec1_,&iflag_);
-      }
       ASSERT_EQ(0,iflag_);
 
 
@@ -702,10 +690,6 @@ protected:
 #endif
       // copy to orderedVec
       SUBR(mvec_to_mvec)(vec2_, orderedVec, &iflag_);
-      if( iflag_ == PHIST_NOT_IMPLEMENTED )
-      {
-        SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),orderedVec,&iflag_);
-      }
       ASSERT_EQ(0,iflag_);
 
 
@@ -785,10 +769,6 @@ protected:
       
       // copy to vec1_
       SUBR(mvec_to_mvec)(orderedVec, vec1_, &iflag_);
-      if( iflag_ == PHIST_NOT_IMPLEMENTED )
-      {
-        SUBR(mvec_add_mvec)(st::one(),orderedVec,st::zero(),vec1_,&iflag_);
-      }
       ASSERT_EQ(0,iflag_);
       
 
@@ -931,10 +911,6 @@ protected:
 #endif
       // copy to orderedVec
       SUBR(mvec_to_mvec)(vec2_, orderedVec, &iflag_);
-      if( iflag_ == PHIST_NOT_IMPLEMENTED )
-      {
-        SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),orderedVec,&iflag_);
-      }
       ASSERT_EQ(0,iflag_);
       
       // download result
@@ -1163,10 +1139,6 @@ protected:
     SUBR(mvec_add_mvec)(st::one(), vec1_, st::zero(), vec2_, &iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_to_mvec)(vec1_,vec3_,&iflag_);
-    if( iflag_ == PHIST_NOT_IMPLEMENTED )
-    {
-      SUBR(mvec_add_mvec)(st::one(),vec1_,st::zero(),vec3_,&iflag_);
-    }
     ASSERT_EQ(0,iflag_);
     ASSERT_EQ(0,iflag_);
 
