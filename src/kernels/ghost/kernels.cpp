@@ -300,8 +300,9 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
   
   map->ctx=NULL;
   // passing in 0.0 here will lead to automatic load-balancing depending on the STREAM benchmark performance on each MPI 
-  // rank. We certainly want to expose this cool feature to the user, the question is wether it should be the default.
-  double proc_weight=0.0;
+  // rank. We certainly want to expose this cool feature to the user, but if we do it here a costly benchmark is run 
+  // whenever a map is created. We probably want to create a static context object and reuse it instead.
+  double proc_weight=1.0;
   PHIST_CHK_GERR(ghost_context_create(&map->ctx,nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,
         GHOST_SPARSEMAT_SRC_NONE, *comm,proc_weight),*iflag);
   map->vtraits_template=phist_default_vtraits();
