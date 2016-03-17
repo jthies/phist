@@ -10,6 +10,11 @@
 #include <mpi.h>
 #endif
 
+#ifdef __cplusplus
+# include <cstdio>
+#else
+# include <stdio.h>
+#endif
 #endif //DOXYGEN
 
 #ifdef __cplusplus
