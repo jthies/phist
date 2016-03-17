@@ -70,6 +70,11 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
 {
   *C = PHIST_SELL_C;
   *sigma = PHIST_SELL_SIGMA;
+  // if the user sets both to postive values, respect this choice
+  // and do not override it by either flags or the presence of GPU
+  // processes
+  if (*C>0 && *sigma>0) return;
+
   if( flags & PHIST_SPARSEMAT_OPT_SINGLESPMVM )
   {
     *C = 32;
@@ -86,8 +91,8 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
   ghost_type_get(&gtype);
   if (gtype==GHOST_TYPE_CUDA)
   {
-//    *C=std::max(*C,32);
-//    *sigma=std::max(256,*sigma);
+    *C=std::max(*C,32);
+    *sigma=std::max(256,*sigma);
   }
   // if the user doesn´t set it in CMake or give a flag, it is -1, override with +1 (CRS)
   *C=std::max(*C,+1);
