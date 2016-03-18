@@ -4249,7 +4249,7 @@ end subroutine phist_Dmvec_put_func
       do i = 1, nglobal
         invGlobalIdx(i) = i
       end do
-      write(*,*) 'generated invGlobalIdx', invGlobalIdx
+      !write(*,*) 'generated invGlobalIdx', invGlobalIdx
 
     end if
 

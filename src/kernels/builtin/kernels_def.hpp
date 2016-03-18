@@ -255,8 +255,9 @@ extern "C" void SUBR(sdMat_extract_error)(TYPE(sdMat_ptr) V, _ST_** err, int* if
 extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_out, int* iflag)
 {
 #ifndef PHIST_HAVE_PARMETIS
-  // we don't need this when no reordering occurs!
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  // the only permutation we may apply is by parmetis, so copy the vectors if they are compatible.
+  // Otherwise mvec_add_mvec will return an error code (I hope...)
+  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(_ONE_,v_in,_ZERO_,v_out,iflag),*iflag);
 #else
   PHIST_CHK_IERR(SUBR(mvec_to_mvec_f)(v_in, v_out, iflag),*iflag);
 #endif
