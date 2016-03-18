@@ -257,7 +257,7 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
 #ifndef PHIST_HAVE_PARMETIS
   // the only permutation we may apply is by parmetis, so copy the vectors if they are compatible.
   // Otherwise mvec_add_mvec will return an error code (I hope...)
-  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(_ONE_,v_in,_ZERO_,v_out,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(ONE,v_in,ZERO,v_out,iflag),*iflag);
 #else
   PHIST_CHK_IERR(SUBR(mvec_to_mvec_f)(v_in, v_out, iflag),*iflag);
 #endif
