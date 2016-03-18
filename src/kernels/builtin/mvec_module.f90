@@ -4237,11 +4237,11 @@ end subroutine phist_Dmvec_put_func
 
       ! get the inverse global index
       allocate(invGlobalIdx(nglobal))
-      write(*,*) 'distributed globalIdx', globalIdx
+      !write(*,*) 'distributed globalIdx', globalIdx
       do i = 1, nglobal
         invGlobalIdx(globalIdx(i)) = i
       end do
-      write(*,*) 'calculated invGlobalIdx', invGlobalIdx
+      !write(*,*) 'calculated invGlobalIdx', invGlobalIdx
 
     else
 
