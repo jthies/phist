@@ -168,10 +168,6 @@ extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, phist_
   ghost_map* map = mapGarbageCollector.new_map(vA);
   map->ctx = A->context;
   map->vtraits_template=phist_default_vtraits();
-  // right now we don't allow 'undoing' a global permutation,
-  // but by using mvec_to_mvec we can undo a local permutation
-  // that comes e.g. from a sorting scope sigma>1
-  map->permutation=A->context->perm_local;
   *vmap = (phist_const_map_ptr)map;
 }
 
@@ -528,70 +524,81 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
 {
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V_in,v_in,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V_out,v_out,*iflag);
-  
-  ghost_map const *map_in=NULL, *map_out=NULL;
-  PHIST_CHK_IERR(SUBR(mvec_get_map)(v_in, (void const**)&map_in,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(mvec_get_map)(v_out,(void const**)&map_out,iflag),*iflag);
 
-  bool outputPermuted=(map_out->permutation!=NULL);
-  bool inputPermuted=(map_in->permutation!=NULL);
+  // set some convenient pointers
+  ghost_context *ctx_in=V_in->context;
+  ghost_context *ctx_out=V_out->context;
   
-  bool can_do_it=false;
-  bool same_context=(map_in->ctx==map_out->ctx);
+  ghost_densemat_flags flags_in=V_in->traits.flags;
+  ghost_densemat_flags flags_out=V_out->traits.flags;
+  
+  ghost_permutation *lperm_in=ctx_in->perm_local;
+  ghost_permutation *lperm_out=ctx_out->perm_local;
 
-  int me,nrank;
-  ghost_rank(&me, map_in->ctx->mpicomm);
-  ghost_nrank(&nrank,map_in->ctx->mpicomm);
-  
-  // check compatibility of the two maps. We can currently only
-  // do local permutations with this function.
-  // Also decide wether to "permute or unpermute"
-  if (map_in->permutation==map_out->permutation&&inputPermuted)
+  ghost_permutation *gperm_in=ctx_in->perm_global;
+  ghost_permutation *gperm_out=ctx_out->perm_global;
+ 
+  if (gperm_in!=gperm_out)
   {
-    // if both have the same permutation we can simply copy
-    // the data and are done.
-    can_do_it=true;
-  }
-  else if (same_context)
-  {
-    // good situation: both maps are local permutations of the same thing
-    can_do_it=true;
-  }
-  else
-  {
-    // the contexts are different, so we have to check if the number of local rows is identical
-    // on all processes. The permutations are not the same or not present, so they tell us nothing
-    // about compatibility of the maps.
-    can_do_it=(map_in->ctx->mpicomm==map_out->ctx->mpicomm);
-    if (can_do_it)
-    {
-      for (int p=0; p<nrank; p++) can_do_it&=(map_in->ctx->lnrows[p]==map_out->ctx->lnrows[p]);
-    }
-  }
-    
-  if (!can_do_it)
-  {
-    PHIST_SOUT(PHIST_WARNING,"function %s only implemented for simple permutation operations\n"
-                             "where the result and input vectors have the same context or number of rows \n"
-                             "either of them may be permuted\n",__FUNCTION__);
+    // I think the permute function we use further down only does local permutations up to now,
+    // so return -99 (not implemented)
+    PHIST_SOUT(PHIST_ERROR,"can't handle global permutations with ghost in mvec_to_mvec up to now\n");
     *iflag=PHIST_NOT_IMPLEMENTED;
     return;
   }
+  
+  bool outputPermuted=flags_out&GHOST_DENSEMAT_PERMUTED;
+  bool  inputPermuted=flags_in &GHOST_DENSEMAT_PERMUTED;
+  
+  // if both are permuted with the same permutation, just copy
+  bool no_perm_needed = (outputPermuted==inputPermuted && lperm_in==lperm_out)
+  
+  int me,nrank;
+  ghost_rank(&me, ctx_in->mpicomm);
+  ghost_nrank(&nrank,ctx_in->mpicomm);
+  
+  // check if the two contexts have the same number of local elements on each process
+  bool compatible_contexts=(ctx_in==ctx_out);
+  if (!compatible_contexts)
+  {
+    compatible_contexts=(ctx_in->mpicomm==ctx_out->mpicomm);
+    for (int i=0; i<nrank;i++) compatible_contexts &= (ctx_in->lnrows[i]==ctx_out->lnrows[i]);
+  }
+  
+  if (compatible_contexts==false)
+  {
+    // I think densemat::fromVec only works if both have the same context and does not call any
+    // permute function. So what we'll do is temporarily replace the context of the output vec-
+    // tor, copy the data by densemat::fromVec, and then perform the permutations. This only   
+    // works if the number of local elements is the same in both contexts. We could also work  
+    // with a temporary vector, but I think GHOST currently does not allow Zoltan/Scotch to    
+    // change the number of local elements.
+    PHIST_SOUT(PHIST_ERROR,"phist/ghost: mvec_to_mvec only implemented if both vectors have\n"
+                           "the same local lengths on all MPI ranks (and the same MPI communicator)\n");
+    *iflag=-1;
+    return;
+  }
 
+// macro to perform a ghost call on a vector with a different context
+#define GHOST_FUNC_CTX(_vec,_ctx,_fnc,...) \
+{\
+  ghost_error _gerr=GHOST_SUCCESS; \
+  ghost_context *_orig_ctx=(_vec)->context; \
+  (_vec)->context=(_ctx);\
+  _gerr=(_vec)->_fnc(__VA_ARGS__);\
+  (_vec)->context=_orig_ctx;\
+  PHIST_CHK_GERR(_gerr,*iflag); \
+}
+
+  GHOST_FUNC_CTX(V_out,ctx_in,fromVec,V_out,V_in,0,0);
+
+  if (no_perm_needed) return;
   
-  
-  // first copy the data. If the contexts are different but
-  // match in terms of MPI distribution, cheat ghost into copying
-  // the data anyway
-  V_out->context=map_in->ctx;
-  PHIST_CHK_GERR(V_out->fromVec(V_out,V_in,0,0),*iflag);
-  // apply permutation of input vector
   if (inputPermuted)
   {
-    PHIST_CHK_GERR(V_out->permute(V_out,GHOST_PERMUTATION_PERM2ORIG),*iflag);
+    GHOST_FUNC_CTX(V_out,ctx_in,permute,V_out,GHOST_PERMUTATION_PERM2ORIG);
   }
-  // reset the original context
-  V_out->context=map_out->ctx;
+  
   if (outputPermuted)
   {
     PHIST_CHK_GERR(V_out->permute(V_out,GHOST_PERMUTATION_ORIG2PERM),*iflag);

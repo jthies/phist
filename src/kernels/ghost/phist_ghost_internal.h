@@ -44,14 +44,11 @@ namespace phist
 //! is allowed by the Petra object model.
 //!
 //! The only way to convert an mvec from one map into another is by calling the function
-//! mvec_to_mvec. This, however, currently only works if both maps have the same nubmer of
-//! local elements on each process, and at most one of them has a permutation object. In this
-//! case mvec_to_mvec is either a copy or local permutation operation.
+//! mvec_to_mvec. 
 typedef struct ghost_map
   {
   ghost_context* ctx;
   ghost_densemat_traits vtraits_template;
-  ghost_permutation *permutation;
   } ghost_map;
 
 
