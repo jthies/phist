@@ -12,6 +12,7 @@
 #include <string>
 
 #include <cstring>
+#include <cstdarg>
 
 // little helper utiliity so that we can recognize strings regardless of case,
 // e.g. carp_cg, CARP_CG, carp_CG => CARP_CG. Note that "carp-cg" won't work
