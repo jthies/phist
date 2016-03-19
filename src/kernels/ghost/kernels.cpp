@@ -131,6 +131,10 @@ int get_perm_flag(int outlev)
       vtraits.ncolspadded=0; // leave padding to ghost
       // ghost should set these correctly depending on GHOST_TYPE if we set HOST and DEVICE to 0
       int new_flags =   (int)vtraits.flags;
+      // do not allow GHOST to automatically allocate memory on the host CPU if a GPU process calls download().
+      // If an mvec should be allocated on both host and devie, the PHIST user should specify
+      // PHIST_REPLICATE_DEVICE_MEM when calling mvec_create.
+      new_flags|=     (int)GHOST_DENSEMAT_NOT_RELOCATE;
  //     new_flags|=    (int)GHOST_DENSEMAT_NO_HALO;
  //     new_flags&=   ~(int)GHOST_DENSEMAT_HOST;
  //     new_flags&=   ~(int)GHOST_DENSEMAT_DEVICE;
@@ -316,8 +320,6 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
   new_flags |= (int)GHOST_DENSEMAT_NO_HALO;
   map->vtraits_template.flags=(ghost_densemat_flags)new_flags;
   // ghost should set these correctly depending on GHOST_TYPE if we set HOST and DEVICE to 0
-
-  map->permutation=NULL; //permutation is defined by a matrix object.
 
   *vmap=(phist_map_ptr)(map);
 }
