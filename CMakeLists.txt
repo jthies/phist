@@ -495,6 +495,7 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
     list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
     list(APPEND OPTIONAL_TRILI_PKG "Belos")
   endif()
+  list(APPEND OPTIONAL_TRILI_PKG "Zoltan")
   list(APPEND OPTIONAL_TRILI_PKG "Kokkos")
   list(APPEND OPTIONAL_TRILI_PKG "Teuchos")
 

@@ -74,7 +74,7 @@ class DSparseMatRepartTest: public virtual TestWithType<double>,
     EXPECT_EQ(0,iflag_);
     PHISTTEST_MVEC_CREATE(&repartV_out_exact_,repartMap_,1,&iflag_);
     EXPECT_EQ(0,iflag_);
-  return;
+
     // extract raw view for filling the input and precalculated result vector
     double *V_in_raw=NULL, *V_out_exact_raw=NULL;
     phist_lidx ldV_in, ldV_out;
