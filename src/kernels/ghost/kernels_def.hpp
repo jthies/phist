@@ -1,6 +1,12 @@
 #include "phist_config.h"
 #include "ghost/config.h"
 
+// this macro is used to specify the processor weight when creating a context for a sparsemat.
+// 1.0 as default, and 0.0 if PHIST_SPARSEMAT_REPARTITION is given (that means, ask GHOST to  
+// perform static load balancing based on a memory bandwidth benchmark)
+//#define PROC_WEIGHT (repart? 0.0: 1.0)
+#define PROC_WEIGHT 1.0
+
 #if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
 template<>
 Teuchos::RCP<node_type> ghost::TsqrAdaptor< _ST_ >::node_=Teuchos::null;
@@ -64,7 +70,7 @@ PHIST_TASK_BEGIN(ComputeTask)
         char* cfname=const_cast<char*>(filename);
 // TODO - check ghost return codes everywhere like this
   PHIST_CHK_GERR(ghost_context_create(&ctx,0,0,
-        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_MM,*comm,repart ? 0. : 1.),*iflag);
+        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_MM,*comm,PROC_WEIGHT),*iflag);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
   PHIST_CHK_GERR(mat->fromMM(mat,cfname),*iflag);
   char *str;
@@ -126,7 +132,7 @@ PHIST_TASK_BEGIN(ComputeTask)
         char* cfname=const_cast<char*>(filename);
 // TODO - check ghost return codes everywhere like this
   PHIST_CHK_GERR(ghost_context_create(&ctx,0,0,
-        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_FILE,*comm,repart ? 0. : 1.),*iflag);
+        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_FILE,*comm,PROC_WEIGHT),*iflag);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
   PHIST_CHK_GERR(mat->fromFile(mat,cfname),*iflag);
 //#if PHIST_OUTLEV >= PHIST_VERBOSE
@@ -546,12 +552,16 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
     *iflag=PHIST_NOT_IMPLEMENTED;
     return;
   }
-  
+
+  // it seems like GHOST does not set these flags at all...
   bool outputPermuted=flags_out&GHOST_DENSEMAT_PERMUTED;
   bool  inputPermuted=flags_in &GHOST_DENSEMAT_PERMUTED;
+
+  outputPermuted=(lperm_out!=NULL);
+  inputPermuted= (lperm_in!=NULL);
   
   // if both are permuted with the same permutation, just copy
-  bool no_perm_needed = (outputPermuted==inputPermuted && lperm_in==lperm_out)
+  bool no_perm_needed = (outputPermuted==inputPermuted && lperm_in==lperm_out);
   
   int me,nrank;
   ghost_rank(&me, ctx_in->mpicomm);
@@ -562,7 +572,11 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   if (!compatible_contexts)
   {
     compatible_contexts=(ctx_in->mpicomm==ctx_out->mpicomm);
-    for (int i=0; i<nrank;i++) compatible_contexts &= (ctx_in->lnrows[i]==ctx_out->lnrows[i]);
+    for (int i=0; i<nrank;i++)
+    {
+      PHIST_SOUT(PHIST_DEBUG,"lnrows PE%d, v_in=%d, v_out=%d\n",i,ctx_in->lnrows[i],ctx_out->lnrows[i]); 
+      compatible_contexts &= (ctx_in->lnrows[i]==ctx_out->lnrows[i]);
+    }
   }
   
   if (compatible_contexts==false)
@@ -1932,8 +1946,11 @@ PHIST_TASK_BEGIN(ComputeTask)
         }
         mtraits.datatype = st::ghost_dt;
         mtraits.flags = flags;
+        // if the user allows repartitioning, ask GHOST to do a distribution of the rows based on
+        // the memory bandwidth measured per MPI rank. Otherwise, use the same number of rows on 
+        // each MPI process.
   PHIST_CHK_GERR(ghost_context_create(&ctx,nrows,ncols,
-        GHOST_CONTEXT_DEFAULT,NULL,GHOST_SPARSEMAT_SRC_FUNC,*comm,repart ? 0. : 1.),*iflag);
+        GHOST_CONTEXT_DEFAULT,NULL,GHOST_SPARSEMAT_SRC_FUNC,*comm,PROC_WEIGHT),*iflag);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
 
   ghost_sparsemat_src_rowfunc src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;

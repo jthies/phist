@@ -97,6 +97,11 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
   // if the user doesn´t set it in CMake or give a flag, it is -1, override with +1 (CRS)
   *C=std::max(*C,+1);
   *sigma=std::max(*sigma,+1);
+
+  // if the user does NOT specify PHIST_SPARSEMAT_REPARTITION, set sigma=1 because the user may
+  // not expect us to permute rows locally
+  if ( !(flags&PHIST_SPARSEMAT_REPARTITION) ) *sigma=1;
+
   // everyone should have the max value found among MPI processes
   MPI_Allreduce(MPI_IN_PLACE,C,1,MPI_INT,MPI_MAX,comm);
   MPI_Allreduce(MPI_IN_PLACE,sigma,1,MPI_INT,MPI_MAX,comm);
@@ -105,14 +110,14 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
 
 int get_perm_flag(int outlev)
 {
-#ifdef USE_ZOLTAN
+#ifdef GHOST_HAVE_ZOLTAN
           PHIST_SOUT(outlev, "Trying to repartition the matrix with Zoltan\n");
           return GHOST_SPARSEMAT_ZOLTAN;
-#elif defined(USE_SCOTCH)
+#elif defined(GHOST_HAVE_SCOTCH)
           PHIST_SOUT(outlev, "Trying to repartition the matrix with SCOTCH\n");
           return GHOST_SPARSEMAT_SCOTCHIFY;
 #else
-          PHIST_SOUT(outlev, "SCOTCH not available, no matrix repartitioning\n");
+          PHIST_SOUT(outlev, "Zoltan or PT-Scotch not enabled in GHOST installation, no matrix repartitioning\n");
           return 0;
 #endif
 }
