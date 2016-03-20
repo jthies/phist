@@ -108,14 +108,9 @@ class WrapLambdaForGhostTask
 
       // actually create the task and copy the context to the heap
       {
-        // setting nThreads=0 means "don't call omp_set_num_threads", so
-        // the parent task's nthreads is kept. If there is no parent task
-        // this is likely to be the 'main task' and we should use all the
-        // PUs we can get. The flag deterministicOneThread is used to steal
-        // a thread from the parent task for e.g. doing communication or I/O.
-        int nThreads = 0;
-        if (curTask==NULL) nThreads=GHOST_TASK_FILL_ALL;
-        if (deterministicOneThread) nThreads = 1;
+        int nThreads = async ? 0 : GHOST_TASK_FILL_ALL;
+        if( deterministicOneThread )
+          nThreads = 1;
         ghost_task_flags flags = GHOST_TASK_DEFAULT;
         PHIST_CHK_GERR(ghost_task_create(task, nThreads, 0, void_lambda_caller, (void*) new LFunc(context), flags, NULL, 0), *iflag);
       }
