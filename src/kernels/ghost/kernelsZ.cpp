@@ -18,11 +18,15 @@
 
 #include "phist_ghost_internal.h"
 
+#if defined(PHIST_HAVE_KOKKOS)&&defined(PHIST_HAVE_TEUCHOS)
+#include "phist_trilinos_macros.h"
+#include "Ghost_TsqrAdaptor.hpp"
+#endif
+
 // these are from Trilinos, we need them to interface
 // the TSQR library for orthogonalizing tall skinny matrices.
 #ifdef PHIST_HAVE_BELOS
 #include "phist_trilinos_macros.h"
-#include "Ghost_TsqrAdaptor.hpp"
 #include "Belos_GhostAdapter.hpp"
 #include "BelosTsqrOrthoManager.hpp"
 #endif
