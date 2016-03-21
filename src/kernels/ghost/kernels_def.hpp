@@ -1,11 +1,6 @@
 #include "phist_config.h"
 #include "ghost/config.h"
 
-// this macro is used to specify the processor weight when creating a context for a sparsemat.
-// 1.0 as default, and 0.0 if PHIST_SPARSEMAT_REPARTITION is given (that means, ask GHOST to  
-// perform static load balancing based on a memory bandwidth benchmark)
-//#define PROC_WEIGHT (repart? 0.0: 1.0)
-#define PROC_WEIGHT 1.0
 
 #if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
 template<>
@@ -70,7 +65,7 @@ PHIST_TASK_BEGIN(ComputeTask)
         char* cfname=const_cast<char*>(filename);
 // TODO - check ghost return codes everywhere like this
   PHIST_CHK_GERR(ghost_context_create(&ctx,0,0,
-        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_MM,*comm,PROC_WEIGHT),*iflag);
+        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_MM,*comm,get_proc_weight()),*iflag);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
   PHIST_CHK_GERR(mat->fromMM(mat,cfname),*iflag);
   char *str;
@@ -132,7 +127,7 @@ PHIST_TASK_BEGIN(ComputeTask)
         char* cfname=const_cast<char*>(filename);
 // TODO - check ghost return codes everywhere like this
   PHIST_CHK_GERR(ghost_context_create(&ctx,0,0,
-        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_FILE,*comm,PROC_WEIGHT),*iflag);
+        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_FILE,*comm,get_proc_weight()),*iflag);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
   PHIST_CHK_GERR(mat->fromFile(mat,cfname),*iflag);
 //#if PHIST_OUTLEV >= PHIST_VERBOSE
@@ -1950,7 +1945,7 @@ PHIST_TASK_BEGIN(ComputeTask)
         // the memory bandwidth measured per MPI rank. Otherwise, use the same number of rows on 
         // each MPI process.
   PHIST_CHK_GERR(ghost_context_create(&ctx,nrows,ncols,
-        GHOST_CONTEXT_DEFAULT,NULL,GHOST_SPARSEMAT_SRC_FUNC,*comm,PROC_WEIGHT),*iflag);
+        GHOST_CONTEXT_DEFAULT,NULL,GHOST_SPARSEMAT_SRC_FUNC,*comm,get_proc_weight()),*iflag);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
 
   ghost_sparsemat_src_rowfunc src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;

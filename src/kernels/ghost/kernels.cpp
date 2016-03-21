@@ -66,6 +66,23 @@ namespace phist
   namespace ghost_internal
   {
 
+//! returns the local partition size based on a benchmark, the benchmark is run once when
+//! this function is called first, subsequently the same weight will be returned unless
+//! you set force_recompute=true. The resulting double can be passed as 'weight' parameter
+//! to ghost_context_create (used in phist_map_create and sparseMat construction routines)
+double get_proc_weight(bool forceRecompute)
+{
+  static double stream_bw=-1.0;
+  int iflag;
+  if (stream_bw<0 || forceRecompute)
+  {
+    phist_bench_stream_triad(&stream_bw,&iflag);
+    if (iflag) stream_bw=1.0;
+  }
+  return stream_bw;
+}
+
+
 void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
 {
   *C = PHIST_SELL_C;
@@ -232,7 +249,7 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
   ghost_machine_npu(&npu,GHOST_NUMANODE_ANY);
 
   ghost_pumap_string(&str);
-  PHIST_ORDERED_OUT(PHIST_VERBOSE,"%s\n",str);
+  PHIST_ORDERED_OUT(PHIST_VERBOSE,MPI_COMM_WORLD,"%s\n",str);
   free(str); str = NULL;
 
 #if defined(PHIST_HAVE_KOKKOS)&&defined(PHIST_HAVE_BELOS)
@@ -311,7 +328,8 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
   // passing in 0.0 here will lead to automatic load-balancing depending on the STREAM benchmark performance on each MPI 
   // rank. We certainly want to expose this cool feature to the user, but if we do it here a costly benchmark is run 
   // whenever a map is created. We probably want to create a static context object and reuse it instead.
-  double proc_weight=1.0;
+  double proc_weight=get_proc_weight();
+  PHIST_ORDERED_OUT(PHIST_VERBOSE,*comm,"PE%6d: partition weight %4.2g\n",proc_weight);
   PHIST_CHK_GERR(ghost_context_create(&map->ctx,nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,
         GHOST_SPARSEMAT_SRC_NONE, *comm,proc_weight),*iflag);
   map->vtraits_template=phist_default_vtraits();

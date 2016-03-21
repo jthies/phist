@@ -63,10 +63,10 @@
                 fflush(PHIST_OUT_out);}\
         }\
 }
-#define PHIST_ORDERED_OUT(level,msg, ...) { \
+#define PHIST_ORDERED_OUT(level,mpicomm,msg, ...) { \
         if(PHIST_OUTLEV >= level) {\
                 FILE* PHIST_OUT_out= (level<=PHIST_WARNING)? stderr:stdout;\
-                phist_ordered_fprintf(PHIST_OUT_out,MPI_COMM_WORLD,msg,##__VA_ARGS__);\
+                phist_ordered_fprintf(PHIST_OUT_out,mpicomm,msg,##__VA_ARGS__);\
         }\
 }
 #else
@@ -77,7 +77,7 @@
                 fflush(PHIST_OUT_out);\
         }\
 }
-#define PHIST_ORDERED_OUT(level,msg, ...) PHIST_SOUT(level,msg,__VA_ARGS__);
+#define PHIST_ORDERED_OUT(level,mpicomm,msg, ...) PHIST_SOUT(level,msg,__VA_ARGS__);
 #endif
 
 
