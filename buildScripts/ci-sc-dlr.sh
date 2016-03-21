@@ -80,9 +80,11 @@ for m in $MODULES_BASIC; do module load $m; done
 for m in ${MODULES_KERNELS["$KERNELS"]}; do module load $m; done
 if [[ "$FLAGS" = *optional-libs* ]]; then
   for m in ${MODULES_KERNELS_OPTIONAL["$KERNELS"]}; do module load $m; done
+  ADD_CMAKE_FLAGS+=" -DPHIST_USE_GRAPH_TPLS:BOOL=ON"
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_PRECON_TPLS:BOOL=ON"
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_SOLVER_TPLS:BOOL=ON"
 else
+  ADD_CMAKE_FLAGS+=" -DPHIST_USE_GRAPH_TPLS:BOOL=OFF"
   ADD_CMAKE_FLAGS+=" -DPHIST_USE_PRECON_TPLS:BOOL=OFF"
 # note: presently epetra and tpetra require Belos for the interface to TSQR.
 # PHIST can do without mvec_QR, so without optional-libs this is tested.

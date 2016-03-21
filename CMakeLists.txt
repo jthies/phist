@@ -70,6 +70,13 @@ option(PHIST_USE_PRECON_TPLS
         "try to find supported third-party libraries that implement preconditioners for the kernel library used."
         ON)
 
+# try to find third-party partitioning packages (depending on kernel lib),
+# for instance if the kernel lib is epetra, look for Isorropia, builtin supports ParMETIS 
+# and ColPack etc.
+option(PHIST_USE_GRAPH_TPLS
+        "try to find supported third-party libraries that implement graph partitioning and reordering for the kernel library used."
+        ON)
+
 
 
 ########################################################################
@@ -455,9 +462,10 @@ if  (PHIST_KERNEL_LIB STREQUAL "epetra")
   set(PHIST_KERNEL_LIB_EPETRA 1)
 
   list(APPEND OPTIONAL_TRILI_PKG "Kokkos")
-  list(APPEND OPTIONAL_TRILI_PKG "Isorropia")
-  list(APPEND OPTIONAL_TRILI_PKG "Zoltan")
-
+  if (PHIST_USE_GRAPH_TPLS)
+    list(APPEND OPTIONAL_TRILI_PKG "Isorropia")
+    list(APPEND OPTIONAL_TRILI_PKG "Zoltan")
+  endif()
   if (PHIST_USE_SOLVER_TPLS)
     list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
     list(APPEND OPTIONAL_TRILI_PKG "Belos")
@@ -497,7 +505,9 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
     list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
     list(APPEND OPTIONAL_TRILI_PKG "Belos")
   endif()
-  list(APPEND OPTIONAL_TRILI_PKG "Zoltan")
+  if (PHIST_USE_GRAPH_TPLS)
+    list(APPEND OPTIONAL_TRILI_PKG "Zoltan")
+  endif()
   list(APPEND OPTIONAL_TRILI_PKG "Kokkos")
   list(APPEND OPTIONAL_TRILI_PKG "Teuchos")
 
@@ -788,30 +798,30 @@ endif()
 
 # load parmetis for reordering builtin
 if(PHIST_KERNEL_LIB STREQUAL "builtin")
-  
-  find_package(ParMETIS)
-  if(PARMETIS_FOUND)
-    set(PHIST_HAVE_PARMETIS On)
-    include_directories(${PARMETIS_INCLUDE_DIRS})
-    link_directories(${PARMETIS_LIBRARY_DIRS})
-    target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} ${PARMETIS_LIBRARIES})
-    message(STATUS "ParMETIS found, enabled matrix reordering!")
-  else()
-    message(STATUS "ParMETIS not found, no matrix reordering!")
+  if (PHIST_USE_GRAPH_TPLS)
+    find_package(ParMETIS)
+    if(PARMETIS_FOUND)
+      set(PHIST_HAVE_PARMETIS On)
+      include_directories(${PARMETIS_INCLUDE_DIRS})
+      link_directories(${PARMETIS_LIBRARY_DIRS})
+      target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} ${PARMETIS_LIBRARIES})
+      message(STATUS "ParMETIS found, enabled matrix reordering!")
+    else()
+      message(STATUS "ParMETIS not found, no matrix reordering!")
+    endif()
+
+    find_package(ColPack)
+
+    if(COLPACK_FOUND)
+      set(PHIST_HAVE_COLPACK 1)
+      include_directories(${COLPACK_INCLUDE_DIRS})
+      link_directories(${COLPACK_LIBRARY_DIRS})
+      target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} ${COLPACK_LIBRARIES})
+      message(STATUS "ColPack found, enabled matrix coloring!")
+    else()
+      message(STATUS "ColPack not found, no matrix coloring!")
+    endif()
   endif()
-
-  find_package(ColPack)
-
-  if(COLPACK_FOUND)
-    set(PHIST_HAVE_COLPACK 1)
-    include_directories(${COLPACK_INCLUDE_DIRS})
-    link_directories(${COLPACK_LIBRARY_DIRS})
-    target_link_libraries(phist_kernels_${PHIST_KERNEL_LIB} ${COLPACK_LIBRARIES})
-    message(STATUS "ColPack found, enabled matrix coloring!")
-  else()
-    message(STATUS "ColPack not found, no matrix coloring!")
-  endif()
-
 endif()
 
 find_package(Likwid PATHS "$ENV{LIKWID_HOME}" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/" Optional)
