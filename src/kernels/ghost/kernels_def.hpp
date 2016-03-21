@@ -1903,6 +1903,15 @@ extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Smvec_ptr reV, ph
 # endif
 #endif
 
+//! create a sparse matrix from a row func and use a distribution prescribed by a given map
+void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
+        phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
+        int *iflag);
+{
+  *iflag=-99;
+  return;
+}
+
 void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
         phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
                 phist_sparseMat_rowFunc rowFunPtr, void* last_arg, int *iflag)

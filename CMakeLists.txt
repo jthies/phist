@@ -455,6 +455,8 @@ if  (PHIST_KERNEL_LIB STREQUAL "epetra")
   set(PHIST_KERNEL_LIB_EPETRA 1)
 
   list(APPEND OPTIONAL_TRILI_PKG "Kokkos")
+  list(APPEND OPTIONAL_TRILI_PKG "Isorropia")
+  list(APPEND OPTIONAL_TRILI_PKG "Zoltan")
 
   if (PHIST_USE_SOLVER_TPLS)
     list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
@@ -649,6 +651,11 @@ if (NOT ESSEX-PHYSICS_FOUND)
   LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/drivers/matfuncs/graphene.c
                                   ${PROJECT_SOURCE_DIR}/drivers/matfuncs/SpinChainSZ.c
                                   ${PROJECT_SOURCE_DIR}/drivers/matfuncs/part_tools.c)
+endif()
+
+# repartitioning with Isorropia/Zoltan
+if (PHIST_KERNEL_LIB STREQUAL "epetra")
+  LIST(APPEND PHIST_KERNEL_SOURCE ${PROJECT_SOURCE_DIR}/src/kernels/epetra/hg_repart.cpp)
 endif()
 
 # sopme `derived' kernel functions, e.g. mvec_my_length is implemented via mvec_get_map/map_get_local_lenth etc.

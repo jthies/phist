@@ -799,6 +799,16 @@ extern "C" void SUBR(mvec_scatter_mvecs)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) 
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
+void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
+        phist_const_map_ptr map,
+        phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
+        int *iflag);
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+  return;
+}
+
+
 // NOTE: see the description of sparseMat_read_mm on how we treat input flags for this function
 extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist_const_comm_ptr vcomm,
         phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,

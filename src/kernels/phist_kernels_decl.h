@@ -522,6 +522,13 @@ void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist_const_comm
         phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
         phist_sparseMat_rowFunc rowFunPtr, void* last_arg, int *iflag);
 
+//! create a sparse matrix from a row func and use a distribution prescribed by a given map
+void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
+        phist_const_map_ptr map,
+        phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
+        int *iflag);
+                
+
 // These are not used or tested, perhaps useful in the future?
 #ifdef PHIST_KERNEL_LIB_BUILTIN
 void SUBR(mvec_gather_mvecs)(TYPE(mvec_ptr) V, TYPE(const_mvec_ptr) W[], int nblocks, int *iflag);

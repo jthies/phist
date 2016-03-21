@@ -13,6 +13,7 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, phist_const_com
         const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*iflag);
   if (filename==NULL)
@@ -26,6 +27,18 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, phist_const_com
 #else
   *iflag=EpetraExt::MatrixMarketFileToCrsMatrix64(filename,*comm,A);
 #endif
+
+if (repart)
+{
+#ifdef PHIST_HAVE_ISORROPIA
+  PHIST_SOUT(PHIST_WARNING,"matrix repartitioning with Epetra/Isorropia/Zoltan only implemented in the function\n"
+                           "sparseMat_create_fromRowFunc so far\n");
+#else
+  PHIST_SOUT(PHIST_WARNING,"matrix repartitioning with Epetra requires Isorropia (and Zoltan)\n");
+#endif
+}
+
+
   *vA = (TYPE(sparseMat_ptr))(A);
   
 /*  std::cerr << "filename was '"<<filename<<"'"<<std::endl;
@@ -52,19 +65,20 @@ const char* filename,int* iflag)
 }
 //!@}
 
-extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
-        phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
-                int *iflag)
+extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
+        phist_const_map_ptr vmap,
+        phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
+        int *iflag)
 {
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  int iflag_in=*iflag;
+  bool repart = (*iflag)&PHIST_SPARSEMAT_REPARTITION;
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_Map,map,vmap,*iflag);
   phist_gidx cols[maxnne];
   double vals[maxnne];
 
   Epetra_CrsMatrix* A=NULL;
-  Epetra_Map* map=NULL;
-  PHIST_TRY_CATCH(map = new Epetra_Map(nrows,0,*comm),*iflag);
   PHIST_TRY_CATCH(A   = new Epetra_CrsMatrix(Copy,*map,maxnne),*iflag);
   for (phist_lidx i=0; i<A->NumMyRows(); i++)
   {
@@ -81,10 +95,46 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
   PHIST_TRY_CATCH(A->FillComplete(),*iflag);
   *vA = (TYPE(sparseMat_ptr))(A);
 
+if (repart)
+{
+#ifdef PHIST_HAVE_ISORROPIA
+  Teuchos::RCP<Epetra_Map> newRowMap = phist::epetra_internal::repartition(Teuchos::rcp(A,false));
+  // create the matrix again and use this new map instead
+  delete A;
+  *iflag=iflag_in & ~PHIST_SPARSEMAT_REPARTITION;
+  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndMap)(vA,vcomm,newRowMap.get(),maxnne,rowFunPtr,last_arg,iflag),*iflag);
+
+  // TODO: print statistics on the partitioning? Isorropia has nice tools for this in examples/
+#else
+  PHIST_SOUT(PHIST_WARNING,"matrix repartitioning with Epetra requires Isorropia (and Zoltan)\n");
+#endif
+}
 
 return;
 }
 
+extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
+        phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
+        int *iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  int iflag_in=*iflag;
+  *iflag=0;
+  if (nrows!=ncols)
+  {
+    PHIST_SOUT(PHIST_ERROR,"Can only handle square matrices in current phist/epetra interface\n");
+    *iflag=-99;
+    return;
+  }
+  phist_map_ptr map=NULL;
+  PHIST_CHK_IERR(phist_map_create(&map,vcomm,nrows,iflag),*iflag);
+  *iflag=iflag_in;
+  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndMap)(vA,vcomm,map,
+        maxnne,rowFunPtr,last_arg,iflag),*iflag);
+  // we're responsible for deleting this map object, Epetra is responsibible for keeping it in the created matrix
+  PHIST_CHK_IERR(phist_map_delete(map,iflag),*iflag);
+  return;
+}
 
 //! \name get information about the data distribution in a matrix (maps)
 

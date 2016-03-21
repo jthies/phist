@@ -914,6 +914,15 @@ extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMa
   }
 }
 
+void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
+        phist_const_map_ptr map,
+        phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
+        int *iflag);
+{
+  *iflag=-99;
+  return;
+}
+
 // NOTE: see the description of sparseMat_read_mm on how we treat input flags for this function
 extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist_const_comm_ptr vcomm,
         phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,

@@ -40,28 +40,28 @@
 #include <likwid.h>
 #endif
 
-extern "C" {
+#include "hg_repart.hpp"
 
 // initialize kernel library. Should at least call MPI_Init if it has not been called
 // but is required.
 extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
-  {
+{
   *iflag=0;
 #ifdef PHIST_HAVE_MPI
   *iflag=MPI_Init(argc,argv); 
 #endif
   phist_kernels_common_init(argc,argv,iflag);
-  }
+}
 
 // finalize kernel library. Should at least call MPI_Finalize if it has not been called
 // but is required.
 extern "C" void phist_kernels_finalize(int* iflag)
-  {
+{
     phist_kernels_common_finalize(iflag);
 #ifdef PHIST_HAVE_MPI
   *iflag=MPI_Finalize();
 #endif  
-  }
+}
 
 
 //!
@@ -79,12 +79,12 @@ extern "C" void phist_comm_create(phist_comm_ptr* vcomm, int* iflag)
 
 //!
 extern "C" void phist_comm_delete(phist_comm_ptr vcomm, int* iflag)
-  {
+{
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(Epetra_Comm,comm,vcomm,*iflag);
   delete comm;
   vcomm=NULL;
-  }
+}
 
 #ifdef PHIST_HAVE_MPI
 extern void phist_comm_get_mpi_comm(phist_const_comm_ptr vcomm, MPI_Comm* mpiComm, int* iflag)
@@ -196,8 +196,6 @@ extern "C" void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iuppe
 #endif
 #include "phist_gen_z.h"
 #include "../common/kernels_no_impl.cpp"
-
-} //extern "C"
 
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"

@@ -77,6 +77,7 @@ double get_proc_weight(bool forceRecompute)
   if (stream_bw<0 || forceRecompute)
   {
     phist_bench_stream_triad(&stream_bw,&iflag);
+    stream_bw=(double)((int)(stream_bw/1e6));
     if (iflag) stream_bw=1.0;
   }
   return stream_bw;
