@@ -83,7 +83,7 @@ class DSparseMatRepartTest: public virtual TestWithType<double>,
     phist_Dmvec_extract_view(linearV_out_exact_,&V_out_exact_raw,&ldV_out,&iflag_);
     EXPECT_EQ(0,iflag_);
 
-#ifdef PHIST_MVECS_ROW_MAJOR    
+#ifdef PHIST_MVECS_ROW_MAJOR
     EXPECT_EQ(1,ldV_in);
     EXPECT_EQ(1,ldV_out);
 #endif
@@ -115,8 +115,11 @@ class DSparseMatRepartTest: public virtual TestWithType<double>,
       }
     }
     
-    // upload V_in to device (if applicable)
+    // upload V_in and V_out_exact to device (if applicable)
     phist_Dmvec_to_device(linearV_in_,&iflag_);
+    EXPECT_EQ(0,iflag_);
+
+    phist_Dmvec_to_device(linearV_out_exact_,&iflag_);
     EXPECT_EQ(0,iflag_);
     
     // fill the remaining vectors with garbage, should all be overwritten by 
