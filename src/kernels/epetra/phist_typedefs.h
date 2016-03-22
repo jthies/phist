@@ -36,14 +36,15 @@ typedef double complex phist_d_complex;
 typedef int phist_lidx;
 
 //! type of global indices
-#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
+#if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)||defined(PHIST_FORCE_INT_GIDX)
 typedef int phist_gidx;
+#define PRgidx "ld"
 #else
 typedef long long int phist_gidx;
+#define PRgidx "d"
 #endif
 
 #define PRlidx "d"
-#define PRgidx "d"
 
 #include "phist_void_aliases.h"
 

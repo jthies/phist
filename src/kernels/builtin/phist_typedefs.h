@@ -28,6 +28,10 @@ typedef int64_t phist_gidx;
 #define PRlidx "d"
 #define PRgidx "ld"
 
+#ifdef PHIST_FORCE_INT_GIDX
+# warning "neglecting config option PHIST_FORCE_INT_GIDX with builtin kernels!"
+#endif
+
 #include "phist_void_aliases.h"
 
 #endif

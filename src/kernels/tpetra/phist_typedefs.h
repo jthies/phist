@@ -33,7 +33,13 @@ typedef std::ptrdiff_t phist_gidx;
 typedef float complex phist_s_complex;
 typedef double complex phist_d_complex;
 //! type of global indices
+#ifdef PHIST_FORCE_INT_GIDX
+typedef int phist_gidx;
+#define PRgidx "d"
+#else
 typedef ptrdiff_t phist_gidx;
+#define PRgidx "ld"
+#endif
 #endif
 
 // we want ptrdiff_t (aka long long int on 64 bit systems) as local index,
@@ -42,9 +48,7 @@ typedef ptrdiff_t phist_gidx;
 
 //! type of node-local indices
 typedef int phist_lidx;
-
 #define PRlidx "d"
-#define PRgidx "ld"
 
 #include "phist_void_aliases.h"
 

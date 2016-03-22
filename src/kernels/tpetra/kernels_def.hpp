@@ -76,10 +76,10 @@ const char* filename,int* iflag)
 //!@}
 
 
-void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
+extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
         phist_const_map_ptr vmap,
         phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
-        int *iflag);
+        int *iflag)
 {
   *iflag=-99;
   return;

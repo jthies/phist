@@ -28,6 +28,14 @@ version of the code in addition to the standard
 */
 #cmakedefine PHIST_HAVE_SP
 
+/* by default PHIST tries to use 64-bit indices with Epetra/Tpetra.
+   This option can be used to force 32-bit (int) global indices, this
+   may be useful for interfaceing e.g. with partitioning libraries like
+   Zoltan/Isorropia. This parameter has no effect on the builtin and ghost
+   kernel interface.
+ */
+#cmakedefine PHIST_FORCE_INT_GIDX
+
 /* do you want to compile the complex valued
 version of the code (only available for some
 kernel libs) ?

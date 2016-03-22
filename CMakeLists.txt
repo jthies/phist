@@ -75,7 +75,7 @@ option(PHIST_USE_PRECON_TPLS
 # and ColPack etc.
 option(PHIST_USE_GRAPH_TPLS
         "try to find supported third-party libraries that implement graph partitioning and reordering for the kernel library used."
-        OFF)
+        ON)
 
 
 
@@ -554,6 +554,20 @@ else()
   message(STATUS "ESSEX-Physics not found, will use supplementary implementation")
   include_directories(${PROJECT_SOURCE_DIR}/drivers/matfuncs)
 endif()
+
+#############################################################################
+# use 32-bit integers as global indices with Epetra by default. This is     #
+# because e.g. Isorropia/Zoltan and our own HYMLS require it. For larger    #
+# runs with Epetra it has to be switched off before compiling PHIST.        #
+#############################################################################
+if( "${PHIST_KERNEL_LIB}" MATCHES "epetra" )
+  set(PHIST_FORCE_INT_GIDX_DEFAULT ON)
+else()
+  set(PHIST_FORCE_INT_GIDX_DEFAULT OFF)
+endif()
+
+option(PHIST_FORCE_INT_GIDX "Use 32-bit global indices for compatiblity with other libs" 
+${PHIST_FORCE_INT_GIDX_DEFAULT})
 
 ##############################################################################
 # enable single precision and complex valued calculation if supported
