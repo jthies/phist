@@ -8,7 +8,7 @@
 typedef int MPI_Comm;
 #endif
 
-#include "gtest/gtest.h"
+#include "gtest/phist_gtest.h"
 
 #include "phist_typedefs.h"
 #include "phist_kernels.h"

@@ -7,7 +7,7 @@
 #define PHIST_HIGH_PRECISION_KERNELS
 #endif
 
-#include "gtest/gtest.h"
+#include "gtest/phist_gtest.h"
 
 
 #include "phist_kernels.h"

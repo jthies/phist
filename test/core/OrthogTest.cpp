@@ -3,7 +3,7 @@
 #include <mpi.h>
 #endif
 
-#include "gtest/gtest.h"
+#include "gtest/phist_gtest.h"
 
 
 #include "phist_orthog.h"

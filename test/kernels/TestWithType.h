@@ -6,7 +6,7 @@
 #include <mpi.h>
 #endif
 
-#include "gtest/gtest.h"
+#include "gtest/phist_gtest.h"
 #include "KernelTest.h"
 #include "phist_ScalarTraits.hpp"
 #include "phist_random.h"

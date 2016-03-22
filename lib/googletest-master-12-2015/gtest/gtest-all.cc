@@ -36,7 +36,7 @@
 
 // This line ensures that gtest.h can be compiled on its own, even
 // when it's fused.
-#include "gtest/gtest.h"
+#include "gtest/phist_gtest.h"
 
 // The following lines pull in the real gtest *.cc files.
 // Copyright 2005, Google Inc.
@@ -488,7 +488,7 @@ GTEST_DECLARE_bool_(death_test_use_fork);
 
 namespace internal {
 
-#ifdef GTEST_HAS_MPI
+#if GTEST_HAS_MPI
 MPI_Comm GTEST_MPI_COMM_WORLD = MPI_COMM_WORLD;
 #endif
 
@@ -557,7 +557,7 @@ inline int GetRandomSeedFromFlag(Int32 random_seed_flag) {
   // make sure every MPI process has the same seed, otherwise they will try to
   // run different tests and hang
   int synchronized_seed=normalized_seed;
-#ifdef GTEST_HAS_MPI
+#if GTEST_HAS_MPI
   bool mpiErr = (MPI_Bcast(&synchronized_seed, 1, MPI_INT, 0, internal::GTEST_MPI_COMM_WORLD)!=MPI_SUCCESS);
   if( mpiErr )
   {
@@ -2467,7 +2467,7 @@ void AssertionResult::swap(AssertionResult& other) {
 // checks that all MPI processes have the same v
 bool AssertionResult::boolIdenticalOnMPIprocs(bool v)
 {
-#ifdef GTEST_HAS_MPI
+#if GTEST_HAS_MPI
   int localSuccess = v;
   int globalAndV, globalOrV;
   bool mpiErr = false;
