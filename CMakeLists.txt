@@ -75,7 +75,7 @@ option(PHIST_USE_PRECON_TPLS
 # and ColPack etc.
 option(PHIST_USE_GRAPH_TPLS
         "try to find supported third-party libraries that implement graph partitioning and reordering for the kernel library used."
-        ON)
+        OFF)
 
 
 

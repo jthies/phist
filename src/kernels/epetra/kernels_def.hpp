@@ -34,7 +34,11 @@ if (repart)
   PHIST_SOUT(PHIST_WARNING,"matrix repartitioning with Epetra/Isorropia/Zoltan only implemented in the function\n"
                            "sparseMat_create_fromRowFunc so far\n");
 #else
-  PHIST_SOUT(PHIST_WARNING,"matrix repartitioning with Epetra requires Isorropia (and Zoltan)\n");
+    Teuchos::RCP<Epetra_Map> newRowMap=Teuchos::null;
+    Teuchos::RCP<Epetra_CrsMatrix> newMatrix=Teuchos::null;
+    PHIST_CHK_IERR(phist::epetra_internal::repartition(Teuchos::rcp(A,false),newRowMap,newMatrix,true,iflag),*iflag);
+    delete A;
+    A=newMatrix.release();    
 #endif
 }
 
@@ -75,6 +79,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Epetra_Map,map,vmap,*iflag);
+  PHIST_SOUT(PHIST_DEBUG,"sparseMat_create_fromRowFuncAndMap with iflag=%d\n",iflag_in);
   phist_gidx cols[maxnne];
   double vals[maxnne];
 
@@ -95,21 +100,27 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
   PHIST_TRY_CATCH(A->FillComplete(),*iflag);
   *vA = (TYPE(sparseMat_ptr))(A);
 
-if (repart)
-{
+  if (repart)
+  {
 #ifdef PHIST_HAVE_ISORROPIA
-  Teuchos::RCP<Epetra_Map> newRowMap = phist::epetra_internal::repartition(Teuchos::rcp(A,false));
-  // create the matrix again and use this new map instead
-  delete A;
-  *iflag=iflag_in & ~PHIST_SPARSEMAT_REPARTITION;
-  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndMap)(vA,vcomm,newRowMap.get(),maxnne,rowFunPtr,last_arg,iflag),*iflag);
+    Teuchos::RCP<Epetra_Map> newRowMap=Teuchos::null;
+    Teuchos::RCP<Epetra_CrsMatrix> dummy=Teuchos::null;
+    PHIST_CHK_IERR(phist::epetra_internal::repartition(Teuchos::rcp(A,false),newRowMap,dummy,false,iflag),*iflag);
+    if (newRowMap==Teuchos::null)
+    {
+      *iflag=PHIST_BAD_CAST;
+      return;
+    }
+    // create the matrix again and use this new map instead
+    delete A;
+    *iflag=iflag_in & ~PHIST_SPARSEMAT_REPARTITION;
+    PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndMap)(vA,vcomm,newRowMap.get(),maxnne,rowFunPtr,last_arg,iflag),*iflag);
 
-  // TODO: print statistics on the partitioning? Isorropia has nice tools for this in examples/
+    // TODO: print statistics on the partitioning? Isorropia has nice tools for this in examples/
 #else
-  PHIST_SOUT(PHIST_WARNING,"matrix repartitioning with Epetra requires Isorropia (and Zoltan)\n");
+    PHIST_SOUT(PHIST_WARNING,"matrix repartitioning with Epetra requires Isorropia (and Zoltan)\n");
 #endif
-}
-
+  }
 return;
 }
 
