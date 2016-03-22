@@ -31,14 +31,13 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, phist_const_com
 if (repart)
 {
 #ifdef PHIST_HAVE_ISORROPIA
-  PHIST_SOUT(PHIST_WARNING,"matrix repartitioning with Epetra/Isorropia/Zoltan only implemented in the function\n"
-                           "sparseMat_create_fromRowFunc so far\n");
-#else
     Teuchos::RCP<Epetra_Map> newRowMap=Teuchos::null;
     Teuchos::RCP<Epetra_CrsMatrix> newMatrix=Teuchos::null;
     PHIST_CHK_IERR(phist::epetra_internal::repartition(Teuchos::rcp(A,false),newRowMap,newMatrix,true,iflag),*iflag);
     delete A;
     A=newMatrix.release().getRawPtr();
+#else
+    PHIST_SOUT(PHIST_WARNING,"%s, not repartitioning the matrix because Isorropia is not available\n",__FUNCTION__);
 #endif
 }
 
