@@ -1,0 +1,250 @@
+#include "phist_config.h"
+
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <strings.h>
+
+#include "phist_macros.h"
+#include "phist_kernels.h"
+#include "phist_operator.h"
+#include "phist_precon.h"
+#include "phist_belos.h"
+
+#include "phist_jadaOpts.h"
+#include "phist_jadaCorrectionSolver.h"
+
+
+#include ${PHIST_TG_HFILE}
+
+#include "phist_driver_utils.h"
+
+int main(int argc, char** argv)
+  {
+  int rank, num_proc;
+  int i, iflag;
+  bool verbose;
+
+  phist_comm_ptr comm;
+  sparseMat_ptr A;
+  linearOp_ptr A_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  linearOp_ptr P_op; // preconditioner
+  
+  phist_const_map_ptr map; // map (element distribution) of vectors according to 
+                       // the distribution of matrix rows
+  mvec_ptr X,XEX,B,R;// multivectors for solution and rhs (XEX exact solution to compare)
+  
+  MT tol;
+  MT *rnorm2; /* for computing the residual norm axplicitly */
+  MT *norm2; /* for computing the error norms after the solve */
+  MT *xnorm2, *bnorm2; /* for scaling, norm of exact solution and rhs */
+  char* matname;
+  
+  int num_iters, nconv;
+  int max_iters,max_blocks,num_rhs;
+  int variant=0; // only proper block GMRES accessible via this driver right now.
+  const char *prec_type,*prec_opts;
+  
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
+
+  PHIST_ICHK_IERR(phist_comm_create(&comm,&iflag),iflag);
+
+  PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&iflag),iflag);
+  PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&iflag),iflag);
+
+  verbose= (rank==0);
+
+  if (argc<2)
+  {
+    if (verbose) fprintf(stdout,"Usage: %s <matrix> [<max iters> [<tol> [<num rhs> [<max blocks> [<precon> [<prec_opts>]>]]]]]\n",argv[0]);
+    SUBR(create_matrix)(NULL,NULL,"usage",&iflag);
+    SUBR(precon_create)(NULL,NULL,ZERO,NULL,NULL,NULL,"usage",NULL,&iflag);
+    return 1;
+  }
+
+  matname = argv[1];
+  
+  if (argc<3)
+  {
+    max_iters=300;
+  }
+  else
+  {
+    max_iters=atoi(argv[2]);
+  }
+
+  if (argc<4)
+  {
+    tol=1.0e-6;
+  }
+  else
+  {
+    tol=(MT)atof(argv[3]);
+  }
+
+  if (argc<5)
+  {
+    num_rhs=1;
+  }
+  else
+  {
+    num_rhs=atoi(argv[4]);
+  }
+
+  if (argc<6)
+  {
+    max_blocks=30;
+  }
+  else
+  {
+    max_blocks=atoi(argv[5]);
+  }
+    
+  if (argc<7)
+  {
+    prec_type="None";
+  }
+  else
+  {
+    prec_type=argv[6];
+  }
+
+  if (argc<7)
+  {
+    prec_opts="";
+  }
+  else
+  {
+    prec_opts=argv[7];
+  }
+
+  if (verbose) 
+  {
+    PHIST_OUT(PHIST_INFO,"matrix: %s\n",matname);
+    PHIST_OUT(PHIST_INFO,"number of rhs: %d\n",num_rhs);
+    PHIST_OUT(PHIST_INFO,"preconditioner: %s\n",prec_type);
+    PHIST_OUT(PHIST_INFO,"prec options: %s\n",prec_opts);
+  }
+
+  //iflag=PHIST_SPARSEMAT_REPARTITION;
+  PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&iflag),iflag);
+  
+  /* we assume domain map = range map here, which is reasonable for something
+     you want to put into a linear solver */
+  PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&iflag),iflag);
+
+  /* create vectors */
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&XEX,map,num_rhs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,num_rhs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&B,map,num_rhs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&R,map,num_rhs,&iflag),iflag);
+  
+  /* randomize the solution vector */
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(X,ZERO,&iflag),iflag);
+  //PHIST_ICHK_IERR(SUBR(mvec_random)(XEX,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(XEX,ONE,&iflag),iflag);
+  
+  /* compute rhs B=A*XEX */
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(ONE,A,XEX,ZERO,B,&iflag),iflag);
+  
+  /* create operator wrapper for computing Y=A*X using a CRS matrix */
+  A_op = (linearOp_ptr)malloc(sizeof(TYPE(linearOp)));
+  PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(A_op,A,&iflag),iflag);
+  
+  /* create the preconditioner */
+  if (strcasecmp(prec_type,"None")!=0)
+  {
+    P_op = (linearOp_ptr)malloc(sizeof(TYPE(linearOp)));
+    PHIST_ICHK_IERR(SUBR(precon_create)(P_op,A,ZERO,NULL,NULL,NULL,prec_type,prec_opts,&iflag),iflag);
+  }
+  num_iters=max_iters;
+  
+  phist_jadaOpts opts;
+  opts.innerSolvType=phist_GMRES;
+  opts.innerSolvBlockSize=1;
+  opts.innerSolvMaxBas=max_blocks;
+  
+  TYPE(mvec_ptr) Vdum=NULL;
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&Vdum,map,1,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(Vdum,(_ST_)0.0,&iflag),iflag);   
+  TYPE(jadaCorrectionSolver_ptr) solver = NULL;
+  PHIST_ICHK_IERR(SUBR(jadaCorrectionSolver_create)(&solver, opts,
+            A_op->domain_map, &iflag), iflag);
+
+  // allow at most the given number of iterations
+  _ST_ sigma=(_ST_)0.0;
+  SUBR(jadaCorrectionSolver_run)(solver, A_op, NULL, Vdum, Vdum,
+                                                     &sigma, B, NULL,
+                                                      &tol, num_iters, X, true, false, &iflag);
+
+  if (iflag!=0)
+    {
+    if (verbose) fprintf(stdout,"code %d returned from Belos BlockGMRES\n",iflag);
+    if (iflag<0) return iflag;
+    }
+  
+  PHIST_OUT(1,"number of iterations performed: %d\n",num_iters);
+
+  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_delete)(solver,&iflag),iflag);
+  
+  /* compute residual norms */
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(ONE,A,X,ZERO,R,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,B,ONE,R,&iflag),iflag);
+  
+  /* compute ||X - XEX||_2 */
+  norm2=(MT*)malloc(num_rhs*sizeof(MT));
+  rnorm2=(MT*)malloc(num_rhs*sizeof(MT));
+  xnorm2=(MT*)malloc(num_rhs*sizeof(MT));
+  bnorm2=(MT*)malloc(num_rhs*sizeof(MT));
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(ONE,XEX,-ONE,X,&iflag),iflag);
+
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(R,rnorm2,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(X,norm2,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(XEX,xnorm2,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(B,bnorm2,&iflag),iflag);
+  
+  if (verbose)
+    {
+    fprintf(stdout,"residual 2-norms: ||r||, ||r||/||x||, ||r||/||b||:\n");
+    for (i=0;i<num_rhs;i++)
+      {
+      fprintf(stdout,"%8.4e\t%8.4e\t%8.4e",rnorm2[i],rnorm2[i]/xnorm2[i],rnorm2[i]/bnorm2[i]);
+      }
+    fprintf(stdout,"\n");
+
+    fprintf(stdout,"error 2-norms: ||e||, ||e||/||x||, ||e||/||b||:\n");
+    for (i=0;i<num_rhs;i++)
+      {
+      fprintf(stdout,"%8.4e\t%8.4e\t%8.4e",norm2[i],norm2[i]/xnorm2[i],norm2[i]/bnorm2[i]);
+      }
+    fprintf(stdout,"\n");
+    }
+  
+  free(rnorm2);
+  free(norm2);
+  free(xnorm2);
+  free(bnorm2);
+
+  // since we don't have smart pointers in PHIST, we have to be a bit
+  // careful about the order in which we delete stuff. For instance, the
+  // preconditioner may have a pointer to A, so we delete it first.
+  if (P_op!=NULL)
+  {
+    PHIST_ICHK_IERR(SUBR(precon_delete)(P_op,&iflag),iflag);
+    free(P_op);
+  }
+
+  PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
+
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(XEX,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(B,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(R,&iflag),iflag);
+  free(A_op);
+  PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
+  return iflag;
+  }
