@@ -539,24 +539,17 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   ghost_permutation *gperm_in=ctx_in->perm_global;
   ghost_permutation *gperm_out=ctx_out->perm_global;
  
-  if (gperm_in!=gperm_out)
-  {
-    // I think the permute function we use further down only does local permutations up to now,
-    // so return -99 (not implemented)
-    PHIST_SOUT(PHIST_ERROR,"can't handle global permutations with ghost in mvec_to_mvec up to now\n");
-    *iflag=PHIST_NOT_IMPLEMENTED;
-    return;
-  }
-
   // it seems like GHOST does not set these flags at all...
   bool outputPermuted=flags_out&GHOST_DENSEMAT_PERMUTED;
   bool  inputPermuted=flags_in &GHOST_DENSEMAT_PERMUTED;
 
-  outputPermuted=(lperm_out!=NULL);
-  inputPermuted= (lperm_in!=NULL);
+  outputPermuted=(lperm_out!=NULL || gperm_out!=NULL);
+  inputPermuted= (lperm_in!=NULL || gperm_in!=NULL);
   
   // if both are permuted with the same permutation, just copy
-  bool no_perm_needed = (outputPermuted==inputPermuted && lperm_in==lperm_out);
+  bool no_perm_needed = (outputPermuted==inputPermuted && 
+                         lperm_in==lperm_out &&
+                         gperm_in==gperm_out);
   
   int me,nrank;
   ghost_rank(&me, ctx_in->mpicomm);
