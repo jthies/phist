@@ -27,7 +27,9 @@
 
 # include "BelosOrthoManager.hpp"
 // we can try any of the methods implemented in Belos:
+#ifdef BELOS_HAVE_TSQR
 # include "BelosTsqrOrthoManager.hpp"
+#endif
 # include "BelosDGKSOrthoManager.hpp"
 # include "BelosICGSOrthoManager.hpp"
 # include "BelosIMGSOrthoManager.hpp"
