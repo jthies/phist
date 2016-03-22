@@ -66,10 +66,13 @@ public:
 #ifdef HIGH_PRECISION_KERNELS
       iflag_in=PHIST_ROBUST_REDUCTIONS;
 #endif
+      // these kernels only work on the host, so we need to manually perform up/downloads
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       iflag_=iflag_in;
       SUBR(sdMat_cholesky)(mat1_,perm,&rank,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      SUBR(sdMat_to_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 //SUBR(sdMat_print)(mat1_,&iflag_);
 //      ASSERT_EQ(0,iflag_);
@@ -96,9 +99,19 @@ public:
       ASSERT_NEAR(mt::one(),SdMatsEqual(mat3_,mat2_),10*mt::eps());
 #endif
 
+      SUBR(sdMat_from_device)(mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
       // -- check rank deficiency of last row/col --
       mat2_vp_[MIDX(nrows_-1,ncols_-1,m_lda_)] = st::zero();
+
+      SUBR(sdMat_to_device)(mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
       SUBR(sdMat_add_sdMat)(st::one(), mat2_, st::zero(), mat1_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // cholesky
@@ -109,7 +122,7 @@ public:
 //SUBR(sdMat_print)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nrows_-1,rank);
-    SUBR(sdMat_from_device)(mat1_,&iflag_);
+    SUBR(sdMat_to_device)(mat1_,&iflag_);
     ASSERT_EQ(0,iflag_);
       // assure that mat1_ is now permuted upper triangular
       for(int i = 0; i < nrows_; i++)
@@ -134,8 +147,6 @@ public:
 #endif
 
       // -- create explicit hpd matrix from upper triangular part --
-      SUBR(sdMat_put_value)(mat1_,st::zero(),&iflag_);
-      ASSERT_EQ(0,iflag_);
       int k = (nrows_*(nrows_+1))/2;
       for(int i = 0; i < nrows_; i++)
       {
@@ -164,18 +175,20 @@ SUBR(sdMat_print)(mat2_,&iflag_);
       SUBR(sdMat_add_sdMat)(st::one(), mat2_, st::zero(), mat1_, &iflag_);
       ASSERT_EQ(0,iflag_);
 
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
       // cholesky
       rank = 0;
       iflag_=iflag_in;
       SUBR(sdMat_cholesky)(mat1_,perm,&rank,&iflag_);
       ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_to_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"L^T:\n");
 SUBR(sdMat_print)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nrows_,rank);
-
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
 
       // assure that mat1_ is now permuted upper triangular
       for(int i = 0; i < nrows_; i++)
@@ -192,7 +205,6 @@ SUBR(sdMat_print)(mat1_,&iflag_);
       // check result
       iflag_=iflag_in;
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat3_, &iflag_);
-      ASSERT_EQ(0,iflag_);
       ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"LL^T:\n");
 SUBR(sdMat_print)(mat3_,&iflag_);
@@ -235,16 +247,17 @@ SUBR(sdMat_print)(mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // cholesky
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
       rank = 0;
       iflag_=iflag_in;
       SUBR(sdMat_cholesky)(mat1_,perm,&rank,&iflag_);
       ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_to_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"L^T:\n");
 SUBR(sdMat_print)(mat1_,&iflag_);
       ASSERT_EQ(nrows_-1,rank);
-
-      SUBR(sdMat_from_device)(mat1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
 
       // assure that mat1_ is now permuted upper triangular
       for(int i = 0; i < nrows_; i++)
@@ -372,8 +385,14 @@ SUBR(sdMat_print)(mat2_,&iflag_);
 ASSERT_EQ(0,iflag_);
 
     // backward substitute
+    SUBR(sdMat_from_device)(mat1_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_from_device)(mat2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
     iflag_=iflag_in;
     SUBR(sdMat_backwardSubst_sdMat)(mat1_,perm,rank,mat2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_to_device)(mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
 PHIST_SOUT(PHIST_INFO,"reconstructed X:\n");
 SUBR(sdMat_print)(mat2_,&iflag_);
@@ -399,9 +418,17 @@ SUBR(sdMat_print)(mat2_,&iflag_);
 ASSERT_EQ(0,iflag_);
 
     // forward substitute
+    SUBR(sdMat_from_device)(mat1_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_from_device)(mat2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
     iflag_=iflag_in;
     SUBR(sdMat_forwardSubst_sdMat)(mat1_,perm,rank,mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
+
+    SUBR(sdMat_to_device)(mat2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
 PHIST_SOUT(PHIST_INFO,"reconstructed X:\n");
 SUBR(sdMat_print)(mat2_,&iflag_);
 ASSERT_EQ(0,iflag_);
