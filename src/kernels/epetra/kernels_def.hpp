@@ -22,7 +22,7 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, phist_const_com
     return;
   }
   Epetra_CrsMatrix* A=NULL;
-#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
+#if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)||defined(PHIST_FORCE_INT_GIDX)
   *iflag=EpetraExt::MatrixMarketFileToCrsMatrix(filename,*comm,A);
 #else
   *iflag=EpetraExt::MatrixMarketFileToCrsMatrix64(filename,*comm,A);
@@ -86,7 +86,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
   PHIST_TRY_CATCH(A   = new Epetra_CrsMatrix(Copy,*map,maxnne),*iflag);
   for (phist_lidx i=0; i<A->NumMyRows(); i++)
   {
-#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
+#if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)||defined(PHIST_FORCE_INT_GIDX)
     ghost_gidx row = (ghost_gidx)map->GID(i);
 #else
     ghost_gidx row = (ghost_gidx)map->GID64(i);
@@ -478,7 +478,7 @@ extern "C" void SUBR(mvec_put_func)(TYPE(mvec_ptr) vV,
   {
     for (int j=0; j<V->NumVectors(); j++)
     {
-#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
+#if defined(EPETRA_NO_64BIT_GLOBAL_INDICES)||defined(PHIST_FORCE_INT_GIDX)
     phist_gidx row=V->Map().GID(i);
 #else
     phist_gidx row=V->Map().GID64(i);
