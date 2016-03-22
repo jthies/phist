@@ -1766,7 +1766,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
 
   PHIST_DEB("mvec_QR: multi-vector case\n");
 
-#if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)&&defined(PHIST_HAVE_BELOS)
+#if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)&&defined(BELOS_HAVE_TSQR)
 
 #ifdef GHOST_HAVE_CUDA
   static int any_cuda=-1;

@@ -28,7 +28,9 @@
 #ifdef PHIST_HAVE_BELOS
 #include "phist_trilinos_macros.h"
 #include "Belos_GhostAdapter.hpp"
-#include "BelosTsqrOrthoManager.hpp"
+# ifdef BELOS_HAVE_TSQR
+# include "BelosTsqrOrthoManager.hpp"
+# endif
 #endif
 
 #ifdef PHIST_HAVE_ANASAZI

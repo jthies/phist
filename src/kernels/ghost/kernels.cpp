@@ -16,22 +16,6 @@
 #include "typedefs.hpp"
 #include "phist_ScalarTraits.hpp"
 
-// these are from Trilinos, we need them to interface
-// the TSQR library for orthogonalizing tall skinny matrices.
-#ifdef PHIST_HAVE_BELOS
-#include "phist_trilinos_macros.h"
-#include "Ghost_TsqrAdaptor.hpp"
-#include "Belos_GhostAdapter.hpp"
-#include "BelosTsqrOrthoManager.hpp"
-#endif
-
-#ifdef PHIST_HAVE_ANASAZI
-#include "phist_trilinos_macros.h"
-#include "Anasazi_GhostAdapter.hpp"
-#include "phist_AnasaziOperatorTraits.hpp"
-#include "AnasaziSVQBOrthoManager.hpp"
-#endif
-
 #include "phist_ghost_internal.h"
 #include "phist_GhostMV.hpp"
 
