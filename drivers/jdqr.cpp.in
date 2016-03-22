@@ -211,10 +211,8 @@ int main(int argc, char** argv)
   // first column in X is currently used as starting vector of Arnoldi in jdqr. The first 
   // jmin vectors are constructed by an Arnoldi process for stability reasons.
   phist_lidx nloc,lda; 
-  ST* valX0;
   MT nrmX0[num_eigs+1];
   PHIST_ICHK_IERR(SUBR(mvec_my_length)(X,&nloc,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(mvec_extract_view)(X,&valX0,&lda,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_normalize)(X,nrmX0,&iflag),iflag);
 
   SUBR(jdqr)(A_op,B_op,X,NULL,NULL,evals,resid,is_cmplx, 
