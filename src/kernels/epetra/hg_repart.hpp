@@ -3,7 +3,6 @@
 
 #include "phist_config.h"
 
-# ifdef PHIST_HAVE_ISORROPIA
 #ifndef DOXYGEN
 #include <mpi.h>
 #include "Teuchos_RCP.hpp"
@@ -31,5 +30,4 @@ namespace phist
   }
 }
 
-# endif
 #endif

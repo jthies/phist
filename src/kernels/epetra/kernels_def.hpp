@@ -38,7 +38,7 @@ if (repart)
     Teuchos::RCP<Epetra_CrsMatrix> newMatrix=Teuchos::null;
     PHIST_CHK_IERR(phist::epetra_internal::repartition(Teuchos::rcp(A,false),newRowMap,newMatrix,true,iflag),*iflag);
     delete A;
-    A=newMatrix.release();    
+    A=newMatrix.release().getRawPtr();
 #endif
 }
 
