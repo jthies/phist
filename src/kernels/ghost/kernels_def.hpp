@@ -723,57 +723,10 @@ PHIST_CHK_IERR(SUBR(mvec_my_length)(Vblock,&nr_vb,iflag),*iflag);
       }
 #endif
 
-  // as ghost uses memcpy, avoid passing in vectors that actually
-  // view the same data (this may happen in subspacejada as it is
-  // implemented right now)
-  _ST_ *v_ptr=NULL,*vb_ptr=NULL;
-  phist_lidx ldv,ldvb;
-  PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))vV,&v_ptr,&ldv,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))vVblock,&vb_ptr,&ldvb,iflag),*iflag);
-  
-  // as far as I know ghost just calls memcpy(a,b), which
-  // (I think) is ill-defined if the arrays overlap. If the
-  // data is already in the correct location, return here.
-  // otherwise, give a warning.
-
-// row and column stride (rs and cs)
-#ifdef PHIST_MVECS_ROW_MAJOR
-  const int cs=1,rs=ldv;
-#else
-  const int cs=ldv,rs=1;
-#endif  
-  if (vb_ptr == v_ptr + cs*jmin)
-  {
-    PHIST_SOUT(PHIST_DEBUG,"mvec_set_block: data already in the correct location.\n");
-    *iflag=0;
-    return;
-  }
-  else if ( (vb_ptr                   <= v_ptr + cs*jmax) &&
-            (vb_ptr+cs*(jmax-jmin)  >= v_ptr + cs*jmin) )
-  {
-    // note: this test is certainly not 
-    // sufficient, but it catches the   
-    // situation where Vblock is a view 
-    // of V overlapping the target cols.
-    PHIST_SOUT(PHIST_ERROR,"mvec_set_block: overlapping memory locations!\n");
-    *iflag=PHIST_INVALID_INPUT;
-    return;
-  }
-  
   // create a view of the requested columns of V
   ghost_densemat *Vcols=NULL;
   V->viewCols(V,&Vcols,(ghost_lidx)(jmax-jmin+1),(ghost_lidx)jmin);
-#ifdef TESTING
-  _ST_* vc_ptr=NULL;
-  phist_lidx ldvc;
-  PHIST_CHK_IERR(SUBR(mvec_extract_view)((TYPE(mvec_ptr))Vcols,&vc_ptr,&ldvc,iflag),*iflag);
-  PHIST_CHK_IERR(*iflag=ldvc-ldv,*iflag);
-  if (vc_ptr!=v_ptr+jmin*cs)
-  {
-    PHIST_SOUT(PHIST_ERROR,"tmp view incorrect in mvec_set_block (file %s, line %d)\n",
-        __FILE__,__LINE__);
-  }
-#endif
+
   // copy the data
   PHIST_CHK_GERR(Vcols->fromVec(Vcols,Vblock,0,0),*iflag);
   // delete the view
