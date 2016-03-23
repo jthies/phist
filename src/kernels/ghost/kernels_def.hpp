@@ -1012,10 +1012,17 @@ extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
   std::cout << "# cols:       "<<M->traits.ncols<<std::endl;
   std::cout << "# row major:  "<<(M->traits.storage & GHOST_DENSEMAT_ROWMAJOR)<<std::endl;
   std::cout << "# stride:     "<<M->stride<<std::endl;
-  char *str=NULL;
-  M->string(M,&str);
-  std::cout << str <<std::endl;
-  free(str); str = NULL;
+  if (M->traits.location == GHOST_LOCATION_HOST) 
+  {
+    char *str=NULL;
+    M->string(M,&str);
+    std::cout << str <<std::endl;
+    free(str); str = NULL;
+  }
+  else
+  {
+    std::cout << "(not printing values on GPU processes)\n";
+  }
 }
 
 #ifndef PHIST_BUILTIN_RNG
