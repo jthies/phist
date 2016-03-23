@@ -242,7 +242,7 @@ static void TearDownTestCase()
   KernelTest::TearDownTestCase();
 }
 
-static void PrintSdMat(std::ostream& os, std::string label, 
+static void PrintSdMat(int outlev, std::string label, 
         ST* mat_vp, phist_lidx lda, phist_lidx stride,MPI_Comm mpi_comm)
 {
     int rank=0, np=1;
@@ -250,43 +250,33 @@ static void PrintSdMat(std::ostream& os, std::string label,
     MPI_Comm_rank(mpi_comm,&rank);
     MPI_Comm_size(mpi_comm,&np);
 #endif    
+    std::ostringstream oss;
     if (rank==0)
     {
-      os << std::endl<<label <<"="<<std::endl;
-      os << "nproc  "<<np<<std::endl;
-      os << "nrows  "<<nrows_<<std::endl;
-      os << "ncols   "<<ncols_<<std::endl;
-      os << "lda    "<<lda<<std::endl;
-      os << "stride "<<stride<<std::endl;
+      oss << std::endl<<label <<"="<<std::endl;
+      oss << "nproc  "<<np<<std::endl;
+      oss << "nrows  "<<nrows_<<std::endl;
+      oss << "ncols   "<<ncols_<<std::endl;
+      oss << "lda    "<<lda<<std::endl;
+      oss << "stride "<<stride<<std::endl;
 #ifdef PHIST_SDMATS_ROW_MAJOR
-      os << "row-major storage"<<std::endl;
+      oss << "row-major storage"<<std::endl;
 #else
-      os << "col-major storage"<<std::endl;
+      oss << "col-major storage"<<std::endl;
 #endif
     }
-    for (int p=0;p<np;p++)
+    
+    for (int i=0;i<stride*nrows_;i+=stride)
     {
-      if (p==rank)
+      for (int j=0;j<ncols_;j++)
       {
-        os << " @ rank "<<p<<" @"<<std::endl;
-        for (int i=0;i<stride*nrows_;i+=stride)
-        {
-          for (int j=0;j<ncols_;j++)
-          {
-            os << mat_vp[MIDX(i,j,lda)]<<"  ";
-          }//j
-          os << std::endl;
-        }//i
-        os << std::flush;
-      }//rank==p
-#ifdef PHIST_HAVE_MPI
-        MPI_Barrier(mpi_comm);
-        MPI_Barrier(mpi_comm);
-        MPI_Barrier(mpi_comm);
-        MPI_Barrier(mpi_comm);
-        MPI_Barrier(mpi_comm);
-#endif
-    }//p
+        oss << mat_vp[MIDX(i,j,lda)]<<"  ";
+      }//j
+      oss << std::endl;
+    }//i
+    // we could also print the local elements on each process, but I think it is more useful to
+    // print the values on rank 0 here
+    PHIST_SOUT(outlev,oss.str().c_str());
     return;
 }
 

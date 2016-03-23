@@ -194,28 +194,18 @@ TEST_F(CLASSNAME,mvec_normalize)
       // the factor 2 in releps here is because otherwise fails the test by a fraction of releps
       ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.0*releps(vec1_));
 
-#if PHIST_OUTLEV>=PHIST_DEBUG
-# if _N_<100
-        PHIST_SOUT(PHIST_DEBUG,"original V:\n");
-        SUBR(mvec_print)(vec1_,&iflag_);
-        PHIST_SOUT(PHIST_DEBUG,"computed Q:\n");
-        SUBR(mvec_print)(vec2_,&iflag_);
-        PHIST_SOUT(PHIST_DEBUG,"computed R:\n");
-        SUBR(sdMat_print)(mat1_,&iflag_);
-# endif
-#endif
+        PrintVector(PHIST_DEBUG,"original V:\n",vec1_vp_,nloc_,lda_,stride_,mpi_comm_);
+        PrintVector(PHIST_DEBUG,"computed Q:\n",vec1_vp_,nloc_,lda_,stride_,mpi_comm_);
+        PrintSdMat(PHIST_DEBUG,"computed R:\n",mat1_vp_,m_lda_,stride_,mpi_comm_);
+
       // check Q*R=V
       SUBR(mvec_times_sdMat)(-st::one(),vec2_,mat1_,st::one(),vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_from_device)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-#if PHIST_OUTLEV>=PHIST_DEBUG
-# if _N_<100
-        PHIST_SOUT(PHIST_DEBUG,"explicit Q*R:\n");
-        SUBR(mvec_print)(vec1_,&iflag_);
-# endif
-#endif
+        PrintVector(PHIST_DEBUG,"explicit V-Q*R:\n",vec1_vp_,nloc_,lda_,stride_,mpi_comm_);
+
       ASSERT_NEAR(mt::one(), ArrayEqual(vec1_vp_,nloc_,nvec_,lda_,stride_,st::zero(),vflag_),sqrt(mt::eps()));
     }
 
@@ -244,10 +234,9 @@ TEST_F(CLASSNAME,mvec_normalize)
       // check that we anyway got something orthogonal back
       ASSERT_NEAR(mt::one(),ColsAreNormalized(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
       ASSERT_NEAR(mt::one(),ColsAreOrthogonal(vec2_vp_,nloc_,lda_,stride_,mpi_comm_),(MT)100.*releps(vec1_));
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      PHIST_DEB("R=\n");
-      SUBR(sdMat_print)(mat1_,&iflag_);
-#endif
+
+      PrintSdMat(PHIST_DEBUG,"R",mat1_vp_,m_lda_,stride_,mpi_comm_);
+
       // check Q*R=V
       SUBR(mvec_times_sdMat)(-st::one(),vec2_,mat1_,st::one(),vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);

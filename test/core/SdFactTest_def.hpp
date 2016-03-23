@@ -164,8 +164,7 @@ public:
       SUBR(sdMat_to_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-PHIST_SOUT(PHIST_INFO,"Predefined L^T:\n");
-SUBR(sdMat_print)(mat1_,&iflag_);
+      MTest::PrintSdMat(PHIST_DEBUG,"Predefined L^T",mat1_vp_,m_lda_,1,mpi_comm_);
       iflag_=iflag_in;
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);

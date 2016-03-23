@@ -113,21 +113,16 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
         SUBR(sdMat_sync_values)(mat2_, comm_, &iflag_);
         ASSERT_EQ(0,iflag_);
       
-#if PHIST_OUTLEV>=PHIST_DEBUG
-        PHIST_DEB("input matrix to Schur-decomp:\n");
-        SUBR(sdMat_print)(mat1_,&iflag_);
-#endif
-
+        PrintSdMat(PHIST_DEBUG,"input matrix to Schur-decomp",
+                mat1_vp_, m_lda_, 1,mpi_comm_);
+        
         PHIST_CHK_IERR(SUBR(sdMat_from_device)(mat1_,&iflag_),iflag_);
         SUBR(SchurDecomp)(mat1_vp_,m_lda_,mat2_vp_,m_lda_,n_,nselect,nsort,which,tol,ev_,&this->iflag_);
         PHIST_CHK_IERR(SUBR(sdMat_to_device)(mat1_,&iflag_),iflag_);
         PHIST_CHK_IERR(SUBR(sdMat_to_device)(mat2_,&iflag_),iflag_);
 
-        PHIST_DEB("resulting T:\n");
-#if PHIST_OUTLEV>=PHIST_DEBUG
-        SUBR(sdMat_print)(mat1_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-#endif
+        PrintSdMat(PHIST_DEBUG,"resulting T",
+                mat1_vp_, m_lda_, 1,mpi_comm_);
 
 
         PHIST_SOUT(PHIST_INFO,"Checking results...\n");
@@ -150,11 +145,9 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
           ASSERT_EQ(0,iflag_);
           SUBR(sdMat_to_device)(mat2_,&iflag_);
           ASSERT_EQ(0,iflag_);
-          PHIST_DEB("resulting T:\n");
-#if PHIST_OUTLEV>=PHIST_DEBUG
-          SUBR(sdMat_print)(mat1_,&iflag_);
-          ASSERT_EQ(0,iflag_);
-#endif
+          
+        PrintSdMat(PHIST_DEBUG,"resulting T",
+                mat1_vp_, m_lda_, 1,mpi_comm_);
 
 
           // should still be a valid schur decomposition!
@@ -195,16 +188,10 @@ class CLASSNAME: public KernelTestWithSdMats<_ST_,_N_,_N_>
       PHIST_DEB("check AS=ST\n");
       SUBR(sdMat_times_sdMat)(st::one(),mat3_,mat2_,st::zero(),mat4_,&iflag_);
       ASSERT_EQ(0,iflag_);
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      //SUBR(sdMat_print)(mat4_,&iflag_);
-      //ASSERT_EQ(0,iflag_);
-#endif
+
       SUBR(sdMat_times_sdMat)(-st::one(),mat2_,mat1_,st::one(),mat4_,&iflag_);
       ASSERT_EQ(0,iflag_);
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      //SUBR(sdMat_print)(mat4_,&iflag_);
-      //ASSERT_EQ(0,iflag_);
-#endif
+
       PHIST_CHK_IERR(SUBR(sdMat_from_device)(mat4_,&iflag_),iflag_);
       ASSERT_NEAR(mt::one(),ArrayEqual(mat4_vp_,nrows_,ncols_,m_lda_,1,st::zero()),1000*mt::eps());
 

@@ -206,7 +206,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
   
   SUBR(mvec_from_device)(V_,&iflag_);
   ASSERT_EQ(0,iflag_);
-//  VTest::PrintVector(std::cout, "V after Arnoldi",
+//  VTest::PrintVector(PHIST_DEBUG, "V after Arnoldi",
 //          vec1_vp_, nloc_, lda_, stride_,mpi_comm_);
 
         // check orthogonality of V_

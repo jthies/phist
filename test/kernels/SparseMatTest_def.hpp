@@ -410,10 +410,9 @@ protected:
       SUBR(mvec_random)(vec2_,&iflag_);
       SUBR(sparseMat_times_mvec)(st::one(),A,vec1_,st::zero(),vec2_,&iflag_);
       if (iflag_) return (_MT_)iflag_;
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(mvec_print)(vec1_,&iflag_);
-      SUBR(mvec_print)(vec2_,&iflag_);
-#endif
+
+      PrintVector(PHIST_DEBUG,"input to spMVM",vec1_vp_,nloc_,lda_,stride_,mpi_comm_);
+      PrintVector(PHIST_DEBUG,"result of spMVM",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
       return MvecEqual(vec2_,val);
     }
     return mt::one();
@@ -485,22 +484,20 @@ protected:
 #endif
       SUBR(mvec_random)(vec1_,&iflag_); 
       SUBR(mvec_random)(vec2_,&iflag_); 
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      std::cout << "input="<<std::endl;
-      SUBR(mvec_print)(vec1_,&iflag_);
-      std::cout << "output, before="<<std::endl;
-      SUBR(mvec_print)(vec2_,&iflag_);
-#endif
+
+      PrintVector(PHIST_DEBUG,"input to spMVM",vec1_vp_,nloc_,lda_,stride_,mpi_comm_);
+      PrintVector(PHIST_DEBUG,"result of spMVM",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+
       // v3=beta*v2 
       SUBR(mvec_add_mvec)(beta,vec2_,st::zero(),vec3_,&iflag_); 
       ASSERT_EQ(0,iflag_); 
       // v2 = 0*v1 + beta*v2 (=v3) 
       SUBR(sparseMat_times_mvec)(alpha,A_,vec1_,beta,vec2_,&iflag_); 
       ASSERT_EQ(0,iflag_); 
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(mvec_print)(vec2_,&iflag_);
-      SUBR(mvec_print)(vec3_,&iflag_);
-#endif
+
+      PrintVector(PHIST_DEBUG,"expected",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+      PrintVector(PHIST_DEBUG,"result of spMVM with beta!=0",vec3_vp_,nloc_,lda_,stride_,mpi_comm_);
+
       ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec2_,vec3_));
 
       //I*X+beta*Y = X+beta*Y?
@@ -511,12 +508,10 @@ protected:
 #endif
       SUBR(mvec_random)(vec1_,&iflag_);
       SUBR(mvec_random)(vec2_,&iflag_);
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      std::cout << "input="<<std::endl;
-      SUBR(mvec_print)(vec1_,&iflag_);
-      std::cout << "output, before="<<std::endl;
-      SUBR(mvec_print)(vec2_,&iflag_);
-#endif
+
+      PrintVector(PHIST_DEBUG,"input",vec1_vp_,nloc_,lda_,stride_,mpi_comm_);
+      PrintVector(PHIST_DEBUG,"output, before",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+
       //v3=v1+beta*v2
       SUBR(mvec_to_mvec)(vec1_,vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -527,10 +522,10 @@ protected:
       // v2 = v1 + beta*v2 (=alpha*v1+v3)
       SUBR(sparseMat_times_mvec)(alpha,A_,vec1_,beta,vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(mvec_print)(vec2_,&iflag_);
-      SUBR(mvec_print)(vec3_,&iflag_);
-#endif
+
+      PrintVector(PHIST_DEBUG,"result with beta!=0",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+      PrintVector(PHIST_DEBUG,"expected",vec3_vp_,nloc_,lda_,stride_,mpi_comm_);
+\
       ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_,mt::one()),1000*mt::eps());
 
       //alpha*I*X+beta*Y = alpha*X+beta*Y?
@@ -541,12 +536,10 @@ protected:
 #endif
       SUBR(mvec_random)(vec1_,&iflag_);
       SUBR(mvec_random)(vec2_,&iflag_);
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      std::cout << "input="<<std::endl;
-      SUBR(mvec_print)(vec1_,&iflag_);
-      std::cout << "output, before="<<std::endl;
-      SUBR(mvec_print)(vec2_,&iflag_);
-#endif
+
+      PrintVector(PHIST_DEBUG,"input",vec1_vp_,nloc_,lda_,stride_,mpi_comm_);
+      PrintVector(PHIST_DEBUG,"output, before",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+
        // v3=alpha*v1+beta*v2
       SUBR(mvec_to_mvec)(vec1_,vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -557,10 +550,10 @@ protected:
       // v2 = alpha*v1 + beta*v2 (=alpha*v1+v3)
       SUBR(sparseMat_times_mvec)(alpha,A_,vec1_,beta,vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(mvec_print)(vec2_,&iflag_);
-      SUBR(mvec_print)(vec3_,&iflag_);
-#endif
+
+      PrintVector(PHIST_DEBUG,"result with beta!=0",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+      PrintVector(PHIST_DEBUG,"expected",vec3_vp_,nloc_,lda_,stride_,mpi_comm_);
+
       ASSERT_NEAR(mt::one(),MvecsEqual(vec2_,vec3_,mt::one()),1000*mt::eps());
     }
   }
@@ -589,17 +582,15 @@ protected:
 // have more control and make sure the data is where it should be:
      //v_in_vp = vec1_vp_+VIDX(0,offs,lda_);
      //v_out_vp = vec1_vp_+VIDX(0,offs+nv,lda_);
-#if(PHIST_OUTLEV>=PHIST_DEBUG)
-      PHIST_DEB("all random:\n");
-      SUBR(mvec_print)(vec1_,&iflag_);
-#endif
+      PrintVector(PHIST_DEBUG,"random",vec1_vp_,nloc_,lda_,stride_,mpi_comm_);
+
       SUBR(sparseMat_times_mvec)(st::one(),A_,v_in,st::zero(),v_out,&iflag_);
       ASSERT_EQ(0,iflag_);
-#if(PHIST_OUTLEV>=PHIST_DEBUG)
-      PHIST_DEB("with two identical blocks [%d..%d] and [%d..%d]:\n",
+
+      PHIST_SOUT(PHIST_DEBUG,"with two identical blocks [%d..%d] and [%d..%d]:\n",
         offs, offs+nv-1,offs+nv,offs+2*nv-1);
-      SUBR(mvec_print)(vec1_,&iflag_);
-#endif
+      PrintVector(PHIST_DEBUG,"with two identical blocks",vec1_vp_,nloc_,lda_,stride_,mpi_comm_);
+
       ASSERT_REAL_EQ(mt::one(),MvecsEqual(v_in,v_out));
 
       SUBR(mvec_delete)(v_out,&iflag_);
@@ -678,16 +669,14 @@ protected:
 #if PHIST_OUTLEV>=PHIST_INFO
       std::cout << "MVM with A='shift', alpha=1, beta=0"<<std::endl;
 #endif
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(mvec_print)(vec1_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-#endif
+
+      PrintVector(PHIST_DEBUG,"input",vec1_vp_,nloc_,lda_,stride_,mpi_comm_);
+
       SUBR(sparseMat_times_mvec)(alpha,A_,vec1_,beta,vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(mvec_print)(vec2_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-#endif
+
+      PrintVector(PHIST_DEBUG,"output",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+
       // copy to orderedVec
       SUBR(mvec_to_mvec)(vec2_, orderedVec, &iflag_);
       ASSERT_EQ(0,iflag_);
@@ -776,17 +765,13 @@ protected:
 #if PHIST_OUTLEV>=PHIST_INFO
       std::cout << "MVM with A='rand', alpha=1, beta=0"<<std::endl;
 #endif
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(mvec_print)(vec1_,&iflag_);
+
+      PrintVector(PHIST_DEBUG,"input",vec1_vp_,nloc_,lda_,stride_,mpi_comm_);
+
+      SUBR(sparseMat_times_mvec)(alpha,A_,vec1_,beta,vec2_,&iflag_);      
       ASSERT_EQ(0,iflag_);
-#endif
-      SUBR(sparseMat_times_mvec)(alpha,A_,vec1_,beta,vec2_,&iflag_);
-      
-      ASSERT_EQ(0,iflag_);
-#if PHIST_OUTLEV>=PHIST_DEBUG
-      SUBR(mvec_print)(vec2_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-#endif
+
+      PrintVector(PHIST_DEBUG,"output",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
  
 #if _N_ == 25 && _NV_ == 1
 #ifdef IS_COMPLEX

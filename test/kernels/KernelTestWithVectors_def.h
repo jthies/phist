@@ -415,62 +415,51 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
   }
 
   // check if vectors are mutually orthogonal after QR factorization
-  static void PrintVector(std::ostream& os, std::string label, 
+  static void PrintVector(int outlev, std::string label, 
         ST* vec_vp, phist_lidx nloc, phist_lidx lda, phist_lidx stride,MPI_Comm mpi_comm) 
-    {
+  {
+    if (outlev<PHIST_OUTLEV) return;
     int rank=0, np=1;
 #ifdef PHIST_HAVE_MPI
     MPI_Comm_rank(mpi_comm,&rank);
     MPI_Comm_size(mpi_comm,&np);
 #endif    
+    std::ostringstream oss;
     if (rank==0)
-      {
-      os << std::endl<<label <<"="<<std::endl;
-      os << "nproc  "<<np<<std::endl;
-      os << "nglob  "<<_Nglob<<std::endl;
-      os << "nloc   "<<nloc<<std::endl;
-      os << "lda    "<<lda<<std::endl;
-      os << "stride "<<stride<<std::endl;
+    {
+      oss << std::endl<<label <<"="<<std::endl;
+      oss << "nproc  "<<np<<std::endl;
+      oss << "nglob  "<<_Nglob<<std::endl;
+      oss << "nloc   "<<nloc<<std::endl;
+      oss << "lda    "<<lda<<std::endl;
+      oss << "stride "<<stride<<std::endl;
 #ifdef PHIST_MVECS_ROW_MAJOR
-      os << "row-major storage"<<std::endl;
+      oss << "row-major storage"<<std::endl;
 #else
-      os << "col-major storage"<<std::endl;
+      oss << "col-major storage"<<std::endl;
 #endif
-      }
+    }
     if (_Nglob>100)
     {
       if (rank==0)
       {
-        os << "(values not printed because vector to big)"<<std::endl;
+        oss << "(values not printed because vector too big)"<<std::endl;
       }
-      return;
     }
-      
-    for (int p=0;p<np;p++)
+    else
+    {
+      for (int i=0;i<stride*nloc;i+=stride)
       {
-      if (p==rank)
+        for (int j=0;j<nvec_;j++)
         {
-        os << " @ rank "<<p<<" @"<<std::endl;
-        for (int i=0;i<stride*nloc;i+=stride)
-          {
-          for (int j=0;j<nvec_;j++)
-            {
-            os << vec_vp[VIDX(i,j,lda)]<<"  ";
-            }//j
-          os << std::endl;
-          }//i
-        os << std::flush;
-        }//rank==p
-#ifdef PHIST_HAVE_MPI
-        MPI_Barrier(mpi_comm);
-        MPI_Barrier(mpi_comm);
-        MPI_Barrier(mpi_comm);
-        MPI_Barrier(mpi_comm);
-        MPI_Barrier(mpi_comm);
-#endif
-      }//p
+          oss << vec_vp[VIDX(i,j,lda)]<<"  ";
+        }//j
+        oss << std::endl;
+      }//i
+    }//if small enough print values
+    PHIST_ORDERED_OUT(outlev,mpi_comm,oss.str().c_str());
     return;
-    }
+  }
     
   static bool pointerUnchanged(TYPE(mvec_ptr) V, ST* expected_location, int expected_lda)
   { 
