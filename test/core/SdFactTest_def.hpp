@@ -168,8 +168,7 @@ public:
       iflag_=iflag_in;
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-PHIST_SOUT(PHIST_INFO,"M:\n");
-SUBR(sdMat_print)(mat2_,&iflag_);
+MTest::PrintSdMat(PHIST_DEBUG,"M",mat2_vp_,m_lda_,1,mpi_comm_);
       iflag_=iflag_in;
       SUBR(sdMat_add_sdMat)(st::one(), mat2_, st::zero(), mat1_, &iflag_);
       ASSERT_EQ(0,iflag_);
@@ -184,8 +183,7 @@ SUBR(sdMat_print)(mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_to_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-PHIST_SOUT(PHIST_INFO,"L^T:\n");
-SUBR(sdMat_print)(mat1_,&iflag_);
+MTest::PrintSdMat(PHIST_DEBUG,"L^T",mat1_vp_,m_lda_,1,mpi_comm_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(nrows_,rank);
 
@@ -234,13 +232,13 @@ SUBR(sdMat_print)(mat3_,&iflag_);
       SUBR(sdMat_to_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-PHIST_SOUT(PHIST_INFO,"Predefined L^T:\n");
-SUBR(sdMat_print)(mat1_,&iflag_);
+PrintSdMat(PHIST_DEBUG,"predefined L^T",mat1_vp_,m_lda_,1,mpi_comm_);
+
       iflag_=iflag_in;
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-PHIST_SOUT(PHIST_INFO,"M:\n");
-SUBR(sdMat_print)(mat2_,&iflag_);
+PrintSdMat(PHIST_DEBUG,"M",mat2_vp_,m_lda_,1,mpi_comm_);
+
       iflag_=iflag_in;
       SUBR(sdMat_add_sdMat)(st::one(), mat2_, st::zero(), mat1_, &iflag_);
       ASSERT_EQ(0,iflag_);
@@ -254,8 +252,8 @@ SUBR(sdMat_print)(mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(sdMat_to_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-PHIST_SOUT(PHIST_INFO,"L^T:\n");
-SUBR(sdMat_print)(mat1_,&iflag_);
+PrintSdMat(PHIST_DEBUG,"L^T",mat1_vp_,m_lda_,1,mpi_comm_);
+
       ASSERT_EQ(nrows_-1,rank);
 
       // assure that mat1_ is now permuted upper triangular
@@ -275,8 +273,7 @@ SUBR(sdMat_print)(mat1_,&iflag_);
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat3_, &iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_EQ(0,iflag_);
-PHIST_SOUT(PHIST_INFO,"LL^T:\n");
-SUBR(sdMat_print)(mat3_,&iflag_);
+PrintSdMat(PHIST_DEBUG,"LL^T",mat3_vp_,m_lda_,1,mpi_comm_);
       ASSERT_EQ(0,iflag_);
 #ifdef PHIST_HIGH_PRECISION_KERNELS
       ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat3_,mat2_));
@@ -373,15 +370,14 @@ SUBR(sdMat_print)(mat3_,&iflag_);
     ASSERT_EQ(0,iflag_);
 
     // multiply mat1_ with identity matrix with
-PHIST_SOUT(PHIST_INFO,"X:\n");
-SUBR(sdMat_print)(mat3_,&iflag_);
+PrintSdMat(PHIST_DEBUG,"X",mat3_vp_,m_lda_,1,mpi_comm_);
 ASSERT_EQ(0,iflag_);
 iflag_=iflag_in;
     SUBR(sdMat_times_sdMat)(st::one(),mat1_,mat3_,st::zero(),mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
-PHIST_SOUT(PHIST_INFO,"R*X:\n");
-SUBR(sdMat_print)(mat2_,&iflag_);
-ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_from_device)(mat2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+PrintSdMat(PHIST_DEBUG,"R*X",mat2_vp_,m_lda_,1,mpi_comm_);
 
     // backward substitute
     SUBR(sdMat_from_device)(mat1_,&iflag_);
@@ -393,15 +389,15 @@ ASSERT_EQ(0,iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(sdMat_to_device)(mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
-PHIST_SOUT(PHIST_INFO,"reconstructed X:\n");
-SUBR(sdMat_print)(mat2_,&iflag_);
-ASSERT_EQ(0,iflag_);
+PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
     // this should have reconstructed mat3_
 iflag_=iflag_in;
     SUBR(sdMat_add_sdMat)(-st::one(),mat3_,st::one(),mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
-PHIST_SOUT(PHIST_INFO,"Difference:\n");
-SUBR(sdMat_print)(mat2_,&iflag_);
+SUBR(sdMat_from_device)(mat2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+PrintSdMat(PHIST_DEBUG,"difference",mat2_vp_,m_lda_,1,mpi_comm_);
+
 ASSERT_EQ(0,iflag_);
 #ifdef PHIST_HIGH_PRECISION_KERNELS
     ASSERT_NEAR(mt::one(),SdMatEqual(mat2_,st::zero()),100*mt::eps()*mt::eps());
@@ -412,9 +408,9 @@ ASSERT_EQ(0,iflag_);
     iflag_=iflag_in;
     SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat3_,st::zero(),mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
-PHIST_SOUT(PHIST_INFO,"R^T*X:\n");
-SUBR(sdMat_print)(mat2_,&iflag_);
-ASSERT_EQ(0,iflag_);
+    SUBR(mvec_from_device)(mat2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+PrintSdMat(PHIST_DEBUG,"R^T*X",mat2_vp_,m_lda_,1,mpi_comm_);
 
     // forward substitute
     SUBR(sdMat_from_device)(mat1_,&iflag_);
@@ -428,9 +424,10 @@ ASSERT_EQ(0,iflag_);
     SUBR(sdMat_to_device)(mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
 
-PHIST_SOUT(PHIST_INFO,"reconstructed X:\n");
-SUBR(sdMat_print)(mat2_,&iflag_);
-ASSERT_EQ(0,iflag_);
+    SUBR(mvec_from_device)(mat2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+PrintSdMat(PHIST_DEBUG,"reconstructed X",mat2_vp_,m_lda_,1,mpi_comm_);
+
     // this should have reconstructed mat3_
     iflag_=iflag_in;
     SUBR(sdMat_add_sdMat)(-st::one(),mat3_,st::one(),mat2_,&iflag_);

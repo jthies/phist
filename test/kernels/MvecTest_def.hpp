@@ -548,12 +548,12 @@ public:
         st::imag(alpha),st::real(beta),st::imag(beta));
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_from_device)(vec2_,&iflag_);
-      PrintVector(std::cerr,"before scale",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+      PrintVector(PHIST_DEBUG,"before scale",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
 #endif
       SUBR(mvec_add_mvec)(alpha,vec1_,beta,vec2_,&iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(mvec_from_device)(vec2_,&iflag_);
-      PrintVector(std::cerr,"after scale",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
+      PrintVector(PHIST_DEBUG,"after scale",vec2_vp_,nloc_,lda_,stride_,mpi_comm_);
 #endif
       ASSERT_EQ(0,iflag_);
             

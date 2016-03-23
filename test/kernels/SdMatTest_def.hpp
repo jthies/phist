@@ -176,12 +176,12 @@ public:
           st::imag(alpha),st::real(beta),st::imag(beta));
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(sdMat_from_device)(mat2_,&iflag_);
-      MTest::PrintSdMat(std::cerr,"before scale",mat2_vp_,m_lda_,stride,mpi_comm_);
+      MTest::PrintSdMat(PHIST_DEBUG,"before scale",mat2_vp_,m_lda_,stride,mpi_comm_);
 #endif
       SUBR(sdMat_add_sdMat)(alpha,mat1_,beta,mat2_,&iflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
       SUBR(sdMat_from_device)(mat2_,&iflag_);
-      MTest::PrintSdMat(std::cerr,"after scale",mat2_vp_,m_lda_,stride,mpi_comm_);
+      MTest::PrintSdMat(PHIST_DEBUG,"after scale",mat2_vp_,m_lda_,stride,mpi_comm_);
 #endif
       ASSERT_EQ(0,iflag_);
 
