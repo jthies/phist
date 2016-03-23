@@ -52,19 +52,22 @@ namespace phist
 
 //! returns the local partition size based on a benchmark, the benchmark is run once when
 //! this function is called first, subsequently the same weight will be returned unless
-//! you set force_recompute=true. The resulting double can be passed as 'weight' parameter
+//! you set force_value>0. If force_vale<=0 is given, the benchmark is run anyway and the
+//! newly measured value is returned in this and subsequent calls.
+//! The resulting double can be passed as 'weight' parameter
 //! to ghost_context_create (used in phist_map_create and sparseMat construction routines)
-double get_proc_weight(bool forceRecompute)
+double get_proc_weight(double force_value)
 {
-  static double stream_bw=-1.0;
+  static double proc_weight=-1.0;
   int iflag;
-  if (stream_bw<0 || forceRecompute)
+  if (force_value>0.0) proc_weight=force_value;
+  if (proc_weight<=0)
   {
-    phist_bench_stream_triad(&stream_bw,&iflag);
-    stream_bw=(double)((int)(stream_bw/1e6));
-    if (iflag) stream_bw=1.0;
+    phist_bench_stream_triad(&proc_weight,&iflag);
+    proc_weight*=1.0e-9;
+    if (iflag) proc_weight=1.0;
   }
-  return stream_bw;
+  return proc_weight;
 }
 
 
@@ -308,15 +311,52 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
   PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*iflag);
 
   ghost_map* map = new ghost_map;
+
+  // sanity checks
+  int rank,nproc;
+  PHIST_CHK_GERR(ghost_rank(&rank,*comm),*iflag);
+  PHIST_CHK_GERR(ghost_nrank(&nproc,*comm),*iflag);
   
-  map->ctx=NULL;
-  // passing in 0.0 here will lead to automatic load-balancing depending on the STREAM benchmark performance on each MPI 
-  // rank. We certainly want to expose this cool feature to the user, but if we do it here a costly benchmark is run 
-  // whenever a map is created. We probably want to create a static context object and reuse it instead.
+  // try to create the context object. We check wether
+  // the weighting for the partitioning gives a feasible context. If the STREAM benchmark
+  // returns very different values on the different MPI processes and the map is tiny (as
+  // happens in our tests) the function may otherwise give empty partitions. In case the 
+  // context looks strange we retry with equal process weights, accepting empty partitions.
+  // If it still fails we return with an error code/message.
   double proc_weight=get_proc_weight();
-  PHIST_ORDERED_OUT(PHIST_VERBOSE,*comm,"PE%6d: partition weight %4.2g\n",proc_weight);
-  PHIST_CHK_GERR(ghost_context_create(&map->ctx,nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,
+  if (proc_weight==1.0) proc_weight+=1e-6; // will pribably never happen but could cause trouble below
+                                           // if one process thinks he's already in the default case of
+                                           // equal partition sizes
+  phist_gidx nglob_count;
+  bool any_empty;
+  map->ctx=NULL;  
+  while (map->ctx==NULL)
+  {
+    PHIST_ORDERED_OUT(PHIST_VERBOSE,*comm,"PE%6d partition weight %4.2g\n",rank,proc_weight);
+    PHIST_CHK_GERR(ghost_context_create(&map->ctx,nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,
         GHOST_SPARSEMAT_SRC_NONE, *comm,proc_weight),*iflag);
+    nglob_count=0;
+    any_empty=false;
+    for (int i=0;i<nproc;i++)
+    {
+      any_empty|=(map->ctx->lnrows[i]<=0);
+      nglob_count+=map->ctx->lnrows[i];
+    }
+    if (nglob_count!=nglob||(any_empty&&proc_weight!=1.0))
+    {
+      if (any_empty)          PHIST_SOUT(PHIST_WARNING,"empty partition in map/context\n");
+      if (nglob_count!=nglob) PHIST_SOUT(PHIST_WARNING,"number of nodes " PRgidx " in context does not match given nglob=" PRgidx "\n", nglob_count,nglob);
+      PHIST_SOUT(PHIST_WARNING,"GHOST did not give a correct context, %s\n",proc_weight==1.0?"aborting!":"retrying...");
+      ghost_context_destroy(map->ctx);
+      map->ctx=NULL;
+      if (proc_weight==1.0)
+      {
+        *iflag=-1;
+        break;
+      }
+      proc_weight=1.0;
+    }
+  }
   map->vtraits_template=phist_default_vtraits();
   // in ghost terminology, we look at LHS=A*RHS, the LHS is based on the
   // row distribution of A, the RHS has halo elements to allow importing from

@@ -71,15 +71,15 @@ typedef struct ghost_map
 
     //! set reasonable default parameters for SELL-C-sigma sparse matrix format in GHOST
     void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm);
-    
-    //! returns the weight for the local partition size based on a benchmark which is run once when
-    //! this function is called first. Subsequently the same weight will be returned unless  
-    //! you set force_recompute=true. The resulting double can be passed as 'weight' parameter
-    //! to ghost_context_create (used in phist_map_create and sparseMat construction routines). It
-    //! is not normalized, so the sum over all MPI ranks is not 1 or any other constant but the
-    //! total memory bandwidth measured over all processes.
-    double get_proc_weight(bool forceRecompute=false);
 
+    //! returns the local partition size based on a benchmark, the benchmark is run once when
+    //! this function is called first, subsequently the same weight will be returned unless
+    //! you set force_value>0. If force_vale<=0 is given, the benchmark is run anyway and the
+    //! newly measured value is returned in this and subsequent calls.
+    //! The resulting double can be passed as 'weight' parameter
+    //! to ghost_context_create (used in phist_map_create and sparseMat construction routines)
+    double get_proc_weight(double force_value=-1.0);
+    
     //! private helper function to create a vtraits object
     ghost_densemat_traits phist_default_vtraits();
     
