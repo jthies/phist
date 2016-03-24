@@ -22,7 +22,7 @@ extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, in
   *iflag=0;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(M,&n,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(M,&m,iflag),*iflag);
-  PHIST_CHK_IERR(*iflag=(n==m)?0:-1,*iflag);
+  PHIST_CHK_IERR(*iflag=(n==m)?0:PHIST_INVALID_INPUT,*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_extract_view)(M,&Mval,&ldM,iflag),*iflag);
 #ifdef PHIST_HIGH_PRECISION_KERNELS
   SUBR(sdMat_extract_error)(M,&Merr,iflag);

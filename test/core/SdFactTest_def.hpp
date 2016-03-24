@@ -203,8 +203,9 @@ MTest::PrintSdMat(PHIST_DEBUG,"L^T",mat1_vp_,m_lda_,1,mpi_comm_);
       iflag_=iflag_in;
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat3_, &iflag_);
       ASSERT_EQ(0,iflag_);
-PHIST_SOUT(PHIST_INFO,"LL^T:\n");
-SUBR(sdMat_print)(mat3_,&iflag_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      PrintSdMat(PHIST_DEBUG,"LL^T",mat3_vp_,m_lda_,1,mpi_comm_);
       ASSERT_EQ(0,iflag_);
 #ifdef PHIST_HIGH_PRECISION_KERNELS
       ASSERT_REAL_EQ(mt::one(),SdMatsEqual(mat3_,mat2_));
@@ -216,6 +217,8 @@ SUBR(sdMat_print)(mat3_,&iflag_);
       // -- create explicit hermitian semi-positive definite matrix from upper triangular part --
       // requires working rank detection and pivoting!
       SUBR(sdMat_put_value)(mat1_,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       k = (nrows_*(nrows_-1))/2+nrows_-1;
       for(int i = 0; i < nrows_; i++)
@@ -236,6 +239,8 @@ PrintSdMat(PHIST_DEBUG,"predefined L^T",mat1_vp_,m_lda_,1,mpi_comm_);
 
       iflag_=iflag_in;
       SUBR(sdMatT_times_sdMat)(st::one(),mat1_,mat1_,st::zero(),mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 PrintSdMat(PHIST_DEBUG,"M",mat2_vp_,m_lda_,1,mpi_comm_);
 
