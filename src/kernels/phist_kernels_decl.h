@@ -329,6 +329,9 @@ void SUBR(mvec_put_func)(TYPE(mvec_ptr) V,
         phist_mvec_elemFunc elemFunPtr, void* last_arg, int *iflag);
 
 //! put identity matrix into a small dense matrix \ingroup sdmat
+//! If *iflag|PHIST_SDMAT_RUN_ON_HOST, only the host memory is  
+//! updated. Otherwise (by default), both host and device mem   
+//! are updated (if applicable).
 void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag);
 
 //@}

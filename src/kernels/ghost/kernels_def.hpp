@@ -943,6 +943,7 @@ extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
+  bool host_only = (*iflag&PHIST_SDMAT_RUN_ON_HOST);
   *iflag = 0;
   PHIST_PERFCHECK_VERIFY_SMALL;
 
@@ -955,7 +956,10 @@ extern "C" void SUBR(sdMat_identity)(TYPE(sdMat_ptr) V, int* iflag)
   for(int i = 0; i < m; i++)
     for(int j = 0; j < n; j++)
       V_raw[lda*i+j] = (i==j) ? st::one() : st::zero();
-  PHIST_CHK_IERR(SUBR(sdMat_to_device)(V,iflag),*iflag);
+  if (!host_only)
+  {
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(V,iflag),*iflag);
+  }
 }
 
 #ifndef PHIST_BUILTIN_RNG

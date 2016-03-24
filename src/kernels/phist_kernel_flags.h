@@ -63,6 +63,18 @@
 /* do not perform global MPI reduction on inner products */
 #define PHIST_NO_GLOBAL_REDUCTION 2
 
+/* explicitly perform sdMat operation on the host CPU (by default GPU processes will execute */
+/* functions like sdMat_add_sdMat only on the GPU)                                           */
+#define PHIST_SDMAT_RUN_ON_HOST 1
+/* execute sdMat function on device if this is a GPU process (the default). By specifying    */
+/* PHIST_SDMAT_RUN_ON_HOST|PHIST_SDMAT_RUN_ON_DEVICE the operation is executed both on the   */
+/* host and device side. No memory is transferred, so the user has to sync the memory expli- */
+/* citly using sdMat_to/from_device                                                          */
+/*                                                                                           */
+/* this flag is disabled for now, not sure wether we want to implement this complexity.      */
+/*                                                                                           */
+/*#define PHIST_SDMAT_RUN_ON_DEVICE 2*/
+
 /* for KPM */
 #define PHIST_KPM_SINGLEVEC 1
 

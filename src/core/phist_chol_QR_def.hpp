@@ -54,19 +54,20 @@ PHIST_SOUT(PHIST_INFO,"];\n");
     // S=V'V
     if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),R,iflag),*iflag);
-    // note: sdMat_cholesky works on host CPU only
-    PHIST_CHK_IERR(SUBR(sdMat_from_device)(R,iflag),*iflag);
+    // note: sdMat_cholesky works on host CPU only, but we can assume the host data
+    // is up-to-date on the host after mvecT_times_mvec
     int rank;
     if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(sdMat_cholesky)(R,perm,&rank,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(R,iflag),*iflag);
 #if PHIST_OUTLEV>=PHIST_DEBUG
 PHIST_SOUT(PHIST_INFO,"%%CHOLQR: cholesky(V'V) has rank %d\nR=[",rank);
 SUBR(sdMat_print)(R,iflag);
 PHIST_SOUT(PHIST_INFO,"];\n");
 #endif
     // construct inv(R)
+    *iflag=PHIST_SDMAT_RUN_ON_HOST;
     PHIST_CHK_IERR(SUBR(sdMat_identity)(R_1,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(sdMat_from_device)(R_1,iflag),*iflag);
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(sdMat_backwardSubst_sdMat)(R,perm,rank,R_1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_to_device)(R_1,iflag),*iflag);
