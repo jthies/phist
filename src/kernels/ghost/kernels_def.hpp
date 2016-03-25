@@ -1,6 +1,15 @@
 #include "phist_config.h"
 #include "ghost/config.h"
 
+/* helper macro to temporarily set the densemat's location to HOST and store the
+   original value of the flag.
+ */
+#ifndef TMP_SET_DENSEMAT_LOCATION
+#define TMP_SET_DENSEMAT_LOCATION(_void_ptr,_densemat_ptr,_orig_location) \
+ghost_densemat* _densemat_ptr = (ghost_densemat*)(_void_ptr); \
+ghost_location _orig_location = _densemat_ptr->traits.location; \
+if (*iflag&PHIST_SDMAT_RUN_ON_HOST) _densemat_ptr->traits.location=GHOST_LOCATION_HOST;
+#endif
 
 #if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
 template<>
@@ -993,7 +1002,7 @@ extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* iflag)
   // which allocates memory on the CPU. Also, the download changes
   // the semantic of the program. If the user wants to print vector
   // elements, we should add an input flag like PHIST_FORCE.
-  if (V->traits.location == GHOST_LOCATION_HOST) 
+  if (V->traits.location == GHOST_LOCATION_HOST)
   {
     char *str=NULL;
     V->string(V,&str);
@@ -1009,26 +1018,25 @@ extern "C" void SUBR(mvec_print)(TYPE(const_mvec_ptr) vV, int* iflag)
 
 extern "C" void SUBR(sdMat_print)(TYPE(const_sdMat_ptr) vM, int* iflag)
 {
-  *iflag=0;
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M,vM,*iflag);
   std::cout << "# rows:       "<<M->traits.nrows<<std::endl;
   std::cout << "# cols:       "<<M->traits.ncols<<std::endl;
   std::cout << "# row major:  "<<(M->traits.storage & GHOST_DENSEMAT_ROWMAJOR)<<std::endl;
   std::cout << "# stride:     "<<M->stride<<std::endl;
-  if (M->traits.location == GHOST_LOCATION_HOST) 
+  // always print the host side of the sdMat, if we don't replace the location by HOST in the traits
+  // temporarily, GHOST will download the memory and allocate the host side.
   {
     char *str=NULL;
+    ghost_location locM=M->traits.location;
+    M->traits.location=GHOST_LOCATION_HOST;
     M->string(M,&str);
+    M->traits.location=locM;
     std::cout << str <<std::endl;
     free(str); str = NULL;
   }
-  else
-  {
-    std::cout << "(not printing values on GPU processes)\n";
-  }
 }
-
 #ifndef PHIST_BUILTIN_RNG
 //! put random numbers into all elements of a serial dense matrix
 extern "C" void SUBR(sdMat_random)(TYPE(sdMat_ptr) vM, int* iflag)
@@ -1202,8 +1210,15 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
                             _ST_ beta,  TYPE(sdMat_ptr)       vB,
                             int* iflag)
 {
+  // if the user specifies PHIST_SDMAT_RUN_ON_HOST, manually switch the location setting
+  // of the densemats and reset them after the call. The GHOST kernel is the same for sdMats
+  // and mvecs, so we can simply call mvec_add_mvec.
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  TMP_SET_DENSEMAT_LOCATION(vA,A,locA);
+  TMP_SET_DENSEMAT_LOCATION(vB,B,locB);
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(alpha,vA,beta,vB,iflag), *iflag);
+  A->traits.location=locA;
+  B->traits.location=locB;
 }
 
 //! B=alpha*A+beta*B
@@ -1212,6 +1227,8 @@ extern "C" void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
                             int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  TMP_SET_DENSEMAT_LOCATION(vA,A,locA);
+  TMP_SET_DENSEMAT_LOCATION(vB,B,locB);
   *iflag=0;
   // simple workaround
   TYPE(sdMat_ptr) I = NULL;
@@ -1221,6 +1238,9 @@ extern "C" void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
   PHIST_CHK_IERR(SUBR(sdMat_identity)(I,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat)(alpha,vA,I,beta,vB,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_delete)(I,iflag),*iflag);
+
+  A->traits.location=locA;
+  B->traits.location=locB;
 }
 
 //! spMVM communication
@@ -1627,6 +1647,9 @@ extern "C" void SUBR(sdMat_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
                                          int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  TMP_SET_DENSEMAT_LOCATION(vV,V,locV);
+  TMP_SET_DENSEMAT_LOCATION(vW,W,locW);
+  TMP_SET_DENSEMAT_LOCATION(vC,C,locC);
   *iflag=0;
   PHIST_PERFCHECK_VERIFY_SMALL;
 PHIST_TASK_DECLARE(ComputeTask)
@@ -1637,7 +1660,10 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   char trans[]="N";  
   PHIST_CHK_GERR(ghost_gemm(C,V,trans,W,trans,(void*)&alpha,(void*)&beta,GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_TASK_END(iflag);
-  }
+  V->traits.location=locV;
+  W->traits.location=locW;
+  C->traits.location=locC;
+}
 
 //! n x m conj. transposed serial dense matrix times m x k serial dense matrix gives m x k sdMat,
 //! C=alpha*V*W + beta*C (serial XGEMM wrapper)
@@ -1647,6 +1673,9 @@ extern "C" void SUBR(sdMatT_times_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
                                          int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  TMP_SET_DENSEMAT_LOCATION(vV,V,locV);
+  TMP_SET_DENSEMAT_LOCATION(vW,W,locW);
+  TMP_SET_DENSEMAT_LOCATION(vC,C,locC);
   *iflag=0;
   PHIST_PERFCHECK_VERIFY_SMALL;
 PHIST_TASK_DECLARE(ComputeTask)
@@ -1661,7 +1690,10 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 #endif  
   PHIST_CHK_GERR(ghost_gemm(C, V, trans,W, (char*)"N", (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_TASK_END(iflag);
-  }
+  V->traits.location=locV;
+  W->traits.location=locW;
+  C->traits.location=locC;
+}
 
 //! n x m serial dense matrix times k x m conj. transposed serial dense matrix gives m x k sdMat,
 //! C=alpha*V*W + beta*C (serial XGEMM wrapper)
@@ -1671,6 +1703,9 @@ extern "C" void SUBR(sdMat_times_sdMatT)(_ST_ alpha, TYPE(const_sdMat_ptr) vV,
                                          int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  TMP_SET_DENSEMAT_LOCATION(vV,V,locV);
+  TMP_SET_DENSEMAT_LOCATION(vW,W,locW);
+  TMP_SET_DENSEMAT_LOCATION(vC,C,locC);
   *iflag=0;
   PHIST_PERFCHECK_VERIFY_SMALL;
 PHIST_TASK_DECLARE(ComputeTask)
@@ -1685,7 +1720,10 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 #endif  
   PHIST_CHK_GERR(ghost_gemm(C, V, (char*)"N", W, trans, (void*)&alpha, (void*)&beta, GHOST_GEMM_NO_REDUCE,GHOST_GEMM_DEFAULT),*iflag);
 PHIST_TASK_END(iflag);
-  }
+  V->traits.location=locV;
+  W->traits.location=locW;
+  C->traits.location=locC;
+}
 
 
 //! 'tall skinny' QR decomposition, V=Q*R, Q'Q=I, R upper triangular.   
