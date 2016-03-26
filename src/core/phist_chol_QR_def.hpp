@@ -59,12 +59,17 @@ PHIST_SOUT(PHIST_INFO,"];\n");
     // todo: since mvecT_times_mvec requires a reduction anyway, we could include the
     // download in the function, it already is if there are more than one MPI process
     PHIST_CHK_IERR(SUBR(sdMat_from_device)(R,iflag),*iflag);
+#if PHIST_OUTLEV>=PHIST_DEBUG
+PHIST_SOUT(PHIST_INFO,"%%CHOLQR: M=V'V\nM=[...\n");
+SUBR(sdMat_print)(R,iflag);
+PHIST_SOUT(PHIST_INFO,"];\n");
+#endif
     int rank;
     if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(sdMat_cholesky)(R,perm,&rank,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_to_device)(R,iflag),*iflag);
 #if PHIST_OUTLEV>=PHIST_DEBUG
-PHIST_SOUT(PHIST_INFO,"%%CHOLQR: cholesky(V'V) has rank %d\nR=[",rank);
+PHIST_SOUT(PHIST_INFO,"%%CHOLQR: cholesky(V'V) has rank %d\nR=[...\n",rank);
 SUBR(sdMat_print)(R,iflag);
 PHIST_SOUT(PHIST_INFO,"];\n");
 #endif
@@ -156,5 +161,5 @@ void SUBR(chol_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int* iflag)
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
   int perm[m];
   *iflag=iflag_in;
-  PHIST_CHK_IERR(SUBR(chol_QRp)(V,R,perm,iflag),*iflag);
+  SUBR(chol_QRp)(V,R,perm,iflag);
 }
