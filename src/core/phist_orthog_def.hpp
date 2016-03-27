@@ -262,11 +262,11 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     {
       // terminate even if random vectors are not "random" enough, e.g. random number generator is broken
       if( random_iter++ > 10 )
-        {
+      {
         PHIST_SOUT(PHIST_ERROR,"could not create random orthogonal vectors, possibly the random vector generator is broken!\n");
         *iflag = -8;
         return;
-        }
+      }
       st::sdMat_t *Rrnd;
       PHIST_SOUT(PHIST_INFO,"Matrix W does not have full rank (%d cols, rank=%d)\n",k,rankW);
       PHIST_CHK_IERR(SUBR(sdMat_create)(&Rrnd,m,k,comm,iflag),*iflag);
