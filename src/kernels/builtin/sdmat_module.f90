@@ -650,6 +650,8 @@ contains
     type(SDMat_t), pointer :: sdmat
     integer :: i, j
     !--------------------------------------------------------------------------------
+    
+    ierr=0
 
     if( .not. c_associated(sdmat_ptr) ) then
       ierr = -88
