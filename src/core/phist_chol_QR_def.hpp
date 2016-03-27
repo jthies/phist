@@ -23,6 +23,7 @@ extern "C" void SUBR(chol_QRp)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int perm[], 
     {
       // just normalize the vector
       MT nrm;
+      if (robust) *iflag=PHIST_ROBUST_REDUCTIONS
       PHIST_CHK_IERR(SUBR(mvec_normalize)(V,&nrm,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,(ST)nrm,iflag),*iflag);
       int rank=1;
@@ -30,6 +31,7 @@ extern "C" void SUBR(chol_QRp)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int perm[], 
       {
         // randomize the vector
         PHIST_CHK_IERR(SUBR(mvec_random)(V,iflag),*iflag);
+      if (robust) *iflag=PHIST_ROBUST_REDUCTIONS
         PHIST_CHK_IERR(SUBR(mvec_normalize)(V,&nrm,iflag),*iflag);
         PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,st::zero(),iflag),*iflag);
         rank=0;
@@ -53,7 +55,7 @@ PHIST_SOUT(PHIST_INFO,"];\n");
 }
 #endif
     // S=V'V
-    if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
+    if (robust) *iflag = PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,V,st::zero(),R,iflag),*iflag);
     // note: sdMat_cholesky works on host CPU only, so we need to download the sdMat.
     // todo: since mvecT_times_mvec requires a reduction anyway, we could include the
@@ -65,7 +67,7 @@ SUBR(sdMat_print)(R,iflag);
 PHIST_SOUT(PHIST_INFO,"];\n");
 #endif
     int rank;
-    if( robust ) *iflag = PHIST_ROBUST_REDUCTIONS;
+    if (robust) *iflag = PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(sdMat_cholesky)(R,perm,&rank,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_to_device)(R,iflag),*iflag);
 #if PHIST_OUTLEV>=PHIST_DEBUG
