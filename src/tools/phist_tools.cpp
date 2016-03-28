@@ -262,10 +262,10 @@ extern "C" int phist_ordered_fprintf(FILE* stream, MPI_Comm comm, const char* fm
   MPI_Gatherv(local_string,local_length,MPI_CHAR,
               global_string,char_counts,char_disps,MPI_CHAR,
               0, comm);
-  global_string[global_length]='\0';  
   // print the global string
   if (rank==0)
   {
+    global_string[global_length]='\0';
     fprintf(stream,global_string);
   }
   
