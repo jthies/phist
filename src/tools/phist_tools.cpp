@@ -235,6 +235,9 @@ extern "C" int phist_ordered_fprintf(FILE* stream, MPI_Comm comm, const char* fm
   va_start(args, fmt);
   local_length=vasprintf(&local_string,fmt,args);
   
+  // on the last rank, include the trailing \0 character
+  if (rank==size-1) local_length++;
+  
   // use MPI to gather the global string
   MPI_Comm_rank(comm,&rank);
   MPI_Comm_size(comm,&size);
