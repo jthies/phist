@@ -235,15 +235,12 @@ extern "C" int phist_ordered_fprintf(FILE* stream, MPI_Comm comm, const char* fm
   va_start(args, fmt);
   local_length=vasprintf(&local_string,fmt,args);
   
-  // on the last rank, include the trailing \0 character
-  if (rank==size-1) local_length++;
-  
   // use MPI to gather the global string
   MPI_Comm_rank(comm,&rank);
   MPI_Comm_size(comm,&size);
   if (rank==0)
   {
-    char_counts=new int[size];    
+    char_counts=new int[size];
     char_disps=new int[size+1];
   }
   // gather remote string lengths
@@ -260,12 +257,12 @@ extern "C" int phist_ordered_fprintf(FILE* stream, MPI_Comm comm, const char* fm
     {
       fprintf(stderr,"WARNING: you're gathering a very large string, PHIST_ORDERED_OUT is intended for short messages\n");
     }
-    global_string=new char[global_length];
+    global_string=new char[global_length+1];
   }
   MPI_Gatherv(local_string,local_length,MPI_CHAR,
               global_string,char_counts,char_disps,MPI_CHAR,
               0, comm);
-  
+  global_string[global_length]='\0';  
   // print the global string
   if (rank==0)
   {
@@ -273,7 +270,9 @@ extern "C" int phist_ordered_fprintf(FILE* stream, MPI_Comm comm, const char* fm
   }
   
   // clean up the mess
-  delete [] local_string;
+  // we use free() here because we got the string from vasprintf and the GNU address
+  // sanitizer gets angry if we delete [] it.
+  free(local_string);
   if (rank==0)
   {
     delete [] char_counts;
