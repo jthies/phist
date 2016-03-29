@@ -1,6 +1,10 @@
 #include "phist_kernels.h"
 
+#ifdef PHIST_HAVE_ESSEX_PHYSICS
 #include "essex-physics/matfuncs.h"
+#else
+#include "matfuncs.h"
+#endif
 
 #include "phist_gen_d.h"
 #include "phist_driver_utils.h"
