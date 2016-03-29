@@ -90,9 +90,9 @@ int innerSolvStopAfterFirstConverged;
 //! This function allows customizing the residual calculation jdqr, it is a tailored
 //! interface for the HYMLS (http://bitbucket.org/hymls/hymls) project and not intended
 //! for other uses right now. Setting this does *not* affect subspacejada.
-void (*custom_computeResidual)(void* customSolverData, void const* B_op, void const* r_ptr,
+void (*custom_computeResidual)(void* customSolverData, void const* B_op, void* r_ptr,
         void const* Au_ptr, void const* u_ptr, void* rtil_ptr,
-        void* Qv, void* tmp, void* Theta,
+        void const* Qv, void* tmp, void* Theta,
         void* atil, void* *atilv, double *resid,
         int nv, int nconv, int* iflag);
 
