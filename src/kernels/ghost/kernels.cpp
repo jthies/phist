@@ -446,5 +446,5 @@ extern "C" void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iuppe
  */
 #include "./bench_kernels.cpp"
 #else
-#include "../common/phist_bench_kernels.cpp");
+#include "../common/phist_bench_kernels.cpp"
 #endif
