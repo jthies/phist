@@ -23,10 +23,6 @@
 #include <likwid.h>
 #endif
 
-#ifdef PHIST_HAVE_MPI
-#include <mpi.h>
-#endif
-
 #include <ghost.h>
 #include <ghost/machine.h>
 #include <ghost/thpool.h>
@@ -444,5 +440,11 @@ extern "C" void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iuppe
 #endif
 
 
-/* use GHOST stream benchmarks instead of those in common/ */
+#ifdef GHOST_HAVE_CUDA
+/* use GHOST stream benchmarks instead of those in common/ because the latter
+   don't work on GPUs 
+ */
 #include "./bench_kernels.cpp"
+#else
+#include "../common/phist_bench_kernels.cpp");
+#endif
