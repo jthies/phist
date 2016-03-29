@@ -167,7 +167,7 @@ PHIST_ENTER_FCN("ghost_spmvm_on_fresh_views");
 #ifndef PHIST_KERNEL_LIB_MAGMA
   PHIST_ICHK_IERR(stream_test(&iflag),iflag);
 #endif
-
+  PHIST_ICHK_IERR(phist_comm_delete(comm,&iflag),iflag);
 PHIST_MAIN_TASK_END
   PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
 
