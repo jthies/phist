@@ -29,6 +29,7 @@ namespace phist_PerfCheck
   // calculates the results and prints them
   void PerfCheckTimer::summarize(int verbosity)
   {
+    if (verbosity<PHIST_OUTLEV) return;
     int ierr = 0;
     int nTimers = timingResults_.size();
     int nExpectedTimers = expectedResults_.size();
@@ -39,9 +40,25 @@ namespace phist_PerfCheck
 
     PHIST_CHK_IERR(ierr = (nTimers != nExpectedTimers) ? -1 : 0, ierr);
 
-    if( nTimers == 0 )
-      return;
+    if( nTimers == 0 ) return;
+    
+    int rank,nproc;
+    MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+    MPI_Comm_size(MPI_COMM_WORLD,&nproc);
 
+    FILE* ofile=NULL;
+        
+#ifdef FPHIST_PERFCHECK_SEPARATE_OUTPUT
+    int ndigits=std::ceil(std::log(nproc)/std::log(10));
+    char *fname=NULL,*fname_fmt=NULL;
+
+    vasprintf(&fname_fmt,"phist-perfcheck-P\%%dd\n",ndigits);
+    vasprintf(&fname,fname_fmt,rank);
+    PHIST_SOUT(PHIST_INFO,"perfcheck results are written to searate files of the form '%s'\n",fname);
+    ofile=fopen(fname,"w+");
+#else
+    if (rank==0) ofile=stdout;
+#endif
     // get timer names from the first process
     std::string fcnNameList;
     for(TimeDataMap::const_iterator it = timingResults_.begin(); it != timingResults_.end(); it++)
@@ -118,12 +135,17 @@ namespace phist_PerfCheck
     }
     maxNameLen = maxNameLen + 5;
     for(int i = 0; i < nTimers; i++)
+    {
       fcnName.at(i).resize(maxNameLen,' ');
-    // print result on proc 0
+    }
+    // print result on proc 0 or on all procs to a file.
+    // We could also implement e.g. that only the ranks on node 0 print the results
+    // in this way
+    if (ofile==NULL) return;
     std::string function = "function(dim) / (formula)";
     function.resize(maxNameLen, ' ');
-    PHIST_SOUT(PHIST_INFO, "================================================== PERFORMANCE CHECK RESULTS =====================================================\n");
-    PHIST_SOUT(PHIST_INFO, "%s  %10s  %10s  %10s  %10s  %10s\n", function.c_str(), "mtot.exp", "%peak-perf", "count", "max.%peak", "min.%peak");
+    fprintf(ofile, "================================================== PERFORMANCE CHECK RESULTS =====================================================\n");
+    fprintf(ofile, "%s  %10s  %10s  %10s  %10s  %10s\n", function.c_str(), "mtot.exp", "%peak-perf", "count", "max.%peak", "min.%peak");
     int nprocs;
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     double sumMaxTotalExpected = 0., sumMaxTotalTime = 0.;
@@ -132,19 +154,20 @@ namespace phist_PerfCheck
       int i = sortedIndex.at(i_);
       if( i_ % 10 == 0 )
       {
-        PHIST_SOUT(PHIST_INFO, "----------------------------------------------------------------------------------------------------------------------------------\n");
+        fprintf(ofile, "----------------------------------------------------------------------------------------------------------------------------------\n");
       }
-      PHIST_SOUT(PHIST_INFO, "%s  %10.3e  %10.3g  %10lu  %10.3g  %10.3g\n", fcnName.at(i).c_str(), maxTotalExpected.at(i), 100*maxTotalExpected.at(i)/maxTotalTime.at(i), numberOfCalls.at(i),
+      fprintf(ofile, "%s  %10.3e  %10.3g  %10lu  %10.3g  %10.3g\n", fcnName.at(i).c_str(), maxTotalExpected.at(i), 100*maxTotalExpected.at(i)/maxTotalTime.at(i), numberOfCalls.at(i),
           100*minExpected.at(i)/minTime.at(i), 100*maxExpected.at(i)/maxTime.at(i));
-      PHIST_SOUT(PHIST_INFO, " %s\n", fcnFormula.at(i).c_str());
+      fprintf(ofile, " %s\n", fcnFormula.at(i).c_str());
       sumMaxTotalExpected += maxTotalExpected.at(i);
       sumMaxTotalTime += maxTotalTime.at(i);
     }
-    PHIST_SOUT(PHIST_INFO, "==================================================================================================================================\n");
+    fprintf(ofile, "==================================================================================================================================\n");
     std::string strTotal = "total";
     strTotal.resize(maxNameLen, ' ');
-    PHIST_SOUT(PHIST_INFO, "%s  %10.3e  %10.3g\n", strTotal.c_str(), sumMaxTotalExpected, 100*sumMaxTotalExpected/sumMaxTotalTime);
-    PHIST_SOUT(PHIST_INFO, "==================================================================================================================================\n");
+    fprintf(ofile, "%s  %10.3e  %10.3g\n", strTotal.c_str(), sumMaxTotalExpected, 100*sumMaxTotalExpected/sumMaxTotalTime);
+    fprintf(ofile, "==================================================================================================================================\n");
+    if (ofile!=stdout) fclose(ofile);
   }
 }
 # endif  
