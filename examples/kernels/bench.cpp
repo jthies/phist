@@ -21,21 +21,25 @@ int main(int argc, char** argv)
 PHIST_MAIN_TASK_BEGIN
 
 #ifndef PHIST_KERNEL_LIB_MAGMA
-  double bw_load,bw_store,bw_triad;
-  PHIST_ICHK_IERR(phist_bench_stream_load(&bw_load,&iflag),iflag);
-  PHIST_ICHK_IERR(phist_bench_stream_store(&bw_store,&iflag),iflag);
-  PHIST_ICHK_IERR(phist_bench_stream_triad(&bw_triad,&iflag),iflag);
+  double max_bw_load,max_bw_store,max_bw_triad;
+  double mean_bw_load,mean_bw_store,mean_bw_triad;
+  PHIST_ICHK_IERR(phist_bench_stream_load(&mean_bw_load,&max_bw_load,&iflag),iflag);
+  PHIST_ICHK_IERR(phist_bench_stream_store(&mean_bw_store,&max_bw_store,&iflag),iflag);
+  PHIST_ICHK_IERR(phist_bench_stream_triad(&mean_bw_triad,&max_bw_triad,&iflag),iflag);
 #else
-  bw_load=0.0;
-  bw_store=0.0;
-  bw_triad=0.0;
+  mean_bw_load=0.0;  max_bw_load=0.0;
+  mean_bw_store=0.0; max_bw_store=0.0;
+  mean_bw_triad=0.0; max_bw_triad=0.0;
   PHIST_SOUT(PHIST_WARNING,"benchmark not implemented correctly with MAGMA\n");
 #endif
 
 // output in GB/s
-bw_load/=1.0e9;
-bw_store/=1.0e9;
-bw_triad/=1.0e9;
+max_bw_load/=1.0e9;
+max_bw_store/=1.0e9;
+max_bw_triad/=1.0e9;
+mean_bw_load/=1.0e9;
+mean_bw_store/=1.0e9;
+mean_bw_triad/=1.0e9;
 
 
 // print measured bandwidths in a table. Note that each MPI process 
@@ -47,16 +51,16 @@ MPI_Comm_size(MPI_COMM_WORLD,&comm_size);
 size=comm_size;
 
 // collect the results for printing them
-double all_store[comm_size], all_load[comm_size], all_triad[comm_size];
+double all_mean_store[comm_size], all_mean_load[comm_size], all_mean_triad[comm_size];
 
-MPI_Gather(&bw_load,1,MPI_DOUBLE,
-           all_load,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+MPI_Gather(&mean_bw_load,1,MPI_DOUBLE,
+           all_mean_load,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
-MPI_Gather(&bw_store,1,MPI_DOUBLE,
-           all_store,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+MPI_Gather(&mean_bw_store,1,MPI_DOUBLE,
+           all_mean_store,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
-MPI_Gather(&bw_triad,1,MPI_DOUBLE,
-           all_triad,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+MPI_Gather(&mean_bw_triad,1,MPI_DOUBLE,
+           all_mean_triad,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
 
 if (size>10)
@@ -78,18 +82,18 @@ if (rank==0)
   PHIST_SOUT(PHIST_INFO,"\n|  load     |");
   for (int i=0; i<size; i++)
   { 
-    fprintf(stdout," %5.3g |",all_load[i]);
+    fprintf(stdout," %5.3g |",all_mean_load[i]);
   }
   PHIST_SOUT(PHIST_INFO,"\n|  store    |");
   for (int i=0; i<size; i++)
   {
-    fprintf(stdout," %5.3g |",all_store[i]);
+    fprintf(stdout," %5.3g |",all_mean_store[i]);
   }
 
   PHIST_SOUT(PHIST_INFO,"\n|  triad    |");
   for (int i=0; i<size; i++)
 {   
-    fprintf(stdout," %5.3g |",all_triad[i]);
+    fprintf(stdout," %5.3g |",all_mean_triad[i]);
   }
 
   PHIST_SOUT(PHIST_INFO,"\n=============");
@@ -98,11 +102,11 @@ if (rank==0)
   // deduce process weights from the results
 
   double bw_triad_total=0.0;
-  for (int i=0; i<comm_size; i++) bw_triad_total+=all_triad[i];
+  for (int i=0; i<comm_size; i++) bw_triad_total+=all_mean_triad[i];
   PHIST_SOUT(PHIST_INFO,"\n\nsuggested weights based on stream triad benchmark:\n");
   for (int i=0; i<comm_size; i++)
   {
-    PHIST_SOUT(PHIST_INFO,"P%d: %4.2f\n",i,all_triad[i]/bw_triad_total);
+    PHIST_SOUT(PHIST_INFO,"P%d: %4.2f\n",i,all_mean_triad[i]/bw_triad_total);
   }
 }
 

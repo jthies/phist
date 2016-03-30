@@ -121,8 +121,8 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
 
 #ifndef PHIST_KERNEL_LIB_MAGMA
-  double max_bw;
-  PHIST_ICHK_IERR(phist_bench_stream_triad(&max_bw, &iflag),iflag);
+  double max_bw,mean_bw;
+  PHIST_ICHK_IERR(phist_bench_stream_triad(&mean_bw,&max_bw, &iflag),iflag);
   PHIST_SOUT(PHIST_INFO,"Maximum memory bandwidth (STREAM_TRIAD): %g GB/s\n",max_bw*1.0e-9);
 #endif
 PHIST_MAIN_TASK_END

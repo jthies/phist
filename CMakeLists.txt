@@ -77,6 +77,11 @@ option(PHIST_USE_GRAPH_TPLS
         "try to find supported third-party libraries that implement graph partitioning and reordering for the kernel library used."
         ON)
 
+# this option allows to disable all Trilinos libraries at once, overriding
+# any of the choices PHIST_USE_*_TPLS
+option(PHIST_USE_TRILINOS_TPLS
+        "enable/disable using any optional Trilinos libraries like Zoltan, Belos, Kokkos etc."
+        ON)
 
 
 ########################################################################
@@ -539,7 +544,7 @@ elseif (PHIST_KERNEL_LIB STREQUAL "magma")
 else ()
   message( FATAL_ERROR "PHIST_KERNEL_LIB not set or not recognized" )
 endif ()
-set(PHIST_BENCH_LARGE_N 64000000 CACHE STRING "Dimension for benchmarking tests (e.g. large enough to make micro benchmarks memory-bound)")
+set(PHIST_BENCH_LARGE_N (int)1e8 CACHE STRING "Dimension for benchmarking tests (e.g. large enough to make micro benchmarks memory-bound). Should be a multiple of 8.")
 
 option(PHIST_TIMINGS_FULL_TRACE "Try to print full call trace in the TimeMonitor/performance measurements (Warning: may generate *a lot* of output)." Off)
 
@@ -880,6 +885,10 @@ endforeach()
 #########################################################################################
 # check for and enable optional libs from Trilinos (preconditioners, Belos/Anasazi)     #
 #########################################################################################
+
+if (NOT PHIST_USE_TRILINOS_TPLS)
+  set(OPTIONAL_TRILINOS_PKG "")
+endif()
 
 foreach(PKG ${OPTIONAL_TRILI_PKG})
   string(TOUPPER ${PKG} PKG_CAPS)
