@@ -140,7 +140,7 @@ TEST_F(CLASSNAME,fused_spmv_mvTmv)
     // check xTy == x^T * y
     SUBR(mvecT_times_mvec)(st::one(),vec1_,vec3_,st::zero(),mat3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), SdMatsEqual(mat2_,mat3_), 10000*(VTest::releps(vec1_)+VTest::releps(vec2_)));
+    ASSERT_NEAR(mt::one(), SdMatsEqual(mat2_,mat3_), mt::sqrt(mt::eps()));
 
     // check yTy == y^T * y
     SUBR(mvecT_times_mvec)(st::one(),vec3_,vec3_,st::zero(),mat3_,&iflag_);
