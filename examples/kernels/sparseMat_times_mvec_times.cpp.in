@@ -32,10 +32,10 @@ void stream_test(int *iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__)
 
-  double max_bw;
+  double max_bw, mean_bw;
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
-  PHIST_CHK_IERR(phist_bench_stream_triad(&max_bw, iflag),*iflag);
+  PHIST_CHK_IERR(phist_bench_stream_triad(&mean_bw, &max_bw, iflag),*iflag);
 PHIST_TASK_END(iflag)
   PHIST_SOUT(PHIST_INFO,"Maximum memory bandwidth (STREAM_TRIAD): %g GB/s\n",max_bw*1.0e-9);
 }

@@ -2,6 +2,8 @@
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
+#else
+#error "this file currently requires MPI"
 #endif
 
 #include "phist_perfcheck.hpp"
@@ -10,6 +12,8 @@
 #include <algorithm>
 #include <sstream>
 #include <cmath>
+#include <cstdarg>
+#include <cstdio>
 
 #ifdef PHIST_PERFCHECK
 # ifndef PHIST_USE_TEUCHOS_TIMEMONITOR
@@ -29,7 +33,7 @@ namespace phist_PerfCheck
   // calculates the results and prints them
   void PerfCheckTimer::summarize(int verbosity)
   {
-    if (verbosity<PHIST_OUTLEV) return;
+    if (PHIST_OUTLEV<verbosity) return;
     int ierr = 0;
     int nTimers = timingResults_.size();
     int nExpectedTimers = expectedResults_.size();
@@ -42,22 +46,22 @@ namespace phist_PerfCheck
 
     if( nTimers == 0 ) return;
     
-    int rank,nproc;
+    int rank=0,nproc=1;
+#ifdef PHIST_HAVE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
     MPI_Comm_size(MPI_COMM_WORLD,&nproc);
+#endif
 
-    FILE* ofile=NULL;
+    FILE* ofile= (rank==0)? stdout: NULL;
         
-#ifdef FPHIST_PERFCHECK_SEPARATE_OUTPUT
+#ifdef PHIST_PERFCHECK_SEPARATE_OUTPUT
     int ndigits=std::ceil(std::log(nproc)/std::log(10));
-    char *fname=NULL,*fname_fmt=NULL;
+    char fname_fmt[32], fname[32];
 
-    vasprintf(&fname_fmt,"phist-perfcheck-P\%%dd\n",ndigits);
-    vasprintf(&fname,fname_fmt,rank);
+    snprintf(fname_fmt,32,"phist-perfcheck-P%%%dd.txt\n",ndigits);
+    snprintf(fname,32,fname_fmt,rank);
     PHIST_SOUT(PHIST_INFO,"perfcheck results are written to searate files of the form '%s'\n",fname);
     ofile=fopen(fname,"w+");
-#else
-    if (rank==0) ofile=stdout;
 #endif
     // get timer names from the first process
     std::string fcnNameList;

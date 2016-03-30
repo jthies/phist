@@ -104,11 +104,11 @@ void phist_map_get_iupper(phist_const_map_ptr map, phist_gidx* iupper, int* ifla
 //!@{
 
 //! simple load dominated streaming benchmark
-void phist_bench_stream_load(double* bw, int* iflag);
+void phist_bench_stream_load(double* mean_bw, double *max_bw, int* iflag);
 //! simple store dominated streaming benchmark
-void phist_bench_stream_store(double* bw, int* iflag);
+void phist_bench_stream_store(double* mean_bw, double* max_bw, int* iflag);
 //! simple stream triad benchmark
-void phist_bench_stream_triad(double* bw, int* iflag);
+void phist_bench_stream_triad(double* mean_bw, double* max_bw, int* iflag);
 //!@}
 
 //! this function should not be called by the user but by each kernel lib in kernels_init()

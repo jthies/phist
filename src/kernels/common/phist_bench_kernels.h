@@ -5,11 +5,11 @@
 extern "C" {
 #endif
 
-void phist_bench_stream_load(double* max_bw, int* iflag);
+void phist_bench_stream_load(double* mean_bw, double* max_bw, int* iflag);
 
-void phist_bench_stream_store(double* max_bw, int* iflag);
+void phist_bench_stream_store(double* mean_bw, double* max_bw, int* iflag);
 
-void phist_bench_stream_triad(double* max_bw, int* iflag);
+void phist_bench_stream_triad(double* mean_bw, double* max_bw, int* iflag);
 
 
 #ifdef __cplusplus

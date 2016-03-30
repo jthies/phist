@@ -22,39 +22,42 @@
    from the one in kernels/common: ghost measures the average over 40 runs, phist the maximum over 10.
  */
 
-extern "C" void phist_bench_stream_load(double* max_bw, int* iflag)
+extern "C" void phist_bench_stream_load(double* mean_bw, double* max_bw, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_TASK_DECLARE(BenchTask)
   PHIST_TASK_BEGIN(BenchTask)
   PHIST_SOUT(PHIST_VERBOSE, "Streaming LOAD benchmark: ");
-  PHIST_CHK_GERR(ghost_bench_stream(GHOST_BENCH_STREAM_LOAD, max_bw),*iflag);
+  PHIST_CHK_GERR(ghost_bench_stream(GHOST_BENCH_STREAM_LOAD, mean_bw, max_bw),*iflag);
   *max_bw*=1.0e9; // GHOST returns GB/s, the PHIST equivalent B/s
-  PHIST_SOUT(PHIST_VERBOSE, "measured %8.4g Gb/s\n", *max_bw/1.e9);
+  *mean_bw*=1.0e9;
+  PHIST_SOUT(PHIST_VERBOSE, "measured %8.4g Gb/s (max) and %8.4g Gb/s (mean)\n", *max_bw/1.e9,*mean_bw/1.e9);
   PHIST_TASK_END(iflag)
 }
 
-extern "C" void phist_bench_stream_store(double* max_bw, int* iflag)
+extern "C" void phist_bench_stream_store(double* mean_bw, double* max_bw, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_TASK_DECLARE(BenchTask)
   PHIST_TASK_BEGIN(BenchTask)
   PHIST_SOUT(PHIST_VERBOSE, "Streaming STORE benchmark: ");
-  PHIST_CHK_GERR(ghost_bench_stream(GHOST_BENCH_STREAM_STORE, max_bw),*iflag);
+  PHIST_CHK_GERR(ghost_bench_stream(GHOST_BENCH_STREAM_STORE, mean_bw,max_bw),*iflag);
   *max_bw*=1.0e9; // GHOST returns GB/s, the PHIST equivalent B/s
-  PHIST_SOUT(PHIST_VERBOSE, "measured %8.4g Gb/s\n", *max_bw/1.e9);
+  *mean_bw*=1.0e9;
+  PHIST_SOUT(PHIST_VERBOSE, "measured %8.4g Gb/s (max) and %8.4g Gb/s (mean)\n", *max_bw/1.e9,*mean_bw/1.e9);
   PHIST_TASK_END(iflag)
 }
 
-extern "C" void phist_bench_stream_triad(double* max_bw, int* iflag)
+extern "C" void phist_bench_stream_triad(double* mean_bw, double* max_bw, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_TASK_DECLARE(BenchTask)
   PHIST_TASK_BEGIN(BenchTask)
   PHIST_SOUT(PHIST_VERBOSE, "Streaming TRIAD benchmark: ");
-  PHIST_CHK_GERR(ghost_bench_stream(GHOST_BENCH_STREAM_TRIAD, max_bw),*iflag);
+  PHIST_CHK_GERR(ghost_bench_stream(GHOST_BENCH_STREAM_TRIAD, mean_bw, max_bw),*iflag);
   *max_bw*=1.0e9; // GHOST returns GB/s, the PHIST equivalent B/s
-  PHIST_SOUT(PHIST_VERBOSE, "measured %8.4g Gb/s\n", *max_bw/1.e9);
+  *mean_bw*=1.0e9;
+  PHIST_SOUT(PHIST_VERBOSE, "measured %8.4g Gb/s (max) and %8.4g Gb/s (mean)\n", *max_bw/1.e9,*mean_bw/1.e9);
   PHIST_TASK_END(iflag)
 }
 

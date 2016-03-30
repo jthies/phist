@@ -18,60 +18,71 @@
 #include "phist_bench_kernels.h"
 #include "stream_bench.h"
 
-extern "C" void phist_bench_stream_load(double* max_bw, int* iflag)
+#define NUM_RUNS 40
+
+extern "C" void phist_bench_stream_load(double* mean_bw, double* max_bw, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   double *data = NULL;
-  PHIST_SOUT(PHIST_INFO, "Streaming LOAD benchmark: ");
+  PHIST_SOUT(PHIST_VERBOSE, "Streaming LOAD benchmark: ");
   PHIST_CHK_IERR(dbench_stream_load_create(&data,iflag),*iflag);
   *max_bw = 0.;
-  for(int i = 0; i < 10; i++)
+  *mean_bw = 0.;
+  for(int i = 0; i < NUM_RUNS; i++)
   {
     double bw = 0.;
     double res;
     PHIST_CHK_IERR(dbench_stream_load_run(data,&res,&bw,iflag),*iflag);
+    *mean_bw+=bw;
     if( bw > *max_bw ) *max_bw = bw;
   }
+  *mean_bw/=NUM_RUNS;
   PHIST_CHK_IERR(dbench_stream_load_destroy(data,iflag),*iflag);
-  PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s\n", *max_bw/1.e9);
+  PHIST_SOUT(PHIST_VERBOSE, "measured %8.4g Gb/s (max) and %8.4g Gb/s (mean)\n", *max_bw/1.e9,*mean_bw/1.e9);
 }
 
-extern "C" void phist_bench_stream_store(double* max_bw, int* iflag)
+extern "C" void phist_bench_stream_store(double *mean_bw, double* max_bw, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   double *data = NULL;
-  PHIST_SOUT(PHIST_INFO, "Streaming STORE benchmark: ");
+  PHIST_SOUT(PHIST_VERBOSE, "Streaming STORE benchmark: ");
   PHIST_CHK_IERR(dbench_stream_store_create(&data,iflag),*iflag);
   *max_bw = 0.;
-  for(int i = 0; i < 10; i++)
+  *mean_bw= 0.;
+  for(int i = 0; i < NUM_RUNS; i++)
   {
     double bw = 0.;
     double res = 77.;
     PHIST_CHK_IERR(dbench_stream_store_run(data,&res,&bw,iflag),*iflag);
+    *mean_bw+=bw;
     if( bw > *max_bw ) *max_bw = bw;
   }
+  *mean_bw/=NUM_RUNS;
   PHIST_CHK_IERR(dbench_stream_store_destroy(data,iflag),*iflag);
-  PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s\n", *max_bw/1.e9);
+  PHIST_SOUT(PHIST_VERBOSE, "measured %8.4g Gb/s (max) and %8.4g Gb/s (mean)\n", *max_bw/1.e9,*mean_bw/1.e9);
 }
 
-extern "C" void phist_bench_stream_triad(double* max_bw, int* iflag)
+extern "C" void phist_bench_stream_triad(double* mean_bw, double* max_bw, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   double *x = NULL;
   double *y = NULL;
   double *z = NULL;
-  PHIST_SOUT(PHIST_INFO, "Streaming TRIAD benchmark: ");
+  PHIST_SOUT(PHIST_VERBOSE, "Streaming TRIAD benchmark: ");
   PHIST_CHK_IERR(dbench_stream_triad_create(&x,&y,&z,iflag),*iflag);
   *max_bw = 0.;
-  for(int i = 0; i < 10; i++)
+  *mean_bw= 0.;
+  for(int i = 0; i < NUM_RUNS; i++)
   {
     double bw = 0.;
     double res = -53.;
     PHIST_CHK_IERR(dbench_stream_triad_run(x,y,z,&res,&bw,iflag),*iflag);
+    *mean_bw+=bw;
     if( bw > *max_bw ) *max_bw = bw;
   }
+  *mean_bw/=NUM_RUNS;
   PHIST_CHK_IERR(dbench_stream_triad_destroy(x,y,z,iflag),*iflag);
-  PHIST_SOUT(PHIST_INFO, "measured %8.4g Gb/s\n", *max_bw/1.e9);
+  PHIST_SOUT(PHIST_VERBOSE, "measured %8.4g Gb/s (max) and %8.4g Gb/s (mean)\n", *max_bw/1.e9,*mean_bw/1.e9);
 }
 
 

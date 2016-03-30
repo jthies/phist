@@ -42,7 +42,8 @@ double benchName(double factor) { \
   double benchResult = phist_PerfCheck::benchmarks[__FUNCTION__]; \
   if( benchResult == 0 ) { \
     int ierr = 0; \
-    benchFunction(&benchResult,&ierr); \
+    double mean_bw; \
+    benchFunction(&mean_bw,&benchResult,&ierr); \
     phist_PerfCheck::benchmarks[__FUNCTION__] = benchResult; \
   } \
   return factor / benchResult; \

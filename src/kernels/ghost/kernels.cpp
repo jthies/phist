@@ -59,8 +59,9 @@ double get_proc_weight(double force_value)
   if (force_value>0.0) proc_weight=force_value;
   if (proc_weight<=0)
   {
-    phist_bench_stream_triad(&proc_weight,&iflag);
-    proc_weight*=1.0e-9;
+    double max_bw, mean_bw;
+    phist_bench_stream_triad(&mean_bw,&max_bw,&iflag);
+    proc_weight=mean_bw*1.0e-9;
     if (iflag) proc_weight=1.0;
   }
   return proc_weight;
