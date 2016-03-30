@@ -111,6 +111,7 @@ kernel libs) ?
 #cmakedefine PHIST_TIMINGS_FULL_TRACE
 #cmakedefine PHIST_PERFCHECK
 #cmakedefine PHIST_PERFCHECK_REALISTIC
+#cmakedefine PHIST_PERFCHECK_SEPARATE_OUTPUT
 #cmakedefine PHIST_BENCH_LARGE_N ${PHIST_BENCH_LARGE_N}
 
 /* specific settings to tune the GHOST performance */
