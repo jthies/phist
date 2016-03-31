@@ -70,11 +70,17 @@ double get_proc_weight(double force_value)
 
 void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
 {
-  *C = PHIST_SELL_C;
-  *sigma = PHIST_SELL_SIGMA;
-  // if the user sets both to postive values, respect this choice
-  // and do not override it by either flags or the presence of GPU
-  // processes
+  // if the user sets both to postive values in the config file (via CMake), respect this choice
+  // and do not override it by either flags or the presence of GPU processes
+  static int C_stored=PHIST_SELL_C;
+  static int sigma_stored=PHIST_SELL_SIGMA;
+
+  // only determine C and sigma once, then use these values subsequently for all maps/matrices. The
+  // code below requires global reductions and we don't know if a user constructs many different matrices
+  // in the course of a simulation.
+  *C=C_stored;
+  *sigma=sigma_stored;
+
   if (*C>0 && *sigma>0) return;
 
   if( flags & PHIST_SPARSEMAT_OPT_SINGLESPMVM )
@@ -107,6 +113,9 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
   // everyone should have the max value found among MPI processes
   MPI_Allreduce(MPI_IN_PLACE,C,1,MPI_INT,MPI_MAX,comm);
   MPI_Allreduce(MPI_IN_PLACE,sigma,1,MPI_INT,MPI_MAX,comm);
+  
+  C_stored=*C;
+  sigma_stored=*sigma;
 
 }
 
@@ -342,7 +351,7 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
     if (nglob_count!=nglob||(any_empty&&proc_weight!=1.0))
     {
       if (any_empty)          PHIST_SOUT(PHIST_WARNING,"empty partition in map/context\n");
-      if (nglob_count!=nglob) PHIST_SOUT(PHIST_WARNING,"number of nodes " PRgidx " in context does not match given nglob=" PRgidx "\n", nglob_count,nglob);
+      if (nglob_count!=nglob) PHIST_SOUT(PHIST_WARNING,"number of nodes %ld in context does not match given nglob=%ld\n", (int64_t)nglob_count,(int64_t)nglob);
       PHIST_SOUT(PHIST_WARNING,"GHOST did not give a correct context, %s\n",proc_weight==1.0?"aborting!":"retrying...");
       ghost_context_destroy(map->ctx);
       map->ctx=NULL;
