@@ -83,15 +83,16 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
 
   if (*C>0 && *sigma>0) return;
 
-  if( flags & PHIST_SPARSEMAT_OPT_SINGLESPMVM )
+  if (*C<0)
   {
-    *C = 32;
-    *sigma = 256;
-  }
-  if( flags & PHIST_SPARSEMAT_OPT_BLOCKSPMVM )
-  {
-    *C = 8;
-    *sigma = 32;
+    if( flags & PHIST_SPARSEMAT_OPT_SINGLESPMVM )
+    {
+      *C = 32;
+    }
+    if( flags & PHIST_SPARSEMAT_OPT_BLOCKSPMVM )
+    {
+      *C = 8;
+    }
   }
 
   // override with max(C,32) if anything runs on a CUDA device
@@ -100,19 +101,18 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
   if (gtype==GHOST_TYPE_CUDA)
   {
     *C=std::max(*C,32);
-    *sigma=std::max(256,*sigma);
   }
   // if the user doesn´t set it in CMake or give a flag, it is -1, override with +1 (CRS)
   *C=std::max(*C,+1);
-  *sigma=std::max(*sigma,+1);
+
+  // everyone should have the max value found among MPI processes
+  MPI_Allreduce(MPI_IN_PLACE,C,1,MPI_INT,MPI_MAX,comm);
+
+  if (*sigma<0) *sigma=4*(*C);
 
   // if the user does NOT specify PHIST_SPARSEMAT_REPARTITION, set sigma=1 because the user may
   // not expect us to permute rows locally
   if ( !(flags&PHIST_SPARSEMAT_REPARTITION) ) *sigma=1;
-
-  // everyone should have the max value found among MPI processes
-  MPI_Allreduce(MPI_IN_PLACE,C,1,MPI_INT,MPI_MAX,comm);
-  MPI_Allreduce(MPI_IN_PLACE,sigma,1,MPI_INT,MPI_MAX,comm);
   
   C_stored=*C;
   sigma_stored=*sigma;
