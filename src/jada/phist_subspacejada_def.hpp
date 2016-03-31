@@ -100,6 +100,22 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
 #endif
 
   phist_EeigExtr how=opts.how;
+
+#if PHIST_OUTLEV>=PHIST_VERBOSE
+  {
+  // print input options to stdout on root 
+    int me=0;
+    phist_const_comm_ptr comm;
+    PHIST_CHK_IERR(phist_map_get_comm(A_op->domain_map,&comm,iflag),*iflag);
+    PHIST_CHK_IERR(phist_comm_get_rank(comm,&me,iflag),*iflag);
+    if (me==0)
+    {
+      PHIST_SOUT(PHIST_VERBOSE,"jadaOpts:\n");
+      phist_jadaOpts_toFile(&opts, stdout);
+    }
+  }
+#endif
+
   
   if (how==phist_HARMONIC)
   {

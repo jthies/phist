@@ -116,6 +116,9 @@ void phist_jadaOpts_fromFile(phist_jadaOpts *opts, const char* filename, int* if
 //! set default values in a jadaOpts struct
 void phist_jadaOpts_setDefaults(phist_jadaOpts *opts);
 
+//! print jadaOpts to a file or stream. The result can be used as input for subsequent runs
+void phist_jadaOpts_toFile(phist_jadaOpts const *opts, FILE* stream);
+
 #ifdef __cplusplus
 } //extern "C"
 #endif

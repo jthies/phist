@@ -9,6 +9,8 @@
 #include <fstream>
 #include <sstream>
 
+#include <cstdio>
+
 extern "C" void phist_jadaOpts_setDefaults(phist_jadaOpts *opts)
 {
   opts->numEigs=6; 
@@ -100,5 +102,32 @@ extern "C" void phist_jadaOpts_fromFile(phist_jadaOpts* opts, const char* filena
   set_value("innerSolvBlockSize",opts->innerSolvBlockSize,file);
   set_value("innerSolvStopAfterFirstConverged",opts->innerSolvStopAfterFirstConverged,file);
   set_value("innerSolvRobust",opts->innerSolvRobust,file);
+}
+
+// print jadaOpts to a file or stream. The result can be used as input for subsequent runs
+extern "C" void phist_jadaOpts_toFile(phist_jadaOpts const *opts, FILE* stream)
+{
+  if (stream==NULL) return;
+  fprintf(stream,"numEigs\t%d\n",opts->numEigs);
+  fprintf(stream,"which\t%s\n",eigSort2str(opts->which)); 
+  fprintf(stream,"how\t%s\n",eigExtr2str(opts->how));
+
+  fprintf(stream,"maxIters\t%d\n",opts->maxIters);
+  fprintf(stream,"blockSize\t%d\n",opts->blockSize);
+  fprintf(stream,"minBas\t%d\n",opts->minBas);
+  fprintf(stream,"maxBas\t%d\n",opts->maxBas);
+  fprintf(stream,"convTol\t%4.2e\n",opts->convTol);
+
+  fprintf(stream,"arno\t%d\n",opts->arno);
+  fprintf(stream,"initialShift_r\t%e\n",opts->initialShift_r);
+  fprintf(stream,"initialShift_i\t%e\n",opts->initialShift_i);
+  fprintf(stream,"initialShiftIters\t%d\n",opts->initialShiftIters);
+
+  fprintf(stream,"innerSolvType\t%s\n",linSolv2str(opts->innerSolvType));
+  fprintf(stream,"innerSolvMaxBas\t%d\n",opts->innerSolvMaxBas);
+  fprintf(stream,"innerSolvMaxIters\t%d\n",opts->innerSolvMaxIters);
+  fprintf(stream,"innerSolvBlockSize\t%d\n",opts->innerSolvBlockSize);
+  fprintf(stream,"innerSolvStopAfterFirstConverged\t%d\n",opts->innerSolvStopAfterFirstConverged);
+  fprintf(stream,"innerSolvRobust\t%d\n",opts->innerSolvRobust);
 }
 
