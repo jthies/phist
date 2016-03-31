@@ -98,5 +98,7 @@ extern "C" void phist_jadaOpts_fromFile(phist_jadaOpts* opts, const char* filena
   set_value("innerSolvMaxBas",opts->innerSolvMaxBas,file);
   set_value("innerSolvMaxIters",opts->innerSolvMaxIters,file);
   set_value("innerSolvBlockSize",opts->innerSolvBlockSize,file);
+  set_value("innerSolvStopAfterFirstConverged",opts->innerSolvStopAfterFirstConverged,file);
+  set_value("innerSolvRobust",opts->innerSolvRobust,file);
 }
 
