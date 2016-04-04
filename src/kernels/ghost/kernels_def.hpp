@@ -8,7 +8,7 @@
 #define TMP_SET_DENSEMAT_LOCATION(_void_ptr,_densemat_ptr,_orig_location) \
 ghost_densemat* _densemat_ptr = (ghost_densemat*)(_void_ptr); \
 ghost_location _orig_location = _densemat_ptr->traits.location; \
-if (*iflag&PHIST_SDMAT_RUN_ON_HOST) _densemat_ptr->traits.location=GHOST_LOCATION_HOST;
+if (*iflag&PHIST_SDMAT_RUN_ON_HOST && false) _densemat_ptr->traits.location=GHOST_LOCATION_HOST;
 #endif
 
 #if defined(PHIST_HAVE_TEUCHOS)&&defined(PHIST_HAVE_KOKKOS)
