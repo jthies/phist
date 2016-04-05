@@ -4,6 +4,7 @@
 #include <mpi.h>
 #endif
 #include "phist_transform_searchspace.h"
+#include "phist_mpi_kernels.h"
 #include "phist_macros.h"
 #include "phist_lapack.h"
 #include "phist_ScalarTraits.hpp"
