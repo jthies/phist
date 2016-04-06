@@ -403,8 +403,12 @@ extern "C" void phist_map_get_local_length(phist_const_map_ptr vmap, phist_lidx*
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
   int me;
-  ghost_rank(&me,map->ctx->mpicomm);
-  *nloc=map->ctx->lnrows[me];
+  if (map->ctx) {
+      ghost_rank(&me,map->ctx->mpicomm);
+      *nloc=map->ctx->lnrows[me];
+  } else {
+      *nloc=map->vtraits_template.nrows;
+  }
 }
 
 //!
