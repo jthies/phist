@@ -4,6 +4,12 @@
 #include <mpi.h>
 #endif
 
+#ifdef PHIST_KERNEL_LIB_GHOST
+#include "ghost/config.h"
+# ifdef GHOST_HAVE_CUDA
+# include "ghost/cu_util.h"
+# endif
+#endif
 #include "phist_timemonitor.hpp"
 #include "phist_macros.h"
 
@@ -27,6 +33,11 @@ namespace phist_TimeMonitor
       {
         if( !name_.empty() && wtime_available() )
         {
+#ifdef PHIST_KERNEL_LIB_GHOST
+# ifdef GHOST_HAVE_CUDA
+          ghost_cu_barrier();
+# endif
+#endif
           wtime_ = get_wtime() - wtime_;
 #pragma omp critical (phist_timemonitor)
           {
