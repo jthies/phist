@@ -21,6 +21,17 @@
 #include ${PHIST_TG_HFILE}
 #include "phist_driver_utils.h"
 
+#define TIME_BENCH_START(label,_m,_k) \
+  std::stringstream ss; \
+  ss<<"BENCH_"<<label<<"_"<<(_m)<<"_"<<(_k); \
+  PHIST_ENTER_FCN(ss.str().c_str());
+
+#ifdef PHIST_KERNEL_LIB_GHOST
+# define TIME_BENCH_END ghost_barrier();
+#else
+# define TIME_BENCH_END
+#endif
+
 typedef phist::ScalarTraits<ST> st;
 typedef phist::ScalarTraits<MT> mt;
 
@@ -86,43 +97,83 @@ PHIST_MAIN_TASK_BEGIN
   
   
   // Cmk=X'Y
-  for (int it=0; it<l; it++)
+  for (int it=0; it<2; it++)
   {
     ST value[m];
     ierr = high_prec?PHIST_ROBUST_REDUCTIONS: 0;
     PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),X,Y,st::zero(),Cmk,&ierr),ierr);
   }
+  for (int it=0; it<l; it++)
+  {
+    TIME_BENCH_START("mvecT_times_mvec",m,k);
+    ST value[m];
+    ierr = high_prec?PHIST_ROBUST_REDUCTIONS: 0;
+    PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),X,Y,st::zero(),Cmk,&ierr),ierr);
+    TIME_BENCH_END
+  }
 
   // Ckk=Y'Y
-  for (int it=0; it<l; it++)
+  for (int it=0; it<2; it++)
   {
     ST value[m];
     ierr = high_prec?PHIST_ROBUST_REDUCTIONS: 0;
     PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Y,Y,st::zero(),Ckk,&ierr),ierr);
   }
+  for (int it=0; it<l; it++)
+  {
+    TIME_BENCH_START("mvecT_times_mvec",k,k);
+    ST value[m];
+    ierr = high_prec?PHIST_ROBUST_REDUCTIONS: 0;
+    PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Y,Y,st::zero(),Ckk,&ierr),ierr);
+    TIME_BENCH_END
+  }
 
   // Y=Y+X*Cmk
-  for (int it=0; it<l; it++)
+  for (int it=0; it<2; it++)
   {
     ST value[m];
     ierr = high_prec?PHIST_ROBUST_REDUCTIONS: 0;
     PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(st::one(),X,Cmk,-st::one(),Y,&ierr),ierr);
   }
+  for (int it=0; it<l; it++)
+  {
+    TIME_BENCH_START("mvec_times_sdMat",m,k);
+    ST value[m];
+    ierr = high_prec?PHIST_ROBUST_REDUCTIONS: 0;
+    PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(st::one(),X,Cmk,-st::one(),Y,&ierr),ierr);
+    TIME_BENCH_END
+  }
 
   // Y=Y*Ckk
-  for (int it=0; it<l; it++)
+  for (int it=0; it<2; it++)
   {
     ST value[m];
     ierr = high_prec?PHIST_ROBUST_REDUCTIONS: 0;
     PHIST_ICHK_IERR(SUBR(mvec_times_sdMat_inplace)(Y,Ckk,&ierr),ierr);
   }
+  for (int it=0; it<l; it++)
+  {
+    TIME_BENCH_START("mvec_times_sdMat_inplace",k,k);
+    ST value[m];
+    ierr = high_prec?PHIST_ROBUST_REDUCTIONS: 0;
+    PHIST_ICHK_IERR(SUBR(mvec_times_sdMat_inplace)(Y,Ckk,&ierr),ierr);
+    TIME_BENCH_END
+  }
 
   // X(:,1:m/2)=X*Cmm2
-  for (int it=0; it<l; it++)
+  for (int it=0; it<2; it++)
   {
     ST value[m];
     ierr = high_prec?PHIST_ROBUST_REDUCTIONS: 0;
     PHIST_ICHK_IERR(SUBR(mvec_times_sdMat_inplace)(X,Cmm2,&ierr),ierr);
+  }
+  for (int it=0; it<l; it++)
+  {
+    TIME_BENCH_START("mvec_times_sdMat_inplace",m,m/2);
+    ST value[m];
+    ierr = high_prec?PHIST_ROBUST_REDUCTIONS: 0;
+    PHIST_ICHK_IERR(SUBR(mvec_times_sdMat_inplace)(X,Cmm2,&ierr),ierr);
+    TIME_BENCH_END
   }
   
   
