@@ -98,6 +98,9 @@ typedef struct ghost_map
     //!          sparseMat_delete           => ref count of map[X] decremented
     //!          mvec_delete(V)             => ref count of map[X] decremented to 0, map and context deleted
     //! See issue #177
+    class MapGarbageCollector
+    {
+
       public:
       
         //!
