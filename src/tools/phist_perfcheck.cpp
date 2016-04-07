@@ -58,7 +58,7 @@ namespace phist_PerfCheck
     int ndigits=std::ceil(std::log(nproc)/std::log(10));
     char fname_fmt[32], fname[32];
 
-    snprintf(fname_fmt,32,"phist-perfcheck-P%%%dd.txt\n",ndigits);
+    snprintf(fname_fmt,32,"phist-perfcheck-P%%%dd.txt",ndigits);
     snprintf(fname,32,fname_fmt,rank);
     PHIST_SOUT(PHIST_INFO,"perfcheck results are written to searate files of the form '%s'\n",fname);
     ofile=fopen(fname,"w+");
