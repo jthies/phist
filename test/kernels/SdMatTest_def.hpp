@@ -210,7 +210,7 @@ public:
       }
       SUBR(sdMat_to_device)(mat1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_NEAR(mt::one(),SdMatsEqual(mat1_,mat2_),100*mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatsEqual(mat1_,mat2_),mt::sqrt(mt::eps()));
     }
   }
 
