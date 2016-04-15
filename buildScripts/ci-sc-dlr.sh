@@ -16,7 +16,7 @@ FLAGS="default" # optional-libs
 ADD_CMAKE_FLAGS="" #optional CMake flags
 VECT_EXT="native"
 # list of modules to load
-MODULES_BASIC="cmake ccache cppcheck gcovr"
+MODULES_BASIC="cmake ccache cppcheck lapack gcovr doxygen"
 # GCC_SANITIZE flag for debug mode, disabled for CUDA
 SANITIZER="address"
 
