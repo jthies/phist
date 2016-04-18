@@ -13,6 +13,7 @@
 #include <cstdio>
 
 #include "phist_void_aliases.h"
+#include "phist_macros.h"
 #include "phist_operator.h"
 #include "phist_lapack.h"
 

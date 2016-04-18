@@ -5,6 +5,7 @@
 // it is in fact a kind of general wrapper
 // for our linear solvers.
 #include "phist_feastCorrectionSolver.h"
+#include "phist_kernels.h"
 #include "phist_ScalarTraits.hpp"
 
 #ifdef PHIST_HAVE_SP

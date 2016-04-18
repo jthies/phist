@@ -1,4 +1,4 @@
-/*! \file prec_kernels_d.c
+/*! \file DsdFact_prec_kernels.c
  * Implementation of some serial LAPaCK like functions with high precision
  * \author "Melven Roehrig-Zoellner" <Melven.Roehrig-Zoellner@DLR.de>
  * \author "Jonas Thies" <Jonas.Thies@DLR.de>
@@ -8,11 +8,18 @@
 */
 
 #include "phist_config.h"
+/* needs to be included before system headers for some intel compilers+mpi */
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
 #include <stdlib.h>
+
 #include "prec_helpers.h"
 #include "phist_macros.h"
 #include "phist_typedefs.h"
 #include "mlapack_wrapper.h"
+
 
 #ifdef PHIST_SDMATS_ROWMAJOR
 #error "functionality not implemented for row-major sdMats"

@@ -1,4 +1,63 @@
+namespace {
+//! small helper function that checks if an sdMat is symmetric
+void SUBR(sdMat_check_symmetry)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
 
+  // check dimensions
+  int m, n;
+  PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(mat, &m, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(mat, &n, iflag), *iflag);
+  if( m != n )
+  {
+    *iflag = 1;
+    return;
+  }
+
+  // create tmp storage
+  TYPE(sdMat_ptr) tmp = NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp, m, n, NULL, iflag), *iflag);
+
+  // construct identity matrix
+  TYPE(sdMat_ptr) id = NULL;
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&id, m, n, NULL, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR( sdMat_identity) (id, iflag), *iflag);
+
+  // set tmp to transposed
+  PHIST_CHK_IERR(SUBR(sdMatT_times_sdMat)(st::one(), mat, id, st::zero(), tmp, iflag), *iflag);
+  // subtract mat
+  PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(-st::one(), mat, st::one(), tmp, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_from_device)(tmp,iflag),*iflag);
+  // calc max. abs. value of mat^T-mat
+  _MT_ maxVal = mt::zero();
+  {
+    _ST_ *tmp_raw = NULL;
+    phist_lidx lda;
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(tmp, &tmp_raw, &lda, iflag), *iflag);
+    for(int i = 0; i < m; i++)
+      for(int j = 0; j < n; j++)
+        maxVal = mt::max(maxVal, st::abs(tmp_raw[i*lda+j]));
+  }
+
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(id, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(tmp, iflag), *iflag);
+
+  if( maxVal < tol )
+  {
+    PHIST_SOUT(PHIST_VERBOSE, "Symmetry deviation of projection %e\n", maxVal);
+    *iflag = 0;
+  }
+  else
+  {
+    PHIST_SOUT(PHIST_WARNING, "Symmetry deviation of projection %e exceeds tolerance (%e)\n", maxVal, tol);
+    *iflag = 1;
+  }
+}
+}
+
+//! Subspace Jacobi-Davidson for interior eigenvalues
+//!
 //! Tries to compute a partial schur form $(Q,R)$ of dimension opts.numEigs
 //! of the stencil $A*x-\lambda*B*x$ with a general linear operator $A$ and a
 //! hermitian positive definite (hpd.) linear operator $B$ using a

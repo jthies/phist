@@ -4,6 +4,7 @@
 #include <mpi.h>
 #endif
 #include "phist_jadaCorrectionSolver.h"
+#include "phist_kernels.h"
 #include "phist_macros.h"
 #include "phist_enums.h"
 #include "phist_ScalarTraits.hpp"

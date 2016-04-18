@@ -9,7 +9,7 @@
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
-#include "phist_kernels.h"
+#include "phist_void_aliases.h"
 #include "phist_sdFact.h"
 
 #endif //DOXYGEN

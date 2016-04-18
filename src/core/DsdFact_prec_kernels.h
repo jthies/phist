@@ -1,4 +1,4 @@
-/*! \file prec_kernels_d.h
+/*! \file DsdFact_prec_kernels.h
  * Implementation of some serial LAPaCK like functions with high precision
  * \author "Melven Roehrig-Zoellner" <Melven.Roehrig-Zoellner@DLR.de>
  * \author "Jonas Thies" <Jonas.Thies@DLR.de>
@@ -6,12 +6,14 @@
  * This implementation can be used by any kernel lib that provides
  * PHIST_HIGH_PRECISION_KERNELS and implements sdMat_extract_err.
 */
+#ifndef PHIST_DSDFACT_PREC_KERNELS_H
+#define PHIST_DSDFACT_PREC_KERNELS_H
 
 #include "phist_config.h"
-#include "prec_helpers.h"
-#include "phist_macros.h"
-#include "phist_typedefs.h"
-#include "mlapack_wrapper.h"
+/* needs to be included before system headers for some intel compilers+mpi */
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
 
 #ifdef PHIST_SDMATS_ROWMAJOR
 #error "functionality not implemented for row-major sdMats"
@@ -45,4 +47,6 @@ void phist_Dprec_qb(double *__restrict__ a,  double *__restrict__ aC,
 
 #ifdef __cplusplus
 } //extern "C"
+#endif
+
 #endif

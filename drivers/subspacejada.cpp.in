@@ -15,6 +15,7 @@
 #include "phist_operator.h"
 #include "phist_jadaOpts.h"
 #include "phist_subspacejada.h"
+#include "phist_harmonicjada.h"
 #include ${PHIST_TG_HFILE}
 #include "phist_driver_utils.h"
 
