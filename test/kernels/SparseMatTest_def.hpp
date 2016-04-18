@@ -1253,7 +1253,10 @@ int PHIST_TG_PREFIX(some_rowFunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* c
 }
 #endif
 
+#ifndef SPARSEMATTEST_PRINT_THIS_WARNING_ONLY_ONCE
+#define SPARSEMATTEST_PRINT_THIS_WARNING_ONLY_ONCE
 #warning "Reenable this test, creating new mvecs or put it in a different file/class"
+#endif
 /*
 #if MATNAME == MATNAME_speye
 TEST_F(CLASSNAME,create_A_fromRowFunc)
