@@ -111,7 +111,7 @@ extern "C" void SUBR(precon_create)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_
   
   pt->type_ = precType;
   
-  if (precType==phist_INVALID_PRECON_T)
+  if (precType==phist_INVALID_PRECON)
   {
     PHIST_SOUT(PHIST_ERROR,"your given precon type '%s' was not recognized,\n"
                            "please check the spelling and if the required TPLs are\n"
