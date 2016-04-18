@@ -28,6 +28,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       SparseMatTest::SetUp();
       VTest::SetUp();
       MTest::SetUp();
+      rightPreconPtr_=NULL;
 
       if( typeImplemented_ && !problemTooSmall_ )
       {
@@ -118,6 +119,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     TYPE(linearOp_ptr) jdOp_ = NULL;
     TYPE(mvec_ptr) q_ = NULL;
     _ST_* sigma_ = NULL;
+
+    TYPE(linearOp_ptr) rightPreconPtr_;
 };
 
 
@@ -165,7 +168,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         ASSERT_EQ(0,iflag_);
 
         _MT_ resNorm;
-        SUBR(blockedGMRESstates_updateSol)(&state[i], 1, x_i, &resNorm, false, &iflag_);
+        SUBR(blockedGMRESstates_updateSol)(&state[i], 1, rightPreconPtr_, x_i, &resNorm, false, &iflag_);
         ASSERT_EQ(0,iflag_);
 
         // can't know the residual norm, yet
@@ -224,7 +227,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
 
       // check the result (we have given the solution as initial guess!)
       _MT_ resNorm[_NV_];
-      SUBR(blockedGMRESstates_updateSol)(state, _NV_, vec2_, resNorm, false, &iflag_);
+      SUBR(blockedGMRESstates_updateSol)(state, _NV_, rightPreconPtr_, vec2_, resNorm, false, &iflag_);
       ASSERT_EQ(0,iflag_);
 
       // can't know the residual norm, yet
@@ -278,7 +281,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
 
       // call iterate
       int nIter = 0;
-      SUBR(blockedGMRESstates_iterate)(jdOp_,state, _NV_, &nIter, true, &iflag_);
+      SUBR(blockedGMRESstates_iterate)(jdOp_,rightPreconPtr_,state, _NV_, &nIter, true, &iflag_);
       ASSERT_EQ(0,iflag_);
       // only one iteration should be needed!
       ASSERT_EQ(1,nIter);
@@ -296,7 +299,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);
       // check the result (we have given the solution as initial guess!)
       _MT_ resNorm[_NV_];
-      SUBR(blockedGMRESstates_updateSol)(state, _NV_, vec2_, resNorm, false, &iflag_);
+      SUBR(blockedGMRESstates_updateSol)(state, _NV_, rightPreconPtr_, vec2_, resNorm, false, &iflag_);
       ASSERT_EQ(0,iflag_);
 
       // residual didn't change, so the relative residual should be one
@@ -358,7 +361,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
 
       // call iterate
       int nIter = 0;
-      SUBR(blockedGMRESstates_iterate)(jdOp_,state, _NV_, &nIter, true, &iflag_);
+      SUBR(blockedGMRESstates_iterate)(jdOp_,rightPreconPtr_,state, _NV_, &nIter, true, &iflag_);
       ASSERT_EQ(0,iflag_);
       // only one iteration should be needed!
       ASSERT_EQ(1,nIter);
@@ -376,7 +379,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);
       // check the result
       _MT_ resNorm[_NV_];
-      SUBR(blockedGMRESstates_updateSol)(state, _NV_, vec2_, resNorm, false, &iflag_);
+      SUBR(blockedGMRESstates_updateSol)(state, _NV_, rightPreconPtr_, vec2_, resNorm, false, &iflag_);
       ASSERT_EQ(0,iflag_);
 
       // resnorm should be set now
@@ -459,7 +462,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
 
       // call iterate
       int nIter = 0;
-      SUBR(blockedGMRESstates_iterate)(jdOp_,state, _NV_, &nIter, true, &iflag_);
+      SUBR(blockedGMRESstates_iterate)(jdOp_,rightPreconPtr_,state, _NV_, &nIter, true, &iflag_);
       ASSERT_TRUE(iflag_ == 0 || iflag_ == 1);
       for(int i = 0; i < _NV_; i++)
       {
@@ -471,7 +474,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);
       // check the result (we have given the solution as initial guess!)
       _MT_ resNorm[_NV_];
-      SUBR(blockedGMRESstates_updateSol)(state, _NV_, vec2_, resNorm, false, &iflag_);
+      SUBR(blockedGMRESstates_updateSol)(state, _NV_, rightPreconPtr_, vec2_, resNorm, false, &iflag_);
       ASSERT_EQ(0,iflag_);
 
       // now check the result: vec3 = jdOp_(vec2)

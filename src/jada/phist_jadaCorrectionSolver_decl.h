@@ -13,6 +13,7 @@ typedef struct TYPE(jadaCorrectionSolver)
   TYPE(carp_cgState_ptr) *carp_cgStates_; //! can use CARP-CG alternatively
   phist_ElinSolv     method_;    //! supported values are GMRES, MINRES, CARP_CG and CUSTOM.
 
+  TYPE(const_linearOp_ptr) rightPrecon;
 
   //! pointer to solver object if innerSolvType==USER_DEFINED
   void* customSolver_;

@@ -1,7 +1,9 @@
 #include "phist_blockedgmres_helper_def.hpp"
 
 // implementation of minres on several systems simultaneously
-void SUBR(blockedMINRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, int* iflag)
+void SUBR(blockedMINRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, 
+                                       TYPE(const_linearOp_ptr) rightPrecon,
+                                       TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -18,6 +20,12 @@ void SUBR(blockedMINRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(blocke
 
   if( numSys <= 0 )
     return;
+
+  if (rightPrecon!=NULL)
+  {
+    PHIST_SOUT(PHIST_WARNING,"preconditioning not implemented in %s\n",__FUNCTION__);
+    
+  }
 
   // if there are multiple systems, get the maximal id
   int maxId = 0;

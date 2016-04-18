@@ -58,6 +58,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         SUBR(mvec_norm2)(rhs_,bNorm_,&iflag_);
         ASSERT_EQ(0,iflag_);
       }
+      opPr_=NULL;
     }
 
     //! Clean up.
@@ -84,6 +85,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     }
 
     TYPE(linearOp_ptr) opA_;
+    TYPE(linearOp_ptr) opPr_; // right preconditioner (NULL by default)
     TYPE(blockedGMRESstate_ptr) *state_;
 
   protected:
@@ -145,12 +147,12 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
           // iterate for MAXBAS iterations
           int nIter = 0;
           if( useMINRES )
-            SUBR(blockedMINRESstates_iterate)(opA_,state_,nrhs,&nIter, &iflag2);
+            SUBR(blockedMINRESstates_iterate)(opA_,opPr_,state_,nrhs,&nIter, &iflag2);
           else
-            SUBR(blockedGMRESstates_iterate)(opA_,state_,nrhs,&nIter,true, &iflag2);
+            SUBR(blockedGMRESstates_iterate)(opA_,opPr_,state_,nrhs,&nIter,true, &iflag2);
           ASSERT_TRUE(iflag2>=0);
           _MT_ resNorm[nrhs];
-          SUBR(blockedGMRESstates_updateSol)(state_,nrhs,x,resNorm,false,&iflag_);
+          SUBR(blockedGMRESstates_updateSol)(state_,nrhs,opPr_,x,resNorm,false,&iflag_);
           ASSERT_EQ(0,iflag_);
           if (iflag2==0) break; // converged
         }

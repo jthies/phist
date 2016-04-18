@@ -46,18 +46,31 @@ int initialShiftIters; // perform given number of iterations with a fixed shift
  * inner solver configuration     *
  **********************************/
 
-phist_ElinSolv innerSolvType; /*! GMRES, MINRES, CARP_CG, USER_DEFINED currently supported.
-                          * If set to USER_DEFINED, you have to provide the customSolver*
-                          * interface below.
-                          */
+phist_ElinSolv innerSolvType; //! GMRES, MINRES, CARP_CG, USER_DEFINED currently supported.
+                              //! If set to USER_DEFINED, you have to provide the customSolver*
+                              //! interface below.
+
 int innerSolvBlockSize;
 int innerSolvMaxBas;
 int innerSolvMaxIters;
 int innerSolvRobust; /*! extra effort to get good jada updates
                       * (in practice this may mean a more accurate orthogonalization etc.)
                       */
-int innerSolvStopAfterFirstConverged;
+  int innerSolvStopAfterFirstConverged;
 
+  //! pointer to a inearOp whose apply_shifted function serves as a preconditioner for the inner solver. May be NULL (no preconditioning) or created by phist_Xprecon_create.
+  //! This pointer can be used to pass an already computed preconditioner to the Jacobi-Davidson solver. The preconditioner will not be updated explicitly during the run, but
+  //! differentsshift will be supplied to the apply_shifted function.
+  void const* preconOp;
+
+  //! specify a preconditioning typeand the jada solver will build the preconditioner (using preconOpts as input) at start-up.
+  //! This is more convenient than passing in an operator via preconOp. That field should be NULL on input if precondType is set.
+  //! While this is not implemented yet, specifying the preconType gives the eigensolver the freedom to update the preconditioner
+  //! dynamically during the eigenvalue computation.
+  phist_Eprecon preconType;
+
+  //! option string passed to precon_create alongside preconType (if it is not NO_PRECON or INVALID_PRECON
+  char* preconOpts;
 
   //! pointer to solver object if innerSolvType==USER_DEFINED
   void* customSolver;

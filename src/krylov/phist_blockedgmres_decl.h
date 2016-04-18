@@ -84,7 +84,9 @@ typedef TYPE(blockedGMRESstate) const * TYPE(const_blockedGMRESstate_ptr);
 //! someone reached max iters")
 //! \warning you cannot mix together states from different calls to blockedGMRESstates_create!
 //!
-void SUBR( blockedGMRESstates_iterate ) (TYPE(const_linearOp_ptr) Op, TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int* nIter, bool useIMGS, int* iflag);
+void SUBR( blockedGMRESstates_iterate ) (TYPE(const_linearOp_ptr) Op, 
+                TYPE(const_linearOp_ptr) rightPrecon,
+                TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int* nIter, bool useIMGS, int* iflag);
 
 //!
 //! create an array of gmresState objects. The method's input parameters
@@ -123,7 +125,9 @@ void SUBR( blockedGMRESstate_reset ) (TYPE(blockedGMRESstate_ptr) S, TYPE(const_
 //! solution. The function is 'vectorized' in the same way as iterate, so an array of states 
 //! and multivector x can be passed in.
 //!
-void SUBR( blockedGMRESstates_updateSol ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, _MT_ *resNorm, bool scaleSolutionToOne, int* iflag);
+void SUBR( blockedGMRESstates_updateSol ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys,
+                TYPE(const_linearOp_ptr) rightPrecon,
+                TYPE(mvec_ptr) x, _MT_ *resNorm, bool scaleSolutionToOne, int* iflag);
 
 //@}
 //@}

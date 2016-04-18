@@ -166,7 +166,9 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
 
 
 // calculate approximate solution
-void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int numSys, TYPE(mvec_ptr) x, _MT_* resNorm, bool scaleSolutionToOne, int* iflag)
+void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int numSys, 
+        TYPE(const_linearOp_ptr) rightPrecon,
+        TYPE(mvec_ptr) x, _MT_* resNorm, bool scaleSolutionToOne, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -179,6 +181,13 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
   int maxId = 0;
   for(int i = 0; i < numSys; i++)
     maxId = std::max(maxId,S[i]->id);
+    
+  TYPE(mvec_ptr) z=x;
+  if (rightPrecon!=NULL)
+  {
+    z=NULL;
+    PHIST_CHK_IERR(SUBR(mvec_create)(&z,rightPrecon->range_map,numSys,iflag),*iflag);
+  }
 
   bool ordered = true;
   for(int i = 0; i < numSys; i++)
@@ -356,11 +365,13 @@ PHIST_TASK_BEGIN(ComputeTask)
     }
     PHIST_DEB("\n");
 
+    // compute z=V*y (if right precond is present) or
+    // x=x+V*y if there is no right preconditioning (z points to x in that case)
     if( j >= maxCurDimV-sharedCurDimV && ordered )
     {
       // update solution of all systems at once
       PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vind), &Vj, 0, maxId, iflag), *iflag);
-      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(yj, Vj, st::one(), x, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(yj, Vj, st::one(), z, iflag), *iflag);
     }
     else
     {
@@ -371,21 +382,27 @@ PHIST_TASK_BEGIN(ComputeTask)
         {
           PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vind), &Vj, S[i]->id, S[i]->id, iflag), *iflag);
           PHIST_CHK_IERR(SUBR(mvec_view_block)(x, &x_i, i, i, iflag), *iflag);
-          PHIST_CHK_IERR(SUBR(mvec_add_mvec)(yj[S[i]->id], Vj, st::one(), x, iflag), *iflag);
+          PHIST_CHK_IERR(SUBR(mvec_add_mvec)(yj[S[i]->id], Vj, st::one(), z, iflag), *iflag);
         }
       }
+    }
+    if (rightPrecon!=NULL)
+    {
+      PHIST_CHK_IERR(rightPrecon->apply(st::one(),rightPrecon->A,z,st::one(),x,iflag),*iflag);
     }
   }
 
   PHIST_CHK_IERR(SUBR(mvec_delete)(x_i, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vj, iflag), *iflag);
+  if (z!=x) PHIST_CHK_IERR(SUBR(mvec_delete)(z,iflag),*iflag);
 PHIST_TASK_END(iflag)
   delete[] yglob;
 }
 
 
 // implementation of gmres on several systems simultaneously
-void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, bool useIMGS, int* iflag)
+void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+        TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, bool useIMGS, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -442,6 +459,10 @@ void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(blocked
   // work vector for x and y = Aop(x)
   TYPE(mvec_ptr) work_x = NULL;
   TYPE(mvec_ptr) work_y = NULL;
+  TYPE(mvec_ptr) work_z = NULL;
+  
+  // z is Precond\x, create it as a temporary vector
+  PHIST_CHK_IERR(SUBR(mvec_create)(&work_z,Pop->range_map,numSys,iflag),*iflag);
 
   {
     // make sure all lastVind_ are the same
@@ -555,9 +576,12 @@ PHIST_TASK_BEGIN(ComputeTask)
     int nextIndex;
     PHIST_CHK_IERR( mvecBuff->getNextUnused(nextIndex,iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(nextIndex), &work_y, minId, maxId, iflag), *iflag);
+    
+    // apply (right) preconditioning
+    PHIST_CHK_IERR( Pop->apply (st::one(), Pop->A, work_x, st::zero(), work_z, iflag), *iflag);
 
     //    % apply the operator of the matrix A
-    PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_x, st::zero(), work_y, iflag), *iflag);
+    PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_z, st::zero(), work_y, iflag), *iflag);
 
 
     //    % initialize GMRES for (re-)started systems
@@ -876,6 +900,7 @@ PHIST_TASK_END(iflag)
   // delete views
   PHIST_CHK_IERR(SUBR(mvec_delete)(work_x, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(work_y, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_delete)(work_z, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vj,     iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vk,     iflag), *iflag);
 

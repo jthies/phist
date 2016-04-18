@@ -33,6 +33,10 @@ extern "C" void phist_jadaOpts_setDefaults(phist_jadaOpts *opts)
   opts->innerSolvBlockSize=1;
   opts->innerSolvStopAfterFirstConverged=0;
   opts->innerSolvRobust=1;
+  
+  opts->preconOp=NULL;
+  opts->preconType=phist_NO_PRECON;
+  opts->preconOpts=NULL;
 
   opts->customSolver=NULL;
   opts->customSolver_run1=NULL;
@@ -98,5 +102,9 @@ extern "C" void phist_jadaOpts_fromFile(phist_jadaOpts* opts, const char* filena
   set_value("innerSolvMaxBas",opts->innerSolvMaxBas,file);
   set_value("innerSolvMaxIters",opts->innerSolvMaxIters,file);
   set_value("innerSolvBlockSize",opts->innerSolvBlockSize,file);
+  
+  set_value("preconType",opts->preconType,file);
+  set_value("preconOpts",opts->preconOpts,file);
+  
 }
 
