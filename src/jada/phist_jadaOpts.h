@@ -63,13 +63,13 @@ int innerSolvRobust; /*! extra effort to get good jada updates
   //! differentsshift will be supplied to the apply_shifted function.
   void const* preconOp;
 
-  //! specify a preconditioning typeand the jada solver will build the preconditioner (using preconOpts as input) at start-up.
-  //! This is more convenient than passing in an operator via preconOp. That field should be NULL on input if precondType is set.
-  //! While this is not implemented yet, specifying the preconType gives the eigensolver the freedom to update the preconditioner
-  //! dynamically during the eigenvalue computation.
+  //! This fields allows specifying a preconditioner (along with preconOpts to pass in options) in an option file.
+  //! Currently it is the responsibility of the driver routine to create the preconditioner in "preconOp", but in 
+  //! the future we may allow the jada solver(s) to update the preconditioner with new subspace information and   
+  //! shifts during the eigenvalue computation.
   phist_Eprecon preconType;
 
-  //! option string passed to precon_create alongside preconType (if it is not NO_PRECON or INVALID_PRECON
+  //! option string passed to precon_create alongside preconType (if it is not NO_PRECON or INVALID_PRECON)
   char* preconOpts;
 
   //! pointer to solver object if innerSolvType==USER_DEFINED
