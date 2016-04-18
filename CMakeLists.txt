@@ -21,10 +21,6 @@ SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 set(PHIST_VERSION 0.9.2)
 set(PRODUCT_NAME phist-${PHIST_VERSION})
 
-# Set global property (all targets are impacted)
-set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CMAKE_COMMAND} -E time")
-set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK "${CMAKE_COMMAND} -E time")
-
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Release, RelWithDebug, Debug" FORCE)
 else()
