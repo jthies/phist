@@ -29,7 +29,7 @@ typedef struct {
   //! internally call the correct create/delete/apply etc functions
   phist_Eprecon type_;
   void* P_;
-} phist_internal_phist_Eprecon;
+} phist_internal_precon;
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
