@@ -160,6 +160,8 @@ int main(int argc, char** argv)
   if (strcasecmp(prec_type,"None")!=0)
   {
     P_op = (linearOp_ptr)malloc(sizeof(TYPE(linearOp)));
+    PHIST_SOUT(PHIST_VERBOSE,"compute preconditioner '%s'\n",prec_type);
+    PHIST_ENTER_FCN("main: preconditioner setup");
     PHIST_ICHK_IERR(SUBR(precon_create)(P_op,A,ZERO,NULL,NULL,NULL,prec_type,prec_opts,&iflag),iflag);
   }
   num_iters=max_iters;
@@ -186,7 +188,7 @@ int main(int argc, char** argv)
 
   if (iflag!=0)
     {
-    if (verbose) fprintf(stdout,"code %d returned from Belos BlockGMRES\n",iflag);
+    if (verbose) fprintf(stdout,"code %d returned from BlockedGMRES\n",iflag);
     if (iflag<0) return iflag;
     }
   
