@@ -315,8 +315,10 @@ PHIST_TASK_BEGIN(ComputeTask)
 PHIST_TASK_END(iflag)
   // delete the jadaOp and preconditioner wrapper
   PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jadaOp, iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jadaPrec, iflag), *iflag);
-
+  if (jadaPrecPtr!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jadaPrec, iflag), *iflag);
+  }
   *iflag = nUnconvergedSystems;
 }
 
