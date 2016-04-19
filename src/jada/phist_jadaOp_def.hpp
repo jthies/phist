@@ -185,6 +185,9 @@ void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    A_op,    TYPE(const_linearO
   jdOp->apply_shifted=NULL;// does not make sense, it would mean calling apply_shifted in a 
                            // nested way.
 
+  jdOp->range_map=A_op->range_map;
+  jdOp->domain_map=A_op->domain_map;
+  
   // print some useful data
   PHIST_SOUT(PHIST_DEBUG, "Created jadaOp with %d projection vectors and %d shifts\n",   nvecp,nvec);
 }
