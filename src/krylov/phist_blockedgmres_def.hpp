@@ -187,6 +187,7 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
   {
     z=NULL;
     PHIST_CHK_IERR(SUBR(mvec_create)(&z,rightPrecon->range_map,numSys,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_put_value)(z,st::zero(),iflag),*iflag);
   }
 
   bool ordered = true;
@@ -462,7 +463,10 @@ void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_l
   TYPE(mvec_ptr) work_z = NULL;
   
   // z is Precond\x, create it as a temporary vector
-  PHIST_CHK_IERR(SUBR(mvec_create)(&work_z,Pop->range_map,numSys,iflag),*iflag);
+  if (Pop!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_create)(&work_z,Pop->range_map,numSys,iflag),*iflag);
+  }
 
   {
     // make sure all lastVind_ are the same
@@ -578,7 +582,14 @@ PHIST_TASK_BEGIN(ComputeTask)
     PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(nextIndex), &work_y, minId, maxId, iflag), *iflag);
     
     // apply (right) preconditioning
-    PHIST_CHK_IERR( Pop->apply (st::one(), Pop->A, work_x, st::zero(), work_z, iflag), *iflag);
+    if (Pop!=NULL)
+    {
+      PHIST_CHK_IERR( Pop->apply (st::one(), Pop->A, work_x, st::zero(), work_z, iflag), *iflag);
+    }
+    else
+    {
+      work_z=work_x;
+    }
 
     //    % apply the operator of the matrix A
     PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_z, st::zero(), work_y, iflag), *iflag);
@@ -900,7 +911,10 @@ PHIST_TASK_END(iflag)
   // delete views
   PHIST_CHK_IERR(SUBR(mvec_delete)(work_x, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(work_y, iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(work_z, iflag), *iflag);
+  if (Pop!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_delete)(work_z, iflag), *iflag);
+  }
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vj,     iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vk,     iflag), *iflag);
 
