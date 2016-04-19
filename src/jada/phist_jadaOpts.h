@@ -70,7 +70,7 @@ int innerSolvRobust; /*! extra effort to get good jada updates
   phist_Eprecon preconType;
 
   //! option string passed to precon_create alongside preconType (if it is not NO_PRECON or INVALID_PRECON)
-  char* preconOpts;
+  char preconOpts[1024];
 
   //! pointer to solver object if innerSolvType==USER_DEFINED
   void* customSolver;

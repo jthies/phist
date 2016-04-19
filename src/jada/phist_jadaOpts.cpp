@@ -36,7 +36,6 @@ extern "C" void phist_jadaOpts_setDefaults(phist_jadaOpts *opts)
   
   opts->preconOp=NULL;
   opts->preconType=phist_NO_PRECON;
-  opts->preconOpts=NULL;
 
   opts->customSolver=NULL;
   opts->customSolver_run1=NULL;
