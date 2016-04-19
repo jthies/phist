@@ -17,6 +17,7 @@
 
 #include "phist_jadaOpts.h"
 #include "phist_jadaCorrectionSolver.h"
+#include "phist_precon.h"
 
 
 #include ${PHIST_TG_HFILE}
@@ -24,7 +25,7 @@
 #include "phist_driver_utils.h"
 
 int main(int argc, char** argv)
-  {
+{
   int rank, num_proc;
   int i, iflag;
   bool verbose;
@@ -168,6 +169,8 @@ int main(int argc, char** argv)
   opts.innerSolvBlockSize=1;
   opts.innerSolvMaxBas=max_blocks;
   
+  opts.preconOp=P_op;
+  
   TYPE(mvec_ptr) Vdum=NULL;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&Vdum,map,1,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(Vdum,(_ST_)0.0,&iflag),iflag);   
@@ -189,7 +192,7 @@ int main(int argc, char** argv)
   
   PHIST_OUT(1,"number of iterations performed: %d\n",num_iters);
 
-  PHIST_CHK_IERR(SUBR(jadaCorrectionSolver_delete)(solver,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(jadaCorrectionSolver_delete)(solver,&iflag),iflag);
   
   /* compute residual norms */
   PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(ONE,A,X,ZERO,R,&iflag),iflag);
@@ -247,4 +250,4 @@ int main(int argc, char** argv)
   free(A_op);
   PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
   return iflag;
-  }
+}
