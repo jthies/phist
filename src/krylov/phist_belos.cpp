@@ -9,7 +9,7 @@
 #include <cmath>
 
 #include "phist_belos.h"
-
+#include "phist_kernels.h"
 #include "phist_ScalarTraits.hpp"
 
 #ifdef PHIST_HAVE_BELOS
