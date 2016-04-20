@@ -26,12 +26,6 @@
   ss<<"BENCH_"<<label<<"_"<<(_m)<<"_"<<(_k); \
   PHIST_ENTER_FCN(ss.str().c_str());
 
-#ifdef PHIST_KERNEL_LIB_GHOST
-# define TIME_BENCH_END ghost_barrier();
-#else
-# define TIME_BENCH_END
-#endif
-
 typedef phist::ScalarTraits<ST> st;
 typedef phist::ScalarTraits<MT> mt;
 
@@ -109,7 +103,6 @@ PHIST_MAIN_TASK_BEGIN
     ST value[m];
     ierr = high_prec?PHIST_ROBUST_REDUCTIONS: 0;
     PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),X,Y,st::zero(),Cmk,&ierr),ierr);
-    TIME_BENCH_END
   }
 
   // Ckk=Y'Y
@@ -125,7 +118,6 @@ PHIST_MAIN_TASK_BEGIN
     ST value[m];
     ierr = high_prec?PHIST_ROBUST_REDUCTIONS: 0;
     PHIST_ICHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Y,Y,st::zero(),Ckk,&ierr),ierr);
-    TIME_BENCH_END
   }
 
   // Y=Y+X*Cmk
@@ -141,7 +133,6 @@ PHIST_MAIN_TASK_BEGIN
     ST value[m];
     ierr = high_prec?PHIST_ROBUST_REDUCTIONS: 0;
     PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(st::one(),X,Cmk,-st::one(),Y,&ierr),ierr);
-    TIME_BENCH_END
   }
 
   // Y=Y*Ckk
@@ -157,7 +148,6 @@ PHIST_MAIN_TASK_BEGIN
     ST value[m];
     ierr = high_prec?PHIST_ROBUST_REDUCTIONS: 0;
     PHIST_ICHK_IERR(SUBR(mvec_times_sdMat_inplace)(Y,Ckk,&ierr),ierr);
-    TIME_BENCH_END
   }
 
   // X(:,1:m/2)=X*Cmm2
@@ -173,7 +163,6 @@ PHIST_MAIN_TASK_BEGIN
     ST value[m];
     ierr = high_prec?PHIST_ROBUST_REDUCTIONS: 0;
     PHIST_ICHK_IERR(SUBR(mvec_times_sdMat_inplace)(X,Cmm2,&ierr),ierr);
-    TIME_BENCH_END
   }
   
   
