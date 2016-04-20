@@ -438,7 +438,7 @@ void SUBR(carp_cgState_iterate)(
 
       // double carp sweep in place, updates r=dkswp(A-sI,omega,r)
       PHIST_CHK_IERR(SUBR(x_carp_sweep)(A, b,r,S->aux_,S->omega_,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(-st::one(),x,st::one(),r,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(-st::one(),x,st::one(),r,iflag),*iflag);
     }
     //ALG end if
     
