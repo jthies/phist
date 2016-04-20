@@ -1,3 +1,4 @@
+namespace {
 //! small helper function that checks if an sdMat is symmetric
 void SUBR(sdMat_check_symmetry)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
 {
@@ -52,6 +53,7 @@ void SUBR(sdMat_check_symmetry)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
     PHIST_SOUT(PHIST_WARNING, "Symmetry deviation of projection %e exceeds tolerance (%e)\n", maxVal, tol);
     *iflag = 1;
   }
+}
 }
 
 //! subspacejada for exterior eigenvalues, using standard Ritz values

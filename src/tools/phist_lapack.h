@@ -1,6 +1,12 @@
 #ifndef PHIST_LAPACK_H
 #define PHIST_LAPACK_H
+#include "phist_config.h"
+/* needs to be included before system headers for some intel compilers+mpi */
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
 
+#include "phist_typedefs.h"
 //TODO: cmake integration of lapacke
 //      I think we should gradually move towards
 //      using lapacke everywhere

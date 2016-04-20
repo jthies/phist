@@ -137,7 +137,12 @@ cmake -DCMAKE_BUILD_TYPE=Release  \
 make doc &> doxygen.log                 || error=1
 make -j 24 || make                      || error=1
 echo "Running tests. Output is compressed and written to test.log.gz"
-make check 2>&1 | gzip -c > test.log.gz || error=1
+make check &> test.log                  || error=1
+if [ "${VECT_EXT}" = "CUDA" ]; then
+  echo "Check if it actually ran on our Tesla card"
+  fgrep "1x Tesla" test.log             || error=1
+fi
+gzip test.log                           || error=1
 echo "Install..."
 make install &> install.log             || error=1
 echo "Check installation with pkg-config project"
@@ -170,7 +175,12 @@ cmake -DCMAKE_BUILD_TYPE=Debug    \
       ..                                || error=1
 make -j 24 || make                      || error=1
 echo "Running tests. Output is compressed and written to test.log.gz"
-make check 2>&1 | gzip -c > test.log.gz || error=1
+make check &> test.log                  || error=1
+if [ "${VECT_EXT}" = "CUDA" ]; then
+  echo "Check if it actually ran on our Tesla card"
+  fgrep "1x Tesla" test.log             || error=1
+fi
+gzip test.log                           || error=1
 make audit                              || error=1
 cd ..
 
