@@ -47,7 +47,6 @@ int main(int argc, char** argv)
   
   int num_iters, nconv;
   int max_iters,max_blocks,num_rhs;
-  int variant=0; // only proper block GMRES accessible via this driver right now.
   const char *prec_type,*prec_opts;
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
@@ -168,7 +167,7 @@ int main(int argc, char** argv)
   
   phist_jadaOpts opts;
   opts.innerSolvType=phist_GMRES;
-  opts.innerSolvBlockSize=1;
+  opts.innerSolvBlockSize=num_rhs;
   opts.innerSolvMaxBas=max_blocks;
   
   opts.preconOp=P_op;
@@ -192,7 +191,7 @@ int main(int argc, char** argv)
     if (iflag<0) return iflag;
     }
   
-  PHIST_OUT(1,"number of iterations performed: %d\n",num_iters);
+  PHIST_OUT(1,"number of iterations performed: %d\n",solver->numTotalIter_);
 
   PHIST_ICHK_IERR(SUBR(jadaCorrectionSolver_delete)(solver,&iflag),iflag);
   

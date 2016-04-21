@@ -26,6 +26,7 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
     {
       *iflag=-88;
     }
+    (*me)->numTotalIter_=0;
     (*me)->customSolver_=opts.customSolver;
     (*me)->customSolver_run=opts.customSolver_run;
     (*me)->customSolver_run1=opts.customSolver_run1;
@@ -115,6 +116,8 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
       PHIST_SOUT(PHIST_ERROR,"custom solver requested but function not set in jadaOpts struct\n");
       *iflag=-88;
     }
+    // #iter not counted so far
+    me->numTotalIter_=-1;
     return;
   }
 
@@ -165,7 +168,7 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   TYPE(mvec_ptr) t_i   = NULL;
 
   // total number of blockedGMRES-iterations performed, not used
-  int nTotalIter = 0;
+  me->numTotalIter_ = 0;
 
   // number of unconverged systems to be returned
   int nUnconvergedSystems = 0;
@@ -228,10 +231,11 @@ PHIST_TASK_BEGIN(ComputeTask)
       currShifts[activeStates[i]->id - firstId] = -sigma[index[activeStates[i]->id]];
     }
 
+    int nIter=0;
     // actually iterate
     if( me->method_==phist_MINRES )
     {
-      PHIST_CHK_NEG_IERR(SUBR(blockedMINRESstates_iterate)(&jadaOp, jadaPrecPtr, &activeStates[0], k, &nTotalIter, iflag), *iflag);
+      PHIST_CHK_NEG_IERR(SUBR(blockedMINRESstates_iterate)(&jadaOp, jadaPrecPtr, &activeStates[0], k, &nIter, iflag), *iflag);
     }
     else if (me->method_==phist_CARP_CG)
     {
@@ -239,9 +243,9 @@ PHIST_TASK_BEGIN(ComputeTask)
     }
     else
     {
-      PHIST_CHK_NEG_IERR(SUBR(blockedGMRESstates_iterate)(&jadaOp, jadaPrecPtr,&activeStates[0], k, &nTotalIter, useIMGS, iflag), *iflag);
+      PHIST_CHK_NEG_IERR(SUBR(blockedGMRESstates_iterate)(&jadaOp, jadaPrecPtr,&activeStates[0], k, &nIter, useIMGS, iflag), *iflag);
     }
-
+    me->numTotalIter_+=nIter*k;
 
     // optimization to use always full blocks and ignore tolerances
     if( abortAfterFirstConvergedInBlock && k > 0 )

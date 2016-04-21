@@ -492,7 +492,7 @@ for(int i = 0; i < numSys; i++)
     mvecUsedBy[S[i]->id][Vind] = true;
   }
 }
-PHIST_SOUT(PHIST_INFO,"Pipelined GMRES status:\n");
+PHIST_SOUT(PHIST_INFO,"Blocked GMRES status:\n");
 for(int j = 0; j < mvecBuff->size(); j++)
 {
   PHIST_SOUT(PHIST_INFO,"--");
