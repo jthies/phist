@@ -13,7 +13,7 @@ fi
 KERNELS="builtin" # ghost epetra tpetra
 PRGENV="gcc-5.1.0-openmpi" # intel-13.0.1-mpich gcc-4.9.2-openmpi
 FLAGS="default" # optional-libs
-ADD_CMAKE_FLAGS="" #optional CMake flags
+ADD_CMAKE_FLAGS="-DPHIST_BENCH_LARGE_N=100000" #optional CMake flags # LARGE_N set to small value to speed up build jobs!
 VECT_EXT="native"
 # list of modules to load
 MODULES_BASIC="cmake ccache cppcheck lapack gcovr doxygen"
@@ -52,7 +52,7 @@ while getopts "k:e:f:c:v:h" o; do
             FLAGS=${OPTARG}
             ;;
         c)
-            ADD_CMAKE_FLAGS=${OPTARG}
+            ADD_CMAKE_FLAGS+=" ${OPTARG}"
             ;;
         v)
             VECT_EXT=${OPTARG}
