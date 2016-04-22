@@ -1,0 +1,315 @@
+#include "phist_config.h"
+
+#ifdef PHIST_HAVE_MPI
+#include <mpi.h>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <strings.h>
+
+#include "phist_get_arg.hpp"
+
+#include "phist_macros.h"
+#include "phist_kernels.h"
+#include "phist_operator.h"
+#include "phist_precon.h"
+#include "phist_belos.h"
+
+#include "phist_blockedgmres.h"
+#include "phist_precon.h"
+
+
+#include ${PHIST_TG_HFILE}
+
+#include "phist_driver_utils.h"
+#include "phist_ScalarTraits.hpp"
+#include "phist_std_typedefs.hpp"
+
+int main(int argc, char** argv)
+{
+  int rank, num_proc;
+  int i, iflag;
+  bool verbose;
+  int useIMGS=0;
+
+  phist_comm_ptr comm;
+  sparseMat_ptr A;
+  linearOp_ptr A_op; // this is a wrapper for the CRS matrix which we pass to the actual solver
+  linearOp_ptr P_op=NULL; // preconditioner. NULL means identity/no preconditioning
+  
+  phist_const_map_ptr map; // map (element distribution) of vectors according to 
+                       // the distribution of matrix rows
+  mvec_ptr X,XEX,B,R;// multivectors for solution and rhs (XEX exact solution to compare)
+  
+  MT *rnorm2; /* for computing the residual norm axplicitly */
+  MT *norm2; /* for computing the error norms after the solve */
+  MT *xnorm2, *bnorm2; /* for scaling, norm of exact solution and rhs */
+  char* matname;
+  
+  int num_iters, nconv;
+
+  PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
+
+  PHIST_ICHK_IERR(phist_comm_create(&comm,&iflag),iflag);
+
+  PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&iflag),iflag);
+  PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&iflag),iflag);
+
+  verbose= (rank==0);
+
+  if (argc<2)
+  {
+    if (verbose) fprintf(stdout,"Usage: %s <matrix> [<max iters> [<tol> [<num rhs> [<max blocks> [<precon> [<prec_opts>]>]]]]]\n",argv[0]);
+    SUBR(create_matrix)(NULL,NULL,"usage",&iflag);
+    SUBR(precon_create)(NULL,NULL,st::zero(),NULL,NULL,NULL,"usage",NULL,&iflag);
+    return 1;
+  }
+
+  matname = argv[1];
+  
+  int p=2;
+
+  int max_iters=300;  
+  GET_ARG(max_iters,p++,max_iters>0);
+  MT tol=1e-6;
+  GET_ARG(tol,p++,tol>0&&tol<1);
+  int num_rhs=1;
+  GET_ARG(num_rhs,p++,num_rhs>0);
+  if (num_rhs>1)
+  {
+    // basic mechanism is there but it's not working yet
+    PHIST_SOUT(PHIST_ERROR,"case num_rhs>1 is not correctly implemented in %s\n",__FILE__);
+    return -1;
+  }
+  int max_blocks=std::min(30,max_iters);
+  GET_ARG(max_blocks,p++,max_blocks<=max_iters);
+  const char* prec_type="None";
+  GET_ARG(prec_type,p++,str2precon(prec_type)!=phist_INVALID_PRECON);
+  const char* prec_opts="";
+  GET_ARG(prec_opts,p++,true);
+
+  // if many RHS are given it may be better to use a block size of 4 or 8, but
+  // this is not implemented here. The blockedGMRES implementation is in principle
+  // capable of doing that, of course. 
+  int block_size=num_rhs>4?4:num_rhs;
+
+
+  if (verbose) 
+  {
+    PHIST_OUT(PHIST_INFO,"matrix: %s\n",matname);
+    PHIST_OUT(PHIST_INFO,"number of rhs: %d\n",num_rhs);
+    PHIST_OUT(PHIST_INFO,"preconditioner: %s\n",prec_type);
+    PHIST_OUT(PHIST_INFO,"prec options: %s\n",prec_opts);
+  }
+
+  //iflag=PHIST_SPARSEMAT_REPARTITION;
+  PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&iflag),iflag);
+  
+  /* we assume domain map = range map here, which is reasonable for something
+     you want to put into a linear solver */
+  PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&iflag),iflag);
+
+  /* create vectors */
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&XEX,map,num_rhs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&X,map,num_rhs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&B,map,num_rhs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_create)(&R,map,num_rhs,&iflag),iflag);
+  
+  /* randomize the solution vector */
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(X,st::zero(),&iflag),iflag);
+  //PHIST_ICHK_IERR(SUBR(mvec_random)(XEX,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(XEX,st::one(),&iflag),iflag);
+  
+  /* compute rhs B=A*XEX */
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,XEX,st::zero(),B,&iflag),iflag);
+  
+  /* create operator wrapper for computing Y=A*X using a CRS matrix */
+  A_op = (linearOp_ptr)malloc(sizeof(TYPE(linearOp)));
+  PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(A_op,A,&iflag),iflag);
+  
+  /* create the preconditioner */
+  if (strcasecmp(prec_type,"None")!=0)
+  {
+    P_op = (linearOp_ptr)malloc(sizeof(TYPE(linearOp)));
+    PHIST_SOUT(PHIST_VERBOSE,"compute preconditioner '%s'\n",prec_type);
+    PHIST_ENTER_FCN("main: preconditioner setup");
+    PHIST_ICHK_IERR(SUBR(precon_create)(P_op,A,st::zero(),NULL,NULL,NULL,prec_type,prec_opts,&iflag),iflag);
+  }
+
+  TYPE(blockedGMRESstate_ptr) states[block_size];
+    PHIST_ICHK_IERR(SUBR(blockedGMRESstates_create)(states, block_size, map, max_blocks, &iflag), iflag);
+
+  for (int i=0; i<block_size; i++) states[i]->tol=tol;
+
+  int num_converged=0;
+  int num_failed=0;
+  int status[num_rhs];
+  for (int i=0; i<num_rhs; i++) status[i]=-2; // not started
+
+  while (num_converged+num_failed<num_rhs)
+  {
+    // first setup at most block_size systems at a time to work on,
+    // skipping any that have converged or failed (exceeded maxIter)
+    int num_active=0;
+    int state_id[block_size];
+
+    TYPE(mvec_ptr) b_i=NULL, x_i=NULL;
+    for (int i=0; i<num_rhs; i++)
+    {
+      // already selected four systems to work on
+      if (num_active==block_size) break;
+      // system i is finished or in progress, don't assign it to a free state object
+      while (states[num_active]->status>0&&num_active<block_size) num_active++; 
+      if (status[i]>=0) continue;
+      if (num_active==block_size) break;
+      // system i needs to be worked on, and states[num_active] is free to do it
+      status[i]=1;
+
+      PHIST_ICHK_IERR(SUBR(mvec_view_block)(B,&b_i,i,i,&iflag),iflag);
+      PHIST_ICHK_IERR(SUBR(blockedGMRESstate_reset)(states[num_active], b_i, NULL, &iflag), iflag);
+      state_id[num_active]=i;
+      num_active++;
+    }
+    if (b_i) PHIST_ICHK_IERR(SUBR(mvec_delete)(b_i,&iflag),iflag);
+    if (x_i) PHIST_ICHK_IERR(SUBR(mvec_delete)(x_i,&iflag),iflag);
+
+    if (num_active==0) break;
+        
+    // perform (re-)starts if needed
+    for (int i=0; i<num_active; i++)
+    {
+      if (states[i]->status==2)
+      {
+        int id=state_id[i];
+        PHIST_SOUT(PHIST_VERBOSE,"restart system %d\n",id);
+        PHIST_ICHK_IERR(SUBR(mvec_view_block)(X,&x_i,id,id,&iflag),iflag);
+        PHIST_ICHK_IERR(SUBR(blockedGMRESstate_reset)(states[i], NULL, x_i, &iflag), iflag);
+      }
+    }
+    
+    if (num_active>0)
+    {
+      PHIST_SOUT(PHIST_VERBOSE," working on %d systems: ",num_active);
+      for (int i=0;i<num_active;i++) PHIST_SOUT(PHIST_VERBOSE,"%d ",state_id[i]);
+      PHIST_SOUT(PHIST_VERBOSE,"\n");
+    }
+
+    int nIter=0;
+    PHIST_ICHK_NEG_IERR(SUBR(blockedGMRESstates_iterate)(A_op, P_op,states, num_active, &nIter, useIMGS, &iflag), iflag);
+    num_iters+=nIter;
+    // we need to update the solution for any systems that
+    // - have converged (status 0)
+    // - need a restart (status 1)
+    // - have failed (status 2)
+    int num_updates=0;
+    TYPE(blockedGMRESstate_ptr) update_states[block_size];
+    for (int i=0; i<num_active; i++)
+    {
+      if (states[i]->status==0) num_converged++;
+      else if (states[i]->totalIter>max_iters) 
+      {
+        status[states[i]->id]=2;
+        num_failed++;
+      }
+      if (states[i]->status==0||states[i]->status==2)
+      {
+        update_states[num_updates++]=states[i];
+      }
+    }
+    if (num_updates>0)
+    {
+      _MT_ res_norms[num_updates];
+      TYPE(mvec_ptr) x=NULL;
+      PHIST_ICHK_IERR(SUBR(mvec_create)(&x,map,num_updates,&iflag),iflag);
+      PHIST_ICHK_IERR(SUBR(blockedGMRESstates_updateSol)(update_states,num_updates,P_op,x,res_norms,false,&iflag),iflag);
+      // copy current approximations to the corresponding columns in the final solution X
+      bool contig=true;
+      for (int i=1; i<num_updates; i++) 
+      {
+        int id_i=state_id[update_states[i]->id];
+        int id_im1=state_id[update_states[i-1]->id];
+        if (id_i!=id_im1+1) contig=false;
+      }
+      if (contig)
+      {
+        PHIST_SOUT(PHIST_VERBOSE,"update systems %d:%d\n",state_id[update_states[0]->id],state_id[update_states[num_updates-1]->id]);
+        PHIST_ICHK_IERR(SUBR(mvec_set_block)(X,x,state_id[update_states[0]->id],state_id[update_states[num_updates-1]->id],&iflag),iflag);
+      }
+      else
+      {
+        TYPE(mvec_ptr) x_i=NULL;
+        for (int i=0; i<num_updates; i++)
+        {
+          PHIST_SOUT(PHIST_VERBOSE,"update systems %d\n",state_id[update_states[i]->id]);
+          PHIST_ICHK_IERR(SUBR(mvec_view_block)(x,&x_i,i,i,&iflag),iflag);
+          PHIST_ICHK_IERR(SUBR(mvec_set_block)(X,x_i,state_id[update_states[i]->id],state_id[update_states[i]->id],&iflag),iflag);
+        }
+        PHIST_ICHK_IERR(SUBR(mvec_delete)(x_i,&iflag),iflag);
+      }
+      PHIST_ICHK_IERR(SUBR(mvec_delete)(x,&iflag),iflag);
+    }
+  }
+  
+  /* compute residual norms */
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,X,st::zero(),R,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-st::one(),B,st::one(),R,&iflag),iflag);
+  
+  /* compute ||X - XEX||_2 */
+  norm2=(MT*)malloc(num_rhs*sizeof(MT));
+  rnorm2=(MT*)malloc(num_rhs*sizeof(MT));
+  xnorm2=(MT*)malloc(num_rhs*sizeof(MT));
+  bnorm2=(MT*)malloc(num_rhs*sizeof(MT));
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(st::one(),XEX,-st::one(),X,&iflag),iflag);
+
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(R,rnorm2,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(X,norm2,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(XEX,xnorm2,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_norm2)(B,bnorm2,&iflag),iflag);
+  
+  if (verbose)
+    {
+    fprintf(stdout,"residual 2-norms: ||r||, ||r||/||x||, ||r||/||b||:\n");
+    for (i=0;i<num_rhs;i++)
+      {
+      fprintf(stdout,"%8.4e\t%8.4e\t%8.4e",rnorm2[i],rnorm2[i]/xnorm2[i],rnorm2[i]/bnorm2[i]);
+      }
+    fprintf(stdout,"\n");
+
+    fprintf(stdout,"error 2-norms: ||e||, ||e||/||x||, ||e||/||b||:\n");
+    for (i=0;i<num_rhs;i++)
+      {
+      fprintf(stdout,"%8.4e\t%8.4e\t%8.4e",norm2[i],norm2[i]/xnorm2[i],norm2[i]/bnorm2[i]);
+      }
+    fprintf(stdout,"\n");
+    }
+  
+  free(rnorm2);
+  free(norm2);
+  free(xnorm2);
+  free(bnorm2);
+
+  // clean up the solver
+  PHIST_ICHK_IERR(SUBR(blockedGMRESstates_delete)(states, block_size, &iflag), iflag);
+
+
+  // since we don't have smart pointers in PHIST, we have to be a bit
+  // careful about the order in which we delete stuff. For instance, the
+  // preconditioner may have a pointer to A, so we delete it first.
+  if (P_op!=NULL)
+  {
+    PHIST_ICHK_IERR(SUBR(precon_delete)(P_op,&iflag),iflag);
+    free(P_op);
+  }
+
+  PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
+
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(X,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(XEX,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(B,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_delete)(R,&iflag),iflag);
+  free(A_op);
+  PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
+  return iflag;
+}
