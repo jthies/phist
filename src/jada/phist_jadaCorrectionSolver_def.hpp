@@ -270,7 +270,7 @@ PHIST_TASK_BEGIN(ComputeTask)
           int ind = index[activeStates[i]->id];
           PHIST_CHK_IERR(SUBR(mvec_view_block)(t, &t_i, ind, ind, iflag), *iflag);
           _MT_ tmp;
-          PHIST_CHK_IERR(SUBR(blockedGMRESstates_updateSol)(&activeStates[i],1,me->rightPrecon, t_i, &tmp, false, iflag), *iflag);
+          PHIST_CHK_IERR(SUBR(blockedGMRESstates_updateSol)(&activeStates[i],1,jadaPrecPtr, t_i, &tmp, false, iflag), *iflag);
 
           if( activeStates[i]->status == 2 && activeStates[i]->totalIter >= maxIter )
             nUnconvergedSystems++;

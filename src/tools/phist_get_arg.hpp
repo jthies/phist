@@ -25,6 +25,13 @@ T get_arg(int argc, char** argv, int pos, T& default_val)
 return result;
 }
 
+// specialization for strings: just set a pointer to argv[pos]
+template<>
+char const* get_arg(int argc, char** argv, int pos, char const*& default_val)
+{
+  return pos>=argc? default_val: argv[pos];
+}
+
 // macro intended for use in CXX main program.
 // output argument should have a default value
 #define GET_ARG(_a_,_p_,_valid_) _a_=get_arg(argc,argv,_p_,_a_); \

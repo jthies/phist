@@ -39,15 +39,12 @@ int main(int argc, char** argv)
                        // the distribution of matrix rows
   mvec_ptr X,XEX,B,R;// multivectors for solution and rhs (XEX exact solution to compare)
   
-  MT tol;
   MT *rnorm2; /* for computing the residual norm axplicitly */
   MT *norm2; /* for computing the error norms after the solve */
   MT *xnorm2, *bnorm2; /* for scaling, norm of exact solution and rhs */
   char* matname;
   
   int num_iters, nconv;
-  int max_iters,max_blocks,num_rhs;
-  const char *prec_type,*prec_opts;
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
 
@@ -68,67 +65,25 @@ int main(int argc, char** argv)
 
   matname = argv[1];
   
-  if (argc<3)
-  {
-    max_iters=300;
-  }
-  else
-  {
-    max_iters=atoi(argv[2]);
-  }
+  int p=2;
 
-  if (argc<4)
-  {
-    tol=1.0e-6;
-  }
-  else
-  {
-    tol=(MT)atof(argv[3]);
-  }
+  int max_iters=300;  
+  GET_ARG(max_iters,p++,max_iters>0);
+  MT tol=1e-6;
+  GET_ARG(tol,p++,tol>0&&tol<1);
+  int num_rhs=1;
+  GET_ARG(num_rhs,p++,num_rhs>0);
+  int max_blocks=std::min(30,max_iters);
+  GET_ARG(max_blocks,p++,max_blocks<=max_iters);
+  const char* prec_type="None";
+  GET_ARG(prec_type,p++,str2precon(prec_type)!=phist_INVALID_PRECON);
+  const char* prec_opts="";
+  GET_ARG(prec_opts,p++,true);
 
-  if (argc<5)
-  {
-    num_rhs=1;
-  }
-  else
-  {
-    num_rhs=atoi(argv[4]);
-  }
-
-  if (argc<6)
-  {
-    max_blocks=30;
-  }
-  else
-  {
-    max_blocks=atoi(argv[5]);
-  }
-    
-  if (argc<7)
-  {
-    prec_type="None";
-  }
-  else
-  {
-    prec_type=argv[6];
-  }
-
-  if (argc<7)
-  {
-    prec_opts="";
-  }
-  else
-  {
-    prec_opts=argv[7];
-  }
-
-  if (verbose) 
-  {
-    PHIST_OUT(PHIST_INFO,"matrix: %s\n",matname);
-    PHIST_OUT(PHIST_INFO,"number of rhs: %d\n",num_rhs);
-    PHIST_OUT(PHIST_INFO,"preconditioner: %s\n",prec_type);
-    PHIST_OUT(PHIST_INFO,"prec options: %s\n",prec_opts);
-  }
+  // if many RHS are given it may be better to use a block size of 4 or 8, but
+  // this is not implemented here. The blockedGMRES implementation is in principle
+  // capable of doing that, of course. 
+  int block_size=num_rhs>4?4:num_rhs;
 
   //iflag=PHIST_SPARSEMAT_REPARTITION;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&iflag),iflag);
