@@ -572,12 +572,11 @@ PHIST_SOUT(PHIST_INFO,"\n");
   int anyConverged = 0;
   int anyFailed = 0;
 
-
-
   PHIST_SOUT(PHIST_VERBOSE,"GMRES iteration started\n");
   PHIST_SOUT(PHIST_VERBOSE,"=======================\n");
 
-  // check if there are already converged/failed systems
+  // check if there are already converged/failed systems and compute explicit residual
+  // if a system was (re-)started with non-zero initial guess
   for(int i = 0; i < numSys; i++)
   {
     // check convergence
@@ -633,6 +632,14 @@ PHIST_TASK_BEGIN(ComputeTask)
         // (re-)start: r_0 = b - A*x_0
         PHIST_CHK_IERR( SUBR(mvec_view_block) (work.y_, &Vj, S[i]->id-minId, S[i]->id-minId, iflag), *iflag);
         PHIST_CHK_IERR( SUBR(mvec_add_mvec) (st::one(), S[i]->b_, -st::one(), Vj, iflag), *iflag);
+        if (S[i]->normR_==-mt::one())
+        {
+          PHIST_CHK_IERR( SUBR(mvec_norm2) (Vj,&S[i]->normR_,iflag), *iflag);
+        }
+        if (S[i]->normR0_==-mt::one())
+        {
+          S[i]->normR0_=S[i]->normR_;
+        }
       }
     }
     // increment ref counters in mvecBuff and set lastVind_
