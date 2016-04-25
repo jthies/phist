@@ -85,6 +85,9 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
 #include "phist_std_typedefs.hpp"  
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
+  
+  int previous_status = S->status;
+  S->status=-2; // not initialized, if this function fails in some way to set status the next _iterate call will complain
 
   // get mvecBuff
 #ifdef PHIST_HAVE_BELOS
@@ -94,22 +97,28 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
   PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S->Vbuff, *iflag);
 #endif
 
+
   // release mvecs currently marked used by this state
   for(int j = 0; j < S->curDimV_; j++)
   {
     int Vind = mvecBuff->prevIndex(S->lastVind_,j);
     mvecBuff->decRef(Vind);
   }
+
   S->curDimV_ = 0;
 
-  // only freed resources
+  // set H to zero
+  PHIST_CHK_IERR(SUBR(sdMat_put_value)(S->H_, st::zero(), iflag), *iflag);
+
+
+  // only freed resources, object still not initialized (status -2)
   if( b == NULL && x0 == NULL )
   {
-    S->status = -2;
+    S->status=-2;
     return;
   }
 
-  if( b == NULL && (S->normR0_ == -mt::one() || S->status == -2) )
+  if( b == NULL && (S->normR0_ == -mt::one() || previous_status == -2) )
   {
     PHIST_OUT(PHIST_ERROR,"on the first call to blockedGMRESstate_reset you *must* provide the RHS vector");
     *iflag=-1;
@@ -120,13 +129,10 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
   {
     // new rhs -> need to recompute ||b-A*x0||
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), b, st::zero(), S->b_, iflag), *iflag);
-    S->status = -1;
+    S->status = -1; // indicates that the residual has to be calculated
     S->totalIter = 0;
-    S->normR0_ = -mt::one();
+    S->normR0_ = -mt::one(); // indicates the initial residual has to be set (first start)
   }
-
-  // set H to zero
-  PHIST_CHK_IERR(SUBR(sdMat_put_value)(S->H_, st::zero(), iflag), *iflag);
 
   if( x0 == NULL )
   {
@@ -149,6 +155,7 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
       PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (scale, S->b_, st::zero(), r0, iflag), *iflag);
     }
     PHIST_CHK_IERR(SUBR( mvec_delete ) (r0, iflag), *iflag);
+    S->status= S->normR_<S->tol? 0:1; // 1: iterating/unconverged
   }
   else // x != NULL
   {
@@ -157,11 +164,9 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
     PHIST_CHK_IERR(SUBR( mvec_set_block ) (mvecBuff->at(S->lastVind_), x0, S->id, S->id, iflag), *iflag);
     mvecBuff->incRef(S->lastVind_);
     S->prevBeta_ = st::zero();
+    S->status=-1; // restart, need to compute residual
   }
 
-  // update status
-  if( S->status >= 0 )
-    S->status = 1;
 }
 
 
