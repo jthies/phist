@@ -109,12 +109,16 @@ void SUBR( blockedGMRESstates_delete ) (TYPE(blockedGMRESstate_ptr) S_array[], i
 //!
 //! this function can be used to force a clean restart of the associated GMRES
 //! solver. It is necessary to call this function before the first call to
-//! blockedGMRES_iterate. The input starting vector x0 may be NULL, in that case this function
-//! will generate a random initial guess. x0 does not have to be normalized in advance.
+//! blockedGMRES_iterate in order to set the RHS b. The input starting vector x0 
+//! may be NULL, in that case x0=0 is used. x0 does not have to be normalized in advance.
 //! The input RHS may also be NULL, meaning 'keep old RHS', but not on the first call to
 //! reset. If one of the RHS vectors changes between calls to gmres, reset with the new
 //! rhs should be called for that gmresState, otherwise a messed up Krylov sequence will
-//! result and the convergence criterion will not be consistent.
+//! result and the convergence criterion will not be consistent. To implement standard 
+//! restarted GMRES, call iterate, then updateSol and afterwards reset with b=NULL and 
+//! x0 the updated solution column.
+//! To free the resources used by this state object, call _reset with b=x0=NULL. Subsequent
+//! use of the object requires a nother call to _reset with at least b!=NULL.
 //!
 void SUBR( blockedGMRESstate_reset ) (TYPE(blockedGMRESstate_ptr) S, TYPE(const_mvec_ptr) b, TYPE(const_mvec_ptr) x0, int *iflag);
 

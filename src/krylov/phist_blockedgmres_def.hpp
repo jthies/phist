@@ -1,5 +1,33 @@
 #include "phist_blockedgmres_helper_def.hpp"
 
+// small C++ wrapper that deletes temporary vectors at the end of a scope
+class TYPE(mvec_GC)
+{
+  public:
+
+  TYPE(mvec_GC)()
+  {
+    x_=NULL;
+    y_=NULL;
+    z_=NULL;
+  }
+  
+  ~TYPE(mvec_GC)()
+  {
+    int iflag;
+    if (z_ && (z_!=x_)) SUBR(mvec_delete)(z_,&iflag);
+    if (x_) SUBR(mvec_delete)(x_,&iflag);
+    if (y_) SUBR(mvec_delete)(y_,&iflag);
+    x_=NULL;
+    y_=NULL;
+    z_=NULL;
+  }
+  
+  //! the actual objects
+  TYPE(mvec_ptr) x_,y_,z_;
+
+};
+
 // create new state objects. We just get an array of (NULL-)pointers
 void SUBR(blockedGMRESstates_create)(TYPE(blockedGMRESstate_ptr) state[], int numSys, phist_const_map_ptr map, int maxBas,int* iflag)
 {
@@ -428,11 +456,9 @@ void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_l
 
   // if there are multiple systems, get the maximal id
   int maxId = 0;
-  for(int i = 0; i < numSys; i++)
-    maxId = std::max(maxId,S[i]->id);
+  for(int i = 0; i < numSys; i++) maxId = std::max(maxId,S[i]->id);
   int minId = maxId;
-  for(int i = 0; i < numSys; i++)
-    minId = std::min(minId,S[i]->id);
+  for(int i = 0; i < numSys; i++) minId = std::min(minId,S[i]->id);
 
 #ifdef PHIST_HAVE_BELOS
   PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *iflag);
@@ -462,15 +488,13 @@ void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_l
     sharedCurDimV = std::min(sharedCurDimV, S[i]->curDimV_);
   }
 
-  // work vector for x and y = Aop(x)
-  TYPE(mvec_ptr) work_x = NULL;
-  TYPE(mvec_ptr) work_y = NULL;
-  TYPE(mvec_ptr) work_z = NULL;
+  // work vectors for x, y = Aop(x) and z=P\r
+  TYPE(mvec_GC) work;
   
   // z is Precond\x, create it as a temporary vector
   if (Pop!=NULL)
   {
-    PHIST_CHK_IERR(SUBR(mvec_create)(&work_z,Pop->range_map,numSys,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_create)(&work.z_,Pop->range_map,numSys,iflag),*iflag);
   }
 
   {
@@ -480,7 +504,7 @@ void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_l
       PHIST_CHK_IERR(*iflag = (S[i]->lastVind_ != lastVind) ? -1 : 0, *iflag);
 
     // x0 / last element of krylov subspace
-    PHIST_CHK_IERR(SUBR( mvec_view_block )( mvecBuff->at(lastVind), &work_x, minId, maxId, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_view_block )( mvecBuff->at(lastVind), &work.x_, minId, maxId, iflag), *iflag);
 
 #ifdef TESTING
 // print a visualization of the current state
@@ -584,20 +608,20 @@ PHIST_TASK_BEGIN(ComputeTask)
     //    % get new vector for y
     int nextIndex;
     PHIST_CHK_IERR( mvecBuff->getNextUnused(nextIndex,iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(nextIndex), &work_y, minId, maxId, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(nextIndex), &work.y_, minId, maxId, iflag), *iflag);
     
     // apply (right) preconditioning
     if (Pop!=NULL)
     {
-      PHIST_CHK_IERR( Pop->apply (st::one(), Pop->A, work_x, st::zero(), work_z, iflag), *iflag);
+      PHIST_CHK_IERR( Pop->apply (st::one(), Pop->A, work.x_, st::zero(), work.z_, iflag), *iflag);
     }
     else
     {
-      work_z=work_x;
+      work.z_=work.x_;
     }
 
     //    % apply the operator of the matrix A
-    PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_z, st::zero(), work_y, iflag), *iflag);
+    PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work.z_, st::zero(), work.y_, iflag), *iflag);
 
 
     //    % initialize GMRES for (re-)started systems
@@ -607,7 +631,7 @@ PHIST_TASK_BEGIN(ComputeTask)
       if( j == 0 )
       {
         // (re-)start: r_0 = b - A*x_0
-        PHIST_CHK_IERR( SUBR(mvec_view_block) (work_y, &Vj, S[i]->id-minId, S[i]->id-minId, iflag), *iflag);
+        PHIST_CHK_IERR( SUBR(mvec_view_block) (work.y_, &Vj, S[i]->id-minId, S[i]->id-minId, iflag), *iflag);
         PHIST_CHK_IERR( SUBR(mvec_add_mvec) (st::one(), S[i]->b_, -st::one(), Vj, iflag), *iflag);
       }
     }
@@ -639,7 +663,7 @@ PHIST_TASK_BEGIN(ComputeTask)
         prev_ynorm = ynorm;
         if( useIMGS || mgsIter == 1 )
         {
-          PHIST_CHK_IERR(SUBR(mvec_norm2)(work_y, &ynorm[0], iflag), *iflag);
+          PHIST_CHK_IERR(SUBR(mvec_norm2)(work.y_, &ynorm[0], iflag), *iflag);
         }
 
         bool needAnotherIteration = (mgsIter == 0);
@@ -669,10 +693,10 @@ PHIST_TASK_BEGIN(ComputeTask)
           {
             // MGS step for all systems at once
             PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, minId, maxId, iflag), *iflag);
-            PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vk, work_y, tmp, iflag), *iflag);
+            PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vk, work.y_, tmp, iflag), *iflag);
             for(int i = 0; i < maxId+1-minId; i++)
               tmp[i] = -tmp[i];
-            PHIST_CHK_IERR(SUBR( mvec_vadd_mvec  ) (tmp, Vk, st::one(), work_y, iflag), *iflag);
+            PHIST_CHK_IERR(SUBR( mvec_vadd_mvec  ) (tmp, Vk, st::one(), work.y_, iflag), *iflag);
             calculatedDot = true;
           }
 
@@ -687,7 +711,7 @@ PHIST_TASK_BEGIN(ComputeTask)
               {
                 // MGS step for single system
                 PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, S[i]->id,       S[i]->id,       iflag), *iflag);
-                PHIST_CHK_IERR(SUBR( mvec_view_block ) (work_y,             &Vj, S[i]->id-minId, S[i]->id-minId, iflag), *iflag);
+                PHIST_CHK_IERR(SUBR( mvec_view_block ) (work.y_,             &Vj, S[i]->id-minId, S[i]->id-minId, iflag), *iflag);
                 PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vk, Vj, &tmp[S[i]->id-minId], iflag), *iflag);
                 tmp[S[i]->id-minId] = -tmp[S[i]->id-minId];
                 PHIST_CHK_IERR(SUBR( mvec_add_mvec   ) (tmp[S[i]->id-minId], Vk, st::one(), Vj, iflag), *iflag);
@@ -735,7 +759,7 @@ PHIST_TASK_BEGIN(ComputeTask)
       _ST_ scale[maxId+1-minId];
       for(int i = 0; i < maxId+1-minId; i++)
         scale[i] = st::one() / ynorm[i];
-      PHIST_CHK_IERR(SUBR(mvec_vscale)(work_y, scale, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR(mvec_vscale)(work.y_, scale, iflag), *iflag);
     }
 
     maxCurDimV++;
@@ -773,10 +797,10 @@ PHIST_TASK_BEGIN(ComputeTask)
 {
   TYPE(mvec_ptr) tmpVec = NULL, tmpVec_ = NULL;
   phist_const_map_ptr map;
-  PHIST_CHK_IERR(SUBR(mvec_get_map)(work_y, &map, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_get_map)(work.y_, &map, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_create)(&tmpVec_, map, maxId+1, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, minId, maxId, iflag), *iflag);
-  PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_x, st::zero(), tmpVec, iflag), *iflag);
+  PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work.x_, st::zero(), tmpVec, iflag), *iflag);
   for(int i = 0; i < numSys; i++)
   {
     PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, S[i]->id, S[i]->id, iflag), *iflag);
@@ -896,8 +920,8 @@ PHIST_TASK_BEGIN(ComputeTask)
       }
     }
 
-    // use work_y as input in the next iteration
-    std::swap(work_x,work_y);
+    // use work.y_ as input in the next iteration
+    std::swap(work.x_,work.y_);
 
 
 
@@ -913,13 +937,7 @@ PHIST_TASK_END(iflag)
   PHIST_SOUT(PHIST_VERBOSE,"%d converged, %d failed.\n",anyConverged,anyFailed);
   PHIST_SOUT(PHIST_VERBOSE,"-----------------------\n");
 
-  // delete views
-  PHIST_CHK_IERR(SUBR(mvec_delete)(work_x, iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(work_y, iflag), *iflag);
-  if (Pop!=NULL)
-  {
-    PHIST_CHK_IERR(SUBR(mvec_delete)(work_z, iflag), *iflag);
-  }
+  // delete remaining views (note that our mvec_GC object "work" takes care of x,y and z)
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vj,     iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vk,     iflag), *iflag);
 
