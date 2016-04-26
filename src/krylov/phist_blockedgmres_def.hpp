@@ -598,7 +598,15 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
   for (int i=0;i<numSys;i++)
   {
-    PHIST_SOUT(PHIST_VERBOSE,"[%d]: %d\t%8.4e\t(%8.4e)\n", i, S[i]->curDimV_-1,S[i]->normR_/S[i]->normR0_,S[i]->normR_);
+    if (S[i]->curDimV_>0)
+    {
+      PHIST_SOUT(PHIST_VERBOSE,"[%d]: %d\t%8.4e\t(%8.4e)\n", i, 
+        S[i]->curDimV_-1,S[i]->normR_/S[i]->normR0_,S[i]->normR_);
+    }
+    else
+    {
+      PHIST_SOUT(PHIST_VERBOSE,"[%d]: restarted\n");
+    }
   }
 
 // put all iterations in one big compute task; this speeds up the tests with ghost (significantly)
@@ -611,10 +619,40 @@ PHIST_TASK_BEGIN(ComputeTask)
     PHIST_CHK_IERR( mvecBuff->getNextUnused(nextIndex,iflag), *iflag);
     PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(nextIndex), &work.y_, minId, maxId, iflag), *iflag);
     
-    // apply (right) preconditioning
+    // apply (right) preconditioning *if this is not a restart*
     if (Pop!=NULL)
     {
-      PHIST_CHK_IERR( Pop->apply (st::one(), Pop->A, work.x_, st::zero(), work.z_, iflag), *iflag);
+      int numRestarted=0;
+      for (int i=0; i<numSys; i++) 
+      {
+        numRestarted+=(S[i]->curDimV_==0)?1:0;
+      }
+      // if all systems were restarted, we don't need to apply the preconditioner in the first iteration at all.
+      if (numRestarted==numSys)
+      {
+        PHIST_CHK_IERR( SUBR(mvec_add_mvec)(st::one(),work.x_,st::zero(),work.z_,iflag),*iflag);
+      }
+      else
+      {
+        // apply preconditioner to all vectors for simplicity and overwrite the ones that should not be preconditioned
+        PHIST_CHK_IERR( Pop->apply (st::one(), Pop->A, work.x_, st::zero(), work.z_, iflag), *iflag);
+        if (numRestarted>0)
+        {
+          for (int i=0; i<numSys; i++)
+          {
+            int j=S[i]->curDimV_;
+            if( j == 0 )
+            {
+              // (re-)start: r_0 = b - A*x_0, so throw away the P\x and 
+              // replace by x for this column
+              TYPE(mvec_ptr) tmpX=NULL, tmpZ=NULL;
+              PHIST_CHK_IERR(SUBR(mvec_view_block)(work.x_,&tmpX,S[i]->id,S[i]->id,iflag),*iflag);
+              PHIST_CHK_IERR(SUBR(mvec_view_block)(work.z_,&tmpZ,S[i]->id,S[i]->id,iflag),*iflag);
+              PHIST_CHK_IERR( SUBR(mvec_add_mvec)(st::one(),tmpX,st::zero(),tmpZ,iflag),*iflag);
+            }
+          }
+        }//numRestarted>0
+      }//numRestarted<numSys
     }
     else
     {
@@ -741,11 +779,17 @@ PHIST_TASK_BEGIN(ComputeTask)
         int j = S[i]->curDimV_;
         if( j == 0 )
         {
-          // initilize rs_
-          S[i]->rs_[0] = ynorm[S[i]->id-minId];
-          S[i]->normR_ = ynorm[S[i]->id-minId];
-          if( S[i]->normR0_ == -mt::one() )
-            S[i]->normR0_ = S[i]->normR_;
+          if (Pop==NULL)
+          {
+            // initilize rs_ and normR, normR0
+            S[i]->rs_[0] = ynorm[S[i]->id-minId];
+            S[i]->normR_ = ynorm[S[i]->id-minId];
+          }
+          else
+          {
+            // we only have y=AP\x and ||y||, recompute ||b-Ax||
+          }
+          if( S[i]->normR0_ == -mt::one() ) S[i]->normR0_ = S[i]->normR_;
         }
         else
         {
