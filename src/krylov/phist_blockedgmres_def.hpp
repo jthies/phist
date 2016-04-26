@@ -15,7 +15,8 @@ class TYPE(mvec_GC)
   ~TYPE(mvec_GC)()
   {
     int iflag;
-    if (z_ && (z_!=x_)) SUBR(mvec_delete)(z_,&iflag);
+    if (z_==x_ || z_==y_) z_=NULL;
+    if (z_) SUBR(mvec_delete)(z_,&iflag);
     if (x_) SUBR(mvec_delete)(x_,&iflag);
     if (y_) SUBR(mvec_delete)(y_,&iflag);
     x_=NULL;
