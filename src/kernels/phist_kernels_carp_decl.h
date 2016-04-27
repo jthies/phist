@@ -27,6 +27,8 @@ void SUBR(carp_setup)(TYPE(const_sparseMat_ptr) A, int numShifts,
         _MT_ const sigma_r[], _MT_ const sigma_i[],
         void** work, int* iflag);
 
+//! TODO Jonas, change interface to store real and imag part consecutively
+
 //! forward/backward sweep of Kaczmarz/CARP algorithm (SSOR sweep on the normal equations),
 //! with matrix A-sigma[j]*I applied to the j'th column of mvec X with rhs B. The
 //! input argument work and shifts sigma_r,sigma_i must be unchanged from the _setup routine. 
