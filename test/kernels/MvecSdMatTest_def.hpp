@@ -35,7 +35,6 @@ public:
   //! mvec/sdMat sizes
   static const int n_=_N_;
   static const int m_=_M_;
-  //TODO: k is currently ignored in this test
   static const int k_=_K_;
   
   //! V is n x m
@@ -624,6 +623,78 @@ public:
       SUBR(mvec_times_sdMat)(-alpha,V1_,M1_,st::one(),V2_,&iflag_);
       ASSERT_EQ(0,iflag_);
       ASSERT_REAL_EQ(mt::one(),MvecEqual(V2_,st::zero()));
+    }
+  }
+
+  // mvec_times_sdMat with random data compared with calculation by hand
+  TEST_F(CLASSNAME, mvec_times_sdMat_with_random_data)
+  {
+    if (typeImplemented_ && !problemTooSmall_)
+    {
+      // random data
+      SUBR(mvec_random)(V1_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(V2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_random)(M1_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      
+      // test alpha = 1, beta = 0
+      ST alpha = st::one(), beta = st::zero();
+
+      SUBR(mvec_times_sdMat)(alpha,V1_,M1_,beta,V2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+
+      // check result error
+      SUBR(mvec_from_device)(V1_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M1_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(V2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+
+      MT err = mt::zero();
+      for(phist_lidx i = 0; i < nloc_; i++)
+        for(int j = 0; j < k_; j++)
+        {
+          ST tmp = st::zero();
+
+          for(int j_ = 0; j_ < m_; j_++)
+            tmp += V1_vp_[VIDX(i,j_,ldaV1_)]*M1_vp_[MIDX(j_,j,ldaM1_)];
+
+          err = std::max( err, st::abs(V2_vp_[VIDX(i,j,ldaV2_)]-tmp) );
+        }
+      ASSERT_NEAR(mt::zero(), err, mt::sqrt(mt::eps()));
+
+
+      // test alpa = 7+3i, beta = 0
+      alpha = (ST)7+(ST)3*st::cmplx_I();
+      SUBR(mvec_times_sdMat)(alpha,V1_,M1_,beta,V2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      SUBR(mvec_from_device)(V2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+
+      // check result error
+      err = mt::zero();
+      for(phist_lidx i = 0; i < nloc_; i++)
+        for(int j = 0; j < k_; j++)
+        {
+          ST tmp = st::zero();
+
+          for(int j_ = 0; j_ < m_; j_++)
+            tmp += alpha*V1_vp_[VIDX(i,j_,ldaV1_)]*M1_vp_[MIDX(j_,j,ldaM1_)];
+
+          err = std::max( err, st::abs(V2_vp_[VIDX(i,j,ldaV2_)]-tmp) );
+        }
+      ASSERT_NEAR(mt::zero(), err, mt::sqrt(mt::eps()));
+
+
+      // test alpha = (-3+i)*alpha, beta = 3-i
+      beta = (ST)3-(ST)st::cmplx_I();
+      alpha = -beta * alpha;
+      SUBR(mvec_times_sdMat)(alpha,V1_,M1_,beta,V2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+      ASSERT_NEAR(mt::one(),MvecEqual(V2_,st::zero()),mt::sqrt(mt::eps()));
     }
   }
 
