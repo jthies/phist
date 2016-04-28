@@ -1,32 +1,85 @@
+#include <ghost.h>
+#include <ghost/helper.h>
+#include <iostream>
+#include <fstream>
+
 extern "C" {
 
-void SUBR(carp_setup)(TYPE(const_sparseMat_ptr) A, int numShifts, 
+void SUBR(carp_setup)(TYPE(const_sparseMat_ptr) vA, int numShifts, 
         _MT_ const sigma_r[], _MT_ const sigma_i[],
         void** work, int* iflag)
 {
   //TODO: maybe the halocommInit call could go here?
+
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
+
+  PHIST_CAST_PTR_FROM_VOID( ghost_sparsemat, A, vA, *iflag);
+
+  
+  double *rownorm = new double[A->nrows];
+ 
+  for(int row=0; row < A->nrows; ++row) {
+      rownorm[row]=0;
+  }
+
+  ghost_sell *sellmat = SELL(A);
+  double *mval = (double *)sellmat->val;
+  ghost_lidx idx;
+
+  for(int row=0; row < A->nrows; ++row) {
+      idx =  sellmat->chunkStart[row];
+      for (int j=0; j<sellmat->rowLen[row]; ++j) {
+            rownorm[row] += mval[idx]*mval[idx];
+       }
+   }
+
+  //do dissection of zones
+  ghost_rcm_dissect(A);
+
+ *work = (void*)rownorm;
+
   
   // TODO Christie compute row scaling and return it in *work as a vector or array
-  
+    
   // CARP sweep not implemented, we indicate this here already
   // to avoid confusion in the tests
-  *iflag=PHIST_NOT_IMPLEMENTED;
+
   return;
 }
 
 //TODO Jonas, change interface to store real and imag part consecutively
-void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) A,
+void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) vA,
         _MT_ const sigma_r[], _MT_ const sigma_i[],
         TYPE(const_mvec_ptr) Rhs, 
         TYPE(mvec_ptr) X_r, TYPE(mvec_ptr) X_i,
         void* const work,
         _MT_ const * omega, int* iflag)
 {
-*iflag=PHIST_NOT_IMPLEMENTED;
+ *iflag=0;
+ X_i = NULL;
+ PHIST_CAST_PTR_FROM_VOID(ghost_sparsemat, A, vA, *iflag);
+
+ ghost_densemat *b = NULL;
+
+if(Rhs != NULL)
+ b=(ghost_densemat*)(Rhs);
+
+ PHIST_CAST_PTR_FROM_VOID(ghost_densemat, x, X_r, *iflag);
+
+ double omega_ = *omega;
+ ghost_kacz_opts opts = GHOST_KACZ_OPTS_INITIALIZER;
+ opts.omega = &omega_;
+ opts.normalize = no;
+ opts.direction = GHOST_KACZ_DIRECTION_FORWARD;
+ ghost_kacz_rb(x,A,b,opts);
+ opts.direction = GHOST_KACZ_DIRECTION_BACKWARD;
+ ghost_kacz_rb(x,A,b,opts);
+
 return;
 // TODO Christie, update this for X_i==NULL and ignoring sigmas
-#if 0
+/*#if 0
     ghost_densemat_halo_comm_t comm = GHOST_DENSEMAT_HALO_COMM_INITIALIZER;
     PHIST_CHK_GERR(x->halocommInit(x,&comm),*iflag);
     PHIST_CHK_GERR(x->halocommStart(x,&comm),*iflag);
@@ -39,7 +92,7 @@ return;
 
   *iflag=0;
   return;
-#endif
+#endif*/
 }
 
 void SUBR(carp_sweep_aug)(TYPE(const_sparseMat_ptr) A,
@@ -60,6 +113,11 @@ void SUBR(carp_destroy)(TYPE(const_sparseMat_ptr) A,
 void* work, int *iflag)
 {
   // TODO Christie, delete the vector of row scaling elements
+   PHIST_ENTER_FCN(__FUNCTION__);
+   *iflag=0;
+   PHIST_CAST_PTR_FROM_VOID(double,rownorm,work,*iflag);
+   delete[] rownorm;
+
   *iflag=0;
   return;
 }
