@@ -35,8 +35,7 @@ const char* filename,int* iflag)
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
-  bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
-  bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
+  int iflag_in=*iflag;
   int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
 
   int sellC, sellSigma;
@@ -65,10 +64,8 @@ PHIST_TASK_BEGIN(ComputeTask)
         {
             flags=(ghost_sparsemat_flags)(flags|GHOST_SPARSEMAT_PERMUTE);
         }
-        if (repart)
-        {
-          flags = (ghost_sparsemat_flags)(flags|get_perm_flag(outlev));
-        }
+        flags = (ghost_sparsemat_flags)(flags|get_perm_flag(iflag_in,outlev));
+
         mtraits.datatype = st::ghost_dt;
         mtraits.flags = flags;
         char* cfname=const_cast<char*>(filename);
@@ -96,8 +93,7 @@ const char* filename,int* iflag)
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
-  bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
-  bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
+  int iflag_in=*iflag;
   int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
 
   int sellC, sellSigma;
@@ -127,10 +123,7 @@ PHIST_TASK_BEGIN(ComputeTask)
             flags=(ghost_sparsemat_flags)(flags|GHOST_SPARSEMAT_PERMUTE);
         }
 
-        if (repart)
-        {
-          flags = (ghost_sparsemat_flags)(flags|get_perm_flag(outlev));
-        }
+        flags = (ghost_sparsemat_flags)(flags|get_perm_flag(iflag_in,outlev));
         mtraits.datatype = st::ghost_dt;
         mtraits.flags = flags;
         char* cfname=const_cast<char*>(filename);
@@ -1916,8 +1909,7 @@ void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_com
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
-  bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
-  bool d2clr  = *iflag&PHIST_SPARSEMAT_DIST2_COLOR;
+  int iflag_in=*iflag;  
   int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
 
   int sellC, sellSigma;
@@ -1941,10 +1933,7 @@ PHIST_TASK_BEGIN(ComputeTask)
             flags=(ghost_sparsemat_flags)(flags|GHOST_SPARSEMAT_PERMUTE);
         }
 
-        if (repart)
-        {
-          flags = (ghost_sparsemat_flags)(flags|get_perm_flag(outlev));
-        }
+        flags = (ghost_sparsemat_flags)(flags|get_perm_flag(iflag_in,outlev));
         mtraits.datatype = st::ghost_dt;
         mtraits.flags = flags;
         // if the user allows repartitioning, ask GHOST to do a distribution of the rows based on
