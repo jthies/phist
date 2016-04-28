@@ -622,7 +622,7 @@ void SUBR(carp_cgState_iterate)(
 
   // copy the solution from the x_mvec
   if (x->v_!=X_r) PHIST_CHK_IERR(SUBR(mvec_set_block)(X_r,x->v_,0,nvec-1,iflag),*iflag);
-  if (x->vi_!=X_i&&X_i!=NULL) PHIST_CHK_IERR(SUBR(mvec_set_block)(X_i,x->vi_,0,nvec-1,iflag),*iflag);
+  if (x->vi_!=X_i&&S->rc_variant_) PHIST_CHK_IERR(SUBR(mvec_set_block)(X_i,x->vi_,0,nvec-1,iflag),*iflag);
   
   // this is just a wrapper object, the arguments X_r and X_i carry the solution
   delete x;

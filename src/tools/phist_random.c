@@ -20,7 +20,7 @@
 #endif
 
 #ifdef TESTING
-#define TEST_RNG
+//#define TEST_RNG
 #endif
 
 #include <stdio.h>
