@@ -293,15 +293,15 @@ void SUBR(carp_cgState_iterate)(
   TYPE(x_sparseMat) *A=S->A_;
   int nvec=S->nvec_;
   TYPE(const_mvec_ptr) b=S->b_;
-  // wrap input vectors in our internal x_mvec type
+  // copy or view input vectors in our internal x_mvec type
   TYPE(x_mvec)* x=NULL;
-  if (A->sigma_i_!=NULL)
+  if (A->sigma_i_!=NULL) // rc variant
   {
-    PHIST_CHK_IERR(x=new TYPE(x_mvec)(X_r,X_i,S->nproj_,false,iflag),*iflag);
+    PHIST_CHK_IERR(x=new TYPE(x_mvec)(X_r,X_i,S->nproj_,iflag),*iflag);
   }
   else
   {
-    PHIST_CHK_IERR(x=new TYPE(x_mvec)(X_r,NULL,S->nproj_,false,iflag),*iflag);
+    PHIST_CHK_IERR(x=new TYPE(x_mvec)(X_r,NULL,S->nproj_,iflag),*iflag);
   }
 
   TYPE(x_mvec)* r =S->r_;
@@ -619,6 +619,10 @@ void SUBR(carp_cgState_iterate)(
   
   // to save memory, deallocate CG vector data
   PHIST_CHK_IERR(SUBR(my_carp_cgState_dealloc)(S,iflag),*iflag);
+
+  // copy the solution from the x_mvec
+  if (x->v_!=X_r) PHIST_CHK_IERR(SUBR(mvec_set_block)(X_r,x->v_,0,nvec-1,iflag),*iflag);
+  if (x->vi_!=X_i&&X_i!=NULL) PHIST_CHK_IERR(SUBR(mvec_set_block)(X_i,x->vi_,0,nvec-1,iflag),*iflag);
   
   // this is just a wrapper object, the arguments X_r and X_i carry the solution
   delete x;
