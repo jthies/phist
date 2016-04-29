@@ -64,6 +64,7 @@ public:
 
       for (int i=0; i<_NV_; i++)
       {
+        sigma_[i]=st::zero();
         sigma_r_[i]=mt::zero();
         sigma_i_[i]=mt::zero();
         omega_[i]=mt::one();
@@ -71,7 +72,7 @@ public:
     
       // check if CARP is implemented at all:
       void* work;
-      SUBR(carp_setup)(I_, 1, sigma_r_, sigma_i_,
+      SUBR(carp_setup)(I_, 1, sigma_,
           &work, &iflag_);
       if (iflag_==PHIST_NOT_IMPLEMENTED) 
       {
@@ -200,16 +201,39 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     SUBR(mvec_add_mvec)(st::one(),x_r,st::zero(),x_r_bak,&iflag_);
     ASSERT_EQ(0,iflag_);
 
+    void* work;
+    SUBR(carp_setup)(A, _NV_, sigma_, &work, &iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    SUBR(carp_sweep)(A, sigma_,b,x_r, work, omega_, &iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    SUBR(carp_destroy)(A, work, &iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    return;
+  
+  }
+
+#ifndef IS_COMPLEX
+  // helper function to apply [x_r, x_i] = dkswp(A-sigma[j]*I, b, x_r, x_i)
+  // and copy original X vectors to x_r_bak, x_i_bak.
+  void create_and_apply_carp_rc(TYPE(const_sparseMat_ptr) A)
+  {
+
+    SUBR(mvec_add_mvec)(st::one(),x_r,st::zero(),x_r_bak,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
     if (x_i!=NULL)
     {
       SUBR(mvec_add_mvec)(st::one(),x_i,st::zero(),x_i_bak,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
     void* work;
-    SUBR(carp_setup)(A, _NV_, sigma_r_, sigma_i_, &work, &iflag_);
+    SUBR(carp_setup_rc)(A, _NV_, sigma_r_,sigma_i_, &work, &iflag_);
     ASSERT_EQ(0,iflag_);
     
-    SUBR(carp_sweep)(A, sigma_r_, sigma_i_,b,x_r,x_i, work, omega_, &iflag_);
+    SUBR(carp_sweep_rc)(A, sigma_r_,sigma_i_,b,x_r,x_i, work, omega_, &iflag_);
     ASSERT_EQ(0,iflag_);
     
     SUBR(carp_destroy)(A, work, &iflag_);
@@ -217,7 +241,7 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     
     return;
   }
-
+#endif
 protected:
 
 int delete_mat(TYPE(sparseMat_ptr) &A)
@@ -264,6 +288,7 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
   TYPE(mvec_ptr) x_r, x_i, x_r_bak, x_i_bak, b;
 
   _MT_ sigma_r_[_NV_], sigma_i_[_NV_], omega_[_NV_];
+  _ST_ sigma_[_NV_];
 
   bool carpImplemented_;
 

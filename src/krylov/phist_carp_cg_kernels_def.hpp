@@ -19,29 +19,29 @@
     vi_=NULL;
     vp_=NULL;
     vpi_=NULL;
+    nvec_=-1;
 
     bool rc=vi!=NULL;
     phist_const_map_ptr map=NULL;
     PHIST_CHK_IERR(SUBR(mvec_get_map)(v,&map,iflag),*iflag);
-    int nvec;
-    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v,&nvec,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v,&nvec_,iflag),*iflag);
 
-    PHIST_CHK_IERR(allocate(map,nvec,naug,rc,iflag),*iflag);
+    PHIST_CHK_IERR(allocate(map,nvec_,naug,rc,iflag),*iflag);
 
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(v_,v,0,nvec-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(v_,v,0,nvec_-1,iflag),*iflag);
     if (rc)
     {
-      PHIST_CHK_IERR(SUBR(mvec_set_block)(vi_,vi,0,nvec-1,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_set_block)(vi_,vi,0,nvec_-1,iflag),*iflag);
     }
 
     if (naug>0)
     {
       phist_const_comm_ptr comm=NULL;
       PHIST_CHK_IERR(phist_map_get_comm(map,&comm,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(sdMat_create)(&vp_,naug,nvec,comm,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&vp_,naug,nvec_,comm,iflag),*iflag);
       if (vi!=NULL)
       {
-        PHIST_CHK_IERR(SUBR(sdMat_create)(&vpi_,naug,nvec,comm,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(sdMat_create)(&vpi_,naug,nvec_,comm,iflag),*iflag);
       }
     }
   }
@@ -57,22 +57,23 @@
       *iflag=PHIST_INVALID_INPUT;
       return;
     }
+    nvec_=nvec;
     int actual_nvec=rc?2*nvec:nvec;
     PHIST_CHK_IERR(SUBR(mvec_create)(&vdat_,map,actual_nvec,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(mvec_view_block)(vdat_,&v_,0,nvec-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_view_block)(vdat_,&v_,0,nvec_-1,iflag),*iflag);
     if (rc)
     {
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(vdat_,&vi_,nvec,actual_nvec-1,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(mvec_view_block)(vdat_,&vi_,nvec_,actual_nvec-1,iflag),*iflag);
     }
 
     if (naug>0)
     {
       phist_const_comm_ptr comm=NULL;
       PHIST_CHK_IERR(phist_map_get_comm(map,&comm,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(sdMat_create)(&vp_,naug,nvec,comm,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_create)(&vp_,naug,nvec_,comm,iflag),*iflag);
       if (rc)
       {
-        PHIST_CHK_IERR(SUBR(sdMat_create)(&vpi_,naug,nvec,comm,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(sdMat_create)(&vpi_,naug,nvec_,comm,iflag),*iflag);
       }
     }
   }
@@ -244,9 +245,8 @@ void SUBR(x_mvec_dot_mvec)(TYPE(x_mvec)* v, TYPE(x_mvec)* w,
   bool aug=aug_variant(v,w);
   bool rc=rc_variant(v,w);
 
-  int nvec;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v->v_,&nvec,iflag),*iflag);  
-  int actual_nvec=rc?nvec*2:nvec;
+  int nvec=v->nvec_;
+  int actual_nvec=rc?v->nvec_*2: nvec;
   ST tmp[actual_nvec];
   
   PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v->vdat_,w->vdat_,tmp,iflag),*iflag);
@@ -313,8 +313,7 @@ void SUBR(x_sparseMat_times_mvec)(_ST_ alpha, TYPE(x_sparseMat) const* A, TYPE(x
   bool rc=rc_variant(A,X,Y);
   bool aug=aug_variant(A,X,Y);
   
-  int nvec;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X->v_,&nvec,iflag),*iflag);
+  int nvec=X->nvec_;
   int actual_nvec=rc?2*nvec:nvec;
   
   ST shifts[actual_nvec];
@@ -361,20 +360,49 @@ void SUBR(x_sparseMat_times_mvec)(_ST_ alpha, TYPE(x_sparseMat) const* A, TYPE(x
 void SUBR(x_carp_sweep)(TYPE(x_sparseMat) const* A,TYPE(const_mvec_ptr) b,TYPE(x_mvec)* x,
         void* carp_data, _MT_ const omega[],int *iflag)
 {
-
+#include "phist_std_typedefs.hpp"
   //TODO Jonas: we should have an interface that makes use of vdat_=[v_ vi_] in the RC case,
   //     that may save 50% messages (but require the same communication volume)
 
   // double carp sweep in place, updates r=dkswp(sI-A,omega,r)
-  if (aug_variant(A,x,x))
+#ifndef IS_COMPLEX
+  if (rc_variant(A,x,x))
   {
-    PHIST_CHK_IERR(SUBR(carp_sweep_aug)(A->A_, A->sigma_r_, A->sigma_i_,A->Vproj_,b,x->v_,x->vi_,
-          x->vp_,x->vpi_,carp_data,omega,iflag),*iflag);
+    if (aug_variant(A,x,x))
+    {
+       PHIST_CHK_IERR(SUBR(carp_sweep_aug_rc)(A->A_, A->sigma_r_, A->sigma_i_,A->Vproj_,b,x->v_,x->vi_,
+            x->vp_,x->vpi_,carp_data,omega,iflag),*iflag);
+    }
+    else
+    {
+      PHIST_CHK_IERR(SUBR(carp_sweep_rc)(A->A_, A->sigma_r_, A->sigma_i_,b,x->v_,x->vi_,
+            carp_data, omega, iflag),*iflag);
+    }
   }
   else
+#endif
   {
-    PHIST_CHK_IERR(SUBR(carp_sweep)(A->A_, A->sigma_r_, A->sigma_i_,b,x->v_,x->vi_,
-          carp_data, omega, iflag),*iflag);
+    _ST_* sigma=NULL;
+#ifdef IS_COMPLEX
+    sigma=new _ST_[x->nvec_];
+    for (int i=0; i<x->nvec_;i++) sigma[i]=A->sigma_r_[i]+A->sigma_i_[i]*st::cmplx_I();
+#else
+    sigma=A->sigma_r_;
+#endif
+    if (aug_variant(A,x,x))
+    {
+      PHIST_CHK_IERR(SUBR(carp_sweep_aug)(A->A_, sigma,A->Vproj_,b,x->v_,
+            x->vp_,carp_data,omega,iflag),*iflag);
+    }
+    else
+    {
+      PHIST_CHK_IERR(SUBR(carp_sweep)(A->A_,sigma,b,x->v_,
+            carp_data, omega, iflag),*iflag);
+      
+    }
+#ifdef IS_COMPLEX
+    delete [] sigma;
+#endif  
   }
 }
 
@@ -392,9 +420,8 @@ void SUBR(x_mvec_vadd_mvec)(_ST_ const alpha[], _MT_ const alpha_i[], TYPE(x_mve
   *iflag=0;
   bool rc = rc_variant(X,Y);
   bool aug=aug_variant(X,Y);
-  int nvec,actual_nvec;
+  int nvec=X->nvec_,actual_nvec;
 
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(X->v_,&nvec,iflag),*iflag);
   actual_nvec=rc?2*nvec:nvec;
   ST tmp_alpha[actual_nvec];
   
@@ -439,8 +466,7 @@ void SUBR(x_mvec_vscale)(TYPE(x_mvec)* v, _MT_ const alpha[], int* iflag)
   bool rc=rc_variant(v,v);
   bool aug=aug_variant(v,v);
 
-  int nvec;
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v->v_,&nvec,iflag),*iflag);
+  int nvec=v->nvec_;
   _ST_ tmp_alpha[2*nvec];
   for (int i=0;i<nvec; i++) 
   {

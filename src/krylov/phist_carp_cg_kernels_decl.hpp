@@ -36,6 +36,7 @@ class TYPE(x_mvec)
     TYPE(mvec_ptr)      vi_;
     TYPE(sdMat_ptr)     vp_;
     TYPE(sdMat_ptr)     vpi_;
+    int nvec_;  //! just for convenience
 
   //! constructor - does not allocate memory
   TYPE(x_mvec)();

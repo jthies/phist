@@ -53,11 +53,6 @@ void SUBR(carp_cgState_create)(TYPE(carp_cgState_ptr) *state,
   *iflag=0;
   if (nvec==0) return;
   
-  // setup the CARP kernel and get the required data structures:
-  void* aux=NULL;
-  PHIST_CHK_IERR(SUBR(carp_setup)(A,nvec,sigma_r,sigma_i,
-      &aux, iflag),*iflag);
-
   phist_const_map_ptr map=NULL;
   PHIST_CHK_IERR(SUBR(sparseMat_get_row_map)(A,&map,iflag),*iflag);
   phist_lidx nloc;
@@ -97,12 +92,11 @@ void SUBR(carp_cgState_create)(TYPE(carp_cgState_ptr) *state,
                                  // in the matlab tests.
 
   (*state)->rc_variant_=false;
-
   for (int i=0; i<nvec; i++)
   {
+    (*state)->omega_[i]=mt::one();
     (*state)->A_->sigma_r_[i]=sigma_r[i];
     (*state)->A_->sigma_i_[i]=sigma_i[i];
-    (*state)->omega_[i]=mt::one();
 #ifndef IS_COMPLEX
     if (sigma_i[i]!=mt::zero()) (*state)->rc_variant_=true;
 #endif
@@ -121,6 +115,38 @@ void SUBR(carp_cgState_create)(TYPE(carp_cgState_ptr) *state,
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Vproj,&(*state)->nproj_,iflag),*iflag);
   }
 
+  // setup the CARP kernel and get the required data structures:
+  void* aux=NULL;
+  if ((*state)->rc_variant_)
+  {
+#ifdef IS_COMPLEX
+  *iflag=-1;
+  PHIST_SOUT(PHIST_ERROR,"in complex arithmetic, the flag rc_variant_ should not be set to true\n"
+                        "(file %s, line %d)\n",__FILE__,__LINE__);
+  return;
+#else
+    *iflag=PHIST_NOT_IMPLEMENTED;
+    PHIST_SOUT(PHIST_ERROR,"The real variant of CARP-CG with complex shifts is currently broken and we therefore abort here\n");
+    return;
+    PHIST_CHK_IERR(SUBR(carp_setup_rc)(A,nvec,sigma_r,sigma_i,
+      &aux, iflag),*iflag);
+#endif
+  }
+  else
+  {
+    _ST_ *sigma;
+#ifdef IS_COMPLEX
+    sigma=new _ST_[nvec];
+    for (int i=0; i<nvec; i++) sigma[i]=sigma_r[i]+sigma_i[i]*st::cmplx_I();
+#else
+    sigma=sigma_r;
+#endif
+    PHIST_CHK_IERR(SUBR(carp_setup)(A,nvec,sigma,
+      &aux, iflag),*iflag);
+#ifdef IS_COMPLEX
+    delete [] sigma;
+#endif
+  }
   (*state)->aux_=aux;
 
   for (int j=0;j<nvec;j++)
@@ -295,7 +321,7 @@ void SUBR(carp_cgState_iterate)(
   TYPE(const_mvec_ptr) b=S->b_;
   // copy or view input vectors in our internal x_mvec type
   TYPE(x_mvec)* x=NULL;
-  if (A->sigma_i_!=NULL) // rc variant
+  if (S->rc_variant_) // rc variant
   {
     PHIST_CHK_IERR(x=new TYPE(x_mvec)(X_r,X_i,S->nproj_,iflag),*iflag);
   }

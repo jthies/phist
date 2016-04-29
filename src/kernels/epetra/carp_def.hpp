@@ -66,7 +66,15 @@ void private_kacz_sweep_aug_rc(const Epetra_CrsMatrix* A,
 //!
 //! If the shifts sigma change, carp_destroy and carp_setup should be
 //! used to rebuild the working objects.
+
 extern "C" void SUBR(carp_setup)(TYPE(const_sparseMat_ptr) vA, int numShifts, 
+        _MT_ const sigma[],
+        void** work, int* iflag)
+{
+  PHIST_CHK_IERR(SUBR(carp_setup_rc)(vA,numShifts,sigma,NULL,work,iflag),*iflag);
+}
+
+extern "C" void SUBR(carp_setup_rc)(TYPE(const_sparseMat_ptr) vA, int numShifts, 
         _MT_ const sigma_r[], _MT_ const sigma_i[],
         void** work, int* iflag)
 {
@@ -136,6 +144,20 @@ extern "C" void SUBR(carp_setup)(TYPE(const_sparseMat_ptr) vA, int numShifts,
 //! input arguments nrms_ai2i and work must be unchanged from the _setup routine. For each
 //! shift sigma[j], a separate relaxation parameter omega[j] must be provided.
 extern "C" void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) vA, 
+        _ST_ const sigma[],
+        TYPE(const_mvec_ptr) vrhs,
+        TYPE(mvec_ptr) X,
+        void* const work,
+        _MT_ const * omega, int* iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+  // implementation is in one place in the aug_rc variant, which will call
+  // the appropriate KACZ kernel and take care of the averaging (CARP part)
+  PHIST_CHK_IERR(SUBR(carp_sweep_aug_rc)(vA, sigma, NULL, NULL, vrhs, X, NULL,
+                NULL, NULL, work, omega, iflag), *iflag);
+}
+
+extern "C" void SUBR(carp_sweep_rc)(TYPE(const_sparseMat_ptr) vA, 
         _MT_ const sigma_r[], _MT_ const sigma_i[],
         TYPE(const_mvec_ptr) vrhs,
         TYPE(mvec_ptr) X_r, TYPE(mvec_ptr) X_i,
@@ -143,13 +165,25 @@ extern "C" void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) vA,
         _MT_ const * omega, int* iflag)
 {
   PHIST_ENTER_FCN(__FUNCTION__);
-  // implementation is in one place in the aug variant, which will call
-  // the appropriate KACZ kernel and take care of the averaging (CARP part)
-  PHIST_CHK_IERR(SUBR(carp_sweep_aug)(vA, sigma_r, sigma_i, NULL, vrhs, X_r, X_i,
+  PHIST_CHK_IERR(SUBR(carp_sweep_aug_rc)(vA, sigma_r, sigma_i, NULL, vrhs, X_r, X_i,
                 NULL, NULL, work, omega, iflag), *iflag);
 }
 
 void SUBR(carp_sweep_aug)(TYPE(const_sparseMat_ptr) vA,
+        _ST_ const sigma[],
+        TYPE(const_mvec_ptr) vQ,
+        TYPE(const_mvec_ptr) vrhs,
+        TYPE(mvec_ptr) X,
+        TYPE(sdMat_ptr) vq,
+        void* const work,
+        _MT_ const * omega, int* iflag)
+{
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CHK_IERR(SUBR(carp_sweep_aug_rc)(vA, sigma,NULL, NULL, vrhs, X, NULL,
+                vq, NULL, work, omega, iflag), *iflag);
+}
+
+void SUBR(carp_sweep_aug_rc)(TYPE(const_sparseMat_ptr) vA,
         _MT_ const sigma_r[], _MT_ const sigma_i[],
         TYPE(const_mvec_ptr) vQ,
         TYPE(const_mvec_ptr) vrhs,

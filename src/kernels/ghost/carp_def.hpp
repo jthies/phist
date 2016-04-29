@@ -6,7 +6,7 @@
 extern "C" {
 
 void SUBR(carp_setup)(TYPE(const_sparseMat_ptr) vA, int numShifts, 
-        _MT_ const sigma_r[], _MT_ const sigma_i[],
+        _ST_ const sigma[],
         void** work, int* iflag)
 {
   //TODO: maybe the halocommInit call could go here?
@@ -51,14 +51,13 @@ void SUBR(carp_setup)(TYPE(const_sparseMat_ptr) vA, int numShifts,
 
 //TODO Jonas, change interface to store real and imag part consecutively
 void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) vA,
-        _MT_ const sigma_r[], _MT_ const sigma_i[],
+        _ST_ const sigma[],
         TYPE(const_mvec_ptr) Rhs, 
-        TYPE(mvec_ptr) X_r, TYPE(mvec_ptr) X_i,
+        TYPE(mvec_ptr) X,
         void* const work,
         _MT_ const * omega, int* iflag)
 {
  *iflag=0;
- X_i = NULL;
  PHIST_CAST_PTR_FROM_VOID(ghost_sparsemat, A, vA, *iflag);
 
  ghost_densemat *b = NULL;
@@ -66,7 +65,7 @@ void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) vA,
 if(Rhs != NULL)
  b=(ghost_densemat*)(Rhs);
 
- PHIST_CAST_PTR_FROM_VOID(ghost_densemat, x, X_r, *iflag);
+ PHIST_CAST_PTR_FROM_VOID(ghost_densemat, x, X, *iflag);
 
  double omega_ = *omega;
  ghost_kacz_opts opts = GHOST_KACZ_OPTS_INITIALIZER;
@@ -95,7 +94,45 @@ return;
 #endif*/
 }
 
+#ifndef IS_COMPLEX
+
+// variant with real matrix and complex shifts is not implemented yet
+
+void SUBR(carp_setup_rc)(TYPE(const_sparseMat_ptr) vA, int numShifts, 
+        _MT_ const sigma_r[], _MT_ const sigma_i[],
+        void** work, int* iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+
+void SUBR(carp_sweep_rc)(TYPE(const_sparseMat_ptr) vA,
+        _MT_ const sigma_r[], _MT_ const sigma_i[],
+        TYPE(const_mvec_ptr) Rhs, 
+        TYPE(mvec_ptr) X_r, TYPE(mvec_ptr) X_i,
+        void* const work,
+        _MT_ const * omega, int* iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+
+#endif
+
+
 void SUBR(carp_sweep_aug)(TYPE(const_sparseMat_ptr) A,
+        _ST_ const sigma[],
+        TYPE(const_mvec_ptr) Q,
+        TYPE(const_mvec_ptr) Rhs,
+        TYPE(mvec_ptr) X,
+        TYPE(sdMat_ptr) q,
+        void* const work,
+        _MT_ const * omega, int* iflag)
+{
+  // can be ignored for now (related to JD)
+  *iflag=PHIST_NOT_IMPLEMENTED;
+  return;
+}
+
+void SUBR(carp_sweep_aug_rc)(TYPE(const_sparseMat_ptr) A,
         _MT_ const sigma_r[], _MT_ const sigma_i[],
         TYPE(const_mvec_ptr) Q,
         TYPE(const_mvec_ptr) Rhs,
