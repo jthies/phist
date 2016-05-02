@@ -631,7 +631,8 @@ PHIST_TASK_BEGIN(ComputeTask)
       {
         numRestarted+=(S[i]->curDimV_==0)?1:0;
       }
-      // if all systems were restarted, we don't need to apply the preconditioner in the first iteration at all.
+      // if all systems were restarted, we don't need to apply the preconditioner in the first iteration at all
+      // (in this 'iteration' only the residual is computed)
       if (numRestarted==numSys)
       {
         PHIST_CHK_IERR( SUBR(mvec_add_mvec)(st::one(),work.x_,st::zero(),work.z_,iflag),*iflag);
@@ -639,6 +640,7 @@ PHIST_TASK_BEGIN(ComputeTask)
       else
       {
         // apply preconditioner to all vectors for simplicity and overwrite the ones that should not be preconditioned
+        // because the corresponding system was restarted
         PHIST_CHK_IERR( Pop->apply (st::one(), Pop->A, work.x_, st::zero(), work.z_, iflag), *iflag);
         if (numRestarted>0)
         {
@@ -650,20 +652,20 @@ PHIST_TASK_BEGIN(ComputeTask)
               // (re-)start: r_0 = b - A*x_0, so throw away the P\x and 
               // replace by x for this column
               TYPE(mvec_ptr) tmpX=NULL, tmpZ=NULL;
-              PHIST_CHK_IERR(SUBR(mvec_view_block)(work.x_,&tmpX,S[i]->id,S[i]->id,iflag),*iflag);
-              PHIST_CHK_IERR(SUBR(mvec_view_block)(work.z_,&tmpZ,S[i]->id,S[i]->id,iflag),*iflag);
+              PHIST_CHK_IERR(SUBR(mvec_view_block)(work.x_,&tmpX,S[i]->id-minId,S[i]->id-minId,iflag),*iflag);
+              PHIST_CHK_IERR(SUBR(mvec_view_block)(work.z_,&tmpZ,S[i]->id-minId,S[i]->id-minId,iflag),*iflag);
               PHIST_CHK_IERR( SUBR(mvec_add_mvec)(st::one(),tmpX,st::zero(),tmpZ,iflag),*iflag);
             }
           }
         }//numRestarted>0
       }//numRestarted<numSys
-    }
+    }//Pop!=NULL
     else
     {
       work.z_=work.x_;
     }
 
-    //    % apply the operator of the matrix A
+    //    % apply operator A
     PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work.z_, st::zero(), work.y_, iflag), *iflag);
 
 
@@ -696,7 +698,7 @@ PHIST_TASK_BEGIN(ComputeTask)
       PHIST_CHK_IERR(SUBR(sdMat_from_device)(S[i]->H_,iflag),*iflag);
     }
 
-    //    % arnoldi update with iterated modified gram schmidt
+    //    % Arnoldi update with iterated modified Gram Schmidt
     {
       std::vector<_MT_> ynorm(maxId+1-minId,-mt::one());
       std::vector<_MT_> prev_ynorm(maxId+1-minId,-mt::one());
@@ -783,16 +785,9 @@ PHIST_TASK_BEGIN(ComputeTask)
         int j = S[i]->curDimV_;
         if( j == 0 )
         {
-          if (Pop==NULL)
-          {
-            // initilize rs_ and normR, normR0
-            S[i]->rs_[0] = ynorm[S[i]->id-minId];
-            S[i]->normR_ = ynorm[S[i]->id-minId];
-          }
-          else
-          {
-            // we only have y=AP\x and ||y||, recompute ||b-Ax||
-          }
+          // initilize rs_ and normR, normR0
+          S[i]->rs_[0] = ynorm[S[i]->id-minId];
+          S[i]->normR_ = ynorm[S[i]->id-minId];
           if( S[i]->normR0_ == -mt::one() ) S[i]->normR0_ = S[i]->normR_;
         }
         else
