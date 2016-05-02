@@ -146,45 +146,72 @@ int main(int argc, char** argv)
   int num_converged=0;
   int num_failed=0;
   int status[num_rhs];
-  for (int i=0; i<num_rhs; i++) status[i]=-2; // not started
+  int total_iter[num_rhs];
+  int active_cols[block_size];
+  
+  for (int i=0; i<num_rhs; i++) 
+  {
+    status[i]=-2; // not started
+    total_iter[i]=0;
+  }
+  for (int i=0; i<block_size; i++) active_cols[i]=-1;
+  
+  // for copying around single columns we may need a view object, whenever it is updated
+  // its memory is freed, and after the loop we delete it explicitly
+  TYPE(mvec_ptr) x_i=NULL;
 
   while (num_converged+num_failed<num_rhs)
   {
+    
     // first setup at most block_size systems at a time to work on,
     // skipping any that have converged or failed (exceeded maxIter)
-    int num_active=0;
-    int state_id[block_size];
 
-    TYPE(mvec_ptr) b_i=NULL, x_i=NULL;
+    TYPE(mvec_ptr) b_i=NULL;
+    
+    int num_active=0;
     for (int i=0; i<num_rhs; i++)
     {
-      // already selected four systems to work on
+      if (status[i]==0||status[i]==2) continue; // converged (0 r failed (2)
+      if (status[i]==1) {num_active++; continue;}// still busy
+
       if (num_active==block_size) break;
-      // system i is finished or in progress, don't assign it to a free state object
-      while (states[num_active]->status>0&&num_active<block_size) num_active++; 
-      if (status[i]>=0) continue;
-      if (num_active==block_size) break;
+
+      // find first "free" state object
+      int pos=0;
+      while ( pos<=block_size && states[pos]->status>0 ) pos++;
+      if (pos==block_size) break; // everyone is still busy
+
       // system i needs to be worked on, and states[num_active] is free to do it
       status[i]=1;
 
       PHIST_ICHK_IERR(SUBR(mvec_view_block)(B,&b_i,i,i,&iflag),iflag);
-      PHIST_ICHK_IERR(SUBR(blockedGMRESstate_reset)(states[num_active], b_i, NULL, &iflag), iflag);
-      state_id[num_active]=i;
+      // reset selected state object with 0 initial guess
+      PHIST_ICHK_IERR(SUBR(blockedGMRESstate_reset)(states[pos], b_i, NULL, &iflag), iflag);
+      active_cols[pos]=i;
       num_active++;
     }
+
     if (b_i) PHIST_ICHK_IERR(SUBR(mvec_delete)(b_i,&iflag),iflag);
-    if (x_i) PHIST_ICHK_IERR(SUBR(mvec_delete)(x_i,&iflag),iflag);
 
     if (num_active==0) break;
         
-    // perform (re-)starts if needed
+    // perform restarts if needed
     for (int i=0; i<num_active; i++)
     {
       if (states[i]->status==2)
       {
-        int id=state_id[i];
-        PHIST_SOUT(PHIST_VERBOSE,"restart system %d\n",id);
+        int id=active_cols[i];
+        PHIST_SOUT(PHIST_VERBOSE,"restart system %d (state %d)\n",id,i);
         PHIST_ICHK_IERR(SUBR(mvec_view_block)(X,&x_i,id,id,&iflag),iflag);
+#if 0
+        TYPE(mvec_ptr) resid=NULL;
+        PHIST_ICHK_IERR(SUBR(mvec_create)(&resid,map,1,&iflag),iflag);
+        PHIST_ICHK_IERR(SUBR(mvec_get_block)(B,resid,id,id,&iflag),iflag);
+        PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,x_i,-st::one(),resid,&iflag),iflag);
+        MT rnorm;
+        PHIST_ICHK_IERR(SUBR(mvec_norm2)(resid,&rnorm,&iflag),iflag);
+        PHIST_SOUT(PHIST_VERBOSE,"res norm of restart vector: %e\n",rnorm);
+#endif
         PHIST_ICHK_IERR(SUBR(blockedGMRESstate_reset)(states[i], NULL, x_i, &iflag), iflag);
       }
     }
@@ -192,65 +219,86 @@ int main(int argc, char** argv)
     if (num_active>0)
     {
       PHIST_SOUT(PHIST_VERBOSE," working on %d systems: ",num_active);
-      for (int i=0;i<num_active;i++) PHIST_SOUT(PHIST_VERBOSE,"%d ",state_id[i]);
+      for (int i=0;i<num_active;i++) PHIST_SOUT(PHIST_VERBOSE,"%d ",active_cols[i]);
       PHIST_SOUT(PHIST_VERBOSE,"\n");
     }
 
     int nIter=0;
     PHIST_ICHK_NEG_IERR(SUBR(blockedGMRESstates_iterate)(A_op, P_op,states, num_active, &nIter, useIMGS, &iflag), iflag);
-    num_iters+=nIter;
+    for (int i=0; i<num_active; i++) total_iter[active_cols[i]]=states[i]->totalIter;
     // we need to update the solution for any systems that
     // - have converged (status 0)
     // - need a restart (status 1)
     // - have failed (status 2)
     int num_updates=0;
-    TYPE(blockedGMRESstate_ptr) update_states[block_size];
+    TYPE(blockedGMRESstate_ptr) update_states[num_active];
+    int update_cols[num_active];
     for (int i=0; i<num_active; i++)
     {
-      if (states[i]->status==0) num_converged++;
+      if (states[i]->status==0)
+      {
+        status[active_cols[i]]=0;
+        num_converged++;
+      }
       else if (states[i]->totalIter>max_iters) 
       {
-        status[states[i]->id]=2;
+        status[active_cols[i]]=2;
         num_failed++;
       }
       if (states[i]->status==0||states[i]->status==2)
       {
+        update_cols[num_updates]=active_cols[i];
         update_states[num_updates++]=states[i];
       }
     }
     if (num_updates>0)
     {
+      PHIST_SOUT(PHIST_VERBOSE,"update systems: ");
+      for (int i=0; i<num_updates; i++) PHIST_SOUT(PHIST_VERBOSE," %d",update_cols[i]);
+      PHIST_SOUT(PHIST_VERBOSE,"\n");
+      // if we're updating a contiguous block of columns, use a view.
+      // Otherwise copy the columns to make them continuguous
+      bool contig=true;
+      for (int i=1; i<num_updates; i++) contig&=(update_cols[i]==update_cols[i-1]+1);
       _MT_ res_norms[num_updates];
       TYPE(mvec_ptr) x=NULL;
-      PHIST_ICHK_IERR(SUBR(mvec_create)(&x,map,num_updates,&iflag),iflag);
-      PHIST_ICHK_IERR(SUBR(blockedGMRESstates_updateSol)(update_states,num_updates,P_op,x,res_norms,false,&iflag),iflag);
-      // copy current approximations to the corresponding columns in the final solution X
-      bool contig=true;
-      for (int i=1; i<num_updates; i++) 
-      {
-        int id_i=state_id[update_states[i]->id];
-        int id_im1=state_id[update_states[i-1]->id];
-        if (id_i!=id_im1+1) contig=false;
-      }
       if (contig)
       {
-        PHIST_SOUT(PHIST_VERBOSE,"update systems %d:%d\n",state_id[update_states[0]->id],state_id[update_states[num_updates-1]->id]);
-        PHIST_ICHK_IERR(SUBR(mvec_set_block)(X,x,state_id[update_states[0]->id],state_id[update_states[num_updates-1]->id],&iflag),iflag);
+        PHIST_ICHK_IERR(SUBR(mvec_view_block)(X,&x,update_cols[0],update_cols[num_updates-1],&iflag),iflag);
       }
       else
       {
-        TYPE(mvec_ptr) x_i=NULL;
+        PHIST_ICHK_IERR(SUBR(mvec_create)(&x,map,num_updates,&iflag),iflag);
         for (int i=0; i<num_updates; i++)
         {
-          PHIST_SOUT(PHIST_VERBOSE,"update systems %d\n",state_id[update_states[i]->id]);
-          PHIST_ICHK_IERR(SUBR(mvec_view_block)(x,&x_i,i,i,&iflag),iflag);
-          PHIST_ICHK_IERR(SUBR(mvec_set_block)(X,x_i,state_id[update_states[i]->id],state_id[update_states[i]->id],&iflag),iflag);
+          PHIST_ICHK_IERR(SUBR(mvec_view_block)(X,&x_i,update_cols[i],update_cols[i],&iflag),iflag);
+          PHIST_ICHK_IERR(SUBR(mvec_set_block)(x,x_i,i,i,&iflag),iflag);
         }
-        PHIST_ICHK_IERR(SUBR(mvec_delete)(x_i,&iflag),iflag);
+      }    
+      PHIST_ICHK_IERR(SUBR(blockedGMRESstates_updateSol)(update_states,num_updates,P_op,x,res_norms,false,&iflag),iflag);
+      if (!contig) // need to copy back solution
+      {
+        for (int i=0; i<num_updates; i++)
+        {
+          PHIST_ICHK_IERR(SUBR(mvec_view_block)(x,&x_i,i,i,&iflag),iflag);
+          PHIST_ICHK_IERR(SUBR(mvec_set_block)(X,x_i,update_cols[i],update_cols[i],&iflag),iflag);
+        }
       }
       PHIST_ICHK_IERR(SUBR(mvec_delete)(x,&iflag),iflag);
     }
+    for (int i=0; i<num_active; i++)
+    {
+      if (status[active_cols[i]]!=1)
+      {
+        // state object is free again
+        PHIST_SOUT(PHIST_VERBOSE,"state[%d] free to use again after working on system %d\n",i,active_cols[i]);
+        PHIST_ICHK_IERR(SUBR(blockedGMRESstate_reset)(states[i],NULL,NULL,&iflag),iflag);        
+      }
+    }
   }
+
+  // delete view of single column if it was used
+  if (x_i) PHIST_ICHK_IERR(SUBR(mvec_delete)(x_i,&iflag),iflag);
   
   /* compute residual norms */
   PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,X,st::zero(),R,&iflag),iflag);
@@ -267,6 +315,12 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(mvec_norm2)(X,norm2,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_norm2)(XEX,xnorm2,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_norm2)(B,bnorm2,&iflag),iflag);
+  
+  PHIST_SOUT(PHIST_INFO,"Total number of iterations:\n:");
+  for (int i=0; i<num_rhs; i++)
+  {
+    PHIST_SOUT(PHIST_INFO,"SYSTEM %d: %d\n",i,total_iter[i]);
+  }
   
   if (verbose)
     {

@@ -273,8 +273,7 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
   }
 
   // no iteration done yet?
-  if( maxCurDimV <= 1 )
-    return;
+  if( maxCurDimV <= 1 ) return;
 
 
   // allocate space for y
