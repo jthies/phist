@@ -166,7 +166,7 @@ int main(int argc, char** argv)
     if (iflag<0) return iflag;
     }
   
-  PHIST_OUT(1,"number of iterations performed: %d\n",num_iters);
+  PHIST_SOUT(1,"number of iterations performed: %d\n",num_iters);
   
   /* compute residual norms */
   PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(ONE,A,X,ZERO,R,&iflag),iflag);
