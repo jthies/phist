@@ -942,8 +942,8 @@ PHIST_TASK_BEGIN(ComputeTask)
     {
       int j = S[i]->curDimV_;
 
+      if (S[i]->curDimV_) S[i]->totalIter++; // do not count first round after restart twice
       S[i]->curDimV_++;
-      S[i]->totalIter++;
 
       // check convergence
       MT relres = S[i]->normR_ / S[i]->normR0_;
