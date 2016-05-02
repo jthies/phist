@@ -199,7 +199,9 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
 }
 
 
-// calculate approximate solution
+// calculate approximate solution.
+// first solves triangular system s=R\y for all states and then updates the solution of all the given
+// states in a vectorized way, x+=Vs
 void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int numSys, 
         TYPE(const_linearOp_ptr) rightPrecon,
         TYPE(mvec_ptr) x, _MT_* resNorm, bool scaleSolutionToOne, int* iflag)
@@ -216,6 +218,8 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
   for(int i = 0; i < numSys; i++)
     maxId = std::max(maxId,S[i]->id);
     
+  // if there is no (right) preconditioner, update x+=Vs directly, otherwise
+  // compute z=Vs first and then update x+=P\z
   TYPE(mvec_ptr) z=x;
   if (rightPrecon!=NULL)
   {
@@ -420,10 +424,11 @@ PHIST_TASK_BEGIN(ComputeTask)
         }
       }
     }
-    if (rightPrecon!=NULL)
-    {
-      PHIST_CHK_IERR(rightPrecon->apply(st::one(),rightPrecon->A,z,st::one(),x,iflag),*iflag);
-    }
+  }
+ 
+  if (rightPrecon!=NULL)
+  {
+    PHIST_CHK_IERR(rightPrecon->apply(st::one(),rightPrecon->A,z,st::one(),x,iflag),*iflag);
   }
 
   PHIST_CHK_IERR(SUBR(mvec_delete)(x_i, iflag), *iflag);
