@@ -35,7 +35,7 @@ void SUBR(blockedMINRESstates_iterate)(TYPE(const_linearOp_ptr) Aop,
   for(int i = 0; i < numSys; i++)
     minId = std::min(minId,S[i]->id);
 
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
   PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *iflag);
   Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
 #else
@@ -45,7 +45,7 @@ void SUBR(blockedMINRESstates_iterate)(TYPE(const_linearOp_ptr) Aop,
   // make sure all systems use the same mvecBuff
   for(int i = 0; i < numSys; i++)
   {
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
     PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *iflag);
     PHIST_CHK_IERR(*iflag = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *iflag);
 #else
