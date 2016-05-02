@@ -85,7 +85,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
 #endif
     }
   }
-  PHIST_CHK_IERR(;,*iflag);
+  PHIST_CHK_IERR("GEES",*iflag);
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
 //PHIST_OUT(0,"eigenvalues of unsorted Schur form:\n");
