@@ -145,7 +145,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
             }
           }
           // iterate for MAXBAS iterations
-          int nIter = 0;
+          int nIter = std::max(nrestarts,1)*maxBas_;
           if( useMINRES )
             SUBR(blockedMINRESstates_iterate)(opA_,opPr_,state_,nrhs,&nIter, &iflag2);
           else

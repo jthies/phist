@@ -12,7 +12,6 @@ typedef struct TYPE(jadaCorrectionSolver)
   TYPE(blockedGMRESstate_ptr) *blockedGMRESstates_;     //! blockedGMRES states
   TYPE(carp_cgState_ptr) *carp_cgStates_; //! can use CARP-CG alternatively
   phist_ElinSolv     method_;    //! supported values are GMRES, MINRES, CARP_CG and CUSTOM.
-  int numTotalIter_;      //! counts all iterations performed on single linear systems, just for diagnostics
 
   TYPE(const_linearOp_ptr) rightPrecon;
 

@@ -447,6 +447,9 @@ void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_l
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag = 0;
 
+  int maxIter = (*nIter)>0 ? *nIter: 9999999;
+  *nIter=0;
+
 #if PHIST_OUTLEV>=PHIST_DEBUG
   PHIST_SOUT(PHIST_DEBUG,"starting function iterate() with %d systems\n curDimVs: ",numSys);
   for (int i=0;i<numSys;i++)
@@ -575,7 +578,8 @@ PHIST_SOUT(PHIST_INFO,"\n");
   // maximum permitted number of iterations. The decision about what to do
   // next is then left to the caller.
   int anyConverged = 0;
-  int anyFailed = 0;
+  int anyFull      = 0;
+  int anyFailed    = 0;
 
 
 
@@ -593,13 +597,17 @@ PHIST_SOUT(PHIST_INFO,"\n");
       S[i]->status = 0; // mark as converged
       anyConverged++;
     }
+    else if( S[i]->totalIter>=maxIter )
+    {
+      S[i]->status = 3;
+      anyFailed++;
+    }
     else if( S[i]->curDimV_ >= mvecBuff->size() )
     {
       S[i]->status = 2; // mark as failed/restart needed
-      anyFailed++;
+      anyFull++;
     }
   }
-
   for (int i=0;i<numSys;i++)
   {
     if (S[i]->curDimV_>0)
@@ -609,14 +617,14 @@ PHIST_SOUT(PHIST_INFO,"\n");
     }
     else
     {
-      PHIST_SOUT(PHIST_VERBOSE,"[%d]: restarted\n");
+      PHIST_SOUT(PHIST_VERBOSE,"[%d]: restarted\n",i);
     }
   }
 
 // put all iterations in one big compute task; this speeds up the tests with ghost (significantly)
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
-  while( anyConverged == 0 && anyFailed == 0 )
+  while( anyConverged==0 && anyFailed==0 && anyFull==0 )
   {
     //    % get new vector for y
     int nextIndex;
@@ -973,22 +981,18 @@ PHIST_TASK_BEGIN(ComputeTask)
     {
       PHIST_SOUT(PHIST_VERBOSE,"[%d]: %d\t%8.4e\t(%8.4e)\n", i, S[i]->curDimV_-1,S[i]->normR_/S[i]->normR0_,S[i]->normR_);
     }
-
     (*nIter)++;
   }
 PHIST_TASK_END(iflag)
 
-  PHIST_SOUT(PHIST_VERBOSE,"%d converged, %d failed.\n",anyConverged,anyFailed);
-  PHIST_SOUT(PHIST_VERBOSE,"-----------------------\n");
+  PHIST_SOUT(PHIST_VERBOSE,"%d converged, %d need restart, %d failed.\n",anyConverged,anyFull,anyFailed);
+  PHIST_SOUT(PHIST_VERBOSE,"---------------------------------------  \n");
 
   // delete remaining views (note that our mvec_GC object "work" takes care of x,y and z)
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vj,     iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vk,     iflag), *iflag);
 
-  if (anyConverged > 0)
-    *iflag=0;
-      
-  if (anyFailed > 0)
-    *iflag=1;
+  *iflag=99;
+  for (int i=0; i<numSys; i++) *iflag=std::min(*iflag,S[i]->status);
 }
 
