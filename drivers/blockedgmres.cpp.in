@@ -31,7 +31,6 @@ int main(int argc, char** argv)
 {
   int rank, num_proc;
   int i, iflag;
-  bool verbose;
   int useIMGS=0;
 
   phist_comm_ptr comm;
@@ -57,11 +56,9 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&iflag),iflag);
   PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&iflag),iflag);
 
-  verbose= (rank==0);
-
   if (argc<2)
   {
-    if (verbose) fprintf(stdout,"Usage: %s <matrix> [<max iters> [<tol> [<num rhs> [<max blocks> [<precon> [<prec_opts>]>]]]]]\n",argv[0]);
+    PHIST_SOUT(PHIST_VERBOSE,"Usage: %s <matrix> [<max iters> [<tol> [<num rhs> [<max blocks> [<precon> [<prec_opts>]>]]]]]\n",argv[0]);
     SUBR(create_matrix)(NULL,NULL,"usage",&iflag);
     SUBR(precon_create)(NULL,NULL,st::zero(),NULL,NULL,NULL,"usage",NULL,&iflag);
     return 1;
@@ -96,13 +93,10 @@ int main(int argc, char** argv)
   int block_size=num_rhs>4?4:num_rhs;
 
 
-  if (verbose) 
-  {
-    PHIST_OUT(PHIST_INFO,"matrix: %s\n",matname);
-    PHIST_OUT(PHIST_INFO,"number of rhs: %d\n",num_rhs);
-    PHIST_OUT(PHIST_INFO,"preconditioner: %s\n",prec_type);
-    PHIST_OUT(PHIST_INFO,"prec options: %s\n",prec_opts);
-  }
+  PHIST_OUT(PHIST_INFO,"matrix: %s\n",matname);
+  PHIST_OUT(PHIST_INFO,"number of rhs: %d\n",num_rhs);
+  PHIST_OUT(PHIST_INFO,"preconditioner: %s\n",prec_type);
+  PHIST_OUT(PHIST_INFO,"prec options: %s\n",prec_opts);
 
   //iflag=PHIST_SPARSEMAT_REPARTITION;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&iflag),iflag);
@@ -172,7 +166,7 @@ int main(int argc, char** argv)
     for (int i=0; i<num_rhs; i++)
     {
       if (status[i]==0||status[i]==3) continue; // converged (0 r failed (3)
-      if (status[i]==1) {num_active++; continue;}// still busy
+      if (status[i]==1||status[i]==2) {num_active++; continue;}// still busy
 
       if (num_active==block_size) break;
 
@@ -309,10 +303,10 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-st::one(),B,st::one(),R,&iflag),iflag);
   
   /* compute ||X - XEX||_2 */
-  norm2=(MT*)malloc(num_rhs*sizeof(MT));
-  rnorm2=(MT*)malloc(num_rhs*sizeof(MT));
-  xnorm2=(MT*)malloc(num_rhs*sizeof(MT));
-  bnorm2=(MT*)malloc(num_rhs*sizeof(MT));
+  norm2=new MT[num_rhs];
+  rnorm2=new MT[num_rhs];
+  xnorm2=new MT[num_rhs];
+  bnorm2=new MT[num_rhs];;
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(st::one(),XEX,-st::one(),X,&iflag),iflag);
 
   PHIST_ICHK_IERR(SUBR(mvec_norm2)(R,rnorm2,&iflag),iflag);
@@ -323,30 +317,29 @@ int main(int argc, char** argv)
   PHIST_SOUT(PHIST_INFO,"Total number of iterations:\n:");
   for (int i=0; i<num_rhs; i++)
   {
-    PHIST_SOUT(PHIST_INFO,"SYSTEM %d: %d\n",i,total_iter[i]);
+    PHIST_SOUT(PHIST_INFO,"SYSTEM %d: %d (%s)\n",i,total_iter[i],total_iter[i]<max_iters?"SUCCESS":"FAILURE");
   }
   
-  if (verbose)
-    {
-    fprintf(stdout,"residual 2-norms: ||r||, ||r||/||x||, ||r||/||b||:\n");
-    for (i=0;i<num_rhs;i++)
-      {
-      fprintf(stdout,"%8.4e\t%8.4e\t%8.4e",rnorm2[i],rnorm2[i]/xnorm2[i],rnorm2[i]/bnorm2[i]);
-      }
-    fprintf(stdout,"\n");
+  PHIST_SOUT(PHIST_VERBOSE,"residual 2-norms: ||r||, ||r||/||x||, ||r||/||b||:\n");
+  for (i=0;i<num_rhs;i++)
+  {
+    PHIST_SOUT(PHIST_VERBOSE,"%8.4e\t%8.4e\t%8.4e (%s)\n",rnorm2[i],rnorm2[i]/xnorm2[i],rnorm2[i]/bnorm2[i], 
+    rnorm2[i]/bnorm2[i]<tol?"SUCCESS":"FAILURE");
+  }
+  PHIST_SOUT(PHIST_VERBOSE,"\n");
 
-    fprintf(stdout,"error 2-norms: ||e||, ||e||/||x||, ||e||/||b||:\n");
-    for (i=0;i<num_rhs;i++)
-      {
-      fprintf(stdout,"%8.4e\t%8.4e\t%8.4e",norm2[i],norm2[i]/xnorm2[i],norm2[i]/bnorm2[i]);
-      }
-    fprintf(stdout,"\n");
-    }
+  PHIST_SOUT(PHIST_VERBOSE,"error 2-norms: ||e||, ||e||/||x||, ||e||/||b||:\n");
+  for (i=0;i<num_rhs;i++)
+  {
+    PHIST_SOUT(PHIST_VERBOSE,"%8.4e\t%8.4e\t%8.4e",norm2[i],norm2[i]/xnorm2[i],norm2[i]/bnorm2[i]);
+  }
+  PHIST_SOUT(PHIST_VERBOSE,"\n");
   
-  free(rnorm2);
-  free(norm2);
-  free(xnorm2);
-  free(bnorm2);
+  
+  delete [] rnorm2;
+  delete [] norm2;
+  delete [] xnorm2;
+  delete [] bnorm2;
 
   // clean up the solver
   PHIST_ICHK_IERR(SUBR(blockedGMRESstates_delete)(states, block_size, &iflag), iflag);

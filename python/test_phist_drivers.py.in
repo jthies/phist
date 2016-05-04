@@ -13,6 +13,8 @@ import platform
 import time
 import re
 
+import py.test as pytest
+
 try:
     import unittest2 as unittest
 except ImportError:
@@ -50,8 +52,8 @@ def RunTest(test_name,test_cmd):
         print('output:\n',logtext)
         return prog.returncode
 
-    if re.search('^ *(ERROR|WARNING)', logtext, flags=re.MULTILINE):
-        print('Output contains ERRORs and/or WARNINGs:\n', logtext)
+    if re.search('^ *(ERROR|WARNING|FAILURE)', logtext, flags=re.MULTILINE):
+        print('Output contains ERRORs WARNINGs and/or FAILUREs:\n', logtext)
         return 1
 
     sys.stdout.flush()
@@ -74,9 +76,28 @@ class PhistDriversTest(unittest.TestCase):
 
     def test_subspacejada_spinSZ14(self):
 
-        test_name='Djdqr'    
+        test_name='Dsubspacejada'    
         test_cmd = './phist_Dsubspacejada  spinSZ14 1 10 SR 1e-8 25 4 16 32 4 8 0.0 0 1 1'
 
         result=RunTest(test_name,test_cmd)
         assert result==0
+
+    def test_restarted_blockedGMRES1(self):
+
+        test_name='Dblockedgmres1'    
+        test_cmd = './phist_Dblockedgmres DjadaTestMat512.mm 150 1e-6 1 30'
+
+        result=RunTest(test_name,test_cmd)
+        assert result==0
+
+    @pytest.mark.skipif('${PHIST_HAVE_IFPACK}'=='' and '${PHIST_HAVE_IFPACK2}'=='',
+                        reason="no TPL available that provides an ILU")
+    def test_restarted_blockedGMRES1_ILU(self):
+
+        test_name='Dblockedgmres1_ILU'
+        if '${PHIST_HAVE_IFPACK}'!='' or '${PHIST_HAVE_IFPACK2}'!='':
+            shutil.copyfile('${CMAKE_SOURCE_DIR}/exampleRuns/precon/ifpack_options.xml', '${CMAKE_CURRENT_BINARY_DIR}/ifpack_options.xml')
+            test_cmd = './phist_Dblockedgmres DjadaTestMat512.mm 42 1e-10 1 10 ifpack ifpack_options.xml'
+            result=RunTest(test_name,test_cmd)
+            assert result==0
 

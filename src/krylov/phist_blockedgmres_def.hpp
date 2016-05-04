@@ -964,7 +964,7 @@ PHIST_TASK_BEGIN(ComputeTask)
       else if( S[i]->curDimV_ >= mvecBuff->size() )
       {
         S[i]->status = 2; // mark as failed/restart needed
-        anyFailed++;
+        anyFull++;
       }
       else
       {
