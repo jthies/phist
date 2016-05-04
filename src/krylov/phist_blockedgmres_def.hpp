@@ -184,7 +184,7 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
       PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (scale, S->b_, st::zero(), r0, iflag), *iflag);
     }
     PHIST_CHK_IERR(SUBR( mvec_delete ) (r0, iflag), *iflag);
-    S->status= S->normR_<S->tol? 0:1; // 1: iterating/unconverged
+    S->status=1; // 1: iterating/unconverged
   }
   else // x != NULL
   {

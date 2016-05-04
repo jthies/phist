@@ -135,7 +135,7 @@ extern "C" void phist_jadaOpts_toFile(phist_jadaOpts const *opts, FILE* stream)
   fprintf(stream,"innerSolvMaxIters\t%d\n",opts->innerSolvMaxIters);
   fprintf(stream,"innerSolvBlockSize\t%d\n",opts->innerSolvBlockSize);
   fprintf(stream,"preconType\t%s\n",precon2str(opts->preconType));
-  fprintf(stream,"preconOpts\t%s\n",opts->preconOpts);
+  fprintf(stream,"preconOpts\t%s\n",opts->preconOpts==NULL?"<NULL>":opts->preconOpts);
   fprintf(stream,"innerSolvStopAfterFirstConverged\t%d\n",opts->innerSolvStopAfterFirstConverged);
   fprintf(stream,"innerSolvRobust\t%d\n",opts->innerSolvRobust);
 }
