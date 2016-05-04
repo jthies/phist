@@ -857,6 +857,8 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
     PHIST_CHK_IERR(SUBR(mvec_delete)(Qv, iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_delete)(atilv, iflag),*iflag);
   }
+  // return 0 if all requested eigenpairs were found, otherwise +1
+  if (nconv<numEigs) *iflag=1;
   return;
 }
 
