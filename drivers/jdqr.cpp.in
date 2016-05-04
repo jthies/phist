@@ -50,7 +50,6 @@ int main(int argc, char** argv)
   
   int i;
   int rank, num_proc;
-  int verbose;
 
   comm_ptr comm;
   sparseMat_ptr A;
@@ -78,16 +77,14 @@ int main(int argc, char** argv)
   PHIST_ICHK_IERR(phist_comm_get_rank(comm, &rank,&iflag),iflag);
   PHIST_ICHK_IERR(phist_comm_get_size(comm, &num_proc,&iflag),iflag);
 
-  verbose= (rank==0);
-
   if (argc<2)
   {
-    if (verbose) fprintf(stdout,"Usage: %s <matrix> <num eigs> <which> <tol> <max it>\n"
-                                "               <min bas> <max bas> <arno> <init shift> <solver type>\n\n"
-                                "       \"matrix\" is the matrix file to be read/created (compulsory)\n\n"
-                                "       all other args are optional but are interpreted in the order given, so only the last\n"
-                                "       few can be left out.\n\n"
-                                "TODO - documentation of options. For now, look in the driver file %s for more details.\n",
+    PHIST_SOUT(PHIST_INFO,"Usage: %s <matrix> <num eigs> <which> <tol> <max it>\n"
+                          "               <min bas> <max bas> <arno> <init shift> <solver type>\n\n"
+                          "       \"matrix\" is the matrix file to be read/created (compulsory)\n\n"
+                          "       all other args are optional but are interpreted in the order given, so only the last\n"
+                          "       few can be left out.\n\n"
+                          "TODO - documentation of options. For now, look in the driver file %s for more details.\n",
                                 argv[0],__FILE__);
         SUBR(create_matrix)(NULL,NULL,"usage",&iflag);
     return 1;
@@ -111,11 +108,8 @@ int main(int argc, char** argv)
     else if (!strcmp(argv[3],"TARGET")) opts.which=phist_TARGET;
     else
     {
-      if (verbose) 
-      {
-        fprintf(stderr,"ERROR: the which parameter may be \"LM\",\"SM\",\"LR\" or \"SR\".\n");
-        fprintf(stderr,"       run the program without args to get a usage message.\n");
-      }
+      PHIST_SOUT(PHIST_ERROR,"ERROR: the which parameter may be \"LM\",\"SM\",\"LR\" or \"SR\".\n");
+      PHIST_SOUT(PHIST_ERROR,"       run the program without args to get a usage message.\n");
       return -1;
     }
   }
@@ -161,11 +155,8 @@ int main(int argc, char** argv)
     else if (!strcmp(argv[10],"CARP_CG")) opts.innerSolvType=phist_CARP_CG;
     else
     {
-      if (verbose) 
-      {
-        fprintf(stderr,"ERROR: the linSolv parameter may be \"GMRES\" or \"CARP_CG\" right now\n");
-        fprintf(stderr,"       run the program without args to get a usage message.\n");
-      }
+      PHIST_SOUT(PHIST_ERROR,"ERROR: the linSolv parameter may be \"GMRES\" or \"CARP_CG\" right now\n");
+      PHIST_SOUT(PHIST_ERROR,"       run the program without args to get a usage message.\n");
       return -1;
     }
   }
@@ -221,19 +212,16 @@ int main(int argc, char** argv)
         &iflag);
 
   if (iflag!=0)
-    {
-    if (verbose) fprintf(stdout,"code %d returned from jdqr\n",iflag);
+  {
+    PHIST_SOUT(PHIST_ERROR,"%s: code %d returned from jdqr\n",iflag>0?"WARNING":"ERROR",iflag);
     if (iflag<0) return iflag;
-    }
-  if (verbose)
-    {
-    fprintf(stdout,"Found %d eigenpairs after %d iterations\n",num_eigs,num_iters);
-    }
+  }
+  PHIST_SOUT(PHIST_INFO,"Found %d eigenpairs after %d iterations\n",num_eigs,num_iters);
 
   MT expRes[MAX(num_eigs,1)];
 
   if (num_eigs>0)
-    {
+  {
     // compute residuals explicitly
     mvec_ptr R=NULL,Xv=NULL;
     PHIST_ICHK_IERR(SUBR(mvec_create)(&R,map,num_eigs,&iflag),iflag);
@@ -254,50 +242,54 @@ int main(int argc, char** argv)
     PHIST_ICHK_IERR(SUBR(sdMat_extract_view)(D,&D_raw,&ldD,&iflag),iflag);
     i=0;
     while (i<num_eigs)
-      {
+    {
       D_raw[i*ldD+i]= evals[i];
       if (is_cmplx[i])
-        {
+      {
         D_raw[(i+1)*ldD+(i+1)]=evals[i];
         D_raw[i*ldD+(i+1)]=-evals[i+1];
         D_raw[(i+1)*ldD+i]= evals[i+1];
         i++;
-        }
-      i++;
       }
+      i++;
+    }
     PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Xv,D,-st::one(),R,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(sdMat_delete)(D,&iflag),iflag);
 #endif
     PHIST_ICHK_IERR(SUBR(mvec_norm2)(R,expRes,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(mvec_delete)(Xv,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(mvec_delete)(R,&iflag),iflag);
-    }
+  }
 
-  if (verbose && num_eigs>0)
-    {
-    fprintf(stdout,"  Eigenvalue\t\t\t\t\t\tRitz Residual\tExpl. Residual\n");
-    fprintf(stdout,"======================================================================================\n");
+  if (num_eigs>0)
+  {
+    PHIST_SOUT(PHIST_INFO,"  Eigenvalue\t\t\t\t\t\tRitz Residual\tExpl. Residual\n");
+    PHIST_SOUT(PHIST_INFO,"======================================================================================\n");
     int i=0;
     while (i<num_eigs)
-      {
+    {
 #ifdef IS_COMPLEX
-      fprintf(stdout,"%24.16e%+24.16ei\t%3.1e\t\t%3.1e\n",
+      PHIST_SOUT(PHIST_INFO,"%24.16e%+24.16ei\t%3.1e\t\t%3.1e\n",
         st::real(evals[i]),st::imag(evals[i]),resid[i],expRes[i]);
 #else
       if (is_cmplx[i])
-        {
-        fprintf(stdout,"%24.16e%+24.16ei\t%3.1e\t\t%3.1e\n",evals[i],evals[i+1],resid[i],expRes[i]);
-        fprintf(stdout,"%24.16e%+24.16ei\t%3.1e\t\t%3.1e\n",evals[i],-evals[i+1],resid[i+1],expRes[i+1]);
+      {
+        PHIST_SOUT(PHIST_INFO,"%24.16e%+24.16ei\t%3.1e\t\t%3.1e\n",evals[i],evals[i+1],resid[i],expRes[i]);
+        PHIST_SOUT(PHIST_INFO,"%24.16e%+24.16ei\t%3.1e\t\t%3.1e\n",evals[i],-evals[i+1],resid[i+1],expRes[i+1]);
         i++;
-        }
-      else
-        {
-        fprintf(stdout,"%24.16e\t\t\t\t%3.1e\t\t%3.1e\n",evals[i],resid[i],expRes[i]);
-        }
-#endif
-      i++;
       }
+      else
+      {
+        PHIST_SOUT(PHIST_INFO,"%24.16e\t\t\t\t%3.1e\t\t%3.1e\n",evals[i],resid[i],expRes[i]);
+      }
+#endif
+      if (expRes[i]>tol)
+      {
+        PHIST_SOUT(PHIST_ERROR,"Warning: explicit residual larger than tol\n");
+      }
+      i++;
     }
+  }
 
   free(evals);
   free(resid);
