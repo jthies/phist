@@ -1,0 +1,49 @@
+'''Python script to execute some integration tests
+'''
+
+#--------------------------------------------------------------------------------
+# imports
+import sys
+
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
+
+
+#--------------------------------------------------------------------------------
+# tests
+
+class PhistDriversTest(unittest.TestCase):
+
+    def test_jdqr(self):
+        mpirun='${MPIEXEC}'
+        logfile='Djdqr.log'
+        errfile='Djdqr.log'
+        np_flag='${MPIEXEC_NUMPROC_FLAG}'
+        np='${PHIST_TEST_DRIVERS_NUM_PROCS}'
+        cmd_pre = mpirun+' '+np_flag+' '+np+' '+env_args+' '
+        cmd_main= ./phist_Djdqr
+        cmd_args= 'DjadaTestMat512.mm 6 LM 1e-8 45 10 20 1 0.0 GMRES'
+        cmd = cmd_pre+' '+cmd_main+' '+cmd_flags
+        prog = subprocess.Popen(cmd,
+                                stdout=logfile,
+                                stderr=errfile,
+                                shell=True)
+        
+        # check returncode
+        expected_returncode = 0
+
+        assert prog.returncode == expected_returncode
+
+        with open(logfile_path, 'r') as logfile:
+        logtext = logfile.read()
+
+        if re.search('^ *([Ee]rror|ERROR|[Ww]arn|WARN|[Ff]ehler|FEHLER)', logtext, flags=re.MULTILINE):
+            print('Output:\n', logtext)
+            assert false
+
+        sys.stdout.flush()
+
+        return 0
+

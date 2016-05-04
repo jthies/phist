@@ -1284,6 +1284,17 @@ if(INTEGRATION_BUILD)
       set_property(TEST ${pyt_name} APPEND PROPERTY ENVIRONMENT "LSAN_OPTIONS=\"exitcode=0\"")
     endif()
   endforeach()
+  if (INTEGRATION_BUILD)
+    message(STATUS "add integration tests")
+    # python script that runs drivers with MPI as integration tests
+    set(PHIST_TEST_DRIVERS_NUM_PROCS 3)
+    configure_file(${PROJECT_SOURCE_DIR}/python/test_phist_drivers.py.in ${CMAKE_CURRENT_BINARY_DIR}/test_phist_drivers.py)
+    set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np${PHIST_TEST_DRIVERS_NUM_PROCS}/test_phist_drivers)
+    file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
+    set(TEST_COMMAND ${CMAKE_CURRENT_BINARY_DIR}/py.test --junitxml ${TEST_OUTPUT_DIR}/xunit.xml ./test_phist_drivers.py)
+    add_test(NAME phist_test_drivers_np${PHIST_TEST_DRIVERS_NUM_PROCS} COMMAND ${TEST_COMMAND})
+    set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "PHIST_NUM_THREADS=8 OMP_NUM_THREADS=8 OMP_SCHEDULE=dynamic,8")
+  endif()
 endif()
 
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console
