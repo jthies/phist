@@ -1284,7 +1284,7 @@ if(INTEGRATION_BUILD)
       set_property(TEST ${pyt_name} APPEND PROPERTY ENVIRONMENT "LSAN_OPTIONS=\"exitcode=0\"")
     endif()
   endforeach()
-  if (INTEGRATION_BUILD)
+  if (INTEGRATION_BUILD AND CMAKE_BUILD_TYPE MATCHES "Release")
     message(STATUS "add integration tests")
     # python script that runs drivers with MPI as integration tests
     set(PHIST_TEST_DRIVERS_NUM_PROCS 3)
