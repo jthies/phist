@@ -13,7 +13,7 @@ fi
 KERNELS="builtin" # ghost epetra tpetra
 PRGENV="gcc-5.1.0-openmpi" # intel-13.0.1-mpich gcc-4.9.2-openmpi
 FLAGS="default" # optional-libs
-ADD_CMAKE_FLAGS="" #optional CMake flags
+ADD_CMAKE_FLAGS="-DPHIST_BENCH_LARGE_N=100000" #optional CMake flags # LARGE_N set to small value to speed up build jobs!
 VECT_EXT="native"
 # list of modules to load
 MODULES_BASIC="cmake ccache cppcheck lapack gcovr doxygen"
@@ -52,7 +52,7 @@ while getopts "k:e:f:c:v:h" o; do
             FLAGS=${OPTARG}
             ;;
         c)
-            ADD_CMAKE_FLAGS=${OPTARG}
+            ADD_CMAKE_FLAGS+=" ${OPTARG}"
             ;;
         v)
             VECT_EXT=${OPTARG}
@@ -137,7 +137,12 @@ cmake -DCMAKE_BUILD_TYPE=Release  \
 make doc &> doxygen.log                 || error=1
 make -j 24 || make                      || error=1
 echo "Running tests. Output is compressed and written to test.log.gz"
-make check 2>&1 | gzip -c > test.log.gz || error=1
+make check &> test.log                  || error=1
+if [ "${VECT_EXT}" = "CUDA" ]; then
+  echo "Check if it actually ran on our Tesla card"
+  fgrep "1x Tesla" test.log             || error=1
+fi
+gzip test.log                           || error=1
 echo "Install..."
 make install &> install.log             || error=1
 echo "Check installation with pkg-config project"
@@ -170,7 +175,12 @@ cmake -DCMAKE_BUILD_TYPE=Debug    \
       ..                                || error=1
 make -j 24 || make                      || error=1
 echo "Running tests. Output is compressed and written to test.log.gz"
-make check 2>&1 | gzip -c > test.log.gz || error=1
+make check &> test.log                  || error=1
+if [ "${VECT_EXT}" = "CUDA" ]; then
+  echo "Check if it actually ran on our Tesla card"
+  fgrep "1x Tesla" test.log             || error=1
+fi
+gzip test.log                           || error=1
 make audit                              || error=1
 cd ..
 

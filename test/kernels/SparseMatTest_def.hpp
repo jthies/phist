@@ -175,7 +175,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     ASSERT_EQ(0, iflag_);
     SUBR(mvec_from_device)(vec3_,&iflag_);
     ASSERT_EQ(0, iflag_);
-    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imin,lda_),vec3_vp_+VIDX(0,imin,lda_),nloc_,imax-imin+1,lda_,stride_,vflag_), 1000*VTest::releps());
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imin,lda_),vec3_vp_+VIDX(0,imin,lda_),nloc_,imax-imin+1,lda_,stride_,vflag_), mt::sqrt(VTest::releps()));
 
     // delete view
     SUBR(mvec_delete)(vec2_view, &iflag_);
@@ -225,7 +225,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     ASSERT_EQ(0, iflag_);
     SUBR(mvec_from_device)(vec3_,&iflag_);
     ASSERT_EQ(0, iflag_);
-    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imin,lda_),vec3_vp_+VIDX(0,imin,lda_),nloc_,imax-imin+1,lda_,stride_,vflag_), 1000*VTest::releps(vec3_));
+    ASSERT_NEAR(mt::one(), ArraysEqual(vec2_vp_+VIDX(0,imin,lda_),vec3_vp_+VIDX(0,imin,lda_),nloc_,imax-imin+1,lda_,stride_,vflag_), mt::sqrt(VTest::releps(vec3_)));
 
     // delete view
     SUBR(mvec_delete)(vec2_view, &iflag_);
@@ -1253,7 +1253,10 @@ int PHIST_TG_PREFIX(some_rowFunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* c
 }
 #endif
 
+#ifndef SPARSEMATTEST_PRINT_THIS_WARNING_ONLY_ONCE
+#define SPARSEMATTEST_PRINT_THIS_WARNING_ONLY_ONCE
 #warning "Reenable this test, creating new mvecs or put it in a different file/class"
+#endif
 /*
 #if MATNAME == MATNAME_speye
 TEST_F(CLASSNAME,create_A_fromRowFunc)
@@ -1350,7 +1353,10 @@ TEST_F(CLASSNAME,create_A_fromRowFunc)
 }
 */
 
+#ifndef SPARSEMATTEST_PRINT_THIS_WARNING_ONLY_ONCE
+#define SPARSEMATTEST_PRINT_THIS_WARNING_ONLY_ONCE
 #warning "Reenable this test, creating new mvecs or put it in a different file/class"
+#endif
 /*
 TEST_F(CLASSNAME,create_I_fromRowFunc)
 {

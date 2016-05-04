@@ -1,3 +1,4 @@
+namespace {
 //! small helper function that checks if an sdMat is symmetric
 void SUBR(sdMat_check_symmetry)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
 {
@@ -53,6 +54,7 @@ void SUBR(sdMat_check_symmetry)(TYPE(const_sdMat_ptr) mat, _MT_ tol, int*iflag)
     *iflag = 1;
   }
 }
+}
 
 //! subspacejada for exterior eigenvalues, using standard Ritz values
 //!
@@ -100,6 +102,22 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
 #endif
 
   phist_EeigExtr how=opts.how;
+
+#if PHIST_OUTLEV>=PHIST_VERBOSE
+  {
+  // print input options to stdout on root 
+    int me=0;
+    phist_const_comm_ptr comm;
+    PHIST_CHK_IERR(phist_map_get_comm(A_op->domain_map,&comm,iflag),*iflag);
+    PHIST_CHK_IERR(phist_comm_get_rank(comm,&me,iflag),*iflag);
+    if (me==0)
+    {
+      PHIST_SOUT(PHIST_VERBOSE,"jadaOpts:\n");
+      phist_jadaOpts_toFile(&opts, stdout);
+    }
+  }
+#endif
+
   
   if (how==phist_HARMONIC)
   {
@@ -923,5 +941,8 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (AV_, iflag), *iflag);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (Vtmp_,iflag), *iflag);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (V_,  iflag), *iflag);
+
+  *iflag = *nConv<nEig? 1:0;
+  return;
 }
 

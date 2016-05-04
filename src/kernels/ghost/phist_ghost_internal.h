@@ -83,9 +83,24 @@ typedef struct ghost_map
     //! private helper function to create a vtraits object
     ghost_densemat_traits phist_default_vtraits();
     
-    //! A Garbage collection for maps as they need to be recreated dynamically with GHOST
+    //! A Garbage collection for maps as they need to be recreated dynamically with GHOST.
+    
+    //! Each time someone requests a map from an mvec or sparseMat, a new object is created
+    //! and addedto an internal 'collection'. Since maps do not contain data but only pointers
+    //! we currently never delete these objects until the end of the run.
+    //!
+    //! \todo we could use a hash map instead and associate each map with the context it links to.
+    //! Reference-counting could then be used to see if a context is no longer needed and delete it.
+    //! 
+    //! Example: sparseMat is created       => context created @X
+    //!          sparseMat_get_domain_map   => map[X] created with ref count 1
+    //!          mvec_create(&V,map[X],...) => ref count of map[X] incremented
+    //!          sparseMat_delete           => ref count of map[X] decremented
+    //!          mvec_delete(V)             => ref count of map[X] decremented to 0, map and context deleted
+    //! See issue #177
     class MapGarbageCollector
     {
+
       public:
       
         //!

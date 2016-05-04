@@ -42,6 +42,9 @@ void SUBR(transform_searchSpace)(TYPE(mvec_ptr) V, TYPE(mvec_ptr) AV, TYPE(mvec_
   // delete temp. storage
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (Htmp, iflag), *iflag);
   PHIST_CHK_IERR(SUBR( sdMat_delete ) (H_,   iflag), *iflag);
+
+  // sync values to avoid problems with CUDA (TODO)
+  PHIST_CHK_IERR(SUBR(sdMat_sync_values)(H,comm,iflag),*iflag);
 }
 
 //! apply transformation matrices MV and MW to given search spaces V and W, resp.

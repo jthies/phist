@@ -180,7 +180,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
           PHIST_DEB("rel. res norm: %6.2g\n",resNorm[i]/bNorm_[i]);
 
           // check error (residual two norm < tol)
-          ASSERT_TRUE(resNorm[i]<=tol*bNorm_[i]);
+          ASSERT_NEAR(1.0,1.0+(double)resNorm[i]/(double)bNorm_[i],(double)tol);
         }
 
         // check error
@@ -196,7 +196,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
           // TODO - we should use the matrix norm for the scaling here,
           //        but since we only test with one matrix we can hard-code
           //        a factor 20 so that the test is passed.
-          ASSERT_TRUE(errNorm[i]<=20*tol*bNorm_[i]);
+          ASSERT_NEAR(1.0,1.0+(double)errNorm[i]/(double)bNorm_[i],20*tol);
         }
 
         SUBR(mvec_delete)(x,&iflag_);

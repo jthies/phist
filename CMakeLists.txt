@@ -504,7 +504,7 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   set(PHIST_SDMATS_ROW_MAJOR 0 CACHE STRING "store sdMats in row-major order (not supported by our algorithms..." )
 
   set(PHIST_SELL_C -1 CACHE INTEGER "chunk size C for the SELL-C-sigma format (-1: automatic choice)")
-  set(PHIST_SELL_SIGMA -1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format (-1: automatic choice)")
+  set(PHIST_SELL_SIGMA 1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format (-1: automatic choice)")
 
   if (PHIST_USE_SOLVER_TPLS)
     list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
@@ -721,6 +721,7 @@ set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_schur_decomp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_subspacejada.cpp
+                         ${PROJECT_SOURCE_DIR}/src/jada/phist_harmonicjada.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaCorrectionSolver.cpp
                          )
@@ -1231,7 +1232,12 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
     set_tests_properties(test-${label}_np${np} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
     set_tests_properties(test-${label}_np${np} PROPERTIES FAIL_REGULAR_EXPRESSION "[. \n]*FAILED[. \n]*")
     set_tests_properties(test-${label}_np${np} PROPERTIES TIMEOUT 500)
-    set_tests_properties(test-${label}_np${np} PROPERTIES ENVIRONMENT ${MPIEXEC_ENVIRONMENT})
+    if(np EQUAL 1 AND INTEGRATION_BUILD AND PHIST_KERNEL_LIB STREQUAL "ghost" AND CUDA_LIBRARIES)
+      set_tests_properties(test-${label}_np${np} PROPERTIES ENVIRONMENT GHOST_TYPE=cuda)
+    else()
+      set_tests_properties(test-${label}_np${np} PROPERTIES ENVIRONMENT "${MPIEXEC_ENVIRONMENT} GHOST_TYPE=cuda")
+    else()
+    endif()
   endforeach()
   # the task tests should be very fast (no heavy computation) - but may deadlock in case of errors!
   # JT increasing timeout because 10s is sometimes too little in debug mode (starting the executable with all the
@@ -1263,7 +1269,11 @@ if(INTEGRATION_BUILD)
     file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
     set(TEST_COMMAND ${CMAKE_CURRENT_BINARY_DIR}/py.test --junitxml ${TEST_OUTPUT_DIR}/xunit.xml ${pyt})
     add_test(NAME ${pyt_name} COMMAND ${TEST_COMMAND})
-    set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH} PYTHONPATH=${PYSTDIR}:$ENV{PYTHONPATH} PHIST_NUM_THREADS=12 OMP_NUM_THREADS=12 OMP_SCHEDULE=dynamic,8")
+    if(INTEGRATION_BUILD AND PHIST_KERNEL_LIB STREQUAL "ghost" AND CUDA_LIBRARIES)
+      set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH} PYTHONPATH=${PYSTDIR}:$ENV{PYTHONPATH} PHIST_NUM_THREADS=12 OMP_NUM_THREADS=12 OMP_SCHEDULE=dynamic,8 GHOST_TYPE=cuda")
+    else()
+      set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}:$ENV{LD_LIBRARY_PATH} PYTHONPATH=${PYSTDIR}:$ENV{PYTHONPATH} PHIST_NUM_THREADS=12 OMP_NUM_THREADS=12 OMP_SCHEDULE=dynamic,8")
+    endif()
   
     if( GCC_SANITIZE )
       # we need to LD_PRELOAD the respective lib<.>san.so library
@@ -1274,6 +1284,17 @@ if(INTEGRATION_BUILD)
       set_property(TEST ${pyt_name} APPEND PROPERTY ENVIRONMENT "LSAN_OPTIONS=\"exitcode=0\"")
     endif()
   endforeach()
+  if (INTEGRATION_BUILD AND CMAKE_BUILD_TYPE MATCHES "Release")
+    message(STATUS "add integration tests")
+    # python script that runs drivers with MPI as integration tests
+    set(PHIST_TEST_DRIVERS_NUM_PROCS 2)
+    configure_file(${PROJECT_SOURCE_DIR}/python/test_phist_drivers.py.in ${CMAKE_CURRENT_BINARY_DIR}/test_phist_drivers.py)
+    set(TEST_OUTPUT_DIR ${PROJECT_BINARY_DIR}/test_output_np${PHIST_TEST_DRIVERS_NUM_PROCS}/test_phist_drivers)
+    file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
+    set(TEST_COMMAND ${CMAKE_CURRENT_BINARY_DIR}/py.test --junitxml ${TEST_OUTPUT_DIR}/xunit.xml ./test_phist_drivers.py)
+    add_test(NAME phist_test_drivers_np${PHIST_TEST_DRIVERS_NUM_PROCS} COMMAND ${TEST_COMMAND})
+    set_tests_properties(${pyt_name} PROPERTIES ENVIRONMENT "PHIST_NUM_THREADS=8 OMP_NUM_THREADS=8 OMP_SCHEDULE=dynamic,8")
+  endif()
 endif()
 
 # Adding custom test target "check" because it is the only way to show the full output of test errors on console

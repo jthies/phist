@@ -78,6 +78,8 @@ PHIST_MAIN_TASK_BEGIN
   sigma = new _ST_[nvecs];
   for(int i = 0; i < nvecs; i++)
     sigma[i] = st::rand();
+    // we manually set the entries of these vectors below, so we need them on the host
+    iflag=PHIST_MVEC_REPLICATE_DEVICE_MEM;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&q,map,nproj,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(q,st::zero(),&iflag),iflag);
   // set q vectors to unit vectors
@@ -87,6 +89,7 @@ PHIST_MAIN_TASK_BEGIN
     PHIST_ICHK_IERR(SUBR(mvec_extract_view)(q,&q_raw,&ldq,&iflag),iflag);
     for(int i = 0; i < nproj; i++)
       q_raw[i*ldq+i] = st::one();
+    PHIST_ICHK_IERR(SUBR(mvec_to_device)(q,&iflag),iflag);
   }
   PHIST_ICHK_IERR(SUBR(jadaOp_create)(&opA,NULL,q,NULL,sigma,nvecs,&jadaOp,&iflag),iflag);
 

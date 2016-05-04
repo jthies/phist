@@ -1,0 +1,82 @@
+'''Python script to execute some integration tests
+'''
+
+#--------------------------------------------------------------------------------
+# imports
+# imports
+import sys
+import os
+import argparse
+import shutil
+import subprocess
+import platform
+import time
+import re
+
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
+
+
+def RunTest(test_name,test_cmd):
+
+    logfile_path='${CMAKE_CURRENT_BINARY_DIR}/'+test_name+'.log'
+
+    mpirun='${MPIEXEC}'
+    np_flag='${MPIEXEC_NUMPROC_FLAG}'
+    np='${PHIST_TEST_DRIVERS_NUM_PROCS}'
+    # something like 'env PHIST_NUM_THREADS=3', not sure if we should pass this in by CMake or let CMake handle the 
+    # environment variables
+    env_args=''
+    cmd_pre = mpirun+' '+np_flag+' '+np+' '+env_args+' '
+    cmd=cmd_pre+' '+test_cmd
+
+    with open(logfile_path, 'w') as logfile:
+        prog = subprocess.Popen(cmd,
+                            stdout=logfile,
+                            stderr=logfile,
+                            shell=True)
+    
+    # wait for the process to finish
+    prog.communicate()
+
+    with open(logfile_path, 'r') as logfile:
+        logtext = logfile.read()
+    
+    # check returncode
+    if prog.returncode!=0:
+        print('program returned non-zero value ',prog.returncode);
+        print('output:\n',logtext)
+        return prog.returncode
+
+    if re.search('^ *(ERROR|WARNING)', logtext, flags=re.MULTILINE):
+        print('Output contains ERRORs and/or WARNINGs:\n', logtext)
+        return 1
+
+    sys.stdout.flush()
+    return 0
+
+
+#--------------------------------------------------------------------------------
+# tests
+
+class PhistDriversTest(unittest.TestCase):
+
+    def test_jdqr(self):
+
+        test_name='Djdqr'    
+        test_cmd = './phist_Djdqr DjadaTestMat512.mm 6 LM 1e-12 45 10 30 1 0.0 GMRES'
+
+        result=RunTest(test_name,test_cmd)
+        assert result==0
+
+
+    def test_subspacejada_spinSZ14(self):
+
+        test_name='Djdqr'    
+        test_cmd = './phist_Dsubspacejada  spinSZ14 1 10 SR 1e-8 25 4 16 32 4 8 0.0 0 1 1'
+
+        result=RunTest(test_name,test_cmd)
+        assert result==0
+

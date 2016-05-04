@@ -3,10 +3,13 @@
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
+
+#include <cstdlib>
+
 #include "phist_normF.h"
+#include "phist_kernels.h"
 #include "phist_macros.h"
 #include "phist_ScalarTraits.hpp"
-#include <stdlib.h>
 
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"

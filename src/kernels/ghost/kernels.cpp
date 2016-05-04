@@ -70,22 +70,29 @@ double get_proc_weight(double force_value)
 
 void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
 {
-  *C = PHIST_SELL_C;
-  *sigma = PHIST_SELL_SIGMA;
-  // if the user sets both to postive values, respect this choice
-  // and do not override it by either flags or the presence of GPU
-  // processes
+  // if the user sets both to postive values in the config file (via CMake), respect this choice
+  // and do not override it by either flags or the presence of GPU processes
+  static int C_stored=PHIST_SELL_C;
+  static int sigma_stored=PHIST_SELL_SIGMA;
+
+  // only determine C and sigma once, then use these values subsequently for all maps/matrices. The
+  // code below requires global reductions and we don't know if a user constructs many different matrices
+  // in the course of a simulation.
+  *C=C_stored;
+  *sigma=sigma_stored;
+
   if (*C>0 && *sigma>0) return;
 
-  if( flags & PHIST_SPARSEMAT_OPT_SINGLESPMVM )
+  if (*C<0)
   {
-    *C = 32;
-    *sigma = 256;
-  }
-  if( flags & PHIST_SPARSEMAT_OPT_BLOCKSPMVM )
-  {
-    *C = 8;
-    *sigma = 32;
+    if( flags & PHIST_SPARSEMAT_OPT_SINGLESPMVM )
+    {
+      *C = 32;
+    }
+    if( flags & PHIST_SPARSEMAT_OPT_BLOCKSPMVM )
+    {
+      *C = 8;
+    }
   }
 
   // override with max(C,32) if anything runs on a CUDA device
@@ -94,19 +101,21 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
   if (gtype==GHOST_TYPE_CUDA)
   {
     *C=std::max(*C,32);
-    *sigma=std::max(256,*sigma);
   }
   // if the user doesn´t set it in CMake or give a flag, it is -1, override with +1 (CRS)
   *C=std::max(*C,+1);
-  *sigma=std::max(*sigma,+1);
+
+  // everyone should have the max value found among MPI processes
+  MPI_Allreduce(MPI_IN_PLACE,C,1,MPI_INT,MPI_MAX,comm);
+
+  if (*sigma<0) *sigma=4*(*C);
 
   // if the user does NOT specify PHIST_SPARSEMAT_REPARTITION, set sigma=1 because the user may
   // not expect us to permute rows locally
   if ( !(flags&PHIST_SPARSEMAT_REPARTITION) ) *sigma=1;
-
-  // everyone should have the max value found among MPI processes
-  MPI_Allreduce(MPI_IN_PLACE,C,1,MPI_INT,MPI_MAX,comm);
-  MPI_Allreduce(MPI_IN_PLACE,sigma,1,MPI_INT,MPI_MAX,comm);
+  
+  C_stored=*C;
+  sigma_stored=*sigma;
 
 }
 
@@ -342,7 +351,7 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
     if (nglob_count!=nglob||(any_empty&&proc_weight!=1.0))
     {
       if (any_empty)          PHIST_SOUT(PHIST_WARNING,"empty partition in map/context\n");
-      if (nglob_count!=nglob) PHIST_SOUT(PHIST_WARNING,"number of nodes " PRgidx " in context does not match given nglob=" PRgidx "\n", nglob_count,nglob);
+      if (nglob_count!=nglob) PHIST_SOUT(PHIST_WARNING,"number of nodes %ld in context does not match given nglob=%ld\n", (int64_t)nglob_count,(int64_t)nglob);
       PHIST_SOUT(PHIST_WARNING,"GHOST did not give a correct context, %s\n",proc_weight==1.0?"aborting!":"retrying...");
       ghost_context_destroy(map->ctx);
       map->ctx=NULL;
@@ -394,8 +403,12 @@ extern "C" void phist_map_get_local_length(phist_const_map_ptr vmap, phist_lidx*
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
   int me;
-  ghost_rank(&me,map->ctx->mpicomm);
-  *nloc=map->ctx->lnrows[me];
+  if (map->ctx) {
+      ghost_rank(&me,map->ctx->mpicomm);
+      *nloc=map->ctx->lnrows[me];
+  } else {
+      *nloc=map->vtraits_template.nrows;
+  }
 }
 
 //!

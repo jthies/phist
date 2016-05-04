@@ -44,6 +44,10 @@ void SUBR(simple_arnoldi)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr
   TYPE(mvec_ptr) v = NULL, av = NULL;
   PHIST_CHK_IERR(SUBR(mvec_create) (&v,  A_op->domain_map, 1, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_create) (&av, A_op->domain_map, 1, iflag), *iflag);
+  
+  // get comm for creating sdMats
+  phist_const_comm_ptr comm=NULL;
+  PHIST_CHK_IERR(phist_map_get_comm(A_op->domain_map,&comm,iflag),*iflag);
 
   // views in H and V
   TYPE(sdMat_ptr) R1 = NULL, R2 = NULL;
@@ -57,6 +61,9 @@ void SUBR(simple_arnoldi)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr
 
   // initialize H
   PHIST_CHK_IERR(SUBR(sdMat_put_value)(H,st::zero(),iflag),*iflag);
+
+  // subdiagonal element (always a 1x1 matrix for block size 1)
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&R1,1,1,comm,iflag),*iflag);
 
 
 // put all iterations in one big compute task; this speeds up the tests with ghost (significantly)
@@ -78,15 +85,20 @@ PHIST_TASK_BEGIN(ComputeTask)
 
     // orthogonalize: Q*R1 = W-VR2
     PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vprev,0,i,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R2,0,i,i,i,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R1,i+1,i+1,i,i,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&R2,i+1,1,comm,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_get_block)(H,R2,0,i,i,i,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_get_block)(H,R1,i+1,i+1,i,i,iflag),*iflag);
     PHIST_CHK_NEG_IERR(SUBR(orthog)(Vprev,av,NULL,R1,R2,3,&rankV,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R2,0,i,i,i,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R1,i+1,i+1,i,i,iflag),*iflag);
 #if PHIST_OUTLEV>=PHIST_DEBUG
     PHIST_DEB("Arnoldi-step %d\n",i);
     PHIST_CHK_IERR(SUBR(sdMat_print)(H,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_print)(R2,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_print)(R1,iflag),*iflag);
 #endif    
+    PHIST_CHK_IERR(SUBR(sdMat_delete)(R2, iflag), *iflag);
+    R2=NULL;
     if( rankV<i+2 )
     {
       PHIST_SOUT(PHIST_INFO,"found invariant subspace in arnoldi, expanding basis with a randomly generated orthogonal vector\n");
@@ -108,7 +120,6 @@ PHIST_TASK_END(iflag)
 
   // delete views
   PHIST_CHK_IERR(SUBR(sdMat_delete)(R1, iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(R2, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vprev, iflag), *iflag);
 
   // delete temp. arrays
