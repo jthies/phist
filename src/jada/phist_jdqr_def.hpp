@@ -124,6 +124,22 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
   // set output format for floating point numbers
   std::cout << std::scientific << std::setprecision(4) << std::setw(8);
   
+  *num_iters=0;
+  *num_eigs=0;
+  res_nrm=1.0e20;// some random large value 
+  phist_const_comm_ptr comm;
+  PHIST_CHK_IERR(phist_map_get_comm(A_op->range_map,&comm,iflag),*iflag);
+  int rank=0;
+  PHIST_CHK_IERR(phist_comm_get_rank(comm,&rank,iflag),*iflag);
+
+#if PHIST_OUTLEV>=PHIST_VERBOSE
+  if (rank==0)
+  {
+    std::cout << "input arguments:\n";
+    phist_jadaOpts_toFile(&opts,stdout);
+  }
+#endif
+
   if (how!=phist_STANDARD)
   {
     PHIST_SOUT(PHIST_ERROR,"only Ritz extraction is implemented (jadaOpts.how=%s), found %s\n",
@@ -132,11 +148,7 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
     return;
   }
 
-  *num_iters=0;
-  *num_eigs=0;
-  res_nrm=1.0e20;// some random large value 
-  phist_const_comm_ptr comm;
-  PHIST_CHK_IERR(phist_map_get_comm(A_op->range_map,&comm,iflag),*iflag);
+  
 
 #ifdef IS_COMPLEX
   const int nv_max=1;
