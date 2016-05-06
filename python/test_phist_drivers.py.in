@@ -46,12 +46,16 @@ def RunTest(test_name,test_cmd):
     
     # check returncode
     if prog.returncode!=0:
-        print('program returned non-zero value ',prog.returncode);
-        print('output:\n',logtext)
+        sys.stdout.write('program returned non-zero value %d',prog.returncode);
+        sys.stdout.write('output:\n')
+        sys.stdout.write(logtext)
+        sys.stdout.flush()
         return prog.returncode
 
     if re.search('^ *(ERROR|WARNING)', logtext, flags=re.MULTILINE):
-        print('Output contains ERRORs and/or WARNINGs:\n', logtext)
+        sys.stdout.write('Output contains ERRORs and/or WARNINGs:\n')
+        sys.stdout.write(logtext)
+        sys.stdout.flush()
         return 1
 
     sys.stdout.flush()
