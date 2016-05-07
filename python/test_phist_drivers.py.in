@@ -78,7 +78,7 @@ class PhistDriversTest(unittest.TestCase):
     def test_subspacejada_spinSZ14(self):
 
         test_name='Djdqr'    
-        test_cmd = './phist_Dsubspacejada  spinSZ14 1 10 SR 1e-8 25 4 16 32 4 8 0.0 0 1 1'
+        test_cmd = './phist_Dsubspacejada  spinSZ14 1 10 SR 1e-8 28 4 16 32 4 8 0.0 0 1 1'
 
         result=RunTest(test_name,test_cmd)
         assert result==0

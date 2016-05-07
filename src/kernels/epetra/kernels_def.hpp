@@ -102,9 +102,14 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
   if (repart)
   {
 #ifdef PHIST_HAVE_ISORROPIA
+// we could do this be calling the function again with the new map, but we'ld also have to renumber the columns
+// then (pass in the column map), so for now we just redistribute the matrix, which may be more expensive, of course.
     Teuchos::RCP<Epetra_Map> newRowMap=Teuchos::null;
-    Teuchos::RCP<Epetra_CrsMatrix> dummy=Teuchos::null;
-    PHIST_CHK_IERR(phist::epetra_internal::repartition(Teuchos::rcp(A,false),newRowMap,dummy,false,iflag),*iflag);
+    Teuchos::RCP<Epetra_CrsMatrix> newMatrix=Teuchos::null;TROET
+    PHIST_CHK_IERR(phist::epetra_internal::repartition(Teuchos::rcp(A,false),newRowMap,newMatrix,true,iflag),*iflag);
+    delete A;
+    A=newMatrix.release().getRawPtr();
+/*
     if (newRowMap==Teuchos::null)
     {
       *iflag=PHIST_BAD_CAST;
@@ -120,7 +125,8 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
     PHIST_SOUT(PHIST_WARNING,"matrix repartitioning with Epetra requires Isorropia (and Zoltan)\n");
 #endif
   }
-return;
+*/
+  return;
 }
 
 extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
