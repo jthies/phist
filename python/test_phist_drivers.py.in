@@ -47,11 +47,12 @@ def RunTest(test_name,test_cmd):
     # check returncode
     if prog.returncode!=0:
         print('program returned non-zero value ',prog.returncode);
-        print('output:\n',logtext)
+        print(logtext)
         return prog.returncode
 
-    if re.search('^ *(ERROR|WARNING)', logtext, flags=re.MULTILINE):
-        print('Output contains ERRORs and/or WARNINGs:\n', logtext)
+    if re.search('^ *(ERROR|WARNING|FAIL)', logtext, flags=re.MULTILINE)
+        print('Output contains FAILs, ERRORs and/or WARNINGs:\n')
+        print(logtext)
         return 1
 
     sys.stdout.flush()
