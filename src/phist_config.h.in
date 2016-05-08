@@ -86,10 +86,11 @@ kernel libs) ?
 #cmakedefine PHIST_HAVE_IFPACK2
 #cmakedefine PHIST_HAVE_MUELU
 #cmakedefine PHIST_HAVE_AMESOS2
-/*
+#if 0
+/* disabled due to issue #193 */
 #cmakedefine PHIST_HAVE_ISORROPIA
 #cmakedefine PHIST_HAVE_ZOLTAN
-*/
+#endif
 /* other TPLs */
 #cmakedefine PHIST_HAVE_MKL
 #cmakedefine PHIST_HAVE_PARMETIS
