@@ -116,11 +116,12 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndMap)(vA,vcomm,newRowMap.get(),maxnne,rowFunPtr,last_arg,iflag),*iflag);
 
     // TODO: print statistics on the partitioning? Isorropia has nice tools for this in examples/
+
 #else
     PHIST_SOUT(PHIST_WARNING,"matrix repartitioning with Epetra requires Isorropia (and Zoltan)\n");
 #endif
   }
-return;
+  return;
 }
 
 extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,

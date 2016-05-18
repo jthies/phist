@@ -49,11 +49,14 @@ def RunTest(test_name,test_cmd):
     # check returncode
     if prog.returncode!=0:
         print('program returned non-zero value ',prog.returncode);
-        print('output:\n',logtext)
+        print(logtext)
+        sys.stdout.flush()
         return prog.returncode
 
-    if re.search('^ *(ERROR|WARNING|FAILURE)', logtext, flags=re.MULTILINE):
-        print('Output contains ERRORs WARNINGs and/or FAILUREs:\n', logtext)
+    if re.search('^ *(ERROR|WARNING|FAIL)', logtext, flags=re.MULTILINE):
+        print('Output contains FAILs, ERRORs and/or WARNINGs:\n')
+        print(logtext)
+        sys.stdout.flush()
         return 1
 
     sys.stdout.flush()
@@ -77,7 +80,7 @@ class PhistDriversTest(unittest.TestCase):
     def test_subspacejada_spinSZ14(self):
 
         test_name='Dsubspacejada'    
-        test_cmd = './phist_Dsubspacejada  spinSZ14 1 10 SR 1e-8 25 4 16 32 4 8 0.0 0 1 1'
+        test_cmd = './phist_Dsubspacejada  spinSZ14 1 10 SR 1e-8 28 4 16 32 4 8 0.0 0 1 1'
 
         result=RunTest(test_name,test_cmd)
         assert result==0
