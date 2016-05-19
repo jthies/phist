@@ -123,16 +123,6 @@ int CP::CP_ADD_ARRAY_INT(const std::string key, const int * const val_array, con
 	arraydata->print();	
 	CpIntArrayMap.insert(std::pair<const std::string, CpArray<int> * >(key, arraydata));	
 
-/*     SAFE_INSERT( doubleArrayData.insert( std::pair<double *, size_t> (val_array, array_size)) );
-     SAFE_INSERT( doubleArray.insert( std::pair<std::string, std::map<double *, size_t> > (key, doubleArrayData)) );
-
-	size_t num_elems = array_size;
-	double * valArrayAsync = new double [num_elems];
-	std::copy(&val_array[0], &val_array[num_elems], valArrayAsync);
-
-	SAFE_INSERT( doubleArrayDataAsync.insert( std::pair<double *, size_t> (valArrayAsync, array_size)) );
-     SAFE_INSERT( doubleArrayAsync.insert( std::pair<std::string, std::map<double * , size_t > > (key, doubleArrayDataAsync)) );
-*/
 	return 0;	
 }
 
@@ -143,17 +133,6 @@ int CP::CP_ADD_ARRAY_DOUBLE(const std::string key, const double * const val_arra
 //	arraydata->print();
 	CpDoubleArrayMap.insert(std::pair<const std::string, CpArray<double> * >(key, arraydata));	
 
-
-    /* SAFE_INSERT( doubleArrayData.insert( std::pair<double *, size_t> (val_array, array_size)) );
-     SAFE_INSERT( doubleArray.insert( std::pair<std::string, std::map<double *, size_t> > (key, doubleArrayData)) );
-
-	size_t num_elems = array_size;
-	double * valArrayAsync = new double [num_elems];
-	std::copy(&val_array[0], &val_array[num_elems], valArrayAsync);
-
-	SAFE_INSERT( doubleArrayDataAsync.insert( std::pair<double *, size_t> (valArrayAsync, array_size)) );
-     SAFE_INSERT( doubleArrayAsync.insert( std::pair<std::string, std::map<double * , size_t > > (key, doubleArrayDataAsync)) );
-*/
 	return 0;	
 }
 
@@ -161,35 +140,36 @@ int CP::CP_ADD_ARRAY_DOUBLE(const std::string key, const double * const val_arra
 
 // ========== MULTI ARRAY CALLS ========== //
 
-int CP::CP_ADD_MULTIARRAY(const std::string key, int ** ptr, size_t nRows, size_t n_cols){
+int CP::CP_ADD_MULTIARRAY(const std::string key, const int * const* ptr, const size_t nRows, const size_t nCols){
 	assert (cpCommitted == false);
-	CP_ADD_MULTIARRAY_INT( key,  ptr, nRows, n_cols);
+	CP_ADD_MULTIARRAY_INT( key,  ptr, nRows, nCols);
 	return 0;
 }
 
-int CP::CP_ADD_MULTIARRAY_INT(const std::string key, int ** ptr, size_t nRows, size_t n_cols){
+int CP::CP_ADD_MULTIARRAY(const std::string key, const double* const* ptr, const size_t nRows, const size_t nCols){
 	assert (cpCommitted == false);
-	printf ("Type of array is int\n");	
+	CP_ADD_MULTIARRAY_DOUBLE( key,  ptr, nRows, nCols);
+	return 0;
+}
+
+int CP::CP_ADD_MULTIARRAY_INT(const std::string key, const int* const* ptr, const size_t nRows, const size_t nCols){
 	
-	//CpMulArray<int> * arraydata = new CpArray<int>[1];
-//	arraydata->ADD(ptr, nRows, n_cols);	
-//	arraydata->Print(ptr);	
+	CpMulArray<int> * arraydata = new CpMulArray<int>[1];
+	arraydata->add(key, ptr, nRows, nCols, cpmpicomm, cpPath);	
+	CpIntMulArrayMap.insert(std::pair<const std::string, CpMulArray<int> * > (key, arraydata));
+
+	arraydata->print();
 	return 0;
 }
 
-int CP::CP_ADD_MULTIARRAY(const std::string key, double ** ptr, size_t nRows, size_t n_cols){
-	assert (cpCommitted == false);
-	CP_ADD_MULTIARRAY_DOUBLE( key,  ptr, nRows, n_cols);
-	return 0;
-}
+int CP::CP_ADD_MULTIARRAY_DOUBLE(const std::string key, const double * const* ptr, const size_t nRows, const size_t nCols){
+	printf ("Adding DOUBLE MULTIARRAY\n");	
 
-int CP::CP_ADD_MULTIARRAY_DOUBLE(const std::string key, double ** ptr, size_t nRows, size_t n_cols){
-	assert (cpCommitted == false);
-	printf ("Type of array is double\n");	
+	CpMulArray<double> * arraydata = new CpMulArray<double>[1];
+	arraydata->add(key, ptr, nRows, nCols, cpmpicomm, cpPath);	
+	CpDoubleMulArrayMap.insert(std::pair<const std::string, CpMulArray<double> * > (key, arraydata));
 	
-//	CpArray<double> * arraydata = new CpArray<double>[1];
-//	arraydata->ADD(ptr, nRows, n_cols);	
-//	arraydata->Print(ptr);	
+	arraydata->print();	
 	return 0;
 }
 
@@ -255,6 +235,23 @@ int CP::updateCp(){
 			it->second->update();
 		}
 	}
+	
+	if(CpIntMulArrayMap.size()!=0){
+		std::map<std::string, CpMulArray<int> * >::iterator it = CpIntMulArrayMap.begin();
+		for (it = CpIntMulArrayMap.begin(); it != CpIntMulArrayMap.end(); ++it){
+			cout << it->first << endl;
+			it->second->update();
+		}
+	}
+
+	if(CpDoubleMulArrayMap.size()!=0){
+		std::map<std::string, CpMulArray<double> * >::iterator it = CpDoubleMulArrayMap.begin();
+		for (it = CpDoubleMulArrayMap.begin(); it != CpDoubleMulArrayMap.end(); ++it){
+			cout << it->first << endl;
+			it->second->update();
+		}
+	}
+
 
 	return 0;
 }
@@ -274,14 +271,14 @@ int CP::writeCp(){
 		std::map<std::string, ghost_densemat *>::iterator itVecAsync = vecAsync.begin();
 		for(itVecAsync = vecAsync.begin(); itVecAsync != vecAsync.end(); ++itVecAsync){
 			char * filename = new char[256];
-			sprintf(filename, "%s/%s-rank%d.cp", cpPath, itVecAsync->first.c_str(), myrank);
+			sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), itVecAsync->first.c_str(), myrank);
 			printf("filename: %s\n", filename);
 			itVecAsync->second->toFile( itVecAsync->second, filename, 0);
 		}
 	}
 	if(intPod.size() != 0 || doublePod.size() !=0 || floatPod.size() != 0 ){
 		char * filename = new char[256];
-		sprintf(filename, "%s/POD-rank%d.cp", cpPath, myrank);
+		sprintf(filename, "%s/POD-rank%d.cp", cpPath.c_str(), myrank);
 		FILE *fp1;
 		if( NULL == (fp1 = fopen(filename, "w+")) ) {
 			fprintf(stderr, "Error: Unable to open file (%s)\n", filename);
@@ -323,7 +320,21 @@ int CP::writeCp(){
 		}
 	}
 
-	
+
+	if(CpIntMulArrayMap.size()!=0){
+		std::map<std::string, CpMulArray<int> * >::iterator it = CpIntMulArrayMap.begin();
+		for (it = CpIntMulArrayMap.begin(); it != CpIntMulArrayMap.end(); ++it){
+			cout << it->first << endl;
+			it->second->write();
+		}
+	}
+	if(CpDoubleMulArrayMap.size()!=0){
+		std::map<std::string, CpMulArray<double> * >::iterator it = CpDoubleMulArrayMap.begin();
+		for (it = CpDoubleMulArrayMap.begin(); it != CpDoubleMulArrayMap.end(); ++it){
+			cout << it->first << endl;
+			it->second->write();
+		}
+	}	
 
 
 	return 0;
@@ -338,7 +349,7 @@ int CP::readCp(){
 		std::map<std::string, ghost_densemat *>::iterator itVec = vec.begin();
 		for(itVecAsync = vecAsync.begin(); itVecAsync != vecAsync.end(); ++itVecAsync, ++itVec){
 			char * filename = new char[256];
-			sprintf(filename, "%s/%s-rank%d.cp", cpPath, itVecAsync->first.c_str(), myrank);
+			sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), itVecAsync->first.c_str(), myrank);
 			printf("%d: filename: %s\n", myrank, filename);
 			itVecAsync->second->fromFile( itVecAsync->second, filename, 0);
 	  		ghost_densemat_init_densemat(itVec->second, itVecAsync->second, 0,0);
@@ -349,7 +360,7 @@ int CP::readCp(){
 	}
 	if(intPod.size() != 0 || doublePod.size() !=0 || floatPod.size() != 0 ){
 			char * cpFile = new char[256];
-			sprintf(cpFile, "%s/POD-rank%d.cp", cpPath, myrank);
+			sprintf(cpFile, "%s/POD-rank%d.cp", cpPath.c_str(), myrank);
 			FILE *fp1;
 			if( NULL == (fp1 = fopen(cpFile, "r")) ) {
 				fprintf(stderr, "Error: Unable to open file (%s)\n", cpFile);
@@ -359,10 +370,11 @@ int CP::readCp(){
 				std::map<const std::string, int>::iterator itAsync = intPodAsync.begin();
 				std::map<const std::string, const int * const>::iterator it = intPod.begin();
 				for(itAsync = intPodAsync.begin(); itAsync != intPodAsync.end(); ++itAsync, ++it){
-					char * tmp = new char[256];
-					fscanf(fp1, "%s %s", itAsync->first, tmp);
-					itAsync->second = atoi(tmp);	
-//					*it->second = itAsync->second;	// TODO: check if it is needed to be read or not
+					char * tmp1 = new char[256];
+					char * tmp2 = new char[256];
+					fscanf(fp1, "%s %s", tmp1 , tmp2);
+					itAsync->second = atoi(tmp2);	
+//					*it->second = itAsync->second;	// TODO: check if it is needed to be read or not TODO: a separeate function could do the trick.
 					printf("%d: read int data is: %s %d \n", myrank, itAsync->first.c_str(), itAsync->second);
 //					printf("it read data is: %s %d \n", it->first.c_str(), *it->second);
 				}
@@ -372,9 +384,10 @@ int CP::readCp(){
 				std::map<const std::string, double>::iterator itAsync = doublePodAsync.begin();
 				std::map<const std::string, const double * const >::iterator it = doublePod.begin();
 				for(itAsync = doublePodAsync.begin(); itAsync != doublePodAsync.end(); ++itAsync, ++it){
-					char * tmp = new char[256];
-					fscanf(fp1, "%s %s", itAsync->first, tmp);
-					itAsync->second = atof(tmp);
+					char * tmp1 = new char[256];
+					char * tmp2 = new char[256];
+					fscanf(fp1, "%s %s", tmp1, tmp2);
+					itAsync->second = atof(tmp1);
 //					*it->second = itAsync->second;	// TODO: check if it is needed to be read or not	
 					printf("%d: read data is: %s %f\n", myrank, itAsync->first.c_str(), itAsync->second);
 //					printf("%d: read d data is it: %s %f \n", myrank, it->first.c_str(), *it->second);
@@ -384,9 +397,10 @@ int CP::readCp(){
 				std::map<const std::string, float>::iterator itAsync = floatPodAsync.begin();
 				std::map<const std::string, const float * const >::iterator it = floatPod.begin();
 				for(itAsync = floatPodAsync.begin(); itAsync != floatPodAsync.end(); ++itAsync, ++it){
-					char * tmp = new char[256];
-				   	fscanf(fp1, "%s %f", itAsync->first, tmp);
-					itAsync->second = atof(tmp);
+					char * tmp1 = new char[256];
+					char * tmp2 = new char[256];
+				   	fscanf(fp1, "%s %s", tmp1, tmp2);
+					itAsync->second = atof(tmp2);
 //					*it->second = itAsync->second;	// TODO: check if it is needed to be read or not
 					printf("read f data is: %s %f \n", itAsync->first.c_str(), itAsync->second);
 				}
@@ -408,7 +422,23 @@ int CP::readCp(){
 			it->second->read();
 		}
 	}
-		
+	
+	if(CpIntMulArrayMap.size()!=0){
+		std::map<std::string, CpMulArray<int> * >::iterator it = CpIntMulArrayMap.begin();
+		for (it = CpIntMulArrayMap.begin(); it != CpIntMulArrayMap.end(); ++it){
+			cout << it->first << endl;
+			it->second->read();
+			it->second->print();
+		}
+	}
+	if(CpDoubleMulArrayMap.size()!=0){
+		std::map<std::string, CpMulArray<double> * >::iterator it = CpDoubleMulArrayMap.begin();
+		for (it = CpDoubleMulArrayMap.begin(); it != CpDoubleMulArrayMap.end(); ++it){
+			cout << it->first << endl;
+			it->second->read();
+		}
+	}	
+
 	return 0;
 }
 

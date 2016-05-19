@@ -94,7 +94,7 @@ int CpArray<T>::write(){
 	int myrank = -1;
 	MPI_Comm_rank(cpMpiComm, &myrank);			// TODO: should be FT_comm
 	char * filename = new char[256];
-	sprintf(filename, "%s/%s-rank%d.cp", cpPath, name, myrank);
+	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
 
 	FILE * fp;
 	if( NULL == (fp = fopen(filename, "w+")) ) {
@@ -117,7 +117,7 @@ int CpArray<T>::read(){
 	int myrank = -1;
 	MPI_Comm_rank(cpMpiComm, &myrank);			// TODO: should be FT_comm
 	char * filename = new char[256];
-	sprintf(filename, "%s/%s-rank%d.cp", cpPath, name, myrank);
+	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
 
 	FILE * fp;
 	if( NULL == (fp = fopen(filename, "r")) ) {
@@ -141,7 +141,7 @@ class CpMulArray
 public:
 		CpMulArray();
 		~CpMulArray();
-		int add(const std::string array_name, const T * const item, const size_t rows , const size_t cols, const MPI_Comm FtComm, const std::string cpPath_);
+		int add(const std::string array_name, const T* const* item, const size_t rows , const size_t cols, const MPI_Comm FtComm, const std::string cpPath_);
 		int print();
 		int update();
 		int write();
@@ -152,7 +152,7 @@ private:
 		std::string name;
 		MPI_Comm cpMpiComm;
 		T ** array;
-		const T ** array_ptr;
+		const T * const* arrayPtr;
 		size_t nRows;
 		size_t nCols;
 		int ToCpCol;			// this should be read as ENUM. 0-N= specified columns, -1 = ALL, -2 = rotational 
@@ -177,14 +177,14 @@ CpMulArray<T>::~CpMulArray()
 }
 
 template <class T>
-int CpMulArray<T>::add(const std::string array_name, const T * const item, const size_t rows , const size_t cols, const MPI_Comm FtComm, const std::string cpPath_)
+int CpMulArray<T>::add(const std::string array_name, const T* const* item, const size_t rows , const size_t cols, const MPI_Comm FtComm, const std::string cpPath_)
 {
 	cpPath = cpPath_;
 	name = array_name;
 	nRows = rows;	
 	nCols = cols;
 	cpMpiComm = FtComm;
-		
+	arrayPtr = item;	
 
 	array = new T*[nCols];
 	for(size_t i = 0; i < nCols; ++i){
@@ -221,21 +221,25 @@ int CpMulArray<T>::update(){
 }
 
 
-/*
+
 template <class T>
 int CpMulArray<T>::write(){
 	cout << "writing CpMulArray file now " << name << endl ;
 	int myrank = -1;
 	MPI_Comm_rank(cpMpiComm, &myrank);			// TODO: should be FT_comm
 	char * filename = new char[256];
-	sprintf(filename, "%s/%s-rank%d.cp", cpPath, name, myrank);
+	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
 
 	FILE * fp;
 	if( NULL == (fp = fopen(filename, "w+")) ) {
 		fprintf(stderr, "Error: Unable to open file (%s)\n", filename);
 		return -1;
 	}
-	fwrite(array, sizeof(T), nRows, fp);
+	// TODO: 	write should be done according to the write-option given by the user. about which column to write
+	for(int i = 0; i < nCols ; ++i){
+		fwrite(&array[i][0], sizeof(T), nRows, fp);
+	}
+	//fwrite(&array[0][0], sizeof(T), nRows*nCols, fp);
 	fclose(fp);
 
 	return 0;
@@ -244,27 +248,26 @@ int CpMulArray<T>::write(){
 template <class T>
 int CpMulArray<T>::read(){
 	cout << "read CpMulArray file now" << name << endl;
-	for(int i = 0; i< nRows; ++i){
-		cout << array[i] << endl;
-	}
-
 	int myrank = -1;
 	MPI_Comm_rank(cpMpiComm, &myrank);			// TODO: should be FT_comm
 	char * filename = new char[256];
-	sprintf(filename, "%s/%s-rank%d.cp", cpPath, name, myrank);
+	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
 
 	FILE * fp;
 	if( NULL == (fp = fopen(filename, "r")) ) {
 		fprintf(stderr, "Error: Unable to open file (%s)\n", filename);
 		return -1;
 	}
-	fread( array, sizeof(T), nRows, fp );
+	// TODO: 	read should be done according to the write-option given by the user. about which column to write
+	for(int i=0; i< nCols; ++i){
+		fread( &array[i][0], sizeof(T), nRows, fp );
+	}
 	fclose(fp);
 
 	return 0;
 }
 
-*/
+
 
 
 
@@ -293,6 +296,8 @@ private:
 
 	std::map<const std::string, CpArray<int> * > CpIntArrayMap;
 	std::map<const std::string, CpArray<double> * > CpDoubleArrayMap;
+	std::map<const std::string, CpMulArray<int> * > CpIntMulArrayMap;
+	std::map<const std::string, CpMulArray<double> * > CpDoubleMulArrayMap;
 
 	int CP_ADD_POD_INT		(const std::string key, const int * const value);
 	int CP_ADD_POD_DOUBLE	(const std::string key, const double * const value); 
@@ -301,8 +306,8 @@ private:
 	int CP_ADD_ARRAY_INT(const std::string key, const int * const val_array, const size_t array_size );
 	int CP_ADD_ARRAY_DOUBLE(const std::string key,  const double * const val_array, const size_t array_size );
 
-	int CP_ADD_MULTIARRAY_INT	(const std::string key, int ** ptr, size_t n_rows, size_t n_cols);
-	int CP_ADD_MULTIARRAY_DOUBLE(const std::string key, double ** ptr, size_t n_rows, size_t n_cols);
+	int CP_ADD_MULTIARRAY_INT	(const std::string key, const int* const* ptr, const size_t n_rows, const size_t n_cols);
+	int CP_ADD_MULTIARRAY_DOUBLE(const std::string key, const double* const* ptr, const size_t n_rows, const size_t n_cols);
 
 public:
 	CP();
@@ -321,8 +326,8 @@ public:
 	int CP_ADD_ARRAY(const std::string key,  const int 	* const val_array, const size_t array_size);
 	int CP_ADD_ARRAY(const std::string key,  const double * const val_array, const size_t array_size);
 
-	int CP_ADD_MULTIARRAY(const std::string key, int ** ptr,  size_t n_rows,  size_t n_cols);
-	int CP_ADD_MULTIARRAY(const std::string key, double ** ptr,  size_t n_rows,  size_t n_cols);
+	int CP_ADD_MULTIARRAY(const std::string key, const int* const* ptr,  const size_t n_rows,  const size_t n_cols);
+	int CP_ADD_MULTIARRAY(const std::string key, const double* const* ptr,  const size_t n_rows,  const size_t n_cols);
 
 	int updateCp();	// this function should update the values of CP
 	int writeCp();		// this function should write the updated CP
