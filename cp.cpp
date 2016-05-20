@@ -115,6 +115,12 @@ int CP::CP_ADD_ARRAY(const std::string key, const double * const val_array, cons
 	return 0;
 }
 
+int CP::CP_ADD_ARRAY(const std::string key, const float * const val_array, const size_t array_size){
+	assert (cpCommitted == false);
+	CP_ADD_ARRAY_FLOAT(key, val_array, array_size);
+	return 0;
+}
+
 int CP::CP_ADD_ARRAY_INT(const std::string key, const int * const val_array, const size_t array_size ){
 	printf("Type of array is int\n");
 
@@ -136,7 +142,15 @@ int CP::CP_ADD_ARRAY_DOUBLE(const std::string key, const double * const val_arra
 	return 0;	
 }
 
+int CP::CP_ADD_ARRAY_FLOAT(const std::string key, const float * const val_array, const size_t array_size ){
+	printf("Type of array is float\n");
+	CpArray<float> * arraydata = new CpArray<float>[1];
+	arraydata->add(key, val_array, array_size , cpmpicomm, cpPath);
+//	arraydata->print();
+	CpFloatArrayMap.insert(std::pair<const std::string, CpArray<float> * >(key, arraydata));	
 
+	return 0;	
+}
 
 // ========== MULTI ARRAY CALLS ========== //
 
@@ -149,6 +163,12 @@ int CP::CP_ADD_MULTIARRAY(const std::string key, const int * const* ptr, const s
 int CP::CP_ADD_MULTIARRAY(const std::string key, const double* const* ptr, const size_t nRows, const size_t nCols, const int toCpCol_){
 	assert (cpCommitted == false);
 	CP_ADD_MULTIARRAY_DOUBLE( key,  ptr, nRows, nCols, toCpCol_);
+	return 0;
+}
+
+int CP::CP_ADD_MULTIARRAY(const std::string key, const float* const* ptr, const size_t nRows, const size_t nCols, const int toCpCol_){
+	assert (cpCommitted == false);
+	CP_ADD_MULTIARRAY_FLOAT( key,  ptr, nRows, nCols, toCpCol_);
 	return 0;
 }
 
@@ -174,6 +194,16 @@ int CP::CP_ADD_MULTIARRAY_DOUBLE(const std::string key, const double * const* pt
 }
 
 
+int CP::CP_ADD_MULTIARRAY_FLOAT(const std::string key, const float * const* ptr, const size_t nRows, const size_t nCols, const int toCpCol_){
+	printf ("Adding FLOAT MULTIARRAY\n");	
+
+	CpMulArray<float> * arraydata = new CpMulArray<float>[1];
+	arraydata->add(key, ptr, nRows, nCols, cpmpicomm, cpPath, toCpCol_);	
+	CpFloatMulArrayMap.insert(std::pair<const std::string, CpMulArray<float> * > (key, arraydata));
+	
+	arraydata->print();	
+	return 0;
+}
 
 
 // ========== UPDATE, WRITE, READ CALLS ========== // 
@@ -235,7 +265,15 @@ int CP::updateCp(){
 			it->second->update();
 		}
 	}
-	
+
+	if(CpFloatArrayMap.size()!=0){
+		std::map<std::string, CpArray<float> * >::iterator it = CpFloatArrayMap.begin();
+		for (it = CpFloatArrayMap.begin(); it != CpFloatArrayMap.end(); ++it){
+			cout << it->first << endl;
+			it->second->update();
+		}
+	}
+
 	if(CpIntMulArrayMap.size()!=0){
 		std::map<std::string, CpMulArray<int> * >::iterator it = CpIntMulArrayMap.begin();
 		for (it = CpIntMulArrayMap.begin(); it != CpIntMulArrayMap.end(); ++it){
@@ -251,7 +289,13 @@ int CP::updateCp(){
 			it->second->update();
 		}
 	}
-
+	if(CpFloatMulArrayMap.size()!=0){
+		std::map<std::string, CpMulArray<float> * >::iterator it = CpFloatMulArrayMap.begin();
+		for (it = CpFloatMulArrayMap.begin(); it != CpFloatMulArrayMap.end(); ++it){
+			cout << it->first << endl;
+			it->second->update();
+		}
+	}
 
 	return 0;
 }
@@ -319,7 +363,13 @@ int CP::writeCp(){
 			it->second->write();
 		}
 	}
-
+	if(CpFloatArrayMap.size()!=0){
+		std::map<std::string, CpArray<float> * >::iterator it = CpFloatArrayMap.begin();
+		for (it = CpFloatArrayMap.begin(); it != CpFloatArrayMap.end(); ++it){
+			cout << it->first << endl;
+			it->second->write();
+		}
+	}
 
 	if(CpIntMulArrayMap.size()!=0){
 		std::map<std::string, CpMulArray<int> * >::iterator it = CpIntMulArrayMap.begin();
@@ -335,7 +385,13 @@ int CP::writeCp(){
 			it->second->write();
 		}
 	}	
-
+	if(CpFloatMulArrayMap.size()!=0){
+		std::map<std::string, CpMulArray<float> * >::iterator it = CpFloatMulArrayMap.begin();
+		for (it = CpFloatMulArrayMap.begin(); it != CpFloatMulArrayMap.end(); ++it){
+			cout << it->first << endl;
+			it->second->write();
+		}
+	}
 
 	return 0;
 }
@@ -422,7 +478,14 @@ int CP::readCp(){
 			it->second->read();
 		}
 	}
-	
+	if(CpFloatArrayMap.size()!=0){
+		std::map<std::string, CpArray<float> * >::iterator it = CpFloatArrayMap.begin();
+		for (it = CpFloatArrayMap.begin(); it != CpFloatArrayMap.end(); ++it){
+			cout << it->first << endl;
+			it->second->read();
+		}
+	}
+
 	if(CpIntMulArrayMap.size()!=0){
 		std::map<std::string, CpMulArray<int> * >::iterator it = CpIntMulArrayMap.begin();
 		for (it = CpIntMulArrayMap.begin(); it != CpIntMulArrayMap.end(); ++it){
@@ -439,6 +502,14 @@ int CP::readCp(){
 			it->second->print();
 		}
 	}	
+	if(CpFloatMulArrayMap.size()!=0){
+		std::map<std::string, CpMulArray<float> * >::iterator it = CpFloatMulArrayMap.begin();
+		for (it = CpFloatMulArrayMap.begin(); it != CpFloatMulArrayMap.end(); ++it){
+			cout << it->first << endl;
+			it->second->read();
+			it->second->print();
+		}
+	}
 
 	return 0;
 }
