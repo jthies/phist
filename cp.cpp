@@ -140,33 +140,33 @@ int CP::CP_ADD_ARRAY_DOUBLE(const std::string key, const double * const val_arra
 
 // ========== MULTI ARRAY CALLS ========== //
 
-int CP::CP_ADD_MULTIARRAY(const std::string key, const int * const* ptr, const size_t nRows, const size_t nCols){
+int CP::CP_ADD_MULTIARRAY(const std::string key, const int * const* ptr, const size_t nRows, const size_t nCols, const int toCpCol_ ){
 	assert (cpCommitted == false);
-	CP_ADD_MULTIARRAY_INT( key,  ptr, nRows, nCols);
+	CP_ADD_MULTIARRAY_INT( key,  ptr, nRows, nCols, toCpCol_);
 	return 0;
 }
 
-int CP::CP_ADD_MULTIARRAY(const std::string key, const double* const* ptr, const size_t nRows, const size_t nCols){
+int CP::CP_ADD_MULTIARRAY(const std::string key, const double* const* ptr, const size_t nRows, const size_t nCols, const int toCpCol_){
 	assert (cpCommitted == false);
-	CP_ADD_MULTIARRAY_DOUBLE( key,  ptr, nRows, nCols);
+	CP_ADD_MULTIARRAY_DOUBLE( key,  ptr, nRows, nCols, toCpCol_);
 	return 0;
 }
 
-int CP::CP_ADD_MULTIARRAY_INT(const std::string key, const int* const* ptr, const size_t nRows, const size_t nCols){
+int CP::CP_ADD_MULTIARRAY_INT(const std::string key, const int* const* ptr, const size_t nRows, const size_t nCols, const int toCpCol_){
 	
 	CpMulArray<int> * arraydata = new CpMulArray<int>[1];
-	arraydata->add(key, ptr, nRows, nCols, cpmpicomm, cpPath);	
+	arraydata->add(key, ptr, nRows, nCols, cpmpicomm, cpPath, toCpCol_);	
 	CpIntMulArrayMap.insert(std::pair<const std::string, CpMulArray<int> * > (key, arraydata));
 
 	arraydata->print();
 	return 0;
 }
 
-int CP::CP_ADD_MULTIARRAY_DOUBLE(const std::string key, const double * const* ptr, const size_t nRows, const size_t nCols){
+int CP::CP_ADD_MULTIARRAY_DOUBLE(const std::string key, const double * const* ptr, const size_t nRows, const size_t nCols, const int toCpCol_){
 	printf ("Adding DOUBLE MULTIARRAY\n");	
 
 	CpMulArray<double> * arraydata = new CpMulArray<double>[1];
-	arraydata->add(key, ptr, nRows, nCols, cpmpicomm, cpPath);	
+	arraydata->add(key, ptr, nRows, nCols, cpmpicomm, cpPath, toCpCol_);	
 	CpDoubleMulArrayMap.insert(std::pair<const std::string, CpMulArray<double> * > (key, arraydata));
 	
 	arraydata->print();	
@@ -436,6 +436,7 @@ int CP::readCp(){
 		for (it = CpDoubleMulArrayMap.begin(); it != CpDoubleMulArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->read();
+			it->second->print();
 		}
 	}	
 

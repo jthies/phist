@@ -141,7 +141,7 @@ class CpMulArray
 public:
 		CpMulArray();
 		~CpMulArray();
-		int add(const std::string array_name, const T* const* item, const size_t rows , const size_t cols, const MPI_Comm FtComm, const std::string cpPath_);
+		int add(const std::string array_name, const T* const* item, const size_t rows , const size_t cols, const MPI_Comm FtComm, const std::string cpPath_, const int toCpCol_);
 		int print();
 		int update();
 		int write();
@@ -155,7 +155,7 @@ private:
 		const T * const* arrayPtr;
 		size_t nRows;
 		size_t nCols;
-		int ToCpCol;			// this should be read as ENUM. 0-N= specified columns, -1 = ALL, -2 = rotational 
+		int toCpCol;			// this should be read as ENUM. 0-N= specified columns, -1 = ALL, -2 = CYCLIC, starting with 0 
 };
 
 template <class T>
@@ -167,7 +167,7 @@ CpMulArray<T>::CpMulArray()
 	nRows = 0;
 	nCols = 0;
 	array = NULL;
-	ToCpCol = ALL;
+	toCpCol = ALL;
 }
 
 template <class T>
@@ -177,7 +177,7 @@ CpMulArray<T>::~CpMulArray()
 }
 
 template <class T>
-int CpMulArray<T>::add(const std::string array_name, const T* const* item, const size_t rows , const size_t cols, const MPI_Comm FtComm, const std::string cpPath_)
+int CpMulArray<T>::add(const std::string array_name, const T* const* item, const size_t rows , const size_t cols, const MPI_Comm FtComm, const std::string cpPath_, const int toCpCol_)
 {
 	cpPath = cpPath_;
 	name = array_name;
@@ -195,7 +195,7 @@ int CpMulArray<T>::add(const std::string array_name, const T* const* item, const
 			array[i][j] = item[i][j];
 		}
 	}
-
+	toCpCol = toCpCol_;
 	return 0;
 }
 
@@ -236,10 +236,27 @@ int CpMulArray<T>::write(){
 		return -1;
 	}
 	// TODO: 	write should be done according to the write-option given by the user. about which column to write
-	for(int i = 0; i < nCols ; ++i){
-		fwrite(&array[i][0], sizeof(T), nRows, fp);
+	
+	if(toCpCol == ALL){
+		cout << "writing all MULTIVEC" << endl;
+		for(int i = 0; i < nCols ; ++i){
+			fwrite(&array[i][0], sizeof(T), nRows, fp);
+		}
 	}
-	//fwrite(&array[0][0], sizeof(T), nRows*nCols, fp);
+	if(toCpCol == CYCLIC){ 
+		static size_t CpCol = 0 ;				// this counter is responsible for determining which Col is to be checkpoinited in the cyclic case. 	
+		cout << "writing CpCol:" << CpCol << endl;
+		fwrite(&array[CpCol][0], sizeof(T), nRows, fp);
+		CpCol ++;
+		if(CpCol == nCols){
+			CpCol = 0;
+		}
+	}
+	if(toCpCol >= 0 ){
+		cout << "writing toCpCol" << toCpCol<< endl;
+		fwrite(&array[toCpCol][0], sizeof(T), nRows, fp);	
+	}
+	
 	fclose(fp);
 
 	return 0;
@@ -306,8 +323,8 @@ private:
 	int CP_ADD_ARRAY_INT(const std::string key, const int * const val_array, const size_t array_size );
 	int CP_ADD_ARRAY_DOUBLE(const std::string key,  const double * const val_array, const size_t array_size );
 
-	int CP_ADD_MULTIARRAY_INT	(const std::string key, const int* const* ptr, const size_t n_rows, const size_t n_cols);
-	int CP_ADD_MULTIARRAY_DOUBLE(const std::string key, const double* const* ptr, const size_t n_rows, const size_t n_cols);
+	int CP_ADD_MULTIARRAY_INT	(const std::string key, const int* const* ptr, const size_t n_rows, const size_t n_cols, const int toCpCol_ );
+	int CP_ADD_MULTIARRAY_DOUBLE(const std::string key, const double* const* ptr, const size_t n_rows, const size_t n_cols, const int toCpCol_ );
 
 public:
 	CP();
@@ -326,8 +343,8 @@ public:
 	int CP_ADD_ARRAY(const std::string key,  const int 	* const val_array, const size_t array_size);
 	int CP_ADD_ARRAY(const std::string key,  const double * const val_array, const size_t array_size);
 
-	int CP_ADD_MULTIARRAY(const std::string key, const int* const* ptr,  const size_t n_rows,  const size_t n_cols);
-	int CP_ADD_MULTIARRAY(const std::string key, const double* const* ptr,  const size_t n_rows,  const size_t n_cols);
+	int CP_ADD_MULTIARRAY(const std::string key, const int* const* ptr,  const size_t n_rows,  const size_t n_cols, const int toCpCol_ = ALL);
+	int CP_ADD_MULTIARRAY(const std::string key, const double* const* ptr,  const size_t n_rows,  const size_t n_cols, const int toCpCol_ = ALL);
 
 	int updateCp();	// this function should update the values of CP
 	int writeCp();		// this function should write the updated CP
