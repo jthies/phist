@@ -73,8 +73,8 @@ PHIST_TASK_BEGIN(ComputeTask)
         mtraits.flags = flags;
         char* cfname=const_cast<char*>(filename);
 // TODO - check ghost return codes everywhere like this
-  PHIST_CHK_GERR(ghost_context_create(&ctx,0,0,
-        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_MM,*comm,get_proc_weight()),*iflag);
+  PHIST_CHK_IERR(phist::ghost_internal::context_create(&ctx,0,0,
+        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_MM,*comm,get_proc_weight(),iflag),*iflag);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
   PHIST_CHK_GERR(mat->fromMM(mat,cfname),*iflag);
   char *str;
@@ -135,8 +135,8 @@ PHIST_TASK_BEGIN(ComputeTask)
         mtraits.flags = flags;
         char* cfname=const_cast<char*>(filename);
 // TODO - check ghost return codes everywhere like this
-  PHIST_CHK_GERR(ghost_context_create(&ctx,0,0,
-        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_FILE,*comm,get_proc_weight()),*iflag);
+  PHIST_CHK_IERR(phist::ghost_internal::context_create(&ctx,0,0,
+        GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_FILE,*comm,get_proc_weight(),iflag),*iflag);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
   PHIST_CHK_GERR(mat->fromFile(mat,cfname),*iflag);
 //#if PHIST_OUTLEV >= PHIST_VERBOSE
@@ -1950,8 +1950,8 @@ PHIST_TASK_BEGIN(ComputeTask)
         // if the user allows repartitioning, ask GHOST to do a distribution of the rows based on
         // the memory bandwidth measured per MPI rank. Otherwise, use the same number of rows on 
         // each MPI process.
-  PHIST_CHK_GERR(ghost_context_create(&ctx,nrows,ncols,
-        GHOST_CONTEXT_DEFAULT,NULL,GHOST_SPARSEMAT_SRC_FUNC,*comm,get_proc_weight()),*iflag);
+  PHIST_CHK_IERR(phist::ghost_internal::context_create(&ctx,nrows,ncols,
+        GHOST_CONTEXT_DEFAULT,NULL,GHOST_SPARSEMAT_SRC_FUNC,*comm,get_proc_weight(),iflag),*iflag);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
 
   ghost_sparsemat_src_rowfunc src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
