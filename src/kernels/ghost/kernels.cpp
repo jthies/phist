@@ -209,7 +209,8 @@ int get_perm_flag(int outlev)
         for (int i=0;i<nproc;i++)
         {
           any_empty|=((*ctx)->lnrows[i]<=0);
-          nglob_count+=(*ctx)->lnrows[i];
+          // do not count/compare number of rows if none was given
+          if (gnrows!=0) nglob_count+=(*ctx)->lnrows[i];
         }
         if (nglob_count!=gnrows||(any_empty&&proc_weight!=1.0))
         {
