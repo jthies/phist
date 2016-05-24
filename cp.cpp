@@ -39,25 +39,24 @@ void CP::commit(){
 
 
 // ========== GHOST-VECTOR CALLS ========== //
-
-int CP::CP_ADD_VEC(std::string key, ghost_densemat * value){
-	assert (cpCommitted == false)	;
-	SAFE_INSERT( vec.insert( std::pair<std::string, ghost_densemat *>(key, value)) );
-
-	// === make async copy of vector === 
-	ghost_densemat_create(&vector_async, value->context, value->traits);
-	ghost_densemat_init_densemat(vector_async, value, 0, 0);
-	SAFE_INSERT( vecAsync.insert( std::pair<std::string, ghost_densemat * > (key, vector_async)) );
-	return 0;
-}
-
-
-int CP::CP_ADD_MULTI_VEC(const std::string key, ghost_densemat ** value, int num_vecs){
+int CP::CP_ADD_GHOST_DENSEMAT(const std::string key, ghost_densemat * const value){	
 	assert (cpCommitted == false);
-
+	CpGhostDenseMat * cpdata = new CpGhostDenseMat[1];
+	cpdata->add(key, value , cpmpicomm, cpPath);
+	cpGhostDenseMat.insert(std::pair<const std::string, CpGhostDenseMat * >(key, cpdata));	
 	return 0;
 }
 
+
+int CP::CP_ADD_GHOST_DENSEMAT_ARRAY(const std::string key, ghost_densemat ** const value, const int nVecs, const int toCpVec_)
+{
+	assert (cpCommitted == false);
+	CpGhostDenseMatArray * cpdata= new CpGhostDenseMatArray[1];
+	cpdata->add(key, value , nVecs, cpmpicomm, cpPath, toCpVec_);
+	cpGhostDenseMatArray.insert( std::pair< const std::string, CpGhostDenseMatArray * >(key, cpdata));
+	return 0;
+}
+	
 
 // ========== POD CALLS ========== //
 
@@ -125,9 +124,9 @@ int CP::CP_ADD_ARRAY_INT(const std::string key, const int * const val_array, con
 	printf("Type of array is int\n");
 
 	CpArray<int> * arraydata = new CpArray<int>[1];
-	arraydata->add(key, val_array, array_size, cpmpicomm, cpPath );	
+	arraydata->add(key, val_array, array_size, cpmpicomm, cpPath );		arraydata->print();	
 	arraydata->print();	
-	CpIntArrayMap.insert(std::pair<const std::string, CpArray<int> * >(key, arraydata));	
+	cpIntArrayMap.insert(std::pair<const std::string, CpArray<int> * >(key, arraydata));	
 
 	return 0;	
 }
@@ -137,7 +136,7 @@ int CP::CP_ADD_ARRAY_DOUBLE(const std::string key, const double * const val_arra
 	CpArray<double> * arraydata = new CpArray<double>[1];
 	arraydata->add(key, val_array, array_size , cpmpicomm, cpPath);
 //	arraydata->print();
-	CpDoubleArrayMap.insert(std::pair<const std::string, CpArray<double> * >(key, arraydata));	
+	cpDoubleArrayMap.insert(std::pair<const std::string, CpArray<double> * >(key, arraydata));	
 
 	return 0;	
 }
@@ -147,7 +146,7 @@ int CP::CP_ADD_ARRAY_FLOAT(const std::string key, const float * const val_array,
 	CpArray<float> * arraydata = new CpArray<float>[1];
 	arraydata->add(key, val_array, array_size , cpmpicomm, cpPath);
 //	arraydata->print();
-	CpFloatArrayMap.insert(std::pair<const std::string, CpArray<float> * >(key, arraydata));	
+	cpFloatArrayMap.insert(std::pair<const std::string, CpArray<float> * >(key, arraydata));	
 
 	return 0;	
 }
@@ -176,7 +175,7 @@ int CP::CP_ADD_MULTIARRAY_INT(const std::string key, const int* const* ptr, cons
 	
 	CpMulArray<int> * arraydata = new CpMulArray<int>[1];
 	arraydata->add(key, ptr, nRows, nCols, cpmpicomm, cpPath, toCpCol_);	
-	CpIntMulArrayMap.insert(std::pair<const std::string, CpMulArray<int> * > (key, arraydata));
+	cpIntMulArrayMap.insert(std::pair<const std::string, CpMulArray<int> * > (key, arraydata));
 
 	arraydata->print();
 	return 0;
@@ -187,7 +186,7 @@ int CP::CP_ADD_MULTIARRAY_DOUBLE(const std::string key, const double * const* pt
 
 	CpMulArray<double> * arraydata = new CpMulArray<double>[1];
 	arraydata->add(key, ptr, nRows, nCols, cpmpicomm, cpPath, toCpCol_);	
-	CpDoubleMulArrayMap.insert(std::pair<const std::string, CpMulArray<double> * > (key, arraydata));
+	cpDoubleMulArrayMap.insert(std::pair<const std::string, CpMulArray<double> * > (key, arraydata));
 	
 	arraydata->print();	
 	return 0;
@@ -199,7 +198,7 @@ int CP::CP_ADD_MULTIARRAY_FLOAT(const std::string key, const float * const* ptr,
 
 	CpMulArray<float> * arraydata = new CpMulArray<float>[1];
 	arraydata->add(key, ptr, nRows, nCols, cpmpicomm, cpPath, toCpCol_);	
-	CpFloatMulArrayMap.insert(std::pair<const std::string, CpMulArray<float> * > (key, arraydata));
+	cpFloatMulArrayMap.insert(std::pair<const std::string, CpMulArray<float> * > (key, arraydata));
 	
 	arraydata->print();	
 	return 0;
@@ -237,61 +236,63 @@ int CP::updateCp(){
 		}
 	}
 
-	if(vec.size()!=0){
-		std::map<std::string, ghost_densemat *>::iterator it = vec.begin();
-		std::map<std::string, ghost_densemat *>::iterator itAsync = vecAsync.begin();
-		for(it = vec.begin() ; it != vec.end() ; ++it, ++itAsync){
-	  		ghost_densemat_init_densemat(itAsync->second, it->second, 0,0); 
-			usleep(100000);
-			std::cout << "vec: vec is updated" << itAsync->first << std::endl;
-//			char * vecstr;
-//			ghost_densemat_string(&vecstr, itAsync->second);
-//			printf("y: \n%s\n", vecstr);	
+	// ===== GHOST DENSE MAT CALLS ===== // 
+	if(cpGhostDenseMat.size()!=0){
+		std::map<std::string, CpGhostDenseMat * >::iterator it = cpGhostDenseMat.begin();
+		for(it = cpGhostDenseMat.begin(); it != cpGhostDenseMat.end(); ++it){
+			it->second->update();
+		}
+	}
+	if(cpGhostDenseMatArray.size()!=0){	
+		std::map<const std::string, CpGhostDenseMatArray * >::iterator it = cpGhostDenseMatArray.begin();
+		for(it = cpGhostDenseMatArray.begin(); it != cpGhostDenseMatArray.end(); ++it){
+			it->second->update();
 		}
 	}
 
-	if(CpIntArrayMap.size()!=0){
-		std::map<std::string, CpArray<int> * >::iterator it = CpIntArrayMap.begin();
-		for (it = CpIntArrayMap.begin(); it != CpIntArrayMap.end(); ++it){
+	// ===== ARRAY CALLS ===== // 
+	if(cpIntArrayMap.size()!=0){
+		std::map<std::string, CpArray<int> * >::iterator it = cpIntArrayMap.begin();
+		for (it = cpIntArrayMap.begin(); it != cpIntArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->update();
 		}
 	}
 
-	if(CpDoubleArrayMap.size()!=0){
-		std::map<std::string, CpArray<double> * >::iterator it = CpDoubleArrayMap.begin();
-		for (it = CpDoubleArrayMap.begin(); it != CpDoubleArrayMap.end(); ++it){
+	if(cpDoubleArrayMap.size()!=0){
+		std::map<std::string, CpArray<double> * >::iterator it = cpDoubleArrayMap.begin();
+		for (it = cpDoubleArrayMap.begin(); it != cpDoubleArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->update();
 		}
 	}
 
-	if(CpFloatArrayMap.size()!=0){
-		std::map<std::string, CpArray<float> * >::iterator it = CpFloatArrayMap.begin();
-		for (it = CpFloatArrayMap.begin(); it != CpFloatArrayMap.end(); ++it){
+	if(cpFloatArrayMap.size()!=0){
+		std::map<std::string, CpArray<float> * >::iterator it = cpFloatArrayMap.begin();
+		for (it = cpFloatArrayMap.begin(); it != cpFloatArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->update();
 		}
 	}
 
-	if(CpIntMulArrayMap.size()!=0){
-		std::map<std::string, CpMulArray<int> * >::iterator it = CpIntMulArrayMap.begin();
-		for (it = CpIntMulArrayMap.begin(); it != CpIntMulArrayMap.end(); ++it){
+	if(cpIntMulArrayMap.size()!=0){
+		std::map<std::string, CpMulArray<int> * >::iterator it = cpIntMulArrayMap.begin();
+		for (it = cpIntMulArrayMap.begin(); it != cpIntMulArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->update();
 		}
 	}
 
-	if(CpDoubleMulArrayMap.size()!=0){
-		std::map<std::string, CpMulArray<double> * >::iterator it = CpDoubleMulArrayMap.begin();
-		for (it = CpDoubleMulArrayMap.begin(); it != CpDoubleMulArrayMap.end(); ++it){
+	if(cpDoubleMulArrayMap.size()!=0){
+		std::map<std::string, CpMulArray<double> * >::iterator it = cpDoubleMulArrayMap.begin();
+		for (it = cpDoubleMulArrayMap.begin(); it != cpDoubleMulArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->update();
 		}
 	}
-	if(CpFloatMulArrayMap.size()!=0){
-		std::map<std::string, CpMulArray<float> * >::iterator it = CpFloatMulArrayMap.begin();
-		for (it = CpFloatMulArrayMap.begin(); it != CpFloatMulArrayMap.end(); ++it){
+	if(cpFloatMulArrayMap.size()!=0){
+		std::map<std::string, CpMulArray<float> * >::iterator it = cpFloatMulArrayMap.begin();
+		for (it = cpFloatMulArrayMap.begin(); it != cpFloatMulArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->update();
 		}
@@ -311,15 +312,23 @@ int CP::writeCp(){
     		fprintf(stderr, "Error: ckeckpoint path is NULL\n");
 		return -1;
     }	
-	if(vecAsync.size()!=0){	
-		std::map<std::string, ghost_densemat *>::iterator itVecAsync = vecAsync.begin();
-		for(itVecAsync = vecAsync.begin(); itVecAsync != vecAsync.end(); ++itVecAsync){
-			char * filename = new char[256];
-			sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), itVecAsync->first.c_str(), myrank);
-			printf("filename: %s\n", filename);
-			itVecAsync->second->toFile( itVecAsync->second, filename, 0);
+
+
+	// ===== GHOST DENSE MAT CALLS ===== // 
+	if(cpGhostDenseMat.size()!=0){	
+		std::map<std::string, CpGhostDenseMat * >::iterator it = cpGhostDenseMat.begin();
+		for(it = cpGhostDenseMat.begin(); it != cpGhostDenseMat.end(); ++it){
+			it->second->write();
 		}
 	}
+	if(cpGhostDenseMatArray.size()!=0){	
+		std::map<std::string, CpGhostDenseMatArray * >::iterator it = cpGhostDenseMatArray.begin();
+		for(it = cpGhostDenseMatArray.begin(); it != cpGhostDenseMatArray.end(); ++it){
+			it->second->write();
+		}
+	}
+
+	// ===== POD CALLS ===== // 
 	if(intPod.size() != 0 || doublePod.size() !=0 || floatPod.size() != 0 ){
 		char * filename = new char[256];
 		sprintf(filename, "%s/POD-rank%d.cp", cpPath.c_str(), myrank);
@@ -348,46 +357,48 @@ int CP::writeCp(){
 		}
 		fclose(fp1);
 	}
-	
-	if(CpIntArrayMap.size()!=0){
-		std::map<std::string, CpArray<int> * >::iterator it = CpIntArrayMap.begin();
-		for (it = CpIntArrayMap.begin(); it != CpIntArrayMap.end(); ++it){
+
+
+	// ===== ARRAY CALLS ===== // 
+	if(cpIntArrayMap.size()!=0){
+		std::map<std::string, CpArray<int> * >::iterator it = cpIntArrayMap.begin();
+		for (it = cpIntArrayMap.begin(); it != cpIntArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->write();
 		}
 	}
-	if(CpDoubleArrayMap.size()!=0){
-		std::map<std::string, CpArray<double> * >::iterator it = CpDoubleArrayMap.begin();
-		for (it = CpDoubleArrayMap.begin(); it != CpDoubleArrayMap.end(); ++it){
+	if(cpDoubleArrayMap.size()!=0){
+		std::map<std::string, CpArray<double> * >::iterator it = cpDoubleArrayMap.begin();
+		for (it = cpDoubleArrayMap.begin(); it != cpDoubleArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->write();
 		}
 	}
-	if(CpFloatArrayMap.size()!=0){
-		std::map<std::string, CpArray<float> * >::iterator it = CpFloatArrayMap.begin();
-		for (it = CpFloatArrayMap.begin(); it != CpFloatArrayMap.end(); ++it){
+	if(cpFloatArrayMap.size()!=0){
+		std::map<std::string, CpArray<float> * >::iterator it = cpFloatArrayMap.begin();
+		for (it = cpFloatArrayMap.begin(); it != cpFloatArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->write();
 		}
 	}
 
-	if(CpIntMulArrayMap.size()!=0){
-		std::map<std::string, CpMulArray<int> * >::iterator it = CpIntMulArrayMap.begin();
-		for (it = CpIntMulArrayMap.begin(); it != CpIntMulArrayMap.end(); ++it){
+	if(cpIntMulArrayMap.size()!=0){
+		std::map<std::string, CpMulArray<int> * >::iterator it = cpIntMulArrayMap.begin();
+		for (it = cpIntMulArrayMap.begin(); it != cpIntMulArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->write();
 		}
 	}
-	if(CpDoubleMulArrayMap.size()!=0){
-		std::map<std::string, CpMulArray<double> * >::iterator it = CpDoubleMulArrayMap.begin();
-		for (it = CpDoubleMulArrayMap.begin(); it != CpDoubleMulArrayMap.end(); ++it){
+	if(cpDoubleMulArrayMap.size()!=0){
+		std::map<std::string, CpMulArray<double> * >::iterator it = cpDoubleMulArrayMap.begin();
+		for (it = cpDoubleMulArrayMap.begin(); it != cpDoubleMulArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->write();
 		}
 	}	
-	if(CpFloatMulArrayMap.size()!=0){
-		std::map<std::string, CpMulArray<float> * >::iterator it = CpFloatMulArrayMap.begin();
-		for (it = CpFloatMulArrayMap.begin(); it != CpFloatMulArrayMap.end(); ++it){
+	if(cpFloatMulArrayMap.size()!=0){
+		std::map<std::string, CpMulArray<float> * >::iterator it = cpFloatMulArrayMap.begin();
+		for (it = cpFloatMulArrayMap.begin(); it != cpFloatMulArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->write();
 		}
@@ -400,20 +411,25 @@ int CP::readCp(){
 	assert( cpCommitted == true );
 	int myrank = 0;
 	MPI_Comm_rank(cpmpicomm, &myrank); 
-	if(vecAsync.size()!=0){	
-		std::map<std::string, ghost_densemat *>::iterator itVecAsync = vecAsync.begin();
-		std::map<std::string, ghost_densemat *>::iterator itVec = vec.begin();
-		for(itVecAsync = vecAsync.begin(); itVecAsync != vecAsync.end(); ++itVecAsync, ++itVec){
-			char * filename = new char[256];
-			sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), itVecAsync->first.c_str(), myrank);
-			printf("%d: filename: %s\n", myrank, filename);
-			itVecAsync->second->fromFile( itVecAsync->second, filename, 0);
-	  		ghost_densemat_init_densemat(itVec->second, itVecAsync->second, 0,0);
-			char * readstr = new char[256];	
-			ghost_densemat_string (&readstr, itVec->second);
-//			printf("itVec->second: \n%s\n", readstr);
+	
+	// ===== GHOST DENSE MAT CALLS ===== // 
+	if(cpGhostDenseMat.size()!=0){	
+		std::map<std::string, CpGhostDenseMat * >::iterator it = cpGhostDenseMat.begin();
+		for(it = cpGhostDenseMat.begin(); it != cpGhostDenseMat.end(); ++it){
+			cout << "reading densemat " << it->first << endl;
+			it->second->read();
 		}
 	}
+
+	if(cpGhostDenseMatArray.size()!=0){	
+		std::map<std::string, CpGhostDenseMatArray * >::iterator it = cpGhostDenseMatArray.begin();
+		for(it = cpGhostDenseMatArray.begin(); it != cpGhostDenseMatArray.end(); ++it){
+			cout << "reading densematArray " << it->first << endl;
+			it->second->read();
+		}
+	}
+
+	// ===== POD CALLS ===== // 
 	if(intPod.size() != 0 || doublePod.size() !=0 || floatPod.size() != 0 ){
 			char * cpFile = new char[256];
 			sprintf(cpFile, "%s/POD-rank%d.cp", cpPath.c_str(), myrank);
@@ -464,47 +480,47 @@ int CP::readCp(){
 			fclose(fp1);
 	}
 	
-	if(CpIntArrayMap.size()!=0){
-		std::map<std::string, CpArray<int> * >::iterator it = CpIntArrayMap.begin();
-		for (it = CpIntArrayMap.begin(); it != CpIntArrayMap.end(); ++it){
+	if(cpIntArrayMap.size()!=0){
+		std::map<std::string, CpArray<int> * >::iterator it = cpIntArrayMap.begin();
+		for (it = cpIntArrayMap.begin(); it != cpIntArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->read();
 		}
 	}
-	if(CpDoubleArrayMap.size()!=0){
-		std::map<std::string, CpArray<double> * >::iterator it = CpDoubleArrayMap.begin();
-		for (it = CpDoubleArrayMap.begin(); it != CpDoubleArrayMap.end(); ++it){
+	if(cpDoubleArrayMap.size()!=0){
+		std::map<std::string, CpArray<double> * >::iterator it = cpDoubleArrayMap.begin();
+		for (it = cpDoubleArrayMap.begin(); it != cpDoubleArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->read();
 		}
 	}
-	if(CpFloatArrayMap.size()!=0){
-		std::map<std::string, CpArray<float> * >::iterator it = CpFloatArrayMap.begin();
-		for (it = CpFloatArrayMap.begin(); it != CpFloatArrayMap.end(); ++it){
+	if(cpFloatArrayMap.size()!=0){
+		std::map<std::string, CpArray<float> * >::iterator it = cpFloatArrayMap.begin();
+		for (it = cpFloatArrayMap.begin(); it != cpFloatArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->read();
 		}
 	}
 
-	if(CpIntMulArrayMap.size()!=0){
-		std::map<std::string, CpMulArray<int> * >::iterator it = CpIntMulArrayMap.begin();
-		for (it = CpIntMulArrayMap.begin(); it != CpIntMulArrayMap.end(); ++it){
+	if(cpIntMulArrayMap.size()!=0){
+		std::map<std::string, CpMulArray<int> * >::iterator it = cpIntMulArrayMap.begin();
+		for (it = cpIntMulArrayMap.begin(); it != cpIntMulArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->read();
 			it->second->print();
 		}
 	}
-	if(CpDoubleMulArrayMap.size()!=0){
-		std::map<std::string, CpMulArray<double> * >::iterator it = CpDoubleMulArrayMap.begin();
-		for (it = CpDoubleMulArrayMap.begin(); it != CpDoubleMulArrayMap.end(); ++it){
+	if(cpDoubleMulArrayMap.size()!=0){
+		std::map<std::string, CpMulArray<double> * >::iterator it = cpDoubleMulArrayMap.begin();
+		for (it = cpDoubleMulArrayMap.begin(); it != cpDoubleMulArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->read();
 			it->second->print();
 		}
 	}	
-	if(CpFloatMulArrayMap.size()!=0){
-		std::map<std::string, CpMulArray<float> * >::iterator it = CpFloatMulArrayMap.begin();
-		for (it = CpFloatMulArrayMap.begin(); it != CpFloatMulArrayMap.end(); ++it){
+	if(cpFloatMulArrayMap.size()!=0){
+		std::map<std::string, CpMulArray<float> * >::iterator it = cpFloatMulArrayMap.begin();
+		for (it = cpFloatMulArrayMap.begin(); it != cpFloatMulArrayMap.end(); ++it){
 			cout << it->first << endl;
 			it->second->read();
 			it->second->print();

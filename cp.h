@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "cp_array.h"
+#include "cp_ghostdensemat.h"
 
 using namespace std;
 
@@ -31,20 +32,20 @@ private:
 	std::map<const std::string, float > floatPodAsync;
 
 	// ===== GHOST-VECTORS ===== 
-	std::map<std::string, ghost_densemat *> vec;
-	std::map<std::string, ghost_densemat *> vecAsync;
+	std::map<const std::string, CpGhostDenseMat *> cpGhostDenseMat;
+	std::map<const std::string, CpGhostDenseMatArray *> cpGhostDenseMatArray;
 
-	ghost_densemat *vector_async;
+	//ghost_densemat *vector_async;
 
 	// ===== ARRAYS ===== 
 
-	std::map<const std::string, CpArray<int> * > 	CpIntArrayMap;
-	std::map<const std::string, CpArray<double> * > CpDoubleArrayMap;
-	std::map<const std::string, CpArray<float> * > 	CpFloatArrayMap;
+	std::map<const std::string, CpArray<int> * > 	cpIntArrayMap;
+	std::map<const std::string, CpArray<double> * > cpDoubleArrayMap;
+	std::map<const std::string, CpArray<float> * > 	cpFloatArrayMap;
 	
-	std::map<const std::string, CpMulArray<int> * > 	CpIntMulArrayMap;
-	std::map<const std::string, CpMulArray<double> * > 	CpDoubleMulArrayMap;
-	std::map<const std::string, CpMulArray<float> * > 	CpFloatMulArrayMap;
+	std::map<const std::string, CpMulArray<int> * > 	cpIntMulArrayMap;
+	std::map<const std::string, CpMulArray<double> * > 	cpDoubleMulArrayMap;
+	std::map<const std::string, CpMulArray<float> * > 	cpFloatMulArrayMap;
 
 	int CP_ADD_POD_INT		(const std::string key, const int * const value);
 	int CP_ADD_POD_DOUBLE	(const std::string key, const double * const value); 
@@ -65,8 +66,8 @@ public:
 	int setComm(const MPI_Comm FT_Comm);
 	void commit();
 
-	int CP_ADD_VEC(const std::string key, ghost_densemat * value);
-	int CP_ADD_MULTI_VEC(const std::string key, ghost_densemat ** value, int num_vecs);
+	int CP_ADD_GHOST_DENSEMAT(const std::string key, ghost_densemat * const value);
+	int CP_ADD_GHOST_DENSEMAT_ARRAY(const std::string key, ghost_densemat ** const value, int num_vecs, const int toCpVec_ = ALL);
 	
 	int CP_ADD_POD(const std::string key, const int * const val_ptr);
 	int CP_ADD_POD(const std::string key, const double * const val_ptr);

@@ -11,10 +11,11 @@ LFLAGS =
 
 OBJS = cp.o aft.o
 
+
 $(TARGET): $(OBJS)
 	$(CXX) -shared -o $(TARGET) $(OBJS) 
 
-cp.o: cp.cpp cp.h cp_array.h
+cp.o: cp.cpp cp.h cp_array.h cp_ghostdensemat.h
 	$(CXX) $(CPPFLAGS) $(INCLUDES) $(LIBS) -c cp.cpp
 
 aft.o: aft.cpp aft.h aft_macros.h

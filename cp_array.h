@@ -1,11 +1,14 @@
-#ifndef __CP_ARRAY_H__
-#define __CP_ARRAY_H__
-
 /**
  * Author: Faisal Shahzad
  * This file contains two classes for arrays and multiarrays of int, double, float datatypes.
  *
  */
+
+#ifndef __CP_ARRAY_H__
+#define __CP_ARRAY_H__
+
+#include "enum.h"
+
 template <class T>
 class CpArray 
 {
@@ -120,11 +123,6 @@ int CpArray<T>::read(){
 	return 0;
 }
 
-enum CpCol{
-	ALL = -1,
-	CYCLIC = -2
-};
-
 template <class T>
 class CpMulArray 
 {
@@ -200,7 +198,7 @@ int CpMulArray<T>::print(){
 }
 
 template <class T>
-int CpMulArray<T>::update(){
+int CpMulArray<T>::update(){ 		// TODO: 	should only update the array to be written
 	for(size_t i = 0; i < nCols; ++i){
 		for(size_t j = 0; j < nRows; ++j){
 			array[i][j] = arrayPtr[i][j];
@@ -216,7 +214,7 @@ template <class T>
 int CpMulArray<T>::write(){
 	std::cout << "writing CpMulArray file now " << name << endl ;
 	int myrank = -1;
-	MPI_Comm_rank(cpMpiComm, &myrank);			// TODO: should be FT_comm
+	MPI_Comm_rank(cpMpiComm, &myrank);	
 	char * filename = new char[256];
 	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
 
@@ -234,12 +232,12 @@ int CpMulArray<T>::write(){
 		}
 	}
 	if(toCpCol == CYCLIC){ 
-		static size_t CpCol = 0 ;				// this counter is responsible for determining which Col is to be checkpoinited in the cyclic case. 	
-		std::cout << "writing CpCol:" << CpCol << endl;
-		fwrite(&array[CpCol][0], sizeof(T), nRows, fp);
-		CpCol ++;
-		if(CpCol == nCols){
-			CpCol = 0;
+		static size_t cyclicCpCounter = 0 ;				// this counter is responsible for determining which Col is to be checkpoinited in the cyclic case. 	
+		std::cout << "writing CpCol:" << cyclicCpCounter << endl;
+		fwrite(&array[cyclicCpCounter][0], sizeof(T), nRows, fp);
+		cyclicCpCounter++;
+		if(cyclicCpCounter == nCols){
+			cyclicCpCounter = 0;
 		}
 	}
 	if(toCpCol >= 0 ){
@@ -265,7 +263,28 @@ int CpMulArray<T>::read(){
 		fprintf(stderr, "Error: Unable to open file (%s)\n", filename);
 		return -1;
 	}
-	// TODO: 	read should be done according to the write-option given by the user. about which column to write
+	if(toCpCol == ALL){
+		std::cout << "reading all MULTIVEC" << endl;
+		for(int i = 0; i < nCols ; ++i){
+			fread(&array[i][0], sizeof(T), nRows, fp);
+		}
+	}
+	if(toCpCol == CYCLIC){
+		// TODO: 	check the restart with cyclic case. restart will have to determine which
+		std::cerr << "Restart with CYCLIC case is not reading yet." << std::endl;
+	/*	static size_t cyclicCpCounter = 0 ;				//which Col is to be read in the cyclic case. 	
+		std::cout << "reading CpCol:" << cyclicCpCounter << endl;
+		fread(&array[cyclicCpCounter][0], sizeof(T), nRows, fp);
+		cyclicCpCounter++;
+		if(cyclicCpCounter == nCols){
+			cyclicCpCounter = 0;
+		}
+		*/
+	}
+	if(toCpCol >= 0 ){
+		std::cout << "reading toCpCol" << toCpCol<< endl;
+		fread(&array[toCpCol][0], sizeof(T), nRows, fp);	
+	}	
 	for(int i=0; i< nCols; ++i){
 		fread( &array[i][0], sizeof(T), nRows, fp );
 	}
