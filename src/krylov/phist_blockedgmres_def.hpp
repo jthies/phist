@@ -1,5 +1,34 @@
 #include "phist_blockedgmres_helper_def.hpp"
 
+// small C++ wrapper that deletes temporary vectors at the end of a scope
+class TYPE(mvec_GC)
+{
+  public:
+
+  TYPE(mvec_GC)()
+  {
+    x_=NULL;
+    y_=NULL;
+    z_=NULL;
+  }
+  
+  ~TYPE(mvec_GC)()
+  {
+    int iflag;
+    if (z_==x_ || z_==y_) z_=NULL;
+    if (z_) SUBR(mvec_delete)(z_,&iflag);
+    if (x_) SUBR(mvec_delete)(x_,&iflag);
+    if (y_) SUBR(mvec_delete)(y_,&iflag);
+    x_=NULL;
+    y_=NULL;
+    z_=NULL;
+  }
+  
+  //! the actual objects
+  TYPE(mvec_ptr) x_,y_,z_;
+
+};
+
 // create new state objects. We just get an array of (NULL-)pointers
 void SUBR(blockedGMRESstates_create)(TYPE(blockedGMRESstate_ptr) state[], int numSys, phist_const_map_ptr map, int maxBas,int* iflag)
 {
@@ -14,7 +43,7 @@ void SUBR(blockedGMRESstates_create)(TYPE(blockedGMRESstate_ptr) state[], int nu
   PHIST_CHK_IERR(phist_map_get_comm(map,&comm,iflag),*iflag);
 
   // setup buffer of mvecs to be used later
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
   Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff(new TYPE(MvecRingBuffer)(maxBas+1));
 #else
   TYPE(MvecRingBuffer)* mvecBuff = new TYPE(MvecRingBuffer)(maxBas+1);
@@ -37,7 +66,7 @@ void SUBR(blockedGMRESstates_create)(TYPE(blockedGMRESstate_ptr) state[], int nu
     state[i]->sn_ = new ST[maxBas];
     state[i]->rs_ = new ST[maxBas+1];
 
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
     // assign MvecRingBuffer (with reference counting)
     state[i]->Vbuff = (void*) new Teuchos::RCP<TYPE(MvecRingBuffer)>(mvecBuff);
 #else
@@ -53,7 +82,7 @@ void SUBR(blockedGMRESstates_delete)(TYPE(blockedGMRESstate_ptr) state[], int nu
 {
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
-#ifndef PHIST_HAVE_BELOS
+#ifndef PHIST_HAVE_TEUCHOS
   if (numSys==0) return;
   
     PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, state[0]->Vbuff, *iflag);    
@@ -69,7 +98,7 @@ void SUBR(blockedGMRESstates_delete)(TYPE(blockedGMRESstate_ptr) state[], int nu
     delete [] state[i]->cs_;
     delete [] state[i]->sn_;
     delete [] state[i]->rs_;
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
     PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuff, state[i]->Vbuff, *iflag);
     PHIST_CHK_IERR((*mvecBuff)->delete_mvecs(iflag), *iflag);
     delete mvecBuff;
@@ -85,14 +114,18 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
 #include "phist_std_typedefs.hpp"  
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag=0;
+  
+  int previous_status = S->status;
+  S->status=-2; // not initialized, if this function fails in some way to set status the next _iterate call will complain
 
   // get mvecBuff
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
   PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S->Vbuff, *iflag);
   Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
 #else
   PHIST_CAST_PTR_FROM_VOID(TYPE(MvecRingBuffer), mvecBuff, S->Vbuff, *iflag);
 #endif
+
 
   // release mvecs currently marked used by this state
   for(int j = 0; j < S->curDimV_; j++)
@@ -100,16 +133,21 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
     int Vind = mvecBuff->prevIndex(S->lastVind_,j);
     mvecBuff->decRef(Vind);
   }
+
   S->curDimV_ = 0;
 
-  // only freed resources
+  // set H to zero
+  PHIST_CHK_IERR(SUBR(sdMat_put_value)(S->H_, st::zero(), iflag), *iflag);
+
+
+  // only freed resources, object still not initialized (status -2)
   if( b == NULL && x0 == NULL )
   {
-    S->status = -2;
+    S->status=-2;
     return;
   }
 
-  if( b == NULL && (S->normR0_ == -mt::one() || S->status == -2) )
+  if( b == NULL && (S->normR0_ == -mt::one() || previous_status == -2) )
   {
     PHIST_OUT(PHIST_ERROR,"on the first call to blockedGMRESstate_reset you *must* provide the RHS vector");
     *iflag=-1;
@@ -120,13 +158,10 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
   {
     // new rhs -> need to recompute ||b-A*x0||
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), b, st::zero(), S->b_, iflag), *iflag);
-    S->status = -1;
+    S->status = -1; // indicates that the residual has to be calculated
     S->totalIter = 0;
-    S->normR0_ = -mt::one();
+    S->normR0_ = -mt::one(); // indicates the initial residual has to be set (first start)
   }
-
-  // set H to zero
-  PHIST_CHK_IERR(SUBR(sdMat_put_value)(S->H_, st::zero(), iflag), *iflag);
 
   if( x0 == NULL )
   {
@@ -149,6 +184,7 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
       PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (scale, S->b_, st::zero(), r0, iflag), *iflag);
     }
     PHIST_CHK_IERR(SUBR( mvec_delete ) (r0, iflag), *iflag);
+    S->status=1; // 1: iterating/unconverged
   }
   else // x != NULL
   {
@@ -157,16 +193,18 @@ void SUBR(blockedGMRESstate_reset)(TYPE(blockedGMRESstate_ptr) S, TYPE(const_mve
     PHIST_CHK_IERR(SUBR( mvec_set_block ) (mvecBuff->at(S->lastVind_), x0, S->id, S->id, iflag), *iflag);
     mvecBuff->incRef(S->lastVind_);
     S->prevBeta_ = st::zero();
+    S->status=-1; // restart, need to compute residual
   }
 
-  // update status
-  if( S->status >= 0 )
-    S->status = 1;
 }
 
 
-// calculate approximate solution
-void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int numSys, TYPE(mvec_ptr) x, _MT_* resNorm, bool scaleSolutionToOne, int* iflag)
+// calculate approximate solution.
+// first solves triangular system s=R\y for all states and then updates the solution of all the given
+// states in a vectorized way, x+=Vs
+void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int numSys, 
+        TYPE(const_linearOp_ptr) rightPrecon,
+        TYPE(mvec_ptr) x, _MT_* resNorm, bool scaleSolutionToOne, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
@@ -179,6 +217,16 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
   int maxId = 0;
   for(int i = 0; i < numSys; i++)
     maxId = std::max(maxId,S[i]->id);
+    
+  // if there is no (right) preconditioner, update x+=Vs directly, otherwise
+  // compute z=Vs first and then update x+=P\z
+  TYPE(mvec_ptr) z=x;
+  if (rightPrecon!=NULL)
+  {
+    z=NULL;
+    PHIST_CHK_IERR(SUBR(mvec_create)(&z,rightPrecon->range_map,numSys,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_put_value)(z,st::zero(),iflag),*iflag);
+  }
 
   bool ordered = true;
   for(int i = 0; i < numSys; i++)
@@ -189,7 +237,7 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
   for(int i = 0; i < numSys; i++)
     PHIST_CHK_IERR(*iflag = (S[i]->lastVind_ != lastVind) ? -1 : 0, *iflag);
 
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
   PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *iflag);
   Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
 #else
@@ -199,7 +247,7 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
   // make sure all systems use the same mvecBuff
   for(int i = 0; i < numSys; i++)
   {
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
     PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *iflag);
     PHIST_CHK_IERR(*iflag = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *iflag);
 #else
@@ -229,8 +277,7 @@ void SUBR(blockedGMRESstates_updateSol)(TYPE(blockedGMRESstate_ptr) S[], int num
   }
 
   // no iteration done yet?
-  if( maxCurDimV <= 1 )
-    return;
+  if( maxCurDimV <= 1 ) return;
 
 
   // allocate space for y
@@ -356,11 +403,13 @@ PHIST_TASK_BEGIN(ComputeTask)
     }
     PHIST_DEB("\n");
 
+    // compute z=V*y (if right precond is present) or
+    // x=x+V*y if there is no right preconditioning (z points to x in that case)
     if( j >= maxCurDimV-sharedCurDimV && ordered )
     {
       // update solution of all systems at once
       PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vind), &Vj, 0, maxId, iflag), *iflag);
-      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(yj, Vj, st::one(), x, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(yj, Vj, st::one(), z, iflag), *iflag);
     }
     else
     {
@@ -371,25 +420,35 @@ PHIST_TASK_BEGIN(ComputeTask)
         {
           PHIST_CHK_IERR(SUBR(mvec_view_block)(mvecBuff->at(Vind), &Vj, S[i]->id, S[i]->id, iflag), *iflag);
           PHIST_CHK_IERR(SUBR(mvec_view_block)(x, &x_i, i, i, iflag), *iflag);
-          PHIST_CHK_IERR(SUBR(mvec_add_mvec)(yj[S[i]->id], Vj, st::one(), x, iflag), *iflag);
+          PHIST_CHK_IERR(SUBR(mvec_add_mvec)(yj[S[i]->id], Vj, st::one(), z, iflag), *iflag);
         }
       }
     }
   }
+ 
+  if (rightPrecon!=NULL)
+  {
+    PHIST_CHK_IERR(rightPrecon->apply(st::one(),rightPrecon->A,z,st::one(),x,iflag),*iflag);
+  }
 
   PHIST_CHK_IERR(SUBR(mvec_delete)(x_i, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vj, iflag), *iflag);
+  if (z!=x) PHIST_CHK_IERR(SUBR(mvec_delete)(z,iflag),*iflag);
 PHIST_TASK_END(iflag)
   delete[] yglob;
 }
 
 
 // implementation of gmres on several systems simultaneously
-void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, bool useIMGS, int* iflag)
+void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(const_linearOp_ptr) Pop,
+        TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, bool useIMGS, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag = 0;
+
+  int maxIter = (*nIter)>0 ? *nIter: 9999999;
+  *nIter=0;
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
   PHIST_SOUT(PHIST_DEBUG,"starting function iterate() with %d systems\n curDimVs: ",numSys);
@@ -405,13 +464,11 @@ void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(blocked
 
   // if there are multiple systems, get the maximal id
   int maxId = 0;
-  for(int i = 0; i < numSys; i++)
-    maxId = std::max(maxId,S[i]->id);
+  for(int i = 0; i < numSys; i++) maxId = std::max(maxId,S[i]->id);
   int minId = maxId;
-  for(int i = 0; i < numSys; i++)
-    minId = std::min(minId,S[i]->id);
+  for(int i = 0; i < numSys; i++) minId = std::min(minId,S[i]->id);
 
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
   PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *iflag);
   Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
 #else
@@ -421,7 +478,7 @@ void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(blocked
   // make sure all systems use the same mvecBuff
   for(int i = 0; i < numSys; i++)
   {
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
     PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *iflag);
     PHIST_CHK_IERR(*iflag = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *iflag);
 #else
@@ -439,9 +496,14 @@ void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(blocked
     sharedCurDimV = std::min(sharedCurDimV, S[i]->curDimV_);
   }
 
-  // work vector for x and y = Aop(x)
-  TYPE(mvec_ptr) work_x = NULL;
-  TYPE(mvec_ptr) work_y = NULL;
+  // work vectors for x, y = Aop(x) and z=P\r
+  TYPE(mvec_GC) work;
+  
+  // z is Precond\x, create it as a temporary vector
+  if (Pop!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_create)(&work.z_,Pop->range_map,numSys,iflag),*iflag);
+  }
 
   {
     // make sure all lastVind_ are the same
@@ -450,7 +512,7 @@ void SUBR(blockedGMRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(blocked
       PHIST_CHK_IERR(*iflag = (S[i]->lastVind_ != lastVind) ? -1 : 0, *iflag);
 
     // x0 / last element of krylov subspace
-    PHIST_CHK_IERR(SUBR( mvec_view_block )( mvecBuff->at(lastVind), &work_x, minId, maxId, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_view_block )( mvecBuff->at(lastVind), &work.x_, minId, maxId, iflag), *iflag);
 
 #ifdef TESTING
 // print a visualization of the current state
@@ -467,7 +529,7 @@ for(int i = 0; i < numSys; i++)
     mvecUsedBy[S[i]->id][Vind] = true;
   }
 }
-PHIST_SOUT(PHIST_INFO,"Pipelined GMRES status:\n");
+PHIST_SOUT(PHIST_INFO,"Blocked GMRES status:\n");
 for(int j = 0; j < mvecBuff->size(); j++)
 {
   PHIST_SOUT(PHIST_INFO,"--");
@@ -516,7 +578,8 @@ PHIST_SOUT(PHIST_INFO,"\n");
   // maximum permitted number of iterations. The decision about what to do
   // next is then left to the caller.
   int anyConverged = 0;
-  int anyFailed = 0;
+  int anyFull      = 0;
+  int anyFailed    = 0;
 
 
 
@@ -534,30 +597,84 @@ PHIST_SOUT(PHIST_INFO,"\n");
       S[i]->status = 0; // mark as converged
       anyConverged++;
     }
+    else if( S[i]->totalIter>=maxIter )
+    {
+      S[i]->status = 3;
+      anyFailed++;
+    }
     else if( S[i]->curDimV_ >= mvecBuff->size() )
     {
       S[i]->status = 2; // mark as failed/restart needed
-      anyFailed++;
+      anyFull++;
     }
   }
-
   for (int i=0;i<numSys;i++)
   {
-    PHIST_SOUT(PHIST_VERBOSE,"[%d]: %d\t%8.4e\t(%8.4e)\n", i, S[i]->curDimV_-1,S[i]->normR_/S[i]->normR0_,S[i]->normR_);
+    if (S[i]->curDimV_>0)
+    {
+      PHIST_SOUT(PHIST_VERBOSE,"[%d]: %d\t%8.4e\t(%8.4e)\n", i, 
+        S[i]->curDimV_-1,S[i]->normR_/S[i]->normR0_,S[i]->normR_);
+    }
+    else
+    {
+      PHIST_SOUT(PHIST_VERBOSE,"[%d]: restarted\n",i);
+    }
   }
 
 // put all iterations in one big compute task; this speeds up the tests with ghost (significantly)
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
-  while( anyConverged == 0 && anyFailed == 0 )
+  while( anyConverged==0 && anyFailed==0 && anyFull==0 )
   {
     //    % get new vector for y
     int nextIndex;
     PHIST_CHK_IERR( mvecBuff->getNextUnused(nextIndex,iflag), *iflag);
-    PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(nextIndex), &work_y, minId, maxId, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(nextIndex), &work.y_, minId, maxId, iflag), *iflag);
+    
+    // apply (right) preconditioning *if this is not a restart*
+    if (Pop!=NULL)
+    {
+      int numRestarted=0;
+      for (int i=0; i<numSys; i++) 
+      {
+        numRestarted+=(S[i]->curDimV_==0)?1:0;
+      }
+      // if all systems were restarted, we don't need to apply the preconditioner in the first iteration at all
+      // (in this 'iteration' only the residual is computed)
+      if (numRestarted==numSys)
+      {
+        PHIST_CHK_IERR( SUBR(mvec_add_mvec)(st::one(),work.x_,st::zero(),work.z_,iflag),*iflag);
+      }
+      else
+      {
+        // apply preconditioner to all vectors for simplicity and overwrite the ones that should not be preconditioned
+        // because the corresponding system was restarted
+        PHIST_CHK_IERR( Pop->apply (st::one(), Pop->A, work.x_, st::zero(), work.z_, iflag), *iflag);
+        if (numRestarted>0)
+        {
+          for (int i=0; i<numSys; i++)
+          {
+            int j=S[i]->curDimV_;
+            if( j == 0 )
+            {
+              // (re-)start: r_0 = b - A*x_0, so throw away the P\x and 
+              // replace by x for this column
+              TYPE(mvec_ptr) tmpX=NULL, tmpZ=NULL;
+              PHIST_CHK_IERR(SUBR(mvec_view_block)(work.x_,&tmpX,S[i]->id-minId,S[i]->id-minId,iflag),*iflag);
+              PHIST_CHK_IERR(SUBR(mvec_view_block)(work.z_,&tmpZ,S[i]->id-minId,S[i]->id-minId,iflag),*iflag);
+              PHIST_CHK_IERR( SUBR(mvec_add_mvec)(st::one(),tmpX,st::zero(),tmpZ,iflag),*iflag);
+            }
+          }
+        }//numRestarted>0
+      }//numRestarted<numSys
+    }//Pop!=NULL
+    else
+    {
+      work.z_=work.x_;
+    }
 
-    //    % apply the operator of the matrix A
-    PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_x, st::zero(), work_y, iflag), *iflag);
+    //    % apply operator A
+    PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work.z_, st::zero(), work.y_, iflag), *iflag);
 
 
     //    % initialize GMRES for (re-)started systems
@@ -567,7 +684,7 @@ PHIST_TASK_BEGIN(ComputeTask)
       if( j == 0 )
       {
         // (re-)start: r_0 = b - A*x_0
-        PHIST_CHK_IERR( SUBR(mvec_view_block) (work_y, &Vj, S[i]->id-minId, S[i]->id-minId, iflag), *iflag);
+        PHIST_CHK_IERR( SUBR(mvec_view_block) (work.y_, &Vj, S[i]->id-minId, S[i]->id-minId, iflag), *iflag);
         PHIST_CHK_IERR( SUBR(mvec_add_mvec) (st::one(), S[i]->b_, -st::one(), Vj, iflag), *iflag);
       }
     }
@@ -589,7 +706,7 @@ PHIST_TASK_BEGIN(ComputeTask)
       PHIST_CHK_IERR(SUBR(sdMat_from_device)(S[i]->H_,iflag),*iflag);
     }
 
-    //    % arnoldi update with iterated modified gram schmidt
+    //    % Arnoldi update with iterated modified Gram Schmidt
     {
       std::vector<_MT_> ynorm(maxId+1-minId,-mt::one());
       std::vector<_MT_> prev_ynorm(maxId+1-minId,-mt::one());
@@ -599,7 +716,7 @@ PHIST_TASK_BEGIN(ComputeTask)
         prev_ynorm = ynorm;
         if( useIMGS || mgsIter == 1 )
         {
-          PHIST_CHK_IERR(SUBR(mvec_norm2)(work_y, &ynorm[0], iflag), *iflag);
+          PHIST_CHK_IERR(SUBR(mvec_norm2)(work.y_, &ynorm[0], iflag), *iflag);
         }
 
         bool needAnotherIteration = (mgsIter == 0);
@@ -629,10 +746,10 @@ PHIST_TASK_BEGIN(ComputeTask)
           {
             // MGS step for all systems at once
             PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, minId, maxId, iflag), *iflag);
-            PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vk, work_y, tmp, iflag), *iflag);
+            PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vk, work.y_, tmp, iflag), *iflag);
             for(int i = 0; i < maxId+1-minId; i++)
               tmp[i] = -tmp[i];
-            PHIST_CHK_IERR(SUBR( mvec_vadd_mvec  ) (tmp, Vk, st::one(), work_y, iflag), *iflag);
+            PHIST_CHK_IERR(SUBR( mvec_vadd_mvec  ) (tmp, Vk, st::one(), work.y_, iflag), *iflag);
             calculatedDot = true;
           }
 
@@ -647,7 +764,7 @@ PHIST_TASK_BEGIN(ComputeTask)
               {
                 // MGS step for single system
                 PHIST_CHK_IERR(SUBR( mvec_view_block ) (mvecBuff->at(Vind), &Vk, S[i]->id,       S[i]->id,       iflag), *iflag);
-                PHIST_CHK_IERR(SUBR( mvec_view_block ) (work_y,             &Vj, S[i]->id-minId, S[i]->id-minId, iflag), *iflag);
+                PHIST_CHK_IERR(SUBR( mvec_view_block ) (work.y_,             &Vj, S[i]->id-minId, S[i]->id-minId, iflag), *iflag);
                 PHIST_CHK_IERR(SUBR( mvec_dot_mvec   ) (Vk, Vj, &tmp[S[i]->id-minId], iflag), *iflag);
                 tmp[S[i]->id-minId] = -tmp[S[i]->id-minId];
                 PHIST_CHK_IERR(SUBR( mvec_add_mvec   ) (tmp[S[i]->id-minId], Vk, st::one(), Vj, iflag), *iflag);
@@ -676,11 +793,10 @@ PHIST_TASK_BEGIN(ComputeTask)
         int j = S[i]->curDimV_;
         if( j == 0 )
         {
-          // initilize rs_
+          // initilize rs_ and normR, normR0
           S[i]->rs_[0] = ynorm[S[i]->id-minId];
           S[i]->normR_ = ynorm[S[i]->id-minId];
-          if( S[i]->normR0_ == -mt::one() )
-            S[i]->normR0_ = S[i]->normR_;
+          if( S[i]->normR0_ == -mt::one() ) S[i]->normR0_ = S[i]->normR_;
         }
         else
         {
@@ -695,7 +811,7 @@ PHIST_TASK_BEGIN(ComputeTask)
       _ST_ scale[maxId+1-minId];
       for(int i = 0; i < maxId+1-minId; i++)
         scale[i] = st::one() / ynorm[i];
-      PHIST_CHK_IERR(SUBR(mvec_vscale)(work_y, scale, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR(mvec_vscale)(work.y_, scale, iflag), *iflag);
     }
 
     maxCurDimV++;
@@ -733,10 +849,10 @@ PHIST_TASK_BEGIN(ComputeTask)
 {
   TYPE(mvec_ptr) tmpVec = NULL, tmpVec_ = NULL;
   phist_const_map_ptr map;
-  PHIST_CHK_IERR(SUBR(mvec_get_map)(work_y, &map, iflag), *iflag);
+  PHIST_CHK_IERR(SUBR(mvec_get_map)(work.y_, &map, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_create)(&tmpVec_, map, maxId+1, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, minId, maxId, iflag), *iflag);
-  PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work_x, st::zero(), tmpVec, iflag), *iflag);
+  PHIST_CHK_IERR( Aop->apply (st::one(), Aop->A, work.x_, st::zero(), tmpVec, iflag), *iflag);
   for(int i = 0; i < numSys; i++)
   {
     PHIST_CHK_IERR(SUBR(mvec_view_block)(tmpVec_, &tmpVec, S[i]->id, S[i]->id, iflag), *iflag);
@@ -834,8 +950,8 @@ PHIST_TASK_BEGIN(ComputeTask)
     {
       int j = S[i]->curDimV_;
 
+      if (S[i]->curDimV_) S[i]->totalIter++; // do not count first round after restart twice
       S[i]->curDimV_++;
-      S[i]->totalIter++;
 
       // check convergence
       MT relres = S[i]->normR_ / S[i]->normR0_;
@@ -848,7 +964,7 @@ PHIST_TASK_BEGIN(ComputeTask)
       else if( S[i]->curDimV_ >= mvecBuff->size() )
       {
         S[i]->status = 2; // mark as failed/restart needed
-        anyFailed++;
+        anyFull++;
       }
       else
       {
@@ -856,8 +972,8 @@ PHIST_TASK_BEGIN(ComputeTask)
       }
     }
 
-    // use work_y as input in the next iteration
-    std::swap(work_x,work_y);
+    // use work.y_ as input in the next iteration
+    std::swap(work.x_,work.y_);
 
 
 
@@ -865,24 +981,18 @@ PHIST_TASK_BEGIN(ComputeTask)
     {
       PHIST_SOUT(PHIST_VERBOSE,"[%d]: %d\t%8.4e\t(%8.4e)\n", i, S[i]->curDimV_-1,S[i]->normR_/S[i]->normR0_,S[i]->normR_);
     }
-
     (*nIter)++;
   }
 PHIST_TASK_END(iflag)
 
-  PHIST_SOUT(PHIST_VERBOSE,"%d converged, %d failed.\n",anyConverged,anyFailed);
-  PHIST_SOUT(PHIST_VERBOSE,"-----------------------\n");
+  PHIST_SOUT(PHIST_VERBOSE,"%d converged, %d need restart, %d failed.\n",anyConverged,anyFull,anyFailed);
+  PHIST_SOUT(PHIST_VERBOSE,"---------------------------------------  \n");
 
-  // delete views
-  PHIST_CHK_IERR(SUBR(mvec_delete)(work_x, iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(mvec_delete)(work_y, iflag), *iflag);
+  // delete remaining views (note that our mvec_GC object "work" takes care of x,y and z)
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vj,     iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vk,     iflag), *iflag);
 
-  if (anyConverged > 0)
-    *iflag=0;
-      
-  if (anyFailed > 0)
-    *iflag=1;
+  *iflag=99;
+  for (int i=0; i<numSys; i++) *iflag=std::min(*iflag,S[i]->status);
 }
 

@@ -120,7 +120,7 @@ if (Prec!=NULL)
 {
   Teuchos::RCP<const OP> Prec_ptr = Teuchos::rcp(Prec,false);
   try {
-    linearSystem->setLeftPrec(Prec_ptr);
+    linearSystem->setRightPrec(Prec_ptr);
   } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,status);
   if (!status){*iflag=PHIST_CAUGHT_EXCEPTION; return;} 
 }

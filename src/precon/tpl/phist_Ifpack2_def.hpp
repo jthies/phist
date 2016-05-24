@@ -92,13 +92,22 @@ class PreconTraits<ST,phist_IFPACK>
     PHIST_CAST_PTR_FROM_VOID(const prec_type, P, vP,*iflag);
     PHIST_CAST_PTR_FROM_VOID(const mvec_t, X, vX,*iflag);
     PHIST_CAST_PTR_FROM_VOID(      mvec_t, Y, vY,*iflag);
-    if (alpha!=st::one()||beta!=st::zero())
+
+    Teuchos::RCP<mvec_t> Y2 = Teuchos::rcp(Y,false);
+    if (beta!=st::zero())
     {
-      PHIST_SOUT(PHIST_ERROR,"Ifpack preconditioner can only be applied as Y=inv(P)X up to now\n");
-      *iflag=PHIST_NOT_IMPLEMENTED;
-      return;
+      Y2=Teuchos::rcp(new mvec_t(*Y));
     }
-    PHIST_CHK_IERR(P->apply(*X,*Y),*iflag);
+    PHIST_CHK_IERR(P->apply(*X,*Y2),*iflag);
+    if (beta!=st::zero())
+    {
+      Y->update(alpha,*Y2,beta);
+    }
+    else if (alpha!=st::one())
+    {
+      Y->scale(alpha);
+    }
+
   }
   
   static void ApplyT(ST alpha, void const* P, TYPE(const_mvec_ptr) X, ST beta, TYPE(mvec_ptr) Y, int* iflag)

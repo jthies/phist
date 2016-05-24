@@ -28,6 +28,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       SparseMatTest::SetUp();
       VTest::SetUp();
       MTest::SetUp();
+      rightPreconPtr_=NULL;
 
       if( typeImplemented_ && !problemTooSmall_ )
       {
@@ -118,6 +119,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     TYPE(linearOp_ptr) jdOp_ = NULL;
     TYPE(mvec_ptr) q_ = NULL;
     _ST_* sigma_ = NULL;
+
+    TYPE(linearOp_ptr) rightPreconPtr_;
 };
 
 
@@ -165,7 +168,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         ASSERT_EQ(0,iflag_);
 
         _MT_ resNorm;
-        SUBR(blockedGMRESstates_updateSol)(&state[i], 1, x_i, &resNorm, false, &iflag_);
+        SUBR(blockedGMRESstates_updateSol)(&state[i], 1, rightPreconPtr_, x_i, &resNorm, false, &iflag_);
         ASSERT_EQ(0,iflag_);
 
         // can't know the residual norm, yet
@@ -224,7 +227,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
 
       // check the result (we have given the solution as initial guess!)
       _MT_ resNorm[_NV_];
-      SUBR(blockedGMRESstates_updateSol)(state, _NV_, vec2_, resNorm, false, &iflag_);
+      SUBR(blockedGMRESstates_updateSol)(state, _NV_, rightPreconPtr_, vec2_, resNorm, false, &iflag_);
       ASSERT_EQ(0,iflag_);
 
       // can't know the residual norm, yet
@@ -276,17 +279,17 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       SUBR(mvec_delete)(y_i,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      // call iterate
-      int nIter = 0;
-      SUBR(blockedGMRESstates_iterate)(jdOp_,state, _NV_, &nIter, true, &iflag_);
+      // call iterate, allowing at most 1 iteration
+      int nIter = 1;
+      SUBR(blockedGMRESstates_iterate)(jdOp_,rightPreconPtr_,state, _NV_, &nIter, true, &iflag_);
       ASSERT_EQ(0,iflag_);
-      // only one iteration should be needed!
+      // make sure no iterations were done (we don't count the residual calculation as an iteration)
       ASSERT_EQ(1,nIter);
       // all systems should be marked as converged
       for(int i = 0; i < _NV_; i++)
       {
         // all systems did 1 iteration
-        ASSERT_EQ(1,state[i]->totalIter);
+        ASSERT_EQ(0,state[i]->totalIter);
         // all systems converged
         ASSERT_EQ(0,state[i]->status);
       }
@@ -296,7 +299,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);
       // check the result (we have given the solution as initial guess!)
       _MT_ resNorm[_NV_];
-      SUBR(blockedGMRESstates_updateSol)(state, _NV_, vec2_, resNorm, false, &iflag_);
+      SUBR(blockedGMRESstates_updateSol)(state, _NV_, rightPreconPtr_, vec2_, resNorm, false, &iflag_);
       ASSERT_EQ(0,iflag_);
 
       // residual didn't change, so the relative residual should be one
@@ -357,8 +360,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);
 
       // call iterate
-      int nIter = 0;
-      SUBR(blockedGMRESstates_iterate)(jdOp_,state, _NV_, &nIter, true, &iflag_);
+      int nIter = 99;
+      SUBR(blockedGMRESstates_iterate)(jdOp_,rightPreconPtr_,state, _NV_, &nIter, true, &iflag_);
       ASSERT_EQ(0,iflag_);
       // only one iteration should be needed!
       ASSERT_EQ(1,nIter);
@@ -367,7 +370,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       for(int i = 0; i < _NV_; i++)
       {
         // all systems did 1 iteration
-        ASSERT_EQ(1,state[i]->totalIter);
+        ASSERT_EQ(0,state[i]->totalIter);
         // other systems may have converged
         ASSERT_TRUE(state[i]->status == 0 || state[i]->status == 1);
       }
@@ -376,7 +379,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);
       // check the result
       _MT_ resNorm[_NV_];
-      SUBR(blockedGMRESstates_updateSol)(state, _NV_, vec2_, resNorm, false, &iflag_);
+      SUBR(blockedGMRESstates_updateSol)(state, _NV_, rightPreconPtr_, vec2_, resNorm, false, &iflag_);
       ASSERT_EQ(0,iflag_);
 
       // resnorm should be set now
@@ -458,20 +461,21 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       SUBR(mvec_norm2)(vec1_,initialResNorm,&iflag_);
 
       // call iterate
-      int nIter = 0;
-      SUBR(blockedGMRESstates_iterate)(jdOp_,state, _NV_, &nIter, true, &iflag_);
-      ASSERT_TRUE(iflag_ == 0 || iflag_ == 1);
+      int nIter = 999;
+      SUBR(blockedGMRESstates_iterate)(jdOp_,rightPreconPtr_,state, _NV_, &nIter, true, &iflag_);
+      ASSERT_TRUE(iflag_ >= 0 && iflag_ <= 2);
       for(int i = 0; i < _NV_; i++)
       {
-        // all systems did nIter iteration
-        ASSERT_EQ(nIter,state[i]->totalIter);
+        // all systems did nIter iterations. Note that nIter counts the initial residual computation after
+        // a restart with non-zero x as an iteration, hence the -1 here
+        ASSERT_EQ(nIter-1,state[i]->totalIter);
       }
 
       SUBR(sparseMat_times_mvec)(st::one(),A_,vec2_,st::zero(),vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       // check the result (we have given the solution as initial guess!)
       _MT_ resNorm[_NV_];
-      SUBR(blockedGMRESstates_updateSol)(state, _NV_, vec2_, resNorm, false, &iflag_);
+      SUBR(blockedGMRESstates_updateSol)(state, _NV_, rightPreconPtr_, vec2_, resNorm, false, &iflag_);
       ASSERT_EQ(0,iflag_);
 
       // now check the result: vec3 = jdOp_(vec2)
