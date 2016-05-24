@@ -237,6 +237,7 @@ int main(int argc, char** argv)
     sdMat_ptr D=NULL;
     PHIST_ICHK_IERR(SUBR(sdMat_create)(&D,num_eigs,num_eigs,comm,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(sdMat_put_value)(D,st::zero(),&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(sdMat_from_device)(D,&iflag),iflag);
     ST *D_raw=NULL;
     phist_lidx ldD;
     PHIST_ICHK_IERR(SUBR(sdMat_extract_view)(D,&D_raw,&ldD,&iflag),iflag);
@@ -253,6 +254,7 @@ int main(int argc, char** argv)
       }
       i++;
     }
+    PHIST_ICHK_IERR(SUBR(sdMat_to_device)(D,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(st::one(),Xv,D,-st::one(),R,&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(sdMat_delete)(D,&iflag),iflag);
 #endif

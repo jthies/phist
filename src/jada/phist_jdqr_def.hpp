@@ -370,6 +370,7 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
         PHIST_CHK_IERR(SUBR(mvec_num_vectors)(Vv,&ncV,iflag),*iflag);
         PHIST_SOUT(PHIST_VERBOSE,"#vectors in V: %d\n",ncV);
       PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,Vv,st::zero(),tmp1,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(sdMat_from_device)(tmp1,iflag),*iflag);
       if (nconv>0)
       {
         int ncQ;
@@ -378,6 +379,7 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
         PHIST_CHK_IERR(SUBR(sdMat_create)(&tmp2,m,nconv,comm,iflag),*iflag);
         PHIST_CHK_IERR(SUBR(sdMat_extract_view)(tmp2,&tmp2_raw,&ld2,iflag),*iflag);
         PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Vv,Qv,st::zero(),tmp2,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(sdMat_from_device)(tmp2,iflag),*iflag);
       }
       MT err1=mt::zero(), err2=mt::zero();
       for (int i=0;i<m;i++)
@@ -438,9 +440,12 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
     // of ill-conditioned Ritz values.
     int nselect=m;
     int nsort=nselect;
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)(T,iflag),*iflag);
     //ALG sorted Schur decomposition
     PHIST_CHK_IERR(SUBR(SchurDecomp)
         (T_raw,ldT,S_raw,ldS,m,nselect,nsort,which,tol,ev,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(T,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(S,iflag),*iflag);
     int ev_pos=0;
     theta=ev[ev_pos];
 
@@ -743,6 +748,7 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
     ST* R_raw=NULL;
     phist_lidx ldR;
     PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R,&R_raw,&ldR,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)(R,iflag),*iflag);
     i=0;
     while (i<nconv)
     {
@@ -777,6 +783,9 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
   
     // compute eigenvectors. Given the Schur form R, first compute all its 
     // eigenvectors in S. Then compute the eigenvectors of A as Q*S.
+    
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)(R,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_from_device)(S,iflag),*iflag);
     const char* side="R";
     const char* howmny="A";
     int m_out;
@@ -800,7 +809,11 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
     iflag),*iflag);
 #endif  
     delete [] work;
+
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(R,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_to_device)(S,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(S,&Sv,0,nconv-1,0,nconv-1,iflag),*iflag);
+    
     TYPE(mvec_ptr) Qcopy=NULL;
     if (Qout == NULL)
     {
@@ -861,6 +874,10 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
   if (nconv<numEigs) *iflag=1;
   return;
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// helper functions                                                                              //
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 void SUBR(computeResidual)(TYPE(const_linearOp_ptr) B_op, TYPE(mvec_ptr) r_ptr,
         TYPE(const_mvec_ptr) Au_ptr, TYPE(const_mvec_ptr) u_ptr, TYPE(mvec_ptr) rtil_ptr,
