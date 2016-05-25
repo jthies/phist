@@ -229,7 +229,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     if( me->method_==phist_MINRES )
     {
       int nIter=maxIter;
-      PHIST_CHK_IERR(SUBR(blockedMINRESstates_iterate)(&jadaOp, jadaPrecPtr, &activeStates[0], k, &nIter, iflag), *iflag);
+      PHIST_CHK_NEG_IERR(SUBR(blockedMINRESstates_iterate)(&jadaOp, jadaPrecPtr, &activeStates[0], k, &nIter, iflag), *iflag);
     }
     else if (me->method_==phist_CARP_CG)
     {
@@ -266,8 +266,10 @@ PHIST_TASK_BEGIN(ComputeTask)
           _MT_ tmp;
           PHIST_CHK_IERR(SUBR(blockedGMRESstates_updateSol)(&activeStates[i],1,jadaPrecPtr, t_i, &tmp, false, iflag), *iflag);
 
-          if( activeStates[i]->status == 2 && activeStates[i]->totalIter >= maxIter )
+          if( activeStates[i]->status == 3 )
+          {
             nUnconvergedSystems++;
+          }
           else if( activeStates[i]->status == 2 )
           {
             // prepare restart
