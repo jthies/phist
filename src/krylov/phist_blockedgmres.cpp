@@ -7,7 +7,7 @@
 #include <cstring>
 #include <cmath>
 #include <vector>
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
 #include <Teuchos_RCP.hpp>
 #endif
 
