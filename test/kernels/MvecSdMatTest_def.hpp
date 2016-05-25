@@ -550,7 +550,7 @@ public:
 // melven: Kahan summation here will most probably not work, see remarks below
 // * compiler optimization!
 // * one can also improve the multiplication
-// * high precision examples are in src/kernels/builtin/*prec*
+// * high precision examples are in src/kernels/builtin/\*prec\*
 // -> long double for reference data should be the better way (hoping/checking that long double != double!)
           _ST_PREC_ dot_ij = (_ST_PREC_)0;
           long double dotAbs_ij = (long double)0;
