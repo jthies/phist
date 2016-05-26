@@ -40,6 +40,8 @@ def _set(varName, value):
 # some helper data types
 c_int = _phist_kernels.c_int
 c_int_p = _phist_kernels.c_int_p
+c_char = _ct.c_char
+c_char_p = _phist_kernels.c_char_p
 c_double = _ct.c_double
 c_void_p = _ct.c_void_p
 
@@ -54,10 +56,10 @@ class phist_jadaOpts_t(_ct.Structure):
 
        // what do you want to compute?
        int numEigs; //! howmany eigenpairs are sought?
-       eigSort_t which; //! LM, SM, LR, SR, or TARGET
+       EeigSort which; //! LM, SM, LR, SR, or TARGET
        double convTol; //! convergence tolerance for eigenvalues
-       matSym_t symmetry; //! Symmetry properties of the matrix
-       eigExtr_t how; //! use standaard or harmonic Ritz values, etc.
+       EmatSym symmetry; //! Symmetry properties of the matrix
+       EeigExtr how; //! use standaard or harmonic Ritz values, etc.
 
        // JaDa configuration
        int maxIters; //! maximum iterations allowed
@@ -74,7 +76,7 @@ class phist_jadaOpts_t(_ct.Structure):
        
        int initialShiftIters; // perform given number of iterations with a fixed shift
        // inner solver configuration
-       linSolv_t innerSolvType; /*! GMRES, MINRES, CARP_CG, USER_DEFINED currently supported.
+       ElinSolv innerSolvType; /*! GMRES, MINRES, CARP_CG, USER_DEFINED currently supported.
                                  * If set to USER_DEFINED, you have to provide the customSolver*
                                  * interface below.
                                  */
@@ -86,6 +88,20 @@ class phist_jadaOpts_t(_ct.Structure):
                              */
        int innerSolvStopAfterFirstConverged;
        
+       //! pointer to a inearOp whose apply_shifted function serves as a preconditioner for the inner solver. May be NULL (no preconditioning) or created by phist_Xprecon_create.
+       //! This pointer can be used to pass an already computed preconditioner to the Jacobi-Davidson solver. The preconditioner will not be updated explicitly during the run, but
+       //! differentsshift will be supplied to the apply_shifted function.
+       void const* preconOp;
+
+       //! This fields allows specifying a preconditioner (along with preconOpts to pass in options) in an option file.
+       //! Currently it is the responsibility of the driver routine to create the preconditioner in "preconOp", but in 
+       //! the future we may allow the jada solver(s) to update the preconditioner with new subspace information and   
+       //! shifts during the eigenvalue computation.
+       phist_Eprecon preconType;
+
+       //! option string passed to precon_create alongside preconType (if it is not NO_PRECON or INVALID_PRECON)
+       char preconOpts[1024];
+
        
          //! pointer to solver object if innerSolvType==USER_DEFINED
          void* customSolver;
@@ -119,10 +135,10 @@ class phist_jadaOpts_t(_ct.Structure):
     '''
 
     _fields_ = [("numEigs",             c_int),
-                ("which",               _phist_tools.eigSort_t),
+                ("which",               _phist_tools.EeigSort),
                 ("convTol",             c_double),
-                ("symmetry",            _phist_tools.matSym_t),
-                ("how",                 _phist_tools.eigExtr_t),
+                ("symmetry",            _phist_tools.EmatSym),
+                ("how",                 _phist_tools.EeigExtr),
                 ("maxIters",            c_int),
                 ("blockSize",           c_int),
                 ("minBas",              c_int),
@@ -132,12 +148,15 @@ class phist_jadaOpts_t(_ct.Structure):
                 ("initialShift_r",      c_double),
                 ("initialShift_i",      c_double),
                 ("initialShiftIters",   c_int),
-                ("innerSolvType",       _phist_tools.linSolv_t),
+                ("innerSolvType",       _phist_tools.ElinSolv),
                 ("innerSolvBlockSize",  c_int),
                 ("innerSolvMaxBas",     c_int),
                 ("innerSolvMaxIters",   c_int),
                 ("innerSolvRobust",     c_int),
                 ("innerSolvStopAfterFirstConverged", c_int),
+                ("preconOp",            c_void_p),
+                ("preconType",          _phist_tools.Eprecon),
+                ("preconOpts",          c_char*1024),
                 ("customSolver",        c_void_p),
                 ("customSolver_run",    c_void_p),
                 ("customSolver_run1",  c_void_p),

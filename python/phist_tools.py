@@ -39,47 +39,60 @@ phist_kernel_lib = _phist_tools.phist_kernel_lib
 #--------------------------------------------------------------------------------
 # from phist_enums.h
 # eigSort
-eigSort_t = _ct.c_uint
+EeigSort = _ct.c_uint
 eigSort_NO_EIGSORT    = _ct.c_uint(0)
 eigSort_LM      = _ct.c_uint(1)
 eigSort_SM      = _ct.c_uint(2)
 eigSort_LR      = _ct.c_uint(3)
 eigSort_SR      = _ct.c_uint(4)
 eigSort_TARGET  = _ct.c_uint(5)
-_phist_tools.eigSort2str.argtypes = (eigSort_t,)
+_phist_tools.eigSort2str.argtypes = (EeigSort,)
 _phist_tools.eigSort2str.resType = _ct.c_char_p
 eigSort2str = _phist_tools.eigSort2str
 _phist_tools.str2eigSort.argtypes = (_ct.c_char_p,)
-_phist_tools.str2eigSort.resType = eigSort_t
+_phist_tools.str2eigSort.resType = EeigSort
 str2eigSort = _phist_tools.str2eigSort
 
 # eigExtr
-eigExtr_t = _ct.c_uint
+EeigExtr = _ct.c_uint
 eigExtr_STANDARD = _ct.c_uint(0)
-eigSort_HARMONIC = _ct.c_uint(1)
-eigSort_INVALID_EIGEXTR_T = _ct.c_uint(99)
-_phist_tools.eigExtr2str.argtypes = (eigExtr_t,)
+eigExtr_HARMONIC = _ct.c_uint(1)
+eigExtr_INVALID_EIGEXTR_T = _ct.c_uint(99)
+_phist_tools.eigExtr2str.argtypes = (EeigExtr,)
 _phist_tools.eigExtr2str.resType = _ct.c_char_p
 eigExtr2str = _phist_tools.eigExtr2str
 _phist_tools.str2eigExtr.argtypes = (_ct.c_char_p,)
-_phist_tools.str2eigExtr.resType = eigExtr_t
+_phist_tools.str2eigExtr.resType = EeigExtr
 str2eigExtr = _phist_tools.str2eigExtr
 
 # linSolv
-linSolv_t = _ct.c_uint
+ElinSolv = _ct.c_uint
 linSolv_DO_NOTHING   = _ct.c_uint(0)
 linSolv_GMRES        = _ct.c_uint(1)
 linSolv_MINRES       = _ct.c_uint(2)
 linSolv_CARP_CG      = _ct.c_uint(3)
 linSolv_USER_DEFINED = _ct.c_uint(98)
-_phist_tools.linSolv2str.argtypes = (linSolv_t,)
+_phist_tools.linSolv2str.argtypes = (ElinSolv,)
 _phist_tools.linSolv2str.resType = _ct.c_char_p
 linSolv2str = _phist_tools.linSolv2str
 _phist_tools.str2linSolv.argtypes = (_ct.c_char_p,)
-_phist_tools.str2linSolv.resType = linSolv_t
+_phist_tools.str2linSolv.resType = ElinSolv
 str2linSolv = _phist_tools.str2linSolv
-# matSym
-matSym_t = _ct.c_uint
+
+# precon
+Eprecon = _ct.c_uint
+precon_NO_PRECON   = _ct.c_uint(0)
+precon_IFPACK        = _ct.c_uint(1)
+#others not exposed here yet
+_phist_tools.precon2str.argtypes = (Eprecon,)
+_phist_tools.precon2str.resType = _ct.c_char_p
+precon2str = _phist_tools.precon2str
+_phist_tools.str2precon.argtypes = (_ct.c_char_p,)
+_phist_tools.str2precon.resType = Eprecon
+str2precon = _phist_tools.str2precon
+
+# matSyma
+EmatSym = _ct.c_uint
 matSym_GENERAL            = _ct.c_uint(0)
 matSym_HERMITIAN          = _ct.c_uint(1)
 matSym_COMPLEX_SYMMETRIC  = _ct.c_uint(2)
