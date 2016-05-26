@@ -1,11 +1,16 @@
 #include "phist_blockedgmres_helper_def.hpp"
 
 // implementation of minres on several systems simultaneously
-void SUBR(blockedMINRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(blockedGMRESstate_ptr) S[], int numSys, int* nIter, int* iflag)
+void SUBR(blockedMINRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, 
+                                       TYPE(const_linearOp_ptr) rightPrecon,
+                                       TYPE(blockedGMRESstate_ptr) S[], int numSys, int *nIter, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag = 0;
+
+  int maxIter=(*nIter)>0?*nIter:9999999;
+  *nIter=0;
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
   PHIST_SOUT(PHIST_DEBUG,"starting function iterate() with %d systems\n curDimVs: ",numSys);
@@ -19,6 +24,12 @@ void SUBR(blockedMINRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(blocke
   if( numSys <= 0 )
     return;
 
+  if (rightPrecon!=NULL)
+  {
+    PHIST_SOUT(PHIST_WARNING,"preconditioning not implemented in %s\n",__FUNCTION__);
+    
+  }
+
   // if there are multiple systems, get the maximal id
   int maxId = 0;
   for(int i = 0; i < numSys; i++)
@@ -27,7 +38,7 @@ void SUBR(blockedMINRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(blocke
   for(int i = 0; i < numSys; i++)
     minId = std::min(minId,S[i]->id);
 
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
   PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr, S[0]->Vbuff, *iflag);
   Teuchos::RCP<TYPE(MvecRingBuffer)> mvecBuff = *mvecBuffPtr;
 #else
@@ -37,7 +48,7 @@ void SUBR(blockedMINRESstates_iterate)(TYPE(const_linearOp_ptr) Aop, TYPE(blocke
   // make sure all systems use the same mvecBuff
   for(int i = 0; i < numSys; i++)
   {
-#ifdef PHIST_HAVE_BELOS
+#ifdef PHIST_HAVE_TEUCHOS
     PHIST_CAST_PTR_FROM_VOID(Teuchos::RCP<TYPE(MvecRingBuffer)>, mvecBuffPtr_i, S[i]->Vbuff, *iflag);
     PHIST_CHK_IERR(*iflag = (*mvecBuffPtr_i != *mvecBuffPtr) ? -1 : 0, *iflag);
 #else
@@ -132,7 +143,8 @@ PHIST_SOUT(PHIST_INFO,"\n");
   // maximum permitted number of iterations. The decision about what to do
   // next is then left to the caller.
   int anyConverged = 0;
-  int anyFailed = 0;
+  int anyFull      = 0;
+  int anyFailed    = 0;
 
 
 
@@ -150,10 +162,15 @@ PHIST_SOUT(PHIST_INFO,"\n");
       S[i]->status = 0; // mark as converged
       anyConverged++;
     }
+    else if( S[i]->totalIter >=maxIter )
+    {
+      S[i]->status = 3; // mark as failed
+      anyFull++;
+    }
     else if( S[i]->curDimV_ >= mvecBuff->size() )
     {
-      S[i]->status = 2; // mark as failed/restart needed
-      anyFailed++;
+      S[i]->status = 2; // mark as restart needed
+      anyFull++;
     }
   }
 
@@ -165,7 +182,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
 // put all iterations in one big compute task; this speeds up the tests with ghost (significantly)
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
-  while( anyConverged == 0 && anyFailed == 0 )
+  while( anyConverged==0 && anyFull==0 && anyFailed==0 )
   {
     //    % get new vector for y
     int nextIndex;
@@ -439,10 +456,15 @@ PHIST_TASK_BEGIN(ComputeTask)
         S[i]->status = 0; // mark as converged
         anyConverged++;
       }
+      else if(S[i]->totalIter >= maxIter )
+      {
+        S[i]->status=3;
+        anyFailed++;
+      }
       else if( S[i]->curDimV_ >= mvecBuff->size() )
       {
-        S[i]->status = 2; // mark as failed/restart needed
-        anyFailed++;
+        S[i]->status = 2; // mark asrestart needed
+        anyFull++;
       }
       else
       {
@@ -473,10 +495,7 @@ PHIST_TASK_END(iflag)
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vj,     iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(Vk,     iflag), *iflag);
 
-  if (anyConverged > 0)
-    *iflag=0;
-      
-  if (anyFailed > 0)
-    *iflag=1;
+  *iflag=99;
+  for (int i=0; i<numSys; i++) *iflag=std::min(*iflag,S[i]->status);
 }
 

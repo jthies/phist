@@ -28,7 +28,7 @@ typedef struct TYPE(blockedGMRESstate)
   //@{
   int id;               //! used to identify the system solved, set in blockedGMRESSates_create, don't modify!
   _MT_ tol;             //! convergence tolerance for this system (can be adjusted any time)
-  int status;           //! -2: not initialized, -1: resetted, 0: converged, 1: not yet converged, 2: max iters exceeded
+  int status;           //! -2: not initialized, -1: resetted, 0: converged, 1: not yet converged, 2: basis full 3: max iters exceeded
   int totalIter;        //! counts the total number of iterations (also over restarts)
   //@}
   //! \name  internal data structures
@@ -62,12 +62,18 @@ typedef TYPE(blockedGMRESstate) const * TYPE(const_blockedGMRESstate_ptr);
 //! column it is applied to, like in block JaDa: OP(X_j) = (A-s_jI)(I-VV').
 //! (Note: a real block variant should be possible, since A-s_jI gives the *SAME* Krylov-subspace as A,
 //! but it would be difficult to add a new system to an existing (generalized) krylov-subspace)
+//!
+//! On input, *nIter indicates the total max number of iterations allowed, maxIter, for any system.
+//! On output, *nIter indicates the number of blocked iterations performed. For technical reasons
+//! this includes the initial residual computation if you pass in a non-zero vector x to _reset, so
+//! the actual number of GMRES iterations may differ (it can be found for each state in S[i]->totalIter).
+//!
 //! The computational steering is done by initializing the parameters in the
 //! gmresState structs. The iteration stops as soon as one system converges or
-//! reaches maxDimV iterations (NOTE: no restarting is implemented, so the maximum
-//! number of iterations is determined by the number of basis vectors allocated).
-//! The user can then continue running GMRES on the others after appropriately
-//! reordering the rhs vectors and array of states.
+//! reaches maxDimV iterations, or the total number of iterations reaches maxIter
+//! for some system.
+//! The user can then continue running GMRES on the some of the systems after appropriately
+//! reordering the rhs vectors and array of states, and calling reset to restart single systems.
 //!
 //! This function does *not* compute the solution to the original system AX=B for you.
 //! For any of the systems (wether converged or not) the function gmresState_updateSol
@@ -77,14 +83,28 @@ typedef TYPE(blockedGMRESstate) const * TYPE(const_blockedGMRESstate_ptr);
 //! Individual status flags are contained within the structs,
 //! and a global error code is put into the last arg iflag, as usual.
 //!
-//! if system j has converged, S_array[j]->status will be set to 0 on output.
-//! Otherwise it will be set to 1 (not yet converged) or 2 (max iters exceeded),
-//! or a negative value if an error occurred related to this particular system.
-//! The global iflag flag will then be set to -1. (0 for "someone converged" and +1 for
-//! someone reached max iters")
-//! \warning you cannot mix together states from different calls to blockedGMRESstates_create!
+//! return flag(s):
 //!
-void SUBR( blockedGMRESstates_iterate ) (TYPE(const_linearOp_ptr) Op, TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int* nIter, bool useIMGS, int* iflag);
+//! if system j has converged, S_array[j]->status will be set to 0 on output.
+//! Otherwise it will be set to 1 (not yet converged), 2 (basis full/need reset),
+//! 3 (maxIter exceeded) or a negative value if an error occurred related to this particular system.
+//!
+//! The global iflag flag will then be set to the minimum of all the status flags, that is
+//!
+//! -1 if any error occurred
+//!  0 if anyone converged and there was no error
+//!  1 if everyone is still running fine but the function exited for some obscure reason (should never happen)
+//!  2 if all systems need to be restarted
+//!  3 if all systems reached the maximum number of iterations
+//!
+//! of the individual states (converged, basis full or failed)
+//!
+//! \warning you cannot mix together states from different calls to blockedGMRESstates_create! The way to
+//! insert a new system into a state array is via reset() with a non-NULL right-hand side b.
+//!
+void SUBR( blockedGMRESstates_iterate ) (TYPE(const_linearOp_ptr) Op, 
+                TYPE(const_linearOp_ptr) rightPrecon,
+                TYPE(blockedGMRESstate_ptr) S_array[], int numSys, int *nIter, bool useIMGS, int* iflag);
 
 //!
 //! create an array of gmresState objects. The method's input parameters
@@ -107,12 +127,16 @@ void SUBR( blockedGMRESstates_delete ) (TYPE(blockedGMRESstate_ptr) S_array[], i
 //!
 //! this function can be used to force a clean restart of the associated GMRES
 //! solver. It is necessary to call this function before the first call to
-//! blockedGMRES_iterate. The input starting vector x0 may be NULL, in that case this function
-//! will generate a random initial guess. x0 does not have to be normalized in advance.
+//! blockedGMRES_iterate in order to set the RHS b. The input starting vector x0 
+//! may be NULL, in that case x0=0 is used. x0 does not have to be normalized in advance.
 //! The input RHS may also be NULL, meaning 'keep old RHS', but not on the first call to
 //! reset. If one of the RHS vectors changes between calls to gmres, reset with the new
 //! rhs should be called for that gmresState, otherwise a messed up Krylov sequence will
-//! result and the convergence criterion will not be consistent.
+//! result and the convergence criterion will not be consistent. To implement standard 
+//! restarted GMRES, call iterate, then updateSol and afterwards reset with b=NULL and 
+//! x0 the updated solution column.
+//! To free the resources used by this state object, call _reset with b=x0=NULL. Subsequent
+//! use of the object requires a nother call to _reset with at least b!=NULL.
 //!
 void SUBR( blockedGMRESstate_reset ) (TYPE(blockedGMRESstate_ptr) S, TYPE(const_mvec_ptr) b, TYPE(const_mvec_ptr) x0, int *iflag);
 
@@ -123,7 +147,9 @@ void SUBR( blockedGMRESstate_reset ) (TYPE(blockedGMRESstate_ptr) S, TYPE(const_
 //! solution. The function is 'vectorized' in the same way as iterate, so an array of states 
 //! and multivector x can be passed in.
 //!
-void SUBR( blockedGMRESstates_updateSol ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys, TYPE(mvec_ptr) x, _MT_ *resNorm, bool scaleSolutionToOne, int* iflag);
+void SUBR( blockedGMRESstates_updateSol ) (TYPE(blockedGMRESstate_ptr) S_array[], int numSys,
+                TYPE(const_linearOp_ptr) rightPrecon,
+                TYPE(mvec_ptr) x, _MT_ *resNorm, bool scaleSolutionToOne, int* iflag);
 
 //@}
 //@}

@@ -82,13 +82,20 @@ class PreconTraits<double,phist_ML>
     PHIST_CAST_PTR_FROM_VOID(const ML_Epetra::MultiLevelPreconditioner, P, vP,*iflag);
     PHIST_CAST_PTR_FROM_VOID(const Epetra_MultiVector, X, vX,*iflag);
     PHIST_CAST_PTR_FROM_VOID(      Epetra_MultiVector, Y, vY,*iflag);
-    if (alpha!=1.0||beta!=0.0)
+    Teuchos::RCP<Epetra_MultiVector> Y2 = Teuchos::rcp(Y,false);
+    if (beta!=0.0)
     {
-      PHIST_SOUT(PHIST_ERROR,"ML preconditioner can only be applied as Y=inv(P)X up to now\n");
-      *iflag=PHIST_NOT_IMPLEMENTED;
-      return;
+      Y2=Teuchos::rcp(new Epetra_MultiVector(*Y));
     }
-    PHIST_CHK_IERR(*iflag=P->ApplyInverse(*X,*Y),*iflag);
+    PHIST_CHK_IERR(*iflag=P->ApplyInverse(*X,*Y2),*iflag);
+    if (beta!=0.0)
+    {
+      Y->Update(alpha,*Y2,beta);
+    }
+    else if (alpha!=1.0)
+    {
+      Y->Scale(alpha);
+    }
   }
   
   static void ApplyT(double alpha, void const* P, phist_Dconst_mvec_ptr X, double beta, phist_Dmvec_ptr Y, int* iflag)

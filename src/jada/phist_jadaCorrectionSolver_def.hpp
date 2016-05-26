@@ -14,6 +14,7 @@ void SUBR(jadaCorrectionSolver_create)(TYPE(jadaCorrectionSolver_ptr) *me, phist
     (*me)->gmresBlockDim_ = opts.innerSolvBlockSize;
     (*me)->blockedGMRESstates_  = new TYPE(blockedGMRESstate_ptr)[(*me)->gmresBlockDim_];
     PHIST_CHK_IERR(SUBR(blockedGMRESstates_create)((*me)->blockedGMRESstates_, opts.innerSolvBlockSize, map, opts.innerSolvMaxBas, iflag), *iflag);
+    (*me)->rightPrecon=(TYPE(const_linearOp_ptr))opts.preconOp;
   }
   else if ((*me)->method_==phist_CARP_CG)
   {
@@ -146,7 +147,14 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   TYPE(linearOp) jadaOp;
   PHIST_CHK_IERR(SUBR(jadaOp_create)(A_op, B_op, Qtil, BQtil, &currShifts[0], k, &jadaOp, iflag), *iflag);
 
-  // the next system to consider if one converged/failed
+  // wrap the preconditioner so that apply_shifted is called
+  TYPE(linearOp) jadaPrec, *jadaPrecPtr=NULL;
+  if (me->rightPrecon!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(jadaPrec_create)(me->rightPrecon,&currShifts[0],k,&jadaPrec,iflag),*iflag);
+    jadaPrecPtr=&jadaPrec;
+  }
+
   int nextSystem = 0;
 
   // just used to prevent inifite loops
@@ -155,9 +163,6 @@ void SUBR(jadaCorrectionSolver_run)(TYPE(jadaCorrectionSolver_ptr) me,
   // we need some views
   TYPE(mvec_ptr) res_i = NULL;
   TYPE(mvec_ptr) t_i   = NULL;
-
-  // total number of blockedGMRES-iterations performed, not used
-  int nTotalIter = 0;
 
   // number of unconverged systems to be returned
   int nUnconvergedSystems = 0;
@@ -223,7 +228,8 @@ PHIST_TASK_BEGIN(ComputeTask)
     // actually iterate
     if( me->method_==phist_MINRES )
     {
-      PHIST_CHK_NEG_IERR(SUBR(blockedMINRESstates_iterate)(&jadaOp, &activeStates[0], k, &nTotalIter, iflag), *iflag);
+      int nIter=maxIter;
+      PHIST_CHK_NEG_IERR(SUBR(blockedMINRESstates_iterate)(&jadaOp, jadaPrecPtr, &activeStates[0], k, &nIter, iflag), *iflag);
     }
     else if (me->method_==phist_CARP_CG)
     {
@@ -231,9 +237,9 @@ PHIST_TASK_BEGIN(ComputeTask)
     }
     else
     {
-      PHIST_CHK_NEG_IERR(SUBR(blockedGMRESstates_iterate)(&jadaOp, &activeStates[0], k, &nTotalIter, useIMGS, iflag), *iflag);
+      int nIter=maxIter;
+      PHIST_CHK_NEG_IERR(SUBR(blockedGMRESstates_iterate)(&jadaOp, jadaPrecPtr,&activeStates[0], k, &nIter, useIMGS, iflag), *iflag);
     }
-
 
     // optimization to use always full blocks and ignore tolerances
     if( abortAfterFirstConvergedInBlock && k > 0 )
@@ -241,7 +247,7 @@ PHIST_TASK_BEGIN(ComputeTask)
       int ind = index[activeStates[0]->id];
       PHIST_CHK_IERR(SUBR(mvec_view_block)(t, &t_i, ind, ind+k-1, iflag), *iflag);
       _MT_ tmp[k];
-      PHIST_CHK_IERR(SUBR(blockedGMRESstates_updateSol)(&activeStates[0], k, t_i, tmp, false, iflag), *iflag);
+      PHIST_CHK_IERR(SUBR(blockedGMRESstates_updateSol)(&activeStates[0], k, jadaPrecPtr, t_i, tmp, false, iflag), *iflag);
       for(int i = 0; i < k; i++)
       {
         PHIST_CHK_IERR(SUBR(blockedGMRESstate_reset)(activeStates[i], NULL, NULL, iflag), *iflag);
@@ -258,10 +264,12 @@ PHIST_TASK_BEGIN(ComputeTask)
           int ind = index[activeStates[i]->id];
           PHIST_CHK_IERR(SUBR(mvec_view_block)(t, &t_i, ind, ind, iflag), *iflag);
           _MT_ tmp;
-          PHIST_CHK_IERR(SUBR(blockedGMRESstates_updateSol)(&activeStates[i], 1, t_i, &tmp, false, iflag), *iflag);
+          PHIST_CHK_IERR(SUBR(blockedGMRESstates_updateSol)(&activeStates[i],1,jadaPrecPtr, t_i, &tmp, false, iflag), *iflag);
 
-          if( activeStates[i]->status == 2 && activeStates[i]->totalIter >= maxIter )
+          if( activeStates[i]->status == 3 )
+          {
             nUnconvergedSystems++;
+          }
           else if( activeStates[i]->status == 2 )
           {
             // prepare restart
@@ -305,9 +313,12 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CHK_IERR(SUBR(mvec_delete)(res_i, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(t_i,   iflag), *iflag);
 PHIST_TASK_END(iflag)
-  // delete the jadaOp
+  // delete the jadaOp and preconditioner wrapper
   PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jadaOp, iflag), *iflag);
-
+  if (jadaPrecPtr!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(jadaOp_delete)(&jadaPrec, iflag), *iflag);
+  }
   *iflag = nUnconvergedSystems;
 }
 

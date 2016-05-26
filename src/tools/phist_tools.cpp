@@ -99,7 +99,7 @@ extern "C" phist_EeigSort str2eigSort(const char* c_str)
 {
   std::string str(c_str);
   str=phist_str2upper(str);
-  phist_EeigSort s=phist_INVALID_EIGSORT_T;
+  phist_EeigSort s=phist_INVALID_EIGSORT;
   if (str=="LM") s=phist_LM;
   else if (str=="SM") s=phist_SM;
   else if (str=="LR") s=phist_LR;
@@ -113,7 +113,7 @@ extern "C" phist_EeigExtr str2eigExtr(const char* c_str)
 {
   std::string str(c_str);
   str=phist_str2upper(str);
-  phist_EeigExtr s=phist_INVALID_EIGEXTR_T;
+  phist_EeigExtr s=phist_INVALID_EIGEXTR;
   if (str=="STANDARD") s=phist_STANDARD;
   else if (str=="HARMONIC") s=phist_HARMONIC;
   return s;
@@ -124,7 +124,7 @@ extern "C" phist_ElinSolv str2linSolv(const char* c_str)
 {
   std::string str(c_str);
   str=phist_str2upper(str);
-  phist_ElinSolv s=phist_INVALID_LINSOLV_T;
+  phist_ElinSolv s=phist_INVALID_LINSOLV;
   if (str=="GMRES") s=phist_GMRES;
   else if (str=="MINRES") s=phist_MINRES;
   else if (str=="CARP_CG") s=phist_CARP_CG;
@@ -137,7 +137,7 @@ extern "C" phist_Eprecon str2precon(const char* c_str)
 {
   std::string str(c_str);
   str=phist_str2upper(str);
-  phist_Eprecon s=phist_INVALID_PRECON_T;
+  phist_Eprecon s=phist_INVALID_PRECON;
   if (str=="NONE") s=phist_NO_PRECON;
 #ifdef PHIST_HAVE_IFPACK
   else if (str=="IFPACK") s=phist_IFPACK;
