@@ -258,7 +258,7 @@ PHIST_TASK_BEGIN(ComputeTask)
       // check the status of the systems
       for(int i = 0; i < k; i++)
       {
-        if( activeStates[i]->status == 0 || activeStates[i]->status == 2 )
+        if( activeStates[i]->status == 0 || activeStates[i]->status >= 2 )
         {
           // update solution
           int ind = index[activeStates[i]->id];
