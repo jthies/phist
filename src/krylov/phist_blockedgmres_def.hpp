@@ -961,6 +961,12 @@ PHIST_TASK_BEGIN(ComputeTask)
         S[i]->status = 0; // mark as converged
         anyConverged++;
       }
+      else if(S[i]->totalIter >= maxIter )
+      {
+        S[i]->status=3;
+        anyFailed++;
+      }
+
       else if( S[i]->curDimV_ >= mvecBuff->size() )
       {
         S[i]->status = 2; // mark as failed/restart needed
