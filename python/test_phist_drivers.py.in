@@ -107,14 +107,17 @@ class PhistDriversTest(unittest.TestCase):
             assert result==0
 
 
+    @pytest.mark.skipif('${PHIST_KERNEL_LIB_EPETRA}'=='' and '${PHIST_KERNEL_LIB_BUILTIN}'=='',
+                        reason="CARP kernel only available with epetra and builtin kernel libs so far")
     def test_carp_cg_graphene(self):
 
         test_name='Dcarp_cg_graphene'
-        if '${PHIST_KERNEL_LIB_EPETRA}'!='' or '${PHIST_KERNEL_LIB_BUILTIN}'!='':
-            shutil.copyfile('${CMAKE_SOURCE_DIR}/examples/test/matrices/graphene/128x64/A.mm', '${CMAKE_CURRENT_BINARY_DIR}/graphene128x64.mm')
+
+        shutil.copyfile('${CMAKE_SOURCE_DIR}/test/matrices/graphene/128x64/A.mm','${CMAKE_CURRENT_BINARY_DIR}/graphene128x64.mm')
+
 # note that we're rather generous here because the way the KACZ/CARP kernel is implemented has some influence on the convergence speed.
 # and the test should also work with more MPI processes
-            test_cmd = './phist_carp_cg graphene128x64.mm none 1 1 1e-12 230 1.0'
-            result=RunTest(test_name,test_cmd)
-            assert result==0
+        test_cmd = './phist_carp_cg graphene128x64.mm none 1 1 1e-12 230 1.0'
+        result=RunTest(test_name,test_cmd)
+        assert result==0
 
