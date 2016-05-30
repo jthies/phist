@@ -15,7 +15,7 @@ typedef enum phist_EeigSort
   phist_LR=3,   // largest real part
   phist_SR=4,   // smallest real part
   phist_TARGET=5, // seek eigenvalues near a specific target
-  phist_INVALID_EIGSORT_T // returned if str2eigSort gets an invalid string
+  phist_INVALID_EIGSORT // returned if str2eigSort gets an invalid string
 } phist_EeigSort;
 
 //! how the eigenvalues of A are approximated in the subspace V
@@ -23,7 +23,7 @@ typedef enum phist_EeigExtr
 {
   phist_STANDARD=0, //! use Ritz values, eig(V'AV)
   phist_HARMONIC=1, //! use harmonic Ritz values, more suitable for inner eigenvalues [eig((AV)'AV)]
-  phist_INVALID_EIGEXTR_T
+  phist_INVALID_EIGEXTR
 } phist_EeigExtr;
 
 //! how to approximately solve linear systems AX=B
@@ -34,7 +34,7 @@ typedef enum phist_ElinSolv
   phist_MINRES=2, // unpreconditioned MINRES
   phist_CARP_CG=3, // CG on the normal equations, preconditioned by CARP (parallel SSOR)
   phist_USER_DEFINED=98,// user wants to provide custom solver
-  phist_INVALID_LINSOLV_T // returned if str2linSolv gets an invalid string
+  phist_INVALID_LINSOLV // returned if str2linSolv gets an invalid string
 } phist_ElinSolv;
 
 typedef enum phist_EmatSym 
@@ -43,7 +43,7 @@ typedef enum phist_EmatSym
   phist_HERMITIAN=1,  /*! A=A^H */
   phist_COMPLEX_SYMMETRIC=2, /*! A=A^T */
   phist_PATTERN_SYMMETRIC=3, /*! G=G^T with G_ij=1 if A_ij!=0, G_ij=0 otherwise */ 
-  phist_INVALID_MATSYM_T
+  phist_INVALID_MATSYM
 } phist_EmatSym;
 
 typedef enum 
@@ -53,7 +53,7 @@ typedef enum
   phist_ML,
   phist_MUELU,
   phist_AMESOS2,
-  phist_INVALID_PRECON_T
+  phist_INVALID_PRECON
 } phist_Eprecon;
 
 

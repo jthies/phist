@@ -941,5 +941,8 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (AV_, iflag), *iflag);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (Vtmp_,iflag), *iflag);
   PHIST_CHK_IERR(SUBR( mvec_delete  ) (V_,  iflag), *iflag);
+
+  *iflag = *nConv<nEig? 1:0;
+  return;
 }
 

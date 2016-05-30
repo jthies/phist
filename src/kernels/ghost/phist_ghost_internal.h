@@ -79,6 +79,12 @@ typedef struct ghost_map
     //! The resulting double can be passed as 'weight' parameter
     //! to ghost_context_create (used in phist_map_create and sparseMat construction routines)
     double get_proc_weight(double force_value=-1.0);
+
+    //! this calls ghost_context_create with the given arguments and retries with a proc_weight of 1 if there are empty partitions
+    //! If the matrix source is not NULL (i.e. the matrix is read from disk or created from a row function) 
+    //! gnrows=gncols=0 should be given.
+    void context_create(ghost_context **context, ghost_gidx gnrows, ghost_gidx gncols, 
+        ghost_context_flags_t flags, void *matrixSource, ghost_sparsemat_src srcType, ghost_mpi_comm comm, double proc_weight, int* iflag);
     
     //! private helper function to create a vtraits object
     ghost_densemat_traits phist_default_vtraits();

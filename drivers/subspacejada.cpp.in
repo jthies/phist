@@ -16,6 +16,8 @@
 #include "phist_jadaOpts.h"
 #include "phist_subspacejada.h"
 #include "phist_harmonicjada.h"
+#include "phist_precon.h"
+
 #include ${PHIST_TG_HFILE}
 #include "phist_driver_utils.h"
 
@@ -98,7 +100,7 @@ else
   GET_ARG(opts.numEigs,p++,opts.numEigs>0);
 
   // which eigenvalues to compute
-  GET_ARG(opts.which,p++,opts.which!=phist_INVALID_EIGSORT_T&&opts.which!=phist_NO_EIGSORT);
+  GET_ARG(opts.which,p++,opts.which!=phist_INVALID_EIGSORT&&opts.which!=phist_NO_EIGSORT);
 
   _ST_ target=st::zero();
   if (opts.which==phist_TARGET)
@@ -224,6 +226,17 @@ else
 
   opts.v0=v0;
   
+  TYPE(linearOp_ptr) precon=NULL;
+  
+  // create a preconditioner if the user asked for it
+  if (opts.preconType!=phist_NO_PRECON)
+  {
+    precon = new TYPE(linearOp);
+    PHIST_ICHK_IERR(SUBR(precon_create)(precon,A,st::zero(),NULL,NULL,NULL,
+                        precon2str(opts.preconType), opts.preconOpts, &iflag),iflag);
+    opts.preconOp=precon;
+  }
+  
   int nIter=opts.maxIters;
 
   //------------------------------- run block JaDa algorithm ----------------------- 
@@ -291,6 +304,13 @@ else
   PHIST_ICHK_IERR(SUBR(mvec_delete)(Q,&iflag),iflag);
   // clean up operator
   delete opA;
+  // delete preconditioner (if any)
+  if (precon!=NULL)
+  {
+    PHIST_ICHK_IERR(SUBR(precon_delete)(precon,&iflag),iflag);
+    delete precon;
+    opts.preconOp=NULL;
+  }
   // delete matrix
   PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
   PHIST_ICHK_IERR(phist_comm_delete(comm,&iflag),iflag);

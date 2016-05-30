@@ -374,7 +374,11 @@ if (num_complex==0)
   for (i=0;i<nrhs;i++) nrm_res_ex[i]=SQRT(nrm_res_ex[i]);
   for (i=0;i<nrhs;i++) nrm_res[i]=SQRT(nrm_res[i]);
 
-  PHIST_SOUT(PHIST_VERBOSE,"res norms for x and x_ex: %16.8e\t%16.8e\n",nrm_res[0],nrm_res_ex[0]);
+  PHIST_SOUT(PHIST_INFO,"residual norms\n");
+  for (int i=0; i<nrhs; i++)
+  {
+    PHIST_SOUT(PHIST_INFO,"%d\t%16.8e (%s)\n",i,nrm_res[i],nrm_res[i]<=tol?"SUCCESS":"FAILURE");
+  }
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
   ST *x_val=NULL, *xex_val=NULL,*r_val=NULL,*rex_val=NULL;

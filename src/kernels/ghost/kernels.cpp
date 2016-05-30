@@ -64,6 +64,9 @@ double get_proc_weight(double force_value)
     proc_weight=mean_bw*1.0e-9;
     if (iflag) proc_weight=1.0;
   }
+  // do not return exactly 1.0 even if it was measured or an error occured on a single MPI process.
+  // context_create below may hang if one process assumes it is in the default case of 1.0
+  if (proc_weight==1.0) proc_weight+=1.0e-12;
   return proc_weight;
 }
 
@@ -195,6 +198,52 @@ int get_perm_flag(int iflag, int outlev)
           delete it->second[i];
         }
         maps_.erase(it);
+      }
+    }
+
+    // this calls ghost_context_create with the given arguments and retries with a proc_weight of 1 if there are empty partitions
+    void context_create(ghost_context **ctx, ghost_gidx gnrows, ghost_gidx gncols, 
+        ghost_context_flags_t flags, void *matrixSource, ghost_sparsemat_src srcType, ghost_mpi_comm comm, double proc_weight, int* iflag)
+    {
+      *iflag=0;
+      phist_gidx nglob_count;
+      bool any_empty;
+      *ctx=NULL;
+      while (*ctx==NULL)
+      {
+        int rank,nproc;
+        ghost_rank(&rank,comm);
+        ghost_nrank(&nproc,comm);
+        PHIST_ORDERED_OUT(PHIST_VERBOSE,comm,"PE%6d partition weight %4.2g\n",rank,proc_weight);
+        PHIST_CHK_GERR(ghost_context_create(ctx,gnrows, gncols, flags, matrixSource,
+            srcType, comm,proc_weight),*iflag);
+        nglob_count=0;
+        any_empty=false;
+        for (int i=0;i<nproc;i++)
+        {
+          any_empty|=((*ctx)->lnrows[i]<=0);
+          // do not count/compare number of rows if none was given
+          if (gnrows!=0) nglob_count+=(*ctx)->lnrows[i];
+        }
+        if (nglob_count!=gnrows||(any_empty&&proc_weight!=1.0))
+        {
+          if (any_empty)          PHIST_SOUT(PHIST_WARNING,"empty partition in map/context\n");
+          if (nglob_count!=gnrows) PHIST_SOUT(PHIST_WARNING,"number of nodes %ld in context does not match given nglob=%ld\n", (int64_t)nglob_count,(int64_t)gnrows);
+          PHIST_SOUT(PHIST_WARNING,"GHOST did not give a correct context, %s\n",proc_weight==1.0?"aborting!":"retrying...");
+          ghost_context_destroy(*ctx);
+          *ctx=NULL;
+          if (proc_weight==1.0)
+          {
+            *iflag=-1;
+            break;
+          }
+          proc_weight=1.0;
+        }
+      }
+      if (*iflag==0)
+      {
+        // set proc weight for subsequent contexts/maps
+        get_proc_weight(proc_weight);
       }
     }
     
@@ -331,11 +380,6 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
 
   ghost_map* map = new ghost_map;
 
-  // sanity checks
-  int rank,nproc;
-  PHIST_CHK_GERR(ghost_rank(&rank,*comm),*iflag);
-  PHIST_CHK_GERR(ghost_nrank(&nproc,*comm),*iflag);
-  
   // try to create the context object. We check wether
   // the weighting for the partitioning gives a feasible context. If the STREAM benchmark
   // returns very different values on the different MPI processes and the map is tiny (as
@@ -343,40 +387,12 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
   // context looks strange we retry with equal process weights, accepting empty partitions.
   // If it still fails we return with an error code/message.
   double proc_weight=get_proc_weight();
-  if (proc_weight==1.0) proc_weight+=1e-6; // will pribably never happen but could cause trouble below
-                                           // if one process thinks he's already in the default case of
-                                           // equal partition sizes
-  phist_gidx nglob_count;
-  bool any_empty;
-  map->ctx=NULL;  
-  while (map->ctx==NULL)
-  {
-    PHIST_ORDERED_OUT(PHIST_VERBOSE,*comm,"PE%6d partition weight %4.2g\n",rank,proc_weight);
-    PHIST_CHK_GERR(ghost_context_create(&map->ctx,nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,
-        GHOST_SPARSEMAT_SRC_NONE, *comm,proc_weight),*iflag);
-    nglob_count=0;
-    any_empty=false;
-    for (int i=0;i<nproc;i++)
-    {
-      any_empty|=(map->ctx->lnrows[i]<=0);
-      nglob_count+=map->ctx->lnrows[i];
-    }
-    if (nglob_count!=nglob||(any_empty&&proc_weight!=1.0))
-    {
-      if (any_empty)          PHIST_SOUT(PHIST_WARNING,"empty partition in map/context\n");
-      if (nglob_count!=nglob) PHIST_SOUT(PHIST_WARNING,"number of nodes %ld in context does not match given nglob=%ld\n", (int64_t)nglob_count,(int64_t)nglob);
-      PHIST_SOUT(PHIST_WARNING,"GHOST did not give a correct context, %s\n",proc_weight==1.0?"aborting!":"retrying...");
-      ghost_context_destroy(map->ctx);
-      map->ctx=NULL;
-      if (proc_weight==1.0)
-      {
-        *iflag=-1;
-        break;
-      }
-      proc_weight=1.0;
-    }
-  }
+
+  PHIST_CHK_IERR(phist::ghost_internal::context_create(&map->ctx,nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,
+            GHOST_SPARSEMAT_SRC_NONE, *comm,proc_weight,iflag),*iflag);
+
   map->vtraits_template=phist_default_vtraits();
+  
   // in ghost terminology, we look at LHS=A*RHS, the LHS is based on the
   // row distribution of A, the RHS has halo elements to allow importing from
   // neighbors. It is not possible to construct an RHS without a matrix, so if

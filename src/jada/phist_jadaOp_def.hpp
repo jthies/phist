@@ -56,7 +56,7 @@ typedef struct TYPE(jadaOp_data)
 // actually applies the jada-operator:
 // for B==NULL:  Y <- alpha* (I-VV')(AX+BX*sigma) + beta*Y
 // for B!=NULL:  Y <- alpha* (I-BVV')*(A(I-VV'B)X + BX*sigma) + beta*Y
-void SUBR(jadaOp_apply)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
+void SUBR(jadaOp_apply_project_post)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
     _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
@@ -162,10 +162,13 @@ void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    A_op,    TYPE(const_linearO
   myOp->BV     = (B_op != NULL ? BV     : V);
   myOp->sigma  = sigma;
   // allocate necessary temporary arrays
-  int nvecp;
+  int nvecp=0;
   phist_const_comm_ptr comm;
   PHIST_CHK_IERR(phist_map_get_comm(A_op->domain_map, &comm, iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V, &nvecp, iflag), *iflag);
+  if (V!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V, &nvecp, iflag), *iflag);
+  }
   if( B_op != NULL )
   {
     PHIST_CHK_IERR(SUBR(mvec_create)(&myOp->X_proj, B_op->domain_map, nvec, iflag), *iflag);
@@ -177,11 +180,14 @@ void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    A_op,    TYPE(const_linearO
 
   // setup op_ptr function pointers
   jdOp->A     = (const void*)myOp;
-  jdOp->apply = (&SUBR(jadaOp_apply));
+  jdOp->apply = (&SUBR(jadaOp_apply_project_post));
   jdOp->applyT= NULL; // not needed, I think, but it's trivial to implement
   jdOp->apply_shifted=NULL;// does not make sense, it would mean calling apply_shifted in a 
                            // nested way.
 
+  jdOp->range_map=A_op->range_map;
+  jdOp->domain_map=A_op->domain_map;
+  
   // print some useful data
   PHIST_SOUT(PHIST_DEBUG, "Created jadaOp with %d projection vectors and %d shifts\n",   nvecp,nvec);
 }
@@ -208,3 +214,39 @@ void SUBR(jadaOp_delete)(TYPE(linearOp_ptr) jdOp, int *iflag)
   delete jadaOp;
 }
 
+
+
+void SUBR(jadaOp_apply_project_none)(_ST_ alpha, const void* op, TYPE(const_mvec_ptr) X,
+    _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(const TYPE(jadaOp_data), jadaOp, op, *iflag);
+
+  if( alpha == st::zero() )
+  {
+    PHIST_CHK_IERR( SUBR( mvec_scale       ) (Y, beta, iflag), *iflag);
+  }
+  else
+  {
+
+    // y_i <- alpha*(A+sigma_i I)*x_i + beta * y_i
+    PHIST_CHK_IERR(jadaOp->A_op->apply_shifted(alpha, jadaOp->A_op->A, jadaOp->sigma, X, beta, Y, iflag),*iflag);
+  }
+}
+
+//! create a preconditioner for the inner solve in Jacobi-Davidson.
+//!
+//! Given a linear operator that is a preconditioner for A, this function will simply
+//! wrap it up to use apply_shifted when apply() is called. We need this because our implementations
+//! of blockedGMRES and MINRES are not aware of the shifts so they can only call apply in the precon-
+//! ditioning operator. Obviously not all preconditioners are able to handle varying shifts without
+//! recomputing, this is not taken into account by this function:in that case the input P_op must be
+//! updated beforehand.
+void SUBR(jadaPrec_create)(TYPE(const_linearOp_ptr) P_op, const _ST_ sigma[], int nvec,
+        TYPE(linearOp_ptr) jdPrec, int* iflag)
+{
+  PHIST_CHK_IERR(SUBR(jadaOp_create)(P_op,NULL,NULL,NULL,sigma, nvec, jdPrec,iflag),*iflag);
+  // use the version without the projections:
+  jdPrec->apply=SUBR(jadaOp_apply_project_none);
+}
