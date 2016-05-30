@@ -306,11 +306,13 @@ PHIST_ICHK_IERR(SUBR(sdMat_delete)(Rtmp,&iflag),iflag);
 
   if (iflag>0)
   {
-    PHIST_SOUT(PHIST_WARNING,"solver returned warning code %d\n",iflag);
+    PHIST_SOUT(PHIST_WARNING,"FAILURE: solver returned warning code %d\n",iflag);
   }
   else if (iflag<0)
   {
-    PHIST_SOUT(PHIST_WARNING,"solver returned error code %d\n",iflag);
+    PHIST_SOUT(PHIST_WARNING,"FAILURE: solver returned error code %d\n",iflag);
+  }
+  PHIST_ICHK_IERR(SUBR(carp_cgState_delete)(carp_cgState,&iflag),iflag);
   }
 
 ///////////////////////////////////////////////////////////////////
@@ -350,16 +352,21 @@ if (num_complex==0)
   PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(-ONE,mat,X_r_ex0,ONE,res_ex0,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(-ONE,mat,X_r[0],ONE,res0,&iflag),iflag);
 
-  double nrm_res[nrhs],nrm_res_ex[nrhs];
+  double nrm_res[nrhs],nrm_res_ex[nrhs],nrm_rhs[nrhs];
+  PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(B,B,nrm_rhs,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(res0,res0,nrm_res,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(res_ex0,res_ex0,nrm_res_ex,&iflag),iflag);
-  for (i=0;i<nrhs;i++) nrm_res_ex[i]=SQRT(nrm_res_ex[i]);
-  for (i=0;i<nrhs;i++) nrm_res[i]=SQRT(nrm_res[i]);
+  for (i=0;i<nrhs;i++) 
+  {
+    nrm_rhs[i]=SQRT(nrm_rhs[i]);
+    nrm_res_ex[i]=SQRT(nrm_res_ex[i]);
+    nrm_res[i]=SQRT(nrm_res[i]);
+  }
 
-  PHIST_SOUT(PHIST_INFO,"residual norms\n");
+  PHIST_SOUT(PHIST_INFO,"residual norms ||r||_2/||b||_2\n");
   for (int i=0; i<nrhs; i++)
   {
-    PHIST_SOUT(PHIST_INFO,"%d\t%16.8e (%s)\n",i,nrm_res[i],nrm_res[i]<=tol?"SUCCESS":"FAILURE");
+    PHIST_SOUT(PHIST_INFO,"%d\t%16.8e (%s)\n",i,nrm_res[i]/nrm_rhs[i],nrm_res[i]<=tol*nrm_rhs[i]?"SUCCESS":"FAILURE");
   }
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
