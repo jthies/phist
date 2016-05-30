@@ -35,8 +35,8 @@ int crsGraphene( ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, 
 
 	static int32_t zigzag_first         = 1;
 	static int32_t long_range_hopping   = 1;
-	static int32_t PBC_W                = 1;
-	static int32_t PBC_L                = 1;
+	static int32_t PBC_W                = 0;
+	static int32_t PBC_L                = 0;
 	static int32_t basis_place          = 0;
 	static int32_t use_symmflag         = 0;
 	static int32_t J_mode           = 0;

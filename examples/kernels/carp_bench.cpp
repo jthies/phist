@@ -94,22 +94,49 @@ PHIST_MAIN_TASK_BEGIN
     xi=NULL;
   }
   
+  ST shifts[nvecs];
   MT shifts_r[nvecs],shifts_i[nvecs],omegas[nvecs];
   for (int i=0;i<nvecs;i++)
   {
     shifts_r[i]=sigma_r;
     shifts_i[i]=sigma_i;
+    shifts[i]=shifts_r[i]+shifts_i[i]*st::cmplx_I();
     omegas[i]=omega;
   }
 
+#ifdef IS_COMPLEX
   PHIST_ICHK_IERR(SUBR(carp_setup)(A,nvecs,shifts_r,shifts_i,&work,&iflag),iflag);
+#else
+  if (shift_type==2)
+  {
+    PHIST_ICHK_IERR(SUBR(carp_setup_rc)(A,nvecs,shifts_r,shifts_i,&work,&iflag),iflag);
+  }
+  else
+  {
+    PHIST_ICHK_IERR(SUBR(carp_setup)(A,nvecs,shifts,&work,&iflag),iflag);
+  }
+#endif
   
   // we only study the case rhs=NULL here because it is the dominant situation in CARP-CG
   // (the rhs is only passed in in the first sweep or for correction steps).
   for(int i = 0; i < NUM_CARP/nvecs; i++)
   {
+#ifdef IS_COMPLEX
     PHIST_ICHK_IERR(SUBR(carp_sweep)(A,shifts_r,shifts_i,rhs,xr,xi,
         work, omegas, &iflag),iflag);
+#else
+    if (shift_type==2)
+    {
+      PHIST_ICHK_IERR(SUBR(carp_sweep_rc)(A,shifts_r,shifts_i,rhs,xr,xi,
+        work, omegas, &iflag),iflag);
+    }
+    else
+    {
+      PHIST_ICHK_IERR(SUBR(carp_sweep)(A,shifts,rhs,xr,
+        work, omegas, &iflag),iflag);
+    }
+
+#endif
   }
   
   PHIST_ICHK_IERR(SUBR(carp_destroy)(A,work,&iflag),iflag);

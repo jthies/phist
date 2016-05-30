@@ -5,7 +5,7 @@
 #define TESTING
 #endif
 #ifdef PHIST_HAVE_COLPACK
-#include "ColPack/ColPackHeaders.h"
+#include "ColPackHeaders.h"
 #endif
 // interface to ColPack's graph coloring algorithms. 
 // Input: local CRS arrays as used in the builtin kernels (only local edges are considered)

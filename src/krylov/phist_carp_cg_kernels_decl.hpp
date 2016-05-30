@@ -11,6 +11,8 @@ typedef struct TYPE(x_sparseMat) {
   TYPE(const_mvec_ptr)      Vproj_;
 } TYPE(x_sparseMat);
 
+//! TODO Jonas: put real and imag part consecutively
+
 //! represent augmented complex vector of the form
 //! |v + i vi |
 //! |vp+ i vpi|
@@ -19,16 +21,28 @@ class TYPE(x_mvec)
   
   public:
 
+    TYPE(mvec_ptr)      vdat_; //! contains the actual vector data, if
+                               //! there is no explicit imaginary part
+                               //! vi vdat_==v_, otherwise vdat_ is 
+                               //! a two*k-column vector with the real
+                               //! and imaginary part stored after each
+                               //! other, so row i contains first the
+                               //! k elements of row i of v_ and then
+                               //! the k elements of the imag part vi_.
+                               //! v_ and vi_ will be views into vdat_.
+                               //! If the storage is column major, the first
+                               //! k vectors are v, the second k are vi.
     TYPE(mvec_ptr)      v_;
     TYPE(mvec_ptr)      vi_;
     TYPE(sdMat_ptr)     vp_;
     TYPE(sdMat_ptr)     vpi_;
+    int nvec_;  //! just for convenience
 
   //! constructor - does not allocate memory
   TYPE(x_mvec)();
 
   //! constructor that views existing mvecs and optionally takes ownership
-  TYPE(x_mvec)(TYPE(mvec_ptr) v, TYPE(mvec_ptr) vi, int naug, bool take_ownership, int* iflag);
+  TYPE(x_mvec)(TYPE(mvec_ptr) v, TYPE(mvec_ptr) vi, int naug, int* iflag);
 
   //! imaginary part is allocated only if rc=true, augmented part only if naug>0.
   void allocate(phist_const_map_ptr map, int nvec, int naug, bool rc, int* iflag);
@@ -38,10 +52,6 @@ class TYPE(x_mvec)
 
   //!
   void deallocate();
-
-  private:
-
-  bool own_mvecs_;
 
 };
 

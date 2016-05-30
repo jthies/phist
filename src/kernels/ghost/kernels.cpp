@@ -122,18 +122,31 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
 
 }
 
-int get_perm_flag(int outlev)
+int get_perm_flag(int iflag, int outlev)
 {
+  int oflag=GHOST_SPARSEMAT_DEFAULT;
+  if (iflag&PHIST_SPARSEMAT_REPARTITION)
+  {
 #ifdef GHOST_HAVE_ZOLTAN
           PHIST_SOUT(outlev, "Trying to repartition the matrix with Zoltan\n");
-          return GHOST_SPARSEMAT_ZOLTAN;
+          oflag|=GHOST_SPARSEMAT_ZOLTAN;
 #elif defined(GHOST_HAVE_SCOTCH)
           PHIST_SOUT(outlev, "Trying to repartition the matrix with SCOTCH\n");
-          return GHOST_SPARSEMAT_SCOTCHIFY;
+          oflag|=GHOST_SPARSEMAT_SCOTCHIFY;
 #else
           PHIST_SOUT(outlev, "Zoltan or PT-Scotch not enabled in GHOST installation, no matrix repartitioning\n");
-          return 0;
 #endif
+#ifdef GHOST_HAVE_SPMP
+          PHIST_SOUT(outlev, "Enable local RCM reordering via SPMP\n");
+          oflag|=GHOST_SPARSEMAT_RCM;
+#endif
+  }
+  if ((iflag&PHIST_SPARSEMAT_OPT_CARP)|(iflag&PHIST_SPARSEMAT_DIST2_COLOR))
+  {
+    oflag|=GHOST_SPARSEMAT_COLOR;
+  }
+  if (oflag!=GHOST_SPARSEMAT_DEFAULT) oflag|=GHOST_SPARSEMAT_PERMUTE;
+  return oflag;
 }
 
  
