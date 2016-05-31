@@ -2,11 +2,17 @@
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
+#else
+#define MPI_COMM_WORLD 0
 #endif
+
 #ifdef PHIST_HAVE_LIKWID
 #include <likwid.h>
 #endif
 #include <stdlib.h>
+
+#include <cstdlib>
+#include <unistd.h>
 
 #include "phist_macros.h"
 #include "phist_tasks.h"
@@ -31,7 +37,24 @@ GHOST_TASK_BEGIN(likwidInitTask)
   }
 GHOST_TASK_END(likwidInitTask)
 #endif
+  // at this point, check for the environment variable PHIST_RUN_DEBUGGER and if it is set,
+  // go into an infinite loop that can only be broken after attaching a debugger
+  // this code was copied from the OpenMPI  FAQ: http://www.open-mpi.de/faq/?category=debugging
+  if (getenv("PHIST_ATTACH_GDB")!=NULL)
+  {
+    int i = 0;
+    char hostname[256];
+    gethostname(hostname, sizeof(hostname));
+    PHIST_SOUT(PHIST_ERROR,"You have set the environment variable 'PHIST_ATTACH_GDB'.\n");
+    PHIST_ORDERED_OUT(PHIST_ERROR,MPI_COMM_WORLD,"PID %d on %s ready for attach.\n", getpid(), hostname);
+    PHIST_SOUT(PHIST_ERROR,"To attach gdb to a process, run 'gdb <executable> <PID> on the respective node.\n"
+                           "In gdb, use 'frame 2', 'set var i = 1' and then 'c' to continue execution.\n"
+                           "Note that you have to do this with every running MPI process in order to continue.\n");
+    while (0 == i) sleep(5);
+  }
 }
+ 
+
 
 extern "C" void phist_kernels_common_finalize(int *iflag)
 {
