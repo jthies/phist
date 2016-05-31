@@ -39,6 +39,12 @@ MODULES_KERNELS_OPTIONAL=(
 usage() { echo "Usage: $0 [-k <builtin|ghost|epetra|tpetra>] [-e <PrgEnv/module-string>] [-f <optional-libs>]"; \
           echo "       [-c <cmake flags to be added>] [-v <SSE|AVX|AVX2|CUDA>]" 1>&2; exit 1; }
 
+function update_error { 
+if [[ "${error}" = "0" ]]; then
+  error=$1
+fi
+}
+
 while getopts "k:e:f:c:v:h" o; do
     case "${o}" in
         k)
@@ -133,27 +139,27 @@ cmake -DCMAKE_BUILD_TYPE=Release  \
       -DINTEGRATION_BUILD=On      \
       -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
       ${ADD_CMAKE_FLAGS} \
-      ..                                || error=${LINENO}
-make doc &> doxygen.log                 || error=${LINENO}
-make -j 24 || make                      || error=${LINENO}
+      ..                                || update_error ${LINENO}
+make doc &> doxygen.log                 || update_error ${LINENO}
+make -j 24 || make                      || update_error ${LINENO}
 echo "Running tests. Output is compressed and written to test.log.gz"
-make check &> test.log                  || error=${LINENO}
+make check &> test.log                  || update_error ${LINENO}
 if [ "${VECT_EXT}" = "CUDA" ]; then
   echo "Check if it actually ran on our Tesla card"
-  fgrep "1x Tesla" test.log             || error=${LINENO}
+  fgrep "1x Tesla" test.log             || update_error ${LINENO}
 fi
-gzip test.log                           || error=${LINENO}
+gzip test.log                           || update_error ${LINENO}
 echo "Install..."
-make install &> install.log             || error=${LINENO}
+make install &> install.log             || update_error ${LINENO}
 echo "Check installation with pkg-config project"
 mkdir jdqr_pkg_config; cd $_
-PKG_CONFIG_PATH=../$INSTALL_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH cmake ../../exampleProjects/jdqr_pkg_config || error=${LINENO}
-make || error=${LINENO}
+PKG_CONFIG_PATH=../$INSTALL_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH cmake ../../exampleProjects/jdqr_pkg_config || update_error ${LINENO}
+make || update_error ${LINENO}
 cd ..
 echo "Check installation with CMake project"
 mkdir jdqr_cmake; cd $_
-CMAKE_PREFIX_PATH=../$INSTALL_PREFIX:$CMAKE_PREFIX_PATH cmake ../../exampleProjects/jdqr_cmake || error=${LINENO}
-make || error=${LINENO}
+CMAKE_PREFIX_PATH=../$INSTALL_PREFIX:$CMAKE_PREFIX_PATH cmake ../../exampleProjects/jdqr_cmake || update_error ${LINENO}
+make || update_error ${LINENO}
 cd ..
 
 cd ..
@@ -172,16 +178,16 @@ cmake -DCMAKE_BUILD_TYPE=Debug    \
       -DINTEGRATION_BUILD=On      \
       -DGCC_SANITIZE=$SANITIZER   \
       ${ADD_CMAKE_FLAGS} \
-      ..                                || error=${LINENO}
-make -j 24 || make                      || error=${LINENO}
+      ..                                || update_error ${LINENO}
+make -j 24 || make                      || update_error ${LINENO}
 echo "Running tests. Output is compressed and written to test.log.gz"
-make check &> test.log                  || error=${LINENO}
+make check &> test.log                  || update_error ${LINENO}
 if [ "${VECT_EXT}" = "CUDA" ]; then
   echo "Check if it actually ran on our Tesla card"
-  fgrep "1x Tesla" test.log             || error=${LINENO}
+  fgrep "1x Tesla" test.log             || update_error ${LINENO}
 fi
-gzip test.log                           || error=${LINENO}
-make audit                              || error=${LINENO}
+gzip test.log                           || update_error ${LINENO}
+make audit                              || update_error ${LINENO}
 cd ..
 
 
