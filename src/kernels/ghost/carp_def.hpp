@@ -9,6 +9,9 @@ void SUBR(carp_setup)(TYPE(const_sparseMat_ptr) vA, int numShifts,
         _ST_ const sigma[],
         void** work, int* iflag)
 {
+// this only works with the GHOST kacz branch so far
+  *iflag=PHIST_NOT_IMPLEMENTED;
+#if 0
   //TODO: maybe the halocommInit call could go here?
 
 #include "phist_std_typedefs.hpp"
@@ -45,7 +48,7 @@ void SUBR(carp_setup)(TYPE(const_sparseMat_ptr) vA, int numShifts,
     
   // CARP sweep not implemented, we indicate this here already
   // to avoid confusion in the tests
-
+#endif
   return;
 }
 
@@ -57,6 +60,9 @@ void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) vA,
         void* const work,
         _MT_ const * omega, int* iflag)
 {
+// this only works with the GHOST kacz branch so far
+  *iflag=PHIST_NOT_IMPLEMENTED;
+#if 0
  *iflag=0;
  PHIST_CAST_PTR_FROM_VOID(ghost_sparsemat, A, vA, *iflag);
 
@@ -75,7 +81,7 @@ if(Rhs != NULL)
  ghost_kacz_rb(x,A,b,opts);
  opts.direction = GHOST_KACZ_DIRECTION_BACKWARD;
  ghost_kacz_rb(x,A,b,opts);
-
+#endif
 return;
 // TODO Christie, update this for X_i==NULL and ignoring sigmas
 /*#if 0
@@ -149,11 +155,13 @@ void SUBR(carp_sweep_aug_rc)(TYPE(const_sparseMat_ptr) A,
 void SUBR(carp_destroy)(TYPE(const_sparseMat_ptr) A,
 void* work, int *iflag)
 {
+#if 0
   // TODO Christie, delete the vector of row scaling elements
    PHIST_ENTER_FCN(__FUNCTION__);
    *iflag=0;
    PHIST_CAST_PTR_FROM_VOID(double,rownorm,work,*iflag);
    delete[] rownorm;
+#endif
 
   *iflag=0;
   return;
