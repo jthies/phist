@@ -386,11 +386,11 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
   if (strcmp(problem,"usage")==0)
   {
     SUBR(create_matrix_usage)();
-    PHIST_SOUT(PHIST_INFO,"read matrix from file '%s'\n",problem);
-    PHIST_CHK_IERR(SUBR(sparseMat_read)(mat,comm,(char*)problem,iflag),*iflag);
     return;
   }
-  *iflag=0;
+
+    PHIST_SOUT(PHIST_INFO,"read matrix from file '%s'\n",problem);
+    PHIST_CHK_IERR(SUBR(sparseMat_read)(mat,comm,(char*)problem,iflag),*iflag);
 
 }
 #endif
