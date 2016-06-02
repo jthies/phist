@@ -67,7 +67,7 @@ typedef struct ghost_map
     // get the most promising repartitioning flag (Zoltan, Scotch or nothing)
     // depending on what is available in the ghost installation. if PHIST_OUTLEV>=outlev,
     // a statement will be printed to indicate the selection.
-    int get_perm_flag(int outlev);
+    int get_perm_flag(int iflag, int outlev);
 
     //! set reasonable default parameters for SELL-C-sigma sparse matrix format in GHOST
     void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm);

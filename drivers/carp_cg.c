@@ -18,7 +18,7 @@
 #include "phist_enums.h"
 #include "phist_kernels.h"
 #include "phist_operator.h"
-#include "phist_feastCorrectionSolver.h"
+#include "phist_carp_cg.h"
 
 // ghost/physics
 #ifdef PHIST_KERNEL_LIB_GHOST
@@ -35,6 +35,23 @@ FROM_FILE=0,
 GRAPHENE=1,
 ANDERSON=2
 } problem_t;
+
+//#define TEST_SYSTEM
+
+int test_rhs(ghost_gidx i, ghost_lidx j, void * val, void * aux)
+{
+  double* dval=(double*)val;
+  *dval = (double)(i+1)/(double)(j+1);
+  return 0;
+}
+/*
+int test_xex_i(ghost_gidx i, ghost_lidx j, void * val, void * aux)
+{
+  double* dval=(double*)val;
+  *dval = (double)(j+1)/(double)(i+1);
+  return 0;
+}
+*/
 
 // This driver routine creates the Graphene Hamiltonian,
 // reads in a number of complex shifts from a textfile, 
@@ -78,6 +95,8 @@ int main(int argc, char** argv)
   MT omega; /* relaxation parameter */
   
   PHIST_ICHK_IERR(phist_kernels_init(&argc,&argv,&iflag),iflag);
+
+  PHIST_MAIN_TASK_BEGIN
 
   PHIST_ICHK_IERR(phist_comm_create(&comm,&iflag),iflag);
 
@@ -237,11 +256,15 @@ int main(int argc, char** argv)
 // generate linear systems                                 //
 /////////////////////////////////////////////////////////////
 
+#ifdef TEST_SYSTEM
+  PHIST_ICHK_IERR(SUBR(mvec_put_func)(B,&test_rhs,NULL,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_r_ex0,0.0,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_i_ex0,0.0,&iflag),iflag);
+#else
 if (num_complex==0)
 {
   PHIST_ICHK_IERR(SUBR(create_sol_and_rhs)(problem,mat,X_r_ex0,B,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(X_i_ex0,ZERO,&iflag),iflag);
-    
   // compute rhs B to match this exact solution for sigma[0]:
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_r[0],X_r_ex0,ONE,B,&iflag),iflag);
 }
@@ -271,53 +294,47 @@ else
   PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_i[0],X_i_ex0,1.0,B,&iflag),iflag);
 
 }
-/*
-TYPE(sdMat_ptr) Rtmp=NULL;
-PHIST_ICHK_IERR(SUBR(sdMat_create)(&Rtmp,nrhs,nrhs,NULL,&iflag),iflag);
-PHIST_ICHK_IERR(SUBR(mvec_random)(B,&iflag),iflag);
-PHIST_ICHK_IERR(SUBR(mvec_QR)(B,Rtmp,&iflag),iflag);
-PHIST_ICHK_IERR(SUBR(sdMat_delete)(Rtmp,&iflag),iflag);
-*/
+#endif
 
-///////////////////////////////////////////////////////////////////
-// setup and solve via feastCorrectionSolver                     //
-///////////////////////////////////////////////////////////////////
-  TYPE(feastCorrectionSolver_ptr) fCorrSolver;
-  PHIST_ICHK_IERR(SUBR(feastCorrectionSolver_create)
-        (&fCorrSolver, mat, phist_CARP_CG, blockSize, nshifts,sigma_r, sigma_i, &iflag),iflag);
-        
-  // this is not very elegant, but since this driver was meant to test the feast correction 
-  // solver in the first place, we stick with it and set parameters manually.
-  for (i=0;i<nshifts;i++)
-  for (int j=0;j<blockSize;j++)
+  // for each shift one by one create the state, iterate and delete the state again
+  TYPE(carp_cgState_ptr) carp_cgState;
+
+  for (int i=0; i<nshifts; i++)
   {
-    fCorrSolver->carp_cgStates_[i]->omega_[j]=omega;
+    MT tmp_sigma_r[blockSize], tmp_sigma_i[blockSize];
+    for (int j=0; j<blockSize; j++) 
+    {
+      tmp_sigma_r[j]=sigma_r[i];
+      tmp_sigma_i[j]=sigma_i[i];
+    }
+    // at this point the carp_cg state will check if there are complex shifts and switch on the "RC" variant
+    // in real arithmetic
+    PHIST_ICHK_IERR(SUBR(carp_cgState_create)
+            (&carp_cgState,mat,NULL,blockSize,tmp_sigma_r,tmp_sigma_i, &iflag),iflag);
+            
+    // relaxation factor
+    for (int j=0;j<blockSize;j++) carp_cgState->omega_[j]=omega;
+
+    PHIST_ICHK_IERR(SUBR(carp_cgState_reset)(carp_cgState,B,NULL,&iflag),iflag);
+
+    SUBR(carp_cgState_iterate)(carp_cgState,X_r[i],X_i[i],tol,maxIter,false,&iflag);
+
+    if (iflag>0)
+    {
+    PHIST_SOUT(PHIST_WARNING,"FAILURE: solver returned warning code %d\n",iflag);
+    }
+    else if (iflag<0)
+    {
+      PHIST_SOUT(PHIST_WARNING,"FAILURE: solver returned error code %d\n",iflag);
+    }
+    PHIST_ICHK_IERR(SUBR(carp_cgState_delete)(carp_cgState,&iflag),iflag);
   }
-
-  int numBlocks=nrhs/blockSize;
-
-  //NOTE: feastCorrectionSolver is defined to solve (sigma*I-A)X=B instead of (A-sigma*I)X=B,
-  //      so at this point we change the sign of B to account for this convention.
-  PHIST_ICHK_IERR(SUBR(mvec_scale)(B,-ONE,&iflag),iflag);
-  SUBR(feastCorrectionSolver_run)
-        (fCorrSolver, B, tol, maxIter,X_r, X_i, &iflag);
-        int iflag_dum=0;
-  PHIST_ICHK_IERR(SUBR(mvec_scale)(B,-ONE,&iflag_dum),iflag_dum);
-
-  if (iflag>0)
-  {
-    PHIST_SOUT(PHIST_WARNING,"solver returned warning code %d\n",iflag);
-  }
-  else if (iflag<0)
-  {
-    PHIST_SOUT(PHIST_WARNING,"solver returned error code %d\n",iflag);
-  }
-
 ///////////////////////////////////////////////////////////////////
 // compute residuals and error                                   //
 ///////////////////////////////////////////////////////////////////
 if (iflag>=0)
 {
+#ifndef TEST_SYSTEM
 PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(ONE,X_r_ex0,ZERO,err_r,&iflag),iflag);
 PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-ONE,X_r[0],ONE,err_r,&iflag),iflag);
 PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(ONE,X_i_ex0,ZERO,err_i,&iflag),iflag);
@@ -329,6 +346,7 @@ PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(err_r,err_r,nrm_err0_2,&iflag),iflag);
 PHIST_SOUT(PHIST_VERBOSE,"for first shift, first rhs:\n");
 PHIST_SOUT(PHIST_VERBOSE,"err in re(x): %e\n",SQRT(nrm_err0_2[0]));
 PHIST_SOUT(PHIST_VERBOSE,"       im(x): %e\n",SQRT(nrm_err0_1[0]));
+#endif
 }
 
 // it may be interesting to look at the residual of the exact solution,
@@ -350,13 +368,22 @@ if (num_complex==0)
   PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(-ONE,mat,X_r_ex0,ONE,res_ex0,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(-ONE,mat,X_r[0],ONE,res0,&iflag),iflag);
 
-  double nrm_res[nrhs],nrm_res_ex[nrhs];
+  double nrm_res[nrhs],nrm_res_ex[nrhs],nrm_rhs[nrhs];
+  PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(B,B,nrm_rhs,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(res0,res0,nrm_res,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(res_ex0,res_ex0,nrm_res_ex,&iflag),iflag);
-  for (i=0;i<nrhs;i++) nrm_res_ex[i]=SQRT(nrm_res_ex[i]);
-  for (i=0;i<nrhs;i++) nrm_res[i]=SQRT(nrm_res[i]);
+  for (i=0;i<nrhs;i++) 
+  {
+    nrm_rhs[i]=SQRT(nrm_rhs[i]);
+    nrm_res_ex[i]=SQRT(nrm_res_ex[i]);
+    nrm_res[i]=SQRT(nrm_res[i]);
+  }
 
-  PHIST_SOUT(PHIST_VERBOSE,"res norms for x and x_ex: %16.8e\t%16.8e\n",nrm_res[0],nrm_res_ex[0]);
+  PHIST_SOUT(PHIST_INFO,"residual norms ||r||_2/||b||_2\n");
+  for (int i=0; i<nrhs; i++)
+  {
+    PHIST_SOUT(PHIST_INFO,"%d\t%16.8e (%s)\n",i,nrm_res[i]/nrm_rhs[i],nrm_res[i]<=tol*nrm_rhs[i]?"SUCCESS":"FAILURE");
+  }
 
 #if PHIST_OUTLEV>=PHIST_DEBUG
   ST *x_val=NULL, *xex_val=NULL,*r_val=NULL,*rex_val=NULL;
@@ -382,8 +409,6 @@ if (num_complex==0)
 // clean up afterwards                                           //
 ///////////////////////////////////////////////////////////////////
 
-  PHIST_ICHK_IERR(SUBR(feastCorrectionSolver_delete)(fCorrSolver,&iflag),iflag);
-
   free(sigma_r);
   free(sigma_i);
 
@@ -398,6 +423,9 @@ if (num_complex==0)
     PHIST_ICHK_IERR(SUBR(mvec_delete)(X_r[i],&iflag),iflag);
     PHIST_ICHK_IERR(SUBR(mvec_delete)(X_i[i],&iflag),iflag);
   }
+
+  PHIST_MAIN_TASK_END
+
   PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
   return iflag;
   }

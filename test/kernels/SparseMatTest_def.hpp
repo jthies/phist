@@ -291,6 +291,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
 
     // setup the CARP kernel and get the required data structures:
     void* aux=NULL;
+    ST sigma[_NV_];
     MT sigma_r[_NV_];
     MT sigma_i[_NV_];
     MT omega[_NV_];
@@ -298,9 +299,10 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     {
       sigma_r[i]=mt::zero();
       sigma_i[i]=mt::zero();
+      sigma[i]=sigma_r[i]+sigma_i[i]*st::cmplx_I();
       omega[i]=mt::one();
     }
-    SUBR(carp_setup)(A,nvec_,sigma_r,sigma_i,
+    SUBR(carp_setup)(A,nvec_,sigma,
         &aux, &iflag_);
     if (iflag_==-99) return; // CARP not implemented
     ASSERT_EQ(0,iflag_);
@@ -334,7 +336,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     SUBR(mvec_add_mvec)(st::one(), Xi, st::zero(), Xi_bak, &iflag_);
     ASSERT_EQ(0, iflag_);
     
-    SUBR(carp_sweep)(A, sigma_r, sigma_i,B,Xr,Xi,
+    SUBR(carp_sweep)(A, sigma,B,Xr,
           aux,omega,&iflag_);
     ASSERT_EQ(0, iflag_);
     
@@ -358,7 +360,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     // Check that it works if B=NULL is passed in
     SUBR(mvec_add_mvec)(st::one(),Xr_bak,st::zero(),Xr,&iflag_);
     ASSERT_EQ(0, iflag_);
-    SUBR(carp_sweep)(A, sigma_r, sigma_i,NULL,Xr,Xi,
+    SUBR(carp_sweep)(A, sigma,NULL,Xr,
           aux,omega,&iflag_);
     ASSERT_EQ(0, iflag_);
 

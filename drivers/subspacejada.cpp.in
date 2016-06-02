@@ -127,7 +127,7 @@ else
   GET_ARG(opts.blockSize,p++,opts.blockSize>0);
 
   // min basis size
-  GET_ARG(opts.minBas,p++,opts.minBas>=opts.numEigs+opts.blockSize);
+  GET_ARG(opts.minBas,p++,opts.minBas>=opts.numEigs+opts.blockSize-1);
 
   // max basis size
   GET_ARG(opts.maxBas,p++,opts.maxBas>opts.minBas+opts.blockSize&&((opts.maxBas-opts.minBas)%opts.blockSize==0));
