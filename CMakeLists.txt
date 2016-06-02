@@ -1230,9 +1230,9 @@ endif()
 foreach(np ${PHIST_MPI_TEST_NPROCS})
   math(EXPR TEST_OMP_NUM_THREADS "12/${np}")
   foreach(label ${PHIST_TESTS})
-    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env LSAN_OPTIONS=\"exitcode=0\" env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=static
-    ./${PRODUCT_NAME}-${label}-test-${CMAKE_BUILD_TYPE} --gtest_death_test_style=threadsafe --gtest_output=xml:$TEST_OUTPUT_DIR}/xunit.xml)
     set(TEST_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/test_output_np${np}/${label}")
+    set(TEST_COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${np} env LSAN_OPTIONS=\"exitcode=0\" env PHIST_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_NUM_THREADS=${TEST_OMP_NUM_THREADS} env OMP_SCHEDULE=static
+    ./${PRODUCT_NAME}-${label}-test-${CMAKE_BUILD_TYPE} --gtest_death_test_style=threadsafe --gtest_output=xml:${TEST_OUTPUT_DIR}/xunit.xml)
     set(CURRENT_TESTNAME test-${label}_np${np})
     add_test(NAME ${CURRENT_TESTNAME} COMMAND ${TEST_COMMAND})
     set_tests_properties(${CURRENT_TESTNAME} PROPERTIES PASS_REGULAR_EXPRESSION "[. \n]*PASSED[. \n]*")
@@ -1243,12 +1243,11 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
     else()
       set_tests_properties(${CURRENT_TESTNAME} PROPERTIES ENVIRONMENT "${MPIEXEC_ENVIRONMENT} GHOST_TYPE=cuda")
     endif()
-    #if ( INTEGRATION_BUILD )
+    if ( INTEGRATION_BUILD )
       # create the default test output that will appear on Jenkins if the test executable crashes
-      #message(STATUS "mkdir '${TEST_OUTPUT_DIR}'")
-      #file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
-      #configure_file(${PROJECT_SOURCE_DIR}/test/xunit.xml.in ${TEST_OUTPUT_DIR}/xunit.xml)
-    #endif()
+      file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
+      configure_file(${PROJECT_SOURCE_DIR}/test/xunit.xml.in ${TEST_OUTPUT_DIR}/xunit.xml)
+    endif()
   endforeach()
   # the task tests should be very fast (no heavy computation) - but may deadlock in case of errors!
   # JT increasing timeout because 10s is sometimes too little in debug mode (starting the executable with all the
