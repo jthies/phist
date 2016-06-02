@@ -82,7 +82,7 @@ return 0;
 extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  const_comm_ptr comm;
+  phist_const_comm_ptr comm;
   phist_gidx gnrows,ilower,iupper,pre_skip,post_skip;
   phist_const_map_ptr map=NULL;
   phist_lidx lnrows,nvec;
