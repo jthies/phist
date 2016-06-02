@@ -1,12 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites tests="1" failures="0" disabled="0" errors="1" timestamp="" time="0.0" 
-name="${CURRENT_TEST_NAME}">
-  <testsuite name="${CURRENT_TEST_NAME}.<all testcases>" tests="1" failures="0" disabled="0" 
-errors="1" time="0">
-    <testcase name="<all tests>" status="notrun" time="0" 
-classname="${CURRENT_TEST_NAME}.<all tests>" />
+<testsuites tests="1" failures="0" disabled="0" errors="1" timestamp="" time="0.0" name="${CURRENT_TESTNAME}">
+  <testsuite name="${CURRENT_TESTNAME}.\<all testcases\>" tests="1" failures="0" disabled="0" errors="1" time="0">
+    <testcase name="\<all tests\>" status="notrun" time="0" classname="${CURRENT_TESTNAME}.\<all tests\>" />
   </testsuite>
-
 </testsuites>
 
 
