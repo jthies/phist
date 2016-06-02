@@ -122,11 +122,15 @@ namespace phist
       // used to partition such that the number of nonzeros is equal (or
       // close to equal) on each processor. No parameter is necessary to
       // specify this.
+# ifndef I_WARNED_YOU
+# define I_WARNED_YOU
+# warning "compiling with Isorropia but without Zoltan, repartitioning will fallback to a simple linear partitioner"
+# endif
 #endif
-
       Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner=Teuchos::null;
 
 #if 0
+
       //Now we're going to create a Epetra_Vector with weights to
       //be used as hypergraph edge weights in the repartitioning operation.
       //

@@ -86,6 +86,7 @@ kernel libs) ?
 #cmakedefine PHIST_HAVE_IFPACK2
 #cmakedefine PHIST_HAVE_MUELU
 #cmakedefine PHIST_HAVE_AMESOS2
+
 #cmakedefine PHIST_HAVE_ISORROPIA
 #cmakedefine PHIST_HAVE_ZOLTAN
 

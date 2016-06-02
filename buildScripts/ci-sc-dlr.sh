@@ -24,13 +24,13 @@ declare -A MODULES_KERNELS
 MODULES_KERNELS=( 
   ["builtin"]=""
   ["ghost"]="gsl"
-  ["epetra"]="trilinos"
-  ["tpetra"]="trilinos" )
+  ["epetra"]="trilinos/trilinos-12.6.1"
+  ["tpetra"]="trilinos/trilinos-11.12.1" )
 
 declare -A MODULES_KERNELS_OPTIONAL
 MODULES_KERNELS_OPTIONAL=(
   ["builtin"]="ColPack parmetis trilinos"
-  ["ghost"]="trilinos"
+  ["ghost"]="ColPack trilinos/trilinos-11.12.1"
   ["epetra"]=""
   ["tpetra"]="" )
 
@@ -123,11 +123,15 @@ error=0
 
 # release build including doc
 if [ "$KERNELS" = "ghost" ]; then
+#  if [ "$FLAGS" = "optional-libs" ]; then
+# disabled for now. This is relevant when we have GHOST builds with -f optional-libs (Zoltan and ColPack)
+#    POSTFIX=_optional-libs
+#  fi
   # this is the easiest way to make phist find ghost+dependencies
-  export CMAKE_PREFIX_PATH=$PWD/../install-${PRGENV}-Release-${VECT_EXT}/lib/ghost:$CMAKE_PREFIX_PATH
-  export PKG_CONFIG_PATH=$PWD/../install-${PRGENV}-Release-${VECT_EXT}/lib/pkgconfig:$PKG_CONFIG_PATH
+  export CMAKE_PREFIX_PATH=$PWD/../install-${PRGENV}-Release-${VECT_EXT}${POSTFIX}/lib/ghost:$CMAKE_PREFIX_PATH
+  export PKG_CONFIG_PATH=$PWD/../install-${PRGENV}-Release-${VECT_EXT}${POSTFIX}/lib/pkgconfig:$PKG_CONFIG_PATH
   # also set the LD_LIBRARY_PATH appropriately
-  export LD_LIBRARY_PATH=$PWD/../install-${PRGENV}-Release-${VECT_EXT}/lib/ghost:$PWD/../install-${PRGENV}-Release-${VECT_EXT}/lib/essex-physics:$LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH=$PWD/../install-${PRGENV}-Release-${VECT_EXT}${POSTFIX}/lib/ghost:$PWD/../install-${PRGENV}-Release-${VECT_EXT}/lib/essex-physics:$LD_LIBRARY_PATH
 fi
 
 # let ctest print all output if there was an error!
