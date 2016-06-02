@@ -82,17 +82,25 @@ return 0;
 extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  const_comm_ptr comm;
   phist_gidx gnrows,ilower,iupper,pre_skip,post_skip;
   phist_const_map_ptr map=NULL;
   phist_lidx lnrows,nvec;
+  
+  bool is_linear_map;
   
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,iflag),*iflag);
 
   PHIST_CHK_IERR(SUBR(mvec_get_map)(V,&map,iflag),*iflag);
   PHIST_CHK_IERR(phist_map_get_local_length(map,&lnrows,iflag),*iflag);
   PHIST_CHK_IERR(phist_map_get_global_length(map,&gnrows,iflag),*iflag);
-  PHIST_CHK_IERR(phist_map_get_ilower(map,&ilower,iflag),*iflag);
-  PHIST_CHK_IERR(phist_map_get_iupper(map,&iupper,iflag),*iflag);
+  // these may return iflag=1 if the map is not a linear map. In that
+  // case we can still create a reproducible sequence by skipping a little 
+  // further in the random number stream (see next if statement)
+  PHIST_CHK_NEG_IERR(phist_map_get_ilower(map,&ilower,iflag),*iflag);
+  is_linear_map=(iflag==0);
+  PHIST_CHK_NEG_IERR(phist_map_get_iupper(map,&iupper,iflag),*iflag);
+  is_linear_map&=(iflag==0);
   
 #ifdef IS_COMPLEX
   const int nelem=2;
@@ -100,8 +108,22 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
   const int nelem=1;
 #endif  
 
-  pre_skip = ilower*nvec*nelem;
-  post_skip= (gnrows-iupper)*nvec*nelem;
+  // deal with non-standard (linear) maps
+  if (is_linear_map==false)
+  {
+    int rank, size;
+    PHIST_CHK_IERR(phist_map_get_comm(map,&comm,iflag),*iflag);
+    PHIST_CHK_IERR(phist_comm_get_rank(comm,&rank,iflag),*iflag);
+    PHIST_CHK_IERR(phist_comm_get_size(comm,&size,iflag),*iflag);
+    pre_skip  = rank            * gnrows*nvec*nelem;
+    post_skip = (size-(rank+1)) * gnrows*nvec*nelem;
+  }
+  else
+  {
+    pre_skip = ilower*nvec*nelem;
+    post_skip= (gnrows-iupper+1)*nvec*nelem;
+  }
+  
     
   // we use the most robust way of implementing this, which should work for
   // any situation (row/col major, GPU/CPU etc.): generate row-major clone data
