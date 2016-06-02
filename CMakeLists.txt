@@ -1243,12 +1243,12 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
     else()
       set_tests_properties(${CURRENT_TESTNAME} PROPERTIES ENVIRONMENT "${MPIEXEC_ENVIRONMENT} GHOST_TYPE=cuda")
     endif()
-    if ( INTEGRATION_BUILD )
+    #if ( INTEGRATION_BUILD )
       # create the default test output that will appear on Jenkins if the test executable crashes
-      message(STATUS "mkdir '${TEST_OUTPUT_DIR}'")
-      file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
-      configure_file(${PROJECT_SOURCE_DIR}/test/xunit.xml.in ${TEST_OUTPUT_DIR}/xunit.xml)
-    endif()
+      #message(STATUS "mkdir '${TEST_OUTPUT_DIR}'")
+      #file(MAKE_DIRECTORY ${TEST_OUTPUT_DIR})
+      #configure_file(${PROJECT_SOURCE_DIR}/test/xunit.xml.in ${TEST_OUTPUT_DIR}/xunit.xml)
+    #endif()
   endforeach()
   # the task tests should be very fast (no heavy computation) - but may deadlock in case of errors!
   # JT increasing timeout because 10s is sometimes too little in debug mode (starting the executable with all the
