@@ -116,7 +116,7 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
     PHIST_CHK_IERR(phist_comm_get_rank(comm,&rank,iflag),*iflag);
     PHIST_CHK_IERR(phist_comm_get_size(comm,&size,iflag),*iflag);
     pre_skip  = rank            * gnrows           *nvec*nelem;
-    post_skip = (size-rank)     * gnrows - lnrows) *nvec*nelem;
+    post_skip = ((size-rank)    * gnrows - lnrows) *nvec*nelem;
   }
   else
   {
