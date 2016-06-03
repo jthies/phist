@@ -28,7 +28,7 @@ int CP::setCpPath(const std::string cpPath_){
 	return 0;
 }
 	
-int CP::setComm(MPI_Comm FT_Comm){
+int CP::setComm(const MPI_Comm FT_Comm){
 	cpmpicomm = FT_Comm;
 	return 0;
 }
@@ -60,41 +60,50 @@ int CP::CP_ADD_GHOST_DENSEMAT_ARRAY(const std::string key, ghost_densemat ** con
 
 // ========== POD CALLS ========== //
 
-int CP::CP_ADD_POD(const std::string key, const int * const val_ptr){
+int CP::CP_ADD_POD(const std::string key, int * const val_ptr){
 	assert (cpCommitted == false);
-	const	int * const a = val_ptr;
-	 //a = val_ptr;
 	CP_ADD_POD_INT(key, val_ptr);
 	return 0;
 }
 
-int CP::CP_ADD_POD(std::string key, const double * const val_ptr){
+int CP::CP_ADD_POD(const std::string key, double * const val_ptr){
 	assert (cpCommitted == false);
 	CP_ADD_POD_DOUBLE(key, val_ptr);	
 	return 0;
 }
 
-int CP::CP_ADD_POD(std::string key, const float * const val_ptr){
+int CP::CP_ADD_POD(const std::string key, double complex * const val_ptr){
+	assert (cpCommitted == false);
+	CP_ADD_POD_DOUBLE_COMPLEX(key, val_ptr);	
+	return 0;
+}
+
+int CP::CP_ADD_POD(const std::string key, float * const val_ptr){
 	assert (cpCommitted == false)	;
 	CP_ADD_POD_FLOAT(key, val_ptr);	
 	return 0;
 }
 
-int CP::CP_ADD_POD_INT(const std::string key, const int * const value){
-	int  a = *value;	
-	SAFE_INSERT( intPod.insert(std::pair<std::string, const int * const>(key, value)) );
+int CP::CP_ADD_POD_INT(const std::string key, int * const value){
+	SAFE_INSERT( intPod.insert(std::pair<std::string, int * >(key, value)) );
 	SAFE_INSERT( intPodAsync.insert( std::pair<std::string, int > (key, *value)) );
 	return 0;
 }
 
-int CP::CP_ADD_POD_DOUBLE(const std::string key, const double * const value){	 
-	SAFE_INSERT( doublePod.insert( std::pair<std::string, const double * const >(key, value)) );
+int CP::CP_ADD_POD_DOUBLE(const std::string key, double * const value){	 
+	SAFE_INSERT( doublePod.insert( std::pair<std::string, double * >(key, value)) );
 	SAFE_INSERT( doublePodAsync.insert(std::pair<std::string, double > (key, *value)) );
 	return 0;
 }
 
-int CP::CP_ADD_POD_FLOAT(const std::string key, const float * const value){ 
-	SAFE_INSERT( floatPod.insert( std::pair<std::string, const float * const >(key, value)) );
+int CP::CP_ADD_POD_DOUBLE_COMPLEX(const std::string key, double complex * const value){	 
+	SAFE_INSERT( doubleComplexPod.insert( std::pair<std::string, double complex * >(key, value)) );
+	SAFE_INSERT( doubleComplexPodAsync.insert(std::pair<std::string, double complex> (key, *value)) );
+	return 0;
+}
+
+int CP::CP_ADD_POD_FLOAT(const std::string key, float * const value){ 
+	SAFE_INSERT( floatPod.insert( std::pair<std::string, float * >(key, value)) );
 	SAFE_INSERT( floatPodAsync.insert( std::pair<std::string, float > (key, *value)) );
 	return 0;
 }
@@ -102,36 +111,42 @@ int CP::CP_ADD_POD_FLOAT(const std::string key, const float * const value){
 
 // ========== SINGLE ARRAY CALLS ========== //
 
-int CP::CP_ADD_ARRAY(const std::string key, const int * const val_array, const size_t array_size){
+int CP::CP_ADD_ARRAY(const std::string key, int * const val_array, const size_t array_size){
 	assert (cpCommitted == false);
 	CP_ADD_ARRAY_INT(key, val_array, array_size);
 	return 0;
 }
 
-int CP::CP_ADD_ARRAY(const std::string key, const double * const val_array, const size_t array_size){
+int CP::CP_ADD_ARRAY(const std::string key, double * const val_array, const size_t array_size){
 	assert (cpCommitted == false);
 	CP_ADD_ARRAY_DOUBLE(key, val_array, array_size);
 	return 0;
 }
 
-int CP::CP_ADD_ARRAY(const std::string key, const float * const val_array, const size_t array_size){
+int CP::CP_ADD_ARRAY(const std::string key, float * const val_array, const size_t array_size){
 	assert (cpCommitted == false);
 	CP_ADD_ARRAY_FLOAT(key, val_array, array_size);
 	return 0;
 }
 
-int CP::CP_ADD_ARRAY_INT(const std::string key, const int * const val_array, const size_t array_size ){
+int CP::CP_ADD_ARRAY(const std::string key, double complex * const val_array, const size_t array_size){
+	assert (cpCommitted == false);
+	CP_ADD_ARRAY_DOUBLE_COMPLEX(key, val_array, array_size);
+	return 0;
+}
+
+int CP::CP_ADD_ARRAY_INT(const std::string key, int * const val_array, const size_t array_size ){
 	printf("Type of array is int\n");
 
 	CpArray<int> * arraydata = new CpArray<int>[1];
-	arraydata->add(key, val_array, array_size, cpmpicomm, cpPath );		arraydata->print();	
+	arraydata->add(key, val_array, array_size, cpmpicomm, cpPath );		
 	arraydata->print();	
 	cpIntArrayMap.insert(std::pair<const std::string, CpArray<int> * >(key, arraydata));	
 
 	return 0;	
 }
 
-int CP::CP_ADD_ARRAY_DOUBLE(const std::string key, const double * const val_array, const size_t array_size ){
+int CP::CP_ADD_ARRAY_DOUBLE(const std::string key, double * const val_array, const size_t array_size ){
 	printf("Type of array is double\n");
 	CpArray<double> * arraydata = new CpArray<double>[1];
 	arraydata->add(key, val_array, array_size , cpmpicomm, cpPath);
@@ -141,7 +156,7 @@ int CP::CP_ADD_ARRAY_DOUBLE(const std::string key, const double * const val_arra
 	return 0;	
 }
 
-int CP::CP_ADD_ARRAY_FLOAT(const std::string key, const float * const val_array, const size_t array_size ){
+int CP::CP_ADD_ARRAY_FLOAT(const std::string key, float * const val_array, const size_t array_size ){
 	printf("Type of array is float\n");
 	CpArray<float> * arraydata = new CpArray<float>[1];
 	arraydata->add(key, val_array, array_size , cpmpicomm, cpPath);
@@ -151,27 +166,39 @@ int CP::CP_ADD_ARRAY_FLOAT(const std::string key, const float * const val_array,
 	return 0;	
 }
 
+int CP::CP_ADD_ARRAY_DOUBLE_COMPLEX	(const std::string key, double complex * const val_array, const size_t array_size ){
+	printf("Type of array is double complex");
+	CpArray<double complex> * arraydata = new CpArray<double complex>[1];
+	arraydata->add(key, val_array, array_size , cpmpicomm, cpPath);
+//	arraydata->print();
+	cpDoubleComplexArrayMap.insert(std::pair<const std::string, CpArray<double complex> * >(key, arraydata));	
+
+	return 0;
+}
+
+
+
 // ========== MULTI ARRAY CALLS ========== //
 
-int CP::CP_ADD_MULTIARRAY(const std::string key, const int * const* ptr, const size_t nRows, const size_t nCols, const int toCpCol_ ){
+int CP::CP_ADD_MULTIARRAY(const std::string key, int ** const ptr, const size_t nRows, const size_t nCols, const int toCpCol_ ){
 	assert (cpCommitted == false);
 	CP_ADD_MULTIARRAY_INT( key,  ptr, nRows, nCols, toCpCol_);
 	return 0;
 }
 
-int CP::CP_ADD_MULTIARRAY(const std::string key, const double* const* ptr, const size_t nRows, const size_t nCols, const int toCpCol_){
+int CP::CP_ADD_MULTIARRAY(const std::string key, double** const ptr, const size_t nRows, const size_t nCols, const int toCpCol_){
 	assert (cpCommitted == false);
 	CP_ADD_MULTIARRAY_DOUBLE( key,  ptr, nRows, nCols, toCpCol_);
 	return 0;
 }
 
-int CP::CP_ADD_MULTIARRAY(const std::string key, const float* const* ptr, const size_t nRows, const size_t nCols, const int toCpCol_){
+int CP::CP_ADD_MULTIARRAY(const std::string key, float** const ptr, const size_t nRows, const size_t nCols, const int toCpCol_){
 	assert (cpCommitted == false);
 	CP_ADD_MULTIARRAY_FLOAT( key,  ptr, nRows, nCols, toCpCol_);
 	return 0;
 }
 
-int CP::CP_ADD_MULTIARRAY_INT(const std::string key, const int* const* ptr, const size_t nRows, const size_t nCols, const int toCpCol_){
+int CP::CP_ADD_MULTIARRAY_INT(const std::string key, int** const ptr, const size_t nRows, const size_t nCols, const int toCpCol_){
 	
 	CpMulArray<int> * arraydata = new CpMulArray<int>[1];
 	arraydata->add(key, ptr, nRows, nCols, cpmpicomm, cpPath, toCpCol_);	
@@ -181,7 +208,7 @@ int CP::CP_ADD_MULTIARRAY_INT(const std::string key, const int* const* ptr, cons
 	return 0;
 }
 
-int CP::CP_ADD_MULTIARRAY_DOUBLE(const std::string key, const double * const* ptr, const size_t nRows, const size_t nCols, const int toCpCol_){
+int CP::CP_ADD_MULTIARRAY_DOUBLE(const std::string key, double ** const ptr, const size_t nRows, const size_t nCols, const int toCpCol_){
 	printf ("Adding DOUBLE MULTIARRAY\n");	
 
 	CpMulArray<double> * arraydata = new CpMulArray<double>[1];
@@ -193,7 +220,7 @@ int CP::CP_ADD_MULTIARRAY_DOUBLE(const std::string key, const double * const* pt
 }
 
 
-int CP::CP_ADD_MULTIARRAY_FLOAT(const std::string key, const float * const* ptr, const size_t nRows, const size_t nCols, const int toCpCol_){
+int CP::CP_ADD_MULTIARRAY_FLOAT(const std::string key, float ** const ptr, const size_t nRows, const size_t nCols, const int toCpCol_){
 	printf ("Adding FLOAT MULTIARRAY\n");	
 
 	CpMulArray<float> * arraydata = new CpMulArray<float>[1];
@@ -210,7 +237,7 @@ int CP::CP_ADD_MULTIARRAY_FLOAT(const std::string key, const float * const* ptr,
 int CP::updateCp(){
 	assert ( cpCommitted == true );
 	if(intPod.size()!=0){
-		std::map<std::string, const int * const>::iterator it = intPod.begin();
+		std::map<std::string, int * >::iterator it = intPod.begin();
 		std::map<std::string, int>::iterator itAsync = intPodAsync.begin();
 		for(it = intPod.begin() ; it != intPod.end() ; ++it, ++itAsync){
 			itAsync->second = *it->second;
@@ -219,7 +246,7 @@ int CP::updateCp(){
 	}
 
 	if(doublePod.size()!=0){
-		std::map<std::string, const double * const>::iterator it = doublePod.begin();
+		std::map<std::string, double * >::iterator it = doublePod.begin();
 		std::map<std::string, double>::iterator itAsync = doublePodAsync.begin();
 		for(it = doublePod.begin() ; it != doublePod.end() ; ++it, ++itAsync){
 			itAsync->second = *it->second;
@@ -228,11 +255,20 @@ int CP::updateCp(){
 	}
 
 	if(floatPod.size()!=0){
-		std::map<std::string, const float * const >::iterator it = floatPod.begin();
+		std::map<std::string, float * >::iterator it = floatPod.begin();
 		std::map<std::string, float>::iterator itAsync = floatPodAsync.begin();
 		for(it = floatPod.begin() ; it != floatPod.end() ; ++it, ++itAsync){
 			itAsync->second = *it->second;
 			std::cout << "flo: new Async val:" << itAsync->first << ", "<< itAsync->second << std::endl;
+		}
+	}
+	
+	if(doubleComplexPod.size()!=0){
+		std::map<std::string, double complex * >::iterator it = doubleComplexPod.begin();
+		std::map<std::string, double complex>::iterator itAsync = doubleComplexPodAsync.begin();
+		for(it = doubleComplexPod.begin() ; it != doubleComplexPod.end() ; ++it, ++itAsync){
+			itAsync->second = *it->second;
+			std::cout << "douComplex: new Async val:" << itAsync->first << ", "<< itAsync->second << std::endl;
 		}
 	}
 
@@ -355,6 +391,12 @@ int CP::writeCp(){
 				fprintf(fp1, "%s %.100f \n", itAsync->first.c_str(), itAsync->second);	
 			}
 		}
+		if(doubleComplexPod.size() != 0){
+			std::map<std::string, double complex>::iterator itAsync = doubleComplexPodAsync.begin();
+			for(itAsync = doubleComplexPodAsync.begin(); itAsync != doubleComplexPodAsync.end(); ++itAsync){
+				fprintf(fp1, "%s %.100f %.100f \n", itAsync->first.c_str(), creal(itAsync->second), cimag(itAsync->second));
+			}
+		}
 		fclose(fp1);
 	}
 
@@ -440,41 +482,63 @@ int CP::readCp(){
 			}
 			if(intPod.size() != 0){
 				std::map<const std::string, int>::iterator itAsync = intPodAsync.begin();
-				std::map<const std::string, const int * const>::iterator it = intPod.begin();
+				std::map<const std::string, int * >::iterator it = intPod.begin();
 				for(itAsync = intPodAsync.begin(); itAsync != intPodAsync.end(); ++itAsync, ++it){
 					char * tmp1 = new char[256];
 					char * tmp2 = new char[256];
 					fscanf(fp1, "%s %s", tmp1 , tmp2);
 					itAsync->second = atoi(tmp2);	
-//					*it->second = itAsync->second;	// TODO: check if it is needed to be read or not TODO: a separeate function could do the trick.
+					*it->second = itAsync->second;	// TODO: check if it is needed to be read or not TODO: a separeate function could do the trick. The problem is that it has been read as a constant.
 					printf("%d: read int data is: %s %d \n", myrank, itAsync->first.c_str(), itAsync->second);
-//					printf("it read data is: %s %d \n", it->first.c_str(), *it->second);
+					printf("it read data is: %s %d \n", it->first.c_str(), *it->second);
 				}
 			}
 			
 			if(doublePod.size() != 0){
 				std::map<const std::string, double>::iterator itAsync = doublePodAsync.begin();
-				std::map<const std::string, const double * const >::iterator it = doublePod.begin();
+				std::map<const std::string, double * >::iterator it = doublePod.begin();
 				for(itAsync = doublePodAsync.begin(); itAsync != doublePodAsync.end(); ++itAsync, ++it){
 					char * tmp1 = new char[256];
 					char * tmp2 = new char[256];
 					fscanf(fp1, "%s %s", tmp1, tmp2);
-					itAsync->second = atof(tmp1);
-//					*it->second = itAsync->second;	// TODO: check if it is needed to be read or not	
+					itAsync->second = atof(tmp2);
+					*it->second = itAsync->second;	// TODO: check if it is needed to be read or not	
 					printf("%d: read data is: %s %f\n", myrank, itAsync->first.c_str(), itAsync->second);
-//					printf("%d: read d data is it: %s %f \n", myrank, it->first.c_str(), *it->second);
+					printf("%d: read d data is it: %s %f \n", myrank, it->first.c_str(), *it->second);
 				}
 			}
 			if(floatPod.size() != 0){
 				std::map<const std::string, float>::iterator itAsync = floatPodAsync.begin();
-				std::map<const std::string, const float * const >::iterator it = floatPod.begin();
+				std::map<const std::string, float * >::iterator it = floatPod.begin();
 				for(itAsync = floatPodAsync.begin(); itAsync != floatPodAsync.end(); ++itAsync, ++it){
 					char * tmp1 = new char[256];
 					char * tmp2 = new char[256];
 				   	fscanf(fp1, "%s %s", tmp1, tmp2);
 					itAsync->second = atof(tmp2);
-//					*it->second = itAsync->second;	// TODO: check if it is needed to be read or not
+					*it->second = itAsync->second;	// TODO: check if it is needed to be read or not
 					printf("read f data is: %s %f \n", itAsync->first.c_str(), itAsync->second);
+				}
+			}
+
+			if(doubleComplexPod.size() != 0){
+				std::map<const std::string, double complex>::iterator itAsync = doubleComplexPodAsync.begin();
+				std::map<const std::string, double complex * >::iterator it = doubleComplexPod.begin();
+				for(itAsync = doubleComplexPodAsync.begin(); itAsync != doubleComplexPodAsync.end(); ++itAsync, ++it){
+					char * tmp1 = new char[256];
+					char * tmp2 = new char[256];
+					char * tmp3 = new char[256];
+					fscanf(fp1, "%s %s %s", tmp1, tmp2, tmp3);
+					//itAsync->second = atof(tmp2);
+					//*it->second = itAsync->second;	// TODO: check if it is needed to be read or not	
+					//printf("%d: read data is: %s %f\n", myrank, itAsync->first.c_str(), itAsync->second);
+//					printf("%d: read d data is it: %s %f \n", myrank, it->first.c_str(), *it->second);
+				}
+			}
+
+			if(doubleComplexPod.size() != 0){
+				std::map<std::string, double complex>::iterator itAsync = doubleComplexPodAsync.begin();
+				for(itAsync = doubleComplexPodAsync.begin(); itAsync != doubleComplexPodAsync.end(); ++itAsync){
+					fprintf(fp1, "%s %.100f %.100f \n", itAsync->first.c_str(), creal(itAsync->second), cimag(itAsync->second));
 				}
 			}
 			fclose(fp1);

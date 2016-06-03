@@ -9,7 +9,7 @@ INCLUDES +=
 TARGET = libcpaft.so
 LFLAGS =
 
-OBJS = cp.o aft.o
+OBJS = cp.o aft.o cp_options.o testclass.o 
 
 
 $(TARGET): $(OBJS)
@@ -17,6 +17,12 @@ $(TARGET): $(OBJS)
 
 cp.o: cp.cpp cp.h cp_array.h cp_ghostdensemat.h
 	$(CXX) $(CPPFLAGS) $(INCLUDES) $(LIBS) -c cp.cpp
+
+cp_options.o: cp_options.cpp cp_options.h 
+	$(CXX) $(CPPFLAGS) $(INCLUDES) $(LIBS) -c cp_options.cpp
+
+testclass.o: testclass.cpp testclass.h 
+	$(CXX) $(CPPFLAGS) $(INCLUDES) $(LIBS) -c testclass.cpp
 
 aft.o: aft.cpp aft.h aft_macros.h
 	$(CXX) $(CPPFLAGS) $(INCLUDES) $(LIBS) -c aft.cpp

@@ -1,6 +1,6 @@
 /**
  * Author: Faisal Shahzad
- * This file contains two classes for arrays and multiarrays of int, double, float datatypes.
+ * This file contains two classes for denseMat and denseMatArrays.
  *
  */
 
@@ -81,7 +81,6 @@ int CpGhostDenseMat::read(){
 	ghost_densemat_init_densemat(denseMat, denseMatAsync, 0, 0);
 	char * readstr = new char[256];	
 	ghost_densemat_string (&readstr, denseMat);
-
 	
 	return 0;
 }
@@ -225,6 +224,7 @@ int CpGhostDenseMatArray::read(){
 				return -1;
 			}		
 			denseMatArrayAsync[i]->fromFile(denseMatArrayAsync[i], filename, 0);
+			ghost_densemat_init_densemat ( denseMatArray[i], denseMatArrayAsync[i], 0, 0);	
 		}
 	}
 	if(toCpDenseMat == CYCLIC){
@@ -258,6 +258,7 @@ int CpGhostDenseMatArray::read(){
 			return -1;
 		}		
 		denseMatArrayAsync[toCpDenseMat]->fromFile(denseMatArrayAsync[toCpDenseMat], filename, 0);
+		ghost_densemat_init_densemat ( denseMatArray[toCpDenseMat], denseMatArrayAsync[toCpDenseMat], 0, 0);	
 	}
 	return 0;
 }

@@ -15,7 +15,7 @@ class CpArray
 public:
 		CpArray();
 		~CpArray();
-		int add(const std::string array_name, const T * const item, const size_t rows, const MPI_Comm FtComm, const std::string cpPath_ );
+		int add(const std::string array_name, T * const item, const size_t rows, const MPI_Comm FtComm, const std::string cpPath_ );
 		int print();
 		int update();	// check it the item is defined. if it is defined, update according to nRows and array
 	   	int write();	
@@ -24,10 +24,12 @@ private:
 		std::string cpPath;
 		MPI_Comm cpMpiComm;
 		T * array;
-		const T * arrayPtr;
+		T * arrayPtr;		// TODO: the pointer should be constant. But not the data, as data has to be read/written on this array after restart. it can not even be a constant pointer because the pointer has to be assigned a value in he add function.
 		std::string name;
 		size_t nRows;
+		void copyArray(T * const src, T * const dst, const size_t numElems);
 };
+
 
 template <class T>
 CpArray<T>::CpArray()
@@ -47,7 +49,7 @@ CpArray<T>::~CpArray()
 }
 
 template <class T>
-int CpArray<T>::add(const std::string array_name, const T * const item, const size_t rows , const MPI_Comm FtComm, const std::string cpPath_)
+int CpArray<T>::add(const std::string array_name, T * const item, const size_t rows , const MPI_Comm FtComm, const std::string cpPath_)
 {
 	nRows = rows;
 	arrayPtr = item;	
@@ -58,10 +60,6 @@ int CpArray<T>::add(const std::string array_name, const T * const item, const si
 	for(size_t i = 0; i < nRows; ++i){
 		array[i] = item[i];
 	}
-
-//	for(size_t i = 0; i < nRows; ++i){
-//		cout << array[i] << endl; 
-//	}
 	return 0;
 }
 
@@ -69,15 +67,16 @@ template <class T>
 int CpArray<T>::print(){
 	for(size_t i = 0; i < this->nRows; ++i){
 		std::cout << "array[" << i << "] = " << array[i] << endl;
+	}
+	for(size_t i = 0; i < this->nRows; ++i){
+		std::cout << "arrayPtr[" << i << "] = " << arrayPtr[i] << endl;
 	}	
 	return 0;
 }
 
 template <class T>
 int CpArray<T>::update(){
-	for(size_t i = 0; i < nRows; ++i){
-		array[i] = arrayPtr[i];
-	}	
+	copyArray(arrayPtr, array, nRows);
 	return 0;
 }
 
@@ -96,7 +95,6 @@ int CpArray<T>::write(){
 	}
 	fwrite(array, sizeof(T), nRows, fp);
 	fclose(fp);
-
 	return 0;
 }
 
@@ -119,9 +117,18 @@ int CpArray<T>::read(){
 	}
 	fread( array, sizeof(T), nRows, fp );
 	fclose(fp);
-
+	copyArray(array, arrayPtr, nRows);	
+	print();
 	return 0;
 }
+
+template <class T>
+void CpArray<T>::copyArray(T * const src, T * const dst, const size_t numElems){
+	for(size_t i= 0; i< numElems; ++i){
+		dst[i] = src[i];
+	}
+}	
+
 
 template <class T>
 class CpMulArray 
@@ -129,7 +136,7 @@ class CpMulArray
 public:
 		CpMulArray();
 		~CpMulArray();
-		int add(const std::string array_name, const T* const* item, const size_t rows , const size_t cols, const MPI_Comm FtComm, const std::string cpPath_, const int toCpCol_);
+		int add(const std::string array_name, T** const item, const size_t rows , const size_t cols, const MPI_Comm FtComm, const std::string cpPath_, const int toCpCol_);
 		int print();
 		int update();
 		int write();
@@ -140,10 +147,12 @@ private:
 		std::string name;
 		MPI_Comm cpMpiComm;
 		T ** array;
-		const T * const* arrayPtr;
+		T ** arrayPtr;
 		size_t nRows;
 		size_t nCols;
 		int toCpCol;			// this should be read as ENUM. 0-N= specified columns, -1 = ALL, -2 = CYCLIC, starting with 0 
+		void copyMulArray(T ** arrayPtr, T** array, const size_t nRows, const size_t nCols);
+
 };
 
 template <class T>
@@ -165,7 +174,7 @@ CpMulArray<T>::~CpMulArray()
 }
 
 template <class T>
-int CpMulArray<T>::add(const std::string array_name, const T* const* item, const size_t rows , const size_t cols, const MPI_Comm FtComm, const std::string cpPath_, const int toCpCol_)
+int CpMulArray<T>::add(const std::string array_name, T** const item, const size_t rows , const size_t cols, const MPI_Comm FtComm, const std::string cpPath_, const int toCpCol_)
 {
 	cpPath = cpPath_;
 	name = array_name;
@@ -193,18 +202,19 @@ int CpMulArray<T>::print(){
 		for(size_t j = 0; j < nRows; ++j){
 				std::cout << "array[" << i << "][" << j << "] = " << array[i][j] << endl;
 		}
+	}
+	for(size_t i = 0; i < nCols; ++i){
+		for(size_t j = 0; j < nRows; ++j){
+				std::cout << "arrayPtr[" << i << "][" << j << "] = " << arrayPtr[i][j] << endl;
+		}
 	}	
 	return 0;
 }
 
 template <class T>
 int CpMulArray<T>::update(){ 		// TODO: 	should only update the array to be written
-	for(size_t i = 0; i < nCols; ++i){
-		for(size_t j = 0; j < nRows; ++j){
-			array[i][j] = arrayPtr[i][j];
-			std::cout << "array[" << i << "][" << j << "] = " << array[i][j] << endl;
-		}
-	}	
+	copyMulArray(arrayPtr, array, nRows, nCols);	
+	print();	
 	return 0;
 }
 
@@ -289,7 +299,19 @@ int CpMulArray<T>::read(){
 		fread( &array[i][0], sizeof(T), nRows, fp );
 	}
 	fclose(fp);
-
+	copyMulArray(array, arrayPtr, nRows, nCols);	
+	print();
 	return 0;
 }
+
+template <class T>
+void CpMulArray<T>::copyMulArray(T ** arrayPtr, T** array, const size_t nRows, const size_t nCols){
+	for(size_t i = 0; i < nCols; ++i){
+		for(size_t j = 0; j < nRows; ++j){
+			array[i][j] = arrayPtr[i][j];
+		//	std::cout << "array[" << i << "][" << j << "] = " << array[i][j] << endl;
+		}
+	}	
+}
+
 #endif
