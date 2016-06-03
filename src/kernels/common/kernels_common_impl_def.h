@@ -121,7 +121,7 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
   else
   {
     pre_skip = ilower*nvec*nelem;
-    post_skip= (gnrows-iupper+1)*nvec*nelem;
+    post_skip= (gnrows-iupper)*nvec*nelem;
   }
   
     
