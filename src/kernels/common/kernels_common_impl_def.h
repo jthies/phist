@@ -81,6 +81,7 @@ return 0;
 
 extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
 {
+#include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   phist_const_comm_ptr comm;
   phist_gidx gnrows,ilower,iupper,pre_skip,post_skip;
@@ -183,7 +184,7 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
 #endif
         V_raw[pos_V] = (_ST_)((_MT_)wrap.data[pos_buf]);
 #ifdef IS_COMPLEX
-        V_raw[pos_V] += (_ST_)((_MT_)wrap.data[pos_buf+1]*st::complex_I());
+        V_raw[pos_V] += (_ST_)((_MT_)wrap.data[pos_buf+1]*st::cmplx_I());
 #endif
       }
     }
