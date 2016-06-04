@@ -151,14 +151,43 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
  PHIST_SOUT(PHIST_INFO,"\n");
  }
  */
- 
   dwrap wrap;
   wrap.lda=nvec*nelem;
   wrap.lnrows=lnrows;
   wrap.lncols=nvec;
   wrap.ilower=ilower;
   wrap.data=randbuf;
-  PHIST_CHK_IERR(SUBR(mvec_put_func)(V,&PHIST_TG_PREFIX(copyDataFunc),&wrap,iflag),*iflag);
+  if (is_linear_map)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_put_func)(V,&PHIST_TG_PREFIX(copyDataFunc),&wrap,iflag),*iflag);
+  }
+  else
+  {
+    // since put_func with copyDataFunc won't work because we can't reconstruct the local index of the given
+    // global one by subtracting ilower. So instead we copy the data manually. This is not a safe way of doing
+    // it because this may be a "device rank", but so far we only support GPUs with GHOST, and GHOST only has
+    // linearly distributed indices.
+    _ST_* V_raw=NULL;
+    phist_lidx ldV;
+    PHIST_CHK_IERR(SUBR(mvec_extract_view)(V,&V_raw,&ldV,iflag),*iflag);
+    ghost_lidx pos_V, pos_buf;
+    for (ghost_lidx i=0; i<lnrows; i++)
+    {
+      for (int j=0; j<nvec; j++)
+      {
+        pos_buf=i*wrap.lda+j;
+#ifdef PHIST_MVECS_ROW_MAJOR
+        pos_V=i*ldV+j;
+#else
+        pos_V=j*ldV+i;
+#endif
+        V_raw[pos_V] = (_ST_)((_MT_)wrap.data[pos_buf]);
+#ifdef IS_COMPLEX
+        V_raw[pos_V] += (_ST_)((_MT_)wrap.data[pos_buf+1]*st::complex_I());
+#endif
+      }
+    }
+  }
   free(randbuf);
 }
 
