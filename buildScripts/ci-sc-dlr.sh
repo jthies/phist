@@ -123,10 +123,9 @@ error=0
 
 # release build including doc
 if [ "$KERNELS" = "ghost" ]; then
-#  if [ "$FLAGS" = "optional-libs" ]; then
-# disabled for now. This is relevant when we have GHOST builds with -f optional-libs (Zoltan and ColPack)
-#    POSTFIX=_optional-libs
-#  fi
+  if [ "$FLAGS" = "optional-libs" ]; then
+    POSTFIX=_optional-libs
+  fi
   # this is the easiest way to make phist find ghost+dependencies
   export CMAKE_PREFIX_PATH=$PWD/../install-${PRGENV}-Release-${VECT_EXT}${POSTFIX}/lib/ghost:$CMAKE_PREFIX_PATH
   export PKG_CONFIG_PATH=$PWD/../install-${PRGENV}-Release-${VECT_EXT}${POSTFIX}/lib/pkgconfig:$PKG_CONFIG_PATH
