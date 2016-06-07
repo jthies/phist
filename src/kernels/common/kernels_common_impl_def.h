@@ -99,9 +99,9 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) V, int* iflag)
   // case we can still create a reproducible sequence by skipping a little 
   // further in the random number stream (see next if statement)
   PHIST_CHK_NEG_IERR(phist_map_get_ilower(map,&ilower,iflag),*iflag);
-  is_linear_map=(iflag==0);
+  is_linear_map=(*iflag==0);
   PHIST_CHK_NEG_IERR(phist_map_get_iupper(map,&iupper,iflag),*iflag);
-  is_linear_map&=(iflag==0);
+  is_linear_map&=(*iflag==0);
   
 #ifdef IS_COMPLEX
   const int nelem=2;
