@@ -20,8 +20,14 @@
 
 #include <cstdio>
 
-#define _L_ 12
-#define _N_ 924
+//#define _L_ 12
+//#define _N_ 924
+
+//#define _L_ 10
+//#define _N_ 252
+
+#define _L_ 8
+#define _N_ 70
 
 /* This test constructs the spinSZ[L] matrix with and without the flag    */
 /* PHIST_SPARSEMAT_REPARTITION, constructs a vector X with characteristic */
@@ -51,7 +57,11 @@ class DSparseMatRepartTest: public virtual TestWithType<double>,
   {
     // construct the spinSZ[L] matrix with the default map
     char spin_label[9];
+#if _L_>8
     sprintf(spin_label,"spinSZ%2d",_L_);
+#else
+    sprintf(spin_label,"spinSZ%1d",_L_);
+#endif
     phist_Dcreate_matrix(&linearA_,comm_,spin_label,&iflag_);
     EXPECT_EQ(0,iflag_);
     phist_DsparseMat_get_row_map(linearA_,&linearMap_,&iflag_);
@@ -190,6 +200,19 @@ protected:
     ASSERT_EQ(0,iflag_);
     // transfer  and unpermute the permuted vector to recover the original
     phist_Dmvec_to_mvec(repartV_in_, linearV_out_,&iflag_);    
+#if PHIST_OUTLEV>=PHIST_DEBUG
+    PHIST_SOUT(PHIST_DEBUG,"linearV_in_:\n");
+    SUBR(mvec_print)(linearV_in_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    PHIST_SOUT(PHIST_DEBUG,"repartV_in_:\n");
+    SUBR(mvec_print)(repartV_in_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    PHIST_SOUT(PHIST_DEBUG,"linearV_out_:\n");
+    SUBR(mvec_print)(linearV_out_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+#endif
     ASSERT_REAL_EQ(1.0,MvecsEqual(linearV_in_,linearV_out_));
   }
 
@@ -205,11 +228,21 @@ protected:
   TEST_F(DSparseMatRepartTest, permuted_spmvm)
   {
     if (!typeImplemented_) return;
-    
+
     // first permute the input vector into the domain map of the matrix, which in this case
     // is the same as the row map of the repartitioned A.
     phist_Dmvec_to_mvec(linearV_in_,repartV_in_,&iflag_);
     ASSERT_EQ(0,iflag_);
+
+#if PHIST_OUTLEV>=PHIST_DEBUG
+    PHIST_SOUT(PHIST_DEBUG,"linearV_in_:\n");
+    SUBR(mvec_print)(linearV_in_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    PHIST_SOUT(PHIST_DEBUG,"repartV_in_:\n");
+    SUBR(mvec_print)(repartV_in_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+#endif
     
     // perform spMVM with repartitioned/permuted matrix and vectors
     phist_DsparseMat_times_mvec(1.0,repartA_,repartV_in_,0.0,repartV_out_,&iflag_);
@@ -217,6 +250,19 @@ protected:
     // unpermute the result
     phist_Dmvec_to_mvec(repartV_out_, linearV_out_, &iflag_);
     ASSERT_EQ(0,iflag_);
+
+#if PHIST_OUTLEV>=PHIST_DEBUG
+    PHIST_SOUT(PHIST_DEBUG,"repartV_out_:\n");
+    SUBR(mvec_print)(repartV_out_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    PHIST_SOUT(PHIST_DEBUG,"linearV_out_:\n");
+    SUBR(mvec_print)(linearV_out_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    PHIST_SOUT(PHIST_DEBUG,"linearV_out_exact_:\n");
+    SUBR(mvec_print)(linearV_out_exact_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+#endif
+
     // check correctness
     ASSERT_REAL_EQ(1.0,MvecsEqual(linearV_out_,linearV_out_exact_));    
   }
