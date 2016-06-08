@@ -125,9 +125,9 @@ void SUBR(carp_cgState_create)(TYPE(carp_cgState_ptr) *state,
                         "(file %s, line %d)\n",__FILE__,__LINE__);
   return;
 #else
-    *iflag=PHIST_NOT_IMPLEMENTED;
-    PHIST_SOUT(PHIST_ERROR,"The real variant of CARP-CG with complex shifts is currently broken and we therefore abort here\n");
-    return;
+//    *iflag=PHIST_NOT_IMPLEMENTED;
+//    PHIST_SOUT(PHIST_ERROR,"The real variant of CARP-CG with complex shifts is currently broken and we therefore abort here\n");
+//    return;
     PHIST_CHK_IERR(SUBR(carp_setup_rc)(A,nvec,sigma_r,sigma_i,
       &aux, iflag),*iflag);
 #endif
