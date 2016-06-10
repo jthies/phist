@@ -935,8 +935,14 @@ foreach(dir ${dirs})
 endforeach()
 
 set(PHIST_PKG_CONFIG_LIBRARIES "")
+set(PHIST_CMAKE_CONFIG_LIBRARIES "")
 foreach(lib ${library_list})
   set(PHIST_PKG_CONFIG_LIBRARIES "${PHIST_PKG_CONFIG_LIBRARIES} -l${lib}")
+  if (BUILD_SHARED_LIBS) 
+    list(APPEND PHIST_CMAKE_CONFIG_LIBRARIES "${CMAKE_INSTALL_PREFIX}/lib/lib${lib}.so")
+  else()
+    list(APPEND PHIST_CMAKE_CONFIG_LIBRARIES "${CMAKE_INSTALL_PREFIX}/lib/lib${lib}.a")
+  endif()
 endforeach()
 
 ###########################################################################################
