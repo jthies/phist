@@ -2395,7 +2395,7 @@ end if
     
     !--------------------------------------------------------------------------------
     integer :: ldx, ldb, nvec
-    logical strided_x, interleaved_x, strided_b
+    logical strided_x, strided_b
     integer :: theShape(2)
     integer :: sendBuffSize,recvBuffSize
     logical :: b_is_zero
@@ -2450,7 +2450,7 @@ end if
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
       if( associated(A%comm_buff%recvData) ) then
-        if( size(A%comm_buff%recvData,1) .ne. 2*nvec ) then
+        if( size(A%comm_buff%recvData,1) .ne. nvec ) then
           call delete_buffers(A%comm_buff)
         end if
       end if
@@ -2459,7 +2459,7 @@ end if
       recvBuffSize = A%comm_buff%recvInd(A%comm_buff%nRecvProcs+1)-1
 
       if( .not. associated(A%comm_buff%recvData) ) then
-        call alloc_buffers(A%comm_buff, A%row_map%comm, 2*nvec,ierr)
+        call alloc_buffers(A%comm_buff, A%row_map%comm, nvec,ierr)
         if (ierr/=0) then
           ierr=-44
           return
@@ -2468,14 +2468,7 @@ end if
 
       ldx = size(x_r%val,1)
     
-      ! determine data layout
-      if( x_r%is_view .and. x_i%is_view &
-         .and. x_r%val==x_i%val         &
-         .and. x_i%jmin==x_i%jmin+1) then
-        interleaved_x=.true.
-      else
-        interleaved_x=.false.    
-      end if
+      ! determin data layout
       if( .not. x_r%is_view .or. &
         & ( x_r%jmin .eq. lbound(x_r%val,1) .and. &
         &   x_r%jmax .eq. ubound(x_r%val,1)       ) ) then
@@ -2494,9 +2487,9 @@ end if
         strided_b = .true.
       end if
       
-      if (.NOT. interleaved_x .or. strided_b) then
-        write(*,*) "CARP R/C kernels require interleaved real and imaginary part of X"
-        ierr=PHIST_INVALID_INPUT
+      if (strided_x .or. strided_b) then
+        write(*,*) "CARP kernels not implemented for strided vectors (views)"
+        ierr=PHIST_NOT_IMPLEMENTED
         return
       end if
     
