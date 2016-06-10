@@ -563,6 +563,9 @@ void SUBR(carp_cgState_iterate)(
         //ALG correction_needed=true
         if (std::sqrt(*(S->normR))/std::sqrt(*(S->normR_old)) > cor_tol)
         {
+          std::cout <<  std::sqrt(*(S->normR)) << " " << std::sqrt((*(S->normR_old))) << " "<< std::sqrt(*(S->normR))/std::sqrt((*(S->normR_old))) <<std::endl;
+          std::cout << "Cstep(!) needed, because " << std::sqrt(*(S->normR))/std::sqrt((*(S->normR_old))) <<" > " << cor_tol <<std::endl;
+                                              
           correction_needed = true;
         }
       }
@@ -630,8 +633,7 @@ void SUBR(carp_cgState_iterate)(
 
     //ALG correction_step=correction_needed
     correction_step=correction_needed;
-//    correction_step=false;
-//    correction_needed=false;
+    correction_needed=false;
   }
   //ALG end for
 
