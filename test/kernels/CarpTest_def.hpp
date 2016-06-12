@@ -41,6 +41,7 @@ public:
     SparseMatTest::SetUpTestCase();
     VTest::SetUpTestCase();
     MT_Test::SetUpTestCase();
+    
   }
 
   /*! Set up routine.
@@ -73,7 +74,46 @@ public:
       iflag_=PHIST_SPARSEMAT_OPT_CARP | PHIST_SPARSEMAT_QUIET;
       SUBR(sparseMat_create_fromRowFunc)(&I_,comm_,_N_,_N_,1,&SUBR(idfunc),NULL,&iflag_);
       ASSERT_EQ(0,iflag_);
+      
+      SUBR(mvec_random)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(vec1b_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(vec2b_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(vec3b_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      x_vec1_=new TYPE(x_mvec)(vec1_,vec1b_,0,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      x_vec2_=new TYPE(x_mvec)(vec2_,vec2b_,0,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      x_vec3_=new TYPE(x_mvec)(vec3_,vec3b_,0,&iflag_);
+      ASSERT_EQ(0,iflag_);
 
+      iflag_=PHIST_MVEC_REPLICATE_DEVICE_MEM;
+      phist_Zmvec_create(&z_vec1_,map_,nvec_,&iflag_); \
+      cTypeImplemented_=(iflag_!=PHIST_NOT_IMPLEMENTED);         
+      if (cTypeImplemented_)
+      {
+        ASSERT_EQ(0,iflag_);
+        iflag_=PHIST_MVEC_REPLICATE_DEVICE_MEM;
+        phist_Zmvec_create(&z_vec2_,map_,nvec_,&iflag_); \
+        ASSERT_EQ(0,iflag_);
+        iflag_=PHIST_MVEC_REPLICATE_DEVICE_MEM;
+        phist_Zmvec_create(&z_vec3_,map_,nvec_,&iflag_); \
+        ASSERT_EQ(0,iflag_);
+      }
+      else
+      {
+        z_vec1_=NULL;
+        z_vec2_=NULL;
+        z_vec3_=NULL;
+      }
       for (int i=0; i<_NV_; i++)
       {
         sigma_[i]=st::zero();
@@ -96,6 +136,11 @@ public:
         SUBR(carp_destroy)(I_, work, &iflag_);
         ASSERT_EQ(0,iflag_);
       }
+      x_A_=new TYPE(x_sparseMat);
+      x_A_->A_=A_;
+      x_A_->sigma_r_=sigma_r_;
+      x_A_->sigma_i_=sigma_i_;
+      x_A_->Vproj_=NULL;
     }
   }
 
@@ -121,6 +166,29 @@ public:
         ASSERT_EQ(0,iflag_);
       }
       ASSERT_EQ(0,delete_mat(I_));
+      
+      if (x_vec1_!=NULL) delete x_vec1_;
+      if (x_vec2_!=NULL) delete x_vec2_;
+      if (x_vec3_!=NULL) delete x_vec3_;
+  
+      if (cTypeImplemented_)
+      {
+        if (z_vec1_!=NULL)
+        {
+          phist_Zmvec_delete(z_vec1_,&iflag_);
+          ASSERT_EQ(0,iflag_);
+        }
+        if (z_vec2_!=NULL)
+        {
+          phist_Zmvec_delete(z_vec2_,&iflag_);
+          ASSERT_EQ(0,iflag_);
+        }
+        if (z_vec3_!=NULL)
+        {
+          phist_Zmvec_delete(z_vec3_,&iflag_);
+          ASSERT_EQ(0,iflag_);
+        }
+      }
     }
     
     VTest::TearDown();
@@ -224,7 +292,9 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
     ASSERT_NEAR(mt::one(),max_err+mt::one(),tol);
   }
 
+  // identity matrix (only used for checking if CARP is implemented at all right now)
   TYPE(sparseMat_ptr) I_;
+  // backup vectors since the carp kernel works in-place
   TYPE(mvec_ptr) vec1b_,vec2b_,vec3b_;
   // mere pointers to allow e.g. passing in b=NULL
   TYPE(mvec_ptr) x_r, x_i, x_r_bak, x_i_bak, b;
@@ -233,7 +303,16 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
   _ST_ sigma_[_NV_];
 
   bool carpImplemented_;
-
+  bool cTypeImplemented_;
+  
+  // data structures for testing the "x_*" kernels used to implement CARP-CG.
+  // these use x_mvecs with separate real and imaginary part so that CARP-CG can
+  // be used in real arithmetic but with complex-shifted matrix
+  TYPE(x_sparseMat) *x_A_;
+  TYPE(x_mvec) *x_vec1_, *x_vec2_,*x_vec3_;
+  
+  phist_ZsparseMat_ptr z_A_;
+  phist_Zmvec_ptr z_vec1_, z_vec2_,z_vec3_;
 };
 
   TEST_F(CLASSNAME, create_matrices)

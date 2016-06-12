@@ -13,6 +13,10 @@
 
 #include <complex>
 
+#include "phist_gen_d.h"
+#include "krylov/phist_carp_cg_kernels_decl.hpp"
+#include "phist_gen_clean.h"
+
 using namespace ::testing;
 
 #define CLASSFILE_DEF "CarpTest_def.hpp"
