@@ -570,20 +570,16 @@ void SUBR(carp_cgState_iterate)(
     }
     //ALG end if
     
-    // regular CG step?
-    if (!correction_step)
+    //ALG r=r-alpha*q;
+    ST min_alpha[nvec];
+    MT min_alpha_i[nvec];
+    for (int j=0;j<nvec;j++)
     {
-      //ALG r=r-alpha*q;
-      ST min_alpha[nvec];
-      MT min_alpha_i[nvec];
-      for (int j=0;j<nvec;j++)
-      {
-        min_alpha[j]=-alpha[j];
-        min_alpha_i[j]=-alpha_i[j];
-      }
-      PHIST_CHK_IERR(SUBR(x_mvec_vadd_mvec)(min_alpha,min_alpha_i,
-                q,st::one(),r,iflag),*iflag);
+      min_alpha[j]=-alpha[j];
+      min_alpha_i[j]=-alpha_i[j];
     }
+    PHIST_CHK_IERR(SUBR(x_mvec_vadd_mvec)(min_alpha,min_alpha_i,
+              q,st::one(),r,iflag),*iflag);
       
     //ALG if (correction_step)
     if (correction_step)
