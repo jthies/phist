@@ -3,6 +3,7 @@
 #include <mpi.h>
 #endif
 
+#include "matfuncs/matfuncs.h"
 #include "gtest/phist_gtest.h"
 
 
@@ -19,18 +20,15 @@
 
 using namespace ::testing;
 
-#define CLASSFILE_DEF "CarpTest_def.hpp"
-
-#define MATNAME MATNAME_BENCH3D_8_A1
-#define _BASENAME_ CarpTest_A
-/* the tests are only executed if the carp kernel is implemented,
+/* tests involving carp sweeps are only executed if the carp kernel is implemented,
 if the setup routine returns -99, further tests will not be run
+Other tests compare "RC" variants with complex arithmetic implementations, these are
+only run if the kernel lib supports the Z type.
 */
 
 double MvecsEqualZD(phist_Zmvec* zvec, phist_Dmvec* dvec_r, phist_Dmvec* dvec_i, double relTo=0.0)
 {
   int iflag=0;
-
   phist_Dmvec_from_device(dvec_r,&iflag);
   if (iflag!=PHIST_SUCCESS) return -1.0e11;
   phist_Dmvec_from_device(dvec_i,&iflag);
@@ -85,8 +83,9 @@ double MvecsEqualZD(phist_Zmvec* zvec, phist_Dmvec* dvec_r, phist_Dmvec* dvec_i,
       zval_r[VIDX(i,j,lda_r)] = std::real(zval[VIDX(i,j,lda_z)]);
       zval_i[VIDX(i,j,lda_i)] = std::imag(zval[VIDX(i,j,lda_z)]);
     }
-//    PHIST_SOUT(PHIST_DEBUG,"%16.8e%+16.8ei  <-> %16.8e%+16.8ei\n", zval_r[VIDX(i,0,lda_r)],zval_i[VIDX(i,0,lda_r)],
-//                                                                   dval_r[VIDX(i,0,lda_r)],dval_i[VIDX(i,0,lda_r)]);
+//    PHIST_SOUT(PHIST_DEBUG,"%d\t%16.8e%+16.8ei  <-> %16.8e%+16.8ei\n", 
+//        i,zval_r[VIDX(i,0,lda_r)],zval_i[VIDX(i,0,lda_r)],
+//        dval_r[VIDX(i,0,lda_r)],dval_i[VIDX(i,0,lda_r)]);
   }
   double result_r = TestWithType<double>::ArraysEqual(dval_r,zval_r,nloc_z,nvec_z,lda_r,1,KernelTest::vflag_,relTo);
   double result_i = TestWithType<double>::ArraysEqual(dval_i,zval_i,nloc_z,nvec_z,lda_r,1,KernelTest::vflag_,relTo);
@@ -138,6 +137,38 @@ void MvecCopyX2Z(phist_Dx_mvec *xvec, phist_Zmvec *zvec, int* iflag)
   PHIST_CHK_IERR(phist_Zmvec_to_device(zvec,iflag),*iflag);
 }
 
+int zshift_bench3D(ghost_gidx row, ghost_lidx *nnz, ghost_gidx* cols, void* vals, void* data)
+{
+  phist_d_complex* shift = (phist_d_complex*)data;
+  phist_d_complex* zvals = (phist_d_complex*)vals;
+  double dvals[7];
+  MATPDE3D_rowFunc(row,nnz,cols,dvals,NULL);
+  for (int i=0; i<*nnz; i++) 
+  {
+    zvals[i]=(phist_d_complex)dvals[i];
+    if (cols[i]==row && shift) zvals[i] -= (*shift);
+  }
+  return 0;
+}
+
+int zshift_idfunc(ghost_gidx row, ghost_lidx *nnz, ghost_gidx* cols, void* vals, void* data)
+{
+  phist_d_complex* shift = (phist_d_complex*)data;
+  phist_d_complex* zvals = (phist_d_complex*)vals;
+  *nnz=1;
+  cols[0]=row;
+  zvals[0]= (phist_d_complex)1.0;
+//  if (shift) zvals[0] -= (*shift);
+  return 0;
+}
+
+
+#define CLASSFILE_DEF "CarpTest_def.hpp"
+
+#define MATNAME MATNAME_BENCH3D_8_A1
+#define ZMATFUNC zshift_bench3D
+#define _BASENAME_ CarpTest_A
+
 #define _N_ 512
 #define _M_ 1
 #include "../phist_typed_test_gen.h"
@@ -152,10 +183,12 @@ void MvecCopyX2Z(phist_Dx_mvec *xvec, phist_Zmvec *zvec, int* iflag)
 
 #undef MATNAME
 #define MATNAME MATNAME_IDFUNC
+#undef ZMATFUNC
+#define ZMATFUNC zshift_idfunc
 #undef _BASENAME_
 #define _BASENAME_ CarpTest_I
 
-#define _N_ 99
+#define _N_ 12
 #define _M_ 1
 #include "../phist_typed_test_gen.h"
 

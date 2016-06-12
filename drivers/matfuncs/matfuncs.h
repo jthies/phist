@@ -51,6 +51,9 @@ extern "C" {
 
 int SpinChainSZ(   ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, void* data);
 int crsGraphene(   ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, void* data);
+int MATPDE_rowFunc(   ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, void* data);
+int MATPDE3D_rowFunc(   ghost_gidx row, ghost_lidx *nnz, ghost_gidx *cols, void *vals, void* data);
+
 #ifdef __cplusplus
 }
 #endif
