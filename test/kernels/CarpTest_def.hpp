@@ -107,6 +107,12 @@ public:
         iflag_=PHIST_MVEC_REPLICATE_DEVICE_MEM;
         phist_Zmvec_create(&z_vec3_,map_,nvec_,&iflag_); \
         ASSERT_EQ(0,iflag_);
+        MvecCopyX2Z(x_vec1_,z_vec1_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        MvecCopyX2Z(x_vec2_,z_vec2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        MvecCopyX2Z(x_vec3_,z_vec3_,&iflag_);
+        ASSERT_EQ(0,iflag_);
       }
       else
       {
@@ -431,5 +437,69 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
 #endif
 //TODO - more tests like this could be invented, in particular
 //       involving real or complex shifts
+
+//////////////////////////////////////////////////
+// tests for matrix/vector operations in "RC"   //
+//////////////////////////////////////////////////
+
+// these tests only use basic kernels (not the CARP kernel) but require complex
+// arithmetic in order to work. So right now, the tests above will be run with
+// builtin and epetra, and the tests below with ghost and tpetra only.
+//
+// At the start of these tests, z_vec1 = vec1 + i*vec1b etc
+
+TEST_F(CLASSNAME, x_mvec_add_mvec)
+{
+  if (!cTypeImplemented_) return;
+
+  double alpha = st::rand();
+  double beta = st::rand();
+
+  // sanity check of initial status
+  ASSERT_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
+  ASSERT_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
+  
+  phist_d_complex z_alpha = (phist_d_complex)alpha;
+  phist_d_complex z_beta  = (phist_d_complex)beta;
+
+  SUBR(x_mvec_add_mvec)(alpha,x_vec1_, beta, x_vec2_, &iflag_);
+  ASSERT_EQ(0,iflag_);
+
+  phist_Zmvec_add_mvec(z_alpha,z_vec1_, z_beta, z_vec2_, &iflag_);
+  ASSERT_EQ(0,iflag_);
+    
+  ASSERT_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
+  ASSERT_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
+  
+}
+
+TEST_F(CLASSNAME, x_mvec_dot_mvec)
+{
+  if (!cTypeImplemented_) return;
+
+  // sanity check of initial status
+  ASSERT_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
+  ASSERT_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
+  
+  double d_dot_r[nvec_], d_dot_i[nvec_];
+  phist_d_complex z_dot[nvec_];
+
+  SUBR(x_mvec_dot_mvec)(x_vec1_, x_vec2_, d_dot_r, d_dot_i, &iflag_);
+  ASSERT_EQ(0,iflag_);
+
+  phist_Zmvec_dot_mvec(z_vec1_, z_vec2_, z_dot, &iflag_);
+  ASSERT_EQ(0,iflag_);
+
+  double max_err_r=0.0, max_err_i=0.0;
+  for (int i=0; i<nvec_; i++)
+  {
+    max_err_r = std::max(max_err_r,d_dot_r[i]-ct::real(z_dot[i]));
+    max_err_i = std::max(max_err_i,d_dot_i[i]-ct::imag(z_dot[i]));
+  }
+  
+  ASSERT_NEAR(1.0,1.0+max_err_r,std::sqrt(st::eps()));
+  ASSERT_NEAR(1.0,1.0+max_err_i,std::sqrt(st::eps()));
+  
+}
 
 #endif
