@@ -4,6 +4,8 @@
 #error "file not included correctly."
 #endif
 
+#if !defined(IS_COMPLEX)&&defined(IS_DOUBLE)
+
 /*! Test fixure. 
   
   basic tests for CARP kernel, creates a test matrix defined by
@@ -38,7 +40,6 @@ public:
   {
     SparseMatTest::SetUpTestCase();
     VTest::SetUpTestCase();
-
     MT_Test::SetUpTestCase();
   }
 
@@ -49,11 +50,22 @@ public:
     SparseMatTest::SetUp();
     VTest::SetUp();
 
-    // created in rebuildVectors
+    
     vec1b_=NULL;
+    PHISTTEST_MVEC_CREATE(&vec1b_,map_,nvec_,&iflag_);
+    ASSERT_EQ(0,iflag_);
     vec2b_=NULL; 
+    PHISTTEST_MVEC_CREATE(&vec2b_,map_,nvec_,&iflag_);
+    ASSERT_EQ(0,iflag_);
     vec3b_=NULL;
-    A_=NULL;
+    PHISTTEST_MVEC_CREATE(&vec3b_,map_,nvec_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    // set pointers for the tests
+    x_r=vec1_; x_r_bak=vec1b_;
+    x_i=vec2_; x_i_bak=vec2b_;
+    b=vec3_;
+
     I_=NULL;
     if (typeImplemented_ && !problemTooSmall_)
     {
@@ -121,76 +133,6 @@ public:
     SparseMatTest::TearDownTestCase();
   }
 
-// the matrices may have individual maps, so we need to recreate all vectors with the specific map of the matrix!
-void rebuildVectors(TYPE(const_sparseMat_ptr) A)
-{
-  if (typeImplemented_ && !problemTooSmall_)
-  {
-    // set vec1 to be a valid X, vec2 and vec3 a valid Y in Y=AX
-    phist_const_map_ptr range_map, domain_map;
-    SUBR(sparseMat_get_range_map)(A,&range_map,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(sparseMat_get_domain_map)(A,&domain_map,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    
-    SUBR(mvec_delete)(vec1_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_delete)(vec2_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_delete)(vec3_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-
-    phist_lidx lda;
-    PHISTTEST_MVEC_CREATE(&vec1_,domain_map,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    ASSERT_EQ(lda,lda_);
-
-    PHISTTEST_MVEC_CREATE(&vec2_,range_map,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&lda,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    ASSERT_EQ(lda,lda_);
-
-    PHISTTEST_MVEC_CREATE(&vec3_,range_map,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&lda,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    ASSERT_EQ(lda,lda_);
-
-    if (vec1b_)
-    {
-      SUBR(mvec_delete)(vec1b_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-    }
-    PHISTTEST_MVEC_CREATE(&vec1b_,range_map,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    if (vec2b_)
-    {
-      SUBR(mvec_delete)(vec2b_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-    }
-    PHISTTEST_MVEC_CREATE(&vec2b_,range_map,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    if (vec3b_)
-    {
-      SUBR(mvec_delete)(vec3b_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-    }
-    PHISTTEST_MVEC_CREATE(&vec3b_,range_map,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-
-    phist_map_get_local_length(domain_map, &nloc_, &iflag_);
-    ASSERT_EQ(0,iflag_);
-    
-    // set pointers for the tests
-    x_r=vec1_; x_r_bak=vec1b_;
-    x_i=vec2_; x_i_bak=vec2b_;
-    b=vec3_;
-
-  }
-}
 
 
   // helper function to apply [x_r, x_i] = dkswp(A-sigma[j]*I, b, x_r, x_i)
@@ -249,7 +191,7 @@ int delete_mat(TYPE(sparseMat_ptr) &A)
   if (A!=NULL)
     {
     SUBR(sparseMat_delete)(A,&iflag_);
-    A = 0;
+    A = NULL;
     }
   return iflag_;
   }
@@ -309,8 +251,6 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
   {
     if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
     {
-      rebuildVectors(A_);
-
       SUBR(mvec_random)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_random)(vec2_,&iflag_);
@@ -328,7 +268,7 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
       x_r=vec1_; x_r_bak=vec1b_;
       x_i=vec2_; x_i_bak=vec2b_;
       b=vec3_;
-      create_and_apply_carp(A_);
+      create_and_apply_carp_rc(A_);
       ASSERT_EQ(0,iflag_);
             
       MT norm1r[_NV_], norm1i[_NV_];
@@ -342,7 +282,7 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(st::one(),vec2b_,st::zero(),vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      create_and_apply_carp(A_);
+      create_and_apply_carp_rc(A_);
       ASSERT_EQ(0,iflag_);
 
       MT norm2r[_NV_], norm2i[_NV_];
@@ -362,8 +302,6 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
   {
     if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
     {
-      rebuildVectors(A_);
-
       SUBR(mvec_random)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_put_value)(vec2_,st::zero(),&iflag_);
@@ -395,16 +333,15 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
     }
   }
 
+#if MATNAME==MATNAME_IDFUNC
   TEST_F(CLASSNAME, Identity_yields_zero)
   {
     if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
     {
-      rebuildVectors(I_);
-      
       SUBR(mvec_random)(x_r,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      create_and_apply_carp(I_);
+      create_and_apply_carp(A_);
       ASSERT_EQ(0,iflag_);
       
       // real X should be zero now (all rows of I projected out)
@@ -412,6 +349,8 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
       
     }
   }
-
+#endif
 //TODO - more tests like this could be invented, in particular
 //       involving real or complex shifts
+
+#endif
