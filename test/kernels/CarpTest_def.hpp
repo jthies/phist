@@ -114,19 +114,20 @@ public:
         MvecCopyX2Z(x_vec3_,z_vec3_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
-        for (int i=0; i<_NV_; i++)
+        sigma_[0]=-1.0+ct::cmplx_I();        minus_sigma_[0]=-sigma_[0];
+        sigma_r_[0]=ct::real(sigma_[0]);     sigma_i_[0]=ct::imag(sigma_[0]);
+        for (int i=1; i<_NV_; i++)
         {
-          sigma_[i]=ct::rand();
-          //sigma_[i]=1.0+1.0*ct::cmplx_I();
-          minus_sigma_[i]=-sigma_[i];
-          sigma_r_[i]=ct::real(sigma_[i]);
-          sigma_i_[i]=ct::imag(sigma_[i]);
+          sigma_[i]=ct::rand();                 minus_sigma_[i]=-sigma_[i];
+          sigma_r_[i]=ct::real(sigma_[i]);      sigma_i_[i]=ct::imag(sigma_[i]);
           omega_[i]=1.84299;
         }
 
+        phist_ZsparseMat_create_fromRowFunc(&z_A_,comm_,_N_,_N_,7,&ZMATFUNC,NULL,&iflag_);
+        ASSERT_EQ(0,iflag_);
         phist_ZsparseMat_create_fromRowFunc(&z_A_shift0_,comm_,_N_,_N_,7,&ZMATFUNC,&sigma_[0],&iflag_);
         ASSERT_EQ(0,iflag_);
-        phist_ZsparseMat_create_fromRowFunc(&z_A_,comm_,_N_,_N_,7,&ZMATFUNC,NULL,&iflag_);
+        phist_ZsparseMat_create_fromRowFunc(&z_A_shift1_,comm_,_N_,_N_,7,&ZMATFUNC,&sigma_[1],&iflag_);
         ASSERT_EQ(0,iflag_);
 
       }
@@ -137,6 +138,7 @@ public:
         z_vec3_=NULL;
         z_A_=NULL;
         z_A_shift0_=NULL;
+        z_A_shift1_=NULL;
       }
     
       // check if CARP is implemented at all:
@@ -218,6 +220,11 @@ public:
         if (z_A_shift0_!=NULL)
         {
           phist_ZsparseMat_delete(z_A_shift0_,&iflag_);
+          ASSERT_EQ(0,iflag_);
+        }
+        if (z_A_shift1_!=NULL)
+        {
+          phist_ZsparseMat_delete(z_A_shift1_,&iflag_);
           ASSERT_EQ(0,iflag_);
         }
       }
@@ -345,6 +352,32 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
     ASSERT_EQ(0,iflag_);
 
     ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
+    ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),100*mt::eps());
+  }
+  
+  void do_spmv_test_single(double alpha, double beta, phist_d_complex sigma, phist_ZsparseMat_ptr z_A_shift)
+  {
+  for (int i=0; i<nvec_; i++)
+  {
+    x_A_->sigma_r_[i]=ct::real(sigma);;
+    x_A_->sigma_i_[i]=ct::imag(sigma);;
+  }
+
+  // sanity check of initial status
+  ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
+  ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
+
+  phist_d_complex z_alpha=(phist_d_complex)alpha;
+  phist_d_complex z_beta=(phist_d_complex)beta;
+
+  SUBR(x_sparseMat_times_mvec)(alpha, x_A_, x_vec1_, beta, x_vec2_, &iflag_);
+  ASSERT_EQ(0,iflag_);
+
+  // check against multiplying with A-sigma*I directly
+  phist_ZsparseMat_times_mvec(z_alpha,z_A_shift,z_vec1_,z_beta,z_vec2_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+
+    ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
     ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
   }
   
@@ -367,7 +400,7 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
   TYPE(x_sparseMat) *x_A_;
   TYPE(x_mvec) *x_vec1_, *x_vec2_,*x_vec3_;
   
-  phist_ZsparseMat_ptr z_A_, z_A_shift0_;
+  phist_ZsparseMat_ptr z_A_, z_A_shift0_, z_A_shift1_;
   phist_Zmvec_ptr z_vec1_, z_vec2_,z_vec3_;
 };
 
@@ -380,6 +413,7 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
       {
         ASSERT_TRUE(AssertNotNull(z_A_));
         ASSERT_TRUE(AssertNotNull(z_A_shift0_));
+        ASSERT_TRUE(AssertNotNull(z_A_shift1_));
       }
       ASSERT_TRUE(AssertNotNull(I_));
     }
@@ -627,37 +661,36 @@ TEST_F(CLASSNAME, x_sparseMat_times_mvec_imag_shift_with_alpha_beta)
 }
 
 
-TEST_F(CLASSNAME, x_sparseMat_times_mvec_compare_with_shifted_matrix)
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_compare_with_i_shifted_matrix)
 {
   if (!cTypeImplemented_) return;
   
-  for (int i=0; i<nvec_; i++)
-  {
-    x_A_->sigma_r_[i]=sigma_r_[0];
-    x_A_->sigma_i_[i]=sigma_i_[0];
-  }
+  do_spmv_test_single(1.0,0.0, sigma_[0], z_A_shift0_);  
+}
 
-  phist_Zmvec_add_mvec(ct::one(),z_vec1_,ct::zero(),z_vec3_,&iflag_);
-  ASSERT_EQ(0,iflag_);
-
-  double alpha=5.39874;
-  double beta=-3.34656;
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_compare_with_rnd_shifted_matrix)
+{
+  if (!cTypeImplemented_) return;
   
-  phist_d_complex z_alpha=(phist_d_complex)alpha;
-  phist_d_complex z_beta=(phist_d_complex)beta;
+  do_spmv_test_single(1.0,0.0, sigma_[1], z_A_shift1_);  
+}
 
-  do_spmv_test(alpha,beta);
-
-  // in addition to the regular spmv test, also check against multiplying with A-sigma*I directly
-  phist_Zmvec_add_mvec(ct::one(),z_vec3_,ct::zero(),z_vec1_,&iflag_);
-  ASSERT_EQ(0,iflag_);
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_compare_with_i_shifted_matrix_alpha_beta)
+{
+  if (!cTypeImplemented_) return;
   
-  phist_ZsparseMat_times_mvec(z_alpha,z_A_shift0_,z_vec1_,z_beta,z_vec2_,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  double alpha = 1.23456;
+  double beta = 9.876543;
+  do_spmv_test_single(alpha, beta, sigma_[0], z_A_shift0_);  
+}
 
-    ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
-    ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_compare_with_rnd_shifted_matrix_alpha_beta)
+{
+  if (!cTypeImplemented_) return;
   
+  double alpha = 1.23456;
+  double beta = 9.876543;
+  do_spmv_test_single(alpha, beta, sigma_[1], z_A_shift1_);  
 }
 
 #endif
