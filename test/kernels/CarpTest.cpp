@@ -139,16 +139,17 @@ void MvecCopyX2Z(phist_Dx_mvec *xvec, phist_Zmvec *zvec, int* iflag)
 
 int zshift_bench3D(ghost_gidx row, ghost_lidx *nnz, ghost_gidx* cols, void* vals, void* data)
 {
+  int iflag=0;
   phist_d_complex* shift = (phist_d_complex*)data;
   phist_d_complex* zvals = (phist_d_complex*)vals;
   double dvals[7];
-  MATPDE3D_rowFunc(row,nnz,cols,dvals,NULL);
+  PHIST_ICHK_IERR(iflag=MATPDE3D_rowFunc(row,nnz,cols,dvals,NULL),iflag);
   for (int i=0; i<*nnz; i++) 
   {
     zvals[i]=(phist_d_complex)dvals[i];
-    if (cols[i]==row && shift) zvals[i] -= (*shift);
+    if (cols[i]==row && shift!=NULL) zvals[i] -= (*shift);
   }
-  return 0;
+  return iflag;
 }
 
 int zshift_idfunc(ghost_gidx row, ghost_lidx *nnz, ghost_gidx* cols, void* vals, void* data)
@@ -158,7 +159,7 @@ int zshift_idfunc(ghost_gidx row, ghost_lidx *nnz, ghost_gidx* cols, void* vals,
   *nnz=1;
   cols[0]=row;
   zvals[0]= (phist_d_complex)1.0;
-//  if (shift) zvals[0] -= (*shift);
+  if (shift!=NULL) zvals[0] -= (*shift);
   return 0;
 }
 
@@ -188,7 +189,7 @@ int zshift_idfunc(ghost_gidx row, ghost_lidx *nnz, ghost_gidx* cols, void* vals,
 #undef _BASENAME_
 #define _BASENAME_ CarpTest_I
 
-#define _N_ 12
+#define _N_ 99
 #define _M_ 1
 #include "../phist_typed_test_gen.h"
 

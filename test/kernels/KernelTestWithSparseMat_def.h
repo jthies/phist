@@ -29,15 +29,16 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _MatName, _multipleDefinitionCounter
       if( typeImplemented_ && !problemTooSmall )
       {
         // read matrix first
-        if (MatNameEnumIsMatFunc(_MatName))
+        if (_MatName==MATNAME_IDFUNC)
         {
+          // this is not handled by create_matrix, so it gets an extra treatment
           SUBR(sparseMat_create_fromRowFunc)(&A_,comm_,_Nglob,_Nglob,1,&SUBR(idfunc),NULL,&iflag_);
         }
-        else
+        else if (MatNameEnumIsMatFunc(_MatName)==false)
         {
           SUBR(read_mat)(MatNameEnumToStr(_MatName),comm_,_Nglob,&A_,&iflag_);
         }
-        if( iflag_ != 0 )
+        else
         {
           SUBR(create_matrix)(&A_,comm_,MatNameEnumToStr(_MatName),&iflag_);
         }

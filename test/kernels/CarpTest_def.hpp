@@ -96,7 +96,7 @@ public:
       ASSERT_EQ(0,iflag_);
 
       iflag_=PHIST_MVEC_REPLICATE_DEVICE_MEM;
-      phist_Zmvec_create(&z_vec1_,map_,nvec_,&iflag_); \
+      phist_Zmvec_create(&z_vec1_,map_,nvec_,&iflag_);
       cTypeImplemented_=(iflag_!=PHIST_NOT_IMPLEMENTED);         
       if (cTypeImplemented_)
       {
@@ -117,15 +117,17 @@ public:
         for (int i=0; i<_NV_; i++)
         {
           sigma_[i]=ct::rand();
+          //sigma_[i]=1.0+1.0*ct::cmplx_I();
+          minus_sigma_[i]=-sigma_[i];
           sigma_r_[i]=ct::real(sigma_[i]);
           sigma_i_[i]=ct::imag(sigma_[i]);
           omega_[i]=1.84299;
         }
 
-      phist_ZsparseMat_create_fromRowFunc(&z_A_shift0_,comm_,_N_,_N_,7,&ZMATFUNC,&sigma_[0],&iflag_);
-      ASSERT_EQ(0,iflag_);
-      phist_ZsparseMat_create_fromRowFunc(&z_A_,comm_,_N_,_N_,7,&ZMATFUNC,NULL,&iflag_);
-      ASSERT_EQ(0,iflag_);
+        phist_ZsparseMat_create_fromRowFunc(&z_A_shift0_,comm_,_N_,_N_,7,&ZMATFUNC,&sigma_[0],&iflag_);
+        ASSERT_EQ(0,iflag_);
+        phist_ZsparseMat_create_fromRowFunc(&z_A_,comm_,_N_,_N_,7,&ZMATFUNC,NULL,&iflag_);
+        ASSERT_EQ(0,iflag_);
 
       }
       else
@@ -135,13 +137,6 @@ public:
         z_vec3_=NULL;
         z_A_=NULL;
         z_A_shift0_=NULL;
-      }
-      for (int i=0; i<_NV_; i++)
-      {
-        sigma_[i]=ct::zero();
-        sigma_r_[i]=mt::zero();
-        sigma_i_[i]=mt::zero();
-        omega_[i]=mt::one();
       }
     
       // check if CARP is implemented at all:
@@ -160,9 +155,14 @@ public:
       }
       x_A_=new TYPE(x_sparseMat);
       x_A_->A_=A_;
-      x_A_->sigma_r_=sigma_r_;
-      x_A_->sigma_i_=sigma_i_;
+      x_A_->sigma_r_=new _ST_[nvec_];
+      x_A_->sigma_i_=new _ST_[nvec_];
       x_A_->Vproj_=NULL;
+      for (int i=0; i<nvec_;i++)
+      {
+        x_A_->sigma_r_[i]=sigma_r_[i];
+        x_A_->sigma_i_[i]=sigma_i_[i];
+      }
     }
   }
 
@@ -324,6 +324,30 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
     ASSERT_NEAR(mt::one(),max_err+mt::one(),tol);
   }
 
+  void do_spmv_test(double alpha, double beta)
+  {
+    // sanity check of initial status
+    ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
+    ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
+
+    phist_d_complex z_alpha = (phist_d_complex)alpha;
+    phist_d_complex z_beta = (phist_d_complex)beta;
+  
+    SUBR(x_sparseMat_times_mvec)(alpha, x_A_, x_vec1_, beta, x_vec2_, &iflag_);
+    ASSERT_EQ(0,iflag_);
+  
+    for (int i=0; i<nvec_; i++)
+    {
+      minus_sigma_[i]=-(x_A_->sigma_r_[i] + ct::cmplx_I()*x_A_->sigma_i_[i]);
+    }
+  
+    phist_ZsparseMat_times_mvec_vadd_mvec(z_alpha, z_A_, minus_sigma_, z_vec1_, z_beta, z_vec2_, &iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
+    ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
+  }
+  
   // identity matrix (only used for checking if CARP is implemented at all right now)
   TYPE(sparseMat_ptr) I_;
   // backup vectors since the carp kernel works in-place
@@ -332,7 +356,7 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
   TYPE(mvec_ptr) x_r, x_i, x_r_bak, x_i_bak, b;
 
   _MT_ sigma_r_[_NV_], sigma_i_[_NV_], omega_[_NV_];
-  _CT_ sigma_[_NV_];
+  _CT_ sigma_[_NV_], minus_sigma_[_NV_];
 
   bool carpImplemented_;
   bool cTypeImplemented_;
@@ -352,6 +376,11 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
     if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
     {
       ASSERT_TRUE(AssertNotNull(A_));
+      if (cTypeImplemented_) 
+      {
+        ASSERT_TRUE(AssertNotNull(z_A_));
+        ASSERT_TRUE(AssertNotNull(z_A_shift0_));
+      }
       ASSERT_TRUE(AssertNotNull(I_));
     }
   }
@@ -533,45 +562,74 @@ TEST_F(CLASSNAME, x_sparseMat_times_mvec_without_shift)
 {
   if (!cTypeImplemented_) return;
 
-  // sanity check of initial status
-  ASSERT_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
-  ASSERT_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
-
-  double alpha = 3.489934;
-  double beta = -9.435662;
-  phist_d_complex z_alpha = (phist_d_complex)alpha;
-  phist_d_complex z_beta = (phist_d_complex)beta;
-  
   for (int i=0; i<nvec_; i++)
   {
     x_A_->sigma_r_[i]=0.0;
     x_A_->sigma_i_[i]=0.0;
   }
-
-  SUBR(x_sparseMat_times_mvec)(alpha, x_A_, x_vec1_, beta, x_vec2_, &iflag_);
-  ASSERT_EQ(0,iflag_);
-  
-  phist_ZsparseMat_times_mvec(z_alpha, z_A_, z_vec1_, z_beta, z_vec2_, &iflag_);
-  ASSERT_EQ(0,iflag_);
-
-  ASSERT_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
-  ASSERT_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
-  
-  
+  do_spmv_test(1.0,0.0);
 }
 
-TEST_F(CLASSNAME, x_sparseMat_times_mvec_single_shift)
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_without_shift_with_alpha_beta)
 {
   if (!cTypeImplemented_) return;
 
-  // sanity check of initial status
-  ASSERT_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
-  ASSERT_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
+  for (int i=0; i<nvec_; i++)
+  {
+    x_A_->sigma_r_[i]=0.0;
+    x_A_->sigma_i_[i]=0.0;
+  }
+  do_spmv_test(1.234,-0.987);
+}
 
-  double alpha = 3.489934;
-  double beta = -9.435662;
-  phist_d_complex z_alpha = (phist_d_complex)alpha;
-  phist_d_complex z_beta = (phist_d_complex)beta;
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_real_shift)
+{
+  if (!cTypeImplemented_) return;
+
+  for (int i=0; i<nvec_; i++)
+  {
+    x_A_->sigma_r_[i]=0.0;
+  }
+  do_spmv_test(1.0,0.0);
+}
+
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_real_shift_with_alpha_beta)
+{
+  if (!cTypeImplemented_) return;
+
+  for (int i=0; i<nvec_; i++)
+  {
+    x_A_->sigma_r_[i]=0.0;
+  }
+  do_spmv_test(1.234,-0.987);
+}
+
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_imag_shift)
+{
+  if (!cTypeImplemented_) return;
+
+  for (int i=0; i<nvec_; i++)
+  {
+    x_A_->sigma_i_[i]=0.0;
+  }
+  do_spmv_test(1.0,0.0);
+}
+
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_imag_shift_with_alpha_beta)
+{
+  if (!cTypeImplemented_) return;
+
+  for (int i=0; i<nvec_; i++)
+  {
+    x_A_->sigma_i_[i]=0.0;
+  }
+  do_spmv_test(1.234,-0.987);
+}
+
+
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_compare_with_shifted_matrix)
+{
+  if (!cTypeImplemented_) return;
   
   for (int i=0; i<nvec_; i++)
   {
@@ -579,41 +637,26 @@ TEST_F(CLASSNAME, x_sparseMat_times_mvec_single_shift)
     x_A_->sigma_i_[i]=sigma_i_[0];
   }
 
-  SUBR(x_sparseMat_times_mvec)(alpha, x_A_, x_vec1_, beta, x_vec2_, &iflag_);
-  ASSERT_EQ(0,iflag_);
-  
-  phist_ZsparseMat_times_mvec(z_alpha, z_A_shift0_, z_vec1_, z_beta, z_vec2_, &iflag_);
+  phist_Zmvec_add_mvec(ct::one(),z_vec1_,ct::zero(),z_vec3_,&iflag_);
   ASSERT_EQ(0,iflag_);
 
-  ASSERT_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
-  ASSERT_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
+  double alpha=5.39874;
+  double beta=-3.34656;
   
-  
-}
+  phist_d_complex z_alpha=(phist_d_complex)alpha;
+  phist_d_complex z_beta=(phist_d_complex)beta;
 
+  do_spmv_test(alpha,beta);
 
-TEST_F(CLASSNAME, x_sparseMat_times_mvec_varying_shifts)
-{
-  if (!cTypeImplemented_) return;
-
-  // sanity check of initial status
-  ASSERT_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
-  ASSERT_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
-
-  double alpha = 3.489934;
-  double beta = -9.435662;
-  phist_d_complex z_alpha = (phist_d_complex)alpha;
-  phist_d_complex z_beta = (phist_d_complex)beta;
-
-  SUBR(x_sparseMat_times_mvec)(alpha, x_A_, x_vec1_, beta, x_vec2_, &iflag_);
+  // in addition to the regular spmv test, also check against multiplying with A-sigma*I directly
+  phist_Zmvec_add_mvec(ct::one(),z_vec3_,ct::zero(),z_vec1_,&iflag_);
   ASSERT_EQ(0,iflag_);
   
-  phist_ZsparseMat_times_mvec_vadd_mvec(z_alpha, z_A_, sigma_, z_vec1_, z_beta, z_vec2_, &iflag_);
+  phist_ZsparseMat_times_mvec(z_alpha,z_A_shift0_,z_vec1_,z_beta,z_vec2_,&iflag_);
   ASSERT_EQ(0,iflag_);
 
-  ASSERT_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
-  ASSERT_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
-  
+    ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
+    ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
   
 }
 
