@@ -487,7 +487,7 @@ void SUBR(x_mvec_vadd_mvec)(_ST_ const alpha[], _MT_ const alpha_i[], TYPE(x_mve
 #ifndef IS_COMPLEX
   if (rc)
   {
-    for (int i=0; i<nvec; i++)
+    for (int i=0; i<actual_nvec; i++)
     {
       tmp_alpha[i]=-(_ST_)alpha_i[i];
     }
