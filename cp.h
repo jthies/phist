@@ -8,61 +8,62 @@
 #include <ghost.h>
 #include <ghost/types.h>
 #include <iostream>
+#include <complex>
 #include <fstream>
 #include <stdlib.h>
 #include <stdio.h>
 #include "cp_array.h"
 #include "cp_ghostdensemat.h"
-#include <complex.h>
-using namespace std;
+#include "cpPOD.h"
+#include <mpi.h>
 
-class CP{
+#ifdef SCR
+extern "C"{
+	#include <scr.h>
+}
+#endif
+
+using namespace std;
+using std::complex;
+class CP
+{
 private:
 	MPI_Comm cpmpicomm;
 	std::string cpPath;
 	bool cpCommitted;
 	// ===== POD ===== 
-	std::map<const std::string, int * > intPod;
-	std::map<const std::string, int > intPodAsync;
-
-	std::map<const std::string, double * > doublePod;
-	std::map<const std::string, double > doublePodAsync;
-
-	std::map<const std::string, double complex * > doubleComplexPod;
-	std::map<const std::string, double complex > doubleComplexPodAsync;
-
-	std::map<const std::string, float * > floatPod;
-	std::map<const std::string, float > floatPodAsync;
-
+	std::map<const std::string, CpPod<int> * > intPodMap;
+	std::map<const std::string, CpPod<double> *> doublePodMap;
+	std::map<const std::string, CpPod<float> *> floatPodMap;
+	std::map<const std::string, CpPod< complex<double> >* > doubleComplexPodMap;
+	
 	// ===== GHOST-VECTORS ===== 
-	std::map<const std::string, CpGhostDenseMat *> cpGhostDenseMat;
-	std::map<const std::string, CpGhostDenseMatArray *> cpGhostDenseMatArray;
-
-	//ghost_densemat *vector_async;
+	std::map<const std::string, CpGhostDenseMat *> ghostDenseMatMap;
+	std::map<const std::string, CpGhostDenseMatArray *> ghostDenseMatArrayMap;
 
 	// ===== ARRAYS ===== 
+ 	std::map<const std::string, CpArray<int> * > 	intArrayMap;
+	std::map<const std::string, CpArray<double> * > doubleArrayMap;
+	std::map<const std::string, CpArray<float> * > 	floatArrayMap;
+	std::map<const std::string, CpArray<complex<double> > * > doubleComplexArrayMap;
 
-	std::map<const std::string, CpArray<int> * > 	cpIntArrayMap;
-	std::map<const std::string, CpArray<double> * > cpDoubleArrayMap;
-	std::map<const std::string, CpArray<float> * > 	cpFloatArrayMap;
+	// ===== MULTI ARRAYS ===== 
+	std::map<const std::string, CpMulArray<int> * > 	intMulArrayMap;
+	std::map<const std::string, CpMulArray<double> * > 	doubleMulArrayMap;
+	std::map<const std::string, CpMulArray<float> * > 	floatMulArrayMap;
 
-	std::map<const std::string, CpArray<double complex> * > cpDoubleComplexArrayMap;
-
-	std::map<const std::string, CpMulArray<int> * > 	cpIntMulArrayMap;
-	std::map<const std::string, CpMulArray<double> * > 	cpDoubleMulArrayMap;
-	std::map<const std::string, CpMulArray<float> * > 	cpFloatMulArrayMap;
 
 	int CP_ADD_POD_INT		(const std::string key, int * const value);
 	int CP_ADD_POD_DOUBLE	(const std::string key, double * const value); 
 	int CP_ADD_POD_FLOAT	(const std::string key, float * const value); 
 	
-	int CP_ADD_POD_DOUBLE_COMPLEX	(const std::string key, double complex * const value); 
+	int CP_ADD_POD_DOUBLE_COMPLEX	(const std::string key, complex<double> * const value); 
 
 	int CP_ADD_ARRAY_INT	(const std::string key, int * const val_array, const size_t array_size );
 	int CP_ADD_ARRAY_DOUBLE	(const std::string key, double * const val_array, const size_t array_size );
 	int CP_ADD_ARRAY_FLOAT	(const std::string key, float * const val_array, const size_t array_size );
 
-	int CP_ADD_ARRAY_DOUBLE_COMPLEX	(const std::string key, double complex * const val_array, const size_t array_size );
+	int CP_ADD_ARRAY_DOUBLE_COMPLEX	(const std::string key, complex<double>  * const val_array, const size_t array_size );
 
 
 	int CP_ADD_MULTIARRAY_INT	(const std::string key, int** const ptr, const size_t n_rows, const size_t n_cols, const int toCpCol_ );
@@ -81,27 +82,25 @@ public:
 	
 	int CP_ADD_POD(const std::string key, int * const val_ptr);
 	int CP_ADD_POD(const std::string key, double * const val_ptr);
-	int CP_ADD_POD(const std::string key, double complex * const val_ptr);
+	int CP_ADD_POD(const std::string key, complex<double>  * const val_ptr);
 	int CP_ADD_POD(const std::string key, float * const val_ptr);
 
 	int CP_ADD_ARRAY(const std::string key,  int 	* const val_array, const size_t array_size);
 	int CP_ADD_ARRAY(const std::string key,  double * const val_array, const size_t array_size);
 	int CP_ADD_ARRAY(const std::string key,  float * const val_array, const size_t array_size);
 	
-	int CP_ADD_ARRAY(const std::string key,  double complex * const val_array, const size_t array_size);
+	int CP_ADD_ARRAY(const std::string key,  complex<double>  * const val_array, const size_t array_size);
 
 	int CP_ADD_MULTIARRAY(const std::string key, int** const ptr,  const size_t n_rows,  const size_t n_cols, const int toCpCol_ = ALL);
 	int CP_ADD_MULTIARRAY(const std::string key, double** const ptr,  const size_t n_rows,  const size_t n_cols, const int toCpCol_ = ALL);
 	int CP_ADD_MULTIARRAY(const std::string key, float** const ptr,  const size_t n_rows,  const size_t n_cols, const int toCpCol_ = ALL);
 
-	int updateCp();	// this function should update the values of CP
-	int writeCp();		// this function should write the updated CP
-	int readCp();
+	int update();	// this function should update the values of CP
+	int write();		// this function should write the updated CP
+	int read();
 
 	int print();
 };
 
 #endif
-
-
 

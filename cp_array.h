@@ -8,9 +8,16 @@
 #define __CP_ARRAY_H__
 
 #include "enum.h"
+#include "cp.h"
+
+#ifdef SCR
+extern "C"{
+	#include <scr.h>
+}
+#endif
 
 template <class T>
-class CpArray 
+class CpArray
 {
 public:
 		CpArray();
@@ -88,6 +95,13 @@ int CpArray<T>::write(){
 	char * filename = new char[256];
 	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
 
+#ifdef SCR
+	char * tmpFilename = new char[256];
+	strcpy(tmpFilename, filename); 
+	SCR_Route_file(tmpFilename, filename);
+	printf("new filename %s\n", filename);
+#endif
+
 	FILE * fp;
 	if( NULL == (fp = fopen(filename, "w+")) ) {
 		fprintf(stderr, "Error: Unable to open file (%s)\n", filename);
@@ -100,15 +114,18 @@ int CpArray<T>::write(){
 
 template <class T>
 int CpArray<T>::read(){
-	std::cout << "read file now" << name << endl;
-	for(int i = 0; i< nRows; ++i){
-		std::cout << array[i] << endl;
-	}
 
 	int myrank = -1;
 	MPI_Comm_rank(cpMpiComm, &myrank);			// TODO: should be FT_comm
 	char * filename = new char[256];
 	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
+
+#ifdef SCR
+	char * tmpFilename = new char[256];
+	strcpy(tmpFilename, filename); 
+	SCR_Route_file(tmpFilename, filename);
+	printf("new filename %s\n", filename);
+#endif
 
 	FILE * fp;
 	if( NULL == (fp = fopen(filename, "r")) ) {
@@ -118,7 +135,7 @@ int CpArray<T>::read(){
 	fread( array, sizeof(T), nRows, fp );
 	fclose(fp);
 	copyArray(array, arrayPtr, nRows);	
-	print();
+//	print();
 	return 0;
 }
 
@@ -214,7 +231,7 @@ int CpMulArray<T>::print(){
 template <class T>
 int CpMulArray<T>::update(){ 		// TODO: 	should only update the array to be written
 	copyMulArray(arrayPtr, array, nRows, nCols);	
-	print();	
+//	print();	
 	return 0;
 }
 
@@ -227,6 +244,13 @@ int CpMulArray<T>::write(){
 	MPI_Comm_rank(cpMpiComm, &myrank);	
 	char * filename = new char[256];
 	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
+
+#ifdef SCR
+	char * tmpFilename = new char[256];
+	strcpy(tmpFilename, filename); 
+	SCR_Route_file(tmpFilename, filename);
+	printf("new filename %s\n", filename);
+#endif
 
 	FILE * fp;
 	if( NULL == (fp = fopen(filename, "w+")) ) {
@@ -262,11 +286,17 @@ int CpMulArray<T>::write(){
 
 template <class T>
 int CpMulArray<T>::read(){
-	std::cout << "read CpMulArray file now" << name << endl;
 	int myrank = -1;
 	MPI_Comm_rank(cpMpiComm, &myrank);			// TODO: should be FT_comm
 	char * filename = new char[256];
 	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
+
+#ifdef SCR
+	char * tmpFilename = new char[256];
+	strcpy(tmpFilename, filename); 
+	SCR_Route_file(tmpFilename, filename);
+	printf("new filename %s\n", filename);
+#endif
 
 	FILE * fp;
 	if( NULL == (fp = fopen(filename, "r")) ) {
@@ -300,7 +330,7 @@ int CpMulArray<T>::read(){
 	}
 	fclose(fp);
 	copyMulArray(array, arrayPtr, nRows, nCols);	
-	print();
+	//print();
 	return 0;
 }
 

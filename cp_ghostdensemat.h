@@ -66,6 +66,14 @@ int CpGhostDenseMat::write(){
 	MPI_Comm_rank(cpMpiComm, &myrank);		
 	char * filename = new char[256];
 	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
+
+#ifdef SCR
+	char * tmpFilename = new char[256];
+	strcpy(tmpFilename, filename); 
+	SCR_Route_file(tmpFilename, filename);
+	printf("new filename %s\n", filename);
+#endif
+
 	denseMatAsync->toFile(denseMatAsync, filename, 0);
 	std::cout << "writing done " << name << std::endl ;
 	return 0;
@@ -77,6 +85,14 @@ int CpGhostDenseMat::read(){
 	MPI_Comm_rank(cpMpiComm, &myrank);
 	char * filename = new char[256];
 	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
+
+#ifdef SCR
+	char * tmpFilename = new char[256];
+	strcpy(tmpFilename, filename); 
+	SCR_Route_file(tmpFilename, filename);
+	printf("new filename %s\n", filename);
+#endif
+
 	denseMatAsync->fromFile(denseMatAsync, filename, 0);
 	ghost_densemat_init_densemat(denseMat, denseMatAsync, 0, 0);
 	char * readstr = new char[256];	
@@ -166,6 +182,13 @@ int CpGhostDenseMatArray::write(){
 			char * filename = new char[256];
 			sprintf(filename, "%s/%s%d-rank%d.cp", cpPath.c_str(), name.c_str(), i, myrank);
 
+#ifdef SCR
+			char * tmpFilename = new char[256];
+			strcpy(tmpFilename, filename); 
+			SCR_Route_file(tmpFilename, filename);
+			printf("new filename %s\n", filename);
+#endif
+
 			FILE * fp;
 			if( NULL == (fp = fopen(filename, "w+")) ) {
 				fprintf(stderr, "Error: Unable to open file (%s)\n", filename);
@@ -179,6 +202,13 @@ int CpGhostDenseMatArray::write(){
 		std::cout << "writing all MULTIVEC" << std::endl;
 		char * filename = new char[256];
 		sprintf(filename, "%s/%s%zu-rank%d.cp", cpPath.c_str(), name.c_str(), cyclicCpCounter, myrank);
+
+#ifdef SCR
+			char * tmpFilename = new char[256];
+			strcpy(tmpFilename, filename); 
+			SCR_Route_file(tmpFilename, filename);
+			printf("new filename %s\n", filename);
+#endif
 
 		FILE * fp;
 		if( NULL == (fp = fopen(filename, "w+")) ) {
@@ -196,6 +226,13 @@ int CpGhostDenseMatArray::write(){
 		std::cout << "writing toCpDenseMat" << toCpDenseMat<< std::endl;
 		char * filename = new char[256];
 		sprintf(filename, "%s/%s%d-rank%d.cp", cpPath.c_str(), name.c_str(), toCpDenseMat, myrank);
+
+#ifdef SCR
+			char * tmpFilename = new char[256];
+			strcpy(tmpFilename, filename); 
+			SCR_Route_file(tmpFilename, filename);
+			printf("new filename %s\n", filename);
+#endif
 
 		FILE * fp;
 		if( NULL == (fp = fopen(filename, "w+")) ) {
@@ -218,6 +255,13 @@ int CpGhostDenseMatArray::read(){
 			char * filename = new char[256];
 			sprintf(filename, "%s/%s%d-rank%d.cp", cpPath.c_str(), name.c_str(), i, myrank);
 
+#ifdef SCR
+			char * tmpFilename = new char[256];
+			strcpy(tmpFilename, filename); 
+			SCR_Route_file(tmpFilename, filename);
+			printf("new filename %s\n", filename);
+#endif
+
 			FILE * fp;
 			if( NULL == (fp = fopen(filename, "r")) ) {
 				fprintf(stderr, "Error: Unable to open file (%s)\n", filename);
@@ -235,6 +279,13 @@ int CpGhostDenseMatArray::read(){
 		char * filename = new char[256];
 		sprintf(filename, "%s/%s%zu-rank%d.cp", cpPath.c_str(), name.c_str(), cyclicCpCounter, myrank);
 
+#ifdef SCR
+			char * tmpFilename = new char[256];
+			strcpy(tmpFilename, filename); 
+			SCR_Route_file(tmpFilename, filename);
+			printf("new filename %s\n", filename);
+#endif
+
 		FILE * fp;
 		if( NULL == (fp = fopen(filename, "r")) ) {
 			fprintf(stderr, "Error: Unable to open file (%s)\n", filename);
@@ -251,6 +302,13 @@ int CpGhostDenseMatArray::read(){
 		std::cout << "writing toCpDenseMat" << toCpDenseMat<< std::endl;
 		char * filename = new char[256];
 		sprintf(filename, "%s/%s%d-rank%d.cp", cpPath.c_str(), name.c_str(), toCpDenseMat, myrank);
+
+#ifdef SCR
+			char * tmpFilename = new char[256];
+			strcpy(tmpFilename, filename); 
+			SCR_Route_file(tmpFilename, filename);
+			printf("new filename %s\n", filename);
+#endif
 
 		FILE * fp;
 		if( NULL == (fp = fopen(filename, "r")) ) {
