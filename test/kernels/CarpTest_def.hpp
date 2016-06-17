@@ -562,6 +562,37 @@ TEST_F(CLASSNAME, x_mvec_add_mvec)
   
 }
 
+TEST_F(CLASSNAME, x_mvec_vadd_mvec)
+{
+  if (!cTypeImplemented_) return;
+
+  double alpha[_NV_], alpha_i[_NV_];
+  phist_d_complex z_alpha[_NV_];
+  for (int i=0; i<nvec_;i++)
+  {
+    z_alpha[i]=ct::rand();
+    alpha[i] = ct::real(z_alpha[i]);
+    alpha_i[i] = ct::imag(z_alpha[i]);
+  }
+  double beta = st::rand();
+  phist_d_complex z_beta  = (phist_d_complex)beta;
+
+  // sanity check of initial status
+  ASSERT_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
+  ASSERT_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
+  
+
+  SUBR(x_mvec_vadd_mvec)(alpha,alpha_i,x_vec1_, beta, x_vec2_, &iflag_);
+  ASSERT_EQ(0,iflag_);
+
+  phist_Zmvec_vadd_mvec(z_alpha,z_vec1_, z_beta, z_vec2_, &iflag_);
+  ASSERT_EQ(0,iflag_);
+    
+  ASSERT_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
+  ASSERT_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
+  
+}
+
 TEST_F(CLASSNAME, x_mvec_dot_mvec)
 {
   if (!cTypeImplemented_) return;
