@@ -70,8 +70,11 @@ public:
     I_=NULL;
     if (typeImplemented_ && !problemTooSmall_)
     {
-      iflag_=PHIST_SPARSEMAT_OPT_CARP;
+#ifndef PHIST_KERNEL_LIB_GHOST
       iflag_=PHIST_SPARSEMAT_OPT_CARP | PHIST_SPARSEMAT_QUIET;
+#else
+      iflag_=PHIST_SPARSEMAT_QUIET;
+#endif
       SUBR(sparseMat_create_fromRowFunc)(&I_,comm_,_N_,_N_,1,&SUBR(idfunc),NULL,&iflag_);
       ASSERT_EQ(0,iflag_);
       
@@ -331,6 +334,53 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
     ASSERT_NEAR(mt::one(),max_err+mt::one(),tol);
   }
 
+void check_symmetry_rc(TYPE(const_mvec_ptr) X_r, TYPE(const_mvec_ptr) X_i, 
+                            TYPE(const_mvec_ptr) OPX_r, TYPE(const_mvec_ptr) OPX_i, _MT_ tol=10*mt::eps())
+  {
+    _MT_ max_err_r=mt::zero();
+    _MT_ max_err_i=mt::zero();
+    if (typeImplemented_ && !problemTooSmall_)
+    {
+      TYPE(sdMat_ptr) M_r=NULL, M_i=NULL;
+      SUBR(sdMat_create)(&M_r,_NV_,_NV_,comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_create)(&M_i,_NV_,_NV_,comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(mvecT_times_mvec)(st::one(),X_r,OPX_r,st::zero(),M_r,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvecT_times_mvec)(+st::one(),X_i,OPX_i,st::one(),M_r,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvecT_times_mvec)(st::one(),X_r,OPX_i,st::zero(),M_i,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvecT_times_mvec)(-st::one(),X_i,OPX_r,st::one(),M_i,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M_r,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M_i,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      phist_lidx ldmr,ldmi;
+      _ST_ *M_r_raw=NULL, *M_i_raw=NULL;
+      SUBR(sdMat_extract_view)(M_r,&M_r_raw,&ldmr,&iflag_);
+      SUBR(sdMat_extract_view)(M_i,&M_i_raw,&ldmi,&iflag_);
+      for (int i=0; i<_NV_; i++)
+      {
+        for (int j=i+1; j<_NV_;j++)
+        {
+          PHIST_SOUT(PHIST_INFO,"%d %d %25.16e%+25.16ei\n",i,j,M_r_raw[i*ldmr+j],M_i_raw[i*ldmi+j]);
+          PHIST_SOUT(PHIST_INFO,"%d %d %25.16e%+25.16ei\n",j,i,M_r_raw[j*ldmr+i],M_i_raw[j*ldmi+i]);
+          max_err_r = std::max(max_err_r,std::abs(M_r_raw[i*ldmr+j]-M_r_raw[j*ldmr+i]));
+          max_err_i = std::max(max_err_i,std::abs(M_i_raw[i*ldmi+j]+M_i_raw[j*ldmi+i]));
+        }
+      }
+      SUBR(sdMat_delete)(M_r,&iflag_);
+      SUBR(sdMat_delete)(M_i,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+    ASSERT_NEAR(mt::one(),max_err_r+mt::one(),tol);
+    ASSERT_NEAR(mt::one(),max_err_i+mt::one(),tol);
+  }
+
   void do_spmv_test(double alpha, double beta)
   {
     // sanity check of initial status
@@ -472,7 +522,7 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
 
 
   // test if the kernel works correctly if b=NULL is given (should be same as b=zeros(n,1))
-  TEST_F(CLASSNAME, works_with_bnull)
+  TEST_F(CLASSNAME, operator_symmetric)
   {
     if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
     {
@@ -486,6 +536,10 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
       x_r=vec1_; x_r_bak=vec1b_;
       x_i=vec2_; x_i_bak=vec2b_;
       b=vec3_;
+      for (int i=0; i<nvec_; i++)
+      {
+        sigma_i_[i]=mt::zero();
+      }
       // copies x_r_bak=x_r, x_i_bak=x_i before the carp sweep
       create_and_apply_carp(A_);
       ASSERT_EQ(0,iflag_);
@@ -504,6 +558,29 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
       SUBR(mvec_add_mvec)(-st::one(),vec1_,st::one(),vec2_,&iflag_);
       ASSERT_REAL_EQ(mt::one(),MvecEqual(vec2_,mt::zero()));
       check_symmetry(x_r_bak,x_r,10*releps(x_r_bak));
+    }
+  }
+
+  // test if the kernel works correctly if b=NULL is given (should be same as b=zeros(n,1))
+  TEST_F(CLASSNAME, rc_operator_hermitian)
+  {
+    if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
+    {
+      SUBR(mvec_random)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_put_value)(vec3_,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      x_r=vec1_; x_r_bak=vec1b_;
+      x_i=vec2_; x_i_bak=vec2b_;
+      b=vec3_;
+      // copies x_r_bak=x_r, x_i_bak=x_i before the carp sweep
+      create_and_apply_carp_rc(A_);
+      ASSERT_EQ(0,iflag_);
+      
+      check_symmetry_rc(x_r_bak,x_i_bak,x_r,x_i,10*releps(x_r_bak));
     }
   }
 

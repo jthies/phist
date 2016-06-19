@@ -295,6 +295,14 @@ void SUBR(x_mvec_dot_mvec)(TYPE(x_mvec)* v, TYPE(x_mvec)* w,
   }
 
 #ifndef IS_COMPLEX
+  // avoid uninitialized imaginary part
+  if (dotsi!=NULL)
+  {
+    for (int j=0;j<nvec;j++)
+    {
+      dotsi[j]=mt::zero();
+    }
+  }
   if (rc)
   {
     if (aug)
@@ -318,13 +326,6 @@ void SUBR(x_mvec_dot_mvec)(TYPE(x_mvec)* v, TYPE(x_mvec)* w,
       for (int j=0;j<nvec;j++)
       {
         dotsi[j]=tmp[j]-tmp[nvec+j];
-      }
-    }
-    else if (dotsi!=NULL)
-    {
-      for (int j=0;j<nvec;j++)
-      {
-        dotsi[j]=mt::zero();
       }
     }
   }
