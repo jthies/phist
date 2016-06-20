@@ -562,7 +562,7 @@ void check_symmetry_rc(TYPE(const_mvec_ptr) X_r, TYPE(const_mvec_ptr) X_i,
   }
 
   // test if the kernel works correctly if b=NULL is given (should be same as b=zeros(n,1))
-  TEST_F(CLASSNAME, rc_operator_hermitian)
+  TEST_F(CLASSNAME, DISABLED_rc_operator_hermitian)
   {
     if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
     {
