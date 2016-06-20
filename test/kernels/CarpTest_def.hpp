@@ -428,7 +428,7 @@ void check_symmetry_rc(TYPE(const_mvec_ptr) X_r, TYPE(const_mvec_ptr) X_i,
   ASSERT_EQ(0,iflag_);
 
     ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
-    ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),1.0e-12);
+    ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),2.0e-12);
   }
   
   // identity matrix (only used for checking if CARP is implemented at all right now)
