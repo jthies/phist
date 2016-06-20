@@ -1,3 +1,27 @@
+void SUBR(show_vector_elements)(TYPE(mvec_ptr) V, int *iflag)
+{
+  #include "phist_std_typedefs.hpp"
+ST* V_val;
+phist_lidx lda;
+int nvec;
+int nloc = 1;
+PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,iflag),*iflag);
+PHIST_CHK_IERR(SUBR(mvec_extract_view)(V,&V_val,&lda,iflag),*iflag);
+PHIST_CHK_IERR(SUBR(mvec_from_device)(V,iflag),*iflag);
+for (int i=0; i<nloc; i++)
+  {
+    for (int j=0;j<nvec; j++)
+    {
+#ifdef PHIST_MVECS_ROW_MAJOR
+        std::cout << "Element is "<< -V_val[i*lda+j] << std::endl;
+#else
+        std::cout << "Element is "<< -V_val[j*lda+i] << std::endl;
+#endif
+    } 
+  }
+}
+
+
 // in this implementation, there is no mixed real/complex arithmetic
 // simply since we don't have a kernel lib interface and we also want
 // to support kernel libs like epetra or our own fortran variant, which
@@ -94,6 +118,9 @@ void SUBR(carp_cgState_create)(TYPE(carp_cgState_ptr) *state,
   (*state)->rc_variant_=false;
   for (int i=0; i<nvec; i++)
   {
+    (*state)->alpha_[i]=st::zero();
+    (*state)->alpha_i_[i]=mt::zero();
+    (*state)->beta_[i]=mt::zero();
     (*state)->omega_[i]=mt::one();
     (*state)->A_->sigma_r_[i]=sigma_r[i];
     (*state)->A_->sigma_i_[i]=sigma_i[i];
@@ -438,6 +465,7 @@ void SUBR(carp_cgState_iterate)(
   //ALG for (it=1..maxIter
   for (int it=1;it<maxIter; it++)
   {
+
     //ALG correction_needed=false
     correction_needed=false;
 
@@ -475,7 +503,8 @@ void SUBR(carp_cgState_iterate)(
     //ALG alpha = (r'*r)/(p'*q);
     ST denom  [nvec];
     MT denom_i[nvec];
-    PHIST_CHK_IERR(SUBR(x_mvec_dot_mvec)(r,p,alpha,alpha_i,iflag),*iflag);
+
+    PHIST_CHK_IERR(SUBR(x_mvec_dot_mvec)(r,r,alpha,alpha_i,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(x_mvec_dot_mvec)(p,q,denom,denom_i,iflag),*iflag);
 
     // stop updating x if the system is already converged (1-conv[j])
@@ -580,6 +609,12 @@ void SUBR(carp_cgState_iterate)(
     }
     PHIST_CHK_IERR(SUBR(x_mvec_vadd_mvec)(min_alpha,min_alpha_i,
               q,st::one(),r,iflag),*iflag);
+
+    for (int j=0;j<nvec;j++)
+    {
+      r2_old[j]=std::abs(r2_new[j]);
+    }
+    PHIST_CHK_IERR(SUBR(x_mvec_dot_mvec)(r,r,r2_new,NULL,iflag),*iflag);
       
     //ALG if (correction_step)
     if (correction_step)
@@ -602,17 +637,12 @@ void SUBR(carp_cgState_iterate)(
         beta[j]=ct::real(tmp3);
 #else
         beta[j]=ct::real(rq[j]/pq[j]);
-#endif       
+#endif
       }
     }//ALG else
     else
     {
       //ALG beta = r'r/r_old'r_old
-      for (int j=0;j<nvec;j++)
-      {
-        r2_old[j]=std::abs(r2_new[j]);
-      }
-      PHIST_CHK_IERR(SUBR(x_mvec_dot_mvec)(r,r,r2_new,NULL,iflag),*iflag);
       for (int j=0;j<nvec;j++)
       {
         beta[j]=std::abs(r2_new[j])/r2_old[j];
