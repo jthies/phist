@@ -119,6 +119,10 @@ A=new Traits<_ST_>::sparseMat_t(map_ptr,(int)maxnne);
     PHIST_TRY_CATCH(A->insertGlobalValues (row,cols_v,vals_v),*iflag);
   }
   PHIST_TRY_CATCH(A->fillComplete(),*iflag);
+
+//  Teuchos::FancyOStream fos(Teuchos::rcp(&std::cout,false));
+//  fos << std::scientific << std::setw(16) << std::setprecision(12);
+//  A->describe(fos,Teuchos::VERB_EXTREME);
                             
   *vA = (TYPE(sparseMat_ptr))(A);  
   return;

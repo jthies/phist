@@ -125,9 +125,9 @@ void SUBR(carp_cgState_create)(TYPE(carp_cgState_ptr) *state,
                         "(file %s, line %d)\n",__FILE__,__LINE__);
   return;
 #else
-    *iflag=PHIST_NOT_IMPLEMENTED;
-    PHIST_SOUT(PHIST_ERROR,"The real variant of CARP-CG with complex shifts is currently broken and we therefore abort here\n");
-    return;
+//    *iflag=PHIST_NOT_IMPLEMENTED;
+//    PHIST_SOUT(PHIST_ERROR,"The real variant of CARP-CG with complex shifts is currently broken and we therefore abort here\n");
+//    return;
     PHIST_CHK_IERR(SUBR(carp_setup_rc)(A,nvec,sigma_r,sigma_i,
       &aux, iflag),*iflag);
 #endif
@@ -570,20 +570,16 @@ void SUBR(carp_cgState_iterate)(
     }
     //ALG end if
     
-    // regular CG step?
-    if (!correction_step)
+    //ALG r=r-alpha*q;
+    ST min_alpha[nvec];
+    MT min_alpha_i[nvec];
+    for (int j=0;j<nvec;j++)
     {
-      //ALG r=r-alpha*q;
-      ST min_alpha[nvec];
-      MT min_alpha_i[nvec];
-      for (int j=0;j<nvec;j++)
-      {
-        min_alpha[j]=-alpha[j];
-        min_alpha_i[j]=-alpha_i[j];
-      }
-      PHIST_CHK_IERR(SUBR(x_mvec_vadd_mvec)(min_alpha,min_alpha_i,
-                q,st::one(),r,iflag),*iflag);
+      min_alpha[j]=-alpha[j];
+      min_alpha_i[j]=-alpha_i[j];
     }
+    PHIST_CHK_IERR(SUBR(x_mvec_vadd_mvec)(min_alpha,min_alpha_i,
+              q,st::one(),r,iflag),*iflag);
       
     //ALG if (correction_step)
     if (correction_step)
@@ -629,9 +625,9 @@ void SUBR(carp_cgState_iterate)(
     PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(st::one(),r,st::one(),p,iflag),*iflag);
 
     //ALG correction_step=correction_needed
-//    correction_step=correction_needed;
-    correction_step=false;
-    correction_needed=false;
+    correction_step=correction_needed;
+//    correction_step=false;
+//    correction_needed=false;
   }
   //ALG end for
 

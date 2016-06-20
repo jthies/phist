@@ -4,6 +4,8 @@
 #error "file not included correctly."
 #endif
 
+#if !defined(IS_COMPLEX)&&defined(IS_DOUBLE)
+
 /*! Test fixure. 
   
   basic tests for CARP kernel, creates a test matrix defined by
@@ -38,8 +40,8 @@ public:
   {
     SparseMatTest::SetUpTestCase();
     VTest::SetUpTestCase();
-
     MT_Test::SetUpTestCase();
+    
   }
 
   /*! Set up routine.
@@ -49,30 +51,102 @@ public:
     SparseMatTest::SetUp();
     VTest::SetUp();
 
-    // created in rebuildVectors
+    
     vec1b_=NULL;
+    PHISTTEST_MVEC_CREATE(&vec1b_,map_,nvec_,&iflag_);
+    ASSERT_EQ(0,iflag_);
     vec2b_=NULL; 
+    PHISTTEST_MVEC_CREATE(&vec2b_,map_,nvec_,&iflag_);
+    ASSERT_EQ(0,iflag_);
     vec3b_=NULL;
-    A_=NULL;
+    PHISTTEST_MVEC_CREATE(&vec3b_,map_,nvec_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    // set pointers for the tests
+    x_r=vec1_; x_r_bak=vec1b_;
+    x_i=vec2_; x_i_bak=vec2b_;
+    b=vec3_;
+
     I_=NULL;
     if (typeImplemented_ && !problemTooSmall_)
     {
-      iflag_=PHIST_SPARSEMAT_OPT_CARP;
+#ifndef PHIST_KERNEL_LIB_GHOST
       iflag_=PHIST_SPARSEMAT_OPT_CARP | PHIST_SPARSEMAT_QUIET;
+#else
+      iflag_=PHIST_SPARSEMAT_QUIET;
+#endif
       SUBR(sparseMat_create_fromRowFunc)(&I_,comm_,_N_,_N_,1,&SUBR(idfunc),NULL,&iflag_);
       ASSERT_EQ(0,iflag_);
+      
+      SUBR(mvec_random)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(vec1b_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(vec2b_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(vec3b_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      x_vec1_=new TYPE(x_mvec)(vec1_,vec1b_,0,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      x_vec2_=new TYPE(x_mvec)(vec2_,vec2b_,0,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      x_vec3_=new TYPE(x_mvec)(vec3_,vec3b_,0,&iflag_);
+      ASSERT_EQ(0,iflag_);
 
-      for (int i=0; i<_NV_; i++)
+      iflag_=PHIST_MVEC_REPLICATE_DEVICE_MEM;
+      phist_Zmvec_create(&z_vec1_,map_,nvec_,&iflag_);
+      cTypeImplemented_=(iflag_!=PHIST_NOT_IMPLEMENTED);         
+      if (cTypeImplemented_)
       {
-        sigma_[i]=st::zero();
-        sigma_r_[i]=mt::zero();
-        sigma_i_[i]=mt::zero();
-        omega_[i]=mt::one();
+        ASSERT_EQ(0,iflag_);
+        iflag_=PHIST_MVEC_REPLICATE_DEVICE_MEM;
+        phist_Zmvec_create(&z_vec2_,map_,nvec_,&iflag_); \
+        ASSERT_EQ(0,iflag_);
+        iflag_=PHIST_MVEC_REPLICATE_DEVICE_MEM;
+        phist_Zmvec_create(&z_vec3_,map_,nvec_,&iflag_); \
+        ASSERT_EQ(0,iflag_);
+        MvecCopyX2Z(x_vec1_,z_vec1_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        MvecCopyX2Z(x_vec2_,z_vec2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        MvecCopyX2Z(x_vec3_,z_vec3_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+
+        sigma_[0]=1.0-ct::cmplx_I();        minus_sigma_[0]=-sigma_[0];
+        sigma_r_[0]=ct::real(sigma_[0]);     sigma_i_[0]=ct::imag(sigma_[0]);
+        for (int i=1; i<_NV_; i++)
+        {
+          sigma_[i]=ct::rand();                 minus_sigma_[i]=-sigma_[i];
+          sigma_r_[i]=ct::real(sigma_[i]);      sigma_i_[i]=ct::imag(sigma_[i]);
+          omega_[i]=1.84299;
+        }
+
+        phist_ZsparseMat_create_fromRowFunc(&z_A_,comm_,_N_,_N_,7,&ZMATFUNC,NULL,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        phist_ZsparseMat_create_fromRowFunc(&z_A_shift0_,comm_,_N_,_N_,7,&ZMATFUNC,&sigma_[0],&iflag_);
+        ASSERT_EQ(0,iflag_);
+        phist_ZsparseMat_create_fromRowFunc(&z_A_shift1_,comm_,_N_,_N_,7,&ZMATFUNC,&sigma_[1],&iflag_);
+        ASSERT_EQ(0,iflag_);
+
+      }
+      else
+      {
+        z_vec1_=NULL;
+        z_vec2_=NULL;
+        z_vec3_=NULL;
+        z_A_=NULL;
+        z_A_shift0_=NULL;
+        z_A_shift1_=NULL;
       }
     
       // check if CARP is implemented at all:
       void* work;
-      SUBR(carp_setup)(I_, 1, sigma_,
+      SUBR(carp_setup)(I_, 1, sigma_r_,
           &work, &iflag_);
       if (iflag_==PHIST_NOT_IMPLEMENTED) 
       {
@@ -83,6 +157,16 @@ public:
         carpImplemented_=true;
         SUBR(carp_destroy)(I_, work, &iflag_);
         ASSERT_EQ(0,iflag_);
+      }
+      x_A_=new TYPE(x_sparseMat);
+      x_A_->A_=A_;
+      x_A_->sigma_r_=new _ST_[nvec_];
+      x_A_->sigma_i_=new _ST_[nvec_];
+      x_A_->Vproj_=NULL;
+      for (int i=0; i<nvec_;i++)
+      {
+        x_A_->sigma_r_[i]=sigma_r_[i];
+        x_A_->sigma_i_[i]=sigma_i_[i];
       }
     }
   }
@@ -109,6 +193,44 @@ public:
         ASSERT_EQ(0,iflag_);
       }
       ASSERT_EQ(0,delete_mat(I_));
+      
+      if (x_vec1_!=NULL) delete x_vec1_;
+      if (x_vec2_!=NULL) delete x_vec2_;
+      if (x_vec3_!=NULL) delete x_vec3_;
+  
+      if (cTypeImplemented_)
+      {
+        if (z_vec1_!=NULL)
+        {
+          phist_Zmvec_delete(z_vec1_,&iflag_);
+          ASSERT_EQ(0,iflag_);
+        }
+        if (z_vec2_!=NULL)
+        {
+          phist_Zmvec_delete(z_vec2_,&iflag_);
+          ASSERT_EQ(0,iflag_);
+        }
+        if (z_vec3_!=NULL)
+        {
+          phist_Zmvec_delete(z_vec3_,&iflag_);
+          ASSERT_EQ(0,iflag_);
+        }
+        if (z_A_!=NULL)
+        {
+          phist_ZsparseMat_delete(z_A_,&iflag_);
+          ASSERT_EQ(0,iflag_);
+        }
+        if (z_A_shift0_!=NULL)
+        {
+          phist_ZsparseMat_delete(z_A_shift0_,&iflag_);
+          ASSERT_EQ(0,iflag_);
+        }
+        if (z_A_shift1_!=NULL)
+        {
+          phist_ZsparseMat_delete(z_A_shift1_,&iflag_);
+          ASSERT_EQ(0,iflag_);
+        }
+      }
     }
     
     VTest::TearDown();
@@ -121,76 +243,6 @@ public:
     SparseMatTest::TearDownTestCase();
   }
 
-// the matrices may have individual maps, so we need to recreate all vectors with the specific map of the matrix!
-void rebuildVectors(TYPE(const_sparseMat_ptr) A)
-{
-  if (typeImplemented_ && !problemTooSmall_)
-  {
-    // set vec1 to be a valid X, vec2 and vec3 a valid Y in Y=AX
-    phist_const_map_ptr range_map, domain_map;
-    SUBR(sparseMat_get_range_map)(A,&range_map,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(sparseMat_get_domain_map)(A,&domain_map,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    
-    SUBR(mvec_delete)(vec1_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_delete)(vec2_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_delete)(vec3_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-
-    phist_lidx lda;
-    PHISTTEST_MVEC_CREATE(&vec1_,domain_map,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_extract_view)(vec1_,&vec1_vp_,&lda,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    ASSERT_EQ(lda,lda_);
-
-    PHISTTEST_MVEC_CREATE(&vec2_,range_map,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_extract_view)(vec2_,&vec2_vp_,&lda,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    ASSERT_EQ(lda,lda_);
-
-    PHISTTEST_MVEC_CREATE(&vec3_,range_map,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_extract_view)(vec3_,&vec3_vp_,&lda,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    ASSERT_EQ(lda,lda_);
-
-    if (vec1b_)
-    {
-      SUBR(mvec_delete)(vec1b_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-    }
-    PHISTTEST_MVEC_CREATE(&vec1b_,range_map,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    if (vec2b_)
-    {
-      SUBR(mvec_delete)(vec2b_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-    }
-    PHISTTEST_MVEC_CREATE(&vec2b_,range_map,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    if (vec3b_)
-    {
-      SUBR(mvec_delete)(vec3b_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-    }
-    PHISTTEST_MVEC_CREATE(&vec3b_,range_map,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-
-    phist_map_get_local_length(domain_map, &nloc_, &iflag_);
-    ASSERT_EQ(0,iflag_);
-    
-    // set pointers for the tests
-    x_r=vec1_; x_r_bak=vec1b_;
-    x_i=vec2_; x_i_bak=vec2b_;
-    b=vec3_;
-
-  }
-}
 
 
   // helper function to apply [x_r, x_i] = dkswp(A-sigma[j]*I, b, x_r, x_i)
@@ -202,10 +254,10 @@ void rebuildVectors(TYPE(const_sparseMat_ptr) A)
     ASSERT_EQ(0,iflag_);
 
     void* work;
-    SUBR(carp_setup)(A, _NV_, sigma_, &work, &iflag_);
+    SUBR(carp_setup)(A, _NV_, sigma_r_, &work, &iflag_);
     ASSERT_EQ(0,iflag_);
     
-    SUBR(carp_sweep)(A, sigma_,b,x_r, work, omega_, &iflag_);
+    SUBR(carp_sweep)(A, sigma_r_,b,x_r, work, omega_, &iflag_);
     ASSERT_EQ(0,iflag_);
     
     SUBR(carp_destroy)(A, work, &iflag_);
@@ -249,7 +301,7 @@ int delete_mat(TYPE(sparseMat_ptr) &A)
   if (A!=NULL)
     {
     SUBR(sparseMat_delete)(A,&iflag_);
-    A = 0;
+    A = NULL;
     }
   return iflag_;
   }
@@ -282,16 +334,124 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
     ASSERT_NEAR(mt::one(),max_err+mt::one(),tol);
   }
 
+void check_symmetry_rc(TYPE(const_mvec_ptr) X_r, TYPE(const_mvec_ptr) X_i, 
+                            TYPE(const_mvec_ptr) OPX_r, TYPE(const_mvec_ptr) OPX_i, _MT_ tol=10*mt::eps())
+  {
+    _MT_ max_err_r=mt::zero();
+    _MT_ max_err_i=mt::zero();
+    if (typeImplemented_ && !problemTooSmall_)
+    {
+      TYPE(sdMat_ptr) M_r=NULL, M_i=NULL;
+      SUBR(sdMat_create)(&M_r,_NV_,_NV_,comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_create)(&M_i,_NV_,_NV_,comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(mvecT_times_mvec)(st::one(),X_r,OPX_r,st::zero(),M_r,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvecT_times_mvec)(+st::one(),X_i,OPX_i,st::one(),M_r,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvecT_times_mvec)(st::one(),X_r,OPX_i,st::zero(),M_i,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvecT_times_mvec)(-st::one(),X_i,OPX_r,st::one(),M_i,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M_r,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sdMat_from_device)(M_i,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      phist_lidx ldmr,ldmi;
+      _ST_ *M_r_raw=NULL, *M_i_raw=NULL;
+      SUBR(sdMat_extract_view)(M_r,&M_r_raw,&ldmr,&iflag_);
+      SUBR(sdMat_extract_view)(M_i,&M_i_raw,&ldmi,&iflag_);
+      for (int i=0; i<_NV_; i++)
+      {
+        for (int j=i+1; j<_NV_;j++)
+        {
+          PHIST_SOUT(PHIST_INFO,"%d %d %25.16e%+25.16ei\n",i,j,M_r_raw[i*ldmr+j],M_i_raw[i*ldmi+j]);
+          PHIST_SOUT(PHIST_INFO,"%d %d %25.16e%+25.16ei\n",j,i,M_r_raw[j*ldmr+i],M_i_raw[j*ldmi+i]);
+          max_err_r = std::max(max_err_r,std::abs(M_r_raw[i*ldmr+j]-M_r_raw[j*ldmr+i]));
+          max_err_i = std::max(max_err_i,std::abs(M_i_raw[i*ldmi+j]+M_i_raw[j*ldmi+i]));
+        }
+      }
+      SUBR(sdMat_delete)(M_r,&iflag_);
+      SUBR(sdMat_delete)(M_i,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+    ASSERT_NEAR(mt::one(),max_err_r+mt::one(),tol);
+    ASSERT_NEAR(mt::one(),max_err_i+mt::one(),tol);
+  }
+
+  void do_spmv_test(double alpha, double beta)
+  {
+    // sanity check of initial status
+    ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
+    ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
+
+    phist_d_complex z_alpha = (phist_d_complex)alpha;
+    phist_d_complex z_beta = (phist_d_complex)beta;
+  
+    SUBR(x_sparseMat_times_mvec)(alpha, x_A_, x_vec1_, beta, x_vec2_, &iflag_);
+    ASSERT_EQ(0,iflag_);
+  
+    for (int i=0; i<nvec_; i++)
+    {
+      minus_sigma_[i]=-(x_A_->sigma_r_[i] + ct::cmplx_I()*x_A_->sigma_i_[i]);
+    }
+  
+    phist_ZsparseMat_times_mvec_vadd_mvec(z_alpha, z_A_, minus_sigma_, z_vec1_, z_beta, z_vec2_, &iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
+    ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),100*mt::eps());
+  }
+  
+  void do_spmv_test_single(double alpha, double beta, phist_d_complex sigma, phist_ZsparseMat_ptr z_A_shift)
+  {
+  for (int i=0; i<nvec_; i++)
+  {
+    x_A_->sigma_r_[i]=ct::real(sigma);;
+    x_A_->sigma_i_[i]=ct::imag(sigma);;
+  }
+
+  // sanity check of initial status
+  ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
+  ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
+
+  phist_d_complex z_alpha=(phist_d_complex)alpha;
+  phist_d_complex z_beta=(phist_d_complex)beta;
+
+  SUBR(x_sparseMat_times_mvec)(alpha, x_A_, x_vec1_, beta, x_vec2_, &iflag_);
+  ASSERT_EQ(0,iflag_);
+
+  // check against multiplying with A-sigma*I directly
+  phist_ZsparseMat_times_mvec(z_alpha,z_A_shift,z_vec1_,z_beta,z_vec2_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+
+    ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
+    ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),1.0e-12);
+  }
+  
+  // identity matrix (only used for checking if CARP is implemented at all right now)
   TYPE(sparseMat_ptr) I_;
+  // backup vectors since the carp kernel works in-place
   TYPE(mvec_ptr) vec1b_,vec2b_,vec3b_;
   // mere pointers to allow e.g. passing in b=NULL
   TYPE(mvec_ptr) x_r, x_i, x_r_bak, x_i_bak, b;
 
   _MT_ sigma_r_[_NV_], sigma_i_[_NV_], omega_[_NV_];
-  _ST_ sigma_[_NV_];
+  _CT_ sigma_[_NV_], minus_sigma_[_NV_];
 
   bool carpImplemented_;
-
+  bool cTypeImplemented_;
+  
+  // data structures for testing the "x_*" kernels used to implement CARP-CG.
+  // these use x_mvecs with separate real and imaginary part so that CARP-CG can
+  // be used in real arithmetic but with complex-shifted matrix
+  TYPE(x_sparseMat) *x_A_;
+  TYPE(x_mvec) *x_vec1_, *x_vec2_,*x_vec3_;
+  
+  phist_ZsparseMat_ptr z_A_, z_A_shift0_, z_A_shift1_;
+  phist_Zmvec_ptr z_vec1_, z_vec2_,z_vec3_;
 };
 
   TEST_F(CLASSNAME, create_matrices)
@@ -299,6 +459,12 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
     if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
     {
       ASSERT_TRUE(AssertNotNull(A_));
+      if (cTypeImplemented_) 
+      {
+        ASSERT_TRUE(AssertNotNull(z_A_));
+        ASSERT_TRUE(AssertNotNull(z_A_shift0_));
+        ASSERT_TRUE(AssertNotNull(z_A_shift1_));
+      }
       ASSERT_TRUE(AssertNotNull(I_));
     }
   }
@@ -309,8 +475,6 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
   {
     if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
     {
-      rebuildVectors(A_);
-
       SUBR(mvec_random)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_random)(vec2_,&iflag_);
@@ -328,7 +492,7 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
       x_r=vec1_; x_r_bak=vec1b_;
       x_i=vec2_; x_i_bak=vec2b_;
       b=vec3_;
-      create_and_apply_carp(A_);
+      create_and_apply_carp_rc(A_);
       ASSERT_EQ(0,iflag_);
             
       MT norm1r[_NV_], norm1i[_NV_];
@@ -342,7 +506,7 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(st::one(),vec2b_,st::zero(),vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      create_and_apply_carp(A_);
+      create_and_apply_carp_rc(A_);
       ASSERT_EQ(0,iflag_);
 
       MT norm2r[_NV_], norm2i[_NV_];
@@ -358,12 +522,10 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
 
 
   // test if the kernel works correctly if b=NULL is given (should be same as b=zeros(n,1))
-  TEST_F(CLASSNAME, works_with_bnull)
+  TEST_F(CLASSNAME, operator_symmetric)
   {
     if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
     {
-      rebuildVectors(A_);
-
       SUBR(mvec_random)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_put_value)(vec2_,st::zero(),&iflag_);
@@ -374,6 +536,10 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
       x_r=vec1_; x_r_bak=vec1b_;
       x_i=vec2_; x_i_bak=vec2b_;
       b=vec3_;
+      for (int i=0; i<nvec_; i++)
+      {
+        sigma_i_[i]=mt::zero();
+      }
       // copies x_r_bak=x_r, x_i_bak=x_i before the carp sweep
       create_and_apply_carp(A_);
       ASSERT_EQ(0,iflag_);
@@ -395,16 +561,38 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
     }
   }
 
+  // test if the kernel works correctly if b=NULL is given (should be same as b=zeros(n,1))
+  TEST_F(CLASSNAME, rc_operator_hermitian)
+  {
+    if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
+    {
+      SUBR(mvec_random)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_put_value)(vec3_,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      x_r=vec1_; x_r_bak=vec1b_;
+      x_i=vec2_; x_i_bak=vec2b_;
+      b=vec3_;
+      // copies x_r_bak=x_r, x_i_bak=x_i before the carp sweep
+      create_and_apply_carp_rc(A_);
+      ASSERT_EQ(0,iflag_);
+      
+      check_symmetry_rc(x_r_bak,x_i_bak,x_r,x_i,10*releps(x_r_bak));
+    }
+  }
+
+#if MATNAME==MATNAME_IDFUNC
   TEST_F(CLASSNAME, Identity_yields_zero)
   {
     if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
     {
-      rebuildVectors(I_);
-      
       SUBR(mvec_random)(x_r,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      create_and_apply_carp(I_);
+      create_and_apply_carp(A_);
       ASSERT_EQ(0,iflag_);
       
       // real X should be zero now (all rows of I projected out)
@@ -412,6 +600,205 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
       
     }
   }
-
+#endif
 //TODO - more tests like this could be invented, in particular
 //       involving real or complex shifts
+
+//////////////////////////////////////////////////
+// tests for matrix/vector operations in "RC"   //
+//////////////////////////////////////////////////
+
+// these tests only use basic kernels (not the CARP kernel) but require complex
+// arithmetic in order to work. So right now, the tests above will be run with
+// builtin and epetra, and the tests below with ghost and tpetra only.
+//
+// At the start of these tests, z_vec1 = vec1 + i*vec1b etc
+
+TEST_F(CLASSNAME, x_mvec_add_mvec)
+{
+  if (!cTypeImplemented_) return;
+
+  double alpha = st::rand();
+  double beta = st::rand();
+
+  // sanity check of initial status
+  ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
+  ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
+  
+  phist_d_complex z_alpha = (phist_d_complex)alpha;
+  phist_d_complex z_beta  = (phist_d_complex)beta;
+
+  SUBR(x_mvec_add_mvec)(alpha,x_vec1_, beta, x_vec2_, &iflag_);
+  ASSERT_EQ(0,iflag_);
+
+  phist_Zmvec_add_mvec(z_alpha,z_vec1_, z_beta, z_vec2_, &iflag_);
+  ASSERT_EQ(0,iflag_);
+    
+  ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
+  ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
+  
+}
+
+TEST_F(CLASSNAME, x_mvec_vadd_mvec)
+{
+  if (!cTypeImplemented_) return;
+
+  double alpha[_NV_], alpha_i[_NV_];
+  phist_d_complex z_alpha[_NV_];
+  for (int i=0; i<nvec_;i++)
+  {
+    z_alpha[i]=ct::rand();
+    alpha[i] = ct::real(z_alpha[i]);
+    alpha_i[i] = ct::imag(z_alpha[i]);
+  }
+  double beta = st::rand();
+  phist_d_complex z_beta  = (phist_d_complex)beta;
+
+  // sanity check of initial status
+  ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
+  ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
+  
+
+  SUBR(x_mvec_vadd_mvec)(alpha,alpha_i,x_vec1_, beta, x_vec2_, &iflag_);
+  ASSERT_EQ(0,iflag_);
+
+  phist_Zmvec_vadd_mvec(z_alpha,z_vec1_, z_beta, z_vec2_, &iflag_);
+  ASSERT_EQ(0,iflag_);
+    
+  ASSERT_NEAR(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_),mt::eps());
+  ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),100*VTest::releps());
+  
+}
+
+TEST_F(CLASSNAME, x_mvec_dot_mvec)
+{
+  if (!cTypeImplemented_) return;
+
+  // sanity check of initial status
+  ASSERT_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
+  ASSERT_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
+  
+  double d_dot_r[nvec_], d_dot_i[nvec_];
+  phist_d_complex z_dot[nvec_];
+
+  SUBR(x_mvec_dot_mvec)(x_vec1_, x_vec2_, d_dot_r, d_dot_i, &iflag_);
+  ASSERT_EQ(0,iflag_);
+
+  phist_Zmvec_dot_mvec(z_vec1_, z_vec2_, z_dot, &iflag_);
+  ASSERT_EQ(0,iflag_);
+
+  double max_err_r=0.0, max_err_i=0.0;
+  for (int i=0; i<nvec_; i++)
+  {
+    max_err_r = std::max(max_err_r,d_dot_r[i]-ct::real(z_dot[i]));
+    max_err_i = std::max(max_err_i,d_dot_i[i]-ct::imag(z_dot[i]));
+  }
+  
+  ASSERT_NEAR(1.0,1.0+max_err_r,std::sqrt(st::eps()));
+  ASSERT_NEAR(1.0,1.0+max_err_i,std::sqrt(st::eps()));
+  
+}
+
+
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_without_shift)
+{
+  if (!cTypeImplemented_) return;
+
+  for (int i=0; i<nvec_; i++)
+  {
+    x_A_->sigma_r_[i]=0.0;
+    x_A_->sigma_i_[i]=0.0;
+  }
+  do_spmv_test(1.0,0.0);
+}
+
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_without_shift_with_alpha_beta)
+{
+  if (!cTypeImplemented_) return;
+
+  for (int i=0; i<nvec_; i++)
+  {
+    x_A_->sigma_r_[i]=0.0;
+    x_A_->sigma_i_[i]=0.0;
+  }
+  do_spmv_test(1.234,-0.987);
+}
+
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_real_shift)
+{
+  if (!cTypeImplemented_) return;
+
+  for (int i=0; i<nvec_; i++)
+  {
+    x_A_->sigma_r_[i]=0.0;
+  }
+  do_spmv_test(1.0,0.0);
+}
+
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_real_shift_with_alpha_beta)
+{
+  if (!cTypeImplemented_) return;
+
+  for (int i=0; i<nvec_; i++)
+  {
+    x_A_->sigma_r_[i]=0.0;
+  }
+  do_spmv_test(1.234,-0.987);
+}
+
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_imag_shift)
+{
+  if (!cTypeImplemented_) return;
+
+  for (int i=0; i<nvec_; i++)
+  {
+    x_A_->sigma_i_[i]=0.0;
+  }
+  do_spmv_test(1.0,0.0);
+}
+
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_imag_shift_with_alpha_beta)
+{
+  if (!cTypeImplemented_) return;
+
+  for (int i=0; i<nvec_; i++)
+  {
+    x_A_->sigma_i_[i]=0.0;
+  }
+  do_spmv_test(1.234,-0.987);
+}
+
+
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_compare_with_i_shifted_matrix)
+{
+  if (!cTypeImplemented_) return;
+  
+  do_spmv_test_single(1.0,0.0, sigma_[0], z_A_shift0_);  
+}
+
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_compare_with_rnd_shifted_matrix)
+{
+  if (!cTypeImplemented_) return;
+  
+  do_spmv_test_single(1.0,0.0, sigma_[1], z_A_shift1_);  
+}
+
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_compare_with_i_shifted_matrix_alpha_beta)
+{
+  if (!cTypeImplemented_) return;
+  
+  double alpha = 1.23456;
+  double beta = 9.876543;
+  do_spmv_test_single(alpha, beta, sigma_[0], z_A_shift0_);  
+}
+
+TEST_F(CLASSNAME, x_sparseMat_times_mvec_compare_with_rnd_shifted_matrix_alpha_beta)
+{
+  if (!cTypeImplemented_) return;
+  
+  double alpha = 1.23456;
+  double beta = 9.876543;
+  do_spmv_test_single(alpha, beta, sigma_[1], z_A_shift1_);  
+}
+
+#endif

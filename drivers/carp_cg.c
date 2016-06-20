@@ -36,7 +36,7 @@ GRAPHENE=1,
 ANDERSON=2
 } problem_t;
 
-//#define TEST_SYSTEM
+#define TEST_SYSTEM
 
 int test_rhs(ghost_gidx i, ghost_lidx j, void * val, void * aux)
 {

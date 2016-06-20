@@ -1,3 +1,10 @@
+
+#ifndef PHIST_KERNEL_LIB_BUILTIN
+# ifndef VIEW_VDAT
+# define VIEW_VDAT
+# endif
+#endif
+
 // basic operations for some extended matrix/vector types
 
   // constructor - does not allocate memory
@@ -58,6 +65,9 @@
       return;
     }
     nvec_=nvec;
+#ifdef VIEW_VDAT
+    // let v and vi view the first and last columns of vdat, this way the communication
+    // in the CARP kernel can be done in one step
     int actual_nvec=rc?2*nvec:nvec;
     PHIST_CHK_IERR(SUBR(mvec_create)(&vdat_,map,actual_nvec,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_view_block)(vdat_,&v_,0,nvec_-1,iflag),*iflag);
@@ -65,7 +75,15 @@
     {
       PHIST_CHK_IERR(SUBR(mvec_view_block)(vdat_,&vi_,nvec_,actual_nvec-1,iflag),*iflag);
     }
-
+#else
+    // the builtin implementation doesn't support this data layout yet, so allocate separate vectors
+    vdat_=NULL;
+    PHIST_CHK_IERR(SUBR(mvec_create)(&v_,map,nvec_,iflag),*iflag);
+    if (rc)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_create)(&vi_,map,nvec_,iflag),*iflag);
+    }
+#endif
     if (naug>0)
     {
       phist_const_comm_ptr comm=NULL;
@@ -102,8 +120,16 @@ void SUBR(x_mvec_add_mvec)(_ST_ alpha, TYPE(x_mvec) const* V,
   PHIST_ENTER_FCN(__FUNCTION__);
   bool rc =  rc_variant(V,W);
   bool aug= aug_variant(V,W);
-  
+
+#ifdef VIEW_VDAT  
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(alpha,V->vdat_,beta,W->vdat_,iflag),*iflag);
+#else
+  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(alpha,V->v_,beta,W->v_,iflag),*iflag);
+  if (rc)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(alpha,V->vi_,beta,W->vi_,iflag),*iflag);
+  }
+#endif
   if (aug)
   { 
     PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(alpha,V->vp_,beta,W->vp_,iflag),*iflag);
@@ -249,7 +275,15 @@ void SUBR(x_mvec_dot_mvec)(TYPE(x_mvec)* v, TYPE(x_mvec)* w,
   int actual_nvec=rc?v->nvec_*2: nvec;
   ST tmp[actual_nvec];
   
+#ifdef VIEW_VDAT
   PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v->vdat_,w->vdat_,tmp,iflag),*iflag);
+#else
+  PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v->v_,w->v_,tmp,iflag),*iflag);
+  if (rc)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v->vi_,w->vi_,tmp+nvec,iflag),*iflag);
+  }
+#endif
   if (aug)
   {
     PHIST_CHK_IERR(SUBR(sdMat_dot_sdMat_add)(v->vp_,w->vp_,tmp,iflag),*iflag);    
@@ -261,6 +295,14 @@ void SUBR(x_mvec_dot_mvec)(TYPE(x_mvec)* v, TYPE(x_mvec)* w,
   }
 
 #ifndef IS_COMPLEX
+  // avoid uninitialized imaginary part
+  if (dotsi!=NULL)
+  {
+    for (int j=0;j<nvec;j++)
+    {
+      dotsi[j]=mt::zero();
+    }
+  }
   if (rc)
   {
     if (aug)
@@ -284,13 +326,6 @@ void SUBR(x_mvec_dot_mvec)(TYPE(x_mvec)* v, TYPE(x_mvec)* w,
       for (int j=0;j<nvec;j++)
       {
         dotsi[j]=tmp[j]-tmp[nvec+j];
-      }
-    }
-    else if (dotsi!=NULL)
-    {
-      for (int j=0;j<nvec;j++)
-      {
-        dotsi[j]=mt::zero();
       }
     }
   }
@@ -325,8 +360,15 @@ void SUBR(x_sparseMat_times_mvec)(_ST_ alpha, TYPE(x_sparseMat) const* A, TYPE(x
     shifts[i]-=A->sigma_i_[i]*st::cmplx_I();
 #endif
   }
+#ifdef VIEW_VDAT
   PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_vadd_mvec)(alpha,A->A_,shifts,X->vdat_,beta,Y->vdat_,iflag),*iflag);
-
+#else
+  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_vadd_mvec)(alpha,A->A_,shifts,X->v_,beta,Y->v_,iflag),*iflag);
+  if (rc)
+  {
+    PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_vadd_mvec)(alpha,A->A_,shifts+nvec,X->vi_,beta,Y->vi_,iflag),*iflag);
+  }
+#endif
   // note: this is not optimal in row-major storage with the interleaved storage vdat=[v vi], if it is expensive
   // we could add a kernel function doing this directly on vdat
   if (rc)
@@ -430,7 +472,15 @@ void SUBR(x_mvec_vadd_mvec)(_ST_ const alpha[], _MT_ const alpha_i[], TYPE(x_mve
     tmp_alpha[i]=alpha[i];
     if (rc) tmp_alpha[nvec+i]=alpha[i];
   }
+#ifdef VIEW_VDAT
   PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(tmp_alpha,X->vdat_,beta,Y->vdat_,iflag),*iflag);
+#else
+  PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(tmp_alpha,X->v_,beta,Y->v_,iflag),*iflag);
+  if (rc)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(tmp_alpha+nvec,X->vi_,beta,Y->vi_,iflag),*iflag);
+  }
+#endif
   if (aug)
   {
     PHIST_CHK_IERR(SUBR(sdMat_vadd_sdMat)(alpha,X->vp_,beta,Y->vp_,iflag),*iflag);
@@ -438,7 +488,7 @@ void SUBR(x_mvec_vadd_mvec)(_ST_ const alpha[], _MT_ const alpha_i[], TYPE(x_mve
 #ifndef IS_COMPLEX
   if (rc)
   {
-    for (int i=0; i<nvec; i++)
+    for (int i=0; i<actual_nvec; i++)
     {
       tmp_alpha[i]=-(_ST_)alpha_i[i];
     }
@@ -473,7 +523,15 @@ void SUBR(x_mvec_vscale)(TYPE(x_mvec)* v, _MT_ const alpha[], int* iflag)
     tmp_alpha[i]=(_ST_)alpha[i];
     tmp_alpha[nvec+i]=(_ST_)alpha[i];
   }
+#ifdef VIEW_VDAT
   PHIST_CHK_IERR(SUBR(mvec_vscale)(v->vdat_,tmp_alpha,iflag),*iflag);
+#else
+  PHIST_CHK_IERR(SUBR(mvec_vscale)(v->v_,tmp_alpha,iflag),*iflag);
+  if (rc)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_vscale)(v->vi_,tmp_alpha+nvec,iflag),*iflag);
+  }
+#endif
   if (aug)
   {
     PHIST_CHK_IERR(SUBR(sdMat_vscale)(v->vp_,tmp_alpha,iflag),*iflag);    

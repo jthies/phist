@@ -1,9 +1,11 @@
 //! \name internal data structures for mixed-precision CARP-CG
-//! \note thse should not be used directly by the user!
+//! \note these should not be used directly by the user!
 //!@{
 
 //! e(x)tended sparse matrix type with complex shift and augmented 
 //! by additional (dense) rows and columns.
+//! [ A-(sigma_r_[j]+sigma_i_[j])I        Vproj_ ]
+//  [   Vproj'                              0    ] is applied to column j of the input vector
 typedef struct TYPE(x_sparseMat) {
   TYPE(const_sparseMat_ptr) A_;
   _MT_ *sigma_r_;

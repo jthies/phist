@@ -6,6 +6,7 @@
 #include <mpi.h>
 #endif
 
+#include "phist_kernels.h"
 #include "gtest/phist_gtest.h"
 
 #include "phist_typedefs.h"
@@ -16,6 +17,11 @@
 #include "../tools/MatrixIO.h"
 
 using namespace testing;
+
+extern "C" int phist_Sidfunc(ghost_gidx row, ghost_lidx* len, ghost_gidx* cols, void* vals, void *arg);
+extern "C" int phist_Didfunc(ghost_gidx row, ghost_lidx* len, ghost_gidx* cols, void* vals, void *arg);
+extern "C" int phist_Cidfunc(ghost_gidx row, ghost_lidx* len, ghost_gidx* cols, void* vals, void *arg);
+extern "C" int phist_Zidfunc(ghost_gidx row, ghost_lidx* len, ghost_gidx* cols, void* vals, void *arg);
 
 // available matrices
 // need to be preprocessor definitions to allow "#if MATNAME == MATNAME_speye" style comparisons
@@ -29,6 +35,10 @@ using namespace testing;
 #define MATNAME_symmMat 6
 #define MATNAME_sprandsym 7
 #define MATNAME_BENCH3D_8_A1 8
+#define MATNAME_IDFUNC 9
+
+inline bool MatNameEnumIsMatFunc(MATNAME_ENUM e){return (e==MATNAME_BENCH3D_8_A1)||(e==MATNAME_IDFUNC);}
+
 const char* MatNameEnumToStr(MATNAME_ENUM);
 
 /*! Base class for tests using sparse matrices. The class is templated on 
