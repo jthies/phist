@@ -296,17 +296,17 @@ public:
 #endif
 protected:
 
-int delete_mat(TYPE(sparseMat_ptr) &A)
+  int delete_mat(TYPE(sparseMat_ptr) &A)
   {
-  if (A!=NULL)
+    if (A!=NULL)
     {
-    SUBR(sparseMat_delete)(A,&iflag_);
-    A = NULL;
+      SUBR(sparseMat_delete)(A,&iflag_);
+      A = NULL;
     }
-  return iflag_;
+    return iflag_;
   }
 
-void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10*mt::eps())
+  void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10*mt::eps())
   {
     _MT_ max_err=mt::zero();
     if (typeImplemented_ && !problemTooSmall_)
@@ -334,7 +334,7 @@ void check_symmetry(TYPE(const_mvec_ptr) X, TYPE(const_mvec_ptr) OPX,_MT_ tol=10
     ASSERT_NEAR(mt::one(),max_err+mt::one(),tol);
   }
 
-void check_symmetry_rc(TYPE(const_mvec_ptr) X_r, TYPE(const_mvec_ptr) X_i, 
+  void check_symmetry_rc(TYPE(const_mvec_ptr) X_r, TYPE(const_mvec_ptr) X_i, 
                             TYPE(const_mvec_ptr) OPX_r, TYPE(const_mvec_ptr) OPX_i, _MT_ tol=10*mt::eps())
   {
     _MT_ max_err_r=mt::zero();
@@ -544,7 +544,7 @@ void check_symmetry_rc(TYPE(const_mvec_ptr) X_r, TYPE(const_mvec_ptr) X_i,
       create_and_apply_carp(A_);
       ASSERT_EQ(0,iflag_);
       
-      // check that x_i is still 0 (shift was 0+0i)
+      // check that x_i is still 0 (shift was s[j]+0i)
       ASSERT_REAL_EQ(mt::one(),MvecEqual(vec2_,st::zero()));
       
       x_r=vec2_; x_r_bak=vec2b_;
