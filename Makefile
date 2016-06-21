@@ -9,7 +9,7 @@ INCLUDES +=
 TARGET = libcpaft.so
 LFLAGS =
 
-OBJS = cp.o aft.o cp_options.o testclass.o 
+OBJS = cp.o aft.o cp_options.o 
 
 
 $(TARGET): $(OBJS)
