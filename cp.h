@@ -27,10 +27,13 @@ using namespace std;
 using std::complex;
 class CP
 {
-private:
+protected:	
 	MPI_Comm cpmpicomm;
 	std::string cpPath;
+	bool useSCR;							// true = enabled, false = disabled 
 	bool cpCommitted;
+
+private:
 	// ===== POD ===== 
 	std::map<const std::string, CpPod<int> * > intPodMap;
 	std::map<const std::string, CpPod<double> *> doublePodMap;
@@ -75,6 +78,7 @@ public:
 	~CP();
 	int setCpPath(const std::string cpPath_);
 	int setComm(const MPI_Comm FT_Comm);
+	void enableSCR();
 	void commit();
 
 	int CP_ADD_GHOST_DENSEMAT(const std::string key, ghost_densemat * const value);

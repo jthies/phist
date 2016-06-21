@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <cstdlib>
 
+#define WITHSCR
+
 #define SAFE_INSERT(a) \
 	if (a.second==false){ \
 		printf("MAP member exists at %s (%d) \n", __FILE__, __LINE__);\
@@ -14,24 +16,18 @@
 	}
 
 CP::CP(){
-	cpmpicomm = MPI_COMM_WORLD;	
-	cpPath = "";
+	cpmpicomm 	= MPI_COMM_WORLD;	
+	cpPath 		= "";
 	cpCommitted = false;
-#ifdef SCR
-	printf(	"scr is defined in CP.cpp\n");
-#endif
-#ifndef SCR
-	printf(	"scr is NOT defined in CP.cpp\n");
-#endif
-
-
+	useSCR 		= false;
 }
 
 CP::~CP(){
-	printf("============= SCR_Finalize is done1 ============= \n");
 #ifdef SCR
-	printf("============= SCR_Finalize is done ============= \n");
-	SCR_Finalize();
+	if(useSCR == true){
+		printf("====== SCR_Finalize is done ====== \n");
+		SCR_Finalize();
+	}
 #endif
 }
 
@@ -43,10 +39,21 @@ int CP::setCpPath(const std::string cpPath_){
 int CP::setComm(const MPI_Comm FT_Comm){
 	cpmpicomm = FT_Comm;
 #ifdef SCR
-	SCR_Init(&cpmpicomm);
-	printf("============= SCR_init is done with cpmpicomm ============= \n");
+	if(useSCR == true){
+		SCR_Init(&cpmpicomm);
+	}
 #endif
 	return 0;
+}
+
+void CP::enableSCR(){
+#ifdef SCR
+	useSCR = true;
+//	printf("useSCR is set true \n");
+
+#else 
+	printf("ERROR: CPAFT-lib is not compiled with SCR\n");
+#endif
 }
 
 void CP::commit(){
@@ -58,7 +65,7 @@ void CP::commit(){
 int CP::CP_ADD_GHOST_DENSEMAT(const std::string key, ghost_densemat * const value){	
 	assert (cpCommitted == false);
 	CpGhostDenseMat * cpdata = new CpGhostDenseMat[1];
-	cpdata->add(key, value , cpmpicomm, cpPath);
+	cpdata->add(key, value , cpmpicomm, cpPath, useSCR);
 	ghostDenseMatMap.insert(std::pair<const std::string, CpGhostDenseMat * >(key, cpdata));	
 	return 0;
 }
@@ -68,7 +75,7 @@ int CP::CP_ADD_GHOST_DENSEMAT_ARRAY(const std::string key, ghost_densemat ** con
 {
 	assert (cpCommitted == false);
 	CpGhostDenseMatArray * cpdata= new CpGhostDenseMatArray[1];
-	cpdata->add(key, value , nVecs, cpmpicomm, cpPath, toCpVec_);
+	cpdata->add(key, value , nVecs, cpmpicomm, cpPath, toCpVec_, useSCR);
 	ghostDenseMatArrayMap.insert( std::pair< const std::string, CpGhostDenseMatArray * >(key, cpdata));
 	return 0;
 }
@@ -103,7 +110,7 @@ int CP::CP_ADD_POD(const std::string key, float * const val_ptr){
 int CP::CP_ADD_POD_INT(const std::string key, int * const value){
 
 	CpPod<int> * podData = new CpPod<int>[1];
-	podData->add(key, value, cpmpicomm, cpPath );		
+	podData->add(key, value, cpmpicomm, cpPath, useSCR );		
 	podData->print();	
 	intPodMap.insert(std::pair<const std::string, CpPod<int> * >(key, podData));	
 	
@@ -112,7 +119,7 @@ int CP::CP_ADD_POD_INT(const std::string key, int * const value){
 
 int CP::CP_ADD_POD_DOUBLE(const std::string key, double * const value){	 
 	CpPod<double> * podData = new CpPod<double>[1];
-	podData->add(key, value, cpmpicomm, cpPath );		
+	podData->add(key, value, cpmpicomm, cpPath, useSCR );		
 	podData->print();	
 	doublePodMap.insert(std::pair<const std::string, CpPod<double> * >(key, podData));	
 	return 0;
@@ -120,7 +127,7 @@ int CP::CP_ADD_POD_DOUBLE(const std::string key, double * const value){
 
 int CP::CP_ADD_POD_DOUBLE_COMPLEX(const std::string key, complex<double> * const value){	 
 	CpPod<complex<double> > * podData = new CpPod<complex<double> >[1];
-	podData->add(key, value, cpmpicomm, cpPath );		
+	podData->add(key, value, cpmpicomm, cpPath, useSCR );		
 	podData->print();	
 	doubleComplexPodMap.insert(std::pair<const std::string, CpPod<complex<double> > * >(key, podData));	
 	return 0;
@@ -128,7 +135,7 @@ int CP::CP_ADD_POD_DOUBLE_COMPLEX(const std::string key, complex<double> * const
 
 int CP::CP_ADD_POD_FLOAT(const std::string key, float * const value){ 
 	CpPod<float> * podData = new CpPod<float>[1];
-	podData->add(key, value, cpmpicomm, cpPath );		
+	podData->add(key, value, cpmpicomm, cpPath, useSCR );		
 	podData->print();	
 	floatPodMap.insert(std::pair<const std::string, CpPod<float> * >(key, podData));	
 	return 0;
@@ -165,8 +172,8 @@ int CP::CP_ADD_ARRAY_INT(const std::string key, int * const val_array, const siz
 	printf("Type of array is int\n");
 
 	CpArray<int> * arraydata = new CpArray<int>[1];
-	arraydata->add(key, val_array, array_size, cpmpicomm, cpPath );		
-	arraydata->print();	
+	arraydata->add(key, val_array, array_size, cpmpicomm, cpPath, useSCR );		
+//	arraydata->print();	
 	intArrayMap.insert(std::pair<const std::string, CpArray<int> * >(key, arraydata));	
 
 	return 0;	
@@ -175,7 +182,7 @@ int CP::CP_ADD_ARRAY_INT(const std::string key, int * const val_array, const siz
 int CP::CP_ADD_ARRAY_DOUBLE(const std::string key, double * const val_array, const size_t array_size ){
 	printf("Type of array is double\n");
 	CpArray<double> * arraydata = new CpArray<double>[1];
-	arraydata->add(key, val_array, array_size , cpmpicomm, cpPath);
+	arraydata->add(key, val_array, array_size , cpmpicomm, cpPath, useSCR);
 //	arraydata->print();
 	doubleArrayMap.insert(std::pair<const std::string, CpArray<double> * >(key, arraydata));	
 
@@ -185,7 +192,7 @@ int CP::CP_ADD_ARRAY_DOUBLE(const std::string key, double * const val_array, con
 int CP::CP_ADD_ARRAY_FLOAT(const std::string key, float * const val_array, const size_t array_size ){
 	printf("Type of array is float\n");
 	CpArray<float> * arraydata = new CpArray<float>[1];
-	arraydata->add(key, val_array, array_size , cpmpicomm, cpPath);
+	arraydata->add(key, val_array, array_size , cpmpicomm, cpPath, useSCR);
 //	arraydata->print();
 	floatArrayMap.insert(std::pair<const std::string, CpArray<float> * >(key, arraydata));	
 
@@ -195,7 +202,7 @@ int CP::CP_ADD_ARRAY_FLOAT(const std::string key, float * const val_array, const
 int CP::CP_ADD_ARRAY_DOUBLE_COMPLEX	(const std::string key, complex<double>  * const val_array, const size_t array_size ){
 	printf("Type of array is complex<double> ");
 	CpArray<complex<double>  > * arraydata = new CpArray<complex<double>  >[1];
-	arraydata->add(key, val_array, array_size , cpmpicomm, cpPath);
+	arraydata->add(key, val_array, array_size , cpmpicomm, cpPath, useSCR);
 //	arraydata->print();
 	doubleComplexArrayMap.insert(std::pair<const std::string, CpArray<complex<double>  > * >(key, arraydata));	
 
@@ -227,10 +234,10 @@ int CP::CP_ADD_MULTIARRAY(const std::string key, float** const ptr, const size_t
 int CP::CP_ADD_MULTIARRAY_INT(const std::string key, int** const ptr, const size_t nRows, const size_t nCols, const int toCpCol_){
 	
 	CpMulArray<int> * arraydata = new CpMulArray<int>[1];
-	arraydata->add(key, ptr, nRows, nCols, cpmpicomm, cpPath, toCpCol_);	
+	arraydata->add(key, ptr, nRows, nCols, cpmpicomm, cpPath, toCpCol_, useSCR);	
 	intMulArrayMap.insert(std::pair<const std::string, CpMulArray<int> * > (key, arraydata));
 
-	arraydata->print();
+//	arraydata->print();
 	return 0;
 }
 
@@ -238,10 +245,10 @@ int CP::CP_ADD_MULTIARRAY_DOUBLE(const std::string key, double ** const ptr, con
 	printf ("Adding DOUBLE MULTIARRAY\n");	
 
 	CpMulArray<double> * arraydata = new CpMulArray<double>[1];
-	arraydata->add(key, ptr, nRows, nCols, cpmpicomm, cpPath, toCpCol_);	
+	arraydata->add(key, ptr, nRows, nCols, cpmpicomm, cpPath, toCpCol_, useSCR);	
 	doubleMulArrayMap.insert(std::pair<const std::string, CpMulArray<double> * > (key, arraydata));
 	
-	arraydata->print();	
+//	arraydata->print();	
 	return 0;
 }
 
@@ -250,10 +257,10 @@ int CP::CP_ADD_MULTIARRAY_FLOAT(const std::string key, float ** const ptr, const
 	printf ("Adding FLOAT MULTIARRAY\n");	
 
 	CpMulArray<float> * arraydata = new CpMulArray<float>[1];
-	arraydata->add(key, ptr, nRows, nCols, cpmpicomm, cpPath, toCpCol_);	
+	arraydata->add(key, ptr, nRows, nCols, cpmpicomm, cpPath, toCpCol_, useSCR);	
 	floatMulArrayMap.insert(std::pair<const std::string, CpMulArray<float> * > (key, arraydata));
 	
-	arraydata->print();	
+//	arraydata->print();	
 	return 0;
 }
 
@@ -309,7 +316,6 @@ int CP::update(){
 	if(intArrayMap.size()!=0){
 		std::map<std::string, CpArray<int> * >::iterator it = intArrayMap.begin();
 		for (it = intArrayMap.begin(); it != intArrayMap.end(); ++it){
-			cout << it->first << endl;
 			it->second->update();
 		}
 	}
@@ -317,7 +323,6 @@ int CP::update(){
 	if(doubleArrayMap.size()!=0){
 		std::map<std::string, CpArray<double> * >::iterator it = doubleArrayMap.begin();
 		for (it = doubleArrayMap.begin(); it != doubleArrayMap.end(); ++it){
-			cout << it->first << endl;
 			it->second->update();
 		}
 	}
@@ -325,7 +330,6 @@ int CP::update(){
 	if(floatArrayMap.size()!=0){
 		std::map<std::string, CpArray<float> * >::iterator it = floatArrayMap.begin();
 		for (it = floatArrayMap.begin(); it != floatArrayMap.end(); ++it){
-			cout << it->first << endl;
 			it->second->update();
 		}
 	}
@@ -333,7 +337,6 @@ int CP::update(){
 	if(intMulArrayMap.size()!=0){
 		std::map<std::string, CpMulArray<int> * >::iterator it = intMulArrayMap.begin();
 		for (it = intMulArrayMap.begin(); it != intMulArrayMap.end(); ++it){
-			cout << it->first << endl;
 			it->second->update();
 		}
 	}
@@ -341,14 +344,12 @@ int CP::update(){
 	if(doubleMulArrayMap.size()!=0){
 		std::map<std::string, CpMulArray<double> * >::iterator it = doubleMulArrayMap.begin();
 		for (it = doubleMulArrayMap.begin(); it != doubleMulArrayMap.end(); ++it){
-			cout << it->first << endl;
 			it->second->update();
 		}
 	}
 	if(floatMulArrayMap.size()!=0){
 		std::map<std::string, CpMulArray<float> * >::iterator it = floatMulArrayMap.begin();
 		for (it = floatMulArrayMap.begin(); it != floatMulArrayMap.end(); ++it){
-			cout << it->first << endl;
 			it->second->update();
 		}
 	}
@@ -358,9 +359,9 @@ int CP::update(){
 
 int CP::write(){
 #ifdef SCR
-		int valid = 0;
+	if(useSCR == true){
 		SCR_Start_checkpoint();
-		printf("SCR_Start_checkpoint is called \n");
+	}
 #endif
 	assert ( cpCommitted == true );
 	int myrank = -1;
@@ -420,21 +421,18 @@ int CP::write(){
 	if(intArrayMap.size()!=0){
 		std::map<std::string, CpArray<int> * >::iterator it = intArrayMap.begin();
 		for (it = intArrayMap.begin(); it != intArrayMap.end(); ++it){
-			cout << it->first << endl;
 			it->second->write();
 		}
 	}
 	if(doubleArrayMap.size()!=0){
 		std::map<std::string, CpArray<double> * >::iterator it = doubleArrayMap.begin();
 		for (it = doubleArrayMap.begin(); it != doubleArrayMap.end(); ++it){
-			cout << it->first << endl;
 			it->second->write();
 		}
 	}
 	if(floatArrayMap.size()!=0){
 		std::map<std::string, CpArray<float> * >::iterator it = floatArrayMap.begin();
 		for (it = floatArrayMap.begin(); it != floatArrayMap.end(); ++it){
-			cout << it->first << endl;
 			it->second->write();
 		}
 	}
@@ -442,28 +440,27 @@ int CP::write(){
 	if(intMulArrayMap.size()!=0){
 		std::map<std::string, CpMulArray<int> * >::iterator it = intMulArrayMap.begin();
 		for (it = intMulArrayMap.begin(); it != intMulArrayMap.end(); ++it){
-			cout << it->first << endl;
 			it->second->write();
 		}
 	}
 	if(doubleMulArrayMap.size()!=0){
 		std::map<std::string, CpMulArray<double> * >::iterator it = doubleMulArrayMap.begin();
 		for (it = doubleMulArrayMap.begin(); it != doubleMulArrayMap.end(); ++it){
-			cout << it->first << endl;
 			it->second->write();
 		}
 	}	
 	if(floatMulArrayMap.size()!=0){
 		std::map<std::string, CpMulArray<float> * >::iterator it = floatMulArrayMap.begin();
 		for (it = floatMulArrayMap.begin(); it != floatMulArrayMap.end(); ++it){
-			cout << it->first << endl;
 			it->second->write();
 		}
 	}
 
 #ifdef SCR
-	valid = 1;
-	SCR_Complete_checkpoint(valid);			// valid flag should be 1 if every CP is successfully written. TODO: check the flag from each write call.
+	if(useSCR == true){
+		int valid = 1;
+		SCR_Complete_checkpoint(valid);			// valid flag should be 1 if every CP is successfully written. TODO: check the flag from each write call.
+	}
 #endif
 
 	return 0;

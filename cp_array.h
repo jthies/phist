@@ -22,7 +22,7 @@ class CpArray
 public:
 		CpArray();
 		~CpArray();
-		int add(const std::string array_name, T * const item, const size_t rows, const MPI_Comm FtComm, const std::string cpPath_ );
+		int add(const std::string array_name, T * const item, const size_t rows, const MPI_Comm FtComm, const std::string cpPath_, const bool useSCR_);
 		int print();
 		int update();	// check it the item is defined. if it is defined, update according to nRows and array
 	   	int write();	
@@ -30,9 +30,10 @@ public:
 private:
 		std::string cpPath;
 		MPI_Comm cpMpiComm;
+		std::string name;
+		bool useSCR;
 		T * array;
 		T * arrayPtr;		// TODO: the pointer should be constant. But not the data, as data has to be read/written on this array after restart. it can not even be a constant pointer because the pointer has to be assigned a value in he add function.
-		std::string name;
 		size_t nRows;
 		void copyArray(T * const src, T * const dst, const size_t numElems);
 };
@@ -56,13 +57,14 @@ CpArray<T>::~CpArray()
 }
 
 template <class T>
-int CpArray<T>::add(const std::string array_name, T * const item, const size_t rows , const MPI_Comm FtComm, const std::string cpPath_)
+int CpArray<T>::add(const std::string array_name, T * const item, const size_t rows , const MPI_Comm FtComm, const std::string cpPath_, const bool useSCR_)
 {
 	nRows = rows;
 	arrayPtr = item;	
 	name = array_name;	
 	cpMpiComm = FtComm;
 	cpPath = cpPath_;
+	useSCR = useSCR_;
 	array = new T[nRows];
 	for(size_t i = 0; i < nRows; ++i){
 		array[i] = item[i];
@@ -96,10 +98,12 @@ int CpArray<T>::write(){
 	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
 
 #ifdef SCR
-	char * tmpFilename = new char[256];
-	strcpy(tmpFilename, filename); 
-	SCR_Route_file(tmpFilename, filename);
-	printf("new filename %s\n", filename);
+	if(useSCR == true){
+		char * tmpFilename = new char[256];
+		strcpy(tmpFilename, filename); 
+		SCR_Route_file(tmpFilename, filename);
+		printf("new filename %s\n", filename);
+	}
 #endif
 
 	FILE * fp;
@@ -121,10 +125,12 @@ int CpArray<T>::read(){
 	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
 
 #ifdef SCR
-	char * tmpFilename = new char[256];
-	strcpy(tmpFilename, filename); 
-	SCR_Route_file(tmpFilename, filename);
-	printf("new filename %s\n", filename);
+	if(useSCR == true){
+		char * tmpFilename = new char[256];
+		strcpy(tmpFilename, filename); 
+		SCR_Route_file(tmpFilename, filename);
+		printf("new filename %s\n", filename);
+	}
 #endif
 
 	FILE * fp;
@@ -153,7 +159,7 @@ class CpMulArray
 public:
 		CpMulArray();
 		~CpMulArray();
-		int add(const std::string array_name, T** const item, const size_t rows , const size_t cols, const MPI_Comm FtComm, const std::string cpPath_, const int toCpCol_);
+		int add(const std::string array_name, T** const item, const size_t rows , const size_t cols, const MPI_Comm FtComm, const std::string cpPath_, const int toCpCol_, const bool useSCR_);
 		int print();
 		int update();
 		int write();
@@ -163,6 +169,7 @@ private:
 		std::string cpPath;
 		std::string name;
 		MPI_Comm cpMpiComm;
+		bool useSCR;
 		T ** array;
 		T ** arrayPtr;
 		size_t nRows;
@@ -191,10 +198,11 @@ CpMulArray<T>::~CpMulArray()
 }
 
 template <class T>
-int CpMulArray<T>::add(const std::string array_name, T** const item, const size_t rows , const size_t cols, const MPI_Comm FtComm, const std::string cpPath_, const int toCpCol_)
+int CpMulArray<T>::add(const std::string array_name, T** const item, const size_t rows , const size_t cols, const MPI_Comm FtComm, const std::string cpPath_, const int toCpCol_, const bool useSCR_)
 {
 	cpPath = cpPath_;
 	name = array_name;
+	useSCR = useSCR_;
 	nRows = rows;	
 	nCols = cols;
 	cpMpiComm = FtComm;
@@ -246,10 +254,12 @@ int CpMulArray<T>::write(){
 	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
 
 #ifdef SCR
-	char * tmpFilename = new char[256];
-	strcpy(tmpFilename, filename); 
-	SCR_Route_file(tmpFilename, filename);
-	printf("new filename %s\n", filename);
+	if(useSCR == true){
+		char * tmpFilename = new char[256];
+		strcpy(tmpFilename, filename); 
+		SCR_Route_file(tmpFilename, filename);
+		printf("new filename %s\n", filename);
+	}
 #endif
 
 	FILE * fp;
@@ -292,10 +302,12 @@ int CpMulArray<T>::read(){
 	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
 
 #ifdef SCR
-	char * tmpFilename = new char[256];
-	strcpy(tmpFilename, filename); 
-	SCR_Route_file(tmpFilename, filename);
-	printf("new filename %s\n", filename);
+	if(useSCR == true){
+		char * tmpFilename = new char[256];
+		strcpy(tmpFilename, filename); 
+		SCR_Route_file(tmpFilename, filename);
+		printf("new filename %s\n", filename);
+	}
 #endif
 
 	FILE * fp;

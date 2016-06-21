@@ -14,7 +14,7 @@ class CpGhostDenseMat
 public:
 		CpGhostDenseMat();
 		~CpGhostDenseMat();
-		int add(const std::string name, ghost_densemat * const item, const MPI_Comm FtComm, const std::string cpPath_ );
+		int add(const std::string name, ghost_densemat * const item, const MPI_Comm FtComm, const std::string cpPath_, const bool useSCR_);
 		int update();	// check it the item is defined. if it is defined, update according to nRows and array
 	   	int write();	
 		int read();
@@ -22,6 +22,7 @@ private:
 		std::string cpPath;
 		MPI_Comm cpMpiComm;
 		std::string name;
+		bool useSCR;
 		ghost_densemat * denseMatAsync;			// the poointer of acsynchronous vector to be written
 	 	ghost_densemat * denseMat;		// the pointer of actual vetor 
 };
@@ -38,12 +39,13 @@ CpGhostDenseMat::~CpGhostDenseMat()
 
 }
 
-int CpGhostDenseMat::add(const std::string name_, ghost_densemat * const item, const MPI_Comm FtComm, const std::string cpPath_)
+int CpGhostDenseMat::add(const std::string name_, ghost_densemat * const item, const MPI_Comm FtComm, const std::string cpPath_, const bool useSCR_)
 {
 	denseMat = item;	
 	name = name_;	
 	cpMpiComm = FtComm;
 	cpPath = cpPath_;
+	useSCR = useSCR_;
 	denseMatAsync = new ghost_densemat[1];
 	ghost_densemat_create(&denseMatAsync, item->context, item->traits);
 	ghost_densemat_init_densemat(denseMatAsync, item, 0, 0);
@@ -68,10 +70,12 @@ int CpGhostDenseMat::write(){
 	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
 
 #ifdef SCR
-	char * tmpFilename = new char[256];
-	strcpy(tmpFilename, filename); 
-	SCR_Route_file(tmpFilename, filename);
-	printf("new filename %s\n", filename);
+	if(useSCR == true){
+		char * tmpFilename = new char[256];
+		strcpy(tmpFilename, filename); 
+		SCR_Route_file(tmpFilename, filename);
+		printf("new filename %s\n", filename);
+	}
 #endif
 
 	denseMatAsync->toFile(denseMatAsync, filename, 0);
@@ -87,10 +91,12 @@ int CpGhostDenseMat::read(){
 	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
 
 #ifdef SCR
-	char * tmpFilename = new char[256];
-	strcpy(tmpFilename, filename); 
-	SCR_Route_file(tmpFilename, filename);
-	printf("new filename %s\n", filename);
+	if(useSCR == true){
+		char * tmpFilename = new char[256];
+		strcpy(tmpFilename, filename); 
+		SCR_Route_file(tmpFilename, filename);
+		printf("new filename %s\n", filename);
+	}
 #endif
 
 	denseMatAsync->fromFile(denseMatAsync, filename, 0);
@@ -108,7 +114,7 @@ class CpGhostDenseMatArray
 public:
 		CpGhostDenseMatArray();
 		~CpGhostDenseMatArray();
-		int add(const std::string name, ghost_densemat ** const item, const size_t nDenseMat_, const MPI_Comm FtComm, const std::string cpPath_, const int toCpDenseMat_);
+		int add(const std::string name, ghost_densemat ** const item, const size_t nDenseMat_, const MPI_Comm FtComm, const std::string cpPath_, const int toCpDenseMat_, const bool useSCR_);
 		int update();	// check it the item is defined. if it is defined, update according to nRows and array
 	   	int write();	
 		int read();
@@ -116,6 +122,7 @@ private:
 		std::string cpPath;
 		MPI_Comm cpMpiComm;
 		std::string name;
+		bool useSCR;
 		ghost_densemat ** denseMatArrayAsync;			// the poointer of acsynchronous vector to be written
 	 	ghost_densemat ** denseMatArray;		// the pointer of actual vetor 
 		size_t nDenseMat;
@@ -136,13 +143,14 @@ CpGhostDenseMatArray::~CpGhostDenseMatArray()
 
 }
 
-int CpGhostDenseMatArray::add(const std::string name_, ghost_densemat ** const item, const size_t nDenseMat_, const MPI_Comm FtComm, const std::string cpPath_, const int toCpDenseMat_)
+int CpGhostDenseMatArray::add(const std::string name_, ghost_densemat ** const item, const size_t nDenseMat_, const MPI_Comm FtComm, const std::string cpPath_, const int toCpDenseMat_, const bool useSCR_)
 {
 	denseMatArray = item;
 	nDenseMat = nDenseMat_;	
 	name = name_;	
 	cpMpiComm = FtComm;
 	cpPath = cpPath_;
+	useSCR = useSCR_;
 	denseMatArrayAsync = new ghost_densemat*[nDenseMat];
 	toCpDenseMat = toCpDenseMat_;
 	for(size_t i = 0; i < nDenseMat ; ++i)
@@ -183,10 +191,12 @@ int CpGhostDenseMatArray::write(){
 			sprintf(filename, "%s/%s%d-rank%d.cp", cpPath.c_str(), name.c_str(), i, myrank);
 
 #ifdef SCR
+	if(useSCR == true){
 			char * tmpFilename = new char[256];
 			strcpy(tmpFilename, filename); 
 			SCR_Route_file(tmpFilename, filename);
 			printf("new filename %s\n", filename);
+	}
 #endif
 
 			FILE * fp;
@@ -204,10 +214,12 @@ int CpGhostDenseMatArray::write(){
 		sprintf(filename, "%s/%s%zu-rank%d.cp", cpPath.c_str(), name.c_str(), cyclicCpCounter, myrank);
 
 #ifdef SCR
+	if(useSCR == true){
 			char * tmpFilename = new char[256];
 			strcpy(tmpFilename, filename); 
 			SCR_Route_file(tmpFilename, filename);
 			printf("new filename %s\n", filename);
+	}
 #endif
 
 		FILE * fp;
@@ -228,10 +240,12 @@ int CpGhostDenseMatArray::write(){
 		sprintf(filename, "%s/%s%d-rank%d.cp", cpPath.c_str(), name.c_str(), toCpDenseMat, myrank);
 
 #ifdef SCR
+	if(useSCR == true){
 			char * tmpFilename = new char[256];
 			strcpy(tmpFilename, filename); 
 			SCR_Route_file(tmpFilename, filename);
 			printf("new filename %s\n", filename);
+	}
 #endif
 
 		FILE * fp;
@@ -256,10 +270,12 @@ int CpGhostDenseMatArray::read(){
 			sprintf(filename, "%s/%s%d-rank%d.cp", cpPath.c_str(), name.c_str(), i, myrank);
 
 #ifdef SCR
+	if(useSCR == true){
 			char * tmpFilename = new char[256];
 			strcpy(tmpFilename, filename); 
 			SCR_Route_file(tmpFilename, filename);
 			printf("new filename %s\n", filename);
+	}
 #endif
 
 			FILE * fp;
@@ -280,10 +296,12 @@ int CpGhostDenseMatArray::read(){
 		sprintf(filename, "%s/%s%zu-rank%d.cp", cpPath.c_str(), name.c_str(), cyclicCpCounter, myrank);
 
 #ifdef SCR
+	if(useSCR == true){
 			char * tmpFilename = new char[256];
 			strcpy(tmpFilename, filename); 
 			SCR_Route_file(tmpFilename, filename);
 			printf("new filename %s\n", filename);
+	}
 #endif
 
 		FILE * fp;
@@ -304,10 +322,12 @@ int CpGhostDenseMatArray::read(){
 		sprintf(filename, "%s/%s%d-rank%d.cp", cpPath.c_str(), name.c_str(), toCpDenseMat, myrank);
 
 #ifdef SCR
+	if(useSCR == true){
 			char * tmpFilename = new char[256];
 			strcpy(tmpFilename, filename); 
 			SCR_Route_file(tmpFilename, filename);
 			printf("new filename %s\n", filename);
+	}
 #endif
 
 		FILE * fp;

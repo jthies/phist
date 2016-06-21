@@ -13,6 +13,7 @@
 #include <complex>
 #include <string>
 #include <typeinfo>
+#include "cp.h"
 #ifdef SCR
 extern "C"{
 	#include <scr.h>
@@ -25,7 +26,7 @@ class CpPod			// TODO: check the class types. These should be child classes of t
 public:
 		CpPod();
 		~CpPod();
-		int add(const std::string podName, T * const item, const MPI_Comm FtComm, const std::string cpPath_ );
+		int add(const std::string podName, T * const item, const MPI_Comm FtComm, const std::string cpPath_, const bool useSCR_);
 		int print();
 		int update();	// check it the item is defined. if it is defined, update according to nRows and array
 	   	int write();	
@@ -34,6 +35,7 @@ private:
 		std::string cpPath;
 		MPI_Comm cpMpiComm;
 		std::string name;
+		bool useSCR;
 		T pod;
 		T * podPtr;		// TODO: the pointer should be constant. But not the data, as data has to be read/written on this array after restart. it can not even be a constant pointer because the pointer has to be assigned a value in he add function.
 };
@@ -53,14 +55,14 @@ CpPod<T>::~CpPod()
 }
 
 template <class T>
-int CpPod<T>::add(const std::string podName, T * const item, const MPI_Comm FtComm, const std::string cpPath_ )
+int CpPod<T>::add(const std::string podName, T * const item, const MPI_Comm FtComm, const std::string cpPath_, const bool useSCR_)
 {
 	name 	= podName;	
 	podPtr 	= item;	
 	pod		= *item;
 	cpMpiComm = FtComm;
 	cpPath 	= cpPath_;
-	
+	useSCR 	= useSCR_;	
 	return 0;
 }
 
@@ -86,14 +88,16 @@ int CpPod<T>::write(){		// TODO: check the correctness of DOUBLE COMPLEX type
 	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
 	
 #ifdef SCR
-	char * tmpFilename = new char[256];
-	strcpy(tmpFilename, filename); 
-	SCR_Route_file(tmpFilename, filename);
-	printf("new filename %s\n", filename);
+	if(useSCR == true){
+		char * tmpFilename = new char[256];
+		strcpy(tmpFilename, filename); 
+		SCR_Route_file(tmpFilename, filename);
+		printf("new filename %s\n", filename);
+	}
 #endif	
 	std::ofstream fstr;// (filename);	
 	fstr.open (filename);	
-	fstr << name << "\t" << pod;		
+	fstr << name.c_str() << "\t" << pod;		
 /*	if( typeid(T) == typeid(double complex) ){	// TODO: check the correctness of DOUBLE COMPLEX type
 		std::cout << "ERROR: complex write is not yet tested \n" << endl;
 	}*/	
@@ -109,10 +113,12 @@ int CpPod<T>::read(){
 	sprintf(filename, "%s/%s-rank%d.cp", cpPath.c_str(), name.c_str(), myrank);
 
 #ifdef SCR
-	char * tmpFilename = new char[256];
-	strcpy(tmpFilename, filename); 
-	SCR_Route_file(tmpFilename, filename);
-	printf("new filename %s\n", filename);
+	if(useSCR == true){
+		char * tmpFilename = new char[256];
+		strcpy(tmpFilename, filename); 
+		SCR_Route_file(tmpFilename, filename);
+		printf("new filename %s\n", filename);
+	}
 #endif	
 
 	std::ifstream fstr (filename);
