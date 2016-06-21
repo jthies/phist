@@ -613,7 +613,7 @@ protected:
     {
     // we allow a tolerance here because the matrices may have errors in the
     // last digit and we can't get the test to pass otherwise.
-    ASSERT_NEAR(mt::one(),const_row_sum_test(A_),100*mt::eps());
+    ASSERT_NEAR(mt::one(),const_row_sum_test(A_),100*VTest::releps());
     }
 #endif
 
@@ -622,7 +622,7 @@ protected:
     {
     // we allow a tolerance here because the matrices may have errors in the
     // last digit and we can't get the test to pass otherwise.
-    ASSERT_NEAR(mt::one(),const_row_sum_test(A_),100*mt::eps());
+    ASSERT_NEAR(mt::one(),const_row_sum_test(A_),100*VTest::releps());
     }
 #endif
 
