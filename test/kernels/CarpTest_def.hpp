@@ -593,13 +593,17 @@ protected:
   {
     if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
     {
+      SUBR(mvec_put_value)(b,st::zero(),&iflag_);
+      ASSERT_EQ(0,iflag_);
       SUBR(mvec_random)(x_r,&iflag_);
       ASSERT_EQ(0,iflag_);
       for (int i=0; i<nvec_; i++)
       {
         sigma_r_[i]=st::zero();
         sigma_[i]=ct::zero();
+        omega_[i]=1.0;
       }
+
       create_and_apply_carp(A_);
       ASSERT_EQ(0,iflag_);
       
