@@ -100,6 +100,7 @@ subroutine SUB_NAME(nvec,nlocal, nhalo, ncols, nnz, &
     ! Kaczmarz update of X. tmp is now (A-s_jI)_i x -b
 
     ! a) scaling factors
+    WHERE(row_norm(1:NVEC)==0.0_8) row_norm=1.0_8
     tmp_r(1:NVEC)=tmp_r(1:NVEC)*omega(1:NVEC)/row_norm(1:NVEC)
 #ifdef KACZ_RC_VARIANT
     tmp_i(1:NVEC)=tmp_i(1:NVEC)*omega(1:NVEC)/row_norm(1:NVEC)
