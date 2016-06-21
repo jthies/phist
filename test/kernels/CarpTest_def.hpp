@@ -642,8 +642,8 @@ TEST_F(CLASSNAME, x_mvec_add_mvec)
   phist_Zmvec_add_mvec(z_alpha,z_vec1_, z_beta, z_vec2_, &iflag_);
   ASSERT_EQ(0,iflag_);
     
-  ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
-  ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
+  ASSERT_NEAR(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_),mt::eps());
+  ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),100*VTest::releps());
   
 }
 
