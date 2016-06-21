@@ -454,6 +454,7 @@ void private_kacz_sweep(const Epetra_CrsMatrix* A,
     for (int k=0;k<nvec;k++)
     {
       nrm_ai2[k]=tmp-2*d*sigma_r[k]+sigma_r[k]*sigma_r[k];
+      if (nrm_ai2[k]==0.0) nrm_ai2[k]=1.0;
     }
     
     // first compute scaling factors. 
@@ -551,6 +552,7 @@ void private_kacz_sweep_aug(const Epetra_CrsMatrix* A,
     {
       // adjust for diagonal shift
       nrm_ai2[k]=tmp-2*d*sigma_r[k]+sigma_r[k]*sigma_r[k];
+      if (nrm_ai2[k]==0.0) nrm_ai2[k]=1.0;
     }
     
     // first compute scaling factors. 
@@ -646,6 +648,7 @@ void private_kacz_sweep_rc(const Epetra_CrsMatrix* A,
     {
       nrm_ai2[k]=tmp-2*d*sigma_r[k]+sigma_r[k]*sigma_r[k]
                     +sigma_i[k]*sigma_i[k];
+      if (nrm_ai2[k]==0.0) nrm_ai2[k]=1.0;
     }
     
     // first compute scaling factors. 
