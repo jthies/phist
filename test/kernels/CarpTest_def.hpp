@@ -98,9 +98,22 @@ public:
       x_vec3_=new TYPE(x_mvec)(vec3_,vec3b_,0,&iflag_);
       ASSERT_EQ(0,iflag_);
 
+
       iflag_=PHIST_MVEC_REPLICATE_DEVICE_MEM;
       phist_Zmvec_create(&z_vec1_,map_,nvec_,&iflag_);
       cTypeImplemented_=(iflag_!=PHIST_NOT_IMPLEMENTED);         
+
+      sigma_[0]=1.0-ct::cmplx_I();        minus_sigma_[0]=-sigma_[0];
+      sigma_r_[0]=ct::real(sigma_[0]);     sigma_i_[0]=ct::imag(sigma_[0]);
+      for (int i=1; i<_NV_; i++)
+      {
+        sigma_[i]=ct::rand();                 minus_sigma_[i]=-sigma_[i];
+        sigma_r_[i]=ct::real(sigma_[i]);      sigma_i_[i]=ct::imag(sigma_[i]);
+        omega_[i]=1.84299;
+      }
+
+
+
       if (cTypeImplemented_)
       {
         ASSERT_EQ(0,iflag_);
@@ -116,15 +129,6 @@ public:
         ASSERT_EQ(0,iflag_);
         MvecCopyX2Z(x_vec3_,z_vec3_,&iflag_);
         ASSERT_EQ(0,iflag_);
-
-        sigma_[0]=1.0-ct::cmplx_I();        minus_sigma_[0]=-sigma_[0];
-        sigma_r_[0]=ct::real(sigma_[0]);     sigma_i_[0]=ct::imag(sigma_[0]);
-        for (int i=1; i<_NV_; i++)
-        {
-          sigma_[i]=ct::rand();                 minus_sigma_[i]=-sigma_[i];
-          sigma_r_[i]=ct::real(sigma_[i]);      sigma_i_[i]=ct::imag(sigma_[i]);
-          omega_[i]=1.84299;
-        }
 
         phist_ZsparseMat_create_fromRowFunc(&z_A_,comm_,_N_,_N_,7,&ZMATFUNC,NULL,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -591,7 +595,11 @@ protected:
     {
       SUBR(mvec_random)(x_r,&iflag_);
       ASSERT_EQ(0,iflag_);
-
+      for (int i=0; i<nvec_; i++)
+      {
+        sigma_r_[i]=st::zero();
+        sigma_[i]=ct::zero();
+      }
       create_and_apply_carp(A_);
       ASSERT_EQ(0,iflag_);
       
