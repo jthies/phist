@@ -5,7 +5,11 @@
 
 #ifndef PHIST_HAVE_GHOST
 #define G_LIDX_T C_INT32_T
-#define G_GIDX_T C_INT64_T
+# ifndef PHIST_FORCE_INT_GIDX
+# define G_GIDX_T C_INT64_T
+# else
+# define G_GIDX_T C_INT32_T
+# endif
 #else
 #ifdef GHOST_IDX64_LOCAL
 #define G_LIDX_T C_INT64_T
@@ -426,7 +430,8 @@ end if
 
 
   pure function coordOfId(id) result(coord)
-    integer(kind=8), intent(in) :: id
+    use, intrinsic :: iso_c_binding
+    integer(kind=G_GIDX_T), intent(in) :: id
     integer(kind=8) :: coord(3)
     integer(kind=8) :: tElem, fak(3)
     integer :: bitlevel, i
