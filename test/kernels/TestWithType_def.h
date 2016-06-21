@@ -36,7 +36,7 @@ static _MT_ MvecEqual(TYPE(mvec_ptr) V, _ST_ value)
   SUBR(mvec_num_vectors)(V,&m,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
   
-  int return_value=ArrayEqual(val,n,m,lda,1,value,KernelTest::vflag_);
+  _MT_ return_value=ArrayEqual(val,n,m,lda,1,value,KernelTest::vflag_);
 #if PHIST_OUTLEV>=PHIST_DEBUG
   int print_vec_loc,print_vec;
   print_vec_loc=(std::abs(return_value-mt::one())>std::sqrt(mt::eps())&&(n<=100))?1:0;
