@@ -116,8 +116,8 @@ class PhistDriversTest(unittest.TestCase):
         shutil.copyfile('${CMAKE_SOURCE_DIR}/test/matrices/graphene/128x64/A.mm','${CMAKE_CURRENT_BINARY_DIR}/graphene128x64.mm')
 
 # note that we're rather generous here because the way the KACZ/CARP kernel is implemented has some influence on the convergence speed.
-# and the test should also work with more MPI processes
-        test_cmd = './phist_carp_cg graphene128x64.mm none 1 1 1e-12 230 1.0'
+# and the test should also work with more MPI processes and different variants.
+        test_cmd = './phist_carp_cg graphene128x64.mm none 1 1 1e-12 350 1.0'
         result=RunTest(test_name,test_cmd)
         assert result==0
 
