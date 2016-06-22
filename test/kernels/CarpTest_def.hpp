@@ -589,6 +589,25 @@ protected:
   }
 
 #if MATNAME==MATNAME_IDFUNC
+
+  TEST_F(CLASSNAME, ZsparseMat_times_mvec_works)
+  {
+    if (!typeImplemented_ || problemTooSmall_ || !cTypeImplemented_) return;
+    // the matrix z_A_shift0 is I - (1-i)I=I*i, so it's effect is to swap real and imagineary part and reverse the sign 
+    // of the (new) real part.
+    ASSERT_REAL_EQ(sigma_r_[0],1.0);
+    ASSERT_REAL_EQ(sigma_i_[0],-1.0);
+    phist_Zmvec_random(z_vec1_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    phist_Zmvec_add_mvec(ct::cmplx_I(),z_vec1_,ct::zero(),z_vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    phist_ZsparseMat_times_mvec(ct::one(),z_A_shift0_,z_vec1_,-ct::one(),z_vec2_,&iflag_);
+    MT nrm0[nvec_];
+    phist_Zmvec_norm2(z_vec2_,nrm0,&iflag_);
+    ASSERT_NEAR(mt::one(),ArrayEqual(nrm0,nvec_,1,nvec_,1,st::zero()),VTest::releps());
+  }
+  
+
   TEST_F(CLASSNAME, Identity_yields_zero)
   {
     if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
