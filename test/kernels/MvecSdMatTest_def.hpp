@@ -823,7 +823,7 @@ public:
       SUBR(mvec_view_block)(V1_,&V_cols,0,k_-1,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      ASSERT_NEAR(mt::one(),MvecsEqual(V_cols,V2_),3*sqrt(mt::eps()));
+      ASSERT_NEAR(mt::one(),MvecsEqual(V_cols,V2_),12*sqrt(mt::eps()));
    
       MTest::sdMat_parallel_check(M1_,&iflag_);
       ASSERT_EQ(0,iflag_);
