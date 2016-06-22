@@ -312,12 +312,12 @@ void SUBR(carp_cgState_iterate)(
   // some internal settings 
   bool correction_step = false, correction_needed=false; 
   int cor_count = 0;
-  double cor_tol = 0.99;
+  double cor_tol = 0.95;
 
   // how often to print the current impl. residual norms
 #if PHIST_OUTLEV>=PHIST_VERBOSE
   int itprint=1; 
-  int itcheck=1;
+  int itcheck=10;
 #else
   int itprint=-1; 
   int itcheck=10; // how often to check the actual expl. res norms. We
@@ -327,6 +327,7 @@ void SUBR(carp_cgState_iterate)(
                   // sure how much sense it would make to use it as an
                   // indication of convergence.
 #endif
+  int itcorr=30; // frequency of correction steps
   itcheck=std::min(itcheck,maxIter);
   int numSolved=0;
 
@@ -482,7 +483,7 @@ void SUBR(carp_cgState_iterate)(
     //ALG if (correction_step)
     if (correction_step)
     {
-      PHIST_SOUT(PHIST_INFO,"CARP_CG - correction step\n");
+      PHIST_SOUT(PHIST_INFO,"CARP_CG %d - correction step\n",it);
       cor_count++;
 
       //ALG r=b-OP*x
@@ -646,6 +647,8 @@ void SUBR(carp_cgState_iterate)(
       for (int j=0;j<nvec;j++)
       {
         beta[j]=std::abs(r2_new[j])/r2_old[j];
+        //PHIST_SOUT(PHIST_INFO,"CARP beta=%8.4e\n",beta[j]);
+        //if (beta[j]>1.5) correction_needed=true;
       }
     }//ALG end if
 
@@ -655,7 +658,7 @@ void SUBR(carp_cgState_iterate)(
     PHIST_CHK_IERR(SUBR(x_mvec_add_mvec)(st::one(),r,st::one(),p,iflag),*iflag);
 
     //ALG correction_step=correction_needed
-    correction_step=correction_needed;
+    correction_step=correction_needed || ((it+1)%itcorr==0);
 //    correction_step=false;
 //    correction_needed=false;
   }
