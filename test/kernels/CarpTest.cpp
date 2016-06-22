@@ -83,9 +83,9 @@ double MvecsEqualZD(phist_Zmvec* zvec, phist_Dmvec* dvec_r, phist_Dmvec* dvec_i,
       zval_r[VIDX(i,j,lda_r)] = std::real(zval[VIDX(i,j,lda_z)]);
       zval_i[VIDX(i,j,lda_i)] = std::imag(zval[VIDX(i,j,lda_z)]);
     }
-//    PHIST_SOUT(PHIST_DEBUG,"%d\t%16.8e%+16.8ei  <-> %16.8e%+16.8ei\n", 
-//        i,zval_r[VIDX(i,0,lda_r)],zval_i[VIDX(i,0,lda_r)],
-//        dval_r[VIDX(i,0,lda_r)],dval_i[VIDX(i,0,lda_r)]);
+    PHIST_SOUT(PHIST_DEBUG,"%d\t%16.8e%+16.8ei  <-> %16.8e%+16.8ei\n", 
+        i,zval_r[VIDX(i,0,lda_r)],zval_i[VIDX(i,0,lda_r)],
+        dval_r[VIDX(i,0,lda_r)],dval_i[VIDX(i,0,lda_r)]);
   }
   double result_r = TestWithType<double>::ArraysEqual(dval_r,zval_r,nloc_z,nvec_z,lda_r,1,KernelTest::vflag_,relTo);
   double result_i = TestWithType<double>::ArraysEqual(dval_i,zval_i,nloc_z,nvec_z,lda_r,1,KernelTest::vflag_,relTo);

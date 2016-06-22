@@ -406,7 +406,7 @@ protected:
     ASSERT_EQ(0,iflag_);
 
     ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
-    ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),100*mt::eps());
+    ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),100*VTest::releps());
   }
   
   void do_spmv_test_single(double alpha, double beta, phist_d_complex sigma, phist_ZsparseMat_ptr z_A_shift)
@@ -561,7 +561,7 @@ protected:
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(-st::one(),vec1_,st::one(),vec2_,&iflag_);
       ASSERT_NEAR(mt::one(),MvecEqual(vec2_,mt::zero()),10*VTest::releps());
-      check_symmetry(x_r_bak,x_r,10*releps(x_r_bak));
+      check_symmetry(x_r_bak,x_r,100*releps(x_r_bak));
     }
   }
 
