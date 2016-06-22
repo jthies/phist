@@ -1946,6 +1946,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   ghost_sparsemat_src_rowfunc src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
   src.func = rowFunPtr;
   src.maxrowlen = maxnne;
+  src.arg=last_arg;
       
   PHIST_CHK_GERR(mat->fromRowFunc(mat,&src),*iflag);
 //#if PHIST_OUTLEV >= PHIST_VERBOSE
