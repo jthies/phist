@@ -560,7 +560,7 @@ protected:
       create_and_apply_carp(A_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(-st::one(),vec1_,st::one(),vec2_,&iflag_);
-      ASSERT_REAL_EQ(mt::one(),MvecEqual(vec2_,mt::zero()));
+      ASSERT_NEAR(mt::one(),MvecEqual(vec2_,mt::zero()),10*VTest::releps());
       check_symmetry(x_r_bak,x_r,10*releps(x_r_bak));
     }
   }
