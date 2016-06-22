@@ -432,7 +432,7 @@ protected:
   ASSERT_EQ(0,iflag_);
 
     ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
-    ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),1.0e-11);
+    ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),5.0e-11);
   }
   
   // identity matrix (only used for checking if CARP is implemented at all right now)
