@@ -107,7 +107,7 @@ public:
       sigma_r_[0]=ct::real(sigma_[0]);     sigma_i_[0]=ct::imag(sigma_[0]);
       for (int i=1; i<_NV_; i++)
       {
-        sigma_[i]=ct::rand();                 minus_sigma_[i]=-sigma_[i];
+        sigma_[i]=ct::prand();                 minus_sigma_[i]=-sigma_[i];
         sigma_r_[i]=ct::real(sigma_[i]);      sigma_i_[i]=ct::imag(sigma_[i]);
         omega_[i]=1.84299;
       }
@@ -630,8 +630,8 @@ TEST_F(CLASSNAME, x_mvec_add_mvec)
 {
   if (!cTypeImplemented_) return;
 
-  double alpha = st::rand();
-  double beta = st::rand();
+  double alpha = st::prand();
+  double beta = st::prand();
 
   // sanity check of initial status
   ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
@@ -659,11 +659,11 @@ TEST_F(CLASSNAME, x_mvec_vadd_mvec)
   phist_d_complex z_alpha[_NV_];
   for (int i=0; i<nvec_;i++)
   {
-    z_alpha[i]=ct::rand();
+    z_alpha[i]=ct::prand();
     alpha[i] = ct::real(z_alpha[i]);
     alpha_i[i] = ct::imag(z_alpha[i]);
   }
-  double beta = st::rand();
+  double beta = st::prand();
   phist_d_complex z_beta  = (phist_d_complex)beta;
 
   // sanity check of initial status
