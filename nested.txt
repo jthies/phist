@@ -1,4 +1,5 @@
 
+whenever CP[level k] is updated, invalidate CP[k+1...]
 
 
 
@@ -103,3 +104,6 @@ class Checkpoint
     level--;
   }
 }
+
+
+
