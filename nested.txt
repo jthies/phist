@@ -1,0 +1,105 @@
+
+
+
+
+int outer=0;
+if (restarting) READ(outer, outer_data);
+for (; outer<1000; outer++)
+{
+  
+  inner_data = initialize();
+  
+  inner=0;
+  if (restarting) {READ(inner, inner_data); restarting=false;}
+  for (; inner<500; inner++)
+  {
+    inner_data->update(inner)
+    if (inner%inner_freq==0) WRITE(inner, inner_data);
+  }
+  outer_data->update(outer, inner_data);
+    if (outer%outer_freq==0) WRITE(outer, outer_data);
+}
+
+outer_freq=10
+crash at outer=25
+
+restarting
+        at 20
+        read outer=20, outer_data[20]
+        read inner=300, which was written at outer=24 or 25, so inner should not be read at all
+
+
+
+
+Scenarios:
+
+1. two or more nested loops, most time spent in innermost loop
+
+  - checkpoint frequency 1 for outer loops and <f> for innermost loop
+  
+Example: for different parameters p compute matrix A(p)
+                run Eigensolver to find some eigenpairs
+                        checkpoint after every f=200 iteratios or so
+                update outer_data using eigs(A(p))
+                WRITE(p, outer_data)
+
+
+p=5 completed, CP(5) written
+for p=6 inner CP at 100 written, crash before convergence of inner loop
+restart from p=6 and inner_it=100
+
+
+
+
+CheckPoint CP; // object gets to know if we're restarting
+CP.add(p)
+CP.add(outer_data)
+
+for (int p=0; p<20; p++)
+{
+  if (!CP.restarting)
+  {
+    // create a *new* object that will be deleted after the inner loop.
+    // When it gets deleted, the checkoints it has written are *invalidated*
+    Checkpoint CP; // how does this one know if we restarted?
+    CP.add(j,x)
+    compute A=matrix(k);
+    j=0;
+    x=x0;
+    if (CP.restarting)
+    {
+      CP.read(j,x);
+    }
+    for (; j<1000000; j++)
+    {
+      // improve x
+      if (j%f==0) CP.write(j,x);
+    }
+    update outer_data using x
+    CP.write(p,outer_data)
+  }
+  else
+  {
+    CP.read(p,outer_data);
+  }
+}
+
+
+class Checkpoint
+{
+  private:
+  
+  static int level;
+  
+  public:
+  
+  Checkpoint()
+  {
+    level++;
+  }
+  
+  ~Checkpoint()
+  {
+    level--;
+  }
+}
