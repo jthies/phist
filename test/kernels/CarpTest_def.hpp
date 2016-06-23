@@ -105,12 +105,13 @@ public:
 
       sigma_[0]=1.0-ct::cmplx_I();        minus_sigma_[0]=-sigma_[0];
       sigma_r_[0]=ct::real(sigma_[0]);     sigma_i_[0]=ct::imag(sigma_[0]);
-      for (int i=1; i<_NV_; i++)
+      for (int i=1; i<nvec_; i++)
       {
         sigma_[i]=ct::prand();                 minus_sigma_[i]=-sigma_[i];
         sigma_r_[i]=ct::real(sigma_[i]);      sigma_i_[i]=ct::imag(sigma_[i]);
-        omega_[i]=1.84299;
       }
+
+      for (int i=0; i<nvec_; i++) omega_[i]=1.84299;
 
 
 
