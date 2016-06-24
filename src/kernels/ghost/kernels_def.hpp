@@ -1292,8 +1292,12 @@ _ST_* ydoty, _ST_* xdoty, int* iflag)
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_MODE_OVERLAP);
   else if( *iflag & PHIST_SPMVM_TASK )
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_MODE_TASK);
+  bool no_reduce=false;
   if (*iflag & PHIST_NO_GLOBAL_REDUCTION )
+  {
     spMVM_opts.flags = (ghost_spmv_flags)((int)spMVM_opts.flags | (int)GHOST_SPMV_NOT_REDUCE);
+    no_reduce=true;
+  }
     
   *iflag=0;
 
@@ -1327,10 +1331,12 @@ _ST_* ydoty, _ST_* xdoty, int* iflag)
       }
       if( xdoty != NULL )
       {
+        if (no_reduce) *iflag=PHIST_NO_GLOBAL_REDUCTION;
         PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(vx,vy,xdoty,iflag),*iflag);
       }
       if( ydoty != NULL )
       {
+        if (no_reduce) *iflag=PHIST_NO_GLOBAL_REDUCTION;
         PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(vy,vy,ydoty,iflag),*iflag);
       }
     }
