@@ -113,12 +113,13 @@ contains
   end function coordOfId
 
 
-  function MATPDE_rowFunc(row, nnz, cols, vals) result(the_result) bind(C, name='MATPDE_rowFunc')
+  function MATPDE_rowFunc(row, nnz, cols, vals, dummy) result(the_result) bind(C, name='MATPDE_rowFunc')
     use, intrinsic :: iso_c_binding
     integer(G_GIDX_T), value :: row
     integer(G_LIDX_T), intent(inout) :: nnz
     integer(G_GIDX_T), intent(inout) :: cols(*)
     real(C_DOUBLE),    intent(inout) :: vals(*)
+    TYPE(c_ptr), value               :: dummy
     integer(C_INT) :: the_result
 
 ! copied from MatrixMarket, original description:
