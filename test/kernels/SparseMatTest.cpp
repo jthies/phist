@@ -5,11 +5,12 @@
 
 #include "gtest/phist_gtest.h"
 
-
 #include "kernels/phist_kernels.h"
 #include "KernelTestWithSparseMat.h"
 #include "KernelTestWithVectors.h"
 #include "KernelTestWithSdMats.h"
+
+#include "matfuncs/matfuncs.h"
 
 using namespace ::testing;
 
@@ -244,3 +245,25 @@ using namespace ::testing;
 #ifdef DISABLE_TESTCASE
 #undef DISABLE_TESTCASE
 #endif
+
+#undef MATNAME
+#undef _BASENAME_
+
+#define MATNAME MATNAME_BENCH3D_8_A1
+#define _BASENAME_ SparseMatTest_BENCH3D_8_A1
+
+#define _N_ 512
+#define _M_ 1
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 512
+#define _M_ 4
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 512
+#define _M_ 7
+#include "../phist_typed_test_gen.h"
+
+#define _N_ 512
+#define _M_ 12
+#include "../phist_typed_test_gen.h"

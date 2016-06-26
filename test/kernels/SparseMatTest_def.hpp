@@ -3,6 +3,15 @@
 #error "file not included correctly."
 #endif
 
+#if MATNAME==MATNAME_BENCH3D_8_A1
+# if defined(IS_COMPLEX)||!defined(IS_DOUBLE)
+#   define DONT_INSTANTIATE
+# endif
+#endif
+
+
+#ifndef DONT_INSTANTIATE
+
 /*! Test fixure. */
 class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
                  public virtual KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,3>,
@@ -280,125 +289,6 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
 
   }
 
-  void test_carp_kernel(TYPE(const_sparseMat_ptr) A)
-  {
-    if( !typeImplemented_ || problemTooSmall_ )
-      return;
-    // ColPack has trouble with the tiny
-    // local matrices that occur when partitioning a
-    // 25x25 matrix (TODO: larger SparseMat tests)
-    if (mpi_size_>1) return;
-
-    // setup the CARP kernel and get the required data structures:
-    void* aux=NULL;
-    ST sigma[_NV_];
-    MT sigma_r[_NV_];
-    MT sigma_i[_NV_];
-    MT omega[_NV_];
-    for (int i=0;i<nvec_;i++)
-    {
-      sigma_r[i]=mt::zero();
-      sigma_i[i]=mt::zero();
-      sigma[i]=sigma_r[i]+sigma_i[i]*st::cmplx_I();
-      omega[i]=mt::one();
-    }
-    SUBR(carp_setup)(A,nvec_,sigma,
-        &aux, &iflag_);
-    if (iflag_==-99) return; // CARP not implemented
-    ASSERT_EQ(0,iflag_);
-    
-    // perform single CARP forward/backward sweep with B=0 and X=v2.
-    
-    // set up mvecs
-    TYPE(mvec_ptr) B=vec1_;
-    TYPE(mvec_ptr) Xr=vec2_;
-    TYPE(mvec_ptr) Xi=vec3_;
-    SUBR(mvec_put_value)(B, st::zero(),&iflag_);
-    ASSERT_EQ(0, iflag_);
-    SUBR(mvec_random)(Xr, &iflag_);
-    ASSERT_EQ(0, iflag_);
-    SUBR(mvec_random)(Xi, &iflag_);
-    ASSERT_EQ(0, iflag_);
-    
-    MT norms_X0[_NV_];
-    MT norms_X1[_NV_];
-    MT norms_X2[_NV_];
-
-    // backup X
-    TYPE(mvec_ptr) Xr_bak=NULL;
-    TYPE(mvec_ptr) Xi_bak=NULL;
-    PHISTTEST_MVEC_CREATE(&Xr_bak,map_,_NV_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    PHISTTEST_MVEC_CREATE(&Xi_bak,map_,_NV_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_add_mvec)(st::one(), Xr, st::zero(), Xr_bak, &iflag_);
-    ASSERT_EQ(0, iflag_);
-    SUBR(mvec_add_mvec)(st::one(), Xi, st::zero(), Xi_bak, &iflag_);
-    ASSERT_EQ(0, iflag_);
-    
-    SUBR(carp_sweep)(A, sigma,B,Xr,
-          aux,omega,&iflag_);
-    ASSERT_EQ(0, iflag_);
-    
-    // compute norms before and after the sweep
-    SUBR(mvec_norm2)(Xr_bak,norms_X0,&iflag_);
-    ASSERT_EQ(0, iflag_);
-    SUBR(mvec_norm2)(Xr,norms_X1,&iflag_);
-    ASSERT_EQ(0, iflag_);
-
-    PHIST_SOUT(PHIST_VERBOSE,"||X||_2 before and after CARP sweep:\n");
-    for (int i=0; i<nvec_; i++) PHIST_SOUT(PHIST_VERBOSE,
-        "%12.8e\t%12.8e\n", norms_X0[i], norms_X1[i]);
-
-    // TEST 1: row projection must be non-increasing on the vectors norm.
-    for (int i=0; i<_NV_; i++)
-    {
-      ASSERT_TRUE(norms_X0[i]>=norms_X1[i]);
-    }
-    
-
-    // Check that it works if B=NULL is passed in
-    SUBR(mvec_add_mvec)(st::one(),Xr_bak,st::zero(),Xr,&iflag_);
-    ASSERT_EQ(0, iflag_);
-    SUBR(carp_sweep)(A, sigma,NULL,Xr,
-          aux,omega,&iflag_);
-    ASSERT_EQ(0, iflag_);
-
-    SUBR(mvec_norm2)(Xr,norms_X2,&iflag_);
-    ASSERT_EQ(0, iflag_);
-
-    PHIST_SOUT(PHIST_VERBOSE,"||X||_2 after CARP with B=0 and B=NULL:\n");
-    for (int i=0; i<nvec_; i++) PHIST_SOUT(PHIST_VERBOSE,
-        "%12.8e\t%12.8e\n", norms_X1[i], norms_X2[i]);
-    
-    ASSERT_REAL_EQ(mt::one(),MT_Test::ArraysEqual(norms_X1,norms_X2,nvec_,1,nvec_,1,vflag_));
-      
-    // test that the forward/backward CARP operator is symmetric
-    SUBR(mvecT_times_mvec)(st::one(),Xr,Xr_bak,st::zero(),mat1_,&iflag_);
-    ASSERT_EQ(0, iflag_);
-    SUBR(sdMat_from_device)(mat1_,&iflag_);
-    ASSERT_EQ(0, iflag_);      
-    MT nonsymm=mt::zero();
-    for (int i=1; i<nvec_; i++)
-    {
-      for (int j=1; j<nvec_; j++)
-      {
-        nonsymm = std::max(nonsymm,
-                st::abs(mat1_vp_[i*lda_+j]-mat1_vp_[j*lda_+i]));
-      }
-    }
-    ASSERT_NEAR(mt::one(),mt::one()+nonsymm,100*mt::eps());
-
-    SUBR(carp_destroy)(A,aux,&iflag_);
-    ASSERT_EQ(0, iflag_);
-
-    SUBR(mvec_delete)(Xr_bak,&iflag_);
-    ASSERT_EQ(0,iflag_);
-
-    SUBR(mvec_delete)(Xi_bak,&iflag_);
-    ASSERT_EQ(0,iflag_);
-
-  }
 
 protected:
 
@@ -1252,139 +1142,30 @@ int PHIST_TG_PREFIX(some_rowFunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* c
   }
   return 0;
 }
-}
-#endif
 
-#ifndef SPARSEMATTEST_PRINT_THIS_WARNING_ONLY_ONCE
-#define SPARSEMATTEST_PRINT_THIS_WARNING_ONLY_ONCE
-#warning "Reenable this test, creating new mvecs or put it in a different file/class"
-#endif
-/*
-#if MATNAME == MATNAME_speye
-TEST_F(CLASSNAME,create_A_fromRowFunc)
-{
-  if( !typeImplemented_ || problemTooSmall_ )
-    return;
-
-  TYPE(sparseMat_ptr) A=NULL;
-  ghost_lidx nnzr = 5;
-  iflag_=0; // do not ask for reordering etc.
-  SUBR(sparseMat_create_fromRowFunc)(&A,comm_, _N_,_N_,nnzr,
-                &PHIST_TG_PREFIX(some_rowFunc),NULL,&iflag_);
-  ASSERT_EQ(0,iflag_);
-  rebuildVectors(A);
-  
-  SUBR(mvec_random)(vec1_,&iflag_);
-  ASSERT_EQ(0,iflag_);
-  
-  SUBR(sparseMat_times_mvec)(st::one(), A, vec1_,st::zero(),vec2_,&iflag_);
-  ASSERT_EQ(0,iflag_);
-  
-  SUBR(mvec_from_device)(vec2_,&iflag_);
-  ASSERT_EQ(0,iflag_);
-
-#if _N_<=100
-  // test if the resulting matrix is correct by applying it ot the identity matrix
-  // and checking all its entries
-  phist_const_map_ptr rowMap=NULL;
-  phist_gidx ilower, iupper;
-  phist_lidx nloc;
-  SUBR(sparseMat_get_row_map)(A,&rowMap,&iflag_);
-  ASSERT_EQ(0,iflag_);
-  // these functions should return iflag!=0 if the map is not 'linear', i.e. has 
-  // contiguous monotonously increasing indices across partitions
-  phist_map_get_ilower(rowMap,&ilower,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      phist_map_get_iupper(rowMap,&iupper,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      phist_map_get_local_length(rowMap,&nloc,&iflag_);
-      ASSERT_EQ(0,iflag_);
-  
-  TYPE(mvec_ptr) Adense=NULL, I=NULL;
-    PHISTTEST_MVEC_CREATE(&Adense,rowMap,_N_,&iflag_);
-  ASSERT_EQ(0,iflag_);
-    PHISTTEST_MVEC_CREATE(&I,rowMap,_N_,&iflag_);
-  ASSERT_EQ(0,iflag_);
-  
-  _ST_ *Ival=NULL,*Aval=NULL;
-  phist_lidx ldI,ldA;
-  SUBR(mvec_extract_view)(I,&Ival,&ldI,&iflag_);
-  ASSERT_EQ(0,iflag_);
-  SUBR(mvec_extract_view)(Adense,&Aval,&ldA,&iflag_);
-  ASSERT_EQ(0,iflag_);
-  int len;
-  _ST_ val[nnzr];
-  phist_gidx col[nnzr];
-  for (phist_lidx i=0; i<nloc; i++)
+  int PHIST_TG_PREFIX(mvec123func)(ghost_gidx i, ghost_lidx j, void* val, void* last_arg)
   {
-    phist_gidx row = ilower+i;
-    for (phist_gidx j=0; j<_N_; j++)
-    {
-      Ival[VIDX(i,j,ldI)]=st::zero();
-      Aval[VIDX(i,j,ldI)]=st::zero();
-    }
-    Ival[VIDX(i,row,ldI)]=st::one();
-  
-    // put A into the dense mvec structure
-    int len;
-    iflag_=PHIST_TG_PREFIX(some_rowFunc)(row,&len,col,(void*)val,NULL);
-    for (int j=0; j<len;j++)
-    {
-      Aval[VIDX(i,col[j],ldA)]=val[j];
-    }
+    _ST_* v= (_ST_*)val;
+    int *int_arg=(int*)last_arg;
+    int N  = int_arg[0];
+    int NV = int_arg[1];
+    *v = (_ST_)(i+1 + N*j);
+    return 0;
   }
-  // subtract A*I as computed by the kernel lib => should be 0!
-  SUBR(mvec_to_device)(Adense,&iflag_);
-  ASSERT_EQ(0,iflag_);
-  SUBR(mvec_to_device)(I,&iflag_);
-  ASSERT_EQ(0,iflag_);
-  SUBR(sparseMat_times_mvec)(-st::one(),A,I,st::one(),Adense,&iflag_);
-  ASSERT_EQ(0,iflag_);
-        
-  ASSERT_REAL_EQ(mt::one(),MvecEqual(Adense,st::zero()));
 
-  SUBR(mvec_delete)(Adense,&iflag_);
-    ASSERT_EQ(0,iflag_);
-  SUBR(mvec_delete)(I,&iflag_);
-    ASSERT_EQ(0,iflag_);
+  int PHIST_TG_PREFIX(mvec321func)(ghost_gidx i, ghost_lidx j, void* val, void* last_arg)
+  {
+    _ST_* v= (_ST_*)val;
+    int *int_arg=(int*)last_arg;
+    int N  = int_arg[0];
+    int NV = int_arg[1];
+    *v = (_ST_)((N-i) + N*(NV-(j+1)));
+    return 0;
+  }
 
-#endif
 
-  SUBR(sparseMat_delete)(A,&iflag_);
-    ASSERT_EQ(0,iflag_);
-}
-*/
-
-#ifndef SPARSEMATTEST_PRINT_THIS_WARNING_ONLY_ONCE
-#define SPARSEMATTEST_PRINT_THIS_WARNING_ONLY_ONCE
-#warning "Reenable this test, creating new mvecs or put it in a different file/class"
-#endif
-/*
-TEST_F(CLASSNAME,create_I_fromRowFunc)
-{
-  if( !typeImplemented_ || problemTooSmall_ )
-    return;
-
-  TYPE(sparseMat_ptr) A=NULL;
-  ghost_gidx nnzr = 1;
-  iflag_=0; // do not ask for reordering etc.
-  SUBR(sparseMat_create_fromRowFunc)(&A,comm_, _N_,_N_,nnzr,
-                &PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
-  ASSERT_EQ(0,iflag_);
-  rebuildVectors(A);
-  
-  SUBR(mvec_random)(vec1_,&iflag_);
-  ASSERT_EQ(0,iflag_);
-  
-  SUBR(sparseMat_times_mvec)(st::one(), A, vec1_,st::zero(),vec2_,&iflag_);
-  ASSERT_EQ(0,iflag_);
-  
-  ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
-  SUBR(sparseMat_delete)(A,&iflag_);
-  
 }
 #endif
-*/
 
 
 #if MATNAME == MATNAME_sprandn
@@ -1433,4 +1214,78 @@ TEST_F(CLASSNAME,mvecT_times_mvec_after_spmvm)
     }
   }
 }
+#endif
+
+
+#if MATNAME==MATNAME_BENCH3D_8_A1
+
+TEST_F(CLASSNAME,compare_with_rowFunc)
+{
+
+  if (MatNameEnumIsMatFunc(MATNAME)==false) return;
+  if (!typeImplemented_ || problemTooSmall_) return;
+  
+  // arguments passed to the mvec* functions for filling the vectors
+  int v_arg[2];
+  v_arg[0]=_N_;
+  v_arg[1]=_M_;
+
+  // initialize vec1 and vec2 with row funcs
+  SUBR(mvec_put_func)(vec1_,&PHIST_TG_PREFIX(mvec123func),v_arg,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  SUBR(mvec_put_func)(vec2_,&PHIST_TG_PREFIX(mvec321func),v_arg,&iflag_);
+  ASSERT_EQ(0,iflag_);
+
+  _ST_ alpha = st::prand();
+  _ST_ beta  = st::prand();
+  SUBR(sparseMat_times_mvec)(alpha,A_,vec1_,beta,vec2_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  
+  SUBR(mvec_from_device)(vec2_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  
+  // now construct the actual result in vec1 using only the defining functions
+  phist_gidx ilower;
+  phist_map_get_ilower(map_,&ilower,&iflag_);
+  ASSERT_EQ(0,iflag_);  
+  bool row_func_error_encountered=false;
+  for (int i=0; i<nloc_; i++)
+  {
+    phist_gidx row=ilower+i;
+    for (int j=0; j<nvec_;j++)
+    {
+      _ST_ v2val;
+      PHIST_TG_PREFIX(mvec321func)(row,j,&v2val,v_arg);
+      vec1_vp_[VIDX(i,j,lda_)]=beta*v2val;
+    }
+    ghost_lidx len;
+    ghost_gidx cols[_N_];
+    ST val[_N_];
+    iflag_=MATPDE3D_rowFunc(row,&len,cols,val,NULL);
+    if (iflag_) {row_func_error_encountered=true; break;}
+    for (int j=0; j<len; j++)
+    {
+      for (int k=0; k<nvec_; k++)
+      {
+        _ST_ v1val;
+        iflag_=PHIST_TG_PREFIX(mvec123func)(cols[j],k,&v1val,v_arg);
+        if (iflag_) {row_func_error_encountered=true; break;}
+        vec1_vp_[VIDX(i,k,lda_)]+=alpha*val[j]*v1val;
+      }
+      if (row_func_error_encountered) break;
+    }
+    if (row_func_error_encountered) break;
+    ASSERT_FALSE(row_func_error_encountered); // something wrong with row functions?
+    SUBR(mvec_to_device)(vec1_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+  }
+  ASSERT_NEAR(1.0,MvecsEqual(vec1_,vec2_),sqrt(mt::eps()));
+}
+#endif
+
+
+#endif // DONT_INSTANTIATE
+
+#ifdef DONT_INSTANTIATE
+#undef DONT_INSTANTIATE
 #endif
