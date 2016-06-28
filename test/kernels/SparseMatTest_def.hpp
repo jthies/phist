@@ -4,9 +4,9 @@
 #endif
 
 #if MATNAME==MATNAME_BENCH3D_8_A1
-//# if defined(IS_COMPLEX)||!defined(IS_DOUBLE)
+# if defined(IS_COMPLEX)||!defined(IS_DOUBLE)
 #   define DONT_INSTANTIATE
-//# endif
+# endif
 #endif
 
 
@@ -1221,7 +1221,6 @@ TEST_F(CLASSNAME,mvecT_times_mvec_after_spmvm)
 
 TEST_F(CLASSNAME,compare_with_rowFunc)
 {
-
   if (MatNameEnumIsMatFunc(MATNAME)==false) return;
   if (!typeImplemented_ || problemTooSmall_) return;
   
@@ -1275,10 +1274,11 @@ TEST_F(CLASSNAME,compare_with_rowFunc)
       if (row_func_error_encountered) break;
     }
     if (row_func_error_encountered) break;
-    ASSERT_FALSE(row_func_error_encountered); // something wrong with row functions?
-    SUBR(mvec_to_device)(vec1_,&iflag_);
-    ASSERT_EQ(0,iflag_);
   }
+
+  SUBR(mvec_to_device)(vec1_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  ASSERT_FALSE(row_func_error_encountered); // something wrong with row functions?
   ASSERT_NEAR(1.0,MvecsEqual(vec1_,vec2_),sqrt(mt::eps()));
 }
 #endif
