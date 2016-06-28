@@ -4,9 +4,9 @@
 #endif
 
 #if MATNAME==MATNAME_BENCH3D_8_A1
-# if defined(IS_COMPLEX)||!defined(IS_DOUBLE)
+//# if defined(IS_COMPLEX)||!defined(IS_DOUBLE)
 #   define DONT_INSTANTIATE
-# endif
+//# endif
 #endif
 
 
