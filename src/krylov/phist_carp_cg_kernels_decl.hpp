@@ -40,13 +40,15 @@ class TYPE(x_mvec)
     TYPE(sdMat_ptr)     vpi_;
     int nvec_;  //! just for convenience
 
-  //! constructor - does not allocate memory
+  //! constructor - does not allocate memory, so before the object can
+  //! be used you have to call allocate(...)
   TYPE(x_mvec)();
 
-  //! constructor that views existing mvecs and optionally takes ownership
+  //! constructor that allocates memory and copies existing mvec data
   TYPE(x_mvec)(TYPE(mvec_ptr) v, TYPE(mvec_ptr) vi, int naug, int* iflag);
 
   //! imaginary part is allocated only if rc=true, augmented part only if naug>0.
+  //! the iflag given is passed to mvec_create
   void allocate(phist_const_map_ptr map, int nvec, int naug, bool rc, int* iflag);
 
   //! destructor

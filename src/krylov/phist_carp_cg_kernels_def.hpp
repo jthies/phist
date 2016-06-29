@@ -20,6 +20,7 @@
   // constructor that allocates memory and copies given vector(s)
   TYPE(x_mvec)::TYPE(x_mvec)(TYPE(mvec_ptr) v, TYPE(mvec_ptr) vi, int naug, int* iflag)
   {
+    int iflag_in=*iflag;
 
     vdat_=NULL;
     v_=NULL;
@@ -33,6 +34,7 @@
     PHIST_CHK_IERR(SUBR(mvec_get_map)(v,&map,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(v,&nvec_,iflag),*iflag);
 
+    *iflag=iflag_in;
     PHIST_CHK_IERR(allocate(map,nvec_,naug,rc,iflag),*iflag);
 
     PHIST_CHK_IERR(SUBR(mvec_set_block)(v_,v,0,nvec_-1,iflag),*iflag);
@@ -56,6 +58,7 @@
   // imaginary part is allocated only if rc=true, augmented part only if naug>0.
   void TYPE(x_mvec)::allocate(phist_const_map_ptr map, int nvec, int naug, bool rc, int* iflag)
   {
+    int iflag_in=*iflag;
     *iflag=0;
     if (vdat_!=NULL||v_!=NULL||vi_!=NULL) 
     {
@@ -69,6 +72,7 @@
     // let v and vi view the first and last columns of vdat, this way the communication
     // in the CARP kernel can be done in one step
     int actual_nvec=rc?2*nvec:nvec;
+    *iflag=iflag_in;
     PHIST_CHK_IERR(SUBR(mvec_create)(&vdat_,map,actual_nvec,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_view_block)(vdat_,&v_,0,nvec_-1,iflag),*iflag);
     if (rc)
@@ -78,9 +82,11 @@
 #else
     // the builtin implementation doesn't support this data layout yet, so allocate separate vectors
     vdat_=NULL;
+    *iflag=iflag_in;
     PHIST_CHK_IERR(SUBR(mvec_create)(&v_,map,nvec_,iflag),*iflag);
     if (rc)
     {
+      *iflag=iflag_in;
       PHIST_CHK_IERR(SUBR(mvec_create)(&vi_,map,nvec_,iflag),*iflag);
     }
 #endif
