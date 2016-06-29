@@ -440,7 +440,7 @@ protected:
     PHIST_SOUT(PHIST_DEBUG,"afterwards X:\n:");
     ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
     PHIST_SOUT(PHIST_DEBUG,"afterwards Y:\n:");
-    ASSERT_NEAR(1.0,MvecsEqualZD(z_ve2_, x_vec2_->v_, x_vec2_->vi_),1000*VTest::releps());
+    ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),1000*VTest::releps());
   }
   
   void do_spmv_test_single(double alpha, double beta, phist_d_complex sigma, phist_ZsparseMat_ptr z_A_shift)
