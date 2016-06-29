@@ -159,11 +159,13 @@ public:
           &work, &iflag_);
       if (iflag_==PHIST_NOT_IMPLEMENTED) 
       {
+        iflag_=0;
         carpImplemented_=false;
       }
       else 
       {
         carpImplemented_=true;
+        iflag_=0;
         SUBR(carp_destroy)(I_, work, &iflag_);
         ASSERT_EQ(0,iflag_);
       }
