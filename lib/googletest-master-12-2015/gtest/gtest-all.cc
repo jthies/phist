@@ -1614,25 +1614,7 @@ namespace testing
     int rank, size;
     MPI_Comm_size(internal::GTEST_MPI_COMM_WORLD,&size);
     MPI_Comm_rank(internal::GTEST_MPI_COMM_WORLD,&rank);
-    
-    // do nothing if there is only one MPI process
     if (size==1) return;
-    
-    // do nothing if all agree on the test output, this is to avoid lengthy error
-    // messages where everyone says the same anyway
-    int localSuccess = type_==kSuccess? 1:0;
-    int globalAndV, globalOrV;
-    bool mpiErr = false;
-    mpiErr = mpiErr || (MPI_Allreduce(&localSuccess, &globalAndV, 1, MPI_INT, MPI_LAND, internal::GTEST_MPI_COMM_WORLD) != MPI_SUCCESS);
-  mpiErr = mpiErr || (MPI_Allreduce(&localSuccess, &globalOrV, 1, MPI_INT, MPI_LOR, internal::GTEST_MPI_COMM_WORLD) != MPI_SUCCESS);
-  if( mpiErr )
-  {
-      GTEST_LOG_(ERROR)
-        << "Error in MPI_Allreduce (should return MPI_SUCCESS)!";
-      return;
-  }    
-
-  if (globalAndV == globalOrV) return;
 
     // prepend MPI rank
     std::stringstream ss;
@@ -1643,7 +1625,7 @@ namespace testing
 
     int len=ss.str().length();
     int counts[size];
-    mpiErr=(MPI_Gather(&len,1,MPI_INT,counts,1,MPI_INT,0,internal::GTEST_MPI_COMM_WORLD)!=MPI_SUCCESS);
+    bool mpiErr=(MPI_Gather(&len,1,MPI_INT,counts,1,MPI_INT,0,internal::GTEST_MPI_COMM_WORLD)!=MPI_SUCCESS);
     if (mpiErr)
     {
       GTEST_LOG_(ERROR)
