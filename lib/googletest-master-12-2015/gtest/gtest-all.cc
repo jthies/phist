@@ -1607,6 +1607,56 @@ class GTEST_API_ StreamingListener : public EmptyTestEventListener {
 #endif  // GTEST_SRC_GTEST_INTERNAL_INL_H_
 #undef GTEST_IMPLEMENTATION_
 
+namespace testing 
+{
+  void TestPartResult::gather_messages()
+  {
+    int rank, size;
+    MPI_Comm_size(internal::GTEST_MPI_COMM_WORLD,&size);
+    MPI_Comm_rank(internal::GTEST_MPI_COMM_WORLD,&rank);
+    if (size==1) return;
+
+    // prepend MPI rank
+    std::stringstream ss;
+    if (message_.length()>0)
+    {
+      ss << "MPI P"<<rank<<": "<<message_<<std::endl;
+    }
+
+    int len=ss.str().length();
+    int counts[size];
+    bool mpiErr=(MPI_Gather(&len,1,MPI_INT,counts,1,MPI_INT,0,internal::GTEST_MPI_COMM_WORLD)!=MPI_SUCCESS);
+    if (mpiErr)
+    {
+      GTEST_LOG_(ERROR)
+        << "Error in MPI_Gather (should return MPI_SUCCESS)! Messages from MPI ranks!=0 may get lost.";
+      return;
+    }
+    int disps[size+1];
+    disps[0]=0;
+    for (int i=0; i<size; i++) disps[i+1]=disps[i]+counts[i];
+    int total_len=disps[size];
+    char* message_buf=NULL;
+    if (rank==0) 
+    {
+      message_buf=new char[total_len];
+    }
+    mpiErr=(MPI_Gatherv(ss.str().c_str(),len,MPI_CHAR,message_buf,counts,disps,MPI_CHAR,0,internal::GTEST_MPI_COMM_WORLD)!=MPI_SUCCESS);
+    if (mpiErr)
+    {
+      GTEST_LOG_(ERROR)
+        << "Error in MPI_Gatherv (should return MPI_SUCCESS)! Messages from MPI ranks!=0 may get lost.";
+      if (rank==0) delete [] message_buf;
+      return;    
+    }
+    if (rank==0) 
+    {
+      message_=message_buf;
+      delete [] message_buf;
+    }
+  }
+}
+
 #if GTEST_OS_WINDOWS
 # define vsnprintf _vsnprintf
 #endif  // GTEST_OS_WINDOWS

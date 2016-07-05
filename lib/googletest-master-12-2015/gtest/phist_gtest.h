@@ -18307,12 +18307,13 @@ class GTEST_API_ TestPartResult {
   TestPartResult(Type a_type,
                  const char* a_file_name,
                  int a_line_number,
-                 const char* a_message)
+                 const char* a_message, bool global=true)
       : type_(a_type),
         file_name_(a_file_name == NULL ? "" : a_file_name),
         line_number_(a_line_number),
         summary_(ExtractSummary(a_message)),
         message_(a_message) {
+     if (global) gather_messages();
   }
 
   // Gets the outcome of the test part.
@@ -18333,6 +18334,11 @@ class GTEST_API_ TestPartResult {
 
   // Gets the message associated with the test part.
   const char* message() const { return message_.c_str(); }
+  
+#ifdef GTEST_HAS_MPI
+  // collective call to get all messages on MPI rank 0 for reporting the result
+  void gather_messages();
+#endif
 
   // Returns true iff the test part passed.
   bool passed() const { return type_ == kSuccess; }
