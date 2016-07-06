@@ -395,9 +395,7 @@ protected:
   void do_spmv_test(double alpha, double beta)
   {
     // sanity check of initial status
-    PHIST_SOUT(PHIST_DEBUG,"X_in=\n");
     ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
-    PHIST_SOUT(PHIST_DEBUG,"Y_in=\n");
     ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_));
     
     phist_d_complex z_alpha = (phist_d_complex)alpha;
@@ -414,35 +412,8 @@ protected:
     SUBR(x_sparseMat_times_mvec)(alpha, x_A_, x_vec1_, beta, x_vec2_, &iflag_);
     ASSERT_EQ(0,iflag_);
     
-#if 0
-    // try to construct the resulting vectors by separate calls
-    SUBR(mvec_put_value)(vec1_,0.0,&iflag_);
-    SUBR(mvec_put_value)(vec1b_,0.0,&iflag_);
-    SUBR(mvec_add_mvec)(1.0,x_vec1_->v_,0.0,vec1_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_add_mvec)(1.0,x_vec1_->vi_,0.0,vec1b_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_add_mvec)(1.0,x_vec2_->v_,0.0,vec2_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_add_mvec)(1.0,x_vec2_->vi_,0.0,vec2b_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-
-    // TODO: add shifts
-    SUBR(sparseMat_times_mvec)(alpha,A_,vec1_,beta,vec2_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(sparseMat_times_mvec)(alpha,A_,vec1b_,beta,vec2b_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-
-    PHIST_SOUT(PHIST_INFO,"MANUAL X:\n:");
-    ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, vec1_, vec1b_));
-    PHIST_SOUT(PHIST_INFO,"MANUAL Y:\n:");
-    ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, vec2_, vec2b_),1000*VTest::releps());
-#endif
-
-    PHIST_SOUT(PHIST_DEBUG,"afterwards X:\n:");
     ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
-    PHIST_SOUT(PHIST_DEBUG,"afterwards Y:\n:");
-    ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),1000*VTest::releps());
+    ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),10000*VTest::releps());
   }
   
   void do_spmv_test_single(double alpha, double beta, phist_d_complex sigma, phist_ZsparseMat_ptr z_A_shift)
@@ -869,6 +840,7 @@ TEST_F(CLASSNAME, x_sparseMat_times_mvec_compare_with_rnd_shifted_matrix_alpha_b
   double alpha = 1.23456;
   double beta = 9.876543;
   do_spmv_test_single(alpha, beta, sigma_[1], z_A_shift1_);  
+
 }
 
 #endif
