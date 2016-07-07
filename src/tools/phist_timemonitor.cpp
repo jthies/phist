@@ -5,7 +5,8 @@
 #endif
 
 #ifdef PHIST_KERNEL_LIB_GHOST
-#include "ghost/config.h"
+//#include "ghost/config.h"
+#include "ghost.h"
 # ifdef GHOST_HAVE_CUDA
 # include "ghost/cu_util.h"
 # endif
@@ -35,7 +36,12 @@ namespace phist_TimeMonitor
         {
 #ifdef PHIST_KERNEL_LIB_GHOST
 # ifdef GHOST_HAVE_CUDA
-          ghost_cu_barrier();
+  ghost_type gtype;
+  ghost_type_get(&gtype);
+  if (gtype==GHOST_TYPE_CUDA)
+  {
+    ghost_cu_barrier();
+  }
 # endif
 #endif
           wtime_ = get_wtime() - wtime_;
