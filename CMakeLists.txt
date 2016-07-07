@@ -922,11 +922,15 @@ option(PHIST_PERFCHECK "Check performance of operations (which have a performanc
 if( PHIST_PERFCHECK )
   message(STATUS "activated PerfCheck timing monitoring")
   if( PHIST_PERFCHECK AND PHIST_TIMEMONITOR )
-    message(FATAL_ERROR "You cannot use PHIST_PERFCHECK and PHIST_TIMEMONITOR at once currently!")
+    message(WARNING "You cannot use PHIST_PERFCHECK and PHIST_TIMEMONITOR at once, disabling timing!")
+    set(PHIST_TIMEMONITOR Off)
   endif()
   option(PHIST_PERFCHECK_SEPARATE_OUTPUT "write perfcheck output to separate files for each MPI rank (useful for analysing heterogenous runs)" OFF)
   option(PHIST_PERFCHECK_REALISTIC "Switch from ideal performance predictions to more realistic ones (e.g. for views)!" OFF)
 endif()
+
+set(PHIST_CPU_PEAK_FLOPS 442e9 CACHE STRING "Peak GFlop/s rate of the CPU component (for PERFCHECK only)")
+set(PHIST_GPU_PEAK_FLOPS 1.43e12 CACHE STRING "Peak GFlop/s rate of the GPU component (for PERFCHECK only)")
 
 set(INCLUDE_FLAGS "")
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
