@@ -25,21 +25,9 @@ class Checkpoint
 
 // implementation of add() for anything that is Checkpointable,
 // anything else will give an error message
-template <typename T>
-void add(std::string label, T const* p)
+void add(std::string label, Checkpointable const* p)
 {
-  Checkpointable const* cp_p = dynamic_cast<Checkpointable const*>(p);
-  if (cp_p==NULL) 
-  {
-                  std::cerr << "can't add object with label '"<<label<<"'\n"
-                            << "because it is not derived from Checkpointable\n"
-                            << "and has no specialized implementation.\n";
-    return;
-  }
-  else
-  {
-    objects[label] = cp_p;
-  }
+    objects[label] = p;
 }
 
 // specialized implementation of add for POD (plain old data), which is obviously
