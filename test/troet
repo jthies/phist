@@ -1,0 +1,15 @@
+In file included from main.cpp:1:0:
+Checkpoint.hpp: In member function ‘void Checkpoint::add(std::__cxx11::string, T*) [with T = int; std::__cxx11::string = std::__cxx11::basic_string<char>]’:
+Checkpoint.hpp:55:72: error: expected type-specifier before ‘CpPOD’
+   void Checkpoint::add(std::string label, int* i){this->add(label, new CpPOD(i));}
+                                                                        ^
+Checkpoint.hpp: At global scope:
+Checkpoint.hpp:58:40: error: ‘add’ is not a template function
+   void add(std::string label, double* d){this->add(label, new CpPOD(d));}
+                                        ^
+Checkpoint.hpp: In instantiation of ‘void Checkpoint::add(std::__cxx11::string, T*) [with T = double; std::__cxx11::string = std::__cxx11::basic_string<char>]’:
+main.cpp:11:28:   required from here
+Checkpoint.hpp:33:57: error: cannot dynamic_cast ‘p’ (of type ‘double*’) to type ‘class Checkpointable*’ (source is not a pointer to class)
+   Checkpointable* cp_p = dynamic_cast<Checkpointable*>(p);
+                                                         ^
+make: *** [main.o] Error 1
