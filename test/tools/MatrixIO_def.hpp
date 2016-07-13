@@ -1,5 +1,7 @@
 void SUBR(read_mat)(const char* filebase,phist_const_comm_ptr comm, int nglob,TYPE(sparseMat_ptr) *ptr, int* iflag)
 {
+  int iflag_in=*iflag;
+  iflag_in |= PHIST_OUTLEV>=PHIST_DEBUG ? 0 : PHIST_SPARSEMAT_QUIET;
   *ptr = NULL;
   char tpc = ::phist::ScalarTraits< _ST_ >::type_char();
   char mmfile[256],hbfile[256],binfile[256],crsfile[256];
@@ -19,7 +21,7 @@ void SUBR(read_mat)(const char* filebase,phist_const_comm_ptr comm, int nglob,TY
   PHIST_SOUT(PHIST_DEBUG, "Looking for matrix \'%s\'..\n", filebase);
 
   PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", binfile);
-  *iflag = PHIST_OUTLEV>=PHIST_DEBUG ? 0 : PHIST_SPARSEMAT_QUIET;
+  *iflag = iflag_in;
   SUBR(sparseMat_read_bin)(ptr,comm,binfile,iflag);
   if (*iflag==PHIST_SUCCESS) return;
 
@@ -30,11 +32,11 @@ void SUBR(read_mat)(const char* filebase,phist_const_comm_ptr comm, int nglob,TY
   if (*iflag==PHIST_SUCCESS) return;
   
   PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", mmfile);
-  *iflag = PHIST_OUTLEV>=PHIST_DEBUG ? 0 : PHIST_SPARSEMAT_QUIET;
+  *iflag = iflag_in;
   SUBR(sparseMat_read_mm)(ptr,comm,mmfile,iflag);
   if (*iflag==PHIST_SUCCESS) return;
 
   PHIST_SOUT(PHIST_DEBUG, "... try \'%s\'\n", hbfile);
-  *iflag = PHIST_OUTLEV>=PHIST_DEBUG ? 0 : PHIST_SPARSEMAT_QUIET;
+  *iflag = iflag_in;
   SUBR(sparseMat_read_hb)(ptr,comm,hbfile,iflag);
 }//read_mat

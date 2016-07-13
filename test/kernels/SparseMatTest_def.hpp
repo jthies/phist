@@ -27,7 +27,20 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
 
   static void SetUpTestCase()
   {
-    SparseMatTest::SetUpTestCase();
+    // set the flag for reading/creating the matrix dpeending on #rows and #vectors
+    int sparseMatCreateFlag=0;
+    if (_N_>=100)
+    {
+      if (_NV_>1)
+      {
+        sparseMatCreateFlag=PHIST_SPARSEMAT_OPT_BLOCKSPMVM;
+      }
+      else
+      {
+        sparseMatCreateFlag=PHIST_SPARSEMAT_OPT_SINGLESPMVM;
+      }
+    }
+    SparseMatTest::SetUpTestCase(sparseMatCreateFlag);
     VTest::SetUpTestCase();
     MTest::SetUpTestCase();
   }

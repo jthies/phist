@@ -18,13 +18,15 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _MatName, _multipleDefinitionCounter
 
   public:
 
-    static void SetUpTestCase()
+    static void SetUpTestCase(int sparseMatCreateFlag)
     {
       TestWithType<_ST_>::SetUpTestCase();
       KernelTest::SetUpTestCase();
 
       // preset problemTooSmall_ to abort appropriately
       bool problemTooSmall = mpi_size_ > _Nglob;
+      
+      iflag_ = sparseMatCreateFlag;
 
       if( typeImplemented_ && !problemTooSmall )
       {

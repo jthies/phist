@@ -38,8 +38,8 @@ public:
 
   static void SetUpTestCase()
   {
-    iflag_=0; // TODO: set PHIST_SPARSEMAT_OPT_CARP
-    SparseMatTest::SetUpTestCase();
+    int sparseMatCreateFlag=PHIST_SPARSEMAT_OPT_CARP;
+    SparseMatTest::SetUpTestCase(sparseMatCreateFlag);
     VTest::SetUpTestCase();
     MT_Test::SetUpTestCase();
     
