@@ -15,8 +15,8 @@ public:
 
   static void SetUpTestCase()
   {
-    int sparseMatRepartTest=0;
-    SparseMatTest::SetUpTestCase(sparseMatRepartTest);
+    int sparseMatCreateFlag=getSparseMatCreateFlag(_N_,_NV_);
+    SparseMatTest::SetUpTestCase(sparseMatCreateFlag);
     VTest::SetUpTestCase();
   }
 

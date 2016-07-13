@@ -7,6 +7,9 @@
 extern "C" {
 #endif
 
+    // set the flag for reading/creating the matrix dpeending on #rows and #vectors
+    int getSparseMatCreateFlag(int N, int NV);
+
 #ifdef PHIST_HAVE_SP
 
 #include "phist_gen_s.h"

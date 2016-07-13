@@ -9,6 +9,24 @@
 extern "C" {
 #endif
 
+    int getSparseMatCreateFlag(int N, int NV)
+    {
+      int flag=0;
+      if (N>=100)
+      {
+        if (NV>1)
+        {
+          flag=PHIST_SPARSEMAT_OPT_BLOCKSPMVM;
+        }
+        else
+        {
+          flag=PHIST_SPARSEMAT_OPT_SINGLESPMVM;
+        }
+    }
+    if (flag) flag|=PHIST_SPARSEMAT_PERM_LOCAL;
+    return flag;
+  }
+
 #ifdef PHIST_HAVE_SP
 
 #include "phist_gen_s.h"
