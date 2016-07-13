@@ -140,11 +140,30 @@ int get_perm_flag(int iflag, int outlev)
           oflag|=GHOST_SPARSEMAT_RCM;
 #endif
   }
-  if ((iflag&PHIST_SPARSEMAT_OPT_CARP)|(iflag&PHIST_SPARSEMAT_DIST2_COLOR))
+  else if (iflag&PHIST_SPARSEMAT_PERM_LOCAL)
+  {
+#ifdef GHOST_HAVE_SPMP
+          PHIST_SOUT(outlev, "Enable local RCM reordering via SPMP\n");
+          oflag|=GHOST_SPARSEMAT_RCM;
+#endif
+  }
+  if (iflag&PHIST_SPARSEMAT_OPT_CARP)
+  {
+        oflag|=GHOST_SOLVER_KACZ;
+  }
+  if (iflag&PHIST_SPARSEMAT_DIST2_COLOR)
   {
     oflag|=GHOST_SPARSEMAT_COLOR;
   }
   if (oflag!=GHOST_SPARSEMAT_DEFAULT) oflag|=GHOST_SPARSEMAT_PERMUTE;
+  if (iflag&PHIST_SPARSEMAT_PERM_LOCAL == 0 )
+  {
+    PHIST_SOUT(PHIST_WARNING,"WARNING: based on your input flags, PHIST suggests to set permutation flags for the matrix.\n"
+                             "         However, since PHIST_SPARSEMAT_PERM_LOCAL is missing from the input flags, I  can't set\n"
+                             "         them. For optimal performance you should consider allowing at least local\n" 
+                             "         permutations.\n");
+    return 0;
+  }
   return oflag;
 }
 
