@@ -67,7 +67,7 @@ void SUBR(type_avail)(int* iflag);
 //! \name Matrix input from a file
 //!
 //! optional flags:
-//! * PHIST_SPARSEMAT_REPARTITION
+//! * PHIST_SPARSEMAT_PERM_GLOBAL
 //! * PHIST_SPARSEMAT_DIST2_COLOR (feature required for CARP-CG)
 ///@{
 
@@ -518,7 +518,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) V,
 //! in ghost and how the test problems in essex/physics are defined.
 //!
 //! optional flags:
-//! * PHIST_SPARSEMAT_REPARTITION
+//! * PHIST_SPARSEMAT_PERM_GLOBAL
 //! * PHIST_SPARSEMAT_DIST2_COLOR (feature required for CARP-CG)
 //!
 void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist_const_comm_ptr comm,

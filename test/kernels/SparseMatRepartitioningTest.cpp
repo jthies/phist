@@ -30,7 +30,7 @@
 #define _N_ 70
 
 /* This test constructs the spinSZ[L] matrix with and without the flag    */
-/* PHIST_SPARSEMAT_REPARTITION, constructs a vector X with characteristic */
+/* PHIST_SPARSEMAT_PERM_GLOBAL, constructs a vector X with characteristic */
 /* entries, and computes the spMVM in three different ways, comparing the */
 /* results:                                                               */
 /* - by using the row function and vector definition directly (does not   */
@@ -68,7 +68,7 @@ class DSparseMatRepartTest: public virtual TestWithType<double>,
     EXPECT_EQ(0,iflag_);
     // construct same matrix but possibly with repartitioning (depends on what the kernel
     // library supports and which TPLs are available)
-    iflag_=PHIST_SPARSEMAT_REPARTITION;
+    iflag_=PHIST_SPARSEMAT_PERM_GLOBAL;
     phist_Dcreate_matrix(&repartA_,comm_,spin_label,&iflag_);
     EXPECT_EQ(0,iflag_);
     phist_DsparseMat_get_row_map(repartA_,&repartMap_,&iflag_);
@@ -176,7 +176,7 @@ class DSparseMatRepartTest: public virtual TestWithType<double>,
 protected:
 
   // two different maps: the regular one and the one obtained as row distribution
-  // when asking for PHIST_SPARSEMAT_REPARTITION
+  // when asking for PHIST_SPARSEMAT_PERM_GLOBAL
   phist_const_map_ptr linearMap_, repartMap_;
   
   // input, result and exact result of spMVM in linear map

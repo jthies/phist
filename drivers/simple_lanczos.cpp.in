@@ -53,7 +53,7 @@ int main(int argc, char** argv)
 
   matname = argv[1];
  
-  iflag = PHIST_SPARSEMAT_REPARTITION;
+  iflag = PHIST_SPARSEMAT_PERM_GLOBAL;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&iflag),iflag);
   
   // create operator wrapper for computing Y=A*X using a CRS matrix

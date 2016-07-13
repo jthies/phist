@@ -74,7 +74,8 @@ double get_proc_weight(double force_value)
 void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
 {
   // if the user sets both to postive values in the config file (via CMake), respect this choice
-  // and do not override it by either flags or the presence of GPU processes
+  // and do not override it by either flags or the presence of GPU processes. An exception is that
+  // we strictly disallow reordering unless pHIST_SPARSEMAT_PERM_LOCAL is set
   static int C_stored=PHIST_SELL_C;
   static int sigma_stored=PHIST_SELL_SIGMA;
 
@@ -83,6 +84,8 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
   // in the course of a simulation.
   *C=C_stored;
   *sigma=sigma_stored;
+  
+  if (!(flags&PHIST_SPARSEMAT_PERM_LOCAL) ) *sigma=1;
 
   if (*C>0 && *sigma>0) return;
 
@@ -112,10 +115,6 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
   MPI_Allreduce(MPI_IN_PLACE,C,1,MPI_INT,MPI_MAX,comm);
 
   if (*sigma<0) *sigma=4*(*C);
-
-  // if the user does NOT specify PHIST_SPARSEMAT_REPARTITION, set sigma=1 because the user may
-  // not expect us to permute rows locally
-  if ( !(flags&PHIST_SPARSEMAT_REPARTITION) ) *sigma=1;
   
   C_stored=*C;
   sigma_stored=*sigma;
@@ -125,7 +124,7 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
 int get_perm_flag(int iflag, int outlev)
 {
   int oflag=GHOST_SPARSEMAT_DEFAULT;
-  if (iflag&PHIST_SPARSEMAT_REPARTITION)
+  if (iflag&PHIST_SPARSEMAT_PERM_GLOBAL)
   {
 #ifdef GHOST_HAVE_ZOLTAN
           PHIST_SOUT(outlev, "Trying to repartition the matrix with Zoltan\n");

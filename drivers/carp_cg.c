@@ -226,7 +226,7 @@ int main(int argc, char** argv)
   
   // this is in the tools/driver_utils.h header, a useful tool for
   // generating our favorite test matrices or reading them from a file:
-       iflag=PHIST_SPARSEMAT_REPARTITION|PHIST_SPARSEMAT_OPT_CARP;
+       iflag=PHIST_SPARSEMAT_PERM_GLOBAL|PHIST_SPARSEMAT_OPT_CARP;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&mat,comm,problem,&iflag),iflag);
   
   PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(mat, &map,&iflag),iflag);

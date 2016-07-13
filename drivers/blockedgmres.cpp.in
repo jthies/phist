@@ -98,7 +98,7 @@ int main(int argc, char** argv)
   PHIST_OUT(PHIST_INFO,"preconditioner: %s\n",prec_type);
   PHIST_OUT(PHIST_INFO,"prec options: %s\n",prec_opts);
 
-  //iflag=PHIST_SPARSEMAT_REPARTITION;
+  //iflag=PHIST_SPARSEMAT_PERM_GLOBAL;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&iflag),iflag);
   
   /* we assume domain map = range map here, which is reasonable for something

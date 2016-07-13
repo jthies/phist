@@ -34,8 +34,10 @@
 #else
 # include "TpetraClassic_config.h"
 #endif
+# include "Kokkos_DefaultNode.hpp"
 
-/*typedef Kokkos::DefaultNode::DefaultNodeType node_type;*/
+typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
+/*
 # if defined(HAVE_TPETRACLASSIC_TBB)||defined(HAVE_KOKKOSCLASSIC_TBB)
 # include "Kokkos_TBBNode.hpp"
 typedef Kokkos::TBBNode node_type;
@@ -48,6 +50,7 @@ typedef Kokkos::TPINode node_type;
 # include "Kokkos_SerialNode.hpp"
 typedef Kokkos::SerialNode node_type;
 # endif
+*/
 #endif
 template <typename ST>
 class Traits

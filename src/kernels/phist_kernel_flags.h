@@ -15,28 +15,31 @@
 */
 #define PHIST_IFLAG_DEFAULT 0
 
-/* sparse matrix preprocessing */
-#define PHIST_SPARSEMAT_REPARTITION 1
+/* sparse matrix preprocessing: allow local matrix reorderings */
+#define PHIST_SPARSEMAT_PERM_LOCAL 1
+/* allow global symmetric permutations. Note that PERM_GLOBAL implies PERM_LOCAL. */
+#define PHIST_SPARSEMAT_PERM_GLOBAL 3
 /* this flag is DEPRECATED, use SPARSEMAT_OPT_CARP instead */
 /* in the current implementation of the builtin kernels,   */
 /* DIST2_COLOR will cause a local permutation according to */
 /* colors, which breaks the MPI communication but can be   */
 /* used to assess the performance impact of coloring. A    */
 /* warning will be issued.                                 */
-#define PHIST_SPARSEMAT_DIST2_COLOR 2
-#define PHIST_SPARSEMAT_OPT_SINGLESPMVM 4
-#define PHIST_SPARSEMAT_OPT_BLOCKSPMVM 8
-#define PHIST_SPARSEMAT_OPT_CARP 16
-#define PHIST_SPARSEMAT_QUIET 32
+#define PHIST_SPARSEMAT_DIST2_COLOR 4
+#define PHIST_SPARSEMAT_OPT_SINGLESPMVM 8
+#define PHIST_SPARSEMAT_OPT_BLOCKSPMVM 16
+#define PHIST_SPARSEMAT_OPT_CARP 32
+#define PHIST_SPARSEMAT_QUIET 64
 
 #define PHIST_SPARSEMAT_FLAGS_DESCRIPTION \
 "     PHIST_IFLAG_DEFAULT 0 \n" \
-"     PHIST_SPARSEMAT_REPARTITION 1 \n" \
-"     PHIST_SPARSEMAT_DIST2_COLOR 2 \n" \
-"     PHIST_SPARSEMAT_OPT_SINGLESPMVM 4 \n" \
-"     PHIST_SPARSEMAT_OPT_BLOCKSPMVM 8 \n" \
-"     PHIST_SPARSEMAT_OPT_CARP 16 \n" \
-"     PHIST_SPARSEMAT_QUIET 32 \n"
+"     PHIST_SPARSEMAT_PERM_LOCAL 1 \n" \
+"     PHIST_SPARSEMAT_PERM_GLOBAL 3 \n" \
+"     PHIST_SPARSEMAT_DIST2_COLOR 4 \n" \
+"     PHIST_SPARSEMAT_OPT_SINGLESPMVM 8 \n" \
+"     PHIST_SPARSEMAT_OPT_BLOCKSPMVM 16 \n" \
+"     PHIST_SPARSEMAT_OPT_CARP 32 \n" \
+"     PHIST_SPARSEMAT_QUIET 64 \n"
 
 /* When this flag was passed to mvec_create, the memory for
    the multi-vector is allocated both on host and device for CUDA

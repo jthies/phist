@@ -104,7 +104,7 @@ PHIST_MAIN_TASK_BEGIN
   {
     // if B is read/created, it must be partitioned along with A,
     // which we can't do right now.
-    iflag=PHIST_SPARSEMAT_REPARTITION;
+    iflag=PHIST_SPARSEMAT_PERM_GLOBAL;
   }
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&iflag),iflag);
   if (haveB)
