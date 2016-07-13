@@ -77,7 +77,8 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
   // and do not override it by either flags or the presence of GPU processes. An exception is that
   // we strictly disallow reordering unless pHIST_SPARSEMAT_PERM_LOCAL is set
   static int C_stored=PHIST_SELL_C;
-  static int sigma_stored=PHIST_SELL_SIGMA;
+//  static int sigma_stored=PHIST_SELL_SIGMA;
+  static int sigma_stored=1; // temporarily disable all sorting here until we merge the branch tests_with_sigma
 
   // only determine C and sigma once, then use these values subsequently for all maps/matrices. The
   // code below requires global reductions and we don't know if a user constructs many different matrices
