@@ -243,9 +243,6 @@ phist_lidx lda1, phist_lidx lda2, phist_lidx stride, bool swap_n_m=false, _MT_ r
   int N = swap_n_m? m: n;
   int M = swap_n_m? n: m;
   _MT_ maxval=mt::zero();
-  std::stringstream ss_deb;
-  int mpi_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
   for (int i=0;i<N*stride;i+=stride)
   {
     for (int j=0;j<M;j++)
@@ -255,10 +252,10 @@ phist_lidx lda1, phist_lidx lda2, phist_lidx stride, bool swap_n_m=false, _MT_ r
       if (pl==mt::zero()) pl = (st::abs(arr1[j*lda1+i])+st::abs(arr2[j*lda2+i]))*(MT)0.5;
       if (pl==mt::zero()) pl=mt::one();
       maxval=mt::max(mn/pl,maxval);
-      ss_deb<<"PE"<<mpi_rank<<" "<<j<<" "<<i<<" "<<arr1[j*lda1+i]<<" ?= "<<arr2[j*lda2+i]<<std::endl;
+      //std::cout << arr1[j*lda1+i]<< "\t SAME ?? AS \t"<<arr2[j*lda2+i]<<std::endl;
     }
+    //std::cout << std::endl;
   }
-  PHIST_ORDERED_OUT(PHIST_DEBUG,MPI_COMM_WORLD,"%s\n",ss_deb.str().c_str());
   //std::cout << "MAX VAL: "<<maxval<<std::endl;
   return mt::one()+maxval;
 }

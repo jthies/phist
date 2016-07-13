@@ -45,8 +45,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
 
     static void SetUpTestCase()
     {
-      int sparseMatCreateFlag=PHIST_SPARSEMAT_OPT_CARP;
-      SparseMatTest::SetUpTestCase(sparseMatCreateFlag);
+      SparseMatTest::SetUpTestCase();
       VTest::SetUpTestCase();
     }
 

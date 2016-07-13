@@ -18,9 +18,7 @@ public:
 
   static void SetUpTestCase()
   {
-    int sparseMatCreateFlag=0;
-    if (_N_>=100) sparseMatCreateFlag= _NV_>1? PHIST_SPARSEMAT_OPT_BLOCKSPMVM: PHIST_SPARSEMAT_OPT_SINGLESPMVM;
-    SparseMatTest::SetUpTestCase(sparseMatCreateFlag);
+    SparseMatTest::SetUpTestCase();
     VTest::SetUpTestCase();
     MTest::SetUpTestCase();
   }
