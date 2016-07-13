@@ -281,10 +281,10 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
     phist_lidx row_nnz = -1;
     MATPDE_initDimensions(L, L, &nrows, &row_nnz);
     phist_gidx ncols = nrows;
-    if( *iflag & PHIST_SPARSEMAT_REPARTITION )
+    if( *iflag & PHIST_SPARSEMAT_PERM_GLOBAL )
     {
-      PHIST_SOUT(outlev,"Disabling PHIST_SPARSEMAT_REPARTITION; MATPDE features a predefined partitioning!\n");
-      *iflag &= ~PHIST_SPARSEMAT_REPARTITION;
+      PHIST_SOUT(outlev,"Disabling PHIST_SPARSEMAT_PERM_GLOBAL; MATPDE features a predefined partitioning!\n");
+      *iflag &= ~PHIST_SPARSEMAT_PERM_GLOBAL;
     }
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
           nrows, ncols, row_nnz, &MATPDE_rowFunc, NULL, iflag), *iflag);
@@ -296,10 +296,10 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
     phist_lidx row_nnz = -1;
     TriToeplitz_initDimensions(L, &nrows, &row_nnz);
     phist_gidx ncols = nrows;
-    if( *iflag & PHIST_SPARSEMAT_REPARTITION )
+    if( *iflag & PHIST_SPARSEMAT_PERM_GLOBAL )
     {
-      PHIST_SOUT(outlev,"Disabling PHIST_SPARSEMAT_REPARTITION; TriToeplitz is already tridiagonal!\n");
-      *iflag &= ~PHIST_SPARSEMAT_REPARTITION;
+      PHIST_SOUT(outlev,"Disabling PHIST_SPARSEMAT_PERM_GLOBAL; TriToeplitz is already tridiagonal!\n");
+      *iflag &= ~PHIST_SPARSEMAT_PERM_GLOBAL;
     }
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFunc)(mat, comm, 
           nrows, ncols, row_nnz, &TriToeplitz_rowFunc, NULL, iflag), *iflag);
@@ -333,10 +333,10 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
     phist_lidx row_nnz = -1;
     MATPDE3D_initDimensions(L, L, L, &nrows, &row_nnz);
     phist_gidx ncols = nrows;
-    if( *iflag & PHIST_SPARSEMAT_REPARTITION )
+    if( *iflag & PHIST_SPARSEMAT_PERM_GLOBAL )
     {
-      PHIST_SOUT(outlev,"Disabling PHIST_SPARSEMAT_REPARTITION; MATPDE3D features a predefined partitioning!\n");
-      *iflag &= ~PHIST_SPARSEMAT_REPARTITION;
+      PHIST_SOUT(outlev,"Disabling PHIST_SPARSEMAT_PERM_GLOBAL; MATPDE3D features a predefined partitioning!\n");
+      *iflag &= ~PHIST_SPARSEMAT_PERM_GLOBAL;
     }
     int iflag_tmp=*iflag;
     PHIST_CHK_IERR(MATPDE3D_selectProblem(which,iflag),*iflag);

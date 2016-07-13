@@ -174,7 +174,7 @@ int main(int argc, char** argv)
 
   num_eigs = opts.numEigs;
 
-  iflag = PHIST_SPARSEMAT_REPARTITION;
+  iflag = PHIST_SPARSEMAT_PERM_GLOBAL;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,filename,&iflag),iflag);
   
   PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&iflag),iflag);

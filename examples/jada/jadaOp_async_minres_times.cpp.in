@@ -123,7 +123,7 @@ void myMain(int argc, char** argv, int &iflag)
 
   iflag = PHIST_IFLAG_DEFAULT;
   if( repart )
-    iflag |= PHIST_SPARSEMAT_REPARTITION;
+    iflag |= PHIST_SPARSEMAT_PERM_GLOBAL;
   if( nvecs > 1 )
     iflag |= PHIST_SPARSEMAT_OPT_BLOCKSPMVM;
   else
