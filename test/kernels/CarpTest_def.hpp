@@ -71,11 +71,7 @@ public:
     I_=NULL;
     if (typeImplemented_ && !problemTooSmall_)
     {
-#ifndef PHIST_KERNEL_LIB_GHOST
-      iflag_=PHIST_SPARSEMAT_OPT_CARP | PHIST_SPARSEMAT_QUIET;
-#else
-      iflag_=PHIST_SPARSEMAT_QUIET;
-#endif
+      iflag_=PHIST_SPARSEMAT_OPT_CARP | getSparseMatCreateFlag(_N_,_NV_);
       SUBR(sparseMat_create_fromRowFunc)(&I_,comm_,_N_,_N_,1,&SUBR(idfunc),NULL,&iflag_);
       ASSERT_EQ(0,iflag_);
       

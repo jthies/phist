@@ -24,6 +24,9 @@ extern "C" {
         }
     }
     if (flag) flag|=PHIST_SPARSEMAT_PERM_LOCAL;
+#if PHIST_OUTLEV<4
+    flag|=PHIST_SPARSEMAT_QUIET;
+#endif
     return flag;
   }
 
