@@ -34,8 +34,6 @@ int main(int argc, char* argv[])
 	std::string cpPath;
    	read_params(argc, argv, &cpPath); 
 
-	int i1 = 99;
-	double d1 = 88.5; 
 	int n = 5;
 	int * a 	= new int[n];
 	double * d 	= new double[n];
@@ -47,29 +45,12 @@ int main(int argc, char* argv[])
 	Checkpoint * myCP = new Checkpoint[1];
 	
 	myCP->setCpPath(cpPath);
-//	myCP->add("i1", &i1);
-//	myCP->add("d1", &d1);
-	myCP->add<int>("a", a, n);
-	myCP->add<double>("d", d, n);
+	myCP->add("a", a, n);
+	myCP->add("d", d, n);
 	myCP->add("iteration", &iteration);
-//	CpPOD<int>  * myCpPOD1= new CpPOD<int>[1];	
-//	CpPOD<double>  * myCpPOD2= new CpPOD<double>[1];	
-//	myCpPOD1->init(&i1);
-//	myCpPOD2->init(&d1);
-	
-//	myCP->add("myCpPOD1", myCpPOD1);
-//	myCP->add("myCpPOD2", myCpPOD2);
-//	myCP->commit(); 
+	myCP->commit(); 
  
 	printf("%d: START----------------------\n", myrank);
-/*	if(failed == true){
-		failed = false;
-		printf("RESTART ----> failed == true \n");
-		myCP->read();
-		iteration++;
-	
-	}
-	*/
 	int rc = 9;
     for(; iteration < nIter ; iteration++)
     {
@@ -85,9 +66,6 @@ int main(int argc, char* argv[])
 			exit(0);
 		}
 */
-		//rc = MPI_Barrier(MPI_COMM_WORLD);
-		//MPI_Barrier(MPI_COMM_WORLD);
-//		printf("iteration: %d\n");
 		if(iteration % 3 == 0){
 			myCP->update();
 			myCP->write();
@@ -96,9 +74,6 @@ int main(int argc, char* argv[])
 			myCP->read();
 			failed = false;
 		}
-		i1++;
-		d1 = d1 - 1.0;
-//		myA1.print();
 		usleep(1000000);
     }
 	return 0;
