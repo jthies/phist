@@ -156,7 +156,7 @@ int get_perm_flag(int iflag, int outlev)
     oflag|=GHOST_SPARSEMAT_COLOR;
   }
   if (oflag!=GHOST_SPARSEMAT_DEFAULT) oflag|=GHOST_SPARSEMAT_PERMUTE;
-  if (iflag&PHIST_SPARSEMAT_PERM_LOCAL == 0 )
+  if (iflag&PHIST_SPARSEMAT_PERM_LOCAL == 0 && oflag!=0)
   {
     PHIST_SOUT(PHIST_WARNING,"WARNING: based on your input flags, PHIST suggests to set permutation flags for the matrix.\n"
                              "         However, since PHIST_SPARSEMAT_PERM_LOCAL is missing from the input flags, I  can't set\n"
