@@ -57,6 +57,13 @@ class TYPE(x_mvec)
   //!
   void deallocate();
 
+  //! copy the real part of the vector into the given location *unless* it is already a pointer to the internal real 
+  //! part. In true real or complex arithmetic, copies the whole vector.
+  void get_vr(TYPE(mvec_ptr) xr, int* iflag);
+
+  //! copy the imag part of the vector into the given location *unless* it is already a pointer to the internal imag 
+  //! part. In true complex arithmetic, do nothing. In true real arithmetic, set output vector to 0 if it is not NULL.
+  void get_vi(TYPE(mvec_ptr) xi, int* iflag);
 };
 
 //@}
