@@ -84,7 +84,6 @@ void add(std::string label, CpBase * p)
 			this->add(label, new CpArray<T>(arrayPtr_, nRows_));
 	}
 
-#endif
 
 };
 
@@ -135,3 +134,4 @@ void Checkpoint::commit(){
 }
 
 
+#endif
