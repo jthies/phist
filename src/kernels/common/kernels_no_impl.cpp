@@ -387,8 +387,16 @@ extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Dmvec* reV, phist
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
+extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Dconst_mvec_ptr reV, phist_Dconst_mvec_ptr imV, int *iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
 # else
 extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Smvec* reV, phist_Smvec* imV, int *iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Sconst_mvec* reV, phist_Sconst_mvec* imV, int *iflag)
 {
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
