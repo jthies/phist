@@ -676,8 +676,7 @@ void SUBR(carp_cgState_iterate)(
   PHIST_CHK_IERR(SUBR(my_carp_cgState_dealloc)(S,iflag),*iflag);
 
   // copy the solution from the x_mvec
-  PHIST_CHK_IERR(x->get_vr(X_r,iflag),*iflag);
-  PHIST_CHK_IERR(x->get_vi(X_i,iflag),*iflag);
+  PHIST_CHK_IERR(x->get_re_im(X_r,X_i,iflag),*iflag);
   
   // this is just a wrapper object, the arguments X_r and X_i carry the solution
   delete x;
