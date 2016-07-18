@@ -73,17 +73,32 @@ double get_proc_weight(double force_value)
 
 void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
 {
+  // on the first call, figure out if there is a GPU process and set C=32 if so.
+  // This requires global communication!!!
+  static int any_GPUs=-1;
+  if (any_GPUs<0)
+  {
+    ghost_type gtype;
+    ghost_type_get(&gtype);
+    if (gtype==GHOST_TYPE_CUDA)
+    {
+      any_GPUs=1;
+    }
+    else
+    {
+      any_GPUs=0;
+    }
+
+    // everyone should have the max value found among MPI processes
+    MPI_Allreduce(MPI_IN_PLACE,&any_GPUs,1,MPI_INT,MPI_SUM,comm);
+  }
+
   // if the user sets both to postive values in the config file (via CMake), respect this choice
   // and do not override it by either flags or the presence of GPU processes. An exception is that
-  // we strictly disallow reordering unless pHIST_SPARSEMAT_PERM_LOCAL is set
-  static int C_stored=PHIST_SELL_C;
-  static int sigma_stored=PHIST_SELL_SIGMA;
-
-  // only determine C and sigma once, then use these values subsequently for all maps/matrices. The
-  // code below requires global reductions and we don't know if a user constructs many different matrices
-  // in the course of a simulation.
-  *C=C_stored;
-  *sigma=sigma_stored;
+  // we strictly disallow reordering unless pHIST_SPARSEMAT_PERM_LOCAL is set, i.e. we set sigma=1
+  // in that case.
+  *C=PHIST_SELL_C;
+  *sigma=PHIST_SELL_SIGMA;
   
   if (!(flags&PHIST_SPARSEMAT_PERM_LOCAL) ) *sigma=1;
 
@@ -99,26 +114,14 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
     {
       *C = 8;
     }
+    if (any_GPUs)
+    {
+      *C=32;
+    }
   }
-
-  // override with max(C,32) if anything runs on a CUDA device
-  ghost_type gtype;
-  ghost_type_get(&gtype);
-  if (gtype==GHOST_TYPE_CUDA)
-  {
-    *C=std::max(*C,32);
-  }
-  // if the user doesn´t set it in CMake or give a flag, it is -1, override with +1 (CRS)
-  *C=std::max(*C,+1);
-
-  // everyone should have the max value found among MPI processes
-  MPI_Allreduce(MPI_IN_PLACE,C,1,MPI_INT,MPI_MAX,comm);
+  if (*C<0) *C=1;
 
   if (*sigma<0) *sigma=4*(*C);
-  
-  C_stored=*C;
-  sigma_stored=*sigma;
-
 }
 
 int get_perm_flag(int iflag, int outlev)
