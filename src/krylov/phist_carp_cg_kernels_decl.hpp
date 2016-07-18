@@ -25,27 +25,20 @@ class TYPE(x_mvec)
 
     TYPE(mvec_ptr)      vdat_; //! contains the actual vector data, if
                                //! there is no explicit imaginary part
-                               //! vi, vdat_==v_, otherwise vdat_ is 
-                               //! (depending on the kernel lib and vector
-                               //! layout):
-                               //!
-                               //! GHOST: vdat is a complex densemat, v_ and
-                               //! vi_ are NULL (VAR_MIXED in source file)
-                               //!
-                               //!other kernel lib,  CM data layout: vdat is
+                               //! vi vdat_==v_, otherwise vdat_ is 
                                //! a two*k-column vector with the real
                                //! and imaginary part stored after each
-                               //! other. v_ and vi_ will be views into vdat_
-                               //! (VAR_VIEW_VDAT in source file)
-                               //!
-                               //! other kl, RM mvecs: vdat_ is NULL, v_ and vi_ are allocated.
-                               //! (VAR_SEPARATE, default implementation in source file)
+                               //! other, so row i contains first the
+                               //! k elements of row i of v_ and then
+                               //! the k elements of the imag part vi_.
+                               //! v_ and vi_ will be views into vdat_.
+                               //! If the storage is column major, the first
+                               //! k vectors are v, the second k are vi.
     TYPE(mvec_ptr)      v_;
     TYPE(mvec_ptr)      vi_;
     TYPE(sdMat_ptr)     vp_;
     TYPE(sdMat_ptr)     vpi_;
     int nvec_;  //! just for convenience
-    bool rc_; //! indicates wether there vdat is real or complex (only actually used with GHOST in real arithmetic)
 
   //! constructor - does not allocate memory, so before the object can
   //! be used you have to call allocate(...)
@@ -64,11 +57,13 @@ class TYPE(x_mvec)
   //!
   void deallocate();
 
-  //! copy the real and imaginary part of the vector into the given locations *unless* they point to the same memory*
-  //! part. In complex arithmetic, copies whole vector to xr. If imaginary part is NULL (true real arithmetic), xi is
-  //! set to 0 if not NULL.
-  void get_re_im(TYPE(mvec_ptr) xr, TYPE(mvec_ptr) xi, int* iflag);
+  //! copy the real part of the vector into the given location *unless* it is already a pointer to the internal real 
+  //! part. In true real or complex arithmetic, copies the whole vector.
+  void get_vr(TYPE(mvec_ptr) xr, int* iflag);
 
+  //! copy the imag part of the vector into the given location *unless* it is already a pointer to the internal imag 
+  //! part. In true complex arithmetic, do nothing. In true real arithmetic, set output vector to 0 if it is not NULL.
+  void get_vi(TYPE(mvec_ptr) xi, int* iflag);
 };
 
 //@}

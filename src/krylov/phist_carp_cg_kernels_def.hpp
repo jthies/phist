@@ -1,39 +1,8 @@
-#ifdef VAR_VIEW_VDAT
-# undef VAR_VIEW_VDAT
-#endif
 
-#ifdef VAR_MIXED
-# undef VAR_MIXED
-#endif
-
-#ifdef VAR_SEPARATE
-# undef VAR_SEPARATE
-#endif
-
-// In complex arithmetic or for real vectors, vdat_=v_=complete vector.
-// There are three different data layouts implemented for complex vectors in
-// real arithmetic. 
-// VIEW_VDAT: vr and vi are views of the first (last) nvec columns of vdat
-// SEPARATE: vr and vi are allocated separately with nvec columns each, vdat_=NULL
-// MIXED: use mixed precision arithmetic, x_mvec is either real or complex, x_sparseMat
-// is real with complex shift
-
-#if defined(PHIST_KERNEL_LIB_GHOST)
-# ifndef IS_COMPLEX
-#  define VAR_MIXED
-# else
-@  define VAR_SEPARATE
-#  ifdef IS_DOUBLE
-#   define CSUBR(xyz) phist_Z ## xyz
-#  else
-#   define CSUBR(xyz) phist_C ## xyz
-#  endif
+#ifndef PHIST_KERNEL_LIB_BUILTIN
+# ifndef VIEW_VDAT
+# define VIEW_VDAT
 # endif
-#elif !defined(PHIST_MVECS_ROW_MAJOR)
-# define VAR_VIEW_VDAT
-#else
-// this implementation is the default, we don't explicitly surround it with ifdefs
-# define VAR_SEPARATE
 #endif
 
 // basic operations for some extended matrix/vector types
@@ -46,7 +15,6 @@
     vp_=NULL;
     vi_=NULL;
     vpi_=NULL;
-    rc_=false;
   }
 
   // constructor that allocates memory and copies given vector(s)
@@ -68,22 +36,13 @@
 
     *iflag=iflag_in;
     PHIST_CHK_IERR(allocate(map,nvec_,naug,rc,iflag),*iflag);
-#ifdef VAR_MIXED
-  if (rc)
-  {
-    PHIST_CHK_IERR(CSUBR(mvec_combine)(vdat_,v,vi,iflag),*iflag);
-  }
-  else
-  {
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(vdat_,v,0,nvec_-1,iflag),*iflag);
-  }
-#else
+
     PHIST_CHK_IERR(SUBR(mvec_set_block)(v_,v,0,nvec_-1,iflag),*iflag);
     if (rc)
     {
       PHIST_CHK_IERR(SUBR(mvec_set_block)(vi_,vi,0,nvec_-1,iflag),*iflag);
     }
-#endif
+
     if (naug>0)
     {
       phist_const_comm_ptr comm=NULL;
@@ -108,9 +67,8 @@
       *iflag=PHIST_INVALID_INPUT;
       return;
     }
-    rc_=rc;
     nvec_=nvec;
-#ifdef VAR_VIEW_VDAT
+#ifdef VIEW_VDAT
     // let v and vi view the first and last columns of vdat, this way the communication
     // in the CARP kernel can be done in one step
     int actual_nvec=rc?2*nvec:nvec;
@@ -121,23 +79,8 @@
     {
       PHIST_CHK_IERR(SUBR(mvec_view_block)(vdat_,&vi_,nvec_,actual_nvec-1,iflag),*iflag);
     }
-#elif defined(VAR_MIXED
-    v_=NULL;
-    vi_=NULL;
-    *iflag=iflag_in;
-    if (rc)
-    {
-      PHIST_CHK_IERR(CSUBR(mvec_create)(&vdat_,map,nvec,iflag),*iflag);
-    }
-    else
-    {
-      PHIST_CHK_IERR(SUBR(mvec_create)(&vdat_,map,nvec,iflag),*iflag);
-      PHIST_CHK_IERR(SUBR(mvec_view_block)(vdat_,&v_,0,nvec_-1,iflag),*iflag);
-    }
 #else
-    // the builtin implementation doesn't support these data layouts yet, so allocate separate vectors
-    // (VAR_SEPARATE). This can also be used by any other kernel lib that implements the basic kernel
-    //  interface, so we make it the default
+    // the builtin implementation doesn't support this data layout yet, so allocate separate vectors
     vdat_=NULL;
     *iflag=iflag_in;
     PHIST_CHK_IERR(SUBR(mvec_create)(&v_,map,nvec_,iflag),*iflag);
@@ -170,52 +113,35 @@ void TYPE(x_mvec)::deallocate()
     int iflag;
     if (v_) PHIST_CHK_IERR(SUBR(mvec_delete)(v_,&iflag),iflag); v_=NULL;
     if (vi_) PHIST_CHK_IERR(SUBR(mvec_delete)(vi_,&iflag),iflag); vi_=NULL;
-#ifdef VAR_MIXED
-    if (vdat_)
-    { 
-      if (rc) PHIST_CHK_IERR(CSUBR(mvec_delete)(vdat_,&iflag),iflag); 
-      else    PHIST_CHK_IERR( SUBR(mvec_delete)(vdat_,&iflag),iflag); 
-      vdat_=NULL;
-    }
-#else
     if (vdat_) PHIST_CHK_IERR(SUBR(mvec_delete)(vdat_,&iflag),iflag); vdat_=NULL;
-#endif
+
     if (vp_) PHIST_CHK_IERR(SUBR(sdMat_delete)(vp_,&iflag),iflag); vp_=NULL;
     if (vpi_) PHIST_CHK_IERR(SUBR(sdMat_delete)(vpi_,&iflag),iflag); vpi_=NULL;
 }
 
-void TYPE(x_mvec)::get_re_im(TYPE(mvec_ptr) xr, TYPE(mvec_ptr) vi, int* iflag)
+void TYPE(x_mvec)::get_vr(TYPE(mvec_ptr) xr, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   *iflag=0;
-#if defined(VAR_MIXED)
-  if (!rc_)
-  {
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), vdat_, st::zero(), xr, iflag),*iflag);  
-    if (xi)
-    {
-      PHIST_CHK_IERR(SUBR(mvec_put_value)(xi,st::zero(),iflag),*iflag);
-    }
-  }
-  else if (vr!=NULL && vi!=NULL)
-  {
-    PHIST_CHK_IERR(CSUBR(mvec_split)(vdat_,vr,vi,iflag),*iflag);
-  }
-  else
-  {
-    PHIST_SOUT(PHIST_ERROR,"function %s called for 'rc' x_mvec, must get non-NULL output vecs\n",__FUNCTION__);
-    *iflag=PHIST_INVALID_INPUT;
-  }
-#else
   if (v_!=xr)
   {
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), v_, st::zero(), xr, iflag),*iflag);  
   }
-  if (rc_ && vi_!=xi && vi!=NULL)
+  return;
+}
+
+void TYPE(x_mvec)::get_vi(TYPE(mvec_ptr) xi, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  *iflag=0;
+  if (vi_!=xi && vi_!=NULL && xi!=NULL)
   {
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), vi_, st::zero(), xi, iflag),*iflag);  
   }
-#endif
+  else if (vi_==NULL && xi!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_put_value)(xi,st::zero(),iflag),*iflag);
+  }
   return;
 }
 
@@ -227,19 +153,8 @@ void SUBR(x_mvec_add_mvec)(_ST_ alpha, TYPE(x_mvec) const* V,
   bool rc =  rc_variant(V,W);
   bool aug= aug_variant(V,W);
 
-#ifdef VAR_VIEW_VDAT
+#ifdef VIEW_VDAT  
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(alpha,V->vdat_,beta,W->vdat_,iflag),*iflag);
-#elif VAR_MIXED
-  if (rc)
-  {
-    CT c_alpha = (CT)alpha;
-    CT c_beta = (CT)beta;
-    PHIST_CHK_IERR(CSUBR(mvec_add_mvec)(c_alpha,V->vdat_,c_beta,W->vdat_,iflag),*iflag);
-  }
-  else
-  {
-    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(alpha,V->vdat_,beta,W->vdat_,iflag),*iflag);
-  }
 #else
   PHIST_CHK_IERR(SUBR(mvec_add_mvec)(alpha,V->v_,beta,W->v_,iflag),*iflag);
   if (rc)
@@ -392,23 +307,8 @@ void SUBR(x_mvec_dot_mvec)(TYPE(x_mvec)* v, TYPE(x_mvec)* w,
   int actual_nvec=rc?v->nvec_*2: nvec;
   ST tmp[actual_nvec];
   
-#ifdef VAR_VIEW_VDAT
+#ifdef VIEW_VDAT
   PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v->vdat_,w->vdat_,tmp,iflag),*iflag);
-#elif defined VAR_MIXED
-  if (rc)
-  {
-    CT ctmp[nvec];
-    PHIST_CHK_IERR(CSUBR(mvec_dot_mvec)v->vdat_,w->vdat_,ctmp,iflag),*iflag);
-    for (int i=0; i<nvec; i++)
-    {
-      tmp[i]=ct::real(ctmp[i]);
-      tmp[nvec+i]=ct::imag(ctmp[i]);
-    }
-  }
-  else
-  {
-    PHIST_CHK_IERR(SUBR(mvec_dot_mvec)v->vdat_,w->vdat_,tmp,iflag),*iflag);
-  }
 #else
   PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v->v_,w->v_,tmp,iflag),*iflag);
   if (rc)
@@ -448,9 +348,6 @@ void SUBR(x_mvec_dot_mvec)(TYPE(x_mvec)* v, TYPE(x_mvec)* w,
 
     if ( (v!=w) && dotsi!=NULL)
     {
-#ifdef VAR_MIXED
-      PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
-#endif
       PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v->v_,w->vi_,tmp,iflag),*iflag);      
       PHIST_CHK_IERR(SUBR(mvec_dot_mvec)(v->vi_,w->v_,tmp+nvec,iflag),*iflag);      
       if (aug)
@@ -485,33 +382,17 @@ void SUBR(x_sparseMat_times_mvec)(_ST_ alpha, TYPE(x_sparseMat) const* A, TYPE(x
   
   int nvec=X->nvec_;
   int actual_nvec=rc?2*nvec:nvec;
+  
   ST shifts[actual_nvec];
-  int stride=1, offset=nvec;
-#ifdef VAR_MIXED
-  if (rc) {stride=2; offset=0;}
-#endif
   for (int i=0;i<nvec;i++)
   {
-    shifts[stride*i]=-(ST)A->sigma_r_[i];
+    shifts[i]=-(ST)A->sigma_r_[i];
     if (rc) shifts[nvec+i]=shifts[i];
 #ifdef IS_COMPLEX
     shifts[i]-=A->sigma_i_[i]*st::cmplx_I();
 #endif
   }
-#ifdef VAR_MIXED
-  // call the complex function interface because we need to pass in the shifts as complex numbers. GHOST doesn't
-  // mind that the matrix has real entries.
-  if (rc)
-  {
-    CT calpha=(CT)alpha;
-    CT cbeta=(CT)beta;
-    PHIST_CHK_IERR(CSUBR(sparseMat_times_mvec_vadd_mvec)(calpha,A->A_,shifts,X->vdat_,cbeta,Y->vdat_,iflag),*iflag);
-  }
-  else
-  {
-    PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_vadd_mvec)(alpha,A->A_,shifts,X->vdat_,beta,Y->vdat_,iflag),*iflag);
-  }
-#elif defined(VAR_VIEW_VDAT)
+#ifdef VIEW_VDAT
   PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_vadd_mvec)(alpha,A->A_,shifts,X->vdat_,beta,Y->vdat_,iflag),*iflag);
 #else
   PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_vadd_mvec)(alpha,A->A_,shifts,X->v_,beta,Y->v_,iflag),*iflag);
@@ -520,7 +401,6 @@ void SUBR(x_sparseMat_times_mvec)(_ST_ alpha, TYPE(x_sparseMat) const* A, TYPE(x
     PHIST_CHK_IERR(SUBR(sparseMat_times_mvec_vadd_mvec)(alpha,A->A_,shifts+nvec,X->vi_,beta,Y->vi_,iflag),*iflag);
   }
 #endif
-#ifndef VAR_MIXED
   // note: this is not optimal in row-major storage with the interleaved storage vdat=[v vi], if it is expensive
   // we could add a kernel function doing this directly on vdat
   if (rc)
@@ -532,7 +412,7 @@ void SUBR(x_sparseMat_times_mvec)(_ST_ alpha, TYPE(x_sparseMat) const* A, TYPE(x
     for (int i=0;i<nvec;i++) shifts[i]=-alpha*A->sigma_i_[i];
     PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(shifts,X->v_,st::one(),Y->vi_,iflag),*iflag);
   }
-#endif  
+  
   if (aug)
   {
     //y+=V*xp
@@ -542,9 +422,6 @@ void SUBR(x_sparseMat_times_mvec)(_ST_ alpha, TYPE(x_sparseMat) const* A, TYPE(x
 
     if (rc)
     {
-#ifdef VAR_MIXED
-      PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
-#endif
       //yi+=V*xpi
       PHIST_CHK_IERR(SUBR(mvec_times_sdMat)(alpha,A->Vproj_,X->vpi_,st::one(),Y->vi_,iflag),*iflag);
       //ypi=V'xi+beta*ypi
@@ -562,40 +439,12 @@ void SUBR(x_carp_sweep)(TYPE(x_sparseMat) const* A,TYPE(const_mvec_ptr) b,TYPE(x
   //     that may save 50% messages (but require the same communication volume)
 
   // double carp sweep in place, updates r=dkswp(sI-A,omega,r)
-#ifdef IS_COMPLEX
-    ST sigma[x->nvec_];
-    for (int i=0; i<x->nvec_;i++) sigma[i]=A->sigma_r_[i]+A->sigma_i_[i]*st::cmplx_I();
-    if (aug_variant(A,x,x))
-    {
-      PHIST_CHK_IERR(SUBR(carp_sweep_aug)(A->A_, sigma,A->Vproj_,b,x->v_,
-            x->vp_,carp_data,omega,iflag),*iflag);
-    }
-    else
-    {
-      PHIST_CHK_IERR(SUBR(carp_sweep)(A->A_,sigma,b,x->v_,
-            carp_data, omega, iflag),*iflag);
-    }
-#else
-  if (rc_variant(A,x,x)) // RC Kacz sweep
+#ifndef IS_COMPLEX
+  if (rc_variant(A,x,x))
   {
-#ifdef VAR_MIXED
-    CT sigma[x->nvec_];
-    for (int i=0; i<x->nvec_;i++) sigma[i]=A->sigma_r_[i]+A->sigma_i_[i]*ct::cmplx_I();
     if (aug_variant(A,x,x))
     {
-      PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag); // should have vp as complex densemat, I guess
-       PHIST_CHK_IERR(CSUBR(carp_sweep_aug)(A->A_, sigma,A->Vproj_,b,x->vdat_,
-            x->vp_,carp_data,omega,iflag),*iflag);
-    }
-    else
-    {
-      PHIST_CHK_IERR(CSUBR(carp_sweep)(A->A_, sigma, A->sigma_i_,b,x->vdat_,
-            carp_data, omega, iflag),*iflag);
-    }
-#else
-    if (aug_variant(A,x,x))
-    {
-       PHIST_CHK_IERR(CSUBR(carp_sweep_aug_rc)(A->A_, A->sigma_r_, A->sigma_i_,A->Vproj_,b,x->v_,x->vi_,
+       PHIST_CHK_IERR(SUBR(carp_sweep_aug_rc)(A->A_, A->sigma_r_, A->sigma_i_,A->Vproj_,b,x->v_,x->vi_,
             x->vp_,x->vpi_,carp_data,omega,iflag),*iflag);
     }
     else
@@ -603,11 +452,17 @@ void SUBR(x_carp_sweep)(TYPE(x_sparseMat) const* A,TYPE(const_mvec_ptr) b,TYPE(x
       PHIST_CHK_IERR(SUBR(carp_sweep_rc)(A->A_, A->sigma_r_, A->sigma_i_,b,x->v_,x->vi_,
             carp_data, omega, iflag),*iflag);
     }
-#endif  
   }
-  else // real Kacz sweep
+  else
+#endif
   {
-    _ST_* sigma=A->sigma_r_;
+    _ST_* sigma=NULL;
+#ifdef IS_COMPLEX
+    sigma=new _ST_[x->nvec_];
+    for (int i=0; i<x->nvec_;i++) sigma[i]=A->sigma_r_[i]+A->sigma_i_[i]*st::cmplx_I();
+#else
+    sigma=A->sigma_r_;
+#endif
     if (aug_variant(A,x,x))
     {
       PHIST_CHK_IERR(SUBR(carp_sweep_aug)(A->A_, sigma,A->Vproj_,b,x->v_,
@@ -619,6 +474,9 @@ void SUBR(x_carp_sweep)(TYPE(x_sparseMat) const* A,TYPE(const_mvec_ptr) b,TYPE(x
             carp_data, omega, iflag),*iflag);
       
     }
+#ifdef IS_COMPLEX
+    delete [] sigma;
+#endif  
   }
 }
 
@@ -646,7 +504,7 @@ void SUBR(x_mvec_vadd_mvec)(_ST_ const alpha[], _MT_ const alpha_i[], TYPE(x_mve
     tmp_alpha[i]=alpha[i];
     if (rc) tmp_alpha[nvec+i]=alpha[i];
   }
-#ifdef VAR_VIEW_VDAT
+#ifdef VIEW_VDAT
   PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(tmp_alpha,X->vdat_,beta,Y->vdat_,iflag),*iflag);
 #else
   PHIST_CHK_IERR(SUBR(mvec_vadd_mvec)(tmp_alpha,X->v_,beta,Y->v_,iflag),*iflag);
@@ -697,7 +555,7 @@ void SUBR(x_mvec_vscale)(TYPE(x_mvec)* v, _MT_ const alpha[], int* iflag)
     tmp_alpha[i]=(_ST_)alpha[i];
     tmp_alpha[nvec+i]=(_ST_)alpha[i];
   }
-#ifdef VAR_VIEW_VDAT
+#ifdef VIEW_VDAT
   PHIST_CHK_IERR(SUBR(mvec_vscale)(v->vdat_,tmp_alpha,iflag),*iflag);
 #else
   PHIST_CHK_IERR(SUBR(mvec_vscale)(v->v_,tmp_alpha,iflag),*iflag);
