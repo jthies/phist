@@ -19,13 +19,25 @@ else()
 	message (STATUS "GHOST package is NOT found")
 endif()
 
-set (SCR "/home/hpc/unrz/unrza354/local/scr-modif-ulfm/")
-include_directories ("${SCR}/include/")
-link_directories ("${SCR}/lib/")
-set(LIBS ${LIBS} ${SCR}/lib/libscr.so)
+set (PHIST "/home/hpc/unrz/unrza354/local/phist-intel/")
+include_directories ("${PHIST}/include/")
+link_directories ("${PHIST}/lib/")
+link_libraries(phist_core)
+link_libraries(phist_kernels_ghost)
+link_libraries(phist_tools)
+link_libraries(phist_solvers)
+link_libraries(phist_support)
 
-link_libraries (scr)
-add_definitions(-DSCR)
+
+#set (SCR "/home/hpc/unrz/unrza354/local/scr-modif-ulfm/")
+#include_directories ("${SCR}/include/")
+#link_directories ("${SCR}/lib/")
+#set(LIBS ${LIBS} ${SCR}/lib/libscr.so)
+
+#link_libraries (scr)
+#add_definitions(-DNSCR)
+
+add_definitions(-DNAFT)
 #find_library(SCR)
 #if(SCR_FOUND)
 #	message (STATUS "SCR pacage is found ${SCR_INCLUDE_DIRS} ")
@@ -37,8 +49,10 @@ add_definitions(-DSCR)
 
 
 
+
 message (STATUS "LIBS ${LIBS}")
 message (STATUS "INCLUDE ${INCLUDE_DIRECTORIES}")
 
-add_library(cpaft SHARED Checkpoint.cpp cp_options.cpp aft.cpp aft_macros.h )
+#add_library(cpaft SHARED Checkpoint.cpp cp_options.cpp aft.cpp aft_macros.h )
+add_library(cpaft SHARED Checkpoint.cpp cp_options.cpp aft_macros.h )
 

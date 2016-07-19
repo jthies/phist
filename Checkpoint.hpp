@@ -8,11 +8,18 @@
 #include "CpPOD.hpp"
 #include "CpGhost.hpp"
 #include "CpArray.hpp"
+#include "CpPhistMvec.hpp"
 
 #include <string>
 #include <sstream>
 #include <map>
 #include <mpi.h>
+#include <complex>
+
+//#include "phist_gen_s.h"
+//#include "phist_gen_c.h"
+
+
 
 #ifdef SCR
 extern "C"{
@@ -52,7 +59,7 @@ public:
 // anything else will give an error message
 void add(std::string label, CpBase * p)
 {
-    objects[label] = p;
+		objects[label] = p;
 }
 
 // specialized implementation of add for POD (plain old data), which is obviously
@@ -63,29 +70,51 @@ void add(std::string label, CpBase * p)
 //       the pointer to the map and the person who created the object is responsible
 //       for deleting it.
 
-	// ===== POD ===== //
-  	void add(std::string label, int * const i){this->add(label, new CpPOD<int>(i));}
-  	void add(std::string label, float * const i){this->add(label, new CpPOD<float>(i));}
-	void add(std::string label, double * const d){this->add(label, new CpPOD<double>(d));}
-
-	// ===== GHOST DENSE MATRIX ===== //
-	void add(std::string label, ghost_densemat * const GDM)
-	{
+// ===== POD ===== //
+void add(std::string label, int * const i){this->add(label, new CpPOD<int>(i));}
+void add(std::string label, float * const i){this->add(label, new CpPOD<float>(i));}
+void add(std::string label, double * const d){this->add(label, new CpPOD<double>(d));}
+void add(std::string label, std::complex<double> * const d){
+		this->add(label, new CpPOD<std::complex<double> >(d));
+}
+void add(std::string label, std::complex<float> * const d){
+		this->add(label, new CpPOD<std::complex<float> >(d));
+}
+// ===== GHOST DENSE MATRIX ===== //
+void add(std::string label, ghost_densemat * const GDM)
+{
 		this->add(label, new CpGhostDenseMat(GDM));
-	}
-	void add(std::string label, ghost_densemat ** const GDMArray, const size_t nDenseMat_, const int toCpDenseMat_=ALL)
-	{
+}
+void add(std::string label, ghost_densemat ** const GDMArray, const size_t nDenseMat_, const int toCpDenseMat_=ALL)
+{
 		this->add(label, new CpGhostDenseMatArray(GDMArray, nDenseMat_, toCpDenseMat_) );
+}
+
+// ===== POD ARRAY ===== // 
+template <class T>
+void add(std::string label, T* const arrayPtr_, const size_t nRows_){
+		this->add(label, new CpArray<T>(arrayPtr_, nRows_));
+}
+
+// ===== PHIST MVEC ===== // 
+/*	void add(std::string label, TYPE(mvec_ptr) const PMvec, TYPE(const_linearOp_ptr) A_op)
+	{	
+		printf("PHIST_ MVEC const_linearOp_ptr add is called\n" );
+		this->add(label, new CpPhistMvec(PMvec, A_op) );
 	}
-
-	// ===== POD ARRAY ===== // 
-	template <class T>
-	void add(std::string label, T* const arrayPtr_, const size_t nRows_){
-			this->add(label, new CpArray<T>(arrayPtr_, nRows_));
+*/	
+	void add(std::string label, TYPE(mvec_ptr) const PMvec)
+	{	
+		printf("PHIST_ MVEC const_linearOp_ptr add is called\n" );
+		//this->add(label, new CpPhistMvec(PMvec, A_op) );
+		this->add(label, new CpPhistMvec(PMvec) );
 	}
-
-
 };
+
+
+void temp_func( TYPE(const_linearOp_ptr) const A_op_){
+
+}
 
 
 Checkpoint::Checkpoint(){

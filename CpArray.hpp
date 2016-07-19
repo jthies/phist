@@ -25,7 +25,7 @@ public:
 		dataPtr = dataPtr_;
 		copyArray(dataPtr, asynData, nRows);
 		std::cout << "POD Array is added: " << std::endl;
-		print();
+		//print();
 	}
 	~CpArray(){}	
 
