@@ -542,6 +542,15 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V_in,v_in,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V_out,v_out,*iflag);
 
+#ifdef TESTING
+  // ask the map guru if the operation makes sense at all. We only do this in TESTING mode
+  // because maps_compatible may do global reductions etc. (although it tries to avoid this)
+  phist_const_map_ptr map_in, map_out;
+  PHIST_CHK_IERR(SUBR(mvec_get_map)(v_in,&map_in,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_get_map)(v_out,&map_out,iflag),*iflag);
+  PHIST_CHK_NEG_IERR(phist_maps_compatible(map_in,map_out,iflag),*iflag);
+#endif
+
   // set some convenient pointers
   ghost_context *ctx_in=V_in->context;
   ghost_context *ctx_out=V_out->context;
@@ -614,11 +623,13 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   
   if (inputPermuted)
   {
+    PHIST_SOUT(PHIST_DEBUG,"mvec_to_mvec: unpermute input vector\n");
     GHOST_FUNC_CTX(V_out,ctx_in,permute,V_out,GHOST_PERMUTATION_PERM2ORIG);
   }
   
   if (outputPermuted)
   {
+    PHIST_SOUT(PHIST_DEBUG,"mvec_to_mvec: permute output vector\n");
     PHIST_CHK_GERR(V_out->permute(V_out,GHOST_PERMUTATION_ORIG2PERM),*iflag);
   }
   return;

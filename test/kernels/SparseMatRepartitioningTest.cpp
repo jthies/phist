@@ -1,4 +1,5 @@
 #include "phist_kernels.h"
+#include "../tools/MatrixIO.h"
 
 #ifdef PHIST_HAVE_ESSEX_PHYSICS
 #include "essex-physics/matfuncs.h"
@@ -69,7 +70,7 @@ class DSparseMatRepartTest: public virtual TestWithType<double>,
     EXPECT_EQ(0,iflag_);
     // construct same matrix but possibly with repartitioning (depends on what the kernel
     // library supports and which TPLs are available)
-    iflag_=PHIST_SPARSEMAT_PERM_GLOBAL;
+    iflag_=PHIST_SPARSEMAT_PERM_GLOBAL|getSparseMatCreateFlag(_N_,1);
     phist_Dcreate_matrix(&repartA_,comm_,spin_label,&iflag_);
     EXPECT_EQ(0,iflag_);
     phist_DsparseMat_get_domain_map(repartA_,&repartMap_,&iflag_);
