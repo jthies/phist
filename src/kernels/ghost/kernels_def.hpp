@@ -171,6 +171,13 @@ extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, phist_
   ghost_map* map = mapGarbageCollector.new_map(vA);
   map->ctx = A->context;
   map->vtraits_template=phist_default_vtraits();
+  // vectors based on this map should have the same permutation as the matrix rows
+  if (map->ctx->perm_local!=NULL ||
+      map->ctx->perm_global!=NULL )
+  {
+    map->vtraits_template.permutemethod=ROW;
+    map->vtraits_template.flags|=GHOST_DENSEMAT_PERMUTED;
+  }
   *vmap = (phist_const_map_ptr)map;
 }
 
@@ -187,6 +194,13 @@ extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, phist_
   ghost_map* map = mapGarbageCollector.new_map(vA);
   map->ctx = A->context;
   map->vtraits_template=phist_default_vtraits();
+  // vectors based on this map should have the same permutation as the matrix rows
+  if (map->ctx->perm_local!=NULL ||
+      map->ctx->perm_global!=NULL )
+  {
+    map->vtraits_template.permutemethod=COLUMN;
+    map->vtraits_template.flags|=GHOST_DENSEMAT_PERMUTED;
+  }
   *vmap = (phist_const_map_ptr)map;
 }
 

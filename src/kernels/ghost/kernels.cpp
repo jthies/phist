@@ -193,6 +193,8 @@ int get_perm_flag(int iflag, int outlev)
  //     new_flags&=   ~(int)GHOST_DENSEMAT_HOST;
  //     new_flags&=   ~(int)GHOST_DENSEMAT_DEVICE;
       vtraits.flags = (ghost_densemat_flags)new_flags;
+      
+      vtraits.permutemethod=NONE;
 
       vtraits.ncols=1;
 #ifdef PHIST_MVECS_ROW_MAJOR
