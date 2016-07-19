@@ -180,6 +180,12 @@ PHIST_OUT(PHIST_WARNING,"Warning, function %s is DEPRECATED.\n(file %s, line %d)
 
 #endif
 
+// macros for checking MPI errors. We may want to define them differently
+// to properly catch node failures etc.
+#define PHIST_CHK_MPIERR(call, iflag) PHIST_CHK_IERR(call,iflag)
+#define PHIST_ICHK_MPIERR(call, iflag) PHIST_ICHK_IERR(call,iflag)
+
+
 #if PHIST_OUTLEV>=PHIST_DEBUG
 #define PHIST_DEB(msg, ...) PHIST_OUT(PHIST_DEBUG,msg,##__VA_ARGS__);
 #else
