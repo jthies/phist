@@ -1930,23 +1930,50 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
 #ifdef IS_COMPLEX
 # ifdef IS_DOUBLE
 extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Dmvec* reV, phist_Dmvec* imV, int *iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
-extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Dconst_mvec_ptr reV, phist_Dconst_mvec_ptr imV, int *iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
 # else
-extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Smvec_ptr reV, phist_Smvec_ptr imV, int *iflag)
+extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Smvec* reV, phist_Smvec* imV, int *iflag)
+#endif
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  *iflag=0;
+  int _jmin=0,_jmax;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&_jmax,iflag),*iflag);
+  _jmax--;
+  PHIST_PERFCHECK_VERIFY_MVEC_SET_BLOCK(V,V,_jmin,_jmax,iflag);
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN(ComputeTask)
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,src,V,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,re,reV,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,im,imV,*iflag);
+  
+  PHIST_CHK_GERR(re->fromComplex(re,im,src),*iflag);
+  PHIST_TASK_END(iflag);
 }
+
+# ifdef IS_DOUBLE
+extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Dconst_mvec_ptr reV, phist_Dconst_mvec_ptr imV, int *iflag)
+# else
 extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Sconst_mvec_ptr reV, phist_Sconst_mvec_ptr imV, int *iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
 # endif
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  *iflag=0;
+  int _jmin=0;
+  int _jmax;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&_jmax,iflag),*iflag);
+  _jmax--;
+  PHIST_PERFCHECK_VERIFY_MVEC_SET_BLOCK(V,V,_jmin,_jmax,iflag);
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN(ComputeTask)
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,vec,V,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,re,reV,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,im,imV,*iflag);
+  
+  PHIST_CHK_GERR(vec->fromReal(vec,re,im),*iflag);
+  PHIST_TASK_END(iflag);
+}
 #endif
 
 //! create a sparse matrix from a row func and use a distribution prescribed by a given map
