@@ -31,10 +31,12 @@ using namespace testing;
 #define _M_ 5
 #include "../phist_typed_test_gen.h"
 
-// let's try something bigger...
+// let's try something bigger... (slow in debug mode!)
+#ifndef PHIST_TESTING
 #define _N_ 9999
 #define _M_ 65
 #include "../phist_typed_test_gen.h"
+#endif
 
 /* small test but with viewed mvecs and sdMats */
 #undef MVECS_VIEWED

@@ -35,10 +35,12 @@ using namespace testing;
 #include "../phist_typed_test_gen.h"
 
 // let's try something bigger...
+#ifndef PHIST_TESTING
 #define _N_ 9999
 #define _M_ 65
 #define CLASSFILE_DEF "../kernels/QR_Test_def.hpp"
 #include "../phist_typed_test_gen.h"
+#endif
 
 /* small test but with viewed mvecs and sdMats */
 #undef MVECS_VIEWED
