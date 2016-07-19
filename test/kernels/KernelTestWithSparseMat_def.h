@@ -47,18 +47,27 @@ class KernelTestWithSparseMat<_ST_, _Nglob, _MatName, _multipleDefinitionCounter
         ASSERT_EQ(0,iflag_);
         ASSERT_TRUE(A_ != NULL);
 
-        phist_const_map_ptr map = NULL;
-        SUBR(sparseMat_get_domain_map)(A_,&map,&iflag_);
+        phist_const_map_ptr domain_map = NULL;
+        SUBR(sparseMat_get_domain_map)(A_,&domain_map,&iflag_);
+        ASSERT_EQ(0,iflag_);
+
+        phist_const_map_ptr range_map = NULL;
+        SUBR(sparseMat_get_domain_map)(A_,&range_map,&iflag_);
         ASSERT_EQ(0,iflag_);
 
         // check the size of the map
         phist_gidx map_nglob = 0;
-        phist_map_get_global_length(map,&map_nglob,&iflag_);
+        phist_map_get_global_length(domain_map,&map_nglob,&iflag_);
         ASSERT_EQ(0,iflag_);
         ASSERT_EQ(_Nglob,map_nglob);
+        
+        // check that the range- and domain map are the same. Our tests dassume
+        // the matrix is square and symmetrically permuted.
+        phist_maps_compatible(range_map,domain_map,&iflag_);
+        ASSERT_EQ(0,iflag_);
 
         // now setup the map
-        KernelTestWithMap<_Nglob>::SetUpTestCaseWithMap(map);
+        KernelTestWithMap<_Nglob>::SetUpTestCaseWithMap(domain_map);
       }
     }
 
