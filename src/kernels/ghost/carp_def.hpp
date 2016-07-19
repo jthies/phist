@@ -60,6 +60,26 @@ void SUBR(carp_sweep)(TYPE(const_sparseMat_ptr) vA,
         void* const work,
         _MT_ const * omega, int* iflag)
 {
+
+#ifdef PHIST_TESTING
+  // check if the in/output and rhs have the correct maps. For Christies implementation of the kernel,
+  // we need X and B to live in the *column map* of A, the actual ordering of the columns, not of an input
+  // vector to the spMVM (the domain map).
+  {
+    phist_const_map_ptr map_x, map_b=NULL, col_map_A;
+    PHIST_CHK_IERR(SUBR(sparseMat_get_col_map)(vA,&col_map_A,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_get_map)(X,&map_x,iflag),*iflag);
+    // x and y must be correctly partitioned and permuted at this point, so demand *iflag=0 here:
+    PHIST_CHK_IERR(phist_maps_compatible(map_x, col_map_A,iflag),*iflag);
+    if (Rhs)
+    {
+      PHIST_CHK_IERR(SUBR(mvec_get_map)(Rhs,&map_b,iflag),*iflag);
+      PHIST_CHK_IERR(phist_maps_compatible(map_b, col_map_A,iflag),*iflag);
+    }
+    
+  }
+#endif
+
 // this only works with the GHOST kacz branch so far
   *iflag=PHIST_NOT_IMPLEMENTED;
 #if 0

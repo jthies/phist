@@ -1291,6 +1291,7 @@ _ST_ beta, TYPE(mvec_ptr) vy, _ST_* ydoty, _ST_* xdoty, int* iflag)
   PHIST_CHK_IERR(SUBR(fused_spmv_mvdot_mvadd)(alpha,vA,vx,beta,vy,st::zero(),st::zero(),NULL,ydoty,xdoty,iflag),*iflag);
 }
 
+// This is the central place where we call the GHOST sparse matrix-vector product with all its bells and whistles
 extern "C" void SUBR(fused_spmv_mvdot_mvadd)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
 _ST_ beta, TYPE(mvec_ptr) vy, 
 _ST_ gamma, _ST_ delta, TYPE(mvec_ptr) vz,
@@ -1298,6 +1299,23 @@ _ST_* ydoty, _ST_* xdoty, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
+
+#ifdef PHIST_TESTING
+  // check if the input and output have the correct maps, that is they live in the same index space
+  // as the columns and rows of A, respectively, and have the same distribution and permutation.
+  {
+    phist_const_map_ptr map_x, map_y, range_map_A, domain_map_A;
+    PHIST_CHK_IERR(SUBR(mvec_get_map)(vx,&map_x,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_get_map)(vy,&map_y,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sparseMat_get_range_map)(vA,&range_map_A,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sparseMat_get_domain_map)(vA,&domain_map_A,iflag),*iflag);
+    
+    // x and y must be correctly partitioned and permuted at this point, so demand *iflag=0 here:
+    PHIST_CHK_IERR(phist_maps_compatible(map_x, domain_map_A,iflag),*iflag);
+    PHIST_CHK_IERR(phist_maps_compatible(map_y, range_map_A,iflag),*iflag);
+  }
+#endif
+
   ghost_spmv_opts spMVM_opts=GHOST_SPMV_OPTS_INITIALIZER;
   // ghost spmvm mode
   if( *iflag & PHIST_SPMVM_ONLY_LOCAL )
