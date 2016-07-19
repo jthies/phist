@@ -152,6 +152,7 @@ int get_perm_flag(int iflag, int outlev)
   }
   if (iflag&PHIST_SPARSEMAT_OPT_CARP)
   {
+        PHIST_SOUT(outlev, "Enable reorderings for CARP kernel\n");
         oflag|=GHOST_SOLVER_KACZ;
   }
   if (iflag&PHIST_SPARSEMAT_DIST2_COLOR)
@@ -160,7 +161,7 @@ int get_perm_flag(int iflag, int outlev)
   }
 
   if (oflag!=GHOST_SPARSEMAT_DEFAULT) oflag|=GHOST_SPARSEMAT_PERMUTE;
-  if (iflag&PHIST_SPARSEMAT_PERM_LOCAL == 0 && oflag!=0)
+  if (((iflag&PHIST_SPARSEMAT_PERM_LOCAL) == 0) && (oflag!=0))
   {
     PHIST_SOUT(PHIST_WARNING,"WARNING: based on your input flags, PHIST suggests to set permutation flags for the matrix.\n"
                              "         However, since PHIST_SPARSEMAT_PERM_LOCAL is missing from the input flags, I  can't set\n"
@@ -535,8 +536,8 @@ extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map
       return;
     }
   }
-  if ( (vtraits1.flags&GHOST_DENSEMAT_PERMUTED ==
-        vtraits2.flags&GHOST_DENSEMAT_PERMUTED) )
+  if ( (vtraits1.flags&GHOST_DENSEMAT_PERMUTED) ==
+       (vtraits2.flags&GHOST_DENSEMAT_PERMUTED) )
   {
     // should be same permutation
     *iflag=0;
