@@ -490,6 +490,75 @@ extern "C" void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iuppe
   *iupper = map->ctx->lfRow[me]+map->ctx->lnrows[me]-1;
 }
 
+extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map_ptr vmap2, int* iflag)
+{
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map,map1,vmap1,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map,map2,vmap2,*iflag);
+  *iflag=-1;
+  // same object?
+  if (map1==map2) {*iflag=0; return;}
+  // can only be compatible with same context in GHOST
+  if (map1->ctx!=map2->ctx) {*iflag=-1; return;}
+  const ghost_densemat_traits& vtraits1 = map1->vtraits_template;
+  const ghost_densemat_traits& vtraits2 = map2->vtraits_template;
+  const ghost_permutation *lperm = map1->ctx->perm_local;
+  const ghost_permutation *gperm = map1->ctx->perm_global;
+  
+  if (&vtraits1==&vtraits2)
+  {
+    *iflag=0;
+    return;
+  }
+  // since ghost_vtraits doesn't implement operator==, we have to compare manually
+  if (vtraits1.nrows == vtraits2.nrows                      &&
+      vtraits1.nrowshalo == vtraits2.nrowshalo              &&
+      vtraits1.flags == vtraits2.flags                      &&
+      vtraits1.permutemethod == vtraits2.permutemethod)
+  {
+    // these maps will create vectors with the same distribution and permutation
+    *iflag=0;
+    return;
+  }
+  // check if the maps are locally or globally permuted versions of the same index space
+  if (vtraits1.permutemethod != vtraits2.permutemethod)
+  {
+    // this means e.g. that the one is a row distribution and the other a column distribution,
+    // and we currently do not allow converting between them unless they are the same 
+    // (as for a symmetrically permuted sparse matrix)
+    if ( (lperm && lperm->method!=GHOST_PERMUTATION_SYMMETRIC) ||
+         (gperm && gperm->method!=GHOST_PERMUTATION_SYMMETRIC) )
+    {
+      *iflag=-1;
+      return;
+    }
+  }
+  if ( (vtraits1.flags&GHOST_DENSEMAT_PERMUTED ==
+        vtraits2.flags&GHOST_DENSEMAT_PERMUTED) )
+  {
+    // should be same permutation
+    *iflag=0;
+    return;
+  }
+  else
+  {
+    // one of the vectors is permuted, the other isn't. Check if the permutation is global or local
+    if (gperm!=NULL) 
+    {
+      *iflag=2;
+    }
+    else if (lperm!=NULL)
+    {
+      *iflag=1;
+    }
+    else
+    {
+      *iflag=0;
+    }
+  }
+  return;
+}
+
 /* helper function that tells the matrix generation routines which 
    repartitioning flags they should pass to GHOST (depending on how
    GHOST was compiled/installed different options may be available)

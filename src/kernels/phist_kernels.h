@@ -96,7 +96,15 @@ void phist_map_get_ilower(phist_const_map_ptr map, phist_gidx* ilower, int* ifla
 //! in case the map is not contiguous, because in that case it may be that the
 //! caller falsely assumes global elements [ilower ... iupper] are actually on this partition.
 void phist_map_get_iupper(phist_const_map_ptr map, phist_gidx* iupper, int* iflag);
-
+//! set *iflag= 0 if the two maps represent the same distribution and permutation, 
+//!     *iflag=+1 if map2 is a local permutation of map1
+//!     *iflag=+2 if map2 is a global permutation of map1
+//! *iflag=-1 otherwise (the maps are incommpatible)
+//! if *iflag>=0, mvec_to_mvec can be used to transform vectors with the one map to vectors with the other.
+//! 
+//! This function may require communication, so it has to be called by all processes in the map's comm object.
+//! 
+void phist_maps_compatible(phist_const_map_ptr map1, phist_const_map_ptr map2, int* iflag);
 //!@}
 
 //! \name STREAM benchmarks for measuring main memory bandwidth. These are implemented in the common/

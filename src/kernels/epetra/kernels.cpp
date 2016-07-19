@@ -185,6 +185,49 @@ extern "C" void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iuppe
 #endif
 }
 
+extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map_ptr vmap2, int* iflag)
+{
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_BlockMap,map1,vmap1,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Epetra_BlockMap,map2,vmap2,*iflag);
+  *iflag=-1;
+  // same object?
+  if (map1==map2) {*iflag=0; return;}
+  // maps identical?
+  if (map1->SameAs(*map2)) {*iflag=0; return;}
+
+  // check the maps use the same comm
+#ifdef PHIST_HAVE_MPI
+  MPI_Comm mpi_comm1,mpi_comm2;
+  *iflag=0;
+  PHIST_CHK_IERR(phist_comm_get_mpi_comm(&map1->Comm(),&mpi_comm1,iflag),*iflag);
+  PHIST_CHK_IERR(phist_comm_get_mpi_comm(&map1->Comm(),&mpi_comm2,iflag),*iflag);
+  *iflag=-1;
+  if (mpi_comm1!=mpi_comm2) {return;}
+#endif  
+
+  // same global size and local size? We can't tell if there is a global
+  // permutation going on (actually we could, but it involves creating the
+  // import object, which is too much effort for this query).
+  if (map1->PointSameAs(*map2)) {*iflag=2; return;}
+  // if the MPI communicator is the same, Epetra can always transform vectors from
+  // one map to the other using an appropriate Import or Export object.
+
+  // check some simple heuristics, index base, global length, global min and max index.
+  // mvec_to_mvec will take care of most conversions with Epetra anyway.
+  if ( map1->NumGlobalElements() == map2->NumGlobalElements() &&
+       map1->IndexBase()    == map2->IndexBase()    &&
+       map1->MinAllGID()    == map2->MinAllGID()    && 
+       map1->MaxAllGID()    == map2->MaxAllGID() )
+  {
+    *iflag=2;
+  }
+
+  // if not, return the -1 (incompatible maps)
+  *iflag=-1;
+  return;
+}
+
+
 #include "../common/phist_bench_kernels.cpp"
 
 #ifdef PHIST_HAVE_SP

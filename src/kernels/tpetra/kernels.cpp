@@ -260,5 +260,75 @@ extern "C" void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iuppe
   *iupper = map->getMaxGlobalIndex();
 }
 
+// allow verifying that maps are compatible (the same or permuted)
+extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map_ptr vmap2, int* iflag)
+{
+  PHIST_CAST_PTR_FROM_VOID(const map_type,map1,vmap1,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const map_type,map2,vmap2,*iflag);
+  *iflag=-1;
+  // same object?
+  if (map1==map2) {*iflag=0; return;}
+  // maps identical?
+  if (*map1==*map2) {*iflag=0; return;}
+  // check wether the maps have the same communicator, some of the functions below
+  // need the same number of processes etc. We simply demand the same communicator
+  // and return -1 otherwise.
+  Teuchos::RCP<const comm_type> comm1=map1->getComm();
+  Teuchos::RCP<const comm_type> comm2=map2->getComm();
+  if (comm1!=comm2) 
+  {
+#ifdef PHIST_HAVE_MPI
+  MPI_Comm mpi_comm1, mpi_comm2;
+  PHIST_CHK_NEG_IERR(phist_comm_get_mpi_comm(comm1.get(),&mpi_comm1,iflag),*iflag);
+  PHIST_CHK_NEG_IERR(phist_comm_get_mpi_comm(comm2.get(),&mpi_comm2,iflag),*iflag);
+  if (mpi_comm1!=mpi_comm2)
+  {
+    return;
+  }
+#else
+    // can't check communicator compatibility for now
+    PHIST_CHK_IERR(*iflag=-99,*iflag);
+    return;
+#endif
+  }
+
+  // query how compatible the maps are
+  
+  // same global size and distribution?
+  
+  bool compat=map1->isCompatible(*map2);
+  bool locallySame=map1->locallySameAs(*map2);
+
+#ifdef PHIST_HAVE_MPI  
+  MPI_Comm mpi_comm;
+  PHIST_CHK_IERR(phist_comm_get_mpi_comm(comm1.get(),&mpi_comm,iflag),*iflag);
+  PHIST_CHK_MPIERR(*iflag=MPI_Allreduce(MPI_IN_PLACE,&locallySame,1,MPI_LOGICAL,MPI_LOR,mpi_comm),*iflag);
+#endif
+
+  if (compat&&!locallySame)
+  {
+    *iflag=1; // just a local permutation
+    return;
+  }
+  
+  // "compatible" in Tpetra is a strong word, it means that the partition sizes can't change,
+  // so e.g. load balancing is not included. If the maps are compatible, return 2 here (global perm), 
+  // otherwise do some more checks.
+  if (compat) {*iflag=2; return;}
+  if (map1->getIndexBase()         == map2->getIndexBase()         &&
+      map1->getGlobalNumElements() == map2->getGlobalNumElements() &&
+      map1->getMaxGlobalIndex() == map2->getMaxGlobalIndex() &&
+      map1->getMinGlobalIndex() == map2->getMinGlobalIndex() )
+  {
+    *iflag=2; // assume that the maps are a global permutation (repartitioning+reordering) of each other.
+              // the check is not 100% fool proof, you could have map1=[0 2 | 4 6] and map2=[0 1 | 3 6] and
+              // falsely return +2 here, but then subsequent Tpetra calls will complain. Anyway, mvec_to_mvec
+              // will probably still work, and we don't give the user any interface to construct such funny maps,
+              // so if he does it's in a way his own fault.
+    return;
+  }
+  return;
+}
+
 
 #include "../common/phist_bench_kernels.cpp"
