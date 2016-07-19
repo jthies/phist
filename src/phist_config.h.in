@@ -11,6 +11,13 @@
 */
 #cmakedefine PHIST_OUTLEV ${PHIST_OUTLEV}
 
+/* enables some potentially expesive tests, for instance wether the index spaces of
+   input and output vectors to an operation are correct. By default, this is ON if
+   CMAKE_BUILD_TYPE=Debug.
+ */
+#cmakedefine PHIST_TESTING
+
+
 /* some compiler/system flags */
 #cmakedefine PHIST_HAVE_CXX11_LAMBDAS
 #cmakedefine PHIST_HAVE_CXX11_THREADLOCAL

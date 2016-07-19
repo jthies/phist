@@ -685,7 +685,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,Vblock,vVblock,*iflag);
   *iflag=0;
-#ifdef TESTING
+#ifdef PHIST_TESTING
 // nonzero error code if #vectors in Vblock too small or large
   PHIST_CHK_IERR(*iflag=(jmax-jmin+1)-Vblock->traits.ncols,*iflag);
   PHIST_CHK_IERR(*iflag=((jmin<0)||(jmax>=V->traits.ncols))?PHIST_INVALID_INPUT:0,*iflag);
@@ -718,7 +718,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,Vblock,vVblock,*iflag);
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
 int nv_v,nv_vb;
 phist_lidx nr_v,nr_vb;
 PHIST_CHK_IERR(*iflag=V->elSize-Vblock->elSize,*iflag);
@@ -761,7 +761,7 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMbloc
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M,vM,*iflag);
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
   if (imin<0||jmin<0||imax>M->traits.nrows||jmax>M->traits.ncols)
   {
     PHIST_OUT(PHIST_ERROR,"%s: range out of bounds of matrix\n"
@@ -803,7 +803,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M,vM,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,Mblock,vMblock,*iflag);
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
   int nr=imax-imin+1;
   int nc=jmax-jmin+1;
   if (Mblock->traits.nrows!=nr || Mblock->traits.ncols!=nc)
@@ -1607,7 +1607,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     nrW=W->traits.nrows;  ncW=V->traits.ncols;
     nrC=C->traits.nrows;  ncC=V->traits.ncols;
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
     PHIST_CHK_IERR(*iflag=nrV-nrW,*iflag);
     PHIST_CHK_IERR(*iflag=nrC-ncV,*iflag);
     PHIST_CHK_IERR(*iflag=ncC-ncW,*iflag);
@@ -1635,7 +1635,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
     PHIST_CAST_PTR_FROM_VOID(ghost_densemat,C,vC,*iflag);
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
     int ncV, nrC, ncC;
     ncV=V->traits.ncols;
      nrC=C->traits.nrows;  ncC=V->traits.ncols;

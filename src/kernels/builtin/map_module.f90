@@ -94,7 +94,7 @@ contains
       map%distrib(i) = map%distrib(i-1) + map%nlocal(i-1)
     end do
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
 if( verbose ) then
   write(*,*) map%me, 'setting up map with nglob = ', n_glob, ', nProcs = ', map%nProcs, &
     &  ', distrib = ', map%distrib, ', nlocal = ', map%nlocal

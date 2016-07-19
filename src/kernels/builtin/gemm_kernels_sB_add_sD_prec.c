@@ -19,7 +19,7 @@
 // more accureate fused gemm products y <- x*r + y*d AVX2 kernel for y of blocksize 4
 void dgemm_sb_add_sd_prec_strided_k_4(int nrows, int k, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(x,32) )
@@ -115,7 +115,7 @@ void dgemm_sb_add_sd_prec_strided_k_4(int nrows, int k, const double *restrict x
 
 void dgemm_sb_add_sd_prec_k_4(int nrows, int k, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_sb_add_sd_prec_strided_k_4(nrows, k, x, k, r, rC, y, d, dC);
@@ -123,7 +123,7 @@ void dgemm_sb_add_sd_prec_k_4(int nrows, int k, const double *restrict x, const 
 
 void dgemm_sb_add_sd_prec_4_4(int nrows, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_sb_add_sd_prec_strided_k_4(nrows, 4, x, 4, r, rC, y, d, dC);
@@ -131,7 +131,7 @@ void dgemm_sb_add_sd_prec_4_4(int nrows, const double *restrict x, const double 
 
 void dgemm_sb_add_sd_prec_2_4(int nrows, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_sb_add_sd_prec_strided_k_4(nrows, 2, x, 2, r, rC, y, d, dC);
@@ -139,7 +139,7 @@ void dgemm_sb_add_sd_prec_2_4(int nrows, const double *restrict x, const double 
 
 void dgemm_sb_add_sd_prec_1_4(int nrows, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_sb_add_sd_prec_strided_k_4(nrows, 1, x, 1, r, rC, y, d, dC);
@@ -149,7 +149,7 @@ void dgemm_sb_add_sd_prec_1_4(int nrows, const double *restrict x, const double 
 // more accureate fused gemm products y <- x*r + y*d AVX2 kernel for y of blocksize 2
 void dgemm_sb_add_sd_prec_strided_k_2(int nrows, int k, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(x,32) )
@@ -228,7 +228,7 @@ void dgemm_sb_add_sd_prec_strided_k_2(int nrows, int k, const double *restrict x
 
 void dgemm_sb_add_sd_prec_k_2(int nrows, int k, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_sb_add_sd_prec_strided_k_2(nrows, k, x, k, r, rC, y, d, dC);
@@ -236,7 +236,7 @@ void dgemm_sb_add_sd_prec_k_2(int nrows, int k, const double *restrict x, const 
 
 void dgemm_sb_add_sd_prec_4_2(int nrows, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_sb_add_sd_prec_strided_k_2(nrows, 4, x, 4, r, rC, y, d, dC);
@@ -244,7 +244,7 @@ void dgemm_sb_add_sd_prec_4_2(int nrows, const double *restrict x, const double 
 
 void dgemm_sb_add_sd_prec_2_2(int nrows, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_sb_add_sd_prec_strided_k_2(nrows, 2, x, 2, r, rC, y, d, dC);
@@ -252,7 +252,7 @@ void dgemm_sb_add_sd_prec_2_2(int nrows, const double *restrict x, const double 
 
 void dgemm_sb_add_sd_prec_1_2(int nrows, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_sb_add_sd_prec_strided_k_2(nrows, 1, x, 1, r, rC, y, d, dC);
@@ -262,7 +262,7 @@ void dgemm_sb_add_sd_prec_1_2(int nrows, const double *restrict x, const double 
 // more accureate fused gemm products y <- x*r + y*d AVX2 kernel for y of blocksize 1
 void dgemm_sb_add_sd_prec_strided_k_1(int nrows, int k, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(x,32) )
@@ -320,7 +320,7 @@ void dgemm_sb_add_sd_prec_strided_k_1(int nrows, int k, const double *restrict x
 
 void dgemm_sb_add_sd_prec_k_1(int nrows, int k, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_sb_add_sd_prec_strided_k_1(nrows, k, x, k, r, rC, y, d, dC);
@@ -328,7 +328,7 @@ void dgemm_sb_add_sd_prec_k_1(int nrows, int k, const double *restrict x, const 
 
 void dgemm_sb_add_sd_prec_4_1(int nrows, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_sb_add_sd_prec_strided_k_1(nrows, 4, x, 4, r, rC, y, d, dC);
@@ -336,7 +336,7 @@ void dgemm_sb_add_sd_prec_4_1(int nrows, const double *restrict x, const double 
 
 void dgemm_sb_add_sd_prec_2_1(int nrows, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_sb_add_sd_prec_strided_k_1(nrows, 2, x, 2, r, rC, y, d, dC);
@@ -344,7 +344,7 @@ void dgemm_sb_add_sd_prec_2_1(int nrows, const double *restrict x, const double 
 
 void dgemm_sb_add_sd_prec_1_1(int nrows, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y, const double *restrict d, const double *restrict dC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_sb_add_sd_prec_strided_k_1(nrows, 1, x, 1, r, rC, y, d, dC);

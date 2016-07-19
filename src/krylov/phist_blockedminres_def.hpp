@@ -79,7 +79,7 @@ void SUBR(blockedMINRESstates_iterate)(TYPE(const_linearOp_ptr) Aop,
     // x0 / last element of krylov subspace
     PHIST_CHK_IERR(SUBR( mvec_view_block )( mvecBuff->at(lastVind), &work_x, minId, maxId, iflag), *iflag);
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
 // print a visualization of the current state
 std::vector< std::vector<int> > mvecUsedBy(maxId+1);
 for(int i = 0; i < maxId+1; i++)
@@ -311,7 +311,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     }
     maxCurDimV++;
     sharedCurDimV++;
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_DEBUG)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_DEBUG)
 // check subspace orthogonality
 {
   for(int i = 0; i < numSys; i++)
@@ -410,7 +410,7 @@ PHIST_TASK_BEGIN(ComputeTask)
         //tmp = st::conj(S[i]->cs_[j-1])*Hj[j-1] + st::conj(S[i]->sn_[j-1])*Hj[j];
       //}
 #endif
-#ifdef TESTING
+#ifdef PHIST_TESTING
 {
   PHIST_OUT(PHIST_DEBUG,"(Hj[j-1],Hj[j]) = (%8.4e+i%8.4e, %8.4e + i%8.4e)\n", st::real(Hj[j-1]), st::imag(Hj[j-1]),st::real(Hj[j]),st::imag(Hj[j]));
   PHIST_OUT(PHIST_DEBUG,"(c,s) = (%8.4e+i%8.4e, %8.4e+i%8.4e)\n", st::real(S[i]->cs_[j-1]),st::imag(S[i]->cs_[j-1]),st::real(S[i]->sn_[j-1]),st::imag(S[i]->sn_[j-1]));

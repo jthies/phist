@@ -225,6 +225,10 @@ else()
 	set(PHIST_OUTLEV 3 CACHE STRING "PHIST verbosity (debug 3, 'VERBOSE')")
 endif()
 
+if(CMAKE_BUILD_TYPE MATCHES "Debug")
+  set(PHIST_TESTING ON CACHE STRING "Enable potentially expensive checks in the code")
+endif()
+
 ##############################################################################
 # compiler-dependent flags 
 ##############################################################################
@@ -266,13 +270,13 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
 
   if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
-    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter --coverage")
-    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter --coverage")
-    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all --coverage")
+    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter --coverage")
+    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter --coverage")
+    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Wall -fcheck=all -fstack-protector-all --coverage")
   else ()
-    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -fstack-protector-all -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs --coverage")
-    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -fstack-protector-all -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs --coverage")
-    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all --coverage")
+    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -fstack-protector-all -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs --coverage")
+    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -fstack-protector-all -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs --coverage")
+    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Wall -fcheck=all -fstack-protector-all --coverage")
   endif ()
 
   if (NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
@@ -321,13 +325,13 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -debug")
   set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -debug")
 
-  set (CMAKE_C_FLAGS_DEBUG        "-check-pointers=rw -fstack-protector -w2 -debug -traceback -DTESTING")
-  set (CMAKE_CXX_FLAGS_DEBUG      "-check-pointers=rw -fstack-protector -w2 -debug -traceback -DTESTING")
-  set (CMAKE_Fortran_FLAGS_DEBUG  "-check all -debug -traceback -DTESTING")
+  set (CMAKE_C_FLAGS_DEBUG        "-check-pointers=rw -fstack-protector -w2 -debug -traceback")
+  set (CMAKE_CXX_FLAGS_DEBUG      "-check-pointers=rw -fstack-protector -w2 -debug -traceback")
+  set (CMAKE_Fortran_FLAGS_DEBUG  "-check all -debug -traceback")
   if (PHIST_BUILD_MIC)
-      set (CMAKE_C_FLAGS_DEBUG        "-mmic -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
-      set (CMAKE_CXX_FLAGS_DEBUG      "-mmic -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
-      set (CMAKE_Fortran_FLAGS_DEBUG  "-mmic -check all -debug -traceback -DTESTING")
+      set (CMAKE_C_FLAGS_DEBUG        "-mmic -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback")
+      set (CMAKE_CXX_FLAGS_DEBUG      "-mmic -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback")
+      set (CMAKE_Fortran_FLAGS_DEBUG  "-mmic -check all -debug -traceback")
   endif()
   # this is for some reason required with Intel 15 on Emmy:
   set (CMAKE_EXE_LINKER_FLAGS_DEBUG "-lifcore -lifport")
@@ -369,9 +373,9 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "PGI")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -g")
   set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
 
-  set (CMAKE_C_FLAGS_DEBUG       "-O0 -g")#-O0 -g -DTESTING -Mbounds -Mdwarf3")
-  set (CMAKE_CXX_FLAGS_DEBUG     "-O0")#-O0 -g -DTESTING -Mbounds -Mdwarf3")
-  set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g")#-O0 -g -DTESTING -Mbounds -Mdwarf3")
+  set (CMAKE_C_FLAGS_DEBUG       "-O0 -g")#-O0 -g -Mbounds -Mdwarf3")
+  set (CMAKE_CXX_FLAGS_DEBUG     "-O0")#-O0 -g -Mbounds -Mdwarf3")
+  set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g")#-O0 -g -Mbounds -Mdwarf3")
 
 else()
 

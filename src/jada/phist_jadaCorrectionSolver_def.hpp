@@ -277,7 +277,7 @@ PHIST_TASK_BEGIN(ComputeTask)
             continue;
           }
 /*
-#ifdef TESTING
+#ifdef PHIST_TESTING
 {
   // determine real residual for comparison
   currShifts[0] = -sigma[ind];

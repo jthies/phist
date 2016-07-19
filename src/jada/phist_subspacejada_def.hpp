@@ -191,7 +191,7 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
 
   // create mvecs and sdMats
   mvec_ptr  V_      = NULL;    //< space for V
-  mvec_ptr  Vtmp_   = NULL;    //< temporary space for V only used for checking invariants in TESTING mode
+  mvec_ptr  Vtmp_   = NULL;    //< temporary space for V only used for checking invariants in PHIST_TESTING mode
   mvec_ptr  AV_     = NULL;    //< space for AV
   mvec_ptr  BV_     = NULL;    //< space for BV
   mvec_ptr  Q_      = NULL;    //< Q, enlarged dynamically
@@ -217,7 +217,7 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
 
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&V_,     A_op->domain_map, maxBase,        iflag), *iflag);
   // TODO: remove Vtmp
-#ifdef TESTING
+#ifdef PHIST_TESTING
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&Vtmp_,  A_op->domain_map, maxBase,                iflag), *iflag);
 #endif
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&AV_,    A_op->range_map,  maxBase,                iflag), *iflag);
@@ -339,11 +339,11 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
 
 
 
-#ifdef TESTING_CHECK_SUBSPACE_INVARIANTS
-#undef TESTING_CHECK_SUBSPACE_INVARIANTS
+#ifdef PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS
+#undef PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS
 #endif
-#ifdef TESTING
-#define TESTING_CHECK_SUBSPACE_INVARIANTS \
+#ifdef PHIST_TESTING
+#define PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS \
 { \
   /* check orthogonality of V, BV, Q */ \
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      iflag), *iflag); \
@@ -379,11 +379,11 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   /* PHIST_CHK_IERR(SUBR( sdMat_print )(Htmp, iflag), *iflag); */ \
 }
 #else
-#define TESTING_CHECK_SUBSPACE_INVARIANTS
+#define PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS
 #endif
 
 
-TESTING_CHECK_SUBSPACE_INVARIANTS;
+PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS;
 
 
   //----------------------------------- MAIN LOOP ----------------------------------
@@ -480,7 +480,7 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
     {
       PHIST_CHK_IERR(SUBR(sdMat_to_device)(Q_H_,iflag),*iflag);
     }
-#ifdef TESTING
+#ifdef PHIST_TESTING
 {
   // check that H Q_H = Q_H R_H
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Q_H_,&Q_H, 0, nV-1,    0, nEig_-1, iflag), *iflag);
@@ -523,7 +523,7 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
     PHIST_CHK_IERR(SUBR( mvec_times_sdMat ) (st::one(), BQ,   Rr_H,    -st::one(), t_res, iflag), *iflag);
     // calculate norm of the residual
     PHIST_CHK_IERR(SUBR( mvec_norm2 ) (t_res, resNorm+nConvEig, iflag), *iflag);
-#ifdef TESTING
+#ifdef PHIST_TESTING
 {
   // check that the residual is orthogonal to Q (should be by construction!)
   PHIST_CHK_IERR( SUBR( sdMat_view_block ) (Htmp_, &Htmp, 0, nEig_-1, nConvEig, nEig_-1, iflag), *iflag);
@@ -562,7 +562,7 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
       PHIST_CHK_IERR( SUBR(ReorderPartialSchurDecomp)(R_H_raw+offR_H, ldaR_H, Q_H_raw+offQ_H, ldaQ_H, nV-nConvEig, nEig_-nConvEig, which, sqrt(tol), resNorm+nConvEig, ev_H+nConvEig, &resPermutation[nConvEig], iflag), *iflag);
       for(int i = nConvEig; i < nEig_; i++)
         resPermutation[i] += nConvEig;
-#ifdef TESTING
+#ifdef PHIST_TESTING
 PHIST_SOUT(PHIST_INFO,"resPermutation: ");
 for(int i = 0; i < nEig_; i++)
   PHIST_SOUT(PHIST_INFO,"\t%d", resPermutation[i]);
@@ -595,7 +595,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
         break;
       }
     }
-#ifdef TESTING
+#ifdef PHIST_TESTING
 {
   // check that Q is in correct order
   PHIST_CHK_IERR( SUBR(mvec_view_block)(Vtmp_, &t, 0, nEig_-1, iflag), *iflag);
@@ -727,7 +727,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
 
         UPDATE_SUBSPACE_VIEWS;
       }
-TESTING_CHECK_SUBSPACE_INVARIANTS;
+PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS;
     }
 
 
@@ -797,7 +797,7 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
       nV = minBase;
 
       UPDATE_SUBSPACE_VIEWS;
-TESTING_CHECK_SUBSPACE_INVARIANTS;
+PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS;
     }
 
     if( k > 0 ) 
@@ -874,7 +874,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
     } // k > 0
 
     UPDATE_SUBSPACE_VIEWS;
-TESTING_CHECK_SUBSPACE_INVARIANTS;
+PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS;
   }
 
   // copy result to Q_

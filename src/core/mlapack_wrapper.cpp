@@ -46,7 +46,7 @@ void printmat(int N, int M, dd_real * A, int LDA)
 extern "C" void phist_Drsyev(int n, double *restrict a, double *restrict aC, int lda,
                        double *restrict w, double *restrict wC, int *iflag)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
 

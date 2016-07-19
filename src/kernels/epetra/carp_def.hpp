@@ -215,7 +215,7 @@ void SUBR(carp_sweep_aug_rc)(TYPE(const_sparseMat_ptr) vA,
       *iflag=PHIST_INVALID_INPUT;
       return;
     }
-#ifdef TESTING
+#ifdef PHIST_TESTING
     double norms[Q->NumVectors()];
     PHIST_CHK_IERR(*iflag=Q->Norm2(norms),*iflag);
     double norm_err=0.0;

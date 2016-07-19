@@ -359,7 +359,7 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
       PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vv,0,m-1,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(mvec_view_block)(AV,&AVv,0,m-1,iflag),*iflag);
       PHIST_DEB("basis size is now m=%d\n",m);
-#ifdef TESTING
+#ifdef PHIST_TESTING
       // check orthogonality of [V Q]
       sdMat_ptr tmp1=NULL,tmp2=NULL;
       ST *tmp1_raw, *tmp2_raw;

@@ -920,7 +920,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   int nrows = R->MyLength();
   int ncols = R->NumVectors();
     
-#ifdef TESTING
+#ifdef PHIST_TESTING
   PHIST_CHK_IERR(*iflag=nrows-ncols,*iflag);
   PHIST_CHK_IERR(*iflag=nrows-V->NumVectors(),*iflag);
 #endif  

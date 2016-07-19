@@ -1386,7 +1386,7 @@ end do
 write(42,*) '];'
 #endif
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
 ! quick test if the pointer is correct
 if (A%row_map%color_offset(A%row_map%nColors+1)-1/=A%nRows) then
   stop 'color_ptr incorrect'
@@ -1498,7 +1498,7 @@ end subroutine permute_local_matrix
       ierr = -1
       return
     end if
-#ifdef TESTING
+#ifdef PHIST_TESTING
     if( .not. map_compatible_map(A%row_map, x%map) .or. &
       & .not. map_compatible_map(A%row_map, y%map)      ) then
       ierr = -1

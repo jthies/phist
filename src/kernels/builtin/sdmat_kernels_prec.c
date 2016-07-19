@@ -14,7 +14,7 @@
 // b+eps_b <- alpha*(a+eps_a) + beta*(b+eps_b) more precise
 void daxpby_prec(int n, double alpha, const double *restrict a, const double *restrict aC, double beta, double *restrict b, double *restrict bC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
 
@@ -41,7 +41,7 @@ void dgemm_prec(int m, int n, int k, double alpha, const double *restrict a, con
                                                    const double *restrict b, const double *restrict bC,
                                      double beta,        double *restrict c,       double *restrict cC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
 

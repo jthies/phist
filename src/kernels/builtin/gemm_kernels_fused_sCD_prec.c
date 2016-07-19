@@ -21,7 +21,7 @@ typedef double aligned_double __attribute__((aligned(64)));
 // more accurate gemm product x'x AVX2 kernel
 void dgemm_fused_scd_self_prec_4(int nrows, aligned_double *restrict x, double *restrict scal, double *restrict scalC, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(x,32) )
@@ -169,7 +169,7 @@ void dgemm_fused_scd_self_prec_4(int nrows, aligned_double *restrict x, double *
 // more accurate gemm product x'x AVX2 kernel
 void dgemm_fused_scd_self_prec_2(int nrows, aligned_double *restrict x, const double *restrict scal, const double *restrict scalC, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(x,32) )
@@ -285,7 +285,7 @@ void dgemm_fused_scd_self_prec_2(int nrows, aligned_double *restrict x, const do
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_fused_scd_prec_k_4(int nrows, int k, const aligned_double *restrict y, aligned_double *restrict x, const double *restrict scal, const double *restrict scalC, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(x,32) )
@@ -419,7 +419,7 @@ void dgemm_fused_scd_prec_k_4(int nrows, int k, const aligned_double *restrict y
 
 void dgemm_fused_scd_prec_4_4(int nrows, const aligned_double *restrict y, aligned_double *restrict x, const double *restrict scal, const double *restrict scalC, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_fused_scd_prec_k_4(nrows, 4, y, x, scal, scalC, res, resC);
@@ -427,7 +427,7 @@ void dgemm_fused_scd_prec_4_4(int nrows, const aligned_double *restrict y, align
 
 void dgemm_fused_scd_prec_2_4(int nrows, const aligned_double *restrict y, aligned_double *restrict x, const double *restrict scal, const double *restrict scalC, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_fused_scd_prec_k_4(nrows, 2, y, x, scal, scalC, res, resC);
@@ -435,7 +435,7 @@ void dgemm_fused_scd_prec_2_4(int nrows, const aligned_double *restrict y, align
 
 void dgemm_fused_scd_prec_1_4(int nrows, const aligned_double *restrict y, aligned_double *restrict x, const double *restrict scal, const double *restrict scalC, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_fused_scd_prec_k_4(nrows, 1, y, x, scal, scalC, res, resC);
@@ -445,7 +445,7 @@ void dgemm_fused_scd_prec_1_4(int nrows, const aligned_double *restrict y, align
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_fused_scd_prec_k_2(int nrows, int k, const aligned_double *restrict y, aligned_double *restrict x, const double *restrict scal, const double *restrict scalC, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(x,32) )
@@ -568,7 +568,7 @@ void dgemm_fused_scd_prec_k_2(int nrows, int k, const aligned_double *restrict y
 
 void dgemm_fused_scd_prec_4_2(int nrows, const aligned_double *restrict y, aligned_double *restrict x, const double *restrict scal, const double *restrict scalC, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_fused_scd_prec_k_2(nrows, 4, y, x, scal, scalC, res, resC);
@@ -576,7 +576,7 @@ void dgemm_fused_scd_prec_4_2(int nrows, const aligned_double *restrict y, align
 
 void dgemm_fused_scd_prec_2_2(int nrows, const aligned_double *restrict y, aligned_double *restrict x, const double *restrict scal, const double *restrict scalC, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_fused_scd_prec_k_2(nrows, 2, y, x, scal, scalC, res, resC);
@@ -584,7 +584,7 @@ void dgemm_fused_scd_prec_2_2(int nrows, const aligned_double *restrict y, align
 
 void dgemm_fused_scd_prec_1_2(int nrows, const aligned_double *restrict y, aligned_double *restrict x, const double *restrict scal, const double *restrict scalC, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_fused_scd_prec_k_2(nrows, 1, y, x, scal, scalC, res, resC);
@@ -594,7 +594,7 @@ void dgemm_fused_scd_prec_1_2(int nrows, const aligned_double *restrict y, align
 // more accurate gemm product x'y AVX2 kernel
 void dgemm_fused_scd_prec_k_1(int nrows, int k, const aligned_double *restrict y, aligned_double *restrict x, const double *restrict scal, const double *restrict scalC, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(x,32) )
@@ -697,7 +697,7 @@ void dgemm_fused_scd_prec_k_1(int nrows, int k, const aligned_double *restrict y
 
 void dgemm_fused_scd_prec_4_1(int nrows, const aligned_double *restrict y, aligned_double *restrict x, const double *restrict scal, const double *restrict scalC, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_fused_scd_prec_k_1(nrows, 4, y, x, scal, scalC, res, resC);
@@ -705,7 +705,7 @@ void dgemm_fused_scd_prec_4_1(int nrows, const aligned_double *restrict y, align
 
 void dgemm_fused_scd_prec_2_1(int nrows, const aligned_double *restrict y, aligned_double *restrict x, const double *restrict scal, const double *restrict scalC, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   dgemm_fused_scd_prec_k_1(nrows, 2, y, x, scal, scalC, res, resC);
