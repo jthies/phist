@@ -27,21 +27,43 @@ int PHIST_TG_PREFIX(mvecInitializer)(ghost_gidx i, ghost_lidx j, void* vval,void
 }
 #endif
 
+#ifdef RSUBR
+# undef RSUBR
+#endif
+#ifdef RTYPE
+# undef RTYPE
+#endif
+#ifdef IS_COMPLEX
+# ifdef IS_DOUBLE
+#  define RSUBR(xyz) phist_D ## xyz
+#  define RTYPE(xyz) phist_D ## xyz
+# else
+#  define RSUBR(xyz) phist_S ## xyz
+#  define RTYPE(xyz) phist_S ## xyz
+# endif
+
+
+
 /*! Test fixure. */
 class CLASSNAME: public KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,2> 
-  {
+{
 
 public:
-  typedef KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,2> VTest;
 
+  typedef KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,2> VTest;
+  typedef TestWithType<_MT_> MT_Test;
+
+#ifdef IS_COMPLEX
+  RTYPE(mvec_ptr) re_,im_,re_expect_,im_expect_;
+#endif
 
   /*! Set up routine.
    */
   virtual void SetUp()
-    {
+  {
     VTest::SetUp();
     if (typeImplemented_ && !problemTooSmall_)
-      {
+    {
 
       // we need to somehow initialize the vectors. Here we choose
       // to do it manually (and not rely on the functions mvec_random
@@ -53,22 +75,36 @@ public:
       // the diversity here will lead to a well-covered code in total.
             
       for (int j=0;j<nvec_;j++)
+      {
         for (int i=0;i<nloc_*stride_;i+=stride_)
-          {
+        {
           vec1_vp_[VIDX(i,j,lda_)]=random_number();
           vec2_vp_[VIDX(i,j,lda_)]=st::one();
-          }
+        }
+      }
       SUBR(mvec_to_device)(vec1_,&iflag_);
       SUBR(mvec_to_device)(vec2_,&iflag_);
-      }
+#ifdef IS_COMPLEX
+      PHISTTEST_RMVEC_CREATE(&re_,map_,nvec_,&iflag_);
+      PHISTTEST_RMVEC_CREATE(&re_expect_,map_,nvec_,&iflag_);
+      PHISTTEST_RMVEC_CREATE(&im_,map_,nvec_,&iflag_);
+      PHISTTEST_RMVEC_CREATE(&im_expect_,map_,nvec_,&iflag_);
+#endif    
     }
+  }
 
   /*! Clean up.
    */
   virtual void TearDown() 
-    {
-      VTest::TearDown();
-    }
+  {
+#ifdef IS_COMPLEX
+    if (re_!=NULL) RSUBR(mvec_delete)(re_,&iflag_);
+    if (im_!=NULL) RSUBR(mvec_delete)(im_,&iflag_);
+    if (re_expect_!=NULL) RSUBR(mvec_delete)(re_expect_,&iflag_);
+    if (im_expect_!=NULL) RSUBR(mvec_delete)(im_expect_,&iflag_);
+#endif
+    VTest::TearDown();
+  }
 
 };
 
@@ -925,6 +961,53 @@ TEST_F(CLASSNAME,put_func)
   ASSERT_EQ(0,iflag_);
   ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
 }
+
+int PHIST_TG_PREFIX(elemFunc_complex)(ghost_gidx i, ghost_lidx j, void* vval,void* last_arg);
+int PHIST_TG_PREFIX(elemFunc_real)(ghost_gidx i, ghost_lidx j, void* vval,void* last_arg);
+int PHIST_TG_PREFIX(elemFunc_imag)(ghost_gidx i, ghost_lidx j, void* vval,void* last_arg);
+
+#ifdef FIRST_INSTANCE
+int PHIST_TG_PREFIX(elemFunc_complex)(ghost_gidx i, ghost_lidx j, void* vval,void* last_arg)
+{
+#include "phist_std_typedefs.hpp"
+  _MT_ re,im;
+  PHIST_TG_PREFIX(elemFunc_real)(i,j,&re,last_arg);
+  PHIST_TG_PREFIX(elemFunc_imag)(i,j,&im,last_arg);
+  _ST_ *val = (_ST_*)vval;
+  *val = re + st::cmplx_I()*im;
+  return 0;
+}
+int PHIST_TG_PREFIX(elemFunc_real)(ghost_gidx i, ghost_lidx j, void* vval,void* last_arg)
+{
+  _MT_ *val = (_MT_*)vval;
+  *val = (_MT_)i / 42.9 + (_MT_)(j+1)/99.;
+  return 0;
+}
+int PHIST_TG_PREFIX(elemFunc_imag)(ghost_gidx i, ghost_lidx j, void* vval,void* last_arg)
+{
+  _MT_ *val = (_MT_*)vval;
+  *val = (_MT_)i * 3.1415926/8.0 + 1.0/(_MT_)(j+1);
+  return 0;
+}
+#endif
+TEST_F(CLASSNAME,split_and_combine)
+{
+  SUBR(mvec_put_func)(vec1_,&PHIST_TG_PREFIX(elemFunc_complex),NULL,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  SUBR(mvec_put_func)(re_expect_,&PHIST_TG_PREFIX(elemFunc_real),NULL,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  SUBR(mvec_put_func)(im_expect_,&PHIST_TG_PREFIX(elemFunc_imag),NULL,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  SUBR(mvec_split)(vec1_,re_,im_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  SUBR(mvec_combine)(vec2_,re_expect_,im_expect_,&iflag_);
+  ASSERT_EQ(0,iflag_);
+  // this should not cause numerical errors, so no tolerance
+  ASSERT_REAL_EQ(1.0,MvecsEqual(vec1_,vec2_));
+  ASSERT_REAL_EQ(1.0,MT_Test::MvecsEqual(re_,re_expect_));
+  ASSERT_REAL_EQ(1.0,MT_Test::MvecsEqual(im_,im_expect_));
+}
+#endif
 
 // only test the Belos interface for ghost, we didn't write
 // the interfaces for Epetra or Tpetra so it is not our problem.
