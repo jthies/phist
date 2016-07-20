@@ -716,8 +716,14 @@ set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.c
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedgmres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedminres.cpp
-                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_belos.cpp
-                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasazi.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_belosS.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_belosC.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_belosD.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_belosZ.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziS.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziC.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziD.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziZ.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp
                          )
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
