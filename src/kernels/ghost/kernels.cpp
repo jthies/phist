@@ -119,7 +119,11 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
       *C=32;
     }
   }
-  if (*C<0) *C=1;
+  if (*C<0 || (flags&PHIST_SPARSEMAT_OPT_CARP)) 
+  {
+    *C=1; 
+    *sigma=1;
+  }
 
   if (*sigma<0) *sigma=4*(*C);
 }
