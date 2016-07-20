@@ -43,10 +43,6 @@
 #  include "ghost.h"
 #  include "Belos_GhostAdapter.hpp"
 #  include "Anasazi_GhostAdapter.hpp"
-//#  include "Ghost_TsqrAdapter.hpp"
-# elif defined(PHIST_KERNEL_LIB_EPETRA)
-#  include "Epetra_MultiVector.h"
-#  include "BelosEpetraAdapter.hpp"
 #  include "AnasaziEpetraAdapter.hpp"
 # elif defined(PHIST_KERNEL_LIB_TPETRA)
 #  include "Tpetra_MultiVector.hpp"

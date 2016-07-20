@@ -11,6 +11,7 @@
 #include <vector>
 #include <complex>
 #include "phist_enums.h"
+#include "phist_ScalarTraits.hpp"
 
 #endif
 
@@ -20,7 +21,10 @@ template<typename T>
 class SelectLM
 {
   public:
-    SelectLM(_MT_ tol) : tol_(tol) {}
+  
+    typedef typename phist::ScalarTraits<T>::magn_t MT;
+  
+    SelectLM(MT tol) : tol_(tol) {}
 
     bool operator()(std::pair<T,int> a_, std::pair<T,int> b_)
     {
@@ -42,14 +46,17 @@ class SelectLM
     }
 
   private:
-    _MT_ tol_;
+    MT tol_;
 };
 
 template<typename T>
 class SelectSM
 {
   public:
-    SelectSM(_MT_ tol) : tol_(tol) {}
+
+    typedef typename phist::ScalarTraits<T>::magn_t MT;
+
+    SelectSM(MT tol) : tol_(tol) {}
 
     bool operator()(std::pair<T,int> a_, std::pair<T,int> b_)
     {
@@ -71,14 +78,17 @@ class SelectSM
     }
 
   private:
-    _MT_ tol_;
+    MT tol_;
 };
 
 template<typename T>
 class SelectLR
 {
   public:
-    SelectLR(_MT_ tol) : tol_(tol) {}
+
+    typedef typename phist::ScalarTraits<T>::magn_t MT;
+
+    SelectLR(MT tol) : tol_(tol) {}
 
     bool operator()(std::pair<T,int> a_, std::pair<T,int> b_)
     {
@@ -88,14 +98,17 @@ class SelectLR
     }
 
   private:
-    _MT_ tol_;
+    MT tol_;
 };
 
 template<typename T>
 class SelectSR
 {
   public:
-    SelectSR(_MT_ tol) : tol_(tol) {}
+
+    typedef typename phist::ScalarTraits<T>::magn_t MT;
+
+    SelectSR(MT tol) : tol_(tol) {}
 
     bool operator()(std::pair<T,int> a_, std::pair<T,int> b_)
     {
@@ -105,13 +118,13 @@ class SelectSR
     }
 
   private:
-    _MT_ tol_;
+    MT tol_;
 };
 
 
 
 template<typename MT>
-void SortEig(std::complex<MT>* ev,int n,int* idx,phist_EeigSort which, _MT_ tol, int* iflag)
+void SortEig(std::complex<MT>* ev,int n,int* idx,phist_EeigSort which, MT tol, int* iflag)
 {
   typedef std::complex<MT> ST;
   typedef std::pair<ST,int> PT;
