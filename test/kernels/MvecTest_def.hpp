@@ -994,9 +994,9 @@ TEST_F(CLASSNAME,split_and_combine)
 {
   SUBR(mvec_put_func)(vec1_,&PHIST_TG_PREFIX(elemFunc_complex),NULL,&iflag_);
   ASSERT_EQ(0,iflag_);
-  SUBR(mvec_put_func)(re_expect_,&PHIST_TG_PREFIX(elemFunc_real),NULL,&iflag_);
+  RSUBR(mvec_put_func)(re_expect_,&PHIST_TG_PREFIX(elemFunc_real),NULL,&iflag_);
   ASSERT_EQ(0,iflag_);
-  SUBR(mvec_put_func)(im_expect_,&PHIST_TG_PREFIX(elemFunc_imag),NULL,&iflag_);
+  RSUBR(mvec_put_func)(im_expect_,&PHIST_TG_PREFIX(elemFunc_imag),NULL,&iflag_);
   ASSERT_EQ(0,iflag_);
   SUBR(mvec_split)(vec1_,re_,im_,&iflag_);
   ASSERT_EQ(0,iflag_);
