@@ -482,6 +482,7 @@ extern "C" void SUBR(mvec_to_device)(TYPE(mvec_ptr) vV, int* iflag)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   //PHIST_PERFCHECK_VERIFY_TO_DEVICE(vV,iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V, vV, *iflag);
+/*
   PHIST_SOUT(PHIST_DEBUG,"ghost densemat upload\n"
                          "nrows=%" PRlidx ", ncols=%" PRlidx "\n"
                          "nrowshalo=%" PRlidx "\n"
@@ -490,6 +491,7 @@ extern "C" void SUBR(mvec_to_device)(TYPE(mvec_ptr) vV, int* iflag)
                          V->traits.nrowshalo,
                          V->traits.nrowspadded, V->traits.ncolspadded);
   PHIST_SOUT(PHIST_DEBUG,"V flags: %d\n",(int)V->traits.flags);
+*/
   PHIST_CHK_GERR(V->upload(V),*iflag);
 #endif
 }
@@ -933,7 +935,7 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, _ST_ value, int* iflag)
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
-  PHIST_DEB("put value, V @ %p. V->traits.nrows=%" PRlidx "\n",V,V->traits.nrows);
+//  PHIST_DEB("put value, V @ %p. V->traits.nrows=%" PRlidx "\n",V,V->traits.nrows);
   V->fromScalar(V,(void*)&value);
 PHIST_TASK_END(iflag);
 }
@@ -1569,13 +1571,14 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE
     mybeta = beta;
 
     phist_lidx ncC = C->traits.ncols;
-
+/*
   PHIST_DEB("VtV=C, V %" PRlidx "x%" PRlidx ", \n"
             "       W %" PRlidx "x%" PRlidx ", \n"
             "       C %" PRlidx "x%" PRlidx "\n", 
   V->traits.nrows,V->traits.ncols,
   W->traits.nrows,W->traits.ncols,
   C->traits.nrows,C->traits.ncols);
+*/
 
   // NOTE: we call the allreduction by hand afterwards to allow asynchronuous communication!
   /*
