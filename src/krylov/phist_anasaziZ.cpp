@@ -4,8 +4,6 @@
 #undef PHIST_HAVE_ANASAZI
 #endif
 
-#ifdef PHIST_HAVE_ANASAZI
-
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -18,6 +16,8 @@
 #include "phist_anasazi.h"
 #include "phist_kernels.h"
 #include "phist_ScalarTraits.hpp"
+
+#ifdef PHIST_HAVE_ANASAZI
 
 #include "phist_rcp_helpers.hpp"
 #include "phist_AnasaziOperatorTraits.hpp"
@@ -43,10 +43,6 @@
 #  include "Belos_GhostAdapter.hpp"
 #  include "Anasazi_GhostAdapter.hpp"
 //#  include "Ghost_TsqrAdapter.hpp"
-# elif defined(PHIST_KERNEL_LIB_EPETRA)
-#  include "Epetra_MultiVector.h"
-#  include "BelosEpetraAdapter.hpp"
-#  include "AnasaziEpetraAdapter.hpp"
 # elif defined(PHIST_KERNEL_LIB_TPETRA)
 #  include "Tpetra_MultiVector.hpp"
 #  include "BelosTpetraAdapter.hpp"
@@ -72,8 +68,8 @@
 # ifndef OLD_TRILINOS
 # include "AnasaziTraceMinDavidsonSolMgr.hpp"
 # endif
+#endif
 
 #include "phist_gen_z.h"
 #include "phist_anasazi_def.hpp"
 
-#endif
