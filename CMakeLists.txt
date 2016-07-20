@@ -729,7 +729,10 @@ set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaCorrectionSolver.cpp
                          )
-set(PHIST_PRECON_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/phist_precon.cpp
+set(PHIST_PRECON_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/phist_preconS.cpp
+                        ${PROJECT_SOURCE_DIR}/src/precon/phist_preconD.cpp
+                        ${PROJECT_SOURCE_DIR}/src/precon/phist_preconC.cpp
+                        ${PROJECT_SOURCE_DIR}/src/precon/phist_preconZ.cpp
                         ${PROJECT_SOURCE_DIR}/src/precon/phist_ilu.cpp
                         )
 set (PHIST_SUPPORT_SOURCE  ${PROJECT_SOURCE_DIR}/src/support/phist_feastCorrectionSolver.cpp
