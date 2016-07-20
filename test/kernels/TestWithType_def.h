@@ -36,7 +36,15 @@ static _MT_ MvecEqual(TYPE(mvec_ptr) V, _ST_ value)
   SUBR(mvec_num_vectors)(V,&m,&iflag);
   if (iflag!=PHIST_SUCCESS) return (_MT_)(-2*mt::one());
   
-  _MT_ return_value=ArrayEqual(val,n,m,lda,1,value,KernelTest::vflag_);
+  _MT_ return_value;
+  if (n*m>100000)
+  {
+    return_value=ArrayEqualOMP(val,n,m,lda,1,value,KernelTest::vflag_);
+  }
+  else
+  {
+    return_value=ArrayEqual(val,n,m,lda,1,value,KernelTest::vflag_);
+  }
 #if PHIST_OUTLEV>=PHIST_DEBUG
   int print_vec_loc,print_vec;
   print_vec_loc=(std::abs(return_value-mt::one())>std::sqrt(mt::eps())&&(n<=100))?1:0;
@@ -80,13 +88,27 @@ static _MT_ MvecsEqual(TYPE(mvec_ptr) V1, TYPE(mvec_ptr) V2, _MT_ relTo = mt::ze
   // vectors not equal: dimensions mismatch
   if (n!=n2||m!=m2) return (_MT_)(-mt::one());
   MT return_value=mt::one();
-  if (lda!=lda2)
+  if (n*m>100000)
   {
-    return_value=ArraysEqualWithDifferentLDA(val,val2,n,m,lda,lda2,1,KernelTest::vflag_,relTo);
+    if (lda!=lda2)
+    {
+      return_value=ArraysEqualWithDifferentLDA_OMP(val,val2,n,m,lda,lda2,1,KernelTest::vflag_,relTo);
+    }
+    else
+    {
+      return_value=ArraysEqualOMP(val,val2,n,m,lda,1,KernelTest::vflag_,relTo);
+    }
   }
   else
   {
-    return_value=ArraysEqual(val,val2,n,m,lda,1,KernelTest::vflag_,relTo);
+    if (lda!=lda2)
+    {
+      return_value=ArraysEqualWithDifferentLDA(val,val2,n,m,lda,lda2,1,KernelTest::vflag_,relTo);
+    }
+    else
+    {
+      return_value=ArraysEqual(val,val2,n,m,lda,1,KernelTest::vflag_,relTo);
+    }
   }
 #if PHIST_OUTLEV>=PHIST_DEBUG
   int print_vecs_loc,print_vecs;
@@ -191,6 +213,33 @@ static _MT_ ArrayEqual(const _ST_* array, int n, int m, phist_lidx lda, phist_li
   return (MT)1.0+maxval;
 }
 
+// a faster variant for multi core CPUs that allows us to test larger cases
+static _MT_ ArrayEqualOMP(const _ST_* array, int n, int m, phist_lidx lda, phist_lidx stride, _ST_ value, bool swap_nm=false)
+{
+  MT maxval=mt::zero(),maxval_thread=mt::zero();
+  MT scal= st::abs(value);
+  int N = swap_nm? m: n;
+  int M = swap_nm? n: m;
+  if (scal==mt::zero()) scal=mt::one();
+#pragma omp parallel private(maxval_thread)
+  {
+#pragma omp for schedule(static)
+    for (int i=0;i<N*stride;i+=stride)
+    {
+      for (int j=0; j<M;j++)
+      {
+        maxval_thread=mt::max(st::abs(array[j*lda+i]-value)/scal,maxval_thread);
+      }
+    }
+#pragma omp critical
+    {
+      maxval=std::max(maxval,maxval_thread);
+    }
+  }
+  return (MT)1.0+maxval;
+}
+
+
 static _MT_ ArrayParallelReplicated(const _ST_* array, int n, int m, phist_lidx lda, phist_lidx stride, bool swap_nm=false)
 {
   _ST_ buff[n*m];
@@ -236,6 +285,11 @@ static _MT_ ArraysEqual(const _ST_* arr1,const _ST_* arr2, int n, int m, phist_l
 {
     return ArraysEqualWithDifferentLDA(arr1,arr2,n,m,lda,lda,stride,swap_n_m,relTo);
 }
+
+static _MT_ ArraysEqualOMP(const _ST_* arr1,const _ST_* arr2, int n, int m, phist_lidx lda, phist_lidx stride, bool swap_n_m=false, _MT_ relTo=mt::zero())
+{
+    return ArraysEqualWithDifferentLDA_OMP(arr1,arr2,n,m,lda,lda,stride,swap_n_m,relTo);
+}
   
 static _MT_ ArraysEqualWithDifferentLDA(const _ST_* arr1,const _ST_* arr2, int n, int m, 
 phist_lidx lda1, phist_lidx lda2, phist_lidx stride, bool swap_n_m=false, _MT_ relTo = mt::zero())
@@ -243,9 +297,6 @@ phist_lidx lda1, phist_lidx lda2, phist_lidx stride, bool swap_n_m=false, _MT_ r
   int N = swap_n_m? m: n;
   int M = swap_n_m? n: m;
   _MT_ maxval=mt::zero();
-  std::stringstream ss_deb;
-  int mpi_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
   for (int i=0;i<N*stride;i+=stride)
   {
     for (int j=0;j<M;j++)
@@ -255,10 +306,37 @@ phist_lidx lda1, phist_lidx lda2, phist_lidx stride, bool swap_n_m=false, _MT_ r
       if (pl==mt::zero()) pl = (st::abs(arr1[j*lda1+i])+st::abs(arr2[j*lda2+i]))*(MT)0.5;
       if (pl==mt::zero()) pl=mt::one();
       maxval=mt::max(mn/pl,maxval);
-      ss_deb<<"PE"<<mpi_rank<<" "<<j<<" "<<i<<" "<<arr1[j*lda1+i]<<" ?= "<<arr2[j*lda2+i]<<std::endl;
     }
   }
-  PHIST_ORDERED_OUT(PHIST_DEBUG,MPI_COMM_WORLD,"%s\n",ss_deb.str().c_str());
+  return mt::one()+maxval;
+}
+
+static _MT_ ArraysEqualWithDifferentLDA_OMP(const _ST_* arr1,const _ST_* arr2, int n, int m, 
+phist_lidx lda1, phist_lidx lda2, phist_lidx stride, bool swap_n_m=false, _MT_ relTo = mt::zero())
+{
+  int N = swap_n_m? m: n;
+  int M = swap_n_m? n: m;
+  _MT_ maxval=mt::zero(),maxval_thread=mt::zero();
+  std::stringstream ss_deb;
+#pragma omp parallel private(maxval_thread)
+  {
+#pragma omp for schedule(static)
+    for (int i=0;i<N*stride;i+=stride)
+    {
+      for (int j=0;j<M;j++)
+      {
+        MT mn = st::abs(arr1[j*lda1+i]-arr2[j*lda2+i]);
+        MT pl = relTo;
+        if (pl==mt::zero()) pl = (st::abs(arr1[j*lda1+i])+st::abs(arr2[j*lda2+i]))*(MT)0.5;
+        if (pl==mt::zero()) pl=mt::one();
+        maxval_thread=mt::max(mn/pl,maxval_thread);
+      }
+    }
+#pragma omp critical
+    {
+      maxval=std::max(maxval,maxval_thread);
+    }
+  }
   //std::cout << "MAX VAL: "<<maxval<<std::endl;
   return mt::one()+maxval;
 }
