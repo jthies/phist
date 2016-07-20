@@ -1190,6 +1190,8 @@ TEST_F(CLASSNAME,mvecT_times_mvec_after_spmvm)
   // exploits sum_(k=1)^n 1/(k*(k+1)) = 1 - 1/(n+1)
   phist_gidx ilower;     
   phist_map_get_ilower(map_,&ilower,&iflag_);
+  EXPECT_EQ(0,iflag_);// make sure this is a linear map, otherwise the
+                      // analytical sum below is not matched
   for (int ii=0; ii< nloc_; ii++)
   {
     for (int j=0; j<nvec_; j++)

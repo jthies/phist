@@ -17,8 +17,11 @@
 
 /* sparse matrix preprocessing: allow local matrix reorderings */
 #define PHIST_SPARSEMAT_PERM_LOCAL 1
-/* allow global symmetric permutations. Note that PERM_GLOBAL implies PERM_LOCAL. */
-#define PHIST_SPARSEMAT_PERM_GLOBAL 3
+/* allow global symmetric permutations. If given, the partition sizes may  */
+/* be adapted for load-balancing, and both global and local reordering may */
+/* be used for e.g. reducing the bandwidth, number of messages and         */
+/* communication volume                                                    */
+#define PHIST_SPARSEMAT_PERM_GLOBAL 2
 /* this flag is DEPRECATED, use SPARSEMAT_OPT_CARP instead */
 /* in the current implementation of the builtin kernels,   */
 /* DIST2_COLOR will cause a local permutation according to */
