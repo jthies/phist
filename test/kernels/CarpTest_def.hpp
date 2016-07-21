@@ -131,11 +131,13 @@ public:
         MvecCopyX2Z(x_vec3_,z_vec3_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
-        phist_ZsparseMat_create_fromRowFunc(&z_A_,comm_,_N_,_N_,7,&ZMATFUNC,NULL,&iflag_);
+        // note: we make sure the complex matrices use the same map as the real ones, this sames some
+        // trouble when comparing result vectors.
+        phist_ZsparseMat_create_fromRowFuncAndMap(&z_A_,comm_,map_,7,&ZMATFUNC,NULL,&iflag_);
         ASSERT_EQ(0,iflag_);
-        phist_ZsparseMat_create_fromRowFunc(&z_A_shift0_,comm_,_N_,_N_,7,&ZMATFUNC,&sigma_[0],&iflag_);
+        phist_ZsparseMat_create_fromRowFuncAndMap(&z_A_shift0_,comm_,map_,7,&ZMATFUNC,&sigma_[0],&iflag_);
         ASSERT_EQ(0,iflag_);
-        phist_ZsparseMat_create_fromRowFunc(&z_A_shift1_,comm_,_N_,_N_,7,&ZMATFUNC,&sigma_[1],&iflag_);
+        phist_ZsparseMat_create_fromRowFuncAndMap(&z_A_shift1_,comm_,map_,7,&ZMATFUNC,&sigma_[1],&iflag_);
         ASSERT_EQ(0,iflag_);
 
       }
