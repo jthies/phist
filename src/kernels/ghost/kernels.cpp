@@ -121,7 +121,7 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
   }
   if (*C<0 || (flags&PHIST_SPARSEMAT_OPT_CARP)) 
   {
-    *C=1; 
+    *C=1;
     *sigma=1;
   }
 
@@ -156,8 +156,11 @@ int get_perm_flag(int iflag, int outlev)
   }
   if (iflag&PHIST_SPARSEMAT_OPT_CARP)
   {
-        PHIST_SOUT(outlev, "Enable reorderings for CARP kernel\n");
-        oflag|=GHOST_SOLVER_KACZ;
+//        PHIST_SOUT(outlev, "Enable reorderings for CARP kernel\n");
+//        oflag|=GHOST_SOLVER_KACZ;
+        PHIST_SOUT(PHIST_WARNING,"flag PHIST_SPARSEMAT_OPT_CARP ignored right now,\n"
+                                 "since CARP is experimental in ghost and may mess up the matrix\n"
+                                 "(file %s, line %d)\n",__FILE__,__LINE__);
   }
   if (iflag&PHIST_SPARSEMAT_DIST2_COLOR)
   {
