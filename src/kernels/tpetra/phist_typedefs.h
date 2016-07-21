@@ -12,7 +12,6 @@
 //#include <cinttypes>
 #include <complex>
 #include <cstddef>
-#include "Kokkos_DefaultNode.hpp"
 #else
 //#include <inttypes.h>
 #include <complex.h>
@@ -21,9 +20,6 @@
 #endif
 
 #ifdef __cplusplus
-//! TODO - do we want that here or do we want to give
-//!        the user a choice?
-typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
 //! single precision complex type
 typedef std::complex<float> phist_s_complex;
 typedef std::complex<double> phist_d_complex;
