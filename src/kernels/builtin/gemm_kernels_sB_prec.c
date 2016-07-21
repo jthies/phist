@@ -18,7 +18,7 @@
 // more accurate gemm product x <- x*m AVX2 kernel for blocksize 4
 void dgemm_sb_inplace_prec_4(int nrows, double *restrict x, const double *restrict r, const double *restrict rC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(x,32) )
@@ -85,7 +85,7 @@ void dgemm_sb_inplace_prec_4(int nrows, double *restrict x, const double *restri
 // more accurate gemm product x <- x*m AVX2 kernel for blocksize 2
 void dgemm_sb_inplace_prec_2(int nrows, double *restrict x, const double *restrict r, const double *restrict rC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(x,32) )
@@ -134,7 +134,7 @@ void dgemm_sb_inplace_prec_2(int nrows, double *restrict x, const double *restri
 // more accurate gemm product x <- x*m AVX2 kernel for blocksize 1
 void dgemm_sb_inplace_prec_1(int nrows, double *restrict x, const double *restrict r, const double *restrict rC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(x,32) )
@@ -165,7 +165,7 @@ void dgemm_sb_inplace_prec_1(int nrows, double *restrict x, const double *restri
 // more accurate gemm product y <- alpha*x*m + beta*y AVX2 kernel for y of blocksize 4
 void dgemm_sb_prec_k_4(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(y,32) )
@@ -226,7 +226,7 @@ void dgemm_sb_prec_k_4(int nrows, int k, double alpha, const double *restrict x,
 // more accurate gemm product y <- alpha*x*m + beta*y AVX2 kernel for y of blocksize 2
 void dgemm_sb_prec_k_2(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(y,32) )
@@ -289,7 +289,7 @@ void dgemm_sb_prec_k_2(int nrows, int k, double alpha, const double *restrict x,
 // more accurate gemm product y <- alpha*x*m + beta*y AVX2 kernel for y of blocksize 1
 void dgemm_sb_prec_k_1(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double beta, double *restrict y)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(y,32) )
@@ -349,7 +349,7 @@ void dgemm_sb_prec_k_1(int nrows, int k, double alpha, const double *restrict x,
 // more accurate gemm product y <- alpha*x*m AVX2 kernel for y of blocksize 4 with non-temporal stores
 void dgemm_sb_prec_k_4_nt(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(y,32) )
@@ -402,7 +402,7 @@ void dgemm_sb_prec_k_4_nt(int nrows, int k, double alpha, const double *restrict
 // more accurate gemm product y <- alpha*x*m AVX2 kernel for y of blocksize 2 with non-temporal stores
 void dgemm_sb_prec_k_2_nt(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(y,32) )
@@ -459,7 +459,7 @@ void dgemm_sb_prec_k_2_nt(int nrows, int k, double alpha, const double *restrict
 // more accurate gemm product y <- alpha*x*m AVX2 kernel for y of blocksize 1 with non-temporal stores
 void dgemm_sb_prec_k_1_nt(int nrows, int k, double alpha, const double *restrict x, const double *restrict r, const double *restrict rC, double *restrict y)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(y,32) )
@@ -512,7 +512,7 @@ void dgemm_sb_prec_k_1_nt(int nrows, int k, double alpha, const double *restrict
 // more accurate gemm product y <- alpha*x*m + beta*y AVX2 kernel for y of blocksize 4
 void dgemm_sb_prec_k_strided_4(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double beta, double *restrict y)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(y,32) )
@@ -562,7 +562,7 @@ void dgemm_sb_prec_k_strided_4(int nrows, int k, double alpha, const double *res
 // more accurate gemm product y <- alpha*x*m + beta*y AVX2 kernel for y of blocksize 2
 void dgemm_sb_prec_k_strided_2(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double beta, double *restrict y)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(y,32) )
@@ -614,7 +614,7 @@ void dgemm_sb_prec_k_strided_2(int nrows, int k, double alpha, const double *res
 // more accurate gemm product y <- alpha*x*m + beta*y AVX2 kernel for y of blocksize 1
 void dgemm_sb_prec_k_strided_1(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double beta, double *restrict y)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(y,32) )
@@ -663,7 +663,7 @@ void dgemm_sb_prec_k_strided_1(int nrows, int k, double alpha, const double *res
 // more accurate gemm product y <- alpha*x*m AVX2 kernel for y of blocksize 4 with non-temporal stores
 void dgemm_sb_prec_k_strided_4_nt(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double *restrict y)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(y,32) )
@@ -716,7 +716,7 @@ void dgemm_sb_prec_k_strided_4_nt(int nrows, int k, double alpha, const double *
 // more accurate gemm product y <- alpha*x*m AVX2 kernel for y of blocksize 2 with non-temporal stores
 void dgemm_sb_prec_k_strided_2_nt(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double *restrict y)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(y,32) )
@@ -773,7 +773,7 @@ void dgemm_sb_prec_k_strided_2_nt(int nrows, int k, double alpha, const double *
 // more accurate gemm product y <- alpha*x*m AVX2 kernel for y of blocksize 1 with non-temporal stores
 void dgemm_sb_prec_k_strided_1_nt(int nrows, int k, double alpha, const double *restrict x, int ldx, const double *restrict r, const double *restrict rC, double *restrict y)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(y,32) )

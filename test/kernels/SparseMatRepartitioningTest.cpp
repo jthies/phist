@@ -1,4 +1,5 @@
 #include "phist_kernels.h"
+#include "../tools/MatrixIO.h"
 
 #ifdef PHIST_HAVE_ESSEX_PHYSICS
 #include "essex-physics/matfuncs.h"
@@ -30,7 +31,7 @@
 #define _N_ 70
 
 /* This test constructs the spinSZ[L] matrix with and without the flag    */
-/* PHIST_SPARSEMAT_REPARTITION, constructs a vector X with characteristic */
+/* PHIST_SPARSEMAT_PERM_GLOBAL, constructs a vector X with characteristic */
 /* entries, and computes the spMVM in three different ways, comparing the */
 /* results:                                                               */
 /* - by using the row function and vector definition directly (does not   */
@@ -62,16 +63,17 @@ class DSparseMatRepartTest: public virtual TestWithType<double>,
 #else
     sprintf(spin_label,"spinSZ%1d",_L_);
 #endif
+    iflag_=0;
     phist_Dcreate_matrix(&linearA_,comm_,spin_label,&iflag_);
     EXPECT_EQ(0,iflag_);
-    phist_DsparseMat_get_row_map(linearA_,&linearMap_,&iflag_);
+    phist_DsparseMat_get_domain_map(linearA_,&linearMap_,&iflag_);
     EXPECT_EQ(0,iflag_);
     // construct same matrix but possibly with repartitioning (depends on what the kernel
     // library supports and which TPLs are available)
-    iflag_=PHIST_SPARSEMAT_REPARTITION;
+    iflag_=PHIST_SPARSEMAT_PERM_GLOBAL|getSparseMatCreateFlag(_N_,1);
     phist_Dcreate_matrix(&repartA_,comm_,spin_label,&iflag_);
     EXPECT_EQ(0,iflag_);
-    phist_DsparseMat_get_row_map(repartA_,&repartMap_,&iflag_);
+    phist_DsparseMat_get_domain_map(repartA_,&repartMap_,&iflag_);
     EXPECT_EQ(0,iflag_);
     
     // create the vectors
@@ -176,7 +178,7 @@ class DSparseMatRepartTest: public virtual TestWithType<double>,
 protected:
 
   // two different maps: the regular one and the one obtained as row distribution
-  // when asking for PHIST_SPARSEMAT_REPARTITION
+  // when asking for PHIST_SPARSEMAT_PERM_GLOBAL
   phist_const_map_ptr linearMap_, repartMap_;
   
   // input, result and exact result of spMVM in linear map
@@ -190,6 +192,21 @@ protected:
   
 };
 
+  TEST_F(DSparseMatRepartTest,perm_symmetric)
+  {
+    // check that the domain and range map are the same for both the linear and repartitioned matrix
+    // we do not impose anything on the row and column map since we don't care what happens internally
+    // as long as the in- and output vectors have the same map.
+    phist_const_map_ptr repart_range_map, linear_range_map;
+    SUBR(sparseMat_get_range_map)(linearA_,&linear_range_map,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    phist_maps_compatible(linearMap_,linear_range_map,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sparseMat_get_range_map)(repartA_,&repart_range_map,&iflag_);
+    phist_maps_compatible(repartMap_,repart_range_map,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_EQ(0,iflag_);
+  }
 
   // tests that mvec_to_mvec recovers the exact vector from the permuted one.
   // if applied twice with exchanged arguments

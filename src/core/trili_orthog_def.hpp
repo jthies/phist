@@ -79,7 +79,7 @@ void SUBR(trili_orthog)(TYPE(const_mvec_ptr) V,
     return;
     }
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
 
   // check that all array dimensions are correct
   PHIST_CHK_IERR(*iflag=(int)(V==NULL || W==NULL || R1==NULL || R2==NULL),*iflag);

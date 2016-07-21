@@ -6,11 +6,19 @@
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
 #endif
+
+#include "phist_typedefs.h"
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+
+#include "KokkosClassic_config.h"
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+#include "Kokkos_OpenMPNode.hpp"
+#endif
 
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DefaultKernels.hpp"
@@ -26,8 +34,11 @@
 namespace phist {
 namespace tpetra {
 
-// currently typedef'd in phist_typedefs.hpp (TODO)
-//typedef Kokkos::DefaultNode::DefaultNodeType node_type; // from the Kokkos node API
+#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+typedef KokkosClassic::OpenMPNode node_type; // from the Kokkos node API
+#else
+typedef Kokkos::DefaultNode::DefaultNodeType node_type; // from the Kokkos node API
+#endif
 typedef Tpetra::Map<phist_lidx,phist_gidx,node_type> map_type;
 typedef Tpetra::Import<phist_lidx,phist_gidx,node_type> import_type;
 typedef Tpetra::Export<phist_lidx,phist_gidx,node_type> export_type;

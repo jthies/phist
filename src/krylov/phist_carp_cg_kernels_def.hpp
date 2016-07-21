@@ -118,7 +118,33 @@ void TYPE(x_mvec)::deallocate()
     if (vp_) PHIST_CHK_IERR(SUBR(sdMat_delete)(vp_,&iflag),iflag); vp_=NULL;
     if (vpi_) PHIST_CHK_IERR(SUBR(sdMat_delete)(vpi_,&iflag),iflag); vpi_=NULL;
 }
-  
+
+void TYPE(x_mvec)::get_vr(TYPE(mvec_ptr) xr, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  *iflag=0;
+  if (v_!=xr)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), v_, st::zero(), xr, iflag),*iflag);  
+  }
+  return;
+}
+
+void TYPE(x_mvec)::get_vi(TYPE(mvec_ptr) xi, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  *iflag=0;
+  if (vi_!=xi && vi_!=NULL && xi!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(), vi_, st::zero(), xi, iflag),*iflag);  
+  }
+  else if (vi_==NULL && xi!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_put_value)(xi,st::zero(),iflag),*iflag);
+  }
+  return;
+}
+
 //!
 void SUBR(x_mvec_add_mvec)(_ST_ alpha, TYPE(x_mvec) const* V,
                             _ST_ beta, TYPE(x_mvec)* W, int* iflag)

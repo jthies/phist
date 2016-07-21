@@ -1,4 +1,10 @@
 #include "phist_config.h"
+
+#ifdef PHIST_KERNEL_LIB_EPETRA
+#undef PHIST_HAVE_ANASAZI
+#endif
+#ifdef PHIST_HAVE_SP
+
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>
@@ -37,10 +43,6 @@
 #  include "ghost.h"
 #  include "Belos_GhostAdapter.hpp"
 #  include "Anasazi_GhostAdapter.hpp"
-//#  include "Ghost_TsqrAdapter.hpp"
-# elif defined(PHIST_KERNEL_LIB_EPETRA)
-#  include "Epetra_MultiVector.h"
-#  include "BelosEpetraAdapter.hpp"
 #  include "AnasaziEpetraAdapter.hpp"
 # elif defined(PHIST_KERNEL_LIB_TPETRA)
 #  include "Tpetra_MultiVector.hpp"
@@ -69,18 +71,6 @@
 # endif
 #endif
 
-#include "phist_gen_d.h"
-#include "phist_anasazi_def.hpp"
-
-#ifdef PHIST_KERNEL_LIB_EPETRA
-#undef PHIST_HAVE_ANASAZI
-#endif
-#ifdef PHIST_HAVE_SP
-#include "phist_gen_s.h"
-#include "phist_anasazi_def.hpp"
 #include "phist_gen_c.h"
 #include "phist_anasazi_def.hpp"
 #endif
-#include "phist_gen_z.h"
-#include "phist_anasazi_def.hpp"
-

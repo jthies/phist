@@ -1,8 +1,8 @@
 #include <cstdint>
 #include "phist_config.h"
 #include "phist_macros.h"
-#ifndef TESTING
-#define TESTING
+#ifndef PHIST_TESTING
+#define PHIST_TESTING
 #endif
 #ifdef PHIST_HAVE_COLPACK
 #include "ColPackHeaders.h"
@@ -124,7 +124,7 @@ int verbose=2;
 #else
 int verbose=1;
 #endif
-#ifdef TESTING
+#ifdef PHIST_TESTING
     PHIST_SOUT(PHIST_VERBOSE,"thoroughly test local dist-2 coloring\n");
     PHIST_CHK_IERR(*iflag=GC->CheckDistanceTwoColoring(verbose),*iflag);
 #else

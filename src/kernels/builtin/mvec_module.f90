@@ -3034,7 +3034,7 @@ contains
     real(kind=8) :: rii(1:1)
     integer :: idum
     !--------------------------------------------------------------------------------
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
     write(*,*) 'entering mvec_QR'
 #endif
 
@@ -3179,7 +3179,7 @@ contains
     type(Map_t), pointer :: map
     integer :: i, nt, padding
     type(C_PTR) :: rawMem
-#if defined(TESTING)
+#if defined(PHIST_TESTING)
     integer(C_INTPTR_T) :: dummy
 #endif
     !--------------------------------------------------------------------------------
@@ -3462,7 +3462,7 @@ contains
     call c_f_pointer(mvec_ptr, mvec)
     call c_f_pointer(block_ptr,block)
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
     if( .not. map_compatible_map(mvec%map, block%map) ) then
       ierr = -1
       return
@@ -3516,7 +3516,7 @@ contains
       end if
       call c_f_pointer(block_ptr_list(i),tmp)
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
     if( .not. map_compatible_map(mvec%map, tmp%map) ) then
       ierr = -1
       return
@@ -3565,7 +3565,7 @@ contains
       end if
       call c_f_pointer(block_ptr_list(i),tmp)
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
     if( .not. map_compatible_map(mvec%map, tmp%map) ) then
       ierr = -1
       return
@@ -3838,7 +3838,7 @@ end subroutine phist_Dmvec_put_func
       return
     end if
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
     if( .not. map_compatible_map(x%map, y%map) ) then
       ierr = -1
       return
@@ -3893,7 +3893,7 @@ end subroutine phist_Dmvec_put_func
       return
     end if
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
     if( .not. map_compatible_map(x%map, y%map) ) then
       ierr = -1
       return
@@ -3929,7 +3929,7 @@ end subroutine phist_Dmvec_put_func
       return
     end if
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
     if( .not. map_compatible_map(x%map, y%map) ) then
       iflag = -1
       return
@@ -3970,7 +3970,7 @@ end subroutine phist_Dmvec_put_func
       return
     end if
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
     if( .not. map_compatible_map(v%map, w%map) ) then
       iflag = -1
       return
@@ -4015,7 +4015,7 @@ end subroutine phist_Dmvec_put_func
       return
     end if
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
     if( .not. map_compatible_map(v%map, w%map) ) then
       iflag = -1
       return
@@ -4059,7 +4059,7 @@ end subroutine phist_Dmvec_put_func
       return
     end if
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
     if( .not. map_compatible_map(v%map, w%map) ) then
       iflag = -1
       return
@@ -4131,7 +4131,7 @@ end subroutine phist_Dmvec_put_func
       return
     end if
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
     if( .not. map_compatible_map(v%map, w%map) ) then
       iflag = -1
       return
@@ -4175,7 +4175,7 @@ end subroutine phist_Dmvec_put_func
       return
     end if
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
     if( .not. map_compatible_map(v%map, w%map) ) then
       iflag = -1
       return

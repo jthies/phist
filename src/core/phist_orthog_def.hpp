@@ -179,7 +179,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   PHIST_CHK_IERR((*iflag=(m==nrR2)?0:-1),*iflag);
   PHIST_CHK_IERR((*iflag=(k==ncR2)?0:-1),*iflag);
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
   PHIST_DEB("orthog: V is %dx%d,  W is %dx%d\n"
                         "       R1 is %dx%d, R2 is %dx%d\n",n,m,n,k,nrR1,ncR1,nrR2,ncR2);
 #endif
@@ -199,7 +199,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   PHIST_DEB("\n");
   
   // orthogonalize against V (first CGS sweep)
-#ifdef TESTING
+#ifdef PHIST_TESTING
 {
   _MT_ normV[m];
   PHIST_CHK_IERR(SUBR(mvec_norm2)(V,normV,iflag),*iflag);
@@ -216,7 +216,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 
   //R2=V'*W;
   PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),V,W,st::zero(),R2,iflag),*iflag);
-#ifdef TESTING
+#ifdef PHIST_TESTING
   //PHIST_SOUT(PHIST_INFO,"R2:\n");
   //PHIST_CHK_IERR(SUBR(sdMat_print)(R2, iflag), *iflag);
 #endif

@@ -215,7 +215,7 @@ void SUBR(carp_sweep_aug_rc)(TYPE(const_sparseMat_ptr) vA,
       *iflag=PHIST_INVALID_INPUT;
       return;
     }
-#ifdef TESTING
+#ifdef PHIST_TESTING
     double norms[Q->NumVectors()];
     PHIST_CHK_IERR(*iflag=Q->Norm2(norms),*iflag);
     double norm_err=0.0;
@@ -345,7 +345,7 @@ void SUBR(carp_sweep_aug_rc)(TYPE(const_sparseMat_ptr) vA,
     }
     if (rc_variant && dat->xLoc_i_.get()!=sol_i)
     {
-      PHIST_CHK_IERR(*iflag=sol_i->Export(*dat->xLoc_i_, *(A->Importer()), Average),*iflag);
+      PHIST_CHK_IERR(*iflag=sol_i->Export(*dat->xLoc_i_, *(A->Importer()), Add),*iflag);
       PHIST_CHK_IERR(*iflag=dat->xLoc_i_->Import(*sol_i, *A->Importer(),Insert),*iflag);
     }
 
@@ -401,7 +401,7 @@ void SUBR(carp_sweep_aug_rc)(TYPE(const_sparseMat_ptr) vA,
     }
     if (rc_variant && dat->xLoc_i_.get()!=sol_i)
     {
-      PHIST_CHK_IERR(*iflag=sol_i->Export(*dat->xLoc_i_, *(A->Importer()), Average),*iflag);
+      PHIST_CHK_IERR(*iflag=sol_i->Export(*dat->xLoc_i_, *(A->Importer()), Add),*iflag);
     }
 }
 

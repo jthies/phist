@@ -1651,7 +1651,7 @@ namespace testing
     }
     if (rank==0) 
     {
-      message_=message_buf;
+      message_.assign(message_buf,total_len);
       delete [] message_buf;
     }
   }

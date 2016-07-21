@@ -67,7 +67,7 @@ void SUBR(type_avail)(int* iflag);
 //! \name Matrix input from a file
 //!
 //! optional flags:
-//! * PHIST_SPARSEMAT_REPARTITION
+//! * PHIST_SPARSEMAT_PERM_GLOBAL
 //! * PHIST_SPARSEMAT_DIST2_COLOR (feature required for CARP-CG)
 ///@{
 
@@ -228,6 +228,26 @@ void SUBR(sdMat_to_device)(TYPE(sdMat_ptr) M, int* iflag);
 
 //! copy small dense matrix (sdmat) data from the GPU to the host CPU \ingroup sdmat
 void SUBR(sdMat_from_device)(TYPE(sdMat_ptr) M, int* iflag);
+
+//@}
+
+//!   \defgroup mvec and sdMat I/O
+/*! note: these functions only read and write the data, not the map, comm etc.
+If you want to read an mvec from file, you have to create it first with a consitent map object.
+ */
+//@{
+
+//! write mvec data to file
+void SUBR(mvec_write_bin)(TYPE(const_mvec_ptr) V, const char* filename, int* iflag);
+
+//! read mvec data from file
+void SUBR(mvec_read_bin)(TYPE(mvec_ptr) V, const char* filename, int* iflag);
+
+//! write sdMat data to file
+void SUBR(sdMat_write_bin)(TYPE(const_sdMat_ptr) M, const char* filename, int* iflag);
+
+//! read sdMat data from file
+void SUBR(sdMat_read_bin)(TYPE(sdMat_ptr) M, const char* filename, int* iflag);
 
 //@}
 
@@ -518,7 +538,7 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) V,
 //! in ghost and how the test problems in essex/physics are defined.
 //!
 //! optional flags:
-//! * PHIST_SPARSEMAT_REPARTITION
+//! * PHIST_SPARSEMAT_PERM_GLOBAL
 //! * PHIST_SPARSEMAT_DIST2_COLOR (feature required for CARP-CG)
 //!
 void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist_const_comm_ptr comm,
@@ -540,13 +560,23 @@ void SUBR(mvec_scatter_mvecs)(TYPE(const_mvec_ptr) V, TYPE(mvec_ptr) W[], int nb
 
 //@}
 
-//! mixed real/complex operation: split mvec into real and imag part.
-//! if either reV or imV are NULL, it is not touched.
 #ifdef IS_COMPLEX
 # ifdef IS_DOUBLE
+//! mixed real/complex operation: split mvec into real and imag part.
+//! if either reV or imV are NULL, it is not touched.
 void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Dmvec* reV, phist_Dmvec* imV, int *iflag);
+
+//! mixed real/complex operation: copy separate real and imaginary part into complex vector
+//! if either reV or imV are NULL, it is not touched.
+void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Dconst_mvec_ptr reV, phist_Dconst_mvec_ptr imV, int *iflag);
 # else
+//! mixed real/complex operation: split mvec into real and imag part.
+//! if either reV or imV are NULL, it is not touched.
 void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Smvec* reV, phist_Smvec* imV, int *iflag);
+
+//! mixed real/complex operation: copy separate real and imaginary part into complex vector
+//! if either reV or imV are NULL, it is not touched.
+void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Sconst_mvec_ptr reV, phist_Sconst_mvec_ptr imV, int *iflag);
 # endif
 #endif
 

@@ -25,6 +25,7 @@ code alike */
 /* return types */
 #define PHIST_SUCCESS 0
 #define PHIST_FUNCTIONAL_ERROR -1
+#define PHIST_MPI_ERROR -33
 #define PHIST_MEM_ALLOC_FAILED -44
 #define PHIST_INVALID_INPUT -55
 #define PHIST_INTEGER_OVERFLOW -66

@@ -13,7 +13,7 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* vA, phist_const_com
         const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  bool repart = *iflag&PHIST_SPARSEMAT_REPARTITION;
+  bool repart = *iflag&PHIST_SPARSEMAT_PERM_GLOBAL;
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*iflag);
   if (filename==NULL)
@@ -74,7 +74,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
         int *iflag)
 {
   int iflag_in=*iflag;
-  bool repart = (*iflag)&PHIST_SPARSEMAT_REPARTITION;
+  bool repart = (*iflag)&PHIST_SPARSEMAT_PERM_GLOBAL;
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const Epetra_Comm,comm,vcomm,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Epetra_Map,map,vmap,*iflag);
@@ -112,7 +112,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
     }
     // create the matrix again and use this new map instead
     delete A;
-    *iflag=iflag_in & ~PHIST_SPARSEMAT_REPARTITION;
+    *iflag=iflag_in & ~PHIST_SPARSEMAT_PERM_GLOBAL;
     PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndMap)(vA,vcomm,newRowMap.get(),maxnne,rowFunPtr,last_arg,iflag),*iflag);
 
     // TODO: print statistics on the partitioning? Isorropia has nice tools for this in examples/
@@ -920,7 +920,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   int nrows = R->MyLength();
   int ncols = R->NumVectors();
     
-#ifdef TESTING
+#ifdef PHIST_TESTING
   PHIST_CHK_IERR(*iflag=nrows-ncols,*iflag);
   PHIST_CHK_IERR(*iflag=nrows-V->NumVectors(),*iflag);
 #endif  

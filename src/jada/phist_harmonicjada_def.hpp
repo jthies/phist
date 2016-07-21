@@ -212,7 +212,7 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   phist_lidx ldaH, ldaH_A, ldaHtmp, ldaH_Atmp,ldaS_L, ldaS_R, ldaT, ldaT_A;
 
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&V_,     A_op->domain_map, maxBase,        iflag), *iflag);
-#ifdef TESTING
+#ifdef PHIST_TESTING
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&Vtmp_,  A_op->domain_map, maxBase,                iflag), *iflag);
 #endif
   PHIST_CHK_IERR(SUBR( mvec_create  ) (&W_,    A_op->range_map,  maxBase,                iflag), *iflag);
@@ -393,13 +393,13 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   UPDATE_SUBSPACE_VIEWS;
 
 
-#ifdef TESTING_CHECK_SUBSPACE_INVARIANTS
-#undef TESTING_CHECK_SUBSPACE_INVARIANTS
+#ifdef PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS
+#undef PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS
 #endif
-#ifdef TESTING
+#ifdef PHIST_TESTING
 // V'V=I, W'W=I, A*V=W*H_A, V'Q=W'Q=0 
 // H=W'V, H_A S_R = S_L T_A, H S_R = S_L T
-#define TESTING_CHECK_SUBSPACE_INVARIANTS \
+#define PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS \
 { \
   PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp, 0, nV-1,          iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_, &Htmp, 0, nV-1, 0, nV-1, iflag), *iflag); \
@@ -447,11 +447,11 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   /* PHIST_CHK_IERR(SUBR( sdMat_print )(Htmp, iflag), *iflag); */ \
 }
 #else
-#define TESTING_CHECK_SUBSPACE_INVARIANTS
+#define PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS
 #endif
 
 
-TESTING_CHECK_SUBSPACE_INVARIANTS;
+PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS;
 
 
   //----------------------------------- MAIN LOOP ----------------------------------
@@ -583,7 +583,7 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
       PHIST_CHK_IERR(SUBR( sdMat_times_sdMat ) (st::one(), H_Aq, S_R, st::zero(), T_Aq, iflag), *iflag);
     }
     
-#ifdef TESTING
+#ifdef PHIST_TESTING
 {
   // check that H S_R = S_L T
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (S_L_,&S_L, 0, nV-1,    0, nEig_-1, iflag), *iflag);
@@ -684,7 +684,7 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
 #endif                                           
 
     
-#ifdef TESTING
+#ifdef PHIST_TESTING
 {
   // check that the residual is orthogonal to Q (should be by construction!)
   PHIST_CHK_IERR( SUBR( sdMat_view_block ) (Htmp_, &Htmp, 0, nEig_-1, nConvEig, nEig_-1, iflag), *iflag);
@@ -723,7 +723,7 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
     for(int i = 0; i < nEig_; i++)
       resPermutation[i] = i;
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
 {
   // check that Q is in correct order
   PHIST_CHK_IERR( SUBR(mvec_view_block)(Vtmp_, &t, 0, nEig_-1, iflag), *iflag);
@@ -863,7 +863,7 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
 
         UPDATE_SUBSPACE_VIEWS;
       }
-TESTING_CHECK_SUBSPACE_INVARIANTS;
+PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS;
     }
 
 
@@ -938,7 +938,7 @@ TESTING_CHECK_SUBSPACE_INVARIANTS;
       nV = minBase;
 
       UPDATE_SUBSPACE_VIEWS;
-TESTING_CHECK_SUBSPACE_INVARIANTS;
+PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS;
     }
 
     if( k > 0 ) 
@@ -1024,7 +1024,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
     } // k > 0
 
     UPDATE_SUBSPACE_VIEWS;
-TESTING_CHECK_SUBSPACE_INVARIANTS;
+PHIST_TESTING_CHECK_SUBSPACE_INVARIANTS;
   }
 
   // copy result to Q_

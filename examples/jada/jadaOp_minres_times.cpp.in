@@ -119,7 +119,7 @@ void myMain(int argc, char** argv, int &iflag)
 
   iflag = PHIST_IFLAG_DEFAULT;
   if( repart )
-    iflag |= PHIST_SPARSEMAT_REPARTITION;
+    iflag |= PHIST_SPARSEMAT_PERM_GLOBAL;
   if( nvecs > 1 )
     iflag |= PHIST_SPARSEMAT_OPT_BLOCKSPMVM;
   else
@@ -414,7 +414,7 @@ if (i < maxit - 2)
       PHIST_SOUT(PHIST_INFO,"residue(%d): %e\n", i, residue[0]);
       
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
     //check orthogonality
     //_ST_ yTz[nvecs], yTx[nvecs];
     //SUBR(mvec_dot_mvec)(y,x,yTx,&iflag);
@@ -428,7 +428,7 @@ if (i < maxit - 2)
       std::swap(c_old,c_k);
       std::swap(c_k,c_new);
       
-#ifdef TESTING
+#ifdef PHIST_TESTING
     //absolute error. Also not neccessary. Just for tests
     // PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),b,st::zero(),y,&iflag),iflag);
     // PHIST_CHK_IERR(jadaOp.apply(st::one(),jadaOp.A,solution,-st::one(),y,&iflag),iflag);

@@ -70,7 +70,7 @@ PHIST_MAIN_TASK_BEGIN
   if (argc>2) nvecs=atoi(argv[2]);
   if (argc>3) shift_type=atoi(argv[3]);
   
-  int sparseMat_flags=PHIST_SPARSEMAT_OPT_CARP|PHIST_SPARSEMAT_REPARTITION;
+  int sparseMat_flags=PHIST_SPARSEMAT_OPT_CARP|PHIST_SPARSEMAT_PERM_GLOBAL;
   if (argc>4) sparseMat_flags=atoi(argv[4]);
 
   iflag=sparseMat_flags;

@@ -252,6 +252,7 @@ void phist_map_get_local_length(phist_const_map_ptr vmap, phist_lidx* nloc, int*
 void phist_map_get_global_length(phist_const_map_ptr vmap, phist_gidx* nglob, int* iflag);
 void phist_map_get_ilower(phist_const_map_ptr vmap, phist_gidx* ilower, int* iflag);
 void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iupper, int* iflag);
+void phist_maps_compatible(phist_const_map_ptr map1, phist_const_map_ptr map2, int* iflag);
 
 #include "../common/phist_bench_kernels.cpp"
 
@@ -271,6 +272,7 @@ void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iupper, int* ifl
 #include "phist_gen_d.h"
 #include "kernels_def.hpp"
 #include "carp_def.hpp"
+#include "../common/kernels_no_io.cpp"
 #include "../common/kernels_no_gpu.cpp"
 #include "../common/kernels_no_fused_spmv.cpp"
 

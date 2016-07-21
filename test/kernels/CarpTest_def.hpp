@@ -38,8 +38,8 @@ public:
 
   static void SetUpTestCase()
   {
-    iflag_=0; // TODO: set PHIST_SPARSEMAT_OPT_CARP
-    SparseMatTest::SetUpTestCase();
+    int sparseMatCreateFlag=PHIST_SPARSEMAT_OPT_CARP | getSparseMatCreateFlag(_N_,_NV_);
+    SparseMatTest::SetUpTestCase(sparseMatCreateFlag);
     VTest::SetUpTestCase();
     MT_Test::SetUpTestCase();
     
@@ -71,11 +71,7 @@ public:
     I_=NULL;
     if (typeImplemented_ && !problemTooSmall_)
     {
-#ifndef PHIST_KERNEL_LIB_GHOST
-      iflag_=PHIST_SPARSEMAT_OPT_CARP | PHIST_SPARSEMAT_QUIET;
-#else
-      iflag_=PHIST_SPARSEMAT_QUIET;
-#endif
+      iflag_=PHIST_SPARSEMAT_OPT_CARP | getSparseMatCreateFlag(_N_,_NV_);
       SUBR(sparseMat_create_fromRowFunc)(&I_,comm_,_N_,_N_,1,&SUBR(idfunc),NULL,&iflag_);
       ASSERT_EQ(0,iflag_);
       
@@ -169,6 +165,22 @@ public:
         SUBR(carp_destroy)(I_, work, &iflag_);
         ASSERT_EQ(0,iflag_);
       }
+#ifndef IS_COMPLEX
+      SUBR(carp_setup_rc)(I_, 1, sigma_r_,sigma_i_,
+          &work, &iflag_);
+      if (iflag_==PHIST_NOT_IMPLEMENTED) 
+      {
+        iflag_=0;
+        rc_carpImplemented_=false;
+      }
+      else 
+      {
+        rc_carpImplemented_=true;
+        iflag_=0;
+        SUBR(carp_destroy)(I_, work, &iflag_);
+        ASSERT_EQ(0,iflag_);
+      }
+#endif
       x_A_=new TYPE(x_sparseMat);
       x_A_->A_=A_;
       x_A_->sigma_r_=new _ST_[nvec_];
@@ -452,7 +464,7 @@ protected:
   _MT_ sigma_r_[_NV_], sigma_i_[_NV_], omega_[_NV_];
   _CT_ sigma_[_NV_], minus_sigma_[_NV_];
 
-  bool carpImplemented_;
+  bool carpImplemented_, rc_carpImplemented_;
   bool cTypeImplemented_;
   
   // data structures for testing the "x_*" kernels used to implement CARP-CG.
@@ -482,9 +494,9 @@ protected:
 
 
   // make sure the operator is deterministic (important for CGMN)
-  TEST_F(CLASSNAME, operator_is_deterministic)
+  TEST_F(CLASSNAME, rc_operator_is_deterministic)
   {
-    if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
+    if (typeImplemented_ && !problemTooSmall_ && rc_carpImplemented_)
     {
       SUBR(mvec_random)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -528,6 +540,42 @@ protected:
 
       ASSERT_NEAR(mt::one(),MT_Test::ArraysEqual(norm1r,norm2r,_NV_,1,_NV_,1),10*mt::eps());
       ASSERT_NEAR(mt::one(),MT_Test::ArraysEqual(norm1i,norm2i,_NV_,1,_NV_,1),10*mt::eps());
+    }
+  }
+
+  TEST_F(CLASSNAME, operator_is_deterministic)
+  {
+    if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
+    {
+      SUBR(mvec_random)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      for (int i=0; i<_NV_; i++)
+      {
+        sigma_r_[i]=(MT)i;
+      }
+      
+      x_r=vec1_; x_r_bak=vec1b_;
+      b=vec3_;
+      create_and_apply_carp(A_);
+      ASSERT_EQ(0,iflag_);
+            
+      MT norm1r[_NV_];
+      SUBR(mvec_norm2)(x_r,norm1r,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // reset x_r and x_i to original vectors
+      SUBR(mvec_add_mvec)(st::one(),vec1b_,st::zero(),vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      create_and_apply_carp(A_);
+      ASSERT_EQ(0,iflag_);
+
+      MT norm2r[_NV_];
+      SUBR(mvec_norm2)(x_r,norm2r,&iflag_);
+
+      ASSERT_NEAR(mt::one(),MT_Test::ArraysEqual(norm1r,norm2r,_NV_,1,_NV_,1),10*mt::eps());
     }
   }
 
@@ -575,7 +623,7 @@ protected:
   // test if the kernel works correctly if b=NULL is given (should be same as b=zeros(n,1))
   TEST_F(CLASSNAME, DISABLED_rc_operator_hermitian)
   {
-    if (typeImplemented_ && !problemTooSmall_ && carpImplemented_)
+    if (typeImplemented_ && !problemTooSmall_ && rc_carpImplemented_)
     {
       SUBR(mvec_random)(vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);

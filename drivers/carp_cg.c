@@ -36,7 +36,7 @@ GRAPHENE=1,
 ANDERSON=2
 } problem_t;
 
-#define TEST_SYSTEM
+//#define TEST_SYSTEM
 
 int test_rhs(ghost_gidx i, ghost_lidx j, void * val, void * aux)
 {
@@ -226,7 +226,7 @@ int main(int argc, char** argv)
   
   // this is in the tools/driver_utils.h header, a useful tool for
   // generating our favorite test matrices or reading them from a file:
-       iflag=PHIST_SPARSEMAT_REPARTITION|PHIST_SPARSEMAT_OPT_CARP;
+       iflag=PHIST_SPARSEMAT_PERM_GLOBAL|PHIST_SPARSEMAT_OPT_CARP;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&mat,comm,problem,&iflag),iflag);
   
   PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(mat, &map,&iflag),iflag);
@@ -404,7 +404,37 @@ if (num_complex==0)
   }
 #endif
 }
+else
+{
+  // compute the residual for all linear systems and the error for system 0 only
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(ONE,B,ZERO,err_r,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_put_value)(err_i,ZERO,&iflag),iflag);
 
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(-ONE,mat,X_r[0],ONE,err_r,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(-ONE,mat,X_i[0],ONE,err_i,&iflag),iflag);
+
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_r[0],X_r[0],ONE,err_r,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(-sigma_i[0],X_i[0],ONE,err_r,&iflag),iflag);
+
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_r[0],X_i[0],ONE,err_i,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_add_mvec)(sigma_i[0],X_r[0],ONE,err_i,&iflag),iflag);
+
+  double nrm_res[nrhs],tmp[nrhs],nrm_rhs[nrhs];
+  PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(B,B,nrm_rhs,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(err_r,err_r,nrm_res,&iflag),iflag);
+  PHIST_ICHK_IERR(SUBR(mvec_dot_mvec)(err_i,err_i,tmp,&iflag),iflag);
+  for (i=0;i<nrhs;i++) 
+  {
+    nrm_rhs[i]=SQRT(nrm_rhs[i]);
+    nrm_res[i]=SQRT(nrm_res[i]+tmp[i]);
+  }
+
+  PHIST_SOUT(PHIST_INFO,"residual norms ||r||_2/||b||_2\n");
+  for (int i=0; i<nrhs; i++)
+  {
+    PHIST_SOUT(PHIST_INFO,"%d\t%16.8e (%s)\n",i,nrm_res[i]/nrm_rhs[i],nrm_res[i]<=tol*nrm_rhs[i]?"SUCCESS":"FAILURE");
+  }
+}
 ///////////////////////////////////////////////////////////////////
 // clean up afterwards                                           //
 ///////////////////////////////////////////////////////////////////

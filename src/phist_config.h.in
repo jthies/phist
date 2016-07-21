@@ -11,6 +11,13 @@
 */
 #cmakedefine PHIST_OUTLEV ${PHIST_OUTLEV}
 
+/* enables some potentially expesive tests, for instance wether the index spaces of
+   input and output vectors to an operation are correct. By default, this is ON if
+   CMAKE_BUILD_TYPE=Debug.
+ */
+#cmakedefine PHIST_TESTING
+
+
 /* some compiler/system flags */
 #cmakedefine PHIST_HAVE_CXX11_LAMBDAS
 #cmakedefine PHIST_HAVE_CXX11_THREADLOCAL
@@ -114,6 +121,8 @@ kernel libs) ?
 #cmakedefine PHIST_PERFCHECK_REALISTIC
 #cmakedefine PHIST_PERFCHECK_SEPARATE_OUTPUT
 #cmakedefine PHIST_BENCH_LARGE_N ${PHIST_BENCH_LARGE_N}
+#cmakedefine PHIST_PEAK_FLOPS_CPU ${PHIST_PEAK_FLOPS_CPU}
+#cmakedefine PHIST_PEAK_FLOPS_GPU ${PHIST_PEAK_FLOPS_GPU}
 
 /* specific settings to tune the GHOST performance */
 #ifdef PHIST_KERNEL_LIB_GHOST

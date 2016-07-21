@@ -117,7 +117,7 @@ using namespace testing;
 
 
 // large high precision tests (too slow in debug mode)
-#if defined(PHIST_HIGH_PRECISION_KERNELS) && !defined(TESTING)
+#if defined(PHIST_HIGH_PRECISION_KERNELS) && !defined(PHIST_TESTING)
 
 #define _N_ 4000000
 #define _M_ 1

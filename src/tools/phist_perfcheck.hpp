@@ -7,10 +7,13 @@
 #include <mpi.h>
 #endif
 
+#ifdef PHIST_KERNEL_LIB_GHOST
+#include "ghost.h"
+#endif
 
 #ifndef PHIST_PERFCHECK
 
-#define PHIST_PERFCHECK_VERIFY(functionName, benchFormula)
+#define PHIST_PERFCHECK_VERIFY(functionName, benchFormula, flops)
 #define PHIST_PERFCHECK_BENCHMARK(benchName, benchFunction)
 #define PHIST_PERFCHECK_SUMMARIZE(verbosity)
 
@@ -27,8 +30,8 @@
  * \param functionName name of the function, ideally with required block sizes appended
  * \param benchFormula formula to calculate expected time
  */
-#define PHIST_PERFCHECK_VERIFY(functionName,n1,n2,n3,n4,n5,n6,n7, benchFormula) \
-  phist_PerfCheck::PerfCheckTimer YouCanOnlyHaveOnePerfCheckInOneScope(functionName,#n1,n1,#n2,n2,#n3,n3,#n4,n4,#n5,n5,#n6,n6,#n7,n7, #benchFormula, benchFormula);
+#define PHIST_PERFCHECK_VERIFY(functionName,n1,n2,n3,n4,n5,n6,n7, benchFormula,flops) \
+  phist_PerfCheck::PerfCheckTimer YouCanOnlyHaveOnePerfCheckInOneScope(functionName,#n1,n1,#n2,n2,#n3,n3,#n4,n4,#n5,n5,#n6,n6,#n7,n7, #benchFormula, benchFormula,flops);
 
 
 /*! Defines a new benchmark for the performance check
@@ -77,10 +80,17 @@ namespace phist_PerfCheck
                                        const char* sn5, double n5, 
                                        const char* sn6, double n6, 
                                        const char* sn7, double n7, 
-                                       const char* formula, double expectedTime) :
+                                       const char* formula, double expectedTime, double flops) :
         Timer(constructName(name,sn1,n1,sn2,n2,sn3,n3,sn4,n4,sn5,n5,sn6,n6,sn7,n7,formula).c_str())
       {
-        expectedResults_[name_].update(expectedTime);
+        double peak=PHIST_PEAK_FLOPS_CPU;
+#ifdef PHIST_KERNEL_LIB_GHOST
+        ghost_type gtype;
+        ghost_type_get(&gtype);
+        if (gtype==GHOST_TYPE_CUDA) peak=PHIST_PEAK_FLOPS_GPU;
+#endif
+        double t_peak = flops/peak;
+        expectedResults_[name_].update(std::max(expectedTime,t_peak));
       }
 
       // generate and print statistics

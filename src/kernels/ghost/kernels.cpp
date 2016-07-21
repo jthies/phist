@@ -73,16 +73,34 @@ double get_proc_weight(double force_value)
 
 void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
 {
-  // if the user sets both to postive values in the config file (via CMake), respect this choice
-  // and do not override it by either flags or the presence of GPU processes
-  static int C_stored=PHIST_SELL_C;
-  static int sigma_stored=PHIST_SELL_SIGMA;
+  // on the first call, figure out if there is a GPU process and set C=32 if so.
+  // This requires global communication!!!
+  static int any_GPUs=-1;
+  if (any_GPUs<0)
+  {
+    ghost_type gtype;
+    ghost_type_get(&gtype);
+    if (gtype==GHOST_TYPE_CUDA)
+    {
+      any_GPUs=1;
+    }
+    else
+    {
+      any_GPUs=0;
+    }
 
-  // only determine C and sigma once, then use these values subsequently for all maps/matrices. The
-  // code below requires global reductions and we don't know if a user constructs many different matrices
-  // in the course of a simulation.
-  *C=C_stored;
-  *sigma=sigma_stored;
+    // everyone should have the max value found among MPI processes
+    MPI_Allreduce(MPI_IN_PLACE,&any_GPUs,1,MPI_INT,MPI_SUM,comm);
+  }
+
+  // if the user sets both to postive values in the config file (via CMake), respect this choice
+  // and do not override it by either flags or the presence of GPU processes. An exception is that
+  // we strictly disallow reordering unless pHIST_SPARSEMAT_PERM_LOCAL is set, i.e. we set sigma=1
+  // in that case.
+  *C=PHIST_SELL_C;
+  *sigma=PHIST_SELL_SIGMA;
+  
+  if (!(flags&PHIST_SPARSEMAT_PERM_LOCAL) ) *sigma=1;
 
   if (*C>0 && *sigma>0) return;
 
@@ -96,36 +114,24 @@ void get_C_sigma(int* C, int* sigma, int flags, MPI_Comm comm)
     {
       *C = 8;
     }
+    if (any_GPUs)
+    {
+      *C=32;
+    }
   }
-
-  // override with max(C,32) if anything runs on a CUDA device
-  ghost_type gtype;
-  ghost_type_get(&gtype);
-  if (gtype==GHOST_TYPE_CUDA)
+  if (*C<0 || (flags&PHIST_SPARSEMAT_OPT_CARP)) 
   {
-    *C=std::max(*C,32);
+    *C=1;
+    *sigma=1;
   }
-  // if the user doesn´t set it in CMake or give a flag, it is -1, override with +1 (CRS)
-  *C=std::max(*C,+1);
-
-  // everyone should have the max value found among MPI processes
-  MPI_Allreduce(MPI_IN_PLACE,C,1,MPI_INT,MPI_MAX,comm);
 
   if (*sigma<0) *sigma=4*(*C);
-
-  // if the user does NOT specify PHIST_SPARSEMAT_REPARTITION, set sigma=1 because the user may
-  // not expect us to permute rows locally
-  if ( !(flags&PHIST_SPARSEMAT_REPARTITION) ) *sigma=1;
-  
-  C_stored=*C;
-  sigma_stored=*sigma;
-
 }
 
 int get_perm_flag(int iflag, int outlev)
 {
   int oflag=GHOST_SPARSEMAT_DEFAULT;
-  if (iflag&PHIST_SPARSEMAT_REPARTITION)
+  if (iflag&PHIST_SPARSEMAT_PERM_GLOBAL)
   {
 #ifdef GHOST_HAVE_ZOLTAN
           PHIST_SOUT(outlev, "Trying to repartition the matrix with Zoltan\n");
@@ -141,11 +147,38 @@ int get_perm_flag(int iflag, int outlev)
           oflag|=GHOST_SPARSEMAT_RCM;
 #endif
   }
-  if ((iflag&PHIST_SPARSEMAT_OPT_CARP)|(iflag&PHIST_SPARSEMAT_DIST2_COLOR))
+  else if (iflag&PHIST_SPARSEMAT_PERM_LOCAL)
+  {
+#ifdef GHOST_HAVE_SPMP
+          PHIST_SOUT(outlev, "Enable local RCM reordering via SPMP\n");
+          oflag|=GHOST_SPARSEMAT_RCM;
+#endif
+  }
+  if (iflag&PHIST_SPARSEMAT_OPT_CARP)
+  {
+//        PHIST_SOUT(outlev, "Enable reorderings for CARP kernel\n");
+//        oflag|=GHOST_SOLVER_KACZ;
+        PHIST_SOUT(PHIST_WARNING,"flag PHIST_SPARSEMAT_OPT_CARP ignored right now,\n"
+                                 "since CARP is experimental in ghost and may mess up the matrix\n"
+                                 "(file %s, line %d)\n",__FILE__,__LINE__);
+  }
+  if (iflag&PHIST_SPARSEMAT_DIST2_COLOR)
   {
     oflag|=GHOST_SPARSEMAT_COLOR;
   }
+
   if (oflag!=GHOST_SPARSEMAT_DEFAULT) oflag|=GHOST_SPARSEMAT_PERMUTE;
+  if ( ((iflag&PHIST_SPARSEMAT_PERM_LOCAL)  == 0) && 
+       ((iflag&PHIST_SPARSEMAT_PERM_GLOBAL) == 0) && 
+        (oflag!=0) )
+  {
+    PHIST_SOUT(PHIST_WARNING,"WARNING: based on your input flags, PHIST suggests to set permutation flags for the matrix.\n"
+                             "         However, since neither PHIST_SPARSEMAT_PERM_LOCAL nor PHIST_SPARSEMAT_PERM_GLOBAL\n"
+                             "         are present in the input flags, I  can't set\n"
+                             "         them. For optimal performance you should consider allowing at least local\n" 
+                             "         permutations.\n");
+    return 0;
+  }
   return oflag;
 }
 
@@ -171,6 +204,8 @@ int get_perm_flag(int iflag, int outlev)
  //     new_flags&=   ~(int)GHOST_DENSEMAT_HOST;
  //     new_flags&=   ~(int)GHOST_DENSEMAT_DEVICE;
       vtraits.flags = (ghost_densemat_flags)new_flags;
+      
+      vtraits.permutemethod=NONE;
 
       vtraits.ncols=1;
 #ifdef PHIST_MVECS_ROW_MAJOR
@@ -466,6 +501,75 @@ extern "C" void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iuppe
   int me;
   ghost_rank(&me,map->ctx->mpicomm);
   *iupper = map->ctx->lfRow[me]+map->ctx->lnrows[me]-1;
+}
+
+extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map_ptr vmap2, int* iflag)
+{
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map,map1,vmap1,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map,map2,vmap2,*iflag);
+  *iflag=-1;
+  // same object?
+  if (map1==map2) {*iflag=0; return;}
+  // can only be compatible with same context in GHOST
+  if (map1->ctx!=map2->ctx) {*iflag=-1; return;}
+  const ghost_densemat_traits& vtraits1 = map1->vtraits_template;
+  const ghost_densemat_traits& vtraits2 = map2->vtraits_template;
+  const ghost_permutation *lperm = map1->ctx->perm_local;
+  const ghost_permutation *gperm = map1->ctx->perm_global;
+  
+  if (&vtraits1==&vtraits2)
+  {
+    *iflag=0;
+    return;
+  }
+  // since ghost_vtraits doesn't implement operator==, we have to compare manually
+  if (vtraits1.nrows == vtraits2.nrows                      &&
+      vtraits1.nrowshalo == vtraits2.nrowshalo              &&
+      vtraits1.flags == vtraits2.flags                      &&
+      vtraits1.permutemethod == vtraits2.permutemethod)
+  {
+    // these maps will create vectors with the same distribution and permutation
+    *iflag=0;
+    return;
+  }
+  // check if the maps are locally or globally permuted versions of the same index space
+  if (vtraits1.permutemethod != vtraits2.permutemethod)
+  {
+    // this means e.g. that the one is a row distribution and the other a column distribution,
+    // and we currently do not allow converting between them unless they are the same 
+    // (as for a symmetrically permuted sparse matrix)
+    if ( (lperm && lperm->method!=GHOST_PERMUTATION_SYMMETRIC) ||
+         (gperm && gperm->method!=GHOST_PERMUTATION_SYMMETRIC) )
+    {
+      *iflag=-1;
+      return;
+    }
+  }
+  if ( (vtraits1.flags&GHOST_DENSEMAT_PERMUTED) ==
+       (vtraits2.flags&GHOST_DENSEMAT_PERMUTED) )
+  {
+    // should be same permutation
+    *iflag=0;
+    return;
+  }
+  else
+  {
+    // one of the vectors is permuted, the other isn't. Check if the permutation is global or local
+    if (gperm!=NULL) 
+    {
+      *iflag=2;
+    }
+    else if (lperm!=NULL)
+    {
+      *iflag=1;
+    }
+    else
+    {
+      *iflag=0;
+    }
+  }
+  return;
 }
 
 /* helper function that tells the matrix generation routines which 

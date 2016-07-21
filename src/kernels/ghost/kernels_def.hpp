@@ -171,6 +171,13 @@ extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, phist_
   ghost_map* map = mapGarbageCollector.new_map(vA);
   map->ctx = A->context;
   map->vtraits_template=phist_default_vtraits();
+  // vectors based on this map should have the same permutation as the matrix rows
+  if (map->ctx->perm_local!=NULL ||
+      map->ctx->perm_global!=NULL )
+  {
+    map->vtraits_template.permutemethod=ROW;
+    map->vtraits_template.flags|=GHOST_DENSEMAT_PERMUTED;
+  }
   *vmap = (phist_const_map_ptr)map;
 }
 
@@ -187,6 +194,13 @@ extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, phist_
   ghost_map* map = mapGarbageCollector.new_map(vA);
   map->ctx = A->context;
   map->vtraits_template=phist_default_vtraits();
+  // vectors based on this map should have the same permutation as the matrix rows
+  if (map->ctx->perm_local!=NULL ||
+      map->ctx->perm_global!=NULL )
+  {
+    map->vtraits_template.permutemethod=COLUMN;
+    map->vtraits_template.flags|=GHOST_DENSEMAT_PERMUTED;
+  }
   *vmap = (phist_const_map_ptr)map;
 }
 
@@ -468,6 +482,7 @@ extern "C" void SUBR(mvec_to_device)(TYPE(mvec_ptr) vV, int* iflag)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   //PHIST_PERFCHECK_VERIFY_TO_DEVICE(vV,iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V, vV, *iflag);
+/*
   PHIST_SOUT(PHIST_DEBUG,"ghost densemat upload\n"
                          "nrows=%" PRlidx ", ncols=%" PRlidx "\n"
                          "nrowshalo=%" PRlidx "\n"
@@ -476,6 +491,7 @@ extern "C" void SUBR(mvec_to_device)(TYPE(mvec_ptr) vV, int* iflag)
                          V->traits.nrowshalo,
                          V->traits.nrowspadded, V->traits.ncolspadded);
   PHIST_SOUT(PHIST_DEBUG,"V flags: %d\n",(int)V->traits.flags);
+*/
   PHIST_CHK_GERR(V->upload(V),*iflag);
 #endif
 }
@@ -527,6 +543,15 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
 {
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V_in,v_in,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V_out,v_out,*iflag);
+
+#ifdef TESTING
+  // ask the map guru if the operation makes sense at all. We only do this in TESTING mode
+  // because maps_compatible may do global reductions etc. (although it tries to avoid this)
+  phist_const_map_ptr map_in, map_out;
+  PHIST_CHK_IERR(SUBR(mvec_get_map)(v_in,&map_in,iflag),*iflag);
+  PHIST_CHK_IERR(SUBR(mvec_get_map)(v_out,&map_out,iflag),*iflag);
+  PHIST_CHK_NEG_IERR(phist_maps_compatible(map_in,map_out,iflag),*iflag);
+#endif
 
   // set some convenient pointers
   ghost_context *ctx_in=V_in->context;
@@ -600,11 +625,13 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   
   if (inputPermuted)
   {
+    PHIST_SOUT(PHIST_DEBUG,"mvec_to_mvec: unpermute input vector\n");
     GHOST_FUNC_CTX(V_out,ctx_in,permute,V_out,GHOST_PERMUTATION_PERM2ORIG);
   }
   
   if (outputPermuted)
   {
+    PHIST_SOUT(PHIST_DEBUG,"mvec_to_mvec: permute output vector\n");
     PHIST_CHK_GERR(V_out->permute(V_out,GHOST_PERMUTATION_ORIG2PERM),*iflag);
   }
   return;
@@ -671,7 +698,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,Vblock,vVblock,*iflag);
   *iflag=0;
-#ifdef TESTING
+#ifdef PHIST_TESTING
 // nonzero error code if #vectors in Vblock too small or large
   PHIST_CHK_IERR(*iflag=(jmax-jmin+1)-Vblock->traits.ncols,*iflag);
   PHIST_CHK_IERR(*iflag=((jmin<0)||(jmax>=V->traits.ncols))?PHIST_INVALID_INPUT:0,*iflag);
@@ -704,7 +731,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,Vblock,vVblock,*iflag);
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
 int nv_v,nv_vb;
 phist_lidx nr_v,nr_vb;
 PHIST_CHK_IERR(*iflag=V->elSize-Vblock->elSize,*iflag);
@@ -747,7 +774,7 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(mvec_ptr) vM, TYPE(mvec_ptr)* vMbloc
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M,vM,*iflag);
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
   if (imin<0||jmin<0||imax>M->traits.nrows||jmax>M->traits.ncols)
   {
     PHIST_OUT(PHIST_ERROR,"%s: range out of bounds of matrix\n"
@@ -789,7 +816,7 @@ PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M,vM,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,Mblock,vMblock,*iflag);
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
   int nr=imax-imin+1;
   int nc=jmax-jmin+1;
   if (Mblock->traits.nrows!=nr || Mblock->traits.ncols!=nc)
@@ -908,7 +935,7 @@ extern "C" void SUBR(mvec_put_value)(TYPE(mvec_ptr) vV, _ST_ value, int* iflag)
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
-  PHIST_DEB("put value, V @ %p. V->traits.nrows=%" PRlidx "\n",V,V->traits.nrows);
+//  PHIST_DEB("put value, V @ %p. V->traits.nrows=%" PRlidx "\n",V,V->traits.nrows);
   V->fromScalar(V,(void*)&value);
 PHIST_TASK_END(iflag);
 }
@@ -1277,6 +1304,7 @@ _ST_ beta, TYPE(mvec_ptr) vy, _ST_* ydoty, _ST_* xdoty, int* iflag)
   PHIST_CHK_IERR(SUBR(fused_spmv_mvdot_mvadd)(alpha,vA,vx,beta,vy,st::zero(),st::zero(),NULL,ydoty,xdoty,iflag),*iflag);
 }
 
+// This is the central place where we call the GHOST sparse matrix-vector product with all its bells and whistles
 extern "C" void SUBR(fused_spmv_mvdot_mvadd)(_ST_ alpha, TYPE(const_sparseMat_ptr) vA, TYPE(const_mvec_ptr) vx, 
 _ST_ beta, TYPE(mvec_ptr) vy, 
 _ST_ gamma, _ST_ delta, TYPE(mvec_ptr) vz,
@@ -1284,6 +1312,23 @@ _ST_* ydoty, _ST_* xdoty, int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
+
+#ifdef PHIST_TESTING
+  // check if the input and output have the correct maps, that is they live in the same index space
+  // as the columns and rows of A, respectively, and have the same distribution and permutation.
+  {
+    phist_const_map_ptr map_x, map_y, range_map_A, domain_map_A;
+    PHIST_CHK_IERR(SUBR(mvec_get_map)(vx,&map_x,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_get_map)(vy,&map_y,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sparseMat_get_range_map)(vA,&range_map_A,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sparseMat_get_domain_map)(vA,&domain_map_A,iflag),*iflag);
+    
+    // x and y must be correctly partitioned and permuted at this point, so demand *iflag=0 here:
+    PHIST_CHK_IERR(phist_maps_compatible(map_x, domain_map_A,iflag),*iflag);
+    PHIST_CHK_IERR(phist_maps_compatible(map_y, range_map_A,iflag),*iflag);
+  }
+#endif
+
   ghost_spmv_opts spMVM_opts=GHOST_SPMV_OPTS_INITIALIZER;
   // ghost spmvm mode
   if( *iflag & PHIST_SPMVM_ONLY_LOCAL )
@@ -1531,13 +1576,14 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE
     mybeta = beta;
 
     phist_lidx ncC = C->traits.ncols;
-
+/*
   PHIST_DEB("VtV=C, V %" PRlidx "x%" PRlidx ", \n"
             "       W %" PRlidx "x%" PRlidx ", \n"
             "       C %" PRlidx "x%" PRlidx "\n", 
   V->traits.nrows,V->traits.ncols,
   W->traits.nrows,W->traits.ncols,
   C->traits.nrows,C->traits.ncols);
+*/
 
   // NOTE: we call the allreduction by hand afterwards to allow asynchronuous communication!
   /*
@@ -1598,7 +1644,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     nrW=W->traits.nrows;  ncW=V->traits.ncols;
     nrC=C->traits.nrows;  ncC=V->traits.ncols;
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
     PHIST_CHK_IERR(*iflag=nrV-nrW,*iflag);
     PHIST_CHK_IERR(*iflag=nrC-ncV,*iflag);
     PHIST_CHK_IERR(*iflag=ncC-ncW,*iflag);
@@ -1626,7 +1672,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
     PHIST_CAST_PTR_FROM_VOID(ghost_densemat,C,vC,*iflag);
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
     int ncV, nrC, ncC;
     ncV=V->traits.ncols;
      nrC=C->traits.nrows;  ncC=V->traits.ncols;
@@ -1892,15 +1938,50 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
 #ifdef IS_COMPLEX
 # ifdef IS_DOUBLE
 extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Dmvec* reV, phist_Dmvec* imV, int *iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
 # else
-extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Smvec_ptr reV, phist_Smvec_ptr imV, int *iflag)
+extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Smvec* reV, phist_Smvec* imV, int *iflag)
+#endif
 {
-  *iflag=PHIST_NOT_IMPLEMENTED;
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  *iflag=0;
+  int _jmin=0,_jmax;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&_jmax,iflag),*iflag);
+  _jmax--;
+  PHIST_PERFCHECK_VERIFY_MVEC_SET_BLOCK(V,V,_jmin,_jmax,iflag);
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN(ComputeTask)
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,src,V,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,re,reV,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,im,imV,*iflag);
+  
+  PHIST_CHK_GERR(re->fromComplex(re,im,src),*iflag);
+  PHIST_TASK_END(iflag);
 }
+
+# ifdef IS_DOUBLE
+extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Dconst_mvec_ptr reV, phist_Dconst_mvec_ptr imV, int *iflag)
+# else
+extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Sconst_mvec_ptr reV, phist_Sconst_mvec_ptr imV, int *iflag)
 # endif
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+#include "phist_std_typedefs.hpp"
+  *iflag=0;
+  int _jmin=0;
+  int _jmax;
+  PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&_jmax,iflag),*iflag);
+  _jmax--;
+  PHIST_PERFCHECK_VERIFY_MVEC_SET_BLOCK(V,V,_jmin,_jmax,iflag);
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN(ComputeTask)
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,vec,V,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,re,reV,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,im,imV,*iflag);
+  
+  PHIST_CHK_GERR(vec->fromReal(vec,re,im),*iflag);
+  PHIST_TASK_END(iflag);
+}
 #endif
 
 //! create a sparse matrix from a row func and use a distribution prescribed by a given map
@@ -1913,7 +1994,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
   return;
 }
 
-void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
+extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
         phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
                 phist_sparseMat_rowFunc rowFunPtr, void* last_arg, int *iflag)
 {
@@ -1975,3 +2056,34 @@ PHIST_TASK_END(iflag);
   return;
 }
 
+extern "C" void SUBR(mvec_write_bin)(TYPE(const_mvec_ptr) vV, const char* filename, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
+  PHIST_CHK_GERR(V->toFile(V,(char*)filename,1),*iflag);
+}
+
+extern "C" void SUBR(mvec_read_bin)(TYPE(mvec_ptr) vV, const char* filename, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
+  PHIST_CHK_GERR(V->fromFile(V,(char*)filename,1),*iflag);
+}
+
+extern "C" void SUBR(sdMat_write_bin)(TYPE(const_sdMat_ptr) vM, const char* filename, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M,vM,*iflag);
+  PHIST_CHK_GERR(M->toFile(M,(char*)filename,0),*iflag);
+}
+
+extern "C" void SUBR(sdMat_read_bin)(TYPE(sdMat_ptr) vM, const char* filename, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M,vM,*iflag);
+  PHIST_CHK_GERR(M->fromFile(M,(char*)filename,0),*iflag);
+}

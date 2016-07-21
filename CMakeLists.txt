@@ -225,6 +225,10 @@ else()
 	set(PHIST_OUTLEV 3 CACHE STRING "PHIST verbosity (debug 3, 'VERBOSE')")
 endif()
 
+if(CMAKE_BUILD_TYPE MATCHES "Debug")
+  set(PHIST_TESTING ON CACHE STRING "Enable potentially expensive checks in the code")
+endif()
+
 ##############################################################################
 # compiler-dependent flags 
 ##############################################################################
@@ -266,13 +270,13 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
   set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
 
   if (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
-    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter --coverage")
-    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter --coverage")
-    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all --coverage")
+    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter --coverage")
+    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter --coverage")
+    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Wall -fcheck=all -fstack-protector-all --coverage")
   else ()
-    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -fstack-protector-all -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs --coverage")
-    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -fstack-protector-all -DTESTING -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs --coverage")
-    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -DTESTING -Wall -fcheck=all -fstack-protector-all --coverage")
+    set (CMAKE_C_FLAGS_DEBUG       "-O0 -g -fstack-protector-all -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs --coverage")
+    set (CMAKE_CXX_FLAGS_DEBUG     "-O0 -g -fstack-protector-all -Wall -Wextra -Wno-format -Wno-sign-compare -Wno-unused-variable -Wno-unused-parameter -Wno-unused-local-typedefs --coverage")
+    set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -Wall -fcheck=all -fstack-protector-all --coverage")
   endif ()
 
   if (NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8)
@@ -321,13 +325,13 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -debug")
   set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -debug")
 
-  set (CMAKE_C_FLAGS_DEBUG        "-check-pointers=rw -fstack-protector -w2 -debug -traceback -DTESTING")
-  set (CMAKE_CXX_FLAGS_DEBUG      "-check-pointers=rw -fstack-protector -w2 -debug -traceback -DTESTING")
-  set (CMAKE_Fortran_FLAGS_DEBUG  "-check all -debug -traceback -DTESTING")
+  set (CMAKE_C_FLAGS_DEBUG        "-check-pointers=rw -fstack-protector -w2 -debug -traceback")
+  set (CMAKE_CXX_FLAGS_DEBUG      "-check-pointers=rw -fstack-protector -w2 -debug -traceback")
+  set (CMAKE_Fortran_FLAGS_DEBUG  "-check all -debug -traceback")
   if (PHIST_BUILD_MIC)
-      set (CMAKE_C_FLAGS_DEBUG        "-mmic -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
-      set (CMAKE_CXX_FLAGS_DEBUG      "-mmic -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback -DTESTING")
-      set (CMAKE_Fortran_FLAGS_DEBUG  "-mmic -check all -debug -traceback -DTESTING")
+      set (CMAKE_C_FLAGS_DEBUG        "-mmic -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback")
+      set (CMAKE_CXX_FLAGS_DEBUG      "-mmic -check-pointers=rw -check=uninit,stack -fstack-protector -w2 -debug -traceback")
+      set (CMAKE_Fortran_FLAGS_DEBUG  "-mmic -check all -debug -traceback")
   endif()
   # this is for some reason required with Intel 15 on Emmy:
   set (CMAKE_EXE_LINKER_FLAGS_DEBUG "-lifcore -lifport")
@@ -369,9 +373,9 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "PGI")
   set (CMAKE_CXX_FLAGS_RELWITHDEBINFO     "${CMAKE_CXX_FLAGS_RELEASE}     -g")
   set (CMAKE_Fortran_FLAGS_RELWITHDEBINFO "${CMAKE_Fortran_FLAGS_RELEASE} -g")
 
-  set (CMAKE_C_FLAGS_DEBUG       "-O0 -g")#-O0 -g -DTESTING -Mbounds -Mdwarf3")
-  set (CMAKE_CXX_FLAGS_DEBUG     "-O0")#-O0 -g -DTESTING -Mbounds -Mdwarf3")
-  set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g")#-O0 -g -DTESTING -Mbounds -Mdwarf3")
+  set (CMAKE_C_FLAGS_DEBUG       "-O0 -g")#-O0 -g -Mbounds -Mdwarf3")
+  set (CMAKE_CXX_FLAGS_DEBUG     "-O0")#-O0 -g -Mbounds -Mdwarf3")
+  set (CMAKE_Fortran_FLAGS_DEBUG "-O0 -g")#-O0 -g -Mbounds -Mdwarf3")
 
 else()
 
@@ -504,7 +508,7 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   set(PHIST_SDMATS_ROW_MAJOR 0 CACHE STRING "store sdMats in row-major order (not supported by our algorithms..." )
 
   set(PHIST_SELL_C -1 CACHE INTEGER "chunk size C for the SELL-C-sigma format (-1: automatic choice)")
-  set(PHIST_SELL_SIGMA 1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format (-1: automatic choice)")
+  set(PHIST_SELL_SIGMA -1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format (-1: automatic choice)")
 
   if (PHIST_USE_SOLVER_TPLS)
     list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
@@ -712,8 +716,14 @@ set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.c
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedgmres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedminres.cpp
-                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_belos.cpp
-                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasazi.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_belosS.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_belosC.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_belosD.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_belosZ.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziS.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziC.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziD.cpp
+                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziZ.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp
                          )
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
@@ -725,7 +735,10 @@ set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_transform_searchspace.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaCorrectionSolver.cpp
                          )
-set(PHIST_PRECON_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/phist_precon.cpp
+set(PHIST_PRECON_SOURCE ${PROJECT_SOURCE_DIR}/src/precon/phist_preconS.cpp
+                        ${PROJECT_SOURCE_DIR}/src/precon/phist_preconD.cpp
+                        ${PROJECT_SOURCE_DIR}/src/precon/phist_preconC.cpp
+                        ${PROJECT_SOURCE_DIR}/src/precon/phist_preconZ.cpp
                         ${PROJECT_SOURCE_DIR}/src/precon/phist_ilu.cpp
                         )
 set (PHIST_SUPPORT_SOURCE  ${PROJECT_SOURCE_DIR}/src/support/phist_feastCorrectionSolver.cpp
@@ -922,11 +935,15 @@ option(PHIST_PERFCHECK "Check performance of operations (which have a performanc
 if( PHIST_PERFCHECK )
   message(STATUS "activated PerfCheck timing monitoring")
   if( PHIST_PERFCHECK AND PHIST_TIMEMONITOR )
-    message(FATAL_ERROR "You cannot use PHIST_PERFCHECK and PHIST_TIMEMONITOR at once currently!")
+    message(WARNING "You cannot use PHIST_PERFCHECK and PHIST_TIMEMONITOR at once, disabling timing!")
+    set(PHIST_TIMEMONITOR Off)
   endif()
   option(PHIST_PERFCHECK_SEPARATE_OUTPUT "write perfcheck output to separate files for each MPI rank (useful for analysing heterogenous runs)" OFF)
   option(PHIST_PERFCHECK_REALISTIC "Switch from ideal performance predictions to more realistic ones (e.g. for views)!" OFF)
 endif()
+
+set(PHIST_PEAK_FLOPS_CPU 442e9 CACHE STRING "Peak GFlop/s rate of the CPU component (for PERFCHECK only)")
+set(PHIST_PEAK_FLOPS_GPU 1.43e12 CACHE STRING "Peak GFlop/s rate of the GPU component (for PERFCHECK only)")
 
 set(INCLUDE_FLAGS "")
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)

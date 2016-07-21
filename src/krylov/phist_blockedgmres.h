@@ -28,6 +28,7 @@ extern "C" {
 #include "phist_blockedgmres_decl.h"
 #include "phist_gen_z.h"
 #include "phist_blockedgmres_decl.h"
+#include "phist_gen_clean.h"
 #ifdef __cplusplus
 }
 #endif

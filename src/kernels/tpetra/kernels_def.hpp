@@ -314,7 +314,7 @@ extern "C" void SUBR(mvec_view_block)(TYPE(mvec_ptr) vV,
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*iflag);
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
   if (jmax<jmin)
   {
     PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d] is invalid\n",__FUNCTION__,
@@ -355,7 +355,7 @@ extern "C" void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,Vblock,vVblock,*iflag);
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
   if (jmax<jmin)
   {
     PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d] is invalid\n",__FUNCTION__,
@@ -398,7 +398,7 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,Vblock,vVblock,*iflag);
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
   if (jmax<jmin)
   {
     PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d] is invalid\n",__FUNCTION__,
@@ -448,7 +448,7 @@ extern "C" void SUBR(sdMat_view_block)(TYPE(sdMat_ptr) vM,
     delete tmp;
   }
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
   if (jmax<jmin||imax<imin)
   {
     PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d]x[%d..%d] is invalid\n",__FUNCTION__,
@@ -511,7 +511,7 @@ extern "C" void SUBR(sdMat_get_block)(TYPE(const_sdMat_ptr) vM,
   
   Teuchos::RCP<const Traits<_ST_>::sdMat_t> Mview,Mtmp;
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
   if (jmax<jmin||imax<imin)
   {
     PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d]x[%d..%d] is invalid\n",__FUNCTION__,
@@ -571,7 +571,7 @@ extern "C" void SUBR(sdMat_set_block)(TYPE(sdMat_ptr) vM,
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::sdMat_t,M,vM,*iflag);
   PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::sdMat_t,Mblock,vMblock,*iflag);
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
   if (jmax<jmin||imax<imin)
   {
     PHIST_OUT(PHIST_ERROR,"in %s, given range [%d..%d]x[%d..%d] is invalid\n",__FUNCTION__,
@@ -706,8 +706,8 @@ extern "C" void SUBR(mvec_random)(TYPE(mvec_ptr) vV, int* iflag)
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,vV,*iflag);
-#ifdef TESTING
-  PHIST_SOUT(PHIST_DEBUG,"gathering global vector (only in TESTING mode)\n");
+#ifdef PHIST_TESTING
+  PHIST_SOUT(PHIST_DEBUG,"gathering global vector (only in PHIST_TESTING mode)\n");
   // make results reproducible by doing a sequential randomization and then a 'scatter'
   Teuchos::RCP<const map_type> map = V->getMap();
   phist_gidx nglob=map->getGlobalNumElements();
@@ -1161,7 +1161,7 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
   int nrows = R->getLocalLength();
   int ncols = R->getNumVectors();
       
-#ifdef TESTING
+#ifdef PHIST_TESTING
   PHIST_CHK_IERR(*iflag=nrows-ncols,*iflag);
   PHIST_CHK_IERR(*iflag=nrows-V->getNumVectors(),*iflag);
 #endif  
@@ -1207,16 +1207,57 @@ extern "C" void SUBR(mvec_QR)(TYPE(mvec_ptr) vV, TYPE(sdMat_ptr) vR, int* iflag)
 //! mixed real/complex operation: split mvec into real and imag part.
 //! if either reV or imV are NULL, it is not touched.
 #ifdef IS_COMPLEX
+
+// Warning: these implementations are slow because I use sequential loops!
+// If they are used in practice they should be parallelized using Kokkos
 # ifdef IS_DOUBLE
-extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Dmvec* reV, phist_Dmvec* imV, int *iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
+extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) v_V, phist_Dmvec* v_reV, phist_Dmvec* v_imV, int *iflag)
 # else
-extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Smvec* reV, phist_Smvec* imV, int *iflag)
-{
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
+extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) v_V, phist_Smvec* v_reV, phist_Smvec* v_imV, int *iflag)
 # endif
+{
+#include "phist_std_typedefs.hpp"
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_ST_>::mvec_t,V,v_V,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_MT_>::mvec_t,reV,v_reV,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(Traits<_MT_>::mvec_t,imV,v_imV,*iflag);
+  
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const _ST_> > _V = V->get2dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<_MT_> > _reV = reV->get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<_MT_> > _imV = imV->get2dViewNonConst();
+  for (phist_lidx j=0; j<_V.size(); j++)
+  {
+    for (phist_lidx i=0; i<_V[j].size();i++)
+    {
+      _reV[j][i] = st::real(_V[j][i]);
+      _imV[j][i] = st::imag(_V[j][i]);
+    }
+  }
+}
+
+# ifdef IS_DOUBLE
+extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) v_V, phist_Dconst_mvec_ptr v_reV, phist_Dconst_mvec_ptr v_imV, int *iflag)
+#else
+extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) v_V, phist_Sconst_mvec_ptr v_reV, phist_Sconst_mvec_ptr v_imV, int *iflag)
+#endif
+{
+#include "phist_std_typedefs.hpp"
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(Traits<_ST_>::mvec_t,V,v_V,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_MT_>::mvec_t,reV,v_reV,*iflag);
+  PHIST_CAST_PTR_FROM_VOID(const Traits<_MT_>::mvec_t,imV,v_imV,*iflag);
+  
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<_ST_> > _V = V->get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const _MT_> > _reV = reV->get2dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const _MT_> > _imV = imV->get2dView();
+  for (phist_lidx j=0; j<_V.size(); j++)
+  {
+    for (phist_lidx i=0; i<_V[j].size();i++)
+    {
+      _V[j][i] = _reV[j][i] + st::cmplx_I()*_imV[j][i];
+    }
+  }
+}
+
 #endif
 

@@ -94,7 +94,7 @@ contains
       map%distrib(i) = map%distrib(i-1) + map%nlocal(i-1)
     end do
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
 if( verbose ) then
   write(*,*) map%me, 'setting up map with nglob = ', n_glob, ', nProcs = ', map%nProcs, &
     &  ', distrib = ', map%distrib, ', nlocal = ', map%nlocal
@@ -308,6 +308,95 @@ end if
     iupper = map%distrib(map%me+1)-2
     ierr = 0
   end subroutine phist_map_get_iupper
+
+  subroutine phist_maps_compatible(map1_ptr, map2_ptr, ierr) bind(C,name='phist_maps_compatible')
+    use, intrinsic :: iso_c_binding
+    use mpi
+    !------------------------------------------------------------
+    type(C_PTR),        value       :: map1_ptr, map2_ptr
+    integer(C_INT),     intent(out) :: ierr
+    !------------------------------------------------------------
+    type(Map_t), pointer :: map1,map2
+    !------------------------------------------------------------
+    
+    integer :: i, mpi_ierr
+    logical :: map1_permuted, map2_permuted
+
+    ! check if the two pointers refer to the same memory location
+    if ( c_associated(map1_ptr,map2_ptr) ) then
+      ierr=0
+      return
+    end if
+
+    call c_f_pointer(map1_ptr, map1)
+    call c_f_pointer(map2_ptr, map2)
+    
+    if (.not. (associated(map1) .and. associated(map2))) then
+      ierr=PHIST_BAD_CAST
+      return
+    end if
+    
+    ierr=-1
+    
+    ! check if MPI setup is compatible
+    if ( map1%comm      /= map2%comm    .or. &
+         map1%nprocs   /= map2%nprocs  .or. &
+         map1%me       /= map2%me ) then
+      return
+    end if
+    
+    ! check global size is the same
+    if ( map1%distrib(map1%nprocs) /= map2%distrib(map2%nprocs) ) then
+      return
+    end if
+
+    map1_permuted=allocated(map1%global_idx)
+    map2_permuted=allocated(map2%global_idx)
+
+    ! check compatibility if both or none of the maps have been reordered
+    if ( map1_permuted .eqv. map2_permuted ) then
+        
+      do i=0,map1%nProcs
+        if (map1%distrib(i)/=map2%distrib(i) ) then
+          return
+        end if
+      end do
+      ! maps are the same if both maps are unpermuted
+      if (.not. map1_permuted) then
+        ierr=0
+        return
+      end if
+    end if
+    
+    if (map1_permuted .and. map2_permuted) then
+      ! check if the permutation is the same
+      ierr=0
+      do i=1,map1%nlocal(map1%me)
+        if ( map1%global_idx(i)/=map2%global_idx(i) ) then
+          ierr=1
+          exit
+        end if
+      end do
+      call MPI_Allreduce(MPI_IN_PLACE,ierr,1,MPI_INTEGER,MPI_MAX,map1%comm,mpi_ierr)
+      if (mpi_ierr/=MPI_SUCCESS) then
+        ierr=PHIST_MPI_ERROR
+        return
+      end if
+      if (ierr/=0) then
+        ! we don't support this type of construction (both maps permuted with different orderings)
+        ierr=-1
+      end if
+      return
+    end if
+    
+    ! this is the standard case, one map is the permutation of the other.
+    ! we do not distinguish between global and local, though. Note that we
+    ! already verified that the maps have the same global size above.
+    ierr=2
+    
+  end subroutine phist_maps_compatible
+
+  
 
 
 end module map_module

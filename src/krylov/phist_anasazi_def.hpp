@@ -17,7 +17,7 @@
 #define PHIST_rcp phist::rcp
 #endif
 // Anasazi: block krylov methods from Trilinos
-void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) Ainv_op, 
+extern "C" void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr) Ainv_op, 
                          TYPE(const_linearOp_ptr) B_op, int variant,
                          TYPE(const_mvec_ptr) v0,  phist_EeigSort which,
                          _MT_ tol,                 int *nEig,
@@ -26,7 +26,7 @@ void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr)
                          bool symmetric,
                          TYPE(mvec_ptr) vX,         _ST_* eigs,
                          int* iflag)
-  {
+{
   PHIST_ENTER_FCN(__FUNCTION__);
 #ifndef PHIST_HAVE_ANASAZI
   *iflag = PHIST_NOT_IMPLEMENTED;
@@ -248,5 +248,5 @@ try {
   PHIST_SOUT(PHIST_VERBOSE,"returning nEig=%d, nIter=%d\n",*nEig,*nIter);
   return;
 #endif /* PHIST_HAVE_ANASAZI */
-  }// end of anasazi
+}// end of anasazi
 #undef PHIST_rcp

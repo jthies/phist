@@ -35,7 +35,7 @@
 // higher-precision + pivoting + stable low rank approximation
 void phist_Dprec_cholesky(double *__restrict__ a, double *__restrict__ aC, phist_lidx n, phist_lidx lda, phist_lidx *perm, int *rank, int* iflag)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
 
@@ -158,7 +158,7 @@ void phist_Dprec_cholesky(double *__restrict__ a, double *__restrict__ aC, phist
 void phist_Dprec_backwardSubst(const double *__restrict__ r, const double *__restrict__ rC, phist_lidx n, phist_lidx ldr, phist_lidx *p, int rank,
         double *__restrict__ x, double *__restrict__ xC, phist_lidx k, phist_lidx ldx, int* iflag)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
 
@@ -208,7 +208,7 @@ void phist_Dprec_backwardSubst(const double *__restrict__ r, const double *__res
 void phist_Dprec_forwardSubst(const double *__restrict__ r, const double *__restrict__ rC, phist_lidx n, phist_lidx ldr, phist_lidx *p, int rank,
         double *__restrict__ x, double *__restrict__ xC, phist_lidx k, phist_lidx ldx, int* iflag)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
 

@@ -20,7 +20,7 @@ typedef double aligned_double __attribute__((aligned(64)));
 // more accurate dot product x'x AVX2 kernel
 void ddot_self_prec_4(int nrows, const aligned_double *restrict x, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(x,32) )
@@ -80,7 +80,7 @@ void ddot_self_prec_4(int nrows, const aligned_double *restrict x, double *restr
 // more accurate dot product x'x AVX2 kernel, fused with accurate scaling of x
 void ddot_fused_scale_self_prec_4(int nrows, aligned_double *restrict x, const double *restrict scal, const double *restrict scalC, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(x,32) )
@@ -153,7 +153,7 @@ void ddot_fused_scale_self_prec_4(int nrows, aligned_double *restrict x, const d
 // more accurate dot product x'y AVX2 kernel
 void ddot_prec_4(int nrows, const aligned_double *restrict x, const aligned_double *restrict y, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(x,32) )
@@ -221,7 +221,7 @@ void ddot_prec_4(int nrows, const aligned_double *restrict x, const aligned_doub
 // more accurate dot product x'y AVX2 kernel, fused with accurate scaling of y
 void ddot_fused_scale_prec_4(int nrows, const aligned_double *restrict x, aligned_double *restrict y, const double *restrict scal, const double *restrict scalC, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   if( !is_aligned(x,32) )
@@ -300,7 +300,7 @@ void ddot_fused_scale_prec_4(int nrows, const aligned_double *restrict x, aligne
 // more accurate dot product x'x for block size 1
 void ddot_self_prec_1(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   double s[4], c[4];
@@ -316,7 +316,7 @@ void ddot_self_prec_1(int nrows, const double *restrict x, double *restrict res,
 // more accurate fused kernel of vector scaling with dot product
 void ddot_fused_scale_self_prec_1(int nrows, double *restrict x, double scal, double scalC, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   double s[4], c[4];
@@ -338,7 +338,7 @@ void ddot_fused_scale_self_prec_1(int nrows, double *restrict x, double scal, do
 // more accurate dot product x'y for block size 1
 void ddot_prec_1(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   double s[4], c[4];
@@ -354,7 +354,7 @@ void ddot_prec_1(int nrows, const double *restrict x, const double *restrict y, 
 // more accurate fused kernel of vector scaling with dot product
 void ddot_fused_scale_prec_1(int nrows, const double *restrict x, double *restrict y, double scal, double scalC, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   double s[4], c[4];
@@ -376,7 +376,7 @@ void ddot_fused_scale_prec_1(int nrows, const double *restrict x, double *restri
 // more accurate dot product x'x for block size 2
 void ddot_self_prec_2(int nrows, const double *restrict x, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   double s[4], c[4];
@@ -392,7 +392,7 @@ void ddot_self_prec_2(int nrows, const double *restrict x, double *restrict res,
 // more accurate dot product x'y for block size 2
 void ddot_prec_2(int nrows, const double *restrict x, const double *restrict y, double *restrict res, double *restrict resC)
 {
-#if defined(TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
+#if defined(PHIST_TESTING) && (PHIST_OUTLEV>=PHIST_TRACE)
   printf("Entering %s\n", __FUNCTION__);
 #endif
   double s[4], c[4];

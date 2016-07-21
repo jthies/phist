@@ -1386,7 +1386,7 @@ end do
 write(42,*) '];'
 #endif
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
 ! quick test if the pointer is correct
 if (A%row_map%color_offset(A%row_map%nColors+1)-1/=A%nRows) then
   stop 'color_ptr incorrect'
@@ -1498,7 +1498,7 @@ end subroutine permute_local_matrix
       ierr = -1
       return
     end if
-#ifdef TESTING
+#ifdef PHIST_TESTING
     if( .not. map_compatible_map(A%row_map, x%map) .or. &
       & .not. map_compatible_map(A%row_map, y%map)      ) then
       ierr = -1
@@ -1705,7 +1705,7 @@ end subroutine permute_local_matrix
     logical :: verbose
     !--------------------------------------------------------------------------------
     
-    repart = CHECK_IFLAG(ierr,PHIST_SPARSEMAT_REPARTITION)
+    repart = CHECK_IFLAG(ierr,PHIST_SPARSEMAT_PERM_GLOBAL)
     d2clr_and_permute =  CHECK_IFLAG(ierr,PHIST_SPARSEMAT_DIST2_COLOR)
     d2clr = CHECK_IFLAG(ierr,PHIST_SPARSEMAT_OPT_CARP)
     verbose = .not. CHECK_IFLAG(ierr,PHIST_SPARSEMAT_QUIET)
@@ -1973,7 +1973,7 @@ end subroutine permute_local_matrix
     logical :: verbose
     !--------------------------------------------------------------------------------
 
-    repart = CHECK_IFLAG(ierr,PHIST_SPARSEMAT_REPARTITION)
+    repart = CHECK_IFLAG(ierr,PHIST_SPARSEMAT_PERM_GLOBAL)
     ! deprecated flag, if set without OPT_CARP, we will do a local permutation according to
     ! a dist-2 coloring and issue a warning because it breaks MPI communication. This is 
     ! just for benchmarking the performance impact of the coloring now.

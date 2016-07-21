@@ -95,7 +95,7 @@ PHIST_MAIN_TASK_BEGIN
     num_blocks=(how_many+10)/block_size;
   }
 
-  iflag=PHIST_SPARSEMAT_REPARTITION;
+  iflag=PHIST_SPARSEMAT_PERM_GLOBAL;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&iflag),iflag);
   
   /* we assume domain map = range map here, which is reasonable for something

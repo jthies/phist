@@ -56,7 +56,7 @@ PHIST_MAIN_TASK_BEGIN
     high_prec = atoi(argv[5]) ? PHIST_ROBUST_REDUCTIONS : PHIST_IFLAG_DEFAULT;
   int repart = PHIST_IFLAG_DEFAULT;
   if( argc > 6 )
-    repart = atoi(argv[6]) ? PHIST_SPARSEMAT_REPARTITION : PHIST_IFLAG_DEFAULT;
+    repart = atoi(argv[6]) ? PHIST_SPARSEMAT_PERM_GLOBAL : PHIST_IFLAG_DEFAULT;
 
   // create matrix and vectors
   iflag = repart;

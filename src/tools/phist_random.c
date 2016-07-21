@@ -19,7 +19,7 @@
 #endif
 #endif
 
-#ifdef TESTING
+#ifdef PHIST_TESTING
 //#define TEST_RNG
 #endif
 
