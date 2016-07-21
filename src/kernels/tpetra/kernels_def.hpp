@@ -81,26 +81,10 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
         phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
         int *iflag)
 {
-  *iflag=-99;
-  return;
-}
-
-extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
-        phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
-                phist_sparseMat_rowFunc rowFunPtr, void* last_arg,
-                int *iflag)
-{
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-
-  PHIST_CAST_PTR_FROM_VOID(const comm_type,comm,vcomm,*iflag);
-  Teuchos::RCP<const comm_type> phist_comm_ptr = Teuchos::rcp(comm,false);
-  Traits<_ST_>::sparseMat_t* A=NULL;
-
-  phist_map_ptr map=NULL;
-  PHIST_CHK_IERR(phist_map_create(&map,vcomm,nrows,iflag),*iflag);
-  const phist::tpetra::map_type* tpetra_map=(const phist::tpetra::map_type*)map;
-Teuchos::RCP<const phist::tpetra::map_type> map_ptr=Teuchos::rcp(tpetra_map,true);
-A=new Traits<_ST_>::sparseMat_t(map_ptr,(int)maxnne);
+  PHIST_CAST_PTR_FROM_VOID(const phist::tpetra::map_type,tpetra_map,vmap,*iflag);
+  bool ownMap = *iflag&PHIST_SPARSEMAT_OWN_MAPS;
+Teuchos::RCP<const phist::tpetra::map_type> map_ptr=Teuchos::rcp(tpetra_map,ownMap);
+  Traits<_ST_>::sparseMat_t* A=new Traits<_ST_>::sparseMat_t(map_ptr,(int)maxnne);
 
   phist_gidx cols[maxnne];
   _ST_ vals[maxnne];
@@ -126,6 +110,22 @@ A=new Traits<_ST_>::sparseMat_t(map_ptr,(int)maxnne);
                             
   *vA = (TYPE(sparseMat_ptr))(A);  
   return;
+}
+
+extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
+        phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
+                phist_sparseMat_rowFunc rowFunPtr, void* last_arg,
+                int *iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  int iflag_in=*iflag;
+
+  phist_map_ptr vmap=NULL;
+  PHIST_CHK_IERR(phist_map_create(&vmap,vcomm,nrows,iflag),*iflag);
+  //The matrix will take ownership of the map:
+  *iflag=iflag_in|PHIST_SPARSEMAT_OWN_MAPS;
+  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndMap)(vA,vcomm,vmap,maxnne,rowFunPtr,last_arg,iflag),*iflag);
 }
                                                             
 
