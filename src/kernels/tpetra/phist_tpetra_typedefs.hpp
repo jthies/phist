@@ -19,7 +19,12 @@
 #ifdef HAVE_KOKKOSCLASSIC_OPENMP
 #include "Kokkos_OpenMPNode.hpp"
 #endif
-
+#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+#include "Kokkos_TPINode.hpp"
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_TBB
+#include "Kokkos_TBBNode.hpp"
+#endif
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_DefaultKernels.hpp"
 
@@ -34,8 +39,13 @@
 namespace phist {
 namespace tpetra {
 
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-typedef KokkosClassic::OpenMPNode node_type; // from the Kokkos node API
+// notte: with the OpenMP node and Trilinos 11.12, TSQR doesn't work
+//#ifdef HAVE_KOKKOSCLASSIC_OPENMP
+//typedef KokkosClassic::OpenMPNode node_type; // from the Kokkos node API
+#if defined(HAVE_KOKKOSCLASSIC_TBB)
+typedef KokkosClassic::TBBNode node_type; // from the Kokkos node API
+#elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
+typedef KokkosClassic::TPINode node_type; // from the Kokkos node API
 #else
 typedef Kokkos::DefaultNode::DefaultNodeType node_type; // from the Kokkos node API
 #endif
