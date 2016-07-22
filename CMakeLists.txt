@@ -942,7 +942,7 @@ if( PHIST_PERFCHECK )
   option(PHIST_PERFCHECK_REALISTIC "Switch from ideal performance predictions to more realistic ones (e.g. for views)!" OFF)
 endif()
 
-set(PHIST_PEAK_FLOPS_CPU 442e9 CACHE STRING "Peak GFlop/s rate of the CPU component (for PERFCHECK only)")
+set(PHIST_PEAK_FLOPS_CPU 884e9 CACHE STRING "Peak GFlop/s rate of the CPU component (for PERFCHECK only)")
 set(PHIST_PEAK_FLOPS_GPU 1.43e12 CACHE STRING "Peak GFlop/s rate of the GPU component (for PERFCHECK only)")
 
 set(INCLUDE_FLAGS "")
