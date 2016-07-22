@@ -15,12 +15,14 @@
 #ifdef PHIST_HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
+#include "Tpetra_MpiPlatform.hpp"
+#else
+#include "Tpetra_SerialPlatform.hpp"
 #endif
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_RCP.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_MatrixIO.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
 
 #ifdef PHIST_HAVE_LIKWID
 #include <likwid.h>
@@ -34,6 +36,67 @@ using namespace phist::tpetra;
 
 namespace {
 static int myMpiSession=0;
+}
+
+// This function creates the default compute node to be used for vectors and matrices.
+// It is not exposed to the user because the Kokkos node concept is specific for Tpetra
+// and doesn't have a direct equivalent in epetra or ghost. The function checks if a file
+// node.xml exists in which the node parameters like "Num Threads" can be set, otherwise
+// it just uses default parameters.
+extern "C" void phist_tpetra_node_create(node_type** node, phist_const_comm_ptr vcomm, int* iflag)
+{
+  // print messages only once
+  int outputLevel;
+  {
+    static int globalMessagesPrinted = 0;
+    int messagesPrinted;
+#pragma omp atomic capture
+    messagesPrinted = globalMessagesPrinted++;
+    outputLevel = messagesPrinted > 0 ? PHIST_DEBUG : PHIST_INFO;
+  }
+
+  *iflag=0;
+  PHIST_CAST_PTR_FROM_VOID(const comm_type,comm,vcomm,*iflag);
+  Teuchos::RCP<Teuchos::ParameterList> nodeParams=Teuchos::rcp(new Teuchos::ParameterList);
+  // check if the file exists
+  bool haveNodeFile=false;
+  if (comm->getRank()==0)
+    {
+    std::ifstream test("phist_node.xml");
+    if (test) haveNodeFile=true;
+    }
+  
+  comm->broadcast(0,sizeof(bool),(char*)&haveNodeFile);
+
+  if (haveNodeFile)
+  {
+    bool status=true;
+    try 
+    {
+      Teuchos::updateParametersFromXmlFileAndBroadcast("phist_node.xml",nodeParams.ptr(),*comm);
+    } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,status);
+    if (status==false)
+      {
+      *iflag=PHIST_CAUGHT_EXCEPTION; 
+      return;
+      }
+  }
+  else
+  {
+    PHIST_SOUT(outputLevel,"File phist_node.xml not found, using default node settings in tpetra\n");
+  }
+  const char* PHIST_NUM_THREADS=getenv("PHIST_NUM_THREADS");
+  if (PHIST_NUM_THREADS!=NULL)
+  {
+    int nThreads=atoi(PHIST_NUM_THREADS);
+    if (nThreads>0)
+    {
+      PHIST_SOUT(outputLevel,"taking #threads from env variable PHIST_NUM_THREADS\n");
+      nodeParams->set("Num Threads",nThreads);
+    }
+  }
+  PHIST_SOUT(outputLevel,"# threads requested: %d\n",nodeParams->get("Num Threads",0));
+  *node = new node_type(*nodeParams);
 }
 
 // initialize kernel library. Should at least call MPI_Init if it has not been called
@@ -50,10 +113,24 @@ extern "C" void phist_kernels_init(int* argc, char*** argv, int* iflag)
     *iflag=MPI_Init(argc,argv);
   }
 #endif
+  // create comm and node objects for the first time
+  phist_comm_ptr vcomm=NULL;
+  node_type*     node=NULL;
+  PHIST_CHK_IERR(phist_comm_create(&vcomm,iflag),*iflag);
+  PHIST_CHK_IERR(phist_tpetra_node_create(&node,vcomm,iflag),*iflag);
+  Teuchos::RCP<node_type> node_ptr=Teuchos::rcp(node,true);
   // describe yourself!
   std::ostringstream oss;
-  Tpetra::DefaultPlatform::getDefaultPlatform().describe(oss,Teuchos::VERB_MEDIUM);
+  Teuchos::RCP<Teuchos::Describable> plat=Teuchos::null;
+#ifdef PHIST_HAVE_MPI
+  plat=Teuchos::rcp(new Tpetra::MpiPlatform<node_type>(node_ptr));
+#else
+  plat=Teuchos::rcp(new Tpetra::SerialPlatform<node_type>(node_ptr));
+#endif
+#if PHIST_OUTLEV>=PHIST_INFO
+  plat->describe(oss,(PHIST_OUTLEV>=PHIST_VERBOSE)? Teuchos::VERB_EXTREME: Teuchos::VERB_MEDIUM);
   PHIST_SOUT(PHIST_INFO,"Tpetra platform:\n%s\n", oss.str().c_str());
+#endif
   PHIST_CHK_IERR(phist_kernels_common_init(argc,argv,iflag),*iflag);
 }
       
@@ -126,67 +203,6 @@ extern "C" void phist_comm_get_size(phist_const_comm_ptr vcomm, int* size, int* 
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const comm_type,comm,vcomm,*iflag);
   *size=comm->getSize();
-}
-
-// This function creates the default compute node to be used for vectors and matrices.
-// It is not exposed to the user because the Kokkos node concept is specific for Tpetra
-// and doesn't have a direct equivalent in epetra or ghost. The function checks if a file
-// node.xml exists in which the node parameters like "Num Threads" can be set, otherwise
-// it just uses default parameters.
-extern "C" void phist_tpetra_node_create(node_type** node, phist_const_comm_ptr vcomm, int* iflag)
-{
-  // print messages only once
-  int outputLevel;
-  {
-    static int globalMessagesPrinted = 0;
-    int messagesPrinted;
-#pragma omp atomic capture
-    messagesPrinted = globalMessagesPrinted++;
-    outputLevel = messagesPrinted > 0 ? PHIST_DEBUG : PHIST_INFO;
-  }
-
-  *iflag=0;
-  PHIST_CAST_PTR_FROM_VOID(const comm_type,comm,vcomm,*iflag);
-  Teuchos::RCP<Teuchos::ParameterList> nodeParams=Teuchos::rcp(new Teuchos::ParameterList);
-  // check if the file exists
-  bool haveNodeFile=false;
-  if (comm->getRank()==0)
-    {
-    std::ifstream test("phist_node.xml");
-    if (test) haveNodeFile=true;
-    }
-  
-  comm->broadcast(0,sizeof(bool),(char*)&haveNodeFile);
-
-  if (haveNodeFile)
-  {
-    bool status=true;
-    try 
-    {
-      Teuchos::updateParametersFromXmlFileAndBroadcast("phist_node.xml",nodeParams.ptr(),*comm);
-    } TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,status);
-    if (status==false)
-      {
-      *iflag=PHIST_CAUGHT_EXCEPTION; 
-      return;
-      }
-  }
-  else
-  {
-    PHIST_SOUT(outputLevel,"File phist_node.xml not found, using default node settings in tpetra\n");
-  }
-  const char* PHIST_NUM_THREADS=getenv("PHIST_NUM_THREADS");
-  if (PHIST_NUM_THREADS!=NULL)
-  {
-    int nThreads=atoi(PHIST_NUM_THREADS);
-    if (nThreads>0)
-    {
-      PHIST_SOUT(outputLevel,"taking #threads from env variable PHIST_NUM_THREADS\n");
-      nodeParams->set("Num Threads",nThreads);
-    }
-  }
-  PHIST_SOUT(outputLevel,"# threads requested: %d\n",nodeParams->get("Num Threads",0));
-  *node = new node_type(*nodeParams);
 }
 
 //!
