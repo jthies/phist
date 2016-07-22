@@ -17,7 +17,7 @@ static void SetUpTestCase()
   // this function may be called by multiple base classes, e.g.
   // by KernelTestWithVectors and KernelTestWithSparseMat, so  
   // do not re-build the map if it has been called already
-  if( defaultMap_ == NULL && !problemTooSmall_ )
+  if( defaultMap_ == NULL)
   {
 
     phist_map_ptr map;
@@ -38,7 +38,6 @@ static void SetUpTestCaseWithMap(phist_const_map_ptr map)
   EXPECT_EQ(NULL,map_);
 
   SetUpTestCase(); // creates defaultMap_, determines problemTooSmall_ etc
-  if (problemTooSmall_) return;
 
   map_ = map;
   phist_map_get_local_length(map_,&nloc_,&iflag_);
