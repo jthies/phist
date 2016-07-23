@@ -47,6 +47,7 @@
 #  include "Tpetra_MultiVector.hpp"
 #  include "BelosTpetraAdapter.hpp"
 #  include "AnasaziTpetraAdapter.hpp"
+#  include "phist_tpetra_typedefs.hpp"
 # else
 #  warning "Anasazi not supported for this kernel lib"
 #  undef PHIST_HAVE_ANASAZI

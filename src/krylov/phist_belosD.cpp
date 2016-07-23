@@ -32,6 +32,7 @@
 # elif defined(PHIST_KERNEL_LIB_TPETRA)
 #  include "Tpetra_MultiVector.hpp"
 #  include "BelosTpetraAdapter.hpp"
+#  include "phist_tpetra_typedefs.hpp"
 # else
 // use general phist interface to Belos (may not be complete)
 #  warning "Belos not supported for this kernel lib"
