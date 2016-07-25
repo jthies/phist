@@ -457,6 +457,12 @@ extern "C" void phist_map_get_comm(phist_const_map_ptr vmap, phist_const_comm_pt
 {
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
+  if (map->ctx==NULL)
+  {
+    // we may one day have maps without contexts, but right now we need them for functions like this one
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
   *vcomm = (phist_const_comm_ptr)(&map->ctx->mpicomm);
 }
 
@@ -479,7 +485,12 @@ extern "C" void phist_map_get_global_length(phist_const_map_ptr vmap, phist_gidx
 {
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
-  int me;
+  if (map->ctx==NULL)
+  {
+    // we may one day have maps without contexts, but right now we need them for functions like this one
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
   *nglob=map->ctx->gnrows;
 }
 
@@ -488,6 +499,12 @@ extern "C" void phist_map_get_ilower(phist_const_map_ptr vmap, phist_gidx* ilowe
 {
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
+  if (map->ctx==NULL)
+  {
+    // we may one day have maps without contexts, but right now we need them for functions like this one
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
   int me;
   ghost_rank(&me,map->ctx->mpicomm);
   *ilower = map->ctx->lfRow[me];
@@ -497,6 +514,12 @@ extern "C" void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iuppe
 {
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
+  if (map->ctx==NULL)
+  {
+    // we may one day have maps without contexts, but right now we need them for functions like this one
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
   int me;
   ghost_rank(&me,map->ctx->mpicomm);
   *iupper = map->ctx->lfRow[me]+map->ctx->lnrows[me]-1;
