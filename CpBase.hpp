@@ -1,5 +1,6 @@
 #ifndef CPBASE_HPP
 #define CPBASE_HPP
+#include <string>
 
 class CpBase
 {

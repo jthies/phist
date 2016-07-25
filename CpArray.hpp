@@ -36,12 +36,12 @@ public:
 		std::string line;
 		for(size_t i = 0; i < nRows; ++i){
 			getline (fstr, line);
-			asynData[i] = StringToNumber<T>(line);
+			asynData[i] = StringToNumber<T>(line);	// TODO: perhaps the array can be directly read into dataPtr.
 			dataPtr[i] = asynData[i];
 		}	
 		fstr.close();
 		std::cout << "POD Array after reading is: " << std::endl;
-		print();
+		//print();
 		return;
 	}
 	

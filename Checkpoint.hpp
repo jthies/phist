@@ -8,7 +8,9 @@
 #include "CpPOD.hpp"
 #include "CpGhost.hpp"
 #include "CpArray.hpp"
-#include "CpPhistMvec.hpp"
+//#include "CpPhistMvecClassic.hpp"
+#include "CpPhistMvec.h"
+#include "CpPhistMvec_def.hpp"
 
 #include <string>
 #include <sstream>
@@ -16,10 +18,9 @@
 #include <mpi.h>
 #include <complex>
 
-//#include "phist_gen_s.h"
-//#include "phist_gen_c.h"
-
-
+//#include "phist_kernels.h"
+#include "phist_operator.h"
+//#include "phist_enums.h"
 
 #ifdef SCR
 extern "C"{
@@ -97,24 +98,11 @@ void add(std::string label, T* const arrayPtr_, const size_t nRows_){
 }
 
 // ===== PHIST MVEC ===== // 
-/*	void add(std::string label, TYPE(mvec_ptr) const PMvec, TYPE(const_linearOp_ptr) A_op)
-	{	
-		printf("PHIST_ MVEC const_linearOp_ptr add is called\n" );
-		this->add(label, new CpPhistMvec(PMvec, A_op) );
-	}
-*/	
-	void add(std::string label, TYPE(mvec_ptr) const PMvec)
-	{	
-		printf("PHIST_ MVEC const_linearOp_ptr add is called\n" );
-		//this->add(label, new CpPhistMvec(PMvec, A_op) );
-		this->add(label, new CpPhistMvec(PMvec) );
-	}
-};
-
-
-void temp_func( TYPE(const_linearOp_ptr) const A_op_){
-
+void add(std::string label, TYPE(mvec_ptr) const PMvec)
+{	
+		this->add(label, new TYPE(CpPhistMvec)(PMvec) );
 }
+};
 
 
 Checkpoint::Checkpoint(){
