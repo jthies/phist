@@ -167,17 +167,7 @@ extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, phist_
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_sparsemat,A,vA,*iflag);
-  //!@TODO: cache this as it never gets deleted otherwise!
-  ghost_map* map = mapGarbageCollector.new_map(vA);
-  map->ctx = A->context;
-  map->vtraits_template=phist_default_vtraits();
-  // vectors based on this map should have the same permutation as the matrix rows
-  if (map->ctx->perm_local!=NULL ||
-      map->ctx->perm_global!=NULL )
-  {
-    map->vtraits_template.permutemethod=ROW;
-    map->vtraits_template.flags|=GHOST_DENSEMAT_PERMUTED;
-  }
+  ghost_map* map = mapGarbageCollector.new_map(vA,A->context,ROW,false);
   *vmap = (phist_const_map_ptr)map;
 }
 
@@ -190,17 +180,7 @@ extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, phist_
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_sparsemat,A,vA,*iflag);
-  //!@TODO: cache this as it never gets deleted otherwise!
-  ghost_map* map = mapGarbageCollector.new_map(vA);
-  map->ctx = A->context;
-  map->vtraits_template=phist_default_vtraits();
-  // vectors based on this map should have the same permutation as the matrix rows
-  if (map->ctx->perm_local!=NULL ||
-      map->ctx->perm_global!=NULL )
-  {
-    map->vtraits_template.permutemethod=COLUMN;
-    map->vtraits_template.flags|=GHOST_DENSEMAT_PERMUTED;
-  }
+  ghost_map* map = mapGarbageCollector.new_map(vA,A->context,COLUMN,false);
   *vmap = (phist_const_map_ptr)map;
 }
 
@@ -381,9 +361,8 @@ extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, phist_const_map_ptr*
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_densemat,V,vV,*iflag);
-  //!@TODO: cache this as it never gets deleted otherwise!
-  ghost_map* map = mapGarbageCollector.new_map(vV);
-  map->ctx=V->context; 
+  ghost_densemat_permuted pt = V->traits.permutemethod;
+  ghost_map* map = mapGarbageCollector.new_map(vV,V->context,pt,false);
   map->vtraits_template=V->traits;
   *vmap=(phist_const_map_ptr)map;
 }
