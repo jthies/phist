@@ -560,11 +560,11 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   ghost_densemat_flags flags_in=V_in->traits.flags;
   ghost_densemat_flags flags_out=V_out->traits.flags;
   
-  ghost_permutation *lperm_in=ctx_in->perm_local;
-  ghost_permutation *lperm_out=ctx_out->perm_local;
+  ghost_densemat_permutation *lperm_in=V_in->perm_local;
+  ghost_densemat_permutation *lperm_out=V_out->perm_local;
 
-  ghost_permutation *gperm_in=ctx_in->perm_global;
-  ghost_permutation *gperm_out=ctx_out->perm_global;
+  ghost_densemat_permutation *gperm_in=V_in->perm_global;
+  ghost_densemat_permutation *gperm_out=V_out->perm_global;
  
   // it seems like GHOST does not set these flags at all...
   bool outputPermuted=flags_out&GHOST_DENSEMAT_PERMUTED;
@@ -609,30 +609,36 @@ extern "C" void SUBR(mvec_to_mvec)(TYPE(const_mvec_ptr) v_in, TYPE(mvec_ptr) v_o
   }
 
 // macro to perform a ghost call on a vector with a different context
-#define GHOST_FUNC_CTX(_vec,_ctx,_fnc,...) \
+#define GHOST_FUNC_CTX(_vec,_ctx,_lperm,_gperm,_fnc,...) \
 {\
   ghost_error _gerr=GHOST_SUCCESS; \
   ghost_context *_orig_ctx=(_vec)->context; \
+  ghost_densemat_permutation *_orig_lperm=(_vec)->perm_local; \
+  ghost_densemat_permutation *_orig_gperm=(_vec)->perm_global; \
   (_vec)->context=(_ctx);\
+  (_vec)->perm_local=(_lperm);\
+  (_vec)->perm_global=(_gperm);\
   _gerr=(_vec)->_fnc(__VA_ARGS__);\
   (_vec)->context=_orig_ctx;\
+  (_vec)->perm_local=_orig_lperm;\
+  (_vec)->perm_global=_orig_gperm;\
   PHIST_CHK_GERR(_gerr,*iflag); \
 }
 
-  GHOST_FUNC_CTX(V_out,ctx_in,fromVec,V_out,V_in,0,0);
+  GHOST_FUNC_CTX(V_out,ctx_in,lperm_in,gperm_in,fromVec,V_out,V_in,0,0);
 
   if (no_perm_needed) return;
   
   if (inputPermuted)
   {
     PHIST_SOUT(PHIST_DEBUG,"mvec_to_mvec: unpermute input vector\n");
-    GHOST_FUNC_CTX(V_out,ctx_in,permute,V_out,GHOST_PERMUTATION_PERM2ORIG);
+    GHOST_FUNC_CTX(V_out,ctx_in,lperm_in,gperm_in,permute,V_out,ctx_in,GHOST_PERMUTATION_PERM2ORIG);
   }
   
   if (outputPermuted)
   {
     PHIST_SOUT(PHIST_DEBUG,"mvec_to_mvec: permute output vector\n");
-    PHIST_CHK_GERR(V_out->permute(V_out,GHOST_PERMUTATION_ORIG2PERM),*iflag);
+    PHIST_CHK_GERR(V_out->permute(V_out,ctx_out,GHOST_PERMUTATION_ORIG2PERM),*iflag);
   }
   return;
 }
@@ -1617,7 +1623,7 @@ PHIST_TASK_END(iflag);
 
 PHIST_TASK_POST_STEP(iflag);
 
-  PHIST_CHK_GERR(C->reduce(C,comm,GHOST_ALLREDUCE),*iflag);
+  PHIST_CHK_GERR(C->reduce(C,*comm,GHOST_ALLREDUCE),*iflag);
 }
 
 
@@ -2061,7 +2067,7 @@ extern "C" void SUBR(mvec_write_bin)(TYPE(const_mvec_ptr) vV, const char* filena
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
-  PHIST_CHK_GERR(V->toFile(V,(char*)filename,1),*iflag);
+  PHIST_CHK_GERR(V->toFile(V,(char*)filename,V->context->mpicomm),*iflag);
 }
 
 extern "C" void SUBR(mvec_read_bin)(TYPE(mvec_ptr) vV, const char* filename, int* iflag)
@@ -2069,7 +2075,7 @@ extern "C" void SUBR(mvec_read_bin)(TYPE(mvec_ptr) vV, const char* filename, int
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
-  PHIST_CHK_GERR(V->fromFile(V,(char*)filename,1),*iflag);
+  PHIST_CHK_GERR(V->fromFile(V,(char*)filename,V->context->mpicomm),*iflag);
 }
 
 extern "C" void SUBR(sdMat_write_bin)(TYPE(const_sdMat_ptr) vM, const char* filename, int* iflag)
@@ -2077,7 +2083,7 @@ extern "C" void SUBR(sdMat_write_bin)(TYPE(const_sdMat_ptr) vM, const char* file
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M,vM,*iflag);
-  PHIST_CHK_GERR(M->toFile(M,(char*)filename,0),*iflag);
+  PHIST_CHK_GERR(M->toFile(M,(char*)filename,MPI_COMM_SELF),*iflag);
 }
 
 extern "C" void SUBR(sdMat_read_bin)(TYPE(sdMat_ptr) vM, const char* filename, int* iflag)
@@ -2085,5 +2091,5 @@ extern "C" void SUBR(sdMat_read_bin)(TYPE(sdMat_ptr) vM, const char* filename, i
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,M,vM,*iflag);
-  PHIST_CHK_GERR(M->fromFile(M,(char*)filename,0),*iflag);
+  PHIST_CHK_GERR(M->fromFile(M,(char*)filename,MPI_COMM_SELF),*iflag);
 }
