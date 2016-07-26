@@ -187,9 +187,11 @@ class ghost_map
 
       public:
       
-        //!
+        //! create a new map and associate it with the object pointed to by p
         ghost_map* new_map(const void* p, ghost_context* ctx=NULL, ghost_densemat_permuted pt=NONE, bool own_ctx=false);
-        //!
+        //! associate an existing map with the object pointed to by p
+        void add_map(const void* p, ghost_map* m);
+        //! delete all maps associated with the object pointed to by p
         void delete_maps(void* p);
 
       private:

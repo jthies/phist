@@ -2012,6 +2012,12 @@ PHIST_TASK_BEGIN(ComputeTask)
 
   mtraits.datatype = st::ghost_dt;
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,map->ctx,&mtraits,1),*iflag);                               
+  
+  if (own_map)
+  {
+    // the user explicitly asked us to keep track of the map's deletion, so we can do a const cast here
+    mapGarbageCollector.add_map(mat, (ghost_map*)map);
+  }
 
   ghost_sparsemat_src_rowfunc src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
   src.func = rowFunPtr;
