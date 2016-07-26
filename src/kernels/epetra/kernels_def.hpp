@@ -138,7 +138,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
   phist_map_ptr map=NULL;
   PHIST_CHK_IERR(phist_map_create(&map,vcomm,nrows,iflag),*iflag);
   *iflag=iflag_in;
-  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndMap)(vA,vcomm,map,
+  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndMap)(vA,map,
         maxnne,rowFunPtr,last_arg,iflag),*iflag);
   // we're responsible for deleting this map object, Epetra is responsibible for keeping it in the created matrix
   PHIST_CHK_IERR(phist_map_delete(map,iflag),*iflag);
