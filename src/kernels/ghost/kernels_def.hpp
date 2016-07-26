@@ -69,7 +69,7 @@ PHIST_TASK_BEGIN(ComputeTask)
         mtraits.datatype = st::ghost_dt;
         mtraits.flags = flags;
         char* cfname=const_cast<char*>(filename);
-// TODO - check ghost return codes everywhere like this
+
   PHIST_CHK_IERR(phist::ghost_internal::context_create(&ctx,0,0,
         GHOST_CONTEXT_DEFAULT,cfname,GHOST_SPARSEMAT_SRC_MM,*comm,get_proc_weight(),iflag),*iflag);
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
@@ -83,6 +83,9 @@ PHIST_TASK_BEGIN(ComputeTask)
   free(str); str = NULL;
 //#endif
   *vA = (TYPE(sparseMat_ptr))mat;
+  // create an initial map object that owns the context. This way, the context is deleted
+  // when the sparseMat is.
+  mapGarbageCollector.new_map(vA,ctx);
 PHIST_TASK_END(iflag);
 }
 
@@ -141,6 +144,9 @@ PHIST_TASK_BEGIN(ComputeTask)
   PHIST_SOUT(outlev,"%s\n",str);
   free(str); str = NULL;
 //#endif
+  // create an initial map object that owns the context. This way, the context is deleted
+  // when the sparseMat is.
+  mapGarbageCollector.new_map(vA,ctx);
   *vA = (TYPE(sparseMat_ptr))mat;
 PHIST_TASK_END(iflag);
 }
@@ -873,10 +879,13 @@ extern "C" void SUBR(sparseMat_delete)(TYPE(sparseMat_ptr) vA, int* iflag)
   if (vA==NULL) return;
   PHIST_CAST_PTR_FROM_VOID(ghost_sparsemat,A,vA,*iflag);
 
-  mapGarbageCollector.delete_maps(vA);
-  ghost_context *ctx = A->context;
+  
+  // delete the matrix data but not the context
   ghost_sparsemat_destroy(A);
-  ghost_context_destroy(ctx);
+  // delete any map objects associated with this matrix.
+  // Our map/matrix creation routines make sure that there is
+  // always one that owns the context and deletes it.
+  mapGarbageCollector.delete_maps(vA);
 }
 
 //!
