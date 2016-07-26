@@ -916,8 +916,7 @@ extern "C" void SUBR(mvec_times_sdMat_inplace)(TYPE(mvec_ptr) V, TYPE(const_sdMa
   }
 }
 
-extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
-        phist_const_map_ptr vmap,
+extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA, phist_const_map_ptr vmap,
         phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
         int *iflag)
 {
@@ -925,6 +924,8 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
   //       happens to be the default map anyway, and otherwise return -99 (not implemented)
   phist_gidx N;
   PHIST_CHK_IERR(phist_map_get_global_length(vmap,&N,iflag),*iflag);
+  phist_const_comm_ptr vcomm=NULL;
+  PHIST_CHK_IERR(phist_map_get_comm(vmap,&vcomm,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(crsMat_create_fromRowFunc_f)(vA, vcomm, N, N, maxnne,
         rowFunPtr, last_arg, iflag), *iflag);
   phist_const_map_ptr new_map=NULL;

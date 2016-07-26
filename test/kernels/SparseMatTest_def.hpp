@@ -1308,9 +1308,9 @@ TEST_F(CLASSNAME,compare_with_rowFunc)
 TEST_F(CLASSNAME,fromRowFuncAndMap)
 {
   TYPE(sparseMat_ptr) A1=NULL, A2=NULL;
-  SUBR(sparseMat_create_fromRowFuncAndMap)(&A1,comm_,defaultMap_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
+  SUBR(sparseMat_create_fromRowFuncAndMap)(&A1,defaultMap_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
   ASSERT_EQ(0,iflag_);
-  SUBR(sparseMat_create_fromRowFuncAndMap)(&A2,comm_,map_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
+  SUBR(sparseMat_create_fromRowFuncAndMap)(&A2,map_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
   ASSERT_EQ(0,iflag_);
   phist_const_map_ptr domain1, domain2, range1, range2, row1, row2, col1, col2;
   // first check if the created matrices are compatible with vectors of the given map:

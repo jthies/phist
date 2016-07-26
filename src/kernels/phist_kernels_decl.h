@@ -551,8 +551,7 @@ void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist_const_comm
 //!
 //! optional flags: as fromRowFunc, plus:
 //! * PHIST_SPARSEMAT_OWN_MAPS to pass ownership of the given map to the matrix
-void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
-        phist_const_map_ptr map,
+void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA, phist_const_map_ptr map,
         phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
         int *iflag);
                 
