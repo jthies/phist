@@ -561,10 +561,26 @@ extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map
     }
   }
   
-  if (lperm1!=lperm2 || gperm1!=gperm2)
+  if (lperm1!=lperm2)
   {
-    *iflag=-1;
-    return;
+    if ( lperm1==NULL || lperm2!=NULL    ||
+       lperm1->perm!=lperm2->perm        ||
+       lperm1->invPerm!=lperm2->invPerm )
+    {
+      *iflag=-1;
+      return;
+    }
+  }
+
+  if (gperm1!=gperm2)
+  {
+    if ( gperm1==NULL || gperm2!=NULL    ||
+       gperm1->perm!=gperm2->perm        ||
+       gperm1->invPerm!=gperm2->invPerm )
+    {
+      *iflag=-1;
+      return;
+    }
   }
 
   if (lperm1==NULL && gperm1==NULL)
