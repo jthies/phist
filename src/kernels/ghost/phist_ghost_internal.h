@@ -77,6 +77,31 @@ class ghost_map
     vtraits_template=phist_default_vtraits();
     mtraits_template=(ghost_sparsemat_traits)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
     mtraits_template.flags=GHOST_SPARSEMAT_DEFAULT;
+    if (pt==COLUMN)
+    {
+      // we need to set a few things by hand to make sure we can
+      // check compatibility of maps
+      int me;
+      ghost_rank(&me,ctx->mpicomm);
+      vtraits_template.gnrows=ctx->gnrows;
+      vtraits_template.nrows=ctx->lnrows[me];
+    }
+    else
+    {
+      vtraits_template.gnrows=ctx->gncols;
+      // NOTE: if we have non-square matrices, the number of
+      //       local rows of the vector must be determined  
+      //       differently, for now we leave it at its default
+      //       value (0 or -1, I guess) and let ghost decide.
+      //       such a map can currently not be comapred with
+      //       maps_compatible, however!
+      if (ctx->gncols==ctx->gnrows)
+      {
+        int me;
+        ghost_rank(&me,ctx->mpicomm);
+        vtraits_template.nrows=ctx->lnrows[me];
+      }
+    }
         
     if (pt!=NONE && (ctx->perm_local || ctx->perm_global))
     {

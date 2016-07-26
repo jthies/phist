@@ -541,9 +541,12 @@ extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map
   
   const ghost_densemat_traits& vtraits1 = map1->vtraits_template;
   const ghost_densemat_traits& vtraits2 = map2->vtraits_template;
+  
+  int permuted1 = vtraits1.flags&GHOST_DENSEMAT_PERMUTED;
+  int permuted2 = vtraits2.flags&GHOST_DENSEMAT_PERMUTED;
 
   const ghost_context *ctx1 = map1->ctx;  
-  const ghost_context *ctx2 = map1->ctx;
+  const ghost_context *ctx2 = map2->ctx;
   
   const ghost_densemat_permutation *lperm1 = map1->perm_local;
   const ghost_densemat_permutation *gperm1 = map1->perm_global;
@@ -561,47 +564,58 @@ extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map
     }
   }
   
+  // check if the two maps contain the same vector permutation info.
+  // If not, this is not a game breaker: the maps are still compatible
+  // if at most one of them is permuted.
+  bool same_lperm=true;
+  bool same_gperm=true;
+  
   if (lperm1!=lperm2)
   {
-    if ( lperm1==NULL || lperm2!=NULL    ||
+    if ( lperm1==NULL || lperm2==NULL    ||
        lperm1->perm!=lperm2->perm        ||
        lperm1->invPerm!=lperm2->invPerm )
     {
-      *iflag=-1;
-      return;
+      same_lperm=false;
     }
   }
 
   if (gperm1!=gperm2)
   {
-    if ( gperm1==NULL || gperm2!=NULL    ||
+    if ( gperm1==NULL || gperm2==NULL    ||
        gperm1->perm!=gperm2->perm        ||
        gperm1->invPerm!=gperm2->invPerm )
     {
-      *iflag=-1;
-      return;
+      same_gperm=false;
     }
   }
 
-  if (lperm1==NULL && gperm1==NULL)
+  if (!(permuted1||permuted2))
   {
     *iflag=0;
     return;
   }
+
+  if ( (same_lperm==false || same_gperm==false) &&
+       (permuted1&&permuted2) )
+  {
+    *iflag=-1;
+    return;
+  }
     
   // contexts, permutations and traits/flags are the same
-  if (&vtraits1==&vtraits2)
+  if (&vtraits1==&vtraits2 && same_lperm && same_gperm)
   {
     // this means if the vectors are permuted, they are permuted the same way and do
     // not need to be permuted via mvec_to_mvec in order to be compatible.
     *iflag=0;
     return;
   }
+
   // since ghost_vtraits doesn't implement operator==, we have to compare manually
-  if (vtraits1.nrows == vtraits2.nrows                      &&
-      vtraits1.nrowshalo == vtraits2.nrowshalo              &&
-      vtraits1.flags == vtraits2.flags                      &&
-      vtraits1.permutemethod == vtraits2.permutemethod)
+  if (vtraits1.nrows == vtraits2.nrows &&
+      permuted1      == permuted2      &&
+      same_lperm     && same_gperm)
   {
     // these maps will create vectors with the same distribution and permutation
     *iflag=0;
@@ -609,11 +623,11 @@ extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map
   }
   
   // one of the vectors is permuted, the other isn't. Check if the permutation is global or local
-  if (gperm1!=NULL) 
+  if (gperm1!=NULL || gperm2!=NULL) 
   {
     *iflag=2;
   }
-  else if (lperm1!=NULL)
+  else if (lperm1!=NULL || lperm2!=NULL)
   {
     *iflag=1;
   }
