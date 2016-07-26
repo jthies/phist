@@ -62,7 +62,10 @@ class ghost_map
   ghost_context* ctx;
   ghost_densemat_permutation *perm_local;
   ghost_densemat_permutation *perm_global;
+  // blueprints for how to create a densemat (mvec) object from this map
   ghost_densemat_traits vtraits_template;
+  // blueprints for how to create a sparsemat object from this map
+  ghost_sparsemat_traits mtraits_template;
   
   ghost_map(ghost_context* ctx_in, ghost_densemat_permuted pt=NONE, bool own_ctx=false)
   {
@@ -72,7 +75,9 @@ class ghost_map
     ownContext_=own_ctx;
 
     vtraits_template=phist_default_vtraits();
-
+    mtraits_template=(ghost_sparsemat_traits)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
+    mtraits_template.flags=GHOST_SPARSEMAT_DEFAULT;
+        
     if (pt!=NONE && (ctx->perm_local || ctx->perm_global))
     {
       vtraits_template.permutemethod=pt;

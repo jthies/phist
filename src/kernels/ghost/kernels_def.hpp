@@ -1970,55 +1970,48 @@ PHIST_TASK_BEGIN(ComputeTask)
 #endif
 
 //! create a sparse matrix from a row func and use a distribution prescribed by a given map
-extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
-        phist_const_map_ptr map,
+extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA,
+        phist_const_map_ptr vmap,
         phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
         int *iflag)
-{
-  *iflag=-99;
-  return;
-}
-
-extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
-        phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
-                phist_sparseMat_rowFunc rowFunPtr, void* last_arg, int *iflag)
 {
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
 
-  int iflag_in=*iflag;  
+  int iflag_in=*iflag;
   int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
+  int own_map= *iflag&PHIST_SPARSEMAT_OWN_MAPS;
 
-  int sellC, sellSigma;
-  get_C_sigma(&sellC,&sellSigma,*iflag, *((MPI_Comm*)vcomm));
+  PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
+
+  int sellC=map->mtraits_template.C;
+  int sellSigma=map->mtraits_template.sortScope;
+  
   PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
 
   *iflag=0;
   
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
+
   ghost_sparsemat* mat = NULL;
-  ghost_context *ctx = NULL;
-  PHIST_CAST_PTR_FROM_VOID(const MPI_Comm, comm, vcomm, *iflag);
+  ghost_context *ctx = map->ctx;
 
-  ghost_sparsemat_traits mtraits=(ghost_sparsemat_traits)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
-  ghost_sparsemat_flags flags=GHOST_SPARSEMAT_DEFAULT;
+  ghost_sparsemat_traits mtraits=map->mtraits_template;
 
-        mtraits.C = sellC;
-        mtraits.sortScope = sellSigma;
-        if (mtraits.sortScope > 1) {
-            flags=(ghost_sparsemat_flags)(flags|GHOST_SPARSEMAT_PERMUTE);
-        }
+  if (!own_map && (mtraits.sortScope>1 || mtraits.flags&GHOST_SPARSEMAT_PERMUTE) )
+  {
+    PHIST_SOUT(PHIST_WARNING,"NOTE: we do not fully support the situation right now where sigma>1 or other permutations\n"
+                             "      are used, and multiple matrices are created. This may lead to separately per-\n"
+                             "      muted matrices with incompatible row and/or column ordering.\n");
+    // we probably have to disable sorting like this, but I'm not sure if an existing
+    // permutation in the context is then used in ghost
+    mtraits.flags = (ghost_sparsemat_flags)(mtraits.flags & ~GHOST_SPARSEMAT_PERMUTE);
+    mtraits.sortScope=1;
+  }
 
-        flags = (ghost_sparsemat_flags)(flags|get_perm_flag(iflag_in,outlev));
-        mtraits.datatype = st::ghost_dt;
-        mtraits.flags = flags;
-        // if the user allows repartitioning, ask GHOST to do a distribution of the rows based on
-        // the memory bandwidth measured per MPI rank. Otherwise, use the same number of rows on 
-        // each MPI process.
-  PHIST_CHK_IERR(phist::ghost_internal::context_create(&ctx,nrows,ncols,
-        GHOST_CONTEXT_DEFAULT,NULL,GHOST_SPARSEMAT_SRC_FUNC,*comm,get_proc_weight(),iflag),*iflag);
-  PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
+  mtraits.datatype = st::ghost_dt;
+  PHIST_CHK_GERR(ghost_sparsemat_create(&mat,map->ctx,&mtraits,1),*iflag);                               
 
   ghost_sparsemat_src_rowfunc src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
   src.func = rowFunPtr;
@@ -2036,9 +2029,55 @@ PHIST_TASK_BEGIN(ComputeTask)
   free(str); str = NULL;
 //#endif
   *vA = (TYPE(sparseMat_ptr))mat;
-PHIST_TASK_END(iflag);
 
+PHIST_TASK_END(iflag);
   return;
+}
+
+extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
+        phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
+                phist_sparseMat_rowFunc rowFunPtr, void* last_arg, int *iflag)
+{
+#include "phist_std_typedefs.hpp"
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+
+  int iflag_in=*iflag;  
+  int outlev = *iflag&PHIST_SPARSEMAT_QUIET ? PHIST_DEBUG : PHIST_INFO;
+
+  PHIST_CAST_PTR_FROM_VOID(const MPI_Comm, comm, vcomm, *iflag);
+
+  // if the user allows repartitioning, ask GHOST to do a distribution of the rows based on
+  // the memory bandwidth measured per MPI rank. Otherwise, use the same number of rows on 
+  // each MPI process.
+  ghost_context *ctx=NULL;
+  PHIST_CHK_IERR(context_create(&ctx,nrows,ncols,
+        GHOST_CONTEXT_DEFAULT,NULL,GHOST_SPARSEMAT_SRC_FUNC,*comm,get_proc_weight(),iflag),*iflag);
+
+  int sellC, sellSigma;
+  get_C_sigma(&sellC,&sellSigma,*iflag, *((MPI_Comm*)vcomm));
+  PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
+
+  *iflag=0;
+  
+  // create the map object and call the create_fromRowFuncWithMap variant
+  ghost_map* map = new ghost_map(ctx,NONE,true);
+  {
+    ghost_sparsemat_flags flags=map->mtraits_template.flags;
+    map->mtraits_template.C = sellC;
+    map->mtraits_template.sortScope = sellSigma;
+        
+    if (map->mtraits_template.sortScope > 1) 
+    {
+      flags=(ghost_sparsemat_flags)(flags|GHOST_SPARSEMAT_PERMUTE);
+    }
+
+    map->mtraits_template.datatype = st::ghost_dt;
+
+    flags = (ghost_sparsemat_flags)(flags|get_perm_flag(iflag_in,outlev));
+    map->mtraits_template.flags = flags;
+  }
+  *iflag=iflag_in | PHIST_SPARSEMAT_OWN_MAPS;
+  PHIST_CHK_IERR(SUBR(sparseMat_create_fromRowFuncAndMap)(vA,map,maxnne,rowFunPtr,last_arg,iflag),*iflag);
 }
 
 extern "C" void SUBR(mvec_write_bin)(TYPE(const_mvec_ptr) vV, const char* filename, int* iflag)
