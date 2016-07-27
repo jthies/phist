@@ -508,7 +508,7 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   set(PHIST_SDMATS_ROW_MAJOR 0 CACHE STRING "store sdMats in row-major order (not supported by our algorithms..." )
 
   set(PHIST_SELL_C -1 CACHE INTEGER "chunk size C for the SELL-C-sigma format (-1: automatic choice)")
-  set(PHIST_SELL_SIGMA -1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format (-1: automatic choice)")
+  set(PHIST_SELL_SIGMA 1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format (-1: automatic choice)")
 
   if (PHIST_USE_SOLVER_TPLS)
     list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
