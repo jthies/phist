@@ -190,6 +190,7 @@ extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, phist_
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_sparsemat,A,vA,*iflag);
   ghost_map* map = mapGarbageCollector.new_map(vA,A->context,ROW,false);
+  map->mtraits_template=A->traits;
   *vmap = (phist_const_map_ptr)map;
 }
 
@@ -203,6 +204,7 @@ extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, phist_
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_sparsemat,A,vA,*iflag);
   ghost_map* map = mapGarbageCollector.new_map(vA,A->context,COLUMN,false);
+  map->mtraits_template=A->traits;
   *vmap = (phist_const_map_ptr)map;
 }
 
@@ -386,6 +388,8 @@ extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, phist_const_map_ptr*
   ghost_densemat_permuted pt = V->traits.permutemethod;
   ghost_map* map = mapGarbageCollector.new_map(vV,V->context,pt,false);
   map->vtraits_template=V->traits;
+  // do not allow a sparseMat that is created from this map to be permuted
+  map->mtraits_template.sortScope=1;
   *vmap=(phist_const_map_ptr)map;
 }
 
@@ -2028,8 +2032,20 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
 
   int sellC=map->mtraits_template.C;
   int sellSigma=map->mtraits_template.sortScope;
+  int sellC_suggested, sellSigma_suggested;
+  phist::ghost_internal::get_C_sigma(&sellC_suggested,&sellSigma_suggested,iflag_in,map->ctx->mpicomm);
+  if (sellC<0) sellC=sellC_suggested;
+  if (sellSigma<0) sellSigma=sellSigma_suggested;
   
   PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
+  if (map->ctx->wishlist!=NULL)
+  {
+    PHIST_SOUT(PHIST_WARNING,"NOTE: You are creating a new sparseMat with a context that was used before or is shared.\n"
+                             "      This currently will only work if the new amatrix has the same sparsity pattern!\n"
+                             "      (in file %s, line %d)\n",__FILE__,__LINE__);
+    //TODO - we should probably clone the context without the communication data structures at this point
+    //       (but with the complete permutation info)
+  }
 
   *iflag=0;
   
@@ -2040,6 +2056,9 @@ PHIST_TASK_BEGIN(ComputeTask)
   ghost_context *ctx = map->ctx;
 
   ghost_sparsemat_traits mtraits=map->mtraits_template;
+  mtraits.C=sellC;
+  mtraits.sortScope=sellSigma;
+  mtraits.datatype = st::ghost_dt;
 
   if (!own_map && (mtraits.sortScope>1 || mtraits.flags&GHOST_SPARSEMAT_PERMUTE) )
   {
