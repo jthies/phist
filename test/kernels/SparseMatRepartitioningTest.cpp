@@ -30,6 +30,8 @@
 #define _L_ 8
 #define _N_ 70
 
+using namespace phist::testing;
+
 /* This test constructs the spinSZ[L] matrix with and without the flag    */
 /* PHIST_SPARSEMAT_PERM_GLOBAL, constructs a vector X with characteristic */
 /* entries, and computes the spMVM in three different ways, comparing the */
