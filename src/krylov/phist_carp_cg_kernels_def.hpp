@@ -1,5 +1,5 @@
 
-#ifndef PHIST_KERNEL_LIB_BUILTIN
+#ifndef PHIST_MVECS_ROW_MAJOR
 # ifndef VIEW_VDAT
 # define VIEW_VDAT
 # endif
