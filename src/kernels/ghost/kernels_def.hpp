@@ -1,6 +1,22 @@
 #include "phist_config.h"
 #include "ghost/config.h"
 
+#ifdef TEST_MVEC_MAPS_SAME
+#undef TEST_MVEC_MAPS_SAME
+#endif
+
+#ifdef PHIST_TESTING
+#define TEST_MVEC_MAPS_SAME(_v1,_v2,_iflag) \
+if (_v1!=NULL && _v2!=NULL) { \
+phist_const_map_ptr map1, map2; \
+PHIST_CHK_IERR(SUBR(mvec_get_map)(_v1,&map1,_iflag),*_iflag); \
+PHIST_CHK_IERR(SUBR(mvec_get_map)(_v2,&map2,_iflag),*_iflag); \
+PHIST_CHK_IERR(phist_maps_compatible(map1,map2,_iflag),*_iflag); \
+}
+#else
+#define TEST_MVEC_MAPS_SAME(_v1,_v2,_iflag)
+#endif
+
 /* helper macro to temporarily set the densemat's location to HOST and store the
    original value of the flag.
  */
@@ -684,6 +700,7 @@ extern "C" void SUBR(mvec_get_block)(TYPE(const_mvec_ptr) vV,
 #include "phist_std_typedefs.hpp"
   *iflag=0;
   PHIST_PERFCHECK_VERIFY_MVEC_GET_BLOCK(vV,vVblock,jmin,jmax,iflag);
+  TEST_MVEC_MAPS_SAME(vV,vVblock,iflag)
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
@@ -717,6 +734,7 @@ extern "C" void SUBR(mvec_set_block)(TYPE(mvec_ptr) vV,
 #include "phist_std_typedefs.hpp"
   *iflag=0;
   PHIST_PERFCHECK_VERIFY_MVEC_SET_BLOCK(vV,vVblock,jmin,jmax,iflag);
+  TEST_MVEC_MAPS_SAME(vV,vVblock,iflag)
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
@@ -1156,6 +1174,7 @@ extern "C" void SUBR(mvec_add_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vX,
 #include "phist_std_typedefs.hpp"
   *iflag=0;
   PHIST_PERFCHECK_VERIFY_MVEC_ADD_MVEC(alpha,vX,beta,vY,iflag);
+  TEST_MVEC_MAPS_SAME(vX,vY,iflag)
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,X,vX,*iflag);
@@ -1196,6 +1215,7 @@ extern "C" void SUBR(mvec_vadd_mvec)(const _ST_ *alpha, TYPE(const_mvec_ptr) vX,
 #include "phist_std_typedefs.hpp"
   *iflag=0;
   PHIST_PERFCHECK_VERIFY_MVEC_VADD_MVEC(alpha,vX,beta,vY,iflag);
+  TEST_MVEC_MAPS_SAME(vX,vY,iflag)
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,X,vX,*iflag);
@@ -1209,12 +1229,11 @@ PHIST_TASK_BEGIN(ComputeTask)
     // ghost also expects a vector for beta, so construct one:
     int nvec = 0;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(vY,&nvec,iflag),*iflag);
-    _ST_ *b = (_ST_*)malloc(nvec*sizeof(_ST_));
+    _ST_ b[nvec];
     for(int i = 0; i < nvec; i++)
       b[i] = beta;
 
     Y->vaxpby(Y,X,(void*)alpha,(void*)b);
-    free(b);
   }
 PHIST_TASK_END(iflag);
 }
@@ -1224,15 +1243,22 @@ extern "C" void SUBR(sdMat_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
                             _ST_ beta,  TYPE(sdMat_ptr)       vB,
                             int* iflag)
 {
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  _ST_ a=alpha, b=beta;
+  PHIST_PERFCHECK_VERIFY_SMALL;
+
+PHIST_TASK_DECLARE(ComputeTask)
+PHIST_TASK_BEGIN_SMALLDETERMINISTIC(ComputeTask)
+
   // if the user specifies PHIST_SDMAT_RUN_ON_HOST, manually switch the location setting
   // of the densemats and reset them after the call. The GHOST kernel is the same for sdMats
   // and mvecs, so we can simply call mvec_add_mvec.
-  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   TMP_SET_DENSEMAT_LOCATION(vA,A,locA);
   TMP_SET_DENSEMAT_LOCATION(vB,B,locB);
-  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(alpha,vA,beta,vB,iflag), *iflag);
+    PHIST_CHK_GERR(B->axpby(B,A,(void*)&a,(void*)&b),*iflag);
   A->traits.location=locA;
   B->traits.location=locB;
+PHIST_TASK_END(iflag);
 }
 
 //! B=alpha*A+beta*B
@@ -1241,6 +1267,7 @@ extern "C" void SUBR(sdMatT_add_sdMat)(_ST_ alpha, TYPE(const_sdMat_ptr) vA,
                             int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  PHIST_PERFCHECK_VERIFY_SMALL;
   TMP_SET_DENSEMAT_LOCATION(vA,A,locA);
   TMP_SET_DENSEMAT_LOCATION(vB,B,locB);
   *iflag=0;
@@ -1520,6 +1547,7 @@ extern "C" void SUBR(mvec_dot_mvec)(TYPE(const_mvec_ptr) vV, TYPE(const_mvec_ptr
 #include "phist_std_typedefs.hpp"  
   *iflag=0;
   PHIST_PERFCHECK_VERIFY_MVEC_DOT_MVEC(vV,vW,iflag);
+  TEST_MVEC_MAPS_SAME(vV,vW,iflag)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,W,vW,*iflag);
   // NOTE: calculate local dot by hand and do the reduction by hand
@@ -1550,6 +1578,7 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE
 #include "phist_std_typedefs.hpp"  
   *iflag=0;
   PHIST_PERFCHECK_VERIFY_MVECT_TIMES_MVEC(vV,vW,iflag);
+  TEST_MVEC_MAPS_SAME(vV,vW,iflag)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,W,vW,*iflag);
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,C,vC,*iflag);
@@ -1626,6 +1655,7 @@ extern "C" void SUBR(mvec_times_sdMat)(_ST_ alpha, TYPE(const_mvec_ptr) vV,
 #include "phist_std_typedefs.hpp"
     *iflag=0;
     PHIST_PERFCHECK_VERIFY_MVEC_TIMES_SDMAT(alpha,vV,beta,vW,iflag);
+  TEST_MVEC_MAPS_SAME(vV,vW,iflag)
   PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
     PHIST_CAST_PTR_FROM_VOID(ghost_densemat,V,vV,*iflag);
@@ -1943,6 +1973,8 @@ extern "C" void SUBR(mvec_split)(TYPE(const_mvec_ptr) V, phist_Smvec* reV, phist
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&_jmax,iflag),*iflag);
   _jmax--;
   PHIST_PERFCHECK_VERIFY_MVEC_SET_BLOCK(V,V,_jmin,_jmax,iflag);
+  TEST_MVEC_MAPS_SAME(V,reV,iflag)
+  TEST_MVEC_MAPS_SAME(V,imV,iflag)
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,src,V,*iflag);
@@ -1967,6 +1999,7 @@ extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Sconst_mvec_ptr reV, 
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&_jmax,iflag),*iflag);
   _jmax--;
   PHIST_PERFCHECK_VERIFY_MVEC_SET_BLOCK(V,V,_jmin,_jmax,iflag);
+  TEST_MVEC_MAPS_SAME(V,reV,iflag)
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,vec,V,*iflag);
