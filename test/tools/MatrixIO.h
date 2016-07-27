@@ -3,9 +3,10 @@
 
 #include "phist_kernels.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace phist
+{
+  namespace testing
+  {
 
     // set the flag for reading/creating the matrix dpeending on #rows and #vectors
     int getSparseMatCreateFlag(int N, int NV);
@@ -26,8 +27,7 @@ extern "C" {
 #include "phist_gen_z.h"
 #include "MatrixIO_decl.h"
 
-#ifdef __cplusplus
-} //extern "C"
-#endif
+  }
+}
 
 #endif

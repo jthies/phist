@@ -5,9 +5,10 @@
 #include "phist_kernels.h"
 #include "phist_ScalarTraits.hpp"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace phist
+{
+  namespace testing
+  {
 
     int getSparseMatCreateFlag(int N, int NV)
     {
@@ -22,14 +23,15 @@ extern "C" {
         {
           flag=PHIST_SPARSEMAT_OPT_SINGLESPMVM;
         }
-    }
-    if (flag) flag|=PHIST_SPARSEMAT_PERM_LOCAL;
+      }
+      if (flag) flag|=PHIST_SPARSEMAT_PERM_LOCAL;
 #if PHIST_OUTLEV<4
-    flag|=PHIST_SPARSEMAT_QUIET;
+      flag|=PHIST_SPARSEMAT_QUIET;
 #endif
-    return flag;
+      return flag;
+    }
   }
-
+}
 #ifdef PHIST_HAVE_SP
 
 #include "phist_gen_s.h"
@@ -46,6 +48,3 @@ extern "C" {
 #include "phist_gen_z.h"
 #include "MatrixIO_def.hpp"
 
-#ifdef __cplusplus
-} //extern "C"
-#endif

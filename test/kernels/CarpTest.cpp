@@ -76,6 +76,13 @@ double MvecsEqualZD(phist_Zmvec* zvec, phist_Dmvec* dvec_r, phist_Dmvec* dvec_i,
 #else
   double zval_r[nvec_z*lda_r], zval_i[nvec_z*lda_i];
 #endif
+PHIST_SOUT(PHIST_INFO,"TROET z-vec:\n");
+phist_Zmvec_print(zvec,&iflag);
+PHIST_SOUT(PHIST_INFO,"TROET d-vec (re):\n");
+phist_Dmvec_print(dvec_r,&iflag);
+PHIST_SOUT(PHIST_INFO,"TROET d-vec (im):\n");
+phist_Dmvec_print(dvec_i,&iflag);
+  PHIST_SOUT(PHIST_DEBUG,"==============================================\n");
   for (phist_lidx i=0; i<nloc_z; i++)
   {
     for (int j=0; j<nvec_z; j++)
@@ -83,10 +90,11 @@ double MvecsEqualZD(phist_Zmvec* zvec, phist_Dmvec* dvec_r, phist_Dmvec* dvec_i,
       zval_r[VIDX(i,j,lda_r)] = std::real(zval[VIDX(i,j,lda_z)]);
       zval_i[VIDX(i,j,lda_i)] = std::imag(zval[VIDX(i,j,lda_z)]);
     }
-//    PHIST_SOUT(PHIST_DEBUG,"%d\t%16.8e%+16.8ei  <-> %16.8e%+16.8ei\n", 
-//        i,zval_r[VIDX(i,0,lda_r)],zval_i[VIDX(i,0,lda_r)],
-//        dval_r[VIDX(i,0,lda_r)],dval_i[VIDX(i,0,lda_r)]);
+    PHIST_SOUT(PHIST_DEBUG,"%d\t%16.8e%+16.8ei  <-> %16.8e%+16.8ei\n", 
+        i,zval_r[VIDX(i,0,lda_r)],zval_i[VIDX(i,0,lda_r)],
+        dval_r[VIDX(i,0,lda_r)],dval_i[VIDX(i,0,lda_r)]);
   }
+  PHIST_SOUT(PHIST_DEBUG,"==============================================\n");
   double result_r = TestWithType<double>::ArraysEqual(dval_r,zval_r,nloc_z,nvec_z,lda_r,1,KernelTest::vflag_,relTo);
   double result_i = TestWithType<double>::ArraysEqual(dval_i,zval_i,nloc_z,nvec_z,lda_r,1,KernelTest::vflag_,relTo);
   if (std::abs(result_r-1.0)>=std::abs(result_i-1.0))
@@ -189,14 +197,14 @@ int zshift_idfunc(ghost_gidx row, ghost_lidx *nnz, ghost_gidx* cols, void* vals,
 #undef _BASENAME_
 #define _BASENAME_ CarpTest_I
 
-#define _N_ 99
+#define _N_ 9
 #define _M_ 1
 #include "../phist_typed_test_gen.h"
 
-#define _N_ 99
+#define _N_ 9
 #define _M_ 4
 #include "../phist_typed_test_gen.h"
 
-#define _N_ 99
+#define _N_ 9
 #define _M_ 7
 #include "../phist_typed_test_gen.h"

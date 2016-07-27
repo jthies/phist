@@ -12,6 +12,9 @@
 
 #ifndef DONT_INSTANTIATE
 
+using namespace phist::testing;
+
+
 /*! Test fixure. */
 class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
                  public virtual KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,3>,
@@ -497,6 +500,18 @@ protected:
     }
   }
 #endif
+
+  TEST_F(CLASSNAME,A1_fromRowFunc)
+  {
+    TYPE(sparseMat_ptr) A=NULL;
+    SUBR(sparseMat_create_fromRowFunc)(&A,comm_,_N_,_N_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    // check that AX=X
+    SUBR(sparseMat_times_mvec)(st::one(),A,vec1_,st::zero(),vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(1.0,MvecsEqual(vec1_,vec2_),100*mt::eps());
+  }
+
 #endif // MATNAME_speye
 
 #if MATNAME == MATNAME_sprandn
@@ -1115,57 +1130,6 @@ protected:
     ASSERT_EQ(0,iflag_);
   }
 #endif
-#endif
-
-#ifdef FIRST_TIME
-namespace
-{
-int PHIST_TG_PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
-{
-  *len=1;
-  _ST_* val = (_ST_*)vval;
-  val[0]=(_ST_)1.0;
-  cols[0]=row;
-  return 0;
-}
-
-int PHIST_TG_PREFIX(some_rowFunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
-{
-#include "phist_std_typedefs.hpp"
-  _ST_* val = (_ST_*)vval;
-
-  *len=5;
-  for (int i=0; i<*len; i++)
-  {
-    cols[i]=(ghost_gidx)(((row+i-2)*3)%_N_);
-    if (cols[i]<0) cols[i]+=_N_;
-    val[i]=(ST)(i+1)/(ST)(row+1) + st::cmplx_I()*(ST)(row-cols[i]);
-  }
-  return 0;
-}
-
-  int PHIST_TG_PREFIX(mvec123func)(ghost_gidx i, ghost_lidx j, void* val, void* last_arg)
-  {
-    _ST_* v= (_ST_*)val;
-    int *int_arg=(int*)last_arg;
-    int N  = int_arg[0];
-    int NV = int_arg[1];
-    *v = (_ST_)(i+1 + N*j);
-    return 0;
-  }
-
-  int PHIST_TG_PREFIX(mvec321func)(ghost_gidx i, ghost_lidx j, void* val, void* last_arg)
-  {
-    _ST_* v= (_ST_*)val;
-    int *int_arg=(int*)last_arg;
-    int N  = int_arg[0];
-    int NV = int_arg[1];
-    *v = (_ST_)((N-i) + N*(NV-(j+1)));
-    return 0;
-  }
-
-
-}
 #endif
 
 
