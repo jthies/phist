@@ -2030,6 +2030,10 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
 
   PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
 
+  *iflag=0;
+  PHIST_TASK_DECLARE(ComputeTask)
+  PHIST_TASK_BEGIN(ComputeTask)
+  
   int sellC=map->mtraits_template.C;
   int sellSigma=map->mtraits_template.sortScope;
   int sellC_suggested, sellSigma_suggested;
@@ -2038,27 +2042,37 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
   if (sellSigma<0) sellSigma=sellSigma_suggested;
   
   PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
+
+  ghost_sparsemat_src_rowfunc src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
+  src.func = rowFunPtr;
+  src.maxrowlen = maxnne;
+  src.arg=last_arg;
+
+
+  ghost_context *ctx = map->ctx;
+
   if (map->ctx->wishlist!=NULL)
   {
     PHIST_SOUT(PHIST_WARNING,"NOTE: You are creating a new sparseMat with a context that was used before or is shared.\n"
                              "      This currently will only work if the new matrix has the same sparsity pattern!\n"
+                             "      Due to ghost issue #273 this will currently fail in any case, so we copy the  \n"
+                             "      context at this point and re-initialize it.                                   \n"
                              "      (in file %s, line %d)\n",__FILE__,__LINE__);
-    //TODO - we should probably clone the context without the communication data structures at this point
+
+    // Clone the context without the communication data structures
     //       (but with the complete permutation info)
+    PHIST_CHK_IERR(context_create(&ctx,map->ctx->gnrows,map->ctx->gncols,
+        map->ctx->flags,&src,GHOST_SPARSEMAT_SRC_FUNC,map->ctx->mpicomm,map->ctx->weight,iflag),*iflag);
+    
   }
 
-  *iflag=0;
-  
-PHIST_TASK_DECLARE(ComputeTask)
-PHIST_TASK_BEGIN(ComputeTask)
 
+  
   ghost_sparsemat* mat = NULL;
-  ghost_context *ctx = map->ctx;
 
   ghost_sparsemat_traits mtraits=map->mtraits_template;
   mtraits.C=sellC;
   mtraits.sortScope=sellSigma;
-  mtraits.datatype = st::ghost_dt;
 
   if (!own_map && (mtraits.sortScope>1 || mtraits.flags&GHOST_SPARSEMAT_PERMUTE) )
   {
@@ -2072,7 +2086,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   }
 
   mtraits.datatype = st::ghost_dt;
-  PHIST_CHK_GERR(ghost_sparsemat_create(&mat,map->ctx,&mtraits,1),*iflag);                               
+  PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
   
   if (own_map)
   {
@@ -2080,11 +2094,6 @@ PHIST_TASK_BEGIN(ComputeTask)
     mapGarbageCollector.add_map(mat, (ghost_map*)map);
   }
 
-  ghost_sparsemat_src_rowfunc src = GHOST_SPARSEMAT_SRC_ROWFUNC_INITIALIZER;
-  src.func = rowFunPtr;
-  src.maxrowlen = maxnne;
-  src.arg=last_arg;
-      
   PHIST_CHK_GERR(mat->fromRowFunc(mat,&src),*iflag);
 //#if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;
