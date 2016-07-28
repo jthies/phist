@@ -126,6 +126,11 @@ kernel libs) ?
 
 /* specific settings to tune the GHOST performance */
 #ifdef PHIST_KERNEL_LIB_GHOST
+/* with GHOST we execute everything in tasks, this can make debugging a bit tedious
+   because GDB will jump out of the function context and into the tasking stuff. If
+   this flag is defined, all kernels are executed in order.
+ */
+#cmakedefine PHIST_USE_GHOST_TASKS ${PHIST_USE_GHOST_TASKS}
 #cmakedefine PHIST_SELL_C ${PHIST_SELL_C}
 #cmakedefine PHIST_SELL_SIGMA ${PHIST_SELL_SIGMA}
 #endif
