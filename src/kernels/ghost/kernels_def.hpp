@@ -2041,7 +2041,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
   if (map->ctx->wishlist!=NULL)
   {
     PHIST_SOUT(PHIST_WARNING,"NOTE: You are creating a new sparseMat with a context that was used before or is shared.\n"
-                             "      This currently will only work if the new amatrix has the same sparsity pattern!\n"
+                             "      This currently will only work if the new matrix has the same sparsity pattern!\n"
                              "      (in file %s, line %d)\n",__FILE__,__LINE__);
     //TODO - we should probably clone the context without the communication data structures at this point
     //       (but with the complete permutation info)

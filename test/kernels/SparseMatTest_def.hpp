@@ -516,6 +516,21 @@ protected:
     ASSERT_NEAR(1.0,MvecsEqual(vec1_,vec2_),100*mt::eps());
   }
 
+  TEST_F(CLASSNAME,A1_fromRowFuncAndMap)
+  {
+    TYPE(sparseMat_ptr) A=NULL;
+    SUBR(sparseMat_create_fromRowFuncAndMap)(&A,map_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    // check that AX=X
+    SUBR(mvec_random)(vec1_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_put_value)(vec2_,(_ST_)99.9,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sparseMat_times_mvec)(st::one(),A,vec1_,st::zero(),vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(1.0,MvecsEqual(vec1_,vec2_),100*mt::eps());
+  }
+
 #endif // MATNAME_speye
 
 #if MATNAME == MATNAME_sprandn
