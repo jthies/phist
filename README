@@ -1,0 +1,18 @@
+===== ABOUT =====
+This library provides an easier interface to introduce Checkpoint/Restart capabilities in your program.
+
+===== Supported types and features =====
+
+1) POD (double, int, float etc.)
+2) POD Arrays
+3) GHOST dense mat
+4) PHIST Mvec, SdMat 
+
+
+===== REQUIREMENTS =====
+1) Requires MPI
+
+===== INSTALLATION =====
+1) ccmake ./
+configure according to your requirements
+2) make
