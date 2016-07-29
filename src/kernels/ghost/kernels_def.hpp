@@ -2085,6 +2085,8 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
     mtraits.sortScope=1;
   }
 
+  PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", mtraits.C, mtraits.sortScope);
+
   mtraits.datatype = st::ghost_dt;
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
   
@@ -2130,8 +2132,7 @@ extern "C" void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *vA, phis
         GHOST_CONTEXT_DEFAULT,NULL,GHOST_SPARSEMAT_SRC_FUNC,*comm,get_proc_weight(),iflag),*iflag);
 
   int sellC, sellSigma;
-  get_C_sigma(&sellC,&sellSigma,*iflag, *((MPI_Comm*)vcomm));
-  PHIST_SOUT(outlev, "Creating sparseMat with SELL-%d-%d format.\n", sellC, sellSigma);
+  get_C_sigma(&sellC,&sellSigma,iflag_in, *((MPI_Comm*)vcomm));
 
   *iflag=0;
   
