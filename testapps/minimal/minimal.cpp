@@ -1,11 +1,10 @@
 #include "minimal.h"
 #include "Checkpoint.hpp"
-
-//#include "UserClass.hpp"
+#include <cstring>
 
 void read_params(int argc, char* argv[] , std::string * cpPath){
 
-	//============================ Reading commnad line arguments with flags ===============//
+	//=========== Reading commnad line arguments with flags ===============//
 	for (int i = 1; i < argc; ++i) {
 
 		if ((!strcmp(argv[i], "-cppath"))) {
@@ -14,11 +13,6 @@ void read_params(int argc, char* argv[] , std::string * cpPath){
 			*cpPath = tmp;
 			std::cout << "cpPath: " << *cpPath << std::endl;
 		}
-/*		if ((!strcmp(argv[i], "-m"))) {
-			m = atoi(argv[++i]);
-			printf("m: %d\n",m);
-		}
-*/
 	}
 }
 
@@ -46,29 +40,23 @@ int main(int argc, char* argv[])
 	myCP->add("myarray", myarray, n);
 	myCP->commit(); 
  
-	printf("%d: START----------------------\n", myrank);
-	int iteration = 0, failed = true, nIter = 10;
+	int iteration = 0, failed = true, nIter = 20;
 	
 	int rc = 9;
     for(; iteration < nIter ; iteration++)
     {
-		printf("===========\n");
-		printf("iter: %d\t\n", iteration);
-		if(iteration % 3 == 0){
+		printf("====iter: %d\t\n", iteration);
+		if(iteration % 4 == 0){
 			myCP->update();
 			myCP->write();
-		}
-		if(iteration  == 5){
-	//		myCP->read();
 		}
 		myint++;
 		for(size_t i = 0; i < n ; ++i){
 			myarray[i] += 1;
 		}
-		usleep(1000000);
+		usleep(100000);
     }
    	 
-    printf("%d: ------------------------------------- END\n", myrank);
 	MPI_Finalize();
 	return 0;
 }
