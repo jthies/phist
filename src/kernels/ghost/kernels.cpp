@@ -654,11 +654,10 @@ extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map
 #endif
 
 
-#ifdef GHOST_HAVE_CUDA
 /* use GHOST stream benchmarks instead of those in common/ because the latter
-   don't work on GPUs 
+   don't work on GPUs and tended to fail with GHOST even without CUDA
  */
 #include "./bench_kernels.cpp"
-#else
+/*
 #include "../common/phist_bench_kernels.cpp"
-#endif
+*/
