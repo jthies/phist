@@ -6,10 +6,10 @@ set (SRC_DIR ${CMAKE_SOURCE_DIR})
 ###### OPTIONS ######
 option(PHIST_CP
 		"enables/disables the checkpoints of PHIST data types"
-		OFF)
+		ON)
 option(GHOST_CP
 		"enables/disables the checkpoints of PHIST data types"
-		OFF)
+		ON)
 option(SCR
 		"enables/disables the usage of SCR-library for node-level C/R"
 		OFF)
