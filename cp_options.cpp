@@ -1,42 +1,40 @@
-//#include "cp_options.h"
+#include "cp_options.h"
 #include <stdio.h>
 
 
-
-
-/*CP_Options::CP_Options(){
+Cp_Options::Cp_Options(){
 	cpFreq = 0;
-	cpPath = NULL;
+	cpPath = new char[256];
 	isRestarted = false;	
 }
 
 
-CP_Options::~CP_Options(){
+Cp_Options::~Cp_Options(){
 	
 }
 
-void CP_Options::setCpFreq(const int cpFreq_){
+void Cp_Options::setCpFreq(const int cpFreq_){
 	cpFreq = cpFreq_;
 }
 
-void CP_Options::setCpPath(const char * cpPath_){
+void Cp_Options::setCpPath(const char * cpPath_){
 	sprintf(cpPath, "%s", cpPath_);
 }
 
-void CP_Options::setRestartStatus( bool status_){
+void Cp_Options::setRestartStatus( bool status_){
 	isRestarted = status_;
 }
 
-void CP_Options::getCpFreq ( int * cpFreq_){
-	*cpFreq_ = cpFreq;
+int Cp_Options::getCpFreq (){
+	return cpFreq;
 }
 
-void CP_Options::getCpPath ( char * cpPath_){
+void Cp_Options::getCpPath ( char * cpPath_){
 	sprintf(cpPath_, "%s\n", cpPath);
 }
 
-bool  CP_Options::getRestartStatus(){
+bool  Cp_Options::getRestartStatus(){
 	return isRestarted;
 }
-*/
+
 

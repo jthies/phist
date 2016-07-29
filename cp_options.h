@@ -1,28 +1,28 @@
 #ifndef __CP_OPTIONS_H__
 #define __CP_OPTIONS_H__
 
+#include <string>
 
-typedef struct {
-
+class Cp_Options{
+private:
 	int cpFreq;
 	char * cpPath;
 	bool isRestarted;
 	bool withSCR;
-//	cpOpt->cpFreq = cpFreq_;
-/*	CP_Options();
-	~CP_Options();
-	void setCpPath ( const char * cpPath_); 
+public:
+	Cp_Options();
+	~Cp_Options();
+		void setCpPath ( const char * cpPath_); 
 
-	void getCpFreq( int * cpFreq_);
+	void setCpFreq ( const int cpFreq_);
+	int getCpFreq();
 	void getCpPath ( char * cpPath_); 
 	
 	void setRestartStatus(bool status);
 	bool getRestartStatus();
-*/
-}CP_Options;
-// TODO: build the functions for cpFreq and cpPath 
-//
-//void setCpFreq( struct CP_Options * cpOpt, const int cpFreq_);
 
+
+
+};
 
 #endif

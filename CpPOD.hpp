@@ -1,7 +1,7 @@
 #ifndef __CPPOD_H__
 #define __CPPOD_H__
 
-#include "helperFuncs.hpp"
+#include "CpHelperFuncs.hpp"
 #include "CpBase.hpp"
 #include <stdio.h>
 #include <iostream>

@@ -2,31 +2,34 @@
 #define __CHECKPOINT_HPP__
 
 #include <string>
-
-#include "enum.h"
-#include "CpBase.hpp"
-#include "CpPOD.hpp"
-#include "CpGhost.hpp"
-#include "CpArray.hpp"
-//#include "CpPhistMvecClassic.hpp"
-#include "CpPhistMvec.h"
-#include "CpPhistMvec_def.hpp"
-
-#include <string>
 #include <sstream>
 #include <map>
+#include <stdio.h>
+#include <stdlib.h>
 #include <mpi.h>
 #include <complex>
 
-//#include "phist_kernels.h"
-#include "phist_operator.h"
-//#include "phist_enums.h"
+// ====== CP TYPES HEADERS ===== //  
+#include "CpEnum.h"
+#include "CpBase.hpp"
+#include "CpPOD.hpp"
+#include "CpArray.hpp"
+
+#ifdef GHOST_CP 
+#include "CpGhost.hpp"
+#endif
+
+#ifdef PHIST_CP 
+#include "cpTypes/cpPhistMvec/CpPhistMvec.cpp"
+#include "cpTypes/cpPhistSdMat/CpPhistSdMat.cpp"
+#endif
 
 #ifdef SCR
 extern "C"{
 	#include <scr.h>
 }
 #endif
+
 
 class Checkpoint
 {
@@ -75,12 +78,16 @@ void add(std::string label, CpBase * p)
 void add(std::string label, int * const i){this->add(label, new CpPOD<int>(i));}
 void add(std::string label, float * const i){this->add(label, new CpPOD<float>(i));}
 void add(std::string label, double * const d){this->add(label, new CpPOD<double>(d));}
-void add(std::string label, std::complex<double> * const d){
-		this->add(label, new CpPOD<std::complex<double> >(d));
+void add(std::string label, std::complex<double> * const d){this->add(label, new CpPOD<std::complex<double> >(d));}	//TODO: COMPLEX write is not implemented.
+void add(std::string label, std::complex<float> * const d){this->add(label, new CpPOD<std::complex<float> >(d));}
+
+// ===== POD ARRAY ===== // 
+template <class T>
+void add(std::string label, T* const arrayPtr_, const size_t nRows_){
+		this->add(label, new CpArray<T>(arrayPtr_, nRows_));
 }
-void add(std::string label, std::complex<float> * const d){
-		this->add(label, new CpPOD<std::complex<float> >(d));
-}
+
+#ifdef GHOST_CP
 // ===== GHOST DENSE MATRIX ===== //
 void add(std::string label, ghost_densemat * const GDM)
 {
@@ -90,20 +97,22 @@ void add(std::string label, ghost_densemat ** const GDMArray, const size_t nDens
 {
 		this->add(label, new CpGhostDenseMatArray(GDMArray, nDenseMat_, toCpDenseMat_) );
 }
+#endif
 
-// ===== POD ARRAY ===== // 
-template <class T>
-void add(std::string label, T* const arrayPtr_, const size_t nRows_){
-		this->add(label, new CpArray<T>(arrayPtr_, nRows_));
-}
-
+#ifdef PHIST_CP 
 // ===== PHIST MVEC ===== // 
-void add(std::string label, TYPE(mvec_ptr) const PMvec)
+void add(std::string label, TYPE(mvec_ptr) const Mvec)
 {	
-		this->add(label, new TYPE(CpPhistMvec)(PMvec) );
+		this->add(label, new TYPE(CpPhistMvec)(Mvec) );
 }
-};
+// ===== PHIST SDMAT ===== //	TODO: as MVEC, and SDMAT are both void*, they should be differenciated in some better way.  
+void add(std::string label, TYPE(sdMat_ptr) const sdMat, TYPE(sdMat_ptr) const temp)
+{	
+		this->add(label, new TYPE(CpPhistSdMat)(sdMat) );
+}
+#endif
 
+};
 
 Checkpoint::Checkpoint(){
 	cpMpiComm 	= MPI_COMM_WORLD;	
@@ -149,6 +158,5 @@ void Checkpoint::enableSCR(){
 void Checkpoint::commit(){
 	cpCommitted = true;	
 }
-
 
 #endif

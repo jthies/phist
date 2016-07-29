@@ -1,6 +1,4 @@
-#include "helperFuncs.hpp"
 #include "Checkpoint.hpp"
-#include "CpPOD.hpp"
 
 void Checkpoint::update(){
 	for(cp_const_map:: iterator it = objects.begin(); it != objects.end(); ++it)

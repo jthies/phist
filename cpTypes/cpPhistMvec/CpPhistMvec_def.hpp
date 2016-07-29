@@ -1,24 +1,7 @@
-//#ifndef __CPPHISTMVEC_DEF_HPP__
-//#define __CPPHISTMVEC_DEF_HPP__
 
-#include "phist_kernels.h"
-#include "phist_operator.h"
-#include "phist_enums.h"
-#include "CpBase.hpp"
-#include <stdio.h>
-
-
-#include "phist_ScalarTraits.hpp"
-typedef phist::ScalarTraits<_ST_> st;
-
-
-/*void SUBR(tempfuncX)(){
-	printf("definition of tempfuncX\n");	
-	return ;
-}
-*/
 class TYPE(CpPhistMvec) : public CpBase
 {
+typedef phist::ScalarTraits<_ST_> st;
 private:
 
 	TYPE(mvec_ptr) dataPtr;
@@ -39,15 +22,13 @@ public:
 		phist_const_map_ptr map;
 		PHIST_CHK_IERR(SUBR(mvec_get_map)(dataPtr, &map, &iflag), iflag); 
   		PHIST_CHK_IERR(SUBR(mvec_create)(&asynData,map,nVec,&iflag),iflag);
+		PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),dataPtr,st::zero(),asynData,&iflag),iflag);
 
 	}
 
-	
 	void update(){
 		printf("CpPhistMvec Before update: \n");
 		PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),dataPtr,st::zero(),asynData,&iflag),iflag);
-		//ghost_densemat_init_densemat(asynData, dataPtr, 0, 0);
-		//printf("After update: \n");
 		return;
 	}
 
@@ -63,4 +44,4 @@ public:
 		return;
 	}
 };
-//#endif
+
