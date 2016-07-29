@@ -18,10 +18,9 @@ option(AFT
 		OFF)
 
 
-
-
 ###### FIND LIBRARIES ######
 
+find_package(MPI REQUIRED)
 if(MPI_FOUND)
 	message (STATUS "MPI package is found ${MPI_INCLUDE_PATH}")
 	include_directories(${MPI_INCLUDE_PATH})
@@ -34,10 +33,10 @@ endif()
 if(GHOST_CP)
 	find_package(GHOST REQUIRED)
 	if(GHOST_FOUND)
+		add_definitions(-DGHOST_CP)
 		message (STATUS "GHOST pacage is found ${GHOST_INCLUDE_DIRS} ")
 		include_directories(${GHOST_INCLUDE_DIRS})
 		set(LIBS ${LIBS} ${GHOST_LIBRARIES})
-		add_definitions(-DGHOST_CP)
 	else()
 		message (STATUS "GHOST package is NOT found")
 	endif()
@@ -46,6 +45,7 @@ endif()
 
 if(PHIST_CP)
 	find_path(PHIST REQUIRED)
+	add_definitions(-DPHIST_CP)
 	include_directories ("${PHIST}/include/")
 	link_directories ("${PHIST}/lib/")
 
@@ -63,11 +63,10 @@ if(PHIST_CP)
 							${CPPHISTSDMAT_DIR}/CpPhistSdMat_decl.h
 							${CPPHISTSDMAT_DIR}/CpPhistSdMat.cpp
 							${CPPHISTSDMAT_DIR}/CpPhistSdMat_def.hpp)
-	add_definitions(-DPHIST_CP)
 endif()
 
 if(SCR)
-	find_package(MPI REQUIRED)
+	find_package(SCR)
 	if(SCR_FOUND)
 		message (STATUS "SCR package is found ${SCR_INCLUDE_PATH}")
 		include_directories(${SCR_INCLUDE_PATH})
@@ -77,7 +76,7 @@ if(SCR)
 	endif()
 endif()
 
-set ( CPAFT_SOURCE 	${SRC_DIR}/Checkpoint.cpp
+set (CPAFT_SOURCE 	${SRC_DIR}/Checkpoint.cpp
 		${SRC_DIR}/cp_options.cpp)
 
 if(AFT)
@@ -85,8 +84,6 @@ if(AFT)
 						${SRC_DIR}/aft.cpp
 						${SRC_DIR}/aft_macros.h)
 endif()	
-
-
 
 add_library(cpaft SHARED ${CPAFT_SOURCE} ${CPPHISTMVEC_SRC} ${CPPHISTSDMAT_SRC})
 
