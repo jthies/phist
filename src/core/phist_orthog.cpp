@@ -9,6 +9,9 @@
 // fallback routine: if the kernel library does not implement mvec_QR,
 // we simply switch to our own implementation of Cholesky-QR.
 #include "phist_chol_QR.h"
+// under the hood we use this implementation, which exploits fused kernels and
+// high precision operations if available.
+#include "phist_orthogrrfused.h"
 
 #include "phist_ScalarTraits.hpp"
 
