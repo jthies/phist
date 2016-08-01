@@ -87,7 +87,4 @@
 /*                                                                                           */
 /*#define PHIST_SDMAT_RUN_ON_DEVICE 2*/
 
-/* for KPM */
-#define PHIST_KPM_SINGLEVEC 1
-
 #endif
