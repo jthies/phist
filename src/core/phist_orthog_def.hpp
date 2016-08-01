@@ -2,7 +2,7 @@
 // use our own Cholesky-QR instead. This way we allow the kernel library
 // to override our choice of Cholesky QR by e.g. TSQR. normsV on exit contains
 // the norm of each column of V before the normalization.
-void SUBR(my_mvec_QR)(TYPE(mvec_ptr) V, TYPE(mvec_ptr(BV), TYPE(sdMat_ptr) R, _MT_* normsV, int* iflag)
+void SUBR(my_mvec_QR)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, _MT_* normsV, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   static bool first_call=true;
@@ -15,21 +15,16 @@ void SUBR(my_mvec_QR)(TYPE(mvec_ptr) V, TYPE(mvec_ptr(BV), TYPE(sdMat_ptr) R, _M
   int perm[m];
   for (int i=0;i<m;i++) perm[i]=i;
 
-  bool done=false;
-  if (BV==V)
-  {
-    SUBR(mvec_QR)(V,R,iflag);
+  SUBR(mvec_QR)(V,R,iflag);
   
-    if (*iflag!=PHIST_NOT_IMPLEMENTED) done=true;
-  }
-  if (!done) 
+  if (*iflag==PHIST_NOT_IMPLEMENTED)
   {
     *iflag=iflag_in;
-    SUBR(chol_QRp)(V,BV,R,perm,iflag);
+    SUBR(chol_QRp)(V,R,perm,iflag);
     if (first_call)
     {
       first_call=false; 
-      PHIST_SOUT(PHIST_VERBOSE,"orthog: using chol_QR\n");
+      PHIST_SOUT(PHIST_VERBOSE,"orthog: using fallback chol_QR\n");
     }
   }
   
@@ -45,27 +40,26 @@ void SUBR(my_mvec_QR)(TYPE(mvec_ptr) V, TYPE(mvec_ptr(BV), TYPE(sdMat_ptr) R, _M
   *iflag=iflag_out;
 }
 
-extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
-                     TYPE(mvec_ptr) W,
-                     TYPE(sdMat_ptr) R1,
-                     TYPE(sdMat_ptr) R2,
-                     int numSweeps,
-                     int* rankVW,
-                     int* iflag)
-{
-  SUBR(orthogB)(V, V,
-                W, W,
-                NULL,
-                R1,R2,
-                numSweeps,
-                rankVW,
-                iflag);
-}
+// allow using orthog routines from Trilinos because we don't have
+// B-orthogonalization yet
+
+// possibly we could even do this for ghost and builtin, but
+// we just use Trilinos as a fallback for B-orthogonalization
+// with HYMLS right now and will eventually provide our own
+// kernels for it
+#if defined(PHIST_KERNEL_LIB_TPETRA)||defined(PHIST_KERNEL_LIB_EPETRA)
+# if defined(PHIST_HAVE_BELOS)&&defined(IS_DOUBLE)&&!defined(IS_COMPLEX)
+#  define HAVE_TRILINOS_ORTHO_MANAGER
+# endif
+#endif
+
+// provide trili_orthog as fallback if B!=NULL
+#include "trili_orthog_def.hpp"
 
 //! orthogonalize an mvec against an already orthogonal one.
-extern "C" void SUBR(orthogB)(TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
-                     TYPE(mvec_ptr) W,                TYPE(mvec_ptr) BW,
-                     TYPE(const_linearOp_ptr)         B,
+extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
+                     TYPE(mvec_ptr) W,
+                     TYPE(const_linearOp_ptr) B,
                      TYPE(sdMat_ptr) R1,
                      TYPE(sdMat_ptr) R2,
                      int numSweeps,
@@ -84,6 +78,25 @@ extern "C" void SUBR(orthogB)(TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
   st::sdMat_t *R1p,*R2p,*R1pp;
 
   phist_const_comm_ptr comm=NULL;
+
+  if (B!=NULL)
+  {
+#ifdef HAVE_TRILINOS_ORTHO_MANAGER
+  static bool first_call=true;
+  if (first_call)
+  {
+    PHIST_SOUT(PHIST_WARNING,"using trilinos ortho manager for B-orthogonalization\n");
+    first_call=false;
+  }
+  
+  SUBR(trili_orthog)(V,W,B,R1,R2,numSweeps,rankVW,iflag);
+  return;    
+#else
+    PHIST_SOUT(PHIST_ERROR,"case B!=I not implemented (file %s, line %d)\n",__FILE__,__LINE__);
+    *iflag=PHIST_NOT_IMPLEMENTED;
+    return;
+#endif
+  }
 
   int iflag_in=*iflag;
   *iflag=0;
@@ -382,3 +395,6 @@ extern "C" void SUBR(orthogB)(TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
   return;
 }
 
+#ifdef HAVE_TRILINOS_ORTHO_MANAGER
+#undef HAVE_TRILINOS_ORTHO_MANAGER
+#endif

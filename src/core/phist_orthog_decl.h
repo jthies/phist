@@ -6,6 +6,11 @@
 //! (Q overwrites W here).                                         
 //! The matrices R1 and R2 must be pre-allocated by the caller.    
 //!                                                                
+//! There is an option to supply an operator for B, in which case  
+//! V should be a B-orthogonal basis and we B-orthogonalize W with 
+//! respect to V, such that instead Q'BQ=I. This is currectly not  
+//! implemented.                                                   
+//!                                                                
 //! The algorithm used is up to numSweeps steps of classical       
 //! block Gram-Schmidt, alternated with QR factorizations to       
 //! normalize W. The method stops if the reduction in norm of W    
@@ -40,19 +45,16 @@
 
 void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      TYPE(mvec_ptr) W,
-                     TYPE(sdMat_ptr) R1,
-                     TYPE(sdMat_ptr) R2,
-                     int numSweeps, int* rankVW, int* iflag);
-
-//! orthogonalize an mvec against an already (B-)orthogonal one in the inner product induced by the symmetric and positive definite operator B. \ingroup core
-
-//! the algorithm is the same as for SUBR(orthog), except that there is no kernel function for B-orthogonalization,
-//! so SVQB is always used for the W block. On input, the user has to provide B*V and B*W. On output, W=Q and BW=BQ.
-void SUBR(orthog)(TYPE(const_mvec_ptr) V, TYPE(const_mvec_ptr) BV,
-                     TYPE(mvec_ptr) W,    TYPE(mvec_ptr) BW,
                      TYPE(const_linearOp_ptr) B,
                      TYPE(sdMat_ptr) R1,
                      TYPE(sdMat_ptr) R2,
                      int numSweeps, int* rankVW, int* iflag);
 
 
+//! for timing measurements provide access to a trilinos orthog manager
+void SUBR(trili_orthog)(TYPE(const_mvec_ptr) V,
+                        TYPE(mvec_ptr) W,
+                        TYPE(const_linearOp_ptr) B,
+                        TYPE(sdMat_ptr) R1,
+                        TYPE(sdMat_ptr) R2,
+                        int numSweeps, int* rankVW, int* iflag);
