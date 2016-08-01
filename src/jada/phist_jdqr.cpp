@@ -19,6 +19,7 @@
 #include "phist_simple_arnoldi.h"
 #include "phist_jadaOp.hpp"
 #include "phist_jadaOpts.h"
+#include "phist_core_flags.h"
 
 #include "phist_jadaCorrectionSolver.h"
 // for testing CARP-CG, we use Belos BlockCG for now.

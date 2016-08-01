@@ -88,6 +88,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     PHIST_CHK_IERR(SUBR(sdMat_create)(&R2,i+1,1,comm,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_get_block)(H,R2,0,i,i,i,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_get_block)(H,R1,i+1,i+1,i,i,iflag),*iflag);
+    *iflag=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
     PHIST_CHK_NEG_IERR(SUBR(orthog)(Vprev,av,NULL,R1,R2,3,&rankV,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R2,0,i,i,i,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R1,i+1,i+1,i,i,iflag),*iflag);
@@ -177,6 +178,7 @@ void SUBR(simple_blockArnoldi)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearO
   PHIST_CHK_IERR(SUBR(mvec_random) (v, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R1,0,bs-1,0,bs-1,iflag),*iflag);
   int tmp; // rank of random input matrix to orthog, not interesting here
+  *iflag=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
   PHIST_CHK_IERR(SUBR(orthog)(NULL,v, B_op,R1,NULL,2,&tmp,iflag), *iflag);
   // copy to V
   PHIST_CHK_IERR(SUBR(mvec_set_block)(V, v, 0, bs-1, iflag), *iflag);
@@ -207,6 +209,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R2,0,(i+1)*bs-1,i*bs,(i+1)*bs-1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R1,(i+1)*bs,(i+2)*bs-1,i*bs,(i+1)*bs-1,iflag),*iflag);
     int rankV;
+    *iflag=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
     PHIST_CHK_NEG_IERR(SUBR(orthog)(Vprev,av,NULL,R1,R2,3,&rankV,iflag),*iflag);
     *iflag = 0;
     if( rankV != (i+2)*bs-1 )

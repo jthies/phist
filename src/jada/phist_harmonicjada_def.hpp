@@ -980,7 +980,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,  &HVv, 0,     nV-1,      nV,    nV+k-1,    iflag), *iflag);
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,  &Hvv, nV,    nV+k-1,    nV,    nV+k-1,    iflag), *iflag);
       int rankV;
-      *iflag=PHIST_ROBUST_REDUCTIONS;
+      *iflag=PHIST_ROBUST_REDUCTIONS | PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
       PHIST_CHK_NEG_IERR(SUBR( orthog ) (Vful, Vv, B_op, Hvv, HVv, 5, &rankV, iflag), *iflag);
 
       // calculate AVv, BVv
@@ -1001,7 +1001,7 @@ PHIST_SOUT(PHIST_INFO,"\n");
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_A_,&H_Aq, 0,     nV-1,    nV,    nV+k-1,    iflag), *iflag);
       PHIST_CHK_IERR(SUBR( sdMat_view_block ) (H_A_,&H_A, nV,   nV+k-1,    nV,    nV+k-1,    iflag), *iflag);
       int rankW;
-      *iflag=PHIST_ROBUST_REDUCTIONS;
+      *iflag=PHIST_ROBUST_REDUCTIONS | PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
       PHIST_CHK_NEG_IERR(SUBR( orthog ) (Wful, Wv, B_op, H_A, H_Aq, 5, &rankW, iflag), *iflag);
       // TODO: only take non-random vector if *iflag > 0
 
