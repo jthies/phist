@@ -507,14 +507,41 @@ protected:
     iflag_=PHIST_SPARSEMAT_QUIET;
     SUBR(sparseMat_create_fromRowFunc)(&A,comm_,_N_,_N_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
     ASSERT_EQ(0,iflag_);
+
+    // the domain map of this matrix should be the defaultMap_, check this and construct vectors for the spMVM
+    phist_const_map_ptr domainA=NULL;
+    SUBR(sparseMat_get_domain_map)(A,&domainA,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    phist_maps_compatible(defaultMap_,domainA,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    // and it has to be compatible with the (domain) map of A_ that defines the vectors vec1/2_
+    phist_maps_compatible(map_,domainA,&iflag_);
+    ASSERT_TRUE(iflag_>=0);
+    bool other_map=(iflag_>0);
+    TYPE(mvec_ptr) vec1=vec1_, vec2=vec2_;
+    if (other_map)
+    {
+      SUBR(mvec_create)(&vec1,domainA,nvec_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_create)(&vec2,domainA,nvec_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+    
     // check that AX=X
-    SUBR(mvec_random)(vec1_,&iflag_);
+    SUBR(mvec_random)(vec1,&iflag_);
     ASSERT_EQ(0,iflag_);
-    SUBR(mvec_put_value)(vec2_,(_ST_)99.9,&iflag_);
+    SUBR(mvec_put_value)(vec2,(_ST_)99.9,&iflag_);
     ASSERT_EQ(0,iflag_);
-    SUBR(sparseMat_times_mvec)(st::one(),A,vec1_,st::zero(),vec2_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(1.0,MvecsEqual(vec1_,vec2_),100*mt::eps());
+    SUBR(sparseMat_times_mvec)(st::one(),A,vec1,st::zero(),vec2,&iflag_);
+    EXPECT_EQ(0,iflag_);
+    ASSERT_NEAR(1.0,MvecsEqual(vec1,vec2),100*mt::eps());
+    if (other_map)
+    {
+      SUBR(mvec_delete)(vec1,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_delete)(vec2,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
   }
 
   TEST_F(CLASSNAME,A1_fromRowFuncAndMap)
@@ -523,6 +550,7 @@ protected:
     iflag_=PHIST_SPARSEMAT_QUIET;
     SUBR(sparseMat_create_fromRowFuncAndMap)(&A,map_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
     ASSERT_EQ(0,iflag_);
+
     // check that AX=X
     SUBR(mvec_random)(vec1_,&iflag_);
     ASSERT_EQ(0,iflag_);

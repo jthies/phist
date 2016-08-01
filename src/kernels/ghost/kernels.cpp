@@ -553,6 +553,12 @@ extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map
   const ghost_densemat_permutation *lperm2 = map2->perm_local;
   const ghost_densemat_permutation *gperm2 = map2->perm_global;
   
+  // check if these objects are actually initialized - otherwise treat them as NULL
+  if (gperm1 && (gperm1->perm==NULL||gperm1->invPerm==NULL)) gperm1=NULL;
+  if (gperm2 && (gperm2->perm==NULL||gperm2->invPerm==NULL)) gperm2=NULL;
+  if (lperm1 && (lperm1->perm==NULL||lperm1->invPerm==NULL)) lperm1=NULL;
+  if (lperm2 && (lperm2->perm==NULL||lperm2->invPerm==NULL)) lperm2=NULL;
+  
   // compare contexts and permutation objects as far as we need the info to be consistent
   if (ctx1!=ctx2)
   {
