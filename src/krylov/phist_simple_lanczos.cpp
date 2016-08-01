@@ -14,14 +14,27 @@
 
 #include "phist_ScalarTraits.hpp"
 
+#ifndef GHOST_CP
+#define GHOST_CP
+#endif
+#ifndef PHIST_CP
+#define PHIST_CP
+#endif
+
+#include "Checkpoint.hpp"
+#include "cpTypes/cpPhistMvec/CpPhistMvec.h"
+#include "cp_options.h"
+
+
+
 #ifdef PHIST_HAVE_SP
 #include "phist_gen_s.h"
 #include "phist_simple_lanczos_def.hpp"
 #include "phist_gen_c.h"
 #include "phist_simple_lanczos_def.hpp"
 #endif
+
 #include "phist_gen_d.h"
 #include "phist_simple_lanczos_def.hpp"
 #include "phist_gen_z.h"
 #include "phist_simple_lanczos_def.hpp"
-

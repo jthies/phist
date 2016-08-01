@@ -12,6 +12,8 @@
 #include "phist_operator.h"
 #include "phist_enums.h"
 
+#include "cp_options.h"
+
 #endif //DOXYGEN
 
 #ifdef __cplusplus

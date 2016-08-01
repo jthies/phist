@@ -1,4 +1,6 @@
+
 // this implementation is adapted from the simple lanczos solver in essex/ghost-sandbox/ghost-apps/lanczos/
+
 static int SUBR(converged)(_MT_ evmin)
 {
 #include "phist_std_typedefs.hpp"
@@ -46,8 +48,10 @@ PHIST_CHK_IERR(A_op->apply(st::one(),A_op->A, vold,minusbeta,vnew,iflag),*iflag)
 //! *numIter, number of iterations performed
 //!
 void SUBR(simple_lanczos)(TYPE(const_linearOp_ptr) A_op,
-        _MT_ *evmin, _MT_ *evmax, int *numIter, int* iflag)
+        _MT_ *evmin, _MT_ *evmax, int *numIter, int* iflag, Cp_Options *cpOpt)
 {
+	
+	printf("==== simple_lanczos started ===== \n");
 #include "phist_std_typedefs.hpp"
   PHIST_ENTER_FCN(__FUNCTION__);
   *iflag = 0;
@@ -73,12 +77,34 @@ void SUBR(simple_lanczos)(TYPE(const_linearOp_ptr) A_op,
   PHIST_CHK_IERR(SUBR(mvec_scale)(vold,scal,iflag),*iflag);
 
   *evmin=mt::zero();
+	int i = 0;
+// ===== CHECKPOINT DEFINITION ==== // 
 
+	Checkpoint * myCP = new Checkpoint[1];
+	std::string cpPath = "/lxfs/unrz/unrza354/checkpoints/"; 
+	myCP->setCpPath(cpPath);
+	myCP->add("i", &i);	
+	myCP->add("alpha", &alpha);	
+	myCP->add("beta", &beta);	
+	myCP->add("alphas", alphas, maxIter);
+	myCP->add("betas", betas, maxIter);
+	myCP->add("vold", vold);
+	myCP->add("vnew", vnew);
+
+//	SUBRX(wrapperWrite(vold));
 // put all iterations in one big compute task; this speeds up the tests with ghost (significantly)
-PHIST_TASK_DECLARE(ComputeTask)
-PHIST_TASK_BEGIN(ComputeTask)
+	PHIST_TASK_DECLARE(ComputeTask)
+	PHIST_TASK_BEGIN(ComputeTask)
+	
+	if(cpOpt->getRestartStatus() == true) {
+		printf("===== Program is restarted =====\n");	
+		myCP->read();
+		i += 1;
+    std::swap(vold,vnew);
+	}
+	
   // Lanczos loop
-  for(int i = 0; i < maxIter; i++)
+  for(; i < maxIter; i++)
   {
         int n=i+1;
         PHIST_CHK_IERR(SUBR(lanczosStep)(A_op,vnew,vold,&alpha,&beta,iflag),*iflag);
@@ -111,7 +137,7 @@ PHIST_TASK_BEGIN(ComputeTask)
         }
         *evmin=falphas[0];
         *evmax=falphas[n-1];
-        PHIST_SOUT(PHIST_INFO,"LANCZOS step %d\tmin/max eigenvalue: %f/%f\n", i,*evmin,*evmax);
+        PHIST_SOUT(PHIST_INFO,"LANCZOS:__: step %d\tmin/max eigenvalue: %f/%f\n", i,*evmin,*evmax);
 #if 0
          PHIST_SOUT(PHIST_INFO,"D=[ ");
         for (int j=0;j<n;j++) PHIST_SOUT(PHIST_INFO,"%25.16e ",betas[j]);
@@ -123,6 +149,13 @@ PHIST_TASK_BEGIN(ComputeTask)
           
         *numIter=i;
         if (SUBR(converged)(*evmin)) break;
+
+		if( i % cpOpt->getCpFreq() == 0){ 
+			myCP->update();
+			myCP->write();
+		}
+		
+		usleep(100000);
   }
   
 
@@ -133,3 +166,4 @@ PHIST_TASK_END(iflag)
   PHIST_CHK_IERR(SUBR(mvec_delete)(vold,  iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(vnew, iflag), *iflag);
 }
+

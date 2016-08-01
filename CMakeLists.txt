@@ -83,6 +83,10 @@ option(PHIST_USE_TRILINOS_TPLS
         "enable/disable using any optional Trilinos libraries like Zoltan, Belos, Kokkos etc."
         ON)
 
+# option for using checkpoint/restart + automatic fault-tolerance features
+option(PHIST_USE_CPAFT
+		"enables/desables the use of checkpoint/restart and auto FT features using CPAFT"
+	ON)
 
 ########################################################################
 # Lists of libraries, executables, tests
@@ -757,6 +761,15 @@ include_directories(${PROJECT_SOURCE_DIR}/src/jada)
 include_directories(${PROJECT_SOURCE_DIR}/src/precon)
 include_directories(${PROJECT_SOURCE_DIR}/src/support)
 include_directories(${PROJECT_SOURCE_DIR}/drivers)
+
+if (PHIST_USE_CPAFT)
+	find_path(CPAFT REQUIRED)
+	include_directories(${CPAFT})
+	link_directories("${CPAFT}")
+	set(LIBS ${LIBS} ${CPAFT})
+	link_libraries (cpaft)
+endif()
+
 
 add_library(phist_tools ${PHIST_TOOLS_SOURCE})
 add_library(phist_core ${PHIST_CORE_SOURCE})

@@ -20,6 +20,8 @@
 #include "phist_ScalarTraits.hpp"
 #include "phist_std_typedefs.hpp"
 
+#include "cp_options.h"
+
 // Computes the largest and smallest eigenvalue of a Hermitian matrix using the Lanczos
 // method. This driver is intended for testing fault tolarance concepts in PHIST.
 int main(int argc, char** argv)
@@ -52,7 +54,10 @@ int main(int argc, char** argv)
   }
 
   matname = argv[1];
- 
+	char * cpPath = new char [256];
+	sprintf(cpPath , "%s", "/lxfs/unrz/unrza354/checkpoints/");
+	printf("CPPATH : %s", cpPath); 
+
   iflag = PHIST_SPARSEMAT_PERM_GLOBAL;
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,matname,&iflag),iflag);
   
@@ -60,11 +65,13 @@ int main(int argc, char** argv)
   TYPE(linearOp) A_op;
   PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(&A_op,A,&iflag),iflag);
 
-  
+ 	Cp_Options * cpOpt=new Cp_Options[1]; 
+	cpOpt->setCpFreq(70);
+	cpOpt->setCpPath(cpPath);
+
   // call Lanczos iteration routine
   num_iters=10000;
-  SUBR(simple_lanczos)(&A_op,&lambda_min,&lambda_max,&num_iters,&iflag);
-
+	SUBR(simple_lanczos)(&A_op,&lambda_min,&lambda_max,&num_iters,&iflag, cpOpt);
   if (iflag!=0)
   {
     PHIST_SOUT(PHIST_WARNING,"code %d returned from jdqr\n",iflag);
