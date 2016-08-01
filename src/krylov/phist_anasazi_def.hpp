@@ -36,7 +36,7 @@ extern "C" void SUBR(anasazi)(      TYPE(const_linearOp_ptr) A_op, TYPE(const_li
   typedef ghost_densemat MV;
   typedef phist::GhostMV AnasaziMV;
 #elif defined(PHIST_KERNEL_LIB_TPETRA)
-  typedef Tpetra::MultiVector<ST,phist_lidx,phist_gidx,node_type> MV;
+  typedef phist::tpetra::Traits<ST>::mvec_t MV;
   typedef MV AnasaziMV;
 #elif defined(PHIST_KERNEL_LIB_EPETRA)
   typedef Epetra_MultiVector MV; 

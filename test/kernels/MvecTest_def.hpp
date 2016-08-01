@@ -41,7 +41,7 @@ int PHIST_TG_PREFIX(mvecInitializer)(ghost_gidx i, ghost_lidx j, void* vval,void
 #  define RSUBR(xyz) phist_S ## xyz
 #  define RTYPE(xyz) phist_S ## xyz
 # endif
-
+#endif
 
 
 /*! Test fixure. */
@@ -56,6 +56,16 @@ public:
 #ifdef IS_COMPLEX
   RTYPE(mvec_ptr) re_,im_,re_expect_,im_expect_;
 #endif
+
+  static void SetUpTestCase()
+  {
+    VTest::SetUpTestCase();
+  }
+
+  static void TearDownTestCase()
+  {
+    VTest::TearDownTestCase();
+  }
 
   /*! Set up routine.
    */
@@ -98,10 +108,13 @@ public:
   virtual void TearDown() 
   {
 #ifdef IS_COMPLEX
-    if (re_!=NULL) RSUBR(mvec_delete)(re_,&iflag_);
-    if (im_!=NULL) RSUBR(mvec_delete)(im_,&iflag_);
-    if (re_expect_!=NULL) RSUBR(mvec_delete)(re_expect_,&iflag_);
-    if (im_expect_!=NULL) RSUBR(mvec_delete)(im_expect_,&iflag_);
+    if (!problemTooSmall_)
+    {
+      if (re_!=NULL) RSUBR(mvec_delete)(re_,&iflag_);
+      if (im_!=NULL) RSUBR(mvec_delete)(im_,&iflag_);
+      if (re_expect_!=NULL) RSUBR(mvec_delete)(re_expect_,&iflag_);
+      if (im_expect_!=NULL) RSUBR(mvec_delete)(im_expect_,&iflag_);
+    }
 #endif
     VTest::TearDown();
   }
@@ -962,6 +975,8 @@ TEST_F(CLASSNAME,put_func)
   ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec1_,vec2_));
 }
 
+#ifdef IS_COMPLEX
+
 int PHIST_TG_PREFIX(elemFunc_complex)(ghost_gidx i, ghost_lidx j, void* vval,void* last_arg);
 int PHIST_TG_PREFIX(elemFunc_real)(ghost_gidx i, ghost_lidx j, void* vval,void* last_arg);
 int PHIST_TG_PREFIX(elemFunc_imag)(ghost_gidx i, ghost_lidx j, void* vval,void* last_arg);
@@ -989,9 +1004,11 @@ int PHIST_TG_PREFIX(elemFunc_imag)(ghost_gidx i, ghost_lidx j, void* vval,void* 
   *val = (_MT_)i * 3.1415926/8.0 + 1.0/(_MT_)(j+1);
   return 0;
 }
-#endif
+#endif // first instance
+
 TEST_F(CLASSNAME,split_and_combine)
 {
+  if (!typeImplemented_ || problemTooSmall_) return;
   SUBR(mvec_put_func)(vec1_,&PHIST_TG_PREFIX(elemFunc_complex),NULL,&iflag_);
   ASSERT_EQ(0,iflag_);
   RSUBR(mvec_put_func)(re_expect_,&PHIST_TG_PREFIX(elemFunc_real),NULL,&iflag_);

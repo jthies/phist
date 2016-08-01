@@ -21,6 +21,15 @@ namespace phist
   namespace ghost_internal 
   {
 
+    //! this calls ghost_context_create with the given arguments and retries with a proc_weight of 1 if there are empty partitions
+    //! If the matrix source is not NULL (i.e. the matrix is read from disk or created from a row function) 
+    //! gnrows=gncols=0 should be given.
+    void context_create(ghost_context **context, ghost_gidx gnrows, ghost_gidx gncols, 
+        ghost_context_flags_t flags, void *matrixSource, ghost_sparsemat_src srcType, ghost_mpi_comm comm, double proc_weight, int* iflag);
+    
+    //! private helper function to create a vtraits object
+    ghost_densemat_traits phist_default_vtraits();
+    
 
 //! map object for ghost kernel library
 //!                                                                                        
@@ -45,11 +54,114 @@ namespace phist
 //!
 //! The only way to convert an mvec from one map into another is by calling the function
 //! mvec_to_mvec. 
-typedef struct ghost_map
-  {
+class ghost_map
+{
+
+  public:
+
   ghost_context* ctx;
+  ghost_densemat_permutation *perm_local;
+  ghost_densemat_permutation *perm_global;
+  // blueprints for how to create a densemat (mvec) object from this map
   ghost_densemat_traits vtraits_template;
-  } ghost_map;
+  // blueprints for how to create a sparsemat object from this map
+  ghost_sparsemat_traits mtraits_template;
+  
+  ghost_map(ghost_context* ctx_in, ghost_densemat_permuted pt=NONE, bool own_ctx=false)
+  {
+    perm_local=NULL;
+    perm_global=NULL;
+    ctx=ctx_in;
+    ownContext_=own_ctx;
+
+    vtraits_template=phist_default_vtraits();
+    mtraits_template=(ghost_sparsemat_traits)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
+    mtraits_template.flags=GHOST_SPARSEMAT_DEFAULT;
+    if (pt==COLUMN)
+    {
+      // we need to set a few things by hand to make sure we can
+      // check compatibility of maps
+      int me;
+      ghost_rank(&me,ctx->mpicomm);
+      vtraits_template.gnrows=ctx->gnrows;
+      vtraits_template.nrows=ctx->lnrows[me];
+    }
+    else
+    {
+      vtraits_template.gnrows=ctx->gncols;
+      // NOTE: if we have non-square matrices, the number of
+      //       local rows of the vector must be determined  
+      //       differently, for now we leave it at its default
+      //       value (0 or -1, I guess) and let ghost decide.
+      //       such a map can currently not be comapred with
+      //       maps_compatible, however!
+      if (ctx->gncols==ctx->gnrows)
+      {
+        int me;
+        ghost_rank(&me,ctx->mpicomm);
+        vtraits_template.nrows=ctx->lnrows[me];
+      }
+    }
+        
+    if (pt!=NONE && (ctx->perm_local || ctx->perm_global))
+    {
+      vtraits_template.permutemethod=pt;
+      vtraits_template.flags|=GHOST_DENSEMAT_PERMUTED;
+  
+      perm_local=new ghost_densemat_permutation;
+      perm_global=new ghost_densemat_permutation;
+      perm_local->perm=NULL;
+      perm_local->invPerm=NULL;
+      perm_global->perm=NULL;
+      perm_global->invPerm=NULL;
+    }
+    if (pt==ROW)
+    {
+      if (ctx->perm_local) 
+      {
+        perm_local->perm=ctx->perm_local->perm;
+        perm_local->invPerm=ctx->perm_local->invPerm;
+      }
+      if (ctx->perm_global) 
+      {
+        perm_global->perm=ctx->perm_global->perm;
+        perm_global->invPerm=ctx->perm_global->invPerm;
+      }
+    }
+    else if (pt==COLUMN)
+    {
+      if (ctx->perm_local) 
+      {
+        perm_local->perm=ctx->perm_local->colPerm;
+        perm_local->invPerm=ctx->perm_local->colInvPerm;
+      }
+      if (ctx->perm_global) 
+      {
+        perm_global->perm=ctx->perm_global->colPerm;
+        perm_global->invPerm=ctx->perm_global->colInvPerm;
+      }
+    }
+  }
+  
+  ~ghost_map()
+  {
+    if (ownContext_)
+    {
+      ghost_context_destroy(ctx);
+    }
+    // note: the context owns data structures, these
+    // perm objects only have pointers to data in the context,
+    // so we can always allocate the objects without too much 
+    // overhead
+    if (perm_local) delete perm_local;
+    if (perm_global) delete perm_global;
+  }
+  
+  private:
+  
+  bool ownContext_;
+  
+};
 
 
     //! small helper function to preclude integer overflows (ghost allows 64 bit local indices, 
@@ -80,15 +192,6 @@ typedef struct ghost_map
     //! to ghost_context_create (used in phist_map_create and sparseMat construction routines)
     double get_proc_weight(double force_value=-1.0);
 
-    //! this calls ghost_context_create with the given arguments and retries with a proc_weight of 1 if there are empty partitions
-    //! If the matrix source is not NULL (i.e. the matrix is read from disk or created from a row function) 
-    //! gnrows=gncols=0 should be given.
-    void context_create(ghost_context **context, ghost_gidx gnrows, ghost_gidx gncols, 
-        ghost_context_flags_t flags, void *matrixSource, ghost_sparsemat_src srcType, ghost_mpi_comm comm, double proc_weight, int* iflag);
-    
-    //! private helper function to create a vtraits object
-    ghost_densemat_traits phist_default_vtraits();
-    
     //! A Garbage collection for maps as they need to be recreated dynamically with GHOST.
     
     //! Each time someone requests a map from an mvec or sparseMat, a new object is created
@@ -109,9 +212,11 @@ typedef struct ghost_map
 
       public:
       
-        //!
-        ghost_map* new_map(const void* p);
-        //!
+        //! create a new map and associate it with the object pointed to by p
+        ghost_map* new_map(const void* p, ghost_context* ctx=NULL, ghost_densemat_permuted pt=NONE, bool own_ctx=false);
+        //! associate an existing map with the object pointed to by p
+        void add_map(const void* p, ghost_map* m);
+        //! delete all maps associated with the object pointed to by p
         void delete_maps(void* p);
 
       private:

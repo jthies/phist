@@ -25,9 +25,9 @@ template<typename ST>
 class PreconTraits<ST,phist_IFPACK>
 {
 
-  typedef Tpetra::MultiVector<ST,phist_lidx,phist_gidx,node_type> mvec_t;
-  typedef Tpetra::CrsMatrix<ST,phist_lidx,phist_gidx,node_type> sparseMat_t;
-  typedef Ifpack2::Preconditioner<ST,phist_lidx,phist_gidx,node_type> prec_type;
+  typedef typename tpetra::Traits<ST>::mvec_t mvec_t;
+  typedef typename tpetra::Traits<ST>::sparseMat_t sparseMat_t;
+  typedef Ifpack2::Preconditioner<ST,phist_lidx,phist_gidx,tpetra::node_type> prec_type;
   typedef phist::ScalarTraits<ST> st;
 
   public:

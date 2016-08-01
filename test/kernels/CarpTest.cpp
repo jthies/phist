@@ -89,7 +89,7 @@ double MvecsEqualZD(phist_Zmvec* zvec, phist_Dmvec* dvec_r, phist_Dmvec* dvec_i,
   }
   double result_r = TestWithType<double>::ArraysEqual(dval_r,zval_r,nloc_z,nvec_z,lda_r,1,KernelTest::vflag_,relTo);
   double result_i = TestWithType<double>::ArraysEqual(dval_i,zval_i,nloc_z,nvec_z,lda_r,1,KernelTest::vflag_,relTo);
-  if (abs(result_r-1.0)>=abs(result_i-1.0))
+  if (std::abs(result_r-1.0)>=std::abs(result_i-1.0))
   { 
     return result_r; 
   }

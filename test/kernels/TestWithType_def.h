@@ -214,26 +214,22 @@ static _MT_ ArrayEqual(const _ST_* array, int n, int m, phist_lidx lda, phist_li
 }
 
 // a faster variant for multi core CPUs that allows us to test larger cases
-static _MT_ ArrayEqualOMP(const _ST_* array, int n, int m, phist_lidx lda, phist_lidx stride, _ST_ value, bool swap_nm=false)
+static inline _MT_ ArrayEqualOMP(const _ST_* array, int n, int m, phist_lidx lda, phist_lidx stride, _ST_ value, bool swap_nm=false)
 {
-  MT maxval=mt::zero(),maxval_thread=mt::zero();
+  MT maxval=mt::zero();
   MT scal= st::abs(value);
   int N = swap_nm? m: n;
   int M = swap_nm? n: m;
   if (scal==mt::zero()) scal=mt::one();
-#pragma omp parallel private(maxval_thread)
+// Intel produces "multiple definitions of ..." errors for OpenMP clauses here (in a header included multiple times)
+#ifndef __INTEL_COMPILER
+#pragma omp parallel for reduction(max:maxval) schedule(static)
+#endif
+  for (int i=0;i<N*stride;i+=stride)
   {
-#pragma omp for schedule(static)
-    for (int i=0;i<N*stride;i+=stride)
+    for (int j=0; j<M;j++)
     {
-      for (int j=0; j<M;j++)
-      {
-        maxval_thread=mt::max(st::abs(array[j*lda+i]-value)/scal,maxval_thread);
-      }
-    }
-#pragma omp critical
-    {
-      maxval=std::max(maxval,maxval_thread);
+      maxval=mt::max(st::abs(array[j*lda+i]-value)/scal,maxval);
     }
   }
   return (MT)1.0+maxval;
@@ -311,30 +307,26 @@ phist_lidx lda1, phist_lidx lda2, phist_lidx stride, bool swap_n_m=false, _MT_ r
   return mt::one()+maxval;
 }
 
-static _MT_ ArraysEqualWithDifferentLDA_OMP(const _ST_* arr1,const _ST_* arr2, int n, int m, 
+static inline _MT_ ArraysEqualWithDifferentLDA_OMP(const _ST_* arr1,const _ST_* arr2, int n, int m, 
 phist_lidx lda1, phist_lidx lda2, phist_lidx stride, bool swap_n_m=false, _MT_ relTo = mt::zero())
 {
   int N = swap_n_m? m: n;
   int M = swap_n_m? n: m;
-  _MT_ maxval=mt::zero(),maxval_thread=mt::zero();
+  _MT_ maxval=mt::zero();
   std::stringstream ss_deb;
-#pragma omp parallel private(maxval_thread)
+// Intel produces "multiple definitions of ..." errors for OpenMP clauses here (in a header included multiple times)
+#ifndef __INTEL_COMPILER
+#pragma omp parallel for reduction(max:maxval) schedule(static)
+#endif
+  for (int i=0;i<N*stride;i+=stride)
   {
-#pragma omp for schedule(static)
-    for (int i=0;i<N*stride;i+=stride)
+    for (int j=0;j<M;j++)
     {
-      for (int j=0;j<M;j++)
-      {
-        MT mn = st::abs(arr1[j*lda1+i]-arr2[j*lda2+i]);
-        MT pl = relTo;
-        if (pl==mt::zero()) pl = (st::abs(arr1[j*lda1+i])+st::abs(arr2[j*lda2+i]))*(MT)0.5;
-        if (pl==mt::zero()) pl=mt::one();
-        maxval_thread=mt::max(mn/pl,maxval_thread);
-      }
-    }
-#pragma omp critical
-    {
-      maxval=std::max(maxval,maxval_thread);
+      MT mn = st::abs(arr1[j*lda1+i]-arr2[j*lda2+i]);
+      MT pl = relTo;
+      if (pl==mt::zero()) pl = (st::abs(arr1[j*lda1+i])+st::abs(arr2[j*lda2+i]))*(MT)0.5;
+      if (pl==mt::zero()) pl=mt::one();
+      maxval=mt::max(mn/pl,maxval);
     }
   }
   //std::cout << "MAX VAL: "<<maxval<<std::endl;

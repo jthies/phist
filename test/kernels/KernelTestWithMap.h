@@ -12,15 +12,15 @@ public:
 
 static void SetUpTestCase()
 {
+  KernelTest::SetUpTestCase();
+  problemTooSmall_ = mpi_size_ > nglob_;
   // this function may be called by multiple base classes, e.g.
   // by KernelTestWithVectors and KernelTestWithSparseMat, so  
   // do not re-build the map if it has been called already
-  if( defaultMap_ == NULL )
+  if( defaultMap_ == NULL)
   {
-    KernelTest::SetUpTestCase();
 
     phist_map_ptr map;
-    problemTooSmall_ = mpi_size_ > nglob_;
     iflag_=PHIST_SPARSEMAT_QUIET;
     phist_map_create(&map,comm_,nglob_,&iflag_);
     EXPECT_EQ(0,iflag_);

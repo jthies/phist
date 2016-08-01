@@ -15,29 +15,16 @@ PRGENV="gcc-5.1.0-openmpi" # intel-13.0.1-mpich gcc-4.9.2-openmpi
 FLAGS="default" # optional-libs
 ADD_CMAKE_FLAGS="-DPHIST_BENCH_LARGE_N=100000" #optional CMake flags # LARGE_N set to small value to speed up build jobs!
 VECT_EXT="native"
+TRILINOS_VERSION="11.12.1"
 # list of modules to load
 MODULES_BASIC="cmake ccache cppcheck lapack gcovr doxygen"
 # GCC_SANITIZE flag for debug mode, disabled for CUDA
 SANITIZER="address"
 
-declare -A MODULES_KERNELS
-MODULES_KERNELS=( 
-  ["builtin"]=""
-  ["ghost"]="gsl"
-  ["epetra"]="trilinos/trilinos-12.6.1"
-  ["tpetra"]="trilinos/trilinos-11.12.1" )
-
-declare -A MODULES_KERNELS_OPTIONAL
-MODULES_KERNELS_OPTIONAL=(
-  ["builtin"]="ColPack parmetis trilinos"
-  ["ghost"]="ColPack trilinos/trilinos-11.12.1"
-  ["epetra"]=""
-  ["tpetra"]="" )
-
 
 ## parse command line arguments
 usage() { echo "Usage: $0 [-k <builtin|ghost|epetra|tpetra>] [-e <PrgEnv/module-string>] [-f <optional-libs>]"; \
-          echo "       [-c <cmake flags to be added>] [-v <SSE|AVX|AVX2|CUDA>]" 1>&2; exit 1; }
+          echo "       [-c <cmake flags to be added>] [-v <SSE|AVX|AVX2|CUDA>] [-t <trilinos version>]" 1>&2; exit 1; }
 
 function update_error { 
 if [[ "${error}" = "0" ]]; then
@@ -45,7 +32,7 @@ if [[ "${error}" = "0" ]]; then
 fi
 }
 
-while getopts "k:e:f:c:v:h" o; do
+while getopts "k:e:f:c:v:t:h" o; do
     case "${o}" in
         k)
             KERNELS=${OPTARG}
@@ -63,6 +50,9 @@ while getopts "k:e:f:c:v:h" o; do
         v)
             VECT_EXT=${OPTARG}
             ;;
+        t)
+            TRILINOS_VERSION=${OPTARG}
+            ;;
         h)
             usage
             ;;
@@ -74,6 +64,21 @@ done
 shift $((OPTIND-1))
 
 echo "Options: KERNEL_LIB=${KERNELS}, PRGENV=${PRGENV}, FLAGS=${FLAGS}, ADD_CMAKE_FLAGS='${ADD_CMAKE_FLAGS}', VECT_EXT=${VECT_EXT}"
+
+declare -A MODULES_KERNELS
+MODULES_KERNELS=( 
+  ["builtin"]=""
+  ["ghost"]="gsl"
+  ["epetra"]="trilinos/trilinos-${TRILINOS_VERSION}"
+  ["tpetra"]="trilinos/trilinos-${TRILINOS_VERSION}" )
+
+declare -A MODULES_KERNELS_OPTIONAL
+MODULES_KERNELS_OPTIONAL=(
+  ["builtin"]="ColPack parmetis trilinos"
+  ["ghost"]="ColPack trilinos/trilinos-11.12.1"
+  ["epetra"]=""
+  ["tpetra"]="" )
+
 
 ## prepare system for compilation
 # configure modulesystem

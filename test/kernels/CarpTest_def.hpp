@@ -131,11 +131,13 @@ public:
         MvecCopyX2Z(x_vec3_,z_vec3_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
-        phist_ZsparseMat_create_fromRowFunc(&z_A_,comm_,_N_,_N_,7,&ZMATFUNC,NULL,&iflag_);
+        // note: we make sure the complex matrices use the same map as the real ones, this sames some
+        // trouble when comparing result vectors.
+        phist_ZsparseMat_create_fromRowFuncAndMap(&z_A_,map_,7,&ZMATFUNC,NULL,&iflag_);
         ASSERT_EQ(0,iflag_);
-        phist_ZsparseMat_create_fromRowFunc(&z_A_shift0_,comm_,_N_,_N_,7,&ZMATFUNC,&sigma_[0],&iflag_);
+        phist_ZsparseMat_create_fromRowFuncAndMap(&z_A_shift0_,map_,7,&ZMATFUNC,&sigma_[0],&iflag_);
         ASSERT_EQ(0,iflag_);
-        phist_ZsparseMat_create_fromRowFunc(&z_A_shift1_,comm_,_N_,_N_,7,&ZMATFUNC,&sigma_[1],&iflag_);
+        phist_ZsparseMat_create_fromRowFuncAndMap(&z_A_shift1_,map_,7,&ZMATFUNC,&sigma_[1],&iflag_);
         ASSERT_EQ(0,iflag_);
 
       }
@@ -451,7 +453,7 @@ protected:
   ASSERT_EQ(0,iflag_);
 
     ASSERT_REAL_EQ(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_));
-    ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),5.0e-11);
+    ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),1.0e-9);
   }
   
   // identity matrix (only used for checking if CARP is implemented at all right now)
@@ -752,7 +754,7 @@ TEST_F(CLASSNAME, x_mvec_vadd_mvec)
   ASSERT_EQ(0,iflag_);
     
   ASSERT_NEAR(1.0,MvecsEqualZD(z_vec1_, x_vec1_->v_, x_vec1_->vi_),mt::eps());
-  ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),1000*VTest::releps());
+  ASSERT_NEAR(1.0,MvecsEqualZD(z_vec2_, x_vec2_->v_, x_vec2_->vi_),1.0e-9);
   
 }
 

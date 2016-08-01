@@ -538,16 +538,20 @@ void SUBR(mvec_QR)(TYPE(mvec_ptr) V,
 //! in ghost and how the test problems in essex/physics are defined.
 //!
 //! optional flags:
-//! * PHIST_SPARSEMAT_PERM_GLOBAL
-//! * PHIST_SPARSEMAT_DIST2_COLOR (feature required for CARP-CG)
+//! * PHIST_SPARSEMAT_PERM_LOCAL/GLOBAL
+//! * PHIST_SPARSEMAT_PERM_OPT_SINGLE/BLOCKSPMVM
+//! * PHIST_SPARSEMAT_OPT_CARP
+//! * PHIST_SPARSEMAT_DIST2_COLOR (if the kernel lib supports it)
 //!
 void SUBR(sparseMat_create_fromRowFunc)(TYPE(sparseMat_ptr) *A, phist_const_comm_ptr comm,
         phist_gidx nrows, phist_gidx ncols, phist_lidx maxnne,
         phist_sparseMat_rowFunc rowFunPtr, void* last_arg, int *iflag);
 
 //! create a sparse matrix from a row func and use a distribution prescribed by a given map
-void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA, phist_const_comm_ptr vcomm,
-        phist_const_map_ptr map,
+//!
+//! optional flags: as fromRowFunc, plus:
+//! * PHIST_SPARSEMAT_OWN_MAPS to pass ownership of the given map to the matrix
+void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA, phist_const_map_ptr map,
         phist_lidx maxnne,phist_sparseMat_rowFunc rowFunPtr,void* last_arg,
         int *iflag);
                 

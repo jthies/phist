@@ -216,11 +216,17 @@ int get_perm_flag(int iflag, int outlev)
       return vtraits;
     }  
     
-    ghost_map* MapGarbageCollector::new_map(const void* p)
+    ghost_map* MapGarbageCollector::new_map(const void* p,
+        ghost_context* ctx, ghost_densemat_permuted pt, bool own_ctx)
     {
-      ghost_map* m = new ghost_map;
-      maps_[p].push_back(m);
+      ghost_map* m = new ghost_map(ctx,pt,own_ctx);
+      add_map(p,m);
       return m;
+    }
+
+    void MapGarbageCollector::add_map(const void* p, ghost_map* m)
+    {
+      maps_[p].push_back(m);
     }
 
     void MapGarbageCollector::delete_maps(void* p)
@@ -413,8 +419,6 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(MPI_Comm,comm,vcomm,*iflag);
 
-  ghost_map* map = new ghost_map;
-
   // try to create the context object. We check wether
   // the weighting for the partitioning gives a feasible context. If the STREAM benchmark
   // returns very different values on the different MPI processes and the map is tiny (as
@@ -423,11 +427,13 @@ extern "C" void phist_map_create(phist_map_ptr* vmap, phist_const_comm_ptr vcomm
   // If it still fails we return with an error code/message.
   double proc_weight=get_proc_weight();
 
-  PHIST_CHK_IERR(phist::ghost_internal::context_create(&map->ctx,nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,
+  ghost_context *ctx;
+  PHIST_CHK_IERR(phist::ghost_internal::context_create(&ctx,nglob, nglob, GHOST_CONTEXT_DEFAULT, NULL,
             GHOST_SPARSEMAT_SRC_NONE, *comm,proc_weight,iflag),*iflag);
 
-  map->vtraits_template=phist_default_vtraits();
-  
+  // create map with default context, no permutation and owning the context object.
+  ghost_map* map = new ghost_map(ctx,NONE,true);
+std::cout << "Created context with " << map->ctx->gnrows << " global rows!\n";  
   // in ghost terminology, we look at LHS=A*RHS, the LHS is based on the
   // row distribution of A, the RHS has halo elements to allow importing from
   // neighbors. It is not possible to construct an RHS without a matrix, so if
@@ -447,8 +453,6 @@ extern "C" void phist_map_delete(phist_map_ptr vmap, int *iflag)
 {
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(ghost_map,map,vmap,*iflag);
-  // should be safe if calling order is respected? (e.g. create map, create stuff with map, destroy stuff, destroy map)
-  ghost_context_destroy(map->ctx);
   delete map;
   vmap=NULL;
 }
@@ -458,6 +462,12 @@ extern "C" void phist_map_get_comm(phist_const_map_ptr vmap, phist_const_comm_pt
 {
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
+  if (map->ctx==NULL)
+  {
+    // we may one day have maps without contexts, but right now we need them for functions like this one
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
   *vcomm = (phist_const_comm_ptr)(&map->ctx->mpicomm);
 }
 
@@ -480,7 +490,12 @@ extern "C" void phist_map_get_global_length(phist_const_map_ptr vmap, phist_gidx
 {
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
-  int me;
+  if (map->ctx==NULL)
+  {
+    // we may one day have maps without contexts, but right now we need them for functions like this one
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
   *nglob=map->ctx->gnrows;
 }
 
@@ -489,6 +504,12 @@ extern "C" void phist_map_get_ilower(phist_const_map_ptr vmap, phist_gidx* ilowe
 {
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
+  if (map->ctx==NULL)
+  {
+    // we may one day have maps without contexts, but right now we need them for functions like this one
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
   int me;
   ghost_rank(&me,map->ctx->mpicomm);
   *ilower = map->ctx->lfRow[me];
@@ -498,6 +519,12 @@ extern "C" void phist_map_get_iupper(phist_const_map_ptr vmap, phist_gidx* iuppe
 {
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_map,map,vmap,*iflag);
+  if (map->ctx==NULL)
+  {
+    // we may one day have maps without contexts, but right now we need them for functions like this one
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
   int me;
   ghost_rank(&me,map->ctx->mpicomm);
   *iupper = map->ctx->lfRow[me]+map->ctx->lnrows[me]-1;
@@ -511,63 +538,103 @@ extern "C" void phist_maps_compatible(phist_const_map_ptr vmap1, phist_const_map
   *iflag=-1;
   // same object?
   if (map1==map2) {*iflag=0; return;}
-  // can only be compatible with same context in GHOST
-  if (map1->ctx!=map2->ctx) {*iflag=-1; return;}
+  
   const ghost_densemat_traits& vtraits1 = map1->vtraits_template;
   const ghost_densemat_traits& vtraits2 = map2->vtraits_template;
-  const ghost_permutation *lperm = map1->ctx->perm_local;
-  const ghost_permutation *gperm = map1->ctx->perm_global;
   
-  if (&vtraits1==&vtraits2)
+  int permuted1 = vtraits1.flags&GHOST_DENSEMAT_PERMUTED;
+  int permuted2 = vtraits2.flags&GHOST_DENSEMAT_PERMUTED;
+
+  const ghost_context *ctx1 = map1->ctx;  
+  const ghost_context *ctx2 = map2->ctx;
+  
+  const ghost_densemat_permutation *lperm1 = map1->perm_local;
+  const ghost_densemat_permutation *gperm1 = map1->perm_global;
+  const ghost_densemat_permutation *lperm2 = map2->perm_local;
+  const ghost_densemat_permutation *gperm2 = map2->perm_global;
+  
+  // compare contexts and permutation objects as far as we need the info to be consistent
+  if (ctx1!=ctx2)
   {
-    *iflag=0;
-    return;
-  }
-  // since ghost_vtraits doesn't implement operator==, we have to compare manually
-  if (vtraits1.nrows == vtraits2.nrows                      &&
-      vtraits1.nrowshalo == vtraits2.nrowshalo              &&
-      vtraits1.flags == vtraits2.flags                      &&
-      vtraits1.permutemethod == vtraits2.permutemethod)
-  {
-    // these maps will create vectors with the same distribution and permutation
-    *iflag=0;
-    return;
-  }
-  // check if the maps are locally or globally permuted versions of the same index space
-  if (vtraits1.permutemethod != vtraits2.permutemethod)
-  {
-    // this means e.g. that the one is a row distribution and the other a column distribution,
-    // and we currently do not allow converting between them unless they are the same 
-    // (as for a symmetrically permuted sparse matrix)
-    if ( (lperm && lperm->method!=GHOST_PERMUTATION_SYMMETRIC) ||
-         (gperm && gperm->method!=GHOST_PERMUTATION_SYMMETRIC) )
+    if ( ctx1->gnrows  != ctx2->gnrows  ||
+         ctx1->mpicomm != ctx2->mpicomm )
     {
       *iflag=-1;
       return;
     }
   }
-  if ( (vtraits1.flags&GHOST_DENSEMAT_PERMUTED) ==
-       (vtraits2.flags&GHOST_DENSEMAT_PERMUTED) )
+  
+  // check if the two maps contain the same vector permutation info.
+  // If not, this is not a game breaker: the maps are still compatible
+  // if at most one of them is permuted.
+  bool same_lperm=true;
+  bool same_gperm=true;
+  
+  if (lperm1!=lperm2)
   {
-    // should be same permutation
+    if ( lperm1==NULL || lperm2==NULL    ||
+       lperm1->perm!=lperm2->perm        ||
+       lperm1->invPerm!=lperm2->invPerm )
+    {
+      same_lperm=false;
+    }
+  }
+
+  if (gperm1!=gperm2)
+  {
+    if ( gperm1==NULL || gperm2==NULL    ||
+       gperm1->perm!=gperm2->perm        ||
+       gperm1->invPerm!=gperm2->invPerm )
+    {
+      same_gperm=false;
+    }
+  }
+
+  if (!(permuted1||permuted2))
+  {
     *iflag=0;
     return;
   }
+
+  if ( (same_lperm==false || same_gperm==false) &&
+       (permuted1&&permuted2) )
+  {
+    *iflag=-1;
+    return;
+  }
+    
+  // contexts, permutations and traits/flags are the same
+  if (&vtraits1==&vtraits2 && same_lperm && same_gperm)
+  {
+    // this means if the vectors are permuted, they are permuted the same way and do
+    // not need to be permuted via mvec_to_mvec in order to be compatible.
+    *iflag=0;
+    return;
+  }
+
+  // since ghost_vtraits doesn't implement operator==, we have to compare manually
+  if (vtraits1.nrows == vtraits2.nrows &&
+      permuted1      == permuted2      &&
+      same_lperm     && same_gperm)
+  {
+    // these maps will create vectors with the same distribution and permutation
+    *iflag=0;
+    return;
+  }
+  
+  // one of the vectors is permuted, the other isn't. Check if the permutation is global or local
+  if (gperm1!=NULL || gperm2!=NULL) 
+  {
+    *iflag=2;
+  }
+  else if (lperm1!=NULL || lperm2!=NULL)
+  {
+    *iflag=1;
+  }
   else
   {
-    // one of the vectors is permuted, the other isn't. Check if the permutation is global or local
-    if (gperm!=NULL) 
-    {
-      *iflag=2;
-    }
-    else if (lperm!=NULL)
-    {
-      *iflag=1;
-    }
-    else
-    {
-      *iflag=0;
-    }
+    // I think we never should get to this point!
+    *iflag=-2;
   }
   return;
 }

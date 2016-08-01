@@ -310,9 +310,9 @@ elseif (CMAKE_C_COMPILER_ID STREQUAL "Intel")
 
   if( PHIST_ENABLE_OPENMP )
     set(PHIST_HAVE_OPENMP 1)
-    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -openmp")
-    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -openmp")
-    set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -openmp")
+    set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}       -qopenmp")
+    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}     -qopenmp")
+    set (CMAKE_Fortran_FLAGS  "${CMAKE_Fortran_FLAGS} -qopenmp")
   endif()
 
   if (PHIST_BUILD_MIC)
@@ -955,7 +955,7 @@ if( PHIST_PERFCHECK )
   option(PHIST_PERFCHECK_REALISTIC "Switch from ideal performance predictions to more realistic ones (e.g. for views)!" OFF)
 endif()
 
-set(PHIST_PEAK_FLOPS_CPU 442e9 CACHE STRING "Peak GFlop/s rate of the CPU component (for PERFCHECK only)")
+set(PHIST_PEAK_FLOPS_CPU 884e9 CACHE STRING "Peak GFlop/s rate of the CPU component (for PERFCHECK only)")
 set(PHIST_PEAK_FLOPS_GPU 1.43e12 CACHE STRING "Peak GFlop/s rate of the GPU component (for PERFCHECK only)")
 
 set(INCLUDE_FLAGS "")

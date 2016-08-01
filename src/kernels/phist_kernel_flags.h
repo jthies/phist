@@ -33,6 +33,12 @@
 #define PHIST_SPARSEMAT_OPT_BLOCKSPMVM 16
 #define PHIST_SPARSEMAT_OPT_CARP 32
 #define PHIST_SPARSEMAT_QUIET 64
+/* if you pass pointers to maps to a function to create/read a matrix,  */
+/* this flag makes the matrix responsible for deleting the map if it is */
+/* deleted itself.                                                      */
+/* If the creating function has no maps as arguments, they are created  */
+/* and owned by the matrix automatically.                               */
+#define PHIST_SPARSEMAT_OWN_MAPS 128
 
 #define PHIST_SPARSEMAT_FLAGS_DESCRIPTION \
 "     PHIST_IFLAG_DEFAULT 0 \n" \
