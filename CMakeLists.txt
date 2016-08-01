@@ -508,7 +508,7 @@ elseif (PHIST_KERNEL_LIB STREQUAL "ghost")
   set(PHIST_USE_GHOST_TASKS 1 CACHE STRING "execute all kernels as GHOST tasks, recommended for performance, but it makes debugging easier to turn it off from time to time")
 
   set(PHIST_SELL_C -1 CACHE INTEGER "chunk size C for the SELL-C-sigma format (-1: automatic choice)")
-  set(PHIST_SELL_SIGMA 1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format (-1: automatic choice)")
+  set(PHIST_SELL_SIGMA -1 CACHE INTEGER "sorting scope sigma for the SELL-C-sigma format (-1: automatic choice)")
 
   if (PHIST_USE_SOLVER_TPLS)
     list(APPEND OPTIONAL_TRILI_PKG "Anasazi")
