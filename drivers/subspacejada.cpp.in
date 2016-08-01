@@ -173,7 +173,7 @@ else
   // which can handle matrix files like name.mm, name.bin etc. but also our
   // favorite test cases spinSZ<N>, graphene<N> etc.
   sparseMat_ptr A = NULL;
-  iflag=PHIST_SPARSEMAT_PERM_GLOBAL;
+  iflag=PHIST_SPARSEMAT_PERM_GLOBAL|PHIST_SPARSEMAT_PERM_LOCAL;
   if( opts.innerSolvBlockSize == 1 )
     iflag = iflag | PHIST_SPARSEMAT_OPT_SINGLESPMVM;
   else

@@ -76,6 +76,12 @@ class ghost_map
 
     vtraits_template=phist_default_vtraits();
     mtraits_template=(ghost_sparsemat_traits)GHOST_SPARSEMAT_TRAITS_INITIALIZER;
+    // we set C=sigma=-1 to indicate that the map has not been used for creating any matrix.
+    // The functions that actually generate the maps (mvec/sparseMat_get*map) will overrule 
+    // this setting, for instance, if you create a sparseMat from a map obtained by an mvec,
+    // the sparseMat can not be sorted globally or locally anymore because it has to be
+    mtraits_template.C=-2;
+    mtraits_template.sortScope=-2;
     mtraits_template.flags=GHOST_SPARSEMAT_DEFAULT;
     if (pt==COLUMN)
     {

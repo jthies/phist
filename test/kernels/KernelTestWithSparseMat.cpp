@@ -1,5 +1,7 @@
 #include "KernelTestWithSparseMat.h"
 
+using namespace phist::testing;
+
 extern "C" {
 
 int phist_Sidfunc(ghost_gidx row, ghost_lidx* len, ghost_gidx* cols, void* vals, void *arg)

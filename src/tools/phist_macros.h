@@ -202,7 +202,7 @@ PHIST_OUT(PHIST_WARNING,"Warning, function %s is DEPRECATED.\n(file %s, line %d)
 # ifdef PHIST_TIMEMONITOR
 #   include "phist_timemonitor.hpp"
 # endif
-# ifdef PHIST_KERNEL_LIB_GHOST
+# if defined(PHIST_KERNEL_LIB_GHOST) && PHIST_USE_GHOST_TASKS
 #   include "ghost/task.h"
 #   define PHIST_GHOST_CHK_IN_TASK(s, iflag) { \
       ghost_task_t *curtask = NULL; \

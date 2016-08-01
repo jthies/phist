@@ -12,6 +12,9 @@
 
 #ifndef DONT_INSTANTIATE
 
+using namespace phist::testing;
+
+
 /*! Test fixure. */
 class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
                  public virtual KernelTestWithVectors<_ST_,_N_,_NV_,_USE_VIEWS_,3>,
@@ -497,6 +500,39 @@ protected:
     }
   }
 #endif
+
+  TEST_F(CLASSNAME,A1_fromRowFunc)
+  {
+    TYPE(sparseMat_ptr) A=NULL;
+    iflag_=PHIST_SPARSEMAT_QUIET;
+    SUBR(sparseMat_create_fromRowFunc)(&A,comm_,_N_,_N_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    // check that AX=X
+    SUBR(mvec_random)(vec1_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_put_value)(vec2_,(_ST_)99.9,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sparseMat_times_mvec)(st::one(),A,vec1_,st::zero(),vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(1.0,MvecsEqual(vec1_,vec2_),100*mt::eps());
+  }
+
+  TEST_F(CLASSNAME,A1_fromRowFuncAndMap)
+  {
+    TYPE(sparseMat_ptr) A=NULL;
+    iflag_=PHIST_SPARSEMAT_QUIET;
+    SUBR(sparseMat_create_fromRowFuncAndMap)(&A,map_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    // check that AX=X
+    SUBR(mvec_random)(vec1_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvec_put_value)(vec2_,(_ST_)99.9,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sparseMat_times_mvec)(st::one(),A,vec1_,st::zero(),vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(1.0,MvecsEqual(vec1_,vec2_),100*mt::eps());
+  }
+
 #endif // MATNAME_speye
 
 #if MATNAME == MATNAME_sprandn
@@ -1117,57 +1153,6 @@ protected:
 #endif
 #endif
 
-#ifdef FIRST_TIME
-namespace
-{
-int PHIST_TG_PREFIX(idfunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
-{
-  *len=1;
-  _ST_* val = (_ST_*)vval;
-  val[0]=(_ST_)1.0;
-  cols[0]=row;
-  return 0;
-}
-
-int PHIST_TG_PREFIX(some_rowFunc)(ghost_gidx row, ghost_lidx *len, ghost_gidx* cols, void* vval, void *arg)
-{
-#include "phist_std_typedefs.hpp"
-  _ST_* val = (_ST_*)vval;
-
-  *len=5;
-  for (int i=0; i<*len; i++)
-  {
-    cols[i]=(ghost_gidx)(((row+i-2)*3)%_N_);
-    if (cols[i]<0) cols[i]+=_N_;
-    val[i]=(ST)(i+1)/(ST)(row+1) + st::cmplx_I()*(ST)(row-cols[i]);
-  }
-  return 0;
-}
-
-  int PHIST_TG_PREFIX(mvec123func)(ghost_gidx i, ghost_lidx j, void* val, void* last_arg)
-  {
-    _ST_* v= (_ST_*)val;
-    int *int_arg=(int*)last_arg;
-    int N  = int_arg[0];
-    int NV = int_arg[1];
-    *v = (_ST_)(i+1 + N*j);
-    return 0;
-  }
-
-  int PHIST_TG_PREFIX(mvec321func)(ghost_gidx i, ghost_lidx j, void* val, void* last_arg)
-  {
-    _ST_* v= (_ST_*)val;
-    int *int_arg=(int*)last_arg;
-    int N  = int_arg[0];
-    int NV = int_arg[1];
-    *v = (_ST_)((N-i) + N*(NV-(j+1)));
-    return 0;
-  }
-
-
-}
-#endif
-
 
 #if MATNAME == MATNAME_sprandn
 TEST_F(CLASSNAME,mvecT_times_mvec_after_spmvm)
@@ -1308,8 +1293,10 @@ TEST_F(CLASSNAME,compare_with_rowFunc)
 TEST_F(CLASSNAME,fromRowFuncAndMap)
 {
   TYPE(sparseMat_ptr) A1=NULL, A2=NULL;
+  iflag_=PHIST_SPARSEMAT_QUIET;
   SUBR(sparseMat_create_fromRowFuncAndMap)(&A1,defaultMap_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
   ASSERT_EQ(0,iflag_);
+    iflag_=PHIST_SPARSEMAT_QUIET;
   SUBR(sparseMat_create_fromRowFuncAndMap)(&A2,map_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
   ASSERT_EQ(0,iflag_);
   phist_const_map_ptr domain1, domain2, range1, range2, row1, row2, col1, col2;

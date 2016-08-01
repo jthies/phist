@@ -68,7 +68,7 @@
  */
 
 
-#if defined(__cplusplus) && defined(PHIST_HAVE_GHOST) && defined(PHIST_HAVE_CXX11_LAMBDAS)
+#if defined(__cplusplus) && defined(PHIST_HAVE_GHOST) && defined(PHIST_HAVE_CXX11_LAMBDAS) && (PHIST_USE_GHOST_TASKS)
 #include <ghost.h>
 #include <ghost/machine.h>
 
@@ -262,10 +262,10 @@ static inline void phist_wait_ghost_task(ghost_task** task, int* iflag)
 
 
 #define PHIST_TASK_DECLARE(taskName)
-#define PHIST_TASK_BEGIN(taskName)
-#define PHIST_TASK_BEGIN_SMALLDETERMINISTIC(taskName)
-#define PHIST_TASK_END(task_ierr)
-#define PHIST_TASK_END_NOWAIT(task_ierr)
+#define PHIST_TASK_BEGIN(taskName) {
+#define PHIST_TASK_BEGIN_SMALLDETERMINISTIC(taskName) {
+#define PHIST_TASK_END(task_ierr) }
+#define PHIST_TASK_END_NOWAIT(task_ierr) }
 #define PHIST_TASK_WAIT(taskName,task_ierr)
 
 #define PHIST_TASK_POST_STEP(task_ierr)

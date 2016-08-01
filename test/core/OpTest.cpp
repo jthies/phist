@@ -31,6 +31,7 @@
 #endif
 
 using namespace testing;
+using namespace phist::testing;
 
 #define CLASSFILE_DEF "OpTest_def.hpp"
 

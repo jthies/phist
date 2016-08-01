@@ -1,5 +1,7 @@
 #include "../tools/TestHelpers.h"
 
+using namespace phist::testing;
+
 extern "C" {
 
 // prototype for a useful function from the driver_utils, we can't include
