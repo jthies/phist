@@ -27,6 +27,12 @@ typedef struct TYPE(linearOp) {
  //! pointer to function for computing Y=(A-sigma[j]B)*X[j]+beta*Y[j]
  void (*apply_shifted)(_ST_ alpha, const void* A, _ST_ const * sigma,
         TYPE(const_mvec_ptr) X, _ST_ beta,  TYPE(mvec_ptr) Y, int* iflag);
+  //! apply operator and compute inner products with in- and output vector
+void (*fused_apply_mvTmv)(_ST_ alpha, const void* A, TYPE(const_mvec_ptr)  V,
+                             _ST_ beta,                 TYPE(mvec_ptr)        W,
+                             TYPE(sdMat_ptr) WtW, TYPE(sdMat_ptr) VtW,
+                             int* iflag);
+
 } TYPE(linearOp);
 
 typedef TYPE(linearOp)* TYPE(linearOp_ptr);

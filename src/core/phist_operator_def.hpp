@@ -11,6 +11,7 @@ void SUBR(linearOp_wrap_sparseMat)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_p
   op->apply = &SUBR(sparseMat_times_mvec);
   op->applyT = &SUBR(sparseMatT_times_mvec);
   op->apply_shifted = &SUBR(sparseMat_times_mvec_vadd_mvec);
+  op->fused_apply_mvTmv = &SUBR(fused_spmv_mvTmv);
   return;
 }
 
@@ -22,6 +23,20 @@ void SUBR(private_idOp_apply)(_ST_ alpha, const void* A, TYPE(const_mvec_ptr) X,
   *iflag=0;
   PHIST_TOUCH(A)
   SUBR(mvec_add_mvec)(alpha,X,beta,Y,iflag);
+}
+
+//
+void SUBR(private_idOp_fused_apply_mvTmv)(_ST_ alpha, const void* A, TYPE(const_mvec_ptr) X,
+        _ST_ beta, TYPE(mvec_ptr) Y, TYPE(sdMat_ptr) YtX, TYPE(sdMat_ptr) YtY, int* iflag)
+{
+#include "phist_std_typedefs.hpp"
+  int iflag_in=*iflag;
+  *iflag=0;
+  PHIST_TOUCH(A)
+  PHIST_CHK_IERR(SUBR(mvec_add_mvec)(alpha,X,beta,Y,iflag),*iflag);
+  *iflag=iflag_in;
+  if (YtX!=NULL) PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Y,X,st::zero(),YtX,iflag),*iflag);
+  if (YtY!=NULL) PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Y,Y,st::zero(),YtY,iflag),*iflag);
 }
 
 //
@@ -45,6 +60,7 @@ void SUBR(linearOp_identity)(TYPE(linearOp_ptr) op, int* iflag)
   op->apply = &SUBR(private_idOp_apply);
   op->applyT = &SUBR(private_idOp_apply);
   op->apply_shifted = &SUBR(private_idOp_apply_shifted);
+  op->fused_apply_mvTmv = &SUBR(private_idOp_fused_apply_mvTmv);
 }
 
 } // extern "C"
