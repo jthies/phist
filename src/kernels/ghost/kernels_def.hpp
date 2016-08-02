@@ -1,5 +1,6 @@
 #include "phist_config.h"
 #include "ghost/config.h"
+#include "ghost/util.h"
 
 #ifdef TEST_MVEC_MAPS_SAME
 #undef TEST_MVEC_MAPS_SAME
@@ -2051,23 +2052,21 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
 
   ghost_context *ctx = map->ctx;
 
+  // TODO: introduce ghost functions context_comm_initialized() and context_clone() etc.
   if (map->ctx->wishlist!=NULL)
   {
-    PHIST_SOUT(PHIST_WARNING,"NOTE: You are creating a new sparseMat with a context that was used before or is shared.\n"
-                             "      This currently will only work if the new matrix has the same sparsity pattern!\n"
-                             "      Due to ghost issue #273 this will currently fail in any case, so we copy the  \n"
-                             "      context at this point and re-initialize it.                                   \n"
-                             "      (in file %s, line %d)\n",__FILE__,__LINE__);
-
+    int me;
     // Clone the context without the communication data structures
     //       (but with the complete permutation info)
+    ghost_rank(&me,map->ctx->mpicomm);
+    ghost_lidx nrows=map->ctx->lnrows[me];
     PHIST_CHK_IERR(context_create(&ctx,map->ctx->gnrows,map->ctx->gncols,
         map->ctx->flags,&src,GHOST_SPARSEMAT_SRC_FUNC,map->ctx->mpicomm,map->ctx->weight,iflag),*iflag);
-    
+    // share permutation info with the original context
+    ctx->perm_local=map->ctx->perm_local;
+    ctx->perm_global=map->ctx->perm_global;
   }
 
-
-  
   ghost_sparsemat* mat = NULL;
 
   ghost_sparsemat_traits mtraits=map->mtraits_template;
@@ -2076,11 +2075,8 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
 
   if (!own_map && (mtraits.sortScope>1 || mtraits.flags&GHOST_SPARSEMAT_PERMUTE) )
   {
-    PHIST_SOUT(PHIST_WARNING,"NOTE: we do not fully support the situation right now where sigma>1 or other permutations\n"
-                             "      are used, and multiple matrices are created. This may lead to separately per-\n"
-                             "      muted matrices with incompatible row and/or column ordering.\n");
-    // we probably have to disable sorting like this, but I'm not sure if an existing
-    // permutation in the context is then used in ghost
+    // we have to disable sorting for now and reset the flags after the matrix has been created with the
+    // given permutations.
     mtraits.flags = (ghost_sparsemat_flags)(mtraits.flags & ~GHOST_SPARSEMAT_PERMUTE);
     mtraits.sortScope=1;
   }
@@ -2089,13 +2085,19 @@ extern "C" void SUBR(sparseMat_create_fromRowFuncAndMap)(TYPE(sparseMat_ptr) *vA
 
   mtraits.datatype = st::ghost_dt;
   PHIST_CHK_GERR(ghost_sparsemat_create(&mat,ctx,&mtraits,1),*iflag);                               
+  mtraits.flags=map->mtraits_template.flags;
+  mtraits.sortScope=map->mtraits_template.sortScope;
   
   if (own_map)
   {
     // the user explicitly asked us to keep track of the map's deletion, so we can do a const cast here
     mapGarbageCollector.add_map(mat, (ghost_map*)map);
   }
-
+  else if (ctx!=map->ctx)
+  {
+    // register a new map that owns the context ctx, but *not* the permutations
+    mapGarbageCollector.new_map(mat,ctx,NONE,true,false);
+  }
   PHIST_CHK_GERR(mat->fromRowFunc(mat,&src),*iflag);
 //#if PHIST_OUTLEV >= PHIST_VERBOSE
   char *str;

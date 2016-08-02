@@ -217,7 +217,7 @@ int get_perm_flag(int iflag, int outlev)
     }  
     
     ghost_map* MapGarbageCollector::new_map(const void* p,
-        ghost_context* ctx, ghost_densemat_permuted pt, bool own_ctx)
+        ghost_context* ctx, ghost_densemat_permuted pt, bool own_ctx, bool own_perm)
     {
       ghost_map* m = new ghost_map(ctx,pt,own_ctx);
       add_map(p,m);
