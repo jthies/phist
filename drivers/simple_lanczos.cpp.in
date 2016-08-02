@@ -78,5 +78,6 @@ int main(int argc, char** argv)
   PHIST_MAIN_TASK_END
 
   PHIST_ICHK_IERR(phist_kernels_finalize(&iflag),iflag);
-  return iflag;
+  
+	return iflag;
 }

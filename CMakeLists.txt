@@ -83,6 +83,10 @@ option(PHIST_USE_TRILINOS_TPLS
         "enable/disable using any optional Trilinos libraries like Zoltan, Belos, Kokkos etc."
         ON)
 
+# option for using checkpoint/restart + automatic fault-tolerance features
+option(PHIST_USE_CPAFT
+		"enables/desables the use of checkpoint/restart and auto FT features using CPAFT"
+		OFF)
 
 ########################################################################
 # Lists of libraries, executables, tests
@@ -712,7 +716,7 @@ set (PHIST_CORE_SOURCE ${PROJECT_SOURCE_DIR}/src/core/phist_operator.cpp
                        ${PROJECT_SOURCE_DIR}/src/core/phist_kpm.cpp
                        )
 set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.cpp
-                         ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos.cpp
+				                 ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedgmres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_blockedminres.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_belosS.cpp
@@ -725,6 +729,7 @@ set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.c
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziZ.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp
                          )
+
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp
@@ -756,6 +761,15 @@ include_directories(${PROJECT_SOURCE_DIR}/src/jada)
 include_directories(${PROJECT_SOURCE_DIR}/src/precon)
 include_directories(${PROJECT_SOURCE_DIR}/src/support)
 include_directories(${PROJECT_SOURCE_DIR}/drivers)
+
+if (PHIST_USE_CPAFT)
+	find_path(CPAFT REQUIRED)
+	include_directories(${CPAFT})
+	link_directories("${CPAFT}")
+	set(LIBS ${LIBS} ${CPAFT})
+	link_libraries (cpaft)
+endif()
+
 
 add_library(phist_tools ${PHIST_TOOLS_SOURCE})
 add_library(phist_core ${PHIST_CORE_SOURCE})
