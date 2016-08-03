@@ -65,11 +65,17 @@ PHIST_MAIN_TASK_BEGIN
 
   iflag = PHIST_IFLAG_DEFAULT;
   if( repart )
+  {
     iflag |= PHIST_SPARSEMAT_PERM_GLOBAL;
+  }
   if( nvecs > 1 )
+  {
     iflag |= PHIST_SPARSEMAT_OPT_BLOCKSPMVM;
+  }
   else
+  {
     iflag |= PHIST_SPARSEMAT_OPT_SINGLESPMVM;
+  }
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A, comm, matname, &iflag),iflag);
   PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A, &map,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_create)(&x,map,nvecs,&iflag),iflag);
@@ -77,9 +83,12 @@ PHIST_MAIN_TASK_BEGIN
   PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(&opA,A,&iflag),iflag);
   sigma = new _ST_[nvecs];
   for(int i = 0; i < nvecs; i++)
+  {
     sigma[i] = st::rand();
-    // we manually set the entries of these vectors below, so we need them on the host
-    iflag=PHIST_MVEC_REPLICATE_DEVICE_MEM;
+  }
+  
+  // we manually set the entries of these vectors below, so we need them on the host
+  iflag=PHIST_MVEC_REPLICATE_DEVICE_MEM;
   PHIST_ICHK_IERR(SUBR(mvec_create)(&q,map,nproj,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_put_value)(q,st::zero(),&iflag),iflag);
   // set q vectors to unit vectors
