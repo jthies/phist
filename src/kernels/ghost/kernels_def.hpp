@@ -2005,6 +2005,7 @@ extern "C" void SUBR(mvec_combine)(TYPE(mvec_ptr) V, phist_Sconst_mvec_ptr reV, 
   _jmax--;
   PHIST_PERFCHECK_VERIFY_MVEC_SET_BLOCK(V,V,_jmin,_jmax,iflag);
   TEST_MVEC_MAPS_SAME(V,reV,iflag)
+  TEST_MVEC_MAPS_SAME(V,imV,iflag)
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
   PHIST_CAST_PTR_FROM_VOID(ghost_densemat,vec,V,*iflag);

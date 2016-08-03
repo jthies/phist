@@ -221,6 +221,10 @@ public:
         ASSERT_EQ(0,iflag_);
       }
       ASSERT_EQ(0,delete_mat(I_));
+
+      delete [] x_A_->sigma_r_;
+      delete [] x_A_->sigma_i_;
+      delete x_A_;
       
       if (x_vec1_!=NULL) delete x_vec1_;
       if (x_vec2_!=NULL) delete x_vec2_;
