@@ -102,7 +102,7 @@ PHIST_TASK_BEGIN(ComputeTask)
   *vA = (TYPE(sparseMat_ptr))mat;
   // create an initial map object that owns the context. This way, the context is deleted
   // when the sparseMat is.
-  mapGarbageCollector.new_map(vA,ctx);
+  mapGarbageCollector.new_map(mat,ctx,NONE,true,true);
 PHIST_TASK_END(iflag);
 }
 
@@ -163,7 +163,7 @@ PHIST_TASK_BEGIN(ComputeTask)
 //#endif
   // create an initial map object that owns the context. This way, the context is deleted
   // when the sparseMat is.
-  mapGarbageCollector.new_map(vA,ctx);
+  mapGarbageCollector.new_map(mat,ctx,NONE,true,true);
   *vA = (TYPE(sparseMat_ptr))mat;
 PHIST_TASK_END(iflag);
 }
