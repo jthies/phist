@@ -148,6 +148,7 @@ PHIST_SOUT(PHIST_INFO,"];\n");
         PHIST_CHK_IERR(SUBR(sdMat_delete)(R2,iflag),*iflag);
         PHIST_CHK_IERR(SUBR(mvec_delete)(Vorth,iflag),*iflag);
       }
+      PHIST_CHK_IERR(SUBR(mvec_delete)(V_,iflag),*iflag);
     }
     PHIST_CHK_IERR(SUBR(sdMat_delete)(R_1,iflag),*iflag);
     *iflag=m-rank;
