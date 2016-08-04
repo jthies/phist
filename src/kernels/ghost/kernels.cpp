@@ -217,14 +217,29 @@ int get_perm_flag(int iflag, int outlev)
     }  
     
     ghost_map* MapGarbageCollector::new_map(const void* p,
-        ghost_context* ctx, ghost_densemat_permuted pt, bool own_ctx, bool own_perm)
+        ghost_context* ctx, ghost_densemat_permuted pt, bool own_ctx, bool own_perm,
+        bool reuse_if_exists)
     {
       if (p==NULL)
       {
         PHIST_SOUT(PHIST_ERROR,"cannot associate a map with the NULL pointer\n");
         return NULL;
       }
-      ghost_map* m = new ghost_map(ctx,pt,own_ctx);
+      ghost_map* m=NULL;
+      if (reuse_if_exists==true)
+      {
+        MapCollection::iterator it = maps_.find(p);
+        if( it != maps_.end() )
+        {
+          if (it->second.size()>0)
+          {
+            m = it->second[0];
+          }
+        }
+      }
+
+      if (m!=NULL) return m;
+      m = new ghost_map(ctx,pt,own_ctx,own_perm);
       add_map(p,m);
       return m;
     }

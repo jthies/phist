@@ -506,42 +506,45 @@ protected:
     TYPE(sparseMat_ptr) A=NULL;
     iflag_=PHIST_SPARSEMAT_QUIET;
     SUBR(sparseMat_create_fromRowFunc)(&A,comm_,_N_,_N_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
-    ASSERT_EQ(0,iflag_);
+    // use EXPECT from now on so that the matrix gets deleted even if something fails
+    EXPECT_EQ(0,iflag_);
 
     // the domain map of this matrix should be the defaultMap_, check this and construct vectors for the spMVM
     phist_const_map_ptr domainA=NULL;
     SUBR(sparseMat_get_domain_map)(A,&domainA,&iflag_);
-    ASSERT_EQ(0,iflag_);
+    EXPECT_EQ(0,iflag_);
     phist_maps_compatible(defaultMap_,domainA,&iflag_);
-    ASSERT_EQ(0,iflag_);
+    EXPECT_EQ(0,iflag_);
     // and it has to be compatible with the (domain) map of A_ that defines the vectors vec1/2_
     phist_maps_compatible(map_,domainA,&iflag_);
-    ASSERT_TRUE(iflag_>=0);
+    EXPECT_TRUE(iflag_>=0);
     bool other_map=(iflag_>0);
     TYPE(mvec_ptr) vec1=vec1_, vec2=vec2_;
     if (other_map)
     {
       SUBR(mvec_create)(&vec1,domainA,nvec_,&iflag_);
-      ASSERT_EQ(0,iflag_);
+      EXPECT_EQ(0,iflag_);
       SUBR(mvec_create)(&vec2,domainA,nvec_,&iflag_);
-      ASSERT_EQ(0,iflag_);
+      EXPECT_EQ(0,iflag_);
     }
     
     // check that AX=X
     SUBR(mvec_random)(vec1,&iflag_);
-    ASSERT_EQ(0,iflag_);
+    EXPECT_EQ(0,iflag_);
     SUBR(mvec_put_value)(vec2,(_ST_)99.9,&iflag_);
-    ASSERT_EQ(0,iflag_);
+    EXPECT_EQ(0,iflag_);
     SUBR(sparseMat_times_mvec)(st::one(),A,vec1,st::zero(),vec2,&iflag_);
     EXPECT_EQ(0,iflag_);
-    ASSERT_NEAR(1.0,MvecsEqual(vec1,vec2),100*mt::eps());
+    EXPECT_NEAR(1.0,MvecsEqual(vec1,vec2),100*mt::eps());
     if (other_map)
     {
       SUBR(mvec_delete)(vec1,&iflag_);
-      ASSERT_EQ(0,iflag_);
+      EXPECT_EQ(0,iflag_);
       SUBR(mvec_delete)(vec2,&iflag_);
-      ASSERT_EQ(0,iflag_);
+      EXPECT_EQ(0,iflag_);
     }
+    SUBR(sparseMat_delete)(A,&iflag_);
+    EXPECT_EQ(0,iflag_);
   }
 
   TEST_F(CLASSNAME,A1_fromRowFuncAndMap)
@@ -549,16 +552,18 @@ protected:
     TYPE(sparseMat_ptr) A=NULL;
     iflag_=PHIST_SPARSEMAT_QUIET;
     SUBR(sparseMat_create_fromRowFuncAndMap)(&A,map_,1,&PHIST_TG_PREFIX(idfunc),NULL,&iflag_);
-    ASSERT_EQ(0,iflag_);
+    EXPECT_EQ(0,iflag_);
 
     // check that AX=X
     SUBR(mvec_random)(vec1_,&iflag_);
-    ASSERT_EQ(0,iflag_);
+    EXPECT_EQ(0,iflag_);
     SUBR(mvec_put_value)(vec2_,(_ST_)99.9,&iflag_);
-    ASSERT_EQ(0,iflag_);
+    EXPECT_EQ(0,iflag_);
     SUBR(sparseMat_times_mvec)(st::one(),A,vec1_,st::zero(),vec2_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(1.0,MvecsEqual(vec1_,vec2_),100*mt::eps());
+    EXPECT_EQ(0,iflag_);
+    EXPECT_NEAR(1.0,MvecsEqual(vec1_,vec2_),100*mt::eps());
+    SUBR(sparseMat_delete)(A,&iflag_);
+    EXPECT_EQ(0,iflag_);
   }
 
 #endif // MATNAME_speye
@@ -1268,16 +1273,18 @@ TEST_F(CLASSNAME,compare_with_rowFunc)
 
   TYPE(mvec_ptr) tmp_vec1=NULL;
   iflag_=0;
+  // since we use temporary vector, we will only EXPECT instead of ASSERT so that
+  // the memory is freed at the end of the function even if an assertion fails.
   PHISTTEST_MVEC_CREATE(&tmp_vec1, defaultMap_, nvec_, &iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   _ST_* vec1_vp=NULL;
   phist_lidx lda;
   SUBR(mvec_extract_view)(tmp_vec1,&vec1_vp,&lda,&iflag_);
-  ASSERT_EQ(0,iflag_);
-  ASSERT_EQ(lda,lda_);
+  EXPECT_EQ(0,iflag_);
+  EXPECT_EQ(lda,lda_);
   phist_gidx ilower;
   phist_map_get_ilower(defaultMap_,&ilower,&iflag_);
-  ASSERT_EQ(0,iflag_);  
+  EXPECT_EQ(0,iflag_);  
   bool row_func_error_encountered=false;
   for (int i=0; i<nloc_; i++)
   {
@@ -1308,14 +1315,19 @@ TEST_F(CLASSNAME,compare_with_rowFunc)
   }
 
   SUBR(mvec_to_device)(tmp_vec1,&iflag_);
-  ASSERT_EQ(0,iflag_);
-  ASSERT_FALSE(row_func_error_encountered); // something wrong with row functions?
+  EXPECT_EQ(0,iflag_);
+  EXPECT_FALSE(row_func_error_encountered); // something wrong with row functions?
 
   // our expected result in tmp_vec1 is in the linear map defaultMap_, if necessary convert it to the permuted map map_
   SUBR(mvec_to_mvec)(tmp_vec1,vec1_,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   
-  ASSERT_NEAR(1.0,MvecsEqual(vec1_,vec2_),sqrt(mt::eps()));
+  EXPECT_NEAR(1.0,MvecsEqual(vec1_,vec2_),sqrt(mt::eps()));
+  if (tmp_vec1!=NULL) 
+  {
+    SUBR(mvec_delete)(tmp_vec1,&iflag_);
+    EXPECT_EQ(0,iflag_);
+  }
 }
 
 TEST_F(CLASSNAME,fromRowFuncAndMap)
@@ -1323,52 +1335,56 @@ TEST_F(CLASSNAME,fromRowFuncAndMap)
   TYPE(sparseMat_ptr) A1=NULL, A2=NULL;
   iflag_=PHIST_SPARSEMAT_QUIET;
   SUBR(sparseMat_create_fromRowFuncAndMap)(&A1,defaultMap_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
     iflag_=PHIST_SPARSEMAT_QUIET;
   SUBR(sparseMat_create_fromRowFuncAndMap)(&A2,map_,7,&MATPDE3D_rowFunc,NULL,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   phist_const_map_ptr domain1, domain2, range1, range2, row1, row2, col1, col2;
   // first check if the created matrices are compatible with vectors of the given map:
   SUBR(sparseMat_get_range_map)(A1,&range1,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   SUBR(sparseMat_get_domain_map)(A1,&domain1,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   SUBR(sparseMat_get_range_map)(A2,&range2,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   SUBR(sparseMat_get_domain_map)(A2,&domain2,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   
   phist_maps_compatible(domain1,defaultMap_,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   phist_maps_compatible(range1,defaultMap_,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   phist_maps_compatible(domain2,map_,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   phist_maps_compatible(range2,map_,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   // then check if all of the maps are identical to those of A_ if the map_ is given
   SUBR(sparseMat_get_range_map)(A_,&range1,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   SUBR(sparseMat_get_domain_map)(A_,&domain1,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   SUBR(sparseMat_get_row_map)(A_,&row1,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   SUBR(sparseMat_get_col_map)(A_,&col1,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   SUBR(sparseMat_get_row_map)(A2,&row2,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   SUBR(sparseMat_get_col_map)(A2,&col2,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   //
   phist_maps_compatible(domain2,domain1,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   phist_maps_compatible(range2,range1,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   phist_maps_compatible(col2,col1,&iflag_);
-  ASSERT_EQ(0,iflag_);
+  EXPECT_EQ(0,iflag_);
   phist_maps_compatible(row2,row1,&iflag_);
-  ASSERT_EQ(0,iflag_);
-  
+  EXPECT_EQ(0,iflag_);
+  // delete matrices
+  SUBR(sparseMat_delete)(A1,&iflag_);
+  EXPECT_EQ(0,iflag_); 
+  SUBR(sparseMat_delete)(A2,&iflag_);
+  EXPECT_EQ(0,iflag_); 
 }
 
 #endif

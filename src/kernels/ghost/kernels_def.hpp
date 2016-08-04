@@ -6,7 +6,7 @@
 #undef TEST_MVEC_MAPS_SAME
 #endif
 
-#ifdef PHIST_TESTING
+#ifdef PHIST_TESTING_____
 #define TEST_MVEC_MAPS_SAME(_v1,_v2,_iflag) \
 if (_v1!=NULL && _v2!=NULL) { \
 phist_const_map_ptr map1, map2; \
@@ -190,7 +190,7 @@ extern "C" void SUBR(sparseMat_get_row_map)(TYPE(const_sparseMat_ptr) vA, phist_
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_sparsemat,A,vA,*iflag);
-  ghost_map* map = mapGarbageCollector.new_map(vA,A->context,ROW,false);
+  ghost_map* map = mapGarbageCollector.new_map(vA,A->context,ROW,false,false);
   map->mtraits_template=A->traits;
   *vmap = (phist_const_map_ptr)map;
 }
@@ -204,7 +204,7 @@ extern "C" void SUBR(sparseMat_get_col_map)(TYPE(const_sparseMat_ptr) vA, phist_
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_sparsemat,A,vA,*iflag);
-  ghost_map* map = mapGarbageCollector.new_map(vA,A->context,COLUMN,false);
+  ghost_map* map = mapGarbageCollector.new_map(vA,A->context,COLUMN,false,false);
   map->mtraits_template=A->traits;
   *vmap = (phist_const_map_ptr)map;
 }
@@ -386,8 +386,10 @@ extern "C" void SUBR(mvec_get_map)(TYPE(const_mvec_ptr) vV, phist_const_map_ptr*
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   *iflag=0;
   PHIST_CAST_PTR_FROM_VOID(const ghost_densemat,V,vV,*iflag);
+  // this map does *not* own the context of the vector or its permutations (first two bools)
+  // but if the vector has a map associated with it already, use that object (third bool)
   ghost_densemat_permuted pt = V->traits.permutemethod;
-  ghost_map* map = mapGarbageCollector.new_map(vV,V->context,pt,false);
+  ghost_map* map = mapGarbageCollector.new_map(vV,V->context,pt,false,false,true);
   map->vtraits_template=V->traits;
   // do not allow a sparseMat that is created from this map to be permuted
   map->mtraits_template.sortScope=1;
@@ -1601,9 +1603,10 @@ extern "C" void SUBR(mvecT_times_mvec)(_ST_ alpha, TYPE(const_mvec_ptr) vV, TYPE
   int rank = 0;
   PHIST_CHK_IERR(*iflag = MPI_Comm_rank(*comm,&rank),*iflag);
   if( rank == 0 )
+  {
     mybeta = beta;
-
-    phist_lidx ncC = C->traits.ncols;
+  }
+  phist_lidx ncC = C->traits.ncols;
 /*
   PHIST_DEB("VtV=C, V %" PRlidx "x%" PRlidx ", \n"
             "       W %" PRlidx "x%" PRlidx ", \n"
