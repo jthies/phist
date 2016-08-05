@@ -70,5 +70,6 @@
 #include "carp_def.hpp"
 #include "../common/kernels_no_fused_mvec.cpp"
 #include "../common/kernels_no_fused_spmv_mvTmv.cpp"
+#include "../common/kernels_no_fused_spmv_pair.cpp"
 #include "../common/kernels_no_VC_add_WD.cpp"
 
