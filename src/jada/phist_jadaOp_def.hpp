@@ -44,7 +44,7 @@
 // private struct to keep all the pointers we need in order to apply the operator.
 typedef struct TYPE(jadaOp_data)
 {
-  TYPE(const_linearOp_ptr)    A_op;   // operator of the general matrix A
+  TYPE(const_linearOp_ptr)    AB_op;   // operator of the general matrix A
   TYPE(const_linearOp_ptr)    B_op;   // operator of the hpd. matrix B, assumed I when NULL
   TYPE(const_mvec_ptr)  V;      // B-orthonormal basis
   TYPE(const_mvec_ptr)  BV;     // B*V
@@ -82,7 +82,7 @@ void SUBR(jadaOp_apply_project_post)(_ST_ alpha, const void* op, TYPE(const_mvec
     // y_i <- alpha*(A+sigma_i I)*x_i + beta * y_i
 {
 PHIST_ENTER_FCN("phist_jadaOp_shifted_A_times_mvec");
-    PHIST_CHK_IERR(jadaOp->A_op->apply_shifted(alpha, jadaOp->A_op->A, jadaOp->sigma, X, beta, Y, iflag),*iflag);
+    PHIST_CHK_IERR(jadaOp->AB_op->apply_shifted(alpha, jadaOp->AB_op->A, jadaOp->sigma, X, beta, Y, iflag),*iflag);
 }
     // tmp <- V'*Y
 {
@@ -134,7 +134,7 @@ PHIST_ENTER_FCN("phist_jadaOp_mvec_times_sdMat");
 
 
 // allocate and initialize the jadaOp struct
-void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    A_op,    TYPE(const_linearOp_ptr)    B_op,
+void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
                          TYPE(const_mvec_ptr)  V,       TYPE(const_mvec_ptr)  BV,
                          const _ST_            sigma[], int                   nvec,
                          TYPE(linearOp_ptr)          jdOp,    int*                  iflag)
@@ -147,7 +147,7 @@ void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    A_op,    TYPE(const_linearO
   // allocate jadaOp struct
   TYPE(jadaOp_data) *myOp = new(TYPE(jadaOp_data));
   
-  if (A_op->apply_shifted==NULL)
+  if (AB_op->apply_shifted==NULL)
   {
     PHIST_SOUT(PHIST_ERROR, "operator passed to %s does not support apply_shifted\n"
                             "(file %s, line %d)\n",__FUNCTION__,__FILE__,__LINE__);
@@ -156,15 +156,14 @@ void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    A_op,    TYPE(const_linearO
   }
 
   // setup jadaOp members
-  myOp->A_op   = A_op;
-  myOp->B_op   = B_op;
+  myOp->AB_op   = AB_op;
   myOp->V      = V;
   myOp->BV     = (B_op != NULL ? BV     : V);
   myOp->sigma  = sigma;
   // allocate necessary temporary arrays
   int nvecp=0;
   phist_const_comm_ptr comm;
-  PHIST_CHK_IERR(phist_map_get_comm(A_op->domain_map, &comm, iflag), *iflag);
+  PHIST_CHK_IERR(phist_map_get_comm(AB_op->domain_map, &comm, iflag), *iflag);
   if (V!=NULL)
   {
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V, &nvecp, iflag), *iflag);
@@ -184,9 +183,10 @@ void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    A_op,    TYPE(const_linearO
   jdOp->applyT= NULL; // not needed, I think, but it's trivial to implement
   jdOp->apply_shifted=NULL;// does not make sense, it would mean calling apply_shifted in a 
                            // nested way.
+  jdOp->destroy = (&SUBR(jadaOp_delete));
 
-  jdOp->range_map=A_op->range_map;
-  jdOp->domain_map=A_op->domain_map;
+  jdOp->range_map=AB_op->range_map;
+  jdOp->domain_map=AB_op->domain_map;
   
   // print some useful data
   PHIST_SOUT(PHIST_DEBUG, "Created jadaOp with %d projection vectors and %d shifts\n",   nvecp,nvec);
@@ -231,7 +231,7 @@ void SUBR(jadaOp_apply_project_none)(_ST_ alpha, const void* op, TYPE(const_mvec
   {
 
     // y_i <- alpha*(A+sigma_i I)*x_i + beta * y_i
-    PHIST_CHK_IERR(jadaOp->A_op->apply_shifted(alpha, jadaOp->A_op->A, jadaOp->sigma, X, beta, Y, iflag),*iflag);
+    PHIST_CHK_IERR(jadaOp->AB_op->apply_shifted(alpha, jadaOp->AB_op->A, jadaOp->sigma, X, beta, Y, iflag),*iflag);
   }
 }
 
