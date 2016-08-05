@@ -16,15 +16,15 @@ extern "C" void SUBR(fused_spmv_pair)(_ST_ alpha,
   int nvec=-1;
   SUBR(mvec_num_vectors)(X,&nvec,&iflag0);
   phist_const_map_ptr map=NULL;
-  SUBR(mvec_get_map(X,&map,&iflag1);
+  SUBR(mvec_get_map)(X,&map,&iflag1);
   TYPE(mvec_ptr) tmp=NULL;
   SUBR(mvec_create)(&tmp,map,nvec,&iflag2);
   iflag1 = *iflag;
-  SUBR(sparseMat_times_mvec_vadd_mvec)(alpha,A1,X,st::zero(),tmp,&iflag3);
+  SUBR(sparseMat_times_mvec)(alpha,A1,X,st::zero(),tmp,&iflag3);
   SUBR(mvec_vadd_mvec)(shift1,tmp,beta,Y,&iflag4);
 
   iflag1 = *iflag;
-  SUBR(sparseMat_times_mvec_vadd_mvec)(alpha,A2,X,st::zero(),tmp,&iflag5);
+  SUBR(sparseMat_times_mvec)(alpha,A2,X,st::zero(),tmp,&iflag5);
   SUBR(mvec_vadd_mvec)(shift2,tmp,st::one(),Y,&iflag6);
   
 

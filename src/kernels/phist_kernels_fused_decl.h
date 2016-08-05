@@ -30,10 +30,10 @@ extern "C" {
 //! perform concatenated sparse matrix-vector products with two matrices
 
 //! y = alpha*(shifts1[j]*A1 + shifts2[j]*A2) + beta*Y
-void SUBR(fused_spmv_pair)(_ST_ alpha, _ST_ shifts1[], TYPE(const_sparseMat_ptr) A1,
-                                  _ST_ shifts2[], TYPE(const_sparseMat_ptr) A2,
-                                  TYPE(const_mvec_ptr) X,
-                                  _ST_ beta, TYPE(mvec_ptr) Y, int* iflag);
+void SUBR(fused_spmv_pair)(_ST_ alpha, _ST_ const shifts1[], TYPE(const_sparseMat_ptr) A1,
+                                       _ST_ const shifts2[], TYPE(const_sparseMat_ptr) A2,
+                                       TYPE(const_mvec_ptr) X,
+                           _ST_ beta, TYPE(mvec_ptr) Y, int* iflag);
 
 //! W=alpha*A*V + beta*W, WdotW[i] = W(:,i)'W(:,i), VdotW[i]=V(:,i)'W(:,i)
 //! understands *iflag=PHIST_NO_GLOBAL_REDUCTION, in which case the dot products
