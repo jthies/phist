@@ -7,6 +7,7 @@
 //! To construct such an operator from two sparseMats, SUBR(linearOp_wrap_sparseMat_pair)
 //! can be used.
 void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
+                         TYPE(const_linearOp_ptr)     B_op,
                          TYPE(const_mvec_ptr)  V,       TYPE(const_mvec_ptr)  BV,
                          const _ST_            sigma[], int                   nvec,
                          TYPE(linearOp_ptr)          jdOp,    int*                  iflag);

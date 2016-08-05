@@ -135,6 +135,7 @@ PHIST_ENTER_FCN("phist_jadaOp_mvec_times_sdMat");
 
 // allocate and initialize the jadaOp struct
 void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
+                         TYPE(const_linearOp_ptr)     B_op,
                          TYPE(const_mvec_ptr)  V,       TYPE(const_mvec_ptr)  BV,
                          const _ST_            sigma[], int                   nvec,
                          TYPE(linearOp_ptr)          jdOp,    int*                  iflag)
@@ -157,8 +158,9 @@ void SUBR(jadaOp_create)(TYPE(const_linearOp_ptr)    AB_op,
 
   // setup jadaOp members
   myOp->AB_op   = AB_op;
+  myOp->B_op   = B_op;
   myOp->V      = V;
-  myOp->BV     = (B_op != NULL ? BV     : V);
+  myOp->BV     = (BV != NULL ? BV     : V);
   myOp->sigma  = sigma;
   // allocate necessary temporary arrays
   int nvecp=0;
