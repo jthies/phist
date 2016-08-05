@@ -11,7 +11,7 @@ extern "C" void SUBR(fused_spmv_pair)(_ST_ alpha,
   // call two kernels
   // don't freeze inside here if the first one returns an error on only some processes
   // pass *iflag to both kernels.
-  int iflag0=0, iflag1=0, iflag2=0, iflag3=0, iflag4=0,iflag5=0, iflag6=0;
+  int iflag0=0, iflag1=0, iflag2=0, iflag3=0, iflag4=0,iflag5=0, iflag6=0, iflag7=0;
   // we need a temporary vector because there is no function for shift[j]*A*X_j
   int nvec=-1;
   SUBR(mvec_num_vectors)(X,&nvec,&iflag0);
@@ -28,12 +28,15 @@ extern "C" void SUBR(fused_spmv_pair)(_ST_ alpha,
   SUBR(mvec_vadd_mvec)(shift2,tmp,st::one(),Y,&iflag6);
   
 
+  SUBR(mvec_delete)(tmp,&iflag7);
+
   PHIST_CHK_IERR(*iflag = iflag1,*iflag);
   PHIST_CHK_IERR(*iflag = iflag2,*iflag);
   PHIST_CHK_IERR(*iflag = iflag3,*iflag);
   PHIST_CHK_IERR(*iflag = iflag4,*iflag);
   PHIST_CHK_IERR(*iflag = iflag5,*iflag);
   PHIST_CHK_IERR(*iflag = iflag6,*iflag);
+  PHIST_CHK_IERR(*iflag = iflag7,*iflag);
 }
 
 
