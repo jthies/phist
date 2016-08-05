@@ -24,10 +24,15 @@ extern "C" void phist_bench_stream_load(double* mean_bw, double* max_bw, int* if
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   double *data = NULL;
-  PHIST_SOUT(PHIST_VERBOSE, "Streaming LOAD benchmark: ");
-  PHIST_CHK_IERR(dbench_stream_load_create(&data,iflag),*iflag);
+  *iflag=0;
   *max_bw = 0.;
   *mean_bw = 0.;
+  PHIST_SOUT(PHIST_VERBOSE, "Streaming LOAD benchmark: ");
+#if PHIST_BENCH_LARGE_N<=0
+  PHIST_SOUT(PHIST_VERBOSE, "skipped because PHIST_BENCH_LARGE_N<=0\n");
+  return;
+#endif  
+  PHIST_CHK_IERR(dbench_stream_load_create(&data,iflag),*iflag);
   for(int i = 0; i < NUM_RUNS; i++)
   {
     double bw = 0.;
@@ -46,9 +51,14 @@ extern "C" void phist_bench_stream_store(double *mean_bw, double* max_bw, int* i
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
   double *data = NULL;
   PHIST_SOUT(PHIST_VERBOSE, "Streaming STORE benchmark: ");
-  PHIST_CHK_IERR(dbench_stream_store_create(&data,iflag),*iflag);
+  *iflag=0;
   *max_bw = 0.;
   *mean_bw= 0.;
+#if PHIST_BENCH_LARGE_N<=0
+  PHIST_SOUT(PHIST_VERBOSE, "skipped because PHIST_BENCH_LARGE_N<=0\n");
+  return;
+#endif  
+  PHIST_CHK_IERR(dbench_stream_store_create(&data,iflag),*iflag);
   for(int i = 0; i < NUM_RUNS; i++)
   {
     double bw = 0.;
@@ -69,9 +79,14 @@ extern "C" void phist_bench_stream_triad(double* mean_bw, double* max_bw, int* i
   double *y = NULL;
   double *z = NULL;
   PHIST_SOUT(PHIST_VERBOSE, "Streaming TRIAD benchmark: ");
-  PHIST_CHK_IERR(dbench_stream_triad_create(&x,&y,&z,iflag),*iflag);
   *max_bw = 0.;
   *mean_bw= 0.;
+  *iflag=0;
+#if PHIST_BENCH_LARGE_N<=0
+  PHIST_SOUT(PHIST_VERBOSE, "skipped because PHIST_BENCH_LARGE_N<=0\n");
+  return;
+#endif  
+  PHIST_CHK_IERR(dbench_stream_triad_create(&x,&y,&z,iflag),*iflag);
   for(int i = 0; i < NUM_RUNS; i++)
   {
     double bw = 0.;
