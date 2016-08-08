@@ -86,6 +86,17 @@ if(AFT)
 endif()	
 
 add_library(cpaft SHARED ${CPAFT_SOURCE} ${CPPHISTMVEC_SRC} ${CPPHISTSDMAT_SRC})
+set(LIBRARY_INSTALL_DIR lib)
+install ( TARGETS cpaft EXPORT cpaftLibrary LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR} )
 
+file(GLOB CPAFT_HEADERS ${CMAKE_SOURCE_DIR}/*.h
+												${CMAKE_SOURCE_DIR}/*.hpp	
+												${CMAKE_SOURCE_DIR}/cpTypes/*/*.hpp	
+												${CMAKE_SOURCE_DIR}/cpTypes/*/*.h	
+												)
+												
+			
+set(INCLUDE_INSTALL_DIR include)
+install ( FILES ${CPAFT_HEADERS} DESTINATION ${INCLUDE_INSTALL_DIR} )
 
 
