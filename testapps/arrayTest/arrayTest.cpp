@@ -1,6 +1,3 @@
-#include "aft.h"
-#include "aft_macros.h"
-
 
 #include "arrayTest.h"
 #include <malloc.h>
@@ -9,16 +6,34 @@
 #include <string>
 #include <cstring>
 #include <stdio.h>
+#include <unistd.h>
 
-void read_params(int argc, char* argv[] , std::string * cpPath){
+static char *prgname = "a.out";
+
+void printusage(){
+  int myrank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+	if(myrank==0){		
+    printf("Usage: %s [OPTION]...\n",prgname);
+    printf("Valid options are:\n");
+    printf(" -cppath <PATH-TO-CHECKPOINT>\n");
+	}
+}
+
+int read_params(int argc, char* argv[] , std::string * cpPath){
+  prgname = argv[0];
+
 	for (int i = 1; i < argc; ++i) {
-
 		if ((!strcmp(argv[i], "-cppath"))) {
 			char * tmp = new char[256];
-			tmp = argv[++i];
+			sprintf(tmp, "%s", argv[++i]);
 			*cpPath = tmp;
 			std::cout << "cpPath: " << *cpPath << std::endl;
 		}
+	}
+	if(cpPath->empty()){
+		printusage();
+		exit(EXIT_FAILURE);
 	}
 }
 
@@ -32,7 +47,7 @@ int main(int argc, char* argv[])
 	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
 	printf("%d/%d\n", myrank, numprocs);
 	std::string cpPath;
-   	read_params(argc, argv, &cpPath); 
+  read_params(argc, argv, &cpPath); 
 
 	int n = 5;
 	int * a 	= new int[n];

@@ -3,7 +3,20 @@
 #include <cstring>
 #include <unistd.h>
 
-void read_params(int argc, char* argv[] , std::string * cpPath){
+static char *prgname = "a.out";
+
+void printusage(){
+	int myrank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+	if(myrank==0){	
+    printf("Usage: %s [OPTION]...\n",prgname);
+    printf("Valid options are:\n");
+    printf(" -cppath <PATH-TO-CHECKPOINT>\n");
+	}
+}
+
+int read_params(int argc, char* argv[] , std::string * cpPath){
+  prgname = argv[0];
 
 	//=========== Reading commnad line arguments with flags ===============//
 	for (int i = 1; i < argc; ++i) {
@@ -15,20 +28,21 @@ void read_params(int argc, char* argv[] , std::string * cpPath){
 			std::cout << "cpPath: " << *cpPath << std::endl;
 		}
 	}
+	if(cpPath->empty()){
+		printusage();
+		exit(EXIT_FAILURE);
+	}
 }
 
 int main(int argc, char* argv[])
 {
 	MPI_Init(&argc, &argv);
-   	int myrank, numprocs;
+  int myrank, numprocs;
 	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
 	printf("%d/%d\n", myrank, numprocs);
 	std::string cpPath;
   read_params(argc, argv, &cpPath); 
-	if(cpPath.empty()){
-		printf("cppath not specified.\n");	
-	}
 
 	int n = 5;
 	int myint = 99;
