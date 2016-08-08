@@ -12,10 +12,9 @@ else()
 	message (STATUS "MPI package is NOT found")
 endif()
 
-set(CPAFT "${SRC_DIR}/../../")
-include_directories(${CPAFT})
-link_directories("${CPAFT}")
-set(LIBS ${LIBS} ${CPAFT})
+find_path(CPAFT REQIRED)
+include_directories ("${CPAFT}/include")
+link_directories ("${CPAFT}/lib")
 link_libraries (cpaft)
 
 add_executable(minimal.bin minimal.cpp )
