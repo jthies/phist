@@ -1285,12 +1285,12 @@ foreach(np ${PHIST_MPI_TEST_NPROCS})
   set_tests_properties(test-task_np${np} PROPERTIES TIMEOUT 120)
 endforeach()
 
-# disable the following python tests if the GCC sanitizer is used and the kernel lib is Tpetra
-# because that does not work (cf. #165)
-#if (PHIST_KERNEL_LIB_TPETRA AND GCC_SANITIZE )
-#  message(WARNING "Disabling Python tests with Tpetra+GCC sanitizer, cf. issue #165")
-#  set(DISABLE_PYTHON_TESTS 1)
-#endif()
+# disable the following python tests if the GCC sanitizer is used and the kernel lib is GHOST
+# because that does not work with GCC 6.1 (see issue #187)
+if (PHIST_KERNEL_LIB_GHOST AND GCC_SANITIZE )
+  message(WARNING "Disabling Python tests with GHOST+GCC sanitizer, cf. issue #165")
+  set(DISABLE_PYTHON_TESTS 1)
+endif()
 # Test python interface if this is an integration build.
 # The reason why this test is only included in integration builds is that it requires
 # py.test, which is included in phist but currently with a hard-coded interpreter from
@@ -1321,7 +1321,7 @@ if(INTEGRATION_BUILD)
       set(GCC_SANITIZE_LIB "lib${GCC_SANITIZE_FIRST_CHAR}san.so")
       # work around cmake bug (specifying multiple set_tests_properties(...ENVIRONMENT...)
       set_property(TEST ${pyt_name} APPEND PROPERTY ENVIRONMENT "LD_PRELOAD=${GCC_SANITIZE_LIB}:$ENV{LD_PRELOAD}")
-      set_property(TEST ${pyt_name} APPEND PROPERTY ENVIRONMENT "LSAN_OPTIONS=\"exitcode=0\"")
+      set_property(TEST ${pyt_name} APPEND PROPERTY ENVIRONMENT "LSAN_OPTIONS=\"exitcode=0 log_path=${pyt_name}_asan_log\"")
     endif()
   endforeach()
   if (INTEGRATION_BUILD AND CMAKE_BUILD_TYPE MATCHES "Release")
