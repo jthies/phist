@@ -6,10 +6,10 @@ set (SRC_DIR ${CMAKE_SOURCE_DIR})
 ###### OPTIONS ######
 option(PHIST_CP
 		"enables/disables the checkpoints of PHIST data types"
-		ON)
+		OFF)
 option(GHOST_CP
 		"enables/disables the checkpoints of PHIST data types"
-		ON)
+		OFF)
 option(SCR
 		"enables/disables the usage of SCR-library for node-level C/R"
 		OFF)
@@ -103,5 +103,3 @@ file(GLOB CPAFT_HEADERS ${CMAKE_SOURCE_DIR}/*.h
 set(INCLUDE_INSTALL_DIR include)
 install ( FILES ${CPAFT_HEADERS} DESTINATION ${INCLUDE_INSTALL_DIR} )
 
-
-#configure_file("${SRC_DIR}/phistConfig.cmake.in" "${PROJECT_BINARY_DIR}/phistConfig.cmake" INSTALL_DESTINATION ${LIBRARY_INSTALL_DIR}/cmake/phist PATH_VARS INCLUDE_INSTALL_DIR)# LIBRARY_INSTALL_DIR)
