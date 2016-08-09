@@ -729,7 +729,11 @@ set (PHIST_KRYLOV_SOURCE ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_arnoldi.c
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_anasaziZ.cpp
                          ${PROJECT_SOURCE_DIR}/src/krylov/phist_carp_cg.cpp
                          )
-
+if(PHIST_USE_CPAFT)
+	set (PHIST_KRYLOV_SOURCE ${PHIST_KRYLOV_SOURCE}
+				                 ${PROJECT_SOURCE_DIR}/src/krylov/phist_simple_lanczos_ft.cpp
+												 )
+endif()
 set (PHIST_JADA_SOURCE   ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOp.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jadaOpts.cpp
                          ${PROJECT_SOURCE_DIR}/src/jada/phist_jdqr.cpp
@@ -763,11 +767,17 @@ include_directories(${PROJECT_SOURCE_DIR}/src/support)
 include_directories(${PROJECT_SOURCE_DIR}/drivers)
 
 if (PHIST_USE_CPAFT)
-	find_path(CPAFT REQUIRED)
-	include_directories(${CPAFT})
-	link_directories("${CPAFT}")
-	set(LIBS ${LIBS} ${CPAFT})
-	link_libraries (cpaft)
+	find_package(CPAFT REQUIRED)
+	if(CPAFT_FOUND)
+		message (STATUS "CPAFT package is found ${CPAFT_INCLUDE_PATH}")
+		include_directories(${CPAFT_INCLUDE_PATH})
+		link_libraries(${CPAFT_LIBRARIES})
+		set (CMAKE_C_FLAGS        "${CMAKE_C_FLAGS}      ${CPAFT_FLAGS}")
+    set (CMAKE_CXX_FLAGS      "${CMAKE_CXX_FLAGS}    ${CPAFT_FLAGS}")
+
+	else()
+		message (STATUS "CPAFT package is NOT found")
+	endif()
 endif()
 
 

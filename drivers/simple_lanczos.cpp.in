@@ -13,7 +13,13 @@
 #include "phist_enums.h"
 #include "phist_kernels.h"
 #include "phist_operator.h"
+
+#ifdef PHIST_CP
+#include "phist_simple_lanczos_ft.h"
+#include "cp_options.h"
+#else 
 #include "phist_simple_lanczos.h"
+#endif
 
 #include ${PHIST_TG_HFILE}
 #include "phist_driver_utils.h"
@@ -60,10 +66,25 @@ int main(int argc, char** argv)
   TYPE(linearOp) A_op;
   PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(&A_op,A,&iflag),iflag);
 
-  
+#ifdef PHIST_CP
+ 	char * cpPath = new char [256];
+	sprintf(cpPath , "%s", argv[2]);
+	printf("CPPATH : %s", cpPath); 
+
+	Cp_Options * cpOpt=new Cp_Options[1]; 
+	cpOpt->setCpFreq(70);
+	cpOpt->setCpPath(cpPath);
+#endif
+ 
   // call Lanczos iteration routine
   num_iters=10000;
-  SUBR(simple_lanczos)(&A_op,&lambda_min,&lambda_max,&num_iters,&iflag);
+#ifdef PHIST_CP
+	printf("===== Simple_lanczos_ft =====\n"); 
+	SUBR(simple_lanczos_ft)(&A_op,&lambda_min,&lambda_max,&num_iters,cpOpt, &iflag);
+#else
+	printf("===== Simple_lanczos =====\n"); 
+	SUBR(simple_lanczos)(&A_op,&lambda_min,&lambda_max,&num_iters,&iflag);
+#endif
 
   if (iflag!=0)
   {
