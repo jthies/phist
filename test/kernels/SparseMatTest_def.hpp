@@ -248,51 +248,6 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
   }
 #endif
   
-  void test_sparseMat_times_mvec_on_plain_data(_ST_ alpha, TYPE(const_sparseMat_ptr) A, _ST_ beta)
-  {
-    if( !typeImplemented_ || problemTooSmall_ )
-      return;
-      
-    phist_const_map_ptr map1,map2;
-    SUBR(sparseMat_get_domain_map)(A,&map1,&iflag_);
-    SUBR(sparseMat_get_range_map)(A,&map2,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    TYPE(mvec_ptr) vec1,vec2,vec3;
-    SUBR(mvec_create_view)(&vec1,map1,vec1_vp_,lda_,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_create_view)(&vec2,map2,vec2_vp_,lda_,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    SUBR(mvec_create_view)(&vec3,map2,vec3_vp_,lda_,nvec_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-
-    // set up mvecs
-    SUBR(mvec_random)(vec1, &iflag_);
-    ASSERT_EQ(0, iflag_);
-    SUBR(mvec_random)(vec2, &iflag_);
-    ASSERT_EQ(0, iflag_);
-
-    SUBR(mvec_add_mvec)(st::one(), vec2, st::zero(), vec3, &iflag_);
-    ASSERT_EQ(0, iflag_);
-
-    SUBR(sparseMat_times_mvec)(alpha, A, vec1, beta, vec2, &iflag_);
-    ASSERT_EQ(0, iflag_);
-
-    // reference solution
-    SUBR(sparseMat_times_mvec)(alpha, A, vec1_, beta, vec3_, &iflag_);
-    ASSERT_EQ(0, iflag_);
-
-    // delete views
-    SUBR(mvec_delete)(vec1, &iflag_);
-    ASSERT_EQ(0, iflag_);
-    SUBR(mvec_delete)(vec2, &iflag_);
-    ASSERT_EQ(0, iflag_);
-    SUBR(mvec_delete)(vec3, &iflag_);
-    ASSERT_EQ(0, iflag_);
-
-    ASSERT_NEAR(mt::one(), MvecsEqual(vec2_,vec3_), sqrt(mt::eps()));
-
-  }
-
 
 protected:
 
@@ -522,9 +477,9 @@ protected:
     TYPE(mvec_ptr) vec1=vec1_, vec2=vec2_;
     if (other_map)
     {
-      SUBR(mvec_create)(&vec1,domainA,nvec_,&iflag_);
+      PHISTTEST_MVEC_CREATE(&vec1,domainA,nvec_,&iflag_);
       EXPECT_EQ(0,iflag_);
-      SUBR(mvec_create)(&vec2,domainA,nvec_,&iflag_);
+      PHISTTEST_MVEC_CREATE(&vec2,domainA,nvec_,&iflag_);
       EXPECT_EQ(0,iflag_);
     }
     
@@ -947,20 +902,6 @@ protected:
   }
 #endif
 
-#if MATNAME == MATNAME_sprandn_nodiag
-  // this test is disabled because viewing plain data does not work
-  // for some kernel libs (builtin, ghost). The function will probably
-  // be thrown out alltogether (mvec_create_view, that is).
-  TEST_F(CLASSNAME, DISABLED_sparseMat_times_mvec_random_plain_data)
-  {
-    _ST_ alpha = st::prand();
-    _ST_ beta = st::prand();
-    //NOTE! With GHOST and CUDA this test will currently fail because
-    // the "mvec_create_view" function passes the CPU valptr to GHOST,
-    // whereas GHOST expects a valid cuda pointer. 
-    test_sparseMat_times_mvec_on_plain_data(alpha, A_, beta);
-  }
-#endif
 
 #if MATNAME == MATNAME_sprandn
 #if _NV_ > 1
