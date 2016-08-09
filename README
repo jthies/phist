@@ -1,5 +1,6 @@
 ===== ABOUT =====
-This library provides an easier interface to introduce Checkpoint/Restart capabilities in your program.
+This library provides an easier interface to introduce Checkpoint/Restart and Automatic Fault Tolerance(AFT) capabilities in your program.
+AFT-option can only be used if compliled with ULFM-MPI.
 
 ===== Supported types and features =====
 
@@ -14,5 +15,6 @@ This library provides an easier interface to introduce Checkpoint/Restart capabi
 
 ===== INSTALLATION =====
 1) ccmake ./
-configure according to your requirements
+ Provide CMAKE_INSTALL_PREFIX. Configure according to your requirements. 
 2) make
+3) make install
