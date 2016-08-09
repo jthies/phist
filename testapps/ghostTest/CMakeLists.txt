@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.6)
-project (APP-SCR-TEST C Fortran CXX)
+project (GHOST-TEST C Fortran CXX)
 
 find_package(MPI REQUIRED)
 if(MPI_FOUND)
@@ -21,32 +21,24 @@ find_package(GHOST REQUIRED)
 		message (STATUS "GHOST package is NOT found")
 endif()
 
-find_package(ESSEX-PHYSICS REQUIRED)
-	if(ESSEX-PHYSICS_FOUND)
-		message (STATUS "GHOST pacage is found ${ESSEX-PHYSICS_INCLUDE_DIRS} ")
-		include_directories(${ESSEX-PHYSICS_INCLUDE_DIRS})
-		set(LIBS ${LIBS} ${ESSEX-PHYSICS_LIBRARIES})
-		link_libraries(${ESSEX-PHYSICS_LIBRARIES})
-	else()
-			message (STATUS "ESSEX-PHYSICS package is NOT found")
+find_package(CPAFT REQUIRED)
+if(CPAFT_FOUND)
+	message (STATUS "CPAFT package is found ${CPAFT_INCLUDE_PATH}")
+	message (STATUS "CPAFT_FLAGS: ${CPAFT_FLAGS}")
+	include_directories(${CPAFT_INCLUDE_PATH})
+	set(LIBS ${LIBS} ${CPAFT_LIBRARIES})
+	link_libraries(${CPAFT_LIBRARIES})
+	set( CMAKE_CXX_FLAGS ${CPAFT_FLAGS})
+else()
+	message (STATUS "CPAFT package is NOT found")
 endif()
 
-
-
-set (CPAFT "/home/hpc/unrz/unrza354/Projects/ESSEX/GHOST/CPLIB/CpAftlib/")
-include_directories(${CPAFT})
-link_directories("${CPAFT}")
-set(LIBS ${LIBS} ${CPAFT})
-link_libraries (cpaft)
-
-set (GHOSTSANDBOX "/home/hpc/unrz/unrza354/Projects/ESSEX/GHOST/ghost-sandbox")
-set (ESSEXAMPLES_INC "/home/hpc/unrz/unrza354/Projects/ESSEX/GHOST/ghost-sandbox/ghost-apps/common")
-set (ESSEXAMPLES_LIB "/home/hpc/unrz/unrza354/Projects/ESSEX/GHOST/ghost-sandbox/build-ulfm-aft/ghost-apps/common/")
+find_path(ESSEXAMPLES_INC REQURIED)
+find_path(ESSEXAMPLES_LIB REQURIED)
 include_directories(${ESSEXAMPLES_INC})
 link_directories("${ESSEXAMPLES_LIB}")
-set(LIBS ${LIBS} ${ESSEXAMPLES_LIB})
-link_libraries (essexamples)
 
+link_libraries (essexamples)
 
 add_executable(ghostTest.bin ghostTest.cpp )
 

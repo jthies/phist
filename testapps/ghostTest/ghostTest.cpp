@@ -1,10 +1,10 @@
-#include "aft.h"
-#include "aft_macros.h"
-
+#ifdef AFT
+	#include <aft.h>
+	#include <aft_macros.h>
+#endif
 
 #include "ghostTest.h"
 #include <malloc.h>
-//#include "param.h"
 #include <Checkpoint.hpp>
 #include <vector>
 #include <string>
@@ -59,8 +59,10 @@ static void *mainTask(void *varg)
 
 	int success = false;
 	int failed = false;
+#ifdef AFT
    	MPI_Comm FT_Comm;
    	KSM_MAIN_BEGIN(FT_Comm, &myrank, argv);	
+#endif 
 
     ghost_context *context;
 	
@@ -85,8 +87,11 @@ static void *mainTask(void *varg)
     vtraits.datatype = vecdt;
     	
     ghost_sparsemat_traits mtraits = GHOST_SPARSEMAT_TRAITS_INITIALIZER;
+#ifdef AFT
     essexamples_create_context_and_matrix_ft(&context,&A,&mtraits, FT_Comm);
-    
+#else 
+    essexamples_create_context_and_matrix_ft(&context,&A,&mtraits, MPI_COMM_WORLD);
+#endif
     ghost_spmv_flags spmvmOpt = GHOST_SPMV_DOT;
     ghost_spmv_opts spmvtraits = GHOST_SPMV_OPTS_INITIALIZER;
     spmvtraits.dot = localdot;
@@ -107,7 +112,7 @@ static void *mainTask(void *varg)
 
     ghost_spmv(r,A,x,spmvtraits); // r = A * x
     ghost_axpby(r,b,&one, &neg);  // r = -1*r + b
-    ghost_dot(&alpha,r,r);        // alpha = ||r||
+    ghost_dot(&alpha,r,r,A->context->mpicomm);        // alpha = ||r||
 
     ghost_densemat_init_densemat(p,r,0,0); // p = r
 
@@ -118,7 +123,7 @@ static void *mainTask(void *varg)
 	Checkpoint * myCP = new Checkpoint[1];
 	myCP->setCpPath(cpPath);
 	//myCP->enableSCR();
-	myCP->setComm(FT_Comm);
+//	myCP->setComm(FT_Comm);
 	myCP->add("iteration", &iteration);	
 	myCP->add("lambda", &lambda);	
 	myCP->add("alpha", &alpha);	
@@ -161,7 +166,7 @@ static void *mainTask(void *varg)
         ghost_instr_prefix_set("");
         lambda *= -1.;
 
-        ghost_dot(&alpha,r,r); // alpha = ||r||
+        ghost_dot(&alpha,r,r,A->context->mpicomm); // alpha = ||r||
 
         tmp = alpha/alphaold;
 
@@ -188,7 +193,7 @@ static void *mainTask(void *varg)
     ghost_spmv(r,A,x,GHOST_SPMV_OPTS_INITIALIZER);
     r->axpy(r,b,&neg);
     vecdt_t rnorm;
-    ghost_dot(&rnorm,r,r);
+    ghost_dot(&rnorm,r,r,A->context->mpicomm);
     rnorm = sqrt(rnorm);
     printf("|Ax-b|      = %g\n",rnorm);
     printf("%d: END-------------------------------------\n", myrank);
@@ -203,8 +208,9 @@ static void *mainTask(void *varg)
     ghost_sparsemat_destroy(A);
 
     ghost_context_destroy(context);
-	
+#ifdef AFT	
 	KSM_MAIN_END();
+#endif
     return NULL;
     
 }
