@@ -30,6 +30,7 @@ extern "C" void phist_bench_stream_load(double* mean_bw, double* max_bw, int* if
   PHIST_SOUT(PHIST_VERBOSE, "Streaming LOAD benchmark: ");
 #if PHIST_BENCH_LARGE_N<=0
   PHIST_SOUT(PHIST_VERBOSE, "skipped because PHIST_BENCH_LARGE_N<=0\n");
+  *iflag=1;
   *mean_bw=0.0;
   *max_bw=0.0;
 #else
@@ -49,6 +50,7 @@ extern "C" void phist_bench_stream_store(double* mean_bw, double* max_bw, int* i
   PHIST_SOUT(PHIST_VERBOSE, "Streaming STORE benchmark: ");
 #if PHIST_BENCH_LARGE_N<=0
   PHIST_SOUT(PHIST_VERBOSE, "skipped because PHIST_BENCH_LARGE_N<=0\n");
+  *iflag=1;
   *mean_bw=0.0;
   *max_bw=0.0;
 #else
@@ -68,6 +70,7 @@ extern "C" void phist_bench_stream_triad(double* mean_bw, double* max_bw, int* i
   PHIST_SOUT(PHIST_VERBOSE, "Streaming TRIAD benchmark: ");
 #if PHIST_BENCH_LARGE_N<=0
   PHIST_SOUT(PHIST_VERBOSE, "skipped because PHIST_BENCH_LARGE_N<=0\n");
+  *iflag=1;
   *mean_bw=0.0;
   *max_bw=0.0;
 #else
