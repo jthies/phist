@@ -1296,7 +1296,7 @@ endif()
 # py.test, which is included in phist but currently with a hard-coded interpreter from
 # the module system (anaconda module). We can't just load the module because it brings its own
 # MPI installation which breaks the rest of PHIST.
-if(INTEGRATION_BUILD)
+if(INTEGRATION_BUILD AND NOT DISABLE_PYTHON_TESTS)
   configure_file(${PROJECT_SOURCE_DIR}/python/py.test ${CMAKE_CURRENT_BINARY_DIR}/ COPYONLY)
   # note: we can do system-specific stuff like chmod here because we know that it's an integration build
   # and no one should run it except for ourselves
