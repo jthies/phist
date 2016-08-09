@@ -32,8 +32,8 @@ endif()
 
 if(GHOST_CP)
 	find_package(GHOST REQUIRED)
+	add_definitions(-DGHOST_CP)
 	if(GHOST_FOUND)
-		add_definitions(-DGHOST_CP)
 		message (STATUS "GHOST pacage is found ${GHOST_INCLUDE_DIRS} ")
 		include_directories(${GHOST_INCLUDE_DIRS})
 		set(LIBS ${LIBS} ${GHOST_LIBRARIES})
@@ -87,7 +87,11 @@ endif()
 
 add_library(cpaft SHARED ${CPAFT_SOURCE} ${CPPHISTMVEC_SRC} ${CPPHISTSDMAT_SRC})
 set(LIBRARY_INSTALL_DIR lib)
+
+configure_file("${SRC_DIR}/cpaft-config.cmake.in" "${SRC_DIR}/cpaft-config.cmake" @ONLY)
+
 install ( TARGETS cpaft EXPORT cpaftLibrary LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR} )
+install ( FILES ${SRC_DIR}/cpaft-config.cmake DESTINATION ${LIBRARY_INSTALL_DIR} )
 
 file(GLOB CPAFT_HEADERS ${CMAKE_SOURCE_DIR}/*.h
 												${CMAKE_SOURCE_DIR}/*.hpp	
@@ -100,3 +104,4 @@ set(INCLUDE_INSTALL_DIR include)
 install ( FILES ${CPAFT_HEADERS} DESTINATION ${INCLUDE_INSTALL_DIR} )
 
 
+#configure_file("${SRC_DIR}/phistConfig.cmake.in" "${PROJECT_BINARY_DIR}/phistConfig.cmake" INSTALL_DESTINATION ${LIBRARY_INSTALL_DIR}/cmake/phist PATH_VARS INCLUDE_INSTALL_DIR)# LIBRARY_INSTALL_DIR)
