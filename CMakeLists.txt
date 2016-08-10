@@ -77,12 +77,18 @@ if(SCR)
 endif()
 
 set (CPAFT_SOURCE 	${SRC_DIR}/Checkpoint.cpp
-		${SRC_DIR}/cp_options.cpp)
+		${SRC_DIR}/cp_options.cpp
+		)
 
 if(AFT)
-	set ( CPAFT_SOURCE 	${CPAFT_SOURCE}
-						${SRC_DIR}/aft.cpp
-						${SRC_DIR}/aft_macros.h)
+	find_file(MPI_EXT_PATH "mpi-ext.h" HINTS ${MPI_INCLUDE_PATH})
+	message (STATUS "MPI_EXT_PATH: ${MPI_EXT_PATH}")
+	if("${MPI_EXT_PATH}" STREQUAL "MPI_EXT_PATH-NOTFOUND")
+		message (FATAL_ERROR "mpi-ext.h is not found. Compile with ULFM-MPI for using AFT feature.")
+	endif()
+		set ( CPAFT_SOURCE 	${CPAFT_SOURCE}
+							${SRC_DIR}/aft.cpp
+							${SRC_DIR}/aft_macros.h)
 endif()	
 
 add_library(cpaft SHARED ${CPAFT_SOURCE} ${CPPHISTMVEC_SRC} ${CPPHISTSDMAT_SRC})
@@ -95,11 +101,12 @@ install ( FILES ${SRC_DIR}/cpaft-config.cmake DESTINATION ${LIBRARY_INSTALL_DIR}
 
 file(GLOB CPAFT_HEADERS ${CMAKE_SOURCE_DIR}/*.h
 												${CMAKE_SOURCE_DIR}/*.hpp	
-												${CMAKE_SOURCE_DIR}/cpTypes/*/*.hpp	
-												${CMAKE_SOURCE_DIR}/cpTypes/*/*.h	
 												)
-												
-			
+
+file(GLOB CPAFT_TYPE_SRC 
+					${CMAKE_SOURCE_DIR}/cpTypes	
+		)	
 set(INCLUDE_INSTALL_DIR include)
 install ( FILES ${CPAFT_HEADERS} DESTINATION ${INCLUDE_INSTALL_DIR} )
+install ( DIRECTORY ${CPAFT_TYPE_SRC} DESTINATION ${INCLUDE_INSTALL_DIR} )
 
