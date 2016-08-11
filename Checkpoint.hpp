@@ -42,7 +42,7 @@ protected:
 public:
 	Checkpoint();  
 	~Checkpoint();  
-  	void setCpPath (const std::string cpPath_);
+	void setCpPath (const std::string cpPath_);
 	void setComm (const MPI_Comm cpMpiComm_);
 	void enableSCR();
 	void commit();

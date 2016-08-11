@@ -72,8 +72,8 @@ int main(int argc, char* argv[])
 	}
 	
 	Checkpoint * myCP = new Checkpoint[1];
-	
 	myCP->setCpPath(cpPath);
+	myCP->setComm(FT_Comm);
 	myCP->add("a", a, n);
 	myCP->add("d", d, n);
 	myCP->add("iteration", &iteration);
