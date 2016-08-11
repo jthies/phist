@@ -1,3 +1,8 @@
+#ifdef AFT
+	#include <aft.h>
+	#include <aft_macros.h>
+#endif
+
 
 #include "arrayTest.h"
 #include <malloc.h>
@@ -40,11 +45,20 @@ int read_params(int argc, char* argv[] , std::string * cpPath){
 
 int main(int argc, char* argv[])
 {
-	int iteration = 0, failed = true, nIter = 10;
+	int iteration = 0, nIter = 20;
 	MPI_Init(&argc, &argv);
    	int myrank, numprocs;
-	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+//	===== AFT BEGIN =====
+	int success = false;
+	int failed = false;
+  MPI_Comm FT_Comm;
+	MPI_Comm_dup(MPI_COMM_WORLD, &FT_Comm);
+#ifdef AFT
+   	KSM_MAIN_BEGIN(FT_Comm, &myrank, argv);	
+#endif 
+
+	MPI_Comm_rank(FT_Comm, &myrank);
+	MPI_Comm_size(FT_Comm, &numprocs);
 	printf("%d/%d\n", myrank, numprocs);
 	std::string cpPath;
   read_params(argc, argv, &cpPath); 
@@ -65,13 +79,15 @@ int main(int argc, char* argv[])
 	myCP->add("iteration", &iteration);
 	myCP->commit(); 
  
-	printf("%d: START----------------------\n", myrank);
-	int rc = 9;
-    for(; iteration < nIter ; iteration++)
-    {
-		printf("===========\n");
-		printf("iter: %d\t\n", iteration);
-		printf("a[0]: %d\t\n", a[0]);
+  if( failed == true ) {
+		failed = false;
+		printf("RESTART ------> failed == true \n");
+		myCP->read();
+		iteration++;
+	}
+	for(; iteration < nIter ; iteration++)
+  {
+		printf("=== iter: %d\t\n", iteration);
 		for(size_t i = 0; i < n ; ++i){
 			a[i] += 1;
 			d[i] += 1.0;
@@ -81,16 +97,26 @@ int main(int argc, char* argv[])
 			exit(0);
 		}
 */
-		if(iteration % 3 == 0){
+		if(iteration % 5 == 0){
 			myCP->update();
 			myCP->write();
 		}
-		if(iteration  == 5 && failed == true){
-			myCP->read();
-			failed = false;
-		}
-		usleep(1000000);
-    }
+		usleep(500000);
+		MPI_Barrier(FT_Comm);
+		if ( iteration+1 == nIter ){
+			success = true;
+			printf("%d/%d: iterations finishied \n", myrank, numprocs);
+	  }
+
+  }
+	myCP->update();
+	myCP->write();
+
+#ifdef AFT
+	KSM_MAIN_END();
+#endif
+
+	MPI_Finalize();
 	return 0;
 }
 
