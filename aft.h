@@ -3,6 +3,7 @@
 
 #include "mpi.h"
 #include "mpi-ext.h"
+#include <unistd.h>
 //#include "config.h"
 
 // int verbose= 1;
