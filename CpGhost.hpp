@@ -32,7 +32,7 @@ public:
 
 	void write( const std::string * filename){
 		printf("Writing ghost densemat: \n");
-		asynData->toFile(asynData, (char *) (*filename).c_str(), 0); 
+		asynData->toFile(asynData, (char *) (*filename).c_str(), MPI_COMM_SELF);	// TODO:  enbale local and private writes.
 		return;
 	}
 	
@@ -83,7 +83,7 @@ public:
 		for(size_t i = 0; i < nDenseMat ; ++i)
 		{
 			printf("Writing ghost densemat: %d\n", i);
-			asynData[i]->toFile(asynData[i], (char *) (*filename).c_str(), 0); 
+			asynData[i]->toFile(asynData[i], (char *) (*filename).c_str(), MPI_COMM_SELF); // TODO:  enbale local and private writes.
 		}
 		return;
 	}
