@@ -38,7 +38,7 @@ public:
 	
 	void read(const std::string * filename){
 		printf("Reading ghost densemat: \n");
-		asynData->fromFile(asynData, (char *) (*filename).c_str(), 0); 
+		asynData->fromFile(asynData, (char *) (*filename).c_str(), MPI_COMM_SELF); // TODO:  enbale local and private read.
 		ghost_densemat_init_densemat(dataPtr, asynData, 0, 0);
 		return;
 	}
@@ -93,7 +93,7 @@ public:
 		for(size_t i = 0; i < nDenseMat ; ++i)
 		{
 			printf("Writing ghost densemat: %d\n", i);
-			asynData[i]->fromFile(asynData[i], (char *) (*filename).c_str(), 0); 
+			asynData[i]->fromFile(asynData[i], (char *) (*filename).c_str(), MPI_COMM_SELF); // TODO:  enbale local and private read.
 			ghost_densemat_init_densemat(dataPtr[i], asynData[i], 0, 0);
 		}
 		return;
