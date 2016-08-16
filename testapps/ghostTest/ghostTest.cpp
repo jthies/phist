@@ -6,6 +6,7 @@
 #include "ghostTest.h"
 #include <malloc.h>
 #include <Checkpoint.hpp>
+
 #include <vector>
 #include <string>
 #include <cstring>
@@ -15,11 +16,11 @@
 #include <stdio.h>
 #include "essexamples.h"
 #include <math.h>
+
 #include "CpGhost.hpp"
 #include "CpPOD.hpp"
 
 #define DP
-
 #ifdef DP
     GHOST_REGISTER_DT_D(vecdt) // vectors have double values
     GHOST_REGISTER_DT_D(matdt) // matrix has double values
@@ -59,9 +60,10 @@ static void *mainTask(void *varg)
 
 	int success = false;
 	int failed = false;
+  MPI_Comm FT_Comm;
+	MPI_Comm_dup(MPI_COMM_WORLD, &FT_Comm);
 #ifdef AFT
-   	MPI_Comm FT_Comm;
-   	KSM_MAIN_BEGIN(FT_Comm, &myrank, argv);	
+  KSM_MAIN_BEGIN(FT_Comm, &myrank, argv);	
 #endif 
 
     ghost_context *context;
@@ -80,8 +82,8 @@ static void *mainTask(void *varg)
     ghost_densemat *v;
 	
     essexamples_get_iterations(&nIter);
-	essexamples_get_cp_freq(&cp_freq);
-	essexamples_get_cp_folder(&cpPath);
+		essexamples_get_cp_freq(&cp_freq);
+		essexamples_get_cp_folder(&cpPath);
 
     ghost_densemat_traits vtraits = GHOST_DENSEMAT_TRAITS_INITIALIZER;
     vtraits.datatype = vecdt;
@@ -97,7 +99,7 @@ static void *mainTask(void *varg)
     spmvtraits.dot = localdot;
     spmvtraits.flags = GHOST_SPMV_DOT;
 
-	ghost_rank(&myrank, context->mpicomm);
+		ghost_rank(&myrank, context->mpicomm);
 
     essexamples_create_densemat(&x,&vtraits,context);
     essexamples_create_densemat(&b,&vtraits,context);
@@ -122,8 +124,10 @@ static void *mainTask(void *varg)
 
 	Checkpoint * myCP = new Checkpoint[1];
 	myCP->setCpPath(cpPath);
-	//myCP->enableSCR();
-//	myCP->setComm(FT_Comm);
+#ifdef SCR
+	myCP->enableSCR();
+#endif
+	myCP->setComm(FT_Comm);
 	myCP->add("iteration", &iteration);	
 	myCP->add("lambda", &lambda);	
 	myCP->add("alpha", &alpha);	
@@ -131,15 +135,14 @@ static void *mainTask(void *varg)
 	myCP->add("r", r);
 	myCP->add("p", p);
 	// this class object contains only an integer
-    myCP->commit();
+  myCP->commit();
     	
-    printf("%d: START-------------------------------------\n", myrank);
-	//return NULL;
 	iteration = 0;
 	if(failed == true){
 		failed = false;
 		printf("RESTART ----> failed == true \n");
 		myCP->read();
+		iteration++;
 	}
 	
     for(; iteration < nIter && alpha > EPS; iteration++)
@@ -170,13 +173,13 @@ static void *mainTask(void *varg)
 
         tmp = alpha/alphaold;
 
-        ghost_axpby(p,r,&one,&tmp);
+        ghost_axpby(p,r,&one,&tmp);			//	p = 1*r + tmp*p // ghost_axpby(y, x, a, b)
 		
-		usleep(100000);
+				usleep(10000);				// TODO: just for testing, in order to see the progress of program
         if (myrank == 0){
-			printf("iter=%d, ", iteration);
-          	printf("alpha[%4d] = %g\n",iteration+1, alpha);
-	   	}
+					printf("iter=%d, ", iteration);
+          printf("alpha[%4d] = %g\n",iteration+1, alpha);
+	   		}
 		if(iteration % cp_freq == 0){
 			myCP->update();
 			myCP->write();
@@ -211,6 +214,7 @@ static void *mainTask(void *varg)
 #ifdef AFT	
 	KSM_MAIN_END();
 #endif
+	
     return NULL;
     
 }
@@ -220,19 +224,17 @@ int main(int argc, char* argv[])
 	args arg;
 	arg.argc = argc;
 	arg.argv = argv;
-    essexamples_process_options(argc,argv);
+  essexamples_process_options(argc,argv);
+  ghost_init(argc,argv); 
+  ghost_task *t;
+  ghost_task_create(&t,GHOST_TASK_FILL_ALL,0,&mainTask,&arg,GHOST_TASK_DEFAULT, NULL, 0);
 
-    ghost_init(argc,argv); 
+  ghost_task_enqueue(t);
+ 	ghost_task_wait(t);
+  ghost_task_destroy(t);
+  ghost_finalize();
 
-    ghost_task *t;
-    ghost_task_create(&t,GHOST_TASK_FILL_ALL,0,&mainTask,&arg,GHOST_TASK_DEFAULT, NULL, 0);
-
-    ghost_task_enqueue(t);
-    ghost_task_wait(t);
-    ghost_task_destroy(t);
-    ghost_finalize();
-
-    return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }
 
 
