@@ -125,6 +125,7 @@ static void *mainTask(void *varg)
 	Checkpoint * myCP = new Checkpoint[1];
 	myCP->setCpPath(cpPath);
 #ifdef SCR
+	printf("===== SCR ENABLED =====");
 	myCP->enableSCR();
 #endif
 	myCP->setComm(FT_Comm);
@@ -175,7 +176,7 @@ static void *mainTask(void *varg)
 
         ghost_axpby(p,r,&one,&tmp);			//	p = 1*r + tmp*p // ghost_axpby(y, x, a, b)
 		
-				usleep(10000);				// TODO: just for testing, in order to see the progress of program
+				usleep(1000);				// TODO: just for testing, in order to see the progress of program
         if (myrank == 0){
 					printf("iter=%d, ", iteration);
           printf("alpha[%4d] = %g\n",iteration+1, alpha);

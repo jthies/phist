@@ -73,6 +73,10 @@ int main(int argc, char* argv[])
 	
 	Checkpoint * myCP = new Checkpoint[1];
 	myCP->setCpPath(cpPath);
+#ifdef SCR
+	printf("===== SCR ENABLED =====");
+	myCP->enableSCR();
+#endif
 	myCP->setComm(FT_Comm);
 	myCP->add("a", a, n);
 	myCP->add("d", d, n);
@@ -111,7 +115,12 @@ int main(int argc, char* argv[])
   }
 	myCP->update();
 	myCP->write();
-
+	for(int i = 0; i < n; ++i){
+		printf("a[%d]: %d \n", i, a[i]);
+	}
+	for(int i = 0; i < n; ++i){
+		printf("d[%d]: %f \n", i, d[i]);
+	}
 #ifdef AFT
 	KSM_MAIN_END();
 #endif

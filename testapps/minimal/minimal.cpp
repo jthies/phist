@@ -1,3 +1,4 @@
+#undef SCR
 #ifdef AFT
 	#include <aft.h>
 	#include <aft_macros.h>
@@ -61,6 +62,7 @@ int main(int argc, char* argv[])
 
 	int n = 5;
 	int myint = 0;
+	double mydouble = 0.0123;
 	int * myarray 	= new int[n];
 	for(int i = 0; i < n; ++i){
 			myarray[i] = 0;
@@ -70,8 +72,14 @@ int main(int argc, char* argv[])
 	
 	Checkpoint * myCP = new Checkpoint[1];
 	myCP->setCpPath(cpPath);
+#ifdef SCR
+	printf("===== SCR ENABLED =====\n");
+	myCP->enableSCR();
+#endif
+
 	myCP->setComm(FT_Comm);
 	myCP->add("myint", &myint);
+	myCP->add("mydouble", &mydouble);
 	myCP->add("iteration", &iteration);
 	myCP->add("myarray", myarray, n);
 	myCP->commit(); 
