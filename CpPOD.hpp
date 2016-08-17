@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 
 template <class T>
 class CpPOD: public CpBase
@@ -41,7 +42,7 @@ public:
 	{
 		std::ofstream fstr;
 		fstr.open ((*filename).c_str());	
-		fstr << *asynData;
+		fstr << std::setprecision(32) << *asynData;
 		fstr.close();
 		return;
 	}

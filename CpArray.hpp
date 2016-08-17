@@ -50,7 +50,7 @@ public:
 		std::ofstream fstr;
 		fstr.open ((*filename).c_str());	
 		for(size_t i = 0; i < nRows; ++i){
-			fstr << asynData[i] << std::endl;	
+			fstr << std::setprecision(32) << asynData[i] << std::endl;	
 		}
 		fstr.close();
 		return;
