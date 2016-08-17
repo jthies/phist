@@ -29,11 +29,9 @@ public:
 	void read(const std::string * filename)
 	{
 		std::ifstream fstr;
-		fstr.open ((*filename).c_str());	
-		std::string line;
-		getline (fstr, line); 
-		*asynData = StringToNumber<T>(line);
-		*dataPtr = *asynData;
+		fstr.open ((*filename).c_str(), std::ios::in | std::ios::binary);	
+		fstr.read( (char*)dataPtr , sizeof(T));	
+		std::cout << "dataPtr read is: " << *dataPtr << std::endl;
 		fstr.close();
 		return;
 	}
@@ -41,8 +39,10 @@ public:
 	void write(const std::string * filename)
 	{
 		std::ofstream fstr;
-		fstr.open ((*filename).c_str());	
-		fstr << std::setprecision(32) << *asynData;
+		fstr.open ((*filename).c_str(), std::ios::out | std::ios::app | std::ios::binary );	
+		if(fstr.is_open()){
+			fstr.write( (char *)asynData, sizeof (T) );
+		}
 		fstr.close();
 		return;
 	}

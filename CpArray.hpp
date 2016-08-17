@@ -32,13 +32,8 @@ public:
 	void read(const std::string * filename)
 	{
 		std::ifstream fstr;
-		fstr.open ((*filename).c_str());	
-		std::string line;
-		for(size_t i = 0; i < nRows; ++i){
-			getline (fstr, line);
-			asynData[i] = StringToNumber<T>(line);	// TODO: perhaps the array can be directly read into dataPtr.
-			dataPtr[i] = asynData[i];
-		}	
+		fstr.open ((*filename).c_str(), std::ios::in | std::ios::binary);	
+		fstr.read( (char*)dataPtr , sizeof(T) * nRows);	
 		fstr.close();
 		std::cout << "POD Array after reading is: " << std::endl;
 		//print();
@@ -48,10 +43,8 @@ public:
 	void write(const std::string * filename)
 	{
 		std::ofstream fstr;
-		fstr.open ((*filename).c_str());	
-		for(size_t i = 0; i < nRows; ++i){
-			fstr << std::setprecision(32) << asynData[i] << std::endl;	
-		}
+		fstr.open ((*filename).c_str(), std::ios::out | std::ios::app | std::ios::binary);	
+		fstr.write( (char *)asynData, sizeof (T) * nRows );
 		fstr.close();
 		return;
 	}
