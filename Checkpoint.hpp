@@ -55,8 +55,8 @@ public:
   	cp_copy_map async_copies;
 
  
-  	void read();	
-  	void write();
+  void read();	
+ 	void write();
 	void update();
   
 // implementation of add() for anything that is CpBase,

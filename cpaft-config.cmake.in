@@ -19,6 +19,13 @@ endif()
 
 if(@SCR@ STREQUAL "ON")
 				set(CPAFT_FLAGS "${CPAFT_FLAGS} -DSCR")
+				set (SCR_INCLUDE_PATH @SCR_INCLUDE_PATH@)
+				include_directories("${SCR_INCLUDE_PATH}")
+				set (SCR_LIBRARY_PATH @SCR_LIBRARY_PATH@)
+				link_directories ("${SCR_LIBRARY_PATH}")
+				set (SCR_LIBRARIES "${SCR_LIBRARY_PATH}/libscr.so")
+				link_libraries (${SCR_LIBRARIES})
+				message (STATUS "SCR_LIBRARIES: ${SCR_LIBRARIES}")
 endif()
 
 if(@AFT@ STREQUAL "ON")
