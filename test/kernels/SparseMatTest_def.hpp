@@ -1023,12 +1023,15 @@ protected:
     SUBR(mvec_random)(vec1_, &iflag_);
     ASSERT_EQ(0,iflag_);
 
-    // safe vec1_
+    // save vec1_
     SUBR(mvec_add_mvec)(st::one(), vec1_, st::zero(), vec2_, &iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(mvec_to_mvec)(vec1_,vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_EQ(0,iflag_);
+    
+    // this is a sanity check to make sure the above give the same (mvec_add_mvec and mvec_to_mvec)
+    ASSERT_REAL_EQ(1.0,MvecsEqual(vec1_,vec2_));
+    ASSERT_REAL_EQ(1.0,MvecsEqual(vec2_,vec3_));
 
     // create views
     TYPE(mvec_ptr) vin = NULL;
@@ -1219,10 +1222,9 @@ TEST_F(CLASSNAME,compare_with_rowFunc)
   PHISTTEST_MVEC_CREATE(&tmp_vec1, defaultMap_, nvec_, &iflag_);
   EXPECT_EQ(0,iflag_);
   _ST_* vec1_vp=NULL;
-  phist_lidx lda;
-  SUBR(mvec_extract_view)(tmp_vec1,&vec1_vp,&lda,&iflag_);
+  phist_lidx lda_tmp;
+  SUBR(mvec_extract_view)(tmp_vec1,&vec1_vp,&lda_tmp,&iflag_);
   EXPECT_EQ(0,iflag_);
-  EXPECT_EQ(lda,lda_);
   phist_gidx ilower;
   phist_map_get_ilower(defaultMap_,&ilower,&iflag_);
   EXPECT_EQ(0,iflag_);  
@@ -1234,7 +1236,7 @@ TEST_F(CLASSNAME,compare_with_rowFunc)
     {
       _ST_ v2val;
       PHIST_TG_PREFIX(mvec321func)(row,j,&v2val,v_arg);
-      vec1_vp[VIDX(i,j,lda_)]=beta*v2val;
+      vec1_vp[VIDX(i,j,lda_tmp)]=beta*v2val;
     }
     ghost_lidx len;
     ghost_gidx cols[_N_];
@@ -1248,7 +1250,7 @@ TEST_F(CLASSNAME,compare_with_rowFunc)
         _ST_ v1val;
         iflag_=PHIST_TG_PREFIX(mvec123func)(cols[j],k,&v1val,v_arg);
         if (iflag_) {row_func_error_encountered=true; break;}
-        vec1_vp[VIDX(i,k,lda_)]+=alpha*val[j]*v1val;
+        vec1_vp[VIDX(i,k,lda_tmp)]+=alpha*val[j]*v1val;
       }
       if (row_func_error_encountered) break;
     }
