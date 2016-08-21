@@ -439,7 +439,7 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
       oss << "col-major storage"<<std::endl;
 #endif
     }
-    if (_Nglob>100)
+    if (_Nglob>1000)
     {
       if (rank==0)
       {

@@ -312,7 +312,7 @@ extern "C" void SUBR(jdqr)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_pt
     //ALG if (expand)
     if (expand)
     {
-      PHIST_DEB("EXPAND basis by %d vector(s)\n",nv);
+      PHIST_DEB("EXPAND basis by %d vector(s)\n",expand);
       int m0=m;
       m+=expand;
       mm++;
