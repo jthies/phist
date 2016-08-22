@@ -361,20 +361,22 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
   return iflag;
   }
 
-  //! tests if each column of an mv is normalized in the 2-norm
-  static MT ColsAreNormalized(const ST* vec_vp, phist_lidx nloc, phist_lidx lda, phist_lidx stride,
+  //! tests if each column of an mv is normalized in the B-norm
+  static MT ColsAreBNormalized(const ST* V_vp, const ST* BV_vp, phist_lidx nloc, 
+        phist_lidx ldV, phist_lidx ldBV, phist_lidx stride,
         MPI_Comm mpi_comm)
-    {
+  {
     MT res=1.0;
-    // see if all columns in vec2 have 2-norm 1
+    // see if all columns in vec2 have B-norm 1
     ST *norms = new ST[nvec_];
     for (int j=0;j<nvec_;j++)
       {
       ST sum=st::zero();
       for (int i=0;i<stride*nloc;i+=stride)
         {
-        ST val=vec_vp[VIDX(i,j,lda)];
-        sum+=st::conj(val)*val; 
+        ST val=V_vp[VIDX(i,j,ldV)];
+        ST Bval=BV_vp[VIDX(i,j,ldBV)];
+        sum+=st::conj(val)*Bval; 
         }
       norms[j]=sum;
       }
@@ -383,15 +385,18 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
     res=ArrayEqual(norms,nvec_,1,nvec_,1,st::one());
     delete [] norms;
     return res;
-    }
+  }
 
-  // check if vectors are mutually orthogonal after QR factorization
-  static MT ColsAreOrthogonal(ST* vec_vp, phist_lidx nloc, phist_lidx lda, phist_lidx stride,MPI_Comm mpi_comm) 
+  // check if vectors are mutually B-orthogonal, V'BV=I
+  static MT ColsAreBOrthogonal(ST* V_vp, ST* BV_vp, phist_lidx nloc, 
+        phist_lidx ldV, phist_lidx ldBV, phist_lidx stride,MPI_Comm mpi_comm) 
   {
     MT res=mt::one();
     int nsums=(nvec_*nvec_-nvec_)/2;
     if(nsums == 0)
+    {
       return mt::one();
+    }
     else
     {
       ST sums[nsums+1];
@@ -402,8 +407,8 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
           ST sum=st::zero();
           for (int i=0;i<stride*nloc;i+=stride)
           {
-            ST val1=vec_vp[VIDX(i,j1,lda)];
-            ST val2=vec_vp[VIDX(i,j2,lda)];
+            ST val1=V_vp[VIDX(i,j1,ldV)];
+            ST val2=BV_vp[VIDX(i,j2,ldBV)];
             sum+=val1*st::conj(val2);
           }
           sums[k++]=sum;
@@ -412,6 +417,20 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
       res=ArrayEqual(sums,nsums,1,nsums,1,st::zero());
       return res;
     }
+  }
+
+  //! tests if each column of an mv is normalized in the 2-norm, v_i'*v_i=1
+  static MT ColsAreNormalized(const ST* V_vp, phist_lidx nloc, 
+        phist_lidx ldV, phist_lidx stride,
+        MPI_Comm mpi_comm)
+    {
+      return ColsAreBNormalized(V_vp,V_vp,nloc,ldV,ldV,stride,mpi_comm);
+    }
+
+  // check if vectors are mutually orthogonal in the 2-norm, V'V=I
+  static MT ColsAreOrthogonal(ST* V_vp, phist_lidx nloc, phist_lidx ldV, phist_lidx stride,MPI_Comm mpi_comm) 
+  {
+    return ColsAreBOrthogonal(V_vp,V_vp,nloc,ldV,ldV,stride,mpi_comm);
   }
 
   // check if vectors are mutually orthogonal after QR factorization
