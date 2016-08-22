@@ -20,17 +20,25 @@ public:
   
   //! V is n x m, W is n x k  
   TYPE(mvec_ptr) V_, W_,W2_,Q_;
+  
+  //! linear operator representing a Hermitian positive definite (hpd) matrix B
+  //! which defines the inner product in which we want to orthogonalize.
+  //! If NULL it is the identity matrix, this is the case if ORTHOG_WITH_HPD_B is not defined.
+  TYPE(linearOp_ptr) B_op;
+
+  //! vectorspaces above, pre-multiplied by B
+  TYPE(mvec_ptr) BV_, BW_,BQ_;
+
+  //! sparse matrix B so we can delete it properly
+  TYPE(sparseMat_ptr) B_;
 
   //! R1 is m x m, R2 is k x k
   TYPE(sdMat_ptr) R0_, R1_, R2_;
-  
-  _ST_ *V_vp_,*W_vp_,*W2_vp_,*Q_vp_,*R0_vp_,*R1_vp_,*R2_vp_;
-  // how defines the data layout. Vector
-  // i starts at (i-1)*lda. Entries j and j+1
-  // are at memory locations (i-1)*lda+stride*j
-  // and (i-1)*lda+stride*(j+1), respectively.
-  phist_lidx ldaV_,ldaW_,ldaW2_,ldaQ_,ldaR0_,ldaR1_,ldaR2_,stride_;
 
+  //! for some tests we need to access the raw data of the R matrices and W2 (tmp space)
+  _ST_ *R0_vp_,*R1_vp_,*R2_vp_,*W2_vp_;
+  phist_lidx ldaR0_, ldaR1_, ldaR2_, ldaW2_, stride_;
+  
 
   static void SetUpTestCase()
   {
@@ -70,20 +78,37 @@ public:
       // create vectors V, W and vector views for setting/checking entries
       PHISTTEST_MVEC_CREATE(&V_,this->map_,this->m_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
-      SUBR(mvec_extract_view)(V_,&V_vp_,&ldaV_,&this->iflag_);
-      ASSERT_EQ(0,this->iflag_);
       PHISTTEST_MVEC_CREATE(&W_,this->map_,this->k_,&this->iflag_);
-      ASSERT_EQ(0,this->iflag_);
-      SUBR(mvec_extract_view)(W_,&W_vp_,&ldaW_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       PHISTTEST_MVEC_CREATE(&Q_,this->map_,this->k_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
-      SUBR(mvec_extract_view)(Q_,&Q_vp_,&ldaQ_,&this->iflag_);
-      ASSERT_EQ(0,this->iflag_);
       PHISTTEST_MVEC_CREATE(&W2_,this->map_,this->k_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
-      SUBR(mvec_extract_view)(W2_,&W2_vp_,&ldaW2_,&this->iflag_);
+      SUBR(sdMat_extract_view)(W2_,&W2_vp_,&this->ldaW2_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
+      
+      B_op=NULL; B_=NULL; BV_=NULL; BW_=NULL; BQ_=NULL;
+
+#ifdef ORTHOG_WITH_HPD_B
+      // create B_ as a tridiagonal hpd matrix
+      ghost_gidx gnrows=_N_;
+      // initialize rowFunc
+      iflag_=phist::testing::PHIST_TG_PREFIX(hpd_tridiag)(-1,NULL,&gnrows,NULL,NULL);
+      ASSERT_EQ(0,iflag_);
+      SUBR(sparseMat_create_fromRowFuncAndMap)(&B_,map_,3,&phist::testing::PHIST_TG_PREFIX(hpd_tridiag),NULL,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      B_op=new TYPE(linearOp);
+      SUBR(linearOp_wrap_sparseMat)(B_op,B_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // create spaces pre-multiplied by B
+      PHISTTEST_MVEC_CREATE(&BV_,this->map_,this->m_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      PHISTTEST_MVEC_CREATE(&BW_,this->map_,this->k_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+      PHISTTEST_MVEC_CREATE(&BQ_,this->map_,this->k_,&this->iflag_);
+      ASSERT_EQ(0,this->iflag_);
+#endif
       // create matrices R0,R1, R2 and matrix views for setting/checking entries
       SUBR(sdMat_create)(&R0_,this->m_,this->m_,this->comm_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
@@ -103,24 +128,40 @@ public:
   /*! Clean up.
    */
   virtual void TearDown()
-    {
+  {
     if (typeImplemented_ && !problemTooSmall_)
-      {
+    {
       SUBR(mvec_delete)(V_,&iflag_);
       SUBR(mvec_delete)(W_,&iflag_);
       SUBR(mvec_delete)(W2_,&iflag_);
       SUBR(mvec_delete)(Q_,&iflag_);
+#ifdef ORTHOG_WITH_HPD_B
+      SUBR(sparseMat_delete)(B_,&iflag_);
+      SUBR(mvec_delete)(BV_,&iflag_);
+      SUBR(mvec_delete)(BW_,&iflag_);
+      SUBR(mvec_delete)(BQ_,&iflag_);
+      delete B_op;
+#endif
       SUBR(sdMat_delete)(R0_,&iflag_);
       SUBR(sdMat_delete)(R1_,&iflag_);
       SUBR(sdMat_delete)(R2_,&iflag_);
-      }
+    }
     KernelTestWithMap<_N_>::TearDown();
     TestWithType<_ST_>::TearDown();
-    }
+  }
 
+  // primary test routine that calls orthog and checks the result vectors
+  // for orthogonality etc. Unit tests below just construct various V and W
+  // and their rank so that the correct rank detection can be checked. The
+  // other arguments are just memory locations that the test routine should
+  // use. BV/BW/BQ are not accessed unless ORTHOG_WITH_HPD_B is defined.
+  // It is *not* necessary to compute BV and BW beforehand.
   void doOrthogTests(TYPE(mvec_ptr) V, 
                   TYPE(mvec_ptr) W, 
                   TYPE(mvec_ptr) Q,
+                  TYPE(mvec_ptr) BV,
+                  TYPE(mvec_ptr) BW,
+                  TYPE(mvec_ptr) BQ,
                   TYPE(sdMat_ptr) R0,
                   TYPE(sdMat_ptr) R1,
                   TYPE(sdMat_ptr) R2,
@@ -136,10 +177,18 @@ public:
       // copy Q=W because orthog() works in-place
       SUBR(mvec_add_mvec)(st::one(),W,st::zero(),Q,&iflag_);
       ASSERT_EQ(0,iflag_);
+
+#ifdef ORTHOG_WITH_HPD_B
+      B_op->apply(st::one(),B_op->A,W,st::zero(),BW,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      B_op->apply(st::one(),B_op->A,V,st::zero(),BV,&iflag_);
+      ASSERT_EQ(0,iflag_);
+#endif
+
       // orthogonalize the m columns of V. Test that orthog
       // works if the first argument is NULL.
       int rankVW=-42;
-      SUBR(orthog)(NULL,V,NULL,R0,NULL,1,&rankVW,&iflag_);
+      SUBR(orthog)(NULL,V,B_op,R0,NULL,1,&rankVW,&iflag_);
       if (iflag_!=+2)
       {
         ASSERT_EQ(expect_iflagV,iflag_);
@@ -163,14 +212,38 @@ public:
       
       SUBR(mvec_from_device)(V,&iflag_);
       ASSERT_EQ(0,iflag_);
+#ifdef ORTHOG_WITH_HPD_B
+      // check wether this worked out
+      phist_lidx ldaBV;
+      ST* BV_vp=NULL;
+      SUBR(mvec_extract_view)(BV,&BV_vp,&ldaBV,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      int nvec_BV;
+      SUBR(mvec_num_vectors)(BV,&nvec_BV,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(VTest::nvec_,nvec_BV);
+
+      phist_lidx nloc_BV;
+      SUBR(mvec_my_length)(BV,&nloc_BV,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(nloc_,nloc_BV);
+      
+      SUBR(mvec_from_device)(BV,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+
+      ASSERT_NEAR(mt::one(),VTest::ColsAreBNormalized(V_vp,BV_vp,nloc_,ldaV,ldaBV,stride_,mpi_comm_),tolV);
+      ASSERT_NEAR(mt::one(),VTest::ColsAreBOrthogonal(V_vp,BV_vp,nloc_,ldaV,ldaBV,stride_,mpi_comm_),tolV);
+#else
       ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp,nloc_,ldaV,stride_,mpi_comm_),tolV);
       ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp,nloc_,ldaV,stride_,mpi_comm_),tolV);
-      
+#endif      
       int nsteps=2;
 
       // now orthogonalize W against V. The result should be such that Q*R1=W-V*R2, Q'*Q=I,V'*Q=0
       rankVW=-42;
-      SUBR(orthog)(V,Q,NULL,R1,R2,nsteps,&rankVW,&iflag_);
+      SUBR(orthog)(V,Q,B_op,R1,R2,nsteps,&rankVW,&iflag_);
       ASSERT_EQ(expect_iflagVW,iflag_);
       ASSERT_EQ(expectedRankVW,rankVW);
       
@@ -193,8 +266,30 @@ public:
       SUBR(mvec_from_device)(Q,&iflag_);
       ASSERT_EQ(0,iflag_);
 
+#ifdef ORTHOG_WITH_HPD_B
+      phist_lidx ldaBQ;
+      ST* BQ_vp=NULL;
+      SUBR(mvec_extract_view)(BQ,&BQ_vp,&ldaBQ,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      int nvec_BQ;
+      SUBR(mvec_num_vectors)(BQ,&nvec_BQ,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(WTest::nvec_,nvec_BQ);
+
+      phist_lidx nloc_BQ;
+      SUBR(mvec_my_length)(V,&nloc_BQ,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_EQ(nloc_,nloc_BQ);
+      
+      SUBR(mvec_from_device)(BQ,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_NEAR(mt::one(),WTest::ColsAreBNormalized(Q_vp,BQ_vp,nloc_,ldaQ,ldaBQ,stride_,mpi_comm_),tolW);
+      ASSERT_NEAR(mt::one(),WTest::ColsAreBOrthogonal(Q_vp,BQ_vp,nloc_,ldaQ,ldaBQ,stride_,mpi_comm_),tolW);
+#else
       ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(Q_vp,nloc_,ldaQ,stride_,mpi_comm_),tolW);
       ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(Q_vp,nloc_,ldaQ,stride_,mpi_comm_),tolW);
+#endif
 
       // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
       SUBR(mvec_times_sdMat)(st::one(),Q,R1,st::zero(),W2_,&iflag_);
@@ -222,7 +317,7 @@ public:
       ASSERT_EQ(0,iflag_);
       
       // test orthog routine, expect full rank of V and [V W]
-      doOrthogTests(V_, W_, Q_, R0_, R1_, R2_, 
+      doOrthogTests(V_, W_, Q_, BV_, BW_, BQ_, R0_, R1_, R2_, 
         0, 0, m_, m_+k_);
       
     }
@@ -239,7 +334,7 @@ public:
       ASSERT_EQ(0,iflag_);
 
       // test orthog routine, expect V and [V, W] to have rank 1
-      doOrthogTests(V_, W_, Q_, R0_, R1_, R2_, 
+      doOrthogTests(V_, W_, Q_, BV_, BW_, BQ_, R0_, R1_, R2_, 
         m_>1? 1:0, 1, 1, m_);
            
     }
@@ -290,7 +385,7 @@ public:
       ASSERT_EQ(0,this->iflag_);
 
       // test orthog routine, expect full rank of V and [V W]
-      doOrthogTests(V_, W_, Q_, R0_, R1_, R2_, 
+      doOrthogTests(V_, W_, Q_, BV_, BW_, BQ_, R0_, R1_, R2_, 
         0, 0, m_, m_+k_);
 
       // check the location of the resulting R parts
@@ -397,7 +492,7 @@ return;
       ASSERT_EQ(0,this->iflag_);
 
       // test orthog routine, expect V and [V, W] to have rank 1
-      doOrthogTests(V_, W_, Q_, R0_, R1_, R2_, 
+      doOrthogTests(V_, W_, Q_, BV_, BW_, BQ_, R0_, R1_, R2_, 
         m_>1? 1:0, 1, 1, m_);
       
       // check the location of the resulting R parts
@@ -479,9 +574,9 @@ return;
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_view_block)(V_big,&W,m_+1,m_+k_,&iflag_);
       ASSERT_EQ(0,iflag_);
-
+      
       // test orthog routine, expect full rank of V and [V W]
-      doOrthogTests(V, W, Q_, R0_, R1_, R2_, 
+      doOrthogTests(V, W, Q_, BV_, BW_, BQ_, R0_, R1_, R2_, 
         0, 0, m_, m_+k_);
       
       SUBR(mvec_delete)(V,&iflag_);
@@ -514,7 +609,7 @@ return;
       ASSERT_EQ(0,iflag_);
 
       // test orthog routine, expect V and [V, W] to have rank 1
-      doOrthogTests(V, W, Q_, R0_, R1_, R2_, 
+      doOrthogTests(V, W, Q_, BV_, BW_, BQ_, R0_, R1_, R2_, 
         m_>1? 1:0, 1, 1, m_);
 
       SUBR(mvec_delete)(V,&iflag_);
