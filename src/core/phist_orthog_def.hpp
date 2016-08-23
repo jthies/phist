@@ -62,6 +62,13 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
 
   int num_attempts=0;
   const int max_attempts=5;
+  TYPE(sdMat_ptr) R1p=NULL,R1pp=NULL,R2p=NULL;
+  if (randomize&&dim0>0)
+  {
+    if (m>0) PHIST_CHK_IERR(SUBR(sdMat_create)(&R2p,m,k,comm,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&R1p,k,k,comm,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&R1pp,k,k,comm,iflag),*iflag);
+  }
   while (randomize && dim0>0 && num_attempts++<max_attempts)
   {
     // randomize last few columns, redo
@@ -86,16 +93,35 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     if (V!=NULL)
     {
       if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-      SUBR(orthogrrfused)(V, BW, R2, R1, WtW, iflag);
+      SUBR(orthogrrfused)(V, BW, R2p, R1p, WtW, iflag);
       dim0=*iflag;
     }
     else
     {
       // fused orthog core doesn't allow V==NULL, so use orthogrr instead
       if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-      SUBR(orthogrr)(V, BW, R2, R1, NULL,WtW, orthoEps,numSweeps,iflag);
+      SUBR(orthogrr)(V, BW, R2p, R1p, NULL,WtW, orthoEps,numSweeps,iflag);
       dim0=*iflag; // return value of orthog is rank of null space of [V W] on entry
     }
+
+    // update R1 and R2
+
+    // we must not modify columns in R2 corresponding to random vectors!
+    if (m>0)
+    {
+      TYPE(sdMat_ptr) R2p_r = NULL;
+      PHIST_CHK_IERR(SUBR(sdMat_view_block)(R2p,&R2p_r,0,m-1,rankW,k-1,iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_put_value)(R2p_r,st::zero(),iflag),*iflag);
+      PHIST_CHK_IERR(SUBR(sdMat_delete)(R2p_r,iflag),*iflag);
+
+      //R2=R2+R2'*R1;
+      PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R2p,R1,st::one(),R2,iflag),*iflag);
+    }
+    
+    //R1=R1p*R1;
+    PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),R1,st::zero(),R1pp,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_times_sdMat)(st::one(),R1p,R1pp,st::zero(),R1,iflag),*iflag);
+    
     // zero-out the last dim0 columns of R2
     TYPE(sdMat_ptr) R1_r = NULL;
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(R1,&R1_r,0,k-1,rankW,k-1,iflag),*iflag);
@@ -109,6 +135,8 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     PHIST_CHK_IERR(SUBR(mvec_delete)(BW,iflag),*iflag);
   }
   PHIST_CHK_IERR(SUBR(sdMat_delete)(WtW,iflag),*iflag);
+  if (R1p) PHIST_CHK_IERR(SUBR(sdMat_delete)(R1p,iflag),*iflag);
+  if (R2p) PHIST_CHK_IERR(SUBR(sdMat_delete)(R2p,iflag),*iflag);
   if (num_attempts==max_attempts)
   {
     *iflag=-8;
