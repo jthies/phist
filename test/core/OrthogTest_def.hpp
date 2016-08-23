@@ -290,7 +290,16 @@ public:
       ASSERT_NEAR(mt::one(),WTest::ColsAreNormalized(Q_vp,nloc_,ldaQ,stride_,mpi_comm_),tolW);
       ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(Q_vp,nloc_,ldaQ,stride_,mpi_comm_),tolW);
 #endif
-
+std::cout<<"V=\n";
+SUBR(mvec_print)(V,&iflag_);
+std::cout<<"W=\n";
+SUBR(mvec_print)(W,&iflag_);
+std::cout<<"Q=\n";
+SUBR(mvec_print)(Q,&iflag_);
+std::cout<<"R1=\n";
+SUBR(sdMat_print)(R1,&iflag_);
+std::cout<<"R2=\n";
+SUBR(sdMat_print)(R2,&iflag_);
       // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
       SUBR(mvec_times_sdMat)(st::one(),Q,R1,st::zero(),W2_,&iflag_);
       ASSERT_EQ(0,iflag_);

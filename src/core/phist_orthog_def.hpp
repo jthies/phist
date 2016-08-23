@@ -47,7 +47,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   if (V!=NULL)
   {
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-    PHIST_CHK_NEG_IERR(SUBR(orthogrrfused)(V, BW, R1, R2, WtW, iflag),*iflag);
+    PHIST_CHK_NEG_IERR(SUBR(orthogrrfused)(V, BW, R2, R1, WtW, iflag),*iflag);
     dim0=*iflag; // return value of orthog is rank of null space of W on entry
     *rankVW=m+k-dim0;
   }
@@ -55,7 +55,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   {
     // fused orthog core doesn't allow V==NULL, so use orthogrr instead
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-    PHIST_CHK_NEG_IERR(SUBR(orthogrr)(V, BW, R1, R2, NULL,WtW, orthoEps,numSweeps,iflag),*iflag);
+    PHIST_CHK_NEG_IERR(SUBR(orthogrr)(V, BW, R2, R1, NULL,WtW, orthoEps,numSweeps,iflag),*iflag);
     dim0=*iflag; // return value of orthog is rank of null space of W on entry
     *rankVW=k-dim0;
   }
@@ -74,14 +74,14 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     if (V!=NULL)
     {
       if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-      SUBR(orthogrrfused)(V, BW, R1, R2, WtW, iflag);
+      SUBR(orthogrrfused)(V, BW, R2, R1, WtW, iflag);
       dim0=m+k-*iflag;
     }
     else
     {
     // fused orthog core doesn't allow V==NULL, so use orthogrr instead
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-    SUBR(orthogrr)(V, BW, R1, R2, NULL,WtW, orthoEps,numSweeps,iflag);
+    SUBR(orthogrr)(V, BW, R2, R1, NULL,WtW, orthoEps,numSweeps,iflag);
     dim0=k-*iflag; // return value of orthog is rank of null space of W on entry
     }
     // zero-out the last dim0 columns of R2
