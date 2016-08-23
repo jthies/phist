@@ -70,6 +70,18 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     PHIST_CHK_IERR(SUBR(mvec_view_block)(W,&Wrnd,rankW,k-1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_random)(Wrnd,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_delete)(Wrnd,iflag),*iflag);
+  
+    // compute W'W (or W'BW) with the new randomized column(s)
+    if (B!=NULL)
+    {
+      if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
+      PHIST_CHK_IERR(B->fused_apply_mvTmv(st::one(),B->A,W,st::zero(),BW,NULL,WtW,iflag),*iflag);
+    }
+    else
+    {
+      if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
+      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),W,W,st::zero(),WtW,iflag),*iflag);
+    }
 
     if (V!=NULL)
     {
@@ -79,10 +91,10 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     }
     else
     {
-    // fused orthog core doesn't allow V==NULL, so use orthogrr instead
-    if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-    SUBR(orthogrr)(V, BW, R2, R1, NULL,WtW, orthoEps,numSweeps,iflag);
-    dim0=k-*iflag; // return value of orthog is rank of null space of W on entry
+      // fused orthog core doesn't allow V==NULL, so use orthogrr instead
+      if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
+      SUBR(orthogrr)(V, BW, R2, R1, NULL,WtW, orthoEps,numSweeps,iflag);
+      dim0=k-*iflag; // return value of orthog is rank of null space of W on entry
     }
     // zero-out the last dim0 columns of R2
     TYPE(sdMat_ptr) R1_r = NULL;
