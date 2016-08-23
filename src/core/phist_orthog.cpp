@@ -12,6 +12,7 @@
 // under the hood we use this implementation, which exploits fused kernels and
 // high precision operations if available.
 #include "phist_orthogrrfused.h"
+#include "phist_orthogrr.h"
 
 #include "phist_ScalarTraits.hpp"
 

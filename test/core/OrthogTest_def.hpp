@@ -84,7 +84,7 @@ public:
       ASSERT_EQ(0,this->iflag_);
       PHISTTEST_MVEC_CREATE(&W2_,this->map_,this->k_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
-      SUBR(sdMat_extract_view)(W2_,&W2_vp_,&this->ldaW2_,&this->iflag_);
+      SUBR(mvec_extract_view)(W2_,&W2_vp_,&this->ldaW2_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       
       B_op=NULL; B_=NULL; BV_=NULL; BW_=NULL; BQ_=NULL;

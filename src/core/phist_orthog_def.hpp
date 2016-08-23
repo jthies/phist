@@ -13,6 +13,9 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   int robust    =(*iflag&PHIST_ROBUST_REDUCTIONS);
   int randomize =(*iflag&PHIST_ORTHOG_RANDOMIZE_NULLSPACE);
   int m=0,k;
+  
+  _MT_ orthoEps = mt::eps();
+  
   PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&k,iflag),*iflag);
   if (V!=NULL) PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
 
@@ -38,15 +41,25 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
     PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),W,W,st::zero(),WtW,iflag),*iflag);
   }
-
-  // I *think* that we just have to pas in BW and it should work fine for B!=I, but
-  // I have to check this again. We certainly have to copy the resulting Q into W  
-  // at some point (TODO)
-  if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-  SUBR(orthogrrfused)(V, BW, R1, R2, WtW, iflag);
-  int dim0=*iflag; // return value of orthog is rank of null space of W on entry
-  *rankVW=m+k-dim0;
   
+  int dim0;
+
+  if (V!=NULL)
+  {
+    if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
+    PHIST_CHK_NEG_IERR(SUBR(orthogrrfused)(V, BW, R1, R2, WtW, iflag),*iflag);
+    dim0=*iflag; // return value of orthog is rank of null space of W on entry
+    *rankVW=m+k-dim0;
+  }
+  else
+  {
+    // fused orthog core doesn't allow V==NULL, so use orthogrr instead
+    if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
+    PHIST_CHK_NEG_IERR(SUBR(orthogrr)(V, BW, R1, R2, NULL,WtW, orthoEps,numSweeps,iflag),*iflag);
+    dim0=*iflag; // return value of orthog is rank of null space of W on entry
+    *rankVW=k-dim0;
+  }
+
   int num_attempts=0;
   const int max_attempts=5;
   while (randomize && dim0>0 && num_attempts++<max_attempts)
@@ -57,9 +70,20 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     PHIST_CHK_IERR(SUBR(mvec_view_block)(W,&Wrnd,rankW,k-1,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_random)(Wrnd,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_delete)(Wrnd,iflag),*iflag);
+
+    if (V!=NULL)
+    {
+      if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
+      SUBR(orthogrrfused)(V, BW, R1, R2, WtW, iflag);
+      dim0=m+k-*iflag;
+    }
+    else
+    {
+    // fused orthog core doesn't allow V==NULL, so use orthogrr instead
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-    SUBR(orthogrrfused)(V, BW, R1, R2, WtW, iflag);
-    dim0=m+k-*iflag;
+    SUBR(orthogrr)(V, BW, R1, R2, NULL,WtW, orthoEps,numSweeps,iflag);
+    dim0=k-*iflag; // return value of orthog is rank of null space of W on entry
+    }
     // zero-out the last dim0 columns of R2
     TYPE(sdMat_ptr) R1_r = NULL;
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(R1,&R1_r,0,k-1,rankW,k-1,iflag),*iflag);
