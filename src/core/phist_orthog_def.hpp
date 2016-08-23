@@ -103,14 +103,19 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     PHIST_CHK_IERR(SUBR(sdMat_delete)(R1_r,iflag),*iflag);
   }
   
-  if (num_attempts==max_attempts)
-  {
-    *iflag=-8;
-  }
   if (B!=NULL)
   {
     PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),BW,st::zero(),W,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_delete)(BW,iflag),*iflag);
+  }
+  PHIST_CHK_IERR(SUBR(sdMat_delete)(WtW,iflag),*iflag);
+  if (num_attempts==max_attempts)
+  {
+    *iflag=-8;
+  }
+  else if (*rankVW<m+k)
+  {
+    *iflag=+1;
   }
 }
 

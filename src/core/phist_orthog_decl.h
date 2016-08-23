@@ -16,7 +16,7 @@
 //! by a CGS step is less than approx. a factor sqrt(2).           
 //!                                                                
 //! If the flag PHIST_ORTHOG_RANDOMIZE_NULLSPACE is given and we   
-//! If find that W-V*R2 does not have full column rank,            
+//! find that W-V*R2 does not have full column rank,               
 //! the matrix Q is augmented with random vectors which are made   
 //! mutually orthogonal and orthogonal against V. If the flag is   
 //! omitted, the last (m+k)-*rankVW columns are zero. On exit, the 
@@ -31,8 +31,9 @@
 //! If the decrease in norm in one of the columns                  
 //! in the last CGS sweep indicates that the algorithm has not     
 //! yet converged, we return iflag=-9 to indicate that more steps  
-//! may be advisable. This should not happen in practice if        
-//! numSweeps>=2 ('twice is enough').                              
+//! may be advisable. Since the 'inner' and 'outer' loop (to make  
+//! W'W=I and V'W=0, resp.) may deteriorate the result of one      
+//! another, so that more than 2 iterations may be needed.         
 //!                                                                
 void SUBR(orthog)(TYPE(const_mvec_ptr) V,
                      TYPE(mvec_ptr) W,
