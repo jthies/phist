@@ -73,10 +73,6 @@ int main(int argc, char* argv[])
 	
 	Checkpoint * myCP = new Checkpoint[1];
 	myCP->setCpPath(cpPath);
-#ifdef SCR
-	printf("===== SCR ENABLED =====");
-	myCP->enableSCR();
-#endif
 	myCP->setComm(FT_Comm);
 	myCP->add("a", a, n);
 	myCP->add("d", d, n);

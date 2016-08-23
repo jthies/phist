@@ -123,11 +123,8 @@ static void *mainTask(void *varg)
 	printf("==== Defining CP ====\n");
 
 	Checkpoint * myCP = new Checkpoint[1];
+	myCP->disableSCR();
 	myCP->setCpPath(cpPath);
-#ifdef SCR
-	printf("===== SCR ENABLED =====");
-	myCP->enableSCR();
-#endif
 	myCP->setComm(FT_Comm);
 	myCP->add("iteration", &iteration);	
 	myCP->add("lambda", &lambda);	
