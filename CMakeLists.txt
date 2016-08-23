@@ -70,7 +70,7 @@ if(SCR)
 	find_library(SCR_PATH NAMES scr)
 
 	if(SCR_PATH-NOTFOUND)
-		message (STATUS "=== SCR package is NOT found")
+		message (STATUS "SCR package is NOT found")
 	else()
 		message (STATUS "SCR lib path ${SCR_PATH}")
 		set ( SCR_LIBRARY_PATH "${SCR_PATH}/lib/")
@@ -104,6 +104,8 @@ set(LIBRARY_INSTALL_DIR lib)
 
 configure_file("${SRC_DIR}/cpaft-config.cmake.in" "${SRC_DIR}/cpaft-config.cmake" @ONLY)
 
+
+##### INSTALL TARGET #####
 install ( TARGETS cpaft EXPORT cpaftLibrary LIBRARY DESTINATION ${LIBRARY_INSTALL_DIR} )
 install ( FILES ${SRC_DIR}/cpaft-config.cmake DESTINATION ${LIBRARY_INSTALL_DIR} )
 
@@ -117,4 +119,14 @@ file(GLOB CPAFT_TYPE_SRC
 set(INCLUDE_INSTALL_DIR include)
 install ( FILES ${CPAFT_HEADERS} DESTINATION ${INCLUDE_INSTALL_DIR} )
 install ( DIRECTORY ${CPAFT_TYPE_SRC} DESTINATION ${INCLUDE_INSTALL_DIR} )
+
+##### UNINSTALL TARGET #####
+configure_file(
+				    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
+						 "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+	    				IMMEDIATE @ONLY)
+
+add_custom_target(uninstall
+		COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+
 

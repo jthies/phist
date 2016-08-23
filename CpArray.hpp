@@ -43,7 +43,7 @@ public:
 	void write(const std::string * filename)
 	{
 		std::ofstream fstr;
-		fstr.open ((*filename).c_str(), std::ios::out | std::ios::app | std::ios::binary);	
+		fstr.open ((*filename).c_str(), std::ios::out | std::ios::binary);	
 		fstr.write( (char *)asynData, sizeof (T) * nRows );
 		fstr.close();
 		return;

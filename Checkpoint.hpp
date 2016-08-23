@@ -44,7 +44,7 @@ public:
 	~Checkpoint();  
 	void setCpPath (const std::string cpPath_);
 	void setComm (const MPI_Comm cpMpiComm_);
-	void enableSCR();
+	void disableSCR();
 	void commit();
 
 	typedef std::map<const std::string,CpBase *> cp_const_map;		// TODO: check if they can be privatly declared
@@ -118,7 +118,12 @@ Checkpoint::Checkpoint(){
 	cpMpiComm 	= MPI_COMM_WORLD;	
 	cpPath 		= "";
 	cpCommitted = false;
+
+#ifdef SCR																		// check if CPAFTLIB was compiled with SCR
+	useSCR 		= true;
+#else
 	useSCR 		= false;
+#endif
 }	
 
 Checkpoint::~Checkpoint(){
@@ -145,13 +150,10 @@ void Checkpoint::setComm(const MPI_Comm cpMpiComm_){
 	return;
 }
 
-void Checkpoint::enableSCR(){
+void Checkpoint::disableSCR(){
 #ifdef SCR
-	useSCR = true;
-//	printf("useSCR is set true \n");
-
-#else 
-	printf("ERROR: Checkpoint-lib is not compiled with SCR. Checkpoints will be written at default path\n");
+	printf("SCR is disabled. Use SCR to reduce the impact of Checkpoint/restart\n");
+	useSCR = false;
 #endif
 }
 

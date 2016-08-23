@@ -13,7 +13,9 @@ void Checkpoint::update(){
 void Checkpoint::write()
 {
 #ifdef SCR
-	SCR_Start_checkpoint();
+	if(useSCR == true){
+		SCR_Start_checkpoint();
+	}
 #endif
 	int myrank_ = -1;
 	MPI_Comm_rank(cpMpiComm, &myrank_);
@@ -55,7 +57,7 @@ void Checkpoint::read()
   	for (cp_const_map::iterator it=objects.begin(); it!=objects.end(); it++)
   	{
 			filename = cpPath + "/" + (it->first) + myrank + ".ckpt"; 
-#ifdef SCR
+#ifdef SCR 
 			char * fNameScrPath = new char[256]; 
 			if(useSCR == true){
 				char * tmpFilename = new char[256];
