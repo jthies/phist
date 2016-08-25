@@ -13,12 +13,6 @@
 #error "functionality not implemented for row-major sdMats"
 #endif
 
-// threshold at which to call a matrix rank deficient
-#ifdef SINGTOL
-#undef SINGTOL
-#endif
-#define SINGTOL 10*mt::eps()
-
 // calculates a possibly low rank approximation of a lower cholesky factor of an spd matrix
 // higher-precision + pivoting + stable low rank approximation
 extern "C" void SUBR(cholesky)(_ST_ *__restrict__ a, phist_lidx n, phist_lidx lda, phist_lidx *perm, int *rank, int* iflag)
@@ -28,6 +22,8 @@ extern "C" void SUBR(cholesky)(_ST_ *__restrict__ a, phist_lidx n, phist_lidx ld
 
   // permutation
   int p[n];
+  MT rankTol = mt::rankTol();
+  
   for(int i = 0; i < n; i++)
     p[i] = i;
   // constructed L
@@ -42,13 +38,13 @@ extern "C" void SUBR(cholesky)(_ST_ *__restrict__ a, phist_lidx n, phist_lidx ld
   for(int i = 0; i < n; i++)
   {
     d[i]=a[i*lda+i];
-    diagNorm += st::real(st::conj(d[i])*d[i]);
+    diagNorm = std::max(diagNorm,st::abs(d[i]));
   }
-  diagNorm=mt::sqrt(diagNorm);
-  if( diagNorm == mt::zero() )
+  if( diagNorm < rankTol )
   {
-    PHIST_OUT(PHIST_WARNING,"zero diagonal in %s\n", __FUNCTION__);
-    diagNorm = mt::eps();
+    PHIST_OUT(PHIST_WARNING,"all diagonal entries tiny in %s\n", __FUNCTION__);
+    // use absolute criterion for small diagonals (will give rank 0 below)
+    diagNorm = mt::one();
   }
 
   *rank = 0;
@@ -58,10 +54,10 @@ extern "C" void SUBR(cholesky)(_ST_ *__restrict__ a, phist_lidx n, phist_lidx ld
     _MT_ err = mt::zero();
     for(int i = *rank; i < n; i++)
     {
-      err = err + st::abs(d[p[i]]);
+      err = std::max(err,st::abs(d[p[i]]));
     }
 //printf("step %d, err %e\n", *rank, err);
-    if( err < SINGTOL*diagNorm ) break;
+    if( err < rankTol*diagNorm ) break;
 
     int m = *rank;
     *rank = *rank + 1;
