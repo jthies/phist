@@ -25,7 +25,9 @@
 #error "functionality not implemented for row-major sdMats"
 #endif
 
-// threshold at which to call a matrix rank deficient
+// threshold at which to call a matrix rank deficient.
+// This is actually ScalarTraits<double>::rankTol, but
+// this is a C source file, so we define it here.
 #ifdef SINGTOL
 #undef SINGTOL
 #endif

@@ -13,6 +13,7 @@ extern "C" void SUBR(chol_QRp)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int perm[], 
     PHIST_ENTER_FCN(__FUNCTION__);
     int m;
     bool robust = *iflag & PHIST_ROBUST_REDUCTIONS;
+    MT rankTol = mt::rankTol(robust);
     *iflag=0;
     PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&m,iflag),*iflag);
     phist_const_comm_ptr comm;
@@ -27,7 +28,7 @@ extern "C" void SUBR(chol_QRp)(TYPE(mvec_ptr) V, TYPE(sdMat_ptr) R, int perm[], 
       PHIST_CHK_IERR(SUBR(mvec_normalize)(V,&nrm,iflag),*iflag);
       PHIST_CHK_IERR(SUBR(sdMat_put_value)(R,(ST)nrm,iflag),*iflag);
       int rank=1;
-      if (nrm<10*mt::eps())
+      if (nrm<rankTol)
       {
         // randomize the vector
         PHIST_CHK_IERR(SUBR(mvec_random)(V,iflag),*iflag);

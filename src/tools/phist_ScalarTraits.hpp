@@ -178,6 +178,15 @@ class ScalarTraits< float >
   //! machine epsilon around 1.0 (distance between
   //! 1.0 and the next floating point number)
   static inline magn_t eps(){return std::numeric_limits<magn_t>::epsilon();}
+
+  //! suggested criterion for determining the rank of a matrix.
+  
+  //! To get uniform behavior we *suggest* to use this value, but it is not compulsory. If s_max is the largest
+  //! singular value of a matrix M, a singular value s(M) is considered to be 0 if s_max<rankTol or s<rankTol*s_max.
+  //! If the high_prec argument is true (default false), it is asusmed that M is stored in double double precision 
+  //! and a value <eps will be returned.
+  static inline magn_t rankTol(bool high_prec=false) {return high_prec? 1.0f-12: 10.0f*eps();}
+
 };
 #endif
 template<>
@@ -326,6 +335,14 @@ class ScalarTraits< double >
   //! machine epsilon around 1.0 (distance between
   //! 1.0 and the next floating point number)
   static inline magn_t eps(){return std::numeric_limits<magn_t>::epsilon();}
+
+  //! suggested criterion for determining the rank of a matrix.
+  
+  //! To get uniform behavior we *suggest* to use this value, but it is not compulsory. If s_max is the largest
+  //! singular value of a matrix M, a singular value s(M) is considered to be 0 if s_max<rankTol or s<rankTol*s_max.
+  //! If the high_prec argument is true (default false), it is asusmed that M is stored in double double precision 
+  //! and a value <eps will be returned.
+  static inline magn_t rankTol(bool high_prec=false) {return high_prec? 1.0e-25: 10.0f*eps();}
 };
 
 
@@ -461,6 +478,14 @@ class ScalarTraits< std::complex<MT> >
   //! machine epsilon around 1.0 (distance between
   //! 1.0 and the next floating point number)
   static inline magn_t eps(){return ScalarTraits<MT>::eps();}
+
+  //! suggested criterion for determining the rank of a matrix.
+  
+  //! To get uniform behavior we *suggest* to use this value, but it is not compulsory. If s_max is the largest
+  //! singular value of a matrix M, a singular value s(M) is considered to be 0 if s_max<rankTol or s<rankTol*s_max.
+  //! If the high_prec argument is true (default false), it is asusmed that M is stored in double double precision 
+  //! and a value <eps will be returned.
+  static inline magn_t rankTol(bool high_prec=false) {return ScalarTraits<MT>::rankTol(high_prec);}
 };
 
   
