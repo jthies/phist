@@ -35,7 +35,7 @@ void SUBR(fused_spmv_pair)(_ST_ alpha, _ST_ const shifts1[], TYPE(const_sparseMa
                                        TYPE(const_mvec_ptr) X,
                            _ST_ beta, TYPE(mvec_ptr) Y, int* iflag);
 
-//! W=alpha*A*V + beta*W, WdotW[i] = W(:,i)'W(:,i), VdotW[i]=V(:,i)'W(:,i)
+//! W=alpha*A*V + beta*W_in, WdotW[i] = W(:,i)'W(:,i), VdotW[i]=V(:,i)'W(:,i) with W_in=W on input.
 //! understands *iflag=PHIST_NO_GLOBAL_REDUCTION, in which case the dot products
 //! are only carried out per MPI process.
 //! The arrays VdotW and/or WdotW may be NULL, in which case the corresponding 
@@ -45,10 +45,10 @@ void SUBR(fused_spmv_mvdot)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_
                             _ST_* WdotW, _ST_* VdotW,
                             int* iflag);
 
-//! W=alpha*A*V + beta*W, WtW = W'W, VtW = V'W
+//! W=alpha*A*V + beta*W_in, WtW = W'W, VtW = V'W, with W=W_in on input.
 //! understands *iflag=PHIST_NO_GLOBAL_REDUCTION, in which case the inner products
 //! are only carried out per MPI process.
-//! The arrays VtW and/or WtW may be NULL, in which case the corresponding 
+//! The sdMats VtW and/or WtW may be NULL, in which case the corresponding 
 //! operation is not performed.
 void SUBR(fused_spmv_mvTmv)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
                              _ST_ beta,                               TYPE(mvec_ptr)        W,
