@@ -129,30 +129,24 @@ TEST_F(CLASSNAME,fused_spmv_mvTmv)
     _ST_ alpha = st::prand();
     _ST_ beta = st::prand();
 
-    // actually do y=Ax with xTy, yTy and y0Ty
-    SUBR(fused_spmv_mvTmv)(alpha,A_,vec1_,beta,vec2_,mat1_,mat2_,mat3_,&iflag_);
+    // actually do y=Ax with xTy and yTy
+    SUBR(fused_spmv_mvTmv)(alpha,A_,vec1_,beta,vec2_,mat1_,mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
 
-    // check yTy == y0^T * y
-    SUBR(mvecT_times_mvec)(st::one(),vec3_,vec2_,st::zero(),mat4_,&iflag_);
-    ASSERT_EQ(0,iflag_);
-    // use EXPECT here - if the test fails, it may mean that the spmv was incorrect (vec2_ is wrong)
-    ASSERT_NEAR(mt::one(), SdMatsEqual(mat3_,mat4_), std::sqrt(VTest::releps()));
-
-    // check y = A * x. This gives the expected y in vec3_ (used below)
+    // check y = A * x
     SUBR(sparseMat_times_mvec)(alpha,A_,vec1_,beta,vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
     ASSERT_NEAR(mt::one(), MvecsEqual(vec2_,vec3_), std::sqrt(VTest::releps()));
 
     // check xTy == x^T * y
-    SUBR(mvecT_times_mvec)(st::one(),vec1_,vec3_,st::zero(),mat4_,&iflag_);
+    SUBR(mvecT_times_mvec)(st::one(),vec1_,vec3_,st::zero(),mat3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), SdMatsEqual(mat2_,mat4_), mt::sqrt(mt::eps()));
+    ASSERT_NEAR(mt::one(), SdMatsEqual(mat2_,mat3_), mt::sqrt(mt::eps()));
 
-    // check yTy == y^T * y.
-    SUBR(mvecT_times_mvec)(st::one(),vec3_,vec3_,st::zero(),mat4_,&iflag_);
+    // check yTy == y^T * y
+    SUBR(mvecT_times_mvec)(st::one(),vec3_,vec3_,st::zero(),mat3_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    ASSERT_NEAR(mt::one(), SdMatsEqual(mat1_,mat4_), std::sqrt(VTest::releps()));
+    ASSERT_NEAR(mt::one(), SdMatsEqual(mat1_,mat3_), std::sqrt(VTest::releps()));
 }
 
 TEST_F(CLASSNAME,fused_spmv_mvdot_mvadd)

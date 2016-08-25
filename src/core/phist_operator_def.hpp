@@ -78,7 +78,7 @@ void SUBR(private_idOp_apply)(_ST_ alpha, const void* A, TYPE(const_mvec_ptr) X,
 
 //
 void SUBR(private_idOp_fused_apply_mvTmv)(_ST_ alpha, const void* A, TYPE(const_mvec_ptr) X,
-        _ST_ beta, TYPE(mvec_ptr) Y, TYPE(sdMat_ptr) YtX, TYPE(sdMat_ptr) YtY, TYPE(sdMat_ptr) Y0tY,int* iflag)
+        _ST_ beta, TYPE(mvec_ptr) Y, TYPE(sdMat_ptr) YtX, TYPE(sdMat_ptr) YtY, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   int iflag_in=*iflag;
@@ -88,7 +88,6 @@ void SUBR(private_idOp_fused_apply_mvTmv)(_ST_ alpha, const void* A, TYPE(const_
   *iflag=iflag_in;
   if (YtX!=NULL) PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Y,X,st::zero(),YtX,iflag),*iflag);
   if (YtY!=NULL) PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(),Y,Y,st::zero(),YtY,iflag),*iflag);
-  if (Y0tY!=NULL) PHIST_CHK_IERR(SUBR(sdMat_add_sdMat)(st::one(),YtY,st::zero(),Y0tY,iflag),*iflag);
 }
 
 //

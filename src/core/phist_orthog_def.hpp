@@ -34,11 +34,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   {
     PHIST_CHK_IERR(SUBR(mvec_create)(&BW,map,k,iflag),*iflag);
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-    PHIST_CHK_IERR(B->fused_apply_mvTmv(st::one(),B->A,W,st::zero(),BW,NULL,NULL,WtW,iflag),*iflag);
-    std::cout << "TROET: BW="<<std::endl;
-    SUBR(mvec_print)(BW,iflag);
-    std::cout << "TROET: W'BW="<<std::endl;
-    SUBR(sdMat_print)(WtW,iflag);
+    PHIST_CHK_IERR(B->fused_apply_mvTmv(st::one(),B->A,W,st::zero(),BW,NULL,WtW,iflag),*iflag);
   }
   else
   {
@@ -91,7 +87,7 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
     if (B!=NULL)
     {
       if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-      PHIST_CHK_IERR(B->fused_apply_mvTmv(st::one(),B->A,W,st::zero(),BW,NULL,NULL,WtW,iflag),*iflag);
+      PHIST_CHK_IERR(B->fused_apply_mvTmv(st::one(),B->A,W,st::zero(),BW,NULL,WtW,iflag),*iflag);
     }
     else
     {
