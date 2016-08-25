@@ -47,7 +47,10 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   if (V!=NULL)
   {
     if (robust) *iflag=PHIST_ROBUST_REDUCTIONS;
-    PHIST_CHK_NEG_IERR(SUBR(orthogrrfused)(V, BW, R2, R1, WtW, iflag),*iflag);
+
+// the fused variant currently doesn't detect the rank of [V W] correctly in all cases, see issue #188
+//    PHIST_CHK_NEG_IERR(SUBR(orthogrrfused)(V, BW, R2, R1, WtW, iflag),*iflag);
+    PHIST_CHK_NEG_IERR(SUBR(orthogrr)(V, BW, R2, R1, NULL,WtW, orthoEps,numSweeps,iflag),*iflag);
     dim0=*iflag; // return value of orthog is rank of null space of [V W] on entry
     *rankVW=m+k-dim0;
   }
@@ -71,6 +74,8 @@ extern "C" void SUBR(orthog)(TYPE(const_mvec_ptr) V,
   }
   while (randomize && dim0>0 && num_attempts++<max_attempts)
   {
+    PHIST_SOUT(PHIST_DEBUG,"orthog: randomize %d column(s) to compensate rank deficiency (attempt %d)\n",
+        dim0, num_attempts);
     // randomize last few columns, redo
     int rankW=k-dim0;
     TYPE(mvec_ptr) Wrnd=NULL;
