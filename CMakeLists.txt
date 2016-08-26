@@ -1199,7 +1199,7 @@ foreach(label ${PHIST_TESTS})
 
   # add dynmic include dependencies (which cannot be automatically detected by cmake!)
   foreach(testSrc ${${label_uc}_TEST_SOURCES})
-    string(REGEX REPLACE "(With[UnAa]*lignedViews)*.cpp$" "_def.hpp" testDef ${testSrc})
+    string(REGEX REPLACE "(With[UnAa]*lignedViews|WithB)*.cpp$" "_def.hpp" testDef ${testSrc})
     if(EXISTS ${testDef})
 #      message(STATUS "Adding dynamic dependency ${testDef} to ${testSrc}")
       set_property(SOURCE ${testSrc} APPEND PROPERTY OBJECT_DEPENDS ${testDef})
