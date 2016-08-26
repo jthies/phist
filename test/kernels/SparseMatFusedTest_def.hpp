@@ -133,6 +133,10 @@ TEST_F(CLASSNAME,fused_spmv_mvTmv)
     SUBR(fused_spmv_mvTmv)(alpha,A_,vec1_,beta,vec2_,mat1_,mat2_,&iflag_);
     ASSERT_EQ(0,iflag_);
 
+#if MATNAME!=MATNAME_spzero
+    // make sure the vector was updated at all
+    ASSERT_NE(mt::one(), MvecsEqual(vec2_,vec3_));
+#endif
     // check y = A * x
     SUBR(sparseMat_times_mvec)(alpha,A_,vec1_,beta,vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
@@ -147,6 +151,7 @@ TEST_F(CLASSNAME,fused_spmv_mvTmv)
     SUBR(mvecT_times_mvec)(st::one(),vec3_,vec3_,st::zero(),mat3_,&iflag_);
     ASSERT_EQ(0,iflag_);
     ASSERT_NEAR(mt::one(), SdMatsEqual(mat1_,mat3_), std::sqrt(VTest::releps()));
+    
 }
 
 TEST_F(CLASSNAME,fused_spmv_mvdot_mvadd)

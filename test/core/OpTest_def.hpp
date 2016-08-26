@@ -5,30 +5,38 @@
 
 /*! Test fixure. */
 class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
-                 public virtual KernelTestWithVectors<_ST_,_N_,_NV_,0,1> 
+                 public virtual KernelTestWithVectors<_ST_,_N_,_NV_,0,3>, 
+                 public virtual KernelTestWithSdMats<_ST_,_NV_,_NV_,0,4>
   {
 
 public:
 
   typedef KernelTestWithSparseMat<_ST_,_N_,MATNAME> SparseMatTest;
-  typedef KernelTestWithVectors<_ST_,_N_,_NV_,0,1> VTest;
+  typedef KernelTestWithVectors<_ST_,_N_,_NV_,0,3> VTest;
+  typedef KernelTestWithSdMats<_ST_,_NV_,_NV_,0,4> MTest;
 
   static void SetUpTestCase()
   {
     int sparseMatCreateFlag=getSparseMatCreateFlag(_N_,_NV_);
     SparseMatTest::SetUpTestCase(sparseMatCreateFlag);
     VTest::SetUpTestCase();
+    MTest::SetUpTestCase();
+
+    SUBR(linearOp_wrap_sparseMat)(&A_op,A_,&iflag_);
+    ASSERT_EQ(0,iflag_);
   }
 
   /*! Set up routine.
    */
   virtual void SetUp()
-    {
+  {
     SparseMatTest::SetUp();
     VTest::SetUp();
+    MTest::SetUp();
 
+        
     if (typeImplemented_ && !problemTooSmall_)
-      {
+    {
       nq_ = std::min(3*nvec_+1,(int)nglob_-4);
 #ifdef HAVE_MPI
       // note: TSQR does not work if nvec>nloc (that wouldn't really be a 'tall skinny 
@@ -39,6 +47,13 @@ public:
       ASSERT_EQ(0,iflag_);
 #endif      
       PHISTTEST_MVEC_CREATE(&Q_,map_,nq_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(mvec_random)(vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_random)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // create random orthogonal Q
@@ -54,10 +69,10 @@ public:
       ASSERT_EQ(0,iflag_);
 
       sigma = new _ST_[nq_];
-      }
+    }
 
     haveMat_ = (A_ != NULL);
-    }
+  }
 
   /*! Clean up.
    */
@@ -108,7 +123,7 @@ public:
   int doBelosTests(TYPE(sparseMat_ptr) A)
     {
     if (typeImplemented_ && !problemTooSmall_ && haveMat_)
-      {
+    {
       Teuchos::RCP<Belos::OutputManager<ST> > MyOM
         = Teuchos::rcp( new Belos::OutputManager<ST>() );
       MyOM->setVerbosity( Belos::Warnings|Belos::Debug);
@@ -139,21 +154,25 @@ public:
 //      if (Belos::TestOperatorTraits(MyOM,V,jdOp_ptr)==false) {iflag_=-2; return iflag_;}
 //TODO - I'm getting an 'undefined reference' linker error here
       PHIST_ICHK_IERR(SUBR(jadaOp_delete)(&jdOp,&iflag_),iflag_);
-      }
-    return iflag_;
     }
+    return iflag_;
+  }
 #endif
+
+  static TYPE(linearOp) A_op;
 
   bool haveMat_;
   };
 
+  TYPE(linearOp) CLASSNAME::A_op;
+
   TEST_F(CLASSNAME, read_matrices) 
-    {
+  {
     if (typeImplemented_ && !problemTooSmall_)
-      {
+    {
       ASSERT_TRUE(AssertNotNull(A_));
-      }
     }
+  }
 
 
 #if defined(PHIST_HAVE_BELOS)
@@ -162,11 +181,41 @@ public:
 #else
   TEST_F(CLASSNAME, belos_opTests) 
 #endif
-    {
+  {
     if (typeImplemented_ && !problemTooSmall_)
-      {
+    {
       ASSERT_EQ(0,doBelosTests(A_));
-      }
     }
+  }
 #endif
-//TODO test jada operator, test operator and compare with raw CrsMat
+
+  TEST_F(CLASSNAME,linearOp_wrap_sparseMat_apply)
+  {
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+  
+    SUBR(sparseMat_times_mvec)(alpha,A_,vec1_,beta,vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    A_op.apply(alpha,A_op.A,vec1_,beta,vec3_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    ASSERT_REAL_EQ(st::one(),MvecsEqual(vec2_,vec3_));
+  
+  }
+
+  TEST_F(CLASSNAME,linearOp_wrap_sparseMat_apply_fused_mvTmv)
+  {
+    _ST_ alpha = st::prand();
+    _ST_ beta = st::prand();
+  
+    SUBR(fused_spmv_mvTmv)(alpha,A_,vec1_,beta,vec2_,mat1_,mat2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    A_op.fused_apply_mvTmv(alpha,A_op.A,vec1_,beta,vec3_,mat3_,mat4_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    
+    ASSERT_REAL_EQ(st::one(),MvecsEqual(vec2_,vec3_));
+    ASSERT_NEAR(st::one(),SdMatsEqual(mat1_,mat3_),std::sqrt(st::eps()));
+    ASSERT_NEAR(st::one(),SdMatsEqual(mat2_,mat4_),std::sqrt(st::eps()));
+  }

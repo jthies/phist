@@ -247,7 +247,6 @@ public:
       iflag_=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
       SUBR(orthog)(V,Q,B_op,R1,R2,nsteps,&rankVW,&iflag_);
       ASSERT_EQ(expect_iflagVW,iflag_);
-      ASSERT_EQ(expectedRankVW,rankVW);
 
 std::cout<<"V=\n";
 SUBR(mvec_print)(V,&iflag_);
@@ -259,6 +258,8 @@ std::cout<<"R1=\n";
 SUBR(sdMat_print)(R1,&iflag_);
 std::cout<<"R2=\n";
 SUBR(sdMat_print)(R2,&iflag_);
+
+      ASSERT_EQ(expectedRankVW,rankVW);
       
       // check orthonormality of Q
       phist_lidx ldaQ;
@@ -317,6 +318,32 @@ SUBR(sdMat_print)(R2,&iflag_);
   }
 
 };
+
+#ifdef ORTHOG_WITH_HPD_B
+  TEST_F(CLASSNAME, B_op_is_hpd)
+  {
+    SUBR(mvec_random)(V_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    B_op->apply(st::one(),B_op->A,V_,st::zero(),BV_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(mvecT_times_mvec)(st::one(),V_,BV_,st::zero(),R0_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    SUBR(sdMat_from_device)(R0_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    _MT_ sym_err=mt::zero();
+    _MT_ min_diag=(_MT_)1.0e10;
+    for (int i=0; i<m_; i++)
+    {
+      min_diag=std::min(min_diag,R0_vp_[i*ldaR0_+i]);
+      for (int j=0; j<m_; j++)
+      {
+        sym_err = std::max(sym_err, std::abs(st::conj(R0_vp_[i*ldaR0_+j])-R0_vp_[j*ldaR0_+i]));
+      }
+    }
+    ASSERT_NEAR(mt::one(), mt::one()+sym_err,10*mt::eps());
+    ASSERT_GT(std::sqrt(mt::eps()), min_diag);
+  }
+#endif
 
   // check if vectors are normalized correctly after QR factorization
   TEST_F(CLASSNAME, test_with_random_vectors)

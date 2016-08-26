@@ -11,6 +11,7 @@
 
 #include "../kernels/KernelTestWithSparseMat.h"
 #include "../kernels/KernelTestWithVectors.h"
+#include "../kernels/KernelTestWithSdMats.h"
 
 #ifdef PHIST_HAVE_BELOS
 # ifdef PHIST_KERNEL_LIB_TPETRA
