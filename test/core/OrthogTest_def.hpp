@@ -178,13 +178,6 @@ public:
       SUBR(mvec_add_mvec)(st::one(),W,st::zero(),Q,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-#ifdef ORTHOG_WITH_HPD_B
-      B_op->apply(st::one(),B_op->A,W,st::zero(),BW,&iflag_);
-      ASSERT_EQ(0,iflag_);
-      B_op->apply(st::one(),B_op->A,V,st::zero(),BV,&iflag_);
-      ASSERT_EQ(0,iflag_);
-#endif
-
       // orthogonalize the m columns of V. Test that orthog
       // works if the first argument is NULL.
       int rankVW=-42;
@@ -195,6 +188,16 @@ public:
         ASSERT_EQ(expect_iflagV,iflag_);
       }
       ASSERT_EQ(expectedRankV,rankVW);
+
+#ifdef ORTHOG_WITH_HPD_B
+      // compute BV after orthogonalizing V
+      B_op->apply(st::one(),B_op->A,W,st::zero(),BW,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      B_op->apply(st::one(),B_op->A,V,st::zero(),BV,&iflag_);
+      ASSERT_EQ(0,iflag_);
+#endif
+
+
       // check wether this worked out
       phist_lidx ldaV;
       ST* V_vp=NULL;
@@ -232,7 +235,6 @@ public:
       
       SUBR(mvec_from_device)(BV,&iflag_);
       ASSERT_EQ(0,iflag_);
-
 
       ASSERT_NEAR(mt::one(),VTest::ColsAreBNormalized(V_vp,BV_vp,nloc_,ldaV,ldaBV,stride_,mpi_comm_),tolV);
       ASSERT_NEAR(mt::one(),VTest::ColsAreBOrthogonal(V_vp,BV_vp,nloc_,ldaV,ldaBV,stride_,mpi_comm_),tolV);
@@ -281,6 +283,10 @@ SUBR(sdMat_print)(R2,&iflag_);
       ASSERT_EQ(0,iflag_);
 
 #ifdef ORTHOG_WITH_HPD_B
+      // compute BQ after orthogonalizing W against Q
+      B_op->apply(st::one(),B_op->A,Q,st::zero(),BQ,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
       phist_lidx ldaBQ;
       ST* BQ_vp=NULL;
       SUBR(mvec_extract_view)(BQ,&BQ_vp,&ldaBQ,&iflag_);
@@ -341,7 +347,7 @@ SUBR(sdMat_print)(R2,&iflag_);
       }
     }
     ASSERT_NEAR(mt::one(), mt::one()+sym_err,10*mt::eps());
-    ASSERT_GT(std::sqrt(mt::eps()), min_diag);
+    ASSERT_GT(min_diag,std::sqrt(mt::eps()));
   }
 #endif
 
