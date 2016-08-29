@@ -38,9 +38,12 @@ static void SUBR(sdMat_rank_identity)(TYPE(sdMat_ptr) I, const int k, int* iflag
 #include "phist_std_typedefs.hpp"
   PHIST_CHK_IERR(SUBR(sdMat_put_value)(I,st::zero(),iflag),*iflag);
   TYPE(sdMat_ptr) Ik = NULL;
-  PHIST_CHK_IERR(SUBR(sdMat_view_block)(I,&Ik,0,k-1,0,k-1,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_identity)(Ik,iflag),*iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_delete)(Ik,iflag),*iflag);
+  if (k>0)
+  {
+    PHIST_CHK_IERR(SUBR(sdMat_view_block)(I,&Ik,0,k-1,0,k-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_identity)(Ik,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_delete)(Ik,iflag),*iflag);
+  }
 }
 
 //
