@@ -200,7 +200,7 @@ public:
     A_op.apply(alpha,A_op.A,vec1_,beta,vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
     
-    ASSERT_REAL_EQ(st::one(),MvecsEqual(vec2_,vec3_));
+    ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec2_,vec3_));
   
   }
 
@@ -215,7 +215,7 @@ public:
     A_op.fused_apply_mvTmv(alpha,A_op.A,vec1_,beta,vec3_,mat3_,mat4_,&iflag_);
     ASSERT_EQ(0,iflag_);
     
-    ASSERT_REAL_EQ(st::one(),MvecsEqual(vec2_,vec3_));
-    ASSERT_NEAR(st::one(),SdMatsEqual(mat1_,mat3_),std::sqrt(st::eps()));
-    ASSERT_NEAR(st::one(),SdMatsEqual(mat2_,mat4_),std::sqrt(st::eps()));
+    ASSERT_REAL_EQ(mt::one(),MvecsEqual(vec2_,vec3_));
+    ASSERT_NEAR(mt::one(),SdMatsEqual(mat1_,mat3_),std::sqrt(st::eps()));
+    ASSERT_NEAR(mt::one(),SdMatsEqual(mat2_,mat4_),std::sqrt(st::eps()));
   }

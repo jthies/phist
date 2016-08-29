@@ -251,6 +251,7 @@ public:
       SUBR(orthog)(V,Q,B_op,R1,R2,nsteps,&rankVW,&iflag_);
       ASSERT_EQ(expect_iflagVW,iflag_);
 
+/*
 std::cout<<"V=\n";
 SUBR(mvec_print)(V,&iflag_);
 std::cout<<"W=\n";
@@ -261,7 +262,7 @@ std::cout<<"R1=\n";
 SUBR(sdMat_print)(R1,&iflag_);
 std::cout<<"R2=\n";
 SUBR(sdMat_print)(R2,&iflag_);
-
+*/
       ASSERT_EQ(expectedRankVW,rankVW);
       
       // check orthonormality of Q
@@ -319,7 +320,7 @@ SUBR(sdMat_print)(R2,&iflag_);
 
       SUBR(mvecT_times_mvec)(st::one(),V,BQ,st::zero(),VtQ,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_NEAR(st::one(),SdMatEqual(VtQ,st::zero()),100*mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatEqual(VtQ,st::zero()),100*mt::eps());
 
       // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
       SUBR(mvec_times_sdMat)(st::one(),Q,R1,st::zero(),W2_,&iflag_);
@@ -350,7 +351,7 @@ SUBR(sdMat_print)(R2,&iflag_);
     _MT_ min_diag=(_MT_)1.0e10;
     for (int i=0; i<m_; i++)
     {
-      min_diag=std::min(min_diag,R0_vp_[i*ldaR0_+i]);
+      min_diag=std::min(min_diag,st::real(R0_vp_[i*ldaR0_+i]));
       for (int j=0; j<m_; j++)
       {
         sym_err = std::max(sym_err, std::abs(st::conj(R0_vp_[i*ldaR0_+j])-R0_vp_[j*ldaR0_+i]));
