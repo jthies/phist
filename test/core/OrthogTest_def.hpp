@@ -18,7 +18,7 @@ public:
   static const int m_=_M_;
   static const int k_=_K_;
   
-  //! V is n x m, W is n x k  
+  //! V is n x m, W is n x k
   TYPE(mvec_ptr) V_, W_,W2_,Q_;
   
   //! linear operator representing a Hermitian positive definite (hpd) matrix B
@@ -53,7 +53,7 @@ public:
   /*! Set up routine.
    */
   virtual void SetUp()
-    {
+  {
     TestWithType<_ST_>::SetUp();
     KernelTestWithMap<_N_>::SetUp();
 
@@ -74,7 +74,7 @@ public:
 
 
     if (typeImplemented_ && !problemTooSmall_)
-      {
+    {
       // create vectors V, W and vector views for setting/checking entries
       PHISTTEST_MVEC_CREATE(&V_,this->map_,this->m_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
@@ -121,9 +121,9 @@ public:
       ASSERT_EQ(0,this->iflag_);
       SUBR(sdMat_extract_view)(R2_,&R2_vp_,&this->ldaR2_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
-      }
-    stride_=1;
     }
+    stride_=1;
+  }
 
   /*! Clean up.
    */
@@ -339,6 +339,7 @@ SUBR(sdMat_print)(R2,&iflag_);
 #ifdef ORTHOG_WITH_HPD_B
   TEST_F(CLASSNAME, B_op_is_hpd)
   {
+    if (problemTooSmall_ || !typeImplemented_) return;
     SUBR(mvec_random)(V_,&iflag_);
     ASSERT_EQ(0,iflag_);
     B_op->apply(st::one(),B_op->A,V_,st::zero(),BV_,&iflag_);
@@ -357,7 +358,7 @@ SUBR(sdMat_print)(R2,&iflag_);
         sym_err = std::max(sym_err, std::abs(st::conj(R0_vp_[i*ldaR0_+j])-R0_vp_[j*ldaR0_+i]));
       }
     }
-    ASSERT_NEAR(mt::one(), mt::one()+sym_err,10*mt::eps());
+    ASSERT_NEAR(mt::one(), mt::one()+sym_err,100.0*mt::eps());
     ASSERT_GT(min_diag,std::sqrt(mt::eps()));
   }
 #endif
@@ -402,10 +403,12 @@ SUBR(sdMat_print)(R2,&iflag_);
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
+      _ST_ v1= (_ST_)0.9344646 - (_ST_)1.04357*st::cmplx_I();
+      _ST_ v2=-(_ST_)0.9554373 + (_ST_)1.08158*st::cmplx_I();
       // fill V and W with constant entries!=1
-      SUBR(mvec_put_value)(V_,st::prand(),&iflag_);
+      SUBR(mvec_put_value)(V_,v1,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(mvec_put_value)(W_,st::prand(),&iflag_);
+      SUBR(mvec_put_value)(W_,v2,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // test orthog routine, expect V and [V, W] to have rank 1
