@@ -47,11 +47,17 @@ GHOST_TASK_END(likwidInitTask)
     gethostname(hostname, sizeof(hostname));
     PHIST_SOUT(PHIST_ERROR,"You have set the environment variable 'PHIST_ATTACH_GDB'.\n");
     PHIST_ORDERED_OUT(PHIST_ERROR,MPI_COMM_WORLD,"PID %d on %s ready for attach.\n", getpid(), hostname);
-    PHIST_SOUT(PHIST_ERROR,"To attach gdb to a process, run 'gdb <executable> <PID> on the respective node.\n"
-                           "In gdb, use 'frame 2', 'set var i = 1' and then 'c' to continue execution.\n"
-                           "Note that you have to do this with every running MPI process in order to continue.\n");
-    while (0 == i) sleep(5);
+    PHIST_SOUT(PHIST_ERROR,"To attach gdb to a process, run 'gdb <executable> <PID> on the respective node.\n");
+    PHIST_SOUT(PHIST_ERROR,"Press any key to continue...\n");
+    int rank=0;
+#ifdef PHIST_HAVE_MPI
+    MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+#endif
+    while (rank==fgetc(stdin)) sleep(1);
   }
+#ifdef PHIST_HAVE_MPI
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
 }
  
 
