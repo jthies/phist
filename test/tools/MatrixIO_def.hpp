@@ -81,7 +81,11 @@ int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* co
   
   if (vals) vals[0]=st::one();
   if (cols && row>=0) cols[0]=row;
-  
+
+// create identity matrix (just while developing stuff with B-inner products
+//  if (len) *len=1;
+//  return 0;
+
   if (row<0)
   {
     gnrows=cols[0];
@@ -114,7 +118,7 @@ int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* co
   }
   else
   {
-    *len=2;
+    *len=3;
     cols[1]=row-1;
     cols[2]=row+1;
 #ifdef IS_COMPLEX
@@ -125,6 +129,7 @@ int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* co
     vals[2]=-0.5*st::one();
 #endif
   }
+  return 0;
 }
 
   int PHIST_TG_PREFIX(mvec123func)(ghost_gidx i, ghost_lidx j, void* val, void* last_arg)

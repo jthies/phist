@@ -87,7 +87,7 @@ public:
       SUBR(mvec_extract_view)(W2_,&W2_vp_,&this->ldaW2_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       
-      B_op=NULL; B_=NULL; BV_=NULL; BW_=NULL; BQ_=NULL;
+      B_op=NULL; B_=NULL; BV_=BV_; BW_=W_; BQ_=Q_;
 
 #ifdef ORTHOG_WITH_HPD_B
       // create B_ as a tridiagonal hpd matrix
@@ -190,11 +190,13 @@ public:
       ASSERT_EQ(expectedRankV,rankVW);
 
 #ifdef ORTHOG_WITH_HPD_B
+      ASSERT_TRUE(W!=BW);
       // compute BV after orthogonalizing V
       B_op->apply(st::one(),B_op->A,W,st::zero(),BW,&iflag_);
       ASSERT_EQ(0,iflag_);
       B_op->apply(st::one(),B_op->A,V,st::zero(),BV,&iflag_);
       ASSERT_EQ(0,iflag_);
+
 #endif
 
 
@@ -235,11 +237,10 @@ public:
       
       SUBR(mvec_from_device)(BV,&iflag_);
       ASSERT_EQ(0,iflag_);
-
-      ASSERT_NEAR(mt::one(),VTest::ColsAreBNormalized(V_vp,BV_vp,nloc_,ldaV,ldaBV,stride_,mpi_comm_),tolV);
+      EXPECT_NEAR(mt::one(),VTest::ColsAreBNormalized(V_vp,BV_vp,nloc_,ldaV,ldaBV,stride_,mpi_comm_),tolV);
       ASSERT_NEAR(mt::one(),VTest::ColsAreBOrthogonal(V_vp,BV_vp,nloc_,ldaV,ldaBV,stride_,mpi_comm_),tolV);
 #else
-      ASSERT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp,nloc_,ldaV,stride_,mpi_comm_),tolV);
+      EXPECT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp,nloc_,ldaV,stride_,mpi_comm_),tolV);
       ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp,nloc_,ldaV,stride_,mpi_comm_),tolV);
 #endif      
       int nsteps=2;
@@ -311,6 +312,15 @@ SUBR(sdMat_print)(R2,&iflag_);
       ASSERT_NEAR(mt::one(),WTest::ColsAreOrthogonal(Q_vp,nloc_,ldaQ,stride_,mpi_comm_),tolW);
 #endif
 
+      // check Q and original V are orthogonal to each other, V'Q=0
+      TYPE(sdMat_ptr) VtQ=NULL;
+      SUBR(sdMat_create)(&VtQ,nvec_V,nvec_Q,comm_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(mvecT_times_mvec)(st::one(),V,BQ,st::zero(),VtQ,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_NEAR(st::one(),SdMatEqual(VtQ,st::zero()),100*mt::eps());
+
       // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
       SUBR(mvec_times_sdMat)(st::one(),Q,R1,st::zero(),W2_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -377,6 +387,24 @@ SUBR(sdMat_print)(R2,&iflag_);
       SUBR(mvec_put_value)(V_,st::one(),&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_put_value)(W_,st::one(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // test orthog routine, expect V and [V, W] to have rank 1
+      doOrthogTests(V_, W_, Q_, BV_, BW_, BQ_, R0_, R1_, R2_, 
+        m_>1? 1:0, 1, 1, m_);
+           
+    }
+  }
+
+  // check if random orthogonal vectors are generated automatically if filled with one-vectors
+  TEST_F(CLASSNAME, test_with_constant_vectors)
+  {
+    if( typeImplemented_ && !problemTooSmall_ )
+    {
+      // fill V and W with constant entries!=1
+      SUBR(mvec_put_value)(V_,st::prand(),&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_put_value)(W_,st::prand(),&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // test orthog routine, expect V and [V, W] to have rank 1

@@ -10,6 +10,7 @@
 #include <mpi.h>
 #endif
 #include "phist_void_aliases.h"
+#include "phist_operator.h"
 #include "phist_sdFact.h"
 
 #endif //DOXYGEN

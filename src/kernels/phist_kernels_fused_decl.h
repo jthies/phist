@@ -50,6 +50,7 @@ void SUBR(fused_spmv_mvdot)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_
 //! are only carried out per MPI process.
 //! The sdMats VtW and/or WtW may be NULL, in which case the corresponding 
 //! operation is not performed.
+//! Furthermore, W=NULL is allowed. This implies beta==0 and will not return the computed vector alpha*A*V
 void SUBR(fused_spmv_mvTmv)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_mvec_ptr)  V,
                              _ST_ beta,                               TYPE(mvec_ptr)        W,
                              TYPE(sdMat_ptr) WtW, TYPE(sdMat_ptr) VtW,
