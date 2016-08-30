@@ -12,6 +12,7 @@
 #ifdef PHIST_HAVE_OPENMP
 #include <omp.h>
 #endif
+#include "phist_defs.h"
 #include "prec_helpers.h"
 
 // define our own datatype for aligned doubles

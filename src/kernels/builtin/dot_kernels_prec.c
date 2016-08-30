@@ -5,6 +5,7 @@
 */
 
 #include "phist_config.h"
+#include "phist_defs.h"
 /* needs to be included before system headers for some intel compilers+mpi */
 #ifdef PHIST_HAVE_MPI
 #include <mpi.h>

@@ -5,6 +5,7 @@
 */
 
 #include "phist_config.h"
+#include "phist_defs.h"
 #include "prec_helpers.h"
 
 #ifdef PHIST_SDMATS_ROWMAJOR
