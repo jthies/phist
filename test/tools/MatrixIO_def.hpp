@@ -101,7 +101,7 @@ int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* co
     *len=2;
     cols[1]=row+1;
 #ifdef IS_COMPLEX
-    vals[1]=-0.5*st::cmplx_I();
+    vals[1]=(_ST_)-0.5*st::cmplx_I();
 #else
     vals[1]=-0.5*st::one();
 #endif
@@ -111,7 +111,7 @@ int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* co
     *len=2;
     cols[1]=row-1;
 #ifdef IS_COMPLEX
-    vals[1]=+0.5*st::cmplx_I();
+    vals[1]=(_ST_)+0.5*st::cmplx_I();
 #else
     vals[1]=-0.5*st::one();
 #endif
@@ -122,8 +122,8 @@ int PHIST_TG_PREFIX(hpd_tridiag)(ghost_gidx row, ghost_lidx *len, ghost_gidx* co
     cols[1]=row-1;
     cols[2]=row+1;
 #ifdef IS_COMPLEX
-    vals[1]=+0.5*st::cmplx_I();
-    vals[2]=-0.5*st::cmplx_I();
+    vals[1]=(_ST_)+0.5*st::cmplx_I();
+    vals[2]=(_ST_)-0.5*st::cmplx_I();
 #else
     vals[1]=-0.5*st::one();
     vals[2]=-0.5*st::one();
