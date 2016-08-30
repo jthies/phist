@@ -660,7 +660,11 @@ return;
   }
 
   // check if we can orthogonalize W against V where V and W are views into Z=[V W].
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+  TEST_F(CLASSNAME, DISABLED_random_vectors_viewing_same_block)
+#else
   TEST_F(CLASSNAME, random_vectors_viewing_same_block)
+#endif
   {
     if (typeImplemented_ && !problemTooSmall_)
     {
