@@ -3,6 +3,11 @@
 #error "file not included correctly"
 #endif
 
+
+#if !defined(PHIST_HIGH_PRECISION_KERNELS) && defined(PHIST_HIGH_PRECISION_KERNELS_FORCE)
+#define PHIST_HIGH_PRECISION_KERNELS
+#endif
+
 /*! Test fixure. */
 class CLASSNAME: public virtual TestWithType< _ST_ >,
                  public virtual KernelTestWithMap<_N_>
@@ -171,9 +176,17 @@ public:
                   int expectedRankVW)
   {
 
+      int iflag_in=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+      // the check using ASSERT_NEAR(mt::one(),...,tol)
+      // requires at least eps(1.0) to make sense
+      MT tolV=mt::eps();
+      MT tolW=mt::eps();
+      iflag_in|=PHIST_ROBUST_REDUCTIONS;
+#else
       MT tolV=(MT)10.*VTest::releps(V);
       MT tolW=(MT)10.*WTest::releps(W);
-
+#endif
       // copy Q=W because orthog() works in-place
       SUBR(mvec_add_mvec)(st::one(),W,st::zero(),Q,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -181,7 +194,7 @@ public:
       // orthogonalize the m columns of V. Test that orthog
       // works if the first argument is NULL.
       int rankVW=-42;
-      iflag_=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
+      iflag_=iflag_in;
       SUBR(orthog)(NULL,V,B_op,R0,NULL,1,&rankVW,&iflag_);
       if (iflag_!=+2)
       {
@@ -242,12 +255,12 @@ public:
 #else
       EXPECT_NEAR(mt::one(),VTest::ColsAreNormalized(V_vp,nloc_,ldaV,stride_,mpi_comm_),tolV);
       ASSERT_NEAR(mt::one(),VTest::ColsAreOrthogonal(V_vp,nloc_,ldaV,stride_,mpi_comm_),tolV);
-#endif      
+#endif
       int nsteps=2;
 
       // now orthogonalize W against V. The result should be such that Q*R1=W-V*R2, Q'*Q=I,V'*Q=0
       rankVW=-42;
-      iflag_=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
+      iflag_=iflag_in;
       SUBR(orthog)(V,Q,B_op,R1,R2,nsteps,&rankVW,&iflag_);
       ASSERT_EQ(expect_iflagVW,iflag_);
 
@@ -318,15 +331,19 @@ SUBR(sdMat_print)(R2,&iflag_);
       SUBR(sdMat_create)(&VtQ,nvec_V,nvec_Q,comm_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
+      iflag_=iflag_in;
       SUBR(mvecT_times_mvec)(st::one(),V,BQ,st::zero(),VtQ,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_NEAR(mt::one(),SdMatEqual(VtQ,st::zero()),100*mt::eps());
+      ASSERT_NEAR(mt::one(),SdMatEqual(VtQ,st::zero()),tolV);
 
       // check the decomposition: Q*R1 = W - V*R2 (compute W2=Q*R1+V*R2-W and compare with 0)
+      iflag_=iflag_in;
       SUBR(mvec_times_sdMat)(st::one(),Q,R1,st::zero(),W2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=iflag_in;
       SUBR(mvec_times_sdMat)(st::one(),V,R2,st::one(),W2_,&iflag_);
       ASSERT_EQ(0,iflag_);
+      iflag_=iflag_in;
       SUBR(mvec_add_mvec)(-st::one(),W,st::one(),W2_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_from_device)(W2_,&iflag_);
@@ -339,11 +356,16 @@ SUBR(sdMat_print)(R2,&iflag_);
 #ifdef ORTHOG_WITH_HPD_B
   TEST_F(CLASSNAME, B_op_is_hpd)
   {
+    int iflag_in=0;
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+    iflag_in=PHIST_ROBUST_REDUCTIONS;
+#endif
     if (problemTooSmall_ || !typeImplemented_) return;
     SUBR(mvec_random)(V_,&iflag_);
     ASSERT_EQ(0,iflag_);
     B_op->apply(st::one(),B_op->A,V_,st::zero(),BV_,&iflag_);
     ASSERT_EQ(0,iflag_);
+    iflag_=iflag_in;
     SUBR(mvecT_times_mvec)(st::one(),V_,BV_,st::zero(),R0_,&iflag_);
     ASSERT_EQ(0,iflag_);
     SUBR(sdMat_from_device)(R0_,&iflag_);
@@ -358,7 +380,11 @@ SUBR(sdMat_print)(R2,&iflag_);
         sym_err = std::max(sym_err, std::abs(st::conj(R0_vp_[i*ldaR0_+j])-R0_vp_[j*ldaR0_+i]));
       }
     }
+#ifdef PHIST_HIGH_PRECISION_KERNELS
+    ASSERT_REAL_EQ(mt::one(), mt::one()+sym_err);
+#else
     ASSERT_NEAR(mt::one(), mt::one()+sym_err,100.0*mt::eps());
+#endif
     ASSERT_GT(min_diag,std::sqrt(mt::eps()));
   }
 #endif
