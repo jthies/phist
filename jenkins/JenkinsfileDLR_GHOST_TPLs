@@ -34,6 +34,8 @@ export FC="ifort" CC="icc" CXX="icpc"
 ./test/ci-sc-dlr.sh -e intel-16.0.3-mpich -f optional-libs -v native -k ghost
 ''')
 
+step([$class: 'JUnitResultArchiver', testResults: 'build_*/test_output_np*/*/xunit.xml'])
+
  stage 'e-mail results'
  emailext body: '''Project: ${PROJECT_NAME}
 Revision: ${GIT_REVISION}
