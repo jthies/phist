@@ -4,6 +4,10 @@
 //! input: v0, V and H allocated with m+1 resp. m columns
 //! and nloc resp. m+1 rows.
 //!
+//! If B_op!=NULL, B is assumed to be symmetric and positive definite 
+//! and the B-inner product is used and the Arnoldi-relation is
+//! A*V(:,1:m) = B*V(:,1:m+1)*H(1:m+1,1:m).
+//!
 //! We do not check for converged Ritz values in these first few steps.
 //! If a breakdown is encountered, the basis is extended with a random 
 //! vector and the process is continued.
@@ -13,11 +17,7 @@ void SUBR(simple_arnoldi)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *iflag = 0;
-  if( B_op != NULL )
-  {
-    PHIST_SOUT(PHIST_ERROR,"case B_op != NULL (e.g. B != I) not implemented yet!\n");
-    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED, *iflag);
-  }
+
   // check dimensions
   {
     int nrH,ncH,ncV;
@@ -56,7 +56,16 @@ void SUBR(simple_arnoldi)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr
   // normalize v0
   PHIST_CHK_IERR(SUBR(mvec_set_block) (v, v0, 0, 0, iflag), *iflag);
   _MT_ v0norm;
-  PHIST_CHK_IERR(SUBR(mvec_normalize) (v, &v0norm,  iflag), *iflag);
+  if (B_op==NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_normalize) (v, &v0norm,  iflag), *iflag);
+  }
+  else
+  {
+    *iflag=PHIST_NOT_IMPLEMENTED;
+    return;
+//    PHIST_CHK_IERR(B_op->fused_apply_mvTmv(st::one(),B_op->A,v,NULL,vTv,iflag),*iflag);
+  }
   PHIST_CHK_IERR(SUBR(mvec_set_block) (V, v,  0, 0, iflag), *iflag);
 
   // initialize H
@@ -89,7 +98,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     PHIST_CHK_IERR(SUBR(sdMat_get_block)(H,R2,0,i,i,i,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_get_block)(H,R1,i+1,i+1,i,i,iflag),*iflag);
     *iflag=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
-    PHIST_CHK_NEG_IERR(SUBR(orthog)(Vprev,av,NULL,R1,R2,3,&rankV,iflag),*iflag);
+    PHIST_CHK_NEG_IERR(SUBR(orthog)(Vprev,av,B_op,R1,R2,3,&rankV,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R2,0,i,i,i,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R1,i+1,i+1,i,i,iflag),*iflag);
 #if PHIST_OUTLEV>=PHIST_DEBUG

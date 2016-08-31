@@ -4,7 +4,10 @@
 //! input: v0, V and H allocated with m+1 resp. m columns
 //! and nloc resp. m+1 rows.
 //!
-//! TODO - block Arnoldi, cf. matlab/krylov/arnoldi.m for a prototype.
+//! If B_op!=NULL, B is assumed to be symmetric and positive definite 
+//! and the B-inner product is used and the Arnoldi-relation is
+//! A*V(:,1:m) = B*V(:,1:m+1)*H(1:m+1,1:m).
+//!
 //! TODO - we may want to include a check if any Ritz values have already
 //!        converged in Arnoldi, but this requires some additional programming
 //!        effort which we leave for later.
