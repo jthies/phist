@@ -1,0 +1,54 @@
+node("SC-030083L") {
+   dir("/localdata/f_buildn/ESSEX_workspace/phist_GHOST_TPLs/"){
+   
+   stage 'check out from bitbucket'
+   git url: 'https://bitbucket.org/essex/phist.git', branch: 'master'
+   
+   shellPrefix="#!/bin/bash\n"
+   
+   stage 'native build with GHOST+TPLs, GCC 5.3.0 and OpenMPI'
+   sh(shellPrefix + '''# configure modulesystem to load newer bash!
+export MODULEPATH=/tools/modulesystem/modulefiles
+module() { eval `/usr/bin/modulecmd bash $*`; }
+# set ccache path
+export CCACHE_DIR=/home_local/f_buildn/ESSEX_workspace/.ccache
+export FC="ccache gfortran" CC="ccache gcc" CXX="ccache g++"
+./buildScripts/ci-sc-dlr-optional-libs.sh -e gcc-5.3.0-openmpi -f optional-libs -v native -k ghost
+''')
+
+   stage 'CUDA build with GHOST+TPLs, GCC 4.9.2 and OpenMPI'
+   sh(shellPrefix + '''# configure modulesystem to load newer bash!
+export MODULEPATH=/tools/modulesystem/modulefiles
+module() { eval `/usr/bin/modulecmd bash $*`; }
+# set ccache path
+export CCACHE_DIR=/home_local/f_buildn/ESSEX_workspace/.ccache
+export FC="ccache gfortran" CC="ccache gcc" CXX="ccache g++"
+./buildScripts/ci-sc-dlr-optional-libs.sh -e gcc-4.9.2-openmpi-1.10.1 -f optional-libs -v CUDA -k ghost
+''')
+
+   stage 'native build with GHOST+TPLs, ICC 16.0.3 and MPICH'
+   sh(shellPrefix + '''# configure modulesystem to load newer bash!
+export MODULEPATH=/tools/modulesystem/modulefiles
+module() { eval `/usr/bin/modulecmd bash $*`; }
+export FC="ifort" CC="icc" CXX="icpc"
+./test/ci-sc-dlr-optional-libs.sh -e intel-16.0.3-mpich -f optional-libs -v native -k ghost
+''')
+
+ stage 'e-mail results'
+ emailext body: '''Project: ${PROJECT_NAME}
+Revision: ${GIT_REVISION}
+
+CI-Build trigger: ${CAUSE}
+
+Attachements:
+- Build log: build.zip
+- Test results (Debug+Release mode): test.log.gz
+
+Changes:
+${CHANGES, showDependencies=true, format="[%a] %r %m\\n"}
+
+Failed tests:
+${FAILED_TESTS, showStack=false,showMessage=false,maxTests=200}
+ ''', subject: '$DEFAULT_SUBJECT', to: 'Jonas.Thies@DLR.de'
+ }
+}
