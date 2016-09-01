@@ -318,8 +318,14 @@ phist_lidx lda1, phist_lidx lda2, phist_lidx stride, bool swap_n_m=false, _MT_ r
   if (maxval>std::sqrt(mt::eps()))
   {
     PHIST_OUT(PHIST_INFO,"max relative difference is %e in location (i=%d,j=%d)\n",maxval,max_i,max_j);
+#ifdef IS_COMPLEX
+    PHIST_OUT(PHIST_INFO,"a1(%d,%d)=%16.8e%+16.8ei, a2(%d,%d)=%16.8e%+16.8ei\n",
+        max_i,max_j, st::real(arr1[max_j*lda1+max_i]), st::imag(arr1[max_j*lda1+max_i]),
+        max_i,max_j, st::real(arr2[max_j*lda2+max_i]), st::imag(arr2[max_j*lda2+max_i]));
+#else
     PHIST_OUT(PHIST_INFO,"a1(%d,%d)=%16.8e, a2(%d,%d)=%16.8e\n",max_i,max_j,
         arr1[max_j*lda1+max_i],max_i,max_j,arr2[max_j*lda2+max_i]);
+#endif
     PHIST_OUT(PHIST_INFO,"With lda1=%d, lda2=%d, N=%d, M=%d\n",lda1,lda2,n,m);
   }
 #endif
