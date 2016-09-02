@@ -60,6 +60,7 @@ kernel libs) ?
 /* do we have support for higher precision kernel routines (Kahan-style reductions etc.)?
 */
 #cmakedefine PHIST_HIGH_PRECISION_KERNELS
+#cmakedefine PHIST_HIGH_PRECISION_KERNELS_FORCE 1
 
 /* which library provides the basic matrix/vector operations? */
 #cmakedefine PHIST_KERNEL_LIB_EPETRA
