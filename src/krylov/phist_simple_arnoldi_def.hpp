@@ -53,6 +53,9 @@ void SUBR(simple_arnoldi)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr
   TYPE(sdMat_ptr) R1 = NULL, R2 = NULL;
   TYPE(mvec_ptr) Vprev = NULL;
 
+  // subdiagonal element (always a 1x1 matrix for block size 1)
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&R1,1,1,comm,iflag),*iflag);
+
   // normalize v0
   PHIST_CHK_IERR(SUBR(mvec_set_block) (v, v0, 0, 0, iflag), *iflag);
   _MT_ v0norm;
@@ -62,22 +65,24 @@ void SUBR(simple_arnoldi)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr
   }
   else
   {
-    *iflag=PHIST_NOT_IMPLEMENTED;
-    return;
-//    PHIST_CHK_IERR(B_op->fused_apply_mvTmv(st::one(),B_op->A,v,NULL,vTv,iflag),*iflag);
+    // compute v'Bv without storing Bv
+    PHIST_CHK_IERR(B_op->fused_apply_mvTmv(st::one(),B_op->A,v,st::zero(),NULL,
+        NULL, R1, iflag), *iflag);
+    _ST_ *val;
+    phist_lidx lda;
+    PHIST_CHK_IERR(SUBR(sdMat_extract_view)(R1,&val,&lda,iflag),*iflag);
+    v0norm=st::real(st::sqrt(val[0]));
+    PHIST_CHK_IERR(SUBR(mvec_scale)(v,st::one()/v0norm,iflag),*iflag);
   }
   PHIST_CHK_IERR(SUBR(mvec_set_block) (V, v,  0, 0, iflag), *iflag);
 
   // initialize H
   PHIST_CHK_IERR(SUBR(sdMat_put_value)(H,st::zero(),iflag),*iflag);
 
-  // subdiagonal element (always a 1x1 matrix for block size 1)
-  PHIST_CHK_IERR(SUBR(sdMat_create)(&R1,1,1,comm,iflag),*iflag);
-
-
 // put all iterations in one big compute task; this speeds up the tests with ghost (significantly)
 PHIST_TASK_DECLARE(ComputeTask)
 PHIST_TASK_BEGIN(ComputeTask)
+
   // Arnoldi loop
   for(int i = 0; i < m; i++)
   {
