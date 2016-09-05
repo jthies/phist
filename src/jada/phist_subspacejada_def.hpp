@@ -127,7 +127,7 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   {
     PHIST_SOUT(PHIST_ERROR,"only standard Ritz extraction is implemented (jadaOpts.how=%s), found %s\n",
         eigExtr2str(phist_STANDARD),eigExtr2str(how));
-    *iflag=PHIST_NOT_IMPLEMENTED;
+    *iflag=PHIST_INVALID_INPUT;
     return;
   }
 
@@ -144,27 +144,27 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   if( blockDim < 1 )
   {
     PHIST_SOUT(PHIST_ERROR, "parameter blockDim < 1!\n");
-    PHIST_CHK_IERR(*iflag = PHIST_NOT_IMPLEMENTED, *iflag);
+    PHIST_CHK_IERR(*iflag = PHIST_INVALID_INPUT, *iflag);
   }
   if( innerBlockDim > blockDim || innerBlockDim < 1)
   {
     PHIST_SOUT(PHIST_ERROR, "parameter innerBlockDim > blockDim || innerBlockDim < 1!\n");
-    PHIST_CHK_IERR(*iflag = PHIST_NOT_IMPLEMENTED, *iflag);
+    PHIST_CHK_IERR(*iflag = PHIST_INVALID_INPUT, *iflag);
   }
   if( minBase < nEig_ )
   {
     PHIST_SOUT(PHIST_ERROR, "parameter minBase < nEig+blockDim-1!\n");
-    PHIST_CHK_IERR(*iflag = PHIST_NOT_IMPLEMENTED, *iflag);
+    PHIST_CHK_IERR(*iflag = PHIST_INVALID_INPUT, *iflag);
   }
   if( minBase+blockDim > maxBase )
   {
     PHIST_SOUT(PHIST_ERROR, "parameter minBase+blockDim > maxBase!\n");
-    PHIST_CHK_IERR(*iflag = PHIST_NOT_IMPLEMENTED, *iflag);
+    PHIST_CHK_IERR(*iflag = PHIST_INVALID_INPUT, *iflag);
   }
   if( maxBase < nEig+blockDim )
   {
     PHIST_SOUT(PHIST_ERROR, "paramater maxBase < nEig+blockDim!\n");
-    PHIST_CHK_IERR(*iflag = PHIST_NOT_IMPLEMENTED, *iflag);
+    PHIST_CHK_IERR(*iflag = PHIST_INVALID_INPUT, *iflag);
   }
   if( B_op != NULL )
   {
