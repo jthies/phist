@@ -17,8 +17,8 @@ void SUBR(fused_spmv_mvTmv)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_
   {
     phist_const_map_ptr map=NULL;
     int nvec;
-    PHIST_CHK_IERR(SUBR(mvec_get_map)(W,&map,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(W,&nvec,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_get_map)(V,&map,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(mvec_num_vectors)(V,&nvec,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(mvec_create)(&_W,map,nvec,iflag),*iflag);
     _alpha=st::one();
     _beta=st::zero();
