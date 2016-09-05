@@ -316,7 +316,7 @@ static void TearDownTestCase()
 
 // tolerance for tests depending on the vector length
 inline static MT releps(TYPE(const_mvec_ptr) V=NULL)
-  {
+{
   if (V==NULL) return std::sqrt((MT)_Nglob)*mt::eps();
   int nvec,iflag;
   SUBR(mvec_num_vectors)(V,&nvec,&iflag);
@@ -324,17 +324,17 @@ inline static MT releps(TYPE(const_mvec_ptr) V=NULL)
   MT max_nrm=0;
   SUBR(mvec_norm2)(V,nrms,&iflag);
   for (int i=0;i<nvec;i++)
-    {
+  {
     max_nrm = std::max(max_nrm,nrms[i]);
-    }
+  }
   if (max_nrm<4*mt::eps()) max_nrm=mt::sqrt((MT)_Nglob);
   delete[] nrms;
   return max_nrm*mt::eps();
-  }
+}
 
 //! in-place reduction operation on scalar data type (for testing with MPI)
 static int global_sum(ST* value, int count, MPI_Comm mpi_comm)
-  {
+{
   int iflag=0;
 #ifdef PHIST_HAVE_MPI
         ST* gvalue = new ST[count];
@@ -345,11 +345,43 @@ static int global_sum(ST* value, int count, MPI_Comm mpi_comm)
         delete [] gvalue;
 #endif
   return iflag;
-  }
+}
+
+#if defined(PHIST_HIGH_PRECISION_KERNELS) && defined(IS_DOUBLE) && !defined(IS_COMPLEX)
 
 //! in-place reduction operation on scalar data type (for testing with MPI)
+static int global_prec_sum(ST* value, ST* err, int count, MPI_Comm mpi_comm)
+{
+  std::cout << "global_prec_sum local value[0]: "<<value[0] << " + " << err[0]<<std::endl;
+# ifndef PHIST_HAVE_MPI
+      // not implemented
+      return -99;
+# endif
+  int iflag=0;
+  int nproc;
+  MPI_Comm_size(mpi_comm,&nproc);
+      ST gvalue[count*nproc];
+      ST gerr[count*nproc];
+
+        iflag=MPI_Allgather(value,count,st::mpi_type(),gvalue,count,st::mpi_type(),mpi_comm);
+        if (iflag) return iflag;
+        iflag=MPI_Allgather(err,count,st::mpi_type(),gerr,count,st::mpi_type(),mpi_comm);
+        if (iflag) return iflag;
+        
+        for (int i=0; i<count; i++) 
+        {
+          value[i]=st::zero();
+          err[i]=st::zero();
+        }
+        prec_reduction_k(nproc,count,gvalue,gerr,value,err);
+  std::cout << "global_prec_sum global value[0]: "<<value[0] << " " << gvalue[0]<<std::endl;
+  return iflag;
+}
+
+#endif
+//! in-place reduction operation on scalar data type (for testing with MPI)
 static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
-  {
+{
   int iflag=0;
 #ifdef PHIST_HAVE_MPI
         ST* gvalue = new MT[count];        
@@ -359,7 +391,7 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
         delete [] gvalue;
 #endif
   return iflag;
-  }
+}
 
   //! tests if each column of an mv is normalized in the B-norm
   static MT ColsAreBNormalized(const ST* V_vp, const ST* BV_vp, phist_lidx nloc, 
@@ -368,22 +400,43 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
   {
     MT res=1.0;
     // see if all columns in vec2 have B-norm 1
-    ST *norms = new ST[nvec_];
+    ST norms[nvec_],errs[nvec_];
     for (int j=0;j<nvec_;j++)
+    {
+#if defined(PHIST_HIGH_PRECISION_KERNELS) && defined(IS_DOUBLE) && !defined(IS_COMPLEX)
+      ST sum=st::zero(),err=st::zero();
+      for (int i=0;i<stride*nloc;i+=stride)
       {
+        ST val=V_vp[VIDX(i,j,ldV)];
+        ST Bval=BV_vp[VIDX(i,j,ldBV)];
+        DOUBLE_4DOTADD(val,Bval,sum,err);
+      }
+      norms[j]=sum;
+      errs[j]=err;
+#else
       ST sum=st::zero();
       for (int i=0;i<stride*nloc;i+=stride)
-        {
+      {
         ST val=V_vp[VIDX(i,j,ldV)];
         ST Bval=BV_vp[VIDX(i,j,ldBV)];
         sum+=st::conj(val)*Bval; 
-        }
-      norms[j]=sum;
       }
+      norms[j]=sum;
+#endif
+    }
+#if defined(PHIST_HIGH_PRECISION_KERNELS) && defined(IS_DOUBLE) && !defined(IS_COMPLEX)
+    global_prec_sum(norms,errs,nvec_,mpi_comm);
+    for (int j=0;j<nvec_;j++)
+    {
+      double sqrt_a,sqrt_aC,divsqrt_a,divsqrt_aC;
+      DOUBLE_4SQRT_NEWTONRAPHSON_FMA(norms[j],errs[j],sqrt_a,sqrt_aC,divsqrt_a,divsqrt_aC);
+      norms[j]=sqrt_a;
+    }
+#else
     global_sum(norms,nvec_,mpi_comm);
     for (int j=0;j<nvec_;j++) norms[j]=st::sqrt(norms[j]);
+#endif
     res=ArrayEqual(norms,nvec_,1,nvec_,1,st::one());
-    delete [] norms;
     return res;
   }
 
@@ -399,11 +452,23 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
     }
     else
     {
-      ST sums[nsums+1];
+      ST sums[nsums+1],errs[nsums+1];
       int k=0;
       for (int j1=0;j1<nvec_;j1++)
         for (int j2=j1+1;j2<nvec_;j2++)
         {
+#if defined(PHIST_HIGH_PRECISION_KERNELS) && defined(IS_DOUBLE) && !defined(IS_COMPLEX)
+          // TODO: we need high precision arithmetic for other data types, for instance in the ScalarTraits
+          ST sum=st::zero(),err=st::zero();
+          for (int i=0;i<stride*nloc;i+=stride)
+          {
+            double val1=V_vp[VIDX(i,j1,ldV)];
+            double val2=BV_vp[VIDX(i,j2,ldBV)];
+            DOUBLE_4DOTADD(val1,val2,sum,err);
+          }
+          errs[k]=err;
+          sums[k++]=sum;
+#else
           ST sum=st::zero();
           for (int i=0;i<stride*nloc;i+=stride)
           {
@@ -411,9 +476,15 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
             ST val2=BV_vp[VIDX(i,j2,ldBV)];
             sum+=val1*st::conj(val2);
           }
+          errs[k]=st::zero();
           sums[k++]=sum;
+#endif
         }
+#if defined(PHIST_HIGH_PRECISION_KERNELS) && defined(IS_DOUBLE) && !defined(IS_COMPLEX)
+      global_prec_sum(sums,errs,nsums,mpi_comm);
+#else
       global_sum(sums,nsums,mpi_comm);
+#endif
       res=ArrayEqual(sums,nsums,1,nsums,1,st::zero());
       return res;
     }

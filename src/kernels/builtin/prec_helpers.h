@@ -548,6 +548,10 @@ static inline double double_fmsub(double a, double b, double c)
   MM128_4SUM(m4to2_a,m4to2_aC,m4to2_b,m4to2_bC,s,t);\
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // precise reduction of gathered MPI results of all processes for block size 1
 void prec_reduction_1(int n, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC);
 // precise reduction of gathered MPI results of all processes for block size 2
@@ -561,5 +565,8 @@ void prec_reduction_4k(int n, int k, const double *restrict s_, const double *re
 // precise reduction of gathered MPI results of all processes for block size k
 void prec_reduction_k(int n, int k, const double *restrict s_, const double *restrict c_, double *restrict r, double *restrict rC);
 
+#ifdef __cplusplus
+} //extern "C"
+#endif
 
 #endif
