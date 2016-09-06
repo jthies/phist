@@ -73,6 +73,25 @@ const char* filename,int* iflag)
   Teuchos::Ptr<Traits<_ST_>::sparseMat_t> Aptr = A.release();
   *vA = (TYPE(sparseMat_ptr))(Aptr.get());
 }
+
+extern "C" void SUBR(sparseMat_read_mm_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
+        const char* filename,int* iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+
+extern "C" void SUBR(sparseMat_read_bin_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
+        const char* filename,int* iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+
+extern "C" void SUBR(sparseMat_read_hb_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
+        const char* filename,int* iflag)
+{
+  *iflag=PHIST_NOT_IMPLEMENTED;
+}
+
 //!@}
 
 

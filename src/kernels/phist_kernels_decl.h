@@ -69,18 +69,33 @@ void SUBR(type_avail)(int* iflag);
 //! optional flags:
 //! * PHIST_SPARSEMAT_PERM_GLOBAL
 //! * PHIST_SPARSEMAT_DIST2_COLOR (feature required for CARP-CG)
+//!
+//! If a predefined map is used, the permutation and partitioning is defined solely by the map.
+//!
 ///@{
 
 //! read a matrix from a MatrixMarket (ASCII) file \ingroup(crsmat)
 void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
         const char* filename,int* iflag);
 
-//! read a matrix from a Harwell-Boeing file
+//! read a matrix from a Harwell-Boeing file \ingroup(crsmat)
 void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
         const char* filename,int* iflag);
 
-//! read a matrix from a Ghost CRS (binary) file.
+//! read a matrix from a Ghost CRS (binary) file \ingroup(crsmat)
 void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
+const char* filename,int* iflag);
+
+//! read a matrix from a MatrixMarket (ASCII) file with predefined map \ingroup(crsmat)
+void SUBR(sparseMat_read_mm_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
+        const char* filename,int* iflag);
+
+//! read a matrix from a Harwell-Boeing file with predefined map \ingroup(crsmat)
+void SUBR(sparseMat_read_hb_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
+        const char* filename,int* iflag);
+
+//! read a matrix from a Ghost CRS (binary) file with predefined map \ingroup(crsmat)
+void SUBR(sparseMat_read_bin_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
 const char* filename,int* iflag);
 
 ///@}
