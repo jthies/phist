@@ -1,33 +1,39 @@
-// auto-detects the file type by looking at the file extension
+// auto-detects the file type by looking at the file extension. Either comm or map must be non-NULL
 void SUBR(sparseMat_read)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr comm,
-        char* filename, int* iflag)
+        phist_const_map_ptr map, char* filename, int* iflag)
 {
-  char *c=filename+strlen(filename)-1;
-  int isMM=0;
-  int isCRS=0;
-  int isHB=0;
-  
-  while (c!=filename)
+  if (phist_filename_isMM(filename))
   {
-    if (*c=='.') break;
-    c--;
+    if (map)
+    {
+      PHIST_CHK_IERR(SUBR(sparseMat_read_mm_with_map)(A,map,filename,iflag),*iflag);
+    }
+    else
+    {
+      PHIST_CHK_IERR(SUBR(sparseMat_read_mm)(A,comm,filename,iflag),*iflag);
+    }
   }
-  c++;
-  isMM=(!strcmp(c,"mm"))||(!strcmp(c,"mtx"));
-  isCRS=!strcmp(c,"crs");
-  isCRS=isCRS||!strcmp(c,"bin");
-  isHB=!strcmp(c,"rua")||!strcmp(c,"cua");
-  if (isMM)
+  else if (phist_filename_isHB(filename))
   {
-    PHIST_CHK_IERR(SUBR(sparseMat_read_mm)(A,comm,filename,iflag),*iflag);
+    if (map)
+    {
+      PHIST_CHK_IERR(SUBR(sparseMat_read_hb_with_map)(A,map,filename,iflag),*iflag);
+    }
+    else
+    {
+      PHIST_CHK_IERR(SUBR(sparseMat_read_hb)(A,comm,filename,iflag),*iflag);
+    }
   }
-  else if (isHB)
+  else if (phist_filename_isCRS(filename))
   {
-    PHIST_CHK_IERR(SUBR(sparseMat_read_hb)(A,comm,filename,iflag),*iflag);
-  }
-  else if (isCRS)
-  {
-    PHIST_CHK_IERR(SUBR(sparseMat_read_bin)(A,comm,filename,iflag),*iflag);
+    if (map)
+    {
+      PHIST_CHK_IERR(SUBR(sparseMat_read_bin_with_map)(A,map,filename,iflag),*iflag);
+    }
+    else
+    {
+      PHIST_CHK_IERR(SUBR(sparseMat_read_bin)(A,comm,filename,iflag),*iflag);
+    }
   }
   else
   {
@@ -81,6 +87,7 @@ PHIST_SOUT(PHIST_INFO,"\n\nInstead of a matrix file you can also specify a strin
 
 }
 
+// variant for double real that allows creating selected matrices from functions
 #if defined(IS_DOUBLE) && !defined(IS_COMPLEX)
 
 // ghost/physics
@@ -376,7 +383,7 @@ PHIST_SOUT(PHIST_ERROR,"BAPPS models (essex-physics/bapps) not\n"
   else
   {
     PHIST_SOUT(outlev,"read matrix from file '%s'\n",problem);
-    PHIST_CHK_IERR(SUBR(sparseMat_read)(mat,comm,(char*)problem,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sparseMat_read)(mat,comm,NULL,(char*)problem,iflag),*iflag);
   }
   
   return;
@@ -392,10 +399,21 @@ void SUBR(create_matrix)(TYPE(sparseMat_ptr)* mat, phist_const_comm_ptr comm,
   }
 
     PHIST_SOUT(PHIST_INFO,"read matrix from file '%s'\n",problem);
-    PHIST_CHK_IERR(SUBR(sparseMat_read)(mat,comm,(char*)problem,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sparseMat_read)(mat,comm,NULL,(char*)problem,iflag),*iflag);
 
 }
 #endif
+
+void SUBR(create_matrix_with_map)(TYPE(sparseMat_ptr)* mat, phist_const_map_ptr map,
+        const char* problem, int* iflag)
+{
+  // try interpreting the string as filename
+  SUBR(sparseMat_read)(mat,NULL,map,(char*)problem,iflag);
+  // if that fails, return NOT_IMPLEMENTED (input from a function can be added later if we need it).
+  // Note that we do have a kernel function sparseMat_create_fromRowFuncAndMap, but interpreting the
+  // string to select and initialize the rowFunc is currently done in the create_matrix function.
+  if (*iflag!=0) PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED,*iflag);
+}
 
 //! For testing linear solvers, generates an 'exact solution' sol and right-hand side rhs
 //! for some matrix creted by create_matrix. For most test cases, this will be some random

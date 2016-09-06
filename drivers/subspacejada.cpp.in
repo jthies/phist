@@ -28,14 +28,16 @@
 void SUBR(print_usage)(const char* progname)
 {
     int iflag;
-    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A> <jadaOpts file>\n",progname);
+    PHIST_SOUT(PHIST_ERROR,"Usage: %s <matrix A> <matrix B> <jadaOpts file>\n",progname);
     
-    PHIST_SOUT(PHIST_ERROR,"Alternative (deprecated) Usage: %s <matrix A> [<hermitian>] [<invariant subspace dim>] [<which>] [<tol>] [<max iters> "
+    PHIST_SOUT(PHIST_ERROR,"Alternative Usage: %s <matrix A> [<matrix B>] [<hermitian>] [<invariant subspace dim>] [<which>] [<tol>] [<max iters> "
     "<JD block size> <min basis> <max basis> <inner block size> <inner iters> <initial shift> <initial shift iters> "
     "<inner solver robust> <inner solver abort when first converged>]\n"
     "\n"
-    "Where <matrix A> is a string defining the matrix A (see explanation below)                         \n"
-    "      <hermitian> is 0 (general) or 1 (symmetric/hermitian)                                        \n"
+    "Where <matrix A> is a string defining the matrix A (see explanation below)                                 \n"
+    "      <matrix B> defines the Hermitian and positive definite B matrix, which may be \"I\" or \"none\"      \n"
+    "                 to solve a standard eigenvalue problem.                                                   \n"
+    "      <hermitian> is 0 (general A) or 1 (symmetric/Hermitian A)                                    \n"
     "      <invariant subspace dim> is the number of eigenpairs sought                                  \n"
     "      <which> may be SM, LM, SR, LR (S/L for smallest/largest, M/R for magnitude/real part)        \n"
     "              or of the form \"TARGET\" <value>. SM is equivalent to TARGET 0, in this the driver  \n"
@@ -73,13 +75,14 @@ int main(int argc, char** argv)
     return 1;
   }
   const char* problem=argv[1];
+  const char* problemB=argc>2? argv[2]: NULL;
 
   // fill the jadaOpts struct to pass settings to the solver
   phist_jadaOpts opts;
 
-if (argc==3 && argv[2][0]!='0'&&argv[2][0]!='1')
+if (argc==4 && argv[3][0]!='0'&&argv[3][0]!='1')
 {
-  const char* parameter_file=argv[2];
+  const char* parameter_file=argv[3];
   PHIST_SOUT(PHIST_VERBOSE,"get options from file '%s'\n",parameter_file);
   PHIST_ICHK_IERR(phist_jadaOpts_fromFile(&opts,parameter_file,&iflag),iflag);
 }
@@ -89,7 +92,7 @@ else
   PHIST_SOUT(PHIST_VERBOSE,"get options from command line (if any)'\n");
   phist_jadaOpts_setDefaults(&opts);
   // parse command line
-  int p=2;
+  int p=3;
   
   // symmetry of A
   bool symmetric=false;
@@ -175,18 +178,40 @@ else
   sparseMat_ptr A = NULL;
   iflag=PHIST_SPARSEMAT_PERM_GLOBAL|PHIST_SPARSEMAT_PERM_LOCAL;
   if( opts.innerSolvBlockSize == 1 )
+  {
     iflag = iflag | PHIST_SPARSEMAT_OPT_SINGLESPMVM;
+  }
   else
+  {
     iflag = iflag | PHIST_SPARSEMAT_OPT_BLOCKSPMVM;
+  }
   PHIST_ICHK_IERR(SUBR(create_matrix)(&A,comm,problem,&iflag), iflag);
   
   // create an operator from A
   linearOp_ptr opA = new TYPE(linearOp);
-  PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(opA,A,&iflag),iflag);
 
   // we need the domain map of the matrix
   const_map_ptr map = NULL;
   PHIST_ICHK_IERR(SUBR(sparseMat_get_domain_map)(A,&map,&iflag),iflag);
+
+  // create/read B matrix if needed. If B is the identity matrix, do not create an operator.
+  // This would lead to quite some memory overhead since B*Q is stored in the implementation
+  // of subspacejada.
+  linearOp_ptr opB = NULL;
+  sparseMat_ptr B=NULL;
+  
+  if (strcmp(problemB, "I") && strcasecmp(problemB, "none"))
+  {
+    iflag=0;
+    PHIST_ICHK_IERR(SUBR(create_matrix_with_map)(&B,map,problemB,&iflag), iflag);
+    opB=new TYPE(linearOp);
+    PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(opB,B,&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat_pair)(opA,A,B,&iflag),iflag);
+  }
+  else
+  {
+    PHIST_ICHK_IERR(SUBR(linearOp_wrap_sparseMat)(opA,A,&iflag),iflag);
+  }
 
   // setup necessary vectors and matrices for the schur form
   mvec_ptr Q = NULL;
@@ -243,19 +268,31 @@ else
   if (opts.how==phist_HARMONIC)
   {
     PHIST_SOUT(PHIST_INFO,"Jacobi-Davidson for interior eigenvalues\n");
-    PHIST_ICHK_IERR(SUBR(harmonicjada)(opA, NULL, opts,
+    PHIST_ICHK_IERR(SUBR(harmonicjada)(opA, opB, opts,
           Q, R, ev, resNorm, &nEig, &nIter, &iflag), iflag);
   }
   else
   {
     PHIST_SOUT(PHIST_INFO,"Jacobi-Davidson for exterior eigenvalues\n");
-    PHIST_ICHK_IERR(SUBR(subspacejada)(opA, NULL, opts,
+    PHIST_ICHK_IERR(SUBR(subspacejada)(opA, opB, opts,
           Q, R, ev, resNorm, &nEig, &nIter, &iflag), iflag);
   }
 
-  // calculate real residual
+  // calculate real residual, res = AQ - BQR
+  mvec_ptr BQ = Q;
+  if (B!=NULL)
+  {
+    int nvQ;
+    PHIST_ICHK_IERR(SUBR(mvec_num_vectors)(Q,&nvQ,&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(mvec_create)(&BQ,map,nvQ,&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),B,Q,st::zero(),BQ,&iflag),iflag);
+  }
+  
   PHIST_ICHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),A,Q,st::zero(),res,&iflag),iflag);
-  PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),Q,R,st::one(),res,&iflag),iflag);
+    PHIST_ICHK_IERR(SUBR(mvec_times_sdMat)(-st::one(),BQ,R,st::one(),res,&iflag),iflag);
+
+  if (BQ!=Q) PHIST_ICHK_IERR(SUBR(mvec_delete)(BQ,&iflag),iflag);
+
   PHIST_ICHK_IERR(SUBR(mvec_norm2)(res,resNormExp,&iflag),iflag);
   int nConvergedEig = 0;
   for(int i = 0; i < nEig; i++)
@@ -302,8 +339,14 @@ else
   PHIST_ICHK_IERR(SUBR(mvec_delete)(v0,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(sdMat_delete)(R,&iflag),iflag);
   PHIST_ICHK_IERR(SUBR(mvec_delete)(Q,&iflag),iflag);
-  // clean up operator
+  // clean up operators
+  PHIST_ICHK_IERR(opA->destroy(opA,&iflag),iflag);
   delete opA;
+  if (opB)
+  {
+    PHIST_ICHK_IERR(opB->destroy(opB,&iflag),iflag);
+    delete opB;
+  }
   // delete preconditioner (if any)
   if (precon!=NULL)
   {
@@ -311,8 +354,12 @@ else
     delete precon;
     opts.preconOp=NULL;
   }
-  // delete matrix
+  // delete matrices 
   PHIST_ICHK_IERR(SUBR(sparseMat_delete)(A,&iflag),iflag);
+  if (B)
+  {
+    PHIST_ICHK_IERR(SUBR(sparseMat_delete)(B,&iflag),iflag);
+  }
   PHIST_ICHK_IERR(phist_comm_delete(comm,&iflag),iflag);
 
   PHIST_MAIN_TASK_END

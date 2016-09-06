@@ -2,6 +2,7 @@
 NP=2
 DRIVER=phist_Dsubspacejada
 MATFILE=spinSZ20
+MASSMAT="I"
 # symmatric problem
 SYM=1
 # we look for 20 eigenpairs
@@ -18,5 +19,5 @@ INNER_ITERS=10
 MINBAS=28
 MAXBAS=60
 
-mpirun_rrze -np ${NP} ./${DRIVER} ${MATFILE} ${SYM} ${NEIG} ${WHICH} \
+mpirun_rrze -np ${NP} ./${DRIVER} ${MATFILE} ${MASSMAT} ${SYM} ${NEIG} ${WHICH} \
         ${TOL} ${MAXIT} ${BLOCKSIZE} ${MINBAS} ${MAXBAS} ${BLOCKSIZE} ${INNER_ITERS} 0 0 1 1
