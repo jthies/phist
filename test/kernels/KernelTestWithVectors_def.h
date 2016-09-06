@@ -452,7 +452,10 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
     }
     else
     {
-      ST sums[nsums+1],errs[nsums+1];
+      ST sums[nsums+1];
+#if defined(PHIST_HIGH_PRECISION_KERNELS) && defined(IS_DOUBLE) && !defined(IS_COMPLEX)
+      ST errs[nsums+1];
+#endif
       int k=0;
       for (int j1=0;j1<nvec_;j1++)
         for (int j2=j1+1;j2<nvec_;j2++)
@@ -476,7 +479,6 @@ static int global_msum(MT* value, int count, MPI_Comm mpi_comm)
             ST val2=BV_vp[VIDX(i,j2,ldBV)];
             sum+=val1*st::conj(val2);
           }
-          errs[k]=st::zero();
           sums[k++]=sum;
 #endif
         }

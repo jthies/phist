@@ -31,13 +31,11 @@ void SUBR(fused_spmv_mvTmv)(_ST_ alpha, TYPE(const_sparseMat_ptr) A, TYPE(const_
   if (WtW!=NULL)
   {
     iflag2 = iflag_in;
-    _ST_ scal =st::one()/(_alpha*_alpha);
     SUBR(mvecT_times_mvec)(st::one(),_W,_W,st::zero(),WtW,&iflag2);
   }
   if (VtW!=NULL)
   {
     iflag3 = iflag_in;
-    _ST_ scal =st::one()/(_alpha);
     SUBR(mvecT_times_mvec)(st::one(),V,_W,st::zero(),VtW,&iflag2);
   }
   if (W==NULL)
