@@ -166,11 +166,6 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
     PHIST_SOUT(PHIST_ERROR, "paramater maxBase < nEig+blockDim!\n");
     PHIST_CHK_IERR(*iflag = PHIST_INVALID_INPUT, *iflag);
   }
-  if( B_op != NULL )
-  {
-    PHIST_SOUT(PHIST_ERROR,"case B_op != NULL (e.g. B != I) not implemented yet!\n");
-    PHIST_CHK_IERR(*iflag = PHIST_NOT_IMPLEMENTED, *iflag);
-  }
 /*
   if( minBase % innerBlockDim != 0 )
   {
@@ -201,7 +196,7 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   mvec_ptr  res     = NULL;    //< residuum A*Q-Q*R
 
   // For standard Ritz values (approximating extreme eigenvalues), we have
-  // V'V=I, V'Q=0, H=V'AV, and the Schur decomposition H=Q_H R_H    
+  // V'BV=I, V'BQ=0, H=V'AV, and the Schur decomposition H=Q_H R_H    
 
   sdMat_ptr H_      = NULL;    //< space for H
   sdMat_ptr Htmp_   = NULL;    //< temporary space for H used only for checking invariants
