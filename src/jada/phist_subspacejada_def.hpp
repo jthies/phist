@@ -91,7 +91,7 @@ int maxBase=opts.maxBas;
 int innerBlockDim=opts.innerSolvBlockSize;        
 int innerMaxBase=opts.innerSolvMaxBas;
 int initialShiftIter=opts.initialShiftIters;   
-_ST_ initialShift   =(_ST_)opts.initialShift_r;
+_ST_ initialShift   =(_ST_)opts.initialShift_r
                     +(_ST_)opts.initialShift_i*st::cmplx_I();
                          
 bool innerIMGS=(opts.innerSolvRobust!=0);

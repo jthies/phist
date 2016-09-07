@@ -1490,7 +1490,6 @@ end subroutine permute_local_matrix
     integer :: nvec, ldx, ldy, recvBuffSize, sendBuffSize
     logical :: strided_x, strided_y, strided
     logical :: y_is_aligned, x_is_aligned, handled
-    integer :: i, k, l
     !--------------------------------------------------------------------------------
 
     ! check arguments
@@ -1995,15 +1994,9 @@ end subroutine permute_local_matrix
     character(len=filename_len) :: filename
     !--------------------------------------------------------------------------------
     integer :: funit
-    character(len=100) :: line
-    integer(kind=8), allocatable :: idx(:,:)
-    real(kind=8), allocatable :: val(:)
     integer(kind=8) :: globalLines, globalRows, globalCols, globalEntries, nRows
     integer :: i
     logical :: symmetric
-    integer(kind=8) :: tmp_idx(2,2)
-    real(kind=8) :: tmp_val(2)
-    integer :: newEntries
     logical :: verbose
     !--------------------------------------------------------------------------------
     
