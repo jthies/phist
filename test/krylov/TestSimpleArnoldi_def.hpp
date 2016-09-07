@@ -218,21 +218,30 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     {
       if( typeImplemented_ && !problemTooSmall_ )
       {
+        // fill AV and BV with rubbish
+        SUBR(mvec_put_value)(AV_,(_ST_)99.999,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_put_value)(BV_,(_ST_)42.9,&iflag_);
+        ASSERT_EQ(0,iflag_);
         // run simple_arnoldi
         if( blockSize > 0 )
         {
-          SUBR(simple_blockArnoldi)(opA,opB_,V_,NULL,NULL,H_,m_,blockSize,&iflag_);
+          SUBR(simple_blockArnoldi)(opA,opB_,V_,AV_,BV_,H_,m_,blockSize,&iflag_);
           ASSERT_EQ(0,iflag_);
         }
         else
         {
-          SUBR(simple_arnoldi)(opA,opB_,v0_,V_,NULL,NULL,H_,m_,&iflag_);
-          // for the moment, just test that we don't get a segfault or something like that,
-          // because block Arnoldi is not yet implemented in the B-inner product
-          return;
+          SUBR(simple_arnoldi)(opA,opB_,v0_,V_,AV_,BV_,H_,m_,&iflag_);
           ASSERT_EQ(0,iflag_);
         }
-        PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),B_,V_,st::zero(),BV_,&iflag_),iflag_);
+        // check if AV and BV are returned correctly
+        PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(-st::one(),A_,Vm_,st::one(),AV_,&iflag_),iflag_);
+        PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(-st::one(),B_,Vm_,st::one(),BV_,&iflag_),iflag_);
+        
+        ASSERT_NEAR(st::one(),MvecEqual(AV_,st::zero()),VTest::releps());
+        ASSERT_NEAR(st::one(),MvecEqual(BV_,st::zero()),VTest::releps());
+        
+        PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),B_,Vm_,st::zero(),BV_,&iflag_),iflag_);
         PHIST_CHK_IERR(SUBR(mvec_from_device)(V_,&iflag_),iflag_);
         PHIST_CHK_IERR(SUBR(mvec_from_device)(BV_,&iflag_),iflag_);
 
@@ -338,6 +347,7 @@ TEST_F(CLASSNAME, Aeye_v0ones)
     SUBR(mvec_put_value)(v0_,st::one(),&iflag_);
     ASSERT_EQ(0,iflag_);
     doArnoldiTest(opA_, BLOCK_SIZE);
+    ASSERT_EQ(0,iflag_);
   }
 }
 TEST_F(CLASSNAME, Aeye_v0ones_withB) 
@@ -347,6 +357,7 @@ TEST_F(CLASSNAME, Aeye_v0ones_withB)
     SUBR(mvec_put_value)(v0_,st::one(),&iflag_);
     ASSERT_EQ(0,iflag_);
     doBArnoldiTest(opA_, BLOCK_SIZE);
+    ASSERT_EQ(0,iflag_);
   }
 }
 #endif
@@ -359,6 +370,7 @@ TEST_F(CLASSNAME, Azero_v0ones)
     SUBR(mvec_put_value)(v0_,st::one(),&iflag_);
     ASSERT_EQ(0,iflag_);
     doArnoldiTest(opA_, BLOCK_SIZE);
+    ASSERT_EQ(0,iflag_);
   }
 }
 TEST_F(CLASSNAME, Azero_v0ones_withB) 
@@ -368,6 +380,7 @@ TEST_F(CLASSNAME, Azero_v0ones_withB)
     SUBR(mvec_put_value)(v0_,st::one(),&iflag_);
     ASSERT_EQ(0,iflag_);
     doBArnoldiTest(opA_, BLOCK_SIZE);
+    ASSERT_EQ(0,iflag_);
   }
 }
 #endif
@@ -380,6 +393,7 @@ TEST_F(CLASSNAME, Arand_v0ones)
     SUBR(mvec_put_value)(v0_,st::one(),&iflag_);
     ASSERT_EQ(0,iflag_);
     doArnoldiTest(opA_, BLOCK_SIZE);
+    ASSERT_EQ(0,iflag_);
   }
 }
 TEST_F(CLASSNAME, Arand_v0ones_withB) 
@@ -389,6 +403,7 @@ TEST_F(CLASSNAME, Arand_v0ones_withB)
     SUBR(mvec_put_value)(v0_,st::one(),&iflag_);
     ASSERT_EQ(0,iflag_);
     doBArnoldiTest(opA_, BLOCK_SIZE);
+    ASSERT_EQ(0,iflag_);
   }
 }
 #endif
@@ -401,6 +416,7 @@ TEST_F(CLASSNAME, Arand_nodiag_v0ones)
     SUBR(mvec_put_value)(v0_,st::one(),&iflag_);
     ASSERT_EQ(0,iflag_);
     doArnoldiTest(opA_, BLOCK_SIZE);
+    ASSERT_EQ(0,iflag_);
   }
 }
 TEST_F(CLASSNAME, Arand_nodiag_v0ones_withB) 
@@ -410,6 +426,7 @@ TEST_F(CLASSNAME, Arand_nodiag_v0ones_withB)
     SUBR(mvec_put_value)(v0_,st::one(),&iflag_);
     ASSERT_EQ(0,iflag_);
     doBArnoldiTest(opA_, BLOCK_SIZE);
+    ASSERT_EQ(0,iflag_);
   }
 }
 #endif
@@ -423,6 +440,7 @@ TEST_F(CLASSNAME, extended_Aeye_v0ones)
     SUBR(mvec_put_value)(v0_,st::one(),&iflag_);
     ASSERT_EQ(0,iflag_);
     doExtendedArnoldiTest(opA_, BLOCK_SIZE);
+    ASSERT_EQ(0,iflag_);
   }
 }
 #endif
@@ -435,6 +453,7 @@ TEST_F(CLASSNAME, extended_Azero_v0ones)
     SUBR(mvec_put_value)(v0_,st::one(),&iflag_);
     ASSERT_EQ(0,iflag_);
     doExtendedArnoldiTest(opA_, BLOCK_SIZE);
+    ASSERT_EQ(0,iflag_);
   }
 }
 #endif
@@ -447,6 +466,7 @@ TEST_F(CLASSNAME, extended_Arand_v0ones)
     SUBR(mvec_put_value)(v0_,st::one(),&iflag_);
     ASSERT_EQ(0,iflag_);
     doExtendedArnoldiTest(opA_, BLOCK_SIZE);
+    ASSERT_EQ(0,iflag_);
   }
 }
 #endif
@@ -459,6 +479,7 @@ TEST_F(CLASSNAME, extended_Arand_nodiag_v0ones)
     SUBR(mvec_put_value)(v0_,st::one(),&iflag_);
     ASSERT_EQ(0,iflag_);
     doExtendedArnoldiTest(opA_, BLOCK_SIZE);
+    ASSERT_EQ(0,iflag_);
   }
 }
 #endif
