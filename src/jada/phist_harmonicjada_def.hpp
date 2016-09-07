@@ -486,7 +486,7 @@ if( Qsize < nEig_ )
     {
       PHIST_CHK_IERR(SUBR(mvec_set_block)(newBQ, BQ_, 0, Qsize-1, iflag), *iflag);
     }
-    PHIST_CHK_IERR(SUBR(mvec_delete)(Q_, iflag), *iflag);
+    PHIST_CHK_IERR(SUBR(mvec_delete)(BQ_, iflag), *iflag);
     BQ_ = newBQ;
   }
   else
