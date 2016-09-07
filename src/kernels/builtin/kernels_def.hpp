@@ -18,6 +18,7 @@ extern "C" {
   void SUBR(crsMat_delete_f)(TYPE(sparseMat_ptr) A, int* iflag);
   void SUBR(crsMat_get_map_f)(TYPE(const_sparseMat_ptr),phist_const_map_ptr*,int*);
   void SUBR(crsMat_read_mm_f)(void*A,phist_const_comm_ptr comm, int fname_len, const char* fname, int* iflag);
+  void SUBR(crsMat_read_mm_with_map_f)(void*A,phist_const_map_ptr map, int fname_len, const char* fname, int* iflag);
   void SUBR(mvecT_times_mvec_f)(_ST_,TYPE(const_mvec_ptr),TYPE(const_mvec_ptr),_ST_,TYPE(sdMat_ptr),int*);
   void SUBR(mvecT_times_mvec_times_sdMat_inplace_f)(_ST_,TYPE(const_mvec_ptr),TYPE(const_mvec_ptr),TYPE(const_sdMat_ptr),_ST_,TYPE(sdMat_ptr),int*);
   void SUBR(mvec_QR_f)(TYPE(mvec_ptr),TYPE(sdMat_ptr),int*);
@@ -139,6 +140,20 @@ extern "C" void SUBR(sparseMat_read_mm)(TYPE(sparseMat_ptr)* A, phist_const_comm
   PHIST_CHK_IERR(SUBR(crsMat_read_mm_f)(A,vcomm,strlen(filename),filename,iflag),*iflag);
 }
 
+//
+extern "C" void SUBR(sparseMat_read_mm_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr vmap,
+        const char* filename,int* iflag)
+{
+  PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
+  if (filename==NULL)
+  {
+    *iflag=PHIST_INVALID_INPUT;
+    return;
+  }
+
+  PHIST_CHK_IERR(SUBR(crsMat_read_mm_with_map_f)(A,vmap,strlen(filename),filename,iflag),*iflag);
+}
+
 extern "C" void SUBR(sparseMat_read_bin)(TYPE(sparseMat_ptr)* A, phist_const_comm_ptr vcomm,
 const char* filename,int* iflag)
 {
@@ -150,12 +165,6 @@ extern "C" void SUBR(sparseMat_read_hb)(TYPE(sparseMat_ptr)* A, phist_const_comm
 const char* filename,int* iflag)
 {
   PHIST_ENTER_KERNEL_FCN(__FUNCTION__);
-  *iflag=PHIST_NOT_IMPLEMENTED;
-}
-
-extern "C" void SUBR(sparseMat_read_mm_with_map)(TYPE(sparseMat_ptr)* A, phist_const_map_ptr map,
-        const char* filename,int* iflag)
-{
   *iflag=PHIST_NOT_IMPLEMENTED;
 }
 
