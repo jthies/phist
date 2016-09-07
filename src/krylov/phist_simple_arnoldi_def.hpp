@@ -130,6 +130,22 @@ PHIST_TASK_BEGIN(ComputeTask)
     // swap vectors
     std::swap(v, av);
   }
+  
+  if (BV!=NULL && BV!=V)
+  {
+    // TODO - not sure if it is smarter to construct this on-the-fly in the loop or in one operation
+    //        here, the former may lead to strided copy operations
+    if (B_op!=NULL)
+    {
+      PHIST_CHK_IERR(B_op->apply(st::one(),B_op->A,V,st::zero(),BV,iflag),*iflag);
+    }
+    else
+    {
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),V,st::zero(),BV,iflag),*iflag);
+    }
+  }
+
+  
 PHIST_TASK_END(iflag)
 
 

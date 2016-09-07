@@ -78,7 +78,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         ASSERT_EQ(0,iflag_);
 
         // setup views for needed vectors and sdMats
-        v0_ = V_ = Vm_ = AV_ = AVm_ = VH_ = NULL;
+        v0_ = V_ = Vm_ = AV_ = AVm_ = BVm_ = VH_ = NULL;
         SUBR(mvec_view_block)(vec2_,&v0_,0,0,&iflag_);
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_view_block)(vec1_,&V_,0,m_+BLOCK_SIZE1-1,&iflag_);
@@ -94,7 +94,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_view_block)(vec3_,&VH_,BLOCK_SIZE1,m_+BLOCK_SIZE1-1,&iflag_);
         ASSERT_EQ(0,iflag_);
-        SUBR(mvec_create)(&BV_,map_,m_,&iflag_);
+        SUBR(mvec_create)(&BV_,map_,m_+BLOCK_SIZE1,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_view_block)(BV_,&BVm_,0,m_-1,&iflag_);
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_extract_view)(BV_,&BV_vp_,&ldaBV_,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -121,6 +123,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         SUBR(mvec_delete)(AV_,&iflag_);
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_delete)(AVm_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_delete)(BVm_,&iflag_);
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_delete)(VH_,&iflag_);
         ASSERT_EQ(0,iflag_);
@@ -164,6 +168,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     TYPE(mvec_ptr) Vm_;
     TYPE(mvec_ptr) AV_,BV_;
     TYPE(mvec_ptr) AVm_;
+    TYPE(mvec_ptr) BVm_;
     TYPE(mvec_ptr) VH_;
     TYPE(sdMat_ptr) H_;
     TYPE(sdMat_ptr) Hm_;
@@ -236,12 +241,12 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         }
         // check if AV and BV are returned correctly
         PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(-st::one(),A_,Vm_,st::one(),AV_,&iflag_),iflag_);
-        PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(-st::one(),B_,Vm_,st::one(),BV_,&iflag_),iflag_);
+        PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(-st::one(),B_,V_,st::one(),BV_,&iflag_),iflag_);
         
-        ASSERT_NEAR(st::one(),MvecEqual(AV_,st::zero()),VTest::releps());
+        ASSERT_NEAR(st::one(),MvecEqual(AV_,st::zero()),10*VTest::releps());
         ASSERT_NEAR(st::one(),MvecEqual(BV_,st::zero()),VTest::releps());
         
-        PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),B_,Vm_,st::zero(),BV_,&iflag_),iflag_);
+        PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(st::one(),B_,V_,st::zero(),BV_,&iflag_),iflag_);
         PHIST_CHK_IERR(SUBR(mvec_from_device)(V_,&iflag_),iflag_);
         PHIST_CHK_IERR(SUBR(mvec_from_device)(BV_,&iflag_),iflag_);
 
@@ -253,7 +258,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         opA->apply(st::one(),opA->A,Vm_,st::zero(),AV_,&iflag_);
         ASSERT_EQ(0,iflag_);
         // calculate B*V(:,1:m+BLOCK_SIZE1)*H(1:m+BLOCK_SIZE1,1:m)
-        SUBR(mvec_times_sdMat)(st::one(),BV_,H_,st::zero(),VH_,&iflag_);
+        SUBR(mvec_times_sdMat)(st::one(),V_,H_,st::zero(),VH_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
         // calculate AV_' := AV_ - VH_
