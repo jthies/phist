@@ -18,7 +18,11 @@ extern "C" void SUBR(sdMat_cholesky)(TYPE(sdMat_ptr) M, int* perm, int* rank, in
   PHIST_PERFCHECK_VERIFY_SMALL;
   phist_lidx ldM, n,m;
   _ST_ *Mval, *Merr=NULL;
+#if PHIST_HIGH_PRECISION_KERNELS_FORCE
+  bool robust=true;
+#else
   bool robust=(*iflag&PHIST_ROBUST_REDUCTIONS);
+#endif
   *iflag=0;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(M,&n,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(M,&m,iflag),*iflag);
@@ -43,7 +47,11 @@ extern "C" void SUBR(sdMat_backwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* pe
   PHIST_PERFCHECK_VERIFY_SMALL;
   phist_lidx ldR, n, m, ldX, k;
   _ST_ *Rval, *Rerr=NULL, *Xval, *Xerr=NULL;
+#if PHIST_HIGH_PRECISION_KERNELS_FORCE
+  bool robust=true;
+#else
   bool robust=(*iflag&PHIST_ROBUST_REDUCTIONS);
+#endif
   *iflag=0;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R,&n,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(R,&m,iflag),*iflag);
@@ -77,7 +85,11 @@ extern "C" void SUBR(sdMat_forwardSubst_sdMat)(const TYPE(sdMat_ptr) R, int* per
   PHIST_PERFCHECK_VERIFY_SMALL;
   phist_lidx ldR, n, m, ldX, k;
   _ST_ *Rval, *Rerr=NULL, *Xval, *Xerr=NULL;
+#if PHIST_HIGH_PRECISION_KERNELS_FORCE
+  bool robust=true;
+#else
   bool robust=(*iflag&PHIST_ROBUST_REDUCTIONS);
+#endif
   *iflag=0;
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(R,&n,iflag),*iflag);
   PHIST_CHK_IERR(SUBR(sdMat_get_ncols)(R,&m,iflag),*iflag);
@@ -113,7 +125,11 @@ extern "C" void SUBR(sdMat_qb)(TYPE(sdMat_ptr) B,
   PHIST_PERFCHECK_VERIFY_SMALL;
   phist_lidx ldB, ldB_1, n, m;
   _ST_ *Bval, *B_1val, *Berr=NULL, *B_1err=NULL;
+#if PHIST_HIGH_PRECISION_KERNELS_FORCE
+  bool robust=true;
+#else
   bool robust=(*iflag&PHIST_ROBUST_REDUCTIONS);
+#endif
   *iflag=0;
   
   PHIST_CHK_IERR(SUBR(sdMat_get_nrows)(B,&n,iflag),*iflag);
