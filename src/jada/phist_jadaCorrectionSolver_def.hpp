@@ -200,23 +200,23 @@ PHIST_TASK_BEGIN(ComputeTask)
     // gather systems that are waiting to be iterated
     std::vector<TYPE(blockedGMRESstate_ptr)> activeStates;
     int firstId = max_k;
-    PHIST_SOUT(PHIST_INFO, "Iterating systems:");
+    if (max_k>0) PHIST_SOUT(PHIST_VERBOSE, "Iterating systems:");
     for(int i = 0; i < max_k; i++)
     {
       if( std::abs(me->blockedGMRESstates_[i]->status) == 1 )
       {
 #ifdef IS_COMPLEX
-        PHIST_SOUT(PHIST_INFO, "\t%d (%f%+fi)", index[me->blockedGMRESstates_[i]->id], 
+        PHIST_SOUT(PHIST_VERBOSE, "\t%d (%f%+fi)", index[me->blockedGMRESstates_[i]->id], 
         -st::real(sigma[index[me->blockedGMRESstates_[i]->id]]),
         -st::imag(sigma[index[me->blockedGMRESstates_[i]->id]]));
 #else
-        PHIST_SOUT(PHIST_INFO, "\t%d (%f)", index[me->blockedGMRESstates_[i]->id], -sigma[index[me->blockedGMRESstates_[i]->id]]);
+        PHIST_SOUT(PHIST_VERBOSE, "\t%d (%f)", index[me->blockedGMRESstates_[i]->id], -sigma[index[me->blockedGMRESstates_[i]->id]]);
 #endif
         activeStates.push_back(me->blockedGMRESstates_[i]);
         firstId = std::min(firstId,activeStates.back()->id);
       }
     }
-    PHIST_SOUT(PHIST_INFO, "\n");
+    if (max_k>0) PHIST_SOUT(PHIST_VERBOSE, "\n");
     k = activeStates.size();
 
     // set correct shifts
