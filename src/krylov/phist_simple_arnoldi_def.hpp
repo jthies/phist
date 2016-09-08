@@ -41,9 +41,13 @@ void SUBR(simple_arnoldi)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr
   int rankV;
 
   // allocate temporary storage
-  TYPE(mvec_ptr) v = NULL, av = NULL;
+  TYPE(mvec_ptr) v = NULL, av = NULL, bv = NULL;
   PHIST_CHK_IERR(SUBR(mvec_create) (&v,  A_op->domain_map, 1, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_create) (&av, A_op->domain_map, 1, iflag), *iflag);
+  if (B_op!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_create)(&bv,B_op->domain_map,1,iflag),*iflag);
+  }
   
   // get comm for creating sdMats
   phist_const_comm_ptr comm=NULL;
@@ -55,7 +59,7 @@ void SUBR(simple_arnoldi)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearOp_ptr
 
   // subdiagonal element (always a 1x1 matrix for block size 1)
   PHIST_CHK_IERR(SUBR(sdMat_create)(&R1,1,1,comm,iflag),*iflag);
-
+  
   // normalize v0
   PHIST_CHK_IERR(SUBR(mvec_set_block) (v, v0, 0, 0, iflag), *iflag);
   _MT_ v0norm;
@@ -100,8 +104,6 @@ PHIST_TASK_BEGIN(ComputeTask)
     // orthogonalize: Q*R1 = W-VR2
     PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vprev,0,i,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_create)(&R2,i+1,1,comm,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(sdMat_get_block)(H,R2,0,i,i,i,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(sdMat_get_block)(H,R1,i+1,i+1,i,i,iflag),*iflag);
     *iflag=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
     PHIST_CHK_NEG_IERR(SUBR(orthog)(Vprev,av,B_op,R1,R2,3,&rankV,iflag),*iflag);
     PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R2,0,i,i,i,iflag),*iflag);
@@ -114,6 +116,10 @@ PHIST_TASK_BEGIN(ComputeTask)
 #endif    
     PHIST_CHK_IERR(SUBR(sdMat_delete)(R2, iflag), *iflag);
     R2=NULL;
+    
+    // store result in V
+    PHIST_CHK_IERR(SUBR(mvec_set_block)(V, av, i+1, i+1, iflag), *iflag);
+
     if( rankV<i+2 )
     {
       PHIST_SOUT(PHIST_INFO,"found invariant subspace in arnoldi, expanding basis with a randomly generated orthogonal vector\n");
@@ -121,11 +127,17 @@ PHIST_TASK_BEGIN(ComputeTask)
     else
     {
       // the result for R1 from av'*(A*v) may not be precise enough, so improve it!
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), av, v, st::zero(), R1, iflag), *iflag);
+      if (B_op==NULL)
+      {
+        PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), av, v, st::zero(), R1, iflag), *iflag);
+      }
+      else
+      {
+        PHIST_CHK_IERR(B_op->apply(st::one(),B_op->A,v,st::zero(),bv,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), av, bv, st::zero(), R1, iflag), *iflag);
+      }
+      PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R1,i+1,i+1,i,i,iflag),*iflag);
     }
-
-    // store result in V
-    PHIST_CHK_IERR(SUBR(mvec_set_block)(V, av, i+1, i+1, iflag), *iflag);
 
     // swap vectors
     std::swap(v, av);
@@ -156,6 +168,10 @@ PHIST_TASK_END(iflag)
   // delete temp. arrays
   PHIST_CHK_IERR(SUBR(mvec_delete)(v,  iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(av, iflag), *iflag);
+  if (B_op!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_delete)(bv, iflag), *iflag);
+  }
 }
 
 
@@ -192,17 +208,25 @@ void SUBR(simple_blockArnoldi)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearO
 
 
   // allocate temporary storage
-  TYPE(mvec_ptr) v = NULL, av = NULL;
+  phist_const_comm_ptr comm=NULL;
+  PHIST_CHK_IERR(phist_map_get_comm(A_op->domain_map,&comm,iflag),*iflag);
+  TYPE(mvec_ptr) v = NULL, av = NULL, bv = NULL;
   PHIST_CHK_IERR(SUBR(mvec_create) (&v,  A_op->domain_map, bs, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_create) (&av, A_op->domain_map, bs, iflag), *iflag);
+  if (B_op!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_create) (&bv, A_op->domain_map, bs, iflag), *iflag);
+  }
 
   // views in H and V
   TYPE(sdMat_ptr) R1 = NULL, R2 = NULL;
   TYPE(mvec_ptr) Vprev = NULL;
 
+  PHIST_CHK_IERR(SUBR(sdMat_create)(&R1,bs,bs,comm,iflag),*iflag);
+
   // create random orthogonal block vector
   PHIST_CHK_IERR(SUBR(mvec_random) (v, iflag), *iflag);
-  PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R1,0,bs-1,0,bs-1,iflag),*iflag);
+
   int tmp; // rank of random input matrix to orthog, not interesting here
   *iflag=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
   PHIST_CHK_IERR(SUBR(orthog)(NULL,v, B_op,R1,NULL,2,&tmp,iflag), *iflag);
@@ -211,7 +235,6 @@ void SUBR(simple_blockArnoldi)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearO
 
   // initialize H
   PHIST_CHK_IERR(SUBR(sdMat_put_value)(H,st::zero(),iflag),*iflag);
-
 
 // put all iterations in one big compute task; this speeds up the tests with ghost (significantly)
 PHIST_TASK_DECLARE(ComputeTask)
@@ -232,12 +255,15 @@ PHIST_TASK_BEGIN(ComputeTask)
 
     // orthogonalize: Q*R1 = W-VR2
     PHIST_CHK_IERR(SUBR(mvec_view_block)(V,&Vprev,0,(i+1)*bs-1,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R2,0,(i+1)*bs-1,i*bs,(i+1)*bs-1,iflag),*iflag);
-    PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R1,(i+1)*bs,(i+2)*bs-1,i*bs,(i+1)*bs-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_create)(&R2,(i+1)*bs,bs,comm,iflag),*iflag);
     int rankV;
     *iflag=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
     PHIST_CHK_NEG_IERR(SUBR(orthog)(Vprev,av,B_op,R1,R2,3,&rankV,iflag),*iflag);
     *iflag = 0;
+    PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R2,0,(i+1)*bs-1,i*bs,(i+1)*bs-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R1,(i+1)*bs,(i+2)*bs-1,i*bs,(i+1)*bs-1,iflag),*iflag);
+    PHIST_CHK_IERR(SUBR(sdMat_delete)(R2,iflag),*iflag);
+    R2=NULL;
     if( rankV != (i+2)*bs-1 )
     {
       PHIST_SOUT(PHIST_INFO,"found invariant subspace in arnoldi, expanding basis with a randomly generated orthogonal vector\n");
@@ -245,7 +271,16 @@ PHIST_TASK_BEGIN(ComputeTask)
     else
     {
       // the result for R1 from av'*(A*v) may not be precise enough, so improve it!
-      PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), av, v, st::zero(), R1, iflag), *iflag);
+      if (B_op==NULL)
+      {
+        PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), av, v, st::zero(), R1, iflag), *iflag);
+      }
+      else
+      {
+        PHIST_CHK_IERR(B_op->apply(st::one(),B_op->A,v,st::zero(),bv,iflag),*iflag);
+        PHIST_CHK_IERR(SUBR(mvecT_times_mvec)(st::one(), av, bv, st::zero(), R1, iflag), *iflag);
+      }
+      PHIST_CHK_IERR(SUBR(sdMat_set_block)(H,R1,(i+1)*bs,(i+2)*bs-1,i*bs,(i+1)*bs-1,iflag),*iflag);
     }
 
     // store result in V
@@ -279,4 +314,8 @@ PHIST_TASK_END(iflag)
   // delete temp. arrays
   PHIST_CHK_IERR(SUBR(mvec_delete)(v,  iflag), *iflag);
   PHIST_CHK_IERR(SUBR(mvec_delete)(av, iflag), *iflag);
+  if (B_op!=NULL)
+  {
+    PHIST_CHK_IERR(SUBR(mvec_delete)(bv, iflag), *iflag);
+  }
 }
