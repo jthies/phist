@@ -359,6 +359,18 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
   for(int i = 0; i < nV; i++) \
     equalEps = mt::max(equalEps, normVtmp[i]); \
   PHIST_OUT(PHIST_INFO, "Line %d: AV - A*V: %e\n", __LINE__, equalEps); \
+  /* check BV = B*V */ \
+  if (B_op!=NULL) { \
+  PHIST_CHK_IERR(SUBR( mvec_view_block  ) (Vtmp_, &Vtmp,                  0,       nV-1,          iflag), *iflag); \
+  PHIST_CHK_IERR( B_op->apply(st::one(), B_op->A, Vful, st::zero(), Vtmp, iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( mvec_add_mvec ) (-st::one(), BVful, st::one(), Vtmp, iflag), *iflag); \
+  _MT_ normVtmp[nV]; \
+  PHIST_CHK_IERR(SUBR( mvec_norm2 ) (Vtmp, normVtmp, iflag), *iflag); \
+  _MT_ equalEps = normVtmp[0]; \
+  for(int i = 0; i < nV; i++) \
+    equalEps = mt::max(equalEps, normVtmp[i]); \
+  PHIST_OUT(PHIST_INFO, "Line %d: BV - B*V: %e\n", __LINE__, equalEps); \
+  } \
   /* check H = V'*A*V */ \
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vful, AVful, st::zero(), Htmp, iflag), *iflag); \
