@@ -167,11 +167,7 @@ void SUBR(simple_blockArnoldi)(TYPE(const_linearOp_ptr) A_op, TYPE(const_linearO
   PHIST_ENTER_FCN(__FUNCTION__);
 #include "phist_std_typedefs.hpp"
   *iflag = 0;
-  if( B_op != NULL )
-  {
-    PHIST_SOUT(PHIST_ERROR,"case B_op != NULL (e.g. B != I) not implemented yet!\n");
-    PHIST_CHK_IERR(*iflag=PHIST_NOT_IMPLEMENTED, *iflag);
-  }
+
   // check dimensions
   {
     int nrH,ncH,ncV;
@@ -240,7 +236,7 @@ PHIST_TASK_BEGIN(ComputeTask)
     PHIST_CHK_IERR(SUBR(sdMat_view_block)(H,&R1,(i+1)*bs,(i+2)*bs-1,i*bs,(i+1)*bs-1,iflag),*iflag);
     int rankV;
     *iflag=PHIST_ORTHOG_RANDOMIZE_NULLSPACE;
-    PHIST_CHK_NEG_IERR(SUBR(orthog)(Vprev,av,NULL,R1,R2,3,&rankV,iflag),*iflag);
+    PHIST_CHK_NEG_IERR(SUBR(orthog)(Vprev,av,B_op,R1,R2,3,&rankV,iflag),*iflag);
     *iflag = 0;
     if( rankV != (i+2)*bs-1 )
     {
@@ -258,6 +254,20 @@ PHIST_TASK_BEGIN(ComputeTask)
     // swap vectors
     std::swap(v, av);
   }
+  
+  if (BV!=NULL && BV!=V)
+  {
+    // TODO - not sure if it is smarter to construct this on-the-fly in the loop or in one operation
+    //        here, the former may lead to strided copy operations
+    if (B_op!=NULL)
+    {
+      PHIST_CHK_IERR(B_op->apply(st::one(),B_op->A,V,st::zero(),BV,iflag),*iflag);
+    }
+    else
+    {
+      PHIST_CHK_IERR(SUBR(mvec_add_mvec)(st::one(),V,st::zero(),BV,iflag),*iflag);
+    }
+  }  
 PHIST_TASK_END(iflag)
 
 
