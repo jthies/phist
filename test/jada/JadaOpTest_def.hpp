@@ -81,6 +81,10 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         opB_ = new TYPE(linearOp);
         SUBR(linearOp_wrap_sparseMat)(opB_, B_, &iflag_);
         ASSERT_EQ(0,iflag_);
+
+        opAB_ = new TYPE(linearOp);
+        SUBR(linearOp_wrap_sparseMat_pair)(opAB_, A_, B_, &iflag_);
+        ASSERT_EQ(0,iflag_);
       }
     }
 
@@ -92,14 +96,25 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       {
         if( opA_ != NULL )
         {
+          opA_->destroy(opA_,&iflag_);
+          ASSERT_EQ(0,iflag_);
           delete opA_;
         }
         opA_ = NULL;
         if( opB_ != NULL )
         {
+          opB_->destroy(opB_,&iflag_);
+          ASSERT_EQ(0,iflag_);
           delete opB_;
         }
         opB_ = NULL;
+        if( opAB_ != NULL )
+        {
+          opAB_->destroy(opAB_,&iflag_);
+          ASSERT_EQ(0,iflag_);
+          delete opAB_;
+        }
+        opA_ = NULL;
         SUBR(mvec_delete)(q_,&iflag_);
         ASSERT_EQ(0,iflag_);
         SUBR(mvec_delete)(Bq_,&iflag_);
@@ -123,7 +138,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       BTest::TearDownTestCase();
     }
 
-    TYPE(linearOp_ptr) opA_ = NULL, opB_ = NULL;
+    TYPE(linearOp_ptr) opA_ = NULL, opB_ = NULL, opAB_ = NULL;
     TYPE(mvec_ptr) q_ = NULL, Bq_ = NULL;
     _ST_* sigma_ = NULL;
 };
@@ -147,7 +162,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(linearOp) jdOp;
-      SUBR(jadaOp_create)(opA_,opB_,q_,q_,sigma_,_NV_,&jdOp,&iflag_);
+      SUBR(jadaOp_create)(opAB_,opB_,q_,Bq_,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
@@ -162,6 +177,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(linearOp) jdOp;
+      for(int i = 0; i < _NV_; i++)
+        sigma_[i] = st::zero();
       SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -169,8 +186,6 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);
 
       // apply
-      for(int i = 0; i < _NV_; i++)
-        sigma_[i] = st::zero();
       jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
@@ -182,12 +197,39 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_times_sdMat)(st::one(),q_,mat2_,st::one(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      PHIST_CHK_IERR(SUBR(mvec_from_device)(vec3_,&iflag_),iflag_);
-#ifdef PHIST_MVECS_ROW_MAJOR
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()));
-#else
-      ASSERT_REAL_EQ(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()));
-#endif
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(vec3_,st::zero()));
+
+      SUBR(jadaOp_delete)(&jdOp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+  }
+
+  TEST_F(CLASSNAME, apply_only_projection_with_B)
+  {
+    if( typeImplemented_ && !problemTooSmall_ )
+    {
+      TYPE(linearOp) jdOp;
+      for(int i = 0; i < _NV_; i++)
+        sigma_[i] = st::zero();
+      SUBR(jadaOp_create)(opAB_,opB_,q_,Bq_,sigma_,_NV_,&jdOp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(mvec_random)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // apply
+      jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+
+      // vec3_ = (I-q_*q_') vec2_ ?
+      SUBR(mvecT_times_mvec)(st::one(),Bq_,vec2_,st::zero(),mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_add_mvec)(-st::one(),vec2_,st::one(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_times_sdMat)(st::one(),q_,mat2_,st::one(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(vec3_,st::zero()));
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -259,12 +301,42 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       SUBR(mvec_times_sdMat)(st::one(),q_,mat2_,st::one(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      PHIST_CHK_IERR(SUBR(mvec_from_device)(vec3_,&iflag_),iflag_);
-#ifdef PHIST_MVECS_ROW_MAJOR
-      ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
-#else
-      ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
-#endif
+      ASSERT_NEAR(mt::one(),MvecEqual(vec3_,st::zero()),10*VTest::releps());
+
+      SUBR(jadaOp_delete)(&jdOp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+  }
+
+  TEST_F(CLASSNAME, apply_check_result_withB)
+  {
+    if( typeImplemented_ && !problemTooSmall_ )
+    {
+      TYPE(linearOp) jdOp;
+      SUBR(jadaOp_create)(opAB_,opB_,q_,Bq_,sigma_,_NV_,&jdOp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(mvec_random)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // apply
+      jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+
+      // vec3_ = (I-q_*q_') (vec1+sigma_i*I)vec2_ ?
+      opA_->apply(st::one(), opA_->A, vec2_, st::zero(), vec1_, &iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_vadd_mvec)(sigma_,vec2_,st::one(),vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvecT_times_mvec)(st::one(),q_,vec1_,st::zero(),mat2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_add_mvec)(-st::one(),vec1_,st::one(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_times_sdMat)(st::one(),q_,mat2_,st::one(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_NEAR(mt::one(),MvecEqual(vec3_,st::zero()),10*VTest::releps());
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -301,12 +373,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       SUBR(mvec_add_mvec)(-st::one(),vec5,alpha,vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      PHIST_CHK_IERR(SUBR(mvec_from_device)(vec3_,&iflag_),iflag_);
-#ifdef PHIST_MVECS_ROW_MAJOR
-      ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
-#else
-      ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
-#endif
+      ASSERT_NEAR(mt::one(),MvecEqual(vec3_,st::zero()),10*VTest::releps());
 
       SUBR(mvec_delete)(vec5,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -357,12 +424,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       SUBR(mvec_add_mvec)(st::one(),vec5,-st::one(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      PHIST_CHK_IERR(SUBR(mvec_from_device)(vec3_,&iflag_),iflag_);
-#ifdef PHIST_MVECS_ROW_MAJOR
-      ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nvec_,nloc_,lda_,stride_,st::zero()),10*VTest::releps());
-#else
-      ASSERT_NEAR(mt::one(),ArrayEqual(vec3_vp_,nloc_,nvec_,lda_,stride_,st::zero()),10*VTest::releps());
-#endif
+      ASSERT_NEAR(mt::one(),MvecEqual(vec3_,st::zero()),10*VTest::releps());
 
       SUBR(mvec_delete)(vec5,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -380,7 +442,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(linearOp) jdOp;
-      SUBR(jadaOp_create)(opA_,opB_,q_,Bq_,sigma_,_NV_,&jdOp,&iflag_);
+      SUBR(jadaOp_create)(opAB_,opB_,q_,Bq_,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       SUBR(mvec_random)(vec2_,&iflag_);
