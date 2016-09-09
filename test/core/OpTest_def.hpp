@@ -219,3 +219,48 @@ public:
     ASSERT_NEAR(mt::one(),SdMatsEqual(mat1_,mat3_),std::sqrt(st::eps()));
     ASSERT_NEAR(mt::one(),SdMatsEqual(mat2_,mat4_),std::sqrt(st::eps()));
   }
+
+  TEST_F(CLASSNAME,linearOp_wrap_sparseMat_pair_apply)
+  {
+    TYPE(linearOp) AA_op;
+    SUBR(linearOp_wrap_sparseMat_pair)(&AA_op,A_,A_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    // we have v1, v2 random and v3=v2 from SetUp()
+
+    // check that AA_op->apply is the same as A_op->apply
+
+    _ST_ alpha=st::prand();
+    _ST_ beta=st::prand();
+    AA_op.apply(alpha,AA_op.A,vec1_,beta,vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    AA_op.apply(alpha,A_op.A,vec1_,beta,vec3_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(st::one(),MvecsEqual(vec2_,vec3_),VTest::releps());
+        
+    // clean up the operator
+    AA_op.destroy(&AA_op,&iflag_);
+    ASSERT_EQ(0,iflag_);
+  }
+
+  TEST_F(CLASSNAME,linearOp_wrap_sparseMat_pair_apply_shifted)
+  {
+    TYPE(linearOp) AA_op;
+    SUBR(linearOp_wrap_sparseMat_pair)(&AA_op,A_,A_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+
+    // we have v1, v2 random and v3=v2 from SetUp()
+
+    // check that  (A -1*A)x=0
+
+    _ST_ alpha=st::prand();
+    _ST_ sigma[nvec_];
+    for (int i=0; i<nvec_; i++) sigma[i]=st::one();
+    AA_op.apply_shifted(alpha,AA_op.A,sigma,vec1_,st::zero(),vec2_,&iflag_);
+    ASSERT_EQ(0,iflag_);
+    ASSERT_NEAR(st::one(),MvecEqual(vec2_,st::zero()),VTest::releps());
+        
+    // clean up the operator
+    AA_op.destroy(&AA_op,&iflag_);
+    ASSERT_EQ(0,iflag_);
+  }
