@@ -1,5 +1,15 @@
 extern "C" {
 
+// if the linear operator represents the matrix pair [A B],
+// we store  pointers to A and B in this struct and then call
+// sparseMat_times_mvec with A as the apply function. The apply_shifted
+// function, on the other hand, will compute alpha*(A+sigma[j]*B)X+beta*Y
+typedef struct TYPE(private_sparseMat_pair)
+{
+  TYPE(const_sparseMat_ptr) A;
+  TYPE(const_sparseMat_ptr) B;
+} TYPE(private_sparseMat_pair);
+
 //! just to have some function to point to
 void SUBR(private_linearOp_destroy_nothing)(TYPE(linearOp_ptr) op, int* iflag)
 {
@@ -9,10 +19,8 @@ void SUBR(private_linearOp_destroy_nothing)(TYPE(linearOp_ptr) op, int* iflag)
 //! just to have some function to point to
 void SUBR(private_linearOp_destroy_sparseMat_pair_wrapper)(TYPE(linearOp_ptr) op, int* iflag)
 {
-  // A[0] points to the A matrix, A[1] to the B matrix, the array of two pointers
-  // was allocated using new, so it has to be deleted
-  TYPE(const_sparseMat_ptr)* ptrs = (TYPE(const_sparseMat_ptr)*)op->A;
-  delete [] ptrs;
+  TYPE(private_sparseMat_pair)* pair = (TYPE(private_sparseMat_pair)*)(op->A);
+  delete pair; // delete the struct, not the matrices
   *iflag=0;
 }
 
@@ -32,15 +40,25 @@ void SUBR(linearOp_wrap_sparseMat)(TYPE(linearOp_ptr) op, TYPE(const_sparseMat_p
   return;
 }
 
+// helper function to compute Y=beta*Y + alpha*AX, ignoring B
+void SUBR(private_linearOp_apply_sparseMat_pair_only_A)
+(_ST_ alpha, const void* AB, TYPE(const_mvec_ptr) X, _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
+{
+  // get separate pointers to A and B
+  TYPE(private_sparseMat_pair) *_AB = (TYPE(private_sparseMat_pair)*)AB;
+  TYPE(const_sparseMat_ptr) A = _AB->A;
+  PHIST_CHK_IERR(SUBR(sparseMat_times_mvec)(alpha,A,X,beta,Y,iflag),*iflag);
+}
+
 // helper function to compute Y=beta*Y + alpha*(A+shifts[j]*B)X_j (apply_shifted function for matrix pair)
 void SUBR(private_linearOp_apply_sparseMat_pair_shifted)
-(_ST_ alpha, const void* AB, _ST_ shifts[], TYPE(const_mvec_ptr) X, _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
+(_ST_ alpha, const void* AB, _ST_ const shifts[], TYPE(const_mvec_ptr) X, _ST_ beta, TYPE(mvec_ptr) Y, int* iflag)
 {
 #include "phist_std_typedefs.hpp"
   // get separate pointers to A and B
-  TYPE(const_sparseMat_ptr) *_AB = (TYPE(const_sparseMat_ptr)*)AB;
-  TYPE(const_sparseMat_ptr) A = _AB[0];
-  TYPE(const_sparseMat_ptr) B = _AB[1];
+  TYPE(private_sparseMat_pair) *_AB = (TYPE(private_sparseMat_pair)*)AB;
+  TYPE(const_sparseMat_ptr) A = _AB->A;
+  TYPE(const_sparseMat_ptr) B = _AB->B;
   
   // start by figuring out the number of vectors (=#shifts)
   int nvec;
@@ -58,12 +76,14 @@ void SUBR(private_linearOp_apply_sparseMat_pair_shifted)
 void SUBR(linearOp_wrap_sparseMat_pair)(TYPE(linearOp_ptr) op, 
         TYPE(const_sparseMat_ptr) A, TYPE(const_sparseMat_ptr) B, int *iflag)
 {
-  // setup default behavior
+  // setup maps etc.
   PHIST_CHK_IERR(SUBR(linearOp_wrap_sparseMat)(op,A,iflag),*iflag);
-  TYPE(const_sparseMat_ptr) *ptrs=new TYPE(const_sparseMat_ptr)[2];
-  ptrs[0]=A;
-  ptrs[1]=B;
-  op->A=(void*)ptrs;
+  TYPE(private_sparseMat_pair) *pair=new TYPE(private_sparseMat_pair);
+  pair->A=A;
+  pair->B=B;
+  op->A=(void*)(pair);
+  op->apply=&SUBR(private_linearOp_apply_sparseMat_pair_only_A);
+  op->apply_shifted=&SUBR(private_linearOp_apply_sparseMat_pair_shifted);
   op->destroy=&SUBR(private_linearOp_destroy_sparseMat_pair_wrapper);
 }
 

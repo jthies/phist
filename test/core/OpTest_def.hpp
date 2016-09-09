@@ -234,7 +234,7 @@ public:
     _ST_ beta=st::prand();
     AA_op.apply(alpha,AA_op.A,vec1_,beta,vec2_,&iflag_);
     ASSERT_EQ(0,iflag_);
-    AA_op.apply(alpha,A_op.A,vec1_,beta,vec3_,&iflag_);
+    A_op.apply(alpha,A_op.A,vec1_,beta,vec3_,&iflag_);
     ASSERT_EQ(0,iflag_);
     ASSERT_NEAR(st::one(),MvecsEqual(vec2_,vec3_),VTest::releps());
         
@@ -255,7 +255,7 @@ public:
 
     _ST_ alpha=st::prand();
     _ST_ sigma[nvec_];
-    for (int i=0; i<nvec_; i++) sigma[i]=st::one();
+    for (int i=0; i<nvec_; i++) sigma[i]=-st::one();
     AA_op.apply_shifted(alpha,AA_op.A,sigma,vec1_,st::zero(),vec2_,&iflag_);
     ASSERT_EQ(0,iflag_);
     ASSERT_NEAR(st::one(),MvecEqual(vec2_,st::zero()),VTest::releps());
