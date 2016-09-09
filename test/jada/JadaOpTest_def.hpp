@@ -51,28 +51,23 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
 
       if (typeImplemented_ && !problemTooSmall_)
       {
+
+        SUBR(mvec_random)(vec1_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_random)(vec2_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_add_mvec)(st::one(),vec2_,st::zero(),vec3_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+
         PHISTTEST_MVEC_CREATE(&q_,map_,_NVP_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        PHISTTEST_MVEC_CREATE(&qb_,map_,_NVP_,&iflag_);
         ASSERT_EQ(0,iflag_);
         PHISTTEST_MVEC_CREATE(&Bq_,map_,_NVP_,&iflag_);
         ASSERT_EQ(0,iflag_);
         sigma_ = new _ST_[_NV_];
         for(int i = 0; i < _NV_; i++)
           sigma_[i] = st::prand();
-
-        // create random orthogonal Q
-        SUBR(mvec_random)(q_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        TYPE(sdMat_ptr) Rtmp;
-        SUBR(sdMat_create)(&Rtmp,_NVP_,_NVP_,comm_,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        int rankQ=0;
-        SUBR(orthog)(NULL,q_,NULL,Rtmp,NULL,4,&rankQ,&iflag_);
-        ASSERT_GE(iflag_,0);
-        SUBR(sdMat_delete)(Rtmp,&iflag_);
-        ASSERT_EQ(0,iflag_);
-        
-        SUBR(sparseMat_times_mvec)(st::one(),B_,q_,st::zero(),Bq_,&iflag_);
-        ASSERT_EQ(0,iflag_);
 
         opA_ = new TYPE(linearOp);
         SUBR(linearOp_wrap_sparseMat)(opA_, A_, &iflag_);
@@ -84,6 +79,25 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
 
         opAB_ = new TYPE(linearOp);
         SUBR(linearOp_wrap_sparseMat_pair)(opAB_, A_, B_, &iflag_);
+        ASSERT_EQ(0,iflag_);
+
+        // create random orthogonal Q and B-orhtogonalQ_B
+        SUBR(mvec_random)(q_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        SUBR(mvec_random)(qb_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        TYPE(sdMat_ptr) Rtmp;
+        SUBR(sdMat_create)(&Rtmp,_NVP_,_NVP_,comm_,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        int rankQ=0;
+        SUBR(orthog)(NULL,q_,NULL,Rtmp,NULL,4,&rankQ,&iflag_);
+        ASSERT_GE(iflag_,0);
+        SUBR(orthog)(NULL,qb_,opB_,Rtmp,NULL,4,&rankQ,&iflag_);
+        ASSERT_GE(iflag_,0);
+        SUBR(sdMat_delete)(Rtmp,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        
+        SUBR(sparseMat_times_mvec)(st::one(),B_,qb_,st::zero(),Bq_,&iflag_);
         ASSERT_EQ(0,iflag_);
       }
     }
@@ -117,6 +131,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         opA_ = NULL;
         SUBR(mvec_delete)(q_,&iflag_);
         ASSERT_EQ(0,iflag_);
+        SUBR(mvec_delete)(qb_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         SUBR(mvec_delete)(Bq_,&iflag_);
         ASSERT_EQ(0,iflag_);
         if( sigma_ != NULL)
@@ -139,7 +155,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     }
 
     TYPE(linearOp_ptr) opA_ = NULL, opB_ = NULL, opAB_ = NULL;
-    TYPE(mvec_ptr) q_ = NULL, Bq_ = NULL;
+    TYPE(mvec_ptr) q_ = NULL, Bq_ = NULL, qb_ = NULL;
     _ST_* sigma_ = NULL;
 };
 
@@ -162,7 +178,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(linearOp) jdOp;
-      SUBR(jadaOp_create)(opAB_,opB_,q_,Bq_,sigma_,_NV_,&jdOp,&iflag_);
+      SUBR(jadaOp_create)(opAB_,opB_,qb_,Bq_,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
@@ -180,9 +196,6 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       for(int i = 0; i < _NV_; i++)
         sigma_[i] = st::zero();
       SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
-      SUBR(mvec_random)(vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // apply
@@ -204,32 +217,35 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     }
   }
 
-  TEST_F(CLASSNAME, apply_only_projection_with_B)
+  TEST_F(CLASSNAME, apply_only_projection_withB)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(linearOp) jdOp;
       for(int i = 0; i < _NV_; i++)
         sigma_[i] = st::zero();
-      SUBR(jadaOp_create)(opAB_,opB_,q_,Bq_,sigma_,_NV_,&jdOp,&iflag_);
+      SUBR(jadaOp_create)(opAB_,opB_,qb_,Bq_,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(mvec_random)(vec2_,&iflag_);
+      // apply, vec1 = (I-qBq') I (I-qBq')vec2
+      jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      // apply
-      jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
-
-      // vec3_ = (I-q_*q_') vec2_ ?
+      // vec2_ = (I-q_*Bq_') vec2_ 
       SUBR(mvecT_times_mvec)(st::one(),Bq_,vec2_,st::zero(),mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(mvec_add_mvec)(-st::one(),vec2_,st::one(),vec3_,&iflag_);
+      SUBR(mvec_times_sdMat)(-st::one(),qb_,mat2_,st::one(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(mvec_times_sdMat)(st::one(),q_,mat2_,st::one(),vec3_,&iflag_);
+
+      // vec1_ <- vec1 - (vec2 projected twice) should be zero
+      SUBR(mvecT_times_mvec)(st::one(),Bq_,vec3_,st::zero(),mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      ASSERT_REAL_EQ(mt::one(),MvecEqual(vec3_,st::zero()));
+      SUBR(mvec_add_mvec)(-st::one(),vec3_,st::one(),vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      SUBR(mvec_times_sdMat)(st::one(),qb_,mat2_,st::one(),vec1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      ASSERT_REAL_EQ(mt::one(),MvecEqual(vec1_,st::zero()));
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -243,9 +259,6 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     {
       TYPE(linearOp) jdOp;
       SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
-      SUBR(mvec_random)(vec2_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // apply
@@ -281,9 +294,6 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       SUBR(jadaOp_create)(opA_,NULL,q_,NULL,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
-      SUBR(mvec_random)(vec2_,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
       // apply
       jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -313,10 +323,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(linearOp) jdOp;
-      SUBR(jadaOp_create)(opAB_,opB_,q_,Bq_,sigma_,_NV_,&jdOp,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
-      SUBR(mvec_random)(vec2_,&iflag_);
+      SUBR(jadaOp_create)(opAB_,opB_,qb_,Bq_,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // apply
@@ -329,11 +336,11 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_vadd_mvec)(sigma_,vec2_,st::one(),vec1_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(mvecT_times_mvec)(st::one(),q_,vec1_,st::zero(),mat2_,&iflag_);
+      SUBR(mvecT_times_mvec)(st::one(),Bq_,vec1_,st::zero(),mat2_,&iflag_);
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_add_mvec)(-st::one(),vec1_,st::one(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
-      SUBR(mvec_times_sdMat)(st::one(),q_,mat2_,st::one(),vec3_,&iflag_);
+      SUBR(mvec_times_sdMat)(st::one(),qb_,mat2_,st::one(),vec3_,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       ASSERT_NEAR(mt::one(),MvecEqual(vec3_,st::zero()),10*VTest::releps());
@@ -442,10 +449,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     if( typeImplemented_ && !problemTooSmall_ )
     {
       TYPE(linearOp) jdOp;
-      SUBR(jadaOp_create)(opAB_,opB_,q_,Bq_,sigma_,_NV_,&jdOp,&iflag_);
-      ASSERT_EQ(0,iflag_);
-
-      SUBR(mvec_random)(vec2_,&iflag_);
+      SUBR(jadaOp_create)(opAB_,opB_,qb_,Bq_,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       // apply
