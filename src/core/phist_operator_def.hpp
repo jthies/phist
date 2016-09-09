@@ -9,9 +9,9 @@ void SUBR(private_linearOp_destroy_nothing)(TYPE(linearOp_ptr) op, int* iflag)
 //! just to have some function to point to
 void SUBR(private_linearOp_destroy_sparseMat_pair_wrapper)(TYPE(linearOp_ptr) op, int* iflag)
 {
-  // A points to the A matrix, &A + 1 to the B matrix, the array of two pointers
+  // A[0] points to the A matrix, A[1] to the B matrix, the array of two pointers
   // was allocated using new, so it has to be deleted
-  TYPE(const_sparseMat_ptr)* ptrs = &op->A;
+  TYPE(const_sparseMat_ptr)* ptrs = (TYPE(const_sparseMat_ptr)*)op->A;
   delete [] ptrs;
   *iflag=0;
 }
@@ -63,7 +63,7 @@ void SUBR(linearOp_wrap_sparseMat_pair)(TYPE(linearOp_ptr) op,
   TYPE(const_sparseMat_ptr) *ptrs=new TYPE(const_sparseMat_ptr)[2];
   ptrs[0]=A;
   ptrs[1]=B;
-  op->A=ptrs[0];
+  op->A=(void*)ptrs;
   op->destroy=&SUBR(private_linearOp_destroy_sparseMat_pair_wrapper);
 }
 
