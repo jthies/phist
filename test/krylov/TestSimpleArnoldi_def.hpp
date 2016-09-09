@@ -13,12 +13,14 @@
 
 /*! Test fixure. */
 class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
+                 public virtual KernelTestWithMassMat<_ST_,_N_>,
                  public virtual KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_>,
                  public virtual KernelTestWithVectors<_ST_,_N_,_M_+BLOCK_SIZE1,0,3>
 {
 
   public:
     typedef KernelTestWithSparseMat<_ST_,_N_,MATNAME> SparseMatTest;
+    typedef KernelTestWithMassMat<_ST_,_N_> BTest;
     typedef KernelTestWithVectors<_ST_,_N_,_M_+BLOCK_SIZE1,0,3> VTest;
     typedef KernelTestWithSdMats<_ST_,_M_+BLOCK_SIZE1,_M_> MTest;
 
@@ -31,11 +33,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       int sparseMatCreateFlag=getSparseMatCreateFlag(_N_,BLOCK_SIZE);
 
       SparseMatTest::SetUpTestCase(sparseMatCreateFlag);
-      // create Hermitian matrix for B-Arnoldi tests
-      phist_gidx gnrows=_N_;
-      phist::testing::PHIST_TG_PREFIX(hpd_tridiag)(-1,NULL,&gnrows,NULL,NULL);
-      SUBR(sparseMat_create_fromRowFuncAndMap)(&B_,map_,3,&phist::testing::PHIST_TG_PREFIX(hpd_tridiag),NULL,&iflag_);
-      
+      BTest::SetUpTestCase(map_);
       VTest::SetUpTestCase();
       MTest::SetUpTestCase();
     }
@@ -44,6 +42,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     virtual void SetUp()
     {
       SparseMatTest::SetUp();
+      BTest::SetUp();
       MTest::SetUp();
       VTest::SetUp();
 
@@ -144,6 +143,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
 
       MTest::TearDown();
       VTest::TearDown();
+      BTest::TearDown();
       SparseMatTest::TearDown();
     }
 
@@ -151,8 +151,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     {
       MTest::TearDownTestCase();
       VTest::TearDownTestCase();
-      SUBR(sparseMat_delete)(B_,&iflag_);
-      ASSERT_EQ(0,iflag_);
+      BTest::TearDownTestCase();
       SparseMatTest::TearDownTestCase();
     }
 
@@ -160,7 +159,6 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
 
   protected:
   
-    static TYPE(sparseMat_ptr) B_;
     TYPE(mvec_ptr) v0_;
     TYPE(mvec_ptr) V_;
     _ST_ *V_vp_, *BV_vp_;
@@ -341,8 +339,6 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       }
     }
 };
-
-TYPE(sparseMat_ptr) CLASSNAME::B_;
 
 #if MATNAME == MATNAME_speye
 TEST_F(CLASSNAME, Aeye_v0ones) 

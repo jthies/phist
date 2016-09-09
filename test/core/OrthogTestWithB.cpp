@@ -10,6 +10,7 @@
 #include "phist_orthog.h"
 #include "phist_kernels.h"
 
+#include "../kernels/KernelTestWithMassMat.h"
 #include "../kernels/KernelTestWithVectors.h"
 #include "../kernels/KernelTestWithSdMats.h"
 

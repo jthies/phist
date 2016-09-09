@@ -11,12 +11,18 @@
 /*! Test fixure. */
 class CLASSNAME: public virtual TestWithType< _ST_ >,
                  public virtual KernelTestWithMap<_N_>
+#ifdef ORTHOG_WITH_HPD_B
+                 , public virtual KernelTestWithMassMat<_ST_,_N_>
+#endif
 {
 
 public:
 
   typedef KernelTestWithVectors<_ST_,_N_,_M_> VTest;
   typedef KernelTestWithVectors<_ST_,_N_,_K_> WTest;
+#ifdef ORTHOG_WITH_HPD_B
+  typedef KernelTestWithMassMat<_ST_,_N_> BTest;
+#endif
 
   //! mvec/sdMat sizes
   static const int n_=_N_;
@@ -34,9 +40,6 @@ public:
   //! vectorspaces above, pre-multiplied by B
   TYPE(mvec_ptr) BV_, BW_,BQ_;
 
-  //! sparse matrix B so we can delete it properly
-  TYPE(sparseMat_ptr) B_;
-
   //! R1 is m x m, R2 is k x k
   TYPE(sdMat_ptr) R0_, R1_, R2_;
 
@@ -49,7 +52,10 @@ public:
   {
     KernelTestWithMap<_N_>::SetUpTestCase();
     TestWithType<_ST_>::SetUpTestCase();
-  }
+#ifdef ORTHOG_WITH_HPD_B
+    BTest::SetUpTestCase(map_);
+#endif
+}
   
   //NOTE: we assume stride_=1 here to make the loops simpler,
   //      it seems reasonable to me to do that because mvecs 
@@ -61,7 +67,9 @@ public:
   {
     TestWithType<_ST_>::SetUp();
     KernelTestWithMap<_N_>::SetUp();
-
+#ifdef ORTHOG_WITH_HPD_B
+    BTest::SetUp();
+#endif
       if(typeImplemented_ && !problemTooSmall_)
       {
 
@@ -92,16 +100,9 @@ public:
       SUBR(mvec_extract_view)(W2_,&W2_vp_,&this->ldaW2_,&this->iflag_);
       ASSERT_EQ(0,this->iflag_);
       
-      B_op=NULL; B_=NULL; BV_=BV_; BW_=W_; BQ_=Q_;
+      B_op=NULL; BV_=BV_; BW_=W_; BQ_=Q_;
 
 #ifdef ORTHOG_WITH_HPD_B
-      // create B_ as a tridiagonal hpd matrix
-      ghost_gidx gnrows=_N_;
-      // initialize rowFunc
-      iflag_=phist::testing::PHIST_TG_PREFIX(hpd_tridiag)(-1,NULL,&gnrows,NULL,NULL);
-      ASSERT_EQ(0,iflag_);
-      SUBR(sparseMat_create_fromRowFuncAndMap)(&B_,map_,3,&phist::testing::PHIST_TG_PREFIX(hpd_tridiag),NULL,&iflag_);
-      ASSERT_EQ(0,iflag_);
       B_op=new TYPE(linearOp);
       SUBR(linearOp_wrap_sparseMat)(B_op,B_,&iflag_);
       ASSERT_EQ(0,iflag_);
@@ -141,7 +142,7 @@ public:
       SUBR(mvec_delete)(W2_,&iflag_);
       SUBR(mvec_delete)(Q_,&iflag_);
 #ifdef ORTHOG_WITH_HPD_B
-      SUBR(sparseMat_delete)(B_,&iflag_);
+    BTest::TearDown();
       SUBR(mvec_delete)(BV_,&iflag_);
       SUBR(mvec_delete)(BW_,&iflag_);
       SUBR(mvec_delete)(BQ_,&iflag_);
@@ -153,6 +154,13 @@ public:
     }
     KernelTestWithMap<_N_>::TearDown();
     TestWithType<_ST_>::TearDown();
+  }
+
+  static void TearDownTestCase()
+  {
+#ifdef ORTHOG_WITH_HPD_B
+    BTest::TearDownTestCase();
+#endif
   }
 
   // primary test routine that calls orthog and checks the result vectors
