@@ -53,6 +53,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       {
         PHISTTEST_MVEC_CREATE(&q_,map_,_NVP_,&iflag_);
         ASSERT_EQ(0,iflag_);
+        PHISTTEST_MVEC_CREATE(&Bq_,map_,_NVP_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         sigma_ = new _ST_[_NV_];
         for(int i = 0; i < _NV_; i++)
           sigma_[i] = st::prand();
@@ -67,6 +69,9 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         SUBR(orthog)(NULL,q_,NULL,Rtmp,NULL,4,&rankQ,&iflag_);
         ASSERT_GE(iflag_,0);
         SUBR(sdMat_delete)(Rtmp,&iflag_);
+        ASSERT_EQ(0,iflag_);
+        
+        SUBR(sparseMat_times_mvec)(st::one(),B_,q_,st::zero(),Bq_,&iflag_);
         ASSERT_EQ(0,iflag_);
 
         opA_ = new TYPE(linearOp);
@@ -97,6 +102,8 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         opB_ = NULL;
         SUBR(mvec_delete)(q_,&iflag_);
         ASSERT_EQ(0,iflag_);
+        SUBR(mvec_delete)(Bq_,&iflag_);
+        ASSERT_EQ(0,iflag_);
         if( sigma_ != NULL)
           delete[] sigma_;
         sigma_ = NULL;
@@ -117,7 +124,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     }
 
     TYPE(linearOp_ptr) opA_ = NULL, opB_ = NULL;
-    TYPE(mvec_ptr) q_ = NULL;
+    TYPE(mvec_ptr) q_ = NULL, Bq_ = NULL;
     _ST_* sigma_ = NULL;
 };
 
@@ -361,6 +368,33 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       ASSERT_EQ(0,iflag_);
       SUBR(mvec_delete)(vec4,&iflag_);
       ASSERT_EQ(0,iflag_);
+
+      SUBR(jadaOp_delete)(&jdOp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+    }
+  }
+
+
+  TEST_F(CLASSNAME, apply_check_orthogonality_withB)
+  {
+    if( typeImplemented_ && !problemTooSmall_ )
+    {
+      TYPE(linearOp) jdOp;
+      SUBR(jadaOp_create)(opA_,opB_,q_,Bq_,sigma_,_NV_,&jdOp,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      SUBR(mvec_random)(vec2_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+
+      // apply
+      jdOp.apply(st::one(),jdOp.A,vec2_,st::zero(),vec3_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      // check that result is orthogonal to q
+      SUBR(mvecT_times_mvec)(st::one(),Bq_,vec3_,st::zero(),mat1_,&iflag_);
+      ASSERT_EQ(0,iflag_);
+      
+      ASSERT_NEAR(st::one(),SdMatEqual(mat1_,st::zero()),10*mt::eps());
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
