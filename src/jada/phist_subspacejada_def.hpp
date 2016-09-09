@@ -371,9 +371,9 @@ symmetric=symmetric||(opts.symmetry==phist_COMPLEX_SYMMETRIC);
     equalEps = mt::max(equalEps, normVtmp[i]); \
   PHIST_OUT(PHIST_INFO, "Line %d: BV - B*V: %e\n", __LINE__, equalEps); \
   } \
-  /* check H = V'*A*V */ \
+  /* check H = V'*B*A*V */ \
   PHIST_CHK_IERR(SUBR( sdMat_view_block ) (Htmp_,&Htmp,0,    nV-1,      0,     nV-1,      iflag), *iflag); \
-  PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), Vful, AVful, st::zero(), Htmp, iflag), *iflag); \
+  PHIST_CHK_IERR(SUBR( mvecT_times_mvec ) (st::one(), BVful, AVful, st::zero(), Htmp, iflag), *iflag); \
   PHIST_CHK_IERR(SUBR( sdMat_add_sdMat ) (-st::one(), Hful, st::one(), Htmp, iflag), *iflag); \
   equalEps = st::abs(Htmp_raw[0]); \
   for(int i = 0; i < nV; i++) \
@@ -534,7 +534,7 @@ PHIST_CHK_IERR(SUBR( sdMat_view_block ) (R_,  &R, 0, nEig_-1, 0, nEig_-1, iflag)
 {
   // check that the residual is orthogonal to Q (should be by construction!)
   PHIST_CHK_IERR( SUBR( sdMat_view_block ) (Htmp_, &Htmp, 0, nEig_-1, nConvEig, nEig_-1, iflag), *iflag);
-  PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (st::one(), Q, t_res, st::zero(), Htmp, iflag), *iflag);
+  PHIST_CHK_IERR( SUBR( mvecT_times_mvec ) (st::one(), BQ, t_res, st::zero(), Htmp, iflag), *iflag);
   PHIST_CHK_IERR(SUBR(sdMat_from_device)(Htmp_,iflag),*iflag);
   _MT_ equalEps = st::abs(Htmp_raw[0]);
   for(int i = 0; i < nEig_; i++)
