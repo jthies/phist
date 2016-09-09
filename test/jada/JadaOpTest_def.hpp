@@ -5,12 +5,14 @@
 
 /*! Test fixure. */
 class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
+                 public virtual KernelTestWithMassMat<_ST_,_N_>,
                  public virtual KernelTestWithVectors<_ST_,_N_,_NV_,0,3>,
                  public virtual KernelTestWithSdMats<_ST_,_NVP_,_NV_>
 {
 
   public:
     typedef KernelTestWithSparseMat<_ST_,_N_,MATNAME> SparseMatTest;
+    typedef KernelTestWithMassMat<_ST_,_N_> BTest;
     typedef KernelTestWithVectors<_ST_,_N_,_NV_,0,3> VTest;
     typedef KernelTestWithSdMats<_ST_,_NVP_,_NV_> MTest;
 
@@ -18,6 +20,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     {
       int sparseMatCreateFlag=getSparseMatCreateFlag(_N_,_NV_);
       SparseMatTest::SetUpTestCase(sparseMatCreateFlag);
+      BTest::SetUpTestCase(map_);
       VTest::SetUpTestCase();
       MTest::SetUpTestCase();
     }
@@ -27,6 +30,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     virtual void SetUp()
     {
       SparseMatTest::SetUp();
+      BTest::SetUp();
       VTest::SetUp();
       MTest::SetUp();
 
@@ -68,6 +72,10 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
         opA_ = new TYPE(linearOp);
         SUBR(linearOp_wrap_sparseMat)(opA_, A_, &iflag_);
         ASSERT_EQ(0,iflag_);
+
+        opB_ = new TYPE(linearOp);
+        SUBR(linearOp_wrap_sparseMat)(opB_, B_, &iflag_);
+        ASSERT_EQ(0,iflag_);
       }
     }
 
@@ -78,8 +86,15 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       if (typeImplemented_ && !problemTooSmall_)
       {
         if( opA_ != NULL )
+        {
           delete opA_;
+        }
         opA_ = NULL;
+        if( opB_ != NULL )
+        {
+          delete opB_;
+        }
+        opB_ = NULL;
         SUBR(mvec_delete)(q_,&iflag_);
         ASSERT_EQ(0,iflag_);
         if( sigma_ != NULL)
@@ -90,6 +105,7 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       MTest::TearDown();
       VTest::TearDown();
       SparseMatTest::TearDown();
+      BTest::TearDown();
     }
 
     static void TearDownTestCase()
@@ -97,9 +113,10 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
       MTest::TearDownTestCase();
       VTest::TearDownTestCase();
       SparseMatTest::TearDownTestCase();
+      BTest::TearDownTestCase();
     }
 
-    TYPE(linearOp_ptr) opA_ = NULL;
+    TYPE(linearOp_ptr) opA_ = NULL, opB_ = NULL;
     TYPE(mvec_ptr) q_ = NULL;
     _ST_* sigma_ = NULL;
 };
@@ -118,22 +135,18 @@ class CLASSNAME: public virtual KernelTestWithSparseMat<_ST_,_N_,MATNAME>,
     }
   }
 
-/*
-  TEST_F(CLASSNAME, DISABLE_create_and_delete_generalized)
+  TEST_F(CLASSNAME, create_and_delete_withB)
   {
     if( typeImplemented_ && !problemTooSmall_ )
     {
-      // we need fitting maps??
-
       TYPE(linearOp) jdOp;
-      SUBR(jadaOp_create)(opA_,opI_,q_,q_,sigma_,_NV_,&jdOp,&iflag_);
+      SUBR(jadaOp_create)(opA_,opB_,q_,q_,sigma_,_NV_,&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
 
       SUBR(jadaOp_delete)(&jdOp,&iflag_);
       ASSERT_EQ(0,iflag_);
     }
   }
-*/
 
 
 #if MATNAME == MATNAME_speye
